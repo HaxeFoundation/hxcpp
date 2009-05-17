@@ -3,6 +3,7 @@
 #define GC_WIN32_THREADS
 #include <time.h>
 #else
+#include <gc_pthread_redirects.h>
 #include <sys/time.h>
 #endif
 #include <hxObject.h>
@@ -24,6 +25,7 @@ extern "C" {
 #include <windows.h>
 #else
 #include <wchar.h>
+typedef  uint64_t  __int64;
 #endif
 
 // Stoopid windows ...
@@ -1677,7 +1679,7 @@ int __int__(double x)
 {
 	if (x < -0x7fffffff || x>0x80000000 )
 	{
-		__int64 big_int = x;
+		__int64 big_int = (__int64)x;
 		return big_int & 0xffffffff;
 	}
 	else

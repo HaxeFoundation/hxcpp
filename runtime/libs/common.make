@@ -1,7 +1,7 @@
 
 ifeq ("$(OSTYPE)","linux")
 FULL_DLL_NAME = ../../../bin/Linux/$(NDLL_NAME).dso
-LD_FLAGS = $(LINUX_LD_FLAGS) -shared -o $(FULL_DLL_NAME) 
+LD_FLAGS = $(LINUX_LD_FLAGS) -fpic -fPIC -shared -o $(FULL_DLL_NAME) 
 else
 FULL_DLL_NAME = ../../../bin/Mac/$(NDLL_NAME).dylib
 LD_FLAGS = $(MAC_LD_FLAGS) ../../../bin/Mac/hxcpp.dylib -dynamiclib -o $(FULL_DLL_NAME)
@@ -17,11 +17,11 @@ OPTIM := -g
 endif
 
 
-NEKO_SOURCE_DIR := ../neko
-
 CPP := g++
+C := gcc
 DEFINES += -DNEKO_SOURCES
-CPPFLAGS += -I"$(HXCPP)/include" -I"$(NEKO_SOURCE_DIR)" -frtti -c $(OPTIM) $(DEFINES)
+CFLAGS += -I../../../include -c $(OPTIM) $(DEFINES)
+CPPFLAGS += $(CFLAGS) -frtti
 OBJ := o
 
 all : obj $(FULL_DLL_NAME)

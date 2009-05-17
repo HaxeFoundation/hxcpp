@@ -1,17 +1,15 @@
 .default:all
 .phony:clean
 
-NEKO_SOURCE_DIR = ../neko
-
 DLL_NAME = ../../../bin/Windows/$(NDLL_NAME).dll
 CPP = cl
 DEFINES = $(DEFINES) -DNEKO_SOURCES -D_CRT_SECURE_NO_DEPRECATE.
 
 HX_INCLUDE = $(HX_INCLUDE) -I../../../include
 !ifdef HXCPP_DEBUG
-CPPFLAGS = -nologo $(HX_INCLUDE) -I$(NEKO_SOURCE_DIR) /EHsc -c -Zi -Od $(DEFINES) 
+CPPFLAGS = -nologo $(HX_INCLUDE) /EHsc -c -Zi -Od $(DEFINES) 
 !else
-CPPFLAGS = -nologo $(HX_INCLUDE) -I$(NEKO_SOURCE_DIR) /EHsc -c -Zi -O2 $(DEFINES) 
+CPPFLAGS = -nologo $(HX_INCLUDE) /EHsc -c -Zi -O2 $(DEFINES) 
 !endif
 
 

@@ -1,30 +1,51 @@
-.PHONY : all build-ndlls
+.PHONY : all build-libs
+
+GC_FILES = \
+pthread_stop_world pthread_support \
+allchblk alloc backgraph blacklst checksums dbg_mlc dyn_load \
+finalize gc_dlopen gcj_mlc gcname headers mach_dep malloc \
+mallocx mark mark_rts misc new_hblk obj_map os_dep \
+pcr_interface ptr_chck real_malloc reclaim specific stubborn \
+thread_local_alloc typd_mlc
+
+
 
 ifeq ("$(OSTYPE)","linux")
+
 DLL_NAME = hxcpp.dso
 BIN := Linux
-LD_DYNAMIC :=  -shared
+LD_DYNAMIC :=  -shared -fpic -fPIX
+
 else
+
 LD_DYNAMIC := -fpic -fPIC -dynamiclib -framework Cocoa
 DLL_NAME = hxcpp.dylib
 BIN := Mac
+GC_FILES += MaxOS
+
 endif
 
 FULL_DLL_NAME = ../bin/$(BIN)/$(DLL_NAME)
+
+
+GC_DEFINES = -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -DMY_CPU -DX86 -DCPU -DMY_CPU -DGC_NO_THREAD_REDIRECTS -DGC_PTHREADS
+
+
 
 ifeq ("x$(HXCPP)","x")
 export HXCPP := $(shell haxelib path hxcpp)
 endif
 
-all : obj $(FULL_DLL_NAME) build-ndlls
+all : obj $(FULL_DLL_NAME) build-libs
 
-build-ndlls:
-	cd ndlls/std; make --no-print-directory
-	cd ndlls/regexp; make --no-print-directory
-	cd ndlls/zlib; make --no-print-directory
+build-libs:
+	cd libs/std; make --no-print-directory
+	cd libs/regexp; make --no-print-directory
+	cd libs/zlib; make --no-print-directory
 
 CPP = g++
-DEFINES = -DBUILDING_HXCPP_DLL -DNEKO_SOURCES
+C = gcc
+DEFINES = -DBUILDING_HXCPP_DLL -DNEKO_SOURCES $(GC_DEFINES)
 
 ifdef HXCPP_DEBUG
 OPTIM := -O2
@@ -32,10 +53,22 @@ else
 OPTIM := -g
 endif
 
-CPPFLAGS = -I"$(HXCPP)/include" -Ithirdparty/$(BIN)/gc/include -frtti -c $(OPTIM) $(DEFINES)
-OBJ_FILES = obj/hxObject.o obj/hxNekoAPI.o obj/hxLib.o obj/hxHash.o obj/hxDate.o
+
+GC_DIR := thirdparty/gc-7.1
+AO_VERSION := 1.2
+GC_INCLUDES := -I$(GC_DIR) -I$(GC_DIR)/include -I$(GC_DIR)/include/private -I$(GC_DIR)/libatomic_ops-$(AO_VERSION)/src
+
+
+CFLAGS = -I"../include" $(GC_INCLUDES) -c $(OPTIM) $(DEFINES)
+CPPFLAGS = $(CFLAGS) -frtti
+
+OBJ_FILES = obj/hxObject.o obj/hxNekoAPI.o obj/hxLib.o obj/hxHash.o \
+             obj/hxDate.o \
+            $(GC_FILES:%=obj/%.o)
+
 HEADERS =  ../include/hxObject.h ../include/hxMacros.h ../include/hxMath.h
-LD_FLAGS = -Lthirdparty/$(BIN)/gc/lib -lgc -ldl -Lthirdparty/$(BIN) -lz -lpthread $(LD_DYNAMIC) -o $(DLL_NAME)
+
+LD_FLAGS = -ldl $(LD_DYNAMIC) -o $(DLL_NAME)
 
 $(FULL_DLL_NAME):obj
 
@@ -51,14 +84,17 @@ $(FULL_DLL_NAME) : $(OBJ_FILES)
 obj/%.o:src/%.cpp
 	$(CPP) $(CPPFLAGS) $< -o$@
 
+obj/%.o:$(GC_DIR)/%.c
+	$(C) $(CFLAGS) $< -o$@
+
 clean: 
 	rm -rf obj
-	cd ndlls/std; make clean --no-print-directory
-	cd ndlls/regexp; make clean --no-print-directory
-	cd ndlls/zlib; make clean --no-print-directory
+	cd libs/std; make clean --no-print-directory
+	cd libs/regexp; make clean --no-print-directory
+	cd libs/zlib; make clean --no-print-directory
 
 clobber: 
 	rm -rf obj $(FULL_DLL_NAME)
-	cd ndlls/std; make clobber --no-print-directory
-	cd ndlls/regexp; make clobber --no-print-directory
-	cd ndlls/zlib; make clobber --no-print-directory
+	cd libs/std; make clobber --no-print-directory
+	cd libs/regexp; make clobber --no-print-directory
+	cd libs/zlib; make clobber --no-print-directory

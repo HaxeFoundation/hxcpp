@@ -125,7 +125,7 @@ static value deflate_buffer( value s, value src, value srcpos, value dst, value 
 		zlib_error(z,err);
 	z->next_in = NULL;
 	z->next_out = NULL;
-	o = alloc_object(NULL);
+	o = alloc_object(0);
 	alloc_field(o,id_done,alloc_bool(err == Z_STREAM_END));
 	alloc_field(o,id_read,alloc_int((int)(slen - z->avail_in)));
 	alloc_field(o,id_write,alloc_int((int)(dlen - z->avail_out)));
@@ -212,7 +212,7 @@ static value inflate_buffer( value s, value src, value srcpos, value dst, value 
 		zlib_error(z,err);
 	z->next_in = NULL;
 	z->next_out = NULL;
-	o = alloc_object(NULL);
+	o = alloc_object(0);
 	alloc_field(o,id_done,alloc_bool(err == Z_STREAM_END));
 	alloc_field(o,id_read,alloc_int((int)(slen - z->avail_in)));
 	alloc_field(o,id_write,alloc_int((int)(dlen - z->avail_out)));

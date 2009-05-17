@@ -442,14 +442,15 @@ static value sys_cpu_time() {
 static value sys_read_dir( value p) {
 	Array<String> h(0,0);
 	value cur = NULL_VAL, tmp;
-#ifdef NEKO_WINDOWS
-	WIN32_FIND_DATAW d;
-	HANDLE handle;
-	buffer b;
 	int len;
 	val_check(p,string);
 	String path = p;
 	len = path.length;
+
+#ifdef NEKO_WINDOWS
+	WIN32_FIND_DATAW d;
+	HANDLE handle;
+	buffer b;
 	if( len && val_string(path)[len-1] != '/' && val_string(path)[len-1] != '\\' )
 		path += L"/*.*";
 	else
@@ -469,7 +470,6 @@ static value sys_read_dir( value p) {
 #else
 	DIR *d;
 	struct dirent *e;
-	val_check(path,string);
 	d = opendir(val_string(path));
 	if( d == NULL )
 		neko_error();

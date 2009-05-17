@@ -423,7 +423,7 @@ public:
    RETURN_ Cast() const { return RETURN_(*this); }
 
    template<typename CLASS_>
-   bool IsClass() { return dynamic_cast<CLASS_::Ptr>(mPtr)!=0; }
+   bool IsClass() { return dynamic_cast<typename CLASS_::Ptr>(mPtr)!=0; }
 
 
    int Compare(const Dynamic &inRHS) const
@@ -901,7 +901,12 @@ template<> inline double *hxNewNull<double>() { double d=0; return (double *)hxN
 template<> inline unsigned char *hxNewNull<unsigned char>() { unsigned char u=0; return (unsigned char *)hxNewGCPrivate(&u,sizeof(u)); }
 
 
+#ifdef _MSC_VER
 typedef void (*ThreadFunc)(void *inUserData);
+#else
+typedef void *(*ThreadFunc)(void *inUserData);
+#endif
+
 SHARED void hxStartThread(ThreadFunc inFunc,void *inUserData);
 
 

@@ -52,7 +52,7 @@ typedef struct _tqueue {
 
 
 
-#	ifdef NEKO_WINDOWS
+#ifdef NEKO_WINDOWS
 typedef CRITICAL_SECTION ThreadLock;
 typedef CRITICAL_SECTION ThreadMutex;
 typedef int ThreadID;
@@ -62,22 +62,39 @@ void MutexInit(ThreadMutex &inLock) { InitializeCriticalSection(&inLock); }
 void MutexDestroy(ThreadMutex &inLock) { DeleteCriticalSection(&inLock); }
 bool MutexTryLock(ThreadMutex &inLock) { return TryEnterCriticalSection(&inLock); }
 
-void SignalInit(ThreadSignal &outSignal) { outSignal = CreateSemaphore(NULL,0,(1 << 30),NULL); }
+void SignalInit(ThreadSignal &outSignal,ThreadMutex &)
+{
+   outSignal = CreateSemaphore(NULL,0,(1 << 30),NULL);
+}
 
-void WaitFor(ThreadSignal &inWait) { WaitForSingleObject(inWait,INFINITE); }
+void WaitFor(ThreadSignal &inWait,ThreadMutex &) { WaitForSingleObject(inWait,INFINITE); }
 
 ThreadID CurrentThreadID() { return  GetCurrentThreadId(); }
 
-#	else
-typedef phandle ThreadID;
+#else
+typedef pthread_t ThreadID;
 typedef pthread_cond_t ThreadSignal;
 typedef pthread_mutex_t ThreadMutex;
+typedef pthread_mutex_t ThreadLock;
 
-void MutexInit(ThreadMutex &inLock) { pthread_mutex_init(&inLock); }
+void MutexInit(ThreadMutex &inLock) { pthread_mutex_init(&inLock,0); }
+
+void MutexDestroy(ThreadMutex &inLock) { pthread_mutex_destroy(&inLock); }
+
+bool MutexTryLock(ThreadMutex &inLock) { return pthread_mutex_trylock(&inLock); }
+
+void SignalInit(ThreadSignal &outSignal,ThreadMutex &outMutex)
+{
+   pthread_cond_init(&outSignal,NULL);
+   pthread_mutex_init(&outMutex,NULL);
+}
 
 ThreadID CurrentThreadID() { return pthread_self(); }
 
-#	endif
+void WaitFor(ThreadSignal &inWait,ThreadMutex &inMutex) { pthread_cond_wait(&inWait,&inMutex); }
+
+
+#endif
 
 
 
@@ -94,7 +111,7 @@ typedef struct {
 	DWORD GetID() { return tid; }
 #	else
 	pthread_t phandle;
-	phandle GetID() { return phandle; }
+	pthread_t GetID() { return phandle; }
 #	endif
 	value v;
 	vdeque q;
@@ -242,6 +259,7 @@ typedef struct {
 	value callparam;
 	vthread *t;
 	void *handle;
+	ThreadLock   mBegunMutex;
 	ThreadSignal mBegun;
 } tparams;
 
@@ -278,8 +296,12 @@ static vthread *alloc_thread() {
 	return t;
 }
 
-
-static void thread_loop( void *_p ) {
+#ifdef NEKO_WINDOWS
+static void
+#else
+static void *
+#endif
+thread_loop( void *_p ) {
 	tparams *p = (tparams*)_p;
 
 	p->t = alloc_thread();
@@ -301,6 +323,9 @@ static void thread_loop( void *_p ) {
 	}
 	// cleanup
 	p->t->v = val_null;
+#ifndef NEKO_WINDOWS
+   return 0;
+#endif
 }
 
 /**
@@ -313,9 +338,9 @@ static value thread_create( value f, value param ) {
 	p = (tparams*)alloc(sizeof(tparams));
 	p->callb = f;
 	p->callparam = param;
-	SignalInit(p->mBegun);
+	SignalInit(p->mBegun,p->mBegunMutex);
 	hxStartThread(thread_loop,p);
-   WaitFor(p->mBegun);
+   WaitFor(p->mBegun,p->mBegunMutex);
 	return p->t->v;
 }
 
