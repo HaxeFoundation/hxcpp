@@ -1,0 +1,54 @@
+default : obj exe
+
+obj:
+	mkdir -p obj
+
+exe : obj
+
+
+ifeq ("x$(OSTYPE)","xlinux")
+
+OBJ := .o
+OUT_FLAGS := -o
+COMPILE := g++ -I$(HXCPP)/include -Iinclude -frtti -c
+LINK := g++ -debug -Bdynamic $(HXCPP)/bin/Linux/hxcpp.dso
+LINK_OUT := -o
+
+else
+ifeq ("x$(OSTYPE)","xdarwin")
+
+SPACE := $X $X
+OBJ := .o
+OUT_FLAGS := -o
+COMPILE := g++ -I$(HXCPP)/include -Iinclude -frtti -c
+LINK := g++ $(HXCPP)/bin/Mac/hxcpp.dylib
+LINK_OUT := -o $(SPACE)
+
+else
+
+OBJ := .obj
+OUT_FLAGS := -Fo
+COMPILE := cl -nologo -I$(HXCPP)/include -Iinclude  /EHsc -c -Zi -Od
+#COMPILE := cl -nologo -I$(HXCPP)/include -Iinclude  /EHsc -c -Zi -O2
+LINK := link -nologo -debug -libpath:$(HXCPP)/bin/Windows hxcpp.lib
+LINK_OUT := -out:
+
+endif
+endif
+
+
+CLEAN_CMD := - rm -f
+
+OBJ_FILES += obj/__main__$(OBJ)
+obj/__main__$(OBJ) : src/__main__.cpp
+	$(COMPILE) $< $(OUT_FLAGS)$@
+
+OBJ_FILES += obj/__boot__$(OBJ)
+obj/__boot__$(OBJ) : src/__boot__.cpp
+	$(COMPILE) $< $(OUT_FLAGS)$@
+
+OBJ_FILES += obj/__resources__$(OBJ)
+obj/__resources__$(OBJ) : src/__resources__.cpp
+	$(COMPILE) $< $(OUT_FLAGS)$@
+
+

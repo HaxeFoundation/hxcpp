@@ -1,0 +1,2 @@
+cd cpp
+nmake -nologo

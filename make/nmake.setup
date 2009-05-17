@@ -1,0 +1,37 @@
+
+default : exe
+
+obj:
+	mkdir -p obj
+
+exe : obj
+
+!ifdef HXCPP_DEBUG
+CPPFLAGS = -nologo -I"$(HXCPP)/include" -Iinclude  /EHsc -c -Zi -Od
+LD_DEBUG = -debug
+!else
+CPPFLAGS = -nologo -I"$(HXCPP)/include" -Iinclude  /EHsc -c -Zi -O2
+LD_DEBUG = -debug
+!endif
+
+OUT_FLAGS = -Fo
+EXE_EXT = .exe
+OBJ = .obj
+#DELAYLOAD =  /delayload:hxcpp.dll delayimp.lib
+
+CPP = cl
+COMPILE =$(CPP) $(CPPFLAGS) 
+LINK = link -nologo $(LD_DEBUG) -libpath:"$(HXCPP)\bin\Windows" hxcpp.lib $(DELAYLOAD)
+LINK_OUT = -out:
+CLEAN_CMD = - rm -f
+
+OBJ_FILES = $(OBJ_FILES) obj\__main__.obj obj\__boot__.obj obj\__resources__.obj
+
+obj/__main__.obj:src/__main__.cpp
+	$(COMPILE) src/__main__.cpp $(OUT_FLAGS)$@
+
+obj/__boot__.obj:src/__boot__.cpp
+	$(COMPILE) src/__boot__.cpp $(OUT_FLAGS)$@
+
+obj/__resources__.obj:src/__resources__.cpp
+	$(COMPILE) src/__resources__.cpp $(OUT_FLAGS)$@
