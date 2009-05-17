@@ -15,20 +15,18 @@ ifeq ("$(OSTYPE)","linux")
 DLL_NAME = hxcpp.dso
 BIN := Linux
 LD_DYNAMIC :=  -shared -fpic -fPIX
-
 else
 
 LD_DYNAMIC := -fpic -fPIC -dynamiclib -framework Cocoa
 DLL_NAME = hxcpp.dylib
 BIN := Mac
 GC_FILES += MaxOS
-
 endif
 
 FULL_DLL_NAME = ../bin/$(BIN)/$(DLL_NAME)
 
 
-GC_DEFINES = -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -DMY_CPU -DX86 -DCPU -DMY_CPU -DGC_NO_THREAD_REDIRECTS -DGC_PTHREADS
+GC_DEFINES += -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -DMY_CPU -DX86 -DCPU -DMY_CPU -DGC_NO_THREAD_REDIRECTS -DGC_THREADS
 
 
 
@@ -68,7 +66,7 @@ OBJ_FILES = obj/hxObject.o obj/hxNekoAPI.o obj/hxLib.o obj/hxHash.o \
 
 HEADERS =  ../include/hxObject.h ../include/hxMacros.h ../include/hxMath.h
 
-LD_FLAGS = -ldl $(LD_DYNAMIC) -o $(DLL_NAME)
+LD_FLAGS = -ldl -lpthread $(LD_DYNAMIC) -o $(DLL_NAME)
 
 $(FULL_DLL_NAME):obj
 

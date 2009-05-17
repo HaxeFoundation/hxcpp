@@ -3,7 +3,10 @@
 #define GC_WIN32_THREADS
 #include <time.h>
 #else
+extern "C" {
+#include <gc_config_macros.h>
 #include <gc_pthread_redirects.h>
+}
 #include <sys/time.h>
 #endif
 #include <hxObject.h>
@@ -94,7 +97,8 @@ void hxStartThread(ThreadFunc inFunc,void *inUserData)
 	data->data = inUserData;
    GC_beginthreadex(0,0,thread_func,data,0,0);
 #else
-   GC_pthread_create(0,0,inFunc,inUserData);
+   pthread_t result;
+   GC_pthread_create(&result,0,inFunc,inUserData);
 #endif
 }
 
