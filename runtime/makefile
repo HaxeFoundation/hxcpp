@@ -3,8 +3,8 @@
 GC_FILES = \
 pthread_stop_world pthread_support \
 allchblk alloc backgraph blacklst checksums dbg_mlc dyn_load \
-finalize gc_dlopen gcj_mlc gcname headers mach_dep malloc \
-mallocx mark mark_rts misc new_hblk obj_map os_dep \
+finalize gc_dlopen gcj_mlc gcname headers mach_dep malloc os_dep \
+mallocx mark mark_rts misc new_hblk obj_map \
 pcr_interface ptr_chck real_malloc reclaim specific stubborn \
 thread_local_alloc typd_mlc
 
@@ -15,12 +15,14 @@ ifeq ("$(OSTYPE)","linux")
 DLL_NAME = hxcpp.dso
 BIN := Linux
 LD_DYNAMIC :=  -shared -fpic -fPIX
+
 else
 
 LD_DYNAMIC := -fpic -fPIC -dynamiclib -framework Cocoa
 DLL_NAME = hxcpp.dylib
 BIN := Mac
-GC_FILES += MaxOS
+GC_FILES += darwin_stop_world
+GC_DEFINES += -DHAS_X86_THREAD_STATE32___EAX=1
 endif
 
 FULL_DLL_NAME = ../bin/$(BIN)/$(DLL_NAME)

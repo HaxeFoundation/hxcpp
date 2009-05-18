@@ -50,6 +50,16 @@ typedef struct _tqueue {
 	struct _tqueue *next;
 } tqueue;
 
+#ifdef NEKO_WINDOWS
+#	define LOCK(l)		EnterCriticalSection(&(l))
+#	define UNLOCK(l)	LeaveCriticalSection(&(l))
+#	define SIGNAL(l)	ReleaseSemaphore(l,1,NULL)
+#else
+#	define LOCK(l)		pthread_mutex_lock(&(l))
+#	define UNLOCK(l)	pthread_mutex_unlock(&(l))
+#	define SIGNAL(l)	pthread_cond_signal(&(l))
+#endif
+
 
 
 #ifdef NEKO_WINDOWS
@@ -62,12 +72,16 @@ void MutexInit(ThreadMutex &inLock) { InitializeCriticalSection(&inLock); }
 void MutexDestroy(ThreadMutex &inLock) { DeleteCriticalSection(&inLock); }
 bool MutexTryLock(ThreadMutex &inLock) { return TryEnterCriticalSection(&inLock); }
 
-void SignalInit(ThreadSignal &outSignal,ThreadMutex &)
+void SignalInit(ThreadSignal &outSignal,ThreadMutex &,bool &)
 {
    outSignal = CreateSemaphore(NULL,0,(1 << 30),NULL);
 }
+void SignalSet(ThreadSignal &outSignal,ThreadMutex &,bool &)
+{
+    ReleaseSemaphore(&outSignal,1,0);
+}
 
-void WaitFor(ThreadSignal &inWait,ThreadMutex &) { WaitForSingleObject(inWait,INFINITE); }
+void WaitFor(ThreadSignal &inWait,ThreadMutex &,bool &ioOn) { WaitForSingleObject(inWait,INFINITE); }
 
 ThreadID CurrentThreadID() { return  GetCurrentThreadId(); }
 
@@ -83,15 +97,37 @@ void MutexDestroy(ThreadMutex &inLock) { pthread_mutex_destroy(&inLock); }
 
 bool MutexTryLock(ThreadMutex &inLock) { return pthread_mutex_trylock(&inLock); }
 
-void SignalInit(ThreadSignal &outSignal,ThreadMutex &outMutex)
+void SignalInit(ThreadSignal &outSignal,ThreadMutex &outMutex,bool &outOn)
 {
+   outOn = false;
    pthread_cond_init(&outSignal,NULL);
    pthread_mutex_init(&outMutex,NULL);
+}
+void SignalSet(ThreadSignal &outSignal,ThreadMutex &inMutex,bool &ioOn)
+{
+    LOCK(inMutex);
+    if (ioOn)
+    {
+       UNLOCK(inMutex);
+       return;
+    }
+    ioOn=true;
+    UNLOCK(inMutex);
+    SIGNAL(outSignal);
 }
 
 ThreadID CurrentThreadID() { return pthread_self(); }
 
-void WaitFor(ThreadSignal &inWait,ThreadMutex &inMutex) { pthread_cond_wait(&inWait,&inMutex); }
+void WaitFor(ThreadSignal &inWait,ThreadMutex &inMutex,bool &ioOn)
+{
+   LOCK(inMutex);
+   if (ioOn)
+   {
+      UNLOCK(inMutex);
+      return;
+   }
+   pthread_cond_wait(&inWait,&inMutex);
+}
 
 
 #endif
@@ -137,16 +173,6 @@ InitObject sgAutoInit;
 DECLARE_KIND(k_thread);
 
 #define val_thread(t)	((vthread*)val_data(t))
-
-#ifdef NEKO_WINDOWS
-#	define LOCK(l)		EnterCriticalSection(&(l))
-#	define UNLOCK(l)	LeaveCriticalSection(&(l))
-#	define SIGNAL(l)	ReleaseSemaphore(l,1,NULL)
-#else
-#	define LOCK(l)		pthread_mutex_lock(&(l))
-#	define UNLOCK(l)	pthread_mutex_unlock(&(l))
-#	define SIGNAL(l)	pthread_cond_signal(&(l))
-#endif
 
 /*
 	deque raw API
@@ -260,6 +286,7 @@ typedef struct {
 	vthread *t;
 	void *handle;
 	ThreadLock   mBegunMutex;
+        bool         mStarted;
 	ThreadSignal mBegun;
 } tparams;
 
@@ -308,7 +335,7 @@ thread_loop( void *_p ) {
 	LOCK(sgThreadMapMutex);
 	sgThreadMap[ CurrentThreadID() ] = p->t;
 	UNLOCK(sgThreadMapMutex);
-	SIGNAL(p->mBegun);
+	SignalSet(p->mBegun,p->mBegunMutex,p->mStarted);
 
 	try {
 	if (p->callb!=null())
@@ -338,9 +365,9 @@ static value thread_create( value f, value param ) {
 	p = (tparams*)alloc(sizeof(tparams));
 	p->callb = f;
 	p->callparam = param;
-	SignalInit(p->mBegun,p->mBegunMutex);
+	SignalInit(p->mBegun,p->mBegunMutex,p->mStarted);
 	hxStartThread(thread_loop,p);
-   WaitFor(p->mBegun,p->mBegunMutex);
+   WaitFor(p->mBegun,p->mBegunMutex,p->mStarted);
 	return p->t->v;
 }
 
