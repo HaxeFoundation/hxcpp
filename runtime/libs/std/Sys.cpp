@@ -495,7 +495,7 @@ static value file_full_path( value path ) {
 #ifdef NEKO_WINDOWS
 	char buf[MAX_PATH+1];
 	val_check(path,string);
-	if( GetFullPathName(val_string(path),MAX_PATH+1,buf,NULL) == 0 )
+	if( GetFullPathNameA(val_string(path),MAX_PATH+1,buf,NULL) == 0 )
 		neko_error();
 	return alloc_string(buf);
 #else
@@ -513,10 +513,10 @@ static value file_full_path( value path ) {
 **/
 static value sys_exe_path() {
 #if defined(NEKO_WINDOWS)
-	char path[MAX_PATH];
-	if( GetModuleFileName(NULL,path,MAX_PATH) == 0 )
+	wchar_t path[MAX_PATH];
+	if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
 		neko_error();
-	return alloc_string(path);
+	return String(path);
 #elif defined(NEKO_MAC)
 	char path[PATH_MAX+1];
 	uint32_t path_len = PATH_MAX;
