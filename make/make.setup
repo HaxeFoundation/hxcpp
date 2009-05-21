@@ -6,7 +6,13 @@ obj:
 exe : obj
 
 
-ifeq ("x$(OSTYPE)","xlinux")
+OS := $(OSTYPE:linux%=lunix)
+OS := $(OS:darwin%=darwin)
+
+AR := ar -cr
+LIB_EXT := .a
+
+ifeq ("x$(OS)","xlinux")
 
 OBJ := .o
 OUT_FLAGS := -o
@@ -15,7 +21,7 @@ LINK := g++ -debug -Bdynamic $(HXCPP)/bin/Linux/hxcpp.dso
 LINK_OUT := -o
 
 else
-ifeq ("x$(OSTYPE)","xdarwin")
+ifeq ("x$(OS)","xdarwin")
 
 SPACE := $X $X
 OBJ := .o
@@ -32,6 +38,7 @@ COMPILE := cl -nologo -I$(HXCPP)/include -Iinclude  /EHsc -c -Zi -Od
 #COMPILE := cl -nologo -I$(HXCPP)/include -Iinclude  /EHsc -c -Zi -O2
 LINK := link -nologo -debug -libpath:$(HXCPP)/bin/Windows hxcpp.lib
 LINK_OUT := -out:
+LIB_EXT := .lib
 
 endif
 endif
@@ -39,8 +46,10 @@ endif
 
 CLEAN_CMD := - rm -f
 
-OBJ_FILES += obj/__main__$(OBJ)
 obj/__main__$(OBJ) : src/__main__.cpp
+	$(COMPILE) $< $(OUT_FLAGS)$@
+
+obj/__lib__$(OBJ) : src/__lib__.cpp
 	$(COMPILE) $< $(OUT_FLAGS)$@
 
 OBJ_FILES += obj/__boot__$(OBJ)
@@ -51,4 +60,4 @@ OBJ_FILES += obj/__resources__$(OBJ)
 obj/__resources__$(OBJ) : src/__resources__.cpp
 	$(COMPILE) $< $(OUT_FLAGS)$@
 
-
+AR := ar -cr

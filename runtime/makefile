@@ -25,7 +25,10 @@ GC_FILES += darwin_stop_world
 GC_DEFINES += -DHAS_X86_THREAD_STATE32___EAX=1
 endif
 
+LIB_NAME = libstatic_hxcpp.a
+
 FULL_DLL_NAME = ../bin/$(BIN)/$(DLL_NAME)
+FULL_LIB_NAME = ../bin/$(BIN)/$(LIB_NAME)
 
 
 GC_DEFINES += -DALL_INTERIOR_POINTERS -DGC_NOT_DLL -DMY_CPU -DX86 -DCPU -DMY_CPU -DGC_NO_THREAD_REDIRECTS -DGC_THREADS
@@ -37,6 +40,8 @@ export HXCPP := $(shell haxelib path hxcpp)
 endif
 
 all : obj $(FULL_DLL_NAME) build-libs
+
+lib : $(FULL_LIB_NAME)
 
 build-libs:
 	cd libs/std; make --no-print-directory
@@ -71,6 +76,7 @@ HEADERS =  ../include/hxObject.h ../include/hxMacros.h ../include/hxMath.h
 LD_FLAGS = -ldl -lpthread $(LD_DYNAMIC) -o $(DLL_NAME)
 
 $(FULL_DLL_NAME):obj
+$(FULL_LIB_NAME):obj
 
 obj:
 	mkdir obj
@@ -80,6 +86,9 @@ $(OBJ_FILES):$(HEADERS)
 $(FULL_DLL_NAME) : $(OBJ_FILES)
 	g++ $(GC_EXTRA) $(OBJ_FILES) $(LD_FLAGS)
 	mv $(DLL_NAME) $(FULL_DLL_NAME)
+
+$(FULL_LIB_NAME) : $(OBJ_FILES)
+	ar -cr $(FULL_LIB_NAME) $(OBJ_FILES) 
 
 obj/%.o:src/%.cpp
 	$(CPP) $(CPPFLAGS) $< -o$@
@@ -94,7 +103,7 @@ clean:
 	cd libs/zlib; make clean --no-print-directory
 
 clobber: 
-	rm -rf obj $(FULL_DLL_NAME)
+	rm -rf obj $(FULL_DLL_NAME) $(FULL_LIB_NAME)
 	cd libs/std; make clobber --no-print-directory
 	cd libs/regexp; make clobber --no-print-directory
 	cd libs/zlib; make clobber --no-print-directory

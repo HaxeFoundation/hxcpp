@@ -396,6 +396,30 @@ static Dynamic Create##enum_obj(String inName,DynamicArray inArgs) \
    inline double operator op (const int &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS; } \
 
 
+#define BEGIN_MAIN \
+int main(int argc,char **argv){ \
+	__boot_hxcpp(); \
+	try{ \
+		__boot_all();
+
+#define END_MAIN \
+	} \
+	catch (Dynamic e){ \
+		printf("Error : %s\n",e->__ToString().__CStr()); \
+	} \
+	return 0; \
+}
+
+
+#define BEGIN_LIB_MAIN \
+extern "C" {\
+void __hxcpp_lib_main() \
+{
+
+#define END_LIB_MAIN \
+} }
+
+
 
 #endif
 
