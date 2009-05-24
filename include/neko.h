@@ -305,9 +305,21 @@ inline String alloc_empty_string( unsigned int size ) { return String((const cha
 
 
 #define VAR_ARGS (-1)
-#define DEFINE_PRIM_MULT(func) extern "C" {  EXPORT void *func##__MULT() { return (void*)(&func); } }
+#define DEFINE_PRIM_MULT(func) extern "C" { \
+  EXPORT void *func##__MULT() {  \
+     return (void*)(&func); \
+ } \
+hxPrimRegisterer __reg_##func(#func "__MULT",(void *)(&func)); \
+}
 
-#define DEFINE_PRIM(func,nargs) extern "C" {  EXPORT void *func##__##nargs() { return (void*)(&func); } }
+#define DEFINE_PRIM(func,nargs) extern "C" { \
+  EXPORT void *func##__##nargs() { \
+       return (void*)(&func); \
+  } \
+hxPrimRegisterer __reg_##func(#func "__" #nargs,(void *)(&func)); \
+}
+
+
 #define DEFINE_KIND(name) vkind name = hxcpp_alloc_kind();
 
 #ifdef NEKO_INSTALLER

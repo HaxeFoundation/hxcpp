@@ -6,7 +6,7 @@ obj:
 exe : obj
 
 
-OS := $(OSTYPE:linux%=lunix)
+OS := $(OSTYPE:linux%=linux)
 OS := $(OS:darwin%=darwin)
 
 AR := ar -cr
@@ -29,6 +29,10 @@ OUT_FLAGS := -o
 COMPILE := g++ -I$(HXCPP)/include -Iinclude -frtti -c
 LINK := g++ $(HXCPP)/bin/Mac/hxcpp.dylib
 LINK_OUT := -o $(SPACE)
+
+ifdef HXCPP_DEBUG
+COMPILE += -g
+endif
 
 else
 

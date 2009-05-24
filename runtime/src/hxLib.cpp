@@ -194,9 +194,13 @@ String FindHaxelib(String inLib)
    return path;
 }
 
+typedef std::map<std::wstring,void *> RegistrationMap;
+RegistrationMap *sgRegisteredPrims=0;
+
 
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
+   bool debug = getenv("HXCPP_LOAD_DEBUG");
    String ext =
 #ifdef _WIN32
     String(L".dll",4);
@@ -221,46 +225,6 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #endif
 
 
-   String dll_ext = inLib + ext;
-
-   Module module = sgLoadedModule[dll_ext.__s];
-   if (!module)
-   {
-      module = hxLoadLibrary(dll_ext.__s);
-      if (!module)
-      {
-        String hxcpp = FindHaxelib(L"hxcpp");
-        if (hxcpp.length!=0)
-        {
-            module = hxLoadLibrary((hxcpp + L"/bin/" + bin + L"/" + dll_ext).__s);
-        }
-      }
-
-      if (!module)
-      {
-         String path = FindHaxelib(inLib);
-         if (path.length!=0)
-         {
-            String full_path  = path + L"/ndll/" + bin + L"/" + dll_ext;
-            // printf("Check path %S : %S\n", full_path.__s,inLib.__s);
-            module = hxLoadLibrary(full_path.__s);
-         }
-      }
-
-      if (!module)
-        throw Dynamic(String(L"could not load module ") + dll_ext);
-
-
-      sgLoadedModule[inLib.__s] = module;
-      GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
-      if (func)
-      {
-         NekoEntryFunc entry = (NekoEntryFunc)func();
-         if (entry)
-            entry();
-      }
-   }
-
    String full_name = inPrim;
    switch(inArgCount)
    {
@@ -274,6 +238,73 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
           full_name += L"__MULT";
    }
 
+   String dll_ext = inLib + ext;
+
+   Module module = sgLoadedModule[inLib.__s];
+   if (!module)
+   {
+      if (debug)
+         printf("Searching for %S...\n", dll_ext.__s);
+      module = hxLoadLibrary(dll_ext.__s);
+      if (!module)
+      {
+         String hxcpp = GetEnv("HXCPP");
+         if (hxcpp.length!=0)
+         {
+             String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
+             if (debug)
+                printf(" try %S...\n", name.__s);
+             module = hxLoadLibrary(name.__s);
+         }
+      }
+   
+      if (!module)
+      {
+         String hxcpp = FindHaxelib(L"hxcpp");
+         if (hxcpp.length!=0)
+         {
+             String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
+             if (debug)
+                printf(" try %S...\n", name.__s);
+             module = hxLoadLibrary(name.__s);
+         }
+      }
+
+      if (!module)
+      {
+         String path = FindHaxelib(inLib);
+         if (path.length!=0)
+         {
+            String full_path  = path + L"/ndll/" + bin + L"/" + dll_ext;
+            if (debug)
+               printf(" try %S...\n", full_path.__s);
+            module = hxLoadLibrary(full_path.__s);
+         }
+      }
+
+      if (!module && sgRegisteredPrims)
+      {
+         void *registered = (*sgRegisteredPrims)[full_name.__s];
+         if (registered)
+         {
+            return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
+         }
+      }
+
+      if (!module)
+        throw Dynamic(String(L"Could not load module ") + dll_ext + String(L"@") + full_name);
+
+
+      sgLoadedModule[inLib.__s] = module;
+
+      GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
+      if (func)
+      {
+         NekoEntryFunc entry = (NekoEntryFunc)func();
+         if (entry)
+            entry();
+      }
+   }
    // No "wchar_t" version
    std::vector<char> name(full_name.length+1);
    for(int i=0;i<full_name.length;i++)
@@ -300,3 +331,12 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    return 0;
 }
 
+// This can be used to find symbols in static libraries
+
+hxPrimRegisterer::hxPrimRegisterer(char *inName,void *inProc)
+{
+   if (sgRegisteredPrims==0)
+      sgRegisteredPrims = new RegistrationMap();
+   String prim(inName,strlen(inName));
+   (*sgRegisteredPrims)[prim.__s] = inProc;
+}

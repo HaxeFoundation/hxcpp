@@ -414,7 +414,9 @@ int main(int argc,char **argv){ \
 #define BEGIN_LIB_MAIN \
 extern "C" {\
 void __hxcpp_lib_main() \
-{
+{ \
+	__boot_hxcpp(); \
+	__boot_all();
 
 #define END_LIB_MAIN \
 } }

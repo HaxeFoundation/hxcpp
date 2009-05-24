@@ -1567,4 +1567,18 @@ SHARED String __hxcpp_to_string(double inSeconds);
 SHARED double __hxcpp_date_now();
 
 
+// Loading functions via name
+SHARED struct hxPrimRegisterer
+{
+   hxPrimRegisterer(char *inName,void *inFunc);
+};
+
+#ifdef BIG_ENDIAN
+#undef BIG_ENDIAN
+#endif
+
+#ifdef LITTLE_ENDIAN
+#undef LITTLE_ENDIAN
+#endif
+
 #endif
