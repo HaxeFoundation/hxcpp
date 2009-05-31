@@ -6,6 +6,7 @@ obj:
 exe : obj
 
 
+SPACE := $X $X
 OS := $(OSTYPE:linux%=linux)
 OS := $(OS:darwin%=darwin)
 
@@ -23,23 +24,47 @@ LINK_OUT := -o
 else
 ifeq ("x$(OS)","xdarwin")
 
-SPACE := $X $X
+ifdef IPHONE
+
+IPHONE_VER := 2.2.1
+OBJ := .iphoneos.o
+OUT_FLAGS := -o
+LIB_EXT := .iphoneos.a
+
+COMPILE := /Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0 -x c++ \
+      -arch armv6 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings \
+      -fasm-blocks -Wreturn-type -Wunused-variable \
+      -isysroot /Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(IPHONE_VER).sdk \
+      -fvisibility=hidden -fvisibility-inlines-hidden -gdwarf-2 -mthumb \
+      -miphoneos-version-min=$(IPHONE_VER) \
+      -I$(HXCPP)/include -Iinclude -frtti -c
+
+else
+
+
 OBJ := .o
 OUT_FLAGS := -o
 COMPILE := g++ -I$(HXCPP)/include -Iinclude -frtti -c
 LINK := g++ $(HXCPP)/bin/Mac/hxcpp.dylib
 LINK_OUT := -o $(SPACE)
 
+endif # IPHONE
+
 ifdef HXCPP_DEBUG
 COMPILE += -g
+else
+COMPILE += -O2
 endif
 
 else
 
 OBJ := .obj
 OUT_FLAGS := -Fo
+ifdef HXCPP_DEBUG
 COMPILE := cl -nologo -I$(HXCPP)/include -Iinclude  /EHsc -c -Zi -Od
-#COMPILE := cl -nologo -I$(HXCPP)/include -Iinclude  /EHsc -c -Zi -O2
+else
+COMPILE := cl -nologo -I$(HXCPP)/include -Iinclude  /EHsc -c -Zi -O2
+endif
 LINK := link -nologo -debug -libpath:$(HXCPP)/bin/Windows hxcpp.lib
 LINK_OUT := -out:
 LIB_EXT := .lib

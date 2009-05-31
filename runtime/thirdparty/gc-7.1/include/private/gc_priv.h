@@ -401,7 +401,7 @@ extern GC_warn_proc GC_current_warn_proc;
 #                 define GC_GETSECTBYNAME getsectbynamefromheader_64
 #               endif
 #	else
-#		error define GC_THREAD_STATE_T
+#		define GC_THREAD_STATE_T arm_thread_state_t
 #		define GC_MACH_THREAD_STATE MACHINE_THREAD_STATE
 #		define GC_MACH_THREAD_STATE_COUNT MACHINE_THREAD_STATE_COUNT
 #	endif
