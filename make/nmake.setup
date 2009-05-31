@@ -25,10 +25,7 @@ LINK = link -nologo $(LD_DEBUG) -libpath:"$(HXCPP)\bin\Windows" hxcpp.lib $(DELA
 LINK_OUT = -out:
 CLEAN_CMD = - rm -f
 
-OBJ_FILES = $(OBJ_FILES) obj\__main__.obj obj\__boot__.obj obj\__resources__.obj
-
-obj/__main__.obj:src/__main__.cpp
-	$(COMPILE) src/__main__.cpp $(OUT_FLAGS)$@
+OBJ_FILES = $(OBJ_FILES) obj\__boot__.obj obj\__resources__.obj
 
 obj/__boot__.obj:src/__boot__.cpp
 	$(COMPILE) src/__boot__.cpp $(OUT_FLAGS)$@

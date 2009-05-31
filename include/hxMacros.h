@@ -252,11 +252,14 @@ static Dynamic Create##enum_obj(String inName,DynamicArray inArgs) \
 
 
 #define BEGIN_DEFAULT_FUNC(name,t0) \
+	namespace { \
    struct name : public hxObject { int __GetType() const { return vtFunction; } \
    hxObjectPtr<t0> __this; \
    name(hxObjectPtr<t0> __0 = null()) : __this(__0) {}
 
 
+#define END_DEFAULT_FUNC \
+}
 
 
 #define BEGIN_LOCAL_FUNC0(name) \

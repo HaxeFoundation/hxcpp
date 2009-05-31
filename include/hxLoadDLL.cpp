@@ -13,8 +13,8 @@ void hxLoadDLL()
       char *full_path = new char[len+20];
       strcpy(full_path,env);
       strcat(full_path,"/bin/hxcpp.dll");
-      HMODULE mod = LoadLibrary(full_path);
-      printf("Mod : %p\n",mod);
+      HMODULE mod = LoadLibraryA(full_path);
+      //printf("Mod : %p\n",mod);
       delete [] full_path;
    }
 }

@@ -1568,7 +1568,7 @@ SHARED double __hxcpp_date_now();
 
 
 // Loading functions via name
-SHARED struct hxPrimRegisterer
+struct SHARED hxPrimRegisterer
 {
    hxPrimRegisterer(char *inName,void *inFunc);
 };

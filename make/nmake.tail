@@ -1,0 +1,17 @@
+OUT_EXE = $(PROJECT)$(EXE_EXT)
+
+OUT_LIB = lib$(PROJECT)$(LIB_EXT)
+
+$(OUT_EXE) : $(OBJ_FILES) obj/__main__$(OBJ)
+
+$(OUT_LIB) : $(OBJ_FILES) obj/__lib__$(OBJ)
+
+
+exe : $(OUT_EXE)
+	$(LINK) $(OBJ_FILES) obj/__main__$(OBJ) $(LINK_OUT)$(OUT_EXE)
+
+lib : $(OUT_LIB)
+	$(AR) $(OUT_LIB) $(OBJ_FILES) obj/__lib__$(OBJ)
+
+clean:
+	$(CLEAN_CMD) $(OBJ_FILES) $(OUT_EXE) $(OUT_LIB)
