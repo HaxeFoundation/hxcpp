@@ -1,28 +1,13 @@
 #include <stdio.h>
-#ifdef _WIN32
-#define GC_WIN32_THREADS
-#include <time.h>
-#else
-extern "C" {
-#include <gc_config_macros.h>
-#include <gc_pthread_redirects.h>
-}
 #include <sys/time.h>
-#endif
 #include <hxObject.h>
 #include <hxMath.h>
 #include <hxMacros.h>
 #include <cpp/CppInt32__.h>
-#include <gc.h>
-#include <gc_allocator.h>
 #include <map>
 #include <ctype.h>
 #include <algorithm>
 #include <typeinfo>
-
-extern "C" {
-//#include "private/gc_priv.h"
-}
 
 #ifdef _WIN32
 #include <windows.h>
@@ -39,7 +24,8 @@ typedef  uint64_t  __int64;
 #undef abs
 #endif
 
-static wchar_t *sNone[] = { 0 };
+static String sNone[] = { String(null()) };
+
 void StringBoot();
 
 Class __BoolClass;
@@ -52,94 +38,7 @@ Class Class_obj__mClass;
 
 // --- boot -----------------------------------------
 
-void __RegisterStatic(void *inPtr,int inSize)
-{
-   GC_add_roots((char *)inPtr, (char *)inPtr + inSize );
-}
-
-// On Mac, we need to call GC_INIT before first alloc
-static int sNeedGCInit = true;
-
 bool NoCast(hxObject *) { return false; }
-
-
-/*
-void __hxcpp_reachable(hxObject *inPtr)
-{
-   void *ptr = (char *)inPtr;
-   bool ok = GC_is_marked((ptr_t)GC_base(ptr));
-   wprintf(L"Marked : %d\n",ok);
-}
-*/
-
-#if defined(_MSC_VER)
-struct ThreadData
-{
-   ThreadFunc func;
-	void       *data;
-};
-
-unsigned int __stdcall thread_func(void *data)
-{
-	ThreadData d = *(ThreadData *)data;
-	data=0;
-	d.func(d.data);
-	return 0;
-}
-
-#endif
-
-void hxStartThread(ThreadFunc inFunc,void *inUserData)
-{
-#if defined(_MSC_VER)
-	ThreadData *data = (ThreadData *)GC_MALLOC( sizeof(ThreadData) );
-	data->func = inFunc;
-	data->data = inUserData;
-   GC_beginthreadex(0,0,thread_func,data,0,0);
-#else
-   pthread_t result;
-   GC_pthread_create(&result,0,inFunc,inUserData);
-#endif
-}
-
-
-void __hxcpp_collect()
-{
-   GC_gcollect();
-}
-
-void __hxcpp_enable(bool inEnable)
-{
-   if (inEnable)
-      GC_enable();
-   else
-      GC_disable();
-}
-
-wchar_t *hxNewString(int inLen)
-{
-   wchar_t *result =  (wchar_t *)GC_MALLOC_ATOMIC((inLen+1)*sizeof(wchar_t));
-   result[inLen] = '\0';
-   return result;
-
-}
-
-void *hxNewGCBytes(void *inData,int inSize)
-{
-   void *result =  GC_MALLOC(inSize);
-   if (inData)
-      memcpy(result,inData,inSize);
-   return result;
-}
-
-
-void *hxNewGCPrivate(void *inData,int inSize)
-{
-   void *result =  GC_MALLOC_ATOMIC(inSize);
-   if (inData)
-      memcpy(result,inData,inSize);
-   return result;
-}
 
 
 const wchar_t *hxConvertToWChar(const char *inStr, int *ioLen=0)
@@ -210,23 +109,6 @@ static wchar_t *GCStringDup(const wchar_t *inStr,int &outLen)
 // --- hxObject -----------------------------------------
 
 
-void *hxObject::operator new( size_t inSize, bool inContainer )
-{
-#ifdef __APPLE__
-   if (sNeedGCInit)
-   {
-      sNeedGCInit = false;
-      GC_no_dls = 1;
-      GC_INIT();
-   }
-#endif
-   if (inContainer)
-      return GC_MALLOC(inSize);
-   else
-      return GC_MALLOC_ATOMIC(inSize);
-}
-
-
 Dynamic hxObject::__IField(int inFieldID)
 {
    return __Field( __hxcpp_field_from_id(inFieldID) );
@@ -258,7 +140,7 @@ bool AlwaysCast(hxObject *inPtr) { return inPtr!=0; }
 
 void hxObject::__boot()
 {
-   Static(hxObject__mClass) = RegisterClass(L"Dynamic",AlwaysCast,sNone,sNone, 0,0, 0 );
+   Static(hxObject__mClass) = RegisterClass(STRING(L"Dynamic",7),AlwaysCast,sNone,sNone, 0,0, 0 );
 }
 
 Class &hxObject::__SGetClass() { return hxObject__mClass; }
@@ -458,6 +340,11 @@ public:
    }
    int __length() const { return mValue.length; }
 
+   void __Mark()
+   {
+      MarkMember(mValue);
+   }
+
    int __ToInt() const
    {
       if (!mValue.__s) return 0;
@@ -488,24 +375,18 @@ static bool IsFloat(hxObject *inPtr)
 
 void __boot_hxcpp()
 {
-   if (sNeedGCInit)
-   {
-      sNeedGCInit = false;
-      // We explicitly register all the statics, and there is quite a performance
-      //  boost by doing this...
-      GC_no_dls = 1;
-      GC_INIT();
-   }
+   hxGCInit();
+
 
    // GC_disable();
 
    hxObject::__boot();
 
-   Static(__BoolClass) = RegisterClass(L"Bool",TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
-   Static(__IntClass) = RegisterClass(L"Int",TCanCast<IntData>,sNone,sNone, 0,0, 0 );
-   Static(__FloatClass) = RegisterClass(L"Float",IsFloat,sNone,sNone, 0,0, &__IntClass );
-   Static(__VoidClass) = RegisterClass(L"Void",NoCast,sNone,sNone, 0,0, 0 );
-   Static(Class_obj__mClass) = RegisterClass(L"Class",TCanCast<Class_obj>,sNone,sNone, 0,0 , 0 );
+   Static(__BoolClass) = RegisterClass(STRING(L"Bool",4),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
+   Static(__IntClass) = RegisterClass(STRING(L"Int",3),TCanCast<IntData>,sNone,sNone, 0,0, 0 );
+   Static(__FloatClass) = RegisterClass(STRING(L"Float",5),IsFloat,sNone,sNone, 0,0, &__IntClass );
+   Static(__VoidClass) = RegisterClass(STRING(L"Void",4),NoCast,sNone,sNone, 0,0, 0 );
+   Static(Class_obj__mClass) = RegisterClass(STRING(L"Class",5),TCanCast<Class_obj>,sNone,sNone, 0,0 , 0 );
 
    StringBoot();
 
@@ -596,131 +477,7 @@ Dynamic::operator haxe::Int32 () const
 
 // -----
 
-#ifdef _WIN32
-typedef String StringKey;
-#else
-typedef const String StringKey;
-#endif
-
-typedef gc_allocator< std::pair<StringKey, Dynamic> > MapAlloc;
-
-
-class hxFieldMap : public  std::map<StringKey,Dynamic, std::less<StringKey>, MapAlloc >
-{
-public:
-   void *operator new( size_t inSize ) { return GC_MALLOC(inSize); }
-   void operator delete( void * ) { }
-
-   hxFieldMap() { }
-};
-
-hxFieldMap *hxFieldMapCreate()
-{
-	return new hxFieldMap;
-}
-
-bool hxFieldMapGet(hxFieldMap *inMap, const String &inName, Dynamic &outValue)
-{
-	hxFieldMap::iterator i = inMap->find(inName);
-	if (i==inMap->end())
-		return false;
-	outValue = i->second;
-	return true;
-}
-bool hxFieldMapGet(hxFieldMap *inMap, int inID, Dynamic &outValue)
-{
-	hxFieldMap::iterator i = inMap->find(__hxcpp_field_from_id(inID));
-	if (i==inMap->end())
-		return false;
-	outValue = i->second;
-	return true;
-}
-
-void hxFieldMapSet(hxFieldMap *inMap, const String &inName, const Dynamic &inValue)
-{
-	(*inMap)[inName] = inValue;
-}
-
-void hxFieldMapAppendFields(hxFieldMap *inMap,Array<String> &outFields)
-{
-   for(hxFieldMap::const_iterator i = inMap->begin(); i!= inMap->end(); ++i)
-      outFields->push(i->first);
-}
-
-
-
-hxAnon_obj::hxAnon_obj()
-{
-   mFields = new hxFieldMap;
-}
-
-
-Dynamic hxAnon_obj::__Field(const String &inString)
-{
-   hxFieldMap::const_iterator f = mFields->find(inString);
-   if (f==mFields->end())
-      return null();
-   return f->second;
-}
-
-bool hxAnon_obj::__HasField(const String &inString)
-{
-   hxFieldMap::const_iterator f = mFields->find(inString);
-   return (f!=mFields->end());
-}
-
-
-bool hxAnon_obj::__Remove(String inKey)
-{
-   hxFieldMap::iterator f = mFields->find(inKey);
-	bool found = f!=mFields->end();
-	if (found)
-	{
-		mFields->erase(f);
-	}
-   return found;
-}
-
-
-Dynamic hxAnon_obj::__SetField(const String &inString,const Dynamic &inValue)
-{
-   (*mFields)[inString] = inValue;
-   return inValue;
-}
-
-hxAnon_obj *hxAnon_obj::Add(const String &inName,const Dynamic &inValue)
-{
-   (*mFields)[inName] = inValue;
-   if (inValue.GetPtr())
-		inValue.GetPtr()->__SetThis(this);
-   return this;
-}
-
-
 String hxAnon_obj::__ToString() const { return L"Anon"; }
-String hxAnon_obj::toString()
-{
-   String result = String(L"{ ",2);
-   bool first = true;
-   for(hxFieldMap::const_iterator i = mFields->begin(); i!= mFields->end(); ++i)
-   {
-      if (first)
-      {
-         result += i->first + String(L"=",1) + (String)(i->second);
-         first = false;
-      }
-      else
-         result += String(L", ") + i->first + String(L"=") + (String)(i->second);
-   }
-   return result + String(L" }",2);
-}
-
-void hxAnon_obj::__GetFields(Array<String> &outFields)
-{
-   for(hxFieldMap::const_iterator i = mFields->begin(); i!= mFields->end(); ++i)
-      outFields->push(i->first);
-}
-
 
 
 Dynamic hxAnon_obj::__Create(DynamicArray inArgs) { return hxAnon(new hxAnon_obj); }
@@ -729,7 +486,7 @@ Class hxAnon_obj::__mClass;
 
 void hxAnon_obj::__boot()
 {
-   Static(__mClass) = RegisterClass(L"__Anon",TCanCast<hxAnon_obj>,sNone,sNone,0,0,0);
+   Static(__mClass) = RegisterClass(STRING(L"__Anon",6),TCanCast<hxAnon_obj>,sNone,sNone,0,0,0);
 }
 
 bool __hx_anon_remove(hxAnon inObj,String inKey)
@@ -746,8 +503,8 @@ hxArrayBase::hxArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomi
    mAlloc = inSize < inReserve ? inReserve : inSize;
    if (mAlloc)
    {
-      mBase = (char *)( (inAtomic||1) ?
-        GC_MALLOC( mAlloc * inElementSize ) : GC_MALLOC_ATOMIC(mAlloc*inElementSize));
+      mBase = (char *)( (!inAtomic) ?
+        hxNewGCBytes(0, mAlloc * inElementSize ) : hxNewGCPrivate(0,mAlloc*inElementSize));
    }
    else
       mBase = 0;
@@ -766,18 +523,18 @@ void hxArrayBase::EnsureSize(int inSize) const
          int bytes = mAlloc * GetElementSize();
          if (mBase)
          {
-            mBase = (char *)GC_REALLOC(mBase, bytes );
+            mBase = (char *)hxGCRealloc(mBase, bytes );
             // atomic data not cleared by gc lib ...
             memset(mBase + obytes, 0, bytes-obytes);
          }
          else if (AllocAtomic())
          {
-            mBase = (char *)GC_MALLOC_ATOMIC(bytes);
+            mBase = (char *)hxNewGCPrivate(0,bytes);
             // atomic data not cleared ...
             memset(mBase,0,bytes);
          }
          else
-            mBase = (char *)GC_MALLOC(bytes);
+            mBase = (char *)hxNewGCBytes(0,bytes);
       }
       length = s;
    }
@@ -973,23 +730,23 @@ Dynamic hxArrayBase::__Field(const String &inString)
 }
 
 
-static wchar_t *sArrayFields[] = {
-	L"length",
-	L"concat",
-	L"insert",
-	L"iterator",
-	L"join",
-	L"pop",
-	L"push",
-	L"remove",
-	L"reverse",
-	L"shift",
-	L"slice",
-	L"splice",
-	L"sort",
-	L"toString",
-	L"unshift",
-	0,
+static String sArrayFields[] = {
+	STRING(L"length",6),
+	STRING(L"concat",6),
+	STRING(L"insert",6),
+	STRING(L"iterator",8),
+	STRING(L"join",4),
+	STRING(L"pop",3),
+	STRING(L"push",4),
+	STRING(L"remove",6),
+	STRING(L"reverse",7),
+	STRING(L"shift",5),
+	STRING(L"slice",5),
+	STRING(L"splice",6),
+	STRING(L"sort",4),
+	STRING(L"toString",8),
+	STRING(L"unshift",7),
+	String(null())
 };
 
 
@@ -998,7 +755,7 @@ static wchar_t *sArrayFields[] = {
 Class hxArrayBase::__mClass;
 void hxArrayBase::__boot()
 {
-   Static(__mClass) = RegisterClass(L"Array",TCanCast<hxArrayBase>,sArrayFields,sNone,0,0,0);
+   Static(__mClass) = RegisterClass(STRING(L"Array",5),TCanCast<hxArrayBase>,sArrayFields,sNone,0,0,0);
 }
 
 
@@ -1064,9 +821,7 @@ String::String(const char *inPtr,int inLen)
    }
    else
    {
-      wchar_t *result = (wchar_t *)GC_MALLOC_ATOMIC(length+1);
-      result[length]='\0';
-      __s = result;
+      __s = hxNewString(length);
    }
 }
 
@@ -1503,22 +1258,22 @@ Dynamic String::__Field(const String &inString)
 }
 
 
-static wchar_t *sStringStatics[] = {
-   L"fromCharCode",
-   0
+static String sStringStatics[] = {
+   STRING(L"fromCharCode",12),
+   String(null())
 };
-static wchar_t *sStringFields[] = {
-   L"length",
-   L"charAt",
-   L"charCodeAt",
-   L"indexOf",
-   L"lastIndexOf",
-   L"split",
-   L"substr",
-   L"toLowerCase",
-   L"toUpperCase",
-   L"toString",
-   0
+static String sStringFields[] = {
+   STRING(L"length",6),
+   STRING(L"charAt",6),
+   STRING(L"charCodeAt",10),
+   STRING(L"indexOf",7),
+   STRING(L"lastIndexOf",11),
+   STRING(L"split",5),
+   STRING(L"substr",6),
+   STRING(L"toLowerCase",11),
+   STRING(L"toUpperCase",11),
+   STRING(L"toString",8),
+   String(null())
 };
 
 /*
@@ -1530,7 +1285,7 @@ Dynamic String::__Field(const String &inString)
 
 void StringBoot()
 {
-   Static(__StringClass) = RegisterClass(L"String",TCanCast<StringData>,sStringStatics, sStringFields,
+   Static(__StringClass) = RegisterClass(STRING(L"String",5),TCanCast<StringData>,sStringStatics, sStringFields,
                        &CreateEmptyString, &CreateString, &hxObject__mClass);
 }
 
@@ -1566,22 +1321,23 @@ double ParseFloat(const String &inString)
 typedef std::map<String,Class> ClassMap;
 ClassMap *sClassMap = 0;
 
-Class_obj::Class_obj(const String &inClassName,wchar_t *inStatics[], wchar_t *inMembers[],
+Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMembers[],
              ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
              Class *inSuperClass,ConstructEnumFunc inConstructEnum,
-             CanCastFunc inCanCast)
+             CanCastFunc inCanCast, MarkFunc inFunc)
 {
    mName = inClassName;
    mSuper = inSuperClass;
    mConstructEmpty = inConstructEmpty;
    mConstructArgs = inConstructArgs;
    mConstructEnum = inConstructEnum;
+   mMarkFunc = inFunc;
    mStatics = Array_obj<String>::__new(0,0);
-   for(wchar_t **s = inStatics; *s; s++)
-      mStatics->Add( String(*s) );
+   for(String *s = inStatics; s->length; s++)
+      mStatics->Add( *s );
    mMembers = Array_obj<String>::__new(0,0);
-   for(wchar_t **m = inMembers; *m; m++)
-      mMembers->Add( String(*m) );
+   for(String *m = inMembers; m->length; m++)
+      mMembers->Add( *m );
    CanCast = inCanCast;
 }
 
@@ -1592,25 +1348,39 @@ Class Class_obj::GetSuper()
    return *mSuper;
 }
 
+void Class_obj::__Mark()
+{
+   MarkMember(mName);
+   MarkMember(mStatics);
+   MarkMember(mMembers);
+}
+
 
 Class  Class_obj::__GetClass() const { return Class_obj__mClass; }
 Class &Class_obj::__SGetClass() { return Class_obj__mClass; }
 
 
 Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
-                    wchar_t *inStatics[], wchar_t *inMembers[],
+                    String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
-                    Class *inSuperClass, ConstructEnumFunc inConstructEnum)
+                    Class *inSuperClass, ConstructEnumFunc inConstructEnum,
+                    MarkFunc inMarkFunc)
 {
    if (sClassMap==0)
       sClassMap = new ClassMap;
 
    Class_obj *obj = new Class_obj(inClassName, inStatics, inMembers,
                                   inConstructEmpty, inConstructArgs, inSuperClass,
-                                  inConstructEnum, inCanCast);
+                                  inConstructEnum, inCanCast, inMarkFunc);
    Class c(obj);
    (*sClassMap)[inClassName] = c;
    return c;
+}
+
+void Class_obj::MarkStatics()
+{
+   hxGCMark(this);
+   if (mMarkFunc) mMarkFunc();
 }
 
 Class Class_obj::Resolve(String inName)
@@ -1667,6 +1437,13 @@ Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue)
    return instance->__SetField(inString,inValue);
 }
 
+void hxMarkClassStatics()
+{
+   ClassMap::iterator end = sClassMap->end();
+   for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
+      i->second->MarkStatics();
+}
+
 
 
 bool __instanceof(const Dynamic &inValue, const Dynamic &inType)
@@ -1701,8 +1478,6 @@ int hxEnumBase_obj::__FindIndex(String inName) { return -1; }
 int hxEnumBase_obj::__FindArgCount(String inName) { return -1; }
 Dynamic hxEnumBase_obj::__Field(const String &inString) { return null(); }
 
-static wchar_t *sEnumNone[] = { 0 };
-
 static Class hxEnumBase_obj__mClass;
 Class &hxEnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }
 
@@ -1710,8 +1485,8 @@ Class &hxEnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }
 
 void hxEnumBase_obj::__boot()
 {
-   Static(hxEnumBase_obj__mClass) = RegisterClass(L"__EnumBase",TCanCast<hxEnumBase_obj>,
-                       sEnumNone,sEnumNone,
+   Static(hxEnumBase_obj__mClass) = RegisterClass(STRING(L"__EnumBase",10) ,TCanCast<hxEnumBase_obj>,
+                       sNone,sNone,
                        &__CreateEmpty, &__Create, 0 );
 }
 
@@ -1795,8 +1570,21 @@ Dynamic Math_obj::__IField(int inFieldID)
 
 void Math_obj::__GetFields(Array<String> &outFields) { }
 
-static wchar_t *sMathFields[] = { L"floor", L"ceil", L"round", L"random", L"sqrt", L"cos",
-    L"sin", L"tan", L"atan2", L"abs", L"pow", L"isNaN", L"isFinite",  0 };
+static String sMathFields[] = {
+   STRING(L"floor",5),
+   STRING(L"ceil",4),
+   STRING(L"round",5),
+   STRING(L"random",6),
+   STRING(L"sqrt",4),
+   STRING(L"cos",3),
+   STRING(L"sin",3),
+   STRING(L"tan",3),
+   STRING(L"atan2",5),
+   STRING(L"abs",3),
+   STRING(L"pow",3),
+   STRING(L"isNaN",5),
+   STRING(L"isFinite",8),
+   String(null()) };
 
 
 Dynamic Math_obj::__SetField(const String &inString,const Dynamic &inValue) { return null(); }
@@ -1814,7 +1602,7 @@ bool Math_obj::__Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!
 
 void Math_obj::__boot()
 {
-   Static(Math_obj::__mClass) = RegisterClass(L"Math",TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
+   Static(Math_obj::__mClass) = RegisterClass(STRING(L"Math",4),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
 }
 
 double hxDoubleMod(double inLHS,double inRHS)

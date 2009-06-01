@@ -99,6 +99,18 @@ SHARED void *hxNewGCBytes(void *inData,int inSize);
 // This wont be GC'ed
 SHARED void *hxNewGCPrivate(void *inData,int inSize);
 
+// This is used internally in hxcpp
+wchar_t *hxNewString(int inLen);
+
+// Mark a slab of bytes - not an object
+SHARED void hxGCMarkString(const void *inPtr);
+
+// Internal for arrays
+void *hxGCRealloc(void *inData,int inSize);
+void hxGCInit();
+void hxMarkClassStatics();
+
+
 
 inline int hxUShr(int inData,int inShift)
 {
@@ -214,6 +226,7 @@ public:
    virtual Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k);
 
    virtual int __ArgCount() const { return -1; }
+   virtual void __Mark() { }
 
 
    static Class &__SGetClass();
@@ -696,6 +709,7 @@ SHARED bool hxFieldMapGet(hxFieldMap *inMap, const String &inName, Dynamic &outV
 SHARED bool hxFieldMapGet(hxFieldMap *inMap, int inID, Dynamic &outValue);
 SHARED void hxFieldMapSet(hxFieldMap *inMap, const String &inName, const Dynamic &inValue);
 SHARED void hxFieldMapAppendFields(hxFieldMap *inMap,Array<String> &outFields);
+SHARED void hxFieldMapMark(hxFieldMap *inMap);
 
 class SHARED hxAnon_obj : public hxObject
 {
@@ -952,6 +966,18 @@ public:
    // Does not check for size valid - use quth care
    inline ELEM_ &QuickItem(int inIndex) { return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)); }
 
+
+   void __Mark()
+   {
+      if (ContainsPointers<ELEM_>())
+      {
+         ELEM_ *ptr = (ELEM_ *)mBase;
+         for(int i=0;i<length;i++)
+            MarkMember(ptr[i]);
+      }
+      if (mBase)
+        hxGCMarkString(mBase);
+   }
 
    int GetElementSize() const { return sizeof(ELEM_); }
 
@@ -1219,6 +1245,7 @@ inline bool Dynamic::IsClass<Array<Dynamic> >()
 typedef Dynamic (*ConstructEmptyFunc)();
 typedef Dynamic (*ConstructArgsFunc)(DynamicArray inArgs);
 typedef Dynamic (*ConstructEnumFunc)(String inName,DynamicArray inArgs);
+typedef void (*MarkFunc)();
 
 inline bool operator!=(ConstructEnumFunc inFunc,const null &inNull) { return inFunc!=0; }
 
@@ -1229,12 +1256,16 @@ class SHARED Class_obj : public hxObject
 {
 public:
    Class_obj() : mSuper(0) { };
-   Class_obj(const String &inClassName, wchar_t *inStatics[], wchar_t *inMembers[],
+   Class_obj(const String &inClassName, String inStatics[], String inMembers[],
              ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
              Class *inSuperClass, ConstructEnumFunc inConstructEnum,
-             CanCastFunc inCanCast);
+             CanCastFunc inCanCast, MarkFunc inMarkFunc);
 
    String __ToString() const;
+
+   void __Mark();
+
+   void MarkStatics();
 
    // the "Class class"
    Class              __GetClass() const;
@@ -1260,6 +1291,7 @@ public:
    ConstructArgsFunc  mConstructArgs;
    ConstructEmptyFunc mConstructEmpty;
    ConstructEnumFunc  mConstructEnum;
+   MarkFunc           mMarkFunc;
    Array<String>      mStatics;
    Array<String>      mMembers;
 };
@@ -1270,9 +1302,9 @@ typedef hxObjectPtr<Class_obj> Class;
 // --- All classes should be registered with this function via the "__boot" method
 
 SHARED Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
-                    wchar_t *inStatics[], wchar_t *inMembers[],
+                    String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
-                    Class *inSuperClass, ConstructEnumFunc inConst=0);
+                    Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0);
 
 template<typename T>
 inline bool TCanCast(hxObject *inPtr) { return dynamic_cast<T *>(inPtr)!=0; }
@@ -1464,6 +1496,7 @@ inline hxFieldRef hxModEq(hxFieldRef inLHS, R inRHS) { inLHS = (int)inLHS % (int
 // All statics are explicitly registered - this saves adding the whole data segment
 // to the collection list.
 SHARED void __RegisterStatic(void *inPtr,int inSize = sizeof(void *));
+SHARED void hxGCMark(hxObject *inPtr);
 
 
 // This may not be needed now that GC memsets everything to 0.
@@ -1472,6 +1505,17 @@ template<> inline void InitMember<int>(int &outT) { outT = 0; }
 template<> inline void InitMember<bool>(bool &outT) { outT = false; }
 template<> inline void InitMember<double>(double &outT) { outT = 0; }
 
+
+template<typename T> inline void MarkMember(T &outT) { }
+template<typename T> inline void MarkMember(hxObjectPtr<T> &outT)
+{
+   if (outT.GetPtr()) hxGCMark(outT.GetPtr());
+}
+template<> inline void MarkMember<int>(int &outT) {  }
+template<> inline void MarkMember<bool>(bool &outT) {  }
+template<> inline void MarkMember<double>(double &outT) {  }
+template<> inline void MarkMember<String>(String &outT) { if (outT.__s) hxGCMarkString(outT.__s); }
+template<> inline void MarkMember<Void>(Void &outT) {  }
 
 // Template used to register and initialise the statics in the one call.
 template<typename T> inline T &Static(T &inPtr) { __RegisterStatic(&inPtr); return inPtr; }

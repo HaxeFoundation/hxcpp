@@ -1,6 +1,11 @@
 #ifndef HX_MACROS_H
 #define HX_MACROS_H
 
+#ifdef _MSC_VER
+#define STRING(s,len) String((L"\xffff\xffff" s)+2,len)
+#else
+#define STRING(s,len) String( (L"\xffffffff" s) + 1 ,len)
+#endif
 
 #define DO_RTTI_BASE(Parent) \
    bool __Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; } \
@@ -39,6 +44,8 @@
 #define DECLARE_IMPLEMENT_DYNAMIC  hxFieldMap *__mDynamicFields;
 
 #define INIT_IMPLEMENT_DYNAMIC __mDynamicFields = hxFieldMapCreate();
+
+#define MARK_DYNAMIC hxFieldMapMark(__mDynamicFields);
 
 #define CHECK_DYNAMIC_GET_FIELD(inName) \
    { Dynamic d;  if (hxFieldMapGet(__mDynamicFields,inName,d)) return d; }

@@ -72,7 +72,7 @@ ifeq ("x$(HXCPP)","x")
 export HXCPP := $(shell haxelib path hxcpp)
 endif
 
-ifdef IPHONE
+ifndef IPHONE
 all : obj $(FULL_DLL_NAME) build-libs
 else
 all : obj lib build-libs
@@ -103,7 +103,7 @@ CFLAGS += -I"../include" $(GC_INCLUDES) -c $(OPTIM) $(DEFINES)
 CPPFLAGS += $(CFLAGS) -frtti
 
 OBJ_FILES = obj/hxObject$(OBJ) obj/hxNekoAPI$(OBJ) obj/hxLib$(OBJ) obj/hxHash$(OBJ) \
-             obj/hxDate$(OBJ) \
+             obj/hxDate$(OBJ) obj/hxGC$(OBJ) \
             $(GC_FILES:%=obj/%$(OBJ))
 
 HEADERS =  ../include/hxObject.h ../include/hxMacros.h ../include/hxMath.h

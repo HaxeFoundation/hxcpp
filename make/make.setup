@@ -75,11 +75,6 @@ endif
 
 CLEAN_CMD := - rm -f
 
-obj/__main__$(OBJ) : src/__main__.cpp
-	$(COMPILE) $< $(OUT_FLAGS)$@
-
-obj/__lib__$(OBJ) : src/__lib__.cpp
-	$(COMPILE) $< $(OUT_FLAGS)$@
 
 OBJ_FILES += obj/__boot__$(OBJ)
 obj/__boot__$(OBJ) : src/__boot__.cpp
