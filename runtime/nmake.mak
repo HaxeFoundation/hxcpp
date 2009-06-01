@@ -55,7 +55,7 @@ GC_OBJS = \
  obj\typd_mlc.obj
 
 
-OBJ_FILES = obj\hxObject.obj obj\hxNekoAPI.obj obj\hxLib.obj obj\hxHash.obj obj\hxDate.obj $(GC_OBJS)
+OBJ_FILES = obj\hxObject.obj obj\hxNekoAPI.obj obj\hxLib.obj obj\hxHash.obj obj\hxDate.obj obj\hxGC.obj $(GC_OBJS)
 
 HEADERS =  ../include/hxObject.h ../include/hxMacros.h ../include/hxMath.h
 LD_FLAGS = $(DEBUG_LINK) -dll -out:$(DLL_NAME)

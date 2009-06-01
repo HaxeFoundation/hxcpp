@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <sys/time.h>
 #include <hxObject.h>
 #include <hxMath.h>
 #include <hxMacros.h>
@@ -11,7 +10,9 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <time.h>
 #else
+#include <sys/time.h>
 #include <wchar.h>
 typedef  uint64_t  __int64;
 #endif
