@@ -7,10 +7,10 @@ obj:
 exe : obj
 
 !ifdef HXCPP_DEBUG
-CPPFLAGS = -nologo -I"$(HXCPP)/include" -Iinclude  /EHsc -c -Zi -Od
+CPPFLAGS = -nologo -I"$(HXCPP)/include" -Iinclude  /EHsc -c -Zi -Od -GR
 LD_DEBUG = -debug
 !else
-CPPFLAGS = -nologo -I"$(HXCPP)/include" -Iinclude  /EHsc -c -Zi -O2
+CPPFLAGS = -nologo -I"$(HXCPP)/include" -Iinclude  /EHsc -c -Zi -O2 -GR
 LD_DEBUG = -debug
 !endif
 
