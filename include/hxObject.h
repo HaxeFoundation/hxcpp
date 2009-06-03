@@ -422,6 +422,7 @@ public:
    operator int () const { return mPtr ? mPtr->__ToInt() : 0; }
    operator unsigned char () const { return mPtr ? mPtr->__ToInt() : 0; }
    operator bool() const { return mPtr && mPtr->__ToInt(); }
+   bool operator !() const { return !mPtr || !mPtr->__ToInt(); }
 
    inline Dynamic operator[](int inIndex) const { return mPtr->__GetItem(inIndex); }
    inline Dynamic __get(int inIndex) const { return mPtr->__GetItem(inIndex); }
