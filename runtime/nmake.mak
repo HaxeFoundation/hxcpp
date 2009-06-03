@@ -14,10 +14,10 @@ INCLUDES = -I"$(HXCPP)/include" -I$(GC_DIR) -I$(GC_DIR)\include -I$(GC_DIR)\incl
  -I$(GC_DIR)/libatomic_ops-$(AO_VERSION)/src
 
 !ifdef HXCPP_DEBUG
-CPPFLAGS = -nologo $(INCLUDES) /EHsc -c -Zi -Od $(DEFINES)
+CPPFLAGS = -nologo $(INCLUDES) /EHsc -c -Zi -Od -GR $(DEFINES)
 DEBUG_LINK = -debug
 !else
-CPPFLAGS = -nologo $(INCLUDES) /EHsc -c -Zi -O2 $(DEFINES)
+CPPFLAGS = -nologo $(INCLUDES) /EHsc -c -Zi -O2 -GR $(DEFINES)
 DEBUG_LINK = -debug
 !endif
 
