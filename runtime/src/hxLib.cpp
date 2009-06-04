@@ -37,7 +37,7 @@ typedef Dynamic (*prim_mult)(Dynamic *inArray,int inArgs);
 
 typedef void *(*func)(); 
 
-static Dynamic sgInvalidArgCount("Invalid arguement count");
+static Dynamic sgInvalidArgCount(STRING(L"Invalid arguement count",23));
 
 class ExternalPrimitive : public hxObject
 {
@@ -111,6 +111,7 @@ public:
            .Add(a).Add(b).Add(c).Add(d).Add(e).Add(f).Add(g).Add(h).Add(i).Add(j).Add(k)->Pointer(),11);
    }
 
+   void __Mark() {  MarkMember(mName); }
 
 
    void        *mProc;
@@ -333,10 +334,14 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 // This can be used to find symbols in static libraries
 
-hxPrimRegisterer::hxPrimRegisterer(char *inName,void *inProc)
+hxPrimRegisterer::hxPrimRegisterer(wchar_t *inName,void *inProc)
 {
    if (sgRegisteredPrims==0)
       sgRegisteredPrims = new RegistrationMap();
-   String prim(inName,strlen(inName));
-   (*sgRegisteredPrims)[prim.__s] = inProc;
+   (*sgRegisteredPrims)[inName] = inProc;
+}
+
+void hxLibMark()
+{
+	MarkMember(sgInvalidArgCount);
 }

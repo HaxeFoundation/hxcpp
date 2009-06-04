@@ -32,6 +32,8 @@
 #undef assert
 #endif
 
+// #define INTERNAL_GC
+
 
 // TODO: Construct array-dynamic from foreign array
 
@@ -84,12 +86,11 @@ typedef Array<Dynamic> DynamicArray;
 class String;
 
 // --- Exteral constants, used inline
-
-#define INVALID_CAST Dynamic(L"Invalid Cast")
-#define INDEX_OUT_OF_BOUNDS Dynamic(L"Index Out of Bounds")
-#define INVALID_CONSTRUCTOR Dynamic(L"Invalid constructor")
-#define INVALID_ARG_COUNT Dynamic(L"Invalid Arg Count")
-#define NULL_FUNCTION_POINTER Dynamic(L"Null Function Pointer")
+#define INVALID_CAST          Dynamic(STRING(L"Invalid Cast",11))
+#define INDEX_OUT_OF_BOUNDS   Dynamic(STRING(L"Index Out of Bounds",18))
+#define INVALID_CONSTRUCTOR   Dynamic(STRING(L"Invalid constructor",18))
+#define INVALID_ARG_COUNT     Dynamic(STRING(L"Invalid Arg Count",16))
+#define NULL_FUNCTION_POINTER Dynamic(STRING(L"Null Function Pointer",20))
 
 //extern Dynamic SHARED __InvalidConstructor;
 //extern Dynamic SHARED __InvalidArgCount;
@@ -109,6 +110,8 @@ SHARED void hxGCMarkString(const void *inPtr);
 void *hxGCRealloc(void *inData,int inSize);
 void hxGCInit();
 void hxMarkClassStatics();
+void hxLibMark();
+void hxGCMark(class hxObject *inPtr);
 
 
 
@@ -187,7 +190,6 @@ public:
    virtual hxFieldRef __FieldRef(const String &inString);
 
    virtual String __ToString() const;
-
 
    virtual int __ToInt() const { return 0; }
    virtual double __ToDouble() const { return 0.0; }
@@ -705,12 +707,16 @@ inline hxIndexRef<T> hxIndexRefNew(const T &inObj, int inIdx)
 // The hxAnon_obj contains an arbitrary string map of fields.
 
 class hxFieldMap;
+
+/*
 SHARED hxFieldMap *hxFieldMapCreate();
 SHARED bool hxFieldMapGet(hxFieldMap *inMap, const String &inName, Dynamic &outValue);
 SHARED bool hxFieldMapGet(hxFieldMap *inMap, int inID, Dynamic &outValue);
 SHARED void hxFieldMapSet(hxFieldMap *inMap, const String &inName, const Dynamic &inValue);
 SHARED void hxFieldMapAppendFields(hxFieldMap *inMap,Array<String> &outFields);
 SHARED void hxFieldMapMark(hxFieldMap *inMap);
+*/
+
 
 class SHARED hxAnon_obj : public hxObject
 {
@@ -734,10 +740,12 @@ public:
    Dynamic __SetField(const String &inString,const Dynamic &inValue);
    virtual void __GetFields(Array<String> &outFields);
 
+   static void Destroy(Dynamic inObj);
 
    virtual int __GetType() const { return vtObject; }
 
    hxAnon_obj *Add(const String &inName,const Dynamic &inValue);
+	void __Mark();
 
    String __ToString() const;
    String toString();
@@ -1345,6 +1353,8 @@ class SHARED hxEnumBase_obj : public hxObject
       static Dynamic __Create(DynamicArray inArgs);
       static void __boot();
 
+      void __Mark();
+
       static hxObjectPtr<hxEnumBase_obj> Resolve(String inName);
       Dynamic __Param(int inID) { return mArgs[inID]; }
       inline int GetIndex() { return index; }
@@ -1497,7 +1507,6 @@ inline hxFieldRef hxModEq(hxFieldRef inLHS, R inRHS) { inLHS = (int)inLHS % (int
 // All statics are explicitly registered - this saves adding the whole data segment
 // to the collection list.
 SHARED void __RegisterStatic(void *inPtr,int inSize = sizeof(void *));
-SHARED void hxGCMark(hxObject *inPtr);
 
 
 // This may not be needed now that GC memsets everything to 0.
@@ -1506,11 +1515,26 @@ template<> inline void InitMember<int>(int &outT) { outT = 0; }
 template<> inline void InitMember<bool>(bool &outT) { outT = false; }
 template<> inline void InitMember<double>(double &outT) { outT = 0; }
 
+#define HX_GC_MARKED   0x80000000
 
 template<typename T> inline void MarkMember(T &outT) { }
 template<typename T> inline void MarkMember(hxObjectPtr<T> &outT)
 {
-   if (outT.GetPtr()) hxGCMark(outT.GetPtr());
+   unsigned int *ptr =  (unsigned int *)dynamic_cast<void *>(outT.GetPtr());
+   if (ptr && !( ptr[-1]&HX_GC_MARKED ) )
+      { ptr[-1] |= HX_GC_MARKED; outT->__Mark(); }
+}
+template<> inline void MarkMember(Dynamic &outT)
+{
+   unsigned int *ptr =  (unsigned int *)dynamic_cast<void *>(outT.GetPtr());
+   if (ptr && !( ptr[-1]&HX_GC_MARKED ) )
+      { ptr[-1] |= HX_GC_MARKED; outT->__Mark(); }
+}
+template<typename T> inline void MarkMember(Array<T> &outT)
+{
+   unsigned int *ptr =  (unsigned int *)dynamic_cast<void *>(outT.GetPtr());
+   if (ptr && !( ptr[-1]&HX_GC_MARKED ) )
+      { ptr[-1] |= HX_GC_MARKED; outT->__Mark(); }
 }
 template<> inline void MarkMember<int>(int &outT) {  }
 template<> inline void MarkMember<bool>(bool &outT) {  }
@@ -1615,7 +1639,7 @@ SHARED double __hxcpp_date_now();
 // Loading functions via name
 struct SHARED hxPrimRegisterer
 {
-   hxPrimRegisterer(char *inName,void *inFunc);
+   hxPrimRegisterer(wchar_t *inName,void *inFunc);
 };
 
 #ifdef BIG_ENDIAN

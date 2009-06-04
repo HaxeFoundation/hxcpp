@@ -22,22 +22,6 @@ void hxcpp_alloc_field( value obj, field f, value v )
 
 
 
-void hxcpp_finalizer(void * obj, void * client_data)
-{
-   finalizer f = (finalizer)client_data;
-   if (f)
-      f( (hxObject *)obj );
-}
-
-
-void hxcpp_val_gc( value v, finalizer f )
-{
-   hxObject *ptr = v.GetPtr();
-   if (ptr)
-   {
-      GC_register_finalizer(ptr,hxcpp_finalizer,(void *)f,0,0);
-   }
-}
 
 
 

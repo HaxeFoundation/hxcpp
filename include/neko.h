@@ -224,7 +224,7 @@ inline const char *val_string(const Dynamic &v) { return v->__CStr(); }
 
 inline Dynamic alloc_array(int inLen) { return Array<Dynamic>(2,0); }
 inline void val_throw(Dynamic inVal) { throw inVal; }
-inline String alloc_empty_string( unsigned int size ) { return String((const char *)0,size); }
+inline String alloc_empty_string( unsigned int size ) { return String((const wchar_t *)0,size); }
 
 
 #define val_tag(v)			(v->__GetType())
@@ -309,14 +309,14 @@ inline String alloc_empty_string( unsigned int size ) { return String((const cha
   EXPORT void *func##__MULT() {  \
      return (void*)(&func); \
  } \
-hxPrimRegisterer __reg_##func(#func "__MULT",(void *)(&func)); \
+hxPrimRegisterer __reg_##func(L#func L"__MULT",(void *)(&func)); \
 }
 
 #define DEFINE_PRIM(func,nargs) extern "C" { \
   EXPORT void *func##__##nargs() { \
        return (void*)(&func); \
   } \
-hxPrimRegisterer __reg_##func(#func "__" #nargs,(void *)(&func)); \
+hxPrimRegisterer __reg_##func(L#func L"__" L#nargs,(void *)(&func)); \
 }
 
 
@@ -389,7 +389,7 @@ hxPrimRegisterer __reg_##func(#func "__" #nargs,(void *)(&func)); \
 inline Dynamic alloc_string(const char *str) { return String(str,(int)strlen(str)); }
 #define val_id				__hxcpp_field_to_id
 #define alloc_field			hxcpp_alloc_field
-#define val_gc				hxcpp_val_gc
+#define val_gc				hxGCAddFinalizer
 #define alloc_abstract(inKind,inData) Dynamic(new Abstract_obj(inKind,inData))
 #define val_field			hxcpp_val_field
 #define val_null			null()
@@ -410,7 +410,7 @@ inline Dynamic alloc_object(const Dynamic &inObj) { return inObj; }
 	#define kind_share( k, name ) // Not sure ? *(k) = hxcpp_find_kind(name)
 
 	EXTERN void  hxcpp_alloc_field( value obj, field f, value v );
-	EXTERN void  hxcpp_val_gc( value v, finalizer f );
+	EXTERN void  hxGCAddFinalizer( value v, finalizer f );
 
 /*
 	EXTERN value alloc_string( const char *str );

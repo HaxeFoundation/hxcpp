@@ -1113,8 +1113,9 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
 
 char * String::__CStr() const
 {
-   Array<unsigned char> bytes(0,length);
+   Array<unsigned char> bytes(0,length+1);
    __hxcpp_bytes_of_string(bytes,*this);
+	bytes.Add(0);
    char *result =  bytes->GetBase();
    if (result)
       return result;
@@ -1320,7 +1321,7 @@ double ParseFloat(const String &inString)
 // -------- Class ---------------------------------------
 
 typedef std::map<String,Class> ClassMap;
-ClassMap *sClassMap = 0;
+static ClassMap *sClassMap = 0;
 
 Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMembers[],
              ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
@@ -1442,7 +1443,10 @@ void hxMarkClassStatics()
 {
    ClassMap::iterator end = sClassMap->end();
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
+   {
+      // all strings should be constants anyhow - MarkMember(i->first);
       i->second->MarkStatics();
+   }
 }
 
 
@@ -1489,6 +1493,12 @@ void hxEnumBase_obj::__boot()
    Static(hxEnumBase_obj__mClass) = RegisterClass(STRING(L"__EnumBase",10) ,TCanCast<hxEnumBase_obj>,
                        sNone,sNone,
                        &__CreateEmpty, &__Create, 0 );
+}
+
+void hxEnumBase_obj::__Mark()
+{
+   MarkMember(tag);
+   MarkMember(mArgs);
 }
 
 String hxEnumBase_obj::toString() { return GetEnumName() + String(L".") + tag; }

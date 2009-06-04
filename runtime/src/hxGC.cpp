@@ -1,8 +1,7 @@
 #include <hxObject.h>
 #include <map>
 #include <vector>
-
-//#define INTERNAL_GC
+#include <neko.h>
 
 #ifdef _WIN32
 
@@ -30,54 +29,118 @@ extern "C" {
 // On Mac, we need to call GC_INIT before first alloc
 static int sNeedGCInit = true;
 
-#define MARK_BIT   0x80000000
 #define IS_CONST   0x40000000
-#define SIZE_MASK  0x3fffffff
+#define IS_BYTES   0x20000000
+#define ID_MASK    0x1fffffff
 
-static unsigned int sCurrentMark = 0;
+typedef unsigned int AllocData;
 
-typedef unsigned int AllocInfo;
+struct AllocInfo
+{
+   unsigned int     mSize;
+   AllocData        *mPtr;
+   finalizer        mFinalizer;
+};
 
-std::vector<AllocInfo *> *sgActiveAllocs = 0;
-std::vector<int> *sgFreeIDs = 0;
+
+
+template<typename T>
+struct QuickVec
+{
+	QuickVec() : mPtr(0), mAlloc(0), mSize(0) { } 
+	inline void push(T inT)
+	{
+		if (mSize+1>=mAlloc)
+		{
+			mAlloc = 10 + (mSize*3/2);
+			mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
+		}
+		mPtr[mSize++]=inT;
+	}
+	inline T pop()
+	{
+		return mPtr[--mSize];
+	}
+	inline bool empty() const { return !mSize; }
+	inline int next()
+	{
+		if (mSize+1>=mAlloc)
+		{
+			mAlloc = 10 + (mSize*3/2);
+			mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
+		}
+		return mSize++;
+	}
+	inline int size() const { return mSize; }
+	inline T &operator[](int inIndex) { return mPtr[inIndex]; }
+
+	int mAlloc;
+	int mSize;
+	T *mPtr;
+};
+
+
+QuickVec<AllocInfo> *sgActiveAllocs = 0;
+QuickVec<int> *sgFreeIDs = 0;
+
 static int sgTotalAllocBytes = 0;
 static int sgTotalAllocObjs = 0;
+static bool sgUsePool = false;
 
-void *hxInternalNew( size_t inSize )
+typedef QuickVec<AllocData *> SparePointers;
+
+
+#define POOL_SIZE 65
+static SparePointers sgSmallPool[POOL_SIZE];
+
+
+
+void *hxInternalNew( size_t inSize, bool inIsObj = false )
 {
+   AllocData *data = 0;
+
    //printf("hxInternalNew %d\n", inSize);
    if (!sgActiveAllocs)
    {
-      sgActiveAllocs = new std::vector<AllocInfo *>;
-      sgFreeIDs = new std::vector<int>;
+      sgActiveAllocs = new QuickVec<AllocInfo>;
+      sgFreeIDs = new QuickVec<int>;
+   }
+   // First run, we can't be sure the pool has initialised - but now we can.
+   else if (inSize < POOL_SIZE )
+   {
+      SparePointers &spares = sgSmallPool[inSize];
+      int n = spares.size();
+      if (!spares.empty())
+			data = spares.pop();
    }
 
-   AllocInfo *info = (AllocInfo *)malloc(sizeof(AllocInfo) + inSize );
-   *info = sCurrentMark | inSize;
+   int id;
    if (!sgFreeIDs->empty())
-   {
-      int n  = sgFreeIDs->size() - 1;
-      int id = (*sgFreeIDs)[ n - 1];
-      sgFreeIDs->resize(n);
-      (*sgActiveAllocs)[id] = info;
-   }
+		id = sgFreeIDs->pop();
    else
-   {
-      sgActiveAllocs->push_back(info);
-   }
+      id = sgActiveAllocs->next();
+
+   if (!data)
+      data = (AllocData *)malloc(sizeof(AllocData) + inSize );
+   memset(data+1,0,inSize);
+   *data = id | ( inIsObj ? 0 : IS_BYTES) ;
+	AllocInfo &info = (*sgActiveAllocs)[id];
+
+   info.mPtr = data;
+   info.mSize = inSize;
+   info.mFinalizer = 0;
 
    sgTotalAllocBytes += inSize;
    sgTotalAllocObjs++;
 
-   return info + 1;
-
+   return data + 1;
 }
 
 
 void *hxObject::operator new( size_t inSize, bool inContainer )
 {
 #ifdef INTERNAL_GC
-   return hxInternalNew(inSize);
+   return hxInternalNew(inSize,true);
 #else
 #ifdef __APPLE__
    if (sNeedGCInit)
@@ -99,37 +162,54 @@ void *hxObject::operator new( size_t inSize, bool inContainer )
 void __hxcpp_collect()
 {
    #ifdef INTERNAL_GC
-   printf("Collecting...\n");
+   // printf("Collecting...\n");
    if (!sgActiveAllocs) return;
 
-   sCurrentMark ^= MARK_BIT;
    hxMarkClassStatics();
+   hxLibMark();
 
    // And sweep ...
    int n = sgActiveAllocs->size();
    if (n)
    {
-      AllocInfo **info = &(*sgActiveAllocs)[0];
+      AllocInfo *info_array = &(*sgActiveAllocs)[0];
       for(int i=0;i<n;i++)
       {
-         if (info[i])
+         AllocInfo &info = info_array[i];
+         if (info.mPtr)
          {
-            AllocInfo &val = *info[i];
-            if ( (val & MARK_BIT) != sCurrentMark )
+            AllocData &val = *(info.mPtr);
+            if ( !(val & HX_GC_MARKED) )
             {
-                sgFreeIDs->push_back(i);
-                printf("Free %d\n", (*info[i]) & SIZE_MASK);
-                sgTotalAllocBytes -= (*info[i]) & SIZE_MASK;
+                if ( !(val & IS_BYTES) )
+                {
+                   hxObject *obj = (hxObject *)(info.mPtr + 1);
+                   if (info.mFinalizer)
+                   {
+                      info.mFinalizer(Dynamic(obj));
+                   }
+                   //printf("Free obj %d : %p\n", i, obj );
+                }
+                //else printf("Free bytes %d: %S\n",i, info.mPtr+1);
+                sgFreeIDs->push(i);
+                sgTotalAllocBytes -= info.mSize;
+                sgTotalAllocBytes -= info.mSize;
                 sgTotalAllocObjs--;
-                free( info[i] );
-                info[i] = 0;
+                if ( info.mSize<POOL_SIZE )
+                   sgSmallPool[info.mSize].push(info.mPtr);
+                else
+                   free( info.mPtr );
+                info.mPtr = 0;
+                info.mFinalizer = 0;
             }
+				else
+					val ^= HX_GC_MARKED;
          }
       }
    }
 
-   printf("Total bytes = %d in %d objs (max objs %d)\n",
-      sgTotalAllocBytes, sgTotalAllocObjs, sgActiveAllocs->size() );
+   //printf("Total bytes = %d in %d objs (max objs %d)\n",
+    //  sgTotalAllocBytes, sgTotalAllocObjs, sgActiveAllocs->size() );
 
    #else
    GC_gcollect();
@@ -137,6 +217,32 @@ void __hxcpp_collect()
 }
 
 
+#ifndef INTERNAL_GC
+static void hxcpp_finalizer(void * obj, void * client_data)
+{
+   finalizer f = (finalizer)client_data;
+   if (f)
+      f( (hxObject *)obj );
+}
+#endif
+
+
+
+
+void hxGCAddFinalizer(Dynamic v, finalizer f)
+{
+   hxObject *ptr = v.GetPtr();
+   if (ptr)
+   {
+#ifdef INTERNAL_GC
+      AllocData *data = ((AllocData *)ptr) - 1;
+      int id = (*data) & ID_MASK;
+      (*sgActiveAllocs)[id].mFinalizer = f;
+#else
+      GC_register_finalizer(ptr,hxcpp_finalizer,(void *)f,0,0);
+#endif
+   }
+}
 
 
 void __RegisterStatic(void *inPtr,int inSize)
@@ -259,14 +365,29 @@ void *hxNewGCPrivate(void *inData,int inSize)
 void *hxGCRealloc(void *inData,int inSize)
 {
 #ifdef INTERNAL_GC
-   // maybe should do something better here
-   void *bytes = hxInternalNew(inSize);
    if (inData==0)
-      return bytes;
-   AllocInfo *info = (AllocInfo*)(inData) - 1;
+      return hxInternalNew(inSize);
 
-   memcpy(bytes,inData, *info & SIZE_MASK );
-   return bytes;
+   AllocData *data = (AllocData*)(inData) - 1;
+   int id = *data & ID_MASK;
+
+   AllocData *new_data = (AllocData *)malloc(sizeof(AllocData) + inSize );
+   *new_data =  id | ( *data & IS_BYTES );
+   int old_size = (*sgActiveAllocs)[id].mSize;
+
+   sgTotalAllocBytes -= old_size;
+
+   (*sgActiveAllocs)[id].mPtr = new_data;
+   (*sgActiveAllocs)[id].mSize = inSize;
+
+   sgTotalAllocBytes += inSize;
+
+   memcpy(new_data+1,inData, old_size);
+   memset((char *)(new_data+1) + old_size, 0, inSize-old_size);
+
+   free(data);
+
+   return new_data+1;
 #else
    return GC_REALLOC(inData, inSize );
 #endif
@@ -276,10 +397,10 @@ void *hxGCRealloc(void *inData,int inSize)
 
 void hxGCMark(hxObject *inPtr)
 {
-   AllocInfo &info = ((AllocInfo *)inPtr)[-1];
-   if (  (info & MARK_BIT) != sCurrentMark )
+   AllocData &info = ((AllocData *)( dynamic_cast<void *>(inPtr)))[-1];
+   if (  !(info & HX_GC_MARKED) )
    {
-      info ^= MARK_BIT;
+      info |= HX_GC_MARKED;
       inPtr->__Mark();
    }
 }
@@ -287,9 +408,9 @@ void hxGCMark(hxObject *inPtr)
 void hxGCMarkString(const void *inPtr)
 {
    // printf("Mark %S\n", inPtr);
-   AllocInfo &info = ((AllocInfo *)inPtr)[-1];
-   if (  ((info & MARK_BIT) != sCurrentMark) && !(info & IS_CONST) )
-      info ^= MARK_BIT;
+   AllocData &info = ((AllocData *)inPtr)[-1];
+   if (  !(info & HX_GC_MARKED) && !(info & IS_CONST) )
+      info |= HX_GC_MARKED;
 }
 
 // --- FieldObject ------------------------------
@@ -311,13 +432,14 @@ typedef gc_allocator< std::pair<StringKey, Dynamic> > MapAlloc;
 typedef std::map<StringKey,Dynamic, std::less<StringKey>, MapAlloc > FieldMap;
 #endif
 
-class hxFieldMap : public  FieldMap
+class hxFieldMap : public FieldMap
 {
+#ifndef INTERNAL_GC
 public:
-   void *operator new( size_t inSize ) { return hxNewGCBytes(0,inSize); }
+   void *operator new( size_t inSize ) { return GC_MALLOC(inSize); }
    void operator delete( void * ) { }
+#endif
 
-   hxFieldMap() { }
 };
 
 hxFieldMap *hxFieldMapCreate()
@@ -333,6 +455,7 @@ bool hxFieldMapGet(hxFieldMap *inMap, const String &inName, Dynamic &outValue)
 	outValue = i->second;
 	return true;
 }
+
 bool hxFieldMapGet(hxFieldMap *inMap, int inID, Dynamic &outValue)
 {
 	hxFieldMap::iterator i = inMap->find(__hxcpp_field_from_id(inID));
@@ -353,12 +476,44 @@ void hxFieldMapAppendFields(hxFieldMap *inMap,Array<String> &outFields)
       outFields->push(i->first);
 }
 
+void hxFieldMapMark(hxFieldMap *inMap)
+{
+   for(hxFieldMap::const_iterator i = inMap->begin(); i!= inMap->end(); ++i)
+   {
+      hxGCMarkString(i->first.__s);
+      hxObject *ptr = i->second.GetPtr();
+      AllocData &info = ((AllocData *)( dynamic_cast<void *>(ptr)))[-1];
+      if (  !(info & HX_GC_MARKED) )
+      {
+         info |= HX_GC_MARKED;
+         ptr->__Mark();
+      }
+   }
+}
 
 // --- Anon -----
+//
+
+void hxAnon_obj::Destroy(Dynamic inObj)
+{
+   hxAnon_obj *obj = dynamic_cast<hxAnon_obj *>(inObj.GetPtr());
+	if (obj)
+		delete obj->mFields;
+}
+
 hxAnon_obj::hxAnon_obj()
 {
    mFields = new hxFieldMap;
+	#ifdef INTERNAL_GC
+	hxGCAddFinalizer(this,Destroy);
+	#endif
 }
+
+void hxAnon_obj::__Mark()
+{
+   hxFieldMapMark(mFields);
+}
+
 
 
 Dynamic hxAnon_obj::__Field(const String &inString)
