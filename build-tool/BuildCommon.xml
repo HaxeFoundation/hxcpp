@@ -1,0 +1,42 @@
+<xml>
+
+<compiler id="Linuxgcc" name="g++" if="linux">
+  <compilerarg value="-g" if="debug"/>
+  <compilerarg value="-Wall"/>
+  <compilerarg value="-Wshadow"/>
+  <compilerarg value="-O2"/>
+  <defineset>
+    <define name="HAVE_CONFIG_H"/>
+    <define name="PIC"/>
+  </defineset>
+  <includepath path="${dir.include}"/>
+</compiler>
+
+<set name="IPHONE_VER" value="2.2.1"/>
+
+
+<compiler id="iPhoneOS" name="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0" if="iphoneos">
+  <cflag value="-c c"/>
+  <cppflag value="-c c++"/>
+  <cppflag value="-fvisibility-inlines-hidden"/>
+  <flag value="-g" if="debug"/>
+  <flag value="-O2"/>
+  <flag value="-arch armv6"/>
+  <flag value="-fmessage-length=0"/>
+  <flag value="-pipe"/>
+  <flag value="-Wno-trigraphs"/>
+  <flag value="-fpascal-strings"/>
+  <flag value="-fasm-blocks"/>
+  <flag value="-Wreturn-type"/>
+  <flag value="-Wunused-variable"/>
+  <flag value="-isysroot /Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
+  <flag value="-fvisibility=hidden"/>
+  <flag value="-gdwarf-2"/>
+  <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
+  <flag value="-DIPHONE"/>
+  <outflag value="-o"/>
+  <objdir value="obj/iphoneos/" unless="debug"/>
+  <objdir value="obj/iphoneos-dbg/" if="debug"/>
+</compiler>
+
+</xml>
