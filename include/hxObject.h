@@ -32,7 +32,9 @@
 #undef assert
 #endif
 
-// #define INTERNAL_GC
+#ifdef IPHONE
+ #define INTERNAL_GC
+#endif
 
 
 // TODO: Construct array-dynamic from foreign array
@@ -261,8 +263,8 @@ public:
    hxObjectPtr &operator=(const hxObjectPtr &inRHS) { mPtr = inRHS.mPtr; return *this; }
 
    inline OBJ_ *GetPtr() const { return mPtr; }
-   OBJ_ *operator->() { return mPtr; }
-   const OBJ_ *operator->() const { return mPtr; }
+   inline OBJ_ *operator->() { return mPtr; }
+   inline const OBJ_ *operator->() const { return mPtr; }
 
    bool operator==(const hxObjectPtr &inRHS) const { return mPtr==inRHS.mPtr; }
    bool operator!=(const hxObjectPtr &inRHS) const { return mPtr!=inRHS.mPtr; }

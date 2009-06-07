@@ -309,14 +309,14 @@ inline String alloc_empty_string( unsigned int size ) { return String((const wch
   EXPORT void *func##__MULT() {  \
      return (void*)(&func); \
  } \
-hxPrimRegisterer __reg_##func(L#func L"__MULT",(void *)(&func)); \
+hxPrimRegisterer __reg_##func(L###func L"__MULT",(void *)(&func)); \
 }
 
 #define DEFINE_PRIM(func,nargs) extern "C" { \
   EXPORT void *func##__##nargs() { \
        return (void*)(&func); \
   } \
-hxPrimRegisterer __reg_##func(L#func L"__" L#nargs,(void *)(&func)); \
+hxPrimRegisterer __reg_##func(L###func L"__" L###nargs,(void *)(&func)); \
 }
 
 
