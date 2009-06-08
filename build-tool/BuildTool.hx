@@ -1,37 +1,175 @@
 
+class DirManager
+{
+   static var mMade = new Hash<Bool>();
+	static public function make(inDir:String)
+	{
+	   var parts = inDir.split("/");
+		var total = "";
+		for(part in parts)
+		{
+		   if (total!="") total+="/";
+			total += part;
+			if (!mMade.exists(total))
+			{
+			   mMade.set(total,true);
+				if (!neko.FileSystem.exists(total))
+				   neko.FileSystem.createDirectory(total);
+			}
+		}
+	}
+}
 
 class Compiler
 {
-   var mFlags : Array<String>;
-   var mCFlags : Array<String>;
-   var mCPPFlags : Array<String>;
-   var mExe:String;
-   var mOutFlag:String;
-   var mObjDir:String;
+   public var mFlags : Array<String>;
+   public var mCFlags : Array<String>;
+   public var mCPPFlags : Array<String>;
+   public var mExe:String;
+   public var mOutFlag:String;
+   public var mObjDir:String;
+   public var mExt:String;
 
-   public function new()
+   public function new(inExe:String)
    {
       mFlags = [];
       mCFlags = [];
       mCPPFlags = [];
       mObjDir = "obj";
       mOutFlag = "-o";
-      mExe = "";
+      mExe = inExe;
+      mExt = ".o";
+   }
+
+	public function compile(inFile:File)
+	{
+	   var path = new neko.io.Path(mObjDir + "/" + inFile.mName);
+		var obj_name = path.dir + "/" + path.file + mExt;
+		DirManager.make(path.dir);
+
+		if (!inFile.isOutOfDate(obj_name))
+		   return;
+
+		var args = mFlags.concat(inFile.mCompilerFlags);
+
+		if (path.ext.toLowerCase()=="c")
+		   args = args.concat(mCFlags);
+		else
+		   args = args.concat(mCPPFlags);
+
+		args.push( (new neko.io.Path(inFile.mDir + "/" + inFile.mName)).toString() );
+
+		var out = mOutFlag;
+		if (out.substr(-1)==" ")
+		{
+		   args.push(out);
+			out = "";
+		}
+		args.push(out + obj_name);
+		neko.Lib.println( mExe + " " + args.join(" ") );
+		var result = neko.Sys.command( mExe, args );
+		if (result!=0)
+		   throw "Error : " + result + " - build aborted";
+	}
+}
+
+
+class Linker
+{
+   public var mExe:String;
+   public var mFlags : Array<String>;
+   public var mOutFlag:String;
+
+   public function new(inExe:String)
+   {
+      mFlags = [];
+      mOutFlag = "-o";
+      mExe = inExe;
    }
 }
 
+class File
+{
+   public function new(inName:String, inDir:String, inDepends:Array<String>, inFlags:Array<String>)
+   {
+      mName = inName;
+		mDir = inDir;
+		mDepends = inDepends.copy();
+		mCompilerFlags = inFlags.copy();
+   }
+	public function isOutOfDate(inObj:String)
+	{
+	   if (!neko.FileSystem.exists(inObj))
+		   return true;
+		var obj_stamp = neko.FileSystem.stat(inObj).mtime.getTime();
+		var source_name = mDir+"/"+mName;
+	   if (!neko.FileSystem.exists(source_name))
+			throw "Could not find source '" + source_name + "'";
+		var source_stamp = neko.FileSystem.stat(source_name).mtime.getTime();
+		if (obj_stamp < source_stamp)
+		   return true;
+		for(depend in mDepends)
+		{
+	      if (!neko.FileSystem.exists(depend))
+			   throw "Could not find dependency '" + depend + "' for '" + mName + "'";
+		   if (neko.FileSystem.stat(depend).mtime.getTime() > obj_stamp )
+			   return true;
+		}
+	   return false;
+	}
+   public var mName:String;
+   public var mDir:String;
+   public var mDepends:Array<String>;
+   public var mCompilerFlags:Array<String>;
+}
+
+typedef FileGroup = Array<File>;
+
+typedef FileGroups = Hash<FileGroup>;
+
+class Target
+{
+   public function new(inOutput:String, inTool:String)
+	{
+	   mOutput = inOutput;
+		mTool = inTool;
+		mFiles = [];
+		mDynamicLibs = [];
+		mStaticLibs = [];
+		mSubTargets = [];
+	}
+	public function link(inLinker:Linker)
+	{
+	}
+	public function addFiles(inFiles:FileGroup)
+	{
+	   mFiles = mFiles.concat(inFiles);
+	}
+   public var mOutput:String;
+	public var mTool:String;
+	public var mFiles:Array<File>;
+	public var mSubTargets:Array<String>;
+	public var mDynamicLibs:Array<String>;
+	public var mStaticLibs:Array<String>;
+}
+
+typedef Targets = Hash<Target>;
+
 class BuildTool
 {
-   var mTargets : Array<String>;
    var mDefines : Hash<String>;
-   var mCompilers : Hash<Compiler>;
+   var mCompiler : Compiler;
+   var mLinker : Linker;
+	var mFileGroups : FileGroups;
+	var mTargets : Targets;
 
 
-   public function new(inMakefile:String,inTargets:Array<String>,inDefines:Hash<String>)
+   public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>)
    {
-      mTargets = inTargets;
       mDefines = inDefines;
-      mCompilers = new Hash<Compiler>();
+		mFileGroups = new FileGroups();
+      mCompiler = null;
+		mTargets = new Targets();
       var make_contents = neko.io.File.getContent(inMakefile);
       var xml_slow = Xml.parse(make_contents);
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
@@ -40,7 +178,6 @@ class BuildTool
       {
          if (valid(el))
          {
-            trace(el.name);
             switch(el.name)
             {
                 case "set" : 
@@ -48,19 +185,125 @@ class BuildTool
                    var value = substitute(el.att.value);
                    mDefines.set(name,value);
                 case "compiler" : 
-                   var id = el.att.id;
-                   mCompilers.set(id,createCompiler(el));
+                   if (mCompiler!=null)
+                   	 throw "Only one compiler may be set";
+                   mCompiler = createCompiler(el);
+                case "linker" : 
+                   if (mLinker!=null)
+                   	 throw "Only one linker may be set";
+                   mLinker = createLinker(el);
+                case "files" : 
+                   var name = el.att.id;
+                   mFileGroups.set(name,createFiles(el));
+                case "target" : 
+                   var name = el.att.id;
+                   mTargets.set(name,createTarget(el));
             }
          }
       }
+
+		for(target in inTargets)
+		   buildTarget(target);
    }
 
-   public function createCompiler(inEl:haxe.xml.Fast) : Compiler
+	public function buildTarget(inTarget:String)
+	{
+	   neko.Lib.println("Building " + inTarget + "...");
+	   if (!mTargets.exists(inTarget))
+		   throw "Could not find target '" + inTarget + "' to build.";
+      var target = mTargets.get(inTarget);
+	   for(sub in target.mSubTargets)
+	      buildTarget(sub);
+
+		for(file in target.mFiles)
+		   mCompiler.compile(file);
+
+      switch(target.mTool)
+		{
+		   case "linker": target.link(mLinker);
+		}
+	   neko.Lib.println("Built " + inTarget);
+	}
+
+   public function createCompiler(inXML:haxe.xml.Fast) : Compiler
    {
-      var c = new Compiler();
+      var c = new Compiler(inXML.att.exe);
+      for(el in inXML.elements)
+      {
+         if (valid(el))
+            switch(el.name)
+            {
+                case "flag" : c.mFlags.push(substitute(el.att.value));
+                case "cflag" : c.mCFlags.push(substitute(el.att.value));
+                case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
+                case "objdir" : c.mObjDir = substitute((el.att.value));
+                case "outflag" : c.mOutFlag = substitute((el.att.value));
+                case "ext" : c.mExt = substitute((el.att.value));
+            }
+      }
 
       return c;
    }
+
+   public function createLinker(inXML:haxe.xml.Fast) : Linker
+   {
+      var l = new Linker(inXML.att.exe);
+      for(el in inXML.elements)
+      {
+         if (valid(el))
+            switch(el.name)
+            {
+                case "flag" : l.mFlags.push(substitute(el.att.value));
+            }
+      }
+
+      return l;
+   }
+
+   public function createFiles(inXML:haxe.xml.Fast) : FileGroup
+   {
+	   var files = new FileGroup();
+		var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
+		var depends = new Array<String>();
+		var flags = new Array<String>();
+      for(el in inXML.elements)
+      {
+         if (valid(el))
+            switch(el.name)
+            {
+                case "file" : files.push( new File(substitute(el.att.name),dir,depends,flags) );
+                case "depend" : depends.push( substitute(el.att.name) );
+                case "compilerflag" : flags.push( substitute(el.att.value) );
+            }
+      }
+
+      return files;
+   }
+
+
+   public function createTarget(inXML:haxe.xml.Fast) : Target
+   {
+      var output = inXML.has.output ? inXML.att.output : "";
+      var tool = inXML.has.tool ? inXML.att.tool : "";
+		var target = new Target(output,tool);
+      for(el in inXML.elements)
+      {
+         if (valid(el))
+            switch(el.name)
+            {
+                case "target" : target.mSubTargets.push( substitute(el.att.id) );
+                case "dynamiclib" : target.mDynamicLibs.push( substitute(el.att.name) );
+                case "staticlib" : target.mStaticLibs.push( substitute(el.att.name) );
+                case "files" : var id = el.att.id;
+					    if (!mFileGroups.exists(id))
+						    throw "Could not find filegroup " + id; 
+					    target.addFiles( mFileGroups.get(id) );
+            }
+      }
+
+      return target;
+   }
+
 
    public function valid(inEl:haxe.xml.Fast) : Bool
    {
@@ -78,7 +321,7 @@ class BuildTool
       return mDefines.exists(inString);
    }
    
-   static var mVarMatch = ~/\$(\(.*\))/g;
+   static var mVarMatch = new EReg("\\${(.*?)}","");
    public function substitute(str:String) : String
    {
       while( mVarMatch.match(str) )
@@ -86,7 +329,6 @@ class BuildTool
          str = mVarMatch.matchedLeft() + mDefines.get( mVarMatch.matched(1) ) + mVarMatch.matchedRight();
       }
 
-      trace(str);
       return str;
    }
    
@@ -99,7 +341,15 @@ class BuildTool
       var targets = new Array<String>();
       var defines = new Hash<String>();
       var makefile:String="";
-   
+
+      var os = neko.Sys.getEnv("OSTYPE");
+      if ( (new EReg("windows","i")).match(os) )
+         defines.set("windows","windows");
+      else if ( (new EReg("linux","i")).match(os) )
+         defines.set("linux","linux");
+      else if ( (new EReg("darwin","i")).match(os) )
+         defines.set("darwin","darwin");
+
       for(arg in args)
       {
          if (arg.substr(0,2)=="-D")
@@ -109,18 +359,20 @@ class BuildTool
          else
             targets.push(arg);
       }
-   
+
       if (targets.length==0)
+         targets.push("default");
+   
+      if (makefile=="")
       {
-         neko.Lib.println("Usage :  BuildTool makefile.xml -DFLAG1 -DFLAG2 ... target1 target2 ...");
+         neko.Lib.println("Usage :  BuildTool makefile.xml [-DFLAG1] ...  [-DFLAGN] ... [target1]...[targetN]");
       }
       else
       {
          for(env in neko.Sys.environment().keys())
             defines.set(env, neko.Sys.getEnv(env) );
-         new BuildTool(makefile,targets,defines);
+         new BuildTool(makefile,defines,targets);
       }
-   
    }
    
 }

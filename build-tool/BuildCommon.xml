@@ -14,8 +14,7 @@
 
 <set name="IPHONE_VER" value="2.2.1"/>
 
-
-<compiler id="iPhoneOS" name="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0" if="iphoneos">
+<compiler id="iPhoneOS" exe="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0" if="iphoneos">
   <cflag value="-c c"/>
   <cppflag value="-c c++"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
@@ -34,9 +33,129 @@
   <flag value="-gdwarf-2"/>
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
-  <outflag value="-o"/>
+  <outflag value="-o "/>
+  <ext value=".o"/>
   <objdir value="obj/iphoneos/" unless="debug"/>
   <objdir value="obj/iphoneos-dbg/" if="debug"/>
 </compiler>
 
+<compiler id="MSVC" exe="cl.exe" if="windows">
+  <flag value="-nologo"/>
+  <flag value="-Od" if="debug"/>
+  <flag value="-O2" unless="debug"/>
+  <flag value="-GR"/>
+  <flag value="-Zi"/>
+  <flag value="-c"/>
+  <flag value="-EHsc"/>
+  <flag value="-I${HXCPP}/include"/>
+  <outflag value="-Fo"/>
+  <ext value=".obj"/>
+  <objdir value="obj/Debug" if="debug"/>
+  <objdir value="obj/Release" unless="debug"/>
+</compiler>
+
+<linker exe="link.exe" if="windows">
+  <flag value="-nologo"/>
+  <flag value="-debug" if="debug"/>
+  <flag value="-libpath:${HXCPP}\bin\Windows"/>
+  <outflag value="-out:"/>
+</linker>
+
+<set name="GC_DIR" value="thirdparty/gc-7.1"/>
+<set name="AO_VERSION" value="1.2"/>
+
+<files id="runtime" dir="${HXCPP}">
+  <depend name="${HXCPP}/include/hxMacros.h"/>
+  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/hxMath.h"/>
+  <depend name="${HXCPP}/include/neko.h"/>
+
+  <compilerflag value="-DBUILDING_HXCPP_DLL"/>
+  <compilerflag value="-DNEKO_SOURCES"/>
+  <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
+  <compilerflag value="-DALL_INTERIOR_POINTERS"/>
+  <compilerflag value="-DGC_NOT_DLL"/>
+  <compilerflag value="-DCPU" if="windows"/>
+  <compilerflag value="-DMY_CPU" if="windows"/>
+  <compilerflag value="-DX86" if="windows"/>
+  <compilerflag value="-DGC_WIN32_THREADS" if="windows"/>
+
+  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
+  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
+  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
+
+  <file name = "runtime/src/hxObject.cpp"/>
+  <file name = "runtime/src/hxDate.cpp"/>
+  <file name = "runtime/src/hxGC.cpp"/>
+  <file name = "runtime/src/hxHash.cpp"/>
+  <file name = "runtime/src/hxLib.cpp"/>
+  <file name = "runtime/src/hxNekoAPI.cpp"/>
+
+
+  <file name="runtime/${GC_DIR}/win32_threads.c"/>
+  <file name="runtime/${GC_DIR}/allchblk.c"/>
+  <file name="runtime/${GC_DIR}/alloc.c"/>
+  <file name="runtime/${GC_DIR}/backgraph.c"/>
+  <file name="runtime/${GC_DIR}/blacklst.c"/>
+  <file name="runtime/${GC_DIR}/checksums.c"/>
+  <file name="runtime/${GC_DIR}/dbg_mlc.c"/>
+  <file name="runtime/${GC_DIR}/dyn_load.c"/>
+  <file name="runtime/${GC_DIR}/finalize.c"/>
+  <file name="runtime/${GC_DIR}/gc_dlopen.c"/>
+  <file name="runtime/${GC_DIR}/gcj_mlc.c"/>
+  <file name="runtime/${GC_DIR}/gcname.c"/>
+  <file name="runtime/${GC_DIR}/headers.c"/>
+  <file name="runtime/${GC_DIR}/mach_dep.c"/>
+  <file name="runtime/${GC_DIR}/malloc.c"/>
+  <file name="runtime/${GC_DIR}/mallocx.c"/>
+  <file name="runtime/${GC_DIR}/mark.c"/>
+  <file name="runtime/${GC_DIR}/mark_rts.c"/>
+  <file name="runtime/${GC_DIR}/misc.c"/>
+  <file name="runtime/${GC_DIR}/msvc_dbg.c"/>
+  <file name="runtime/${GC_DIR}/new_hblk.c"/>
+  <file name="runtime/${GC_DIR}/obj_map.c"/>
+  <file name="runtime/${GC_DIR}/os_dep.c"/>
+  <file name="runtime/${GC_DIR}/pcr_interface.c"/>
+  <file name="runtime/${GC_DIR}/ptr_chck.c"/>
+  <file name="runtime/${GC_DIR}/real_malloc.c"/>
+  <file name="runtime/${GC_DIR}/reclaim.c"/>
+  <file name="runtime/${GC_DIR}/specific.c"/>
+  <file name="runtime/${GC_DIR}/stubborn.c"/>
+  <file name="runtime/${GC_DIR}/thread_local_alloc.c"/>
+  <file name="runtime/${GC_DIR}/typd_mlc.c"/>
+
+
+
+</files>
+
+<target id="runtime" output="hxcpp" tool="linker">
+  <files id="runtime"/>
+</target>
+
+<files id="std" dir="${HXCPP}">
+</files>
+
+<target id="std" output="std" tool="linker">
+  <files id="std"/>
+  <dynamiclib name="hxcpp"/>
+</target>
+
+
+<target id="default">
+   <target id="runtime"/>
+	<!--
+   <target id="std"/>
+   <target id="regex"/>
+   <target id="zlib"/>
+	-->
+</target>
+
+
+<target id="clean" tool="clean">
+  <dir name="obj"/>
+</target>
+
+
 </xml>
+
+
