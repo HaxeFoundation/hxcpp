@@ -48,7 +48,7 @@ class Compiler
 		DirManager.make(path.dir);
 
 		if (!inFile.isOutOfDate(obj_name))
-		   return;
+		   return obj_name;
 
 		var args = mFlags.concat(inFile.mCompilerFlags);
 
@@ -69,7 +69,8 @@ class Compiler
 		neko.Lib.println( mExe + " " + args.join(" ") );
 		var result = neko.Sys.command( mExe, args );
 		if (result!=0)
-		   throw "Error : " + result + " - build aborted";
+		   throw "Error : " + result + " - build cancelled";
+		return obj_name;
 	}
 }
 
@@ -79,13 +80,51 @@ class Linker
    public var mExe:String;
    public var mFlags : Array<String>;
    public var mOutFlag:String;
+   public var mExt:String;
+   public var mNamePrefix:String;
 
    public function new(inExe:String)
    {
       mFlags = [];
       mOutFlag = "-o";
       mExe = inExe;
+		mNamePrefix = "";
    }
+	public function link(inTarget:Target,inObjs:Array<String>)
+	{
+		var out_name = mNamePrefix + inTarget.mOutput + mExt;
+		if (isOutOfDate(out_name,inObjs))
+		{
+			var args = new Array<String>();
+			var out = mOutFlag;
+			if (out.substr(-1)==" ")
+			{
+				args.push(out);
+				out = "";
+			}
+			args.push(out + out_name);
+			args = args.concat(mFlags).concat(inTarget.mLibs).concat(inTarget.mFlags).concat(inObjs);
+
+			neko.Lib.println( mExe + " " + args.join(" ") );
+			var result = neko.Sys.command( mExe, args );
+			if (result!=0)
+				throw "Error : " + result + " - build cancelled";
+		}
+	}
+	function isOutOfDate(inName:String, inObjs:Array<String>)
+	{
+	   if (!neko.FileSystem.exists(inName))
+		   return true;
+		var stamp = neko.FileSystem.stat(inName).mtime.getTime();
+		for(obj in inObjs)
+		{
+		   if (!neko.FileSystem.exists(obj))
+			   throw "Could not find " + obj + " required by " + inName;
+		   if (neko.FileSystem.stat(inName).mtime.getTime()>stamp)
+			   return true;
+		}
+		return false;
+	}
 }
 
 class File
@@ -134,12 +173,10 @@ class Target
 	   mOutput = inOutput;
 		mTool = inTool;
 		mFiles = [];
-		mDynamicLibs = [];
-		mStaticLibs = [];
+		mLibs = [];
+		mFlags = [];
 		mSubTargets = [];
-	}
-	public function link(inLinker:Linker)
-	{
+		mFlags = [];
 	}
 	public function addFiles(inFiles:FileGroup)
 	{
@@ -149,8 +186,8 @@ class Target
 	public var mTool:String;
 	public var mFiles:Array<File>;
 	public var mSubTargets:Array<String>;
-	public var mDynamicLibs:Array<String>;
-	public var mStaticLibs:Array<String>;
+	public var mLibs:Array<String>;
+	public var mFlags:Array<String>;
 }
 
 typedef Targets = Hash<Target>;
@@ -215,12 +252,13 @@ class BuildTool
 	   for(sub in target.mSubTargets)
 	      buildTarget(sub);
 
+      var objs = new Array<String>();
 		for(file in target.mFiles)
-		   mCompiler.compile(file);
+		   objs.push( mCompiler.compile(file) );
 
       switch(target.mTool)
 		{
-		   case "linker": target.link(mLinker);
+		   case "linker": mLinker.link(target,objs);
 		}
 	   neko.Lib.println("Built " + inTarget);
 	}
@@ -254,6 +292,8 @@ class BuildTool
             switch(el.name)
             {
                 case "flag" : l.mFlags.push(substitute(el.att.value));
+                case "ext" : l.mExt = (substitute(el.att.value));
+                case "outflag" : l.mOutFlag = (substitute(el.att.value));
             }
       }
 
@@ -283,7 +323,7 @@ class BuildTool
 
    public function createTarget(inXML:haxe.xml.Fast) : Target
    {
-      var output = inXML.has.output ? inXML.att.output : "";
+      var output = inXML.has.output ? substitute(inXML.att.output) : "";
       var tool = inXML.has.tool ? inXML.att.tool : "";
 		var target = new Target(output,tool);
       for(el in inXML.elements)
@@ -292,8 +332,8 @@ class BuildTool
             switch(el.name)
             {
                 case "target" : target.mSubTargets.push( substitute(el.att.id) );
-                case "dynamiclib" : target.mDynamicLibs.push( substitute(el.att.name) );
-                case "staticlib" : target.mStaticLibs.push( substitute(el.att.name) );
+                case "lib" : target.mLibs.push( substitute(el.att.name) );
+                case "flag" : target.mFlags.push( substitute(el.att.value) );
                 case "files" : var id = el.att.id;
 					    if (!mFileGroups.exists(id))
 						    throw "Could not find filegroup " + id; 

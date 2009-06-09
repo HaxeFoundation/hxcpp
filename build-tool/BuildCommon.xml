@@ -48,6 +48,8 @@
   <flag value="-c"/>
   <flag value="-EHsc"/>
   <flag value="-I${HXCPP}/include"/>
+  <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
+  <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
   <objdir value="obj/Debug" if="debug"/>
@@ -56,8 +58,10 @@
 
 <linker exe="link.exe" if="windows">
   <flag value="-nologo"/>
+  <flag value="-machine:x86"/>
   <flag value="-debug" if="debug"/>
   <flag value="-libpath:${HXCPP}\bin\Windows"/>
+  <ext value=".dll"/>
   <outflag value="-out:"/>
 </linker>
 
@@ -78,7 +82,6 @@
   <compilerflag value="-DCPU" if="windows"/>
   <compilerflag value="-DMY_CPU" if="windows"/>
   <compilerflag value="-DX86" if="windows"/>
-  <compilerflag value="-DGC_WIN32_THREADS" if="windows"/>
 
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
@@ -123,31 +126,125 @@
   <file name="runtime/${GC_DIR}/stubborn.c"/>
   <file name="runtime/${GC_DIR}/thread_local_alloc.c"/>
   <file name="runtime/${GC_DIR}/typd_mlc.c"/>
-
-
-
 </files>
 
 <target id="runtime" output="hxcpp" tool="linker">
   <files id="runtime"/>
+  <staticlib name="user32.lib"/>
 </target>
 
+
 <files id="std" dir="${HXCPP}">
+  <depend name="${HXCPP}/include/hxMacros.h"/>
+  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/neko.h"/>
+
+  <file name="runtime/libs/std/Sys.cpp"/>
+  <file name="runtime/libs/std/Thread.cpp"/>
+  <file name="runtime/libs/std/Xml.cpp"/>
+  <file name="runtime/libs/std/Process.cpp"/>
+  <file name="runtime/libs/std/Random.cpp"/>
+  <file name="runtime/libs/std/Socket.cpp"/>
+  <file name="runtime/libs/std/String.cpp"/>
+  <file name="runtime/libs/std/File.cpp"/>
+  <file name="runtime/libs/std/Init.cpp"/>
+  <file name="runtime/libs/std/Misc.cpp"/>
+
 </files>
+
+
 
 <target id="std" output="std" tool="linker">
   <files id="std"/>
-  <dynamiclib name="hxcpp"/>
+  <flag value="-dll"/>
+  <lib name="hxcpp.lib"/>
+  <lib name="wsock32.lib"/>
+</target>
+
+<set name="PCRE_DIR" value="runtime/thirdparty/pcre-7.8"/>
+
+<files id="regexp" dir="${HXCPP}">
+  <depend name="${HXCPP}/include/hxMacros.h"/>
+  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/neko.h"/>
+
+  <compilerflag value="-DPCRE_STATIC"/>
+  <compilerflag value="-I${HXCPP}/${PCRE_DIR}"/>
+
+  <file name="runtime/libs/regexp/RegExp.cpp"/>
+
+  <file name="${PCRE_DIR}/pcre_get.c"/>
+  <file name="${PCRE_DIR}/pcre_study.c"/>
+  <file name="${PCRE_DIR}/pcre_chartables.c"/>
+  <file name="${PCRE_DIR}/pcre_globals.c"/>
+  <file name="${PCRE_DIR}/pcre_tables.c"/>
+  <file name="${PCRE_DIR}/pcre_compile.c"/>
+  <file name="${PCRE_DIR}/pcre_info.c"/>
+  <file name="${PCRE_DIR}/pcre_try_flipped.c"/>
+  <file name="${PCRE_DIR}/pcre_config.c"/>
+  <file name="${PCRE_DIR}/pcre_maketables.c"/>
+  <file name="${PCRE_DIR}/pcre_ucd.c"/>
+  <file name="${PCRE_DIR}/pcre_dfa_exec.c"/>
+  <file name="${PCRE_DIR}/pcre_newline.c"/>
+  <file name="${PCRE_DIR}/pcre_valid_utf8.c"/>
+  <file name="${PCRE_DIR}/pcre_exec.c"/>
+  <file name="${PCRE_DIR}/pcre_ord2utf8.c"/>
+  <file name="${PCRE_DIR}/pcre_version.c"/>
+  <file name="${PCRE_DIR}/pcre_fullinfo.c"/>
+  <file name="${PCRE_DIR}/pcre_refcount.c"/>
+  <file name="${PCRE_DIR}/pcre_xclass.c"/>
+
+</files>
+
+
+
+<target id="regexp" output="regexp" tool="linker">
+  <files id="regexp"/>
+  <flag value="-dll"/>
+  <lib name="hxcpp.lib"/>
+</target>
+
+<set name="ZLIB_DIR" value="runtime/thirdparty/zlib-1.2.3"/>
+
+<files id="zlib" dir="${HXCPP}">
+  <depend name="${HXCPP}/include/hxMacros.h"/>
+  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/neko.h"/>
+
+  <compilerflag value="-I${HXCPP}/${ZLIB_DIR}"/>
+
+  <file name="runtime/libs/zlib/ZLib.cpp"/>
+
+  <file name="${ZLIB_DIR}/adler32.c"/>
+  <file name="${ZLIB_DIR}/crc32.c"/>
+  <file name="${ZLIB_DIR}/infback.c"/>
+  <file name="${ZLIB_DIR}/inflate.c"/>
+  <file name="${ZLIB_DIR}/uncompr.c"/>
+  <file name="${ZLIB_DIR}/compress.c"/>
+  <file name="${ZLIB_DIR}/deflate.c"/>
+  <file name="${ZLIB_DIR}/gzio.c"/>
+  <file name="${ZLIB_DIR}/inffast.c"/>
+  <file name="${ZLIB_DIR}/inftrees.c"/>
+  <file name="${ZLIB_DIR}/trees.c"/>
+  <file name="${ZLIB_DIR}/zutil.c"/>
+
+</files>
+
+
+
+
+<target id="zlib" output="zlib" tool="linker">
+  <files id="zlib"/>
+  <flag value="-dll"/>
+  <lib name="hxcpp.lib"/>
 </target>
 
 
 <target id="default">
    <target id="runtime"/>
-	<!--
    <target id="std"/>
-   <target id="regex"/>
+   <target id="regexp"/>
    <target id="zlib"/>
-	-->
 </target>
 
 
