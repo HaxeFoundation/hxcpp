@@ -43,6 +43,8 @@
   <flag value="-nologo"/>
   <flag value="-Od" if="debug"/>
   <flag value="-O2" unless="debug"/>
+  <flag value="-MTd" if="debug"/>
+  <flag value="-MT" unless="debug"/>
   <flag value="-GR"/>
   <flag value="-Zi"/>
   <flag value="-c"/>
@@ -56,14 +58,25 @@
   <objdir value="obj/Release" unless="debug"/>
 </compiler>
 
-<linker exe="link.exe" if="windows">
+<linker id="dll" exe="link.exe" if="windows">
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
+  <flag value="-dll"/>
   <flag value="-debug" if="debug"/>
-  <flag value="-libpath:${HXCPP}\bin\Windows"/>
   <ext value=".dll"/>
   <outflag value="-out:"/>
 </linker>
+
+<linker id="exe" exe="link.exe" if="windows">
+  <flag value="-nologo"/>
+  <flag value="-machine:x86"/>
+  <flag value="-debug" if="debug"/>
+  <ext value=".exe"/>
+  <outflag value="-out:"/>
+</linker>
+
+
+<set name="STD_MODULE_LINK" value="dll"/>
 
 <set name="GC_DIR" value="thirdparty/gc-7.1"/>
 <set name="AO_VERSION" value="1.2"/>
@@ -82,6 +95,7 @@
   <compilerflag value="-DCPU" if="windows"/>
   <compilerflag value="-DMY_CPU" if="windows"/>
   <compilerflag value="-DX86" if="windows"/>
+  <compilerflag value="-DWIN32_THREADS" if="windows"/>
 
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
@@ -128,9 +142,9 @@
   <file name="runtime/${GC_DIR}/typd_mlc.c"/>
 </files>
 
-<target id="runtime" output="hxcpp" tool="linker">
+<target id="runtime" output="hxcpp" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="runtime"/>
-  <staticlib name="user32.lib"/>
+  <lib name="user32.lib"/>
 </target>
 
 
@@ -154,7 +168,7 @@
 
 
 
-<target id="std" output="std" tool="linker">
+<target id="std" output="std" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="std"/>
   <flag value="-dll"/>
   <lib name="hxcpp.lib"/>
@@ -198,7 +212,7 @@
 
 
 
-<target id="regexp" output="regexp" tool="linker">
+<target id="regexp" output="regexp" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="regexp"/>
   <flag value="-dll"/>
   <lib name="hxcpp.lib"/>
@@ -233,7 +247,7 @@
 
 
 
-<target id="zlib" output="zlib" tool="linker">
+<target id="zlib" output="zlib" tool="linker" toolid="dll">
   <files id="zlib"/>
   <flag value="-dll"/>
   <lib name="hxcpp.lib"/>
@@ -250,6 +264,15 @@
 
 <target id="clean" tool="clean">
   <dir name="obj"/>
+</target>
+
+<set name="DBG" value="-debug" if="debug"/>
+
+<target id="haxe" tool="linker" toolid="exe" output="${HAXE_OUTPUT}${DBG}">
+  <target id="default"/>
+  <files id="haxe"/>
+  <files id="__main__"/>
+  <lib name="hxcpp.lib"/>
 </target>
 
 

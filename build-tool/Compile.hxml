@@ -1,8 +1,2 @@
--neko run.n
+-neko ../run.n
 -main BuildTool
-
-# --next
-# -cpp cpp
-# -main BuildTool
-# --remap neko:cpp
-# -cp /Users/hugh/dev/code.google/haxe-cvs/haxe/std
