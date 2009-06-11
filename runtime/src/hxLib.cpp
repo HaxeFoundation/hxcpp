@@ -225,6 +225,10 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #endif
 #endif
 
+#ifdef HXCPP_DEBUG
+   ext = String(L"-debug",6) + ext;
+#endif
+
 
    String full_name = inPrim;
    switch(inArgCount)

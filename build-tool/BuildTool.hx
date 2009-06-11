@@ -82,6 +82,7 @@ class Linker
    public var mOutFlag:String;
    public var mExt:String;
    public var mNamePrefix:String;
+   public var mLibDir:String;
 
    public function new(inExe:String)
    {
@@ -89,6 +90,7 @@ class Linker
       mOutFlag = "-o";
       mExe = inExe;
 		mNamePrefix = "";
+		mLibDir = "";
    }
 	public function link(inTarget:Target,inObjs:Array<String>)
 	{
@@ -102,13 +104,27 @@ class Linker
 				args.push(out);
 				out = "";
 			}
-			args.push(out + out_name);
+			// Build in temp dir, and then move out so all the crap windows
+			//  creates stays out of the way
+			if (mLibDir!="")
+			{
+			   DirManager.make(mLibDir);
+			   args.push(out + mLibDir + "/" + out_name);
+			}
+			else
+			   args.push(out + out_name);
 			args = args.concat(mFlags).concat(inTarget.mLibs).concat(inTarget.mFlags).concat(inObjs);
 
 			neko.Lib.println( mExe + " " + args.join(" ") );
 			var result = neko.Sys.command( mExe, args );
 			if (result!=0)
 				throw "Error : " + result + " - build cancelled";
+
+			if (mLibDir!="")
+			{
+			   neko.io.File.copy( mLibDir+"/"+out_name, out_name );
+			   neko.FileSystem.deleteFile( mLibDir+"/"+out_name );
+			}
 		}
 	}
 	function isOutOfDate(inName:String, inObjs:Array<String>)
@@ -310,6 +326,7 @@ class BuildTool
                 case "flag" : l.mFlags.push(substitute(el.att.value));
                 case "ext" : l.mExt = (substitute(el.att.value));
                 case "outflag" : l.mOutFlag = (substitute(el.att.value));
+                case "libdir" : l.mLibDir = (substitute(el.att.value));
             }
       }
 
@@ -388,7 +405,9 @@ class BuildTool
    {
       while( mVarMatch.match(str) )
       {
-         str = mVarMatch.matchedLeft() + mDefines.get( mVarMatch.matched(1) ) + mVarMatch.matchedRight();
+         var sub = mDefines.get( mVarMatch.matched(1) );
+			if (sub==null) sub="";
+         str = mVarMatch.matchedLeft() + sub + mVarMatch.matchedRight();
       }
 
       return str;

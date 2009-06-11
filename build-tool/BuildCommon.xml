@@ -1,5 +1,7 @@
 <xml>
 
+<set name="DBG" value="-debug" if="debug"/>
+
 <compiler id="Linuxgcc" name="g++" if="linux">
   <compilerarg value="-g" if="debug"/>
   <compilerarg value="-Wall"/>
@@ -28,7 +30,8 @@
   <flag value="-fasm-blocks"/>
   <flag value="-Wreturn-type"/>
   <flag value="-Wunused-variable"/>
-  <flag value="-isysroot /Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
+  <flag value="-isysroot"/>
+  <flag value="/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-gdwarf-2"/>
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
@@ -64,6 +67,8 @@
   <flag value="-dll"/>
   <flag value="-debug" if="debug"/>
   <ext value=".dll"/>
+  <libdir value="lib"/>
+  <flag value="-libpath:lib"/>
   <outflag value="-out:"/>
 </linker>
 
@@ -71,6 +76,7 @@
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
   <flag value="-debug" if="debug"/>
+  <flag value="-libpath:lib"/>
   <ext value=".exe"/>
   <outflag value="-out:"/>
 </linker>
@@ -96,6 +102,7 @@
   <compilerflag value="-DMY_CPU" if="windows"/>
   <compilerflag value="-DX86" if="windows"/>
   <compilerflag value="-DWIN32_THREADS" if="windows"/>
+  <compilerflag value="-DHXCPP_DEBUG" if="debug"/>
 
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
@@ -142,7 +149,7 @@
   <file name="runtime/${GC_DIR}/typd_mlc.c"/>
 </files>
 
-<target id="runtime" output="hxcpp" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="runtime" output="hxcpp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="runtime"/>
   <lib name="user32.lib"/>
 </target>
@@ -168,10 +175,10 @@
 
 
 
-<target id="std" output="std" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="std" output="std${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="std"/>
   <flag value="-dll"/>
-  <lib name="hxcpp.lib"/>
+  <lib name="hxcpp${DBG}.lib"/>
   <lib name="wsock32.lib"/>
 </target>
 
@@ -212,10 +219,10 @@
 
 
 
-<target id="regexp" output="regexp" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="regexp" output="regexp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="regexp"/>
   <flag value="-dll"/>
-  <lib name="hxcpp.lib"/>
+  <lib name="hxcpp${DBG}.lib"/>
 </target>
 
 <set name="ZLIB_DIR" value="runtime/thirdparty/zlib-1.2.3"/>
@@ -247,10 +254,10 @@
 
 
 
-<target id="zlib" output="zlib" tool="linker" toolid="dll">
+<target id="zlib" output="zlib${DBG}" tool="linker" toolid="dll">
   <files id="zlib"/>
   <flag value="-dll"/>
-  <lib name="hxcpp.lib"/>
+  <lib name="hxcpp${DBG}.lib"/>
 </target>
 
 
@@ -266,13 +273,12 @@
   <dir name="obj"/>
 </target>
 
-<set name="DBG" value="-debug" if="debug"/>
 
 <target id="haxe" tool="linker" toolid="exe" output="${HAXE_OUTPUT}${DBG}">
   <target id="default"/>
   <files id="haxe"/>
   <files id="__main__"/>
-  <lib name="hxcpp.lib"/>
+  <lib name="hxcpp${DBG}.lib"/>
 </target>
 
 
