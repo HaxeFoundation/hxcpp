@@ -2,22 +2,22 @@
 class DirManager
 {
    static var mMade = new Hash<Bool>();
-	static public function make(inDir:String)
-	{
-	   var parts = inDir.split("/");
-		var total = "";
-		for(part in parts)
-		{
-		   if (total!="") total+="/";
-			total += part;
-			if (!mMade.exists(total))
-			{
-			   mMade.set(total,true);
-				if (!neko.FileSystem.exists(total))
-				   neko.FileSystem.createDirectory(total);
-			}
-		}
-	}
+   static public function make(inDir:String)
+   {
+      var parts = inDir.split("/");
+      var total = "";
+      for(part in parts)
+      {
+         if (total!="") total+="/";
+         total += part;
+         if (!mMade.exists(total))
+         {
+            mMade.set(total,true);
+            if (!neko.FileSystem.exists(total))
+               neko.FileSystem.createDirectory(total);
+         }
+      }
+   }
 }
 
 class Compiler
@@ -41,37 +41,37 @@ class Compiler
       mExt = ".o";
    }
 
-	public function compile(inFile:File)
-	{
-	   var path = new neko.io.Path(mObjDir + "/" + inFile.mName);
-		var obj_name = path.dir + "/" + path.file + mExt;
-		DirManager.make(path.dir);
+   public function compile(inFile:File)
+   {
+      var path = new neko.io.Path(mObjDir + "/" + inFile.mName);
+      var obj_name = path.dir + "/" + path.file + mExt;
+      DirManager.make(path.dir);
 
-		if (!inFile.isOutOfDate(obj_name))
-		   return obj_name;
+      if (!inFile.isOutOfDate(obj_name))
+         return obj_name;
 
-		var args = mFlags.concat(inFile.mCompilerFlags);
+      var args = mFlags.concat(inFile.mCompilerFlags);
 
-		if (path.ext.toLowerCase()=="c")
-		   args = args.concat(mCFlags);
-		else
-		   args = args.concat(mCPPFlags);
+      if (path.ext.toLowerCase()=="c")
+         args = args.concat(mCFlags);
+      else
+         args = args.concat(mCPPFlags);
 
-		args.push( (new neko.io.Path(inFile.mDir + "/" + inFile.mName)).toString() );
+      args.push( (new neko.io.Path(inFile.mDir + "/" + inFile.mName)).toString() );
 
-		var out = mOutFlag;
-		if (out.substr(-1)==" ")
-		{
-		   args.push(out);
-			out = "";
-		}
-		args.push(out + obj_name);
-		neko.Lib.println( mExe + " " + args.join(" ") );
-		var result = neko.Sys.command( mExe, args );
-		if (result!=0)
-		   throw "Error : " + result + " - build cancelled";
-		return obj_name;
-	}
+      var out = mOutFlag;
+      if (out.substr(-1)==" ")
+      {
+         args.push(out.substr(0,out.length-1));
+         out = "";
+      }
+      args.push(out + obj_name);
+      neko.Lib.println( mExe + " " + args.join(" ") );
+      var result = neko.Sys.command( mExe, args );
+      if (result!=0)
+         throw "Error : " + result + " - build cancelled";
+      return obj_name;
+   }
 }
 
 
@@ -89,59 +89,59 @@ class Linker
       mFlags = [];
       mOutFlag = "-o";
       mExe = inExe;
-		mNamePrefix = "";
-		mLibDir = "";
+      mNamePrefix = "";
+      mLibDir = "";
    }
-	public function link(inTarget:Target,inObjs:Array<String>)
-	{
-		var out_name = mNamePrefix + inTarget.mOutput + mExt;
-		if (isOutOfDate(out_name,inObjs))
-		{
-			var args = new Array<String>();
-			var out = mOutFlag;
-			if (out.substr(-1)==" ")
-			{
-				args.push(out);
-				out = "";
-			}
-			// Build in temp dir, and then move out so all the crap windows
-			//  creates stays out of the way
-			if (mLibDir!="")
-			{
-			   DirManager.make(mLibDir);
-			   args.push(out + mLibDir + "/" + out_name);
-			}
-			else
-			   args.push(out + out_name);
-			args = args.concat(mFlags).concat(inTarget.mLibs).concat(inTarget.mFlags).concat(inObjs);
+   public function link(inTarget:Target,inObjs:Array<String>)
+   {
+      var out_name = mNamePrefix + inTarget.mOutput + mExt;
+      if (isOutOfDate(out_name,inObjs))
+      {
+         var args = new Array<String>();
+         var out = mOutFlag;
+         if (out.substr(-1)==" ")
+         {
+            args.push(out.substr(0,out.length-1));
+            out = "";
+         }
+         // Build in temp dir, and then move out so all the crap windows
+         //  creates stays out of the way
+         if (mLibDir!="")
+         {
+            DirManager.make(mLibDir);
+            args.push(out + mLibDir + "/" + out_name);
+         }
+         else
+            args.push(out + out_name);
+         args = args.concat(mFlags).concat(inTarget.mLibs).concat(inTarget.mFlags).concat(inObjs);
 
-			neko.Lib.println( mExe + " " + args.join(" ") );
-			var result = neko.Sys.command( mExe, args );
-			if (result!=0)
-				throw "Error : " + result + " - build cancelled";
+         neko.Lib.println( mExe + " " + args.join(" ") );
+         var result = neko.Sys.command( mExe, args );
+         if (result!=0)
+            throw "Error : " + result + " - build cancelled";
 
-			if (mLibDir!="")
-			{
-			   neko.io.File.copy( mLibDir+"/"+out_name, out_name );
-			   neko.FileSystem.deleteFile( mLibDir+"/"+out_name );
-			}
-		}
-	}
-	function isOutOfDate(inName:String, inObjs:Array<String>)
-	{
-	   if (!neko.FileSystem.exists(inName))
-		   return true;
-		var stamp = neko.FileSystem.stat(inName).mtime.getTime();
-		for(obj in inObjs)
-		{
-		   if (!neko.FileSystem.exists(obj))
-			   throw "Could not find " + obj + " required by " + inName;
-		   var obj_stamp =  neko.FileSystem.stat(obj).mtime.getTime();
-		   if (obj_stamp > stamp)
-			   return true;
-		}
-		return false;
-	}
+         if (mLibDir!="")
+         {
+            neko.io.File.copy( mLibDir+"/"+out_name, out_name );
+            neko.FileSystem.deleteFile( mLibDir+"/"+out_name );
+         }
+      }
+   }
+   function isOutOfDate(inName:String, inObjs:Array<String>)
+   {
+      if (!neko.FileSystem.exists(inName))
+         return true;
+      var stamp = neko.FileSystem.stat(inName).mtime.getTime();
+      for(obj in inObjs)
+      {
+         if (!neko.FileSystem.exists(obj))
+            throw "Could not find " + obj + " required by " + inName;
+         var obj_stamp =  neko.FileSystem.stat(obj).mtime.getTime();
+         if (obj_stamp > stamp)
+            return true;
+      }
+      return false;
+   }
 }
 
 class File
@@ -149,30 +149,30 @@ class File
    public function new(inName:String, inDir:String, inDepends:Array<String>, inFlags:Array<String>)
    {
       mName = inName;
-		mDir = inDir;
-		mDepends = inDepends.copy();
-		mCompilerFlags = inFlags.copy();
+      mDir = inDir;
+      mDepends = inDepends.copy();
+      mCompilerFlags = inFlags.copy();
    }
-	public function isOutOfDate(inObj:String)
-	{
-	   if (!neko.FileSystem.exists(inObj))
-		   return true;
-		var obj_stamp = neko.FileSystem.stat(inObj).mtime.getTime();
-		var source_name = mDir+"/"+mName;
-	   if (!neko.FileSystem.exists(source_name))
-			throw "Could not find source '" + source_name + "'";
-		var source_stamp = neko.FileSystem.stat(source_name).mtime.getTime();
-		if (obj_stamp < source_stamp)
-		   return true;
-		for(depend in mDepends)
-		{
-	      if (!neko.FileSystem.exists(depend))
-			   throw "Could not find dependency '" + depend + "' for '" + mName + "'";
-		   if (neko.FileSystem.stat(depend).mtime.getTime() > obj_stamp )
-			   return true;
-		}
-	   return false;
-	}
+   public function isOutOfDate(inObj:String)
+   {
+      if (!neko.FileSystem.exists(inObj))
+         return true;
+      var obj_stamp = neko.FileSystem.stat(inObj).mtime.getTime();
+      var source_name = mDir+"/"+mName;
+      if (!neko.FileSystem.exists(source_name))
+         throw "Could not find source '" + source_name + "'";
+      var source_stamp = neko.FileSystem.stat(source_name).mtime.getTime();
+      if (obj_stamp < source_stamp)
+         return true;
+      for(depend in mDepends)
+      {
+         if (!neko.FileSystem.exists(depend))
+            throw "Could not find dependency '" + depend + "' for '" + mName + "'";
+         if (neko.FileSystem.stat(depend).mtime.getTime() > obj_stamp )
+            return true;
+      }
+      return false;
+   }
    public var mName:String;
    public var mDir:String;
    public var mDepends:Array<String>;
@@ -186,27 +186,27 @@ typedef FileGroups = Hash<FileGroup>;
 class Target
 {
    public function new(inOutput:String, inTool:String,inToolID:String)
-	{
-	   mOutput = inOutput;
-		mToolID = inToolID;
-		mTool = inTool;
-		mFiles = [];
-		mLibs = [];
-		mFlags = [];
-		mSubTargets = [];
-		mFlags = [];
-	}
-	public function addFiles(inFiles:FileGroup)
-	{
-	   mFiles = mFiles.concat(inFiles);
-	}
+   {
+      mOutput = inOutput;
+      mToolID = inToolID;
+      mTool = inTool;
+      mFiles = [];
+      mLibs = [];
+      mFlags = [];
+      mSubTargets = [];
+      mFlags = [];
+   }
+   public function addFiles(inFiles:FileGroup)
+   {
+      mFiles = mFiles.concat(inFiles);
+   }
    public var mOutput:String;
-	public var mTool:String;
-	public var mToolID:String;
-	public var mFiles:Array<File>;
-	public var mSubTargets:Array<String>;
-	public var mLibs:Array<String>;
-	public var mFlags:Array<String>;
+   public var mTool:String;
+   public var mToolID:String;
+   public var mFiles:Array<File>;
+   public var mSubTargets:Array<String>;
+   public var mLibs:Array<String>;
+   public var mFlags:Array<String>;
 }
 
 typedef Targets = Hash<Target>;
@@ -217,30 +217,30 @@ class BuildTool
    var mDefines : Hash<String>;
    var mCompiler : Compiler;
    var mLinkers : Linkers;
-	var mFileGroups : FileGroups;
-	var mTargets : Targets;
+   var mFileGroups : FileGroups;
+   var mTargets : Targets;
 
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>)
    {
       mDefines = inDefines;
-		mFileGroups = new FileGroups();
+      mFileGroups = new FileGroups();
       mCompiler = null;
-		mTargets = new Targets();
-		mLinkers = new Linkers();
+      mTargets = new Targets();
+      mLinkers = new Linkers();
       var make_contents = neko.io.File.getContent(inMakefile);
       var xml_slow = Xml.parse(make_contents);
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
 
-		parseXML(xml);
+      parseXML(xml);
 
-		for(target in inTargets)
-		   buildTarget(target);
+      for(target in inTargets)
+         buildTarget(target);
    }
 
 
    function parseXML(inXML:haxe.xml.Fast)
-	{
+   {
       for(el in inXML.elements)
       {
          if (valid(el))
@@ -253,10 +253,10 @@ class BuildTool
                    mDefines.set(name,value);
                 case "compiler" : 
                    if (mCompiler!=null)
-                   	 throw "Only one compiler may be set";
+                       throw "Only one compiler may be set";
                    mCompiler = createCompiler(el);
                 case "linker" : 
-					    mLinkers.set( el.att.id, createLinker(el) );
+                   mLinkers.set( el.att.id, createLinker(el) );
                 case "files" : 
                    var name = el.att.id;
                    mFileGroups.set(name,createFiles(el));
@@ -271,29 +271,32 @@ class BuildTool
             }
          }
       }
-	}
+   }
 
 
-	public function buildTarget(inTarget:String)
-	{
-	   if (!mTargets.exists(inTarget))
-		   throw "Could not find target '" + inTarget + "' to build.";
+   public function buildTarget(inTarget:String)
+   {
+      if (!mTargets.exists(inTarget))
+         throw "Could not find target '" + inTarget + "' to build.";
+      if (mCompiler==null)
+         throw "No compiler defined";
+
       var target = mTargets.get(inTarget);
-	   for(sub in target.mSubTargets)
-	      buildTarget(sub);
+      for(sub in target.mSubTargets)
+         buildTarget(sub);
 
       var objs = new Array<String>();
-		for(file in target.mFiles)
-		   objs.push( mCompiler.compile(file) );
+      for(file in target.mFiles)
+         objs.push( mCompiler.compile(file) );
 
       switch(target.mTool)
-		{
-		   case "linker":
-			   if (!mLinkers.exists(target.mToolID))
-				   throw "Missing linker :\"" + target.mToolID + "\"";
-			   mLinkers.get(target.mToolID).link(target,objs);
-		}
-	}
+      {
+         case "linker":
+            if (!mLinkers.exists(target.mToolID))
+               throw "Missing linker :\"" + target.mToolID + "\"";
+            mLinkers.get(target.mToolID).link(target,objs);
+      }
+   }
 
    public function createCompiler(inXML:haxe.xml.Fast) : Compiler
    {
@@ -335,21 +338,21 @@ class BuildTool
 
    public function createFiles(inXML:haxe.xml.Fast) : FileGroup
    {
-	   var files = new FileGroup();
-		var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
-		var depends = new Array<String>();
-		var flags = new Array<String>();
+      var files = new FileGroup();
+      var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
+      var depends = new Array<String>();
+      var flags = new Array<String>();
       for(el in inXML.elements)
       {
          if (valid(el))
             switch(el.name)
             {
                 case "file" :
-					    var file = new File(substitute(el.att.name),dir,depends,flags);
+                   var file = new File(substitute(el.att.name),dir,depends,flags);
                    for(f in el.elements)
                       if (valid(f) && f.name=="depend")
-							    file.mDepends.push( f.att.name );
-					    files.push( file );
+                         file.mDepends.push( f.att.name );
+                   files.push( file );
                 case "depend" : depends.push( substitute(el.att.name) );
                 case "compilerflag" : flags.push( substitute(el.att.value) );
             }
@@ -364,7 +367,7 @@ class BuildTool
       var output = inXML.has.output ? substitute(inXML.att.output) : "";
       var tool = inXML.has.tool ? inXML.att.tool : "";
       var toolid = inXML.has.toolid ? substitute(inXML.att.toolid) : "";
-		var target = new Target(output,tool,toolid);
+      var target = new Target(output,tool,toolid);
       for(el in inXML.elements)
       {
          if (valid(el))
@@ -374,9 +377,9 @@ class BuildTool
                 case "lib" : target.mLibs.push( substitute(el.att.name) );
                 case "flag" : target.mFlags.push( substitute(el.att.value) );
                 case "files" : var id = el.att.id;
-					    if (!mFileGroups.exists(id))
-						    throw "Could not find filegroup " + id; 
-					    target.addFiles( mFileGroups.get(id) );
+                   if (!mFileGroups.exists(id))
+                      throw "Could not find filegroup " + id; 
+                   target.addFiles( mFileGroups.get(id) );
             }
       }
 
@@ -406,7 +409,7 @@ class BuildTool
       while( mVarMatch.match(str) )
       {
          var sub = mDefines.get( mVarMatch.matched(1) );
-			if (sub==null) sub="";
+         if (sub==null) sub="";
          str = mVarMatch.matchedLeft() + sub + mVarMatch.matchedRight();
       }
 
@@ -422,24 +425,24 @@ class BuildTool
       var makefile:String="";
 
       var args = neko.Sys.args();
-		var HXCPP = "";
-		// Check for calling from haxelib ...
-		if (args.length>0)
-		{
-		   var last:String = (new neko.io.Path(args[args.length-1])).toString();
-			var slash = last.substr(-1);
-			if (slash=="/"|| slash=="\\") 
-			   last = last.substr(0,last.length-1);
-			if (neko.FileSystem.exists(last) && neko.FileSystem.isDirectory(last))
-			{
-			   // When called from haxelib, the last arg is the original directory, and
-				//  the current direcory is the library directory.
-				HXCPP = neko.Sys.getCwd();
-				defines.set("HXCPP",HXCPP);
-				args.pop();
-				neko.Sys.setCwd(last);
-			}
-		}
+      var HXCPP = "";
+      // Check for calling from haxelib ...
+      if (args.length>0)
+      {
+         var last:String = (new neko.io.Path(args[args.length-1])).toString();
+         var slash = last.substr(-1);
+         if (slash=="/"|| slash=="\\") 
+            last = last.substr(0,last.length-1);
+         if (neko.FileSystem.exists(last) && neko.FileSystem.isDirectory(last))
+         {
+            // When called from haxelib, the last arg is the original directory, and
+            //  the current direcory is the library directory.
+            HXCPP = neko.Sys.getCwd();
+            defines.set("HXCPP",HXCPP);
+            args.pop();
+            neko.Sys.setCwd(last);
+         }
+      }
    
       var os = neko.Sys.getEnv("OSTYPE");
       if ( (new EReg("windows","i")).match(os) )

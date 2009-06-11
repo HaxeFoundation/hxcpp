@@ -36,11 +36,48 @@
   <flag value="-gdwarf-2"/>
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
-  <outflag value="-o "/>
+  <outflag value="-o"/>
   <ext value=".o"/>
   <objdir value="obj/iphoneos/" unless="debug"/>
   <objdir value="obj/iphoneos-dbg/" if="debug"/>
 </compiler>
+
+
+<compiler id="darwin" exe="gcc" if="darwin">
+  <flag value="-c"/>
+  <cppflag value="-fvisibility-inlines-hidden"/>
+  <cppflag value="-c++"/>
+  <cppflag value="-frtti"/>
+  <flag value="-g" if="debug"/>
+  <flag value="-O2"/>
+  <flag value="-I${HXCPP}/include"/>
+  <objdir value="obj/darwin/" unless="debug"/>
+  <objdir value="obj/darwin-dbg/" if="debug"/>
+  <outflag value="-o"/>
+  <ext value=".o"/>
+</compiler>
+
+<linker id="dll" exe="g++" if="darwin">
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <flag value="-dynamiclib"/>
+  <flag value="-framework"/>
+  <flag value="Cocoa"/>
+  <flag value="-debug" if="debug"/>
+  <ext value=".dylib"/>
+  <outflag value="-o "/>
+</linker>
+
+<linker id="exe" exe="g++" if="darwin">
+  <flag value="-framework"/>
+  <flag value="Cocoa"/>
+  <flag value="-debug" if="debug"/>
+  <ext value=""/>
+  <outflag value="-o "/>
+</linker>
+
+
+
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
@@ -98,11 +135,18 @@
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
   <compilerflag value="-DALL_INTERIOR_POINTERS"/>
   <compilerflag value="-DGC_NOT_DLL"/>
+
+  <compilerflag value="-DHXCPP_DEBUG" if="debug"/>
+
   <compilerflag value="-DCPU" if="windows"/>
   <compilerflag value="-DMY_CPU" if="windows"/>
   <compilerflag value="-DX86" if="windows"/>
   <compilerflag value="-DWIN32_THREADS" if="windows"/>
-  <compilerflag value="-DHXCPP_DEBUG" if="debug"/>
+
+  <compilerflag value="-DX86" if="darwin"/>
+  <compilerflag value="-DHAS_X86_THREAD_STATE32___EAX=1" if="darwin"/>
+  <compilerflag value="-DNO_THREAD_REDIRECT" if="darwin"/>
+  <compilerflag value="-DGC_THREADS" if="darwin"/>
 
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
@@ -116,7 +160,10 @@
   <file name = "runtime/src/hxNekoAPI.cpp"/>
 
 
-  <file name="runtime/${GC_DIR}/win32_threads.c"/>
+  <file name="runtime/${GC_DIR}/win32_threads.c" if="windows"/>
+  <file name="runtime/${GC_DIR}/darwin_stop_world.c" if="darwin"/>
+  <file name="runtime/${GC_DIR}/pthread_stop_world.c" unless="windows"/>
+  <file name="runtime/${GC_DIR}/pthread_support.c" unless="windows"/>
   <file name="runtime/${GC_DIR}/allchblk.c"/>
   <file name="runtime/${GC_DIR}/alloc.c"/>
   <file name="runtime/${GC_DIR}/backgraph.c"/>
@@ -135,7 +182,7 @@
   <file name="runtime/${GC_DIR}/mark.c"/>
   <file name="runtime/${GC_DIR}/mark_rts.c"/>
   <file name="runtime/${GC_DIR}/misc.c"/>
-  <file name="runtime/${GC_DIR}/msvc_dbg.c"/>
+  <file name="runtime/${GC_DIR}/msvc_dbg.c" if="windows"/>
   <file name="runtime/${GC_DIR}/new_hblk.c"/>
   <file name="runtime/${GC_DIR}/obj_map.c"/>
   <file name="runtime/${GC_DIR}/os_dep.c"/>
@@ -151,7 +198,7 @@
 
 <target id="runtime" output="hxcpp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="runtime"/>
-  <lib name="user32.lib"/>
+  <lib name="user32.lib" if="windows"/>
 </target>
 
 
@@ -178,8 +225,9 @@
 <target id="std" output="std${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="std"/>
   <flag value="-dll"/>
-  <lib name="hxcpp${DBG}.lib"/>
-  <lib name="wsock32.lib"/>
+  <lib name="hxcpp${DBG}.lib" if="windows"/>
+  <lib name="hxcpp${DBG}.dylib" if="darwin"/>
+  <lib name="wsock32.lib" if="windows"/>
 </target>
 
 <set name="PCRE_DIR" value="runtime/thirdparty/pcre-7.8"/>
@@ -221,8 +269,8 @@
 
 <target id="regexp" output="regexp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="regexp"/>
-  <flag value="-dll"/>
-  <lib name="hxcpp${DBG}.lib"/>
+  <lib name="hxcpp${DBG}.lib" if="windows"/>
+  <lib name="hxcpp${DBG}.dylib" if="darwin"/>
 </target>
 
 <set name="ZLIB_DIR" value="runtime/thirdparty/zlib-1.2.3"/>
@@ -256,8 +304,8 @@
 
 <target id="zlib" output="zlib${DBG}" tool="linker" toolid="dll">
   <files id="zlib"/>
-  <flag value="-dll"/>
-  <lib name="hxcpp${DBG}.lib"/>
+  <lib name="hxcpp${DBG}.lib" if="windows"/>
+  <lib name="hxcpp${DBG}.dylib" if="darwin"/>
 </target>
 
 
@@ -278,7 +326,8 @@
   <target id="default"/>
   <files id="haxe"/>
   <files id="__main__"/>
-  <lib name="hxcpp${DBG}.lib"/>
+  <lib name="hxcpp${DBG}.lib" if="windows"/>
+  <lib name="hxcpp${DBG}.dylib" if="darwin"/>
 </target>
 
 
