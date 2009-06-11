@@ -776,10 +776,21 @@ Dynamic ArrayIterator::__Field(const String &inString)
 
 // -------- String ----------------------------------------
 
-#ifdef _WIN32
+#ifdef _MSC_VER
+// vc 7...
+#if _MSC_VER < 1400 
+
+#define SPRINTF _snwprintf
+#define SSCANF _snwscanf
+
+#else // vc8+
+
 #define SPRINTF _snwprintf_s
 #define SSCANF _snwscanf_s
-#else
+
+#endif
+
+#else // not _MSC_VER ..
 #define SPRINTF swprintf
 #define SSCANF(str,len,fmt,ptr) swscanf(str,fmt,ptr)
 #endif

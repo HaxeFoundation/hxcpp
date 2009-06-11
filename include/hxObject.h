@@ -138,8 +138,9 @@ inline int hxMod(int inLHS,int inRHS) { return inLHS % inRHS; }
 class null
 {
    public:
-     template<typename Pointer> operator Pointer * () { return 0; }
-     operator bool () const { return 0; }
+     operator char * () const { return 0; }
+     operator wchar_t * () const { return 0; }
+     operator bool () const { return false; }
      operator int () const { return 0; }
      operator double () const { return 0; }
      operator unsigned char () const { return 0; }
@@ -154,6 +155,7 @@ class null
      bool operator == (bool inRHS) const { return false; }
      bool operator != (bool inRHS) const { return true; }
 };
+
 
 typedef null Void;
 
