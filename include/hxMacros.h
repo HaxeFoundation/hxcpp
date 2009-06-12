@@ -7,6 +7,9 @@
 #define STRING(s,len) String( (L"\xffffffff" s) + 1 ,len)
 #endif
 
+#define STRING_UTF8(s,len) String( ("\xff\xff\xff\xff" s) + 4 ,len)
+
+
 #define DO_RTTI_BASE(Parent) \
    bool __Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; } \
 
