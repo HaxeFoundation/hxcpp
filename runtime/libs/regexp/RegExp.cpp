@@ -44,7 +44,7 @@ static field id_len;
 	</doc>
 **/
 
-static void free_regexp( value p ) {	
+static void free_regexp( hxObject * p ) {	
 	pcre_free( PCRE(p)->r );
 }
 
@@ -109,7 +109,7 @@ static value regexp_new_options( value s, value opt ) {
 		pcre_fullinfo(p,NULL,PCRE_INFO_CAPTURECOUNT,&pdata->nmatchs);
 		pdata->nmatchs++;
 		pdata->matchs = (int*)alloc_private(sizeof(int) * 3 * pdata->nmatchs);
-		val_gc(v,free_regexp);
+		val_gc(v.GetPtr(),free_regexp);
 		return v;
 	}	
 }

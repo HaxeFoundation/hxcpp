@@ -67,7 +67,7 @@ static int do_close( int fd ) {
 }
 #endif
 
-static void free_process( value vp ) {
+static void free_process( hxObject * vp ) {
 	vprocess *p = val_process(vp);
 #	ifdef NEKO_WINDOWS
 	CloseHandle(p->eread);
@@ -171,7 +171,7 @@ static value process_run( value cmd, value vargs ) {
 #	endif
 	{
 		value vp = alloc_abstract(k_process,p);
-		val_gc(vp,free_process);
+		val_gc(vp.GetPtr(),free_process);
 		return vp;
 	}
 }
@@ -353,11 +353,11 @@ static value process_pid( value vp ) {
 **/
 static value process_close( value vp ) {	
 	val_check_kind(vp,k_process);
-	free_process(vp);
+	free_process(vp.GetPtr());
    #ifndef HXCPP
 	val_kind(vp) = NULL;
    #endif
-	val_gc(vp,NULL);
+	val_gc(vp.GetPtr(),NULL);
 	return val_null;
 }
 

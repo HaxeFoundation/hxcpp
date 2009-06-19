@@ -157,7 +157,7 @@
   <file name = "runtime/src/hxGC.cpp"/>
   <file name = "runtime/src/hxHash.cpp"/>
   <file name = "runtime/src/hxLib.cpp"/>
-  <file name = "runtime/src/hxNekoAPI.cpp"/>
+  <file name = "runtime/src/hxCFFI.cpp"/>
 
 
   <file name="runtime/${GC_DIR}/win32_threads.c" if="windows"/>

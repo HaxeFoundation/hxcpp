@@ -463,7 +463,7 @@ double Dynamic::operator%(const Dynamic &inRHS) const
 void Dynamic::CheckFPtr()
 {
 	if (!mPtr)
-		throw Dynamic( String(L"Null Function Access") );
+		throw NULL_FUNCTION_POINTER;
 }
 
 

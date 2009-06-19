@@ -27,13 +27,13 @@ typedef std::map<std::wstring,Module> LoadedModule;
 
 static LoadedModule sgLoadedModule;
 
-typedef Dynamic (*prim_0)();
-typedef Dynamic (*prim_1)(Dynamic);
-typedef Dynamic (*prim_2)(Dynamic,Dynamic);
-typedef Dynamic (*prim_3)(Dynamic,Dynamic,Dynamic);
-typedef Dynamic (*prim_4)(Dynamic,Dynamic,Dynamic,Dynamic);
-typedef Dynamic (*prim_5)(Dynamic,Dynamic,Dynamic,Dynamic,Dynamic);
-typedef Dynamic (*prim_mult)(Dynamic *inArray,int inArgs);
+typedef hxObject * (*prim_0)();
+typedef hxObject * (*prim_1)(hxObject *);
+typedef hxObject * (*prim_2)(hxObject *,hxObject *);
+typedef hxObject * (*prim_3)(hxObject *,hxObject *,hxObject *);
+typedef hxObject * (*prim_4)(hxObject *,hxObject *,hxObject *,hxObject *);
+typedef hxObject * (*prim_5)(hxObject *,hxObject *,hxObject *,hxObject *,hxObject *);
+typedef hxObject * (*prim_mult)(hxObject **inArray,int inArgs);
 
 typedef void *(*func)(); 
 
@@ -58,57 +58,62 @@ public:
    Dynamic __run(D a)
    {
       if (mArgCount!=1) throw sgInvalidArgCount;
-      return ((prim_1)mProc)(a);
+      return ((prim_1)mProc)(a.GetPtr());
    }
    Dynamic __run(D a,D b)
    {
       if (mArgCount!=2) throw sgInvalidArgCount;
-      return ((prim_2)mProc)(a,b);
+      return ((prim_2)mProc)(a.GetPtr(),b.GetPtr());
    }
    Dynamic __run(D a,D b,D c)
    {
       if (mArgCount!=3) throw sgInvalidArgCount;
-      return ((prim_3)mProc)(a,b,c);
+      return ((prim_3)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d)
    {
       if (mArgCount!=4) throw sgInvalidArgCount;
-      return ((prim_4)mProc)(a,b,c,d);
+      return ((prim_4)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d,D e)
    {
       if (mArgCount!=5) throw sgInvalidArgCount;
-      return ((prim_5)mProc)(a,b,c,d,e);
+      return ((prim_5)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr(),e.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f)
    {
-      return ((prim_mult)mProc)( Array_obj<Dynamic>::__new(0,6)
-           .Add(a).Add(b).Add(c).Add(d).Add(e).Add(f)->Pointer(),6);
+		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr() };
+      return ((prim_mult)mProc)(args,6);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g)
    {
-      return ((prim_mult)mProc)( Array_obj<Dynamic>::__new(0,7)
-           .Add(a).Add(b).Add(c).Add(d).Add(e).Add(f).Add(g)->Pointer(),7);
+		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		                     g.GetPtr() };
+      return ((prim_mult)mProc)(args,7);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h)
    {
-      return ((prim_mult)mProc)( Array_obj<Dynamic>::__new(0,8)
-           .Add(a).Add(b).Add(c).Add(d).Add(e).Add(f).Add(g).Add(h)->Pointer(),8);
+		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		                     g.GetPtr(), h.GetPtr() };
+      return ((prim_mult)mProc)(args,9);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i)
    {
-      return ((prim_mult)mProc)( Array_obj<Dynamic>::__new(0,9)
-           .Add(a).Add(b).Add(c).Add(d).Add(e).Add(f).Add(g).Add(h).Add(i)->Pointer(),9);
+		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		                     g.GetPtr(), h.GetPtr(), i.GetPtr() };
+      return ((prim_mult)mProc)(args,9);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j)
    {
-      return ((prim_mult)mProc)( Array_obj<Dynamic>::__new(0,10)
-           .Add(a).Add(b).Add(c).Add(d).Add(e).Add(f).Add(g).Add(h).Add(i).Add(j)->Pointer(),10);
+		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		                     g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr() };
+      return ((prim_mult)mProc)(args,10);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k)
    {
-      return ((prim_mult)mProc)( Array_obj<Dynamic>::__new(0,11)
-           .Add(a).Add(b).Add(c).Add(d).Add(e).Add(f).Add(g).Add(h).Add(i).Add(j).Add(k)->Pointer(),11);
+		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		                     g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr(), k.GetPtr() };
+      return ((prim_mult)mProc)(args,11);
    }
 
    void __Mark() {  MarkMember(mName); }
@@ -338,11 +343,12 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 // This can be used to find symbols in static libraries
 
-hxPrimRegisterer::hxPrimRegisterer(wchar_t *inName,void *inProc)
+int __hxcpp_register_prim(wchar_t *inName,void *inProc)
 {
    if (sgRegisteredPrims==0)
       sgRegisteredPrims = new RegistrationMap();
    (*sgRegisteredPrims)[inName] = inProc;
+	return 0;
 }
 
 void hxLibMark()

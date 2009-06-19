@@ -299,7 +299,7 @@ static vthread *neko_thread_current() {
 	return result;
 }
 
-static void free_thread( value v ) {
+static void free_thread( hxObject * v ) {
 	vthread *t = val_thread(v);
 	LOCK(sgThreadMapMutex);
 	ThreadMap::iterator i = sgThreadMap.find(t->GetID());
@@ -319,7 +319,7 @@ static vthread *alloc_thread() {
 #endif
 	t->v = alloc_abstract(k_thread,t);
 	_deque_init(&t->q);
-	val_gc(t->v,free_thread);
+	val_gc(t->v.GetPtr(),free_thread);
 	return t;
 }
 
@@ -415,7 +415,7 @@ static value thread_read_message( value block ) {
 	return _deque_pop( &t->q, val_bool(block) );
 }
 
-static void free_lock( value l ) {
+static void free_lock( hxObject * l ) {
 #	ifdef NEKO_WINDOWS
 	CloseHandle( val_lock(l) );
 #	else
@@ -443,7 +443,7 @@ static value lock_create() {
 		neko_error();
 #	endif
 	vl = alloc_abstract(k_lock,l);
-	val_gc(vl,free_lock);
+	val_gc(vl.GetPtr(),free_lock);
 	return vl;
 }
 
@@ -620,7 +620,7 @@ static value tls_set( value v, value content ) {
 }
 #endif
 
-static void free_mutex( value v ) {
+static void free_mutex( hxObject * v ) {
 	MutexDestroy( val_mutex(v) );
 }
 
@@ -635,7 +635,7 @@ static value mutex_create() {
 	ThreadMutex *m = (ThreadMutex *)alloc_private(sizeof(ThreadMutex));
 	MutexInit(*m);
 	value v = alloc_abstract(k_mutex,m);
-	val_gc(v,free_mutex);
+	val_gc(v.GetPtr(),free_mutex);
 	return v;
 }
 
@@ -677,7 +677,7 @@ static value mutex_release( value m ) {
 	return val_null;
 }
 
-static void free_deque( value v ) {	
+static void free_deque( hxObject * v ) {	
 	_deque_destroy(val_deque(v));
 }
 
@@ -688,7 +688,7 @@ static void free_deque( value v ) {
 static value deque_create() {
 	vdeque *q = (vdeque*)alloc(sizeof(vdeque));
 	value v = alloc_abstract(k_deque,q);
-	val_gc(v,free_deque);
+	val_gc(v.GetPtr(),free_deque);
 	_deque_init(q);
 	return v;
 }

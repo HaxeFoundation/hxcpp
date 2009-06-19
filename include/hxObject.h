@@ -86,11 +86,13 @@ class Class_obj;
 typedef hxObjectPtr<Class_obj> Class;
 typedef Array<Dynamic> DynamicArray;
 class String;
+class hxObject;
 
 // --- Exteral constants, used inline
 #define INVALID_CAST          Dynamic(STRING(L"Invalid Cast",11))
 #define INDEX_OUT_OF_BOUNDS   Dynamic(STRING(L"Index Out of Bounds",18))
 #define INVALID_CONSTRUCTOR   Dynamic(STRING(L"Invalid constructor",18))
+#define INVALID_OBJECT        Dynamic(STRING(L"Invalid object",13))
 #define INVALID_ARG_COUNT     Dynamic(STRING(L"Invalid Arg Count",16))
 #define NULL_FUNCTION_POINTER Dynamic(STRING(L"Null Function Pointer",20))
 
@@ -101,6 +103,10 @@ class String;
 SHARED void *hxNewGCBytes(void *inData,int inSize);
 // This wont be GC'ed
 SHARED void *hxNewGCPrivate(void *inData,int inSize);
+
+typedef void (*finalizer)(hxObject *v);
+SHARED void  hxGCAddFinalizer( hxObject *, finalizer f );
+
 
 // This is used internally in hxcpp
 wchar_t *hxNewString(int inLen);
@@ -730,9 +736,9 @@ class SHARED hxAnon_obj : public hxObject
 
    hxFieldMap *mFields;
 
+public:
    hxAnon_obj();
 
-public:
    static hxAnon Create() { return hxAnon(new hxAnon_obj); }
    static hxAnon Create(const Dynamic &inSrc) { return hxAnon(new hxAnon_obj); }
 
@@ -1580,6 +1586,8 @@ SHARED const wchar_t *__hxcpp_field_from_id( int f );
 // Get function pointer from dll file
 SHARED Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
 
+// Loading functions via name (dummy return value)
+SHARED int __hxcpp_register_prim(wchar_t *inName,void *inFunc);
 
 // Throw must return a value ...
 inline Dynamic hxThrow(Dynamic inError) { throw inError; return Dynamic(); }
@@ -1640,11 +1648,6 @@ SHARED String __hxcpp_to_string(double inSeconds);
 SHARED double __hxcpp_date_now();
 
 
-// Loading functions via name
-struct SHARED hxPrimRegisterer
-{
-   hxPrimRegisterer(wchar_t *inName,void *inFunc);
-};
 
 #ifdef BIG_ENDIAN
 #undef BIG_ENDIAN

@@ -445,6 +445,12 @@ class BuildTool
       }
    
       var os = neko.Sys.getEnv("OSTYPE");
+		if (os==null)
+		{
+		   neko.Lib.println("No OSTYPE - assuming windows");
+			os = "windows";
+		}
+
       if ( (new EReg("windows","i")).match(os) )
          defines.set("windows","windows");
       else if ( (new EReg("linux","i")).match(os) )

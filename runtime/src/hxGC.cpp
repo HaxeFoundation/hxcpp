@@ -229,17 +229,16 @@ static void hxcpp_finalizer(void * obj, void * client_data)
 
 
 
-void hxGCAddFinalizer(Dynamic v, finalizer f)
+void hxGCAddFinalizer(hxObject *v, finalizer f)
 {
-   hxObject *ptr = v.GetPtr();
-   if (ptr)
+   if (v)
    {
 #ifdef INTERNAL_GC
-      AllocData *data = ((AllocData *)ptr) - 1;
+      AllocData *data = ((AllocData *)v) - 1;
       int id = (*data) & ID_MASK;
       (*sgActiveAllocs)[id].mFinalizer = f;
 #else
-      GC_register_finalizer(ptr,hxcpp_finalizer,(void *)f,0,0);
+      GC_register_finalizer(v,hxcpp_finalizer,(void *)f,0,0);
 #endif
    }
 }

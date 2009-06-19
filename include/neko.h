@@ -116,7 +116,7 @@ typedef int field;
 typedef double tfloat;
 typedef int int_val;
 
-typedef void (*finalizer)(value v);
+
 
 typedef String vstring;
 
@@ -309,14 +309,14 @@ inline String alloc_empty_string( unsigned int size ) { return String((const wch
   EXPORT void *func##__MULT() {  \
      return (void*)(&func); \
  } \
-hxPrimRegisterer __reg_##func(L###func L"__MULT",(void *)(&func)); \
+int __reg_##func = __hxcpp_register_prim(L###func L"__MULT",(void *)(&func)); \
 }
 
 #define DEFINE_PRIM(func,nargs) extern "C" { \
   EXPORT void *func##__##nargs() { \
        return (void*)(&func); \
   } \
-hxPrimRegisterer __reg_##func(L###func L"__" L###nargs,(void *)(&func)); \
+int __reg_##func = __hxcpp_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
 }
 
 
@@ -388,7 +388,7 @@ hxPrimRegisterer __reg_##func(L###func L"__" L###nargs,(void *)(&func)); \
 #define alloc_float(f) ((double)f)
 inline Dynamic alloc_string(const char *str) { return String(str,(int)strlen(str)); }
 #define val_id				__hxcpp_field_to_id
-#define alloc_field			hxcpp_alloc_field
+#define alloc_field(a,b,c)			hxcpp_alloc_field((a).GetPtr(),b,Dynamic(c).GetPtr())
 #define val_gc				hxGCAddFinalizer
 #define alloc_abstract(inKind,inData) Dynamic(new Abstract_obj(inKind,inData))
 #define val_field			hxcpp_val_field
@@ -409,8 +409,7 @@ inline Dynamic alloc_object(const Dynamic &inObj) { return inObj; }
 
 	#define kind_share( k, name ) // Not sure ? *(k) = hxcpp_find_kind(name)
 
-	EXTERN void  hxcpp_alloc_field( value obj, field f, value v );
-	EXTERN void  hxGCAddFinalizer( value v, finalizer f );
+	EXTERN void  hxcpp_alloc_field( hxObject * obj, field f, hxObject * v );
 
 /*
 	EXTERN value alloc_string( const char *str );
