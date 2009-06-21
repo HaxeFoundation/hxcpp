@@ -428,7 +428,7 @@ extern "C" {
 SHARED void * hx_cffi(const char *inName)
 {
 
-	#define DEFFUNC(name,r,b,c) if ( !strcmp(inName,#name) ) return name;
+	#define DEFFUNC(name,r,b,c) if ( !strcmp(inName,#name) ) return (void *)name;
 
 	#include <hxCFFIAPI.h>
 

@@ -1,6 +1,6 @@
 /* ************************************************************************ */
 /*																			*/
-/*  Neko Standard Library													*/
+/*  From the Neko Standard Library													*/
 /*  Copyright (c)2005 Motion-Twin											*/
 /*																			*/
 /* This library is free software; you can redistribute it and/or			*/
@@ -14,7 +14,7 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
-#include <neko.h>
+#include <hxCFFI.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -23,13 +23,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifdef HXCPP
-#define NULL_VAL null()
-#else
-#define NULL_VAL NULL
-#endif
-
-
 
 
 
@@ -37,6 +30,7 @@
 #	include <windows.h>
 #	include <direct.h>
 #	include <conio.h>
+#	include <string>
 #else
 #	include <errno.h>
 #	include <unistd.h>
@@ -94,14 +88,14 @@ static value put_env( value e, value v ) {
 	buffer_append_sub(b,"=",1);
 	val_buffer(b,v);
 	if( putenv(val_string(buffer_to_string(b))) != 0 )
-		neko_error();
+		return alloc_null();
 #else
 	val_check(e,string);
 	val_check(v,string);
 	if( setenv(val_string(e),val_string(v),1) != 0 )
-		neko_error();
+		return alloc_null();
 #endif
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -120,12 +114,12 @@ static value sys_sleep( value f ) {
 		t.tv_nsec = (int)((val_number(f) - t.tv_sec) * 1e9);
 		while( nanosleep(&t,&tmp) == -1 ) {
 			if( errno != EINTR )
-				neko_error();
+				return alloc_null();
 			t = tmp;
 		}
 	}
 #endif
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -137,15 +131,15 @@ static value set_time_locale( value l ) {
 	locale_t lc, old;
 	val_check(l,string);
 	lc = newlocale(LC_TIME_MASK,val_string(l),NULL);
-	if( lc == NULL ) return val_false;
+	if( lc == NULL ) return alloc_bool(false);
 	old = uselocale(lc);
 	if( old == NULL ) {
 		freelocale(lc);
-		return val_false;
+		return alloc_bool(false);
 	}
 	if( old != LC_GLOBAL_LOCALE )
 		freelocale(old);
-	return val_true;
+	return alloc_bool(true);
 #else
 	val_check(l,string);
 	return alloc_bool(setlocale(LC_TIME,val_string(l)) != NULL);
@@ -160,7 +154,7 @@ static value get_cwd() {
 	char buf[256];
 	int l;
 	if( getcwd(buf,256) == NULL )
-		neko_error();
+		return alloc_null();
 	l = (int)strlen(buf);
 	if( buf[l-1] != '/' && buf[l-1] != '\\' ) {
 		buf[l] = '/';
@@ -176,8 +170,8 @@ static value get_cwd() {
 static value set_cwd( value d ) {
 	val_check(d,string);
 	if( chdir(val_string(d)) )
-		neko_error();
-	return val_true;
+		return alloc_null();
+	return alloc_bool(true);
 }
 
 
@@ -217,9 +211,9 @@ static value sys_string() {
 **/
 static value sys_is64() {
 #ifdef NEKO_64BITS
-	return val_true;
+	return alloc_bool(true);
 #else
-	return val_false;
+	return alloc_bool(false);
 #endif
 }
 
@@ -241,7 +235,7 @@ static value sys_command( value cmd ) {
 static value sys_exit( value ecode ) {
 	val_check(ecode,int);
 	exit(val_int(ecode));
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -269,8 +263,8 @@ static value file_exists( value path ) {
 static value file_delete( value path ) {
 	val_check(path,string);
 	if( unlink(val_string(path)) != 0 )
-		neko_error();
-	return val_true;
+		return alloc_null();
+	return alloc_bool(true);
 }
 
 /**
@@ -281,8 +275,8 @@ static value sys_rename( value path, value newname ) {
 	val_check(path,string);
 	val_check(newname,string);
 	if( rename(val_string(path),val_string(newname)) != 0 )
-		neko_error();
-	return val_true;
+		return alloc_null();
+	return alloc_bool(true);
 }
 
 #define STATF(f) alloc_field(o,val_id(#f),alloc_int(s.st_##f))
@@ -309,8 +303,8 @@ static value sys_stat( value path ) {
 	value o;
 	val_check(path,string);
 	if( stat(val_string(path),&s) != 0 )
-		neko_error();
-	o = alloc_object( 0 );
+		return alloc_null();
+	o = alloc_empty_object( );
 	STATF(gid);
 	STATF(uid);
 	STATF32(atime);
@@ -345,7 +339,7 @@ static value sys_file_type( value path ) {
 	struct stat s;
 	val_check(path,string);
 	if( stat(val_string(path),&s) != 0 )
-		neko_error();
+		return alloc_null();
 	if( s.st_mode & S_IFREG )
 		return alloc_string("file");
 	if( s.st_mode & S_IFDIR )
@@ -362,7 +356,7 @@ static value sys_file_type( value path ) {
 	if( s.st_mode & S_IFSOCK )
 		return alloc_string("sock");
 #endif
-	neko_error();
+	return alloc_null();
 }
 
 /**
@@ -377,8 +371,8 @@ static value sys_create_dir( value path, value mode ) {
 #else
 	if( mkdir(val_string(path),val_int(mode)) != 0 )
 #endif
-		neko_error();
-	return val_true;
+		return alloc_null();
+	return alloc_bool(true);
 }
 
 /**
@@ -388,8 +382,8 @@ static value sys_create_dir( value path, value mode ) {
 static value sys_remove_dir( value path ) {
 	val_check(path,string);
 	if( rmdir(val_string(path)) != 0 )
-		neko_error();
-	return val_true;
+		return alloc_null();
+	return alloc_bool(true);
 }
 
 /**
@@ -404,15 +398,15 @@ static value sys_time() {
     ULARGE_INTEGER ui;
 	GetSystemTime(&t);
 	if( !SystemTimeToFileTime(&t,&ft) )
-		neko_error();
+		return alloc_null();
     ui.LowPart = ft.dwLowDateTime;
     ui.HighPart = ft.dwHighDateTime;
-	return alloc_float( ((tfloat)ui.QuadPart) / 10000000.0 - EPOCH_DIFF );
+	return alloc_float( ((double)ui.QuadPart) / 10000000.0 - EPOCH_DIFF );
 #else
 	struct timeval tv;
 	if( gettimeofday(&tv,NULL) != 0 )
-		neko_error();
-	return alloc_float( tv.tv_sec + ((tfloat)tv.tv_usec) / 1000000.0 );
+		return alloc_null();
+	return alloc_float( tv.tv_sec + ((double)tv.tv_usec) / 1000000.0 );
 #endif
 }
 
@@ -426,12 +420,12 @@ static value sys_cpu_time() {
 	FILETIME stime;
 	FILETIME utime;
 	if( !GetProcessTimes(GetCurrentProcess(),&unused,&unused,&stime,&utime) )
-		neko_error();
-	return alloc_float( ((tfloat)(utime.dwHighDateTime+stime.dwHighDateTime)) * 65.536 * 6.5536 + (((tfloat)utime.dwLowDateTime + (tfloat)stime.dwLowDateTime) / 10000000) );
+		return alloc_null();
+	return alloc_float( ((double)(utime.dwHighDateTime+stime.dwHighDateTime)) * 65.536 * 6.5536 + (((double)utime.dwLowDateTime + (double)stime.dwLowDateTime) / 10000000) );
 #else
 	struct tms t;
 	times(&t);
-	return alloc_float( ((tfloat)(t.tms_utime + t.tms_stime)) / CLK_TCK );
+	return alloc_float( ((double)(t.tms_utime + t.tms_stime)) / CLK_TCK );
 #endif
 }
 
@@ -440,28 +434,27 @@ static value sys_cpu_time() {
 	<doc>Return the content of a directory</doc>
 **/
 static value sys_read_dir( value p) {
-	Array<String> h(0,0);
-	value cur = NULL_VAL, tmp;
-	int len;
 	val_check(p,string);
-	String path = p;
-	len = path.length;
-
+	
+        value result = alloc_array(0);
 #ifdef NEKO_WINDOWS
+	std::wstring path = val_wstring(p);
+	int len = path.length();
+
 	WIN32_FIND_DATAW d;
 	HANDLE handle;
 	buffer b;
-	if( len && val_string(path)[len-1] != '/' && val_string(path)[len-1] != '\\' )
+	if( len && path[len-1] != '/' && path[len-1] != '\\' )
 		path += L"/*.*";
 	else
 		path += L"*.*";
-	handle = FindFirstFileW(path.__s,&d);
+	handle = FindFirstFileW(path.c_str(),&d);
 	if( handle == INVALID_HANDLE_VALUE )
-		neko_error();
+		return alloc_null();
 	while( true ) {
 		// skip magic dirs
 		if( d.cFileName[0] != '.' || (d.cFileName[1] != 0 && (d.cFileName[1] != '.' || d.cFileName[2] != 0)) ) {
-			h->push( String(d.cFileName).dup() );
+			val_array_push(result,val_alloc_wstring(d.cFileName));
 		}
 		if( !FindNextFileW(handle,&d) )
 			break;
@@ -470,9 +463,9 @@ static value sys_read_dir( value p) {
 #else
 	DIR *d;
 	struct dirent *e;
-	d = opendir(val_string(path));
+	d = opendir(val_string(p));
 	if( d == NULL )
-		neko_error();
+		return alloc_null();
 	while( true ) {
 		e = readdir(d);
 		if( e == NULL )
@@ -480,11 +473,11 @@ static value sys_read_dir( value p) {
 		// skip magic dirs
 		if( e->d_name[0] == '.' && (e->d_name[1] == 0 || (e->d_name[1] == '.' && e->d_name[2] == 0)) )
 			continue;
-		h->push( String(e->d_name,strlen(e->d_name)) );
+		val_array_push(result, alloc_string(e->d_name) );
 	}
 	closedir(d);
 #endif
-	return h;
+	return result;
 }
 
 /**
@@ -496,13 +489,13 @@ static value file_full_path( value path ) {
 	char buf[MAX_PATH+1];
 	val_check(path,string);
 	if( GetFullPathNameA(val_string(path),MAX_PATH+1,buf,NULL) == 0 )
-		neko_error();
+		return alloc_null();
 	return alloc_string(buf);
 #else
 	char buf[PATH_MAX];
 	val_check(path,string);
 	if( realpath(val_string(path),buf) == NULL )
-		neko_error();
+		return alloc_null();
 	return alloc_string(buf);
 #endif
 }
@@ -515,13 +508,13 @@ static value sys_exe_path() {
 #if defined(NEKO_WINDOWS)
 	wchar_t path[MAX_PATH];
 	if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
-		neko_error();
+		return alloc_null();
 	return String(path);
 #elif defined(NEKO_MAC)
 	char path[PATH_MAX+1];
 	uint32_t path_len = PATH_MAX;
 	if( _NSGetExecutablePath(path, &path_len) )
-		neko_error();
+		return alloc_null();
 	return alloc_string(path);
 #else
 	const char *p = getenv("_");
@@ -531,7 +524,7 @@ static value sys_exe_path() {
 		char path[PATH_MAX];
 		int length = readlink("/proc/self/exe", path, sizeof(path));
 		if( length < 0 )
-			neko_error();
+			return alloc_null();
 	    path[length] = '\0';
 		return alloc_string(path);
 	}
@@ -552,11 +545,7 @@ extern char **environ;
 	<doc>Return all the (key,value) pairs in the environment as a chained list</doc>
 **/
 static value sys_env() {
-	#ifdef HXCPP
-	Array<String> h(0,0);
-	#else
-	value cur = NULL_VAL, tmp, key;
-	#endif
+        value result = alloc_array(0);
 	char **e = environ;
 	while( *e ) {
 		char *x = strchr(*e,'=');
@@ -564,25 +553,11 @@ static value sys_env() {
 			e++;
 			continue;
 		}
-      #ifdef HXCPP
-		h->push(String(*e,(int)(x-*e)));
-		h->push(String(x+1,strlen(x+1)));
-      #else
-		tmp = alloc_array(3);
-		key = alloc_empty_string((int)(x - *e));
-		memcpy(val_string(key),*e,(int)(x - *e));
-		val_array_ptr(tmp)[0] = key;
-		val_array_ptr(tmp)[1] = alloc_string(x+1);
-		val_array_ptr(tmp)[2] = val_null;
-		if( cur )
-			val_array_ptr(cur)[2] = tmp;
-		else
-			h = tmp;
-		cur = tmp;
-      #endif
+                val_array_push(result,alloc_string_len(*e,(int)(x-*e)));
+                val_array_push(result,alloc_string(x+1));
 		e++;
 	}
-	return h;
+	return result;
 }
 
 /**

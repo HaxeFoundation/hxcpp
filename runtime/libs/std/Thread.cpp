@@ -1,6 +1,6 @@
 /* ************************************************************************ */
 /*																			*/
-/*  Neko Standard Library													*/
+/*  Based on Neko Standard Library													*/
 /*  Copyright (c)2005-2006 Motion-Twin										*/
 /*																			*/
 /* This library is free software; you can redistribute it and/or			*/
@@ -17,7 +17,7 @@
 
 #include <map>
 
-#include <neko.h>
+#include <hxCFFI.h>
 #undef free_lock
 #undef lock_release
 
@@ -199,7 +199,7 @@ static void _deque_destroy( vdeque *q ) {
 
 static void _deque_add( vdeque *q, value msg ) {
 	tqueue *t;
-	t = (tqueue*)alloc(sizeof(tqueue));
+	t = (tqueue*)hx_alloc(sizeof(tqueue));
 	t->msg = msg;
 	t->next = NULL;
 	LOCK(q->lock);
@@ -214,7 +214,7 @@ static void _deque_add( vdeque *q, value msg ) {
 
 static void _deque_push( vdeque *q, value msg ) {
 	tqueue *t;
-	t = (tqueue*)alloc(sizeof(tqueue));
+	t = (tqueue*)hx_alloc(sizeof(tqueue));
 	t->msg = msg;
 	LOCK(q->lock);
 	t->next = q->first;
@@ -299,7 +299,7 @@ static vthread *neko_thread_current() {
 	return result;
 }
 
-static void free_thread( hxObject * v ) {
+static void free_thread( value v ) {
 	vthread *t = val_thread(v);
 	LOCK(sgThreadMapMutex);
 	ThreadMap::iterator i = sgThreadMap.find(t->GetID());
@@ -310,7 +310,7 @@ static void free_thread( hxObject * v ) {
 }
 
 static vthread *alloc_thread() {
-	vthread *t = (vthread*)alloc(sizeof(vthread));
+	vthread *t = (vthread*)hx_alloc(sizeof(vthread));
 	memset(t,0,sizeof(vthread));
 #ifdef NEKO_WINDOWS
 	t->tid = GetCurrentThreadId();
@@ -338,18 +338,18 @@ thread_loop( void *_p ) {
 	SignalSet(p->mBegun,p->mBegunMutex,p->mStarted);
 
 	try {
-	if (p->callb!=null())
+	if ( !val_is_null(p->callb))
 	{
-		p->callb->__Run(p->callparam);
+		val_call0(p->callb);
 	}
 	}
-	catch (Dynamic d)
+	catch (const char *inErrMessage)
 	{
-		fprintf(stderr,"An exception occured in a neko Thread :\n");
-		fwprintf(stderr,L"%s\n",d->toString().__s);
+		fprintf(stderr,"An exception occured in a custom thread :\n");
+		fprintf(stderr,"%s\n",inErrMessage );
 	}
 	// cleanup
-	p->t->v = val_null;
+	p->t->v = alloc_null();
 #ifndef NEKO_WINDOWS
    return 0;
 #endif
@@ -362,7 +362,7 @@ thread_loop( void *_p ) {
 static value thread_create( value f, value param ) {
 	tparams *p;
 	val_check_function(f,1);
-	p = (tparams*)alloc(sizeof(tparams));
+	p = (tparams*)hx_alloc(sizeof(tparams));
 	p->callb = f;
 	p->callparam = param;
 	SignalInit(p->mBegun,p->mBegunMutex,p->mStarted);
@@ -686,7 +686,7 @@ static void free_deque( hxObject * v ) {
 	<doc>create a message queue for multithread access</doc>
 **/
 static value deque_create() {
-	vdeque *q = (vdeque*)alloc(sizeof(vdeque));
+	vdeque *q = (vdeque*)hx_alloc(sizeof(vdeque));
 	value v = alloc_abstract(k_deque,q);
 	val_gc(v.GetPtr(),free_deque);
 	_deque_init(q);
