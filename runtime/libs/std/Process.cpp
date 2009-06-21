@@ -14,7 +14,7 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
-#include <neko.h>
+#include <hxCFFI.h>
 
 #ifdef NEKO_WINDOWS
 #	include <windows.h>
@@ -67,7 +67,7 @@ static int do_close( int fd ) {
 }
 #endif
 
-static void free_process( hxObject * vp ) {
+static void free_process( value vp ) {
 	vprocess *p = val_process(vp);
 #	ifdef NEKO_WINDOWS
 	CloseHandle(p->eread);
@@ -100,11 +100,18 @@ static value process_run( value cmd, value vargs ) {
 		HANDLE proc = GetCurrentProcess();
 		HANDLE oread,eread,iwrite;
 		// creates commandline
-		String cmd_line = L"\"" + cmd->toString() + L"\"";
-		for(i=0;i<vargs->__length();i++) {
-			value v = vargs->__GetItem(i);
+		buffer b = alloc_buffer("\"");
+		alloc_buffer("\"");
+		val_buffer(b,cmd);
+		buffer_append(b,"\"");
+
+		int n = val_array_size(vargs);
+		for(i=0;i<n;i++) {
+			value v = val_array_i(vargs,i);
 			val_check(v,string);
-			cmd_line += L" \"" + v->toString() + L"\"";
+			buffer_append(b," \"");
+			val_buffer(b,v);
+			buffer_append(b,"\"");
 		}
 		p = (vprocess*)alloc_private(sizeof(vprocess));
 		// startup process
@@ -124,9 +131,9 @@ static value process_run( value cmd, value vargs ) {
 		CloseHandle(oread);
 		CloseHandle(eread);
 		CloseHandle(iwrite);
-		wprintf(L"Cmd %s\n",cmd_line.__s);
-		if( !CreateProcessW(NULL,(LPWSTR)cmd_line.__s,NULL,NULL,TRUE,0,NULL,NULL,&sinf,&p->pinf) )
-			neko_error();
+		//printf("Cmd %s\n",val_string(cmd));
+		if( !CreateProcessW(NULL,val_dup_wstring(buffer_to_string(b)),NULL,NULL,TRUE,0,NULL,NULL,&sinf,&p->pinf) )
+			return alloc_null();
 		// close unused pipes
 		CloseHandle(sinf.hStdOutput);
 		CloseHandle(sinf.hStdError);
@@ -144,11 +151,11 @@ static value process_run( value cmd, value vargs ) {
 	argv[i+1] = NULL;
 	int input[2], output[2], error[2];
 	if( pipe(input) || pipe(output) || pipe(error) )
-		neko_error();
+		return alloc_null();
 	p = (vprocess*)alloc_private(sizeof(vprocess));
 	p->pid = fork();
 	if( p->pid == -1 )
-		neko_error();
+		return alloc_null();
 	// child
 	if( p->pid == 0 ) {
 		close(input[1]);
@@ -171,7 +178,7 @@ static value process_run( value cmd, value vargs ) {
 #	endif
 	{
 		value vp = alloc_abstract(k_process,p);
-		val_gc(vp.GetPtr(),free_process);
+		val_gc(vp,free_process);
 		return vp;
 	}
 }
@@ -179,12 +186,14 @@ static value process_run( value cmd, value vargs ) {
 // CPP streams are byte-based, not char based ...
 #define CHECK_ARGS()	\
 	vprocess *p; \
+	buffer buf; \
 	val_check_kind(vp,k_process); \
-	val_check(str,bytes); \
+	val_check(str,buffer); \
+	buf = val_to_buffer(str); \
 	val_check(pos,int); \
 	val_check(len,int); \
-	if( val_int(pos) < 0 || val_int(len) < 0 || val_int(pos) + val_int(len) > val_strlen(str) ) \
-		neko_error(); \
+	if( val_int(pos) < 0 || val_int(len) < 0 || val_int(pos) + val_int(len) > buffer_size(buf) ) \
+		return alloc_null(); \
 	p = val_process(vp); \
 
 
@@ -200,18 +209,17 @@ static value process_run( value cmd, value vargs ) {
 **/
 static value process_stdout_read( value vp, value str, value pos, value len ) {
 	CHECK_ARGS();
-	Array<unsigned char> buf = str;
 #	ifdef NEKO_WINDOWS
 	{
 		DWORD nbytes;
-		if( !ReadFile(p->oread,(char *)&buf[val_int(pos)],val_int(len),&nbytes,NULL) )
-			neko_error();
+		if( !ReadFile(p->oread,buffer_data(buf)+val_int(pos),val_int(len),&nbytes,NULL) )
+			return alloc_null();
 		return alloc_int(nbytes);
 	}
 #	else
-	int nbytes = read(p->oread,(char *)&buf[val_int(pos)],val_int(len));
+	int nbytes = read(p->oread,buffer_data(buf) + val_int(pos),val_int(len));
 	if( nbytes <= 0 )
-		neko_error();
+		alloc_null();
 	return alloc_int(nbytes);
 #	endif
 }
@@ -227,25 +235,17 @@ static value process_stdout_read( value vp, value str, value pos, value len ) {
 static value process_stderr_read( value vp, value str, value pos, value len ) {
 	CHECK_ARGS();
 
-        #ifdef HXCPP
-        Array<unsigned char> buf = str;
-        #endif
-
 #	ifdef NEKO_WINDOWS
 	{
 		DWORD nbytes;
-		if( !ReadFile(p->eread,(char *)&buf[val_int(pos)],val_int(len),&nbytes,NULL) )
-			neko_error();
+		if( !ReadFile(p->eread,buffer_data(buf)+val_int(pos),val_int(len),&nbytes,NULL) )
+			return alloc_null();
 		return alloc_int(nbytes);
 	}
 #	else
-        #ifdef HXCPP
-	int nbytes = read(p->eread,&buf[val_int(pos)],val_int(len));
-        #else
-	int nbytes = read(p->eread,val_string(str)+val_int(pos),val_int(len));
-        #endif
+	int nbytes = read(p->eread,buffer_data(buf)+val_int(pos),val_int(len));
 	if( nbytes <= 0 )
-		neko_error();
+		return alloc_null();
 	return alloc_int(nbytes);
 #	endif
 }
@@ -260,18 +260,17 @@ static value process_stderr_read( value vp, value str, value pos, value len ) {
 **/
 static value process_stdin_write( value vp, value str, value pos, value len ) {
 	CHECK_ARGS();
-	Array<unsigned char> buf = str;
 #	ifdef NEKO_WINDOWS
 	{
 		DWORD nbytes;
-		if( !WriteFile(p->iwrite,(char *)val_string(str)+val_int(pos),val_int(len),&nbytes,NULL) )
-			neko_error();
+		if( !WriteFile(p->iwrite,buffer_data(buf)+val_int(pos),val_int(len),&nbytes,NULL) )
+			return alloc_null();
 		return alloc_int(nbytes);
 	}
 #	else
-	int nbytes = write(p->iwrite,&buf[0]+val_int(pos),val_int(len));
+	int nbytes = write(p->iwrite,buffer_data(buf)+val_int(pos),val_int(len));
 	if( nbytes == -1 )
-		neko_error();
+		return alloc_null();
 	return alloc_int(nbytes);
 #	endif
 }
@@ -288,10 +287,10 @@ static value process_stdin_close( value vp ) {
 	p = val_process(vp);
 #	ifdef NEKO_WINDOWS
 	if( !CloseHandle(p->iwrite) )
-		neko_error();
+		return alloc_null();
 #	else
 	if( do_close(p->iwrite) )
-		neko_error();
+		return alloc_null();
 	p->iwrite = -1;
 #	endif
 	return val_null;
@@ -312,7 +311,7 @@ static value process_exit( value vp ) {
 		DWORD rval;
 		WaitForSingleObject(p->pinf.hProcess,INFINITE);
 		if( !GetExitCodeProcess(p->pinf.hProcess,&rval) )
-			neko_error();
+			return alloc_null();
 		return alloc_int(rval);
 	}
 #	else
@@ -320,10 +319,10 @@ static value process_exit( value vp ) {
 	while( waitpid(p->pid,&rval,0) != p->pid ) {
 		if( errno == EINTR )
 			continue;
-		neko_error();
+		return alloc_null();
 	}
 	if( !WIFEXITED(rval) )
-		neko_error();
+		return alloc_null();
 	return alloc_int(WEXITSTATUS(rval));
 #	endif
 }
@@ -353,11 +352,8 @@ static value process_pid( value vp ) {
 **/
 static value process_close( value vp ) {	
 	val_check_kind(vp,k_process);
-	free_process(vp.GetPtr());
-   #ifndef HXCPP
-	val_kind(vp) = NULL;
-   #endif
-	val_gc(vp.GetPtr(),NULL);
+	free_process(vp);
+	val_gc(vp,NULL);
 	return val_null;
 }
 

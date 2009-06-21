@@ -14,7 +14,10 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
-#include <neko.h>
+
+#define IMPLEMENT_API
+
+#include <hxCFFI.h>
 #include <string.h>
 #ifndef PCRE_STATIC
 #define PCRE_STATIC
@@ -44,7 +47,7 @@ static field id_len;
 	</doc>
 **/
 
-static void free_regexp( hxObject * p ) {	
+static void free_regexp( value p ) {	
 	pcre_free( PCRE(p)->r );
 }
 
@@ -89,7 +92,7 @@ static value regexp_new_options( value s, value opt ) {
 				options |= PCRE_UNGREEDY;
 				break;
 			default:
-				neko_error();
+				return alloc_null();
 				break;
 			}
 		}
@@ -101,15 +104,15 @@ static value regexp_new_options( value s, value opt ) {
 			val_buffer(b,s);
 			bfailure(b);
 		}
-		v = alloc_abstract(k_regexp,alloc(sizeof(pcredata)));
+		v = alloc_abstract(k_regexp,hx_alloc(sizeof(pcredata)));
 		pdata = PCRE(v);
 		pdata->r = p;
-		pdata->str = val_null;
+		pdata->str = alloc_null();
 		pdata->nmatchs = 0;
 		pcre_fullinfo(p,NULL,PCRE_INFO_CAPTURECOUNT,&pdata->nmatchs);
 		pdata->nmatchs++;
 		pdata->matchs = (int*)alloc_private(sizeof(int) * 3 * pdata->nmatchs);
-		val_gc(v.GetPtr(),free_regexp);
+		val_gc(v,free_regexp);
 		return v;
 	}	
 }
@@ -137,7 +140,7 @@ static value regexp_match( value o, value s, value p, value len ) {
 	pp = val_int(p);
 	ll = val_int(len);
 	if( pp < 0 || ll < 0 || pp > val_strlen(s) || pp + ll > val_strlen(s) )
-		neko_error();
+		return alloc_null();
 	d = PCRE(o);
 	if( pcre_exec(d->r,NULL,val_string(s)+pp,ll,0,0,d->matchs,d->nmatchs * 3) >= 0 ) {
 		if( pp > 0 ) {
@@ -146,10 +149,10 @@ static value regexp_match( value o, value s, value p, value len ) {
 				d->matchs[i] += pp;
 		}
 		d->str = s;
-		return val_true;
+		return alloc_bool(true);
 	} else {
-		d->str = val_null;
-		return val_false;
+		d->str = alloc_null();
+		return alloc_bool(false);
 	}
 }
 
@@ -172,7 +175,7 @@ static value do_replace( value o, value s, value s2, bool all ) {
 			if( !all )
 				break;
 		}
-		d->str = val_null;
+		d->str = alloc_null();
 		buffer_append_sub(b,str+pos,len-pos);
 		return buffer_to_string(b);
 	}
@@ -214,7 +217,7 @@ static value regexp_replace_fun( value o, value s, value f ) {
 			val_buffer(b,val_call1(f,o));
 			pos = d->matchs[1];
 		}
-		d->str = val_null;
+		d->str = alloc_null();
 		buffer_append_sub(b,str+pos,len-pos);
 		return buffer_to_string(b);
 	}
@@ -233,20 +236,14 @@ static value regexp_matched( value o, value n ) {
 	val_check(n,int);
 	m = val_int(n);
 	if( m < 0 || m >= d->nmatchs || val_is_null(d->str) )
-		neko_error();
+		return alloc_null();
 	{
 		int start = d->matchs[m*2];
 		int len = d->matchs[m*2+1] - start;
 		value str;
 		if( start == -1 )
-			return val_null;
-      #ifndef HXCPP
-		str = alloc_empty_string(len);
-		memcpy((char*)val_string(str),val_string(d->str)+start,len);
-		return str;
-      #else
-      return String(val_string(d->str)+start,len);
-      #endif
+			return alloc_null();
+		return copy_string( val_string(d->str)+start,len );
 	}
 }
 
@@ -263,31 +260,23 @@ static value regexp_matched_pos( value o, value n ) {
 	val_check(n,int);
 	m = val_int(n);
 	if( m < 0 || m >= d->nmatchs || val_is_null(d->str) )
-		neko_error();
+		return alloc_null();
 	{
 		int start = d->matchs[m*2];
 		int len = d->matchs[m*2+1] - start;
-      #ifdef HXCPP
-		value o = empty_object;
-      #else
-		value o = alloc_object(NULL);
-      #endif
+		value o = alloc_empty_object();
 		alloc_field(o,id_pos,alloc_int(start));
 		alloc_field(o,id_len,alloc_int(len));
 		return o;
 	}
 }
 
-#ifdef HXCPP
 extern "C" {
-#endif
 void regexp_main() {
 	id_pos = val_id("pos");
 	id_len = val_id("len");	
 }
-#ifdef HXCPP
 }
-#endif
 
 DEFINE_PRIM(regexp_new,1);
 DEFINE_PRIM(regexp_new_options,2);

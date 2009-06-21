@@ -299,8 +299,8 @@ static vthread *neko_thread_current() {
 	return result;
 }
 
-static void free_thread( value v ) {
-	vthread *t = val_thread(v);
+static void free_thread( void * v ) {
+	vthread *t = (vthread *)(v);
 	LOCK(sgThreadMapMutex);
 	ThreadMap::iterator i = sgThreadMap.find(t->GetID());
 	if (i!=sgThreadMap.end())
@@ -319,7 +319,7 @@ static vthread *alloc_thread() {
 #endif
 	t->v = alloc_abstract(k_thread,t);
 	_deque_init(&t->q);
-	val_gc(t->v.GetPtr(),free_thread);
+	val_gc_ptr(t,free_thread);
 	return t;
 }
 
@@ -337,17 +337,9 @@ thread_loop( void *_p ) {
 	UNLOCK(sgThreadMapMutex);
 	SignalSet(p->mBegun,p->mBegunMutex,p->mStarted);
 
-	try {
 	if ( !val_is_null(p->callb))
-	{
-		val_call0(p->callb);
-	}
-	}
-	catch (const char *inErrMessage)
-	{
-		fprintf(stderr,"An exception occured in a custom thread :\n");
-		fprintf(stderr,"%s\n",inErrMessage );
-	}
+		val_call0_traceexcept(p->callb);
+
 	// cleanup
 	p->t->v = alloc_null();
 #ifndef NEKO_WINDOWS
@@ -366,7 +358,9 @@ static value thread_create( value f, value param ) {
 	p->callb = f;
 	p->callparam = param;
 	SignalInit(p->mBegun,p->mBegunMutex,p->mStarted);
-	hxStartThread(thread_loop,p);
+
+	start_thread(thread_loop,p);
+
    WaitFor(p->mBegun,p->mBegunMutex,p->mStarted);
 	return p->t->v;
 }
@@ -408,19 +402,19 @@ static value thread_send( value vt, value msg ) {
 static value thread_read_message( value block ) {
 	value v = thread_current();
 	vthread *t;
-	if( v == null() )
-		neko_error();
+	if( val_is_null(v) )
+		return alloc_null();
 	t = val_thread(v);
 	val_check(block,bool);
 	return _deque_pop( &t->q, val_bool(block) );
 }
 
-static void free_lock( hxObject * l ) {
+static void free_lock( void * l ) {
 #	ifdef NEKO_WINDOWS
-	CloseHandle( val_lock(l) );
+	CloseHandle( (vlock)(l) );
 #	else
-	pthread_cond_destroy( &val_lock(l)->cond );
-	pthread_mutex_destroy( &val_lock(l)->lock );
+	pthread_cond_destroy( &((vlock)(l))->cond );
+	pthread_mutex_destroy( &((vlock)(l))->lock );
 #	endif
 }
 
@@ -435,15 +429,15 @@ static value lock_create() {
 #	ifdef NEKO_WINDOWS
 	l = CreateSemaphore(NULL,0,(1 << 30),NULL);
 	if( l == NULL )
-		neko_error();
+		return alloc_null();
 #	else
-	l = (vlock)alloc_private(sizeof(struct _vlock));
+	l = (vlock)hx_alloc_private(sizeof(struct _vlock));
 	l->counter = 0;
 	if( pthread_mutex_init(&l->lock,NULL) != 0 || pthread_cond_init(&l->cond,NULL) != 0 )
-		neko_error();
+		return alloc_null();
 #	endif
 	vl = alloc_abstract(k_lock,l);
-	val_gc(vl.GetPtr(),free_lock);
+	val_gc_ptr(l,free_lock);
 	return vl;
 }
 
@@ -461,14 +455,14 @@ static value lock_release( value lock ) {
 	l = val_lock(lock);
 #	ifdef NEKO_WINDOWS
 	if( !ReleaseSemaphore(l,1,NULL) )
-		neko_error();
+		return alloc_null();
 #	else
 	pthread_mutex_lock(&l->lock);
 	l->counter++;
 	pthread_cond_signal(&l->cond);
 	pthread_mutex_unlock(&l->lock);
 #	endif
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -488,11 +482,11 @@ static value lock_wait( value lock, value timeout ) {
 	switch( WaitForSingleObject(val_lock(lock),has_timeout?(DWORD)(val_number(timeout) * 1000.0):INFINITE) ) {
 	case WAIT_ABANDONED:
 	case WAIT_OBJECT_0:
-		return val_true;
+		return alloc_bool(true);
 	case WAIT_TIMEOUT:
-		return val_false;
+		return alloc_bool(false);
 	default:
-		neko_error();
+		return alloc_null();
 	}
 #	else
 	{
@@ -514,7 +508,7 @@ static value lock_wait( value lock, value timeout ) {
 				t.tv_nsec = (long)delta;
 				if( pthread_cond_timedwait(&l->cond,&l->lock,&t) != 0 ) {
 					pthread_mutex_unlock(&l->lock);
-					return val_false;
+					return alloc_bool(false);
 				}
 			} else
 				pthread_cond_wait(&l->cond,&l->lock);
@@ -523,7 +517,7 @@ static value lock_wait( value lock, value timeout ) {
 		if( l->counter > 0 )
 			pthread_cond_signal(&l->cond);
 		pthread_mutex_unlock(&l->lock);
-		return val_true;
+		return alloc_bool(true);
 	}
 #	endif
 }
@@ -620,7 +614,7 @@ static value tls_set( value v, value content ) {
 }
 #endif
 
-static void free_mutex( hxObject * v ) {
+static void free_mutex( value v ) {
 	MutexDestroy( val_mutex(v) );
 }
 
@@ -635,7 +629,7 @@ static value mutex_create() {
 	ThreadMutex *m = (ThreadMutex *)alloc_private(sizeof(ThreadMutex));
 	MutexInit(*m);
 	value v = alloc_abstract(k_mutex,m);
-	val_gc(v.GetPtr(),free_mutex);
+	val_gc(v,free_mutex);
 	return v;
 }
 
@@ -677,7 +671,7 @@ static value mutex_release( value m ) {
 	return val_null;
 }
 
-static void free_deque( hxObject * v ) {	
+static void free_deque( value v ) {	
 	_deque_destroy(val_deque(v));
 }
 
@@ -688,7 +682,7 @@ static void free_deque( hxObject * v ) {
 static value deque_create() {
 	vdeque *q = (vdeque*)hx_alloc(sizeof(vdeque));
 	value v = alloc_abstract(k_deque,q);
-	val_gc(v.GetPtr(),free_deque);
+	val_gc(v,free_deque);
 	_deque_init(q);
 	return v;
 }

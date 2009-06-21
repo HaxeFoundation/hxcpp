@@ -1,4 +1,4 @@
-#include <neko.h>
+#include <hxCFFI.h>
 
 static bool is_big_endian()
 {
@@ -15,21 +15,22 @@ static value float_bytes( value n, value be ) {
 	val_check(n,number);
 	val_check(be,bool);
 	f = (float)val_number(n);
-	unsigned char *ptr = (unsigned char *)&f;
-	Array<unsigned char> bytes(4,4);
+	char *ptr = (char *)&f;
+	buffer bytes = alloc_buffer_len(4);
+	char *dest = (char *)buffer_data(bytes);
 	if( is_big_endian() != val_bool(be) ) {
-		bytes[3] = *ptr++;
-		bytes[2] = *ptr++;
-		bytes[1] = *ptr++;
-		bytes[0] = *ptr++;
+		dest[3] = *ptr++;
+		dest[2] = *ptr++;
+		dest[1] = *ptr++;
+		dest[0] = *ptr++;
 	}
 	else {
-		bytes[0] = *ptr++;
-		bytes[1] = *ptr++;
-		bytes[2] = *ptr++;
-		bytes[3] = *ptr++;
+		dest[0] = *ptr++;
+		dest[1] = *ptr++;
+		dest[2] = *ptr++;
+		dest[3] = *ptr++;
 	}
-	return bytes;
+	return buffer_val(bytes);
 }
 
 
@@ -39,28 +40,29 @@ static value double_bytes( value n, value be ) {
 	val_check(be,bool);
 	f = (double)val_number(n);
 	unsigned char *ptr = (unsigned char *)&f;
-	Array<unsigned char> bytes(8,8);
+	buffer bytes = alloc_buffer_len(8);
+	char *dest = (char *)buffer_data(bytes);
 	if( is_big_endian() != val_bool(be) ) {
-		bytes[7] = *ptr++;
-		bytes[6] = *ptr++;
-		bytes[5] = *ptr++;
-		bytes[4] = *ptr++;
-		bytes[3] = *ptr++;
-		bytes[2] = *ptr++;
-		bytes[1] = *ptr++;
-		bytes[0] = *ptr++;
+		dest[7] = *ptr++;
+		dest[6] = *ptr++;
+		dest[5] = *ptr++;
+		dest[4] = *ptr++;
+		dest[3] = *ptr++;
+		dest[2] = *ptr++;
+		dest[1] = *ptr++;
+		dest[0] = *ptr++;
 	}
 	else {
-		bytes[0] = *ptr++;
-		bytes[1] = *ptr++;
-		bytes[2] = *ptr++;
-		bytes[3] = *ptr++;
-		bytes[4] = *ptr++;
-		bytes[5] = *ptr++;
-		bytes[6] = *ptr++;
-		bytes[7] = *ptr++;
+		dest[0] = *ptr++;
+		dest[1] = *ptr++;
+		dest[2] = *ptr++;
+		dest[3] = *ptr++;
+		dest[4] = *ptr++;
+		dest[5] = *ptr++;
+		dest[6] = *ptr++;
+		dest[7] = *ptr++;
 	}
-	return bytes;
+	return buffer_val(bytes);
 }
 
 
@@ -71,10 +73,10 @@ static value double_bytes( value n, value be ) {
 static value float_of_bytes( value s, value be ) {
 	float f;
 	val_check(be,bool);
-	Array<unsigned char> bytes = s;
-	if( bytes==null())
-		neko_error();
-	f = *(float*)&bytes[0];
+	buffer bytes = val_to_buffer(s);
+	if( bytes==0)
+		return alloc_null();
+	f = *(float*)buffer_data(bytes);
 	char *c = (char*)&f;
 	if( is_big_endian() != val_bool(be) ) {
 		char *c = (char*)&f;
@@ -82,16 +84,16 @@ static value float_of_bytes( value s, value be ) {
 		tmp = c[0];	c[0] = c[3]; c[3] = tmp;
 		tmp = c[1];	c[1] = c[2]; c[2] = tmp;
 	}
-	return f;
+	return alloc_float(f);
 }
 
 static value double_of_bytes( value s, value be ) {
 	double f;
 	val_check(be,bool);
-	Array<unsigned char> bytes = s;
-	if( bytes==null())
-		neko_error();
-	f = *(double*)val_string(s);
+	buffer bytes = val_to_buffer(s);
+	if( bytes==0)
+		return alloc_null();
+	f = *(double*)buffer_data(bytes);
 	if( is_big_endian() != val_bool(be) ) {
 		char *c = (char*)&f;
 		char tmp;
@@ -100,7 +102,7 @@ static value double_of_bytes( value s, value be ) {
 		tmp = c[2]; c[2] = c[5]; c[5] = tmp;
 		tmp = c[3];	c[3] = c[4]; c[4] = tmp;
 	}
-	return f;
+	return alloc_float(f);
 }
 
 

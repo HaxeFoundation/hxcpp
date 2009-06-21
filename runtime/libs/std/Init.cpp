@@ -14,7 +14,7 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
-#include <neko.h>
+#include <hxCFFI.h>
 
 field id_h;
 field id_m;
@@ -34,10 +34,10 @@ field id_serialize;
 field id_unserialize;
 
 DEFINE_ENTRY_POINT(std_main);
-extern vkind k_file;
-extern vkind k_socket;
-extern vkind k_buffer;
-extern vkind k_thread;
+
+DECLARE_KIND( k_file );
+DECLARE_KIND( k_socket );
+DECLARE_KIND( k_thread );
 
 void std_main() {
 	id_h = val_id("h");
@@ -58,7 +58,6 @@ void std_main() {
 	id_unserialize = val_id("__unserialize");	
 	kind_share(&k_file,"file");
 	kind_share(&k_socket,"socket");
-	kind_share(&k_buffer,"buffer");
 	kind_share(&k_thread,"thread");
 }
 

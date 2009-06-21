@@ -14,18 +14,8 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
-#include <neko.h>
-#ifndef HXCPP
-#include <neko_vm.h>
-#endif
+#include <hxCFFI.h>
 #include <string.h>
-
-#ifdef HXCPP
-#define NULL_VAL null()
-#else
-#define NULL_VAL NULL
-#endif
-
 
 
 
@@ -52,38 +42,34 @@ static value string_split( value o, value s ) {
 	val_check(o,string);
 	ilen = val_strlen(o);
 	slen = val_strlen(s);
-	l = NULL_VAL;
-	first = NULL_VAL;
+	l = alloc_null();
+	first = alloc_null();
 	for(pos=slen?0:1;pos<=ilen-slen;pos++)
 		if( memcmp(val_string(o)+pos,val_string(s),slen) == 0 ) {
 			value ss = copy_string(val_string(o)+start,pos-start);
 			value l2 = alloc_array(2);
-			val_array_ptr(l2)[0] = ss;
-			val_array_ptr(l2)[1] = val_null;
-			if( first == NULL_VAL )
+			val_array_set_i(l2,0,ss);
+			val_array_set_i(l2,1,alloc_null());
+			if( val_is_null(first) )
 				first = l2;
 			else
-				val_array_ptr(l)[1] = l2;
+				val_array_set_i(l,1,l2);
 			l = l2;
 			start = pos + slen;
 			if( slen )
 				pos = start - 1;
 		}
 	if( ilen > 0 && slen ) {
-                #ifdef HXCPP
-		value ss = start ? Dynamic(copy_string(val_string(o)+start,ilen-start)) : o;
-                #else
 		value ss = start ? copy_string(val_string(o)+start,ilen-start) : o;
-                #endif
 		value l2 = alloc_array(2);
-		val_array_ptr(l2)[0] = ss;
-		val_array_ptr(l2)[1] = val_null;
-		if( first == NULL_VAL )
+		val_array_set_i(l2,0,ss);
+		val_array_set_i(l2,1,alloc_null());
+		if( val_is_null(first))
 			first = l2;
 		else
-			val_array_ptr(l)[1] = l2;
+			val_array_set_i(l,1,l2);
 	}
-	return (first == NULL_VAL)?val_null:first;
+	return first;
 }
 
 #define HEX			1
@@ -109,7 +95,7 @@ static value neko_sprintf( value fmt, value params ) {
 	int count = 0;
 	buffer b;
 	val_check(fmt,string);
-	b = alloc_buffer(NULL_VAL);
+	b = alloc_buffer(0);
 	last = val_string(fmt);
 	cur = last;
 	end = cur + val_strlen(fmt);
@@ -138,9 +124,9 @@ static value neko_sprintf( value fmt, value params ) {
 					param = params;
 					count++;
 				} else if( !val_is_array(params) || val_array_size(params) <= count )
-					neko_error();
+					return alloc_null();
 				else
-					param = val_array_ptr(params)[count++];
+					param = val_array_i(params,count++);
 				switch( *cur ) {
 				case 'c':
 					{
@@ -149,7 +135,7 @@ static value neko_sprintf( value fmt, value params ) {
 						val_check(param,int);
 						c = val_int(param);
 						if( c < 0 || c > 255 )
-							neko_error();
+							return alloc_null();
 						cc = (char)c;
 						buffer_append_sub(b,&cc,1);
 					}
@@ -234,7 +220,7 @@ static value neko_sprintf( value fmt, value params ) {
 					}
 					break;
 				default:
-					neko_error();
+					return alloc_null();
 					break;
 				}
 			}
@@ -258,8 +244,8 @@ static value url_decode( value v ) {
 		int pout = 0;
 		const char *in = val_string(v);
 		int len = val_strlen(v);
-		value v2 = alloc_empty_string(len);
-		char *out = (char*)val_string(v2);
+		buffer v2 = alloc_buffer_len(len);
+		char *out = (char*)buffer_data(v2);
 		while( len-- > 0 ) {
 			char c = in[pin++];
 			if( c == '+' )
@@ -292,8 +278,8 @@ static value url_decode( value v ) {
 			out[pout++] = c;
 		}
 		out[pout] = 0;
-		val_set_size(v2,pout);
-		return v2;
+		buffer_set_size(v2,pout);
+		return buffer_to_string(v2);
 	}
 }
 
@@ -309,8 +295,8 @@ static value url_encode( value v ) {
 		const unsigned char *in = (const unsigned char*)val_string(v);
 		static const char *hex = "0123456789ABCDEF";
 		int len = val_strlen(v);
-		value v2 = alloc_empty_string(len * 3);
-		unsigned char *out = (unsigned char*)val_string(v2);
+		buffer v2 = alloc_buffer_len(len * 3);
+		unsigned char *out = (unsigned char*)buffer_data(v2);
 		while( len-- > 0 ) {
 			unsigned char c = in[pin++];
 			if( (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.' )
@@ -322,8 +308,8 @@ static value url_encode( value v ) {
 			}
 		}
 		out[pout] = 0;
-		val_set_size(v2,pout);
-		return v2;
+		buffer_set_size(v2,pout);
+		return buffer_to_string(v2);
 	}
 }
 
@@ -341,7 +327,7 @@ static value base_encode( value s, value base ) {
 	int mask;
 	unsigned int buf;
 	int curbits;
-	value out;
+	buffer out;
 	unsigned char *cin, *cout, *chars;
 	val_check(s,string);
 	val_check(base,string);
@@ -352,10 +338,10 @@ static value base_encode( value s, value base ) {
 	while( len > 1 << nbits )
 		nbits++;
 	if( nbits > 8 || len != 1 << nbits )
-		neko_error();
+		return alloc_null();
 	size = (val_strlen(s) * 8 + nbits - 1) / nbits;
-	out = alloc_empty_string(size);
-	cout = (unsigned char *)val_string(out);
+	out = alloc_buffer_len(size);
+	cout = (unsigned char *)buffer_data(out);
 	buf = 0;
 	curbits = 0;
 	mask = ((1 << nbits) - 1);
@@ -368,7 +354,7 @@ static value base_encode( value s, value base ) {
 		curbits -= nbits;
 		*cout++ = chars[(buf >> curbits) & mask];
 	}
-	return out;
+	return buffer_to_string(out);
 }
 
 /**
@@ -384,7 +370,7 @@ static value base_decode( value s, value base ) {
 	int size;
 	unsigned int buf;
 	int curbits;
-	value out;
+	buffer out;
 	int i;
 	int tbl[256];
 	unsigned char *cin, *cout, *chars;
@@ -397,14 +383,14 @@ static value base_decode( value s, value base ) {
 	while( len > 1 << nbits )
 		nbits++;
 	if( nbits > 8 || len != 1 << nbits )
-		neko_error();
+		return alloc_null();
 	for(i=0;i<256;i++)
 		tbl[i] = -1;
 	for(i=0;i<len;i++)
 		tbl[chars[i]] = i;
 	size = (val_strlen(s) * nbits) / 8;
-	out = alloc_empty_string(size);
-	cout = (unsigned char *)val_string(out);
+	out = alloc_buffer_len(size);
+	cout = (unsigned char *)buffer_data(out);
 	buf = 0;
 	curbits = 0;
 	while( size-- > 0 ) {
@@ -413,13 +399,13 @@ static value base_decode( value s, value base ) {
 			buf <<= nbits;
 			i = tbl[*cin++];
 			if( i == -1 )
-				neko_error();
+				return alloc_null();
 			buf |= i;
 		}
 		curbits -= 8;
 		*cout++ = (buf >> curbits) & 0xFF;
 	}
-	return out;
+	return buffer_to_string(out);
 }
 
 #define neko_sprintf__2 sprintf__2

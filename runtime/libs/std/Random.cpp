@@ -14,7 +14,7 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
-#include <neko.h>
+#include <hxCFFI.h>
 #include <time.h>
 #include <string.h>
 #ifdef NEKO_WINDOWS
@@ -126,7 +126,7 @@ static value random_set_seed( value o, value v ) {
 	val_check_kind(o,k_random);
 	val_check(v,int);
 	rnd_set_seed(val_rnd(o),val_int(v));
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**

@@ -14,9 +14,12 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
+
+#define IMPLEMENT_API
+
 #include <stdlib.h>
 #include <string.h>
-#include <neko.h>
+#include <hxCFFI.h>
 #include <zlib.h>
 
 /**
@@ -45,23 +48,17 @@ void zlib_main() {
 	id_done = val_id("done");
 }
 
-static void free_stream_def( hxObject * v ) {
+static void free_stream_def( value v ) {
 	z_stream *s = val_stream(v);
 	deflateEnd(s); // no error
 	free(s);
-   #ifndef HXCPP
-	val_kind(v) = NULL;
-   #endif
 	val_gc(v,NULL);
 }
 
-static void free_stream_inf( hxObject * v ) {
+static void free_stream_inf( value v ) {
 	z_stream *s = val_stream(v);
 	inflateEnd(s); // no error
 	free(s);
-   #ifndef HXCPP
-	val_kind(v) = NULL;
-   #endif
 	val_gc(v,NULL);
 }
 
@@ -94,7 +91,7 @@ static value deflate_init( value level ) {
 		zlib_error(NULL,err);
 	}
 	s = alloc_abstract(k_stream_def,z);
-	val_gc(s.GetPtr(),free_stream_def);
+	val_gc(s,free_stream_def);
 	return s;
 }
 
@@ -112,11 +109,11 @@ static value deflate_buffer( value s, value src, value srcpos, value dst, value 
 	val_check(dstpos,int);
 	z = val_stream(s);
 	if( val_int(srcpos) < 0 || val_int(dstpos) < 0 )
-		neko_error();
+		return alloc_null();
 	slen = val_strlen(src) - val_int(srcpos);
 	dlen = val_strlen(dst) - val_int(dstpos);
 	if( slen < 0 || dlen < 0 )
-		neko_error();
+		return alloc_null();
 	z->next_in = (Bytef*)(val_string(src) + val_int(srcpos));
 	z->next_out = (Bytef*)(val_string(dst) + val_int(dstpos));
 	z->avail_in = slen;
@@ -125,7 +122,7 @@ static value deflate_buffer( value s, value src, value srcpos, value dst, value 
 		zlib_error(z,err);
 	z->next_in = NULL;
 	z->next_out = NULL;
-	o = alloc_object(0);
+	o = alloc_empty_object();
 	alloc_field(o,id_done,alloc_bool(err == Z_STREAM_END));
 	alloc_field(o,id_read,alloc_int((int)(slen - z->avail_in)));
 	alloc_field(o,id_write,alloc_int((int)(dlen - z->avail_out)));
@@ -138,8 +135,8 @@ static value deflate_buffer( value s, value src, value srcpos, value dst, value 
 **/
 static value deflate_end( value s ) {
 	val_check_kind(s,k_stream_def);
-	free_stream_def(s.GetPtr());
-	return val_null;
+	free_stream_def(s);
+	return alloc_null();
 }
 
 /**
@@ -165,7 +162,7 @@ static value inflate_init( value wsize ) {
 		zlib_error(NULL,err);
 	}
 	s = alloc_abstract(k_stream_inf,z);
-	val_gc(s.GetPtr(),free_stream_inf);
+	val_gc(s,free_stream_inf);
 	return s;
 }
 
@@ -182,7 +179,7 @@ static value inflate_buffer( value s, value src, value srcpos, value dst, value 
    Array<unsigned char> src_buf = src;
    Array<unsigned char> dst_buf = dst;
    if (src_buf==null() || dst_buf==null())
-      neko_error();
+      return alloc_null();
 	slen = src_buf.__length();
 	dlen = dst_buf.__length();
    #else
@@ -194,11 +191,11 @@ static value inflate_buffer( value s, value src, value srcpos, value dst, value 
 	val_check(dstpos,int);
 	z = val_stream(s);
 	if( val_int(srcpos) < 0 || val_int(dstpos) < 0 )
-		neko_error();
+		return alloc_null();
 	slen -= val_int(srcpos);
 	dlen -= val_int(dstpos);
 	if( slen < 0 || dlen < 0 )
-		neko_error();
+		return alloc_null();
    #ifdef HXCPP
 	z->next_in = (Bytef*)(&src_buf[val_int(srcpos)]);
 	z->next_out = (Bytef*)(&dst_buf[val_int(dstpos)]);
@@ -212,7 +209,7 @@ static value inflate_buffer( value s, value src, value srcpos, value dst, value 
 		zlib_error(z,err);
 	z->next_in = NULL;
 	z->next_out = NULL;
-	o = alloc_object(0);
+	o = alloc_empty_object();
 	alloc_field(o,id_done,alloc_bool(err == Z_STREAM_END));
 	alloc_field(o,id_read,alloc_int((int)(slen - z->avail_in)));
 	alloc_field(o,id_write,alloc_int((int)(dlen - z->avail_out)));
@@ -225,8 +222,8 @@ static value inflate_buffer( value s, value src, value srcpos, value dst, value 
 **/
 static value inflate_end( value s ) {
 	val_check_kind(s,k_stream_inf);
-	free_stream_inf(s.GetPtr());
-	return val_null;
+	free_stream_inf(s);
+	return alloc_null();
 }
 
 /**
@@ -249,9 +246,9 @@ static value set_flush_mode( value s, value flush ) {
 	else if( strcmp(val_string(flush),"BLOCK") == 0 )
 		f = Z_BLOCK;
 	else
-		neko_error();
+		return alloc_null();
 	val_flush(val_stream(s)) = f;
-	return val_null;
+	return alloc_null();
 }
 
 /**
@@ -270,13 +267,13 @@ static value get_adler32( value s ) {
 	<doc>Update an adler32 value with a substring</doc>
 **/
 static value update_adler32( value adler, value s, value pos, value len ) {
-	val_check(adler,int32);
+	val_check(adler,int);
 	val_check(s,string);
 	val_check(pos,int);
 	val_check(len,int);
 	if( val_int(pos) < 0 || val_int(len) < 0 || val_int(pos) + val_int(len) > val_strlen(s) )
-		neko_error();
-	return alloc_int32(adler32(val_int32(adler),(Bytef*)(val_string(s)+val_int(pos)),val_int(len)));
+		return alloc_null();
+	return alloc_int32(adler32(val_int(adler),(Bytef*)(val_string(s)+val_int(pos)),val_int(len)));
 }
 
 /**
@@ -284,13 +281,13 @@ static value update_adler32( value adler, value s, value pos, value len ) {
 	<doc>Update a CRC32 value with a substring</doc>
 **/
 static value update_crc32( value crc, value s, value pos, value len ) {
-	val_check(crc,int32);
+	val_check(crc,int);
 	val_check(s,string);
 	val_check(pos,int);
 	val_check(len,int);
 	if( val_int(pos) < 0 || val_int(len) < 0 || val_int(pos) + val_int(len) > val_strlen(s) )
-		neko_error();
-	return alloc_int32(crc32(val_int32(crc),(Bytef*)(val_string(s)+val_int(pos)),val_int(len)));
+		return alloc_null();
+	return alloc_int32(crc32(val_int(crc),(Bytef*)(val_string(s)+val_int(pos)),val_int(len)));
 }
 
 /**

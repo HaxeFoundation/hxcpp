@@ -14,7 +14,7 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
-#include <neko.h>
+#include <hxCFFI.h>
 #include <memory.h>
 
 
@@ -196,7 +196,7 @@ static void do_parse_xml( const char *xml, const char **lp, int *line, value cal
 				if( p == start )
 					ERROR("Expected node name");
 				nodename = copy_string(start,p-start);
-				attribs = alloc_object(0);
+				attribs = alloc_empty_object();
 				state = IGNORE_SPACES;
 				next = BODY;
 				continue;
@@ -302,7 +302,7 @@ static void do_parse_xml( const char *xml, const char **lp, int *line, value cal
 						buffer b = alloc_buffer("Expected </");
 						buffer_append(b,parentname);
 						buffer_append(b,">");
-						ERROR(val_string(buffer_to_string(b)));
+						ERROR(buffer_data(b));
 					}
 				}
 				state = IGNORE_SPACES;
@@ -388,7 +388,7 @@ static value parse_xml( value str, value callb ) {
 	if( p[0] == (char)0xEF && p[1] == (char)0xBB && p[2] == (char)0xBF )
 		p += 3;
 	do_parse_xml(p,&p,&line,callb,NULL);
-	return val_true;
+	return alloc_bool(true);
 }
 
 DEFINE_PRIM(parse_xml,2);

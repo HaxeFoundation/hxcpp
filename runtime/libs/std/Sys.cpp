@@ -80,14 +80,13 @@ static value get_env( value v ) {
 **/
 static value put_env( value e, value v ) {
 #ifdef NEKO_WINDOWS
-	buffer b;
 	val_check(e,string);
 	val_check(v,string);
-	b = alloc_buffer(NULL_VAL);
+	buffer b = alloc_buffer(0);
 	val_buffer(b,e);
 	buffer_append_sub(b,"=",1);
 	val_buffer(b,v);
-	if( putenv(val_string(buffer_to_string(b))) != 0 )
+	if( putenv(buffer_data(b)) != 0 )
 		return alloc_null();
 #else
 	val_check(e,string);
@@ -454,7 +453,7 @@ static value sys_read_dir( value p) {
 	while( true ) {
 		// skip magic dirs
 		if( d.cFileName[0] != '.' || (d.cFileName[1] != 0 && (d.cFileName[1] != '.' || d.cFileName[2] != 0)) ) {
-			val_array_push(result,val_alloc_wstring(d.cFileName));
+			val_array_push(result,alloc_wstring(d.cFileName));
 		}
 		if( !FindNextFileW(handle,&d) )
 			break;
@@ -509,7 +508,7 @@ static value sys_exe_path() {
 	wchar_t path[MAX_PATH];
 	if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
 		return alloc_null();
-	return String(path);
+	return alloc_wstring(path);
 #elif defined(NEKO_MAC)
 	char path[PATH_MAX+1];
 	uint32_t path_len = PATH_MAX;

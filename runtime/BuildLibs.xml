@@ -19,6 +19,7 @@
   <file name="runtime/libs/std/File.cpp"/>
   <file name="runtime/libs/std/Init.cpp"/>
   <file name="runtime/libs/std/Misc.cpp"/>
+  <file name="runtime/libs/std/Interface.cpp"/>
 
 </files>
 

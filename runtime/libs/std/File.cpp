@@ -14,7 +14,7 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
-#include <neko.h>
+#include <hxCFFI.h>
 #include <stdio.h>
 #ifdef NEKO_WINDOWS
 #	include <windows.h>
@@ -40,8 +40,8 @@ DEFINE_KIND(k_file);
 
 static void file_error( const char *msg, fio *f ) {
 	value a = alloc_array(2);
-	val_array_ptr(a)[0] = alloc_string(msg);
-	val_array_ptr(a)[1] = alloc_string(val_string(f->name));
+	val_array_set_i(a,0,alloc_string(msg));
+	val_array_set_i(a,1,alloc_string(val_string(f->name)));
 	val_throw(a);
 }
 
@@ -56,7 +56,7 @@ static value file_open( value name, value r ) {
 	fio *f;
 	val_check(name,string);
 	val_check(r,string);
-	f = (fio*)alloc(sizeof(fio));
+	f = (fio*)hx_alloc(sizeof(fio));
 	f->name = alloc_string(val_string(name));
 	f->io = fopen(val_string(name),val_string(r));
 	if( f->io == NULL )
@@ -73,10 +73,7 @@ static value file_close( value o ) {
 	val_check_kind(o,k_file);
 	f = val_file(o);
 	fclose(f->io);
-   #ifndef HXCPP
-	val_kind(o) = NULL;
-   #endif
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -100,28 +97,20 @@ static value file_write( value o, value s, value pp, value n ) {
 	int buflen;
 	fio *f;
 	val_check_kind(o,k_file);
-   #ifdef HXCPP
-   Array<unsigned char> bytes = s;
-   buflen = bytes.__length();
-   #else
-	val_check(s,string);
-	buflen = val_strlen(s);
-	#endif
+	val_check(s,buffer);
+	buffer buf = val_to_buffer(s);
+	buflen = buffer_size(buf);
 	val_check(pp,int);
 	val_check(n,int);
 	f = val_file(o);
 	p = val_int(pp);
 	len = val_int(n);
 	if( p < 0 || len < 0 || p > buflen || p + len > buflen )
-		neko_error();
+		return alloc_null();
 	while( len > 0 ) {
 		int d;
 		POSIX_LABEL(file_write_again);
-      #ifdef HXCPP
-		d = (int)fwrite(&bytes[p],1,len,f->io);
-      #else
-		d = (int)fwrite(val_string(s)+p,1,len,f->io);
-		#endif
+		d = (int)fwrite(buffer_data(buf)+p,1,len,f->io);
 		if( d <= 0 ) {
 			HANDLE_FINTR(f->io,file_write_again);
 			file_error("file_write",f);
@@ -158,7 +147,7 @@ static value file_read( value o, value s, value pp, value n ) {
 	p = val_int(pp);
 	len = val_int(n);
 	if( p < 0 || len < 0 || p > buf_len || p + len > buf_len )
-		neko_error();
+		return alloc_null();
 	while( len > 0 ) {
 		int d;
 		POSIX_LABEL(file_read_again);
@@ -190,7 +179,7 @@ static value file_write_char( value o, value c ) {
 	val_check(c,int);
 	val_check_kind(o,k_file);
 	if( val_int(c) < 0 || val_int(c) > 255 )
-		neko_error();
+		return alloc_null();
 	cc = (char)val_int(c);
 	f = val_file(o);
 	POSIX_LABEL(write_char_again);
@@ -198,7 +187,7 @@ static value file_write_char( value o, value c ) {
 		HANDLE_FINTR(f->io,write_char_again);
 		file_error("file_write_char",f);
 	}
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -230,7 +219,7 @@ static value file_seek( value o, value pos, value kind ) {
 	f = val_file(o);
 	if( fseek(f->io,val_int(pos),val_int(kind)) != 0 )
 		file_error("file_seek",f);
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -267,7 +256,7 @@ static value file_flush( value o ) {
 	f = val_file(o);
 	if( fflush( f->io ) != 0 )
 		file_error("file_flush",f);
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -275,9 +264,7 @@ static value file_flush( value o ) {
 	<doc>Read the content of the file [f] and return it.</doc>
 **/
 static value file_contents( value name ) {
-   #ifndef HXCPP
-	value s;
-   #endif
+	buffer s;
 	fio f;
 	int len;
 	int p;
@@ -289,18 +276,12 @@ static value file_contents( value name ) {
 	fseek(f.io,0,SEEK_END);
 	len = ftell(f.io);
 	fseek(f.io,0,SEEK_SET);
-   #ifdef HXCPP
-   Array<unsigned char> s(len,len);
-   #endif
+	s = alloc_buffer_len(len);
 	p = 0;
 	while( len > 0 ) {
 		int d;
 		POSIX_LABEL(file_contents);
-      #ifdef HXCPP
-		d = (int)fread((char*)&s[p],1,len,f.io);
-      #else
-		d = (int)fread((char*)val_string(s)+p,1,len,f.io);
-      #endif
+		d = (int)fread((char*)buffer_data(s)+p,1,len,f.io);
 		if( d <= 0 ) {
 			HANDLE_FINTR(f.io,file_contents);
 			fclose(f.io);
@@ -310,13 +291,13 @@ static value file_contents( value name ) {
 		len -= d;
 	}	
 	fclose(f.io);
-	return s;
+	return buffer_val(s);
 }
 
 #define MAKE_STDIO(k) \
 	static value file_##k() { \
 		fio *f; \
-		f = (fio*)alloc(sizeof(fio)); \
+		f = (fio*)hx_alloc(sizeof(fio)); \
 		f->name = alloc_string(#k); \
 		f->io = k; \
 		return alloc_abstract(k_file,f); \

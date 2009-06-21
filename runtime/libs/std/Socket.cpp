@@ -15,7 +15,7 @@
 /*																			*/
 /* ************************************************************************ */
 #include <string.h>
-#include <neko.h>
+#include <hxCFFI.h>
 #ifdef NEKO_WINDOWS
 #	include <winsock2.h>
 #	define FDSIZE(n)	(sizeof(u_int) + (n) * sizeof(SOCKET))
@@ -42,12 +42,6 @@
 #	define INVALID_SOCKET (-1)
 #endif
 
-#ifdef HXCPP
-#define NULL_VAL null()
-#else
-#define NULL_VAL NULL
-#endif
-
 #if defined(NEKO_WINDOWS) || defined(NEKO_MAC)
 #	define MSG_NOSIGNAL 0
 #endif
@@ -71,7 +65,9 @@ typedef struct {
 DEFINE_KIND(k_socket);
 DEFINE_KIND(k_poll);
 
-#define val_sock(o)		((SOCKET)(int_val)val_data(o))
+typedef int socket_int;
+
+#define val_sock(o)		((SOCKET)(socket_int)val_data(o))
 #define val_poll(o)		((polldata*)val_data(o))
 
 /**
@@ -91,8 +87,8 @@ static value block_error() {
 	if( errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS || errno == EALREADY )
 #endif
 		val_throw(alloc_string("Blocking"));
-	neko_error();
-	return val_true;
+	return alloc_null();
+	return alloc_bool(true);
 }
 
 /**
@@ -109,7 +105,7 @@ static value socket_init() {
 		init_done = true;
 	}
 #endif
-	return val_true;
+	return alloc_bool(true);
 }
 
 
@@ -125,7 +121,7 @@ static value socket_new( value udp ) {
 	else
 		s = socket(AF_INET,SOCK_STREAM,0);
 	if( s == INVALID_SOCKET )
-		neko_error();
+		return alloc_null();
 #	ifdef NEKO_MAC
 	setsockopt(s,SOL_SOCKET,SO_NOSIGPIPE,NULL,0);
 #	endif
@@ -136,11 +132,7 @@ static value socket_new( value udp ) {
 		if( old >= 0 ) fcntl(s,F_SETFD,old|FD_CLOEXEC);
 	}
 #	endif
-   #ifdef HXCPP
 	return alloc_abstract(k_socket,(void *)s);
-   #else
-	return alloc_abstract(k_socket,(value)(int_val)s);
-   #endif
 }
 
 /**
@@ -153,10 +145,7 @@ static value socket_close( value o ) {
 	if( closesocket(val_sock(o)) ) {
 		HANDLE_EINTR(close_again);
 	}
-   #ifndef HXCPP
-	val_kind(o) = NULL;
-   #endif
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -170,14 +159,14 @@ static value socket_send_char( value o, value v ) {
 	val_check(v,int);
 	c = val_int(v);
 	if( c < 0 || c > 255 )
-		neko_error();
+		return alloc_null();
 	cc = (unsigned char)c;
 	POSIX_LABEL(send_char_again);
 	if( send(val_sock(o),(const char *)&cc,1,MSG_NOSIGNAL) == SOCKET_ERROR ) {
 		HANDLE_EINTR(send_char_again);
 		return block_error();
 	}
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -195,7 +184,7 @@ static value socket_send( value o, value data, value pos, value len ) {
 	l = val_int(len);
 	dlen = val_strlen(data);
 	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
-		neko_error();
+		return alloc_null();
 	dlen = send(val_sock(o), val_string(data) + p , l, MSG_NOSIGNAL);
 	if( dlen == SOCKET_ERROR )
 		return block_error();
@@ -210,26 +199,17 @@ static value socket_send( value o, value data, value pos, value len ) {
 static value socket_recv( value o, value data, value pos, value len ) {
 	int p,l,dlen;
 	val_check_kind(o,k_socket);
-   #ifdef HXCPP
-	Array<unsigned char> bytes = data;
-	if (data==null())
-		neko_error();
-   #else
-	val_check(data,string);
-   #endif
+	val_check(data,buffer);
+	buffer buf = val_to_buffer(data);
 	val_check(pos,int);
 	val_check(len,int);
 	p = val_int(pos);
 	l = val_int(len);
-	dlen = val_strlen(data);
+	dlen = buffer_size(buf);
 	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
-		neko_error();
+		return alloc_null();
 	POSIX_LABEL(recv_again);
-   #ifdef HXCPP
-	dlen = recv(val_sock(o), (char *)&bytes[p], l, MSG_NOSIGNAL);
-   #else
-	dlen = recv(val_sock(o), val_string(data) + p , l, MSG_NOSIGNAL);
-   #endif
+	dlen = recv(val_sock(o), buffer_data(buf) + p, l, MSG_NOSIGNAL);
 	if( dlen == SOCKET_ERROR ) {
 		HANDLE_EINTR(recv_again);
 		return block_error();
@@ -252,7 +232,7 @@ static value socket_recv_char( value o ) {
 		return block_error();
 	}
 	if( ret == 0 )
-		neko_error();
+		return alloc_null();
 	return alloc_int(cc);
 }
 
@@ -268,7 +248,7 @@ static value socket_write( value o, value data ) {
    #ifdef HXCPP
 	Array<unsigned char> bytes = data;
 	if (bytes==null())
-		neko_error();
+		return alloc_null();
 	cdata =(const char *)&bytes[0]; 
 	datalen = bytes->length;
    #else
@@ -286,7 +266,7 @@ static value socket_write( value o, value data ) {
 		cdata += slen;
 		datalen -= slen;
 	}
-	return val_true;
+	return alloc_bool(true);
 }
 
 
@@ -297,17 +277,11 @@ static value socket_write( value o, value data ) {
 	</doc>
 **/
 static value socket_read( value o ) {
-   #ifndef HXCPP
 	buffer b;
-	#endif
 	char buf[256];
 	int len;
 	val_check_kind(o,k_socket);
-   #ifndef HXCPP
 	b = alloc_buffer(NULL);
-	#else
-	Array<unsigned char> b(0,0);
-	#endif
 	while( true ) {
 		POSIX_LABEL(read_again);
 		len = recv(val_sock(o),buf,256,MSG_NOSIGNAL);
@@ -317,19 +291,9 @@ static value socket_read( value o ) {
 		}
 		if( len == 0 )
 			break;
-      #ifndef HXCPP
 		buffer_append_sub(b,buf,len);
-	   #else
-		int old_len = b->length;
-		b->__SetSize( old_len + len );
-		memcpy( &b[old_len], buf, len );
-		#endif
 	}
-   #ifndef HXCPP
-	return buffer_to_string(b);
-	#else
-	return b;
-	#endif
+	return buffer_val(b);
 }
 
 /**
@@ -351,7 +315,7 @@ static value host_resolve( value host ) {
 		gethostbyname_r(val_string(host),&hbase,buf,1024,&h,&errcode);
 #	endif
 		if( h == NULL )
-			neko_error();
+			return alloc_null();
 		ip = *((unsigned int*)h->h_addr);
 	}
 	return alloc_int32(ip);
@@ -363,8 +327,8 @@ static value host_resolve( value host ) {
 **/
 static value host_to_string( value ip ) {
 	struct in_addr i;
-	val_check(ip,int32);
-	*(int*)&i = val_int32(ip);
+	val_check(ip,int);
+	*(int*)&i = val_int(ip);
 	return alloc_string( inet_ntoa(i) );
 }
 
@@ -375,8 +339,8 @@ static value host_to_string( value ip ) {
 static value host_reverse( value host ) {
 	struct hostent *h;
 	unsigned int ip;
-	val_check(host,int32);
-	ip = val_int32(host);
+	val_check(host,int);
+	ip = val_int(host);
 #	if defined(NEKO_WINDOWS) || defined(NEKO_MAC)
 	h = gethostbyaddr((char *)&ip,4,AF_INET);
 #	else
@@ -386,7 +350,7 @@ static value host_reverse( value host ) {
 	gethostbyaddr_r((char *)&ip,4,AF_INET,&htmp,buf,1024,&h,&errcode);
 #	endif
 	if( h == NULL )
-		neko_error();
+		return alloc_null();
 	return alloc_string( h->h_name );
 }
 
@@ -397,7 +361,7 @@ static value host_reverse( value host ) {
 static value host_local() {
 	char buf[256];
 	if( gethostname(buf,256) == SOCKET_ERROR )
-		neko_error();
+		return alloc_null();
 	return alloc_string(buf);
 }
 
@@ -408,15 +372,15 @@ static value host_local() {
 static value socket_connect( value o, value host, value port ) {
 	struct sockaddr_in addr;
 	val_check_kind(o,k_socket);
-	val_check(host,int32);
+	val_check(host,int);
 	val_check(port,int);
 	memset(&addr,0,sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(val_int(port));
-	*(int*)&addr.sin_addr.s_addr = val_int32(host);
+	*(int*)&addr.sin_addr.s_addr = val_int(host);
 	if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
 		return block_error();
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -427,8 +391,8 @@ static value socket_listen( value o, value n ) {
 	val_check_kind(o,k_socket);
 	val_check(n,int);
 	if( listen(val_sock(o),val_int(n)) == SOCKET_ERROR )
-		neko_error();
-	return val_true;
+		return alloc_null();
+	return alloc_bool(true);
 }
 
 static fd_set INVALID;
@@ -445,7 +409,7 @@ static fd_set *make_socket_array( value a, fd_set *tmp, SOCKET *n ) {
 		val_throw(alloc_string("Too many sockets in select"));
 	FD_ZERO(tmp);
 	for(i=0;i<len;i++) {
-		value s = val_array_ptr(a)[i];
+		value s = val_array_i(a,i);
 		if( !val_is_kind(s,k_socket) )
 			return &INVALID;
 		sock = val_sock(s);
@@ -465,15 +429,15 @@ static value make_array_result( value a, fd_set *tmp ) {
 	len = val_array_size(a);
 	r = alloc_array(len);
 	for(i=0;i<len;i++) {
-		value s = val_array_ptr(a)[i];
+		value s = val_array_i(a,i);
 		if( FD_ISSET(val_sock(s),tmp) )
-			val_array_ptr(r)[pos++] = s;
+			val_array_set_i(r,pos++,s);
 	}
-	val_set_size(r,pos);
+	val_array_set_size(r,pos);
 	return r;
 }
 
-static void init_timeval( tfloat f, struct timeval *t ) {
+static void init_timeval( double f, struct timeval *t ) {
 	t->tv_usec = ((int)(f*1000000)) % 1000000;
 	t->tv_sec = (int)f;
 }
@@ -494,7 +458,7 @@ static value socket_select( value rs, value ws, value es, value timeout ) {
 	wa = make_socket_array(ws,&wx,&n);
 	ea = make_socket_array(es,&ex,&n);
 	if( ra == &INVALID || wa == &INVALID || ea == &INVALID )
-		neko_error();
+		return alloc_null();
 	if( val_is_null(timeout) )
 		tt = NULL;
 	else {
@@ -504,35 +468,35 @@ static value socket_select( value rs, value ws, value es, value timeout ) {
 	}
 	if( select((int)(n+1),ra,wa,ea,tt) == SOCKET_ERROR ) {
 		HANDLE_EINTR(select_again);
-		neko_error();
+		return alloc_null();
 	}
 	r = alloc_array(3);
-	val_array_ptr(r)[0] = make_array_result(rs,ra);
-	val_array_ptr(r)[1] = make_array_result(ws,wa);
-	val_array_ptr(r)[2] = make_array_result(es,ea);
+	val_array_set_i(r,0,make_array_result(rs,ra));
+	val_array_set_i(r,1,make_array_result(ws,wa));
+	val_array_set_i(r,2,make_array_result(es,ea));
 	return r;
 }
 
 /**
-	socket_bind : 'socket -> host : 'int32 -> port:int -> void
+	socket_bind : 'socket -> host : 'int -> port:int -> void
 	<doc>Bind the socket for server usage on the given host and port</doc>
 **/
 static value socket_bind( value o, value host, value port ) {
 	int opt = 1;
 	struct sockaddr_in addr;
 	val_check_kind(o,k_socket);
-	val_check(host,int32);
+	val_check(host,int);
 	val_check(port,int);
 	memset(&addr,0,sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(val_int(port));
-	*(int*)&addr.sin_addr.s_addr = val_int32(host);
+	*(int*)&addr.sin_addr.s_addr = val_int(host);
 	#ifndef NEKO_WINDOWS
 	setsockopt(val_sock(o),SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof(opt));
 	#endif
 	if( bind(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) == SOCKET_ERROR )
-		neko_error();
-	return val_true;
+		return alloc_null();
+	return alloc_bool(true);
 }
 
 /**
@@ -553,11 +517,7 @@ static value socket_accept( value o ) {
 	s = accept(val_sock(o),(struct sockaddr*)&addr,&addrlen);
 	if( s == INVALID_SOCKET )
 		return block_error();
-   #ifdef HXCPP
-	return alloc_abstract(k_socket,(void *)(int_val)s);
-   #else
-	return alloc_abstract(k_socket,(value)(int_val)s);
-   #endif
+	return alloc_abstract(k_socket,(void *)(socket_int)s);
 }
 
 /**
@@ -570,10 +530,10 @@ static value socket_peer( value o ) {
 	value ret;
 	val_check_kind(o,k_socket);
 	if( getpeername(val_sock(o),(struct sockaddr*)&addr,&addrlen) == SOCKET_ERROR )
-		neko_error();
+		return alloc_null();
 	ret = alloc_array(2);
-	val_array_ptr(ret)[0] = alloc_int32(*(int*)&addr.sin_addr);
-	val_array_ptr(ret)[1] = alloc_int(ntohs(addr.sin_port));
+	val_array_set_i(ret,0,alloc_int32(*(int*)&addr.sin_addr));
+	val_array_set_i(ret,1,alloc_int(ntohs(addr.sin_port)));
 	return ret;
 }
 
@@ -587,10 +547,10 @@ static value socket_host( value o ) {
 	value ret;
 	val_check_kind(o,k_socket);
 	if( getsockname(val_sock(o),(struct sockaddr*)&addr,&addrlen) == SOCKET_ERROR )
-		neko_error();
+		return alloc_null();
 	ret = alloc_array(2);
-	val_array_ptr(ret)[0] = alloc_int32(*(int*)&addr.sin_addr);
-	val_array_ptr(ret)[1] = alloc_int(ntohs(addr.sin_port));
+	val_array_set_i(ret,0,alloc_int32(*(int*)&addr.sin_addr));
+	val_array_set_i(ret,1,alloc_int(ntohs(addr.sin_port)));
 	return ret;
 }
 
@@ -620,10 +580,10 @@ static value socket_set_timeout( value o, value t ) {
 	}
 #endif
 	if( setsockopt(val_sock(o),SOL_SOCKET,SO_SNDTIMEO,(char*)&time,sizeof(time)) != 0 )
-		neko_error();
+		return alloc_null();
 	if( setsockopt(val_sock(o),SOL_SOCKET,SO_RCVTIMEO,(char*)&time,sizeof(time)) != 0 )
-		neko_error();
-	return val_true;
+		return alloc_null();
+	return alloc_bool(true);
 }
 
 /**
@@ -635,10 +595,10 @@ static value socket_shutdown( value o, value r, value w ) {
 	val_check(r,bool);
 	val_check(w,bool);
 	if( !val_bool(r) && !val_bool(w) )
-		return val_true;
+		return alloc_bool(true);
 	if( shutdown(val_sock(o),val_bool(r)?(val_bool(w)?SHUT_RDWR:SHUT_RD):SHUT_WR) )
-		neko_error();
-	return val_true;
+		return alloc_null();
+	return alloc_bool(true);
 }
 
 /**
@@ -652,22 +612,22 @@ static value socket_set_blocking( value o, value b ) {
 	{
 		unsigned long arg = val_bool(b)?0:1;
 		if( ioctlsocket(val_sock(o),FIONBIO,&arg) != 0 )
-			neko_error();
+			return alloc_null();
 	}
 #else
 	{
 		int rights = fcntl(val_sock(o),F_GETFL);
 		if( rights == -1 )
-			neko_error();
+			return alloc_null();
 		if( val_bool(b) )
 			rights &= ~O_NONBLOCK;
 		else
 			rights |= O_NONBLOCK;
 		if( fcntl(val_sock(o),F_SETFL,rights) == -1 )
-			neko_error();
+			return alloc_null();
 	}
 #endif
-	return val_true;
+	return alloc_bool(true);
 }
 
 /**
@@ -678,10 +638,10 @@ static value socket_poll_alloc( value nsocks ) {
 	polldata *p;
 	int i;
 	val_check(nsocks,int);
-	p = (polldata*)alloc(sizeof(polldata));
+	p = (polldata*)hx_alloc(sizeof(polldata));
 	p->max = val_int(nsocks);
 	if( p->max < 0 || p->max > 1000000 )
-		neko_error();
+		return alloc_null();
 #	ifdef NEKO_WINDOWS
 	{
 		p->fdr = (fd_set*)alloc_private(FDSIZE(p->max));
@@ -699,8 +659,8 @@ static value socket_poll_alloc( value nsocks ) {
 	p->ridx = alloc_array(p->max+1);
 	p->widx = alloc_array(p->max+1);
 	for(i=0;i<=p->max;i++) {
-		val_array_ptr(p->ridx)[i] = alloc_int(-1);
-		val_array_ptr(p->widx)[i] = alloc_int(-1);
+		val_array_set_i(p->ridx,i, alloc_int(-1));
+		val_array_set_i(p->widx,i, alloc_int(-1));
 	}
 	return alloc_abstract(k_poll, p);
 }
@@ -723,21 +683,21 @@ static value socket_poll_prepare( value pdata, value rsocks, value wsocks ) {
 		val_throw(alloc_string("Too many sockets in poll"));
 #	ifdef NEKO_WINDOWS
 	for(i=0;i<len;i++) {
-		value s = val_array_ptr(rsocks)[i];
+		value s = val_array_i(rsocks,i);
 		val_check_kind(s,k_socket);
 		p->fdr->fd_array[i] = val_sock(s);
 	}
 	p->fdr->fd_count = len;
 	len = val_array_size(wsocks);
 	for(i=0;i<len;i++) {
-		value s = val_array_ptr(wsocks)[i];
+		value s = val_array_i(wsocks,i);
 		val_check_kind(s,k_socket);
 		p->fdw->fd_array[i] = val_sock(s);
 	}
 	p->fdw->fd_count = len;
 #	else
 	for(i=0;i<len;i++) {
-		value s = val_array_ptr(rsocks)[i];
+		value s = val_array_i(rsocks,i);
 		val_check_kind(s,k_socket);
 		p->fds[i].fd = val_sock(s);
 		p->fds[i].events = POLLIN;
@@ -747,7 +707,7 @@ static value socket_poll_prepare( value pdata, value rsocks, value wsocks ) {
 	len = val_array_size(wsocks);
 	for(i=0;i<len;i++) {
 		int k = i + p->rcount;
-		value s = val_array_ptr(wsocks)[i];
+		value s = val_array_i(wsocks,i);
 		val_check_kind(s,k_socket);
 		p->fds[k].fd = val_sock(s);
 		p->fds[k].events = POLLOUT;
@@ -757,8 +717,8 @@ static value socket_poll_prepare( value pdata, value rsocks, value wsocks ) {
 #	endif
 	{
 		value a = alloc_array(2);
-		val_array_ptr(a)[0] = p->ridx;
-		val_array_ptr(a)[1] = p->widx;
+		val_array_set_i(a,0, p->ridx);
+		val_array_set_i(a,1, p->widx);
 		return a;
 	}
 }
@@ -782,17 +742,17 @@ static value socket_poll_events( value pdata, value timeout ) {
 	val_check(timeout,number);
 	init_timeval(val_number(timeout),&t);
 	if( p->fdr->fd_count + p->fdw->fd_count != 0 && select(0,p->outr,p->outw,NULL,&t) == SOCKET_ERROR )
-		neko_error();
+		return alloc_null();
 	k = 0;
 	for(i=0;i<p->fdr->fd_count;i++)
 		if( FD_ISSET(p->fdr->fd_array[i],p->outr) )
-			val_array_ptr(p->ridx)[k++] = alloc_int(i);
-	val_array_ptr(p->ridx)[k] = alloc_int(-1);
+			val_array_set_i(p->ridx,k++,alloc_int(i));
+	val_array_set_i(p->ridx,k,alloc_int(-1));
 	k = 0;
 	for(i=0;i<p->fdw->fd_count;i++)
 		if( FD_ISSET(p->fdw->fd_array[i],p->outw) )
-			val_array_ptr(p->widx)[k++] = alloc_int(i);
-	val_array_ptr(p->widx)[k] = alloc_int(-1);
+			val_array_set_i(p->widx,k++, alloc_int(i));
+	val_array_set_i(p->widx,k,alloc_int(-1));
 #else
 	int i,k;
 	int tot;
@@ -803,18 +763,18 @@ static value socket_poll_events( value pdata, value timeout ) {
 	POSIX_LABEL(poll_events_again);
 	if( poll(p->fds,tot,(int)(val_number(timeout) * 1000)) < 0 ) {
 		HANDLE_EINTR(poll_events_again);
-		neko_error();
+		return alloc_null();
 	}
 	k = 0;
 	for(i=0;i<p->rcount;i++)
 		if( p->fds[i].revents & (POLLIN|POLLHUP) )
-			val_array_ptr(p->ridx)[k++] = alloc_int(i);
-	val_array_ptr(p->ridx)[k] = alloc_int(-1);
+			val_array_set_i(p->ridx,k++,alloc_int(i));
+	val_array_set_i(p->ridx,k, alloc_int(-1));
 	k = 0;
 	for(;i<tot;i++)
 		if( p->fds[i].revents & (POLLOUT|POLLHUP) )
-			val_array_ptr(p->widx)[k++] = alloc_int(i - p->rcount);
-	val_array_ptr(p->widx)[k] = alloc_int(-1);
+			val_array_set_i(p->widx,k++, alloc_int(i - p->rcount));
+	val_array_set_i(p->widx,k, alloc_int(-1));
 #endif
 	return val_null;
 }
@@ -831,16 +791,16 @@ static value socket_poll( value socks, value pdata, value timeout ) {
 	polldata *p;
 	value a;
 	int i, rcount = 0;
-	if( socket_poll_prepare(pdata,socks,alloc_array(0)) == NULL_VAL )
-		neko_error();
-	if( socket_poll_events(pdata,timeout) == NULL_VAL )
-		neko_error();
+	if( val_is_null( socket_poll_prepare(pdata,socks,alloc_array(0))) )
+		return alloc_null();
+	if( val_is_null( socket_poll_events(pdata,timeout) ) )
+		return alloc_null();
 	p = val_poll(pdata);
-	while( val_array_ptr(p->ridx)[rcount] != alloc_int(-1) )
+	while( val_int(val_array_i(p->ridx,rcount)) != -1 )
 		rcount++;
 	a = alloc_array(rcount);
 	for(i=0;i<rcount;i++)
-		val_array_ptr(a)[i] = val_array_ptr(socks)[val_int(val_array_ptr(p->ridx)[i])];
+		val_array_set_i(a,i, val_array_i(socks,val_int(val_array_i(p->ridx,i))));
 	return a;
 }
 
