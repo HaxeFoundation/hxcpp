@@ -38,12 +38,16 @@ DEFFUNC_1(value,alloc_int32,int)
 DEFFUNC_1(int,val_strlen,value)
 DEFFUNC_1(const wchar_t *,val_wstring,value)
 DEFFUNC_1(const char *,val_string,value)
-DEFFUNC_1(value,alloc_string,const char *)
+DEFFUNC_2(value,alloc_string_len,const char *,int)
+DEFFUNC_2(value,alloc_wstring_len,const wchar_t *,int)
 
 // Array access - generic
+DEFFUNC_1(value,alloc_array,int)
 DEFFUNC_1(int,val_array_size,value)
 DEFFUNC_2(value,val_array_i,value,int)
-DEFFUNC_1(value,val_alloc_array,int)
+DEFFUNC_3(value,val_array_set_i,value,int,value)
+DEFFUNC_2(value,val_array_push,value,value)
+
 
 // Array access - fast if possible - may return null
 // Resizing the array may invalidate the pointer

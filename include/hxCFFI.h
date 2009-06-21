@@ -40,7 +40,7 @@ enum { faNotFunction = -2, faVarArgs=-1, faArgs0=0 /* ... */ };
 typedef struct __hx_value *value;
 typedef struct __hx_kind  *vkind;
 typedef struct __hx_byte_array  *hx_byte_array;
-typedef struct __hx_string_bug  *hx_string_buf;
+typedef struct __hx_string_buf  *hx_string_buf;
 
 typedef void (*hxFinalizer)(value v);
 
@@ -133,15 +133,22 @@ inline bool val_is_object(value inVal)
 // The "Check" macros throw an error if assumtion is false
 #define val_check_kind(v,t)	if( !val_is_kind(v,t) ) failure("invalid kind");
 #define val_check_function(f,n) if( !val_is_function(f) || (val_fun_nargs(f) != (n) && val_fun_nargs(f) != faVarArgs) ) failure("Bad function");
-#define val_check(v,t)		if( !val_is_##t(v) ) failure("type not "###t);
+#define val_check(v,t)		if( !val_is_##t(v) ) failure("type not " #t);
 
 // The "Get" function will return or force an error
-inline int val_get_bool(value inVal) {  val_check(inVal,bool); return val_bool(inVal); }
+inline bool val_get_bool(value inVal) {  val_check(inVal,bool); return val_bool(inVal); }
 inline int val_get_int(value inVal) {  val_check(inVal,int); return val_int(inVal); }
 inline double val_get_double(value inVal) {  val_check(inVal,number); return val_number(inVal); }
 inline const char *val_get_string(value inVal) {  val_check(inVal,string); return val_string(inVal); }
 inline void *val_get_handle(value inVal,vkind inKind)
   {  val_check_kind(inVal,inKind); return val_to_kind(inVal,inKind); }
+
+inline value alloc_string(const char *inStr)
+{
+   const char *end = inStr;
+   while(*end) end++;
+   return alloc_string_len(inStr,end-inStr);
+}
 
 #endif
 

@@ -18,6 +18,25 @@ class DirManager
          }
       }
    }
+   static public function deleteRecurse(inDir:String)
+   {
+      if (neko.FileSystem.exists(inDir))
+      {
+         var contents = neko.FileSystem.readDirectory(inDir);
+         for(item in contents)
+         {
+            if (item!="." && item!="..")
+            {
+               var name = inDir + "/" + item;
+               if (neko.FileSystem.isDirectory(name))
+                  deleteRecurse(name);
+               else
+                  neko.FileSystem.deleteFile(name);
+            }
+	 }
+         neko.FileSystem.deleteDirectory(inDir);
+      }
+   }
 }
 
 class Compiler
@@ -195,11 +214,31 @@ class Target
       mFlags = [];
       mSubTargets = [];
       mFlags = [];
+      mErrors=[];
+      mDirs=[];
    }
    public function addFiles(inFiles:FileGroup)
    {
       mFiles = mFiles.concat(inFiles);
    }
+   public function addError(inError:String)
+   {
+      mErrors.push(inError);
+   }
+   public function checkError()
+   {
+       if (mErrors.length>0)
+          throw mErrors.join("/");
+   }
+   public function clean()
+   {
+      for(dir in mDirs)
+      {
+         neko.Lib.println("Remove " + dir + "...");
+         DirManager.deleteRecurse(dir);
+      }
+   }
+
    public var mOutput:String;
    public var mTool:String;
    public var mToolID:String;
@@ -207,6 +246,8 @@ class Target
    public var mSubTargets:Array<String>;
    public var mLibs:Array<String>;
    public var mFlags:Array<String>;
+   public var mErrors:Array<String>;
+   public var mDirs:Array<String>;
 }
 
 typedef Targets = Hash<Target>;
@@ -282,6 +323,8 @@ class BuildTool
          throw "No compiler defined";
 
       var target = mTargets.get(inTarget);
+      target.checkError();
+
       for(sub in target.mSubTargets)
          buildTarget(sub);
 
@@ -295,6 +338,8 @@ class BuildTool
             if (!mLinkers.exists(target.mToolID))
                throw "Missing linker :\"" + target.mToolID + "\"";
             mLinkers.get(target.mToolID).link(target,objs);
+         case "clean":
+            target.clean();
       }
    }
 
@@ -376,10 +421,12 @@ class BuildTool
                 case "target" : target.mSubTargets.push( substitute(el.att.id) );
                 case "lib" : target.mLibs.push( substitute(el.att.name) );
                 case "flag" : target.mFlags.push( substitute(el.att.value) );
+                case "dir" : target.mDirs.push( substitute(el.att.name) );
                 case "files" : var id = el.att.id;
                    if (!mFileGroups.exists(id))
-                      throw "Could not find filegroup " + id; 
-                   target.addFiles( mFileGroups.get(id) );
+                      target.addError( "Could not find filegroup " + id ); 
+                   else
+                      target.addFiles( mFileGroups.get(id) );
             }
       }
 
