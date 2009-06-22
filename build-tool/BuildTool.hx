@@ -8,14 +8,20 @@ class DirManager
       var total = "";
       for(part in parts)
       {
-         if (total!="") total+="/";
-         total += part;
-         if (!mMade.exists(total))
-         {
-            mMade.set(total,true);
-            if (!neko.FileSystem.exists(total))
-               neko.FileSystem.createDirectory(total);
-         }
+		   if (part!="." && part!="")
+			{
+            if (total!="") total+="/";
+				total += part;
+				if (!mMade.exists(total))
+				{
+					mMade.set(total,true);
+					if (!neko.FileSystem.exists(total))
+					{
+						neko.Lib.println("mkdir " + total);
+						neko.FileSystem.createDirectory(total);
+					}
+				}
+			}
       }
    }
    static public function deleteRecurse(inDir:String)
@@ -113,7 +119,8 @@ class Linker
    }
    public function link(inTarget:Target,inObjs:Array<String>)
    {
-      var out_name = inTarget.mOutputDir + mNamePrefix + inTarget.mOutput + mExt;
+      var file_name = mNamePrefix + inTarget.mOutput + mExt;
+      var out_name = inTarget.mOutputDir + file_name;
       if (isOutOfDate(out_name,inObjs))
       {
          var args = new Array<String>();
@@ -128,7 +135,7 @@ class Linker
          if (mLibDir!="")
          {
             DirManager.make(mLibDir);
-            args.push(out + mLibDir + "/" + out_name);
+            args.push(out + mLibDir + "/" + file_name);
          }
          else
             args.push(out + out_name);
@@ -141,8 +148,8 @@ class Linker
 
          if (mLibDir!="")
          {
-            neko.io.File.copy( mLibDir+"/"+out_name, out_name );
-            neko.FileSystem.deleteFile( mLibDir+"/"+out_name );
+            neko.io.File.copy( mLibDir+"/"+file_name, out_name );
+            neko.FileSystem.deleteFile( mLibDir+"/"+file_name );
          }
       }
    }

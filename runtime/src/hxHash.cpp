@@ -105,7 +105,8 @@ void IntHash::Destroy(Dynamic inHash)
 }
 
 
-hxObject SHARED * CreateIntHash() { return new IntHash; }
+hxObject * CreateIntHash() { return new IntHash; }
+
 void __int_hash_set(Dynamic &inHash,int inKey,const Dynamic &value)
 {
    IntHash *h = dynamic_cast<IntHash *>(inHash.GetPtr());

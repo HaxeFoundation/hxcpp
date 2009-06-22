@@ -12,20 +12,11 @@
 #pragma warning(disable:4800)
 
 #ifdef _WIN32
-
 // MSVC hacks
-#ifdef BUILDING_HXCPP_DLL
 #define SHARED __declspec(dllexport)
 #else
-#define SHARED __declspec(dllimport)
-
-#endif
-
-#else
-
-// Linux hacks
+// not windows ...
 #define SHARED
-
 #endif
 
 #ifdef assert
@@ -96,23 +87,23 @@ class hxObject;
 #define INVALID_ARG_COUNT     Dynamic(STRING(L"Invalid Arg Count",16))
 #define NULL_FUNCTION_POINTER Dynamic(STRING(L"Null Function Pointer",20))
 
-//extern Dynamic SHARED __InvalidConstructor;
-//extern Dynamic SHARED __InvalidArgCount;
+//extern Dynamic  __InvalidConstructor;
+//extern Dynamic  __InvalidArgCount;
 
 // This will be GC'ed
-SHARED void *hxNewGCBytes(void *inData,int inSize);
+ void *hxNewGCBytes(void *inData,int inSize);
 // This wont be GC'ed
-SHARED void *hxNewGCPrivate(void *inData,int inSize);
+ void *hxNewGCPrivate(void *inData,int inSize);
 
 typedef void (*finalizer)(hxObject *v);
-SHARED void  hxGCAddFinalizer( hxObject *, finalizer f );
+ void  hxGCAddFinalizer( hxObject *, finalizer f );
 
 
 // This is used internally in hxcpp
 wchar_t *hxNewString(int inLen);
 
 // Mark a slab of bytes - not an object
-SHARED void hxGCMarkString(const void *inPtr);
+ void hxGCMarkString(const void *inPtr);
 
 // Internal for arrays
 void *hxGCRealloc(void *inData,int inSize);
@@ -129,7 +120,7 @@ inline int hxUShr(int inData,int inShift)
 }
 
 
-SHARED double hxDoubleMod(double inLHS,double inRHS);
+ double hxDoubleMod(double inLHS,double inRHS);
 
 template<typename TL,typename TR>
 double hxMod(TL inLHS,TR inRHS) { return hxDoubleMod(inLHS,inRHS); }
@@ -179,7 +170,7 @@ struct BreakFromFunction { };
 //  may in turn implement an interface (ie, multiple inheritance) then the class
 //  inherit virtually from this base.
 //
-class SHARED hxObject
+class  hxObject
 {
 public:
    // These allocate the function using the garbage-colleced malloc
@@ -303,13 +294,13 @@ public:
    inline String(const wchar_t *inPtr) : __s(inPtr) { length = inPtr ? (int)wcslen(inPtr) : 0; }
    inline String(const wchar_t *inPtr,int inLen) : __s(inPtr), length(inLen) { }
    inline String(const String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
-   SHARED String(const int &inRHS);
-   SHARED String(const cpp::CppInt32__ &inRHS);
-   SHARED String(const double &inRHS);
-   SHARED String(const bool &inRHS);
+    String(const int &inRHS);
+    String(const cpp::CppInt32__ &inRHS);
+    String(const double &inRHS);
+    String(const bool &inRHS);
    inline String(const null &inRHS) : __s(0), length(0) { }
    // Construct from utf8 string
-   SHARED String(const char *inPtr,int inLen);
+    String(const char *inPtr,int inLen);
 
    template<typename T>
    inline String(const hxObjectPtr<T> &inRHS)
@@ -317,31 +308,31 @@ public:
       if (inRHS.GetPtr()) { String s = const_cast<hxObjectPtr<T> & >(inRHS)->toString(); __s = s.__s; length = s.length; }
       else { __s = 0; length = 0; }
    }
-   SHARED String(const Dynamic &inRHS);
+    String(const Dynamic &inRHS);
 
    inline String &operator=(const String &inRHS)
            { length = inRHS.length; __s = inRHS.__s; return *this; }
 
    String toString() { return *this; }
 
-   SHARED String __URLEncode() const;
-   SHARED String __URLDecode() const;
+    String __URLEncode() const;
+    String __URLDecode() const;
 
-   SHARED String &dup();
+    String &dup();
 
-   SHARED String toUpperCase() const;
-   SHARED String toLowerCase() const;
-   SHARED String charAt(int inPos) const;
-   SHARED Dynamic charCodeAt(int inPos) const;
-   SHARED int indexOf(const String &inValue, Dynamic inStart) const;
-   SHARED int lastIndexOf(const String &inValue, Dynamic inStart) const;
-   SHARED Array<String> split(const String &inDelimiter) const;
-   SHARED String substr(int inPos,Dynamic inLen) const;
+    String toUpperCase() const;
+    String toLowerCase() const;
+    String charAt(int inPos) const;
+    Dynamic charCodeAt(int inPos) const;
+    int indexOf(const String &inValue, Dynamic inStart) const;
+    int lastIndexOf(const String &inValue, Dynamic inStart) const;
+    Array<String> split(const String &inDelimiter) const;
+    String substr(int inPos,Dynamic inLen) const;
 
    inline const wchar_t *c_str() const { return __s; }
-   SHARED char *__CStr() const;
+    char *__CStr() const;
 
-   static SHARED String fromCharCode(int inCode);
+   static  String fromCharCode(int inCode);
 
    inline bool operator==(const null &inRHS) const { return __s==0; }
    inline bool operator!=(const null &inRHS) const { return __s!=0; }
@@ -359,8 +350,8 @@ public:
    }
 
 
-   SHARED String &operator+=(String inRHS);
-   SHARED String operator+(String inRHS) const;
+    String &operator+=(String inRHS);
+    String operator+(String inRHS) const;
    String operator+(const int &inRHS) const { return *this + String(inRHS); }
    String operator+(const bool &inRHS) const { return *this + String(inRHS); }
    String operator+(const double &inRHS) const { return *this + String(inRHS); }
@@ -386,20 +377,20 @@ public:
    const wchar_t *__s;
 
 
-   static SHARED Dynamic fromCharCode_dyn();
+   static  Dynamic fromCharCode_dyn();
 
-   SHARED Dynamic charAt_dyn();
-   SHARED Dynamic charCodeAt_dyn();
-   SHARED Dynamic indexOf_dyn();
-   SHARED Dynamic lastIndexOf_dyn();
-   SHARED Dynamic split_dyn();
-   SHARED Dynamic substr_dyn();
-   SHARED Dynamic toLowerCase_dyn();
-   SHARED Dynamic toString_dyn();
-   SHARED Dynamic toUpperCase_dyn();
+    Dynamic charAt_dyn();
+    Dynamic charCodeAt_dyn();
+    Dynamic indexOf_dyn();
+    Dynamic lastIndexOf_dyn();
+    Dynamic split_dyn();
+    Dynamic substr_dyn();
+    Dynamic toLowerCase_dyn();
+    Dynamic toString_dyn();
+    Dynamic toUpperCase_dyn();
 
 	// This is used by the string-wrapped-as-dynamic class
-   SHARED Dynamic __Field(const String &inString);
+    Dynamic __Field(const String &inString);
 };
 
 
@@ -417,19 +408,19 @@ class Dynamic : public hxObjectPtr<hxObject>
 public:
 
    Dynamic() {};
-   SHARED Dynamic(int inVal);
-   SHARED Dynamic(const cpp::CppInt32__ &inVal);
-   SHARED Dynamic(bool inVal);
-   SHARED Dynamic(double inVal);
+    Dynamic(int inVal);
+    Dynamic(const cpp::CppInt32__ &inVal);
+    Dynamic(bool inVal);
+    Dynamic(double inVal);
    Dynamic(hxObject *inObj) : super(inObj) { }
-   SHARED Dynamic(const String &inString);
-   SHARED Dynamic(const wchar_t *inString);
+    Dynamic(const String &inString);
+    Dynamic(const wchar_t *inString);
    Dynamic(const null &inNull) : super(0) { }
    Dynamic(const Dynamic &inRHS) : super(inRHS.GetPtr()) { }
 
-   SHARED void Set(bool inVal);
-   SHARED void Set(int inVal);
-   SHARED void Set(double inVal);
+    void Set(bool inVal);
+    void Set(int inVal);
+    void Set(double inVal);
 
    operator double () const { return mPtr ? mPtr->__ToDouble() : 0.0; }
    operator int () const { return mPtr ? mPtr->__ToInt() : 0; }
@@ -486,18 +477,18 @@ public:
 
 
    // Operator + is different, since it must consider strings too...
-   SHARED Dynamic operator+(const Dynamic &inRHS) const;
+    Dynamic operator+(const Dynamic &inRHS) const;
    inline String operator+(const String &s) const;
-   SHARED Dynamic operator+(const int &i) const;
-   SHARED Dynamic operator+(const double &d) const;
+    Dynamic operator+(const int &i) const;
+    Dynamic operator+(const double &d) const;
 
-   SHARED double operator%(const Dynamic &inRHS) const;
+    double operator%(const Dynamic &inRHS) const;
 
    DYNAMIC_ARITH( - )
    DYNAMIC_ARITH( * )
    DYNAMIC_ARITH( / )
 
-	SHARED void CheckFPtr();
+	 void CheckFPtr();
 
    // Hmm, ugly.
    typedef const Dynamic &D;
@@ -540,11 +531,11 @@ inline String Dynamic::Cast<String>() const { return mPtr ? mPtr->toString() : S
 // Most classes have their own class data, by the standard types (non-classes)
 //  use the template traits to get the class
 
-SHARED Class &GetIntClass();
-SHARED Class &GetFloatClass();
-SHARED Class &GetBoolClass();
-SHARED Class &GetVoidClass();
-SHARED Class &GetStringClass();
+ Class &GetIntClass();
+ Class &GetFloatClass();
+ Class &GetBoolClass();
+ Class &GetVoidClass();
+ Class &GetStringClass();
 
 template<>
 inline bool Dynamic::IsClass<int>() { return mPtr && mPtr->__GetClass()==GetIntClass(); }
@@ -614,8 +605,8 @@ ARITH_DYNAMIC( - )
 ARITH_DYNAMIC( + )
 ARITH_DYNAMIC( / )
 
-SHARED double operator%(const int &inLHS,const Dynamic &inRHS);
-SHARED double operator%(const double &inLHS,const Dynamic &inRHS);
+ double operator%(const int &inLHS,const Dynamic &inRHS);
+ double operator%(const double &inLHS,const Dynamic &inRHS);
 
 // --- hxFieldRef ----------------------------------------------------------
 //
@@ -720,16 +711,16 @@ inline hxIndexRef<T> hxIndexRefNew(const T &inObj, int inIdx)
 class hxFieldMap;
 
 /*
-SHARED hxFieldMap *hxFieldMapCreate();
-SHARED bool hxFieldMapGet(hxFieldMap *inMap, const String &inName, Dynamic &outValue);
-SHARED bool hxFieldMapGet(hxFieldMap *inMap, int inID, Dynamic &outValue);
-SHARED void hxFieldMapSet(hxFieldMap *inMap, const String &inName, const Dynamic &inValue);
-SHARED void hxFieldMapAppendFields(hxFieldMap *inMap,Array<String> &outFields);
-SHARED void hxFieldMapMark(hxFieldMap *inMap);
+ hxFieldMap *hxFieldMapCreate();
+ bool hxFieldMapGet(hxFieldMap *inMap, const String &inName, Dynamic &outValue);
+ bool hxFieldMapGet(hxFieldMap *inMap, int inID, Dynamic &outValue);
+ void hxFieldMapSet(hxFieldMap *inMap, const String &inName, const Dynamic &inValue);
+ void hxFieldMapAppendFields(hxFieldMap *inMap,Array<String> &outFields);
+ void hxFieldMapMark(hxFieldMap *inMap);
 */
 
 
-class SHARED hxAnon_obj : public hxObject
+class  hxAnon_obj : public hxObject
 {
    typedef hxAnon_obj OBJ_;
    typedef hxObjectPtr<hxAnon_obj> hxAnon;
@@ -773,7 +764,7 @@ public:
 typedef hxObjectPtr<hxAnon_obj> hxAnon;
 
 
-SHARED bool __hx_anon_remove(hxAnon inObj,String inKey);
+ bool __hx_anon_remove(hxAnon inObj,String inKey);
 
 
 
@@ -793,7 +784,7 @@ template<> struct hxBoxed<String> { typedef Dynamic type; };
 //
 // An object that conforms to the standard iterator interface for arrays
 
-class SHARED ArrayIterator : public hxObject
+class  ArrayIterator : public hxObject
 {
 public:
    ArrayIterator(Dynamic inArray) : mArray(inArray), mIdx(0) { }
@@ -815,7 +806,7 @@ public:
 // Base class that treats array contents as a slab of bytes.
 // The derived "Array_obj" adds strong typing to the "[]" operator
 
-class SHARED hxArrayBase : public hxObject
+class  hxArrayBase : public hxObject
 {
 public:
    hxArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic);
@@ -941,7 +932,7 @@ typedef void (*ThreadFunc)(void *inUserData);
 typedef void *(*ThreadFunc)(void *inUserData);
 #endif
 
-SHARED void hxStartThread(ThreadFunc inFunc,void *inUserData);
+ void hxStartThread(ThreadFunc inFunc,void *inUserData);
 
 
 
@@ -1270,7 +1261,7 @@ inline bool operator!=(ConstructEnumFunc inFunc,const null &inNull) { return inF
 
 typedef bool (*CanCastFunc)(hxObject *inPtr);
 
-class SHARED Class_obj : public hxObject
+class  Class_obj : public hxObject
 {
 public:
    Class_obj() : mSuper(0) { };
@@ -1319,7 +1310,7 @@ typedef hxObjectPtr<Class_obj> Class;
 
 // --- All classes should be registered with this function via the "__boot" method
 
-SHARED Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
+ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
                     Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0);
@@ -1338,7 +1329,7 @@ typedef Class Enum;
 // Specializations of this class don't actually add more data, just extra constructors
 //  and type information.
 
-class SHARED hxEnumBase_obj : public hxObject
+class  hxEnumBase_obj : public hxObject
 {
    typedef hxObject super;
    typedef hxEnumBase_obj OBJ_;
@@ -1418,11 +1409,11 @@ struct hxResource
 
 hxResource *GetResources();
 
-SHARED void RegisterResources(hxResource *inResources);
+ void RegisterResources(hxResource *inResources);
 
-SHARED Array<String> __hxcpp_resource_names();
-SHARED String __hxcpp_resource_string(String inName);
-SHARED Array<unsigned char> __hxcpp_resource_bytes(String inName);
+ Array<String> __hxcpp_resource_names();
+ String __hxcpp_resource_string(String inName);
+ Array<unsigned char> __hxcpp_resource_bytes(String inName);
 
 // --- CreateEnum -------------------------------------------------------------
 //
@@ -1515,7 +1506,7 @@ inline hxFieldRef hxModEq(hxFieldRef inLHS, R inRHS) { inLHS = (int)inLHS % (int
 // Create a new root.
 // All statics are explicitly registered - this saves adding the whole data segment
 // to the collection list.
-SHARED void __RegisterStatic(void *inPtr,int inSize = sizeof(void *));
+ void __RegisterStatic(void *inPtr,int inSize = sizeof(void *));
 
 
 // This may not be needed now that GC memsets everything to 0.
@@ -1565,86 +1556,86 @@ template<> inline double &Static<double>(double &inPtr) { return inPtr; }
 
 
 // Initialise the garbage collection and hxcpp statics.
-void SHARED __boot_hxcpp();
+void  __boot_hxcpp();
 
 // Helpers for debugging code
-void SHARED __hxcpp_reachable(hxObject *inKeep);
-void SHARED __hxcpp_enable(bool inEnable);
-void SHARED __hxcpp_collect();
+void  __hxcpp_reachable(hxObject *inKeep);
+void  __hxcpp_enable(bool inEnable);
+void  __hxcpp_collect();
 
 // Dynamic casting
-bool SHARED __instanceof(const Dynamic &inValue, const Dynamic &inType);
+bool  __instanceof(const Dynamic &inValue, const Dynamic &inType);
 
 
-SHARED int __int__(double x);
+ int __int__(double x);
 
 // Used for accessing object fields by integer ID, rather than string ID.
 // Used mainly for neko ndll interaction.
-SHARED int  __hxcpp_field_to_id( const char *inField );
-SHARED const wchar_t *__hxcpp_field_from_id( int f );
+ int  __hxcpp_field_to_id( const char *inField );
+ const wchar_t *__hxcpp_field_from_id( int f );
 // Get function pointer from dll file
-SHARED Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
+ Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
 
 // Loading functions via name (dummy return value)
-SHARED int __hxcpp_register_prim(wchar_t *inName,void *inFunc);
+ int __hxcpp_register_prim(wchar_t *inName,void *inFunc);
 
 // Throw must return a value ...
 inline Dynamic hxThrow(Dynamic inError) { throw inError; return Dynamic(); }
 
 // Used by std library...
-SHARED int ParseInt(const String &inString);
-SHARED double ParseFloat(const String &inString);
-void SHARED __trace(Dynamic inPtr, Dynamic inData);
-double SHARED __time_stamp();
+ int ParseInt(const String &inString);
+ double ParseFloat(const String &inString);
+void  __trace(Dynamic inPtr, Dynamic inData);
+double  __time_stamp();
 
-SHARED void __hxcpp_print(Dynamic &inV);
-SHARED void __hxcpp_println(Dynamic &inV);
+ void __hxcpp_print(Dynamic &inV);
+ void __hxcpp_println(Dynamic &inV);
 
-SHARED bool __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2);
+ bool __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2);
 
 // System access
-Array<String> SHARED __get_args();
+Array<String>  __get_args();
 
 // haxe.Int32
-SHARED void hxCheckOverflow(int inVal);
+ void hxCheckOverflow(int inVal);
 
 // haxe.io.BytesData
 
-SHARED void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inString);
-SHARED void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len);
+ void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inString);
+ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len);
 
 // Int hash access...
-hxObject SHARED * CreateIntHash();
-void SHARED __int_hash_set(Dynamic &inHash,int inKey,const Dynamic &value);
-Dynamic  SHARED __int_hash_get(Dynamic &inHash,int inKey);
-bool  SHARED __int_hash_exists(Dynamic &inHash,int inKey);
-bool  SHARED __int_hash_remove(Dynamic &inHash,int inKey);
-Dynamic SHARED __int_hash_keys(Dynamic &inHash);
-Dynamic SHARED __int_hash_values(Dynamic &inHash);
+hxObject  * CreateIntHash();
+void  __int_hash_set(Dynamic &inHash,int inKey,const Dynamic &value);
+Dynamic   __int_hash_get(Dynamic &inHash,int inKey);
+bool   __int_hash_exists(Dynamic &inHash,int inKey);
+bool   __int_hash_remove(Dynamic &inHash,int inKey);
+Dynamic  __int_hash_keys(Dynamic &inHash);
+Dynamic  __int_hash_values(Dynamic &inHash);
 
 
 // String hash access
 /*
-hxObject SHARED * CreateStringHash();
-void SHARED _string_hash_set(Dynamic &inHash,String &inKey,const Dynamic &inValue);
-Dynamic  SHARED _string_hash_get(Dynamic &inHash,String &inKey);
-bool  SHARED _string_hash_exists(Dynamic &inHash,String &inKey);
-bool  SHARED _string_hash_remove(Dynamic &inHash,String &inKey);
-Dynamic SHARED _string_hash_keys(Dynamic &inHash);
+hxObject  * CreateStringHash();
+void  _string_hash_set(Dynamic &inHash,String &inKey,const Dynamic &inValue);
+Dynamic   _string_hash_get(Dynamic &inHash,String &inKey);
+bool   _string_hash_exists(Dynamic &inHash,String &inKey);
+bool   _string_hash_remove(Dynamic &inHash,String &inKey);
+Dynamic  _string_hash_keys(Dynamic &inHash);
 */
 
 // Date class
 
-SHARED double __hxcpp_new_date(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds);
-SHARED int __hxcpp_get_hours(double inSeconds);
-SHARED int __hxcpp_get_minutes(double inSeconds);
-SHARED int __hxcpp_get_seconds(double inSeconds);
-SHARED int __hxcpp_get_year(double inSeconds);
-SHARED int __hxcpp_get_month(double inSeconds);
-SHARED int __hxcpp_get_date(double inSeconds);
-SHARED int __hxcpp_get_day(double inSeconds);
-SHARED String __hxcpp_to_string(double inSeconds);
-SHARED double __hxcpp_date_now();
+ double __hxcpp_new_date(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds);
+ int __hxcpp_get_hours(double inSeconds);
+ int __hxcpp_get_minutes(double inSeconds);
+ int __hxcpp_get_seconds(double inSeconds);
+ int __hxcpp_get_year(double inSeconds);
+ int __hxcpp_get_month(double inSeconds);
+ int __hxcpp_get_date(double inSeconds);
+ int __hxcpp_get_day(double inSeconds);
+ String __hxcpp_to_string(double inSeconds);
+ double __hxcpp_date_now();
 
 
 

@@ -78,7 +78,7 @@ void SignalInit(ThreadSignal &outSignal,ThreadMutex &,bool &)
 }
 void SignalSet(ThreadSignal &outSignal,ThreadMutex &,bool &)
 {
-    ReleaseSemaphore(&outSignal,1,0);
+    ReleaseSemaphore(outSignal,1,0);
 }
 
 void WaitFor(ThreadSignal &inWait,ThreadMutex &,bool &ioOn) { WaitForSingleObject(inWait,INFINITE); }

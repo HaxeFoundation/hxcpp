@@ -233,7 +233,7 @@ hxObject *alloc_string_len(const char *inStr,int inLen)
 hxObject *alloc_wstring_len(const wchar_t *inStr,int inLen)
 {
    String str(inStr,inLen);
-   return Dynamic(str).GetPtr();
+   return Dynamic(str.dup()).GetPtr();
 }
 
 // Array access - generic
@@ -369,7 +369,7 @@ int buffer_size(buffer inBuffer)
 }
 
 
-int buffer_set_size(buffer inBuffer,int inLen)
+void buffer_set_size(buffer inBuffer,int inLen)
 {
 	ByteArray b = (ByteArray)inBuffer;
 	b->__SetSize(inLen);
@@ -437,7 +437,9 @@ hxObject * val_call0_traceexcept(hxObject * arg1)
 	{
 		String s = e;
 		fprintf(stderr,"Fatal Error : %s\n",s.__CStr());
+		exit(1);
 	}
+	return 0;
 }
 
 
@@ -513,12 +515,12 @@ int val_id(const char * arg1)
 }
 
 
-SHARED void alloc_field(hxObject * arg1,int arg2,hxObject * arg3)
+void alloc_field(hxObject * arg1,int arg2,hxObject * arg3)
 {
 	if (!arg1) throw INVALID_OBJECT;
 	arg1->__SetField(__hxcpp_field_from_id(arg2),arg3);
 }
-SHARED void hxcpp_alloc_field(hxObject * arg1,int arg2,hxObject * arg3)
+void hxcpp_alloc_field(hxObject * arg1,int arg2,hxObject * arg3)
 {
 	return alloc_field(arg1,arg2,arg3);
 }

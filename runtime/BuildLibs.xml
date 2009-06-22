@@ -2,24 +2,25 @@
 
 <include name="${HXCPP}/build-tool/BuildCommon.xml"/>
 
+<set name="RUNTIME" value="./"/>
 
 
-<files id="std" dir="${HXCPP}">
+<files id="std" dir="${RUNTIME}">
   <depend name="${HXCPP}/include/hxMacros.h"/>
   <depend name="${HXCPP}/include/hxObject.h"/>
   <depend name="${HXCPP}/include/hxCFFI.h"/>
 
-  <file name="runtime/libs/std/Sys.cpp"/>
-  <file name="runtime/libs/std/Thread.cpp"/>
-  <file name="runtime/libs/std/Xml.cpp"/>
-  <file name="runtime/libs/std/Process.cpp"/>
-  <file name="runtime/libs/std/Random.cpp"/>
-  <file name="runtime/libs/std/Socket.cpp"/>
-  <file name="runtime/libs/std/String.cpp"/>
-  <file name="runtime/libs/std/File.cpp"/>
-  <file name="runtime/libs/std/Init.cpp"/>
-  <file name="runtime/libs/std/Misc.cpp"/>
-  <file name="runtime/libs/std/Interface.cpp"/>
+  <file name="libs/std/Sys.cpp"/>
+  <file name="libs/std/Thread.cpp"/>
+  <file name="libs/std/Xml.cpp"/>
+  <file name="libs/std/Process.cpp"/>
+  <file name="libs/std/Random.cpp"/>
+  <file name="libs/std/Socket.cpp"/>
+  <file name="libs/std/String.cpp"/>
+  <file name="libs/std/File.cpp"/>
+  <file name="libs/std/Init.cpp"/>
+  <file name="libs/std/Misc.cpp"/>
+  <file name="libs/std/Interface.cpp"/>
 
 
 </files>
@@ -33,17 +34,17 @@
   <outdir name="../bin/${BINDIR}"/>
 </target>
 
-<set name="PCRE_DIR" value="runtime/thirdparty/pcre-7.8"/>
+<set name="PCRE_DIR" value="${RUNTIME}/thirdparty/pcre-7.8"/>
 
-<files id="regexp" dir="${HXCPP}">
+<files id="regexp" dir="${RUNTIME}">
   <depend name="${HXCPP}/include/hxMacros.h"/>
   <depend name="${HXCPP}/include/hxObject.h"/>
   <depend name="${HXCPP}/include/hxCFFI.h"/>
 
   <compilerflag value="-DPCRE_STATIC"/>
-  <compilerflag value="-I${HXCPP}/${PCRE_DIR}"/>
+  <compilerflag value="-I${PCRE_DIR}"/>
 
-  <file name="runtime/libs/regexp/RegExp.cpp"/>
+  <file name="libs/regexp/RegExp.cpp"/>
 
   <file name="${PCRE_DIR}/pcre_get.c"/>
   <file name="${PCRE_DIR}/pcre_study.c"/>
@@ -75,16 +76,16 @@
   <outdir name="../bin/${BINDIR}"/>
 </target>
 
-<set name="ZLIB_DIR" value="runtime/thirdparty/zlib-1.2.3"/>
+<set name="ZLIB_DIR" value="${RUNTIME}/thirdparty/zlib-1.2.3"/>
 
-<files id="zlib" dir="${HXCPP}">
+<files id="zlib" dir="${RUNTIME}">
   <depend name="${HXCPP}/include/hxMacros.h"/>
   <depend name="${HXCPP}/include/hxObject.h"/>
   <depend name="${HXCPP}/include/hxCFFI.h"/>
 
-  <compilerflag value="-I${HXCPP}/${ZLIB_DIR}"/>
+  <compilerflag value="-I${ZLIB_DIR}"/>
 
-  <file name="runtime/libs/zlib/ZLib.cpp"/>
+  <file name="libs/zlib/ZLib.cpp"/>
 
   <file name="${ZLIB_DIR}/adler32.c"/>
   <file name="${ZLIB_DIR}/crc32.c"/>

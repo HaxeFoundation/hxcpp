@@ -245,17 +245,10 @@ static value socket_write( value o, value data ) {
 	const char *cdata;
 	int datalen, slen;
 	val_check_kind(o,k_socket);
-   #ifdef HXCPP
-	Array<unsigned char> bytes = data;
-	if (bytes==null())
-		return alloc_null();
-	cdata =(const char *)&bytes[0]; 
-	datalen = bytes->length;
-   #else
-	val_check(data,string);
-	cdata = val_string(data);
-	datalen = val_strlen(data);
-   #endif
+	val_check(data,buffer);
+	buffer buf = val_to_buffer(data);
+	cdata = buffer_data(buf);
+	datalen = buffer_size(buf);
 	while( datalen > 0 ) {
 		POSIX_LABEL(write_again);
 		slen = send(val_sock(o),cdata,datalen,MSG_NOSIGNAL);

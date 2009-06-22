@@ -134,13 +134,9 @@ static value file_read( value o, value s, value pp, value n ) {
 	int len;
 	int buf_len;
 	val_check_kind(o,k_file);
-   #ifdef HXCPP
-   Array<unsigned char> bytes = s;
-   buf_len = bytes.__length();
-   #else
-	val_check(s,string);
-   buf_len = val_strlen(s);
-   #endif
+	val_check(s,buffer);
+	buffer buf = val_to_buffer(s);
+   buf_len = buffer_size(buf);
 	val_check(pp,int);
 	val_check(n,int);
 	f = val_file(o);
@@ -151,11 +147,7 @@ static value file_read( value o, value s, value pp, value n ) {
 	while( len > 0 ) {
 		int d;
 		POSIX_LABEL(file_read_again);
-   #ifdef HXCPP
-		d = (int)fread(&bytes[p],1,len,f->io);
-   #else
-		d = (int)fread((char*)val_string(s)+p,1,len,f->io);
-   #endif
+		d = (int)fread(buffer_data(buf)+p,1,len,f->io);
 		if( d <= 0 ) {
 			int size = val_int(n) - len;
 			HANDLE_FINTR(f->io,file_read_again);
