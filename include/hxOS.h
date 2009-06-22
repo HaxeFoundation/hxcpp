@@ -91,6 +91,16 @@
 #endif
 
 
+#ifdef NEKO_POSIX
+#	include <errno.h>
+#	define POSIX_LABEL(name)	name:
+#	define HANDLE_EINTR(label)	if( errno == EINTR ) goto label
+#	define HANDLE_FINTR(f,label) if( ferror(f) && errno == EINTR ) goto label
+#else
+#	define POSIX_LABEL(name)
+#	define HANDLE_EINTR(label)
+#	define HANDLE_FINTR(f,label)
+#endif
 
 
 #endif

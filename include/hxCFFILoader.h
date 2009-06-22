@@ -8,6 +8,7 @@ static ResolveProc sResolveProc = 0;
 #ifdef NEKO_WINDOWS
 
 #include <windows.h>
+#include <stdio.h>
  
 void *LoadFunc(const char *inName)
 {

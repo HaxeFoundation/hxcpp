@@ -36,16 +36,24 @@ enum ValueType
 // val_fun_nargs may return a special value
 enum { faNotFunction = -2, faVarArgs=-1, faArgs0=0 /* ... */ };
 
+typedef int field;
 
 typedef struct __hx_value *value;
 typedef struct __hx_kind  *vkind;
-typedef struct __hx_byte_array  *hx_byte_array;
+typedef struct __hx_buffer  *buffer;
 typedef struct __hx_string_buf  *hx_string_buf;
 
 typedef void (*hxFinalizer)(value v);
+typedef void (*hxPtrFinalizer)(void *v);
 
-#define failure(msg)		hx_fail(msg,__FILE__,__LINE__)
+#ifdef NEKO_WINDOWS
+typedef void (*thread_callback)(void *);
+#else
+typedef void *(*thread_callback)(void *);
+#endif
 
+
+#define hx_failure(msg)		hx_fail(msg,__FILE__,__LINE__)
 
 #ifndef IGNORE_CFFI_API_H
 
@@ -78,7 +86,7 @@ int __reg_##func = hx_register_prim(L###func L"__MULT",(void *)(&func)); \
 int __reg_##func = hx_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
 }
 
-#define DEFINE_KIND(name) vkind name = hx_alloc_kind();
+#define DEFINE_KIND(name) extern "C" { vkind name = alloc_kind(); }
 
 #	define DEFINE_ENTRY_POINT(name) extern "C" {  void name(); EXPORT void *__neko_entry_point() { return (void *)&name; } }
 
@@ -107,7 +115,7 @@ int __reg_##func = hx_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
 
 // Check type...
 inline bool val_is_null(value inVal) { return val_type(inVal)==valtNull; }
-inline bool val_is_byte_array(value inVal) { return val_byte_array(inVal)!=0; }
+inline bool val_is_buffer(value inVal) { return val_to_buffer(inVal)!=0; }
 inline bool val_is_int(value inVal) { return val_type(inVal)==valtInt; }
 inline bool val_is_bool(value inVal) { return val_type(inVal)==valtBool; }
 inline bool val_is_float(value inVal) { return val_type(inVal)==valtFloat; }
@@ -130,10 +138,15 @@ inline bool val_is_object(value inVal)
 
 #define val_null alloc_null()
 
+#define bfailure(x) val_throw(buffer_to_string(x))
+
+#define copy_string(str,len) alloc_string_len(str,len)
+
+
 // The "Check" macros throw an error if assumtion is false
-#define val_check_kind(v,t)	if( !val_is_kind(v,t) ) failure("invalid kind");
-#define val_check_function(f,n) if( !val_is_function(f) || (val_fun_nargs(f) != (n) && val_fun_nargs(f) != faVarArgs) ) failure("Bad function");
-#define val_check(v,t)		if( !val_is_##t(v) ) failure("type not " #t);
+#define val_check_kind(v,t)	if( !val_is_kind(v,t) ) hx_failure("invalid kind");
+#define val_check_function(f,n) if( !val_is_function(f) || (val_fun_nargs(f) != (n) && val_fun_nargs(f) != faVarArgs) ) hx_failure("Bad function");
+#define val_check(v,t)		if( !val_is_##t(v) ) hx_failure("type not " #t);
 
 // The "Get" function will return or force an error
 inline bool val_get_bool(value inVal) {  val_check(inVal,bool); return val_bool(inVal); }
@@ -143,11 +156,19 @@ inline const char *val_get_string(value inVal) {  val_check(inVal,string); retur
 inline void *val_get_handle(value inVal,vkind inKind)
   {  val_check_kind(inVal,inKind); return val_to_kind(inVal,inKind); }
 
+
 inline value alloc_string(const char *inStr)
 {
    const char *end = inStr;
    while(*end) end++;
    return alloc_string_len(inStr,end-inStr);
+}
+
+inline value alloc_wstring(const wchar_t *inStr)
+{
+   const wchar_t *end = inStr;
+   while(*end) end++;
+   return alloc_wstring_len(inStr,end-inStr);
 }
 
 #endif
