@@ -431,7 +431,7 @@ static value lock_create() {
 	if( l == NULL )
 		return alloc_null();
 #	else
-	l = (vlock)hx_alloc_private(sizeof(struct _vlock));
+	l = (vlock)alloc_private(sizeof(struct _vlock));
 	l->counter = 0;
 	if( pthread_mutex_init(&l->lock,NULL) != 0 || pthread_cond_init(&l->cond,NULL) != 0 )
 		return alloc_null();

@@ -2,6 +2,9 @@
 // Get headers etc.
 #define IGNORE_CFFI_API_H
 #include <hxCFFI.h>
+#include <map>
+#include <string>
+
 
 
 // Class for boxing external handles
@@ -33,11 +36,22 @@ typedef hxObjectPtr<Abstract_obj> Abstract;
 vkind k_int32 = (vkind)vtAbstractBase;
 vkind k_hash = (vkind)(vtAbstractBase + 1);
 static int sgKinds = (int)(vtAbstractBase + 2);
+typedef std::map<std::string,int> KindMap;
+static KindMap sgKindMap;
 
 
 SHARED int hxcpp_alloc_kind()
 {
    return ++sgKinds;
+}
+
+
+void hxcpp_kind_share(int &ioKind,const char *inName)
+{
+   int &kind = sgKindMap[inName];
+   if (kind==0)
+      kind = hxcpp_alloc_kind();
+   ioKind = kind;
 }
 
 
@@ -55,7 +69,7 @@ void hx_error()
 }
 
 
-void hx_throw(hxObject * arg1)
+void val_throw(hxObject * arg1)
 {
 	if (arg1==0)
 	   throw Dynamic(null());
@@ -197,7 +211,30 @@ hxObject * alloc_string(const char * arg1)
 	return Dynamic( String(arg1,strlen(arg1)) ).GetPtr();
 }
 
+wchar_t * val_dup_wstring(value inVal)
+{
+   hxObject *obj = (hxObject *)inVal;
+   String  s = obj->toString();
+   return (wchar_t *)s.dup().__s;
+}
 
+char * val_dup_string(value inVal)
+{
+   hxObject *obj = (hxObject *)inVal;
+   return obj->toString().__CStr();
+}
+
+hxObject *alloc_string_len(const char *inStr,int inLen)
+{
+   String str(inStr,inLen);
+   return Dynamic(str).GetPtr();
+}
+
+hxObject *alloc_wstring_len(const wchar_t *inStr,int inLen)
+{
+   String str(inStr,inLen);
+   return Dynamic(str).GetPtr();
+}
 
 // Array access - generic
 int val_array_size(hxObject * arg1)
@@ -213,8 +250,27 @@ hxObject * val_array_i(hxObject * arg1,int arg2)
 	return arg1->__GetItem(arg2).GetPtr();
 }
 
+void val_array_set_i(hxObject * arg1,int arg2,hxObject *inVal)
+{
+	if (arg1==0) return;
+	return arg1->__SetItem(arg2, Dynamic(inVal) );
+}
 
-hxObject * val_alloc_array(int arg1)
+void val_array_set_size(hxObject * arg1,int inLen)
+{
+	if (arg1==0) return;
+	return arg1->__SetSize(inLen);
+}
+
+void val_array_push(hxObject * arg1,hxObject *inValue)
+{
+	hxArrayBase *base = dynamic_cast<hxArrayBase *>(arg1);
+	if (base==0) return;
+	base->__push(inValue);
+}
+
+
+hxObject * alloc_array(int arg1)
 {
 	Array<Dynamic> array(arg1,arg1);
 	return array.GetPtr();
@@ -251,42 +307,115 @@ double * val_array_double(hxObject * arg1)
 }
 
 
+typedef Array_obj<unsigned char> *ByteArray;
 
 // Byte arrays
 // The byte array may be a string or a Array<bytes> depending on implementation
-hx_byte_array val_byte_array(hxObject * arg1)
+buffer val_to_buffer(hxObject * arg1)
 {
-	Array_obj<unsigned char> *b = dynamic_cast< Array_obj<unsigned char> * >(arg1);
-	return (hx_byte_array)b;
+	ByteArray b = dynamic_cast< ByteArray >(arg1);
+	return (buffer)b;
 }
 
 
-int byte_array_len(hx_byte_array arg1)
+
+buffer alloc_buffer(const char *inStr)
 {
-	Array_obj<unsigned char> *b = (Array_obj<unsigned char> *)(arg1);
+	int len = inStr ? strlen(inStr) : 0;
+	ByteArray b = new Array_obj<unsigned char>(len,len);
+	if (len)
+		memcpy(b->GetBase(),inStr,len);
+	return (buffer)b;
+}
+
+
+buffer alloc_buffer_len(int inLen)
+{
+	ByteArray b = new Array_obj<unsigned char>(inLen,inLen);
+	return (buffer)b;
+}
+
+
+value buffer_val(buffer b)
+{
+	return (value)b;
+}
+
+
+value buffer_to_string(buffer inBuffer)
+{
+	ByteArray b = (ByteArray) inBuffer;
+	String str(b->GetBase(),b->length);
+        Dynamic d(str);
+	return (value)d.GetPtr();
+}
+
+
+void buffer_append(buffer inBuffer,const char *inStr)
+{
+	ByteArray b = (ByteArray)inBuffer;
+	int olen = b->length;
+	int len = strlen(inStr);
+	b->__SetSize(olen+len);
+	memcpy(b->GetBase()+olen,inStr,len);
+
+}
+
+
+int buffer_size(buffer inBuffer)
+{
+	ByteArray b = (ByteArray)inBuffer;
 	return b->length;
 }
 
 
-unsigned char byte_array_i(hx_byte_array arg1,int arg2)
+int buffer_set_size(buffer inBuffer,int inLen)
 {
-	Array_obj<unsigned char> *b = (Array_obj<unsigned char> *)(arg1);
-	return b->QuickItem(arg2);
+	ByteArray b = (ByteArray)inBuffer;
+	b->__SetSize(inLen);
 }
 
 
-void byte_array_push(hx_byte_array arg1,unsigned char arg2)
+void buffer_append_sub(buffer inBuffer,const char *inStr,int inLen)
 {
-	Array_obj<unsigned char> *b = (Array_obj<unsigned char> *)(arg1);
-	b->push(arg2);
+	ByteArray b = (ByteArray)inBuffer;
+	int olen = b->length;
+	b->__SetSize(olen+inLen);
+	memcpy(b->GetBase()+olen,inStr,inLen);
 }
 
 
-void byte_array_resize(hx_byte_array arg1,int arg2)
+void buffer_append_char(buffer inBuffer,int inChar)
 {
-	Array_obj<unsigned char> *b = (Array_obj<unsigned char> *)(arg1);
-	b->__SetSize(arg2);
+	ByteArray b = (ByteArray)inBuffer;
+	b->Add(inChar);
 }
+
+
+char * buffer_data(buffer inBuffer)
+{
+	ByteArray b = (ByteArray)inBuffer;
+	return b->GetBase();
+}
+
+
+// Append value to buffer
+void val_buffer(buffer inBuffer,value inValue)
+{
+	ByteArray b = (ByteArray)inBuffer;
+	hxObject *obj = (hxObject *)inValue;
+	if (obj)
+	{
+	    buffer_append(inBuffer, obj->toString().__CStr());
+	}
+	else
+	{
+		buffer_append_sub(inBuffer,"null",4);
+	}
+}
+
+
+
 
 
 
@@ -295,6 +424,20 @@ hxObject * val_call0(hxObject * arg1)
 {
 	if (!arg1) throw NULL_FUNCTION_POINTER;
 	return arg1->__run().GetPtr();
+}
+
+hxObject * val_call0_traceexcept(hxObject * arg1)
+{
+	try
+	{
+	if (!arg1) throw NULL_FUNCTION_POINTER;
+	return arg1->__run().GetPtr();
+	}
+	catch(Dynamic e)
+	{
+		String s = e;
+		fprintf(stderr,"Fatal Error : %s\n",s.__CStr());
+	}
 }
 
 
@@ -388,10 +531,25 @@ hxObject * val_field(hxObject * arg1,int arg2)
 }
 
 	// Abstract types
-vkind hx_alloc_kind()
+vkind alloc_kind()
 {
 	return (vkind)hxcpp_alloc_kind();
 }
+
+void kind_share(vkind *inKind,const char *inName)
+{
+	int k = (int)*inKind;
+	hxcpp_kind_share(k,inName);
+	*inKind = (vkind)k;
+}
+
+
+// Thead
+void start_thread(thread_callback inFunc,void *inUserData)
+{
+   hxStartThread(inFunc,inUserData);
+}
+
 
 
 
@@ -402,7 +560,7 @@ void * hx_alloc(int arg1)
 }
 
 
-void * hx_alloc_private(int arg1)
+void * alloc_private(int arg1)
 {
    return hxNewGCPrivate(0,arg1);
 }
@@ -411,6 +569,11 @@ void * hx_alloc_private(int arg1)
 void  val_gc(hxObject * arg1,finalizer arg2)
 {
 	 hxGCAddFinalizer( arg1, arg2 );
+}
+
+void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2)
+{
+	 hxGCAddFinalizer( (hxObject *)arg1, (finalizer)arg2 );
 }
 
 

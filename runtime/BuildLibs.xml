@@ -21,6 +21,7 @@
   <file name="runtime/libs/std/Misc.cpp"/>
   <file name="runtime/libs/std/Interface.cpp"/>
 
+
 </files>
 
 
@@ -29,6 +30,7 @@
   <files id="std"/>
   <flag value="-dll"/>
   <lib name="wsock32.lib" if="windows"/>
+  <outdir name="../bin/${BINDIR}"/>
 </target>
 
 <set name="PCRE_DIR" value="runtime/thirdparty/pcre-7.8"/>
@@ -70,6 +72,7 @@
 
 <target id="regexp" output="regexp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="regexp"/>
+  <outdir name="../bin/${BINDIR}"/>
 </target>
 
 <set name="ZLIB_DIR" value="runtime/thirdparty/zlib-1.2.3"/>
@@ -102,6 +105,7 @@
 
 <target id="zlib" output="zlib${DBG}" tool="linker" toolid="dll">
   <files id="zlib"/>
+  <outdir name="../bin/${BINDIR}"/>
 </target>
 
 

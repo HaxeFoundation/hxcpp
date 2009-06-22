@@ -144,7 +144,7 @@ static value process_run( value cmd, value vargs ) {
 	char **argv = (char**)alloc_private(sizeof(char*)*(val_array_size(vargs)+2));
 	argv[0] = (char *)val_string(cmd);
 	for(i=0;i<val_array_size(vargs);i++) {
-		value v = val_array_ptr(vargs)[i];
+		value v = val_array_i(vargs,i);
 		val_check(v,string);
 		argv[i+1] = (char *)val_string(v);
 	}

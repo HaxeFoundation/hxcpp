@@ -50,6 +50,8 @@ void *LoadFunc(const char *inName)
 #endif
 
 #include <dlfcn.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 void *LoadFunc(const char *inName)
 {
@@ -63,7 +65,6 @@ void *LoadFunc(const char *inName)
       if (handle)
       {
          sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
-printf("PROC : %p\n",sResolveProc);
       }
    }
    if (sResolveProc==0)

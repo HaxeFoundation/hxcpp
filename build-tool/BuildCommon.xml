@@ -104,7 +104,7 @@
   <flag value="-dll"/>
   <flag value="-debug" if="debug"/>
   <ext value=".dll"/>
-  <libdir value="lib"/>
+  <libdir name="lib"/>
   <flag value="-libpath:lib"/>
   <outflag value="-out:"/>
 </linker>

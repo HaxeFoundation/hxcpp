@@ -127,6 +127,7 @@ Dynamic hxObject::__Field(const String &inString) { return null(); }
 bool hxObject::__HasField(const String &inString) { return __Field(inString)!=null(); }
 Dynamic hxObject::__Run(const Array<Dynamic> &inArgs) { return 0; }
 Dynamic hxObject::__GetItem(int inIndex) const { return Dynamic(); }
+void hxObject::__SetItem(int inIndex,Dynamic) {  }
 DynamicArray hxObject::__EnumParams() { return DynamicArray(); }
 String hxObject::__Tag() const { return L"<not enum>"; }
 int hxObject::__Index() const { return -1; }

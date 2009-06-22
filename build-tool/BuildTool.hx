@@ -113,7 +113,7 @@ class Linker
    }
    public function link(inTarget:Target,inObjs:Array<String>)
    {
-      var out_name = mNamePrefix + inTarget.mOutput + mExt;
+      var out_name = inTarget.mOutputDir + mNamePrefix + inTarget.mOutput + mExt;
       if (isOutOfDate(out_name,inObjs))
       {
          var args = new Array<String>();
@@ -207,6 +207,7 @@ class Target
    public function new(inOutput:String, inTool:String,inToolID:String)
    {
       mOutput = inOutput;
+      mOutputDir = "";
       mToolID = inToolID;
       mTool = inTool;
       mFiles = [];
@@ -240,6 +241,7 @@ class Target
    }
 
    public var mOutput:String;
+   public var mOutputDir:String;
    public var mTool:String;
    public var mToolID:String;
    public var mFiles:Array<File>;
@@ -356,7 +358,6 @@ class BuildTool
                 case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
                 case "objdir" : c.mObjDir = substitute((el.att.value));
                 case "outflag" : c.mOutFlag = substitute((el.att.value));
-                case "ext" : c.mExt = substitute((el.att.value));
             }
       }
 
@@ -374,7 +375,7 @@ class BuildTool
                 case "flag" : l.mFlags.push(substitute(el.att.value));
                 case "ext" : l.mExt = (substitute(el.att.value));
                 case "outflag" : l.mOutFlag = (substitute(el.att.value));
-                case "libdir" : l.mLibDir = (substitute(el.att.value));
+                case "libdir" : l.mLibDir = (substitute(el.att.name));
             }
       }
 
@@ -422,6 +423,7 @@ class BuildTool
                 case "lib" : target.mLibs.push( substitute(el.att.name) );
                 case "flag" : target.mFlags.push( substitute(el.att.value) );
                 case "dir" : target.mDirs.push( substitute(el.att.name) );
+                case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
                 case "files" : var id = el.att.id;
                    if (!mFileGroups.exists(id))
                       target.addError( "Could not find filegroup " + id ); 
@@ -499,11 +501,20 @@ class BuildTool
 		}
 
       if ( (new EReg("windows","i")).match(os) )
+      {
          defines.set("windows","windows");
+         defines.set("BINDIR","Windows");
+      }
       else if ( (new EReg("linux","i")).match(os) )
+      {
          defines.set("linux","linux");
+         defines.set("BINDIR","Linux");
+      }
       else if ( (new EReg("darwin","i")).match(os) )
+      {
          defines.set("darwin","darwin");
+         defines.set("BINDIR","Mac");
+      }
 
       for(arg in args)
       {

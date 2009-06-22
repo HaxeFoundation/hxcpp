@@ -2,6 +2,7 @@
 
 #include <map>
 #include <vector>
+#include <string>
 #include <gc.h>
 
 
@@ -9,9 +10,24 @@ vkind k_int32 = vtAbstractBase;
 vkind k_hash = (int)vtAbstractBase + 1;
 static int sgKinds = (int)vtAbstractBase + 2;
 
+typedef std::map<std:;string,int> KindMap;
 
 int hxcpp_alloc_kind()
 {
+   return ++sgKinds;
+}
+
+int hxcpp_alloc_kind()
+{
+   return ++sgKinds;
+}
+
+int hxcpp_kind_share(int &ioKind,const char *inName)
+{
+   int &kind = sgKindMap[inName];
+   if (kind==0)
+      kind = hxcpp_alloc_kind();
+   ioKind = kind;
    return ++sgKinds;
 }
 

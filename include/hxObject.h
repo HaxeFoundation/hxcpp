@@ -221,6 +221,7 @@ public:
 
    virtual int __length() const { return 0; }
    virtual Dynamic __GetItem(int inIndex) const;
+   virtual void __SetItem(int inIndex,Dynamic inValue);
    virtual void __SetSize(int inLen) { }
 
    typedef const Dynamic &D;
@@ -952,12 +953,9 @@ class Array_obj : public hxArrayBase
    typedef typename hxBoxed<ELEM_>::type NullType;
 
 
-protected:
+public:
    Array_obj(int inSize,int inReserve) :
         hxArrayBase(inSize,inReserve,sizeof(ELEM_),ContainsPointers<ELEM_>()) { }
-
-public:
-
 
 
    // Defined later so we can use "Array"
@@ -967,6 +965,7 @@ public:
 
 
    virtual Dynamic __GetItem(int inIndex) const { return __get(inIndex); }
+   virtual void __SetItem(int inIndex,Dynamic inValue) { Item(inIndex) = inValue; }
 
    inline ELEM_ *Pointer() { return (ELEM_ *)mBase; }
 
