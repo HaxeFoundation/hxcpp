@@ -25,7 +25,8 @@ void *LoadFunc(const char *inName)
    }
    if (sResolveProc==0)
    {
-      HMODULE handle = LoadLibrary("CFFI.dll");
+      // Maybe we are part of a neko script?
+      HMODULE handle = LoadLibrary("nekoapi.dll");
       if (handle)
       {
          sResolveProc = (ResolveProc)GetProcAddress(handle,"hx_cffi");
@@ -69,7 +70,7 @@ void *LoadFunc(const char *inName)
    }
    if (sResolveProc==0)
    {
-      void *handle = dlopen("CFFI." EXT ,RTLD_NOW);
+      void *handle = dlopen("neko." EXT ,RTLD_NOW);
       if (handle)
          sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
    }

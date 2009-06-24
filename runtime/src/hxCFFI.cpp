@@ -306,6 +306,13 @@ double * val_array_double(hxObject * arg1)
 	return (double *)a->GetBase();
 }
 
+value * val_array_value(hxObject * arg1)
+{
+	return 0;
+}
+
+
+
 
 typedef Array_obj<unsigned char> *ByteArray;
 

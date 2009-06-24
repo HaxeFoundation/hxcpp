@@ -129,10 +129,8 @@
   <depend name="${HXCPP}/include/hxMacros.h"/>
   <depend name="${HXCPP}/include/hxObject.h"/>
   <depend name="${HXCPP}/include/hxMath.h"/>
-  <depend name="${HXCPP}/include/neko.h"/>
 
   <compilerflag value="-DBUILDING_HXCPP_DLL"/>
-  <compilerflag value="-DNEKO_SOURCES"/>
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
   <compilerflag value="-DALL_INTERIOR_POINTERS"/>
   <compilerflag value="-DGC_NOT_DLL"/>

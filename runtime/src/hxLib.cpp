@@ -1,6 +1,5 @@
 #include <hxObject.h>
 #include <string>
-#include <neko.h>
 #include <map>
 #include <vector>
 

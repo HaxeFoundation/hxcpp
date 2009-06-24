@@ -38,10 +38,11 @@ enum { faNotFunction = -2, faVarArgs=-1, faArgs0=0 /* ... */ };
 
 typedef int field;
 
+#ifndef HAVE_NEKO_TYPES
 typedef struct __hx_value *value;
 typedef struct __hx_kind  *vkind;
 typedef struct __hx_buffer  *buffer;
-typedef struct __hx_string_buf  *hx_string_buf;
+#endif
 
 typedef void (*hxFinalizer)(value v);
 typedef void (*hxPtrFinalizer)(void *v);
@@ -127,12 +128,12 @@ inline bool val_is_kind(value inVal,vkind inKind) { return val_to_kind(inVal,inK
 
 inline bool val_is_number(value inVal)
 {
-	ValueType t = val_type(inVal);
+	int t = val_type(inVal);
 	return t==valtInt || t==valtFloat;
 }
 inline bool val_is_object(value inVal)
 {
-	ValueType t = val_type(inVal);
+	int t = val_type(inVal);
 	return t==valtObject || t==valtEnum ||t==valtClass;
 }
 
@@ -161,14 +162,14 @@ inline value alloc_string(const char *inStr)
 {
    const char *end = inStr;
    while(*end) end++;
-   return alloc_string_len(inStr,end-inStr);
+   return alloc_string_len(inStr,(int)(end-inStr));
 }
 
 inline value alloc_wstring(const wchar_t *inStr)
 {
    const wchar_t *end = inStr;
    while(*end) end++;
-   return alloc_wstring_len(inStr,end-inStr);
+   return alloc_wstring_len(inStr,(int)(end-inStr));
 }
 
 #endif

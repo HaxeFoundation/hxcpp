@@ -110,12 +110,25 @@
 </target>
 
 
+<files id="nekoapi" dir="${RUNTIME}">
+  <depend name="libs/nekoapi/neko.h"/>
+  <file name="libs/nekoapi/NekoAPI.cpp"/>
+</files>
+
+
+<target id="nekoapi" output="nekoapi" tool="linker" toolid="dll">
+  <files id="nekoapi"/>
+  <lib name="${RUNTIME}/libs/nekoapi/neko.lib" if="windows"/>
+  <outdir name="../bin/${BINDIR}"/>
+</target>
+
 
 
 <target id="default">
    <target id="std"/>
    <target id="regexp"/>
    <target id="zlib"/>
+   <target id="nekoapi"/>
 </target>
 
 

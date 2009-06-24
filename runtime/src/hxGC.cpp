@@ -1,7 +1,6 @@
 #include <hxObject.h>
 #include <map>
 #include <vector>
-#include <neko.h>
 
 #ifdef _WIN32
 
