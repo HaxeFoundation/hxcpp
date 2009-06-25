@@ -119,7 +119,8 @@ class Linker
    }
    public function link(inTarget:Target,inObjs:Array<String>)
    {
-      var file_name = mNamePrefix + inTarget.mOutput + mExt;
+	   var ext = inTarget.mExt=="" ? mExt : inTarget.mExt;
+      var file_name = mNamePrefix + inTarget.mOutput + ext;
       var out_name = inTarget.mOutputDir + file_name;
       if (isOutOfDate(out_name,inObjs))
       {
@@ -220,6 +221,7 @@ class Target
       mFiles = [];
       mLibs = [];
       mFlags = [];
+      mExt = "";
       mSubTargets = [];
       mFlags = [];
       mErrors=[];
@@ -257,6 +259,7 @@ class Target
    public var mFlags:Array<String>;
    public var mErrors:Array<String>;
    public var mDirs:Array<String>;
+   public var mExt:String;
 }
 
 typedef Targets = Hash<Target>;
@@ -431,6 +434,7 @@ class BuildTool
                 case "flag" : target.mFlags.push( substitute(el.att.value) );
                 case "dir" : target.mDirs.push( substitute(el.att.name) );
                 case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
+                case "ext" : target.mExt = (substitute(el.att.value));
                 case "files" : var id = el.att.id;
                    if (!mFileGroups.exists(id))
                       target.addError( "Could not find filegroup " + id ); 

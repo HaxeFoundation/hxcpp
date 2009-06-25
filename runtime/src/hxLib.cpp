@@ -34,7 +34,7 @@ typedef hxObject * (*prim_4)(hxObject *,hxObject *,hxObject *,hxObject *);
 typedef hxObject * (*prim_5)(hxObject *,hxObject *,hxObject *,hxObject *,hxObject *);
 typedef hxObject * (*prim_mult)(hxObject **inArray,int inArgs);
 
-typedef void *(*func)(); 
+typedef void *(*FundFunc)(); 
 
 static Dynamic sgInvalidArgCount(STRING(L"Invalid arguement count",23));
 
@@ -216,6 +216,9 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #else
     String(L".dso",4);
 #endif
+
+
+
 #endif
    String bin =
 #ifdef _WIN32
@@ -229,9 +232,8 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #endif
 #endif
 
-#ifdef HXCPP_DEBUG
-   ext = String(L"-debug",6) + ext;
-#endif
+	 int passes = 4;
+
 
 
    String full_name = inPrim;
@@ -247,80 +249,96 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
           full_name += L"__MULT";
    }
 
-   String dll_ext = inLib + ext;
+#ifdef HXCPP_DEBUG
+	int pass0 = 0;
+#else
+	int pass0 = 2;
+#endif
+
+	// Try debug extensions first, then native extensions then ndll
+
 
    Module module = sgLoadedModule[inLib.__s];
-   if (!module)
-   {
-      if (debug)
-         printf("Searching for %S...\n", dll_ext.__s);
-      module = hxLoadLibrary(dll_ext.__s);
-      if (!module)
-      {
-         String hxcpp = GetEnv("HXCPP");
-         if (hxcpp.length!=0)
-         {
-             String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
-             if (debug)
-                printf(" try %S...\n", name.__s);
-             module = hxLoadLibrary(name.__s);
-         }
-      }
-   
-      if (!module)
-      {
-         String hxcpp = FindHaxelib(L"hxcpp");
-         if (hxcpp.length!=0)
-         {
-             String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
-             if (debug)
-                printf(" try %S...\n", name.__s);
-             module = hxLoadLibrary(name.__s);
-         }
-      }
+	if (!module && debug)
+		printf("Searching for %S...\n", inLib.__s);
 
-      if (!module)
-      {
-         String path = FindHaxelib(inLib);
-         if (path.length!=0)
-         {
-            String full_path  = path + L"/ndll/" + bin + L"/" + dll_ext;
-            if (debug)
-               printf(" try %S...\n", full_path.__s);
-            module = hxLoadLibrary(full_path.__s);
-         }
-      }
+	for(int pass=pass0;module==0 && pass<4;pass++)
+	{
+      String modifier = pass < 2 ? STRING(L"-debug",6) : STRING(L"",0);
 
-      if (!module && sgRegisteredPrims)
-      {
-         void *registered = (*sgRegisteredPrims)[full_name.__s];
-         if (registered)
-         {
-            return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
-         }
-      }
+      String dll_ext = inLib + modifier + ( (pass&1) ? STRING(L".ndll",5) : ext );
 
-      if (!module)
-        throw Dynamic(String(L"Could not load module ") + dll_ext + String(L"@") + full_name);
+		if (debug)
+			printf(" try %S...\n", dll_ext.__s);
+		module = hxLoadLibrary(dll_ext.__s);
+
+		if (!module)
+		{
+			String hxcpp = GetEnv("HXCPP");
+			if (hxcpp.length!=0)
+			{
+				 String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
+				 if (debug)
+					 printf(" try %S...\n", name.__s);
+				 module = hxLoadLibrary(name.__s);
+			}
+		}
+	
+		if (!module)
+		{
+			String hxcpp = FindHaxelib(L"hxcpp");
+			if (hxcpp.length!=0)
+			{
+				 String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
+				 if (debug)
+					 printf(" try %S...\n", name.__s);
+				 module = hxLoadLibrary(name.__s);
+			}
+		}
+
+		if (!module)
+		{
+			String path = FindHaxelib(inLib);
+			if (path.length!=0)
+			{
+				String full_path  = path + L"/ndll/" + bin + L"/" + dll_ext;
+				if (debug)
+					printf(" try %S...\n", full_path.__s);
+				module = hxLoadLibrary(full_path.__s);
+			}
+		}
+	}
+
+	if (!module && sgRegisteredPrims)
+	{
+		void *registered = (*sgRegisteredPrims)[full_name.__s];
+		if (registered)
+		{
+			return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
+		}
+	}
+
+	if (!module)
+	  throw Dynamic(String(L"Could not load module ") + inLib + String(L"@") + full_name);
 
 
-      sgLoadedModule[inLib.__s] = module;
+	sgLoadedModule[inLib.__s] = module;
 
-      GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
-      if (func)
-      {
-         NekoEntryFunc entry = (NekoEntryFunc)func();
-         if (entry)
-            entry();
-      }
-   }
+	GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
+	if (func)
+	{
+		NekoEntryFunc entry = (NekoEntryFunc)func();
+		if (entry)
+			entry();
+	}
+
    // No "wchar_t" version
    std::vector<char> name(full_name.length+1);
    for(int i=0;i<full_name.length;i++)
       name[i] = full_name.__s[i];
    name[full_name.length] = '\0';
 
-   func proc_query = (func)hxFindSymbol(module,&name[0]);
+   FundFunc proc_query = (FundFunc)hxFindSymbol(module,&name[0]);
    if (!proc_query)
    {
       fwprintf(stderr,L"Could not find primitive %s in %s\n", full_name.__s,inLib.__s);
