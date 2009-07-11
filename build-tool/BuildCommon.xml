@@ -2,11 +2,14 @@
 
 <set name="DBG" value="-debug" if="debug"/>
 
+<set name="SLIBEXT" value=".a" unless="windows"/>
+<set name="SLIBEXT" value=".lib" if="windows"/>
+
 <compiler id="Linuxgcc" name="g++" if="linux">
   <compilerarg value="-g" if="debug"/>
   <compilerarg value="-Wall"/>
   <compilerarg value="-Wshadow"/>
-  <compilerarg value="-O2"/>
+  <compilerarg value="-O2" unless="debug"/>
   <defineset>
     <define name="HAVE_CONFIG_H"/>
     <define name="PIC"/>
@@ -17,12 +20,16 @@
 <set name="IPHONE_VER" value="2.2.1"/>
 
 <compiler id="iPhoneOS" exe="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0" if="iphoneos">
-  <cflag value="-c c"/>
-  <cppflag value="-c c++"/>
+  <flag value="-c"/>
+  <cflag value="-x"/>
+  <cflag value="c"/>
+  <cppflag value="-x"/>
+  <cppflag value="c++"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <flag value="-g" if="debug"/>
-  <flag value="-O2"/>
-  <flag value="-arch armv6"/>
+  <flag value="-O2" unless="debug"/>
+  <flag value="-arch"/>
+  <flag value="armv6"/>
   <flag value="-fmessage-length=0"/>
   <flag value="-pipe"/>
   <flag value="-Wno-trigraphs"/>
@@ -36,20 +43,59 @@
   <flag value="-gdwarf-2"/>
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
+  <flag value="-DIPHONEOS"/>
+  <flag value="-DSTATIC_LINK"/>
+  <flag value="-I${HXCPP}/include"/>
+  <cppflag value="-frtti"/>
   <outflag value="-o"/>
   <ext value=".o"/>
   <objdir value="obj/iphoneos/" unless="debug"/>
   <objdir value="obj/iphoneos-dbg/" if="debug"/>
 </compiler>
 
+<compiler id="iPhoneSim" exe="/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/gcc-4.0" if="iphonesim">
+  <flag value="-c"/>
+  <cflag value="-x"/>
+  <cflag value="c"/>
+  <cppflag value="-x"/>
+  <cppflag value="c++"/>
+  <cppflag value="-fvisibility-inlines-hidden"/>
+  <flag value="-g" if="debug"/>
+  <flag value="-O2" unless="debug"/>
+  <flag value="-fmessage-length=0"/>
+  <flag value="-pipe"/>
+  <flag value="-Wno-trigraphs"/>
+  <flag value="-fpascal-strings"/>
+  <flag value="-fasm-blocks"/>
+  <flag value="-Wreturn-type"/>
+  <flag value="-Wunused-variable"/>
+  <flag value="-arch"/>
+  <flag value="i386"/>
+  <flag value="-isysroot"/>
+  <flag value="/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
+  <flag value="-fvisibility=hidden"/>
+  <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
+  <flag value="-DIPHONE"/>
+  <flag value="-DIPHONESIM"/>
+  <flag value="-DSTATIC_LINK"/>
+  <flag value="-I${HXCPP}/include"/>
+  <cppflag value="-frtti"/>
+  <outflag value="-o"/>
+  <ext value=".o"/>
+  <objdir value="obj/iphonesim/" unless="debug"/>
+  <objdir value="obj/iphonesim-dbg/" if="debug"/>
+</compiler>
 
-<compiler id="darwin" exe="gcc" if="darwin">
+
+
+
+<compiler id="darwin" exe="gcc" if="macos">
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <cppflag value="-c++"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
-  <flag value="-O2"/>
+  <flag value="-O2" unless="debug"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/darwin/" unless="debug"/>
   <objdir value="obj/darwin-dbg/" if="debug"/>
@@ -57,7 +103,7 @@
   <ext value=".o"/>
 </compiler>
 
-<linker id="dll" exe="g++" if="darwin">
+<linker id="dll" exe="g++" if="macos">
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
@@ -68,12 +114,17 @@
   <outflag value="-o "/>
 </linker>
 
-<linker id="exe" exe="g++" if="darwin">
+<linker id="exe" exe="g++" if="macos">
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-debug" if="debug"/>
   <ext value=""/>
   <outflag value="-o "/>
+</linker>
+
+<linker id="static" exe="ar" unless="windows">
+  <ext value=".a"/>
+  <outflag value="-cr "/>
 </linker>
 
 
@@ -121,6 +172,13 @@
 
 
 <set name="STD_MODULE_LINK" value="dll"/>
+<set name="STD_MODULE_LINK" value="static" if="iphoneos"/>
+<set name="STD_MODULE_LINK" value="static" if="iphonesim"/>
+
+
+<set name="LIBEXTRA" value=".iphoneos" if="iphoneos"/>
+<set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
+
 
 <set name="GC_DIR" value="thirdparty/gc-7.1"/>
 <set name="AO_VERSION" value="1.2"/>
@@ -142,10 +200,10 @@
   <compilerflag value="-DX86" if="windows"/>
   <compilerflag value="-DWIN32_THREADS" if="windows"/>
 
-  <compilerflag value="-DX86" if="darwin"/>
-  <compilerflag value="-DHAS_X86_THREAD_STATE32___EAX=1" if="darwin"/>
-  <compilerflag value="-DNO_THREAD_REDIRECT" if="darwin"/>
-  <compilerflag value="-DGC_THREADS" if="darwin"/>
+  <compilerflag value="-DX86" if="macos"/>
+  <compilerflag value="-DHAS_X86_THREAD_STATE32___EAX=1" if="macos"/>
+  <compilerflag value="-DNO_THREAD_REDIRECT" if="macos"/>
+  <compilerflag value="-DGC_THREADS" if="macos"/>
 
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
@@ -160,7 +218,7 @@
 
 
   <file name="runtime/${GC_DIR}/win32_threads.c" if="windows"/>
-  <file name="runtime/${GC_DIR}/darwin_stop_world.c" if="darwin"/>
+  <file name="runtime/${GC_DIR}/darwin_stop_world.c" if="macos"/>
   <file name="runtime/${GC_DIR}/pthread_stop_world.c" unless="windows"/>
   <file name="runtime/${GC_DIR}/pthread_support.c" unless="windows"/>
   <file name="runtime/${GC_DIR}/allchblk.c"/>
@@ -204,10 +262,18 @@
   <dir name="obj"/>
 </target>
 
+<set name="static" value="1" if="iphoneos"/>
+<set name="static" value="1" if="iphonesim"/>
 
-<target id="haxe" tool="linker" toolid="exe" output="${HAXE_OUTPUT}${DBG}">
+<set name="haxelink" value="exe" unless="static"/>
+<set name="haxelink" value="static" if="static"/>
+
+<target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
-  <files id="__main__"/>
+  <ext value=".iphoneos.a" if="iphoneos"/>
+  <ext value=".iphonesim.a" if="iphonesim"/>
+  <files id="__main__" unless="static"/>
+  <files id="__lib__" if="static"/>
   <files id="runtime"/>
 </target>
 

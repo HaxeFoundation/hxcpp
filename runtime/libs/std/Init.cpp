@@ -61,4 +61,38 @@ void std_main() {
 	kind_share(&k_thread,"thread");
 }
 
+
+extern int   __file_prims();
+extern int   __misc_prims();
+extern int   __process_prims();
+extern int   __random_prims();
+extern int   __socket_prims();
+extern int   __string_prims();
+extern int   __sys_prims();
+extern int   __thread_prims();
+extern int   __xml_prims();
+
+
+extern "C" {
+
+// Called when static linking to bring in the required symbols and initaliaze
+int std_register_prims()
+{
+   std_main();
+    return
+        __file_prims()
+      + __misc_prims()
+      + __process_prims()
+      + __random_prims()
+      + __socket_prims()
+      + __string_prims()
+      + __sys_prims()
+      + __thread_prims()
+      + __xml_prims();
+
+}
+
+}
+
+
 /* ************************************************************************ */

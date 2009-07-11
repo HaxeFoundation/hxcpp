@@ -50,19 +50,23 @@ class Compiler
    public var mFlags : Array<String>;
    public var mCFlags : Array<String>;
    public var mCPPFlags : Array<String>;
+   public var mOBJCFlags : Array<String>;
    public var mExe:String;
    public var mOutFlag:String;
    public var mObjDir:String;
    public var mExt:String;
+   public var mID:String;
 
-   public function new(inExe:String)
+   public function new(inID,inExe:String)
    {
       mFlags = [];
       mCFlags = [];
       mCPPFlags = [];
+      mOBJCFlags = [];
       mObjDir = "obj";
       mOutFlag = "-o";
       mExe = inExe;
+      mID = inID;
       mExt = ".o";
    }
 
@@ -79,10 +83,12 @@ class Compiler
 
       if (path.ext.toLowerCase()=="c")
          args = args.concat(mCFlags);
+      else if (path.ext.toLowerCase()=="m")
+         args = args.concat(mOBJCFlags);
       else
          args = args.concat(mCPPFlags);
 
-      args.push( (new neko.io.Path(inFile.mDir + "/" + inFile.mName)).toString() );
+      args.push( (new neko.io.Path(inFile.mDir + inFile.mName)).toString() );
 
       var out = mOutFlag;
       if (out.substr(-1)==" ")
@@ -94,7 +100,11 @@ class Compiler
       neko.Lib.println( mExe + " " + args.join(" ") );
       var result = neko.Sys.command( mExe, args );
       if (result!=0)
+      {
+         if (neko.FileSystem.exists(obj_name))
+            neko.FileSystem.deleteFile(obj_name);
          throw "Error : " + result + " - build cancelled";
+      }
       return obj_name;
    }
 }
@@ -119,10 +129,10 @@ class Linker
    }
    public function link(inTarget:Target,inObjs:Array<String>)
    {
-	   var ext = inTarget.mExt=="" ? mExt : inTarget.mExt;
+      var ext = inTarget.mExt=="" ? mExt : inTarget.mExt;
       var file_name = mNamePrefix + inTarget.mOutput + ext;
       var out_name = inTarget.mOutputDir + file_name;
-      if (isOutOfDate(out_name,inObjs))
+      if (isOutOfDate(out_name,inObjs) || isOutOfDate(out_name,inTarget.mDepends))
       {
          var args = new Array<String>();
          var out = mOutFlag;
@@ -177,6 +187,7 @@ class File
    {
       mName = inName;
       mDir = inDir;
+      if (mDir!="") mDir += "/";
       mDepends = inDepends.copy();
       mCompilerFlags = inFlags.copy();
    }
@@ -185,7 +196,7 @@ class File
       if (!neko.FileSystem.exists(inObj))
          return true;
       var obj_stamp = neko.FileSystem.stat(inObj).mtime.getTime();
-      var source_name = mDir+"/"+mName;
+      var source_name = mDir+mName;
       if (!neko.FileSystem.exists(source_name))
          throw "Could not find source '" + source_name + "'";
       var source_stamp = neko.FileSystem.stat(source_name).mtime.getTime();
@@ -219,6 +230,7 @@ class Target
       mToolID = inToolID;
       mTool = inTool;
       mFiles = [];
+      mDepends = [];
       mLibs = [];
       mFlags = [];
       mExt = "";
@@ -254,6 +266,7 @@ class Target
    public var mTool:String;
    public var mToolID:String;
    public var mFiles:Array<File>;
+   public var mDepends:Array<String>;
    public var mSubTargets:Array<String>;
    public var mLibs:Array<String>;
    public var mFlags:Array<String>;
@@ -306,7 +319,8 @@ class BuildTool
                    mDefines.set(name,value);
                 case "compiler" : 
                    if (mCompiler!=null)
-                       throw "Only one compiler may be set";
+                       throw "Only one compiler may be set (" +
+                         mCompiler.mID + " set, adding " + el.att.id + ")";
                    mCompiler = createCompiler(el);
                 case "linker" : 
                    mLinkers.set( el.att.id, createLinker(el) );
@@ -357,7 +371,7 @@ class BuildTool
 
    public function createCompiler(inXML:haxe.xml.Fast) : Compiler
    {
-      var c = new Compiler(inXML.att.exe);
+      var c = new Compiler(inXML.att.id,inXML.att.exe);
       for(el in inXML.elements)
       {
          if (valid(el))
@@ -366,6 +380,7 @@ class BuildTool
                 case "flag" : c.mFlags.push(substitute(el.att.value));
                 case "cflag" : c.mCFlags.push(substitute(el.att.value));
                 case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
+                case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
                 case "objdir" : c.mObjDir = substitute((el.att.value));
                 case "outflag" : c.mOutFlag = substitute((el.att.value));
             }
@@ -411,6 +426,8 @@ class BuildTool
                    files.push( file );
                 case "depend" : depends.push( substitute(el.att.name) );
                 case "compilerflag" : flags.push( substitute(el.att.value) );
+                case "compilervalue" : flags.push( substitute(el.att.name) );
+                                       flags.push( substitute(el.att.value) );
             }
       }
 
@@ -432,6 +449,9 @@ class BuildTool
                 case "target" : target.mSubTargets.push( substitute(el.att.id) );
                 case "lib" : target.mLibs.push( substitute(el.att.name) );
                 case "flag" : target.mFlags.push( substitute(el.att.value) );
+                case "depend" : target.mDepends.push( substitute(el.att.name) );
+                case "vflag" : target.mFlags.push( substitute(el.att.name) );
+                               target.mFlags.push( substitute(el.att.value) );
                 case "dir" : target.mDirs.push( substitute(el.att.name) );
                 case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
                 case "ext" : target.mExt = (substitute(el.att.value));
@@ -511,7 +531,29 @@ class BuildTool
 			os = "windows";
 		}
 
-      if ( (new EReg("windows","i")).match(os) )
+      for(arg in args)
+      {
+         if (arg.substr(0,2)=="-D")
+            defines.set(arg.substr(2),"");
+         else if (makefile.length==0)
+            makefile = arg;
+         else
+            targets.push(arg);
+      }
+
+      if (defines.exists("iphoneos"))
+      {
+         defines.set("iphone","iphone");
+         defines.set("apple","apple");
+         defines.set("BINDIR","iPhone");
+      }
+      else if (defines.exists("iphonesim"))
+      {
+         defines.set("iphone","iphone");
+         defines.set("apple","apple");
+         defines.set("BINDIR","iPhone");
+      }
+      else if ( (new EReg("windows","i")).match(os) )
       {
          defines.set("windows","windows");
          defines.set("BINDIR","Windows");
@@ -523,18 +565,9 @@ class BuildTool
       }
       else if ( (new EReg("darwin","i")).match(os) )
       {
-         defines.set("darwin","darwin");
+         defines.set("macos","macos");
+         defines.set("apple","apple");
          defines.set("BINDIR","Mac");
-      }
-
-      for(arg in args)
-      {
-         if (arg.substr(0,2)=="-D")
-            defines.set(arg.substr(2),"");
-         else if (makefile.length==0)
-            makefile = arg;
-         else
-            targets.push(arg);
       }
 
       if (targets.length==0)

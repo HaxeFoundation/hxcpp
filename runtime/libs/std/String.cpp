@@ -17,7 +17,7 @@
 #include <hxCFFI.h>
 #include <string.h>
 
-
+int __string_prims() { return 0; }
 
 /**
 	<doc>

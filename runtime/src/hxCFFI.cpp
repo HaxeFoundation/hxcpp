@@ -1,6 +1,8 @@
 #include <hxObject.h>
 // Get headers etc.
+
 #define IGNORE_CFFI_API_H
+
 #include <hxCFFI.h>
 #include <map>
 #include <string>
@@ -55,12 +57,15 @@ void hxcpp_kind_share(int &ioKind,const char *inName)
 }
 
 
+extern "C" {
 
 
 /*
  This bit of Macro magic is used to define extern function pointers
   in ndlls, define stub implementations that link back to the hxcpp dll
   and glue up the implementation in the hxcpp runtime.
+
+ For the static link case, these functions are linked directly.
 */
 
 void hx_error()
@@ -585,7 +590,16 @@ void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2)
 	 hxGCAddFinalizer( (hxObject *)arg1, (finalizer)arg2 );
 }
 
+void  val_gc_add_root(hxObject **inRoot)
+{
+	 hxGCAddRoot(inRoot);
+}
 
+
+void  val_gc_remove_root(hxObject **inRoot)
+{
+	 hxGCRemoveRoot(inRoot);
+}
 
 // Used for finding functions in static libraries
 int hx_register_prim( wchar_t * arg1, void* arg2)
@@ -595,7 +609,6 @@ int hx_register_prim( wchar_t * arg1, void* arg2)
 }
 
 
-extern "C" {
 
 SHARED void * hx_cffi(const char *inName)
 {

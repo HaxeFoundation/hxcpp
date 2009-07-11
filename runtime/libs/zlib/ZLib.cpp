@@ -15,7 +15,9 @@
 /*																			*/
 /* ************************************************************************ */
 
+#ifndef STATIC_LINK
 #define IMPLEMENT_API
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -298,6 +300,12 @@ static value deflate_bound( value s, value size ) {
 	val_check_kind(s,k_stream_def);
 	val_check(size,int);
 	return alloc_int(deflateBound(val_stream(s),val_int(size)));
+}
+
+extern "C" int zlib_register_prims()
+{
+   zlib_main();
+   return 0;
 }
 
 DEFINE_PRIM(deflate_init,1);

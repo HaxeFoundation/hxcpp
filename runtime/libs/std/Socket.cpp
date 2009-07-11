@@ -46,6 +46,8 @@
 #	define MSG_NOSIGNAL 0
 #endif
 
+int __socket_prims() { return 0; }
+
 typedef struct {
 	int max;
 #	ifdef NEKO_WINDOWS
@@ -598,6 +600,8 @@ static value socket_shutdown( value o, value r, value w ) {
 	socket_set_blocking : 'socket -> bool -> void
 	<doc>Turn on/off the socket blocking mode.</doc>
 **/
+#include <stdlib.h>
+
 static value socket_set_blocking( value o, value b ) {
 	val_check_kind(o,k_socket);
 	val_check(b,bool);
@@ -627,35 +631,55 @@ static value socket_set_blocking( value o, value b ) {
 	socket_poll_alloc : int -> 'poll
 	<doc>Allocate memory to perform polling on a given number of sockets</doc>
 **/
+
+void free_sock(value v)
+{
+	polldata *p = (polldata *)val_data(v);
+#	ifdef NEKO_WINDOWS
+	free(p->fdr);
+	free(p->fdw);
+	free(p->outr);
+	free(p->outw);
+#	else
+#	endif
+	val_gc_remove_root(&p->ridx);
+	val_gc_remove_root(&p->widx);
+	free(p);
+}
+
 static value socket_poll_alloc( value nsocks ) {
 	polldata *p;
 	int i;
 	val_check(nsocks,int);
-	p = (polldata*)hx_alloc(sizeof(polldata));
+	p = (polldata*)malloc(sizeof(polldata));
 	p->max = val_int(nsocks);
 	if( p->max < 0 || p->max > 1000000 )
 		return alloc_null();
 #	ifdef NEKO_WINDOWS
 	{
-		p->fdr = (fd_set*)alloc_private(FDSIZE(p->max));
-		p->fdw = (fd_set*)alloc_private(FDSIZE(p->max));
-		p->outr = (fd_set*)alloc_private(FDSIZE(p->max));
-		p->outw = (fd_set*)alloc_private(FDSIZE(p->max));
+		p->fdr = (fd_set*)malloc(FDSIZE(p->max));
+		p->fdw = (fd_set*)malloc(FDSIZE(p->max));
+		p->outr = (fd_set*)malloc(FDSIZE(p->max));
+		p->outw = (fd_set*)malloc(FDSIZE(p->max));
 		p->fdr->fd_count = 0;
 		p->fdw->fd_count = 0;
 	}
 #	else
-	p->fds = (struct pollfd*)alloc_private(sizeof(struct pollfd) * p->max);
+	p->fds = (struct pollfd*)malloc(sizeof(struct pollfd) * p->max);
 	p->rcount = 0;
 	p->wcount = 0;
 #	endif
 	p->ridx = alloc_array(p->max+1);
 	p->widx = alloc_array(p->max+1);
+        val_gc_add_root(&p->ridx);
+        val_gc_add_root(&p->widx);
 	for(i=0;i<=p->max;i++) {
 		val_array_set_i(p->ridx,i, alloc_int(-1));
 		val_array_set_i(p->widx,i, alloc_int(-1));
 	}
-	return alloc_abstract(k_poll, p);
+	value v = alloc_abstract(k_poll, p);
+        val_gc(v,free_sock);
+        return v;
 }
 
 /**

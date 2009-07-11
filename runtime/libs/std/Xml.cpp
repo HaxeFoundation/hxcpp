@@ -32,6 +32,8 @@
 #	include <string.h>
 #endif
 
+int __xml_prims() { return 0; }
+
 #define ERROR(msg)	xml_error(xml,p,line,msg);
 
 // -------------- parsing --------------------------

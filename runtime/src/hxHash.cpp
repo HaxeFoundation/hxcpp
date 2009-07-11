@@ -2,7 +2,7 @@
 #ifndef INTERNAL_GC
 #include <gc_allocator.h>
 #else
-#include <neko.h>
+#include <hxCFFi.h>
 #endif
 #include <map>
 
@@ -44,7 +44,7 @@ public:
 
    void set(int inKey,const Dynamic &inValue) { (*mMap)[inKey] = inValue; }
 
-   static void Destroy(Dynamic);
+   static void Destroy(hxObject *inObj);
 
    Dynamic get(int inKey)
    {
@@ -97,9 +97,9 @@ public:
 
 };
 
-void IntHash::Destroy(Dynamic inHash)
+void IntHash::Destroy(hxObject *inHash)
 {
-	IntHash *hash = dynamic_cast<IntHash *>(inHash.GetPtr());
+	IntHash *hash = dynamic_cast<IntHash *>(inHash);
 	if (hash)
 		delete hash->mMap;
 }

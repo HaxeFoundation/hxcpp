@@ -9,7 +9,13 @@
 typedef HMODULE Module;
 Module hxLoadLibrary(const wchar_t *inLib) { return LoadLibraryW(inLib); }
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return GetProcAddress(inModule,inSymbol); }
+#elif defined (IPHONE)
+
+typedef void *Module;
 #else
+
+Module hxLoadLibrary(const wchar_t *inLib) { return 0; }
+
 #include <dlfcn.h>
 typedef void *Module;
 Module hxLoadLibrary(const wchar_t *inLib)
@@ -94,7 +100,7 @@ public:
    {
 		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
 		                     g.GetPtr(), h.GetPtr() };
-      return ((prim_mult)mProc)(args,9);
+      return ((prim_mult)mProc)(args,8);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i)
    {
@@ -202,6 +208,40 @@ String FindHaxelib(String inLib)
 typedef std::map<std::wstring,void *> RegistrationMap;
 RegistrationMap *sgRegisteredPrims=0;
 
+
+#ifdef IPHONE
+
+Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
+{
+   String full_name = inPrim;
+   switch(inArgCount)
+   {
+      case 0: full_name += L"__0"; break;
+      case 1: full_name += L"__1"; break;
+      case 2: full_name += L"__2"; break;
+      case 3: full_name += L"__3"; break;
+      case 4: full_name += L"__4"; break;
+      case 5: full_name += L"__5"; break;
+      default:
+          full_name += L"__MULT";
+   }
+
+
+	if (sgRegisteredPrims)
+	{
+		void *registered = (*sgRegisteredPrims)[full_name.__s];
+		if (registered)
+		{
+			return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
+		}
+	}
+
+   printf("Primitive not found : %S\n", full_name.__s );
+}
+
+
+
+#else
 
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
@@ -341,14 +381,18 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    FundFunc proc_query = (FundFunc)hxFindSymbol(module,&name[0]);
    if (!proc_query)
    {
-      fwprintf(stderr,L"Could not find primitive %s in %s\n", full_name.__s,inLib.__s);
+      fprintf(stderr,"Could not find primitive %s.\n", &name[0]);
       return 0;
    }
 
    void *proc = proc_query();
    if (!proc)
    {
+#ifdef _WIN32
       fwprintf(stderr,L"Could not identify primitive %s in %s\n", full_name.__s,inLib.__s);
+#else
+      fwprintf(stderr,L"Could not identify primitive %S in %S\n", full_name.__s,inLib.__s);
+#endif
       return 0;
    }
 
@@ -357,6 +401,8 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
    return 0;
 }
+
+#endif // not IPHONE
 
 // This can be used to find symbols in static libraries
 

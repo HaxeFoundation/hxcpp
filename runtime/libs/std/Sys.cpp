@@ -23,7 +23,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
+int __sys_prims() { return 0; }
 
 
 #ifdef NEKO_WINDOWS
@@ -42,10 +42,12 @@
 #	include <xlocale.h>
 #endif
 
+#ifndef IPHONE
 #ifdef NEKO_MAC
 #	include <sys/syslimits.h>
 #	include <limits.h>
 #	include <mach-o/dyld.h>
+#endif
 #endif
 
 #ifndef CLK_TCK
@@ -509,7 +511,7 @@ static value sys_exe_path() {
 	if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
 		return alloc_null();
 	return alloc_wstring(path);
-#elif defined(NEKO_MAC)
+#elif defined(NEKO_MAC) && !defined(IPHONE)
 	char path[PATH_MAX+1];
 	uint32_t path_len = PATH_MAX;
 	if( _NSGetExecutablePath(path, &path_len) )
@@ -530,9 +532,11 @@ static value sys_exe_path() {
 #endif
 }
 
+#ifndef IPHONE
 #ifdef NEKO_MAC
 #include <crt_externs.h>
 #	define environ (*_NSGetEnviron())
+#endif
 #endif
 
 #ifndef NEKO_WINDOWS

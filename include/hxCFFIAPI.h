@@ -109,9 +109,10 @@ DEFFUNC_2(void,start_thread,thread_callback,void *)
 
 // Garbage Collection
 DEFFUNC_1(void *,hx_alloc,int)
-DEFFUNC_1(void *,alloc_private,int)
 DEFFUNC_2(void, val_gc,value,hxFinalizer)
 DEFFUNC_2(void, val_gc_ptr,void *,hxPtrFinalizer)
+DEFFUNC_1(void, val_gc_add_root,value *)
+DEFFUNC_1(void, val_gc_remove_root,value *)
 
 // Used for finding functions in static libraries
 DEFFUNC_2(int, hx_register_prim, wchar_t *, void*)

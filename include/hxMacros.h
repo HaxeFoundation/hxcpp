@@ -433,7 +433,7 @@ int main(int argc,char **argv){ \
 #define END_MAIN \
 	} \
 	catch (Dynamic e){ \
-		printf("Error : %s\n",e->__ToString().__CStr()); \
+		printf("Error : %s\n",e->toString().__CStr()); \
 	} \
 	return 0; \
 }

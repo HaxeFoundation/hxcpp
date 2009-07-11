@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int __process_prims() { return 0; }
+
 typedef struct {
 #ifdef NEKO_WINDOWS
 	HANDLE oread;
@@ -80,6 +82,7 @@ static void free_process( value vp ) {
 	do_close(p->oread);
 	do_close(p->iwrite);
 #	endif
+        free(p);
 }
 
 /**
@@ -113,7 +116,7 @@ static value process_run( value cmd, value vargs ) {
 			val_buffer(b,v);
 			buffer_append(b,"\"");
 		}
-		p = (vprocess*)alloc_private(sizeof(vprocess));
+		p = (vprocess*)malloc(sizeof(vprocess));
 		// startup process
 		sattr.nLength = sizeof(sattr);
 		sattr.bInheritHandle = TRUE;
@@ -133,26 +136,29 @@ static value process_run( value cmd, value vargs ) {
 		CloseHandle(iwrite);
 		//printf("Cmd %s\n",val_string(cmd));
 		if( !CreateProcessW(NULL,val_dup_wstring(buffer_to_string(b)),NULL,NULL,TRUE,0,NULL,NULL,&sinf,&p->pinf) )
+                {
+                    free(p);
 			return alloc_null();
+                }
 		// close unused pipes
 		CloseHandle(sinf.hStdOutput);
 		CloseHandle(sinf.hStdError);
 		CloseHandle(sinf.hStdInput);
 	}
-#	else
-	/* TODO */
-	char **argv = (char**)alloc_private(sizeof(char*)*(val_array_size(vargs)+2));
-	argv[0] = (char *)val_string(cmd);
+	else
+	/* TODO - fix leak */
+	char **argv = (char**)malloc(sizeof(char*)*(val_array_size(vargs)+2));
+	argv[0] = strdup(val_string(cmd));
 	for(i=0;i<val_array_size(vargs);i++) {
 		value v = val_array_i(vargs,i);
 		val_check(v,string);
-		argv[i+1] = (char *)val_string(v);
+		argv[i+1] = strdup(val_string(v));
 	}
 	argv[i+1] = NULL;
 	int input[2], output[2], error[2];
 	if( pipe(input) || pipe(output) || pipe(error) )
 		return alloc_null();
-	p = (vprocess*)alloc_private(sizeof(vprocess));
+	p = (vprocess*)malloc(sizeof(vprocess));
 	p->pid = fork();
 	if( p->pid == -1 )
 		return alloc_null();
@@ -169,6 +175,9 @@ static value process_run( value cmd, value vargs ) {
 		exit(1);
 	}
 	// parent
+	for(i=0;i<=val_array_size(vargs);i++)
+           free(argv[i]);
+        free(argv);
 	do_close(input[0]);
 	do_close(output[1]);
 	do_close(error[1]);

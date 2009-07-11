@@ -39,9 +39,9 @@ enum { faNotFunction = -2, faVarArgs=-1, faArgs0=0 /* ... */ };
 typedef int field;
 
 #ifndef HAVE_NEKO_TYPES
-typedef struct __hx_value *value;
-typedef struct __hx_kind  *vkind;
-typedef struct __hx_buffer  *buffer;
+typedef struct _value *value;
+typedef struct _vkind  *vkind;
+typedef struct _buffer  *buffer;
 #endif
 
 typedef void (*hxFinalizer)(value v);
@@ -61,9 +61,19 @@ typedef void *(*thread_callback)(void *);
 
 #ifndef IMPLEMENT_API
  
+#ifdef STATIC_LINK
+
+#define DEFFUNC(name,ret,def_args,call_args) \
+extern "C" ret name def_args;
+
+
+#else
+
 #define DEFFUNC(name,ret,def_args,call_args) \
 typedef ret (*FUNC_##name) def_args; \
 extern FUNC_##name name;
+
+#endif
 
 #endif
  
@@ -89,7 +99,11 @@ int __reg_##func = hx_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
 
 #define DEFINE_KIND(name) extern "C" { vkind name = alloc_kind(); }
 
+#ifdef STATIC_LINK
+#	define DEFINE_ENTRY_POINT(name)
+#else
 #	define DEFINE_ENTRY_POINT(name) extern "C" {  void name(); EXPORT void *__neko_entry_point() { return (void *)&name; } }
+#endif
 
 #ifdef HEADER_IMPORTS
 #	define H_EXTERN IMPORT

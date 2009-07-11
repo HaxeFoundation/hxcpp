@@ -29,6 +29,8 @@
 	</doc>
 **/
 
+int __file_prims() { return 0; }
+
 typedef struct {
 	value name;
 	FILE *io;

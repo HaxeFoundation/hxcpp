@@ -1,5 +1,7 @@
 #include <hxCFFI.h>
 
+int __misc_prims() { return 0; }
+
 static bool is_big_endian()
 {
 	static unsigned char bytes[] = { 1, 0, 0, 0 };

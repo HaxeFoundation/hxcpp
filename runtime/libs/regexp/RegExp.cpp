@@ -15,7 +15,9 @@
 /*																			*/
 /* ************************************************************************ */
 
+#ifndef STATIC_LINK
 #define IMPLEMENT_API
+#endif
 
 #include <hxCFFI.h>
 #include <string.h>
@@ -48,7 +50,12 @@ static field id_len;
 **/
 
 static void free_regexp( value p ) {	
-	pcre_free( PCRE(p)->r );
+	pcredata *pdata = PCRE(p);
+	if (pdata->matchs)
+	   free(pdata->matchs);
+        val_gc_remove_root(&pdata->str);
+	pcre_free( pdata->r );
+        free(pdata);
 }
 
 /**
@@ -104,14 +111,15 @@ static value regexp_new_options( value s, value opt ) {
 			val_buffer(b,s);
 			bfailure(b);
 		}
-		v = alloc_abstract(k_regexp,hx_alloc(sizeof(pcredata)));
+		v = alloc_abstract(k_regexp,malloc(sizeof(pcredata)));
 		pdata = PCRE(v);
 		pdata->r = p;
 		pdata->str = alloc_null();
+                val_gc_add_root(&pdata->str);
 		pdata->nmatchs = 0;
 		pcre_fullinfo(p,NULL,PCRE_INFO_CAPTURECOUNT,&pdata->nmatchs);
 		pdata->nmatchs++;
-		pdata->matchs = (int*)alloc_private(sizeof(int) * 3 * pdata->nmatchs);
+		pdata->matchs = (int*)malloc(sizeof(int) * 3 * pdata->nmatchs);
 		val_gc(v,free_regexp);
 		return v;
 	}	
@@ -276,6 +284,13 @@ void regexp_main() {
 	id_pos = val_id("pos");
 	id_len = val_id("len");	
 }
+
+// Called when static linking to bring in the required symbols and initaliaze
+int regexp_register_prims()
+{
+   regexp_main();
+}
+
 }
 
 DEFINE_PRIM(regexp_new,1);

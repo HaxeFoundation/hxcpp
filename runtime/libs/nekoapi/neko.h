@@ -109,7 +109,7 @@ struct _buffer;
 typedef int field;
 
 #ifndef HAVE_NEKO_TYPES
-typedef struct { int __zero; } *vkind;
+typedef struct _vkind *vkind;
 typedef struct _value *value;
 typedef struct _buffer *buffer;
 #endif

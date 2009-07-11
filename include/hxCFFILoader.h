@@ -5,6 +5,15 @@
 typedef void *(*ResolveProc)(const char *inName);
 static ResolveProc sResolveProc = 0;
 
+
+#ifdef STATIC_LINK
+extern "C" void * hx_cffi(const char *inName);
+
+#define LoadFunc hx_cffi
+
+#else  // Dynamic link
+
+
 #ifdef NEKO_WINDOWS
 
 #include <windows.h>
@@ -36,7 +45,7 @@ void *LoadFunc(const char *inName)
    }
    if (sResolveProc==0)
    {
-      fprintf(stderr,"Could not link plugin to process (%s)",__FILE__);
+      fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d)\n",__LINE__);
       exit(1);
    }
    return sResolveProc(inName);
@@ -70,13 +79,13 @@ void *LoadFunc(const char *inName)
    }
    if (sResolveProc==0)
    {
-      void *handle = dlopen("neko." EXT ,RTLD_NOW);
+      void *handle = dlopen("nekoapi." EXT ,RTLD_NOW);
       if (handle)
          sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
    }
    if (sResolveProc==0)
    {
-      fprintf(stderr,"Could not link plugin to process (%s)",__FILE__);
+      fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d)\n",__LINE__);
       exit(1);
    }
    return sResolveProc(inName);
@@ -86,6 +95,7 @@ void *LoadFunc(const char *inName)
 
 #endif
 
+#endif // not static link
  
 #define DEFFUNC(name,ret,def_args,call_args) \
 typedef ret (*FUNC_##name)def_args; \

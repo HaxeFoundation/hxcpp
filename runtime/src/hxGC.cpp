@@ -1,6 +1,7 @@
 #include <hxObject.h>
 #include <map>
 #include <vector>
+#include <set>
 
 #ifdef _WIN32
 
@@ -23,6 +24,10 @@ extern "C" {
 #ifndef INTERNAL_GC
 #include <gc.h>
 #include <gc_allocator.h>
+#else
+
+typedef std::set<hxObject **> RootSet;
+static RootSet sgRootSet;
 #endif
 
 // On Mac, we need to call GC_INIT before first alloc
@@ -136,6 +141,7 @@ void *hxInternalNew( size_t inSize, bool inIsObj = false )
 }
 
 
+
 void *hxObject::operator new( size_t inSize, bool inContainer )
 {
 #ifdef INTERNAL_GC
@@ -149,23 +155,60 @@ void *hxObject::operator new( size_t inSize, bool inContainer )
       GC_INIT();
    }
 #endif
-   if (inContainer)
-      return GC_MALLOC(inSize);
-   else
-      return GC_MALLOC_ATOMIC(inSize);
+   void *result = inContainer ?
+      GC_MALLOC(inSize) :
+      GC_MALLOC_ATOMIC(inSize);
+
+
+   return result;
 #endif
 }
+
+
+void *String::operator new( size_t inSize )
+{
+#ifdef INTERNAL_GC
+   return hxInternalNew(inSize,true);
+#else
+   return GC_MALLOC(inSize);
+#endif
+}
+
+void hxGCAddRoot(hxObject **inRoot)
+{
+#ifdef INTERNAL_GC
+   sgRootSet.insert(inRoot);
+#else
+   GC_add_roots(inRoot,inRoot+1);
+#endif
+}
+
+void hxGCRemoveRoot(hxObject **inRoot)
+{
+#ifdef INTERNAL_GC
+   sgRootSet.erase(inRoot);
+#else
+   GC_remove_roots(inRoot,inRoot+1);
+#endif
+}
+
 
 
 
 void __hxcpp_collect()
 {
    #ifdef INTERNAL_GC
-   // printf("Collecting...\n");
    if (!sgActiveAllocs) return;
 
    hxMarkClassStatics();
    hxLibMark();
+
+   for(RootSet::iterator i = sgRootSet.begin(); i!=sgRootSet.end(); ++i)
+   {
+      hxObject *ptr = **i;
+      if (ptr)
+         ptr->__Mark();
+   }
 
    // And sweep ...
    int n = sgActiveAllocs->size();
@@ -185,7 +228,7 @@ void __hxcpp_collect()
                    hxObject *obj = (hxObject *)(info.mPtr + 1);
                    if (info.mFinalizer)
                    {
-                      info.mFinalizer(Dynamic(obj));
+                      info.mFinalizer(obj);
                    }
                    //printf("Free obj %d : %p\n", i, obj );
                 }
@@ -259,6 +302,7 @@ void hxGCInit()
       sNeedGCInit = false;
       // We explicitly register all the statics, and there is quite a performance
       //  boost by doing this...
+
       GC_no_dls = 1;
       GC_INIT();
    }
@@ -480,11 +524,14 @@ void hxFieldMapMark(hxFieldMap *inMap)
    {
       hxGCMarkString(i->first.__s);
       hxObject *ptr = i->second.GetPtr();
-      AllocData &info = ((AllocData *)( dynamic_cast<void *>(ptr)))[-1];
-      if (  !(info & HX_GC_MARKED) )
+      if (ptr)
       {
-         info |= HX_GC_MARKED;
-         ptr->__Mark();
+         AllocData &info = ((AllocData *)( dynamic_cast<void *>(ptr)))[-1];
+         if (  !(info & HX_GC_MARKED) )
+         {
+            info |= HX_GC_MARKED;
+            ptr->__Mark();
+         }
       }
    }
 }
@@ -492,9 +539,9 @@ void hxFieldMapMark(hxFieldMap *inMap)
 // --- Anon -----
 //
 
-void hxAnon_obj::Destroy(Dynamic inObj)
+void hxAnon_obj::Destroy(hxObject *inObj)
 {
-   hxAnon_obj *obj = dynamic_cast<hxAnon_obj *>(inObj.GetPtr());
+   hxAnon_obj *obj = dynamic_cast<hxAnon_obj *>(inObj);
 	if (obj)
 		delete obj->mFields;
 }

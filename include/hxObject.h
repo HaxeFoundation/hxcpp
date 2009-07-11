@@ -86,6 +86,7 @@ class hxObject;
 #define INVALID_OBJECT        Dynamic(STRING(L"Invalid object",13))
 #define INVALID_ARG_COUNT     Dynamic(STRING(L"Invalid Arg Count",16))
 #define NULL_FUNCTION_POINTER Dynamic(STRING(L"Null Function Pointer",20))
+#define LOGIC_ERROR           Dynamic(STRING(L"Logic Error",11))
 
 //extern Dynamic  __InvalidConstructor;
 //extern Dynamic  __InvalidArgCount;
@@ -290,6 +291,10 @@ protected:
 class String
 {
 public:
+  // These allocate the function using the garbage-colleced malloc
+   void *operator new( size_t inSize );
+   void operator delete( void * ) { }
+
    inline String() : length(0), __s(0) { }
    inline String(const wchar_t *inPtr) : __s(inPtr) { length = inPtr ? (int)wcslen(inPtr) : 0; }
    inline String(const wchar_t *inPtr,int inLen) : __s(inPtr), length(inLen) { }
@@ -742,7 +747,7 @@ public:
    Dynamic __SetField(const String &inString,const Dynamic &inValue);
    virtual void __GetFields(Array<String> &outFields);
 
-   static void Destroy(Dynamic inObj);
+   static void Destroy(hxObject * inObj);
 
    virtual int __GetType() const { return vtObject; }
 
@@ -910,12 +915,17 @@ protected:
 
 
 // This is to determine is we need to include our slab of bytes in garbage collection
-template<typename TYPE> inline bool ContainsPointers() { return true; }
-template<> inline bool ContainsPointers<double>() { return false; }
-template<> inline bool ContainsPointers<int>() { return false; }
-template<> inline bool ContainsPointers<bool>() { return false; }
-template<> inline bool ContainsPointers<unsigned char>() { return false; }
+template<typename T>
+inline bool TypeContainsPointers(T *) { return true; }
+template<> inline bool TypeContainsPointers(bool *) { return false; }
+template<> inline bool TypeContainsPointers(int *) { return false; }
+template<> inline bool TypeContainsPointers(double *) { return false; }
+template<> inline bool TypeContainsPointers(unsigned char *) { return false; }
 
+template<typename TYPE> inline bool ContainsPointers()
+{
+   return TypeContainsPointers( (TYPE *)0 );
+}
 
 // For returning "null" when out of bounds ...
 template<typename TYPE>
@@ -946,7 +956,7 @@ class Array_obj : public hxArrayBase
 
 public:
    Array_obj(int inSize,int inReserve) :
-        hxArrayBase(inSize,inReserve,sizeof(ELEM_),ContainsPointers<ELEM_>()) { }
+        hxArrayBase(inSize,inReserve,sizeof(ELEM_),!ContainsPointers<ELEM_>()) { }
 
 
    // Defined later so we can use "Array"
@@ -1506,8 +1516,10 @@ inline hxFieldRef hxModEq(hxFieldRef inLHS, R inRHS) { inLHS = (int)inLHS % (int
 // Create a new root.
 // All statics are explicitly registered - this saves adding the whole data segment
 // to the collection list.
- void __RegisterStatic(void *inPtr,int inSize = sizeof(void *));
+void __RegisterStatic(void *inPtr,int inSize);
 
+void hxGCAddRoot(hxObject **inRoot);
+void hxGCRemoveRoot(hxObject **inRoot);
 
 // This may not be needed now that GC memsets everything to 0.
 template<typename T> inline void InitMember(T &outT) { }
@@ -1542,8 +1554,9 @@ template<> inline void MarkMember<double>(double &outT) {  }
 template<> inline void MarkMember<String>(String &outT) { if (outT.__s) hxGCMarkString(outT.__s); }
 template<> inline void MarkMember<Void>(Void &outT) {  }
 
+
 // Template used to register and initialise the statics in the one call.
-template<typename T> inline T &Static(T &inPtr) { __RegisterStatic(&inPtr); return inPtr; }
+template<typename T> inline T &Static(T &inPtr) { __RegisterStatic(&inPtr,sizeof(void *)); return inPtr; }
 
 // Make sure we get the "__s" pointer
 template<> inline String &Static<String>(String &inString)

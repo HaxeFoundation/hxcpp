@@ -4,6 +4,12 @@
 
 <set name="RUNTIME" value="./"/>
 
+<set name="LIBEXTRA" value=".iphoneos" if="iphoneos"/>
+<set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
+<set name="LIBPREFIX" value="lib" if="iphoneos"/>
+<set name="LIBPREFIX" value="lib" if="iphonesim"/>
+
+
 
 <files id="std" dir="${RUNTIME}">
   <depend name="${HXCPP}/include/hxMacros.h"/>
@@ -27,9 +33,8 @@
 
 
 
-<target id="std" output="std${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="std" output="${LIBPREFIX}std${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="std"/>
-  <flag value="-dll"/>
   <lib name="wsock32.lib" if="windows"/>
   <outdir name="../bin/${BINDIR}"/>
 </target>
@@ -71,7 +76,7 @@
 
 
 
-<target id="regexp" output="regexp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="regexp" output="${LIBPREFIX}regexp${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="regexp"/>
   <outdir name="../bin/${BINDIR}"/>
 </target>
@@ -104,7 +109,7 @@
 
 
 
-<target id="zlib" output="zlib${DBG}" tool="linker" toolid="dll">
+<target id="zlib" output="${LIBPREFIX}zlib${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="zlib"/>
   <outdir name="../bin/${BINDIR}"/>
 </target>
@@ -119,6 +124,7 @@
 <target id="nekoapi" output="nekoapi" tool="linker" toolid="dll">
   <files id="nekoapi"/>
   <lib name="${RUNTIME}/libs/nekoapi/neko.lib" if="windows"/>
+  <lib name="-lneko" unless="windows"/>
   <outdir name="../bin/${BINDIR}"/>
 </target>
 
@@ -128,7 +134,9 @@
    <target id="std"/>
    <target id="regexp"/>
    <target id="zlib"/>
-   <target id="nekoapi"/>
+   <target id="nekoapi" if="windows"/>
+   <target id="nekoapi" if="mac"/>
+   <target id="nekoapi" if="linux"/>
 </target>
 
 

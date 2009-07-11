@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int __thread_prims() { return 0; }
+
 #ifdef NEKO_WINDOWS
 
 #ifndef _WIN32_WINNT
@@ -37,11 +39,12 @@
 #else
 #	include <pthread.h>
 #	include <sys/time.h>
-	typedef struct _vlock {
-		pthread_mutex_t lock;
-		pthread_cond_t cond;
-		int counter;
-	} *vlock;
+
+struct vlock {
+   pthread_mutex_t lock;
+   pthread_cond_t cond;
+   int counter;
+};
 #endif
 
 
@@ -261,8 +264,8 @@ static value _deque_pop( vdeque *q, int block ) {
 	</doc>
 **/
 
-#define val_lock(l)		((vlock)val_data(l))
-#define val_tls(l)		((vtls*)val_data(l))
+#define val_lock(l)	((vlock *)val_data(l))
+#define val_tls(l)	((vtls*)val_data(l))
 #define val_mutex(l)	(*(ThreadMutex *)val_data(l))
 #define val_deque(l)	((vdeque*)val_data(l))
 
@@ -335,13 +338,13 @@ thread_loop( void *_p ) {
 	LOCK(sgThreadMapMutex);
 	sgThreadMap[ CurrentThreadID() ] = p->t;
 	UNLOCK(sgThreadMapMutex);
+        value callb = p->callb;
+        value callparam = p->callparam;
 	SignalSet(p->mBegun,p->mBegunMutex,p->mStarted);
 
-	if ( !val_is_null(p->callb))
-		val_call0_traceexcept(p->callb);
+	if ( !val_is_null(callb))
+		val_call0_traceexcept(callb);
 
-	// cleanup
-	p->t->v = alloc_null();
 #ifndef NEKO_WINDOWS
    return 0;
 #endif
@@ -354,14 +357,16 @@ thread_loop( void *_p ) {
 static value thread_create( value f, value param ) {
 	tparams *p;
 	val_check_function(f,1);
-	p = (tparams*)hx_alloc(sizeof(tparams));
+	p = (tparams*)malloc(sizeof(tparams));
 	p->callb = f;
 	p->callparam = param;
 	SignalInit(p->mBegun,p->mBegunMutex,p->mStarted);
 
 	start_thread(thread_loop,p);
 
-   WaitFor(p->mBegun,p->mBegunMutex,p->mStarted);
+   	WaitFor(p->mBegun,p->mBegunMutex,p->mStarted);
+	value v = p->t->v;
+        free(p);
 	return p->t->v;
 }
 
@@ -409,12 +414,13 @@ static value thread_read_message( value block ) {
 	return _deque_pop( &t->q, val_bool(block) );
 }
 
-static void free_lock( void * l ) {
+static void free_lock( value l ) {
 #	ifdef NEKO_WINDOWS
-	CloseHandle( (vlock)(l) );
+	CloseHandle( val_data(l) );
 #	else
-	pthread_cond_destroy( &((vlock)(l))->cond );
-	pthread_mutex_destroy( &((vlock)(l))->lock );
+	pthread_cond_destroy( & val_lock(l)->cond );
+	pthread_mutex_destroy( & val_lock(l)->lock );
+	free( val_lock(l) );
 #	endif
 }
 
@@ -425,19 +431,19 @@ static void free_lock( void * l ) {
 **/
 static value lock_create() {
 	value vl;
-	vlock l;
+	vlock *l;
 #	ifdef NEKO_WINDOWS
 	l = CreateSemaphore(NULL,0,(1 << 30),NULL);
 	if( l == NULL )
 		return alloc_null();
 #	else
-	l = (vlock)alloc_private(sizeof(struct _vlock));
+	l = (vlock *)malloc(sizeof(vlock));
 	l->counter = 0;
 	if( pthread_mutex_init(&l->lock,NULL) != 0 || pthread_cond_init(&l->cond,NULL) != 0 )
 		return alloc_null();
 #	endif
 	vl = alloc_abstract(k_lock,l);
-	val_gc_ptr(l,free_lock);
+	val_gc(vl,free_lock);
 	return vl;
 }
 
@@ -450,9 +456,8 @@ static value lock_create() {
 	</doc>
 **/
 static value lock_release( value lock ) {
-	vlock l;
 	val_check_kind(lock,k_lock);
-	l = val_lock(lock);
+	vlock *l = val_lock(lock);
 #	ifdef NEKO_WINDOWS
 	if( !ReleaseSemaphore(l,1,NULL) )
 		return alloc_null();
@@ -490,7 +495,7 @@ static value lock_wait( value lock, value timeout ) {
 	}
 #	else
 	{
-		vlock l = val_lock(lock);
+		vlock *l = val_lock(lock);
 		pthread_mutex_lock(&l->lock);
 		while( l->counter == 0 ) {
 			if( has_timeout ) {
@@ -616,6 +621,7 @@ static value tls_set( value v, value content ) {
 
 static void free_mutex( value v ) {
 	MutexDestroy( val_mutex(v) );
+	MutexDestroy( val_mutex(v) );
 }
 
 /**
@@ -626,7 +632,7 @@ static void free_mutex( value v ) {
 	</doc>
 **/
 static value mutex_create() {
-	ThreadMutex *m = (ThreadMutex *)alloc_private(sizeof(ThreadMutex));
+	ThreadMutex *m = (ThreadMutex *)malloc(sizeof(ThreadMutex));
 	MutexInit(*m);
 	value v = alloc_abstract(k_mutex,m);
 	val_gc(v,free_mutex);

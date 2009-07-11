@@ -26,6 +26,8 @@
 #	include <unistd.h>
 #endif
 
+
+int __random_prims() {return 0; }
 /**
 	<doc>
 	<h1>Random</h1>
@@ -114,8 +116,18 @@ static double rnd_float( rnd *r ) {
 	random_new : void -> 'random
 	<doc>Create a new random with random seed</doc>
 **/
+
+
+#include<stdlib.h>
+void free_rand(value v)
+{
+   free(val_data(v));
+}
+
 static value random_new() {
-	return alloc_abstract( k_random, rnd_init(alloc_private(rnd_size())) );
+	value v = alloc_abstract( k_random, rnd_init(malloc(rnd_size())) );
+	val_gc(v,free_rand);
+	return v;
 }
 
 /**
