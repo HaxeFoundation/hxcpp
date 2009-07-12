@@ -12,9 +12,10 @@ void *hxFindSymbol(Module inModule, const char *inSymbol) { return GetProcAddres
 #elif defined (IPHONE)
 
 typedef void *Module;
+Module hxLoadLibrary(const wchar_t *inLib) { return 0; }
 #else
 
-Module hxLoadLibrary(const wchar_t *inLib) { return 0; }
+typedef void *Module;
 
 #include <dlfcn.h>
 typedef void *Module;
