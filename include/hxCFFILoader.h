@@ -56,12 +56,14 @@ void *LoadFunc(const char *inName)
 #ifdef NEKO_LINUX
 #define EXT "dso"
 #else
+#include <mach-o/dyld.h>
 #define EXT "dylib"
 #endif
 
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
 
 void *LoadFunc(const char *inName)
 {
@@ -82,6 +84,35 @@ void *LoadFunc(const char *inName)
       void *handle = dlopen("nekoapi." EXT ,RTLD_NOW);
       if (handle)
          sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
+   }
+   if (sResolveProc==0)
+   {
+      bool debug = getenv("HXCPP_LOAD_DEBUG");
+#ifndef NEKO_LINUX
+      int count = _dyld_image_count();
+      for(int i=0;i<count;i++)
+      {
+         const char *s =  _dyld_get_image_name(i);
+         char *buf = (char *)malloc( strlen(s) + 20 );
+         strcpy(buf,s);
+         char *slash = rindex(buf,'/');
+         if (slash)
+         {
+            slash[1] = '\0';
+            strcat(slash, "nekoapi." EXT );
+            if (debug)
+               printf(" -> %s\n", buf );
+            void *handle = dlopen(buf, RTLD_NOW);
+            if (handle)
+            {
+               sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
+               free(buf);
+               break;
+            }
+         }
+         free(buf);
+      }
+#endif
    }
    if (sResolveProc==0)
    {

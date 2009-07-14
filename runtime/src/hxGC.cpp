@@ -176,7 +176,7 @@ void *hxInternalNew( size_t inSize, bool inIsObj = false )
       AllocInfo::sHead.InitHead();
    }
    // First run, we can't be sure the pool has initialised - but now we can.
-   else if (inSize < POOL_SIZE  && 0)
+   else if (inSize < POOL_SIZE )
    {
       SparePointers &spares = sgSmallPool[inSize];
       if (!spares.empty())
@@ -272,7 +272,7 @@ void __hxcpp_collect()
       if ( !(flags & HX_GC_MARKED) )
       {
           data->Unlink();
-          if ( (data->mSize & SIZE_MASK) <POOL_SIZE && 0)
+          if ( (data->mSize & SIZE_MASK) <POOL_SIZE )
           {
                SparePointers &pool = sgSmallPool[data->mSize & SIZE_MASK];
                if (pool.size()<1000)

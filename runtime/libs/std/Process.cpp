@@ -21,6 +21,7 @@
 #else
 #	include <sys/types.h>
 #	include <unistd.h>
+#	include <memory.h>
 #	include <errno.h>
 #	ifndef NEKO_MAC
 #		include <wait.h>
@@ -145,9 +146,9 @@ static value process_run( value cmd, value vargs ) {
 		CloseHandle(sinf.hStdError);
 		CloseHandle(sinf.hStdInput);
 	}
-	else
-	/* TODO - fix leak */
+#else
 	char **argv = (char**)malloc(sizeof(char*)*(val_array_size(vargs)+2));
+
 	argv[0] = strdup(val_string(cmd));
 	for(i=0;i<val_array_size(vargs);i++) {
 		value v = val_array_i(vargs,i);
