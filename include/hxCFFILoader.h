@@ -73,14 +73,6 @@ void *LoadFunc(const char *inName)
    }
    if (sResolveProc==0)
    {
-      void *handle = dlopen("hxcpp." EXT,RTLD_NOW);
-      if (handle)
-      {
-         sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
-      }
-   }
-   if (sResolveProc==0)
-   {
       void *handle = dlopen("nekoapi." EXT ,RTLD_NOW);
       if (handle)
          sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");

@@ -72,6 +72,10 @@
 #	define INLINE __inline
 #	define EXPORT __declspec( dllexport )
 #	define IMPORT __declspec( dllimport )
+#elif defined (HX_LINUX)
+#	define INLINE inline
+#	define EXPORT __attribute__ ((visibility("default")))
+#	define IMPORT
 #else
 #	define INLINE inline
 #	define EXPORT

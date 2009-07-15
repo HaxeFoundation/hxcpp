@@ -612,7 +612,6 @@ int hx_register_prim( wchar_t * arg1, void* arg2)
 
 SHARED void * hx_cffi(const char *inName)
 {
-
 	#define DEFFUNC(name,r,b,c) if ( !strcmp(inName,#name) ) return (void *)name;
 
 	#include <hxCFFIAPI.h>

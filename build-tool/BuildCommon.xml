@@ -2,20 +2,42 @@
 
 <set name="DBG" value="-debug" if="debug"/>
 
-<set name="SLIBEXT" value=".a" unless="windows"/>
-<set name="SLIBEXT" value=".lib" if="windows"/>
 
-<compiler id="Linuxgcc" name="g++" if="linux">
-  <compilerarg value="-g" if="debug"/>
-  <compilerarg value="-Wall"/>
-  <compilerarg value="-Wshadow"/>
-  <compilerarg value="-O2" unless="debug"/>
-  <defineset>
-    <define name="HAVE_CONFIG_H"/>
-    <define name="PIC"/>
-  </defineset>
-  <includepath path="${dir.include}"/>
+
+<!-- LINUX TOOLS -------------------------------------->
+
+<compiler id="linux" exe="gcc" if="linux">
+  <flag value="-c"/>
+  <cppflag value="-fvisibility=hidden"/>
+  <cppflag value="-frtti"/>
+  <flag value="-g" if="debug"/>
+  <flag value="-O2"/>
+  <flag value="-DHX_LINUX"/>
+  <flag value="-I${HXCPP}/include"/>
+  <objdir value="obj/linux/" unless="debug"/>
+  <objdir value="obj/linux-dbg/" if="debug"/>
+  <outflag value="-o"/>
+  <ext value=".o"/>
 </compiler>
+
+<linker id="dll" exe="g++" if="linux">
+  <flag value="-fpic"/>
+  <flag value="-fPIX"/>
+  <flag value="-shared"/>
+  <flag value="-debug" if="debug"/>
+  <ext value=".dso"/>
+  <outflag value="-o "/>
+</linker>
+
+<linker id="exe" exe="g++" if="linux">
+  <flag value="-debug" if="debug"/>
+  <flag value="-rdynamic"/>
+  <ext value=""/>
+  <outflag value="-o "/>
+</linker>
+
+
+<!-- IPHONE TOOLS ---------------------------------------------------->
 
 <set name="IPHONE_VER" value="2.2.1"/>
 
@@ -88,15 +110,15 @@
 
 
 
-
 <compiler id="darwin" exe="gcc" if="macos">
   <flag value="-c"/>
-  <cppflag value="-fvisibility-inlines-hidden"/>
+  <flag value="-fvisibility=hidden"/>
   <cppflag value="-c++"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-I${HXCPP}/include"/>
+  <flag value="-DHX_MACOS"/>
   <objdir value="obj/darwin/" unless="debug"/>
   <objdir value="obj/darwin-dbg/" if="debug"/>
   <outflag value="-o"/>
@@ -108,6 +130,7 @@
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
   <flag value="-framework"/>
+  <flag value="-fvisibility=hidden"/>
   <flag value="Cocoa"/>
   <flag value="-debug" if="debug"/>
   <ext value=".dylib"/>
@@ -122,12 +145,11 @@
   <outflag value="-o "/>
 </linker>
 
+<!-- WINDOWS TOOLS -------------------------------------->
 <linker id="static" exe="ar" unless="windows">
   <ext value=".a"/>
   <outflag value="-cr "/>
 </linker>
-
-
 
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
@@ -136,6 +158,7 @@
   <flag value="-O2" unless="debug"/>
   <flag value="-MTd" if="debug"/>
   <flag value="-MT" unless="debug"/>
+  <flag value="-DHX_WINDOWS"/>
   <flag value="-GR"/>
   <flag value="-Zi"/>
   <flag value="-c"/>
@@ -204,6 +227,8 @@
   <compilerflag value="-DHAS_X86_THREAD_STATE32___EAX=1" if="macos"/>
   <compilerflag value="-DNO_THREAD_REDIRECT" if="macos"/>
   <compilerflag value="-DGC_THREADS" if="macos"/>
+  <compilerflag value="-DNO_THREAD_REDIRECT" if="linux"/>
+  <compilerflag value="-DGC_THREADS" if="linux"/>
 
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
@@ -255,6 +280,99 @@
 <target id="runtime" output="hxcpp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="runtime"/>
   <lib name="user32.lib" if="windows"/>
+  <lib name="-lpthread" if="linux"/>
+  <lib name="-ldl" if="linux"/>
+</target>
+
+
+<target id="std" output="std${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <files id="std"/>
+  <flag value="-dll"/>
+  <lib name="wsock32.lib" if="windows"/>
+  <lib name="-lpthread" if="linux"/>
+  <lib name="-ldl" if="linux"/>
+</target>
+
+<set name="PCRE_DIR" value="runtime/thirdparty/pcre-7.8"/>
+
+<files id="regexp" dir="${HXCPP}">
+  <depend name="${HXCPP}/include/hxMacros.h"/>
+  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/neko.h"/>
+
+  <compilerflag value="-DPCRE_STATIC"/>
+  <compilerflag value="-I${HXCPP}/${PCRE_DIR}"/>
+
+  <file name="runtime/libs/regexp/RegExp.cpp"/>
+
+  <file name="${PCRE_DIR}/pcre_get.c"/>
+  <file name="${PCRE_DIR}/pcre_study.c"/>
+  <file name="${PCRE_DIR}/pcre_chartables.c"/>
+  <file name="${PCRE_DIR}/pcre_globals.c"/>
+  <file name="${PCRE_DIR}/pcre_tables.c"/>
+  <file name="${PCRE_DIR}/pcre_compile.c"/>
+  <file name="${PCRE_DIR}/pcre_info.c"/>
+  <file name="${PCRE_DIR}/pcre_try_flipped.c"/>
+  <file name="${PCRE_DIR}/pcre_config.c"/>
+  <file name="${PCRE_DIR}/pcre_maketables.c"/>
+  <file name="${PCRE_DIR}/pcre_ucd.c"/>
+  <file name="${PCRE_DIR}/pcre_dfa_exec.c"/>
+  <file name="${PCRE_DIR}/pcre_newline.c"/>
+  <file name="${PCRE_DIR}/pcre_valid_utf8.c"/>
+  <file name="${PCRE_DIR}/pcre_exec.c"/>
+  <file name="${PCRE_DIR}/pcre_ord2utf8.c"/>
+  <file name="${PCRE_DIR}/pcre_version.c"/>
+  <file name="${PCRE_DIR}/pcre_fullinfo.c"/>
+  <file name="${PCRE_DIR}/pcre_refcount.c"/>
+  <file name="${PCRE_DIR}/pcre_xclass.c"/>
+
+</files>
+
+
+
+<target id="regexp" output="regexp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <files id="regexp"/>
+</target>
+
+<set name="ZLIB_DIR" value="runtime/thirdparty/zlib-1.2.3"/>
+
+<files id="zlib" dir="${HXCPP}">
+  <depend name="${HXCPP}/include/hxMacros.h"/>
+  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/neko.h"/>
+
+  <compilerflag value="-I${HXCPP}/${ZLIB_DIR}"/>
+
+  <file name="runtime/libs/zlib/ZLib.cpp"/>
+
+  <file name="${ZLIB_DIR}/adler32.c"/>
+  <file name="${ZLIB_DIR}/crc32.c"/>
+  <file name="${ZLIB_DIR}/infback.c"/>
+  <file name="${ZLIB_DIR}/inflate.c"/>
+  <file name="${ZLIB_DIR}/uncompr.c"/>
+  <file name="${ZLIB_DIR}/compress.c"/>
+  <file name="${ZLIB_DIR}/deflate.c"/>
+  <file name="${ZLIB_DIR}/gzio.c"/>
+  <file name="${ZLIB_DIR}/inffast.c"/>
+  <file name="${ZLIB_DIR}/inftrees.c"/>
+  <file name="${ZLIB_DIR}/trees.c"/>
+  <file name="${ZLIB_DIR}/zutil.c"/>
+
+</files>
+
+
+
+
+<target id="zlib" output="zlib${DBG}" tool="linker" toolid="dll">
+  <files id="zlib"/>
+</target>
+
+
+<target id="default">
+   <target id="runtime"/>
+   <target id="std"/>
+   <target id="regexp"/>
+   <target id="zlib"/>
 </target>
 
 
@@ -275,6 +393,8 @@
   <files id="__main__" unless="static"/>
   <files id="__lib__" if="static"/>
   <files id="runtime"/>
+  <lib name="-lpthread" if="linux"/>
+  <lib name="-ldl" if="linux"/>
 </target>
 
 
