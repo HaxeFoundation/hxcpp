@@ -1299,7 +1299,7 @@ Dynamic String::__Field(const String &inString)
 
 void StringBoot()
 {
-   Static(__StringClass) = RegisterClass(STRING(L"String",5),TCanCast<StringData>,sStringStatics, sStringFields,
+   Static(__StringClass) = RegisterClass(STRING(L"String",6),TCanCast<StringData>,sStringStatics, sStringFields,
                        &CreateEmptyString, &CreateString, &hxObject__mClass);
 }
 

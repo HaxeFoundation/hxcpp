@@ -433,7 +433,7 @@ static value lock_create() {
 	value vl;
 	vlock *l;
 #	ifdef NEKO_WINDOWS
-	l = CreateSemaphore(NULL,0,(1 << 30),NULL);
+	l = (vlock *)CreateSemaphore(NULL,0,(1 << 30),NULL);
 	if( l == NULL )
 		return alloc_null();
 #	else

@@ -715,14 +715,12 @@ inline hxIndexRef<T> hxIndexRefNew(const T &inObj, int inIdx)
 
 class hxFieldMap;
 
-/*
  hxFieldMap *hxFieldMapCreate();
  bool hxFieldMapGet(hxFieldMap *inMap, const String &inName, Dynamic &outValue);
  bool hxFieldMapGet(hxFieldMap *inMap, int inID, Dynamic &outValue);
  void hxFieldMapSet(hxFieldMap *inMap, const String &inName, const Dynamic &inValue);
  void hxFieldMapAppendFields(hxFieldMap *inMap,Array<String> &outFields);
  void hxFieldMapMark(hxFieldMap *inMap);
-*/
 
 
 class  hxAnon_obj : public hxObject

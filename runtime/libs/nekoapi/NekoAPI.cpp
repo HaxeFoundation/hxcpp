@@ -525,4 +525,13 @@ int api_hx_register_prim( wchar_t * arg1, void* arg2)
 	return 0;
 }
 
+void api_val_gc_add_root(value *inVal)
+{
+	// TODO
+}
+
+void api_val_gc_remove_root(value *inVal)
+{
+	// TODO
+}
 

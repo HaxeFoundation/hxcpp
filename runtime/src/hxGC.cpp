@@ -89,7 +89,7 @@ struct AllocInfo
    {
       AllocInfo *new_info = (AllocInfo *)malloc( inSize + sizeof(AllocInfo) );
       int s = mSize & SIZE_MASK;
-      int min_size = std::min( s, inSize );
+      int min_size = s < inSize ? s : inSize;
       memcpy(new_info, this, min_size + sizeof(AllocInfo) ); 
       if (inSize>s)
          memset(((char *)new_info) + s + sizeof(AllocInfo), 0, inSize-s ); 
@@ -158,8 +158,9 @@ struct QuickVec
 };
 
 
-typedef QuickVec<AllocInfo *> SparePointers;
+#ifdef INTERNAL_GC
 
+typedef QuickVec<AllocInfo *> SparePointers;
 #define POOL_SIZE 65
 static SparePointers sgSmallPool[POOL_SIZE];
 
@@ -194,6 +195,7 @@ void *hxInternalNew( size_t inSize, bool inIsObj = false )
    return data + 1;
 }
 
+#endif
 
 
 void *hxObject::operator new( size_t inSize, bool inContainer )
@@ -225,12 +227,28 @@ void *String::operator new( size_t inSize )
 #endif
 }
 
+
+#ifndef INTERNAL_GC
+static hxObject ***sgExtraRoots = 0;
+static int sgExtraAlloced = 0;
+static int sgExtraSize = 0;
+
+#endif
+
 void hxGCAddRoot(hxObject **inRoot)
 {
 #ifdef INTERNAL_GC
    sgRootSet.insert(inRoot);
 #else
-   GC_add_roots(inRoot,inRoot+1);
+	if (sgExtraSize+1>=sgExtraAlloced)
+	{
+		sgExtraAlloced = 10 + sgExtraSize*3/2;
+		if (!sgExtraRoots)
+		   sgExtraRoots = (hxObject ***)GC_MALLOC( sgExtraAlloced * sizeof(hxObject **) );
+		else
+		   sgExtraRoots = (hxObject ***)GC_REALLOC( sgExtraRoots, sgExtraAlloced * sizeof(hxObject **) );
+	}
+	sgExtraRoots[ sgExtraSize++ ] = inRoot;
 #endif
 }
 
@@ -239,7 +257,16 @@ void hxGCRemoveRoot(hxObject **inRoot)
 #ifdef INTERNAL_GC
    sgRootSet.erase(inRoot);
 #else
-   GC_remove_roots(inRoot,inRoot+1);
+	int i;
+	for(i=0;i<sgExtraSize;i++)
+	{
+		if (sgExtraRoots[i]==inRoot)
+		{
+			sgExtraRoots[i] = sgExtraRoots[sgExtraSize-1];
+			sgExtraRoots[--sgExtraSize] = 0;
+			break;
+		}
+	}
 #endif
 }
 

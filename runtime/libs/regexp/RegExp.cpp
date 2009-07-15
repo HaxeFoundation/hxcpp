@@ -289,6 +289,7 @@ void regexp_main() {
 int regexp_register_prims()
 {
    regexp_main();
+	return 0;
 }
 
 }
