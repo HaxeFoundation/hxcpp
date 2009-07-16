@@ -150,7 +150,7 @@ class Linker
          }
          else
             args.push(out + out_name);
-         args = args.concat(mFlags).concat(inTarget.mLibs).concat(inTarget.mFlags).concat(inObjs);
+         args = args.concat(mFlags).concat(inTarget.mFlags).concat(inObjs).concat(inTarget.mLibs);
 
          neko.Lib.println( mExe + " " + args.join(" ") );
          var result = neko.Sys.command( mExe, args );

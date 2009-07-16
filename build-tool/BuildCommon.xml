@@ -8,7 +8,7 @@
 
 <compiler id="linux" exe="gcc" if="linux">
   <flag value="-c"/>
-  <cppflag value="-fvisibility=hidden"/>
+  <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
   <flag value="-O2"/>
@@ -21,9 +21,10 @@
 </compiler>
 
 <linker id="dll" exe="g++" if="linux">
-  <flag value="-fpic"/>
-  <flag value="-fPIX"/>
   <flag value="-shared"/>
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <flag value="-W,l--unresolved-symbols=report-all"/>
   <flag value="-debug" if="debug"/>
   <ext value=".dso"/>
   <outflag value="-o "/>
