@@ -14,8 +14,10 @@
 #ifdef HX_WINDOWS
 // MSVC hacks
 #define SHARED __declspec(dllexport)
-#elif defined(HX_LINUX)
+#elif defined(HX_LINUX) || defined (HX_MACOS)
 #define SHARED __attribute__ ((visibility("default")))
+#else
+#define SHARED
 #endif
 
 #ifdef assert

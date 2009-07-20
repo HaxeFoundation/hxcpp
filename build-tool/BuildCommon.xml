@@ -131,8 +131,8 @@
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
   <flag value="-framework"/>
-  <flag value="-fvisibility=hidden"/>
   <flag value="Cocoa"/>
+  <flag value="-fvisibility=hidden"/>
   <flag value="-debug" if="debug"/>
   <ext value=".dylib"/>
   <outflag value="-o "/>
