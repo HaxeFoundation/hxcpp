@@ -2,8 +2,6 @@
 
 <set name="DBG" value="-debug" if="debug"/>
 
-
-
 <!-- LINUX TOOLS -------------------------------------->
 
 <compiler id="linux" exe="gcc" if="linux">
@@ -38,7 +36,7 @@
 </linker>
 
 
-<!-- IPHONE TOOLS ---------------------------------------------------->
+<!-- IPHONE TOOLS -------------------------------------------------->
 
 <set name="IPHONE_VER" value="2.2.1"/>
 
@@ -195,6 +193,7 @@
   <outflag value="-out:"/>
 </linker>
 
+<!-- Library files & targets -------------------------------------->
 
 <set name="STD_MODULE_LINK" value="dll"/>
 <set name="STD_MODULE_LINK" value="static" if="iphoneos"/>
@@ -399,6 +398,9 @@
   <lib name="-ldl" if="linux"/>
 </target>
 
+<!-- Add user config if provided ------------------>
+
+<include name="${HXCPP_CONFIG}" if ="HXCPP_CONFIG"/>
 
 </xml>
 

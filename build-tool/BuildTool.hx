@@ -8,20 +8,20 @@ class DirManager
       var total = "";
       for(part in parts)
       {
-		   if (part!="." && part!="")
-			{
+         if (part!="." && part!="")
+         {
             if (total!="") total+="/";
-				total += part;
-				if (!mMade.exists(total))
-				{
-					mMade.set(total,true);
-					if (!neko.FileSystem.exists(total))
-					{
-						neko.Lib.println("mkdir " + total);
-						neko.FileSystem.createDirectory(total);
-					}
-				}
-			}
+            total += part;
+            if (!mMade.exists(total))
+            {
+               mMade.set(total,true);
+               if (!neko.FileSystem.exists(total))
+               {
+                  neko.Lib.println("mkdir " + total);
+                  neko.FileSystem.createDirectory(total);
+               }
+            }
+         }
       }
    }
    static public function deleteRecurse(inDir:String)
@@ -39,7 +39,7 @@ class DirManager
                else
                   neko.FileSystem.deleteFile(name);
             }
-	 }
+    }
          neko.FileSystem.deleteDirectory(inDir);
       }
    }
@@ -329,12 +329,14 @@ class BuildTool
                    var value = substitute(el.att.value);
                    mDefines.set(name,value);
                 case "compiler" : 
-                   if (mCompiler!=null)
-                       throw "Only one compiler may be set (" +
-                         mCompiler.mID + " set, adding " + el.att.id + ")";
-                   mCompiler = createCompiler(el);
+                   mCompiler = createCompiler(el,mCompiler);
+
                 case "linker" : 
-                   mLinkers.set( el.att.id, createLinker(el) );
+                   if (mLinkers.exists(el.att.id))
+                      createLinker(el,mLinkers.get(el.att.id));
+                   else
+                      mLinkers.set( el.att.id, createLinker(el,null) );
+
                 case "files" : 
                    var name = el.att.id;
                    mFileGroups.set(name,createFiles(el));
@@ -380,9 +382,9 @@ class BuildTool
       }
    }
 
-   public function createCompiler(inXML:haxe.xml.Fast) : Compiler
+   public function createCompiler(inXML:haxe.xml.Fast,inBase:Compiler) : Compiler
    {
-      var c = new Compiler(inXML.att.id,inXML.att.exe);
+      var c = inBase!=null ? inBase : new Compiler(inXML.att.id,inXML.att.exe);
       for(el in inXML.elements)
       {
          if (valid(el))
@@ -400,9 +402,9 @@ class BuildTool
       return c;
    }
 
-   public function createLinker(inXML:haxe.xml.Fast) : Linker
+   public function createLinker(inXML:haxe.xml.Fast,inBase:Linker) : Linker
    {
-      var l = new Linker(inXML.att.exe);
+      var l = inBase!=null ? inBase : new Linker(inXML.att.exe);
       for(el in inXML.elements)
       {
          if (valid(el))
@@ -548,11 +550,11 @@ class BuildTool
             targets.push(arg);
       }
 
-	if (os==null && !defines.exists("iphoneos") && !defines.exists("iphonesim") )
-	{
-	   neko.Lib.println("No OSTYPE - assuming windows");
-	   os = "windows";
-	}
+      if (os==null && !defines.exists("iphoneos") && !defines.exists("iphonesim") )
+      {
+         neko.Lib.println("No OSTYPE - assuming windows");
+         os = "windows";
+      }
 
       if (defines.exists("iphoneos"))
       {
