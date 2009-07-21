@@ -118,6 +118,7 @@ class Linker
    public var mExt:String;
    public var mNamePrefix:String;
    public var mLibDir:String;
+   public var mRanLib:String;
 
    public function new(inExe:String)
    {
@@ -126,6 +127,7 @@ class Linker
       mExe = inExe;
       mNamePrefix = "";
       mLibDir = "";
+      mRanLib = "";
    }
    public function link(inTarget:Target,inObjs:Array<String>)
    {
@@ -156,6 +158,15 @@ class Linker
          var result = neko.Sys.command( mExe, args );
          if (result!=0)
             throw "Error : " + result + " - build cancelled";
+
+         if (mRanLib!="")
+         {
+            args = [file_name];
+            neko.Lib.println( mRanLib + " " + args.join(" ") );
+            var result = neko.Sys.command( mRanLib, args );
+            if (result!=0)
+               throw "Error : " + result + " - build cancelled";
+         }
 
          if (mLibDir!="")
          {
@@ -401,6 +412,7 @@ class BuildTool
                 case "ext" : l.mExt = (substitute(el.att.value));
                 case "outflag" : l.mOutFlag = (substitute(el.att.value));
                 case "libdir" : l.mLibDir = (substitute(el.att.name));
+                case "ranlib" : l.mRanLib = (substitute(el.att.name));
             }
       }
 
@@ -525,11 +537,6 @@ class BuildTool
       }
    
       var os = neko.Sys.getEnv("OSTYPE");
-		if (os==null)
-		{
-		   neko.Lib.println("No OSTYPE - assuming windows");
-			os = "windows";
-		}
 
       for(arg in args)
       {
@@ -540,6 +547,12 @@ class BuildTool
          else
             targets.push(arg);
       }
+
+	if (os==null && !defines.exists("iphoneos") && !defines.exists("iphonesim") )
+	{
+	   neko.Lib.println("No OSTYPE - assuming windows");
+	   os = "windows";
+	}
 
       if (defines.exists("iphoneos"))
       {

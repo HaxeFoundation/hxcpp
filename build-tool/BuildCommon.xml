@@ -146,12 +146,13 @@
   <outflag value="-o "/>
 </linker>
 
-<!-- WINDOWS TOOLS -------------------------------------->
 <linker id="static" exe="ar" unless="windows">
   <ext value=".a"/>
   <outflag value="-cr "/>
+  <ranlib name="ranlib"/>
 </linker>
 
+<!-- WINDOWS TOOLS -------------------------------------->
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
