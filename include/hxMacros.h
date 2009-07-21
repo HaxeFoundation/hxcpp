@@ -1,7 +1,7 @@
 #ifndef HX_MACROS_H
 #define HX_MACROS_H
 
-#ifdef _MSC_VER
+#ifdef HX_WINDOWS
 #define STRING(s,len) String((L"\xffff\xffff" s)+2,len)
 #else
 #define STRING(s,len) String( (L"\xffffffff" s) + 1 ,len)

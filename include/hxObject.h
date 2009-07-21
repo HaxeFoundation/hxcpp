@@ -935,7 +935,7 @@ template<> inline double *hxNewNull<double>() { double d=0; return (double *)hxN
 template<> inline unsigned char *hxNewNull<unsigned char>() { unsigned char u=0; return (unsigned char *)hxNewGCPrivate(&u,sizeof(u)); }
 
 
-#ifdef _MSC_VER
+#ifdef HX_WINDOWS
 typedef void (*ThreadFunc)(void *inUserData);
 #else
 typedef void *(*ThreadFunc)(void *inUserData);
