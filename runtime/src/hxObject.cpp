@@ -1513,7 +1513,7 @@ void hxEnumBase_obj::__Mark()
    MarkMember(mArgs);
 }
 
-String hxEnumBase_obj::toString() { return GetEnumName() + String(L".") + tag; }
+String hxEnumBase_obj::toString() { return tag; }
 
 
 // -------- Int32 ---------------------------------------
