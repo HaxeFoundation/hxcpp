@@ -135,7 +135,7 @@
    <target id="regexp"/>
    <target id="zlib"/>
    <target id="nekoapi" if="windows"/>
-   <target id="nekoapi" if="mac"/>
+   <target id="nekoapi" if="macos"/>
    <target id="nekoapi" if="linux"/>
 </target>
 

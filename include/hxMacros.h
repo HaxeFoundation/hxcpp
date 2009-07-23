@@ -112,6 +112,7 @@ struct class##func : public hxObject \
    hxObjectPtr<class> mThis; \
    class##func(class *inThis) : mThis(inThis) { } \
    String __ToString() const{ return L###func ; } \
+   void __Mark() { MarkMember(mThis); } \
    void *__GetHandle() const { return mThis.GetPtr(); } \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \

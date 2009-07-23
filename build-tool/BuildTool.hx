@@ -161,7 +161,7 @@ class Linker
 
          if (mRanLib!="")
          {
-            args = [file_name];
+            args = [out_name];
             neko.Lib.println( mRanLib + " " + args.join(" ") );
             var result = neko.Sys.command( mRanLib, args );
             if (result!=0)

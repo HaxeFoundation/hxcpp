@@ -102,22 +102,29 @@ static value deflate_init( value level ) {
 **/
 static value deflate_buffer( value s, value src, value srcpos, value dst, value dstpos ) {
 	z_stream *z;
-	int slen, dlen, err;
+	int err;
 	value o;
 	val_check_kind(s,k_stream_def);
-	val_check(src,string);
+
+	buffer src_buf = val_to_buffer(src);
+	if (!src_buf)
+	   hx_failure("invalid source buffer");
+	buffer dst_buf = val_to_buffer(dst);
+	if (!dst_buf)
+	   hx_failure("invalid destination buffer");
+
+
 	val_check(srcpos,int);
-	val_check(dst,string);
 	val_check(dstpos,int);
 	z = val_stream(s);
 	if( val_int(srcpos) < 0 || val_int(dstpos) < 0 )
 		return alloc_null();
-	slen = val_strlen(src) - val_int(srcpos);
-	dlen = val_strlen(dst) - val_int(dstpos);
+	int slen = buffer_size(src_buf) - val_int(srcpos);
+	int dlen = buffer_size(dst_buf) - val_int(dstpos);
 	if( slen < 0 || dlen < 0 )
 		return alloc_null();
-	z->next_in = (Bytef*)(val_string(src) + val_int(srcpos));
-	z->next_out = (Bytef*)(val_string(dst) + val_int(dstpos));
+	z->next_in = (Bytef*)(buffer_data(src_buf) + val_int(srcpos));
+	z->next_out = (Bytef*)(buffer_data(dst_buf) + val_int(dstpos));
 	z->avail_in = slen;
 	z->avail_out = dlen;
 	if( (err = deflate(z,val_flush(z))) < 0 )
@@ -173,23 +180,21 @@ static value inflate_init( value wsize ) {
 **/
 static value inflate_buffer( value s, value src, value srcpos, value dst, value dstpos ) {
 	z_stream *z;
-	int slen, dlen, err;
+	int err;
 	value o;
 	val_check_kind(s,k_stream_inf);
 	val_check(srcpos,int);
-   #ifdef HXCPP
-   Array<unsigned char> src_buf = src;
-   Array<unsigned char> dst_buf = dst;
-   if (src_buf==null() || dst_buf==null())
-      return alloc_null();
-	slen = src_buf.__length();
-	dlen = dst_buf.__length();
-   #else
-	val_check(src,string);
-	val_check(dst,string);
-	slen = val_strlen(src);
-	dlen = val_strlen(dst);
-   #endif
+
+	buffer src_buf = val_to_buffer(src);
+	if (!src_buf)
+	   hx_failure("invalid source buffer");
+	buffer dst_buf = val_to_buffer(dst);
+	if (!dst_buf)
+	   hx_failure("invalid destination buffer");
+
+	int slen = buffer_size(src_buf);
+	int dlen = buffer_size(dst_buf);
+
 	val_check(dstpos,int);
 	z = val_stream(s);
 	if( val_int(srcpos) < 0 || val_int(dstpos) < 0 )
@@ -198,13 +203,9 @@ static value inflate_buffer( value s, value src, value srcpos, value dst, value 
 	dlen -= val_int(dstpos);
 	if( slen < 0 || dlen < 0 )
 		return alloc_null();
-   #ifdef HXCPP
-	z->next_in = (Bytef*)(&src_buf[val_int(srcpos)]);
-	z->next_out = (Bytef*)(&dst_buf[val_int(dstpos)]);
-   #else
-	z->next_in = (Bytef*)(val_string(src) + val_int(srcpos));
-	z->next_out = (Bytef*)(val_string(dst) + val_int(dstpos));
-   #endif
+
+	z->next_in = (Bytef*)buffer_data(src_buf);
+	z->next_out = (Bytef*)buffer_data(dst_buf);
 	z->avail_in = slen;
 	z->avail_out = dlen;
 	if( (err = inflate(z,val_flush(z))) < 0 )
