@@ -339,7 +339,6 @@ thread_loop( void *_p ) {
 	sgThreadMap[ CurrentThreadID() ] = p->t;
 	UNLOCK(sgThreadMapMutex);
         value callb = p->callb;
-        value callparam = p->callparam;
 	SignalSet(p->mBegun,p->mBegunMutex,p->mStarted);
 
 	if ( !val_is_null(callb))
@@ -367,7 +366,7 @@ static value thread_create( value f, value param ) {
    	WaitFor(p->mBegun,p->mBegunMutex,p->mStarted);
 	value v = p->t->v;
         free(p);
-	return p->t->v;
+	return v;
 }
 
 /**
