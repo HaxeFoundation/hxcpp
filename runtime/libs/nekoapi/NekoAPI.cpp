@@ -58,7 +58,7 @@ void api_hx_fail(char * arg1,char * arg2,int arg3)
 {
 	_neko_failure( alloc_string(arg1), arg2, arg3 );
 }
-#define NOT_IMPLEMNETED(func) api_hx_fail(func,__FILE__,__LINE__)
+#define NOT_IMPLEMNETED(func) api_hx_fail("NOT Implemented:" func,__FILE__,__LINE__)
 
 
 // Determine value type
