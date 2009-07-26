@@ -1,5 +1,5 @@
 <project name="hxcpp" url="http://gamehaxe.com/" license="BSD">
     <user name="gamehaxe"/>
-    <description>Hxcpp is the c++ backend compiler for haxe.  This release constains the compiler, libries and support code required to generate a fully compiled exe from haxe code.  Eventually, much of this will be merged into the main code branch.</description>
-    <version name="0.4">Initial haxelib release.  Added Mac(intel) and Linux ports.  Updated to 2.0.3 code base.</version>
+    <description>Hxcpp is the c++ backend compiler for haxe.  This release constains the headers, libries and support code required to generate a fully compiled executable from haxe code.</description>
+    <version name="1.0">First full release to support haxe compiler 2.04.</version>
 </project>
