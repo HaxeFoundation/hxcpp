@@ -401,6 +401,8 @@
 <!-- Add user config if provided ------------------>
 
 <include name="${HXCPP_CONFIG}" if ="HXCPP_CONFIG"/>
+<include name="${HOME}/.hxcpp_config.xml" unless ="windows" noerror="1"/>
+<include name="${USERPROFILE}/.hxcpp_config.xml" if ="windows" noerror="1"/>
 
 </xml>
 

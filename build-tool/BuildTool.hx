@@ -342,9 +342,16 @@ class BuildTool
                    mFileGroups.set(name,createFiles(el));
                 case "include" : 
                    var name = substitute(el.att.name);
-                   var make_contents = neko.io.File.getContent(name);
-                   var xml_slow = Xml.parse(make_contents);
-                   parseXML(new haxe.xml.Fast(xml_slow.firstElement()));
+                   if (neko.FileSystem.exists(name))
+                   {
+                      var make_contents = neko.io.File.getContent(name);
+                      var xml_slow = Xml.parse(make_contents);
+                      parseXML(new haxe.xml.Fast(xml_slow.firstElement()));
+                   }
+                   else if (!el.has.noerror)
+                   {
+                      throw "Could not find include file " + name;
+                   }
                 case "target" : 
                    var name = el.att.id;
                    mTargets.set(name,createTarget(el));
@@ -384,7 +391,8 @@ class BuildTool
 
    public function createCompiler(inXML:haxe.xml.Fast,inBase:Compiler) : Compiler
    {
-      var c = inBase!=null ? inBase : new Compiler(inXML.att.id,inXML.att.exe);
+      var c = (inBase!=null && !inXML.has.replace) ? inBase :
+                 new Compiler(inXML.att.id,inXML.att.exe);
       for(el in inXML.elements)
       {
          if (valid(el))
@@ -404,7 +412,7 @@ class BuildTool
 
    public function createLinker(inXML:haxe.xml.Fast,inBase:Linker) : Linker
    {
-      var l = inBase!=null ? inBase : new Linker(inXML.att.exe);
+      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(inXML.att.exe);
       for(el in inXML.elements)
       {
          if (valid(el))
