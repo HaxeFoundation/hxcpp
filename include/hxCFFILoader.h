@@ -55,6 +55,7 @@ void *LoadFunc(const char *inName)
 
 #ifdef NEKO_LINUX
 #define EXT "dso"
+//#define __USE_GNU 1
 #else
 #include <mach-o/dyld.h>
 #define EXT "dylib"
@@ -104,6 +105,31 @@ void *LoadFunc(const char *inName)
          }
          free(buf);
       }
+#else
+      // Find module for this function ...
+      Dl_info info;
+      if (dladdr((void *)LoadFunc,&info))
+      {
+         if (debug)
+            printf("Found loaded module : %s\n", info.dli_fname );
+
+         char *buf = (char *)malloc( strlen(info.dli_fname) + 20 );
+         strcpy(buf,info.dli_fname);
+         char *slash = rindex(buf,'/');
+         if (slash)
+         {
+            slash[1] = '\0';
+            strcat(slash, "nekoapi." EXT );
+            if (debug)
+               printf(" -> %s\n", buf );
+            void *handle = dlopen(buf, RTLD_NOW);
+            if (handle)
+               sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
+         }
+         free(buf);
+      }
+      else if (debug)
+         printf("Could not find loaded module?\n");
 #endif
    }
    if (sResolveProc==0)
