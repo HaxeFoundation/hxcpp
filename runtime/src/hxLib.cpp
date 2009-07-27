@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <hxObject.h>
 #include <string>
 #include <map>
