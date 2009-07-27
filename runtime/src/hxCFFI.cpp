@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <hxObject.h>
 // Get headers etc.
 
