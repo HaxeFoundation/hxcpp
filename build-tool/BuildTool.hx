@@ -404,6 +404,7 @@ class BuildTool
                 case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
                 case "objdir" : c.mObjDir = substitute((el.att.value));
                 case "outflag" : c.mOutFlag = substitute((el.att.value));
+                case "exe" : c.mExe = substitute((el.att.name));
             }
       }
 
@@ -423,6 +424,7 @@ class BuildTool
                 case "outflag" : l.mOutFlag = (substitute(el.att.value));
                 case "libdir" : l.mLibDir = (substitute(el.att.name));
                 case "ranlib" : l.mRanLib = (substitute(el.att.name));
+                case "exe" : l.mExe = (substitute(el.att.name));
             }
       }
 
@@ -546,6 +548,10 @@ class BuildTool
          }
       }
    
+      var os = neko.Sys.getEnv("OSTYPE");
+      if (os == null)
+         os = neko.Sys.systemName();
+
       var os = neko.Sys.getEnv("OSTYPE");
 
       for(arg in args)
