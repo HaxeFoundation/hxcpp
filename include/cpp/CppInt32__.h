@@ -31,7 +31,7 @@ public:
    static inline CppInt32__ _xor(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue ^ b.mValue  ); }
    static inline CppInt32__ neg(CppInt32__ a) { return CppInt32__( -a.mValue ); }
    static inline CppInt32__ complement(CppInt32__ a) { return CppInt32__( ~a.mValue ); }
-   static inline CppInt32__ compare(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue - b.mValue ); }
+   static inline int compare(CppInt32__ a,CppInt32__ b) { return ( a.mValue - b.mValue ); }
 
    inline bool operator==(const CppInt32__ &inRHS) const { return mValue == inRHS.mValue; }
 

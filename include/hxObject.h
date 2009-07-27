@@ -5,11 +5,11 @@
 
 #include <wchar.h>
 #include <string.h>
-#include <stdint.h>
 
 #ifdef HX_LINUX
 #include <sys/typed.h>
 #include <unistd.h>
+#include <stdint.h>
 #endif
 
 #include <hxMacros.h>
