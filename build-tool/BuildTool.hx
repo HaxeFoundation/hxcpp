@@ -552,8 +552,6 @@ class BuildTool
       if (os == null)
          os = neko.Sys.systemName();
 
-      var os = neko.Sys.getEnv("OSTYPE");
-
       for(arg in args)
       {
          if (arg.substr(0,2)=="-D")
