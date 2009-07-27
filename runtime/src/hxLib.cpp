@@ -201,7 +201,15 @@ String FindHaxelib(String inLib)
       path = GetFileContents(dir + L".current");
       if (path.length==0)
          return null();
-      path = dir + path + L"/";
+      // Replace "." with "," ...
+      String with_commas;
+      for(int i=0;i<path.length;i++)
+         if (path.getChar(i)=='.')
+            with_commas += STRING(L",",1);
+         else
+            with_commas += path.substr(i,1);
+
+      path = dir + with_commas + L"/";
    }
 
    return path;
