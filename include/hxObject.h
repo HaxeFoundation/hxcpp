@@ -496,7 +496,8 @@ public:
     Dynamic operator+(const int &i) const;
     Dynamic operator+(const double &d) const;
 
-    double operator%(const Dynamic &inRHS) const;
+   double operator%(const Dynamic &inRHS) const;
+   double operator-() const { return mPtr ? - mPtr->__ToDouble() : 0.0; }
 
    DYNAMIC_ARITH( - )
    DYNAMIC_ARITH( * )
@@ -618,6 +619,7 @@ inline bool operator != (int inLHS,const null &inRHS)  { return true; }
 ARITH_DYNAMIC( - )
 ARITH_DYNAMIC( + )
 ARITH_DYNAMIC( / )
+ARITH_DYNAMIC( * )
 
  double operator%(const int &inLHS,const Dynamic &inRHS);
  double operator%(const double &inLHS,const Dynamic &inRHS);
