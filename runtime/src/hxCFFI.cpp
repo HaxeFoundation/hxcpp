@@ -115,7 +115,7 @@ void * val_to_kind(hxObject * arg1,vkind arg2)
 {
 	if (arg1==0)
 		return 0;
-	if ((int)arg2 == arg1->__GetType())
+	if ((int)(intptr_t)arg2 == arg1->__GetType())
 		return arg1->__GetHandle();
 	return 0;
 }
@@ -181,7 +181,7 @@ hxObject * alloc_empty_object() { return new hxAnon_obj(); }
 
 hxObject * alloc_abstract(vkind arg1,void * arg2)
 {
-	int type = (int)arg1;
+	int type = (int)(intptr_t)arg1;
 	return new Abstract_obj(type,arg2);
 }
 
@@ -553,7 +553,7 @@ vkind alloc_kind()
 
 void kind_share(vkind *inKind,const char *inName)
 {
-	int k = (int)*inKind;
+	int k = (int)(intptr_t)*inKind;
 	hxcpp_kind_share(k,inName);
 	*inKind = (vkind)k;
 }
