@@ -152,7 +152,17 @@ class Linker
          }
          else
             args.push(out + out_name);
-         args = args.concat(mFlags).concat(inTarget.mFlags).concat(inObjs).concat(inTarget.mLibs);
+
+
+         // Place list of obj files in a file called "all_objs"
+         var fname = "all_objs";
+         var fout = neko.io.File.write(fname,false);
+         for(obj in inObjs)
+            fout.writeString(obj + "\n");
+         fout.close();
+         args = args.concat(mFlags).concat(inTarget.mFlags);
+         args.push("@" + fname );
+         args = args.concat(inTarget.mLibs);
 
          neko.Lib.println( mExe + " " + args.join(" ") );
          var result = neko.Sys.command( mExe, args );
@@ -548,9 +558,7 @@ class BuildTool
          }
       }
    
-      var os = neko.Sys.getEnv("OSTYPE");
-      if (os == null)
-         os = neko.Sys.systemName();
+      var os = neko.Sys.systemName();
 
       for(arg in args)
       {
@@ -560,12 +568,6 @@ class BuildTool
             makefile = arg;
          else
             targets.push(arg);
-      }
-
-      if (os==null && !defines.exists("iphoneos") && !defines.exists("iphonesim") )
-      {
-         neko.Lib.println("No OSTYPE - assuming windows");
-         os = "windows";
       }
 
       if (defines.exists("iphoneos"))
@@ -580,7 +582,7 @@ class BuildTool
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
       }
-      else if ( (new EReg("windows","i")).match(os) )
+      else if ( (new EReg("window","i")).match(os) )
       {
          defines.set("windows","windows");
          defines.set("BINDIR","Windows");
@@ -590,7 +592,7 @@ class BuildTool
          defines.set("linux","linux");
          defines.set("BINDIR","Linux");
       }
-      else if ( (new EReg("darwin","i")).match(os) )
+      else if ( (new EReg("mac","i")).match(os) )
       {
          defines.set("macos","macos");
          defines.set("apple","apple");

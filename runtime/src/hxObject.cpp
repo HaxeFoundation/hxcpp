@@ -1138,10 +1138,25 @@ char * String::__CStr() const
 
 Array<String> String::split(const String &inDelimiter) const
 {
-   Array<String> result(0,1);
    int len = inDelimiter.length;
    int pos = 0;
    int last = 0;
+   if (len==0)
+   {
+      // Special case of splitting into characters - use efficient code...
+      int chars = length;
+      Array<String> result(chars,chars);
+      for(int i=0;i<chars;i++)
+      {
+         wchar_t *ptr = hxNewString(1);
+         ptr[0] = __s[i];
+         ptr[1] = '\0';
+         result[i] = String(ptr,1);
+      }
+      return result;
+   }
+
+   Array<String> result(0,1);
    while(pos+len <=length )
    {
       if (!wcsncmp(__s+pos,inDelimiter.__s,len))
@@ -1562,6 +1577,10 @@ STATIC_DEFINE_DYNAMIC_FUNC2(Math_obj,pow,return);
 STATIC_DEFINE_DYNAMIC_FUNC1(Math_obj,log,return);
 STATIC_DEFINE_DYNAMIC_FUNC2(Math_obj,min,return);
 STATIC_DEFINE_DYNAMIC_FUNC2(Math_obj,max,return);
+STATIC_DEFINE_DYNAMIC_FUNC1(Math_obj,atan,return);
+STATIC_DEFINE_DYNAMIC_FUNC1(Math_obj,asin,return);
+STATIC_DEFINE_DYNAMIC_FUNC1(Math_obj,acos,return);
+STATIC_DEFINE_DYNAMIC_FUNC1(Math_obj,exp,return);
 STATIC_DEFINE_DYNAMIC_FUNC1(Math_obj,isNaN,return);
 STATIC_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
 
@@ -1581,6 +1600,10 @@ Dynamic Math_obj::__Field(const String &inString)
    if (inString==L"log") return log_dyn();
    if (inString==L"min") return min_dyn();
    if (inString==L"max") return max_dyn();
+   if (inString==L"atan") return max_dyn();
+   if (inString==L"acos") return max_dyn();
+   if (inString==L"asin") return max_dyn();
+   if (inString==L"exp") return max_dyn();
    if (inString==L"isNaN") return isNaN_dyn();
    if (inString==L"isFinite") return isFinite_dyn();
    return null();
@@ -1605,7 +1628,10 @@ static String sMathFields[] = {
    STRING(L"atan2",5),
    STRING(L"abs",3),
    STRING(L"pow",3),
-   STRING(L"isNaN",5),
+   STRING(L"atan",4),
+   STRING(L"acos",4),
+   STRING(L"asin",4),
+   STRING(L"exp",3),
    STRING(L"isFinite",8),
    String(null()) };
 

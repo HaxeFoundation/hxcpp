@@ -31,6 +31,11 @@ public:
    inline static double max(double inA,double inB) { return inA>inB ? inA:inB; }
    inline static double min(double inA,double inB) { return inA<inB ? inA:inB; }
 
+   inline static double atan(double inA) { return ::atan(inA); }
+   inline static double asin(double inA) { return ::asin(inA); }
+   inline static double acos(double inA) { return ::acos(inA); }
+   inline static double exp(double inA) { return ::exp(inA); }
+
 
    static bool isNaN(double inX);
    static bool isFinite(double inX);
@@ -50,6 +55,10 @@ public:
    static Dynamic log_dyn();
    static Dynamic min_dyn();
    static Dynamic max_dyn();
+   static Dynamic atan_dyn();
+   static Dynamic asin_dyn();
+   static Dynamic acos_dyn();
+   static Dynamic exp_dyn();
    static Dynamic isNaN_dyn();
    static Dynamic isFinite_dyn();
 
