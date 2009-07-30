@@ -228,10 +228,12 @@
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
   <flag value="-libpath:lib"/>
+  <fromfile value="@"/>
   <outflag value="-out:"/>
 </linker>
 
 <linker id="exe" exe="link.exe" if="windows">
+  <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
   <flag value="-debug" if="debug"/>

@@ -119,6 +119,7 @@ class Linker
    public var mNamePrefix:String;
    public var mLibDir:String;
    public var mRanLib:String;
+   public var mFromFile:String;
 
    public function new(inExe:String)
    {
@@ -128,6 +129,7 @@ class Linker
       mNamePrefix = "";
       mLibDir = "";
       mRanLib = "";
+      mFromFile = "";
    }
    public function link(inTarget:Target,inObjs:Array<String>)
    {
@@ -153,15 +155,21 @@ class Linker
          else
             args.push(out + out_name);
 
+          args = args.concat(mFlags).concat(inTarget.mFlags);
 
          // Place list of obj files in a file called "all_objs"
-         var fname = "all_objs";
-         var fout = neko.io.File.write(fname,false);
-         for(obj in inObjs)
-            fout.writeString(obj + "\n");
-         fout.close();
-         args = args.concat(mFlags).concat(inTarget.mFlags);
-         args.push("@" + fname );
+			if (mFromFile!="")
+			{
+            var fname = "all_objs";
+            var fout = neko.io.File.write(fname,false);
+            for(obj in inObjs)
+               fout.writeString(obj + "\n");
+            fout.close();
+            args.push("@" + fname );
+			}
+			else
+            args = args.concat(inObjs);
+
          args = args.concat(inTarget.mLibs);
 
          neko.Lib.println( mExe + " " + args.join(" ") );
@@ -438,6 +446,7 @@ class BuildTool
                 case "outflag" : l.mOutFlag = (substitute(el.att.value));
                 case "libdir" : l.mLibDir = (substitute(el.att.name));
                 case "ranlib" : l.mRanLib = (substitute(el.att.name));
+                case "fromfile" : l.mFromFile = (substitute(el.att.value));
                 case "exe" : l.mExe = (substitute(el.att.name));
             }
       }
