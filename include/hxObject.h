@@ -37,6 +37,12 @@
 #endif
 
 
+#if defined(_MSC_VER) && _MSC_VER < 1201
+#error MSVC 7.1 does not support template specialization and is not sopported by HXCPP
+#endif
+
+
+
 // TODO: Construct array-dynamic from foreign array
 
 // Basic mapping from haxe -> c++
@@ -134,7 +140,9 @@ inline int hxUShr(int inData,int inShift)
 
 template<typename TL,typename TR>
 double hxMod(TL inLHS,TR inRHS) { return hxDoubleMod(inLHS,inRHS); }
+#if !defined(_MSC_VER) || _MSC_VER > 1399
 inline int hxMod(int inLHS,int inRHS) { return inLHS % inRHS; }
+#endif
 
 
 // --- null value  ---------------------------------------------------------
@@ -145,6 +153,14 @@ inline int hxMod(int inLHS,int inRHS) { return inLHS % inRHS; }
 class null
 {
    public:
+     inline null(){ } 
+
+     template<typename T> explicit inline null(const hxObjectPtr<T> &){ } 
+     template<typename T> explicit inline null(const String &){ } 
+     explicit inline null(double){ } 
+     explicit inline null(int){ } 
+     explicit inline null(bool){ } 
+
      operator char * () const { return 0; }
      operator wchar_t * () const { return 0; }
      operator bool () const { return false; }
@@ -162,7 +178,6 @@ class null
      bool operator == (bool inRHS) const { return false; }
      bool operator != (bool inRHS) const { return true; }
 };
-
 
 typedef null Void;
 
@@ -262,11 +277,12 @@ public:
    hxObjectPtr() : mPtr(0) { }
    hxObjectPtr(OBJ_ *inObj) : mPtr(inObj) { }
    hxObjectPtr(const null &inNull) : mPtr(0) { }
-   hxObjectPtr(const hxObjectPtr &inOther) : mPtr( inOther.GetPtr() ) {  }
 
    template<typename SOURCE_>
    hxObjectPtr(const hxObjectPtr<SOURCE_> &inObjectPtr)
       { mPtr = dynamic_cast<OBJ_ *>(inObjectPtr.GetPtr()); }
+
+   hxObjectPtr(const hxObjectPtr<OBJ_> &inOther) : mPtr( inOther.GetPtr() ) {  }
 
    hxObjectPtr &operator=(const null &inNull) { mPtr = 0; return *this; }
    hxObjectPtr &operator=(Ptr inRHS) { mPtr = inRHS; return *this; }
@@ -290,6 +306,12 @@ protected:
    OBJ_ *mPtr;
 };
 
+template<typename T>
+inline bool operator==(const null &inLHS,const hxObjectPtr<T> &inRHS) { return inRHS==inLHS; }
+
+template<typename T>
+inline bool operator!=(const null &inLHS,const hxObjectPtr<T> &inRHS) { return inRHS!=inLHS; }
+
 // --- String --------------------------------------------------------
 //
 // Basic String type for hxcpp.
@@ -308,10 +330,10 @@ public:
    inline String(const wchar_t *inPtr) : __s(inPtr) { length = inPtr ? (int)wcslen(inPtr) : 0; }
    inline String(const wchar_t *inPtr,int inLen) : __s(inPtr), length(inLen) { }
    inline String(const String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
-    String(const int &inRHS);
-    String(const cpp::CppInt32__ &inRHS);
-    String(const double &inRHS);
-    String(const bool &inRHS);
+   String(const int &inRHS);
+   String(const cpp::CppInt32__ &inRHS);
+   String(const double &inRHS);
+   String(const bool &inRHS);
    inline String(const null &inRHS) : __s(0), length(0) { }
    // Construct from utf8 string
     String(const char *inPtr,int inLen);
@@ -364,8 +386,8 @@ public:
    }
 
 
-    String &operator+=(String inRHS);
-    String operator+(String inRHS) const;
+   String &operator+=(String inRHS);
+   String operator+(String inRHS) const;
    String operator+(const int &inRHS) const { return *this + String(inRHS); }
    String operator+(const bool &inRHS) const { return *this + String(inRHS); }
    String operator+(const double &inRHS) const { return *this + String(inRHS); }
@@ -422,13 +444,12 @@ class Dynamic : public hxObjectPtr<hxObject>
 public:
 
    Dynamic() {};
-    Dynamic(int inVal);
-    Dynamic(const cpp::CppInt32__ &inVal);
-    Dynamic(bool inVal);
-    Dynamic(double inVal);
+   Dynamic(int inVal);
+   Dynamic(const cpp::CppInt32__ &inVal);
+   Dynamic(bool inVal);
+   Dynamic(double inVal);
    Dynamic(hxObject *inObj) : super(inObj) { }
-    Dynamic(const String &inString);
-    Dynamic(const wchar_t *inString);
+   Dynamic(const String &inString);
    Dynamic(const null &inNull) : super(0) { }
    Dynamic(const Dynamic &inRHS) : super(inRHS.GetPtr()) { }
 
@@ -1174,6 +1195,7 @@ public:
    Array() { }
    Array(int inSize,int inReserve) : super( OBJ_::__new(inSize,inReserve) ) { }
    Array(const null &inNull) : super(0) { }
+   Array(Ptr inPtr) : super(inPtr) { }
 
 
    // Construct from our type ...

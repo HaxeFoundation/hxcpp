@@ -57,6 +57,8 @@ void hxcpp_kind_share(int &ioKind,const char *inName)
    ioKind = kind;
 }
 
+#define THROWS throw(Dynamic)
+
 
 extern "C" {
 
@@ -69,13 +71,13 @@ extern "C" {
  For the static link case, these functions are linked directly.
 */
 
-void hx_error()
+void hx_error() THROWS
 {
 	throw Dynamic( STRING(L"ERROR",6) );
 }
 
 
-void val_throw(hxObject * arg1)
+void val_throw(hxObject * arg1) THROWS
 {
 	if (arg1==0)
 	   throw Dynamic(null());
@@ -100,7 +102,7 @@ int val_type(hxObject * arg1)
 }
 
 
-vkind val_kind(hxObject * arg1)
+vkind val_kind(hxObject * arg1) THROWS
 {
 	if (arg1==0)
 	   throw Dynamic( STRING(L"Value has no 'kind'",19) );
@@ -433,13 +435,13 @@ void val_buffer(buffer inBuffer,value inValue)
 
 
 // Call Function 
-hxObject * val_call0(hxObject * arg1)
+hxObject * val_call0(hxObject * arg1) THROWS
 {
 	if (!arg1) throw NULL_FUNCTION_POINTER;
 	return arg1->__run().GetPtr();
 }
 
-hxObject * val_call0_traceexcept(hxObject * arg1)
+hxObject * val_call0_traceexcept(hxObject * arg1) THROWS
 {
 	try
 	{
@@ -456,28 +458,28 @@ hxObject * val_call0_traceexcept(hxObject * arg1)
 }
 
 
-hxObject * val_call1(hxObject * arg1,hxObject * arg2)
+hxObject * val_call1(hxObject * arg1,hxObject * arg2) THROWS
 {
 	if (!arg1) throw NULL_FUNCTION_POINTER;
 	return arg1->__run(arg2).GetPtr();
 }
 
 
-hxObject * val_call2(hxObject * arg1,hxObject * arg2,hxObject * arg3)
+hxObject * val_call2(hxObject * arg1,hxObject * arg2,hxObject * arg3) THROWS
 {
 	if (!arg1) throw NULL_FUNCTION_POINTER;
 	return arg1->__run(arg2,arg3).GetPtr();
 }
 
 
-hxObject * val_call3(hxObject * arg1,hxObject * arg2,hxObject * arg3,hxObject * arg4)
+hxObject * val_call3(hxObject * arg1,hxObject * arg2,hxObject * arg3,hxObject * arg4) THROWS
 {
 	if (!arg1) throw NULL_FUNCTION_POINTER;
 	return arg1->__run(arg2,arg3,arg4).GetPtr();
 }
 
 
-hxObject * val_callN(hxObject * arg1,hxObject * arg2)
+hxObject * val_callN(hxObject * arg1,hxObject * arg2) THROWS
 {
 	if (!arg1) throw NULL_FUNCTION_POINTER;
 	return arg1->__Run( Dynamic(arg2) ).GetPtr();
@@ -485,35 +487,35 @@ hxObject * val_callN(hxObject * arg1,hxObject * arg2)
 
 
 // Call object field
-hxObject * val_ocall0(hxObject * arg1,int arg2)
+hxObject * val_ocall0(hxObject * arg1,int arg2) THROWS
 {
 	if (!arg1) throw INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run().GetPtr();
 }
 
 
-hxObject * val_ocall1(hxObject * arg1,int arg2,hxObject * arg3)
+hxObject * val_ocall1(hxObject * arg1,int arg2,hxObject * arg3) THROWS
 {
 	if (!arg1) throw INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run(arg3).GetPtr();
 }
 
 
-hxObject * val_ocall2(hxObject * arg1,int arg2,hxObject * arg3,hxObject * arg4)
+hxObject * val_ocall2(hxObject * arg1,int arg2,hxObject * arg3,hxObject * arg4) THROWS
 {
 	if (!arg1) throw INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run(arg3,arg4).GetPtr();
 }
 
 
-hxObject * val_ocall3(hxObject * arg1,int arg2,hxObject * arg3,hxObject * arg4,hxObject * arg5)
+hxObject * val_ocall3(hxObject * arg1,int arg2,hxObject * arg3,hxObject * arg4,hxObject * arg5) THROWS
 {
 	if (!arg1) throw INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run(arg3,arg4,arg5).GetPtr();
 }
 
 
-hxObject * val_ocallN(hxObject * arg1,int arg2,hxObject * arg3)
+hxObject * val_ocallN(hxObject * arg1,int arg2,hxObject * arg3) THROWS
 {
 	if (!arg1) throw INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run(Dynamic(arg3)).GetPtr();
@@ -528,7 +530,7 @@ int val_id(const char * arg1)
 }
 
 
-void alloc_field(hxObject * arg1,int arg2,hxObject * arg3)
+void alloc_field(hxObject * arg1,int arg2,hxObject * arg3) THROWS
 {
 	if (!arg1) throw INVALID_OBJECT;
 	arg1->__SetField(__hxcpp_field_from_id(arg2),arg3);
@@ -539,7 +541,7 @@ void hxcpp_alloc_field(hxObject * arg1,int arg2,hxObject * arg3)
 }
 
 
-hxObject * val_field(hxObject * arg1,int arg2)
+hxObject * val_field(hxObject * arg1,int arg2) THROWS
 {
 	if (!arg1) throw INVALID_OBJECT;
 	return arg1->__IField(arg2).GetPtr();

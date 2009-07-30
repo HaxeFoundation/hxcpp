@@ -410,8 +410,6 @@ Dynamic::Dynamic(int inVal) : super( new IntData(inVal) ) { }
 Dynamic::Dynamic(double inVal) : super( new DoubleData(inVal) ) { }
 Dynamic::Dynamic(const cpp::CppInt32__ &inVal) : super( new IntData((int)inVal) ) { }
 Dynamic::Dynamic(const String &inVal) : super( inVal.__s ? new StringData(inVal) : 0 ) { }
-Dynamic::Dynamic(const wchar_t *inString) :
-     super( inString ? new StringData(String(inString)) : 0 ) { }
 
 
 Dynamic Dynamic::operator+(const Dynamic &inRHS) const
@@ -479,7 +477,7 @@ Dynamic::operator haxe::Int32 () const
 
 // -----
 
-String hxAnon_obj::__ToString() const { return L"Anon"; }
+String hxAnon_obj::__ToString() const { return STR(L"Anon"); }
 
 
 Dynamic hxAnon_obj::__Create(DynamicArray inArgs) { return hxAnon(new hxAnon_obj); }
@@ -488,7 +486,7 @@ Class hxAnon_obj::__mClass;
 
 void hxAnon_obj::__boot()
 {
-   Static(__mClass) = RegisterClass(STRING(L"__Anon",6),TCanCast<hxAnon_obj>,sNone,sNone,0,0,0);
+   Static(__mClass) = RegisterClass(STR(L"__Anon"),TCanCast<hxAnon_obj>,sNone,sNone,0,0,0);
 }
 
 bool __hx_anon_remove(hxAnon inObj,String inKey)
@@ -713,21 +711,21 @@ DEFINE_ARRAY_FUNC1(unshift);
 
 Dynamic hxArrayBase::__Field(const String &inString)
 {
-   if (inString==L"length") return Dynamic((int)size());
-   if (inString==L"concat") return concat_dyn();
-   if (inString==L"insert") return insert_dyn();
-   if (inString==L"iterator") return iterator_dyn();
-   if (inString==L"join") return join_dyn();
-   if (inString==L"pop") return pop_dyn();
-   if (inString==L"push") return push_dyn();
-   if (inString==L"remove") return remove_dyn();
-   if (inString==L"reverse") return reverse_dyn();
-   if (inString==L"shift") return shift_dyn();
-   if (inString==L"splice") return splice_dyn();
-   if (inString==L"slice") return slice_dyn();
-   if (inString==L"sort") return sort_dyn();
-   if (inString==L"toString") return toString_dyn();
-   if (inString==L"unshift") return unshift_dyn();
+   if (inString==STR(L"length")) return Dynamic((int)size());
+   if (inString==STR(L"concat")) return concat_dyn();
+   if (inString==STR(L"insert")) return insert_dyn();
+   if (inString==STR(L"iterator")) return iterator_dyn();
+   if (inString==STR(L"join")) return join_dyn();
+   if (inString==STR(L"pop")) return pop_dyn();
+   if (inString==STR(L"push")) return push_dyn();
+   if (inString==STR(L"remove")) return remove_dyn();
+   if (inString==STR(L"reverse")) return reverse_dyn();
+   if (inString==STR(L"shift")) return shift_dyn();
+   if (inString==STR(L"splice")) return splice_dyn();
+   if (inString==STR(L"slice")) return slice_dyn();
+   if (inString==STR(L"sort")) return sort_dyn();
+   if (inString==STR(L"toString")) return toString_dyn();
+   if (inString==STR(L"unshift")) return unshift_dyn();
    return null();
 }
 
@@ -769,8 +767,8 @@ DEFINE_DYNAMIC_FUNC0(ArrayIterator,next,return)
 
 Dynamic ArrayIterator::__Field(const String &inString)
 {
-   if (inString==L"hasNext") return hasNext_dyn();
-   if (inString==L"next") return next_dyn();
+   if (inString==STR(L"hasNext")) return hasNext_dyn();
+   if (inString==STR(L"next")) return next_dyn();
    return null();
 }
 
@@ -1053,7 +1051,7 @@ String String::fromCharCode( int c )
 
 String String::charAt( int at ) const
 {
-   if (at<0 || at>=length) return L"";
+   if (at<0 || at>=length) return STR(L"");
    return fromCharCode(__s[at]);
 }
 
@@ -1273,16 +1271,16 @@ DEFINE_STRING_FUNC0(toUpperCase);
 
 Dynamic String::__Field(const String &inString)
 {
-   if (inString==L"length") return length;
-   if (inString==L"charAt") return charAt_dyn();
-   if (inString==L"charCodeAt") return charCodeAt_dyn();
-   if (inString==L"indexOf") return indexOf_dyn();
-   if (inString==L"lastIndexOf") return lastIndexOf_dyn();
-   if (inString==L"split") return split_dyn();
-   if (inString==L"substr") return substr_dyn();
-   if (inString==L"toLowerCase") return toLowerCase_dyn();
-   if (inString==L"toUpperCase") return toUpperCase_dyn();
-   if (inString==L"toString") return toString_dyn();
+   if (inString==STR(L"length")) return length;
+   if (inString==STR(L"charAt")) return charAt_dyn();
+   if (inString==STR(L"charCodeAt")) return charCodeAt_dyn();
+   if (inString==STR(L"indexOf")) return indexOf_dyn();
+   if (inString==STR(L"lastIndexOf")) return lastIndexOf_dyn();
+   if (inString==STR(L"split")) return split_dyn();
+   if (inString==STR(L"substr")) return substr_dyn();
+   if (inString==STR(L"toLowerCase")) return toLowerCase_dyn();
+   if (inString==STR(L"toUpperCase")) return toUpperCase_dyn();
+   if (inString==STR(L"toString")) return toString_dyn();
    return null();
 }
 
@@ -1586,26 +1584,26 @@ STATIC_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
 
 Dynamic Math_obj::__Field(const String &inString)
 {
-   if (inString==L"floor") return floor_dyn();
-   if (inString==L"ceil") return ceil_dyn();
-   if (inString==L"round") return round_dyn();
-   if (inString==L"random") return random_dyn();
-   if (inString==L"sqrt") return sqrt_dyn();
-   if (inString==L"cos") return cos_dyn();
-   if (inString==L"sin") return sin_dyn();
-   if (inString==L"tan") return tan_dyn();
-   if (inString==L"atan2") return atan2_dyn();
-   if (inString==L"abs") return abs_dyn();
-   if (inString==L"pow") return pow_dyn();
-   if (inString==L"log") return log_dyn();
-   if (inString==L"min") return min_dyn();
-   if (inString==L"max") return max_dyn();
-   if (inString==L"atan") return max_dyn();
-   if (inString==L"acos") return max_dyn();
-   if (inString==L"asin") return max_dyn();
-   if (inString==L"exp") return max_dyn();
-   if (inString==L"isNaN") return isNaN_dyn();
-   if (inString==L"isFinite") return isFinite_dyn();
+   if (inString==STR(L"floor")) return floor_dyn();
+   if (inString==STR(L"ceil")) return ceil_dyn();
+   if (inString==STR(L"round")) return round_dyn();
+   if (inString==STR(L"random")) return random_dyn();
+   if (inString==STR(L"sqrt")) return sqrt_dyn();
+   if (inString==STR(L"cos")) return cos_dyn();
+   if (inString==STR(L"sin")) return sin_dyn();
+   if (inString==STR(L"tan")) return tan_dyn();
+   if (inString==STR(L"atan2")) return atan2_dyn();
+   if (inString==STR(L"abs")) return abs_dyn();
+   if (inString==STR(L"pow")) return pow_dyn();
+   if (inString==STR(L"log")) return log_dyn();
+   if (inString==STR(L"min")) return min_dyn();
+   if (inString==STR(L"max")) return max_dyn();
+   if (inString==STR(L"atan")) return max_dyn();
+   if (inString==STR(L"acos")) return max_dyn();
+   if (inString==STR(L"asin")) return max_dyn();
+   if (inString==STR(L"exp")) return max_dyn();
+   if (inString==STR(L"isNaN")) return isNaN_dyn();
+   if (inString==STR(L"isFinite")) return isFinite_dyn();
    return null();
 }
 

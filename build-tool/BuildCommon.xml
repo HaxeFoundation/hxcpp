@@ -1,6 +1,55 @@
 <xml>
 
+<!-- You can override the in a "vars" section on your own .hxcpp_config -->
+<!-- eg:
+
+<xml>
+
+  <section id="vars">
+     <set name="IPHONE_VER" value="2.2.1"/>
+  </section>
+
+  <section id="exes">
+     <linker id="dll" if="windows">
+        <flag value = "-libpath:e:\VS8\DirectXSDK\Lib\x86"/>
+     </linker>
+  </section>
+
+</xml>
+
+-->
+
+
 <set name="DBG" value="-debug" if="debug"/>
+<set name="IPHONE_VER" value="2.2.1"/>
+<set name="STD_MODULE_LINK" value="dll"/>
+<set name="STD_MODULE_LINK" value="static" if="iphoneos"/>
+<set name="STD_MODULE_LINK" value="static" if="iphonesim"/>
+
+
+<set name="LIBEXTRA" value=".iphoneos" if="iphoneos"/>
+<set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
+
+
+<set name="ZLIB_DIR" value="runtime/thirdparty/zlib-1.2.3"/>
+<set name="PCRE_DIR" value="runtime/thirdparty/pcre-7.8"/>
+<set name="GC_DIR" value="thirdparty/gc-7.1"/>
+<set name="AO_VERSION" value="1.2"/>
+
+<set name="static" value="1" if="iphoneos"/>
+<set name="static" value="1" if="iphonesim"/>
+
+<set name="haxelink" value="exe" unless="static"/>
+<set name="haxelink" value="static" if="static"/>
+
+
+<include name="${HXCPP_CONFIG}" section="vars" if ="HXCPP_CONFIG"/>
+<include name="${HOME}/.hxcpp_config.xml" section="vars" unless ="windows" noerror="1"/>
+<include name="${USERPROFILE}/.hxcpp_config.xml" section="vars" if ="windows" noerror="1"/>
+
+
+<!-- You can override the exes an "exe" section on your own .hxcpp_config -->
+<!-- You can use replace="1" to change the compiler, or omit to add flags -->
 
 <!-- LINUX TOOLS -------------------------------------->
 
@@ -38,7 +87,6 @@
 
 <!-- IPHONE TOOLS -------------------------------------------------->
 
-<set name="IPHONE_VER" value="2.2.1"/>
 
 <compiler id="iPhoneOS" exe="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0" if="iphoneos">
   <flag value="-c"/>
@@ -195,17 +243,6 @@
 
 <!-- Library files & targets -------------------------------------->
 
-<set name="STD_MODULE_LINK" value="dll"/>
-<set name="STD_MODULE_LINK" value="static" if="iphoneos"/>
-<set name="STD_MODULE_LINK" value="static" if="iphonesim"/>
-
-
-<set name="LIBEXTRA" value=".iphoneos" if="iphoneos"/>
-<set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
-
-
-<set name="GC_DIR" value="thirdparty/gc-7.1"/>
-<set name="AO_VERSION" value="1.2"/>
 
 <files id="runtime" dir="${HXCPP}">
   <depend name="${HXCPP}/include/hxMacros.h"/>
@@ -294,7 +331,6 @@
   <lib name="-ldl" if="linux"/>
 </target>
 
-<set name="PCRE_DIR" value="runtime/thirdparty/pcre-7.8"/>
 
 <files id="regexp" dir="${HXCPP}">
   <depend name="${HXCPP}/include/hxMacros.h"/>
@@ -335,7 +371,6 @@
   <files id="regexp"/>
 </target>
 
-<set name="ZLIB_DIR" value="runtime/thirdparty/zlib-1.2.3"/>
 
 <files id="zlib" dir="${HXCPP}">
   <depend name="${HXCPP}/include/hxMacros.h"/>
@@ -381,11 +416,6 @@
   <dir name="obj"/>
 </target>
 
-<set name="static" value="1" if="iphoneos"/>
-<set name="static" value="1" if="iphonesim"/>
-
-<set name="haxelink" value="exe" unless="static"/>
-<set name="haxelink" value="static" if="static"/>
 
 <target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
@@ -398,11 +428,11 @@
   <lib name="-ldl" if="linux"/>
 </target>
 
-<!-- Add user config if provided ------------------>
+<!-- Add user config if provided, "exes" section ------------------>
 
-<include name="${HXCPP_CONFIG}" if ="HXCPP_CONFIG"/>
-<include name="${HOME}/.hxcpp_config.xml" unless ="windows" noerror="1"/>
-<include name="${USERPROFILE}/.hxcpp_config.xml" if ="windows" noerror="1"/>
+<include name="${HXCPP_CONFIG}" section="exes" if ="HXCPP_CONFIG"/>
+<include name="${HOME}/.hxcpp_config.xml" section="exes" unless ="windows" noerror="1"/>
+<include name="${USERPROFILE}/.hxcpp_config.xml" section="exes" if ="windows" noerror="1"/>
 
 </xml>
 

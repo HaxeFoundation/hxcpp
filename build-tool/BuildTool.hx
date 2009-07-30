@@ -319,18 +319,18 @@ class BuildTool
       var xml_slow = Xml.parse(make_contents);
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
 
-      parseXML(xml);
+      parseXML(xml,"");
 
       for(target in inTargets)
          buildTarget(target);
    }
 
 
-   function parseXML(inXML:haxe.xml.Fast)
+   function parseXML(inXML:haxe.xml.Fast,inSection :String)
    {
       for(el in inXML.elements)
       {
-         if (valid(el))
+         if (valid(el,inSection))
          {
             switch(el.name)
             {
@@ -356,7 +356,9 @@ class BuildTool
                    {
                       var make_contents = neko.io.File.getContent(name);
                       var xml_slow = Xml.parse(make_contents);
-                      parseXML(new haxe.xml.Fast(xml_slow.firstElement()));
+                      var section = el.has.section ? el.att.section : "";
+
+                      parseXML(new haxe.xml.Fast(xml_slow.firstElement()),section);
                    }
                    else if (!el.has.noerror)
                    {
@@ -365,6 +367,8 @@ class BuildTool
                 case "target" : 
                    var name = el.att.id;
                    mTargets.set(name,createTarget(el));
+                case "section" : 
+                   parseXML(el,"");
             }
          }
       }
@@ -405,7 +409,7 @@ class BuildTool
                  new Compiler(inXML.att.id,inXML.att.exe);
       for(el in inXML.elements)
       {
-         if (valid(el))
+         if (valid(el,""))
             switch(el.name)
             {
                 case "flag" : c.mFlags.push(substitute(el.att.value));
@@ -426,7 +430,7 @@ class BuildTool
       var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(inXML.att.exe);
       for(el in inXML.elements)
       {
-         if (valid(el))
+         if (valid(el,""))
             switch(el.name)
             {
                 case "flag" : l.mFlags.push(substitute(el.att.value));
@@ -449,13 +453,13 @@ class BuildTool
       var flags = new Array<String>();
       for(el in inXML.elements)
       {
-         if (valid(el))
+         if (valid(el,""))
             switch(el.name)
             {
                 case "file" :
                    var file = new File(substitute(el.att.name),dir,depends,flags);
                    for(f in el.elements)
-                      if (valid(f) && f.name=="depend")
+                      if (valid(f,"") && f.name=="depend")
                          file.mDepends.push( f.att.name );
                    files.push( file );
                 case "depend" : depends.push( substitute(el.att.name) );
@@ -477,7 +481,7 @@ class BuildTool
       var target = new Target(output,tool,toolid);
       for(el in inXML.elements)
       {
-         if (valid(el))
+         if (valid(el,""))
             switch(el.name)
             {
                 case "target" : target.mSubTargets.push( substitute(el.att.id) );
@@ -501,13 +505,23 @@ class BuildTool
    }
 
 
-   public function valid(inEl:haxe.xml.Fast) : Bool
+   public function valid(inEl:haxe.xml.Fast,inSection:String) : Bool
    {
       if (inEl.x.get("if")!=null)
          if (!defined(inEl.x.get("if"))) return false;
 
       if (inEl.has.unless)
          if (defined(inEl.att.unless)) return false;
+
+      if (inSection!="")
+      {
+         if (inEl.name!="section")
+            return false;
+         if (!inEl.has.id)
+            return false;
+         if (inEl.att.id!=inSection)
+            return false;
+      }
 
       return true;
    }
