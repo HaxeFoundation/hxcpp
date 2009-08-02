@@ -179,15 +179,17 @@ static value socket_send_char( value o, value v ) {
 static value socket_send( value o, value data, value pos, value len ) {
 	int p,l,dlen;
 	val_check_kind(o,k_socket);
-	val_check(data,string);
 	val_check(pos,int);
 	val_check(len,int);
+        buffer buf = val_to_buffer(data);
+        if (!buf)
+           hx_failure("not bytebuffer");
 	p = val_int(pos);
 	l = val_int(len);
-	dlen = val_strlen(data);
+	dlen = buffer_size(buf);
 	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
 		return alloc_null();
-	dlen = send(val_sock(o), val_string(data) + p , l, MSG_NOSIGNAL);
+	dlen = send(val_sock(o), buffer_data(buf) + p , l, MSG_NOSIGNAL);
 	if( dlen == SOCKET_ERROR )
 		return block_error();
 	return alloc_int(dlen);
