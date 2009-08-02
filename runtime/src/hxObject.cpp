@@ -776,6 +776,9 @@ Dynamic ArrayIterator::__Field(const String &inString)
 // -------- String ----------------------------------------
 
 #ifdef _MSC_VER
+
+#define WPRINTF wprintf
+
 // vc 7...
 #if _MSC_VER < 1400 
 
@@ -792,6 +795,7 @@ Dynamic ArrayIterator::__Field(const String &inString)
 #else // not _MSC_VER ..
 #define SPRINTF swprintf
 #define SSCANF(str,len,fmt,ptr) swscanf(str,fmt,ptr)
+#define WPRINTF printf
 #endif
 
 String::String(const Dynamic &inRHS)
@@ -1129,7 +1133,7 @@ char * String::__CStr() const
    char *result =  bytes->GetBase();
    if (result)
       return result;
-   return "";
+   return (char *)"";
 }
 
 
@@ -1713,12 +1717,8 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 
 void __trace(Dynamic inObj, Dynamic inData)
 {
-   wprintf(
-           #ifdef _WIN32
-           L"%s:%d: %s\n",
-           #else
-           L"%S:%d: %S\n",
-           #endif
+   printf(
+           "%S:%d: %S\n",
                inData->__Field(L"fileName")->__ToString().__s,
                inData->__Field(L"lineNumber")->__ToInt(),
                inObj.GetPtr() ? inObj->toString().__s : L"null" );
@@ -1889,20 +1889,12 @@ int  __hxcpp_field_to_id( const char *inFieldName )
 
 void __hxcpp_print(Dynamic &inV)
 {
-#ifdef _WIN32
-   wprintf(L"%s",inV->toString().c_str());
-#else
-   wprintf(L"%S",inV->toString().c_str());
-#endif
+   printf("%S",inV->toString().c_str());
 }
 
 void __hxcpp_println(Dynamic &inV)
 {
-#ifdef _WIN32
-   wprintf(L"%s\n",inV->toString().c_str());
-#else
-   wprintf(L"%S\n",inV->toString().c_str());
-#endif
+   printf("%S\n",inV->toString().c_str());
 }
 
 
