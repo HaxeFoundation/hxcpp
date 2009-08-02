@@ -1,18 +1,5 @@
 <project name="hxcpp" url="http://gamehaxe.com/" license="BSD">
     <user name="gamehaxe"/>
     <description>Hxcpp is the c++ backend compiler for haxe.  This release constains the headers, libries and support code required to generate a fully compiled executable from haxe code.</description>
-<version name="1.0.3">
-Fix socket_send.
-Fix Bytes->toString.
-Fix vkind on 64bit systems.
-Fix Int32 compare, exp, acos, asin, atan.
-Fix substr for negative offsets.
-operator ==null/!=null.
-Fix operator * and negate for Dynamic variables.
-Added "@" option for writing obj names to a file for linker.
-Use printf, not wprintf, so output does not disappear on Linux.
-Re-worked .hxcpp_config to allow for a "vars" section.
-Added option for Leopard compiling.
-Moved build-tool to use neko systemName by preference.
-</version>
+<version name="1.0.4">Restore Dynamic(wchar_t *)</version>
 </project>
