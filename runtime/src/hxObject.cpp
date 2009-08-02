@@ -546,6 +546,12 @@ void hxArrayBase::EnsureSize(int inSize) const
 String hxArrayBase::__ToString() const { return "Array"; }
 String hxArrayBase::toString()
 {
+   // Byte-array
+   if (GetElementSize()==1)
+   {
+      return String( (const char *) mBase, length);
+   }
+
    int n = __length();
    String result(L"[",1);
    for(int i=0;i<n;i++)
