@@ -452,6 +452,7 @@ public:
    Dynamic(const String &inString);
    Dynamic(const null &inNull) : super(0) { }
    Dynamic(const Dynamic &inRHS) : super(inRHS.GetPtr()) { }
+   Dynamic(const wchar_t *inStr);
 
     void Set(bool inVal);
     void Set(int inVal);

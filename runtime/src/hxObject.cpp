@@ -410,6 +410,7 @@ Dynamic::Dynamic(int inVal) : super( new IntData(inVal) ) { }
 Dynamic::Dynamic(double inVal) : super( new DoubleData(inVal) ) { }
 Dynamic::Dynamic(const cpp::CppInt32__ &inVal) : super( new IntData((int)inVal) ) { }
 Dynamic::Dynamic(const String &inVal) : super( inVal.__s ? new StringData(inVal) : 0 ) { }
+Dynamic::Dynamic(const wchar_t *inVal) : super( inVal ? new StringData(String(inVal)) : 0 ) { }
 
 
 Dynamic Dynamic::operator+(const Dynamic &inRHS) const
