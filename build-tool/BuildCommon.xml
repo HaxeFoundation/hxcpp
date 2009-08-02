@@ -7,6 +7,7 @@
 
   <section id="vars">
      <set name="IPHONE_VER" value="2.2.1"/>
+     <set name="macos_leopard" value="1"/>
   </section>
 
   <section id="exes">
@@ -264,7 +265,7 @@
   <compilerflag value="-DWIN32_THREADS" if="windows"/>
 
   <compilerflag value="-DX86" if="macos"/>
-  <compilerflag value="-DHAS_X86_THREAD_STATE32___EAX=1" if="macos"/>
+  <compilerflag value="-DHAS_X86_THREAD_STATE32___EAX=1" if="macos" unless="macos_leopard"/>
   <compilerflag value="-DNO_THREAD_REDIRECT" if="macos"/>
   <compilerflag value="-DGC_THREADS" if="macos"/>
   <compilerflag value="-DNO_THREAD_REDIRECT" if="linux"/>
