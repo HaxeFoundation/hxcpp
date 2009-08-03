@@ -7,7 +7,7 @@
 #define STRING(s,len) String( (L"\xffffffff" s) + 1 ,len)
 #endif
 
-#define STR(s) String(s,sizeof(s)/sizeof(wchar_t)-1)
+#define STR(s) STRING(s,sizeof(s)/sizeof(wchar_t)-1)
 
 #define STRING_UTF8(s,len) String( ("\xff\xff\xff\xff" s) + 4 ,len)
 

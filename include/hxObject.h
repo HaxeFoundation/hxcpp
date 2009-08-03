@@ -327,7 +327,7 @@ public:
    void operator delete( void * ) { }
 
    inline String() : length(0), __s(0) { }
-   inline String(const wchar_t *inPtr) : __s(inPtr) { length = inPtr ? (int)wcslen(inPtr) : 0; }
+   String(const wchar_t *inPtr);
    inline String(const wchar_t *inPtr,int inLen) : __s(inPtr), length(inLen) { }
    inline String(const String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
    String(const int &inRHS);
@@ -1617,7 +1617,7 @@ bool  __instanceof(const Dynamic &inValue, const Dynamic &inType);
 // Used for accessing object fields by integer ID, rather than string ID.
 // Used mainly for neko ndll interaction.
  int  __hxcpp_field_to_id( const char *inField );
- const wchar_t *__hxcpp_field_from_id( int f );
+ const String &__hxcpp_field_from_id( int f );
 // Get function pointer from dll file
  Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
 

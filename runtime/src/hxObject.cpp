@@ -85,6 +85,22 @@ void hxCheckOverflow(int x)
       throw Dynamic(String(L"Overflow ")+x);
 }
 
+// Field name management
+
+
+#include <string>
+#include <vector>
+
+typedef Array<String> FieldToString;
+typedef std::map<std::string,int> StringToField;
+
+// These need to be pointers because of the unknown order of static object construction.
+FieldToString *sgFieldToString=0;
+StringToField *sgStringToField=0;
+
+static String sgNullString;
+
+
 
 
 // --- GC helper
@@ -383,6 +399,10 @@ void __boot_hxcpp()
    // GC_disable();
 
    hxObject::__boot();
+
+#ifndef INTERNAL_GC
+   __RegisterStatic(sgFieldToString,sizeof(sgFieldToString));
+#endif
 
    Static(__BoolClass) = RegisterClass(STRING(L"Bool",4),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
    Static(__IntClass) = RegisterClass(STRING(L"Int",3),TCanCast<IntData>,sNone,sNone, 0,0, 0 );
@@ -824,6 +844,7 @@ String::String(const int &inRHS)
    __s = GCStringDup(buf,length);
 }
 
+
 String::String(const cpp::CppInt32__ &inRHS)
 {
    wchar_t buf[100];
@@ -847,6 +868,13 @@ String::String(const char *inPtr,int inLen)
    }
 }
 
+String::String(const wchar_t *inStr)
+{
+   __s = GCStringDup(inStr,length);
+}
+
+
+
 
 
 String::String(const double &inRHS)
@@ -860,13 +888,11 @@ String::String(const bool &inRHS)
 {
    if (inRHS)
    {
-      __s = L"true";
-      length = 4;
+      *this = STR(L"true");
    }
    else
    {
-      __s = L"false";
-      length = 5;
+      *this = STR(L"false");
    }
 }
 
@@ -1481,6 +1507,8 @@ Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue)
 void hxMarkClassStatics()
 {
    ClassMap::iterator end = sClassMap->end();
+   if (sgFieldToString)
+      MarkMember(*sgFieldToString);
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
       // all strings should be constants anyhow - MarkMember(i->first);
@@ -1724,8 +1752,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 
 void __trace(Dynamic inObj, Dynamic inData)
 {
-   printf(
-           "%S:%d: %S\n",
+   printf( "%S:%d: %S\n",
                inData->__Field(L"fileName")->__ToString().__s,
                inData->__Field(L"lineNumber")->__ToInt(),
                inObj.GetPtr() ? inObj->toString().__s : L"null" );
@@ -1851,27 +1878,12 @@ Array<String> __get_args()
    return result;
 }
 
-// Field name management
-
-
-#include <string>
-#include <vector>
-
-typedef std::vector<std::string> FieldToString;
-typedef std::map<std::string,int> StringToField;
-
-FieldToString *sgFieldToString=0;
-StringToField *sgStringToField=0;
-
-
-const wchar_t *__hxcpp_field_from_id( int f )
+const String &__hxcpp_field_from_id( int f )
 {
-   if (!sgFieldToString) return L"";
+   if (!sgFieldToString)
+      return sgNullString;
 
-   //TODO:
-   if (f<0 || f>= sgFieldToString->size()) return L"";
-
-   return hxConvertToWChar( (*sgFieldToString)[f].c_str() );
+   return (*sgFieldToString)[f];
 }
 
 
@@ -1879,7 +1891,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
 {
    if (!sgFieldToString)
    {
-      sgFieldToString = new FieldToString;
+      sgFieldToString = new Array<String>(0,0);
       sgStringToField = new StringToField;
    }
 
@@ -1888,9 +1900,10 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    if (i!=sgStringToField->end())
       return i->second;
 
-   int result = sgFieldToString->size();
+   int result = (*sgFieldToString)->size();
    (*sgStringToField)[f] = result;
-   sgFieldToString->push_back(f);
+   String str(inFieldName,strlen(inFieldName));
+   (*sgFieldToString)->push( String(inFieldName,strlen(inFieldName)));
    return result;
 }
 
