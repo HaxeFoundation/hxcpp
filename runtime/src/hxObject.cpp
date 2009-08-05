@@ -396,13 +396,9 @@ void __boot_hxcpp()
    hxGCInit();
 
 
-   // GC_disable();
+   //__hxcpp_enable(false);
 
    hxObject::__boot();
-
-#ifndef INTERNAL_GC
-   __RegisterStatic(sgFieldToString,sizeof(sgFieldToString));
-#endif
 
    Static(__BoolClass) = RegisterClass(STRING(L"Bool",4),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
    Static(__IntClass) = RegisterClass(STRING(L"Int",3),TCanCast<IntData>,sNone,sNone, 0,0, 0 );
@@ -1892,6 +1888,10 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    if (!sgFieldToString)
    {
       sgFieldToString = new Array<String>(0,0);
+
+      #ifndef INTERNAL_GC
+      __RegisterStatic(sgFieldToString,sizeof(*sgFieldToString));
+      #endif
       sgStringToField = new StringToField;
    }
 
