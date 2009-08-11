@@ -278,6 +278,7 @@
   <file name = "runtime/src/hxObject.cpp"/>
   <file name = "runtime/src/hxDate.cpp"/>
   <file name = "runtime/src/hxGC.cpp"/>
+  <file name = "runtime/src/hxGCInternal.cpp"/>
   <file name = "runtime/src/hxHash.cpp"/>
   <file name = "runtime/src/hxLib.cpp"/>
   <file name = "runtime/src/hxCFFI.cpp"/>

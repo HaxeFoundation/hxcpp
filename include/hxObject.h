@@ -12,6 +12,7 @@
 #endif
 
 #include <hxMacros.h>
+#include <hxGCInternal.h>
 
 // sort...
 #include <algorithm>
@@ -32,9 +33,6 @@
 #undef assert
 #endif
 
-#ifdef IPHONE
- #define INTERNAL_GC
-#endif
 
 
 #if defined(_MSC_VER) && _MSC_VER < 1201
@@ -106,20 +104,10 @@ class hxObject;
 //extern Dynamic  __InvalidConstructor;
 //extern Dynamic  __InvalidArgCount;
 
-// This will be GC'ed
- void *hxNewGCBytes(void *inData,int inSize);
-// This wont be GC'ed
- void *hxNewGCPrivate(void *inData,int inSize);
-
-typedef void (*finalizer)(hxObject *v);
- void  hxGCAddFinalizer( hxObject *, finalizer f );
 
 
 // This is used internally in hxcpp
 wchar_t *hxNewString(int inLen);
-
-// Mark a slab of bytes - not an object
- void hxGCMarkString(const void *inPtr);
 
 // Internal for arrays
 void *hxGCRealloc(void *inData,int inSize);
@@ -128,7 +116,13 @@ void hxMarkClassStatics();
 void hxLibMark();
 void hxGCMark(class hxObject *inPtr);
 
+// This will be GC'ed
+ void *hxNewGCBytes(void *inData,int inSize);
+// This wont be GC'ed
+ void *hxNewGCPrivate(void *inData,int inSize);
 
+
+void  hxGCAddFinalizer( hxObject *, finalizer f );
 
 inline int hxUShr(int inData,int inShift)
 {
@@ -204,6 +198,7 @@ public:
 
    static void __boot();
 
+   virtual void *__root();
    virtual bool __Is(hxObject *inClass) const { return true; }
    // helpers...
    bool __Is(Dynamic inClass ) const;
@@ -302,7 +297,6 @@ public:
    inline class hxFieldRef FieldRef(const String &inString);
    static Class &__SGetClass() { return OBJ_::__SGetClass(); }
 
-protected:
    OBJ_ *mPtr;
 };
 
@@ -1025,8 +1019,7 @@ public:
          for(int i=0;i<length;i++)
             MarkMember(ptr[i]);
       }
-      if (mBase)
-        hxGCMarkString(mBase);
+      HX_MARK_STRING(mBase, ELEM_ *);
    }
 
    int GetElementSize() const { return sizeof(ELEM_); }
@@ -1559,31 +1552,27 @@ template<> inline void InitMember<int>(int &outT) { outT = 0; }
 template<> inline void InitMember<bool>(bool &outT) { outT = false; }
 template<> inline void InitMember<double>(double &outT) { outT = 0; }
 
-#define HX_GC_MARKED   0x80000000
 
 template<typename T> inline void MarkMember(T &outT) { }
 template<typename T> inline void MarkMember(hxObjectPtr<T> &outT)
 {
-   unsigned int *ptr =  (unsigned int *)dynamic_cast<void *>(outT.GetPtr());
-   if (ptr && !( ptr[-1]&HX_GC_MARKED ) )
-      { ptr[-1] |= HX_GC_MARKED; outT->__Mark(); }
+	HX_MARK_OBJECT(outT.mPtr);
 }
 template<> inline void MarkMember(Dynamic &outT)
 {
-   unsigned int *ptr =  (unsigned int *)dynamic_cast<void *>(outT.GetPtr());
-   if (ptr && !( ptr[-1]&HX_GC_MARKED ) )
-      { ptr[-1] |= HX_GC_MARKED; outT->__Mark(); }
+	HX_MARK_OBJECT(outT.mPtr);
 }
 template<typename T> inline void MarkMember(Array<T> &outT)
 {
-   unsigned int *ptr =  (unsigned int *)dynamic_cast<void *>(outT.GetPtr());
-   if (ptr && !( ptr[-1]&HX_GC_MARKED ) )
-      { ptr[-1] |= HX_GC_MARKED; outT->__Mark(); }
+	HX_MARK_OBJECT(outT.mPtr);
 }
 template<> inline void MarkMember<int>(int &outT) {  }
 template<> inline void MarkMember<bool>(bool &outT) {  }
 template<> inline void MarkMember<double>(double &outT) {  }
-template<> inline void MarkMember<String>(String &outT) { if (outT.__s) hxGCMarkString(outT.__s); }
+template<> inline void MarkMember<String>(String &outT)
+{
+   HX_MARK_STRING(outT.__s,wchar_t *);
+}
 template<> inline void MarkMember<Void>(Void &outT) {  }
 
 

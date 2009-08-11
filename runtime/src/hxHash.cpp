@@ -92,7 +92,9 @@ public:
    void __Mark()
    {
       for(Map::iterator i=mMap->begin();i!=mMap->end();++i)
-         hxGCMark(i->second.GetPtr());
+      {
+         HX_MARK_OBJECT(i->second.mPtr);
+      }
    }
 
 };

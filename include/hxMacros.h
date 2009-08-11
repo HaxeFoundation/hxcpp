@@ -23,7 +23,7 @@
    static hxObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
    Dynamic __Field(const String &inString); \
    Dynamic __IField(int inFieldID); \
-   void *GetRoot() { return this; } \
+   void *__root() { return this; } \
    void __GetFields(Array<String> &outFields); \
    Dynamic __SetField(const String &inString,const Dynamic &inValue);
 

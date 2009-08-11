@@ -137,6 +137,10 @@ int hxObject::__Compare(const hxObject *inRHS) const
 }
 
 
+void *hxObject::__root()
+{
+	return this;
+}
 
 Dynamic hxObject::__Field(const String &inString) { return null(); }
 // TODO: this is not quite correct...
@@ -1442,8 +1446,8 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
 
 void Class_obj::MarkStatics()
 {
-   hxGCMark(this);
-   if (mMarkFunc) mMarkFunc();
+   if (mMarkFunc)
+		mMarkFunc();
 }
 
 Class Class_obj::Resolve(String inName)
@@ -1508,6 +1512,7 @@ void hxMarkClassStatics()
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
       // all strings should be constants anyhow - MarkMember(i->first);
+      HX_MARK_OBJECT(i->second.mPtr);
       i->second->MarkStatics();
    }
 }
