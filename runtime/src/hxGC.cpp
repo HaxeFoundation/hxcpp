@@ -123,6 +123,7 @@ void __hxcpp_collect()
    #endif
 }
 
+#ifdef INTERNAL_GC
 void hxGCMarkNow()
 {
    hxMarkClassStatics();
@@ -134,6 +135,7 @@ void hxGCMarkNow()
       HX_MARK_OBJECT( obj );
    }
 }
+#endif
 
 
 #ifndef INTERNAL_GC

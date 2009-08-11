@@ -14,6 +14,8 @@
 static bool sgAllocInit = 0;
 static bool sgInternalEnable = true;
 
+int sgAllocedSinceLastCollect = 0;
+
 
 struct AllocInfo
 {
@@ -60,6 +62,7 @@ struct AllocInfo
       return result;
    }
 
+	/*
    AllocInfo *Realloc(int inSize)
    {
       AllocInfo *new_info = (AllocInfo *)malloc( inSize + sizeof(AllocInfo) );
@@ -77,7 +80,8 @@ struct AllocInfo
       free(this);
       return new_info;
    }
-   
+	*/
+
    finalizer  mFinalizer;
    AllocInfo  *mNext;
    AllocInfo  *mPrev;
@@ -133,9 +137,16 @@ struct QuickVec
 };
 
 
+
+#define POOL_BIN_SHIFT   3
+#define POOL_BIN         (1<<POOL_BIN_SHIFT)
+#define POOL_COUNT       32
+#define MAX_POOLED       (POOL_COUNT<<POOL_BIN_SHIFT)
+
 typedef QuickVec<AllocInfo *> SparePointers;
-#define POOL_SIZE 65
-static SparePointers sgSmallPool[POOL_SIZE];
+
+static SparePointers sgFreePool[POOL_COUNT];
+static int sgMaxPool[POOL_COUNT];
 
 
 
@@ -143,16 +154,25 @@ void *hxInternalNew( int inSize )
 {
    AllocInfo *data = 0;
 
+   inSize = (inSize + POOL_BIN -1 ) & (~(POOL_BIN-1));
+
+   sgAllocedSinceLastCollect+=inSize;
+
    //printf("hxInternalNew %d\n", inSize);
    if (!sgAllocInit)
    {
       sgAllocInit = true;
       AllocInfo::sHead.InitHead();
+      sgMaxPool[0] = 0;
+      // Up to 500k per bin ...
+      for(int i=1;i<POOL_COUNT;i++)
+         sgMaxPool[i] = 500000 / (i<<POOL_BIN_SHIFT);
    }
    // First run, we can't be sure the pool has initialised - but now we can.
-   else if (inSize < POOL_SIZE )
+   else if (inSize < MAX_POOLED )
    {
-      SparePointers &spares = sgSmallPool[inSize];
+      int bin =  inSize >> POOL_BIN_SHIFT;
+      SparePointers &spares = sgFreePool[bin];
       if (!spares.empty())
       {
           data = spares.pop();
@@ -175,6 +195,13 @@ void hxInternalCollect()
    if (!sgAllocInit || !sgInternalEnable)
 		return;
 
+   //printf("New Bytes %d/%d\n", sgAllocedSinceLastCollect, AllocInfo::sTotalSize );
+   if (sgAllocedSinceLastCollect*4 < AllocInfo::sTotalSize)
+      return;
+
+   sgAllocedSinceLastCollect= 0;
+
+
    hxGCMarkNow();
 
    // And sweep ...
@@ -188,16 +215,16 @@ void hxInternalCollect()
       if ( !(flags & HX_GC_MARKED) )
       {
           data->Unlink();
-          if ( (data->mSize & SIZE_MASK) <POOL_SIZE )
+          int bin = data->mSize >> POOL_BIN_SHIFT;
+          if ( bin < POOL_COUNT )
           {
-               SparePointers &pool = sgSmallPool[data->mSize & SIZE_MASK];
-               if (pool.size()<1000)
-               {
+               SparePointers &pool = sgFreePool[bin];
+               if (pool.size()<sgMaxPool[bin])
                   pool.push(data);
-                  data = 0;
-               }
+               else
+                  free(data);
           }
-          if (data)
+          else
              free(data);
           deleted++;
       }
@@ -235,10 +262,15 @@ void *hxInternalRealloc(void *inData,int inSize)
       return hxInternalNew(inSize);
 
    AllocInfo *data = ((AllocInfo *)(inData) ) -1;
+   int s = data->mSize & SIZE_MASK;
 
-   AllocInfo *new_data = data->Realloc(inSize);
+   void *new_data = hxInternalNew(inSize);
 
-   return new_data+1;
+   int min_size = s < inSize ? s : inSize;
+
+   memcpy(new_data, inData, min_size );
+
+   return new_data;
 }
 
 

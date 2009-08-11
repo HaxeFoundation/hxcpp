@@ -2,12 +2,9 @@
 #define HX_GC_INTERNAL_H
 
 
-#define INTERNAL_GC
-/*
 #ifdef IPHONE
  #define INTERNAL_GC
 #endif
-*/
 
 class hxObject;
 
