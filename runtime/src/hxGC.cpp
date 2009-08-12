@@ -153,7 +153,7 @@ void hxGCAddFinalizer(hxObject *v, finalizer f)
    if (v)
    {
 #ifdef INTERNAL_GC
-      hxInternalAddFinalizer(dynamic_cast<void *>(v),f);
+      throw Dynamic(STR(L"Add finalizer error"));
 #else
       GC_register_finalizer(v,hxcpp_finalizer,(void *)f,0,0);
 #endif
@@ -373,13 +373,19 @@ hxAnon_obj::hxAnon_obj()
 {
    mFields = new hxFieldMap;
 	#ifdef INTERNAL_GC
-	hxGCAddFinalizer(this,Destroy);
+	mFinalizer = new hxInternalFinalizer(this);
+	mFinalizer->mFinalizer = Destroy;
+	#else
+	mFinalizer = 0;
 	#endif
 }
 
 void hxAnon_obj::__Mark()
 {
    hxFieldMapMark(mFields);
+	#ifdef INTERNAL_GC
+	mFinalizer->Mark();
+	#endif
 }
 
 

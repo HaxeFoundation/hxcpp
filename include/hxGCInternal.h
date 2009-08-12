@@ -6,18 +6,32 @@
  #define INTERNAL_GC
 #endif
 
+// #define INTERNAL_GC
+
 class hxObject;
 
 typedef void (*finalizer)(hxObject *v);
 
 
 void *hxInternalNew(int inSize);
-void hxInternalAddFinalizer(void *v, finalizer f);
 void *hxInternalRealloc(void *inData,int inSize);
 void hxInternalEnableGC(bool inEnable);
 void hxInternalCollect();
 
 void hxGCMarkNow();
+
+struct hxInternalFinalizer
+{
+	hxInternalFinalizer(hxObject *inObj);
+
+	void Mark() { mUsed=true; }
+	void Detach();
+
+	bool      mUsed;
+	bool      mValid;
+	finalizer mFinalizer;
+	hxObject  *mObject;
+};
 
 
 // Some inline implementations ...

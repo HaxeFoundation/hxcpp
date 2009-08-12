@@ -58,6 +58,54 @@ struct QuickVec
 };
 
 
+// --- hxInternalFinalizer -------------------------------
+
+typedef QuickVec<hxInternalFinalizer *> FinalizerList;
+
+FinalizerList *sgFinalizers = 0;
+
+hxInternalFinalizer::hxInternalFinalizer(hxObject *inObj)
+{
+	mUsed = false;
+	mValid = true;
+	mObject = inObj;
+	mFinalizer = 0;
+	sgFinalizers->push(this);
+}
+
+void hxInternalFinalizer::Detach()
+{
+	mValid = false;
+}
+
+void RunFinalizers()
+{
+	FinalizerList &list = *sgFinalizers;
+	int idx = 0;
+	while(idx<list.size())
+	{
+		hxInternalFinalizer *f = list[idx];
+		if (!f->mValid)
+			list.qerase(idx);
+		else if (!f->mUsed)
+		{
+			if (f->mFinalizer)
+				f->mFinalizer(f->mObject);
+			list.qerase(idx);
+			delete f;
+		}
+		else
+		{
+			f->mUsed = false;
+			idx++;
+		}
+	}
+}
+
+// --- AllocInfo -----------------
+
+
+
 typedef QuickVec<struct AllocInfo *> AllocInfoList;
 
 struct AllocInfo
@@ -71,17 +119,11 @@ struct AllocInfo
    {
       //sTotalSize -= (mSize & SIZE_MASK);
       sTotalObjs--;
-      if (mFinalizer)
-      {
-         hxObject *obj = (hxObject *)(this +1);
-         mFinalizer(obj);
-      }
    }
 
    inline void Link()
    {
       mActivePointers->push(this);
-      mFinalizer = 0;
       //sTotalSize += (mSize & SIZE_MASK);
       sTotalObjs++;
    }
@@ -95,27 +137,6 @@ struct AllocInfo
       return result;
    }
 
-	/*
-   AllocInfo *Realloc(int inSize)
-   {
-      AllocInfo *new_info = (AllocInfo *)malloc( inSize + sizeof(AllocInfo) );
-      int s = mSize & SIZE_MASK;
-      int min_size = s < inSize ? s : inSize;
-      memcpy(new_info, this, min_size + sizeof(AllocInfo) ); 
-      if (inSize>s)
-         memset(((char *)new_info) + s + sizeof(AllocInfo), 0, inSize-s ); 
-      new_info->mSize = (mSize & ~SIZE_MASK) | inSize;
-      sTotalSize += inSize-s;
-      if (new_info->mNext)
-         new_info->mNext->mPrev = new_info;
-      if (new_info->mPrev)
-         new_info->mPrev->mNext = new_info;
-      free(this);
-      return new_info;
-   }
-	*/
-
-   finalizer  mFinalizer;
    // We will also use mSize for the mark-bit.
    // If aligment means that there are 4 bytes spare after size, then we
    //  will use those instead.
@@ -157,6 +178,7 @@ void *hxInternalNew( int inSize )
    {
       sgAllocInit = true;
       AllocInfo::Init();
+      sgFinalizers = new FinalizerList();
       sgMaxPool[0] = 0;
       // Up to 500k per bin ...
       for(int i=1;i<POOL_COUNT;i++)
@@ -198,6 +220,8 @@ void hxInternalCollect()
 
    hxGCMarkNow();
 
+	RunFinalizers();
+
    // And sweep ...
    int deleted = 0;
    int retained = 0;
@@ -238,15 +262,6 @@ void hxInternalCollect()
    //printf("Objs freed %d/%d)\n", deleted, retained);
 }
 
-
-void hxInternalAddFinalizer(void *v, finalizer f)
-{
-   if (v)
-   {
-      AllocInfo *data = ((AllocInfo *)v) - 1;
-      data->mFinalizer = f;
-   }
-}
 
 
 void hxInternalEnableGC(bool inEnable)

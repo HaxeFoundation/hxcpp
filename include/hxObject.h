@@ -757,6 +757,7 @@ class  hxAnon_obj : public hxObject
    typedef hxObject super;
 
    hxFieldMap *mFields;
+	hxInternalFinalizer *mFinalizer;
 
 public:
    hxAnon_obj();

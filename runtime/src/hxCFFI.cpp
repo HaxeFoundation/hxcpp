@@ -19,6 +19,7 @@ public:
    {
       mType = inType;
       mHandle = inData;
+		mFinalizer = 0;
    }
 
    virtual int __GetType() const { return mType; }
@@ -30,6 +31,38 @@ public:
       return mHandle;
    }
 
+	void __Mark()
+	{
+	   #ifdef INTERNAL_GC
+		if (mFinalizer)
+			mFinalizer->Mark();
+		#endif
+	}
+
+	void SetFinalizer(finalizer inFinalizer)
+	{
+	   #ifdef INTERNAL_GC
+		if (!inFinalizer)
+		{
+			mFinalizer->Detach();
+			mFinalizer = 0;
+		}
+		else
+		{
+			if (!mFinalizer)
+				mFinalizer = new hxInternalFinalizer(this);
+			mFinalizer->mFinalizer = inFinalizer;
+		}
+	   #else
+		mFinalizer = 0;
+	   #endif
+	}
+
+	#ifdef INTERNAL_GC
+	hxInternalFinalizer *mFinalizer;
+	#else
+	finalizer mFinalizer;
+	#endif
    void *mHandle;
    int mType;
 };
@@ -583,14 +616,25 @@ void * alloc_private(int arg1)
 }
 
 
-void  val_gc(hxObject * arg1,finalizer arg2)
+void  val_gc(hxObject * arg1,finalizer arg2) THROWS
 {
-	 hxGCAddFinalizer( arg1, arg2 );
+	#ifdef INTERNAL_GC
+	Abstract_obj *abstract = dynamic_cast<Abstract_obj *>(arg1);
+	if (!abstract)
+	   throw Dynamic(STR(L"Finalizer not on abstract object"));
+   abstract->SetFinalizer(arg2);
+	#else
+	hxGCAddFinalizer( arg1, arg2 );
+	#endif
 }
 
-void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2)
+void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2) THROWS
 {
-	 hxGCAddFinalizer( (hxObject *)arg1, (finalizer)arg2 );
+	#ifdef INTERNAL_GC
+	throw Dynamic(STR(L"Finalizer not supported here"));
+	#else
+	hxGCAddFinalizer( (hxObject *)arg1, (finalizer)arg2 );
+	#endif
 }
 
 void  val_gc_add_root(hxObject **inRoot)

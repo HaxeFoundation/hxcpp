@@ -32,13 +32,17 @@ public:
 
 private:
    Map *mMap;
+#ifdef INTERNAL_GC
+	hxInternalFinalizer *mFinalizer;
+#endif
 
 public:
    IntHash()
 	{
 		mMap = new hxMap;
 		#ifdef INTERNAL_GC
-		hxGCAddFinalizer(this,Destroy);
+		mFinalizer = new hxInternalFinalizer(this);
+		mFinalizer->mFinalizer = Destroy;
 		#endif
 	}
 
@@ -91,6 +95,9 @@ public:
 
    void __Mark()
    {
+		#ifdef INTERNAL_GC
+		mFinalizer->Mark();
+		#endif
       for(Map::iterator i=mMap->begin();i!=mMap->end();++i)
       {
          HX_MARK_OBJECT(i->second.mPtr);
