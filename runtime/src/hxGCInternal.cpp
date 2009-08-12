@@ -17,22 +17,59 @@ static bool sgInternalEnable = true;
 int sgAllocedSinceLastCollect = 0;
 
 
+template<typename T>
+struct QuickVec
+{
+	QuickVec() : mPtr(0), mAlloc(0), mSize(0) { } 
+	inline void push(T inT)
+	{
+		if (mSize+1>=mAlloc)
+		{
+			mAlloc = 10 + (mSize*3/2);
+			mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
+		}
+		mPtr[mSize++]=inT;
+	}
+	inline T pop()
+	{
+		return mPtr[--mSize];
+	}
+   inline void qerase(int inPos)
+   {
+      --mSize;
+      mPtr[inPos] = mPtr[mSize];
+   }
+	inline bool empty() const { return !mSize; }
+	inline int next()
+	{
+		if (mSize+1>=mAlloc)
+		{
+			mAlloc = 10 + (mSize*3/2);
+			mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
+		}
+		return mSize++;
+	}
+	inline int size() const { return mSize; }
+	inline T &operator[](int inIndex) { return mPtr[inIndex]; }
+
+	int mAlloc;
+	int mSize;
+	T *mPtr;
+};
+
+
+typedef QuickVec<struct AllocInfo *> AllocInfoList;
+
 struct AllocInfo
 {
-   void InitHead()
+   static void Init()
    {
-      mSize = 0;
-      mFinalizer = 0;
-      mNext = 0;
-      mPrev = 0;
+      mActivePointers = new AllocInfoList();
    }
 
    inline void Unlink()
    {
-      mPrev->mNext = mNext;
-      if (mNext)
-        mNext->mPrev = mPrev;
-      sTotalSize -= (mSize & SIZE_MASK);
+      //sTotalSize -= (mSize & SIZE_MASK);
       sTotalObjs--;
       if (mFinalizer)
       {
@@ -43,13 +80,9 @@ struct AllocInfo
 
    inline void Link()
    {
-      mNext = sHead.mNext;
-      mPrev = &sHead;
-      if (mNext)
-         mNext->mPrev = this;
-      sHead.mNext = this;
+      mActivePointers->push(this);
       mFinalizer = 0;
-      sTotalSize += (mSize & SIZE_MASK);
+      //sTotalSize += (mSize & SIZE_MASK);
       sTotalObjs++;
    }
 
@@ -83,8 +116,6 @@ struct AllocInfo
 	*/
 
    finalizer  mFinalizer;
-   AllocInfo  *mNext;
-   AllocInfo  *mPrev;
    // We will also use mSize for the mark-bit.
    // If aligment means that there are 4 bytes spare after size, then we
    //  will use those instead.
@@ -92,49 +123,16 @@ struct AllocInfo
    //  will be 0xffffffff
    int        mSize;
 
-   static AllocInfo sHead;
    static unsigned int sTotalSize;
    static unsigned int sTotalObjs;
+
+   static AllocInfoList *mActivePointers;
 };
 
-AllocInfo AllocInfo::sHead;
+AllocInfoList *AllocInfo::mActivePointers = 0;
 unsigned int AllocInfo::sTotalSize = 0;
 unsigned int AllocInfo::sTotalObjs = 0;
 
-template<typename T>
-struct QuickVec
-{
-	QuickVec() : mPtr(0), mAlloc(0), mSize(0) { } 
-	inline void push(T inT)
-	{
-		if (mSize+1>=mAlloc)
-		{
-			mAlloc = 10 + (mSize*3/2);
-			mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
-		}
-		mPtr[mSize++]=inT;
-	}
-	inline T pop()
-	{
-		return mPtr[--mSize];
-	}
-	inline bool empty() const { return !mSize; }
-	inline int next()
-	{
-		if (mSize+1>=mAlloc)
-		{
-			mAlloc = 10 + (mSize*3/2);
-			mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
-		}
-		return mSize++;
-	}
-	inline int size() const { return mSize; }
-	inline T &operator[](int inIndex) { return mPtr[inIndex]; }
-
-	int mAlloc;
-	int mSize;
-	T *mPtr;
-};
 
 
 
@@ -143,12 +141,8 @@ struct QuickVec
 #define POOL_COUNT       32
 #define MAX_POOLED       (POOL_COUNT<<POOL_BIN_SHIFT)
 
-typedef QuickVec<AllocInfo *> SparePointers;
-
-static SparePointers sgFreePool[POOL_COUNT];
+static AllocInfoList sgFreePool[POOL_COUNT];
 static int sgMaxPool[POOL_COUNT];
-
-
 
 void *hxInternalNew( int inSize )
 {
@@ -162,7 +156,7 @@ void *hxInternalNew( int inSize )
    if (!sgAllocInit)
    {
       sgAllocInit = true;
-      AllocInfo::sHead.InitHead();
+      AllocInfo::Init();
       sgMaxPool[0] = 0;
       // Up to 500k per bin ...
       for(int i=1;i<POOL_COUNT;i++)
@@ -172,7 +166,7 @@ void *hxInternalNew( int inSize )
    else if (inSize < MAX_POOLED )
    {
       int bin =  inSize >> POOL_BIN_SHIFT;
-      SparePointers &spares = sgFreePool[bin];
+      AllocInfoList &spares = sgFreePool[bin];
       if (!spares.empty())
       {
           data = spares.pop();
@@ -196,8 +190,8 @@ void hxInternalCollect()
 		return;
 
    //printf("New Bytes %d/%d\n", sgAllocedSinceLastCollect, AllocInfo::sTotalSize );
-   if (sgAllocedSinceLastCollect*4 < AllocInfo::sTotalSize)
-      return;
+   //if (sgAllocedSinceLastCollect*4 < AllocInfo::sTotalSize)
+      //return;
 
    sgAllocedSinceLastCollect= 0;
 
@@ -207,18 +201,23 @@ void hxInternalCollect()
    // And sweep ...
    int deleted = 0;
    int retained = 0;
-   AllocInfo *data = AllocInfo::sHead.mNext;
-   while(data)
+
+   int &size = AllocInfo::mActivePointers->mSize;
+   AllocInfo **info = AllocInfo::mActivePointers->mPtr;
+   int idx = 0;
+   while(idx<size)
    {
-      AllocInfo *next = data->mNext;
+      AllocInfo *data = info[idx];
       int &flags = ( (int *)(data+1) )[-1];
       if ( !(flags & HX_GC_MARKED) )
       {
           data->Unlink();
+          AllocInfo::mActivePointers->qerase(idx);
+
           int bin = data->mSize >> POOL_BIN_SHIFT;
           if ( bin < POOL_COUNT )
           {
-               SparePointers &pool = sgFreePool[bin];
+               AllocInfoList &pool = sgFreePool[bin];
                if (pool.size()<sgMaxPool[bin])
                   pool.push(data);
                else
@@ -232,8 +231,8 @@ void hxInternalCollect()
       {
            flags ^= HX_GC_MARKED;
            retained++;
+           idx++;
       }
-      data = next;
    }
 
    //printf("Objs freed %d/%d)\n", deleted, retained);
