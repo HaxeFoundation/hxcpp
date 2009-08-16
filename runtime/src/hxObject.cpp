@@ -91,7 +91,12 @@ void hxCheckOverflow(int x)
 #include <string>
 #include <vector>
 
+#ifdef INTERNAL_GC
+typedef std::vector<String> FieldToString;
+#else
 typedef Array<String> FieldToString;
+#endif
+
 typedef std::map<std::string,int> StringToField;
 
 // These need to be pointers because of the unknown order of static object construction.
@@ -1507,8 +1512,6 @@ Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue)
 void hxMarkClassStatics()
 {
    ClassMap::iterator end = sClassMap->end();
-   if (sgFieldToString)
-      MarkMember(*sgFieldToString);
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
       // all strings should be constants anyhow - MarkMember(i->first);
@@ -1892,7 +1895,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
 {
    if (!sgFieldToString)
    {
-      sgFieldToString = new Array<String>(0,0);
+      sgFieldToString = new FieldToString;
 
       #ifndef INTERNAL_GC
       __RegisterStatic(sgFieldToString,sizeof(*sgFieldToString));
@@ -1905,10 +1908,18 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    if (i!=sgStringToField->end())
       return i->second;
 
+   #ifdef INTERNAL_GC
+   int result = sgFieldToString->size();
+   (*sgStringToField)[f] = result;
+   String str(inFieldName,strlen(inFieldName));
+   String cstr((wchar_t *)hxInternalCreateConstBuffer(str.__s,(str.length+1) * sizeof(wchar_t)), str.length );
+   sgFieldToString->push_back( cstr );
+   #else
    int result = (*sgFieldToString)->size();
    (*sgStringToField)[f] = result;
    String str(inFieldName,strlen(inFieldName));
-   (*sgFieldToString)->push( String(inFieldName,strlen(inFieldName)));
+   (*sgFieldToString)->push(str);
+   #endif
    return result;
 }
 

@@ -115,6 +115,16 @@ void hxInternalEnableGC(bool inEnable)
 }
 
 
+void *hxInternalCreateConstBuffer(const void *inData,int inSize)
+{
+   int *result = (int *)malloc(inSize + sizeof(int));
+
+   *result = 0xffffffff;
+   memcpy(result+1,inData,inSize);
+
+   return result+1;
+}
+
 #ifdef HX_GC_IMMIX
 
 // ---  Internal GC - IMMIX Implementation ------------------------------
@@ -145,6 +155,7 @@ public:
 		mNextEmpty = 0;
 		mRowsInUse = 0;
 		mLargeAllocated = 0;
+		mLargeSinceLastCollect = 0;
 		mTotalLastCollect = 0;
 	}
    void *AllocLarge(int inSize)
@@ -406,6 +417,7 @@ void hxInternalCollect()
 	int prev_total = sGlobalAlloc->MemLastCollect();
 	if (since_last<prev_total)
 		return;
+
 
 	gMarkBit ^= HX_GC_MARKED;
 

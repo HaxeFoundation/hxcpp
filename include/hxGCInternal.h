@@ -6,7 +6,7 @@
  #define INTERNAL_GC
 #endif
 
-//#define INTERNAL_GC
+// #define INTERNAL_GC
 
 class hxObject;
 
@@ -16,6 +16,7 @@ typedef void (*finalizer)(hxObject *v);
 void *hxInternalNew(int inSize);
 void *hxInternalRealloc(void *inData,int inSize);
 void hxInternalEnableGC(bool inEnable);
+void *hxInternalCreateConstBuffer(const void *inData,int inSize);
 void hxInternalCollect();
 
 void hxGCMarkNow();
