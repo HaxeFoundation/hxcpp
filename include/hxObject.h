@@ -1020,7 +1020,7 @@ public:
          for(int i=0;i<length;i++)
             MarkMember(ptr[i]);
       }
-      HX_MARK_STRING(mBase, ELEM_ *);
+      HX_MARK_STRING(mBase);
    }
 
    int GetElementSize() const { return sizeof(ELEM_); }
@@ -1572,7 +1572,7 @@ template<> inline void MarkMember<bool>(bool &outT) {  }
 template<> inline void MarkMember<double>(double &outT) {  }
 template<> inline void MarkMember<String>(String &outT)
 {
-   HX_MARK_STRING(outT.__s,wchar_t *);
+   HX_MARK_STRING(outT.__s);
 }
 template<> inline void MarkMember<Void>(Void &outT) {  }
 

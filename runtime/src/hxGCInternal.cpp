@@ -1,5 +1,9 @@
 #include <hxGCInternal.h>
 
+char **gMovedPtrs = 0;
+int gMarkBit = 0;
+
+
 #ifdef INTERNAL_GC
 
 #include <hxObject.h>
@@ -8,7 +12,7 @@
 #include <vector>
 #include <set>
 
-#define SIZE_MASK    0x3fffffff
+#define SIZE_MASK    0x07ffffff
 
 
 static bool sgAllocInit = 0;
@@ -40,6 +44,7 @@ struct QuickVec
       mPtr[inPos] = mPtr[mSize];
    }
 	inline bool empty() const { return !mSize; }
+	inline void clear() { mSize = 0; }
 	inline int next()
 	{
 		if (mSize+1>=mAlloc)
@@ -102,9 +107,349 @@ void RunFinalizers()
 	}
 }
 
+
+
+void hxInternalEnableGC(bool inEnable)
+{
+   sgInternalEnable = inEnable;
+}
+
+
+#ifdef HX_GC_IMMIX
+
+// ---  Internal GC - IMMIX Implementation ------------------------------
+
+
+
+struct BlockInfo
+{
+	BlockInfo(char *inPtr=0)
+	{
+		mPtr = inPtr;
+		mFreeLines = mPtr ? IMMIX_USEFUL_LINES : 0;
+	}
+   char *mPtr;
+   int  mFreeLines;
+};
+
+typedef QuickVec<BlockInfo> BlockList;
+
+typedef QuickVec<int *> LargeList;
+
+class GlobalAllocator
+{
+public:
+	GlobalAllocator()
+	{
+		mNextRecycled = 0;
+		mNextEmpty = 0;
+		mRowsInUse = 0;
+		mLargeAllocated = 0;
+		mTotalLastCollect = 0;
+	}
+   void *AllocLarge(int inSize)
+	{
+		int *result = (int *)malloc(inSize + sizeof(int));
+		mLargeList.push(result);
+
+		mLargeAllocated += inSize;
+		*result = inSize | HX_GC_FIXED | gMarkBit;
+		memset(result+1,0,inSize);
+		mLargeSinceLastCollect += inSize;
+		return result+1;
+	}
+	BlockInfo GetRecycledBlock()
+	{
+		if (mNextRecycled < mRecycledBlock.size())
+		{
+			return mRecycledBlock[mNextRecycled++];
+		}
+		return GetEmptyBlock();
+	}
+
+	BlockInfo GetEmptyBlock()
+	{
+		if (mNextEmpty >= mEmptyBlocks.size())
+		{
+			// Allocate some more blocks...
+			// Using simple malloc for now, so allocate a big chuck in case we have to
+			//  waste space by doing block-aligning
+			char *chunk = (char *)malloc( 1<<20 );
+			int n = 1<<(20-IMMIX_BLOCK_BITS);
+			char *aligned = (char *)( (((size_t)chunk) + IMMIX_BLOCK_SIZE-1) & IMMIX_BLOCK_BASE_MASK);
+			if (aligned!=chunk)
+				n--;
+
+			for(int i=0;i<n;i++)
+			{
+				char *ptr = aligned + i*IMMIX_BLOCK_SIZE;
+				//memset(ptr,0,IMMIX_HEADER_LINES * IMMIX_LINE_LEN );
+				memset(ptr,0,IMMIX_BLOCK_SIZE);
+				for(int i=0;i<IMMIX_HEADER_LINES;i++)
+					ptr[i] = 1;
+				mAllBlocks.push( BlockInfo(ptr) );
+				mEmptyBlocks.push( BlockInfo(ptr) );
+			}
+		}
+
+		return mEmptyBlocks[mNextEmpty++];
+	}
+
+	void ClearRowMarks()
+	{
+		for(int i=0;i<mAllBlocks.size();i++)
+			memset(mAllBlocks[i].mPtr,0,IMMIX_LINE_LEN * IMMIX_HEADER_LINES);
+	}
+
+	void Reclaim()
+	{
+		mTotalLastCollect = MemUsage();
+
+		mEmptyBlocks.clear();
+		mRecycledBlock.clear();
+		mNextEmpty = 0;
+		mNextRecycled = 0;
+		mRowsInUse = 0;
+		mLargeSinceLastCollect = 0;
+		for(int i=0;i<mAllBlocks.size();i++)
+		{
+			BlockInfo &info = mAllBlocks[i];
+			char *row_used = info.mPtr;
+			int free = 0;
+			for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
+				if (!row_used[r])
+					free++;
+			info.mFreeLines = free;
+			mRowsInUse += (IMMIX_USEFUL_LINES-free);
+			if (free==IMMIX_USEFUL_LINES)
+				mEmptyBlocks.push(info);
+			else if (free>0)
+				mRecycledBlock.push(info);
+		}
+
+		int idx = 0;
+		while(idx<mLargeList.size())
+		{
+			int *blob = mLargeList[idx];
+			if ( (*blob & HX_GC_MARKED) != gMarkBit )
+			{
+				mLargeAllocated -= (*blob & SIZE_MASK);
+				free(blob);
+				mLargeList.qerase(idx);
+			}
+			else
+				idx++;
+		}
+	}
+
+	int MemUsage()
+	{
+		return mLargeAllocated + (mRowsInUse<<IMMIX_LINE_BITS);
+	}
+
+	int MemSinceLastCollect()
+	{
+		return mLargeSinceLastCollect;
+	}
+	int MemLastCollect()
+	{
+		return mTotalLastCollect;
+	}
+
+
+	int mRowsInUse;
+	int mLargeAllocated;
+	int mLargeSinceLastCollect;
+	int mTotalLastCollect;
+
+	int mNextEmpty;
+	int mNextRecycled;
+
+   BlockList mAllBlocks;
+   BlockList mEmptyBlocks;
+   BlockList mRecycledBlock;
+	LargeList mLargeList;
+};
+
+GlobalAllocator *sGlobalAlloc = 0;
+
+class LocalAllocator
+{
+public:
+	LocalAllocator()
+	{
+		Reset();
+	}
+
+	void Reset()
+	{
+		mCurrent.mPtr = 0;
+		mOverflow.mPtr = 0;
+		mCurrentLine = IMMIX_LINES;
+		mLinesSinceLastCollect = 0; 
+	}
+
+	void *Alloc(int inSize)
+   {
+		int s = ((inSize+3) & ~3) +sizeof(int);
+		while(1)
+		{
+			if (!mCurrent.mPtr || mCurrentLine==IMMIX_LINES)
+			{
+				mCurrent = sGlobalAlloc->GetRecycledBlock();
+				// Start on line 2 (there are 256 line-markers at the beginning)
+				mCurrentLine = IMMIX_HEADER_LINES;
+				// find first empty line ...
+				while(mCurrent.mPtr[mCurrentLine])
+					mCurrentLine++;
+				mCurrentPos = 0;
+			}
+			// easy case ...
+			int extra_lines = (s + mCurrentPos-1) >> IMMIX_LINE_BITS;
+			if (extra_lines == 0)
+			{
+				int *result = (int *)(mCurrent.mPtr + (mCurrentLine<<IMMIX_LINE_BITS) + mCurrentPos);
+				*result = inSize | HX_GC_FIXED | HX_GC_SMALL_OBJ | gMarkBit;
+				mCurrentPos += s;
+				if (mCurrentPos==IMMIX_LINE_LEN)
+				{
+					mLinesSinceLastCollect++;
+					mCurrentPos = 0;
+					mCurrentLine++;
+					while( (mCurrentLine<IMMIX_LINES) && mCurrent.mPtr[mCurrentLine])
+						mCurrentLine++;
+				}
+				return result+1;
+			}
+			// Do we have enough blank lines?
+			while (mCurrentLine+extra_lines < IMMIX_LINES)
+			{
+				bool clear = true;
+				char *base = mCurrent.mPtr + 1 + mCurrentLine;
+				for(int k=0;k<extra_lines;k++)
+					if (base[k])
+					{
+						mCurrentPos = 0;
+						clear = false;
+						mCurrentLine += k + 2;
+						while( (mCurrentLine+extra_lines<IMMIX_LINES) && mCurrent.mPtr[mCurrentLine])
+						   mCurrentLine++;
+						break;
+					}
+				if (clear)
+				{
+				   int *result = (int *)(mCurrent.mPtr + (mCurrentLine<<IMMIX_LINE_BITS) + mCurrentPos);
+				   *result = inSize | HX_GC_FIXED | HX_GC_MEDIUM_OBJ | gMarkBit;
+					mCurrentLine += extra_lines;
+					mCurrentPos = (mCurrentPos+s) & (IMMIX_LINE_LEN-1);
+					if (mCurrentPos==0)
+					{
+						mCurrentLine++;
+						while( (mCurrentLine<IMMIX_LINES) && mCurrent.mPtr[mCurrentLine])
+							mCurrentLine++;
+					}
+					mLinesSinceLastCollect+=extra_lines+1;
+					return result + 1;
+				}
+			}
+			// Not enough gap - to progress or end-of-block
+			// Simply progress to next block for now...
+			//   TODO?
+			mCurrentLine = IMMIX_LINES;
+		}
+		return 0;
+	}
+
+	int MemSinceLastCollect()
+	{
+		return mLinesSinceLastCollect<<IMMIX_LINE_BITS;
+	}
+
+	int mCurrentPos;
+	int mCurrentLine;
+
+	int mOverflowPos;
+	int mOverflowLine;
+
+	int mLinesSinceLastCollect;
+
+	BlockInfo mCurrent;
+	BlockInfo mOverflow;
+};
+
+// Should have 1 per thread...
+LocalAllocator *sLocalAlloc = 0;
+
+
+void *hxInternalNew(int inSize)
+{
+	if (!sgAllocInit)
+	{
+		sgAllocInit = true;
+		sGlobalAlloc = new GlobalAllocator();
+		sLocalAlloc = new LocalAllocator();
+      sgFinalizers = new FinalizerList();
+	}
+	if (inSize>IMMIX_LARGE_OBJ_SIZE)
+		return sGlobalAlloc->AllocLarge(inSize);
+
+	return sLocalAlloc->Alloc(inSize);
+}
+
+// immix...
+void hxInternalCollect()
+{
+   if (!sgAllocInit || !sgInternalEnable)
+		return;
+
+	int since_last = sGlobalAlloc->MemSinceLastCollect() + sLocalAlloc->MemSinceLastCollect();
+	int prev_total = sGlobalAlloc->MemLastCollect();
+	if (since_last<prev_total)
+		return;
+
+	gMarkBit ^= HX_GC_MARKED;
+
+	sGlobalAlloc->ClearRowMarks();
+
+   hxGCMarkNow();
+
+	RunFinalizers();
+
+	sGlobalAlloc->Reclaim();
+
+	int alloced = sGlobalAlloc->MemUsage();
+
+	sLocalAlloc->Reset();
+}
+
+
+
+void *hxInternalRealloc(void *inData,int inSize)
+{
+   if (inData==0)
+      return hxInternalNew(inSize);
+
+   int *base = ((int *)(inData)) -1;
+
+   int s = (*base) & SIZE_MASK;
+
+   void *new_data = hxInternalNew(inSize);
+
+   int min_size = s < inSize ? s : inSize;
+
+   memcpy(new_data, inData, min_size );
+
+   return new_data;
+}
+
+
+
+#else // Naive implementation ...
+
+// ---  Internal GC - Simple Implementation ------------------------------
+
+
 // --- AllocInfo -----------------
-
-
 
 typedef QuickVec<struct AllocInfo *> AllocInfoList;
 
@@ -264,11 +609,6 @@ void hxInternalCollect()
 
 
 
-void hxInternalEnableGC(bool inEnable)
-{
-   sgInternalEnable = inEnable;
-}
-
 
 void *hxInternalRealloc(void *inData,int inSize)
 {
@@ -287,5 +627,6 @@ void *hxInternalRealloc(void *inData,int inSize)
    return new_data;
 }
 
+#endif // Naive implementation
 
 #endif // if INTERNAL_GC

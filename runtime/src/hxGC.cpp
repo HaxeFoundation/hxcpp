@@ -354,7 +354,7 @@ void hxFieldMapMark(hxFieldMap *inMap)
 {
    for(hxFieldMap::const_iterator i = inMap->begin(); i!= inMap->end(); ++i)
    {
-		HX_MARK_STRING(i->first.__s,wchar_t *);
+		HX_MARK_STRING(i->first.__s);
 		HX_MARK_OBJECT(i->second.mPtr);
    }
 }
