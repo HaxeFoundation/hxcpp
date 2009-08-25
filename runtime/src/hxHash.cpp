@@ -2,7 +2,7 @@
 #ifndef INTERNAL_GC
 #include <gc_allocator.h>
 #else
-#include <hxCFFi.h>
+#include <hxCFFI.h>
 #endif
 #include <map>
 
