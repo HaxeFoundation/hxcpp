@@ -61,6 +61,7 @@
   <flag value="-g" if="debug"/>
   <flag value="-O2"/>
   <flag value="-DHX_LINUX"/>
+  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/linux/" unless="debug"/>
   <objdir value="obj/linux-dbg/" if="debug"/>
@@ -157,6 +158,7 @@
 </compiler>
 
 
+<!-- MACOS TOOLS -------------------------------------------------->
 
 <compiler id="darwin" exe="gcc" if="macos">
   <flag value="-c"/>
@@ -167,6 +169,7 @@
   <flag value="-O2" unless="debug"/>
   <flag value="-I${HXCPP}/include"/>
   <flag value="-DHX_MACOS"/>
+  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
   <objdir value="obj/darwin/" unless="debug"/>
   <objdir value="obj/darwin-dbg/" if="debug"/>
   <outflag value="-o"/>
@@ -208,6 +211,7 @@
   <flag value="-MTd" if="debug"/>
   <flag value="-MT" unless="debug"/>
   <flag value="-DHX_WINDOWS"/>
+  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
   <flag value="-GR"/>
   <flag value="-Zi"/>
   <flag value="-c"/>
@@ -246,23 +250,7 @@
 
 <!-- Library files & targets -------------------------------------->
 
-
-<files id="runtime" dir="${HXCPP}">
-  <depend name="${HXCPP}/include/hxMacros.h"/>
-  <depend name="${HXCPP}/include/hxObject.h"/>
-  <depend name="${HXCPP}/include/hxMath.h"/>
-
-  <compilerflag value="-DBUILDING_HXCPP_DLL"/>
-  <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
-  <compilerflag value="-DALL_INTERIOR_POINTERS"/>
-  <compilerflag value="-DGC_NOT_DLL"/>
-
-  <compilerflag value="-DHXCPP_DEBUG" if="debug"/>
-
-  <compilerflag value="-DCPU" if="windows"/>
-  <compilerflag value="-DMY_CPU" if="windows"/>
-  <compilerflag value="-DX86" if="windows"/>
-  <compilerflag value="-DWIN32_THREADS" if="windows"/>
+<files id="boehm_gc" dir="${HXCPP}">
 
   <compilerflag value="-DX86" if="macos"/>
   <compilerflag value="-DHAS_X86_THREAD_STATE32___EAX=1" if="macos" unless="macos_leopard"/>
@@ -275,14 +263,10 @@
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
 
-  <file name = "runtime/src/hxObject.cpp"/>
-  <file name = "runtime/src/hxDate.cpp"/>
-  <file name = "runtime/src/hxGC.cpp"/>
-  <file name = "runtime/src/hxGCInternal.cpp"/>
-  <file name = "runtime/src/hxHash.cpp"/>
-  <file name = "runtime/src/hxLib.cpp"/>
-  <file name = "runtime/src/hxCFFI.cpp"/>
-
+  <compilerflag value="-DBUILDING_HXCPP_DLL"/>
+  <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
+  <compilerflag value="-DALL_INTERIOR_POINTERS"/>
+  <compilerflag value="-DGC_NOT_DLL"/>
 
   <file name="runtime/${GC_DIR}/win32_threads.c" if="windows"/>
   <file name="runtime/${GC_DIR}/darwin_stop_world.c" if="macos"/>
@@ -317,10 +301,47 @@
   <file name="runtime/${GC_DIR}/stubborn.c"/>
   <file name="runtime/${GC_DIR}/thread_local_alloc.c"/>
   <file name="runtime/${GC_DIR}/typd_mlc.c"/>
+
+</files>
+
+
+
+
+<files id="runtime" dir="${HXCPP}">
+  <depend name="${HXCPP}/include/hxMacros.h"/>
+  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/hxMath.h"/>
+
+  <compilerflag value="-DBUILDING_HXCPP_DLL"/>
+  <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
+
+  <compilerflag value="-DHXCPP_DEBUG" if="debug"/>
+
+  <compilerflag value="-DWIN32_THREADS" if="windows"/>
+
+  <compilerflag value="-DNO_THREAD_REDIRECT" if="macos"/>
+  <compilerflag value="-DGC_THREADS" if="macos"/>
+  <compilerflag value="-DNO_THREAD_REDIRECT" if="linux"/>
+  <compilerflag value="-DGC_THREADS" if="linux"/>
+
+  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
+  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
+  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
+
+  <file name = "runtime/src/hxObject.cpp"/>
+  <file name = "runtime/src/hxDate.cpp"/>
+  <file name = "runtime/src/hxGC.cpp"/>
+  <file name = "runtime/src/hxGCInternal.cpp"/>
+  <file name = "runtime/src/hxHash.cpp"/>
+  <file name = "runtime/src/hxLib.cpp"/>
+  <file name = "runtime/src/hxCFFI.cpp"/>
+
+
 </files>
 
 <target id="runtime" output="hxcpp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="runtime"/>
+  <files id="boehm_gc" unless="INTERNAL_GC"/>
   <lib name="user32.lib" if="windows"/>
   <lib name="-lpthread" if="linux"/>
   <lib name="-ldl" if="linux"/>
