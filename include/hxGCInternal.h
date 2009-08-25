@@ -2,11 +2,7 @@
 #define HX_GC_INTERNAL_H
 
 
-#ifdef IPHONE
- #define INTERNAL_GC
-#endif
-
-// #define INTERNAL_GC
+// INTERNAL_GC is defined on the command-line with "-DINTERNAL_GC"
 
 class hxObject;
 
@@ -122,7 +118,7 @@ if (ioPtr) \
 	} \
 }
 
-#else // Naive GC ...
+#else // Naive GC (non-immix)...
 
 #define HX_MARK_OBJECT(ioPtr) \
 if (ioPtr) \

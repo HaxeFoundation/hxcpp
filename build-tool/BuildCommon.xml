@@ -89,6 +89,8 @@
 
 <!-- IPHONE TOOLS -------------------------------------------------->
 
+<set name="INTERNAL_GC" if = "iphoneos">
+<set name="INTERNAL_GC" if = "iphonesim">
 
 <compiler id="iPhoneOS" exe="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0" if="iphoneos">
   <flag value="-c"/>
@@ -114,7 +116,8 @@
   <flag value="-gdwarf-2"/>
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
-  <flag value="-DIPHONEOS"/>
+  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
+  <flag value="-DINTERNAL_GC"/>
   <flag value="-DSTATIC_LINK"/>
   <flag value="-I${HXCPP}/include"/>
   <cppflag value="-frtti"/>
@@ -148,6 +151,7 @@
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
   <flag value="-DIPHONESIM"/>
+  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
   <flag value="-DSTATIC_LINK"/>
   <flag value="-I${HXCPP}/include"/>
   <cppflag value="-frtti"/>
