@@ -1899,6 +1899,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
 
       #ifndef INTERNAL_GC
       __RegisterStatic(sgFieldToString,sizeof(*sgFieldToString));
+      (*sgFieldToString) = Array<String>(0,100);
       #endif
       sgStringToField = new StringToField;
    }
