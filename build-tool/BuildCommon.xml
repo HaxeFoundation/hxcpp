@@ -117,7 +117,6 @@
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
   <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
-  <flag value="-DINTERNAL_GC"/>
   <flag value="-DSTATIC_LINK"/>
   <flag value="-I${HXCPP}/include"/>
   <cppflag value="-frtti"/>
