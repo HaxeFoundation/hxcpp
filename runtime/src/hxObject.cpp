@@ -1864,7 +1864,7 @@ Array<String> __get_args()
       buf[1] = '\0';
       while (fread(buf, 1, 1, cmd))
       {
-         if (buf[0]<32) // line terminator
+         if ((unsigned char)buf[0]<32) // line terminator
          {
             if (real_arg)
                result->push(arg);
