@@ -1,5 +1,5 @@
 <project name="hxcpp" url="http://gamehaxe.com/" license="BSD">
     <user name="gamehaxe"/>
     <description>Hxcpp is the c++ backend compiler for haxe.  This release constains the headers, libries and support code required to generate a fully compiled executable from haxe code.</description>
-<version name="1.0.5">Fix STR macro.</version>
+<version name="1.0.6">Fix loading of extental libraries.  Fix command args on linux.  Added IMMIX internal GC, with easy build options.</version>
 </project>
