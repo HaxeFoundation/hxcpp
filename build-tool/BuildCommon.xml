@@ -89,8 +89,8 @@
 
 <!-- IPHONE TOOLS -------------------------------------------------->
 
-<set name="INTERNAL_GC" if = "iphoneos">
-<set name="INTERNAL_GC" if = "iphonesim">
+<set name="INTERNAL_GC" value="1" if="iphoneos"/>
+<set name="INTERNAL_GC" value="1" if="iphonesim"/>
 
 <compiler id="iPhoneOS" exe="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0" if="iphoneos">
   <flag value="-c"/>
