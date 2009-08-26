@@ -266,6 +266,8 @@
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
 
+  <compilerflag value="-DHXCPP_DEBUG" if="debug"/>
+  <compilerflag value="-DWIN32_THREADS" if="windows"/>
   <compilerflag value="-DBUILDING_HXCPP_DLL"/>
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
   <compilerflag value="-DALL_INTERIOR_POINTERS"/>
@@ -341,15 +343,6 @@
 
 
 </files>
-
-<target id="runtime" output="hxcpp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
-  <files id="runtime"/>
-  <files id="boehm_gc" unless="INTERNAL_GC"/>
-  <lib name="user32.lib" if="windows"/>
-  <lib name="-lpthread" if="linux"/>
-  <lib name="-ldl" if="linux"/>
-</target>
-
 
 <target id="std" output="std${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="std"/>
@@ -433,10 +426,7 @@
 
 
 <target id="default">
-   <target id="runtime"/>
-   <target id="std"/>
-   <target id="regexp"/>
-   <target id="zlib"/>
+   <target id="haxe"/>
 </target>
 
 
@@ -452,6 +442,7 @@
   <files id="__main__" unless="static"/>
   <files id="__lib__" if="static"/>
   <files id="runtime"/>
+  <files id="boehm_gc" unless="INTERNAL_GC"/>
   <lib name="-lpthread" if="linux"/>
   <lib name="-ldl" if="linux"/>
 </target>
