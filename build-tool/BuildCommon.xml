@@ -258,9 +258,9 @@
   <compilerflag value="-DX86" if="macos"/>
   <compilerflag value="-DHAS_X86_THREAD_STATE32___EAX=1" if="macos" unless="macos_leopard"/>
   <compilerflag value="-DNO_THREAD_REDIRECT" if="macos"/>
-  <compilerflag value="-DGC_THREADS" if="macos"/>
+  <compilerflag value="-DGC_THREADS"/>
   <compilerflag value="-DNO_THREAD_REDIRECT" if="linux"/>
-  <compilerflag value="-DGC_THREADS" if="linux"/>
+  <compilerflag value="-DWIN32_THREADS" if="windows"/>
 
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
@@ -323,7 +323,6 @@
   <compilerflag value="-DHXCPP_DEBUG" if="debug"/>
 
   <compilerflag value="-DWIN32_THREADS" if="windows"/>
-
   <compilerflag value="-DNO_THREAD_REDIRECT" if="macos"/>
   <compilerflag value="-DGC_THREADS" if="macos"/>
   <compilerflag value="-DNO_THREAD_REDIRECT" if="linux"/>
@@ -437,6 +436,7 @@
 
 <target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
+  <files id="boehm_gc" unless="INTERNAL_GC"/>
   <ext value=".iphoneos.a" if="iphoneos"/>
   <ext value=".iphonesim.a" if="iphonesim"/>
   <files id="__main__" unless="static"/>
