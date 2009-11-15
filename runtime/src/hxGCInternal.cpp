@@ -1,10 +1,15 @@
 #include <hxGCInternal.h>
+	// TODO: what is ThreadLocalAlloc is NULL (foreign thread) ?
 
 char **gMovedPtrs = 0;
 int gMarkBit = 0;
 
 
 #ifdef INTERNAL_GC
+
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
 
 #include <hxObject.h>
 
@@ -14,12 +19,33 @@ int gMarkBit = 0;
 
 #define SIZE_MASK    0x07ffffff
 
+#define STRING_MAGIC 0xD82BC9B1
+
+void hxMarkCurrentThread(void *inBottomOfStack);
+
+typedef std::map<void *,StaticMarkFunc> StaticMarkFuncMap;
+StaticMarkFuncMap sStaticMarkFuncMap;
+
+void hxGCSetVTables(_VtableMarks inVtableMark[])
+{
+	if (inVtableMark)
+	{
+	   for(_VtableMarks *v=inVtableMark; v->mVtable; v++)
+	      sStaticMarkFuncMap[v->mVtable] = v->mMark;
+	}
+}
+
+
 
 static bool sgAllocInit = 0;
-static bool sgInternalEnable = true;
+static bool sgInternalEnable = false;
+static void *sgObject_root = 0;
 
-int sgAllocedSinceLastCollect = 0;
+//#define DEBUG_ALLOC_PTR
 
+#ifdef DEBUG_ALLOC_PTR
+static char *sgDebugPointer = (char *)0xb5a584;
+#endif
 
 template<typename T>
 struct QuickVec
@@ -125,11 +151,7 @@ void *hxInternalCreateConstBuffer(const void *inData,int inSize)
    return result+1;
 }
 
-#ifdef HX_GC_IMMIX
-
 // ---  Internal GC - IMMIX Implementation ------------------------------
-
-
 
 struct BlockInfo
 {
@@ -155,31 +177,39 @@ public:
 		mNextEmpty = 0;
 		mRowsInUse = 0;
 		mLargeAllocated = 0;
-		mLargeSinceLastCollect = 0;
-		mTotalLastCollect = 0;
+		mDistributedSinceLastCollect = 0;
+		// Start at 1 Meg...
+		mTotalAfterLastCollect = 1<<20;
 	}
-   void *AllocLarge(int inSize)
+	// TODO: make thread safe
+   void *AllocLarge(int inSize,bool inIsString)
 	{
-		int *result = (int *)malloc(inSize + sizeof(int));
+		int *result = (int *)malloc(inSize + sizeof(int)*2);
 		mLargeList.push(result);
 
 		mLargeAllocated += inSize;
-		*result = inSize | HX_GC_FIXED | gMarkBit;
-		memset(result+1,0,inSize);
-		mLargeSinceLastCollect += inSize;
-		return result+1;
+		result[0] = inIsString ? STRING_MAGIC : 0;
+		result[1] = inSize | HX_GC_FIXED | gMarkBit;
+		memset(result+2,0,inSize);
+		mDistributedSinceLastCollect += inSize;
+		return result+2;
 	}
-	BlockInfo GetRecycledBlock()
+	BlockInfo GetRecycledBlock(void *inBottomOfStack)
 	{
+		CheckCollect(inBottomOfStack);
 		if (mNextRecycled < mRecycledBlock.size())
 		{
-			return mRecycledBlock[mNextRecycled++];
+			BlockInfo &block = mRecycledBlock[mNextRecycled++];
+			mDistributedSinceLastCollect +=  block.mFreeLines << IMMIX_LINE_BITS;
+			return block;
 		}
-		return GetEmptyBlock();
+		return GetEmptyBlock(false,inBottomOfStack);
 	}
 
-	BlockInfo GetEmptyBlock()
+	BlockInfo GetEmptyBlock(bool inCheckCollect, void *inBottomOfStack)
 	{
+		if (inCheckCollect)
+			CheckCollect(inBottomOfStack);
 		if (mNextEmpty >= mEmptyBlocks.size())
 		{
 			// Allocate some more blocks...
@@ -203,7 +233,10 @@ public:
 			}
 		}
 
-		return mEmptyBlocks[mNextEmpty++];
+		BlockInfo &block = mEmptyBlocks[mNextEmpty++];
+		mActiveBlocks.insert(block.mPtr);
+		mDistributedSinceLastCollect +=  block.mFreeLines << IMMIX_LINE_BITS;
+		return block;
 	}
 
 	void ClearRowMarks()
@@ -212,28 +245,64 @@ public:
 			memset(mAllBlocks[i].mPtr,0,IMMIX_LINE_LEN * IMMIX_HEADER_LINES);
 	}
 
-	void Reclaim()
+	void Collect(void *inBottomOfStack)
 	{
-		mTotalLastCollect = MemUsage();
+		static int collect = 0;
+		//printf("Collect %d\n",collect++);
+		gMarkBit ^= HX_GC_MARKED;
 
+		ClearRowMarks();
+
+   	hxGCMarkNow();
+
+		hxMarkCurrentThread(inBottomOfStack);
+
+		RunFinalizers();
+
+		// Reclaim ...
 		mEmptyBlocks.clear();
 		mRecycledBlock.clear();
 		mNextEmpty = 0;
 		mNextRecycled = 0;
 		mRowsInUse = 0;
-		mLargeSinceLastCollect = 0;
 		for(int i=0;i<mAllBlocks.size();i++)
 		{
 			BlockInfo &info = mAllBlocks[i];
 			char *row_used = info.mPtr;
 			int free = 0;
+			int free_in_a_row = 0;
 			for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
 				if (!row_used[r])
+				{
 					free++;
+					free_in_a_row++;
+				}
+				else if (free_in_a_row)
+				{
+					char *base = info.mPtr + ((r-free_in_a_row)<<IMMIX_LINE_BITS);
+					memset(base, 0, free_in_a_row<<IMMIX_LINE_BITS);
+					#ifdef DEBUG_ALLOC_PTR
+	            if (base<=sgDebugPointer && sgDebugPointer<( base + (free_in_a_row<<IMMIX_LINE_BITS)) )
+		            printf("Pointer collected !\n");
+					#endif
+					free_in_a_row = 0;
+				}
+			if (free_in_a_row)
+			{
+				char *base = info.mPtr + ((IMMIX_LINES-free_in_a_row)<<IMMIX_LINE_BITS);
+				#ifdef DEBUG_ALLOC_PTR
+	         if (base<=sgDebugPointer && sgDebugPointer<( base + (free_in_a_row<<IMMIX_LINE_BITS)) )
+		         printf("Pointer collected !\n");
+				#endif
+				memset(base, 0, free_in_a_row<<IMMIX_LINE_BITS);
+			}
 			info.mFreeLines = free;
 			mRowsInUse += (IMMIX_USEFUL_LINES-free);
 			if (free==IMMIX_USEFUL_LINES)
+			{
 				mEmptyBlocks.push(info);
+				mActiveBlocks.erase(info.mPtr);
+			}
 			else if (free>0)
 				mRecycledBlock.push(info);
 		}
@@ -241,37 +310,58 @@ public:
 		int idx = 0;
 		while(idx<mLargeList.size())
 		{
-			int *blob = mLargeList[idx];
+			int *blob = mLargeList[idx] + 1;
 			if ( (*blob & HX_GC_MARKED) != gMarkBit )
 			{
 				mLargeAllocated -= (*blob & SIZE_MASK);
-				free(blob);
+				free(mLargeList[idx]);
 				mLargeList.qerase(idx);
 			}
 			else
 				idx++;
 		}
+
+		mTotalAfterLastCollect = MemUsage();
+		mDistributedSinceLastCollect = 0;
 	}
 
-	int MemUsage()
+	void CheckCollect(void *inBottomOfStack)
+	{
+		if (sgAllocInit && sgInternalEnable && mDistributedSinceLastCollect>(1<<20) &&
+		    mDistributedSinceLastCollect>mTotalAfterLastCollect)
+		{
+			Collect(inBottomOfStack);
+		}
+	}
+
+	size_t MemUsage()
 	{
 		return mLargeAllocated + (mRowsInUse<<IMMIX_LINE_BITS);
 	}
 
-	int MemSinceLastCollect()
+	bool IsValidObjectAddress(void *inPtr)
 	{
-		return mLargeSinceLastCollect;
-	}
-	int MemLastCollect()
-	{
-		return mTotalLastCollect;
+		for(int i=0;i<mLargeList.size();i++)
+		{
+			int *blob = mLargeList[i] + 2;
+			if (blob==inPtr)
+				return true;
+		}
+		void *aligned = (void *)( ((size_t)inPtr) & IMMIX_BLOCK_BASE_MASK);
+		if ( ((char *)inPtr - (char *)aligned) < ( IMMIX_HEADER_LINES << IMMIX_LINE_BITS) )
+			return false;
+		if ( mActiveBlocks.find(aligned) != mActiveBlocks.end() )
+			return true;
+		return false;
 	}
 
 
-	int mRowsInUse;
-	int mLargeAllocated;
-	int mLargeSinceLastCollect;
-	int mTotalLastCollect;
+	size_t mDistributedSinceLastCollect;
+
+	size_t mRowsInUse;
+	size_t mLargeAllocated;
+	size_t mTotalAfterLastCollect;
+
 
 	int mNextEmpty;
 	int mNextRecycled;
@@ -280,15 +370,18 @@ public:
    BlockList mEmptyBlocks;
    BlockList mRecycledBlock;
 	LargeList mLargeList;
+	std::set<void *> mActiveBlocks;
 };
 
 GlobalAllocator *sGlobalAlloc = 0;
 
+
 class LocalAllocator
 {
 public:
-	LocalAllocator()
+	LocalAllocator(int *inTopOfStack=0)
 	{
+		mTopOfStack = inTopOfStack;
 		Reset();
 	}
 
@@ -300,14 +393,21 @@ public:
 		mLinesSinceLastCollect = 0; 
 	}
 
-	void *Alloc(int inSize)
+	void SetTopOfStack(int *inTop)
+	{
+		// stop early to allow for ptr[1] ....
+		mTopOfStack = inTop;
+	}
+
+	void *Alloc(int inSize,bool inIsString)
    {
 		int s = ((inSize+3) & ~3) +sizeof(int);
+		if (inIsString) s += sizeof(int);
 		while(1)
 		{
 			if (!mCurrent.mPtr || mCurrentLine==IMMIX_LINES)
 			{
-				mCurrent = sGlobalAlloc->GetRecycledBlock();
+				mCurrent = sGlobalAlloc->GetRecycledBlock(&inSize);
 				// Start on line 2 (there are 256 line-markers at the beginning)
 				mCurrentLine = IMMIX_HEADER_LINES;
 				// find first empty line ...
@@ -320,6 +420,8 @@ public:
 			if (extra_lines == 0)
 			{
 				int *result = (int *)(mCurrent.mPtr + (mCurrentLine<<IMMIX_LINE_BITS) + mCurrentPos);
+		      if (inIsString)
+					*result++ = STRING_MAGIC;
 				*result = inSize | HX_GC_FIXED | HX_GC_SMALL_OBJ | gMarkBit;
 				mCurrentPos += s;
 				if (mCurrentPos==IMMIX_LINE_LEN)
@@ -350,6 +452,8 @@ public:
 				if (clear)
 				{
 				   int *result = (int *)(mCurrent.mPtr + (mCurrentLine<<IMMIX_LINE_BITS) + mCurrentPos);
+		         if (inIsString)
+						*result++ = STRING_MAGIC;
 				   *result = inSize | HX_GC_FIXED | HX_GC_MEDIUM_OBJ | gMarkBit;
 					mCurrentLine += extra_lines;
 					mCurrentPos = (mCurrentPos+s) & (IMMIX_LINE_LEN-1);
@@ -371,9 +475,58 @@ public:
 		return 0;
 	}
 
-	int MemSinceLastCollect()
+	bool TryVTable0(void **inVTable)
 	{
-		return mLinesSinceLastCollect<<IMMIX_LINE_BITS;
+		if (IsBadReadPtr(inVTable, sizeof(void *)))
+			return false;
+		return inVTable[0]==sgObject_root;
+	}
+
+
+	void Mark(void *inBottomOfStack)
+	{
+		int here = 0;
+		void *prev = 0;
+		for(int *ptr = inBottomOfStack ? (int *)inBottomOfStack : &here; ptr<mTopOfStack; ptr++)
+		{
+			void *vptr = *(void **)ptr;
+			if (vptr && !((size_t)vptr & 0x03) && vptr!=prev && sGlobalAlloc->IsValidObjectAddress(vptr))
+			{
+				prev = vptr;
+					void **vtable = *(void ***)vptr;
+					if ( (size_t)vtable > 0x10000 )
+					{
+						//printf("Found poiner %p -> %p.\n",vptr,vtable);
+						if (sStaticMarkFuncMap.find(vtable)!=sStaticMarkFuncMap.end())
+						{
+							//printf("  found func too\n");
+							sStaticMarkFuncMap[vtable](vptr);
+						}
+						// See if it is an object derived (non-virtually) from hxObject
+						else if ( TryVTable0(vtable) )
+						{
+							//printf("  found hxObject\n");
+							// ( (hxObject *)vptr )->__Mark();
+							HX_MARK_OBJECT( ((hxObject *)vptr) );
+						}
+						else
+						{
+							// Check for string...
+							unsigned int *header = ((unsigned int *)vptr);
+							if ( header[-2]==STRING_MAGIC && (header[-1] & gMarkBit) )
+							{
+							   //printf("String! %p (%08x)\n",vptr,header);
+								HX_MARK_STRING(vptr);
+							}
+							else
+							{
+							   //printf("????????????????????\n",vptr,header);
+							}
+						}
+					}
+			}
+		}
+	   Reset();
 	}
 
 	int mCurrentPos;
@@ -384,56 +537,92 @@ public:
 
 	int mLinesSinceLastCollect;
 
+	int *mTopOfStack;
+
 	BlockInfo mCurrent;
 	BlockInfo mOverflow;
 };
 
-// Should have 1 per thread...
-LocalAllocator *sLocalAlloc = 0;
+#ifdef _MSC_VER
+static int sTLSSlot = 0;
+#else
+static __thread LocalAllocator *ThreadLocalAlloc = 0;
+#endif
 
 
-void *hxInternalNew(int inSize)
+void hxSetTopOfStack(int *inTop)
+{
+	#ifdef _MSC_VER
+	LocalAllocator *ThreadLocalAlloc = (LocalAllocator *)TlsGetValue(sTLSSlot);
+	#endif
+
+	sgInternalEnable = true;
+
+	return ThreadLocalAlloc->SetTopOfStack(inTop);
+
+}
+
+void hxMarkCurrentThread(void *inBottomOfStack)
+{
+	#ifdef _MSC_VER
+	LocalAllocator *ThreadLocalAlloc = (LocalAllocator *)TlsGetValue(sTLSSlot);
+	#endif
+	ThreadLocalAlloc->Mark(inBottomOfStack);
+}
+
+
+void *hxInternalNew(int inSize,bool inIsString)
 {
 	if (!sgAllocInit)
 	{
 		sgAllocInit = true;
 		sGlobalAlloc = new GlobalAllocator();
-		sLocalAlloc = new LocalAllocator();
       sgFinalizers = new FinalizerList();
+		hxObject tmp;
+		void **vtable = *(void ***)(&tmp);
+		sgObject_root = vtable[0];
+		//printf("__root pointer %p\n", sgObject_root);
+		#ifdef _MSC_VER
+		sTLSSlot = TlsAlloc();
+		// Store object for main thread ...
+		TlsSetValue(sTLSSlot, new LocalAllocator() );
+		#endif
 	}
-	if (inSize>IMMIX_LARGE_OBJ_SIZE)
-		return sGlobalAlloc->AllocLarge(inSize);
+	void *result;
 
-	return sLocalAlloc->Alloc(inSize);
+	if (inSize>IMMIX_LARGE_OBJ_SIZE)
+		result = sGlobalAlloc->AllocLarge(inSize,inIsString);
+	else
+	{
+		#ifdef _MSC_VER
+		LocalAllocator *ThreadLocalAlloc = (LocalAllocator *)TlsGetValue(sTLSSlot);
+		// TODO: what is ThreadLocalAlloc is NULL (foreign thread) ?
+		#endif
+
+		result = ThreadLocalAlloc->Alloc(inSize,inIsString);
+	}
+
+	#ifdef DEBUG_ALLOC_PTR
+	if (result<=sgDebugPointer && sgDebugPointer -inSize < result)
+		printf("Pointer alloced !\n");
+	/*
+	for(int i=0;i<inSize;i++)
+		if ( ((char *)result)[i]!=0)
+			*(int *)0=0;
+	*/
+	#endif
+	return result;
 }
 
-// immix...
+// Force global collection - should only be called from 1 thread.
 void hxInternalCollect()
 {
+	int dummy;
    if (!sgAllocInit || !sgInternalEnable)
 		return;
 
-	int since_last = sGlobalAlloc->MemSinceLastCollect() + sLocalAlloc->MemSinceLastCollect();
-	int prev_total = sGlobalAlloc->MemLastCollect();
-	if (since_last<prev_total)
-		return;
-
-
-	gMarkBit ^= HX_GC_MARKED;
-
-	sGlobalAlloc->ClearRowMarks();
-
-   hxGCMarkNow();
-
-	RunFinalizers();
-
-	sGlobalAlloc->Reclaim();
-
-	int alloced = sGlobalAlloc->MemUsage();
-
-	sLocalAlloc->Reset();
+	sGlobalAlloc->Collect(&dummy);
 }
-
 
 
 void *hxInternalRealloc(void *inData,int inSize)
@@ -450,195 +639,21 @@ void *hxInternalRealloc(void *inData,int inSize)
    int min_size = s < inSize ? s : inSize;
 
    memcpy(new_data, inData, min_size );
+	memset(inData,0,s);
+
+	#ifdef DEBUG_ALLOC_PTR
+	if (inData<=sgDebugPointer && sgDebugPointer -s < inData)
+		printf("Pointer re-alloced !\n");
+	/*
+	for(int i=0;i<inSize;i++)
+		if ( ((char *)result)[i]!=0)
+			*(int *)0=0;
+	*/
+	#endif
+
 
    return new_data;
 }
 
-
-
-#else // Naive implementation ...
-
-// ---  Internal GC - Simple Implementation ------------------------------
-
-
-// --- AllocInfo -----------------
-
-typedef QuickVec<struct AllocInfo *> AllocInfoList;
-
-struct AllocInfo
-{
-   static void Init()
-   {
-      mActivePointers = new AllocInfoList();
-   }
-
-   inline void Unlink()
-   {
-      //sTotalSize -= (mSize & SIZE_MASK);
-      sTotalObjs--;
-   }
-
-   inline void Link()
-   {
-      mActivePointers->push(this);
-      //sTotalSize += (mSize & SIZE_MASK);
-      sTotalObjs++;
-   }
-
-   static AllocInfo *Create(int inSize)
-   {
-      AllocInfo *result = (AllocInfo *)malloc( inSize + sizeof(AllocInfo) );
-      memset(result,0,inSize+sizeof(AllocInfo));
-      result->mSize = inSize;
-      result->Link();
-      return result;
-   }
-
-   // We will also use mSize for the mark-bit.
-   // If aligment means that there are 4 bytes spare after size, then we
-   //  will use those instead.
-   // For strings generated by the linker, rather than malloc, this last int
-   //  will be 0xffffffff
-   int        mSize;
-
-   static unsigned int sTotalSize;
-   static unsigned int sTotalObjs;
-
-   static AllocInfoList *mActivePointers;
-};
-
-AllocInfoList *AllocInfo::mActivePointers = 0;
-unsigned int AllocInfo::sTotalSize = 0;
-unsigned int AllocInfo::sTotalObjs = 0;
-
-
-
-
-#define POOL_BIN_SHIFT   3
-#define POOL_BIN         (1<<POOL_BIN_SHIFT)
-#define POOL_COUNT       32
-#define MAX_POOLED       (POOL_COUNT<<POOL_BIN_SHIFT)
-
-static AllocInfoList sgFreePool[POOL_COUNT];
-static int sgMaxPool[POOL_COUNT];
-
-void *hxInternalNew( int inSize )
-{
-   AllocInfo *data = 0;
-
-   inSize = (inSize + POOL_BIN -1 ) & (~(POOL_BIN-1));
-
-   sgAllocedSinceLastCollect+=inSize;
-
-   //printf("hxInternalNew %d\n", inSize);
-   if (!sgAllocInit)
-   {
-      sgAllocInit = true;
-      AllocInfo::Init();
-      sgFinalizers = new FinalizerList();
-      sgMaxPool[0] = 0;
-      // Up to 500k per bin ...
-      for(int i=1;i<POOL_COUNT;i++)
-         sgMaxPool[i] = 500000 / (i<<POOL_BIN_SHIFT);
-   }
-   // First run, we can't be sure the pool has initialised - but now we can.
-   else if (inSize < MAX_POOLED )
-   {
-      int bin =  inSize >> POOL_BIN_SHIFT;
-      AllocInfoList &spares = sgFreePool[bin];
-      if (!spares.empty())
-      {
-          data = spares.pop();
-          data->Link();
-      }
-   }
-
-   if (!data)
-      data = AllocInfo::Create(inSize);
-   else
-      memset(data+1,0,inSize);
-
-   return data + 1;
-}
-
-
-
-void hxInternalCollect()
-{
-   if (!sgAllocInit || !sgInternalEnable)
-		return;
-
-   //printf("New Bytes %d/%d\n", sgAllocedSinceLastCollect, AllocInfo::sTotalSize );
-   //if (sgAllocedSinceLastCollect*4 < AllocInfo::sTotalSize)
-      //return;
-
-   sgAllocedSinceLastCollect= 0;
-
-
-   hxGCMarkNow();
-
-	RunFinalizers();
-
-   // And sweep ...
-   int deleted = 0;
-   int retained = 0;
-
-   int &size = AllocInfo::mActivePointers->mSize;
-   AllocInfo **info = AllocInfo::mActivePointers->mPtr;
-   int idx = 0;
-   while(idx<size)
-   {
-      AllocInfo *data = info[idx];
-      int &flags = ( (int *)(data+1) )[-1];
-      if ( !(flags & HX_GC_MARKED) )
-      {
-          data->Unlink();
-          AllocInfo::mActivePointers->qerase(idx);
-
-          int bin = data->mSize >> POOL_BIN_SHIFT;
-          if ( bin < POOL_COUNT )
-          {
-               AllocInfoList &pool = sgFreePool[bin];
-               if (pool.size()<sgMaxPool[bin])
-                  pool.push(data);
-               else
-                  free(data);
-          }
-          else
-             free(data);
-          deleted++;
-      }
-      else
-      {
-           flags ^= HX_GC_MARKED;
-           retained++;
-           idx++;
-      }
-   }
-
-   //printf("Objs freed %d/%d)\n", deleted, retained);
-}
-
-
-
-
-void *hxInternalRealloc(void *inData,int inSize)
-{
-   if (inData==0)
-      return hxInternalNew(inSize);
-
-   AllocInfo *data = ((AllocInfo *)(inData) ) -1;
-   int s = data->mSize & SIZE_MASK;
-
-   void *new_data = hxInternalNew(inSize);
-
-   int min_size = s < inSize ? s : inSize;
-
-   memcpy(new_data, inData, min_size );
-
-   return new_data;
-}
-
-#endif // Naive implementation
 
 #endif // if INTERNAL_GC

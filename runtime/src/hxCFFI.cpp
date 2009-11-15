@@ -134,7 +134,7 @@ int val_type(hxObject * arg1)
 	return arg1->__GetType();
 }
 
-
+\
 vkind val_kind(hxObject * arg1) THROWS
 {
 	if (arg1==0)

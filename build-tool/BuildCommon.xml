@@ -442,7 +442,6 @@
   <files id="__main__" unless="static"/>
   <files id="__lib__" if="static"/>
   <files id="runtime"/>
-  <files id="boehm_gc" unless="INTERNAL_GC"/>
   <lib name="-lpthread" if="linux"/>
   <lib name="-ldl" if="linux"/>
 </target>

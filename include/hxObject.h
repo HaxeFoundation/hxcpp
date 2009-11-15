@@ -22,6 +22,7 @@
 
 #ifdef HX_WINDOWS
 // MSVC hacks
+
 #define SHARED __declspec(dllexport)
 #elif defined(HX_LINUX) || defined (HX_MACOS)
 #define SHARED __attribute__ ((visibility("default")))
@@ -196,9 +197,8 @@ public:
    void *operator new( size_t inSize, bool inContainer=true );
    void operator delete( void *, bool ) { }
 
-   static void __boot();
-
    virtual void *__root();
+   virtual void __Mark() { }
    virtual bool __Is(hxObject *inClass) const { return true; }
    // helpers...
    bool __Is(Dynamic inClass ) const;
@@ -250,10 +250,11 @@ public:
    virtual Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k);
 
    virtual int __ArgCount() const { return -1; }
-   virtual void __Mark() { }
 
 
    static Class &__SGetClass();
+   static void __SMark(void *inPtr) { HX_MARK_OBJECT( ((hxObject *)inPtr) ); }
+   static void __boot();
 };
 
 
@@ -278,6 +279,8 @@ public:
       { mPtr = dynamic_cast<OBJ_ *>(inObjectPtr.GetPtr()); }
 
    hxObjectPtr(const hxObjectPtr<OBJ_> &inOther) : mPtr( inOther.GetPtr() ) {  }
+
+	inline ~hxObjectPtr() { mPtr = 0; }
 
    hxObjectPtr &operator=(const null &inNull) { mPtr = 0; return *this; }
    hxObjectPtr &operator=(Ptr inRHS) { mPtr = inRHS; return *this; }
@@ -342,6 +345,9 @@ public:
 
    inline String &operator=(const String &inRHS)
            { length = inRHS.length; __s = inRHS.__s; return *this; }
+
+   String Default(const String &inDef) { return __s ? *this : inDef; }
+
 
    String toString() { return *this; }
 
@@ -1008,7 +1014,7 @@ public:
       return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_));
    }
 
-   // Does not check for size valid - use quth care
+   // Does not check for size valid - use with care
    inline ELEM_ &QuickItem(int inIndex) { return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)); }
 
 
@@ -1020,7 +1026,7 @@ public:
          for(int i=0;i<length;i++)
             MarkMember(ptr[i]);
       }
-      HX_MARK_STRING(mBase);
+      HX_MARK_ARRAY(mBase);
    }
 
    int GetElementSize() const { return sizeof(ELEM_); }
@@ -1291,8 +1297,23 @@ typedef Dynamic (*ConstructEmptyFunc)();
 typedef Dynamic (*ConstructArgsFunc)(DynamicArray inArgs);
 typedef Dynamic (*ConstructEnumFunc)(String inName,DynamicArray inArgs);
 typedef void (*MarkFunc)();
+typedef void (*StaticMarkFunc)(void *inPtr);
 
 inline bool operator!=(ConstructEnumFunc inFunc,const null &inNull) { return inFunc!=0; }
+
+template<typename CLASS_,typename SUPER_>
+void *hxGetVTable()
+{
+	CLASS_ c;
+	SUPER_ *s = &c;
+	return *(void **)s;
+}
+
+struct _VtableMarks
+{
+	void *mVtable;
+   StaticMarkFunc mMark;
+};
 
 
 typedef bool (*CanCastFunc)(hxObject *inPtr);
@@ -1347,7 +1368,7 @@ typedef hxObjectPtr<Class_obj> Class;
 // --- All classes should be registered with this function via the "__boot" method
 
  Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
-                    String inStatics[], String inMembers[],
+                    String inStatics[], String inMembers[], _VtableMarks inVtableMark[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
                     Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0);
 

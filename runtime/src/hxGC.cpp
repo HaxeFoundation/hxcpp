@@ -237,7 +237,7 @@ void __hxcpp_enable(bool inEnable)
 wchar_t *hxNewString(int inLen)
 {
 #ifdef INTERNAL_GC
-   wchar_t *result =  (wchar_t *)hxInternalNew( (inLen+1)*sizeof(wchar_t) );
+   wchar_t *result =  (wchar_t *)hxInternalNew( (inLen+1)*sizeof(wchar_t), true );
 #else
    wchar_t *result =  (wchar_t *)GC_MALLOC_ATOMIC((inLen+1)*sizeof(wchar_t));
 #endif

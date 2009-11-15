@@ -12,39 +12,38 @@
 #define STRING_UTF8(s,len) String( ("\xff\xff\xff\xff" s) + 4 ,len)
 
 
-#define DO_RTTI_BASE(Parent) \
+#define DO_RTTI_BASE \
    bool __Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; } \
 
 
-#define DO_RTTI_NO_TYPE(Parent) \
-   DO_RTTI_BASE(Parent) \
+#define DO_RTTI \
+   DO_RTTI_BASE \
    static hxObjectPtr<Class_obj> __mClass; \
    hxObjectPtr<Class_obj > __GetClass() const { return __mClass; } \
    static hxObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
+   static void __SMark(void *inPtr) { HX_MARK_OBJECT(((OBJ_ *)inPtr)); } \
    Dynamic __Field(const String &inString); \
    Dynamic __IField(int inFieldID); \
    void *__root() { return this; } \
    void __GetFields(Array<String> &outFields); \
-   Dynamic __SetField(const String &inString,const Dynamic &inValue);
-
-#define DO_RTTI_(Parent) \
-   DO_RTTI_NO_TYPE(Parent) \
+   Dynamic __SetField(const String &inString,const Dynamic &inValue); \
    virtual int __GetType() const { return vtClass; }
 
 
-#define DO_RTTI DO_RTTI_(hxObject)
-
-#define DO_ENUM_RTTI_INTERNAL DO_RTTI_BASE(hxObject)  \
+#define DO_ENUM_RTTI_INTERNAL \
+   DO_RTTI_BASE  \
    Dynamic __Field(const String &inString); \
    static int __FindIndex(String inName); \
    static int __FindArgCount(String inName);
 
-#define DO_ENUM_RTTI DO_ENUM_RTTI_INTERNAL \
+#define DO_ENUM_RTTI \
+   DO_ENUM_RTTI_INTERNAL \
    static hxObjectPtr<Class_obj> __mClass; \
    hxObjectPtr<Class_obj > __GetClass() const { return __mClass; } \
    static hxObjectPtr<Class_obj> &__SGetClass() { return __mClass; }
 
-#define INTERFACE_DEF
+#define INTERFACE_DEF \
+   static void __SMark(void *inPtr) { HX_MARK_OBJECT(((OBJ_ *)inPtr)); } \
 
 
 #define DECLARE_IMPLEMENT_DYNAMIC  hxFieldMap *__mDynamicFields;
@@ -232,7 +231,9 @@ static Dynamic Create##enum_obj(String inName,DynamicArray inArgs) \
 }
 
 
-#define DECLARE_CLASS0(klass) class klass##_obj; typedef hxObjectPtr<klass##_obj> klass;
+#define DECLARE_CLASS0(klass) \
+	class klass##_obj; \
+	typedef hxObjectPtr<klass##_obj> klass;
 #define DECLARE_CLASS1(ns1,klass) namespace ns1 { DECLARE_CLASS0(klass) }
 #define DECLARE_CLASS2(ns2,ns1,klass) namespace ns2 { DECLARE_CLASS1(ns1,klass) }
 #define DECLARE_CLASS3(ns3,ns2,ns1,klass) namespace ns3 { DECLARE_CLASS2(ns2,ns1,klass) }
@@ -427,8 +428,20 @@ static Dynamic Create##enum_obj(String inName,DynamicArray inArgs) \
    inline double operator op (const int &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS; } \
 
 
+#ifdef INTERNAL_GC
+extern void hxSetTopOfStack(int *inTopOfStack);
+	#define TOP_OF_STACK \
+		int t0 = 99; \
+		hxSetTopOfStack(&t0);
+#else
+	#define TOP_OF_STACK
+#endif
+
+
 #define BEGIN_MAIN \
+\
 int main(int argc,char **argv){ \
+	TOP_OF_STACK \
 	__boot_hxcpp(); \
 	try{ \
 		__boot_all();
@@ -444,8 +457,10 @@ int main(int argc,char **argv){ \
 
 #define BEGIN_LIB_MAIN \
 extern "C" {\
+\
 void __hxcpp_lib_main() \
 { \
+	TOP_OF_STACK \
 	__boot_hxcpp(); \
 	__boot_all();
 

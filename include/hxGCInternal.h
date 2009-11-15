@@ -9,13 +9,16 @@ class hxObject;
 typedef void (*finalizer)(hxObject *v);
 
 
-void *hxInternalNew(int inSize);
+void *hxInternalNew(int inSize,bool inIsString=false);
 void *hxInternalRealloc(void *inData,int inSize);
 void hxInternalEnableGC(bool inEnable);
 void *hxInternalCreateConstBuffer(const void *inData,int inSize);
 void hxInternalCollect();
+void hxGCSetVTables(struct _VtableMarks inVtableMark[]);
 
 void hxGCMarkNow();
+
+void hxPrologDone();
 
 struct hxInternalFinalizer
 {
@@ -67,17 +70,17 @@ extern int  gMarkBit;
 
 #define IMMIX_LARGE_OBJ_SIZE 8000
 
-#define MARK_ROW(ptr,flags) \
+#define MARK_ROW(ptr,flags,header_bytes) \
 { \
-	register size_t ptr_i = ((size_t)ptr)-sizeof(int); \
+	register size_t ptr_i = ((size_t)ptr)-sizeof(int)*header_bytes; \
    char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK); \
    char *base = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS); \
 	if ( flags & HX_GC_SMALL_OBJ ) \
 		*base = 1; \
 	else if (flags & HX_GC_MEDIUM_OBJ) \
 	{ \
-		int rows = (( (flags & HX_SIZE_MASK) + (sizeof(int) + IMMIX_LINE_LEN -1)  + \
-				    (ptr_i & (IMMIX_LINE_LEN-1))) >> IMMIX_LINE_BITS); \
+		int rows = (( (flags & HX_SIZE_MASK) + sizeof(int)*header_bytes + \
+				    (ptr_i & (IMMIX_LINE_LEN-1)) -1 ) >> IMMIX_LINE_BITS); \
 		for(int i=0;i<=rows;i++) \
 			*base++ = 1; \
 	} \
@@ -88,14 +91,10 @@ if (ioPtr) \
 { \
    char *root = (char *)ioPtr->__root(); \
    unsigned int &flags =  ((unsigned int *)root)[-1]; \
-   if ( !(flags&HX_GC_FIXED) ) \
-	{ \
-		*(char **)ioPtr =  gMovedPtrs[flags & HX_MOVED_ID_MASK] + ( (char *)(ioPtr) - root) ; \
-	} \
 	if ( (flags&HX_GC_MARKED)!=gMarkBit  ) \
    { \
 		flags ^= HX_GC_MARKED; \
-		MARK_ROW(root,flags); \
+		MARK_ROW(root,flags,1); \
 		(ioPtr)->__Mark(); \
 	} \
 }
@@ -106,17 +105,28 @@ if (ioPtr) \
    int &flags = ((int *)(ioPtr))[-1]; \
    if ( !(flags & HX_GC_IS_CONST) ) \
 	{ \
-		if (!( flags&HX_GC_FIXED ) ) \
-		{ \
-			*(char **)ioPtr = gMovedPtrs[flags & HX_MOVED_ID_MASK]; \
-		} \
 		if ( (flags & HX_GC_MARKED) != gMarkBit) \
 		{ \
 			flags ^= HX_GC_MARKED; \
-			MARK_ROW(ioPtr,flags); \
+			MARK_ROW(ioPtr,flags,2); \
 		} \
 	} \
 }
+
+#define HX_MARK_ARRAY(ioPtr) \
+if (ioPtr) \
+{ \
+   int &flags = ((int *)(ioPtr))[-1]; \
+   if ( !(flags & HX_GC_IS_CONST) ) \
+	{ \
+		if ( (flags & HX_GC_MARKED) != gMarkBit) \
+		{ \
+			flags ^= HX_GC_MARKED; \
+			MARK_ROW(ioPtr,flags,1); \
+		} \
+	} \
+}
+
 
 #else // Naive GC (non-immix)...
 
