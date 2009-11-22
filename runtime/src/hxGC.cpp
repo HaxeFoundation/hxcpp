@@ -42,7 +42,7 @@ static bool sgAllocInit = 0;
 void *hxObject::operator new( size_t inSize, bool inContainer )
 {
 #ifdef INTERNAL_GC
-   return hxInternalNew(inSize);
+   return hxInternalNew(inSize,true);
 #else
 #ifdef __APPLE__
    if (sNeedGCInit)
@@ -62,7 +62,7 @@ void *hxObject::operator new( size_t inSize, bool inContainer )
 void *String::operator new( size_t inSize )
 {
 #ifdef INTERNAL_GC
-   return hxInternalNew(inSize);
+   return hxInternalNew(inSize,false);
 #else
    return GC_MALLOC_ATOMIC(inSize);
 #endif
@@ -184,6 +184,11 @@ void hxGCInit()
 #endif
 }
 
+#ifndef INTERNAL_GC
+// Stubs...
+void hxGCSetVTables(_VTableMarks inVtableMark[]) { } 
+bool hxMarkAlloc(void *inPtr) { return false; }
+#endif
 
 #if defined(_MSC_VER)
 struct ThreadData
@@ -237,7 +242,7 @@ void __hxcpp_enable(bool inEnable)
 wchar_t *hxNewString(int inLen)
 {
 #ifdef INTERNAL_GC
-   wchar_t *result =  (wchar_t *)hxInternalNew( (inLen+1)*sizeof(wchar_t), true );
+   wchar_t *result =  (wchar_t *)hxInternalNew( (inLen+1)*sizeof(wchar_t), false );
 #else
    wchar_t *result =  (wchar_t *)GC_MALLOC_ATOMIC((inLen+1)*sizeof(wchar_t));
 #endif
@@ -249,7 +254,7 @@ wchar_t *hxNewString(int inLen)
 void *hxNewGCBytes(void *inData,int inSize)
 {
 #ifdef INTERNAL_GC
-   void *result =  hxInternalNew(inSize);
+   void *result =  hxInternalNew(inSize,false);
 #else
    void *result =  GC_MALLOC(inSize);
 #endif
@@ -264,7 +269,7 @@ void *hxNewGCBytes(void *inData,int inSize)
 void *hxNewGCPrivate(void *inData,int inSize)
 {
 #ifdef INTERNAL_GC
-   void *result =  hxInternalNew(inSize);
+   void *result =  hxInternalNew(inSize,false);
 #else
    void *result =  GC_MALLOC_ATOMIC(inSize);
 #endif

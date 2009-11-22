@@ -7,6 +7,11 @@ int gMarkBit = 0;
 
 #ifdef INTERNAL_GC
 
+#define PRECISE_STACK_MARK
+#define CREATE_OBJ_TABLE
+#define MARK_OBJ_TABLE
+#define UPDATE_OBJ_TABLE
+
 #ifdef _MSC_VER
 #include <windows.h>
 #endif
@@ -17,22 +22,31 @@ int gMarkBit = 0;
 #include <vector>
 #include <set>
 
-#define SIZE_MASK    0x07ffffff
-
-#define STRING_MAGIC 0xD82BC9B1
-
 void hxMarkCurrentThread(void *inBottomOfStack);
 
-typedef std::map<void *,StaticMarkFunc> StaticMarkFuncMap;
+
+struct VTableData
+{
+	StaticMarkFunc mMark;
+	int            mOffset;
+};
+
+typedef std::map<void *,VTableData> StaticMarkFuncMap;
+
 StaticMarkFuncMap sStaticMarkFuncMap;
 
-void hxGCSetVTables(_VtableMarks inVtableMark[])
+void hxGCSetVTables(_VTableMarks inVtableMark[])
 {
+	#ifdef PRECISE_STACK_MARK
 	if (inVtableMark)
 	{
-	   for(_VtableMarks *v=inVtableMark; v->mVtable; v++)
-	      sStaticMarkFuncMap[v->mVtable] = v->mMark;
+	   for(_VTableMarks *v=inVtableMark; v->mVTable; v++)
+		{
+			VTableData data = { v->mMark, v->mOffset };
+	      sStaticMarkFuncMap[v->mVTable] = data;
+		}
 	}
+	#endif
 }
 
 
@@ -41,11 +55,8 @@ static bool sgAllocInit = 0;
 static bool sgInternalEnable = false;
 static void *sgObject_root = 0;
 
-//#define DEBUG_ALLOC_PTR
-
-#ifdef DEBUG_ALLOC_PTR
-static char *sgDebugPointer = (char *)0xb5a584;
-#endif
+//#define DEBUG_ALLOC_PTR ((char *)0xb68354)
+//#define DEBUG_ALLOC_SIZE 0xd24
 
 template<typename T>
 struct QuickVec
@@ -153,20 +164,335 @@ void *hxInternalCreateConstBuffer(const void *inData,int inSize)
 
 // ---  Internal GC - IMMIX Implementation ------------------------------
 
-struct BlockInfo
+
+
+// Some inline implementations ...
+// Use macros to allow for mark/move
+
+
+
+/*
+  IMMIX block size, and various masks for converting addresses
+
+*/
+
+#define IMMIX_BLOCK_BITS      15
+#define IMMIX_LINE_BITS        7
+
+#define IMMIX_BLOCK_SIZE        (1<<IMMIX_BLOCK_BITS)
+#define IMMIX_BLOCK_OFFSET_MASK (IMMIX_BLOCK_SIZE-1)
+#define IMMIX_BLOCK_BASE_MASK   (~(size_t)(IMMIX_BLOCK_OFFSET_MASK))
+#define IMMIX_LINE_LEN          (1<<IMMIX_LINE_BITS)
+#define IMMIX_LINES             (1<<(IMMIX_BLOCK_BITS-IMMIX_LINE_BITS))
+#define IMMIX_HEADER_LINES      (IMMIX_LINES>>IMMIX_LINE_BITS)
+#define IMMIX_USEFUL_LINES      (IMMIX_LINES - IMMIX_HEADER_LINES)
+#define IMMIX_LINE_POS_MASK     ((size_t)(IMMIX_LINE_LEN-1))
+#define IMMIX_START_OF_ROW_MASK  (~IMMIX_LINE_POS_MASK)
+
+
+
+/*
+
+ IMMIX Alloc Header - 32 bits
+
+*/
+
+#define IMMIX_ALLOC_MARKED      0x80000000
+#define IMMIX_ALLOC_IS_CONST    0x40000000
+#define IMMIX_ALLOC_SMALL_OBJ   0x20000000
+#define IMMIX_ALLOC_MEDIUM_OBJ  0x10000000
+#define IMMIX_ALLOC_TO_OBJ_TBL  0x00ff0000
+#define IMMIX_ALLOC_IS_OBJECT   0x00008000
+#define IMMIX_ALLOC_SIZE_MASK   0x00007fff
+
+
+
+/*
+
+ IMMIX Row Header - 8 bits
+
+*/
+#define IMMIX_ROW_NEEDS_CLEAR     0x80
+#define IMMIX_ROW_BIG_OBJ_TABLE   0x80
+#define IMMIX_ROW_OBJ_TABLE_POS   0x7C
+#define IMMIX_ROW_HAS_OBJ_TABLE   0x02
+#define IMMIX_ROW_MARKED          0x01
+#define IMMIX_NOT_MARKED_MASK     (~IMMIX_ROW_MARKED)
+
+
+
+/*
+ OBJ_TBL - 8 bits
+*/
+#define IMMIX_OBJ_TBL_ALLOC_POS_MASK  0x7C
+#define IMMIX_OBJ_TBL_ALL_ALLOC_POS_MASK  0x7C7C7C7C
+#define IMMIX_OBJ_TBL_OBJECT_LIVE     0x02
+#define IMMIX_OBJ_TBL_MARKED          0x01
+
+// Bigger than this, and they go in the large object pool
+#define IMMIX_LARGE_OBJ_SIZE 4000
+#define IMMIX_LARGE_OBJ_SIZE_MASK   0x0fffffff
+
+#ifdef allocString
+#undef allocString
+#endif
+
+
+
+enum AllocType { allocNone, allocString, allocObject };
+
+union BlockData
 {
-	BlockInfo(char *inPtr=0)
+	void Init() { mUsedRows = 0; }
+	inline int GetFreeData() const { return (IMMIX_USEFUL_LINES - mUsedRows)<<IMMIX_LINE_BITS; }
+	void ClearEmpty()
 	{
-		mPtr = inPtr;
-		mFreeLines = mPtr ? IMMIX_USEFUL_LINES : 0;
+		memset(this,0,IMMIX_BLOCK_SIZE);
 	}
-   char *mPtr;
-   int  mFreeLines;
+	void ClearRecycled()
+	{
+		for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
+		{
+			if (!(mRowFlags[r] & IMMIX_ROW_MARKED))
+			{
+				mRowFlags[r] = 0;
+				//__int64 *row = (__int64 *)mRow[r];
+				double *row = (double *)mRow[r];
+				row[0] = 0;
+				row[1] = 0;
+				row[2] = 0;
+				row[3] = 0;
+				row[4] = 0;
+				row[5] = 0;
+				row[6] = 0;
+				row[7] = 0;
+				row[8] = 0;
+				row[9] = 0;
+				row[10] = 0;
+				row[11] = 0;
+				row[12] = 0;
+				row[13] = 0;
+				row[14] = 0;
+				row[15] = 0;
+			}
+		}
+	}
+	bool IsEmpty() const { return mUsedRows == 0; }
+	bool IsFull() const { return mUsedRows == IMMIX_USEFUL_LINES; }
+	int GetRowsInUse() const { return mUsedRows; }
+	inline bool IsRowUsed(int inRow) const { return mRowFlags[inRow] & IMMIX_ROW_MARKED; }
+
+	void Verify()
+	{
+		for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
+		{
+			unsigned char &row_flag = mRowFlags[r];
+			if ( !(row_flag * IMMIX_ROW_MARKED) )
+			{
+				if (row_flag!=0)
+				{
+					printf("Block verification failed on row %d\n",r);
+					*(int *)0=0;
+				}
+			}
+		}
+	}
+
+	#define CHECK_TABLE_LIVE \
+					if (*table &&  \
+			            ((row[*table & IMMIX_OBJ_TBL_ALLOC_POS_MASK] & IMMIX_ALLOC_MARKED) != \
+							   gMarkBit)) *table = 0;
+
+	void Reclaim()
+	{
+		int free = 0;
+		for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
+		{
+			unsigned char &row_flag = mRowFlags[r];
+			if (row_flag & IMMIX_ROW_MARKED)
+			{
+				#ifdef UPDATE_OBJ_TABLE
+				// Find object table
+				if (row_flag & IMMIX_ROW_HAS_OBJ_TABLE)
+				{
+					int table_pos = row_flag & IMMIX_ROW_OBJ_TABLE_POS;
+
+					#ifndef MARK_OBJ_TABLE
+					// Must update from the object mark flag ...
+					unsigned char *row = mRow[r];
+					unsigned char *table = row + table_pos;
+
+					CHECK_TABLE_LIVE
+					table++;
+					CHECK_TABLE_LIVE
+					table++;
+					CHECK_TABLE_LIVE
+					table++;
+					CHECK_TABLE_LIVE
+					if (row_flag & IMMIX_ROW_BIG_OBJ_TABLE)
+					{
+						table++;
+						CHECK_TABLE_LIVE
+						table++;
+						CHECK_TABLE_LIVE
+						table++;
+						CHECK_TABLE_LIVE
+						table++;
+						CHECK_TABLE_LIVE
+					}
+
+					#else
+					unsigned int *table = (unsigned int *)(mRow[r] + table_pos);
+
+					// Shift mark bit into "live" bit
+					*table = (*table & IMMIX_OBJ_TBL_ALL_ALLOC_POS_MASK) | ((*table & 0x01010101) << 1);
+
+					if (row_flag & IMMIX_ROW_BIG_OBJ_TABLE)
+					{
+						table++;
+						// Shift mark bit into "live" bit
+						*table = (*table & IMMIX_OBJ_TBL_ALL_ALLOC_POS_MASK) | ((*table & 0x01010101) << 1);
+					}
+					#endif
+				}
+				#endif
+			}
+			else
+			{
+				row_flag = 0;
+				free++;
+			}
+		}
+
+		mUsedRows = IMMIX_USEFUL_LINES - free;
+
+		//Verify();
+	}
+
+
+	#ifdef PRECISE_STACK_MARK
+	AllocType GetAllocType(int inOffset,bool inReport = false)
+	{
+		inReport = false;
+		int row = inOffset >> IMMIX_LINE_BITS;
+		if (row < IMMIX_HEADER_LINES || row >= IMMIX_LINES)
+		{
+			if (inReport)
+			   printf("  bad row %d (off=%d)\n", row);
+			return allocNone;
+		}
+		int flags = mRowFlags[row];
+		if (!(flags & (IMMIX_ROW_HAS_OBJ_TABLE)))
+		{
+			if (inReport)
+				printf("  row has no obj table :[%d] = %d\n", row, flags );
+			return allocNone;
+		}
+		int sought = inOffset & IMMIX_LINE_POS_MASK;
+		if (sought==0)
+		{
+			if (inReport)
+				printf("  obj on start of row :[%d] (&%d)\n", row, IMMIX_LINE_POS_MASK );
+			return allocNone;
+		}
+
+		int table_pos = flags & IMMIX_ROW_OBJ_TABLE_POS;
+		unsigned char *table = (unsigned char *)(mRow[row] + table_pos);
+		for(int n=(flags & IMMIX_ROW_BIG_OBJ_TABLE) ? 8 : 4; n; n--)
+		{
+			// Ok, it is a valid offset
+			if ( (*table & IMMIX_OBJ_TBL_ALLOC_POS_MASK) == sought)
+			{
+				// Object dead ?
+				if ( ! (*table & (IMMIX_OBJ_TBL_OBJECT_LIVE | IMMIX_OBJ_TBL_MARKED))  )
+				{
+					if (inReport)
+						printf(" Object appears dead.\n");
+					break; 
+				}
+				return ( (*(int *)(mRow[0] + inOffset)) & IMMIX_ALLOC_IS_OBJECT) ? allocObject : allocString;
+			}
+			table++;
+		}
+
+	   /*
+		if (inReport)
+		{
+			printf("  not found in table (r=%d,tp=%d,sought =%d): ", row, table_pos, sought);
+			table = (unsigned char *)(mRow[row] + table_pos);
+			for(int n=(flags & IMMIX_ROW_BIG_OBJ_TABLE) ? 8 : 4; n; n--)
+				printf ("%d ", *table++ & IMMIX_OBJ_TBL_ALLOC_POS_MASK);
+			printf("\n");
+		}
+		*/
+
+		return allocNone;
+	}
+	#endif
+
+	void ClearRowMarks()
+	{
+		unsigned char *header = mRowFlags + IMMIX_HEADER_LINES;
+		unsigned char *header_end = header + IMMIX_USEFUL_LINES;
+		while(header !=  header_end)
+			*header++ &= IMMIX_NOT_MARKED_MASK;
+	}
+
+
+	// First 2 bytes are not needed for row markers (first 2 rows are for flags)
+	unsigned short mUsedRows;
+	// First 2 rows contain a byte-flag-per-row 
+	unsigned char  mRowFlags[IMMIX_LINES];
+	// Row data as union - don't use first 2 rows
+	unsigned char  mRow[IMMIX_LINES][IMMIX_LINE_LEN];
 };
 
-typedef QuickVec<BlockInfo> BlockList;
+
+bool hxMarkAlloc(void *inPtr)
+{
+	register size_t ptr_i = ((size_t)inPtr)-sizeof(int);
+   unsigned int &flags =  *((unsigned int *)ptr_i);
+	if ( (flags&IMMIX_ALLOC_MARKED)==gMarkBit  )
+		return false;
+
+	if ( flags & IMMIX_ALLOC_IS_CONST )
+		return false;
+
+	flags ^= IMMIX_ALLOC_MARKED;
+
+   char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
+   char *base = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS);
+	if ( flags & IMMIX_ALLOC_SMALL_OBJ )
+	{
+		*base |= IMMIX_ROW_MARKED;
+		#ifdef MARK_OBJ_TABLE
+		((unsigned char *)(ptr_i & IMMIX_START_OF_ROW_MASK))
+			  [ (flags & IMMIX_ALLOC_TO_OBJ_TBL) >> 16 ] |= IMMIX_OBJ_TBL_MARKED;
+		#endif
+	}
+	else if (flags & IMMIX_ALLOC_MEDIUM_OBJ)
+	{
+		int rows = (( (flags & IMMIX_ALLOC_SIZE_MASK) + sizeof(int) +
+				    (ptr_i & (IMMIX_LINE_LEN-1)) -1 ) >> IMMIX_LINE_BITS);
+		#ifdef MARK_OBJ_TABLE
+		((unsigned char *)(ptr_i & IMMIX_START_OF_ROW_MASK))
+			  [ (flags & IMMIX_ALLOC_TO_OBJ_TBL) >> 16 ] |= IMMIX_OBJ_TBL_MARKED;
+		#endif
+		for(int i=0;i<=rows;i++)
+			*base++ |= IMMIX_ROW_MARKED;
+	}
+
+	return true;
+}
+
+
+
+typedef std::set<BlockData *> PointerSet;
+typedef QuickVec<BlockData *> BlockList;
 
 typedef QuickVec<int *> LargeList;
+
+enum MemType { memUnmanaged, memBlock, memLarge };
 
 class GlobalAllocator
 {
@@ -182,34 +508,38 @@ public:
 		mTotalAfterLastCollect = 1<<20;
 	}
 	// TODO: make thread safe
-   void *AllocLarge(int inSize,bool inIsString)
+   void *AllocLarge(int inSize)
 	{
-		int *result = (int *)malloc(inSize + sizeof(int)*2);
+		inSize = (inSize +3) & ~3;
+		int *result = (int *)malloc(inSize + sizeof(int));
 		mLargeList.push(result);
 
 		mLargeAllocated += inSize;
-		result[0] = inIsString ? STRING_MAGIC : 0;
-		result[1] = inSize | HX_GC_FIXED | gMarkBit;
-		memset(result+2,0,inSize);
+		result[0] = inSize | gMarkBit;
 		mDistributedSinceLastCollect += inSize;
-		return result+2;
+		return result+1;
 	}
-	BlockInfo GetRecycledBlock(void *inBottomOfStack)
+	BlockData * GetRecycledBlock(void *inBottomOfStack)
 	{
+		#ifdef PRECISE_STACK_MARK
 		CheckCollect(inBottomOfStack);
+		#endif
 		if (mNextRecycled < mRecycledBlock.size())
 		{
-			BlockInfo &block = mRecycledBlock[mNextRecycled++];
-			mDistributedSinceLastCollect +=  block.mFreeLines << IMMIX_LINE_BITS;
+			BlockData *block = mRecycledBlock[mNextRecycled++];
+			mDistributedSinceLastCollect +=  block->GetFreeData();
+			block->ClearRecycled();
 			return block;
 		}
 		return GetEmptyBlock(false,inBottomOfStack);
 	}
 
-	BlockInfo GetEmptyBlock(bool inCheckCollect, void *inBottomOfStack)
+	BlockData *GetEmptyBlock(bool inCheckCollect, void *inBottomOfStack)
 	{
+		#ifdef PRECISE_STACK_MARK
 		if (inCheckCollect)
 			CheckCollect(inBottomOfStack);
+		#endif
 		if (mNextEmpty >= mEmptyBlocks.size())
 		{
 			// Allocate some more blocks...
@@ -223,97 +553,76 @@ public:
 
 			for(int i=0;i<n;i++)
 			{
-				char *ptr = aligned + i*IMMIX_BLOCK_SIZE;
-				//memset(ptr,0,IMMIX_HEADER_LINES * IMMIX_LINE_LEN );
-				memset(ptr,0,IMMIX_BLOCK_SIZE);
-				for(int i=0;i<IMMIX_HEADER_LINES;i++)
-					ptr[i] = 1;
-				mAllBlocks.push( BlockInfo(ptr) );
-				mEmptyBlocks.push( BlockInfo(ptr) );
+				BlockData *block = (BlockData *)(aligned + i*IMMIX_BLOCK_SIZE);
+				block->Init();
+				mAllBlocks.push(block);
+				mEmptyBlocks.push(block);
 			}
 		}
 
-		BlockInfo &block = mEmptyBlocks[mNextEmpty++];
-		mActiveBlocks.insert(block.mPtr);
-		mDistributedSinceLastCollect +=  block.mFreeLines << IMMIX_LINE_BITS;
+		BlockData *block = mEmptyBlocks[mNextEmpty++];
+		block->ClearEmpty();
+		mActiveBlocks.insert(block);
+		mDistributedSinceLastCollect +=  block->GetFreeData();
 		return block;
 	}
 
 	void ClearRowMarks()
 	{
-		for(int i=0;i<mAllBlocks.size();i++)
-			memset(mAllBlocks[i].mPtr,0,IMMIX_LINE_LEN * IMMIX_HEADER_LINES);
+		for(PointerSet::iterator i=mActiveBlocks.begin(); i!=mActiveBlocks.end();++i)
+			(*i)->ClearRowMarks();
 	}
 
 	void Collect(void *inBottomOfStack)
 	{
 		static int collect = 0;
 		//printf("Collect %d\n",collect++);
-		gMarkBit ^= HX_GC_MARKED;
+		gMarkBit ^= IMMIX_ALLOC_MARKED;
 
 		ClearRowMarks();
 
-   	hxGCMarkNow();
+		hxGCMarkNow();
 
 		hxMarkCurrentThread(inBottomOfStack);
 
 		RunFinalizers();
 
 		// Reclaim ...
+		//
+		// Clear lists, start fresh...
 		mEmptyBlocks.clear();
 		mRecycledBlock.clear();
+		for(PointerSet::iterator i=mActiveBlocks.begin(); i!=mActiveBlocks.end();++i)
+			(*i)->Reclaim();
+		mActiveBlocks.clear();
 		mNextEmpty = 0;
 		mNextRecycled = 0;
 		mRowsInUse = 0;
+
+
+		// IMMIX suggest filling up in creation order ....
 		for(int i=0;i<mAllBlocks.size();i++)
 		{
-			BlockInfo &info = mAllBlocks[i];
-			char *row_used = info.mPtr;
-			int free = 0;
-			int free_in_a_row = 0;
-			for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
-				if (!row_used[r])
-				{
-					free++;
-					free_in_a_row++;
-				}
-				else if (free_in_a_row)
-				{
-					char *base = info.mPtr + ((r-free_in_a_row)<<IMMIX_LINE_BITS);
-					memset(base, 0, free_in_a_row<<IMMIX_LINE_BITS);
-					#ifdef DEBUG_ALLOC_PTR
-	            if (base<=sgDebugPointer && sgDebugPointer<( base + (free_in_a_row<<IMMIX_LINE_BITS)) )
-		            printf("Pointer collected !\n");
-					#endif
-					free_in_a_row = 0;
-				}
-			if (free_in_a_row)
+			BlockData *block = mAllBlocks[i];
+
+			if (block->IsEmpty())
+				mEmptyBlocks.push(block);
+			else
 			{
-				char *base = info.mPtr + ((IMMIX_LINES-free_in_a_row)<<IMMIX_LINE_BITS);
-				#ifdef DEBUG_ALLOC_PTR
-	         if (base<=sgDebugPointer && sgDebugPointer<( base + (free_in_a_row<<IMMIX_LINE_BITS)) )
-		         printf("Pointer collected !\n");
-				#endif
-				memset(base, 0, free_in_a_row<<IMMIX_LINE_BITS);
+				mActiveBlocks.insert(block);
+				mRowsInUse += block->GetRowsInUse();
+				if (!block->IsFull())
+					mRecycledBlock.push(block);
 			}
-			info.mFreeLines = free;
-			mRowsInUse += (IMMIX_USEFUL_LINES-free);
-			if (free==IMMIX_USEFUL_LINES)
-			{
-				mEmptyBlocks.push(info);
-				mActiveBlocks.erase(info.mPtr);
-			}
-			else if (free>0)
-				mRecycledBlock.push(info);
 		}
 
 		int idx = 0;
 		while(idx<mLargeList.size())
 		{
-			int *blob = mLargeList[idx] + 1;
-			if ( (*blob & HX_GC_MARKED) != gMarkBit )
+			int *blob = mLargeList[idx];
+			if ( (*blob & IMMIX_ALLOC_MARKED) != gMarkBit )
 			{
-				mLargeAllocated -= (*blob & SIZE_MASK);
+				mLargeAllocated -= (*blob & IMMIX_LARGE_OBJ_SIZE_MASK);
 				free(mLargeList[idx]);
 				mLargeList.qerase(idx);
 			}
@@ -330,6 +639,7 @@ public:
 		if (sgAllocInit && sgInternalEnable && mDistributedSinceLastCollect>(1<<20) &&
 		    mDistributedSinceLastCollect>mTotalAfterLastCollect)
 		{
+			//printf("Collect %d/%d\n", mDistributedSinceLastCollect, mTotalAfterLastCollect);
 			Collect(inBottomOfStack);
 		}
 	}
@@ -339,20 +649,20 @@ public:
 		return mLargeAllocated + (mRowsInUse<<IMMIX_LINE_BITS);
 	}
 
-	bool IsValidObjectAddress(void *inPtr)
+	MemType GetMemType(void *inPtr)
 	{
+		BlockData *block = (BlockData *)( ((size_t)inPtr) & IMMIX_BLOCK_BASE_MASK);
+		if ( mActiveBlocks.find(block) != mActiveBlocks.end() )
+			return memBlock;
+
 		for(int i=0;i<mLargeList.size();i++)
 		{
-			int *blob = mLargeList[i] + 2;
+			int *blob = mLargeList[i] + 1;
 			if (blob==inPtr)
-				return true;
+				return memLarge;
 		}
-		void *aligned = (void *)( ((size_t)inPtr) & IMMIX_BLOCK_BASE_MASK);
-		if ( ((char *)inPtr - (char *)aligned) < ( IMMIX_HEADER_LINES << IMMIX_LINE_BITS) )
-			return false;
-		if ( mActiveBlocks.find(aligned) != mActiveBlocks.end() )
-			return true;
-		return false;
+
+		return memUnmanaged;
 	}
 
 
@@ -370,11 +680,15 @@ public:
    BlockList mEmptyBlocks;
    BlockList mRecycledBlock;
 	LargeList mLargeList;
-	std::set<void *> mActiveBlocks;
+	PointerSet mActiveBlocks;
 };
 
 GlobalAllocator *sGlobalAlloc = 0;
 
+
+// --- LocalAllocator -------------------------------------------------------
+//
+// One per thread ...
 
 class LocalAllocator
 {
@@ -387,9 +701,14 @@ public:
 
 	void Reset()
 	{
-		mCurrent.mPtr = 0;
-		mOverflow.mPtr = 0;
+		mCurrent = 0;
+		mOverflow = 0;
 		mCurrentLine = IMMIX_LINES;
+		#ifdef CREATE_OBJ_TABLE
+		mObjTable = 0;
+		mObjsLeftInTable = 0;
+		#endif
+		mCurrentPos = 0;
 		mLinesSinceLastCollect = 0; 
 	}
 
@@ -399,137 +718,305 @@ public:
 		mTopOfStack = inTop;
 	}
 
-	void *Alloc(int inSize,bool inIsString)
+	#ifdef CREATE_OBJ_TABLE
+	inline void AddObjectTable(unsigned char *inRow,int inSize)
+	{
+		if (mCurrent->mRowFlags[mCurrentLine] & IMMIX_ROW_HAS_OBJ_TABLE)
+		{
+			printf("TABLE ALREADY EXISTS ON ROW %d = %d - bailing\n", mCurrentLine,
+			    mCurrent->mRowFlags[mCurrentLine] );
+			*(int *)0=0;
+		}
+
+		//printf("New table on row %d (%d entries)\n",mCurrentLine,inSize);
+		mCurrent->mRowFlags[mCurrentLine] = mCurrentPos | IMMIX_ROW_HAS_OBJ_TABLE |
+								(inSize==8 ? IMMIX_ROW_BIG_OBJ_TABLE : 0);
+		mObjTable = inRow + mCurrentPos;
+		if (inSize==4)
+			*(int *)mObjTable = 0;
+		else
+			*(double *)mObjTable = 0;
+		mObjsLeftInTable = inSize;
+		mCurrentPos += inSize;
+		if (mCurrentPos>=IMMIX_LINE_LEN)
+		{
+			mCurrentPos = 0;
+			mCurrentLine++;
+		}
+	}
+	#endif
+
+	void *Alloc(int inSize,bool inIsObject)
    {
 		int s = ((inSize+3) & ~3) +sizeof(int);
-		if (inIsString) s += sizeof(int);
+		/*
+		printf("Request %d, cline=%d, cpos=%d, objtbl=%p, left=%d: ", s,
+			mCurrentLine, mCurrentPos, mObjTable, mObjsLeftInTable);
+		if (mCurrent)
+		for(int i=mCurrentLine; i<mCurrentLine + 4 && i<IMMIX_LINES; i++)
+			printf("%02x ", mCurrent->mRowFlags[i]);
+		printf("\n");
+		*/
 		while(1)
 		{
-			if (!mCurrent.mPtr || mCurrentLine==IMMIX_LINES)
+			#ifdef CREATE_OBJ_TABLE
+		   if (mObjTable && !mObjsLeftInTable)
 			{
-				mCurrent = sGlobalAlloc->GetRecycledBlock(&inSize);
-				// Start on line 2 (there are 256 line-markers at the beginning)
-				mCurrentLine = IMMIX_HEADER_LINES;
-				// find first empty line ...
-				while(mCurrent.mPtr[mCurrentLine])
-					mCurrentLine++;
+				//printf("--- not enough table entries---\n");
+				mCurrentLine++;
+				mObjTable = 0;
 				mCurrentPos = 0;
 			}
-			// easy case ...
-			int extra_lines = (s + mCurrentPos-1) >> IMMIX_LINE_BITS;
-			if (extra_lines == 0)
+			#endif
+
+			// Try to squeeze it on this line ...
+			if (mCurrentPos > 0)
 			{
-				int *result = (int *)(mCurrent.mPtr + (mCurrentLine<<IMMIX_LINE_BITS) + mCurrentPos);
-		      if (inIsString)
-					*result++ = STRING_MAGIC;
-				*result = inSize | HX_GC_FIXED | HX_GC_SMALL_OBJ | gMarkBit;
-				mCurrentPos += s;
-				if (mCurrentPos==IMMIX_LINE_LEN)
+				int skip = 1;
+				#ifdef CREATE_OBJ_TABLE
+				int table_size = mObjTable ? 0 : (mCurrentPos + inSize<64) ? 8 : 4;
+				// enough room to start the object on this line?
+				if (mCurrentPos+table_size+sizeof(int) < IMMIX_LINE_LEN)
+				#else
+				#define table_size 0
+				#endif
 				{
-					mLinesSinceLastCollect++;
-					mCurrentPos = 0;
-					mCurrentLine++;
-					while( (mCurrentLine<IMMIX_LINES) && mCurrent.mPtr[mCurrentLine])
-						mCurrentLine++;
-				}
-				return result+1;
-			}
-			// Do we have enough blank lines?
-			while (mCurrentLine+extra_lines < IMMIX_LINES)
-			{
-				bool clear = true;
-				char *base = mCurrent.mPtr + 1 + mCurrentLine;
-				for(int k=0;k<extra_lines;k++)
-					if (base[k])
+					int extra_lines = (s + table_size + mCurrentPos-1) >> IMMIX_LINE_BITS;
+					//printf("check for %d extra lines ...\n", extra_lines);
+					if (mCurrentLine + extra_lines < IMMIX_LINES)
 					{
-						mCurrentPos = 0;
-						clear = false;
-						mCurrentLine += k + 2;
-						while( (mCurrentLine+extra_lines<IMMIX_LINES) && mCurrent.mPtr[mCurrentLine])
-						   mCurrentLine++;
+						int test = 0;
+						if (extra_lines)
+							for(test=0;test<extra_lines;test++)
+							{
+								if (mCurrent->IsRowUsed(mCurrentLine+test+1))
+									break;
+							}
+						//printf(" found %d extra lines\n", test);
+						if (test==extra_lines)
+						{
+							// Ok, fits on the line! - setup object table
+							unsigned char *row = mCurrent->mRow[mCurrentLine];
+							#ifdef CREATE_OBJ_TABLE
+							//printf("Setting obj table entry %d\n", mCurrentPos);
+							if (table_size)
+								AddObjectTable(row,table_size);
+							#endif
+
+							int *result = (int *)(row + mCurrentPos);
+							*result = inSize | gMarkBit |
+					  			#ifdef CREATE_OBJ_TABLE
+					  			( (mObjTable-row)<<16) |
+					  			#endif
+								(extra_lines==0 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
+
+							if (inIsObject)
+								*result |= IMMIX_ALLOC_IS_OBJECT;
+
+							#ifdef CREATE_OBJ_TABLE
+							*mObjTable++ = mCurrentPos | IMMIX_OBJ_TBL_OBJECT_LIVE;
+							if (extra_lines)
+								mObjTable = 0;
+							else
+								mObjsLeftInTable--;
+							#endif
+
+							mCurrentLine += extra_lines;
+							mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
+							if (mCurrentPos==0)
+							{
+								mCurrentLine++;
+								#ifdef CREATE_OBJ_TABLE
+								mObjTable = 0;
+								#endif
+							}
+
+							//printf("Alloced %d - %d/%d now\n", s, mCurrentPos, mCurrentLine);
+
+							return result + 1;
+						}
+						//printf("not enought extra lines - skip %d\n",skip);
+						skip = test + 1;
+					}
+					else
+						skip = extra_lines;
+				}
+
+				// Does not fit on this line - we may also know how many to skip, so
+				//  jump down those lines...
+				mCurrentPos = 0;
+				mCurrentLine += skip;
+				#ifdef CREATE_OBJ_TABLE
+				mObjTable = 0;
+				#endif
+			}
+
+			#ifdef CREATE_OBJ_TABLE
+			int table_size = inSize<40 ? 8 : 4;
+			#endif
+			int required_rows = (s + table_size + IMMIX_LINE_LEN-1) >> IMMIX_LINE_BITS;
+			int last_start = IMMIX_LINES - required_rows;
+
+			// Alloc new block, if required ...
+			if (!mCurrent || mCurrentLine>last_start)
+			{
+				mCurrent = sGlobalAlloc->GetRecycledBlock(&inSize);
+				//mCurrent->Verify();
+				// Start on line 2 (there are 256 line-markers at the beginning)
+				mCurrentLine = IMMIX_HEADER_LINES;
+			}
+
+			// Look for N in a row ....
+			while(mCurrentLine <= last_start)
+			{
+				int test = 0;
+				for(;test<required_rows;test++)
+					if (mCurrent->IsRowUsed(mCurrentLine+test))
 						break;
-					}
-				if (clear)
+
+				// Not enough room...
+				if (test<required_rows)
 				{
-				   int *result = (int *)(mCurrent.mPtr + (mCurrentLine<<IMMIX_LINE_BITS) + mCurrentPos);
-		         if (inIsString)
-						*result++ = STRING_MAGIC;
-				   *result = inSize | HX_GC_FIXED | HX_GC_MEDIUM_OBJ | gMarkBit;
-					mCurrentLine += extra_lines;
-					mCurrentPos = (mCurrentPos+s) & (IMMIX_LINE_LEN-1);
-					if (mCurrentPos==0)
-					{
-						mCurrentLine++;
-						while( (mCurrentLine<IMMIX_LINES) && mCurrent.mPtr[mCurrentLine])
-							mCurrentLine++;
-					}
-					mLinesSinceLastCollect+=extra_lines+1;
-					return result + 1;
+					mCurrentLine += test+1;
+					//printf("  Only found %d good - skip to %d\n",test,mCurrentLine);
+					continue;
 				}
+
+				// Ok, found a gap
+				unsigned char *row = mCurrent->mRow[mCurrentLine];
+
+				#ifdef CREATE_OBJ_TABLE
+				AddObjectTable(row,table_size);
+				#endif
+				int *result = (int *)(row + mCurrentPos);
+				*result = inSize | gMarkBit |
+					#ifdef CREATE_OBJ_TABLE
+					( (mObjTable-row)<<16) |
+					#endif
+				   (required_rows==1 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
+
+				if (inIsObject)
+					*result |= IMMIX_ALLOC_IS_OBJECT;
+
+				#ifdef CREATE_OBJ_TABLE
+				*mObjTable++ = mCurrentPos | IMMIX_OBJ_TBL_OBJECT_LIVE;
+				if (required_rows==1)
+				   mObjsLeftInTable--;
+				else
+					mObjTable = 0;
+				#endif
+				mCurrentLine += required_rows - 1;
+				mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
+				if (mCurrentPos==0)
+				{
+					#ifdef CREATE_OBJ_TABLE
+					mObjTable = 0;
+					#endif
+					mCurrentLine++;
+				}
+				//printf("Alloced multiple/start %d(%d rows) - %d/%d now\n", s, required_rows, mCurrentPos, mCurrentLine);
+				return result + 1;
 			}
-			// Not enough gap - to progress or end-of-block
-			// Simply progress to next block for now...
-			//   TODO?
-			mCurrentLine = IMMIX_LINES;
 		}
 		return 0;
-	}
-
-	bool TryVTable0(void **inVTable)
-	{
-		if (IsBadReadPtr(inVTable, sizeof(void *)))
-			return false;
-		return inVTable[0]==sgObject_root;
 	}
 
 
 	void Mark(void *inBottomOfStack)
 	{
+		#ifdef PRECISE_STACK_MARK
 		int here = 0;
 		void *prev = 0;
+		//printf("=========== Mark Stack ==================== %p/%d\n",inBottomOfStack,&here);
 		for(int *ptr = inBottomOfStack ? (int *)inBottomOfStack : &here; ptr<mTopOfStack; ptr++)
 		{
 			void *vptr = *(void **)ptr;
-			if (vptr && !((size_t)vptr & 0x03) && vptr!=prev && sGlobalAlloc->IsValidObjectAddress(vptr))
+			MemType mem;
+			if (vptr && !((size_t)vptr & 0x03) && vptr!=prev &&
+		           (mem = sGlobalAlloc->GetMemType(vptr)) != memUnmanaged )
 			{
-				prev = vptr;
+				if (mem==memLarge)
+				{
+					int &flags = ((int *)(vptr))[-1];
+					if ((flags&IMMIX_ALLOC_MARKED)!=gMarkBit)
+						flags ^= IMMIX_ALLOC_MARKED;
+				}
+				else
+				{
+					BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
+					int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
+
 					void **vtable = *(void ***)vptr;
-					if ( (size_t)vtable > 0x10000 )
+					StaticMarkFuncMap::iterator vtable_info = sStaticMarkFuncMap.find(vtable);
+					if (vtable_info!=sStaticMarkFuncMap.end())
 					{
-						//printf("Found poiner %p -> %p.\n",vptr,vtable);
-						if (sStaticMarkFuncMap.find(vtable)!=sStaticMarkFuncMap.end())
+						int offset = vtable_info->second.mOffset;
+						AllocType t = block->GetAllocType(pos-offset-sizeof(int),true);
+						if ( t==allocObject )
 						{
-							//printf("  found func too\n");
-							sStaticMarkFuncMap[vtable](vptr);
-						}
-						// See if it is an object derived (non-virtually) from hxObject
-						else if ( TryVTable0(vtable) )
-						{
-							//printf("  found hxObject\n");
-							// ( (hxObject *)vptr )->__Mark();
-							HX_MARK_OBJECT( ((hxObject *)vptr) );
+							if (offset>0)
+							{
+							   // Check to see if object is big enough to include vtable...
+								unsigned int flags = ((unsigned int *)( (char *)vptr - offset ))[-1];
+								int size = flags & IMMIX_ALLOC_SIZE_MASK;
+								if (offset>=size)
+								{
+									//printf("Dead virtual back pointer - ignore\n");
+									continue;
+								}
+								// Original object...
+								vptr = (void **)( (char *)ptr - offset);
+								vtable = *(void ***)vptr;
+								vtable_info = sStaticMarkFuncMap.find(vtable);
+								if (vtable_info!=sStaticMarkFuncMap.end())
+								{
+									vtable_info->second.mMark(vptr);
+								}
+								//printf("Odd sub-vtable\n");
+								continue;
+							}
+							//printf(" Mark Obj %p (%p)\n", vptr,ptr);
+							vtable_info->second.mMark(vptr);
+							continue;
 						}
 						else
 						{
-							// Check for string...
-							unsigned int *header = ((unsigned int *)vptr);
-							if ( header[-2]==STRING_MAGIC && (header[-1] & gMarkBit) )
-							{
-							   //printf("String! %p (%08x)\n",vptr,header);
-								HX_MARK_STRING(vptr);
-							}
-							else
-							{
-							   //printf("????????????????????\n",vptr,header);
-							}
+							// Dubious objects are old objects pointed to from old stack data
+							// (otherwise is a big in GC code)
+							//printf("### Dubious object %p off=%d (%p) %s\n", vptr,offset, ptr,
+				              //t==allocNone ? "NONE" : t==allocString ? "String"  : "??");
+							continue;
 						}
 					}
+
+               AllocType alloc = block->GetAllocType(pos-sizeof(int));
+					if (alloc==allocObject)
+					{
+						//printf(" Mark basic %p (%p)\n", vptr,ptr);
+						HX_MARK_OBJECT( ((hxObject *)vptr) );
+					}
+					else if (alloc==allocString)
+					{
+						//printf(" Mark string %p (%p)\n", vptr,ptr);
+						HX_MARK_STRING(vptr);
+					}
+					else
+					{
+						//printf(" unknown %p (%p)\n", vptr,ptr);
+					}
+				}
 			}
 		}
+		#endif
+		//printf("marked\n");
 	   Reset();
 	}
 
 	int mCurrentPos;
+	#ifdef CREATE_OBJ_TABLE
+	unsigned char *mObjTable;
+	int mObjsLeftInTable;
+	#endif
 	int mCurrentLine;
 
 	int mOverflowPos;
@@ -539,8 +1026,8 @@ public:
 
 	int *mTopOfStack;
 
-	BlockInfo mCurrent;
-	BlockInfo mOverflow;
+	BlockData * mCurrent;
+	BlockData * mOverflow;
 };
 
 #ifdef _MSC_VER
@@ -571,7 +1058,7 @@ void hxMarkCurrentThread(void *inBottomOfStack)
 }
 
 
-void *hxInternalNew(int inSize,bool inIsString)
+void *hxInternalNew(int inSize,bool inIsObject)
 {
 	if (!sgAllocInit)
 	{
@@ -591,7 +1078,7 @@ void *hxInternalNew(int inSize,bool inIsString)
 	void *result;
 
 	if (inSize>IMMIX_LARGE_OBJ_SIZE)
-		result = sGlobalAlloc->AllocLarge(inSize,inIsString);
+		result = sGlobalAlloc->AllocLarge(inSize);
 	else
 	{
 		#ifdef _MSC_VER
@@ -599,18 +1086,9 @@ void *hxInternalNew(int inSize,bool inIsString)
 		// TODO: what is ThreadLocalAlloc is NULL (foreign thread) ?
 		#endif
 
-		result = ThreadLocalAlloc->Alloc(inSize,inIsString);
+		result = ThreadLocalAlloc->Alloc(inSize,inIsObject);
 	}
 
-	#ifdef DEBUG_ALLOC_PTR
-	if (result<=sgDebugPointer && sgDebugPointer -inSize < result)
-		printf("Pointer alloced !\n");
-	/*
-	for(int i=0;i<inSize;i++)
-		if ( ((char *)result)[i]!=0)
-			*(int *)0=0;
-	*/
-	#endif
 	return result;
 }
 
@@ -628,29 +1106,34 @@ void hxInternalCollect()
 void *hxInternalRealloc(void *inData,int inSize)
 {
    if (inData==0)
-      return hxInternalNew(inSize);
+      return hxInternalNew(inSize,false);
 
-   int *base = ((int *)(inData)) -1;
+   int header = ((int *)(inData))[-1];
 
-   int s = (*base) & SIZE_MASK;
+	int s = (header & ( IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ)) ?
+			(header) & IMMIX_ALLOC_SIZE_MASK : (header) & IMMIX_LARGE_OBJ_SIZE_MASK;
 
-   void *new_data = hxInternalNew(inSize);
+   void *new_data = 0;
+
+	if (inSize>IMMIX_LARGE_OBJ_SIZE)
+	{
+		new_data = sGlobalAlloc->AllocLarge(inSize);
+		if (inSize>s)
+			memset((char *)new_data + s,0,inSize-s);
+	}
+	else
+	{
+		#ifdef _MSC_VER
+		LocalAllocator *ThreadLocalAlloc = (LocalAllocator *)TlsGetValue(sTLSSlot);
+		// TODO: what is ThreadLocalAlloc is NULL (foreign thread) ?
+		#endif
+
+		new_data = ThreadLocalAlloc->Alloc(inSize,false);
+	}
 
    int min_size = s < inSize ? s : inSize;
 
    memcpy(new_data, inData, min_size );
-	memset(inData,0,s);
-
-	#ifdef DEBUG_ALLOC_PTR
-	if (inData<=sgDebugPointer && sgDebugPointer -s < inData)
-		printf("Pointer re-alloced !\n");
-	/*
-	for(int i=0;i<inSize;i++)
-		if ( ((char *)result)[i]!=0)
-			*(int *)0=0;
-	*/
-	#endif
-
 
    return new_data;
 }

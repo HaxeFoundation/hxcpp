@@ -1299,21 +1299,24 @@ typedef Dynamic (*ConstructEnumFunc)(String inName,DynamicArray inArgs);
 typedef void (*MarkFunc)();
 typedef void (*StaticMarkFunc)(void *inPtr);
 
+struct _VTableMarks
+{
+	void           *mVTable;
+	StaticMarkFunc mMark;
+	int            mOffset;
+};
+
+
 inline bool operator!=(ConstructEnumFunc inFunc,const null &inNull) { return inFunc!=0; }
 
 template<typename CLASS_,typename SUPER_>
-void *hxGetVTable()
+_VTableMarks hxGetVTable()
 {
 	CLASS_ c;
 	SUPER_ *s = &c;
-	return *(void **)s;
+	_VTableMarks result = { *(void **)s, SUPER_::__SMark, (char *)s - (char*)(&c) };
+	return result;
 }
-
-struct _VtableMarks
-{
-	void *mVtable;
-   StaticMarkFunc mMark;
-};
 
 
 typedef bool (*CanCastFunc)(hxObject *inPtr);
@@ -1368,7 +1371,7 @@ typedef hxObjectPtr<Class_obj> Class;
 // --- All classes should be registered with this function via the "__boot" method
 
  Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
-                    String inStatics[], String inMembers[], _VtableMarks inVtableMark[],
+                    String inStatics[], String inMembers[], _VTableMarks inVtableMark[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
                     Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0);
 
@@ -1569,11 +1572,14 @@ void hxGCAddRoot(hxObject **inRoot);
 void hxGCRemoveRoot(hxObject **inRoot);
 
 // This may not be needed now that GC memsets everything to 0.
+#ifdef GC_CLEARS_OBJECTS
+#define InitMember(x)
+#else
 template<typename T> inline void InitMember(T &outT) { }
 template<> inline void InitMember<int>(int &outT) { outT = 0; }
 template<> inline void InitMember<bool>(bool &outT) { outT = false; }
 template<> inline void InitMember<double>(double &outT) { outT = 0; }
-
+#endif
 
 template<typename T> inline void MarkMember(T &outT) { }
 template<typename T> inline void MarkMember(hxObjectPtr<T> &outT)

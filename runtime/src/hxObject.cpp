@@ -27,7 +27,7 @@ typedef  uint64_t  __int64;
 
 
 #define VTABLE_SELF(OBJ) \
-_VtableMarks OBJ##_vtbl[] = { {hxGetVTable<OBJ,OBJ>(),OBJ::__SMark}, {0,0} };
+_VTableMarks OBJ##_vtbl[] = { hxGetVTable<OBJ,OBJ>(), {0,0} };
 
 
 static String sNone[] = { String(null()) };
@@ -171,9 +171,9 @@ static Class hxObject__mClass;
 bool AlwaysCast(hxObject *inPtr) { return inPtr!=0; }
 
 
-_VtableMarks hxObjectVTable[] =
+_VTableMarks hxObjectVTable[] =
 {
-	{hxGetVTable<hxObject,hxObject>(),hxObject::__SMark},
+	hxGetVTable<hxObject,hxObject>(),
 	{0,0}
 };
 void hxObject::__boot()
@@ -566,16 +566,28 @@ void hxArrayBase::EnsureSize(int inSize) const
          {
             mBase = (char *)hxGCRealloc(mBase, bytes );
             // atomic data not cleared by gc lib ...
-            memset(mBase + obytes, 0, bytes-obytes);
+				#ifndef GC_CLEARS_ALL
+				   #ifndef GC_CLEARS_OBJECTS
+               if (AllocAtomic())
+				   #endif
+            		memset(mBase + obytes, 0, bytes-obytes);
+				#endif
          }
          else if (AllocAtomic())
          {
             mBase = (char *)hxNewGCPrivate(0,bytes);
             // atomic data not cleared ...
-            memset(mBase,0,bytes);
+				#ifndef GC_CLEARS_ALL
+            		memset(mBase,0,bytes);
+				#endif
          }
          else
+			{
             mBase = (char *)hxNewGCBytes(0,bytes);
+				#ifndef GC_CLEARS_OBJECTS
+            		memset(mBase,0,bytes);
+				#endif
+			}
       }
       length = s;
    }
@@ -1449,7 +1461,7 @@ Class &Class_obj::__SGetClass() { return Class_obj__mClass; }
 
 
 Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
-                    String inStatics[], String inMembers[], _VtableMarks inVtableMarks[],
+                    String inStatics[], String inMembers[], _VTableMarks inVtableMarks[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
                     Class *inSuperClass, ConstructEnumFunc inConstructEnum,
                     MarkFunc inMarkFunc)
