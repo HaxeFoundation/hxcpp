@@ -45,24 +45,6 @@ struct hxInternalFinalizer
 
 bool hxMarkAlloc(void *inPtr);
 
-template<typename PTR>
-inline void HX_MARK_OBJECT(PTR *ioPtr)
-{
-   if ((ioPtr) && hxMarkAlloc((ioPtr)->__root()))
-		(ioPtr)->__Mark();
-}
-
-inline void HX_MARK_STRING(const void *ioPtr)
-{
-   if (ioPtr)
-		hxMarkAlloc((void *)ioPtr);
-}
-
-inline void HX_MARK_ARRAY(const void *ioPtr)
-{
-   if (ioPtr)
-		hxMarkAlloc((void *)ioPtr);
-}
 
 #endif
 

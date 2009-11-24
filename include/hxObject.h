@@ -5,6 +5,7 @@
 
 #include <wchar.h>
 #include <string.h>
+#include <typeinfo.h>
 
 #ifdef HX_LINUX
 #include <unistd.h>
@@ -200,6 +201,8 @@ public:
    virtual void *__root();
    virtual void __Mark() { }
    virtual bool __Is(hxObject *inClass) const { return true; }
+   virtual hxObject *__ToInterface(const type_info &inInterface) { return 0; }
+
    // helpers...
    bool __Is(Dynamic inClass ) const;
    bool __IsArray() const { return __GetType()==vtArray; }
@@ -253,9 +256,32 @@ public:
 
 
    static Class &__SGetClass();
-   static void __SMark(void *inPtr) { HX_MARK_OBJECT( ((hxObject *)inPtr) ); }
+   static void __SMark(void *inPtr);
    static void __boot();
 };
+
+
+// GC, now that we can see hxObject
+
+inline void HX_MARK_OBJECT(hxObject *ioPtr)
+{
+   if (ioPtr && hxMarkAlloc(ioPtr))
+		ioPtr->__Mark();
+}
+
+inline void HX_MARK_STRING(const void *ioPtr)
+{
+   if (ioPtr)
+		hxMarkAlloc((void *)ioPtr);
+}
+
+inline void HX_MARK_ARRAY(const void *ioPtr)
+{
+   if (ioPtr)
+		hxMarkAlloc((void *)ioPtr);
+}
+
+
 
 
 // --- hxObjectPtr ---------------------------------------------------------------
@@ -276,15 +302,25 @@ public:
 
    template<typename SOURCE_>
    hxObjectPtr(const hxObjectPtr<SOURCE_> &inObjectPtr)
-      { mPtr = dynamic_cast<OBJ_ *>(inObjectPtr.GetPtr()); }
+   {
+		mPtr = dynamic_cast<OBJ_ *>(inObjectPtr.mPtr);
+		if (!mPtr && inObjectPtr.mPtr)
+			mPtr = (Ptr)inObjectPtr.mPtr->__ToInterface(typeid(Obj));
+	}
 
-   hxObjectPtr(const hxObjectPtr<OBJ_> &inOther) : mPtr( inOther.GetPtr() ) {  }
+   hxObjectPtr(const hxObjectPtr<OBJ_> &inOther) : mPtr( inOther.mPtr ) {  }
 
-	inline ~hxObjectPtr() { mPtr = 0; }
+	// inline ~hxObjectPtr() { mPtr = 0; }
 
    hxObjectPtr &operator=(const null &inNull) { mPtr = 0; return *this; }
    hxObjectPtr &operator=(Ptr inRHS) { mPtr = inRHS; return *this; }
    hxObjectPtr &operator=(const hxObjectPtr &inRHS) { mPtr = inRHS.mPtr; return *this; }
+   template<typename InterfaceImpl>
+   hxObjectPtr &operator=(InterfaceImpl *inRHS)
+	{
+		mPtr = inRHS->operator Ptr();
+		return *this;
+	}
 
    inline OBJ_ *GetPtr() const { return mPtr; }
    inline OBJ_ *operator->() { return mPtr; }
@@ -338,7 +374,7 @@ public:
    template<typename T>
    inline String(const hxObjectPtr<T> &inRHS)
    {
-      if (inRHS.GetPtr()) { String s = const_cast<hxObjectPtr<T> & >(inRHS)->toString(); __s = s.__s; length = s.length; }
+      if (inRHS.mPtr) { String s = const_cast<hxObjectPtr<T> & >(inRHS)->toString(); __s = s.__s; length = s.length; }
       else { __s = 0; length = 0; }
    }
     String(const Dynamic &inRHS);
@@ -396,7 +432,7 @@ public:
    String operator+(const cpp::CppInt32__ &inRHS) const{ return *this + String(inRHS); } 
    template<typename T>
    inline String operator+(const hxObjectPtr<T> &inRHS) const
-      { return *this + (inRHS.GetPtr() ? const_cast<hxObjectPtr<T>&>(inRHS)->toString() : String(L"null",4) ); }
+      { return *this + (inRHS.mPtr ? const_cast<hxObjectPtr<T>&>(inRHS)->toString() : String(L"null",4) ); }
 
    inline bool operator==(const String &inRHS) const
                      { return length==inRHS.length && compare(inRHS)==0; }
@@ -451,7 +487,7 @@ public:
    Dynamic(hxObject *inObj) : super(inObj) { }
    Dynamic(const String &inString);
    Dynamic(const null &inNull) : super(0) { }
-   Dynamic(const Dynamic &inRHS) : super(inRHS.GetPtr()) { }
+   Dynamic(const Dynamic &inRHS) : super(inRHS.mPtr) { }
    Dynamic(const wchar_t *inStr);
 
     void Set(bool inVal);
@@ -469,7 +505,7 @@ public:
 
    template<typename SOURCE_>
    Dynamic(const hxObjectPtr<SOURCE_> &inObjectPtr) :
-          hxObjectPtr<hxObject>(inObjectPtr.GetPtr()) { }
+          hxObjectPtr<hxObject>(inObjectPtr.mPtr) { }
 
    Dynamic Default(const Dynamic &inDef) { return mPtr ? *this : inDef; }
 
@@ -507,7 +543,7 @@ public:
    DYNAMIC_COMPARE_OP_ALL( >  )
 
    template<typename T_>
-   bool operator==(const hxObjectPtr<T_> &inRHS) const { return mPtr == inRHS.GetPtr(); }
+   bool operator==(const hxObjectPtr<T_> &inRHS) const { return mPtr == inRHS.mPtr; }
    template<typename T_>
    bool operator!=(const hxObjectPtr<T_> &inRHS) const { return mPtr != inRHS.GetPtr(); }
 
@@ -730,7 +766,7 @@ class hxIndexRef
    int mIdx;
 public: 
    typedef typename Obj::__array_access Return;
-   hxIndexRef(const T &inObj,int inIdx) : mObj(inObj.GetPtr()), mIdx(inIdx) { }
+   hxIndexRef(const T &inObj,int inIdx) : mObj(inObj.mPtr), mIdx(inIdx) { }
 
    inline operator Return() const { return mObj->__get(mIdx); }
    inline void operator=(Return inVal)  { mObj->__set(mIdx,inVal); }
@@ -1299,24 +1335,8 @@ typedef Dynamic (*ConstructEnumFunc)(String inName,DynamicArray inArgs);
 typedef void (*MarkFunc)();
 typedef void (*StaticMarkFunc)(void *inPtr);
 
-struct _VTableMarks
-{
-	void           *mVTable;
-	StaticMarkFunc mMark;
-	int            mOffset;
-};
-
 
 inline bool operator!=(ConstructEnumFunc inFunc,const null &inNull) { return inFunc!=0; }
-
-template<typename CLASS_,typename SUPER_>
-_VTableMarks hxGetVTable()
-{
-	CLASS_ c;
-	SUPER_ *s = &c;
-	_VTableMarks result = { *(void **)s, SUPER_::__SMark, (char *)s - (char*)(&c) };
-	return result;
-}
 
 
 typedef bool (*CanCastFunc)(hxObject *inPtr);
@@ -1371,12 +1391,15 @@ typedef hxObjectPtr<Class_obj> Class;
 // --- All classes should be registered with this function via the "__boot" method
 
  Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
-                    String inStatics[], String inMembers[], _VTableMarks inVtableMark[],
+                    String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
                     Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0);
 
 template<typename T>
-inline bool TCanCast(hxObject *inPtr) { return dynamic_cast<T *>(inPtr)!=0; }
+inline bool TCanCast(hxObject *inPtr)
+{
+	return inPtr && ( dynamic_cast<T *>(inPtr) || inPtr->__ToInterface(typeid(T)) );
+}
 
 
 // Enum (ie enum object class def)  is the same as Class.
@@ -1500,7 +1523,7 @@ inline String operator+(const cpp::CppInt32__ &i,const String &s) { return Strin
 
 template<typename T_>
    inline String operator+(const hxObjectPtr<T_> &inLHS,const String &s)
-   { return (inLHS.GetPtr() ? const_cast<hxObjectPtr<T_> & >(inLHS)->toString() : String(L"null",4) ) + s; }
+   { return (inLHS.mPtr ? const_cast<hxObjectPtr<T_> & >(inLHS)->toString() : String(L"null",4) ) + s; }
 
 template<typename RHS_>
    inline Dynamic operator+(const hxFieldRef &inField,RHS_ &inRHS)

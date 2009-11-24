@@ -25,32 +25,6 @@ int gMarkBit = 0;
 void hxMarkCurrentThread(void *inBottomOfStack);
 
 
-struct VTableData
-{
-	StaticMarkFunc mMark;
-	int            mOffset;
-};
-
-typedef std::map<void *,VTableData> StaticMarkFuncMap;
-
-StaticMarkFuncMap sStaticMarkFuncMap;
-
-void hxGCSetVTables(_VTableMarks inVtableMark[])
-{
-	#ifdef PRECISE_STACK_MARK
-	if (inVtableMark)
-	{
-	   for(_VTableMarks *v=inVtableMark; v->mVTable; v++)
-		{
-			VTableData data = { v->mMark, v->mOffset };
-	      sStaticMarkFuncMap[v->mVTable] = data;
-		}
-	}
-	#endif
-}
-
-
-
 static bool sgAllocInit = 0;
 static bool sgInternalEnable = false;
 static void *sgObject_root = 0;
@@ -927,7 +901,7 @@ public:
 		#ifdef PRECISE_STACK_MARK
 		int here = 0;
 		void *prev = 0;
-		//printf("=========== Mark Stack ==================== %p/%d\n",inBottomOfStack,&here);
+		// printf("=========== Mark Stack ==================== %p/%d\n",inBottomOfStack,&here);
 		for(int *ptr = inBottomOfStack ? (int *)inBottomOfStack : &here; ptr<mTopOfStack; ptr++)
 		{
 			void *vptr = *(void **)ptr;
@@ -945,64 +919,16 @@ public:
 				{
 					BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
 					int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
-
-					void **vtable = *(void ***)vptr;
-					StaticMarkFuncMap::iterator vtable_info = sStaticMarkFuncMap.find(vtable);
-					if (vtable_info!=sStaticMarkFuncMap.end())
+					AllocType t = block->GetAllocType(pos-sizeof(int),true);
+					if ( t==allocObject )
 					{
-						int offset = vtable_info->second.mOffset;
-						AllocType t = block->GetAllocType(pos-offset-sizeof(int),true);
-						if ( t==allocObject )
-						{
-							if (offset>0)
-							{
-							   // Check to see if object is big enough to include vtable...
-								unsigned int flags = ((unsigned int *)( (char *)vptr - offset ))[-1];
-								int size = flags & IMMIX_ALLOC_SIZE_MASK;
-								if (offset>=size)
-								{
-									//printf("Dead virtual back pointer - ignore\n");
-									continue;
-								}
-								// Original object...
-								vptr = (void **)( (char *)ptr - offset);
-								vtable = *(void ***)vptr;
-								vtable_info = sStaticMarkFuncMap.find(vtable);
-								if (vtable_info!=sStaticMarkFuncMap.end())
-								{
-									vtable_info->second.mMark(vptr);
-								}
-								//printf("Odd sub-vtable\n");
-								continue;
-							}
-							//printf(" Mark Obj %p (%p)\n", vptr,ptr);
-							vtable_info->second.mMark(vptr);
-							continue;
-						}
-						else
-						{
-							// Dubious objects are old objects pointed to from old stack data
-							// (otherwise is a big in GC code)
-							//printf("### Dubious object %p off=%d (%p) %s\n", vptr,offset, ptr,
-				              //t==allocNone ? "NONE" : t==allocString ? "String"  : "??");
-							continue;
-						}
-					}
-
-               AllocType alloc = block->GetAllocType(pos-sizeof(int));
-					if (alloc==allocObject)
-					{
-						//printf(" Mark basic %p (%p)\n", vptr,ptr);
+						// printf(" Mark object %p (%p)\n", vptr,ptr);
 						HX_MARK_OBJECT( ((hxObject *)vptr) );
 					}
-					else if (alloc==allocString)
+					else if (t==allocString)
 					{
-						//printf(" Mark string %p (%p)\n", vptr,ptr);
+						// printf(" Mark string %p (%p)\n", vptr,ptr);
 						HX_MARK_STRING(vptr);
-					}
-					else
-					{
-						//printf(" unknown %p (%p)\n", vptr,ptr);
 					}
 				}
 			}
@@ -1066,8 +992,8 @@ void *hxInternalNew(int inSize,bool inIsObject)
 		sGlobalAlloc = new GlobalAllocator();
       sgFinalizers = new FinalizerList();
 		hxObject tmp;
-		void **vtable = *(void ***)(&tmp);
-		sgObject_root = vtable[0];
+		void **stack = *(void ***)(&tmp);
+		sgObject_root = stack[0];
 		//printf("__root pointer %p\n", sgObject_root);
 		#ifdef _MSC_VER
 		sTLSSlot = TlsAlloc();

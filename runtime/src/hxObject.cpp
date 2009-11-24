@@ -26,10 +26,6 @@ typedef  uint64_t  __int64;
 #endif
 
 
-#define VTABLE_SELF(OBJ) \
-_VTableMarks OBJ##_vtbl[] = { hxGetVTable<OBJ,OBJ>(), {0,0} };
-
-
 static String sNone[] = { String(null()) };
 
 void StringBoot();
@@ -170,15 +166,13 @@ static Class hxObject__mClass;
 
 bool AlwaysCast(hxObject *inPtr) { return inPtr!=0; }
 
+void hxObject::__SMark(void *inPtr) { HX_MARK_OBJECT( ((hxObject *)inPtr) ); }
 
-_VTableMarks hxObjectVTable[] =
-{
-	hxGetVTable<hxObject,hxObject>(),
-	{0,0}
-};
+
+
 void hxObject::__boot()
 {
-   Static(hxObject__mClass) = RegisterClass(STRING(L"Dynamic",7),AlwaysCast,sNone,sNone,hxObjectVTable,0,0, 0 );
+   Static(hxObject__mClass) = RegisterClass(STRING(L"Dynamic",7),AlwaysCast,sNone,sNone,0,0, 0 );
 }
 
 Class &hxObject::__SGetClass() { return hxObject__mClass; }
@@ -291,7 +285,6 @@ public:
 
    int mValue;
 };
-VTABLE_SELF(IntData);
 
 
 class BoolData : public hxObject
@@ -318,7 +311,6 @@ public:
 
    bool mValue;
 };
-VTABLE_SELF(BoolData);
 
 
 
@@ -345,7 +337,6 @@ public:
 
    double mValue;
 };
-VTABLE_SELF(DoubleData);
 
 
 #ifndef _WIN32
@@ -412,7 +403,6 @@ static bool IsFloat(hxObject *inPtr)
 	return inPtr && (TCanCast<IntData>(inPtr) || TCanCast<DoubleData>(inPtr));
 }
 
-VTABLE_SELF(Class_obj);
 
 void __boot_hxcpp()
 {
@@ -423,11 +413,11 @@ void __boot_hxcpp()
 
    hxObject::__boot();
 
-   Static(__BoolClass) = RegisterClass(STRING(L"Bool",4),TCanCast<BoolData>,sNone,sNone,BoolData_vtbl, 0,0, 0 );
-   Static(__IntClass) = RegisterClass(STRING(L"Int",3),TCanCast<IntData>,sNone,sNone,IntData_vtbl,0,0, 0 );
-   Static(__FloatClass) = RegisterClass(STRING(L"Float",5),IsFloat,sNone,sNone, DoubleData_vtbl,0,0,&__IntClass );
+   Static(__BoolClass) = RegisterClass(STRING(L"Bool",4),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
+   Static(__IntClass) = RegisterClass(STRING(L"Int",3),TCanCast<IntData>,sNone,sNone,0,0, 0 );
+   Static(__FloatClass) = RegisterClass(STRING(L"Float",5),IsFloat,sNone,sNone, 0,0,&__IntClass );
    Static(__VoidClass) = RegisterClass(STRING(L"Void",4),NoCast,sNone,sNone,0,0,0, 0 );
-   Static(Class_obj__mClass) = RegisterClass(STRING(L"Class",5),TCanCast<Class_obj>,sNone,sNone, Class_obj_vtbl, 0,0 , 0 );
+   Static(Class_obj__mClass) = RegisterClass(STRING(L"Class",5),TCanCast<Class_obj>,sNone,sNone, 0,0 , 0 );
 
    StringBoot();
 
@@ -1385,7 +1375,7 @@ Dynamic String::__Field(const String &inString)
 
 void StringBoot()
 {
-   Static(__StringClass) = RegisterClass(STRING(L"String",6),TCanCast<StringData>,sStringStatics, sStringFields, 0, 
+   Static(__StringClass) = RegisterClass(STRING(L"String",6),TCanCast<StringData>,sStringStatics, sStringFields,
             &CreateEmptyString, &CreateString, &hxObject__mClass);
 }
 
@@ -1461,17 +1451,13 @@ Class &Class_obj::__SGetClass() { return Class_obj__mClass; }
 
 
 Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
-                    String inStatics[], String inMembers[], _VTableMarks inVtableMarks[],
+                    String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
                     Class *inSuperClass, ConstructEnumFunc inConstructEnum,
                     MarkFunc inMarkFunc)
 {
    if (sClassMap==0)
       sClassMap = new ClassMap;
-
-	#ifdef HX_GC_INTERNAL_H
-	hxGCSetVTables(inVtableMarks);
-	#endif
 
    Class_obj *obj = new Class_obj(inClassName, inStatics, inMembers,
                                   inConstructEmpty, inConstructArgs, inSuperClass,
@@ -1591,12 +1577,10 @@ Class &hxEnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }
 
 //void hxEnumBase_obj::__GetFields(Array<String> &outFields) { }
 
-VTABLE_SELF(hxEnumBase_obj);
-
 void hxEnumBase_obj::__boot()
 {
    Static(hxEnumBase_obj__mClass) = RegisterClass(STRING(L"__EnumBase",10) ,TCanCast<hxEnumBase_obj>,
-                       sNone,sNone, hxEnumBase_obj_vtbl,
+                       sNone,sNone,
                        &__CreateEmpty, &__Create, 0 );
 }
 
@@ -1727,11 +1711,9 @@ bool Math_obj::__Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!
 */
 
 
-VTABLE_SELF(Math_obj);
-
 void Math_obj::__boot()
 {
-   Static(Math_obj::__mClass) = RegisterClass(STRING(L"Math",4),TCanCast<Math_obj>,sMathFields,sNone, Math_obj_vtbl, &__CreateEmpty,0 , 0 );
+   Static(Math_obj::__mClass) = RegisterClass(STRING(L"Math",4),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
 }
 
 double hxDoubleMod(double inLHS,double inRHS)

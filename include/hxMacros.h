@@ -43,7 +43,7 @@
    static hxObjectPtr<Class_obj> &__SGetClass() { return __mClass; }
 
 #define INTERFACE_DEF \
-   static void __SMark(void *inPtr) { HX_MARK_OBJECT(((OBJ_ *)inPtr)); } \
+   static void __SMark(void *inPtr) { HX_MARK_OBJECT(((OBJ_ *)inPtr)); }
 
 
 #define DECLARE_IMPLEMENT_DYNAMIC  hxFieldMap *__mDynamicFields;
@@ -128,6 +128,39 @@ Dynamic class::func##_dyn() \
 {\
    return new class##func(this); \
 }
+
+
+#define DELEGATE_0(ret,func) ret func() { return mDelegate->func(); }
+#define CDELEGATE_0(ret,func) ret func() const { return mDelegate->func(); }
+#define DELEGATE_1(ret,func,arg1) ret func(arg1 _a1) { return mDelegate->func(_a1); }
+#define CDELEGATE_1(ret,func,arg1) ret func(arg1 _a1) const { return mDelegate->func(_a1); }
+#define DELEGATE_2(ret,func,arg1,arg2) ret func(arg1 _a1,arg2 _a2) { return mDelegate->func(_a1,_a2); }
+
+
+#define DELEGATE_hxObject \
+	void __Mark() { HX_MARK_OBJECT(mDelegate); } \
+	DELEGATE_0(void *,__root) \
+   DELEGATE_1(hxObject *,__ToInterface,const type_info &) \
+	CDELEGATE_0(int ,__GetType) \
+	CDELEGATE_0(void * ,__GetHandle) \
+	DELEGATE_1(hxFieldRef ,__FieldRef, const String &) \
+	CDELEGATE_0(String ,__ToString) \
+	CDELEGATE_0(int ,__ToInt) \
+	CDELEGATE_0(double ,__ToDouble) \
+	CDELEGATE_0(char * ,__CStr) \
+	DELEGATE_0(String,toString) \
+	DELEGATE_1(bool,__HasField, const String &) \
+	DELEGATE_1(Dynamic,__Field,const String &) \
+	DELEGATE_1(Dynamic,__IField,int) \
+	DELEGATE_2(Dynamic,__SetField,const String &,const Dynamic &) \
+	DELEGATE_1(void,__SetThis,Dynamic) \
+	DELEGATE_1(void,__GetFields,Array<String> &) \
+	CDELEGATE_0(Class,__GetClass) \
+	CDELEGATE_1(int,__Compare,const hxObject *)
+   /* No need for enum options - not in interfaces */
+   /* No need for array options - not in interfaces */
+   /* No need for function options - not in interfaces */
+
 
 
 
