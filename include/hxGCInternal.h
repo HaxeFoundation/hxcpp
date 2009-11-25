@@ -46,5 +46,19 @@ struct hxInternalFinalizer
 bool hxMarkAlloc(void *inPtr);
 
 
+
+
+#define HX_MARK_OBJECT(ioPtr) if (ioPtr && hxMarkAlloc(ioPtr)) ioPtr->__Mark();
+
+#define GC_CONST_STRING  0xffffffff
+
+#define HX_MARK_STRING(ioPtr) \
+   if (ioPtr && (((int *)ioPtr)[-1] != GC_CONST_STRING) ) hxMarkAlloc((void *)ioPtr);
+
+#define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hxMarkAlloc((void *)ioPtr); }
+
+
+
+
 #endif
 

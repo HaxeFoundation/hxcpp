@@ -261,27 +261,6 @@ public:
 };
 
 
-// GC, now that we can see hxObject
-
-inline void HX_MARK_OBJECT(hxObject *ioPtr)
-{
-   if (ioPtr && hxMarkAlloc(ioPtr))
-		ioPtr->__Mark();
-}
-
-inline void HX_MARK_STRING(const void *ioPtr)
-{
-   if (ioPtr)
-		hxMarkAlloc((void *)ioPtr);
-}
-
-inline void HX_MARK_ARRAY(const void *ioPtr)
-{
-   if (ioPtr)
-		hxMarkAlloc((void *)ioPtr);
-}
-
-
 
 
 // --- hxObjectPtr ---------------------------------------------------------------
