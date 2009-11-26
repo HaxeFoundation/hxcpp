@@ -294,14 +294,17 @@ union BlockData
 						unsigned char *row = mRow[r];
 						unsigned char *last_link = &row_flag;
 						int pos = (row_flag & IMMIX_ROW_LINK_MASK);
-						while( row[pos+2] & IMMIX_ROW_HAS_OBJ_LINK)
+						while(1)
 						{
 							if (row[pos+3] == gByteMarkID)
 							{
-								*last_link = pos;
+								*last_link = pos | IMMIX_ROW_HAS_OBJ_LINK;
 								last_link = row+pos+2;
 							}
-							pos = row[pos+2] & IMMIX_ROW_LINK_MASK;
+				         if (row[pos+2] & IMMIX_ROW_HAS_OBJ_LINK)
+							   pos = row[pos+2] & IMMIX_ROW_LINK_MASK;
+							else
+								break;
 						}
 						*last_link = 0;
 						row_flag |= IMMIX_ROW_MARKED;
