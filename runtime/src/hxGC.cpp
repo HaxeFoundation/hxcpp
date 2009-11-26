@@ -3,6 +3,7 @@
 #include <vector>
 #include <set>
 
+
 #ifdef _WIN32
 
 #define GC_WIN32_THREADS
@@ -32,6 +33,7 @@ typedef std::set<hxObject **> RootSet;
 static RootSet sgRootSet;
 #endif
 
+#include "RedBlack.h"
 
 // On Mac, we need to call GC_INIT before first alloc
 static int sNeedGCInit = true;
@@ -295,169 +297,157 @@ void *hxGCRealloc(void *inData,int inSize)
 // --- FieldObject ------------------------------
 
 
-
-#ifdef _WIN32
-typedef String StringKey;
-#else
-typedef const String StringKey;
-#endif
-
-
-
-#ifdef INTERNAL_GC
-typedef std::map<StringKey,Dynamic, std::less<StringKey> > FieldMap;
-#else
-typedef gc_allocator< std::pair<StringKey, Dynamic> > MapAlloc;
-typedef std::map<StringKey,Dynamic, std::less<StringKey>, MapAlloc > FieldMap;
-#endif
-
-class hxFieldMap : public FieldMap
+int DoCompare(const String &inA, const String &inB)
 {
-#ifndef INTERNAL_GC
-public:
-   void *operator new( size_t inSize ) { return GC_MALLOC(inSize); }
-   void operator delete( void * ) { }
-#endif
+	return inA.compare(inB);
+}
 
+class hxFieldMap : public RBTree<String,Dynamic>
+{
 };
 
 hxFieldMap *hxFieldMapCreate()
 {
-	return new hxFieldMap;
+	return (hxFieldMap *)(RBTree<String,Dynamic>::Create());
 }
 
 bool hxFieldMapGet(hxFieldMap *inMap, const String &inName, Dynamic &outValue)
 {
-	hxFieldMap::iterator i = inMap->find(inName);
-	if (i==inMap->end())
+	Dynamic *value = inMap->Find(inName);
+	if (!value)
 		return false;
-	outValue = i->second;
+	outValue = *value;
 	return true;
 }
 
 bool hxFieldMapGet(hxFieldMap *inMap, int inID, Dynamic &outValue)
 {
-	hxFieldMap::iterator i = inMap->find(__hxcpp_field_from_id(inID));
-	if (i==inMap->end())
+	Dynamic *value = inMap->Find(__hxcpp_field_from_id(inID));
+	if (!value)
 		return false;
-	outValue = i->second;
+	outValue = *value;
 	return true;
 }
 
 void hxFieldMapSet(hxFieldMap *inMap, const String &inName, const Dynamic &inValue)
 {
-	(*inMap)[inName] = inValue;
+	inMap->Insert(inName,inValue);
 }
+
+struct KeyGetter
+{
+	KeyGetter(Array<String> &inArray) : mArray(inArray)  { }
+	void Visit(void *, const String &inStr, const Dynamic &) { mArray->push(inStr); }
+	Array<String> &mArray;
+};
 
 void hxFieldMapAppendFields(hxFieldMap *inMap,Array<String> &outFields)
 {
-   for(hxFieldMap::const_iterator i = inMap->begin(); i!= inMap->end(); ++i)
-      outFields->push(i->first);
+	KeyGetter getter(outFields);
+	inMap->Iterate(getter);
 }
+
+struct Marker
+{
+	void Visit(void *inPtr, const String &inStr, Dynamic &inDyn)
+	{
+		hxMarkAlloc(inPtr);
+		HX_MARK_STRING(inStr.__s);
+		if (inDyn.mPtr)
+		   HX_MARK_OBJECT(inDyn.mPtr);
+	}
+};
 
 void hxFieldMapMark(hxFieldMap *inMap)
 {
-   for(hxFieldMap::const_iterator i = inMap->begin(); i!= inMap->end(); ++i)
-   {
-		HX_MARK_STRING(i->first.__s);
-		HX_MARK_OBJECT(i->second.mPtr);
-   }
+	Marker m;
+	inMap->Iterate(m);
 }
 
 // --- Anon -----
 //
 
-void hxAnon_obj::Destroy(hxObject *inObj)
-{
-   hxAnon_obj *obj = dynamic_cast<hxAnon_obj *>(inObj);
-	if (obj)
-		delete obj->mFields;
-}
-
 hxAnon_obj::hxAnon_obj()
 {
-   mFields = new hxFieldMap;
-	#ifdef INTERNAL_GC
-	mFinalizer = new hxInternalFinalizer(this);
-	mFinalizer->mFinalizer = Destroy;
-	#else
-	mFinalizer = 0;
-	#endif
+   mFields = hxFieldMapCreate();
 }
 
 void hxAnon_obj::__Mark()
 {
-   hxFieldMapMark(mFields);
-	#ifdef INTERNAL_GC
-	mFinalizer->Mark();
-	#endif
+	// We will get mFields=0 here if we collect in the constructor before mFields is assigned
+	if (mFields)
+	{
+	   hxMarkAlloc(mFields);
+      hxFieldMapMark(mFields);
+	}
 }
 
 
 
 Dynamic hxAnon_obj::__Field(const String &inString)
 {
-   hxFieldMap::const_iterator f = mFields->find(inString);
-   if (f==mFields->end())
+   Dynamic *v = mFields->Find(inString);
+	if (!v)
       return null();
-   return f->second;
+   return *v;
 }
 
 bool hxAnon_obj::__HasField(const String &inString)
 {
-   hxFieldMap::const_iterator f = mFields->find(inString);
-   return (f!=mFields->end());
+   return mFields->Find(inString);
 }
 
 
 bool hxAnon_obj::__Remove(String inKey)
 {
-   hxFieldMap::iterator f = mFields->find(inKey);
-	bool found = f!=mFields->end();
-	if (found)
-	{
-		mFields->erase(f);
-	}
-   return found;
+	return mFields->Erase(inKey);
 }
 
 
 Dynamic hxAnon_obj::__SetField(const String &inString,const Dynamic &inValue)
 {
-   (*mFields)[inString] = inValue;
+	mFields->Insert(inString,inValue);
    return inValue;
 }
 
 hxAnon_obj *hxAnon_obj::Add(const String &inName,const Dynamic &inValue)
 {
-   (*mFields)[inName] = inValue;
+	mFields->Insert(inName,inValue);
    if (inValue.GetPtr())
 		inValue.GetPtr()->__SetThis(this);
    return this;
 }
 
+struct Stringer
+{
+	Stringer(String &inString) : result(inString), first(true) { }
+	void Visit(void *, const String &inStr, Dynamic &inDyn)
+	{
+		if (first)
+      {
+         result += inStr + String(L"=",1) + (String)(inDyn);
+         first = false;
+      }
+      else
+         result += String(L", ") + inStr + String(L"=") + (String)(inDyn);
+	}
+
+	bool first;
+	String &result;
+};
 
 String hxAnon_obj::toString()
 {
    String result = String(L"{ ",2);
-   bool first = true;
-   for(hxFieldMap::const_iterator i = mFields->begin(); i!= mFields->end(); ++i)
-   {
-      if (first)
-      {
-         result += i->first + String(L"=",1) + (String)(i->second);
-         first = false;
-      }
-      else
-         result += String(L", ") + i->first + String(L"=") + (String)(i->second);
-   }
+	Stringer stringer(result);
+	mFields->Iterate(stringer);
    return result + String(L" }",2);
 }
 
 void hxAnon_obj::__GetFields(Array<String> &outFields)
 {
-   for(hxFieldMap::const_iterator i = mFields->begin(); i!= mFields->end(); ++i)
-      outFields->push(i->first);
+	KeyGetter getter(outFields);
+	mFields->Iterate(getter);
 }
 
 
