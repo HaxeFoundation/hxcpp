@@ -287,6 +287,16 @@ public:
 			mPtr = (Ptr)inObjectPtr.mPtr->__ToInterface(typeid(Obj));
 	}
 
+
+   template<typename SOURCE_>
+   hxObjectPtr(const SOURCE_ *inPtr)
+   {
+		mPtr = dynamic_cast<OBJ_ *>(const_cast<SOURCE_ *>(inPtr));
+		if (!mPtr && inPtr)
+			mPtr = (Ptr)const_cast<SOURCE_ *>(inPtr)->__ToInterface(typeid(Obj));
+	}
+
+
    hxObjectPtr(const hxObjectPtr<OBJ_> &inOther) : mPtr( inOther.mPtr ) {  }
 
 	// inline ~hxObjectPtr() { mPtr = 0; }
