@@ -256,7 +256,6 @@ public:
 
 
    static Class &__SGetClass();
-   static void __SMark(void *inPtr);
    static void __boot();
 };
 

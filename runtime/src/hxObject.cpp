@@ -166,10 +166,6 @@ static Class hxObject__mClass;
 
 bool AlwaysCast(hxObject *inPtr) { return inPtr!=0; }
 
-void hxObject::__SMark(void *inPtr) { HX_MARK_OBJECT( ((hxObject *)inPtr) ); }
-
-
-
 void hxObject::__boot()
 {
    Static(hxObject__mClass) = RegisterClass(STRING(L"Dynamic",7),AlwaysCast,sNone,sNone,0,0, 0 );

@@ -397,31 +397,40 @@ union BlockData
 };
 
 
-bool hxMarkAlloc(void *inPtr)
-{
-   unsigned char &mark = ((unsigned char *)inPtr)[-1];
-   if ( mark==gByteMarkID  )
-      return false;
-   mark = gByteMarkID;
-
-   register size_t ptr_i = ((size_t)inPtr)-sizeof(int);
-   unsigned int flags =  *((unsigned int *)ptr_i);
-
-   if ( flags & (IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ) )
-   {
-      char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
-      char *base = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS);
-      *base |= IMMIX_ROW_MARKED;
-
-      if (flags & IMMIX_ALLOC_MEDIUM_OBJ)
-      {
-         int rows = (( (flags & IMMIX_ALLOC_SIZE_MASK) + sizeof(int) +
-                (ptr_i & (IMMIX_LINE_LEN-1)) -1 ) >> IMMIX_LINE_BITS);
-         for(int i=1;i<=rows;i++)
-            base[i] |= IMMIX_ROW_MARKED;
-      }
+#define MARK_ROWS \
+   unsigned char &mark = ((unsigned char *)inPtr)[-1]; \
+   if ( mark==gByteMarkID  ) \
+      return; \
+   mark = gByteMarkID; \
+ \
+   register size_t ptr_i = ((size_t)inPtr)-sizeof(int); \
+   unsigned int flags =  *((unsigned int *)ptr_i); \
+ \
+   if ( flags & (IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ) ) \
+   { \
+      char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK); \
+      char *base = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS); \
+      *base |= IMMIX_ROW_MARKED; \
+ \
+      if (flags & IMMIX_ALLOC_MEDIUM_OBJ) \
+      { \
+         int rows = (( (flags & IMMIX_ALLOC_SIZE_MASK) + sizeof(int) + \
+                (ptr_i & (IMMIX_LINE_LEN-1)) -1 ) >> IMMIX_LINE_BITS); \
+         for(int i=1;i<=rows;i++) \
+            base[i] |= IMMIX_ROW_MARKED; \
+      } \
    }
-   return true;
+
+void hxMarkAlloc(void *inPtr)
+{
+	MARK_ROWS
+}
+
+void hxMarkObjectAlloc(hxObject *inPtr)
+{
+	MARK_ROWS
+
+	inPtr->__Mark();
 }
 
 

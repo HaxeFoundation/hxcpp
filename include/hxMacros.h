@@ -21,7 +21,6 @@
    static hxObjectPtr<Class_obj> __mClass; \
    hxObjectPtr<Class_obj > __GetClass() const { return __mClass; } \
    static hxObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
-   static void __SMark(void *inPtr) { HX_MARK_OBJECT(((OBJ_ *)inPtr)); } \
    Dynamic __Field(const String &inString); \
    Dynamic __IField(int inFieldID); \
    void *__root() { return this; } \
@@ -42,8 +41,7 @@
    hxObjectPtr<Class_obj > __GetClass() const { return __mClass; } \
    static hxObjectPtr<Class_obj> &__SGetClass() { return __mClass; }
 
-#define INTERFACE_DEF \
-   static void __SMark(void *inPtr) { HX_MARK_OBJECT(((OBJ_ *)inPtr)); }
+#define INTERFACE_DEF
 
 
 #define DECLARE_IMPLEMENT_DYNAMIC  hxFieldMap *__mDynamicFields;
