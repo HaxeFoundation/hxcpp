@@ -47,13 +47,6 @@ typedef struct _buffer  *buffer;
 typedef void (*hxFinalizer)(value v);
 typedef void (*hxPtrFinalizer)(void *v);
 
-#ifdef NEKO_WINDOWS
-typedef void (*thread_callback)(void *);
-#else
-typedef void *(*thread_callback)(void *);
-#endif
-
-
 #define hx_failure(msg)		hx_fail(msg,__FILE__,__LINE__)
 
 #ifndef IGNORE_CFFI_API_H

@@ -594,14 +594,6 @@ void kind_share(vkind *inKind,const char *inName)
 }
 
 
-// Thead
-void start_thread(thread_callback inFunc,void *inUserData)
-{
-   hxStartThread(inFunc,inUserData);
-}
-
-
-
 
 // Garbage Collection
 void * hx_alloc(int arg1)

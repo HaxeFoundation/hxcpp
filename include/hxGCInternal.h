@@ -22,8 +22,17 @@ void *hxInternalNew(int inSize,bool inIsObject);
 void *hxInternalRealloc(void *inData,int inSize);
 void hxInternalEnableGC(bool inEnable);
 void *hxInternalCreateConstBuffer(const void *inData,int inSize);
+void hxRegisterNewThread(void *inTopOfStack);
 void hxInternalCollect();
-void hxGCSetVTables(struct _VTableMarks inVtableMark[]);
+
+void hxEnterGCFreeZone();
+void hxExitGCFreeZone();
+
+// Threading ...
+void hxRegisterCurrentThread(void *inTopOfStack);
+void hxUnregisterCurrentThread();
+void hxEnterSafePoint();
+
 
 void hxGCMarkNow();
 

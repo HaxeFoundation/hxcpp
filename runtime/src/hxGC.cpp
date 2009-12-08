@@ -188,45 +188,11 @@ void hxGCInit()
 
 #ifndef INTERNAL_GC
 // Stubs...
-void hxGCSetVTables(_VTableMarks inVtableMark[]) { } 
-bool hxMarkAlloc(void *inPtr) { return false; }
+void hxMarkAlloc(void *inPtr) {  }
+void hxMarkObjectAlloc(hxObject *inPtr) { }
+void hxEnterGCFreeZone() { }
+void hxExitGCFreeZone() { }
 #endif
-
-#if defined(_MSC_VER)
-struct ThreadData
-{
-   ThreadFunc func;
-	void       *data;
-};
-
-unsigned int __stdcall thread_func(void *data)
-{
-	ThreadData d = *(ThreadData *)data;
-	data=0;
-	d.func(d.data);
-	return 0;
-}
-
-#endif
-
-void hxStartThread(ThreadFunc inFunc,void *inUserData)
-{
-// TODO
-#ifndef INTERNAL_GC
-
-#if defined(_MSC_VER)
-	ThreadData *data = (ThreadData *)GC_MALLOC( sizeof(ThreadData) );
-	data->func = inFunc;
-	data->data = inUserData;
-   GC_beginthreadex(0,0,thread_func,data,0,0);
-#else
-   pthread_t result;
-   GC_pthread_create(&result,0,inFunc,inUserData);
-#endif
-
-
-#endif
-}
 
 
 void __hxcpp_enable(bool inEnable)

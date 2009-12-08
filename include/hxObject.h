@@ -1709,6 +1709,31 @@ Dynamic  _string_hash_keys(Dynamic &inHash);
  String __hxcpp_to_string(double inSeconds);
  double __hxcpp_date_now();
 
+// Threading
+
+Dynamic __hxcpp_thread_create(Dynamic inFunc);
+Dynamic __hxcpp_thread_current();
+void __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage);
+Dynamic __hxcpp_thread_read_message(bool inBlocked);
+
+Dynamic __hxcpp_mutex_create();
+void __hxcpp_mutex_acquire(Dynamic);
+bool __hxcpp_mutex_try(Dynamic);
+void __hxcpp_mutex_release(Dynamic);
+
+
+Dynamic __hxcpp_lock_create();
+bool __hxcpp_lock_wait(Dynamic inlock,double inTime);
+void __hxcpp_lock_release(Dynamic inlock);
+
+Dynamic __hxcpp_deque_create();
+void __hxcpp_deque_add(Dynamic q,Dynamic inVal);
+void __hxcpp_deque_push(Dynamic q,Dynamic inVal);
+Dynamic __hxcpp_deque_pop(Dynamic q,bool block);
+
+Dynamic __hxcpp_tls_get(int inID);
+void __hxcpp_tls_set(int inID,Dynamic inVal);
+
 
 
 #ifdef BIG_ENDIAN

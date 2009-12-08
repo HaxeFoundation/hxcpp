@@ -339,6 +339,7 @@
   <file name = "runtime/src/hxHash.cpp"/>
   <file name = "runtime/src/hxLib.cpp"/>
   <file name = "runtime/src/hxCFFI.cpp"/>
+  <file name = "runtime/src/hxThread.cpp"/>
 
 
 </files>

@@ -104,9 +104,6 @@ DEFFUNC_2(value,val_field,value,int)
 DEFFUNC_0(vkind,alloc_kind)
 DEFFUNC_2(void,kind_share,vkind *,const char *)
 
-// Thread function
-DEFFUNC_2(void,start_thread,thread_callback,void *)
-
 // Garbage Collection
 DEFFUNC_1(void *,hx_alloc,int)
 DEFFUNC_2(void, val_gc,value,hxFinalizer)
