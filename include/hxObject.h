@@ -5,7 +5,13 @@
 
 #include <wchar.h>
 #include <string.h>
+
+#ifdef _MSC_VER
 #include <typeinfo.h>
+#else
+#include <typeinfo>
+using std::type_info;
+#endif
 
 #ifdef HX_LINUX
 #include <unistd.h>
@@ -297,6 +303,8 @@ public:
 
 
    hxObjectPtr(const hxObjectPtr<OBJ_> &inOther) : mPtr( inOther.mPtr ) {  }
+
+
 
 	// inline ~hxObjectPtr() { mPtr = 0; }
 
