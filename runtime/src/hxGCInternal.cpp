@@ -41,6 +41,7 @@ TLSData<LocalAllocator> tlsLocalAlloc;
 
 void WaitForSafe(LocalAllocator *inAlloc);
 void ReleaseFromSafe(LocalAllocator *inAlloc);
+void hxExitGCFreeZoneLocked();
 
 //#define DEBUG_ALLOC_PTR ((char *)0xb68354)
 
@@ -528,7 +529,7 @@ public:
 		{
 			hxEnterGCFreeZone();
 			gThreadStateChangeLock->Lock();
-			hxExitGCFreeZone();
+			hxExitGCFreeZoneLocked();
 		}
 
 		BlockData *result;
@@ -804,6 +805,14 @@ public:
 		mReadyForCollect.Reset();
 		mGCFreeZone = false;
 	}
+        // For when we already hold the lock
+	void ExitGCFreeZoneLocked()
+	{
+		mReadyForCollect.Reset();
+		mGCFreeZone = false;
+	}
+
+
 
 	// Called by the collecting thread to make sure this allocator is paused.
 	// The collecting thread has the lock, and will not be releasing it until
@@ -1066,6 +1075,11 @@ void hxExitGCFreeZone()
 	tla->ExitGCFreeZone();
 }
 
+void hxExitGCFreeZoneLocked()
+{
+   LocalAllocator *tla = GetLocalAlloc();
+	tla->ExitGCFreeZoneLocked();
+}
 
 
 void *hxInternalNew(int inSize,bool inIsObject)

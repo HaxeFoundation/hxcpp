@@ -18,21 +18,21 @@
 
 struct MyMutex
 {
-   MyMutex() { mCreated = true; InitializeCriticalSection(&mCritSec); }
-   ~MyMutex() { if (mCreated) DeleteCriticalSection(&mCritSec); }
+   MyMutex() { mValid = true; InitializeCriticalSection(&mCritSec); }
+   ~MyMutex() { if (mValid) DeleteCriticalSection(&mCritSec); }
    void Lock() { EnterCriticalSection(&mCritSec); }
    void Unlock() { LeaveCriticalSection(&mCritSec); }
    bool TryLock() { return TryEnterCriticalSection(&mCritSec); }
    void Clean()
    {
-      if (mCreated)
+      if (mValid)
       {
          DeleteCriticalSection(&mCritSec);
-         mCreated = false;
+         mValid = false;
       }
    }
 
-   bool             mCreated;
+   bool             mValid;
    CRITICAL_SECTION mCritSec;
 };
 
@@ -156,13 +156,15 @@ struct MySemaphore
    MySemaphore()
    {
       mSet = false;
-      mCreated = true;
+      mValid = true;
       pthread_cond_init(&mCondition,NULL);
    }
    ~MySemaphore()
    {
-      if (mCreated)
+      if (mValid)
+      {
          pthread_cond_destroy(&mCondition);
+      }
    }
    // For autolock
    inline operator MyMutex &() { return mMutex; }
@@ -175,14 +177,27 @@ struct MySemaphore
          pthread_cond_signal( &mCondition );
       }
    }
+   void QSet()
+   {
+      mSet = true;
+      pthread_cond_signal( &mCondition );
+   }
    void Reset()
    {
       AutoLock lock(mMutex);
       mSet = false;
    }
+   void QReset() { mSet = false; }
    void Wait()
    {
       AutoLock lock(mMutex);
+      while( !mSet )
+         pthread_cond_wait( &mCondition, &mMutex.mMutex );
+      mSet = false;
+   }
+   // when we already hold the mMutex lock ...
+   void QWait()
+   {
       while( !mSet )
          pthread_cond_wait( &mCondition, &mMutex.mMutex );
       mSet = false;
@@ -207,9 +222,9 @@ struct MySemaphore
    void Clean()
    {
       mMutex.Clean();
-      if (mCreated)
+      if (mValid)
       {
-         mCreated = false;
+         mValid = false;
          pthread_cond_destroy(&mCondition);
       }
    }
@@ -218,7 +233,7 @@ struct MySemaphore
    MyMutex         mMutex;
    pthread_cond_t  mCondition;
    bool            mSet;
-   bool            mCreated;
+   bool            mValid;
 };
 
 

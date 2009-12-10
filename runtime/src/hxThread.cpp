@@ -97,7 +97,7 @@ struct Deque : public Array_obj<Dynamic>
 		AutoLock lock(mSemaphore);
 		hxExitGCFreeZone();
 		push(inValue);
-		mSemaphore.Set();
+		mSemaphore.QSet();
 	}
 	void PushFront(Dynamic inValue)
 	{
@@ -105,7 +105,7 @@ struct Deque : public Array_obj<Dynamic>
 		AutoLock lock(mSemaphore);
 		hxExitGCFreeZone();
 		unshift(inValue);
-		mSemaphore.Set();
+		mSemaphore.QSet();
 	}
 
 	
@@ -114,7 +114,7 @@ struct Deque : public Array_obj<Dynamic>
 		hxEnterGCFreeZone();
 		AutoLock lock(mSemaphore);
 		while(inBlock && !length)
-			mSemaphore.Wait();
+			mSemaphore.QWait();
 		hxExitGCFreeZone();
 		return shift();
 	}
@@ -134,7 +134,7 @@ void __hxcpp_deque_add(Dynamic q,Dynamic inVal)
 	Deque *d = dynamic_cast<Deque *>(q.mPtr);
 	if (!d)
 		throw INVALID_OBJECT;
-	d->PushFront(inVal);
+	d->PushBack(inVal);
 }
 
 void __hxcpp_deque_push(Dynamic q,Dynamic inVal)
@@ -142,7 +142,7 @@ void __hxcpp_deque_push(Dynamic q,Dynamic inVal)
 	Deque *d = dynamic_cast<Deque *>(q.mPtr);
 	if (!d)
 		throw INVALID_OBJECT;
-	d->PushBack(inVal);
+	d->PushFront(inVal);
 }
 
 Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
