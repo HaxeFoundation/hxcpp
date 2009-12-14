@@ -2,16 +2,21 @@
 #define HX_GC_INTERNAL_H
 
 
-// INTERNAL_GC is defined on the command-line with "-DINTERNAL_GC"
+
+
+extern int gPauseForCollect;
+void hxPauseForCollect();
 
 
 #ifdef INTERNAL_GC
-  #define GC_CLEARS_OBJECTS
-  #define GC_CLEARS_ALL
+  #ifdef HXCPP_MULTI_THREADED
+  #define __SAFE_POINT if (gPauseForCollect) hxPauseForCollect();
+  #else
+  #define __SAFE_POINT
+  #endif
 #else
-  #define GC_CLEARS_OBJECTS
+#define __SAFE_POINT
 #endif
-
 
 class hxObject;
 
@@ -32,6 +37,8 @@ void hxExitGCFreeZone();
 void hxRegisterCurrentThread(void *inTopOfStack);
 void hxUnregisterCurrentThread();
 void hxEnterSafePoint();
+void hxGCPrepareMultiThreaded();
+
 
 
 void hxGCMarkNow();

@@ -17,7 +17,6 @@
   <depend name="${HXCPP}/include/hxCFFI.h"/>
 
   <file name="libs/std/Sys.cpp"/>
-  <file name="libs/std/Thread.cpp"/>
   <file name="libs/std/Xml.cpp"/>
   <file name="libs/std/Process.cpp"/>
   <file name="libs/std/Random.cpp"/>

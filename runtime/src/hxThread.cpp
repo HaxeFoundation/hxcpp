@@ -8,6 +8,15 @@ extern "C" {
 }
 #endif
 
+#ifdef HXCPP_MULTI_THREADED
+#define CHECK_THREADED
+#else
+
+#define CHECK_THREADED \
+	throw Dynamic(STRING(L"HXCPP_MULTI_THREADED not enabled",32));
+
+#endif
+
 static TLSData<class hxThreadInfo> tlsCurrentThread;
 
 // --- Deque ----------------------------------------------------------
@@ -240,6 +249,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 	hxThreadInfo *info = new hxThreadInfo(inStart);
 
 #ifdef INTERNAL_GC
+	hxGCPrepareMultiThreaded();
 
    #if defined(_MSC_VER)
       _beginthreadex(0,0,hxThreadFunc,info,0,0);
@@ -288,11 +298,13 @@ static hxThreadInfo *GetCurrentInfo()
 
 Dynamic __hxcpp_thread_current()
 {
+	CHECK_THREADED;
 	return GetCurrentInfo();
 }
 
 void __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage)
 {
+	CHECK_THREADED;
 	hxThreadInfo *info = dynamic_cast<hxThreadInfo *>(inThread.mPtr);
 	if (!info)
 		throw INVALID_OBJECT;
@@ -301,6 +313,7 @@ void __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage)
 
 Dynamic __hxcpp_thread_read_message(bool inBlocked)
 {
+	CHECK_THREADED;
 	hxThreadInfo *info = GetCurrentInfo();
 	return info->ReadMessage(inBlocked);
 }
@@ -309,11 +322,13 @@ Dynamic __hxcpp_thread_read_message(bool inBlocked)
 
 Dynamic __hxcpp_tls_get(int inID)
 {
+	CHECK_THREADED;
 	return GetCurrentInfo()->GetTLS(inID);
 }
 
 void __hxcpp_tls_set(int inID,Dynamic inVal)
 {
+	CHECK_THREADED;
 	GetCurrentInfo()->SetTLS(inID,inVal);
 }
 
@@ -368,10 +383,12 @@ public:
 
 Dynamic __hxcpp_mutex_create()
 {
+	CHECK_THREADED;
 	return new hxMutex;
 }
 void __hxcpp_mutex_acquire(Dynamic inMutex)
 {
+	CHECK_THREADED;
 	hxMutex *mutex = dynamic_cast<hxMutex *>(inMutex.mPtr);
 	if (!mutex)
 		throw INVALID_OBJECT;
@@ -379,6 +396,7 @@ void __hxcpp_mutex_acquire(Dynamic inMutex)
 }
 bool __hxcpp_mutex_try(Dynamic inMutex)
 {
+	CHECK_THREADED;
 	hxMutex *mutex = dynamic_cast<hxMutex *>(inMutex.mPtr);
 	if (!mutex)
 		throw INVALID_OBJECT;
@@ -386,6 +404,7 @@ bool __hxcpp_mutex_try(Dynamic inMutex)
 }
 void __hxcpp_mutex_release(Dynamic inMutex)
 {
+	CHECK_THREADED;
 	hxMutex *mutex = dynamic_cast<hxMutex *>(inMutex.mPtr);
 	if (!mutex)
 		throw INVALID_OBJECT;
@@ -489,10 +508,12 @@ public:
 
 Dynamic __hxcpp_lock_create()
 {
+	CHECK_THREADED;
 	return new hxLock;
 }
 bool __hxcpp_lock_wait(Dynamic inlock,double inTime)
 {
+	CHECK_THREADED;
 	hxLock *lock = dynamic_cast<hxLock *>(inlock.mPtr);
 	if (!lock)
 		throw INVALID_OBJECT;
@@ -500,6 +521,7 @@ bool __hxcpp_lock_wait(Dynamic inlock,double inTime)
 }
 void __hxcpp_lock_release(Dynamic inlock)
 {
+	CHECK_THREADED;
 	hxLock *lock = dynamic_cast<hxLock *>(inlock.mPtr);
 	if (!lock)
 		throw INVALID_OBJECT;

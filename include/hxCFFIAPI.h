@@ -111,6 +111,10 @@ DEFFUNC_2(void, val_gc_ptr,void *,hxPtrFinalizer)
 DEFFUNC_1(void, val_gc_add_root,value *)
 DEFFUNC_1(void, val_gc_remove_root,value *)
 
+DEFFUNC_0(void, gc_enter_blocking)
+DEFFUNC_0(void, gc_exit_blocking)
+DEFFUNC_0(void, gc_safe_point)
+
 // Used for finding functions in static libraries
 DEFFUNC_2(int, hx_register_prim, wchar_t *, void*)
 

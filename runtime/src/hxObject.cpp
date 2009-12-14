@@ -818,6 +818,10 @@ Dynamic ArrayIterator::__Field(const String &inString)
    return null();
 }
 
+void  ArrayIterator::__Mark()
+{
+	MarkMember(mArray);
+}
 
 // -------- String ----------------------------------------
 
@@ -1244,14 +1248,14 @@ String String::substr(int inFirst, Dynamic inLen) const
 {
    int len = inLen == null() ? -1 : inLen->__ToInt();
 
-   if (inFirst>=length || length==0) return String(L"",0);
+   if (inFirst>=length || length==0) return STRING(L"",0);
    if (inFirst<0)
       inFirst += length;
    if (inFirst<0)
       inFirst = 0;
    if (len<0 || (len+inFirst > length) ) len = length - inFirst;
    if (len==0)
-      return String(L"",0);
+      return STRING(L"",0);
 
    wchar_t *ptr = hxNewString(len);
    memcpy(ptr,__s+inFirst,len*sizeof(wchar_t));

@@ -484,14 +484,6 @@ void api_kind_share(vkind *inKind,const char *inName)
 }
 
 
-// Thead
-void api_start_thread(thread_callback inFunc,void *inUserData)
-{
-	NOT_IMPLEMNETED("api_start_thread");
-}
-
-
-
 
 // Garbage Collection
 void * api_hx_alloc(int arg1)
@@ -534,4 +526,9 @@ void api_val_gc_remove_root(value *inVal)
 {
 	// TODO
 }
+
+// No need to do anything here...
+void api_gc_enter_blocking() { }
+void api_gc_exit_blocking() { }
+void api_gc_safe_point() { }
 

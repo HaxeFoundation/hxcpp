@@ -61,7 +61,8 @@
   <flag value="-g" if="debug"/>
   <flag value="-O2"/>
   <flag value="-DHX_LINUX"/>
-  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
+  <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
+  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/linux/" unless="debug"/>
   <objdir value="obj/linux-dbg/" if="debug"/>
@@ -89,9 +90,6 @@
 
 <!-- IPHONE TOOLS -------------------------------------------------->
 
-<set name="INTERNAL_GC" value="1" if="iphoneos"/>
-<set name="INTERNAL_GC" value="1" if="iphonesim"/>
-
 <compiler id="iPhoneOS" exe="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0" if="iphoneos">
   <flag value="-c"/>
   <cflag value="-x"/>
@@ -116,7 +114,8 @@
   <flag value="-gdwarf-2"/>
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
-  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
+  <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
+  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-DSTATIC_LINK"/>
   <flag value="-I${HXCPP}/include"/>
   <cppflag value="-frtti"/>
@@ -150,7 +149,8 @@
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
   <flag value="-DIPHONESIM"/>
-  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
+  <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
+  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-DSTATIC_LINK"/>
   <flag value="-I${HXCPP}/include"/>
   <cppflag value="-frtti"/>
@@ -172,7 +172,8 @@
   <flag value="-O2" unless="debug"/>
   <flag value="-I${HXCPP}/include"/>
   <flag value="-DHX_MACOS"/>
-  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
+  <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
+  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <objdir value="obj/darwin/" unless="debug"/>
   <objdir value="obj/darwin-dbg/" if="debug"/>
   <outflag value="-o"/>
@@ -214,7 +215,8 @@
   <flag value="-MTd" if="debug"/>
   <flag value="-MT" unless="debug"/>
   <flag value="-DHX_WINDOWS"/>
-  <flag value="-DINTERNAL_GC" if="INTERNAL_GC"/>
+  <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
+  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-GR"/>
   <flag value="-Zi"/>
   <flag value="-c"/>
@@ -437,7 +439,7 @@
 
 <target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
-  <files id="boehm_gc" unless="INTERNAL_GC"/>
+  <files id="boehm_gc" if="HXCPP_BOEHM_GC"/>
   <ext value=".iphoneos.a" if="iphoneos"/>
   <ext value=".iphonesim.a" if="iphonesim"/>
   <files id="__main__" unless="static"/>

@@ -37,7 +37,6 @@ DEFINE_ENTRY_POINT(std_main);
 
 DECLARE_KIND( k_file );
 DECLARE_KIND( k_socket );
-DECLARE_KIND( k_thread );
 
 void std_main() {
 	id_h = val_id("h");
@@ -58,7 +57,6 @@ void std_main() {
 	id_unserialize = val_id("__unserialize");	
 	kind_share(&k_file,"file");
 	kind_share(&k_socket,"socket");
-	kind_share(&k_thread,"thread");
 }
 
 
@@ -69,7 +67,6 @@ extern int   __random_prims();
 extern int   __socket_prims();
 extern int   __string_prims();
 extern int   __sys_prims();
-extern int   __thread_prims();
 extern int   __xml_prims();
 
 
@@ -87,7 +84,6 @@ int std_register_prims()
       + __socket_prims()
       + __string_prims()
       + __sys_prims()
-      + __thread_prims()
       + __xml_prims();
 
 }

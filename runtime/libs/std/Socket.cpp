@@ -82,6 +82,7 @@ typedef int socket_int;
 **/
 
 static value block_error() {
+	gc_exit_blocking();
 #ifdef NEKO_WINDOWS
 	int err = WSAGetLastError();
 	if( err == WSAEWOULDBLOCK || err == WSAEALREADY )
@@ -90,7 +91,6 @@ static value block_error() {
 #endif
 		val_throw(alloc_string("Blocking"));
 	return alloc_null();
-	return alloc_bool(true);
 }
 
 /**
@@ -163,11 +163,13 @@ static value socket_send_char( value o, value v ) {
 	if( c < 0 || c > 255 )
 		return alloc_null();
 	cc = (unsigned char)c;
+	gc_enter_blocking();
 	POSIX_LABEL(send_char_again);
 	if( send(val_sock(o),(const char *)&cc,1,MSG_NOSIGNAL) == SOCKET_ERROR ) {
 		HANDLE_EINTR(send_char_again);
 		return block_error();
 	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -189,9 +191,11 @@ static value socket_send( value o, value data, value pos, value len ) {
 	dlen = buffer_size(buf);
 	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
 		return alloc_null();
+	gc_enter_blocking();
 	dlen = send(val_sock(o), buffer_data(buf) + p , l, MSG_NOSIGNAL);
 	if( dlen == SOCKET_ERROR )
 		return block_error();
+	gc_exit_blocking();
 	return alloc_int(dlen);
 }
 
@@ -212,12 +216,14 @@ static value socket_recv( value o, value data, value pos, value len ) {
 	dlen = buffer_size(buf);
 	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
 		return alloc_null();
+	gc_enter_blocking();
 	POSIX_LABEL(recv_again);
 	dlen = recv(val_sock(o), buffer_data(buf) + p, l, MSG_NOSIGNAL);
 	if( dlen == SOCKET_ERROR ) {
 		HANDLE_EINTR(recv_again);
 		return block_error();
 	}
+	gc_exit_blocking();
 	return alloc_int(dlen);
 }
 
@@ -229,12 +235,14 @@ static value socket_recv_char( value o ) {
 	int ret;
 	unsigned char cc;
 	val_check_kind(o,k_socket);
+	gc_enter_blocking();
 	POSIX_LABEL(recv_char_again);
 	ret = recv(val_sock(o),(char *)&cc,1,MSG_NOSIGNAL);
 	if( ret == SOCKET_ERROR ) {
 		HANDLE_EINTR(recv_char_again);
 		return block_error();
 	}
+	gc_exit_blocking();
 	if( ret == 0 )
 		return alloc_null();
 	return alloc_int(cc);
@@ -253,6 +261,7 @@ static value socket_write( value o, value data ) {
 	buffer buf = val_to_buffer(data);
 	cdata = buffer_data(buf);
 	datalen = buffer_size(buf);
+	gc_enter_blocking();
 	while( datalen > 0 ) {
 		POSIX_LABEL(write_again);
 		slen = send(val_sock(o),cdata,datalen,MSG_NOSIGNAL);
@@ -387,8 +396,13 @@ static value socket_connect( value o, value host, value port ) {
 static value socket_listen( value o, value n ) {
 	val_check_kind(o,k_socket);
 	val_check(n,int);
+	gc_enter_blocking();
 	if( listen(val_sock(o),val_int(n)) == SOCKET_ERROR )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -450,12 +464,16 @@ static value socket_select( value rs, value ws, value es, value timeout ) {
 	fd_set rx, wx, ex;
 	fd_set *ra, *wa, *ea;
 	value r;
+	gc_enter_blocking();
 	POSIX_LABEL(select_again);
 	ra = make_socket_array(rs,&rx,&n);
 	wa = make_socket_array(ws,&wx,&n);
 	ea = make_socket_array(es,&ex,&n);
 	if( ra == &INVALID || wa == &INVALID || ea == &INVALID )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
 	if( val_is_null(timeout) )
 		tt = NULL;
 	else {
@@ -465,8 +483,10 @@ static value socket_select( value rs, value ws, value es, value timeout ) {
 	}
 	if( select((int)(n+1),ra,wa,ea,tt) == SOCKET_ERROR ) {
 		HANDLE_EINTR(select_again);
+		gc_exit_blocking();
 		return alloc_null();
 	}
+	gc_exit_blocking();
 	r = alloc_array(3);
 	val_array_set_i(r,0,make_array_result(rs,ra));
 	val_array_set_i(r,1,make_array_result(ws,wa));
@@ -491,8 +511,13 @@ static value socket_bind( value o, value host, value port ) {
 	#ifndef NEKO_WINDOWS
 	setsockopt(val_sock(o),SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof(opt));
 	#endif
+	gc_enter_blocking();
 	if( bind(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) == SOCKET_ERROR )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -511,9 +536,11 @@ static value socket_accept( value o ) {
 	SockLen addrlen = sizeof(addr);
 	SOCKET s;
 	val_check_kind(o,k_socket);
+	gc_enter_blocking();
 	s = accept(val_sock(o),(struct sockaddr*)&addr,&addrlen);
 	if( s == INVALID_SOCKET )
 		return block_error();
+	gc_exit_blocking();
 	return alloc_abstract(k_socket,(void *)(socket_int)s);
 }
 
@@ -593,8 +620,13 @@ static value socket_shutdown( value o, value r, value w ) {
 	val_check(w,bool);
 	if( !val_bool(r) && !val_bool(w) )
 		return alloc_bool(true);
+	gc_enter_blocking();
 	if( shutdown(val_sock(o),val_bool(r)?(val_bool(w)?SHUT_RDWR:SHUT_RD):SHUT_WR) )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -760,8 +792,13 @@ static value socket_poll_events( value pdata, value timeout ) {
 	memcpy(p->outw,p->fdw,FDSIZE(p->fdw->fd_count));
 	val_check(timeout,number);
 	init_timeval(val_number(timeout),&t);
+	gc_enter_blocking();
 	if( p->fdr->fd_count + p->fdw->fd_count != 0 && select(0,p->outr,p->outw,NULL,&t) == SOCKET_ERROR )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
+	gc_exit_blocking();
 	k = 0;
 	for(i=0;i<p->fdr->fd_count;i++)
 		if( FD_ISSET(p->fdr->fd_array[i],p->outr) )
@@ -779,11 +816,14 @@ static value socket_poll_events( value pdata, value timeout ) {
 	val_check(timeout,number);
 	p = val_poll(pdata);
 	tot = p->rcount + p->wcount;
+	gc_enter_blocking();
 	POSIX_LABEL(poll_events_again);
 	if( poll(p->fds,tot,(int)(val_number(timeout) * 1000)) < 0 ) {
 		HANDLE_EINTR(poll_events_again);
+		gc_exit_blocking();
 		return alloc_null();
 	}
+	gc_exit_blocking();
 	k = 0;
 	for(i=0;i<p->rcount;i++)
 		if( p->fds[i].revents & (POLLIN|POLLHUP) )

@@ -1,9 +1,10 @@
+#include <hxObject.h>
 #include <neko.h>
 
 #include <map>
 #include <vector>
 #include <string>
-#include <gc.h>
+//#include <gc.h>
 
 
 vkind k_int32 = vtAbstractBase;

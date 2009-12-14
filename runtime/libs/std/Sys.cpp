@@ -105,6 +105,7 @@ static value put_env( value e, value v ) {
 **/
 static value sys_sleep( value f ) {
 	val_check(f,number);
+	gc_enter_blocking();
 #ifdef NEKO_WINDOWS
 	Sleep((DWORD)(val_number(f) * 1000));
 #else
@@ -120,6 +121,7 @@ static value sys_sleep( value f ) {
 		}
 	}
 #endif
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -226,7 +228,10 @@ static value sys_command( value cmd ) {
 	val_check(cmd,string);
 	if( val_strlen(cmd) == 0 )
 		return alloc_int(-1);
-	return alloc_int( system(val_string(cmd)) );
+	gc_enter_blocking();
+	int result =  system(val_string(cmd));
+	gc_exit_blocking();
+	return alloc_int( result );
 }
 
 /**
@@ -246,7 +251,10 @@ static value sys_exit( value ecode ) {
 static value sys_exists( value path ) {
 	struct stat st;
 	val_check(path,string);
-	return alloc_bool(stat(val_string(path),&st) == 0);
+	gc_enter_blocking();
+	bool result =  stat(val_string(path),&st) == 0;
+	gc_exit_blocking();
+	return alloc_bool(result);
 }
 
 /**
@@ -254,7 +262,10 @@ static value sys_exists( value path ) {
 	<doc>Deprecated : use sys_exists instead.</doc>
 **/
 static value file_exists( value path ) {
-	return sys_exists(path);
+	gc_enter_blocking();
+	bool result =  sys_exists(path);
+	gc_exit_blocking();
+	return alloc_bool(result);
 }
 
 /**
@@ -263,8 +274,13 @@ static value file_exists( value path ) {
 **/
 static value file_delete( value path ) {
 	val_check(path,string);
+	gc_enter_blocking();
 	if( unlink(val_string(path)) != 0 )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -275,8 +291,13 @@ static value file_delete( value path ) {
 static value sys_rename( value path, value newname ) {
 	val_check(path,string);
 	val_check(newname,string);
+	gc_enter_blocking();
 	if( rename(val_string(path),val_string(newname)) != 0 )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -303,8 +324,13 @@ static value sys_stat( value path ) {
 	struct stat s;
 	value o;
 	val_check(path,string);
+	gc_enter_blocking();
 	if( stat(val_string(path),&s) != 0 )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
+	gc_exit_blocking();
 	o = alloc_empty_object( );
 	STATF(gid);
 	STATF(uid);
@@ -339,8 +365,13 @@ static value sys_stat( value path ) {
 static value sys_file_type( value path ) {
 	struct stat s;
 	val_check(path,string);
+	gc_enter_blocking();
 	if( stat(val_string(path),&s) != 0 )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
+	gc_exit_blocking();
 	if( s.st_mode & S_IFREG )
 		return alloc_string("file");
 	if( s.st_mode & S_IFDIR )
@@ -367,12 +398,17 @@ static value sys_file_type( value path ) {
 static value sys_create_dir( value path, value mode ) {
 	val_check(path,string);
 	val_check(mode,int);
+	gc_enter_blocking();
 #ifdef NEKO_WINDOWS
 	if( mkdir(val_string(path)) != 0 )
 #else
 	if( mkdir(val_string(path),val_int(mode)) != 0 )
 #endif
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -382,8 +418,12 @@ static value sys_create_dir( value path, value mode ) {
 **/
 static value sys_remove_dir( value path ) {
 	val_check(path,string);
+	gc_enter_blocking();
 	if( rmdir(val_string(path)) != 0 )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
 	return alloc_bool(true);
 }
 
@@ -449,24 +489,35 @@ static value sys_read_dir( value p) {
 		path += L"/*.*";
 	else
 		path += L"*.*";
+	gc_enter_blocking();
 	handle = FindFirstFileW(path.c_str(),&d);
 	if( handle == INVALID_HANDLE_VALUE )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
 	while( true ) {
 		// skip magic dirs
 		if( d.cFileName[0] != '.' || (d.cFileName[1] != 0 && (d.cFileName[1] != '.' || d.cFileName[2] != 0)) ) {
+		   gc_exit_blocking();
 			val_array_push(result,alloc_wstring(d.cFileName));
+			gc_enter_blocking();
 		}
 		if( !FindNextFileW(handle,&d) )
 			break;
 	}
 	FindClose(handle);
+	gc_exit_blocking();
 #else
 	DIR *d;
 	struct dirent *e;
+	gc_enter_blocking();
 	d = opendir(val_string(p));
 	if( d == NULL )
+	{
+		gc_exit_blocking();
 		return alloc_null();
+	}
 	while( true ) {
 		e = readdir(d);
 		if( e == NULL )
@@ -474,10 +525,13 @@ static value sys_read_dir( value p) {
 		// skip magic dirs
 		if( e->d_name[0] == '.' && (e->d_name[1] == 0 || (e->d_name[1] == '.' && e->d_name[2] == 0)) )
 			continue;
+		gc_exit_blocking();
 		val_array_push(result, alloc_string(e->d_name) );
+		gc_enter_blocking();
 	}
 	closedir(d);
 #endif
+	gc_exit_blocking();
 	return result;
 }
 
@@ -570,6 +624,9 @@ static value sys_env() {
 static value sys_getch( value b ) {
 #	ifdef NEKO_WINDOWS
 	val_check(b,bool);
+	gc_enter_blocking();
+	int result = val_bool(b)?getche():getch();
+	gc_exit_blocking();
 	return alloc_int( val_bool(b)?getche():getch() );
 #	else
 	// took some time to figure out how to do that
@@ -578,6 +635,7 @@ static value sys_getch( value b ) {
 	int c;
 	struct termios term, old;
 	val_check(b,bool);
+	gc_enter_blocking();
 	tcgetattr(fileno(stdin), &old);
 	term = old;
 	cfmakeraw(&term);
@@ -585,6 +643,7 @@ static value sys_getch( value b ) {
 	c = getchar();
 	tcsetattr(fileno(stdin), 0, &old);
 	if( val_bool(b) ) fputc(c,stdout);
+	gc_exit_blocking();
 	return alloc_int(c);
 #	endif
 }

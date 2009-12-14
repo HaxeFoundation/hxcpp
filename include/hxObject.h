@@ -3,6 +3,26 @@
 
 #pragma once
 
+
+// INTERNAL_GC is now the default, unless HXCPP_BOEHM_GC is defined...
+
+#ifndef HXCPP_BOEHM_GC
+#ifndef INTERNAL_GC
+  #define INTERNAL_GC
+#endif
+#endif
+
+#ifdef INTERNAL_GC
+  #define GC_CLEARS_OBJECTS
+  #define GC_CLEARS_ALL
+#else
+  #define GC_CLEARS_OBJECTS
+  #ifndef HXCPP_MULTI_THREADED
+     #define HXCPP_MULTI_THREADED
+  #endif
+#endif
+
+
 #include <wchar.h>
 #include <string.h>
 
@@ -864,6 +884,7 @@ public:
    Dynamic next_dyn( );
 
    Dynamic __Field(const String &inString);
+	void __Mark();
 
    int     mIdx;
    Dynamic mArray;

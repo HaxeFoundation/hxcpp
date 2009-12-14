@@ -647,6 +647,22 @@ int hx_register_prim( wchar_t * arg1, void* arg2)
 	return 0;
 }
 
+void gc_enter_blocking()
+{
+	hxEnterGCFreeZone();
+}
+
+void gc_exit_blocking()
+{
+	hxExitGCFreeZone();
+}
+
+void gc_safe_point()
+{
+	__SAFE_POINT;
+}
+
+
 
 
 SHARED void * hx_cffi(const char *inName)

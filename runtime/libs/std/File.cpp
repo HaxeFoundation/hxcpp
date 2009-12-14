@@ -41,6 +41,7 @@ typedef struct {
 DEFINE_KIND(k_file);
 
 static void file_error( const char *msg, fio *f ) {
+	gc_exit_blocking();
 	value a = alloc_array(2);
 	val_array_set_i(a,0,alloc_string(msg));
 	val_array_set_i(a,1,alloc_string(val_string(f->name)));
@@ -60,9 +61,11 @@ static value file_open( value name, value r ) {
 	val_check(r,string);
 	f = (fio*)hx_alloc(sizeof(fio));
 	f->name = alloc_string(val_string(name));
+	gc_enter_blocking();
 	f->io = fopen(val_string(name),val_string(r));
 	if( f->io == NULL )
 		file_error("file_open",f);
+	gc_exit_blocking();
 	return alloc_abstract(k_file,f);
 }
 
@@ -109,6 +112,8 @@ static value file_write( value o, value s, value pp, value n ) {
 	len = val_int(n);
 	if( p < 0 || len < 0 || p > buflen || p + len > buflen )
 		return alloc_null();
+
+	gc_enter_blocking();
 	while( len > 0 ) {
 		int d;
 		POSIX_LABEL(file_write_again);
@@ -120,6 +125,7 @@ static value file_write( value o, value s, value pp, value n ) {
 		p += d;
 		len -= d;
 	}
+	gc_exit_blocking();
 	return n;
 }
 
@@ -146,6 +152,7 @@ static value file_read( value o, value s, value pp, value n ) {
 	len = val_int(n);
 	if( p < 0 || len < 0 || p > buf_len || p + len > buf_len )
 		return alloc_null();
+	gc_enter_blocking();
 	while( len > 0 ) {
 		int d;
 		POSIX_LABEL(file_read_again);
@@ -160,6 +167,7 @@ static value file_read( value o, value s, value pp, value n ) {
 		p += d;
 		len -= d;
 	}
+	gc_exit_blocking();
 	return n;
 }
 
@@ -176,11 +184,13 @@ static value file_write_char( value o, value c ) {
 		return alloc_null();
 	cc = (char)val_int(c);
 	f = val_file(o);
+	gc_enter_blocking();
 	POSIX_LABEL(write_char_again);
 	if( fwrite(&cc,1,1,f->io) != 1 ) {
 		HANDLE_FINTR(f->io,write_char_again);
 		file_error("file_write_char",f);
 	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -193,11 +203,13 @@ static value file_read_char( value o ) {
 	fio *f;
 	val_check_kind(o,k_file);
 	f = val_file(o);
+	gc_enter_blocking();
 	POSIX_LABEL(read_char_again);
 	if( fread(&cc,1,1,f->io) != 1 ) {
 		HANDLE_FINTR(f->io,read_char_again);
 		file_error("file_read_char",f);
 	}
+	gc_exit_blocking();
 	return alloc_int(cc);
 }
 
@@ -211,8 +223,10 @@ static value file_seek( value o, value pos, value kind ) {
 	val_check(pos,int);
 	val_check(kind,int);
 	f = val_file(o);
+	gc_enter_blocking();
 	if( fseek(f->io,val_int(pos),val_int(kind)) != 0 )
 		file_error("file_seek",f);
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -225,9 +239,11 @@ static value file_tell( value o ) {
 	fio *f;
 	val_check_kind(o,k_file);
 	f = val_file(o);
+	gc_enter_blocking();
 	p = ftell(f->io);
 	if( p == -1 )
 		file_error("file_tell",f);
+	gc_exit_blocking();
 	return alloc_int(p);
 }
 
@@ -248,8 +264,10 @@ static value file_flush( value o ) {
 	fio *f;
 	val_check_kind(o,k_file);
 	f = val_file(o);
+	gc_enter_blocking();
 	if( fflush( f->io ) != 0 )
 		file_error("file_flush",f);
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -264,14 +282,17 @@ static value file_contents( value name ) {
 	int p;
 	val_check(name,string);
 	f.name = name;
+	gc_enter_blocking();
 	f.io = fopen(val_string(name),"rb");
 	if( f.io == NULL )
 		file_error("file_contents",&f);
 	fseek(f.io,0,SEEK_END);
 	len = ftell(f.io);
 	fseek(f.io,0,SEEK_SET);
+	gc_exit_blocking();
 	s = alloc_buffer_len(len);
 	p = 0;
+	gc_enter_blocking();
 	while( len > 0 ) {
 		int d;
 		POSIX_LABEL(file_contents);
@@ -285,6 +306,7 @@ static value file_contents( value name ) {
 		len -= d;
 	}	
 	fclose(f.io);
+	gc_exit_blocking();
 	return buffer_val(s);
 }
 

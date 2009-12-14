@@ -144,6 +144,16 @@ inline bool val_is_object(value inVal)
 	return t==valtObject || t==valtEnum ||t==valtClass;
 }
 
+class AutoGCBlocking
+{
+public:
+	AutoGCBlocking() : mLocked(true) { gc_enter_blocking(); }
+	~AutoGCBlocking() { if (mLocked) gc_exit_blocking(); }
+	void Close() { if (mLocked) gc_exit_blocking(); mLocked = false; }
+
+	bool mLocked;
+};
+
 #define val_null alloc_null()
 
 #define bfailure(x) val_throw(buffer_to_string(x))
