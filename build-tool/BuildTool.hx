@@ -73,26 +73,16 @@ class Compiler
       mID = inID;
       mExt = ".o";
       mPCHExt = ".pch";
-      mPCHOut = "-Fp";
       mPCHCreate = "-Yc";
       mPCHUse = "-Yu";
    }
 
    public function precompile(inHeader:String,inGroup:FileGroup)
 	{
-	   var pch_path = new neko.io.Path(mObjDir + "/" + inHeader + mPCHExt);
-      DirManager.make(pch_path.dir);
-		var pch_name = pch_path.toString();
-
-      if (neko.FileSystem.exists(pch_name))
-		{
-		   var stamp = neko.FileSystem.stat(pch_name).mtime.getTime();
-		   if (!inGroup.isOutOfDate(stamp))
-            return;
-		}
+		var pch_name = inHeader + mPCHExt;
 
       // Create a temp file for including ...
-		var tmp_cpp = mObjDir + "/__pch.cpp";
+		var tmp_cpp = "__pch.cpp";
 		var file = neko.io.File.write(tmp_cpp,false);
 		file.writeString("#include <" + inHeader + ".h>\n");
 		file.close();
@@ -101,14 +91,6 @@ class Compiler
 
       args.push( mPCHCreate + inHeader + ".h" );
       args.push( tmp_cpp );
-
-      var out = mPCHOut;
-      if (out.substr(-1)==" ")
-      {
-         args.push(out.substr(0,out.length-1));
-         out = "";
-      }
-      args.push(out + pch_name );
 
       neko.Lib.println( mExe + " " + args.join(" ") );
       var result = neko.Sys.command( mExe, args );
@@ -124,12 +106,10 @@ class Compiler
    {
       var path = new neko.io.Path(mObjDir + "/" + inFile.mName);
       var obj_name = path.dir + "/" + path.file + mExt;
-      DirManager.make(path.dir);
 
-      if (!inFile.isOutOfDate(obj_name))
-         return obj_name;
-
-      var args = mFlags.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags);
+      var args = new Array<String>();
+		
+		args = args.concat(mFlags).concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags);
 
       if (path.ext.toLowerCase()=="c")
          args = args.concat(mCFlags);
@@ -138,15 +118,9 @@ class Compiler
       else
          args = args.concat(mCPPFlags);
 
-		if(inFile.mGroup.mPreCompiledHeaders.length>0)
-		{
-		   args.push( "-I" + mObjDir );
-         if (mPCHUse!="")
-		      for(pch in inFile.mGroup.mPreCompiledHeaders)
-			      args.push(mPCHUse + pch + ".h");
-		}
-
-
+      if (mPCHUse!="")
+		   for(pch in inFile.mGroup.mPreCompiledHeaders)
+			   args.push(mPCHUse + pch + ".h");
 
       args.push( (new neko.io.Path(inFile.mDir + inFile.mName)).toString() );
 
@@ -503,17 +477,67 @@ class BuildTool
       var target = mTargets.get(inTarget);
       target.checkError();
 
-      for(group in target.mFileGroups)
-		   for(header in group.mPreCompiledHeaders)
-			   mCompiler.precompile(header,group);
-		
 
       for(sub in target.mSubTargets)
          buildTarget(sub);
 
       var objs = new Array<String>();
+      var to_be_compiled = new Array<File>();
+
       for(file in target.mFiles)
-         objs.push( mCompiler.compile(file) );
+		{
+         var path = new neko.io.Path(mCompiler.mObjDir + "/" + file.mName);
+         var obj_name = path.dir + "/" + path.file + mCompiler.mExt;
+         DirManager.make(path.dir);
+			objs.push(obj_name);
+         if (file.isOutOfDate(obj_name))
+			   to_be_compiled.push(file);
+		}
+
+		if (to_be_compiled.length>0)
+		{
+      	for(group in target.mFileGroups)
+			   for(header in group.mPreCompiledHeaders)
+				   mCompiler.precompile(header,group);
+		}
+
+		var threads = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
+		if (threads==null || Std.parseInt(threads)<2)
+		{
+		   for(file in to_be_compiled)
+			   mCompiler.compile(file);
+		}
+		else
+		{
+		   var thread_count = Std.parseInt(threads);
+			var mutex = new neko.vm.Mutex();
+			var main_thread = neko.vm.Thread.current();
+			var compiler = mCompiler;
+			for(t in 0...thread_count)
+			{
+			   neko.vm.Thread.create(function()
+				{
+				   while(true)
+					{
+					   mutex.acquire();
+						if (to_be_compiled.length==0)
+						{
+						   mutex.release();
+							break;
+						}
+						var file = to_be_compiled.shift();
+						mutex.release();
+
+						compiler.compile(file);
+					}
+					main_thread.sendMessage("Done");
+				});
+			}
+
+         // Wait for theads to finish...
+			for(t in 0...thread_count)
+			  neko.vm.Thread.readMessage(true);
+		}
 
       switch(target.mTool)
       {

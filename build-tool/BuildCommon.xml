@@ -322,6 +322,8 @@
   <depend name="${HXCPP}/include/hxCFFILoader.h"/>
   <depend name="${HXCPP}/include/hxOS.h"/>
   <depend name="${HXCPP}/include/hxMath.h"/>
+  <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
+  <depend name="${HXCPP}/run.n"/>
   <depend name="Options.txt"/>
 
   <precompiledheader name="hxObject"/>
