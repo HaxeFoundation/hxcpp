@@ -55,10 +55,12 @@ class Compiler
    public var mOutFlag:String;
    public var mObjDir:String;
    public var mExt:String;
+
    public var mPCHExt:String;
-   public var mPCHOut:String;
    public var mPCHCreate:String;
    public var mPCHUse:String;
+   public var mPCH:String;
+
    public var mID:String;
 
    public function new(inID,inExe:String)
@@ -77,19 +79,35 @@ class Compiler
       mPCHUse = "-Yu";
    }
 
+   public function setPCH(inPCH:String)
+   {
+      mPCH = inPCH;
+      if (mPCH=="gcc")
+      {
+          mPCHExt = ".h.gch";
+          mPCHUse = "";
+      }
+   }
+
    public function precompile(inHeader:String,inGroup:FileGroup)
-	{
-		var pch_name = inHeader + mPCHExt;
+   {
+      var pch_name = inHeader + mPCHExt;
 
       // Create a temp file for including ...
-		var tmp_cpp = "__pch.cpp";
-		var file = neko.io.File.write(tmp_cpp,false);
-		file.writeString("#include <" + inHeader + ".h>\n");
-		file.close();
+      var tmp_cpp = "__pch.cpp";
+      var file = neko.io.File.write(tmp_cpp,false);
+      file.writeString("#include <" + inHeader + ".h>\n");
+      file.close();
 
       var args = inGroup.mCompilerFlags.concat(mFlags).concat( mCPPFlags );
 
-      args.push( mPCHCreate + inHeader + ".h" );
+      if (mPCH!="gcc")
+         args.push( mPCHCreate + inHeader + ".h" );
+      else
+      {
+         args.push("-o");
+         args.push(pch_name);
+      }
       args.push( tmp_cpp );
 
       neko.Lib.println( mExe + " " + args.join(" ") );
@@ -100,7 +118,7 @@ class Compiler
             neko.FileSystem.deleteFile(pch_name);
          throw "Error creating pch: " + result + " - build cancelled";
       }
-	}
+   }
 
    public function compile(inFile:File)
    {
@@ -108,8 +126,10 @@ class Compiler
       var obj_name = path.dir + "/" + path.file + mExt;
 
       var args = new Array<String>();
-		
-		args = args.concat(mFlags).concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags);
+      if (inFile.mGroup.mPreCompiledHeaders.length>0)
+         args.push("-I.");
+      
+      args = args.concat(mFlags).concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags);
 
       if (path.ext.toLowerCase()=="c")
          args = args.concat(mCFlags);
@@ -119,8 +139,8 @@ class Compiler
          args = args.concat(mCPPFlags);
 
       if (mPCHUse!="")
-		   for(pch in inFile.mGroup.mPreCompiledHeaders)
-			   args.push(mPCHUse + pch + ".h");
+         for(pch in inFile.mGroup.mPreCompiledHeaders)
+            args.push(mPCHUse + pch + ".h");
 
       args.push( (new neko.io.Path(inFile.mDir + inFile.mName)).toString() );
 
@@ -192,16 +212,16 @@ class Linker
           args = args.concat(mFlags).concat(inTarget.mFlags);
 
          // Place list of obj files in a file called "all_objs"
-			if (mFromFile!="")
-			{
+         if (mFromFile!="")
+         {
             var fname = "all_objs";
             var fout = neko.io.File.write(fname,false);
             for(obj in inObjs)
                fout.writeString(obj + "\n");
             fout.close();
             args.push("@" + fname );
-			}
-			else
+         }
+         else
             args = args.concat(inObjs);
 
          args = args.concat(inTarget.mLibs);
@@ -251,8 +271,8 @@ class File
       mName = inName;
       mDir = inGroup.mDir;
       if (mDir!="") mDir += "/";
-		// Do not take copy - use reference so it can be updated
-		mGroup = inGroup;
+      // Do not take copy - use reference so it can be updated
+      mGroup = inGroup;
       mDepends = [];
       mCompilerFlags = [];
    }
@@ -261,8 +281,8 @@ class File
       if (!neko.FileSystem.exists(inObj))
          return true;
       var obj_stamp = neko.FileSystem.stat(inObj).mtime.getTime();
-		if (mGroup.isOutOfDate(obj_stamp))
-		   return true;
+      if (mGroup.isOutOfDate(obj_stamp))
+         return true;
 
       var source_name = mDir+mName;
       if (!neko.FileSystem.exists(source_name))
@@ -283,45 +303,45 @@ class File
    public var mDir:String;
    public var mDepends:Array<String>;
    public var mCompilerFlags:Array<String>;
-	public var mGroup:FileGroup;
+   public var mGroup:FileGroup;
 }
 
 class FileGroup
 {
    public function new(inDir:String)
-	{
-	   mNewest = 0;
-	   mFiles = [];
-		mCompilerFlags = [];
-		mPreCompiledHeaders = [];
-		mDir = inDir;
-	}
+   {
+      mNewest = 0;
+      mFiles = [];
+      mCompilerFlags = [];
+      mPreCompiledHeaders = [];
+      mDir = inDir;
+   }
 
-	public function addDepend(inFile:String)
-	{
+   public function addDepend(inFile:String)
+   {
       if (!neko.FileSystem.exists(inFile))
          throw "Could not find dependency '" + inFile + "'";
       var stamp =  neko.FileSystem.stat(inFile).mtime.getTime();
-		if (stamp>mNewest)
-		   mNewest = stamp;
-	}
+      if (stamp>mNewest)
+         mNewest = stamp;
+   }
 
-	public function addCompilerFlag(inFlag:String)
-	{
-	   mCompilerFlags.push(inFlag);
-	}
+   public function addCompilerFlag(inFlag:String)
+   {
+      mCompilerFlags.push(inFlag);
+   }
 
-	public function isOutOfDate(inStamp:Float)
-	{
-	   return inStamp<mNewest;
-	}
+   public function isOutOfDate(inStamp:Float)
+   {
+      return inStamp<mNewest;
+   }
 
 
    public var mNewest:Float;
    public var mCompilerFlags:Array<String>;
    public var mPreCompiledHeaders:Array<String>;
-	public var mFiles: Array<File>;
-	public var mDir : String;
+   public var mFiles: Array<File>;
+   public var mDir : String;
 }
 
 
@@ -437,9 +457,9 @@ class BuildTool
 
                 case "files" : 
                    var name = el.att.id;
-						 if (mFileGroups.exists(name))
-						 	createFileGroup(el, mFileGroups.get(name));
-						 else
+                   if (mFileGroups.exists(name))
+                      createFileGroup(el, mFileGroups.get(name));
+                   else
                       mFileGroups.set(name,createFileGroup(el,null));
 
                 case "include" : 
@@ -485,59 +505,59 @@ class BuildTool
       var to_be_compiled = new Array<File>();
 
       for(file in target.mFiles)
-		{
+      {
          var path = new neko.io.Path(mCompiler.mObjDir + "/" + file.mName);
          var obj_name = path.dir + "/" + path.file + mCompiler.mExt;
          DirManager.make(path.dir);
-			objs.push(obj_name);
+         objs.push(obj_name);
          if (file.isOutOfDate(obj_name))
-			   to_be_compiled.push(file);
-		}
+            to_be_compiled.push(file);
+      }
 
-		if (to_be_compiled.length>0)
-		{
-      	for(group in target.mFileGroups)
-			   for(header in group.mPreCompiledHeaders)
-				   mCompiler.precompile(header,group);
-		}
+      if (to_be_compiled.length>0)
+      {
+         for(group in target.mFileGroups)
+            for(header in group.mPreCompiledHeaders)
+               mCompiler.precompile(header,group);
+      }
 
-		var threads = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
-		if (threads==null || Std.parseInt(threads)<2)
-		{
-		   for(file in to_be_compiled)
-			   mCompiler.compile(file);
-		}
-		else
-		{
-		   var thread_count = Std.parseInt(threads);
-			var mutex = new neko.vm.Mutex();
-			var main_thread = neko.vm.Thread.current();
-			var compiler = mCompiler;
-			for(t in 0...thread_count)
-			{
-			   neko.vm.Thread.create(function()
-				{
-				   while(true)
-					{
-					   mutex.acquire();
-						if (to_be_compiled.length==0)
-						{
-						   mutex.release();
-							break;
-						}
-						var file = to_be_compiled.shift();
-						mutex.release();
+      var threads = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
+      if (threads==null || Std.parseInt(threads)<2)
+      {
+         for(file in to_be_compiled)
+            mCompiler.compile(file);
+      }
+      else
+      {
+         var thread_count = Std.parseInt(threads);
+         var mutex = new neko.vm.Mutex();
+         var main_thread = neko.vm.Thread.current();
+         var compiler = mCompiler;
+         for(t in 0...thread_count)
+         {
+            neko.vm.Thread.create(function()
+            {
+               while(true)
+               {
+                  mutex.acquire();
+                  if (to_be_compiled.length==0)
+                  {
+                     mutex.release();
+                     break;
+                  }
+                  var file = to_be_compiled.shift();
+                  mutex.release();
 
-						compiler.compile(file);
-					}
-					main_thread.sendMessage("Done");
-				});
-			}
+                  compiler.compile(file);
+               }
+               main_thread.sendMessage("Done");
+            });
+         }
 
          // Wait for theads to finish...
-			for(t in 0...thread_count)
-			  neko.vm.Thread.readMessage(true);
-		}
+         for(t in 0...thread_count)
+           neko.vm.Thread.readMessage(true);
+      }
 
       switch(target.mTool)
       {
@@ -567,7 +587,7 @@ class BuildTool
                 case "outflag" : c.mOutFlag = substitute((el.att.value));
                 case "exe" : c.mExe = substitute((el.att.name));
                 case "ext" : c.mExt = substitute((el.att.value));
-                case "pchext" : c.mPCHExt = substitute((el.att.value));
+                case "pch" : c.setPCH( substitute((el.att.value)) );
             }
       }
 
@@ -597,7 +617,7 @@ class BuildTool
 
    public function createFileGroup(inXML:haxe.xml.Fast,inFiles:FileGroup) : FileGroup
    {
-		var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
+      var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
       var group = inFiles==null ? new FileGroup(dir) : inFiles;
       for(el in inXML.elements)
       {

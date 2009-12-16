@@ -176,6 +176,7 @@
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <objdir value="obj/darwin/" unless="debug"/>
   <objdir value="obj/darwin-dbg/" if="debug"/>
+  <pch value="gcc"/>
   <outflag value="-o"/>
   <ext value=".o"/>
 </compiler>
@@ -358,7 +359,6 @@
   <file name = "runtime/src/hxLib.cpp"/>
   <file name = "runtime/src/hxCFFI.cpp"/>
   <file name = "runtime/src/hxThread.cpp"/>
-
 
 </files>
 
