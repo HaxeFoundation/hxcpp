@@ -55,6 +55,10 @@ class Compiler
    public var mOutFlag:String;
    public var mObjDir:String;
    public var mExt:String;
+   public var mPCHExt:String;
+   public var mPCHOut:String;
+   public var mPCHCreate:String;
+   public var mPCHUse:String;
    public var mID:String;
 
    public function new(inID,inExe:String)
@@ -68,7 +72,53 @@ class Compiler
       mExe = inExe;
       mID = inID;
       mExt = ".o";
+      mPCHExt = ".pch";
+      mPCHOut = "-Fp";
+      mPCHCreate = "-Yc";
+      mPCHUse = "-Yu";
    }
+
+   public function precompile(inHeader:String,inGroup:FileGroup)
+	{
+	   var pch_path = new neko.io.Path(mObjDir + "/" + inHeader + mPCHExt);
+      DirManager.make(pch_path.dir);
+		var pch_name = pch_path.toString();
+
+      if (neko.FileSystem.exists(pch_name))
+		{
+		   var stamp = neko.FileSystem.stat(pch_name).mtime.getTime();
+		   if (!inGroup.isOutOfDate(stamp))
+            return;
+		}
+
+      // Create a temp file for including ...
+		var tmp_cpp = mObjDir + "/__pch.cpp";
+		var file = neko.io.File.write(tmp_cpp,false);
+		file.writeString("#include <" + inHeader + ".h>\n");
+		file.close();
+
+      var args = inGroup.mCompilerFlags.concat(mFlags).concat( mCPPFlags );
+
+      args.push( mPCHCreate + inHeader + ".h" );
+      args.push( tmp_cpp );
+
+      var out = mPCHOut;
+      if (out.substr(-1)==" ")
+      {
+         args.push(out.substr(0,out.length-1));
+         out = "";
+      }
+      args.push(out + pch_name );
+
+      neko.Lib.println( mExe + " " + args.join(" ") );
+      var result = neko.Sys.command( mExe, args );
+      if (result!=0)
+      {
+         if (neko.FileSystem.exists(pch_name))
+            neko.FileSystem.deleteFile(pch_name);
+         throw "Error creating pch: " + result + " - build cancelled";
+      }
+	}
 
    public function compile(inFile:File)
    {
@@ -79,7 +129,7 @@ class Compiler
       if (!inFile.isOutOfDate(obj_name))
          return obj_name;
 
-      var args = mFlags.concat(inFile.mCompilerFlags);
+      var args = mFlags.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags);
 
       if (path.ext.toLowerCase()=="c")
          args = args.concat(mCFlags);
@@ -87,6 +137,16 @@ class Compiler
          args = args.concat(mOBJCFlags);
       else
          args = args.concat(mCPPFlags);
+
+		if(inFile.mGroup.mPreCompiledHeaders.length>0)
+		{
+		   args.push( "-I" + mObjDir );
+         if (mPCHUse!="")
+		      for(pch in inFile.mGroup.mPreCompiledHeaders)
+			      args.push(mPCHUse + pch + ".h");
+		}
+
+
 
       args.push( (new neko.io.Path(inFile.mDir + inFile.mName)).toString() );
 
@@ -212,19 +272,24 @@ class Linker
 
 class File
 {
-   public function new(inName:String, inDir:String, inDepends:Array<String>, inFlags:Array<String>)
+   public function new(inName:String, inGroup:FileGroup)
    {
       mName = inName;
-      mDir = inDir;
+      mDir = inGroup.mDir;
       if (mDir!="") mDir += "/";
-      mDepends = inDepends.copy();
-      mCompilerFlags = inFlags.copy();
+		// Do not take copy - use reference so it can be updated
+		mGroup = inGroup;
+      mDepends = [];
+      mCompilerFlags = [];
    }
    public function isOutOfDate(inObj:String)
    {
       if (!neko.FileSystem.exists(inObj))
          return true;
       var obj_stamp = neko.FileSystem.stat(inObj).mtime.getTime();
+		if (mGroup.isOutOfDate(obj_stamp))
+		   return true;
+
       var source_name = mDir+mName;
       if (!neko.FileSystem.exists(source_name))
          throw "Could not find source '" + source_name + "'";
@@ -244,9 +309,47 @@ class File
    public var mDir:String;
    public var mDepends:Array<String>;
    public var mCompilerFlags:Array<String>;
+	public var mGroup:FileGroup;
 }
 
-typedef FileGroup = Array<File>;
+class FileGroup
+{
+   public function new(inDir:String)
+	{
+	   mNewest = 0;
+	   mFiles = [];
+		mCompilerFlags = [];
+		mPreCompiledHeaders = [];
+		mDir = inDir;
+	}
+
+	public function addDepend(inFile:String)
+	{
+      if (!neko.FileSystem.exists(inFile))
+         throw "Could not find dependency '" + inFile + "'";
+      var stamp =  neko.FileSystem.stat(inFile).mtime.getTime();
+		if (stamp>mNewest)
+		   mNewest = stamp;
+	}
+
+	public function addCompilerFlag(inFlag:String)
+	{
+	   mCompilerFlags.push(inFlag);
+	}
+
+	public function isOutOfDate(inStamp:Float)
+	{
+	   return inStamp<mNewest;
+	}
+
+
+   public var mNewest:Float;
+   public var mCompilerFlags:Array<String>;
+   public var mPreCompiledHeaders:Array<String>;
+	public var mFiles: Array<File>;
+	public var mDir : String;
+}
+
 
 typedef FileGroups = Hash<FileGroup>;
 
@@ -264,13 +367,15 @@ class Target
       mFlags = [];
       mExt = "";
       mSubTargets = [];
+      mFileGroups = [];
       mFlags = [];
       mErrors=[];
       mDirs=[];
    }
-   public function addFiles(inFiles:FileGroup)
+   public function addFiles(inGroup:FileGroup)
    {
-      mFiles = mFiles.concat(inFiles);
+      mFiles = mFiles.concat(inGroup.mFiles);
+      mFileGroups.push(inGroup);
    }
    public function addError(inError:String)
    {
@@ -295,6 +400,7 @@ class Target
    public var mTool:String;
    public var mToolID:String;
    public var mFiles:Array<File>;
+   public var mFileGroups:Array<FileGroup>;
    public var mDepends:Array<String>;
    public var mSubTargets:Array<String>;
    public var mLibs:Array<String>;
@@ -357,7 +463,11 @@ class BuildTool
 
                 case "files" : 
                    var name = el.att.id;
-                   mFileGroups.set(name,createFiles(el));
+						 if (mFileGroups.exists(name))
+						 	createFileGroup(el, mFileGroups.get(name));
+						 else
+                      mFileGroups.set(name,createFileGroup(el,null));
+
                 case "include" : 
                    var name = substitute(el.att.name);
                    if (neko.FileSystem.exists(name))
@@ -393,6 +503,11 @@ class BuildTool
       var target = mTargets.get(inTarget);
       target.checkError();
 
+      for(group in target.mFileGroups)
+		   for(header in group.mPreCompiledHeaders)
+			   mCompiler.precompile(header,group);
+		
+
       for(sub in target.mSubTargets)
          buildTarget(sub);
 
@@ -427,6 +542,8 @@ class BuildTool
                 case "objdir" : c.mObjDir = substitute((el.att.value));
                 case "outflag" : c.mOutFlag = substitute((el.att.value));
                 case "exe" : c.mExe = substitute((el.att.name));
+                case "ext" : c.mExt = substitute((el.att.value));
+                case "pchext" : c.mPCHExt = substitute((el.att.value));
             }
       }
 
@@ -454,31 +571,30 @@ class BuildTool
       return l;
    }
 
-   public function createFiles(inXML:haxe.xml.Fast) : FileGroup
+   public function createFileGroup(inXML:haxe.xml.Fast,inFiles:FileGroup) : FileGroup
    {
-      var files = new FileGroup();
-      var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
-      var depends = new Array<String>();
-      var flags = new Array<String>();
+		var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
+      var group = inFiles==null ? new FileGroup(dir) : inFiles;
       for(el in inXML.elements)
       {
          if (valid(el,""))
             switch(el.name)
             {
                 case "file" :
-                   var file = new File(substitute(el.att.name),dir,depends,flags);
+                   var file = new File(substitute(el.att.name),group);
                    for(f in el.elements)
                       if (valid(f,"") && f.name=="depend")
                          file.mDepends.push( f.att.name );
-                   files.push( file );
-                case "depend" : depends.push( substitute(el.att.name) );
-                case "compilerflag" : flags.push( substitute(el.att.value) );
-                case "compilervalue" : flags.push( substitute(el.att.name) );
-                                       flags.push( substitute(el.att.value) );
+                   group.mFiles.push( file );
+                case "depend" : group.addDepend( substitute(el.att.name) );
+                case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
+                case "compilervalue" : group.addCompilerFlag( substitute(el.att.name) );
+                                       group.addCompilerFlag( substitute(el.att.value) );
+                case "precompiledheader" : group.mPreCompiledHeaders.push( substitute(el.att.name));
             }
       }
 
-      return files;
+      return group;
    }
 
 

@@ -311,12 +311,26 @@
 
 </files>
 
+<!-- Additional dependencies for haxe target -->
+<files id="haxe">
+  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/hxMacros.h"/>
+  <depend name="${HXCPP}/include/hxThread.h"/>
+  <depend name="${HXCPP}/include/hxGCInternal.h"/>
+  <depend name="${HXCPP}/include/hxCFFI.h"/>
+  <depend name="${HXCPP}/include/hxCFFIAPI.h"/>
+  <depend name="${HXCPP}/include/hxCFFILoader.h"/>
+  <depend name="${HXCPP}/include/hxOS.h"/>
+  <depend name="${HXCPP}/include/hxMath.h"/>
+  <depend name="Options.txt"/>
 
+  <precompiledheader name="hxObject"/>
+</files>
 
 
 <files id="runtime" dir="${HXCPP}">
-  <depend name="${HXCPP}/include/hxMacros.h"/>
   <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/hxMacros.h"/>
   <depend name="${HXCPP}/include/hxMath.h"/>
 
   <compilerflag value="-DBUILDING_HXCPP_DLL"/>
@@ -358,7 +372,6 @@
 <files id="regexp" dir="${HXCPP}">
   <depend name="${HXCPP}/include/hxMacros.h"/>
   <depend name="${HXCPP}/include/hxObject.h"/>
-  <depend name="${HXCPP}/include/neko.h"/>
 
   <compilerflag value="-DPCRE_STATIC"/>
   <compilerflag value="-I${HXCPP}/${PCRE_DIR}"/>
@@ -398,7 +411,6 @@
 <files id="zlib" dir="${HXCPP}">
   <depend name="${HXCPP}/include/hxMacros.h"/>
   <depend name="${HXCPP}/include/hxObject.h"/>
-  <depend name="${HXCPP}/include/neko.h"/>
 
   <compilerflag value="-I${HXCPP}/${ZLIB_DIR}"/>
 
