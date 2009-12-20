@@ -1,8 +1,6 @@
 #ifndef HX_HXOBJECT_H
 #define HX_HXOBJECT_H
 
-#pragma once
-
 
 // INTERNAL_GC is now the default, unless HXCPP_BOEHM_GC is defined...
 

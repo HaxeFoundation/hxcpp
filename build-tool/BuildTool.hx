@@ -89,26 +89,32 @@ class Compiler
       }
    }
 
-   public function precompile(inHeader:String,inGroup:FileGroup)
+   public function precompile(inHeader:String,inDir:String,inGroup:FileGroup)
    {
       var pch_name = inHeader + mPCHExt;
-
-      // Create a temp file for including ...
-      var tmp_cpp = "__pch.cpp";
-      var file = neko.io.File.write(tmp_cpp,false);
-      file.writeString("#include <" + inHeader + ".h>\n");
-      file.close();
 
       var args = inGroup.mCompilerFlags.concat(mFlags).concat( mCPPFlags );
 
       if (mPCH!="gcc")
+      {
          args.push( mPCHCreate + inHeader + ".h" );
+
+         // Create a temp file for including ...
+         var tmp_cpp = "__pch.cpp";
+         var file = neko.io.File.write(tmp_cpp,false);
+         file.writeString("#include <" + inHeader + ".h>\n");
+         file.close();
+
+         args.push( tmp_cpp );
+      }
       else
       {
-         args.push("-o");
-         args.push(pch_name);
+         args.push( inDir + "/"  + inHeader + ".h" );
+         args.push( "-c" );
       }
-      args.push( tmp_cpp );
+
+      args.push("-o");
+      args.push(pch_name);
 
       neko.Lib.println( mExe + " " + args.join(" ") );
       var result = neko.Sys.command( mExe, args );
@@ -126,7 +132,7 @@ class Compiler
       var obj_name = path.dir + "/" + path.file + mExt;
 
       var args = new Array<String>();
-      if (inFile.mGroup.mPreCompiledHeaders.length>0)
+      if (inFile.mGroup.mPrecompiledHeader!="")
          args.push("-I.");
       
       args = args.concat(mFlags).concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags);
@@ -139,8 +145,8 @@ class Compiler
          args = args.concat(mCPPFlags);
 
       if (mPCHUse!="")
-         for(pch in inFile.mGroup.mPreCompiledHeaders)
-            args.push(mPCHUse + pch + ".h");
+         if (inFile.mGroup.mPrecompiledHeader!="")
+            args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
 
       args.push( (new neko.io.Path(inFile.mDir + inFile.mName)).toString() );
 
@@ -313,7 +319,7 @@ class FileGroup
       mNewest = 0;
       mFiles = [];
       mCompilerFlags = [];
-      mPreCompiledHeaders = [];
+      mPrecompiledHeader = "";
       mDir = inDir;
    }
 
@@ -336,10 +342,17 @@ class FileGroup
       return inStamp<mNewest;
    }
 
+   public function setPrecompiled(inFile:String, inDir:String)
+   {
+      mPrecompiledHeader = inFile;
+      mPrecompiledHeaderDir = inDir;
+   }
+
 
    public var mNewest:Float;
    public var mCompilerFlags:Array<String>;
-   public var mPreCompiledHeaders:Array<String>;
+   public var mPrecompiledHeader:String;
+   public var mPrecompiledHeaderDir:String;
    public var mFiles: Array<File>;
    public var mDir : String;
 }
@@ -517,8 +530,8 @@ class BuildTool
       if (to_be_compiled.length>0)
       {
          for(group in target.mFileGroups)
-            for(header in group.mPreCompiledHeaders)
-               mCompiler.precompile(header,group);
+            if(group.mPrecompiledHeader!="")
+               mCompiler.precompile(group.mPrecompiledHeader, group.mPrecompiledHeaderDir,group);
       }
 
       var threads = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
@@ -634,7 +647,8 @@ class BuildTool
                 case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
                 case "compilervalue" : group.addCompilerFlag( substitute(el.att.name) );
                                        group.addCompilerFlag( substitute(el.att.value) );
-                case "precompiledheader" : group.mPreCompiledHeaders.push( substitute(el.att.name));
+                case "precompiledheader" : group.setPrecompiled( substitute(el.att.name),
+                          substitute(el.att.dir) );
             }
       }
 

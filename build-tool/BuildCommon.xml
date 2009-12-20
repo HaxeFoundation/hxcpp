@@ -8,6 +8,7 @@
   <section id="vars">
      <set name="IPHONE_VER" value="2.2.1"/>
      <set name="macos_leopard" value="1"/>
+     <set name="USE_PRECOMPILED_HEADERS" value="1"/>
   </section>
 
   <section id="exes">
@@ -18,6 +19,10 @@
 
 </xml>
 
+You can also set the environment variable "HXCPP_COMPILE_THREADS" to the number of threads
+you wish to use when compiling.  Setting it to 1 per CPU can help, and not setting it
+can help with debug if there is a problem compiling.
+
 -->
 
 
@@ -26,6 +31,8 @@
 <set name="STD_MODULE_LINK" value="dll"/>
 <set name="STD_MODULE_LINK" value="static" if="iphoneos"/>
 <set name="STD_MODULE_LINK" value="static" if="iphonesim"/>
+
+<set name="USE_PRECOMPILED_HEADERS" value="1" if="windows"/>
 
 
 <set name="LIBEXTRA" value=".iphoneos" if="iphoneos"/>
@@ -163,7 +170,7 @@
 
 <!-- MACOS TOOLS -------------------------------------------------->
 
-<compiler id="darwin" exe="gcc" if="macos">
+<compiler id="darwin" exe="g++" if="macos">
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-c++"/>
@@ -327,7 +334,7 @@
   <depend name="${HXCPP}/run.n"/>
   <depend name="Options.txt"/>
 
-  <precompiledheader name="hxObject"/>
+  <precompiledheader name="hxObject" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 </files>
 
 

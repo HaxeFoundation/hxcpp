@@ -2,7 +2,9 @@
 #define HX_MATH
 
 #include <math.h>
+#ifndef HX_HXOBJECT_H
 #include <hxObject.h>
+#endif
 #include <stdlib.h>
 
 class SHARED Math_obj : public hxObject
