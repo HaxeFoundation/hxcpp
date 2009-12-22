@@ -106,15 +106,15 @@ class Compiler
          file.close();
 
          args.push( tmp_cpp );
+         args.push("/Fp" + pch_name);
       }
       else
       {
          args.push( inDir + "/"  + inHeader + ".h" );
          args.push( "-c" );
+         args.push(pch_name);
       }
 
-      args.push("-o");
-      args.push(pch_name);
 
       neko.Lib.println( mExe + " " + args.join(" ") );
       var result = neko.Sys.command( mExe, args );

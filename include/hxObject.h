@@ -1682,8 +1682,8 @@ bool  __instanceof(const Dynamic &inValue, const Dynamic &inType);
 inline Dynamic hxThrow(Dynamic inError) { throw inError; return Dynamic(); }
 
 // Used by std library...
- int ParseInt(const String &inString);
- double ParseFloat(const String &inString);
+Dynamic ParseInt(const String &inString);
+double ParseFloat(const String &inString);
 void  __trace(Dynamic inPtr, Dynamic inData);
 double  __time_stamp();
 

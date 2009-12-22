@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <algorithm>
 #include <typeinfo>
+#include <limits>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -1384,25 +1385,22 @@ void StringBoot()
 STATIC_DEFINE_DYNAMIC_FUNC1(String,fromCharCode,return )
 
 
-int ParseInt(const String &inString)
+Dynamic ParseInt(const String &inString)
 {
-   if (inString.__s[0]=='0' && inString.__s[1]=='x')
-   {
-      int result = 0;
-      SSCANF(inString.__s+2,inString.length-2,L"%x",&result);
-      return result;
-   }
-
-   return _wtoi(inString.__s);
+	wchar_t *end = 0;
+	long result = wcstol(inString.__s,&end,0);
+	if (inString.__s==end)
+		return null();
+	return result;
 }
 
 double ParseFloat(const String &inString)
 {
-   #ifdef _WIN32
-   return _wtof(inString.__s);
-   #else
-   return wcstod(inString.__s,0);
-   #endif
+	wchar_t *end;
+   double result =  wcstod(inString.__s,&end);
+	if (end==inString.__s)
+		return std::numeric_limits<double>::infinity();
+	return result;
 }
 
 
@@ -1605,7 +1603,6 @@ STATIC_DEFINE_DYNAMIC_FUNC2(CppInt32___obj,make,return )
 // -------- Math ---------------------------------------
 
 
-#include <limits>
 
 
 bool Math_obj::isNaN(double inX) { return inX!=inX; }
