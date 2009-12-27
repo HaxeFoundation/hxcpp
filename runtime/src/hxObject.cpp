@@ -328,7 +328,7 @@ public:
    int __Compare(const hxObject *inRHS) const
    {
       double diff = inRHS->__ToDouble() - (double)mValue;
-      return diff < 0 ? -1 : diff==0 ? 0 : 1;
+      return diff < 0 ? 1 : diff==0 ? 0 : -1;
    }
 
 
