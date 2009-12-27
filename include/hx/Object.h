@@ -1,5 +1,5 @@
-#ifndef HX_HXOBJECT_H
-#define HX_HXOBJECT_H
+#ifndef HX_OBJECT_H
+#define HX_OBJECT_H
 
 
 // INTERNAL_GC is now the default, unless HXCPP_BOEHM_GC is defined...
@@ -36,8 +36,8 @@ using std::type_info;
 #include <stdint.h>
 #endif
 
-#include <hxMacros.h>
-#include <hxGCInternal.h>
+#include <hx/Macros.h>
+#include <hx/GC.h>
 
 // sort...
 #include <algorithm>

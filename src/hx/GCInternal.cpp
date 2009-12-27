@@ -1,6 +1,7 @@
-#include <hxObject.h>
-#include <hxGCInternal.h>
-#include <hxThread.h>
+#include <hxcpp.h>
+
+#include <hx/GC.h>
+#include <hx/Thread.h>
 
 char **gMovedPtrs = 0;
 int gByteMarkID = 0;

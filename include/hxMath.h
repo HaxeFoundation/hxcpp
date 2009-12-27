@@ -1,10 +1,8 @@
 #ifndef HX_MATH
 #define HX_MATH
 
+#include <hxcpp.h>
 #include <math.h>
-#ifndef HX_HXOBJECT_H
-#include <hxObject.h>
-#endif
 #include <stdlib.h>
 
 class SHARED Math_obj : public hxObject

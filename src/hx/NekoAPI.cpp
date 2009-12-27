@@ -1,4 +1,5 @@
-#include <hxObject.h>
+#include <hxcpp.h>
+
 #include <neko.h>
 
 #include <map>

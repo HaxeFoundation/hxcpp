@@ -1,7 +1,7 @@
-#include <hxObject.h>
+#include <hxcpp.h>
 
 #include <time.h>
-#include <hxMacros.h>
+//#include <hxMacros.h>
 
 
 double __hxcpp_new_date(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds)

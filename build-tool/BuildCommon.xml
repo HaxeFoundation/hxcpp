@@ -321,26 +321,28 @@ can help with debug if there is a problem compiling.
 
 <!-- Additional dependencies for haxe target -->
 <files id="haxe">
-  <depend name="${HXCPP}/include/hxObject.h"/>
-  <depend name="${HXCPP}/include/hxMacros.h"/>
-  <depend name="${HXCPP}/include/hxThread.h"/>
-  <depend name="${HXCPP}/include/hxGCInternal.h"/>
-  <depend name="${HXCPP}/include/hxCFFI.h"/>
-  <depend name="${HXCPP}/include/hxCFFIAPI.h"/>
-  <depend name="${HXCPP}/include/hxCFFILoader.h"/>
-  <depend name="${HXCPP}/include/hxOS.h"/>
+  <depend name="${HXCPP}/include/hxcpp.h"/>
+  <depend name="${HXCPP}/include/hx/Object.h"/>
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/Thread.h"/>
+  <depend name="${HXCPP}/include/hx/GC.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
+  <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
+  <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
+  <depend name="${HXCPP}/include/hx/OS.h"/>
   <depend name="${HXCPP}/include/hxMath.h"/>
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/run.n"/>
   <depend name="Options.txt"/>
 
-  <precompiledheader name="hxObject" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
+  <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 </files>
 
 
 <files id="runtime" dir="${HXCPP}">
-  <depend name="${HXCPP}/include/hxObject.h"/>
-  <depend name="${HXCPP}/include/hxMacros.h"/>
+  <depend name="${HXCPP}/include/hxcpp.h"/>
+  <depend name="${HXCPP}/include/hx/Object.h"/>
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hxMath.h"/>
 
   <compilerflag value="-DBUILDING_HXCPP_DLL"/>
@@ -358,16 +360,16 @@ can help with debug if there is a problem compiling.
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
 
-  <precompiledheader name="hxObject" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
+  <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 
-  <file name = "src/hx/hxObject.cpp"/>
-  <file name = "src/hx/hxDate.cpp"/>
-  <file name = "src/hx/hxGC.cpp"/>
-  <file name = "src/hx/hxGCInternal.cpp"/>
-  <file name = "src/hx/hxHash.cpp"/>
-  <file name = "src/hx/hxLib.cpp"/>
-  <file name = "src/hx/hxCFFI.cpp"/>
-  <file name = "src/hx/hxThread.cpp"/>
+  <file name = "src/hx/Object.cpp"/>
+  <file name = "src/hx/Date.cpp"/>
+  <file name = "src/hx/GC.cpp"/>
+  <file name = "src/hx/GCInternal.cpp"/>
+  <file name = "src/hx/Hash.cpp"/>
+  <file name = "src/hx/Lib.cpp"/>
+  <file name = "src/hx/CFFI.cpp"/>
+  <file name = "src/hx/Thread.cpp"/>
 
 </files>
 
@@ -381,8 +383,9 @@ can help with debug if there is a problem compiling.
 
 
 <files id="regexp" dir="${HXCPP}">
-  <depend name="${HXCPP}/include/hxMacros.h"/>
-  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/hxcpp.h"/>
+  <depend name="${HXCPP}/include/hx/Object.h"/>
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
 
   <compilerflag value="-DPCRE_STATIC"/>
   <compilerflag value="-I${HXCPP}/${PCRE_DIR}"/>
@@ -420,8 +423,9 @@ can help with debug if there is a problem compiling.
 
 
 <files id="zlib" dir="${HXCPP}">
-  <depend name="${HXCPP}/include/hxMacros.h"/>
-  <depend name="${HXCPP}/include/hxObject.h"/>
+  <depend name="${HXCPP}/include/hxcpp.h"/>
+  <depend name="${HXCPP}/include/hx/Object.h"/>
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
 
   <compilerflag value="-I${HXCPP}/${ZLIB_DIR}"/>
 

@@ -1,5 +1,6 @@
-#include <hxObject.h>
-#include <hxThread.h>
+#include <hxcpp.h>
+
+#include <hx/Thread.h>
 #include <time.h>
 
 #ifndef INTERNAL_GC

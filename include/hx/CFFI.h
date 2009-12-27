@@ -1,11 +1,11 @@
 #ifndef HX_CFFI_H
 #define HX_CFFI_H
 
-#include "hxOS.h"
+#include "OS.h"
 
 #ifdef IMPLEMENT_API
 
-#include "hxCFFILoader.h"
+#include "CFFILoader.h"
 
 #endif
  
@@ -71,7 +71,7 @@ extern FUNC_##name name;
 #endif
  
 
-#include "hxCFFIAPI.h"
+#include "CFFIAPI.h"
 
 
 
@@ -107,16 +107,6 @@ int __reg_##func = hx_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
 #define DECLARE_PRIM(func,nargs) extern "C" {  H_EXTERN void *func##__##nargs(); }
 #define DECLARE_KIND(name) extern "C" {  H_EXTERN extern vkind name; }
 
-
-/*
-  #ifdef HXCPP
-   value objs_arr =  inDrawList;
-   int n =  objs_arr->__length();
-   #else
-   value objs_arr =  val_field(inDrawList,val_id___a);
-   int n =  val_int( val_field(inDrawList,val_id_length));
-   #endif
-*/
 
 
 // --- Helpers ----------------------------------------------------------------

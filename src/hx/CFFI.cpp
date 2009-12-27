@@ -1,10 +1,10 @@
+#include <hxcpp.h>
 #include <stdio.h>
-#include <hxObject.h>
 // Get headers etc.
 
 #define IGNORE_CFFI_API_H
 
-#include <hxCFFI.h>
+#include <hx/CFFI.h>
 #include <map>
 #include <string>
 
@@ -669,7 +669,7 @@ SHARED void * hx_cffi(const char *inName)
 {
 	#define DEFFUNC(name,r,b,c) if ( !strcmp(inName,#name) ) return (void *)name;
 
-	#include <hxCFFIAPI.h>
+	#include <hx/CFFIAPI.h>
 
 	return 0;
 }

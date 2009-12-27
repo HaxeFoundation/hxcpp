@@ -1,7 +1,8 @@
-#include <hxObject.h>
+#include <hxcpp.h>
+
 #include <stdio.h>
 #include <hxMath.h>
-#include <hxMacros.h>
+//#include <hxMacros.h>
 #include <cpp/CppInt32__.h>
 #include <map>
 #include <ctype.h>

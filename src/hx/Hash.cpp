@@ -1,8 +1,9 @@
-#include <hxObject.h>
+#include <hxcpp.h>
+
 #ifndef INTERNAL_GC
 #include <gc_allocator.h>
 #else
-#include <hxCFFI.h>
+#include <hx/CFFI.h>
 #endif
 #include <map>
 

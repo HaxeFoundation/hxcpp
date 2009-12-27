@@ -1,5 +1,5 @@
-#ifndef HX_GC_INTERNAL_H
-#define HX_GC_INTERNAL_H
+#ifndef HX_GC_H
+#define HX_GC_H
 
 
 

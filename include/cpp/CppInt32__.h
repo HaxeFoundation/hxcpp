@@ -1,7 +1,7 @@
 #ifndef INCLUDED_haxe_CppInt32__
 #define INCLUDED_haxe_CppInt32__
 
-#include <hxObject.h>
+#include <hxcpp.h>
 
 namespace cpp
 {
