@@ -358,14 +358,16 @@ can help with debug if there is a problem compiling.
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
 
-  <file name = "runtime/src/hxObject.cpp"/>
-  <file name = "runtime/src/hxDate.cpp"/>
-  <file name = "runtime/src/hxGC.cpp"/>
-  <file name = "runtime/src/hxGCInternal.cpp"/>
-  <file name = "runtime/src/hxHash.cpp"/>
-  <file name = "runtime/src/hxLib.cpp"/>
-  <file name = "runtime/src/hxCFFI.cpp"/>
-  <file name = "runtime/src/hxThread.cpp"/>
+  <precompiledheader name="hxObject" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
+
+  <file name = "src/hx/hxObject.cpp"/>
+  <file name = "src/hx/hxDate.cpp"/>
+  <file name = "src/hx/hxGC.cpp"/>
+  <file name = "src/hx/hxGCInternal.cpp"/>
+  <file name = "src/hx/hxHash.cpp"/>
+  <file name = "src/hx/hxLib.cpp"/>
+  <file name = "src/hx/hxCFFI.cpp"/>
+  <file name = "src/hx/hxThread.cpp"/>
 
 </files>
 

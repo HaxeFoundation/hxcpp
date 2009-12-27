@@ -1,6 +1,6 @@
-#include <time.h>
-
 #include <hxObject.h>
+
+#include <time.h>
 #include <hxMacros.h>
 
 

@@ -514,63 +514,77 @@ class BuildTool
       for(sub in target.mSubTargets)
          buildTarget(sub);
 
+      var thread_var = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
+      if (thread_var==null) thread_var = neko.Sys.getEnv("NUMBER_OF_PROCESSORS");
+      var threads =  (thread_var==null || Std.parseInt(thread_var)<2) ? 1 :
+			Std.parseInt(thread_var);
+
+
       var objs = new Array<String>();
-      var to_be_compiled = new Array<File>();
 
-      for(file in target.mFiles)
-      {
-         var path = new neko.io.Path(mCompiler.mObjDir + "/" + file.mName);
-         var obj_name = path.dir + "/" + path.file + mCompiler.mExt;
-         DirManager.make(path.dir);
-         objs.push(obj_name);
-         if (file.isOutOfDate(obj_name))
-            to_be_compiled.push(file);
-      }
+      for(group in target.mFileGroups)
+		{
+         var to_be_compiled = new Array<File>();
 
-      if (to_be_compiled.length>0)
-      {
-         for(group in target.mFileGroups)
-            if(group.mPrecompiledHeader!="")
-               mCompiler.precompile(group.mPrecompiledHeader, group.mPrecompiledHeaderDir,group);
-      }
-
-      var threads = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
-      if (threads==null || Std.parseInt(threads)<2)
-      {
-         for(file in to_be_compiled)
-            mCompiler.compile(file);
-      }
-      else
-      {
-         var thread_count = Std.parseInt(threads);
-         var mutex = new neko.vm.Mutex();
-         var main_thread = neko.vm.Thread.current();
-         var compiler = mCompiler;
-         for(t in 0...thread_count)
+         for(file in group.mFiles)
          {
-            neko.vm.Thread.create(function()
-            {
-               while(true)
-               {
-                  mutex.acquire();
-                  if (to_be_compiled.length==0)
-                  {
-                     mutex.release();
-                     break;
-                  }
-                  var file = to_be_compiled.shift();
-                  mutex.release();
-
-                  compiler.compile(file);
-               }
-               main_thread.sendMessage("Done");
-            });
+            var path = new neko.io.Path(mCompiler.mObjDir + "/" + file.mName);
+            var obj_name = path.dir + "/" + path.file + mCompiler.mExt;
+            DirManager.make(path.dir);
+            objs.push(obj_name);
+            if (file.isOutOfDate(obj_name))
+               to_be_compiled.push(file);
          }
 
-         // Wait for theads to finish...
-         for(t in 0...thread_count)
-           neko.vm.Thread.readMessage(true);
-      }
+         if (to_be_compiled.length>0 && group.mPrecompiledHeader!="")
+            mCompiler.precompile(group.mPrecompiledHeader, group.mPrecompiledHeaderDir,group);
+
+			if (threads<2)
+			{
+				for(file in to_be_compiled)
+					mCompiler.compile(file);
+			}
+			else
+			{
+				var mutex = new neko.vm.Mutex();
+				var main_thread = neko.vm.Thread.current();
+				var compiler = mCompiler;
+				for(t in 0...threads)
+				{
+					neko.vm.Thread.create(function()
+					{
+						try
+						{
+						while(true)
+						{
+							mutex.acquire();
+							if (to_be_compiled.length==0)
+							{
+								mutex.release();
+								break;
+							}
+							var file = to_be_compiled.shift();
+							mutex.release();
+
+							compiler.compile(file);
+						}
+						} catch (error:Dynamic)
+						{
+						   main_thread.sendMessage("Error");
+						}
+						main_thread.sendMessage("Done");
+					});
+				}
+
+				// Wait for theads to finish...
+				for(t in 0...threads)
+				{
+				  var result = neko.vm.Thread.readMessage(true);
+				  if (result=="Error")
+				  	   throw "Error in building thread";
+				}
+			}
+		}
 
       switch(target.mTool)
       {
