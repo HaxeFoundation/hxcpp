@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <hxObject.h>
+#include <stdio.h>
 #include <hxMath.h>
 #include <hxMacros.h>
 #include <cpp/CppInt32__.h>
