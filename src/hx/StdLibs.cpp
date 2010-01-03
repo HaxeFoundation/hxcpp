@@ -2,6 +2,9 @@
 
 #ifdef HX_WINDOWS
 #include <windows.h>
+#else
+#include <sys/time.h>
+typedef uint64_t __int64;
 #endif
 
 #include <string>
@@ -232,7 +235,7 @@ Dynamic __hxcpp_parse_int(const String &inString)
 		result = wcstol(inString.__s,&end,10);
 	if (inString.__s==end)
 		return null();
-	return result;
+	return (int)result;
 }
 
 double __hxcpp_parse_float(const String &inString)

@@ -24,7 +24,7 @@ public:
 	Dynamic __IField(int);
 	Dynamic __SetField(const ::String &,const Dynamic &);
 	void __SetThis(Dynamic);
-	void __GetFields(Array<::String> &);
+	void __GetFields(Array< ::String> &);
 	Class __GetClass();
 	int __Compare(const hx::Object *);
 

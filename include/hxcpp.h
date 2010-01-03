@@ -111,7 +111,7 @@ void __hxcpp_check_overflow(int inVal);
 #include "Array.h"
 #include "Class.h"
 #include "Enum.h"
-#include <hx/interface.h>
+#include <hx/Interface.h>
 #include <hx/Operators.h>
 #include <hx/StdLibs.h>
 

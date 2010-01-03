@@ -26,7 +26,7 @@ inline String operator+(const cpp::CppInt32__ &i,const String &s) { return Strin
 
 template<typename T_>
    inline String operator+(const hx::ObjectPtr<T_> &inLHS,const String &s)
-   { return (inLHS.mPtr ? const_cast<hx::ObjectPtr<T_> & >(inLHS)->toString() : STRING(L"null",4) ) + s; }
+   { return (inLHS.mPtr ? const_cast<hx::ObjectPtr<T_> & >(inLHS)->toString() : HX_STRING(L"null",4) ) + s; }
 
 template<typename RHS_>
    inline Dynamic operator+(const hx::FieldRef &inField,RHS_ &inRHS)

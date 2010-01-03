@@ -79,7 +79,7 @@ void Interface::__SetThis(Dynamic d)
 	return __GetRealObject()->__SetThis(d);
 }
 
-void Interface::__GetFields(Array<::String> &a)
+void Interface::__GetFields(Array< ::String> &a)
 {
 	return __GetRealObject()->__GetFields(a);
 }
