@@ -4,13 +4,21 @@
 
 
 
+// Helpers for debugging code
+void  __hxcpp_reachable(hx::Object *inKeep);
+void  __hxcpp_enable(bool inEnable);
+void  __hxcpp_collect();
+
+namespace hx
+{
+
 extern int gPauseForCollect;
-void hxPauseForCollect();
+void PauseForCollect();
 
 
-#ifdef INTERNAL_GC
+#ifdef HX_INTERNAL_GC
   #ifdef HXCPP_MULTI_THREADED
-  #define __SAFE_POINT if (gPauseForCollect) hxPauseForCollect();
+  #define __SAFE_POINT if (hx::gPauseForCollect) hx::PauseForCollect();
   #else
   #define __SAFE_POINT
   #endif
@@ -18,36 +26,67 @@ void hxPauseForCollect();
 #define __SAFE_POINT
 #endif
 
-class hxObject;
 
-typedef void (*finalizer)(hxObject *v);
+// Create a new root.
+// All statics are explicitly registered - this saves adding the whole data segment
+// to the collection list.
+void RegisterObject(hx::Object **inObj);
+void RegisterString(const wchar_t **inString);
+
+void GCAddRoot(hx::Object **inRoot);
+void GCRemoveRoot(hx::Object **inRoot);
+
+const wchar_t *ConvertToWChar(const char *inStr, int *ioLen=0);
 
 
-void *hxInternalNew(int inSize,bool inIsObject);
-void *hxInternalRealloc(void *inData,int inSize);
-void hxInternalEnableGC(bool inEnable);
-void *hxInternalCreateConstBuffer(const void *inData,int inSize);
-void hxRegisterNewThread(void *inTopOfStack);
-void hxInternalCollect();
 
-void hxEnterGCFreeZone();
-void hxExitGCFreeZone();
+
+// This is used internally in hxcpp
+wchar_t *NewString(int inLen);
+
+// Internal for arrays
+void *GCRealloc(void *inData,int inSize);
+void GCInit();
+void MarkClassStatics();
+void LibMark();
+void GCMark(Object *inPtr);
+
+// This will be GC'ed
+void *NewGCBytes(void *inData,int inSize);
+// This wont be GC'ed
+void *NewGCPrivate(void *inData,int inSize);
+
+
+typedef void (*finalizer)(hx::Object *v);
+
+void  GCAddFinalizer( hx::Object *, hx::finalizer f );
+
+
+void *InternalNew(int inSize,bool inIsObject);
+void *InternalRealloc(void *inData,int inSize);
+void InternalEnableGC(bool inEnable);
+void *InternalCreateConstBuffer(const void *inData,int inSize);
+void RegisterNewThread(void *inTopOfStack);
+void InternalCollect();
+
+void EnterGCFreeZone();
+void ExitGCFreeZone();
 
 // Threading ...
-void hxRegisterCurrentThread(void *inTopOfStack);
-void hxUnregisterCurrentThread();
-void hxEnterSafePoint();
-void hxGCPrepareMultiThreaded();
+void RegisterCurrentThread(void *inTopOfStack);
+void UnregisterCurrentThread();
+void EnterSafePoint();
+void GCPrepareMultiThreaded();
 
 
 
-void hxGCMarkNow();
+void GCMarkNow();
 
-void hxPrologDone();
+void PrologDone();
 
-struct hxInternalFinalizer
+struct InternalFinalizer
 {
-	hxInternalFinalizer(hxObject *inObj);
+	InternalFinalizer(hx::Object *inObj);
 
 	void Mark() { mUsed=true; }
 	void Detach();
@@ -55,26 +94,25 @@ struct hxInternalFinalizer
 	bool      mUsed;
 	bool      mValid;
 	finalizer mFinalizer;
-	hxObject  *mObject;
+	hx::Object  *mObject;
 };
 
 
-void hxMarkAlloc(void *inPtr);
-void hxMarkObjectAlloc(hxObject *inPtr);
+void MarkAlloc(void *inPtr);
+void MarkObjectAlloc(hx::Object *inPtr);
 
 
+} // end namespace hx
 
 
-#define HX_MARK_OBJECT(ioPtr) if (ioPtr) hxMarkObjectAlloc(ioPtr);
+#define HX_MARK_OBJECT(ioPtr) if (ioPtr) hx::MarkObjectAlloc(ioPtr);
 
-#define GC_CONST_STRING  0xffffffff
+#define HX_GC_CONST_STRING  0xffffffff
 
 #define HX_MARK_STRING(ioPtr) \
-   if (ioPtr && (((int *)ioPtr)[-1] != GC_CONST_STRING) ) hxMarkAlloc((void *)ioPtr);
+   if (ioPtr && (((int *)ioPtr)[-1] != HX_GC_CONST_STRING) ) hx::MarkAlloc((void *)ioPtr);
 
-#define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hxMarkAlloc((void *)ioPtr); }
-
-
+#define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hx::MarkAlloc((void *)ioPtr); }
 
 
 #endif

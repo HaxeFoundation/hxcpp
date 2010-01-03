@@ -1,6 +1,8 @@
 #include <hxcpp.h>
+#include "RedBlack.h"
+#include "FieldMap.h"
 
-#ifndef INTERNAL_GC
+#ifndef HX_INTERNAL_GC
 #include <gc_allocator.h>
 #else
 #include <hx/CFFI.h>
@@ -8,7 +10,74 @@
 #include <map>
 
 
-class IntHash : public hxObject
+using namespace hx;
+
+// --- IntHash ------------------------------------------------------------------------------
+
+namespace hx
+{
+
+// --- FieldObject ------------------------------
+
+FieldMap *FieldMapCreate()
+{
+	return (FieldMap *)(RBTree<String,Dynamic>::Create());
+}
+
+bool FieldMapGet(FieldMap *inMap, const String &inName, Dynamic &outValue)
+{
+	Dynamic *value = inMap->Find(inName);
+	if (!value)
+		return false;
+	outValue = *value;
+	return true;
+}
+
+bool FieldMapGet(FieldMap *inMap, int inID, Dynamic &outValue)
+{
+	Dynamic *value = inMap->Find(__hxcpp_field_from_id(inID));
+	if (!value)
+		return false;
+	outValue = *value;
+	return true;
+}
+
+void FieldMapSet(FieldMap *inMap, const String &inName, const Dynamic &inValue)
+{
+	inMap->Insert(inName,inValue);
+}
+
+
+
+void FieldMapAppendFields(FieldMap *inMap,Array<String> &outFields)
+{
+	KeyGetter getter(outFields);
+	inMap->Iterate(getter);
+}
+
+struct Marker
+{
+	void Visit(void *inPtr, const String &inStr, Dynamic &inDyn)
+	{
+		hx::MarkAlloc(inPtr);
+		HX_MARK_STRING(inStr.__s);
+		if (inDyn.mPtr)
+		   HX_MARK_OBJECT(inDyn.mPtr);
+	}
+};
+
+void FieldMapMark(FieldMap *inMap)
+{
+	Marker m;
+	inMap->Iterate(m);
+}
+
+
+
+
+
+
+class IntHash : public Object
 {
 #ifdef _WIN32
 typedef int IntKey;
@@ -16,7 +85,7 @@ typedef int IntKey;
 typedef const int IntKey;
 #endif
 
-#ifdef INTERNAL_GC
+#ifdef HX_INTERNAL_GC
 typedef std::map<IntKey,Dynamic, std::less<IntKey> > Map;
 #else
 typedef std::map<IntKey,Dynamic, std::less<IntKey>, gc_allocator< std::pair<IntKey, Dynamic> > > Map;
@@ -24,7 +93,7 @@ typedef std::map<IntKey,Dynamic, std::less<IntKey>, gc_allocator< std::pair<IntK
 
 class hxMap : public Map
 {
-#ifndef INTERNAL_GC
+#ifndef HX_INTERNAL_GC
 public:
    void *operator new( size_t inSize ) { return GC_MALLOC(inSize); }
    void operator delete( void * ) { }
@@ -33,23 +102,23 @@ public:
 
 private:
    Map *mMap;
-#ifdef INTERNAL_GC
-	hxInternalFinalizer *mFinalizer;
+#ifdef HX_INTERNAL_GC
+	hx::InternalFinalizer *mFinalizer;
 #endif
 
 public:
    IntHash()
 	{
 		mMap = new hxMap;
-		#ifdef INTERNAL_GC
-		mFinalizer = new hxInternalFinalizer(this);
+		#ifdef HX_INTERNAL_GC
+		mFinalizer = new hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = Destroy;
 		#endif
 	}
 
    void set(int inKey,const Dynamic &inValue) { (*mMap)[inKey] = inValue; }
 
-   static void Destroy(hxObject *inObj);
+   static void Destroy(Object *inObj);
 
    Dynamic get(int inKey)
    {
@@ -96,7 +165,7 @@ public:
 
    void __Mark()
    {
-		#ifdef INTERNAL_GC
+		#ifdef HX_INTERNAL_GC
 		mFinalizer->Mark();
 		#endif
       for(Map::iterator i=mMap->begin();i!=mMap->end();++i)
@@ -107,15 +176,17 @@ public:
 
 };
 
-void IntHash::Destroy(hxObject *inHash)
+void IntHash::Destroy(Object *inHash)
 {
 	IntHash *hash = dynamic_cast<IntHash *>(inHash);
 	if (hash)
 		delete hash->mMap;
 }
 
+}
 
-hxObject * CreateIntHash() { return new IntHash; }
+
+Object * __int_hash_create() { return new IntHash; }
 
 void __int_hash_set(Dynamic &inHash,int inKey,const Dynamic &value)
 {

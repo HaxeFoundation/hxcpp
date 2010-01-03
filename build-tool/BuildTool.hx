@@ -320,17 +320,26 @@ class FileGroup
       mFiles = [];
       mCompilerFlags = [];
       mPrecompiledHeader = "";
+		mMissingDepends = [];
       mDir = inDir;
    }
 
    public function addDepend(inFile:String)
    {
       if (!neko.FileSystem.exists(inFile))
-         throw "Could not find dependency '" + inFile + "'";
+		{
+			mMissingDepends.push(inFile);
+			return;
+		}
       var stamp =  neko.FileSystem.stat(inFile).mtime.getTime();
       if (stamp>mNewest)
          mNewest = stamp;
    }
+	public function checkDependsExist()
+	{
+		if (mMissingDepends.length>0)
+         throw "Could not find dependencies: " + mMissingDepends.join(",");
+	}
 
    public function addCompilerFlag(inFlag:String)
    {
@@ -351,6 +360,7 @@ class FileGroup
 
    public var mNewest:Float;
    public var mCompilerFlags:Array<String>;
+   public var mMissingDepends:Array<String>;
    public var mPrecompiledHeader:String;
    public var mPrecompiledHeaderDir:String;
    public var mFiles: Array<File>;
@@ -442,8 +452,11 @@ class BuildTool
 
       parseXML(xml,"");
 
-      for(target in inTargets)
-         buildTarget(target);
+      if (mTargets.exists("default"))
+         buildTarget("default");
+      else
+         for(target in inTargets)
+            buildTarget(target);
    }
 
 
@@ -502,6 +515,7 @@ class BuildTool
 
    public function buildTarget(inTarget:String)
    {
+		// neko.Lib.println("Build : " + inTarget );
       if (!mTargets.exists(inTarget))
          throw "Could not find target '" + inTarget + "' to build.";
       if (mCompiler==null)
@@ -524,6 +538,7 @@ class BuildTool
 
       for(group in target.mFileGroups)
 		{
+			group.checkDependsExist();
          var to_be_compiled = new Array<File>();
 
          for(file in group.mFiles)

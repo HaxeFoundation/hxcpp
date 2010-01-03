@@ -5,12 +5,12 @@
 #include <math.h>
 #include <stdlib.h>
 
-class SHARED Math_obj : public hxObject
+class Math_obj : public hx::Object
 {
 public:
-   typedef hxObject super;
+   typedef hx::Object super;
    typedef Math_obj OBJ_;
-   DO_RTTI;
+   HX_DO_RTTI;
    void __construct();
    static Dynamic __CreateEmpty();
    static void __boot();
@@ -68,7 +68,7 @@ public:
    static double POSITIVE_INFINITY;
 };
 
-typedef hxObjectPtr<Math_obj> Math;
+typedef hx::ObjectPtr<Math_obj> Math;
 
 
 #endif

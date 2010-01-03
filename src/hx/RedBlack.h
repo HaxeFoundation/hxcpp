@@ -34,8 +34,8 @@
 #define HEIGHT_LIMIT 64 /* Tallest allowable tree */
 #endif
 
-#ifdef INTERNAL_GC
-#define DO_ALLOC(x) hxInternalNew(x,false)
+#ifdef HX_INTERNAL_GC
+#define DO_ALLOC(x) hx::InternalNew(x,false)
 #else
 #define DO_ALLOC(x) GC_MALLOC(x)
 #endif

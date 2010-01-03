@@ -12,9 +12,8 @@
 
 
 <files id="std" dir="${RUNTIME}">
-  <depend name="${HXCPP}/include/hxMacros.h"/>
-  <depend name="${HXCPP}/include/hxObject.h"/>
-  <depend name="${HXCPP}/include/hxCFFI.h"/>
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
 
   <file name="libs/std/Sys.cpp"/>
   <file name="libs/std/Xml.cpp"/>
@@ -41,9 +40,8 @@
 <set name="PCRE_DIR" value="${RUNTIME}/thirdparty/pcre-7.8"/>
 
 <files id="regexp" dir="${RUNTIME}">
-  <depend name="${HXCPP}/include/hxMacros.h"/>
-  <depend name="${HXCPP}/include/hxObject.h"/>
-  <depend name="${HXCPP}/include/hxCFFI.h"/>
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
 
   <compilerflag value="-DPCRE_STATIC"/>
   <compilerflag value="-I${PCRE_DIR}"/>
@@ -83,9 +81,8 @@
 <set name="ZLIB_DIR" value="${RUNTIME}/thirdparty/zlib-1.2.3"/>
 
 <files id="zlib" dir="${RUNTIME}">
-  <depend name="${HXCPP}/include/hxMacros.h"/>
-  <depend name="${HXCPP}/include/hxObject.h"/>
-  <depend name="${HXCPP}/include/hxCFFI.h"/>
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
 
   <compilerflag value="-I${ZLIB_DIR}"/>
 
@@ -116,6 +113,8 @@
 
 <files id="nekoapi" dir="${RUNTIME}">
   <depend name="libs/nekoapi/neko.h"/>
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
   <file name="libs/nekoapi/NekoAPI.cpp"/>
 </files>
 

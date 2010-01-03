@@ -1,5 +1,5 @@
 #ifndef STATIC_LINK
 #define IMPLEMENT_API
 
-#include <hxCFFI.h>
+#include <hx/CFFI.h>
 #endif

@@ -8,7 +8,7 @@ int gByteMarkID = 0;
 int gMarkID = 0;
 
 
-#ifdef INTERNAL_GC
+#ifdef HX_INTERNAL_GC
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -18,7 +18,6 @@ int gMarkID = 0;
 #include <vector>
 #include <set>
 
-void hxMarkLocalAlloc(class LocalAllocator *inAlloc);
 
 
 static bool sgAllocInit = 0;
@@ -36,9 +35,10 @@ static bool sMultiThreadMode = false;
 
 TLSData<LocalAllocator> tlsLocalAlloc;
 
-void WaitForSafe(LocalAllocator *inAlloc);
-void ReleaseFromSafe(LocalAllocator *inAlloc);
-void hxExitGCFreeZoneLocked();
+static void MarkLocalAlloc(LocalAllocator *inAlloc);
+static void WaitForSafe(LocalAllocator *inAlloc);
+static void ReleaseFromSafe(LocalAllocator *inAlloc);
+static void ExitGCFreeZoneLocked();
 
 //#define DEBUG_ALLOC_PTR ((char *)0xb68354)
 
@@ -95,13 +95,16 @@ struct QuickVec
 };
 
 
-// --- hxInternalFinalizer -------------------------------
+// --- InternalFinalizer -------------------------------
 
-typedef QuickVec<hxInternalFinalizer *> FinalizerList;
+namespace hx
+{
+
+typedef QuickVec<InternalFinalizer *> FinalizerList;
 
 FinalizerList *sgFinalizers = 0;
 
-hxInternalFinalizer::hxInternalFinalizer(hxObject *inObj)
+InternalFinalizer::InternalFinalizer(hx::Object *inObj)
 {
    mUsed = false;
    mValid = true;
@@ -110,7 +113,7 @@ hxInternalFinalizer::hxInternalFinalizer(hxObject *inObj)
    sgFinalizers->push(this);
 }
 
-void hxInternalFinalizer::Detach()
+void InternalFinalizer::Detach()
 {
    mValid = false;
 }
@@ -121,7 +124,7 @@ void RunFinalizers()
    int idx = 0;
    while(idx<list.size())
    {
-      hxInternalFinalizer *f = list[idx];
+      InternalFinalizer *f = list[idx];
       if (!f->mValid)
          list.qerase(idx);
       else if (!f->mUsed)
@@ -141,13 +144,13 @@ void RunFinalizers()
 
 
 
-void hxInternalEnableGC(bool inEnable)
+void InternalEnableGC(bool inEnable)
 {
    sgInternalEnable = inEnable;
 }
 
 
-void *hxInternalCreateConstBuffer(const void *inData,int inSize)
+void *InternalCreateConstBuffer(const void *inData,int inSize)
 {
    int *result = (int *)malloc(inSize + sizeof(int));
 
@@ -156,6 +159,8 @@ void *hxInternalCreateConstBuffer(const void *inData,int inSize)
 
    return result+1;
 }
+
+} // end namespace hx
 
 // ---  Internal GC - IMMIX Implementation ------------------------------
 
@@ -440,16 +445,21 @@ union BlockData
       } \
    }
 
-void hxMarkAlloc(void *inPtr)
+namespace hx
+{
+
+void MarkAlloc(void *inPtr)
 {
 	MARK_ROWS
 }
 
-void hxMarkObjectAlloc(hxObject *inPtr)
+void MarkObjectAlloc(hx::Object *inPtr)
 {
 	MARK_ROWS
 
 	inPtr->__Mark();
+}
+
 }
 
 
@@ -524,7 +534,7 @@ public:
 		{
 			hxEnterGCFreeZone();
 			gThreadStateChangeLock->Lock();
-			hxExitGCFreeZoneLocked();
+			ExitGCFreeZoneLocked();
 		}
 		#endif
 
@@ -617,12 +627,12 @@ public:
 
       ClearRowMarks();
 
-      hxGCMarkNow();
+		hx::GCMarkNow();
 
 		for(int i=0;i<mLocalAllocs.size();i++)
-         hxMarkLocalAlloc(mLocalAllocs[i]);
+         MarkLocalAlloc(mLocalAllocs[i]);
 
-      RunFinalizers();
+		hx::RunFinalizers();
 
       // Reclaim ...
 
@@ -1021,7 +1031,7 @@ public:
                if ( t==allocObject )
                {
                   // printf(" Mark object %p (%p)\n", vptr,ptr);
-                  HX_MARK_OBJECT( ((hxObject *)vptr) );
+                  HX_MARK_OBJECT( ((hx::Object *)vptr) );
                }
                else if (t==allocString)
                {
@@ -1090,12 +1100,21 @@ void ReleaseFromSafe(LocalAllocator *inAlloc)
 	inAlloc->ReleaseFromSafe();
 }
 
-void hxPauseForCollect()
+void MarkLocalAlloc(LocalAllocator *inAlloc)
+{
+   inAlloc->Mark();
+}
+
+
+namespace hx
+{
+
+void PauseForCollect()
 {
 	GetLocalAlloc()->PauseForCollect();
 }
 
-void hxSetTopOfStack(int *inTop)
+void SetTopOfStack(int *inTop)
 {
    LocalAllocator *tla = GetLocalAlloc();
 
@@ -1105,12 +1124,8 @@ void hxSetTopOfStack(int *inTop)
 
 }
 
-void hxMarkLocalAlloc(LocalAllocator *inAlloc)
-{
-   inAlloc->Mark();
-}
 
-void hxEnterGCFreeZone()
+void EnterGCFreeZone()
 {
 	if (sMultiThreadMode)
 	{
@@ -1119,7 +1134,7 @@ void hxEnterGCFreeZone()
 	}
 }
 
-void hxExitGCFreeZone()
+void ExitGCFreeZone()
 {
 	if (sMultiThreadMode)
 	{
@@ -1128,7 +1143,7 @@ void hxExitGCFreeZone()
 	}
 }
 
-void hxExitGCFreeZoneLocked()
+void ExitGCFreeZoneLocked()
 {
 	if (sMultiThreadMode)
 	{
@@ -1137,12 +1152,12 @@ void hxExitGCFreeZoneLocked()
 	}
 }
 
-void hxInitAlloc()
+void InitAlloc()
 {
    sgAllocInit = true;
    sGlobalAlloc = new GlobalAllocator();
    sgFinalizers = new FinalizerList();
-   hxObject tmp;
+	hx::Object tmp;
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
    //printf("__root pointer %p\n", sgObject_root);
@@ -1150,7 +1165,7 @@ void hxInitAlloc()
 
 }
 
-void hxGCPrepareMultiThreaded()
+void GCPrepareMultiThreaded()
 {
 	if (!sMultiThreadMode)
 	{
@@ -1161,10 +1176,10 @@ void hxGCPrepareMultiThreaded()
 
 
 
-void *hxInternalNew(int inSize,bool inIsObject)
+void *InternalNew(int inSize,bool inIsObject)
 {
    if (!sgAllocInit)
-		hxInitAlloc();
+		InitAlloc();
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
       return sGlobalAlloc->AllocLarge(inSize);
@@ -1176,7 +1191,7 @@ void *hxInternalNew(int inSize,bool inIsObject)
 }
 
 // Force global collection - should only be called from 1 thread.
-void hxInternalCollect()
+void InternalCollect()
 {
    if (!sgAllocInit || !sgInternalEnable)
       return;
@@ -1187,10 +1202,10 @@ void hxInternalCollect()
 }
 
 
-void *hxInternalRealloc(void *inData,int inSize)
+void *InternalRealloc(void *inData,int inSize)
 {
    if (inData==0)
-      return hxInternalNew(inSize,false);
+      return hx::InternalNew(inSize,false);
 
    unsigned int header = ((unsigned int *)(inData))[-1];
 
@@ -1221,14 +1236,14 @@ void *hxInternalRealloc(void *inData,int inSize)
 
 
 
-void hxRegisterCurrentThread(void *inTopOfStack)
+void RegisterCurrentThread(void *inTopOfStack)
 {
 	// Create a local-alloc
 	LocalAllocator *local = new LocalAllocator((int *)inTopOfStack);
 	tlsLocalAlloc = local;
 }
 
-void hxUnregisterCurrentThread()
+void UnregisterCurrentThread()
 {
 	LocalAllocator *local = tlsLocalAlloc;
 	delete local;
@@ -1236,6 +1251,7 @@ void hxUnregisterCurrentThread()
 }
 
 
+} // end namespace hc
 
 
-#endif // if INTERNAL_GC
+#endif // if HX_INTERNAL_GC

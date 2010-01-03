@@ -15,7 +15,7 @@
 /*																			*/
 /* ************************************************************************ */
 #include <string.h>
-#include <hxCFFI.h>
+#include <hx/CFFI.h>
 #ifdef NEKO_WINDOWS
 #	include <winsock2.h>
 #	define FDSIZE(n)	(sizeof(u_int) + (n) * sizeof(SOCKET))

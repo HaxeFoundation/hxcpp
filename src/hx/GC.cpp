@@ -12,7 +12,7 @@
 
 #else
 
-#ifndef INTERNAL_GC
+#ifndef HX_INTERNAL_GC
 extern "C" {
 #include <gc_config_macros.h>
 #include <gc_pthread_redirects.h>
@@ -26,15 +26,18 @@ extern "C" {
 
 
 
-#ifndef INTERNAL_GC
+#ifndef HX_INTERNAL_GC
 #include <gc.h>
 #include <gc_allocator.h>
 #else
-typedef std::set<hxObject **> RootSet;
+typedef std::set<hx::Object **> RootSet;
 static RootSet sgRootSet;
 #endif
 
 #include "RedBlack.h"
+
+namespace hx
+{
 
 // On Mac, we need to call GC_INIT before first alloc
 static int sNeedGCInit = true;
@@ -42,10 +45,11 @@ static int sNeedGCInit = true;
 static bool sgAllocInit = 0;
 
 
-void *hxObject::operator new( size_t inSize, bool inContainer )
+
+void *Object::operator new( size_t inSize, bool inContainer )
 {
-#ifdef INTERNAL_GC
-   return hxInternalNew(inSize,true);
+#ifdef HX_INTERNAL_GC
+   return InternalNew(inSize,true);
 #else
 #ifdef __APPLE__
    if (sNeedGCInit)
@@ -61,44 +65,49 @@ void *hxObject::operator new( size_t inSize, bool inContainer )
 #endif
 }
 
+}
+
 
 void *String::operator new( size_t inSize )
 {
-#ifdef INTERNAL_GC
-   return hxInternalNew(inSize,false);
+#ifdef HX_INTERNAL_GC
+   return hx::InternalNew(inSize,false);
 #else
    return GC_MALLOC_ATOMIC(inSize);
 #endif
 }
 
 
-#ifndef INTERNAL_GC
+#ifndef HX_INTERNAL_GC
 static hxObject ***sgExtraRoots = 0;
 static int sgExtraAlloced = 0;
 static int sgExtraSize = 0;
 
 #endif
 
-void hxGCAddRoot(hxObject **inRoot)
+namespace hx
 {
-#ifdef INTERNAL_GC
+
+void GCAddRoot(hx::Object **inRoot)
+{
+#ifdef HX_INTERNAL_GC
    sgRootSet.insert(inRoot);
 #else
 	if (sgExtraSize+1>=sgExtraAlloced)
 	{
 		sgExtraAlloced = 10 + sgExtraSize*3/2;
 		if (!sgExtraRoots)
-		   sgExtraRoots = (hxObject ***)GC_MALLOC( sgExtraAlloced * sizeof(hxObject **) );
+		   sgExtraRoots = (hx::Object ***)GC_MALLOC( sgExtraAlloced * sizeof(hx::Object **) );
 		else
-		   sgExtraRoots = (hxObject ***)GC_REALLOC( sgExtraRoots, sgExtraAlloced * sizeof(hxObject **) );
+		   sgExtraRoots = (hx::Object ***)GC_REALLOC( sgExtraRoots, sgExtraAlloced * sizeof(hx::Object **) );
 	}
 	sgExtraRoots[ sgExtraSize++ ] = inRoot;
 #endif
 }
 
-void hxGCRemoveRoot(hxObject **inRoot)
+void GCRemoveRoot(hx::Object **inRoot)
 {
-#ifdef INTERNAL_GC
+#ifdef HX_INTERNAL_GC
    sgRootSet.erase(inRoot);
 #else
 	int i;
@@ -115,33 +124,36 @@ void hxGCRemoveRoot(hxObject **inRoot)
 }
 
 
-
-
-void __hxcpp_collect()
+#ifdef HX_INTERNAL_GC
+void GCMarkNow()
 {
-   #ifdef INTERNAL_GC
-   hxInternalCollect();
-   #else
-   GC_gcollect();
-   #endif
-}
-
-#ifdef INTERNAL_GC
-void hxGCMarkNow()
-{
-   hxMarkClassStatics();
-   hxLibMark();
+   MarkClassStatics();
 
    for(RootSet::iterator i = sgRootSet.begin(); i!=sgRootSet.end(); ++i)
    {
-		hxObject *&obj = **i;
+		Object *&obj = **i;
       HX_MARK_OBJECT( obj );
    }
 }
 #endif
 
 
-#ifndef INTERNAL_GC
+
+} // end namespace hx
+
+
+void __hxcpp_collect()
+{
+   #ifdef HX_INTERNAL_GC
+	hx::InternalCollect();
+   #else
+   GC_gcollect();
+   #endif
+}
+
+
+
+#ifndef HX_INTERNAL_GC
 static void hxcpp_finalizer(void * obj, void * client_data)
 {
    finalizer f = (finalizer)client_data;
@@ -151,12 +163,15 @@ static void hxcpp_finalizer(void * obj, void * client_data)
 #endif
 
 
-void hxGCAddFinalizer(hxObject *v, finalizer f)
+namespace hx
+{
+
+void GCAddFinalizer(hx::Object *v, finalizer f)
 {
    if (v)
    {
-#ifdef INTERNAL_GC
-      throw Dynamic(STR(L"Add finalizer error"));
+#ifdef HX_INTERNAL_GC
+      throw Dynamic(HX_STR(L"Add finalizer error"));
 #else
       GC_register_finalizer(v,hxcpp_finalizer,(void *)f,0,0);
 #endif
@@ -164,17 +179,26 @@ void hxGCAddFinalizer(hxObject *v, finalizer f)
 }
 
 
-void __RegisterStatic(void *inPtr,int inSize)
+void RegisterObject(Object **inPtr)
 {
-#ifndef INTERNAL_GC
-   GC_add_roots((char *)inPtr, (char *)inPtr + inSize );
+#ifndef HX_INTERNAL_GC
+   GC_add_roots((char *)inPtr, (char *)inPtr + sizeof(void *) );
+
+#endif
+}
+
+void RegisterString(const wchar_t **inPtr)
+{
+#ifndef HX_INTERNAL_GC
+   GC_add_roots((char *)inPtr, (char *)inPtr + sizeof(void *) );
 #endif
 }
 
 
-void hxGCInit()
+
+void GCInit()
 {
-#ifndef INTERNAL_GC
+#ifndef HX_INTERNAL_GC
    if (sNeedGCInit)
    {
       sNeedGCInit = false;
@@ -187,31 +211,22 @@ void hxGCInit()
 #endif
 }
 
-#ifndef INTERNAL_GC
+#ifndef HX_INTERNAL_GC
 // Stubs...
-void hxMarkAlloc(void *inPtr) {  }
-void hxMarkObjectAlloc(hxObject *inPtr) { }
-void hxEnterGCFreeZone() { }
-void hxExitGCFreeZone() { }
+void MarkAlloc(void *inPtr) {  }
+void MarkObjectAlloc(hx::Object *inPtr) { }
+void EnterGCFreeZone() { }
+void ExitGCFreeZone() { }
 #endif
 
 
-void __hxcpp_enable(bool inEnable)
-{
-#ifndef INTERNAL_GC
-   if (inEnable)
-      GC_enable();
-   else
-      GC_disable();
-#else
-   hxInternalEnableGC(inEnable);
-#endif
-}
 
-wchar_t *hxNewString(int inLen)
+
+
+wchar_t *NewString(int inLen)
 {
-#ifdef INTERNAL_GC
-   wchar_t *result =  (wchar_t *)hxInternalNew( (inLen+1)*sizeof(wchar_t), false );
+#ifdef HX_INTERNAL_GC
+   wchar_t *result =  (wchar_t *)hx::InternalNew( (inLen+1)*sizeof(wchar_t), false );
 #else
    wchar_t *result =  (wchar_t *)GC_MALLOC_ATOMIC((inLen+1)*sizeof(wchar_t));
 #endif
@@ -220,10 +235,10 @@ wchar_t *hxNewString(int inLen)
 
 }
 
-void *hxNewGCBytes(void *inData,int inSize)
+void *NewGCBytes(void *inData,int inSize)
 {
-#ifdef INTERNAL_GC
-   void *result =  hxInternalNew(inSize,false);
+#ifdef HX_INTERNAL_GC
+   void *result =  hx::InternalNew(inSize,false);
 #else
    void *result =  GC_MALLOC(inSize);
 #endif
@@ -235,10 +250,10 @@ void *hxNewGCBytes(void *inData,int inSize)
 }
 
 
-void *hxNewGCPrivate(void *inData,int inSize)
+void *NewGCPrivate(void *inData,int inSize)
 {
-#ifdef INTERNAL_GC
-   void *result =  hxInternalNew(inSize,false);
+#ifdef HX_INTERNAL_GC
+   void *result =  InternalNew(inSize,false);
 #else
    void *result =  GC_MALLOC_ATOMIC(inSize);
 #endif
@@ -250,172 +265,69 @@ void *hxNewGCPrivate(void *inData,int inSize)
 }
 
 
-void *hxGCRealloc(void *inData,int inSize)
+void *GCRealloc(void *inData,int inSize)
 {
-#ifdef INTERNAL_GC
-   return hxInternalRealloc(inData,inSize);
+#ifdef HX_INTERNAL_GC
+   return InternalRealloc(inData,inSize);
 #else
    return GC_REALLOC(inData, inSize );
 #endif
 }
 
 
-
-// --- FieldObject ------------------------------
-
-
-int DoCompare(const String &inA, const String &inB)
+const wchar_t *ConvertToWChar(const char *inStr, int *ioLen)
 {
-	return inA.compare(inB);
-}
+   int len = ioLen ? *ioLen : strlen(inStr);
 
-class hxFieldMap : public RBTree<String,Dynamic>
-{
-};
+   wchar_t *result = hx::NewString(len);
+   int l = 0;
 
-hxFieldMap *hxFieldMapCreate()
-{
-	return (hxFieldMap *)(RBTree<String,Dynamic>::Create());
-}
-
-bool hxFieldMapGet(hxFieldMap *inMap, const String &inName, Dynamic &outValue)
-{
-	Dynamic *value = inMap->Find(inName);
-	if (!value)
-		return false;
-	outValue = *value;
-	return true;
-}
-
-bool hxFieldMapGet(hxFieldMap *inMap, int inID, Dynamic &outValue)
-{
-	Dynamic *value = inMap->Find(__hxcpp_field_from_id(inID));
-	if (!value)
-		return false;
-	outValue = *value;
-	return true;
-}
-
-void hxFieldMapSet(hxFieldMap *inMap, const String &inName, const Dynamic &inValue)
-{
-	inMap->Insert(inName,inValue);
-}
-
-struct KeyGetter
-{
-	KeyGetter(Array<String> &inArray) : mArray(inArray)  { }
-	void Visit(void *, const String &inStr, const Dynamic &) { mArray->push(inStr); }
-	Array<String> &mArray;
-};
-
-void hxFieldMapAppendFields(hxFieldMap *inMap,Array<String> &outFields)
-{
-	KeyGetter getter(outFields);
-	inMap->Iterate(getter);
-}
-
-struct Marker
-{
-	void Visit(void *inPtr, const String &inStr, Dynamic &inDyn)
-	{
-		hxMarkAlloc(inPtr);
-		HX_MARK_STRING(inStr.__s);
-		if (inDyn.mPtr)
-		   HX_MARK_OBJECT(inDyn.mPtr);
-	}
-};
-
-void hxFieldMapMark(hxFieldMap *inMap)
-{
-	Marker m;
-	inMap->Iterate(m);
-}
-
-// --- Anon -----
-//
-
-hxAnon_obj::hxAnon_obj()
-{
-   mFields = hxFieldMapCreate();
-}
-
-void hxAnon_obj::__Mark()
-{
-	// We will get mFields=0 here if we collect in the constructor before mFields is assigned
-	if (mFields)
-	{
-	   hxMarkAlloc(mFields);
-      hxFieldMapMark(mFields);
-	}
-}
-
-
-
-Dynamic hxAnon_obj::__Field(const String &inString)
-{
-   Dynamic *v = mFields->Find(inString);
-	if (!v)
-      return null();
-   return *v;
-}
-
-bool hxAnon_obj::__HasField(const String &inString)
-{
-   return mFields->Find(inString);
-}
-
-
-bool hxAnon_obj::__Remove(String inKey)
-{
-	return mFields->Erase(inKey);
-}
-
-
-Dynamic hxAnon_obj::__SetField(const String &inString,const Dynamic &inValue)
-{
-	mFields->Insert(inString,inValue);
-   return inValue;
-}
-
-hxAnon_obj *hxAnon_obj::Add(const String &inName,const Dynamic &inValue)
-{
-	mFields->Insert(inName,inValue);
-   if (inValue.GetPtr())
-		inValue.GetPtr()->__SetThis(this);
-   return this;
-}
-
-struct Stringer
-{
-	Stringer(String &inString) : result(inString), first(true) { }
-	void Visit(void *, const String &inStr, Dynamic &inDyn)
-	{
-		if (first)
+   unsigned char *b = (unsigned char *)inStr;
+   for(int i=0;i<len;)
+   {
+      int c = b[i++];
+      if (c==0) break;
+      else if( c < 0x80 )
       {
-         result += inStr + String(L"=",1) + (String)(inDyn);
-         first = false;
+        result[l++] = c;
+      }
+      else if( c < 0xE0 )
+        result[l++] = ( ((c & 0x3F) << 6) | (b[i++] & 0x7F) );
+      else if( c < 0xF0 )
+      {
+        int c2 = b[i++];
+        result[l++] += ( ((c & 0x1F) << 12) | ((c2 & 0x7F) << 6) | ( b[i++] & 0x7F) );
       }
       else
-         result += String(L", ") + inStr + String(L"=") + (String)(inDyn);
-	}
-
-	bool first;
-	String &result;
-};
-
-String hxAnon_obj::toString()
-{
-   String result = String(L"{ ",2);
-	Stringer stringer(result);
-	mFields->Iterate(stringer);
-   return result + String(L" }",2);
+      {
+        int c2 = b[i++];
+        int c3 = b[i++];
+        result[l++] += ( ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 << 6) & 0x7F) | (b[i++] & 0x7F) );
+      }
+   }
+   result[l] = '\0';
+   if (ioLen)
+      *ioLen = l;
+   return result;
 }
 
-void hxAnon_obj::__GetFields(Array<String> &outFields)
-{
-	KeyGetter getter(outFields);
-	mFields->Iterate(getter);
-}
 
+
+} // end namespace hx
+
+
+
+
+void __hxcpp_enable(bool inEnable)
+{
+#ifndef HX_INTERNAL_GC
+   if (inEnable)
+      GC_enable();
+   else
+      GC_disable();
+#else
+	hx::InternalEnableGC(inEnable);
+#endif
+}
 
 

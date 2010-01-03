@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <stdio.h>
 // Get headers etc.
+#include <hx/OS.h>
 
 #define IGNORE_CFFI_API_H
 
@@ -12,7 +13,10 @@
 
 // Class for boxing external handles
 
-class Abstract_obj : public hxObject
+namespace hx
+{
+
+class Abstract_obj : public Object
 {
 public:
    Abstract_obj(int inType,void *inData)
@@ -23,7 +27,7 @@ public:
    }
 
    virtual int __GetType() const { return mType; }
-   virtual hxObjectPtr<Class_obj> __GetClass() const { return 0; }
+   virtual hx::ObjectPtr<Class_obj> __GetClass() const { return 0; }
    virtual bool __IsClass(Class inClass ) const { return false; }
 
    virtual void *__GetHandle() const
@@ -33,7 +37,7 @@ public:
 
 	void __Mark()
 	{
-	   #ifdef INTERNAL_GC
+	   #ifdef HX_INTERNAL_GC
 		if (mFinalizer)
 			mFinalizer->Mark();
 		#endif
@@ -41,7 +45,7 @@ public:
 
 	void SetFinalizer(finalizer inFinalizer)
 	{
-	   #ifdef INTERNAL_GC
+	   #ifdef HX_INTERNAL_GC
 		if (!inFinalizer)
 		{
 			mFinalizer->Detach();
@@ -50,7 +54,7 @@ public:
 		else
 		{
 			if (!mFinalizer)
-				mFinalizer = new hxInternalFinalizer(this);
+				mFinalizer = new hx::InternalFinalizer(this);
 			mFinalizer->mFinalizer = inFinalizer;
 		}
 	   #else
@@ -58,8 +62,8 @@ public:
 	   #endif
 	}
 
-	#ifdef INTERNAL_GC
-	hxInternalFinalizer *mFinalizer;
+	#ifdef HX_INTERNAL_GC
+	hx::InternalFinalizer *mFinalizer;
 	#else
 	finalizer mFinalizer;
 	#endif
@@ -67,7 +71,9 @@ public:
    int mType;
 };
 
-typedef hxObjectPtr<Abstract_obj> Abstract;
+typedef ObjectPtr<Abstract_obj> Abstract;
+
+} // end namespace hx
 
 vkind k_int32 = (vkind)vtAbstractBase;
 vkind k_hash = (vkind)(vtAbstractBase + 1);
@@ -76,7 +82,7 @@ typedef std::map<std::string,int> KindMap;
 static KindMap sgKindMap;
 
 
-SHARED int hxcpp_alloc_kind()
+int hxcpp_alloc_kind()
 {
    return ++sgKinds;
 }
@@ -106,11 +112,11 @@ extern "C" {
 
 void hx_error() THROWS
 {
-	throw Dynamic( STRING(L"ERROR",6) );
+	throw Dynamic( HX_STRING(L"ERROR",6) );
 }
 
 
-void val_throw(hxObject * arg1) THROWS
+void val_throw(hx::Object * arg1) THROWS
 {
 	if (arg1==0)
 	   throw Dynamic(null());
@@ -126,8 +132,8 @@ void hx_fail(char * arg1,char * arg2,int arg3)
 
 
 
-// Determine hxObject * type
-int val_type(hxObject * arg1)
+// Determine hx::Object * type
+int val_type(hx::Object * arg1)
 {
 	if (arg1==0)
 		return valtNull;
@@ -135,18 +141,18 @@ int val_type(hxObject * arg1)
 }
 
 \
-vkind val_kind(hxObject * arg1) THROWS
+vkind val_kind(hx::Object * arg1) THROWS
 {
 	if (arg1==0)
-	   throw Dynamic( STRING(L"Value has no 'kind'",19) );
+	   throw Dynamic( HX_STRING(L"Value has no 'kind'",19) );
 	int type = arg1->__GetType();
 	if (type<valtAbstractBase)
-	   throw Dynamic( STRING(L"Value has no 'kind'",19) );
+	   throw Dynamic( HX_STRING(L"Value has no 'kind'",19) );
 	return (vkind)(type);
 }
 
 
-void * val_to_kind(hxObject * arg1,vkind arg2)
+void * val_to_kind(hx::Object * arg1,vkind arg2)
 {
 	if (arg1==0)
 		return 0;
@@ -157,7 +163,7 @@ void * val_to_kind(hxObject * arg1,vkind arg2)
 
 
 // don't check the 'kind' ...
-void * val_data(hxObject * arg1)
+void * val_data(hx::Object * arg1)
 {
 	if (arg1==0)
 		return 0;
@@ -165,7 +171,7 @@ void * val_data(hxObject * arg1)
 }
 
 
-int val_fun_nargs(hxObject * arg1)
+int val_fun_nargs(hx::Object * arg1)
 {
 	if (arg1==0)
 		return faNotFunction;
@@ -175,29 +181,29 @@ int val_fun_nargs(hxObject * arg1)
 
 
 
-// Extract hxObject * type
-bool val_bool(hxObject * arg1)
+// Extract hx::Object * type
+bool val_bool(hx::Object * arg1)
 {
 	if (arg1==0) return false;
 	return arg1->__ToInt()!=0;
 }
 
 
-int val_int(hxObject * arg1)
+int val_int(hx::Object * arg1)
 {
 	if (arg1==0) return 0;
 	return arg1->__ToInt();
 }
 
 
-double val_float(hxObject * arg1)
+double val_float(hx::Object * arg1)
 {
 	if (arg1==0) return 0.0;
 	return arg1->__ToDouble();
 }
 
 
-double val_number(hxObject * arg1)
+double val_number(hx::Object * arg1)
 {
 	if (arg1==0) return 0.0;
 	return arg1->__ToDouble();
@@ -205,113 +211,113 @@ double val_number(hxObject * arg1)
 
 
 
-// Create hxObject * type
+// Create hx::Object * type
 
-hxObject * alloc_null() { return 0; }
-hxObject * alloc_bool(bool arg1) { return Dynamic(arg1).GetPtr(); }
-hxObject * alloc_int(int arg1) { return Dynamic(arg1).GetPtr(); }
-hxObject * alloc_float(double arg1) { return Dynamic(arg1).GetPtr(); }
-hxObject * alloc_empty_object() { return new hxAnon_obj(); }
+hx::Object * alloc_null() { return 0; }
+hx::Object * alloc_bool(bool arg1) { return Dynamic(arg1).GetPtr(); }
+hx::Object * alloc_int(int arg1) { return Dynamic(arg1).GetPtr(); }
+hx::Object * alloc_float(double arg1) { return Dynamic(arg1).GetPtr(); }
+hx::Object * alloc_empty_object() { return new hx::Anon_obj(); }
 
 
-hxObject * alloc_abstract(vkind arg1,void * arg2)
+hx::Object * alloc_abstract(vkind arg1,void * arg2)
 {
 	int type = (int)(intptr_t)arg1;
-	return new Abstract_obj(type,arg2);
+	return new hx::Abstract_obj(type,arg2);
 }
 
-hxObject * alloc_best_int(int arg1) { return Dynamic(arg1).GetPtr(); }
-hxObject * alloc_int32(int arg1) { return Dynamic(arg1).GetPtr(); }
+hx::Object * alloc_best_int(int arg1) { return Dynamic(arg1).GetPtr(); }
+hx::Object * alloc_int32(int arg1) { return Dynamic(arg1).GetPtr(); }
 
 
 
 // String access
-int val_strlen(hxObject * arg1)
+int val_strlen(hx::Object * arg1)
 {
 	if (arg1==0) return 0;
 	return arg1->toString().length;
 }
 
 
-const wchar_t * val_wstring(hxObject * arg1)
+const wchar_t * val_wstring(hx::Object * arg1)
 {
 	if (arg1==0) return L"";
 	return arg1->toString().__s;
 }
 
 
-const char * val_string(hxObject * arg1)
+const char * val_string(hx::Object * arg1)
 {
 	if (arg1==0) return "";
 	return arg1->__CStr();
 }
 
 
-hxObject * alloc_string(const char * arg1)
+hx::Object * alloc_string(const char * arg1)
 {
 	return Dynamic( String(arg1,strlen(arg1)) ).GetPtr();
 }
 
 wchar_t * val_dup_wstring(value inVal)
 {
-   hxObject *obj = (hxObject *)inVal;
+   hx::Object *obj = (hx::Object *)inVal;
    String  s = obj->toString();
    return (wchar_t *)s.dup().__s;
 }
 
 char * val_dup_string(value inVal)
 {
-   hxObject *obj = (hxObject *)inVal;
+   hx::Object *obj = (hx::Object *)inVal;
    return obj->toString().__CStr();
 }
 
-hxObject *alloc_string_len(const char *inStr,int inLen)
+hx::Object *alloc_string_len(const char *inStr,int inLen)
 {
    String str(inStr,inLen);
    return Dynamic(str).GetPtr();
 }
 
-hxObject *alloc_wstring_len(const wchar_t *inStr,int inLen)
+hx::Object *alloc_wstring_len(const wchar_t *inStr,int inLen)
 {
    String str(inStr,inLen);
    return Dynamic(str.dup()).GetPtr();
 }
 
 // Array access - generic
-int val_array_size(hxObject * arg1)
+int val_array_size(hx::Object * arg1)
 {
 	if (arg1==0) return 0;
 	return arg1->__length();
 }
 
 
-hxObject * val_array_i(hxObject * arg1,int arg2)
+hx::Object * val_array_i(hx::Object * arg1,int arg2)
 {
 	if (arg1==0) return 0;
 	return arg1->__GetItem(arg2).GetPtr();
 }
 
-void val_array_set_i(hxObject * arg1,int arg2,hxObject *inVal)
+void val_array_set_i(hx::Object * arg1,int arg2,hx::Object *inVal)
 {
 	if (arg1==0) return;
 	return arg1->__SetItem(arg2, Dynamic(inVal) );
 }
 
-void val_array_set_size(hxObject * arg1,int inLen)
+void val_array_set_size(hx::Object * arg1,int inLen)
 {
 	if (arg1==0) return;
 	return arg1->__SetSize(inLen);
 }
 
-void val_array_push(hxObject * arg1,hxObject *inValue)
+void val_array_push(hx::Object * arg1,hx::Object *inValue)
 {
-	hxArrayBase *base = dynamic_cast<hxArrayBase *>(arg1);
+	hx::ArrayBase *base = dynamic_cast<hx::ArrayBase *>(arg1);
 	if (base==0) return;
 	base->__push(inValue);
 }
 
 
-hxObject * alloc_array(int arg1)
+hx::Object * alloc_array(int arg1)
 {
 	Array<Dynamic> array(arg1,arg1);
 	return array.GetPtr();
@@ -321,7 +327,7 @@ hxObject * alloc_array(int arg1)
 
 // Array access - fast if possible - may return null
 // Resizing the array may invalidate the pointer
-bool * val_array_bool(hxObject * arg1)
+bool * val_array_bool(hx::Object * arg1)
 {
 	Array_obj<bool> *a = dynamic_cast< Array_obj<bool> * >(arg1);
 	if (a==0)
@@ -330,7 +336,7 @@ bool * val_array_bool(hxObject * arg1)
 }
 
 
-int * val_array_int(hxObject * arg1)
+int * val_array_int(hx::Object * arg1)
 {
 	Array_obj<int> *a = dynamic_cast< Array_obj<int> * >(arg1);
 	if (a==0)
@@ -339,7 +345,7 @@ int * val_array_int(hxObject * arg1)
 }
 
 
-double * val_array_double(hxObject * arg1)
+double * val_array_double(hx::Object * arg1)
 {
 	Array_obj<double> *a = dynamic_cast< Array_obj<double> * >(arg1);
 	if (a==0)
@@ -347,7 +353,7 @@ double * val_array_double(hxObject * arg1)
 	return (double *)a->GetBase();
 }
 
-value * val_array_value(hxObject * arg1)
+value * val_array_value(hx::Object * arg1)
 {
 	return 0;
 }
@@ -359,7 +365,7 @@ typedef Array_obj<unsigned char> *ByteArray;
 
 // Byte arrays
 // The byte array may be a string or a Array<bytes> depending on implementation
-buffer val_to_buffer(hxObject * arg1)
+buffer val_to_buffer(hx::Object * arg1)
 {
 	ByteArray b = dynamic_cast< ByteArray >(arg1);
 	return (buffer)b;
@@ -451,7 +457,7 @@ char * buffer_data(buffer inBuffer)
 void val_buffer(buffer inBuffer,value inValue)
 {
 	ByteArray b = (ByteArray)inBuffer;
-	hxObject *obj = (hxObject *)inValue;
+	hx::Object *obj = (hx::Object *)inValue;
 	if (obj)
 	{
 	    buffer_append(inBuffer, obj->toString().__CStr());
@@ -468,17 +474,17 @@ void val_buffer(buffer inBuffer,value inValue)
 
 
 // Call Function 
-hxObject * val_call0(hxObject * arg1) THROWS
+hx::Object * val_call0(hx::Object * arg1) THROWS
 {
-	if (!arg1) throw NULL_FUNCTION_POINTER;
+	if (!arg1) throw HX_NULL_FUNCTION_POINTER;
 	return arg1->__run().GetPtr();
 }
 
-hxObject * val_call0_traceexcept(hxObject * arg1) THROWS
+hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
 {
 	try
 	{
-	if (!arg1) throw NULL_FUNCTION_POINTER;
+	if (!arg1) throw HX_NULL_FUNCTION_POINTER;
 	return arg1->__run().GetPtr();
 	}
 	catch(Dynamic e)
@@ -491,66 +497,66 @@ hxObject * val_call0_traceexcept(hxObject * arg1) THROWS
 }
 
 
-hxObject * val_call1(hxObject * arg1,hxObject * arg2) THROWS
+hx::Object * val_call1(hx::Object * arg1,hx::Object * arg2) THROWS
 {
-	if (!arg1) throw NULL_FUNCTION_POINTER;
+	if (!arg1) throw HX_NULL_FUNCTION_POINTER;
 	return arg1->__run(arg2).GetPtr();
 }
 
 
-hxObject * val_call2(hxObject * arg1,hxObject * arg2,hxObject * arg3) THROWS
+hx::Object * val_call2(hx::Object * arg1,hx::Object * arg2,hx::Object * arg3) THROWS
 {
-	if (!arg1) throw NULL_FUNCTION_POINTER;
+	if (!arg1) throw HX_NULL_FUNCTION_POINTER;
 	return arg1->__run(arg2,arg3).GetPtr();
 }
 
 
-hxObject * val_call3(hxObject * arg1,hxObject * arg2,hxObject * arg3,hxObject * arg4) THROWS
+hx::Object * val_call3(hx::Object * arg1,hx::Object * arg2,hx::Object * arg3,hx::Object * arg4) THROWS
 {
-	if (!arg1) throw NULL_FUNCTION_POINTER;
+	if (!arg1) throw HX_NULL_FUNCTION_POINTER;
 	return arg1->__run(arg2,arg3,arg4).GetPtr();
 }
 
 
-hxObject * val_callN(hxObject * arg1,hxObject * arg2) THROWS
+hx::Object * val_callN(hx::Object * arg1,hx::Object * arg2) THROWS
 {
-	if (!arg1) throw NULL_FUNCTION_POINTER;
+	if (!arg1) throw HX_NULL_FUNCTION_POINTER;
 	return arg1->__Run( Dynamic(arg2) ).GetPtr();
 }
 
 
 // Call object field
-hxObject * val_ocall0(hxObject * arg1,int arg2) THROWS
+hx::Object * val_ocall0(hx::Object * arg1,int arg2) THROWS
 {
-	if (!arg1) throw INVALID_OBJECT;
+	if (!arg1) throw HX_INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run().GetPtr();
 }
 
 
-hxObject * val_ocall1(hxObject * arg1,int arg2,hxObject * arg3) THROWS
+hx::Object * val_ocall1(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
 {
-	if (!arg1) throw INVALID_OBJECT;
+	if (!arg1) throw HX_INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run(arg3).GetPtr();
 }
 
 
-hxObject * val_ocall2(hxObject * arg1,int arg2,hxObject * arg3,hxObject * arg4) THROWS
+hx::Object * val_ocall2(hx::Object * arg1,int arg2,hx::Object * arg3,hx::Object * arg4) THROWS
 {
-	if (!arg1) throw INVALID_OBJECT;
+	if (!arg1) throw HX_INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run(arg3,arg4).GetPtr();
 }
 
 
-hxObject * val_ocall3(hxObject * arg1,int arg2,hxObject * arg3,hxObject * arg4,hxObject * arg5) THROWS
+hx::Object * val_ocall3(hx::Object * arg1,int arg2,hx::Object * arg3,hx::Object * arg4,hx::Object * arg5) THROWS
 {
-	if (!arg1) throw INVALID_OBJECT;
+	if (!arg1) throw HX_INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run(arg3,arg4,arg5).GetPtr();
 }
 
 
-hxObject * val_ocallN(hxObject * arg1,int arg2,hxObject * arg3) THROWS
+hx::Object * val_ocallN(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
 {
-	if (!arg1) throw INVALID_OBJECT;
+	if (!arg1) throw HX_INVALID_OBJECT;
 	return arg1->__IField(arg2)->__run(Dynamic(arg3)).GetPtr();
 }
 
@@ -563,20 +569,20 @@ int val_id(const char * arg1)
 }
 
 
-void alloc_field(hxObject * arg1,int arg2,hxObject * arg3) THROWS
+void alloc_field(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
 {
-	if (!arg1) throw INVALID_OBJECT;
+	if (!arg1) throw HX_INVALID_OBJECT;
 	arg1->__SetField(__hxcpp_field_from_id(arg2),arg3);
 }
-void hxcpp_alloc_field(hxObject * arg1,int arg2,hxObject * arg3)
+void hxcpp_alloc_field(hx::Object * arg1,int arg2,hx::Object * arg3)
 {
 	return alloc_field(arg1,arg2,arg3);
 }
 
 
-hxObject * val_field(hxObject * arg1,int arg2) THROWS
+hx::Object * val_field(hx::Object * arg1,int arg2) THROWS
 {
-	if (!arg1) throw INVALID_OBJECT;
+	if (!arg1) throw HX_INVALID_OBJECT;
 	return arg1->__IField(arg2).GetPtr();
 }
 
@@ -598,46 +604,46 @@ void kind_share(vkind *inKind,const char *inName)
 // Garbage Collection
 void * hx_alloc(int arg1)
 {
-	return hxNewGCBytes(0,arg1);
+	return hx::NewGCBytes(0,arg1);
 }
 
 
 void * alloc_private(int arg1)
 {
-   return hxNewGCPrivate(0,arg1);
+   return hx::NewGCPrivate(0,arg1);
 }
 
 
-void  val_gc(hxObject * arg1,finalizer arg2) THROWS
+void  val_gc(hx::Object * arg1,hx::finalizer arg2) THROWS
 {
-	#ifdef INTERNAL_GC
-	Abstract_obj *abstract = dynamic_cast<Abstract_obj *>(arg1);
+	#ifdef HX_INTERNAL_GC
+	hx::Abstract_obj *abstract = dynamic_cast<hx::Abstract_obj *>(arg1);
 	if (!abstract)
-	   throw Dynamic(STR(L"Finalizer not on abstract object"));
+	   throw Dynamic(HX_STR(L"Finalizer not on abstract object"));
    abstract->SetFinalizer(arg2);
 	#else
-	hxGCAddFinalizer( arg1, arg2 );
+	hx::GCAddFinalizer( arg1, arg2 );
 	#endif
 }
 
 void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2) THROWS
 {
-	#ifdef INTERNAL_GC
-	throw Dynamic(STR(L"Finalizer not supported here"));
+	#ifdef HX_INTERNAL_GC
+	throw Dynamic(HX_STR(L"Finalizer not supported here"));
 	#else
-	hxGCAddFinalizer( (hxObject *)arg1, (finalizer)arg2 );
+	hx::GCAddFinalizer( (hx::Object *)arg1, (finalizer)arg2 );
 	#endif
 }
 
-void  val_gc_add_root(hxObject **inRoot)
+void  val_gc_add_root(hx::Object **inRoot)
 {
-	 hxGCAddRoot(inRoot);
+	hx::GCAddRoot(inRoot);
 }
 
 
-void  val_gc_remove_root(hxObject **inRoot)
+void  val_gc_remove_root(hx::Object **inRoot)
 {
-	 hxGCRemoveRoot(inRoot);
+	hx::GCRemoveRoot(inRoot);
 }
 
 // Used for finding functions in static libraries
@@ -649,12 +655,12 @@ int hx_register_prim( wchar_t * arg1, void* arg2)
 
 void gc_enter_blocking()
 {
-	hxEnterGCFreeZone();
+	hx::EnterGCFreeZone();
 }
 
 void gc_exit_blocking()
 {
-	hxExitGCFreeZone();
+	hx::ExitGCFreeZone();
 }
 
 void gc_safe_point()
@@ -665,7 +671,7 @@ void gc_safe_point()
 
 
 
-SHARED void * hx_cffi(const char *inName)
+EXPORT void * hx_cffi(const char *inName)
 {
 	#define DEFFUNC(name,r,b,c) if ( !strcmp(inName,#name) ) return (void *)name;
 

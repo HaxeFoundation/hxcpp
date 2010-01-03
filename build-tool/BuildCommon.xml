@@ -39,8 +39,6 @@ can help with debug if there is a problem compiling.
 <set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
 
 
-<set name="ZLIB_DIR" value="runtime/thirdparty/zlib-1.2.3"/>
-<set name="PCRE_DIR" value="runtime/thirdparty/pcre-7.8"/>
 <set name="GC_DIR" value="thirdparty/gc-7.1"/>
 <set name="AO_VERSION" value="1.2"/>
 
@@ -362,96 +360,27 @@ can help with debug if there is a problem compiling.
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 
-  <file name = "src/hx/Object.cpp"/>
-  <file name = "src/hx/Date.cpp"/>
+  <file name = "src/hx/Anon.cpp"/>
+  <file name = "src/hx/Boot.cpp"/>
+  <file name = "src/hx/CFFI.cpp"/>
   <file name = "src/hx/GC.cpp"/>
   <file name = "src/hx/GCInternal.cpp"/>
   <file name = "src/hx/Hash.cpp"/>
+  <file name = "src/hx/Interface.cpp"/>
   <file name = "src/hx/Lib.cpp"/>
-  <file name = "src/hx/CFFI.cpp"/>
+  <file name = "src/hx/Object.cpp"/>
+  <file name = "src/hx/StdLibs.cpp"/>
   <file name = "src/hx/Thread.cpp"/>
 
-</files>
-
-<target id="std" output="std${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
-  <files id="std"/>
-  <flag value="-dll"/>
-  <lib name="wsock32.lib" if="windows"/>
-  <lib name="-lpthread" if="linux"/>
-  <lib name="-ldl" if="linux"/>
-</target>
-
-
-<files id="regexp" dir="${HXCPP}">
-  <depend name="${HXCPP}/include/hxcpp.h"/>
-  <depend name="${HXCPP}/include/hx/Object.h"/>
-  <depend name="${HXCPP}/include/hx/Macros.h"/>
-
-  <compilerflag value="-DPCRE_STATIC"/>
-  <compilerflag value="-I${HXCPP}/${PCRE_DIR}"/>
-
-  <file name="runtime/libs/regexp/RegExp.cpp"/>
-
-  <file name="${PCRE_DIR}/pcre_get.c"/>
-  <file name="${PCRE_DIR}/pcre_study.c"/>
-  <file name="${PCRE_DIR}/pcre_chartables.c"/>
-  <file name="${PCRE_DIR}/pcre_globals.c"/>
-  <file name="${PCRE_DIR}/pcre_tables.c"/>
-  <file name="${PCRE_DIR}/pcre_compile.c"/>
-  <file name="${PCRE_DIR}/pcre_info.c"/>
-  <file name="${PCRE_DIR}/pcre_try_flipped.c"/>
-  <file name="${PCRE_DIR}/pcre_config.c"/>
-  <file name="${PCRE_DIR}/pcre_maketables.c"/>
-  <file name="${PCRE_DIR}/pcre_ucd.c"/>
-  <file name="${PCRE_DIR}/pcre_dfa_exec.c"/>
-  <file name="${PCRE_DIR}/pcre_newline.c"/>
-  <file name="${PCRE_DIR}/pcre_valid_utf8.c"/>
-  <file name="${PCRE_DIR}/pcre_exec.c"/>
-  <file name="${PCRE_DIR}/pcre_ord2utf8.c"/>
-  <file name="${PCRE_DIR}/pcre_version.c"/>
-  <file name="${PCRE_DIR}/pcre_fullinfo.c"/>
-  <file name="${PCRE_DIR}/pcre_refcount.c"/>
-  <file name="${PCRE_DIR}/pcre_xclass.c"/>
+  <file name = "src/Array.cpp"/>
+  <file name = "src/Class.cpp"/>
+  <file name = "src/Date.cpp"/>
+  <file name = "src/Dynamic.cpp"/>
+  <file name = "src/Enum.cpp"/>
+  <file name = "src/Math.cpp"/>
+  <file name = "src/String.cpp"/>
 
 </files>
-
-
-
-<target id="regexp" output="regexp${DBG}" tool="linker" toolid="${STD_MODULE_LINK}">
-  <files id="regexp"/>
-</target>
-
-
-<files id="zlib" dir="${HXCPP}">
-  <depend name="${HXCPP}/include/hxcpp.h"/>
-  <depend name="${HXCPP}/include/hx/Object.h"/>
-  <depend name="${HXCPP}/include/hx/Macros.h"/>
-
-  <compilerflag value="-I${HXCPP}/${ZLIB_DIR}"/>
-
-  <file name="runtime/libs/zlib/ZLib.cpp"/>
-
-  <file name="${ZLIB_DIR}/adler32.c"/>
-  <file name="${ZLIB_DIR}/crc32.c"/>
-  <file name="${ZLIB_DIR}/infback.c"/>
-  <file name="${ZLIB_DIR}/inflate.c"/>
-  <file name="${ZLIB_DIR}/uncompr.c"/>
-  <file name="${ZLIB_DIR}/compress.c"/>
-  <file name="${ZLIB_DIR}/deflate.c"/>
-  <file name="${ZLIB_DIR}/gzio.c"/>
-  <file name="${ZLIB_DIR}/inffast.c"/>
-  <file name="${ZLIB_DIR}/inftrees.c"/>
-  <file name="${ZLIB_DIR}/trees.c"/>
-  <file name="${ZLIB_DIR}/zutil.c"/>
-
-</files>
-
-
-
-
-<target id="zlib" output="zlib${DBG}" tool="linker" toolid="dll">
-  <files id="zlib"/>
-</target>
 
 
 <target id="default">

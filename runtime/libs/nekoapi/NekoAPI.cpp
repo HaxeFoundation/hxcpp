@@ -9,7 +9,7 @@ typedef struct _buffer *buffer;
 
 
 #define IGNORE_CFFI_API_H
-#include <hxCFFI.h>
+#include <hx/CFFI.h>
 #include "string.h"
 
 
@@ -17,7 +17,7 @@ extern "C" {
 
 // Proto-type the functions
 #define DEFFUNC(name,r,b,c) r api_##name b;
-#include <hxCFFIAPI.h>
+#include <hx/CFFIAPI.h>
 #undef DEFFUNC
 
 
@@ -27,7 +27,7 @@ void * hx_cffi(const char *inName)
 {
 	#define DEFFUNC(name,r,b,c) if ( !strcmp(inName,#name) ) return (void *)api_##name;
 
-	#include <hxCFFIAPI.h>
+	#include <hx/CFFIAPI.h>
 	return 0;
 }
 

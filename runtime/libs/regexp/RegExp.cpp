@@ -19,7 +19,7 @@
 #define IMPLEMENT_API
 #endif
 
-#include <hxCFFI.h>
+#include <hx/CFFI.h>
 #include <string.h>
 #ifndef PCRE_STATIC
 #define PCRE_STATIC

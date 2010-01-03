@@ -21,7 +21,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <hxCFFI.h>
+#include <hx/CFFI.h>
 #include <zlib.h>
 
 /**

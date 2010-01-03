@@ -14,7 +14,7 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
-#include <hxCFFI.h>
+#include <hx/CFFI.h>
 #include <string.h>
 
 int __string_prims() { return 0; }

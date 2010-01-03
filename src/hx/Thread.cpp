@@ -3,7 +3,7 @@
 #include <hx/Thread.h>
 #include <time.h>
 
-#ifndef INTERNAL_GC
+#ifndef HX_INTERNAL_GC
 extern "C" {
 #include <gc.h>
 }
@@ -14,7 +14,7 @@ extern "C" {
 #else
 
 #define CHECK_THREADED \
-	throw Dynamic(STRING(L"HXCPP_MULTI_THREADED not enabled",32));
+	throw Dynamic(HX_STRING(L"HXCPP_MULTI_THREADED not enabled",32));
 
 #endif
 
@@ -29,13 +29,13 @@ struct Deque : public Array_obj<Dynamic>
 	static Deque *Create()
 	{
 		Deque *result = new Deque();
-		#ifdef INTERNAL_GC
-		result->mFinalizer = new hxInternalFinalizer(result);
+		#ifdef HX_INTERNAL_GC
+		result->mFinalizer = new hx::InternalFinalizer(result);
 		result->mFinalizer->mFinalizer = clean;
 		#endif
 		return result;
 	}
-	static void clean(hxObject *inObj)
+	static void clean(hx::Object *inObj)
 	{
 		Deque *d = dynamic_cast<Deque *>(inObj);
 		if (d) d->Clean();
@@ -48,7 +48,7 @@ struct Deque : public Array_obj<Dynamic>
 		mSemaphore.Clean();
 	}
 
-	#ifdef INTERNAL_GC
+	#ifdef HX_INTERNAL_GC
 	void __Mark()
 	{
 		Array_obj<Dynamic>::__Mark();
@@ -60,18 +60,18 @@ struct Deque : public Array_obj<Dynamic>
 	MyMutex     mMutex;
 	void PushBack(Dynamic inValue)
 	{
-		hxEnterGCFreeZone();
+		hx::EnterGCFreeZone();
 		AutoLock lock(mMutex);
-		hxExitGCFreeZone();
+		hx::ExitGCFreeZone();
 
 		push(inValue);
 		mSemaphore.Set();
 	}
 	void PushFront(Dynamic inValue)
 	{
-		hxEnterGCFreeZone();
+		hx::EnterGCFreeZone();
 		AutoLock lock(mMutex);
-		hxExitGCFreeZone();
+		hx::ExitGCFreeZone();
 
 		unshift(inValue);
 		mSemaphore.Set();
@@ -80,11 +80,11 @@ struct Deque : public Array_obj<Dynamic>
 	
 	Dynamic PopFront(bool inBlock)
 	{
-		hxEnterGCFreeZone();
+		hx::EnterGCFreeZone();
 		AutoLock lock(mMutex);
 		if (!inBlock)
 		{
-			hxExitGCFreeZone();
+			hx::ExitGCFreeZone();
 			return shift();
 		}
 		// Ok - wait for something on stack...
@@ -95,7 +95,7 @@ struct Deque : public Array_obj<Dynamic>
 			mSemaphore.Wait();
 			lock.Lock();
 		}
-		hxExitGCFreeZone();
+		hx::ExitGCFreeZone();
 		if (length==1)
 			mSemaphore.Reset();
 		return shift();
@@ -103,17 +103,17 @@ struct Deque : public Array_obj<Dynamic>
 	#else
 	void PushBack(Dynamic inValue)
 	{
-		hxEnterGCFreeZone();
+		hx::EnterGCFreeZone();
 		AutoLock lock(mSemaphore);
-		hxExitGCFreeZone();
+		hx::ExitGCFreeZone();
 		push(inValue);
 		mSemaphore.QSet();
 	}
 	void PushFront(Dynamic inValue)
 	{
-		hxEnterGCFreeZone();
+		hx::EnterGCFreeZone();
 		AutoLock lock(mSemaphore);
-		hxExitGCFreeZone();
+		hx::ExitGCFreeZone();
 		unshift(inValue);
 		mSemaphore.QSet();
 	}
@@ -121,16 +121,16 @@ struct Deque : public Array_obj<Dynamic>
 	
 	Dynamic PopFront(bool inBlock)
 	{
-		hxEnterGCFreeZone();
+		hx::EnterGCFreeZone();
 		AutoLock lock(mSemaphore);
 		while(inBlock && !length)
 			mSemaphore.QWait();
-		hxExitGCFreeZone();
+		hx::ExitGCFreeZone();
 		return shift();
 	}
 	#endif
 
-	hxInternalFinalizer *mFinalizer;
+	hx::InternalFinalizer *mFinalizer;
 	MySemaphore mSemaphore;
 };
 
@@ -143,7 +143,7 @@ void __hxcpp_deque_add(Dynamic q,Dynamic inVal)
 {
 	Deque *d = dynamic_cast<Deque *>(q.mPtr);
 	if (!d)
-		throw INVALID_OBJECT;
+		throw HX_INVALID_OBJECT;
 	d->PushBack(inVal);
 }
 
@@ -151,7 +151,7 @@ void __hxcpp_deque_push(Dynamic q,Dynamic inVal)
 {
 	Deque *d = dynamic_cast<Deque *>(q.mPtr);
 	if (!d)
-		throw INVALID_OBJECT;
+		throw HX_INVALID_OBJECT;
 	d->PushFront(inVal);
 }
 
@@ -159,7 +159,7 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 {
 	Deque *d = dynamic_cast<Deque *>(q.mPtr);
 	if (!d)
-		throw INVALID_OBJECT;
+		throw HX_INVALID_OBJECT;
 	return d->PopFront(block);
 }
 
@@ -167,7 +167,7 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 
 // --- Thread ----------------------------------------------------------
 
-class hxThreadInfo : public hxObject
+class hxThreadInfo : public hx::Object
 {
 public:
 	hxThreadInfo(Dynamic inFunction) : mFunction(inFunction), mTLS(0,0)
@@ -218,8 +218,8 @@ public:
 THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 {
 	int dummy = 0;
-#ifdef INTERNAL_GC
-	hxRegisterCurrentThread(&dummy);
+#ifdef HX_INTERNAL_GC
+	hx::RegisterCurrentThread(&dummy);
 #endif
 
 	hxThreadInfo *info = (hxThreadInfo *)inInfo;
@@ -234,8 +234,8 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 		info->mFunction->__run();
 	}
 
-#ifdef INTERNAL_GC
-	hxUnregisterCurrentThread();
+#ifdef HX_INTERNAL_GC
+	hx::UnregisterCurrentThread();
 #endif
 
 	tlsCurrentThread.Set(0);
@@ -249,8 +249,8 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 {
 	hxThreadInfo *info = new hxThreadInfo(inStart);
 
-#ifdef INTERNAL_GC
-	hxGCPrepareMultiThreaded();
+#ifdef HX_INTERNAL_GC
+	hx::GCPrepareMultiThreaded();
 
    #if defined(_MSC_VER)
       _beginthreadex(0,0,hxThreadFunc,info,0,0);
@@ -270,10 +270,10 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 
 #endif
 
-#ifdef INTERNAL_GC
-	hxEnterGCFreeZone();
+#ifdef HX_INTERNAL_GC
+		hx::EnterGCFreeZone();
 	info->mSemaphore->Wait();
-	hxExitGCFreeZone();
+	hx::ExitGCFreeZone();
 #else
 	info->mSemaphore->Wait();
 #endif
@@ -281,7 +281,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 	return info;
 }
 
-static hxObject *sMainThreadInfo = 0;
+static hx::Object *sMainThreadInfo = 0;
 
 static hxThreadInfo *GetCurrentInfo()
 {
@@ -291,7 +291,7 @@ static hxThreadInfo *GetCurrentInfo()
 		// Hmm, must be the "main" thead...
 		info = new hxThreadInfo(null());
 		sMainThreadInfo = info;
-		hxGCAddRoot(&sMainThreadInfo);
+		hx::GCAddRoot(&sMainThreadInfo);
 		tlsCurrentThread.Set(info);
 	}
 	return info;
@@ -308,7 +308,7 @@ void __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage)
 	CHECK_THREADED;
 	hxThreadInfo *info = dynamic_cast<hxThreadInfo *>(inThread.mPtr);
 	if (!info)
-		throw INVALID_OBJECT;
+		throw HX_INVALID_OBJECT;
 	info->Send(inMessage);
 }
 
@@ -337,26 +337,26 @@ void __hxcpp_tls_set(int inID,Dynamic inVal)
 
 // --- Mutex ------------------------------------------------------------
 
-class hxMutex : public hxObject
+class hxMutex : public hx::Object
 {
 public:
 
 	hxMutex()
 	{
-	#ifdef INTERNAL_GC
-		mFinalizer = new hxInternalFinalizer(this);
+	#ifdef HX_INTERNAL_GC
+		mFinalizer = new hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = clean;
 	#else
 		hxGCAddFinalizer(this,clean);
 	#endif
 	}
 
-	#ifdef INTERNAL_GC
+	#ifdef HX_INTERNAL_GC
 	void __Mark() { mFinalizer->Mark(); }
-	hxInternalFinalizer *mFinalizer;
+	hx::InternalFinalizer *mFinalizer;
 	#endif
 
-	static void clean(hxObject *inObj)
+	static void clean(hx::Object *inObj)
 	{
 		hxMutex *m = dynamic_cast<hxMutex *>(inObj);
 		if (m) m->mMutex.Clean();
@@ -367,9 +367,9 @@ public:
 	}
 	void Acquire()
 	{
-		hxEnterGCFreeZone();
+		hx::EnterGCFreeZone();
 		mMutex.Lock();
-		hxExitGCFreeZone();
+		hx::ExitGCFreeZone();
 	}
 	void Release()
 	{
@@ -392,7 +392,7 @@ void __hxcpp_mutex_acquire(Dynamic inMutex)
 	CHECK_THREADED;
 	hxMutex *mutex = dynamic_cast<hxMutex *>(inMutex.mPtr);
 	if (!mutex)
-		throw INVALID_OBJECT;
+		throw HX_INVALID_OBJECT;
 	mutex->Acquire();
 }
 bool __hxcpp_mutex_try(Dynamic inMutex)
@@ -400,7 +400,7 @@ bool __hxcpp_mutex_try(Dynamic inMutex)
 	CHECK_THREADED;
 	hxMutex *mutex = dynamic_cast<hxMutex *>(inMutex.mPtr);
 	if (!mutex)
-		throw INVALID_OBJECT;
+		throw HX_INVALID_OBJECT;
 	return mutex->Try();
 }
 void __hxcpp_mutex_release(Dynamic inMutex)
@@ -408,7 +408,7 @@ void __hxcpp_mutex_release(Dynamic inMutex)
 	CHECK_THREADED;
 	hxMutex *mutex = dynamic_cast<hxMutex *>(inMutex.mPtr);
 	if (!mutex)
-		throw INVALID_OBJECT;
+		throw HX_INVALID_OBJECT;
 	return mutex->Release();
 }
 
@@ -419,23 +419,23 @@ void __hxcpp_mutex_release(Dynamic inMutex)
 
 // --- Lock ------------------------------------------------------------
 
-class hxLock : public hxObject
+class hxLock : public hx::Object
 {
 public:
 
 	hxLock()
 	{
-	#ifdef INTERNAL_GC
-		mFinalizer = new hxInternalFinalizer(this);
+	#ifdef HX_INTERNAL_GC
+		mFinalizer = new hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = clean;
 	#else
 		hxGCAddFinalizer(this,clean);
 	#endif
 	}
 
-	#ifdef INTERNAL_GC
+	#ifdef HX_INTERNAL_GC
 	void __Mark() { mFinalizer->Mark(); }
-	hxInternalFinalizer *mFinalizer;
+	hx::InternalFinalizer *mFinalizer;
 	#endif
 
 	#ifdef _MSC_VER
@@ -452,7 +452,7 @@ public:
 	}
 	#endif
 
-	static void clean(hxObject *inObj)
+	static void clean(hx::Object *inObj)
 	{
 		hxLock *l = dynamic_cast<hxLock *>(inObj);
 		if (l)
@@ -484,12 +484,12 @@ public:
 					return false;
 			}
 
-			hxEnterGCFreeZone();
+			hx::EnterGCFreeZone();
 			if (inTimeout<0)
 				mNotEmpty.Wait( );
 			else
 				mNotEmpty.WaitFor(wait);
-			hxExitGCFreeZone();
+			hx::ExitGCFreeZone();
 		}
 	}
 	void Release()
@@ -517,7 +517,7 @@ bool __hxcpp_lock_wait(Dynamic inlock,double inTime)
 	CHECK_THREADED;
 	hxLock *lock = dynamic_cast<hxLock *>(inlock.mPtr);
 	if (!lock)
-		throw INVALID_OBJECT;
+		throw HX_INVALID_OBJECT;
 	return lock->Wait(inTime);
 }
 void __hxcpp_lock_release(Dynamic inlock)
@@ -525,7 +525,7 @@ void __hxcpp_lock_release(Dynamic inlock)
 	CHECK_THREADED;
 	hxLock *lock = dynamic_cast<hxLock *>(inlock.mPtr);
 	if (!lock)
-		throw INVALID_OBJECT;
+		throw HX_INVALID_OBJECT;
 	lock->Release();
 }
 

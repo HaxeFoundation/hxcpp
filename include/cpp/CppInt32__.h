@@ -12,12 +12,12 @@ class CppInt32__
 public:
    CppInt32__(int inX=0) : mValue(inX) { }
    CppInt32__(const null &inNull) : mValue(0) { }
-   CppInt32__(const Dynamic &inD) : mValue(inD->__ToInt()) { }
+   CppInt32__(const Dynamic &inD);
    operator int() const { return mValue; }
 
    static inline CppInt32__ make(int a,int b) { return CppInt32__( (a<<16) | b ); }
    static inline CppInt32__ ofInt(int a) { return CppInt32__( a ); }
-   static inline int toInt(CppInt32__ a) { hxCheckOverflow(a); return a.mValue; }
+   static inline int toInt(CppInt32__ a) { __hxcpp_check_overflow(a); return a.mValue; }
    static inline CppInt32__ add(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue + b.mValue  ); }
    static inline CppInt32__ sub(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue - b.mValue  ); }
    static inline CppInt32__ mul(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue * b.mValue  ); }
@@ -41,7 +41,7 @@ public:
    inline int operator/(CppInt32__ b) { return mValue / b.mValue; }
    inline int operator%(CppInt32__ b) { return mValue % b.mValue; }
 
-   SHARED static Dynamic make_dyn();
+   static Dynamic make_dyn();
 
    int mValue;
 };

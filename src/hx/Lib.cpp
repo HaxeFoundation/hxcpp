@@ -35,19 +35,18 @@ typedef std::map<std::wstring,Module> LoadedModule;
 
 static LoadedModule sgLoadedModule;
 
-typedef hxObject * (*prim_0)();
-typedef hxObject * (*prim_1)(hxObject *);
-typedef hxObject * (*prim_2)(hxObject *,hxObject *);
-typedef hxObject * (*prim_3)(hxObject *,hxObject *,hxObject *);
-typedef hxObject * (*prim_4)(hxObject *,hxObject *,hxObject *,hxObject *);
-typedef hxObject * (*prim_5)(hxObject *,hxObject *,hxObject *,hxObject *,hxObject *);
-typedef hxObject * (*prim_mult)(hxObject **inArray,int inArgs);
+typedef hx::Object * (*prim_0)();
+typedef hx::Object * (*prim_1)(hx::Object *);
+typedef hx::Object * (*prim_2)(hx::Object *,hx::Object *);
+typedef hx::Object * (*prim_3)(hx::Object *,hx::Object *,hx::Object *);
+typedef hx::Object * (*prim_4)(hx::Object *,hx::Object *,hx::Object *,hx::Object *);
+typedef hx::Object * (*prim_5)(hx::Object *,hx::Object *,hx::Object *,hx::Object *,hx::Object *);
+typedef hx::Object * (*prim_mult)(hx::Object **inArray,int inArgs);
 
 typedef void *(*FundFunc)(); 
 
-static Dynamic sgInvalidArgCount(STRING(L"Invalid arguement count",23));
 
-class ExternalPrimitive : public hxObject
+class ExternalPrimitive : public hx::Object
 {
 public:
    ExternalPrimitive(void *inProc,int inArgCount,const String &inName) :
@@ -60,71 +59,71 @@ public:
 
    Dynamic __run()
    {
-      if (mArgCount!=0) throw sgInvalidArgCount;
+      if (mArgCount!=0) throw HX_INVALID_ARG_COUNT;
       return ((prim_0)mProc)();
    }
    Dynamic __run(D a)
    {
-      if (mArgCount!=1) throw sgInvalidArgCount;
+      if (mArgCount!=1) throw HX_INVALID_ARG_COUNT;
       return ((prim_1)mProc)(a.GetPtr());
    }
    Dynamic __run(D a,D b)
    {
-      if (mArgCount!=2) throw sgInvalidArgCount;
+      if (mArgCount!=2) throw HX_INVALID_ARG_COUNT;
       return ((prim_2)mProc)(a.GetPtr(),b.GetPtr());
    }
    Dynamic __run(D a,D b,D c)
    {
-      if (mArgCount!=3) throw sgInvalidArgCount;
+      if (mArgCount!=3) throw HX_INVALID_ARG_COUNT;
       return ((prim_3)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d)
    {
-      if (mArgCount!=4) throw sgInvalidArgCount;
+      if (mArgCount!=4) throw HX_INVALID_ARG_COUNT;
       return ((prim_4)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d,D e)
    {
-      if (mArgCount!=5) throw sgInvalidArgCount;
+      if (mArgCount!=5) throw HX_INVALID_ARG_COUNT;
       return ((prim_5)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr(),e.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f)
    {
-		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr() };
+		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr() };
       return ((prim_mult)mProc)(args,6);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g)
    {
-		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
 		                     g.GetPtr() };
       return ((prim_mult)mProc)(args,7);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h)
    {
-		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
 		                     g.GetPtr(), h.GetPtr() };
       return ((prim_mult)mProc)(args,8);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i)
    {
-		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
 		                     g.GetPtr(), h.GetPtr(), i.GetPtr() };
       return ((prim_mult)mProc)(args,9);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j)
    {
-		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
 		                     g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr() };
       return ((prim_mult)mProc)(args,10);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k)
    {
-		hxObject *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
 		                     g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr(), k.GetPtr() };
       return ((prim_mult)mProc)(args,11);
    }
 
-   void __Mark() {  MarkMember(mName); }
+   void __Mark() {  hx::MarkMember(mName); }
 
 
    void        *mProc;
@@ -206,7 +205,7 @@ String FindHaxelib(String inLib)
       String with_commas;
       for(int i=0;i<path.length;i++)
          if (path.getChar(i)=='.')
-            with_commas += STRING(L",",1);
+            with_commas += HX_STRING(L",",1);
          else
             with_commas += path.substr(i,1);
 
@@ -315,9 +314,9 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 	for(int pass=pass0;module==0 && pass<4;pass++)
 	{
-      String modifier = pass < 2 ? STRING(L"-debug",6) : STRING(L"",0);
+      String modifier = pass < 2 ? HX_STRING(L"-debug",6) : HX_STRING(L"",0);
 
-      String dll_ext = inLib + modifier + ( (pass&1) ? STRING(L".ndll",5) : ext );
+      String dll_ext = inLib + modifier + ( (pass&1) ? HX_STRING(L".ndll",5) : ext );
 
 		if (debug)
 			printf(" try %S...\n", dll_ext.__s);
@@ -425,7 +424,3 @@ int __hxcpp_register_prim(wchar_t *inName,void *inProc)
 	return 0;
 }
 
-void hxLibMark()
-{
-	MarkMember(sgInvalidArgCount);
-}

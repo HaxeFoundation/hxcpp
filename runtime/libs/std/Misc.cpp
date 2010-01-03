@@ -1,4 +1,4 @@
-#include <hxCFFI.h>
+#include <hx/CFFI.h>
 
 int __misc_prims() { return 0; }
 
