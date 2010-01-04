@@ -247,6 +247,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 	}
 
    printf("Primitive not found : %S\n", full_name.__s );
+   return null();
 }
 
 
