@@ -529,7 +529,8 @@ class BuildTool
          buildTarget(sub);
 
       var thread_var = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
-      if (thread_var==null) thread_var = neko.Sys.getEnv("NUMBER_OF_PROCESSORS");
+		// Don't do this by default
+      //if (thread_var==null) thread_var = neko.Sys.getEnv("NUMBER_OF_PROCESSORS");
       var threads =  (thread_var==null || Std.parseInt(thread_var)<2) ? 1 :
 			Std.parseInt(thread_var);
 
