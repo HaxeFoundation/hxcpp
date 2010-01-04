@@ -18,14 +18,14 @@ typedef uint64_t __int64;
 namespace hx
 {
 
-typedef std::map<String,Resource> ResourceSet;
+typedef std::map<std::wstring,Resource> ResourceSet;
 static ResourceSet sgResources;
 
 void RegisterResources(Resource *inResources)
 {
    while(inResources->mData)
    {
-      sgResources[inResources->mName] = *inResources;
+      sgResources[inResources->mName.__s] = *inResources;
       inResources++;
    }
 }
@@ -38,13 +38,18 @@ Array<String> __hxcpp_resource_names()
 {
    Array<String> result(0,0);
    for(ResourceSet::iterator i=sgResources.begin(); i!=sgResources.end();++i)
-      result->push( i->first );
+	{
+		int len = i->first.length();
+		wchar_t *copy = hx::NewString(len);
+		memcpy(copy,i->first.c_str(), len*sizeof(wchar_t));
+      result->push( String(copy) );
+	}
    return result;
 }
 
 String __hxcpp_resource_string(String inName)
 {
-   ResourceSet::iterator i=sgResources.find(inName);
+   ResourceSet::iterator i=sgResources.find(inName.__s);
    if (i==sgResources.end())
       return null();
    return String((const char *) i->second.mData, i->second.mDataLength );
@@ -52,7 +57,7 @@ String __hxcpp_resource_string(String inName)
 
 Array<unsigned char> __hxcpp_resource_bytes(String inName)
 {
-   ResourceSet::iterator i=sgResources.find(inName);
+   ResourceSet::iterator i=sgResources.find(inName.__s);
    if (i==sgResources.end())
       return null();
    int len = i->second.mDataLength;
@@ -271,16 +276,13 @@ bool __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2)
 
 
 
-#ifdef HX_INTERNAL_GC
-typedef std::vector<String> FieldToString;
-#else
-typedef Array<String> FieldToString;
-#endif
 
 typedef std::map<std::string,int> StringToField;
 
 // These need to be pointers because of the unknown order of static object construction.
-FieldToString *sgFieldToString=0;
+String *sgFieldToString=0;
+int    sgFieldToStringSize=0;
+int    sgFieldToStringAlloc=0;
 StringToField *sgStringToField=0;
 
 static String sgNullString;
@@ -291,20 +293,17 @@ const String &__hxcpp_field_from_id( int f )
    if (!sgFieldToString)
       return sgNullString;
 
-   return (*sgFieldToString)[f];
+   return sgFieldToString[f];
 }
 
 
 int  __hxcpp_field_to_id( const char *inFieldName )
 {
-   if (!sgFieldToString)
+   if (!sgFieldToStringAlloc)
    {
-      sgFieldToString = new FieldToString;
+		sgFieldToStringAlloc = 100;
+      sgFieldToString = (String *)malloc(sgFieldToStringAlloc * sizeof(String));
 
-      #ifndef HX_INTERNAL_GC
-      __RegisterStatic(sgFieldToString,sizeof(*sgFieldToString));
-      (*sgFieldToString) = Array<String>(0,100);
-      #endif
       sgStringToField = new StringToField;
    }
 
@@ -313,18 +312,25 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    if (i!=sgStringToField->end())
       return i->second;
 
+   int result = sgFieldToStringSize;
+   (*sgStringToField)[f] = result;
+   String str(inFieldName,strlen(inFieldName));
+
+	// Make into "const" string that will not get collected...
    #ifdef HX_INTERNAL_GC
-   int result = sgFieldToString->size();
-   (*sgStringToField)[f] = result;
-   String str(inFieldName,strlen(inFieldName));
-   String cstr((wchar_t *)hx::InternalCreateConstBuffer(str.__s,(str.length+1) * sizeof(wchar_t)), str.length );
-   sgFieldToString->push_back( cstr );
-   #else
-   int result = (*sgFieldToString)->size();
-   (*sgStringToField)[f] = result;
-   String str(inFieldName,strlen(inFieldName));
-   (*sgFieldToString)->push(str);
+   str = String((wchar_t *)hx::InternalCreateConstBuffer(str.__s,(str.length+1) * sizeof(wchar_t)), str.length );
+	#else
+   wchar_t *w = (wchar_t *)malloc((str.length+1) * sizeof(wchar_t));
+	memcpy(w,str.__s,(str.length+1) * sizeof(wchar_t));
+   str = String(w, str.length );
    #endif
+
+	if (sgFieldToStringAlloc<=sgFieldToStringSize+1)
+	{
+		sgFieldToStringAlloc *= 2;
+		sgFieldToString = (String *)realloc(sgFieldToString, sgFieldToStringAlloc*sizeof(String));
+	}
+	sgFieldToString[sgFieldToStringSize++] = str;
    return result;
 }
 
