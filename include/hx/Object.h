@@ -81,6 +81,7 @@ public:
    virtual bool __HasField(const String &inString);
    virtual Dynamic __Field(const String &inString);
    virtual Dynamic __IField(int inFieldID);
+   virtual double __INumField(int inFieldID);
    virtual Dynamic __SetField(const String &inField,const Dynamic &inValue);
    virtual void  __SetThis(Dynamic inThis);
    virtual Dynamic __Run(const Array<Dynamic> &inArgs);
@@ -188,7 +189,6 @@ public:
    bool operator==(const null &inRHS) const { return mPtr==0; }
    bool operator!=(const null &inRHS) const { return mPtr!=0; }
    //explicit operator bool() const { return mPtr!=0; }
-
 
 	// This is defined in the "FieldRef" class...
    inline class hx::FieldRef FieldRef(const String &inString);

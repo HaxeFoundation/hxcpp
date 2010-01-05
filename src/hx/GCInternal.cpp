@@ -1114,15 +1114,6 @@ void PauseForCollect()
 	GetLocalAlloc()->PauseForCollect();
 }
 
-void SetTopOfStack(int *inTop)
-{
-   LocalAllocator *tla = GetLocalAlloc();
-
-   sgInternalEnable = true;
-
-   return tla->SetTopOfStack(inTop);
-
-}
 
 
 void EnterGCFreeZone()
@@ -1164,6 +1155,20 @@ void InitAlloc()
    sMainThreadAlloc =  new LocalAllocator();
 
 }
+
+void SetTopOfStack(int *inTop)
+{
+	if (!sgAllocInit)
+		InitAlloc();
+
+   LocalAllocator *tla = GetLocalAlloc();
+
+   sgInternalEnable = true;
+
+   return tla->SetTopOfStack(inTop);
+
+}
+
 
 void GCPrepareMultiThreaded()
 {

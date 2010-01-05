@@ -586,6 +586,13 @@ hx::Object * val_field(hx::Object * arg1,int arg2) THROWS
 	return arg1->__IField(arg2).GetPtr();
 }
 
+double val_field_numeric(hx::Object * arg1,int arg2) THROWS
+{
+	if (!arg1) throw HX_INVALID_OBJECT;
+	return arg1->__INumField(arg2);
+}
+
+
 	// Abstract types
 vkind alloc_kind()
 {

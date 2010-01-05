@@ -38,6 +38,12 @@ Dynamic Object::__IField(int inFieldID)
    return __Field( __hxcpp_field_from_id(inFieldID) );
 }
 
+double Object::__INumField(int inFieldID)
+{
+	return __IField(inFieldID);
+}
+
+
 int Object::__Compare(const Object *inRHS) const
 {
    return (int)(inRHS-this);

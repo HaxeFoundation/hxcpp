@@ -22,7 +22,6 @@
    hx::ObjectPtr<Class_obj > __GetClass() const { return __mClass; } \
    static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
    Dynamic __Field(const ::String &inString); \
-   Dynamic __IField(int inFieldID); \
    void __GetFields(Array< ::String> &outFields); \
    Dynamic __SetField(const ::String &inString,const Dynamic &inValue); \
    virtual int __GetType() const { return vtClass; }

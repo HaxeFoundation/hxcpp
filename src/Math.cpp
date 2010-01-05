@@ -71,11 +71,6 @@ Dynamic Math_obj::__Field(const String &inString)
    return null();
 }
 
-Dynamic Math_obj::__IField(int inFieldID)
-{
-   return __Field( __hxcpp_field_from_id(inFieldID) );
-}
-
 void Math_obj::__GetFields(Array<String> &outFields) { }
 
 static String sMathFields[] = {

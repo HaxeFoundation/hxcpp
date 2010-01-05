@@ -2,6 +2,7 @@
 #define HX_OPERATORS_H
 
 
+
 template<typename T> bool null::operator == (const hx::ObjectPtr<T> &O) { return !O.mPtr; }
 template<typename T> inline bool null::operator != (const hx::ObjectPtr<T> &O) { return O.mPtr; }
 
@@ -38,6 +39,19 @@ template<typename RHS_>
 
 namespace hx
 {
+
+template<typename T> inline double ToDouble(T inT) { return 0; }
+template<typename T> inline double ToDouble(hx::ObjectPtr<T> inObj)
+{
+	return inObj.mPtr ? inObj.mPtr->__ToDouble() : 0.0;
+}
+template<> inline double ToDouble(String inValue) { return __hxcpp_parse_float(inValue); }
+template<> inline double ToDouble(double inValue) { return inValue; }
+template<> inline double ToDouble(int inValue) { return inValue; }
+template<> inline double ToDouble(bool inValue) { return inValue; }
+template<> inline double ToDouble(null inValue) { return 0; }
+
+
 
 inline int UShr(int inData,int inShift)
 {
