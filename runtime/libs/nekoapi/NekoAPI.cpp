@@ -469,6 +469,16 @@ value  api_val_field(value  arg1,int arg2)
 	return val_field(arg1,arg2);
 }
 
+double  api_val_field_numeric(value  arg1,int arg2)
+{
+	value field = val_field(arg1, arg2);
+	if (val_is_number(field))
+		return val_number(field);
+	if (val_is_bool(field))
+		return val_bool(field);
+	return 0;
+}
+
 // Abstract types
 vkind api_alloc_kind()
 {

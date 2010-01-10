@@ -106,9 +106,12 @@ void Anon_obj::__boot()
 
 
 
-bool __hxcpp_anon_remove(hx::Anon inObj,String inKey)
+bool __hxcpp_anon_remove(Dynamic inObj,String inKey)
 {
-	return inObj->__Remove(inKey);
+	hx::FieldMap *map = inObj->__GetFieldMap();
+	if (map)
+		return map->Erase(inKey);
+	return false;
 }
 
 

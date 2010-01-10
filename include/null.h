@@ -32,8 +32,10 @@ class null
      operator double () const { return 0; }
      operator unsigned char () const { return 0; }
 
-     bool operator == (const null &inRHS) const { return true; }
-     bool operator != (const null &inRHS) const { return false; }
+     bool operator == (null inRHS) const { return true; }
+     bool operator != (null inRHS) const { return false; }
+     bool operator == (null inRHS) { return true; }
+     bool operator != (null inRHS) { return false; }
 
      bool operator == (int inRHS) const { return false; }
      bool operator != (int inRHS) const { return true; }

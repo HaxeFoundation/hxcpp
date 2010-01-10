@@ -61,6 +61,7 @@ typedef bool Bool;
 namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
 namespace cpp { class CppInt32__; }
 namespace hx { class Object; }
+namespace hx { class FieldMap; }
 namespace hx { template<typename O> class ObjectPtr; }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;

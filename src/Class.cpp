@@ -59,6 +59,8 @@ Class Class_obj::GetSuper()
 {
    if (!mSuper)
       return null();
+	if (mSuper==&hx::Object::__SGetClass())
+		return null();
    return *mSuper;
 }
 

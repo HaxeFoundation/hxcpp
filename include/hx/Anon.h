@@ -40,6 +40,8 @@ public:
    bool __HasField(const String &inString);
    Dynamic __SetField(const String &inString,const Dynamic &inValue);
    virtual void __GetFields(Array<String> &outFields);
+	hx::FieldMap *__GetFieldMap() { return mFields; }
+
 
    static void Destroy(hx::Object * inObj);
 
@@ -66,6 +68,6 @@ typedef hx::ObjectPtr<hx::Anon_obj> Anon;
 
 } // end namespace hx
 
-bool __hxcpp_anon_remove(hx::Anon inObj,::String inKey);
+bool __hxcpp_anon_remove(Dynamic inObj,::String inKey);
 
 #endif

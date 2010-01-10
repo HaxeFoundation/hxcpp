@@ -43,6 +43,8 @@ double Object::__INumField(int inFieldID)
 	return __IField(inFieldID);
 }
 
+hx::FieldMap *Object::__GetFieldMap() { return 0; }
+
 
 int Object::__Compare(const Object *inRHS) const
 {

@@ -40,7 +40,9 @@
    static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; }
 
 
-#define HX_DECLARE_IMPLEMENT_DYNAMIC  hx::FieldMap *__mDynamicFields;
+#define HX_DECLARE_IMPLEMENT_DYNAMIC  hx::FieldMap *__mDynamicFields; \
+    hx::FieldMap *__GetFieldMap() { return __mDynamicFields; }
+
 
 #define HX_INIT_IMPLEMENT_DYNAMIC __mDynamicFields = hx::FieldMapCreate();
 
