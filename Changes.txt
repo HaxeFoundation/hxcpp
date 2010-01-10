@@ -1,0 +1,32 @@
+
+2.05.0
+------------------------------------------------------------
+
+* Default to IMMIX based internal garbage collection.
+* Reorginised files - split big ones, and moved common ones out of "runtime".
+* Put internal classes in "hx" namespace, or HX_ prefix for macros.
+* Remove multiple-inheritance, and use delegation instead.
+* Write "Options.txt" from compiler so dependency can be determined.
+* Require -D HXCPP_MULTI_THREADED for multi-threaded classes - to avoid overhead if not required.
+* Build thread code into executable for better control.
+* Fix return values of parseINt/parseFloat.
+* Added comprehensive list of reserved member names.
+* Put if/else statements in blocks.
+* Added assert, NULL, LITTLE_ENDIAN, BIG_ENDIAN as keywords.
+* Added control over how fast-cffi routines are created by requiring cpp.rtti.FastIntergerLookup to be "implemented".
+* Construct anonymous object fields in deterministic (as declared) order.
+* Fix code generation for some complex inline cases.
+* Added cpp.zip.Compress
+* Change "Reflect" class to be more standard
+* Use array of dynamics for StringBuf.
+* Fix setting of attributes in XML nodes.
+
+Build-tool:
+* Allow multiple build threads (via setenv HXCPP_COMNPILE_THREADS N) for faster building on multi-code boxes.
+* Added FileGroup dependencies
+* Added pre-compiled headers (windows only, at the moment since gcc seems buggy)
+
+
+1.0.7
+-----------------
+Changelog starts.
