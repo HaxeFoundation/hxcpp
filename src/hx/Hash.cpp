@@ -68,8 +68,12 @@ struct Marker
 
 void FieldMapMark(FieldMap *inMap)
 {
-	Marker m;
-	inMap->Iterate(m);
+	if (inMap)
+	{
+		hx::MarkAlloc(inMap);
+		Marker m;
+		inMap->Iterate(m);
+	}
 }
 
 

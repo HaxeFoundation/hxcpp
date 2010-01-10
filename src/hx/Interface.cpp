@@ -6,8 +6,7 @@ namespace hx
 void Interface::__Mark()
 {
 	Object *obj = __GetRealObject();
-	if (obj)
-		MarkMember(obj);
+	HX_MARK_OBJECT(obj);
 }
 
 hx::Object *Interface::__ToInterface(const type_info &i)
