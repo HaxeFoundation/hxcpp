@@ -68,6 +68,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-DHX_LINUX"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/linux/" unless="debug"/>
   <objdir value="obj/linux-dbg/" if="debug"/>
@@ -79,6 +80,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-shared"/>
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-W,l--unresolved-symbols=report-all"/>
   <flag value="-debug" if="debug"/>
   <ext value=".dso"/>
@@ -88,6 +90,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
 <linker id="exe" exe="g++" if="linux">
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
   <ext value=""/>
   <outflag value="-o "/>
 </linker>
@@ -177,6 +180,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-O2" unless="debug"/>
   <flag value="-I${HXCPP}/include"/>
   <flag value="-DHX_MACOS"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <objdir value="obj/darwin/" unless="debug"/>
@@ -191,6 +195,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
   <flag value="-framework"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="Cocoa"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-debug" if="debug"/>
@@ -202,6 +207,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-debug" if="debug"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
   <ext value=""/>
   <outflag value="-o "/>
 </linker>
