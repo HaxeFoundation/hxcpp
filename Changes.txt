@@ -1,4 +1,9 @@
 
+2.05.1
+------------------------------------------------------------
+* Updated windows nekoapi.dll binary
+* Added -m32 compile flags to force 32 bit
+
 2.05.0
 ------------------------------------------------------------
 
@@ -22,7 +27,7 @@
 * Fix setting of attributes in XML nodes.
 
 Build-tool:
-* Allow multiple build threads (via setenv HXCPP_COMNPILE_THREADS N) for faster building on multi-code boxes.
+* Allow multiple build threads (via setenv HXCPP_COMPILE_THREADS N) for faster building on multi-code boxes.
 * Added FileGroup dependencies
 * Added pre-compiled headers (windows only, at the moment since gcc seems buggy)
 
