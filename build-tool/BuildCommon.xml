@@ -194,8 +194,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
-  <flag value="-framework"/>
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-debug" if="debug"/>
