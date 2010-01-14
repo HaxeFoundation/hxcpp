@@ -13,6 +13,18 @@ typedef uint64_t __int64;
 #include <time.h>
 #include <limits>
 
+
+namespace hx
+{
+
+Dynamic Throw(Dynamic inDynamic)
+{
+   throw inDynamic;
+   return null();
+}
+
+}
+
 // -------- Resources ---------------------------------------
 
 namespace hx

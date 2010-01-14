@@ -25,11 +25,6 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName);
 
 
 
-namespace hx
-{
-// Throw must return a value ...
-inline Dynamic Throw(Dynamic inError) { throw inError; return Dynamic(); }
-}
 
 // System access
 Array<String>  __get_args();

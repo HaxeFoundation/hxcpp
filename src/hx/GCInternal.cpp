@@ -525,7 +525,13 @@ public:
 
       return result+2;
    }
-   BlockData * GetRecycledBlock()
+   // Making this function "virtual" is actually a (big) performance enhancement!
+   // On the iphone, sjlj (set-jump-long-jump) exceptions are used, which incur a
+   //  performance overhead.  It seems that the overhead in only in routines that call
+   //  malloc/new.  This is not called very often, so the overhead should be minimal.
+   //  However, gcc inlines this function!  requiring every alloc the have sjlj overhead.
+   //  Making it virtual prevents the overhead.
+   virtual BlockData * GetRecycledBlock()
    {
       CheckCollect();
 
@@ -857,7 +863,7 @@ public:
 
    void *Alloc(int inSize,bool inIsObject)
    {
-		#ifndef HXCPP_MULTI_THREADED
+		#ifdef HXCPP_MULTI_THREADED
 		if (gPauseForCollect)
 			PauseForCollect();
 		#endif

@@ -70,6 +70,8 @@ typedef hx::ObjectPtr<Class_obj> Class;
 class Dynamic;
 class String;
 
+// Use an external routine to throw to avoid sjlj overhead on iphone.
+namespace hx { extern Dynamic Throw(Dynamic inDynamic); }
 namespace hx { extern String sNone[]; }
 void __hxcpp_check_overflow(int inVal);
 
