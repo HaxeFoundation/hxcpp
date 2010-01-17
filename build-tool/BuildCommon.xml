@@ -102,6 +102,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-c"/>
   <cflag value="-x"/>
   <cflag value="c"/>
+  <mmflag value="-x"/>
+  <mmflag value="objective-c++"/>
   <cppflag value="-x"/>
   <cppflag value="c++"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
@@ -137,6 +139,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-c"/>
   <cflag value="-x"/>
   <cflag value="c"/>
+  <mmflag value="-x"/>
+  <mmflag value="objective-c++"/>
   <cppflag value="-x"/>
   <cppflag value="c++"/>
   <cppflag value="-fvisibility-inlines-hidden"/>

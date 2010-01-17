@@ -49,6 +49,7 @@ class Compiler
 {
    public var mFlags : Array<String>;
    public var mCFlags : Array<String>;
+   public var mMMFlags : Array<String>;
    public var mCPPFlags : Array<String>;
    public var mOBJCFlags : Array<String>;
    public var mExe:String;
@@ -69,6 +70,7 @@ class Compiler
       mCFlags = [];
       mCPPFlags = [];
       mOBJCFlags = [];
+      mMMFlags = [];
       mObjDir = "obj";
       mOutFlag = "-o";
       mExe = inExe;
@@ -141,6 +143,8 @@ class Compiler
          args = args.concat(mCFlags);
       else if (path.ext.toLowerCase()=="m")
          args = args.concat(mOBJCFlags);
+      else if (path.ext.toLowerCase()=="mm")
+         args = args.concat(mMMFlags);
       else
          args = args.concat(mCPPFlags);
 
@@ -626,6 +630,7 @@ class BuildTool
                 case "cflag" : c.mCFlags.push(substitute(el.att.value));
                 case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
                 case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
+                case "mmflag" : c.mMMFlags.push(substitute(el.att.value));
                 case "objdir" : c.mObjDir = substitute((el.att.value));
                 case "outflag" : c.mOutFlag = substitute((el.att.value));
                 case "exe" : c.mExe = substitute((el.att.name));
