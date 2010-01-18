@@ -109,6 +109,10 @@ DEFFUNC_2(void,kind_share,vkind *,const char *)
 DEFFUNC_1(void *,hx_alloc,int)
 DEFFUNC_2(void, val_gc,value,hxFinalizer)
 DEFFUNC_2(void, val_gc_ptr,void *,hxPtrFinalizer)
+DEFFUNC_0(value *, alloc_root)
+DEFFUNC_1(void, free_root,value *)
+
+// Only available on cpp target...
 DEFFUNC_1(void, val_gc_add_root,value *)
 DEFFUNC_1(void, val_gc_remove_root,value *)
 

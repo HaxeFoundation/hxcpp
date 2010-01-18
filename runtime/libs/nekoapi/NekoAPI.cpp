@@ -537,6 +537,16 @@ void api_val_gc_remove_root(value *inVal)
 	// TODO
 }
 
+value *api_alloc_root()
+{
+   return alloc_root(1);
+}
+
+void api_free_root(value *inVal)
+{
+   return free_root(inVal);
+}
+
 // No need to do anything here...
 void api_gc_enter_blocking() { }
 void api_gc_exit_blocking() { }

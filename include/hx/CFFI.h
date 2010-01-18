@@ -144,6 +144,29 @@ public:
 	bool mLocked;
 };
 
+class AutoGCRoot
+{
+public:
+   static AutoGCRoot *Create(value inValue) { return new AutoGCRoot(inValue); }
+  ~AutoGCRoot()
+   {
+      free_root(mValue);
+   }
+   value get()const { return *mValue; }
+   void set(value inValue) { *mValue = inValue; }
+   
+private:
+   AutoGCRoot(value inValue)
+   {
+      mValue = alloc_root();
+      *mValue = inValue;
+   }
+
+   value *mValue;
+   AutoGCRoot(const AutoGCRoot &);
+   void operator=(const AutoGCRoot &);
+};
+
 #define val_null alloc_null()
 
 #define bfailure(x) val_throw(buffer_to_string(x))
