@@ -152,6 +152,11 @@ extern FUNC_##name name; \
 ret IMPL_##name def_args \
 { \
    name = (FUNC_##name)LoadFunc(#name); \
+   if (!name) \
+   { \
+      fprintf(stderr,"Could find function " #name " \n",__LINE__); \
+      exit(1); \
+   } \
    return name call_args; \
 }\
 FUNC_##name name = IMPL_##name;

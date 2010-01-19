@@ -147,7 +147,12 @@ public:
 class AutoGCRoot
 {
 public:
-   static AutoGCRoot *Create(value inValue) { return new AutoGCRoot(inValue); }
+   AutoGCRoot(value inValue)
+   {
+      mValue = alloc_root();
+      *mValue = inValue;
+   }
+
   ~AutoGCRoot()
    {
       free_root(mValue);
@@ -156,12 +161,6 @@ public:
    void set(value inValue) { *mValue = inValue; }
    
 private:
-   AutoGCRoot(value inValue)
-   {
-      mValue = alloc_root();
-      *mValue = inValue;
-   }
-
    value *mValue;
    AutoGCRoot(const AutoGCRoot &);
    void operator=(const AutoGCRoot &);
