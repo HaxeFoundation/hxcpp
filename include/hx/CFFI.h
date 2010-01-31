@@ -2,6 +2,8 @@
 #define HX_CFFI_H
 
 #include "OS.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef IMPLEMENT_API
 
