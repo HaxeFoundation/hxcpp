@@ -381,6 +381,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <file name = "src/hx/Object.cpp"/>
   <file name = "src/hx/StdLibs.cpp"/>
   <file name = "src/hx/Thread.cpp"/>
+  <file name = "src/hx/RunLibs.cpp" if="static"/>
 
   <file name = "src/Array.cpp"/>
   <file name = "src/Class.cpp"/>

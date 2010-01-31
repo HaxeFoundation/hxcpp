@@ -32,6 +32,7 @@ enum ValueType
    valtFunction = 6,
    valtEnum,
    valtClass,
+   valtRoot = 0xff,
    valtAbstractBase = 0x100,
 };
 
