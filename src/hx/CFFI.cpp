@@ -654,6 +654,66 @@ void  val_gc_remove_root(hx::Object **inRoot)
 	hx::GCRemoveRoot(inRoot);
 }
 
+
+
+class Root_obj *sgRootHead = 0;
+
+class Root_obj : public hx::Object
+{
+public:
+   Root_obj()
+   {
+      mNext = 0;
+      mPrev = 0;
+      mValue = 0;
+   }
+
+   virtual int __GetType() const { return valtRoot; }
+   virtual hx::ObjectPtr<Class_obj> __GetClass() const { return 0; }
+   virtual bool __IsClass(Class inClass ) const { return false; }
+   void __Mark()
+   {
+      HX_MARK_OBJECT(mNext);
+      HX_MARK_OBJECT(mValue);
+   }
+   Root_obj *mNext;
+   Root_obj *mPrev;
+   hx::Object *mValue;
+};
+
+
+
+value *alloc_root()
+{
+   if (!sgRootHead)
+   {
+      val_gc_add_root((hx::Object **)&sgRootHead);
+      sgRootHead = new Root_obj;
+   }
+
+   Root_obj *root = new Root_obj;
+   root->mNext = sgRootHead->mNext;
+   if (root->mNext)
+      root->mNext->mPrev = root;
+
+   sgRootHead->mNext = root;
+   root->mPrev = sgRootHead;
+
+   return (value *)&root->mValue;
+}
+
+void free_root(value *inValue)
+{
+   int diff =(char *)(&sgRootHead->mValue) - (char *)sgRootHead;
+   Root_obj *root = (Root_obj *)( (char *)inValue - diff );
+
+   if (root->mPrev)
+      root->mPrev->mNext = root->mNext;
+   if (root->mNext)
+      root->mNext->mPrev = root->mPrev;
+}
+
+
 // Used for finding functions in static libraries
 int hx_register_prim( wchar_t * arg1, void* arg2)
 {
