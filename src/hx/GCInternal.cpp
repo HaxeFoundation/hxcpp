@@ -798,7 +798,8 @@ public:
    void SetTopOfStack(int *inTop)
    {
       // stop early to allow for ptr[1] ....
-      mTopOfStack = inTop;
+      if (inTop>mTopOfStack)
+         mTopOfStack = inTop;
    }
 
 	void SetBottomOfStack(int *inBottom)
@@ -1262,7 +1263,15 @@ void UnregisterCurrentThread()
 }
 
 
-} // end namespace hc
+} // end namespace hx
 
+extern "C"
+{
+void hxcpp_set_top_of_stack()
+{
+   int i = 0;
+   hx::SetTopOfStack(&i);
+}
+}
 
 #endif // if HX_INTERNAL_GC
