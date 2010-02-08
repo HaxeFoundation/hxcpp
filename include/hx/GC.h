@@ -8,6 +8,7 @@
 void  __hxcpp_reachable(hx::Object *inKeep);
 void  __hxcpp_enable(bool inEnable);
 void  __hxcpp_collect();
+int   __hxcpp_gc_used_bytes();
 
 namespace hx
 {

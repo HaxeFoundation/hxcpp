@@ -1265,6 +1265,11 @@ void UnregisterCurrentThread()
 
 } // end namespace hx
 
+int   __hxcpp_gc_used_bytes()
+{
+	return sGlobalAlloc->MemUsage();
+}
+
 extern "C"
 {
 void hxcpp_set_top_of_stack()
