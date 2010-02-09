@@ -164,10 +164,9 @@ double Dynamic::operator%(const Dynamic &inRHS) const
 }
 
 
-void Dynamic::CheckFPtr()
+void Dynamic::ThrowBadFunctionError()
 {
-	if (!mPtr)
-		throw HX_NULL_FUNCTION_POINTER;
+	throw HX_NULL_FUNCTION_POINTER;
 }
 
 namespace cpp

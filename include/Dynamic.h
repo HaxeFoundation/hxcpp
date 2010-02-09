@@ -117,7 +117,9 @@ public:
    DYNAMIC_ARITH( * )
    DYNAMIC_ARITH( / )
 
-	 void CheckFPtr();
+   void ThrowBadFunctionError();
+   inline void CheckFPtr() { if (!mPtr) ThrowBadFunctionError(); }
+
 
    // Hmm, ugly.
    typedef const Dynamic &D;
