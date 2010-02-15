@@ -464,7 +464,7 @@ public:
       if (ptr)
       {
          mPtr = dynamic_cast<OBJ_ *>(ptr);
-         if (!mPtr) throw HX_INVALID_CAST;
+         if (!mPtr) hx::Throw(HX_INVALID_CAST);
       }
       else
          mPtr = 0;
