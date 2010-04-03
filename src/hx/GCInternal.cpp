@@ -26,7 +26,7 @@ static void *sgObject_root = 0;
 
 static int sgTimeToNextTableUpdate = 0;
 
-int gPauseForCollect = 0;
+
 MyMutex  *gThreadStateChangeLock=0;
 
 class LocalAllocator;
@@ -38,7 +38,11 @@ TLSData<LocalAllocator> tlsLocalAlloc;
 static void MarkLocalAlloc(LocalAllocator *inAlloc);
 static void WaitForSafe(LocalAllocator *inAlloc);
 static void ReleaseFromSafe(LocalAllocator *inAlloc);
-static void ExitGCFreeZoneLocked();
+
+namespace hx {
+int gPauseForCollect = 0;
+void ExitGCFreeZoneLocked();
+}
 
 //#define DEBUG_ALLOC_PTR ((char *)0xb68354)
 
@@ -64,15 +68,15 @@ struct QuickVec
       --mSize;
       mPtr[inPos] = mPtr[mSize];
    }
-	inline void qerase_val(T inVal)
+   inline void qerase_val(T inVal)
    {
-		for(int i=0;i<mSize;i++)
-			if (mPtr[i]==inVal)
-			{
+      for(int i=0;i<mSize;i++)
+         if (mPtr[i]==inVal)
+         {
             --mSize;
             mPtr[i] = mPtr[mSize];
-				return;
-			}
+            return;
+         }
    }
 
    inline bool empty() const { return !mSize; }
@@ -450,14 +454,14 @@ namespace hx
 
 void MarkAlloc(void *inPtr)
 {
-	MARK_ROWS
+   MARK_ROWS
 }
 
 void MarkObjectAlloc(hx::Object *inPtr)
 {
-	MARK_ROWS
+   MARK_ROWS
 
-	inPtr->__Mark();
+   inPtr->__Mark();
 }
 
 }
@@ -484,22 +488,22 @@ public:
       // Start at 1 Meg...
       mTotalAfterLastCollect = 1<<20;
    }
-	void AddLocal(LocalAllocator *inAlloc)
-	{
-	   if (!gThreadStateChangeLock)
-		   gThreadStateChangeLock = new MyMutex();
-		// Until we add ourselves, the colled will not wait
-		//  on us - ie, we are assumed ot be in a GC free zone.
-		AutoLock lock(*gThreadStateChangeLock);
-		mLocalAllocs.push(inAlloc);
-	}
+   void AddLocal(LocalAllocator *inAlloc)
+   {
+      if (!gThreadStateChangeLock)
+         gThreadStateChangeLock = new MyMutex();
+      // Until we add ourselves, the colled will not wait
+      //  on us - ie, we are assumed ot be in a GC free zone.
+      AutoLock lock(*gThreadStateChangeLock);
+      mLocalAllocs.push(inAlloc);
+   }
 
-	void RemoveLocal(LocalAllocator *inAlloc)
-	{
-		// You should be in the GC zone before you call this...
-		AutoLock lock(*gThreadStateChangeLock);
-		mLocalAllocs.qerase_val(inAlloc);
-	}
+   void RemoveLocal(LocalAllocator *inAlloc)
+   {
+      // You should be in the GC zone before you call this...
+      AutoLock lock(*gThreadStateChangeLock);
+      mLocalAllocs.qerase_val(inAlloc);
+   }
 
    void *AllocLarge(int inSize)
    {
@@ -508,20 +512,20 @@ public:
       result[0] = inSize;
       result[1] = gMarkID;
 
-		#ifdef HXCPP_MULTI_THREADED
-		bool do_lock = sMultiThreadMode;
-		if (do_lock)
-			mLargeListLock.Lock();
-		#endif
+      #ifdef HXCPP_MULTI_THREADED
+      bool do_lock = sMultiThreadMode;
+      if (do_lock)
+         mLargeListLock.Lock();
+      #endif
 
       mLargeList.push(result);
       mLargeAllocated += inSize;
       mDistributedSinceLastCollect += inSize;
 
-		#ifdef HXCPP_MULTI_THREADED
-		if (do_lock)
-			mLargeListLock.Unlock();
-		#endif
+      #ifdef HXCPP_MULTI_THREADED
+      if (do_lock)
+         mLargeListLock.Unlock();
+      #endif
 
       return result+2;
    }
@@ -535,33 +539,33 @@ public:
    {
       CheckCollect();
 
-		#ifdef HXCPP_MULTI_THREADED
-		if (sMultiThreadMode)
-		{
-			hxEnterGCFreeZone();
-			gThreadStateChangeLock->Lock();
-			ExitGCFreeZoneLocked();
-		}
-		#endif
+      #ifdef HXCPP_MULTI_THREADED
+      if (sMultiThreadMode)
+      {
+         hx::EnterGCFreeZone();
+         gThreadStateChangeLock->Lock();
+         hx::ExitGCFreeZoneLocked();
+      }
+      #endif
 
-		BlockData *result;
+      BlockData *result;
       if (mNextRecycled < mRecycledBlock.size())
       {
          result = mRecycledBlock[mNextRecycled++];
          mDistributedSinceLastCollect +=  result->GetFreeData();
          result->ClearRecycled();
       }
-		else
-		{
+      else
+      {
          result = GetEmptyBlock();
-		}
+      }
 
-		#ifdef HXCPP_MULTI_THREADED
-		if (sMultiThreadMode)
-			gThreadStateChangeLock->Unlock();
-		#endif
+      #ifdef HXCPP_MULTI_THREADED
+      if (sMultiThreadMode)
+         gThreadStateChangeLock->Unlock();
+      #endif
 
-		return result;
+      return result;
    }
 
    BlockData *GetEmptyBlock()
@@ -601,30 +605,30 @@ public:
 
    void Collect()
    {
-		LocalAllocator *this_local = 0;
-		#ifdef HXCPP_MULTI_THREADED
-		if (sMultiThreadMode)
-		{
-			hxEnterGCFreeZone();
-		   gThreadStateChangeLock->Lock();
-			hxEnterGCFreeZone();
-		   // Someone else beat us to it ...
-		   if (gPauseForCollect)
-		   {
-			   gThreadStateChangeLock->Unlock();
-			   return;
-		   }
+      LocalAllocator *this_local = 0;
+      #ifdef HXCPP_MULTI_THREADED
+      if (sMultiThreadMode)
+      {
+         hx::EnterGCFreeZone();
+         gThreadStateChangeLock->Lock();
+         hx::EnterGCFreeZone();
+         // Someone else beat us to it ...
+         if (hx::gPauseForCollect)
+         {
+            gThreadStateChangeLock->Unlock();
+            return;
+         }
 
-		   gPauseForCollect = true;
+         hx::gPauseForCollect = true;
 
-		   this_local = tlsLocalAlloc;
-		   for(int i=0;i<mLocalAllocs.size();i++)
-			   if (mLocalAllocs[i]!=this_local)
-			      WaitForSafe(mLocalAllocs[i]);
-		}
-		#endif
+         this_local = tlsLocalAlloc;
+         for(int i=0;i<mLocalAllocs.size();i++)
+            if (mLocalAllocs[i]!=this_local)
+               WaitForSafe(mLocalAllocs[i]);
+      }
+      #endif
 
-		// Now all threads have mTopOfStack & mBottomOfStack set.
+      // Now all threads have mTopOfStack & mBottomOfStack set.
 
       static int collect = 0;
       //printf("Collect %d\n",collect++);
@@ -633,12 +637,12 @@ public:
 
       ClearRowMarks();
 
-		hx::GCMarkNow();
+      hx::GCMarkNow();
 
-		for(int i=0;i<mLocalAllocs.size();i++)
+      for(int i=0;i<mLocalAllocs.size();i++)
          MarkLocalAlloc(mLocalAllocs[i]);
 
-		hx::RunFinalizers();
+      hx::RunFinalizers();
 
       // Reclaim ...
 
@@ -690,17 +694,17 @@ public:
       mTotalAfterLastCollect = MemUsage();
       mDistributedSinceLastCollect = 0;
 
-		#ifdef HXCPP_MULTI_THREADED
-		if (sMultiThreadMode)
-		{
-			for(int i=0;i<mLocalAllocs.size();i++)
-			if (mLocalAllocs[i]!=this_local)
-			   ReleaseFromSafe(mLocalAllocs[i]);
+      #ifdef HXCPP_MULTI_THREADED
+      if (sMultiThreadMode)
+      {
+         for(int i=0;i<mLocalAllocs.size();i++)
+         if (mLocalAllocs[i]!=this_local)
+            ReleaseFromSafe(mLocalAllocs[i]);
 
-			gPauseForCollect = false;
-		   gThreadStateChangeLock->Unlock();
-		}
-		#endif
+         hx::gPauseForCollect = false;
+         gThreadStateChangeLock->Unlock();
+      }
+      #endif
    }
 
    void CheckCollect()
@@ -752,8 +756,8 @@ public:
    BlockList mRecycledBlock;
    LargeList mLargeList;
    PointerSet mActiveBlocks;
-	MyMutex    mLargeListLock;
-	QuickVec<LocalAllocator *> mLocalAllocs;
+   MyMutex    mLargeListLock;
+   QuickVec<LocalAllocator *> mLocalAllocs;
 };
 
 GlobalAllocator *sGlobalAlloc = 0;
@@ -769,22 +773,22 @@ public:
    LocalAllocator(int *inTopOfStack=0)
    {
       mTopOfStack = inTopOfStack;
-		mGCFreeZone = false;
+      mGCFreeZone = false;
       Reset();
-		mState = lasNew;
-		sGlobalAlloc->AddLocal(this);
-		mState = lasRunning;
-		#ifdef _MSC_VER
-		mID = GetCurrentThreadId();
-		#endif
+      mState = lasNew;
+      sGlobalAlloc->AddLocal(this);
+      mState = lasRunning;
+      #ifdef _MSC_VER
+      mID = GetCurrentThreadId();
+      #endif
    }
 
-	~LocalAllocator()
-	{
-		mState = lasTerminal;
-		EnterGCFreeZone();
-		sGlobalAlloc->RemoveLocal(this);
-	}
+   ~LocalAllocator()
+   {
+      mState = lasTerminal;
+      EnterGCFreeZone();
+      sGlobalAlloc->RemoveLocal(this);
+   }
 
    void Reset()
    {
@@ -802,159 +806,159 @@ public:
          mTopOfStack = inTop;
    }
 
-	void SetBottomOfStack(int *inBottom)
+   void SetBottomOfStack(int *inBottom)
    {
       mBottomOfStack = inBottom;
    }
 
 
-	void PauseForCollect()
-	{
-		int dummy = 1;
-		mBottomOfStack = &dummy;
-		mReadyForCollect.Set();
-		mCollectDone.Wait();
-	}
+   void PauseForCollect()
+   {
+      int dummy = 1;
+      mBottomOfStack = &dummy;
+      mReadyForCollect.Set();
+      mCollectDone.Wait();
+   }
 
-	void EnterGCFreeZone()
-	{
-		int dummy = 1;
-		mBottomOfStack = &dummy;
-		mGCFreeZone = true;
-		mReadyForCollect.Set();
-	}
+   void EnterGCFreeZone()
+   {
+      int dummy = 1;
+      mBottomOfStack = &dummy;
+      mGCFreeZone = true;
+      mReadyForCollect.Set();
+   }
 
-	void ExitGCFreeZone()
-	{
-		if (sMultiThreadMode)
-		{
-		   AutoLock lock(*gThreadStateChangeLock);
-		   mReadyForCollect.Reset();
-		   mGCFreeZone = false;
-		}
-	}
+   void ExitGCFreeZone()
+   {
+      if (sMultiThreadMode)
+      {
+         AutoLock lock(*gThreadStateChangeLock);
+         mReadyForCollect.Reset();
+         mGCFreeZone = false;
+      }
+   }
         // For when we already hold the lock
-	void ExitGCFreeZoneLocked()
-	{
-		if (sMultiThreadMode)
-		{
-		   mReadyForCollect.Reset();
-		   mGCFreeZone = false;
-		}
-	}
+   void ExitGCFreeZoneLocked()
+   {
+      if (sMultiThreadMode)
+      {
+         mReadyForCollect.Reset();
+         mGCFreeZone = false;
+      }
+   }
 
 
 
-	// Called by the collecting thread to make sure this allocator is paused.
-	// The collecting thread has the lock, and will not be releasing it until
-	//  it has finished the collect.
-	void WaitForSafe()
-	{
-		if (!mGCFreeZone)
-		   mReadyForCollect.Wait();
-	}
+   // Called by the collecting thread to make sure this allocator is paused.
+   // The collecting thread has the lock, and will not be releasing it until
+   //  it has finished the collect.
+   void WaitForSafe()
+   {
+      if (!mGCFreeZone)
+         mReadyForCollect.Wait();
+   }
 
-	void ReleaseFromSafe()
-	{
-		if (!mGCFreeZone)
-		   mCollectDone.Set();
-	}
+   void ReleaseFromSafe()
+   {
+      if (!mGCFreeZone)
+         mCollectDone.Set();
+   }
 
 
 
    void *Alloc(int inSize,bool inIsObject)
    {
-		#ifdef HXCPP_MULTI_THREADED
-		if (gPauseForCollect)
-			PauseForCollect();
-		#endif
+      #ifdef HXCPP_MULTI_THREADED
+      if (hx::gPauseForCollect)
+         PauseForCollect();
+      #endif
 
-		inSize = (inSize + 3 ) & ~3;
+      inSize = (inSize + 3 ) & ~3;
 
       int s = inSize +sizeof(int);
-		// Try to squeeze it on this line ...
-		if (mCurrentPos > 0)
-		{
-			int skip = 1;
-			int extra_lines = (s + mCurrentPos-1) >> IMMIX_LINE_BITS;
+      // Try to squeeze it on this line ...
+      if (mCurrentPos > 0)
+      {
+         int skip = 1;
+         int extra_lines = (s + mCurrentPos-1) >> IMMIX_LINE_BITS;
 
-			#if 0
-			// Optimise for fitting on same line...
-			if (!extra_lines)
-			{
-				unsigned char *row = mCurrent->mRow[mCurrentLine];
-				unsigned char &row_flag = mCurrent->mRowFlags[mCurrentLine];
+         #if 0
+         // Optimise for fitting on same line...
+         if (!extra_lines)
+         {
+            unsigned char *row = mCurrent->mRow[mCurrentLine];
+            unsigned char &row_flag = mCurrent->mRowFlags[mCurrentLine];
 
-				int *result = (int *)(row + mCurrentPos);
-				if (inIsObject)
-				   *result = inSize | gMarkID | (row_flag<<16) |
-					   (IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_IS_OBJECT); 
-				else
-				   *result = inSize | gMarkID | (row_flag<<16) | IMMIX_ALLOC_SMALL_OBJ; 
+            int *result = (int *)(row + mCurrentPos);
+            if (inIsObject)
+               *result = inSize | gMarkID | (row_flag<<16) |
+                  (IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_IS_OBJECT); 
+            else
+               *result = inSize | gMarkID | (row_flag<<16) | IMMIX_ALLOC_SMALL_OBJ; 
 
-				row_flag =  mCurrentPos | IMMIX_ROW_HAS_OBJ_LINK;
+            row_flag =  mCurrentPos | IMMIX_ROW_HAS_OBJ_LINK;
 
-				mCurrentLine += extra_lines;
-				mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
-				if (mCurrentPos==0)
-					mCurrentLine++;
+            mCurrentLine += extra_lines;
+            mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
+            if (mCurrentPos==0)
+               mCurrentLine++;
 
-				//printf("Alloced %d - %d/%d now\n", s, mCurrentPos, mCurrentLine);
-				return result + 1;
-			}
-			#endif
+            //printf("Alloced %d - %d/%d now\n", s, mCurrentPos, mCurrentLine);
+            return result + 1;
+         }
+         #endif
 
 
-			//printf("check for %d extra lines ...\n", extra_lines);
-			if (mCurrentLine + extra_lines < IMMIX_LINES)
-			{
-				int test = 0;
-				if (extra_lines)
-				{
-					const unsigned char *used = mCurrent->mRowFlags + mCurrentLine+test+1;
-					for(test=0;test<extra_lines;test++)
-						if ( used[test] & IMMIX_ROW_MARKED)
-							break;
-				}
-				//printf(" found %d extra lines\n", test);
-				if (test==extra_lines)
-				{
-					// Ok, fits on the line! - setup object table
-					unsigned char *row = mCurrent->mRow[mCurrentLine];
-					unsigned char &row_flag = mCurrent->mRowFlags[mCurrentLine];
+         //printf("check for %d extra lines ...\n", extra_lines);
+         if (mCurrentLine + extra_lines < IMMIX_LINES)
+         {
+            int test = 0;
+            if (extra_lines)
+            {
+               const unsigned char *used = mCurrent->mRowFlags + mCurrentLine+test+1;
+               for(test=0;test<extra_lines;test++)
+                  if ( used[test] & IMMIX_ROW_MARKED)
+                     break;
+            }
+            //printf(" found %d extra lines\n", test);
+            if (test==extra_lines)
+            {
+               // Ok, fits on the line! - setup object table
+               unsigned char *row = mCurrent->mRow[mCurrentLine];
+               unsigned char &row_flag = mCurrent->mRowFlags[mCurrentLine];
 
-					int *result = (int *)(row + mCurrentPos);
-					*result = inSize | gMarkID |
-						(row_flag<<16) |
-						(extra_lines==0 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
+               int *result = (int *)(row + mCurrentPos);
+               *result = inSize | gMarkID |
+                  (row_flag<<16) |
+                  (extra_lines==0 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
 
-					if (inIsObject)
-						*result |= IMMIX_ALLOC_IS_OBJECT;
+               if (inIsObject)
+                  *result |= IMMIX_ALLOC_IS_OBJECT;
 
-					row_flag =  mCurrentPos | IMMIX_ROW_HAS_OBJ_LINK;
+               row_flag =  mCurrentPos | IMMIX_ROW_HAS_OBJ_LINK;
 
-					mCurrentLine += extra_lines;
-					mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
-					if (mCurrentPos==0)
-						mCurrentLine++;
+               mCurrentLine += extra_lines;
+               mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
+               if (mCurrentPos==0)
+                  mCurrentLine++;
 
-					//printf("Alloced %d - %d/%d now\n", s, mCurrentPos, mCurrentLine);
+               //printf("Alloced %d - %d/%d now\n", s, mCurrentPos, mCurrentLine);
 
-					return result + 1;
-				}
-				//printf("not enought extra lines - skip %d\n",skip);
-				skip = test + 1;
-			}
-			else
-				skip = extra_lines;
+               return result + 1;
+            }
+            //printf("not enought extra lines - skip %d\n",skip);
+            skip = test + 1;
+         }
+         else
+            skip = extra_lines;
 
-			// Does not fit on this line - we may also know how many to skip, so
-			//  jump down those lines...
-			mCurrentPos = 0;
-			mCurrentLine += skip;
-		}
+         // Does not fit on this line - we may also know how many to skip, so
+         //  jump down those lines...
+         mCurrentPos = 0;
+         mCurrentLine += skip;
+      }
 
-		int required_rows = (s + IMMIX_LINE_LEN-1) >> IMMIX_LINE_BITS;
+      int required_rows = (s + IMMIX_LINE_LEN-1) >> IMMIX_LINE_BITS;
       int last_start = IMMIX_LINES - required_rows;
 
       while(1)
@@ -962,8 +966,8 @@ public:
          // Alloc new block, if required ...
          if (!mCurrent || mCurrentLine>last_start)
          {
-		      int dummy = 1;
-		      mBottomOfStack = &dummy;
+            int dummy = 1;
+            mBottomOfStack = &dummy;
             mCurrent = sGlobalAlloc->GetRecycledBlock();
             //mCurrent->Verify();
             // Start on line 2 (there are 256 line-markers at the beginning)
@@ -974,9 +978,9 @@ public:
          while(mCurrentLine <= last_start)
          {
             int test = 0;
-				const unsigned char *used = mCurrent->mRowFlags + mCurrentLine+test;
+            const unsigned char *used = mCurrent->mRowFlags + mCurrentLine+test;
             for(;test<required_rows;test++)
-					if ( used[test] & IMMIX_ROW_MARKED)
+               if ( used[test] & IMMIX_ROW_MARKED)
                   break;
 
             // Not enough room...
@@ -1066,11 +1070,11 @@ public:
    int *mTopOfStack;
    int *mBottomOfStack;
 
-	bool            mGCFreeZone;
-	int             mID;
-	LocalAllocState mState;
-	MySemaphore     mReadyForCollect;
-	MySemaphore     mCollectDone;
+   bool            mGCFreeZone;
+   int             mID;
+   LocalAllocState mState;
+   MySemaphore     mReadyForCollect;
+   MySemaphore     mCollectDone;
 };
 
 LocalAllocator *sMainThreadAlloc = 0;
@@ -1079,32 +1083,32 @@ LocalAllocator *sMainThreadAlloc = 0;
 LocalAllocator *GetLocalAllocMT()
 {
    LocalAllocator *result =  tlsLocalAlloc.Get();
-	if (!result)
-	{
-		result = new LocalAllocator();
+   if (!result)
+   {
+      result = new LocalAllocator();
       tlsLocalAlloc.Set(result);
-	}
-	return result;
+   }
+   return result;
 }
 
 
 inline LocalAllocator *GetLocalAlloc()
 {
-	#ifdef HXCPP_MULTI_THREADED
+   #ifdef HXCPP_MULTI_THREADED
    if (sMultiThreadMode)
-		return GetLocalAllocMT();
-	#endif
+      return GetLocalAllocMT();
+   #endif
    return sMainThreadAlloc;
 }
 
 void WaitForSafe(LocalAllocator *inAlloc)
 {
-	inAlloc->WaitForSafe();
+   inAlloc->WaitForSafe();
 }
 
 void ReleaseFromSafe(LocalAllocator *inAlloc)
 {
-	inAlloc->ReleaseFromSafe();
+   inAlloc->ReleaseFromSafe();
 }
 
 void MarkLocalAlloc(LocalAllocator *inAlloc)
@@ -1118,36 +1122,36 @@ namespace hx
 
 void PauseForCollect()
 {
-	GetLocalAlloc()->PauseForCollect();
+   GetLocalAlloc()->PauseForCollect();
 }
 
 
 
 void EnterGCFreeZone()
 {
-	if (sMultiThreadMode)
-	{
+   if (sMultiThreadMode)
+   {
       LocalAllocator *tla = GetLocalAlloc();
-	   tla->EnterGCFreeZone();
-	}
+      tla->EnterGCFreeZone();
+   }
 }
 
 void ExitGCFreeZone()
 {
-	if (sMultiThreadMode)
-	{
+   if (sMultiThreadMode)
+   {
       LocalAllocator *tla = GetLocalAlloc();
-	   tla->ExitGCFreeZone();
-	}
+      tla->ExitGCFreeZone();
+   }
 }
 
 void ExitGCFreeZoneLocked()
 {
-	if (sMultiThreadMode)
-	{
+   if (sMultiThreadMode)
+   {
       LocalAllocator *tla = GetLocalAlloc();
-	   tla->ExitGCFreeZoneLocked();
-	}
+      tla->ExitGCFreeZoneLocked();
+   }
 }
 
 void InitAlloc()
@@ -1155,7 +1159,7 @@ void InitAlloc()
    sgAllocInit = true;
    sGlobalAlloc = new GlobalAllocator();
    sgFinalizers = new FinalizerList();
-	hx::Object tmp;
+   hx::Object tmp;
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
    //printf("__root pointer %p\n", sgObject_root);
@@ -1165,8 +1169,8 @@ void InitAlloc()
 
 void SetTopOfStack(int *inTop)
 {
-	if (!sgAllocInit)
-		InitAlloc();
+   if (!sgAllocInit)
+      InitAlloc();
 
    LocalAllocator *tla = GetLocalAlloc();
 
@@ -1179,11 +1183,11 @@ void SetTopOfStack(int *inTop)
 
 void GCPrepareMultiThreaded()
 {
-	if (!sMultiThreadMode)
-	{
-		sMultiThreadMode = true;
-	   tlsLocalAlloc = sMainThreadAlloc;
-	}
+   if (!sMultiThreadMode)
+   {
+      sMultiThreadMode = true;
+      tlsLocalAlloc = sMainThreadAlloc;
+   }
 }
 
 
@@ -1191,7 +1195,7 @@ void GCPrepareMultiThreaded()
 void *InternalNew(int inSize,bool inIsObject)
 {
    if (!sgAllocInit)
-		InitAlloc();
+      InitAlloc();
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
       return sGlobalAlloc->AllocLarge(inSize);
@@ -1208,8 +1212,8 @@ void InternalCollect()
    if (!sgAllocInit || !sgInternalEnable)
       return;
 
-	int dummy;
-	GetLocalAlloc()->SetTopOfStack(&dummy);
+   int dummy;
+   GetLocalAlloc()->SetTopOfStack(&dummy);
    sGlobalAlloc->Collect();
 }
 
@@ -1250,16 +1254,16 @@ void *InternalRealloc(void *inData,int inSize)
 
 void RegisterCurrentThread(void *inTopOfStack)
 {
-	// Create a local-alloc
-	LocalAllocator *local = new LocalAllocator((int *)inTopOfStack);
-	tlsLocalAlloc = local;
+   // Create a local-alloc
+   LocalAllocator *local = new LocalAllocator((int *)inTopOfStack);
+   tlsLocalAlloc = local;
 }
 
 void UnregisterCurrentThread()
 {
-	LocalAllocator *local = tlsLocalAlloc;
-	delete local;
-	tlsLocalAlloc = 0;
+   LocalAllocator *local = tlsLocalAlloc;
+   delete local;
+   tlsLocalAlloc = 0;
 }
 
 
@@ -1267,7 +1271,7 @@ void UnregisterCurrentThread()
 
 int   __hxcpp_gc_used_bytes()
 {
-	return sGlobalAlloc->MemUsage();
+   return sGlobalAlloc->MemUsage();
 }
 
 extern "C"
