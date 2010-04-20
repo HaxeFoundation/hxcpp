@@ -68,7 +68,14 @@ struct QuickVec
       --mSize;
       mPtr[inPos] = mPtr[mSize];
    }
-   inline void qerase_val(T inVal)
+   inline void erase(int inPos)
+   {
+      --mSize;
+      if (mSize>inPos)
+         memmove(mPtr+inPos, mPtr+inPos+1, (mSize-inPos)*sizeof(T));
+   }
+
+	inline void qerase_val(T inVal)
    {
       for(int i=0;i<mSize;i++)
          if (mPtr[i]==inVal)
@@ -309,6 +316,8 @@ union BlockData
    void Reclaim()
    {
       int free = 0;
+      int max_free_in_a_row = 0;
+      int free_in_a_row = 0;
       bool update_table = sgTimeToNextTableUpdate==0;
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
@@ -339,15 +348,20 @@ union BlockData
                   row_flag |= IMMIX_ROW_MARKED;
                }
             }
+            free_in_a_row = 0;
          }
          else
          {
             row_flag = 0;
+            free_in_a_row++;
+            if (free_in_a_row>max_free_in_a_row)
+               max_free_in_a_row = free_in_a_row;
             free++;
          }
       }
 
       mUsedRows = IMMIX_USEFUL_LINES - free;
+      mFreeInARow = max_free_in_a_row;
 
       //Verify();
    }
@@ -417,7 +431,11 @@ union BlockData
 
 
    // First 2 bytes are not needed for row markers (first 2 rows are for flags)
-   unsigned short mUsedRows;
+   struct
+   {
+      unsigned char mUsedRows;
+      unsigned char mFreeInARow;
+   };
    // First 2 rows contain a byte-flag-per-row 
    unsigned char  mRowFlags[IMMIX_LINES];
    // Row data as union - don't use first 2 rows
@@ -535,7 +553,7 @@ public:
    //  malloc/new.  This is not called very often, so the overhead should be minimal.
    //  However, gcc inlines this function!  requiring every alloc the have sjlj overhead.
    //  Making it virtual prevents the overhead.
-   virtual BlockData * GetRecycledBlock()
+   virtual BlockData * GetRecycledBlock(int inRequiredRows)
    {
       CheckCollect();
 
@@ -548,17 +566,34 @@ public:
       }
       #endif
 
-      BlockData *result;
+		BlockData *result = 0;
       if (mNextRecycled < mRecycledBlock.size())
       {
-         result = mRecycledBlock[mNextRecycled++];
-         mDistributedSinceLastCollect +=  result->GetFreeData();
-         result->ClearRecycled();
+         if (mRecycledBlock[mNextRecycled]->mFreeInARow>=inRequiredRows)
+         {
+            result = mRecycledBlock[mNextRecycled++];
+         }
+         else
+         {
+            for(int block = mNextRecycled+1; block<mRecycledBlock.size(); block++)
+            {
+               if (mRecycledBlock[block]->mFreeInARow>=inRequiredRows)
+               {
+                  result = mRecycledBlock[block];
+                  mRecycledBlock.erase(block);
+               }
+            }
+         }
+
+         if (result)
+         {
+            mDistributedSinceLastCollect +=  result->GetFreeData();
+            result->ClearRecycled();
+         }
       }
-      else
-      {
+
+		if (!result)
          result = GetEmptyBlock();
-      }
 
       #ifdef HXCPP_MULTI_THREADED
       if (sMultiThreadMode)
@@ -588,6 +623,7 @@ public:
             mAllBlocks.push(block);
             mEmptyBlocks.push(block);
          }
+         // printf("Blocks %d\n", mAllBlocks.size());
       }
 
       BlockData *block = mEmptyBlocks[mNextEmpty++];
@@ -968,7 +1004,7 @@ public:
          {
             int dummy = 1;
             mBottomOfStack = &dummy;
-            mCurrent = sGlobalAlloc->GetRecycledBlock();
+            mCurrent = sGlobalAlloc->GetRecycledBlock(required_rows);
             //mCurrent->Verify();
             // Start on line 2 (there are 256 line-markers at the beginning)
             mCurrentLine = IMMIX_HEADER_LINES;
