@@ -182,8 +182,20 @@ public:
 	}
 
    inline OBJ_ *GetPtr() const { return mPtr; }
-   inline OBJ_ *operator->() { return mPtr; }
-   inline const OBJ_ *operator->() const { return mPtr; }
+   inline OBJ_ *operator->()
+   {
+      #ifdef HXCPP_DEBUG
+      if (!mPtr) CriticalError(L"Null Object Reference");
+      #endif
+      return mPtr;
+   }
+   inline const OBJ_ *operator->() const
+   {
+      #ifdef HXCPP_DEBUG
+      if (!mPtr) CriticalError(L"Null Object Reference");
+      #endif
+      return mPtr;
+   }
 
    bool operator==(const ObjectPtr &inRHS) const { return mPtr==inRHS.mPtr; }
    bool operator!=(const ObjectPtr &inRHS) const { return mPtr!=inRHS.mPtr; }

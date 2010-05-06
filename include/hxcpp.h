@@ -17,6 +17,7 @@ using std::type_info;
 #ifdef HX_LINUX
 #include <unistd.h>
 #include <stdint.h>
+#include <cstdio>
 #endif
 
 
@@ -33,10 +34,34 @@ using std::type_info;
 
 #ifdef BIG_ENDIAN
 #undef BIG_ENDIAN
+
+  #ifndef HX_LITTLE_ENDIAN
+  #define HX_LITTLE_ENDIAN 0
+  #endif
+#endif
+
+#ifdef __BIG_ENDIAN__
+  #ifndef HX_LITTLE_ENDIAN
+  #define HX_LITTLE_ENDIAN 0
+  #endif
 #endif
 
 #ifdef LITTLE_ENDIAN
 #undef LITTLE_ENDIAN
+
+  #ifndef HX_LITTLE_ENDIAN
+  #define HX_LITTLE_ENDIAN 1
+  #endif
+#endif
+
+#ifdef __LITTLE_ENDIAN__
+  #ifndef HX_LITTLE_ENDIAN
+  #define HX_LITTLE_ENDIAN 1
+  #endif
+#endif
+
+#ifndef HX_LITTLE_ENDIAN
+#define HX_LITTLE_ENDIAN 1
 #endif
 
 
@@ -44,7 +69,7 @@ using std::type_info;
 #pragma warning(disable:4800)
 
 #if defined(_MSC_VER) && _MSC_VER < 1201
-#error MSVC 7.1 does not support template specialization and is not sopported by HXCPP
+#error MSVC 7.1 does not support template specialization and is not supported by HXCPP
 #endif
 
 
@@ -72,6 +97,7 @@ class String;
 
 // Use an external routine to throw to avoid sjlj overhead on iphone.
 namespace hx { extern Dynamic Throw(Dynamic inDynamic); }
+namespace hx { extern void CriticalError(const wchar_t *inError); }
 namespace hx { extern String sNone[]; }
 void __hxcpp_check_overflow(int inVal);
 

@@ -208,7 +208,13 @@ void *InternalCreateConstBuffer(const void *inData,int inSize)
 
 */
 
-#define ENDIAN_OBJ_NEXT_BYTE        2
+#if HX_LITTLE_ENDIAN
+#define ENDIAN_MARK_ID_BYTE        -1
+#define ENDIAN_OBJ_NEXT_BYTE       2
+#else
+#define ENDIAN_MARK_ID_BYTE        -4
+#define ENDIAN_OBJ_NEXT_BYTE       1
+#endif
 
 #define IMMIX_ALLOC_MARK_ID     0xff000000
 #define IMMIX_ALLOC_OBJ_NEXT    0x00ff0000
@@ -444,7 +450,7 @@ union BlockData
 
 
 #define MARK_ROWS \
-   unsigned char &mark = ((unsigned char *)inPtr)[-1]; \
+   unsigned char &mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE]; \
    if ( mark==gByteMarkID  ) \
       return; \
    mark = gByteMarkID; \

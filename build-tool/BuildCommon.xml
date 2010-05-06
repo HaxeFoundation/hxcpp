@@ -68,6 +68,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-DHX_LINUX"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_DEBUG" if="debug"/>
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/linux/" unless="debug"/>
@@ -126,6 +128,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-DIPHONEOS"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_DEBUG" if="debug"/>
   <flag value="-DSTATIC_LINK"/>
   <flag value="-I${HXCPP}/include"/>
   <cppflag value="-frtti"/>
@@ -163,6 +167,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-DIPHONESIM"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_DEBUG" if="debug"/>
   <flag value="-DSTATIC_LINK"/>
   <flag value="-I${HXCPP}/include"/>
   <cppflag value="-frtti"/>
@@ -187,6 +193,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_DEBUG" if="debug"/>
   <objdir value="obj/darwin/" unless="debug"/>
   <objdir value="obj/darwin-dbg/" if="debug"/>
   <pch value="gcc"/>
@@ -224,15 +232,19 @@ and setting it to 1 can help with debug if there is a problem compiling.
 
 <!-- WINDOWS TOOLS -------------------------------------->
 
+<set name="ABI" value="-MT" unless="ABI"/>
+
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
   <flag value="-Od" if="debug"/>
   <flag value="-O2" unless="debug"/>
-  <flag value="-MTd" if="debug"/>
-  <flag value="-MT" unless="debug"/>
+  <flag value="${ABI}d" if="debug"/>
+  <flag value="${ABI}" unless="debug"/>
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_DEBUG" if="debug"/>
   <flag value="-GR"/>
   <flag value="-Zi"/>
   <flag value="-c"/>
@@ -356,8 +368,6 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <compilerflag value="-DBUILDING_HXCPP_DLL"/>
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
-  <compilerflag value="-DHXCPP_DEBUG" if="debug"/>
-
   <compilerflag value="-DWIN32_THREADS" if="windows"/>
   <compilerflag value="-DNO_THREAD_REDIRECT" if="macos"/>
   <compilerflag value="-DGC_THREADS" if="macos"/>
@@ -380,6 +390,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <file name = "src/hx/Lib.cpp"/>
   <file name = "src/hx/Object.cpp"/>
   <file name = "src/hx/StdLibs.cpp"/>
+  <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static"/>
 

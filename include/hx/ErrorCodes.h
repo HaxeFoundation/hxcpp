@@ -8,6 +8,5 @@
 #define HX_INVALID_OBJECT        Dynamic(HX_STR(L"Invalid object"))
 #define HX_INVALID_ARG_COUNT     Dynamic(HX_STR(L"Invalid Arg Count"))
 #define HX_NULL_FUNCTION_POINTER Dynamic(HX_STR(L"Null Function Pointer"))
-#define HX_LOGIC_ERROR           Dynamic(HX_STR(L"Logic Error"))
 
 #endif
