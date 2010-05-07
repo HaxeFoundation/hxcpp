@@ -408,6 +408,15 @@ public:
    Array(const null &inNull) : super(0) { }
    Array(Ptr inPtr) : super(inPtr) { }
 
+   #ifdef HXCPP_DEBUG
+   inline OBJ_ *CheckGetPtr() const
+   {
+      if (!mPtr) hx::CriticalError(L"Null Array Reference");
+      return mPtr;
+   }
+   #else
+   inline OBJ_ *CheckGetPtr() const { return mPtr; }
+   #endif
 
    // Construct from our type ...
    Array ( const hx::ObjectPtr< OBJ_  > &inArray )
@@ -479,12 +488,12 @@ public:
 
 
 
-   inline ELEM_ &operator[](int inIdx) { return GetPtr()->Item(inIdx); }
-   inline ELEM_ operator[](int inIdx) const { return GetPtr()->__get(inIdx); }
-   //inline ELEM_ __get(int inIdx) const { return GetPtr()->__get(inIdx); }
-   inline int __length() const { return GetPtr()->__length(); }
-   inline Array<ELEM_> &Add(const ELEM_ &inElem) { GetPtr()->Add(inElem); return *this; }
-   inline Array<ELEM_> & operator<<(const ELEM_ &inElem) { GetPtr()->Add(inElem); return *this; }
+   inline ELEM_ &operator[](int inIdx) { return CheckGetPtr()->Item(inIdx); }
+   inline ELEM_ operator[](int inIdx) const { return CheckGetPtr()->__get(inIdx); }
+   //inline ELEM_ __get(int inIdx) const { return CheckGetPtr()->__get(inIdx); }
+   inline int __length() const { return CheckGetPtr()->__length(); }
+   inline Array<ELEM_> &Add(const ELEM_ &inElem) { CheckGetPtr()->Add(inElem); return *this; }
+   inline Array<ELEM_> & operator<<(const ELEM_ &inElem) { CheckGetPtr()->Add(inElem); return *this; }
 };
 
 
