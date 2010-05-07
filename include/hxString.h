@@ -39,7 +39,12 @@ public:
    template<typename T>
    inline String(const hx::ObjectPtr<T> &inRHS)
    {
-      if (inRHS.mPtr) { String s = const_cast<hx::ObjectPtr<T> & >(inRHS)->toString(); __s = s.__s; length = s.length; }
+      if (inRHS.mPtr)
+      {
+         String s = static_cast<hx::Object *>(inRHS.mPtr)->toString();
+         __s = s.__s;
+         length = s.length;
+      }
       else { __s = 0; length = 0; }
    }
     String(const Dynamic &inRHS);
