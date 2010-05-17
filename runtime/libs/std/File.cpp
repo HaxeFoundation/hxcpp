@@ -16,6 +16,7 @@
 /* ************************************************************************ */
 #include <hx/CFFI.h>
 #include <stdio.h>
+#include <string>
 #ifdef NEKO_WINDOWS
 #	include <windows.h>
 #endif
@@ -31,20 +32,38 @@
 
 int __file_prims() { return 0; }
 
-typedef struct {
-	value name;
-	FILE *io;
-} fio;
+struct fio
+{
+   fio(const wchar_t *inName, FILE *inFile=0) : io(inFile), name(inName) { }
+   ~fio()
+   {
+      // todo : close - but not stdlib etc.
+   }
 
-#define val_file(o)	((fio*)val_data(o))
+ 
+   std::wstring name;
+   FILE         *io;
+};
+
+#define val_file(o)	((fio *)val_data(o))
+
+static void free_file( value v )
+{
+	fio *file =  val_file(v);
+	delete file;
+	val_gc(v,NULL);
+}
+
 
 DEFINE_KIND(k_file);
 
-static void file_error( const char *msg, fio *f ) {
+static void file_error( const char *msg, fio *f, bool delete_f = false ) {
 	gc_exit_blocking();
 	value a = alloc_array(2);
 	val_array_set_i(a,0,alloc_string(msg));
-	val_array_set_i(a,1,alloc_string(val_string(f->name)));
+	val_array_set_i(a,1,alloc_wstring(f->name.c_str()));
+	if (delete_f)
+		delete f;
 	val_throw(a);
 }
 
@@ -56,17 +75,21 @@ static void file_error( const char *msg, fio *f ) {
 	</doc>
 **/
 static value file_open( value name, value r ) {
-	fio *f;
 	val_check(name,string);
 	val_check(r,string);
-	f = (fio*)hx_alloc(sizeof(fio));
-	f->name = alloc_string(val_string(name));
+	fio *f = new fio(val_wstring(name));
+        const char *fname = val_string(name);
+        const char *mode = val_string(r);
 	gc_enter_blocking();
-	f->io = fopen(val_string(name),val_string(r));
+	f->io = fopen(fname,mode);
 	if( f->io == NULL )
-		file_error("file_open",f);
+        {
+		file_error("file_open",f,true);
+        }
 	gc_exit_blocking();
-	return alloc_abstract(k_file,f);
+	value result =  alloc_abstract(k_file,f);
+        val_gc(result,free_file);
+	return result;
 }
 
 /**
@@ -78,6 +101,7 @@ static value file_close( value o ) {
 	val_check_kind(o,k_file);
 	f = val_file(o);
 	fclose(f->io);
+        f->io = 0;
 	return alloc_bool(true);
 }
 
@@ -87,7 +111,7 @@ static value file_close( value o ) {
 **/
 static value file_name( value o ) {
 	val_check_kind(o,k_file);
-	return alloc_string(val_string(val_file(o)->name));
+	return alloc_wstring(val_file(o)->name.c_str());
 }
 
 /**
@@ -144,7 +168,7 @@ static value file_read( value o, value s, value pp, value n ) {
 	val_check_kind(o,k_file);
 	val_check(s,buffer);
 	buffer buf = val_to_buffer(s);
-   buf_len = buffer_size(buf);
+	buf_len = buffer_size(buf);
 	val_check(pp,int);
 	val_check(n,int);
 	f = val_file(o);
@@ -277,13 +301,13 @@ static value file_flush( value o ) {
 **/
 static value file_contents( value name ) {
 	buffer s;
-	fio f;
 	int len;
 	int p;
 	val_check(name,string);
-	f.name = name;
+	fio f(val_wstring(name));
+        const char *fname = val_string(name);
 	gc_enter_blocking();
-	f.io = fopen(val_string(name),"rb");
+	f.io = fopen(fname,"rb");
 	if( f.io == NULL )
 		file_error("file_contents",&f);
 	fseek(f.io,0,SEEK_END);
@@ -313,10 +337,10 @@ static value file_contents( value name ) {
 #define MAKE_STDIO(k) \
 	static value file_##k() { \
 		fio *f; \
-		f = (fio*)hx_alloc(sizeof(fio)); \
-		f->name = alloc_string(#k); \
-		f->io = k; \
-		return alloc_abstract(k_file,f); \
+		f = new fio(L###k,k); \
+		value result = alloc_abstract(k_file,f); \
+		val_gc(result,free_file); \
+		return result; \
 	} \
 	DEFINE_PRIM(file_##k,0);
 
