@@ -110,5 +110,7 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block);
 Dynamic __hxcpp_tls_get(int inID);
 void    __hxcpp_tls_set(int inID,Dynamic inVal);
 
+static inline int __hxcpp_obj_id(Dynamic inObj) { return inObj.GetPtr() ? (int)inObj->__GetRealObject() : 0; }
+
 
 #endif
