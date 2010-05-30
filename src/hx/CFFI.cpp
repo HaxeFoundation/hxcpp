@@ -736,6 +736,9 @@ void gc_safe_point()
 	__SAFE_POINT;
 }
 
+gcroot create_root(value) { return 0; }
+value query_root(gcroot) { return 0; }
+void destroy_root(gcroot) { }
 
 
 

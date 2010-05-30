@@ -115,6 +115,10 @@ DEFFUNC_1(void, free_root,value *)
 // Only available on cpp target...
 DEFFUNC_1(void, val_gc_add_root,value *)
 DEFFUNC_1(void, val_gc_remove_root,value *)
+// Only available on js target - use AutoGCRoot to assist
+DEFFUNC_1(gcroot, create_root,value)
+DEFFUNC_1(value, query_root,gcroot)
+DEFFUNC_1(void, destroy_root,gcroot)
 
 DEFFUNC_0(void, gc_enter_blocking)
 DEFFUNC_0(void, gc_exit_blocking)

@@ -552,3 +552,9 @@ void api_gc_enter_blocking() { }
 void api_gc_exit_blocking() { }
 void api_gc_safe_point() { }
 
+// For v8 target
+gcroot api_create_root(value) { return 0; }
+value api_query_root(gcroot) { return 0; }
+void api_destroy_root(gcroot) { }
+
+

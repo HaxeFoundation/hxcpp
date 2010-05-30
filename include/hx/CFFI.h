@@ -47,6 +47,8 @@ typedef struct _vkind  *vkind;
 typedef struct _buffer  *buffer;
 #endif
 
+typedef struct _gcroot  *gcroot;
+
 typedef void (*hxFinalizer)(value v);
 typedef void (*hxPtrFinalizer)(void *v);
 
@@ -152,19 +154,36 @@ class AutoGCRoot
 public:
    AutoGCRoot(value inValue)
    {
-      mValue = alloc_root();
-      *mValue = inValue;
+		mRoot = 0;
+		mPtr = alloc_root();
+		if (mPtr)
+			*mPtr = inValue;
+		else
+			mRoot = create_root(inValue);
    }
 
   ~AutoGCRoot()
    {
-      free_root(mValue);
+		if (mPtr)
+			free_root(mPtr);
+		else if (mRoot)
+         destroy_root(mRoot);
    }
-   value get()const { return *mValue; }
-   void set(value inValue) { *mValue = inValue; }
+   value get()const { return mPtr ? *mPtr : query_root(mRoot); }
+   void set(value inValue)
+	{ 
+		if (mPtr)
+			*mPtr = inValue;
+		else
+		{
+			if (mRoot) destroy_root(mRoot);
+			mRoot = create_root(inValue);
+		}
+	}
    
 private:
-   value *mValue;
+   value *mPtr;
+   gcroot mRoot;
    AutoGCRoot(const AutoGCRoot &);
    void operator=(const AutoGCRoot &);
 };
