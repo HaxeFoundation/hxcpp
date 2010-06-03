@@ -27,7 +27,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
 
 
 <set name="DBG" value="-debug" if="debug"/>
-<set name="IPHONE_VER" value="2.2.1"/>
+<set name="IPHONE_VER" value="3.2"/>
 <set name="STD_MODULE_LINK" value="dll"/>
 <set name="STD_MODULE_LINK" value="static" if="iphoneos"/>
 <set name="STD_MODULE_LINK" value="static" if="iphonesim"/>
@@ -100,7 +100,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
 
 <!-- IPHONE TOOLS -------------------------------------------------->
 
-<compiler id="iPhoneOS" exe="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc-4.0" if="iphoneos">
+<compiler id="iPhoneOS" exe="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc" if="iphoneos">
   <flag value="-c"/>
   <cflag value="-x"/>
   <cflag value="c"/>
@@ -113,17 +113,9 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>
   <flag value="armv6"/>
-  <flag value="-fmessage-length=0"/>
-  <flag value="-pipe"/>
-  <flag value="-Wno-trigraphs"/>
-  <flag value="-fpascal-strings"/>
-  <flag value="-fasm-blocks"/>
-  <flag value="-Wreturn-type"/>
   <flag value="-isysroot"/>
   <flag value="/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
   <flag value="-fvisibility=hidden"/>
-  <flag value="-gdwarf-2"/>
-  <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
   <flag value="-DIPHONEOS"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
@@ -139,7 +131,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <objdir value="obj/iphoneos-dbg/" if="debug"/>
 </compiler>
 
-<compiler id="iPhoneSim" exe="/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/gcc-4.0" if="iphonesim">
+<compiler id="iPhoneSim" exe="/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/gcc" if="iphonesim">
   <flag value="-c"/>
   <cflag value="-x"/>
   <cflag value="c"/>
