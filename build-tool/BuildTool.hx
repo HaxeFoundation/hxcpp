@@ -184,6 +184,7 @@ class Linker
    public var mLibDir:String;
    public var mRanLib:String;
    public var mFromFile:String;
+   public var mLibs:Array<String>;
 
    public function new(inExe:String)
    {
@@ -194,6 +195,7 @@ class Linker
       mLibDir = "";
       mRanLib = "";
       mFromFile = "";
+      mLibs = [];
    }
    public function link(inTarget:Target,inObjs:Array<String>)
    {
@@ -234,6 +236,7 @@ class Linker
          else
             args = args.concat(inObjs);
 
+         args = args.concat(mLibs);
          args = args.concat(inTarget.mLibs);
 
          neko.Lib.println( mExe + " " + args.join(" ") );
@@ -654,6 +657,8 @@ class BuildTool
                 case "ext" : l.mExt = (substitute(el.att.value));
                 case "outflag" : l.mOutFlag = (substitute(el.att.value));
                 case "libdir" : l.mLibDir = (substitute(el.att.name));
+                case "lib" : l.mLibs.push( substitute(el.att.name) );
+                case "prefix" : l.mNamePrefix = substitute(el.att.value);
                 case "ranlib" : l.mRanLib = (substitute(el.att.name));
                 case "fromfile" : l.mFromFile = (substitute(el.att.value));
                 case "exe" : l.mExe = (substitute(el.att.name));
@@ -814,6 +819,15 @@ class BuildTool
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
       }
+      else if (defines.exists("android"))
+      {
+         defines.set("android","android");
+         defines.set("BINDIR","Android");
+         if ( (new EReg("mac","i")).match(os) )
+            defines.set("ANDROID_HOST","darwin-x86");
+         else
+            throw "Unknown android host:" + os;
+      }
       else if ( (new EReg("window","i")).match(os) )
       {
          defines.set("windows","windows");
@@ -842,6 +856,10 @@ class BuildTool
       {
          for(env in neko.Sys.environment().keys())
             defines.set(env, neko.Sys.getEnv(env) );
+
+	 if (defines.exists("android") && !defines.exists("ANDROID_NDK"))
+            throw("Please define ANDROID_NDK");
+
          new BuildTool(makefile,defines,targets);
       }
    }
