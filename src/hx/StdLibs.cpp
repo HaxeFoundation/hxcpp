@@ -7,6 +7,10 @@
 typedef uint64_t __int64;
 #endif
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 #include <string>
 #include <vector>
 #include <map>
@@ -85,13 +89,19 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 // --- System ---------------------------------------------------------------------
 
 
-
 void __trace(Dynamic inObj, Dynamic inData)
 {
+#ifdef ANDROID
+   __android_log_print(ANDROID_LOG_INFO, "trace", "%s:%d: %s",
+               inData->__Field(L"fileName")->toString().__CStr(),
+               inData->__Field(L"lineNumber")->__ToInt(),
+               inObj.GetPtr() ? inObj->toString().__CStr() : "null" );
+#else
    printf( "%S:%d: %S\n",
                inData->__Field(L"fileName")->__ToString().__s,
                inData->__Field(L"lineNumber")->__ToInt(),
                inObj.GetPtr() ? inObj->toString().__s : L"null" );
+#endif
 }
 
 static double t0 = 0;
@@ -173,6 +183,9 @@ Array<String> __get_args()
       result->push( String(argv[i],strlen(argv[i])) );
 
 
+   #else
+   #ifdef ANDROID
+   // TODO: Get from java
    #else // linux
 
    char buf[80];
@@ -199,6 +212,7 @@ Array<String> __get_args()
    }
    #endif
 
+   #endif
    #endif
    return result;
 }

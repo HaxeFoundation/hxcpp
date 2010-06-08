@@ -5,28 +5,27 @@
 #include <map>
 #include <vector>
 
+
+
 #ifdef _WIN32
 
 #include <windows.h>
 typedef HMODULE Module;
-Module hxLoadLibrary(const wchar_t *inLib) { return LoadLibraryW(inLib); }
+Module hxLoadLibrary(String inLib) { return LoadLibraryW(inLib.__s); }
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return GetProcAddress(inModule,inSymbol); }
 #elif defined (IPHONE)
 
 typedef void *Module;
-Module hxLoadLibrary(const wchar_t *inLib) { return 0; }
+Module hxLoadLibrary(const String &) { return 0; }
 #else
 
 typedef void *Module;
 
 #include <dlfcn.h>
 typedef void *Module;
-Module hxLoadLibrary(const wchar_t *inLib)
+Module hxLoadLibrary(String inLib)
 {
-   char utf8_str[2048];
-   wcstombs(utf8_str,inLib,2048);
-   utf8_str[2047]='\0';
-   return dlopen(utf8_str,RTLD_NOW);
+   return dlopen(inLib.__CStr(),RTLD_NOW);
 }
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return dlsym(inModule,inSymbol); }
 #endif
@@ -138,10 +137,7 @@ typedef void (*NekoEntryFunc)();
 String GetFileContents(String inFile)
 {
 #ifndef _WIN32
-   char utf8_str[2048];
-   wcstombs(utf8_str,inFile.__s,2048);
-   utf8_str[2047]='\0';
-   FILE *file = fopen(utf8_str,"rb");
+   FILE *file = fopen(inFile.__CStr(),"rb");
 #else
    FILE *file = _wfopen(inFile.__s,L"rb");
 #endif
@@ -265,7 +261,11 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #ifdef __APPLE__
     String(L".dylib",6);
 #else
+#ifdef ANDROID
+    String(L".so",3);
+#else
     String(L".dso",4);
+#endif
 #endif
 
 
@@ -279,7 +279,11 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #ifdef __APPLE__
     String(L"Mac",3);
 #else
+#ifdef ANDROID
+    String(L"Android",7);
+#else
     String(L"Linux",5);
+#endif
 #endif
 #endif
 
@@ -321,7 +325,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 		if (debug)
 			printf(" try %S...\n", dll_ext.__s);
-		module = hxLoadLibrary(dll_ext.__s);
+		module = hxLoadLibrary(dll_ext);
 
 		if (!module)
 		{
@@ -331,7 +335,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 				 String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
 				 if (debug)
 					 printf(" try %S...\n", name.__s);
-				 module = hxLoadLibrary(name.__s);
+				 module = hxLoadLibrary(name);
 			}
 		}
 	
@@ -343,7 +347,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 				 String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
 				 if (debug)
 					 printf(" try %S...\n", name.__s);
-				 module = hxLoadLibrary(name.__s);
+				 module = hxLoadLibrary(name);
 			}
 		}
 
@@ -355,7 +359,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 				String full_path  = path + L"/ndll/" + bin + L"/" + dll_ext;
 				if (debug)
 					printf(" try %S...\n", full_path.__s);
-				module = hxLoadLibrary(full_path.__s);
+				module = hxLoadLibrary(full_path);
 			}
 		}
 	}

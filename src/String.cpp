@@ -396,7 +396,9 @@ char * String::__CStr() const
 	bytes.Add(0);
    char *result =  bytes->GetBase();
    if (result)
-      return result;
+   {
+      return  (char *)NewGCPrivate(result,bytes->length);
+   }
    return (char *)"";
 }
 

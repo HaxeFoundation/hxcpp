@@ -402,6 +402,30 @@ extern void SetTopOfStack(int *inTopOfStack);
 	#define HX_TOP_OF_STACK
 #endif
 
+#ifdef ANDROID
+// Java Main....
+#include <jni.h>
+#include <android/log.h>
+
+#ifdef __GNUC__
+ #define GCC_EXTRA __attribute__ ((visibility("default")))
+#else
+ #define GCC_EXTRA
+#endif
+
+#define HX_BEGIN_MAIN \
+extern "C" GCC_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * env) { \
+	HX_TOP_OF_STACK \
+	hx::Boot(); \
+	__boot_all();
+
+
+
+#define HX_END_MAIN \
+}
+
+#else
+// Console Main ...
 
 #define HX_BEGIN_MAIN \
 \
@@ -419,7 +443,10 @@ int main(int argc,char **argv){ \
 	return 0; \
 }
 
+#endif
 
+
+// Run as library
 #define HX_BEGIN_LIB_MAIN \
 extern "C" {\
 \
