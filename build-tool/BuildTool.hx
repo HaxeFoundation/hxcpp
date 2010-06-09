@@ -1,7 +1,9 @@
 
 class DirManager
 {
+   public static var sIsCygwin = false;
    static var mMade = new Hash<Bool>();
+
    static public function make(inDir:String)
    {
       var parts = inDir.split("/");
@@ -43,6 +45,14 @@ class DirManager
          neko.FileSystem.deleteDirectory(inDir);
       }
    }
+
+   static public function DosToCygwin(path:String)
+	{
+		if (sIsCygwin && path.substr(1,1)==":")
+			return "/cygdrive/" + path.substr(0,1) + path.substr(2);
+		return path;
+	}
+
 }
 
 class Compiler
@@ -152,7 +162,8 @@ class Compiler
          if (inFile.mGroup.mPrecompiledHeader!="")
             args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
 
-      args.push( (new neko.io.Path(inFile.mDir + inFile.mName)).toString() );
+      
+      args.push( (new neko.io.Path( DirManager.DosToCygwin(inFile.mDir) + inFile.mName)).toString() );
 
       var out = mOutFlag;
       if (out.substr(-1)==" ")
@@ -825,7 +836,9 @@ class BuildTool
          defines.set("BINDIR","Android");
          if ( (new EReg("mac","i")).match(os) )
             defines.set("ANDROID_HOST","darwin-x86");
-         else
+         else if ( (new EReg("window","i")).match(os) )
+            defines.set("ANDROID_HOST","windows");
+			else
             throw "Unknown android host:" + os;
       }
       else if ( (new EReg("window","i")).match(os) )
@@ -857,8 +870,16 @@ class BuildTool
          for(env in neko.Sys.environment().keys())
             defines.set(env, neko.Sys.getEnv(env) );
 
-	 if (defines.exists("android") && !defines.exists("ANDROID_NDK"))
-            throw("Please define ANDROID_NDK");
+	      if (defines.exists("android") )
+			{
+			   if (!defines.exists("ANDROID_NDK"))
+               throw("Please define ANDROID_NDK");
+				DirManager.sIsCygwin = true;
+				defines.set("ANDROID_NDK_CYG", DirManager.DosToCygwin(defines.get("ANDROID_NDK") ) );
+				defines.set( "HXCPP_CYG", DirManager.DosToCygwin(defines.get("HXCPP") ) );
+			}
+
+
 
          new BuildTool(makefile,defines,targets);
       }

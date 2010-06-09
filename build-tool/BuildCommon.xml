@@ -279,8 +279,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
 <compiler id="android-gcc" exe="arm-eabi-g++" if="android">
   <exe name="${ANDROID_NDK}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/bin/arm-eabi-g++"/>
 
- <flag value="-I${ANDROID_NDK}/build/platforms/android-5/arch-arm/usr/include"/>
- <flag value="-I${HXCPP}/include"/>
+ <flag value="-I${ANDROID_NDK_CYG}/build/platforms/android-5/arch-arm/usr/include"/>
+ <flag value="-I${HXCPP_CYG}/include"/>
  <flag value="-Iinclude"/>
  <flag value="-fpic"/>
  <flag value="-fvisibility=hidden"/>
@@ -330,23 +330,23 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-Wl,-shared,-Bsymbolic"/>
   <flag value="-Wl,--whole-archive"/>
   <flag value="-Wl,--no-whole-archive"/>
-  <flag value="${ANDROID_NDK}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libstdc++.a"/>
-  <flag value="${ANDROID_NDK}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libsupc++.a"/>
-  <flag value="${ANDROID_NDK}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/lib/gcc/arm-eabi/4.4.0/libgcc.a"/>
-  <flag value="${ANDROID_NDK}/build/platforms/android-5/arch-arm/usr/lib/libc.so"/>
-  <flag value="${ANDROID_NDK}/build/platforms/android-5/arch-arm/usr/lib/libm.so"/>
+  <flag value="${ANDROID_NDK_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libstdc++.a"/>
+  <flag value="${ANDROID_NDK_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libsupc++.a"/>
+  <flag value="${ANDROID_NDK_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/lib/gcc/arm-eabi/4.4.0/libgcc.a"/>
+  <flag value="${ANDROID_NDK_CYG}/build/platforms/android-5/arch-arm/usr/lib/libc.so"/>
+  <flag value="${ANDROID_NDK_CYG}/build/platforms/android-5/arch-arm/usr/lib/libm.so"/>
   <flag value="-Wl,--no-undefined"/>
   <flag value="-Wl,-z,noexecstack"/>
-  <flag value="-L${ANDROID_NDK}/build/platforms/android-5/arch-arm/usr/lib"/>
+  <flag value="-L${ANDROID_NDK_CYG}/build/platforms/android-5/arch-arm/usr/lib"/>
   <flag value="-llog"/>
   <flag value="-ldl"/>
   <!-- <flag value="-lGLESv2"/> -->
-  <flag value="-Wl,-rpath-link=${ANDROID_NDK}/build/platforms/android-5/arch-arm/usr/lib"/>
+  <flag value="-Wl,-rpath-link=${ANDROID_NDK_CYG}/build/platforms/android-5/arch-arm/usr/lib"/>
 
-  <lib name="${ANDROID_NDK}/build/platforms/android-5/arch-arm/usr/lib/libc.so"/>
-  <lib name="${ANDROID_NDK}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/lib/gcc/arm-eabi/4.4.0/libgcc.a"/>
-  <lib name="${ANDROID_NDK}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libsupc++.a"/>
-  <lib name="${ANDROID_NDK}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libstdc++.a"/>
+  <lib name="${ANDROID_NDK_CYG}/build/platforms/android-5/arch-arm/usr/lib/libc.so"/>
+  <lib name="${ANDROID_NDK_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/lib/gcc/arm-eabi/4.4.0/libgcc.a"/>
+  <lib name="${ANDROID_NDK_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libsupc++.a"/>
+  <lib name="${ANDROID_NDK_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libstdc++.a"/>
 </linker>
 
 <!-- Library files & targets -------------------------------------->
@@ -442,9 +442,9 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <compilerflag value="-DNO_THREAD_REDIRECT" if="linux"/>
   <compilerflag value="-DGC_THREADS" if="linux"/>
 
-  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
-  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
-  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
+  <compilerflag value="-I${HXCPP_CYG}/runtime/${GC_DIR}/include"/>
+  <compilerflag value="-I${HXCPP_CYG}/runtime/${GC_DIR}/include/private"/>
+  <compilerflag value="-I${HXCPP_CYG}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 
