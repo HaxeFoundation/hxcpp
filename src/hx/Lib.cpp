@@ -5,6 +5,9 @@
 #include <map>
 #include <vector>
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 
 #ifdef _WIN32
@@ -252,6 +255,11 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
+#ifdef ANDROID
+   __android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s",
+               inLib.__CStr(), inPrim.__CStr() );
+#endif
+
    bool debug = getenv("HXCPP_LOAD_DEBUG");
    String ext =
 #ifdef _WIN32
