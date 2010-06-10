@@ -47,11 +47,11 @@ class DirManager
    }
 
    static public function DosToCygwin(path:String)
-	{
-		if (sIsCygwin && path.substr(1,1)==":")
-			return "/cygdrive/" + path.substr(0,1) + path.substr(2);
-		return path;
-	}
+   {
+      if (sIsCygwin && path.substr(1,1)==":")
+         return "/cygdrive/" + path.substr(0,1) + path.substr(2);
+      return path;
+   }
 
 }
 
@@ -338,26 +338,26 @@ class FileGroup
       mFiles = [];
       mCompilerFlags = [];
       mPrecompiledHeader = "";
-		mMissingDepends = [];
+      mMissingDepends = [];
       mDir = inDir;
    }
 
    public function addDepend(inFile:String)
    {
       if (!neko.FileSystem.exists(inFile))
-		{
-			mMissingDepends.push(inFile);
-			return;
-		}
+      {
+         mMissingDepends.push(inFile);
+         return;
+      }
       var stamp =  neko.FileSystem.stat(inFile).mtime.getTime();
       if (stamp>mNewest)
          mNewest = stamp;
    }
-	public function checkDependsExist()
-	{
-		if (mMissingDepends.length>0)
+   public function checkDependsExist()
+   {
+      if (mMissingDepends.length>0)
          throw "Could not find dependencies: " + mMissingDepends.join(",");
-	}
+   }
 
    public function addCompilerFlag(inFlag:String)
    {
@@ -533,7 +533,7 @@ class BuildTool
 
    public function buildTarget(inTarget:String)
    {
-		// neko.Lib.println("Build : " + inTarget );
+      // neko.Lib.println("Build : " + inTarget );
       if (!mTargets.exists(inTarget))
          throw "Could not find target '" + inTarget + "' to build.";
       if (mCompiler==null)
@@ -547,17 +547,17 @@ class BuildTool
          buildTarget(sub);
 
       var thread_var = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
-		// Don't do this by default
+      // Don't do this by default
       //if (thread_var==null) thread_var = neko.Sys.getEnv("NUMBER_OF_PROCESSORS");
       var threads =  (thread_var==null || Std.parseInt(thread_var)<2) ? 1 :
-			Std.parseInt(thread_var);
+         Std.parseInt(thread_var);
 
 
       var objs = new Array<String>();
 
       for(group in target.mFileGroups)
-		{
-			group.checkDependsExist();
+      {
+         group.checkDependsExist();
          var to_be_compiled = new Array<File>();
 
          for(file in group.mFiles)
@@ -573,52 +573,52 @@ class BuildTool
          if (to_be_compiled.length>0 && group.mPrecompiledHeader!="")
             mCompiler.precompile(group.mPrecompiledHeader, group.mPrecompiledHeaderDir,group);
 
-			if (threads<2)
-			{
-				for(file in to_be_compiled)
-					mCompiler.compile(file);
-			}
-			else
-			{
-				var mutex = new neko.vm.Mutex();
-				var main_thread = neko.vm.Thread.current();
-				var compiler = mCompiler;
-				for(t in 0...threads)
-				{
-					neko.vm.Thread.create(function()
-					{
-						try
-						{
-						while(true)
-						{
-							mutex.acquire();
-							if (to_be_compiled.length==0)
-							{
-								mutex.release();
-								break;
-							}
-							var file = to_be_compiled.shift();
-							mutex.release();
+         if (threads<2)
+         {
+            for(file in to_be_compiled)
+               mCompiler.compile(file);
+         }
+         else
+         {
+            var mutex = new neko.vm.Mutex();
+            var main_thread = neko.vm.Thread.current();
+            var compiler = mCompiler;
+            for(t in 0...threads)
+            {
+               neko.vm.Thread.create(function()
+               {
+                  try
+                  {
+                  while(true)
+                  {
+                     mutex.acquire();
+                     if (to_be_compiled.length==0)
+                     {
+                        mutex.release();
+                        break;
+                     }
+                     var file = to_be_compiled.shift();
+                     mutex.release();
 
-							compiler.compile(file);
-						}
-						} catch (error:Dynamic)
-						{
-						   main_thread.sendMessage("Error");
-						}
-						main_thread.sendMessage("Done");
-					});
-				}
+                     compiler.compile(file);
+                  }
+                  } catch (error:Dynamic)
+                  {
+                     main_thread.sendMessage("Error");
+                  }
+                  main_thread.sendMessage("Done");
+               });
+            }
 
-				// Wait for theads to finish...
-				for(t in 0...threads)
-				{
-				  var result = neko.vm.Thread.readMessage(true);
-				  if (result=="Error")
-				  	   throw "Error in building thread";
-				}
-			}
-		}
+            // Wait for theads to finish...
+            for(t in 0...threads)
+            {
+              var result = neko.vm.Thread.readMessage(true);
+              if (result=="Error")
+                    throw "Error in building thread";
+            }
+         }
+      }
 
       switch(target.mTool)
       {
@@ -838,7 +838,7 @@ class BuildTool
             defines.set("ANDROID_HOST","darwin-x86");
          else if ( (new EReg("window","i")).match(os) )
             defines.set("ANDROID_HOST","windows");
-			else
+         else
             throw "Unknown android host:" + os;
       }
       else if ( (new EReg("window","i")).match(os) )
@@ -870,15 +870,14 @@ class BuildTool
          for(env in neko.Sys.environment().keys())
             defines.set(env, neko.Sys.getEnv(env) );
 
-	      if (defines.exists("android") )
-			{
-			   if (!defines.exists("ANDROID_NDK"))
-               throw("Please define ANDROID_NDK");
-				DirManager.sIsCygwin = true;
-				defines.set("ANDROID_NDK_CYG", DirManager.DosToCygwin(defines.get("ANDROID_NDK") ) );
-				defines.set( "HXCPP_CYG", DirManager.DosToCygwin(defines.get("HXCPP") ) );
-			}
-
+         if (defines.exists("android") )
+         {
+            if (!defines.exists("ANDROID_NDK_ROOT"))
+               throw("Please define ANDROID_NDK_ROOT");
+            DirManager.sIsCygwin = true;
+            defines.set("ANDROID_NDK_ROOT_CYG", DirManager.DosToCygwin(defines.get("ANDROID_NDK_ROOT") ) );
+            defines.set( "HXCPP_CYG", DirManager.DosToCygwin(defines.get("HXCPP") ) );
+         }
 
 
          new BuildTool(makefile,defines,targets);

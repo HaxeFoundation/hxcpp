@@ -57,8 +57,12 @@ void *LoadFunc(const char *inName)
 #define EXT "dso"
 //#define __USE_GNU 1
 #else
+#ifdef ANDROID
+#define EXT "so"
+#else
 #include <mach-o/dyld.h>
 #define EXT "dylib"
+#endif
 #endif
 
 #include <dlfcn.h>
@@ -78,10 +82,11 @@ void *LoadFunc(const char *inName)
       if (handle)
          sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
    }
+#ifndef ANDROID
    if (sResolveProc==0)
    {
       bool debug = getenv("HXCPP_LOAD_DEBUG");
-#ifndef NEKO_LINUX
+#if NEKO_LINUX
       int count = _dyld_image_count();
       for(int i=0;i<count;i++)
       {
@@ -132,6 +137,7 @@ void *LoadFunc(const char *inName)
          printf("Could not find loaded module?\n");
 #endif
    }
+#endif
    if (sResolveProc==0)
    {
       fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d)\n",__LINE__);
