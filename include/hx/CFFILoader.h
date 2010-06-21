@@ -1,6 +1,10 @@
 #ifndef HX_CFFI_LOADER_H
 #define HX_CFFI_LOADER_H
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 
 typedef void *(*ResolveProc)(const char *inName);
 static ResolveProc sResolveProc = 0;
@@ -72,6 +76,7 @@ void *LoadFunc(const char *inName)
 
 void *LoadFunc(const char *inName)
 {
+   // __android_log_print(ANDROID_LOG_INFO, "haxe plugin", "LoadFunc %s", inName );
    if (sResolveProc==0)
    {
       sResolveProc = (ResolveProc)dlsym(RTLD_DEFAULT,"hx_cffi");
@@ -140,8 +145,12 @@ void *LoadFunc(const char *inName)
 #endif
    if (sResolveProc==0)
    {
+      #ifdef ANDROID
+      __android_log_print(ANDROID_LOG_ERROR, "Haxe Plugin", "Could not API functions");
+      #else
       fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d)\n",__LINE__);
       exit(1);
+      #endif
    }
    return sResolveProc(inName);
 }

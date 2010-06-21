@@ -91,37 +91,37 @@ public:
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f)
    {
-		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr() };
+      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr() };
       return ((prim_mult)mProc)(args,6);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g)
    {
-		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-		                     g.GetPtr() };
+      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+                           g.GetPtr() };
       return ((prim_mult)mProc)(args,7);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h)
    {
-		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-		                     g.GetPtr(), h.GetPtr() };
+      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+                           g.GetPtr(), h.GetPtr() };
       return ((prim_mult)mProc)(args,8);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i)
    {
-		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-		                     g.GetPtr(), h.GetPtr(), i.GetPtr() };
+      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+                           g.GetPtr(), h.GetPtr(), i.GetPtr() };
       return ((prim_mult)mProc)(args,9);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j)
    {
-		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-		                     g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr() };
+      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+                           g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr() };
       return ((prim_mult)mProc)(args,10);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k)
    {
-		hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-		                     g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr(), k.GetPtr() };
+      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
+                           g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr(), k.GetPtr() };
       return ((prim_mult)mProc)(args,11);
    }
 
@@ -236,14 +236,14 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    }
 
 
-	if (sgRegisteredPrims)
-	{
-		void *registered = (*sgRegisteredPrims)[full_name.__s];
-		if (registered)
-		{
-			return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
-		}
-	}
+   if (sgRegisteredPrims)
+   {
+      void *registered = (*sgRegisteredPrims)[full_name.__s];
+      if (registered)
+      {
+         return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
+      }
+   }
 
    printf("Primitive not found : %S\n", full_name.__s );
    return null();
@@ -256,6 +256,9 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
 #ifdef ANDROID
+
+   inLib = HX_STR(L"/data/data/org.haxe/lib/lib") + inLib;
+
    __android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s",
                inLib.__CStr(), inPrim.__CStr() );
 #endif
@@ -277,7 +280,6 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #endif
 
 
-
 #endif
    String bin =
 #ifdef _WIN32
@@ -295,9 +297,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #endif
 #endif
 
-	 int passes = 4;
-
-
+    int passes = 4;
 
    String full_name = inPrim;
    switch(inArgCount)
@@ -313,87 +313,105 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    }
 
 #ifdef HXCPP_DEBUG
-	int pass0 = 0;
+   int pass0 = 0;
 #else
-	int pass0 = 2;
+   int pass0 = 2;
 #endif
 
-	// Try debug extensions first, then native extensions then ndll
-
+   // Try debug extensions first, then native extensions then ndll
 
    Module module = sgLoadedModule[inLib.__s];
-	if (!module && debug)
-		printf("Searching for %S...\n", inLib.__s);
 
-	for(int pass=pass0;module==0 && pass<4;pass++)
-	{
+   if (!module && debug)
+   {
+      #ifdef ANDROID
+       __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", inLib.__CStr());
+      #else
+      printf("Searching for %S...\n", inLib.__s);
+      #endif
+   }
+
+
+   for(int pass=pass0;module==0 && pass<4;pass++)
+   {
       String modifier = pass < 2 ? HX_STRING(L"-debug",6) : HX_STRING(L"",0);
 
       String dll_ext = inLib + modifier + ( (pass&1) ? HX_STRING(L".ndll",5) : ext );
 
-		if (debug)
-			printf(" try %S...\n", dll_ext.__s);
-		module = hxLoadLibrary(dll_ext);
+      
+      if (debug)
+      {
+         #ifndef ANDROID
+         printf(" try %S...\n", dll_ext.__s);
+         #else
+         __android_log_print(ANDROID_LOG_INFO, "loader", "Try %s", dll_ext.__CStr());
+         #endif
+      }
+      module = hxLoadLibrary(dll_ext);
 
-		if (!module)
-		{
-			String hxcpp = GetEnv("HXCPP");
-			if (hxcpp.length!=0)
-			{
-				 String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
-				 if (debug)
-					 printf(" try %S...\n", name.__s);
-				 module = hxLoadLibrary(name);
-			}
-		}
-	
-		if (!module)
-		{
-			String hxcpp = FindHaxelib(L"hxcpp");
-			if (hxcpp.length!=0)
-			{
-				 String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
-				 if (debug)
-					 printf(" try %S...\n", name.__s);
-				 module = hxLoadLibrary(name);
-			}
-		}
+      #ifndef ANDROID
+      if (!module)
+      {
+         String hxcpp = GetEnv("HXCPP");
+         if (hxcpp.length!=0)
+         {
+             String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
+             if (debug)
+                printf(" try %S...\n", name.__s);
+             module = hxLoadLibrary(name);
+         }
+      }
+   
+      if (!module)
+      {
+         String hxcpp = FindHaxelib(L"hxcpp");
+         if (hxcpp.length!=0)
+         {
+             String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
+             if (debug)
+                printf(" try %S...\n", name.__s);
+             module = hxLoadLibrary(name);
+         }
+      }
 
-		if (!module)
-		{
-			String path = FindHaxelib(inLib);
-			if (path.length!=0)
-			{
-				String full_path  = path + L"/ndll/" + bin + L"/" + dll_ext;
-				if (debug)
-					printf(" try %S...\n", full_path.__s);
-				module = hxLoadLibrary(full_path);
-			}
-		}
-	}
+      if (!module)
+      {
+         String path = FindHaxelib(inLib);
+         if (path.length!=0)
+         {
+            String full_path  = path + L"/ndll/" + bin + L"/" + dll_ext;
+            if (debug)
+               printf(" try %S...\n", full_path.__s);
+            module = hxLoadLibrary(full_path);
+         }
+      }
+      #endif
+   }
 
-	if (!module && sgRegisteredPrims)
-	{
-		void *registered = (*sgRegisteredPrims)[full_name.__s];
-		if (registered)
-		{
-			return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
-		}
-	}
+   if (!module && sgRegisteredPrims)
+   {
+      void *registered = (*sgRegisteredPrims)[full_name.__s];
+      if (registered)
+      {
+         return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
+      }
+   }
 
-	if (!module)
-	  throw Dynamic(String(L"Could not load module ") + inLib + String(L"@") + full_name);
+   if (!module)
+   {
+     throw Dynamic(String(L"Could not load module ") + inLib + String(L"@") + full_name);
+    }
 
 
-	sgLoadedModule[inLib.__s] = module;
+   sgLoadedModule[inLib.__s] = module;
 
-	GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
-	if (func)
-	{
-		NekoEntryFunc entry = (NekoEntryFunc)func();
-		if (entry)
-			entry();
-	}
+   GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
+   if (func)
+   {
+      NekoEntryFunc entry = (NekoEntryFunc)func();
+      if (entry)
+         entry();
+   }
 
    // No "wchar_t" version
    std::vector<char> name(full_name.length+1);
@@ -434,6 +452,6 @@ int __hxcpp_register_prim(wchar_t *inName,void *inProc)
    if (sgRegisteredPrims==0)
       sgRegisteredPrims = new RegistrationMap();
    (*sgRegisteredPrims)[inName] = inProc;
-	return 0;
+   return 0;
 }
 

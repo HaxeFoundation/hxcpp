@@ -416,12 +416,15 @@ extern void SetTopOfStack(int *inTopOfStack);
 #define HX_BEGIN_MAIN \
 extern "C" GCC_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * env) { \
 	HX_TOP_OF_STACK \
+        try { \
 	hx::Boot(); \
 	__boot_all();
 
 
-
 #define HX_END_MAIN \
+        } catch (Dynamic e) { \
+          __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e->toString().__CStr()); \
+        }\
 }
 
 #else
