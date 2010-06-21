@@ -47,7 +47,7 @@ double __hxcpp_parse_float(const String &inString);
 // Used mainly for neko ndll interaction.
 int           __hxcpp_field_to_id( const char *inField );
 const String &__hxcpp_field_from_id( int f );
-int           __hxcpp_register_prim(wchar_t *inName,void *inFunc);
+int           __hxcpp_register_prim(const wchar_t *inName,void *inFunc);
 
 // Get function pointer from dll file
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount);

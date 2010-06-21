@@ -28,7 +28,7 @@ typedef void *Module;
 typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
-   return dlopen(inLib.__CStr(),RTLD_NOW);
+   return dlopen(inLib.__CStr(),RTLD_NOW|RTLD_GLOBAL);
 }
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return dlsym(inModule,inSymbol); }
 #endif
@@ -134,6 +134,7 @@ public:
 };
 
 
+typedef void (*SetLoaderProcFunc)(void *(*)(const char *));
 typedef void *(*GetNekoEntryFunc)();
 typedef void (*NekoEntryFunc)();
 
@@ -253,6 +254,9 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 #else
 
+
+extern "C" void *hx_cffi(const char *inName);
+
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
 #ifdef ANDROID
@@ -321,6 +325,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    // Try debug extensions first, then native extensions then ndll
 
    Module module = sgLoadedModule[inLib.__s];
+	bool new_module = module==0;
 
    if (!module && debug)
    {
@@ -403,15 +408,22 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
     }
 
 
-   sgLoadedModule[inLib.__s] = module;
+	if (new_module)
+	{
+		sgLoadedModule[inLib.__s] = module;
 
-   GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
-   if (func)
-   {
-      NekoEntryFunc entry = (NekoEntryFunc)func();
-      if (entry)
-         entry();
-   }
+		SetLoaderProcFunc set_loader = (SetLoaderProcFunc)hxFindSymbol(module,"hx_set_loader");
+		if (set_loader)
+			set_loader(hx_cffi);
+
+		GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
+		if (func)
+		{
+			NekoEntryFunc entry = (NekoEntryFunc)func();
+			if (entry)
+				entry();
+		}
+	}
 
    // No "wchar_t" version
    std::vector<char> name(full_name.length+1);
@@ -447,7 +459,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 // This can be used to find symbols in static libraries
 
-int __hxcpp_register_prim(wchar_t *inName,void *inProc)
+int __hxcpp_register_prim(const wchar_t *inName,void *inProc)
 {
    if (sgRegisteredPrims==0)
       sgRegisteredPrims = new RegistrationMap();

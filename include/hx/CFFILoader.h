@@ -9,6 +9,13 @@
 typedef void *(*ResolveProc)(const char *inName);
 static ResolveProc sResolveProc = 0;
 
+extern "C" {
+EXPORT void hx_set_loader(ResolveProc inProc)
+{
+   //__android_log_print(ANDROID_LOG_INFO, "haxe plugin", "Got Load Proc %s", inProc );
+	sResolveProc = inProc;
+}
+}
 
 #ifdef STATIC_LINK
 extern "C" void * hx_cffi(const char *inName);
@@ -76,11 +83,11 @@ void *LoadFunc(const char *inName)
 
 void *LoadFunc(const char *inName)
 {
-   // __android_log_print(ANDROID_LOG_INFO, "haxe plugin", "LoadFunc %s", inName );
    if (sResolveProc==0)
    {
       sResolveProc = (ResolveProc)dlsym(RTLD_DEFAULT,"hx_cffi");
    }
+
    if (sResolveProc==0)
    {
       void *handle = dlopen("nekoapi." EXT ,RTLD_NOW);

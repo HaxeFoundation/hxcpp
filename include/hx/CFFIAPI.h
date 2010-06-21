@@ -6,7 +6,7 @@
 
 DEFFUNC_1(void,val_throw,value)
 DEFFUNC_0(void,hx_error)
-DEFFUNC_3(void,hx_fail,char *,char *,int)
+DEFFUNC_3(void,hx_fail,const char *,const char *,int)
 
 // Determine value type
 DEFFUNC_1(int,val_type,value)
@@ -125,6 +125,6 @@ DEFFUNC_0(void, gc_exit_blocking)
 DEFFUNC_0(void, gc_safe_point)
 
 // Used for finding functions in static libraries
-DEFFUNC_2(int, hx_register_prim, wchar_t *, void*)
+DEFFUNC_2(int, hx_register_prim, const wchar_t *, void*)
 
 

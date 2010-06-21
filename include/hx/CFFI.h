@@ -81,19 +81,30 @@ extern FUNC_##name name;
 
 
 // --- Register functions (primitives) ----
+
+#ifdef STATIC_LINK
+
+#define DEFINE_PRIM_MULT(func) \
+int __reg_##func = hx_register_prim(L###func L"__MULT",(void *)(&func)); \
+
+#define DEFINE_PRIM(func,nargs) \
+int __reg_##func = hx_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
+
+#else
+
 #define DEFINE_PRIM_MULT(func) extern "C" { \
   EXPORT void *func##__MULT() {  \
      return (void*)(&func); \
  } \
-int __reg_##func = hx_register_prim(L###func L"__MULT",(void *)(&func)); \
 }
 
 #define DEFINE_PRIM(func,nargs) extern "C" { \
   EXPORT void *func##__##nargs() { \
        return (void*)(&func); \
   } \
-int __reg_##func = hx_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
 }
+
+#endif // !STATIC_LINK
 
 #define DEFINE_KIND(name) extern "C" { vkind name = alloc_kind(); }
 

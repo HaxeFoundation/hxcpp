@@ -125,7 +125,7 @@ void val_throw(hx::Object * arg1) THROWS
 }
 
 
-void hx_fail(char * arg1,char * arg2,int arg3)
+void hx_fail(const char * arg1,const char * arg2,int arg3)
 {
    fprintf(stderr,"Terminal error %s, File %s, line %d\n", arg1,arg2,arg3);
    exit(1);
@@ -715,7 +715,7 @@ void free_root(value *inValue)
 
 
 // Used for finding functions in static libraries
-int hx_register_prim( wchar_t * arg1, void* arg2)
+int hx_register_prim( const wchar_t * arg1, void* arg2)
 {
 	__hxcpp_register_prim(arg1,arg2);
 	return 0;
