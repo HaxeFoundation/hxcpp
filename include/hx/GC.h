@@ -68,6 +68,7 @@ void *InternalRealloc(void *inData,int inSize);
 void InternalEnableGC(bool inEnable);
 void *InternalCreateConstBuffer(const void *inData,int inSize);
 void RegisterNewThread(void *inTopOfStack);
+void SetTopOfStack(void *inTopOfStack,bool inForce=false);
 void InternalCollect();
 
 void EnterGCFreeZone();

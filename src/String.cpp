@@ -51,6 +51,25 @@ static wchar_t *GCStringDup(const wchar_t *inStr,int &outLen)
 }
 
 
+static wchar_t *GCStringDup(const char *inStr,int &outLen)
+{
+   if (inStr==0)
+   {
+      outLen = 0;
+      return 0;
+   }
+
+   outLen = strlen(inStr);
+   if (outLen==0)
+      return 0;
+
+   wchar_t *result = hx::NewString(outLen);
+   for(int i=0;i<=outLen;i++)
+      result[i] = ((unsigned char *)inStr)[i];
+   return result;
+}
+
+
 
 
 String::String(const Dynamic &inRHS)
@@ -67,8 +86,13 @@ String::String(const Dynamic &inRHS)
 
 String::String(const int &inRHS)
 {
+#ifdef ANDROID
+   char buf[100];
+   snprintf(buf,100,"%d",inRHS);
+#else
    wchar_t buf[100];
    SPRINTF(buf,100,L"%d",inRHS);
+#endif
    __s = GCStringDup(buf,length);
 }
 
@@ -107,8 +131,13 @@ String::String(const wchar_t *inStr)
 
 String::String(const double &inRHS)
 {
+   #ifdef ANDROID
+   char buf[100];
+   snprintf(buf,100,"%.10g",inRHS);
+   #else
    wchar_t buf[100];
    SPRINTF(buf,100,L"%.10g",inRHS);
+   #endif
    __s = GCStringDup(buf,length);
 }
 

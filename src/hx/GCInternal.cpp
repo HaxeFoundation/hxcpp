@@ -7,6 +7,10 @@ char **gMovedPtrs = 0;
 int gByteMarkID = 0;
 int gMarkID = 0;
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 
 #ifdef HX_INTERNAL_GC
 
@@ -647,6 +651,10 @@ public:
 
    void Collect()
    {
+      #ifdef ANDROID
+      __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Collect...");
+      #endif
+     
       LocalAllocator *this_local = 0;
       #ifdef HXCPP_MULTI_THREADED
       if (sMultiThreadMode)
@@ -747,6 +755,10 @@ public:
          gThreadStateChangeLock->Unlock();
       }
       #endif
+
+      #ifdef ANDROID
+      __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Collect done.");
+      #endif
    }
 
    void CheckCollect()
@@ -841,10 +853,10 @@ public:
       mLinesSinceLastCollect = 0; 
    }
 
-   void SetTopOfStack(int *inTop)
+   void SetTopOfStack(int *inTop,bool inForce)
    {
       // stop early to allow for ptr[1] ....
-      if (inTop>mTopOfStack)
+      if (inTop>mTopOfStack || inForce)
          mTopOfStack = inTop;
    }
 
@@ -1063,6 +1075,10 @@ public:
       int here = 0;
       void *prev = 0;
       // printf("=========== Mark Stack ==================== %p/%d\n",mBottomOfStack,&here);
+      #ifdef ANDROID
+      __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark %p...%p.", mBottomOfStack, mTopOfStack);
+      #endif
+
       for(int *ptr = mBottomOfStack ; ptr<mTopOfStack; ptr++)
       {
          void *vptr = *(void **)ptr;
@@ -1083,11 +1099,19 @@ public:
                AllocType t = block->GetAllocType(pos-sizeof(int),true);
                if ( t==allocObject )
                {
+                   #ifdef ANDROID
+                   __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark obj %p.", vptr);
+                   #endif
+
                   // printf(" Mark object %p (%p)\n", vptr,ptr);
                   HX_MARK_OBJECT( ((hx::Object *)vptr) );
                }
                else if (t==allocString)
                {
+                   #ifdef ANDROID
+                   __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark str %p.", vptr);
+                   #endif
+
                   // printf(" Mark string %p (%p)\n", vptr,ptr);
                   HX_MARK_STRING(vptr);
                }
@@ -1209,7 +1233,7 @@ void InitAlloc()
 
 }
 
-void SetTopOfStack(int *inTop)
+void SetTopOfStack(int *inTop,bool inForce)
 {
    if (!sgAllocInit)
       InitAlloc();
@@ -1218,7 +1242,7 @@ void SetTopOfStack(int *inTop)
 
    sgInternalEnable = true;
 
-   return tla->SetTopOfStack(inTop);
+   return tla->SetTopOfStack(inTop,inForce);
 
 }
 
@@ -1255,7 +1279,7 @@ void InternalCollect()
       return;
 
    int dummy;
-   GetLocalAlloc()->SetTopOfStack(&dummy);
+   GetLocalAlloc()->SetTopOfStack(&dummy,false);
    sGlobalAlloc->Collect();
 }
 
@@ -1321,7 +1345,7 @@ extern "C"
 void hxcpp_set_top_of_stack()
 {
    int i = 0;
-   hx::SetTopOfStack(&i);
+   hx::SetTopOfStack(&i,false);
 }
 }
 

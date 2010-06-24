@@ -28,7 +28,7 @@ typedef void *Module;
 typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
-   return dlopen(inLib.__CStr(),RTLD_NOW|RTLD_GLOBAL);
+   return dlopen(inLib.__CStr(),RTLD_NOW);
 }
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return dlsym(inModule,inSymbol); }
 #endif
@@ -263,23 +263,22 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
    inLib = HX_STR(L"/data/data/org.haxe/lib/lib") + inLib;
 
-   __android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s",
-               inLib.__CStr(), inPrim.__CStr() );
+   __android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
 #endif
 
    bool debug = getenv("HXCPP_LOAD_DEBUG");
    String ext =
 #ifdef _WIN32
-    String(L".dll",4);
+    HX_STRING(L".dll",4);
 #else
 // Unix...
 #ifdef __APPLE__
-    String(L".dylib",6);
+    HX_STRING(L".dylib",6);
 #else
 #ifdef ANDROID
-    String(L".so",3);
+    HX_STRING(L".so",3);
 #else
-    String(L".dso",4);
+    HX_STRING(L".dso",4);
 #endif
 #endif
 
@@ -287,16 +286,16 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #endif
    String bin =
 #ifdef _WIN32
-    String(L"Windows",7);
+    HX_STRING(L"Windows",7);
 #else
 // Unix...
 #ifdef __APPLE__
-    String(L"Mac",3);
+    HX_STRING(L"Mac",3);
 #else
 #ifdef ANDROID
-    String(L"Android",7);
+    HX_STRING(L"Android",7);
 #else
-    String(L"Linux",5);
+    HX_STRING(L"Linux",5);
 #endif
 #endif
 #endif
@@ -325,7 +324,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    // Try debug extensions first, then native extensions then ndll
 
    Module module = sgLoadedModule[inLib.__s];
-	bool new_module = module==0;
+   bool new_module = module==0;
 
    if (!module && debug)
    {
@@ -408,25 +407,22 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
     }
 
 
-	if (new_module)
-	{
-		sgLoadedModule[inLib.__s] = module;
+   if (new_module)
+   {
+      sgLoadedModule[inLib.__s] = module;
 
-		SetLoaderProcFunc set_loader = (SetLoaderProcFunc)hxFindSymbol(module,"hx_set_loader");
-		if (set_loader)
-			set_loader(hx_cffi);
+      SetLoaderProcFunc set_loader = (SetLoaderProcFunc)hxFindSymbol(module,"hx_set_loader");
+      if (set_loader)
+         set_loader(hx_cffi);
 
-		GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
-		#ifdef ANDROID
-      __android_log_print(ANDROID_LOG_INFO, "loader", "Found entry point : %p", func);
-		#endif
-		if (func)
-		{
-			NekoEntryFunc entry = (NekoEntryFunc)func();
-			if (entry)
-				entry();
-		}
-	}
+      GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
+      if (func)
+      {
+         NekoEntryFunc entry = (NekoEntryFunc)func();
+         if (entry)
+            entry();
+      }
+   }
 
    // No "wchar_t" version
    std::vector<char> name(full_name.length+1);
@@ -437,11 +433,12 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    FundFunc proc_query = (FundFunc)hxFindSymbol(module,&name[0]);
    if (!proc_query)
    {
-#ifdef ANDROID
-      __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not find primitive %s", &name[0]);
-#else
+      #ifdef ANDROID
+       __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not find primitive %s in %p",
+        &name[0], module);
+      #else
       fprintf(stderr,"Could not find primitive %s.\n", &name[0]);
-#endif
+      #endif
       return 0;
    }
 
@@ -451,14 +448,14 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #ifdef ANDROID
       __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s\n", full_name.__s,inLib.__s);
       fwprintf(stderr,L"Could not identify primitive %s in %s\n", full_name.__s,inLib.__s);
-#elif defined(_WIN32)
-      fwprintf(stderr,L"Could not identify primitive %s in %s\n", full_name.__s,inLib.__s);
+#elif defined(ANDROID)
+   __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s",
+        inPrim.__CStr(), inLib.__CStr() );
 #else
-      fwprintf(stderr,L"Could not identify primitive %S in %S\n", full_name.__s,inLib.__s);
+   fwprintf(stderr,L"Could not identify primitive %S in %S\n", full_name.__s,inLib.__s);
 #endif
       return 0;
    }
-
 
    return Dynamic( new ExternalPrimitive(proc,inArgCount,inLib+L"@"+full_name) );
 

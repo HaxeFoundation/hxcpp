@@ -393,11 +393,11 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 
 #ifdef HX_INTERNAL_GC
 namespace hx {
-extern void SetTopOfStack(int *inTopOfStack);
+extern void SetTopOfStack(int *inTopOfStack,bool);
 }
 #define HX_TOP_OF_STACK \
 		int t0 = 99; \
-		hx::SetTopOfStack(&t0);
+		hx::SetTopOfStack(&t0,false);
 #else
 	#define HX_TOP_OF_STACK
 #endif

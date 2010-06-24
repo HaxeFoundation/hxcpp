@@ -123,6 +123,7 @@ DEFFUNC_1(void, destroy_root,gcroot)
 DEFFUNC_0(void, gc_enter_blocking)
 DEFFUNC_0(void, gc_exit_blocking)
 DEFFUNC_0(void, gc_safe_point)
+DEFFUNC_2(void, gc_set_top_of_stack,int *,bool)
 
 // Used for finding functions in static libraries
 DEFFUNC_2(int, hx_register_prim, const wchar_t *, void*)
