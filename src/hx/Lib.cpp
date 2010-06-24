@@ -306,14 +306,14 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    String full_name = inPrim;
    switch(inArgCount)
    {
-      case 0: full_name += L"__0"; break;
-      case 1: full_name += L"__1"; break;
-      case 2: full_name += L"__2"; break;
-      case 3: full_name += L"__3"; break;
-      case 4: full_name += L"__4"; break;
-      case 5: full_name += L"__5"; break;
+      case 0: full_name += HX_STR(L"__0"); break;
+      case 1: full_name += HX_STR(L"__1"); break;
+      case 2: full_name += HX_STR(L"__2"); break;
+      case 3: full_name += HX_STR(L"__3"); break;
+      case 4: full_name += HX_STR(L"__4"); break;
+      case 5: full_name += HX_STR(L"__5"); break;
       default:
-          full_name += L"__MULT";
+          full_name += HX_STR(L"__MULT");
    }
 
 #ifdef HXCPP_DEBUG
@@ -417,6 +417,9 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 			set_loader(hx_cffi);
 
 		GetNekoEntryFunc func = (GetNekoEntryFunc)hxFindSymbol(module,"__neko_entry_point");
+		#ifdef ANDROID
+      __android_log_print(ANDROID_LOG_INFO, "loader", "Found entry point : %p", func);
+		#endif
 		if (func)
 		{
 			NekoEntryFunc entry = (NekoEntryFunc)func();
@@ -434,14 +437,21 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    FundFunc proc_query = (FundFunc)hxFindSymbol(module,&name[0]);
    if (!proc_query)
    {
+#ifdef ANDROID
+      __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not find primitive %s", &name[0]);
+#else
       fprintf(stderr,"Could not find primitive %s.\n", &name[0]);
+#endif
       return 0;
    }
 
    void *proc = proc_query();
    if (!proc)
    {
-#ifdef _WIN32
+#ifdef ANDROID
+      __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s\n", full_name.__s,inLib.__s);
+      fwprintf(stderr,L"Could not identify primitive %s in %s\n", full_name.__s,inLib.__s);
+#elif defined(_WIN32)
       fwprintf(stderr,L"Could not identify primitive %s in %s\n", full_name.__s,inLib.__s);
 #else
       fwprintf(stderr,L"Could not identify primitive %S in %S\n", full_name.__s,inLib.__s);
