@@ -88,7 +88,15 @@ public:
       if (__s == r) return inRHS.length-length;
       if (__s==0) return -1;
       if (r==0) return 1;
+      #ifdef ANDROID
+      int min_len = length < inRHS.length ? length : inRHS.length;
+      for(int i=0;i<min_len;i++)
+         if (__s[i]<r[i]) return -1;
+         else if (__s[i]>r[i]) return 1;
+      return length<inRHS.length ? -1 : length>inRHS.length ? 1 : 0;
+      #else
       return wcscmp(__s,r);
+      #endif
    }
 
 

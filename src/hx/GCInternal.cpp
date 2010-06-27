@@ -329,6 +329,7 @@ union BlockData
       int max_free_in_a_row = 0;
       int free_in_a_row = 0;
       bool update_table = sgTimeToNextTableUpdate==0;
+
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
          unsigned char &row_flag = mRowFlags[r];
@@ -479,6 +480,7 @@ union BlockData
 
 namespace hx
 {
+
 
 void MarkAlloc(void *inPtr)
 {
@@ -652,7 +654,7 @@ public:
    void Collect()
    {
       #ifdef ANDROID
-      __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Collect...");
+      //__android_log_print(ANDROID_LOG_ERROR, "hxcpp", "Collect...");
       #endif
      
       LocalAllocator *this_local = 0;
@@ -699,6 +701,7 @@ public:
       sgTimeToNextTableUpdate--;
       if (sgTimeToNextTableUpdate<0)
          sgTimeToNextTableUpdate = 20;
+
 
       // Clear lists, start fresh...
       mEmptyBlocks.clear();
@@ -754,10 +757,6 @@ public:
          hx::gPauseForCollect = false;
          gThreadStateChangeLock->Unlock();
       }
-      #endif
-
-      #ifdef ANDROID
-      __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Collect done.");
       #endif
    }
 
@@ -1076,7 +1075,7 @@ public:
       void *prev = 0;
       // printf("=========== Mark Stack ==================== %p/%d\n",mBottomOfStack,&here);
       #ifdef ANDROID
-      __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark %p...%p.", mBottomOfStack, mTopOfStack);
+      // __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark %p...%p.", mBottomOfStack, mTopOfStack);
       #endif
 
       for(int *ptr = mBottomOfStack ; ptr<mTopOfStack; ptr++)
@@ -1099,19 +1098,11 @@ public:
                AllocType t = block->GetAllocType(pos-sizeof(int),true);
                if ( t==allocObject )
                {
-                   #ifdef ANDROID
-                   __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark obj %p.", vptr);
-                   #endif
-
                   // printf(" Mark object %p (%p)\n", vptr,ptr);
                   HX_MARK_OBJECT( ((hx::Object *)vptr) );
                }
                else if (t==allocString)
                {
-                   #ifdef ANDROID
-                   __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark str %p.", vptr);
-                   #endif
-
                   // printf(" Mark string %p (%p)\n", vptr,ptr);
                   HX_MARK_STRING(vptr);
                }
@@ -1242,8 +1233,8 @@ void SetTopOfStack(int *inTop,bool inForce)
 
    sgInternalEnable = true;
 
-   return tla->SetTopOfStack(inTop,inForce);
-
+   tla->SetTopOfStack(inTop,inForce);
+   // if (inForce) InternalCollect();
 }
 
 

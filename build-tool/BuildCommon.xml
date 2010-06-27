@@ -284,7 +284,6 @@ and setting it to 1 can help with debug if there is a problem compiling.
  <flag value="-Iinclude"/>
  <flag value="-fpic"/>
  <flag value="-fvisibility=hidden"/>
- <flag value="-mthumb-interwork"/>
  <flag value="-ffunction-sections"/>
  <flag value="-funwind-tables"/>
  <flag value="-fstack-protector"/>
@@ -298,17 +297,14 @@ and setting it to 1 can help with debug if there is a problem compiling.
  <flag value="-march=armv5te"/>
  <flag value="-mtune=xscale"/>
  <flag value="-msoft-float"/>
- <flag value="-mthumb"/>
- <flag value="-Os"/>
  <flag value="-fomit-frame-pointer"/>
  <flag value="-fno-strict-aliasing"/>
- <flag value="-finline-limit=64"/>
+ <flag value="-finline-limit=10000"/>
  <flag value="-DANDROID"/>
  <!-- todo <flag value="-Werror"/> -->
  <flag value="-Wa,--noexecstack"/>
  <flag value="-O2"/>
  <flag value="-DNDEBUG"/>
- <flag value="-g"/>
  <flag value="-c"/>
  <outflag value="-o"/>
  <ext value=".obj"/>

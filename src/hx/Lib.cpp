@@ -261,9 +261,10 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
 #ifdef ANDROID
 
+   // TODO: Get this from the project
    inLib = HX_STR(L"/data/data/org.haxe/lib/lib") + inLib;
 
-   __android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
+   // __android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
 #endif
 
    bool debug = getenv("HXCPP_LOAD_DEBUG");

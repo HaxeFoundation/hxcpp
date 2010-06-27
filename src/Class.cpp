@@ -1,6 +1,9 @@
 #include <hxcpp.h>
 #include <map>
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 
 namespace hx
@@ -142,13 +145,16 @@ Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue)
    return instance->__SetField(inString,inValue);
 }
 
+
 namespace hx
 {
 void MarkClassStatics()
 {
-	ClassMap::iterator end = sClassMap->end();
+   ClassMap::iterator end = sClassMap->end();
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
+      MarkMember(i->first);
+
       // all strings should be constants anyhow - MarkMember(i->first);
       HX_MARK_OBJECT(i->second.mPtr);
       i->second->MarkStatics();

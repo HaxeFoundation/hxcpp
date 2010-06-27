@@ -93,8 +93,8 @@ void __trace(Dynamic inObj, Dynamic inData)
 {
 #ifdef ANDROID
    __android_log_print(ANDROID_LOG_INFO, "trace", "%s:%d: %s",
-               inData->__Field(L"fileName")->toString().__CStr(),
-               inData->__Field(L"lineNumber")->__ToInt(),
+               inData==null() ? "?" : inData->__Field(L"fileName")->toString().__CStr(),
+               inData==null() ? 0 : inData->__Field(L"lineNumber")->__ToInt(),
                inObj.GetPtr() ? inObj->toString().__CStr() : "null" );
 #else
    printf( "%S:%d: %S\n",

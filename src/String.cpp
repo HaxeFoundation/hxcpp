@@ -41,7 +41,12 @@ static wchar_t *GCStringDup(const wchar_t *inStr,int &outLen)
       return 0;
    }
 
+   #ifndef ANDROID
    outLen = wcslen(inStr);
+   #else
+   outLen = 0;
+   while(inStr[outLen]) outLen++;
+   #endif
    if (outLen==0)
       return 0;
 
@@ -93,6 +98,7 @@ String::String(const int &inRHS)
    wchar_t buf[100];
    SPRINTF(buf,100,L"%d",inRHS);
 #endif
+   buf[99]='\0';
    __s = GCStringDup(buf,length);
 }
 
@@ -138,6 +144,7 @@ String::String(const double &inRHS)
    wchar_t buf[100];
    SPRINTF(buf,100,L"%.10g",inRHS);
    #endif
+   buf[99]='\0';
    __s = GCStringDup(buf,length);
 }
 
@@ -432,6 +439,15 @@ char * String::__CStr() const
 }
 
 
+#ifdef ANDROID
+bool my_wstrneq(const wchar_t *s1, const wchar_t *s2, int len)
+{
+   for(int i=0;i<len;i++)
+      if (s1[i]!=s2[i])
+        return false;
+   return true;
+}
+#endif
 
 Array<String> String::split(const String &inDelimiter) const
 {
@@ -453,10 +469,15 @@ Array<String> String::split(const String &inDelimiter) const
       return result;
    }
 
+
    Array<String> result(0,1);
    while(pos+len <=length )
    {
+      #ifdef ANDROID
+      if (my_wstrneq(__s+pos,inDelimiter.__s,len))
+      #else
       if (!wcsncmp(__s+pos,inDelimiter.__s,len))
+      #endif
       {
          result.Add( substr(last,pos-last) );
          pos += len;
@@ -627,8 +648,33 @@ namespace hx
 #ifndef _WIN32
 inline double _wtof(const wchar_t *inStr)
 {
+   #ifdef ANDROID
+   char buf[101];
+   int i;
+   for(int i=0;i<100 && inStr[i];i++)
+      buf[i] = inStr[i];
+   buf[i] = '\0';
+   return atof(buf);
+   #else
    return wcstod(inStr,0);
+   #endif
 }
+
+#ifdef ANDROID
+int my_wtol(const wchar_t *inStr,wchar_t ** end, int inBase)
+{
+   char buf[101];
+   int i;
+   for(int i=0;i<100 && inStr[i];i++)
+      buf[i] = inStr[i];
+   buf[i] = '\0';
+   char *cend = buf;
+   int result = strtol(buf,&cend,inBase);
+   *end = (wchar_t *)inStr + (cend-buf);
+   return result;
+}
+#define wcstol my_wtol
+#endif
 
 inline int _wtoi(const wchar_t *inStr)
 {
