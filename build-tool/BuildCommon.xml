@@ -303,7 +303,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
  <flag value="-DANDROID"/>
  <!-- todo <flag value="-Werror"/> -->
  <flag value="-Wa,--noexecstack"/>
- <flag value="-O2"/>
+ <flag value="-O2" unless="debug"/>
+ <flag value="-O0" if="debug"/>
  <flag value="-DNDEBUG"/>
  <flag value="-c"/>
  <outflag value="-o"/>

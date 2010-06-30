@@ -1073,9 +1073,10 @@ public:
    {
       int here = 0;
       void *prev = 0;
-      // printf("=========== Mark Stack ==================== %p/%d\n",mBottomOfStack,&here);
       #ifdef ANDROID
       // __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark %p...%p.", mBottomOfStack, mTopOfStack);
+		#else
+      // printf("=========== Mark Stack ==================== %p/%d\n",mBottomOfStack,&here);
       #endif
 
       for(int *ptr = mBottomOfStack ; ptr<mTopOfStack; ptr++)
@@ -1234,7 +1235,6 @@ void SetTopOfStack(int *inTop,bool inForce)
    sgInternalEnable = true;
 
    tla->SetTopOfStack(inTop,inForce);
-   // if (inForce) InternalCollect();
 }
 
 

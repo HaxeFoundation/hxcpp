@@ -54,7 +54,7 @@ void api_val_throw(value arg1)
 }
 
 
-void api_hx_fail(char * arg1,char * arg2,int arg3)
+void api_hx_fail(const char * arg1,const char * arg2,int arg3)
 {
 	_neko_failure( alloc_string(arg1), arg2, arg3 );
 }
@@ -521,7 +521,7 @@ void  api_val_gc_ptr(void * arg1,hxPtrFinalizer arg2)
 
 
 // Used for finding functions in static libraries
-int api_hx_register_prim( wchar_t * arg1, void* arg2)
+int api_hx_register_prim( const wchar_t * arg1, void* arg2)
 {
 	// Not used - but return something anyhow.
 	return 0;
@@ -536,6 +536,12 @@ void api_val_gc_remove_root(value *inVal)
 {
 	// TODO
 }
+
+void api_gc_set_top_of_stack(int *,bool)
+{
+}
+
+
 
 value *api_alloc_root()
 {
