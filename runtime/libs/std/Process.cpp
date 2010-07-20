@@ -23,7 +23,9 @@
 #   include <unistd.h>
 #   include <memory.h>
 #   include <errno.h>
-#   ifndef NEKO_MAC
+#   ifdef  ANDROID
+#      include <sys/wait.h>
+#   elif !defined(NEKO_MAC)
 #      include <wait.h>
 #   endif
 #endif

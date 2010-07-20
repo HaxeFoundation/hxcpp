@@ -55,7 +55,7 @@ static void free_file( value v )
 }
 
 
-DEFINE_KIND(k_file);
+DECLARE_KIND(k_file);
 
 static void file_error( const char *msg, fio *f, bool delete_f = false ) {
 	gc_exit_blocking();

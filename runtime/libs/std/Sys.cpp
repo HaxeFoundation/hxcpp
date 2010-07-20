@@ -18,10 +18,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <locale.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 
 int __sys_prims() { return 0; }
 
@@ -31,6 +31,7 @@ int __sys_prims() { return 0; }
 #	include <direct.h>
 #	include <conio.h>
 #	include <string>
+#       include <locale.h>
 #else
 #	include <errno.h>
 #	include <unistd.h>
@@ -39,7 +40,9 @@ int __sys_prims() { return 0; }
 #	include <termios.h>
 #	include <sys/time.h>
 #	include <sys/times.h>
+#ifndef ANDROID
 #	include <xlocale.h>
+#endif
 #endif
 
 #ifndef IPHONE
@@ -130,6 +133,10 @@ static value sys_sleep( value f ) {
 	<doc>Set the locale for LC_TIME, returns true on success</doc>
 **/
 static value set_time_locale( value l ) {
+#ifdef ANDROID
+        return alloc_null();
+#else
+
 #ifdef NEKO_POSIX
 	locale_t lc, old;
 	val_check(l,string);
@@ -147,6 +154,8 @@ static value set_time_locale( value l ) {
 	val_check(l,string);
 	return alloc_bool(setlocale(LC_TIME,val_string(l)) != NULL);
 #endif
+
+#endif // !Android
 }
 
 /**
@@ -201,6 +210,8 @@ static value sys_string() {
 	return alloc_string("BSD");
 #elif defined(NEKO_MAC)
 	return alloc_string("Mac");
+#elif defined(ANDROID)
+	return alloc_string("Android");
 #else
 #error Unknow system string
 #endif

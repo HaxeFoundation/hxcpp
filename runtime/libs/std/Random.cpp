@@ -35,7 +35,7 @@ int __random_prims() {return 0; }
 	</doc>
 **/
 
-DEFINE_KIND(k_random);
+DECLARE_KIND(k_random);
 
 #define val_rnd(o)		((rnd*)val_data(o))
 
