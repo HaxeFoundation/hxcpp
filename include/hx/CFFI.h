@@ -98,6 +98,7 @@ int __reg_##func = hx_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
  } \
 }
 
+
 #define DEFINE_PRIM(func,nargs) extern "C" { \
   EXPORT void *func##__##nargs() { \
        return (void*)(&func); \
@@ -106,7 +107,7 @@ int __reg_##func = hx_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
 
 #endif // !STATIC_LINK
 
-#define DEFINE_KIND(name) extern "C" { vkind name = alloc_kind(); }
+#define DEFINE_KIND(name) extern "C" { vkind name = 0; }
 
 #ifdef STATIC_LINK
 #	define DEFINE_ENTRY_POINT(name)

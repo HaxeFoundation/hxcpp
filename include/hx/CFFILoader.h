@@ -13,7 +13,7 @@ extern "C" {
 EXPORT void hx_set_loader(ResolveProc inProc)
 {
    //__android_log_print(ANDROID_LOG_INFO, "haxe plugin", "Got Load Proc %s", inProc );
-	sResolveProc = inProc;
+   sResolveProc = inProc;
 }
 }
 
@@ -83,6 +83,7 @@ void *LoadFunc(const char *inName)
 
 void *LoadFunc(const char *inName)
 {
+#ifndef ANDROID
    if (sResolveProc==0)
    {
       sResolveProc = (ResolveProc)dlsym(RTLD_DEFAULT,"hx_cffi");
@@ -94,7 +95,6 @@ void *LoadFunc(const char *inName)
       if (handle)
          sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
    }
-#ifndef ANDROID
    if (sResolveProc==0)
    {
       bool debug = getenv("HXCPP_LOAD_DEBUG");
@@ -149,11 +149,14 @@ void *LoadFunc(const char *inName)
          printf("Could not find loaded module?\n");
 #endif
    }
-#endif
+
+#endif // !Android
+
    if (sResolveProc==0)
    {
       #ifdef ANDROID
-      __android_log_print(ANDROID_LOG_ERROR, "Haxe Plugin", "Could not API functions");
+      __android_log_print(ANDROID_LOG_ERROR, "CFFILoader.h", "Could not API %s", inName);
+      return 0;
       #else
       fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d)\n",__LINE__);
       exit(1);
@@ -168,6 +171,9 @@ void *LoadFunc(const char *inName)
 
 #endif // not static link
  
+
+#ifndef ANDROID
+
 #define DEFFUNC(name,ret,def_args,call_args) \
 typedef ret (*FUNC_##name)def_args; \
 extern FUNC_##name name; \
@@ -176,14 +182,32 @@ ret IMPL_##name def_args \
    name = (FUNC_##name)LoadFunc(#name); \
    if (!name) \
    { \
-      fprintf(stderr,"Could find function " #name " \n",__LINE__); \
+      fprintf(stderr,"Could find function " #name " \n"); \
       exit(1); \
    } \
    return name call_args; \
 }\
 FUNC_##name name = IMPL_##name;
  
+#else
 
+
+#define DEFFUNC(name,ret,def_args,call_args) \
+typedef ret (*FUNC_##name)def_args; \
+extern FUNC_##name name; \
+ret IMPL_##name def_args \
+{ \
+   name = (FUNC_##name)LoadFunc(#name); \
+   if (!name) \
+   { \
+      __android_log_print(ANDROID_LOG_ERROR,"Could not resolve :" #name "\n"); \
+   } \
+   return name call_args; \
+}\
+FUNC_##name name = IMPL_##name;
+ 
+
+#endif
 
 
 #endif
