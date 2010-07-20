@@ -54,12 +54,12 @@ Array<String> __hxcpp_resource_names()
 {
    Array<String> result(0,0);
    for(ResourceSet::iterator i=sgResources.begin(); i!=sgResources.end();++i)
-	{
-		int len = i->first.length();
-		wchar_t *copy = hx::NewString(len);
-		memcpy(copy,i->first.c_str(), len*sizeof(wchar_t));
+   {
+      int len = i->first.length();
+      wchar_t *copy = hx::NewString(len);
+      memcpy(copy,i->first.c_str(), len*sizeof(wchar_t));
       result->push( String(copy) );
-	}
+   }
    return result;
 }
 
@@ -234,60 +234,89 @@ void __hxcpp_println(Dynamic &inV)
 
 bool __instanceof(const Dynamic &inValue, const Dynamic &inType)
 {
-	if (inType==hx::Object::__SGetClass()) return true;
-	if (inValue==null()) return false;
-	Class c = inType;
-	if (c==null()) return false;
-	return c->CanCast(inValue.GetPtr());
+   if (inType==hx::Object::__SGetClass()) return true;
+   if (inValue==null()) return false;
+   Class c = inType;
+   if (c==null()) return false;
+   return c->CanCast(inValue.GetPtr());
 }
 
 
 int __int__(double x)
 {
-	if (x < -0x7fffffff || x>0x80000000 )
-	{
-		__int64 big_int = (__int64)x;
-		return big_int & 0xffffffff;
-	}
-	else
-		return (int)x;
+   if (x < -0x7fffffff || x>0x80000000 )
+   {
+      __int64 big_int = (__int64)x;
+      return big_int & 0xffffffff;
+   }
+   else
+      return (int)x;
 }
 
 
 Dynamic __hxcpp_parse_int(const String &inString)
 {
-	wchar_t *end = 0;
-	if (!inString.__s)
-		return null();
-	long result;
-	if (inString.__s[0]=='0' && (inString.__s[1]=='x' || inString.__s[1]=='X'))
-		result = wcstol(inString.__s+2,&end,16);
-	else
-		result = wcstol(inString.__s,&end,10);
-	if (inString.__s==end)
-		return null();
-	return (int)result;
+   if (!inString.__s)
+      return null();
+   long result;
+   const wchar_t *str = inString.__s;
+   bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
+
+   #ifdef ANDROID
+   char buf[100];
+   for(int i=0;i<99 && i<inString.length;i++)
+      buf[i] = str[i];
+   buf[99] = '\0';
+ 
+   char *end = 0;
+   if (hex)
+      result = strtol(buf+2,&end,16);
+   else
+      result = strtol(buf,&end,10);
+   if (buf==end)
+   #else
+   wchar_t *end = 0;
+   if (hex)
+      result = wcstol(str+2,&end,16);
+   else
+      result = wcstol(str,&end,10);
+   if (inString.__s==end)
+   #endif
+      return null();
+   return (int)result;
 }
 
 double __hxcpp_parse_float(const String &inString)
 {
-	wchar_t *end;
+   const wchar_t *str = inString.__s;
+   #ifdef ANDROID
+   char buf[100];
+   for(int i=0;i<99 && i<inString.length;i++)
+      buf[i] = str[i];
+   buf[99] = '\0';
+   char *end;
+   double result = strtod(buf,&end);
+   if (end==buf)
+   #else
+   wchar_t *end;
    double result =  wcstod(inString.__s,&end);
-	if (end==inString.__s)
-	{
-		if (std::numeric_limits<double>::has_quiet_NaN)
-			return std::numeric_limits<double>::quiet_NaN();
-		else
-			return std::numeric_limits<double>::infinity();
-	}
-	return result;
+ 
+   if (end==inString.__s)
+   #endif
+   {
+      if (std::numeric_limits<double>::has_quiet_NaN)
+         return std::numeric_limits<double>::quiet_NaN();
+      else
+         return std::numeric_limits<double>::infinity();
+   }
+   return result;
 }
 
 
 bool __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2)
 {
-	hx::Object *p1 = inF1.GetPtr();
-	hx::Object *p2 = inF2.GetPtr();
+   hx::Object *p1 = inF1.GetPtr();
+   hx::Object *p2 = inF2.GetPtr();
    if (p1==0 || p2==0)
       return false;
    if (p1->__GetHandle() != p2->__GetHandle())
@@ -327,7 +356,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
 {
    if (!sgFieldToStringAlloc)
    {
-		sgFieldToStringAlloc = 100;
+      sgFieldToStringAlloc = 100;
       sgFieldToString = (String *)malloc(sgFieldToStringAlloc * sizeof(String));
 
       sgStringToField = new StringToField;
@@ -342,21 +371,21 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    (*sgStringToField)[f] = result;
    String str(inFieldName,strlen(inFieldName));
 
-	// Make into "const" string that will not get collected...
+   // Make into "const" string that will not get collected...
    #ifdef HX_INTERNAL_GC
    str = String((wchar_t *)hx::InternalCreateConstBuffer(str.__s,(str.length+1) * sizeof(wchar_t)), str.length );
-	#else
+   #else
    wchar_t *w = (wchar_t *)malloc((str.length+1) * sizeof(wchar_t));
-	memcpy(w,str.__s,(str.length+1) * sizeof(wchar_t));
+   memcpy(w,str.__s,(str.length+1) * sizeof(wchar_t));
    str = String(w, str.length );
    #endif
 
-	if (sgFieldToStringAlloc<=sgFieldToStringSize+1)
-	{
-		sgFieldToStringAlloc *= 2;
-		sgFieldToString = (String *)realloc(sgFieldToString, sgFieldToStringAlloc*sizeof(String));
-	}
-	sgFieldToString[sgFieldToStringSize++] = str;
+   if (sgFieldToStringAlloc<=sgFieldToStringSize+1)
+   {
+      sgFieldToStringAlloc *= 2;
+      sgFieldToString = (String *)realloc(sgFieldToString, sgFieldToStringAlloc*sizeof(String));
+   }
+   sgFieldToString[sgFieldToStringSize++] = str;
    return result;
 }
 

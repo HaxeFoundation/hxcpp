@@ -7,6 +7,7 @@
 
 #ifdef ANDROID
 #include <android/log.h>
+#include <unistd.h>
 #endif
 
 
@@ -33,7 +34,11 @@ Module hxLoadLibrary(String inLib)
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return dlsym(inModule,inSymbol); }
 #endif
 
+#ifdef ANDROID
+typedef std::map<std::string,Module> LoadedModule;
+#else
 typedef std::map<std::wstring,Module> LoadedModule;
+#endif
 
 static LoadedModule sgLoadedModule;
 
@@ -260,11 +265,9 @@ extern "C" void *hx_cffi(const char *inName);
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
 #ifdef ANDROID
+   inLib = HX_STR(L"lib") + inLib;
 
-   // TODO: Get this from the project
-   inLib = HX_STR(L"/data/data/org.haxe/lib/lib") + inLib;
-
-   // __android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
+   //__android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
 #endif
 
    bool debug = getenv("HXCPP_LOAD_DEBUG");
@@ -324,13 +327,18 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
    // Try debug extensions first, then native extensions then ndll
 
+   #ifdef ANDROID
+   std::string module_name = inLib.__CStr();
+   Module module = sgLoadedModule[module_name];
+   #else
    Module module = sgLoadedModule[inLib.__s];
+   #endif
    bool new_module = module==0;
 
    if (!module && debug)
    {
       #ifdef ANDROID
-       __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", inLib.__CStr());
+       __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", module_name.c_str());
       #else
       printf("Searching for %S...\n", inLib.__s);
       #endif
@@ -410,7 +418,11 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
    if (new_module)
    {
+      #ifdef ANDROID
+      sgLoadedModule[module_name] = module;
+      #else
       sgLoadedModule[inLib.__s] = module;
+      #endif
 
       SetLoaderProcFunc set_loader = (SetLoaderProcFunc)hxFindSymbol(module,"hx_set_loader");
       if (set_loader)
