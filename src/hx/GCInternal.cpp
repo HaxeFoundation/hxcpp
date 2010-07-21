@@ -385,7 +385,7 @@ union BlockData
       if (r < IMMIX_HEADER_LINES || r >= IMMIX_LINES)
       {
          if (inReport)
-            printf("  bad row %d (off=%d)\n", r);
+            printf("  bad row %d (off=%d)\n", r, inOffset);
          return allocNone;
       }
       unsigned char time = mRow[0][inOffset+3];
@@ -417,7 +417,7 @@ union BlockData
 
       if (inReport)
       {
-         printf("  not found in table (r=%d,sought =%d): ", row, sought);
+         printf("  not found in table (r=%p,sought =%d): ", row, sought);
          int pos = (flags & IMMIX_ROW_LINK_MASK);
          printf(" %d ", pos );
          while( pos!=sought && (row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_HAS_OBJ_LINK) )
