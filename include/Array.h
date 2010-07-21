@@ -136,6 +136,8 @@ public:
 
    virtual bool AllocAtomic() const { return false; }
 
+   virtual bool IsByteArray() const = 0;
+
 
    mutable int length;
 protected:
@@ -179,6 +181,12 @@ template<> inline unsigned char *NewNull<unsigned char>() { unsigned char u=0; r
 
 // sort...
 #include <algorithm>
+
+
+template<typename T>
+struct ArrayTraits { enum { IsByteArray = 0 }; };
+template<>
+struct ArrayTraits<unsigned char> { enum { IsByteArray = 1 }; };
 
 
 template<typename ELEM_>
@@ -367,6 +375,7 @@ public:
       std::sort(e, e+length, Sorter(inSorter) );
    }
 
+   virtual bool IsByteArray() const { return ArrayTraits<ELEM_>::IsByteArray; }
 
    // Dynamic interface
    virtual Dynamic __concat(const Dynamic &a0) { return concat(a0); }
