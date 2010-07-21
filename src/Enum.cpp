@@ -32,7 +32,11 @@ void EnumBase_obj::__Mark()
    MarkMember(mArgs);
 }
 
-String EnumBase_obj::toString() { return tag; }
+String EnumBase_obj::toString() {
+   if (mArgs==null() || mArgs->length==0)
+      return tag;
+   return tag + HX_STR(L"(") + mArgs->join(HX_STR(L",")) + HX_STR(L")");
+}
 
 }
 

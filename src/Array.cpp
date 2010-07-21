@@ -36,28 +36,28 @@ void ArrayBase::EnsureSize(int inSize) const
          {
             mBase = (char *)hx::GCRealloc(mBase, bytes );
             // atomic data not cleared by gc lib ...
-				#ifndef GC_CLEARS_ALL
-				   #ifndef GC_CLEARS_OBJECTS
+            #ifndef GC_CLEARS_ALL
+               #ifndef GC_CLEARS_OBJECTS
                if (AllocAtomic())
-				   #endif
-            		memset(mBase + obytes, 0, bytes-obytes);
-				#endif
+               #endif
+                  memset(mBase + obytes, 0, bytes-obytes);
+            #endif
          }
          else if (AllocAtomic())
          {
             mBase = (char *)hx::NewGCPrivate(0,bytes);
             // atomic data not cleared ...
-				#ifndef GC_CLEARS_ALL
-            		memset(mBase,0,bytes);
-				#endif
+            #ifndef GC_CLEARS_ALL
+                  memset(mBase,0,bytes);
+            #endif
          }
          else
-			{
+         {
             mBase = (char *)hx::NewGCBytes(0,bytes);
-				#ifndef GC_CLEARS_OBJECTS
-            		memset(mBase,0,bytes);
-				#endif
-			}
+            #ifndef GC_CLEARS_OBJECTS
+                  memset(mBase,0,bytes);
+            #endif
+         }
       }
       length = s;
    }
@@ -69,22 +69,13 @@ void ArrayBase::EnsureSize(int inSize) const
 String ArrayBase::__ToString() const { return "Array"; }
 String ArrayBase::toString()
 {
-   // Byte-array
-   if (GetElementSize()==1)
+   // Byte-array (not bool!)
+   if (IsByteArray())
    {
       return String( (const char *) mBase, length);
    }
 
-   int n = __length();
-   String result(L"[",1);
-   for(int i=0;i<n;i++)
-   {
-      result+=(String)__GetItem(i);
-      if (i+1<n)
-         result+=String(L", ",1);
-   }
-   result+=String(L"]",1);
-   return result;
+   return HX_STR(L"[") + join(HX_STR(L", ")) + HX_STR(L"]");
 }
 
 void ArrayBase::__SetSize(int inSize)
@@ -122,14 +113,14 @@ void ArrayBase::Splice(ArrayBase *outResult,int inPos,int inLen)
       outResult->__SetSize(0);
       return;
    }
-	else if (inPos<0)
-	{
-		inPos += length;
-		if (inPos<0)
-			inPos =0;
-	}
-	if (inLen<0)
-		return;
+   else if (inPos<0)
+   {
+      inPos += length;
+      if (inPos<0)
+         inPos =0;
+   }
+   if (inLen<0)
+      return;
    if (inPos+inLen>length)
       inLen = length - inPos;
 
@@ -143,15 +134,15 @@ void ArrayBase::Splice(ArrayBase *outResult,int inPos,int inLen)
 void ArrayBase::Slice(ArrayBase *outResult,int inPos,int inEnd)
 {
    if (inPos<0)
-	{
-		inPos += length;
-		if (inPos<0)
-			inPos =0;
-	}
+   {
+      inPos += length;
+      if (inPos<0)
+         inPos =0;
+   }
    if (inEnd<0)
-		inEnd += length;
-	if (inEnd>length)
-		inEnd = length;
+      inEnd += length;
+   if (inEnd>length)
+      inEnd = length;
    int n = inEnd - inPos;
    if (n<=0)
       outResult->__SetSize(0);
@@ -222,10 +213,10 @@ struct ArrayBase_##func : public hx::Object \
    ArrayBase_##func(ArrayBase *inThis) : mThis(inThis) { } \
    String toString() const{ return L###func ; } \
    String __ToString() const{ return L###func ; } \
-	int __GetType() const { return vtFunction; } \
-	void *__GetHandle() const { return mThis; } \
-	int __ArgCount() const { return ARG_C; } \
-	void __Mark() { MarkMember(mThis); } \
+   int __GetType() const { return vtFunction; } \
+   void *__GetHandle() const { return mThis; } \
+   int __ArgCount() const { return ARG_C; } \
+   void __Mark() { MarkMember(mThis); } \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
       return mThis->__##func(array_list); return Dynamic(); \
@@ -282,23 +273,23 @@ Dynamic ArrayBase::__Field(const String &inString)
 
 
 static String sArrayFields[] = {
-	HX_STRING(L"length",6),
-	HX_STRING(L"concat",6),
-	HX_STRING(L"insert",6),
-	HX_STRING(L"iterator",8),
-	HX_STRING(L"join",4),
-	HX_STRING(L"copy",4),
-	HX_STRING(L"pop",3),
-	HX_STRING(L"push",4),
-	HX_STRING(L"remove",6),
-	HX_STRING(L"reverse",7),
-	HX_STRING(L"shift",5),
-	HX_STRING(L"slice",5),
-	HX_STRING(L"splice",6),
-	HX_STRING(L"sort",4),
-	HX_STRING(L"toString",8),
-	HX_STRING(L"unshift",7),
-	String(null())
+   HX_STRING(L"length",6),
+   HX_STRING(L"concat",6),
+   HX_STRING(L"insert",6),
+   HX_STRING(L"iterator",8),
+   HX_STRING(L"join",4),
+   HX_STRING(L"copy",4),
+   HX_STRING(L"pop",3),
+   HX_STRING(L"push",4),
+   HX_STRING(L"remove",6),
+   HX_STRING(L"reverse",7),
+   HX_STRING(L"shift",5),
+   HX_STRING(L"slice",5),
+   HX_STRING(L"splice",6),
+   HX_STRING(L"sort",4),
+   HX_STRING(L"toString",8),
+   HX_STRING(L"unshift",7),
+   String(null())
 };
 
 
@@ -309,13 +300,13 @@ Class ArrayBase::__mClass;
 Dynamic ArrayCreateEmpty() { return new Array<Dynamic>(0,0); }
 Dynamic ArrayCreateArgs(DynamicArray inArgs)
 {
-	return inArgs->__copy();
+   return inArgs->__copy();
 }
 
 void ArrayBase::__boot()
 {
    Static(__mClass) = RegisterClass(HX_STRING(L"Array",5),TCanCast<ArrayBase>,sNone,sArrayFields,
-												ArrayCreateEmpty,ArrayCreateArgs,0,0);
+                                    ArrayCreateEmpty,ArrayCreateArgs,0,0);
 }
 
 
@@ -336,7 +327,7 @@ Dynamic ArrayIterator::__Field(const String &inString)
 
 void  ArrayIterator::__Mark()
 {
-	MarkMember(mArray);
+   MarkMember(mArray);
 }
 
 
