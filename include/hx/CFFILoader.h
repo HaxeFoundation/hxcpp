@@ -200,7 +200,7 @@ ret IMPL_##name def_args \
    name = (FUNC_##name)LoadFunc(#name); \
    if (!name) \
    { \
-      __android_log_print(ANDROID_LOG_ERROR,"Could not resolve :" #name "\n"); \
+      __android_log_print(ANDROID_LOG_ERROR,"CFFILoader", "Could not resolve :" #name "\n"); \
    } \
    return name call_args; \
 }\

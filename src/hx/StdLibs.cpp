@@ -34,16 +34,19 @@ Dynamic Throw(Dynamic inDynamic)
 namespace hx
 {
 
-typedef std::map<std::wstring,Resource> ResourceSet;
-static ResourceSet sgResources;
+//typedef std::map<std::wstring,Resource> ResourceSet;
+//static ResourceSet sgResources;
+
+Resource *sgResources;
 
 void RegisterResources(Resource *inResources)
 {
-   while(inResources->mData)
-   {
-      sgResources[inResources->mName.__s] = *inResources;
-      inResources++;
-   }
+   sgResources = inResources;
+   //while(inResources->mData)
+   //{
+      //sgResources[inResources->mName.__s] = *inResources;
+      //inResources++;
+   //}
 }
 
 }
@@ -53,36 +56,36 @@ using namespace hx;
 Array<String> __hxcpp_resource_names()
 {
    Array<String> result(0,0);
-   for(ResourceSet::iterator i=sgResources.begin(); i!=sgResources.end();++i)
-   {
-      int len = i->first.length();
-      wchar_t *copy = hx::NewString(len);
-      memcpy(copy,i->first.c_str(), len*sizeof(wchar_t));
-      result->push( String(copy) );
-   }
+
+   for(Resource *reso  = sgResources; reso->mData; reso++)
+      result->push( reso->mName );
+
    return result;
 }
 
 String __hxcpp_resource_string(String inName)
 {
-   ResourceSet::iterator i=sgResources.find(inName.__s);
-   if (i==sgResources.end())
-      return null();
-   return String((const char *) i->second.mData, i->second.mDataLength );
+   for(Resource *reso  = sgResources; reso->mData; reso++)
+   {
+      if (reso->mName == inName)
+          return String((const char *) reso->mData, reso->mDataLength );
+   }
+   return null();
 }
 
 Array<unsigned char> __hxcpp_resource_bytes(String inName)
 {
-   ResourceSet::iterator i=sgResources.find(inName.__s);
-   if (i==sgResources.end())
-      return null();
-   int len = i->second.mDataLength;
-   Array<unsigned char> result( len, 0);
-   memcpy( result->GetBase() , i->second.mData, len );
-   return result;
+   for(Resource *reso  = sgResources; reso->mData; reso++)
+   {
+      if (reso->mName == inName)
+      {
+         int len = reso->mDataLength;
+         Array<unsigned char> result( len, 0);
+         memcpy( result->GetBase() , reso->mData, len );
+         return result;
+      }
+   }
 }
-
-
 
 
 
@@ -264,9 +267,10 @@ Dynamic __hxcpp_parse_int(const String &inString)
 
    #ifdef ANDROID
    char buf[100];
-   for(int i=0;i<99 && i<inString.length;i++)
+   int i;
+   for(i=0;i<99 && i<inString.length;i++)
       buf[i] = str[i];
-   buf[99] = '\0';
+   buf[i] = '\0';
  
    char *end = 0;
    if (hex)
@@ -291,9 +295,10 @@ double __hxcpp_parse_float(const String &inString)
    const wchar_t *str = inString.__s;
    #ifdef ANDROID
    char buf[100];
-   for(int i=0;i<99 && i<inString.length;i++)
+   int i;
+   for(i=0;i<99 && i<inString.length;i++)
       buf[i] = str[i];
-   buf[99] = '\0';
+   buf[i] = '\0';
    char *end;
    double result = strtod(buf,&end);
    if (end==buf)
@@ -402,7 +407,6 @@ namespace cpp
 STATIC_HX_DEFINE_DYNAMIC_FUNC2(CppInt32___obj,make,return )
 
 }
-
 
 
 

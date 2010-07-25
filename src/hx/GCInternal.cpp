@@ -758,6 +758,10 @@ public:
          gThreadStateChangeLock->Unlock();
       }
       #endif
+
+      #ifdef ANDROID
+      //__android_log_print(ANDROID_LOG_INFO, "hxcpp", "Collect Done");
+      #endif
    }
 
    void CheckCollect()
@@ -1269,8 +1273,10 @@ void InternalCollect()
    if (!sgAllocInit || !sgInternalEnable)
       return;
 
+#ifndef ANDROID
    int dummy;
    GetLocalAlloc()->SetTopOfStack(&dummy,false);
+#endif
    sGlobalAlloc->Collect();
 }
 

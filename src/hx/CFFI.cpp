@@ -10,7 +10,6 @@
 #include <string>
 
 
-
 // Class for boxing external handles
 
 namespace hx
