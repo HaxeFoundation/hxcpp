@@ -40,7 +40,7 @@ public:
 
    int __Compare(const hx::Object *inRHS) const
    {
-      double diff = inRHS->__ToDouble() - mValue;
+      double diff = mValue - inRHS->__ToDouble();
       return diff < 0 ? -1 : diff==0 ? 0 : 1;
    }
 
@@ -66,7 +66,7 @@ public:
 
    int __Compare(const hx::Object *inRHS) const
    {
-      double diff = inRHS->__ToDouble() - (double)mValue;
+      double diff = (double)mValue - inRHS->__ToDouble();
       return diff < 0 ? -1 : diff==0 ? 0 : 1;
    }
 
@@ -92,8 +92,8 @@ public:
 
    int __Compare(const hx::Object *inRHS) const
    {
-      double diff = inRHS->__ToDouble() - (double)mValue;
-      return diff < 0 ? 1 : diff==0 ? 0 : -1;
+      double diff = mValue - inRHS->__ToDouble();
+      return diff < 0 ? -1 : diff==0 ? 0 : 1;
    }
 
 
