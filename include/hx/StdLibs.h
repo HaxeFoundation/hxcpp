@@ -40,6 +40,7 @@ int   __int__(double x);
 bool  __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2);
 Dynamic __hxcpp_parse_int(const String &inString);
 double __hxcpp_parse_float(const String &inString);
+Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
 
 // --- CFFI helpers ------------------------------------------------------------------
 

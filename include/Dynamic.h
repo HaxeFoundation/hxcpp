@@ -34,7 +34,7 @@ public:
    operator bool() const { return mPtr && mPtr->__ToInt(); }
    bool operator !() const { return !mPtr || !mPtr->__ToInt(); }
 
-   inline Dynamic operator[](int inIndex) const { return mPtr->__GetItem(inIndex); }
+   hx::ArrayRef operator[](int inIndex);
    inline Dynamic __get(int inIndex) const { return mPtr->__GetItem(inIndex); }
 
    template<typename SOURCE_>

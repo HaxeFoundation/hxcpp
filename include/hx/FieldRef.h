@@ -63,6 +63,7 @@ public:
       return d;
    }
    bool operator !() { return ! mObject->__Field(mName)->__ToInt(); }
+   int operator ~() { return ~ mObject->__Field(mName)->__ToInt(); }
 
 
    String  mName;
@@ -75,6 +76,75 @@ inline FieldRef ObjectPtr<T>::FieldRef(const String &inString)
 {
    return hx::FieldRef(mPtr,inString);
 }
+
+
+// --- ArrayRef --------------------------------------------------------------
+//
+// Like FieldRef, but for integer array access
+//
+
+class ArrayRef
+{
+public:
+   explicit ArrayRef(hx::Object *inObj,int inIndex) : mObject(inObj), mIndex(inIndex)
+   {
+   }
+
+   Dynamic operator=(const Dynamic &inRHS)
+   {
+      return mObject->__SetItem(mIndex,inRHS);
+   }
+   inline operator Dynamic() const { return mObject->__GetItem(mIndex); }
+   inline operator double() const { return mObject->__GetItem(mIndex); }
+   inline operator int() const { return mObject->__GetItem(mIndex); }
+
+   // post-increment
+   inline double operator++(int)
+   {
+      double d = mObject->__GetItem(mIndex)->__ToDouble();
+      mObject->__SetItem(mIndex,d+1);
+      return d;
+   }
+   // pre-increment
+   inline double operator++()
+   {
+      double d = mObject->__GetItem(mIndex)->__ToDouble() + 1;
+      mObject->__SetItem(mIndex,d);
+      return d;
+   }
+   // post-decrement
+   inline double operator--(int)
+   {
+      double d = mObject->__GetItem(mIndex)->__ToDouble();
+      mObject->__SetItem(mIndex,d-1);
+      return d;
+   }
+   // pre-decrement
+   inline double operator--()
+   {
+      double d = mObject->__GetItem(mIndex)->__ToDouble() - 1;
+      mObject->__SetItem(mIndex,d);
+      return d;
+   }
+   bool operator !() { return ! mObject->__GetItem(mIndex)->__ToInt(); }
+   int operator ~() { return ~ mObject->__GetItem(mIndex)->__ToInt(); }
+
+
+   int mIndex;
+   hx::Object *mObject;
+};
+
+// We can define this one now...
+template<typename T>
+inline ArrayRef ObjectPtr<T>::ArrayRef(int inIndex)
+{
+   return hx::ArrayRef(mPtr,inIndex);
+}
+
+
+
+
+
 
 } // end namespace hx
 

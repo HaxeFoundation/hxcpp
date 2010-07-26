@@ -163,6 +163,11 @@ double Dynamic::operator%(const Dynamic &inRHS) const
    return remain;
 }
 
+hx::ArrayRef Dynamic::operator[](int inIndex)
+{
+   return hx::ArrayRef(mPtr,inIndex);
+}
+
 
 void Dynamic::ThrowBadFunctionError()
 {

@@ -38,6 +38,7 @@ namespace hx
 
 
 class FieldRef;
+class ArrayRef;
 typedef Array<Dynamic> DynamicArray;
 
 
@@ -96,7 +97,7 @@ public:
 
    virtual int __length() const { return 0; }
    virtual Dynamic __GetItem(int inIndex) const;
-   virtual void __SetItem(int inIndex,Dynamic inValue);
+   virtual Dynamic __SetItem(int inIndex,Dynamic inValue);
    virtual void __SetSize(int inLen) { }
 
    typedef const Dynamic &D;
@@ -205,6 +206,7 @@ public:
 
 	// This is defined in the "FieldRef" class...
    inline class hx::FieldRef FieldRef(const String &inString);
+   inline class hx::ArrayRef ArrayRef(int inString);
    static Class &__SGetClass() { return OBJ_::__SGetClass(); }
 
    OBJ_ *mPtr;

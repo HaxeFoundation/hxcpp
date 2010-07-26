@@ -209,7 +209,8 @@ public:
 
 
    virtual Dynamic __GetItem(int inIndex) const { return __get(inIndex); }
-   virtual void __SetItem(int inIndex,Dynamic inValue) { Item(inIndex) = inValue; }
+   virtual Dynamic __SetItem(int inIndex,Dynamic inValue)
+           { Item(inIndex) = inValue; return inValue; }
 
    inline ELEM_ *Pointer() { return (ELEM_ *)mBase; }
 

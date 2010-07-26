@@ -33,6 +33,9 @@ template<typename RHS_>
    inline Dynamic operator+(const hx::FieldRef &inField,RHS_ &inRHS)
    { return inField.operator Dynamic() + inRHS; }
 
+template<typename RHS_>
+   inline Dynamic operator+(const hx::ArrayRef &inRef,RHS_ &inRHS)
+   { return inRHS.operator Dynamic() + inRHS; }
 
 
 // += -= *= /= %= &= |= ^= <<= >>= >>>=
@@ -115,6 +118,31 @@ template<typename R>
 inline hx::FieldRef UShrEq(hx::FieldRef inLHS, R inRHS) { inLHS = hx::UShr(inLHS,inRHS); return inLHS; }
 template<typename R>
 inline hx::FieldRef ModEq(hx::FieldRef inLHS, R inRHS) { inLHS = (int)inLHS % (int)inRHS; return inLHS; }
+
+
+template<typename R>
+inline hx::ArrayRef AddEq(hx::ArrayRef inLHS, R inRHS) { inLHS = inLHS + inRHS; return inLHS; }
+template<typename R>
+inline hx::ArrayRef MultEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (double)inLHS * (double)inRHS; return inLHS; }
+template<typename R>
+inline hx::ArrayRef DivEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (double)inLHS / (double)inRHS; return inLHS; }
+template<typename R>
+inline hx::ArrayRef SubEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (double)inLHS - (double)inRHS; return inLHS; }
+template<typename R>
+inline hx::ArrayRef AndEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS & (int)inRHS; return inLHS; }
+template<typename R>
+inline hx::ArrayRef OrEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS | (int)inRHS; return inLHS; }
+template<typename R>
+inline hx::ArrayRef XorEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS ^ (int)inRHS; return inLHS; }
+template<typename R>
+inline hx::ArrayRef ShlEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS << (int)inRHS; return inLHS; }
+template<typename R>
+inline hx::ArrayRef ShrEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS >> (int)inRHS; return inLHS; }
+template<typename R>
+inline hx::ArrayRef UShrEq(hx::ArrayRef inLHS, R inRHS) { inLHS = hx::UShr(inLHS,inRHS); return inLHS; }
+template<typename R>
+inline hx::ArrayRef ModEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS % (int)inRHS; return inLHS; }
+
 
 #endif // __GNUC__
 

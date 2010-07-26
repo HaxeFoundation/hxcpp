@@ -330,6 +330,34 @@ bool __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2)
    return typeid(*p1) == typeid(*p2);
 }
 
+namespace hx
+{
+
+struct VarArgFunc : public hx::Object
+{
+   VarArgFunc(Dynamic &inFunc) : mRealFunc(inFunc) { }
+
+   int __GetType() const { return vtFunction; }
+   ::String __ToString() const { return mRealFunc->__ToString() ; }
+
+   void __Mark() { MarkMember(mRealFunc); }
+
+   void *__GetHandle() const { return mRealFunc.GetPtr(); }
+   Dynamic __Run(const Array<Dynamic> &inArgs)
+   {
+      return mRealFunc->__run(inArgs);
+   }
+
+   Dynamic mRealFunc;
+};
+
+}
+
+Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc)
+{
+   return Dynamic(new hx::VarArgFunc(inArrayFunc));
+}
+
 // --- CFFI helpers ------------------------------------------------------------------
 
 

@@ -300,13 +300,13 @@ hx::Object * val_array_i(hx::Object * arg1,int arg2)
 void val_array_set_i(hx::Object * arg1,int arg2,hx::Object *inVal)
 {
 	if (arg1==0) return;
-	return arg1->__SetItem(arg2, Dynamic(inVal) );
+	arg1->__SetItem(arg2, Dynamic(inVal) );
 }
 
 void val_array_set_size(hx::Object * arg1,int inLen)
 {
 	if (arg1==0) return;
-	return arg1->__SetSize(inLen);
+	arg1->__SetSize(inLen);
 }
 
 void val_array_push(hx::Object * arg1,hx::Object *inValue)
