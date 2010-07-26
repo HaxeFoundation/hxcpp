@@ -85,6 +85,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
          return result;
       }
    }
+   return null();
 }
 
 
