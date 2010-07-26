@@ -2,6 +2,10 @@
 #include <limits>
 #include <hxMath.h>
 
+
+#ifdef HX_WINDOWS
+#include <time.h>
+#endif
 // -------- Math ---------------------------------------
 
 using namespace hx;
