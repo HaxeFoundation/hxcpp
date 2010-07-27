@@ -65,6 +65,8 @@ public:
    bool operator !() { return ! mObject->__Field(mName)->__ToInt(); }
    int operator ~() { return ~ mObject->__Field(mName)->__ToInt(); }
 
+   inline bool operator==(const null &) const { return !mObject; }
+   inline bool operator!=(const null &) const { return mObject; }
 
    String  mName;
    hx::Object *mObject;
@@ -129,6 +131,8 @@ public:
    bool operator !() { return ! mObject->__GetItem(mIndex)->__ToInt(); }
    int operator ~() { return ~ mObject->__GetItem(mIndex)->__ToInt(); }
 
+   inline bool operator==(const null &) const { return !mObject; }
+   inline bool operator!=(const null &) const { return mObject; }
 
    int mIndex;
    hx::Object *mObject;
