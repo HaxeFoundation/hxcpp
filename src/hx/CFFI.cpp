@@ -95,8 +95,8 @@ void hxcpp_kind_share(int &ioKind,const char *inName)
    ioKind = kind;
 }
 
-//#define THROWS throw(Dynamic)
-#define THROWS
+#define THROWS throw(Dynamic)
+//#define THROWS
 
 
 extern "C" {

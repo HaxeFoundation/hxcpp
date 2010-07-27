@@ -68,6 +68,8 @@ public:
    inline bool operator==(const null &) const { return !mObject; }
    inline bool operator!=(const null &) const { return mObject; }
 
+	bool HasPointer() const { return mObject; }
+
    String  mName;
    hx::Object *mObject;
 };
@@ -80,15 +82,15 @@ inline FieldRef ObjectPtr<T>::FieldRef(const String &inString)
 }
 
 
-// --- ArrayRef --------------------------------------------------------------
+// --- IndexRef --------------------------------------------------------------
 //
 // Like FieldRef, but for integer array access
 //
 
-class ArrayRef
+class IndexRef
 {
 public:
-   explicit ArrayRef(hx::Object *inObj,int inIndex) : mObject(inObj), mIndex(inIndex)
+   explicit IndexRef(hx::Object *inObj,int inIndex) : mObject(inObj), mIndex(inIndex)
    {
    }
 
@@ -134,15 +136,17 @@ public:
    inline bool operator==(const null &) const { return !mObject; }
    inline bool operator!=(const null &) const { return mObject; }
 
+	bool HasPointer() const { return mObject; }
+
    int mIndex;
    hx::Object *mObject;
 };
 
 // We can define this one now...
 template<typename T>
-inline ArrayRef ObjectPtr<T>::ArrayRef(int inIndex)
+inline IndexRef ObjectPtr<T>::IndexRef(int inIndex)
 {
-   return hx::ArrayRef(mPtr,inIndex);
+   return hx::IndexRef(mPtr,inIndex);
 }
 
 

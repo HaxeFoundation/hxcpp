@@ -163,9 +163,9 @@ double Dynamic::operator%(const Dynamic &inRHS) const
    return remain;
 }
 
-hx::ArrayRef Dynamic::operator[](int inIndex)
+hx::IndexRef Dynamic::operator[](int inIndex)
 {
-   return hx::ArrayRef(mPtr,inIndex);
+   return hx::IndexRef(mPtr,inIndex);
 }
 
 

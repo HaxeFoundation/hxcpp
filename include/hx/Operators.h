@@ -3,17 +3,32 @@
 
 
 
-template<typename T> bool null::operator == (const hx::ObjectPtr<T> &O) { return !O.mPtr; }
-template<typename T> inline bool null::operator != (const hx::ObjectPtr<T> &O) { return O.mPtr; }
+template<typename T> bool null::operator == (const hx::ObjectPtr<T> &O) const { return !O.mPtr; }
+template<typename T> inline bool null::operator != (const hx::ObjectPtr<T> &O) const { return O.mPtr; }
 
-template<typename T> inline bool null::operator == (const Array<T> &O) { return !O.mPtr; }
-template<typename T> inline bool null::operator != (const Array<T> &O) { return O.mPtr; }
+template<typename T> inline bool null::operator == (const Array<T> &O) const { return !O.mPtr; }
+template<typename T> inline bool null::operator != (const Array<T> &O) const { return O.mPtr; }
+inline bool null::operator == (const hx::FieldRef &O) const { return !O.HasPointer(); }
+inline bool null::operator != (const hx::FieldRef &O) const { return O.HasPointer(); }
+inline bool null::operator == (const hx::IndexRef &O) const { return !O.HasPointer(); }
+inline bool null::operator != (const hx::IndexRef &O) const { return O.HasPointer(); }
 
-inline bool null::operator == (const Dynamic &O) { return !O.mPtr; }
-inline bool null::operator != (const Dynamic &O) { return O.mPtr; }
+inline bool null::operator == (const Dynamic &O) const { return !O.mPtr; }
+inline bool null::operator != (const Dynamic &O) const { return O.mPtr; }
 
-inline bool null::operator == (const String &O) { return !O.__s; }
-inline bool null::operator != (const String &O) { return O.__s; }
+inline bool null::operator == (const String &O) const { return !O.__s; }
+inline bool null::operator != (const String &O) const { return O.__s; }
+
+HX_COMPARE_NULL_MOST_OPS(String)
+HX_COMPARE_NULL_MOST_OPS(Dynamic)
+HX_COMPARE_NULL_MOST_OPS(hx::FieldRef)
+HX_COMPARE_NULL_MOST_OPS(hx::IndexRef)
+
+//HX_NULL_DEFINE_COMPARE_MOST_OPS(String)
+//HX_NULL_DEFINE_COMPARE_MOST_OPS(Dynamic)
+//HX_NULL_DEFINE_COMPARE_MOST_OPS(hx::FieldRef)
+//HX_NULL_DEFINE_COMPARE_MOST_OPS(hx::IndexRef)
+
 
 // Operators for mixing various types ....
 
@@ -34,7 +49,7 @@ template<typename RHS_>
    { return inField.operator Dynamic() + inRHS; }
 
 template<typename RHS_>
-   inline Dynamic operator+(const hx::ArrayRef &inRef,RHS_ &inRHS)
+   inline Dynamic operator+(const hx::IndexRef &inRef,RHS_ &inRHS)
    { return inRHS.operator Dynamic() + inRHS; }
 
 
@@ -121,30 +136,70 @@ inline hx::FieldRef ModEq(hx::FieldRef inLHS, R inRHS) { inLHS = (int)inLHS % (i
 
 
 template<typename R>
-inline hx::ArrayRef AddEq(hx::ArrayRef inLHS, R inRHS) { inLHS = inLHS + inRHS; return inLHS; }
+inline hx::IndexRef AddEq(hx::IndexRef inLHS, R inRHS) { inLHS = inLHS + inRHS; return inLHS; }
 template<typename R>
-inline hx::ArrayRef MultEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (double)inLHS * (double)inRHS; return inLHS; }
+inline hx::IndexRef MultEq(hx::IndexRef inLHS, R inRHS) { inLHS = (double)inLHS * (double)inRHS; return inLHS; }
 template<typename R>
-inline hx::ArrayRef DivEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (double)inLHS / (double)inRHS; return inLHS; }
+inline hx::IndexRef DivEq(hx::IndexRef inLHS, R inRHS) { inLHS = (double)inLHS / (double)inRHS; return inLHS; }
 template<typename R>
-inline hx::ArrayRef SubEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (double)inLHS - (double)inRHS; return inLHS; }
+inline hx::IndexRef SubEq(hx::IndexRef inLHS, R inRHS) { inLHS = (double)inLHS - (double)inRHS; return inLHS; }
 template<typename R>
-inline hx::ArrayRef AndEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS & (int)inRHS; return inLHS; }
+inline hx::IndexRef AndEq(hx::IndexRef inLHS, R inRHS) { inLHS = (int)inLHS & (int)inRHS; return inLHS; }
 template<typename R>
-inline hx::ArrayRef OrEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS | (int)inRHS; return inLHS; }
+inline hx::IndexRef OrEq(hx::IndexRef inLHS, R inRHS) { inLHS = (int)inLHS | (int)inRHS; return inLHS; }
 template<typename R>
-inline hx::ArrayRef XorEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS ^ (int)inRHS; return inLHS; }
+inline hx::IndexRef XorEq(hx::IndexRef inLHS, R inRHS) { inLHS = (int)inLHS ^ (int)inRHS; return inLHS; }
 template<typename R>
-inline hx::ArrayRef ShlEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS << (int)inRHS; return inLHS; }
+inline hx::IndexRef ShlEq(hx::IndexRef inLHS, R inRHS) { inLHS = (int)inLHS << (int)inRHS; return inLHS; }
 template<typename R>
-inline hx::ArrayRef ShrEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS >> (int)inRHS; return inLHS; }
+inline hx::IndexRef ShrEq(hx::IndexRef inLHS, R inRHS) { inLHS = (int)inLHS >> (int)inRHS; return inLHS; }
 template<typename R>
-inline hx::ArrayRef UShrEq(hx::ArrayRef inLHS, R inRHS) { inLHS = hx::UShr(inLHS,inRHS); return inLHS; }
+inline hx::IndexRef UShrEq(hx::IndexRef inLHS, R inRHS) { inLHS = hx::UShr(inLHS,inRHS); return inLHS; }
 template<typename R>
-inline hx::ArrayRef ModEq(hx::ArrayRef inLHS, R inRHS) { inLHS = (int)inLHS % (int)inRHS; return inLHS; }
+inline hx::IndexRef ModEq(hx::IndexRef inLHS, R inRHS) { inLHS = (int)inLHS % (int)inRHS; return inLHS; }
 
 
 #endif // __GNUC__
+
+
+
+template<typename T> inline T TCastObject(hx::Object *inObj) { return null(); }
+template<> inline bool TCastObject<bool>(hx::Object *inObj) { return inObj?inObj->__ToInt():0; }
+template<> inline int TCastObject<int>(hx::Object *inObj) { return inObj?inObj->__ToInt():0; }
+template<> inline double TCastObject<double>(hx::Object *inObj) { return inObj?inObj->__ToDouble():0; }
+template<> inline null TCastObject<null>(hx::Object *inObj) { return null(); }
+
+// Cast to scalar
+template<typename T> struct TCast
+{
+   template<typename VAL> static inline T cast(VAL inVal ) { return T(inVal); }
+
+   template<typename INOBJ>
+   static inline T cast(ObjectPtr<INOBJ> inObj )
+	{
+		return TCastObject<T>(inObj.GetPtr());
+	}
+
+	template<typename INOBJ>
+   static inline T cast(Array<INOBJ> inObj ) { return null(); }
+
+};
+
+// Cast to object
+template<typename T> struct TCast< ObjectPtr<T> >
+{
+   template<typename VAL> static inline ObjectPtr<T> cast(VAL inVal ) { return Dynamic(inVal); }
+
+   template<typename INOBJ>
+   static inline ObjectPtr<T> cast(ObjectPtr<INOBJ> inObj )
+	{
+		return ObjectPtr<T>(inObj);
+	}
+};
+
+
+Array<Dynamic> TCastToArray(Dynamic inVal) { return inVal; }
+
 
 }
 

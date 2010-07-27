@@ -27,6 +27,12 @@ Dynamic Throw(Dynamic inDynamic)
    return null();
 }
 
+null NullArithmetic(const wchar_t *inErr)
+{
+	Throw( String(inErr) );
+	return null();
+}
+
 }
 
 // -------- Resources ---------------------------------------

@@ -11,7 +11,55 @@
 
 // Forward declare ...
 class String;
+class null;
 namespace hx { template<typename O> class ObjectPtr; }
+
+namespace hx { null NullArithmetic(const wchar_t *inText); }
+
+#define HX_NULL_COMPARE_OP(op,type,value) \
+			bool operator op (const type &inRHS) const { return value; }
+
+#define HX_NULL_COMPARE_OPS(type) \
+	HX_NULL_COMPARE_OP(<,type,false) \
+	HX_NULL_COMPARE_OP(<=,type,false) \
+	HX_NULL_COMPARE_OP(>,type,false) \
+	HX_NULL_COMPARE_OP(>=,type,false) \
+	HX_NULL_COMPARE_OP(==,type,false) \
+	HX_NULL_COMPARE_OP(!=,type,true)
+
+#define HX_NULL_COMPARE_MOST_OPS(type) \
+	HX_NULL_COMPARE_OP(<,type,false) \
+	HX_NULL_COMPARE_OP(<=,type,false) \
+	HX_NULL_COMPARE_OP(>,type,false) \
+	HX_NULL_COMPARE_OP(>=,type,false)
+
+#define HX_COMPARE_NULL_OP(op,type,value) \
+	   inline bool operator op (type inLHS, const null &) { return value; }
+
+#define HX_COMPARE_NULL_OPS(type) \
+	HX_COMPARE_NULL_OP(<,type,false) \
+	HX_COMPARE_NULL_OP(<=,type,false) \
+	HX_COMPARE_NULL_OP(>,type,false) \
+	HX_COMPARE_NULL_OP(>=,type,false) \
+	HX_COMPARE_NULL_OP(==,type,false) \
+	HX_COMPARE_NULL_OP(!=,type,true)
+
+#define HX_COMPARE_NULL_MOST_OPS(type) \
+	HX_COMPARE_NULL_OP(<,type,false) \
+	HX_COMPARE_NULL_OP(<=,type,false) \
+	HX_COMPARE_NULL_OP(>,type,false) \
+	HX_COMPARE_NULL_OP(>=,type,false)
+
+
+#define HX_NULL_ARITHMETIC_OP(op) \
+template<typename T> inline null operator op (T t) const \
+   { return hx::NullArithmetic(L###op); } \
+inline null operator op (const null &) const \
+   { return hx::NullArithmetic(L###op); }
+
+#define HX_ARITHMETIC_NULL_OP(op) \
+template<typename T> inline null operator op (const T &, const null &) \
+   { return hx::NullArithmetic(L###op); }
 
 
 class null
@@ -25,44 +73,78 @@ class null
      explicit inline null(int){ } 
      explicit inline null(bool){ } 
 
-     operator char * () const { return 0; }
-     operator wchar_t * () const { return 0; }
-     operator bool () const { return false; }
-     operator int () const { return 0; }
-     operator double () const { return 0; }
-     operator unsigned char () const { return 0; }
+     operator char * () { return 0; }
+     operator wchar_t * () { return 0; }
+     operator bool () { return false; }
+     operator int () { return 0; }
+     operator double () { return 0; }
+     operator unsigned char () { return 0; }
 
      bool operator == (null inRHS) const { return true; }
      bool operator != (null inRHS) const { return false; }
      bool operator == (null inRHS) { return true; }
      bool operator != (null inRHS) { return false; }
 
-     bool operator == (int inRHS) const { return false; }
-     bool operator != (int inRHS) const { return true; }
-     bool operator == (double inRHS) const { return false; }
-     bool operator != (double inRHS) const { return true; }
-     bool operator == (bool inRHS) const { return false; }
-     bool operator != (bool inRHS) const { return true; }
+     template<typename T> inline bool operator == (const hx::ObjectPtr<T> &) const;
+     template<typename T> inline bool operator != (const hx::ObjectPtr<T> &) const;
+     template<typename T> inline bool operator == (const Array<T> &) const;
+     template<typename T> inline bool operator != (const Array<T> &) const;
+     inline bool operator == (const hx::FieldRef &) const;
+     inline bool operator != (const hx::FieldRef &) const;
+     inline bool operator == (const hx::IndexRef &) const;
+     inline bool operator != (const hx::IndexRef &) const;
+     inline bool operator == (const Dynamic &) const;
+     inline bool operator != (const Dynamic &) const;
+     inline bool operator == (const String &) const;
+     inline bool operator != (const String &) const;
 
-     template<typename T> inline bool operator == (const hx::ObjectPtr<T> &);
-     template<typename T> inline bool operator != (const hx::ObjectPtr<T> &);
-     template<typename T> inline bool operator == (const Array<T> &);
-     template<typename T> inline bool operator != (const Array<T> &);
-     inline bool operator == (const Dynamic &);
-     inline bool operator != (const Dynamic &);
-     inline bool operator == (const String &);
-     inline bool operator != (const String &);
+     inline null operator - () const { return hx::NullArithmetic(L"-"); }
+     inline null operator ! () const { return hx::NullArithmetic(L"-"); }
+
+	  HX_NULL_COMPARE_OPS(bool)
+	  HX_NULL_COMPARE_OPS(double)
+	  HX_NULL_COMPARE_OPS(int)
+	  HX_NULL_COMPARE_MOST_OPS(String)
+	  HX_NULL_COMPARE_MOST_OPS(Dynamic)
+	  HX_NULL_COMPARE_MOST_OPS(hx::FieldRef)
+	  HX_NULL_COMPARE_MOST_OPS(hx::IndexRef)
+
+	  HX_NULL_COMPARE_OP(<,null,false)
+	  HX_NULL_COMPARE_OP(<=,null,true)
+	  HX_NULL_COMPARE_OP(>,null,false)
+	  HX_NULL_COMPARE_OP(>=,null,true)
+
+
+	  HX_NULL_ARITHMETIC_OP(+);
+	  HX_NULL_ARITHMETIC_OP(*);
+	  HX_NULL_ARITHMETIC_OP(-);
+	  HX_NULL_ARITHMETIC_OP(/);
+	  HX_NULL_ARITHMETIC_OP(%);
+	  HX_NULL_ARITHMETIC_OP(&);
+	  HX_NULL_ARITHMETIC_OP(|);
+	  HX_NULL_ARITHMETIC_OP(^);
+	  HX_NULL_ARITHMETIC_OP(>>);
+	  HX_NULL_ARITHMETIC_OP(<<);
 };
 
 typedef null Void;
 
-inline bool operator == (bool inLHS,const null &inRHS)  { return false; }
-inline bool operator != (bool inLHS,const null &inRHS)  { return true; }
-inline bool operator == (double inLHS,const null &inRHS)  { return false; }
-inline bool operator != (double inLHS,const null &inRHS)  { return true; }
-inline bool operator == (int inLHS,const null &inRHS)  { return false; }
-inline bool operator != (int inLHS,const null &inRHS)  { return true; }
+HX_COMPARE_NULL_OPS(bool)
+HX_COMPARE_NULL_OPS(double)
+HX_COMPARE_NULL_OPS(int)
 
+HX_ARITHMETIC_NULL_OP(+)
+HX_ARITHMETIC_NULL_OP(*)
+HX_ARITHMETIC_NULL_OP(-)
+HX_ARITHMETIC_NULL_OP(/)
+HX_ARITHMETIC_NULL_OP(%)
+HX_ARITHMETIC_NULL_OP(&)
+HX_ARITHMETIC_NULL_OP(|)
+HX_ARITHMETIC_NULL_OP(^)
+HX_ARITHMETIC_NULL_OP(>>)
+HX_ARITHMETIC_NULL_OP(<<)
+
+// Other ops in Operator.h
 
 
 

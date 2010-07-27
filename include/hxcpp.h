@@ -87,6 +87,8 @@ namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
 namespace cpp { class CppInt32__; }
 namespace hx { class Object; }
 namespace hx { class FieldMap; }
+namespace hx { class FieldRef; }
+namespace hx { class IndexRef; }
 namespace hx { template<typename O> class ObjectPtr; }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
@@ -135,7 +137,6 @@ void __hxcpp_check_overflow(int inVal);
 // This needs to "see" other declarations ...
 #include <hx/GCTemplates.h>
 #include <hx/FieldRef.h>
-#include <hx/IndexRef.h>
 #include <hx/Anon.h>
 #include "Array.h"
 #include "Class.h"

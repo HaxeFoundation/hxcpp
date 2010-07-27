@@ -38,7 +38,7 @@ namespace hx
 
 
 class FieldRef;
-class ArrayRef;
+class IndexRef;
 typedef Array<Dynamic> DynamicArray;
 
 
@@ -206,17 +206,12 @@ public:
 
 	// This is defined in the "FieldRef" class...
    inline class hx::FieldRef FieldRef(const String &inString);
-   inline class hx::ArrayRef ArrayRef(int inString);
+   inline class hx::IndexRef IndexRef(int inString);
    static Class &__SGetClass() { return OBJ_::__SGetClass(); }
 
    OBJ_ *mPtr;
 };
 
-template<typename T>
-inline bool operator==(const null &inLHS,const hx::ObjectPtr<T> &inRHS) { return inRHS==inLHS; }
-
-template<typename T>
-inline bool operator!=(const null &inLHS,const hx::ObjectPtr<T> &inRHS) { return inRHS!=inLHS; }
 
 } // end namespace hx
 
