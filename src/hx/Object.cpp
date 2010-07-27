@@ -57,7 +57,7 @@ Dynamic Object::__Field(const String &inString) { return null(); }
 bool Object::__HasField(const String &inString) { return __Field(inString)!=null(); }
 Dynamic Object::__Run(const Array<Dynamic> &inArgs) { return 0; }
 Dynamic Object::__GetItem(int inIndex) const { return null(); }
-Dynamic Object::__SetItem(int inIndex,Dynamic) {  }
+Dynamic Object::__SetItem(int inIndex,Dynamic) { return null();  }
 DynamicArray Object::__EnumParams() { return DynamicArray(); }
 String Object::__Tag() const { return L"<not enum>"; }
 int Object::__Index() const { return -1; }
