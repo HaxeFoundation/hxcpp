@@ -21,15 +21,15 @@ namespace hx
 
 
 #define HX_FIELD_REF_MEM_OP(op,ret) \
-inline ret operator op (const FieldRef &inRHS) \
-    { return mObject->__Field(mName) op inRHS.mObject->__Field(mName); } \
-inline ret operator op (const IndexRef &inRHS); \
-template<typename T> inline ret operator op (const T& inRHS) \
-   { return mObject->__Field(mName) op inRHS; }
+inline ret operator op (const FieldRef &inA) \
+  { return (Dynamic)(*this) op (Dynamic)inA; } \
+inline ret operator op (const IndexRef &inA); \
+template<typename T> inline ret operator op (const T& inA) \
+   { return (Dynamic)(*this) op inA; }
 
 #define HX_FIELD_REF_IMPL_MEM_OP(op,ret) \
-inline ret hx::FieldRef::operator op (const IndexRef &inRHS) \
-    { return mObject->__Field(mName) op inRHS.operator Dynamic(); } \
+inline ret hx::FieldRef::operator op (const IndexRef &inA) \
+    { return (Dynamic)(*this) op inA.operator Dynamic(); } \
 
 class FieldRef
 {
@@ -42,7 +42,7 @@ public:
    {
       return mObject->__SetField(mName,inRHS);
    }
-   inline operator Dynamic() const { return mObject->__Field(mName); }
+   inline operator Dynamic() const { return mObject ? mObject->__Field(mName) : null(); }
    inline operator double() const { return mObject->__Field(mName); }
    inline operator int() const { return mObject->__Field(mName); }
 
@@ -112,8 +112,8 @@ inline FieldRef ObjectPtr<T>::FieldRef(const String &inString)
 }
 
 #define HX_FIELD_REF_OP(op,ret) \
-template<typename T> inline ret operator op (T &inT, const FieldRef &inRHS) \
-   { return inT op ( inRHS. operator Dynamic()); }
+template<typename T> inline ret operator op (T &inT, const FieldRef &inA) \
+   { return inT op ( inA.operator Dynamic()); }
 
 HX_FIELD_REF_OP(==,bool)
 HX_FIELD_REF_OP(!=,bool)
@@ -130,20 +130,18 @@ HX_FIELD_REF_OP(%,double)
 
 
 
-
-
 // --- IndexRef --------------------------------------------------------------
 //
 // Like FieldRef, but for integer array access
 //
 
 #define HX_INDEX_REF_MEM_OP(op,ret) \
-inline ret operator op (const IndexRef &inRHS) \
-    { return mObject->__GetItem(mIndex) op inRHS.mObject->__GetItem(mIndex); } \
-inline ret operator op (const FieldRef &inRHS) \
-    { return mObject->__GetItem(mIndex) op inRHS.operator Dynamic(); } \
-template<typename T> inline ret operator op (const T& inRHS) \
-   { return mObject->__GetItem(mIndex) op inRHS; }
+inline ret operator op (const IndexRef &inA) \
+    { return (Dynamic)(*this) op (Dynamic)(inA); } \
+inline ret operator op (const FieldRef &inA) \
+    { return (Dynamic)(*this)op inA.operator Dynamic(); } \
+template<typename T> inline ret operator op (const T& inA) \
+   { return (Dynamic)(*this) op inA; }
 
 
 class IndexRef
@@ -223,8 +221,8 @@ inline IndexRef ObjectPtr<T>::IndexRef(int inIndex)
 }
 
 #define HX_INDEX_REF_OP(op,ret) \
-template<typename T> inline ret operator op (T &inT, const IndexRef &inRHS) \
-   { return inT op ( inRHS. operator Dynamic()); }
+template<typename T> inline ret operator op (T &inT, const IndexRef &inA) \
+   { return inT op ( inA. operator Dynamic()); }
 
 HX_INDEX_REF_OP(==,bool)
 HX_INDEX_REF_OP(!=,bool)
@@ -240,20 +238,30 @@ HX_INDEX_REF_OP(-,double)
 HX_INDEX_REF_OP(%,double)
 
 
-   // Implement once IndexRef has been defined.
-   HX_FIELD_REF_IMPL_MEM_OP(==,bool)
-   HX_FIELD_REF_IMPL_MEM_OP(!=,bool)
-   HX_FIELD_REF_IMPL_MEM_OP(<,bool)
-   HX_FIELD_REF_IMPL_MEM_OP(<=,bool)
-   HX_FIELD_REF_IMPL_MEM_OP(>,bool)
-   HX_FIELD_REF_IMPL_MEM_OP(>=,bool)
+// Implement once IndexRef has been defined.
+HX_FIELD_REF_IMPL_MEM_OP(==,bool)
+HX_FIELD_REF_IMPL_MEM_OP(!=,bool)
+HX_FIELD_REF_IMPL_MEM_OP(<,bool)
+HX_FIELD_REF_IMPL_MEM_OP(<=,bool)
+HX_FIELD_REF_IMPL_MEM_OP(>,bool)
+HX_FIELD_REF_IMPL_MEM_OP(>=,bool)
 
-   HX_FIELD_REF_IMPL_MEM_OP(+,Dynamic)
-   HX_FIELD_REF_IMPL_MEM_OP(*,double)
-   HX_FIELD_REF_IMPL_MEM_OP(/,double)
-   HX_FIELD_REF_IMPL_MEM_OP(-,double)
-   HX_FIELD_REF_IMPL_MEM_OP(%,double)
+HX_FIELD_REF_IMPL_MEM_OP(+,Dynamic)
+HX_FIELD_REF_IMPL_MEM_OP(*,double)
+HX_FIELD_REF_IMPL_MEM_OP(/,double)
+HX_FIELD_REF_IMPL_MEM_OP(-,double)
+HX_FIELD_REF_IMPL_MEM_OP(%,double)
 
+// Disambiguate Dynamic operators...
+
+#define HX_INDEX_REF_OP_DYNAMIC(op,ret) \
+inline ret operator op (const Dynamic &inT, const IndexRef &inA) \
+   { return inT op ( inA.operator Dynamic()); }
+
+HX_INDEX_REF_OP_DYNAMIC(==,bool)
+HX_INDEX_REF_OP_DYNAMIC(!=,bool)
+HX_INDEX_REF_OP_DYNAMIC(+,Dynamic)
+HX_INDEX_REF_OP_DYNAMIC(*,double)
 
 
 } // end namespace hx

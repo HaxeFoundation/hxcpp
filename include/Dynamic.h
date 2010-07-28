@@ -79,7 +79,7 @@ public:
       bool operator op (const String &inRHS)  const { return mPtr && ((String)(*this) op inRHS); } \
       bool operator op (double inRHS)  const { return mPtr && ((double)(*this) op inRHS); } \
       bool operator op (int inRHS)  const { return mPtr && ((double)(*this) op (double)inRHS); } \
-      bool operator op (bool inRHS)  const { return mPtr && ((double)(*this) op (double)inRHS); }
+      bool operator op (bool inRHS)  const { return mPtr && ((double)(*this) op (double)inRHS); } \
 
    #define DYNAMIC_COMPARE_OP_ALL( op ) \
       bool operator op (const Dynamic &inRHS) const { return mPtr && (Compare(inRHS) op 0); } \
@@ -106,6 +106,10 @@ public:
 
    double operator%(const Dynamic &inRHS) const;
    double operator-() const { return mPtr ? - mPtr->__ToDouble() : 0.0; }
+   double operator++() { double val = mPtr->__ToDouble() + 1; *this = val; return val; }
+   double operator++(int) {double val = mPtr->__ToDouble(); *this = val+1; return val; }
+   double operator--() { double val = mPtr->__ToDouble() - 1; *this = val; return val; }
+   double operator--(int) {double val = mPtr->__ToDouble(); *this = val-1; return val; }
 
 
    #define DYNAMIC_ARITH( op ) \
