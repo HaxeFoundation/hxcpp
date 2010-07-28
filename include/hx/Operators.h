@@ -44,14 +44,15 @@ template<typename T_>
    inline String operator+(const hx::ObjectPtr<T_> &inLHS,const String &s)
    { return (inLHS.mPtr ? const_cast<hx::ObjectPtr<T_> & >(inLHS)->toString() : HX_STRING(L"null",4) ) + s; }
 
-template<typename RHS_>
-   inline Dynamic operator+(const hx::FieldRef &inField,RHS_ &inRHS)
-   { return inField.operator Dynamic() + inRHS; }
+/*
+template<typename LHS_>
+   inline Dynamic operator+(LHS_ inLHS, const hx::FieldRef &inField)
+   { return inLHS + inField.operator Dynamic(); }
 
-template<typename RHS_>
-   inline Dynamic operator+(const hx::IndexRef &inRef,RHS_ &inRHS)
-   { return inRHS.operator Dynamic() + inRHS; }
-
+template<typename LHS_>
+   inline Dynamic operator+(LHS_ inLHS,const hx::IndexRef &inIndexRef)
+   { return inLHS + inIndexRef.operator Dynamic(); }
+*/
 
 // += -= *= /= %= &= |= ^= <<= >>= >>>=
 
@@ -61,7 +62,7 @@ namespace hx
 template<typename T> inline double ToDouble(T inT) { return 0; }
 template<typename T> inline double ToDouble(hx::ObjectPtr<T> inObj)
 {
-	return inObj.mPtr ? inObj.mPtr->__ToDouble() : 0.0;
+   return inObj.mPtr ? inObj.mPtr->__ToDouble() : 0.0;
 }
 template<> inline double ToDouble(String inValue) { return __hxcpp_parse_float(inValue); }
 template<> inline double ToDouble(double inValue) { return inValue; }
@@ -176,11 +177,11 @@ template<typename T> struct TCast
 
    template<typename INOBJ>
    static inline T cast(ObjectPtr<INOBJ> inObj )
-	{
-		return TCastObject<T>(inObj.GetPtr());
-	}
+   {
+      return TCastObject<T>(inObj.GetPtr());
+   }
 
-	template<typename INOBJ>
+   template<typename INOBJ>
    static inline T cast(Array<INOBJ> inObj ) { return null(); }
 
 };
@@ -192,13 +193,13 @@ template<typename T> struct TCast< ObjectPtr<T> >
 
    template<typename INOBJ>
    static inline ObjectPtr<T> cast(ObjectPtr<INOBJ> inObj )
-	{
-		return ObjectPtr<T>(inObj);
-	}
+   {
+      return ObjectPtr<T>(inObj);
+   }
 };
 
 
-Array<Dynamic> TCastToArray(Dynamic inVal) { return inVal; }
+inline Array<Dynamic> TCastToArray(Dynamic inVal) { return inVal; }
 
 
 }
