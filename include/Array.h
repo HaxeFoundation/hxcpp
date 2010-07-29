@@ -184,9 +184,11 @@ template<> inline unsigned char *NewNull<unsigned char>() { unsigned char u=0; r
 
 
 template<typename T>
-struct ArrayTraits { enum { IsByteArray = 0 }; };
+struct ArrayTraits { enum { IsByteArray = 0, IsDynamic = 0 }; };
 template<>
-struct ArrayTraits<unsigned char> { enum { IsByteArray = 1 }; };
+struct ArrayTraits<unsigned char> { enum { IsByteArray = 1, IsDynamic = 0 }; };
+template<>
+struct ArrayTraits<Dynamic> { enum { IsByteArray = 0, IsDynamic = 1 }; };
 
 
 template<typename ELEM_>
@@ -243,7 +245,12 @@ public:
 
    int GetElementSize() const { return sizeof(ELEM_); }
 
-   String ItemString(int inI) { return __get(inI); }
+   String ItemString(int inI)
+   {
+      String result =  __get(inI);
+      if (result==null()) return HX_STR(L"null");
+      return result;
+   }
 
    Array_obj<ELEM_> *Add(const ELEM_ &inItem) { push(inItem); return this; }
 
@@ -432,11 +439,34 @@ public:
    Array ( const hx::ObjectPtr< OBJ_  > &inArray )
         :  hx::ObjectPtr< OBJ_ >(inArray) { }
 
-   // Construct from general pointer (eg, dynamic)
+   Array(const Array<ELEM_> &inArray) : super(inArray.GetPtr()) { }
+
+   // Build dynamic array from foreign array
    template<typename SOURCE_>
-   Array( const hx::ObjectPtr<SOURCE_> &inRHS ) : super(0)
+   Array( const Array<SOURCE_> &inRHS ) : super(0)
    {
-      SOURCE_ *ptr = inRHS.GetPtr(); 
+      Array_obj<SOURCE_> *ptr = inRHS.GetPtr(); 
+      if (ptr)
+      {
+         OBJ_ *arr = dynamic_cast<OBJ_ *>(ptr);
+         if (!arr)
+         {
+            // Non-identical type (syntactically, should be creating from Array<Dynamic>)
+            // Copy elements one-by-one
+            // Not quite right, but is the best we can do...
+            int n = ptr->__length();
+            *this = Array_obj<ELEM_>::__new(n);
+            for(int i=0;i<n;i++)
+               mPtr->QuickItem(i) = ptr->__GetItem(i);
+         }
+         else
+            mPtr = arr;
+      }
+   }
+
+   Array( const Dynamic &inRHS ) : super(0)
+   {
+      hx::Object *ptr = inRHS.GetPtr(); 
       if (ptr)
       {
          OBJ_ *arr = dynamic_cast<OBJ_ *>(ptr);
@@ -456,37 +486,24 @@ public:
    }
 
 
-   // Constuct from foreign array ...
-   template<typename SOURCE_ELEM_>
-   Array(const Array<SOURCE_ELEM_> &inArray) : super(0)
+   // operator= exact match...
+   Array &operator=( Array<ELEM_> inRHS )
    {
-      if (inArray.GetPtr())
-      {
-         int n = inArray->size();
-         *this = Array_obj<ELEM_>::__new(n);
-         for(int i=0;i<n;i++)
-            mPtr->QuickItem(i) = inArray->__get(i);
-      }
-   }
-
-   Array(const Array<ELEM_> &inArray) : super(inArray.GetPtr()) { }
-
-
-   Array &operator=( const hx::ObjectPtr<OBJ_ >&inArray )
-   {
-      mPtr = inArray.GetPtr();
+      mPtr = inRHS.GetPtr();
       return *this;
    }
+
+   // Foreign array
+   template<typename OTHER>
+   Array &operator=( const Array<OTHER> &inRHS )
+   {
+      *this = Array(inRHS);
+      return *this;
+   }
+
    Array &operator=( const Dynamic &inRHS )
    {
-      hx::Object *ptr = inRHS.GetPtr();
-      if (ptr)
-      {
-         mPtr = dynamic_cast<OBJ_ *>(ptr);
-         if (!mPtr) hx::Throw(HX_INVALID_CAST);
-      }
-      else
-         mPtr = 0;
+      *this = Array(inRHS);
       return *this;
    }
 
