@@ -74,6 +74,8 @@ typedef wchar_t HX_CHAR;
 #endif
 
 
+#define HX_SOURCE_PUSH
+#define HX_SOURCE_POS(FILE,LINE)
 
 
 
