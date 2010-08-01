@@ -17,7 +17,7 @@ public:
 	::String __ToString();
 	int __ToInt();
 	double __ToDouble();
-	char * __CStr();
+	const char * __CStr();
 	::String toString();
 	bool __HasField(const ::String &);
 	Dynamic __Field(const ::String &);

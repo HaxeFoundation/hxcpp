@@ -1,15 +1,7 @@
 #ifndef HX_MACROS_H
 #define HX_MACROS_H
 
-#ifdef HX_WINDOWS
-#define HX_STRING(s,len) ::String((L"\xffff\xffff" s)+2,len)
-#else
-#define HX_STRING(s,len) ::String( (L"\xffffffff" s) + 1 ,len)
-#endif
 
-#define HX_STR(s) HX_STRING(s,sizeof(s)/sizeof(wchar_t)-1)
-
-#define HX_STRING_UTF8(s,len) ::String( ("\xff\xff\xff\xff" s) + 4 ,len)
 
 
 #define HX_DO_RTTI_BASE \
@@ -108,7 +100,7 @@ struct class##func : public hx::Object \
    int __ArgCount() const { return N; } \
    hx::ObjectPtr<class> mThis; \
    class##func(class *inThis) : mThis(inThis) { } \
-   ::String __ToString() const{ return L###func ; } \
+   ::String __ToString() const{ return HX_CSTRING(#func); } \
    void __Mark() { MarkMember(mThis); } \
    void *__GetHandle() const { return mThis.GetPtr(); } \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
@@ -180,7 +172,7 @@ struct class##func : public hx::Object \
    class##func() { } \
    int __GetType() const { return vtFunction; } \
    int __ArgCount() const { return N; } \
-   ::String __ToString() const{ return L###func ; } \
+   ::String __ToString() const{ return HX_CSTRING(#func) ; } \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
       ret class::func(array_list); return Dynamic(); \

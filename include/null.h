@@ -14,7 +14,7 @@ class String;
 class null;
 namespace hx { template<typename O> class ObjectPtr; }
 
-namespace hx { null NullArithmetic(const wchar_t *inText); }
+namespace hx { null NullArithmetic(const char *inText); }
 
 #define HX_NULL_COMPARE_OP(op,type,value) \
 			bool operator op (const type &inRHS) const { return value; }
@@ -53,13 +53,13 @@ namespace hx { null NullArithmetic(const wchar_t *inText); }
 
 #define HX_NULL_ARITHMETIC_OP(op) \
 template<typename T> inline null operator op (T t) const \
-   { return hx::NullArithmetic(L###op); } \
+   { return hx::NullArithmetic(#op); } \
 inline null operator op (const null &) const \
-   { return hx::NullArithmetic(L###op); }
+   { return hx::NullArithmetic(#op); }
 
 #define HX_ARITHMETIC_NULL_OP(op) \
 template<typename T> inline null operator op (const T &, const null &) \
-   { return hx::NullArithmetic(L###op); }
+   { return hx::NullArithmetic(#op); }
 
 
 class null
@@ -98,8 +98,8 @@ class null
      inline bool operator == (const String &) const;
      inline bool operator != (const String &) const;
 
-     inline null operator - () const { return hx::NullArithmetic(L"-"); }
-     inline null operator ! () const { return hx::NullArithmetic(L"-"); }
+     inline null operator - () const { return hx::NullArithmetic("-"); }
+     inline null operator ! () const { return hx::NullArithmetic("-"); }
 
 	  HX_NULL_COMPARE_OPS(bool)
 	  HX_NULL_COMPARE_OPS(double)

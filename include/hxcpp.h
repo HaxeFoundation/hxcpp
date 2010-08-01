@@ -4,6 +4,9 @@
 // Standard headers ....
 
 #include <string.h>
+
+#define HX_UTF8_STRINGS
+
 #include <wchar.h>
 
 #ifdef _MSC_VER
@@ -29,6 +32,54 @@ using std::type_info;
 #ifdef assert
 #undef assert
 #endif
+
+
+
+
+#ifdef HX_UTF8_STRINGS
+
+typedef char HX_CHAR;
+
+#define HX_STRINGI(s,len) ::String( ("\xff\xff\xff\xff" s) + 4 ,len)
+
+#define HX_STRI(s) HX_STRINGI(s,sizeof(s)/sizeof(HX_CHAR)-1)
+
+#define HX_CSTRING(x) HX_STRI(x)
+
+#define HX_CSTRING2(wide,len,utf8) HX_STRI(utf8)
+
+#define HX_FIELD_EQ(name,field) !memcmp(name.__s, field, sizeof(field)/sizeof(char))
+
+
+#else // wide strings
+
+typedef wchar_t HX_CHAR;
+
+#ifdef HX_WINDOWS
+#define HX_STRING(s,len) ::String((L"\xffff\xffff" s)+2,len)
+#else
+#define HX_STRING(s,len) ::String( (L"\xffffffff" s) + 1 ,len)
+#endif
+
+#define HX_STR(s) HX_STRING(s,sizeof(s)/sizeof(HX_CHAR)-1)
+
+#define HX_STRING_UTF8(s,len) ::String( ("\xff\xff\xff\xff" s) + 4 ,len)
+
+#define HX_CSTRING2(wide,len,utf8) HX_STRING(wide,len)
+
+#define HX_CSTRING(x) HX_STR(L##x)
+
+#define HX_FIELD_EQ(name,field) !memcmp(name.__s, L##field, sizeof(field)/sizeof(wchar_t))
+
+#endif
+
+
+
+
+
+
+
+
 
 
 
@@ -99,7 +150,7 @@ class String;
 
 // Use an external routine to throw to avoid sjlj overhead on iphone.
 namespace hx { extern Dynamic Throw(Dynamic inDynamic); }
-namespace hx { extern void CriticalError(const wchar_t *inError); }
+namespace hx { extern void CriticalError(const String &inError); }
 namespace hx { extern String sNone[]; }
 void __hxcpp_check_overflow(int inVal);
 

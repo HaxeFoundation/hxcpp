@@ -66,7 +66,7 @@ void ArrayBase::EnsureSize(int inSize) const
 
 
 
-String ArrayBase::__ToString() const { return "Array"; }
+String ArrayBase::__ToString() const { return HX_CSTRING("Array"); }
 String ArrayBase::toString()
 {
    // Byte-array (not bool!)
@@ -75,7 +75,7 @@ String ArrayBase::toString()
       return String( (const char *) mBase, length);
    }
 
-   return HX_STR(L"[") + join(HX_STR(L", ")) + HX_STR(L"]");
+   return HX_CSTRING("[") + join(HX_CSTRING(", ")) + HX_CSTRING("]");
 }
 
 void ArrayBase::__SetSize(int inSize)
@@ -185,18 +185,18 @@ String ArrayBase::join(String inSeparator)
    }
    if (length) len += (length-1) * inSeparator.length;
 
-   wchar_t *buf = hx::NewString(len);
+   HX_CHAR *buf = hx::NewString(len);
 
    int pos = 0;
    bool separated = inSeparator.length>0;
    for(int i=0;i<length;i++)
    {
       String s = ItemString(i);
-      memcpy(buf+pos,s.__s,s.length*sizeof(wchar_t));
+      memcpy(buf+pos,s.__s,s.length*sizeof(HX_CHAR));
       pos += s.length;
       if (separated)
       {
-         memcpy(buf+pos,inSeparator.__s,inSeparator.length*sizeof(wchar_t));
+         memcpy(buf+pos,inSeparator.__s,inSeparator.length*sizeof(HX_CHAR));
          pos += inSeparator.length;
       }
    }
@@ -211,8 +211,8 @@ struct ArrayBase_##func : public hx::Object \
    bool __IsFunction() const { return true; } \
    ArrayBase *mThis; \
    ArrayBase_##func(ArrayBase *inThis) : mThis(inThis) { } \
-   String toString() const{ return L###func ; } \
-   String __ToString() const{ return L###func ; } \
+   String toString() const{ return HX_CSTRING(#func) ; } \
+   String __ToString() const{ return HX_CSTRING(#func) ; } \
    int __GetType() const { return vtFunction; } \
    void *__GetHandle() const { return mThis; } \
    int __ArgCount() const { return ARG_C; } \
@@ -252,43 +252,43 @@ DEFINE_ARRAY_FUNC1(unshift);
 
 Dynamic ArrayBase::__Field(const String &inString)
 {
-   if (inString==HX_STR(L"length")) return Dynamic((int)size());
-   if (inString==HX_STR(L"concat")) return concat_dyn();
-   if (inString==HX_STR(L"insert")) return insert_dyn();
-   if (inString==HX_STR(L"copy")) return copy_dyn();
-   if (inString==HX_STR(L"iterator")) return iterator_dyn();
-   if (inString==HX_STR(L"join")) return join_dyn();
-   if (inString==HX_STR(L"pop")) return pop_dyn();
-   if (inString==HX_STR(L"push")) return push_dyn();
-   if (inString==HX_STR(L"remove")) return remove_dyn();
-   if (inString==HX_STR(L"reverse")) return reverse_dyn();
-   if (inString==HX_STR(L"shift")) return shift_dyn();
-   if (inString==HX_STR(L"splice")) return splice_dyn();
-   if (inString==HX_STR(L"slice")) return slice_dyn();
-   if (inString==HX_STR(L"sort")) return sort_dyn();
-   if (inString==HX_STR(L"toString")) return toString_dyn();
-   if (inString==HX_STR(L"unshift")) return unshift_dyn();
+   if (inString==HX_CSTRING("length")) return Dynamic((int)size());
+   if (inString==HX_CSTRING("concat")) return concat_dyn();
+   if (inString==HX_CSTRING("insert")) return insert_dyn();
+   if (inString==HX_CSTRING("copy")) return copy_dyn();
+   if (inString==HX_CSTRING("iterator")) return iterator_dyn();
+   if (inString==HX_CSTRING("join")) return join_dyn();
+   if (inString==HX_CSTRING("pop")) return pop_dyn();
+   if (inString==HX_CSTRING("push")) return push_dyn();
+   if (inString==HX_CSTRING("remove")) return remove_dyn();
+   if (inString==HX_CSTRING("reverse")) return reverse_dyn();
+   if (inString==HX_CSTRING("shift")) return shift_dyn();
+   if (inString==HX_CSTRING("splice")) return splice_dyn();
+   if (inString==HX_CSTRING("slice")) return slice_dyn();
+   if (inString==HX_CSTRING("sort")) return sort_dyn();
+   if (inString==HX_CSTRING("toString")) return toString_dyn();
+   if (inString==HX_CSTRING("unshift")) return unshift_dyn();
    return null();
 }
 
 
 static String sArrayFields[] = {
-   HX_STRING(L"length",6),
-   HX_STRING(L"concat",6),
-   HX_STRING(L"insert",6),
-   HX_STRING(L"iterator",8),
-   HX_STRING(L"join",4),
-   HX_STRING(L"copy",4),
-   HX_STRING(L"pop",3),
-   HX_STRING(L"push",4),
-   HX_STRING(L"remove",6),
-   HX_STRING(L"reverse",7),
-   HX_STRING(L"shift",5),
-   HX_STRING(L"slice",5),
-   HX_STRING(L"splice",6),
-   HX_STRING(L"sort",4),
-   HX_STRING(L"toString",8),
-   HX_STRING(L"unshift",7),
+   HX_CSTRING("length"),
+   HX_CSTRING("concat"),
+   HX_CSTRING("insert"),
+   HX_CSTRING("iterator"),
+   HX_CSTRING("join"),
+   HX_CSTRING("copy"),
+   HX_CSTRING("pop"),
+   HX_CSTRING("push"),
+   HX_CSTRING("remove"),
+   HX_CSTRING("reverse"),
+   HX_CSTRING("shift"),
+   HX_CSTRING("slice"),
+   HX_CSTRING("splice"),
+   HX_CSTRING("sort"),
+   HX_CSTRING("toString"),
+   HX_CSTRING("unshift"),
    String(null())
 };
 
@@ -305,7 +305,7 @@ Dynamic ArrayCreateArgs(DynamicArray inArgs)
 
 void ArrayBase::__boot()
 {
-   Static(__mClass) = RegisterClass(HX_STRING(L"Array",5),TCanCast<ArrayBase>,sNone,sArrayFields,
+   Static(__mClass) = RegisterClass(HX_CSTRING("Array"),TCanCast<ArrayBase>,sNone,sArrayFields,
                                     ArrayCreateEmpty,ArrayCreateArgs,0,0);
 }
 
@@ -320,8 +320,8 @@ HX_DEFINE_DYNAMIC_FUNC0(ArrayIterator,next,return)
 
 Dynamic ArrayIterator::__Field(const String &inString)
 {
-   if (inString==HX_STR(L"hasNext")) return hasNext_dyn();
-   if (inString==HX_STR(L"next")) return next_dyn();
+   if (inString==HX_CSTRING("hasNext")) return hasNext_dyn();
+   if (inString==HX_CSTRING("next")) return next_dyn();
    return null();
 }
 

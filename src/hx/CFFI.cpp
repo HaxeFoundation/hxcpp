@@ -112,7 +112,7 @@ extern "C" {
 
 void hx_error() THROWS
 {
-	throw Dynamic( HX_STRING(L"ERROR",6) );
+	throw Dynamic( HX_CSTRING("ERROR") );
 }
 
 
@@ -144,10 +144,10 @@ int val_type(hx::Object * arg1)
 vkind val_kind(hx::Object * arg1) THROWS
 {
 	if (arg1==0)
-	   hx::Throw( HX_STRING(L"Value has no 'kind'",19) );
+	   hx::Throw( HX_CSTRING("Value has no 'kind'") );
 	int type = arg1->__GetType();
 	if (type<valtAbstractBase)
-	   hx::Throw( HX_STRING(L"Value has no 'kind'",19) );
+	   hx::Throw( HX_CSTRING("Value has no 'kind'") );
 	return (vkind)(type);
 }
 
@@ -242,7 +242,7 @@ int val_strlen(hx::Object * arg1)
 const wchar_t * val_wstring(hx::Object * arg1)
 {
 	if (arg1==0) return L"";
-	return arg1->toString().__s;
+	return arg1->toString().__WCStr();
 }
 
 
@@ -255,32 +255,54 @@ const char * val_string(hx::Object * arg1)
 
 hx::Object * alloc_string(const char * arg1)
 {
+#ifdef HX_UTF8_STRINGS
+	return Dynamic( String(arg1,strlen(arg1)).dup() ).GetPtr();
+#else
 	return Dynamic( String(arg1,strlen(arg1)) ).GetPtr();
+#endif
 }
 
 wchar_t * val_dup_wstring(value inVal)
 {
    hx::Object *obj = (hx::Object *)inVal;
    String  s = obj->toString();
-   return (wchar_t *)s.dup().__s;
+#ifdef HX_UTF8_STRINGS
+   return (wchar_t *)s.__WCStr();
+#else
+   return (char *)s.dup().__s;
+#endif
 }
 
 char * val_dup_string(value inVal)
 {
    hx::Object *obj = (hx::Object *)inVal;
-   return obj->toString().__CStr();
+   if (!obj) return 0;
+
+   #ifdef HX_UTF8_STRINGS
+   return (char *)obj->toString().dup().__CStr();
+   #else
+   // Known to create a copy
+   return (wchar_t *)obj->toString().__CStr();
+   #endif
 }
 
 hx::Object *alloc_string_len(const char *inStr,int inLen)
 {
-   String str(inStr,inLen);
-   return Dynamic(str).GetPtr();
+#ifdef HX_UTF8_STRINGS
+	return Dynamic( String(inStr,inLen).dup() ).GetPtr();
+#else
+	return Dynamic( String(inStr,inLen) ).GetPtr();
+#endif
 }
 
 hx::Object *alloc_wstring_len(const wchar_t *inStr,int inLen)
 {
    String str(inStr,inLen);
+   #ifdef HX_UTF8_STRINGS
+   return Dynamic(str).GetPtr();
+   #else
    return Dynamic(str.dup()).GetPtr();
+   #endif
 }
 
 // Array access - generic
@@ -476,7 +498,7 @@ void val_buffer(buffer inBuffer,value inValue)
 // Call Function 
 hx::Object * val_call0(hx::Object * arg1) THROWS
 {
-	if (!arg1) hx::Throw(HX_NULL_FUNCTION_POINTER);
+	if (!arg1) Dynamic::ThrowBadFunctionError();
 	return arg1->__run().GetPtr();
 }
 
@@ -484,7 +506,7 @@ hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
 {
 	try
 	{
-	if (!arg1) hx::Throw(HX_NULL_FUNCTION_POINTER);
+	if (!arg1) Dynamic::ThrowBadFunctionError();
 	return arg1->__run().GetPtr();
 	}
 	catch(Dynamic e)
@@ -499,28 +521,28 @@ hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
 
 hx::Object * val_call1(hx::Object * arg1,hx::Object * arg2) THROWS
 {
-	if (!arg1) hx::Throw(HX_NULL_FUNCTION_POINTER);
+	if (!arg1) Dynamic::ThrowBadFunctionError();
 	return arg1->__run(arg2).GetPtr();
 }
 
 
 hx::Object * val_call2(hx::Object * arg1,hx::Object * arg2,hx::Object * arg3) THROWS
 {
-	if (!arg1) hx::Throw(HX_NULL_FUNCTION_POINTER);
+	if (!arg1) Dynamic::ThrowBadFunctionError();
 	return arg1->__run(arg2,arg3).GetPtr();
 }
 
 
 hx::Object * val_call3(hx::Object * arg1,hx::Object * arg2,hx::Object * arg3,hx::Object * arg4) THROWS
 {
-	if (!arg1) hx::Throw(HX_NULL_FUNCTION_POINTER);
+	if (!arg1) Dynamic::ThrowBadFunctionError();
 	return arg1->__run(arg2,arg3,arg4).GetPtr();
 }
 
 
 hx::Object * val_callN(hx::Object * arg1,hx::Object * arg2) THROWS
 {
-	if (!arg1) hx::Throw(HX_NULL_FUNCTION_POINTER);
+	if (!arg1) Dynamic::ThrowBadFunctionError();
 	return arg1->__Run( Dynamic(arg2) ).GetPtr();
 }
 
@@ -626,7 +648,7 @@ void  val_gc(hx::Object * arg1,hx::finalizer arg2) THROWS
 	#ifdef HX_INTERNAL_GC
 	hx::Abstract_obj *abstract = dynamic_cast<hx::Abstract_obj *>(arg1);
 	if (!abstract)
-	   hx::Throw(HX_STR(L"Finalizer not on abstract object"));
+	   hx::Throw(HX_CSTRING("Finalizer not on abstract object"));
    abstract->SetFinalizer(arg2);
 	#else
 	hx::GCAddFinalizer( arg1, arg2 );
@@ -636,7 +658,7 @@ void  val_gc(hx::Object * arg1,hx::finalizer arg2) THROWS
 void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2) THROWS
 {
 	#ifdef HX_INTERNAL_GC
-	hx::Throw(HX_STR(L"Finalizer not supported here"));
+	hx::Throw(HX_CSTRING("Finalizer not supported here"));
 	#else
 	hx::GCAddFinalizer( (hx::Object *)arg1, (finalizer)arg2 );
 	#endif
@@ -718,7 +740,7 @@ void free_root(value *inValue)
 
 
 // Used for finding functions in static libraries
-int hx_register_prim( const wchar_t * arg1, void* arg2)
+int hx_register_prim( const char * arg1, void* arg2)
 {
 	__hxcpp_register_prim(arg1,arg2);
 	return 0;

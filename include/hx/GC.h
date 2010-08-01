@@ -32,18 +32,16 @@ void PauseForCollect();
 // All statics are explicitly registered - this saves adding the whole data segment
 // to the collection list.
 void RegisterObject(hx::Object **inObj);
-void RegisterString(const wchar_t **inString);
+void RegisterString(const HX_CHAR **inString);
 
 void GCAddRoot(hx::Object **inRoot);
 void GCRemoveRoot(hx::Object **inRoot);
-
-const wchar_t *ConvertToWChar(const char *inStr, int *ioLen=0);
 
 
 
 
 // This is used internally in hxcpp
-wchar_t *NewString(int inLen);
+HX_CHAR *NewString(int inLen);
 
 // Internal for arrays
 void *GCRealloc(void *inData,int inSize);

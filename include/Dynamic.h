@@ -22,7 +22,7 @@ public:
    Dynamic(const String &inString);
    Dynamic(const null &inNull) : super(0) { }
    Dynamic(const Dynamic &inRHS) : super(inRHS.mPtr) { }
-   Dynamic(const wchar_t *inStr);
+   explicit Dynamic(const HX_CHAR *inStr);
 
     void Set(bool inVal);
     void Set(int inVal);
@@ -121,7 +121,7 @@ public:
    DYNAMIC_ARITH( * )
    DYNAMIC_ARITH( / )
 
-   void ThrowBadFunctionError();
+   static void ThrowBadFunctionError();
    inline void CheckFPtr() { if (!mPtr) ThrowBadFunctionError(); }
 
 

@@ -14,7 +14,7 @@ extern "C" {
 #else
 
 #define CHECK_THREADED \
-	throw Dynamic(HX_STRING(L"HXCPP_MULTI_THREADED not enabled",32));
+	throw Dynamic(HX_CSTRING("HXCPP_MULTI_THREADED not enabled"));
 
 #endif
 

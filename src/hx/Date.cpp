@@ -71,10 +71,15 @@ String __hxcpp_to_string(double inSeconds)
 {
    time_t t = (time_t)inSeconds;
    struct tm *time = localtime(&t);
+   #ifdef HX_UTF8_STRINGS
+   char buf[100];
+   sprintf(buf,100,"%04d-%02d-%02d %02d:%02d:%02d",
+   #else
    wchar_t buf[100];
    swprintf(buf,100,L"%04d-%02d-%02d %02d:%02d:%02d",
+   #endif
        time->tm_year + 1900, time->tm_mon+1, time->tm_mday,
        time->tm_hour, time->tm_min, time->tm_sec );
-   return String(buf).dup();
+   return String(buf,-1).dup();
 }
 

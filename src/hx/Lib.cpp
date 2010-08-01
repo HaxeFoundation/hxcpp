@@ -34,7 +34,7 @@ Module hxLoadLibrary(String inLib)
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return dlsym(inModule,inSymbol); }
 #endif
 
-#ifdef ANDROID
+#ifdef HX_UTF8_STRINGS
 typedef std::map<std::string,Module> LoadedModule;
 #else
 typedef std::map<std::wstring,Module> LoadedModule;
@@ -148,7 +148,7 @@ String GetFileContents(String inFile)
 #ifndef _WIN32
    FILE *file = fopen(inFile.__CStr(),"rb");
 #else
-   FILE *file = _wfopen(inFile.__s,L"rb");
+   FILE *file = _wfopen(inFile.__WCStr(),L"rb");
 #endif
    if (!file)
    {
@@ -162,13 +162,13 @@ String GetFileContents(String inFile)
    if (bytes<1)
       return null();
    buf[bytes]='\0';
-   return String(buf,-1);
+   return String(buf,strlen(buf));
 }
 
 String GetEnv(const char *inPath)
 {
-   String result(getenv(inPath),-1);
-   //printf("Got env %S\n", result.__s );
+   const char *env  = getenv(inPath);
+   String result(env,env?strlen(env):0);
    return result;
 }
 
@@ -178,49 +178,53 @@ String FindHaxelib(String inLib)
    String haxepath = GetEnv("HAXEPATH");
    if (haxepath.length==0)
    {
-       String home = GetEnv("HOME") + L"/.haxelib";
+       String home = GetEnv("HOME") + HX_CSTRING("/.haxelib");
        haxepath = GetFileContents(home);
    }
    else
-      haxepath += L"/lib";
-
-   if (haxepath.length==0)
    {
-       haxepath = GetFileContents(String("/etc/.haxepath",-1));
+      haxepath += HX_CSTRING("/lib");
    }
 
    if (haxepath.length==0)
+   {
+       haxepath = GetFileContents(HX_CSTRING("/etc/.haxepath"));
+   }
+
+   if (haxepath.length==0)
+   {
       #ifdef _WIN32
-      haxepath = L"C:\\Program Files\\Motion-Twin\\haxe\\lib";
+      haxepath = HX_CSTRING("C:\\Program Files\\Motion-Twin\\haxe\\lib");
       #else
-      haxepath = L"/usr/lib/haxe/lib";
+      haxepath = HX_CSTRING("/usr/lib/haxe/lib");
       #endif
+   }
 
-   String dir = haxepath + L"/" + inLib + L"/";
+   String dir = haxepath + HX_CSTRING("/") + inLib + HX_CSTRING("/");
 
 
-   String dev = dir + L".dev";
+   String dev = dir + HX_CSTRING(".dev");
    String path = GetFileContents(dev);
    if (path.length==0)
    {
-      path = GetFileContents(dir + L".current");
+      path = GetFileContents(dir + HX_CSTRING(".current"));
       if (path.length==0)
          return null();
       // Replace "." with "," ...
       String with_commas;
       for(int i=0;i<path.length;i++)
          if (path.getChar(i)=='.')
-            with_commas += HX_STRING(L",",1);
+            with_commas += HX_CSTRING(",");
          else
             with_commas += path.substr(i,1);
 
-      path = dir + with_commas + L"/";
+      path = dir + with_commas + HX_CSTRING("/");
    }
 
    return path;
 }
 
-typedef std::map<std::wstring,void *> RegistrationMap;
+typedef std::map<std::string,void *> RegistrationMap;
 RegistrationMap *sgRegisteredPrims=0;
 
 
@@ -231,27 +235,27 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    String full_name = inPrim;
    switch(inArgCount)
    {
-      case 0: full_name += L"__0"; break;
-      case 1: full_name += L"__1"; break;
-      case 2: full_name += L"__2"; break;
-      case 3: full_name += L"__3"; break;
-      case 4: full_name += L"__4"; break;
-      case 5: full_name += L"__5"; break;
+      case 0: full_name += HX_CSTRING("__0"); break;
+      case 1: full_name += HX_CSTRING("__1"); break;
+      case 2: full_name += HX_CSTRING("__2"); break;
+      case 3: full_name += HX_CSTRING("__3"); break;
+      case 4: full_name += HX_CSTRING("__4"); break;
+      case 5: full_name += HX_CSTRING("__5"); break;
       default:
-          full_name += L"__MULT";
+          full_name += HX_CSTRING("__MULT");
    }
 
 
    if (sgRegisteredPrims)
    {
-      void *registered = (*sgRegisteredPrims)[full_name.__s];
+      void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
       if (registered)
       {
-         return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
+         return Dynamic( new ExternalPrimitive(registered,inArgCount,HX_CSTRING("registered@")+full_name) );
       }
    }
 
-   printf("Primitive not found : %S\n", full_name.__s );
+   printf("Primitive not found : %s\n", full_name.__CStr() );
    return null();
 }
 
@@ -265,7 +269,7 @@ extern "C" void *hx_cffi(const char *inName);
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
 #ifdef ANDROID
-   inLib = HX_STR(L"lib") + inLib;
+   inLib = HX_CSTRING("lib") + inLib;
 
    //__android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
 #endif
@@ -273,16 +277,16 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    bool debug = getenv("HXCPP_LOAD_DEBUG");
    String ext =
 #ifdef _WIN32
-    HX_STRING(L".dll",4);
+    HX_CSTRING(".dll");
 #else
 // Unix...
 #ifdef __APPLE__
-    HX_STRING(L".dylib",6);
+    HX_CSTRING(".dylib");
 #else
 #ifdef ANDROID
-    HX_STRING(L".so",3);
+    HX_CSTRING(".so");
 #else
-    HX_STRING(L".dso",4);
+    HX_CSTRING(".dso");
 #endif
 #endif
 
@@ -290,16 +294,16 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #endif
    String bin =
 #ifdef _WIN32
-    HX_STRING(L"Windows",7);
+    HX_CSTRING("Windows");
 #else
 // Unix...
 #ifdef __APPLE__
-    HX_STRING(L"Mac",3);
+    HX_CSTRING("Mac");
 #else
 #ifdef ANDROID
-    HX_STRING(L"Android",7);
+    HX_CSTRING("Android");
 #else
-    HX_STRING(L"Linux",5);
+    HX_CSTRING("Linux");
 #endif
 #endif
 #endif
@@ -309,14 +313,14 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    String full_name = inPrim;
    switch(inArgCount)
    {
-      case 0: full_name += HX_STR(L"__0"); break;
-      case 1: full_name += HX_STR(L"__1"); break;
-      case 2: full_name += HX_STR(L"__2"); break;
-      case 3: full_name += HX_STR(L"__3"); break;
-      case 4: full_name += HX_STR(L"__4"); break;
-      case 5: full_name += HX_STR(L"__5"); break;
+      case 0: full_name += HX_CSTRING("__0"); break;
+      case 1: full_name += HX_CSTRING("__1"); break;
+      case 2: full_name += HX_CSTRING("__2"); break;
+      case 3: full_name += HX_CSTRING("__3"); break;
+      case 4: full_name += HX_CSTRING("__4"); break;
+      case 5: full_name += HX_CSTRING("__5"); break;
       default:
-          full_name += HX_STR(L"__MULT");
+          full_name += HX_CSTRING("__MULT");
    }
 
 #ifdef HXCPP_DEBUG
@@ -338,24 +342,24 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    if (!module && debug)
    {
       #ifdef ANDROID
-       __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", module_name.c_str());
+       __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", module_name.__CStr());
       #else
-      printf("Searching for %S...\n", inLib.__s);
+      printf("Searching for %s...\n", inLib.__CStr());
       #endif
    }
 
 
    for(int pass=pass0;module==0 && pass<4;pass++)
    {
-      String modifier = pass < 2 ? HX_STRING(L"-debug",6) : HX_STRING(L"",0);
+      String modifier = pass < 2 ? HX_CSTRING("-debug") : HX_CSTRING("");
 
-      String dll_ext = inLib + modifier + ( (pass&1) ? HX_STRING(L".ndll",5) : ext );
+      String dll_ext = inLib + modifier + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
 
       
       if (debug)
       {
          #ifndef ANDROID
-         printf(" try %S...\n", dll_ext.__s);
+         printf(" try %s...\n", dll_ext.__CStr());
          #else
          __android_log_print(ANDROID_LOG_INFO, "loader", "Try %s", dll_ext.__CStr());
          #endif
@@ -368,21 +372,21 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
          String hxcpp = GetEnv("HXCPP");
          if (hxcpp.length!=0)
          {
-             String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
+             String name = hxcpp + HX_CSTRING("/bin/") + bin + HX_CSTRING("/") + dll_ext;
              if (debug)
-                printf(" try %S...\n", name.__s);
+                printf(" try %s...\n", name.__CStr());
              module = hxLoadLibrary(name);
          }
       }
    
       if (!module)
       {
-         String hxcpp = FindHaxelib(L"hxcpp");
+         String hxcpp = FindHaxelib( HX_CSTRING("hxcpp") );
          if (hxcpp.length!=0)
          {
-             String name = hxcpp + L"/bin/" + bin + L"/" + dll_ext;
+             String name = hxcpp + HX_CSTRING("/bin/") + bin + HX_CSTRING("/") + dll_ext;
              if (debug)
-                printf(" try %S...\n", name.__s);
+                printf(" try %s...\n", name.__CStr());
              module = hxLoadLibrary(name);
          }
       }
@@ -392,9 +396,9 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
          String path = FindHaxelib(inLib);
          if (path.length!=0)
          {
-            String full_path  = path + L"/ndll/" + bin + L"/" + dll_ext;
+            String full_path  = path + HX_CSTRING("/ndll/") + bin + HX_CSTRING("/") + dll_ext;
             if (debug)
-               printf(" try %S...\n", full_path.__s);
+               printf(" try %s...\n", full_path.__CStr());
             module = hxLoadLibrary(full_path);
          }
       }
@@ -403,16 +407,16 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
    if (!module && sgRegisteredPrims)
    {
-      void *registered = (*sgRegisteredPrims)[full_name.__s];
+      void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
       if (registered)
       {
-         return Dynamic( new ExternalPrimitive(registered,inArgCount,L"registered@"+full_name) );
+         return Dynamic( new ExternalPrimitive(registered,inArgCount,HX_CSTRING("registered@")+full_name) );
       }
    }
 
    if (!module)
    {
-     throw Dynamic(String(L"Could not load module ") + inLib + String(L"@") + full_name);
+     throw Dynamic(HX_CSTRING("Could not load module ") + inLib + HX_CSTRING("@") + full_name);
     }
 
 
@@ -437,20 +441,14 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
       }
    }
 
-   // No "wchar_t" version
-   std::vector<char> name(full_name.length+1);
-   for(int i=0;i<full_name.length;i++)
-      name[i] = full_name.__s[i];
-   name[full_name.length] = '\0';
-
-   FundFunc proc_query = (FundFunc)hxFindSymbol(module,&name[0]);
+   FundFunc proc_query = (FundFunc)hxFindSymbol(module,full_name.__CStr());
    if (!proc_query)
    {
       #ifdef ANDROID
        __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not find primitive %s in %p",
         &name[0], module);
       #else
-      fprintf(stderr,"Could not find primitive %s.\n", &name[0]);
+      fprintf(stderr,"Could not find primitive %s.\n", full_name.__CStr());
       #endif
       return 0;
    }
@@ -459,18 +457,18 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    if (!proc)
    {
 #ifdef ANDROID
-      __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s\n", full_name.__s,inLib.__s);
-      fwprintf(stderr,L"Could not identify primitive %s in %s\n", full_name.__s,inLib.__s);
+      __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
+      fprintf(stderr,"Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
 #elif defined(ANDROID)
    __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s",
         inPrim.__CStr(), inLib.__CStr() );
 #else
-   fwprintf(stderr,L"Could not identify primitive %S in %S\n", full_name.__s,inLib.__s);
+   fprintf(stderr,"Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
 #endif
       return 0;
    }
 
-   return Dynamic( new ExternalPrimitive(proc,inArgCount,inLib+L"@"+full_name) );
+   return Dynamic( new ExternalPrimitive(proc,inArgCount,inLib+HX_CSTRING("@")+full_name) );
 
    return 0;
 }
@@ -479,7 +477,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 // This can be used to find symbols in static libraries
 
-int __hxcpp_register_prim(const wchar_t *inName,void *inProc)
+int __hxcpp_register_prim(const char *inName,void *inProc)
 {
    if (sgRegisteredPrims==0)
       sgRegisteredPrims = new RegistrationMap();

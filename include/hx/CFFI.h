@@ -85,10 +85,10 @@ extern FUNC_##name name;
 #ifdef STATIC_LINK
 
 #define DEFINE_PRIM_MULT(func) \
-int __reg_##func = hx_register_prim(L###func L"__MULT",(void *)(&func)); \
+int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func)); \
 
 #define DEFINE_PRIM(func,nargs) \
-int __reg_##func = hx_register_prim(L###func L"__" L###nargs,(void *)(&func)); \
+int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)); \
 
 #else
 

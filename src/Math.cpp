@@ -52,48 +52,48 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
 
 Dynamic Math_obj::__Field(const String &inString)
 {
-   if (inString==HX_STR(L"floor")) return floor_dyn();
-   if (inString==HX_STR(L"ceil")) return ceil_dyn();
-   if (inString==HX_STR(L"round")) return round_dyn();
-   if (inString==HX_STR(L"random")) return random_dyn();
-   if (inString==HX_STR(L"sqrt")) return sqrt_dyn();
-   if (inString==HX_STR(L"cos")) return cos_dyn();
-   if (inString==HX_STR(L"sin")) return sin_dyn();
-   if (inString==HX_STR(L"tan")) return tan_dyn();
-   if (inString==HX_STR(L"atan2")) return atan2_dyn();
-   if (inString==HX_STR(L"abs")) return abs_dyn();
-   if (inString==HX_STR(L"pow")) return pow_dyn();
-   if (inString==HX_STR(L"log")) return log_dyn();
-   if (inString==HX_STR(L"min")) return min_dyn();
-   if (inString==HX_STR(L"max")) return max_dyn();
-   if (inString==HX_STR(L"atan")) return max_dyn();
-   if (inString==HX_STR(L"acos")) return max_dyn();
-   if (inString==HX_STR(L"asin")) return max_dyn();
-   if (inString==HX_STR(L"exp")) return max_dyn();
-   if (inString==HX_STR(L"isNaN")) return isNaN_dyn();
-   if (inString==HX_STR(L"isFinite")) return isFinite_dyn();
+   if (inString==HX_CSTRING("floor")) return floor_dyn();
+   if (inString==HX_CSTRING("ceil")) return ceil_dyn();
+   if (inString==HX_CSTRING("round")) return round_dyn();
+   if (inString==HX_CSTRING("random")) return random_dyn();
+   if (inString==HX_CSTRING("sqrt")) return sqrt_dyn();
+   if (inString==HX_CSTRING("cos")) return cos_dyn();
+   if (inString==HX_CSTRING("sin")) return sin_dyn();
+   if (inString==HX_CSTRING("tan")) return tan_dyn();
+   if (inString==HX_CSTRING("atan2")) return atan2_dyn();
+   if (inString==HX_CSTRING("abs")) return abs_dyn();
+   if (inString==HX_CSTRING("pow")) return pow_dyn();
+   if (inString==HX_CSTRING("log")) return log_dyn();
+   if (inString==HX_CSTRING("min")) return min_dyn();
+   if (inString==HX_CSTRING("max")) return max_dyn();
+   if (inString==HX_CSTRING("atan")) return max_dyn();
+   if (inString==HX_CSTRING("acos")) return max_dyn();
+   if (inString==HX_CSTRING("asin")) return max_dyn();
+   if (inString==HX_CSTRING("exp")) return max_dyn();
+   if (inString==HX_CSTRING("isNaN")) return isNaN_dyn();
+   if (inString==HX_CSTRING("isFinite")) return isFinite_dyn();
    return null();
 }
 
 void Math_obj::__GetFields(Array<String> &outFields) { }
 
 static String sMathFields[] = {
-   HX_STRING(L"floor",5),
-   HX_STRING(L"ceil",4),
-   HX_STRING(L"round",5),
-   HX_STRING(L"random",6),
-   HX_STRING(L"sqrt",4),
-   HX_STRING(L"cos",3),
-   HX_STRING(L"sin",3),
-   HX_STRING(L"tan",3),
-   HX_STRING(L"atan2",5),
-   HX_STRING(L"abs",3),
-   HX_STRING(L"pow",3),
-   HX_STRING(L"atan",4),
-   HX_STRING(L"acos",4),
-   HX_STRING(L"asin",4),
-   HX_STRING(L"exp",3),
-   HX_STRING(L"isFinite",8),
+   HX_CSTRING("floor"),
+   HX_CSTRING("ceil"),
+   HX_CSTRING("round"),
+   HX_CSTRING("random"),
+   HX_CSTRING("sqrt"),
+   HX_CSTRING("cos"),
+   HX_CSTRING("sin"),
+   HX_CSTRING("tan"),
+   HX_CSTRING("atan2"),
+   HX_CSTRING("abs"),
+   HX_CSTRING("pow"),
+   HX_CSTRING("atan"),
+   HX_CSTRING("acos"),
+   HX_CSTRING("asin"),
+   HX_CSTRING("exp"),
+   HX_CSTRING("isFinite"),
    String(null()) };
 
 
@@ -112,7 +112,7 @@ bool Math_obj::__Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!
 
 void Math_obj::__boot()
 {
-   Static(Math_obj::__mClass) = RegisterClass(HX_STRING(L"Math",4),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
+   Static(Math_obj::__mClass) = RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
 
   srand(time(0));
 }

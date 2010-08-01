@@ -21,7 +21,7 @@ Class &EnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }
 
 void EnumBase_obj::__boot()
 {
-   Static(hxEnumBase_obj__mClass) = RegisterClass(HX_STRING(L"__EnumBase",10) ,TCanCast<EnumBase_obj>,
+   Static(hxEnumBase_obj__mClass) = RegisterClass(HX_CSTRING("__EnumBase") ,TCanCast<EnumBase_obj>,
                        sNone,sNone,
                        &__CreateEmpty, &__Create, 0 );
 }
@@ -35,7 +35,7 @@ void EnumBase_obj::__Mark()
 String EnumBase_obj::toString() {
    if (mArgs==null() || mArgs->length==0)
       return tag;
-   return tag + HX_STR(L"(") + mArgs->join(HX_STR(L",")) + HX_STR(L")");
+   return tag + HX_CSTRING("(") + mArgs->join(HX_CSTRING(",")) + HX_CSTRING(")");
 }
 
 }

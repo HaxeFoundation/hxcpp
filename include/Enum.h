@@ -77,7 +77,7 @@ class  EnumBase_obj : public hx::Object
          index = inIndex;
          mArgs = inArgs;
       }
-      virtual String GetEnumName( ) const { return L"Enum"; }
+      virtual String GetEnumName( ) const { return HX_CSTRING("Enum"); }
 };
 
 

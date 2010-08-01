@@ -36,13 +36,13 @@ HX_COMPARE_NULL_MOST_OPS(hx::IndexRef)
 inline String operator+(const Int &i,const String &s) { return String(i) + s; }
 inline String operator+(const double &d,const String &s) { return String(d) + s; }
 inline String operator+(const bool &b,const String &s) { return String(b) + s; }
-inline String operator+(const wchar_t *c,const String &s) { return String(c) + s; }
+inline String operator+(const HX_CHAR *c,const String &s) { return String(c) + s; }
 inline String operator+(const null &n,const String &s) { return String(n) + s; }
 inline String operator+(const cpp::CppInt32__ &i,const String &s) { return String(i) + s; }
 
 template<typename T_>
    inline String operator+(const hx::ObjectPtr<T_> &inLHS,const String &s)
-   { return (inLHS.mPtr ? const_cast<hx::ObjectPtr<T_> & >(inLHS)->toString() : HX_STRING(L"null",4) ) + s; }
+   { return (inLHS.mPtr ? const_cast<hx::ObjectPtr<T_> & >(inLHS)->toString() : HX_CSTRING("null") ) + s; }
 
 /*
 template<typename LHS_>

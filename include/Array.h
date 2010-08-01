@@ -70,7 +70,7 @@ public:
    inline int __length() const { return (int)length; }
    virtual String ItemString(int inI)  = 0;
 
-   char * __CStr() const { return mBase; }
+   const char * __CStr() const { return mBase; }
    inline const char *GetBase() const { return mBase; }
    inline char *GetBase() { return mBase; }
 
@@ -247,8 +247,8 @@ public:
 
    String ItemString(int inI)
    {
-      String result =  __get(inI);
-      if (result==null()) return HX_STR(L"null");
+      String result(__get(inI));
+      if (result==null()) return HX_CSTRING("null");
       return result;
    }
 
@@ -428,7 +428,7 @@ public:
    #ifdef HXCPP_DEBUG
    inline OBJ_ *CheckGetPtr() const
    {
-      if (!mPtr) hx::CriticalError(L"Null Array Reference");
+      if (!mPtr) hx::CriticalError(HX_CSTRING("Null Array Reference"));
       return mPtr;
    }
    #else

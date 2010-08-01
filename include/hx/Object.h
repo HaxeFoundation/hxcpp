@@ -77,7 +77,7 @@ public:
 
    virtual int __ToInt() const { return 0; }
    virtual double __ToDouble() const { return 0.0; }
-   virtual char * __CStr() const;
+   virtual const char * __CStr() const;
    virtual String toString();
    virtual bool __HasField(const String &inString);
    virtual Dynamic __Field(const String &inString);
@@ -186,14 +186,14 @@ public:
    inline OBJ_ *operator->()
    {
       #ifdef HXCPP_DEBUG
-      if (!mPtr) CriticalError(L"Null Object Reference");
+      if (!mPtr) CriticalError(HX_CSTRING("Null Object Reference"));
       #endif
       return mPtr;
    }
    inline const OBJ_ *operator->() const
    {
       #ifdef HXCPP_DEBUG
-      if (!mPtr) CriticalError(L"Null Object Reference");
+      if (!mPtr) CriticalError(HX_CSTRING("Null Object Reference"));
       #endif
       return mPtr;
    }

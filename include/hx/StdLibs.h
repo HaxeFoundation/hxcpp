@@ -48,7 +48,7 @@ Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
 // Used mainly for neko ndll interaction.
 int           __hxcpp_field_to_id( const char *inField );
 const String &__hxcpp_field_from_id( int f );
-int           __hxcpp_register_prim(const wchar_t *inName,void *inFunc);
+int           __hxcpp_register_prim(const HX_CHAR *inName,void *inFunc);
 
 // Get function pointer from dll file
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
@@ -65,12 +65,12 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
 // --- IntHash ----------------------------------------------------------------------
 
 hx::Object   *__int_hash_create();
-void          __int_hash_set(Dynamic &inHash,int inKey,const Dynamic &value);
-Dynamic       __int_hash_get(Dynamic &inHash,int inKey);
-bool          __int_hash_exists(Dynamic &inHash,int inKey);
-bool          __int_hash_remove(Dynamic &inHash,int inKey);
-Dynamic       __int_hash_keys(Dynamic &inHash);
-Dynamic       __int_hash_values(Dynamic &inHash);
+void          __int_hash_set(Dynamic inHash,int inKey,const Dynamic &value);
+Dynamic       __int_hash_get(Dynamic inHash,int inKey);
+bool          __int_hash_exists(Dynamic inHash,int inKey);
+bool          __int_hash_remove(Dynamic inHash,int inKey);
+Dynamic       __int_hash_keys(Dynamic inHash);
+Dynamic       __int_hash_values(Dynamic inHash);
 
 
 // --- Date --------------------------------------------------------------------------

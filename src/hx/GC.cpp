@@ -171,7 +171,7 @@ void GCAddFinalizer(hx::Object *v, finalizer f)
    if (v)
    {
 #ifdef HX_INTERNAL_GC
-      throw Dynamic(HX_STR(L"Add finalizer error"));
+      throw Dynamic(HX_CSTRING("Add finalizer error"));
 #else
       GC_register_finalizer(v,hxcpp_finalizer,(void *)f,0,0);
 #endif
@@ -188,6 +188,14 @@ void RegisterObject(Object **inPtr)
 }
 
 void RegisterString(const wchar_t **inPtr)
+{
+#ifndef HX_INTERNAL_GC
+   GC_add_roots((char *)inPtr, (char *)inPtr + sizeof(void *) );
+#endif
+}
+
+
+void RegisterString(const char **inPtr)
 {
 #ifndef HX_INTERNAL_GC
    GC_add_roots((char *)inPtr, (char *)inPtr + sizeof(void *) );
@@ -223,12 +231,12 @@ void ExitGCFreeZone() { }
 
 
 
-wchar_t *NewString(int inLen)
+HX_CHAR *NewString(int inLen)
 {
 #ifdef HX_INTERNAL_GC
-   wchar_t *result =  (wchar_t *)hx::InternalNew( (inLen+1)*sizeof(wchar_t), false );
+   HX_CHAR *result =  (HX_CHAR *)hx::InternalNew( (inLen+1)*sizeof(HX_CHAR), false );
 #else
-   wchar_t *result =  (wchar_t *)GC_MALLOC_ATOMIC((inLen+1)*sizeof(wchar_t));
+   HX_CHAR *result =  (HX_CHAR *)GC_MALLOC_ATOMIC((inLen+1)*sizeof(HX_CHAR));
 #endif
    result[inLen] = '\0';
    return result;
@@ -272,43 +280,6 @@ void *GCRealloc(void *inData,int inSize)
 #else
    return GC_REALLOC(inData, inSize );
 #endif
-}
-
-
-const wchar_t *ConvertToWChar(const char *inStr, int *ioLen)
-{
-   int len = ioLen ? *ioLen : strlen(inStr);
-
-   wchar_t *result = hx::NewString(len);
-   int l = 0;
-
-   unsigned char *b = (unsigned char *)inStr;
-   for(int i=0;i<len;)
-   {
-      int c = b[i++];
-      if (c==0) break;
-      else if( c < 0x80 )
-      {
-        result[l++] = c;
-      }
-      else if( c < 0xE0 )
-        result[l++] = ( ((c & 0x3F) << 6) | (b[i++] & 0x7F) );
-      else if( c < 0xF0 )
-      {
-        int c2 = b[i++];
-        result[l++] += ( ((c & 0x1F) << 12) | ((c2 & 0x7F) << 6) | ( b[i++] & 0x7F) );
-      }
-      else
-      {
-        int c2 = b[i++];
-        int c3 = b[i++];
-        result[l++] += ( ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 << 6) & 0x7F) | (b[i++] & 0x7F) );
-      }
-   }
-   result[l] = '\0';
-   if (ioLen)
-      *ioLen = l;
-   return result;
 }
 
 

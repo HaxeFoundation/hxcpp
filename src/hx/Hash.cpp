@@ -154,17 +154,17 @@ public:
    }
    String toString()
    {
-      String result = L"{ ";
+      String result = HX_CSTRING("{ ");
       Map::iterator i=mMap->begin();
       while(i!=mMap->end())
       {
-         result += String(i->first) + String(L" => ",1) + i->second;
+         result += String(i->first) + HX_CSTRING(" => ") + i->second;
          ++i;
          if (i!=mMap->end())
-            result+= L",";
+            result+= HX_CSTRING(",");
       }
 
-      return result + L"}";
+      return result + HX_CSTRING("}");
    }
 
    void __Mark()
@@ -192,37 +192,37 @@ void IntHash::Destroy(Object *inHash)
 
 Object * __int_hash_create() { return new IntHash; }
 
-void __int_hash_set(Dynamic &inHash,int inKey,const Dynamic &value)
+void __int_hash_set(Dynamic inHash,int inKey,const Dynamic &value)
 {
    IntHash *h = dynamic_cast<IntHash *>(inHash.GetPtr());
    h->set(inKey,value);
 }
 
-Dynamic  __int_hash_get(Dynamic &inHash,int inKey)
+Dynamic  __int_hash_get(Dynamic inHash,int inKey)
 {
    IntHash *h = dynamic_cast<IntHash *>(inHash.GetPtr());
    return h->get(inKey);
 }
 
-bool  __int_hash_exists(Dynamic &inHash,int inKey)
+bool  __int_hash_exists(Dynamic inHash,int inKey)
 {
    IntHash *h = dynamic_cast<IntHash *>(inHash.GetPtr());
    return h->exists(inKey);
 }
 
-bool  __int_hash_remove(Dynamic &inHash,int inKey)
+bool  __int_hash_remove(Dynamic inHash,int inKey)
 {
    IntHash *h = dynamic_cast<IntHash *>(inHash.GetPtr());
    return h->remove(inKey);
 }
 
-Dynamic __int_hash_keys(Dynamic &inHash)
+Dynamic __int_hash_keys(Dynamic inHash)
 {
    IntHash *h = dynamic_cast<IntHash *>(inHash.GetPtr());
    return h->keys();
 }
 
-Dynamic __int_hash_values(Dynamic &inHash)
+Dynamic __int_hash_values(Dynamic inHash)
 {
    IntHash *h = dynamic_cast<IntHash *>(inHash.GetPtr());
    return h->values();

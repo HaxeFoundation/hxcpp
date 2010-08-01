@@ -10,12 +10,20 @@
 namespace hx
 {
 
-void CriticalError(const wchar_t *inErr)
+void CriticalError(const String &inErr)
 {
-   fprintf(stderr,"Critical Error: %S\n", inErr);
+   #ifdef HX_UTF8_STRINGS
+   fprintf(stderr,"Critical Error: %s\n", inErr.__s);
+   #else
+   fprintf(stderr,"Critical Error: %S\n", inErr.__s);
+   #endif
 
    #ifdef HX_WINDOWS
-   MessageBoxW(0,inErr,L"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
+      #ifdef HX_UTF8_STRINGS
+      MessageBoxA(0,inErr.__s,"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
+      #else
+      MessageBoxW(0,inErr.__s,L"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
+      #endif
    exit(1);
    #endif
    *(int *)0=0;

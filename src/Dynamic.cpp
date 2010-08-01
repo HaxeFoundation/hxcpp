@@ -59,8 +59,8 @@ public:
 
    virtual int __GetType() const { return vtBool; }
 
-   String __ToString() const { return mValue ? L"true" : L"false"; }
-   String toString() { return mValue ? L"true" : L"false"; }
+   String __ToString() const { return mValue ? HX_CSTRING("true") : HX_CSTRING("false"); }
+   String toString() { return mValue ? HX_CSTRING("true") : HX_CSTRING("false"); }
    double __ToDouble() const { return mValue; }
    int __ToInt() const { return mValue; }
 
@@ -114,7 +114,7 @@ Dynamic::Dynamic(int inVal) : super( new IntData(inVal) ) { }
 Dynamic::Dynamic(double inVal) : super( new DoubleData(inVal) ) { }
 Dynamic::Dynamic(const cpp::CppInt32__ &inVal) : super( new IntData((int)inVal) ) { }
 Dynamic::Dynamic(const String &inVal) : super( inVal.__s ? inVal.__ToObject() : 0 ) { }
-Dynamic::Dynamic(const wchar_t *inVal) : super( inVal ? String(String(inVal)).__ToObject() : 0 ) { }
+Dynamic::Dynamic(const HX_CHAR *inVal) : super( inVal ? String(inVal).__ToObject() : 0 ) { }
 
 
 Dynamic Dynamic::operator+(const Dynamic &inRHS) const
@@ -188,10 +188,10 @@ static bool IsFloat(hx::Object *inPtr)
 
 void Dynamic::__boot()
 {
-   Static(__BoolClass) = RegisterClass(HX_STRING(L"Bool",4),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
-   Static(__IntClass) = RegisterClass(HX_STRING(L"Int",3),TCanCast<IntData>,sNone,sNone,0,0, 0 );
-   Static(__FloatClass) = RegisterClass(HX_STRING(L"Float",5),IsFloat,sNone,sNone, 0,0,&__IntClass );
-   Static(__VoidClass) = RegisterClass(HX_STRING(L"Void",4),NoCast,sNone,sNone,0,0,0, 0 );
+   Static(__BoolClass) = RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
+   Static(__IntClass) = RegisterClass(HX_CSTRING("Int"),TCanCast<IntData>,sNone,sNone,0,0, 0 );
+   Static(__FloatClass) = RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
+   Static(__VoidClass) = RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0 );
 }
 
 

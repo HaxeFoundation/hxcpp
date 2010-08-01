@@ -101,15 +101,19 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 
 void __trace(Dynamic inObj, Dynamic inData)
 {
-#ifdef ANDROID
-   __android_log_print(ANDROID_LOG_INFO, "trace", "%s:%d: %s",
-               inData==null() ? "?" : inData->__Field(L"fileName")->toString().__CStr(),
-               inData==null() ? 0 : inData->__Field(L"lineNumber")->__ToInt(),
-               inObj.GetPtr() ? inObj->toString().__CStr() : "null" );
+#ifdef HX_UTF8_STRINGS
+   #ifdef ANDRIOD
+   __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",
+   #else
+   printf("%s:%d: %s\n",
+   #endif
+               inData==null() ? "?" : inData->__Field( HX_CSTRING("fileName")) ->toString().__s,
+               inData==null() ? 0 : inData->__Field( HX_CSTRING("lineNumber") )->__ToInt(),
+               inObj.GetPtr() ? inObj->toString().__s : "null" );
 #else
    printf( "%S:%d: %S\n",
-               inData->__Field(L"fileName")->__ToString().__s,
-               inData->__Field(L"lineNumber")->__ToInt(),
+               inData->__Field( HX_CSTRING("fileName") )->__ToString().__s,
+               inData->__Field( HX_CSTRING("lineNumber") )->__ToInt(),
                inObj.GetPtr() ? inObj->toString().__s : L"null" );
 #endif
 }
@@ -230,12 +234,20 @@ Array<String> __get_args()
 
 void __hxcpp_print(Dynamic &inV)
 {
-   printf("%S",inV->toString().c_str());
+   #ifdef HX_UTF8_STRINGS
+   printf("%s",inV->toString().__s);
+   #else
+   printf("%S",inV->toString().__s);
+   #endif
 }
 
 void __hxcpp_println(Dynamic &inV)
 {
-   printf("%S\n",inV->toString().c_str());
+   #ifdef HX_UTF8_STRINGS
+   printf("%s\n",inV->toString().__s);
+   #else
+   printf("%S\n",inV->toString().__s);
+   #endif
 }
 
 
@@ -269,52 +281,37 @@ Dynamic __hxcpp_parse_int(const String &inString)
    if (!inString.__s)
       return null();
    long result;
-   const wchar_t *str = inString.__s;
+   const HX_CHAR *str = inString.__s;
    bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
+   HX_CHAR *end = 0;
 
-   #ifdef ANDROID
-   char buf[100];
-   int i;
-   for(i=0;i<99 && i<inString.length;i++)
-      buf[i] = str[i];
-   buf[i] = '\0';
- 
-   char *end = 0;
+   #ifdef HX_UTF8_STRINGS
    if (hex)
-      result = strtol(buf+2,&end,16);
+      result = strtol(str+2,&end,16);
    else
-      result = strtol(buf,&end,10);
-   if (buf==end)
+      result = strtol(str,&end,10);
    #else
-   wchar_t *end = 0;
    if (hex)
       result = wcstol(str+2,&end,16);
    else
       result = wcstol(str,&end,10);
-   if (inString.__s==end)
    #endif
+   if (str==end)
       return null();
    return (int)result;
 }
 
 double __hxcpp_parse_float(const String &inString)
 {
-   const wchar_t *str = inString.__s;
-   #ifdef ANDROID
-   char buf[100];
-   int i;
-   for(i=0;i<99 && i<inString.length;i++)
-      buf[i] = str[i];
-   buf[i] = '\0';
-   char *end;
-   double result = strtod(buf,&end);
-   if (end==buf)
+   const HX_CHAR *str = inString.__s;
+   HX_CHAR *end;
+   #ifdef HX_UTF8_STRINGS
+   double result = strtod(str,&end);
    #else
-   wchar_t *end;
-   double result =  wcstod(inString.__s,&end);
- 
-   if (end==inString.__s)
+   double result =  wcstod(str,&end);
    #endif
+
+   if (end==str)
    {
       if (std::numeric_limits<double>::has_quiet_NaN)
          return std::numeric_limits<double>::quiet_NaN();
@@ -413,10 +410,10 @@ int  __hxcpp_field_to_id( const char *inFieldName )
 
    // Make into "const" string that will not get collected...
    #ifdef HX_INTERNAL_GC
-   str = String((wchar_t *)hx::InternalCreateConstBuffer(str.__s,(str.length+1) * sizeof(wchar_t)), str.length );
+   str = String((HX_CHAR *)hx::InternalCreateConstBuffer(str.__s,(str.length+1) * sizeof(HX_CHAR)), str.length );
    #else
-   wchar_t *w = (wchar_t *)malloc((str.length+1) * sizeof(wchar_t));
-   memcpy(w,str.__s,(str.length+1) * sizeof(wchar_t));
+   HX_CHAR *w = (HX_CHAR *)malloc((str.length+1) * sizeof(HX_CHAR));
+   memcpy(w,str.__s,(str.length+1) * sizeof(HX_CHAR));
    str = String(w, str.length );
    #endif
 
@@ -433,7 +430,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
 void __hxcpp_check_overflow(int x)
 {
    if( (((x) >> 30) & 1) != ((unsigned int)(x) >> 31) )
-      throw Dynamic(HX_STRING(L"Overflow ",9)+x);
+      throw Dynamic(HX_CSTRING("Overflow ")+x);
 }
 
 namespace cpp

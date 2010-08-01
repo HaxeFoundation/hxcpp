@@ -59,7 +59,7 @@ Dynamic Object::__Run(const Array<Dynamic> &inArgs) { return 0; }
 Dynamic Object::__GetItem(int inIndex) const { return null(); }
 Dynamic Object::__SetItem(int inIndex,Dynamic) { return null();  }
 DynamicArray Object::__EnumParams() { return DynamicArray(); }
-String Object::__Tag() const { return L"<not enum>"; }
+String Object::__Tag() const { return HX_CSTRING("<not enum>"); }
 int Object::__Index() const { return -1; }
 
 void Object::__SetThis(Dynamic inThis) { }
@@ -72,7 +72,7 @@ bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
 void Object::__boot()
 {
-   Static(Object__mClass) = RegisterClass(HX_STRING(L"Dynamic",7),AlwaysCast,sNone,sNone,0,0, 0 );
+   Static(Object__mClass) = RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0 );
 }
 
 Class &Object::__SGetClass() { return Object__mClass; }
@@ -81,14 +81,14 @@ Class Object::__GetClass() const { return Object__mClass; }
 
 hx::FieldRef Object::__FieldRef(const String &inString) { return hx::FieldRef(this,inString); }
 
-String Object::__ToString() const { return L"Object"; }
+String Object::__ToString() const { return HX_CSTRING("Object"); }
 
-char * Object::__CStr() const { return __ToString().__CStr(); }
+const char * Object::__CStr() const { return __ToString().__CStr(); }
 
 
 Dynamic Object::__SetField(const String &inField,const Dynamic &inValue)
 {
-	throw Dynamic( String(L"Invalid field:") + inField );
+	throw Dynamic( HX_CSTRING("Invalid field:") + inField );
 	return null();
 }
 

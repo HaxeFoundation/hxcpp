@@ -43,7 +43,7 @@ double Interface::__ToDouble()
 	return __GetRealObject()->__ToDouble();
 }
 
-char * Interface::__CStr()
+const char * Interface::__CStr()
 {
 	return __GetRealObject()->__CStr();
 }

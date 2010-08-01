@@ -64,11 +64,11 @@ struct Stringer
 
       if (first)
       {
-         result += inStr + HX_STRING(L" => ",4) + (String)(inDyn);
+         result += inStr + HX_CSTRING(" => ") + (String)(inDyn);
          first = false;
       }
       else
-         result += HX_STRING(L", ",2) + inStr + HX_STRING(L" => ",4) + (String)(inDyn);
+         result += HX_CSTRING(", ") + inStr + HX_CSTRING(" => ") + (String)(inDyn);
    }
 
    bool first;
@@ -77,10 +77,10 @@ struct Stringer
 
 String Anon_obj::toString()
 {
-   String result = HX_STRING(L"{ ",2);
+   String result = HX_CSTRING("{ ");
    Stringer stringer(result);
    mFields->Iterate(stringer);
-   return result + HX_STRING(L" }",2);
+   return result + HX_CSTRING(" }");
 }
 
 void Anon_obj::__GetFields(Array<String> &outFields)
@@ -91,7 +91,7 @@ void Anon_obj::__GetFields(Array<String> &outFields)
 
 
 
-String Anon_obj::__ToString() const { return HX_STR(L"Anon"); }
+String Anon_obj::__ToString() const { return HX_CSTRING("Anon"); }
 
 
 Dynamic Anon_obj::__Create(DynamicArray inArgs) { return Anon(new Anon_obj); }
@@ -101,7 +101,7 @@ Class Anon_obj::__mClass;
 
 void Anon_obj::__boot()
 {
-   Static(__mClass) = RegisterClass(HX_STR(L"__Anon"),TCanCast<Anon_obj>,sNone,sNone,0,0,0,0);
+   Static(__mClass) = RegisterClass(HX_CSTRING("__Anon"),TCanCast<Anon_obj>,sNone,sNone,0,0,0,0);
 }
 
 }
