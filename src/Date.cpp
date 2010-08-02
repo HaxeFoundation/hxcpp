@@ -76,7 +76,11 @@ String __hxcpp_to_string(double inSeconds)
    swnprintf(buf,100,L"%04d-%02d-%02d %02d:%02d:%02d",
 #else
    char buf[100];
+   #ifdef HX_WINDOWS
+   sprintf_s(buf,100,"%04d-%02d-%02d %02d:%02d:%02d",
+   #else
    snprintf(buf,100,"%04d-%02d-%02d %02d:%02d:%02d",
+   #endif
 #endif
        time->tm_year + 1900, time->tm_mon+1, time->tm_mday,
        time->tm_hour, time->tm_min, time->tm_sec );

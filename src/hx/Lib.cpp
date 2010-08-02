@@ -15,7 +15,8 @@
 
 #include <windows.h>
 typedef HMODULE Module;
-Module hxLoadLibrary(String inLib) { return LoadLibraryW(inLib.__s); }
+
+Module hxLoadLibrary(String inLib) { return LoadLibraryW(inLib.__WCStr()); }
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return GetProcAddress(inModule,inSymbol); }
 #elif defined (IPHONE)
 
