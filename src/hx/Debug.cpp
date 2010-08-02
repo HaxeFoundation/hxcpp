@@ -12,11 +12,16 @@
 #endif
 
 
+void __hx_stack_set_last_exception();
+
 namespace hx
 {
 
 void CriticalError(const String &inErr)
 {
+   __hx_stack_set_last_exception();
+   __hx_dump_stack();
+
    #ifdef HX_UTF8_STRINGS
    fprintf(stderr,"Critical Error: %s\n", inErr.__s);
    #else
@@ -29,9 +34,10 @@ void CriticalError(const String &inErr)
       #else
       MessageBoxW(0,inErr.__s,L"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
       #endif
-   exit(1);
    #endif
-   *(int *)0=0;
+   // Good when using gdb...
+   // *(int *)0=0;
+   exit(1);
 }
 
 struct CallLocation
