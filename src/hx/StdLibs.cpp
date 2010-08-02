@@ -17,19 +17,23 @@ typedef uint64_t __int64;
 #include <time.h>
 #include <limits>
 
+void __hx_stack_set_last_exception();
 
 namespace hx
 {
 
 Dynamic Throw(Dynamic inDynamic)
 {
+   #ifdef HXCPP_DEBUG
+   __hx_stack_set_last_exception();
+   #endif
    throw inDynamic;
    return null();
 }
 
-null NullArithmetic(const wchar_t *inErr)
+null NullArithmetic(const HX_CHAR *inErr)
 {
-	Throw( String(inErr) );
+	Throw( String(inErr).dup() );
 	return null();
 }
 

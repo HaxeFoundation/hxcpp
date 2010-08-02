@@ -68,66 +68,78 @@ public:
    Dynamic __run()
    {
       if (mArgCount!=0) throw HX_INVALID_ARG_COUNT;
+      HX_SOURCE_PUSH(0);
       return ((prim_0)mProc)();
    }
    Dynamic __run(D a)
    {
       if (mArgCount!=1) throw HX_INVALID_ARG_COUNT;
+      HX_SOURCE_PUSH(0);
       return ((prim_1)mProc)(a.GetPtr());
    }
    Dynamic __run(D a,D b)
    {
       if (mArgCount!=2) throw HX_INVALID_ARG_COUNT;
+      HX_SOURCE_PUSH(0);
       return ((prim_2)mProc)(a.GetPtr(),b.GetPtr());
    }
    Dynamic __run(D a,D b,D c)
    {
       if (mArgCount!=3) throw HX_INVALID_ARG_COUNT;
+      HX_SOURCE_PUSH(0);
       return ((prim_3)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d)
    {
       if (mArgCount!=4) throw HX_INVALID_ARG_COUNT;
+      HX_SOURCE_PUSH(0);
       return ((prim_4)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d,D e)
    {
       if (mArgCount!=5) throw HX_INVALID_ARG_COUNT;
+      HX_SOURCE_PUSH(0);
       return ((prim_5)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr(),e.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f)
    {
       hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr() };
+      HX_SOURCE_PUSH(0);
       return ((prim_mult)mProc)(args,6);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g)
    {
       hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
                            g.GetPtr() };
+      HX_SOURCE_PUSH(0);
       return ((prim_mult)mProc)(args,7);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h)
    {
       hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
                            g.GetPtr(), h.GetPtr() };
+      HX_SOURCE_PUSH(0);
       return ((prim_mult)mProc)(args,8);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i)
    {
       hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
                            g.GetPtr(), h.GetPtr(), i.GetPtr() };
+      HX_SOURCE_PUSH(0);
       return ((prim_mult)mProc)(args,9);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j)
    {
       hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
                            g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr() };
+      HX_SOURCE_PUSH(0);
       return ((prim_mult)mProc)(args,10);
    }
    Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k)
    {
       hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
                            g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr(), k.GetPtr() };
+      HX_SOURCE_PUSH(0);
       return ((prim_mult)mProc)(args,11);
    }
 

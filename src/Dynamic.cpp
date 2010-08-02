@@ -171,7 +171,7 @@ hx::IndexRef Dynamic::operator[](int inIndex)
 
 void Dynamic::ThrowBadFunctionError()
 {
-	throw HX_NULL_FUNCTION_POINTER;
+	hx::Throw( HX_NULL_FUNCTION_POINTER );
 }
 
 namespace cpp

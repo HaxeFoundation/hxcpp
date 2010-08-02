@@ -397,7 +397,7 @@ extern void SetTopOfStack(int *inTopOfStack,bool);
 #ifdef ANDROID
 // Java Main....
 #include <jni.h>
-#include <android/log.h>
+#include <hx/Thread.h>
 
 #ifdef __GNUC__
  #define GCC_EXTRA __attribute__ ((visibility("default")))
@@ -415,6 +415,7 @@ extern "C" GCC_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * en
 
 #define HX_END_MAIN \
         } catch (Dynamic e) { \
+	  __hx_dump_stack(); \
           __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e->toString().__CStr()); \
         }\
 }
@@ -433,6 +434,7 @@ int main(int argc,char **argv){ \
 #define HX_END_MAIN \
 	} \
 	catch (Dynamic e){ \
+		__hx_dump_stack(); \
 		printf("Error : %s\n",e->toString().__CStr()); \
 	} \
 	return 0; \

@@ -74,8 +74,29 @@ typedef wchar_t HX_CHAR;
 #endif
 
 
-#define HX_SOURCE_PUSH
+
+
+#ifdef HXCPP_DEBUG
+
+struct __AutoStack
+{
+   __AutoStack(const char *inName);
+   ~__AutoStack();
+};
+void __hx_set_source_pos(const char *inFile, int inLine);
+
+#define HX_SOURCE_PUSH(name) __AutoStack __autostack(name);
+#define HX_SOURCE_POS(a,b) __hx_set_source_pos(a,b);
+
+
+#else
+
+#define HX_SOURCE_PUSH(x)
 #define HX_SOURCE_POS(FILE,LINE)
+
+#endif
+
+void __hx_dump_stack();
 
 
 
