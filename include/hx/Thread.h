@@ -157,7 +157,7 @@ struct MySemaphore
    {
       mSet = false;
       mValid = true;
-      pthread_cond_init(&mCondition,NULL);
+      pthread_cond_init(&mCondition,0);
    }
    ~MySemaphore()
    {
@@ -205,7 +205,7 @@ struct MySemaphore
    void WaitFor(double inSeconds)
    {
       struct timeval tv;
-      gettimeofday(&tv, NULL);
+      gettimeofday(&tv, 0);
 
       int isec = (int)inSeconds;
       int usec = (int)((inSeconds-isec)*1000000.0);
