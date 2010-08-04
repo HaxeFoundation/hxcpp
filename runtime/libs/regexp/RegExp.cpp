@@ -243,8 +243,11 @@ static value regexp_matched( value o, value n ) {
 	d = PCRE(o);
 	val_check(n,int);
 	m = val_int(n);
-	if( m < 0 || m >= d->nmatchs || val_is_null(d->str) )
+	if( m < 0 || m >= d->nmatchs)
+		val_throw(alloc_string("regexp@regexp_matched"));
+	if (val_is_null(d->str) )
 		return alloc_null();
+
 	{
 		int start = d->matchs[m*2];
 		int len = d->matchs[m*2+1] - start;
@@ -283,6 +286,7 @@ extern "C" {
 void regexp_main() {
 	id_pos = val_id("pos");
 	id_len = val_id("len");	
+   k_regexp = alloc_kind();
 }
 
 // Called when static linking to bring in the required symbols and initaliaze
