@@ -287,6 +287,7 @@ static value socket_write( value o, value data ) {
 		cdata += slen;
 		datalen -= slen;
 	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -303,6 +304,7 @@ static value socket_read( value o ) {
 	int len;
 	SOCKET sock = val_sock(o);
 	b = alloc_buffer(NULL);
+	gc_enter_blocking();
 	while( true ) {
 		POSIX_LABEL(read_again);
 		len = recv(sock,buf,256,MSG_NOSIGNAL);
@@ -312,8 +314,11 @@ static value socket_read( value o ) {
 		}
 		if( len == 0 )
 			break;
+	        gc_exit_blocking();
 		buffer_append_sub(b,buf,len);
+	        gc_enter_blocking();
 	}
+	gc_exit_blocking();
 	return buffer_val(b);
 }
 
@@ -398,8 +403,13 @@ static value socket_connect( value o, value host, value port ) {
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(val_int(port));
 	*(int*)&addr.sin_addr.s_addr = val_int(host);
+	gc_enter_blocking();
 	if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
-		return block_error();
+	{
+		gc_exit_blocking();
+		val_throw(alloc_string("std@socket_connect"));
+	}
+	gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -425,18 +435,17 @@ static fd_set INVALID;
 static fd_set *make_socket_array( value a, fd_set *tmp, SOCKET *n ) {
 	int i, len;
 	SOCKET sock;
+	FD_ZERO(tmp);
 	if( val_is_null(a) )
-		return NULL;
+		return tmp;
 	if( !val_is_array(a) )
 		return &INVALID;
 	len = val_array_size(a);
 	if( len > FD_SETSIZE )
 		val_throw(alloc_string("Too many sockets in select"));
-	FD_ZERO(tmp);
 	for(i=0;i<len;i++) {
 		value s = val_array_i(a,i);
-		if( !val_is_kind(s,k_socket) )
-			return &INVALID;
+                // make sure it is a socket...
 		sock = val_sock(s);
 		if( sock > *n )
 			*n = sock;
@@ -463,7 +472,7 @@ static value make_array_result( value a, fd_set *tmp ) {
 }
 
 static void init_timeval( double f, struct timeval *t ) {
-	t->tv_usec = ((int)(f*1000000)) % 1000000;
+	t->tv_usec = (f - (int)f ) * 1000000;
 	t->tv_sec = (int)f;
 }
 
@@ -478,14 +487,13 @@ static value socket_select( value rs, value ws, value es, value timeout ) {
 	fd_set rx, wx, ex;
 	fd_set *ra, *wa, *ea;
 	value r;
-	gc_enter_blocking();
 	POSIX_LABEL(select_again);
 	ra = make_socket_array(rs,&rx,&n);
 	wa = make_socket_array(ws,&wx,&n);
 	ea = make_socket_array(es,&ex,&n);
 	if( ra == &INVALID || wa == &INVALID || ea == &INVALID )
 	{
-		gc_exit_blocking();
+		val_throw( alloc_string("No valid sockets") );
 		return alloc_null();
 	}
 	if( val_is_null(timeout) )
@@ -495,10 +503,13 @@ static value socket_select( value rs, value ws, value es, value timeout ) {
 		tt = &tval;
 		init_timeval(val_number(timeout),tt);
 	}
+	gc_enter_blocking();
 	if( select((int)(n+1),ra,wa,ea,tt) == SOCKET_ERROR ) {
 		HANDLE_EINTR(select_again);
 		gc_exit_blocking();
-		return alloc_null();
+		char buf[100];
+		sprintf(buf,"Select error %d", errno );
+		val_throw( alloc_string(buf) );
 	}
 	gc_exit_blocking();
 	r = alloc_array(3);
@@ -529,7 +540,7 @@ static value socket_bind( value o, value host, value port ) {
 	if( bind(sock,(struct sockaddr*)&addr,sizeof(addr)) == SOCKET_ERROR )
 	{
 		gc_exit_blocking();
-		return alloc_null();
+		val_throw(alloc_string("Bind failed"));
 	}
 	gc_exit_blocking();
 	return alloc_bool(true);
