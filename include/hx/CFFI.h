@@ -235,6 +235,23 @@ inline value alloc_wstring(const wchar_t *inStr)
    return alloc_wstring_len(inStr,(int)(end-inStr));
 }
 
+
+//additional glue for easier neko modules compilation
+#define val_true    alloc_bool(true)
+#define val_false    alloc_bool(false)
+inline void neko_error() { hx_error(); }
+
+
+// Conservative marking within a buffer is not yet supported.
+//inline void * alloc(int i) { return hx_alloc(i); }
+
+// The bytes themselves will be GC'd, but not the pointers contained within.
+inline void * alloc_private(int i) { return hx_alloc(i); }
+
+// You should use alloc_buffer_len/buffer_data instead
+//value alloc_empty_string(int len) { }
+
+
 #endif
 
 
