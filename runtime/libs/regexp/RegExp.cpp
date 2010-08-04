@@ -243,11 +243,8 @@ static value regexp_matched( value o, value n ) {
 	d = PCRE(o);
 	val_check(n,int);
 	m = val_int(n);
-	if( m < 0 || m >= d->nmatchs)
+	if( m < 0 || m >= d->nmatchs || val_is_null(d->str) )
 		val_throw(alloc_string("regexp@regexp_matched"));
-	if (val_is_null(d->str) )
-		return alloc_null();
-
 	{
 		int start = d->matchs[m*2];
 		int len = d->matchs[m*2+1] - start;

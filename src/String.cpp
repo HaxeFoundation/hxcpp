@@ -955,7 +955,7 @@ hx::Object *String::__ToObject() const { return new StringData(*this); }
 
 void String::__boot()
 {
-   Static(__StringClass) = RegisterClass(HX_CSTRING("String"),TCanCast<StringData>,sStringStatics, sStringFields,
+   Static(__StringClass) = hx::RegisterClass(HX_CSTRING("String"),TCanCast<StringData>,sStringStatics, sStringFields,
            &CreateEmptyString, &CreateString, 0);
 }
 

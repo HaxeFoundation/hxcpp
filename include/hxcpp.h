@@ -3,6 +3,9 @@
 
 // Standard headers ....
 
+// Windows hack
+#define NOMINMAX
+
 #include <string.h>
 
 #define HX_UTF8_STRINGS

@@ -660,7 +660,7 @@ void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2) THROWS
 	#ifdef HX_INTERNAL_GC
 	hx::Throw(HX_CSTRING("Finalizer not supported here"));
 	#else
-	hx::GCAddFinalizer( (hx::Object *)arg1, (finalizer)arg2 );
+	hx::GCAddFinalizer( (hx::Object *)arg1, (hx::finalizer)arg2 );
 	#endif
 }
 

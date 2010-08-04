@@ -4,6 +4,7 @@
 #include <windows.h>
 #else
 #include <sys/time.h>
+#include <stdio.h>
 typedef uint64_t __int64;
 #endif
 

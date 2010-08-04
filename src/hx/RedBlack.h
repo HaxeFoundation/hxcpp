@@ -37,6 +37,8 @@
 #ifdef HX_INTERNAL_GC
 #define DO_ALLOC(x) hx::InternalNew(x,false)
 #else
+#include <gc.h>
+#include <gc_allocator.h>
 #define DO_ALLOC(x) GC_MALLOC(x)
 #endif
 

@@ -347,7 +347,7 @@ public:
 		mFinalizer = new hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = clean;
 	#else
-		hxGCAddFinalizer(this,clean);
+      hx::GCAddFinalizer(this,clean);
 	#endif
 	}
 
@@ -429,7 +429,7 @@ public:
 		mFinalizer = new hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = clean;
 	#else
-		hxGCAddFinalizer(this,clean);
+      hx::GCAddFinalizer(this,clean);
 	#endif
 	}
 

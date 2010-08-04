@@ -305,7 +305,7 @@ Dynamic ArrayCreateArgs(DynamicArray inArgs)
 
 void ArrayBase::__boot()
 {
-   Static(__mClass) = RegisterClass(HX_CSTRING("Array"),TCanCast<ArrayBase>,sNone,sArrayFields,
+   Static(__mClass) = hx::RegisterClass(HX_CSTRING("Array"),TCanCast<ArrayBase>,sNone,sArrayFields,
                                     ArrayCreateEmpty,ArrayCreateArgs,0,0);
 }
 

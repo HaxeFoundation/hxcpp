@@ -112,7 +112,7 @@ bool Math_obj::__Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!
 
 void Math_obj::__boot()
 {
-   Static(Math_obj::__mClass) = RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
+   Static(Math_obj::__mClass) = hx::RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
 
   srand(time(0));
 }

@@ -79,7 +79,7 @@ void *String::operator new( size_t inSize )
 
 
 #ifndef HX_INTERNAL_GC
-static hxObject ***sgExtraRoots = 0;
+static hx::Object ***sgExtraRoots = 0;
 static int sgExtraAlloced = 0;
 static int sgExtraSize = 0;
 
@@ -156,9 +156,9 @@ void __hxcpp_collect()
 #ifndef HX_INTERNAL_GC
 static void hxcpp_finalizer(void * obj, void * client_data)
 {
-   finalizer f = (finalizer)client_data;
+   hx::finalizer f = (hx::finalizer)client_data;
    if (f)
-      f( (hxObject *)obj );
+      f( (hx::Object *)obj );
 }
 #endif
 

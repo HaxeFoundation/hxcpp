@@ -21,7 +21,7 @@ int gMarkID = 0;
 #include <map>
 #include <vector>
 #include <set>
-
+#include <stdio.h>
 
 
 static bool sgAllocInit = 0;

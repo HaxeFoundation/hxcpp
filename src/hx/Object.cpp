@@ -8,14 +8,9 @@
 
 
 #ifdef _WIN32
+
 #include <windows.h>
 #include <time.h>
-#else
-#include <sys/time.h>
-#include <wchar.h>
-typedef  uint64_t  __int64;
-#endif
-
 // Stoopid windows ...
 #ifdef RegisterClass
 #undef RegisterClass
@@ -24,6 +19,13 @@ typedef  uint64_t  __int64;
 #undef abs
 #endif
 
+#else
+
+#include <sys/time.h>
+#include <wchar.h>
+typedef  uint64_t  __int64;
+
+#endif
 
 
 // --- hxObject -----------------------------------------
@@ -72,7 +74,7 @@ bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
 void Object::__boot()
 {
-   Static(Object__mClass) = RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0 );
+   Static(Object__mClass) = hx::RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0 );
 }
 
 Class &Object::__SGetClass() { return Object__mClass; }

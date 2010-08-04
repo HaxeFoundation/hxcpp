@@ -29,6 +29,14 @@ extern "C" void * hx_cffi(const char *inName);
 
 #include <windows.h>
 #include <stdio.h>
+// Stoopid windows ...
+#ifdef RegisterClass
+#undef RegisterClass
+#endif
+#ifdef abs
+#undef abs
+#endif
+
  
 void *LoadFunc(const char *inName)
 {

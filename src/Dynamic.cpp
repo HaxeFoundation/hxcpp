@@ -188,10 +188,10 @@ static bool IsFloat(hx::Object *inPtr)
 
 void Dynamic::__boot()
 {
-   Static(__BoolClass) = RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
-   Static(__IntClass) = RegisterClass(HX_CSTRING("Int"),TCanCast<IntData>,sNone,sNone,0,0, 0 );
-   Static(__FloatClass) = RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
-   Static(__VoidClass) = RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0 );
+   Static(__BoolClass) = hx::RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
+   Static(__IntClass) = hx::RegisterClass(HX_CSTRING("Int"),TCanCast<IntData>,sNone,sNone,0,0, 0 );
+   Static(__FloatClass) = hx::RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
+   Static(__VoidClass) = hx::RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0 );
 }
 
 
