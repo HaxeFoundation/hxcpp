@@ -14,6 +14,8 @@ public:
    CppInt32__(const null &inNull) : mValue(0) { }
    CppInt32__(const Dynamic &inD);
    operator int() const { return mValue; }
+   template<typename T>
+   inline CppInt32__ &operator=(T inValue) { mValue = inValue; return *this; }
 
    static inline CppInt32__ make(int a,int b) { return CppInt32__( (a<<16) | b ); }
    static inline CppInt32__ ofInt(int a) { return CppInt32__( a ); }
