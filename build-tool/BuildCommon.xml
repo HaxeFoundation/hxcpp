@@ -230,9 +230,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
   <flag value="-Od" if="debug"/>
-  <!-- -O2 is a bit too aggressive - it  stores offsets to array pointers on
-     the stack, which confuses the GC -->
-  <flag value="-Ot" unless="debug"/>
+  <!-- -O2 is back ! -->
+  <flag value="-O2" unless="debug"/>
   <flag value="${ABI}d" if="debug"/>
   <flag value="${ABI}" unless="debug"/>
   <flag value="-DHX_WINDOWS"/>
@@ -269,6 +268,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
+  <flag value="-debug" unless="debug"/>
   <flag value="-debug" if="debug"/>
   <flag value="-libpath:lib"/>
   <flag value="user32.lib"/>

@@ -180,6 +180,8 @@ namespace hx { extern void CriticalError(const String &inError); }
 namespace hx { extern String sNone[]; }
 void __hxcpp_check_overflow(int inVal);
 
+namespace hx { class MarkContext; }
+
 
 // HX_INTERNAL_GC is now the default, unless HXCPP_BOEHM_GC is defined...
 
@@ -196,7 +198,6 @@ void __hxcpp_check_overflow(int inVal);
      #define HXCPP_MULTI_THREADED
   #endif
 #endif
-
 
 
 

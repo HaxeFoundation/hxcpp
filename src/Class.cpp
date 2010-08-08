@@ -67,11 +67,11 @@ Class Class_obj::GetSuper()
    return *mSuper;
 }
 
-void Class_obj::__Mark()
+void Class_obj::__Mark(HX_MARK_PARAMS)
 {
-   MarkMember(mName);
-   MarkMember(mStatics);
-   MarkMember(mMembers);
+   HX_MARK_MEMBER(mName);
+   HX_MARK_MEMBER(mStatics);
+   HX_MARK_MEMBER(mMembers);
 }
 
 Class Class_obj__mClass;
@@ -85,10 +85,10 @@ Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class
 }
 
 
-void Class_obj::MarkStatics()
+void Class_obj::MarkStatics(HX_MARK_PARAMS)
 {
    if (mMarkFunc)
-		mMarkFunc();
+		mMarkFunc(HX_MARK_ARG);
 }
 
 Class Class_obj::Resolve(String inName)
@@ -148,16 +148,16 @@ Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue)
 
 namespace hx
 {
-void MarkClassStatics()
+void MarkClassStatics(HX_MARK_PARAMS)
 {
    ClassMap::iterator end = sClassMap->end();
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
-      MarkMember(i->first);
+      HX_MARK_MEMBER(i->first);
 
-      // all strings should be constants anyhow - MarkMember(i->first);
+      // all strings should be constants anyhow - HX_MARK_MEMBER(i->first);
       HX_MARK_OBJECT(i->second.mPtr);
-      i->second->MarkStatics();
+      i->second->MarkStatics(HX_MARK_ARG);
    }
 }
 }

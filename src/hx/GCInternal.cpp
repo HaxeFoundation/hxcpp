@@ -39,7 +39,7 @@ static bool sMultiThreadMode = false;
 
 TLSData<LocalAllocator> tlsLocalAlloc;
 
-static void MarkLocalAlloc(LocalAllocator *inAlloc);
+static void MarkLocalAlloc(LocalAllocator *inAlloc HX_MARK_ADD_PARAMS);
 static void WaitForSafe(LocalAllocator *inAlloc);
 static void ReleaseFromSafe(LocalAllocator *inAlloc);
 
@@ -482,16 +482,35 @@ namespace hx
 {
 
 
-void MarkAlloc(void *inPtr)
+
+class MarkContext
+{
+};
+
+typedef std::set<hx::Object **> RootSet;
+static RootSet sgRootSet;
+
+void GCAddRoot(hx::Object **inRoot)
+{
+   sgRootSet.insert(inRoot);
+}
+
+void GCRemoveRoot(hx::Object **inRoot)
+{
+   sgRootSet.erase(inRoot);
+}
+
+
+void MarkAlloc(void *inPtr HX_MARK_ADD_PARAMS)
 {
    MARK_ROWS
 }
 
-void MarkObjectAlloc(hx::Object *inPtr)
+void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS)
 {
    MARK_ROWS
 
-   inPtr->__Mark();
+   inPtr->__Mark(HX_MARK_ARG);
 }
 
 }
@@ -689,10 +708,29 @@ public:
 
       ClearRowMarks();
 
-      hx::GCMarkNow();
+
+
+
+
+
+		#ifdef HX_MARK_RECURSIVE
+		#define MARK_CONTEXT
+		#define MARK_ADD_CONTEXT
+		#else
+		hx::MarkContext ctx;
+		#define MARK_CONTEXT &ctx
+		#define MARK_ADD_CONTEXT ,&ctx
+		#endif
+		hx::MarkClassStatics(MARK_CONTEXT);
+
+		for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
+		{
+			hx::Object *&obj = **i;
+			hx::MarkObjectAlloc(obj MARK_ADD_CONTEXT );
+		}
 
       for(int i=0;i<mLocalAllocs.size();i++)
-         MarkLocalAlloc(mLocalAllocs[i]);
+         MarkLocalAlloc(mLocalAllocs[i] MARK_ADD_CONTEXT);
 
       hx::RunFinalizers();
 
@@ -830,6 +868,7 @@ public:
    LocalAllocator(int *inTopOfStack=0)
    {
       mTopOfStack = inTopOfStack;
+		mRegisterBufSize = 0;
       mGCFreeZone = false;
       Reset();
       mState = lasNew;
@@ -882,6 +921,7 @@ public:
       int dummy = 1;
       mBottomOfStack = &dummy;
       mGCFreeZone = true;
+      hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20);
       mReadyForCollect.Set();
    }
 
@@ -1025,6 +1065,7 @@ public:
          {
             int dummy = 1;
             mBottomOfStack = &dummy;
+				hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20);
             mCurrent = sGlobalAlloc->GetRecycledBlock(required_rows);
             //mCurrent->Verify();
             // Start on line 2 (there are 256 line-markers at the beginning)
@@ -1073,17 +1114,27 @@ public:
    }
 
 
-   void Mark()
+   void Mark(HX_MARK_PARAMS)
    {
       int here = 0;
-      void *prev = 0;
       #ifdef ANDROID
       // __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark %p...%p.", mBottomOfStack, mTopOfStack);
 		#else
       // printf("=========== Mark Stack ==================== %p/%d\n",mBottomOfStack,&here);
       #endif
 
-      for(int *ptr = mBottomOfStack ; ptr<mTopOfStack; ptr++)
+		//printf("mark stack...");
+		MarkConservative(mBottomOfStack, mTopOfStack HX_MARK_ADD_ARG);
+		//printf("mark buffer...");
+		MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) HX_MARK_ADD_ARG);
+      //printf("marked\n");
+      Reset();
+	}
+
+	void MarkConservative(int *inBottom, int *inTop HX_MARK_ADD_PARAMS)
+	{
+      void *prev = 0;
+      for(int *ptr = inBottom ; ptr<inTop; ptr++)
       {
          void *vptr = *(void **)ptr;
          MemType mem;
@@ -1114,9 +1165,7 @@ public:
             }
          }
       }
-      //printf("marked\n");
-      Reset();
-   }
+	}
 
    int mCurrentPos;
    int mCurrentLine;
@@ -1131,6 +1180,9 @@ public:
 
    int *mTopOfStack;
    int *mBottomOfStack;
+
+	int  *mRegisterBuf[20];
+	int  mRegisterBufSize;
 
    bool            mGCFreeZone;
    int             mID;
@@ -1173,9 +1225,9 @@ void ReleaseFromSafe(LocalAllocator *inAlloc)
    inAlloc->ReleaseFromSafe();
 }
 
-void MarkLocalAlloc(LocalAllocator *inAlloc)
+void MarkLocalAlloc(LocalAllocator *inAlloc HX_MARK_ADD_PARAMS)
 {
-   inAlloc->Mark();
+   inAlloc->Mark(HX_MARK_ARG);
 }
 
 
@@ -1345,5 +1397,7 @@ void hxcpp_set_top_of_stack()
    hx::SetTopOfStack(&i,false);
 }
 }
+
+void DummyFunction(void *inPtr) { }
 
 #endif // if HX_INTERNAL_GC

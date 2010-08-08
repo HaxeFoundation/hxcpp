@@ -216,7 +216,7 @@ struct ArrayBase_##func : public hx::Object \
    int __GetType() const { return vtFunction; } \
    void *__GetHandle() const { return mThis; } \
    int __ArgCount() const { return ARG_C; } \
-   void __Mark() { MarkMember(mThis); } \
+   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(mThis); } \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
       return mThis->__##func(array_list); return Dynamic(); \
@@ -325,9 +325,9 @@ Dynamic ArrayIterator::__Field(const String &inString)
    return null();
 }
 
-void  ArrayIterator::__Mark()
+void  ArrayIterator::__Mark(HX_MARK_PARAMS)
 {
-   MarkMember(mArray);
+   HX_MARK_MEMBER(mArray);
 }
 
 

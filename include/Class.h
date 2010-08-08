@@ -41,7 +41,7 @@ namespace hx
 typedef Dynamic (*ConstructEmptyFunc)();
 typedef Dynamic (*ConstructArgsFunc)(DynamicArray inArgs);
 typedef Dynamic (*ConstructEnumFunc)(String inName,DynamicArray inArgs);
-typedef void (*MarkFunc)();
+typedef void (*MarkFunc)(HX_MARK_PARAMS);
 typedef bool (*CanCastFunc)(hx::Object *inPtr);
 }
 
@@ -58,9 +58,9 @@ public:
 
    String __ToString() const;
 
-   void __Mark();
+   void __Mark(HX_MARK_PARAMS);
 
-   void MarkStatics();
+   void MarkStatics(HX_MARK_PARAMS);
 
 
    // the "Class class"

@@ -6,8 +6,6 @@
 #endif
 
 
-// TODO: Construct array-dynamic from foreign array
-
 
 
 // --- Constants -------------------------------------------------------
@@ -42,6 +40,7 @@ class IndexRef;
 typedef Array<Dynamic> DynamicArray;
 
 
+
 // --- hx::Object ------------------------------------------------------------
 //
 // Base for all hxcpp objects.
@@ -58,7 +57,7 @@ public:
    void operator delete( void *, bool ) { }
 
    //virtual void *__root();
-   virtual void __Mark() { }
+   virtual void __Mark(HX_MARK_PARAMS) { }
    virtual bool __Is(hx::Object *inClass) const { return true; }
    virtual hx::Object *__ToInterface(const type_info &inInterface) { return 0; }
    virtual hx::Object *__GetRealObject() { return this; }

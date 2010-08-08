@@ -143,7 +143,7 @@ public:
       return ((prim_mult)mProc)(args,11);
    }
 
-   void __Mark() {  hx::MarkMember(mName); }
+   void __Mark(HX_MARK_PARAMS) {  HX_MARK_MEMBER(mName); }
 
 
    void        *mProc;

@@ -34,7 +34,7 @@ public:
       return mHandle;
    }
 
-	void __Mark()
+	void __Mark(HX_MARK_PARAMS)
 	{
 	   #ifdef HX_INTERNAL_GC
 		if (mFinalizer)
@@ -696,7 +696,7 @@ public:
    virtual int __GetType() const { return valtRoot; }
    virtual hx::ObjectPtr<Class_obj> __GetClass() const { return 0; }
    virtual bool __IsClass(Class inClass ) const { return false; }
-   void __Mark()
+   void __Mark(HX_MARK_PARAMS)
    {
       HX_MARK_OBJECT(mNext);
       HX_MARK_OBJECT(mValue);

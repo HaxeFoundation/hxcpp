@@ -3,7 +3,7 @@
 namespace hx
 {
 
-void Interface::__Mark()
+void Interface::__Mark(HX_MARK_PARAMS)
 {
 	Object *obj = __GetRealObject();
 	HX_MARK_OBJECT(obj);

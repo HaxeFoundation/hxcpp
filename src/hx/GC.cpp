@@ -29,9 +29,6 @@ extern "C" {
 #ifndef HX_INTERNAL_GC
 #include <gc.h>
 #include <gc_allocator.h>
-#else
-typedef std::set<hx::Object **> RootSet;
-static RootSet sgRootSet;
 #endif
 
 #include "RedBlack.h"
@@ -79,20 +76,16 @@ void *String::operator new( size_t inSize )
 
 
 #ifndef HX_INTERNAL_GC
+
 static hx::Object ***sgExtraRoots = 0;
 static int sgExtraAlloced = 0;
 static int sgExtraSize = 0;
-
-#endif
 
 namespace hx
 {
 
 void GCAddRoot(hx::Object **inRoot)
 {
-#ifdef HX_INTERNAL_GC
-   sgRootSet.insert(inRoot);
-#else
 	if (sgExtraSize+1>=sgExtraAlloced)
 	{
 		sgExtraAlloced = 10 + sgExtraSize*3/2;
@@ -102,14 +95,10 @@ void GCAddRoot(hx::Object **inRoot)
 		   sgExtraRoots = (hx::Object ***)GC_REALLOC( sgExtraRoots, sgExtraAlloced * sizeof(hx::Object **) );
 	}
 	sgExtraRoots[ sgExtraSize++ ] = inRoot;
-#endif
 }
 
 void GCRemoveRoot(hx::Object **inRoot)
 {
-#ifdef HX_INTERNAL_GC
-   sgRootSet.erase(inRoot);
-#else
 	int i;
 	for(i=0;i<sgExtraSize;i++)
 	{
@@ -120,26 +109,10 @@ void GCRemoveRoot(hx::Object **inRoot)
 			break;
 		}
 	}
-#endif
 }
-
-
-#ifdef HX_INTERNAL_GC
-void GCMarkNow()
-{
-   MarkClassStatics();
-
-   for(RootSet::iterator i = sgRootSet.begin(); i!=sgRootSet.end(); ++i)
-   {
-		Object *&obj = **i;
-      HX_MARK_OBJECT( obj );
-   }
-}
-#endif
-
-
 
 } // end namespace hx
+#endif // End not internal
 
 
 void __hxcpp_collect()
@@ -221,8 +194,8 @@ void GCInit()
 
 #ifndef HX_INTERNAL_GC
 // Stubs...
-void MarkAlloc(void *inPtr) {  }
-void MarkObjectAlloc(hx::Object *inPtr) { }
+void MarkAlloc(void *inPtr HX_MARK_ADD_PARAMS) {  }
+void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS) { }
 void EnterGCFreeZone() { }
 void ExitGCFreeZone() { }
 #endif
@@ -282,6 +255,29 @@ void *GCRealloc(void *inData,int inSize)
 #endif
 }
 
+
+// Put this function here so we can be reasonablly sure that "this" register and
+// the 4 registers that may be used to pass args are on the stack.
+int RegisterCapture::Capture(int *inTopOfStack,int **inBuf,int &outSize,int inMaxSize)
+{
+	int here = 0;
+	int size = ( (char *)inTopOfStack - (char *)&here )/sizeof(void *);
+	if (size>inMaxSize)
+		size = inMaxSize;
+	outSize = size;
+	if (size>0)
+	   memcpy(inBuf,&here,size*sizeof(void*));
+	return 1;
+}
+
+
+RegisterCapture *gRegisterCaptureInstance = 0;
+RegisterCapture *RegisterCapture::Instance()
+{
+	if (!gRegisterCaptureInstance)
+		gRegisterCaptureInstance = new RegisterCapture();
+	return gRegisterCaptureInstance;
+}
 
 
 } // end namespace hx

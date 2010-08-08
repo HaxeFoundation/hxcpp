@@ -348,7 +348,7 @@ struct VarArgFunc : public hx::Object
    int __GetType() const { return vtFunction; }
    ::String __ToString() const { return mRealFunc->__ToString() ; }
 
-   void __Mark() { MarkMember(mRealFunc); }
+   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(mRealFunc); }
 
    void *__GetHandle() const { return mRealFunc.GetPtr(); }
    Dynamic __Run(const Array<Dynamic> &inArgs)

@@ -26,10 +26,10 @@ void EnumBase_obj::__boot()
                        &__CreateEmpty, &__Create, 0 );
 }
 
-void EnumBase_obj::__Mark()
+void EnumBase_obj::__Mark(HX_MARK_PARAMS)
 {
-   MarkMember(tag);
-   MarkMember(mArgs);
+   HX_MARK_MEMBER(tag);
+   HX_MARK_MEMBER(mArgs);
 }
 
 String EnumBase_obj::toString() {

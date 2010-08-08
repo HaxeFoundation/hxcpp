@@ -33,7 +33,7 @@ public:
    Dynamic next_dyn( );
 
    Dynamic __Field(const String &inString);
-	void __Mark();
+	void __Mark(HX_MARK_PARAMS);
 
    int     mIdx;
    Dynamic mArray;
@@ -232,13 +232,13 @@ public:
    inline ELEM_ &QuickItem(int inIndex) { return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)); }
 
 
-   void __Mark()
+   void __Mark(HX_MARK_PARAMS)
    {
       if (hx::ContainsPointers<ELEM_>())
       {
          ELEM_ *ptr = (ELEM_ *)mBase;
          for(int i=0;i<length;i++)
-            hx::MarkMember(ptr[i]);
+            HX_MARK_MEMBER(ptr[i]);
       }
       HX_MARK_ARRAY(mBase);
    }

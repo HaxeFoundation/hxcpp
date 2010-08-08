@@ -49,9 +49,9 @@ struct Deque : public Array_obj<Dynamic>
 	}
 
 	#ifdef HX_INTERNAL_GC
-	void __Mark()
+	void __Mark(HX_MARK_PARAMS)
 	{
-		Array_obj<Dynamic>::__Mark();
+		Array_obj<Dynamic>::__Mark(HX_MARK_ARG);
 		mFinalizer->Mark();
 	}
 	#endif
@@ -200,10 +200,10 @@ public:
 	void SetTLS(int inID,Dynamic inVal) { mTLS[inID] = inVal; }
 	Dynamic GetTLS(int inID) { return mTLS[inID]; }
 
-	void __Mark()
+	void __Mark(HX_MARK_PARAMS)
 	{
-		MarkMember(mFunction);
-		MarkMember(mTLS);
+		HX_MARK_MEMBER(mFunction);
+		HX_MARK_MEMBER(mTLS);
 		if (mDeque)
 			HX_MARK_OBJECT(mDeque);
 	}
@@ -352,7 +352,7 @@ public:
 	}
 
 	#ifdef HX_INTERNAL_GC
-	void __Mark() { mFinalizer->Mark(); }
+	void __Mark(HX_MARK_PARAMS) { mFinalizer->Mark(); }
 	hx::InternalFinalizer *mFinalizer;
 	#endif
 
@@ -434,7 +434,7 @@ public:
 	}
 
 	#ifdef HX_INTERNAL_GC
-	void __Mark() { mFinalizer->Mark(); }
+	void __Mark(HX_MARK_PARAMS) { mFinalizer->Mark(); }
 	hx::InternalFinalizer *mFinalizer;
 	#endif
 
