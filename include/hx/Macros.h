@@ -16,7 +16,8 @@
    Dynamic __Field(const ::String &inString); \
    void __GetFields(Array< ::String> &outFields); \
    Dynamic __SetField(const ::String &inString,const Dynamic &inValue); \
-   virtual int __GetType() const { return vtClass; }
+   virtual int __GetType() const { return vtClass; } \
+   inline operator super *() { return this; } 
 
 
 #define HX_DO_ENUM_RTTI_INTERNAL \

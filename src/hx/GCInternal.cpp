@@ -726,7 +726,8 @@ public:
 		for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
 		{
 			hx::Object *&obj = **i;
-			hx::MarkObjectAlloc(obj MARK_ADD_CONTEXT );
+			if (obj)
+				hx::MarkObjectAlloc(obj MARK_ADD_CONTEXT );
 		}
 
       for(int i=0;i<mLocalAllocs.size();i++)
@@ -783,6 +784,7 @@ public:
       }
 
       mTotalAfterLastCollect = MemUsage();
+      //printf("Using %d\n", mTotalAfterLastCollect);
       mDistributedSinceLastCollect = 0;
 
       #ifdef HXCPP_MULTI_THREADED

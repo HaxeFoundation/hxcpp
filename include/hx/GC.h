@@ -132,6 +132,8 @@ void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS);
 
 #define HX_MARK_MEMBER(x) hx::MarkMember(x HX_MARK_ADD_ARG )
 
+#define HX_MARK_MEMBER_NAME(x,name) hx::MarkMember(x HX_MARK_ADD_ARG )
+
 #define HX_MARK_OBJECT(ioPtr) if (ioPtr) hx::MarkObjectAlloc(ioPtr HX_MARK_ADD_ARG );
 
 #define HX_GC_CONST_STRING  0xffffffff

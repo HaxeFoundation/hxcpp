@@ -49,7 +49,7 @@ struct CallLocation
 
 struct CallStack
 {
-   enum { StackSize = 50 };
+   enum { StackSize = 1000 };
 
    CallStack()
    {
@@ -82,7 +82,7 @@ struct CallStack
    }
    void Dump()
    {
-      for(int i=1;i<=mLastException;i++)
+      for(int i=1;i<=mLastException && i<StackSize;i++)
       {
          CallLocation loc = mLocations[i];
          #ifdef ANDROID
@@ -96,6 +96,10 @@ struct CallStack
          else
             printf("Called from %s, %s %d\n", loc.mFunction, loc.mFile, loc.mLine );
          #endif
+      }
+      if (mLastException >= StackSize)
+      {
+         printf("... %d functions missing ...\n", mLastException + 1 - StackSize);
       }
    }
 

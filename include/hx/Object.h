@@ -142,29 +142,29 @@ public:
    template<typename SOURCE_>
    ObjectPtr(const ObjectPtr<SOURCE_> &inObjectPtr)
    {
-		if (inObjectPtr.mPtr)
-		{
-			mPtr = dynamic_cast<OBJ_ *>(inObjectPtr.mPtr->__GetRealObject());
-			if (!mPtr)
-				mPtr = (Ptr)inObjectPtr.mPtr->__ToInterface(typeid(Obj));
-		}
-		else
-			mPtr = 0;
-	}
+      if (inObjectPtr.mPtr)
+      {
+         mPtr = dynamic_cast<OBJ_ *>(inObjectPtr.mPtr->__GetRealObject());
+         if (!mPtr)
+            mPtr = (Ptr)inObjectPtr.mPtr->__ToInterface(typeid(Obj));
+      }
+      else
+         mPtr = 0;
+   }
 
 
    template<typename SOURCE_>
    ObjectPtr(const SOURCE_ *inPtr)
    {
-		if (inPtr)
-		{
-			mPtr = dynamic_cast<OBJ_ *>((const_cast<SOURCE_ *>(inPtr))->__GetRealObject());
-			if (!mPtr)
-				mPtr = (Ptr)const_cast<SOURCE_ *>(inPtr)->__ToInterface(typeid(Obj));
-		}
-		else
-			mPtr = 0;
-	}
+      if (inPtr)
+      {
+         mPtr = dynamic_cast<OBJ_ *>((const_cast<SOURCE_ *>(inPtr))->__GetRealObject());
+         if (!mPtr)
+            mPtr = (Ptr)const_cast<SOURCE_ *>(inPtr)->__ToInterface(typeid(Obj));
+      }
+      else
+         mPtr = 0;
+   }
 
 
    ObjectPtr(const ObjectPtr<OBJ_> &inOther) : mPtr( inOther.mPtr ) {  }
@@ -176,10 +176,10 @@ public:
    ObjectPtr &operator=(const ObjectPtr &inRHS) { mPtr = inRHS.mPtr; return *this; }
    template<typename InterfaceImpl>
    ObjectPtr &operator=(InterfaceImpl *inRHS)
-	{
-		mPtr = inRHS->operator Ptr();
-		return *this;
-	}
+   {
+      mPtr = inRHS->operator Ptr();
+      return *this;
+   }
 
    inline OBJ_ *GetPtr() const { return mPtr; }
    inline OBJ_ *operator->()
@@ -203,7 +203,7 @@ public:
    bool operator!=(const null &inRHS) const { return mPtr!=0; }
    //explicit operator bool() const { return mPtr!=0; }
 
-	// This is defined in the "FieldRef" class...
+   // This is defined in the "FieldRef" class...
    inline class hx::FieldRef FieldRef(const String &inString);
    inline class hx::IndexRef IndexRef(int inString);
    static Class &__SGetClass() { return OBJ_::__SGetClass(); }
