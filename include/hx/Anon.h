@@ -13,6 +13,7 @@ class FieldMap;
 FieldMap *FieldMapCreate();
 
 bool FieldMapGet(hx::FieldMap *inMap, const ::String &inName, ::Dynamic &outValue);
+bool FieldMapHas(hx::FieldMap *inMap, const ::String &inName);
 bool FieldMapGet(hx::FieldMap *inMap, int inID, ::Dynamic &outValue);
 void FieldMapSet(hx::FieldMap *inMap, const ::String &inName, const ::Dynamic &inValue);
 void FieldMapAppendFields(hx::FieldMap *inMap,::Array< ::String> &outFields);

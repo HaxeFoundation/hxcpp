@@ -34,10 +34,16 @@
 
 
 #define HX_DECLARE_IMPLEMENT_DYNAMIC  hx::FieldMap *__mDynamicFields; \
-    hx::FieldMap *__GetFieldMap() { return __mDynamicFields; }
+    hx::FieldMap *__GetFieldMap() { return __mDynamicFields; } \
+    bool __HasField(const String &inString) \
+      { return hx::FieldMapHas(__mDynamicFields,inString) || super::__HasField(inString); } 
 
 
 #define HX_INIT_IMPLEMENT_DYNAMIC __mDynamicFields = hx::FieldMapCreate();
+
+#define HX_IMPLEMENT_HAS_FIELD(class) \
+    bool class::__HasField(const String &inString) \
+    {  if (hx::FieldMap::
 
 #define HX_MARK_DYNAMIC hx::FieldMapMark(__mDynamicFields HX_MARK_ADD_ARG);
 

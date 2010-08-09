@@ -33,6 +33,13 @@ bool FieldMapGet(FieldMap *inMap, const String &inName, Dynamic &outValue)
 	return true;
 }
 
+
+bool FieldMapHas(FieldMap *inMap, const String &inName)
+{
+	return inMap->Find(inName);
+}
+
+
 bool FieldMapGet(FieldMap *inMap, int inID, Dynamic &outValue)
 {
 	Dynamic *value = inMap->Find(__hxcpp_field_from_id(inID));

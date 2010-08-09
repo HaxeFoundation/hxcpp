@@ -72,8 +72,12 @@ public:
 
    Dynamic __SetField(const String &inString,const Dynamic &inValue);
 
+   bool __HasField(const String &inString);
+
 
    int __GetType() const { return vtObject; }
+
+   bool __IsEnum() { return mConstructEnum; }
 
 	hx::CanCastFunc     CanCast;
 

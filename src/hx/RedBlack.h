@@ -157,7 +157,7 @@ struct RBTree {
  
  
  
-   int Erase ( const KEY &inKey )
+   bool Erase ( const KEY &inKey )
    {
       if ( root != NULL ) {
         Node head = {0}; /* False tree root */
@@ -239,9 +239,10 @@ struct RBTree {
           root->red = 0;
   
         --size;
+        return true;
       }
   
-      return 1;
+      return false;
     }
  
    size_t Size( ) { return size; }

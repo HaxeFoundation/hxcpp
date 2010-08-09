@@ -127,6 +127,16 @@ Array<String> Class_obj::GetClassFields()
    return result;
 }
 
+bool Class_obj::__HasField(const String &inString)
+{
+   for(int s=0;s<mStatics->size();s++)
+      if (mStatics[s]==inString)
+         return true;
+   if (mSuper)
+      return (*mSuper)->__HasField(inString);
+   return false;
+}
+
 Dynamic Class_obj::__Field(const String &inString)
 {
    // Not the most efficient way of doing this!

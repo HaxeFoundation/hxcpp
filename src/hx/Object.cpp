@@ -55,8 +55,10 @@ int Object::__Compare(const Object *inRHS) const
 
 
 Dynamic Object::__Field(const String &inString) { return null(); }
-// TODO: this is not quite correct...
-bool Object::__HasField(const String &inString) { return __Field(inString)!=null(); }
+bool Object::__HasField(const String &inString)
+{
+   return false;
+}
 Dynamic Object::__Run(const Array<Dynamic> &inArgs) { return 0; }
 Dynamic Object::__GetItem(int inIndex) const { return null(); }
 Dynamic Object::__SetItem(int inIndex,Dynamic) { return null();  }
