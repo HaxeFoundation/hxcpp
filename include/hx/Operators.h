@@ -162,44 +162,73 @@ inline hx::IndexRef ModEq(hx::IndexRef inLHS, R inRHS) { inLHS = (int)inLHS % (i
 
 #endif // __GNUC__
 
+null BadCast();
 
-
-template<typename T> inline T TCastObject(hx::Object *inObj) { return null(); }
-template<> inline bool TCastObject<bool>(hx::Object *inObj) { return inObj?inObj->__ToInt():0; }
-template<> inline int TCastObject<int>(hx::Object *inObj) { return inObj?inObj->__ToInt():0; }
-template<> inline double TCastObject<double>(hx::Object *inObj) { return inObj?inObj->__ToDouble():0; }
+template<typename T> inline T TCastObject(hx::Object *inObj) { return hx::BadCast(); }
+template<> inline bool TCastObject<bool>(hx::Object *inObj)
+{
+   if (!inObj || inObj->__GetType()!=::vtBool) return hx::BadCast();
+   return inObj?inObj->__ToInt():0;
+}
+template<> inline int TCastObject<int>(hx::Object *inObj)
+{
+   if (!inObj || inObj->__GetType()!=::vtInt) return hx::BadCast();
+   return inObj->__ToInt();
+}
+template<> inline double TCastObject<double>(hx::Object *inObj)
+{
+   if (!inObj || (inObj->__GetType()!=::vtFloat && inObj->__GetType()!=::vtInt))
+      return hx::BadCast();
+   return inObj->__ToDouble();
+}
 template<> inline null TCastObject<null>(hx::Object *inObj) { return null(); }
 
 // Cast to scalar
 template<typename T> struct TCast
 {
-   template<typename VAL> static inline T cast(VAL inVal ) { return T(inVal); }
+   template<typename VAL> static inline T cast(VAL inVal ) {
+      T result =  TCastObject<T>(Dynamic(inVal).GetPtr());
+      if (result==null()) hx::BadCast();
+      return result;
+   }
 
    template<typename INOBJ>
    static inline T cast(ObjectPtr<INOBJ> inObj )
    {
-      return TCastObject<T>(inObj.GetPtr());
+      T result =  TCastObject<T>(inObj.GetPtr());
+      if (result==null()) hx::BadCast();
+      return result;
    }
 
    template<typename INOBJ>
-   static inline T cast(Array<INOBJ> inObj ) { return null(); }
+   static inline T cast(Array<INOBJ> inObj ) { return hx::BadCast(); }
 
 };
 
 // Cast to object
 template<typename T> struct TCast< ObjectPtr<T> >
 {
-   template<typename VAL> static inline ObjectPtr<T> cast(VAL inVal ) { return Dynamic(inVal); }
+   template<typename VAL> static inline ObjectPtr<T> cast(VAL inVal ) {
+      ObjectPtr<T> result = Dynamic(inVal);
+      if (result==null()) BadCast();
+      return result;
+   }
 
    template<typename INOBJ>
    static inline ObjectPtr<T> cast(ObjectPtr<INOBJ> inObj )
    {
-      return ObjectPtr<T>(inObj);
+      ObjectPtr<T> result = ObjectPtr<T>(inObj);
+      if (result==null()) hx::BadCast();
+      return result;
    }
 };
 
-
-inline Array<Dynamic> TCastToArray(Dynamic inVal) { return inVal; }
+inline Array<Dynamic> TCastToArray(Dynamic inVal)
+{
+   Dynamic result = inVal;
+   if (result==null()) hx::BadCast();
+   return inVal;
+}
 
 
 }

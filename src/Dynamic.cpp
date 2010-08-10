@@ -179,6 +179,15 @@ namespace cpp
 CppInt32__::CppInt32__(const Dynamic &inD) : mValue(inD->__ToInt()) { }
 }
 
+namespace hx {
+null BadCast()
+{
+   hx::Throw(HX_INVALID_CAST);
+   return null();
+}
+}
+
+
 static bool NoCast(hx::Object *) { return false; }
 static bool IsFloat(hx::Object *inPtr)
 {
