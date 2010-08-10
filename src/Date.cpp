@@ -73,17 +73,11 @@ String __hxcpp_to_string(double inSeconds)
    struct tm *time = localtime(&t);
 #ifndef HX_UTF8_STRINGS
    wchar_t buf[100];
-   swnprintf(buf,100,L"%04d-%02d-%02d %02d:%02d:%02d",
+   wcsftime(buf,100,L"%Y-%m-%d %H:%M:%S", time);
 #else
    char buf[100];
-   #ifdef HX_WINDOWS
-   sprintf_s(buf,100,"%04d-%02d-%02d %02d:%02d:%02d",
-   #else
-   snprintf(buf,100,"%04d-%02d-%02d %02d:%02d:%02d",
-   #endif
+   strftime(buf,100,"%Y-%m-%d %H:%M:%S", time);
 #endif
-       time->tm_year + 1900, time->tm_mon+1, time->tm_mday,
-       time->tm_hour, time->tm_min, time->tm_sec );
    return String(buf).dup();
 }
 

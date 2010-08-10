@@ -3,8 +3,11 @@
 #include <hxMath.h>
 
 
-#ifdef HX_WINDOWS
+#include <stdlib.h>
 #include <time.h>
+#include <process.h>
+#ifndef HX_WINDOWS
+#include <sys/time.h>
 #endif
 // -------- Math ---------------------------------------
 
@@ -114,7 +117,19 @@ void Math_obj::__boot()
 {
    Static(Math_obj::__mClass) = hx::RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
 
-  srand(time(0));
+	unsigned int t;
+#ifdef HX_WINDOWS
+	t = clock();
+	int pid = _getpid();
+#else
+	int pid = getpid();
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+	t = tv.tv_sec * 1000000 + tv.tv_usec;
+#endif	
+
+  srand(t ^ (pid | (pid << 16)));
+  rand();
 }
 
 namespace hx
