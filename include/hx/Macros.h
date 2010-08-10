@@ -405,6 +405,7 @@ extern void SetTopOfStack(int *inTopOfStack,bool);
 // Java Main....
 #include <jni.h>
 #include <hx/Thread.h>
+#include <android/log.h>
 
 #ifdef __GNUC__
  #define GCC_EXTRA __attribute__ ((visibility("default")))

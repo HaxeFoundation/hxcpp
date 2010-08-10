@@ -5,10 +5,14 @@
 
 #include <stdlib.h>
 #include <time.h>
-#include <process.h>
 #ifndef HX_WINDOWS
+#include <unistd.h>
 #include <sys/time.h>
+#else
+#include <process.h>
 #endif
+
+
 // -------- Math ---------------------------------------
 
 using namespace hx;

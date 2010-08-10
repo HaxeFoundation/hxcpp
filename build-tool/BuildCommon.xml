@@ -209,6 +209,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
 </linker>
 
 <linker id="exe" exe="g++" if="macos">
+  <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-debug" if="debug"/>
@@ -279,7 +280,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
 <!-- Android TOOLS -------------------------------------->
 
 <compiler id="android-gcc" exe="arm-eabi-g++" if="android">
-  <exe name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/bin/arm-eabi-g++"/>
+  <exe name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/bin/arm-eabi-gcc"/>
 
  <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/platforms/android-5/arch-arm/usr/include"/>
  <flag value="-I${HXCPP_CYG}/include"/>
@@ -290,7 +291,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
  <flag value="-funwind-tables"/>
  <flag value="-fstack-protector"/>
  <flag value="-fno-short-enums"/>
- <flag value="-frtti"/>
+ <cppflag value="-frtti"/>
  <flag value="-D__ARM_ARCH_5__"/>
  <flag value="-D__ARM_ARCH_5T__"/>
  <flag value="-D__ARM_ARCH_5E__"/>

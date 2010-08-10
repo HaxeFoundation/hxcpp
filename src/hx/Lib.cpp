@@ -355,7 +355,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    if (!module && debug)
    {
       #ifdef ANDROID
-       __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", module_name.__CStr());
+       __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", module_name.c_str());
       #else
       printf("Searching for %s...\n", inLib.__CStr());
       #endif
@@ -459,7 +459,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    {
       #ifdef ANDROID
        __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not find primitive %s in %p",
-        &name[0], module);
+        full_name.__CStr(), module);
       #else
       fprintf(stderr,"Could not find primitive %s.\n", full_name.__CStr());
       #endif

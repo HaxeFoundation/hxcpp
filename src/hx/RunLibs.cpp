@@ -13,10 +13,13 @@ int regexp_register_prims();
 int zlib_register_prims();
 
 
-
+#ifdef HX_UTF8_STRINGS
+std::string sgResultBuffer;
+#else
 std::wstring sgResultBuffer;
+#endif
 
-const wchar_t *hxRunLibrary()
+const HX_CHAR *hxRunLibrary()
 {
    std_register_prims();
    regexp_register_prims();

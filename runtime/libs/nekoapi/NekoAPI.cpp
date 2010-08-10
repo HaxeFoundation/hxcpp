@@ -521,7 +521,7 @@ void  api_val_gc_ptr(void * arg1,hxPtrFinalizer arg2)
 
 
 // Used for finding functions in static libraries
-int api_hx_register_prim( const wchar_t * arg1, void* arg2)
+int api_hx_register_prim( const char * arg1, void* arg2)
 {
 	// Not used - but return something anyhow.
 	return 0;

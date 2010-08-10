@@ -107,7 +107,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 void __trace(Dynamic inObj, Dynamic inData)
 {
 #ifdef HX_UTF8_STRINGS
-   #ifdef ANDRIOD
+   #ifdef ANDROID
    __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",
    #else
    printf("%s:%d: %s\n",
@@ -158,10 +158,12 @@ double  __time_stamp()
 
 
 #ifdef __APPLE__
+ #ifndef IPHONE
    extern "C" {
    extern int *_NSGetArgc(void);
    extern char ***_NSGetArgv(void);
    }
+ #endif
 #endif
 Array<String> __get_args()
 {
@@ -196,11 +198,12 @@ Array<String> __get_args()
    #else
    #ifdef __APPLE__
 
+   #ifndef IPHONE
    int argc = *_NSGetArgc();
    char **argv = *_NSGetArgv();
    for(int i=1;i<argc;i++)
       result->push( String(argv[i],strlen(argv[i])) );
-
+   #endif
 
    #else
    #ifdef ANDROID
