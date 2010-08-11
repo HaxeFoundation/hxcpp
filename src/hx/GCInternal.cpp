@@ -28,6 +28,10 @@ static bool sgAllocInit = 0;
 static bool sgInternalEnable = false;
 static void *sgObject_root = 0;
 
+#ifdef HXCPP_DEBUG
+static hx::Object *gCollectTrace = 0;
+#endif
+
 static int sgTimeToNextTableUpdate = 0;
 
 
@@ -79,7 +83,7 @@ struct QuickVec
          memmove(mPtr+inPos, mPtr+inPos+1, (mSize-inPos)*sizeof(T));
    }
 
-	inline void qerase_val(T inVal)
+   inline void qerase_val(T inVal)
    {
       for(int i=0;i<mSize;i++)
          if (mPtr[i]==inVal)
@@ -482,10 +486,93 @@ namespace hx
 {
 
 
+struct MarkInfo
+{
+   const char *mClass;
+   const char *mMember;
+};
 
 class MarkContext
 {
+public:
+    enum { StackSize = 8192 };
+    MarkContext()
+    {
+       mInfo = new MarkInfo[StackSize];
+       mPos = 0;
+    }
+    ~MarkContext() { delete [] mInfo; };
+    void PushClass(const char *inClass)
+    {
+       if (mPos<StackSize-1)
+       {
+          mInfo[mPos].mClass = inClass;
+          mInfo[mPos].mMember = 0;
+       }
+       mPos++;
+    }
+    void SetMember(const char *inMember)
+    {
+       if (mPos<StackSize)
+          mInfo[mPos-1].mMember = inMember ? inMember : "Unknown";
+    }
+    void PopClass() { mPos--; }
+
+    void Trace()
+    {
+       int n = mPos < StackSize ? mPos : StackSize;
+       #ifdef ANDROID
+       __android_log_print(ANDROID_LOG_ERROR, "trace", "Class referenced from");
+       #else
+       printf("Class referenced from:\n");
+       #endif
+
+       for(int i=0;i<n;i++)
+          #ifdef ANDROID
+          __android_log_print(ANDROID_LOG_INFO, "trace", "%s.%s",  mInfo[i].mClass, mInfo[i].mMember );
+          #else
+          printf("%s.%s\n",  mInfo[i].mClass, mInfo[i].mMember );
+          #endif
+
+       if (mPos>=StackSize)
+       {
+          #ifdef ANDROID
+          __android_log_print(ANDROID_LOG_INFO, "trace", "... + deeper");
+          #else
+          printf("... + deeper\n");
+          #endif
+       }
+    }
+
+    int mPos;
+    MarkInfo *mInfo;
 };
+
+void MarkSetMember(const char *inName HX_MARK_ADD_PARAMS)
+{
+   #ifdef HXCPP_DEBUG
+   __inCtx->SetMember(inName);
+   #endif
+}
+
+void MarkPushClass(const char *inName HX_MARK_ADD_PARAMS)
+{
+   #ifdef HXCPP_DEBUG
+   __inCtx->PushClass(inName);
+   #endif
+}
+
+void MarkPopClass(HX_MARK_PARAMS)
+{
+   #ifdef HXCPP_DEBUG
+   __inCtx->PopClass();
+   #endif
+}
+
+
+
+
+
 
 typedef std::set<hx::Object **> RootSet;
 static RootSet sgRootSet;
@@ -510,6 +597,13 @@ void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS)
 {
    MARK_ROWS
 
+   #if defined(HXCPP_DEBUG) && defined(HX_MARK_WITH_CONTEXT)
+   if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
+   {
+       __inCtx->Trace();
+   }
+   #endif
+   
    inPtr->__Mark(HX_MARK_ARG);
 }
 
@@ -597,7 +691,7 @@ public:
       }
       #endif
 
-		BlockData *result = 0;
+      BlockData *result = 0;
       if (mNextRecycled < mRecycledBlock.size())
       {
          if (mRecycledBlock[mNextRecycled]->mFreeInARow>=inRequiredRows)
@@ -623,7 +717,7 @@ public:
          }
       }
 
-		if (!result)
+      if (!result)
          result = GetEmptyBlock();
 
       #ifdef HXCPP_MULTI_THREADED
@@ -713,22 +807,22 @@ public:
 
 
 
-		#ifdef HX_MARK_RECURSIVE
-		#define MARK_CONTEXT
-		#define MARK_ADD_CONTEXT
-		#else
-		hx::MarkContext ctx;
-		#define MARK_CONTEXT &ctx
-		#define MARK_ADD_CONTEXT ,&ctx
-		#endif
-		hx::MarkClassStatics(MARK_CONTEXT);
+      #ifndef HX_MARK_WITH_CONTEXT
+      #define MARK_CONTEXT
+      #define MARK_ADD_CONTEXT
+      #else
+      hx::MarkContext ctx;
+      #define MARK_CONTEXT &ctx
+      #define MARK_ADD_CONTEXT ,&ctx
+      #endif
+      hx::MarkClassStatics(MARK_CONTEXT);
 
-		for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
-		{
-			hx::Object *&obj = **i;
-			if (obj)
-				hx::MarkObjectAlloc(obj MARK_ADD_CONTEXT );
-		}
+      for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
+      {
+         hx::Object *&obj = **i;
+         if (obj)
+            hx::MarkObjectAlloc(obj MARK_ADD_CONTEXT );
+      }
 
       for(int i=0;i<mLocalAllocs.size();i++)
          MarkLocalAlloc(mLocalAllocs[i] MARK_ADD_CONTEXT);
@@ -870,7 +964,7 @@ public:
    LocalAllocator(int *inTopOfStack=0)
    {
       mTopOfStack = inTopOfStack;
-		mRegisterBufSize = 0;
+      mRegisterBufSize = 0;
       mGCFreeZone = false;
       Reset();
       mState = lasNew;
@@ -1067,7 +1161,7 @@ public:
          {
             int dummy = 1;
             mBottomOfStack = &dummy;
-				hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20);
+            hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20);
             mCurrent = sGlobalAlloc->GetRecycledBlock(required_rows);
             //mCurrent->Verify();
             // Start on line 2 (there are 256 line-markers at the beginning)
@@ -1121,20 +1215,30 @@ public:
       int here = 0;
       #ifdef ANDROID
       // __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark %p...%p.", mBottomOfStack, mTopOfStack);
-		#else
+      #else
       // printf("=========== Mark Stack ==================== %p/%d\n",mBottomOfStack,&here);
       #endif
 
-		//printf("mark stack...");
-		MarkConservative(mBottomOfStack, mTopOfStack HX_MARK_ADD_ARG);
-		//printf("mark buffer...");
-		MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) HX_MARK_ADD_ARG);
+      //printf("mark stack...");
+
+      #ifdef HXCPP_DEBUG
+      MarkPushClass("Stack",__inCtx);
+      MarkSetMember("Stack",__inCtx);
+      MarkConservative(mBottomOfStack, mTopOfStack HX_MARK_ADD_ARG);
+      MarkSetMember("Registers",__inCtx);
+      MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) HX_MARK_ADD_ARG);
+      MarkPopClass(__inCtx);
+      #else
+      MarkConservative(mBottomOfStack, mTopOfStack HX_MARK_ADD_ARG);
+      MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) HX_MARK_ADD_ARG);
+      #endif
+
       //printf("marked\n");
       Reset();
-	}
+   }
 
-	void MarkConservative(int *inBottom, int *inTop HX_MARK_ADD_PARAMS)
-	{
+   void MarkConservative(int *inBottom, int *inTop HX_MARK_ADD_PARAMS)
+   {
       void *prev = 0;
       for(int *ptr = inBottom ; ptr<inTop; ptr++)
       {
@@ -1167,7 +1271,7 @@ public:
             }
          }
       }
-	}
+   }
 
    int mCurrentPos;
    int mCurrentLine;
@@ -1183,8 +1287,8 @@ public:
    int *mTopOfStack;
    int *mBottomOfStack;
 
-	int  *mRegisterBuf[20];
-	int  mRegisterBufSize;
+   int  *mRegisterBuf[20];
+   int  mRegisterBufSize;
 
    bool            mGCFreeZone;
    int             mID;
@@ -1385,6 +1489,26 @@ void UnregisterCurrentThread()
 
 
 } // end namespace hx
+
+
+
+void __hxcpp_gc_trace(Class inClass)
+{
+    #if !defined(HX_MARK_WITH_CONTEXT) || !defined(HXCPP_DEBUG)
+       #ifdef ANDROID
+          __android_log_print(ANDROID_LOG_ERROR, "hxcpp", "GC trace not enabled in release build.");
+       #else
+          printf("WARNING : gc trace not enabled in release build.\n");
+       #endif
+    #else
+       gCollectTrace = inClass.GetPtr();
+       hx::InternalCollect();
+       gCollectTrace = 0;
+    #endif
+}
+
+
+
 
 int   __hxcpp_gc_used_bytes()
 {

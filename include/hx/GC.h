@@ -2,33 +2,33 @@
 #define HX_GC_H
 
 
-//#define HX_MARK_RECURSIVE
+#ifdef HXCPP_DEBUG
+#define HX_MARK_WITH_CONTEXT
+#endif
 
-#ifdef HX_MARK_RECURSIVE
-
-#define HX_MARK_ARG
-#define HX_MARK_ADD_ARG
-#define HX_MARK_PARAMS
-#define HX_MARK_ADD_PARAMS
-
-#else
+#ifdef HX_MARK_WITH_CONTEXT
 
 #define HX_MARK_ARG __inCtx
 #define HX_MARK_ADD_ARG ,__inCtx
 #define HX_MARK_PARAMS hx::MarkContext *__inCtx
 #define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
 
+#else
+
+#define HX_MARK_ARG
+#define HX_MARK_ADD_ARG
+#define HX_MARK_PARAMS
+#define HX_MARK_ADD_PARAMS
+
 #endif
 
-#define HX_MARK_BEGIN_CLASS(x)
-#define HX_MARK_END_CLASS()
 
 
 // Helpers for debugging code
 void  __hxcpp_reachable(hx::Object *inKeep);
 void  __hxcpp_enable(bool inEnable);
 void  __hxcpp_collect();
-int   __hxcpp_gc_used_bytes();
+void   __hxcpp_gc_trace(Class inClass);
 
 namespace hx
 {
@@ -126,13 +126,33 @@ struct InternalFinalizer
 void MarkAlloc(void *inPtr HX_MARK_ADD_PARAMS);
 void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS);
 
+#ifdef HX_INTERNAL_GC
+#ifdef HXCPP_DEBUG
+void MarkSetMember(const char *inName HX_MARK_ADD_PARAMS);
+void MarkPushClass(const char *inName HX_MARK_ADD_PARAMS);
+void MarkPopClass(HX_MARK_PARAMS);
+#endif
+#endif
 
 } // end namespace hx
 
+#ifdef HXCPP_DEBUG
 
-#define HX_MARK_MEMBER(x) hx::MarkMember(x HX_MARK_ADD_ARG )
+#define HX_MARK_MEMBER_NAME(x,name) { hx::MarkSetMember(name HX_MARK_ADD_ARG); hx::MarkMember(x HX_MARK_ADD_ARG ); }
+#define HX_MARK_BEGIN_CLASS(x) hx::MarkPushClass(#x HX_MARK_ADD_ARG );
+#define HX_MARK_END_CLASS() hx::MarkPopClass(HX_MARK_ARG );
+#define HX_MARK_MEMBER(x) { hx::MarkSetMember(0 HX_MARK_ADD_ARG); hx::MarkMember(x HX_MARK_ADD_ARG ); }
+
+#else
 
 #define HX_MARK_MEMBER_NAME(x,name) hx::MarkMember(x HX_MARK_ADD_ARG )
+#define HX_MARK_BEGIN_CLASS(x)
+#define HX_MARK_END_CLASS()
+#define HX_MARK_MEMBER(x) hx::MarkMember(x HX_MARK_ADD_ARG )
+
+#endif
+
+
 
 #define HX_MARK_OBJECT(ioPtr) if (ioPtr) hx::MarkObjectAlloc(ioPtr HX_MARK_ADD_ARG );
 

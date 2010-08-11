@@ -111,7 +111,13 @@ void GCRemoveRoot(hx::Object **inRoot)
 	}
 }
 
+
+
+
 } // end namespace hx
+
+void __hxcpp_gc_trace(Class inClass) { }
+
 #endif // End not internal
 
 

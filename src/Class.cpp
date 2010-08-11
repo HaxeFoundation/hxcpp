@@ -88,7 +88,9 @@ Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class
 void Class_obj::MarkStatics(HX_MARK_PARAMS)
 {
    if (mMarkFunc)
-		mMarkFunc(HX_MARK_ARG);
+   {
+       mMarkFunc(HX_MARK_ARG);
+   }
 }
 
 Class Class_obj::Resolve(String inName)
@@ -160,6 +162,9 @@ namespace hx
 {
 void MarkClassStatics(HX_MARK_PARAMS)
 {
+   #ifdef HXCPP_DEBUG
+   MarkPushClass("MarkClassStatics",__inCtx);
+   #endif
    ClassMap::iterator end = sClassMap->end();
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
@@ -167,8 +172,21 @@ void MarkClassStatics(HX_MARK_PARAMS)
 
       // all strings should be constants anyhow - HX_MARK_MEMBER(i->first);
       HX_MARK_OBJECT(i->second.mPtr);
+
+      #ifdef HXCPP_DEBUG
+      hx::MarkPushClass(i->first.__s,__inCtx);
+      hx::MarkSetMember("statics",__inCtx);
+      #endif
+   
       i->second->MarkStatics(HX_MARK_ARG);
+
+      #ifdef HXCPP_DEBUG
+      hx::MarkPopClass(__inCtx);
+      #endif
    }
+   #ifdef HXCPP_DEBUG
+   MarkPopClass(__inCtx);
+   #endif
 }
 }
 

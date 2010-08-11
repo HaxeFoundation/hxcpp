@@ -64,7 +64,7 @@ void FieldMapAppendFields(FieldMap *inMap,Array<String> &outFields)
 
 struct Marker
 {
-	#ifdef HX_MARK_RECURSIVE
+	#ifndef HX_MARK_WITH_CONTEXT
 	Marker() {}
 	#else
 	Marker(HX_MARK_PARAMS) { this->__inCtx = __inCtx;  }
@@ -76,7 +76,12 @@ struct Marker
 		hx::MarkAlloc(inPtr HX_MARK_ADD_ARG);
 		HX_MARK_STRING(inStr.__s);
 		if (inDyn.mPtr)
+                {
+                   #ifdef HXCPP_DEBUG
+                   hx::MarkSetMember(inStr.__s, __inCtx);
+                   #endif
 		   HX_MARK_OBJECT(inDyn.mPtr);
+                }
 	}
 };
 
@@ -85,7 +90,7 @@ void FieldMapMark(FieldMap *inMap HX_MARK_ADD_PARAMS)
 	if (inMap)
 	{
 		hx::MarkAlloc(inMap HX_MARK_ADD_ARG);
-		#ifdef HX_MARK_RECURSIVE
+		#ifndef HX_MARK_WITH_CONTEXT
 		Marker m;
 		#else
 		Marker m(HX_MARK_ARG);
