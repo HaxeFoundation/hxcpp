@@ -104,9 +104,21 @@ void Anon_obj::__boot()
    Static(__mClass) = hx::RegisterClass(HX_CSTRING("__Anon"),TCanCast<Anon_obj>,sNone,sNone,0,0,0,0);
 }
 
+
+
+Anon SourceInfo(String inFile, int inLine, String inClass, String inMethod)
+{
+   Anon result = Anon_obj::Create();
+   result->Add(HX_CSTRING("fileName"),inFile);
+   result->Add(HX_CSTRING("lineNumber"),inLine);
+   result->Add(HX_CSTRING("className"),inClass);
+   result->Add(HX_CSTRING("methodName"),inMethod);
+   return result;
 }
 
 
+
+}
 
 bool __hxcpp_anon_remove(Dynamic inObj,String inKey)
 {

@@ -65,6 +65,7 @@ public:
 
 typedef hx::ObjectPtr<hx::Anon_obj> Anon;
 
+Anon SourceInfo(String inFile, int inLine, String inClass, String inMethod);
 
 
 } // end namespace hx
