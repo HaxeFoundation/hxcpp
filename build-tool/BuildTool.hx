@@ -455,6 +455,7 @@ class BuildTool
    var mLinkers : Linkers;
    var mFileGroups : FileGroups;
    var mTargets : Targets;
+   static var sAllowNumProcs = true;
 
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>)
@@ -545,10 +546,11 @@ class BuildTool
 
       for(sub in target.mSubTargets)
          buildTarget(sub);
-
+ 
       var thread_var = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
       // Don't do this by default
-      //if (thread_var==null) thread_var = neko.Sys.getEnv("NUMBER_OF_PROCESSORS");
+      if (thread_var==null && sAllowNumProcs)
+         thread_var = neko.Sys.getEnv("NUMBER_OF_PROCESSORS");
       var threads =  (thread_var==null || Std.parseInt(thread_var)<2) ? 1 :
          Std.parseInt(thread_var);
 
@@ -845,6 +847,20 @@ class BuildTool
       {
          defines.set("windows","windows");
          defines.set("BINDIR","Windows");
+
+         try
+         {
+            var proc = new neko.io.Process("cl.exe",[]);
+            var str = proc.stderr.readLine();
+            proc.close();
+            if (str>"")
+            {
+                var reg = ~/Version\s+(\d+)/;
+                if (reg.match(str))
+                   BuildTool.sAllowNumProcs = Std.parseInt(reg.matched(1)) >= 12;
+            }
+         }
+         catch(e:Dynamic){}
       }
       else if ( (new EReg("linux","i")).match(os) )
       {
