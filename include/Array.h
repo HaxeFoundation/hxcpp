@@ -229,7 +229,11 @@ public:
    }
 
    // Does not check for size valid - use with care
-   inline ELEM_ &QuickItem(int inIndex) { return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)); }
+   inline ELEM_ &__unsafe_get(int inIndex) { return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)); }
+   inline void __unsafe_set(int inIndex, const ELEM_ &inValue)
+   {
+      * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
+   }
 
 
    void __Mark(HX_MARK_PARAMS)
@@ -457,7 +461,7 @@ public:
             int n = ptr->__length();
             *this = Array_obj<ELEM_>::__new(n);
             for(int i=0;i<n;i++)
-               mPtr->QuickItem(i) = ptr->__GetItem(i);
+               mPtr->__unsafe_set(i,ptr->__GetItem(i));
          }
          else
             mPtr = arr;
@@ -478,7 +482,7 @@ public:
             int n = ptr->__length();
             *this = Array_obj<ELEM_>::__new(n);
             for(int i=0;i<n;i++)
-               mPtr->QuickItem(i) = ptr->__GetItem(i);
+               mPtr->__unsafe_set(i,ptr->__GetItem(i));
          }
          else
             mPtr = arr;
