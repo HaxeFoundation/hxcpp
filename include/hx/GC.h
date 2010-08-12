@@ -2,9 +2,8 @@
 #define HX_GC_H
 
 
-#ifdef HXCPP_DEBUG
+// Need context for non-recursive marking
 #define HX_MARK_WITH_CONTEXT
-#endif
 
 #ifdef HX_MARK_WITH_CONTEXT
 

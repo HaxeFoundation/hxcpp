@@ -94,6 +94,7 @@ struct QuickVec
          }
    }
 
+   inline bool some_left() { return mSize; }
    inline bool empty() const { return !mSize; }
    inline void clear() { mSize = 0; }
    inline int next()
@@ -113,6 +114,74 @@ struct QuickVec
    T *mPtr;
 };
 
+
+template<typename T>
+class QuickDeque
+{
+    struct Slab
+    {
+       T mElems[1024];
+    };
+
+    QuickVec<Slab *> mSpare;
+    QuickVec<Slab *> mActive;
+
+    int  mHeadPos;
+    int  mTailPos;
+    Slab *mHead;
+    Slab *mTail;
+
+public:
+
+   QuickDeque()
+   {
+      mHead = mTail = 0;
+      mHeadPos = 1024;
+      mTailPos = 1024;
+   }
+   ~QuickDeque()
+   {
+      for(int i=0;i<mSpare.size();i++)
+         delete mSpare[i];
+      for(int i=0;i<mActive.size();i++)
+         delete mActive[i];
+      delete mHead;
+      if (mTail!=mHead)
+         delete mTail;
+   }
+   inline void push(T inObj)
+   {
+      if (mHeadPos<1024)
+      {
+         mHead->mElems[mHeadPos++] = inObj;
+         return;
+      }
+      if (mHead != mTail)
+         mActive.push(mHead);
+      mHead = mSpare.empty() ? new Slab : mSpare.pop();
+      mHead->mElems[0] = inObj;
+      mHeadPos = 1;
+   }
+   inline bool some_left() { return mHead!=mTail || mHeadPos!=mTailPos; }
+   inline T pop()
+   {
+      if (mTailPos<1024)
+         return mTail->mElems[mTailPos++];
+      if (mTail)
+         mSpare.push(mTail);
+      if (mActive.empty())
+      {
+         mTail = mHead;
+      }
+      else
+      {
+         mTail = mActive[0];
+         mActive.erase(0);
+      }
+      mTailPos = 1;
+      return mTail->mElems[0];
+   }
+};
 
 // --- InternalFinalizer -------------------------------
 
@@ -496,12 +565,18 @@ class MarkContext
 {
 public:
     enum { StackSize = 8192 };
+
     MarkContext()
     {
        mInfo = new MarkInfo[StackSize];
        mPos = 0;
+       mDepth = 0;
     }
-    ~MarkContext() { delete [] mInfo; };
+    ~MarkContext()
+    {
+       delete [] mInfo;
+       // TODO: Free slabs
+    }
     void PushClass(const char *inClass)
     {
        if (mPos<StackSize-1)
@@ -544,28 +619,60 @@ public:
        }
     }
 
+    inline void PushMark(hx::Object *inMarker)
+    {
+       #ifdef HX_MARK_WITH_CONTEXT
+       if (mDepth > 32)
+       {
+          mDeque.push(inMarker);
+       }
+       else
+       {
+          ++mDepth;
+          inMarker->__Mark(this);
+          --mDepth;
+       }
+       #endif
+    }
+
+    void Process()
+    {
+       #ifdef HX_MARK_WITH_CONTEXT
+       while(mDeque.some_left())
+          mDeque.pop()->__Mark(this);
+       #endif
+    }
+
+    int mDepth;
     int mPos;
     MarkInfo *mInfo;
+    // Last in, first out
+    QuickVec<hx::Object *> mDeque;
+    // First in, first out
+    //QuickDeque<hx::Object *> mDeque;
 };
 
 void MarkSetMember(const char *inName HX_MARK_ADD_PARAMS)
 {
    #ifdef HXCPP_DEBUG
-   __inCtx->SetMember(inName);
+   if (gCollectTrace)
+      __inCtx->SetMember(inName);
    #endif
 }
 
 void MarkPushClass(const char *inName HX_MARK_ADD_PARAMS)
 {
    #ifdef HXCPP_DEBUG
-   __inCtx->PushClass(inName);
+   if (gCollectTrace)
+      __inCtx->PushClass(inName);
    #endif
 }
 
 void MarkPopClass(HX_MARK_PARAMS)
 {
    #ifdef HXCPP_DEBUG
-   __inCtx->PopClass();
+   if (gCollectTrace)
+      __inCtx->PopClass();
    #endif
 }
 
@@ -597,14 +704,31 @@ void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS)
 {
    MARK_ROWS
 
-   #if defined(HXCPP_DEBUG) && defined(HX_MARK_WITH_CONTEXT)
+   #ifdef HXCPP_DEBUG
    if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
    {
        __inCtx->Trace();
    }
    #endif
    
-   inPtr->__Mark(HX_MARK_ARG);
+   #ifndef HX_MARK_WITH_CONTEXT
+      inPtr->__Mark();
+   #else
+
+      #ifdef HXCPP_DEBUG
+         // Recursive mark so stack stays intact..
+         if (gCollectTrace)
+            inPtr->__Mark(HX_MARK_ARG);
+         else
+      #endif
+
+      // There is a slight performance gain by calling recursively, but you
+      //   run the risk of stack overflow.  Also, a parallel mark algorithm could be
+      //   done when the marking is stack based.
+      //inPtr->__Mark(__inCtx);
+      __inCtx->PushMark(inPtr);
+
+   #endif
 }
 
 }
@@ -802,30 +926,54 @@ public:
 
       ClearRowMarks();
 
-
-
-
-
-
-      #ifndef HX_MARK_WITH_CONTEXT
-      #define MARK_CONTEXT
-      #define MARK_ADD_CONTEXT
-      #else
-      hx::MarkContext ctx;
-      #define MARK_CONTEXT &ctx
-      #define MARK_ADD_CONTEXT ,&ctx
+      //#define PRINT_STATS
+      #ifdef PRINT_STATS
+      double t0 =  __time_stamp();
       #endif
-      hx::MarkClassStatics(MARK_CONTEXT);
+
+      #ifdef HX_MARK_WITH_CONTEXT
+      hx::MarkClassStatics(&mMarker);
+      #else
+      hx::MarkClassStatics();
+      #endif
+
+      mMarker.Process();
 
       for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
       {
          hx::Object *&obj = **i;
          if (obj)
-            hx::MarkObjectAlloc(obj MARK_ADD_CONTEXT );
+            #ifdef HX_MARK_WITH_CONTEXT
+            hx::MarkObjectAlloc(obj , &mMarker );
+            #else
+            hx::MarkObjectAlloc(obj );
+            #endif
       }
 
+      mMarker.Process();
+
       for(int i=0;i<mLocalAllocs.size();i++)
-         MarkLocalAlloc(mLocalAllocs[i] MARK_ADD_CONTEXT);
+         #ifdef HX_MARK_WITH_CONTEXT
+         MarkLocalAlloc(mLocalAllocs[i] , &mMarker);
+         #else
+         MarkLocalAlloc(mLocalAllocs[i]);
+         #endif
+
+      mMarker.Process();
+
+      #ifdef PRINT_STATS
+      double t = __time_stamp() - t0;
+      static int average_n = 0;
+      static double sum = 0;
+      average_n++;
+      sum += t;
+      if (average_n==50)
+      {
+         printf("time %f\n", sum*20);
+         average_n = 0;
+         sum = 0;
+      }
+      #endif
 
       hx::RunFinalizers();
 
@@ -938,6 +1086,7 @@ public:
    size_t mLargeAllocated;
    size_t mTotalAfterLastCollect;
 
+   hx::MarkContext mMarker;
 
    int mNextEmpty;
    int mNextRecycled;
