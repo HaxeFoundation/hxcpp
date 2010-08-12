@@ -310,24 +310,29 @@ void ArrayBase::__boot()
 }
 
 
-} // End namespace hx
 
 
 // -------- ArrayIterator -------------------------------------
 
-HX_DEFINE_DYNAMIC_FUNC0(ArrayIterator,hasNext,return)
-HX_DEFINE_DYNAMIC_FUNC0(ArrayIterator,next,return)
+} // End namespace hx
 
-Dynamic ArrayIterator::__Field(const String &inString)
+
+namespace cpp
 {
-   if (inString==HX_CSTRING("hasNext")) return hasNext_dyn();
-   if (inString==HX_CSTRING("next")) return next_dyn();
-   return null();
+HX_DEFINE_DYNAMIC_FUNC0(IteratorBase,hasNext,return)
+HX_DEFINE_DYNAMIC_FUNC0(IteratorBase,_dynamicNext,return)
+
+Dynamic IteratorBase::next_dyn()
+{
+   return new IteratorBase_dynamicNext(this);
 }
 
-void  ArrayIterator::__Mark(HX_MARK_PARAMS)
+Dynamic IteratorBase::__Field(const String &inString)
 {
-   HX_MARK_MEMBER(mArray);
+   if (inString==HX_CSTRING("hasNext")) return hasNext_dyn();
+   if (inString==HX_CSTRING("next")) return _dynamicNext_dyn();
+   return null();
+}
 }
 
 

@@ -1,6 +1,7 @@
 #ifndef HX_ARRAY_H
 #define HX_ARRAY_H
 
+#include <cpp/FastIterator.h>
 
 // --- hx::Boxed ------------------------------------------------------
 //
@@ -17,27 +18,32 @@ template<> struct Boxed<String> { typedef Dynamic type; };
 }
 
 
+namespace hx
+{
+
+
+
 // --- ArrayIterator -------------------------------------------
 //
 // An object that conforms to the standard iterator interface for arrays
-
-class  ArrayIterator : public hx::Object
+template<typename T>
+class ArrayIterator : public cpp::FastIterator_obj<T>
 {
 public:
-   ArrayIterator(Dynamic inArray) : mArray(inArray), mIdx(0) { }
+   ArrayIterator(Array<T> inArray) : mArray(inArray), mIdx(0) { }
 
-   bool   hasNext( ) { return mIdx < mArray->__length(); }
-   Dynamic hasNext_dyn( );
+   // Fast versions ...
+   bool hasNext()  { return mIdx < mArray->length; }
+   T next() { return mArray->__get(mIdx++); }
 
-   Dynamic next() { return mArray->__GetItem(mIdx++); }
-   Dynamic next_dyn( );
 
-   Dynamic __Field(const String &inString);
-	void __Mark(HX_MARK_PARAMS);
+   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
 
-   int     mIdx;
-   Dynamic mArray;
+   int      mIdx;
+   Array<T> mArray;
 };
+
+}
 
 namespace hx
 {
@@ -132,7 +138,6 @@ public:
 
    String join(String inSeparator);
 
-   Dynamic iterator() { return new ArrayIterator(this); }
 
    virtual bool AllocAtomic() const { return false; }
 
@@ -386,6 +391,8 @@ public:
       ELEM_ *e = (ELEM_ *)mBase;
       std::sort(e, e+length, Sorter(inSorter) );
    }
+
+   Dynamic iterator() { return new hx::ArrayIterator<ELEM_>(this); }
 
    virtual bool IsByteArray() const { return ArrayTraits<ELEM_>::IsByteArray; }
 
