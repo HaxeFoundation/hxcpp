@@ -157,6 +157,11 @@ Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue)
    return instance->__SetField(inString,inValue);
 }
 
+bool Class_obj::__IsEnum()
+{
+   return mConstructEnum || this==GetVoidClass().GetPtr() || this==GetBoolClass().GetPtr();
+}
+
 
 namespace hx
 {

@@ -77,7 +77,7 @@ public:
 
    int __GetType() const { return vtObject; }
 
-   bool __IsEnum() { return mConstructEnum; }
+   bool __IsEnum();
 
 	hx::CanCastFunc     CanCast;
 
