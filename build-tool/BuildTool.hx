@@ -857,7 +857,7 @@ class BuildTool
             {
                 var reg = ~/Version\s+(\d+)/;
                 if (reg.match(str))
-                   BuildTool.sAllowNumProcs = Std.parseInt(reg.matched(1)) >= 12;
+                   BuildTool.sAllowNumProcs = Std.parseInt(reg.matched(1)) >= 14;
             }
          }
          catch(e:Dynamic){}
