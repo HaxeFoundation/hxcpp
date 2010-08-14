@@ -855,7 +855,7 @@ class BuildTool
             proc.close();
             if (str>"")
             {
-                var reg = ~/Version\s+(\d+)/;
+                var reg = ~/Version\s+(\d+)/i;
                 if (reg.match(str))
                    BuildTool.sAllowNumProcs = Std.parseInt(reg.matched(1)) >= 14;
             }
