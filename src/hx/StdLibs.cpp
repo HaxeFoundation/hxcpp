@@ -312,11 +312,11 @@ Dynamic __hxcpp_parse_int(const String &inString)
 double __hxcpp_parse_float(const String &inString)
 {
    const HX_CHAR *str = inString.__s;
-   HX_CHAR *end;
+   HX_CHAR *end = 0;
    #ifdef HX_UTF8_STRINGS
-   double result = strtod(str,&end);
+   double result = str ? strtod(str,&end) : 0;
    #else
-   double result =  wcstod(str,&end);
+   double result =  str ? wcstod(str,&end) : 0;
    #endif
 
    if (end==str)

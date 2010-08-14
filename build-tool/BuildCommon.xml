@@ -451,6 +451,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <file name = "src/hx/Anon.cpp"/>
   <file name = "src/hx/Boot.cpp"/>
   <file name = "src/hx/CFFI.cpp"/>
+  <file name = "src/hx/Date.cpp"/>
   <file name = "src/hx/GC.cpp"/>
   <file name = "src/hx/GCInternal.cpp"/>
   <file name = "src/hx/Hash.cpp"/>
@@ -464,7 +465,6 @@ and setting it to 1 can help with debug if there is a problem compiling.
 
   <file name = "src/Array.cpp"/>
   <file name = "src/Class.cpp"/>
-  <file name = "src/Date.cpp"/>
   <file name = "src/Dynamic.cpp"/>
   <file name = "src/Enum.cpp"/>
   <file name = "src/Math.cpp"/>
