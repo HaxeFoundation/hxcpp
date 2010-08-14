@@ -204,6 +204,9 @@ void MarkAlloc(void *inPtr HX_MARK_ADD_PARAMS) {  }
 void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS) { }
 void EnterGCFreeZone() { }
 void ExitGCFreeZone() { }
+
+int   __hxcpp_gc_used_bytes() { return 0; }
+
 #endif
 
 
