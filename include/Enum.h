@@ -96,7 +96,14 @@ hx::ObjectPtr<ENUM> CreateEnum(const String &inName,int inIndex, DynamicArray in
    result->Set(inName,inIndex,inArgs);
    return result;
 }
-
 } // end namespace hx
+
+inline void __hxcpp_enum_force(hx::EnumBase inEnum,String inForceName, int inIndex)
+{
+   hx::DynamicArray empty;
+   inEnum->Set(inForceName, inIndex, empty);
+}
+
+
 
 #endif

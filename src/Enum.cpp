@@ -10,8 +10,16 @@ Dynamic EnumBase_obj::__Create(DynamicArray inArgs) { return new hx::EnumBase_ob
 Dynamic EnumBase_obj::__CreateEmpty() { return new hx::EnumBase_obj; }
 
 
-int EnumBase_obj::__FindIndex(String inName) { return -1; }
-int EnumBase_obj::__FindArgCount(String inName) { return -1; }
+int EnumBase_obj::__FindIndex(String inName)
+{
+   if (inName==HX_CSTRING("__")) return 1;
+   return -1;
+}
+int EnumBase_obj::__FindArgCount(String inName)
+{
+   if (inName==HX_CSTRING("__")) return 0;
+   return -1;
+}
 Dynamic EnumBase_obj::__Field(const String &inString) { return null(); }
 
 static Class hxEnumBase_obj__mClass;
