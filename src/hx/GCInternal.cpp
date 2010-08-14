@@ -735,6 +735,7 @@ void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS)
 
 
 
+typedef std::map<void *,int> BlockIDMap;
 typedef std::set<BlockData *> PointerSet;
 typedef QuickVec<BlockData *> BlockList;
 
@@ -871,6 +872,8 @@ public:
             block->Init();
             mAllBlocks.push(block);
             mEmptyBlocks.push(block);
+            int n = mBlockIDs.size();
+            mBlockIDs[block] = n;
          }
          // printf("Blocks %d\n", mAllBlocks.size());
       }
@@ -880,6 +883,15 @@ public:
       mActiveBlocks.insert(block);
       mDistributedSinceLastCollect +=  block->GetFreeData();
       return block;
+   }
+ 
+   int GetObjectID(void *inPtr)
+   {
+      int *base = (int *)( (((size_t)inPtr)) & IMMIX_BLOCK_BASE_MASK);
+      BlockIDMap::iterator i = mBlockIDs.find(base);
+      if (i==mBlockIDs.end())
+         return 0;
+      return ( (i->second) * (IMMIX_BLOCK_SIZE>>2)) | (int)((int *)inPtr-base);
    }
 
    void ClearRowMarks()
@@ -1096,6 +1108,7 @@ public:
    BlockList mRecycledBlock;
    LargeList mLargeList;
    PointerSet mActiveBlocks;
+   BlockIDMap mBlockIDs;
    MyMutex    mLargeListLock;
    QuickVec<LocalAllocator *> mLocalAllocs;
 };
@@ -1636,6 +1649,11 @@ void UnregisterCurrentThread()
    tlsLocalAlloc = 0;
 }
 
+int InternalAllocID(void *inPtr)
+{
+   return sGlobalAlloc->GetObjectID(inPtr);
+}
+
 
 } // end namespace hx
 
@@ -1655,7 +1673,6 @@ void __hxcpp_gc_trace(Class inClass)
        gCollectTrace = 0;
     #endif
 }
-
 
 
 

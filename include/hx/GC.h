@@ -94,6 +94,7 @@ void *InternalCreateConstBuffer(const void *inData,int inSize);
 void RegisterNewThread(void *inTopOfStack);
 void SetTopOfStack(void *inTopOfStack,bool inForce=false);
 void InternalCollect();
+int InternalAllocID(void *inPtr);
 
 void EnterGCFreeZone();
 void ExitGCFreeZone();

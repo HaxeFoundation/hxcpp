@@ -450,4 +450,18 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC2(CppInt32___obj,make,return )
 
 
 
+int __hxcpp_obj_id(Dynamic inObj)
+{
+   hx::Object *obj = inObj->__GetRealObject();
+   if (!obj) return 0;
+   #ifdef _64BITS
+      #ifdef HX_INTERNAL_GC
+      return hx::InternalAllocID(obj);
+      #else
+      return (int)(size_t)obj;
+      #endif
+   #else
+   return (int)(obj);
+   #endif
+}
 
