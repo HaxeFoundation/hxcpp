@@ -172,7 +172,8 @@ template<> inline bool TCastObject<bool>(hx::Object *inObj)
 }
 template<> inline int TCastObject<int>(hx::Object *inObj)
 {
-   if (!inObj || inObj->__GetType()!=::vtInt) return hx::BadCast();
+   if (!inObj || !(inObj->__GetType()==::vtInt ||
+        (inObj->__GetType()==::vtFloat && inObj->__ToDouble()==inObj->__ToInt()) ) ) return hx::BadCast();
    return inObj->__ToInt();
 }
 template<> inline double TCastObject<double>(hx::Object *inObj)
@@ -181,6 +182,13 @@ template<> inline double TCastObject<double>(hx::Object *inObj)
       return hx::BadCast();
    return inObj->__ToDouble();
 }
+template<> inline String TCastObject<String>(hx::Object *inObj)
+{
+   if (!inObj || (inObj->__GetType()!=::vtString))
+      return hx::BadCast();
+   return inObj->__ToString();
+}
+
 template<> inline null TCastObject<null>(hx::Object *inObj) { return null(); }
 
 // Cast to scalar
