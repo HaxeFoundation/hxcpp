@@ -1,4 +1,18 @@
 
+2.06.0
+------------------------------------------------------------
+* Updates to match haxe 2.06 compiler features
+* Numerous bug fixes
+* Add additional context to GC collection process
+* Swapped from wchar_t* to utf8 char*
+* Added templated iterators
+* Use strftime for Dates
+* Fix socket select and "_s" members
+* Seed Math.random
+* Fixed dynamic integer compare
+* Added __hxcpp_obj_id
+* Added some Android support
+
 2.05.1
 ------------------------------------------------------------
 * Updated windows nekoapi.dll binary
