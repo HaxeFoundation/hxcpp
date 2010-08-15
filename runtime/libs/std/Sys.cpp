@@ -41,6 +41,7 @@ int __sys_prims() { return 0; }
 #	include <sys/time.h>
 #	include <sys/times.h>
 #ifndef ANDROID
+#	include <locale.h>
 #	include <xlocale.h>
 #endif
 #endif

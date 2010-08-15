@@ -106,7 +106,7 @@ void *LoadFunc(const char *inName)
    if (sResolveProc==0)
    {
       bool debug = getenv("HXCPP_LOAD_DEBUG");
-#if NEKO_LINUX
+#ifndef NEKO_LINUX
       int count = _dyld_image_count();
       for(int i=0;i<count;i++)
       {
