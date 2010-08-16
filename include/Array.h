@@ -195,7 +195,6 @@ struct ArrayTraits<unsigned char> { enum { IsByteArray = 1, IsDynamic = 0 }; };
 template<>
 struct ArrayTraits<Dynamic> { enum { IsByteArray = 0, IsDynamic = 1 }; };
 
-
 template<typename ELEM_>
 class Array_obj : public hx::ArrayBase
 {
@@ -280,19 +279,6 @@ public:
       return result;
    }
 
-   ObjPtr concat( ObjPtr inTail )
-   {
-      Array_obj *result = new Array_obj(inTail->__length()+(int)length,0);
-		hx::ArrayBase::Concat(result,inTail->GetBase(),inTail->__length());
-      return result;
-   }
-
-   ObjPtr copy( )
-   {
-      Array_obj *result = new Array_obj((int)length,0);
-      memcpy(result->GetBase(),GetBase(),length*sizeof(ELEM_));
-      return result;
-   }
 
    int Find(ELEM_ inValue)
    {
@@ -326,22 +312,11 @@ public:
       return result;
    }
 
-   // Copies the range of the array starting at pos up to, but not including, end.
-   // Both pos and end can be negative to count from the end: -1 is the last item in the array.
-   ObjPtr slice(int inPos, Dynamic end = null())
-   {
-      int e = end==null() ? length : end->__ToInt();
-      Array_obj *result = new Array_obj(0,0);
-		hx::ArrayBase::Slice(result,inPos,(int)e);
-      return result;
-   }
 
-   ObjPtr splice(int inPos, int len)
-   {
-      Array_obj * result = new Array_obj(len,0);
-		hx::ArrayBase::Splice(result,inPos,len);
-      return result;
-   }
+   Array<ELEM_> concat( Array<ELEM_> inTail );
+   Array<ELEM_> copy( );
+   Array<ELEM_> slice(int inPos, Dynamic end = null());
+   Array<ELEM_> splice(int inPos, int len);
 
    void insert(int inPos, ELEM_ inValue)
    {
@@ -545,6 +520,46 @@ Array<ELEM_> Array_obj<ELEM_>::__new(int inSize,int inReserve)
 template<>
 inline bool Dynamic::IsClass<Array<Dynamic> >()
    { return mPtr && mPtr->__GetClass()== hx::ArrayBase::__mClass; }
+
+
+template<typename ELEM_>
+Array<ELEM_> Array_obj<ELEM_>::concat( Array<ELEM_> inTail )
+{
+   Array_obj *result = new Array_obj(inTail->__length()+(int)length,0);
+   hx::ArrayBase::Concat(result,inTail->GetBase(),inTail->__length());
+   return result;
+}
+
+template<typename ELEM_>
+Array<ELEM_> Array_obj<ELEM_>::copy( )
+{
+   Array_obj *result = new Array_obj((int)length,0);
+   memcpy(result->GetBase(),GetBase(),length*sizeof(ELEM_));
+   return result;
+}
+
+// Copies the range of the array starting at pos up to, but not including, end.
+// Both pos and end can be negative to count from the end: -1 is the last item in the array.
+template<typename ELEM_>
+Array<ELEM_> Array_obj<ELEM_>::slice(int inPos, Dynamic end = null())
+{
+   int e = end==null() ? length : end->__ToInt();
+   Array_obj *result = new Array_obj(0,0);
+   hx::ArrayBase::Slice(result,inPos,(int)e);
+   return result;
+}
+
+template<typename ELEM_>
+Array<ELEM_> Array_obj<ELEM_>::splice(int inPos, int len)
+{
+   Array_obj * result = new Array_obj(len,0);
+   hx::ArrayBase::Splice(result,inPos,len);
+   return result;
+}
+
+
+
+
 
 
 #endif
