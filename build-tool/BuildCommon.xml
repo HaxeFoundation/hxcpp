@@ -27,7 +27,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
 
 
 <set name="DBG" value="-debug" if="debug"/>
-<set name="IPHONE_VER" value="3.2"/>
+<set name="IPHONE_VER" value="4.0"/>
 <set name="STD_MODULE_LINK" value="dll"/>
 <set name="STD_MODULE_LINK" value="static" if="iphoneos"/>
 <set name="STD_MODULE_LINK" value="static" if="iphonesim"/>
@@ -117,6 +117,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-isysroot"/>
   <flag value="/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
   <flag value="-fvisibility=hidden"/>
+  <flag value="-fno-stack-protector"/>
   <flag value="-DIPHONE"/>
   <flag value="-DIPHONEOS"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
@@ -132,7 +133,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <objdir value="obj/iphoneos-dbg/" if="debug"/>
 </compiler>
 
-<compiler id="iPhoneSim" exe="/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/gcc" if="iphonesim">
+<compiler id="iPhoneSim" exe="/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/gcc-4.2" if="iphonesim">
   <flag value="-c"/>
   <cflag value="-x"/>
   <cflag value="c"/>
@@ -146,9 +147,13 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <flag value="-fmessage-length=0"/>
   <flag value="-pipe"/>
   <flag value="-Wno-trigraphs"/>
+  <flag value="-fno-stack-protector"/>
   <flag value="-fpascal-strings"/>
   <flag value="-fasm-blocks"/>
   <flag value="-Wreturn-type"/>
+  <!-- Simulator has been upgraded to ABI version 2.  Old code may not like the following 2 lines  -->
+  <mmflag value="-fobjc-abi-version=2"/>
+  <mmflag value="-fobjc-legacy-dispatch"/>
   <flag value="-Wunused-variable"/>
   <flag value="-arch"/>
   <flag value="i386"/>
