@@ -541,7 +541,7 @@ Array<ELEM_> Array_obj<ELEM_>::copy( )
 // Copies the range of the array starting at pos up to, but not including, end.
 // Both pos and end can be negative to count from the end: -1 is the last item in the array.
 template<typename ELEM_>
-Array<ELEM_> Array_obj<ELEM_>::slice(int inPos, Dynamic end = null())
+Array<ELEM_> Array_obj<ELEM_>::slice(int inPos, Dynamic end)
 {
    int e = end==null() ? length : end->__ToInt();
    Array_obj *result = new Array_obj(0,0);
