@@ -267,15 +267,14 @@ void *GCRealloc(void *inData,int inSize)
 
 // Put this function here so we can be reasonablly sure that "this" register and
 // the 4 registers that may be used to pass args are on the stack.
-int RegisterCapture::Capture(int *inTopOfStack,int **inBuf,int &outSize,int inMaxSize)
+int RegisterCapture::Capture(int *inTopOfStack,int **inBuf,int &outSize,int inMaxSize, int *inBottom)
 {
-	int here = 0;
-	int size = ( (char *)inTopOfStack - (char *)&here )/sizeof(void *);
+	int size = ( (char *)inTopOfStack - (char *)inBottom )/sizeof(void *);
 	if (size>inMaxSize)
 		size = inMaxSize;
 	outSize = size;
 	if (size>0)
-	   memcpy(inBuf,&here,size*sizeof(void*));
+	   memcpy(inBuf,inBottom,size*sizeof(void*));
 	return 1;
 }
 

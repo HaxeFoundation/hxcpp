@@ -39,7 +39,7 @@ void PauseForCollect();
 class RegisterCapture
 {
 public:
-	virtual int Capture(int *inTopOfStack,int **inBuf,int &outSize,int inMaxSize);
+	virtual int Capture(int *inTopOfStack,int **inBuf,int &outSize,int inMaxSize,int *inDummy);
    static RegisterCapture *Instance();
 };
 

@@ -1165,21 +1165,31 @@ public:
       mBottomOfStack = inBottom;
    }
 
+   void SetupStack()
+   {
+      volatile int dummy = 1;
+      mBottomOfStack = (int *)&dummy;
+      SetTopOfStack(mBottomOfStack,false);
+      hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
+   }
+
 
    void PauseForCollect()
    {
-      int dummy = 1;
-      mBottomOfStack = &dummy;
+      volatile int dummy = 1;
+      mBottomOfStack = (int *)&dummy;
+      hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
+ 
       mReadyForCollect.Set();
       mCollectDone.Wait();
    }
 
    void EnterGCFreeZone()
    {
-      int dummy = 1;
-      mBottomOfStack = &dummy;
+      volatile int dummy = 1;
+      mBottomOfStack = (int *)&dummy;
       mGCFreeZone = true;
-      hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20);
+      hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
       mReadyForCollect.Set();
    }
 
@@ -1321,9 +1331,9 @@ public:
          // Alloc new block, if required ...
          if (!mCurrent || mCurrentLine>last_start)
          {
-            int dummy = 1;
-            mBottomOfStack = &dummy;
-            hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20);
+            volatile int dummy = 1;
+            mBottomOfStack = (int *)&dummy;
+            hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
             mCurrent = sGlobalAlloc->GetRecycledBlock(required_rows);
             //mCurrent->Verify();
             // Start on line 2 (there are 256 line-markers at the beginning)
@@ -1374,11 +1384,12 @@ public:
 
    void Mark(HX_MARK_PARAMS)
    {
-      int here = 0;
       #ifdef ANDROID
+      //int here = 0;
       // __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark %p...%p.", mBottomOfStack, mTopOfStack);
       #else
-      // printf("=========== Mark Stack ==================== %p/%d\n",mBottomOfStack,&here);
+      //int here = 0;
+      //printf("=========== Mark Stack ==================== %p ... %p (%p)\n",mBottomOfStack,mTopOfStack,&here);
       #endif
 
       //printf("mark stack...");
@@ -1594,8 +1605,7 @@ void InternalCollect()
       return;
 
 #ifndef ANDROID
-   int dummy;
-   GetLocalAlloc()->SetTopOfStack(&dummy,false);
+   GetLocalAlloc()->SetupStack();
 #endif
    sGlobalAlloc->Collect();
 }
@@ -1665,7 +1675,7 @@ void __hxcpp_gc_trace(Class inClass)
        #ifdef ANDROID
           __android_log_print(ANDROID_LOG_ERROR, "hxcpp", "GC trace not enabled in release build.");
        #else
-          printf("WARNING : gc trace not enabled in release build.\n");
+          printf("WARNING : GC trace not enabled in release build.\n");
        #endif
     #else
        gCollectTrace = inClass.GetPtr();
@@ -1686,6 +1696,7 @@ extern "C"
 void hxcpp_set_top_of_stack()
 {
    int i = 0;
+   printf("SetTopOfStack %p\n", &i);
    hx::SetTopOfStack(&i,false);
 }
 }
