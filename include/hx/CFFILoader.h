@@ -54,7 +54,7 @@ void *LoadFunc(const char *inName)
    if (sResolveProc==0)
    {
       // Maybe we are part of a neko script?
-      HMODULE handle = LoadLibrary("nekoapi.dll");
+      HMODULE handle = LoadLibrary("nekoapi.ndll");
       if (handle)
       {
          sResolveProc = (ResolveProc)GetProcAddress(handle,"hx_cffi");
@@ -99,7 +99,7 @@ void *LoadFunc(const char *inName)
 
    if (sResolveProc==0)
    {
-      void *handle = dlopen("nekoapi." EXT ,RTLD_NOW);
+      void *handle = dlopen("nekoapi.ndll",RTLD_NOW);
       if (handle)
          sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
    }
@@ -117,7 +117,7 @@ void *LoadFunc(const char *inName)
          if (slash)
          {
             slash[1] = '\0';
-            strcat(slash, "nekoapi." EXT );
+            strcat(slash, "nekoapi.ndll" );
             if (debug)
                printf(" -> %s\n", buf );
             void *handle = dlopen(buf, RTLD_NOW);
@@ -144,7 +144,7 @@ void *LoadFunc(const char *inName)
          if (slash)
          {
             slash[1] = '\0';
-            strcat(slash, "nekoapi." EXT );
+            strcat(slash, "nekoapi.ndll" );
             if (debug)
                printf(" -> %s\n", buf );
             void *handle = dlopen(buf, RTLD_NOW);

@@ -120,6 +120,7 @@
 
 
 <target id="nekoapi" output="nekoapi" tool="linker" toolid="dll">
+  <ext value=".ndll"/>
   <files id="nekoapi"/>
   <lib name="${RUNTIME}/libs/nekoapi/neko.lib" if="windows"/>
   <lib name="-lneko" unless="windows"/>

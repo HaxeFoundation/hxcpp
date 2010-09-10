@@ -34,13 +34,21 @@ void * hx_cffi(const char *inName)
 }
 
 
-
 #include "neko.h"
 
 static int __a_id = val_id("__a");
 static int __s_id = val_id("__s");
 static int length_id = val_id("length");
 
+value *gNeko2HaxeString = 0;
+
+value haxe_alloc_string(const char *inString)
+{
+   value neko_string = alloc_string(inString);
+   if (gNeko2HaxeString)
+      return val_call1(*gNeko2HaxeString,neko_string);
+   return neko_string;
+}
  
 void api_hx_error()
 {
@@ -56,7 +64,7 @@ void api_val_throw(value arg1)
 
 void api_hx_fail(const char * arg1,const char * arg2,int arg3)
 {
-	_neko_failure( alloc_string(arg1), arg2, arg3 );
+	_neko_failure( haxe_alloc_string(arg1), arg2, arg3 );
 }
 #define NOT_IMPLEMNETED(func) api_hx_fail("NOT Implemented:" func,__FILE__,__LINE__)
 
@@ -201,7 +209,7 @@ const char * api_val_string(value  arg1)
 
 value  api_alloc_string(const char * arg1)
 {
-	return alloc_string(arg1);
+	return haxe_alloc_string(arg1);
 }
 
 wchar_t * api_val_dup_wstring(value inVal)
@@ -224,6 +232,9 @@ value api_alloc_string_len(const char *inStr,int inLen)
 	char *result = alloc_private(inLen+1);
 	memcpy(result,inStr,inLen);
 	result[inLen] = 0;
+
+	if (gNeko2HaxeString)
+		return val_call1(*gNeko2HaxeString,alloc_string(result));
    return alloc_string(result);
 }
 
@@ -234,6 +245,8 @@ value api_alloc_wstring_len(const wchar_t *inStr,int inLen)
 	for(int i=0;i<inLen;i++)
 		result[i] = inStr[i];
 	result[inLen] = 0;
+	if (gNeko2HaxeString)
+		return val_call1(*gNeko2HaxeString,alloc_string(result));
 	return alloc_string(result);
 }
 
@@ -562,5 +575,21 @@ void api_gc_safe_point() { }
 gcroot api_create_root(value) { return 0; }
 value api_query_root(gcroot) { return 0; }
 void api_destroy_root(gcroot) { }
+
+
+#undef EXPORT
+#if defined(NEKO_VCC) || defined(NEKO_MINGW)
+#	define EXPORT __declspec( dllexport )
+#else
+#	define EXPORT __attribute__ ((visibility("default")))
+#endif
+
+value neko_api_init(value inCallback)
+{
+   gNeko2HaxeString = api_alloc_root();
+   *gNeko2HaxeString = inCallback;
+}
+DEFINE_PRIM(neko_api_init,1)
+
 
 

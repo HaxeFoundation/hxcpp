@@ -391,7 +391,7 @@ int UTF8Bytes(int c)
 void UTF8EncodeAdvance(char * &ioPtr,int c)
 {
       if( c <= 0x7F )
-         *ioPtr = (c);
+         *ioPtr++ = (c);
       else if( c <= 0x7FF )
       {
          *ioPtr++ = ( 0xC0 | (c >> 6) );
@@ -586,7 +586,7 @@ char *ConvertToUTF8(const wchar_t *inStr, int *ioLen)
          chars += UTF8Bytes(inStr[i]);
    }
 
-   char *buf = (char *)NewGCPrivate(0,len+1);
+   char *buf = (char *)NewGCPrivate(0,chars+1);
    char *ptr = buf;
    for(int i=0;i<len;i++)
        UTF8EncodeAdvance(ptr,inStr[i]);
