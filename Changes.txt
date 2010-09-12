@@ -1,4 +1,13 @@
 
+2.06.1
+------------------------------------------------------------
+* Close files if required in GC
+* Added fix for File.write
+* Fixed String UTF8 Encode
+* Nekoapi is now a "ndll", not a "dso".
+* Fix array compile issue on linux
+* Fix stack setting on firced collect
+
 2.06.0
 ------------------------------------------------------------
 * Updates to match haxe 2.06 compiler features
