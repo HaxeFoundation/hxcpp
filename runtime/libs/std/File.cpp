@@ -35,11 +35,16 @@ int __file_prims() { return 0; }
 struct fio
 {
    fio(const wchar_t *inName, FILE *inFile=0) : io(inFile), name(inName) { }
-   ~fio()
-   {
-      // todo : close - but not stdlib etc.
-   }
+   ~fio() { }
 
+   void close()
+   {
+      if (io)
+      {
+         fclose(io);
+         io = 0;
+      }
+   }
  
    std::wstring name;
    FILE         *io;
@@ -50,9 +55,20 @@ struct fio
 static void free_file( value v )
 {
 	fio *file =  val_file(v);
+	file->close();
 	delete file;
 	val_gc(v,NULL);
 }
+
+static void free_stdfile( value v )
+{
+        // Delete, but do not close...
+	fio *file =  val_file(v);
+	delete file;
+	val_gc(v,NULL);
+}
+
+
 
 
 DECLARE_KIND(k_file);
@@ -100,8 +116,7 @@ static value file_close( value o ) {
 	fio *f;
 	val_check_kind(o,k_file);
 	f = val_file(o);
-	fclose(f->io);
-        f->io = 0;
+	f->close();
 	return alloc_bool(true);
 }
 
@@ -339,7 +354,7 @@ static value file_contents( value name ) {
 		fio *f; \
 		f = new fio(L###k,k); \
 		value result = alloc_abstract(k_file,f); \
-		val_gc(result,free_file); \
+		val_gc(result,free_stdfile); \
 		return result; \
 	} \
 	DEFINE_PRIM(file_##k,0);
