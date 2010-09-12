@@ -588,6 +588,7 @@ value neko_api_init(value inCallback)
 {
    gNeko2HaxeString = api_alloc_root();
    *gNeko2HaxeString = inCallback;
+   return val_null;
 }
 DEFINE_PRIM(neko_api_init,1)
 
