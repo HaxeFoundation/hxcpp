@@ -202,7 +202,7 @@ Array<String> __get_args()
    int argc = *_NSGetArgc();
    char **argv = *_NSGetArgv();
    for(int i=1;i<argc;i++)
-      result->push( String(argv[i],strlen(argv[i])) );
+      result->push( String(argv[i],strlen(argv[i])).dup() );
    #endif
 
    #else
