@@ -451,6 +451,7 @@ typedef Linkers = Hash<Linker>;
 class BuildTool
 {
    var mDefines : Hash<String>;
+	var mIncludePath:Array<String>;
    var mCompiler : Compiler;
    var mLinkers : Linkers;
    var mFileGroups : FileGroups;
@@ -458,13 +459,15 @@ class BuildTool
    static var sAllowNumProcs = true;
 
 
-   public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>)
+   public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
+	     inIncludePath:Array<String> )
    {
       mDefines = inDefines;
       mFileGroups = new FileGroups();
       mCompiler = null;
       mTargets = new Targets();
       mLinkers = new Linkers();
+		mIncludePath = inIncludePath;
       var make_contents = neko.io.File.getContent(inMakefile);
       var xml_slow = Xml.parse(make_contents);
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
@@ -478,6 +481,28 @@ class BuildTool
             buildTarget(target);
    }
 
+
+   function findIncludeFile(inBase:String) : String
+	{
+	  var c0 = inBase.substr(0,1);
+	  if (c0!="/" && c0!="\\")
+	  {
+	     var c1 = inBase.substr(1,1);
+		  if (c1!=":")
+		  {
+		     for(p in mIncludePath)
+			  {
+			     var name = p + "/" + inBase;
+              if (neko.FileSystem.exists(name))
+				     return name;
+			  }
+		     return "";
+		  }
+	  }
+     if (neko.FileSystem.exists(inBase))
+	     return inBase;
+	   return "";
+	}
 
    function parseXML(inXML:haxe.xml.Fast,inSection :String)
    {
@@ -509,9 +534,10 @@ class BuildTool
 
                 case "include" : 
                    var name = substitute(el.att.name);
-                   if (neko.FileSystem.exists(name))
+						 var full_name = findIncludeFile(name);
+                   if (full_name!="")
                    {
-                      var make_contents = neko.io.File.getContent(name);
+                      var make_contents = neko.io.File.getContent(full_name);
                       var xml_slow = Xml.parse(make_contents);
                       var section = el.has.section ? el.att.section : "";
 
@@ -786,7 +812,10 @@ class BuildTool
    {
       var targets = new Array<String>();
       var defines = new Hash<String>();
+      var include_path = new Array<String>();
       var makefile:String="";
+
+      include_path.push(".");
 
       var args = neko.Sys.args();
       var HXCPP = "";
@@ -814,26 +843,39 @@ class BuildTool
       {
          if (arg.substr(0,2)=="-D")
             defines.set(arg.substr(2),"");
+         if (arg.substr(0,2)=="-I")
+            include_path.push(arg.substr(2));
          else if (makefile.length==0)
             makefile = arg;
          else
             targets.push(arg);
       }
 
+      include_path.push(".");
+      var env = neko.Sys.environment();
+		if (env.exists("HOME"))
+		  include_path.push(env.get("HOME"));
+		if (env.exists("USERPROFILE"))
+		  include_path.push(env.get("USERPROFILE"));
+		include_path.push(HXCPP + "/build-tool");
+
       if (defines.exists("iphoneos"))
       {
          defines.set("iphone","iphone");
+         defines.set("toolchain","iphoneos");
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
       }
       else if (defines.exists("iphonesim"))
       {
+         defines.set("toolchain","iphonesim");
          defines.set("iphone","iphone");
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
       }
       else if (defines.exists("android"))
       {
+         defines.set("toolchain","android");
          defines.set("android","android");
          defines.set("BINDIR","Android");
          if ( (new EReg("mac","i")).match(os) )
@@ -843,8 +885,21 @@ class BuildTool
          else
             throw "Unknown android host:" + os;
       }
+      else if (defines.exists("webos"))
+      {
+         defines.set("toolchain","webos");
+         defines.set("webos","webos");
+         defines.set("BINDIR","webOS");
+      }
+      else if (defines.exists("gph"))
+      {
+         defines.set("toolchain","gph");
+         defines.set("gph","gph");
+         defines.set("BINDIR","gph");
+      }
       else if ( (new EReg("window","i")).match(os) )
       {
+         defines.set("toolchain","msvc");
          defines.set("windows","windows");
          defines.set("BINDIR","Windows");
 
@@ -864,11 +919,13 @@ class BuildTool
       }
       else if ( (new EReg("linux","i")).match(os) )
       {
+         defines.set("toolchain","linux");
          defines.set("linux","linux");
          defines.set("BINDIR","Linux");
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
+         defines.set("toolchain","mac");
          defines.set("macos","macos");
          defines.set("apple","apple");
          defines.set("BINDIR","Mac");
@@ -883,8 +940,11 @@ class BuildTool
       }
       else
       {
-         for(env in neko.Sys.environment().keys())
-            defines.set(env, neko.Sys.getEnv(env) );
+         for(e in env.keys())
+            defines.set(e, neko.Sys.getEnv(e) );
+
+         if (defines.exists("HXCPP_CONFIG") )
+			   defines.set("HXCPP_CONFIG",".hxcpp_config.xml");
 
          if (defines.exists("android") )
          {
@@ -895,8 +955,24 @@ class BuildTool
             defines.set( "HXCPP_CYG", DirManager.DosToCygwin(defines.get("HXCPP") ) );
          }
 
+         if (defines.exists("gph") )
+			{
+            if (!defines.exists("GPH_ROOT"))
+               throw("Please define GPH_ROOT");
 
-         new BuildTool(makefile,defines,targets);
+            var sep = ";";
+				neko.Sys.putEnv("PATH",
+				   defines.get("GPH_ROOT") + "/gcc-4.2.4-glibc-2.7-eabi/bin/" + sep +
+				   defines.get("GPH_ROOT") +
+					"/gcc-4.2.4-glibc-2.7-eabi/libexec/gcc/arm-gph-linux-gnueabi/4.2.4" + sep +
+				   defines.get("GPH_ROOT") +
+					"/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/bin" + sep + 
+				    env.get("PATH") );
+				neko.Sys.putEnv("CYGWIN","nodosfilewarning");
+			}
+
+
+         new BuildTool(makefile,defines,targets,include_path);
       }
    }
    

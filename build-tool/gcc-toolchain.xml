@@ -1,0 +1,10 @@
+<xml>
+
+<linker id="static" exe="ar" unless="windows">
+  <ext value=".a"/>
+  <outflag value="-cr "/>
+  <ranlib name="ranlib"/>
+</linker>
+
+
+</xml>

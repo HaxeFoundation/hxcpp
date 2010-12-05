@@ -1,0 +1,50 @@
+<xml>
+<!-- MACOS TOOLS -------------------------------------------------->
+
+<include name="gcc-toolchain.xml"/>
+
+<compiler id="darwin" exe="gcc" if="macos">
+  <flag value="-c"/>
+  <flag value="-fvisibility=hidden"/>
+  <cppflag value="-c++"/>
+  <cppflag value="-frtti"/>
+  <flag value="-g" if="debug"/>
+  <flag value="-O2" unless="debug"/>
+  <flag value="-I${HXCPP}/include"/>
+  <flag value="-DHX_MACOS"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
+  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_DEBUG" if="debug"/>
+  <objdir value="obj/darwin/" unless="debug"/>
+  <objdir value="obj/darwin-dbg/" if="debug"/>
+  <pch value="gcc"/>
+  <outflag value="-o"/>
+  <ext value=".o"/>
+</compiler>
+
+<linker id="dll" exe="g++" if="macos">
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <flag value="-dynamiclib"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-framework"/>
+  <flag value="Cocoa"/>
+  <flag value="-fvisibility=hidden"/>
+  <flag value="-debug" if="debug"/>
+  <ext value=".dylib"/>
+  <outflag value="-o "/>
+</linker>
+
+<linker id="exe" exe="g++" if="macos">
+  <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
+  <flag value="-framework"/>
+  <flag value="Cocoa"/>
+  <flag value="-debug" if="debug"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
+  <ext value=""/>
+  <outflag value="-o "/>
+</linker>
+
+</xml>

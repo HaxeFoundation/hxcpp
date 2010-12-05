@@ -1,0 +1,78 @@
+<xml>
+
+<!-- Android TOOLS -------------------------------------->
+
+<compiler id="android-gcc" exe="arm-eabi-g++" if="android">
+  <exe name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/bin/arm-eabi-gcc"/>
+
+ <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/platforms/android-5/arch-arm/usr/include"/>
+ <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/include/c++/4.4.0/"/>
+ <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/include/c++/4.4.0/arm-eabi"/>
+ <flag value="-I${HXCPP_CYG}/include"/>
+ <flag value="-Iinclude"/>
+ <flag value="-fpic"/>
+ <flag value="-fvisibility=hidden"/>
+ <flag value="-ffunction-sections"/>
+ <flag value="-funwind-tables"/>
+ <flag value="-fstack-protector"/>
+ <flag value="-fno-short-enums"/>
+ <cppflag value="-frtti"/>
+ <flag value="-D__ARM_ARCH_5__"/>
+ <flag value="-D__ARM_ARCH_5T__"/>
+ <flag value="-D__ARM_ARCH_5E__"/>
+ <flag value="-D__ARM_ARCH_5TE__"/>
+ <flag value="-Wno-psabi"/>
+ <flag value="-march=armv5te"/>
+ <flag value="-mtune=xscale"/>
+ <flag value="-msoft-float"/>
+ <flag value="-fomit-frame-pointer"/>
+ <flag value="-fno-strict-aliasing"/>
+ <flag value="-finline-limit=10000"/>
+ <flag value="-DANDROID"/>
+ <!-- todo <flag value="-Werror"/> -->
+ <flag value="-Wa,--noexecstack"/>
+ <flag value="-O2" unless="debug"/>
+ <flag value="-O0" if="debug"/>
+ <flag value="-DNDEBUG"/>
+ <flag value="-c"/>
+ <outflag value="-o"/>
+ <ext value=".obj"/>
+ <objdir value="obj/Debug" if="debug"/>
+ <objdir value="obj/Release" unless="debug"/>
+</compiler>
+
+<!-- -Wl,-soname,libgl2jni.so
+-->
+<linker id="dll" exe="g++" if="android">
+  <exe name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/bin/arm-eabi-gcc"/>
+
+  <ext value=".so"/>
+  <outflag value="-o"/>
+  <prefix value="lib"/>
+
+  <flag value="-nostdlib"/>
+  <flag value="-frtti"/>
+  <flag value="-Wl,-shared,-Bsymbolic"/>
+  <flag value="-Wl,--whole-archive"/>
+  <flag value="-Wl,--no-whole-archive"/>
+  <flag value="${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libstdc++.a"/>
+  <flag value="${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libsupc++.a"/>
+  <flag value="${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/lib/gcc/arm-eabi/4.4.0/libgcc.a"/>
+  <flag value="${ANDROID_NDK_ROOT_CYG}/build/platforms/android-5/arch-arm/usr/lib/libc.so"/>
+  <flag value="${ANDROID_NDK_ROOT_CYG}/build/platforms/android-5/arch-arm/usr/lib/libm.so"/>
+  <flag value="-Wl,--no-undefined"/>
+  <flag value="-Wl,-z,noexecstack"/>
+  <flag value="-L${ANDROID_NDK_ROOT_CYG}/build/platforms/android-5/arch-arm/usr/lib"/>
+  <flag value="-llog"/>
+  <flag value="-ldl"/>
+  <!-- <flag value="-lGLESv2"/> -->
+  <flag value="-Wl,-rpath-link=${ANDROID_NDK_ROOT_CYG}/build/platforms/android-5/arch-arm/usr/lib"/>
+
+  <lib name="${ANDROID_NDK_ROOT_CYG}/build/platforms/android-5/arch-arm/usr/lib/libc.so"/>
+  <lib name="${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/lib/gcc/arm-eabi/4.4.0/libgcc.a"/>
+  <lib name="${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libsupc++.a"/>
+  <lib name="${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/lib/libstdc++.a"/>
+</linker>
+
+
+</xml>

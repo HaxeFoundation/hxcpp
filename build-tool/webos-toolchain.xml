@@ -1,0 +1,70 @@
+<xml>
+
+<!-- WEBOS TOOLS -------------------------------------------------->
+	
+<compiler id="webos" exe="arm-none-linux-gnueabi-g++" if="webos">
+	<flag value="-c"/>
+	<flag value="-g" if="debug"/>
+	<flag value="-O2" unless="debug"/>
+	<flag value="-s" unless="debug"/>
+	<flag value="-I${HXCPP}/include"/>
+	<flag value="-I${PalmPDK}/include"/>
+	<flag value="-DWEBOS"/>
+	<flag value="-fvisibility=hidden"/>
+	<flag value="-fdollars-in-identifiers"/>
+	<cppflag value="-frtti"/>
+	<outflag value="-o"/>
+	<objdir value="./obj/Debug" if="debug"/>
+	<objdir value="./obj/Release" unless="debug"/>
+</compiler>
+
+<!-- There are two sets of mcpu and mfpu flags. The default works for both the Pre and Pixi. Setting the "palmpre" directive will optimize for the Pre only -->
+
+<linker id="exe" exe="arm-none-linux-gnueabi-g++" if="webos">
+	<flag value="-g" if="debug"/>
+	<flag value="-O2" unless="debug"/>
+	<flag value="-s" unless="debug"/>
+	<flag value="-mcpu=cortex-a8" if="palmpre" />
+	<flag value="-mfpu=neon" if="palmpre" />
+	<flag value="-mcpu=arm1136jf-s" unless="palmpre" />
+	<flag value="-mfpu=vfp" unless="palmpre" />
+	<flag value="-mfloat-abi=softfp"/>
+	<flag value="-DWEBOS"/>
+	<flag value="-rdynamic"/>
+	<flag value="-L${PalmPDK}/device/lib"/>
+	<flag value="-Wl,--allow-shlib-undefined"/>
+	<flag value="-lSDL"/>
+	<flag value="-lSDL_image"/>
+	<flag value="-lGLES_CM"/>
+	<flag value="-lpdl"/>
+	<ext value=""/>
+	<outflag value="-o"/>
+</linker>
+	
+<linker id="dll" exe="arm-none-linux-gnueabi-g++" if="webos">
+	<flag value="-g" if="debug"/>
+	<flag value="-O2" unless="debug"/>
+	<flag value="-s" unless="debug"/>
+	<flag value="-mcpu=cortex-a8" if="palmpre" />
+	<flag value="-mfpu=neon" if="palmpre" />
+	<flag value="-mcpu=arm1136jf-s" unless="palmpre" />
+	<flag value="-mfpu=vfp" unless="palmpre" />
+	<flag value="-mfloat-abi=softfp"/>
+	<flag value="-DWEBOS"/>
+	<flag value="-L${PalmPDK}/device/lib"/>
+	<flag value="-Wl,--allow-shlib-undefined"/>
+	<flag value="-lSDL"/>
+	<flag value="-fpic"/>
+	<flag value="-fPIC"/>
+	<cppflag value="-frtti"/>
+	<flag value="-lSDL_mixer"/>
+	<flag value="-lGLES_CM"/>
+	<flag value="-lpdl"/>
+	<flag value="-shared"/>
+	<ext value=".so"/>
+	<outflag value="-o"/>
+</linker>
+
+
+
+</xml>
