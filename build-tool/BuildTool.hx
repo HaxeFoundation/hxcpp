@@ -516,6 +516,19 @@ class BuildTool
                    var name = el.att.name;
                    var value = substitute(el.att.value);
                    mDefines.set(name,value);
+                case "setenv" : 
+                   var name = el.att.name;
+                   var value = substitute(el.att.value);
+                   mDefines.set(name,value);
+				       neko.Sys.putEnv(name,value);
+                case "error" : 
+                   var error = substitute(el.att.value);
+                   throw(error);
+                case "path" : 
+                   var path = substitute(el.att.name);
+                   var sep = ";";
+				       neko.Sys.putEnv("PATH", path + sep + neko.Sys.getEnv("PATH"));
+
                 case "compiler" : 
                    mCompiler = createCompiler(el,mCompiler);
 
@@ -895,7 +908,7 @@ class BuildTool
       {
          defines.set("toolchain","gph");
          defines.set("gph","gph");
-         defines.set("BINDIR","gph");
+         defines.set("BINDIR","GPH");
       }
       else if ( (new EReg("window","i")).match(os) )
       {
@@ -954,23 +967,6 @@ class BuildTool
             defines.set("ANDROID_NDK_ROOT_CYG", DirManager.DosToCygwin(defines.get("ANDROID_NDK_ROOT") ) );
             defines.set( "HXCPP_CYG", DirManager.DosToCygwin(defines.get("HXCPP") ) );
          }
-
-         if (defines.exists("gph") )
-			{
-            if (!defines.exists("GPH_ROOT"))
-               throw("Please define GPH_ROOT");
-
-            var sep = ";";
-				neko.Sys.putEnv("PATH",
-				   defines.get("GPH_ROOT") + "/gcc-4.2.4-glibc-2.7-eabi/bin/" + sep +
-				   defines.get("GPH_ROOT") +
-					"/gcc-4.2.4-glibc-2.7-eabi/libexec/gcc/arm-gph-linux-gnueabi/4.2.4" + sep +
-				   defines.get("GPH_ROOT") +
-					"/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/bin" + sep + 
-				    env.get("PATH") );
-				neko.Sys.putEnv("CYGWIN","nodosfilewarning");
-			}
-
 
          new BuildTool(makefile,defines,targets,include_path);
       }
