@@ -5,22 +5,23 @@
 
 <error value="Please define GPH_ROOT" unless="GPH_ROOT"/>
 
-<path name="${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/bin/"/>
-<path name="${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/libexec/gcc/arm-gph-linux-gnueabi/4.2.4/"/>
-<path name="${GPH_ROOT}/libexec/gcc/arm-gph-linux-gnueabi/4.2.4"/>
-<path name="${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/bin"/>
+<set name="GPH_TOOL" value="${GPH_ROOT}/tools/"/>
+<path name="${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/bin/"/>
+<path name="${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/libexec/gcc/arm-gph-linux-gnueabi/4.2.4/"/>
+<path name="${GPH_TOOL}/libexec/gcc/arm-gph-linux-gnueabi/4.2.4"/>
+<path name="${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/bin"/>
 <setenv name="CYGWIN" value="nodosfilewarning"/>
-<set name="GPH_SYS" value="${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root"/>
+<set name="GPH_SYS" value="${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root"/>
 
-<compiler id="gph" exe="arm-gph-linux-gnueabi-gcc.exe">
+<compiler id="gph" exe="arm-gph-linux-gnueabi-gcc">
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
 	<flag value="-I${HXCPP}/include"/>
 	<flag value="--sysroot=${GPH_SYS}"/>
-	<flag value="-I${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/include/c++/4.2.4/"/>
-	<flag value="-I${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/include/c++/4.2.4/arm-gph-linux-gnueabi"/>
+	<flag value="-I${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/include/c++/4.2.4/"/>
+	<flag value="-I${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/include/c++/4.2.4/arm-gph-linux-gnueabi"/>
 	<flag value="-DGPH"/>
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
@@ -33,18 +34,21 @@
 	<objdir value="./obj/Release" unless="debug"/>
 </compiler>
 
-<linker id="exe" exe="arm-gph-linux-gnueabi-g++.exe">
+<linker id="exe" exe="arm-gph-linux-gnueabi-g++">
 	<ext value=".gpe"/>
+	<flag value="--sysroot=${GPH_SYS}"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
 	<flag value="-DGPH"/>
-	<flag value="--sysroot=${GPH_SYS}"/>
-	<!--<flag value="-Wl,--allow-shlib-undefined"/>-->
 	<outflag value="-o"/>
+	<lib name="-lm"/>
+	<lib name="-ldl"/>
+	<lib name="-lc"/>
+	<lib name="-lpthread"/>
 </linker>
 	
-<linker id="dll" exe="arm-gph-linux-gnueabi-g++.exe">
+<linker id="dll" exe="arm-gph-linux-gnueabi-g++">
 	<flag value="-s" unless="debug"/>
 	<flag value="--no-undefined"/>
 	<flag value="--sysroot=${GPH_SYS}"/>
@@ -57,6 +61,7 @@
 	<lib name="-lm"/>
 	<lib name="-ldl"/>
 	<lib name="-lc"/>
+	<lib name="-lpthread"/>
 </linker>
 
 

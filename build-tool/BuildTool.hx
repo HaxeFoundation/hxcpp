@@ -451,7 +451,7 @@ typedef Linkers = Hash<Linker>;
 class BuildTool
 {
    var mDefines : Hash<String>;
-	var mIncludePath:Array<String>;
+   var mIncludePath:Array<String>;
    var mCompiler : Compiler;
    var mLinkers : Linkers;
    var mFileGroups : FileGroups;
@@ -460,14 +460,14 @@ class BuildTool
 
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
-	     inIncludePath:Array<String> )
+        inIncludePath:Array<String> )
    {
       mDefines = inDefines;
       mFileGroups = new FileGroups();
       mCompiler = null;
       mTargets = new Targets();
       mLinkers = new Linkers();
-		mIncludePath = inIncludePath;
+      mIncludePath = inIncludePath;
       var make_contents = neko.io.File.getContent(inMakefile);
       var xml_slow = Xml.parse(make_contents);
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
@@ -483,26 +483,27 @@ class BuildTool
 
 
    function findIncludeFile(inBase:String) : String
-	{
-	  var c0 = inBase.substr(0,1);
-	  if (c0!="/" && c0!="\\")
-	  {
-	     var c1 = inBase.substr(1,1);
-		  if (c1!=":")
-		  {
-		     for(p in mIncludePath)
-			  {
-			     var name = p + "/" + inBase;
+   {
+      if (inBase=="") return "";
+     var c0 = inBase.substr(0,1);
+     if (c0!="/" && c0!="\\")
+     {
+        var c1 = inBase.substr(1,1);
+        if (c1!=":")
+        {
+           for(p in mIncludePath)
+           {
+              var name = p + "/" + inBase;
               if (neko.FileSystem.exists(name))
-				     return name;
-			  }
-		     return "";
-		  }
-	  }
+                 return name;
+           }
+           return "";
+        }
+     }
      if (neko.FileSystem.exists(inBase))
-	     return inBase;
-	   return "";
-	}
+        return inBase;
+      return "";
+   }
 
    function parseXML(inXML:haxe.xml.Fast,inSection :String)
    {
@@ -520,15 +521,15 @@ class BuildTool
                    var name = el.att.name;
                    var value = substitute(el.att.value);
                    mDefines.set(name,value);
-				       neko.Sys.putEnv(name,value);
+                   neko.Sys.putEnv(name,value);
                 case "error" : 
                    var error = substitute(el.att.value);
                    throw(error);
                 case "path" : 
                    var path = substitute(el.att.name);
-                   var sep = ";";
-				       neko.Sys.putEnv("PATH", path + sep + neko.Sys.getEnv("PATH"));
-
+                   var os = neko.Sys.systemName();
+                   var sep = (new EReg("window","i")).match(os) ? ";" : ":";
+                   neko.Sys.putEnv("PATH", path + sep + neko.Sys.getEnv("PATH"));
                 case "compiler" : 
                    mCompiler = createCompiler(el,mCompiler);
 
@@ -547,7 +548,7 @@ class BuildTool
 
                 case "include" : 
                    var name = substitute(el.att.name);
-						 var full_name = findIncludeFile(name);
+                   var full_name = findIncludeFile(name);
                    if (full_name!="")
                    {
                       var make_contents = neko.io.File.getContent(full_name);
@@ -866,11 +867,11 @@ class BuildTool
 
       include_path.push(".");
       var env = neko.Sys.environment();
-		if (env.exists("HOME"))
-		  include_path.push(env.get("HOME"));
-		if (env.exists("USERPROFILE"))
-		  include_path.push(env.get("USERPROFILE"));
-		include_path.push(HXCPP + "/build-tool");
+      if (env.exists("HOME"))
+        include_path.push(env.get("HOME"));
+      if (env.exists("USERPROFILE"))
+        include_path.push(env.get("USERPROFILE"));
+      include_path.push(HXCPP + "/build-tool");
 
       if (defines.exists("iphoneos"))
       {
@@ -957,7 +958,7 @@ class BuildTool
             defines.set(e, neko.Sys.getEnv(e) );
 
          if (defines.exists("HXCPP_CONFIG") )
-			   defines.set("HXCPP_CONFIG",".hxcpp_config.xml");
+            defines.set("HXCPP_CONFIG",".hxcpp_config.xml");
 
          if (defines.exists("android") )
          {
