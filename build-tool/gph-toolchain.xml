@@ -10,6 +10,7 @@
 <path name="${GPH_ROOT}/libexec/gcc/arm-gph-linux-gnueabi/4.2.4"/>
 <path name="${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/bin"/>
 <setenv name="CYGWIN" value="nodosfilewarning"/>
+<set name="GPH_SYS" value="${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root"/>
 
 <compiler id="gph" exe="arm-gph-linux-gnueabi-gcc.exe">
 	<flag value="-c"/>
@@ -17,7 +18,7 @@
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
 	<flag value="-I${HXCPP}/include"/>
-	<flag value="-I${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root/usr/include/"/>
+	<flag value="--sysroot=${GPH_SYS}"/>
 	<flag value="-I${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/include/c++/4.2.4/"/>
 	<flag value="-I${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/include/c++/4.2.4/arm-gph-linux-gnueabi"/>
 	<flag value="-DGPH"/>
@@ -32,42 +33,30 @@
 	<objdir value="./obj/Release" unless="debug"/>
 </compiler>
 
-<linker id="exe" exe="arm-gph-linux-gnueabi-gcc.exe">
+<linker id="exe" exe="arm-gph-linux-gnueabi-g++.exe">
+	<ext value=".gpe"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
 	<flag value="-DGPH"/>
-	<flag value="-rdynamic"/>
-	<flag value="-Wl,--allow-shlib-undefined"/>
-	<flag value="-Wl,-L${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root/usr/lib/"/>
-	<!--
-	<flag value="-lSDL"/>
-	<flag value="-lSDL_image"/>
-	<flag value="-lGLES_CM"/> -->
+	<flag value="--sysroot=${GPH_SYS}"/>
+	<!--<flag value="-Wl,--allow-shlib-undefined"/>-->
 	<outflag value="-o"/>
 </linker>
 	
-<linker id="dll" exe="arm-gph-linux-gnueabi-ld.exe">
+<linker id="dll" exe="arm-gph-linux-gnueabi-g++.exe">
 	<flag value="-s" unless="debug"/>
-	<flag value="${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root/usr/lib/crti.o"/>
-	<flag value="${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root/lib/libc.so.6"/>
-	<flag value="${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root/lib/libgcc_s.so"/>
-	<flag value="-L${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root/usr/lib"/>
-	<flag value="-L${GPH_ROOT}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root/lib"/>
-	<flag value="-lm"/>
-	<flag value="-ldl"/>
-	<flag value="-lz"/>
-	<flag value="-lfreetype"/>
-	<flag value="-lstdc++"/>
-	<flag value="-lsupc++"/>
 	<flag value="--no-undefined"/>
-	<!-- <flag value="-print-search-dirs"/> -->
+	<flag value="--sysroot=${GPH_SYS}"/>
 	<flag value="-fpic"/>
 	<flag value="-fPIC"/>
-	<cppflag value="-frtti"/>
 	<flag value="-shared"/>
 	<ext value=".so"/>
 	<outflag value="-o"/>
+
+	<lib name="-lm"/>
+	<lib name="-ldl"/>
+	<lib name="-lc"/>
 </linker>
 
 

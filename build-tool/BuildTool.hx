@@ -147,7 +147,7 @@ class Compiler
       if (inFile.mGroup.mPrecompiledHeader!="")
          args.push("-I.");
       
-      args = args.concat(mFlags).concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags);
+      args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
 
       if (path.ext.toLowerCase()=="c")
          args = args.concat(mCFlags);
@@ -247,8 +247,8 @@ class Linker
          else
             args = args.concat(inObjs);
 
-         args = args.concat(mLibs);
          args = args.concat(inTarget.mLibs);
+         args = args.concat(mLibs);
 
          neko.Lib.println( mExe + " " + args.join(" ") );
          var result = neko.Sys.command( mExe, args );
