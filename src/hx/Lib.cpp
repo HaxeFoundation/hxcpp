@@ -187,7 +187,7 @@ String GetEnv(const char *inPath)
 
 String FindHaxelib(String inLib)
 {
-   //printf("FindHaxelib %S\n", inLib.__s);
+   // printf("FindHaxelib %S\n", inLib.__s);
    String haxepath = GetEnv("HAXEPATH");
    if (haxepath.length==0)
    {
@@ -303,8 +303,9 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #endif
 #endif
 
-
 #endif
+
+
    String bin =
 #ifdef _WIN32
     HX_CSTRING("Windows");
@@ -316,7 +317,11 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #ifdef ANDROID
     HX_CSTRING("Android");
 #else
+  #ifdef HXCPP_M64
+    HX_CSTRING("Linux64");
+  #else
     HX_CSTRING("Linux");
+  #endif
 #endif
 #endif
 #endif
