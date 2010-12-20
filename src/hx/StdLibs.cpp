@@ -454,7 +454,7 @@ int __hxcpp_obj_id(Dynamic inObj)
 {
    hx::Object *obj = inObj->__GetRealObject();
    if (!obj) return 0;
-   #ifdef _64BITS
+   #ifdef HXCPP_M64
       #ifdef HX_INTERNAL_GC
       return hx::InternalAllocID(obj);
       #else

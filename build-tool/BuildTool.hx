@@ -873,6 +873,8 @@ class BuildTool
         include_path.push(env.get("USERPROFILE"));
       include_path.push(HXCPP + "/build-tool");
 
+      var m64 = defines.exists("HXCPP_M64");
+
       if (defines.exists("iphoneos"))
       {
          defines.set("iphone","iphone");
@@ -915,7 +917,7 @@ class BuildTool
       {
          defines.set("toolchain","msvc");
          defines.set("windows","windows");
-         defines.set("BINDIR","Windows");
+         defines.set("BINDIR",m64 ? "Windows64":"Windows");
 
          try
          {
@@ -935,14 +937,14 @@ class BuildTool
       {
          defines.set("toolchain","linux");
          defines.set("linux","linux");
-         defines.set("BINDIR","Linux");
+         defines.set("BINDIR", m64 ? "Linux64":"Linux");
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
          defines.set("toolchain","mac");
          defines.set("macos","macos");
          defines.set("apple","apple");
-         defines.set("BINDIR","Mac");
+         defines.set("BINDIR",m64 ? "Mac64":"Mac64");
       }
 
       if (targets.length==0)

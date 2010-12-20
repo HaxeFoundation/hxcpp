@@ -67,7 +67,7 @@ typedef struct {
 DECLARE_KIND(k_socket);
 DECLARE_KIND(k_poll);
 
-typedef int socket_int;
+typedef size_t socket_int;
 
 #define val_poll(o)		((polldata*)val_data(o))
 

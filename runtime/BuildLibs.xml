@@ -133,9 +133,9 @@
    <target id="std"/>
    <target id="regexp"/>
    <target id="zlib"/>
-   <target id="nekoapi" if="windows"/>
-   <target id="nekoapi" if="macos"/>
-   <target id="nekoapi" if="linux"/>
+   <target id="nekoapi" if="windows" unless="HXCPP_M64"/>
+   <target id="nekoapi" if="macos" unless="HXCPP_M64"/>
+   <target id="nekoapi" if="linux" unless="HXCPP_M64"/>
 </target>
 
 
