@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #ifdef IMPLEMENT_API
 
 #include "CFFILoader.h"
@@ -51,6 +52,8 @@ typedef struct _gcroot  *gcroot;
 
 typedef void (*hxFinalizer)(value v);
 typedef void (*hxPtrFinalizer)(void *v);
+
+typedef void (__hx_field_iter)(value v,field f,void *);
 
 #define hx_failure(msg)		hx_fail(msg,__FILE__,__LINE__)
 

@@ -101,6 +101,9 @@ DEFFUNC_3(void,alloc_field,value,int,value)
 DEFFUNC_2(value,val_field,value,int)
 DEFFUNC_2(double,val_field_numeric,value,int)
 
+DEFFUNC_1(value,val_field_name,field)
+DEFFUNC_3(void,val_iter_fields,value,__hx_field_iter,void *)
+
 // Abstract types
 DEFFUNC_0(vkind,alloc_kind)
 DEFFUNC_2(void,kind_share,vkind *,const char *)

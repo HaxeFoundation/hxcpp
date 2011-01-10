@@ -471,6 +471,19 @@ int api_val_id(const char * arg1)
 	return val_id(arg1);
 }
 
+value api_val_field_name(field inField)
+{
+   return val_field_name(inField);
+}
+
+
+void api_val_iter_fields(value inObj, __hx_field_iter inFunc ,void *inCookie)
+{
+   val_iter_fields(inObj,inFunc,inCookie);
+}
+
+
+
 
 void api_alloc_field(value  arg1,int arg2,value  arg3)
 {
