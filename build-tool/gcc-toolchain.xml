@@ -6,5 +6,12 @@
   <ranlib name="ranlib"/>
 </linker>
 
+<set name="nostrip" value="1" if="debug"/>
+
+<stripper id="strip" exe="strip" unless="nostrip">
+  <exe name="strip"/>
+</stripper>
+
+
 
 </xml>

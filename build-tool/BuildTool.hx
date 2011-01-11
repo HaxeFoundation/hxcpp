@@ -270,7 +270,10 @@ class Linker
             neko.io.File.copy( mLibDir+"/"+file_name, out_name );
             neko.FileSystem.deleteFile( mLibDir+"/"+file_name );
          }
+         return  out_name;
       }
+
+      return "";
    }
    function isOutOfDate(inName:String, inObjs:Array<String>)
    {
@@ -286,6 +289,33 @@ class Linker
             return true;
       }
       return false;
+   }
+}
+
+
+
+class Stripper
+{
+   public var mExe:String;
+   public var mFlags : Array<String>;
+
+   public function new(inExe:String)
+   {
+      mFlags = [];
+      mExe = inExe;
+   }
+   public function strip(inTarget:String)
+   {
+      var args = new Array<String>();
+
+      args = args.concat(mFlags);
+
+      args.push(inTarget);
+
+      neko.Lib.println( mExe + " " + args.join(" ") );
+      var result = neko.Sys.command( mExe, args );
+      if (result!=0)
+         throw "Error : " + result + " - build cancelled";
    }
 }
 
@@ -454,6 +484,7 @@ class BuildTool
    var mDefines : Hash<String>;
    var mIncludePath:Array<String>;
    var mCompiler : Compiler;
+   var mStripper : Stripper;
    var mLinkers : Linkers;
    var mFileGroups : FileGroups;
    var mTargets : Targets;
@@ -466,6 +497,7 @@ class BuildTool
       mDefines = inDefines;
       mFileGroups = new FileGroups();
       mCompiler = null;
+      mStripper = null;
       mTargets = new Targets();
       mLinkers = new Linkers();
       mIncludePath = inIncludePath;
@@ -533,6 +565,9 @@ class BuildTool
                    neko.Sys.putEnv("PATH", path + sep + neko.Sys.getEnv("PATH"));
                 case "compiler" : 
                    mCompiler = createCompiler(el,mCompiler);
+
+                case "stripper" : 
+                   mStripper = createStripper(el,mStripper);
 
                 case "linker" : 
                    if (mLinkers.exists(el.att.id))
@@ -668,7 +703,12 @@ class BuildTool
          case "linker":
             if (!mLinkers.exists(target.mToolID))
                throw "Missing linker :\"" + target.mToolID + "\"";
-            mLinkers.get(target.mToolID).link(target,objs);
+
+            var exe = mLinkers.get(target.mToolID).link(target,objs);
+            if (exe!="" && mStripper!=null)
+               if (target.mToolID=="exe" || target.mToolID=="dll")
+                  mStripper.strip(exe);
+
          case "clean":
             target.clean();
       }
@@ -698,6 +738,25 @@ class BuildTool
 
       return c;
    }
+
+   public function createStripper(inXML:haxe.xml.Fast,inBase:Stripper) : Stripper
+   {
+      var s = (inBase!=null && !inXML.has.replace) ? inBase :
+                 new Stripper(inXML.att.exe);
+      for(el in inXML.elements)
+      {
+         if (valid(el,""))
+            switch(el.name)
+            {
+                case "flag" : s.mFlags.push(substitute(el.att.value));
+                case "exe" : s.mExe = substitute((el.att.name));
+            }
+      }
+
+      return s;
+   }
+
+
 
    public function createLinker(inXML:haxe.xml.Fast,inBase:Linker) : Linker
    {
