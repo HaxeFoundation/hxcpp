@@ -7,7 +7,12 @@ using namespace hx;
 
 
 
-#ifdef _MSC_VER
+#ifdef HX_WINDOWS
+
+#ifndef _MSC_VER
+#include <stdio.h>
+#define _MSC_VER 1
+#endif
 
 // vc 7...
 #if _MSC_VER < 1400 
@@ -28,7 +33,7 @@ using namespace hx;
 
 #endif
 
-#else // not _MSC_VER ..
+#else // not windows ..
 
 #ifdef HX_UTF8_STRINGS
 #define SPRINTF snprintf
@@ -847,7 +852,7 @@ namespace hx
 
 
 
-#ifndef _WIN32
+#ifndef HX_WINDOWS
 inline double _wtof(const wchar_t *inStr)
 {
    #ifdef ANDROID

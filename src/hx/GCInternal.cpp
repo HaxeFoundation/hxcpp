@@ -14,7 +14,7 @@ int gMarkID = 0;
 
 #ifdef HX_INTERNAL_GC
 
-#ifdef _MSC_VER
+#ifdef HX_WINDOWS
 #include <windows.h>
 #endif
 
@@ -1132,7 +1132,7 @@ public:
       mState = lasNew;
       sGlobalAlloc->AddLocal(this);
       mState = lasRunning;
-      #ifdef _MSC_VER
+      #ifdef HX_WINDOWS
       mID = GetCurrentThreadId();
       #endif
    }

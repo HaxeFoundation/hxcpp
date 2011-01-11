@@ -1,0 +1,48 @@
+<xml>
+
+<!-- MINGW TOOLS -------------------------------------->
+
+<path name="${MINGW_ROOT}/bin"/>
+
+<include name="gcc-toolchain.xml"/>
+
+<compiler id="mingw" exe="gcc">
+  <exe name="${MINGW_ROOT}/bin/gcc.exe"/>
+  <flag value="-c"/>
+  <cppflag value="-frtti"/>
+  <flag value="-g" if="debug"/>
+  <flag value="-O2"/>
+  <flag value="-DHX_WINDOWS"/>
+  <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
+  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_DEBUG" if="debug"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
+  <flag value="-I${HXCPP}/include"/>
+  <objdir value="obj/mingw${M64}${DBG}/"/>
+  <outflag value="-o"/>
+  <ext value=".o"/>
+</compiler>
+
+<linker id="dll" exe="g++">
+  <exe name="${MINGW_ROOT}/bin/g++.exe"/>
+  <flag value="-shared"/>
+  <flag value="--enable-auto-import"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-W,l--unresolved-symbols=report-all"/>
+  <flag value="-debug" if="debug"/>
+  <ext value=".dll"/>
+  <outflag value="-o "/>
+</linker>
+
+<linker id="exe" exe="g++">
+  <exe name="${MINGW_ROOT}/bin/g++.exe"/>
+  <flag value="-debug" if="debug"/>
+  <flag value="-Wl,--enable-auto-import"/>
+  <flag value="-m32" unless="HXCPP_M64"/>
+  <ext value=".exe"/>
+  <outflag value="-o "/>
+</linker>
+
+</xml>

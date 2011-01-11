@@ -2,6 +2,7 @@
 
 #ifdef HX_WINDOWS
 #include <windows.h>
+#include <stdio.h>
 #else
 #include <sys/time.h>
 #include <stdio.h>
@@ -126,7 +127,7 @@ void __trace(Dynamic inObj, Dynamic inData)
 static double t0 = 0;
 double  __time_stamp()
 {
-#ifdef _WIN32
+#ifdef HX_WINDOWS
    static __int64 t0=0;
    static double period=0;
    __int64 now;
@@ -169,7 +170,7 @@ Array<String> __get_args()
 {
    Array<String> result(0,0);
 
-   #ifdef _WIN32
+   #ifdef HX_WINDOWS
    LPTSTR str =  GetCommandLine();
    bool skip_first = true;
    while(*str != '\0')

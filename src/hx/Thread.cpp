@@ -42,7 +42,7 @@ struct Deque : public Array_obj<Dynamic>
 	}
 	void Clean()
 	{
-		#ifdef _MSC_VER
+		#ifdef HX_WINDOWS
 		mMutex.Clean();
 		#endif
 		mSemaphore.Clean();
@@ -56,7 +56,7 @@ struct Deque : public Array_obj<Dynamic>
 	}
 	#endif
 
-	#ifdef _MSC_VER
+	#ifdef HX_WINDOWS
 	MyMutex     mMutex;
 	void PushBack(Dynamic inValue)
 	{
@@ -252,7 +252,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 #ifdef HX_INTERNAL_GC
 	hx::GCPrepareMultiThreaded();
 
-   #if defined(_MSC_VER)
+   #if defined(HX_WINDOWS)
       _beginthreadex(0,0,hxThreadFunc,info,0,0);
    #else
       pthread_t result;
@@ -261,7 +261,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 
 #else
 
-   #if defined(_MSC_VER)
+   #if defined(HX_WINDOWS)
       GC_beginthreadex(0,0,hxThreadFunc,info,0,0);
    #else
       pthread_t result;
@@ -438,7 +438,7 @@ public:
 	hx::InternalFinalizer *mFinalizer;
 	#endif
 
-	#ifdef _MSC_VER
+	#ifdef HX_WINDOWS
 	double Now()
 	{
 		return (double)clock()/CLOCKS_PER_SEC;

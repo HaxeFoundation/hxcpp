@@ -1,7 +1,7 @@
 #ifndef HX_THREAD_H
 #define HX_THREAD_H
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0400
@@ -13,7 +13,7 @@
 #include <sys/time.h>
 #endif
 
-#if defined(_MSC_VER)
+#if defined(HX_WINDOWS)
 
 
 struct MyMutex
@@ -102,7 +102,7 @@ struct TAutoLock
 typedef TAutoLock<MyMutex> AutoLock;
 
 
-#if defined(_MSC_VER)
+#if defined(HX_WINDOWS)
 
 struct MySemaphore
 {

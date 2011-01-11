@@ -913,6 +913,12 @@ class BuildTool
          defines.set("gph","gph");
          defines.set("BINDIR","GPH");
       }
+      else if (defines.exists("mingw"))
+      {
+         defines.set("toolchain","mingw");
+         defines.set("mingw","mingw");
+         defines.set("BINDIR",m64 ? "Windows64":"Windows");
+      }
       else if ( (new EReg("window","i")).match(os) )
       {
          defines.set("toolchain","msvc");
@@ -961,6 +967,9 @@ class BuildTool
 
          if (defines.exists("HXCPP_CONFIG") )
             defines.set("HXCPP_CONFIG",".hxcpp_config.xml");
+
+         if (defines.exists("mingw") && !defines.exists("MINGW_ROOT") )
+            defines.set("MINGW_ROOT","c:/MinGW");
 
          if (defines.exists("android") )
          {

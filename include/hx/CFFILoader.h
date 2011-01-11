@@ -9,13 +9,15 @@
 typedef void *(*ResolveProc)(const char *inName);
 static ResolveProc sResolveProc = 0;
 
+#ifdef ANDROID
 extern "C" {
 EXPORT void hx_set_loader(ResolveProc inProc)
 {
-   //__android_log_print(ANDROID_LOG_INFO, "haxe plugin", "Got Load Proc %s", inProc );
+   __android_log_print(ANDROID_LOG_INFO, "haxe plugin", "Got Load Proc %s", inProc );
    sResolveProc = inProc;
 }
 }
+#endif
 
 #ifdef STATIC_LINK
 extern "C" void * hx_cffi(const char *inName);
