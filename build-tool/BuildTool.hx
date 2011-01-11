@@ -205,7 +205,8 @@ class Linker
       mNamePrefix = "";
       mLibDir = "";
       mRanLib = "";
-      mFromFile = "";
+      // Default to on...
+      mFromFile = "@";
       mLibs = [];
    }
    public function link(inTarget:Target,inObjs:Array<String>)
@@ -235,7 +236,7 @@ class Linker
           args = args.concat(mFlags).concat(inTarget.mFlags);
 
          // Place list of obj files in a file called "all_objs"
-         if (mFromFile!="")
+         if (mFromFile=="@")
          {
             var fname = "all_objs";
             var fout = neko.io.File.write(fname,false);
