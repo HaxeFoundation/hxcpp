@@ -33,7 +33,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
 <set name="STD_MODULE_LINK" value="static" if="iphoneos"/>
 <set name="STD_MODULE_LINK" value="static" if="iphonesim"/>
 
-<set name="USE_PRECOMPILED_HEADERS" value="1" if="windows"/>
+
 
 
 <set name="LIBEXTRA" value=".iphoneos" if="iphoneos"/>

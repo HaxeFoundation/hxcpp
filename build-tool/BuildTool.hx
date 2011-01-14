@@ -122,12 +122,13 @@ class Compiler
       }
       else
       {
-         args.push( inDir + "/"  + inHeader + ".h" );
-         args.push( "-c" );
+         args.push( "-o" );
          args.push(pch_name);
+         args.push( inDir + "/"  + inHeader + ".h" );
       }
 
 
+      trace("Creating " + pch_name + ".");
       neko.Lib.println( mExe + " " + args.join(" ") );
       var result = neko.Sys.command( mExe, args );
       if (result!=0)
@@ -716,8 +717,14 @@ class BuildTool
 
    public function createCompiler(inXML:haxe.xml.Fast,inBase:Compiler) : Compiler
    {
-      var c = (inBase!=null && !inXML.has.replace) ? inBase :
-                 new Compiler(inXML.att.id,inXML.att.exe);
+      var c = inBase;
+      if (inBase==null || inXML.has.replace)
+      {
+         c = new Compiler(inXML.att.id,inXML.att.exe);
+         if (mDefines.exists("USE_PRECOMPILED_HEADERS"))
+            c.setPCH(mDefines.get("USE_PRECOMPILED_HEADERS"));
+      }
+
       for(el in inXML.elements)
       {
          if (valid(el,""))

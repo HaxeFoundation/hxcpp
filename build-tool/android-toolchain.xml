@@ -3,7 +3,7 @@
 <!-- Android TOOLS -------------------------------------->
 
 <compiler id="android-gcc" exe="arm-eabi-g++" if="android">
-  <exe name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/bin/arm-eabi-gcc"/>
+  <exe name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/bin/arm-eabi-g++"/>
 
  <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/platforms/android-5/arch-arm/usr/include"/>
  <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/include/c++/4.4.0/"/>

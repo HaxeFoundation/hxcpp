@@ -1,7 +1,10 @@
 #ifndef HX_MATH
 #define HX_MATH
 
+#ifndef HXCPP_H
 #include <hxcpp.h>
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 

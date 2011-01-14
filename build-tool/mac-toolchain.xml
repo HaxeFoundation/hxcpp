@@ -3,7 +3,7 @@
 
 <include name="gcc-toolchain.xml"/>
 
-<compiler id="darwin" exe="gcc" if="macos">
+<compiler id="darwin" exe="g++" if="macos">
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-c++"/>
@@ -19,7 +19,6 @@
   <flag value="-DHXCPP_DEBUG" if="debug"/>
   <objdir value="obj/darwin/" unless="debug"/>
   <objdir value="obj/darwin-dbg/" if="debug"/>
-  <pch value="gcc"/>
   <outflag value="-o"/>
   <ext value=".o"/>
 </compiler>

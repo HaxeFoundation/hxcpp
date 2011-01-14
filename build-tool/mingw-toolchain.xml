@@ -7,7 +7,7 @@
 <include name="gcc-toolchain.xml"/>
 
 <compiler id="mingw" exe="gcc">
-  <exe name="${MINGW_ROOT}/bin/gcc.exe"/>
+  <exe name="${MINGW_ROOT}/bin/g++.exe"/>
   <flag value="-c"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>

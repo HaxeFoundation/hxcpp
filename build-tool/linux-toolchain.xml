@@ -4,7 +4,7 @@
 
 <include name="gcc-toolchain.xml"/>
 
-<compiler id="linux" exe="gcc" if="linux">
+<compiler id="linux" exe="g++" if="linux">
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>

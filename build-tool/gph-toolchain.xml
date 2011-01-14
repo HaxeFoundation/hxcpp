@@ -13,7 +13,7 @@
 <setenv name="CYGWIN" value="nodosfilewarning"/>
 <set name="GPH_SYS" value="${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/sys-root"/>
 
-<compiler id="gph" exe="arm-gph-linux-gnueabi-gcc">
+<compiler id="gph" exe="arm-gph-linux-gnueabi-g++">
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
