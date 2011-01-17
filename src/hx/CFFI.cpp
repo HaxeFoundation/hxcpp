@@ -698,7 +698,9 @@ void  val_gc_remove_root(hx::Object **inRoot)
 
 void  gc_set_top_of_stack(int *inTopOfStack,bool inForce)
 {
+#ifdef HX_INTERNAL_GC
    hx::SetTopOfStack(inTopOfStack,inForce);
+#endif
 }
 
 

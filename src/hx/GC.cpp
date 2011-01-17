@@ -94,12 +94,14 @@ void GCAddRoot(hx::Object **inRoot)
 		else
 		   sgExtraRoots = (hx::Object ***)GC_REALLOC( sgExtraRoots, sgExtraAlloced * sizeof(hx::Object **) );
 	}
+   printf("Add root : %d\n", sgExtraSize );
 	sgExtraRoots[ sgExtraSize++ ] = inRoot;
 }
 
 void GCRemoveRoot(hx::Object **inRoot)
 {
 	int i;
+   printf("Remove root : %d\n", sgExtraSize );
 	for(i=0;i<sgExtraSize;i++)
 	{
 		if (sgExtraRoots[i]==inRoot)

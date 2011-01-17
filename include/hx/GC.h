@@ -127,11 +127,15 @@ struct InternalFinalizer
 void MarkAlloc(void *inPtr HX_MARK_ADD_PARAMS);
 void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS);
 
-#ifdef HX_INTERNAL_GC
 #ifdef HXCPP_DEBUG
+#ifdef HX_INTERNAL_GC
 void MarkSetMember(const char *inName HX_MARK_ADD_PARAMS);
 void MarkPushClass(const char *inName HX_MARK_ADD_PARAMS);
 void MarkPopClass(HX_MARK_PARAMS);
+#else
+inline void MarkSetMember(const char *inName HX_MARK_ADD_PARAMS) { };
+inline void MarkPushClass(const char *inName HX_MARK_ADD_PARAMS) { };
+inline void MarkPopClass(HX_MARK_PARAMS) { };
 #endif
 #endif
 

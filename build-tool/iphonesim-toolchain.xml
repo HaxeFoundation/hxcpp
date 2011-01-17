@@ -6,12 +6,6 @@
 
 <compiler id="iPhoneSim" exe="/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/gcc-4.2" if="iphonesim">
   <flag value="-c"/>
-  <cflag value="-x"/>
-  <cflag value="c"/>
-  <mmflag value="-x"/>
-  <mmflag value="objective-c++"/>
-  <cppflag value="-x"/>
-  <cppflag value="c++"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>

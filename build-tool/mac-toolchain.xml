@@ -6,7 +6,6 @@
 <compiler id="darwin" exe="g++" if="macos">
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
-  <cppflag value="-c++"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>

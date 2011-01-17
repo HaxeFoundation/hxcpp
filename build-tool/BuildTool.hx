@@ -62,6 +62,7 @@ class Compiler
    public var mMMFlags : Array<String>;
    public var mCPPFlags : Array<String>;
    public var mOBJCFlags : Array<String>;
+   public var mAddGCCIdentity: Bool;
    public var mExe:String;
    public var mOutFlag:String;
    public var mObjDir:String;
@@ -74,24 +75,14 @@ class Compiler
 
    public var mID:String;
 
-   public function new(inID,inExe:String,inGCCFileTypes)
+   public function new(inID,inExe:String,inGCCFileTypes:Bool)
    {
       mFlags = [];
       mCFlags = [];
       mCPPFlags = [];
       mOBJCFlags = [];
       mMMFlags = [];
-      if (inGCCFileTypes)
-      {
-         mCFlags.push("-x");
-         mCFlags.push("c");
-         mOBJCFlags.push("-x");
-         mOBJCFlags.push("objective-c");
-         mMMFlags.push("-x");
-         mMMFlags.push("objective-c++");
-         mCPPFlags.push("-x");
-         mCPPFlags.push("c++");
-      }
+      mAddGCCIdentity = inGCCFileTypes;
       mObjDir = "obj";
       mOutFlag = "-o";
       mExe = inExe;
@@ -100,6 +91,27 @@ class Compiler
       mPCHExt = ".pch";
       mPCHCreate = "-Yc";
       mPCHUse = "-Yu";
+   }
+
+   function addIdentity(ext:String,ioArgs:Array<String>)
+   {
+      if (mAddGCCIdentity)
+      {
+         var identity = switch(ext)
+           {
+              case "c" : "c";
+              case "m" : "objective-c";
+              case "mm" : "objective-c++";
+              case "cpp" : "c++";
+              case "c++" : "c++";
+              default:"";
+         }
+         if (identity!="")
+         {
+            ioArgs.push("-x");
+            ioArgs.push(identity);
+         }
+      }
    }
 
    public function setPCH(inPCH:String)
@@ -162,6 +174,8 @@ class Compiler
       args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
 
       var ext = path.ext.toLowerCase();
+      addIdentity(ext,args);
+
       if (ext=="c")
          args = args.concat(mCFlags);
       else if (ext=="m")
@@ -1056,8 +1070,9 @@ class BuildTool
                throw("Please define ANDROID_NDK_ROOT");
             DirManager.sIsCygwin = true;
             defines.set("ANDROID_NDK_ROOT_CYG", DirManager.DosToCygwin(defines.get("ANDROID_NDK_ROOT") ) );
-            defines.set( "HXCPP_CYG", DirManager.DosToCygwin(defines.get("HXCPP") ) );
          }
+
+         defines.set( "HXCPP_CYG", DirManager.DosToCygwin(defines.get("HXCPP") ) );
 
          new BuildTool(makefile,defines,targets,include_path);
       }
