@@ -218,7 +218,7 @@ Array<String> __get_args()
    if (cmd)
    {
       String arg;
-      buf[1] = '\0';
+      buf[0] = '\0';
       while (fread(buf, 1, 1, cmd))
       {
          if ((unsigned char)buf[0]<32) // line terminator
@@ -229,7 +229,7 @@ Array<String> __get_args()
             arg = String();
          }
          else
-            arg+=String(buf,1);
+            arg += String::fromCharCode(buf[0]);
       }
       fclose(cmd);
    }
