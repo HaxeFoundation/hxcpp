@@ -82,6 +82,8 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <compilerflag value="-DALL_INTERIOR_POINTERS"/>
   <compilerflag value="-DGC_NOT_DLL"/>
 
+  <compilerflag value="-D_XOPEN_SOURCE" if="macos"/>
+
   <file name="runtime/${GC_DIR}/win32_threads.c" if="windows"/>
   <file name="runtime/${GC_DIR}/darwin_stop_world.c" if="macos"/>
   <file name="runtime/${GC_DIR}/pthread_stop_world.c" unless="windows"/>

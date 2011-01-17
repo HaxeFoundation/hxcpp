@@ -2,6 +2,8 @@
 
 <set name="USE_PRECOMPILED_HEADERS" value="gcc"/>
 
+<set name="USE_GCC_FILETYPES" value="1"/>
+
 <linker id="static" exe="ar" unless="windows">
   <ext value=".a"/>
   <outflag value="-cr "/>

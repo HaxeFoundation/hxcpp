@@ -74,13 +74,24 @@ class Compiler
 
    public var mID:String;
 
-   public function new(inID,inExe:String)
+   public function new(inID,inExe:String,inGCCFileTypes)
    {
       mFlags = [];
       mCFlags = [];
       mCPPFlags = [];
       mOBJCFlags = [];
       mMMFlags = [];
+      if (inGCCFileTypes)
+      {
+         mCFlags.push("-x");
+         mCFlags.push("c");
+         mOBJCFlags.push("-x");
+         mOBJCFlags.push("objective-c");
+         mMMFlags.push("-x");
+         mMMFlags.push("objective-c++");
+         mCPPFlags.push("-x");
+         mCPPFlags.push("c++");
+      }
       mObjDir = "obj";
       mOutFlag = "-o";
       mExe = inExe;
@@ -150,13 +161,14 @@ class Compiler
       
       args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
 
-      if (path.ext.toLowerCase()=="c")
+      var ext = path.ext.toLowerCase();
+      if (ext=="c")
          args = args.concat(mCFlags);
-      else if (path.ext.toLowerCase()=="m")
+      else if (ext=="m")
          args = args.concat(mOBJCFlags);
-      else if (path.ext.toLowerCase()=="mm")
+      else if (ext=="mm")
          args = args.concat(mMMFlags);
-      else
+      else if (ext=="cpp" || ext=="c++")
          args = args.concat(mCPPFlags);
 
       if (mPCHUse!="")
@@ -720,7 +732,7 @@ class BuildTool
       var c = inBase;
       if (inBase==null || inXML.has.replace)
       {
-         c = new Compiler(inXML.att.id,inXML.att.exe);
+         c = new Compiler(inXML.att.id,inXML.att.exe,mDefines.exists("USE_GCC_FILETYPES"));
          if (mDefines.exists("USE_PRECOMPILED_HEADERS"))
             c.setPCH(mDefines.get("USE_PRECOMPILED_HEADERS"));
       }
