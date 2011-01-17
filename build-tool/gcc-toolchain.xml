@@ -6,6 +6,7 @@
 
 <linker id="static" exe="ar" unless="windows">
   <ext value=".a"/>
+  <fromfile value=""/>
   <outflag value="-cr "/>
   <ranlib name="ranlib"/>
 </linker>

@@ -29,9 +29,14 @@ and setting it to 1 can help with debug if there is a problem compiling.
 <set name="DBG" value="-debug" if="debug"/>
 <set name="M64" value="64" if="HXCPP_M64"/>
 <set name="IPHONE_VER" value="4.0"/>
+
 <set name="STD_MODULE_LINK" value="dll"/>
-<set name="STD_MODULE_LINK" value="static" if="iphoneos"/>
-<set name="STD_MODULE_LINK" value="static" if="iphonesim"/>
+
+<set name="static" value="1" if="iphoneos"/>
+<set name="static" value="1" if="iphonesim"/>
+
+<set name="STD_MODULE_LINK" value="static" if="static"/>
+<set name="STD_MODULE_LINK" value="static" if="static"/>
 
 
 
@@ -43,8 +48,6 @@ and setting it to 1 can help with debug if there is a problem compiling.
 <set name="GC_DIR" value="thirdparty/gc-7.1"/>
 <set name="AO_VERSION" value="1.2"/>
 
-<set name="static" value="1" if="iphoneos"/>
-<set name="static" value="1" if="iphonesim"/>
 
 <set name="haxelink" value="exe" unless="static"/>
 <set name="haxelink" value="static" if="static"/>
