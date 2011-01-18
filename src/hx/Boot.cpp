@@ -9,6 +9,12 @@ void Boot()
 	hx::GCInit();
    //__hxcpp_enable(false);
 
+	#ifdef GPH
+	 setvbuf( stdout , 0 , _IONBF , 0 );
+	 setvbuf( stderr , 0 , _IONBF , 0 );
+	#endif
+
+
    Object::__boot();
 	Dynamic::__boot();
 	Class_obj::__boot();
