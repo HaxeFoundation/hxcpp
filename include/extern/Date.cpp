@@ -9,7 +9,7 @@ class hxDate : public Date_obj
    public:
       hxDate(time_t inTime = 0 ) : mTime(inTime)  {  }
 
-   void __construct(Int year,Int month,Int day,Int hour,Int min,Int sec)
+   Void __construct(Int year,Int month,Int day,Int hour,Int min,Int sec)
    {
       struct tm time;
       time.tm_year = year-1900;
@@ -20,6 +20,7 @@ class hxDate : public Date_obj
       time.tm_sec = sec;
       time.tm_isdst = -1;
       mTime = mktime(&time);
+		return null();
    }
    struct tm &time()
    {
