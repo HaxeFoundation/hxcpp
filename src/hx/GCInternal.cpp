@@ -382,7 +382,7 @@ union BlockData
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
          unsigned char &row_flag = mRowFlags[r];
-         if ( !(row_flag * IMMIX_ROW_MARKED) )
+         if ( !(row_flag & IMMIX_ROW_MARKED) )
          {
             if (row_flag!=0)
             {
