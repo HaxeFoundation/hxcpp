@@ -5,7 +5,9 @@
 
 <error value="Please define GPH_ROOT" unless="GPH_ROOT"/>
 
-<set name="GPH_TOOL" value="${GPH_ROOT}/tools/"/>
+<set name="GPH_TOOL" value="${GPH_ROOT}/" if="windows_host"/>
+<set name="GPH_TOOL" value="${GPH_ROOT}/tools/" unless="windows_host"/>
+
 <path name="${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/bin/"/>
 <path name="${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/libexec/gcc/arm-gph-linux-gnueabi/4.2.4/"/>
 <path name="${GPH_TOOL}/libexec/gcc/arm-gph-linux-gnueabi/4.2.4"/>
@@ -16,8 +18,7 @@
 <compiler id="gph" exe="arm-gph-linux-gnueabi-g++">
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
-	<flag value="-O2" unless="debug"/>
-	<flag value="-s" unless="debug"/>
+	<flag value="-Os" unless="debug"/>
 	<flag value="-I${HXCPP}/include"/>
 	<flag value="--sysroot=${GPH_SYS}"/>
 	<flag value="-I${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/arm-gph-linux-gnueabi/include/c++/4.2.4/"/>
@@ -25,7 +26,12 @@
 	<flag value="-DGPH"/>
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
-	<flag value="-mfloat-abi=softfp"/>
+	<flag value="-fno-common"/>
+	<flag value="-march=armv5te"/>
+	<flag value="-mtune=arm9tdmi"/>
+	<flag value="-mapcs"/>
+	<flag value="-msoft-float"/>
+	<flag value="-mfloat-abi=soft"/>
 	<cppflag value="-frtti"/>
 	<flag value="-fpic"/>
 	<flag value="-fPIC"/>
@@ -37,31 +43,27 @@
 <linker id="exe" exe="arm-gph-linux-gnueabi-g++">
 	<ext value=".gpe"/>
 	<flag value="--sysroot=${GPH_SYS}"/>
-	<flag value="-g" if="debug"/>
-	<flag value="-O2" unless="debug"/>
-	<flag value="-s" unless="debug"/>
-	<flag value="-DGPH"/>
+	<flag value="-mfloat-abi=soft"/>
 	<outflag value="-o"/>
-	<lib name="-lm"/>
 	<lib name="-ldl"/>
 	<lib name="-lc"/>
 	<lib name="-lpthread"/>
+	<lib name="-lm"/>
 </linker>
 	
 <linker id="dll" exe="arm-gph-linux-gnueabi-g++">
-	<flag value="-s" unless="debug"/>
-	<flag value="--no-undefined"/>
+	<flag value="-Wl,--no-undefined"/>
 	<flag value="--sysroot=${GPH_SYS}"/>
+	<flag value="-msoft-float"/>
 	<flag value="-fpic"/>
 	<flag value="-fPIC"/>
 	<flag value="-shared"/>
 	<ext value=".so"/>
 	<outflag value="-o"/>
-
-	<lib name="-lm"/>
 	<lib name="-ldl"/>
 	<lib name="-lc"/>
 	<lib name="-lpthread"/>
+	<lib name="-lm"/>
 </linker>
 
 
