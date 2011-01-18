@@ -127,7 +127,14 @@ public:
    inline bool operator>(const String &inRHS) const { return compare(inRHS)>0; }
    inline bool operator>=(const String &inRHS) const { return compare(inRHS)>=0; }
 
-   inline int cca(int inPos) const { return __s[inPos]; }
+   inline int cca(int inPos) const
+	{
+		#ifdef HXCPP_DEBUG
+      if (!__s) hx::CriticalError(HX_CSTRING("cca - Null String Reference"));
+		if (inPos<0 || inPos>=length) hx::CriticalError(HX_CSTRING("cca - Out Of Bounds"));
+      #endif
+		return __s[inPos];
+	}
 
 
    static  Dynamic fromCharCode_dyn();
