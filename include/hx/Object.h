@@ -197,8 +197,18 @@ public:
       return mPtr;
    }
 
-   bool operator==(const ObjectPtr &inRHS) const { return mPtr==inRHS.mPtr; }
-   bool operator!=(const ObjectPtr &inRHS) const { return mPtr!=inRHS.mPtr; }
+   bool operator==(const ObjectPtr &inRHS) const
+   {
+      if (mPtr==inRHS.mPtr) return true;
+      if (!mPtr || !inRHS.mPtr) return false;
+      return mPtr->__GetRealObject() == inRHS.mPtr->__GetRealObject();
+   }
+   bool operator!=(const ObjectPtr &inRHS) const
+   {
+      if (mPtr==inRHS.mPtr) return false;
+      if (!mPtr || !inRHS.mPtr) return true;
+      return mPtr->__GetRealObject() != inRHS.mPtr->__GetRealObject();
+   }
    bool operator==(const null &inRHS) const { return mPtr==0; }
    bool operator!=(const null &inRHS) const { return mPtr!=0; }
    //explicit operator bool() const { return mPtr!=0; }

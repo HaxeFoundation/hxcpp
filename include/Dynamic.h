@@ -93,9 +93,20 @@ public:
    DYNAMIC_COMPARE_OP_ALL( >  )
 
    template<typename T_>
-   bool operator==(const hx::ObjectPtr<T_> &inRHS) const { return mPtr == inRHS.mPtr; }
+   bool operator==(const hx::ObjectPtr<T_> &inRHS) const
+   {
+      if (mPtr==inRHS.mPtr) return true;
+      if (!mPtr || !inRHS.mPtr) return false;
+      return mPtr->__GetRealObject() == inRHS.mPtr->__GetRealObject();
+   }
+
    template<typename T_>
-   bool operator!=(const hx::ObjectPtr<T_> &inRHS) const { return mPtr != inRHS.GetPtr(); }
+   bool operator!=(const hx::ObjectPtr<T_> &inRHS) const
+   {
+      if (mPtr==inRHS.mPtr) return false;
+      if (!mPtr || !inRHS.mPtr) return true;
+      return mPtr->__GetRealObject() != inRHS.mPtr->__GetRealObject();
+   }
 
 
    // Operator + is different, since it must consider strings too...
