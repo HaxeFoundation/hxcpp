@@ -56,5 +56,13 @@
   <outflag value="-out:"/>
 </linker>
 
+<linker id="static" exe="lib.exe" if="windows">
+  <fromfile value="@"/>
+  <flag value="-nologo"/>
+  <ext value=".a"/>
+  <outflag value="-out:"/>
+</linker>
+
+
 
 </xml>
