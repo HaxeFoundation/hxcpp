@@ -1053,6 +1053,8 @@ class BuildTool
 				   } 
 				} catch (e:Dynamic) { };
             vc_setup_proc.close();
+            if (!vars_found)
+               throw("Could not setup MSVC 10");
 			}
 
 			var cl_version = "";
