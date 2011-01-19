@@ -30,6 +30,8 @@ static void *sgObject_root = 0;
 
 #ifdef HXCPP_DEBUG
 static hx::Object *gCollectTrace = 0;
+static bool gCollectTraceDoPrint = false;
+static int gCollectTraceCount = 0;
 #endif
 
 static int sgTimeToNextTableUpdate = 0;
@@ -707,7 +709,9 @@ void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS)
    #ifdef HXCPP_DEBUG
    if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
    {
-       __inCtx->Trace();
+		gCollectTraceCount++;
+		if (gCollectTraceDoPrint)
+          __inCtx->Trace();
    }
    #endif
    
@@ -1669,7 +1673,7 @@ int InternalAllocID(void *inPtr)
 
 
 
-void __hxcpp_gc_trace(Class inClass)
+int __hxcpp_gc_trace(Class inClass,bool inPrint)
 {
     #if !defined(HX_MARK_WITH_CONTEXT) || !defined(HXCPP_DEBUG)
        #ifdef ANDROID
@@ -1677,10 +1681,14 @@ void __hxcpp_gc_trace(Class inClass)
        #else
           printf("WARNING : GC trace not enabled in release build.\n");
        #endif
+		 return 0;
     #else
        gCollectTrace = inClass.GetPtr();
+       gCollectTraceCount = 0;
+       gCollectTraceDoPrint = inPrint;
        hx::InternalCollect();
        gCollectTrace = 0;
+		 return gCollectTraceCount;
     #endif
 }
 

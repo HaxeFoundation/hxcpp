@@ -27,7 +27,7 @@
 void  __hxcpp_reachable(hx::Object *inKeep);
 void  __hxcpp_enable(bool inEnable);
 void  __hxcpp_collect();
-void   __hxcpp_gc_trace(Class inClass);
+int   __hxcpp_gc_trace(Class inClass, bool inPrint);
 int   __hxcpp_gc_used_bytes();
 
 namespace hx
