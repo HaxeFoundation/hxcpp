@@ -151,7 +151,7 @@ class Compiler
       }
 
 
-      trace("Creating " + pch_name + ".");
+      neko.Lib.println("Creating " + pch_name + "...");
       neko.Lib.println( mExe + " " + args.join(" ") );
       var result = neko.Sys.command( mExe, args );
       if (result!=0)

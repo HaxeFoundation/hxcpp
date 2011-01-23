@@ -4,7 +4,7 @@
 
 
 
-<compiler id="iPhoneSim" exe="/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/gcc-4.2" if="iphonesim">
+<compiler id="iPhoneSim" exe="/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++-4.2" if="iphonesim">
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <flag value="-g" if="debug"/>
