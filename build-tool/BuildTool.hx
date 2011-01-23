@@ -1089,7 +1089,7 @@ class BuildTool
          defines.set("toolchain","mac");
          defines.set("macos","macos");
          defines.set("apple","apple");
-         defines.set("BINDIR",m64 ? "Mac64":"Mac64");
+         defines.set("BINDIR",m64 ? "Mac64":"Mac");
       }
 
       if (targets.length==0)
