@@ -12,6 +12,8 @@
   <flag value="-I${HXCPP}/include"/>
   <flag value="-DHX_MACOS"/>
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
@@ -27,6 +29,7 @@
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-fvisibility=hidden"/>
@@ -41,6 +44,7 @@
   <flag value="Cocoa"/>
   <flag value="-debug" if="debug"/>
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64"/>
   <ext value=""/>
   <outflag value="-o "/>
 </linker>
