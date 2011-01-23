@@ -2,11 +2,12 @@
 
 <!-- GPH (Caanoo) TOOLS -------------------------------------------------->
 	
-
 <error value="Please define GPH_ROOT" unless="GPH_ROOT"/>
 
 <set name="GPH_TOOL" value="${GPH_ROOT}/" if="windows_host"/>
 <set name="GPH_TOOL" value="${GPH_ROOT}/tools/" unless="windows_host"/>
+
+<include name="gcc-toolchain.xml"/>
 
 <path name="${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/bin/"/>
 <path name="${GPH_TOOL}/gcc-4.2.4-glibc-2.7-eabi/libexec/gcc/arm-gph-linux-gnueabi/4.2.4/"/>
