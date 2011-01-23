@@ -15,8 +15,8 @@
 
 <stripper id="strip" exe="strip" unless="nostrip">
   <exe name="strip"/>
-  <flag value="-u"/>
-  <flag value="-r"/>
+  <flag value="-u" if="macos"/>
+  <flag value="-r" if="macos"/>
 </stripper>
 
 

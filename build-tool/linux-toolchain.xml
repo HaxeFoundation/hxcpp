@@ -18,6 +18,7 @@
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-DHXCPP_DEBUG" if="debug"/>
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/linux${M64}${DBG}/"/>
@@ -30,6 +31,7 @@
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-W,l--unresolved-symbols=report-all"/>
   <flag value="-debug" if="debug"/>
   <ext value=".dso"/>
@@ -40,6 +42,7 @@
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64"/>
   <ext value=""/>
   <outflag value="-o "/>
 </linker>

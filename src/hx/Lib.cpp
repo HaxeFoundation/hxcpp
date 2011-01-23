@@ -187,21 +187,27 @@ String GetEnv(const char *inPath)
 
 String FindHaxelib(String inLib)
 {
+   bool debug = getenv("HXCPP_LOAD_DEBUG");
+
    // printf("FindHaxelib %S\n", inLib.__s);
    String haxepath = GetEnv("HAXEPATH");
+   if (debug) printf("HAXEPATH env:%s\n", haxepath.__s);
    if (haxepath.length==0)
    {
        String home = GetEnv("HOME") + HX_CSTRING("/.haxelib");
        haxepath = GetFileContents(home);
+       if (debug) printf("HAXEPATH home:%s\n", haxepath.__s);
    }
    else
    {
       haxepath += HX_CSTRING("/lib");
    }
+   if (debug) printf("HAXEPATH dir:%s\n", haxepath.__s);
 
    if (haxepath.length==0)
    {
        haxepath = GetFileContents(HX_CSTRING("/etc/.haxepath"));
+       if (debug) printf("HAXEPATH etc:%s\n", haxepath.__s);
    }
 
    if (haxepath.length==0)
@@ -211,6 +217,7 @@ String FindHaxelib(String inLib)
       #else
       haxepath = HX_CSTRING("/usr/lib/haxe/lib");
       #endif
+       if (debug) printf("HAXEPATH default:%s\n", haxepath.__s);
    }
 
    String dir = haxepath + HX_CSTRING("/") + inLib + HX_CSTRING("/");
@@ -218,6 +225,7 @@ String FindHaxelib(String inLib)
 
    String dev = dir + HX_CSTRING(".dev");
    String path = GetFileContents(dev);
+   if (debug) printf("Read dev location from file :%s, got %s\n", dev.__s, path.__s);
    if (path.length==0)
    {
       path = GetFileContents(dir + HX_CSTRING(".current"));

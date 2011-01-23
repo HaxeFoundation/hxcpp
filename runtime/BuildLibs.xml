@@ -123,6 +123,7 @@
   <ext value=".ndll"/>
   <files id="nekoapi"/>
   <lib name="${RUNTIME}/libs/nekoapi/neko.lib" if="windows"/>
+  <lib name="-L${NEKO_INSTALL_PATH}" unless="windows"/>
   <lib name="-lneko" unless="windows"/>
   <outdir name="../bin/${BINDIR}"/>
 </target>
