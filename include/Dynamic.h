@@ -51,6 +51,14 @@ public:
 
 	static void __boot();
 
+	inline bool IsNumeric() const
+	{
+		if (!mPtr) return false;
+		int t = mPtr->__GetType();
+		return t==vtInt || t==vtFloat;
+	}
+
+
    int Compare(const Dynamic &inRHS) const
    {
       if (mPtr==inRHS.mPtr) return 0;
@@ -208,11 +216,17 @@ inline bool operator != (bool inLHS,const Dynamic &inRHS) \
 
 #define COMPARE_DYNAMIC_OP( op ) \
    inline bool operator op (double inLHS,const Dynamic &inRHS) \
-      { return inRHS.GetPtr() && (inLHS op (double)inRHS); } \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
    inline bool operator op (int inLHS,const Dynamic &inRHS) \
-      { return inRHS.GetPtr() && (inLHS op (double)inRHS); } \
-   inline bool operator op (bool inLHS,const Dynamic &inRHS) \
-      { return inRHS.GetPtr() && ((double)inLHS op (double)inRHS); }
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); }
+
+inline bool operator == (bool inLHS,const Dynamic &inRHS) \
+ { return inRHS.mPtr  && inRHS.mPtr->__GetType()==vtBool && (inLHS == (bool)inRHS); }
+
+inline bool operator < (bool inLHS,const Dynamic &inRHS) { return false; }
+inline bool operator <= (bool inLHS,const Dynamic &inRHS) { return false; }
+inline bool operator >= (bool inLHS,const Dynamic &inRHS) { return false; }
+inline bool operator > (bool inLHS,const Dynamic &inRHS) { return false; }
 
 COMPARE_DYNAMIC_OP( == )
 COMPARE_DYNAMIC_OP( < )
