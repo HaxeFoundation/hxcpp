@@ -312,7 +312,11 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #else
 // Unix...
 #ifdef __APPLE__
+  #ifdef HXCPP_M64
+    HX_CSTRING("Mac64");
+  #else
     HX_CSTRING("Mac");
+  #endif
 #else
 #ifdef ANDROID
     HX_CSTRING("Android");
