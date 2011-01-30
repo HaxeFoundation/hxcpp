@@ -229,13 +229,9 @@ char * api_val_dup_string(value inVal)
 
 value api_alloc_string_len(const char *inStr,int inLen)
 {
-	char *result = alloc_private(inLen+1);
-	memcpy(result,inStr,inLen);
-	result[inLen] = 0;
-
 	if (gNeko2HaxeString)
-		return val_call1(*gNeko2HaxeString,alloc_string(result));
-   return alloc_string(result);
+		return val_call1(*gNeko2HaxeString,copy_string(inStr,inLen));
+   return copy_string(inStr,inLen);
 }
 
 
@@ -245,9 +241,7 @@ value api_alloc_wstring_len(const wchar_t *inStr,int inLen)
 	for(int i=0;i<inLen;i++)
 		result[i] = inStr[i];
 	result[inLen] = 0;
-	if (gNeko2HaxeString)
-		return val_call1(*gNeko2HaxeString,alloc_string(result));
-	return alloc_string(result);
+   return api_alloc_string_len(result,inLen);
 }
 
 // Array access - generic
