@@ -1,3 +1,15 @@
+2.0.7
+------------------------------------------------------------
+* Added initial support for Mac64, Linux64, MinGW and GPH and refactored build tool.
+* Return the count of traced objects
+* Fix interface operator ==
+* Initial work on msvc10 batch file
+* Add bounds check on String.cca
+* Build static libraries, if requrested
+* Added exe stripping
+* Added val_field_name, val_iter_fields
+* Fixed nekoapi string length
+* Fixed Sys.args
 
 2.06.1
 ------------------------------------------------------------
