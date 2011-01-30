@@ -2,12 +2,17 @@
 
 <!-- Android TOOLS -------------------------------------->
 
-<compiler id="android-gcc" exe="arm-eabi-g++" if="android">
-  <exe name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/bin/arm-eabi-g++"/>
+<include name="gcc-toolchain.xml"/>
+
+<path name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/bin/"/>
+<path name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/libexec/gcc/arm-eabi/4.4.0/"/>
+
+<compiler id="android-gcc" exe="g++" if="android">
 
  <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/platforms/android-5/arch-arm/usr/include"/>
  <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/include/c++/4.4.0/"/>
  <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/arm-eabi/include/c++/4.4.0/arm-eabi"/>
+ <flag value="-I${ANDROID_NDK_ROOT_CYG}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/lib/gcc/arm-eabi/4.4.0/include"/>
  <flag value="-I${HXCPP_CYG}/include"/>
  <flag value="-Iinclude"/>
  <flag value="-fpic"/>
@@ -44,7 +49,6 @@
 <!-- -Wl,-soname,libgl2jni.so
 -->
 <linker id="dll" exe="g++" if="android">
-  <exe name="${ANDROID_NDK_ROOT}/build/prebuilt/${ANDROID_HOST}/arm-eabi-4.4.0/bin/arm-eabi-gcc"/>
 
   <ext value=".so"/>
   <outflag value="-o"/>

@@ -6,6 +6,8 @@
 
 <include name="gcc-toolchain.xml"/>
 
+<unset name="USE_PRECOMPILED_HEADERS"/>
+
 <compiler id="mingw" exe="gcc">
   <exe name="${MINGW_ROOT}/bin/g++.exe"/>
   <flag value="-c"/>

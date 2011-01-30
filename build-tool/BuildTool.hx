@@ -577,6 +577,9 @@ class BuildTool
                    var name = el.att.name;
                    var value = substitute(el.att.value);
                    mDefines.set(name,value);
+                case "unset" : 
+                   var name = el.att.name;
+                   mDefines.remove(name);
                 case "setenv" : 
                    var name = el.att.name;
                    var value = substitute(el.att.value);
@@ -1075,8 +1078,7 @@ class BuildTool
          }
          catch(e:Dynamic){}
 
-			if (cl_version!="")
-			   neko.Lib.println("Using cl version: " + cl_version);
+			//if (cl_version!="") neko.Lib.println("Using cl version: " + cl_version);
       }
       else if ( (new EReg("linux","i")).match(os) )
       {
