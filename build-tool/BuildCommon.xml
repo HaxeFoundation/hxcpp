@@ -172,9 +172,9 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <compilerflag value="-DNO_THREAD_REDIRECT" if="linux"/>
   <compilerflag value="-DGC_THREADS" if="linux"/>
 
-  <compilerflag value="-I${HXCPP_CYG}/runtime/${GC_DIR}/include"/>
-  <compilerflag value="-I${HXCPP_CYG}/runtime/${GC_DIR}/include/private"/>
-  <compilerflag value="-I${HXCPP_CYG}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
+  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include"/>
+  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private"/>
+  <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/libatomic_ops-${AO_VERSION}/src"/>
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 

@@ -1,7 +1,6 @@
 
 class DirManager
 {
-   public static var sIsCygwin = false;
    static var mMade = new Hash<Bool>();
 
    static public function make(inDir:String)
@@ -44,13 +43,6 @@ class DirManager
     }
          neko.FileSystem.deleteDirectory(inDir);
       }
-   }
-
-   static public function DosToCygwin(path:String)
-   {
-      if (sIsCygwin && path.substr(1,1)==":")
-         return "/cygdrive/" + path.substr(0,1) + path.substr(2);
-      return path;
    }
 
 }
@@ -190,7 +182,7 @@ class Compiler
             args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
 
       
-      args.push( (new neko.io.Path( DirManager.DosToCygwin(inFile.mDir) + inFile.mName)).toString() );
+      args.push( (new neko.io.Path( inFile.mDir + inFile.mName)).toString() );
 
       var out = mOutFlag;
       if (out.substr(-1)==" ")
@@ -1116,11 +1108,8 @@ class BuildTool
          {
             if (!defines.exists("ANDROID_NDK_ROOT"))
                throw("Please define ANDROID_NDK_ROOT");
-            DirManager.sIsCygwin = true;
-            defines.set("ANDROID_NDK_ROOT_CYG", DirManager.DosToCygwin(defines.get("ANDROID_NDK_ROOT") ) );
          }
 
-         defines.set( "HXCPP_CYG", DirManager.DosToCygwin(defines.get("HXCPP") ) );
 
          new BuildTool(makefile,defines,targets,include_path);
       }

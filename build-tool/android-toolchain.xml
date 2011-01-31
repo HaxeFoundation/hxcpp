@@ -6,18 +6,20 @@
 
 <path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/arm-linux-androideabi/bin"/>
 <path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/libexec/gcc/arm-linux-androideabi/4.4.3"/>
+
+<!-- no 7a for now ... -->
 <set name="cpp-eabi" value="armeabi"/>
 
-<compiler id="android-gcc" exe="g++" if="android">
+<compiler id="android-gcc" exe="g++.exe" if="android">
 
- <flag value="-I${ANDROID_NDK_ROOT_CYG}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/4.4.3/include"/>
- <flag value="-I${ANDROID_NDK_ROOT_CYG}/platforms/android-5/arch-arm/usr/include/linux"/>
- <flag value="-I${ANDROID_NDK_ROOT_CYG}/platforms/android-5/arch-arm/usr/include/"/>
- <!--<flag value="-I${ANDROID_NDK_ROOT_CYG}/platforms/android-5/arch-arm/usr/include"/>
- <flag value="-I${ANDROID_NDK_ROOT_CYG}/toolchains/arm-eabi-4.4.0/prebuilt/${ANDROID_HOST}/include"/>
- <flag value="-I${ANDROID_NDK_ROOT_CYG}/sources/cxx-stl/gnu-libstdc++/include"/>
- <flag value="-I${ANDROID_NDK_ROOT_CYG}/sources/cxx-stl/gnu-libstdc++/libs/${cpp-eabi}/include"/> -->
- <flag value="-I${HXCPP_CYG}/include"/>
+ <!-- These must appear in this order! -->
+ <flag value="-I${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/4.4.3/include/"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/include/"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${cpp-eabi}/include"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/include/"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/include/tr1"/>
+
+ <flag value="-I${HXCPP}/include"/>
  <flag value="-Iinclude"/>
  <flag value="-fpic"/>
  <flag value="-fvisibility=hidden"/>
@@ -57,22 +59,23 @@
   <ext value=".so"/>
   <outflag value="-o"/>
   <prefix value="lib"/>
- <flag value="-v"/>
 
   <flag value="-frtti"/>
+  <flag value="-nostdlib"/>
   <flag value="-Wl,-shared,-Bsymbolic"/>
   <flag value="-Wl,--whole-archive"/>
   <flag value="-Wl,--no-whole-archive"/>
   <flag value="-Wl,--no-undefined"/>
   <flag value="-Wl,-z,noexecstack"/>
-  <flag value="--sysroot=${ANDROID_NDK_ROOT_CYG}/toolchains/arm-eabi-4.4.0/prebuilt/darwin-x86/lib/gcc/arm-eabi/4.4.0"/>
-  <flag value="-L${ANDROID_NDK_ROOT_CYG}/platforms/android-5/arch-arm/usr/lib"/>
-  <flag value="-L${ANDROID_NDK_ROOT_CYG}/toolchains/arm-eabi-4.4.0/prebuilt/darwin-x86/lib/gcc/arm-eabi/4.4.0"/>
+  <flag value="-L${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi"/>
+  <flag value="-L${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/4.4.3/"/>
+
+  <flag value="-L${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib"/>
   <lib name="-llog"/>
   <lib name="-ldl"/>
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/libstdc++.a"/>
   <lib name="-lm"/>
-  <lib name="-lstdc++"/>
-  <lib name="-lgcc"/>
+  <lib name="-lc"/>
 
   <!-- <flag value="-lGLESv2"/> -->
 </linker>
