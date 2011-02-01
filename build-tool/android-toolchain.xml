@@ -10,7 +10,7 @@
 <!-- no 7a for now ... -->
 <set name="cpp-eabi" value="armeabi"/>
 
-<compiler id="android-gcc" exe="g++.exe" if="android">
+<compiler id="android-gcc" exe="g++" if="android">
 
  <!-- These must appear in this order! -->
  <flag value="-I${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/4.4.3/include/"/>
