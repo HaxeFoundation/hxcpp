@@ -1,11 +1,42 @@
 class CreateAndroid
 {
+   var mVars:Dynamic;
+
    public function new(inHXCPP:String,inPackage:String)
    {
-      cp_recurse(inHXCPP + "/projects/android/template",".");
+      var base = inPackage;
+      mVars = {};
+      mVars.pkg = inPackage;
+      mVars.PROJ = "MyProj";
+      cp_recurse(inHXCPP + "/projects/android/template",base);
+
+      var parts = inPackage.split(".");
+      var dir = base + "/src/" + parts.join("/");
+      mkdir(dir);
+      cp_file(inHXCPP + "/projects/android/MainActivity.java", dir + "/MainActivity.java");
    }
 
-   static public function cp_recurse(inSrc:String,inDestDir:String)
+   public function cp_file(inSrcFile:String,inDestFile:String)
+   {
+      var ext = neko.io.Path.extension(inSrcFile);
+      if (ext=="xml" || ext=="java")
+      {
+         neko.Lib.println("process " + inSrcFile + " " + inDestFile );
+         var contents = neko.io.File.getContent(inSrcFile);
+         var tmpl = new haxe.Template(contents);
+         var result = tmpl.execute(mVars);
+         var f = neko.io.File.write(inDestFile,false);
+         f.writeString(result);
+         f.close();
+      }
+      else
+      {
+         neko.Lib.println("cp " + inSrcFile + " " + inDestFile );
+         neko.io.File.copy( inSrcFile, inDestFile );
+      }
+   }
+
+   public function cp_recurse(inSrc:String,inDestDir:String)
    {
       if (!neko.FileSystem.exists(inDestDir))
       {
@@ -23,10 +54,7 @@ class CreateAndroid
             if (neko.FileSystem.isDirectory(src))
                cp_recurse(src, dest );
             else
-            {
-               neko.Lib.println("cp " + src + " " + dest );
-               neko.io.File.copy( src, dest );
-            }
+               cp_file(src,dest);
          }
       }
    }
