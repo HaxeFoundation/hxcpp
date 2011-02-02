@@ -1,2 +1,2 @@
--main CreateAndroid
--neko CreateAndroid.n
+-main ProjectTool
+-neko ProjectTool.n
