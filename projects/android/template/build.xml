@@ -76,16 +76,6 @@
             </fileset>
         </copy>
         <copy includeemptydirs="false" todir="bin">
-            <fileset dir="${IP.link}">
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
-        <copy includeemptydirs="false" todir="bin">
-            <fileset dir="${lib.link}">
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
-        <copy includeemptydirs="false" todir="bin">
             <fileset dir="src">
                 <exclude name="**/*.java"/>
             </fileset>
@@ -100,11 +90,6 @@
 
         <javac destdir="bin/classes" source="${java_source}" target="${java_target}">
             <src path="gen"/>
-            <classpath refid="::PROJ::.classpath"/>
-         </javac>
-
-         <javac destdir="bin/classes" source="${java_source}" target="${java_target}">
-            <src path="${lib.link}"/>
             <classpath refid="::PROJ::.classpath"/>
          </javac>
 
