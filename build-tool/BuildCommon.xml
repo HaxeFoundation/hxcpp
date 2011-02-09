@@ -12,9 +12,20 @@
   </section>
 
   <section id="exes">
+
+      <compiler id="MSVC" if="windows">
+        <flag value = "-Ie:/VS8//PlatformSDK/Include"/>
+     </compiler>
+
      <linker id="dll" if="windows">
         <flag value = "-libpath:e:\VS8\DirectXSDK\Lib\x86"/>
+        <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/>
      </linker>
+
+     <linker id="exe" if="windows">
+        <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/>
+     </linker>
+
   </section>
 
 </xml>
