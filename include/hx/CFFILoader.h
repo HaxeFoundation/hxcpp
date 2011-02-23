@@ -101,7 +101,7 @@ void *LoadFunc(const char *inName)
 
    if (sResolveProc==0)
    {
-      void *handle = dlopen("nekoapi.ndll",RTLD_NOW);
+      void *handle = dlopen("nekoapi.ndll",RTLD_NOW|RTLD_GLOBAL);
       if (handle)
          sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
    }
@@ -122,7 +122,7 @@ void *LoadFunc(const char *inName)
             strcat(slash, "nekoapi.ndll" );
             if (debug)
                printf(" -> %s\n", buf );
-            void *handle = dlopen(buf, RTLD_NOW);
+            void *handle = dlopen(buf, RTLD_NOW|RTLD_GLOBAL);
             if (handle)
             {
                sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
@@ -149,7 +149,7 @@ void *LoadFunc(const char *inName)
             strcat(slash, "nekoapi.ndll" );
             if (debug)
                printf(" -> %s\n", buf );
-            void *handle = dlopen(buf, RTLD_NOW);
+            void *handle = dlopen(buf, RTLD_NOW|RTLD_GLOBAL);
             if (handle)
                sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
          }

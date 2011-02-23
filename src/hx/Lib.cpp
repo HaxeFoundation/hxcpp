@@ -30,7 +30,7 @@ typedef void *Module;
 typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
-   return dlopen(inLib.__CStr(),RTLD_NOW);
+   return dlopen(inLib.__CStr(), RTLD_NOW|RTLD_GLOBAL);
 }
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return dlsym(inModule,inSymbol); }
 #endif
@@ -297,21 +297,16 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
    bool debug = getenv("HXCPP_LOAD_DEBUG");
    String ext =
-#ifdef _WIN32
+#if defined(_WIN32)
     HX_CSTRING(".dll");
-#else
-// Unix...
-#ifdef __APPLE__
+#elif defined(__APPLE__)
     HX_CSTRING(".dylib");
-#else
-#ifdef ANDROID
+#elif defined(ANDROID) || defined(GPH)
     HX_CSTRING(".so");
 #else
     HX_CSTRING(".dso");
 #endif
-#endif
 
-#endif
 
 
    String bin =
