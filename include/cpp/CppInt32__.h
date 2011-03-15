@@ -34,6 +34,10 @@ public:
    static inline CppInt32__ neg(CppInt32__ a) { return CppInt32__( -a.mValue ); }
    static inline CppInt32__ complement(CppInt32__ a) { return CppInt32__( ~a.mValue ); }
    static inline int compare(CppInt32__ a,CppInt32__ b) { return ( a.mValue - b.mValue ); }
+   static inline Bool isNeg(CppInt32__ a) { return a.mValue < 0; }
+   static inline Bool isZero(CppInt32__ a) { return a.mValue == 0; }
+   static inline int ucompare(CppInt32__ a,CppInt32__ b) { unsigned int am = a.mValue, bm = b.mValue; return (am == bm) ? 0 : ((am > bm) ? 1 : -1); }
+
 
    inline bool operator==(const CppInt32__ &inRHS) const { return mValue == inRHS.mValue; }
 
