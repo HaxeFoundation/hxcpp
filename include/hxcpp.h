@@ -6,11 +6,6 @@
 // Windows hack
 #define NOMINMAX
 
-#include <string.h>
-
-#define HX_UTF8_STRINGS
-
-#include <wchar.h>
 
 #ifdef _MSC_VER
 #include <typeinfo.h>
@@ -19,6 +14,13 @@
 using std::type_info;
 #endif
 
+
+
+#include <string.h>
+
+#define HX_UTF8_STRINGS
+
+#include <wchar.h>
 
 #ifdef HX_LINUX
 #include <unistd.h>

@@ -14,8 +14,8 @@
 	<flag value="-fdollars-in-identifiers"/>
 	<cppflag value="-frtti"/>
 	<outflag value="-o"/>
-	<objdir value="./obj/Debug" if="debug"/>
-	<objdir value="./obj/Release" unless="debug"/>
+	<objdir value="./obj/webos-dbg" if="debug"/>
+	<objdir value="./obj/webos" unless="debug"/>
 </compiler>
 
 <!-- There are two sets of mcpu and mfpu flags. The default works for both the Pre and Pixi. Setting the "palmpre" directive will optimize for the Pre only -->

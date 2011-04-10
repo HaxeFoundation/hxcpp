@@ -13,7 +13,7 @@ static ResolveProc sResolveProc = 0;
 extern "C" {
 EXPORT void hx_set_loader(ResolveProc inProc)
 {
-   __android_log_print(ANDROID_LOG_INFO, "haxe plugin", "Got Load Proc %s", inProc );
+   __android_log_print(ANDROID_LOG_INFO, "haxe plugin", "Got Load Proc %p", inProc );
    sResolveProc = inProc;
 }
 }

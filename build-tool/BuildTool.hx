@@ -572,6 +572,8 @@ class BuildTool
                 case "unset" : 
                    var name = el.att.name;
                    mDefines.remove(name);
+                case "echo" : 
+                   neko.Lib.println(substitute(el.att.value));
                 case "setenv" : 
                    var name = el.att.name;
                    var value = substitute(el.att.value);
