@@ -2,24 +2,10 @@
 #define HX_GC_H
 
 
-// Need context for non-recursive marking
-#define HX_MARK_WITH_CONTEXT
-
-#ifdef HX_MARK_WITH_CONTEXT
-
 #define HX_MARK_ARG __inCtx
 #define HX_MARK_ADD_ARG ,__inCtx
 #define HX_MARK_PARAMS hx::MarkContext *__inCtx
 #define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
-
-#else
-
-#define HX_MARK_ARG
-#define HX_MARK_ADD_ARG
-#define HX_MARK_PARAMS
-#define HX_MARK_ADD_PARAMS
-
-#endif
 
 
 

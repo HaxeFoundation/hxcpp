@@ -593,6 +593,7 @@ int val_id(const char * arg1)
 
 void alloc_field(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
 {
+   //hx::InternalCollect();
    if (!arg1) hx::Throw(HX_INVALID_OBJECT);
    arg1->__SetField(__hxcpp_field_from_id(arg2),arg3);
 }

@@ -7,6 +7,8 @@ char **gMovedPtrs = 0;
 int gByteMarkID = 0;
 int gMarkID = 0;
 
+enum { gFillWithJunk = 0 } ;
+
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -330,7 +332,12 @@ enum AllocType { allocNone, allocString, allocObject, allocMarked };
 
 union BlockData
 {
-   void Init() { mUsedRows = 0; }
+   void Init()
+   {
+      if (gFillWithJunk)
+         memset(this,0x55,sizeof(*this));
+      mUsedRows = 0;
+   }
    inline int GetFreeData() const { return (IMMIX_USEFUL_LINES - mUsedRows)<<IMMIX_LINE_BITS; }
    void ClearEmpty()
    {
@@ -403,7 +410,7 @@ union BlockData
       int free = 0;
       int max_free_in_a_row = 0;
       int free_in_a_row = 0;
-      bool update_table = sgTimeToNextTableUpdate==0;
+      bool update_table = sgTimeToNextTableUpdate==0 || gFillWithJunk;
 
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
@@ -418,12 +425,22 @@ union BlockData
                   unsigned char *row = mRow[r];
                   unsigned char *last_link = &row_flag;
                   int pos = (row_flag & IMMIX_ROW_LINK_MASK);
+
                   while(1)
                   {
+                     // Still current ....
                      if (row[pos+3] == gByteMarkID)
                      {
                         *last_link = pos | IMMIX_ROW_HAS_OBJ_LINK;
                         last_link = row+pos+2;
+                     }
+                     else if (gFillWithJunk)
+                     {
+                         unsigned int header = *(unsigned int *)(row + pos);
+                         int size = header & IMMIX_ALLOC_SIZE_MASK;
+                         //printf("Fill %d (%p+%d=%p) mark=%d/%d\n",
+                            //size, row,pos, row+pos+4,row[pos+3], gByteMarkID);
+                         memset(row+pos+4,0x55,size);
                      }
                      if (row[pos+2] & IMMIX_ROW_HAS_OBJ_LINK)
                         pos = row[pos+2] & IMMIX_ROW_LINK_MASK;
@@ -440,6 +457,9 @@ union BlockData
          {
             row_flag = 0;
             free_in_a_row++;
+            if (gFillWithJunk)
+              memset(mRow[r],0x55,IMMIX_LINE_LEN);
+
             if (free_in_a_row>max_free_in_a_row)
                max_free_in_a_row = free_in_a_row;
             free++;
@@ -467,6 +487,8 @@ union BlockData
       if ( ((time+1) & 0xff) != gByteMarkID )
       {
          // Object is either out-of-date, or already marked....
+         if (inReport)
+            printf(time==gByteMarkID ? " M " : " O ");
          return time==gByteMarkID ? allocMarked : allocNone;
       }
 
@@ -623,7 +645,6 @@ public:
 
     inline void PushMark(hx::Object *inMarker)
     {
-       #ifdef HX_MARK_WITH_CONTEXT
        if (mDepth > 32)
        {
           mDeque.push(inMarker);
@@ -634,15 +655,12 @@ public:
           inMarker->__Mark(this);
           --mDepth;
        }
-       #endif
     }
 
     void Process()
     {
-       #ifdef HX_MARK_WITH_CONTEXT
        while(mDeque.some_left())
           mDeque.pop()->__Mark(this);
-       #endif
     }
 
     int mDepth;
@@ -715,24 +733,18 @@ void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS)
    }
    #endif
    
-   #ifndef HX_MARK_WITH_CONTEXT
-      inPtr->__Mark();
-   #else
-
-      #ifdef HXCPP_DEBUG
-         // Recursive mark so stack stays intact..
-         if (gCollectTrace)
-            inPtr->__Mark(HX_MARK_ARG);
-         else
-      #endif
+   #ifdef HXCPP_DEBUG
+      // Recursive mark so stack stays intact..
+      if (gCollectTrace)
+         inPtr->__Mark(HX_MARK_ARG);
+      else
+   #endif
 
       // There is a slight performance gain by calling recursively, but you
       //   run the risk of stack overflow.  Also, a parallel mark algorithm could be
       //   done when the marking is stack based.
       //inPtr->__Mark(__inCtx);
       __inCtx->PushMark(inPtr);
-
-   #endif
 }
 
 }
@@ -947,11 +959,7 @@ public:
       double t0 =  __time_stamp();
       #endif
 
-      #ifdef HX_MARK_WITH_CONTEXT
       hx::MarkClassStatics(&mMarker);
-      #else
-      hx::MarkClassStatics();
-      #endif
 
       mMarker.Process();
 
@@ -959,21 +967,13 @@ public:
       {
          hx::Object *&obj = **i;
          if (obj)
-            #ifdef HX_MARK_WITH_CONTEXT
             hx::MarkObjectAlloc(obj , &mMarker );
-            #else
-            hx::MarkObjectAlloc(obj );
-            #endif
       }
 
       mMarker.Process();
 
       for(int i=0;i<mLocalAllocs.size();i++)
-         #ifdef HX_MARK_WITH_CONTEXT
          MarkLocalAlloc(mLocalAllocs[i] , &mMarker);
-         #else
-         MarkLocalAlloc(mLocalAllocs[i]);
-         #endif
 
       mMarker.Process();
 
@@ -1067,7 +1067,7 @@ public:
       while (sgAllocInit && sgInternalEnable && mDistributedSinceLastCollect>(1<<20) &&
           mDistributedSinceLastCollect>mTotalAfterLastCollect)
       {
-         //printf("Collect %d/%d\n", mDistributedSinceLastCollect, mTotalAfterLastCollect);
+         // printf("Collect %d/%d\n", (int)mDistributedSinceLastCollect, (int)mTotalAfterLastCollect);
          Collect();
       }
    }
@@ -1416,6 +1416,7 @@ public:
 
    void MarkConservative(int *inBottom, int *inTop HX_MARK_ADD_PARAMS)
    {
+      //printf("MarkConservative....\n");
       void *prev = 0;
       for(int *ptr = inBottom ; ptr<inTop; ptr++)
       {
@@ -1426,6 +1427,7 @@ public:
          {
             if (mem==memLarge)
             {
+               //printf(" mem large\n");
                unsigned char &mark = ((unsigned char *)(vptr))[-1];
                if (mark!=gByteMarkID)
                   mark = gByteMarkID;
@@ -1434,6 +1436,7 @@ public:
             {
                BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
                int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
+               //printf("Checking %p %p....", ptr,vptr);
                AllocType t = block->GetAllocType(pos-sizeof(int),true);
                if ( t==allocObject )
                {
@@ -1447,7 +1450,13 @@ public:
                }
             }
          }
+         /*
+         else
+            printf(" rejected %p %p %d %p %d=%d\n",ptr, vptr, ((size_t)vptr & 0x03), prev,
+                  sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
+         */
       }
+      //printf("MarkConservative done\n");
    }
 
    int mCurrentPos;
@@ -1675,7 +1684,7 @@ int InternalAllocID(void *inPtr)
 
 int __hxcpp_gc_trace(Class inClass,bool inPrint)
 {
-    #if !defined(HX_MARK_WITH_CONTEXT) || !defined(HXCPP_DEBUG)
+    #if  !defined(HXCPP_DEBUG)
        #ifdef ANDROID
           __android_log_print(ANDROID_LOG_ERROR, "hxcpp", "GC trace not enabled in release build.");
        #else
@@ -1691,7 +1700,6 @@ int __hxcpp_gc_trace(Class inClass,bool inPrint)
 		 return gCollectTraceCount;
     #endif
 }
-
 
 
 int   __hxcpp_gc_used_bytes()
