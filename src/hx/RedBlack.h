@@ -53,6 +53,7 @@ struct RBTree {
      if ( rt == NULL )
        return NULL;
  
+     rt->tmp_head = NULL;
      rt->root = NULL;
      rt->size = 0;
  
@@ -82,18 +83,19 @@ struct RBTree {
           new node directly to the root
         */
          this->root = new_node ( inKey, inValue );
-  
+
         if ( root == NULL )
           return 0;
       }
       else {
-        Node head = {0}; /* False this root */
+        tmp_head = (Node *)DO_ALLOC ( sizeof Node );
         Node *g, *t;     /* Grandparent & parent */
         Node *p, *q;     /* Iterator & parent */
         int dir = 0, last = 0;
+
   
         /* Set up our helpers */
-        t = &head;
+        t = tmp_head;
         g = p = NULL;
         q = t->link[1] = this->root;
   
@@ -104,7 +106,10 @@ struct RBTree {
             p->link[dir] = q = new_node ( inKey, inValue );
   
             if ( q == NULL )
-              return 0;
+            {
+               tmp_head = 0;
+               return 0;
+            }
           }
           else if ( is_red ( q->link[0] ) && is_red ( q->link[1] ) ) {
             /* Simple red violation: color flip */
@@ -145,13 +150,14 @@ struct RBTree {
         }
   
         /* Update the root (it may be different) */
-        root = head.link[1];
+        root = tmp_head->link[1];
       }
   
       /* Make the root black for simplified logic */
       root->red = 0;
       ++size;
   
+      tmp_head = 0;
       return 1;
     }
  
@@ -160,13 +166,13 @@ struct RBTree {
    bool Erase ( const KEY &inKey )
    {
       if ( root != NULL ) {
-        Node head = {0}; /* False tree root */
+        tmp_head = (Node *)DO_ALLOC ( sizeof Node );
         Node *q, *p, *g; /* Helpers */
         Node *f = NULL;  /* Found item */
         int dir = 1;
   
         /* Set up our helpers */
-        q = &head;
+        q = tmp_head;
         g = p = NULL;
         q->link[1] = root;
   
@@ -232,16 +238,18 @@ struct RBTree {
         }
   
         /* Update the root (it may be different) */
-        root = head.link[1];
+        root = tmp_head->link[1];
   
         /* Make the root black for simplified logic */
         if ( root != NULL )
           root->red = 0;
   
         --size;
+        tmp_head = 0;
         return true;
       }
   
+      tmp_head = 0;
       return false;
     }
  
@@ -252,6 +260,8 @@ struct RBTree {
 	{
 		if (root)
 			root->Visit(inVisitor);
+		if (tmp_head)
+			tmp_head->Visit(inVisitor);
 	}
  
  
@@ -260,6 +270,8 @@ protected:
  
    struct Node
 	{
+      Node() : red(0) { link[0]=link[1]=0; }
+
 		Node *rot_single ( int dir )
 		{
 		   Node *save = this->link[!dir];
@@ -317,6 +329,7 @@ protected:
    int is_red ( Node *node) { return node != NULL && node->red == 1; }
  
    Node     *root; /* Top of the tree */
+   Node     *tmp_head; /* Top of the tree */
    size_t   size; /* Number of items (user-defined) */
 };
  
