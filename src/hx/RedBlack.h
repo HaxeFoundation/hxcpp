@@ -48,7 +48,7 @@ struct RBTree {
  
    inline static RBTree *Create( )
    {
-     RBTree *rt = (RBTree *)DO_ALLOC( sizeof *rt );
+     RBTree *rt = (RBTree *)DO_ALLOC( sizeof(*rt) );
  
      if ( rt == NULL )
        return NULL;
@@ -88,7 +88,7 @@ struct RBTree {
           return 0;
       }
       else {
-        tmp_head = (Node *)DO_ALLOC ( sizeof Node );
+        tmp_head = (Node *)DO_ALLOC ( sizeof(Node) );
         Node *g, *t;     /* Grandparent & parent */
         Node *p, *q;     /* Iterator & parent */
         int dir = 0, last = 0;
@@ -166,7 +166,7 @@ struct RBTree {
    bool Erase ( const KEY &inKey )
    {
       if ( root != NULL ) {
-        tmp_head = (Node *)DO_ALLOC ( sizeof Node );
+        tmp_head = (Node *)DO_ALLOC ( sizeof(Node) );
         Node *q, *p, *g; /* Helpers */
         Node *f = NULL;  /* Found item */
         int dir = 1;
@@ -312,7 +312,7 @@ protected:
  
    Node *new_node(const KEY &inKey, const VALUE &inValue)
    {
-     Node *rn = (Node *)DO_ALLOC ( sizeof *rn );
+     Node *rn = (Node *)DO_ALLOC ( sizeof(*rn) );
  
      if ( rn == NULL )
        return NULL;
