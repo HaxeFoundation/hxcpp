@@ -194,7 +194,7 @@ String ArrayBase::join(String inSeparator)
       String s = ItemString(i);
       memcpy(buf+pos,s.__s,s.length*sizeof(HX_CHAR));
       pos += s.length;
-      if (separated)
+      if (separated && (i+1<length) )
       {
          memcpy(buf+pos,inSeparator.__s,inSeparator.length*sizeof(HX_CHAR));
          pos += inSeparator.length;
