@@ -276,101 +276,103 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 	namespace { \
    struct name : public hx::Object { int __GetType() const { return vtFunction; } \
    hx::ObjectPtr<t0> __this; \
-   name(hx::ObjectPtr<t0> __0 = null()) : __this(__0) {}
+   name(hx::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
+   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(__this); }
 
 
 #define HX_END_DEFAULT_FUNC \
 }
 
 
-#define HX_BEGIN_LOCAL_FUNC0(name) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC0(SUPER,name) \
+   struct name : public SUPER { \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); } \
    name() {}
 
-#define HX_BEGIN_LOCAL_FUNC1(name,t0,v0) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC1(SUPER,name,t0,v0) \
+   struct name : public SUPER { \
    t0 v0; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); } \
    name(t0 __0) : v0(__0) {}
 
-#define HX_BEGIN_LOCAL_FUNC2(name,t0,v0,t1,v1) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); } \
+#define HX_BEGIN_LOCAL_FUNC2(SUPER,name,t0,v0,t1,v1) \
+   struct name : public SUPER { \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); } \
    t0 v0; t1 v1;\
    name(t0 __0,t1 __1) : v0(__0), v1(__1) {}
 
-#define HX_BEGIN_LOCAL_FUNC3(name,t0,v0,t1,v1,t2,v2) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC3(SUPER,name,t0,v0,t1,v1,t2,v2) \
+   struct name : public SUPER {  \
    t0 v0; t1 v1; t2 v2;\
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); } \
    name(t0 __0,t1 __1,t2 __2) : v0(__0), v1(__1), v2(__2) {}
 
-#define HX_BEGIN_LOCAL_FUNC4(name,t0,v0,t1,v1,t2,v2,t3,v3) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC4(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3) \
+   struct name : public SUPER {  \
    t0 v0; t1 v1; t2 v2; t3 v3; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); } \
    name(t0 __0,t1 __1,t2 __2, t3 __3) : v0(__0), v1(__1), v2(__2), v3(__3) {}
 
-#define HX_BEGIN_LOCAL_FUNC5(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC5(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4) \
+   struct name : public SUPER { \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); } \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4) {}
 
-#define HX_BEGIN_LOCAL_FUNC6(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); } \
+#define HX_BEGIN_LOCAL_FUNC6(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5) \
+   struct name : public SUPER { \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); } \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; t5 v5; \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4,t5 __5) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4), v5(__5) {}
 
-#define HX_BEGIN_LOCAL_FUNC7(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC7(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6) \
+   struct name : public SUPER { \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; t5 v5; t6 v6; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6);  } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6);  } \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4,t5 __5,t6 __6) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4), v5(__5), v6(__6) {}
 
 
-#define HX_BEGIN_LOCAL_FUNC8(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC8(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7) \
+   struct name : public SUPER { \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; t5 v5; t6 v6; t7 v7; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); } \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4,t5 __5,t6 __6,t7 __7) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4), v5(__5), v6(__6), v7(__7) {}
 
-#define HX_BEGIN_LOCAL_FUNC9(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC9(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8) \
+   struct name : public SUPER { \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; t5 v5; t6 v6; t7 v7; t8 v8; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); } \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4,t5 __5,t6 __6,t7 __7,t8 __8) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4), v5(__5), v6(__6), v7(__7), v8(__8) {}
 
-#define HX_BEGIN_LOCAL_FUNC10(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC10(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9) \
+   struct name : public SUPER { \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; t5 v5; t6 v6; t7 v7; t8 v8; t9 v9; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); } \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4), v5(__5), v6(__6), v7(__7), v8(__8), v9(__9) {}
 
-#define HX_BEGIN_LOCAL_FUNC11(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC11(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10) \
+   struct name : public SUPER { \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; t5 v5; t6 v6; t7 v7; t8 v8; t9 v9; t10 v10;  \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); } \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9, t10 __10) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4), v5(__5), v6(__6), v7(__7), v8(__8), v9(__9), v10(__10) {}
 
-#define HX_BEGIN_LOCAL_FUNC12(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC12(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11) \
+   struct name : public SUPER { \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; t5 v5; t6 v6; t7 v7; t8 v8; t9 v9; t10 v10; t11 v11; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); } \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9, t10 __10, t11 __11) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4), v5(__5), v6(__6), v7(__7), v8(__8), v9(__9), v10(__10), v11(__11) {}
 
-#define HX_BEGIN_LOCAL_FUNC13(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC13(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12) \
+   struct name : public SUPER { \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; t5 v5; t6 v6; t7 v7; t8 v8; t9 v9; t10 v10; t11 v11; t12 v12; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12);  } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12);  } \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9, t10 __10, t11 __11, t12 __12) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4), v5(__5), v6(__6), v7(__7), v8(__8), v9(__9), v10(__10), v11(__11), v12(__12) {}
 
 
-#define HX_BEGIN_LOCAL_FUNC14(name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13) \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+#define HX_BEGIN_LOCAL_FUNC14(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13) \
+   struct name : public SUPER { int __GetType() const { return vtFunction; } \
    t0 v0; t1 v1; t2 v2; t3 v3; t4 v4; t5 v5; t6 v6; t7 v7; t8 v8; t9 v9; t10 v10; t11 v11; t12 v12; t13 v13; \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); HX_MARK_MEMBER(v13); } \
+   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); HX_MARK_MEMBER(v13); } \
    name(t0 __0,t1 __1,t2 __2, t3 __3, t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9, t10 __10, t11 __11, t12 __12, t13 __13) : v0(__0), v1(__1), v2(__2), v3(__3), v4(__4), v5(__5), v6(__6), v7(__7), v8(__8), v9(__9), v10(__10), v11(__11), v12(__12), v13(__13) {}
 
 
