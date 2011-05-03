@@ -224,6 +224,7 @@ namespace hx { class MarkContext; }
 #include <hx/Interface.h>
 #include <hx/StdLibs.h>
 #include <hx/Operators.h>
+#include <hx/Functions.h>
 
 #include <hx/Boot.h>
 
