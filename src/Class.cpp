@@ -49,12 +49,18 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
    mConstructArgs = inConstructArgs;
    mConstructEnum = inConstructEnum;
    mMarkFunc = inFunc;
-   mStatics = Array_obj<String>::__new(0,0);
-   for(String *s = inStatics; s->length; s++)
-      mStatics->Add( *s );
-   mMembers = Array_obj<String>::__new(0,0);
-   for(String *m = inMembers; m->length; m++)
-      mMembers->Add( *m );
+   if (inStatics)
+   {
+      mStatics = Array_obj<String>::__new(0,0);
+      for(String *s = inStatics; s->length; s++)
+         mStatics->Add( *s );
+   }
+   if (inMembers)
+   {
+      mMembers = Array_obj<String>::__new(0,0);
+      for(String *m = inMembers; m->length; m++)
+         mMembers->Add( *m );
+   }
    CanCast = inCanCast;
 }
 
@@ -108,32 +114,37 @@ String Class_obj::__ToString() const { return mName; }
 Array<String> Class_obj::GetInstanceFields()
 {
    Array<String> result = mSuper ? (*mSuper)->GetInstanceFields() : Array<String>(0,0);
-   for(int m=0;m<mMembers->size();m++)
-   {
-      const String &mem = mMembers[m];
-      if (result->Find(mem)==-1)
-         result.Add(mem);
-   }
+   if (mMembers.mPtr)
+      for(int m=0;m<mMembers->size();m++)
+      {
+         const String &mem = mMembers[m];
+         if (result->Find(mem)==-1)
+            result.Add(mem);
+      }
    return result;
 }
 
 Array<String> Class_obj::GetClassFields()
 {
    Array<String> result = mSuper ? (*mSuper)->GetClassFields() : Array<String>(0,0);
-   for(int s=0;s<mStatics->size();s++)
+   if (mStatics.mPtr)
    {
-      const String &mem = mStatics[s];
-      if (result->Find(mem)==-1)
-         result.Add(mem);
+      for(int s=0;s<mStatics->size();s++)
+      {
+         const String &mem = mStatics[s];
+         if (result->Find(mem)==-1)
+            result.Add(mem);
+      }
    }
    return result;
 }
 
 bool Class_obj::__HasField(const String &inString)
 {
-   for(int s=0;s<mStatics->size();s++)
-      if (mStatics[s]==inString)
-         return true;
+   if (mStatics.mPtr)
+      for(int s=0;s<mStatics->size();s++)
+         if (mStatics[s]==inString)
+            return true;
    if (mSuper)
       return (*mSuper)->__HasField(inString);
    return false;

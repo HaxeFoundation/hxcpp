@@ -19,6 +19,10 @@
    virtual int __GetType() const { return vtClass; } \
    inline operator super *() { return this; } 
 
+#define HX_DO_INTERFACE_RTTI \
+   static hx::ObjectPtr<Class_obj> __mClass; \
+   static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
+	static void __register();
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
    HX_DO_RTTI_BASE  \
