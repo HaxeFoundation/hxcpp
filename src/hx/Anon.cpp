@@ -47,10 +47,10 @@ Dynamic Anon_obj::__SetField(const String &inString,const Dynamic &inValue)
    return inValue;
 }
 
-Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue)
+Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetThisPointer)
 {
    mFields->Insert(inName,inValue);
-   if (inValue.GetPtr())
+   if (inSetThisPointer && inValue.GetPtr())
       inValue.GetPtr()->__SetThis(this);
    return this;
 }

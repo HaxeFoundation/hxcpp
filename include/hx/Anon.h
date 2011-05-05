@@ -48,7 +48,7 @@ public:
 
    virtual int __GetType() const { return vtObject; }
 
-   hx::Anon_obj *Add(const String &inName,const Dynamic &inValue);
+   hx::Anon_obj *Add(const String &inName,const Dynamic &inValue,bool inSetThisPointer=true);
 	void __Mark(HX_MARK_PARAMS);
 
    String __ToString() const;
