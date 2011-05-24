@@ -9,7 +9,7 @@
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
-  <flag value="-O2"/>
+  <flag value="-O2" unless="debug"/>
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-DHX_LINUX"/>
@@ -33,6 +33,8 @@
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-W,l--unresolved-symbols=report-all"/>
+  <flag value="-Xlinker"/>
+  <flag value="--no-undefined"/>
   <flag value="-debug" if="debug"/>
   <ext value=".dso"/>
   <outflag value="-o "/>

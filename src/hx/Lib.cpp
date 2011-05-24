@@ -348,12 +348,6 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
           full_name += HX_CSTRING("__MULT");
    }
 
-#ifdef HXCPP_DEBUG
-   int pass0 = 0;
-#else
-   int pass0 = 2;
-#endif
-
    // Try debug extensions first, then native extensions then ndll
 
    #ifdef ANDROID
@@ -374,13 +368,25 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    }
 
 
-   for(int pass=pass0;module==0 && pass<4;pass++)
+   for(int pass=0;module==0 && pass<2;pass++)
    {
-      String modifier = pass < 2 ? HX_CSTRING("-debug") : HX_CSTRING("");
+      String dll_ext = HX_CSTRING("./") + inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
 
-      String dll_ext = inLib + modifier + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
+      // Try Current directory first ...
+      if (debug)
+      {
+         #ifndef ANDROID
+         printf(" try %s...\n", dll_ext.__CStr());
+         #else
+         __android_log_print(ANDROID_LOG_INFO, "loader", "Try %s", dll_ext.__CStr());
+         #endif
+      }
+      module = hxLoadLibrary(dll_ext);
+      if (module)
+         break;
 
       
+      dll_ext = inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
       if (debug)
       {
          #ifndef ANDROID

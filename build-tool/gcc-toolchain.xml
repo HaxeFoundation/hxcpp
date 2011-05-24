@@ -17,6 +17,7 @@
   <exe name="strip"/>
   <flag value="-u" if="macos"/>
   <flag value="-r" if="macos"/>
+  <flag value="-d" if="linux"/>
 </stripper>
 
 
