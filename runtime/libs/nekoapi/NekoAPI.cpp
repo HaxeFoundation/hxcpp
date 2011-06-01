@@ -41,6 +41,7 @@ static int __s_id = val_id("__s");
 static int length_id = val_id("length");
 
 value *gNeko2HaxeString = 0;
+value *gNekoNewArray = 0;
 
 value haxe_alloc_string(const char *inString)
 {
@@ -281,7 +282,9 @@ void api_val_array_push(value  arg1,value inValue)
 
 value  api_alloc_array(int arg1)
 {
-	return alloc_array(arg1);
+   if (!gNekoNewArray)
+	   return alloc_array(arg1);
+	return val_call1(*gNekoNewArray,alloc_int(arg1));
 }
 
 
@@ -598,6 +601,18 @@ value neko_api_init(value inCallback)
    return val_null;
 }
 DEFINE_PRIM(neko_api_init,1)
+
+
+value neko_api_init2(value inNewString,value inNewArray)
+{
+   gNeko2HaxeString = api_alloc_root();
+   *gNeko2HaxeString = inNewString;
+   gNekoNewArray = api_alloc_root();
+   *gNekoNewArray = inNewArray;
+   return val_null;
+}
+DEFINE_PRIM(neko_api_init2,2)
+
 
 
 
