@@ -449,7 +449,7 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC2(CppInt32___obj,make,return )
 
 }
 
-
+unsigned char *__hxcpp_memory = 0;
 
 int __hxcpp_obj_id(Dynamic inObj)
 {
