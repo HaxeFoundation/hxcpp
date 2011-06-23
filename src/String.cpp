@@ -1,5 +1,6 @@
 #include <hxcpp.h>
 #include <ctype.h>
+#include <stdio.h>
 
 using namespace hx;
 
@@ -10,7 +11,6 @@ using namespace hx;
 #ifdef HX_WINDOWS
 
 #ifndef _MSC_VER
-#include <stdio.h>
 #define _MSC_VER 1
 #endif
 

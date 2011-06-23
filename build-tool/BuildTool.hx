@@ -992,6 +992,8 @@ class BuildTool
             defines.set("ANDROID_HOST","darwin-x86");
          else if ( (new EReg("window","i")).match(os) )
             defines.set("ANDROID_HOST","windows");
+         else if ( (new EReg("linux","i")).match(os) )
+            defines.set("ANDROID_HOST","linux");
          else
             throw "Unknown android host:" + os;
       }

@@ -9,9 +9,12 @@
 
 #ifdef _MSC_VER
 #include <typeinfo.h>
+#include <stdint.h>
 #else
 #include <typeinfo>
+#include <stdint.h>
 using std::type_info;
+typedef  uint64_t  __int64;
 #endif
 
 
@@ -24,9 +27,10 @@ using std::type_info;
 
 #ifdef HX_LINUX
 #include <unistd.h>
-#include <stdint.h>
 #include <cstdio>
 #endif
+
+
 
 
 // Some compilers are over-enthusiastic about what they #define ...

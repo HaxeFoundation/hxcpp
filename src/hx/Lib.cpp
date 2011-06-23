@@ -11,6 +11,12 @@
 #endif
 
 
+#ifdef HXCPP_LOAD_DEBUG
+bool gLoadDebug = true;
+#else
+bool gLoadDebug = false;
+#endif
+
 #ifdef _WIN32
 
 #include <windows.h>
@@ -30,7 +36,12 @@ typedef void *Module;
 typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
-   return dlopen(inLib.__CStr(), RTLD_NOW|RTLD_GLOBAL);
+   Module result = dlopen(inLib.__CStr(), RTLD_NOW|RTLD_GLOBAL);
+   if (gLoadDebug)
+   {
+      printf("Error loading library: %s\n", dlerror());
+   }
+   return result;
 }
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return dlsym(inModule,inSymbol); }
 #endif
@@ -187,27 +198,27 @@ String GetEnv(const char *inPath)
 
 String FindHaxelib(String inLib)
 {
-   bool debug = getenv("HXCPP_LOAD_DEBUG");
+   bool gLoadDebug = getenv("HXCPP_LOAD_DEBUG");
 
    // printf("FindHaxelib %S\n", inLib.__s);
    String haxepath = GetEnv("HAXEPATH");
-   if (debug) printf("HAXEPATH env:%s\n", haxepath.__s);
+   if (gLoadDebug) printf("HAXEPATH env:%s\n", haxepath.__s);
    if (haxepath.length==0)
    {
        String home = GetEnv("HOME") + HX_CSTRING("/.haxelib");
        haxepath = GetFileContents(home);
-       if (debug) printf("HAXEPATH home:%s\n", haxepath.__s);
+       if (gLoadDebug) printf("HAXEPATH home:%s\n", haxepath.__s);
    }
    else
    {
       haxepath += HX_CSTRING("/lib");
    }
-   if (debug) printf("HAXEPATH dir:%s\n", haxepath.__s);
+   if (gLoadDebug) printf("HAXEPATH dir:%s\n", haxepath.__s);
 
    if (haxepath.length==0)
    {
        haxepath = GetFileContents(HX_CSTRING("/etc/.haxepath"));
-       if (debug) printf("HAXEPATH etc:%s\n", haxepath.__s);
+       if (gLoadDebug) printf("HAXEPATH etc:%s\n", haxepath.__s);
    }
 
    if (haxepath.length==0)
@@ -217,7 +228,7 @@ String FindHaxelib(String inLib)
       #else
       haxepath = HX_CSTRING("/usr/lib/haxe/lib");
       #endif
-       if (debug) printf("HAXEPATH default:%s\n", haxepath.__s);
+       if (gLoadDebug) printf("HAXEPATH default:%s\n", haxepath.__s);
    }
 
    String dir = haxepath + HX_CSTRING("/") + inLib + HX_CSTRING("/");
@@ -225,7 +236,7 @@ String FindHaxelib(String inLib)
 
    String dev = dir + HX_CSTRING(".dev");
    String path = GetFileContents(dev);
-   if (debug) printf("Read dev location from file :%s, got %s\n", dev.__s, path.__s);
+   if (gLoadDebug) printf("Read dev location from file :%s, got %s\n", dev.__s, path.__s);
    if (path.length==0)
    {
       path = GetFileContents(dir + HX_CSTRING(".current"));
@@ -295,13 +306,13 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    //__android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
 #endif
 
-   bool debug = getenv("HXCPP_LOAD_DEBUG");
+   gLoadDebug = gLoadDebug || getenv("HXCPP_LOAD_DEBUG");
    String ext =
 #if defined(_WIN32)
     HX_CSTRING(".dll");
 #elif defined(__APPLE__)
     HX_CSTRING(".dylib");
-#elif defined(ANDROID) || defined(GPH)
+#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)
     HX_CSTRING(".so");
 #else
     HX_CSTRING(".dso");
@@ -312,25 +323,23 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    String bin =
 #ifdef _WIN32
     HX_CSTRING("Windows");
-#else
 // Unix...
-#ifdef __APPLE__
+#elif defined(__APPLE__)
   #ifdef HXCPP_M64
     HX_CSTRING("Mac64");
   #else
     HX_CSTRING("Mac");
   #endif
-#else
-#ifdef ANDROID
+#elif defined (ANDROID)
     HX_CSTRING("Android");
+#elif defined(WEBOS)
+    HX_CSTRING("webOS");
 #else
   #ifdef HXCPP_M64
     HX_CSTRING("Linux64");
   #else
     HX_CSTRING("Linux");
   #endif
-#endif
-#endif
 #endif
 
     int passes = 4;
@@ -348,8 +357,6 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
           full_name += HX_CSTRING("__MULT");
    }
 
-   // Try debug extensions first, then native extensions then ndll
-
    #ifdef ANDROID
    std::string module_name = inLib.__CStr();
    Module module = sgLoadedModule[module_name];
@@ -358,7 +365,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    #endif
    bool new_module = module==0;
 
-   if (!module && debug)
+   if (!module && gLoadDebug)
    {
       #ifdef ANDROID
        __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", module_name.c_str());
@@ -373,7 +380,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
       String dll_ext = HX_CSTRING("./") + inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
 
       // Try Current directory first ...
-      if (debug)
+      if (gLoadDebug)
       {
          #ifndef ANDROID
          printf(" try %s...\n", dll_ext.__CStr());
@@ -387,7 +394,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
       
       dll_ext = inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
-      if (debug)
+      if (gLoadDebug)
       {
          #ifndef ANDROID
          printf(" try %s...\n", dll_ext.__CStr());
@@ -404,7 +411,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
          if (hxcpp.length!=0)
          {
              String name = hxcpp + HX_CSTRING("/bin/") + bin + HX_CSTRING("/") + dll_ext;
-             if (debug)
+             if (gLoadDebug)
                 printf(" try %s...\n", name.__CStr());
              module = hxLoadLibrary(name);
          }
@@ -416,7 +423,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
          if (hxcpp.length!=0)
          {
              String name = hxcpp + HX_CSTRING("/bin/") + bin + HX_CSTRING("/") + dll_ext;
-             if (debug)
+             if (gLoadDebug)
                 printf(" try %s...\n", name.__CStr());
              module = hxLoadLibrary(name);
          }
@@ -428,7 +435,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
          if (path.length!=0)
          {
             String full_path  = path + HX_CSTRING("/ndll/") + bin + HX_CSTRING("/") + dll_ext;
-            if (debug)
+            if (gLoadDebug)
                printf(" try %s...\n", full_path.__CStr());
             module = hxLoadLibrary(full_path);
          }

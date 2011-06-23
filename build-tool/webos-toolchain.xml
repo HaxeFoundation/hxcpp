@@ -18,18 +18,20 @@
 	<objdir value="./obj/webos" unless="debug"/>
 </compiler>
 
-<!-- There are two sets of mcpu and mfpu flags. The default works for both the Pre and Pixi. Setting the "palmpre" directive will optimize for the Pre only -->
+<!-- There are two sets of mcpu and mfpu flags. The default works for all webOS devices to date, using an armv6 instruction set. Setting the "armv7" directive will optimize for newer devices, but will not work properly on the Pixi or Pixi Plus -->
 
-<linker id="exe" exe="arm-none-linux-gnueabi-g++" if="webos">
+<linker id="exe" exe="arm-none-linux-gnueabi-gcc" if="webos">
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
-	<flag value="-mcpu=cortex-a8" if="palmpre" />
-	<flag value="-mfpu=neon" if="palmpre" />
-	<flag value="-mcpu=arm1136jf-s" unless="palmpre" />
-	<flag value="-mfpu=vfp" unless="palmpre" />
+	<flag value="-mcpu=cortex-a8" if="armv7" />
+	<flag value="-mfpu=neon" if="armv7" />
+	<flag value="-mcpu=arm1136jf-s" unless="armv7" />
+	<flag value="-mfpu=vfp" unless="armv7" />
 	<flag value="-mfloat-abi=softfp"/>
 	<flag value="-DWEBOS"/>
+	<flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
+	<flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
 	<flag value="-rdynamic"/>
 	<flag value="-L${PalmPDK}/device/lib"/>
 	<flag value="-Wl,--allow-shlib-undefined"/>
