@@ -12,8 +12,7 @@
   <flag value="-Od" if="debug"/>
   <!-- -O2 is back ! -->
   <flag value="-O2" unless="debug"/>
-  <flag value="${ABI}d" if="debug"/>
-  <flag value="${ABI}" unless="debug"/>
+  <flag value="${ABI}" />
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
@@ -22,7 +21,8 @@
   <flag value="-GR"/>
   <flag value="-Zi"/>
   <flag value="-c"/>
-  <flag value="-EHsc"/>
+  <flag value="-DSTATIC_LINK" if="static"/>
+  <flag value="-EHs"/>
   <flag value="-I${HXCPP}/include"/>
   <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
   <flag value="-wd4996"/>
@@ -30,6 +30,7 @@
   <ext value=".obj"/>
   <objdir value="obj/mscv-dbg" if="debug"/>
   <objdir value="obj/mscv" unless="debug"/>
+  <objdir value="obj/mscv-static" if="static"/>
 </compiler>
 
 <linker id="dll" exe="link.exe" if="windows">
@@ -59,7 +60,7 @@
 <linker id="static" exe="lib.exe" if="windows">
   <fromfile value="@"/>
   <flag value="-nologo"/>
-  <ext value=".a"/>
+  <ext value=".lib"/>
   <outflag value="-out:"/>
 </linker>
 
