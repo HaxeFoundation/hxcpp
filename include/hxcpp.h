@@ -9,7 +9,6 @@
 
 #ifdef _MSC_VER
 #include <typeinfo.h>
-#include <stdint.h>
 #else
 #include <typeinfo>
 #include <stdint.h>
