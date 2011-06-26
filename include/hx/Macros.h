@@ -465,6 +465,29 @@ extern "C" GCC_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * en
         }\
 }
 
+#elif defined(HX_WIN_MAIN)
+
+
+#define HX_BEGIN_MAIN \
+extern "C" int __stdcall MessageBoxA(void *,const char *,const char *,int); \
+\
+int __stdcall WinMain( void * hInstance, void * hPrevInstance, const char *lpCmdLine, int nCmdShow) \
+{ \
+	HX_TOP_OF_STACK \
+	hx::Boot(); \
+	try{ \
+		__boot_all();
+
+#define HX_END_MAIN \
+	} \
+	catch (Dynamic e){ \
+		__hx_dump_stack(); \
+		MessageBoxA(0,  e->toString().__CStr(), "Error", 0); \
+	} \
+	return 0; \
+}
+
+
 #else
 // Console Main ...
 
