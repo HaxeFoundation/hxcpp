@@ -3,7 +3,7 @@
 
 <!-- WINDOWS TOOLS -------------------------------------->
 
-<set name="USE_PRECOMPILED_HEADERS" value="msvc" />
+<set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
 <set name="ABI" value="-MT" unless="ABI"/>
 

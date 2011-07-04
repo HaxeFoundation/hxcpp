@@ -1,6 +1,6 @@
 <xml>
 
-<set name="USE_PRECOMPILED_HEADERS" value="gcc"/>
+<set name="USE_PRECOMPILED_HEADERS" value="gcc" unless="NO_PRECOMPILED_HEADERS"/>
 
 <set name="USE_GCC_FILETYPES" value="1"/>
 
