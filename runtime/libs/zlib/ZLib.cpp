@@ -204,8 +204,8 @@ static value inflate_buffer( value s, value src, value srcpos, value dst, value 
 	if( slen < 0 || dlen < 0 )
 		return alloc_null();
 
-	z->next_in = (Bytef*)buffer_data(src_buf);
-	z->next_out = (Bytef*)buffer_data(dst_buf);
+	z->next_in = (Bytef*)buffer_data(src_buf) + val_int(srcpos);
+	z->next_out = (Bytef*)buffer_data(dst_buf) + val_int(dstpos);
 	z->avail_in = slen;
 	z->avail_out = dlen;
 	if( (err = inflate(z,val_flush(z))) < 0 )
