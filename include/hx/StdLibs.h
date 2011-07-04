@@ -132,7 +132,7 @@ inline void __hxcpp_memory_set_byte(int addr,int v) { __hxcpp_memory[addr] = v; 
 inline void __hxcpp_memory_set_double(int addr,double v) { *(double *)(__hxcpp_memory+addr) = v; }
 inline void __hxcpp_memory_set_float(int addr,double v) { *(float *)(__hxcpp_memory+addr) = v; }
 inline void __hxcpp_memory_set_i16(int addr,int v) { *(short *)(__hxcpp_memory+addr) = v; }
-inline void __hxcpp_memory_set_i32(int addr,int v) { *(short *)(__hxcpp_memory+addr) = v; }
+inline void __hxcpp_memory_set_i32(int addr,int v) { *(int *)(__hxcpp_memory+addr) = v; }
 
 
 
