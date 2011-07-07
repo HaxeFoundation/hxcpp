@@ -25,9 +25,9 @@ public:
    static inline CppInt32__ mul(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue * b.mValue  ); }
    static inline CppInt32__ div(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue / b.mValue  ); }
    static inline CppInt32__ mod(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue % b.mValue  ); }
-   static inline CppInt32__ shl(CppInt32__ a,int b) { return CppInt32__( a.mValue << b  ); }
-   static inline CppInt32__ shr(CppInt32__ a,int b) { return CppInt32__( a.mValue >> b  ); }
-   static inline CppInt32__ ushr(CppInt32__ a,int b) { return CppInt32__( ((unsigned int)a.mValue) >> b  ); }
+   static inline CppInt32__ shl(CppInt32__ a,int b) { return CppInt32__( a.mValue << (b&31)  ); }
+   static inline CppInt32__ shr(CppInt32__ a,int b) { return CppInt32__( a.mValue >> (b&31)  ); }
+   static inline CppInt32__ ushr(CppInt32__ a,int b) { return CppInt32__( ((unsigned int)a.mValue) >> (b&31)  ); }
    static inline CppInt32__ _and(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue & b.mValue  ); }
    static inline CppInt32__ _or(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue | b.mValue  ); }
    static inline CppInt32__ _xor(CppInt32__ a,CppInt32__ b) { return CppInt32__( a.mValue ^ b.mValue  ); }
