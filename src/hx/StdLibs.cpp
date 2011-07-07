@@ -296,12 +296,12 @@ Dynamic __hxcpp_parse_int(const String &inString)
 
    #ifdef HX_UTF8_STRINGS
    if (hex)
-      result = strtol(str+2,&end,16);
+      result = (long)strtoul(str+2,&end,16);
    else
       result = strtol(str,&end,10);
    #else
    if (hex)
-      result = wcstol(str+2,&end,16);
+      result = (long)wcstoul(str+2,&end,16);
    else
       result = wcstol(str,&end,10);
    #endif
