@@ -231,4 +231,6 @@ namespace hx { class MarkContext; }
 
 #include <hx/Boot.h>
 
+#include <hx/Undefine.h>
+
 #endif
