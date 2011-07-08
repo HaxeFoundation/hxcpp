@@ -38,6 +38,7 @@
  <flag value="-mtune=xscale"/>
  <flag value="-msoft-float"/>
  <flag value="-fomit-frame-pointer"/>
+ <flag value="-fexceptions"/>
  <flag value="-fno-strict-aliasing"/>
  <flag value="-finline-limit=10000"/>
  <flag value="-DANDROID"/>
