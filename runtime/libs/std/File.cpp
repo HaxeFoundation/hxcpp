@@ -32,9 +32,45 @@
 
 int __file_prims() { return 0; }
 
+#if ANDROID
+typedef std::string Filename;
+typedef char FilenameChar;
+#define val_filename val_string
+#define alloc_filename alloc_string
+
+#define MAKE_STDIO(k) \
+	static value file_##k() { \
+		fio *f; \
+		f = new fio(#k,k); \
+		value result = alloc_abstract(k_file,f); \
+		val_gc(result,free_stdfile); \
+		return result; \
+	} \
+	DEFINE_PRIM(file_##k,0);
+
+
+#else
+typedef std::wstring Filename;
+typedef wchar_t FilenameChar;
+#define val_filename val_wstring
+#define alloc_filename alloc_wstring
+
+#define MAKE_STDIO(k) \
+	static value file_##k() { \
+		fio *f; \
+		f = new fio(L###k,k); \
+		value result = alloc_abstract(k_file,f); \
+		val_gc(result,free_stdfile); \
+		return result; \
+	} \
+	DEFINE_PRIM(file_##k,0);
+
+
+#endif
+
 struct fio
 {
-   fio(const wchar_t *inName, FILE *inFile=0) : io(inFile), name(inName) { }
+   fio(const FilenameChar *inName, FILE *inFile=0) : io(inFile), name(inName) { }
    ~fio() { }
 
    void close()
@@ -46,7 +82,7 @@ struct fio
       }
    }
  
-   std::wstring name;
+   Filename name;
    FILE         *io;
 };
 
@@ -77,7 +113,7 @@ static void file_error( const char *msg, fio *f, bool delete_f = false ) {
 	gc_exit_blocking();
 	value a = alloc_array(2);
 	val_array_set_i(a,0,alloc_string(msg));
-	val_array_set_i(a,1,alloc_wstring(f->name.c_str()));
+	val_array_set_i(a,1,alloc_filename(f->name.c_str()));
 	if (delete_f)
 		delete f;
 	val_throw(a);
@@ -93,7 +129,7 @@ static void file_error( const char *msg, fio *f, bool delete_f = false ) {
 static value file_open( value name, value r ) {
 	val_check(name,string);
 	val_check(r,string);
-	fio *f = new fio(val_wstring(name));
+	fio *f = new fio(val_filename(name));
         const char *fname = val_string(name);
         const char *mode = val_string(r);
 	gc_enter_blocking();
@@ -126,7 +162,7 @@ static value file_close( value o ) {
 **/
 static value file_name( value o ) {
 	val_check_kind(o,k_file);
-	return alloc_wstring(val_file(o)->name.c_str());
+	return alloc_filename(val_file(o)->name.c_str());
 }
 
 /**
@@ -319,7 +355,7 @@ static value file_contents( value name ) {
 	int len;
 	int p;
 	val_check(name,string);
-	fio f(val_wstring(name));
+	fio f(val_filename(name));
         const char *fname = val_string(name);
 	gc_enter_blocking();
 	f.io = fopen(fname,"rb");
@@ -349,15 +385,6 @@ static value file_contents( value name ) {
 	return buffer_val(s);
 }
 
-#define MAKE_STDIO(k) \
-	static value file_##k() { \
-		fio *f; \
-		f = new fio(L###k,k); \
-		value result = alloc_abstract(k_file,f); \
-		val_gc(result,free_stdfile); \
-		return result; \
-	} \
-	DEFINE_PRIM(file_##k,0);
 
 /**
 	file_stdin : void -> 'file
