@@ -182,6 +182,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
   <compilerflag value="-DGC_THREADS" if="macos"/>
   <compilerflag value="-DNO_THREAD_REDIRECT" if="linux"/>
   <compilerflag value="-DGC_THREADS" if="linux"/>
+  <compilerflag value="-DHX_UNDEFINE_H" />
 
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include" if="HXCPP_BOEHM_GC" />
   <compilerflag value="-I${HXCPP}/runtime/${GC_DIR}/include/private" if="HXCPP_BOEHM_GC" />

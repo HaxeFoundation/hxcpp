@@ -1,4 +1,5 @@
 #include <hxcpp.h>
+#include <hxMath.h>
 
 #ifdef HX_WINDOWS
 #include <windows.h>
@@ -17,7 +18,6 @@ typedef uint64_t __int64;
 #include <vector>
 #include <map>
 #include <time.h>
-#include <limits>
 
 void __hx_stack_set_last_exception();
 
@@ -321,12 +321,8 @@ double __hxcpp_parse_float(const String &inString)
    #endif
 
    if (end==str)
-   {
-      if (std::numeric_limits<double>::has_quiet_NaN)
-         return std::numeric_limits<double>::quiet_NaN();
-      else
-         return std::numeric_limits<double>::infinity();
-   }
+      Math_obj::NaN;
+
    return result;
 }
 
