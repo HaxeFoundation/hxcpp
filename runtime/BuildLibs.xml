@@ -118,14 +118,14 @@
   <file name="libs/nekoapi/NekoAPI.cpp"/>
 </files>
 
+<set name="NEKOPATH" value="${NEKO_INSTALL_PATH}" unless="NEKOPATH" />
 
 <target id="nekoapi" output="nekoapi" tool="linker" toolid="dll">
   <ext value=".ndll"/>
   <files id="nekoapi"/>
   <lib name="${RUNTIME}/libs/nekoapi/neko.lib" if="windows"/>
-  <lib name="-L${NEKO_INSTALL_PATH}" unless="windows"/>
+  <lib name="-L${NEKOPATH}" unless="windows"/>
   <lib name="-lneko" unless="windows"/>
-  <lib name="-ldl" if="linux"/>
   <outdir name="../bin/${BINDIR}"/>
 </target>
 

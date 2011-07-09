@@ -36,6 +36,7 @@
   <flag value="-Xlinker"/>
   <flag value="--no-undefined"/>
   <flag value="-debug" if="debug"/>
+  <lib name="-ldl"/>
   <ext value=".dso"/>
   <outflag value="-o "/>
 </linker>
@@ -45,6 +46,7 @@
   <flag value="-rdynamic"/>
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
+  <lib name="-ldl"/>
   <ext value=""/>
   <outflag value="-o "/>
 </linker>
