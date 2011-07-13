@@ -1,12 +1,13 @@
 <xml>
 
+<set name="NO_PRECOMPILED_HEADERS" value="1" if="GCC_OLD" />
 <set name="USE_PRECOMPILED_HEADERS" value="gcc" unless="NO_PRECOMPILED_HEADERS"/>
 
 <set name="USE_GCC_FILETYPES" value="1"/>
 
 <linker id="static" exe="ar" unless="windows">
   <ext value=".a"/>
-  <fromfile value=""/>
+  <fromfile value="" if="GCC_OLD" />
   <outflag value="-cr "/>
   <ranlib name="ranlib"/>
 </linker>
@@ -15,6 +16,7 @@
 
 <stripper id="strip" exe="strip" unless="nostrip">
   <exe name="strip"/>
+  <exe name ="arm-none-linux-gnueabi-strip" if="webos" />
   <flag value="-u" if="macos"/>
   <flag value="-r" if="macos"/>
   <flag value="-d" if="linux"/>

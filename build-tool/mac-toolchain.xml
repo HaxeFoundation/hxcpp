@@ -25,6 +25,7 @@
 </compiler>
 
 <linker id="dll" exe="g++" if="macos">
+  <fromfile value="" if="GCC_OLD" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
@@ -40,6 +41,7 @@
 
 <linker id="exe" exe="g++" if="macos">
   <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
+  <fromfile value="" if="GCC_OLD" />
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-debug" if="debug"/>

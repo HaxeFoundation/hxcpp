@@ -27,6 +27,7 @@
 </compiler>
 
 <linker id="dll" exe="g++" if="linux">
+  <fromfile value="" if="GCC_OLD" />
   <flag value="-shared"/>
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
@@ -42,6 +43,7 @@
 </linker>
 
 <linker id="exe" exe="g++" if="linux">
+  <fromfile value="" if="GCC_OLD" />
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
   <flag value="-m32" unless="HXCPP_M64"/>

@@ -946,6 +946,13 @@ class BuildTool
       var windows_host = (new EReg("window","i")).match(os);
 		if (windows_host)
 		   defines.set("windows_host", "1");
+      var mac_host = (new EReg("mac","i")).match(os);
+		if (mac_host)
+		   defines.set("mac_host", "1");
+      var linux_host = (new EReg("linux","i")).match(os);
+		if (linux_host)
+		   defines.set("linux_host", "1");
+
 
       for(arg in args)
       {
