@@ -21,6 +21,7 @@
 
 #ifdef NEKO_LINUX
 #define EXT "dso"
+#define NEKO_EXT "so"
 //#define __USE_GNU 1
 #else
 #ifdef ANDROID
@@ -28,6 +29,7 @@
 #else
 #include <mach-o/dyld.h>
 #define EXT "dylib"
+#define NEKO_EXT "dylib"
 #endif
 #endif
 
@@ -77,19 +79,25 @@ void *sNekoDllHandle = 0;
 
 void *LoadNekoFunc(const char *inName)
 {
+   static bool tried = false;
+   if (tried && !sNekoDllHandle)
+       return 0;
+   tried = true;
+
    if (!sNekoDllHandle)
    {
       #if HX_WINDOWS
       sNekoDllHandle = GetModuleHandle("neko.dll");
-      #elif defined(HX_MACOS)
-      sNekoDllHandle = dlopen("libneko." EXT, RTLD_NOW|RTLD_GLOBAL);
+      #else
+      sNekoDllHandle = dlopen("libneko." NEKO_EXT, RTLD_NOW);
       #endif
   
-      //printf("Loaded handle : %p\n", sNekoDllHandle);
+      if (!sNekoDllHandle)
+      {
+         fprintf(stderr,"Could not link to neko.\n");
+         return 0;
+      }
    }
-
-   if (!sNekoDllHandle)
-      return 0;
 
 
    #if HX_WINDOWS
