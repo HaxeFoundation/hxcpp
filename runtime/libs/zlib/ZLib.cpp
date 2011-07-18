@@ -305,6 +305,10 @@ static value deflate_bound( value s, value size ) {
 
 extern "C" int zlib_register_prims()
 {
+   static bool init = false;
+   if (init) return 0;
+   init = true;
+
    zlib_main();
    return 0;
 }

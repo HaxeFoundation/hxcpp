@@ -289,6 +289,10 @@ void regexp_main() {
 // Called when static linking to bring in the required symbols and initaliaze
 int regexp_register_prims()
 {
+   static bool init = false;
+   if (init) return 0;
+   init = true;
+
    regexp_main();
 	return 0;
 }

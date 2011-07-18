@@ -81,6 +81,10 @@ extern "C" {
 // Called when static linking to bring in the required symbols and initaliaze
 int std_register_prims()
 {
+   static bool init = false;
+   if (init) return 0;
+   init = true;
+
    std_main();
     return
         __file_prims()
