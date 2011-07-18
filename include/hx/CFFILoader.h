@@ -574,17 +574,14 @@ void *LoadFunc(const char *inName)
             FreeLibrary(handle);
       }
    }
+
+   #ifdef NEKO_COMPATIBLE
    if (sResolveProc==0)
    {
-      // Maybe we are part of a neko script?
-      HMODULE handle = LoadLibrary("nekoapi.ndll");
-      if (handle)
-      {
-         sResolveProc = (ResolveProc)GetProcAddress(handle,"hx_cffi");
-         if (sResolveProc==0)
-            FreeLibrary(handle);
-      }
+      sResolveProc = InitDynamicNekoLoader();
    }
+   #endif
+
    if (sResolveProc==0)
    {
       fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d)\n",__LINE__);
@@ -611,68 +608,7 @@ void *LoadFunc(const char *inName)
    }
    #endif
 
-/*
-   if (sResolveProc==0)
-   {
-      void *handle = dlopen("nekoapi.ndll",RTLD_NOW|RTLD_GLOBAL);
-      if (handle)
-         sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
-   }
-   if (sResolveProc==0)
-   {
-      bool debug = getenv("HXCPP_LOAD_DEBUG");
-#ifndef NEKO_LINUX
-      int count = _dyld_image_count();
-      for(int i=0;i<count;i++)
-      {
-         const char *s =  _dyld_get_image_name(i);
-         char *buf = (char *)malloc( strlen(s) + 20 );
-         strcpy(buf,s);
-         char *slash = rindex(buf,'/');
-         if (slash)
-         {
-            slash[1] = '\0';
-            strcat(slash, "nekoapi.ndll" );
-            if (debug)
-               printf(" -> %s\n", buf );
-            void *handle = dlopen(buf, RTLD_NOW|RTLD_GLOBAL);
-            if (handle)
-            {
-               sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
-               free(buf);
-               break;
-            }
-         }
-         free(buf);
-      }
-#else
-      // Find module for this function ...
-      Dl_info info;
-      if (dladdr((void *)LoadFunc,&info))
-      {
-         if (debug)
-            printf("Found loaded module : %s\n", info.dli_fname );
 
-         char *buf = (char *)malloc( strlen(info.dli_fname) + 20 );
-         strcpy(buf,info.dli_fname);
-         char *slash = rindex(buf,'/');
-         if (slash)
-         {
-            slash[1] = '\0';
-            strcat(slash, "nekoapi.ndll" );
-            if (debug)
-               printf(" -> %s\n", buf );
-            void *handle = dlopen(buf, RTLD_NOW|RTLD_GLOBAL);
-            if (handle)
-               sResolveProc = (ResolveProc)dlsym(handle,"hx_cffi");
-         }
-         free(buf);
-      }
-      else if (debug)
-         printf("Could not find loaded module?\n");
-#endif
-   }
-   */
 
 #endif // !Android
 
