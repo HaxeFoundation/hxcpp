@@ -101,7 +101,7 @@ void *LoadNekoFunc(const char *inName)
 
 
    #if HX_WINDOWS
-   void *result = GetProcAddress((HANDLE)sNekoDllHandle,inName);
+   void *result = GetProcAddress((HMODULE)sNekoDllHandle,inName);
    #else
    void *result = dlsym(sNekoDllHandle,inName);
    #endif
@@ -500,18 +500,23 @@ void *DynamicNekoLoader(const char *inName)
 
 ResolveProc InitDynamicNekoLoader()
 {
-   dyn_alloc_private = (alloc_private_func)LoadNekoFunc("neko_alloc_private");
-   dyn_alloc_object = (alloc_object_func)LoadNekoFunc("neko_alloc_object");
-   dyn_alloc_string = (alloc_string_func)LoadNekoFunc("neko_alloc_string");
-   dyn_val_call1 = (val_call1_func)LoadNekoFunc("neko_val_call1");
-   dyn_val_field = (val_field_func)LoadNekoFunc("neko_val_field");
-   dyn_alloc_root = (alloc_root_func)LoadNekoFunc("neko_alloc_root");
-   dyn_copy_string = (copy_string_func)LoadNekoFunc("neko_copy_string");
-   dyn_val_id = (val_id_func)LoadNekoFunc("neko_val_id");
-   dyn_alloc_buffer = (alloc_buffer_func)LoadNekoFunc("neko_alloc_buffer");
-   dyn_fail = (fail_func)LoadNekoFunc("_neko_failure");
-   dyn_buffer_append_sub = (buffer_append_sub_func)LoadNekoFunc("neko_buffer_append_sub");
-   dyn_alloc_array = (alloc_array_func)LoadNekoFunc("neko_alloc_array");
+   static bool init = false;
+   if (!init)
+   {
+      dyn_alloc_private = (alloc_private_func)LoadNekoFunc("neko_alloc_private");
+      dyn_alloc_object = (alloc_object_func)LoadNekoFunc("neko_alloc_object");
+      dyn_alloc_string = (alloc_string_func)LoadNekoFunc("neko_alloc_string");
+      dyn_val_call1 = (val_call1_func)LoadNekoFunc("neko_val_call1");
+      dyn_val_field = (val_field_func)LoadNekoFunc("neko_val_field");
+      dyn_alloc_root = (alloc_root_func)LoadNekoFunc("neko_alloc_root");
+      dyn_copy_string = (copy_string_func)LoadNekoFunc("neko_copy_string");
+      dyn_val_id = (val_id_func)LoadNekoFunc("neko_val_id");
+      dyn_alloc_buffer = (alloc_buffer_func)LoadNekoFunc("neko_alloc_buffer");
+      dyn_fail = (fail_func)LoadNekoFunc("_neko_failure");
+      dyn_buffer_append_sub = (buffer_append_sub_func)LoadNekoFunc("neko_buffer_append_sub");
+      dyn_alloc_array = (alloc_array_func)LoadNekoFunc("neko_alloc_array");
+      init = true;
+   }
 
    if (!dyn_val_id)
      return 0;
@@ -527,6 +532,8 @@ ResolveProc InitDynamicNekoLoader()
 
 neko_value neko_init(neko_value inNewString,neko_value inNewArray,neko_value inNull, neko_value inTrue, neko_value inFalse)
 {
+   InitDynamicNekoLoader();
+
    gNekoNull = inNull;
    gNekoTrue = inTrue;
    gNekoFalse = inFalse;
@@ -706,7 +713,9 @@ ret IMPL_##name def_args \
 }\
 FUNC_##name name = IMPL_##name;
  
+#ifdef NEKO_COMPATIBLE
 DEFINE_PRIM(neko_init,5)
+#endif
 
 #else
 
