@@ -6,11 +6,36 @@
 #include <stdlib.h>
 
 
-#ifdef IMPLEMENT_API
+// --- Register functions (primitives) ----
 
-#include "CFFILoader.h"
+#ifdef STATIC_LINK
 
-#endif
+#define DEFINE_PRIM_MULT(func) \
+int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func)); \
+
+#define DEFINE_PRIM(func,nargs) \
+int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)); \
+
+#else
+
+#define DEFINE_PRIM_MULT(func) extern "C" { \
+  EXPORT void *func##__MULT() {  \
+     return (void*)(&func); \
+ } \
+}
+
+
+#define DEFINE_PRIM(func,nargs) extern "C" { \
+  EXPORT void *func##__##nargs() { \
+       return (void*)(&func); \
+  } \
+}
+
+#endif // !STATIC_LINK
+
+
+
+
  
 #define DEFFUNC_0(ret,name) DEFFUNC(name,ret, (), ())
 #define DEFFUNC_1(ret,name,t1) DEFFUNC(name,ret, (t1 a1), (a1))
@@ -41,6 +66,13 @@ enum ValueType
 enum { faNotFunction = -2, faVarArgs=-1, faArgs0=0 /* ... */ };
 
 typedef int field;
+
+
+
+#ifdef IMPLEMENT_API
+#include "CFFILoader.h"
+#endif
+
 
 #ifndef HAVE_NEKO_TYPES
 typedef struct _value *value;
@@ -83,32 +115,6 @@ extern FUNC_##name name;
 
 
 
-// --- Register functions (primitives) ----
-
-#ifdef STATIC_LINK
-
-#define DEFINE_PRIM_MULT(func) \
-int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func)); \
-
-#define DEFINE_PRIM(func,nargs) \
-int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)); \
-
-#else
-
-#define DEFINE_PRIM_MULT(func) extern "C" { \
-  EXPORT void *func##__MULT() {  \
-     return (void*)(&func); \
- } \
-}
-
-
-#define DEFINE_PRIM(func,nargs) extern "C" { \
-  EXPORT void *func##__##nargs() { \
-       return (void*)(&func); \
-  } \
-}
-
-#endif // !STATIC_LINK
 
 #define DEFINE_KIND(name) extern "C" { vkind name = 0; }
 
