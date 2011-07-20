@@ -313,7 +313,7 @@ Dynamic __hxcpp_parse_int(const String &inString)
 double __hxcpp_parse_float(const String &inString)
 {
    const HX_CHAR *str = inString.__s;
-   HX_CHAR *end = 0;
+   HX_CHAR *end = (HX_CHAR *)str;
    #ifdef HX_UTF8_STRINGS
    double result = str ? strtod(str,&end) : 0;
    #else
@@ -321,7 +321,7 @@ double __hxcpp_parse_float(const String &inString)
    #endif
 
    if (end==str)
-      Math_obj::NaN;
+      return Math_obj::NaN;
 
    return result;
 }
