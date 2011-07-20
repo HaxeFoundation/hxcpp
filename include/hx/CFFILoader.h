@@ -167,7 +167,7 @@ neko_value api_alloc_string(const char *inString)
 
 #define NOT_IMPLEMNETED(func) dyn_fail(api_alloc_string("NOT Implemented:" func),__FILE__,__LINE__)
 
-int api_empty() { return 0; }
+void * api_empty() { return 0; }
 
 bool api_val_bool(neko_value  arg1) { return arg1==gNekoTrue; }
 int api_val_int(neko_value  arg1) { return neko_val_int(arg1); }
@@ -436,19 +436,19 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(alloc_empty_object)
    IMPLEMENT_HERE(alloc_root)
 
-   IGNORE_API("gc_enter_blocking")
-   IGNORE_API("gc_exit_blocking")
-   IGNORE_API("gc_safe_point")
-   IGNORE_API("gc_add_root")
-   IGNORE_API("gc_remove_root")
-   IGNORE_API("gc_set_top_of_stack")
-   IGNORE_API("create_root")
-   IGNORE_API("query_root")
-   IGNORE_API("destroy_root")
-   IGNORE_API("hx_register_prim")
-   IGNORE_API("val_array_int")
-   IGNORE_API("val_array_double")
-   IGNORE_API("val_array_bool")
+   IGNORE_API(gc_enter_blocking)
+   IGNORE_API(gc_exit_blocking)
+   IGNORE_API(gc_safe_point)
+   IGNORE_API(gc_add_root)
+   IGNORE_API(gc_remove_root)
+   IGNORE_API(gc_set_top_of_stack)
+   IGNORE_API(create_root)
+   IGNORE_API(query_root)
+   IGNORE_API(destroy_root)
+   IGNORE_API(hx_register_prim)
+   IGNORE_API(val_array_int)
+   IGNORE_API(val_array_double)
+   IGNORE_API(val_array_bool)
 
    if (!strcmp(inName,"hx_alloc"))
       return LoadNekoFunc("neko_alloc");
