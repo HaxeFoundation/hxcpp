@@ -129,10 +129,7 @@ public:
 
    inline int cca(int inPos) const
 	{
-		#ifdef HXCPP_DEBUG
-      if (!__s) hx::CriticalError(HX_CSTRING("cca - Null String Reference"));
-		if (inPos<0 || inPos>=length) hx::CriticalError(HX_CSTRING("cca - Out Of Bounds"));
-      #endif
+		if ((unsigned)inPos>=length) return 0;
 		return __s[inPos];
 	}
 
