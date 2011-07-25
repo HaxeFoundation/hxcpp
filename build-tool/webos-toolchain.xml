@@ -32,7 +32,7 @@
 
 <!-- There are two sets of mcpu and mfpu flags. The default works for all webOS devices to date, using an armv6 instruction set. Setting the "armv7" directive will optimize for newer devices, but will not work properly on the Pixi or Pixi Plus -->
 
-<linker id="exe" exe="arm-none-linux-gnueabi-gcc" if="webos">
+<linker id="exe" exe="arm-none-linux-gnueabi-g++" if="webos">
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
@@ -48,6 +48,7 @@
 	<flag value="-L${PalmPDK}/device/lib"/>
 	<ext value=""/>
 	<outflag value="-o"/>
+	<lib name="-lpthread"/>
 	<lib name="-ldl"/>
 </linker>
 	
@@ -60,6 +61,7 @@
 	<flag value="-fpic"/>
 	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
+	<lib name="-lpthread"/>
 	<lib name="-ldl"/>
 	<ext value=".so"/>
 	<outflag value="-o"/>
