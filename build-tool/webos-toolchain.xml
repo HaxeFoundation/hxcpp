@@ -1,8 +1,13 @@
 <xml>
 
-<error value="PLEASE SET PalmPDK" if="windows_host" unless="PalmPDK" />
+<set name="PalmPDK" value="c:\Program Files (x86)\HP webOS\PDK" unless="PalmPDK" if="windows_host" />
 <set name="PalmPDK" value="/opt/PalmPDK" unless="PalmPDK" />
-<path name="${PalmPDK}/arm-gcc/bin/" />
+
+
+<path name="${PalmPDK}/arm-gcc/bin/" unless="windows_host" />
+
+<set name="CodeSourcery" value="C:\Program Files (x86)\CodeSourcery\Sourcery G++ Lite" unless = "CodeSourcery" />
+<path name="${CodeSourcery}/bin" if="windows_host"/>
  
 <include name="gcc-toolchain.xml"/>
 

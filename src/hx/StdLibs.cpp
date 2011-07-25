@@ -13,6 +13,9 @@ typedef uint64_t __int64;
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+#ifdef WEBOS
+#include <syslog.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -110,6 +113,8 @@ void __trace(Dynamic inObj, Dynamic inData)
 #ifdef HX_UTF8_STRINGS
    #ifdef ANDROID
    __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",
+   #elif defined(WEBOS)
+   syslog(LOG_INFO, "%s:%d: %s",
    #else
    printf("%s:%d: %s\n",
    #endif
