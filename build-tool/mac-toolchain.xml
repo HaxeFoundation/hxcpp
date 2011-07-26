@@ -27,7 +27,7 @@
 
 <linker id="dll" exe="g++" if="macos">
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-mmacosx-version-min=10.5" />
+  <flag value="-mmacosx-version-min=10.4" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-no_compact_linkedit"/>
@@ -45,9 +45,9 @@
 <linker id="exe" exe="g++" if="macos">
   <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-mmacosx-version-min=10.5" />
-  <flag value="-framework"/>
+  <flag value="-mmacosx-version-min=10.4" />
   <flag value="-no_compact_linkedit"/>
+  <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-debug" if="debug"/>
   <flag value="-m32" unless="HXCPP_M64"/>

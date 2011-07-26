@@ -20,6 +20,7 @@
   <exe name ="arm-none-linux-gnueabi-strip" if="webos" />
   <flag value="-u" if="macos"/>
   <flag value="-r" if="macos"/>
+  <flag value="-x" if="macos"/>
   <flag value="-d" if="linux"/>
 </stripper>
 
