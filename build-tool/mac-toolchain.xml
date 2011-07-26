@@ -30,6 +30,7 @@
   <flag value="-mmacosx-version-min=10.5" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
+  <flag value="-no_compact_linkedit"/>
   <flag value="-dynamiclib"/>
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
@@ -46,6 +47,7 @@
   <fromfile value="" if="GCC_OLD" />
   <flag value="-mmacosx-version-min=10.5" />
   <flag value="-framework"/>
+  <flag value="-no_compact_linkedit"/>
   <flag value="Cocoa"/>
   <flag value="-debug" if="debug"/>
   <flag value="-m32" unless="HXCPP_M64"/>
