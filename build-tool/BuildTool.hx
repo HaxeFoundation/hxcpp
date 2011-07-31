@@ -509,6 +509,10 @@ class BuildTool
    var mTargets : Targets;
    public static var sAllowNumProcs = true;
    public static var HXCPP = "";
+   public static var verbose = false;
+   public static var isWindows = false;
+   public static var isLinux = false;
+   public static var isMac = false;
 
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
@@ -946,21 +950,26 @@ class BuildTool
       }
 
       var os = neko.Sys.systemName();
-      var windows_host = (new EReg("window","i")).match(os);
-		if (windows_host)
+      isWindows = (new EReg("window","i")).match(os);
+		if (isWindows)
 		   defines.set("windows_host", "1");
-      var mac_host = (new EReg("mac","i")).match(os);
-		if (mac_host)
+      isMac = (new EReg("mac","i")).match(os);
+		if (isMac)
 		   defines.set("mac_host", "1");
-      var linux_host = (new EReg("linux","i")).match(os);
-		if (linux_host)
+      var isLinux = (new EReg("linux","i")).match(os);
+		if (isLinux)
 		   defines.set("linux_host", "1");
 
 
       for(arg in args)
       {
          if (arg.substr(0,2)=="-D")
-            defines.set(arg.substr(2),"");
+         {
+            var val = arg.substr(2);
+            defines.set(val,"");
+            if (val=="verbose")
+               verbose = true;
+         }
          if (arg.substr(0,2)=="-I")
             include_path.push(arg.substr(2));
          else if (makefile.length==0)
@@ -968,6 +977,8 @@ class BuildTool
          else
             targets.push(arg);
       }
+
+      Setup.initHXCPPConfig(defines);
 
       include_path.push(".");
       var env = neko.Sys.environment();
@@ -1058,12 +1069,6 @@ class BuildTool
       {
          for(e in env.keys())
             defines.set(e, neko.Sys.getEnv(e) );
-
-         if ( !defines.exists("HXCPP_CONFIG") )
-            defines.set("HXCPP_CONFIG",".hxcpp_config.xml");
-
-         if (defines.exists("mingw") && !defines.exists("MINGW_ROOT") )
-            defines.set("MINGW_ROOT","c:/MinGW");
 
          new BuildTool(makefile,defines,targets,include_path);
       }

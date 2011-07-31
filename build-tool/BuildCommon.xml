@@ -1,9 +1,6 @@
 <xml>
 
-<set name="HXCPP_CONFIG" value="${USER_PROFILE}/.hxcpp_config.xml" if="windows" unless="HXCPP_CONFIG" />
-<set name="HXCPP_CONFIG" value="${HOME}/.hxcpp_config.xml" unless="HXCPP_CONFIG" />
-
-<!-- <echo value="Using config : ${HXCPP_CONFIG}" /> -->
+<echo value="Using config : ${HXCPP_CONFIG}" if="verbose" />
 
 <set name="DBG" value="-debug" if="debug"/>
 <set name="M64" value="64" if="HXCPP_M64"/>

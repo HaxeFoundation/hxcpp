@@ -1,5 +1,51 @@
 class Setup
 {
+   public static function initHXCPPConfig(ioDefines:Hash<String> )
+   {
+      var env = neko.Sys.environment();
+      // If the user has set it themselves, they mush know what they are doing...
+      if (env.exists("HXCPP_CONFIG"))
+         return;
+
+      var home = "";
+      if (env.exists("HOME"))
+        home = env.get("HOME");
+      else if (env.exists("USERPROFILE"))
+        home = env.get("USERPROFILE");
+      else
+      {
+         neko.Lib.println("Warning: No 'HOME' variable set - .hxcpp_config.xml might be missing.");
+         return;
+      }
+
+      var  config = toPath(home+"/.hxcpp_config.xml");
+      ioDefines.set("HXCPP_CONFIG",config);
+
+      var src = toPath(BuildTool.HXCPP + "build-tool/example.hxcpp_config.xml");
+      if (!neko.FileSystem.exists(config))
+      {
+         try {
+            if (BuildTool.verbose)
+                neko.Lib.println("Copy config: " + src + " -> " + config );
+
+            neko.io.File.copy(src,config);
+         } catch(e:Dynamic)
+         {
+            neko.Lib.println("Warning : could not create config: " + config );
+         }
+      }
+   }
+
+   static function toPath(inPath:String)
+   {
+      if (!BuildTool.isWindows)
+         return inPath;
+      var bits = inPath.split("/");
+      return bits.join("\\");
+   }
+
+
+
    public static function setupMSVC(ioDefines:Hash<String> )
    {
       if (!ioDefines.exists("NO_AUTO_MSVC"))
@@ -51,6 +97,8 @@ class Setup
              if (reg.match(str))
              {
                 cl_version = reg.matched(1);
+                if (BuildTool.verbose)
+                   neko.Lib.println("Using msvc cl version " + cl_version);
                 BuildTool.sAllowNumProcs = Std.parseInt(reg.matched(1)) >= 14;
              }
            }

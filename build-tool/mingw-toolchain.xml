@@ -2,6 +2,9 @@
 
 <!-- MINGW TOOLS -------------------------------------->
 
+<set name="MINGW_ROOT" value="c:/MinGW" unless="MINGW_ROOT" />
+
+
 <path name="${MINGW_ROOT}/bin"/>
 
 <include name="gcc-toolchain.xml"/>
