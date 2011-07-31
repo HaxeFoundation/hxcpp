@@ -507,7 +507,8 @@ class BuildTool
    var mLinkers : Linkers;
    var mFileGroups : FileGroups;
    var mTargets : Targets;
-   static var sAllowNumProcs = true;
+   public static var sAllowNumProcs = true;
+   public static var HXCPP = "";
 
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
@@ -525,6 +526,9 @@ class BuildTool
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
 
       parseXML(xml,"");
+
+      if (mDefines.get("toolchain")=="msvc")
+         Setup.setupMSVC(mDefines);
 
       if (mTargets.exists("default"))
          buildTarget("default");
@@ -923,7 +927,6 @@ class BuildTool
       include_path.push(".");
 
       var args = neko.Sys.args();
-      var HXCPP = "";
       // Check for calling from haxelib ...
       if (args.length>0)
       {
@@ -1028,61 +1031,7 @@ class BuildTool
          defines.set("windows","windows");
          defines.set("BINDIR",m64 ? "Windows64":"Windows");
 
-			if (defines.exists("msvc10") || defines.exists("msvc8"))
-			{
-				var ver = defines.exists("msvc10") ? "msvc10" : "msvc8";
-				var vc_setup_proc = new neko.io.Process("cmd.exe", ["/C", HXCPP + "build-tool\\" + ver + "-setup.bat" ]);
-				var vars_found = false;
-				try{
-				   while(true)
-				   {
-               	var str = vc_setup_proc.stdout.readLine();
-						if (str=="HXCPP_VARS")
-							vars_found = true;
-						else if (!vars_found)
-				      	neko.Lib.println(str);
-						else
-						{
-						   var pos = str.indexOf("=");
-							var name = str.substr(0,pos);
-							switch(name)
-							{
-							   case "PATH", "VCINSTALLDIR", "WindowsSdkDir","Framework35Version",
-								   "FrameworkDir", "FrameworkDIR32", "FrameworkVersion",
-									"FrameworkVersion32", "DevEnvDir", "INCLUDE", "LIB", "LIBPATH"
-								 :
-							      var value = str.substr(pos+1);
-							      //trace(name + " = " + value);
-					            defines.set(name,value);
-                           neko.Sys.putEnv(name,value);
-							}
-						}
-				   } 
-				} catch (e:Dynamic) { };
-            vc_setup_proc.close();
-            if (!vars_found)
-               throw("Could not setup " + ver);
-			}
 
-			var cl_version = "";
-         try
-         {
-            var proc = new neko.io.Process("cl.exe",[]);
-            var str = proc.stderr.readLine();
-            proc.close();
-            if (str>"")
-            {
-                var reg = ~/Version\s+(\d+)/i;
-                if (reg.match(str))
-					 {
-					 	cl_version = reg.matched(1);
-                   BuildTool.sAllowNumProcs = Std.parseInt(reg.matched(1)) >= 14;
-					 }
-            }
-         }
-         catch(e:Dynamic){}
-
-			//if (cl_version!="") neko.Lib.println("Using cl version: " + cl_version);
       }
       else if ( (new EReg("linux","i")).match(os) )
       {

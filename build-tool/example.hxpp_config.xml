@@ -44,6 +44,11 @@
           this to debug some problems though. -->
      <!-- <set name="nostrip" value="1" /> -->
 
+     <!-- Let the system detect the latest version of MSVC on windows
+          (otherwise must setup the environment yourself) -->
+     <!-- Disable with <set name="NO_AUTO_MSVC" value="1" /> -->
+     <!-- To disable specific versions: <setenv name="VS110COMNTOOLS" value="disable" /> -->
+
      <!-- If you put all your SDKs in one directory, then you can just set this
           single variable.  If you put them in exactly this place, then you should not
           need to setup anything ! -->
