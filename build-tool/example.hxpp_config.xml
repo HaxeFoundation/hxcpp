@@ -1,0 +1,99 @@
+<!--
+
+  This file will get included twice - once at the beginning - once at the end.
+
+  The first time though, the "vars" section is parsed, and this is where you can
+   set variables to control the setup of the standard compilers and install paths etc.
+
+  The second time, the "exes" section is parsed, and you can modify the linkers/compilers
+   by adding flags to these executables.
+  
+-->
+
+<xml>
+
+  <!-- This section is parses at the beginning of the build .... -->
+  <section id="vars">
+
+     <!-- Use this to control the SDK used when compiling for iphone/iphonesim -->
+     <set name="IPHONE_VER" value="4.2"/>
+
+     <!-- If you want to control how many compilers get spawned .
+          The default will use the number of processors.
+          Reducing this to 1 can help deciphering error messages. -->
+     <!-- <set name="HXCPP_COMPILE_THREADS" value="1" /> -->
+
+     <!-- Used for legacy BOEHM GC on mac - can ignore now -->
+     <!-- <set name="macos_leopard" value="1"/> -->
+
+     <!-- Add this if your compiler does not support precompiled headers -->
+     <!-- <set name="NO_PRECOMPILED_HEADERS" value="1"/> -->
+
+     <!-- Normally, hxcpp will try to build using the 10.5 SDK, for greater compatibility.
+          If you do not have this installed, then you can use your installed one - but then
+          your exes may not work on older macs. -->
+     <!-- <set name ="MAC_USE_CURRENT_SDK" value="1" /> -->
+
+     <!-- Older versions of gcc do not suport the @file syntax for an obj file list
+          and precompiled headers.  Set this if you have these issues -->
+     <!-- <set name="GCC_OLD" value="1" /> -->
+
+
+     <!-- Skip the "stripping" phase.  This will leave extra symbols in you exe, which
+          may allow reverse engineering and larger file sizes.  You might want to do
+          this to debug some problems though. -->
+     <!-- <set name="nostrip" value="1" /> -->
+
+     <!-- If you put all your SDKs in one directory, then you can just set this
+          single variable.  If you put them in exactly this place, then you should not
+          need to setup anything ! -->
+     <set name="SDK_ROOT" value="c:\SDKs\" unless="SDK_ROOT" if="windows" />
+     <set name="SDK_ROOT" value="${HOME}/SDKs/" unless="SDK_ROOT" />
+
+
+     <!-- ANDROID_NDK_ROOT is required for building android binaries. See:
+            http://developer.android.com/sdk/ndk/index.html -->
+     <set name="ANDROID_NDK_ROOT" value="${SDK_ROOT}/android-ndk-r6"/>
+
+     <!-- ant is required to build android packages. See:
+            http://ant.apache.org/bindownload.cgi -->
+     <set name="ANT_HOME" value="${SDK_ROOT}/ant" unless="ANT_HOME" />
+
+     <!-- The ANDROID_SDK is required for building androis packages. See
+            http://developer.android.com/sdk/index.html -->
+     <set name="ANDROID_SDK" value="${SDK_ROOT}/android-sdk" unless="ANDROID_SDK" />
+
+     <!-- The Java development kit (which should include the java runtime) is
+         also required for android dev. Make sure to get the 32 bit version! -->
+
+     <set name="JAVA_HOME" value="${SDK_ROOT}/java_jdk" unless="JAVA_HOME" />
+
+
+  </section>
+
+
+  <!-- Use this section to add flags to the compilers and linkers -->
+  <section id="exes">
+
+     <!-- Compiling on windows ... -->
+     <compiler id="MSVC" if="windows">
+        <!-- Example adding a build flag -->
+        <flag value = "-Ie:/VS8//PlatformSDK/Include"/>
+     </compiler>
+
+     <!-- Linking on windows ... -->
+     <linker id="dll" if="windows">
+        <!-- Add library paths for windows (DirectX needed for building NME) -->
+        <flag value = "-libpath:e:\VS8\DirectXSDK\Lib\x86"/>
+        <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/>
+     </linker>
+
+     <!-- And for linking executables -->
+     <linker id="exe" if="windows">
+        <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/>
+     </linker>
+
+  </section>
+
+</xml>
+

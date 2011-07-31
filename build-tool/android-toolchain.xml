@@ -4,20 +4,18 @@
 
 <include name="gcc-toolchain.xml"/>
 
-<path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/arm-linux-androideabi/bin"/>
-<path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/libexec/gcc/arm-linux-androideabi/4.4.3"/>
+<path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/bin"/>
 
 <!-- no 7a for now ... -->
 <set name="cpp-eabi" value="armeabi"/>
 
-<compiler id="android-gcc" exe="g++">
+<compiler id="android-gcc" exe="arm-linux-androideabi-g++">
 
  <!-- These must appear in this order! -->
 
- <flag value="-I${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/4.4.3/include/"/>
+ <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm"/>
  <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/include"/>
  <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/include"/>
- <flag value="-I${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/include"/>
 
  <flag value="-I${HXCPP}/include"/>
  <flag value="-Iinclude"/>
@@ -56,7 +54,7 @@
 
 <!-- -Wl,-soname,libgl2jni.so
 -->
-<linker id="dll" exe="g++" if="android">
+<linker id="dll" exe="arm-linux-androideabi-g++" >
 
   <ext value=".so"/>
   <outflag value="-o"/>
@@ -73,7 +71,6 @@
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/libstdc++.a"/>
   <lib name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/4.4.3/libgcc.a"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib/libc.so"/>
-  <lib name="${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib/libm.so"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib/libm.so"/>
   <lib name="-llog"/>
   <lib name="-ldl"/>

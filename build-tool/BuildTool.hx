@@ -1116,21 +1116,6 @@ class BuildTool
          if (defines.exists("mingw") && !defines.exists("MINGW_ROOT") )
             defines.set("MINGW_ROOT","c:/MinGW");
 
-         if (defines.exists("android") )
-         {
-            if (!defines.exists("ANDROID_NDK_ROOT"))
-               throw("Please define ANDROID_NDK_ROOT");
-
-				var stdlibcpp = defines.get("ANDROID_NDK_ROOT") +
-				   "/sources/cxx-stl/gnu-libstdc++/libs/armeabi/libstdc++.a";
-				if (neko.FileSystem.exists(stdlibcpp) &&
-				     neko.FileSystem.stat(stdlibcpp).size < 7000000 )
-				{
-					neko.Lib.println("\n*** Warning your current version of libstdc++.a will not work on version <= 2.1\n\n");
-				}
-         }
-
-
          new BuildTool(makefile,defines,targets,include_path);
       }
    }

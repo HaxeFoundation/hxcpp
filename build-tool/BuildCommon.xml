@@ -1,45 +1,12 @@
 <xml>
 
-<!-- You can override the in a "vars" section on your own .hxcpp_config -->
-<!-- eg:
+<set name="HXCPP_CONFIG" value="${USER_PROFILE}/.hxcpp_config.xml" if="windows" unless="HXCPP_CONFIG" />
+<set name="HXCPP_CONFIG" value="${HOME}/.hxcpp_config.xml" unless="HXCPP_CONFIG" />
 
-<xml>
-
-  <section id="vars">
-     <set name="IPHONE_VER" value="2.2.1"/>
-     <set name="macos_leopard" value="1"/>
-     <set name="NO_PRECOMPILED_HEADERS" value="1"/>
-  </section>
-
-  <section id="exes">
-
-      <compiler id="MSVC" if="windows">
-        <flag value = "-Ie:/VS8//PlatformSDK/Include"/>
-     </compiler>
-
-     <linker id="dll" if="windows">
-        <flag value = "-libpath:e:\VS8\DirectXSDK\Lib\x86"/>
-        <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/>
-     </linker>
-
-     <linker id="exe" if="windows">
-        <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/>
-     </linker>
-
-  </section>
-
-</xml>
-
-You can also set the environment variable "HXCPP_COMPILE_THREADS" to the number of threads
-you wish to use when compiling.  Setting it to 1 per CPU can speed things up,
-and setting it to 1 can help with debug if there is a problem compiling.
-
--->
-
+<!-- <echo value="Using config : ${HXCPP_CONFIG}" /> -->
 
 <set name="DBG" value="-debug" if="debug"/>
 <set name="M64" value="64" if="HXCPP_M64"/>
-<set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
 
 <set name="STD_MODULE_LINK" value="dll"/>
 
@@ -67,6 +34,7 @@ and setting it to 1 can help with debug if there is a problem compiling.
 
 <include name="${HXCPP_CONFIG}" section="vars" noerror="1"/>
 
+<set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
 
 <!-- You can override the exes an "exe" section on your own .hxcpp_config -->
 <!-- You can use replace="1" to change the compiler, or omit to add flags -->
