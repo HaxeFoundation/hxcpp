@@ -58,7 +58,7 @@
 
      <!-- ANDROID_NDK_ROOT is required for building android binaries. See:
             http://developer.android.com/sdk/ndk/index.html -->
-     <set name="ANDROID_NDK_ROOT" value="${SDK_ROOT}/android-ndk-r6"/>
+     <set name="ANDROID_NDK_ROOT" value="${SDK_ROOT}/android-ndk-r6" unless="ANDROID_NDK_ROOT" />
 
      <!-- ant is required to build android packages. See:
             http://ant.apache.org/bindownload.cgi -->
