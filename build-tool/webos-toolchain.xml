@@ -18,37 +18,31 @@
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
-	<flag value="-s" unless="debug"/>
 	<flag value="-I${HXCPP}/include"/>
 	<flag value="-I${PalmPDK}/include"/>
-	<flag value="-mcpu=cortex-a8" if="palmpre" />
-	<flag value="-mfpu=neon" if="palmpre" />
-	<flag value="-mcpu=arm1136jf-s" unless="palmpre" />
-	<flag value="-mfpu=vfp" unless="palmpre" />
+  	<flag value="-mcpu=cortex-a8" unless="armv6" />
+	<flag value="-mfpu=neon" unless="armv6" />
+	<flag value="-mcpu=arm1136jf-s" if="armv6" />
+	<flag value="-mfpu=vfp" if="armv6" />
 	<flag value="-mfloat-abi=softfp"/>
 	<flag value="-DWEBOS"/>
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
+	<flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
+	<flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+	<flag value="-fpic"/>
+	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
 	<outflag value="-o"/>
 	<objdir value="./obj/webos-dbg" if="debug"/>
 	<objdir value="./obj/webos" unless="debug"/>
 </compiler>
 
-<!-- There are two sets of mcpu and mfpu flags. The default works for all webOS devices to date, using an armv6 instruction set. Setting the "armv7" directive will optimize for newer devices, but will not work properly on the Pixi or Pixi Plus -->
 
 <linker id="exe" exe="arm-none-linux-gnueabi-g++" if="webos">
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
-	<flag value="-mcpu=cortex-a8" if="armv7" />
-	<flag value="-mfpu=neon" if="armv7" />
-	<flag value="-mcpu=arm1136jf-s" unless="armv7" />
-	<flag value="-mfpu=vfp" unless="armv7" />
-	<flag value="-mfloat-abi=softfp"/>
-	<flag value="-DWEBOS"/>
-	<flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
-	<flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
 	<flag value="-rdynamic"/>
 	<flag value="-L${PalmPDK}/device/lib"/>
 	<ext value=""/>
@@ -63,10 +57,10 @@
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
 	<flag value="-L${PalmPDK}/device/lib"/>
-	<flag value="-fpic"/>
-	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
 	<lib name="-lpthread"/>
+	<flag value="-fpic"/>
+	<flag value="-fPIC"/>
 	<lib name="-ldl"/>
 	<ext value=".so"/>
 	<outflag value="-o"/>
