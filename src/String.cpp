@@ -116,10 +116,16 @@ String::String(const cpp::CppInt32__ &inRHS)
 #ifdef HX_UTF8_STRINGS
 String::String(const wchar_t *inPtr,int inLen)
 {
-   if (!inPtr || inLen==0)
+   if (!inPtr)
    {
        __s = 0;
        length = 0;
+   }
+   else if (inLen==0)
+   {
+       __s = 0;
+       length = 0;
+       *this = HX_CSTRING("");
    }
    else
    {
