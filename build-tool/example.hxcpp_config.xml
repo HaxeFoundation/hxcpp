@@ -16,7 +16,33 @@
   <section id="vars">
 
      <!-- Use this to control the SDK used when compiling for iphone/iphonesim -->
-     <set name="IPHONE_VER" value="4.2"/>
+     <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" unless="IPHONE_VER" />
+
+     <!-- If you put all your SDKs in one directory, then you can just set this
+          single variable.  If you put them in exactly this place, then you should not
+          need to setup anything ! -->
+     <set name="SDK_ROOT" value="c:\SDKs\" unless="SDK_ROOT" if="windows" />
+     <set name="SDK_ROOT" value="${HOME}/SDKs/" unless="SDK_ROOT" />
+
+
+     <!-- ANDROID_NDK_ROOT is required for building android binaries. See:
+            http://developer.android.com/sdk/ndk/index.html -->
+     <set name="ANDROID_NDK_ROOT" value="${SDK_ROOT}/android-ndk-r6" unless="ANDROID_NDK_ROOT" />
+
+     <!-- ant is required to build android packages. See:
+            http://ant.apache.org/bindownload.cgi -->
+     <set name="ANT_HOME" value="${SDK_ROOT}/ant" unless="ANT_HOME" />
+
+     <!-- The ANDROID_SDK is required for building androis packages. See
+            http://developer.android.com/sdk/index.html -->
+     <set name="ANDROID_SDK" value="${SDK_ROOT}/android-sdk" unless="ANDROID_SDK" />
+
+     <!-- The Java development kit (which should include the java runtime) is
+         also required for android dev. Make sure to get the 32 bit version! -->
+
+     <set name="JAVA_HOME" value="${SDK_ROOT}/java_jdk" unless="JAVA_HOME" />
+
+
 
      <!-- If you want to control how many compilers get spawned .
           The default will use the number of processors.
@@ -48,30 +74,6 @@
           (otherwise must setup the environment yourself) -->
      <!-- Disable with <set name="NO_AUTO_MSVC" value="1" /> -->
      <!-- To disable specific versions: <setenv name="VS110COMNTOOLS" value="disable" /> -->
-
-     <!-- If you put all your SDKs in one directory, then you can just set this
-          single variable.  If you put them in exactly this place, then you should not
-          need to setup anything ! -->
-     <set name="SDK_ROOT" value="c:\SDKs\" unless="SDK_ROOT" if="windows" />
-     <set name="SDK_ROOT" value="${HOME}/SDKs/" unless="SDK_ROOT" />
-
-
-     <!-- ANDROID_NDK_ROOT is required for building android binaries. See:
-            http://developer.android.com/sdk/ndk/index.html -->
-     <set name="ANDROID_NDK_ROOT" value="${SDK_ROOT}/android-ndk-r6" unless="ANDROID_NDK_ROOT" />
-
-     <!-- ant is required to build android packages. See:
-            http://ant.apache.org/bindownload.cgi -->
-     <set name="ANT_HOME" value="${SDK_ROOT}/ant" unless="ANT_HOME" />
-
-     <!-- The ANDROID_SDK is required for building androis packages. See
-            http://developer.android.com/sdk/index.html -->
-     <set name="ANDROID_SDK" value="${SDK_ROOT}/android-sdk" unless="ANDROID_SDK" />
-
-     <!-- The Java development kit (which should include the java runtime) is
-         also required for android dev. Make sure to get the 32 bit version! -->
-
-     <set name="JAVA_HOME" value="${SDK_ROOT}/java_jdk" unless="JAVA_HOME" />
 
 
   </section>
