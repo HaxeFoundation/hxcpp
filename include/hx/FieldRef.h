@@ -265,6 +265,31 @@ HX_INDEX_REF_OP_DYNAMIC(+,Dynamic)
 HX_INDEX_REF_OP_DYNAMIC(*,double)
 
 
+
+template<typename _OBJ>
+class __TArrayImplRef
+{
+public:
+   _OBJ &mObject;
+   int mIndex;
+
+   explicit __TArrayImplRef(_OBJ &inObj,int inIndex) : mObject(inObj), mIndex(inIndex) { }
+
+   template<typename _DATA>
+   inline void operator=(_DATA inRHS)
+   {
+      mObject->__set(mIndex,inRHS);
+   }
+};
+
+template<typename _OBJ>
+__TArrayImplRef<_OBJ> __ArrayImplRef(_OBJ &inObj, int inIndex)
+{
+   return __TArrayImplRef<_OBJ>(inObj,inIndex);
+}
+
+
+
 } // end namespace hx
 
 
