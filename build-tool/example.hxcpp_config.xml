@@ -15,8 +15,9 @@
   <!-- This section is parses at the beginning of the build .... -->
   <section id="vars">
 
-     <!-- Use this to control the SDK used when compiling for iphone/iphonesim -->
-     <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
+     <!-- Use this to control the SDK used when compiling for iphone/iphonesim, and the
+           default is not found, or you wish to use a specific version -->
+     <!-- <set name="IPHONE_VER" value="4.2" /> -->
 
      <!-- If you put all your SDKs in one directory, then you can just set this
           single variable.  If you put them in exactly this place, then you should not
