@@ -50,9 +50,6 @@
           Reducing this to 1 can help deciphering error messages. -->
      <!-- <set name="HXCPP_COMPILE_THREADS" value="1" /> -->
 
-     <!-- Used for legacy BOEHM GC on mac - can ignore now -->
-     <!-- <set name="macos_leopard" value="1"/> -->
-
      <!-- Add this if your compiler does not support precompiled headers -->
      <!-- <set name="NO_PRECOMPILED_HEADERS" value="1"/> -->
 

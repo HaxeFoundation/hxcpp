@@ -2,11 +2,7 @@
 #include "RedBlack.h"
 #include "FieldMap.h"
 
-#ifndef HX_INTERNAL_GC
-#include <gc_allocator.h>
-#else
 #include <hx/CFFI.h>
-#endif
 #include <map>
 
 
@@ -104,35 +100,22 @@ typedef int IntKey;
 typedef const int IntKey;
 #endif
 
-#ifdef HX_INTERNAL_GC
 typedef std::map<IntKey,Dynamic, std::less<IntKey> > Map;
-#else
-typedef std::map<IntKey,Dynamic, std::less<IntKey>, gc_allocator< std::pair<IntKey, Dynamic> > > Map;
-#endif
 
 class hxMap : public Map
 {
-#ifndef HX_INTERNAL_GC
-public:
-   void *operator new( size_t inSize ) { return GC_MALLOC(inSize); }
-   void operator delete( void * ) { }
-#endif
 };
 
 private:
    Map *mMap;
-#ifdef HX_INTERNAL_GC
 	hx::InternalFinalizer *mFinalizer;
-#endif
 
 public:
    IntHash()
 	{
 		mMap = new hxMap;
-		#ifdef HX_INTERNAL_GC
 		mFinalizer = new hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = Destroy;
-		#endif
 	}
 
    void set(int inKey,const Dynamic &inValue) { (*mMap)[inKey] = inValue; }
@@ -184,9 +167,7 @@ public:
 
    void __Mark(HX_MARK_PARAMS)
    {
-		#ifdef HX_INTERNAL_GC
 		mFinalizer->Mark();
-		#endif
       for(Map::iterator i=mMap->begin();i!=mMap->end();++i)
       {
          HX_MARK_OBJECT(i->second.mPtr);

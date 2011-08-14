@@ -35,28 +35,14 @@ void ArrayBase::EnsureSize(int inSize) const
          if (mBase)
          {
             mBase = (char *)hx::GCRealloc(mBase, bytes );
-            // atomic data not cleared by gc lib ...
-            #ifndef GC_CLEARS_ALL
-               #ifndef GC_CLEARS_OBJECTS
-               if (AllocAtomic())
-               #endif
-                  memset(mBase + obytes, 0, bytes-obytes);
-            #endif
          }
          else if (AllocAtomic())
          {
             mBase = (char *)hx::NewGCPrivate(0,bytes);
-            // atomic data not cleared ...
-            #ifndef GC_CLEARS_ALL
-                  memset(mBase,0,bytes);
-            #endif
          }
          else
          {
             mBase = (char *)hx::NewGCBytes(0,bytes);
-            #ifndef GC_CLEARS_OBJECTS
-                  memset(mBase,0,bytes);
-            #endif
          }
       }
       length = s;

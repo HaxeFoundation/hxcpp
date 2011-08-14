@@ -14,7 +14,6 @@ enum { gFillWithJunk = 0 } ;
 #endif
 
 
-#ifdef HX_INTERNAL_GC
 
 #ifdef HX_WINDOWS
 #include <windows.h>
@@ -1603,7 +1602,11 @@ void *InternalNew(int inSize,bool inIsObject)
       InitAlloc();
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
-      return sGlobalAlloc->AllocLarge(inSize);
+   {
+      void *result = sGlobalAlloc->AllocLarge(inSize);
+      memset(result,0,inSize);
+      return result;
+   }
    else
    {
       LocalAllocator *tla = GetLocalAlloc();
@@ -1719,4 +1722,3 @@ void hxcpp_set_top_of_stack()
 
 void DummyFunction(void *inPtr) { }
 
-#endif // if HX_INTERNAL_GC

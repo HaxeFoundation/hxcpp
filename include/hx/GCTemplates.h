@@ -9,8 +9,6 @@ namespace hx
 
 template<typename T> inline void MarkMember(T &outT HX_MARK_ADD_PARAMS) { }
 
-#ifdef HX_INTERNAL_GC
-
 template<typename T> inline void MarkMember(hx::ObjectPtr<T> &outT HX_MARK_ADD_PARAMS)
 {
 	HX_MARK_OBJECT(outT.mPtr);
@@ -32,8 +30,6 @@ template<> inline void MarkMember<String>(String &outT HX_MARK_ADD_PARAMS)
 }
 template<> inline void MarkMember<Void>(Void &outT HX_MARK_ADD_PARAMS) {  }
 
-
-#endif
 
 // Template used to register and initialise the statics in the one call.
 template<typename T> inline T &Static(T &inPtr) { hx::RegisterObject((hx::Object **)&inPtr); return inPtr; }

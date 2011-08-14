@@ -427,16 +427,12 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
       HX_BEGIN_LOCAL_FUNC_S14(hx::LocalFunc,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13)
 
 
-#ifdef HX_INTERNAL_GC
 namespace hx {
 extern void SetTopOfStack(int *inTopOfStack,bool);
 }
 #define HX_TOP_OF_STACK \
 		int t0 = 99; \
 		hx::SetTopOfStack(&t0,false);
-#else
-	#define HX_TOP_OF_STACK
-#endif
 
 #ifdef ANDROID
 // Java Main....

@@ -419,13 +419,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    String str(inFieldName,strlen(inFieldName));
 
    // Make into "const" string that will not get collected...
-   #ifdef HX_INTERNAL_GC
    str = String((HX_CHAR *)hx::InternalCreateConstBuffer(str.__s,(str.length+1) * sizeof(HX_CHAR)), str.length );
-   #else
-   HX_CHAR *w = (HX_CHAR *)malloc((str.length+1) * sizeof(HX_CHAR));
-   memcpy(w,str.__s,(str.length+1) * sizeof(HX_CHAR));
-   str = String(w, str.length );
-   #endif
 
    if (sgFieldToStringAlloc<=sgFieldToStringSize+1)
    {
@@ -457,11 +451,7 @@ int __hxcpp_obj_id(Dynamic inObj)
    hx::Object *obj = inObj->__GetRealObject();
    if (!obj) return 0;
    #ifdef HXCPP_M64
-      #ifdef HX_INTERNAL_GC
-      return hx::InternalAllocID(obj);
-      #else
-      return (int)(size_t)obj;
-      #endif
+   return hx::InternalAllocID(obj);
    #else
    return (int)(obj);
    #endif

@@ -18,7 +18,6 @@
   <flag value="-g" if="debug"/>
   <flag value="-O2"/>
   <flag value="-DHX_WINDOWS"/>
-  <flag value="-DHXCPP_BOEHM_GC" if="HXCPP_BOEHM_GC"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-DHXCPP_DEBUG" if="debug"/>

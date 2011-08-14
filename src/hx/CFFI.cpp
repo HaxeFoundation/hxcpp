@@ -36,15 +36,12 @@ public:
 
    void __Mark(HX_MARK_PARAMS)
    {
-      #ifdef HX_INTERNAL_GC
       if (mFinalizer)
          mFinalizer->Mark();
-      #endif
    }
 
    void SetFinalizer(finalizer inFinalizer)
    {
-      #ifdef HX_INTERNAL_GC
       if (!inFinalizer)
       {
          mFinalizer->Detach();
@@ -56,16 +53,9 @@ public:
             mFinalizer = new hx::InternalFinalizer(this);
          mFinalizer->mFinalizer = inFinalizer;
       }
-      #else
-      mFinalizer = 0;
-      #endif
    }
 
-   #ifdef HX_INTERNAL_GC
    hx::InternalFinalizer *mFinalizer;
-   #else
-   finalizer mFinalizer;
-   #endif
    void *mHandle;
    int mType;
 };
@@ -667,23 +657,15 @@ void * alloc_private(int arg1)
 
 void  val_gc(hx::Object * arg1,hx::finalizer arg2) THROWS
 {
-   #ifdef HX_INTERNAL_GC
    hx::Abstract_obj *abstract = dynamic_cast<hx::Abstract_obj *>(arg1);
    if (!abstract)
       hx::Throw(HX_CSTRING("Finalizer not on abstract object"));
    abstract->SetFinalizer(arg2);
-   #else
-   hx::GCAddFinalizer( arg1, arg2 );
-   #endif
 }
 
 void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2) THROWS
 {
-   #ifdef HX_INTERNAL_GC
    hx::Throw(HX_CSTRING("Finalizer not supported here"));
-   #else
-   hx::GCAddFinalizer( (hx::Object *)arg1, (hx::finalizer)arg2 );
-   #endif
 }
 
 void  val_gc_add_root(hx::Object **inRoot)
@@ -699,9 +681,7 @@ void  val_gc_remove_root(hx::Object **inRoot)
 
 void  gc_set_top_of_stack(int *inTopOfStack,bool inForce)
 {
-#ifdef HX_INTERNAL_GC
    hx::SetTopOfStack(inTopOfStack,inForce);
-#endif
 }
 
 

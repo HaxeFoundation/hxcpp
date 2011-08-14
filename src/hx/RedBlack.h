@@ -34,13 +34,7 @@
 #define HEIGHT_LIMIT 64 /* Tallest allowable tree */
 #endif
 
-#ifdef HX_INTERNAL_GC
 #define DO_ALLOC(x) hx::InternalNew(x,false)
-#else
-#include <gc.h>
-#include <gc_allocator.h>
-#define DO_ALLOC(x) GC_MALLOC(x)
-#endif
 
  
 template<typename KEY,typename VALUE>

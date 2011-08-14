@@ -188,24 +188,6 @@ void __hxcpp_check_overflow(int inVal);
 namespace hx { class MarkContext; }
 
 
-// HX_INTERNAL_GC is now the default, unless HXCPP_BOEHM_GC is defined...
-
-#ifndef HXCPP_BOEHM_GC
-#ifndef HX_INTERNAL_GC
-  #define HX_INTERNAL_GC
-#endif
-#endif
-
-#ifdef HX_INTERNAL_GC
-  #define GC_CLEARS_ALL
-#else
-  #ifndef HXCPP_MULTI_THREADED
-     #define HXCPP_MULTI_THREADED
-  #endif
-#endif
-
-
-
 
 // The order of these includes has been chosen to minimize forward declarations.
 // You should not include the individual files, just this one.

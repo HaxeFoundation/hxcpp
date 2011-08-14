@@ -3,12 +3,6 @@
 #include <hx/Thread.h>
 #include <time.h>
 
-#ifndef HX_INTERNAL_GC
-extern "C" {
-#include <gc.h>
-}
-#endif
-
 #ifdef HXCPP_MULTI_THREADED
 #define CHECK_THREADED
 #else
@@ -29,10 +23,8 @@ struct Deque : public Array_obj<Dynamic>
 	static Deque *Create()
 	{
 		Deque *result = new Deque();
-		#ifdef HX_INTERNAL_GC
 		result->mFinalizer = new hx::InternalFinalizer(result);
 		result->mFinalizer->mFinalizer = clean;
-		#endif
 		return result;
 	}
 	static void clean(hx::Object *inObj)
@@ -48,13 +40,11 @@ struct Deque : public Array_obj<Dynamic>
 		mSemaphore.Clean();
 	}
 
-	#ifdef HX_INTERNAL_GC
 	void __Mark(HX_MARK_PARAMS)
 	{
 		Array_obj<Dynamic>::__Mark(HX_MARK_ARG);
 		mFinalizer->Mark();
 	}
-	#endif
 
 	#ifdef HX_WINDOWS
 	MyMutex     mMutex;
@@ -218,9 +208,7 @@ public:
 THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 {
 	int dummy = 0;
-#ifdef HX_INTERNAL_GC
 	hx::RegisterCurrentThread(&dummy);
-#endif
 
 	hxThreadInfo *info = (hxThreadInfo *)inInfo;
 	tlsCurrentThread.Set(info);
@@ -234,9 +222,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 		info->mFunction->__run();
 	}
 
-#ifdef HX_INTERNAL_GC
 	hx::UnregisterCurrentThread();
-#endif
 
 	tlsCurrentThread.Set(0);
 
@@ -249,7 +235,6 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 {
 	hxThreadInfo *info = new hxThreadInfo(inStart);
 
-#ifdef HX_INTERNAL_GC
 	hx::GCPrepareMultiThreaded();
 
    #if defined(HX_WINDOWS)
@@ -259,24 +244,10 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
       pthread_create(&result,0,hxThreadFunc,info);
 	#endif
 
-#else
 
-   #if defined(HX_WINDOWS)
-      GC_beginthreadex(0,0,hxThreadFunc,info,0,0);
-   #else
-      pthread_t result;
-      GC_pthread_create(&result,0,hxThreadFunc,info);
-   #endif
-
-#endif
-
-#ifdef HX_INTERNAL_GC
-		hx::EnterGCFreeZone();
+	hx::EnterGCFreeZone();
 	info->mSemaphore->Wait();
 	hx::ExitGCFreeZone();
-#else
-	info->mSemaphore->Wait();
-#endif
 	info->CleanSemaphore();
 	return info;
 }
@@ -343,18 +314,12 @@ public:
 
 	hxMutex()
 	{
-	#ifdef HX_INTERNAL_GC
 		mFinalizer = new hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = clean;
-	#else
-      hx::GCAddFinalizer(this,clean);
-	#endif
 	}
 
-	#ifdef HX_INTERNAL_GC
 	void __Mark(HX_MARK_PARAMS) { mFinalizer->Mark(); }
 	hx::InternalFinalizer *mFinalizer;
-	#endif
 
 	static void clean(hx::Object *inObj)
 	{
@@ -425,18 +390,12 @@ public:
 
 	hxLock()
 	{
-	#ifdef HX_INTERNAL_GC
 		mFinalizer = new hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = clean;
-	#else
-      hx::GCAddFinalizer(this,clean);
-	#endif
 	}
 
-	#ifdef HX_INTERNAL_GC
 	void __Mark(HX_MARK_PARAMS) { mFinalizer->Mark(); }
 	hx::InternalFinalizer *mFinalizer;
-	#endif
 
 	#ifdef HX_WINDOWS
 	double Now()
