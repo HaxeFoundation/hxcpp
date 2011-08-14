@@ -32,17 +32,8 @@ template<> inline void MarkMember<Void>(Void &outT HX_MARK_ADD_PARAMS) {  }
 
 
 // Template used to register and initialise the statics in the one call.
-template<typename T> inline T &Static(T &inPtr) { hx::RegisterObject((hx::Object **)&inPtr); return inPtr; }
-
-// Make sure we get the "__s" pointer
-template<> inline String &Static<String>(String &inString)
-   { hx::RegisterString(&inString.__s); return inString; }
-
-// Do nothing
-template<> inline int &Static<int>(int &inPtr) { return inPtr; }
-template<> inline bool &Static<bool>(bool &inPtr) { return inPtr; }
-template<> inline double &Static<double>(double &inPtr) { return inPtr; }
-template<> inline null &Static<null>(null &inPtr) { return inPtr; }
+//  Do nothing...
+template<typename T> inline T &Static(T &t) {  return t; }
 
 
 } // end namespace hx

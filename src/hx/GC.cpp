@@ -51,13 +51,6 @@ void GCAddFinalizer(hx::Object *v, finalizer f)
 }
 
 
-// TODO: Remove reference to these
-void RegisterObject(Object **inPtr) { }
-void RegisterString(const wchar_t **inPtr) { }
-void RegisterString(const char **inPtr) { }
-void GCInit() { }
-
-
 
 HX_CHAR *NewString(int inLen)
 {

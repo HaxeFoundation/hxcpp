@@ -6,7 +6,6 @@ namespace hx
 
 void Boot()
 {
-	hx::GCInit();
    //__hxcpp_enable(false);
 
 	#ifdef GPH

@@ -39,9 +39,6 @@ public:
 // Create a new root.
 // All statics are explicitly registered - this saves adding the whole data segment
 // to the collection list.
-void RegisterObject(hx::Object **inObj);
-void RegisterString(const HX_CHAR **inString);
-
 void GCAddRoot(hx::Object **inRoot);
 void GCRemoveRoot(hx::Object **inRoot);
 
