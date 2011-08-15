@@ -1036,13 +1036,18 @@ class BuildTool
          defines.set("mingw","mingw");
          defines.set("BINDIR",m64 ? "Windows64":"Windows");
       }
+      else if (defines.exists("cygwin") || env.exists("HXCPP_CYGWIN"))
+      {
+         defines.set("toolchain","cygwin");
+         defines.set("cygwin","cygwin");
+         defines.set("linux","linux");
+         defines.set("BINDIR",m64 ? "Cygwin64":"Cygwin");
+      }
       else if ( (new EReg("window","i")).match(os) )
       {
          defines.set("toolchain","msvc");
          defines.set("windows","windows");
          defines.set("BINDIR",m64 ? "Windows64":"Windows");
-
-
       }
       else if ( (new EReg("linux","i")).match(os) )
       {
