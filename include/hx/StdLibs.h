@@ -60,6 +60,11 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
 
 void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inString);
 void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len);
+// UTF8 processing
+String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst=0, int inLen=-1);
+Array<int> __hxcpp_utf8_string_to_char_array(String &inString);
+String __hxcpp_char_bytes_to_utf8_string(String &inBytes);
+String __hxcpp_utf8_string_to_char_bytes(String &inUTF8);
 
 
 // --- IntHash ----------------------------------------------------------------------

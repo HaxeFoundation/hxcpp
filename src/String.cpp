@@ -56,6 +56,194 @@ using namespace hx;
 Class __StringClass;
 
 
+static int UTF8Bytes(int c)
+{
+      if( c <= 0x7F )
+         return 1;
+      else if( c <= 0x7FF )
+         return 2;
+      else if( c <= 0xFFFF )
+         return 3;
+      else
+         return 4;
+}
+
+static void UTF8EncodeAdvance(char * &ioPtr,int c)
+{
+      if( c <= 0x7F )
+         *ioPtr++ = (c);
+      else if( c <= 0x7FF )
+      {
+         *ioPtr++ = ( 0xC0 | (c >> 6) );
+         *ioPtr++ = ( 0x80 | (c & 63) );
+      }
+      else if( c <= 0xFFFF )
+      {
+         *ioPtr++  = ( 0xE0 | (c >> 12) );
+         *ioPtr++  = ( 0x80 | ((c >> 6) & 63) );
+         *ioPtr++  = ( 0x80 | (c & 63) );
+      }
+      else
+      {
+         *ioPtr++  = ( 0xF0 | (c >> 18) );
+         *ioPtr++  = ( 0x80 | ((c >> 12) & 63) );
+         *ioPtr++  = ( 0x80 | ((c >> 6) & 63) );
+         *ioPtr++  = ( 0x80 | (c & 63) );
+      }
+}
+
+int DecodeAdvanceUTF8(const unsigned char * &ioPtr)
+{
+   int c = *ioPtr++;
+   if( c < 0x80 )
+   {
+      return c;
+   }
+   else if( c < 0xE0 )
+   {
+      return ((c & 0x3F) << 6) | ((*ioPtr++) & 0x7F);
+   }
+   else if( c < 0xF0 )
+   {
+      int c2 = *ioPtr++;
+      return  ((c & 0x1F) << 12) | ((c2 & 0x7F) << 6) | ( (*ioPtr++) & 0x7F);
+   }
+
+   int c2 = *ioPtr++;
+   int c3 = *ioPtr++;
+   return ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 << 6) & 0x7F) | ((*ioPtr++) & 0x7F);
+ }
+
+
+int DecodeBytes(int c)
+{
+   if( c < 0x80 )
+   {
+      return 1;
+   }
+   else if( c < 0xE0 )
+   {
+      return 2;
+   }
+   else if( c < 0xF0 )
+   {
+      return  3;
+   }
+
+   return 4;
+ }
+
+
+
+
+
+
+template<typename T>
+char *TConvertToUTF8(T *inStr, int *ioLen)
+{
+   int len = 0;
+   int chars = 0;
+   if (ioLen==0)
+      while(inStr[len])
+         chars += UTF8Bytes(inStr[len++]);
+   else
+   {
+      len = *ioLen;
+      for(int i=0;i<len;i++)
+         chars += UTF8Bytes(inStr[i]);
+   }
+
+   char *buf = (char *)NewGCPrivate(0,chars+1);
+   char *ptr = buf;
+   for(int i=0;i<len;i++)
+       UTF8EncodeAdvance(ptr,inStr[i]);
+   *ptr = 0;
+   if (ioLen)
+      *ioLen = chars;
+
+   return buf;
+ 
+}
+
+String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int inLen)
+{
+   int *base = &inChars[0];
+   int len = inChars->length;
+   if (inFirst<0)
+     inFirst = 0;
+   if (inLen<0) inLen = len;
+   if (inFirst+inLen>len)
+      inLen = len-inFirst;
+   if (inLen<0)
+      return String();
+   char *result = TConvertToUTF8(base+inFirst,&len);
+   return String(result,len);
+}
+
+Array<int> __hxcpp_utf8_string_to_char_array(String &inString)
+{
+    Array<int> result = Array_obj<int>::__new(0,inString.length);
+
+    const unsigned char *src = (const unsigned char *)inString.__s;
+    const unsigned char *end = src + inString.length;
+    while(src<end)
+        result->push(DecodeAdvanceUTF8(src));
+
+    if (src!=end)
+       throw Dynamic(HX_CSTRING("Invalid UTF8"));
+
+   return result;
+}
+
+String __hxcpp_char_bytes_to_utf8_string(String &inBytes)
+{
+   int len = inBytes.length;
+   char *result = TConvertToUTF8((unsigned char *)inBytes.__s,&len);
+   return String(result,len);
+}
+
+
+String __hxcpp_utf8_string_to_char_bytes(String &inUTF8)
+{
+    const unsigned char *src = (unsigned char *)inUTF8.__s;
+    const unsigned char *end = src + inUTF8.length;
+    int char_count = 0;
+    while(src<end)
+    {
+        int c = DecodeAdvanceUTF8(src);
+        char_count++;
+	     if( c == 8364 ) // euro symbol
+				c = 164;
+			else if( c == 0xFEFF ) // BOM
+			{
+            char_count--;
+         }
+			else if( c > 255 )
+				throw Dynamic(HX_CSTRING("Utf8::decode invalid character"));
+    }
+
+    if (src!=end)
+       throw Dynamic(HX_CSTRING("Invalid UTF8"));
+
+    HX_CHAR *result = hx::NewString(char_count);
+
+    src = (unsigned char *)inUTF8.__s;
+    char_count = 0;
+    while(src<end)
+    {
+        int c = DecodeAdvanceUTF8(src);
+	     if( c == 8364 ) // euro symbol
+				c = 164;
+		  if( c != 0xFEFF ) // BOM
+           result[char_count++] = c;
+    }
+
+   result[char_count] = '\0';
+   return String(result,char_count);
+}
+
+
+
 
 static HX_CHAR *GCStringDup(const HX_CHAR *inStr,int inLen, int *outLen=0)
 {
@@ -130,7 +318,7 @@ String::String(const wchar_t *inPtr,int inLen)
    else
    {
       length = inLen;
-      __s = ConvertToUTF8(inPtr,&length);
+      __s = TConvertToUTF8(inPtr,&length);
    }
 }
 #else
@@ -167,29 +355,6 @@ String::String(const bool &inRHS)
       *this = HX_CSTRING("false");
    }
 }
-
-int DecodeAdvanceUTF8(const unsigned char * &ioPtr)
-{
-   int c = *ioPtr++;
-   if( c < 0x80 )
-   {
-      return c;
-   }
-   else if( c < 0xE0 )
-   {
-      return ((c & 0x3F) << 6) | ((*ioPtr++) & 0x7F);
-   }
-   else if( c < 0xF0 )
-   {
-      int c2 = *ioPtr++;
-      return  ((c & 0x1F) << 12) | ((c2 & 0x7F) << 6) | ( (*ioPtr++) & 0x7F);
-   }
-
-   int c2 = *ioPtr++;
-   int c3 = *ioPtr++;
-   return ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 << 6) & 0x7F) | ((*ioPtr++) & 0x7F);
- }
-
 
 
 
@@ -387,44 +552,6 @@ Dynamic String::charCodeAt(int inPos) const
    #endif
 }
 
-int UTF8Bytes(int c)
-{
-      if( c <= 0x7F )
-         return 1;
-      else if( c <= 0x7FF )
-         return 2;
-      else if( c <= 0xFFFF )
-         return 3;
-      else
-         return 4;
-}
-
-void UTF8EncodeAdvance(char * &ioPtr,int c)
-{
-      if( c <= 0x7F )
-         *ioPtr++ = (c);
-      else if( c <= 0x7FF )
-      {
-         *ioPtr++ = ( 0xC0 | (c >> 6) );
-         *ioPtr++ = ( 0x80 | (c & 63) );
-      }
-      else if( c <= 0xFFFF )
-      {
-         *ioPtr++  = ( 0xE0 | (c >> 12) );
-         *ioPtr++  = ( 0x80 | ((c >> 6) & 63) );
-         *ioPtr++  = ( 0x80 | (c & 63) );
-      }
-      else
-      {
-         *ioPtr++  = ( 0xF0 | (c >> 18) );
-         *ioPtr++  = ( 0x80 | ((c >> 12) & 63) );
-         *ioPtr++  = ( 0x80 | ((c >> 6) & 63) );
-         *ioPtr++  = ( 0x80 | (c & 63) );
-      }
-}
-
-
-
 String String::fromCharCode( int c )
 {
    #ifdef HX_UTF8_STRINGS
@@ -582,30 +709,6 @@ wchar_t *ConvertToWChar(const char *inStr, int *ioLen)
 }
 
 
-
-char *ConvertToUTF8(const wchar_t *inStr, int *ioLen)
-{
-   int len = 0;
-   int chars = 0;
-   if (ioLen==0)
-      while(inStr[len])
-         chars += UTF8Bytes(inStr[len++]);
-   else
-   {
-      len = *ioLen;
-      for(int i=0;i<len;i++)
-         chars += UTF8Bytes(inStr[i]);
-   }
-
-   char *buf = (char *)NewGCPrivate(0,chars+1);
-   char *ptr = buf;
-   for(int i=0;i<len;i++)
-       UTF8EncodeAdvance(ptr,inStr[i]);
-   *ptr = 0;
-
-   return buf;
- 
-}
 
 
 }

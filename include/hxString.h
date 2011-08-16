@@ -157,14 +157,6 @@ public:
 };
 
 
-namespace hx
-{
-
-wchar_t *ConvertToWChar(const char *inStr, int *ioLen=0);
-
-char *ConvertToUTF8(const wchar_t *inStr, int *ioLen=0);
-
-};
 
 
 #endif
