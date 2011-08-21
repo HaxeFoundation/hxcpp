@@ -1,5 +1,5 @@
 
-::foreach PARAMS:: ::if (ARG>=12)::
+::foreach PARAMS:: ::if (ARG>=6)::
 Dynamic Dynamic::NS::operator()(::DYNAMIC_ARG_LIST::)
 {
    CheckFPtr();

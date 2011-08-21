@@ -106,12 +106,6 @@ public:
    virtual Dynamic __run(D a,D b,D c);
    virtual Dynamic __run(D a,D b,D c,D d);
    virtual Dynamic __run(D a,D b,D c,D d,D e);
-   virtual Dynamic __run(D a,D b,D c,D d,D e,D f);
-   virtual Dynamic __run(D a,D b,D c,D d,D e,D f,D g);
-   virtual Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h);
-   virtual Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i);
-   virtual Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j);
-   virtual Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k);
 
    virtual int __ArgCount() const { return -1; }
 

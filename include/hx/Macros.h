@@ -227,32 +227,32 @@ Dynamic class::func##_dyn() \
 
 
 #define HX_DEFINE_DYNAMIC_FUNC6(class,func,ret) \
-          HX_DEFINE_DYNAMIC_FUNC(class,6,func,ret,HX_ARR_LIST6,HX_DYNAMIC_ARG_LIST6,HX_ARG_LIST6)
+          HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,6,func,ret,HX_ARR_LIST6,HX_DYNAMIC_ARG_LIST6,HX_ARG_LIST6)
 
 
 
 #define HX_DEFINE_DYNAMIC_FUNC7(class,func,ret) \
-          HX_DEFINE_DYNAMIC_FUNC(class,7,func,ret,HX_ARR_LIST7,HX_DYNAMIC_ARG_LIST7,HX_ARG_LIST7)
+          HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,7,func,ret,HX_ARR_LIST7,HX_DYNAMIC_ARG_LIST7,HX_ARG_LIST7)
 
 
 
 #define HX_DEFINE_DYNAMIC_FUNC8(class,func,ret) \
-          HX_DEFINE_DYNAMIC_FUNC(class,8,func,ret,HX_ARR_LIST8,HX_DYNAMIC_ARG_LIST8,HX_ARG_LIST8)
+          HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,8,func,ret,HX_ARR_LIST8,HX_DYNAMIC_ARG_LIST8,HX_ARG_LIST8)
 
 
 
 #define HX_DEFINE_DYNAMIC_FUNC9(class,func,ret) \
-          HX_DEFINE_DYNAMIC_FUNC(class,9,func,ret,HX_ARR_LIST9,HX_DYNAMIC_ARG_LIST9,HX_ARG_LIST9)
+          HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,9,func,ret,HX_ARR_LIST9,HX_DYNAMIC_ARG_LIST9,HX_ARG_LIST9)
 
 
 
 #define HX_DEFINE_DYNAMIC_FUNC10(class,func,ret) \
-          HX_DEFINE_DYNAMIC_FUNC(class,10,func,ret,HX_ARR_LIST10,HX_DYNAMIC_ARG_LIST10,HX_ARG_LIST10)
+          HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,10,func,ret,HX_ARR_LIST10,HX_DYNAMIC_ARG_LIST10,HX_ARG_LIST10)
 
 
 
 #define HX_DEFINE_DYNAMIC_FUNC11(class,func,ret) \
-          HX_DEFINE_DYNAMIC_FUNC(class,11,func,ret,HX_ARR_LIST11,HX_DYNAMIC_ARG_LIST11,HX_ARG_LIST11)
+          HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,11,func,ret,HX_ARR_LIST11,HX_DYNAMIC_ARG_LIST11,HX_ARG_LIST11)
 
 
 
@@ -375,77 +375,77 @@ Dynamic class::func##_dyn() \
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC6(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,6,func,ret,HX_ARR_LIST6,HX_DYNAMIC_ARG_LIST6,HX_ARG_LIST6)
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,6,func,ret,HX_ARR_LIST6,HX_DYNAMIC_ARG_LIST6,HX_ARG_LIST6)
 
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC7(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,7,func,ret,HX_ARR_LIST7,HX_DYNAMIC_ARG_LIST7,HX_ARG_LIST7)
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,7,func,ret,HX_ARR_LIST7,HX_DYNAMIC_ARG_LIST7,HX_ARG_LIST7)
 
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC8(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,8,func,ret,HX_ARR_LIST8,HX_DYNAMIC_ARG_LIST8,HX_ARG_LIST8)
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,8,func,ret,HX_ARR_LIST8,HX_DYNAMIC_ARG_LIST8,HX_ARG_LIST8)
 
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC9(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,9,func,ret,HX_ARR_LIST9,HX_DYNAMIC_ARG_LIST9,HX_ARG_LIST9)
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,9,func,ret,HX_ARR_LIST9,HX_DYNAMIC_ARG_LIST9,HX_ARG_LIST9)
 
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC10(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,10,func,ret,HX_ARR_LIST10,HX_DYNAMIC_ARG_LIST10,HX_ARG_LIST10)
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,10,func,ret,HX_ARR_LIST10,HX_DYNAMIC_ARG_LIST10,HX_ARG_LIST10)
 
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC11(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,11,func,ret,HX_ARR_LIST11,HX_DYNAMIC_ARG_LIST11,HX_ARG_LIST11)
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,11,func,ret,HX_ARR_LIST11,HX_DYNAMIC_ARG_LIST11,HX_ARG_LIST11)
 
 
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA12(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,12,func,ret,HX_ARR_LIST12,HX_DYNAMIC_ARG_LIST12,HX_ARG_LIST12)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC12(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,12,func,ret,HX_ARR_LIST12,HX_DYNAMIC_ARG_LIST12,HX_ARG_LIST12)
 
 
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA13(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,13,func,ret,HX_ARR_LIST13,HX_DYNAMIC_ARG_LIST13,HX_ARG_LIST13)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC13(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,13,func,ret,HX_ARR_LIST13,HX_DYNAMIC_ARG_LIST13,HX_ARG_LIST13)
 
 
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA14(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,14,func,ret,HX_ARR_LIST14,HX_DYNAMIC_ARG_LIST14,HX_ARG_LIST14)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC14(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,14,func,ret,HX_ARR_LIST14,HX_DYNAMIC_ARG_LIST14,HX_ARG_LIST14)
 
 
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA15(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,15,func,ret,HX_ARR_LIST15,HX_DYNAMIC_ARG_LIST15,HX_ARG_LIST15)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC15(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,15,func,ret,HX_ARR_LIST15,HX_DYNAMIC_ARG_LIST15,HX_ARG_LIST15)
 
 
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA16(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,16,func,ret,HX_ARR_LIST16,HX_DYNAMIC_ARG_LIST16,HX_ARG_LIST16)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC16(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,16,func,ret,HX_ARR_LIST16,HX_DYNAMIC_ARG_LIST16,HX_ARG_LIST16)
 
 
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA17(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,17,func,ret,HX_ARR_LIST17,HX_DYNAMIC_ARG_LIST17,HX_ARG_LIST17)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC17(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,17,func,ret,HX_ARR_LIST17,HX_DYNAMIC_ARG_LIST17,HX_ARG_LIST17)
 
 
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA18(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,18,func,ret,HX_ARR_LIST18,HX_DYNAMIC_ARG_LIST18,HX_ARG_LIST18)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC18(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,18,func,ret,HX_ARR_LIST18,HX_DYNAMIC_ARG_LIST18,HX_ARG_LIST18)
 
 
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA19(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,19,func,ret,HX_ARR_LIST19,HX_DYNAMIC_ARG_LIST19,HX_ARG_LIST19)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC19(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,19,func,ret,HX_ARR_LIST19,HX_DYNAMIC_ARG_LIST19,HX_ARG_LIST19)
 
 
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA20(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,20,func,ret,HX_ARR_LIST20,HX_DYNAMIC_ARG_LIST20,HX_ARG_LIST20)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC20(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,20,func,ret,HX_ARR_LIST20,HX_DYNAMIC_ARG_LIST20,HX_ARG_LIST20)
 
 
 
@@ -651,12 +651,12 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
    inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2); } \
    inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3); } \
    inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3,inArg4); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3,inArg4,inArg5); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3,inArg4,inArg5,inArg6); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3,inArg4,inArg5,inArg6,inArg7); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3,inArg4,inArg5,inArg6,inArg7,inArg8); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3,inArg4,inArg5,inArg6,inArg7,inArg8,inArg9); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3,inArg4,inArg5,inArg6,inArg7,inArg8,inArg9,inArg10); } \
+   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5); \
+   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6); \
+   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7); \
+   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8); \
+   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9); \
+   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10); \
    Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11); \
    Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12); \
    Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13); \

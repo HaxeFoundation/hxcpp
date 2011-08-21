@@ -8,11 +8,47 @@
  
  
  
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,6)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5));
+}
+
  
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,7)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6));
+}
+
  
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,8)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7));
+}
+
  
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,9)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8));
+}
+
  
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,10)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9));
+}
+
  
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,11)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10));
+}
+
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11)
 {

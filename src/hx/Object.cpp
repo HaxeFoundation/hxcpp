@@ -121,31 +121,7 @@ Dynamic Object::__run(D a,D b,D c,D d)
 }
 Dynamic Object::__run(D a,D b,D c,D d,D e)
 {
-   return __Run( Array_obj<Dynamic>::__new(0,4) << a << b << c << d << e);
-}
-Dynamic Object::__run(D a,D b,D c,D d,D e,D f)
-{
-   return __Run( Array_obj<Dynamic>::__new(0,5) << a << b << c << d << e << f);
-}
-Dynamic Object::__run(D a,D b,D c,D d,D e,D f,D g)
-{
-   return __Run( Array_obj<Dynamic>::__new(0,6) << a << b << c << d << e << f << g);
-}
-Dynamic Object::__run(D a,D b,D c,D d,D e,D f,D g,D h)
-{
-   return __Run( Array_obj<Dynamic>::__new(0,7) << a << b << c << d << e << f << g << h);
-}
-Dynamic Object::__run(D a,D b,D c,D d,D e,D f,D g,D h,D i)
-{
-   return __Run( Array_obj<Dynamic>::__new(0,8) << a << b << c << d << e << f << g << h << i);
-}
-Dynamic Object::__run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j)
-{
-   return __Run( Array_obj<Dynamic>::__new(0,8) << a << b << c << d << e << f << g << h << i << j);
-}
-Dynamic Object::__run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k)
-{
-   return __Run( Array_obj<Dynamic>::__new(0,9) << a << b << c << d << e << f << g << h << i << j<< k );
+   return __Run( Array_obj<Dynamic>::__new(0,5) << a << b << c << d << e);
 }
 
 void Object::__GetFields(Array<String> &outFields)

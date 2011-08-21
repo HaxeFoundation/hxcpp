@@ -112,46 +112,13 @@ public:
       HX_SOURCE_PUSH(0);
       return ((prim_5)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr(),e.GetPtr());
    }
-   Dynamic __run(D a,D b,D c,D d,D e,D f)
+
+   Dynamic __Run(const Array<Dynamic> &inArgs)
    {
-      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr() };
+      if (mArgCount!=-1)
+         throw HX_INVALID_ARG_COUNT;
       HX_SOURCE_PUSH(0);
-      return ((prim_mult)mProc)(args,6);
-   }
-   Dynamic __run(D a,D b,D c,D d,D e,D f,D g)
-   {
-      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-                           g.GetPtr() };
-      HX_SOURCE_PUSH(0);
-      return ((prim_mult)mProc)(args,7);
-   }
-   Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h)
-   {
-      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-                           g.GetPtr(), h.GetPtr() };
-      HX_SOURCE_PUSH(0);
-      return ((prim_mult)mProc)(args,8);
-   }
-   Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i)
-   {
-      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-                           g.GetPtr(), h.GetPtr(), i.GetPtr() };
-      HX_SOURCE_PUSH(0);
-      return ((prim_mult)mProc)(args,9);
-   }
-   Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j)
-   {
-      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-                           g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr() };
-      HX_SOURCE_PUSH(0);
-      return ((prim_mult)mProc)(args,10);
-   }
-   Dynamic __run(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k)
-   {
-      hx::Object *args[] = { a.GetPtr(), b.GetPtr(), c.GetPtr(), d.GetPtr(), e.GetPtr(), f.GetPtr(),
-                           g.GetPtr(), h.GetPtr(), i.GetPtr(), j.GetPtr(), k.GetPtr() };
-      HX_SOURCE_PUSH(0);
-      return ((prim_mult)mProc)(args,11);
+      return ((prim_mult)mProc)( (hx::Object **)inArgs->GetBase(), inArgs->length );
    }
 
    void __Mark(HX_MARK_PARAMS) {  HX_MARK_MEMBER(mName); }

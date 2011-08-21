@@ -133,7 +133,7 @@ Dynamic class::func##_dyn() \
 
 
 ::foreach PARAMS::
-::if (ARG<12)::
+::if (ARG<6)::
 #define HX_DEFINE_DYNAMIC_FUNC::ARG::(class,func,ret) \
           HX_DEFINE_DYNAMIC_FUNC(class,::ARG::,func,ret,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)
 ::else::
@@ -184,12 +184,12 @@ Dynamic class::func##_dyn() \
 
 
 ::foreach PARAMS::
-::if (ARG<12)::
+::if (ARG<6)::
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC::ARG::(class,func,ret) \
           STATIC_HX_DEFINE_DYNAMIC_FUNC(class,::ARG::,func,ret,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)
 ::else::
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA::ARG::(class,func,ret) \
-          STATIC_HX_DEFINE_DYNAMIC_FUNC(class,::ARG::,func,ret,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC::ARG::(class,func,ret) \
+          STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,::ARG::,func,ret,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)
 ::end::
 ::end::
 
@@ -265,7 +265,7 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 
 
 #define HX_DECLARE_DYNAMIC_FUNCTIONS \
-::foreach PARAMS:: ::if (ARG<12):: inline Dynamic operator()(::DYNAMIC_ARG_LIST::) { CheckFPtr(); return mPtr->__run(::ARG_LIST::); } \
+::foreach PARAMS:: ::if (ARG<6):: inline Dynamic operator()(::DYNAMIC_ARG_LIST::) { CheckFPtr(); return mPtr->__run(::ARG_LIST::); } \
 ::else:: Dynamic operator()(::DYNAMIC_ARG_LIST::); \
 ::end:: ::end::
 
