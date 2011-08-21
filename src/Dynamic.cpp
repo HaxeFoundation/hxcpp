@@ -174,6 +174,8 @@ void Dynamic::ThrowBadFunctionError()
 	hx::Throw( HX_NULL_FUNCTION_POINTER );
 }
 
+#include <hx/DynamicImpl.h>
+
 namespace cpp
 {
 CppInt32__::CppInt32__(const Dynamic &inD) : mValue(inD->__ToInt()) { }

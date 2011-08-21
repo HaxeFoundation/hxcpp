@@ -144,26 +144,7 @@ public:
    inline void CheckFPtr() { if (!mPtr) ThrowBadFunctionError(); }
 
 
-   // Hmm, ugly.
-   typedef const Dynamic &D;
-   inline Dynamic operator()() { CheckFPtr(); return mPtr->__run(); }
-   inline Dynamic operator()(D a) { CheckFPtr(); return mPtr->__run(a); }
-   inline Dynamic operator()(D a,D b) { CheckFPtr(); return mPtr->__run(a,b); }
-   inline Dynamic operator()(D a,D b,D c) { CheckFPtr(); return mPtr->__run(a,b,c); }
-   inline Dynamic operator()(D a,D b,D c,D d) { CheckFPtr(); return mPtr->__run(a,b,c,d); }
-   inline Dynamic operator()(D a,D b,D c,D d,D e) { CheckFPtr(); return mPtr->__run(a,b,c,d,e); }
-   inline Dynamic operator()(D a,D b,D c,D d,D e,D f) { CheckFPtr(); return mPtr->__run(a,b,c,d,e,f); }
-   inline Dynamic operator()(D a,D b,D c,D d,D e,D f,D g)
-      { CheckFPtr(); return mPtr->__run(a,b,c,d,e,f,g); }
-   inline Dynamic operator()(D a,D b,D c,D d,D e,D f,D g,D h)
-      { CheckFPtr(); return mPtr->__run(a,b,c,d,e,f,g,h); }
-   inline Dynamic operator()(D a,D b,D c,D d,D e,D f,D g,D h,D i)
-      { CheckFPtr(); return mPtr->__run(a,b,c,d,e,f,g,h,i); }
-   inline Dynamic operator()(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j)
-      { CheckFPtr(); return mPtr->__run(a,b,c,d,e,f,g,h,i,j); }
-   inline Dynamic operator()(D a,D b,D c,D d,D e,D f,D g,D h,D i,D j,D k)
-      { CheckFPtr(); return mPtr->__run(a,b,c,d,e,f,g,h,i,j,k); }
-
+   HX_DECLARE_DYNAMIC_FUNCTIONS;
 };
 
 
