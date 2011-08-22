@@ -7,6 +7,8 @@
 //  provides generic access to its pointer.
 // It uses dynamic_cast to provide strongly-typed access to the real class.
 
+
+
 class Dynamic : public hx::ObjectPtr<hx::Object>
 {
    typedef  hx::ObjectPtr<hx::Object> super;
@@ -28,11 +30,11 @@ public:
     void Set(int inVal);
     void Set(double inVal);
 
-   operator double () const { return mPtr ? mPtr->__ToDouble() : 0.0; }
-   operator int () const { return mPtr ? mPtr->__ToInt() : 0; }
-   operator unsigned char () const { return mPtr ? mPtr->__ToInt() : 0; }
-   operator bool() const { return mPtr && mPtr->__ToInt(); }
-   bool operator !() const { return !mPtr || !mPtr->__ToInt(); }
+   inline operator double () const { return mPtr ? mPtr->__ToDouble() : 0.0; }
+   inline operator int () const { return mPtr ? mPtr->__ToInt() : 0; }
+   inline operator unsigned char () const { return mPtr ? mPtr->__ToInt() : 0; }
+   inline operator bool() const { return mPtr && mPtr->__ToInt(); }
+   inline bool operator !() const { return !mPtr || !mPtr->__ToInt(); }
 
    hx::IndexRef operator[](int inIndex);
    inline Dynamic __get(int inIndex) const { return mPtr->__GetItem(inIndex); }
@@ -145,7 +147,55 @@ public:
 
 
    HX_DECLARE_DYNAMIC_FUNCTIONS;
+
+
+   typedef const Dynamic &D;
 };
+
+
+
+namespace hx
+{
+typedef Dynamic (*MemberFunction0)(hx::Object *inObj);
+typedef Dynamic (*MemberFunction1)(hx::Object *inObj,const Dynamic &inArg0);
+typedef Dynamic (*MemberFunction2)(hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1);
+typedef Dynamic (*MemberFunction3)(hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2);
+typedef Dynamic (*MemberFunction4)(hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3);
+typedef Dynamic (*MemberFunction5)(hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4);
+typedef Dynamic (*MemberFunctionVar)(hx::Object *inObj,const Array<Dynamic> &inArgs);
+
+typedef Dynamic (*StaticFunction0)();
+typedef Dynamic (*StaticFunction1)(const Dynamic &inArg0);
+typedef Dynamic (*StaticFunction2)(const Dynamic &inArg0,const Dynamic &inArg1);
+typedef Dynamic (*StaticFunction3)(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2);
+typedef Dynamic (*StaticFunction4)(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3);
+typedef Dynamic (*StaticFunction5)(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4);
+typedef Dynamic (*StaticFunctionVar)(const Array<Dynamic> &inArgs);
+
+
+Dynamic CreateMemberFunction0(hx::Object *, MemberFunction0);
+Dynamic CreateMemberFunction1(hx::Object *, MemberFunction1);
+Dynamic CreateMemberFunction2(hx::Object *, MemberFunction2);
+Dynamic CreateMemberFunction3(hx::Object *, MemberFunction3);
+Dynamic CreateMemberFunction4(hx::Object *, MemberFunction4);
+Dynamic CreateMemberFunction5(hx::Object *, MemberFunction5);
+Dynamic CreateMemberFunctionVar(hx::Object *, MemberFunctionVar,int inN);
+
+Dynamic CreateStaticFunction0(StaticFunction0);
+Dynamic CreateStaticFunction1(StaticFunction1);
+Dynamic CreateStaticFunction2(StaticFunction2);
+Dynamic CreateStaticFunction3(StaticFunction3);
+Dynamic CreateStaticFunction4(StaticFunction4);
+Dynamic CreateStaticFunction5(StaticFunction5);
+Dynamic CreateStaticFunctionVar(StaticFunctionVar,int inN);
+
+
+}
+
+
+
+
+
 
 
 template<>

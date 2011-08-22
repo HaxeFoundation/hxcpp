@@ -68,51 +68,37 @@
 ::foreach PARAMS::
 #define HX_ARG_LIST::ARG:: ::ARG_LIST::::end::
 
-#define HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-struct class##func : public hx::Object \
+#define HX_DEFINE_DYNAMIC_FUNC0(class,func,ret) \
+Dynamic __##class##func(hx::NS::Object *inObj) \
 { \
-   int __GetType() const { return vtFunction; } \
-   int __ArgCount() const { return N; } \
-   hx::ObjectPtr<class> mThis; \
-   class##func(class *inThis) : mThis(inThis) { } \
-   ::String __ToString() const{ return HX_CSTRING(#func); } \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(mThis); } \
-   void *__GetHandle() const { return mThis.GetPtr(); } \
-   Dynamic __Run(const Array<Dynamic> &inArgs) \
-   { \
-      ret mThis->func(array_list); return Dynamic(); \
-   } \
-   Dynamic __run(dynamic_arg_list) \
-   { \
-      ret mThis->func(arg_list); return Dynamic(); \
-   } \
+      ret reinterpret_cast<class *>(inObj)->func(); return Dynamic(); \
 }; \
 Dynamic class::func##_dyn() \
 {\
-   return new class##func(this); \
+   return hx::NS::CreateMemberFunction0(this,__##class##func); \
 }
+
+
+#define HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
+Dynamic __##class##func(hx::NS::Object *inObj, dynamic_arg_list) \
+{ \
+      ret reinterpret_cast<class *>(inObj)->func(arg_list); return Dynamic(); \
+}; \
+Dynamic class::func##_dyn() \
+{\
+   return hx::NS::CreateMemberFunction##N(this,__##class##func); \
+}
+
 
 #define HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-struct class##func : public hx::Object \
+Dynamic __##class##func(hx::NS::Object *inObj, const Array<Dynamic> &inArgs) \
 { \
-   int __GetType() const { return vtFunction; } \
-   int __ArgCount() const { return N; } \
-   hx::ObjectPtr<class> mThis; \
-   class##func(class *inThis) : mThis(inThis) { } \
-   ::String __ToString() const{ return HX_CSTRING(#func); } \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(mThis); } \
-   void *__GetHandle() const { return mThis.GetPtr(); } \
-   Dynamic __Run(const Array<Dynamic> &inArgs) \
-   { \
-      ret mThis->func(array_list); return Dynamic(); \
-   } \
+      ret reinterpret_cast<class *>(inObj)->func(array_list); return Dynamic(); \
 }; \
 Dynamic class::func##_dyn() \
 {\
-   return new class##func(this); \
+   return hx::NS::CreateMemberFunctionVar(this,__##class##func,N); \
 }
-
-
 
 
 #define DELEGATE_0(ret,func) ret func() { return mDelegate->func(); }
@@ -133,65 +119,59 @@ Dynamic class::func##_dyn() \
 
 
 ::foreach PARAMS::
-::if (ARG<6)::
+::if (ARG>0)::::if (ARG<6)::
 #define HX_DEFINE_DYNAMIC_FUNC::ARG::(class,func,ret) \
           HX_DEFINE_DYNAMIC_FUNC(class,::ARG::,func,ret,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)
 ::else::
 #define HX_DEFINE_DYNAMIC_FUNC::ARG::(class,func,ret) \
           HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,::ARG::,func,ret,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)
 ::end::
-::end::
+::end::::end::
 
-#define STATIC_HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-struct class##func : public hx::Object \
+
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC0(class,func,ret) \
+Dynamic __##class##func() \
 { \
-   class##func() { } \
-   int __GetType() const { return vtFunction; } \
-   int __ArgCount() const { return N; } \
-   ::String __ToString() const{ return HX_CSTRING(#func) ; } \
-   Dynamic __Run(const Array<Dynamic> &inArgs) \
-   { \
-      ret class::func(array_list); return Dynamic(); \
-   } \
-   Dynamic __run(dynamic_arg_list) \
-   { \
-      ret class::func(arg_list); return Dynamic(); \
-   } \
+      ret class::func(); return Dynamic(); \
 }; \
 Dynamic class::func##_dyn() \
 {\
-   return new class##func(); \
+   return hx::NS::CreateStaticFunction0(__##class##func); \
+}
+
+
+#define STATIC_HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
+Dynamic __##class##func(dynamic_arg_list) \
+{ \
+      ret class::func(arg_list); return Dynamic(); \
+}; \
+Dynamic class::func##_dyn() \
+{\
+   return hx::NS::CreateStaticFunction##N(__##class##func); \
 }
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-struct class##func : public hx::Object \
+Dynamic __##class##func(const Array<Dynamic> &inArgs) \
 { \
-   class##func() { } \
-   int __GetType() const { return vtFunction; } \
-   int __ArgCount() const { return N; } \
-   ::String __ToString() const{ return HX_CSTRING(#func) ; } \
-   Dynamic __Run(const Array<Dynamic> &inArgs) \
-   { \
       ret class::func(array_list); return Dynamic(); \
-   } \
 }; \
 Dynamic class::func##_dyn() \
 {\
-   return new class##func(); \
+   return hx::NS::CreateStaticFunctionVar(__##class##func,N); \
 }
 
 
 
 ::foreach PARAMS::
-::if (ARG<6)::
+::if (ARG>0)::::if (ARG<6)::
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC::ARG::(class,func,ret) \
           STATIC_HX_DEFINE_DYNAMIC_FUNC(class,::ARG::,func,ret,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)
 ::else::
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC::ARG::(class,func,ret) \
           STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,::ARG::,func,ret,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)
 ::end::
-::end::
+::end::::end::
 
 #define HX_DEFINE_CREATE_ENUM(enum_obj) \
 static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
