@@ -16,6 +16,13 @@ struct CMemberFunction0 : public hx::Object
       mThis = inObj;
       mFunction = inFunction;
    }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CMemberFunction0 *other = dynamic_cast<const CMemberFunction0 *>(inRHS);
+      if (!other)
+         return -1;
+      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+   }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 0; } 
@@ -45,6 +52,13 @@ struct CStaticFunction0 : public hx::Object
    CStaticFunction0(StaticFunction0 inFunction)
    {
       mFunction = inFunction;
+   }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CStaticFunction0 *other = dynamic_cast<const CStaticFunction0 *>(inRHS);
+      if (!other)
+         return -1;
+      return mFunction==other->mFunction ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
@@ -85,6 +99,13 @@ struct CMemberFunction1 : public hx::Object
       mThis = inObj;
       mFunction = inFunction;
    }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CMemberFunction1 *other = dynamic_cast<const CMemberFunction1 *>(inRHS);
+      if (!other)
+         return -1;
+      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+   }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 1; } 
@@ -114,6 +135,13 @@ struct CStaticFunction1 : public hx::Object
    CStaticFunction1(StaticFunction1 inFunction)
    {
       mFunction = inFunction;
+   }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CStaticFunction1 *other = dynamic_cast<const CStaticFunction1 *>(inRHS);
+      if (!other)
+         return -1;
+      return mFunction==other->mFunction ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
@@ -154,6 +182,13 @@ struct CMemberFunction2 : public hx::Object
       mThis = inObj;
       mFunction = inFunction;
    }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CMemberFunction2 *other = dynamic_cast<const CMemberFunction2 *>(inRHS);
+      if (!other)
+         return -1;
+      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+   }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 2; } 
@@ -183,6 +218,13 @@ struct CStaticFunction2 : public hx::Object
    CStaticFunction2(StaticFunction2 inFunction)
    {
       mFunction = inFunction;
+   }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CStaticFunction2 *other = dynamic_cast<const CStaticFunction2 *>(inRHS);
+      if (!other)
+         return -1;
+      return mFunction==other->mFunction ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
@@ -223,6 +265,13 @@ struct CMemberFunction3 : public hx::Object
       mThis = inObj;
       mFunction = inFunction;
    }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CMemberFunction3 *other = dynamic_cast<const CMemberFunction3 *>(inRHS);
+      if (!other)
+         return -1;
+      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+   }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 3; } 
@@ -252,6 +301,13 @@ struct CStaticFunction3 : public hx::Object
    CStaticFunction3(StaticFunction3 inFunction)
    {
       mFunction = inFunction;
+   }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CStaticFunction3 *other = dynamic_cast<const CStaticFunction3 *>(inRHS);
+      if (!other)
+         return -1;
+      return mFunction==other->mFunction ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
@@ -292,6 +348,13 @@ struct CMemberFunction4 : public hx::Object
       mThis = inObj;
       mFunction = inFunction;
    }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CMemberFunction4 *other = dynamic_cast<const CMemberFunction4 *>(inRHS);
+      if (!other)
+         return -1;
+      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+   }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 4; } 
@@ -321,6 +384,13 @@ struct CStaticFunction4 : public hx::Object
    CStaticFunction4(StaticFunction4 inFunction)
    {
       mFunction = inFunction;
+   }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CStaticFunction4 *other = dynamic_cast<const CStaticFunction4 *>(inRHS);
+      if (!other)
+         return -1;
+      return mFunction==other->mFunction ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
@@ -361,6 +431,13 @@ struct CMemberFunction5 : public hx::Object
       mThis = inObj;
       mFunction = inFunction;
    }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CMemberFunction5 *other = dynamic_cast<const CMemberFunction5 *>(inRHS);
+      if (!other)
+         return -1;
+      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+   }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 5; } 
@@ -390,6 +467,13 @@ struct CStaticFunction5 : public hx::Object
    CStaticFunction5(StaticFunction5 inFunction)
    {
       mFunction = inFunction;
+   }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CStaticFunction5 *other = dynamic_cast<const CStaticFunction5 *>(inRHS);
+      if (!other)
+         return -1;
+      return mFunction==other->mFunction ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
@@ -539,6 +623,14 @@ struct CMemberFunctionVar : public hx::Object
       mFunction = inFunction;
       N = inN;
    }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CMemberFunctionVar *other = dynamic_cast<const CMemberFunctionVar *>(inRHS);
+      if (!other)
+         return -1;
+      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+   }
+
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 
@@ -563,6 +655,14 @@ struct CStaticFunctionVar : public hx::Object
       mFunction = inFunction;
       N = inN;
    }
+   int __Compare(const hx::Object *inRHS) const
+   {
+      const CStaticFunctionVar *other = dynamic_cast<const CStaticFunctionVar *>(inRHS);
+      if (!other)
+         return -1;
+      return mFunction==other->mFunction ? 0 : -1;
+   }
+
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 
