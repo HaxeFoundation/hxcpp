@@ -927,7 +927,7 @@ public:
       {
          hx::EnterGCFreeZone();
          gThreadStateChangeLock->Lock();
-         hx::EnterGCFreeZone();
+         hx::ExitGCFreeZoneLocked();
          // Someone else beat us to it ...
          if (hx::gPauseForCollect)
          {

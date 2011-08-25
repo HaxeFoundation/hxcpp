@@ -16,7 +16,7 @@
  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm"/>
  <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/include"/>
  <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/include"/>
-
+ <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
  <flag value="-I${HXCPP}/include"/>
  <flag value="-Iinclude"/>
  <flag value="-fpic"/>
