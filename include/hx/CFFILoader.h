@@ -90,6 +90,9 @@ void *LoadNekoFunc(const char *inName)
       sNekoDllHandle = GetModuleHandle("neko.dll");
       #else
       sNekoDllHandle = dlopen("libneko." NEKO_EXT, RTLD_NOW);
+      // Look for libneko.so.0 too ...
+      if (!sNekoDllHandle)
+         sNekoDllHandle = dlopen("libneko." NEKO_EXT ".0", RTLD_NOW);
       #endif
   
       if (!sNekoDllHandle)
