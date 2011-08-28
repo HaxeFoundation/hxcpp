@@ -1,3 +1,29 @@
+2.0.8
+------------------------------------------------------------
+* Do not create a new class definition for each member function
+* Allow 5 fast and up to 20 slow dynamic function arguments
+* Support utf8 class
+* Added "Fast Memory" API similar to flash
+* Added support for webOS
+* Fix uncompress buffers
+* Added file to undefined pesky processor macros
+* Setup default config in user area
+* Auto-detect msvc and iphone version
+* Force compilation for mac 10.5
+* Some support for cygwin compilers
+* Remove Boehm GC as an option
+* Integrate properly now with Android ndk-r6
+* Make Int32 pass haxe unit tests (shift/modulo)
+* Fix bug in "join"
+* Fix bug with marking the "this" pointer in closures
+* Fix bug with returning NAN from parseFloat
+* Fix linux link flags
+* Fix bug where string of length 0 would be null
+* Made String cca return value consistent
+* Added control over @file syntax
+* Removed need for nekoapi.ndll
+* Allow for neko.so to end in ".0"
+
 2.0.7
 ------------------------------------------------------------
 * Added initial support for Mac64, Linux64, MinGW and GPH and refactored build tool.
