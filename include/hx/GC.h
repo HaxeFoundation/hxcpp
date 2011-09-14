@@ -15,6 +15,9 @@ void  __hxcpp_enable(bool inEnable);
 void  __hxcpp_collect();
 int   __hxcpp_gc_trace(Class inClass, bool inPrint);
 int   __hxcpp_gc_used_bytes();
+void  __hxcpp_enter_gc_free_zone();
+void  __hxcpp_exit_gc_free_zone();
+void  __hxcpp_gc_safe_point();
 
 namespace hx
 {

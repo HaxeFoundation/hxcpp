@@ -795,20 +795,16 @@ public:
       result[0] = inSize;
       result[1] = gMarkID;
 
-      #ifdef HXCPP_MULTI_THREADED
       bool do_lock = sMultiThreadMode;
       if (do_lock)
          mLargeListLock.Lock();
-      #endif
 
       mLargeList.push(result);
       mLargeAllocated += inSize;
       mDistributedSinceLastCollect += inSize;
 
-      #ifdef HXCPP_MULTI_THREADED
       if (do_lock)
          mLargeListLock.Unlock();
-      #endif
 
       return result+2;
    }
@@ -822,14 +818,12 @@ public:
    {
       CheckCollect();
 
-      #ifdef HXCPP_MULTI_THREADED
       if (sMultiThreadMode)
       {
          hx::EnterGCFreeZone();
          gThreadStateChangeLock->Lock();
          hx::ExitGCFreeZoneLocked();
       }
-      #endif
 
       BlockData *result = 0;
       if (mNextRecycled < mRecycledBlock.size())
@@ -860,10 +854,8 @@ public:
       if (!result)
          result = GetEmptyBlock();
 
-      #ifdef HXCPP_MULTI_THREADED
       if (sMultiThreadMode)
          gThreadStateChangeLock->Unlock();
-      #endif
 
       return result;
    }
@@ -922,7 +914,6 @@ public:
       #endif
      
       LocalAllocator *this_local = 0;
-      #ifdef HXCPP_MULTI_THREADED
       if (sMultiThreadMode)
       {
          hx::EnterGCFreeZone();
@@ -942,7 +933,6 @@ public:
             if (mLocalAllocs[i]!=this_local)
                WaitForSafe(mLocalAllocs[i]);
       }
-      #endif
 
       // Now all threads have mTopOfStack & mBottomOfStack set.
 
@@ -1044,7 +1034,6 @@ public:
       //printf("Using %d\n", mTotalAfterLastCollect);
       mDistributedSinceLastCollect = 0;
 
-      #ifdef HXCPP_MULTI_THREADED
       if (sMultiThreadMode)
       {
          for(int i=0;i<mLocalAllocs.size();i++)
@@ -1054,7 +1043,6 @@ public:
          hx::gPauseForCollect = false;
          gThreadStateChangeLock->Unlock();
       }
-      #endif
 
       #ifdef ANDROID
       //__android_log_print(ANDROID_LOG_INFO, "hxcpp", "Collect Done");
@@ -1236,10 +1224,8 @@ public:
 
    void *Alloc(int inSize,bool inIsObject)
    {
-      #ifdef HXCPP_MULTI_THREADED
       if (hx::gPauseForCollect)
          PauseForCollect();
-      #endif
 
       inSize = (inSize + 3 ) & ~3;
 
@@ -1499,10 +1485,8 @@ LocalAllocator *GetLocalAllocMT()
 
 inline LocalAllocator *GetLocalAlloc()
 {
-   #ifdef HXCPP_MULTI_THREADED
    if (sMultiThreadMode)
       return GetLocalAllocMT();
-   #endif
    return sMainThreadAlloc;
 }
 

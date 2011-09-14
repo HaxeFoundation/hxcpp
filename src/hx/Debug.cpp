@@ -110,7 +110,6 @@ struct CallStack
 };
 
 
-#ifdef HXCPP_MULTI_THREADED
 TLSData<CallStack> tlsCallStack;
 CallStack *GetCallStack()
 {
@@ -123,15 +122,6 @@ CallStack *GetCallStack()
    return result;
 }
 
-
-#else
-CallStack *gStack = 0;
-CallStack *GetCallStack()
-{
-   if (!gStack) gStack = new CallStack();
-   return gStack;
-}
-#endif
 
 
 }
