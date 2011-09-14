@@ -1149,6 +1149,10 @@ public:
       // stop early to allow for ptr[1] ....
       if (inTop>mTopOfStack || inForce)
          mTopOfStack = inTop;
+      if (mTopOfStack && mGCFreeZone)
+         ExitGCFreeZone();
+      else if (!mTopOfStack && !mGCFreeZone)
+         EnterGCFreeZone();
    }
 
    void SetBottomOfStack(int *inBottom)
@@ -1180,7 +1184,9 @@ public:
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
       mGCFreeZone = true;
-      hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
+      if (mTopOfStack)
+         hx::RegisterCapture::Instance()->Capture(mTopOfStack,
+                mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
       mReadyForCollect.Set();
    }
 
@@ -1373,6 +1379,9 @@ public:
 
    void Mark(HX_MARK_PARAMS)
    {
+      if (!mTopOfStack)
+         return;
+
       #ifdef ANDROID
       //int here = 0;
       // __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark %p...%p.", mBottomOfStack, mTopOfStack);
@@ -1476,8 +1485,21 @@ LocalAllocator *GetLocalAllocMT()
    LocalAllocator *result =  tlsLocalAlloc.Get();
    if (!result)
    {
-      result = new LocalAllocator();
-      tlsLocalAlloc.Set(result);
+      #ifdef ANDROID
+      __android_log_print(ANDROID_LOG_ERROR, "hxcpp",
+      #else
+      fprintf(stderr,
+      #endif
+
+      "GetLocalAllocMT - requesting memory from unregistered thread!"
+
+      #ifdef ANDROID
+      );
+      #else
+      );
+      #endif
+
+      *(int *)0=0;
    }
    return result;
 }
@@ -1553,29 +1575,36 @@ void InitAlloc()
    sgObject_root = stack[0];
    //printf("__root pointer %p\n", sgObject_root);
    sMainThreadAlloc =  new LocalAllocator();
-
-}
-
-void SetTopOfStack(int *inTop,bool inForce)
-{
-   if (!sgAllocInit)
-      InitAlloc();
-
-   LocalAllocator *tla = GetLocalAlloc();
-
-   sgInternalEnable = true;
-
-   tla->SetTopOfStack(inTop,inForce);
+   tlsLocalAlloc.Set(sMainThreadAlloc);
 }
 
 
 void GCPrepareMultiThreaded()
 {
    if (!sMultiThreadMode)
-   {
       sMultiThreadMode = true;
-      tlsLocalAlloc = sMainThreadAlloc;
+}
+
+
+void SetTopOfStack(int *inTop,bool inForce)
+{
+   if (!sgAllocInit)
+      InitAlloc();
+   else
+   {
+      if (!tlsLocalAlloc.Get())
+      {
+         GCPrepareMultiThreaded();
+         RegisterCurrentThread(inTop);
+      }
    }
+
+   LocalAllocator *tla = GetLocalAlloc();
+
+   sgInternalEnable = true;
+
+   tla->SetTopOfStack(inTop,inForce);
+
 }
 
 
