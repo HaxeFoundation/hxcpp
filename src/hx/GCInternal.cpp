@@ -1704,5 +1704,26 @@ void hxcpp_set_top_of_stack()
 }
 }
 
+void __hxcpp_enter_gc_free_zone()
+{
+   hx::EnterGCFreeZone();
+}
+
+
+void __hxcpp_exit_gc_free_zone()
+{
+   hx::ExitGCFreeZone();
+}
+
+
+void __hxcpp_gc_safe_point()
+{
+    if (hx::gPauseForCollect)
+      hx::PauseForCollect();
+}
+
+
+
+
 void DummyFunction(void *inPtr) { }
 
