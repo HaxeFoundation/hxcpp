@@ -283,6 +283,7 @@ extern "C" GCC_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * en
 	  __hx_dump_stack(); \
           __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e->toString().__CStr()); \
         }\
+	hx::SetTopOfStack((int *)0,true); \
 }
 
 #elif defined(HX_WIN_MAIN)
