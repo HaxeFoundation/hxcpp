@@ -57,6 +57,15 @@
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 </files>
 
+<files id="__main__">
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
+</files>
+
+<files id="__lib__">
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
+</files>
 
 <files id="runtime" dir="${HXCPP}">
   <depend name="${HXCPP}/include/hxcpp.h"/>
