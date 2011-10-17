@@ -53,11 +53,6 @@
      <!-- Add this if your compiler does not support precompiled headers -->
      <!-- <set name="NO_PRECOMPILED_HEADERS" value="1"/> -->
 
-     <!-- Normally, hxcpp will try to build using the 10.5 SDK, for greater compatibility.
-          If you do not have this installed, then you can use your installed one - but then
-          your exes may not work on older macs. -->
-     <!-- <set name ="MAC_USE_CURRENT_SDK" value="1" /> -->
-
      <!-- Older versions of gcc do not suport the @file syntax for an obj file list
           and precompiled headers.  Set this if you have these issues -->
      <!-- <set name="GCC_OLD" value="1" /> -->

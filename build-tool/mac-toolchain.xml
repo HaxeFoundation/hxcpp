@@ -3,6 +3,8 @@
 
 <include name="gcc-toolchain.xml"/>
 
+<setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.5" unless="MACOSX_DEPLOYMENT_TARGET" />
+
 <compiler id="darwin" exe="g++" if="macos">
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
@@ -11,15 +13,12 @@
   <flag value="-O2" unless="debug"/>
   <flag value="-I${HXCPP}/include"/>
   <flag value="-DHX_MACOS"/>
-  <flag value="-isysroot" unless="MAC_USE_CURRENT_SDK" />
-  <flag value="/Developer/SDKs/MacOSX10.5.sdk" unless="MAC_USE_CURRENT_SDK" />
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-DHXCPP_DEBUG" if="debug"/>
-  <flag value="-mmacosx-version-min=10.5" unless="MAC_USE_CURRENT_SDK" />
   <objdir value="obj/darwin${M64}/" unless="debug"/>
   <objdir value="obj/darwin${M64}-dbg/" if="debug"/>
   <outflag value="-o"/>
@@ -28,11 +27,8 @@
 
 <linker id="dll" exe="g++" if="macos">
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-mmacosx-version-min=10.4" unless="MAC_USE_CURRENT_SDK" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
-  <flag value="-isysroot" unless="MAC_USE_CURRENT_SDK" />
-  <flag value="/Developer/SDKs/MacOSX10.5.sdk" unless="MAC_USE_CURRENT_SDK" />
   <flag value="-dynamiclib"/>
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
@@ -47,9 +43,6 @@
 <linker id="exe" exe="g++" if="macos">
   <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-mmacosx-version-min=10.4" unless="MAC_USE_CURRENT_SDK" />
-  <flag value="-isysroot" unless="MAC_USE_CURRENT_SDK" />
-  <flag value="/Developer/SDKs/MacOSX10.5.sdk" unless="MAC_USE_CURRENT_SDK" />
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-debug" if="debug"/>
