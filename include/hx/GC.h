@@ -19,6 +19,10 @@ void  __hxcpp_enter_gc_free_zone();
 void  __hxcpp_exit_gc_free_zone();
 void  __hxcpp_gc_safe_point();
 
+// Finalizers from haxe code...
+void  __hxcpp_gc_do_not_kill(Dynamic inObj);
+hx::Object *__hxcpp_get_next_zombie();
+
 namespace hx
 {
 
@@ -66,7 +70,7 @@ void *NewGCPrivate(void *inData,int inSize);
 
 typedef void (*finalizer)(hx::Object *v);
 
-void  GCAddFinalizer( hx::Object *, hx::finalizer f );
+void  GCSetFinalizer( hx::Object *, hx::finalizer f );
 
 
 void *InternalNew(int inSize,bool inIsObject);

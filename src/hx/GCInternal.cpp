@@ -186,72 +186,7 @@ public:
    }
 };
 
-// --- InternalFinalizer -------------------------------
 
-namespace hx
-{
-
-typedef QuickVec<InternalFinalizer *> FinalizerList;
-
-FinalizerList *sgFinalizers = 0;
-
-InternalFinalizer::InternalFinalizer(hx::Object *inObj)
-{
-   mUsed = false;
-   mValid = true;
-   mObject = inObj;
-   mFinalizer = 0;
-   sgFinalizers->push(this);
-}
-
-void InternalFinalizer::Detach()
-{
-   mValid = false;
-}
-
-void RunFinalizers()
-{
-   FinalizerList &list = *sgFinalizers;
-   int idx = 0;
-   while(idx<list.size())
-   {
-      InternalFinalizer *f = list[idx];
-      if (!f->mValid)
-         list.qerase(idx);
-      else if (!f->mUsed)
-      {
-         if (f->mFinalizer)
-            f->mFinalizer(f->mObject);
-         list.qerase(idx);
-         delete f;
-      }
-      else
-      {
-         f->mUsed = false;
-         idx++;
-      }
-   }
-}
-
-
-
-void InternalEnableGC(bool inEnable)
-{
-   sgInternalEnable = inEnable;
-}
-
-
-void *InternalCreateConstBuffer(const void *inData,int inSize)
-{
-   int *result = (int *)malloc(inSize + sizeof(int));
-
-   *result = 0xffffffff;
-   memcpy(result+1,inData,inSize);
-
-   return result+1;
-}
-
-} // end namespace hx
 
 // ---  Internal GC - IMMIX Implementation ------------------------------
 
@@ -577,6 +512,7 @@ union BlockData
 namespace hx
 {
 
+// --- Marking ------------------------------------
 
 struct MarkInfo
 {
@@ -697,23 +633,6 @@ void MarkPopClass(HX_MARK_PARAMS)
 
 
 
-
-
-
-typedef std::set<hx::Object **> RootSet;
-static RootSet sgRootSet;
-
-void GCAddRoot(hx::Object **inRoot)
-{
-   sgRootSet.insert(inRoot);
-}
-
-void GCRemoveRoot(hx::Object **inRoot)
-{
-   sgRootSet.erase(inRoot);
-}
-
-
 void MarkAlloc(void *inPtr HX_MARK_ADD_PARAMS)
 {
    MARK_ROWS
@@ -746,9 +665,181 @@ void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS)
       __inCtx->PushMark(inPtr);
 }
 
+
+
+
+
+// --- Roots -------------------------------
+
+typedef std::set<hx::Object **> RootSet;
+static RootSet sgRootSet;
+
+void GCAddRoot(hx::Object **inRoot)
+{
+   sgRootSet.insert(inRoot);
+}
+
+void GCRemoveRoot(hx::Object **inRoot)
+{
+   sgRootSet.erase(inRoot);
 }
 
 
+
+
+// --- Finalizers -------------------------------
+
+#ifdef HXCPP_DEBUG
+#define FILE_SCOPE
+#else
+#define FILE_SCOPE static
+#endif
+
+typedef QuickVec<InternalFinalizer *> FinalizerList;
+
+FILE_SCOPE FinalizerList *sgFinalizers = 0;
+
+typedef std::map<hx::Object *,hx::finalizer> FinalizerMap;
+FILE_SCOPE FinalizerMap sFinalizerMap;
+
+typedef std::set<hx::Object *> MakeZombieSet;
+FILE_SCOPE MakeZombieSet sMakeZombieSet;
+
+typedef QuickVec<hx::Object *> ZombieList;
+FILE_SCOPE ZombieList sZombieList;
+
+InternalFinalizer::InternalFinalizer(hx::Object *inObj)
+{
+   mUsed = false;
+   mValid = true;
+   mObject = inObj;
+   mFinalizer = 0;
+   sgFinalizers->push(this);
+}
+
+void InternalFinalizer::Detach()
+{
+   mValid = false;
+}
+
+void FindZombies(MarkContext &inContext)
+{
+   for(MakeZombieSet::iterator i=sMakeZombieSet.begin(); i!=sMakeZombieSet.end(); )
+   {
+      hx::Object *obj = *i;
+      MakeZombieSet::iterator next = i;
+      ++next;
+
+      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
+      if ( mark!=gByteMarkID )
+      {
+         sZombieList.push(obj);
+         sMakeZombieSet.erase(i);
+
+         // Mark now to prevent secondary zombies...
+         hx::MarkObjectAlloc(obj , &inContext );
+         inContext.Process();
+      }
+
+      i = next;
+   }
+}
+
+void RunFinalizers()
+{
+   FinalizerList &list = *sgFinalizers;
+   int idx = 0;
+   while(idx<list.size())
+   {
+      InternalFinalizer *f = list[idx];
+      if (!f->mValid)
+         list.qerase(idx);
+      else if (!f->mUsed)
+      {
+         if (f->mFinalizer)
+            f->mFinalizer(f->mObject);
+         list.qerase(idx);
+         delete f;
+      }
+      else
+      {
+         f->mUsed = false;
+         idx++;
+      }
+   }
+
+   for(FinalizerMap::iterator i=sFinalizerMap.begin(); i!=sFinalizerMap.end(); )
+   {
+      hx::Object *obj = i->first;
+      FinalizerMap::iterator next = i;
+      ++next;
+
+      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
+      if ( mark!=gByteMarkID )
+      {
+         (*i->second)(obj);
+         sFinalizerMap.erase(i);
+      }
+
+      i = next;
+   }
+
+}
+
+
+void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
+{
+   AutoLock lock(*gThreadStateChangeLock);
+   if (f==0)
+   {
+      FinalizerMap::iterator i = sFinalizerMap.find(obj);
+      if (i!=sFinalizerMap.end())
+         sFinalizerMap.erase(i);
+   }
+   else
+      sFinalizerMap[obj] = f;
+}
+
+void GCDoNotKill(hx::Object *inObj)
+{
+   AutoLock lock(*gThreadStateChangeLock);
+   sMakeZombieSet.insert(inObj);
+}
+
+hx::Object *GCGetNextZombie()
+{
+   AutoLock lock(*gThreadStateChangeLock);
+   if (sZombieList.empty())
+      return 0;
+   hx::Object *result = sZombieList.pop();
+   return result;
+}
+
+void InternalEnableGC(bool inEnable)
+{
+   sgInternalEnable = inEnable;
+}
+
+
+void *InternalCreateConstBuffer(const void *inData,int inSize)
+{
+   int *result = (int *)malloc(inSize + sizeof(int));
+
+   *result = 0xffffffff;
+   memcpy(result+1,inData,inSize);
+
+   return result+1;
+}
+
+
+
+
+
+
+}
+
+
+// --- GlobalAllocator -------------------------------------------------------
 
 typedef std::map<void *,int> BlockIDMap;
 typedef std::set<BlockData *> PointerSet;
@@ -959,12 +1050,17 @@ public:
             hx::MarkObjectAlloc(obj , &mMarker );
       }
 
-      mMarker.Process();
+      // Mark zombies too....
+      for(int i=0;i<hx::sZombieList.size();i++)
+         hx::MarkObjectAlloc(hx::sZombieList[i] , &mMarker );
 
       for(int i=0;i<mLocalAllocs.size();i++)
          MarkLocalAlloc(mLocalAllocs[i] , &mMarker);
 
       mMarker.Process();
+
+      hx::FindZombies(mMarker);
+
 
       #ifdef PRINT_STATS
       double t = __time_stamp() - t0;
@@ -979,6 +1075,7 @@ public:
          sum = 0;
       }
       #endif
+
 
       hx::RunFinalizers();
 
@@ -1723,12 +1820,21 @@ int   __hxcpp_gc_used_bytes()
    return sGlobalAlloc->MemUsage();
 }
 
+void  __hxcpp_gc_do_not_kill(Dynamic inObj)
+{
+   hx::GCDoNotKill(inObj.GetPtr());
+}
+
+hx::Object *__hxcpp_get_next_zombie()
+{
+   return hx::GCGetNextZombie();
+}
+
 extern "C"
 {
 void hxcpp_set_top_of_stack()
 {
    int i = 0;
-   printf("SetTopOfStack %p\n", &i);
    hx::SetTopOfStack(&i,false);
 }
 }

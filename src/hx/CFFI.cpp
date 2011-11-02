@@ -659,8 +659,12 @@ void  val_gc(hx::Object * arg1,hx::finalizer arg2) THROWS
 {
    hx::Abstract_obj *abstract = dynamic_cast<hx::Abstract_obj *>(arg1);
    if (!abstract)
-      hx::Throw(HX_CSTRING("Finalizer not on abstract object"));
-   abstract->SetFinalizer(arg2);
+   {
+      hx::GCSetFinalizer(arg1,arg2);
+      //hx::Throw(HX_CSTRING("Finalizer not on abstract object"));
+   }
+   else
+      abstract->SetFinalizer(arg2);
 }
 
 void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2) THROWS

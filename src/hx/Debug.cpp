@@ -5,6 +5,7 @@
 
 #ifdef HX_WINDOWS
 #include <windows.h>
+#include <stdio.h>
 #endif
 
 #ifdef ANDROID
