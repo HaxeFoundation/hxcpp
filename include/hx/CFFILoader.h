@@ -144,6 +144,7 @@ typedef neko_buffer (*alloc_buffer_func)(const char *);
 typedef void (*buffer_append_sub_func)(neko_buffer,const char *,int);
 typedef void (*fail_func)(neko_value,const char *,int);
 typedef neko_value (*alloc_array_func)(unsigned int);
+typedef void (*val_gc_func)(neko_value,void *);
 
 static alloc_object_func dyn_alloc_object = 0;
 static alloc_string_func dyn_alloc_string = 0;
@@ -157,6 +158,7 @@ static alloc_buffer_func dyn_alloc_buffer = 0;
 static fail_func dyn_fail = 0;
 static buffer_append_sub_func dyn_buffer_append_sub = 0;
 static alloc_array_func dyn_alloc_array = 0;
+static val_gc_func dyn_val_gc = 0;
 
 
 neko_value api_alloc_string(const char *inString)
@@ -415,6 +417,22 @@ neko_value  api_val_call0_traceexcept(neko_value  arg1)
 }
 
 
+void api_val_gc(neko_value obj, void *finalizer)
+{
+   // Let neko deal with ints or abstracts ...
+   if (neko_val_is_int(obj) || neko_val_is_abstract(obj))
+   {
+      dyn_val_gc(obj,finalizer);
+   }
+   else
+   {
+      // Hack type to abstract for the duration
+      neko_val_type old_tag = neko_val_tag(obj);
+      neko_val_tag(obj) = VAL_ABSTRACT;
+      dyn_val_gc(obj,finalizer);
+      neko_val_tag(obj) = old_tag;
+   }
+}
 
 
 #define IMPLEMENT_HERE(x) if (!strcmp(inName,#x)) return (void *)api_##x;
@@ -438,6 +456,7 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(alloc_int)
    IMPLEMENT_HERE(alloc_empty_object)
    IMPLEMENT_HERE(alloc_root)
+   IMPLEMENT_HERE(val_gc)
 
    IGNORE_API(gc_enter_blocking)
    IGNORE_API(gc_exit_blocking)
@@ -455,8 +474,6 @@ void *DynamicNekoLoader(const char *inName)
 
    if (!strcmp(inName,"hx_alloc"))
       return LoadNekoFunc("neko_alloc");
-   if (!strcmp(inName,"val_gc_ptr"))
-      return LoadNekoFunc("neko_val_gc");
 
    if (!strcmp(inName,"buffer_val"))
       return LoadNekoFunc("neko_buffer_to_string");
@@ -518,6 +535,7 @@ ResolveProc InitDynamicNekoLoader()
       dyn_fail = (fail_func)LoadNekoFunc("_neko_failure");
       dyn_buffer_append_sub = (buffer_append_sub_func)LoadNekoFunc("neko_buffer_append_sub");
       dyn_alloc_array = (alloc_array_func)LoadNekoFunc("neko_alloc_array");
+      dyn_val_gc = (val_gc_func)LoadNekoFunc("neko_val_gc");
       init = true;
    }
 
