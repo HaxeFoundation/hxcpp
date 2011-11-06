@@ -905,13 +905,48 @@ class BuildTool
    {
       return mDefines.exists(inString);
    }
+
+	public static function getHaxelib(library:String):String
+   {
+		var proc = new neko.io.Process("haxelib",["path",library]);
+		var result = "";
+		
+		try
+      {
+			while(true)
+         {
+				var line = proc.stdout.readLine();
+				if (line.substr(0,1) != "-")
+            {
+					result = line;
+               break;
+            }
+			}
+			
+		} catch (e:Dynamic) { };
+		
+		proc.close();
+		
+		if (result == "")
+			throw ("Could not find haxelib path  " + library + " required by a source file.");
+		
+		return result;
+	}
+
    
    static var mVarMatch = new EReg("\\${(.*?)}","");
    public function substitute(str:String) : String
    {
       while( mVarMatch.match(str) )
       {
-         var sub = mDefines.get( mVarMatch.matched(1) );
+         var sub = mVarMatch.matched(1);
+         if (sub.substr(0,8)=="haxelib:")
+         {
+            sub = getHaxelib(sub.substr(8));
+         }
+         else
+            sub = mDefines.get(sub);
+
          if (sub==null) sub="";
          str = mVarMatch.matchedLeft() + sub + mVarMatch.matchedRight();
       }

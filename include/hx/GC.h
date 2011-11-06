@@ -8,6 +8,8 @@
 #define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
 
 
+// Tell compiler the extra functions are supported
+#define HXCPP_GC_FUNCTIONS_1
 
 // Helpers for debugging code
 void  __hxcpp_reachable(hx::Object *inKeep);
