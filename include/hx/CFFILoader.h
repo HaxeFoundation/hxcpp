@@ -5,7 +5,6 @@
 #include <android/log.h>
 #endif
 
-
 #ifdef NEKO_WINDOWS
 #include <windows.h>
 #include <stdio.h>
@@ -117,6 +116,7 @@ void *LoadNekoFunc(const char *inName)
 static int __a_id = 0;
 static int __s_id = 0;
 static int length_id = 0;
+static int push_id = 0;
 
 neko_value *gNeko2HaxeString = 0;
 neko_value *gNekoNewArray = 0;
@@ -145,6 +145,7 @@ typedef void (*buffer_append_sub_func)(neko_buffer,const char *,int);
 typedef void (*fail_func)(neko_value,const char *,int);
 typedef neko_value (*alloc_array_func)(unsigned int);
 typedef void (*val_gc_func)(neko_value,void *);
+typedef void (*val_ocall1_func)(neko_value,int,neko_value);
 
 static alloc_object_func dyn_alloc_object = 0;
 static alloc_string_func dyn_alloc_string = 0;
@@ -159,6 +160,7 @@ static fail_func dyn_fail = 0;
 static buffer_append_sub_func dyn_buffer_append_sub = 0;
 static alloc_array_func dyn_alloc_array = 0;
 static val_gc_func dyn_val_gc = 0;
+static val_ocall1_func dyn_val_ocall1 = 0;
 
 
 neko_value api_alloc_string(const char *inString)
@@ -389,9 +391,9 @@ void api_val_array_set_size(neko_value  arg1,int inLen)
 	NOT_IMPLEMNETED("api_val_array_set_size");
 }
 
-void api_val_array_push(neko_value  arg1,neko_value inValue)
+void api_val_array_push(neko_value  inArray,neko_value inValue)
 {
-	NOT_IMPLEMNETED("api_val_array_push");
+   dyn_val_ocall1(inArray,push_id,inValue);
 }
 
 
@@ -536,6 +538,7 @@ ResolveProc InitDynamicNekoLoader()
       dyn_buffer_append_sub = (buffer_append_sub_func)LoadNekoFunc("neko_buffer_append_sub");
       dyn_alloc_array = (alloc_array_func)LoadNekoFunc("neko_alloc_array");
       dyn_val_gc = (val_gc_func)LoadNekoFunc("neko_val_gc");
+      dyn_val_ocall1 = (val_ocall1_func)LoadNekoFunc("neko_val_ocall1");
       init = true;
    }
 
@@ -546,6 +549,7 @@ ResolveProc InitDynamicNekoLoader()
    __a_id = dyn_val_id("__a");
    __s_id = dyn_val_id("__s");
    length_id = dyn_val_id("length");
+   push_id = dyn_val_id("push");
 
    return DynamicNekoLoader;
 }
