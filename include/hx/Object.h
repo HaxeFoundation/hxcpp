@@ -125,6 +125,25 @@ public:
 template<typename OBJ_>
 class ObjectPtr
 {
+   inline bool SetPtr(OBJ_ *inPtr)
+   {
+      mPtr = inPtr;
+      return true;
+   }
+   inline bool SetPtr(...) { return false; }
+
+   void CastPtr(hx::Object *inPtr)
+   {
+      if (inPtr)
+      {
+         mPtr = dynamic_cast<OBJ_ *>(inPtr->__GetRealObject());
+         if (!mPtr)
+            mPtr = (Ptr)inPtr->__ToInterface(typeid(Obj));
+      }
+      else
+         mPtr = 0;
+   }
+
 public:
    typedef OBJ_ Obj;
    typedef OBJ_ *Ptr;
@@ -132,38 +151,21 @@ public:
    ObjectPtr() : mPtr(0) { }
    ObjectPtr(OBJ_ *inObj) : mPtr(inObj) { }
    ObjectPtr(const null &inNull) : mPtr(0) { }
+   ObjectPtr(const ObjectPtr<OBJ_> &inOther) : mPtr( inOther.mPtr ) {  }
 
    template<typename SOURCE_>
    ObjectPtr(const ObjectPtr<SOURCE_> &inObjectPtr)
    {
-      if (inObjectPtr.mPtr)
-      {
-         mPtr = dynamic_cast<OBJ_ *>(inObjectPtr.mPtr->__GetRealObject());
-         if (!mPtr)
-            mPtr = (Ptr)inObjectPtr.mPtr->__ToInterface(typeid(Obj));
-      }
-      else
-         mPtr = 0;
+      if (!SetPtr(inObjectPtr.mPtr))
+         CastPtr(inObjectPtr.mPtr);
    }
-
 
    template<typename SOURCE_>
    ObjectPtr(const SOURCE_ *inPtr)
    {
-      if (inPtr)
-      {
-         mPtr = dynamic_cast<OBJ_ *>((const_cast<SOURCE_ *>(inPtr))->__GetRealObject());
-         if (!mPtr)
-            mPtr = (Ptr)const_cast<SOURCE_ *>(inPtr)->__ToInterface(typeid(Obj));
-      }
-      else
-         mPtr = 0;
+      if (!SetPtr(const_cast<SOURCE_ *>(inPtr)))
+         CastPtr(const_cast<SOURCE_ *>(inPtr));
    }
-
-
-   ObjectPtr(const ObjectPtr<OBJ_> &inOther) : mPtr( inOther.mPtr ) {  }
-
-
 
    ObjectPtr &operator=(const null &inNull) { mPtr = 0; return *this; }
    ObjectPtr &operator=(Ptr inRHS) { mPtr = inRHS; return *this; }
