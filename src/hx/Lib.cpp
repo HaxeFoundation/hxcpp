@@ -39,7 +39,10 @@ Module hxLoadLibrary(String inLib)
    Module result = dlopen(inLib.__CStr(), RTLD_NOW|RTLD_GLOBAL);
    if (gLoadDebug)
    {
-      printf("Error loading library: %s\n", dlerror());
+      if (result)
+         printf("Loaded : %s.\n", inLib.__CStr());
+      else
+         printf("Error loading library: %s\n", dlerror());
    }
    return result;
 }
