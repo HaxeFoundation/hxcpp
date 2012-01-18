@@ -1049,7 +1049,7 @@ class BuildTool
          else if ( (new EReg("window","i")).match(os) )
             defines.set("ANDROID_HOST","windows");
          else if ( (new EReg("linux","i")).match(os) )
-            defines.set("ANDROID_HOST","linux");
+            defines.set("ANDROID_HOST","linux-x86");
          else
             throw "Unknown android host:" + os;
       }
