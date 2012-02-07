@@ -60,6 +60,7 @@ namespace hx
 #if defined(HXCPP_DBG_HOST)
 
 bool   gTried = false;
+bool   gDBGTrace = false;
 SOCKET gDBGSocket = INVALID_SOCKET;
 fd_set gDBGSocketSet;
 timeval gNoWait = { 0,0 };
@@ -69,6 +70,17 @@ enum
 {
    dbgCONT  = 'c',
    dbgBREAK = 'X',
+   dbgTRACE = 't',
+   dbgNOTRACE = 'n',
+   dbgSTEP = 's',
+
+   dbgWHERE = 'w',
+   dbgKILL = 'k',
+
+
+   rspRESULT = 's',
+   rspDATA = 'd',
+   rspINFO = 'i',
 };
 
 int gDBGState = dbgCONT;
@@ -95,6 +107,33 @@ void DbgWriteString(const std::string &inMessage)
 }
 
 
+void DbgWriteData(const std::string &inMessage)
+{
+   char code = rspDATA;
+   send(gDBGSocket,(char *)&code,1,0);
+   DbgWriteString(inMessage);
+}
+
+
+void DbgWriteInfo(const std::string &inMessage)
+{
+   char code = rspINFO;
+   send(gDBGSocket,(char *)&code,1,0);
+   DbgWriteString(inMessage);
+}
+
+
+
+
+void DbgWriteResponse(const std::string &inMessage)
+{
+   char code = rspRESULT;
+   send(gDBGSocket,(char *)&code,1,0);
+   DbgWriteString(inMessage);
+}
+
+
+
 void DbgSocketLost()
 {
    printf("Debug socket lost");
@@ -102,22 +141,57 @@ void DbgSocketLost()
 }
 
 
+void DbgWhere();
+void DbgTrace();
 void DbgWaitLoop();
 
-void DbgRunCommand(int command)
+void DbgRunCommand(int command,bool waitOnBreak)
 {
    printf("Command : %d\n", command);
+   bool inWait = gDBGState == dbgBREAK;
    if (command==dbgBREAK)
    {
       gDBGState = dbgBREAK;
-      DbgWriteString("State - break");
-      DbgWaitLoop();
+      DbgWriteResponse("State - break");
    }
    else if (command==dbgCONT)
    {
       gDBGState = dbgCONT;
-      DbgWriteString("State - cont");
+      DbgWriteResponse("State - cont");
    }
+   else if (command==dbgWHERE)
+   {
+      if (gDBGState==dbgCONT)
+      {
+         DbgWriteResponse("Must be stopped to use 'where'");
+      }
+      else
+      {
+         DbgWhere();
+         DbgWriteResponse("- end of stack -");
+      }
+   }
+   else if (command==dbgKILL)
+   {
+      exit(1);
+   }
+   else if (command==dbgTRACE)
+   {
+      gDBGTrace = true;
+      DbgWriteResponse("trace on");
+   }
+   else if (command==dbgNOTRACE)
+   {
+      gDBGTrace = false;
+      DbgWriteResponse("trace off");
+   }
+   else
+   {
+      DbgWriteResponse("Unknown command?");
+   }
+
+   if (waitOnBreak & gDBGState==dbgBREAK)
+     DbgWaitLoop();
 }
 
 
@@ -133,7 +207,7 @@ void DbgWaitLoop()
           DbgSocketLost();
           return;
        }
-       DbgRunCommand(command);
+       DbgRunCommand(command,false);
    }
 }
 
@@ -211,7 +285,7 @@ bool DbgInit()
       {
          bool ok = false;
          int command  = DbgReadByte(ok);
-         DbgRunCommand(command);
+         DbgRunCommand(command,true);
       }
    }
 
@@ -234,8 +308,12 @@ void CheckDBG()
             return;
          }
 
-         DbgRunCommand(val);
+         DbgRunCommand(val,true);
       }
+   }
+   if (gDBGTrace)
+   {
+      DbgTrace();
    }
 }
 
@@ -280,7 +358,7 @@ struct CallStack
    CallStack()
    {
       mSize = 0;
-      mLastException;
+      mLastException = 0;
    }
    void Push(const char *inName)
    {
@@ -331,6 +409,42 @@ struct CallStack
          printf("... %d functions missing ...\n", mLastException + 1 - StackSize);
       }
    }
+   #ifdef HXCPP_DBG_HOST
+   void Where()
+   {
+      int last = mSize + 1;
+      if (mLastException!=0 && mLastException<last)
+         last = mLastException;
+      if (last>StackSize)
+         last = StackSize;
+      for(int i=1;i<=mSize && i<StackSize;i++)
+      {
+         CallLocation loc = mLocations[i];
+         if (loc.mFunction==0)
+             DbgWriteData("CFunction\n");
+         else
+         {
+            char buf[2048];
+            sprintf(buf,"%s @  %s:%d\n", loc.mFunction, loc.mFile, loc.mLine );
+            DbgWriteData(buf);
+         }
+      }
+   }
+
+   void Trace()
+   {
+      int last = mSize;
+      //if (mLastException>0 && mLastException<last)
+      //   last = mLastException;
+      if (last>StackSize)
+         last = StackSize-1;
+    
+      CallLocation loc = mLocations[last];
+      char buf[2048];
+      sprintf(buf,"%s @  %s:%d", loc.mFunction, loc.mFile, loc.mLine );
+      DbgWriteInfo(buf);
+   }
+   #endif
 
 
    int mSize;
@@ -350,6 +464,20 @@ CallStack *GetCallStack()
    }
    return result;
 }
+
+#ifdef HXCPP_DBG_HOST
+void DbgWhere()
+{
+   hx::GetCallStack()->Where();
+}
+
+void DbgTrace()
+{
+   hx::GetCallStack()->Trace();
+}
+#
+#endif
+ 
 
 
 

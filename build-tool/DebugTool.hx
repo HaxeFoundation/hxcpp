@@ -18,8 +18,8 @@ class DebugTool
    var dbg:Socket;
    var server:Socket;
    var readBuffer:haxe.io.Bytes;
-   var fromApp:SocketInput;
-   var toApp:SocketOutput;
+   var fromApp:haxe.io.Input;
+   var toApp:haxe.io.Output;
    var port:Int;
    var mainThread:Thread;
    var socketThread:Thread;
@@ -28,6 +28,14 @@ class DebugTool
 
    static var BREAK = "X".charCodeAt(0);
    static var CONT  = "c".charCodeAt(0);
+   static var WHERE  = "w".charCodeAt(0);
+   static var KILL  = "k".charCodeAt(0);
+   static var TRACE  = "t".charCodeAt(0);
+   static var NOTRACE  = "n".charCodeAt(0);
+
+   static var RESPONSE_RESULT = "s".charCodeAt(0);
+   static var RESPONSE_DATA = "d".charCodeAt(0);
+   static var RESPONSE_INFO = "i".charCodeAt(0);
 
   function new(inHost:String, inPort:Int)
   {
@@ -72,9 +80,32 @@ class DebugTool
      {
         while(going)
         {
-           var appCommand = fromApp.readByte();
-           mainThread.sendMessage({from:"socket", data:appCommand});
-           var ack = Thread.readMessage(true);
+           var result = "";
+           while(true)
+           {
+              var appResponse = fromApp.readByte();
+              if (appResponse==RESPONSE_DATA)
+              {
+                 result += readString();
+              }
+              else if (appResponse==RESPONSE_RESULT)
+              {
+                 result += readString();
+                 break;
+              }
+              else if (appResponse==RESPONSE_INFO)
+              {
+                 var info = readString();
+                 mainThread.sendMessage({from:"info", data:info});
+              }
+              else
+              {
+                 result += "Unknown response ??";
+                 break;
+              }
+           }
+          
+           mainThread.sendMessage({from:"socket", data:result});
         }
      }
      catch (e:Dynamic)
@@ -90,9 +121,17 @@ class DebugTool
      {
         try
         {
+           var ready = Thread.readMessage(true);
+
            Lib.print("> ");
            var command = stdin.readLine();
-           mainThread.sendMessage({from:"key", data:command});
+           if (command=="quit")
+           {
+              mainThread.sendMessage({from:"quit", data:command});
+              going = false;
+           }
+           else
+              mainThread.sendMessage({from:"key", data:command});
         }
         catch (e:Dynamic)
         {
@@ -103,14 +142,32 @@ class DebugTool
 
   function processKeyboard(inCommand:String)
   {
-     if (inCommand=="break")
+     switch(inCommand)
      {
-        toApp.writeByte(BREAK);
+        case "break","b":
+           toApp.writeByte(BREAK);
+
+        case "cont","c", "continue":
+           toApp.writeByte(CONT);
+
+        case "where","w":
+           toApp.writeByte(WHERE);
+
+        case "kill":
+           toApp.writeByte(KILL);
+
+        case "trace":
+           toApp.writeByte(TRACE);
+
+        case "notrace":
+           toApp.writeByte(NOTRACE);
+
+        default:
+           Lib.print("Unknown commnd : " + inCommand + ".\n");
+           return false;
      }
-     else if (inCommand=="cont")
-     {
-        toApp.writeByte(CONT);
-     }
+
+     return true;
   }
 
 
@@ -120,6 +177,7 @@ class DebugTool
 
      var command = CONT;
      toApp.writeByte(command);
+     var waitingForResponse = true;
 
      mainThread = Thread.current();
      keyboardThread = Thread.create(keyboardLoop);
@@ -128,15 +186,26 @@ class DebugTool
      while(true)
      {
         var command = Thread.readMessage(true);
-        trace(command);
+        //trace(command);
         switch(command.from)
         {
            case "error":
               break;
+           case "quit":
+              break;
            case "key":
-              processKeyboard(command.data);
+              waitingForResponse = processKeyboard(command.data);
+              if (!waitingForResponse)
+                 keyboardThread.sendMessage(null);
+           case "info":
+              Lib.println(command.data);
            case "socket":
-              trace("socket wake!");
+              Lib.println(command.data);
+              if (waitingForResponse)
+              {
+                 waitingForResponse = false;
+                 keyboardThread.sendMessage(null);
+              }
         }
      }
      trace("Bye bye");
