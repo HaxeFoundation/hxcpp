@@ -1,6 +1,6 @@
 #include <hxcpp.h>
 
-#if defined(HXCPP_DEBUG) && defined(HXCPP_DBG_HOST)
+#if defined(HXCPP_DEBUG) && defined(HXCPP_DEBUG_HOST)
 
 #include <hx/OS.h>
 
@@ -57,7 +57,7 @@ namespace hx
 {
 
 
-#if defined(HXCPP_DBG_HOST)
+#if defined(HXCPP_DEBUG_HOST)
 
 bool   gTried = false;
 bool   gDBGTrace = false;
@@ -236,7 +236,7 @@ bool DbgInit()
          #endif
 
  
-         char host[] = HXCPP_DBG_HOST;
+         char host[] = HXCPP_DEBUG_HOST;
          char *sep = host;
          while(*sep && *sep!=':') sep++;
          int port = 80;
@@ -317,7 +317,7 @@ void CheckDBG()
    }
 }
 
-#endif // HXCPP_DBG_HOST
+#endif // HXCPP_DEBUG_HOST
 
 
 
@@ -379,7 +379,7 @@ struct CallStack
           mLocations[mSize].mFile = inFile;
           mLocations[mSize].mLine = inLine;
       }
-      #ifdef HXCPP_DBG_HOST
+      #ifdef HXCPP_DEBUG_HOST
       CheckDBG();
       #endif
    }
@@ -409,7 +409,7 @@ struct CallStack
          printf("... %d functions missing ...\n", mLastException + 1 - StackSize);
       }
    }
-   #ifdef HXCPP_DBG_HOST
+   #ifdef HXCPP_DEBUG_HOST
    void Where()
    {
       int last = mSize + 1;
@@ -465,7 +465,7 @@ CallStack *GetCallStack()
    return result;
 }
 
-#ifdef HXCPP_DBG_HOST
+#ifdef HXCPP_DEBUG_HOST
 void DbgWhere()
 {
    hx::GetCallStack()->Where();

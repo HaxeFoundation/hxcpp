@@ -44,6 +44,7 @@
  <flag value="-Wa,--noexecstack"/>
  <flag value="-O2" unless="debug"/>
  <flag value="-O0" if="debug"/>
+ <flag value="-DHXCPP_DEBUG" if="debug"/>
  <flag value="-DNDEBUG"/>
  <flag value="-c"/>
  <outflag value="-o"/>

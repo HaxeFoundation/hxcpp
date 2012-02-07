@@ -123,7 +123,7 @@ class DebugTool
         {
            var ready = Thread.readMessage(true);
 
-           Lib.print("> ");
+           Lib.print(" => ");
            var command = stdin.readLine();
            if (command=="quit")
            {
@@ -171,11 +171,11 @@ class DebugTool
   }
 
 
-  function mainLoop()
+  function mainLoop(inStartPaused:Bool)
   {
      going = true;
 
-     var command = CONT;
+     var command = inStartPaused ? BREAK : CONT;
      toApp.writeByte(command);
      var waitingForResponse = true;
 
@@ -216,8 +216,13 @@ class DebugTool
 
   public static function main()
   {
+      var args = neko.Sys.args();
+      var pause = false;
+      for(arg in args)
+         if (arg=="-break")
+            pause = true;
       var server = new DebugTool(Host.localhost(),8080);
       if (server.ok())
-         server.mainLoop();
+         server.mainLoop(pause);
   }
 }
