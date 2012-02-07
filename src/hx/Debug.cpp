@@ -1,4 +1,42 @@
 #include <hxcpp.h>
+
+#if defined(HXCPP_DEBUG) && defined(HXCPP_DBG_HOST)
+
+#include <hx/OS.h>
+
+#ifdef NEKO_WINDOWS
+#	include <winsock2.h>
+#	define FDSIZE(n)	(sizeof(u_int) + (n) * sizeof(SOCKET))
+#	define SHUT_WR		SD_SEND
+#	define SHUT_RD		SD_RECEIVE
+#	define SHUT_RDWR	SD_BOTH
+	static bool init_done = false;
+	static WSADATA gInitData;
+#pragma comment(lib, "Ws2_32.lib")
+
+#else
+#	include <sys/types.h>
+#	include <sys/socket.h>
+#	include <sys/time.h>
+#	include <netinet/in.h>
+#	include <arpa/inet.h>
+#	include <unistd.h>
+#	include <netdb.h>
+#	include <fcntl.h>
+#	include <errno.h>
+#	include <stdio.h>
+#	include <poll.h>
+	typedef int SOCKET;
+#	define closesocket close
+#	define SOCKET_ERROR (-1)
+#	define INVALID_SOCKET (-1)
+#endif
+
+#include <string>
+
+#endif
+
+
 #include <hx/Thread.h>
 
 #ifdef HXCPP_DEBUG
@@ -17,6 +55,190 @@ void __hx_stack_set_last_exception();
 
 namespace hx
 {
+
+
+#if defined(HXCPP_DBG_HOST)
+
+bool   gTried = false;
+SOCKET gDBGSocket = INVALID_SOCKET;
+fd_set gDBGSocketSet;
+timeval gNoWait = { 0,0 };
+
+
+enum
+{
+   dbgCONT  = 'c',
+   dbgBREAK = 'X',
+};
+
+int  gDBGState = dbgCONT;
+
+
+int DbgReadByte(bool &ioOk)
+{
+   unsigned char result;
+   if (recv(gDBGSocket, (char *)&result,1,0)!=1)
+   {
+      ioOk = false;
+      return 0;
+   }
+   return result;
+}
+
+
+void DbgWriteString(const std::string &inMessage)
+{
+   int len = inMessage.size();
+   send(gDBGSocket,(char *)&len,4,0);
+   if (len)
+      send(gDBGSocket,inMessage.c_str(),len,0);
+}
+
+
+void DbgSocketLost()
+{
+   printf("Debug socket lost");
+   gDBGSocket = INVALID_SOCKET;
+}
+
+
+void DbgWaitLoop();
+
+void DbgRunCommand(int command)
+{
+       printf("Command : %d\n", command);
+       if (command==dbgBREAK)
+       {
+          gDBGState = dbgBREAK;
+          DbgWriteString("State - break");
+          DbgWaitLoop();
+       }
+       else if (command==dbgCONT)
+       {
+          gDBGState = dbgCONT;
+          DbgWriteString("State - cont");
+       }
+   }
+}
+
+
+void DbgWaitLoop()
+{
+   bool ok = true;
+   while(gDBGState == dbgBREAK && ok)
+   {
+       printf("Waiting for command...\n");
+       int command = DbgReadByte(ok);
+       if (!ok)
+       {
+          DbgSocketLost();
+          return;
+       }
+       DbgRunCommand(command);
+   }
+}
+
+
+bool DbgInit()
+{
+   if (!gTried)
+   {
+      gTried = true;
+      #ifdef NEKO_WINDOWS
+      WSAStartup(MAKEWORD(2,0),&gInitData);
+      #endif
+      gDBGSocket = socket(AF_INET,SOCK_STREAM,0);
+      if (gDBGSocket != INVALID_SOCKET)
+      {
+         #ifdef NEKO_MAC
+         setsockopt(s,SOL_SOCKET,SO_NOSIGPIPE,NULL,0);
+         #endif
+         #ifdef NEKO_POSIX
+         // we don't want sockets to be inherited in case of exec
+         {
+         int old = fcntl(s,F_GETFD,0);
+         if ( old >= 0 )
+            fcntl(s,F_SETFD,old|FD_CLOEXEC);
+         }
+         #endif
+
+ 
+         char host[] = HXCPP_DBG_HOST;
+         char *sep = host;
+         while(*sep && *sep!=':') sep++;
+         int port = 80;
+         if (*sep)
+         {
+            port = atoi(sep+1);
+            *sep = '\0';
+         }
+
+         struct sockaddr_in addr;
+         memset(&addr,0,sizeof(addr));
+         addr.sin_family = AF_INET;
+         addr.sin_addr.s_addr = inet_addr(host);
+         addr.sin_port = htons( port );
+
+         #ifdef ANDROID
+         __android_log_print(ANDROID_LOG_ERROR, "HXCPPDBG",
+              "DBG seeking connection to %s : %d", host, port );
+         #else
+         printf( "DBG seeking connection to %s : %d\n", host, port );
+         #endif
+
+         int result =  connect(gDBGSocket,(struct sockaddr*)&addr,sizeof(addr));
+         if (result != 0 )
+         {
+            printf("Unable to connect to server: %ld\n", WSAGetLastError());
+            gDBGSocket = INVALID_SOCKET;
+         }
+         else
+         {
+            FD_ZERO(&gDBGSocketSet);
+         }
+      }
+      #ifdef ANDROID
+      __android_log_print(ANDROID_LOG_ERROR, "HXCPPDBG",
+           "DBG connection %s", gDBGSocket==INVALID_SOCKET?"BAD":"GOOD");
+      #else
+      printf( "DBG connection %s\n", gDBGSocket==INVALID_SOCKET?"BAD":"GOOD");
+      #endif
+
+      if (gDBGSocket!=INVALID_SOCKET)
+      {
+         bool ok = false;
+         int command  = DbgReadByte(ok);
+         DbgRunCommand(command);
+      }
+   }
+
+   return gDBGSocket!=INVALID_SOCKET;
+}
+
+void CheckDBG()
+{
+   if (DbgInit())
+   {
+      FD_SET(gDBGSocket,&gDBGSocketSet);
+      if (select((int)(gDBGSocket+1), &gDBGSocketSet,0,0,&gNoWait)>0)
+      {
+         // Got something to read...
+         bool ok = true;
+         int val = DbgReadByte(ok);
+         if (!ok)
+         {
+            DbgSocketLost();
+            return;
+         }
+
+         DbgRunCommand(val);
+      }
+   }
+}
+
+#endif // HXCPP_DBG_HOST
+
+
 
 void CriticalError(const String &inErr)
 {
@@ -76,6 +298,9 @@ struct CallStack
           mLocations[mSize].mFile = inFile;
           mLocations[mSize].mLine = inLine;
       }
+      #ifdef HXCPP_DBG_HOST
+      CheckDBG();
+      #endif
    }
    void SetLastException()
    {
