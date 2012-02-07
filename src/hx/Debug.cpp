@@ -71,7 +71,7 @@ enum
    dbgBREAK = 'X',
 };
 
-int  gDBGState = dbgCONT;
+int gDBGState = dbgCONT;
 
 
 int DbgReadByte(bool &ioOk)
@@ -106,18 +106,17 @@ void DbgWaitLoop();
 
 void DbgRunCommand(int command)
 {
-       printf("Command : %d\n", command);
-       if (command==dbgBREAK)
-       {
-          gDBGState = dbgBREAK;
-          DbgWriteString("State - break");
-          DbgWaitLoop();
-       }
-       else if (command==dbgCONT)
-       {
-          gDBGState = dbgCONT;
-          DbgWriteString("State - cont");
-       }
+   printf("Command : %d\n", command);
+   if (command==dbgBREAK)
+   {
+      gDBGState = dbgBREAK;
+      DbgWriteString("State - break");
+      DbgWaitLoop();
+   }
+   else if (command==dbgCONT)
+   {
+      gDBGState = dbgCONT;
+      DbgWriteString("State - cont");
    }
 }
 
@@ -151,14 +150,14 @@ bool DbgInit()
       if (gDBGSocket != INVALID_SOCKET)
       {
          #ifdef NEKO_MAC
-         setsockopt(s,SOL_SOCKET,SO_NOSIGPIPE,NULL,0);
+         setsockopt(gDBGSocket,SOL_SOCKET,SO_NOSIGPIPE,NULL,0);
          #endif
          #ifdef NEKO_POSIX
          // we don't want sockets to be inherited in case of exec
          {
-         int old = fcntl(s,F_GETFD,0);
+         int old = fcntl(gDBGSocket,F_GETFD,0);
          if ( old >= 0 )
-            fcntl(s,F_SETFD,old|FD_CLOEXEC);
+            fcntl(gDBGSocket,F_SETFD,old|FD_CLOEXEC);
          }
          #endif
 
@@ -189,7 +188,11 @@ bool DbgInit()
          int result =  connect(gDBGSocket,(struct sockaddr*)&addr,sizeof(addr));
          if (result != 0 )
          {
+            #ifdef HX_WINDOWS
             printf("Unable to connect to server: %ld\n", WSAGetLastError());
+            #else
+            printf("Unable to connect to server: %d\n", errno );
+            #endif
             gDBGSocket = INVALID_SOCKET;
          }
          else
