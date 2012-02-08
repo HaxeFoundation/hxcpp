@@ -1,0 +1,6 @@
+<xml>
+ <flag value="-DHXCPP_DEBUG" if="debug"/>
+ <flag value="-DSTATIC_LINK" if="static"/>
+ <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
+ <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+</xml>

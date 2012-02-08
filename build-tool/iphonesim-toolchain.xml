@@ -28,10 +28,8 @@
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
   <flag value="-DIPHONESIM"/>
-  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <include name="common-defines.xml" />
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
-  <flag value="-DHXCPP_DEBUG" if="debug"/>
-  <flag value="-DSTATIC_LINK"/>
   <flag value="-I${HXCPP}/include"/>
   <cppflag value="-frtti"/>
   <outflag value="-o"/>

@@ -772,6 +772,23 @@ class BuildTool
                 case "exe" : c.mExe = substitute((el.att.name));
                 case "ext" : c.mExt = substitute((el.att.value));
                 case "pch" : c.setPCH( substitute((el.att.value)) );
+                case "include" :
+                   var name = substitute(el.att.name);
+                   var full_name = findIncludeFile(name);
+                   if (full_name!="")
+                   {
+                      var make_contents = neko.io.File.getContent(full_name);
+                      var xml_slow = Xml.parse(make_contents);
+                      createCompiler(new haxe.xml.Fast(xml_slow.firstElement()),c);
+                   }
+                   else if (!el.has.noerror)
+                   {
+                      throw "Could not find include file " + name;
+                   }
+               default:
+                   throw "Unknown compiler option: '" + el.name + "'";
+         
+ 
             }
       }
 

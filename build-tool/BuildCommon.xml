@@ -88,16 +88,10 @@
   <depend name="Options.txt"/>
 
 
-  <compilerflag value="-DBUILDING_HXCPP_DLL"/>
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
   <compilerflag value='-DHXCPP_DEBUG_HOST="${HXCPP_DEBUG_HOST}"' if="HXCPP_DEBUG_TOOL" />
 
-  <compilerflag value="-DWIN32_THREADS" if="windows"/>
-  <compilerflag value="-DNO_THREAD_REDIRECT" if="macos"/>
-  <compilerflag value="-DGC_THREADS" if="macos"/>
-  <compilerflag value="-DNO_THREAD_REDIRECT" if="linux"/>
-  <compilerflag value="-DGC_THREADS" if="linux"/>
   <compilerflag value="-DHX_UNDEFINE_H" />
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
