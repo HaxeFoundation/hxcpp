@@ -2,7 +2,7 @@
  This is an example mainline that can be used to link a static version.
  First you need to build the static version of the standard libs, with:
  cd $HXCPP/runtime
- hxcpp haxelib run hxcpp BuildLibs.xml -Dstatic
+ haxelib run hxcpp BuildLibs.xml -Dstatic
 
  Then the static verion of your application with (note: extra space before 'static'):
 
@@ -18,7 +18,9 @@
 
   cl ExampleMain.cpp cpp/YourMain.lib $HXCPP/bin/Windows/std.lib $HXCPP/bin/Windows/zlib.lib  $HXCPP/bin/Windows/regexp.lib user32.lib
 
-  From other OSs, the compile+link command will be different (probably g++ ...).
+  From other OSs, the compile+link command will be different.  Here is one for mac:
+
+   g++ ExampleMain.cpp cpp/Test-debug.a $HXCPP/bin/Mac/regexp.a $HXCPP/bin/Mac/std.a $HXCPP/bin/Mac/zlib.a
 
   If you wish to add other static libraries besides these 3 (eg, nme) you will
    need to compile these with the "-Dstatic" flag too, and call their "register_prims"

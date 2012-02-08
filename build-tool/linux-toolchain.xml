@@ -20,7 +20,7 @@
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
-  <objdir value="obj/linux${M64}${DBG}/"/>
+  <objdir value="obj/linux${OBJEXT}/"/>
   <outflag value="-o"/>
   <ext value=".o"/>
 </compiler>

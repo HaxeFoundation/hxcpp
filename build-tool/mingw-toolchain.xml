@@ -23,7 +23,7 @@
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
-  <objdir value="obj/mingw${M64}${DBG}/"/>
+  <objdir value="obj/mingw${OBJEXT}/"/>
   <outflag value="-o"/>
   <ext value=".o"/>
 </compiler>

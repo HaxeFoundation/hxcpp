@@ -600,7 +600,7 @@ value neko_api_init(value inCallback)
    *gNeko2HaxeString = inCallback;
    return val_null;
 }
-DEFINE_PRIM(neko_api_init,1)
+NEKO_DEFINE_PRIM(neko_api_init,1)
 
 
 value neko_api_init2(value inNewString,value inNewArray)
@@ -611,7 +611,7 @@ value neko_api_init2(value inNewString,value inNewArray)
    *gNekoNewArray = inNewArray;
    return val_null;
 }
-DEFINE_PRIM(neko_api_init2,2)
+NEKO_DEFINE_PRIM(neko_api_init2,2)
 
 
 

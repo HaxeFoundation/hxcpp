@@ -48,8 +48,7 @@
  <flag value="-c"/>
  <outflag value="-o"/>
  <ext value=".obj"/>
- <objdir value="obj/android-dbg" if="debug"/>
- <objdir value="obj/android" unless="debug"/>
+ <objdir value="obj/android${OBJEXT}" if="debug"/>
 </compiler>
 
 <!-- -Wl,-soname,libgl2jni.so

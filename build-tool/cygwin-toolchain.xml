@@ -13,7 +13,7 @@
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
-  <objdir value="obj/cygwin${M64}${DBG}/"/>
+  <objdir value="obj/cygwin${OBJEXT}/"/>
   <outflag value="-o"/>
   <ext value=".o"/>
 </compiler>

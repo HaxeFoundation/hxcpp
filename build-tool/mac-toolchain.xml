@@ -17,8 +17,7 @@
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <include name="common-defines.xml" />
-  <objdir value="obj/darwin${M64}/" unless="debug"/>
-  <objdir value="obj/darwin${M64}-dbg/" if="debug"/>
+  <objdir value="obj/darwin${OBJEXT}/" />
   <outflag value="-o"/>
   <ext value=".o"/>
 </compiler>

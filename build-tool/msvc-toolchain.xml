@@ -26,9 +26,7 @@
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
-  <objdir value="obj/mscv-dbg" if="debug"/>
-  <objdir value="obj/mscv" unless="debug"/>
-  <objdir value="obj/mscv-static" if="static"/>
+  <objdir value="obj/mscv${OBJEXT}" />
 </compiler>
 
 <linker id="dll" exe="link.exe" if="windows">

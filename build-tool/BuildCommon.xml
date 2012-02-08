@@ -10,14 +10,16 @@
 <set name="static" value="1" if="iphoneos"/>
 <set name="static" value="1" if="iphonesim"/>
 
-<set name="STD_MODULE_LINK" value="static" if="static"/>
-<set name="STD_MODULE_LINK" value="static" if="static"/>
+<set name="STAT" value="-stat" if="static" />
 
+<set name="OBJEXT" value="${M64}${STAT}${DBG}" />
 
+<set name="STD_MODULE_LINK" value="static" if="static"/>
 
 
 <set name="LIBEXTRA" value=".iphoneos" if="iphoneos"/>
 <set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
+
 
 
 <set name="haxelink" value="exe" unless="static"/>

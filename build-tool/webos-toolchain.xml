@@ -34,8 +34,7 @@
 	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
 	<outflag value="-o"/>
-	<objdir value="./obj/webos-dbg" if="debug"/>
-	<objdir value="./obj/webos" unless="debug"/>
+	<objdir value="./obj/webos{OBJEXT}" />
 </compiler>
 
 
