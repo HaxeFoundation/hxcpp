@@ -124,7 +124,7 @@ int __hxcpp_obj_id(Dynamic inObj);
 extern unsigned char *__hxcpp_memory;
 
 inline void __hxcpp_memory_clear( ) { __hxcpp_memory = 0; }
-inline void __hxcpp_memory_select( Array<unsigned char> &inBuffer )
+inline void __hxcpp_memory_select( Array<unsigned char> inBuffer )
    { __hxcpp_memory= (unsigned char *)inBuffer->GetBase(); }
 
 inline int __hxcpp_memory_get_byte(int addr) { return __hxcpp_memory[addr]; }
