@@ -77,6 +77,10 @@ struct Stringer
 
 String Anon_obj::toString()
 {
+   Dynamic func;
+   if (FieldMapGet(mFields, HX_CSTRING("toString"), func))
+       return func();
+
    String result = HX_CSTRING("{ ");
    Stringer stringer(result);
    mFields->Iterate(stringer);
