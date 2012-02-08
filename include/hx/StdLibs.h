@@ -121,6 +121,22 @@ int __hxcpp_obj_id(Dynamic inObj);
 
 // --- Memory --------------------------------------------------------------------------
 
+
+// Threadsafe methods - takes buffer
+inline int __hxcpp_memory_get_byte(Array<unsigned char> inBuffer ,int addr) { return inBuffer->GetBase()[addr]; }
+inline double __hxcpp_memory_get_double(Array<unsigned char> inBuffer ,int addr) { return *(double *)(inBuffer->GetBase()+addr); }
+inline double __hxcpp_memory_get_float(Array<unsigned char> inBuffer ,int addr) { return *(float *)(inBuffer->GetBase()+addr); }
+inline int __hxcpp_memory_get_i32(Array<unsigned char> inBuffer ,int addr) { return *(int *)(inBuffer->GetBase()+addr); }
+inline int __hxcpp_memory_get_ui16(Array<unsigned char> inBuffer ,int addr) { return *(unsigned short *)(inBuffer->GetBase()+addr); }
+
+inline void __hxcpp_memory_set_byte(Array<unsigned char> inBuffer ,int addr,int v) { inBuffer->GetBase()[addr] = v; }
+inline void __hxcpp_memory_set_double(Array<unsigned char> inBuffer ,int addr,double v) { *(double *)(inBuffer->GetBase()+addr) = v; }
+inline void __hxcpp_memory_set_float(Array<unsigned char> inBuffer ,int addr,double v) { *(float *)(inBuffer->GetBase()+addr) = v; }
+inline void __hxcpp_memory_set_i16(Array<unsigned char> inBuffer ,int addr,int v) { *(short *)(inBuffer->GetBase()+addr) = v; }
+inline void __hxcpp_memory_set_i32(Array<unsigned char> inBuffer ,int addr,int v) { *(int *)(inBuffer->GetBase()+addr) = v; }
+
+
+// Uses global pointer...
 extern unsigned char *__hxcpp_memory;
 
 inline void __hxcpp_memory_clear( ) { __hxcpp_memory = 0; }
@@ -138,6 +154,7 @@ inline void __hxcpp_memory_set_double(int addr,double v) { *(double *)(__hxcpp_m
 inline void __hxcpp_memory_set_float(int addr,double v) { *(float *)(__hxcpp_memory+addr) = v; }
 inline void __hxcpp_memory_set_i16(int addr,int v) { *(short *)(__hxcpp_memory+addr) = v; }
 inline void __hxcpp_memory_set_i32(int addr,int v) { *(int *)(__hxcpp_memory+addr) = v; }
+
 
 
 
