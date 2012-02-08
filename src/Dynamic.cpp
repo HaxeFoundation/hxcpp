@@ -196,11 +196,25 @@ static bool IsFloat(hx::Object *inPtr)
    return inPtr && (TCanCast<IntData>(inPtr) || TCanCast<DoubleData>(inPtr));
 }
 
+static bool IsInt(hx::Object *inPtr)
+{
+   if (!inPtr)
+      return false;
+   if (TCanCast<IntData>(inPtr))
+      return true;
+   DoubleData *d = dynamic_cast<DoubleData *>(inPtr);
+   if (!d)
+      return false;
+   double val = d->__ToDouble();
+   return  (val>=(int)0xffffffff) && (val<=0x7fffffff) && ((int)val == val);
+}
+
+
 
 void Dynamic::__boot()
 {
    Static(__BoolClass) = hx::RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
-   Static(__IntClass) = hx::RegisterClass(HX_CSTRING("Int"),TCanCast<IntData>,sNone,sNone,0,0, 0 );
+   Static(__IntClass) = hx::RegisterClass(HX_CSTRING("Int"),IsInt,sNone,sNone,0,0, 0 );
    Static(__FloatClass) = hx::RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
    Static(__VoidClass) = hx::RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0 );
 }
