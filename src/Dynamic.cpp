@@ -206,7 +206,7 @@ static bool IsInt(hx::Object *inPtr)
    if (!d)
       return false;
    double val = d->__ToDouble();
-   return  (val>=(int)0xffffffff) && (val<=0x7fffffff) && ((int)val == val);
+   return ((int)val == val);
 }
 
 
