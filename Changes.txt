@@ -1,3 +1,22 @@
+2.0.8.1
+------------------------------------------------------------
+* Fix Math.random returning 1.0 sometimes
+* Std.is( 2.0, Int ) is now true
+* Make static library building more separated - refactor defines to control this 
+* Do not use @files for linking on mac
+* toString on Anon objects will now get called
+* Fix fast memory access with --no-inline
+* Android tool host now set to linux-x86
+* Allow use of __compare as operator== overload
+* Add toNativeInt
+* Add weak references
+* Implement some neko/cffi compatibility operations
+* Fix mac deployment using environment variable
+* Fix reentrant mutexes
+* Do not explicitly specify version of g++
+* Speedup some code by avoiding dynamic_cast if possible
+* Some fixes to allow Android multi-threading in normal operation
+
 2.0.8
 ------------------------------------------------------------
 * Do not create a new class definition for each member function
