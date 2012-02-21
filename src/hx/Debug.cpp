@@ -1,4 +1,5 @@
 #include <hxcpp.h>
+#include <stdio.h>
 
 #if defined(HXCPP_DEBUG) && defined(HXCPP_DEBUG_HOST)
 
