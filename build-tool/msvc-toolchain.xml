@@ -45,7 +45,6 @@
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
-  <flag value="-debug" unless="debug"/>
   <flag value="-debug" if="debug"/>
   <flag value="-subsystem:windows" if="no_console"/>
   <flag value="-libpath:lib"/>

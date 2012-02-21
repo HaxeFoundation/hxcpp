@@ -26,15 +26,15 @@
 	<flag value="-mfpu=vfp" if="armv6" />
 	<flag value="-mfloat-abi=softfp"/>
 	<flag value="-DWEBOS"/>
+	<include name="common-defines.xml" />
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
 	<flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
-	<flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
 	<flag value="-fpic"/>
 	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
 	<outflag value="-o"/>
-	<objdir value="./obj/webos{OBJEXT}" />
+	<objdir value="./obj/webos${OBJEXT}" />
 </compiler>
 
 
