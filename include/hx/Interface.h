@@ -11,13 +11,13 @@ public:
 
 	void __Mark(HX_MARK_PARAMS);
    hx::Object *__ToInterface(const type_info &);
-	int __GetType();
-	void *__GetHandle();
+	int __GetType() const;
+	void *__GetHandle() const;
 	hx::FieldRef __FieldRef(const ::String &);
-	::String __ToString();
-	int __ToInt();
-	double __ToDouble();
-	const char * __CStr();
+	::String __ToString() const;
+	int __ToInt() const;
+	double __ToDouble() const;
+	const char * __CStr() const;
 	::String toString();
 	bool __HasField(const ::String &);
 	Dynamic __Field(const ::String &);
@@ -25,8 +25,8 @@ public:
 	Dynamic __SetField(const ::String &,const Dynamic &);
 	void __SetThis(Dynamic);
 	void __GetFields(Array< ::String> &);
-	Class __GetClass();
-	int __Compare(const hx::Object *);
+	Class __GetClass() const;
+	int __Compare(const hx::Object *) const;
 
    /* No need for enum options - not in interfaces */
    /* No need for array options - not in interfaces */

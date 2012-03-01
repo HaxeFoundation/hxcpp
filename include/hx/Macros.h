@@ -20,6 +20,7 @@
    inline operator super *() { return this; } 
 
 #define HX_DO_INTERFACE_RTTI \
+   int __GetType() const { return vtClass; } \
    static hx::ObjectPtr<Class_obj> __mClass; \
    static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
 	static void __register();
