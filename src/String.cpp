@@ -378,7 +378,6 @@ String String::__URLEncode() const
    int l = utf8_chars + extra*2 + spaces*2 /* *0 */;
    HX_CHAR *result = hx::NewString(l);
    HX_CHAR *ptr = result;
-   bool has_plus = false;
 
    for(int i=0;i<utf8_chars;i++)
    {
@@ -766,7 +765,7 @@ Array<String> String::split(const String &inDelimiter) const
          #ifdef HX_UTF8_STRINGS
          const unsigned char *start = (const unsigned char *)(__s + i);
          const unsigned char *ptr = start;
-         int ch = DecodeAdvanceUTF8(ptr);
+         DecodeAdvanceUTF8(ptr);
          int len =  ptr - start;
          result[idx++] = String( __s+i, len ).dup();
          i+=len;

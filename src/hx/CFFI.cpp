@@ -468,7 +468,6 @@ char * buffer_data(buffer inBuffer)
 // Append value to buffer
 void val_buffer(buffer inBuffer,value inValue)
 {
-   ByteArray b = (ByteArray)inBuffer;
    hx::Object *obj = (hx::Object *)inValue;
    if (obj)
    {

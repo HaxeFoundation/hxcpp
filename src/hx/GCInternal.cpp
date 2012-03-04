@@ -1027,7 +1027,7 @@ public:
 
       // Now all threads have mTopOfStack & mBottomOfStack set.
 
-      static int collect = 0;
+      //static int collect = 0;
       //printf("Collect %d\n",collect++);
       gByteMarkID = (gByteMarkID+1) & 0xff;
       gMarkID = gByteMarkID << 24;

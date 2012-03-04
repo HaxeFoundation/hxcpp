@@ -29,7 +29,6 @@ void ArrayBase::EnsureSize(int inSize) const
    {
       if (s>mAlloc)
       {
-         int obytes = mAlloc * GetElementSize();
          mAlloc = s*3/2 + 10;
          int bytes = mAlloc * GetElementSize();
          if (mBase)
