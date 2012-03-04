@@ -4,7 +4,8 @@
 
 
 
-<compiler id="iPhoneSim" exe="/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++" if="iphonesim">
+<compiler id="iPhoneSim" exe="gcc" if="iphonesim">
+  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <flag value="-g" if="debug"/>
@@ -23,7 +24,7 @@
   <flag value="-arch"/>
   <flag value="i386"/>
   <flag value="-isysroot"/>
-  <flag value="/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
+ <flag value="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>

@@ -1115,9 +1115,17 @@ class BuildTool
          defines.set("BINDIR",m64 ? "Mac64":"Mac");
       }
 
+      if (defines.exists("iphone") && !defines.exists("XCODE_DEVELOPER"))
+      {
+         var xcode_developer = "/Applications/Xcode.app/Contents/Developer";
+         if (!neko.FileSystem.exists(xcode_developer))
+            xcode_developer = "/Developer";
+         defines.set("XCODE_DEVELOPER",xcode_developer);
+      }
+
       if (defines.exists("iphone") && !defines.exists("IPHONE_VER"))
       {
-         var dev_path = "/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/";
+         var dev_path = defines.get("XCODE_DEVELOPER") + "/Platforms/iPhoneOS.platform/Developer/SDKs/";
          if (neko.FileSystem.exists(dev_path))
          {
             var best="";

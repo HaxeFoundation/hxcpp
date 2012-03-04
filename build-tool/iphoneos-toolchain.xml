@@ -4,7 +4,8 @@
 
 <echo value="Using iPhone SDK ${IPHONE_VER}" if="VERBOSE"/>
 
-<compiler id="iPhoneOS" exe="/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/g++" if="iphoneos">
+<compiler id="iPhoneOS" exe="gcc" if="iphoneos">
+  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/g++" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <flag value="-g" if="debug"/>
@@ -12,7 +13,7 @@
   <flag value="-arch"/>
   <flag value="armv6"/>
   <flag value="-isysroot"/>
-  <flag value="/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
+  <flag value="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-fno-stack-protector"/>
   <flag value="-DIPHONE"/>
