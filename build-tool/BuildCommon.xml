@@ -56,7 +56,7 @@
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>
-  <depend name="Options.txt"/>
+  <!--<depend name="Options.txt"/>-->
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 </files>
@@ -87,7 +87,7 @@
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>
-  <depend name="Options.txt"/>
+  <!--<depend name="Options.txt"/>-->
 
 
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
