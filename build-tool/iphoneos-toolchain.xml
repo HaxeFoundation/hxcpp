@@ -1,8 +1,10 @@
 <xml>
 
-<include name="gcc-toolchain.xml"/>
 
 <echo value="Using iPhone SDK ${IPHONE_VER}" if="VERBOSE"/>
+
+<set name="ARCH" value ="-v7" if="HXCPP_ARMV7" />
+<include name="gcc-toolchain.xml"/>
 
 <compiler id="iPhoneOS" exe="gcc" if="iphoneos">
   <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/g++" />
@@ -11,9 +13,12 @@
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>
-  <flag value="armv6"/>
+  <flag value="armv6" unless="HXCPP_ARMV7" />
+  <flag value="armv7" if="HXCPP_ARMV7" />
   <flag value="-isysroot"/>
   <flag value="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
+  <flag value="-miphoneos-version-min=3.0" unless="HXCPP_ARMV7" />
+  <flag value="-miphoneos-version-min=3.0" if="HXCPP_ARMV7" />
   <flag value="-fvisibility=hidden"/>
   <flag value="-fno-stack-protector"/>
   <flag value="-DIPHONE"/>
@@ -24,8 +29,8 @@
   <cppflag value="-frtti"/>
   <outflag value="-o"/>
   <ext value=".o"/>
-  <objdir value="obj/iphoneos/" unless="debug"/>
-  <objdir value="obj/iphoneos-dbg/" if="debug"/>
+  <objdir value="obj/iphoneos${ARCH}/" unless="debug"/>
+  <objdir value="obj/iphoneos-dbg${ARCH}/" if="debug"/>
 </compiler>
 
 

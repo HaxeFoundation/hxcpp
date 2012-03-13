@@ -132,10 +132,12 @@
   <dir name="obj"/>
 </target>
 
+<set name="IOS_EXT" value=".iphoneos-v7.a" if="HXCPP_ARMV7" />
+<set name="IOS_EXT" value=".iphoneos.a" unless="HXCPP_ARMV7" />
 
 <target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
-  <ext value=".iphoneos.a" if="iphoneos"/>
+  <ext value="${IOS_EXT}" if="iphoneos"  />
   <ext value=".iphonesim.a" if="iphonesim"/>
   <files id="__main__" unless="static"/>
   <files id="__lib__" if="static"/>

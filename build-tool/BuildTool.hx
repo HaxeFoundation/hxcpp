@@ -215,6 +215,7 @@ class Linker
    public var mRanLib:String;
    public var mFromFile:String;
    public var mLibs:Array<String>;
+   public var mRecreate:Bool;
 
    public function new(inExe:String)
    {
@@ -227,6 +228,7 @@ class Linker
       // Default to on...
       mFromFile = "@";
       mLibs = [];
+      mRecreate = false;
    }
    public function link(inTarget:Target,inObjs:Array<String>)
    {
@@ -250,7 +252,14 @@ class Linker
             args.push(out + mLibDir + "/" + file_name);
          }
          else
+         {
+            if (mRecreate && neko.FileSystem.exists(out_name))
+            {
+               neko.Lib.println(" clean " + out_name );
+               neko.FileSystem.deleteFile(out_name);
+            }
             args.push(out + out_name);
+         }
 
           args = args.concat(mFlags).concat(inTarget.mFlags);
 
@@ -829,6 +838,7 @@ class BuildTool
                 case "lib" : l.mLibs.push( substitute(el.att.name) );
                 case "prefix" : l.mNamePrefix = substitute(el.att.value);
                 case "ranlib" : l.mRanLib = (substitute(el.att.name));
+                case "recreate" : l.mRecreate = (substitute(el.att.value)) != "";
                 case "fromfile" : l.mFromFile = (substitute(el.att.value));
                 case "exe" : l.mExe = (substitute(el.att.name));
             }
@@ -1119,7 +1129,10 @@ class BuildTool
       {
          var xcode_developer = "/Applications/Xcode.app/Contents/Developer";
          if (!neko.FileSystem.exists(xcode_developer))
+         {
             xcode_developer = "/Developer";
+            defines.set("LEGACY_XCODE_LOCATION","1");
+         }
          defines.set("XCODE_DEVELOPER",xcode_developer);
       }
 

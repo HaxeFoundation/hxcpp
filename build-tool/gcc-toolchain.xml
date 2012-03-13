@@ -11,6 +11,7 @@
   <fromfile value="" if="GCC_OLD" />
   <fromfile value="" if="iphone" />
   <outflag value="-cr "/>
+  <recreate value="1" if="iphone" />
   <ranlib name="ranlib"/>
 </linker>
 
