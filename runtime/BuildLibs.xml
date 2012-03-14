@@ -4,11 +4,11 @@
 
 <set name="RUNTIME" value="./"/>
 
-<set name="LIBEXTRA" value=".iphoneos" if="iphoneos"/>
+<set name="LIBEXTRA" value=".iphoneos-v7" if="iphoneos"/>
+<set name="LIBEXTRA" value=".iphoneos" if="iphoneos" unless="HXCPP_ARMV7" />
 <set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
 <set name="LIBPREFIX" value="lib" if="iphoneos"/>
 <set name="LIBPREFIX" value="lib" if="iphonesim"/>
-
 
 
 <files id="std" dir="${RUNTIME}">
