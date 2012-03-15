@@ -290,7 +290,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
     HX_CSTRING(".dll");
 #elif defined(__APPLE__)
     HX_CSTRING(".dylib");
-#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)
+#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)  || defined(BLACKBERRY)
     HX_CSTRING(".so");
 #else
     HX_CSTRING(".dso");
@@ -312,6 +312,8 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
     HX_CSTRING("Android");
 #elif defined(WEBOS)
     HX_CSTRING("webOS");
+#elif defined(BLACKBERRY)
+    HX_CSTRING("BlackBerry");
 #else
   #ifdef HXCPP_M64
     HX_CSTRING("Linux64");

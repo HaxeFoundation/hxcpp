@@ -332,7 +332,7 @@ static value host_resolve( value host ) {
 	ip = inet_addr(val_string(host));
 	if( ip == INADDR_NONE ) {
 		struct hostent *h;
-#	if defined(NEKO_WINDOWS) || defined(NEKO_MAC)
+#	if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(BLACKBERRY)
 		h = gethostbyname(val_string(host));
 #	else
 		struct hostent hbase;
@@ -367,7 +367,7 @@ static value host_reverse( value host ) {
 	unsigned int ip;
 	val_check(host,int);
 	ip = val_int(host);
-#	if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID)
+#	if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY)
 	h = gethostbyaddr((char *)&ip,4,AF_INET);
 #	else
 	struct hostent htmp;

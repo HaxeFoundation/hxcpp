@@ -213,6 +213,8 @@ static value sys_string() {
 	return alloc_string("Mac");
 #elif defined(ANDROID)
 	return alloc_string("Android");
+#elif defined(BLACKBERRY)
+	return alloc_string("BlackBerry");
 #else
 #error Unknow system string
 #endif

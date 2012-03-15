@@ -118,7 +118,8 @@
   <file name="libs/nekoapi/NekoAPI.cpp"/>
 </files>
 
-<set name="NEKOPATH" value="${NEKO_INSTALL_PATH}" unless="NEKOPATH" />
+<set name="NEKOPATH" value="${NEKO_INSTALL_PATH}" unless="NEKOPATH" if="NEKO_INSTALL_PATH" />
+<set name="NEKOPATH" value="/usr/lib/neko" unless="NEKOPATH" />
 
 <target id="nekoapi" output="nekoapi" tool="linker" toolid="dll">
   <ext value=".ndll"/>

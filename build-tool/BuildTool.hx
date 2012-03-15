@@ -1086,6 +1086,12 @@ class BuildTool
          defines.set("webos","webos");
          defines.set("BINDIR","webOS");
       }
+	   else if (defines.exists("blackberry"))
+      {
+         defines.set("toolchain","blackberry");
+         defines.set("blackberry","blackberry");
+         defines.set("BINDIR","BlackBerry");
+      }
       else if (defines.exists("gph"))
       {
          defines.set("toolchain","gph");
