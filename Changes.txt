@@ -1,3 +1,11 @@
+2.0.8.2
+------------------------------------------------------------
+* Add blackberry support
+* Add armv7 options
+* Support new xcode layout
+* Fix const qualifiers on interface functions
+* Fix webOS obj directory
+
 2.0.8.1
 ------------------------------------------------------------
 * Fix Math.random returning 1.0 sometimes
