@@ -7,6 +7,8 @@
 
 <set name="ABI" value="-MT" unless="ABI"/>
 
+<set name="debuglink" value="1" unless="debug"/>
+
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
   <flag value="-Od" if="debug"/>
@@ -33,7 +35,7 @@
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
   <flag value="-dll"/>
-  <flag value="-debug" if="debug"/>
+  <flag value="-debug" if="debuglink"/>
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
   <flag value="-libpath:lib"/>
@@ -45,7 +47,7 @@
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
-  <flag value="-debug" if="debug"/>
+  <flag value="-debug" if="debuglink"/>
   <flag value="-subsystem:windows" if="no_console"/>
   <flag value="-libpath:lib"/>
   <flag value="user32.lib"/>
