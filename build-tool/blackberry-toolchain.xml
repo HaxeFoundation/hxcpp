@@ -1,0 +1,62 @@
+<xml>
+
+<setenv name="QNX_HOST" value="${BLACKBERRY_NDK_ROOT}/host/win32/x86" if="windows_host" />
+<setenv name="QNX_TARGET" value="${BLACKBERRY_NDK_ROOT}/target/qnx6" />
+
+<path name="${QNX_HOST}/usr/bin/" />
+ 
+<include name="gcc-toolchain.xml"/>
+
+
+<!-- BLACKBERRY TOOLS -------------------------------------------------->
+	
+<compiler id="blackberry" exe="arm-unknown-nto-qnx6.5.0eabi-g++" if="blackberry">
+	<flag value="-c"/>
+	<flag value="-g" if="debug"/>
+	<flag value="-O2" unless="debug"/>
+	<flag value="-I${HXCPP}/include"/>
+	<flag value="-I${QNX_TARGET}/usr/include"/>
+	<flag value="-DBLACKBERRY"/>
+	<flag value="-fvisibility=hidden"/>
+	<flag value="-fdollars-in-identifiers"/>
+	<flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
+	<flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+	<flag value="-fpic"/>
+	<flag value="-fPIC"/>
+	<cppflag value="-frtti"/>
+	<outflag value="-o"/>
+	<objdir value="./obj/blackberry-dbg" if="debug"/>
+	<objdir value="./obj/blackberry" unless="debug"/>
+</compiler>
+
+
+<linker id="exe" exe="arm-unknown-nto-qnx6.5.0eabi-g++" if="blackberry">
+	<flag value="-g" if="debug"/>
+	<flag value="-O2" unless="debug"/>
+	<flag value="-s" unless="debug"/>
+	<flag value="-rdynamic"/>
+	<flag value="-L${QNX_TARGET}/armle-v7/lib"/>
+	<ext value=""/>
+	<outflag value="-o"/>
+	<!-- <lib name="-lpthread"/> -->
+	<!-- <lib name="-ldl"/> -->
+</linker>
+	
+<linker id="dll" exe="arm-unknown-nto-qnx6.5.0eabi-g++" if="blackberry">
+	<flag value="-shared"/>
+	<flag value="-g" if="debug"/>
+	<flag value="-O2" unless="debug"/>
+	<flag value="-s" unless="debug"/>
+	<flag value="-L${QNX_TARGET}/armle-v7/lib"/>
+	<cppflag value="-frtti"/>
+	<!-- <lib name="-lpthread"/> -->
+	<flag value="-fpic"/>
+	<flag value="-fPIC"/>
+	<!-- <flag value="-Wl,-z,defs"/> -->
+	<ext value=".so"/>
+	<outflag value="-o"/>
+</linker>
+
+
+
+</xml>
