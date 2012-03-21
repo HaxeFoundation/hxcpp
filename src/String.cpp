@@ -919,7 +919,7 @@ DEFINE_STRING_FUNC0(toLowerCase);
 DEFINE_STRING_FUNC0(toUpperCase);
 DEFINE_STRING_FUNC0(toString);
 
-Dynamic String::__Field(const String &inString)
+Dynamic String::__Field(const String &inString HXCPP_EXTRA_FIELD_DECL)
 {
    if (HX_FIELD_EQ(inString,"length")) return length;
    if (HX_FIELD_EQ(inString,"charAt")) return charAt_dyn();
@@ -1048,9 +1048,9 @@ public:
       return mValue.compare( const_cast<hx::Object*>(inRHS)->toString() );
    }
 
-   Dynamic __Field(const String &inString)
+   Dynamic __Field(const String &inString HXCPP_EXTRA_FIELD_DECL)
    {
-      return mValue.__Field(inString);
+      return mValue.__Field(inString HXCPP_EXTRA_FIELD_CALL);
    }
 
 

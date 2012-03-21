@@ -35,7 +35,7 @@ int hxcpp_kind_share(int &ioKind,const char *inName)
 
 void hxcpp_alloc_field( value obj, field f, value v )
 {
-   obj->__SetField(__hxcpp_field_from_id(f),v);
+   obj->__SetField(__hxcpp_field_from_id(f),v HXCPP_EXTRA_FIELD_TRUE);
 }
 
 

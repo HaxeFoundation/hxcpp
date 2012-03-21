@@ -147,7 +147,7 @@ public:
    Dynamic toUpperCase_dyn();
 
 	// This is used by the string-wrapped-as-dynamic class
-   Dynamic __Field(const String &inString);
+   Dynamic __Field(const String &inString HXCPP_EXTRA_FIELD_DECL);
 
 	// The actual implementation.
 	// Note that "__s" is const - if you want to change it, you should create a new string.

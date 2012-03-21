@@ -68,9 +68,9 @@ public:
    static Class      & __SGetClass();
 	static void       __boot();
 
-   Dynamic __Field(const String &inString);
+   Dynamic __Field(const String &inString HXCPP_EXTRA_FIELD_DECL);
 
-   Dynamic __SetField(const String &inString,const Dynamic &inValue);
+   Dynamic __SetField(const String &inString,const Dynamic &inValue HXCPP_EXTRA_FIELD_DECL);
 
    bool __HasField(const String &inString);
 

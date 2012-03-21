@@ -58,9 +58,9 @@ bool Interface::__HasField(const ::String &s)
 	return __GetRealObject()->__HasField(s);
 }
 
-Dynamic Interface::__Field(const ::String &s)
+Dynamic Interface::__Field(const ::String &s HXCPP_EXTRA_FIELD_DECL)
 {
-	return __GetRealObject()->__Field(s);
+	return __GetRealObject()->__Field(s HXCPP_EXTRA_FIELD_CALL);
 }
 
 Dynamic Interface::__IField(int i)
@@ -68,9 +68,9 @@ Dynamic Interface::__IField(int i)
 	return __GetRealObject()->__IField( i);
 }
 
-Dynamic Interface::__SetField(const ::String &s,const Dynamic &d)
+Dynamic Interface::__SetField(const ::String &s,const Dynamic &d HXCPP_EXTRA_FIELD_DECL)
 {
-	return __GetRealObject()->__SetField(s,d);
+	return __GetRealObject()->__SetField(s,d HXCPP_EXTRA_FIELD_CALL);
 }
 
 void Interface::__SetThis(Dynamic d)

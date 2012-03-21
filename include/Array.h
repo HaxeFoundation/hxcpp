@@ -62,7 +62,7 @@ public:
 
    typedef hx::Object super;
 
-   Dynamic __SetField(const String &inString,const Dynamic &inValue) { return null(); }
+   Dynamic __SetField(const String &inString,const Dynamic &inValue HXCPP_EXTRA_FIELD_DECL) { return null(); }
 
    static Class __mClass;
    static Class &__SGetClass() { return __mClass; }
@@ -85,7 +85,7 @@ public:
    virtual void __SetSize(int inLen);
 
    // Dynamic interface
-   Dynamic __Field(const String &inString);
+   Dynamic __Field(const String &inString HXCPP_EXTRA_FIELD_DECL);
    virtual Dynamic __concat(const Dynamic &a0) = 0;
    virtual Dynamic __copy() = 0;
    virtual Dynamic __insert(const Dynamic &a0,const Dynamic &a1) = 0;
