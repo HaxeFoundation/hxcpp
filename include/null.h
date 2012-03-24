@@ -142,7 +142,7 @@ struct Null
    inline Null(const null &) : isNull(true) { }
    inline Null(const Dynamic &inVal)
    {
-      isNull = inVal==null();
+      isNull = null() == inVal;
       if (!isNull)
          value = inVal;
    }
