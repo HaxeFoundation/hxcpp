@@ -37,7 +37,7 @@ String sNone[] = { String(null()) };
 
 Dynamic Object::__IField(int inFieldID)
 {
-   return __Field( __hxcpp_field_from_id(inFieldID), true );
+   return __Field( __hxcpp_field_from_id(inFieldID) HXCPP_EXTRA_FIELD_TRUE );
 }
 
 double Object::__INumField(int inFieldID)
