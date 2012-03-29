@@ -7,7 +7,7 @@
 
 <set name="ABI" value="-MT" unless="ABI"/>
 
-<set name="debuglink" value="1" unless="debug"/>
+<set name="debuglink" value="1" if="debug"/>
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
