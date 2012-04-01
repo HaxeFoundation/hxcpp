@@ -42,7 +42,9 @@ int __sys_prims() { return 0; }
 #	include <sys/times.h>
 #ifndef ANDROID
 #	include <locale.h>
+#ifndef BLACKBERRY
 #	include <xlocale.h>
+#endif
 #endif
 #endif
 

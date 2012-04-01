@@ -36,7 +36,14 @@ typedef void *Module;
 typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
-   Module result = dlopen(inLib.__CStr(), RTLD_NOW|RTLD_GLOBAL);
+   int flags = RTLD_GLOBAL;
+   #ifdef HXCPP_RTLD_LAZY
+   flags |= RTLD_LAZY;
+   #else
+   flags |= RTLD_NOW;
+   #endif
+   
+   Module result = dlopen(inLib.__CStr(), flags);
    if (gLoadDebug)
    {
       if (result)

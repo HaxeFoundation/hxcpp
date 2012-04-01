@@ -13,7 +13,7 @@
 
 <!-- BLACKBERRY TOOLS -------------------------------------------------->
 	
-<compiler id="blackberry" exe="arm-unknown-nto-qnx6.5.0eabi-g++" if="blackberry">
+<compiler id="blackberry" exe="i486-pc-nto-qnx6.5.0-g++" if="blackberry">
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
@@ -28,29 +28,29 @@
 	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
 	<outflag value="-o"/>
-	<objdir value="./obj/blackberry-dbg" if="debug"/>
-	<objdir value="./obj/blackberry" unless="debug"/>
+	<objdir value="./obj/blackberrysim-dbg" if="debug"/>
+	<objdir value="./obj/blackberrysim" unless="debug"/>
 </compiler>
 
 
-<linker id="exe" exe="arm-unknown-nto-qnx6.5.0eabi-g++" if="blackberry">
+<linker id="exe" exe="i486-pc-nto-qnx6.5.0-g++" if="blackberry">
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
-	<!-- <flag value="-rdynamic"/> -->
-	<flag value="-L${QNX_TARGET}/armle-v7/lib"/>
+	<flag value="-rdynamic"/>
+	<flag value="-L${QNX_TARGET}/x86/lib"/>
 	<ext value=""/>
 	<outflag value="-o"/>
 	<!-- <lib name="-lpthread"/> -->
 	<!-- <lib name="-ldl"/> -->
 </linker>
 	
-<linker id="dll" exe="arm-unknown-nto-qnx6.5.0eabi-g++" if="blackberry">
+<linker id="dll" exe="i486-pc-nto-qnx6.5.0-g++" if="blackberry">
 	<flag value="-shared"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
-	<flag value="-L${QNX_TARGET}/armle-v7/lib"/>
+	<flag value="-L${QNX_TARGET}/x86/lib"/>
 	<cppflag value="-frtti"/>
 	<!-- <lib name="-lpthread"/> -->
 	<flag value="-fpic"/>

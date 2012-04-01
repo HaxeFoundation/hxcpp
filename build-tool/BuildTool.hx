@@ -1051,11 +1051,23 @@ class BuildTool
       include_path.push(HXCPP + "/build-tool");
 
       var m64 = defines.exists("HXCPP_M64");
+	  
+	  if (defines.exists("ios"))
+	  {
+		 if (defines.exists("simulator"))
+		 {
+			defines.set("iphonesim", "iphonesim");
+		 }
+		 else
+		 {
+			defines.set("iphoneos", "iphoneos");
+		 }
+	  }
 
       if (defines.exists("iphoneos"))
       {
+		 defines.set("toolchain","iphoneos");
          defines.set("iphone","iphone");
-         defines.set("toolchain","iphoneos");
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
       }
@@ -1086,9 +1098,16 @@ class BuildTool
          defines.set("webos","webos");
          defines.set("BINDIR","webOS");
       }
-	   else if (defines.exists("blackberry"))
+	  else if (defines.exists("blackberry"))
       {
-         defines.set("toolchain","blackberry");
+		 if (defines.exists("simulator"))
+		 {
+			 defines.set("toolchain", "blackberry-x86");
+		 }
+		 else
+		 {
+		     defines.set("toolchain", "blackberry");
+		 }
          defines.set("blackberry","blackberry");
          defines.set("BINDIR","BlackBerry");
       }

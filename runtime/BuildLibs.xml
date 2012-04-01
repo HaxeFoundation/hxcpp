@@ -7,6 +7,8 @@
 <set name="LIBEXTRA" value=".iphoneos-v7" if="iphoneos"/>
 <set name="LIBEXTRA" value=".iphoneos" if="iphoneos" unless="HXCPP_ARMV7" />
 <set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
+<set name="LIBEXTRA" value="-x86" if="blackberry"/>
+<set name="LIBEXTRA" value="" if="blackberry" unless="simulator" />
 <set name="LIBPREFIX" value="lib" if="iphoneos"/>
 <set name="LIBPREFIX" value="lib" if="iphonesim"/>
 

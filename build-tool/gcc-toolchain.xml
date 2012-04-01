@@ -21,6 +21,8 @@
   <exe name="strip"/>
   <exe name ="arm-none-linux-gnueabi-strip" if="webos" />
   <exe name ="arm-linux-androideabi-strip" if="android" />
+  <exe name ="i486-pc-nto-qnx6.5.0-strip" if="blackberry" />
+  <exe name ="arm-unknown-nto-qnx6.5.0eabi-strip" if="blackberry" unless="simulator" />
   <flag value="-u" if="macos"/>
   <flag value="-r" if="macos"/>
   <flag value="-x" if="macos"/>

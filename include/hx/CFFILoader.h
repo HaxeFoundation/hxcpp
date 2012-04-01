@@ -23,7 +23,7 @@
 #define NEKO_EXT "so"
 //#define __USE_GNU 1
 #else
-#ifdef ANDROID
+#if defined(ANDROID) || defined(BLACKBERRY)
 #define EXT "so"
 #else
 #include <mach-o/dyld.h>
