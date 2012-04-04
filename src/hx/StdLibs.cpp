@@ -338,9 +338,7 @@ bool __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2)
    hx::Object *p2 = inF2.GetPtr();
    if (p1==0 || p2==0)
       return false;
-   if ( (p1->__GetHandle() != p2->__GetHandle()) || 1)
-      return false;
-   if (typeid(*p1) != typeid(*p2))
+   if ( (p1->__GetHandle() != p2->__GetHandle()))
       return false;
    return p1->__Compare(p2)==0;
 }
