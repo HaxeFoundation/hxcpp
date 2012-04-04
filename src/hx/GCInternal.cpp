@@ -753,7 +753,10 @@ void RunFinalizers()
    {
       InternalFinalizer *f = list[idx];
       if (!f->mValid)
+      {
          list.qerase(idx);
+         delete f;
+      }
       else if (!f->mUsed)
       {
          if (f->mFinalizer)
