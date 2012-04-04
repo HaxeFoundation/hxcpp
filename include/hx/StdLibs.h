@@ -52,6 +52,7 @@ int           __hxcpp_register_prim(const HX_CHAR *inName,void *inFunc);
 
 // Get function pointer from dll file
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
+void *__hxcpp_get_proc_address(String inLib, String inPrim);
 // Loading functions via name (dummy return value)
 
 

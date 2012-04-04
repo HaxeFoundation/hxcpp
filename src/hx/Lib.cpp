@@ -276,6 +276,14 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    return null();
 }
 
+void __hxcpp_get_proc_address(String inLib, String inPrim)
+{
+   if (sgRegisteredPrims)
+      return (*sgRegisteredPrims)[inPrim.__CStr()];
+
+   printf("Primitive not found : %s\n", inPrim.__CStr() );
+   return 0;
+}
 
 
 #else
@@ -283,7 +291,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 extern "C" void *hx_cffi(const char *inName);
 
-Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
+void *__hxcpp_get_proc_address(String inLib, String full_name)
 {
 #ifdef ANDROID
    inLib = HX_CSTRING("lib") + inLib;
@@ -330,19 +338,6 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #endif
 
     int passes = 4;
-
-   String full_name = inPrim;
-   switch(inArgCount)
-   {
-      case 0: full_name += HX_CSTRING("__0"); break;
-      case 1: full_name += HX_CSTRING("__1"); break;
-      case 2: full_name += HX_CSTRING("__2"); break;
-      case 3: full_name += HX_CSTRING("__3"); break;
-      case 4: full_name += HX_CSTRING("__4"); break;
-      case 5: full_name += HX_CSTRING("__5"); break;
-      default:
-          full_name += HX_CSTRING("__MULT");
-   }
 
    #ifdef ANDROID
    std::string module_name = inLib.__CStr();
@@ -434,15 +429,13 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    {
       void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
       if (registered)
-      {
-         return Dynamic( new ExternalPrimitive(registered,inArgCount,HX_CSTRING("registered@")+full_name) );
-      }
+         return registered;
    }
 
    if (!module)
    {
      throw Dynamic(HX_CSTRING("Could not load module ") + inLib + HX_CSTRING("@") + full_name);
-    }
+   }
 
 
    if (new_module)
@@ -490,13 +483,33 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 #else
    fprintf(stderr,"Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
 #endif
-      return 0;
    }
 
-   return Dynamic( new ExternalPrimitive(proc,inArgCount,inLib+HX_CSTRING("@")+full_name) );
-
-   return 0;
+   return proc;
 }
+
+
+Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
+{
+   String full_name = inPrim;
+   switch(inArgCount)
+   {
+      case 0: full_name += HX_CSTRING("__0"); break;
+      case 1: full_name += HX_CSTRING("__1"); break;
+      case 2: full_name += HX_CSTRING("__2"); break;
+      case 3: full_name += HX_CSTRING("__3"); break;
+      case 4: full_name += HX_CSTRING("__4"); break;
+      case 5: full_name += HX_CSTRING("__5"); break;
+      default:
+          full_name += HX_CSTRING("__MULT");
+   }
+   void *proc = __hxcpp_get_proc_address(inLib,full_name);
+
+   if (proc)
+      return Dynamic( new ExternalPrimitive(proc,inArgCount,inLib+HX_CSTRING("@")+full_name) );
+   return null();
+}
+
 
 #endif // not IPHONE
 
