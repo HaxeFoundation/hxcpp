@@ -44,6 +44,7 @@ public:
    }
    inline operator Dynamic() const { return mObject ? mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE) : null(); }
    inline operator double() const { return mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE); }
+   inline operator float() const { return mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE); }
    inline operator int() const { return mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE); }
 
 

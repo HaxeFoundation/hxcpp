@@ -32,6 +32,7 @@ public:
    String(const int &inRHS);
    String(const cpp::CppInt32__ &inRHS);
    String(const double &inRHS);
+   String(const float &inRHS);
    explicit String(const bool &inRHS);
    inline String(const null &inRHS) : __s(0), length(0) { }
 
@@ -111,6 +112,7 @@ public:
    String operator+(const int &inRHS) const { return *this + String(inRHS); }
    String operator+(const bool &inRHS) const { return *this + String(inRHS); }
    String operator+(const double &inRHS) const { return *this + String(inRHS); }
+   String operator+(const float &inRHS) const { return *this + String(inRHS); }
    String operator+(const null &inRHS) const{ return *this + HX_CSTRING("null"); } 
    //String operator+(const HX_CHAR *inRHS) const{ return *this + String(inRHS); } 
    String operator+(const cpp::CppInt32__ &inRHS) const{ return *this + String(inRHS); } 

@@ -21,6 +21,9 @@ template<>
 inline Class &ClassOf<double>() { return GetFloatClass(); }
 
 template<> 
+inline Class &ClassOf<float>() { return GetFloatClass(); }
+
+template<> 
 inline Class &ClassOf<bool>() { return GetBoolClass(); }
 
 template<> 

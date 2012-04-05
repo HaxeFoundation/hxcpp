@@ -1704,16 +1704,12 @@ void SetTopOfStack(int *inTop,bool inForce)
    sgInternalEnable = true;
 
    tla->SetTopOfStack(inTop,inForce);
-
 }
 
 
 
 void *InternalNew(int inSize,bool inIsObject)
 {
-   if (!sgAllocInit)
-      InitAlloc();
-
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
       void *result = sGlobalAlloc->AllocLarge(inSize);

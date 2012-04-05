@@ -146,8 +146,13 @@ void __hx_dump_stack();
 // Basic mapping from haxe -> c++
 
 typedef int Int;
-typedef double Float;
 typedef bool Bool;
+
+#ifdef HXCPP_FLOAT32
+typedef float Float;
+#else
+typedef double Float;
+#endif
 
 // --- Forward decalarations --------------------------------------------
 

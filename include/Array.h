@@ -13,6 +13,7 @@ namespace hx
 template<typename T> struct Boxed { typedef T type; };
 template<> struct Boxed<int> { typedef Dynamic type; };
 template<> struct Boxed<double> { typedef Dynamic type; };
+template<> struct Boxed<float> { typedef Dynamic type; };
 template<> struct Boxed<bool> { typedef Dynamic type; };
 template<> struct Boxed<String> { typedef Dynamic type; };
 }
@@ -165,6 +166,7 @@ inline bool TypeContainsPointers(T *) { return true; }
 template<> inline bool TypeContainsPointers(bool *) { return false; }
 template<> inline bool TypeContainsPointers(int *) { return false; }
 template<> inline bool TypeContainsPointers(double *) { return false; }
+template<> inline bool TypeContainsPointers(float *) { return false; }
 template<> inline bool TypeContainsPointers(unsigned char *) { return false; }
 
 template<typename TYPE> inline bool ContainsPointers()
@@ -179,7 +181,8 @@ inline TYPE *NewNull() { Dynamic d; return (TYPE *)hx::NewGCBytes(&d,sizeof(d));
 
 template<> inline int *NewNull<int>() { int i=0; return (int *)hx::NewGCPrivate(&i,sizeof(i)); }
 template<> inline bool *NewNull<bool>() { bool b=0; return (bool *)hx::NewGCPrivate(&b,sizeof(b)); }
-template<> inline double *NewNull<double>() { double d=0; return (double *)hx::NewGCPrivate(&d,sizeof(d)); }
+template<> inline double *NewNull<double>() { double d=0.0; return (double *)hx::NewGCPrivate(&d,sizeof(d)); }
+template<> inline float *NewNull<float>() { float d=0.0f; return (float *)hx::NewGCPrivate(&d,sizeof(d)); }
 template<> inline unsigned char *NewNull<unsigned char>() { unsigned char u=0; return (unsigned char *)hx::NewGCPrivate(&u,sizeof(u)); }
 
 }

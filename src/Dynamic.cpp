@@ -112,6 +112,7 @@ public:
 Dynamic::Dynamic(bool inVal) : super( new BoolData(inVal) ) { }
 Dynamic::Dynamic(int inVal) : super( new IntData(inVal) ) { }
 Dynamic::Dynamic(double inVal) : super( new DoubleData(inVal) ) { }
+Dynamic::Dynamic(float inVal) : super( new DoubleData(inVal) ) { }
 Dynamic::Dynamic(const cpp::CppInt32__ &inVal) : super( new IntData((int)inVal) ) { }
 Dynamic::Dynamic(const String &inVal) : super( inVal.__s ? inVal.__ToObject() : 0 ) { }
 Dynamic::Dynamic(const HX_CHAR *inVal) : super( inVal ? String(inVal).__ToObject() : 0 ) { }
@@ -148,6 +149,15 @@ Dynamic Dynamic::operator+(const double &d) const
    if (t==vtString)
       return Cast<String>() + String(d);
    return Cast<double>() + d;
+}
+
+
+Dynamic Dynamic::operator+(const float &f) const
+{
+   int t = mPtr ? mPtr->__GetType() : vtNull;
+   if (t==vtString)
+      return Cast<String>() + String(f);
+   return Cast<float>() + f;
 }
 
 

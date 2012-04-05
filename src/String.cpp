@@ -344,6 +344,15 @@ String::String(const double &inRHS)
    __s = GCStringDup(buf,-1,&length);
 }
 
+
+String::String(const float &inRHS)
+{
+   HX_CHAR buf[100];
+   SPRINTF(buf,100,HX_DOUBLE_PATTERN,inRHS);
+   buf[99]='\0';
+   __s = GCStringDup(buf,-1,&length);
+}
+
 String::String(const bool &inRHS)
 {
    if (inRHS)
