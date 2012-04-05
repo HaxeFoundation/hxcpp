@@ -98,8 +98,8 @@ static void do_parse_xml( const char *xml, const char **lp, int *line, value cal
 	const char *p = *lp;
 	char c = *p;
 	int nsubs = 0, nbrackets = 0;
-	gc_safe_point();
 	while( c ) {
+	   gc_safe_point();
 		switch( state ) {
 		case IGNORE_SPACES:
 			switch( c ) {
