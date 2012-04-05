@@ -553,6 +553,11 @@ Dynamic String::charCodeAt(int inPos) const
 
 String String::fromCharCode( int c )
 {
+   char buf[2];
+   buf[0] = c;
+   buf[1] = '\0';
+   return String( GCStringDup(buf,1,0), 1 );
+   #if 0
    #ifdef HX_UTF8_STRINGS
    int len = 0;
    char buf[5];
@@ -585,6 +590,7 @@ String String::fromCharCode( int c )
    result[0] = c;
    result[1] = '\0';
    return String(result,1);
+   #endif
    #endif
 }
 
