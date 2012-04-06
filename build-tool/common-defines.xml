@@ -4,4 +4,5 @@
  <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
  <flag value="-DHXCPP_SET_PROP" if="haxe_209"/>
  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+ <flag value="-DHXCPP_FLOAT32" if="HXCPP_FLOAT32"/>
 </xml>

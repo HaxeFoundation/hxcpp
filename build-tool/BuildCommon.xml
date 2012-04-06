@@ -4,6 +4,9 @@
 
 <set name="DBG" value="-debug" if="debug"/>
 <set name="M64" value="64" if="HXCPP_M64"/>
+<set name="F32" value="-f32" if="HXCPP_FLOAT32"/>
+<set name="NEEDS_NC" value="-nc" if="windows"/>
+<set name="NOCONSOLE" value="${NEEDS_NC}" if="no_console"/>
 
 <set name="STD_MODULE_LINK" value="dll"/>
 
@@ -12,7 +15,7 @@
 
 <set name="STAT" value="-stat" if="static" />
 
-<set name="OBJEXT" value="${M64}${STAT}${DBG}" />
+<set name="OBJEXT" value="${M64}${F32}${STAT}${DBG}${NOCONSOLE}" />
 
 <set name="STD_MODULE_LINK" value="static" if="static"/>
 
@@ -56,7 +59,7 @@
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>
-  <!--<depend name="Options.txt"/>-->
+  <options name="Options.txt"/>
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 </files>
@@ -87,7 +90,7 @@
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>
-  <!--<depend name="Options.txt"/>-->
+  <options name="Options.txt"/>
 
 
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
@@ -137,6 +140,7 @@
 
 <target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
+  <depend name="Options.txt"/>
   <ext value="${IOS_EXT}" if="iphoneos"  />
   <ext value=".iphonesim.a" if="iphonesim"/>
   <files id="__main__" unless="static"/>

@@ -1,4 +1,4 @@
-#include <hxcpp.h>
+   #include <hxcpp.h>
 #include <stdio.h>
 // Get headers etc.
 #include <hx/OS.h>
@@ -363,6 +363,15 @@ double * val_array_double(hx::Object * arg1)
    if (a==0)
       return 0;
    return (double *)a->GetBase();
+}
+
+
+float * val_array_float(hx::Object * arg1)
+{
+   Array_obj<float> *a = dynamic_cast< Array_obj<float> * >(arg1);
+   if (a==0)
+      return 0;
+   return (float *)a->GetBase();
 }
 
 value * val_array_value(hx::Object * arg1)

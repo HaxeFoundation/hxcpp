@@ -472,6 +472,7 @@ void *DynamicNekoLoader(const char *inName)
    IGNORE_API(hx_register_prim)
    IGNORE_API(val_array_int)
    IGNORE_API(val_array_double)
+   IGNORE_API(val_array_float)
    IGNORE_API(val_array_bool)
 
    if (!strcmp(inName,"hx_alloc"))

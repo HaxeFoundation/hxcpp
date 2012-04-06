@@ -398,6 +398,7 @@ class FileGroup
       mCompilerFlags = [];
       mPrecompiledHeader = "";
       mMissingDepends = [];
+      mOptions = [];
       mDir = inDir;
    }
 
@@ -412,6 +413,48 @@ class FileGroup
       if (stamp>mNewest)
          mNewest = stamp;
    }
+   public function addOptions(inFile:String)
+   {
+      mOptions.push(inFile);
+   }
+
+
+   public function checkOptions(inObjDir:String)
+   {
+      var changed = false;
+      for(option in mOptions)
+      {
+         if (!neko.FileSystem.exists(option))
+         {
+            mMissingDepends.push(option);
+         }
+         else
+         {
+            var contents = neko.io.File.getContent(option);
+
+            var dest = inObjDir + "/" + neko.io.Path.withoutDirectory(option);
+            var skip = false;
+
+            if (neko.FileSystem.exists(dest))
+            {
+               var dest_content = neko.io.File.getContent(dest);
+               if (dest_content==contents)
+                  skip = true;
+            }
+            if (!skip)
+            {
+               DirManager.make(inObjDir);
+               var stream = neko.io.File.write(dest,true);
+               stream.writeString(contents);
+               stream.close();
+               changed = true;
+            }
+            addDepend(dest);
+         }
+      }
+      return changed;
+   }
+
    public function checkDependsExist()
    {
       if (mMissingDepends.length>0)
@@ -438,6 +481,7 @@ class FileGroup
    public var mNewest:Float;
    public var mCompilerFlags:Array<String>;
    public var mMissingDepends:Array<String>;
+   public var mOptions:Array<String>;
    public var mPrecompiledHeader:String;
    public var mPrecompiledHeaderDir:String;
    public var mFiles: Array<File>;
@@ -674,9 +718,10 @@ class BuildTool
 
 
       var objs = new Array<String>();
-
       for(group in target.mFileGroups)
       {
+         group.checkOptions(mCompiler.mObjDir);
+
          group.checkDependsExist();
          var to_be_compiled = new Array<File>();
 
@@ -863,6 +908,7 @@ class BuildTool
                          file.mDepends.push( f.att.name );
                    group.mFiles.push( file );
                 case "depend" : group.addDepend( substitute(el.att.name) );
+                case "options" : group.addOptions( substitute(el.att.name) );
                 case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
                 case "compilervalue" : group.addCompilerFlag( substitute(el.att.name) );
                                        group.addCompilerFlag( substitute(el.att.value) );
