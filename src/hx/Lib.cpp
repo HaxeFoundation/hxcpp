@@ -276,7 +276,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    return null();
 }
 
-void __hxcpp_get_proc_address(String inLib, String inPrim)
+void *__hxcpp_get_proc_address(String inLib, String inPrim)
 {
    if (sgRegisteredPrims)
       return (*sgRegisteredPrims)[inPrim.__CStr()];
