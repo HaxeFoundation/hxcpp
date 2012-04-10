@@ -33,6 +33,9 @@ void           __hxcpp_print(Dynamic &inV);
 void           __hxcpp_println(Dynamic &inV);
 void           __trace(Dynamic inPtr, Dynamic inData);
 
+// --- Maths ---------------------------------------------------------
+double __hxcpp_drand();
+int __hxcpp_irand(int inMax);
 
 // --- Casting/Converting ---------------------------------------------------------
 bool  __instanceof(const Dynamic &inValue, const Dynamic &inType);

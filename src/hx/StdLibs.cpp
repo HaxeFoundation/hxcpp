@@ -107,6 +107,24 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 
 // --- System ---------------------------------------------------------------------
 
+// --- Maths ---------------------------------------------------------
+static double rand_scale = 1.0 / (1<<16) / (1<<16);
+double __hxcpp_drand()
+{
+   unsigned int lo = rand() & 0xfff;
+   unsigned int mid = rand() & 0xfff;
+   unsigned int hi = rand() & 0xff;
+   double result = (lo | (mid<<12) | (hi<<24) ) * rand_scale;
+   return result;
+}
+
+int __hxcpp_irand(int inMax)
+{
+   unsigned int lo = rand() & 0xfff;
+   unsigned int mid = rand() & 0xfff;
+   unsigned int hi = rand() & 0xff;
+   return (lo | (mid<<12) | (hi<<24) ) % inMax;
+}
 
 void __trace(Dynamic inObj, Dynamic inData)
 {
