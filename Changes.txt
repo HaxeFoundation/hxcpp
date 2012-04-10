@@ -1,3 +1,15 @@
+2.0.9
+------------------------------------------------------------
+* Improved precision in random implementations
+* Added some experimental support for float32
+* Added some experimental support for generic getProcAddress
+* String::fromCharCode generates single-byte strings
+* Fix method compares
+* Plug memory leak in finalizers
+* Fix debug link flags
+* Separate get/SetField from get/setProperty
+* Added Null<T> for optional parameters
+
 2.0.8.3
 ------------------------------------------------------------
 * Actually add blackberry toolchain
