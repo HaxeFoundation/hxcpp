@@ -373,7 +373,6 @@ void *__hxcpp_get_proc_address(String inLib, String full_name)
       module = hxLoadLibrary(dll_ext);
       if (module)
          break;
-
       
       dll_ext = inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
       if (gLoadDebug)
@@ -385,6 +384,18 @@ void *__hxcpp_get_proc_address(String inLib, String full_name)
          #endif
       }
       module = hxLoadLibrary(dll_ext);
+	  
+	  #ifdef HX_MACOS
+	  if (module)
+	     break;
+	  
+      dll_ext = HX_CSTRING("@executable_path/") + inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
+      if (gLoadDebug)
+      {
+         printf(" try %s...\n", dll_ext.__CStr());
+      }
+      module = hxLoadLibrary(dll_ext);
+	  #endif
 
       #ifndef ANDROID
       if (!module)
