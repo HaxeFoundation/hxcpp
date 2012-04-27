@@ -1,4 +1,9 @@
-2.0.9
+2.09.1
+------------------------------------------------------------
+* Resolve library paths when launching Mac apps from Finder
+* Compile fix for the BlackBerry toolchain
+
+2.09
 ------------------------------------------------------------
 * Improved precision in random implementations
 * Added some experimental support for float32
@@ -10,11 +15,11 @@
 * Separate get/SetField from get/setProperty
 * Added Null<T> for optional parameters
 
-2.0.8.3
+2.08.3
 ------------------------------------------------------------
 * Actually add blackberry toolchain
 
-2.0.8.2
+2.08.2
 ------------------------------------------------------------
 * Add blackberry support
 * Add armv7 options
@@ -22,7 +27,7 @@
 * Fix const qualifiers on interface functions
 * Fix webOS obj directory
 
-2.0.8.1
+2.08.1
 ------------------------------------------------------------
 * Fix Math.random returning 1.0 sometimes
 * Std.is( 2.0, Int ) is now true
@@ -41,7 +46,7 @@
 * Speedup some code by avoiding dynamic_cast if possible
 * Some fixes to allow Android multi-threading in normal operation
 
-2.0.8
+2.08
 ------------------------------------------------------------
 * Do not create a new class definition for each member function
 * Allow 5 fast and up to 20 slow dynamic function arguments
@@ -67,7 +72,7 @@
 * Removed need for nekoapi.ndll
 * Allow for neko.so to end in ".0"
 
-2.0.7
+2.07
 ------------------------------------------------------------
 * Added initial support for Mac64, Linux64, MinGW and GPH and refactored build tool.
 * Return the count of traced objects
