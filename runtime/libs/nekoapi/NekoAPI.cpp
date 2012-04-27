@@ -308,6 +308,12 @@ double * api_val_array_double(value  arg1)
 	return 0;
 }
 
+float * api_val_array_float(value  arg1)
+{
+	return 0;
+}
+
+
 value * api_val_array_value(value  arg1)
 {
 	if (val_is_array(arg1))
