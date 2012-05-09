@@ -69,7 +69,7 @@ public:
       if (mPtr==inRHS.mPtr) return 0;
       if (mPtr==0) return -1;
       if (inRHS.mPtr==0) return -1;
-      return mPtr->__Compare(inRHS.mPtr);
+      return mPtr->__Compare(inRHS.mPtr->__GetRealObject());
    }
 
    bool operator==(const null &inRHS) const { return mPtr==0; }
@@ -86,7 +86,7 @@ public:
    {
       if (mPtr==inRHS.mPtr) return true;
       if (!mPtr || !inRHS.mPtr) return false;
-      return mPtr->__Compare(inRHS.mPtr)==0;
+      return mPtr->__Compare(inRHS.mPtr->__GetRealObject())==0;
    }
 
    #define DYNAMIC_COMPARE_OP( op ) \
