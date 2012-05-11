@@ -1,7 +1,7 @@
 <xml>
 
 <setenv name="QNX_HOST" value="${BLACKBERRY_NDK_ROOT}/host/win32/x86" if="windows_host" />
-<setenv name="QNX_HOST" value="${BLACKBERRY_NDK_ROOT}/host/macos/x86" if="mac_host" />
+<setenv name="QNX_HOST" value="${BLACKBERRY_NDK_ROOT}/host/macosx/x86" if="mac_host" />
 <setenv name="QNX_HOST" value="${BLACKBERRY_NDK_ROOT}/host/linux/x86" if="linux_host" />
 
 <setenv name="QNX_TARGET" value="${BLACKBERRY_NDK_ROOT}/target/qnx6" />
