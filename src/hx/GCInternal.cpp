@@ -14,7 +14,6 @@ enum { gFillWithJunk = 0 } ;
 #endif
 
 
-
 #ifdef HX_WINDOWS
 #include <windows.h>
 #endif
@@ -28,12 +27,35 @@ enum { gFillWithJunk = 0 } ;
 static bool sgAllocInit = 0;
 static bool sgInternalEnable = false;
 static void *sgObject_root = 0;
+int gInAlloc = false;
+
+
+//#define COLLECTOR_STATS
+
+#ifdef COLLECTOR_STATS
+struct AllocBump
+{
+   AllocBump() { gInAlloc++; }
+   ~AllocBump() { gInAlloc--; }
+};
+#define IN_ALLOC AllocBump tmp;
+#else
+#define IN_ALLOC
+#endif
 
 #ifdef HXCPP_DEBUG
 static hx::Object *gCollectTrace = 0;
 static bool gCollectTraceDoPrint = false;
 static int gCollectTraceCount = 0;
 #endif
+
+#ifdef ANDROID
+#define GCLOG(...) __android_log_print(ANDROID_LOG_INFO, "gclog", __VA_ARGS__)
+#else
+#define GCLOG(...) printf(__VA_ARGS__)
+#endif
+
+
 
 static int sgTimeToNextTableUpdate = 0;
 
@@ -607,29 +629,25 @@ public:
     //QuickDeque<hx::Object *> mDeque;
 };
 
+#ifdef HXCPP_DEBUG
 void MarkSetMember(const char *inName HX_MARK_ADD_PARAMS)
 {
-   #ifdef HXCPP_DEBUG
    if (gCollectTrace)
       __inCtx->SetMember(inName);
-   #endif
 }
 
 void MarkPushClass(const char *inName HX_MARK_ADD_PARAMS)
 {
-   #ifdef HXCPP_DEBUG
    if (gCollectTrace)
       __inCtx->PushClass(inName);
-   #endif
 }
 
 void MarkPopClass(HX_MARK_PARAMS)
 {
-   #ifdef HXCPP_DEBUG
    if (gCollectTrace)
       __inCtx->PopClass();
-   #endif
 }
+#endif
 
 
 
@@ -976,7 +994,9 @@ public:
             int n = mBlockIDs.size();
             mBlockIDs[block] = n;
          }
-         // printf("Blocks %d\n", mAllBlocks.size());
+         #ifdef COLLECTOR_STATS
+         GCLOG("Extra %d allocs now (%d k)\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+         #endif
       }
 
       BlockData *block = mEmptyBlocks[mNextEmpty++];
@@ -1490,8 +1510,6 @@ public:
       //printf("=========== Mark Stack ==================== %p ... %p (%p)\n",mBottomOfStack,mTopOfStack,&here);
       #endif
 
-      //printf("mark stack...");
-
       #ifdef HXCPP_DEBUG
       MarkPushClass("Stack",__inCtx);
       MarkSetMember("Stack",__inCtx);
@@ -1710,6 +1728,8 @@ void SetTopOfStack(int *inTop,bool inForce)
 
 void *InternalNew(int inSize,bool inIsObject)
 {
+   IN_ALLOC
+
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
       void *result = sGlobalAlloc->AllocLarge(inSize);
@@ -1738,6 +1758,8 @@ void InternalCollect()
 
 void *InternalRealloc(void *inData,int inSize)
 {
+   IN_ALLOC
+
    if (inData==0)
       return hx::InternalNew(inSize,false);
 

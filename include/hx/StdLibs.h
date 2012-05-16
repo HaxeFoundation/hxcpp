@@ -123,6 +123,9 @@ void    __hxcpp_tls_set(int inID,Dynamic inVal);
 int __hxcpp_obj_id(Dynamic inObj);
 
 
+void __hxcpp_start_profiler();
+void __hxcpp_stop_profiler();
+
 // --- Memory --------------------------------------------------------------------------
 
 
