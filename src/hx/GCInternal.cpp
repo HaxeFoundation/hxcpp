@@ -286,21 +286,46 @@ public:
 
 enum AllocType { allocNone, allocString, allocObject, allocMarked };
 
+struct BlockDataInfo
+{
+   int mId;
+   int mUsedRows;
+   int mFreeInARow;
+   int mHoles;
+   union BlockData *mPtr;
+   bool mPinned;
+};
+
+QuickVec<BlockDataInfo> *gBlockInfo = 0;
+
 union BlockData
 {
    void Init()
    {
       if (gFillWithJunk)
          memset(this,0x55,sizeof(*this));
-      mUsedRows = 0;
+      if (gBlockInfo==0)
+         gBlockInfo = new QuickVec<BlockDataInfo>;
+      mId = gBlockInfo->size();
+      gBlockInfo->push( BlockDataInfo() );
+      BlockDataInfo &info = getInfo();
+      info.mId = mId;
+      info.mUsedRows = 0;
+      info.mFreeInARow = 0;
+      info.mHoles = 0;
+      info.mPinned = 0;
+      info.mPtr = this;
    }
-   inline int GetFreeData() const { return (IMMIX_USEFUL_LINES - mUsedRows)<<IMMIX_LINE_BITS; }
+   inline int GetFreeData() const { return (IMMIX_USEFUL_LINES - getUsedRows())<<IMMIX_LINE_BITS; }
    void ClearEmpty()
    {
-      memset(this,0,IMMIX_HEADER_LINES * IMMIX_LINE_LEN);
+      memset((char *)this + 2,0,IMMIX_HEADER_LINES * IMMIX_LINE_LEN - 2);
       memset(mRow[IMMIX_HEADER_LINES],0,IMMIX_USEFUL_LINES * IMMIX_LINE_LEN);
-      mUsedRows = 0;
+      getInfo().mUsedRows = 0;
    }
+
+   inline BlockDataInfo &getInfo() const { return (*gBlockInfo)[mId]; }
+
    void ClearRecycled()
    {
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
@@ -337,9 +362,11 @@ union BlockData
       for(int i=0;i<inN;i++)
          ptr[i] &= ~(IMMIX_ROW_CLEAR);
    }
-   bool IsEmpty() const { return mUsedRows == 0; }
-   bool IsFull() const { return mUsedRows == IMMIX_USEFUL_LINES; }
-   int GetRowsInUse() const { return mUsedRows; }
+   bool IsEmpty() const { return getUsedRows() == 0; }
+   bool IsFull() const { return getUsedRows() == IMMIX_USEFUL_LINES; }
+   int getUsedRows() const { return getInfo().mUsedRows; }
+   int getFreeInARow() const { return getInfo().mFreeInARow; }
+   int isPinned() const { return getInfo().mPinned; }
    inline bool IsRowUsed(int inRow) const { return mRowFlags[inRow] & IMMIX_ROW_MARKED; }
 
    void Verify()
@@ -366,6 +393,7 @@ union BlockData
       int free = 0;
       int max_free_in_a_row = 0;
       int free_in_a_row = 0;
+      int holes = 0;
       bool update_table = sgTimeToNextTableUpdate==0 || gFillWithJunk;
 
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
@@ -411,6 +439,8 @@ union BlockData
          }
          else
          {
+            if (free_in_a_row==0)
+               holes++;
             row_flag = 0;
             free_in_a_row++;
             if (gFillWithJunk)
@@ -422,8 +452,11 @@ union BlockData
          }
       }
 
-      mUsedRows = IMMIX_USEFUL_LINES - free;
-      mFreeInARow = max_free_in_a_row;
+      BlockDataInfo &info = getInfo();
+      info.mUsedRows = IMMIX_USEFUL_LINES - free;
+      info.mFreeInARow = max_free_in_a_row;
+      info.mHoles = holes;
+      // GCLOG("Used %f, biggest=%f, holes=%d\n", (float)mUsedRows/IMMIX_USEFUL_LINES, (float)mFreeInARow/IMMIX_USEFUL_LINES, holes );
 
       //Verify();
    }
@@ -485,8 +518,11 @@ union BlockData
       return allocNone;
    }
 
+   void pin() { getInfo().mPinned = true; }
+
    void ClearRowMarks()
    {
+      getInfo().mPinned = false;
       unsigned char *header = mRowFlags + IMMIX_HEADER_LINES;
       unsigned char *header_end = header + IMMIX_USEFUL_LINES;
       while(header !=  header_end)
@@ -495,11 +531,8 @@ union BlockData
 
 
    // First 2 bytes are not needed for row markers (first 2 rows are for flags)
-   struct
-   {
-      unsigned char mUsedRows;
-      unsigned char mFreeInARow;
-   };
+   unsigned short mId;
+
    // First 2 rows contain a byte-flag-per-row 
    unsigned char  mRowFlags[IMMIX_LINES];
    // Row data as union - don't use first 2 rows
@@ -862,7 +895,6 @@ void *InternalCreateConstBuffer(const void *inData,int inSize)
 
 // --- GlobalAllocator -------------------------------------------------------
 
-typedef std::map<void *,int> BlockIDMap;
 typedef std::set<BlockData *> PointerSet;
 typedef QuickVec<BlockData *> BlockList;
 
@@ -940,7 +972,7 @@ public:
       BlockData *result = 0;
       if (mNextRecycled < mRecycledBlock.size())
       {
-         if (mRecycledBlock[mNextRecycled]->mFreeInARow>=inRequiredRows)
+         if (mRecycledBlock[mNextRecycled]->getFreeInARow()>=inRequiredRows)
          {
             result = mRecycledBlock[mNextRecycled++];
          }
@@ -948,7 +980,7 @@ public:
          {
             for(int block = mNextRecycled+1; block<mRecycledBlock.size(); block++)
             {
-               if (mRecycledBlock[block]->mFreeInARow>=inRequiredRows)
+               if (mRecycledBlock[block]->getFreeInARow()>=inRequiredRows)
                {
                   result = mRecycledBlock[block];
                   mRecycledBlock.erase(block);
@@ -991,11 +1023,9 @@ public:
             block->Init();
             mAllBlocks.push(block);
             mEmptyBlocks.push(block);
-            int n = mBlockIDs.size();
-            mBlockIDs[block] = n;
          }
          #ifdef COLLECTOR_STATS
-         GCLOG("Extra %d allocs now (%d k)\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+         GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
          #endif
       }
 
@@ -1008,11 +1038,8 @@ public:
  
    int GetObjectID(void *inPtr)
    {
-      int *base = (int *)( (((size_t)inPtr)) & IMMIX_BLOCK_BASE_MASK);
-      BlockIDMap::iterator i = mBlockIDs.find(base);
-      if (i==mBlockIDs.end())
-         return 0;
-      return ( (i->second) * (IMMIX_BLOCK_SIZE>>2)) | (int)((int *)inPtr-base);
+      BlockData *block = (BlockData *)( (((size_t)inPtr)) & IMMIX_BLOCK_BASE_MASK);
+      return ( block->mId * (IMMIX_BLOCK_SIZE>>2)) | (int)((int *)inPtr-(int *)block);
    }
 
    void ClearRowMarks()
@@ -1118,6 +1145,7 @@ public:
       mNextEmpty = 0;
       mNextRecycled = 0;
       mRowsInUse = 0;
+      int pinned = 0;
 
 
       // IMMIX suggest filling up in creation order ....
@@ -1129,8 +1157,10 @@ public:
             mEmptyBlocks.push(block);
          else
          {
+            if (block->isPinned())
+               pinned++;
             mActiveBlocks.insert(block);
-            mRowsInUse += block->GetRowsInUse();
+            mRowsInUse += block->getUsedRows();
             if (!block->IsFull())
                mRecycledBlock.push(block);
          }
@@ -1151,6 +1181,8 @@ public:
       }
 
       mTotalAfterLastCollect = MemUsage();
+
+      // GCLOG("Alloced = %d, Empty ratio %f, pinned = %d\n", mDistributedSinceLastCollect, (float)mEmptyBlocks.size()/mAllBlocks.size(), pinned );
       //printf("Using %d\n", mTotalAfterLastCollect);
       mDistributedSinceLastCollect = 0;
 
@@ -1219,7 +1251,6 @@ public:
    BlockList mRecycledBlock;
    LargeList mLargeList;
    PointerSet mActiveBlocks;
-   BlockIDMap mBlockIDs;
    MyMutex    mLargeListLock;
    QuickVec<LocalAllocator *> mLocalAllocs;
 };
@@ -1554,11 +1585,13 @@ public:
                {
                   // printf(" Mark object %p (%p)\n", vptr,ptr);
                   HX_MARK_OBJECT( ((hx::Object *)vptr) );
+                  block->pin();
                }
                else if (t==allocString)
                {
                   // printf(" Mark string %p (%p)\n", vptr,ptr);
                   HX_MARK_STRING(vptr);
+                  block->pin();
                }
             }
          }
