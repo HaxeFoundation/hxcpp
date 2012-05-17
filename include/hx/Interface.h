@@ -9,7 +9,7 @@ class Interface : public hx::Object
 public:
    // The following functions make use of : hx::Object *__GetRealObject();
 
-	void __Mark(HX_MARK_PARAMS);
+	void __Mark(hx::MarkContext *__inCtx);
    hx::Object *__ToInterface(const type_info &);
 	int __GetType() const;
 	void *__GetHandle() const;

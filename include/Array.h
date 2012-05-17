@@ -38,7 +38,7 @@ public:
    T next() { return mArray->__get(mIdx++); }
 
 
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
 
    int      mIdx;
    Array<T> mArray;
@@ -243,7 +243,7 @@ public:
    }
 
 
-   void __Mark(HX_MARK_PARAMS)
+   void __Mark(hx::MarkContext *__inCtx)
    {
       if (hx::ContainsPointers<ELEM_>())
       {

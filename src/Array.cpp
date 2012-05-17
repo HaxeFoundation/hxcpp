@@ -201,7 +201,7 @@ struct ArrayBase_##func : public hx::Object \
    int __GetType() const { return vtFunction; } \
    void *__GetHandle() const { return mThis; } \
    int __ArgCount() const { return ARG_C; } \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(mThis); } \
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
       return mThis->__##func(array_list); return Dynamic(); \

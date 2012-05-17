@@ -40,7 +40,7 @@ class  EnumBase_obj : public hx::Object
       static Dynamic __Create(DynamicArray inArgs);
       static void __boot();
 
-      void __Mark(HX_MARK_PARAMS);
+      void __Mark(hx::MarkContext *__inCtx);
 
       static hx::ObjectPtr<EnumBase_obj> Resolve(String inName);
       Dynamic __Param(int inID) { return mArgs[inID]; }

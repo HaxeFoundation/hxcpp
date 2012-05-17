@@ -45,7 +45,7 @@ public:
    bool hasNext() { return mHasNext(); }
    T next() { return mNext(); }
 
-   void __Mark(HX_MARK_PARAMS)
+   void __Mark(hx::MarkContext *__inCtx)
    {
       HX_MARK_MEMBER_NAME(mNext,"mNext");
       HX_MARK_MEMBER_NAME(mHasNext,"mHasNext");

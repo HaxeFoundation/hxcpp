@@ -48,7 +48,7 @@
     bool class::__HasField(const String &inString) \
     {  if (hx::NS::FieldMap::NS::
 
-#define HX_MARK_DYNAMIC hx::FieldMapMark(__mDynamicFields HX_MARK_ADD_ARG);
+#define HX_MARK_DYNAMIC hx::FieldMapMark(__mDynamicFields, __inCtx);
 
 #define HX_CHECK_DYNAMIC_GET_FIELD(inName) \
    { Dynamic d;  if (hx::FieldMapGet(__mDynamicFields,inName,d)) return d; }
@@ -214,7 +214,7 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
    struct name : public hx::Object { int __GetType() const { return vtFunction; } \
    hx::ObjectPtr<t0> __this; \
    name(hx::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(__this); }
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); }
 
 
 #define HX_END_DEFAULT_FUNC \
@@ -222,14 +222,14 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 
 #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
    struct name : public SUPER { \
-   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); } \
+   void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
    name() {}
 
 ::foreach LOCALS::
 #define HX_BEGIN_LOCAL_FUNC_S::ARG::(SUPER,name,::TYPE_ARGS::) \
    struct name : public SUPER { \
    ::TYPE_DECL::; \
-   void __Mark(HX_MARK_PARAMS) { DoMarkThis(HX_MARK_ARG); ::MARKS:: } \
+   void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); ::MARKS:: } \
    name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
 
 

@@ -60,12 +60,12 @@ void FieldMapAppendFields(FieldMap *inMap,Array<String> &outFields)
 
 struct Marker
 {
-	Marker(HX_MARK_PARAMS) { this->__inCtx = __inCtx;  }
+	Marker(hx::MarkContext *__inCtx) { this->__inCtx = __inCtx;  }
 	hx::MarkContext *__inCtx;
 
 	void Visit(void *inPtr, const String &inStr, Dynamic &inDyn)
 	{
-		hx::MarkAlloc(inPtr HX_MARK_ADD_ARG);
+		hx::MarkAlloc(inPtr, __inCtx);
 		HX_MARK_STRING(inStr.__s);
 		if (inDyn.mPtr)
       {
@@ -77,12 +77,12 @@ struct Marker
 	}
 };
 
-void FieldMapMark(FieldMap *inMap HX_MARK_ADD_PARAMS)
+void FieldMapMark(FieldMap *inMap,hx::MarkContext *__inCtx)
 {
 	if (inMap)
 	{
-		hx::MarkAlloc(inMap HX_MARK_ADD_ARG);
-		Marker m(HX_MARK_ARG);
+		hx::MarkAlloc(inMap, __inCtx);
+		Marker m(__inCtx);
 		inMap->Iterate(m);
 	}
 }
@@ -165,7 +165,7 @@ public:
       return result + HX_CSTRING("}");
    }
 
-   void __Mark(HX_MARK_PARAMS)
+   void __Mark(hx::MarkContext *__inCtx)
    {
 		mFinalizer->Mark();
       for(Map::iterator i=mMap->begin();i!=mMap->end();++i)

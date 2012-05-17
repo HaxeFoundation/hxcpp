@@ -9,13 +9,13 @@ Anon_obj::Anon_obj()
    mFields = hx::FieldMapCreate();
 }
 
-void Anon_obj::__Mark(HX_MARK_PARAMS)
+void Anon_obj::__Mark(hx::MarkContext *__inCtx)
 {
    // We will get mFields=0 here if we collect in the constructor before mFields is assigned
    if (mFields)
    {
-      hx::MarkAlloc(mFields HX_MARK_ADD_ARG);
-      hx::FieldMapMark(mFields HX_MARK_ADD_ARG);
+      hx::MarkAlloc(mFields , __inCtx);
+      hx::FieldMapMark(mFields , __inCtx);
    }
 }
 

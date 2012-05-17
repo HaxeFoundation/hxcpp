@@ -57,7 +57,7 @@ public:
    void operator delete( void *, bool ) { }
 
    //virtual void *__root();
-   virtual void __Mark(HX_MARK_PARAMS) { }
+   virtual void __Mark(hx::MarkContext *__inCtx) { }
    virtual bool __Is(hx::Object *inClass) const { return true; }
    virtual hx::Object *__ToInterface(const type_info &inInterface) { return 0; }
    virtual hx::Object *__GetRealObject() { return this; }

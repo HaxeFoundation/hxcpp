@@ -31,7 +31,7 @@ struct CMemberFunction::ARG:: : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return ::ARG::; } 
    ::String __ToString() const{ return HX_CSTRING("#function::ARG::"); } 
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
@@ -123,7 +123,7 @@ struct CMemberFunctionVar : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 
    ::String __ToString() const{ return HX_CSTRING("#vfunction"); } 
-   void __Mark(HX_MARK_PARAMS) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 

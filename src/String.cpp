@@ -914,7 +914,7 @@ struct __String_##func : public hx::Object \
    { \
       return mThis.func(arg_list); return Dynamic(); \
    } \
-	void __Mark(HX_MARK_PARAMS) { HX_MARK_STRING(mThis.__s); } \
+	void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.__s); } \
 	void  __SetThis(Dynamic inThis) { mThis = inThis; } \
 }; \
 Dynamic String::func##_dyn()  { return new __String_##func(*this);  }
@@ -1043,7 +1043,7 @@ public:
    }
    int __length() const { return mValue.length; }
 
-   void __Mark(HX_MARK_PARAMS)
+   void __Mark(hx::MarkContext *__inCtx)
    {
       HX_MARK_MEMBER(mValue);
    }

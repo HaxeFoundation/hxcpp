@@ -34,7 +34,7 @@ public:
       return mHandle;
    }
 
-   void __Mark(HX_MARK_PARAMS)
+   void __Mark(hx::MarkContext *__inCtx)
    {
       if (mFinalizer)
          mFinalizer->Mark();
@@ -712,7 +712,7 @@ public:
    virtual int __GetType() const { return valtRoot; }
    virtual hx::ObjectPtr<Class_obj> __GetClass() const { return 0; }
    virtual bool __IsClass(Class inClass ) const { return false; }
-   void __Mark(HX_MARK_PARAMS)
+   void __Mark(hx::MarkContext *__inCtx)
    {
       HX_MARK_OBJECT(mNext);
       HX_MARK_OBJECT(mValue);

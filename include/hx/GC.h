@@ -60,7 +60,7 @@ HX_CHAR *NewString(int inLen);
 // Internal for arrays
 void *GCRealloc(void *inData,int inSize);
 void GCInit();
-void MarkClassStatics(HX_MARK_PARAMS);
+void MarkClassStatics(hx::MarkContext *__inCtx);
 void LibMark();
 void GCMark(Object *inPtr);
 
@@ -112,43 +112,43 @@ struct InternalFinalizer
 };
 
 
-void MarkAlloc(void *inPtr HX_MARK_ADD_PARAMS);
-void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS);
+void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx);
+void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx);
 
 #ifdef HXCPP_DEBUG
-void MarkSetMember(const char *inName HX_MARK_ADD_PARAMS);
-void MarkPushClass(const char *inName HX_MARK_ADD_PARAMS);
-void MarkPopClass(HX_MARK_PARAMS);
+void MarkSetMember(const char *inName ,hx::MarkContext *__inCtx);
+void MarkPushClass(const char *inName ,hx::MarkContext *__inCtx);
+void MarkPopClass(hx::MarkContext *__inCtx);
 #endif
 
 } // end namespace hx
 
 #ifdef HXCPP_DEBUG
 
-#define HX_MARK_MEMBER_NAME(x,name) { hx::MarkSetMember(name HX_MARK_ADD_ARG); hx::MarkMember(x HX_MARK_ADD_ARG ); }
-#define HX_MARK_BEGIN_CLASS(x) hx::MarkPushClass(#x HX_MARK_ADD_ARG );
-#define HX_MARK_END_CLASS() hx::MarkPopClass(HX_MARK_ARG );
-#define HX_MARK_MEMBER(x) { hx::MarkSetMember(0 HX_MARK_ADD_ARG); hx::MarkMember(x HX_MARK_ADD_ARG ); }
+#define HX_MARK_MEMBER_NAME(x,name) { hx::MarkSetMember(name, __inCtx); hx::MarkMember(x, __inCtx ); }
+#define HX_MARK_BEGIN_CLASS(x) hx::MarkPushClass(#x, __inCtx );
+#define HX_MARK_END_CLASS() hx::MarkPopClass(__inCtx );
+#define HX_MARK_MEMBER(x) { hx::MarkSetMember(0, __inCtx); hx::MarkMember(x, __inCtx ); }
 
 #else
 
-#define HX_MARK_MEMBER_NAME(x,name) hx::MarkMember(x HX_MARK_ADD_ARG )
+#define HX_MARK_MEMBER_NAME(x,name) hx::MarkMember(x, __inCtx )
 #define HX_MARK_BEGIN_CLASS(x)
 #define HX_MARK_END_CLASS()
-#define HX_MARK_MEMBER(x) hx::MarkMember(x HX_MARK_ADD_ARG )
+#define HX_MARK_MEMBER(x) hx::MarkMember(x, __inCtx )
 
 #endif
 
 
 
-#define HX_MARK_OBJECT(ioPtr) if (ioPtr) hx::MarkObjectAlloc(ioPtr HX_MARK_ADD_ARG );
+#define HX_MARK_OBJECT(ioPtr) if (ioPtr) hx::MarkObjectAlloc(ioPtr, __inCtx );
 
 #define HX_GC_CONST_STRING  0xffffffff
 
 #define HX_MARK_STRING(ioPtr) \
-   if (ioPtr && (((int *)ioPtr)[-1] != HX_GC_CONST_STRING) ) hx::MarkAlloc((void *)ioPtr HX_MARK_ADD_ARG );
+   if (ioPtr && (((int *)ioPtr)[-1] != HX_GC_CONST_STRING) ) hx::MarkAlloc((void *)ioPtr, __inCtx );
 
-#define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hx::MarkAlloc((void *)ioPtr HX_MARK_ADD_ARG ); }
+#define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx ); }
 
 
 #endif

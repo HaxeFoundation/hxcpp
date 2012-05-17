@@ -17,7 +17,7 @@ bool FieldMapHas(hx::FieldMap *inMap, const ::String &inName);
 bool FieldMapGet(hx::FieldMap *inMap, int inID, ::Dynamic &outValue);
 void FieldMapSet(hx::FieldMap *inMap, const ::String &inName, const ::Dynamic &inValue);
 void FieldMapAppendFields(hx::FieldMap *inMap,::Array< ::String> &outFields);
-void FieldMapMark(hx::FieldMap *inMap HX_MARK_ADD_PARAMS);
+void FieldMapMark(hx::FieldMap *inMap,hx::MarkContext *__inCtx);
 
 
 class Anon_obj : public hx::Object
@@ -49,7 +49,7 @@ public:
    virtual int __GetType() const { return vtObject; }
 
    hx::Anon_obj *Add(const String &inName,const Dynamic &inValue,bool inSetThisPointer=true);
-	void __Mark(HX_MARK_PARAMS);
+	void __Mark(hx::MarkContext *__inCtx);
 
    String __ToString() const;
    String toString();

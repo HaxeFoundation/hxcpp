@@ -34,7 +34,7 @@ void EnumBase_obj::__boot()
                        &__CreateEmpty, &__Create, 0 );
 }
 
-void EnumBase_obj::__Mark(HX_MARK_PARAMS)
+void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(tag);
    HX_MARK_MEMBER(mArgs);

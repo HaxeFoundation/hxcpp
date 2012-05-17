@@ -73,7 +73,7 @@ Class Class_obj::GetSuper()
    return *mSuper;
 }
 
-void Class_obj::__Mark(HX_MARK_PARAMS)
+void Class_obj::__Mark(hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(mName);
    HX_MARK_MEMBER(mStatics);
@@ -91,11 +91,11 @@ Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class
 }
 
 
-void Class_obj::MarkStatics(HX_MARK_PARAMS)
+void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 {
    if (mMarkFunc)
    {
-       mMarkFunc(HX_MARK_ARG);
+       mMarkFunc(__inCtx);
    }
 }
 
@@ -176,7 +176,7 @@ bool Class_obj::__IsEnum()
 
 namespace hx
 {
-void MarkClassStatics(HX_MARK_PARAMS)
+void MarkClassStatics(hx::MarkContext *__inCtx)
 {
    #ifdef HXCPP_DEBUG
    MarkPushClass("MarkClassStatics",__inCtx);
@@ -194,7 +194,7 @@ void MarkClassStatics(HX_MARK_PARAMS)
       hx::MarkSetMember("statics",__inCtx);
       #endif
    
-      i->second->MarkStatics(HX_MARK_ARG);
+      i->second->MarkStatics(__inCtx);
 
       #ifdef HXCPP_DEBUG
       hx::MarkPopClass(__inCtx);

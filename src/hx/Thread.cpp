@@ -32,9 +32,9 @@ struct Deque : public Array_obj<Dynamic>
 		mSemaphore.Clean();
 	}
 
-	void __Mark(HX_MARK_PARAMS)
+	void __Mark(hx::MarkContext *__inCtx)
 	{
-		Array_obj<Dynamic>::__Mark(HX_MARK_ARG);
+		Array_obj<Dynamic>::__Mark(__inCtx);
 		mFinalizer->Mark();
 	}
 
@@ -182,7 +182,7 @@ public:
 	void SetTLS(int inID,Dynamic inVal) { mTLS[inID] = inVal; }
 	Dynamic GetTLS(int inID) { return mTLS[inID]; }
 
-	void __Mark(HX_MARK_PARAMS)
+	void __Mark(hx::MarkContext *__inCtx)
 	{
 		HX_MARK_MEMBER(mFunction);
 		HX_MARK_MEMBER(mTLS);
@@ -305,7 +305,7 @@ public:
 		mFinalizer->mFinalizer = clean;
 	}
 
-	void __Mark(HX_MARK_PARAMS) { mFinalizer->Mark(); }
+	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
 	hx::InternalFinalizer *mFinalizer;
 
 	static void clean(hx::Object *inObj)
@@ -377,7 +377,7 @@ public:
 		mFinalizer->mFinalizer = clean;
 	}
 
-	void __Mark(HX_MARK_PARAMS) { mFinalizer->Mark(); }
+	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
 	hx::InternalFinalizer *mFinalizer;
 
 	#ifdef HX_WINDOWS

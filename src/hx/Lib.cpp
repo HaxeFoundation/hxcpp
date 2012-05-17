@@ -131,7 +131,7 @@ public:
       return ((prim_mult)mProc)( (hx::Object **)inArgs->GetBase(), inArgs->length );
    }
 
-   void __Mark(HX_MARK_PARAMS) {  HX_MARK_MEMBER(mName); }
+   void __Mark(hx::MarkContext *__inCtx) {  HX_MARK_MEMBER(mName); }
 
    int __Compare(const hx::Object *inRHS) const
    {

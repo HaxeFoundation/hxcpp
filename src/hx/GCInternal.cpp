@@ -68,7 +68,7 @@ static bool sMultiThreadMode = false;
 
 TLSData<LocalAllocator> tlsLocalAlloc;
 
-static void MarkLocalAlloc(LocalAllocator *inAlloc HX_MARK_ADD_PARAMS);
+static void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx);
 static void WaitForSafe(LocalAllocator *inAlloc);
 static void ReleaseFromSafe(LocalAllocator *inAlloc);
 
@@ -663,19 +663,19 @@ public:
 };
 
 #ifdef HXCPP_DEBUG
-void MarkSetMember(const char *inName HX_MARK_ADD_PARAMS)
+void MarkSetMember(const char *inName,hx::MarkContext *__inCtx)
 {
    if (gCollectTrace)
       __inCtx->SetMember(inName);
 }
 
-void MarkPushClass(const char *inName HX_MARK_ADD_PARAMS)
+void MarkPushClass(const char *inName,hx::MarkContext *__inCtx)
 {
    if (gCollectTrace)
       __inCtx->PushClass(inName);
 }
 
-void MarkPopClass(HX_MARK_PARAMS)
+void MarkPopClass(hx::MarkContext *__inCtx)
 {
    if (gCollectTrace)
       __inCtx->PopClass();
@@ -684,12 +684,12 @@ void MarkPopClass(HX_MARK_PARAMS)
 
 
 
-void MarkAlloc(void *inPtr HX_MARK_ADD_PARAMS)
+void MarkAlloc(void *inPtr,hx::MarkContext *__inCtx)
 {
    MARK_ROWS
 }
 
-void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS)
+void MarkObjectAlloc(hx::Object *inPtr,hx::MarkContext *__inCtx)
 {
    MARK_ROWS
 
@@ -705,7 +705,7 @@ void MarkObjectAlloc(hx::Object *inPtr HX_MARK_ADD_PARAMS)
    #ifdef HXCPP_DEBUG
       // Recursive mark so stack stays intact..
       if (gCollectTrace)
-         inPtr->__Mark(HX_MARK_ARG);
+         inPtr->__Mark(__inCtx);
       else
    #endif
 
@@ -1528,7 +1528,7 @@ public:
    }
 
 
-   void Mark(HX_MARK_PARAMS)
+   void Mark(hx::MarkContext *__inCtx)
    {
       if (!mTopOfStack)
          return;
@@ -1544,20 +1544,20 @@ public:
       #ifdef HXCPP_DEBUG
       MarkPushClass("Stack",__inCtx);
       MarkSetMember("Stack",__inCtx);
-      MarkConservative(mBottomOfStack, mTopOfStack HX_MARK_ADD_ARG);
+      MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
       MarkSetMember("Registers",__inCtx);
-      MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) HX_MARK_ADD_ARG);
+      MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) , __inCtx);
       MarkPopClass(__inCtx);
       #else
-      MarkConservative(mBottomOfStack, mTopOfStack HX_MARK_ADD_ARG);
-      MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) HX_MARK_ADD_ARG);
+      MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
+      MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) , __inCtx);
       #endif
 
       //printf("marked\n");
       Reset();
    }
 
-   void MarkConservative(int *inBottom, int *inTop HX_MARK_ADD_PARAMS)
+   void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    {
       //printf("MarkConservative....\n");
       void *prev = 0;
@@ -1673,9 +1673,9 @@ void ReleaseFromSafe(LocalAllocator *inAlloc)
    inAlloc->ReleaseFromSafe();
 }
 
-void MarkLocalAlloc(LocalAllocator *inAlloc HX_MARK_ADD_PARAMS)
+void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx)
 {
-   inAlloc->Mark(HX_MARK_ARG);
+   inAlloc->Mark(__inCtx);
 }
 
 
