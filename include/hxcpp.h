@@ -42,18 +42,6 @@ typedef  int64_t  __int64;
 #endif
 
 
-#ifdef HXCPP_SET_PROP
-#define HXCPP_EXTRA_FIELD_DECL ,bool inCallProp
-#define HXCPP_EXTRA_FIELD_CALL ,inCallProp
-#define HXCPP_EXTRA_FIELD_TRUE ,true
-#else
-#define HXCPP_EXTRA_FIELD_DECL
-#define HXCPP_EXTRA_FIELD_CALL
-#define HXCPP_EXTRA_FIELD_TRUE
-#endif
-
-
-
 typedef char HX_CHAR;
 
 #define HX_STRINGI(s,len) ::String( ("\xff\xff\xff\xff" s) + 4 ,len)

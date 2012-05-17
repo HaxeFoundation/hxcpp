@@ -40,49 +40,49 @@ public:
 
    Dynamic operator=(const Dynamic &inRHS)
    {
-      return mObject->__SetField(mName,inRHS HXCPP_EXTRA_FIELD_TRUE);
+      return mObject->__SetField(mName,inRHS,true );
    }
-   inline operator Dynamic() const { return mObject ? mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE) : null(); }
-   inline operator double() const { return mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE); }
-   inline operator float() const { return mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE); }
-   inline operator int() const { return mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE); }
+   inline operator Dynamic() const { return mObject ? mObject->__Field(mName,true) : null(); }
+   inline operator double() const { return mObject->__Field(mName,true); }
+   inline operator float() const { return mObject->__Field(mName,true); }
+   inline operator int() const { return mObject->__Field(mName,true); }
 
 
    // post-increment
    inline double operator++(int)
    {
-      double d = mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE)->__ToDouble();
-      mObject->__SetField(mName,d+1 HXCPP_EXTRA_FIELD_TRUE);
+      double d = mObject->__Field(mName,true)->__ToDouble();
+      mObject->__SetField(mName,d+1,true);
       return d;
    }
    // pre-increment
    inline double operator++()
    {
-      double d = mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE)->__ToDouble() + 1;
-      mObject->__SetField(mName,d HXCPP_EXTRA_FIELD_TRUE);
+      double d = mObject->__Field(mName,true)->__ToDouble() + 1;
+      mObject->__SetField(mName,d,true);
       return d;
    }
    // post-decrement
    inline double operator--(int)
    {
-      double d = mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE)->__ToDouble();
-      mObject->__SetField(mName,d-1 HXCPP_EXTRA_FIELD_TRUE);
+      double d = mObject->__Field(mName,true)->__ToDouble();
+      mObject->__SetField(mName,d-1,true);
       return d;
    }
    // pre-decrement
    inline double operator--()
    {
-      double d = mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE)->__ToDouble() - 1;
-      mObject->__SetField(mName,d HXCPP_EXTRA_FIELD_TRUE);
+      double d = mObject->__Field(mName,true)->__ToDouble() - 1;
+      mObject->__SetField(mName,d, true);
       return d;
    }
-   bool operator !() { return ! mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE)->__ToInt(); }
-   int operator ~() { return ~ mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE)->__ToInt(); }
+   bool operator !() { return ! mObject->__Field(mName, true)->__ToInt(); }
+   int operator ~() { return ~ mObject->__Field(mName, true)->__ToInt(); }
 
    inline bool operator==(const null &) const { return !mObject; }
    inline bool operator!=(const null &) const { return mObject; }
 
-   double operator -() { return - mObject->__Field(mName HXCPP_EXTRA_FIELD_TRUE)->__ToDouble(); }
+   double operator -() { return - mObject->__Field(mName, true)->__ToDouble(); }
 
 	bool HasPointer() const { return mObject; }
 

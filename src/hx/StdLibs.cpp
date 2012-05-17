@@ -136,13 +136,13 @@ void __trace(Dynamic inObj, Dynamic inData)
    #else
    printf("%s:%d: %s\n",
    #endif
-               inData==null() ? "?" : inData->__Field( HX_CSTRING("fileName") HXCPP_EXTRA_FIELD_TRUE) ->toString().__s,
-               inData==null() ? 0 : inData->__Field( HX_CSTRING("lineNumber") HXCPP_EXTRA_FIELD_TRUE)->__ToInt(),
+               inData==null() ? "?" : inData->__Field( HX_CSTRING("fileName") , true) ->toString().__s,
+               inData==null() ? 0 : inData->__Field( HX_CSTRING("lineNumber") , true)->__ToInt(),
                inObj.GetPtr() ? inObj->toString().__s : "null" );
 #else
    printf( "%S:%d: %S\n",
-               inData->__Field( HX_CSTRING("fileName") HXCPP_EXTRA_FIELD_TRUE)->__ToString().__s,
-               inData->__Field( HX_CSTRING("lineNumber") HXCPP_EXTRA_FIELD_TRUE)->__ToInt(),
+               inData->__Field( HX_CSTRING("fileName") , true)->__ToString().__s,
+               inData->__Field( HX_CSTRING("lineNumber") , true)->__ToInt(),
                inObj.GetPtr() ? inObj->toString().__s : L"null" );
 #endif
 }

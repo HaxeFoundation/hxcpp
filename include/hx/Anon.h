@@ -37,9 +37,9 @@ public:
    static Dynamic __CreateEmpty() { return Anon(new hx::Anon_obj); }
    static Dynamic __Create(DynamicArray inArgs);
    static void __boot();
-   Dynamic __Field(const String &inString HXCPP_EXTRA_FIELD_DECL);
+   Dynamic __Field(const String &inString ,bool inCallProp);
    bool __HasField(const String &inString);
-   Dynamic __SetField(const String &inString,const Dynamic &inValue HXCPP_EXTRA_FIELD_DECL);
+   Dynamic __SetField(const String &inString,const Dynamic &inValue ,bool inCallProp);
    virtual void __GetFields(Array<String> &outFields);
 	hx::FieldMap *__GetFieldMap() { return mFields; }
 

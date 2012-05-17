@@ -79,10 +79,10 @@ public:
    virtual const char * __CStr() const;
    virtual String toString();
    virtual bool __HasField(const String &inString);
-   virtual Dynamic __Field(const String &inString HXCPP_EXTRA_FIELD_DECL);
+   virtual Dynamic __Field(const String &inString, bool inCallProp);
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
-   virtual Dynamic __SetField(const String &inField,const Dynamic &inValue HXCPP_EXTRA_FIELD_DECL);
+   virtual Dynamic __SetField(const String &inField,const Dynamic &inValue, bool inCallProp);
    virtual void  __SetThis(Dynamic inThis);
    virtual Dynamic __Run(const Array<Dynamic> &inArgs);
    virtual hx::FieldMap *__GetFieldMap();

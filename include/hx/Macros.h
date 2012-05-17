@@ -13,9 +13,9 @@
    static hx::ObjectPtr<Class_obj> __mClass; \
    hx::ObjectPtr<Class_obj > __GetClass() const { return __mClass; } \
    static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
-   Dynamic __Field(const ::String &inString HXCPP_EXTRA_FIELD_DECL); \
+   Dynamic __Field(const ::String &inString, bool inCallProp); \
    void __GetFields(Array< ::String> &outFields); \
-   Dynamic __SetField(const ::String &inString,const Dynamic &inValue HXCPP_EXTRA_FIELD_DECL); \
+   Dynamic __SetField(const ::String &inString,const Dynamic &inValue, bool inCallProp); \
    virtual int __GetType() const { return vtClass; } \
    inline operator super *() { return this; } 
 
@@ -27,7 +27,7 @@
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
    HX_DO_RTTI_BASE  \
-   Dynamic __Field(const ::String &inString HXCPP_EXTRA_FIELD_DECL); \
+   Dynamic __Field(const ::String &inString, bool inCallProp); \
    static int __FindIndex(::String inName); \
    static int __FindArgCount(::String inName);
 

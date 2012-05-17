@@ -21,7 +21,7 @@ void Anon_obj::__Mark(HX_MARK_PARAMS)
 
 
 
-Dynamic Anon_obj::__Field(const String &inString HXCPP_EXTRA_FIELD_DECL)
+Dynamic Anon_obj::__Field(const String &inString, bool inCallProp)
 {
    Dynamic *v = mFields->Find(inString);
    if (!v)
@@ -41,7 +41,7 @@ bool Anon_obj::__Remove(String inKey)
 }
 
 
-Dynamic Anon_obj::__SetField(const String &inString,const Dynamic &inValue HXCPP_EXTRA_FIELD_DECL)
+Dynamic Anon_obj::__SetField(const String &inString,const Dynamic &inValue, bool inCallProp)
 {
    mFields->Insert(inString,inValue);
    return inValue;
