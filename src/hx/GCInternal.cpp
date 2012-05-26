@@ -56,6 +56,8 @@ static int gCollectTraceCount = 0;
 #endif
 
 
+enum { GC_ALLOCATE_AFTER_COLLECT = 1 };
+
 
 static int sgTimeToNextTableUpdate = 0;
 
@@ -960,7 +962,8 @@ public:
    //  Making it virtual prevents the overhead.
    virtual BlockData * GetRecycledBlock(int inRequiredRows)
    {
-      CheckCollect();
+      if (!GC_ALLOCATE_AFTER_COLLECT)
+        CheckCollect();
 
       if (sMultiThreadMode)
       {
@@ -970,33 +973,37 @@ public:
       }
 
       BlockData *result = 0;
-      if (mNextRecycled < mRecycledBlock.size())
+
+      for(int pass= GC_ALLOCATE_AFTER_COLLECT?0:1 ;pass<2 && result==0;pass++)
       {
-         if (mRecycledBlock[mNextRecycled]->getFreeInARow()>=inRequiredRows)
+         if (mNextRecycled < mRecycledBlock.size())
          {
-            result = mRecycledBlock[mNextRecycled++];
-         }
-         else
-         {
-            for(int block = mNextRecycled+1; block<mRecycledBlock.size(); block++)
+            if (mRecycledBlock[mNextRecycled]->getFreeInARow()>=inRequiredRows)
             {
-               if (mRecycledBlock[block]->getFreeInARow()>=inRequiredRows)
+               result = mRecycledBlock[mNextRecycled++];
+            }
+            else
+            {
+               for(int block = mNextRecycled+1; block<mRecycledBlock.size(); block++)
                {
-                  result = mRecycledBlock[block];
-                  mRecycledBlock.erase(block);
+                  if (mRecycledBlock[block]->getFreeInARow()>=inRequiredRows)
+                  {
+                     result = mRecycledBlock[block];
+                     mRecycledBlock.erase(block);
+                  }
                }
+            }
+
+            if (result)
+            {
+               mDistributedSinceLastCollect +=  result->GetFreeData();
+               result->ClearRecycled();
             }
          }
 
-         if (result)
-         {
-            mDistributedSinceLastCollect +=  result->GetFreeData();
-            result->ClearRecycled();
-         }
+         if (!result)
+            result = GetEmptyBlock(pass==0);
       }
-
-      if (!result)
-         result = GetEmptyBlock();
 
       if (sMultiThreadMode)
          gThreadStateChangeLock->Unlock();
@@ -1004,10 +1011,16 @@ public:
       return result;
    }
 
-   BlockData *GetEmptyBlock()
+   BlockData *GetEmptyBlock(bool inTryCollect)
    {
       if (mNextEmpty >= mEmptyBlocks.size())
       {
+         if (inTryCollect)
+         {
+            bool want_more = Collect();
+            if (!want_more)
+               return 0;
+         }
          // Allocate some more blocks...
          // Using simple malloc for now, so allocate a big chuck in case we have to
          //  waste space by doing block-aligning
@@ -1048,11 +1061,12 @@ public:
          (*i)->ClearRowMarks();
    }
 
-   void Collect()
+   bool Collect()
    {
       #ifdef ANDROID
       //__android_log_print(ANDROID_LOG_ERROR, "hxcpp", "Collect...");
       #endif
+      //printf("Collect %d/%d\n", (int)mDistributedSinceLastCollect, (int)mTotalAfterLastCollect);
      
       LocalAllocator *this_local = 0;
       if (sMultiThreadMode)
@@ -1064,7 +1078,7 @@ public:
          if (hx::gPauseForCollect)
          {
             gThreadStateChangeLock->Unlock();
-            return;
+            return false;
          }
 
          hx::gPauseForCollect = true;
@@ -1183,8 +1197,12 @@ public:
       mTotalAfterLastCollect = MemUsage();
 
       // GCLOG("Alloced = %d, Empty ratio %f, pinned = %d\n", mDistributedSinceLastCollect, (float)mEmptyBlocks.size()/mAllBlocks.size(), pinned );
-      //printf("Using %d\n", mTotalAfterLastCollect);
+      //printf("Using %d, blocks %d\n", mTotalAfterLastCollect, mAllBlocks.size());
       mDistributedSinceLastCollect = 0;
+
+      int free_rows = mAllBlocks.size()*IMMIX_USEFUL_LINES - mRowsInUse;
+      // Aim for 50% free space...
+      bool want_more = free_rows < mRowsInUse;
 
       if (sMultiThreadMode)
       {
@@ -1199,16 +1217,20 @@ public:
       #ifdef ANDROID
       //__android_log_print(ANDROID_LOG_INFO, "hxcpp", "Collect Done");
       #endif
+
+      return want_more;
    }
 
-   void CheckCollect()
+   bool CheckCollect()
    {
+      bool collected = false;
       while (sgAllocInit && sgInternalEnable && mDistributedSinceLastCollect>(1<<20) &&
           mDistributedSinceLastCollect>mTotalAfterLastCollect)
       {
-         // printf("Collect %d/%d\n", (int)mDistributedSinceLastCollect, (int)mTotalAfterLastCollect);
+         collected = true;
          Collect();
       }
+      return collected;
    }
 
    size_t MemUsage()
