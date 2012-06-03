@@ -377,7 +377,7 @@ String String::__URLEncode() const
    int spaces = 0;
    int utf8_chars = bytes->__length();
    for(int i=0;i<utf8_chars;i++)
-      if ( !isalnum(bytes[i]) && bytes[i]!=' ' && bytes[i]!='-')
+      if ( !isalnum(bytes[i]) && bytes[i]!=' ' && bytes[i]!='-' && bytes[i]!='_' && bytes[i]!='.')
          extra++;
       else if (bytes[i]==' ')
          spaces++;
@@ -397,7 +397,7 @@ String String::__URLEncode() const
          *ptr++ = '2';
          *ptr++ = '0';
       }
-      else if ( !isalnum(bytes[i]) && bytes[i]!='-' )
+      else if ( !isalnum(bytes[i]) && bytes[i]!='-' && bytes[i]!='_' && bytes[i]!='.' )
       {
          static char hex[] = "0123456789ABCDEF";
          unsigned char b = bytes[i];
