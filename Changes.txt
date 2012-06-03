@@ -1,7 +1,18 @@
-2.09.1
+2.09.2
 ------------------------------------------------------------
 * Resolve library paths when launching Mac apps from Finder
 * Compile fix for the BlackBerry toolchain
+* Fix interface comparison
+* Fix api_val_array_value for NekoApi
+* Add workaround for optional Strings in interfaces 
+* Tweak the timing og the GC run
+* Remove setProperty conditional compiles
+* String charCodeAt only returns positive values
+* Fix modulo for negative numbers
+* Remove extra space from array output
+* Treat '.' and '_' as literals in urlEncode
+* Dynamically generated, 0 param, enum instances match the static version
+
 
 2.09
 ------------------------------------------------------------
