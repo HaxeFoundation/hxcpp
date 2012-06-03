@@ -52,7 +52,7 @@ static int gCollectTraceCount = 0;
 #ifdef ANDROID
 #define GCLOG(...) __android_log_print(ANDROID_LOG_INFO, "gclog", __VA_ARGS__)
 #else
-#define GCLOG(...) printf(__VA_ARGS__)
+#define GCLOG printf
 #endif
 
 
