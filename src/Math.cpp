@@ -141,10 +141,7 @@ namespace hx
 
 double DoubleMod(double inLHS,double inRHS)
 {
-   if (inRHS==0) return 0;
-   double divs = inLHS/inRHS;
-   double lots = divs<0 ? ::floor(-divs) : ::floor(divs);
-   return inLHS - lots*inRHS;
+   return fmod(inLHS,inRHS);
 }
 
 }

@@ -133,7 +133,7 @@ public:
    inline int cca(int inPos) const
 	{
 		if ((unsigned)inPos>=length) return 0;
-		return __s[inPos];
+		return ((unsigned char *)__s)[inPos];
 	}
 
 

@@ -60,7 +60,7 @@ String ArrayBase::toString()
       return String( (const char *) mBase, length);
    }
 
-   return HX_CSTRING("[") + join(HX_CSTRING(", ")) + HX_CSTRING("]");
+   return HX_CSTRING("[") + join(HX_CSTRING(",")) + HX_CSTRING("]");
 }
 
 void ArrayBase::__SetSize(int inSize)

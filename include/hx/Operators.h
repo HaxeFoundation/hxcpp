@@ -111,7 +111,7 @@ inline L& ShrEq(L &inLHS, R inRHS) { inLHS = (int)inLHS >> (int)inRHS; return in
 template<typename L, typename R>
 inline L& UShrEq(L &inLHS, R inRHS) { inLHS = hx::UShr(inLHS,inRHS); return inLHS; }
 template<typename L, typename R>
-inline L& ModEq(L &inLHS, R inRHS) { inLHS = (int)inLHS % (int)inRHS; return inLHS; }
+inline L& ModEq(L &inLHS, R inRHS) { inLHS = DoubleMod(inLHS,inRHS); return inLHS; }
 
 #ifdef __GNUC__
 template<typename R>
@@ -135,7 +135,7 @@ inline hx::FieldRef ShrEq(hx::FieldRef inLHS, R inRHS) { inLHS = (int)inLHS >> (
 template<typename R>
 inline hx::FieldRef UShrEq(hx::FieldRef inLHS, R inRHS) { inLHS = hx::UShr(inLHS,inRHS); return inLHS; }
 template<typename R>
-inline hx::FieldRef ModEq(hx::FieldRef inLHS, R inRHS) { inLHS = (int)inLHS % (int)inRHS; return inLHS; }
+inline hx::FieldRef ModEq(hx::FieldRef inLHS, R inRHS) { inLHS = DoubleMod(inLHS,inRHS); return inLHS; }
 
 
 template<typename R>
@@ -159,7 +159,7 @@ inline hx::IndexRef ShrEq(hx::IndexRef inLHS, R inRHS) { inLHS = (int)inLHS >> (
 template<typename R>
 inline hx::IndexRef UShrEq(hx::IndexRef inLHS, R inRHS) { inLHS = hx::UShr(inLHS,inRHS); return inLHS; }
 template<typename R>
-inline hx::IndexRef ModEq(hx::IndexRef inLHS, R inRHS) { inLHS = (int)inLHS % (int)inRHS; return inLHS; }
+inline hx::IndexRef ModEq(hx::IndexRef inLHS, R inRHS) { inLHS = DoubleMod(inLHS,inRHS); return inLHS; }
 
 
 #endif // __GNUC__
