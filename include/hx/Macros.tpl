@@ -182,6 +182,7 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
    int count =  enum_obj::__FindArgCount(inName); \
    int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
    if (args!=count)  throw HX_INVALID_ARG_COUNT; \
+   if (args==0) return (new enum_obj())->__Field(inName,true); \
    return hx::CreateEnum<enum_obj >(inName,idx,inArgs); \
 }
 
