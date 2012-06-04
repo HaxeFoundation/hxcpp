@@ -16,14 +16,22 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
                     Class *inSuperClass, ConstructEnumFunc inConstructEnum,
-                    MarkFunc inMarkFunc)
+                    MarkFunc inMarkFunc
+                    #ifdef HXCPP_VISIT_ALLOCS
+                    ,VisitFunc inVisitFunc
+                    #endif
+                    )
 {
    if (sClassMap==0)
       sClassMap = new ClassMap;
 
    Class_obj *obj = new Class_obj(inClassName, inStatics, inMembers,
                                   inConstructEmpty, inConstructArgs, inSuperClass,
-                                  inConstructEnum, inCanCast, inMarkFunc);
+                                  inConstructEnum, inCanCast, inMarkFunc
+                                  #ifdef HXCPP_VISIT_ALLOCS
+                                  ,inVisitFunc
+                                  #endif
+                                  );
    Class c(obj);
    (*sClassMap)[inClassName] = c;
    return c;
@@ -41,7 +49,11 @@ using namespace hx;
 Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMembers[],
              ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
              Class *inSuperClass,ConstructEnumFunc inConstructEnum,
-             CanCastFunc inCanCast, MarkFunc inFunc)
+             CanCastFunc inCanCast, MarkFunc inFunc
+             #ifdef HXCPP_VISIT_ALLOCS
+             ,VisitFunc inVisitFunc
+             #endif
+             )
 {
    mName = inClassName;
    mSuper = inSuperClass;
@@ -49,6 +61,9 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
    mConstructArgs = inConstructArgs;
    mConstructEnum = inConstructEnum;
    mMarkFunc = inFunc;
+   #ifdef HXCPP_VISIT_ALLOCS
+   mVisitFunc = inVisitFunc;
+   #endif
    if (inStatics)
    {
       mStatics = Array_obj<String>::__new(0,0);
@@ -80,6 +95,15 @@ void Class_obj::__Mark(hx::MarkContext *__inCtx)
    HX_MARK_MEMBER(mMembers);
 }
 
+#ifdef HXCPP_VISIT_ALLOCS
+void Class_obj::__Visit(hx::VisitContext *__inCtx)
+{
+   HX_VISIT_MEMBER(mName);
+   HX_VISIT_MEMBER(mStatics);
+   HX_VISIT_MEMBER(mMembers);
+}
+#endif
+
 Class Class_obj__mClass;
 
 Class  Class_obj::__GetClass() const { return Class_obj__mClass; }
@@ -94,10 +118,15 @@ Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class
 void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 {
    if (mMarkFunc)
-   {
        mMarkFunc(__inCtx);
-   }
 }
+#ifdef HXCPP_VISIT_ALLOCS
+void Class_obj::VisitStatics(hx::VisitContext *__inCtx)
+{
+   if (mVisitFunc)
+       mVisitFunc(__inCtx);
+}
+#endif
 
 Class Class_obj::Resolve(String inName)
 {
@@ -176,6 +205,7 @@ bool Class_obj::__IsEnum()
 
 namespace hx
 {
+
 void MarkClassStatics(hx::MarkContext *__inCtx)
 {
    #ifdef HXCPP_DEBUG
@@ -204,6 +234,26 @@ void MarkClassStatics(hx::MarkContext *__inCtx)
    MarkPopClass(__inCtx);
    #endif
 }
+
+#ifdef HXCPP_VISIT_ALLOCS
+
+void VisitClassStatics(hx::VisitContext *__inCtx)
+{
+   ClassMap::iterator end = sClassMap->end();
+   for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
+   {
+      // all strings should be constants anyhow - should not be needed?
+      HX_VISIT_MEMBER(i->first);
+
+      HX_VISIT_MEMBER(i->second.mPtr);
+
+      i->second->VisitStatics(__inCtx);
+   }
+}
+
+#endif
+
+
 }
 
 

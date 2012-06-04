@@ -18,6 +18,7 @@ bool FieldMapGet(hx::FieldMap *inMap, int inID, ::Dynamic &outValue);
 void FieldMapSet(hx::FieldMap *inMap, const ::String &inName, const ::Dynamic &inValue);
 void FieldMapAppendFields(hx::FieldMap *inMap,::Array< ::String> &outFields);
 void FieldMapMark(hx::FieldMap *inMap,hx::MarkContext *__inCtx);
+void FieldMapVisit(hx::FieldMap **inMap,hx::VisitContext *__inCtx);
 
 
 class Anon_obj : public hx::Object
@@ -50,6 +51,9 @@ public:
 
    hx::Anon_obj *Add(const String &inName,const Dynamic &inValue,bool inSetThisPointer=true);
 	void __Mark(hx::MarkContext *__inCtx);
+   #ifdef HXCPP_VISIT_ALLOCS
+	void __Visit(hx::VisitContext *__inCtx);
+   #endif
 
    String __ToString() const;
    String toString();

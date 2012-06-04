@@ -3,10 +3,12 @@
 
 
 #define HX_MARK_ARG __inCtx
-#define HX_MARK_ADD_ARG ,__inCtx
+//#define HX_MARK_ADD_ARG ,__inCtx
 #define HX_MARK_PARAMS hx::MarkContext *__inCtx
-#define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
+//#define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
 
+#define HX_VISIT_ARG __inCtx
+#define HX_VISIT_PARAMS hx::VisitContext *__inCtx
 
 // Tell compiler the extra functions are supported
 #define HXCPP_GC_FUNCTIONS_1
@@ -63,6 +65,9 @@ void GCInit();
 void MarkClassStatics(hx::MarkContext *__inCtx);
 void LibMark();
 void GCMark(Object *inPtr);
+#ifdef HXCPP_VISIT_ALLOCS
+void VisitClassStatics(hx::VisitContext *__inCtx);
+#endif
 
 // This will be GC'ed
 void *NewGCBytes(void *inData,int inSize);
@@ -98,19 +103,6 @@ void GCPrepareMultiThreaded();
 
 void PrologDone();
 
-struct InternalFinalizer
-{
-	InternalFinalizer(hx::Object *inObj);
-
-	void Mark() { mUsed=true; }
-	void Detach();
-
-	bool      mUsed;
-	bool      mValid;
-	finalizer mFinalizer;
-	hx::Object  *mObject;
-};
-
 
 void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx);
 void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx);
@@ -120,6 +112,9 @@ void MarkSetMember(const char *inName ,hx::MarkContext *__inCtx);
 void MarkPushClass(const char *inName ,hx::MarkContext *__inCtx);
 void MarkPopClass(hx::MarkContext *__inCtx);
 #endif
+
+// Make sure we can do a conversion to hx::Object **
+inline void EnsureObjPtr(hx::Object *) { }
 
 } // end namespace hx
 
@@ -149,6 +144,44 @@ void MarkPopClass(hx::MarkContext *__inCtx);
    if (ioPtr && (((int *)ioPtr)[-1] != HX_GC_CONST_STRING) ) hx::MarkAlloc((void *)ioPtr, __inCtx );
 
 #define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx ); }
+
+
+
+
+#define HX_VISIT_MEMBER_NAME(x,name) hx::VisitMember(x, __inCtx )
+#define HX_VISIT_MEMBER(x) hx::VisitMember(x, __inCtx )
+
+#define HX_VISIT_OBJECT(ioPtr) \
+  { hx::EnsureObjPtr(ioPtr); if (ioPtr) __inCtx->visitObject( (hx::Object **)&ioPtr); }
+
+#define HX_VISIT_STRING(ioPtr) \
+   if (ioPtr && (((int *)ioPtr)[-1] != HX_GC_CONST_STRING) ) __inCtx->visitAlloc((void **)&ioPtr);
+
+#define HX_VISIT_ARRAY(ioPtr) { if (ioPtr) __inCtx->visitAlloc((void **)&ioPtr); }
+
+
+
+namespace hx
+{
+
+struct InternalFinalizer
+{
+	InternalFinalizer(hx::Object *inObj);
+
+	void Mark() { mUsed=true; }
+   #ifdef HXCPP_VISIT_ALLOCS
+	void Visit(VisitContext *__inCtx) { HX_VISIT_OBJECT(mObject); }
+   #endif
+	void Detach();
+
+	bool      mUsed;
+	bool      mValid;
+	finalizer mFinalizer;
+	hx::Object  *mObject;
+};
+
+
+} // end namespace hx
 
 
 #endif

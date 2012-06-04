@@ -41,6 +41,9 @@ class  EnumBase_obj : public hx::Object
       static void __boot();
 
       void __Mark(hx::MarkContext *__inCtx);
+      #ifdef HXCPP_VISIT_ALLOCS
+      void __Visit(hx::VisitContext *__inCtx);
+      #endif
 
       static hx::ObjectPtr<EnumBase_obj> Resolve(String inName);
       Dynamic __Param(int inID) { return mArgs[inID]; }

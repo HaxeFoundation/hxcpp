@@ -253,9 +253,16 @@ struct RBTree {
 	void Iterate(VISITOR &inVisitor)
 	{
 		if (root)
+      {
+         inVisitor.VisitNode((void **)&root);
 			root->Visit(inVisitor);
+      }
+
 		if (tmp_head)
+      {
+         inVisitor.VisitNode((void **)&tmp_head);
 			tmp_head->Visit(inVisitor);
+      }
 	}
  
  
@@ -290,10 +297,16 @@ protected:
 		void Visit(VISITOR &inVisitor)
 		{
 			if (link[0])
+         {
+            inVisitor.VisitNode((void **)&link[0]);
 				link[0]->Visit(inVisitor);
-			inVisitor.Visit(this,key,value);
+         }
 			if (link[1])
+         {
+            inVisitor.VisitNode((void **)&link[1]);
 				link[1]->Visit(inVisitor);
+         }
+			inVisitor.VisitValue(key,value);
 		}
  
  

@@ -32,6 +32,34 @@ template<> inline void MarkMember<String>(String &outT,hx::MarkContext *__inCtx)
 template<> inline void MarkMember<Void>(Void &outT,hx::MarkContext *__inCtx) {  }
 
 
+
+template<typename T> inline void VisitMember(T &outT,hx::VisitContext *__inCtx) { }
+
+template<typename T> inline void VisitMember(hx::ObjectPtr<T> &outT,hx::VisitContext *__inCtx)
+{
+	HX_VISIT_OBJECT(outT.mPtr);
+}
+template<> inline void VisitMember(Dynamic &outT,hx::VisitContext *__inCtx)
+{
+	HX_VISIT_OBJECT(outT.mPtr);
+}
+template<typename T> inline void VisitMember(Array<T> &outT,hx::VisitContext *__inCtx)
+{
+	HX_VISIT_OBJECT(outT.mPtr);
+}
+template<> inline void VisitMember<int>(int &outT,hx::VisitContext *__inCtx) {  }
+template<> inline void VisitMember<bool>(bool &outT,hx::VisitContext *__inCtx) {  }
+template<> inline void VisitMember<double>(double &outT,hx::VisitContext *__inCtx) {  }
+template<> inline void VisitMember<float>(float &outT,hx::VisitContext *__inCtx) {  }
+template<> inline void VisitMember<String>(String &outT,hx::VisitContext *__inCtx)
+{
+   HX_VISIT_STRING(outT.__s);
+}
+template<> inline void VisitMember<Void>(Void &outT,hx::VisitContext *__inCtx) {  }
+
+
+
+
 // Template used to register and initialise the statics in the one call.
 //  Do nothing...
 template<typename T> inline T &Static(T &t) {  return t; }

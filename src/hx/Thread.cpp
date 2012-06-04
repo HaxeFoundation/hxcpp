@@ -38,6 +38,15 @@ struct Deque : public Array_obj<Dynamic>
 		mFinalizer->Mark();
 	}
 
+   #ifdef HXCPP_VISIT_ALLOCS
+  	void __Visit(hx::VisitContext *__inCtx)
+	{
+		Array_obj<Dynamic>::__Visit(__inCtx);
+		mFinalizer->Visit(__inCtx);
+	}
+   #endif
+
+
 	#ifdef HX_WINDOWS
 	MyMutex     mMutex;
 	void PushBack(Dynamic inValue)
@@ -189,6 +198,16 @@ public:
 		if (mDeque)
 			HX_MARK_OBJECT(mDeque);
 	}
+   #ifdef HXCPP_VISIT_ALLOCS
+  	void __Visit(hx::VisitContext *__inCtx)
+	{
+		HX_VISIT_MEMBER(mFunction);
+		HX_VISIT_MEMBER(mTLS);
+		if (mDeque)
+			HX_VISIT_OBJECT(mDeque);
+	}
+   #endif
+
 
 	Array<Dynamic> mTLS;
 	MySemaphore *mSemaphore;
@@ -306,6 +325,11 @@ public:
 	}
 
 	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
+
+   #ifdef HXCPP_VISIT_ALLOCS
+	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+   #endif
+
 	hx::InternalFinalizer *mFinalizer;
 
 	static void clean(hx::Object *inObj)
@@ -378,6 +402,11 @@ public:
 	}
 
 	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
+
+   #ifdef HXCPP_VISIT_ALLOCS
+	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+   #endif
+
 	hx::InternalFinalizer *mFinalizer;
 
 	#ifdef HX_WINDOWS

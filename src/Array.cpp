@@ -202,6 +202,7 @@ struct ArrayBase_##func : public hx::Object \
    void *__GetHandle() const { return mThis; } \
    int __ArgCount() const { return ARG_C; } \
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
       return mThis->__##func(array_list); return Dynamic(); \

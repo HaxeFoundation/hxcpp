@@ -63,9 +63,12 @@ struct Marker
 	Marker(hx::MarkContext *__inCtx) { this->__inCtx = __inCtx;  }
 	hx::MarkContext *__inCtx;
 
-	void Visit(void *inPtr, const String &inStr, Dynamic &inDyn)
+	void VisitNode(void **inPtr)
+   {
+		hx::MarkAlloc(*inPtr, __inCtx);
+   }
+	void VisitValue(const String &inStr, Dynamic &inDyn)
 	{
-		hx::MarkAlloc(inPtr, __inCtx);
 		HX_MARK_STRING(inStr.__s);
 		if (inDyn.mPtr)
       {
@@ -87,6 +90,37 @@ void FieldMapMark(FieldMap *inMap,hx::MarkContext *__inCtx)
 	}
 }
 
+#ifdef HXCPP_VISIT_ALLOCS
+
+
+struct Visitor
+{
+	Visitor(hx::VisitContext *__inCtx) { this->__inCtx = __inCtx;  }
+	hx::VisitContext *__inCtx;
+
+	void VisitNode(void **inPtr)
+	{
+		__inCtx->visitAlloc(inPtr);
+	}
+
+	void VisitValue(const String &inStr, Dynamic &inDyn)
+	{
+		HX_VISIT_STRING(inStr.__s);
+		if (inDyn.mPtr)
+		   HX_VISIT_OBJECT(inDyn.mPtr);
+	}
+};
+
+void FieldMapVisit(FieldMap **inMap,hx::VisitContext *__inCtx)
+{
+	if (*inMap)
+	{
+		__inCtx->visitAlloc((void **)inMap);
+		Visitor v(__inCtx);
+		(*inMap)->Iterate(v);
+	}
+}
+#endif
 
 
 

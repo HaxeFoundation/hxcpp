@@ -58,6 +58,9 @@ public:
 
    //virtual void *__root();
    virtual void __Mark(hx::MarkContext *__inCtx) { }
+   #ifdef HXCPP_VISIT_ALLOCS
+   virtual void __Visit(hx::VisitContext *__inCtx) { }
+   #endif
    virtual bool __Is(hx::Object *inClass) const { return true; }
    virtual hx::Object *__ToInterface(const type_info &inInterface) { return 0; }
    virtual hx::Object *__GetRealObject() { return this; }

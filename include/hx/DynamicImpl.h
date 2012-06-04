@@ -28,6 +28,9 @@ struct CMemberFunction0 : public hx::Object
    int __ArgCount() const { return 0; } 
    ::String __ToString() const{ return HX_CSTRING("#function0"); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
+   #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
@@ -111,6 +114,9 @@ struct CMemberFunction1 : public hx::Object
    int __ArgCount() const { return 1; } 
    ::String __ToString() const{ return HX_CSTRING("#function1"); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
+   #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
@@ -194,6 +200,9 @@ struct CMemberFunction2 : public hx::Object
    int __ArgCount() const { return 2; } 
    ::String __ToString() const{ return HX_CSTRING("#function2"); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
+   #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
@@ -277,6 +286,9 @@ struct CMemberFunction3 : public hx::Object
    int __ArgCount() const { return 3; } 
    ::String __ToString() const{ return HX_CSTRING("#function3"); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
+   #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
@@ -360,6 +372,9 @@ struct CMemberFunction4 : public hx::Object
    int __ArgCount() const { return 4; } 
    ::String __ToString() const{ return HX_CSTRING("#function4"); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
+   #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
@@ -443,6 +458,9 @@ struct CMemberFunction5 : public hx::Object
    int __ArgCount() const { return 5; } 
    ::String __ToString() const{ return HX_CSTRING("#function5"); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
+   #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
@@ -636,6 +654,9 @@ struct CMemberFunctionVar : public hx::Object
    int __ArgCount() const { return N; } 
    ::String __ToString() const{ return HX_CSTRING("#vfunction"); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
+   #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 

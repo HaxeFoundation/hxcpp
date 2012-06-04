@@ -19,7 +19,8 @@ class FieldMap : public RBTree<String,Dynamic>
 struct KeyGetter
 {
 	KeyGetter(Array<String> &inArray) : mArray(inArray)  { }
-	void Visit(void *, const String &inStr, const Dynamic &) { mArray->push(inStr); }
+	void VisitNode(void **) { }
+	void VisitValue(const String &inStr, const Dynamic &) { mArray->push(inStr); }
 	Array<String> &mArray;
 };
 

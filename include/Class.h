@@ -46,6 +46,9 @@ typedef Dynamic (*ConstructArgsFunc)(DynamicArray inArgs);
 typedef Dynamic (*ConstructEnumFunc)(String inName,DynamicArray inArgs);
 typedef void (*MarkFunc)(hx::MarkContext *__inCtx);
 typedef bool (*CanCastFunc)(hx::Object *inPtr);
+#ifdef HXCPP_VISIT_ALLOCS
+typedef void (*VisitFunc)(hx::VisitContext *__inCtx);
+#endif
 }
 
 inline bool operator!=(hx::ConstructEnumFunc inFunc,const null &inNull) { return inFunc!=0; }
@@ -57,13 +60,21 @@ public:
    Class_obj(const String &inClassName, String inStatics[], String inMembers[],
              hx::ConstructEmptyFunc inConstructEmpty, hx::ConstructArgsFunc inConstructArgs,
              Class *inSuperClass, hx::ConstructEnumFunc inConstructEnum,
-             hx::CanCastFunc inCanCast, hx::MarkFunc inMarkFunc);
+             hx::CanCastFunc inCanCast, hx::MarkFunc inMarkFunc
+             #ifdef HXCPP_VISIT_ALLOCS
+             , hx::VisitFunc inVisitFunc
+             #endif
+             );
 
    String __ToString() const;
 
    void __Mark(hx::MarkContext *__inCtx);
-
    void MarkStatics(hx::MarkContext *__inCtx);
+
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx);
+   void VisitStatics(hx::VisitContext *__inCtx);
+   #endif
 
 
    // the "Class class"
@@ -96,6 +107,9 @@ public:
 	hx::ConstructEmptyFunc mConstructEmpty;
 	hx::ConstructEnumFunc  mConstructEnum;
 	hx::MarkFunc           mMarkFunc;
+   #ifdef HXCPP_VISIT_ALLOCS
+	hx::VisitFunc           mVisitFunc;
+   #endif
    Array<String>      mStatics;
    Array<String>      mMembers;
 };
@@ -112,7 +126,11 @@ namespace hx
 Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
-                    Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0);
+                    Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0
+                    #ifdef HXCPP_VISIT_ALLOCS
+                    , VisitFunc inVisitFunc=0
+                    #endif
+                    );
 
 template<typename T>
 inline bool TCanCast(hx::Object *inPtr)

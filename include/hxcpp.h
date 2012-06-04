@@ -164,7 +164,18 @@ namespace hx { extern void CriticalError(const String &inError); }
 namespace hx { extern String sNone[]; }
 void __hxcpp_check_overflow(int inVal);
 
-namespace hx { class MarkContext; }
+namespace hx
+{
+class MarkContext;
+
+class VisitContext
+{
+public:
+   virtual void visitObject(hx::Object **ioPtr)=0;
+   virtual void visitAlloc(void **ioPtr)=0;
+};
+
+} // end namespace hx
 
 
 

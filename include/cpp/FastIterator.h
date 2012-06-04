@@ -51,6 +51,14 @@ public:
       HX_MARK_MEMBER_NAME(mHasNext,"mHasNext");
    }
 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_MEMBER_NAME(mNext,"mNext");
+      HX_VISIT_MEMBER_NAME(mHasNext,"mHasNext");
+   }
+   #endif
+
 };
 
 

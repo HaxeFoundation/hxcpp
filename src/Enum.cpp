@@ -40,6 +40,15 @@ void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
    HX_MARK_MEMBER(mArgs);
 }
 
+#ifdef HXCPP_VISIT_ALLOCS
+void EnumBase_obj::__Visit(hx::VisitContext *__inCtx)
+{
+   HX_VISIT_MEMBER(tag);
+   HX_VISIT_MEMBER(mArgs);
+}
+#endif
+
+
 String EnumBase_obj::toString() {
    if (mArgs==null() || mArgs->length==0)
       return tag;

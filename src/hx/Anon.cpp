@@ -19,7 +19,16 @@ void Anon_obj::__Mark(hx::MarkContext *__inCtx)
    }
 }
 
-
+#ifdef HXCPP_VISIT_ALLOCS
+void Anon_obj::__Visit(hx::VisitContext *__inCtx)
+{
+   // We will get mFields=0 here if we collect in the constructor before mFields is assigned
+   if (mFields)
+   {
+      hx::FieldMapVisit(&mFields , __inCtx);
+   }
+}
+#endif
 
 Dynamic Anon_obj::__Field(const String &inString, bool inCallProp)
 {
@@ -59,9 +68,9 @@ Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetTh
 struct Stringer
 {
    Stringer(String &inString) : result(inString), first(true) { }
-   void Visit(void *, const String &inStr, Dynamic &inDyn)
+   void VisitNode(void **) { }
+   void VisitValue(const String &inStr, Dynamic &inDyn)
    {
-
       if (first)
       {
          result += inStr + HX_CSTRING(" => ") + (String)(inDyn);

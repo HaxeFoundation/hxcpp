@@ -40,6 +40,14 @@ public:
          mFinalizer->Mark();
    }
 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      if (mFinalizer)
+         mFinalizer->Visit(__inCtx);
+   }
+   #endif
+
    void SetFinalizer(finalizer inFinalizer)
    {
       if (!inFinalizer)
@@ -717,6 +725,14 @@ public:
       HX_MARK_OBJECT(mNext);
       HX_MARK_OBJECT(mValue);
    }
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_OBJECT(mNext);
+      HX_VISIT_OBJECT(mValue);
+   }
+   #endif
+
    Root_obj *mNext;
    Root_obj *mPrev;
    hx::Object *mValue;

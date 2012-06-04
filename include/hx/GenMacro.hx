@@ -44,6 +44,7 @@ class GenMacro
 
       var locals = new Array<Dynamic>();
       var marks = new Array<String>();
+      var visits = new Array<String>();
       var type_vars = new Array<String>();
       var type_args = new Array<String>();
       var construct_args = new Array<String>();
@@ -54,6 +55,7 @@ class GenMacro
          if (vid>=0)
          {
             marks.push( "HX_MARK_MEMBER(v" + vid +");" );
+            visits.push( "HX_VISIT_MEMBER(v" + vid +");" );
             type_args.push( "t" + vid +",v" + vid  );
             type_vars.push( "t" + vid +" v" + vid  );
             construct_args.push( "t" + vid +" __" + vid  );
@@ -62,6 +64,7 @@ class GenMacro
          locals.push( {
              ARG : arg,
              MARKS : marks.join(" "),
+             VISITS : visits.join(" "),
              TYPE_VARS : type_vars.join(","),
              TYPE_ARGS : type_args.join(","),
              TYPE_DECL : type_vars.join(";"),

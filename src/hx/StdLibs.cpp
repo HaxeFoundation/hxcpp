@@ -373,6 +373,10 @@ struct VarArgFunc : public hx::Object
 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mRealFunc); }
 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mRealFunc); }
+   #endif
+
    void *__GetHandle() const { return mRealFunc.GetPtr(); }
    Dynamic __Run(const Array<Dynamic> &inArgs)
    {

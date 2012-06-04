@@ -39,6 +39,9 @@ public:
 
 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER_NAME(mArray,"mArray"); }
+   #endif
 
    int      mIdx;
    Array<T> mArray;
@@ -253,6 +256,20 @@ public:
       }
       HX_MARK_ARRAY(mBase);
    }
+
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      if (hx::ContainsPointers<ELEM_>())
+      {
+         ELEM_ *ptr = (ELEM_ *)mBase;
+         for(int i=0;i<length;i++)
+            HX_VISIT_MEMBER(ptr[i]);
+      }
+      HX_VISIT_ARRAY(mBase);
+   }
+   #endif
+
 
    int GetElementSize() const { return sizeof(ELEM_); }
 

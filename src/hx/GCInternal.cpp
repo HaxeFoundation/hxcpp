@@ -38,6 +38,8 @@ struct AllocBump
    AllocBump() { gInAlloc++; }
    ~AllocBump() { gInAlloc--; }
 };
+int sObjectsMarked = 0;
+int sObjectsVisited = 0;
 #define IN_ALLOC AllocBump tmp;
 #else
 #define IN_ALLOC
@@ -531,6 +533,42 @@ union BlockData
          *header++ &= IMMIX_NOT_MARKED_MASK;
    }
 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void VisitBlock(hx::VisitContext *inCtx)
+   {
+      for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
+      {
+         if ((mRowFlags[r] & (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED)) ==
+                            (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED) )
+         {
+            int pos = (mRowFlags[r] & IMMIX_ROW_LINK_MASK);
+            unsigned char *row = mRow[r];
+
+            while(true)
+            {
+               if (row[pos+3] == gByteMarkID)
+               {
+                  if ( (*(unsigned int *)(row+pos)) & IMMIX_ALLOC_IS_OBJECT )
+                  {
+                     hx::Object *obj = (hx::Object *)(row+pos+4);
+                     #ifdef COLLECTOR_STATS
+                     sObjectsVisited++;
+                     #endif
+                     obj->__Visit(inCtx);
+                  }
+               }
+
+               int next = row[pos+ENDIAN_OBJ_NEXT_BYTE];
+               if (! (next & IMMIX_ROW_HAS_OBJ_LINK) )
+                  break;
+               pos = next & IMMIX_ROW_LINK_MASK;
+            }
+         }
+      }
+   }
+   #endif
+
+
 
    // First 2 bytes are not needed for row markers (first 2 rows are for flags)
    unsigned short mId;
@@ -694,6 +732,10 @@ void MarkAlloc(void *inPtr,hx::MarkContext *__inCtx)
 void MarkObjectAlloc(hx::Object *inPtr,hx::MarkContext *__inCtx)
 {
    MARK_ROWS
+
+   #ifdef COLLECTOR_STATS
+   sObjectsMarked ++;
+   #endif
 
    #ifdef HXCPP_DEBUG
    if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
@@ -904,6 +946,20 @@ typedef QuickVec<unsigned int *> LargeList;
 
 enum MemType { memUnmanaged, memBlock, memLarge };
 
+
+
+class AllocCounter : public hx::VisitContext
+{
+public:
+   int count;
+
+   AllocCounter() { count = 0; }
+
+   void visitObject(hx::Object **ioPtr) { count ++; }
+   void visitAlloc(void **ioPtr) { count ++; }
+};
+
+
 class GlobalAllocator
 {
 public:
@@ -1061,6 +1117,37 @@ public:
          (*i)->ClearRowMarks();
    }
 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void VisitAll(hx::VisitContext *inCtx)
+   {
+      #ifdef COLLECTOR_STATS
+      sObjectsVisited = 0;
+      #endif
+      hx::VisitClassStatics(inCtx);
+      for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
+      {
+         hx::Object **obj = &**i;
+         if (*obj)
+         {
+            #ifdef COLLECTOR_STATS
+            sObjectsVisited++;
+            #endif
+            inCtx->visitObject(obj);
+         }
+      }
+      for(int i=0;i<hx::sZombieList.size();i++)
+      {
+         #ifdef COLLECTOR_STATS
+         sObjectsVisited++;
+         #endif
+         inCtx->visitObject(&hx::sZombieList[i]);
+      }
+
+      for(PointerSet::iterator i=mActiveBlocks.begin(); i!=mActiveBlocks.end();++i)
+         (*i)->VisitBlock(inCtx);
+   }
+   #endif
+
    bool Collect()
    {
       #ifdef ANDROID
@@ -1095,6 +1182,9 @@ public:
       //printf("Collect %d\n",collect++);
       gByteMarkID = (gByteMarkID+1) & 0xff;
       gMarkID = gByteMarkID << 24;
+      #ifdef COLLECTOR_STATS
+      sObjectsMarked = 0;
+      #endif
 
       ClearRowMarks();
 
@@ -1124,6 +1214,14 @@ public:
       mMarker.Process();
 
       hx::FindZombies(mMarker);
+
+
+      #if defined(COLLECTOR_STATS) && defined(HXCPP_VISIT_ALLOCS)
+      AllocCounter *counter = new AllocCounter();
+      VisitAll(counter);
+      GCLOG("Found %d/%d/%d live objects.\n", counter->count, sObjectsMarked, sObjectsVisited);
+      delete counter;
+      #endif
 
 
       #ifdef PRINT_STATS

@@ -133,6 +133,10 @@ public:
 
    void __Mark(hx::MarkContext *__inCtx) {  HX_MARK_MEMBER(mName); }
 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) {  HX_VISIT_MEMBER(mName); }
+   #endif
+
    int __Compare(const hx::Object *inRHS) const
    {
       const ExternalPrimitive *other = dynamic_cast<const ExternalPrimitive *>(inRHS);
