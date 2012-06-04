@@ -6,7 +6,7 @@
 
 <path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/bin"/>
 
-<set name="ARCH" value ="-7" if="HXCPP_ARM7" />
+<set name="ARCH" value ="-7" if="HXCPP_ARMV7" />
 
 <compiler id="android-gcc" exe="arm-linux-androideabi-g++">
 
@@ -32,13 +32,13 @@
  <flag value="-D_LINUX_STDDEF_H "/> <!-- Avoid compiler including 2 version of file -->
  <flag value="-Wno-psabi"/>
 
- <flag value="-march=armv5te" unless="HXCPP_ARM7" />
- <flag value="-mtune=xscale" unless="HXCPP_ARM7" />
- <flag value="-msoft-float" unless="HXCPP_ARM7" />
+ <flag value="-march=armv5te" unless="HXCPP_ARMV7" />
+ <flag value="-mtune=xscale" unless="HXCPP_ARMV7" />
+ <flag value="-msoft-float" unless="HXCPP_ARMV7" />
 
- <flag value="-march=armv7-a" if="HXCPP_ARM7" />
- <flag value="-mfpu=vfpv3-d16" if="HXCPP_ARM7" />
- <flag value="-mfloat-abi=softfp" if="HXCPP_ARM7" />
+ <flag value="-march=armv7-a" if="HXCPP_ARMV7" />
+ <flag value="-mfpu=vfpv3-d16" if="HXCPP_ARMV7" />
+ <flag value="-mfloat-abi=softfp" if="HXCPP_ARMV7" />
 
  <flag value="-fomit-frame-pointer"/>
  <flag value="-fexceptions"/>
