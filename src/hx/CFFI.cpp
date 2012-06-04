@@ -728,6 +728,7 @@ public:
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
    {
+      HX_VISIT_OBJECT(mPrev);
       HX_VISIT_OBJECT(mNext);
       HX_VISIT_OBJECT(mValue);
    }
