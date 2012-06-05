@@ -38,8 +38,6 @@ struct AllocBump
    AllocBump() { gInAlloc++; }
    ~AllocBump() { gInAlloc--; }
 };
-int sObjectsMarked = 0;
-int sObjectsVisited = 0;
 #define IN_ALLOC AllocBump tmp;
 #else
 #define IN_ALLOC
@@ -56,9 +54,6 @@ static int gCollectTraceCount = 0;
 #else
 #define GCLOG printf
 #endif
-
-
-enum { GC_ALLOCATE_AFTER_COLLECT = 1 };
 
 
 static int sgTimeToNextTableUpdate = 0;
@@ -96,6 +91,15 @@ struct QuickVec
       }
       mPtr[mSize++]=inT;
    }
+   void setSize(int inSize)
+   {
+      if (inSize>mAlloc)
+      {
+         mAlloc = inSize;
+         mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
+      }
+      mSize = inSize;
+   }
    inline T pop()
    {
       return mPtr[--mSize];
@@ -111,6 +115,7 @@ struct QuickVec
       if (mSize>inPos)
          memmove(mPtr+inPos, mPtr+inPos+1, (mSize-inPos)*sizeof(T));
    }
+   void zero() { memset(mPtr,0,mSize*sizeof(T) ); }
 
    inline void qerase_val(T inVal)
    {
@@ -212,6 +217,46 @@ public:
    }
 };
 
+/*
+class IDAllocator
+{
+   QuickVec<Int> mSpare;
+   int  mMax;
+   
+public:
+   IDAllocator() : mMax(0) { }
+   int getNext()
+   {
+      if (mSpare.empty())
+         return mMax++;
+      return mSpare.pop();
+   }
+   void release(int inID)
+   {
+      mSpare.push(inID);
+   }
+   int max() { return mMax; }
+};
+*/
+
+
+struct GroupInfo
+{
+   void clear()
+   {
+      pinned = false;
+      free = 0;
+      used = 0;
+   }
+
+   char *alloc;
+
+   bool pinned;
+   int  free;
+   int  used;
+};
+ 
+QuickVec<GroupInfo> gAllocGroups;
 
 
 // ---  Internal GC - IMMIX Implementation ------------------------------
@@ -241,6 +286,9 @@ public:
 #define IMMIX_LINE_POS_MASK     ((size_t)(IMMIX_LINE_LEN-1))
 #define IMMIX_START_OF_ROW_MASK  (~IMMIX_LINE_POS_MASK)
 
+#define IMMIX_BLOCK_GROUP_BITS  5
+#define IMMIX_MAX_ALLOC_GROUPS_SIZE  (1<<IMMIX_BLOCK_GROUP_BITS)
+
 
 
 /*
@@ -266,6 +314,7 @@ public:
 #define IMMIX_ALLOC_SMALL_OBJ   0x00000001
 
 
+#define IMMIX_OBJECT_HAS_MOVED (~IMMIX_ALLOC_MEDIUM_OBJ)
 
 /*
 
@@ -293,6 +342,7 @@ enum AllocType { allocNone, allocString, allocObject, allocMarked };
 struct BlockDataInfo
 {
    int mId;
+   int mGroupId;
    int mUsedRows;
    int mFreeInARow;
    int mHoles;
@@ -304,7 +354,7 @@ QuickVec<BlockDataInfo> *gBlockInfo = 0;
 
 union BlockData
 {
-   void Init()
+   void Init(int inGID)
    {
       if (gFillWithJunk)
          memset(this,0x55,sizeof(*this));
@@ -314,6 +364,7 @@ union BlockData
       gBlockInfo->push( BlockDataInfo() );
       BlockDataInfo &info = getInfo();
       info.mId = mId;
+      info.mGroupId = inGID;
       info.mUsedRows = 0;
       info.mFreeInARow = 0;
       info.mHoles = 0;
@@ -551,9 +602,6 @@ union BlockData
                   if ( (*(unsigned int *)(row+pos)) & IMMIX_ALLOC_IS_OBJECT )
                   {
                      hx::Object *obj = (hx::Object *)(row+pos+4);
-                     #ifdef COLLECTOR_STATS
-                     sObjectsVisited++;
-                     #endif
                      obj->__Visit(inCtx);
                   }
                }
@@ -732,10 +780,6 @@ void MarkAlloc(void *inPtr,hx::MarkContext *__inCtx)
 void MarkObjectAlloc(hx::Object *inPtr,hx::MarkContext *__inCtx)
 {
    MARK_ROWS
-
-   #ifdef COLLECTOR_STATS
-   sObjectsMarked ++;
-   #endif
 
    #ifdef HXCPP_DEBUG
    if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
@@ -969,7 +1013,6 @@ public:
       mNextEmpty = 0;
       mRowsInUse = 0;
       mLargeAllocated = 0;
-      mDistributedSinceLastCollect = 0;
       // Start at 1 Meg...
       mTotalAfterLastCollect = 1<<20;
    }
@@ -1003,7 +1046,6 @@ public:
 
       mLargeList.push(result);
       mLargeAllocated += inSize;
-      mDistributedSinceLastCollect += inSize;
 
       if (do_lock)
          mLargeListLock.Unlock();
@@ -1018,9 +1060,6 @@ public:
    //  Making it virtual prevents the overhead.
    virtual BlockData * GetRecycledBlock(int inRequiredRows)
    {
-      if (!GC_ALLOCATE_AFTER_COLLECT)
-        CheckCollect();
-
       if (sMultiThreadMode)
       {
          hx::EnterGCFreeZone();
@@ -1030,7 +1069,7 @@ public:
 
       BlockData *result = 0;
 
-      for(int pass= GC_ALLOCATE_AFTER_COLLECT?0:1 ;pass<2 && result==0;pass++)
+      for(int pass= 0 ;pass<2 && result==0;pass++)
       {
          if (mNextRecycled < mRecycledBlock.size())
          {
@@ -1052,7 +1091,6 @@ public:
 
             if (result)
             {
-               mDistributedSinceLastCollect +=  result->GetFreeData();
                result->ClearRecycled();
             }
          }
@@ -1077,19 +1115,34 @@ public:
             if (!want_more)
                return 0;
          }
+
+         // Find spare group...
+         int gid = -1;
+         for(int i=0;i<gAllocGroups.size();i++)
+            if (!gAllocGroups[i].alloc)
+            {
+               gid = i;
+               break;
+            }
+         if (gid<0)
+           gid = gAllocGroups.next();
+
          // Allocate some more blocks...
          // Using simple malloc for now, so allocate a big chuck in case we have to
          //  waste space by doing block-aligning
-         char *chunk = (char *)malloc( 1<<20 );
-         int n = 1<<(20-IMMIX_BLOCK_BITS);
+         char *chunk = (char *)malloc( 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS) );
+         int n = 1<<IMMIX_BLOCK_GROUP_BITS;
          char *aligned = (char *)( (((size_t)chunk) + IMMIX_BLOCK_SIZE-1) & IMMIX_BLOCK_BASE_MASK);
          if (aligned!=chunk)
             n--;
 
+         gAllocGroups[gid].alloc = chunk;
+     
+
          for(int i=0;i<n;i++)
          {
             BlockData *block = (BlockData *)(aligned + i*IMMIX_BLOCK_SIZE);
-            block->Init();
+            block->Init(gid);
             mAllBlocks.push(block);
             mEmptyBlocks.push(block);
          }
@@ -1101,8 +1154,151 @@ public:
       BlockData *block = mEmptyBlocks[mNextEmpty++];
       block->ClearEmpty();
       mActiveBlocks.insert(block);
-      mDistributedSinceLastCollect +=  block->GetFreeData();
       return block;
+   }
+
+   void MoveBlocks(BlockData **inFrom, BlockData **inTo, int inCount)
+   {
+      BlockData *dest = *inTo++;
+      int destRow = IMMIX_HEADER_LINES;
+      int destPos = 0;
+ 
+      
+      for(int f=0;f<inCount;f++)
+      {
+         BlockData &from = *inFrom[f];
+
+         for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
+         {
+            if ((from.mRowFlags[r] & (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED)) ==
+                               (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED) )
+            {
+               int pos = (from.mRowFlags[r] & IMMIX_ROW_LINK_MASK);
+               unsigned char *row = from.mRow[r];
+   
+               while(true)
+               {
+                  int next = row[pos+ENDIAN_OBJ_NEXT_BYTE];
+
+                  if (row[pos+3] == gByteMarkID)
+                  {
+                     unsigned int &flags = *(unsigned int *)(row+pos);
+                     bool isObject = flags & IMMIX_ALLOC_IS_OBJECT;
+                     int size = flags & IMMIX_ALLOC_SIZE_MASK;
+                     void *ptr = &flags + 1;
+
+                     // Find some room
+                     // TODO
+
+                     flags = IMMIX_OBJECT_HAS_MOVED;
+                  }
+   
+                  if (! (next & IMMIX_ROW_HAS_OBJ_LINK) )
+                     break;
+                  pos = next & IMMIX_ROW_LINK_MASK;
+               }
+            }
+         }
+      }
+
+      // TODO visit to adjust pointers...
+   }
+
+   bool EvacuateGroup(int inGid)
+   {
+      BlockData *from[IMMIX_MAX_ALLOC_GROUPS_SIZE];
+      BlockData *to[IMMIX_MAX_ALLOC_GROUPS_SIZE];
+      int fromCount = 0;
+      int toCount = 0;
+
+      for(int i=0;i<mAllBlocks.size();i++)
+      {
+         BlockDataInfo &info = mAllBlocks[i]->getInfo();
+         if (info.mGroupId == inGid)
+         {
+            from[fromCount++] = mAllBlocks[i];
+         }
+         else if (info.mUsedRows==0 && toCount<IMMIX_MAX_ALLOC_GROUPS_SIZE)
+         {
+            to[toCount++] = mAllBlocks[i];
+         }
+      }
+
+      if (toCount >= fromCount)
+      {
+         MoveBlocks(from,to,fromCount);
+         return true;
+      }
+   
+      return false;
+   }
+
+   void ReleaseGroup(int inGid)
+   {
+      #ifdef COLLECTOR_STATS
+      GCLOG("Release group %d\n", inGid);
+      #endif
+      free(gAllocGroups[inGid].alloc);
+      gAllocGroups[inGid].alloc = 0;
+
+      for(int i=0; i<mAllBlocks.size();  )
+         if (mAllBlocks[i]->getInfo().mGroupId==inGid)
+            mAllBlocks.erase(i);
+         else
+            i++;
+   }
+
+   bool ReleaseBestBlockGroup()
+   {
+      for(int i=0;i<gAllocGroups.size();i++)
+         gAllocGroups[i].clear();
+
+      for(int i=0; i<mAllBlocks.size(); i++ )
+      {
+         BlockDataInfo &block = mAllBlocks[i]->getInfo();
+         GroupInfo &g = gAllocGroups[block.mGroupId];
+         if (block.mPinned)
+            g.pinned = true;
+         g.used += block.mUsedRows;
+         g.free += IMMIX_USEFUL_LINES - block.mUsedRows;
+      }
+
+      int bestGroup = -1;
+      int bestFree = 0;
+      for(int i=0;i<gAllocGroups.size();i++)
+      {
+         GroupInfo &g = gAllocGroups[i];
+         if (g.alloc && !g.pinned && g.free)
+         {
+            //printf("Group %d/%d, free = %d\n", i, gAllocGroups.size(), g.free );
+
+            // Release this group - it's all free
+            if (!g.used)
+            {
+               ReleaseGroup(i);
+               return true;
+            }
+      
+            if ( g.free>=bestFree )
+            {
+               bestFree = g.free;
+               bestGroup = i;
+            }
+         }
+      }
+
+      /*
+        Not ready yet...
+      if (bestGroup>=0)
+      {
+         if (EvacuateGroup(bestGroup))
+            ReleaseGroup(bestGroup);
+         return true;
+      }
+      */
+
+      // No unpinned groups ...
+      return false;
    }
  
    int GetObjectID(void *inPtr)
@@ -1120,26 +1316,17 @@ public:
    #ifdef HXCPP_VISIT_ALLOCS
    void VisitAll(hx::VisitContext *inCtx)
    {
-      #ifdef COLLECTOR_STATS
-      sObjectsVisited = 0;
-      #endif
       hx::VisitClassStatics(inCtx);
       for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
       {
          hx::Object **obj = &**i;
          if (*obj)
          {
-            #ifdef COLLECTOR_STATS
-            sObjectsVisited++;
-            #endif
             inCtx->visitObject(obj);
          }
       }
       for(int i=0;i<hx::sZombieList.size();i++)
       {
-         #ifdef COLLECTOR_STATS
-         sObjectsVisited++;
-         #endif
          inCtx->visitObject(&hx::sZombieList[i]);
       }
 
@@ -1153,7 +1340,6 @@ public:
       #ifdef ANDROID
       //__android_log_print(ANDROID_LOG_ERROR, "hxcpp", "Collect...");
       #endif
-      //printf("Collect %d/%d\n", (int)mDistributedSinceLastCollect, (int)mTotalAfterLastCollect);
      
       LocalAllocator *this_local = 0;
       if (sMultiThreadMode)
@@ -1182,16 +1368,8 @@ public:
       //printf("Collect %d\n",collect++);
       gByteMarkID = (gByteMarkID+1) & 0xff;
       gMarkID = gByteMarkID << 24;
-      #ifdef COLLECTOR_STATS
-      sObjectsMarked = 0;
-      #endif
 
       ClearRowMarks();
-
-      //#define PRINT_STATS
-      #ifdef PRINT_STATS
-      double t0 =  __time_stamp();
-      #endif
 
       hx::MarkClassStatics(&mMarker);
 
@@ -1219,23 +1397,8 @@ public:
       #if defined(COLLECTOR_STATS) && defined(HXCPP_VISIT_ALLOCS)
       AllocCounter *counter = new AllocCounter();
       VisitAll(counter);
-      GCLOG("Found %d/%d/%d live objects.\n", counter->count, sObjectsMarked, sObjectsVisited);
+      GCLOG("Found %d live pointers.\n", counter->count );
       delete counter;
-      #endif
-
-
-      #ifdef PRINT_STATS
-      double t = __time_stamp() - t0;
-      static int average_n = 0;
-      static double sum = 0;
-      average_n++;
-      sum += t;
-      if (average_n==50)
-      {
-         printf("time %f\n", sum*20);
-         average_n = 0;
-         sum = 0;
-      }
       #endif
 
 
@@ -1256,27 +1419,10 @@ public:
       mActiveBlocks.clear();
       mNextEmpty = 0;
       mNextRecycled = 0;
+
       mRowsInUse = 0;
-      int pinned = 0;
-
-
-      // IMMIX suggest filling up in creation order ....
       for(int i=0;i<mAllBlocks.size();i++)
-      {
-         BlockData *block = mAllBlocks[i];
-
-         if (block->IsEmpty())
-            mEmptyBlocks.push(block);
-         else
-         {
-            if (block->isPinned())
-               pinned++;
-            mActiveBlocks.insert(block);
-            mRowsInUse += block->getUsedRows();
-            if (!block->IsFull())
-               mRecycledBlock.push(block);
-         }
-      }
+         mRowsInUse += mAllBlocks[i]->getUsedRows();
 
       int idx = 0;
       while(idx<mLargeList.size())
@@ -1294,13 +1440,37 @@ public:
 
       mTotalAfterLastCollect = MemUsage();
 
-      // GCLOG("Alloced = %d, Empty ratio %f, pinned = %d\n", mDistributedSinceLastCollect, (float)mEmptyBlocks.size()/mAllBlocks.size(), pinned );
-      //printf("Using %d, blocks %d\n", mTotalAfterLastCollect, mAllBlocks.size());
-      mDistributedSinceLastCollect = 0;
+
+      //printf("Using %d, blocks %d (%d)\n", mTotalAfterLastCollect, mAllBlocks.size(), mAllBlocks.size()*IMMIX_BLOCK_SIZE);
 
       int free_rows = mAllBlocks.size()*IMMIX_USEFUL_LINES - mRowsInUse;
       // Aim for 50% free space...
       bool want_more = free_rows < mRowsInUse;
+      bool want_less = free_rows > mRowsInUse + (1<<(IMMIX_BLOCK_GROUP_BITS+IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)) * 11/10;
+      bool released = want_less && ReleaseBestBlockGroup();
+
+      if (!released)
+      {
+         // Try compacting
+      }
+
+
+      // IMMIX suggest filling up in creation order ....
+      for(int i=0;i<mAllBlocks.size();i++)
+      {
+         BlockData *block = mAllBlocks[i];
+
+         if (block->IsEmpty())
+            mEmptyBlocks.push(block);
+         else
+         {
+            mActiveBlocks.insert(block);
+            mRowsInUse += block->getUsedRows();
+            if (!block->IsFull())
+               mRecycledBlock.push(block);
+         }
+      }
+
 
       if (sMultiThreadMode)
       {
@@ -1317,18 +1487,6 @@ public:
       #endif
 
       return want_more;
-   }
-
-   bool CheckCollect()
-   {
-      bool collected = false;
-      while (sgAllocInit && sgInternalEnable && mDistributedSinceLastCollect>(1<<20) &&
-          mDistributedSinceLastCollect>mTotalAfterLastCollect)
-      {
-         collected = true;
-         Collect();
-      }
-      return collected;
    }
 
    size_t MemUsage()
@@ -1355,7 +1513,6 @@ public:
    }
 
 
-   size_t mDistributedSinceLastCollect;
 
    size_t mRowsInUse;
    size_t mLargeAllocated;
