@@ -81,7 +81,7 @@ class Setup
 
           vc_setup_proc.close();
           if (!vars_found)
-             throw("Could not automaticall setup MSVC");
+             throw("Could not automatically setup MSVC");
        }
       
    
