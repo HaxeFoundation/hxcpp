@@ -417,6 +417,21 @@ union BlockData
       for(int i=0;i<inN;i++)
          ptr[i] &= ~(IMMIX_ROW_CLEAR);
    }
+
+   void FillTo(int inRow, int inPos)
+   {
+      BlockDataInfo &info = getInfo();
+      info.mUsedRows = inRow-IMMIX_HEADER_LINES+(inPos>0);
+      info.mFreeInARow = IMMIX_USEFUL_LINES - info.mUsedRows;
+      info.mHoles = 1;
+      int offset = (inRow<<IMMIX_LINE_BITS)+inPos;
+      if (offset< IMMIX_BLOCK_SIZE)
+         memset(&mRow[0][0] + offset, 0, IMMIX_BLOCK_SIZE-offset);
+      for(int i=0;i<info.mUsedRows;i++)
+         mRowFlags[i+IMMIX_HEADER_LINES] |= IMMIX_ROW_MARKED;
+   }
+
+
    bool IsEmpty() const { return getUsedRows() == 0; }
    bool IsFull() const { return getUsedRows() == IMMIX_USEFUL_LINES; }
    int getUsedRows() const { return getInfo().mUsedRows; }
@@ -587,6 +602,9 @@ union BlockData
    #ifdef HXCPP_VISIT_ALLOCS
    void VisitBlock(hx::VisitContext *inCtx)
    {
+      if (IsEmpty())
+         return;
+
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
          if ((mRowFlags[r] & (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED)) ==
@@ -992,6 +1010,7 @@ enum MemType { memUnmanaged, memBlock, memLarge };
 
 
 
+#ifdef HXCPP_VISIT_ALLOCS
 class AllocCounter : public hx::VisitContext
 {
 public:
@@ -1002,6 +1021,34 @@ public:
    void visitObject(hx::Object **ioPtr) { count ++; }
    void visitAlloc(void **ioPtr) { count ++; }
 };
+
+class AdjustPointer : public hx::VisitContext
+{
+public:
+   AdjustPointer() {  }
+
+   void visitObject(hx::Object **ioPtr)
+   {
+      if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
+      {
+         //printf("Found object to  %p -> %p\n", *ioPtr,  (*(hx::Object ***)ioPtr)[0]);
+         *ioPtr = (*(hx::Object ***)ioPtr)[0];
+      }
+   }
+
+   void visitAlloc(void **ioPtr)
+   {
+      if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
+      {
+         //printf("Found reference to  %p -> %p\n", *ioPtr,  (*(void ***)ioPtr)[0]);
+         *ioPtr = (*(void ***)ioPtr)[0];
+      }
+   }
+};
+
+
+
+#endif
 
 
 class GlobalAllocator
@@ -1157,12 +1204,13 @@ public:
       return block;
    }
 
+   #ifdef HXCPP_VISIT_ALLOCS
    void MoveBlocks(BlockData **inFrom, BlockData **inTo, int inCount)
    {
       BlockData *dest = *inTo++;
       int destRow = IMMIX_HEADER_LINES;
       int destPos = 0;
- 
+      int moved = 0;
       
       for(int f=0;f<inCount;f++)
       {
@@ -1185,27 +1233,87 @@ public:
                      unsigned int &flags = *(unsigned int *)(row+pos);
                      bool isObject = flags & IMMIX_ALLOC_IS_OBJECT;
                      int size = flags & IMMIX_ALLOC_SIZE_MASK;
-                     void *ptr = &flags + 1;
+                     void **ptr = (void **)(&flags + 1);
+
 
                      // Find some room
-                     // TODO
+                     int s = size +sizeof(int);
+                     int extra_lines = (s + destPos - 1) >> IMMIX_LINE_BITS;
+                     // New block ...
+                     if (destRow+extra_lines >= IMMIX_LINES)
+                     {
+                        // Fill in stats of old block...
+                        dest->FillTo(destRow,destPos);
+ 
+                        dest = *inTo++;
+                        destRow = IMMIX_HEADER_LINES;
+                        destPos = 0;
+                        extra_lines = (s + destPos -1) >> IMMIX_LINE_BITS;
+                     }
+                     
+                     // Append to current position...
+                     unsigned char *row = dest->mRow[destRow];
+                     unsigned char &row_flag = dest->mRowFlags[destRow];
 
+                     int *result = (int *)(row + destPos);
+                     *result = size | gMarkID | (row_flag<<16) |
+                           (extra_lines==0 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
+
+                     if (isObject)
+                        *result |= IMMIX_ALLOC_IS_OBJECT;
+
+                     row_flag =  destPos | IMMIX_ROW_HAS_OBJ_LINK | IMMIX_ROW_MARKED;
+
+                     destRow += extra_lines;
+                     destPos = (destPos + s) & (IMMIX_LINE_LEN-1);
+                     if (destPos==0)
+                        destRow++;
+
+                     // Result has moved - store movement in original position...
+                     memcpy(result+1, ptr, size);
+                     *ptr = result + 1;
                      flags = IMMIX_OBJECT_HAS_MOVED;
+
+                     moved++;
                   }
    
+                  // Next allocation...
                   if (! (next & IMMIX_ROW_HAS_OBJ_LINK) )
                      break;
                   pos = next & IMMIX_ROW_LINK_MASK;
                }
             }
          }
+
+         // Mark as free
+         BlockDataInfo &info = from.getInfo();
+         info.mUsedRows = 0;
       }
 
+      #ifdef COLLECTOR_STATS
+      printf("Moved %d\n", moved);
+      #endif
+
+      // Fill in stats of last block...
+      dest->FillTo(destRow,destPos);
+
+      AdjustPointers();
       // TODO visit to adjust pointers...
+   }
+
+   void AdjustPointers()
+   {
+      AdjustPointer *adjust = new AdjustPointer();
+      VisitAll(adjust);
+      delete adjust;
    }
 
    bool EvacuateGroup(int inGid)
    {
+      #ifdef COLLECTOR_STATS
+      GCLOG("EvacuateGroup %d\n", inGid);
+      #endif
+
       BlockData *from[IMMIX_MAX_ALLOC_GROUPS_SIZE];
       BlockData *to[IMMIX_MAX_ALLOC_GROUPS_SIZE];
       int fromCount = 0;
@@ -1232,6 +1340,8 @@ public:
    
       return false;
    }
+
+   #endif
 
    void ReleaseGroup(int inGid)
    {
@@ -1287,15 +1397,14 @@ public:
          }
       }
 
-      /*
-        Not ready yet...
+      #ifdef HXCPP_VISIT_ALLOCS
       if (bestGroup>=0)
       {
          if (EvacuateGroup(bestGroup))
             ReleaseGroup(bestGroup);
          return true;
       }
-      */
+      #endif
 
       // No unpinned groups ...
       return false;
@@ -1317,6 +1426,7 @@ public:
    void VisitAll(hx::VisitContext *inCtx)
    {
       hx::VisitClassStatics(inCtx);
+
       for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
       {
          hx::Object **obj = &**i;
@@ -1330,8 +1440,8 @@ public:
          inCtx->visitObject(&hx::sZombieList[i]);
       }
 
-      for(PointerSet::iterator i=mActiveBlocks.begin(); i!=mActiveBlocks.end();++i)
-         (*i)->VisitBlock(inCtx);
+      for(int i=0;i<mAllBlocks.size();i++)
+         mAllBlocks[i]->VisitBlock(inCtx);
    }
    #endif
 
@@ -1394,14 +1504,6 @@ public:
       hx::FindZombies(mMarker);
 
 
-      #if defined(COLLECTOR_STATS) && defined(HXCPP_VISIT_ALLOCS)
-      AllocCounter *counter = new AllocCounter();
-      VisitAll(counter);
-      GCLOG("Found %d live pointers.\n", counter->count );
-      delete counter;
-      #endif
-
-
       hx::RunFinalizers();
 
       // Reclaim ...
@@ -1449,10 +1551,12 @@ public:
       bool want_less = free_rows > mRowsInUse + (1<<(IMMIX_BLOCK_GROUP_BITS+IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)) * 11/10;
       bool released = want_less && ReleaseBestBlockGroup();
 
+      #ifdef HXCPP_VISIT_ALLOCS
       if (!released)
       {
          // Try compacting
       }
+      #endif
 
 
       // IMMIX suggest filling up in creation order ....
@@ -1662,6 +1766,11 @@ public:
          PauseForCollect();
 
       inSize = (inSize + 3 ) & ~3;
+      #ifdef HXCPP_VISIT_ALLOCS
+      // Make sure we can fit a relocation pointer
+      if (sizeof(void *)>4 && inSize<sizeof(void *))
+         inSize = sizeof(void *);
+      #endif
 
       int s = inSize +sizeof(int);
       // Try to squeeze it on this line ...
@@ -1669,33 +1778,6 @@ public:
       {
          int skip = 1;
          int extra_lines = (s + mCurrentPos-1) >> IMMIX_LINE_BITS;
-
-         #if 0
-         // Optimise for fitting on same line...
-         if (!extra_lines)
-         {
-            unsigned char *row = mCurrent->mRow[mCurrentLine];
-            unsigned char &row_flag = mCurrent->mRowFlags[mCurrentLine];
-
-            int *result = (int *)(row + mCurrentPos);
-            if (inIsObject)
-               *result = inSize | gMarkID | (row_flag<<16) |
-                  (IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_IS_OBJECT); 
-            else
-               *result = inSize | gMarkID | (row_flag<<16) | IMMIX_ALLOC_SMALL_OBJ; 
-
-            row_flag =  mCurrentPos | IMMIX_ROW_HAS_OBJ_LINK;
-
-            mCurrentLine += extra_lines;
-            mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
-            if (mCurrentPos==0)
-               mCurrentLine++;
-
-            //printf("Alloced %d - %d/%d now\n", s, mCurrentPos, mCurrentLine);
-            return result + 1;
-         }
-         #endif
-
 
          //printf("check for %d extra lines ...\n", extra_lines);
          if (mCurrentLine + extra_lines < IMMIX_LINES)

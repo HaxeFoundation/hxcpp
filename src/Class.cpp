@@ -243,9 +243,9 @@ void VisitClassStatics(hx::VisitContext *__inCtx)
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
       // all strings should be constants anyhow - should not be needed?
-      HX_VISIT_MEMBER(i->first);
+      HX_VISIT_STRING(i->first.__s);
 
-      HX_VISIT_MEMBER(i->second.mPtr);
+      HX_VISIT_OBJECT(i->second.mPtr);
 
       i->second->VisitStatics(__inCtx);
    }

@@ -260,13 +260,13 @@ public:
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
    {
+      HX_VISIT_ARRAY(mBase);
       if (hx::ContainsPointers<ELEM_>())
       {
          ELEM_ *ptr = (ELEM_ *)mBase;
          for(int i=0;i<length;i++)
             HX_VISIT_MEMBER(ptr[i]);
       }
-      HX_VISIT_ARRAY(mBase);
    }
    #endif
 
