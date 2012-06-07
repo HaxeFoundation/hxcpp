@@ -1214,6 +1214,7 @@ public:
       
       for(int f=0;f<inCount;f++)
       {
+         //printf("Move from %d %p\n", f, inFrom[f]);
          BlockData &from = *inFrom[f];
 
          for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
@@ -1324,7 +1325,8 @@ public:
          BlockDataInfo &info = mAllBlocks[i]->getInfo();
          if (info.mGroupId == inGid)
          {
-            from[fromCount++] = mAllBlocks[i];
+            if ( info.mUsedRows>0 )
+               from[fromCount++] = mAllBlocks[i];
          }
          else if (info.mUsedRows==0 && toCount<IMMIX_MAX_ALLOC_GROUPS_SIZE)
          {
@@ -1552,10 +1554,41 @@ public:
       bool released = want_less && ReleaseBestBlockGroup();
 
       #ifdef HXCPP_VISIT_ALLOCS
+      /*
       if (!released)
       {
-         // Try compacting
+         // Try compacting ...
+         enum { MAX_DEFRAG = 10 };
+         enum { DEFRAG_HOLES = 6 };
+         BlockData *from[MAX_DEFRAG]; 
+         BlockData *to[MAX_DEFRAG]; 
+         int fromCount = 0;
+         int toCount = 0;
+
+         for(int i=0;i<mAllBlocks.size();i++)
+         {
+            BlockData *block = mAllBlocks[i];
+            BlockDataInfo &info = block->getInfo();
+   
+            if (info.mUsedRows==0)
+            {
+               if (toCount<MAX_DEFRAG)
+                  to[toCount++] = block;
+            }
+            else if (!info.mPinned && info.mHoles>DEFRAG_HOLES && fromCount<MAX_DEFRAG )
+            {
+               from[fromCount++] = block;
+            }
+         }
+
+         int n = std::min(fromCount,toCount);
+         if (n>2)
+         {
+            printf("Defrag %d/%d\n", fromCount,toCount);
+            MoveBlocks(from,to,n);
+         }
       }
+      */
       #endif
 
 

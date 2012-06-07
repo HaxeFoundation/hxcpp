@@ -221,12 +221,27 @@ static bool IsInt(hx::Object *inPtr)
 
 
 
+#ifdef HXCPP_VISIT_ALLOCS
+static void sVisitStatics(HX_VISIT_PARAMS) {
+	HX_VISIT_MEMBER(__VoidClass);
+	HX_VISIT_MEMBER(__BoolClass);
+	HX_VISIT_MEMBER(__IntClass);
+	HX_VISIT_MEMBER(__FloatClass);
+};
+
+#endif
+
+
 void Dynamic::__boot()
 {
-   Static(__BoolClass) = hx::RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0 );
+   Static(__VoidClass) = hx::RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0, 0
+      #ifdef HXCPP_VISIT_ALLOCS
+      ,sVisitStatics
+      #endif
+   );
+   Static(__BoolClass) = hx::RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0);
    Static(__IntClass) = hx::RegisterClass(HX_CSTRING("Int"),IsInt,sNone,sNone,0,0, 0 );
    Static(__FloatClass) = hx::RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
-   Static(__VoidClass) = hx::RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0 );
 }
 
 

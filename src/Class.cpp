@@ -239,6 +239,7 @@ void MarkClassStatics(hx::MarkContext *__inCtx)
 
 void VisitClassStatics(hx::VisitContext *__inCtx)
 {
+   HX_VISIT_MEMBER(Class_obj__mClass);
    ClassMap::iterator end = sClassMap->end();
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
