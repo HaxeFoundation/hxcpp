@@ -3,7 +3,6 @@
 #include <hx/GC.h>
 #include <hx/Thread.h>
 
-char **gMovedPtrs = 0;
 int gByteMarkID = 0;
 int gMarkID = 0;
 
@@ -31,6 +30,8 @@ int gInAlloc = false;
 
 
 //#define COLLECTOR_STATS
+//#define TRY_DEFRAG
+//#define VERIFY_MOVE
 
 #ifdef COLLECTOR_STATS
 struct AllocBump
@@ -54,6 +55,7 @@ static int gCollectTraceCount = 0;
 #else
 #define GCLOG printf
 #endif
+
 
 
 static int sgTimeToNextTableUpdate = 0;
@@ -789,14 +791,41 @@ void MarkPopClass(hx::MarkContext *__inCtx)
 #endif
 
 
+#ifdef VERIFY_MOVE
+BlockData **gMarkVerifyBlocks = 0;
+int gMarkVerifyCount = 0;
+int gMarkVerified = 0;
+
+bool VerifyMovePtr(void *inPtr)
+{
+   int base = (int)inPtr & IMMIX_BLOCK_BASE_MASK;
+   for(int i=0;i<gMarkVerifyCount;i++)
+   {
+      if ( base == ((int)gMarkVerifyBlocks[i]) )
+         return true;
+      gMarkVerified++;
+   }
+   return false;
+}
+#endif
+
 
 void MarkAlloc(void *inPtr,hx::MarkContext *__inCtx)
 {
+   #ifdef VERIFY_MOVE
+   if (gMarkVerifyBlocks && VerifyMovePtr(inPtr))
+      __inCtx->Trace();
+   #endif
    MARK_ROWS
 }
 
 void MarkObjectAlloc(hx::Object *inPtr,hx::MarkContext *__inCtx)
 {
+   #ifdef VERIFY_MOVE
+   if (gMarkVerifyBlocks && VerifyMovePtr(inPtr))
+      __inCtx->Trace();
+   #endif
+
    MARK_ROWS
 
    #ifdef HXCPP_DEBUG
@@ -1010,6 +1039,7 @@ enum MemType { memUnmanaged, memBlock, memLarge };
 
 
 
+
 #ifdef HXCPP_VISIT_ALLOCS
 class AllocCounter : public hx::VisitContext
 {
@@ -1214,8 +1244,10 @@ public:
       
       for(int f=0;f<inCount;f++)
       {
-         //printf("Move from %d %p\n", f, inFrom[f]);
          BlockData &from = *inFrom[f];
+         #ifdef COLLECTOR_STATS
+         GCLOG("Move from %p -> %p\n", &from, dest );
+         #endif
 
          for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
          {
@@ -1250,6 +1282,10 @@ public:
                         destRow = IMMIX_HEADER_LINES;
                         destPos = 0;
                         extra_lines = (s + destPos -1) >> IMMIX_LINE_BITS;
+
+                        #ifdef COLLECTOR_STATS
+                        GCLOG("          %p -> %p\n", &from, dest );
+                        #endif
                      }
                      
                      // Append to current position...
@@ -1299,7 +1335,16 @@ public:
       dest->FillTo(destRow,destPos);
 
       AdjustPointers();
-      // TODO visit to adjust pointers...
+
+      #ifdef VERIFY_MOVE
+      hx::gMarkVerifyBlocks = inFrom;
+      hx::gMarkVerifyCount = inCount;
+      hx::gMarkVerified = 0;
+      MarkAll(true);
+      printf("%d pointers Ok!\n",hx::gMarkVerified);
+      hx::gMarkVerifyBlocks = 0;
+      hx::gMarkVerifyCount = 0;
+      #endif
    }
 
    void AdjustPointers()
@@ -1447,6 +1492,40 @@ public:
    }
    #endif
 
+   void MarkAll(bool inDoClear)
+   {
+      gByteMarkID = (gByteMarkID+1) & 0xff;
+      gMarkID = gByteMarkID << 24;
+
+      if (inDoClear)
+         ClearRowMarks();
+
+      hx::MarkClassStatics(&mMarker);
+
+      mMarker.Process();
+
+      for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
+      {
+         hx::Object *&obj = **i;
+         if (obj)
+            hx::MarkObjectAlloc(obj , &mMarker );
+      }
+
+      // Mark zombies too....
+      for(int i=0;i<hx::sZombieList.size();i++)
+         hx::MarkObjectAlloc(hx::sZombieList[i] , &mMarker );
+
+      for(int i=0;i<mLocalAllocs.size();i++)
+         MarkLocalAlloc(mLocalAllocs[i] , &mMarker);
+
+      mMarker.Process();
+
+      hx::FindZombies(mMarker);
+
+
+      hx::RunFinalizers();
+   }
+
    bool Collect()
    {
       #ifdef ANDROID
@@ -1476,37 +1555,7 @@ public:
 
       // Now all threads have mTopOfStack & mBottomOfStack set.
 
-      //static int collect = 0;
-      //printf("Collect %d\n",collect++);
-      gByteMarkID = (gByteMarkID+1) & 0xff;
-      gMarkID = gByteMarkID << 24;
-
-      ClearRowMarks();
-
-      hx::MarkClassStatics(&mMarker);
-
-      mMarker.Process();
-
-      for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
-      {
-         hx::Object *&obj = **i;
-         if (obj)
-            hx::MarkObjectAlloc(obj , &mMarker );
-      }
-
-      // Mark zombies too....
-      for(int i=0;i<hx::sZombieList.size();i++)
-         hx::MarkObjectAlloc(hx::sZombieList[i] , &mMarker );
-
-      for(int i=0;i<mLocalAllocs.size();i++)
-         MarkLocalAlloc(mLocalAllocs[i] , &mMarker);
-
-      mMarker.Process();
-
-      hx::FindZombies(mMarker);
-
-
-      hx::RunFinalizers();
+      MarkAll(true);
 
       // Reclaim ...
 
@@ -1553,8 +1602,7 @@ public:
       bool want_less = free_rows > mRowsInUse + (1<<(IMMIX_BLOCK_GROUP_BITS+IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)) * 11/10;
       bool released = want_less && ReleaseBestBlockGroup();
 
-      #ifdef HXCPP_VISIT_ALLOCS
-      /*
+      #ifdef TRY_DEFRAG
       if (!released)
       {
          // Try compacting ...
@@ -1584,11 +1632,12 @@ public:
          int n = std::min(fromCount,toCount);
          if (n>2)
          {
-            printf("Defrag %d/%d\n", fromCount,toCount);
+            #ifdef COLLECTOR_STATS
+            GCLOG("Defrag %d/%d\n", fromCount,toCount);
+            #endif
             MoveBlocks(from,to,n);
          }
       }
-      */
       #endif
 
 
