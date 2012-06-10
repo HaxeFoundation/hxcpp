@@ -101,6 +101,7 @@ void Class_obj::__Visit(hx::VisitContext *__inCtx)
    HX_VISIT_MEMBER(mName);
    HX_VISIT_MEMBER(mStatics);
    HX_VISIT_MEMBER(mMembers);
+   //HX_VISIT_OBJECT(*mSuper);
 }
 #endif
 

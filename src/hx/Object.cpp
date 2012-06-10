@@ -70,13 +70,15 @@ void Object::__SetThis(Dynamic inThis) { }
 
 bool Object::__Is(Dynamic inClass ) const { return __Is(inClass.GetPtr()); }
 
-static Class Object__mClass;
+Class Object__mClass;
 
 bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
+
+
 void Object::__boot()
 {
-   Static(Object__mClass) = hx::RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0 );
+   Static(Object__mClass) = hx::RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0, 0 );
 }
 
 Class &Object::__SGetClass() { return Object__mClass; }

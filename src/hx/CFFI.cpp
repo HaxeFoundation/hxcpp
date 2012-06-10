@@ -705,37 +705,25 @@ void  gc_set_top_of_stack(int *inTopOfStack,bool inForce)
 }
 
 
-class Root_obj *sgRootHead = 0;
+class Root *sgRootHead = 0;
 
-class Root_obj : public hx::Object
+class Root
 {
 public:
-   Root_obj()
+   Root()
    {
       mNext = 0;
       mPrev = 0;
       mValue = 0;
+      hx::GCAddRoot(&mValue);
+   }
+   ~Root()
+   {
+      hx::GCRemoveRoot(&mValue);
    }
 
-   virtual int __GetType() const { return valtRoot; }
-   virtual hx::ObjectPtr<Class_obj> __GetClass() const { return 0; }
-   virtual bool __IsClass(Class inClass ) const { return false; }
-   void __Mark(hx::MarkContext *__inCtx)
-   {
-      HX_MARK_OBJECT(mNext);
-      HX_MARK_OBJECT(mValue);
-   }
-   #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
-   {
-      HX_VISIT_OBJECT(mPrev);
-      HX_VISIT_OBJECT(mNext);
-      HX_VISIT_OBJECT(mValue);
-   }
-   #endif
-
-   Root_obj *mNext;
-   Root_obj *mPrev;
+   Root *mNext;
+   Root *mPrev;
    hx::Object *mValue;
 };
 
@@ -744,12 +732,9 @@ public:
 value *alloc_root()
 {
    if (!sgRootHead)
-   {
-      val_gc_add_root((hx::Object **)&sgRootHead);
-      sgRootHead = new Root_obj;
-   }
+      sgRootHead = new Root;
 
-   Root_obj *root = new Root_obj;
+   Root *root = new Root;
    root->mNext = sgRootHead->mNext;
    if (root->mNext)
       root->mNext->mPrev = root;
@@ -763,12 +748,14 @@ value *alloc_root()
 void free_root(value *inValue)
 {
    int diff =(char *)(&sgRootHead->mValue) - (char *)sgRootHead;
-   Root_obj *root = (Root_obj *)( (char *)inValue - diff );
+   Root *root = (Root *)( (char *)inValue - diff );
 
    if (root->mPrev)
       root->mPrev->mNext = root->mNext;
    if (root->mNext)
       root->mNext->mPrev = root->mPrev;
+
+   delete root;
 }
 
 

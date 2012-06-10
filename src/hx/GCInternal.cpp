@@ -29,9 +29,19 @@ static void *sgObject_root = 0;
 int gInAlloc = false;
 
 
+
+#define TRY_DEFRAG
+//#define SHOW_MEM_EVENTS
 //#define COLLECTOR_STATS
-//#define TRY_DEFRAG
-//#define VERIFY_MOVE
+// Allocate this many blocks at a time - this will increase memory usage % when rounding to block size must be done.
+// However, a bigger number makes it harder to release blocks due to pinning
+#define IMMIX_BLOCK_GROUP_BITS  5
+
+#ifdef __GNUC__
+// Not sure if this is worth it ....
+//#define USE_POSIX_MEMALIGN
+#endif
+
 
 #ifdef COLLECTOR_STATS
 struct AllocBump
@@ -55,7 +65,6 @@ static int gCollectTraceCount = 0;
 #else
 #define GCLOG printf
 #endif
-
 
 
 static int sgTimeToNextTableUpdate = 0;
@@ -241,6 +250,7 @@ public:
 };
 */
 
+#ifndef USE_POSIX_MEMALIGN
 
 struct GroupInfo
 {
@@ -259,6 +269,8 @@ struct GroupInfo
 };
  
 QuickVec<GroupInfo> gAllocGroups;
+
+#endif
 
 
 // ---  Internal GC - IMMIX Implementation ------------------------------
@@ -282,13 +294,13 @@ QuickVec<GroupInfo> gAllocGroups;
 #define IMMIX_BLOCK_OFFSET_MASK (IMMIX_BLOCK_SIZE-1)
 #define IMMIX_BLOCK_BASE_MASK   (~(size_t)(IMMIX_BLOCK_OFFSET_MASK))
 #define IMMIX_LINE_LEN          (1<<IMMIX_LINE_BITS)
-#define IMMIX_LINES             (1<<(IMMIX_BLOCK_BITS-IMMIX_LINE_BITS))
+#define IMMIX_LINE_COUNT_BITS   (IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)
+#define IMMIX_LINES             (1<<IMMIX_LINE_COUNT_BITS)
 #define IMMIX_HEADER_LINES      (IMMIX_LINES>>IMMIX_LINE_BITS)
 #define IMMIX_USEFUL_LINES      (IMMIX_LINES - IMMIX_HEADER_LINES)
 #define IMMIX_LINE_POS_MASK     ((size_t)(IMMIX_LINE_LEN-1))
 #define IMMIX_START_OF_ROW_MASK  (~IMMIX_LINE_POS_MASK)
 
-#define IMMIX_BLOCK_GROUP_BITS  5
 #define IMMIX_MAX_ALLOC_GROUPS_SIZE  (1<<IMMIX_BLOCK_GROUP_BITS)
 
 
@@ -360,9 +372,7 @@ union BlockData
    {
       if (gFillWithJunk)
          memset(this,0x55,sizeof(*this));
-      if (gBlockInfo==0)
-         gBlockInfo = new QuickVec<BlockDataInfo>;
-      mId = gBlockInfo->size();
+      mId = nextBlockId();
       gBlockInfo->push( BlockDataInfo() );
       BlockDataInfo &info = getInfo();
       info.mId = mId;
@@ -379,6 +389,24 @@ union BlockData
       memset((char *)this + 2,0,IMMIX_HEADER_LINES * IMMIX_LINE_LEN - 2);
       memset(mRow[IMMIX_HEADER_LINES],0,IMMIX_USEFUL_LINES * IMMIX_LINE_LEN);
       getInfo().mUsedRows = 0;
+   }
+
+   void destroy()
+   {
+      (*gBlockInfo)[mId].mPtr = 0;
+      #ifdef USE_POSIX_MEMALIGN
+      free(this);
+      #endif
+   }
+
+   int nextBlockId()
+   {
+      if (gBlockInfo==0)
+         gBlockInfo = new QuickVec<BlockDataInfo>;
+      for(int i=0;i<gBlockInfo->size();i++)
+         if ( !(*gBlockInfo)[i].mPtr )
+           return i;
+      return  gBlockInfo->next();
    }
 
    inline BlockDataInfo &getInfo() const { return (*gBlockInfo)[mId]; }
@@ -450,11 +478,16 @@ union BlockData
          {
             if (row_flag!=0)
             {
-               printf("Block verification failed on row %d\n",r);
+               GCLOG("Block verification failed on row %d\n",r);
                *(int *)0=0;
             }
          }
       }
+   }
+ 
+   void FillWithJunk()
+   {
+       memset(&mRow[0][0] + 2, 0x55, IMMIX_BLOCK_SIZE-2 );
    }
 
    #define CHECK_TABLE_LIVE \
@@ -494,8 +527,7 @@ union BlockData
                      {
                          unsigned int header = *(unsigned int *)(row + pos);
                          int size = header & IMMIX_ALLOC_SIZE_MASK;
-                         //printf("Fill %d (%p+%d=%p) mark=%d/%d\n",
-                            //size, row,pos, row+pos+4,row[pos+3], gByteMarkID);
+                         //GCLOG("Fill %d (%p+%d=%p) mark=%d/%d\n",size, row,pos, row+pos+4,row[pos+3], gByteMarkID);
                          memset(row+pos+4,0x55,size);
                      }
                      if (row[pos+2] & IMMIX_ROW_HAS_OBJ_LINK)
@@ -541,7 +573,7 @@ union BlockData
       if (r < IMMIX_HEADER_LINES || r >= IMMIX_LINES)
       {
          if (inReport)
-            printf("  bad row %d (off=%d)\n", r, inOffset);
+            GCLOG("  bad row %d (off=%d)\n", r, inOffset);
          return allocNone;
       }
       unsigned char time = mRow[0][inOffset+3];
@@ -549,7 +581,7 @@ union BlockData
       {
          // Object is either out-of-date, or already marked....
          if (inReport)
-            printf(time==gByteMarkID ? " M " : " O ");
+            GCLOG(time==gByteMarkID ? " M " : " O ");
          return time==gByteMarkID ? allocMarked : allocNone;
       }
 
@@ -557,7 +589,7 @@ union BlockData
       if (!(flags & (IMMIX_ROW_HAS_OBJ_LINK)))
       {
          if (inReport)
-            printf("  row has no new objs :[%d] = %d\n", r, flags );
+            GCLOG("  row has no new objs :[%d] = %d\n", r, flags );
          return allocNone;
       }
 
@@ -575,16 +607,16 @@ union BlockData
 
       if (inReport)
       {
-         printf("  not found in table (r=%p,sought =%d): ", row, sought);
+         GCLOG("  not found in table (r=%p,sought =%d): ", row, sought);
          int pos = (flags & IMMIX_ROW_LINK_MASK);
-         printf(" %d ", pos );
+         GCLOG(" %d ", pos );
          while( pos!=sought && (row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_HAS_OBJ_LINK) )
          {
             pos = row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_LINK_MASK;
-            printf(" %d ", pos );
+            GCLOG(" %d ", pos );
          }
 
-         printf("\n");
+         GCLOG("\n");
       }
 
       return allocNone;
@@ -791,41 +823,14 @@ void MarkPopClass(hx::MarkContext *__inCtx)
 #endif
 
 
-#ifdef VERIFY_MOVE
-BlockData **gMarkVerifyBlocks = 0;
-int gMarkVerifyCount = 0;
-int gMarkVerified = 0;
-
-bool VerifyMovePtr(void *inPtr)
-{
-   int base = (int)inPtr & IMMIX_BLOCK_BASE_MASK;
-   for(int i=0;i<gMarkVerifyCount;i++)
-   {
-      if ( base == ((int)gMarkVerifyBlocks[i]) )
-         return true;
-      gMarkVerified++;
-   }
-   return false;
-}
-#endif
-
 
 void MarkAlloc(void *inPtr,hx::MarkContext *__inCtx)
 {
-   #ifdef VERIFY_MOVE
-   if (gMarkVerifyBlocks && VerifyMovePtr(inPtr))
-      __inCtx->Trace();
-   #endif
    MARK_ROWS
 }
 
 void MarkObjectAlloc(hx::Object *inPtr,hx::MarkContext *__inCtx)
 {
-   #ifdef VERIFY_MOVE
-   if (gMarkVerifyBlocks && VerifyMovePtr(inPtr))
-      __inCtx->Trace();
-   #endif
-
    MARK_ROWS
 
    #ifdef HXCPP_DEBUG
@@ -1052,31 +1057,6 @@ public:
    void visitAlloc(void **ioPtr) { count ++; }
 };
 
-class AdjustPointer : public hx::VisitContext
-{
-public:
-   AdjustPointer() {  }
-
-   void visitObject(hx::Object **ioPtr)
-   {
-      if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
-      {
-         //printf("Found object to  %p -> %p\n", *ioPtr,  (*(hx::Object ***)ioPtr)[0]);
-         *ioPtr = (*(hx::Object ***)ioPtr)[0];
-      }
-   }
-
-   void visitAlloc(void **ioPtr)
-   {
-      if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
-      {
-         //printf("Found reference to  %p -> %p\n", *ioPtr,  (*(void ***)ioPtr)[0]);
-         *ioPtr = (*(void ***)ioPtr)[0];
-      }
-   }
-};
-
-
 
 #endif
 
@@ -1186,46 +1166,75 @@ public:
    {
       if (mNextEmpty >= mEmptyBlocks.size())
       {
+         int want_more = 0;
          if (inTryCollect)
          {
-            bool want_more = Collect();
+            want_more = Collect();
             if (!want_more)
                return 0;
          }
-
-         // Find spare group...
-         int gid = -1;
-         for(int i=0;i<gAllocGroups.size();i++)
-            if (!gAllocGroups[i].alloc)
-            {
-               gid = i;
-               break;
-            }
-         if (gid<0)
-           gid = gAllocGroups.next();
+         else
+         {
+            want_more = 1<<IMMIX_BLOCK_GROUP_BITS;
+         }
 
          // Allocate some more blocks...
          // Using simple malloc for now, so allocate a big chuck in case we have to
          //  waste space by doing block-aligning
-         char *chunk = (char *)malloc( 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS) );
-         int n = 1<<IMMIX_BLOCK_GROUP_BITS;
-         char *aligned = (char *)( (((size_t)chunk) + IMMIX_BLOCK_SIZE-1) & IMMIX_BLOCK_BASE_MASK);
-         if (aligned!=chunk)
-            n--;
 
-         gAllocGroups[gid].alloc = chunk;
-     
-
-         for(int i=0;i<n;i++)
-         {
-            BlockData *block = (BlockData *)(aligned + i*IMMIX_BLOCK_SIZE);
-            block->Init(gid);
-            mAllBlocks.push(block);
-            mEmptyBlocks.push(block);
-         }
-         #ifdef COLLECTOR_STATS
-         GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+         #ifdef SHOW_MEM_EVENTS
+         GCLOG("Request %d blocks\n", want_more);
          #endif
+         while(want_more>0)
+         {
+   
+            #ifdef USE_POSIX_MEMALIGN
+            int gid = 0;
+            char *chunk = 0;
+            int n = 1;
+            int result = posix_memalign( (void **)&chunk, IMMIX_BLOCK_SIZE, IMMIX_BLOCK_SIZE );
+            if (chunk==0)
+            {
+               GCLOG("Error in posix_memalign %d!!!\n", result);
+            }
+            char *aligned = chunk;
+            want_more--;
+
+            #else
+            // Find spare group...
+            int gid = -1;
+            for(int i=0;i<gAllocGroups.size();i++)
+               if (!gAllocGroups[i].alloc)
+               {
+                  gid = i;
+                  break;
+               }
+            if (gid<0)
+              gid = gAllocGroups.next();
+   
+   			char *chunk = (char *)malloc( 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS) );
+            int n = 1<<IMMIX_BLOCK_GROUP_BITS;
+   
+            char *aligned = (char *)( (((size_t)chunk) + IMMIX_BLOCK_SIZE-1) & IMMIX_BLOCK_BASE_MASK);
+            if (aligned!=chunk)
+               n--;
+            gAllocGroups[gid].alloc = chunk;
+            // Only do one group allocation
+            want_more = 0;
+            #endif
+        
+   
+            for(int i=0;i<n;i++)
+            {
+               BlockData *block = (BlockData *)(aligned + i*IMMIX_BLOCK_SIZE);
+               block->Init(gid);
+               mAllBlocks.push(block);
+               mEmptyBlocks.push(block);
+            }
+            #ifdef SHOW_MEM_EVENTS
+            GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+            #endif
+         }
       }
 
       BlockData *block = mEmptyBlocks[mNextEmpty++];
@@ -1328,42 +1337,57 @@ public:
       }
 
       #ifdef COLLECTOR_STATS
-      printf("Moved %d\n", moved);
+      GCLOG("Moved %d\n", moved);
       #endif
 
       // Fill in stats of last block...
       dest->FillTo(destRow,destPos);
 
       AdjustPointers();
-
-      #ifdef VERIFY_MOVE
-      hx::gMarkVerifyBlocks = inFrom;
-      hx::gMarkVerifyCount = inCount;
-      hx::gMarkVerified = 0;
-      MarkAll(true);
-      printf("%d pointers Ok!\n",hx::gMarkVerified);
-      hx::gMarkVerifyBlocks = 0;
-      hx::gMarkVerifyCount = 0;
-      #endif
    }
 
    void AdjustPointers()
    {
-      AdjustPointer *adjust = new AdjustPointer();
+      class AdjustPointer : public hx::VisitContext
+      {
+         GlobalAllocator *mAlloc;
+      public:
+         AdjustPointer(GlobalAllocator *inAlloc) : mAlloc(inAlloc) {  }
+      
+         void visitObject(hx::Object **ioPtr)
+         {
+            if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
+            {
+               //GCLOG("Found object to  %p -> %p\n", *ioPtr,  (*(hx::Object ***)ioPtr)[0]);
+               *ioPtr = (*(hx::Object ***)ioPtr)[0];
+            }
+         }
+
+         void visitAlloc(void **ioPtr)
+         {
+            if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
+            {
+               //GCLOG("Found reference to  %p -> %p\n", *ioPtr,  (*(void ***)ioPtr)[0]);
+               *ioPtr = (*(void ***)ioPtr)[0];
+            }
+         }
+      };
+
+
+      AdjustPointer *adjust = new AdjustPointer(this);
       VisitAll(adjust);
       delete adjust;
    }
 
+   #ifndef USE_POSIX_MEMALIGN
    bool EvacuateGroup(int inGid)
    {
-      #ifdef COLLECTOR_STATS
-      GCLOG("EvacuateGroup %d\n", inGid);
-      #endif
-
       BlockData *from[IMMIX_MAX_ALLOC_GROUPS_SIZE];
       BlockData *to[IMMIX_MAX_ALLOC_GROUPS_SIZE];
       int fromCount = 0;
       int toCount = 0;
+
+      int fromRows = 0;
 
       for(int i=0;i<mAllBlocks.size();i++)
       {
@@ -1371,7 +1395,10 @@ public:
          if (info.mGroupId == inGid)
          {
             if ( info.mUsedRows>0 )
+            {
+               fromRows += info.mUsedRows;
                from[fromCount++] = mAllBlocks[i];
+            }
          }
          else if (info.mUsedRows==0 && toCount<IMMIX_MAX_ALLOC_GROUPS_SIZE)
          {
@@ -1379,34 +1406,78 @@ public:
          }
       }
 
-      if (toCount >= fromCount)
+      if (toCount*IMMIX_USEFUL_LINES > fromRows)
       {
+         while(toCount<fromCount)
+            to[toCount++] = 0;
+         #ifdef SHOW_MEM_EVENTS
+         GCLOG("EvacuateGroup %d\n", inGid );
+         #endif
          MoveBlocks(from,to,fromCount);
          return true;
       }
    
+      #ifdef SHOW_MEM_EVENTS
+      GCLOG("EvacuateGroup %d - not enough room (%d/%d)\n", inGid, toCount*IMMIX_USEFUL_LINES, fromRows);
+      #endif
       return false;
    }
 
-   #endif
-
    void ReleaseGroup(int inGid)
    {
-      #ifdef COLLECTOR_STATS
-      GCLOG("Release group %d\n", inGid);
-      #endif
       free(gAllocGroups[inGid].alloc);
       gAllocGroups[inGid].alloc = 0;
 
+      int remaining=0;
       for(int i=0; i<mAllBlocks.size();  )
          if (mAllBlocks[i]->getInfo().mGroupId==inGid)
+         {
+            mAllBlocks[i]->destroy();
             mAllBlocks.erase(i);
+         }
+         else
+         {
+            remaining++;
+            i++;
+         }
+
+      #ifdef SHOW_MEM_EVENTS
+      GCLOG("Release group %d-> %d blocks left = %dk\n", inGid, remaining, remaining<<(IMMIX_BLOCK_BITS-10) );
+      #endif
+   }
+   #endif // !USE_POSIX_MEMALIGN
+
+   #endif // HXCPP_VISIT_ALLOCS
+
+   bool ReleaseBlocks(int inBlocks)
+   {
+      #ifdef USE_POSIX_MEMALIGN
+      for(int i=0; i<mAllBlocks.size();  )
+      {
+         BlockDataInfo &block = mAllBlocks[i]->getInfo();
+         if (!block.mPinned && !block.mUsedRows)
+         { 
+            #ifdef SHOW_MEM_EVENTS
+            GCLOG("Release block %d (%p) = %dk\n",block.mPtr->mId, block.mPtr,  (mAllBlocks.size()-1)<<(IMMIX_BLOCK_BITS-10) );
+            #endif
+            mAllBlocks[i]->destroy();
+            mAllBlocks.erase(i);
+            inBlocks--;
+            if (inBlocks==0)
+               return true;
+         }
          else
             i++;
-   }
+      }
 
-   bool ReleaseBestBlockGroup()
-   {
+      #ifdef HXCPP_VISIT_ALLOCS
+      // TODO: do some joining to free some blocks
+      #endif
+
+      return true;
+
+      #else
+
       for(int i=0;i<gAllocGroups.size();i++)
          gAllocGroups[i].clear();
 
@@ -1422,24 +1493,32 @@ public:
 
       int bestGroup = -1;
       int bestFree = 0;
+      int pinned = 0;
+      int active = 0;
       for(int i=0;i<gAllocGroups.size();i++)
       {
          GroupInfo &g = gAllocGroups[i];
-         if (g.alloc && !g.pinned && g.free)
+         if (g.alloc)
          {
-            //printf("Group %d/%d, free = %d\n", i, gAllocGroups.size(), g.free );
-
-            // Release this group - it's all free
-            if (!g.used)
+            active++;
+            if (g.pinned)
+               pinned++;
+            else
             {
-               ReleaseGroup(i);
-               return true;
-            }
-      
-            if ( g.free>=bestFree )
-            {
-               bestFree = g.free;
-               bestGroup = i;
+               //GCLOG("Group %d/%d, free = %d\n", i, gAllocGroups.size(), g.free );
+   
+               // Release this group - it's all free
+               if (!g.used)
+               {
+                  ReleaseGroup(i);
+                  return true;
+               }
+         
+               if ( g.free>=bestFree )
+               {
+                  bestFree = g.free;
+                  bestGroup = i;
+               }
             }
          }
       }
@@ -1454,6 +1533,11 @@ public:
       #endif
 
       // No unpinned groups ...
+      #ifdef SHOW_MEM_EVENTS
+      GCLOG("Could not release, %d/%d pinned.\n",pinned,active);
+      #endif
+
+      #endif // !USE_POSIX_MEMALIGN
       return false;
    }
  
@@ -1472,6 +1556,9 @@ public:
    #ifdef HXCPP_VISIT_ALLOCS
    void VisitAll(hx::VisitContext *inCtx)
    {
+      for(int i=0;i<mAllBlocks.size();i++)
+         mAllBlocks[i]->VisitBlock(inCtx);
+
       hx::VisitClassStatics(inCtx);
 
       for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
@@ -1480,15 +1567,12 @@ public:
          if (*obj)
          {
             inCtx->visitObject(obj);
+            (*obj)->__Visit(inCtx);
          }
       }
       for(int i=0;i<hx::sZombieList.size();i++)
-      {
-         inCtx->visitObject(&hx::sZombieList[i]);
-      }
+         hx::sZombieList[i]->__Visit(inCtx);
 
-      for(int i=0;i<mAllBlocks.size();i++)
-         mAllBlocks[i]->VisitBlock(inCtx);
    }
    #endif
 
@@ -1508,7 +1592,9 @@ public:
       {
          hx::Object *&obj = **i;
          if (obj)
+         {
             hx::MarkObjectAlloc(obj , &mMarker );
+         }
       }
 
       // Mark zombies too....
@@ -1526,7 +1612,7 @@ public:
       hx::RunFinalizers();
    }
 
-   bool Collect()
+   int Collect()
    {
       #ifdef ANDROID
       //__android_log_print(ANDROID_LOG_ERROR, "hxcpp", "Collect...");
@@ -1594,20 +1680,23 @@ public:
       mTotalAfterLastCollect = MemUsage();
 
 
-      //printf("Using %d, blocks %d (%d)\n", mTotalAfterLastCollect, mAllBlocks.size(), mAllBlocks.size()*IMMIX_BLOCK_SIZE);
+      //GCLOG("Using %d, blocks %d (%d)\n", mTotalAfterLastCollect, mAllBlocks.size(), mAllBlocks.size()*IMMIX_BLOCK_SIZE);
 
       int free_rows = mAllBlocks.size()*IMMIX_USEFUL_LINES - mRowsInUse;
       // Aim for 50% free space...
-      bool want_more = free_rows < mRowsInUse;
-      bool want_less = free_rows > mRowsInUse + (1<<(IMMIX_BLOCK_GROUP_BITS+IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)) * 11/10;
-      bool released = want_less && ReleaseBestBlockGroup();
+      int  delta = mRowsInUse - free_rows;
+      int  want_more = delta>0 ? (delta >> IMMIX_LINE_COUNT_BITS ) : 0;
+      int  want_less = (delta < -(IMMIX_USEFUL_LINES<<IMMIX_BLOCK_GROUP_BITS)) ?
+                            ((-delta) << IMMIX_LINE_COUNT_BITS ) : 0;
+      bool released = want_less && ReleaseBlocks(want_less);
 
       #ifdef TRY_DEFRAG
-      if (!released)
+      if (!released && sgTimeToNextTableUpdate==0)
       {
          // Try compacting ...
-         enum { MAX_DEFRAG = 10 };
-         enum { DEFRAG_HOLES = 6 };
+         enum { MAX_DEFRAG = 64 };
+         enum { MIN_DEFRAG = 2 };
+         enum { DEFRAG_HOLES = 5 };
          BlockData *from[MAX_DEFRAG]; 
          BlockData *to[MAX_DEFRAG]; 
          int fromCount = 0;
@@ -1623,19 +1712,32 @@ public:
                if (toCount<MAX_DEFRAG)
                   to[toCount++] = block;
             }
-            else if (!info.mPinned && info.mHoles>DEFRAG_HOLES && fromCount<MAX_DEFRAG )
+            else if (!info.mPinned && info.mHoles>=DEFRAG_HOLES && fromCount<MAX_DEFRAG )
             {
                from[fromCount++] = block;
             }
          }
 
-         int n = std::min(fromCount,toCount);
-         if (n>2)
+         if (fromCount>MIN_DEFRAG)
          {
-            #ifdef COLLECTOR_STATS
-            GCLOG("Defrag %d/%d\n", fromCount,toCount);
+            int n = std::min(fromCount,toCount);
+            // Not enough blocks, but perhaps enough memory?
+            if (toCount<fromCount)
+            {
+               int rows = toCount * IMMIX_USEFUL_LINES;
+               n = 0;
+               for(n=0; n<fromCount; n++)
+               {
+                  rows -= from[n]->getInfo().mUsedRows;
+                  if (rows<0)
+                     break;
+               }
+            }
+            #ifdef SHOW_MEM_EVENTS
+            GCLOG("Defrag %d/%d (%d)\n", fromCount, n, toCount);
             #endif
-            MoveBlocks(from,to,n);
+            if (n)
+               MoveBlocks(from,to,n);
          }
       }
       #endif
@@ -1697,7 +1799,6 @@ public:
 
       return memUnmanaged;
    }
-
 
 
    size_t mRowsInUse;
@@ -1861,7 +1962,7 @@ public:
          int skip = 1;
          int extra_lines = (s + mCurrentPos-1) >> IMMIX_LINE_BITS;
 
-         //printf("check for %d extra lines ...\n", extra_lines);
+         //GCLOG("check for %d extra lines ...\n", extra_lines);
          if (mCurrentLine + extra_lines < IMMIX_LINES)
          {
             int test = 0;
@@ -1872,7 +1973,7 @@ public:
                   if ( used[test] & IMMIX_ROW_MARKED)
                      break;
             }
-            //printf(" found %d extra lines\n", test);
+            //GCLOG(" found %d extra lines\n", test);
             if (test==extra_lines)
             {
                // Ok, fits on the line! - setup object table
@@ -1894,11 +1995,11 @@ public:
                if (mCurrentPos==0)
                   mCurrentLine++;
 
-               //printf("Alloced %d - %d/%d now\n", s, mCurrentPos, mCurrentLine);
+               //GCLOG("Alloced %d - %d/%d now\n", s, mCurrentPos, mCurrentLine);
 
                return result + 1;
             }
-            //printf("not enought extra lines - skip %d\n",skip);
+            //GCLOG("not enought extra lines - skip %d\n",skip);
             skip = test + 1;
          }
          else
@@ -1940,7 +2041,7 @@ public:
             if (test<required_rows)
             {
                mCurrentLine += test+1;
-               //printf("  Only found %d good - skip to %d\n",test,mCurrentLine);
+               //GCLOG("  Only found %d good - skip to %d\n",test,mCurrentLine);
                continue;
             }
 
@@ -1974,12 +2075,9 @@ public:
       if (!mTopOfStack)
          return;
 
-      #ifdef ANDROID
+      #ifdef COLLECTOR_STATS
       //int here = 0;
-      // __android_log_print(ANDROID_LOG_INFO, "hxcpp", "Mark %p...%p.", mBottomOfStack, mTopOfStack);
-      #else
-      //int here = 0;
-      //printf("=========== Mark Stack ==================== %p ... %p (%p)\n",mBottomOfStack,mTopOfStack,&here);
+      //GCLOG("=========== Mark Stack ==================== %p ... %p (%p)\n",mBottomOfStack,mTopOfStack,&here);
       #endif
 
       #ifdef HXCPP_DEBUG
@@ -1994,13 +2092,11 @@ public:
       MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) , __inCtx);
       #endif
 
-      //printf("marked\n");
       Reset();
    }
 
    void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    {
-      //printf("MarkConservative....\n");
       void *prev = 0;
       for(int *ptr = inBottom ; ptr<inTop; ptr++)
       {
@@ -2011,7 +2107,6 @@ public:
          {
             if (mem==memLarge)
             {
-               //printf(" mem large\n");
                unsigned char &mark = ((unsigned char *)(vptr))[-1];
                if (mark!=gByteMarkID)
                   mark = gByteMarkID;
@@ -2020,29 +2115,26 @@ public:
             {
                BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
                int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
-               //printf("Checking %p %p....", ptr,vptr);
                AllocType t = block->GetAllocType(pos-sizeof(int),true);
                if ( t==allocObject )
                {
-                  // printf(" Mark object %p (%p)\n", vptr,ptr);
+                  //GCLOG(" Mark object %p (%p)\n", vptr,ptr);
                   HX_MARK_OBJECT( ((hx::Object *)vptr) );
                   block->pin();
                }
                else if (t==allocString)
                {
-                  // printf(" Mark string %p (%p)\n", vptr,ptr);
+                  // GCLOG(" Mark string %p (%p)\n", vptr,ptr);
                   HX_MARK_STRING(vptr);
                   block->pin();
                }
+               else if (t==allocMarked)
+                  block->pin();
             }
          }
-         /*
-         else
-            printf(" rejected %p %p %d %p %d=%d\n",ptr, vptr, ((size_t)vptr & 0x03), prev,
-                  sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
-         */
+         // GCLOG(" rejected %p %p %d %p %d=%d\n", ptr, vptr, !((size_t)vptr & 0x03), prev,
+         //    sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
       }
-      //printf("MarkConservative done\n");
    }
 
    int mCurrentPos;
@@ -2165,7 +2257,7 @@ void InitAlloc()
    hx::Object tmp;
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
-   //printf("__root pointer %p\n", sgObject_root);
+   //GCLOG("__root pointer %p\n", sgObject_root);
    sMainThreadAlloc =  new LocalAllocator();
    tlsLocalAlloc.Set(sMainThreadAlloc);
 }

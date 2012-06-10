@@ -1,16 +1,23 @@
 #include <hxcpp.h>
 #include <math.h>
+#include <hxMath.h>
 
 using namespace hx;
 
+
+
+extern Class __StringClass;
 namespace hx
 {
+
+extern Class hxEnumBase_obj__mClass;
+extern Class Object__mClass;
+
 
 Class __BoolClass;
 Class __IntClass;
 Class __FloatClass;
 Class __VoidClass;
-Class Class_obj__mClass;
 
 
 Class &GetBoolClass() { return __BoolClass; }
@@ -220,6 +227,20 @@ static bool IsInt(hx::Object *inPtr)
 }
 
 
+static void sMarkStatics(HX_MARK_PARAMS) {
+	HX_MARK_MEMBER(__VoidClass);
+	HX_MARK_MEMBER(__BoolClass);
+	HX_MARK_MEMBER(__IntClass);
+	HX_MARK_MEMBER(__FloatClass);
+	HX_MARK_MEMBER(__StringClass);
+	HX_MARK_MEMBER(Object__mClass);
+	HX_MARK_MEMBER(ArrayBase::__mClass);
+	HX_MARK_MEMBER(Math_obj::__mClass);
+	HX_MARK_MEMBER(Anon_obj::__mClass);
+	HX_MARK_MEMBER(hx::hxEnumBase_obj__mClass);
+};
+
+
 
 #ifdef HXCPP_VISIT_ALLOCS
 static void sVisitStatics(HX_VISIT_PARAMS) {
@@ -227,6 +248,12 @@ static void sVisitStatics(HX_VISIT_PARAMS) {
 	HX_VISIT_MEMBER(__BoolClass);
 	HX_VISIT_MEMBER(__IntClass);
 	HX_VISIT_MEMBER(__FloatClass);
+	HX_VISIT_MEMBER(__StringClass);
+	HX_VISIT_MEMBER(Object__mClass);
+	HX_VISIT_MEMBER(ArrayBase::__mClass);
+	HX_VISIT_MEMBER(Math_obj::__mClass);
+	HX_VISIT_MEMBER(Anon_obj::__mClass);
+	HX_VISIT_MEMBER(hx::hxEnumBase_obj__mClass);
 };
 
 #endif
@@ -234,7 +261,7 @@ static void sVisitStatics(HX_VISIT_PARAMS) {
 
 void Dynamic::__boot()
 {
-   Static(__VoidClass) = hx::RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0, 0
+   Static(__VoidClass) = hx::RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0, sMarkStatics
       #ifdef HXCPP_VISIT_ALLOCS
       ,sVisitStatics
       #endif

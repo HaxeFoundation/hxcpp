@@ -22,7 +22,7 @@ int EnumBase_obj::__FindArgCount(String inName)
 }
 Dynamic EnumBase_obj::__Field(const String &inString, bool inCallProp) { return null(); }
 
-static Class hxEnumBase_obj__mClass;
+Class hxEnumBase_obj__mClass;
 Class &EnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }
 
 //void hxEnumBase_obj::__GetFields(Array<String> &outFields) { }

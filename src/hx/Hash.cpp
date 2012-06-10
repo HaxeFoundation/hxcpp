@@ -208,6 +208,20 @@ public:
       }
    }
 
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      if (mFinalizer)
+         mFinalizer->Visit(__inCtx);
+
+      for(Map::iterator i=mMap->begin();i!=mMap->end();++i)
+      {
+         HX_VISIT_OBJECT(i->second.mPtr);
+      }
+   }
+   #endif
+
+
 };
 
 void IntHash::Destroy(Object *inHash)
