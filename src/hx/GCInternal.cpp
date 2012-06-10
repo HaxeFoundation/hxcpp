@@ -1425,11 +1425,9 @@ public:
 
    void ReleaseGroup(int inGid)
    {
-      free(gAllocGroups[inGid].alloc);
-      gAllocGroups[inGid].alloc = 0;
-
       int remaining=0;
       for(int i=0; i<mAllBlocks.size();  )
+      {
          if (mAllBlocks[i]->getInfo().mGroupId==inGid)
          {
             mAllBlocks[i]->destroy();
@@ -1440,6 +1438,10 @@ public:
             remaining++;
             i++;
          }
+      }
+
+      free(gAllocGroups[inGid].alloc);
+      gAllocGroups[inGid].alloc = 0;
 
       #ifdef SHOW_MEM_EVENTS
       GCLOG("Release group %d-> %d blocks left = %dk\n", inGid, remaining, remaining<<(IMMIX_BLOCK_BITS-10) );
@@ -1687,7 +1689,7 @@ public:
       int  delta = mRowsInUse - free_rows;
       int  want_more = delta>0 ? (delta >> IMMIX_LINE_COUNT_BITS ) : 0;
       int  want_less = (delta < -(IMMIX_USEFUL_LINES<<IMMIX_BLOCK_GROUP_BITS)) ?
-                            ((-delta) << IMMIX_LINE_COUNT_BITS ) : 0;
+                            ((-delta) >> IMMIX_LINE_COUNT_BITS ) : 0;
       bool released = want_less && ReleaseBlocks(want_less);
 
       #ifdef TRY_DEFRAG
