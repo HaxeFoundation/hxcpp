@@ -3,19 +3,20 @@
 
 #include <cpp/FastIterator.h>
 
-// --- hx::Boxed ------------------------------------------------------
+// --- hx::ReturnNull ------------------------------------------------------
 //
-// Provides an "Object" of given type.  For types that are not actually objects,
-//  Dynamic is used.
+// Provides an "Null<Object>" of given type.  For types that can't actually be null, Dynamic is used.
 
 namespace hx
 {
-template<typename T> struct Boxed { typedef T type; };
-template<> struct Boxed<int> { typedef Dynamic type; };
-template<> struct Boxed<double> { typedef Dynamic type; };
-template<> struct Boxed<float> { typedef Dynamic type; };
-template<> struct Boxed<bool> { typedef Dynamic type; };
-template<> struct Boxed<String> { typedef Dynamic type; };
+
+template<typename T> struct ReturnNull { typedef T type; };
+template<> struct ReturnNull<int> { typedef Dynamic type; };
+template<> struct ReturnNull<double> { typedef Dynamic type; };
+template<> struct ReturnNull<float> { typedef Dynamic type; };
+template<> struct ReturnNull<bool> { typedef Dynamic type; };
+// ? template<> struct ReturnNull<unsigned char> { typedef Dynamic type; };
+
 }
 
 
@@ -206,7 +207,7 @@ class Array_obj : public hx::ArrayBase
 {
    typedef ELEM_ Elem;
    typedef hx::ObjectPtr< Array_obj<ELEM_> > ObjPtr;
-   typedef typename hx::Boxed<ELEM_>::type NullType;
+   typedef typename hx::ReturnNull<ELEM_>::type NullType;
 
 
 public:
