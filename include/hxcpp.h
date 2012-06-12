@@ -186,9 +186,9 @@ public:
 #include <hx/GC.h>
 #include "null.h"
 #include <hx/Object.h>
-#include <cpp/CppInt32__.h>
 #include "hxString.h"
 #include "Dynamic.h"
+#include <cpp/CppInt32__.h>
 // This needs to "see" other declarations ...
 #include <hx/GCTemplates.h>
 #include <hx/FieldRef.h>

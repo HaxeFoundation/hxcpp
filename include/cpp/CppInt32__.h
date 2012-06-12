@@ -6,6 +6,13 @@
 namespace cpp
 {
 
+#define HX_I32_DEF_FUNC1(Name) \
+   static inline Dynamic __##Name(const Dynamic &a) { return Name(a); } \
+   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction1(&CppInt32__::__##Name); }
+
+#define HX_I32_DEF_FUNC2(Name) \
+   static inline Dynamic __##Name(const Dynamic &a, const Dynamic &b) { return Name(a,b); } \
+   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction2(&CppInt32__::__##Name); }
 
 class CppInt32__
 {
@@ -48,7 +55,27 @@ public:
    inline int operator/(CppInt32__ b) { return mValue / b.mValue; }
    inline int operator%(CppInt32__ b) { return mValue % b.mValue; }
 
-   static Dynamic make_dyn();
+   HX_I32_DEF_FUNC2(make)
+   HX_I32_DEF_FUNC1(ofInt)
+   HX_I32_DEF_FUNC1(toInt)
+   HX_I32_DEF_FUNC1(toNativeInt)
+   HX_I32_DEF_FUNC2(add)
+   HX_I32_DEF_FUNC2(sub)
+   HX_I32_DEF_FUNC2(mul)
+   HX_I32_DEF_FUNC2(div)
+   HX_I32_DEF_FUNC2(mod)
+   HX_I32_DEF_FUNC2(shl)
+   HX_I32_DEF_FUNC2(shr)
+   HX_I32_DEF_FUNC2(ushr)
+   HX_I32_DEF_FUNC2(_and)
+   HX_I32_DEF_FUNC2(_or)
+   HX_I32_DEF_FUNC2(_xor)
+   HX_I32_DEF_FUNC1(neg)
+   HX_I32_DEF_FUNC1(complement)
+   HX_I32_DEF_FUNC2(compare)
+   HX_I32_DEF_FUNC2(ucompare)
+   HX_I32_DEF_FUNC1(isNeg)
+   HX_I32_DEF_FUNC1(isZero)
 
    int mValue;
 };
