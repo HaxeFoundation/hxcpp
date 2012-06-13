@@ -118,12 +118,14 @@ Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class
 
 void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 {
+   HX_MARK_MEMBER(__meta__);
    if (mMarkFunc)
        mMarkFunc(__inCtx);
 }
 #ifdef HXCPP_VISIT_ALLOCS
 void Class_obj::VisitStatics(hx::VisitContext *__inCtx)
 {
+   HX_VISIT_MEMBER(__meta__);
    if (mVisitFunc)
        mVisitFunc(__inCtx);
 }
@@ -182,6 +184,8 @@ bool Class_obj::__HasField(const String &inString)
 
 Dynamic Class_obj::__Field(const String &inString, bool inCallProp)
 {
+   if (inString==HX_CSTRING("__meta__"))
+      return __meta__;
    // Not the most efficient way of doing this!
    if (!mConstructEmpty)
       return null();

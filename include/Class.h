@@ -103,6 +103,7 @@ public:
 
    Class              *mSuper;
    String             mName;
+   Dynamic            __meta__;
 	hx::ConstructArgsFunc  mConstructArgs;
 	hx::ConstructEmptyFunc mConstructEmpty;
 	hx::ConstructEnumFunc  mConstructEnum;
