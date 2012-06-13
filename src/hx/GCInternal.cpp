@@ -1243,7 +1243,7 @@ public:
       return block;
    }
 
-   #ifdef HXCPP_VISIT_ALLOCS
+   #ifdef HXCPP_VISIT_ALLOCS // {
    void MoveBlocks(BlockData **inFrom, BlockData **inTo, int inCount)
    {
       BlockData *dest = *inTo++;
@@ -1379,7 +1379,7 @@ public:
       delete adjust;
    }
 
-   #ifndef USE_POSIX_MEMALIGN
+   #ifndef USE_POSIX_MEMALIGN // {
    bool EvacuateGroup(int inGid)
    {
       BlockData *from[IMMIX_MAX_ALLOC_GROUPS_SIZE];
@@ -1422,6 +1422,8 @@ public:
       #endif
       return false;
    }
+   #endif // !USE_POSIX_MEMALIGN }
+   #endif // HXCPP_VISIT_ALLOCS }
 
    void ReleaseGroup(int inGid)
    {
@@ -1447,9 +1449,7 @@ public:
       GCLOG("Release group %d-> %d blocks left = %dk\n", inGid, remaining, remaining<<(IMMIX_BLOCK_BITS-10) );
       #endif
    }
-   #endif // !USE_POSIX_MEMALIGN
 
-   #endif // HXCPP_VISIT_ALLOCS
 
    bool ReleaseBlocks(int inBlocks)
    {
@@ -1692,7 +1692,7 @@ public:
                             ((-delta) >> IMMIX_LINE_COUNT_BITS ) : 0;
       bool released = want_less && ReleaseBlocks(want_less);
 
-      #ifdef TRY_DEFRAG
+      #if defined(TRY_DEFRAG) && defined(HXCPP_VISIT_ALLOCS)
       if (!released && sgTimeToNextTableUpdate==0)
       {
          // Try compacting ...
