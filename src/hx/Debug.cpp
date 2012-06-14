@@ -1,11 +1,11 @@
 #include <hxcpp.h>
 #include <stdio.h>
 
-#if defined(HXCPP_DEBUG) && defined(HXCPP_DEBUG_HOST)
+#if defined(HXCPP_DEBUG) && defined(HXCPP_DEBUG_HOST) // {
 
 #include <hx/OS.h>
 
-#ifdef NEKO_WINDOWS
+#ifdef NEKO_WINDOWS // {
 #	include <winsock2.h>
 #	define FDSIZE(n)	(sizeof(u_int) + (n) * sizeof(SOCKET))
 #	define SHUT_WR		SD_SEND
@@ -15,7 +15,7 @@
 	static WSADATA gInitData;
 #pragma comment(lib, "Ws2_32.lib")
 
-#else
+#else // }  {
 #	include <sys/types.h>
 #	include <sys/socket.h>
 #	include <sys/time.h>
@@ -31,16 +31,26 @@
 #	define closesocket close
 #	define SOCKET_ERROR (-1)
 #	define INVALID_SOCKET (-1)
-#endif
+#endif // }
 
 #include <string>
 
-#endif
+#endif // }
 
 
 #include <hx/Thread.h>
 
-#ifdef HXCPP_DEBUG
+
+#ifdef ANDROID
+#define DBGLOG(...) __android_log_print(ANDROID_LOG_INFO, "hxcpp", __VA_ARGS__)
+#else
+#define DBGLOG printf
+#endif
+
+
+
+
+#ifdef HXCPP_STACK_TRACE // {
 
 #ifdef HX_WINDOWS
 #include <windows.h>
@@ -360,11 +370,14 @@ struct CallStack
    {
       mSize = 0;
       mLastException = 0;
+      mSinceLastException = 0;
    }
    void Push(const char *inName)
    {
       mSize++;
-      mLastException = 0;
+      if (mSize>mSinceLastException)
+         mSinceLastException = mSize;
+      //mLastException = 0;
       if (mSize<StackSize)
       {
           mLocations[mSize].mFunction = inName;
@@ -387,6 +400,7 @@ struct CallStack
    void SetLastException()
    {
       mLastException = mSize;
+      mSinceLastException = 0;
    }
    void Dump()
    {
@@ -410,6 +424,52 @@ struct CallStack
          printf("... %d functions missing ...\n", mLastException + 1 - StackSize);
       }
    }
+
+   Array< ::String > GetLastException()
+   {
+      Array< ::String > result = Array_obj< ::String >::__new();
+
+      int first = mSinceLastException;
+      if (mSize>first)
+          first = mSize;
+      for(int i=first ;i<=mLastException && i<StackSize;i++)
+      {
+         CallLocation &loc = mLocations[i];
+         if (!loc.mFile || loc.mFile[0]=='?')
+            result->push( String(loc.mFunction) );
+         else
+         {
+            char buf[1024];
+            sprintf(buf,"%s::%s::%d", loc.mFunction, loc.mFile, loc.mLine );
+            result->push( String(buf) );
+         }
+      }
+      return result;
+   }
+
+   Array< ::String > GetCallStack(bool inSkipLast)
+   {
+      Array< ::String > result = Array_obj< ::String >::__new();
+      int n = mSize - inSkipLast;
+
+      for(int i=1;i<=n && i<StackSize;i++)
+      {
+         CallLocation &loc = mLocations[i];
+         if (!loc.mFile || loc.mFile[0]=='?')
+            result->push( String(loc.mFunction) );
+         else
+         {
+            char buf[1024];
+            sprintf(buf,"%s::%s::%d", loc.mFunction, loc.mFile, loc.mLine );
+            result->push( String(buf) );
+         }
+      }
+ 
+      return result;
+   }
+
+
+
    #ifdef HXCPP_DEBUG_HOST
    void Where()
    {
@@ -450,6 +510,7 @@ struct CallStack
 
    int mSize;
    int mLastException;
+   int mSinceLastException;
    CallLocation mLocations[StackSize];
 };
 
@@ -510,11 +571,108 @@ void __hx_stack_set_last_exception()
 }
 
 
-#else
+Array<String> __hxcpp_get_call_stack(bool inSkipLast)
+{
+   return hx::GetCallStack()->GetCallStack(inSkipLast);
+}
+
+Array<String> __hxcpp_get_exception_stack()
+{
+   return hx::GetCallStack()->GetLastException();
+}
+
+
+
+
+
+extern int gInAlloc;
+bool gKeepProfiling = true;
+
+THREAD_FUNC_TYPE profile_main_loop( void *inInfo )
+{
+   int millis = 1;
+   int alloc_count = 0;
+   int last_thousand = 0;
+   int total_count = 0;
+   while(gKeepProfiling)
+   {
+      #ifdef NEKO_WINDOWS
+	   Sleep(millis);
+      #else
+		struct timespec t;
+		struct timespec tmp;
+		t.tv_sec = 0;
+		t.tv_nsec = millis * 1000000;
+		nanosleep(&t,&tmp);
+      #endif
+      if (gInAlloc)
+      {
+         alloc_count++;
+         last_thousand++;
+      }
+      total_count ++;
+      if ((total_count%1000) == 0)
+      {
+         #ifdef ANDROID
+         __android_log_print(ANDROID_LOG_ERROR, "PROFILE",
+         #else
+         printf(
+         #endif
+         "Allocation time = %f%% (%.1f %%)\n", alloc_count*100.0/total_count, last_thousand * 0.1);
+         last_thousand = 0;
+      }
+   }
+	THREAD_FUNC_RET
+}
+
+
+void __hxcpp_start_profiler()
+{
+   gKeepProfiling = true;
+   #if defined(HX_WINDOWS)
+      _beginthreadex(0,0,profile_main_loop,0,0,0);
+   #else
+      pthread_t result;
+      pthread_create(&result,0,profile_main_loop,0);
+	#endif
+}
+
+void __hxcpp_stop_profiler()
+{
+   gKeepProfiling = false;
+}
+
+
+#else // } HXCPP_STACK_TRACE {
 
 void __hx_dump_stack()
 {
    //printf("No stack in release mode.\n");
 }
 
-#endif
+
+Array<String> __hxcpp_get_call_stack(bool inSkipLast)
+{
+   Array< ::String > result = Array_obj< ::String >::__new();
+   return result;
+}
+
+Array<String> __hxcpp_get_exception_stack()
+{
+   Array< ::String > result = Array_obj< ::String >::__new();
+   return result;
+}
+
+
+
+void __hxcpp_start_profiler()
+{
+    DBGLOG("Compile with HXCPP_STACK_TRACE to use profiler.");
+}
+
+void __hxcpp_stop_profiler()
+{
+    DBGLOG("Compile with HXCPP_STACK_TRACE to use profiler.");
+}
+
+#endif // }

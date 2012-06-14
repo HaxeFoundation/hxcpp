@@ -5,4 +5,5 @@
  <flag value="-DHXCPP_VISIT_ALLOCS" if="haxe_210"/>
  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
  <flag value="-DHXCPP_FLOAT32" if="HXCPP_FLOAT32"/>
+ <flag value="-DHXCPP_STACK_TRACE" if="HXCPP_STACK_TRACE"/>
 </xml>

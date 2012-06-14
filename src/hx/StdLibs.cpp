@@ -29,7 +29,7 @@ namespace hx
 
 Dynamic Throw(Dynamic inDynamic)
 {
-   #ifdef HXCPP_DEBUG
+   #ifdef HXCPP_STACK_TRACE
    __hx_stack_set_last_exception();
    #endif
    throw inDynamic;
