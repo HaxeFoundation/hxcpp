@@ -5,7 +5,7 @@
 
 #include <hx/OS.h>
 
-#ifdef NEKO_WINDOWS // {
+#ifdef HX_WINDOWS // {
 #	include <winsock2.h>
 #	define FDSIZE(n)	(sizeof(u_int) + (n) * sizeof(SOCKET))
 #	define SHUT_WR		SD_SEND
@@ -228,7 +228,7 @@ bool DbgInit()
    if (!gTried)
    {
       gTried = true;
-      #ifdef NEKO_WINDOWS
+      #ifdef HX_WINDOWS
       WSAStartup(MAKEWORD(2,0),&gInitData);
       #endif
       gDBGSocket = socket(AF_INET,SOCK_STREAM,0);
@@ -596,7 +596,7 @@ THREAD_FUNC_TYPE profile_main_loop( void *inInfo )
    int total_count = 0;
    while(gKeepProfiling)
    {
-      #ifdef NEKO_WINDOWS
+      #ifdef HX_WINDOWS
 	   Sleep(millis);
       #else
 		struct timespec t;
