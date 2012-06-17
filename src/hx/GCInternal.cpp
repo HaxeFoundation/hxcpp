@@ -43,17 +43,6 @@ int gInAlloc = false;
 #endif
 
 
-#ifdef COLLECTOR_STATS
-struct AllocBump
-{
-   AllocBump() { gInAlloc++; }
-   ~AllocBump() { gInAlloc--; }
-};
-#define IN_ALLOC AllocBump tmp;
-#else
-#define IN_ALLOC
-#endif
-
 #ifdef HXCPP_DEBUG
 static hx::Object *gCollectTrace = 0;
 static bool gCollectTraceDoPrint = false;
@@ -1169,7 +1158,7 @@ public:
          int want_more = 0;
          if (inTryCollect)
          {
-            want_more = Collect();
+            want_more = Collect(false);
             if (!want_more)
                return 0;
          }
@@ -1254,7 +1243,7 @@ public:
       for(int f=0;f<inCount;f++)
       {
          BlockData &from = *inFrom[f];
-         #ifdef COLLECTOR_STATS
+         #ifdef SHOW_MEM_EVENTS
          GCLOG("Move from %p -> %p\n", &from, dest );
          #endif
 
@@ -1292,7 +1281,7 @@ public:
                         destPos = 0;
                         extra_lines = (s + destPos -1) >> IMMIX_LINE_BITS;
 
-                        #ifdef COLLECTOR_STATS
+                        #ifdef SHOW_MEM_EVENTS
                         GCLOG("          %p -> %p\n", &from, dest );
                         #endif
                      }
@@ -1336,7 +1325,7 @@ public:
          info.mUsedRows = 0;
       }
 
-      #ifdef COLLECTOR_STATS
+      #ifdef SHOW_MEM_EVENTS
       GCLOG("Moved %d\n", moved);
       #endif
 
@@ -1614,8 +1603,9 @@ public:
       hx::RunFinalizers();
    }
 
-   int Collect()
+   int Collect(bool inMajor)
    {
+      HX_SOURCE_PUSH("GC::collect")
       #ifdef ANDROID
       //__android_log_print(ANDROID_LOG_ERROR, "hxcpp", "Collect...");
       #endif
@@ -2077,7 +2067,7 @@ public:
       if (!mTopOfStack)
          return;
 
-      #ifdef COLLECTOR_STATS
+      #ifdef SHOW_MEM_EVENTS
       //int here = 0;
       //GCLOG("=========== Mark Stack ==================== %p ... %p (%p)\n",mBottomOfStack,mTopOfStack,&here);
       #endif
@@ -2296,7 +2286,7 @@ void SetTopOfStack(int *inTop,bool inForce)
 
 void *InternalNew(int inSize,bool inIsObject)
 {
-   IN_ALLOC
+   HX_SOURCE_PUSH("GC::new")
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
@@ -2312,7 +2302,7 @@ void *InternalNew(int inSize,bool inIsObject)
 }
 
 // Force global collection - should only be called from 1 thread.
-void InternalCollect()
+void InternalCollect(bool inMajor)
 {
    if (!sgAllocInit || !sgInternalEnable)
       return;
@@ -2320,16 +2310,16 @@ void InternalCollect()
 #ifndef ANDROID
    GetLocalAlloc()->SetupStack();
 #endif
-   sGlobalAlloc->Collect();
+   sGlobalAlloc->Collect(inMajor);
 }
 
 
 void *InternalRealloc(void *inData,int inSize)
 {
-   IN_ALLOC
-
    if (inData==0)
       return hx::InternalNew(inSize,false);
+
+   HX_SOURCE_PUSH("GC::realloc")
 
    unsigned int header = ((unsigned int *)(inData))[-1];
 
@@ -2397,7 +2387,7 @@ int __hxcpp_gc_trace(Class inClass,bool inPrint)
        gCollectTrace = inClass.GetPtr();
        gCollectTraceCount = 0;
        gCollectTraceDoPrint = inPrint;
-       hx::InternalCollect();
+       hx::InternalCollect(false);
        gCollectTrace = 0;
 		 return gCollectTraceCount;
     #endif

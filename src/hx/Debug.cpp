@@ -40,7 +40,6 @@
 
 #include <hx/Thread.h>
 
-
 #ifdef ANDROID
 #define DBGLOG(...) __android_log_print(ANDROID_LOG_INFO, "hxcpp", __VA_ARGS__)
 #else
@@ -51,6 +50,11 @@
 
 
 #ifdef HXCPP_STACK_TRACE // {
+
+#include <map>
+#include <vector>
+#include <string>
+#include <time.h>
 
 #ifdef HX_WINDOWS
 #include <windows.h>
@@ -355,6 +359,8 @@ void CriticalError(const String &inErr)
    exit(1);
 }
 
+bool gIsProfiling = false;
+
 struct CallLocation
 {
    const char *mFunction;
@@ -362,6 +368,29 @@ struct CallLocation
    int        mLine; 
 };
 
+typedef std::map<const char *,int> ChildEntry;
+
+struct ProfileEntry
+{
+   ProfileEntry() : myCount(0), totalCount(0) { }
+   int myCount;
+   int totalCount;
+   // Can we assume strings are constant, and refer to the same memory location? - we will see.
+   ChildEntry children;
+};
+
+typedef std::map<const char *, ProfileEntry> ProfileStats;
+struct FlatResult
+{
+   bool operator<(const FlatResult &inRHS) const { return totalCount > inRHS.totalCount; }
+   const char *func;
+   int        myCount;
+   int        totalCount;
+   ChildEntry *children;
+};
+
+int gProfileClock = 0;
+ 
 struct CallStack
 {
    enum { StackSize = 1000 };
@@ -371,9 +400,115 @@ struct CallStack
       mSize = 0;
       mLastException = 0;
       mSinceLastException = 0;
+      mProfiling = false;
+      mProfileStats = 0;
    }
+   ~CallStack()
+   {
+      delete mProfileStats;
+      printf("Bye-bye call stack!\n");
+   }
+
+   void StartProfile(String inDumpFile)
+   {
+      if (mProfileStats)
+         delete mProfileStats;
+      mProfileStats = new ProfileStats();
+
+      mDumpFile = inDumpFile.__s ? inDumpFile.__s : "";
+
+      mT0 = gProfileClock;
+      mProfiling = true;
+   }
+
+   void StopProfile()
+   {
+      mProfiling = false;
+      FILE *out = 0;
+      if (!mDumpFile.empty())
+         out = fopen(mDumpFile.c_str(),"wb");
+      std::vector<FlatResult> results;
+      results.reserve(mProfileStats->size());
+      int total = 0;
+      for(ProfileStats::iterator i = mProfileStats->begin(); i!=mProfileStats->end(); ++i)
+      {
+         FlatResult r;
+         r.func = i->first;
+         r.totalCount = i->second.totalCount;
+         r.myCount = i->second.myCount;
+         total += r.myCount;
+         r.children = &(i->second.children);
+         results.push_back(r);
+      }
+
+      std::sort(results.begin(), results.end());
+
+      double scale = total==0 ? 1.0 : 100.0/total;
+      for(int i=0;i<results.size();i++)
+      {
+         FlatResult &r = results[i];
+         int internal = r.totalCount;
+         if (out)
+            fprintf(out,"%s %.2f%%/%.2f%%\n", r.func, r.totalCount*scale, r.myCount*scale );
+         else
+            DBGLOG("%s %.2f%%/%.2f%%\n", r.func, r.totalCount*scale, r.myCount*scale );
+
+         for(ChildEntry::iterator c=r.children->begin(); c!=r.children->end(); c++)
+         {
+            if (out)
+               fprintf(out,"   %s %.1f%%\n", c->first, 100.0*c->second/r.totalCount);
+            else
+               DBGLOG("   %s %.1f%%\n", c->first, 100.0*c->second/r.totalCount);
+            internal -= c->second;
+         }
+         if (internal)
+         {
+            if (out)
+               fprintf(out,"   (internal) %.1f%%\n", 100.0*internal/r.totalCount);
+            else
+               DBGLOG("   (internal) %.1f%%\n", 100.0*internal/r.totalCount);
+         }
+      }
+         
+      if (out)
+         fclose(out);
+      delete mProfileStats;
+      mProfileStats = 0;
+   }
+
+   void Sample()
+   {
+      if (mT0!=gProfileClock)
+      {
+         int clock = gProfileClock;
+         int delta = clock-mT0;
+         if (delta<0) delta = 1;
+         mT0 = clock;
+
+         for(int i=1;i<=mSize;i++)
+         {
+            ProfileEntry &p = (*mProfileStats)[mLocations[i].mFunction];
+            bool alreadyInStack = false;
+            for(int j=0;j<i;j++)
+               if (mLocations[i].mFunction==mLocations[j].mFunction)
+               {
+                  alreadyInStack = true;
+                  break;
+               }
+            if (!alreadyInStack)
+               p.totalCount += delta;
+            if (i<mSize)
+               p.children[mLocations[i+1].mFunction] += delta;
+            else
+               p.myCount += delta;
+         }
+      }
+   }
+
    void Push(const char *inName)
    {
+      if (mProfiling) Sample();
+
       mSize++;
       if (mSize>mSinceLastException)
          mSinceLastException = mSize;
@@ -385,7 +520,12 @@ struct CallStack
           mLocations[mSize].mLine = 0;
       }
    }
-   void Pop() { --mSize; }
+   void Pop()
+   {
+      if (mProfiling) Sample();
+     --mSize;
+   }
+
    void SetSrcPos(const char *inFile, int inLine)
    {
       if (mSize<StackSize)
@@ -512,6 +652,10 @@ struct CallStack
    int mLastException;
    int mSinceLastException;
    CallLocation mLocations[StackSize];
+   bool mProfiling;
+   int  mT0;
+   std::string mDumpFile;
+   ProfileStats *mProfileStats;
 };
 
 
@@ -584,17 +728,16 @@ Array<String> __hxcpp_get_exception_stack()
 
 
 
+bool gProfileThreadRunning = false;
 
-extern int gInAlloc;
-bool gKeepProfiling = true;
-
-THREAD_FUNC_TYPE profile_main_loop( void *inInfo )
+THREAD_FUNC_TYPE profile_main_loop( void *)
 {
    int millis = 1;
    int alloc_count = 0;
    int last_thousand = 0;
    int total_count = 0;
-   while(gKeepProfiling)
+
+   while(gProfileThreadRunning)
    {
       #ifdef HX_WINDOWS
 	   Sleep(millis);
@@ -605,41 +748,35 @@ THREAD_FUNC_TYPE profile_main_loop( void *inInfo )
 		t.tv_nsec = millis * 1000000;
 		nanosleep(&t,&tmp);
       #endif
-      if (gInAlloc)
-      {
-         alloc_count++;
-         last_thousand++;
-      }
-      total_count ++;
-      if ((total_count%1000) == 0)
-      {
-         #ifdef ANDROID
-         __android_log_print(ANDROID_LOG_ERROR, "PROFILE",
-         #else
-         printf(
-         #endif
-         "Allocation time = %f%% (%.1f %%)\n", alloc_count*100.0/total_count, last_thousand * 0.1);
-         last_thousand = 0;
-      }
+
+      int count = hx::gProfileClock + 1;
+      hx::gProfileClock = count < 0 ? 0 : count;
    }
 	THREAD_FUNC_RET
 }
 
 
-void __hxcpp_start_profiler()
+void __hxcpp_start_profiler(::String inDumpFile)
 {
-   gKeepProfiling = true;
-   #if defined(HX_WINDOWS)
+   if (!gProfileThreadRunning)
+   {
+      gProfileThreadRunning = true;
+      #if defined(HX_WINDOWS)
       _beginthreadex(0,0,profile_main_loop,0,0,0);
-   #else
+      #else
       pthread_t result;
       pthread_create(&result,0,profile_main_loop,0);
-	#endif
+	   #endif
+   }
+
+   hx::CallStack *stack = hx::GetCallStack();
+   stack->StartProfile(inDumpFile);
 }
 
 void __hxcpp_stop_profiler()
 {
-   gKeepProfiling = false;
+   gProfileThreadRunning = false;
+   hx::GetCallStack()->StopProfile();
 }
 
 
@@ -665,14 +802,13 @@ Array<String> __hxcpp_get_exception_stack()
 
 
 
-void __hxcpp_start_profiler()
+void __hxcpp_start_profiler(::Float)
 {
-    DBGLOG("Compile with HXCPP_STACK_TRACE to use profiler.");
+    DBGLOG("Compile with -D HXCPP_STACK_TRACE or -debug to use profiler.\n");
 }
 
 void __hxcpp_stop_profiler()
 {
-    DBGLOG("Compile with HXCPP_STACK_TRACE to use profiler.");
 }
 
 #endif // }

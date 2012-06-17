@@ -126,7 +126,7 @@ int __hxcpp_obj_id(Dynamic inObj);
 Array<String> __hxcpp_get_call_stack(bool inSkipLast);
 Array<String> __hxcpp_get_exception_stack();
 
-void __hxcpp_start_profiler();
+void __hxcpp_start_profiler(::String inDumpFile);
 void __hxcpp_stop_profiler();
 
 // --- Memory --------------------------------------------------------------------------

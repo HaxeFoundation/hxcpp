@@ -89,37 +89,37 @@ public:
    Dynamic __run()
    {
       if (mArgCount!=0) throw HX_INVALID_ARG_COUNT;
-      HX_SOURCE_PUSH(0);
+      HX_SOURCE_PUSH("extern::cffi");
       return ((prim_0)mProc)();
    }
    Dynamic __run(D a)
    {
       if (mArgCount!=1) throw HX_INVALID_ARG_COUNT;
-      HX_SOURCE_PUSH(0);
+      HX_SOURCE_PUSH("extern::cffi");
       return ((prim_1)mProc)(a.GetPtr());
    }
    Dynamic __run(D a,D b)
    {
       if (mArgCount!=2) throw HX_INVALID_ARG_COUNT;
-      HX_SOURCE_PUSH(0);
+      HX_SOURCE_PUSH("extern::cffi");
       return ((prim_2)mProc)(a.GetPtr(),b.GetPtr());
    }
    Dynamic __run(D a,D b,D c)
    {
       if (mArgCount!=3) throw HX_INVALID_ARG_COUNT;
-      HX_SOURCE_PUSH(0);
+      HX_SOURCE_PUSH("extern::cffi");
       return ((prim_3)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d)
    {
       if (mArgCount!=4) throw HX_INVALID_ARG_COUNT;
-      HX_SOURCE_PUSH(0);
+      HX_SOURCE_PUSH("extern::cffi");
       return ((prim_4)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d,D e)
    {
       if (mArgCount!=5) throw HX_INVALID_ARG_COUNT;
-      HX_SOURCE_PUSH(0);
+      HX_SOURCE_PUSH("extern::cffi");
       return ((prim_5)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr(),e.GetPtr());
    }
 
@@ -127,7 +127,7 @@ public:
    {
       if (mArgCount!=-1)
          throw HX_INVALID_ARG_COUNT;
-      HX_SOURCE_PUSH(0);
+      HX_SOURCE_PUSH("extern::cffi");
       return ((prim_mult)mProc)( (hx::Object **)inArgs->GetBase(), inArgs->length );
    }
 
