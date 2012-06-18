@@ -27,6 +27,9 @@ void  __hxcpp_gc_safe_point();
 void  __hxcpp_gc_do_not_kill(Dynamic inObj);
 hx::Object *__hxcpp_get_next_zombie();
 
+hx::Object *__hxcpp_weak_ref_create(Dynamic inObject);
+hx::Object *__hxcpp_weak_ref_get(Dynamic inRef);
+
 namespace hx
 {
 

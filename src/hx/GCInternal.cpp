@@ -482,13 +482,14 @@ union BlockData
    #define CHECK_TABLE_LIVE \
       if (*table && ((row[*table]) !=  gByteMarkID)) *table = 0;
 
-   void Reclaim()
+   void Reclaim(bool inFull)
    {
       int free = 0;
       int max_free_in_a_row = 0;
       int free_in_a_row = 0;
       int holes = 0;
-      bool update_table = sgTimeToNextTableUpdate==0 || gFillWithJunk;
+      bool update_table = inFull || gFillWithJunk;
+      bool pinned = false;
 
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
@@ -875,6 +876,22 @@ void GCRemoveRoot(hx::Object **inRoot)
 #define FILE_SCOPE static
 #endif
 
+class WeakRef : public hx::Object
+{
+public:
+   WeakRef(Dynamic inRef) { mRef = inRef; }
+
+   // Don't mark our ref !
+
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mRef); }
+   #endif
+
+   Dynamic mRef;
+};
+
+
+
 typedef QuickVec<InternalFinalizer *> FinalizerList;
 
 FILE_SCOPE FinalizerList *sgFinalizers = 0;
@@ -882,11 +899,19 @@ FILE_SCOPE FinalizerList *sgFinalizers = 0;
 typedef std::map<hx::Object *,hx::finalizer> FinalizerMap;
 FILE_SCOPE FinalizerMap sFinalizerMap;
 
+QuickVec<int> sFreeObjectIds;
+typedef std::map<hx::Object *,int> ObjectIdMap;
+FILE_SCOPE ObjectIdMap sObjectIdMap;
+
 typedef std::set<hx::Object *> MakeZombieSet;
 FILE_SCOPE MakeZombieSet sMakeZombieSet;
 
+typedef std::set<WeakRef *> WeakRefs;
+FILE_SCOPE WeakRefs sWeakRefs;
+
 typedef QuickVec<hx::Object *> ZombieList;
 FILE_SCOPE ZombieList sZombieList;
+
 
 InternalFinalizer::InternalFinalizer(hx::Object *inObj)
 {
@@ -967,9 +992,47 @@ void RunFinalizers()
       i = next;
    }
 
+   for(ObjectIdMap::iterator i=sObjectIdMap.begin(); i!=sObjectIdMap.end(); )
+   {
+      ObjectIdMap::iterator next = i;
+      next++;
+
+      unsigned char mark = ((unsigned char *)i->first)[ENDIAN_MARK_ID_BYTE];
+      if ( mark!=gByteMarkID )
+      {
+         sFreeObjectIds.push(i->second);
+         sObjectIdMap.erase(i);
+      }
+
+      i = next;
+   }
+
+   for(WeakRefs::iterator i=sWeakRefs.begin(); i!=sWeakRefs.end(); )
+   {
+      WeakRefs::iterator next = i;
+      next++;
+
+      unsigned char mark = ((unsigned char *)*i)[ENDIAN_MARK_ID_BYTE];
+      // Object itself is gone ...
+      if ( mark!=gByteMarkID )
+         sWeakRefs.erase(i);
+      else
+      {
+         // what about the reference?
+         hx::Object *r = (*i)->mRef.mPtr;
+         unsigned char mark = ((unsigned char *)r)[ENDIAN_MARK_ID_BYTE];
+         if ( mark!=gByteMarkID )
+         {
+            (*i)->mRef.mPtr = 0;
+            sWeakRefs.erase(i);
+         }
+      }
+
+      i = next;
+   }
 }
 
-
+// Callback finalizer on non-abstract type;
 void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
 {
    AutoLock lock(*gThreadStateChangeLock);
@@ -1015,10 +1078,18 @@ void *InternalCreateConstBuffer(const void *inData,int inSize)
 }
 
 
+} // namespace hx
 
 
+hx::Object *__hxcpp_weak_ref_create(Dynamic inObject)
+{
+   return new hx::WeakRef(inObject);
+}
 
-
+hx::Object *__hxcpp_weak_ref_get(Dynamic inRef)
+{
+   hx::WeakRef *ref = dynamic_cast<hx::WeakRef *>(inRef.mPtr);
+   return ref->mRef.mPtr;
 }
 
 
@@ -1232,6 +1303,35 @@ public:
       return block;
    }
 
+   void MoveSpecial(hx::Object *inTo, hx::Object *inFrom)
+   {
+       // FinalizerList will get visited...
+
+       hx::FinalizerMap::iterator i = hx::sFinalizerMap.find(inFrom);
+       if (i!=hx::sFinalizerMap.end())
+       {
+          hx::finalizer f = i->second;
+          hx::sFinalizerMap.erase(i);
+          hx::sFinalizerMap[inTo] = f;
+       }
+
+       hx::MakeZombieSet::iterator mz = hx::sMakeZombieSet.find(inFrom);
+       if (mz!=hx::sMakeZombieSet.end())
+       {
+          hx::sMakeZombieSet.erase(mz);
+          hx::sMakeZombieSet.insert(inTo);
+       }
+
+       hx::ObjectIdMap::iterator id = hx::sObjectIdMap.find(inFrom);
+       if (id!=hx::sObjectIdMap.end())
+       {
+          hx::sObjectIdMap[inTo] = id->second;
+          hx::sObjectIdMap.erase(id);
+       }
+   }
+
+
+
    #ifdef HXCPP_VISIT_ALLOCS // {
    void MoveBlocks(BlockData **inFrom, BlockData **inTo, int inCount)
    {
@@ -1304,6 +1404,8 @@ public:
                      if (destPos==0)
                         destRow++;
 
+                     if (isObject)
+                        MoveSpecial((hx::Object *)result+1,(hx::Object *)ptr);
                      // Result has moved - store movement in original position...
                      memcpy(result+1, ptr, size);
                      *ptr = result + 1;
@@ -1365,6 +1467,7 @@ public:
 
       AdjustPointer *adjust = new AdjustPointer(this);
       VisitAll(adjust);
+
       delete adjust;
    }
 
@@ -1534,8 +1637,18 @@ public:
  
    int GetObjectID(void *inPtr)
    {
-      BlockData *block = (BlockData *)( (((size_t)inPtr)) & IMMIX_BLOCK_BASE_MASK);
-      return ( block->mId * (IMMIX_BLOCK_SIZE>>2)) | (int)((int *)inPtr-(int *)block);
+      AutoLock lock(*gThreadStateChangeLock);
+      hx::ObjectIdMap::iterator i = hx::sObjectIdMap.find( (hx::Object *)inPtr );
+      if (i!=hx::sObjectIdMap.end())
+         return i->second;
+
+      int id = 0;
+      if (hx::sFreeObjectIds.size()>0)
+         id = hx::sFreeObjectIds.pop();
+      else
+         id = hx::sObjectIdMap.size() + 1;
+      hx::sObjectIdMap[(hx::Object *)inPtr] = id;
+      return id;
    }
 
    void ClearRowMarks()
@@ -1562,7 +1675,11 @@ public:
          }
       }
       for(int i=0;i<hx::sZombieList.size();i++)
+      {
+         inCtx->visitObject( &hx::sZombieList[i] );
+
          hx::sZombieList[i]->__Visit(inCtx);
+      }
 
    }
    #endif
@@ -1640,13 +1757,14 @@ public:
       sgTimeToNextTableUpdate--;
       if (sgTimeToNextTableUpdate<0)
          sgTimeToNextTableUpdate = 20;
+      bool full = inMajor || (sgTimeToNextTableUpdate==0);
 
 
       // Clear lists, start fresh...
       mEmptyBlocks.clear();
       mRecycledBlock.clear();
       for(PointerSet::iterator i=mActiveBlocks.begin(); i!=mActiveBlocks.end();++i)
-         (*i)->Reclaim();
+         (*i)->Reclaim(full);
       mActiveBlocks.clear();
       mNextEmpty = 0;
       mNextRecycled = 0;
@@ -1683,7 +1801,7 @@ public:
       bool released = want_less && ReleaseBlocks(want_less);
 
       #if defined(TRY_DEFRAG) && defined(HXCPP_VISIT_ALLOCS)
-      if (!released && sgTimeToNextTableUpdate==0)
+      if (!released && full)
       {
          // Try compacting ...
          enum { MAX_DEFRAG = 64 };
