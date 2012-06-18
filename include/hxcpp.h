@@ -79,8 +79,14 @@ void __hx_set_source_pos(const char *inFile, int inLine);
 
 #ifdef HXCPP_DEBUG
 #define HX_SOURCE_POS(a,b) __hx_set_source_pos(a,b);
+#define HX_LOCAL_THIS(x)
+#define HX_LOCAL_VAR(x,name)
+#define HX_LOCAL_ARG(x,name)
 #else
 #define HX_SOURCE_POS(FILE,LINE)
+#define HX_LOCAL_THIS(x)
+#define HX_LOCAL_VAR(x,name)
+#define HX_LOCAL_ARG(x,name)
 #endif
 
 void __hx_dump_stack();
