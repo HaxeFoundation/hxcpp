@@ -1,8 +1,6 @@
 #if neko
-import neko.net.Socket;
-import neko.net.SocketInput;
-import neko.net.SocketOutput;
-import neko.net.Host;
+import sys.net.Socket;
+import sys.net.Host;
 import neko.vm.Thread;
 import neko.Lib;
 #else
@@ -116,7 +114,7 @@ class DebugTool
 
   function keyboardLoop()
   {
-     var stdin = neko.io.File.stdin();
+     var stdin = Sys.stdin();
      while(going)
      {
         try
