@@ -292,7 +292,7 @@ struct CallStack
       
    }
 
-   void VarPush(__AutoVar *inVar)
+   void VarPush(void *inVar, const char *inName, int inType)
    {
    }
 
@@ -446,7 +446,7 @@ __AutoStack::~__AutoStack()
    hx::GetCallStack()->Pop();
 }
 
-void __hx_set_source_pos(const char *inFile, int inLine)
+void __hxcpp_set_source_pos(const char *inFile, int inLine)
 {
    hx::GetCallStack()->SetSrcPos(inFile,inLine);
 }
@@ -472,17 +472,17 @@ Array<String> __hxcpp_get_exception_stack()
    return hx::GetCallStack()->GetLastException();
 }
 
+bool __hxcpp_local_vars = false;
+
 void __hxcpp_dbg_var_pop()
 {
    return hx::GetCallStack()->VarPop();
 }
 
-void __hxcpp_dbg_var_push(__AutoVar *inVar)
+void __hxcpp_dbg_var_push(void *inVar, const char *inName, int inType)
 {
-   return hx::GetCallStack()->VarPush(inVar);
+   return hx::GetCallStack()->VarPush(inVar,inName,inType);
 }
-
-
 
 
 bool gProfileThreadRunning = false;
