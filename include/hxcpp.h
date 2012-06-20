@@ -79,15 +79,15 @@ void __hx_set_source_pos(const char *inFile, int inLine);
 
 #ifdef HXCPP_DEBUG
 #define HX_SOURCE_POS(a,b) __hx_set_source_pos(a,b);
-#define HX_LOCAL_THIS(x)
-#define HX_LOCAL_VAR(x,name)
-#define HX_LOCAL_ARG(x,name)
+#define HX_LOCAL_VAR(x,name) __AutoVar __auto_##x(&x,name)
+#define HX_LOCAL_THIS(x)     __AutoVar __auto_this(x,"this")
 #else
 #define HX_SOURCE_POS(FILE,LINE)
-#define HX_LOCAL_THIS(x)
 #define HX_LOCAL_VAR(x,name)
-#define HX_LOCAL_ARG(x,name)
+#define HX_LOCAL_THIS(x)
 #endif
+
+#define HX_LOCAL_ARG(x,name) HX_LOCAL_VAR(x,name)
 
 void __hx_dump_stack();
 
@@ -211,6 +211,7 @@ public:
 #include <hx/StdLibs.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>
+#include <hx/Debug.h>
 
 #include <hx/Boot.h>
 

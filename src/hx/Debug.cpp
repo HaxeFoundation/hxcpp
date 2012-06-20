@@ -291,6 +291,15 @@ struct CallStack
          EnterDebugMode();
       
    }
+
+   void VarPush(__AutoVar *inVar)
+   {
+   }
+
+   void VarPop( )
+   {
+   }
+
    void SetLastException()
    {
       mLastException = mSize;
@@ -425,22 +434,6 @@ CallStack *GetCallStack()
    return result;
 }
 
-#ifdef HXCPP_DEBUG_HOST
-void DbgWhere()
-{
-   hx::GetCallStack()->Where();
-}
-
-void DbgTrace()
-{
-   hx::GetCallStack()->Trace();
-}
-#
-#endif
- 
-
-
-
 }
 
 __AutoStack::__AutoStack(const char *inName)
@@ -477,6 +470,16 @@ Array<String> __hxcpp_get_call_stack(bool inSkipLast)
 Array<String> __hxcpp_get_exception_stack()
 {
    return hx::GetCallStack()->GetLastException();
+}
+
+void __hxcpp_dbg_var_pop()
+{
+   return hx::GetCallStack()->VarPop();
+}
+
+void __hxcpp_dbg_var_push(__AutoVar *inVar)
+{
+   return hx::GetCallStack()->VarPush(inVar);
 }
 
 
