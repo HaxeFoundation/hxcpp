@@ -60,12 +60,6 @@ void CriticalError(const String &inErr)
 
 bool gIsProfiling = false;
 
-struct CallLocation
-{
-   const char *mFunction;
-   const char *mFile;
-   int        mLine; 
-};
 
 typedef std::map<const char *,int> ChildEntry;
 
@@ -92,6 +86,10 @@ int gProfileClock = 0;
  
 // --- Debugging ------------------------------------------
 
+
+int  gBreakpoint = 0;
+
+
 } // end namespace hx
 
 bool    dbgInit = false;
@@ -99,10 +97,12 @@ bool    dbgInDebugger = false;
 Dynamic dbgHandler;
 Dynamic dbgThread;
 enum BreakMode { bmNone, bmASAP, bmStep, bmEnter, bmLeave };
-BreakMode dbgBreak = bmNone;
 
 void __hxcpp_dbg_set_handler(Dynamic inHandler)
 {
+   #ifndef HXCPP_DEBUGGER
+   DBGLOG("WARNING: debugger being used without -DHXCPP_DEBUGGER");
+   #endif
    if (!dbgInit)
    {
       dbgInit = true;
@@ -118,21 +118,7 @@ void __hxcpp_dbg_set_break(int inMode,Dynamic inThread)
       exit(1);
    
    dbgThread = inThread;
-   dbgBreak = (BreakMode)inMode;
-}
-
-void EnterDebugMode()
-{
-   if (!dbgInDebugger && dbgHandler.mPtr )
-   {
-      dbgInDebugger = true;
-      if ( __hxcpp_thread_current().mPtr != dbgThread.mPtr)
-      {
-         dbgBreak = bmNone;
-         dbgHandler();
-      }
-      dbgInDebugger = false;
-   }
+   hx::gBreakpoint = inMode;
 }
 
 
@@ -152,6 +138,7 @@ struct CallStack
       mSinceLastException = 0;
       mProfiling = false;
       mProfileStats = 0;
+      mDebuggerStart = StackSize;
    }
    ~CallStack()
    {
@@ -255,7 +242,24 @@ struct CallStack
       }
    }
 
-   void Push(const char *inName)
+   void EnterDebugMode()
+   {
+      if (!dbgInDebugger && dbgHandler.mPtr )
+      {
+         dbgInDebugger = true;
+         if ( __hxcpp_thread_current().mPtr != dbgThread.mPtr)
+         {
+            mDebuggerStart = mSize+1;
+            hx::gBreakpoint = bmNone;
+            dbgHandler();
+            mDebuggerStart = StackSize;
+         }
+         dbgInDebugger = false;
+      }
+   }
+
+
+   CallLocation *Push(const char *inName, const char *inFile, int inLine)
    {
       if (mProfiling) Sample();
 
@@ -266,38 +270,33 @@ struct CallStack
       if (mSize<StackSize)
       {
           mLocations[mSize].mFunction = inName;
-          mLocations[mSize].mFile = "?";
-          mLocations[mSize].mLine = 0;
+          mLocations[mSize].mFile = inFile;
+          mLocations[mSize].mLine = inLine;
+          #ifdef HXCPP_STACK_VARS
+          mLocations[mSize].mLocal = 0;
+          #endif
+          if ( hx::gBreakpoint==bmASAP || hx::gBreakpoint==bmEnter)
+             EnterDebugMode();
+          return mLocations + mSize;
       }
-      if ( dbgBreak==bmASAP || dbgBreak==bmEnter)
+
+      if ( hx::gBreakpoint==bmASAP || hx::gBreakpoint==bmEnter)
          EnterDebugMode();
+      return mLocations + StackSize-1;
    }
+
    void Pop()
    {
       if (mProfiling) Sample();
      --mSize;
-      if ( dbgBreak==bmASAP || dbgBreak==bmLeave)
+      if ( hx::gBreakpoint==bmASAP || hx::gBreakpoint==bmLeave)
          EnterDebugMode();
    }
 
-   void SetSrcPos(const char *inFile, int inLine)
+   void CheckBreakpoint()
    {
-      if (mSize<StackSize)
-      {
-          mLocations[mSize].mFile = inFile;
-          mLocations[mSize].mLine = inLine;
-      }
-      if (dbgBreak==bmASAP)
+      if (hx::gBreakpoint==bmASAP)
          EnterDebugMode();
-      
-   }
-
-   void VarPush(void *inVar, const char *inName, int inType)
-   {
-   }
-
-   void VarPop( )
-   {
    }
 
    void SetLastException()
@@ -355,7 +354,7 @@ struct CallStack
       Array< ::String > result = Array_obj< ::String >::__new();
       int n = mSize - inSkipLast;
 
-      for(int i=1;i<=n && i<StackSize;i++)
+      for(int i=1;i<=n && i<mDebuggerStart;i++)
       {
          CallLocation &loc = mLocations[i];
          if (!loc.mFile || loc.mFile[0]=='?')
@@ -370,6 +369,28 @@ struct CallStack
  
       return result;
    }
+
+   Array< ::String > GetStackVars(int inFrame)
+   {
+      Array< ::String > result = Array_obj< ::String >::__new();
+
+      #ifdef HXCPP_STACK_VARS
+      int idx =  (mDebuggerStart<mSize) ? mDebuggerStart - inFrame : mSize - inFrame;
+
+      if (idx>=0)
+      {
+         hx::AutoVar *var = mLocations[idx].mLocal;
+         while(var)
+         {
+            result->push( String(var->name) );
+            var = var->next;
+         }
+      }
+      #endif
+ 
+      return result;
+   }
+
 
 
 
@@ -413,6 +434,7 @@ struct CallStack
 
    int mSize;
    int mLastException;
+   int mDebuggerStart;
    int mSinceLastException;
    CallLocation mLocations[StackSize];
    bool mProfiling;
@@ -434,22 +456,24 @@ CallStack *GetCallStack()
    return result;
 }
 
-}
 
-__AutoStack::__AutoStack(const char *inName)
+AutoStack::AutoStack(const char *inName, const char *inFile, int inLine)
 {
-   hx::GetCallStack()->Push(inName);
+   mLocation = hx::GetCallStack()->Push(inName,inFile,inLine);
 }
 
-__AutoStack::~__AutoStack()
+AutoStack::~AutoStack()
 {
    hx::GetCallStack()->Pop();
 }
 
-void __hxcpp_set_source_pos(const char *inFile, int inLine)
+void CheckBreakpoint()
 {
-   hx::GetCallStack()->SetSrcPos(inFile,inLine);
+   hx::GetCallStack()->CheckBreakpoint();
 }
+
+
+} // namespace hx
 
 void __hx_dump_stack()
 {
@@ -462,6 +486,11 @@ void __hx_stack_set_last_exception()
 }
 
 
+Array<String> __hxcpp_dbg_get_stack_vars(int inFrame)
+{
+   return hx::GetCallStack()->GetStackVars(inFrame);
+}
+
 Array<String> __hxcpp_get_call_stack(bool inSkipLast)
 {
    return hx::GetCallStack()->GetCallStack(inSkipLast);
@@ -470,18 +499,6 @@ Array<String> __hxcpp_get_call_stack(bool inSkipLast)
 Array<String> __hxcpp_get_exception_stack()
 {
    return hx::GetCallStack()->GetLastException();
-}
-
-bool __hxcpp_local_vars = false;
-
-void __hxcpp_dbg_var_pop()
-{
-   return hx::GetCallStack()->VarPop();
-}
-
-void __hxcpp_dbg_var_push(void *inVar, const char *inName, int inType)
-{
-   return hx::GetCallStack()->VarPush(inVar,inName,inType);
 }
 
 

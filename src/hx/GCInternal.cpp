@@ -1722,7 +1722,7 @@ public:
 
    int Collect(bool inMajor)
    {
-      HX_SOURCE_PUSH("GC::collect")
+      HX_STACK_PUSH("GC::collect",__FILE__,__LINE__)
       #ifdef ANDROID
       //__android_log_print(ANDROID_LOG_ERROR, "hxcpp", "Collect...");
       #endif
@@ -2404,7 +2404,7 @@ void SetTopOfStack(int *inTop,bool inForce)
 
 void *InternalNew(int inSize,bool inIsObject)
 {
-   HX_SOURCE_PUSH("GC::new")
+   HX_STACK_PUSH("GC::new",__FILE__,__LINE__)
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
@@ -2437,7 +2437,7 @@ void *InternalRealloc(void *inData,int inSize)
    if (inData==0)
       return hx::InternalNew(inSize,false);
 
-   HX_SOURCE_PUSH("GC::realloc")
+   HX_STACK_PUSH("GC::realloc",__FILE__,__LINE__)
 
    unsigned int header = ((unsigned int *)(inData))[-1];
 
