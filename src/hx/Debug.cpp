@@ -87,16 +87,41 @@ int gProfileClock = 0;
 // --- Debugging ------------------------------------------
 
 
+MyMutex gBreakpointLock;
+
 int  gBreakpoint = 0;
 
+unsigned short  gBPVersion = 0;
+
+struct Breakpoint
+{ 
+   const char *file;
+   int line;
+};
+
+typedef std::vector<Breakpoint> Breakpoints;
+
+static Breakpoints gBreakpoints;
 
 } // end namespace hx
+
+
 
 bool    dbgInit = false;
 bool    dbgInDebugger = false;
 Dynamic dbgHandler;
 Dynamic dbgThread;
-enum BreakMode { bmNone, bmASAP, bmStep, bmEnter, bmLeave };
+
+enum BreakMode
+{
+   bmNone      = 0x00,
+   bmASAP      = 0x01,
+   bmStep      = 0x02,
+   bmEnter     = 0x04,
+   bmLeave     = 0x08,
+   bmStepMask  = 0x0f,
+   bmFunction  = 0x10,
+};
 
 void __hxcpp_dbg_set_handler(Dynamic inHandler)
 {
@@ -118,7 +143,7 @@ void __hxcpp_dbg_set_break(int inMode,Dynamic inThread)
       exit(1);
    
    dbgThread = inThread;
-   hx::gBreakpoint = inMode;
+   hx::gBreakpoint = (hx::gBreakpoint & (~bmStepMask)) | inMode;
 }
 
 
@@ -139,6 +164,13 @@ struct CallStack
       mProfiling = false;
       mProfileStats = 0;
       mDebuggerStart = StackSize;
+      #if HXCPP_DEBUGGER
+      for(int i=0;i<mSize;i++)
+      {
+         mLocations[i].mBPVersion = 0xffff;
+         mLocations[i].mFile = 0;
+      }
+      #endif
    }
    ~CallStack()
    {
@@ -250,7 +282,7 @@ struct CallStack
          if ( __hxcpp_thread_current().mPtr != dbgThread.mPtr)
          {
             mDebuggerStart = mSize+1;
-            hx::gBreakpoint = bmNone;
+            hx::gBreakpoint &= ~bmStepMask;
             dbgHandler();
             mDebuggerStart = StackSize;
          }
@@ -272,15 +304,21 @@ struct CallStack
           mLocations[mSize].mFunction = inName;
           mLocations[mSize].mFile = inFile;
           mLocations[mSize].mLine = inLine;
+          #ifdef HXCPP_DEBUGGER
+          if (inFile==mLocations[mSize-1].mFile)
+             mLocations[mSize].mBPOnFile = mLocations[mSize-1].mBPOnFile;
+          else
+             mLocations[mSize].mBPVersion = gBPVersion - 1;
+          #endif
           #ifdef HXCPP_STACK_VARS
           mLocations[mSize].mLocal = 0;
           #endif
-          if ( hx::gBreakpoint==bmASAP || hx::gBreakpoint==bmEnter)
+          if ( hx::gBreakpoint & (bmASAP|bmEnter) )
              EnterDebugMode();
           return mLocations + mSize;
       }
 
-      if ( hx::gBreakpoint==bmASAP || hx::gBreakpoint==bmEnter)
+      if ( hx::gBreakpoint & (bmASAP|bmEnter) )
          EnterDebugMode();
       return mLocations + StackSize-1;
    }
@@ -289,14 +327,49 @@ struct CallStack
    {
       if (mProfiling) Sample();
      --mSize;
-      if ( hx::gBreakpoint==bmASAP || hx::gBreakpoint==bmLeave)
+      if ( hx::gBreakpoint & (bmASAP | bmLeave) )
          EnterDebugMode();
    }
 
    void CheckBreakpoint()
    {
-      if (hx::gBreakpoint==bmASAP)
+      #ifdef HXCPP_DEBUGGER
+      if (hx::gBreakpoint & bmASAP)
          EnterDebugMode();
+      else if (hx::gBreakpoint & bmFunction)
+      {
+         CallLocation &loc = mLocations[mSize];
+         if (gBPVersion!=loc.mBPVersion)
+         {
+            bool onFile = false;
+            AutoLock lock(hx::gBreakpointLock);
+            loc.mBPVersion = gBPVersion;
+            for(int i=0;i<gBreakpoints.size();i++)
+               if (gBreakpoints[i].file == loc.mFile)
+               {
+                  onFile = true;
+                  if (gBreakpoints[i].line == loc.mLine)
+                  {
+                     lock.Unlock();
+                     EnterDebugMode();
+                     break;
+                  }
+               }
+            loc.mBPOnFile = onFile;
+         }
+         else if (loc.mBPOnFile)
+         {
+            AutoLock lock(hx::gBreakpointLock);
+            for(int i=0;i<gBreakpoints.size();i++)
+               if (gBreakpoints[i].file == loc.mFile && gBreakpoints[i].line==loc.mLine)
+               {
+                  lock.Unlock();
+                  EnterDebugMode();
+                  return;
+               }
+         }
+      }
+      #endif
    }
 
    void SetLastException()
@@ -442,6 +515,13 @@ struct CallStack
    std::string mDumpFile;
    ProfileStats *mProfileStats;
 };
+
+// Called with lock set...
+void OnBreakpointChanged()
+{
+   gBreakpoint = (gBreakpoint & bmStepMask) | (gBreakpoints.size()>0 ? bmFunction : 0);
+   gBPVersion++;
+}
 
 
 TLSData<CallStack> tlsCallStack;
@@ -590,12 +670,62 @@ void __hxcpp_dbg_set_break(int,Dynamic inThread) { }
 
 #endif // }
 
+#ifdef HXCPP_DEBUGGER // {
+namespace hx
+{
+   extern const char *__hxcpp_class_path[];
+   extern const char *__hxcpp_all_files[];
+}
+
+Array<Dynamic> __hxcpp_dbg_get_files( )
+{
+   Array< ::String > result = Array_obj< ::String >::__new();
+   for(const char **ptr = hx::__hxcpp_all_files; *ptr; ptr++)
+      result->push(String(*ptr));
+   return result;
+}
+
+void __hxcpp_breakpoints_add(int inFile, int inLine)
+{
+   hx::Breakpoint bp;
+   bp.file = hx::__hxcpp_all_files[inFile];
+   bp.line = inLine;
+   AutoLock lock(hx::gBreakpointLock);
+   hx::gBreakpoints.push_back(bp);
+   hx::OnBreakpointChanged();
+}
+
+Array<String> __hxcpp_dbg_breakpoints_get( )
+{
+   Array< ::String > result = Array_obj< ::String >::__new();
+   for(int i=0;i<hx::gBreakpoints.size();i++)
+   {
+      hx::Breakpoint &bp = hx::gBreakpoints[i];
+      char buf[1024];
+      sprintf(buf,"%s:%d", bp.file, bp.line );
+      result->push( String(buf) );
+   }
+   return result;
+}
+
+void __hxcpp_dbg_breakpoints_delete(int inIndex)
+{
+   AutoLock lock(hx::gBreakpointLock);
+   if (inIndex<0 || inIndex>=hx::gBreakpoints.size())
+      return;
+   hx::gBreakpoints.erase( hx::gBreakpoints.begin() + inIndex );
+   hx::OnBreakpointChanged();
+}
+
+#else // } HXCPP_DEBUGGER {
+Array<Dynamic> __hxcpp_dbg_get_files( ) { return null(); }
+void __hxcpp_breakpoints_add(int inFile, int inLine) { }
+Array<String> __hxcpp_dbg_breakpoints_get( ) { return null(); }
+void __hxcpp_dbg_breakpoints_delete(int inIndex) { }
+#endif // }
+
 // Debug stubs
 
-void __hxcpp_breakpoints_add(Dynamic inBreakpoint) { }
-Dynamic __hxcpp_dbg_breakpoints_get( ) { return null(); }
-void __hxcpp_dbg_breakpoints_delete(int inIndex) { }
 Array<Dynamic> __hxcpp_dbg_stack_frames_get( ) { return null(); }
-Array<Dynamic> __hxcpp_dbg_get_files( ) { return null(); }
 Array<Class> __hxcpp_dbg_get_classes( ) { return null(); }
 

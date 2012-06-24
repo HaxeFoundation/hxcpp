@@ -6,6 +6,16 @@ namespace hx { struct CallStack; }
 void __hx_dump_stack();
 
 Array<String> __hxcpp_dbg_get_stack_vars(int inFrame);
+void __hxcpp_breakpoints_add(int inFrame);
+
+void __hxcpp_dbg_set_handler(Dynamic inHandler);
+void __hxcpp_dbg_set_break(int inMode,Dynamic inThread);
+void __hxcpp_breakpoints_add(int inFileId, int inLine);
+Array<String> __hxcpp_dbg_breakpoints_get( );
+void __hxcpp_dbg_breakpoints_delete(int inIndex);
+Array<Dynamic> __hxcpp_dbg_stack_frames_get( );
+Array<Dynamic> __hxcpp_dbg_get_files( );
+Array<Class> __hxcpp_dbg_get_classes( );
 
 
 // Track stack variables - only really needed for debugger
@@ -41,6 +51,12 @@ struct CallLocation
    const char *mFunction;
    const char *mFile;
    int        mLine; 
+
+   #ifdef HXCPP_DEBUGGER
+   unsigned short mBPVersion;
+	bool           mBPOnFile;
+   #endif
+
    #ifdef HXCPP_STACK_VARS
    AutoVar    *mLocal;
    #endif

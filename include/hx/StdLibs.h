@@ -126,20 +126,12 @@ int __hxcpp_obj_id(Dynamic inObj);
 Array<String> __hxcpp_get_call_stack(bool inSkipLast);
 Array<String> __hxcpp_get_exception_stack();
 
-// --- Profile/Debug -------------------------------------------------------------------
+// --- Profile -------------------------------------------------------------------
 
 void __hxcpp_start_profiler(::String inDumpFile);
 void __hxcpp_stop_profiler();
 
 
-void __hxcpp_dbg_set_handler(Dynamic inHandler);
-void __hxcpp_dbg_set_break(int inMode,Dynamic inThread);
-void __hxcpp_breakpoints_add(Dynamic inBreakpoint);
-Dynamic __hxcpp_dbg_breakpoints_get( );
-void __hxcpp_dbg_breakpoints_delete(int inIndex);
-Array<Dynamic> __hxcpp_dbg_stack_frames_get( );
-Array<Dynamic> __hxcpp_dbg_get_files( );
-Array<Class> __hxcpp_dbg_get_classes( );
 
 // --- Memory --------------------------------------------------------------------------
 
