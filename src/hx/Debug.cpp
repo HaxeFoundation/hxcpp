@@ -35,6 +35,8 @@ namespace hx
 
 void CriticalError(const String &inErr)
 {
+   if (__hxcpp_dbg_handle_error(inErr))
+      return;
    __hx_stack_set_last_exception();
    __hx_dump_stack();
 
@@ -137,14 +139,20 @@ void __hxcpp_dbg_set_handler(Dynamic inHandler)
    dbgHandler = inHandler;
 }
 
-void __hxcpp_dbg_set_break(int inMode,Dynamic inThread)
+void __hxcpp_dbg_set_break(int inMode)
 {
    if (inMode==-1)
       exit(1);
    
-   dbgThread = inThread;
    hx::gBreakpoint = (hx::gBreakpoint & (~bmStepMask)) | inMode;
 }
+
+
+void __hxcpp_dbg_set_thread(Dynamic inThread)
+{
+   dbgThread = inThread;
+}
+
 
 
 namespace hx
@@ -274,8 +282,9 @@ struct CallStack
       }
    }
 
-   void EnterDebugMode()
+   bool EnterDebugMode()
    {
+      bool result = false;
       if (!dbgInDebugger && dbgHandler.mPtr )
       {
          dbgInDebugger = true;
@@ -283,11 +292,13 @@ struct CallStack
          {
             mDebuggerStart = mSize+1;
             hx::gBreakpoint &= ~bmStepMask;
+            result = true;
             dbgHandler();
             mDebuggerStart = StackSize;
          }
          dbgInDebugger = false;
       }
+      return result;
    }
 
 
@@ -666,7 +677,8 @@ void __hxcpp_stop_profiler()
 }
 
 void __hxcpp_dbg_set_handler(Dynamic inHandler) { }
-void __hxcpp_dbg_set_break(int,Dynamic inThread) { }
+void __hxcpp_dbg_set_break(int) { }
+void __hxcpp_dbg_set_thread(Dynamic inThread) { }
 
 #endif // }
 
@@ -717,11 +729,22 @@ void __hxcpp_dbg_breakpoints_delete(int inIndex)
    hx::OnBreakpointChanged();
 }
 
+bool __hxcpp_dbg_handle_error(::String inError)
+{
+   if (dbgHandler.mPtr)
+   {
+	   hx::GetCallStack()->EnterDebugMode();
+      hx::Throw(inError);
+   }
+   return false;
+}
+
 #else // } HXCPP_DEBUGGER {
 Array<Dynamic> __hxcpp_dbg_get_files( ) { return null(); }
 void __hxcpp_breakpoints_add(int inFile, int inLine) { }
 Array<String> __hxcpp_dbg_breakpoints_get( ) { return null(); }
 void __hxcpp_dbg_breakpoints_delete(int inIndex) { }
+bool __hxcpp_debugger_handle_error(::String inError) { return false; }
 #endif // }
 
 // Debug stubs

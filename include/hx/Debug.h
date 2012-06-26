@@ -9,8 +9,10 @@ Array<String> __hxcpp_dbg_get_stack_vars(int inFrame);
 void __hxcpp_breakpoints_add(int inFrame);
 
 void __hxcpp_dbg_set_handler(Dynamic inHandler);
-void __hxcpp_dbg_set_break(int inMode,Dynamic inThread);
+void __hxcpp_dbg_set_thread(Dynamic inThread);
+void __hxcpp_dbg_set_break(int inMode);
 void __hxcpp_breakpoints_add(int inFileId, int inLine);
+bool __hxcpp_dbg_handle_error(::String inError);
 Array<String> __hxcpp_dbg_breakpoints_get( );
 void __hxcpp_dbg_breakpoints_delete(int inIndex);
 Array<Dynamic> __hxcpp_dbg_stack_frames_get( );

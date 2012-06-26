@@ -182,14 +182,14 @@ public:
    inline OBJ_ *GetPtr() const { return mPtr; }
    inline OBJ_ *operator->()
    {
-      #ifdef HXCPP_DEBUG
+      #ifdef HXCPP_CHECK_POINTER
       if (!mPtr) CriticalError(HX_CSTRING("Null Object Reference"));
       #endif
       return mPtr;
    }
    inline const OBJ_ *operator->() const
    {
-      #ifdef HXCPP_DEBUG
+      #ifdef HXCPP_CHECK_POINTER
       if (!mPtr) CriticalError(HX_CSTRING("Null Object Reference"));
       #endif
       return mPtr;

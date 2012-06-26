@@ -55,7 +55,9 @@ typedef char HX_CHAR;
 #define HX_FIELD_EQ(name,field) !memcmp(name.__s, field, sizeof(field)/sizeof(char))
 
 
-
+#if (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && !defined HXCPP_CHECK_POINTER
+#define HXCPP_CHECK_POINTER
+#endif
 
 
 
