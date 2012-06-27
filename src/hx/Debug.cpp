@@ -35,8 +35,10 @@ namespace hx
 
 void CriticalError(const String &inErr)
 {
+   #ifdef HXCPP_DEBUGGER
    if (__hxcpp_dbg_handle_error(inErr))
       return;
+   #endif
    __hx_stack_set_last_exception();
    __hx_dump_stack();
 
