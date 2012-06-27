@@ -6,6 +6,8 @@ namespace hx { struct CallStack; }
 void __hx_dump_stack();
 
 Array<String> __hxcpp_dbg_get_stack_vars(int inFrame);
+void __hxcpp_dbg_set_stack_var(int inFrame,String inVar, Dynamic inValue);
+Dynamic __hxcpp_dbg_get_stack_var(int inFrame,String inVar);
 void __hxcpp_breakpoints_add(int inFrame);
 
 void __hxcpp_dbg_set_handler(Dynamic inHandler);
@@ -17,7 +19,6 @@ Array<String> __hxcpp_dbg_breakpoints_get( );
 void __hxcpp_dbg_breakpoints_delete(int inIndex);
 Array<Dynamic> __hxcpp_dbg_stack_frames_get( );
 Array<Dynamic> __hxcpp_dbg_get_files( );
-Array<Class> __hxcpp_dbg_get_classes( );
 
 
 // Track stack variables - only really needed for debugger
@@ -101,7 +102,7 @@ struct AutoStack
 #ifdef HXCPP_STACK_VARS // {
 
 #define HX_STACK_VAR(x,name) hx::AutoVar __auto_##x(__autostack.mLocation,&x,name);
-#define HX_STACK_THIS(x)     hx::AutoVar __auto_this(__autostack.mLocation,x,"this");
+#define HX_STACK_THIS(x)     hx::AutoThis __auto_this(__autostack.mLocation,x,"this");
 
 #else // } HXCPP_STACK_VARS {
 
@@ -119,24 +120,67 @@ namespace hx
 
 struct AutoVar
 {
+	typedef Dynamic (*HandleFunc)(void *ptr,Dynamic,bool get);
+
    explicit AutoVar(const AutoVar &);
 
-   inline AutoVar(CallLocation *l,void *p, const char *n) : loc(l), ptr(p), name(n)
+   template<typename T>
+   inline AutoVar(CallLocation *l,T *p, const char *n) : loc(l), ptr(p), name(n)
+   {
+      next = loc->mLocal;
+      loc->mLocal = this;
+      handler = THandle<T>;
+   }
+
+   template<typename T>
+   inline AutoVar(CallLocation *l,T *p, const char *n, bool /*dummy*/) : loc(l), ptr(p), name(n)
    {
       next = loc->mLocal;
       loc->mLocal = this;
    }
 
+
+   Dynamic get() { return handler(ptr,null(),true); }
+   void    set(Dynamic inValue) { handler(ptr,inValue,false); }
+
+   template<typename T>
+   static Dynamic THandle(void *inPtr,Dynamic inValue, bool inGet)
+   {
+		if (inGet)
+			return * ( (T*)inPtr );
+		else
+         * (T*)inPtr = inValue;
+		return null();
+   }
+
    inline ~AutoVar() { loc->mLocal = next; }
+
 
    void         *ptr;
    const char   *name;
    CallLocation *loc;
    AutoVar      *next;
+   HandleFunc   handler;
 };
 
+struct AutoThis : public AutoVar
+{
+   template<typename T>
+   inline AutoThis(CallLocation *l,T *p, const char *n) : AutoVar(l,p,n,false)
+   {
+      handler = TThisHandler<T>;
+   }
 
-
+   template<typename T>
+   static Dynamic TThisHandler(void *inPtr,Dynamic inValue, bool inGet)
+   {
+		if (inGet)
+			return (T*)inPtr;
+		else
+         Throw("Can't set this pointer.");
+		return null();
+   }
+};
 
 
 

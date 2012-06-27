@@ -110,7 +110,7 @@ static Breakpoints gBreakpoints;
 
 
 bool    dbgInit = false;
-bool    dbgInDebugger = false;
+hx::CallStack   *dbgInDebugger = false;
 Dynamic dbgHandler;
 Dynamic dbgThread;
 
@@ -287,8 +287,8 @@ struct CallStack
       bool result = false;
       if (!dbgInDebugger && dbgHandler.mPtr )
       {
-         dbgInDebugger = true;
-         if ( __hxcpp_thread_current().mPtr != dbgThread.mPtr)
+         dbgInDebugger = this;
+         if ( __hxcpp_thread_current().mPtr == dbgThread.mPtr)
          {
             mDebuggerStart = mSize+1;
             hx::gBreakpoint &= ~bmStepMask;
@@ -296,7 +296,7 @@ struct CallStack
             dbgHandler();
             mDebuggerStart = StackSize;
          }
-         dbgInDebugger = false;
+         dbgInDebugger = 0;
       }
       return result;
    }
@@ -475,6 +475,50 @@ struct CallStack
       return result;
    }
 
+   Dynamic GetStackVar(int inFrame, String inName)
+   {
+      #ifdef HXCPP_STACK_VARS
+      int idx =  (mDebuggerStart<mSize) ? mDebuggerStart - inFrame : mSize - inFrame;
+
+      if (idx>=0)
+      {
+         hx::AutoVar *var = mLocations[idx].mLocal;
+         while(var)
+         {
+            if ( String(var->name)==inName)
+               return var->get();
+            var = var->next;
+         }
+      }
+      #endif
+ 
+      return null();
+   }
+
+
+   void SetStackVar(int inFrame, String inName, Dynamic inValue)
+   {
+      #ifdef HXCPP_STACK_VARS
+      int idx =  (mDebuggerStart<mSize) ? mDebuggerStart - inFrame : mSize - inFrame;
+
+      if (idx>=0)
+      {
+         hx::AutoVar *var = mLocations[idx].mLocal;
+         while(var)
+         {
+            if ( String(var->name)==inName)
+            {
+               var->set(inValue);
+               return;
+            }
+            var = var->next;
+         }
+      }
+      #endif
+   }
+
+
+
 
 
 
@@ -577,10 +621,6 @@ void __hx_stack_set_last_exception()
 }
 
 
-Array<String> __hxcpp_dbg_get_stack_vars(int inFrame)
-{
-   return hx::GetCallStack()->GetStackVars(inFrame);
-}
 
 Array<String> __hxcpp_get_call_stack(bool inSkipLast)
 {
@@ -590,6 +630,26 @@ Array<String> __hxcpp_get_call_stack(bool inSkipLast)
 Array<String> __hxcpp_get_exception_stack()
 {
    return hx::GetCallStack()->GetLastException();
+}
+
+void __hxcpp_dbg_set_stack_var(int inFrame,String inVar, Dynamic inValue)
+{
+   if (dbgInDebugger)
+      dbgInDebugger->SetStackVar(inFrame, inVar, inValue);
+}
+
+Dynamic __hxcpp_dbg_get_stack_var(int inFrame,String inVar)
+{
+   if (!dbgInDebugger)
+      return null();
+   return dbgInDebugger->GetStackVar(inFrame,inVar);
+}
+
+Array<String> __hxcpp_dbg_get_stack_vars(int inFrame)
+{
+   if (!dbgInDebugger)
+      return null();
+   return dbgInDebugger->GetStackVars(inFrame);
 }
 
 
@@ -745,6 +805,8 @@ void __hxcpp_breakpoints_add(int inFile, int inLine) { }
 Array<String> __hxcpp_dbg_breakpoints_get( ) { return null(); }
 void __hxcpp_dbg_breakpoints_delete(int inIndex) { }
 bool __hxcpp_debugger_handle_error(::String inError) { return false; }
+void __hxcpp_dbg_set_stack_var(int inFrame,String inVar, Dynamic inValue) { }
+Dynamic __hxcpp_dbg_get_stack_var(int inFrame,String inVar) { return null(); }
 #endif // }
 
 // Debug stubs
