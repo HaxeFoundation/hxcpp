@@ -118,6 +118,9 @@ Dynamic dbgThread;
 
 enum BreakMode
 {
+   bmBreakThis = -2,
+   bmExit      = -1,
+
    bmNone      = 0x00,
    bmASAP      = 0x01,
    bmStep      = 0x02,
@@ -139,14 +142,6 @@ void __hxcpp_dbg_set_handler(Dynamic inHandler)
       GCAddRoot(&dbgThread.mPtr);
    }
    dbgHandler = inHandler;
-}
-
-void __hxcpp_dbg_set_break(int inMode)
-{
-   if (inMode==-1)
-      exit(1);
-   
-   hx::gBreakpoint = (hx::gBreakpoint & (~bmStepMask)) | inMode;
 }
 
 
@@ -611,6 +606,19 @@ void CheckBreakpoint()
 
 
 } // namespace hx
+
+void __hxcpp_dbg_set_break(int inMode)
+{
+   if (inMode==bmExit)
+      exit(1);
+   else if (inMode==bmBreakThis)
+      hx::GetCallStack()->EnterDebugMode();
+   else
+      hx::gBreakpoint = (hx::gBreakpoint & (~bmStepMask)) | inMode;
+}
+
+
+
 
 void __hx_dump_stack()
 {
