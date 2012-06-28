@@ -76,11 +76,19 @@ struct AutoStack
 
 }
 
+// Code from old compiler ...
+#define HX_SOURCE_PUSH(name)  hx::AutoStack __autostack(name,0,0);
+#define HX_SOURCE_POS(file,line)
+
+// Code from new compiler ...
 #define HX_STACK_PUSH(name,file,line) hx::AutoStack __autostack(name,file,line);
 
 #else // } HXCPP_STACK_TRACE {
 
 #define HX_STACK_PUSH(n,f,l)
+// Backwards compatibility
+#define HX_SOURCE_PUSH(name)
+#define HX_SOURCE_POS(file,line)
 
 #endif // }
 
