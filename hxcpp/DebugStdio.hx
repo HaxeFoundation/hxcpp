@@ -9,18 +9,22 @@ class DebugStdio extends DebugBase
 {
 	var input:haxe.io.Input;
 
-   public function new(inCreateStooped:Bool=false)
+   public function new(inCreateStopped:Bool=false)
    {
-		super();
-		init();
-		if (inCreateStooped && stillDebugging)
-			Debugger.breakBad();
+		super(inCreateStopped);
    }
 
-	function init()
+	override function init():Bool
 	{
 		input = Sys.stdin();
+      return true;
 	}
+
+   override function onCloseInput()
+   {
+      if (input!=null)
+         input.close();
+   }
 
 
 	override function getNextCommand() : String
