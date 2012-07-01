@@ -3,22 +3,23 @@ package hxcpp;
 import haxe.Stack;
 import cpp.vm.Debugger;
 import hxcpp.DebugBase;
+import Type;
 
 
 class DebugStdio extends DebugBase
 {
-	var input:haxe.io.Input;
+   var input:haxe.io.Input;
 
    public function new(inCreateStopped:Bool=false)
    {
-		super(inCreateStopped);
+      super(inCreateStopped);
    }
 
-	override function init():Bool
-	{
-		input = Sys.stdin();
+   override function init():Bool
+   {
+      input = Sys.stdin();
       return true;
-	}
+   }
 
    override function onCloseInput()
    {
@@ -27,27 +28,27 @@ class DebugStdio extends DebugBase
    }
 
 
-	override function getNextCommand() : String
-	{
-		Sys.print("debug>");
-		return input.readLine();
-	}
-
-
-	function sendOutput(inString:String)
-	{
-		Sys.println(inString);
+   override function getNextCommand() : String
+   {
+      Sys.print("debug>");
+      return input.readLine();
    }
 
-	function sendStatus(inString:String)
-	{
-		sendOutput(inString);
+
+   function sendOutput(inString:String)
+   {
+      Sys.println(inString);
    }
 
-	override function onRunning()
-	{
-		sendStatus("running");
-	}
+   function sendStatus(inString:String)
+   {
+      sendOutput(inString);
+   }
+
+   override function onRunning()
+   {
+      sendStatus("running");
+   }
 
 
    override function onStopped()
@@ -67,32 +68,84 @@ class DebugStdio extends DebugBase
 
    override function showFiles()
    {
- 		if (files!=null)
-			for(idx in 0...files.length)
+       if (files!=null)
+         for(idx in 0...files.length)
             sendOutput("file " + idx + " : " + files[idx] );
    }
 
    override function showBreakpoints()
    {
       var bps = Debugger.getBreakpoints();
- 		if (bps!=null)
-			for(idx in 0...bps.length)
+       if (bps!=null)
+         for(idx in 0...bps.length)
             sendOutput("breakpoint " + idx + " : " + bps[idx] );
    }
 
-	override function onPrint(result:String)
-	{
-		sendOutput(result);
-	}
+   function printRec(inPrefix:String, result:Dynamic, inLevel:Int)
+   {
+      if (result==null)
+         sendOutput(inPrefix + "(null)");
+      else if ( untyped result.__IsArray() )
+      {
+         var len = result.length;
+         var lim = len<arrayLimit ? len : arrayLimit;
+         if (lim==0)
+            sendOutput(inPrefix + "(empty)");
+         else if (inLevel>0)
+            sendOutput(inPrefix + len + " elements");
+         else
+         {
+            for(i in 0...lim)
+               printRec(inPrefix + i + "] ", result[i], inLevel+1);
+            if (lim<len)
+               sendOutput(inPrefix + "..." + len + "elements");
+         }
+      }
+      else switch Type.typeof(result)
+      {
+         case TObject:
+            sendObject(inPrefix,result,inLevel, "{...}");
+         case TClass(c):
+            if (c==String)
+               sendOutput(inPrefix+result);
+            else
+               sendObject(inPrefix,result,inLevel,c+"");
+         default:
+            sendOutput(inPrefix + result);
+      }
+   }
 
-	override function onResult(inResult:String)
-	{
-		sendOutput(inResult);
-	}
+   function sendObject(inPrefix:String,result:Dynamic,inLevel:Int, inClass:String)
+   {
+      if (inLevel>0)
+         sendOutput(inPrefix + inClass);
+      else
+      {
+         var fields = Reflect.fields(result);
+         if (files.length==0)
+            sendOutput(inPrefix + "{}");
+         else
+            for(field in fields)
+            {
+               printRec(inPrefix + field + "=",  Reflect.getProperty(result,field), inLevel+1 );
+            }
+      }
+   }
 
-	override function onHelp()
-	{
- 		sendOutput("help  - print this message");
+
+   override function onPrint(result:Dynamic)
+   {
+      printRec("",result,0);
+   }
+
+   override function onResult(inResult:String)
+   {
+      sendOutput(inResult);
+   }
+
+   override function onHelp()
+   {
+       sendOutput("help  - print this message");
       sendOutput("break [file line] - pause execution of one thread [when at certain point]");
       sendOutput("breakpoints - list breakpoints");
       sendOutput("delete N - delete breakpoint N");
@@ -100,9 +153,10 @@ class DebugStdio extends DebugBase
       sendOutput("where - print call stack");
       sendOutput("files - print file list that may be used with breakpoints");
       sendOutput("vars - print local vars for frame");
+      sendOutput("array limit N - show at most N array elements");
       sendOutput("exit  - exit programme");
       sendOutput("bye  - stop debugging, keep running");
-	}
+   }
 
 }
 

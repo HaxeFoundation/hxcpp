@@ -38,12 +38,16 @@ class DebugBase
    var frame:Int;
    var stack:Array<StackItem>;
    var vars:Array<String>;
-   
+   var dbg:Dynamic;
+   var arrayLimit:Int;
 
    public function new(inCreateStopped:Bool)
    {
       frame = -1;
+      stillDebugging = true;
       stillDebugging = init();
+      arrayLimit = 100;
+      dbg = {};
       if (stillDebugging)
       {
          files = Debugger.getFiles();
@@ -226,15 +230,44 @@ class DebugBase
 
    function resolve(inName:String) : DebugExpr
    {
+      var hasThis = false;
       if (vars!=null)
       {
          for(v in vars)
+         {
             if (v==inName)
                return EXPR_STACK_REF(inName);
+            if (v=="this")
+               hasThis = true;
+         }
       }
+
       var cls = Type.resolveClass(inName);
       if (cls!=null)
          return EXPR_VALUE(cls);
+
+      if (hasThis)
+      {
+         var thiz:Dynamic = Debugger.getStackVar(frame,"this");
+         if (thiz!=null)
+         {
+            if (Reflect.hasField(thiz,inName))
+               return EXPR_FIELD_REF(thiz,inName);
+            var clazz = Type.getClass(thiz);
+            var fields = Type.getInstanceFields(clazz);
+            for(f in fields)
+              if (f==inName)
+                 return EXPR_FIELD_REF(thiz,inName);
+
+            var fields = Type.getClassFields(clazz);
+            for(f in fields)
+              if (f==inName)
+                 return EXPR_FIELD_REF(clazz,inName);
+         }
+      }
+
+      if (inName=="dbg")
+         return EXPR_VALUE(dbg);
 
       return null;
    }
@@ -520,14 +553,18 @@ class DebugBase
                   run();
 
             case "vars","v":
-               if (!threadStopped || vars==null)
+               if (!threadStopped)
                   onResult("Must break first.");
-               else
+               else if (vars==null)
                {
-                  onPrint(vars);
+                  onPrint("no vars");
                   onResult("ok");
                }
-
+               else
+               {
+                  onPrint(vars+"");
+                  onResult("ok");
+               }
 
             case "frame","f":
                if (!threadStopped || stack==null )
@@ -543,7 +580,6 @@ class DebugBase
                      waitDebugger();
                   }
                }
-              
 
             case "where","w":
                if (!threadStopped || stack==null)
@@ -562,6 +598,16 @@ class DebugBase
                words.shift();
                set(words.join(" "));
 
+            case "array":
+               var limit = words[1]=="limit" ? words[2] : words[1];
+               var lim:Int = Std.parseInt(limit);
+               if (lim<1)
+                  onResult("usage: array limit N");
+               else
+               {
+                  arrayLimit = lim;
+                  onResult("ok");
+               }
 
             case "files","fi":
                {

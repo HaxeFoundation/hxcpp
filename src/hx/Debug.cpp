@@ -112,7 +112,7 @@ static Breakpoints gBreakpoints;
 
 
 bool    dbgInit = false;
-hx::CallStack   *dbgInDebugger = false;
+hx::CallStack   *dbgInDebugger = 0;
 Dynamic dbgHandler;
 Dynamic dbgThread;
 
@@ -284,16 +284,16 @@ struct CallStack
       bool result = false;
       if (!dbgInDebugger && dbgHandler.mPtr )
       {
-         dbgInDebugger = this;
-         if ( __hxcpp_thread_current().mPtr == dbgThread.mPtr)
+         if ( __hxcpp_is_current_thread(dbgThread.mPtr) )
          {
+            dbgInDebugger = this;
             mDebuggerStart = mSize+1;
             hx::gBreakpoint &= ~bmStepMask;
             result = true;
             dbgHandler();
             mDebuggerStart = StackSize;
+            dbgInDebugger = 0;
          }
-         dbgInDebugger = 0;
       }
       return result;
    }
@@ -729,6 +729,7 @@ void __hxcpp_stop_profiler()
 void __hxcpp_dbg_set_handler(Dynamic inHandler) { }
 void __hxcpp_dbg_set_break(int) { }
 void __hxcpp_dbg_set_thread(Dynamic inThread) { }
+
 
 #endif // }
 

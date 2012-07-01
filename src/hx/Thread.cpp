@@ -298,6 +298,12 @@ Dynamic __hxcpp_thread_read_message(bool inBlocked)
 	return info->ReadMessage(inBlocked);
 }
 
+bool __hxcpp_is_current_thread(hx::Object *inThread)
+{
+   hxThreadInfo *info = tlsCurrentThread.Get();
+   return info==inThread;
+}
+
 // --- TLS ------------------------------------------------------------
 
 Dynamic __hxcpp_tls_get(int inID)

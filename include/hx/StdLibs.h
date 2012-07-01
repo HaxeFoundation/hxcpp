@@ -101,6 +101,7 @@ Dynamic __hxcpp_thread_create(Dynamic inFunc);
 Dynamic __hxcpp_thread_current();
 void    __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage);
 Dynamic __hxcpp_thread_read_message(bool inBlocked);
+bool __hxcpp_is_current_thread(hx::Object *inThread);
 
 Dynamic __hxcpp_mutex_create();
 void    __hxcpp_mutex_acquire(Dynamic);
