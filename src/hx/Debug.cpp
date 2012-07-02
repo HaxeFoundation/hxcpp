@@ -648,9 +648,6 @@ bool gProfileThreadRunning = false;
 THREAD_FUNC_TYPE profile_main_loop( void *)
 {
    int millis = 1;
-   int alloc_count = 0;
-   int last_thousand = 0;
-   int total_count = 0;
 
    while(gProfileThreadRunning)
    {

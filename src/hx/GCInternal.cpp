@@ -489,7 +489,6 @@ union BlockData
       int free_in_a_row = 0;
       int holes = 0;
       bool update_table = inFull || gFillWithJunk;
-      bool pinned = false;
 
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
@@ -1229,7 +1228,7 @@ public:
          int want_more = 0;
          if (inTryCollect)
          {
-            want_more = Collect(false);
+            want_more = Collect(false,false);
             if (!want_more)
                return 0;
          }
@@ -1517,6 +1516,7 @@ public:
    #endif // !USE_POSIX_MEMALIGN }
    #endif // HXCPP_VISIT_ALLOCS }
 
+   #ifndef USE_POSIX_MEMALIGN // {
    void ReleaseGroup(int inGid)
    {
       int remaining=0;
@@ -1541,6 +1541,7 @@ public:
       GCLOG("Release group %d-> %d blocks left = %dk\n", inGid, remaining, remaining<<(IMMIX_BLOCK_BITS-10) );
       #endif
    }
+   #endif // !USE_POSIX_MEMALIGN }
 
 
    bool ReleaseBlocks(int inBlocks)
@@ -1720,7 +1721,7 @@ public:
       hx::RunFinalizers();
    }
 
-   int Collect(bool inMajor)
+   int Collect(bool inMajor, bool inForceCompact)
    {
       HX_STACK_PUSH("GC::collect",__FILE__,__LINE__)
       #ifdef ANDROID
@@ -1757,7 +1758,7 @@ public:
       sgTimeToNextTableUpdate--;
       if (sgTimeToNextTableUpdate<0)
          sgTimeToNextTableUpdate = 20;
-      bool full = inMajor || (sgTimeToNextTableUpdate==0);
+      bool full = inMajor || (sgTimeToNextTableUpdate==0) || inForceCompact;
 
 
       // Clear lists, start fresh...
@@ -1798,7 +1799,14 @@ public:
       int  want_more = delta>0 ? (delta >> IMMIX_LINE_COUNT_BITS ) : 0;
       int  want_less = (delta < -(IMMIX_USEFUL_LINES<<IMMIX_BLOCK_GROUP_BITS)) ?
                             ((-delta) >> IMMIX_LINE_COUNT_BITS ) : 0;
+      if (inForceCompact)
+      {
+         want_less = mAllBlocks.size();
+         want_more = false;
+      }
+
       bool released = want_less && ReleaseBlocks(want_less);
+
 
       #if defined(TRY_DEFRAG) && defined(HXCPP_VISIT_ALLOCS)
       if (!released && full)
@@ -2420,15 +2428,17 @@ void *InternalNew(int inSize,bool inIsObject)
 }
 
 // Force global collection - should only be called from 1 thread.
-void InternalCollect(bool inMajor)
+int InternalCollect(bool inMajor,bool inCompact)
 {
-   if (!sgAllocInit || !sgInternalEnable)
-      return;
+   if (!sgAllocInit)
+       return 0;
 
 #ifndef ANDROID
    GetLocalAlloc()->SetupStack();
 #endif
-   sGlobalAlloc->Collect(inMajor);
+   sGlobalAlloc->Collect(inMajor,inCompact);
+
+   return sGlobalAlloc->MemUsage();
 }
 
 
@@ -2505,7 +2515,7 @@ int __hxcpp_gc_trace(Class inClass,bool inPrint)
        gCollectTrace = inClass.GetPtr();
        gCollectTraceCount = 0;
        gCollectTraceDoPrint = inPrint;
-       hx::InternalCollect(false);
+       hx::InternalCollect(false,false);
        gCollectTrace = 0;
 		 return gCollectTraceCount;
     #endif

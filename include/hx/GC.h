@@ -17,6 +17,7 @@
 void  __hxcpp_reachable(hx::Object *inKeep);
 void  __hxcpp_enable(bool inEnable);
 void  __hxcpp_collect(bool inMajor=true);
+void   __hxcpp_gc_compact();
 int   __hxcpp_gc_trace(Class inClass, bool inPrint);
 int   __hxcpp_gc_used_bytes();
 void  __hxcpp_enter_gc_free_zone();
@@ -89,7 +90,7 @@ void InternalEnableGC(bool inEnable);
 void *InternalCreateConstBuffer(const void *inData,int inSize);
 void RegisterNewThread(void *inTopOfStack);
 void SetTopOfStack(void *inTopOfStack,bool inForce=false);
-void InternalCollect(bool inMajor);
+int InternalCollect(bool inMajor,bool inCompact);
 int InternalAllocID(void *inPtr);
 
 void EnterGCFreeZone();

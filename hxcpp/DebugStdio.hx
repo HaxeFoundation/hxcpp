@@ -45,6 +45,11 @@ class DebugStdio extends DebugBase
       sendOutput(inString);
    }
 
+   override function sendString(inString:String)
+   {
+      sendOutput(inString);
+   }
+
    override function onRunning()
    {
       sendStatus("running");
@@ -143,20 +148,6 @@ class DebugStdio extends DebugBase
       sendOutput(inResult);
    }
 
-   override function onHelp()
-   {
-       sendOutput("help  - print this message");
-      sendOutput("break [file line] - pause execution of one thread [when at certain point]");
-      sendOutput("breakpoints - list breakpoints");
-      sendOutput("delete N - delete breakpoint N");
-      sendOutput("cont  - continue execution");
-      sendOutput("where - print call stack");
-      sendOutput("files - print file list that may be used with breakpoints");
-      sendOutput("vars - print local vars for frame");
-      sendOutput("array limit N - show at most N array elements");
-      sendOutput("exit  - exit programme");
-      sendOutput("bye  - stop debugging, keep running");
-   }
 
 }
 

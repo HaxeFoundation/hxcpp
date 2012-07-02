@@ -34,8 +34,22 @@ void *String::operator new( size_t inSize )
 
 void __hxcpp_collect(bool inMajor)
 {
-	hx::InternalCollect(inMajor);
+	hx::InternalCollect(inMajor,false);
 }
+
+
+void __hxcpp_gc_compact()
+{
+   int mem = hx::InternalCollect(true,true);
+   while(true)
+   {
+      int compact = hx::InternalCollect(true,true);
+      if (compact>=mem-16384)
+         break;
+      mem = compact;
+   }
+}
+
 
 
 

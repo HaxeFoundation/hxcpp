@@ -77,7 +77,24 @@ class DebugBase
       }
    }
 
-   function onHelp() { }
+   function onHelp()
+   {
+      sendString("help  - print this message");
+      sendString("break [file line] - pause execution of one thread [when at certain point]");
+      sendString("breakpoints - list breakpoints");
+      sendString("delete N - delete breakpoint N");
+      sendString("cont  - continue execution");
+      sendString("where - print call stack");
+      sendString("files - print file list that may be used with breakpoints");
+      sendString("vars - print local vars for frame");
+      sendString("array limit N - show at most N array elements");
+      sendString("mem - print memory usage");
+      sendString("collect - run Gc collection");
+      sendString("compact - reduce memory usage");
+      sendString("exit  - exit programme");
+      sendString("bye  - stop debugging, keep running");
+   }
+
 
    function waitDebugger(inSendResult:Bool=true)
    {
@@ -470,6 +487,8 @@ class DebugBase
       onResult("ok");
    }
 
+   function sendString(inString:String) { }
+
 
    function setFrame(inFrame:Int)
    {
@@ -632,6 +651,19 @@ class DebugBase
                   Debugger.deleteBreakpoint(i);
                   onResult("ok");
                }
+
+            case "mem":
+               sendString( cpp.vm.Gc.memUsage()+" bytes" );
+               onResult("ok");
+
+            case "compact":
+               sendString( cpp.vm.Gc.compact() + " bytes" );
+               onResult("ok");
+
+            case "collect":
+               cpp.vm.Gc.run(true);
+               sendString( cpp.vm.Gc.memUsage()+" bytes" );
+               onResult("ok");
 
             case "help","h","?":
                {
