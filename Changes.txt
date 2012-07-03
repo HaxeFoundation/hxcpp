@@ -1,3 +1,11 @@
+2.10.0
+------------------------------------------------------------
+* GC upgrades - moving/defragging/releasing
+* Built-in profiler
+* Build-in debugger
+* Fix mac ndll finding bug
+* Add Int32 member functions
+
 2.09.3
 ------------------------------------------------------------
 * Fix Xml enum usage
