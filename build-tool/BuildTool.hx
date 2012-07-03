@@ -1104,7 +1104,7 @@ class BuildTool
 		 {
 			defines.set("iphonesim", "iphonesim");
 		 }
-		 else
+		 else if (!defines.exists ("iphonesim"))
 		 {
 			defines.set("iphoneos", "iphoneos");
 		 }
