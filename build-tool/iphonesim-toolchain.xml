@@ -2,7 +2,7 @@
 
 <include name="gcc-toolchain.xml"/>
 
-
+<path name="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />
 
 <compiler id="iPhoneSim" exe="gcc" if="iphonesim">
   <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++" />

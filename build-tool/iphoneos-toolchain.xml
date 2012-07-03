@@ -6,6 +6,8 @@
 <set name="ARCH" value ="-v7" if="HXCPP_ARMV7" />
 <include name="gcc-toolchain.xml"/>
 
+<path name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin" />
+
 <compiler id="iPhoneOS" exe="gcc" if="iphoneos">
   <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/g++" />
   <flag value="-c"/>
