@@ -30,6 +30,12 @@ Class &GetVoidClass() { return __VoidClass; }
 // --- "Simple" Data Objects ---------------------------------------------------
 
 
+Dynamic DynZero;
+Dynamic DynOne;
+Dynamic DynTrue;
+Dynamic DynFalse;
+Dynamic DynEmptyString;
+
 class IntData : public hx::Object
 {
 public:
@@ -109,6 +115,7 @@ public:
 
 
 
+
 }
 
 
@@ -116,13 +123,20 @@ public:
 // --- Dynamic -------------------------------------------------
 
 
-Dynamic::Dynamic(bool inVal) : super( new BoolData(inVal) ) { }
-Dynamic::Dynamic(int inVal) : super( new IntData(inVal) ) { }
-Dynamic::Dynamic(double inVal) : super( new DoubleData(inVal) ) { }
-Dynamic::Dynamic(float inVal) : super( new DoubleData(inVal) ) { }
-Dynamic::Dynamic(const cpp::CppInt32__ &inVal) : super( new IntData((int)inVal) ) { }
-Dynamic::Dynamic(const String &inVal) : super( inVal.__s ? inVal.__ToObject() : 0 ) { }
-Dynamic::Dynamic(const HX_CHAR *inVal) : super( inVal ? String(inVal).__ToObject() : 0 ) { }
+
+Dynamic::Dynamic(bool inVal) : super( inVal ? hx::DynTrue.mPtr : hx::DynFalse.mPtr ) { }
+Dynamic::Dynamic(int inVal) :
+  super( inVal==0 ? hx::DynZero.mPtr : inVal==1 ? hx::DynOne.mPtr : (hx::Object *)new IntData(inVal) ) { }
+Dynamic::Dynamic(double inVal) :
+  super(inVal==0 ? hx::DynZero.mPtr : inVal==1 ? hx::DynOne.mPtr :  (hx::Object *)new DoubleData(inVal) ) { }
+Dynamic::Dynamic(float inVal) :
+  super(inVal==0 ? hx::DynZero.mPtr : inVal==1 ? hx::DynOne.mPtr :  (hx::Object *)new DoubleData(inVal) ) { }
+Dynamic::Dynamic(const cpp::CppInt32__ &inVal) :
+  super(inVal.mValue==0 ? hx::DynZero.mPtr : inVal.mValue==1 ? hx::DynOne.mPtr :  (hx::Object *)new IntData((int)inVal) ) { }
+Dynamic::Dynamic(const String &inVal) :
+  super( inVal.__s ? (inVal.length==0 ? DynEmptyString.mPtr : inVal.__ToObject() ) : 0 ) { }
+Dynamic::Dynamic(const HX_CHAR *inVal) :
+  super( inVal ? String(inVal).__ToObject() : 0 ) { }
 
 
 Dynamic Dynamic::operator+(const Dynamic &inRHS) const
@@ -238,6 +252,11 @@ static void sMarkStatics(HX_MARK_PARAMS) {
 	HX_MARK_MEMBER(Math_obj::__mClass);
 	HX_MARK_MEMBER(Anon_obj::__mClass);
 	HX_MARK_MEMBER(hx::hxEnumBase_obj__mClass);
+	HX_MARK_MEMBER(hx::DynZero);
+	HX_MARK_MEMBER(hx::DynOne);
+	HX_MARK_MEMBER(hx::DynTrue);
+	HX_MARK_MEMBER(hx::DynFalse);
+	HX_MARK_MEMBER(hx::DynEmptyString);
 };
 
 
@@ -254,6 +273,11 @@ static void sVisitStatics(HX_VISIT_PARAMS) {
 	HX_VISIT_MEMBER(Math_obj::__mClass);
 	HX_VISIT_MEMBER(Anon_obj::__mClass);
 	HX_VISIT_MEMBER(hx::hxEnumBase_obj__mClass);
+	HX_VISIT_MEMBER(hx::DynZero);
+	HX_VISIT_MEMBER(hx::DynOne);
+	HX_VISIT_MEMBER(hx::DynTrue);
+	HX_VISIT_MEMBER(hx::DynFalse);
+	HX_VISIT_MEMBER(hx::DynEmptyString);
 };
 
 #endif
@@ -269,6 +293,11 @@ void Dynamic::__boot()
    Static(__BoolClass) = hx::RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0);
    Static(__IntClass) = hx::RegisterClass(HX_CSTRING("Int"),IsInt,sNone,sNone,0,0, 0 );
    Static(__FloatClass) = hx::RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
+   DynZero = Dynamic( new hx::DoubleData(0) );
+   DynOne = Dynamic( new hx::DoubleData(1) );
+   DynTrue = Dynamic( new hx::BoolData(true) );
+   DynFalse = Dynamic( new hx::BoolData(false) );
+   DynEmptyString = Dynamic(HX_CSTRING("").__ToObject());
 }
 
 

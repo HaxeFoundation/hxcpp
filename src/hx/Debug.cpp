@@ -714,7 +714,7 @@ Array<String> __hxcpp_get_exception_stack()
 
 
 
-void __hxcpp_start_profiler(::Float)
+void __hxcpp_start_profiler(::String)
 {
     DBGLOG("Compile with -D HXCPP_STACK_TRACE or -debug to use profiler.\n");
 }
