@@ -2,8 +2,10 @@
 <!-- MACOS TOOLS -------------------------------------------------->
 
 <include name="gcc-toolchain.xml"/>
-
-<setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.5" unless="MACOSX_DEPLOYMENT_TARGET" />
+    
+<setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.6" unless="MACOSX_DEPLOYMENT_TARGET" />
+    
+<path name="${XCODE_DEVELOPER}/usr/bin" />
 
 <compiler id="darwin" exe="g++" if="macos">
   <flag value="-c"/>
@@ -11,6 +13,8 @@
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
+  <flag value="-isysroot"/>
+  <flag value="${XCODE_DEVELOPER}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk"/>
   <flag value="-I${HXCPP}/include"/>
   <flag value="-DHX_MACOS"/>
   <flag value="-m32" unless="HXCPP_M64"/>

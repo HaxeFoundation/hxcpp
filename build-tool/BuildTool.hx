@@ -1196,7 +1196,7 @@ class BuildTool
          defines.set("BINDIR",m64 ? "Mac64":"Mac");
       }
 
-      if (defines.exists("iphone") && !defines.exists("XCODE_DEVELOPER"))
+      if (defines.exists("apple") && !defines.exists("XCODE_DEVELOPER"))
       {
          var xcode_developer = "/Applications/Xcode.app/Contents/Developer";
          if (!neko.FileSystem.exists(xcode_developer))
@@ -1226,6 +1226,28 @@ class BuildTool
             }
             if (best!="")
                defines.set("IPHONE_VER",best);
+         }
+      }
+      
+      if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
+      {
+         var dev_path = defines.get("XCODE_DEVELOPER") + "/Platforms/MacOSX.platform/Developer/SDKs/";
+         if (neko.FileSystem.exists(dev_path))
+         {
+            var best="";
+            var files = neko.FileSystem.readDirectory(dev_path);
+            var extract_version = ~/^MacOSX(.*).sdk$/;
+            for(file in files)
+            {
+               if (extract_version.match(file))
+               {
+                  var ver = extract_version.matched(1);
+                  if (ver>best)
+                     best = ver;
+               }
+            }
+            if (best!="")
+               defines.set("MACOSX_VER",best);
          }
       }
 
