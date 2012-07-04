@@ -293,8 +293,8 @@ void Dynamic::__boot()
    Static(__BoolClass) = hx::RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0);
    Static(__IntClass) = hx::RegisterClass(HX_CSTRING("Int"),IsInt,sNone,sNone,0,0, 0 );
    Static(__FloatClass) = hx::RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
-   DynZero = Dynamic( new hx::DoubleData(0) );
-   DynOne = Dynamic( new hx::DoubleData(1) );
+   DynZero = Dynamic( new hx::IntData(0) );
+   DynOne = Dynamic( new hx::IntData(1) );
    DynTrue = Dynamic( new hx::BoolData(true) );
    DynFalse = Dynamic( new hx::BoolData(false) );
    DynEmptyString = Dynamic(HX_CSTRING("").__ToObject());
