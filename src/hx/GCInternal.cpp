@@ -1618,7 +1618,7 @@ public:
          }
       }
 
-      #ifdef HXCPP_VISIT_ALLOCS
+      #if defined(HXCPP_VISIT_ALLOCS) && defined(TRY_DEFRAG)
       if (bestGroup>=0)
       {
          if (EvacuateGroup(bestGroup))

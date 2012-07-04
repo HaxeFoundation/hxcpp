@@ -34,7 +34,6 @@
 
 <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
 
-<error value="You must set the variable HXCPP_DEBUG_HOST to use HXCPP_DEBUG_TOOL" if="HXCPP_DEBUG_TOOL" unless="HXCPP_DEBUG_HOST" />
 
 <!-- You can override the exes an "exe" section on your own .hxcpp_config -->
 <!-- You can use replace="1" to change the compiler, or omit to add flags -->
