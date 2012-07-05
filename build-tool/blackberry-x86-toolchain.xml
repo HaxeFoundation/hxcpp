@@ -38,7 +38,7 @@
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
-	<flag value="-rdynamic"/>
+	<!-- <flag value="-rdynamic"/> -->
 	<flag value="-L${QNX_TARGET}/x86/lib"/>
 	<ext value=""/>
 	<outflag value="-o"/>
