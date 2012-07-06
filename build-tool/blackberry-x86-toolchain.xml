@@ -13,7 +13,7 @@
 
 <!-- BLACKBERRY TOOLS -------------------------------------------------->
 	
-<compiler id="blackberry" exe="i486-pc-nto-qnx6.5.0-g++" if="blackberry">
+<compiler id="blackberry" exe="ntox86-g++" if="blackberry">
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
@@ -34,7 +34,7 @@
 </compiler>
 
 
-<linker id="exe" exe="i486-pc-nto-qnx6.5.0-g++" if="blackberry">
+<linker id="exe" exe="ntox86-g++" if="blackberry">
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
@@ -46,7 +46,7 @@
 	<!-- <lib name="-ldl"/> -->
 </linker>
 	
-<linker id="dll" exe="i486-pc-nto-qnx6.5.0-g++" if="blackberry">
+<linker id="dll" exe="ntox86-g++" if="blackberry">
 	<flag value="-shared"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>

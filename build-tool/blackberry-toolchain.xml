@@ -13,7 +13,7 @@
 
 <!-- BLACKBERRY TOOLS -------------------------------------------------->
 	
-<compiler id="blackberry" exe="arm-unknown-nto-qnx6.5.0eabi-g++" if="blackberry">
+<compiler id="blackberry" exe="ntoarmv7-g++" if="blackberry">
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
@@ -34,7 +34,7 @@
 </compiler>
 
 
-<linker id="exe" exe="arm-unknown-nto-qnx6.5.0eabi-g++" if="blackberry">
+<linker id="exe" exe="ntoarmv7-g++" if="blackberry">
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
@@ -46,7 +46,7 @@
 	<!-- <lib name="-ldl"/> -->
 </linker>
 	
-<linker id="dll" exe="arm-unknown-nto-qnx6.5.0eabi-g++" if="blackberry">
+<linker id="dll" exe="ntoarmv7-g++" if="blackberry">
 	<flag value="-shared"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
