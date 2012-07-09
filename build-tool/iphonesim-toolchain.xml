@@ -6,6 +6,8 @@
 
 <compiler id="iPhoneSim" exe="gcc" if="iphonesim">
   <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++" />
+  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/llvm-g++" if="HXCPP_LLVM" />
+  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <flag value="-g" if="debug"/>
@@ -24,11 +26,13 @@
   <flag value="-arch"/>
   <flag value="i386"/>
   <flag value="-isysroot"/>
- <flag value="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
+  <flag value="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
   <flag value="-DIPHONESIM"/>
+  <flag value="-fobjc-arc" if="HXCPP_CLANG" />
+  <flag value="-Wno-parentheses" if="HXCPP_CLANG" />
   <include name="common-defines.xml" />
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-I${HXCPP}/include"/>

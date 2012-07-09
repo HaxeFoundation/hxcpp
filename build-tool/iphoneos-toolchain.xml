@@ -10,6 +10,8 @@
 
 <compiler id="iPhoneOS" exe="gcc" if="iphoneos">
   <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/g++" />
+  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/llvm-g++" if="HXCPP_LLVM" />
+  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <flag value="-g" if="debug"/>
@@ -20,11 +22,15 @@
   <flag value="-isysroot"/>
   <flag value="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
   <flag value="-miphoneos-version-min=3.0" unless="HXCPP_ARMV7" />
-  <flag value="-miphoneos-version-min=3.0" if="HXCPP_ARMV7" />
+  <flag value="-miphoneos-version-min=5.0" if="HXCPP_ARMV7" />
+  <flag value="-fobjc-arc" if="HXCPP_CLANG" />
+  <flag value="-Wno-parentheses" if="HXCPP_CLANG" />
   <flag value="-fvisibility=hidden"/>
   <flag value="-fno-stack-protector"/>
   <flag value="-DIPHONE"/>
   <flag value="-DIPHONEOS"/>
+  <flag value="-DHXCPP_CLANG" if="HXCPP_CLANG" />
+  <flag value="-DHXCPP_LLVM" if="HXCPP_LLVM" />
   <include name="common-defines.xml" />
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-I${HXCPP}/include"/>
