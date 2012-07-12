@@ -2,12 +2,11 @@
 
 <include name="gcc-toolchain.xml"/>
 
-<path name="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />
+<path name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />
 
 <compiler id="iPhoneSim" exe="gcc" if="iphonesim">
-  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++" />
-  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/llvm-g++" if="HXCPP_LLVM" />
-  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/clang++" if="HXCPP_CLANG" />
+  <exe name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++" />
+  <exe name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin/clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <flag value="-g" if="debug"/>
@@ -26,7 +25,7 @@
   <flag value="-arch"/>
   <flag value="i386"/>
   <flag value="-isysroot"/>
-  <flag value="${XCODE_DEVELOPER}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>

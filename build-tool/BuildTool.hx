@@ -1196,20 +1196,19 @@ class BuildTool
          defines.set("BINDIR",m64 ? "Mac64":"Mac");
       }
 
-      if (defines.exists("apple") && !defines.exists("XCODE_DEVELOPER"))
+      if (defines.exists("apple") && !defines.exists("DEVELOPER_DIR"))
       {
-         var xcode_developer = "/Applications/Xcode.app/Contents/Developer";
-         if (!neko.FileSystem.exists(xcode_developer))
-         {
-            xcode_developer = "/Developer";
-            defines.set("LEGACY_XCODE_LOCATION","1");
-         }
-         defines.set("XCODE_DEVELOPER",xcode_developer);
+          var proc = new neko.io.Process("xcode-select", ["--print-path"]);
+          var developer_dir = proc.stdout.readLine();
+          proc.close();
+          if (developer_dir == "/Developer")
+             defines.set("LEGACY_XCODE_LOCATION","1");
+          defines.set("DEVELOPER_DIR",developer_dir);
       }
 
       if (defines.exists("iphone") && !defines.exists("IPHONE_VER"))
       {
-         var dev_path = defines.get("XCODE_DEVELOPER") + "/Platforms/iPhoneOS.platform/Developer/SDKs/";
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/iPhoneOS.platform/Developer/SDKs/";
          if (neko.FileSystem.exists(dev_path))
          {
             var best="";
@@ -1231,7 +1230,7 @@ class BuildTool
       
       if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
       {
-         var dev_path = defines.get("XCODE_DEVELOPER") + "/Platforms/MacOSX.platform/Developer/SDKs/";
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/";
          if (neko.FileSystem.exists(dev_path))
          {
             var best="";

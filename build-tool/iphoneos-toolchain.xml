@@ -6,12 +6,11 @@
 <set name="ARCH" value ="-v7" if="HXCPP_ARMV7" />
 <include name="gcc-toolchain.xml"/>
 
-<path name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin" />
+<path name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin" />
 
 <compiler id="iPhoneOS" exe="gcc" if="iphoneos">
-  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/g++" />
-  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/llvm-g++" if="HXCPP_LLVM" />
-  <exe name="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/usr/bin/clang++" if="HXCPP_CLANG" />
+  <exe name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin/g++" />
+  <exe name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin/clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <flag value="-g" if="debug"/>
@@ -20,7 +19,7 @@
   <flag value="armv6" unless="HXCPP_ARMV7" />
   <flag value="armv7" if="HXCPP_ARMV7" />
   <flag value="-isysroot"/>
-  <flag value="${XCODE_DEVELOPER}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
   <flag value="-miphoneos-version-min=3.0" unless="HXCPP_ARMV7" />
   <flag value="-miphoneos-version-min=5.0" if="HXCPP_ARMV7" />
   <flag value="-fobjc-arc" if="HXCPP_CLANG" />
