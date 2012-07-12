@@ -30,7 +30,11 @@ int gInAlloc = false;
 
 
 
-#define TRY_DEFRAG
+#ifndef HXCPP_GC_MOVING
+// Enable moving collector...
+//#define HXCPP_GC_MOVING
+#endif
+
 //#define SHOW_MEM_EVENTS
 //#define COLLECTOR_STATS
 // Allocate this many blocks at a time - this will increase memory usage % when rounding to block size must be done.
@@ -1618,7 +1622,7 @@ public:
          }
       }
 
-      #if defined(HXCPP_VISIT_ALLOCS) && defined(TRY_DEFRAG)
+      #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_GC_MOVING)
       if (bestGroup>=0)
       {
          if (EvacuateGroup(bestGroup))
@@ -1808,7 +1812,7 @@ public:
       bool released = want_less && ReleaseBlocks(want_less);
 
 
-      #if defined(TRY_DEFRAG) && defined(HXCPP_VISIT_ALLOCS)
+      #if defined(HXCPP_GC_MOVING) && defined(HXCPP_VISIT_ALLOCS)
       if (!released && full)
       {
          // Try compacting ...
