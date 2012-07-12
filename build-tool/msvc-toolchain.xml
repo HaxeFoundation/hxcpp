@@ -24,7 +24,7 @@
   <flag value="-I${HXCPP}/include"/>
   <include name="common-defines.xml" />
   <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
-  <flag value="-DHX_WIN_MAIN" if="no_console"/>
+  <flag value="-DHX_WIN_MAIN" if="no_console" unless="HXCPP_DEBUGGER" />
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
@@ -48,7 +48,7 @@
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
-  <flag value="-subsystem:windows" if="no_console"/>
+  <flag value="-subsystem:windows" if="no_console" unless="HXCPP_DEBUGGER" />
   <flag value="-libpath:lib"/>
   <flag value="user32.lib"/>
   <ext value=".exe"/>
