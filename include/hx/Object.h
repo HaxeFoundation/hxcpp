@@ -183,14 +183,14 @@ public:
    inline OBJ_ *operator->()
    {
       #ifdef HXCPP_CHECK_POINTER
-      if (!mPtr) CriticalError(HX_CSTRING("Null Object Reference"));
+      if (!mPtr) NullObjectReference();
       #endif
       return mPtr;
    }
    inline const OBJ_ *operator->() const
    {
       #ifdef HXCPP_CHECK_POINTER
-      if (!mPtr) CriticalError(HX_CSTRING("Null Object Reference"));
+      if (!mPtr) NullObjectReference();
       #endif
       return mPtr;
    }

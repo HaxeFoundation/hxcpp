@@ -9,9 +9,6 @@
 #define DBGLOG printf
 #endif
 
-
-#ifdef HXCPP_STACK_TRACE // {
-
 #include <map>
 #include <vector>
 #include <string>
@@ -27,11 +24,12 @@
 #endif
 
 
+
+
 void __hx_stack_set_last_exception();
 
 namespace hx
 {
-
 
 void CriticalError(const String &inErr)
 {
@@ -39,26 +37,37 @@ void CriticalError(const String &inErr)
    if (__hxcpp_dbg_handle_error(inErr))
       return;
    #endif
+
+   #ifdef HXCPP_STACK_TRACE
    __hx_stack_set_last_exception();
    __hx_dump_stack();
-
-   #ifdef HX_UTF8_STRINGS
-   fprintf(stderr,"Critical Error: %s\n", inErr.__s);
-   #else
-   fprintf(stderr,"Critical Error: %S\n", inErr.__s);
    #endif
 
+   DBGLOG("Critical Error: %s\n", inErr.__s);
+
    #ifdef HX_WINDOWS
-      #ifdef HX_UTF8_STRINGS
-      MessageBoxA(0,inErr.__s,"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
-      #else
-      MessageBoxW(0,inErr.__s,L"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
-      #endif
+   MessageBoxA(0,inErr.__s,"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
    #endif
    // Good when using gdb...
    // *(int *)0=0;
    exit(1);
 }
+
+void NullObjectReference()
+{
+   CriticalError(HX_CSTRING("Null Object Reference"));
+}
+
+}
+
+
+
+
+#ifdef HXCPP_STACK_TRACE // {
+
+
+namespace hx
+{
 
 // --- Profiling ------------------------------------------
 
