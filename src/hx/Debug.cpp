@@ -65,6 +65,7 @@ void NullObjectReference()
 
 #ifdef HXCPP_STACK_TRACE // {
 
+bool gProfileThreadRunning = false;
 
 namespace hx
 {
@@ -96,6 +97,7 @@ struct FlatResult
 };
 
 int gProfileClock = 0;
+int gSampleClock = 0;
  
 // --- Debugging ------------------------------------------
 
@@ -200,7 +202,7 @@ struct CallStack
 
       mDumpFile = inDumpFile.__s ? inDumpFile.__s : "";
 
-      mT0 = gProfileClock;
+      mT0 = gProfileClock = 0;
       mProfiling = true;
    }
 
@@ -261,9 +263,15 @@ struct CallStack
 
    void Sample()
    {
-      if (mT0!=gProfileClock)
+      if (!gProfileThreadRunning)
+      {
+         DBGLOG("Forced profile stop.");
+         StopProfile();
+      }
+      else if (mT0!=gProfileClock)
       {
          int clock = gProfileClock;
+         gSampleClock = gProfileClock;
          int delta = clock-mT0;
          if (delta<0) delta = 1;
          mT0 = clock;
@@ -652,11 +660,11 @@ Array<String> __hxcpp_get_exception_stack()
 }
 
 
-bool gProfileThreadRunning = false;
 
 THREAD_FUNC_TYPE profile_main_loop( void *)
 {
    int millis = 1;
+   hx::gSampleClock = hx::gProfileClock;
 
    while(gProfileThreadRunning)
    {
@@ -671,6 +679,13 @@ THREAD_FUNC_TYPE profile_main_loop( void *)
       #endif
 
       int count = hx::gProfileClock + 1;
+      if (count>2000 && (hx::gSampleClock+100 < hx::gProfileClock) )
+      {
+         // Main thread seems to have forgotten about us - force stop
+         gProfileThreadRunning = false;
+         DBGLOG("Profiler terminated due to lack of activity");
+         break;
+      }
       hx::gProfileClock = count < 0 ? 0 : count;
    }
 	THREAD_FUNC_RET
@@ -696,8 +711,11 @@ void __hxcpp_start_profiler(::String inDumpFile)
 
 void __hxcpp_stop_profiler()
 {
-   gProfileThreadRunning = false;
-   hx::GetCallStack()->StopProfile();
+   if (gProfileThreadRunning)
+   {
+      gProfileThreadRunning = false;
+      hx::GetCallStack()->StopProfile();
+   }
 }
 
 
