@@ -5,6 +5,9 @@
 * Build-in debugger
 * Fix mac ndll finding bug
 * Add Int32 member functions
+* Clang options for ios compiler
+* Add a few pre-boxed constants
+* Some general bug fixes
 
 2.09.3
 ------------------------------------------------------------
