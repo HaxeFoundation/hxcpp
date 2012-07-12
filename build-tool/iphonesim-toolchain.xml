@@ -30,7 +30,9 @@
   <flag value="-miphoneos-version-min=${IPHONE_VER}"/>
   <flag value="-DIPHONE"/>
   <flag value="-DIPHONESIM"/>
-  <flag value="-fobjc-arc" if="HXCPP_CLANG" />
+  <flag value="-DHXCPP_CLANG" if="HXCPP_CLANG"/>
+  <flag value="-fobjc-arc" if="OBJC_ARC" />
+  <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <flag value="-Wno-parentheses" if="HXCPP_CLANG" />
   <include name="common-defines.xml" />
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>

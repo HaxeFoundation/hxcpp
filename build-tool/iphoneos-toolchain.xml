@@ -22,7 +22,8 @@
   <flag value="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
   <flag value="-miphoneos-version-min=3.0" unless="HXCPP_ARMV7" />
   <flag value="-miphoneos-version-min=5.0" if="HXCPP_ARMV7" />
-  <flag value="-fobjc-arc" if="HXCPP_CLANG" />
+  <flag value="-fobjc-arc" if="OBJC_ARC" />
+  <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <flag value="-Wno-parentheses" if="HXCPP_CLANG" />
   <flag value="-fvisibility=hidden"/>
   <flag value="-fno-stack-protector"/>
