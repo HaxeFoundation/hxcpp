@@ -14,6 +14,8 @@
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
+  <flag value="-x" />
+  <flag value="c++-header" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-isysroot"/>
