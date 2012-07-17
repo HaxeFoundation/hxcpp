@@ -145,7 +145,7 @@ class Compiler
 
       neko.Lib.println("Creating " + pch_name + "...");
       neko.Lib.println( mExe + " " + args.join(" ") );
-      var result = neko.Sys.command( mExe, args );
+      var result = BuildTool.runCommand( mExe, args );
       if (result!=0)
       {
          if (neko.FileSystem.exists(pch_name))
@@ -192,7 +192,7 @@ class Compiler
       }
       args.push(out + obj_name);
       neko.Lib.println( mExe + " " + args.join(" ") );
-      var result = neko.Sys.command( mExe, args );
+      var result = BuildTool.runCommand( mExe, args );
       if (result!=0)
       {
          if (neko.FileSystem.exists(obj_name))
@@ -280,7 +280,7 @@ class Linker
          args = args.concat(mLibs);
 
          neko.Lib.println( mExe + " " + args.join(" ") );
-         var result = neko.Sys.command( mExe, args );
+         var result = BuildTool.runCommand( mExe, args );
          if (result!=0)
             throw "Error : " + result + " - build cancelled";
 
@@ -288,7 +288,7 @@ class Linker
          {
             args = [out_name];
             neko.Lib.println( mRanLib + " " + args.join(" ") );
-            var result = neko.Sys.command( mRanLib, args );
+            var result = BuildTool.runCommand( mRanLib, args );
             if (result!=0)
                throw "Error : " + result + " - build cancelled";
          }
@@ -341,7 +341,7 @@ class Stripper
       args.push(inTarget);
 
       neko.Lib.println( mExe + " " + args.join(" ") );
-      var result = neko.Sys.command( mExe, args );
+      var result = BuildTool.runCommand( mExe, args );
       if (result!=0)
          throw "Error : " + result + " - build cancelled";
    }
@@ -691,6 +691,18 @@ class BuildTool
             }
          }
       }
+   }
+   
+   
+   public static function runCommand (exe:String, args:Array<String>):Int
+   {
+      if (exe.indexOf (" ") > -1)
+      {
+         var splitExe = exe.split (" ");
+         exe = splitExe.shift ();
+         args = splitExe.concat (args);
+      }
+      return neko.Sys.command (exe, args);
    }
 
 

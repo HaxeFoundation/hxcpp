@@ -4,10 +4,13 @@
 <include name="gcc-toolchain.xml"/>
     
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.5" unless="MACOSX_DEPLOYMENT_TARGET" />
-    
+
 <path name="${DEVELOPER_DIR}/usr/bin" />
 
+
 <compiler id="darwin" exe="g++" if="macos">
+  <exe name="xcrun --sdk macosx${MACOSX_VER} llvm-g++" if="HXCPP_LLVM" />
+  <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
@@ -20,6 +23,8 @@
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_CLANG" if="HXCPP_CLANG" />
+  <flag value="-DHXCPP_LLVM" if="HXCPP_LLVM" />
   <include name="common-defines.xml" />
   <objdir value="obj/darwin${OBJEXT}/" />
   <outflag value="-o"/>
@@ -27,6 +32,8 @@
 </compiler>
 
 <linker id="dll" exe="g++" if="macos">
+  <exe name="xcrun --sdk macosx${MACOSX_VER} llvm-g++" if="HXCPP_LLVM" />
+  <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <fromfile value="" if="GCC_OLD" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
@@ -44,6 +51,8 @@
 </linker>
 
 <linker id="exe" exe="g++" if="macos">
+  <exe name="xcrun --sdk macosx${MACOSX_VER} llvm-g++" if="HXCPP_LLVM" />
+  <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
   <fromfile value="" if="GCC_OLD" />
   <flag value="-framework"/>
