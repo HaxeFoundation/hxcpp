@@ -1,14 +1,16 @@
 <xml>
 
-<include name="gcc-toolchain.xml"/>
+<echo value="Using iOS SDK ${IPHONE_VER}" if="VERBOSE"/>
 
+<include name="gcc-toolchain.xml"/>
 <path name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />
 
-<compiler id="iPhoneSim" exe="gcc" if="iphonesim">
-  <exe name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++" />
-  <exe name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin/clang++" if="HXCPP_CLANG" />
+<compiler id="iPhoneSim" exe="xcrun --sdk iphonesimulator${IPHONE_VER} g++" if="iphonesim">
+  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
+  <flag value="-x" />
+  <flag value="c++-header" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fmessage-length=0"/>
@@ -21,7 +23,7 @@
   <!-- Simulator has been upgraded to ABI version 2.  Old code may not like the following 2 lines  -->
   <mmflag value="-fobjc-abi-version=2"/>
   <mmflag value="-fobjc-legacy-dispatch"/>
-  <flag value="-Wunused-variable"/>
+  <flag value="-Wno-unused-variable"/>
   <flag value="-arch"/>
   <flag value="i386"/>
   <flag value="-isysroot"/>
@@ -34,6 +36,7 @@
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <flag value="-Wno-parentheses" if="HXCPP_CLANG" />
+  <flag value="-Wno-null-dereference" if="HXCPP_CLANG" />
   <include name="common-defines.xml" />
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-I${HXCPP}/include"/>
