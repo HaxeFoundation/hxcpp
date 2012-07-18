@@ -3,6 +3,7 @@
 
 <include name="gcc-toolchain.xml"/>
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.5" unless="MACOSX_DEPLOYMENT_TARGET" />
+<setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.7" if="OBJ_ARC" unless="MACOSX_DEPLOYMENT_TARGET" />
 <path name="${DEVELOPER_DIR}/usr/bin" />
 
 
