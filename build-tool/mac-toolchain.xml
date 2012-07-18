@@ -25,6 +25,8 @@
   <flag value="-DHXCPP_CLANG" if="HXCPP_CLANG" />
   <flag value="-Wno-parentheses" if="HXCPP_CLANG" />
   <flag value="-Wno-null-dereference" if="HXCPP_CLANG" />
+  <flag value="-fobjc-arc" if="OBJC_ARC" />
+  <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <include name="common-defines.xml" />
   <objdir value="obj/darwin${OBJEXT}/" />
   <outflag value="-o"/>
@@ -34,6 +36,7 @@
 <linker id="dll" exe="g++" if="macos">
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <fromfile value="" if="GCC_OLD" />
+  <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
@@ -53,6 +56,7 @@
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
   <fromfile value="" if="GCC_OLD" />
+  <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-isysroot"/>
