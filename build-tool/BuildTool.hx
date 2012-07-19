@@ -1213,7 +1213,7 @@ class BuildTool
           var proc = new neko.io.Process("xcode-select", ["--print-path"]);
           var developer_dir = proc.stdout.readLine();
           proc.close();
-          if (developer_dir.indexOf ("Run xcode-select") > -1)
+          if (developer_dir == "" || developer_dir.indexOf ("Run xcode-select") > -1)
           	 developer_dir = "/Applications/Xcode.app/Contents/Developer";
           if (developer_dir == "/Developer")
              defines.set("LEGACY_XCODE_LOCATION","1");
