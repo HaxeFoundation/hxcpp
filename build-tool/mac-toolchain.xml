@@ -48,7 +48,7 @@
   <flag value="-isysroot"/>
   <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk"/>
   <flag value="-fvisibility=hidden"/>
-  <flag value="-debug" if="debug"/>
+  <!-- <flag value="-debug" if="debug"/> -->
   <ext value=".dylib"/>
   <outflag value="-o "/>
 </linker>
@@ -62,7 +62,7 @@
   <flag value="Cocoa"/>
   <flag value="-isysroot"/>
   <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk"/>
-  <flag value="-debug" if="debug"/>
+  <!-- <flag value="-debug" if="debug"/> -->
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <ext value=""/>
