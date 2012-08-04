@@ -922,6 +922,8 @@ InternalFinalizer::InternalFinalizer(hx::Object *inObj)
    mValid = true;
    mObject = inObj;
    mFinalizer = 0;
+
+   AutoLock lock(*gThreadStateChangeLock);
    sgFinalizers->push(this);
 }
 
