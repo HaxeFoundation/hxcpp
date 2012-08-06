@@ -149,13 +149,11 @@ void __hxcpp_stdlibs_boot()
       freopen("CONOUT$", "w", stdout); 
       freopen("CONOUT$", "w", stderr); 
    }
-   else
-   {
-      setbuf(stdin, NULL);
-	  setbuf(stdout, NULL);
-	  setbuf(stderr, NULL);
-   }
    #endif
+
+   setbuf(stdin, NULL);
+   setbuf(stdout, NULL);
+   setbuf(stderr, NULL);
 }
 
 void __trace(Dynamic inObj, Dynamic inData)
