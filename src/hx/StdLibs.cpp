@@ -126,6 +126,38 @@ int __hxcpp_irand(int inMax)
    return (lo | (mid<<12) | (hi<<24) ) % inMax;
 }
 
+void __hxcpp_stdlibs_boot()
+{
+   #ifdef HX_WINDOWS
+   HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+   AttachConsole(ATTACH_PARENT_PROCESS);
+
+   if (GetConsoleWindow() != NULL)
+   {
+      if (FILE_TYPE_UNKNOWN == GetFileType(out) && ERROR_INVALID_HANDLE == GetLastError())
+	  {
+	      // cygwin fix?
+	      out = CreateFile("CONOUT$", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	      if (out)
+		  {
+		     CloseHandle(out);
+	      }
+      }
+
+      freopen("CONIN$", "r", stdin); 
+      freopen("CONOUT$", "w", stdout); 
+      freopen("CONOUT$", "w", stderr); 
+   }
+   else
+   {
+      setbuf(stdin, NULL);
+	  setbuf(stdout, NULL);
+	  setbuf(stderr, NULL);
+   }
+   #endif
+}
+
 void __trace(Dynamic inObj, Dynamic inData)
 {
 #ifdef HX_UTF8_STRINGS

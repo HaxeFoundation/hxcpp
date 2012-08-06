@@ -13,7 +13,7 @@ void Boot()
 	 setvbuf( stderr , 0 , _IONBF , 0 );
 	#endif
 
-
+   __hxcpp_stdlibs_boot();
    Object::__boot();
 	Dynamic::__boot();
 	Class_obj::__boot();

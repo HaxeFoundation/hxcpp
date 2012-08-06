@@ -32,6 +32,7 @@ double         __time_stamp();
 void           __hxcpp_print(Dynamic &inV);
 void           __hxcpp_println(Dynamic &inV);
 void           __trace(Dynamic inPtr, Dynamic inData);
+void           __hxcpp_stdlibs_boot();
 
 // --- Maths ---------------------------------------------------------
 double __hxcpp_drand();
