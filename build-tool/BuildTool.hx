@@ -234,6 +234,9 @@ class Linker
    {
       var ext = inTarget.mExt=="" ? mExt : inTarget.mExt;
       var file_name = mNamePrefix + inTarget.mOutput + ext;
+      if(!createDirRecursive(inTarget.mOutputDir)) {
+         throw "Unable to create output directory";
+      }
       var out_name = inTarget.mOutputDir + file_name;
       if (isOutOfDate(out_name,inObjs) || isOutOfDate(out_name,inTarget.mDepends))
       {
@@ -317,6 +320,25 @@ class Linker
             return true;
       }
       return false;
+   }
+   function createDirRecursive(dirPath:String) : Bool
+   {
+      var path = neko.FileSystem.fullPath(dirPath).split("\\").join("/");
+      if(path.charAt(path.length - 1) == "/")
+         path = path.substring(0, path.length - 1);
+      if(neko.FileSystem.exists(path))
+         return true;
+      try {
+         neko.FileSystem.createDirectory(path);
+         return true;
+      }
+      catch(e:Dynamic) {
+         if(createDirRecursive(path.substring(0, path.lastIndexOf("/")))) {
+           neko.FileSystem.createDirectory(path);
+           return true;
+         }
+         return false;
+      }
    }
 }
 
