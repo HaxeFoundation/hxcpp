@@ -323,21 +323,25 @@ class Linker
    }
    function createDirRecursive(dirPath:String) : Bool
    {
-      var path = neko.FileSystem.fullPath(dirPath).split("\\").join("/");
-      if(path.charAt(path.length - 1) == "/")
-         path = path.substring(0, path.length - 1);
-      if(neko.FileSystem.exists(path))
-         return true;
       try {
-         neko.FileSystem.createDirectory(path);
-         return true;
-      }
-      catch(e:Dynamic) {
-         if(createDirRecursive(path.substring(0, path.lastIndexOf("/")))) {
-           neko.FileSystem.createDirectory(path);
-           return true;
+         var path = neko.FileSystem.fullPath(dirPath).split("\\").join("/");
+         if(path.charAt(path.length - 1) == "/")
+            path = path.substring(0, path.length - 1);
+         if(neko.FileSystem.exists(path))
+            return true;
+         try {
+            neko.FileSystem.createDirectory(path);
+            return true;
          }
-         return false;
+         catch(e:Dynamic) {
+            if(createDirRecursive(path.substring(0, path.lastIndexOf("/")))) {
+              neko.FileSystem.createDirectory(path);
+              return true;
+            }
+            return false;
+         }
+      } catch (e:Dynamic) {
+         return true;
       }
    }
 }
