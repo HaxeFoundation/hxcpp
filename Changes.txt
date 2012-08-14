@@ -1,3 +1,9 @@
+2.10.1
+------------------------------------------------------------
+* Fix trace() output
+* Clang options for OS X compiler
+* Small fixes
+
 2.10.0
 ------------------------------------------------------------
 * GC upgrades - moving/defragging/releasing
