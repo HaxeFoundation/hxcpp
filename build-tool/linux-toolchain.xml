@@ -32,7 +32,7 @@
   <flag value="-fPIC"/>
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
-  <flag value="-W,l--unresolved-symbols=report-all"/>
+  <flag value="-Wl,--unresolved-symbols=report-all"/>
   <flag value="-Xlinker"/>
   <flag value="--no-undefined"/>
   <flag value="-debug" if="debug"/>
