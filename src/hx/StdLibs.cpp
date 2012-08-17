@@ -4,6 +4,7 @@
 #ifdef HX_WINDOWS
 #include <windows.h>
 #include <stdio.h>
+#include <io.h>
 #else
 #include <sys/time.h>
 #include <stdio.h>
@@ -130,24 +131,17 @@ void __hxcpp_stdlibs_boot()
 {
    #ifdef HX_WINDOWS
    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
-
+   
    AttachConsole(ATTACH_PARENT_PROCESS);
 
    if (GetConsoleWindow() != NULL)
    {
-      if (FILE_TYPE_UNKNOWN == GetFileType(out) && ERROR_INVALID_HANDLE == GetLastError())
-	  {
-	      // cygwin fix?
-	      out = CreateFile("CONOUT$", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-	      if (out)
-		  {
-		     CloseHandle(out);
-	      }
-      }
-
-      //freopen("CONIN$", "r", stdin); 
-      freopen("CONOUT$", "w", stdout); 
-      //freopen("CONOUT$", "w", stderr); 
+      if (_fileno(stdout) == -1 || _get_osfhandle(fileno(stdout)) == -1)
+	     freopen("CONOUT$", "w", stdout);
+      if (_fileno(stderr) == -1 || _get_osfhandle(fileno(stderr)) == -1)
+	     freopen("CONOUT$", "w", stderr);
+      if (_fileno(stdin) == -1 || _get_osfhandle(fileno(stdin)) == -1)
+	     freopen("CONIN$", "r", stdin);
    }
    #endif
 
