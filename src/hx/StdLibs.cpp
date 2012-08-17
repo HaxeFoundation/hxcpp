@@ -130,10 +130,7 @@ int __hxcpp_irand(int inMax)
 void __hxcpp_stdlibs_boot()
 {
    #ifdef HX_WINDOWS
-   HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
-   
    AttachConsole(ATTACH_PARENT_PROCESS);
-
    if (GetConsoleWindow() != NULL)
    {
       if (_fileno(stdout) == -1 || _get_osfhandle(fileno(stdout)) == -1)
