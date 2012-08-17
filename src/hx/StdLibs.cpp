@@ -145,9 +145,9 @@ void __hxcpp_stdlibs_boot()
 	      }
       }
 
-      freopen("CONIN$", "r", stdin); 
+      //freopen("CONIN$", "r", stdin); 
       freopen("CONOUT$", "w", stdout); 
-      freopen("CONOUT$", "w", stderr); 
+      //freopen("CONOUT$", "w", stderr); 
    }
    #endif
 
