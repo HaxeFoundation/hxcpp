@@ -5,6 +5,7 @@
 <include name="gcc-toolchain.xml"/>
 
 <compiler id="linux" exe="g++" if="linux">
+  <exe name="${CXX}" if="CXX" />
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
@@ -26,6 +27,7 @@
 </compiler>
 
 <linker id="dll" exe="g++" if="linux">
+  <exe name="${CXX}" if="CXX" />
   <fromfile value="" if="GCC_OLD" />
   <flag value="-shared"/>
   <flag value="-fpic"/>
@@ -42,6 +44,7 @@
 </linker>
 
 <linker id="exe" exe="g++" if="linux">
+  <exe name="${CXX}" if="CXX" />
   <fromfile value="" if="GCC_OLD" />
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
