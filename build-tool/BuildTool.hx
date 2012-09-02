@@ -1289,6 +1289,11 @@ class BuildTool
                defines.set("MACOSX_VER",best);
          }
       }
+      
+      if (!neko.FileSystem.exists(defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/"))
+      {
+         defines.set("LEGACY_MACOSX_SDK","1");
+      }
 
       if (targets.length==0)
          targets.push("default");

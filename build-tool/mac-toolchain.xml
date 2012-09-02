@@ -14,10 +14,9 @@
   <cppflag value="-frtti"/>
   <flag value="-x" />
   <flag value="c++-header" />
+  <flag value="-Qunused-arguments" if="LEGACY_MACOSX_SDK" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
-  <flag value="-isysroot"/>
-  <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk"/>
   <flag value="-I${HXCPP}/include"/>
   <flag value="-DHX_MACOS"/>
   <flag value="-m32" unless="HXCPP_M64"/>
@@ -46,8 +45,8 @@
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-framework"/>
   <flag value="Cocoa"/>
-  <flag value="-isysroot"/>
-  <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk"/>
+  <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk" unless="LEGACY_MACOSX_SDK"/>
   <flag value="-fvisibility=hidden"/>
   <!-- <flag value="-debug" if="debug"/> -->
   <ext value=".dylib"/>
@@ -61,8 +60,8 @@
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-framework"/>
   <flag value="Cocoa"/>
-  <flag value="-isysroot"/>
-  <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk"/>
+  <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk" unless="LEGACY_MACOSX_SDK"/>
   <!-- <flag value="-debug" if="debug"/> -->
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
