@@ -7,7 +7,8 @@
 <include name="gcc-toolchain.xml"/>
 <path name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin" />
 
-<compiler id="iPhoneOS" exe="xcrun --sdk iphoneos${IPHONE_VER} g++" if="iphoneos">
+<compiler id="iPhoneOS" exe="g++" if="iphoneos">
+  <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" />
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>

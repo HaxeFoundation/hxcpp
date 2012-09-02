@@ -5,7 +5,8 @@
 <include name="gcc-toolchain.xml"/>
 <path name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />
 
-<compiler id="iPhoneSim" exe="xcrun --sdk iphonesimulator${IPHONE_VER} g++" if="iphonesim">
+<compiler id="iPhoneSim" exe="g++" if="iphonesim">
+  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} g++" />
   <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
