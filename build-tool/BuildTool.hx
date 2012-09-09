@@ -18,12 +18,19 @@ class DirManager
                mMade.set(total,true);
                if (!neko.FileSystem.exists(total))
                {
-                  neko.Lib.println("mkdir " + total);
-                  neko.FileSystem.createDirectory(total);
+                  try
+                  {
+                     neko.Lib.println("mkdir " + total);
+                     neko.FileSystem.createDirectory(total);
+                  } catch (e:Dynamic)
+                  {
+                     return false;
+                  }
                }
             }
          }
       }
+      return true;
    }
    static public function deleteRecurse(inDir:String)
    {
@@ -921,7 +928,7 @@ class BuildTool
                    var file = new File(substitute(el.att.name),group);
                    for(f in el.elements)
                       if (valid(f,"") && f.name=="depend")
-                         file.mDepends.push( f.att.name );
+                         file.mDepends.push( substitute(f.att.name) );
                    group.mFiles.push( file );
                 case "depend" : group.addDepend( substitute(el.att.name) );
                 case "options" : group.addOptions( substitute(el.att.name) );
