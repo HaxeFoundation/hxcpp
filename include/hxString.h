@@ -79,6 +79,7 @@ public:
    inline const HX_CHAR *c_str() const { return __s; }
    const char *__CStr() const;
    const wchar_t *__WCStr() const;
+   inline operator const char *() { return __s; }
 
    static  String fromCharCode(int inCode);
 
