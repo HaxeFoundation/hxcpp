@@ -321,7 +321,7 @@ int __int__(double x)
 {
    if (x < -0x7fffffff || x>0x7fffffff )
    {
-      __int64 big_int = __int64(x);
+      __int64 big_int = (__int64)(x);
       return big_int & 0xffffffff;
    }
    else
