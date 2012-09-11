@@ -280,7 +280,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    return null();
 }
 
-void *__hxcpp_get_proc_address(String inLib, String inPrim)
+void *__hxcpp_get_proc_address(String inLib, String inPrim,bool)
 {
    if (sgRegisteredPrims)
       return (*sgRegisteredPrims)[inPrim.__CStr()];
@@ -295,7 +295,7 @@ void *__hxcpp_get_proc_address(String inLib, String inPrim)
 
 extern "C" void *hx_cffi(const char *inName);
 
-void *__hxcpp_get_proc_address(String inLib, String full_name)
+void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
 {
 #ifdef ANDROID
    inLib = HX_CSTRING("lib") + inLib;
@@ -486,6 +486,9 @@ void *__hxcpp_get_proc_address(String inLib, String full_name)
       return 0;
    }
 
+   if (!inNdllProc)
+      return (void *)proc_query;
+
    void *proc = proc_query();
    if (!proc)
    {
@@ -518,7 +521,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
       default:
           full_name += HX_CSTRING("__MULT");
    }
-   void *proc = __hxcpp_get_proc_address(inLib,full_name);
+   void *proc = __hxcpp_get_proc_address(inLib,full_name,true);
 
    if (proc)
       return Dynamic( new ExternalPrimitive(proc,inArgCount,inLib+HX_CSTRING("@")+full_name) );

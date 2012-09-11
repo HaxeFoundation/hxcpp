@@ -17,6 +17,18 @@ struct Resource
 Resource *GetResources();
 
 void RegisterResources(hx::Resource *inResources);
+
+
+struct AnyCast
+{
+   AnyCast(void *inPtr) : mPtr(inPtr) { }
+
+   template<typename T>
+   operator T*() const { return (T*)mPtr; }
+
+   void *mPtr;
+};
+
 } // end namespace hx
 
 Array<String>        __hxcpp_resource_names();
@@ -56,7 +68,13 @@ int           __hxcpp_register_prim(const HX_CHAR *inName,void *inFunc);
 
 // Get function pointer from dll file
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
-void *__hxcpp_get_proc_address(String inLib, String inPrim);
+void *__hxcpp_get_proc_address(String inLib, String inPrim,bool inNdllProc=true);
+// Can assign to function pointer without error
+inline hx::AnyCast __hxcpp_cast_get_proc_address(String inLib, String inPrim)
+{
+   return hx::AnyCast(__hxcpp_get_proc_address(inLib,inPrim,false));
+}
+
 // Loading functions via name (dummy return value)
 
 
