@@ -16,19 +16,39 @@ int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func)); \
 #define DEFINE_PRIM(func,nargs) \
 int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)); \
 
+
+#define DEFINE_PRIM_MULT_NATIVE(func,ext) \
+int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func)) + \
+                   hx_register_prim(#func "__"  #ext,(void *)(&func##_##ext)) ; 
+
+#define DEFINE_PRIM_NATIVE(func,nargs,ext) \
+int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)) + \
+                   hx_register_prim(#func "__" #ext,(void *)(&func##_##ext)) ; 
+
+
+
 #else
 
+
 #define DEFINE_PRIM_MULT(func) extern "C" { \
-  EXPORT void *func##__MULT() {  \
-     return (void*)(&func); \
- } \
+  EXPORT void *func##__MULT() { return (void*)(&func); } \
 }
 
 
 #define DEFINE_PRIM(func,nargs) extern "C" { \
-  EXPORT void *func##__##nargs() { \
-       return (void*)(&func); \
-  } \
+  EXPORT void *func##__##nargs() { return (void*)(&func); } \
+}
+
+
+#define DEFINE_PRIM_MULT_NATIVE(func,ext) extern "C" { \
+  EXPORT void *func##__MULT() { return (void*)(&func); } \
+  EXPORT void *func##__##ext() { return (void*)(&func##_##ext); } \
+}
+
+
+#define DEFINE_PRIM_NATIVE(func,nargs,ext) extern "C" { \
+  EXPORT void *func##__##nargs() { return (void*)(&func); } \
+  EXPORT void *func##__##ext() { return (void*)(&func##_##ext); } \
 }
 
 #endif // !STATIC_LINK
