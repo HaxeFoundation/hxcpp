@@ -12,8 +12,8 @@
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
-  <flag value="-x" />
-  <flag value="c++-header" />
+  <flag value="-x" unless="HXCPP_CLANG" />
+  <flag value="c++-header" unless="HXCPP_CLANG" />
   <flag value="-Qunused-arguments" if="LEGACY_MACOSX_SDK" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
