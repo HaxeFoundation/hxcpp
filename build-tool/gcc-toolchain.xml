@@ -5,7 +5,7 @@
 
 <set name="USE_GCC_FILETYPES" value="1"/>
 
-<linker id="static" exe="ar" unless="windows">
+<linker id="static_link" exe="ar" unless="windows">
   <ext value=".a"/>
   <fromfile value="" if="macos" />
   <fromfile value="" if="GCC_OLD" />

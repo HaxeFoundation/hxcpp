@@ -10,14 +10,14 @@
 
 <set name="STD_MODULE_LINK" value="dll"/>
 
-<set name="static" value="1" if="iphoneos"/>
-<set name="static" value="1" if="iphonesim"/>
+<set name="static_link" value="1" if="iphoneos"/>
+<set name="static_link" value="1" if="iphonesim"/>
 
-<set name="STAT" value="-stat" if="static" />
+<set name="STAT" value="-stat" if="static_link" />
 
 <set name="OBJEXT" value="${M64}${F32}${STAT}${DBG}${NOCONSOLE}" />
 
-<set name="STD_MODULE_LINK" value="static" if="static"/>
+<set name="STD_MODULE_LINK" value="static_link" if="static_link"/>
 
 
 <set name="LIBEXTRA" value=".iphoneos" if="iphoneos"/>
@@ -25,8 +25,8 @@
 
 
 
-<set name="haxelink" value="exe" unless="static"/>
-<set name="haxelink" value="static" if="static"/>
+<set name="haxelink" value="exe" unless="static_link"/>
+<set name="haxelink" value="static_link" if="static_link"/>
 <set name="haxelink" value="dll" if="android"/>
 
 
@@ -113,7 +113,7 @@
   <file name = "src/hx/StdLibs.cpp"/>
   <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Thread.cpp"/>
-  <file name = "src/hx/RunLibs.cpp" if="static"/>
+  <file name = "src/hx/RunLibs.cpp" if="static_link"/>
 
   <file name = "src/Array.cpp"/>
   <file name = "src/Class.cpp"/>
@@ -142,11 +142,11 @@
   <depend name="Options.txt"/>
   <ext value="${IOS_EXT}" if="iphoneos"  />
   <ext value=".iphonesim.a" if="iphonesim"/>
-  <files id="__main__" unless="static"/>
-  <files id="__lib__" if="static"/>
+  <files id="__main__" unless="static_link"/>
+  <files id="__lib__" if="static_link"/>
   <files id="runtime"/>
-  <lib name="-lpthread" if="linux" unless="static"/>
-  <lib name="-ldl" if="linux" unless="static"/>
+  <lib name="-lpthread" if="linux" unless="static_link"/>
+  <lib name="-ldl" if="linux" unless="static_link"/>
 </target>
 
 <!-- Add user config if provided, "exes" section ------------------>

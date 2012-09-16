@@ -55,7 +55,7 @@
   <outflag value="-out:"/>
 </linker>
 
-<linker id="static" exe="lib.exe" if="windows">
+<linker id="static_link" exe="lib.exe" if="windows">
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <ext value=".lib"/>
