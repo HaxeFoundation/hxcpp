@@ -268,6 +268,10 @@ inline bool operator != (bool inLHS,const Dynamic &inRHS) \
 
 inline bool operator == (bool inLHS,const Dynamic &inRHS) \
  { return inRHS.mPtr  && inRHS.mPtr->__GetType()==vtBool && (inLHS == (bool)inRHS); }
+inline bool operator == (const String &inLHS,const Dynamic &inRHS) \
+ { return inRHS.mPtr  && inLHS == inRHS.mPtr->toString(); }
+inline bool operator != (const String &inLHS,const Dynamic &inRHS) \
+ { return !inRHS.mPtr  || inLHS != inRHS.mPtr->toString(); }
 
 inline bool operator < (bool inLHS,const Dynamic &inRHS) { return false; }
 inline bool operator <= (bool inLHS,const Dynamic &inRHS) { return false; }
