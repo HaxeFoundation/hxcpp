@@ -61,6 +61,7 @@ class Compiler
    public var mMMFlags : Array<String>;
    public var mCPPFlags : Array<String>;
    public var mOBJCFlags : Array<String>;
+   public var mPCHFlags : Array<String>;
    public var mAddGCCIdentity: Bool;
    public var mExe:String;
    public var mOutFlag:String;
@@ -81,6 +82,7 @@ class Compiler
       mCPPFlags = [];
       mOBJCFlags = [];
       mMMFlags = [];
+      mPCHFlags = [];
       mAddGCCIdentity = inGCCFileTypes;
       mObjDir = "obj";
       mOutFlag = "-o";
@@ -127,7 +129,7 @@ class Compiler
    {
       var pch_name = inHeader + mPCHExt;
 
-      var args = inGroup.mCompilerFlags.concat(mFlags).concat( mCPPFlags );
+      var args = inGroup.mCompilerFlags.concat(mFlags).concat( mCPPFlags ).concat( mPCHFlags );
 
       if (mPCH!="gcc")
       {
@@ -844,6 +846,7 @@ class BuildTool
                 case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
                 case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
                 case "mmflag" : c.mMMFlags.push(substitute(el.att.value));
+                case "pchflag" : c.mPCHFlags.push(substitute(el.att.value));
                 case "objdir" : c.mObjDir = substitute((el.att.value));
                 case "outflag" : c.mOutFlag = substitute((el.att.value));
                 case "exe" : c.mExe = substitute((el.att.name));
