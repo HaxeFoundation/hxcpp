@@ -10,8 +10,8 @@
   <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
-  <flag value="-x" />
-  <flag value="c++-header" />
+  <pchflag value="-x" />
+  <pchflag value="c++-header" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fmessage-length=0"/>
