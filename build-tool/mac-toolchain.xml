@@ -8,7 +8,7 @@
 
 
 <compiler id="darwin" exe="g++" if="macos">
-  <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
+  <exe name="xcrun --sdk macosx${MACOSX_VER} clang" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>

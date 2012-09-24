@@ -7,7 +7,7 @@
 
 <compiler id="iPhoneSim" exe="g++" if="iphonesim">
   <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} g++" />
-  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang++" if="HXCPP_CLANG" />
+  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <pchflag value="-x" />

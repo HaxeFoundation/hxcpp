@@ -9,7 +9,7 @@
 
 <compiler id="iPhoneOS" exe="g++" if="iphoneos">
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" />
-  <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" if="HXCPP_CLANG" />
+  <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <pchflag value="-x" />
