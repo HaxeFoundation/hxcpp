@@ -26,7 +26,7 @@
 
 
 <set name="haxelink" value="exe" unless="static_link"/>
-<set name="haxelink" value="static" if="static_link"/>
+<set name="haxelink" value="static_link" if="static_link"/>
 <set name="haxelink" value="dll" if="android"/>
 
 

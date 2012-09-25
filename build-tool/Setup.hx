@@ -43,8 +43,50 @@ class Setup
       var bits = inPath.split("/");
       return bits.join("\\");
    }
-
-
+   
+   public static function setupBlackBerryNativeSDK(ioDefines:Hash<String>)
+   {
+      if (ioDefines.exists ("BLACKBERRY_NDK_ROOT") && !ioDefines.exists("QNX_HOST") && !ioDefines.exists("QNX_TARGET"))
+      {
+         var fileName = ioDefines.get ("BLACKBERRY_NDK_ROOT");
+         if (BuildTool.isWindows)
+         {
+            fileName += "\\bbndk-env.bat";
+         }
+         else
+         {
+            fileName += "/bbndk-env.sh";
+         }
+         var fin = neko.io.File.read(fileName, false);
+         try
+         {
+            while(true)
+            {
+               var str = fin.readLine();
+               var split = str.split ("=");
+               var name = StringTools.trim (split[0].substr (split[0].indexOf (" ") + 1));
+               switch (name)
+               {
+                  case "QNX_HOST", "QNX_TARGET":
+                     var value = split[1];
+                     if (StringTools.startsWith(value, "\""))
+                     {
+                        value = value.substr (1);
+                     }
+                     if (StringTools.endsWith(value, "\""))
+                     {
+                        value = value.substr (0, value.length - 1);
+                     }
+                     ioDefines.set(name,value);
+                     Sys.putEnv(name,value);
+               }
+            }
+         }
+         catch( ex:haxe.io.Eof ) 
+         {}
+         fin.close();
+      }
+   }
 
    public static function setupMSVC(ioDefines:Hash<String> )
    {

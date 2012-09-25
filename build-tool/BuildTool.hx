@@ -594,7 +594,7 @@ class BuildTool
       var make_contents = neko.io.File.getContent(inMakefile);
       var xml_slow = Xml.parse(make_contents);
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
-
+      
       parseXML(xml,"");
 
       if (mDefines.get("toolchain")=="msvc")
@@ -643,6 +643,10 @@ class BuildTool
                    var name = el.att.name;
                    var value = substitute(el.att.value);
                    mDefines.set(name,value);
+                   if (name == "BLACKBERRY_NDK_ROOT")
+                   {
+                   Setup.setupBlackBerryNativeSDK(mDefines);
+         			}
                 case "unset" : 
                    var name = el.att.name;
                    mDefines.remove(name);
@@ -729,7 +733,6 @@ class BuildTool
 
       var target = mTargets.get(inTarget);
       target.checkError();
-
 
       for(sub in target.mSubTargets)
          buildTarget(sub);
