@@ -1,3 +1,11 @@
+2.10.2
+------------------------------------------------------------
+* Fixes for BlackBerry 10 compatibility
+* Fixes for iOS 6 compatibility
+* CFFI improvements
+* Minor Linux improvements
+* Minor OS X improvements
+
 2.10.1
 ------------------------------------------------------------
 * Fix trace() output

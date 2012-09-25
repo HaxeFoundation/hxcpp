@@ -46,7 +46,7 @@ class Setup
    
    public static function setupBlackBerryNativeSDK(ioDefines:Hash<String>)
    {
-      if (ioDefines.exists ("BLACKBERRY_NDK_ROOT") && (!ioDefines.exists("QNX_HOST") || !ioDefines.exists("QNX_TARGET")))
+      if (ioDefines.exists ("BLACKBERRY_NDK_ROOT") && (!ioDefines.exists("QNX_HOST") || !ioDefines.exists("QNX_TARGET"))
       {
          var fileName = ioDefines.get ("BLACKBERRY_NDK_ROOT");
          if (BuildTool.isWindows)
