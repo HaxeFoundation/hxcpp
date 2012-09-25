@@ -645,8 +645,8 @@ class BuildTool
                    mDefines.set(name,value);
                    if (name == "BLACKBERRY_NDK_ROOT")
                    {
-                   Setup.setupBlackBerryNativeSDK(mDefines);
-         			}
+                      Setup.setupBlackBerryNativeSDK(mDefines);
+         		   }
                 case "unset" : 
                    var name = el.att.name;
                    mDefines.remove(name);
