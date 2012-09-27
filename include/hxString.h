@@ -75,6 +75,7 @@ public:
     int lastIndexOf(const String &inValue, Dynamic inStart) const;
     Array<String> split(const String &inDelimiter) const;
     String substr(int inPos,Dynamic inLen) const;
+    String substring(int inStartIndex, Dynamic inEndIndex) const;
 
    inline const HX_CHAR *c_str() const { return __s; }
    const char *__CStr() const;

@@ -860,6 +860,30 @@ String String::substr(int inFirst, Dynamic inLen) const
    return String(ptr,len);
 }
 
+String String::substring(int startIndex, Dynamic inEndIndex) const
+{
+   int endIndex = inEndIndex == null() ? length : inEndIndex->__ToInt();
+   if ( endIndex < 0 ) {
+      endIndex = 0;
+   } else if ( endIndex > length ) {
+      endIndex = length;
+   }
+   
+   if ( startIndex < 0 ) {
+      startIndex = 0;
+   } else if ( startIndex > length ) {
+      startIndex = length;
+   }
+   
+   if ( startIndex > endIndex ) {
+      int tmp = startIndex;
+      startIndex = endIndex;
+      endIndex = tmp;
+   }
+   
+   return substr( startIndex, endIndex - startIndex );
+}
+
 String String::operator+(String inRHS) const
 {
    if (!__s) return HX_CSTRING("null") + inRHS;
