@@ -146,6 +146,7 @@ struct Null
       if (!isNull)
          value = inVal;
    }
+   inline operator Dynamic();
    inline T Default(T inDefault) { return isNull ? inDefault : value; }
 
    bool isNull;

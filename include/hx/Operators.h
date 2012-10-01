@@ -19,6 +19,10 @@ inline bool null::operator != (const Dynamic &O) const { return O.mPtr; }
 inline bool null::operator == (const String &O) const { return !O.__s; }
 inline bool null::operator != (const String &O) const { return O.__s; }
 
+namespace hx {
+template<typename T> Null<T>::operator Dynamic() { if (isNull) return Dynamic(); return value; }
+}
+
 HX_COMPARE_NULL_MOST_OPS(String)
 HX_COMPARE_NULL_MOST_OPS(Dynamic)
 HX_COMPARE_NULL_MOST_OPS(hx::FieldRef)
