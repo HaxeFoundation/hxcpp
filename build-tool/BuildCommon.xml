@@ -54,6 +54,7 @@
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
+  <depend name="${HXCPP}/include/hx/Scriptable.h"/>
   <depend name="${HXCPP}/include/hxMath.h"/>
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
@@ -112,6 +113,7 @@
   <file name = "src/hx/Object.cpp"/>
   <file name = "src/hx/StdLibs.cpp"/>
   <file name = "src/hx/Debug.cpp"/>
+  <file name = "src/hx/Scriptable.cpp"/>
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
 
