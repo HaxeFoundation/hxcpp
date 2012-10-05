@@ -1,3 +1,5 @@
+import sys.FileSystem;
+
 class Setup
 {
    public static function initHXCPPConfig(ioDefines:Hash<String> )
@@ -46,7 +48,7 @@ class Setup
    
    public static function setupBlackBerryNativeSDK(ioDefines:Hash<String>)
    {
-      if (ioDefines.exists ("BLACKBERRY_NDK_ROOT") && (!ioDefines.exists("QNX_HOST") || !ioDefines.exists("QNX_TARGET"))
+      if (ioDefines.exists ("BLACKBERRY_NDK_ROOT") && (!ioDefines.exists("QNX_HOST") || !ioDefines.exists("QNX_TARGET")))
       {
          var fileName = ioDefines.get ("BLACKBERRY_NDK_ROOT");
          if (BuildTool.isWindows)
@@ -57,34 +59,37 @@ class Setup
          {
             fileName += "/bbndk-env.sh";
          }
-         var fin = neko.io.File.read(fileName, false);
-         try
+         if (FileSystem.exists (fileName))
          {
-            while(true)
+            var fin = neko.io.File.read(fileName, false);
+            try
             {
-               var str = fin.readLine();
-               var split = str.split ("=");
-               var name = StringTools.trim (split[0].substr (split[0].indexOf (" ") + 1));
-               switch (name)
+               while(true)
                {
-                  case "QNX_HOST", "QNX_TARGET":
-                     var value = split[1];
-                     if (StringTools.startsWith(value, "\""))
-                     {
-                        value = value.substr (1);
-                     }
-                     if (StringTools.endsWith(value, "\""))
-                     {
-                        value = value.substr (0, value.length - 1);
-                     }
-                     ioDefines.set(name,value);
-                     Sys.putEnv(name,value);
+                  var str = fin.readLine();
+                  var split = str.split ("=");
+                  var name = StringTools.trim (split[0].substr (split[0].indexOf (" ") + 1));
+                  switch (name)
+                  {
+                     case "QNX_HOST", "QNX_TARGET":
+                        var value = split[1];
+                        if (StringTools.startsWith(value, "\""))
+                        {
+                           value = value.substr (1);
+                        }
+                        if (StringTools.endsWith(value, "\""))
+                        {
+                           value = value.substr (0, value.length - 1);
+                        }
+                        ioDefines.set(name,value);
+                        Sys.putEnv(name,value);
+                  }
                }
             }
+            catch( ex:haxe.io.Eof ) 
+            {}
+            fin.close();
          }
-         catch( ex:haxe.io.Eof ) 
-         {}
-         fin.close();
       }
    }
 
