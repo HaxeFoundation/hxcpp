@@ -1,10 +1,514 @@
 #include <hxcpp.h>
 #include <hx/Scriptable.h>
 #include <stdio.h>
+#include <vector>
 #include <map>
 
 namespace hx
 {
+
+enum Type { nsPublic, nsPrivate, nsNamespace, nsInternal, nsProtected, nsExplicit, nsStaticProtected };
+
+enum MultiNameKind
+{
+   QNNone       = 0x00,
+   QName        = 0x07,
+   QNameA       = 0x0D,
+   RTQName      = 0x0F,
+   RTQNameA     = 0x10,
+   RTQNameL     = 0x11,
+   RTQNameLA    = 0x12,
+   Multiname    = 0x09,
+   MultinameA   = 0x0E,
+   MultinameL   = 0x1B,
+   MultinameLA  = 0x1C,
+};
+
+enum MethodFlags
+{
+   NEED_ARGUMENTS  = 0x01,
+   NEED_ACTIVATION = 0x02,
+   NEED_REST       = 0x04,
+   HAS_OPTIONAL    = 0x08,
+   SET_DXNS        = 0x40,
+   HAS_PARAM_NAMES = 0x80,
+};
+
+enum TraitKind
+{
+   Trait_Slot    = 0,
+   Trait_Method  = 1,
+   Trait_Getter  = 2,
+   Trait_Setter  = 3,
+   Trait_Class   = 4,
+   Trait_Function= 5,
+   Trait_Const   = 6,
+};
+
+enum TraitAttr
+{
+   ATTR_Final    = 0x10,
+   ATTR_Override = 0x20,
+   ATTR_Metadata = 0x40,
+};
+
+enum InstanceFlags
+{
+   ClassSealed      = 0x01,
+   ClassFinal       = 0x02,
+   ClassInterface   = 0x04,
+   ClassProtectedNs = 0x08,
+};
+
+struct Namespace
+{
+   Type type;
+   int  index;
+};
+
+struct MultiName
+{
+   MultiName() : kind(QNNone), ns(0), name(0), ns_set(0) { }
+   MultiNameKind kind;
+   int           ns;
+   int           name;
+   int           ns_set;
+};
+
+
+typedef std::vector<Namespace> NsSet;
+
+struct Optional
+{
+   int val;
+   int kind;
+};
+
+struct Method
+{
+   int paramCount;
+   int returnType;
+   std::vector<int> paramTypes;
+   int name;
+   int flags;
+   std::vector<Optional> optionals;
+   std::vector<int> paramNames;
+};
+
+struct KeyValue
+{
+   int key;
+   int value;
+};
+
+struct MetaData
+{
+   int name;
+   std::vector<KeyValue> data;
+};
+
+struct TraitSlot
+{
+   int slot;
+   int typeName;
+   int index;
+   int vkind;
+};
+
+struct Trait
+{
+   int       name;
+   int       flags;
+   TraitKind kind;
+
+   int slot;
+   int type;
+   int index;
+   int vkind;
+
+   std::vector<int> metaData;
+};
+
+
+struct InstanceInfo
+{
+   int name;
+   int superName;
+   int flags;
+   int protectedNs;
+   std::vector<int> interfaces;
+   int iinit;
+   std::vector<Trait> traits;
+};
+
+
+struct TraitSet
+{
+   int init;
+   std::vector<Trait> traits;
+};
+
+struct ExceptionInfo
+{
+   int from;
+   int to;
+   int target;
+   int excType;
+   int varName;
+};
+
+struct MethodBody
+{
+   int method;
+   int maxStack;
+   int localCount;
+   int initScopeDepth;
+   int maxScopeDepth;
+   std::vector<unsigned char> code;
+   std::vector<ExceptionInfo> exception;
+   std::vector<Trait> traits;
+};
+
+
+
+struct ABC
+{
+   std::vector<int> mInts;
+   std::vector<unsigned int> mUInts;
+   std::vector<double> mDoubles;
+   std::vector<String> mStrings;
+   std::vector<Namespace> mNamespaces;
+   std::vector<NsSet> mNsSets;
+   std::vector<MultiName> mMultiNames;
+
+   std::vector<Method> mMethods;
+   std::vector<MetaData> mMetaData;
+   std::vector<InstanceInfo> mInstanceInfo;
+   std::vector<TraitSet> mClassInfo;
+   std::vector<TraitSet> mScriptInfo;
+
+   std::vector<MethodBody> mMethodBody;
+};
+
+
+struct ABCReader
+{
+   const unsigned char *ptr;
+   const unsigned char *end;
+   const char *error;
+   ABC &abc;
+
+   ABCReader(ABC &inAbc,const unsigned char *inPtr, int inLen) : abc(inAbc)
+   {
+      ptr = inPtr;
+      end = ptr+inLen;
+      error = 0;
+   }
+
+   int readByte()
+   {
+      if (ptr>=end)
+        setError("Past EOF");
+      if (error)
+         return 0;
+      return *ptr++;
+   }
+
+   bool ok() { return !error; }
+
+   void setError(const char *inError) { error = inError; }
+      
+	int readInt()
+   {
+		int a = readByte();
+		if( a < 128 )
+			return a;
+		a &= 0x7F;
+		int b = readByte();
+		if( b < 128 )
+			return (b << 7) | a;
+		b &= 0x7F;
+		int c = readByte();
+		if( c < 128 )
+			return (c << 14) | (b << 7) | a;
+		c &= 0x7F;
+		int d = readByte();
+		if( d < 128 )
+			return (d << 21) | (c << 14) | (b << 7) | a;
+		d &= 0x7F;
+		int e = readByte();
+		if( e > 15 ) setError("bad integer encoding");
+		return (e << 28) | (d << 21) | (c << 14) | (b << 7) | a;
+	}
+	int readUInt30()
+   {
+		int ch1 = readByte();
+		int ch2 = readByte();
+		int ch3 = readByte();
+		int ch4 = readByte();
+		if( ch4 >= 64 ) setError("Uint30 out of bounds");
+		return  ch1 | (ch2 << 8) | (ch3 << 16) | (ch4 << 24);
+	}
+
+   void read(int &i) { i = readInt(); }
+   void read(unsigned int &i) { i = readInt(); }
+   void read(double &d)
+   {
+      if (ptr+8>=end)
+         setError("EOF");
+      else 
+      {
+         memcpy(&d,ptr,sizeof(double));
+         ptr+=8;
+      }
+   }
+   void read(String &s)
+   {
+      int len = readInt();
+      if (ptr+len>=end)
+         setError("string too long");
+      else
+      {
+         s = String((char *)ptr,len).dup();
+         ptr+=len;
+      }
+   }
+	void read(Namespace &ns)
+   {
+		switch(readByte())
+      {
+		   case 0x05: ns.type = nsPrivate; break;
+		   case 0x08: ns.type = nsNamespace; break;
+		   case 0x16: ns.type = nsPublic; break;
+		   case 0x17: ns.type = nsInternal; break;
+		   case 0x18: ns.type = nsProtected; break;
+		   case 0x19: ns.type = nsExplicit; break;
+		   case 0x1A: ns.type = nsStaticProtected; break;
+		   default: setError("unknown namespace type");
+		}
+      ns.index = readInt();
+   }
+	void read(MultiName &mn)
+   {
+      mn.kind = (MultiNameKind)readByte();
+      switch(mn.kind)
+      {
+         case QName      :
+         case QNameA     :
+             mn.ns = readByte();
+             mn.name = readByte();
+             break;
+         case RTQName    :
+             mn.name = readByte();
+             break;
+         case RTQNameA   :
+         case RTQNameL   :
+         case RTQNameLA  :
+             break;
+         case Multiname  :
+         case MultinameA :
+             mn.name = readByte();
+             mn.ns_set = readByte();
+             break;
+         case MultinameL :
+         case MultinameLA:
+             mn.ns_set = readByte();
+             break;
+         default:
+             setError("Unknown multi-name constant");
+      }
+   }
+
+   void read(Optional &optional)
+   {
+      optional.val = readInt();
+      optional.kind = readByte();
+   }
+
+   void read(Method &method)
+   {
+      method.paramCount = readInt();
+      method.returnType = readInt();
+      readFull(method.paramTypes,method.paramCount);
+      method.name = readInt();
+      method.flags = readByte();
+      if (method.flags & HAS_OPTIONAL)
+         readFull(method.optionals,readInt());
+      if (method.flags & HAS_PARAM_NAMES)
+         readFull(method.paramNames,method.paramCount);
+   }
+
+   void read(KeyValue &value)
+   {
+      value.key = readInt();
+      value.value = readInt();
+   }
+
+   void read(MetaData &meta)
+   {
+      meta.name = readInt();
+      readFull(meta.data);
+   }
+
+
+   void read(ExceptionInfo &ex)
+   {
+      ex.from = readInt();
+      ex.to = readInt();
+      ex.target = readInt();
+      ex.excType = readInt();
+      ex.varName = readInt();
+   }
+   inline void read(unsigned char &byte) { byte = readByte(); }
+
+   void read(MethodBody &body)
+   {
+      body.method = readInt();
+      body.maxStack = readInt();
+      body.localCount = readInt();
+      body.initScopeDepth = readInt();
+      body.maxScopeDepth = readInt();
+      readFull(body.code);
+      readFull(body.exception);
+      readFull(body.traits);
+   }
+
+
+
+   void read(Trait &trait)
+   {
+      trait.name = readInt();
+      trait.flags = readByte();
+      trait.kind = (TraitKind)(trait.flags & 0x0f);
+      switch(trait.kind)
+      {
+         case Trait_Slot:
+         case Trait_Const:
+            trait.slot = readInt();
+            trait.type = readInt();
+            trait.index = readInt();
+            if (trait.index==0)
+               trait.vkind = 0;
+            else
+               trait.vkind = readByte();
+            break;
+         case Trait_Method:
+         case Trait_Getter:
+         case Trait_Setter:
+            trait.slot = readInt();
+            trait.index = readInt();
+            break;
+         case Trait_Class:
+            trait.slot = readInt();
+            trait.index = readInt();
+            break;
+         case Trait_Function:
+            trait.slot = readInt();
+            trait.index = readInt();
+            break;
+         default:
+            setError("Unknown trait type");
+      }
+
+      if (trait.flags & ATTR_Metadata)
+      {
+         readFull(trait.metaData);
+      }
+   }
+
+   void read(InstanceInfo &inst)
+   {
+      inst.name = readInt();
+      printf("Instance Name : %s\n", abc.mStrings[ abc.mMultiNames[inst.name].name].__s);
+      inst.superName = readInt();
+      inst.flags = readByte();
+      if (inst.flags & ClassProtectedNs)
+         inst.protectedNs = readInt();
+      readFull(inst.interfaces);
+      inst.iinit = readInt();
+      readFull(inst.traits);
+   }
+
+
+   void read(TraitSet &ts)
+   {
+      ts.init = readInt();
+      readFull(ts.traits);
+   }
+
+
+
+   template<typename T>
+   void read(std::vector<T> &list)
+   {
+      int n = readInt();
+      if (n==0)
+         n = 1;
+         
+      list.resize(n);
+      for(int i=1;i<n;i++)
+         read(list[i]);
+   }
+
+
+   template<typename T>
+   void readFull(std::vector<T> &list,int inN=-1)
+   {
+      int n = inN<0 ? readInt() : inN;
+         
+      list.resize(n);
+      for(int i=0;i<n;i++)
+         read(list[i]);
+   }
+
+
+   void read(ABC &abc)
+   {
+      read(abc.mInts);
+      read(abc.mUInts);
+      read(abc.mDoubles);
+      read(abc.mStrings);
+      read(abc.mNamespaces);
+      read(abc.mNsSets);
+      read(abc.mMultiNames);
+
+      readFull(abc.mMethods);
+      readFull(abc.mMetaData);
+
+      int classes = readInt();
+
+      readFull(abc.mInstanceInfo,classes);
+      readFull(abc.mClassInfo,classes);
+      readFull(abc.mScriptInfo);
+
+      readFull(abc.mMethodBody);
+
+      printf("Result : %s\n", error );
+
+   }
+
+
+};
+
+void LoadABC(const unsigned char *inBytes, int inLen)
+{
+   ABC abc;
+   ABCReader stream(abc, inBytes,inLen);
+
+   int version = stream.readUInt30();
+   if (version!= 0x002E0010 )
+   {
+      printf("Unknown version\n");
+      return;
+   }
+
+   stream.read(abc);
+   
+    
+}
+
+
+
 
 enum OpCode
 {
@@ -507,3 +1011,7 @@ void __scriptable_load_neko(String inName)
 }
 
 
+void __scriptable_load_abc(Array<unsigned char> inBytes)
+{
+   hx::LoadABC(&inBytes[0], inBytes->length);
+}
