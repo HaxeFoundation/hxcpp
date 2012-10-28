@@ -71,6 +71,7 @@ class Compiler
    public var mPCHExt:String;
    public var mPCHCreate:String;
    public var mPCHUse:String;
+   public var mPCHFilename:String;
    public var mPCH:String;
 
    public var mID:String;
@@ -92,6 +93,7 @@ class Compiler
       mPCHExt = ".pch";
       mPCHCreate = "-Yc";
       mPCHUse = "-Yu";
+      mPCHFilename = "/Fp";
    }
 
    function addIdentity(ext:String,ioArgs:Array<String>)
@@ -122,27 +124,37 @@ class Compiler
       {
           mPCHExt = ".h.gch";
           mPCHUse = "";
+          mPCHFilename = "";
       }
    }
 
-   public function precompile(inHeader:String,inDir:String,inGroup:FileGroup)
+   public function needsPchObj()
    {
-      var pch_name = inHeader + mPCHExt;
+      return mPCH!="gcc";
+   }
 
+   public function precompile(inObjDir:String, inHeader:String,inDir:String,inGroup:FileGroup)
+   {
       var args = inGroup.mCompilerFlags.concat(mFlags).concat( mCPPFlags ).concat( mPCHFlags );
+
+      var dir = inObjDir + "/" + inGroup.getPchDir() + "/";
+      var pch_name = dir + inHeader + mPCHExt;
+
+      DirManager.make(dir);
 
       if (mPCH!="gcc")
       {
          args.push( mPCHCreate + inHeader + ".h" );
 
          // Create a temp file for including ...
-         var tmp_cpp = "__pch.cpp";
+         var tmp_cpp = dir + inHeader + ".cpp";
          var file = neko.io.File.write(tmp_cpp,false);
          file.writeString("#include <" + inHeader + ".h>\n");
          file.close();
 
          args.push( tmp_cpp );
-         args.push("/Fp" + pch_name);
+         args.push(mPCHFilename + pch_name);
+         args.push(mOutFlag + dir + inHeader + mExt);
       }
       else
       {
@@ -169,8 +181,6 @@ class Compiler
       var obj_name = path.dir + "/" + path.file + mExt;
 
       var args = new Array<String>();
-      if (inFile.mGroup.mPrecompiledHeader!="")
-         args.push("-I.");
       
       args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
 
@@ -186,9 +196,17 @@ class Compiler
       else if (ext=="cpp" || ext=="c++")
          args = args.concat(mCPPFlags);
 
-      if (mPCHUse!="")
-         if (inFile.mGroup.mPrecompiledHeader!="")
+      if (inFile.mGroup.mPrecompiledHeader!="")
+      {
+         var pchDir = inFile.mGroup.getPchDir();
+         if (mPCHUse!="")
+         {
             args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
+            args.push(mPCHFilename + mObjDir + "/" + pchDir + "/" + inFile.mGroup.mPrecompiledHeader + mPCHExt);
+         }
+         else
+            args.push("-I"+mObjDir + "/" + pchDir);
+      }
 
       
       args.push( (new neko.io.Path( inFile.mDir + inFile.mName)).toString() );
@@ -404,7 +422,7 @@ class File
 
 class FileGroup
 {
-   public function new(inDir:String)
+   public function new(inDir:String,inId:String)
    {
       mNewest = 0;
       mFiles = [];
@@ -413,6 +431,7 @@ class FileGroup
       mMissingDepends = [];
       mOptions = [];
       mDir = inDir;
+      mId = inId;
    }
 
    public function addDepend(inFile:String)
@@ -431,6 +450,10 @@ class FileGroup
       mOptions.push(inFile);
    }
 
+   public function getPchDir()
+   {
+      return "__pch/" + mId ;
+   }
 
    public function checkOptions(inObjDir:String)
    {
@@ -499,6 +522,7 @@ class FileGroup
    public var mPrecompiledHeaderDir:String;
    public var mFiles: Array<File>;
    public var mDir : String;
+   public var mId : String;
 }
 
 
@@ -597,8 +621,6 @@ class BuildTool
       
       parseXML(xml,"");
 
-      if (mDefines.get("toolchain")=="msvc")
-         Setup.setupMSVC(mDefines);
 
       if (mTargets.exists("default"))
          buildTarget("default");
@@ -681,9 +703,9 @@ class BuildTool
                 case "files" : 
                    var name = el.att.id;
                    if (mFileGroups.exists(name))
-                      createFileGroup(el, mFileGroups.get(name));
+                      createFileGroup(el, mFileGroups.get(name), name);
                    else
-                      mFileGroups.set(name,createFileGroup(el,null));
+                      mFileGroups.set(name,createFileGroup(el,null,name));
 
                 case "include" : 
                    var name = substitute(el.att.name);
@@ -763,8 +785,18 @@ class BuildTool
                to_be_compiled.push(file);
          }
 
-         if (to_be_compiled.length>0 && group.mPrecompiledHeader!="")
-            mCompiler.precompile(group.mPrecompiledHeader, group.mPrecompiledHeaderDir,group);
+         if (group.mPrecompiledHeader!="")
+         {
+            if (to_be_compiled.length>0)
+               mCompiler.precompile(mCompiler.mObjDir,group.mPrecompiledHeader, group.mPrecompiledHeaderDir,group);
+
+            if (mCompiler.needsPchObj())
+            {
+               var pchDir = group.getPchDir();
+               if (pchDir!="")
+                  objs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.mPrecompiledHeader + mCompiler.mExt);
+            }
+         }
 
          if (threads<2)
          {
@@ -921,10 +953,10 @@ class BuildTool
       return l;
    }
 
-   public function createFileGroup(inXML:haxe.xml.Fast,inFiles:FileGroup) : FileGroup
+   public function createFileGroup(inXML:haxe.xml.Fast,inFiles:FileGroup,inName:String) : FileGroup
    {
       var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
-      var group = inFiles==null ? new FileGroup(dir) : inFiles;
+      var group = inFiles==null ? new FileGroup(dir,inName) : inFiles;
       for(el in inXML.elements)
       {
          if (valid(el,""))
@@ -1210,6 +1242,8 @@ class BuildTool
          defines.set("toolchain","msvc");
          defines.set("windows","windows");
          defines.set("BINDIR",m64 ? "Windows64":"Windows");
+
+         Setup.setupMSVC(defines);
       }
       else if ( (new EReg("linux","i")).match(os) )
       {

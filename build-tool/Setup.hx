@@ -143,9 +143,11 @@ class Setup
              var reg = ~/Version\s+(\d+)/i;
              if (reg.match(str))
              {
-                cl_version = reg.matched(1);
+                cl_version = Std.parseInt(reg.matched(1))+"";
                 if (BuildTool.verbose)
                    neko.Lib.println("Using msvc cl version " + cl_version);
+                   neko.Lib.println("Using msvc cl version " + cl_version);
+                ioDefines.set("MSVC_VER", cl_version);
                 BuildTool.sAllowNumProcs = Std.parseInt(reg.matched(1)) >= 14;
              }
            }

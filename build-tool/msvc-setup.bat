@@ -1,4 +1,8 @@
-@if exist "%VS110COMNTOOLS%\vsvars32.bat" (
+@if exist "%HXCPP_MSVC%\vsvars32.bat" (
+	@call "%HXCPP_MSVC%\vsvars32.bat"
+	@echo HXCPP_VARS
+	@set
+) else if exist "%VS110COMNTOOLS%\vsvars32.bat" (
 	@call "%VS110COMNTOOLS%\vsvars32.bat"
 	@echo HXCPP_VARS
 	@set

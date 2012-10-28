@@ -28,7 +28,7 @@
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
-  <objdir value="obj/mscv${OBJEXT}" />
+  <objdir value="obj/mscv${MSVC_VER}${OBJEXT}" />
 </compiler>
 
 <linker id="dll" exe="link.exe" if="windows">
