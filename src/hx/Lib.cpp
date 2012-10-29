@@ -22,7 +22,12 @@ bool gLoadDebug = false;
 #include <windows.h>
 typedef HMODULE Module;
 
+#ifdef HX_WINRT
+Module hxLoadLibrary(String inLib) { return LoadPackagedLibrary(inLib.__WCStr(),0); }
+#else
 Module hxLoadLibrary(String inLib) { return LoadLibraryW(inLib.__WCStr()); }
+#endif
+
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return (void *)GetProcAddress(inModule,inSymbol); }
 #elif defined (IPHONE)
 
@@ -178,6 +183,7 @@ String GetFileContents(String inFile)
    return String(buf,strlen(buf));
 }
 
+#ifndef HX_WINRT
 String GetEnv(const char *inPath)
 {
    const char *env  = getenv(inPath);
@@ -245,6 +251,8 @@ String FindHaxelib(String inLib)
    return path;
 }
 
+#endif
+
 typedef std::map<std::string,void *> RegistrationMap;
 RegistrationMap *sgRegisteredPrims=0;
 
@@ -303,7 +311,10 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
    //__android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
 #endif
 
+   #ifndef HX_WINRT
    gLoadDebug = gLoadDebug || getenv("HXCPP_LOAD_DEBUG");
+   #endif
+
    String ext =
 #if defined(_WIN32)
     HX_CSTRING(".dll");
@@ -401,7 +412,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
       module = hxLoadLibrary(exe_path);
 	   #endif
 
-      #ifndef ANDROID
+      #if !defined(ANDROID) && !defined(HX_WINRT)
       if (!module)
       {
          String hxcpp = GetEnv("HXCPP");

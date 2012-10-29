@@ -69,7 +69,7 @@ class LocalAllocator;
 enum LocalAllocState { lasNew, lasRunning, lasStopped, lasWaiting, lasTerminal };
 static bool sMultiThreadMode = false;
 
-TLSData<LocalAllocator> tlsLocalAlloc;
+DECLARE_TLS_DATA(LocalAllocator, tlsLocalAlloc);
 
 static void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx);
 static void WaitForSafe(LocalAllocator *inAlloc);
@@ -2290,7 +2290,7 @@ LocalAllocator *sMainThreadAlloc = 0;
 
 LocalAllocator *GetLocalAllocMT()
 {
-   LocalAllocator *result =  tlsLocalAlloc.Get();
+   LocalAllocator *result =  tlsLocalAlloc;
    if (!result)
    {
       #ifdef ANDROID
@@ -2383,7 +2383,7 @@ void InitAlloc()
    sgObject_root = stack[0];
    //GCLOG("__root pointer %p\n", sgObject_root);
    sMainThreadAlloc =  new LocalAllocator();
-   tlsLocalAlloc.Set(sMainThreadAlloc);
+   tlsLocalAlloc = sMainThreadAlloc;
 }
 
 
@@ -2400,7 +2400,7 @@ void SetTopOfStack(int *inTop,bool inForce)
       InitAlloc();
    else
    {
-      if (!tlsLocalAlloc.Get())
+      if (tlsLocalAlloc==0)
       {
          GCPrepareMultiThreaded();
          RegisterCurrentThread(inTop);

@@ -1241,7 +1241,14 @@ class BuildTool
       {
          defines.set("toolchain","msvc");
          defines.set("windows","windows");
-         defines.set("BINDIR",m64 ? "Windows64":"Windows");
+         if ( defines.exists("winrt") )
+         {
+            defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
+         }
+         else
+         {
+            defines.set("BINDIR",m64 ? "Windows64":"Windows");
+         }
 
          Setup.setupMSVC(defines);
       }

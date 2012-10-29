@@ -247,7 +247,6 @@ inline bool Dynamic::IsClass<String>() { return mPtr && mPtr->__GetClass()==hx::
 
 inline String Dynamic::operator+(const String &s) const { return Cast<String>() + s; }
 
-
 inline bool operator != (double inLHS,const Dynamic &inRHS) \
    { return !inRHS.GetPtr() || (inLHS != (double)inRHS); } \
 inline bool operator != (float inLHS,const Dynamic &inRHS) \
@@ -258,25 +257,37 @@ inline bool operator != (bool inLHS,const Dynamic &inRHS) \
    { return !inRHS.GetPtr() || ((double)inLHS != (double)inRHS); }
 
 
-#define COMPARE_DYNAMIC_OP( op ) \
-   inline bool operator op (double inLHS,const Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
-   inline bool operator op (float inLHS,const Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && ((double)inLHS op (double)inRHS); } \
-   inline bool operator op (int inLHS,const Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); }
-
 inline bool operator == (bool inLHS,const Dynamic &inRHS) \
  { return inRHS.mPtr  && inRHS.mPtr->__GetType()==vtBool && (inLHS == (bool)inRHS); }
-inline bool operator == (const String &inLHS,const Dynamic &inRHS) \
+inline bool operator == (const String &inLHS,const ::Dynamic &inRHS) \
  { return inRHS.mPtr  && inLHS == inRHS.mPtr->toString(); }
-inline bool operator != (const String &inLHS,const Dynamic &inRHS) \
+inline bool operator != (const String &inLHS,const ::Dynamic &inRHS) \
  { return !inRHS.mPtr  || inLHS != inRHS.mPtr->toString(); }
 
 inline bool operator < (bool inLHS,const Dynamic &inRHS) { return false; }
 inline bool operator <= (bool inLHS,const Dynamic &inRHS) { return false; }
 inline bool operator >= (bool inLHS,const Dynamic &inRHS) { return false; }
 inline bool operator > (bool inLHS,const Dynamic &inRHS) { return false; }
+
+#ifdef HX_WINRT
+// Try to avoid the compiler using injected Box::operator int and Dynamic(null) when doing ==
+template<typename T>
+bool operator==(Platform::Box<T> ^inPtr, nullptr_t)
+{
+    void* ptr = (void*) reinterpret_cast<void*>(inPtr);
+   return ptr==nullptr;
+}
+#endif
+
+
+
+#define COMPARE_DYNAMIC_OP( op ) \
+   inline bool operator op (double inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
+   inline bool operator op (float inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && ((double)inLHS op (double)inRHS); } \
+   inline bool operator op (int inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); }
 
 COMPARE_DYNAMIC_OP( == )
 COMPARE_DYNAMIC_OP( < )
@@ -298,6 +309,7 @@ ARITH_DYNAMIC( * )
 double operator%(const int &inLHS,const Dynamic &inRHS);
 double operator%(const double &inLHS,const Dynamic &inRHS);
 double operator%(const float &inLHS,const Dynamic &inRHS);
+
 
 
 #endif

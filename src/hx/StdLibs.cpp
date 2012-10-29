@@ -129,7 +129,7 @@ int __hxcpp_irand(int inMax)
 
 void __hxcpp_stdlibs_boot()
 {
-   #ifdef HX_WINDOWS
+   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
    AttachConsole(ATTACH_PARENT_PROCESS);
    if (GetConsoleWindow() != NULL)
    {
@@ -214,7 +214,9 @@ Array<String> __get_args()
 {
    Array<String> result(0,0);
 
-   #ifdef HX_WINDOWS
+   #ifdef HX_WINRT
+   // Do nothing
+   #elif defined(HX_WINDOWS)
    LPTSTR str =  GetCommandLine();
    bool skip_first = true;
    while(*str != '\0')

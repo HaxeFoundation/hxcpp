@@ -45,7 +45,7 @@ void CriticalError(const String &inErr)
 
    DBGLOG("Critical Error: %s\n", inErr.__s);
 
-   #ifdef HX_WINDOWS
+   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
    MessageBoxA(0,inErr.__s,"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
    #endif
    // Good when using gdb...
@@ -593,14 +593,15 @@ void OnBreakpointChanged()
 }
 
 
-TLSData<CallStack> tlsCallStack;
+DECLARE_TLS_DATA(CallStack,tlsCallStack);
+
 CallStack *GetCallStack()
 {
-   CallStack *result =  tlsCallStack.Get();
+   CallStack *result =  tlsCallStack;
    if (!result)
    {
       result = new CallStack();
-      tlsCallStack.Set(result);
+      tlsCallStack = result;
    }
    return result;
 }
@@ -669,7 +670,11 @@ THREAD_FUNC_TYPE profile_main_loop( void *)
    while(gProfileThreadRunning)
    {
       #ifdef HX_WINDOWS
-	   Sleep(millis);
+         #ifndef HX_WINRT
+	      Sleep(millis);
+         #else
+         // TODO
+         #endif
       #else
 		struct timespec t;
 		struct timespec tmp;
@@ -698,7 +703,11 @@ void __hxcpp_start_profiler(::String inDumpFile)
    {
       gProfileThreadRunning = true;
       #if defined(HX_WINDOWS)
-      _beginthreadex(0,0,profile_main_loop,0,0,0);
+         #ifndef HX_WINRT
+         _beginthreadex(0,0,profile_main_loop,0,0,0);
+         #else
+         // TODO
+         #endif
       #else
       pthread_t result;
       pthread_create(&result,0,profile_main_loop,0);

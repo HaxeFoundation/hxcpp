@@ -1,7 +1,13 @@
 #ifndef HX_THREAD_H
 #define HX_THREAD_H
 
-#ifdef _WIN32
+#ifdef HX_WINRT
+
+#include <windows.h>
+#include <process.h>
+#include <mutex>
+
+#elif defined(_WIN32)
 
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0400
@@ -18,7 +24,15 @@
 
 struct MyMutex
 {
-   MyMutex() { mValid = true; InitializeCriticalSection(&mCritSec); }
+   MyMutex()
+   {
+      mValid = true;
+      #ifdef HX_WINRT
+      InitializeCriticalSectionEx(&mCritSec,4000,0);
+      #else
+      InitializeCriticalSection(&mCritSec);
+      #endif
+   }
    ~MyMutex() { if (mValid) DeleteCriticalSection(&mCritSec); }
    void Lock() { EnterCriticalSection(&mCritSec); }
    void Unlock() { LeaveCriticalSection(&mCritSec); }
@@ -36,20 +50,14 @@ struct MyMutex
    CRITICAL_SECTION mCritSec;
 };
 
+#ifndef HX_WINRT
 template<typename DATA>
 struct TLSData
 {
    TLSData()
    {
       mSlot = TlsAlloc();
-   }
-   DATA *Get()
-   {
-      return (DATA *)TlsGetValue(mSlot);
-   }
-   void Set(DATA *inData)
-   {
-      TlsSetValue(mSlot,inData);
+      TlsSetValue(mSlot,0);
    }
    inline DATA *operator=(DATA *inData)
    {
@@ -60,6 +68,17 @@ struct TLSData
 
    int mSlot;
 };
+
+#define DECLARE_TLS_DATA(TYPE,NAME) \
+   TLSData<TYPE> NAME;
+
+#else
+
+#define DECLARE_TLS_DATA(TYPE,NAME) \
+   __declspec(thread) TYPE * NAME = nullptr;
+
+#endif
+
 
 #define THREAD_FUNC_TYPE unsigned int WINAPI
 #define THREAD_FUNC_RET return 0;
@@ -113,13 +132,31 @@ typedef TAutoLock<MyMutex> AutoLock;
 
 struct MySemaphore
 {
-   MySemaphore() { mSemaphore = CreateEvent(0,0,0,0); }
+   MySemaphore()
+   {
+      #ifdef HX_WINRT
+      mSemaphore = CreateEventEx(nullptr,nullptr,0,EVENT_ALL_ACCESS);
+      #else
+      mSemaphore = CreateEvent(0,0,0,0);
+      #endif
+   }
    ~MySemaphore() { if (mSemaphore) CloseHandle(mSemaphore); }
    void Set() { SetEvent(mSemaphore); }
-   void Wait() { WaitForSingleObject(mSemaphore,INFINITE); }
+   void Wait()
+   {
+      #ifdef HX_WINRT
+      WaitForSingleObjectEx(mSemaphore,INFINITE,false);
+      #else
+      WaitForSingleObject(mSemaphore,INFINITE);
+      #endif
+   }
    void WaitFor(double inSeconds)
    {
+      #ifdef HX_WINRT
+      WaitForSingleObjectEx(mSemaphore,inSeconds*0.001,false);
+      #else
       WaitForSingleObject(mSemaphore,inSeconds*0.001);
+      #endif
    }
    void Reset() { ResetEvent(mSemaphore); }
    void Clean() { if (mSemaphore) CloseHandle(mSemaphore); mSemaphore = 0; }

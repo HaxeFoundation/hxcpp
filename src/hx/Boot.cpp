@@ -1,12 +1,18 @@
 #include <hxcpp.h>
 #include <hxMath.h>
 
+#ifdef HX_WINRT
+#include<Roapi.h>
+#endif
 namespace hx
 {
 
 void Boot()
 {
    //__hxcpp_enable(false);
+   #ifdef HX_WINRT
+   HRESULT hr = ::RoInitialize(  RO_INIT_MULTITHREADED );
+   #endif
 
 	#ifdef GPH
 	 setvbuf( stdout , 0 , _IONBF , 0 );

@@ -20,69 +20,69 @@ public:
    void *operator new( size_t inSize );
    void operator delete( void * ) { }
 
-   inline String() : length(0), __s(0) { }
-   explicit String(const HX_CHAR *inPtr);
-   inline String(const HX_CHAR *inPtr,int inLen) : __s(inPtr), length(inLen) { }
+   inline ::String() : length(0), __s(0) { }
+   explicit ::String(const HX_CHAR *inPtr);
+   inline ::String(const HX_CHAR *inPtr,int inLen) : __s(inPtr), length(inLen) { }
    #ifdef HX_UTF8_STRINGS
-   String(const wchar_t *inPtr,int inLen);
+   ::String(const wchar_t *inPtr,int inLen);
    #else
-   String(const char *inPtr,int inLen);
+   ::String(const char *inPtr,int inLen);
    #endif
-   inline String(const String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
-   String(const int &inRHS);
-   String(const cpp::CppInt32__ &inRHS);
-   String(const double &inRHS);
-   String(const float &inRHS);
-   explicit String(const bool &inRHS);
-   inline String(const null &inRHS) : __s(0), length(0) { }
-   String(hx::Null<String> inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
+   inline ::String(const ::String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
+   ::String(const int &inRHS);
+   ::String(const cpp::CppInt32__ &inRHS);
+   ::String(const double &inRHS);
+   ::String(const float &inRHS);
+   explicit ::String(const bool &inRHS);
+   inline ::String(const null &inRHS) : __s(0), length(0) { }
+   ::String(hx::Null<::String> inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
 
    static void __boot();
 
 	hx::Object *__ToObject() const;
 
    template<typename T>
-   inline String(const hx::ObjectPtr<T> &inRHS)
+   inline ::String(const hx::ObjectPtr<T> &inRHS)
    {
       if (inRHS.mPtr)
       {
-         String s = static_cast<hx::Object *>(inRHS.mPtr)->toString();
+         ::String s = static_cast<hx::Object *>(inRHS.mPtr)->toString();
          __s = s.__s;
          length = s.length;
       }
       else { __s = 0; length = 0; }
    }
-    String(const Dynamic &inRHS);
+    ::String(const Dynamic &inRHS);
 
-   inline String &operator=(const String &inRHS)
+    inline ::String &operator=(const ::String &inRHS)
            { length = inRHS.length; __s = inRHS.__s; return *this; }
 
-   String Default(const String &inDef) { return __s ? *this : inDef; }
+   ::String Default(const ::String &inDef) { return __s ? *this : inDef; }
 
 
-   String toString() { return *this; }
+   ::String toString() { return *this; }
 
-    String __URLEncode() const;
-    String __URLDecode() const;
+    ::String __URLEncode() const;
+    ::String __URLDecode() const;
 
-    String &dup();
+    ::String &dup();
 
-    String toUpperCase() const;
-    String toLowerCase() const;
-    String charAt(int inPos) const;
+    ::String toUpperCase() const;
+    ::String toLowerCase() const;
+    ::String charAt(int inPos) const;
     Dynamic charCodeAt(int inPos) const;
-    int indexOf(const String &inValue, Dynamic inStart) const;
-    int lastIndexOf(const String &inValue, Dynamic inStart) const;
-    Array<String> split(const String &inDelimiter) const;
-    String substr(int inPos,Dynamic inLen) const;
-    String substring(int inStartIndex, Dynamic inEndIndex) const;
+    int indexOf(const ::String &inValue, Dynamic inStart) const;
+    int lastIndexOf(const ::String &inValue, Dynamic inStart) const;
+    Array<String> split(const ::String &inDelimiter) const;
+    ::String substr(int inPos,Dynamic inLen) const;
+    ::String substring(int inStartIndex, Dynamic inEndIndex) const;
 
    inline const HX_CHAR *c_str() const { return __s; }
    const char *__CStr() const;
    const wchar_t *__WCStr() const;
    inline operator const char *() { return __s; }
 
-   static  String fromCharCode(int inCode);
+   static  ::String fromCharCode(int inCode);
 
    inline bool operator==(const null &inRHS) const { return __s==0; }
    inline bool operator!=(const null &inRHS) const { return __s!=0; }
@@ -90,7 +90,7 @@ public:
    inline int getChar( int index ) { return __s[index]; }
 
 
-   inline int compare(const String &inRHS) const
+   inline int compare(const ::String &inRHS) const
    {
       const HX_CHAR *r = inRHS.__s;
       if (__s == r) return inRHS.length-length;
@@ -110,27 +110,27 @@ public:
    }
 
 
-   String &operator+=(String inRHS);
-   String operator+(String inRHS) const;
-   String operator+(const int &inRHS) const { return *this + String(inRHS); }
-   String operator+(const bool &inRHS) const { return *this + String(inRHS); }
-   String operator+(const double &inRHS) const { return *this + String(inRHS); }
-   String operator+(const float &inRHS) const { return *this + String(inRHS); }
-   String operator+(const null &inRHS) const{ return *this + HX_CSTRING("null"); } 
-   //String operator+(const HX_CHAR *inRHS) const{ return *this + String(inRHS); } 
-   String operator+(const cpp::CppInt32__ &inRHS) const{ return *this + String(inRHS); } 
+   ::String &operator+=(::String inRHS);
+   ::String operator+(::String inRHS) const;
+   ::String operator+(const int &inRHS) const { return *this + ::String(inRHS); }
+   ::String operator+(const bool &inRHS) const { return *this + ::String(inRHS); }
+   ::String operator+(const double &inRHS) const { return *this + ::String(inRHS); }
+   ::String operator+(const float &inRHS) const { return *this + ::String(inRHS); }
+   ::String operator+(const null &inRHS) const{ return *this + HX_CSTRING("null"); } 
+   //::String operator+(const HX_CHAR *inRHS) const{ return *this + ::String(inRHS); } 
+   ::String operator+(const cpp::CppInt32__ &inRHS) const{ return *this + ::String(inRHS); } 
    template<typename T>
-   inline String operator+(const hx::ObjectPtr<T> &inRHS) const
+   inline ::String operator+(const hx::ObjectPtr<T> &inRHS) const
       { return *this + (inRHS.mPtr ? const_cast<hx::ObjectPtr<T>&>(inRHS)->toString() : HX_CSTRING("null") ); }
 
-   inline bool operator==(const String &inRHS) const
+   inline bool operator==(const ::String &inRHS) const
                      { return length==inRHS.length && compare(inRHS)==0; }
-   inline bool operator!=(const String &inRHS) const
+   inline bool operator!=(const ::String &inRHS) const
                      { return length != inRHS.length || compare(inRHS)!=0; }
-   inline bool operator<(const String &inRHS) const { return compare(inRHS)<0; }
-   inline bool operator<=(const String &inRHS) const { return compare(inRHS)<=0; }
-   inline bool operator>(const String &inRHS) const { return compare(inRHS)>0; }
-   inline bool operator>=(const String &inRHS) const { return compare(inRHS)>=0; }
+   inline bool operator<(const ::String &inRHS) const { return compare(inRHS)<0; }
+   inline bool operator<=(const ::String &inRHS) const { return compare(inRHS)<=0; }
+   inline bool operator>(const ::String &inRHS) const { return compare(inRHS)>0; }
+   inline bool operator>=(const ::String &inRHS) const { return compare(inRHS)>=0; }
 
    inline int cca(int inPos) const
 	{
@@ -152,7 +152,7 @@ public:
    Dynamic toUpperCase_dyn();
 
 	// This is used by the string-wrapped-as-dynamic class
-   Dynamic __Field(const String &inString, bool inCallProp);
+   Dynamic __Field(const ::String &inString, bool inCallProp);
 
 	// The actual implementation.
 	// Note that "__s" is const - if you want to change it, you should create a new string.

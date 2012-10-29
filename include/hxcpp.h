@@ -17,7 +17,6 @@ typedef  int64_t  __int64;
 #endif
 
 
-
 #include <string.h>
 
 #define HX_UTF8_STRINGS
@@ -44,7 +43,7 @@ typedef  int64_t  __int64;
 
 typedef char HX_CHAR;
 
-#define HX_STRINGI(s,len) ::String( ("\xff\xff\xff\xff" s) + 4 ,len)
+#define HX_STRINGI(s,len) ::String( (const HX_CHAR *)(("\xff\xff\xff\xff" s)) + 4 ,len)
 
 #define HX_STRI(s) HX_STRINGI(s,sizeof(s)/sizeof(HX_CHAR)-1)
 
@@ -175,9 +174,8 @@ public:
 #include <hx/Operators.h>
 #include <hx/Functions.h>
 #include <hx/Debug.h>
-
 #include <hx/Boot.h>
-
 #include <hx/Undefine.h>
 
 #endif
+

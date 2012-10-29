@@ -3,8 +3,12 @@
 #include <hx/Thread.h>
 #include <time.h>
 
+#ifdef HX_WINRT
+using namespace Windows::Foundation;
+using namespace Windows::System::Threading;
+#endif
 
-static TLSData<class hxThreadInfo> tlsCurrentThread;
+DECLARE_TLS_DATA(class hxThreadInfo, tlsCurrentThread);
 
 // --- Deque ----------------------------------------------------------
 
@@ -222,7 +226,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 	hx::RegisterCurrentThread(&dummy);
 
 	hxThreadInfo *info = (hxThreadInfo *)inInfo;
-	tlsCurrentThread.Set(info);
+	tlsCurrentThread = info;
 
 	// Release the creation function
 	info->mSemaphore->Set();
@@ -235,7 +239,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 
 	hx::UnregisterCurrentThread();
 
-	tlsCurrentThread.Set(0);
+	tlsCurrentThread = 0;
 
 	THREAD_FUNC_RET
 }
@@ -248,7 +252,23 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 
 	hx::GCPrepareMultiThreaded();
 
-   #if defined(HX_WINDOWS)
+   #if defined(HX_WINRT)
+
+   try
+   {
+     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
+        {
+            // Run the user callback.
+            hxThreadFunc(info);
+        }, Platform::CallbackContext::Any);
+
+      ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
+   }
+   catch (...)
+   {
+   }
+
+   #elif defined(HX_WINDOWS)
       _beginthreadex(0,0,hxThreadFunc,info,0,0);
    #else
       pthread_t result;
@@ -267,14 +287,14 @@ static hx::Object *sMainThreadInfo = 0;
 
 static hxThreadInfo *GetCurrentInfo()
 {
-	hxThreadInfo *info = tlsCurrentThread.Get();
+	hxThreadInfo *info = tlsCurrentThread;
 	if (!info)
 	{
 		// Hmm, must be the "main" thead...
 		info = new hxThreadInfo(null());
 		sMainThreadInfo = info;
 		hx::GCAddRoot(&sMainThreadInfo);
-		tlsCurrentThread.Set(info);
+		tlsCurrentThread = info;
 	}
 	return info;
 }
@@ -300,7 +320,7 @@ Dynamic __hxcpp_thread_read_message(bool inBlocked)
 
 bool __hxcpp_is_current_thread(hx::Object *inThread)
 {
-   hxThreadInfo *info = tlsCurrentThread.Get();
+   hxThreadInfo *info = tlsCurrentThread;
    return info==inThread;
 }
 

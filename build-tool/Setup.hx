@@ -118,7 +118,6 @@ class Setup
                         "frameworkversion32", "devenvdir", "include", "lib", "libpath"
                       :
                         var value = str.substr(pos+1);
-                        //trace(name + " = " + value);
                         ioDefines.set(name,value);
                         neko.Sys.putEnv(name,value);
                   }
@@ -132,7 +131,6 @@ class Setup
        }
       
    
-       var cl_version = "";
        try
        {
           var proc = new neko.io.Process("cl.exe",[]);
@@ -143,12 +141,13 @@ class Setup
              var reg = ~/Version\s+(\d+)/i;
              if (reg.match(str))
              {
-                cl_version = Std.parseInt(reg.matched(1))+"";
+                var cl_version = Std.parseInt(reg.matched(1));
                 if (BuildTool.verbose)
                    neko.Lib.println("Using msvc cl version " + cl_version);
-                   neko.Lib.println("Using msvc cl version " + cl_version);
-                ioDefines.set("MSVC_VER", cl_version);
-                BuildTool.sAllowNumProcs = Std.parseInt(reg.matched(1)) >= 14;
+                ioDefines.set("MSVC_VER", cl_version+"");
+                if (cl_version>=17)
+                   ioDefines.set("MSVC17+","1");
+                BuildTool.sAllowNumProcs = cl_version >= 14;
              }
            }
        } catch(e:Dynamic){}

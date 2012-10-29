@@ -124,7 +124,11 @@ void Math_obj::__boot()
 	unsigned int t;
 #ifdef HX_WINDOWS
 	t = clock();
+   #ifdef HX_WINRT
+	int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
+   #else
 	int pid = _getpid();
+   #endif
 #else
 	int pid = getpid();
 	struct timeval tv;

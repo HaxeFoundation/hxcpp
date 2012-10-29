@@ -5,20 +5,32 @@
 
 <set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
+<set name="ABI" value="-ZW" if="winrt" />
 <set name="ABI" value="-MT" unless="ABI"/>
 
 <set name="HXCPP_DEBUG_LINK" value="1" if="debug"/>
+
+
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
   <flag value="-Od" if="debug"/>
   <!-- -O2 is back ! -->
   <flag value="-O2" unless="debug"/>
+
+  <!-- Newer options -->
+  <!-- <flag value = "/analyze-" if="MSVC17+" /> -->
+  <flag value = "/WX-" if="MSVC17+" />
+  <flag value = "/fp:precise" if="MSVC17+" />
+  <flag value = "-DWINAPI_FAMILY=WINAPI_FAMILY_APP" if="winrt" />
+  <flag value = "-DHX_WINRT" if="winrt" />
+
   <flag value="${ABI}" />
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-GR"/>
   <flag value="-Zi"/>
+  <flag value="-Oy-"/>
   <flag value="-c"/>
   <flag value="-EHs"/>
   <flag value="-I${HXCPP}/include"/>
@@ -28,7 +40,8 @@
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
-  <objdir value="obj/mscv${MSVC_VER}${OBJEXT}" />
+  <objdir value="obj/mscv${MSVC_VER}${OBJEXT}" unless="winrt" />
+  <objdir value="obj/mscv${MSVC_VER}-rt${OBJEXT}" if="winrt" />
 </compiler>
 
 <linker id="dll" exe="link.exe" if="windows">
