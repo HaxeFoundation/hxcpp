@@ -75,9 +75,16 @@ static void rnd_set_seed( rnd *r, int s ) {
 
 static rnd *rnd_init( void *data ) {
 	rnd *r = (rnd*)data;
+   #ifdef HX_WINRT
+	int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
+   #else
 	int pid = getpid();
+   #endif
+
 	unsigned int time;
-#ifdef NEKO_WINDOWS
+#ifdef HX_WINRT
+	time = clock();
+#elif defined(NEKO_WINDOWS)
 	time = GetTickCount();
 #else
 	struct timeval t;

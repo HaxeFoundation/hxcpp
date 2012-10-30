@@ -16,6 +16,8 @@
 /* ************************************************************************ */
 #include <hx/CFFI.h>
 
+#ifndef HX_WINRT
+
 #ifdef NEKO_WINDOWS
 #   include <windows.h>
 #else
@@ -33,7 +35,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int __process_prims() { return 0; }
 
 typedef struct {
 #ifdef NEKO_WINDOWS
@@ -389,6 +390,21 @@ static value process_close( value vp ) {
    val_gc(vp,NULL);
    return val_null;
 }
+
+#else  // !HX_WINRT
+
+static value process_run(value , value ) { return alloc_null(); }
+static value process_stdout_read(value, value, value, value) { return alloc_null(); }
+static value process_stderr_read(value ,value ,value ,value ) { return alloc_null(); }
+static value process_stdin_close(value) { return alloc_null(); }
+static value process_stdin_write(value ,value ,value ,value ) { return alloc_null(); }
+static value process_exit( value ) { return alloc_null(); }
+static value process_pid( value ) { return alloc_null(); }
+static value process_close( value  ) {  return alloc_null(); }
+
+#endif // HX_WINRT
+
+int __process_prims() { return 0; }
 
 DEFINE_PRIM(process_run,2);
 DEFINE_PRIM(process_stdout_read,4);

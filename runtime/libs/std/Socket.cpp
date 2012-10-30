@@ -14,6 +14,9 @@
 /* Lesser General Public License or the LICENSE file for more details.		*/
 /*																			*/
 /* ************************************************************************ */
+
+#ifndef HX_WINRT
+
 #include <string.h>
 #include <hx/CFFI.h>
 #ifdef NEKO_WINDOWS
@@ -46,7 +49,6 @@
 #	define MSG_NOSIGNAL 0
 #endif
 
-int __socket_prims() { return 0; }
 
 typedef struct {
 	int max;
@@ -914,5 +916,11 @@ DEFINE_PRIM(host_local,0);
 DEFINE_PRIM(host_resolve,1);
 DEFINE_PRIM(host_to_string,1);
 DEFINE_PRIM(host_reverse,1);
+
+#else // !HX_WINRT
+// TODO: WinRT StreamSocket port
+#endif // HX_WINRT
+
+int __socket_prims() { return 0; }
 
 /* ************************************************************************ */

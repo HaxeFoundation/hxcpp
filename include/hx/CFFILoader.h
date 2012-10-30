@@ -45,11 +45,13 @@
 typedef void *(*ResolveProc)(const char *inName);
 static ResolveProc sResolveProc = 0;
 
-#ifdef ANDROID
+#if defined(ANDROID) || defined(HX_WINRT)
 extern "C" {
 EXPORT void hx_set_loader(ResolveProc inProc)
 {
+   #ifdef ANDROID
    __android_log_print(ANDROID_LOG_INFO, "haxe plugin", "Got Load Proc %08x", inProc );
+   #endif
    sResolveProc = inProc;
 }
 }
@@ -63,6 +65,7 @@ extern "C" void * hx_cffi(const char *inName);
 #define LoadFunc hx_cffi
 
 #else  // Dynamic link
+
 
 
 
@@ -589,6 +592,7 @@ neko_value neko_init(neko_value inNewString,neko_value inNewArray,neko_value inN
  
 void *LoadFunc(const char *inName)
 {
+   #ifndef HX_WINRT
    static char *modules[] = { 0, "hxcpp", "hxcpp-debug" };
    for(int i=0; i<3 && sResolveProc==0; i++)
    {
@@ -600,6 +604,7 @@ void *LoadFunc(const char *inName)
             FreeLibrary(handle);
       }
    }
+   #endif
 
    #ifdef NEKO_COMPATIBLE
    if (sResolveProc==0)

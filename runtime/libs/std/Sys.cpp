@@ -56,6 +56,10 @@ int __sys_prims() { return 0; }
 #endif
 #endif
 
+#ifdef HX_WINRT
+#include <hx/Thread.h>
+#endif
+
 #ifndef CLK_TCK
 #	define CLK_TCK	100
 #endif
@@ -74,9 +78,11 @@ int __sys_prims() { return 0; }
 	<doc>Get some environment variable if exists</doc>
 **/
 static value get_env( value v ) {
-	char *s;
+	char *s = 0;
 	val_check(v,string);
+   #ifndef HX_WINRT
 	s = getenv(val_string(v));
+   #endif
 	if( s == NULL )
 		return val_null;
 	return alloc_string(s);
@@ -87,7 +93,10 @@ static value get_env( value v ) {
 	<doc>Set some environment variable value</doc>
 **/
 static value put_env( value e, value v ) {
-#ifdef NEKO_WINDOWS
+#ifdef HX_WINRT
+   // Do nothing
+	return alloc_null();
+#elif defined(NEKO_WINDOWS)
 	val_check(e,string);
 	val_check(v,string);
 	buffer b = alloc_buffer(0);
@@ -109,10 +118,20 @@ static value put_env( value e, value v ) {
 	sys_sleep : number -> void
 	<doc>Sleep a given number of seconds</doc>
 **/
+
+#ifdef HX_WINRT
+DECLARE_TLS_DATA(void,tlsSleepEvent)
+#endif
+
 static value sys_sleep( value f ) {
 	val_check(f,number);
 	gc_enter_blocking();
-#ifdef NEKO_WINDOWS
+#ifdef HX_WINRT
+   if (!tlsSleepEvent)
+      tlsSleepEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
+   WaitForSingleObjectEx(tlsSleepEvent, (int)(val_number(f)*1000), false);
+   
+#elif defiend(NEKO_WINDOWS)
 	Sleep((DWORD)(val_number(f) * 1000));
 #else
 	{
@@ -166,6 +185,9 @@ static value set_time_locale( value l ) {
 	<doc>Return current working directory</doc>
 **/
 static value get_cwd() {
+   #ifdef HX_WINRT
+   return alloc_string("ms-appdata:///local/");
+   #else
 	char buf[256];
 	int l;
 	if( getcwd(buf,256) == NULL )
@@ -176,6 +198,7 @@ static value get_cwd() {
 		buf[l+1] = 0;
 	}
 	return alloc_string(buf);
+   #endif
 }
 
 /**
@@ -183,9 +206,11 @@ static value get_cwd() {
 	<doc>Set current working directory</doc>
 **/
 static value set_cwd( value d ) {
+   #ifndef HX_WINRT
 	val_check(d,string);
 	if( chdir(val_string(d)) )
 		return alloc_null();
+   #endif
 	return alloc_bool(true);
 }
 
@@ -203,7 +228,9 @@ static value set_cwd( value d ) {
 	</doc>
 **/
 static value sys_string() {
-#if defined(NEKO_WINDOWS)
+#if defined(HX_WINRT)
+	return alloc_string("WinRT");
+#elif defined(NEKO_WINDOWS)
 	return alloc_string("Windows");
 #elif defined(NEKO_GNUKBSD)
 	return alloc_string("GNU/kFreeBSD");
@@ -241,6 +268,9 @@ static value sys_is64() {
 	<doc>Run the shell command and return exit code</doc>
 **/
 static value sys_command( value cmd ) {
+   #ifdef HX_WINRT
+	return alloc_int( -1 );
+   #else
 	val_check(cmd,string);
 	if( val_strlen(cmd) == 0 )
 		return alloc_int(-1);
@@ -248,6 +278,7 @@ static value sys_command( value cmd ) {
 	int result =  system(val_string(cmd));
 	gc_exit_blocking();
 	return alloc_int( result );
+   #endif
 }
 
 /**
@@ -472,7 +503,9 @@ static value sys_time() {
 	<doc>Return the most accurate CPU time spent since the process started (in seconds)</doc>
 **/
 static value sys_cpu_time() {
-#ifdef NEKO_WINDOWS
+#ifdef HX_WINRT
+   return alloc_float(0);
+#elif defined(NEKO_WINDOWS)
 	FILETIME unused;
 	FILETIME stime;
 	FILETIME utime;
@@ -494,7 +527,13 @@ static value sys_read_dir( value p) {
 	val_check(p,string);
 	
         value result = alloc_array(0);
-#ifdef NEKO_WINDOWS
+#ifdef HX_WINRT
+   auto folder = (Windows::Storage::StorageFolder::GetFolderFromPathAsync( ref new Platform::String(val_wstring(p)) ))->GetResults();
+   auto results = folder->GetFilesAsync(Windows::Storage::Search::CommonFileQuery::DefaultQuery)->GetResults();
+   for(int i=0;i<results->Size;i++)
+      val_array_push(result,alloc_wstring(results->GetAt(i)->Path->Data()));
+
+#elif defined(NEKO_WINDOWS)
 	std::wstring path = val_wstring(p);
 	int len = path.length();
 
@@ -556,7 +595,12 @@ static value sys_read_dir( value p) {
 	<doc>Return an absolute path from a relative one. The file or directory must exists</doc>
 **/
 static value file_full_path( value path ) {
-#ifdef NEKO_WINDOWS
+#ifdef HX_WINRT
+   Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
+   Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
+   Platform::String^ output = "Installed Location: " + installedLocation->Path;
+   return path;
+#elif defined(NEKO_WINDOWS)
 	char buf[MAX_PATH+1];
 	val_check(path,string);
 	if( GetFullPathNameA(val_string(path),MAX_PATH+1,buf,NULL) == 0 )
@@ -576,7 +620,11 @@ static value file_full_path( value path ) {
 	<doc>Return the path of the executable</doc>
 **/
 static value sys_exe_path() {
-#if defined(NEKO_WINDOWS)
+#ifdef HX_WINRT
+   Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
+   Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
+   return(alloc_wstring(installedLocation->Path->Data()));
+#elif defined(NEKO_WINDOWS)
 	wchar_t path[MAX_PATH];
 	if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
 		return alloc_null();
@@ -618,7 +666,8 @@ extern char **environ;
 	<doc>Return all the (key,value) pairs in the environment as a chained list</doc>
 **/
 static value sys_env() {
-        value result = alloc_array(0);
+   value result = alloc_array(0);
+   #ifndef HX_WINRT
 	char **e = environ;
 	while( *e ) {
 		char *x = strchr(*e,'=');
@@ -630,6 +679,7 @@ static value sys_env() {
                 val_array_push(result,alloc_string(x+1));
 		e++;
 	}
+   #endif
 	return result;
 }
 
@@ -638,7 +688,9 @@ static value sys_env() {
 	<doc>Read a character from stdin with or without echo</doc>
 **/
 static value sys_getch( value b ) {
-#	ifdef NEKO_WINDOWS
+#ifdef HX_WINRT
+   return alloc_null();
+#elif defined(NEKO_WINDOWS)
 	val_check(b,bool);
 	gc_enter_blocking();
 	int result = val_bool(b)?getche():getch();
