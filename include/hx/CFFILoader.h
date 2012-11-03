@@ -81,6 +81,9 @@ void *sNekoDllHandle = 0;
 
 void *LoadNekoFunc(const char *inName)
 {
+   #ifdef HX_WINRT
+   return 0;
+   #else
    static bool tried = false;
    if (tried && !sNekoDllHandle)
        return 0;
@@ -89,9 +92,7 @@ void *LoadNekoFunc(const char *inName)
    if (!sNekoDllHandle)
    {
       #ifdef HX_WINDOWS
-	  #ifndef HX_WINRT
       sNekoDllHandle = GetModuleHandleA("neko.dll");
-	  #endif
       #else
       sNekoDllHandle = dlopen("libneko." NEKO_EXT, RTLD_NOW);
       // Look for libneko.so.0 too ...
@@ -115,6 +116,7 @@ void *LoadNekoFunc(const char *inName)
 
    //printf(" %s = %p\n", inName, result );
    return result;
+   #endif // !HX_WINRT
 }
 
 
