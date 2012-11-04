@@ -265,6 +265,9 @@ extern void SetTopOfStack(int *inTopOfStack,bool);
 		int t0 = 99; \
 		hx::SetTopOfStack(&t0,false);
 
+
+#ifdef HX_DECALRE_MAIN
+
 #ifdef ANDROID
 // Java Main....
 #include <jni.h>
@@ -291,6 +294,28 @@ extern "C" GCC_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * en
           __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e->toString().__CStr()); \
         }\
 	hx::SetTopOfStack((int *)0,true); \
+}
+
+#elif defined(HX_WINRT)
+
+#include <Roapi.h>
+
+#define HX_BEGIN_MAIN \
+[ Platform::NS::MTAThread ] \
+int main(Platform::NS::Array<Platform::NS::String^>^) \
+{ \
+   HX_TOP_OF_STACK \
+   RoInitialize(RO_INIT_MULTITHREADED); \
+   hx::Boot(); \
+   try{ \
+      __boot_all();
+
+#define HX_END_MAIN \
+   } \
+   catch (Dynamic e){ \
+      __hx_dump_stack(); \
+   } \
+   return 0; \
 }
 
 #elif defined(HX_WIN_MAIN)
@@ -338,6 +363,7 @@ int main(int argc,char **argv){ \
 
 #endif
 
+#endif // HX_DECALRE_MAIN
 
 // Run as library
 #define HX_BEGIN_LIB_MAIN \
@@ -352,7 +378,6 @@ void __hxcpp_lib_main() \
 #define HX_END_LIB_MAIN \
 } }
 
-
-
 #endif
+
 

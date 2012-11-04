@@ -65,11 +65,13 @@
 </files>
 
 <files id="__main__">
+  <compilerflag value="-DHX_DECALRE_MAIN"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
 </files>
 
 <files id="__lib__">
+  <compilerflag value="-DHX_DECALRE_MAIN"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
 </files>

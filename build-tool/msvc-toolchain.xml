@@ -62,12 +62,31 @@
   <outflag value="-out:"/>
 </linker>
 
-<linker id="exe" exe="link.exe" if="windows">
+<linker id="exe" exe="link.exe" unless="winrt">
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
   <flag value="-subsystem:windows" if="no_console" unless="HXCPP_DEBUGGER" />
+  <flag value="-libpath:lib"/>
+  <flag value="user32.lib"/>
+  <ext value=".exe"/>
+  <outflag value="-out:"/>
+</linker>
+
+
+<linker id="exe" exe="link.exe" if="winrt">
+  <fromfile value="@"/>
+  <flag value="-nologo"/>
+  <flag value="-machine:x86"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
+  <flag value="-subsystem:windows" />
+  <flag value="-MANIFEST:NO" />
+  <flag value="-WINMD" />
+  <flag value="-APPCONTAINER" />
+  <flag value="-WINMDFILE:obj/mscv${MSVC_VER}-rt${OBJEXT}/app.winmd" />
+  <flag value="-DYNAMICBASE" />
+  <flag value="-NXCOMPAT" />
   <flag value="-libpath:lib"/>
   <flag value="user32.lib"/>
   <ext value=".exe"/>
