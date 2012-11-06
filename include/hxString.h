@@ -20,29 +20,29 @@ public:
    void *operator new( size_t inSize );
    void operator delete( void * ) { }
 
-   inline ::String() : length(0), __s(0) { }
-   explicit ::String(const HX_CHAR *inPtr);
-   inline ::String(const HX_CHAR *inPtr,int inLen) : __s(inPtr), length(inLen) { }
+   inline String() : length(0), __s(0) { }
+   explicit String(const HX_CHAR *inPtr);
+   inline String(const HX_CHAR *inPtr,int inLen) : __s(inPtr), length(inLen) { }
    #ifdef HX_UTF8_STRINGS
-   ::String(const wchar_t *inPtr,int inLen);
+   String(const wchar_t *inPtr,int inLen);
    #else
-   ::String(const char *inPtr,int inLen);
+   String(const char *inPtr,int inLen);
    #endif
-   inline ::String(const ::String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
-   ::String(const int &inRHS);
-   ::String(const cpp::CppInt32__ &inRHS);
-   ::String(const double &inRHS);
-   ::String(const float &inRHS);
-   explicit ::String(const bool &inRHS);
-   inline ::String(const null &inRHS) : __s(0), length(0) { }
-   ::String(hx::Null<::String> inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
+   inline String(const ::String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
+   String(const int &inRHS);
+   String(const cpp::CppInt32__ &inRHS);
+   String(const double &inRHS);
+   String(const float &inRHS);
+   explicit String(const bool &inRHS);
+   inline String(const null &inRHS) : __s(0), length(0) { }
+   String(hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
 
    static void __boot();
 
 	hx::Object *__ToObject() const;
 
    template<typename T>
-   inline ::String(const hx::ObjectPtr<T> &inRHS)
+   inline String(const hx::ObjectPtr<T> &inRHS)
    {
       if (inRHS.mPtr)
       {
@@ -52,7 +52,7 @@ public:
       }
       else { __s = 0; length = 0; }
    }
-    ::String(const Dynamic &inRHS);
+    String(const Dynamic &inRHS);
 
     inline ::String &operator=(const ::String &inRHS)
            { length = inRHS.length; __s = inRHS.__s; return *this; }

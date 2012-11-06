@@ -69,14 +69,6 @@ struct TLSData
    int mSlot;
 };
 
-#define DECLARE_TLS_DATA(TYPE,NAME) \
-   TLSData<TYPE> NAME;
-
-#else
-
-#define DECLARE_TLS_DATA(TYPE,NAME) \
-   __declspec(thread) TYPE * NAME = nullptr;
-
 #endif
 
 
@@ -113,6 +105,22 @@ struct MyMutex
 #define THREAD_FUNC_RET return 0;
 
 #endif
+
+
+
+#ifdef HX_WINRT
+
+#define DECLARE_TLS_DATA(TYPE,NAME) \
+   __declspec(thread) TYPE * NAME = nullptr;
+
+#else
+
+#define DECLARE_TLS_DATA(TYPE,NAME) \
+   TLSData<TYPE> NAME;
+
+#endif
+
+
 
 template<typename LOCKABLE>
 struct TAutoLock
