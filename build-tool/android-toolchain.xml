@@ -4,7 +4,9 @@
 
 <include name="gcc-toolchain.xml"/>
 
-<path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/bin"/>
+<set name="TOOLCHAIN_VERSION" value="4.4.3" />
+
+<path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}/bin"/>
 
 <set name="ARCH" value ="-7" if="HXCPP_ARMV7" />
 
@@ -13,8 +15,8 @@
  <!-- These must appear in this order! -->
 
  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm"/>
- <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/include"/>
- <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/include"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/include"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/armeabi/include"/>
  <include name="common-defines.xml" />
  <flag value="-I${HXCPP}/include"/>
  <flag value="-Iinclude"/>
@@ -71,9 +73,8 @@
   <flag value="-Wl,-z,noexecstack"/>
   <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm"/>
   <flag value="-L${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib"/>
-  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/libgnustl_static.a" unless="NDKV6"/>
-  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/libstdc++.a" if="NDKV6" />
-  <lib name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-4.4.3/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/4.4.3/libgcc.a"/>
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/armeabi/libgnustl_static.a" />
+  <lib name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/${TOOLCHAIN_VERSION}/libgcc.a"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib/libc.so"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib/libm.so"/>
   <lib name="-llog"/>
