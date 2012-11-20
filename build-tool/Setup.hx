@@ -4,7 +4,7 @@ class Setup
 {
    public static function initHXCPPConfig(ioDefines:Hash<String> )
    {
-      var env = neko.Sys.environment();
+      var env = Sys.environment();
       // If the user has set it themselves, they mush know what they are doing...
       if (env.exists("HXCPP_CONFIG"))
          return;
@@ -16,24 +16,27 @@ class Setup
         home = env.get("USERPROFILE");
       else
       {
-         neko.Lib.println("Warning: No 'HOME' variable set - .hxcpp_config.xml might be missing.");
+         Sys.println("Warning: No 'HOME' variable set - .hxcpp_config.xml might be missing.");
          return;
       }
 
       var  config = toPath(home+"/.hxcpp_config.xml");
       ioDefines.set("HXCPP_CONFIG",config);
 
-      var src = toPath(BuildTool.HXCPP + "build-tool/example.hxcpp_config.xml");
-      if (!neko.FileSystem.exists(config))
+      if (BuildTool.HXCPP!="")
       {
-         try {
-            if (BuildTool.verbose)
-                neko.Lib.println("Copy config: " + src + " -> " + config );
-
-            neko.io.File.copy(src,config);
-         } catch(e:Dynamic)
+         var src = toPath(BuildTool.HXCPP + "build-tool/example.hxcpp_config.xml");
+         if (!sys.FileSystem.exists(config))
          {
-            neko.Lib.println("Warning : could not create config: " + config );
+            try {
+               if (BuildTool.verbose)
+                   Sys.println("Copy config: " + src + " -> " + config );
+
+               sys.io.File.copy(src,config);
+            } catch(e:Dynamic)
+            {
+               Sys.println("Warning : could not create config: " + config );
+            }
          }
       }
    }
@@ -61,7 +64,7 @@ class Setup
          }
          if (FileSystem.exists (fileName))
          {
-            var fin = neko.io.File.read(fileName, false);
+            var fin = sys.io.File.read(fileName, false);
             try
             {
                while(true)
@@ -97,7 +100,7 @@ class Setup
    {
       if (!ioDefines.exists("NO_AUTO_MSVC"))
       {
-         var vc_setup_proc = new neko.io.Process("cmd.exe", ["/C", BuildTool.HXCPP + "build-tool\\msvc-setup.bat" ]);
+         var vc_setup_proc = new sys.io.Process("cmd.exe", ["/C", BuildTool.HXCPP + "build-tool\\msvc-setup.bat" ]);
          var vars_found = false;
          try{
             while(true)
@@ -106,7 +109,7 @@ class Setup
                if (str=="HXCPP_VARS")
                   vars_found = true;
                else if (!vars_found)
-                  neko.Lib.println(str);
+                  Sys.println(str);
                else
                {
                   var pos = str.indexOf("=");
@@ -119,11 +122,12 @@ class Setup
                       :
                         var value = str.substr(pos+1);
                         ioDefines.set(name,value);
-                        neko.Sys.putEnv(name,value);
+                        Sys.putEnv(name,value);
                   }
                }
             }
-          } catch (e:Dynamic) { };
+          } catch (e:Dynamic) {
+          };
 
           vc_setup_proc.close();
           if (!vars_found)
@@ -133,7 +137,7 @@ class Setup
    
        try
        {
-          var proc = new neko.io.Process("cl.exe",[]);
+          var proc = new sys.io.Process("cl.exe",[]);
           var str = proc.stderr.readLine();
           proc.close();
           if (str>"")
@@ -143,7 +147,7 @@ class Setup
              {
                 var cl_version = Std.parseInt(reg.matched(1));
                 if (BuildTool.verbose)
-                   neko.Lib.println("Using msvc cl version " + cl_version);
+                   Sys.println("Using msvc cl version " + cl_version);
                 ioDefines.set("MSVC_VER", cl_version+"");
                 if (cl_version>=17)
                    ioDefines.set("MSVC17+","1");
@@ -151,7 +155,7 @@ class Setup
              }
            }
        } catch(e:Dynamic){}
-            //if (cl_version!="") neko.Lib.println("Using cl version: " + cl_version);
+            //if (cl_version!="") Sys.println("Using cl version: " + cl_version);
     }
 }
 

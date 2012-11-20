@@ -1,3 +1,11 @@
+import sys.FileSystem;
+#if neko
+import neko.vm.Thread;
+import neko.vm.Mutex;
+#else
+import cpp.vm.Thread;
+import cpp.vm.Mutex;
+#end
 
 class DirManager
 {
@@ -16,12 +24,12 @@ class DirManager
             if (!mMade.exists(total))
             {
                mMade.set(total,true);
-               if (!neko.FileSystem.exists(total))
+               if (!FileSystem.exists(total))
                {
                   try
                   {
-                     neko.Lib.println("mkdir " + total);
-                     neko.FileSystem.createDirectory(total);
+                     Sys.println("mkdir " + total);
+                     FileSystem.createDirectory(total);
                   } catch (e:Dynamic)
                   {
                      return false;
@@ -34,21 +42,21 @@ class DirManager
    }
    static public function deleteRecurse(inDir:String)
    {
-      if (neko.FileSystem.exists(inDir))
+      if (FileSystem.exists(inDir))
       {
-         var contents = neko.FileSystem.readDirectory(inDir);
+         var contents = FileSystem.readDirectory(inDir);
          for(item in contents)
          {
             if (item!="." && item!="..")
             {
                var name = inDir + "/" + item;
-               if (neko.FileSystem.isDirectory(name))
+               if (FileSystem.isDirectory(name))
                   deleteRecurse(name);
                else
-                  neko.FileSystem.deleteFile(name);
+                  FileSystem.deleteFile(name);
             }
     }
-         neko.FileSystem.deleteDirectory(inDir);
+         FileSystem.deleteDirectory(inDir);
       }
    }
 
@@ -148,7 +156,7 @@ class Compiler
 
          // Create a temp file for including ...
          var tmp_cpp = dir + inHeader + ".cpp";
-         var file = neko.io.File.write(tmp_cpp,false);
+         var file = sys.io.File.write(tmp_cpp,false);
          file.writeString("#include <" + inHeader + ".h>\n");
          file.close();
 
@@ -164,20 +172,20 @@ class Compiler
       }
 
 
-      neko.Lib.println("Creating " + pch_name + "...");
-      neko.Lib.println( mExe + " " + args.join(" ") );
+      Sys.println("Creating " + pch_name + "...");
+      Sys.println( mExe + " " + args.join(" ") );
       var result = BuildTool.runCommand( mExe, args );
       if (result!=0)
       {
-         if (neko.FileSystem.exists(pch_name))
-            neko.FileSystem.deleteFile(pch_name);
+         if (FileSystem.exists(pch_name))
+            FileSystem.deleteFile(pch_name);
          throw "Error creating pch: " + result + " - build cancelled";
       }
    }
 
    public function compile(inFile:File)
    {
-      var path = new neko.io.Path(mObjDir + "/" + inFile.mName);
+      var path = new haxe.io.Path(mObjDir + "/" + inFile.mName);
       var obj_name = path.dir + "/" + path.file + mExt;
 
       var args = new Array<String>();
@@ -209,7 +217,7 @@ class Compiler
       }
 
       
-      args.push( (new neko.io.Path( inFile.mDir + inFile.mName)).toString() );
+      args.push( (new haxe.io.Path( inFile.mDir + inFile.mName)).toString() );
 
       var out = mOutFlag;
       if (out.substr(-1)==" ")
@@ -218,12 +226,12 @@ class Compiler
          out = "";
       }
       args.push(out + obj_name);
-      neko.Lib.println( mExe + " " + args.join(" ") );
+      Sys.println( mExe + " " + args.join(" ") );
       var result = BuildTool.runCommand( mExe, args );
       if (result!=0)
       {
-         if (neko.FileSystem.exists(obj_name))
-            neko.FileSystem.deleteFile(obj_name);
+         if (FileSystem.exists(obj_name))
+            FileSystem.deleteFile(obj_name);
          throw "Error : " + result + " - build cancelled";
       }
       return obj_name;
@@ -284,10 +292,10 @@ class Linker
          }
          else
          {
-            if (mRecreate && neko.FileSystem.exists(out_name))
+            if (mRecreate && FileSystem.exists(out_name))
             {
-               neko.Lib.println(" clean " + out_name );
-               neko.FileSystem.deleteFile(out_name);
+               Sys.println(" clean " + out_name );
+               FileSystem.deleteFile(out_name);
             }
             args.push(out + out_name);
          }
@@ -298,7 +306,7 @@ class Linker
          if (mFromFile=="@")
          {
             var fname = "all_objs";
-            var fout = neko.io.File.write(fname,false);
+            var fout = sys.io.File.write(fname,false);
             for(obj in inObjs)
                fout.writeString(obj + "\n");
             fout.close();
@@ -310,7 +318,7 @@ class Linker
          args = args.concat(inTarget.mLibs);
          args = args.concat(mLibs);
 
-         neko.Lib.println( mExe + " " + args.join(" ") );
+         Sys.println( mExe + " " + args.join(" ") );
          var result = BuildTool.runCommand( mExe, args );
          if (result!=0)
             throw "Error : " + result + " - build cancelled";
@@ -318,7 +326,7 @@ class Linker
          if (mRanLib!="")
          {
             args = [out_name];
-            neko.Lib.println( mRanLib + " " + args.join(" ") );
+            Sys.println( mRanLib + " " + args.join(" ") );
             var result = BuildTool.runCommand( mRanLib, args );
             if (result!=0)
                throw "Error : " + result + " - build cancelled";
@@ -326,8 +334,8 @@ class Linker
 
          if (mLibDir!="")
          {
-            neko.io.File.copy( mLibDir+"/"+file_name, out_name );
-            neko.FileSystem.deleteFile( mLibDir+"/"+file_name );
+            sys.io.File.copy( mLibDir+"/"+file_name, out_name );
+            FileSystem.deleteFile( mLibDir+"/"+file_name );
          }
          return  out_name;
       }
@@ -336,14 +344,14 @@ class Linker
    }
    function isOutOfDate(inName:String, inObjs:Array<String>)
    {
-      if (!neko.FileSystem.exists(inName))
+      if (!FileSystem.exists(inName))
          return true;
-      var stamp = neko.FileSystem.stat(inName).mtime.getTime();
+      var stamp = FileSystem.stat(inName).mtime.getTime();
       for(obj in inObjs)
       {
-         if (!neko.FileSystem.exists(obj))
+         if (!FileSystem.exists(obj))
             throw "Could not find " + obj + " required by " + inName;
-         var obj_stamp =  neko.FileSystem.stat(obj).mtime.getTime();
+         var obj_stamp =  FileSystem.stat(obj).mtime.getTime();
          if (obj_stamp > stamp)
             return true;
       }
@@ -371,7 +379,7 @@ class Stripper
 
       args.push(inTarget);
 
-      neko.Lib.println( mExe + " " + args.join(" ") );
+      Sys.println( mExe + " " + args.join(" ") );
       var result = BuildTool.runCommand( mExe, args );
       if (result!=0)
          throw "Error : " + result + " - build cancelled";
@@ -392,23 +400,23 @@ class File
    }
    public function isOutOfDate(inObj:String)
    {
-      if (!neko.FileSystem.exists(inObj))
+      if (!FileSystem.exists(inObj))
          return true;
-      var obj_stamp = neko.FileSystem.stat(inObj).mtime.getTime();
+      var obj_stamp = FileSystem.stat(inObj).mtime.getTime();
       if (mGroup.isOutOfDate(obj_stamp))
          return true;
 
       var source_name = mDir+mName;
-      if (!neko.FileSystem.exists(source_name))
+      if (!FileSystem.exists(source_name))
          throw "Could not find source '" + source_name + "'";
-      var source_stamp = neko.FileSystem.stat(source_name).mtime.getTime();
+      var source_stamp = FileSystem.stat(source_name).mtime.getTime();
       if (obj_stamp < source_stamp)
          return true;
       for(depend in mDepends)
       {
-         if (!neko.FileSystem.exists(depend))
+         if (!FileSystem.exists(depend))
             throw "Could not find dependency '" + depend + "' for '" + mName + "'";
-         if (neko.FileSystem.stat(depend).mtime.getTime() > obj_stamp )
+         if (FileSystem.stat(depend).mtime.getTime() > obj_stamp )
             return true;
       }
       return false;
@@ -436,12 +444,12 @@ class FileGroup
 
    public function addDepend(inFile:String)
    {
-      if (!neko.FileSystem.exists(inFile))
+      if (!FileSystem.exists(inFile))
       {
          mMissingDepends.push(inFile);
          return;
       }
-      var stamp =  neko.FileSystem.stat(inFile).mtime.getTime();
+      var stamp =  FileSystem.stat(inFile).mtime.getTime();
       if (stamp>mNewest)
          mNewest = stamp;
    }
@@ -460,27 +468,27 @@ class FileGroup
       var changed = false;
       for(option in mOptions)
       {
-         if (!neko.FileSystem.exists(option))
+         if (!FileSystem.exists(option))
          {
             mMissingDepends.push(option);
          }
          else
          {
-            var contents = neko.io.File.getContent(option);
+            var contents = sys.io.File.getContent(option);
 
-            var dest = inObjDir + "/" + neko.io.Path.withoutDirectory(option);
+            var dest = inObjDir + "/" + haxe.io.Path.withoutDirectory(option);
             var skip = false;
 
-            if (neko.FileSystem.exists(dest))
+            if (FileSystem.exists(dest))
             {
-               var dest_content = neko.io.File.getContent(dest);
+               var dest_content = sys.io.File.getContent(dest);
                if (dest_content==contents)
                   skip = true;
             }
             if (!skip)
             {
                DirManager.make(inObjDir);
-               var stream = neko.io.File.write(dest,true);
+               var stream = sys.io.File.write(dest,true);
                stream.writeString(contents);
                stream.close();
                changed = true;
@@ -565,7 +573,7 @@ class Target
    {
       for(dir in mDirs)
       {
-         neko.Lib.println("Remove " + dir + "...");
+         Sys.println("Remove " + dir + "...");
          DirManager.deleteRecurse(dir);
       }
    }
@@ -615,7 +623,7 @@ class BuildTool
       mTargets = new Targets();
       mLinkers = new Linkers();
       mIncludePath = inIncludePath;
-      var make_contents = neko.io.File.getContent(inMakefile);
+      var make_contents = sys.io.File.getContent(inMakefile);
       var xml_slow = Xml.parse(make_contents);
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
       
@@ -642,13 +650,13 @@ class BuildTool
            for(p in mIncludePath)
            {
               var name = p + "/" + inBase;
-              if (neko.FileSystem.exists(name))
+              if (FileSystem.exists(name))
                  return name;
            }
            return "";
         }
      }
-     if (neko.FileSystem.exists(inBase))
+     if (FileSystem.exists(inBase))
         return inBase;
       return "";
    }
@@ -673,21 +681,21 @@ class BuildTool
                    var name = el.att.name;
                    mDefines.remove(name);
                 case "echo" : 
-                   neko.Lib.println(substitute(el.att.value));
+                   Sys.println(substitute(el.att.value));
                 case "setenv" : 
                    var name = el.att.name;
                    var value = substitute(el.att.value);
                    mDefines.set(name,value);
-                   neko.Sys.putEnv(name,value);
+                   Sys.putEnv(name,value);
                 case "error" : 
                    var error = substitute(el.att.value);
                    throw(error);
                 case "path" : 
                    var path = substitute(el.att.name);
-                   var os = neko.Sys.systemName();
+                   var os = Sys.systemName();
                    var sep = mDefines.exists("windows_host") ? ";" : ":";
-                   neko.Sys.putEnv("PATH", path + sep + neko.Sys.getEnv("PATH"));
-                    //trace(neko.Sys.getEnv("PATH"));
+                   Sys.putEnv("PATH", path + sep + Sys.getEnv("PATH"));
+                    //trace(Sys.getEnv("PATH"));
                 case "compiler" : 
                    mCompiler = createCompiler(el,mCompiler);
 
@@ -712,7 +720,7 @@ class BuildTool
                    var full_name = findIncludeFile(name);
                    if (full_name!="")
                    {
-                      var make_contents = neko.io.File.getContent(full_name);
+                      var make_contents = sys.io.File.getContent(full_name);
                       var xml_slow = Xml.parse(make_contents);
                       var section = el.has.section ? el.att.section : "";
 
@@ -741,13 +749,13 @@ class BuildTool
          exe = splitExe.shift ();
          args = splitExe.concat (args);
       }
-      return neko.Sys.command (exe, args);
+      return Sys.command (exe, args);
    }
 
 
    public function buildTarget(inTarget:String)
    {
-      // neko.Lib.println("Build : " + inTarget );
+      // Sys.println("Build : " + inTarget );
       if (!mTargets.exists(inTarget))
          throw "Could not find target '" + inTarget + "' to build.";
       if (mCompiler==null)
@@ -759,10 +767,10 @@ class BuildTool
       for(sub in target.mSubTargets)
          buildTarget(sub);
  
-      var thread_var = neko.Sys.getEnv("HXCPP_COMPILE_THREADS");
+      var thread_var = Sys.getEnv("HXCPP_COMPILE_THREADS");
       // Don't do this by default
       if (thread_var==null && sAllowNumProcs)
-         thread_var = neko.Sys.getEnv("NUMBER_OF_PROCESSORS");
+         thread_var = Sys.getEnv("NUMBER_OF_PROCESSORS");
       var threads =  (thread_var==null || Std.parseInt(thread_var)<2) ? 1 :
          Std.parseInt(thread_var);
 
@@ -777,7 +785,7 @@ class BuildTool
 
          for(file in group.mFiles)
          {
-            var path = new neko.io.Path(mCompiler.mObjDir + "/" + file.mName);
+            var path = new haxe.io.Path(mCompiler.mObjDir + "/" + file.mName);
             var obj_name = path.dir + "/" + path.file + mCompiler.mExt;
             DirManager.make(path.dir);
             objs.push(obj_name);
@@ -805,12 +813,12 @@ class BuildTool
          }
          else
          {
-            var mutex = new neko.vm.Mutex();
-            var main_thread = neko.vm.Thread.current();
+            var mutex = new Mutex();
+            var main_thread = Thread.current();
             var compiler = mCompiler;
             for(t in 0...threads)
             {
-               neko.vm.Thread.create(function()
+               Thread.create(function()
                {
                   try
                   {
@@ -838,7 +846,7 @@ class BuildTool
             // Wait for theads to finish...
             for(t in 0...threads)
             {
-              var result = neko.vm.Thread.readMessage(true);
+              var result = Thread.readMessage(true);
               if (result=="Error")
                     throw "Error in building thread";
             }
@@ -892,7 +900,7 @@ class BuildTool
                    var full_name = findIncludeFile(name);
                    if (full_name!="")
                    {
-                      var make_contents = neko.io.File.getContent(full_name);
+                      var make_contents = sys.io.File.getContent(full_name);
                       var xml_slow = Xml.parse(make_contents);
                       createCompiler(new haxe.xml.Fast(xml_slow.firstElement()),c);
                    }
@@ -1042,7 +1050,7 @@ class BuildTool
 
 	public static function getHaxelib(library:String):String
    {
-		var proc = new neko.io.Process("haxelib",["path",library]);
+		var proc = new sys.io.Process("haxelib",["path",library]);
 		var result = "";
 		
 		try
@@ -1099,26 +1107,26 @@ class BuildTool
 
       include_path.push(".");
 
-      var args = neko.Sys.args();
+      var args = Sys.args();
       // Check for calling from haxelib ...
       if (args.length>0)
       {
-         var last:String = (new neko.io.Path(args[args.length-1])).toString();
+         var last:String = (new haxe.io.Path(args[args.length-1])).toString();
          var slash = last.substr(-1);
          if (slash=="/"|| slash=="\\") 
             last = last.substr(0,last.length-1);
-         if (neko.FileSystem.exists(last) && neko.FileSystem.isDirectory(last))
+         if (FileSystem.exists(last) && FileSystem.isDirectory(last))
          {
             // When called from haxelib, the last arg is the original directory, and
             //  the current direcory is the library directory.
-            HXCPP = neko.Sys.getCwd();
+            HXCPP = Sys.getCwd();
             defines.set("HXCPP",HXCPP);
             args.pop();
-            neko.Sys.setCwd(last);
+            Sys.setCwd(last);
          }
       }
 
-      var os = neko.Sys.systemName();
+      var os = Sys.systemName();
       isWindows = (new EReg("window","i")).match(os);
 		if (isWindows)
 		   defines.set("windows_host", "1");
@@ -1149,8 +1157,23 @@ class BuildTool
 
       Setup.initHXCPPConfig(defines);
 
+      var env = Sys.environment();
+
+      if (HXCPP=="" && env.exists("HXCPP"))
+      {
+         HXCPP = env.get("HXCPP") + "/";
+         defines.set("HXCPP",HXCPP);
+      }
+
+      if (HXCPP=="")
+      {
+         if (!defines.exists("HXCPP"))
+            throw "HXCPP not set, and not run from haxelib";
+         HXCPP = defines.get("HXCPP") + "/";
+         defines.set("HXCPP",HXCPP);
+      }
+
       include_path.push(".");
-      var env = neko.Sys.environment();
       if (env.exists("HOME"))
         include_path.push(env.get("HOME"));
       if (env.exists("USERPROFILE"))
@@ -1268,7 +1291,7 @@ class BuildTool
 
       if (defines.exists("apple") && !defines.exists("DEVELOPER_DIR"))
       {
-          var proc = new neko.io.Process("xcode-select", ["--print-path"]);
+          var proc = new sys.io.Process("xcode-select", ["--print-path"]);
           var developer_dir = proc.stdout.readLine();
           proc.close();
           if (developer_dir == "" || developer_dir.indexOf ("Run xcode-select") > -1)
@@ -1281,10 +1304,10 @@ class BuildTool
       if (defines.exists("iphone") && !defines.exists("IPHONE_VER"))
       {
          var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/iPhoneOS.platform/Developer/SDKs/";
-         if (neko.FileSystem.exists(dev_path))
+         if (FileSystem.exists(dev_path))
          {
             var best="";
-            var files = neko.FileSystem.readDirectory(dev_path);
+            var files = FileSystem.readDirectory(dev_path);
             var extract_version = ~/^iPhoneOS(.*).sdk$/;
             for(file in files)
             {
@@ -1303,10 +1326,10 @@ class BuildTool
       if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
       {
          var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/";
-         if (neko.FileSystem.exists(dev_path))
+         if (FileSystem.exists(dev_path))
          {
             var best="";
-            var files = neko.FileSystem.readDirectory(dev_path);
+            var files = FileSystem.readDirectory(dev_path);
             var extract_version = ~/^MacOSX(.*).sdk$/;
             for(file in files)
             {
@@ -1322,7 +1345,7 @@ class BuildTool
          }
       }
       
-      if (!neko.FileSystem.exists(defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/"))
+      if (!FileSystem.exists(defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/"))
       {
          defines.set("LEGACY_MACOSX_SDK","1");
       }
@@ -1332,12 +1355,12 @@ class BuildTool
    
       if (makefile=="")
       {
-         neko.Lib.println("Usage :  BuildTool makefile.xml [-DFLAG1] ...  [-DFLAGN] ... [target1]...[targetN]");
+         Sys.println("Usage :  BuildTool makefile.xml [-DFLAG1] ...  [-DFLAGN] ... [target1]...[targetN]");
       }
       else
       {
          for(e in env.keys())
-            defines.set(e, neko.Sys.getEnv(e) );
+            defines.set(e, Sys.getEnv(e) );
 
          new BuildTool(makefile,defines,targets,include_path);
       }
