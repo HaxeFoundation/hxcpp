@@ -40,6 +40,14 @@ class DirManager
       }
       return true;
    }
+   static public function makeFileDir(inFile:String)
+   {
+      var parts = inFile.split("/");
+      if (parts.length<2)
+         return;
+      parts.pop();
+      make(parts.join("/"));
+   }
    static public function deleteRecurse(inDir:String)
    {
       if (FileSystem.exists(inDir))
@@ -428,6 +436,44 @@ class File
    public var mGroup:FileGroup;
 }
 
+
+class HLSL
+{
+   var file:String;
+   var profile:String;
+   var target:String;
+   var variable:String;
+
+   public function new(inFile:String, inProfile:String, inVariable:String, inTarget:String)
+   {
+      file = inFile;
+      profile = inProfile;
+      variable = inVariable;
+      target = inTarget;
+   }
+
+   public function build()
+   {
+      DirManager.makeFileDir(target);
+
+      var srcStamp = FileSystem.stat(file).mtime.getTime();
+      if ( !FileSystem.exists(target) || FileSystem.stat(target).mtime.getTime() < srcStamp)
+      {
+         var exe = "fxc.exe";
+         var args =  [ "/nologo", "/T", profile, file, "/Vn", variable, "/Fh", target ];
+         if (BuildTool.verbose)
+            Sys.println(exe + " " + args.join(" ") );
+         var result = BuildTool.runCommand(exe,args);
+         if (result!=0)
+         {
+            throw "Error : Could not compile shader " + file + " - build cancelled";
+         }
+      }
+   }
+}
+
+
+
 class FileGroup
 {
    public function new(inDir:String,inId:String)
@@ -438,9 +484,24 @@ class FileGroup
       mPrecompiledHeader = "";
       mMissingDepends = [];
       mOptions = [];
+      mHLSLs = [];
       mDir = inDir;
       mId = inId;
    }
+
+   public function preBuild()
+   {
+      for(hlsl in mHLSLs)
+         hlsl.build();
+   }
+
+   public function addHLSL(inFile:String,inProfile:String,inVariable:String,inTarget:String)
+   {
+      addDepend(inFile);
+
+      mHLSLs.push( new HLSL(inFile,inProfile,inVariable,inTarget) );
+   }
+
 
    public function addDepend(inFile:String)
    {
@@ -529,6 +590,7 @@ class FileGroup
    public var mPrecompiledHeader:String;
    public var mPrecompiledHeaderDir:String;
    public var mFiles: Array<File>;
+   public var mHLSLs: Array<HLSL>;
    public var mDir : String;
    public var mId : String;
 }
@@ -741,7 +803,7 @@ class BuildTool
    }
    
    
-   public static function runCommand (exe:String, args:Array<String>):Int
+   public static function runCommand(exe:String, args:Array<String>):Int
    {
       if (exe.indexOf (" ") > -1)
       {
@@ -749,7 +811,7 @@ class BuildTool
          exe = splitExe.shift ();
          args = splitExe.concat (args);
       }
-      return Sys.command (exe, args);
+      return Sys.command(exe, args);
    }
 
 
@@ -781,6 +843,9 @@ class BuildTool
          group.checkOptions(mCompiler.mObjDir);
 
          group.checkDependsExist();
+
+         group.preBuild();
+
          var to_be_compiled = new Array<File>();
 
          for(file in group.mFiles)
@@ -977,6 +1042,8 @@ class BuildTool
                          file.mDepends.push( substitute(f.att.name) );
                    group.mFiles.push( file );
                 case "depend" : group.addDepend( substitute(el.att.name) );
+                case "hlsl" : group.addHLSL( substitute(el.att.name), substitute(el.att.profile),
+                     substitute(el.att.variable), substitute(el.att.target)  );
                 case "options" : group.addOptions( substitute(el.att.name) );
                 case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
                 case "compilervalue" : group.addCompilerFlag( substitute(el.att.name) );
