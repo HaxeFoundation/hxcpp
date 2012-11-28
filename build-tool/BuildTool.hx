@@ -1,3 +1,4 @@
+import haxe.io.Path;
 import sys.FileSystem;
 #if neko
 import neko.vm.Thread;
@@ -454,6 +455,11 @@ class HLSL
 
    public function build()
    {
+	  if (!FileSystem.exists (Path.directory (target))) 
+	  {
+	     DirManager.make (Path.directory (target));
+	  }
+	  
       DirManager.makeFileDir(target);
 
       var srcStamp = FileSystem.stat(file).mtime.getTime();
