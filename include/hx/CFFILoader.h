@@ -597,7 +597,7 @@ neko_value neko_init(neko_value inNewString,neko_value inNewArray,neko_value inN
 void *LoadFunc(const char *inName)
 {
    #ifndef HX_WINRT
-   static char *modules[] = { 0, "hxcpp", "hxcpp-debug" };
+   static const char *modules[] = { 0, "hxcpp", "hxcpp-debug" };
    for(int i=0; i<3 && sResolveProc==0; i++)
    {
       HMODULE handle = GetModuleHandleA(modules[i]);
