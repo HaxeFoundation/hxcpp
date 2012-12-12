@@ -546,10 +546,13 @@ hx::Object * val_call3(hx::Object * arg1,hx::Object * arg2,hx::Object * arg3,hx:
 }
 
 
-hx::Object * val_callN(hx::Object * arg1,hx::Object * arg2) THROWS
+hx::Object * val_callN(hx::Object * arg1,hx::Object ** arg2, int nCount) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
-   return arg1->__Run( Dynamic(arg2) ).GetPtr();
+   Array<Dynamic> args = Array_obj<Dynamic>::__new(0, nCount);
+   while (nCount--)
+     args << *arg2++;
+   return arg1->__Run( args ).GetPtr();
 }
 
 
