@@ -131,7 +131,7 @@ static value sys_sleep( value f ) {
       tlsSleepEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
    WaitForSingleObjectEx(tlsSleepEvent, (int)(val_number(f)*1000), false);
    
-#elif defiend(NEKO_WINDOWS)
+#elif defined(NEKO_WINDOWS)
 	Sleep((DWORD)(val_number(f) * 1000));
 #else
 	{
