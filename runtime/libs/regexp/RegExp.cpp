@@ -150,12 +150,7 @@ static value regexp_match( value o, value s, value p, value len ) {
 	if( pp < 0 || ll < 0 || pp > val_strlen(s) || pp + ll > val_strlen(s) )
 		return alloc_null();
 	d = PCRE(o);
-	if( pcre_exec(d->r,NULL,val_string(s)+pp,ll,0,0,d->matchs,d->nmatchs * 3) >= 0 ) {
-		if( pp > 0 ) {
-			int i;
-			for(i=0;i<d->nmatchs * 3;i++)
-				d->matchs[i] += pp;
-		}
+	if( pcre_exec(d->r,NULL,val_string(s),ll+pp,pp,0,d->matchs,d->nmatchs * 3) >= 0 ) {
 		d->str = s;
 		return alloc_bool(true);
 	} else {
