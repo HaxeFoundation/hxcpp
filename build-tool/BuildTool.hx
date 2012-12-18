@@ -1387,7 +1387,7 @@ class BuildTool
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  if (ver>best)
+                  if (Std.parseFloat (ver)>Std.parseFloat (best))
                      best = ver;
                }
             }
@@ -1409,7 +1409,7 @@ class BuildTool
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  if (ver>best)
+                  if (Std.parseFloat (ver)>Std.parseFloat (best))
                      best = ver;
                }
             }
