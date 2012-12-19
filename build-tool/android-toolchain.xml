@@ -16,24 +16,32 @@
 
 <set name="NDKV7+" value="1" if="NDKV7" />
 <set name="NDKV7+" value="1" if="NDKV8" />
-
 <set name="NDKV8+" value="1" if="NDKV8" />
 
+<!-- Set SDK version, if not already set -->
+<set name="PLATFORM" value="android-3" if="android-3"/>
+<set name="PLATFORM" value="android-4" if="android-4"/>
+<set name="PLATFORM" value="android-5" if="android-5"/>
+<set name="PLATFORM" value="android-8" if="android-8"/>
+<set name="PLATFORM" value="android-9" if="android-9"/>
+<set name="PLATFORM " value="android-14" if="android-14"/>
+<set name="PLATFORM" value="android-5" unless="PLATFORM"/>
 
 <path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}/bin"/>
 
+<!-- Set architecture -->
 <set name="ARCH" value ="-7" if="HXCPP_ARMV7" />
 
 <compiler id="android-gcc" exe="arm-linux-androideabi-g++">
 
  <!-- These must appear in this order! -->
 
- <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm"/>
- <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/include" if="NDK8+"/>
- <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/include" unless="NDK8+"/>
- <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/armeabi/include" if="NDK8+"/>
- <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/include" unless="NDK8+"/>
-
+ <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/arch-arm"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/include" if="NDKV8+"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/include" unless="NDKV8+"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/armeabi/include" if="NDKV8+"/>
+ <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/include" unless="NDKV8+"/>
+ 
  <include name="common-defines.xml" />
  <flag value="-I${HXCPP}/include"/>
  <flag value="-Iinclude"/>
@@ -69,6 +77,7 @@
  <flag value="-O2" unless="debug"/>
  <flag value="-O0" if="debug"/>
  <flag value="-DNDEBUG"/>
+ <flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
  <flag value="-c"/>
  <outflag value="-o"/>
  <ext value=".obj"/>
@@ -88,22 +97,21 @@
   <flag value="-Wl,-shared,-Bsymbolic"/>
   <flag value="-Wl,--no-undefined"/>
   <flag value="-Wl,-z,noexecstack"/>
-  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm"/>
-  <flag value="-L${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib"/>
+  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/arch-arm"/>
+  <flag value="-L${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/arch-arm/usr/lib"/>
 
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/libstdc++.a" if="NDKV6" />
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/armeabi/libgnustl_static.a" if="NDKV7"/>
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/armeabi/libgnustl_static.a" if="NDKV8+" />
 
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/arch-arm/usr/lib/crtbegin_so.o"/>
   <lib name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/${TOOLCHAIN_VERSION}/libgcc.a"/>
-  <lib name="${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib/libc.so"/>
-  <lib name="${ANDROID_NDK_ROOT}/platforms/android-5/arch-arm/usr/lib/libm.so"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/arch-arm/usr/lib/libc.so"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/arch-arm/usr/lib/libm.so"/>
   <lib name="-llog"/>
   <lib name="-ldl"/>
 
   <!-- <flag value="-lGLESv2"/> -->
 </linker>
-
-
 
 </xml>
