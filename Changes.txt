@@ -1,3 +1,10 @@
+2.10.3
+------------------------------------------------------------
+* Added initial build support for WinRT
+* Android toolchain improvements
+* Minor compile fixes
+* Other minor improvements
+
 2.10.2
 ------------------------------------------------------------
 * Fixes for BlackBerry 10 compatibility
