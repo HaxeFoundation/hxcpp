@@ -207,9 +207,13 @@ public:
       if (!mPtr || !inRHS.mPtr) return true;
       return mPtr->__compare(inRHS.mPtr);
    }
+
    bool operator==(const null &inRHS) const { return mPtr==0; }
    bool operator!=(const null &inRHS) const { return mPtr!=0; }
-   //explicit operator bool() const { return mPtr!=0; }
+
+   inline bool operator==(const Dynamic &inRHS) const { return inRHS==*this; }
+   inline bool operator!=(const Dynamic &inRHS) const { return inRHS!=*this; }
+
 
    // This is defined in the "FieldRef" class...
    inline class hx::FieldRef FieldRef(const String &inString);
