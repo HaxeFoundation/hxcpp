@@ -211,8 +211,8 @@ public:
    bool operator==(const null &inRHS) const { return mPtr==0; }
    bool operator!=(const null &inRHS) const { return mPtr!=0; }
 
-   inline bool operator==(const Dynamic &inRHS) const { return inRHS==*this; }
-   inline bool operator!=(const Dynamic &inRHS) const { return inRHS!=*this; }
+   //inline bool operator==(const Dynamic &inRHS) const { return inRHS==*this; }
+   //inline bool operator!=(const Dynamic &inRHS) const { return inRHS!=*this; }
 
 
    // This is defined in the "FieldRef" class...
