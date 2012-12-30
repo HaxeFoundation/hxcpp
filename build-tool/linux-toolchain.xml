@@ -36,7 +36,7 @@
   <flag value="-m64" if="HXCPP_M64"/>
   <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
-  <flag value="--no-undefined"/>
+  <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
   <flag value="-debug" if="debug"/>
   <lib name="-ldl"/>
   <ext value=".dso"/>
