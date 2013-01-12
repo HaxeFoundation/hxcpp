@@ -78,19 +78,19 @@
      <!-- Compiling on windows ... -->
      <compiler id="MSVC" if="windows">
         <!-- Example adding a build flag -->
-        <flag value = "-Ie:/VS8//PlatformSDK/Include"/>
+        <!-- <flag value = "-Ie:/VS8//PlatformSDK/Include"/> -->
      </compiler>
 
      <!-- Linking on windows ... -->
      <linker id="dll" if="windows">
         <!-- Add library paths for windows (DirectX needed for building NME) -->
-        <flag value = "-libpath:e:\VS8\DirectXSDK\Lib\x86"/>
-        <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/>
+        <!-- <flag value = "-libpath:e:\VS8\DirectXSDK\Lib\x86"/>
+        <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/> -->
      </linker>
 
      <!-- And for linking executables -->
      <linker id="exe" if="windows">
-        <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/>
+        <!-- <flag value = "-libpath:e:/VS8/PlatformSDK/Lib"/> -->
      </linker>
 
   </section>
