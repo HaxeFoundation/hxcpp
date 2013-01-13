@@ -344,6 +344,8 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
     HX_CSTRING("webOS");
 #elif defined(BLACKBERRY)
     HX_CSTRING("BlackBerry");
+#elif defined(HX_RPI)
+    HX_CSTRING("RPi-Hfp");
 #else
   #ifdef HXCPP_M64
     HX_CSTRING("Linux64");

@@ -1210,6 +1210,8 @@ class BuildTool
 		if (isLinux)
 		   defines.set("linux_host", "1");
 
+      var isRPi = isLinux && Setup.isRaspberryPi();
+
 
       for(arg in args)
       {
@@ -1347,6 +1349,14 @@ class BuildTool
          }
 
          Setup.setupMSVC(defines);
+      }
+      else if ( isRPi )
+      {
+         defines.set("toolchain","linux");
+         defines.set("linux","linux");
+         defines.set("rpi","1");
+         defines.set("hardfp","1");
+         defines.set("BINDIR", "RPi-Hfp");
       }
       else if ( (new EReg("linux","i")).match(os) )
       {

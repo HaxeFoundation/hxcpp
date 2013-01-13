@@ -157,5 +157,13 @@ class Setup
        } catch(e:Dynamic){}
             //if (cl_version!="") Sys.println("Using cl version: " + cl_version);
     }
+
+   public static function isRaspberryPi()
+   {
+      var proc = new sys.io.Process("uname",["-a"]);
+      var str = proc.stdout.readLine();
+      proc.close();
+      return str.split(" ")[1]=="raspberrypi";
+   }
 }
 

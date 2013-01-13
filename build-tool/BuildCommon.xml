@@ -7,6 +7,8 @@
 <set name="F32" value="-f32" if="HXCPP_FLOAT32"/>
 <set name="NEEDS_NC" value="-nc" if="windows"/>
 <set name="NOCONSOLE" value="${NEEDS_NC}" if="no_console"/>
+<set name="RPI" value="-rpi" if="rpi"/>
+<set name="APIFP" value="-hfp" if="hardfp"/>
 
 <set name="STD_MODULE_LINK" value="dll"/>
 
@@ -15,7 +17,7 @@
 
 <set name="STAT" value="-stat" if="static_link" />
 
-<set name="OBJEXT" value="${M64}${F32}${STAT}${DBG}${NOCONSOLE}" />
+<set name="OBJEXT" value="${M64}${F32}${STAT}${DBG}${NOCONSOLE}${RPI}${APIFP}" />
 
 <set name="STD_MODULE_LINK" value="static_link" if="static_link"/>
 
