@@ -41,6 +41,11 @@ public:
 
 	hx::Object *__ToObject() const;
 
+   /*
+    This causes ambiguous problem with Object==Dynamic (String==Dynamic vs Object==Object)
+     and syntactically, String(Dynamic) should be enough I think.
+    Could perhaps make it explicit
+
    template<typename T>
    inline String(const hx::ObjectPtr<T> &inRHS)
    {
@@ -52,6 +57,7 @@ public:
       }
       else { __s = 0; length = 0; }
    }
+   */
     String(const Dynamic &inRHS);
 
     inline ::String &operator=(const ::String &inRHS)
