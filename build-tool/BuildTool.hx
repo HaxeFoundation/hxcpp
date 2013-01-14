@@ -1356,7 +1356,7 @@ class BuildTool
          defines.set("linux","linux");
          defines.set("rpi","1");
          defines.set("hardfp","1");
-         defines.set("BINDIR", "RPi-Hfp");
+         defines.set("BINDIR", "RPi");
       }
       else if ( (new EReg("linux","i")).match(os) )
       {
