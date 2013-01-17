@@ -130,7 +130,7 @@ static value sys_sleep( value f ) {
    if (!tlsSleepEvent)
       tlsSleepEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
    WaitForSingleObjectEx(tlsSleepEvent, (int)(val_number(f)*1000), false);
-   
+
 #elif defined(NEKO_WINDOWS)
 	Sleep((DWORD)(val_number(f) * 1000));
 #else
@@ -525,7 +525,7 @@ static value sys_cpu_time() {
 **/
 static value sys_read_dir( value p) {
 	val_check(p,string);
-	
+
         value result = alloc_array(0);
 #ifdef HX_WINRT
    auto folder = (Windows::Storage::StorageFolder::GetFolderFromPathAsync( ref new Platform::String(val_wstring(p)) ))->GetResults();
@@ -695,7 +695,7 @@ static value sys_getch( value b ) {
 	gc_enter_blocking();
 	int result = val_bool(b)?getche():getch();
 	gc_exit_blocking();
-	return alloc_int( val_bool(b)?getche():getch() );
+	return alloc_int( result );
 #	else
 	// took some time to figure out how to do that
 	// without relying on ncurses, which clear the
