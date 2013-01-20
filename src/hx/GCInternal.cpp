@@ -1163,7 +1163,7 @@ public:
       // from the blocks, and can 'pile up' between smalll object allocations
       if (inSize+mLargeAllocated > mLargeAllocForceRefresh)
       {
-         GCLOG("Large alloc causing collection");
+         //GCLOG("Large alloc causing collection");
          Collect(true,false);
       }
 
