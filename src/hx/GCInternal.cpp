@@ -1135,6 +1135,8 @@ public:
       mNextEmpty = 0;
       mRowsInUse = 0;
       mLargeAllocated = 0;
+      mLargeAllocSpace = 40 << 20;
+      mLargeAllocForceRefresh = mLargeAllocSpace;
       // Start at 1 Meg...
       mTotalAfterLastCollect = 1<<20;
    }
@@ -1157,8 +1159,26 @@ public:
 
    void *AllocLarge(int inSize)
    {
+      //Should we force a collect ? - the 'large' data are not considered when allocating objects
+      // from the blocks, and can 'pile up' between smalll object allocations
+      if (inSize+mLargeAllocated > mLargeAllocForceRefresh)
+      {
+         GCLOG("Large alloc causing collection");
+         Collect(true,false);
+      }
+
       inSize = (inSize +3) & ~3;
+
+      if (inSize<<1 > mLargeAllocSpace)
+         mLargeAllocSpace = inSize<<1;
+
       unsigned int *result = (unsigned int *)malloc(inSize + sizeof(int)*2);
+      if (!result)
+      {
+         //GCLOG("Large alloc panic!");
+         Collect(true,false);
+         result = (unsigned int *)malloc(inSize + sizeof(int)*2);
+      }
       result[0] = inSize;
       result[1] = gMarkID;
 
@@ -1734,6 +1754,7 @@ public:
       //__android_log_print(ANDROID_LOG_ERROR, "hxcpp", "Collect...");
       #endif
      
+      int largeAlloced = mLargeAllocated;
       LocalAllocator *this_local = 0;
       if (sMultiThreadMode)
       {
@@ -1795,7 +1816,10 @@ public:
       }
 
       mTotalAfterLastCollect = MemUsage();
-
+      int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
+      if (blockSize > mLargeAllocSpace)
+         mLargeAllocSpace = blockSize;
+      mLargeAllocForceRefresh = mLargeAllocated + mLargeAllocSpace;
 
       //GCLOG("Using %d, blocks %d (%d)\n", mTotalAfterLastCollect, mAllBlocks.size(), mAllBlocks.size()*IMMIX_BLOCK_SIZE);
 
@@ -1926,6 +1950,8 @@ public:
 
 
    size_t mRowsInUse;
+   size_t mLargeAllocSpace;
+   size_t mLargeAllocForceRefresh;
    size_t mLargeAllocated;
    size_t mTotalAfterLastCollect;
 
