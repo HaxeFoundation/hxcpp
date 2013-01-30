@@ -879,10 +879,22 @@ void GCRemoveRoot(hx::Object **inRoot)
 #define FILE_SCOPE static
 #endif
 
+class WeakRef;
+typedef QuickVec<WeakRef *> WeakRefs;
+
+FILE_SCOPE MyMutex *sFinalizerLock = 0;
+FILE_SCOPE WeakRefs sWeakRefs;
+
 class WeakRef : public hx::Object
 {
 public:
-   WeakRef(Dynamic inRef) { mRef = inRef; }
+   WeakRef(Dynamic inRef)
+   {
+      sFinalizerLock->Lock();
+      sWeakRefs.push(this);
+      sFinalizerLock->Unlock();
+      mRef = inRef;
+   }
 
    // Don't mark our ref !
 
@@ -908,9 +920,6 @@ FILE_SCOPE ObjectIdMap sObjectIdMap;
 
 typedef std::set<hx::Object *> MakeZombieSet;
 FILE_SCOPE MakeZombieSet sMakeZombieSet;
-
-typedef std::set<WeakRef *> WeakRefs;
-FILE_SCOPE WeakRefs sWeakRefs;
 
 typedef QuickVec<hx::Object *> ZombieList;
 FILE_SCOPE ZombieList sZombieList;
@@ -1012,28 +1021,29 @@ void RunFinalizers()
       i = next;
    }
 
-   for(WeakRefs::iterator i=sWeakRefs.begin(); i!=sWeakRefs.end(); )
+   for(int i=0;i<sWeakRefs.size();    )
    {
-      WeakRefs::iterator next = i;
-      next++;
-
-      unsigned char mark = ((unsigned char *)*i)[ENDIAN_MARK_ID_BYTE];
+      WeakRef *ref = sWeakRefs[i];
+      unsigned char mark = ((unsigned char *)ref)[ENDIAN_MARK_ID_BYTE];
       // Object itself is gone ...
       if ( mark!=gByteMarkID )
-         sWeakRefs.erase(i);
+      {
+         sWeakRefs.qerase(i);
+         // no i++ ...
+      }
       else
       {
          // what about the reference?
-         hx::Object *r = (*i)->mRef.mPtr;
+         hx::Object *r = ref->mRef.mPtr;
          unsigned char mark = ((unsigned char *)r)[ENDIAN_MARK_ID_BYTE];
          if ( mark!=gByteMarkID )
          {
-            (*i)->mRef.mPtr = 0;
-            sWeakRefs.erase(i);
+            ref->mRef.mPtr = 0;
+            sWeakRefs.qerase(i);
          }
+         else
+            i++;
       }
-
-      i = next;
    }
 }
 
@@ -2404,6 +2414,7 @@ void InitAlloc()
    sgAllocInit = true;
    sGlobalAlloc = new GlobalAllocator();
    sgFinalizers = new FinalizerList();
+   sFinalizerLock = new MyMutex();
    hx::Object tmp;
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
