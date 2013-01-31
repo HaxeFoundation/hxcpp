@@ -231,7 +231,7 @@ template<typename T> struct TCast< ObjectPtr<T> >
 {
    template<typename VAL> static inline ObjectPtr<T> cast(VAL inVal ) {
       ObjectPtr<T> result = Dynamic(inVal);
-      if (result==null()) BadCast();
+      if (result==null() && inVal!=null()) BadCast();
       return result;
    }
 
@@ -239,7 +239,7 @@ template<typename T> struct TCast< ObjectPtr<T> >
    static inline ObjectPtr<T> cast(ObjectPtr<INOBJ> inObj )
    {
       ObjectPtr<T> result = ObjectPtr<T>(inObj);
-      if (result==null()) hx::BadCast();
+      if (result==null() && inObj!=null()) hx::BadCast();
       return result;
    }
 };
@@ -247,7 +247,7 @@ template<typename T> struct TCast< ObjectPtr<T> >
 inline Array<Dynamic> TCastToArray(Dynamic inVal)
 {
    Dynamic result = inVal;
-   if (result==null()) hx::BadCast();
+   if (result==null() && inVal!=null()) hx::BadCast();
    return inVal;
 }
 
