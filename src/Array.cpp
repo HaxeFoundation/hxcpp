@@ -235,6 +235,8 @@ DEFINE_ARRAY_FUNC2(splice);
 DEFINE_ARRAY_FUNC1(sort);
 DEFINE_ARRAY_FUNC0(toString);
 DEFINE_ARRAY_FUNC1(unshift);
+DEFINE_ARRAY_FUNC1(map);
+DEFINE_ARRAY_FUNC1(filter);
 
 Dynamic ArrayBase::__Field(const String &inString, bool inCallProp)
 {

@@ -106,6 +106,8 @@ public:
    virtual Dynamic __sort(const Dynamic &a0) = 0;
    virtual Dynamic __toString() = 0;
    virtual Dynamic __unshift(const Dynamic &a0) = 0;
+   virtual Dynamic __map(const Dynamic &func) = 0;
+   virtual Dynamic __filter(const Dynamic &func) = 0;
 
 
    Dynamic concat_dyn();
@@ -123,6 +125,8 @@ public:
    Dynamic sort_dyn();
    Dynamic toString_dyn();
    Dynamic unshift_dyn();
+   Dynamic map_dyn();
+   Dynamic filter_dyn();
 
    void EnsureSize(int inLen) const;
 
@@ -338,6 +342,8 @@ public:
    Array<ELEM_> copy( );
    Array<ELEM_> slice(int inPos, Dynamic end = null());
    Array<ELEM_> splice(int inPos, int len);
+   Array<Dynamic> map(Dynamic inFunc);
+   Array<ELEM_> filter(Dynamic inFunc);
 
    void insert(int inPos, ELEM_ inValue)
    {
@@ -408,6 +414,8 @@ public:
    virtual Dynamic __sort(const Dynamic &a0) { sort(a0); return null(); }
    virtual Dynamic __toString() { return toString(); }
    virtual Dynamic __unshift(const Dynamic &a0) { unshift(a0); return null(); }
+   virtual Dynamic __map(const Dynamic &func) { return map(func); }
+   virtual Dynamic __filter(const Dynamic &func) { return filter(func); }
 };
 
 
@@ -578,6 +586,24 @@ Array<ELEM_> Array_obj<ELEM_>::splice(int inPos, int len)
    return result;
 }
 
+template<typename ELEM_>
+Array<ELEM_> Array_obj<ELEM_>::filter(Dynamic inFunc)
+{
+   Array_obj *result = new Array_obj(0,0);
+   for(int i=0;i<length;i++)
+      if (inFunc(__unsafe_get(i)))
+         result->push(__unsafe_get(i));
+   return result;
+}
+
+template<typename ELEM_>
+Array<Dynamic> Array_obj<ELEM_>::map(Dynamic inFunc)
+{
+   Array_obj<Dynamic> *result = new Array_obj<Dynamic>(length,0);
+   for(int i=0;i<length;i++)
+      result->__unsafe_set(i,inFunc(__unsafe_get(i)));
+   return result;
+}
 
 
 
