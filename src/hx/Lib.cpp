@@ -130,7 +130,7 @@ public:
 
    Dynamic __Run(const Array<Dynamic> &inArgs)
    {
-      if (mArgCount!=-1)
+      if (mArgCount!=-1 && mArgCount!=inArgs->length)
          throw HX_INVALID_ARG_COUNT;
       HX_STACK_PUSH("extern::cffi",__FILE__,__LINE__);
       return ((prim_mult)mProc)( (hx::Object **)inArgs->GetBase(), inArgs->length );
