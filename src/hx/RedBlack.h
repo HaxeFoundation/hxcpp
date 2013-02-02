@@ -129,6 +129,8 @@ struct RBTree {
           if ( q->key== inKey )
  			{
  				q->value = inValue;
+            // Decrease value now - it will be bumped back up at the end of the routine.
+            size--;
             break;
  			}
   
