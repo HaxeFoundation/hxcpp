@@ -33,8 +33,8 @@ public:
    inline static double abs(double inX) { return ::fabs(inX); }
    inline static double pow(double inA,double inB) { return ::pow(inA,inB); }
    inline static double log(double inA) { return ::log(inA); }
-   inline static double max(double inA,double inB) { return inA>inB ? inA:inB; }
-   inline static double min(double inA,double inB) { return inA<inB ? inA:inB; }
+   inline static double max(double inA,double inB) { return inA>inB ? inA:inA==inA?inB:inA; }
+   inline static double min(double inA,double inB) { return inA<inB ? inA:inA==inA?inB:inA; }
 
    inline static double atan(double inA) { return ::atan(inA); }
    inline static double asin(double inA) { return ::asin(inA); }

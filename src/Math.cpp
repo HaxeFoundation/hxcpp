@@ -20,8 +20,9 @@ using namespace hx;
 
 bool Math_obj::isNaN(double inX)
   { return inX!=inX; }
+
 bool Math_obj::isFinite(double inX)
-  { return !isNaN(inX) && inX!=NEGATIVE_INFINITY && inX!=POSITIVE_INFINITY; }
+  { return inX==inX && inX!=NEGATIVE_INFINITY && inX!=POSITIVE_INFINITY; }
 
 double Math_obj::NaN = std::numeric_limits<double>::quiet_NaN();
 double Math_obj::NEGATIVE_INFINITY = -std::numeric_limits<double>::infinity();
