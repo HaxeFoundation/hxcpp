@@ -95,7 +95,6 @@ void ArrayBase::Splice(ArrayBase *outResult,int inPos,int inLen)
 {
    if (inPos>=length)
    {
-      outResult->__SetSize(0);
       return;
    }
    else if (inPos<0)

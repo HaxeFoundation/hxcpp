@@ -581,7 +581,7 @@ Array<ELEM_> Array_obj<ELEM_>::slice(int inPos, Dynamic end)
 template<typename ELEM_>
 Array<ELEM_> Array_obj<ELEM_>::splice(int inPos, int len)
 {
-   Array_obj * result = new Array_obj(len,0);
+   Array_obj * result = new Array_obj(0,0);
    hx::ArrayBase::Splice(result,inPos,len);
    return result;
 }
