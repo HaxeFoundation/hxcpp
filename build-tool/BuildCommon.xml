@@ -48,6 +48,13 @@
 <!-- Additional dependencies for haxe target -->
 <files id="haxe">
   <depend name="${HXCPP}/include/hxcpp.h"/>
+  <depend name="${HXCPP}/include/Array.h"/>
+  <depend name="${HXCPP}/include/Dynamic.h"/>
+  <depend name="${HXCPP}/include/hxString.h"/>
+  <depend name="${HXCPP}/include/hxMath.h"/>
+  <depend name="${HXCPP}/include/null.h"/>
+  <depend name="${HXCPP}/include/Class.h"/>
+  <depend name="${HXCPP}/include/Enum.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/Thread.h"/>
@@ -57,7 +64,6 @@
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
-  <depend name="${HXCPP}/include/hxMath.h"/>
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>
@@ -80,17 +86,21 @@
 
 <files id="runtime" dir="${HXCPP}">
   <depend name="${HXCPP}/include/hxcpp.h"/>
+  <depend name="${HXCPP}/include/Array.h"/>
+  <depend name="${HXCPP}/include/Dynamic.h"/>
+  <depend name="${HXCPP}/include/hxString.h"/>
+  <depend name="${HXCPP}/include/hxMath.h"/>
+  <depend name="${HXCPP}/include/null.h"/>
+  <depend name="${HXCPP}/include/Class.h"/>
+  <depend name="${HXCPP}/include/Enum.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
-  <depend name="${HXCPP}/include/hxMath.h"/>
-
   <depend name="${HXCPP}/include/hx/Thread.h"/>
   <depend name="${HXCPP}/include/hx/GC.h"/>
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
-  <depend name="${HXCPP}/include/hxMath.h"/>
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>
