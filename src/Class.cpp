@@ -158,6 +158,9 @@ Array<String> Class_obj::GetInstanceFields()
 
 Array<String> Class_obj::GetClassFields()
 {
+   // Class fields do not include user fields...
+   return mStatics->copy();
+   /*
    Array<String> result = mSuper ? (*mSuper)->GetClassFields() : Array<String>(0,0);
    if (mStatics.mPtr)
    {
@@ -169,6 +172,7 @@ Array<String> Class_obj::GetClassFields()
       }
    }
    return result;
+   */
 }
 
 bool Class_obj::__HasField(const String &inString)
