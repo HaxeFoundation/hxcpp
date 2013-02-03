@@ -256,6 +256,8 @@ Dynamic ArrayBase::__Field(const String &inString, bool inCallProp)
    if (inString==HX_CSTRING("sort")) return sort_dyn();
    if (inString==HX_CSTRING("toString")) return toString_dyn();
    if (inString==HX_CSTRING("unshift")) return unshift_dyn();
+   if (inString==HX_CSTRING("filter")) return filter_dyn();
+   if (inString==HX_CSTRING("map")) return map_dyn();
    return null();
 }
 
@@ -277,6 +279,8 @@ static String sArrayFields[] = {
    HX_CSTRING("sort"),
    HX_CSTRING("toString"),
    HX_CSTRING("unshift"),
+   HX_CSTRING("filter"),
+   HX_CSTRING("map"),
    String(null())
 };
 
