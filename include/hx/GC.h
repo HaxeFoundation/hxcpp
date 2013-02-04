@@ -31,6 +31,10 @@ hx::Object *__hxcpp_get_next_zombie();
 hx::Object *__hxcpp_weak_ref_create(Dynamic inObject);
 hx::Object *__hxcpp_weak_ref_get(Dynamic inRef);
 
+
+int __hxcpp_obj_id(Dynamic inObj);
+hx::Object *__hxcpp_id_obj(int);
+
 namespace hx
 {
 
@@ -91,7 +95,6 @@ void *InternalCreateConstBuffer(const void *inData,int inSize);
 void RegisterNewThread(void *inTopOfStack);
 void SetTopOfStack(void *inTopOfStack,bool inForce=false);
 int InternalCollect(bool inMajor,bool inCompact);
-int InternalAllocID(void *inPtr);
 
 void EnterGCFreeZone();
 void ExitGCFreeZone();

@@ -916,7 +916,9 @@ FILE_SCOPE FinalizerMap sFinalizerMap;
 
 QuickVec<int> sFreeObjectIds;
 typedef std::map<hx::Object *,int> ObjectIdMap;
+typedef QuickVec<hx::Object *> IdObjectMap;
 FILE_SCOPE ObjectIdMap sObjectIdMap;
+FILE_SCOPE IdObjectMap sIdObjectMap;
 
 typedef std::set<hx::Object *> MakeZombieSet;
 FILE_SCOPE MakeZombieSet sMakeZombieSet;
@@ -1016,6 +1018,7 @@ void RunFinalizers()
       {
          sFreeObjectIds.push(i->second);
          sObjectIdMap.erase(i);
+         sIdObjectMap[i->second] = 0;
       }
 
       i = next;
@@ -1360,6 +1363,7 @@ public:
        hx::ObjectIdMap::iterator id = hx::sObjectIdMap.find(inFrom);
        if (id!=hx::sObjectIdMap.end())
        {
+          hx::sIdObjectMap[id->second] = inTo;
           hx::sObjectIdMap[inTo] = id->second;
           hx::sObjectIdMap.erase(id);
        }
@@ -1672,7 +1676,15 @@ public:
       return false;
    }
  
-   int GetObjectID(void *inPtr)
+   void *GetIDObject(int inIndex)
+   {
+      AutoLock lock(*gThreadStateChangeLock);
+      if (inIndex<0 || inIndex>hx::sIdObjectMap.size())
+         return 0;
+      return hx::sIdObjectMap[inIndex];
+   }
+
+   int GetObjectID(void * inPtr)
    {
       AutoLock lock(*gThreadStateChangeLock);
       hx::ObjectIdMap::iterator i = hx::sObjectIdMap.find( (hx::Object *)inPtr );
@@ -1683,10 +1695,15 @@ public:
       if (hx::sFreeObjectIds.size()>0)
          id = hx::sFreeObjectIds.pop();
       else
+      {
          id = hx::sObjectIdMap.size() + 1;
+         hx::sIdObjectMap.push(0);
+      }
       hx::sObjectIdMap[(hx::Object *)inPtr] = id;
+      hx::sIdObjectMap[id] = (hx::Object *)inPtr;
       return id;
    }
+
 
    void ClearRowMarks()
    {
@@ -2535,10 +2552,6 @@ void UnregisterCurrentThread()
    tlsLocalAlloc = 0;
 }
 
-int InternalAllocID(void *inPtr)
-{
-   return sGlobalAlloc->GetObjectID(inPtr);
-}
 
 
 } // end namespace hx
@@ -2607,6 +2620,33 @@ void __hxcpp_gc_safe_point()
       hx::PauseForCollect();
 }
 
+
+
+//#define HXCPP_FORCE_OBJ_MAP
+
+#if defined(HXCPP_M64) || defined(HXCPP_GC_MOVING) || defined(HXCPP_FORCE_OBJ_MAP)
+#define HXCPP_USE_OBJECT_MAP
+#endif
+
+int __hxcpp_obj_id(Dynamic inObj)
+{
+   hx::Object *obj = inObj->__GetRealObject();
+   if (!obj) return 0;
+   #ifdef HXCPP_USE_OBJECT_MAP
+   return sGlobalAlloc->GetObjectID(inObj.GetPtr());
+   #else
+   return (int)(obj);
+   #endif
+}
+
+hx::Object *__hxcpp_id_obj(int inId)
+{
+   #ifdef HXCPP_USE_OBJECT_MAP
+   return (hx::Object *)sGlobalAlloc->GetIDObject(inId);
+   #else
+   return (hx::Object *)(inId);
+   #endif
+}
 
 
 

@@ -484,14 +484,4 @@ void __hxcpp_check_overflow(int x)
 
 unsigned char *__hxcpp_memory = 0;
 
-int __hxcpp_obj_id(Dynamic inObj)
-{
-   hx::Object *obj = inObj->__GetRealObject();
-   if (!obj) return 0;
-   #ifdef HXCPP_M64
-   return hx::InternalAllocID(obj);
-   #else
-   return (int)(obj);
-   #endif
-}
 
