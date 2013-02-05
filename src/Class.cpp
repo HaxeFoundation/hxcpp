@@ -188,10 +188,8 @@ bool Class_obj::__HasField(const String &inString)
 
 Dynamic Class_obj::__Field(const String &inString, bool inCallProp)
 {
-   #ifdef haxe_210
    if (inString==HX_CSTRING("__meta__"))
       return __meta__;
-   #endif
    // Not the most efficient way of doing this!
    if (!mConstructEmpty)
       return null();
