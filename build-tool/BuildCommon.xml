@@ -63,6 +63,7 @@
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
+  <depend name="${HXCPP}/src/hx/RedBlack.h"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
@@ -101,6 +102,7 @@
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
+  <depend name="${HXCPP}/src/hx/RedBlack.h"/>
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
   <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>

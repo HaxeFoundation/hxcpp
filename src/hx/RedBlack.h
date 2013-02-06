@@ -240,9 +240,12 @@ struct RBTree {
         if ( root != NULL )
           root->red = 0;
   
-        --size;
         tmp_head = 0;
-        return true;
+        if ( f != NULL ) {
+           --size;
+           return true;
+        }
+        return false;
       }
   
       tmp_head = 0;
