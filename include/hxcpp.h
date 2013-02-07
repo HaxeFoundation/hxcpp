@@ -40,6 +40,8 @@ typedef  int64_t  __int64;
 #undef assert
 #endif
 
+// TODO
+#define HXCPP_CLASS_ATTRIBUTES
 
 typedef char HX_CHAR;
 
