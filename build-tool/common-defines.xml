@@ -12,4 +12,7 @@
  <flag value="-DHXCPP_STACK_VARS" if="HXCPP_STACK_VARS"/>
  <flag value="-DHXCPP_DEBUGGER" if="HXCPP_DEBUGGER"/>
  <flag value="-DHXCPP_GC_MOVING" if="HXCPP_GC_MOVING"/>
+ <flag value="-DHXCPP_DLL_IMPORT" if="dll_import"/>
+ <flag value="-I${dll_import}" if="dll_import"/>
+ <flag value="-DHXCPP_DLL_EXPORT" if="dll_export"/>
 </xml>

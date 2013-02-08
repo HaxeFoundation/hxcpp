@@ -29,8 +29,11 @@ class DirManager
                {
                   try
                   {
-                     Sys.println("mkdir " + total);
-                     FileSystem.createDirectory(total);
+                     #if haxe3
+                     FileSystem.createDirectory(total + "/");
+                     #else
+                     FileSystem.createDirectory(total );
+                     #end
                   } catch (e:Dynamic)
                   {
                      return false;
@@ -601,6 +604,9 @@ class FileGroup
    public var mId : String;
 }
 
+#if haxe3
+typedef Hash<T> = haxe.ds.StringMap<T>;
+#end
 
 typedef FileGroups = Hash<FileGroup>;
 
@@ -1198,7 +1204,6 @@ class BuildTool
             Sys.setCwd(last);
          }
       }
-
       var os = Sys.systemName();
       isWindows = (new EReg("window","i")).match(os);
 		if (isWindows)
@@ -1218,7 +1223,11 @@ class BuildTool
          if (arg.substr(0,2)=="-D")
          {
             var val = arg.substr(2);
-            defines.set(val,"");
+            var equals = val.indexOf("=");
+            if (equals>0)
+               defines.set(val.substr(0,equals), val.substr(equals+1) );
+            else
+               defines.set(val,"");
             if (val=="verbose")
                verbose = true;
          }
@@ -1247,6 +1256,7 @@ class BuildTool
          HXCPP = defines.get("HXCPP") + "/";
          defines.set("HXCPP",HXCPP);
       }
+
 
       include_path.push(".");
       if (env.exists("HOME"))
