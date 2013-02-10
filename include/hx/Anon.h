@@ -12,16 +12,23 @@ class FieldMap;
 
 FieldMap *FieldMapCreate();
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 bool FieldMapGet(hx::FieldMap *inMap, const ::String &inName, ::Dynamic &outValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 bool FieldMapHas(hx::FieldMap *inMap, const ::String &inName);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 bool FieldMapGet(hx::FieldMap *inMap, int inID, ::Dynamic &outValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void FieldMapSet(hx::FieldMap *inMap, const ::String &inName, const ::Dynamic &inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void FieldMapAppendFields(hx::FieldMap *inMap,::Array< ::String> &outFields);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void FieldMapMark(hx::FieldMap *inMap,hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void FieldMapVisit(hx::FieldMap **inMap,hx::VisitContext *__inCtx);
 
 
-class Anon_obj : public hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES Anon_obj : public hx::Object
 {
    typedef hx::Anon_obj OBJ_;
    typedef hx::ObjectPtr<hx::Anon_obj> Anon;
@@ -69,11 +76,13 @@ public:
 
 typedef hx::ObjectPtr<hx::Anon_obj> Anon;
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Anon SourceInfo(String inFile, int inLine, String inClass, String inMethod);
 
 
 } // end namespace hx
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 bool __hxcpp_anon_remove(Dynamic inObj,::String inKey);
 
 #endif

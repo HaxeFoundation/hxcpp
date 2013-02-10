@@ -13,7 +13,7 @@
 // Note: this does not inherit from "hx::Object", so in some ways it acts more
 // like a standard "int" type than a mode generic class.
 
-class String
+class HXCPP_EXTERN_CLASS_ATTRIBUTES String
 {
 public:
   // These allocate the function using the garbage-colleced malloc

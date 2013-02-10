@@ -16,6 +16,7 @@ struct Resource
 
 Resource *GetResources();
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void RegisterResources(hx::Resource *inResources);
 
 
@@ -43,6 +44,7 @@ Array<String>  __get_args();
 double         __time_stamp();
 void           __hxcpp_print(Dynamic &inV);
 void           __hxcpp_println(Dynamic &inV);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void           __trace(Dynamic inPtr, Dynamic inData);
 void           __hxcpp_stdlibs_boot();
 
@@ -69,6 +71,7 @@ int           __hxcpp_register_prim(const HX_CHAR *inName,void *inFunc);
 // Get function pointer from dll file
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
 void *__hxcpp_get_proc_address(String inLib, String inPrim,bool inNdllProc=true);
+void __hxcpp_run_dll(String inLib, String inPrim);
 // Can assign to function pointer without error
 inline hx::AnyCast __hxcpp_cast_get_proc_address(String inLib, String inPrim)
 {

@@ -663,29 +663,41 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 
 
 namespace hx {
-extern void SetTopOfStack(int *inTopOfStack,bool);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void SetTopOfStack(int *inTopOfStack,bool);
 }
 #define HX_TOP_OF_STACK \
 		int t0 = 99; \
 		hx::SetTopOfStack(&t0,false);
 
 
+#ifdef __GNUC__
+ #define EXPORT_EXTRA __attribute__ ((visibility("default")))
+#else
+ #define EXPORT_EXTRA __declspec(dllexport)
+#endif
+
 #ifdef HX_DECLARE_MAIN
 
-#ifdef ANDROID
+#ifdef HXCPP_DLL_IMPORT
+
+#define HX_BEGIN_MAIN \
+   extern "C" { \
+   EXPORT_EXTRA void __main__() { \
+	__boot_all();
+
+#define HX_END_MAIN \
+} \
+}
+
+
+#elif defined(ANDROID)
 // Java Main....
 #include <jni.h>
 #include <hx/Thread.h>
 #include <android/log.h>
 
-#ifdef __GNUC__
- #define GCC_EXTRA __attribute__ ((visibility("default")))
-#else
- #define GCC_EXTRA
-#endif
-
 #define HX_BEGIN_MAIN \
-extern "C" GCC_EXTRA void hxcpp_main() { \
+extern "C" EXPORT_EXTRA void hxcpp_main() { \
 	HX_TOP_OF_STACK \
         try { \
 	hx::Boot(); \
@@ -700,7 +712,7 @@ extern "C" GCC_EXTRA void hxcpp_main() { \
 	hx::SetTopOfStack((int *)0,true); \
 } \
 \
-extern "C" GCC_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * env) \
+extern "C" EXPORT_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * env) \
 { hxcpp_main(); }
 
 #elif defined(HX_WINRT)

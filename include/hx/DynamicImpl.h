@@ -78,9 +78,11 @@ struct CStaticFunction0 : public hx::Object
 }; 
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction0(hx::Object *inObj, MemberFunction0 inFunc)
    { return new CMemberFunction0(inObj,inFunc); }
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction0(StaticFunction0 inFunc)
    { return new CStaticFunction0(inFunc); }
 
@@ -115,10 +117,7 @@ struct CMemberFunction1 : public hx::Object
    ::String __ToString() const{ return HX_CSTRING("#function1"); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
-   {
-     HX_VISIT_MEMBER(mThis);
-   } 
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
@@ -167,9 +166,11 @@ struct CStaticFunction1 : public hx::Object
 }; 
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction1(hx::Object *inObj, MemberFunction1 inFunc)
    { return new CMemberFunction1(inObj,inFunc); }
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction1(StaticFunction1 inFunc)
    { return new CStaticFunction1(inFunc); }
 
@@ -253,9 +254,11 @@ struct CStaticFunction2 : public hx::Object
 }; 
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction2(hx::Object *inObj, MemberFunction2 inFunc)
    { return new CMemberFunction2(inObj,inFunc); }
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction2(StaticFunction2 inFunc)
    { return new CStaticFunction2(inFunc); }
 
@@ -339,9 +342,11 @@ struct CStaticFunction3 : public hx::Object
 }; 
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction3(hx::Object *inObj, MemberFunction3 inFunc)
    { return new CMemberFunction3(inObj,inFunc); }
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction3(StaticFunction3 inFunc)
    { return new CStaticFunction3(inFunc); }
 
@@ -425,9 +430,11 @@ struct CStaticFunction4 : public hx::Object
 }; 
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction4(hx::Object *inObj, MemberFunction4 inFunc)
    { return new CMemberFunction4(inObj,inFunc); }
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction4(StaticFunction4 inFunc)
    { return new CStaticFunction4(inFunc); }
 
@@ -511,9 +518,11 @@ struct CStaticFunction5 : public hx::Object
 }; 
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction5(hx::Object *inObj, MemberFunction5 inFunc)
    { return new CMemberFunction5(inObj,inFunc); }
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction5(StaticFunction5 inFunc)
    { return new CStaticFunction5(inFunc); }
 

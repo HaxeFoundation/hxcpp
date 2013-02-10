@@ -111,12 +111,17 @@ void GCPrepareMultiThreaded();
 void PrologDone();
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx);
 
 #ifdef HXCPP_DEBUG
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void MarkSetMember(const char *inName ,hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void MarkPushClass(const char *inName ,hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void MarkPopClass(hx::MarkContext *__inCtx);
 #endif
 

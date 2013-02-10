@@ -53,7 +53,6 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
 
 
 
-
 #define HX_DEFINE_SCRIPTABLE_DYNAMIC \
    HX_DECLARE_IMPLEMENT_DYNAMIC \
 	void __Mark(HX_MARK_PARAMS) { super::__Mark(HX_MARK_ARG); HX_MARK_DYNAMIC; } \

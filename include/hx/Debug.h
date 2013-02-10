@@ -3,6 +3,7 @@
 
 namespace hx { struct CallStack; }
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 void __hx_dump_stack();
 
 Array<String> __hxcpp_dbg_get_stack_vars(int inFrame);

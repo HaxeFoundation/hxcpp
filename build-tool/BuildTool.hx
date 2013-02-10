@@ -1265,6 +1265,15 @@ class BuildTool
         include_path.push(env.get("USERPROFILE"));
       include_path.push(HXCPP + "/build-tool");
 
+      if (defines.exists("dll_import"))
+      {
+         var path = new haxe.io.Path(defines.get("dll_import"));
+         if (!defines.exists("dll_import_include"))
+            defines.set("dll_import_include", path.dir + "/include" );
+         if (!defines.exists("dll_import_link"))
+            defines.set("dll_import_link", defines.get("dll_import"));
+      }
+
       var m64 = defines.exists("HXCPP_M64");
 	  
 	  if (defines.exists("ios"))

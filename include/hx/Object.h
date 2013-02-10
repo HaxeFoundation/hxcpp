@@ -49,7 +49,7 @@ typedef Array<Dynamic> DynamicArray;
 //
 // Hxcpp classes inherit from this.
 //
-class  Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES Object
 {
 public:
    // These allocate the function using the garbage-colleced malloc

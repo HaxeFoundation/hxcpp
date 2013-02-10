@@ -544,6 +544,15 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
 #endif // not IPHONE
 
+void __hxcpp_run_dll(String inLib, String inFunc)
+{
+   typedef void (*VoidVoid)();
+
+   void *result = __hxcpp_get_proc_address(inLib,inFunc,false);
+   if (result)
+      ((VoidVoid)result)();
+}
+
 // This can be used to find symbols in static libraries
 
 int __hxcpp_register_prim(const char *inName,void *inProc)

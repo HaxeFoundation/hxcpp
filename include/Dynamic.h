@@ -9,7 +9,7 @@
 
 
 
-class Dynamic : public hx::ObjectPtr<hx::Object>
+class HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic : public hx::ObjectPtr<hx::Object>
 {
    typedef  hx::ObjectPtr<hx::Object> super;
 
@@ -180,20 +180,34 @@ typedef Dynamic (*StaticFunction5)(const Dynamic &inArg0,const Dynamic &inArg1,c
 typedef Dynamic (*StaticFunctionVar)(const Array<Dynamic> &inArgs);
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction0(hx::Object *, MemberFunction0);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction1(hx::Object *, MemberFunction1);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction2(hx::Object *, MemberFunction2);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction3(hx::Object *, MemberFunction3);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction4(hx::Object *, MemberFunction4);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction5(hx::Object *, MemberFunction5);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunctionVar(hx::Object *, MemberFunctionVar,int inN);
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction0(StaticFunction0);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction1(StaticFunction1);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction2(StaticFunction2);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction3(StaticFunction3);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction4(StaticFunction4);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction5(StaticFunction5);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunctionVar(StaticFunctionVar,int inN);
 
 

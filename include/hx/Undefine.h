@@ -14,6 +14,4 @@
 #undef INT32_MAX
 #undef UINT32_MAX
 
-
-
 #endif

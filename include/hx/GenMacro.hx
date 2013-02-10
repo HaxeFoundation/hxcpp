@@ -5,8 +5,13 @@
 */
 
 import haxe.Template;
+#if haxe3
+import sys.io.File;
+import sys.io.FileOutput;
+#else
 import neko.io.File;
 import neko.io.FileOutput;
+#end
 
 class GenMacro
 {

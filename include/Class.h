@@ -124,6 +124,8 @@ void __hxcpp_boot_std_classes();
 
 namespace hx
 {
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,

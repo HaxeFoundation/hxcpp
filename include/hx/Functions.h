@@ -4,14 +4,14 @@
 
 namespace hx
 {
-   struct LocalFunc : public hx::Object
+   struct HXCPP_EXTERN_CLASS_ATTRIBUTES LocalFunc : public hx::Object
    {
       int __GetType() const { return vtFunction; }
       inline void DoMarkThis(hx::MarkContext *__inCtx) { }
       inline void DoVisitThis(hx::VisitContext *__inCtx) { }
    };
 
-   struct LocalThisFunc : public LocalFunc
+   struct HXCPP_EXTERN_CLASS_ATTRIBUTES LocalThisFunc : public LocalFunc
    {
       Dynamic __this;
 		void __SetThis(Dynamic inThis) { __this = inThis; }

@@ -40,8 +40,17 @@ typedef  int64_t  __int64;
 #undef assert
 #endif
 
-// TODO
 #define HXCPP_CLASS_ATTRIBUTES
+
+#ifdef _MSC_VER
+  #if defined(HXCPP_DLL_IMPORT)
+     #define HXCPP_EXTERN_CLASS_ATTRIBUTES __declspec(dllimport)
+  #else
+     #define HXCPP_EXTERN_CLASS_ATTRIBUTES __declspec(dllexport)
+  #endif
+#else
+#define HXCPP_EXTERN_CLASS_ATTRIBUTES
+#endif
 
 typedef char HX_CHAR;
 

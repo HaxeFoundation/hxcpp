@@ -86,9 +86,11 @@ struct CStaticFunction::ARG:: : public hx::Object
 }; 
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateMemberFunction::ARG::(hx::Object *inObj, MemberFunction::ARG:: inFunc)
    { return new CMemberFunction::ARG::(inObj,inFunc); }
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction::ARG::(StaticFunction::ARG:: inFunc)
    { return new CStaticFunction::ARG::(inFunc); }
 

@@ -30,6 +30,7 @@
 <set name="haxelink" value="exe" unless="static_link"/>
 <set name="haxelink" value="static_link" if="static_link"/>
 <set name="haxelink" value="dll" if="android"/>
+<set name="haxelink" value="dll" if="dll_import"/>
 
 
 <include name="${HXCPP_CONFIG}" section="vars" noerror="1"/>
@@ -160,9 +161,10 @@
   <depend name="Options.txt"/>
   <ext value="${IOS_EXT}" if="iphoneos"  />
   <ext value=".iphonesim.a" if="iphonesim"/>
-  <files id="__main__" unless="static_link"/>
+  <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>
-  <files id="runtime"/>
+  <files id="runtime" unless="dll_import" />
+  <lib name="${dll_import_link}" if="dll_import_link" />
   <lib name="-lpthread" if="linux" unless="static_link"/>
   <lib name="-ldl" if="linux" unless="static_link"/>
 </target>
