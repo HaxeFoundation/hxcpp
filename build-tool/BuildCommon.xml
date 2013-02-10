@@ -164,7 +164,6 @@
   <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>
   <files id="runtime" unless="dll_import" />
-  <lib name="${dll_import_link}" if="dll_import_link" />
   <lib name="-lpthread" if="linux" unless="static_link"/>
   <lib name="-ldl" if="linux" unless="static_link"/>
 </target>

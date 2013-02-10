@@ -1265,28 +1265,20 @@ class BuildTool
         include_path.push(env.get("USERPROFILE"));
       include_path.push(HXCPP + "/build-tool");
 
-      if (defines.exists("dll_import"))
-      {
-         var path = new haxe.io.Path(defines.get("dll_import"));
-         if (!defines.exists("dll_import_include"))
-            defines.set("dll_import_include", path.dir + "/include" );
-         if (!defines.exists("dll_import_link"))
-            defines.set("dll_import_link", defines.get("dll_import"));
-      }
-
       var m64 = defines.exists("HXCPP_M64");
+      var msvc = false;
 	  
-	  if (defines.exists("ios"))
-	  {
-		 if (defines.exists("simulator"))
-		 {
-			defines.set("iphonesim", "iphonesim");
-		 }
-		 else if (!defines.exists ("iphonesim"))
-		 {
-			defines.set("iphoneos", "iphoneos");
-		 }
-	  }
+	   if (defines.exists("ios"))
+	   {
+		  if (defines.exists("simulator"))
+		  {
+			 defines.set("iphonesim", "iphonesim");
+		  }
+		  else if (!defines.exists ("iphonesim"))
+		  {
+			 defines.set("iphoneos", "iphoneos");
+		  }
+	   }
 
       if (defines.exists("iphoneos"))
       {
@@ -1358,6 +1350,7 @@ class BuildTool
       {
          defines.set("toolchain","msvc");
          defines.set("windows","windows");
+         msvc = true;
          if ( defines.exists("winrt") )
          {
             defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
@@ -1390,6 +1383,16 @@ class BuildTool
          defines.set("apple","apple");
          defines.set("BINDIR",m64 ? "Mac64":"Mac");
       }
+
+      if (defines.exists("dll_import"))
+      {
+         var path = new haxe.io.Path(defines.get("dll_import"));
+         if (!defines.exists("dll_import_include"))
+            defines.set("dll_import_include", path.dir + "/include" );
+         if (!defines.exists("dll_import_link"))
+            defines.set("dll_import_link", defines.get("dll_import") );
+      }
+
 
       if (defines.exists("apple") && !defines.exists("DEVELOPER_DIR"))
       {

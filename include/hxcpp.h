@@ -49,7 +49,11 @@ typedef  int64_t  __int64;
      #define HXCPP_EXTERN_CLASS_ATTRIBUTES __declspec(dllexport)
   #endif
 #else
-#define HXCPP_EXTERN_CLASS_ATTRIBUTES
+  #if defined(HXCPP_DLL_EXPORT)
+     #define HXCPP_EXTERN_CLASS_ATTRIBUTES __attribute__((visibility("default")))
+  #else
+     #define HXCPP_EXTERN_CLASS_ATTRIBUTES
+  #endif
 #endif
 
 typedef char HX_CHAR;

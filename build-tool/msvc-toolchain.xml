@@ -55,6 +55,7 @@
   <flag value="-machine:x86"/>
   <flag value="-dll"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
+  <lib name="${dll_import_link}" if="dll_import_link" />
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
   <flag value="-libpath:lib"/>

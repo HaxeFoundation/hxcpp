@@ -39,6 +39,7 @@
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <fromfile value="" if="GCC_OLD" />
   <flag value="-fobjc-arc" if="OBJC_ARC" />
+  <flag value="-Wl,-bundle,-bundle_loader,${dll_import_link}" if="dll_import_link" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
