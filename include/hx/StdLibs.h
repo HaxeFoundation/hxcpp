@@ -107,6 +107,7 @@ Dynamic       __int_hash_values(Dynamic inHash);
 // --- Date --------------------------------------------------------------------------
 
 double __hxcpp_new_date(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds);
+double __hxcpp_utc_date(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds);
 int    __hxcpp_get_hours(double inSeconds);
 int    __hxcpp_get_minutes(double inSeconds);
 int    __hxcpp_get_seconds(double inSeconds);

@@ -20,6 +20,31 @@ double __hxcpp_new_date(int inYear,int inMonth,int inDay,int inHour, int inMin, 
    return mktime(&time);
 }
 
+double __hxcpp_utc_date(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds)
+{
+   int diff;
+   time_t a, b;
+   struct tm time, *temp;
+ 
+   time.tm_year = inYear;
+   time.tm_isdst = -1;
+   time.tm_year = inYear - 1900;
+   time.tm_mon = inMonth;
+   time.tm_mday = inDay;
+   time.tm_hour = inHour;
+   time.tm_min = inMin;
+   time.tm_sec = inSeconds;
+   
+   a =  mktime(&time); //timestamp based on local interpretation of date parts
+   temp = gmtime(&a); //get utc date parts corresponding to this timestamp
+   temp->tm_isdst=-1; //reset dst flag for use in mktime
+   b = mktime(temp); //get timestamp for local interpretation of utc date parts
+   diff= a - b; //find difference in timestamp values .
+   
+   return a+diff; 
+
+}
+
 int __hxcpp_get_hours(double inSeconds)
 {
    time_t t = (time_t)inSeconds;
