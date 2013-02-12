@@ -149,9 +149,9 @@ Dynamic Dynamic::operator+(const Dynamic &inRHS) const
       return mPtr->__ToDouble() + inRHS.mPtr->__ToDouble();
    }
    if (!mPtr)
-      return inRHS;
+      return String() + inRHS;
    if (!inRHS.mPtr)
-      return this;
+      return *this + String();
 
    return const_cast<hx::Object*>(mPtr)->toString() + const_cast<Dynamic&>(inRHS)->toString();
 }
