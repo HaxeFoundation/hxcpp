@@ -8,7 +8,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-class Math_obj : public hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES Math_obj : public hx::Object
 {
 public:
    typedef hx::Object super;

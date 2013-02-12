@@ -239,11 +239,11 @@ inline String Dynamic::Cast<String>() const { return mPtr ? mPtr->toString() : S
 
 namespace hx
 {
-Class &GetIntClass();
-Class &GetFloatClass();
-Class &GetBoolClass();
-Class &GetVoidClass();
-Class &GetStringClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetIntClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetFloatClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetBoolClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetVoidClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetStringClass();
 }
 
 template<>

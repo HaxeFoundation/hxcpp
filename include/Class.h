@@ -53,7 +53,7 @@ typedef void (*VisitFunc)(hx::VisitContext *__inCtx);
 
 inline bool operator!=(hx::ConstructEnumFunc inFunc,const null &inNull) { return inFunc!=0; }
 
-class Class_obj : public hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES Class_obj : public hx::Object
 {
 public:
    Class_obj() : mSuper(0) { };

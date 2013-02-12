@@ -58,7 +58,7 @@ namespace hx
 // Base class that treats array contents as a slab of bytes.
 // The derived "Array_obj" adds strong typing to the "[]" operator
 
-class ArrayBase : public hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayBase : public hx::Object
 {
 public:
    ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic);

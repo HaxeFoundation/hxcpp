@@ -4,7 +4,7 @@
 namespace hx
 {
 
-class Interface : public hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES Interface : public hx::Object
 {
 public:
    // The following functions make use of : hx::Object *__GetRealObject();

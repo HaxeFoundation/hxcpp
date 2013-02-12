@@ -16,7 +16,7 @@ namespace hx
 // Specializations of this class don't actually add more data, just extra constructors
 //  and type information.
 
-class  EnumBase_obj : public hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
 {
    typedef hx::Object super;
    typedef EnumBase_obj OBJ_;

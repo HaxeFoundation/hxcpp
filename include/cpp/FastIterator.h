@@ -4,7 +4,7 @@
 namespace cpp
 {
 
-class IteratorBase : public hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES IteratorBase : public hx::Object
 {
 public:
    Dynamic __Field(const String &inString ,bool inCallProp);
@@ -18,7 +18,7 @@ public:
 
 
 template<typename T>
-class FastIterator_obj : public IteratorBase
+class HXCPP_EXTERN_CLASS_ATTRIBUTES FastIterator_obj : public IteratorBase
 {
 public:
    virtual bool hasNext() = 0;
@@ -30,7 +30,7 @@ public:
 
 
 template<typename T>
-class DynamicIterator : public FastIterator_obj<T>
+class HXCPP_EXTERN_CLASS_ATTRIBUTES DynamicIterator : public FastIterator_obj<T>
 {
 public:
    Dynamic mNext;

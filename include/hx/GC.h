@@ -78,9 +78,9 @@ void VisitClassStatics(hx::VisitContext *__inCtx);
 #endif
 
 // This will be GC'ed
-void *NewGCBytes(void *inData,int inSize);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCBytes(void *inData,int inSize);
 // This wont be GC'ed
-void *NewGCPrivate(void *inData,int inSize);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCPrivate(void *inData,int inSize);
 
 
 typedef void (*finalizer)(hx::Object *v);

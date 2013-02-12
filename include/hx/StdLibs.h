@@ -42,10 +42,9 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName);
 // System access
 Array<String>  __get_args();
 double         __time_stamp();
-void           __hxcpp_print(Dynamic &inV);
-void           __hxcpp_println(Dynamic &inV);
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void           __trace(Dynamic inPtr, Dynamic inData);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_print(Dynamic &inV);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_println(Dynamic &inV);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __trace(Dynamic inPtr, Dynamic inData);
 void           __hxcpp_stdlibs_boot();
 
 // --- Maths ---------------------------------------------------------
@@ -53,25 +52,25 @@ double __hxcpp_drand();
 int __hxcpp_irand(int inMax);
 
 // --- Casting/Converting ---------------------------------------------------------
-bool  __instanceof(const Dynamic &inValue, const Dynamic &inType);
-int   __int__(double x);
-bool  __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2);
-Dynamic __hxcpp_parse_int(const String &inString);
-double __hxcpp_parse_float(const String &inString);
-Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool  __instanceof(const Dynamic &inValue, const Dynamic &inType);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int   __int__(double x);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool  __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_parse_int(const String &inString);
+HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_float(const String &inString);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
 
 // --- CFFI helpers ------------------------------------------------------------------
 
 // Used for accessing object fields by integer ID, rather than string ID.
 // Used mainly for neko ndll interaction.
-int           __hxcpp_field_to_id( const char *inField );
-const String &__hxcpp_field_from_id( int f );
-int           __hxcpp_register_prim(const HX_CHAR *inName,void *inFunc);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __hxcpp_field_to_id( const char *inField );
+HXCPP_EXTERN_CLASS_ATTRIBUTES const String &__hxcpp_field_from_id( int f );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __hxcpp_register_prim(const HX_CHAR *inName,void *inFunc);
 
 // Get function pointer from dll file
-Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
-void *__hxcpp_get_proc_address(String inLib, String inPrim,bool inNdllProc=true);
-void __hxcpp_run_dll(String inLib, String inPrim);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *__hxcpp_get_proc_address(String inLib, String inPrim,bool inNdllProc=true);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_run_dll(String inLib, String inPrim);
 // Can assign to function pointer without error
 inline hx::AnyCast __hxcpp_cast_get_proc_address(String inLib, String inPrim)
 {
@@ -84,24 +83,24 @@ inline hx::AnyCast __hxcpp_cast_get_proc_address(String inLib, String inPrim)
 
 // --- haxe.io.BytesData ----------------------------------------------------------------
 
-void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inString);
-void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inString);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len);
 // UTF8 processing
-String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst=0, int inLen=-1);
-Array<int> __hxcpp_utf8_string_to_char_array(String &inString);
-String __hxcpp_char_bytes_to_utf8_string(String &inBytes);
-String __hxcpp_utf8_string_to_char_bytes(String &inUTF8);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst=0, int inLen=-1);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<int> __hxcpp_utf8_string_to_char_array(String &inString);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_char_bytes_to_utf8_string(String &inBytes);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_utf8_string_to_char_bytes(String &inUTF8);
 
 
 // --- IntHash ----------------------------------------------------------------------
 
-hx::Object   *__int_hash_create();
-void          __int_hash_set(Dynamic inHash,int inKey,const Dynamic &value);
-Dynamic       __int_hash_get(Dynamic inHash,int inKey);
-bool          __int_hash_exists(Dynamic inHash,int inKey);
-bool          __int_hash_remove(Dynamic inHash,int inKey);
-Dynamic       __int_hash_keys(Dynamic inHash);
-Dynamic       __int_hash_values(Dynamic inHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Object   *__int_hash_create();
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set(Dynamic inHash,int inKey,const Dynamic &value);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_get(Dynamic inHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_exists(Dynamic inHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_remove(Dynamic inHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_keys(Dynamic inHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_values(Dynamic inHash);
 
 
 // --- Date --------------------------------------------------------------------------

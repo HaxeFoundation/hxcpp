@@ -10,6 +10,7 @@ namespace hx
 
 class FieldMap;
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 FieldMap *FieldMapCreate();
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES

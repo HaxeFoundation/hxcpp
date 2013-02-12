@@ -84,7 +84,7 @@ inline int UShr(int inData,int inShift)
 }
 
 
-double DoubleMod(double inLHS,double inRHS);
+HXCPP_EXTERN_CLASS_ATTRIBUTES double DoubleMod(double inLHS,double inRHS);
 
 template<typename TL,typename TR>
 double Mod(TL inLHS,TR inRHS) { return hx::DoubleMod(inLHS,inRHS); }
@@ -168,7 +168,7 @@ inline hx::IndexRef ModEq(hx::IndexRef inLHS, R inRHS) { inLHS = DoubleMod(inLHS
 
 #endif // __GNUC__
 
-null BadCast();
+HXCPP_EXTERN_CLASS_ATTRIBUTES null BadCast();
 
 template<typename T> inline T TCastObject(hx::Object *inObj) { return hx::BadCast(); }
 template<> inline bool TCastObject<bool>(hx::Object *inObj)

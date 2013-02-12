@@ -146,7 +146,7 @@ class Dynamic;
 class String;
 
 // Use an external routine to throw to avoid sjlj overhead on iphone.
-namespace hx { extern Dynamic Throw(Dynamic inDynamic); }
+namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic Throw(Dynamic inDynamic); }
 namespace hx { extern void CriticalError(const String &inError); }
 namespace hx { extern void NullObjectReference(); }
 namespace hx { extern String sNone[]; }
