@@ -649,14 +649,14 @@ void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
    // Abstract types
 vkind alloc_kind()
 {
-   return (vkind)hxcpp_alloc_kind();
+   return (vkind)(intptr_t)hxcpp_alloc_kind();
 }
 
 void kind_share(vkind *inKind,const char *inName)
 {
    int k = (int)(intptr_t)*inKind;
    hxcpp_kind_share(k,inName);
-   *inKind = (vkind)k;
+   *inKind = (vkind)(intptr_t)k;
 }
 
 
