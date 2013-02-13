@@ -391,7 +391,7 @@ public:
    void sort(Dynamic inSorter)
    {
       ELEM_ *e = (ELEM_ *)mBase;
-      std::sort(e, e+length, Sorter(inSorter) );
+      std::stable_sort(e, e+length, Sorter(inSorter) );
    }
 
    Dynamic iterator() { return new hx::ArrayIterator<ELEM_>(this); }

@@ -277,9 +277,13 @@ static value sys_command( value cmd ) {
 	gc_enter_blocking();
 	int result =  system(val_string(cmd));
 	gc_exit_blocking();
+   #ifndef NEKO_WINDOWS
+   result = WEXITSTATUS(result) | (WTERMSIG(result) << 8);
+   #endif
 	return alloc_int( result );
    #endif
 }
+
 
 /**
 	sys_exit : int -> void
