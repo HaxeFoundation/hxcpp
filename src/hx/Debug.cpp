@@ -24,8 +24,6 @@
 #endif
 
 
-
-
 void __hx_stack_set_last_exception();
 
 namespace hx
@@ -39,7 +37,7 @@ void CriticalError(const String &inErr)
    #endif
 
    #ifdef HXCPP_STACK_TRACE
-   __hx_stack_set_last_exception();
+   __hxcpp_stack_begin_catch();
    __hx_dump_stack();
    #endif
 
@@ -175,11 +173,12 @@ struct CallStack
    CallStack()
    {
       mSize = 0;
-      mLastException = 0;
-      mSinceLastException = 0;
+      mExceptionStackSize = 0;
+      mExceptionStackOverflow = false;
       mProfiling = false;
       mProfileStats = 0;
       mDebuggerStart = StackSize;
+      mLastException = 0;
       #if HXCPP_DEBUGGER
       for(int i=0;i<mSize;i++)
       {
@@ -321,9 +320,6 @@ struct CallStack
       if (mProfiling) Sample();
 
       mSize++;
-      if (mSize>mSinceLastException)
-         mSinceLastException = mSize;
-      //mLastException = 0;
       if (mSize<StackSize)
       {
           mLocations[mSize].mFunction = inName;
@@ -399,14 +395,25 @@ struct CallStack
 
    void SetLastException()
    {
-      mLastException = mSize;
-      mSinceLastException = 0;
+      mLastException = mSize+1;
    }
-   void Dump()
+
+   void BeginCatch()
    {
-      for(int i=1;i<=mLastException && i<StackSize;i++)
+      int last = mLastException < StackSize ? mLastException : StackSize;
+      mExceptionStackOverflow = mLastException - last;
+      mExceptionStackSize = last-mSize;
+      if (mExceptionStackSize<=0)
+         mExceptionStackSize = 0;
+      else
+         memcpy(mExceptionStack, mLocations + mSize , sizeof(CallLocation)*mExceptionStackSize);
+   }
+
+   void DumpExceptionStack()
+   {
+      for(int i=0;i<mExceptionStackSize;i++)
       {
-         CallLocation loc = mLocations[i];
+         CallLocation loc = mExceptionStack[i];
          #ifdef ANDROID
          if (loc.mFunction==0)
              __android_log_print(ANDROID_LOG_ERROR, "HXCPP", "Called from CFunction\n");
@@ -419,9 +426,13 @@ struct CallStack
             printf("Called from %s, %s %d\n", loc.mFunction, loc.mFile, loc.mLine );
          #endif
       }
-      if (mLastException >= StackSize)
+      if (mExceptionStackOverflow)
       {
-         printf("... %d functions missing ...\n", mLastException + 1 - StackSize);
+         #ifdef ANDROID
+         __android_log_print(ANDROID_LOG_ERROR,"... %d functions missing ...\n", mExceptionStackOverflow);
+         #else
+         printf("... %d functions missing ...\n", mExceptionStackOverflow);
+         #endif
       }
    }
 
@@ -429,12 +440,9 @@ struct CallStack
    {
       Array< ::String > result = Array_obj< ::String >::__new();
 
-      int first = mSinceLastException;
-      if (mSize>first)
-          first = mSize;
-      for(int i=first ;i<=mLastException && i<StackSize;i++)
+      for(int i=0 ;i<mExceptionStackSize; i++)
       {
-         CallLocation &loc = mLocations[i];
+         CallLocation &loc = mExceptionStack[i];
          if (!loc.mFile || loc.mFile[0]=='?')
             result->push( String(loc.mFunction) );
          else
@@ -539,11 +547,6 @@ struct CallStack
    #ifdef HXCPP_DEBUG_HOST
    void Where()
    {
-      int last = mSize + 1;
-      if (mLastException!=0 && mLastException<last)
-         last = mLastException;
-      if (last>StackSize)
-         last = StackSize;
       for(int i=1;i<=mSize && i<StackSize;i++)
       {
          CallLocation loc = mLocations[i];
@@ -561,8 +564,6 @@ struct CallStack
    void Trace()
    {
       int last = mSize;
-      //if (mLastException>0 && mLastException<last)
-      //   last = mLastException;
       if (last>StackSize)
          last = StackSize-1;
     
@@ -574,11 +575,16 @@ struct CallStack
    #endif
 
 
-   int mSize;
-   int mLastException;
    int mDebuggerStart;
-   int mSinceLastException;
+
+   int mSize;
    CallLocation mLocations[StackSize];
+
+   int mExceptionStackSize;
+   int mLastException;
+   bool mExceptionStackOverflow;
+   CallLocation mExceptionStack[StackSize];
+
    bool mProfiling;
    int  mT0;
    std::string mDumpFile;
@@ -636,11 +642,9 @@ void __hxcpp_dbg_set_break(int inMode)
 }
 
 
-
-
-void __hx_dump_stack()
+void __hxcpp_stack_begin_catch()
 {
-   hx::GetCallStack()->Dump();
+   hx::GetCallStack()->BeginCatch();
 }
 
 void __hx_stack_set_last_exception()
@@ -648,7 +652,10 @@ void __hx_stack_set_last_exception()
    hx::GetCallStack()->SetLastException();
 }
 
-
+void __hx_dump_stack()
+{
+   hx::GetCallStack()->DumpExceptionStack();
+}
 
 Array<String> __hxcpp_get_call_stack(bool inSkipLast)
 {

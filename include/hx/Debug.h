@@ -11,6 +11,9 @@ void __hxcpp_dbg_set_stack_var(int inFrame,String inVar, Dynamic inValue);
 Dynamic __hxcpp_dbg_get_stack_var(int inFrame,String inVar);
 void __hxcpp_breakpoints_add(int inFrame);
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void __hxcpp_stack_begin_catch();
+
 void __hxcpp_dbg_set_handler(Dynamic inHandler);
 void __hxcpp_dbg_set_thread(Dynamic inThread);
 void __hxcpp_dbg_set_break(int inMode);
@@ -84,12 +87,16 @@ struct AutoStack
 // Code from new compiler ...
 #define HX_STACK_PUSH(name,file,line) hx::AutoStack __autostack(name,file,line);
 
+#define HX_STACK_BEGIN_CATCH __hxcpp_stack_begin_catch();
+
 #else // } HXCPP_STACK_TRACE {
 
 #define HX_STACK_PUSH(n,f,l)
 // Backwards compatibility
 #define HX_SOURCE_PUSH(name)
 #define HX_SOURCE_POS(file,line)
+
+#define HX_STACK_BEGIN_CATCH
 
 #endif // }
 
