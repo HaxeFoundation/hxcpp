@@ -302,6 +302,36 @@ QuickVec<GroupInfo> gAllocGroups;
 
  IMMIX Alloc Header - 32 bits
 
+
+ The header is placed in the 4 bytes before the object pointer, and it is placed there using a uint32.
+ When addressed as the uint32, you can use the bitmasks below to extract the various data.
+
+ The "mark id" and "obj next" elements can conveniently be interpreted as bytes, however the offsets well
+  be different depending on whether the system is little endian or big endian.
+
+
+  Little endian - lsb first
+
+ 7   0 15 8 23 16 31 24
+ -----------------------
+ |    |    | OBJ | MID  | obj start here .....
+ -----------------------
+
+
+
+  Big endian - msb first
+
+ 31 24 23 16 15 8 7   0
+ -----------------------
+ |MID |OBJ |     |      | obj start here .....
+ -----------------------
+
+MID = ENDIAN_MARK_ID_BYTE = is measured from the object pointer
+      ENDIAN_MARK_ID_BYTE_HEADER = is measured from the header pointer (4 bytes before object)
+
+OBJ = ENDIAN_OBJ_NEXT_BYTE = start is measured from the header pointer
+
+
 */
 
 #if HX_LITTLE_ENDIAN
@@ -311,6 +341,8 @@ QuickVec<GroupInfo> gAllocGroups;
 #define ENDIAN_MARK_ID_BYTE        -4
 #define ENDIAN_OBJ_NEXT_BYTE       1
 #endif
+#define ENDIAN_MARK_ID_BYTE_HEADER (ENDIAN_MARK_ID_BYTE + 4)
+
 
 #define IMMIX_ALLOC_MARK_ID     0xff000000
 #define IMMIX_ALLOC_OBJ_NEXT    0x00ff0000
@@ -319,6 +351,10 @@ QuickVec<GroupInfo> gAllocGroups;
 #define IMMIX_ALLOC_SIZE_MASK   0x00003ffc
 #define IMMIX_ALLOC_MEDIUM_OBJ  0x00000002
 #define IMMIX_ALLOC_SMALL_OBJ   0x00000001
+
+
+
+
 
 
 #define IMMIX_OBJECT_HAS_MOVED (~IMMIX_ALLOC_MEDIUM_OBJ)
@@ -511,20 +547,20 @@ union BlockData
                   while(1)
                   {
                      // Still current ....
-                     if (row[pos+3] == gByteMarkID)
+                     if (row[pos+ENDIAN_MARK_ID_BYTE_HEADER] == gByteMarkID)
                      {
                         *last_link = pos | IMMIX_ROW_HAS_OBJ_LINK;
-                        last_link = row+pos+2;
+                        last_link = row+pos+ENDIAN_OBJ_NEXT_BYTE;
                      }
                      else if (gFillWithJunk)
                      {
                          unsigned int header = *(unsigned int *)(row + pos);
                          int size = header & IMMIX_ALLOC_SIZE_MASK;
-                         //GCLOG("Fill %d (%p+%d=%p) mark=%d/%d\n",size, row,pos, row+pos+4,row[pos+3], gByteMarkID);
+                         //GCLOG("Fill %d (%p+%d=%p) mark=%d/%d\n",size, row,pos, row+pos+4,row[pos+ENDIAN_MARK_ID_BYTE_HEADER], gByteMarkID);
                          memset(row+pos+4,0x55,size);
                      }
-                     if (row[pos+2] & IMMIX_ROW_HAS_OBJ_LINK)
-                        pos = row[pos+2] & IMMIX_ROW_LINK_MASK;
+                     if (row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_HAS_OBJ_LINK)
+                        pos = row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_LINK_MASK;
                      else
                         break;
                   }
@@ -569,7 +605,7 @@ union BlockData
             GCLOG("  bad row %d (off=%d)\n", r, inOffset);
          return allocNone;
       }
-      unsigned char time = mRow[0][inOffset+3];
+      unsigned char time = mRow[0][inOffset+ENDIAN_MARK_ID_BYTE_HEADER];
       if ( ((time+1) & 0xff) != gByteMarkID )
       {
          // Object is either out-of-date, or already marked....
@@ -642,7 +678,7 @@ union BlockData
 
             while(true)
             {
-               if (row[pos+3] == gByteMarkID)
+               if (row[pos+ENDIAN_MARK_ID_BYTE_HEADER] == gByteMarkID)
                {
                   if ( (*(unsigned int *)(row+pos)) & IMMIX_ALLOC_IS_OBJECT )
                   {
@@ -1398,7 +1434,7 @@ public:
                {
                   int next = row[pos+ENDIAN_OBJ_NEXT_BYTE];
 
-                  if (row[pos+3] == gByteMarkID)
+                  if (row[pos+ENDIAN_MARK_ID_BYTE_HEADER] == gByteMarkID)
                   {
                      unsigned int &flags = *(unsigned int *)(row+pos);
                      bool isObject = flags & IMMIX_ALLOC_IS_OBJECT;
@@ -2284,7 +2320,7 @@ public:
          {
             if (mem==memLarge)
             {
-               unsigned char &mark = ((unsigned char *)(vptr))[-1];
+               unsigned char &mark = ((unsigned char *)(vptr))[ENDIAN_MARK_ID_BYTE];
                if (mark!=gByteMarkID)
                   mark = gByteMarkID;
             }
