@@ -131,7 +131,17 @@ void Object::__GetFields(Array<String> &outFields)
 }
 
 
-String Object::toString() { return __ToString(); }
+String Object::toString()
+{
+   FieldMap *m = __GetFieldMap();
+   if (m)
+   {
+      Dynamic func;
+      if (FieldMapGet(m,HX_CSTRING("toString"),func))
+         return func();
+   }
+   return __ToString();
+}
 
 
 } // end namespace hx
