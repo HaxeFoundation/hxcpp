@@ -42,5 +42,22 @@
   <objdir value="obj/iphoneos-dbg${ARCH}/" if="debug"/>
 </compiler>
 
+<linker id="dll" exe="g++" >
+  <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" />
+  <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang" if="HXCPP_CLANG" />
+  <flag value="-dynamiclib"/>
+  <flag value="-arch"/>
+  <flag value="armv6" unless="HXCPP_ARMV7" />
+  <flag value="armv7" if="HXCPP_ARMV7" />
+  <flag value="-isysroot"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk"/>
+  <flag value="-Wl,-undefined,dynamic_lookup"/>
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <flag value="-fvisibility=hidden"/>
+  <ext value=".ios.dylib"/>
+  <outflag value="-o "/>
+</linker>
+
 
 </xml>

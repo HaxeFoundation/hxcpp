@@ -48,5 +48,22 @@
   <objdir value="obj/iphonesim-dbg/" if="debug"/>
 </compiler>
 
+<linker id="dll" exe="g++" >
+  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} g++" />
+  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang" if="HXCPP_CLANG" />
+  <flag value="-dynamiclib"/>
+  <flag value="-arch"/>
+  <flag value="i386"/>
+  <flag value="-isysroot"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IPHONE_VER}.sdk"/>
+  <flag value="-Wl,-undefined,dynamic_lookup"/>
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <flag value="-fvisibility=hidden"/>
+  <ext value=".sim.dylib"/>
+  <outflag value="-o "/>
+</linker>
+
+
 
 </xml>

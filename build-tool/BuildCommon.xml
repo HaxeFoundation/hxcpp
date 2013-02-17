@@ -12,8 +12,8 @@
 
 <set name="STD_MODULE_LINK" value="dll"/>
 
-<set name="static_link" value="1" if="iphoneos"/>
-<set name="static_link" value="1" if="iphonesim"/>
+<set name="static_link" value="1" if="iphoneos" unless="dll_import" />
+<set name="static_link" value="1" if="iphonesim" unless="dll_import" />
 
 <set name="STAT" value="-stat" if="static_link" />
 
@@ -161,13 +161,13 @@
 <target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
   <depend name="Options.txt"/>
-  <ext value="${IOS_EXT}" if="iphoneos"  />
-  <ext value=".iphonesim.a" if="iphonesim"/>
+  <ext value="${IOS_EXT}" if="iphoneos" unless="dll_import" />
+  <ext value=".iphonesim.a" if="iphonesim" unless="dll_import" />
   <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>
   <files id="runtime" unless="dll_import" />
-  <lib name="-lpthread" if="linux" unless="static_link"/>
-  <lib name="-ldl" if="linux" unless="static_link"/>
+  <lib name="-lpthread" if="linux" unless="static_link" />
+  <lib name="-ldl" if="linux" unless="static_link" />
 </target>
 
 <!-- Add user config if provided, "exes" section ------------------>

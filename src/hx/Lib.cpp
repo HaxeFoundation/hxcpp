@@ -29,7 +29,7 @@ Module hxLoadLibrary(String inLib) { return LoadLibraryW(inLib.__WCStr()); }
 #endif
 
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return (void *)GetProcAddress(inModule,inSymbol); }
-#elif defined (IPHONE)
+#elif defined (IPHONE) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
 
 typedef void *Module;
 Module hxLoadLibrary(const String &) { return 0; }
@@ -257,7 +257,7 @@ typedef std::map<std::string,void *> RegistrationMap;
 RegistrationMap *sgRegisteredPrims=0;
 
 
-#ifdef IPHONE
+#if defined(IPHONE) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
 
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
@@ -311,13 +311,19 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
    //__android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
 #endif
 
-   #ifndef HX_WINRT
+   #if defined(IPHONE)
+   gLoadDebug = true;
+   #elif !defined(HX_WINRT)
    gLoadDebug = gLoadDebug || getenv("HXCPP_LOAD_DEBUG");
    #endif
 
    String ext =
 #if defined(_WIN32)
     HX_CSTRING(".dll");
+#elif defined(IPHONEOS)
+    HX_CSTRING(".ios.dylib");
+#elif defined(IPHONESIM)
+    HX_CSTRING(".sim.dylib");
 #elif defined(__APPLE__)
     HX_CSTRING(".dylib");
 #elif defined(ANDROID) || defined(GPH) || defined(WEBOS)  || defined(BLACKBERRY)
@@ -346,6 +352,10 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
     HX_CSTRING("BlackBerry");
 #elif defined(RASPBERRYPI)
     HX_CSTRING("RPi");
+#elif defined(IPHONESIM)
+    HX_CSTRING("IPhoneSim");
+#elif defined(IPHONEOS)
+    HX_CSTRING("IPhoneOs");
 #else
   #ifdef HXCPP_M64
     HX_CSTRING("Linux64");
@@ -414,7 +424,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
       module = hxLoadLibrary(exe_path);
 	   #endif
 
-      #if !defined(ANDROID) && !defined(HX_WINRT)
+      #if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE)
       if (!module)
       {
          String hxcpp = GetEnv("HXCPP");
