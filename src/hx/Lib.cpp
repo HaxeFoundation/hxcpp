@@ -42,7 +42,7 @@ typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
    int flags = RTLD_GLOBAL;
-   #ifdef HXCPP_RTLD_LAZY
+   #if defined(HXCPP_RTLD_LAZY) || defined(IPHONE)
    flags |= RTLD_LAZY;
    #else
    flags |= RTLD_NOW;
@@ -54,7 +54,7 @@ Module hxLoadLibrary(String inLib)
       if (result)
          printf("Loaded : %s.\n", inLib.__CStr());
       else
-         printf("Error loading library: %s\n", dlerror());
+         printf("Error loading library: (%s) %s\n", inLib.__CStr(), dlerror());
    }
    return result;
 }
@@ -311,8 +311,10 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
    //__android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
 #endif
 
-   #if defined(IPHONE)
+   #ifdef IPHONE
    gLoadDebug = true;
+   setenv("DYLD_PRINT_APIS","1",true);
+
    #elif !defined(HX_WINRT)
    gLoadDebug = gLoadDebug || getenv("HXCPP_LOAD_DEBUG");
    #endif
@@ -374,6 +376,14 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
    #endif
    bool new_module = module==0;
 
+
+   if (!module && sgRegisteredPrims)
+   {
+      void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
+      if (registered)
+         return registered;
+   }
+
    if (!module && gLoadDebug)
    {
       #ifdef ANDROID
@@ -411,18 +421,33 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
          #endif
       }
       module = hxLoadLibrary(dll_ext);
-	  
-	  #ifdef HX_MACOS
-	  if (module)
-	     break;
-	  
+
+      // Try exactly as specified...
+      if (!module)
+      {
+         dll_ext = pass==0 ? inLib : HX_CSTRING("./") + inLib;
+         if (gLoadDebug)
+         {
+            #ifndef ANDROID
+            printf(" try %s...\n", dll_ext.__CStr());
+            #else
+            __android_log_print(ANDROID_LOG_INFO, "loader", "Try %s", dll_ext.__CStr());
+            #endif
+         }
+         module = hxLoadLibrary(dll_ext);
+      }
+     
+      #ifdef HX_MACOS
+      if (module)
+        break;
+     
       String exe_path = HX_CSTRING("@executable_path/") + inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
       if (gLoadDebug)
       {
          printf(" try %s...\n", exe_path.__CStr());
       }
       module = hxLoadLibrary(exe_path);
-	   #endif
+      #endif
 
       #if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE)
       if (!module)
@@ -461,13 +486,6 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
          }
       }
       #endif
-   }
-
-   if (!module && sgRegisteredPrims)
-   {
-      void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
-      if (registered)
-         return registered;
    }
 
    if (!module)
