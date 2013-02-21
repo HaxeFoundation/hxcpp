@@ -876,8 +876,7 @@ static value socket_poll( value socks, value pdata, value timeout ) {
 	int i, rcount = 0;
 	if( val_is_null( socket_poll_prepare(pdata,socks,alloc_array(0))) )
 		return alloc_null();
-	if( val_is_null( socket_poll_events(pdata,timeout) ) )
-		return alloc_null();
+	socket_poll_events(pdata,timeout);
 	p = val_poll(pdata);
 	while( val_int(val_array_i(p->ridx,rcount)) != -1 )
 		rcount++;
