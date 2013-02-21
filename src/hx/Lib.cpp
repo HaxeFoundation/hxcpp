@@ -425,7 +425,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
       // Try exactly as specified...
       if (!module)
       {
-         dll_ext = pass==0 ? inLib : HX_CSTRING("./") + inLib;
+         String dll_ext = pass==0 ? inLib : HX_CSTRING("./") + inLib;
          if (gLoadDebug)
          {
             #ifndef ANDROID
@@ -438,15 +438,15 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
       }
      
       #ifdef HX_MACOS
-      if (module)
-        break;
-     
-      String exe_path = HX_CSTRING("@executable_path/") + inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
-      if (gLoadDebug)
+      if (!module)
       {
-         printf(" try %s...\n", exe_path.__CStr());
+         String exe_path = HX_CSTRING("@executable_path/") + inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
+         if (gLoadDebug)
+         {
+            printf(" try %s...\n", exe_path.__CStr());
+         }
+         module = hxLoadLibrary(exe_path);
       }
-      module = hxLoadLibrary(exe_path);
       #endif
 
       #if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE)
