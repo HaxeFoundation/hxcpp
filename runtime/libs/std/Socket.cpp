@@ -87,6 +87,7 @@ SOCKET val_sock(value inValue)
          return ((SOCKET)(socket_int)val_data(inValue));
    }
    val_throw(alloc_string("Invalid soket handle"));
+   return 0;
 }
 
 
