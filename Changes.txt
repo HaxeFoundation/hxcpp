@@ -1,3 +1,33 @@
+3.0.0
+------------------------------------------------------------
+* Support haxe3 syntax
+* Added socket poll function
+* Added some initial support for dll_import/dll_export
+* Allow full path name when loading dynamic libraries
+* Allow dynamic toString function
+* Added initial support for Raspberry Pi
+* Array sort now uses std::stable_sort
+* Fixed Dynamic+null string output
+* Fix splice size calculation
+* Add object ids for use in maps
+* Add map/filter functions to arrays
+* GC will now collect more often when big arrays are used
+* You can specify a number of args > 5 for cffi functions if you want
+* Fix internal hash size variable
+* Class static field list does not report super members now
+* Fix casting of null to any object
+* Do not read input twice in sys_getch
+* Link in PCH generated obj data on msvs 2012
+* Date is now consistent with UTC
+* Hash 'remove' now returns correct value
+* CPP native WeakRef now works, and has a 'set' function
+* Fixed compile error when assigning to a base class
+* Fixed compile error when using != and Dynamic
+* Math/floor/ceil/trunc/min/max now pass unit tests
+* More control over android sdk installation
+* Regexp_match fix
+* Fix val_callN CFFI
+
 2.10.3
 ------------------------------------------------------------
 * Added initial build support for WinRT
