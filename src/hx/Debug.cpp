@@ -429,7 +429,7 @@ struct CallStack
       if (mExceptionStackOverflow)
       {
          #ifdef ANDROID
-         __android_log_print(ANDROID_LOG_ERROR,"... %d functions missing ...\n", mExceptionStackOverflow);
+         __android_log_print(ANDROID_LOG_ERROR,"HXCPP","... %d functions missing ...\n", mExceptionStackOverflow);
          #else
          printf("... %d functions missing ...\n", mExceptionStackOverflow);
          #endif
