@@ -24,7 +24,7 @@
 #endif
 
 
-void __hx_stack_set_last_exception();
+void __hxcpp_stack_begin_catch_all();
 
 namespace hx
 {
@@ -37,7 +37,7 @@ void CriticalError(const String &inErr)
    #endif
 
    #ifdef HXCPP_STACK_TRACE
-   __hxcpp_stack_begin_catch();
+   __hxcpp_stack_begin_catch_all();
    __hx_dump_stack();
    #endif
 
@@ -398,15 +398,16 @@ struct CallStack
       mLastException = mSize+1;
    }
 
-   void BeginCatch()
+   void BeginCatch(bool inAll)
    {
+      int start = inAll ? 1 : mSize;
       int last = mLastException < StackSize ? mLastException : StackSize;
       mExceptionStackOverflow = mLastException - last;
-      mExceptionStackSize = last-mSize;
+      mExceptionStackSize = last-start;
       if (mExceptionStackSize<=0)
          mExceptionStackSize = 0;
       else
-         memcpy(mExceptionStack, mLocations + mSize , sizeof(CallLocation)*mExceptionStackSize);
+         memcpy(mExceptionStack, mLocations + start , sizeof(CallLocation)*mExceptionStackSize);
    }
 
    void DumpExceptionStack()
@@ -642,9 +643,14 @@ void __hxcpp_dbg_set_break(int inMode)
 }
 
 
+void __hxcpp_stack_begin_catch_all()
+{
+   hx::GetCallStack()->BeginCatch(true);
+}
+
 void __hxcpp_stack_begin_catch()
 {
-   hx::GetCallStack()->BeginCatch();
+   hx::GetCallStack()->BeginCatch(false);
 }
 
 void __hx_stack_set_last_exception()
