@@ -401,8 +401,9 @@ struct CallStack
    void BeginCatch(bool inAll)
    {
       int start = inAll ? 1 : mSize;
-      int last = mLastException < StackSize ? mLastException : StackSize;
-      mExceptionStackOverflow = mLastException - last;
+      int end = inAll ? mSize+1 : mLastException;
+      int last = end < StackSize ? end : StackSize;
+      mExceptionStackOverflow = end - last;
       mExceptionStackSize = last-start;
       if (mExceptionStackSize<=0)
          mExceptionStackSize = 0;
