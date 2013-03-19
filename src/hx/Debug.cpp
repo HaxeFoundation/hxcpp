@@ -413,7 +413,7 @@ struct CallStack
 
    void DumpExceptionStack()
    {
-      for(int i=0;i<mExceptionStackSize;i++)
+      for(int i=mExceptionStackSize-1;i>=0;i--)
       {
          CallLocation loc = mExceptionStack[i];
          #ifdef ANDROID
