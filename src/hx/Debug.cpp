@@ -35,14 +35,14 @@ void CriticalError(const String &inErr)
    if (__hxcpp_dbg_handle_error(inErr))
       return;
    #endif
-
+   
+   DBGLOG("Critical Error: %s\n", inErr.__s);
+   
    #ifdef HXCPP_STACK_TRACE
    __hxcpp_stack_begin_catch_all();
    __hx_dump_stack();
    #endif
-
-   DBGLOG("Critical Error: %s\n", inErr.__s);
-
+   
    #if defined(HX_WINDOWS) && !defined(HX_WINRT)
    MessageBoxA(0,inErr.__s,"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
    #endif
@@ -413,7 +413,7 @@ struct CallStack
 
    void DumpExceptionStack()
    {
-      for(int i=mExceptionStackSize-1;i>=0;i--)
+      for(int i=0;i<mExceptionStackSize;i++)
       {
          CallLocation loc = mExceptionStack[i];
          #ifdef ANDROID
