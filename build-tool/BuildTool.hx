@@ -1299,14 +1299,17 @@ class BuildTool
          defines.set("toolchain","android");
          defines.set("android","android");
          defines.set("BINDIR","Android");
-         if ( (new EReg("mac","i")).match(os) )
-            defines.set("ANDROID_HOST","darwin-x86");
-         else if ( (new EReg("window","i")).match(os) )
-            defines.set("ANDROID_HOST","windows");
-         else if ( (new EReg("linux","i")).match(os) )
-            defines.set("ANDROID_HOST","linux-x86");
-         else
-            throw "Unknown android host:" + os;
+         if (!defines.exists("ANDROID_HOST"))
+         {
+            if ( (new EReg("mac","i")).match(os) )
+               defines.set("ANDROID_HOST","darwin-x86");
+            else if ( (new EReg("window","i")).match(os) )
+               defines.set("ANDROID_HOST","windows");
+            else if ( (new EReg("linux","i")).match(os) )
+               defines.set("ANDROID_HOST","linux-x86");
+            else
+               throw "Unknown android host:" + os;
+         }
       }
       else if (defines.exists("webos"))
       {
