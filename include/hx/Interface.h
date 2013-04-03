@@ -10,7 +10,7 @@ public:
    // The following functions make use of : hx::Object *__GetRealObject();
 
 	void __Mark(hx::MarkContext *__inCtx);
-   hx::Object *__ToInterface(const type_info &);
+   hx::Object *__ToInterface(const std::type_info &);
 	int __GetType() const;
 	void *__GetHandle() const;
 	hx::FieldRef __FieldRef(const ::String &);

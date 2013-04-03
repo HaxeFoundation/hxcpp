@@ -9,7 +9,7 @@ void Interface::__Mark(hx::MarkContext *__inCtx)
 	HX_MARK_OBJECT(obj);
 }
 
-hx::Object *Interface::__ToInterface(const type_info &i)
+hx::Object *Interface::__ToInterface(const std::type_info &i)
 {
 	return __GetRealObject()->__ToInterface(i);
 }

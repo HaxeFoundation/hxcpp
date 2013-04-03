@@ -961,7 +961,7 @@ void ScriptableRegisterClass( String inName, String *inFunctions, hx::Scriptable
 }
 
 
-void ScriptableRegisterInterface( String inName, const type_info *inType, hx::ScriptableInterfaceFactory inFactory)
+void ScriptableRegisterInterface( String inName, const std::type_info *inType, hx::ScriptableInterfaceFactory inFactory)
 {
 }
 

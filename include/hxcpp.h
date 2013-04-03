@@ -12,8 +12,10 @@
 #else
 #include <typeinfo>
 #include <stdint.h>
+#ifndef EMSCRIPTEN
 using std::type_info;
 typedef  int64_t  __int64;
+#endif
 #endif
 
 
