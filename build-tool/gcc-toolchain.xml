@@ -18,6 +18,7 @@
 <set name="nostrip" value="1" if="debug"/>
 <set name="nostrip" value="1" if="dll_import"/>
 <set name="nostrip" value="1" if="dll_export"/>
+<set name="nostrip" value="1" if="emscripten"/>
 
 <stripper id="strip" exe="strip" unless="nostrip">
   <exe name="strip"/>

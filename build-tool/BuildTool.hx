@@ -864,6 +864,11 @@ class BuildTool
          {
             var path = new haxe.io.Path(mCompiler.mObjDir + "/" + file.mName);
             var obj_name = path.dir + "/" + path.file + mCompiler.mExt;
+			if (mDefines.exists("emscripten"))
+			{
+				path = new haxe.io.Path(file.mName);
+				obj_name = path.file + mCompiler.mExt;
+			}
             DirManager.make(path.dir);
             objs.push(obj_name);
             if (file.isOutOfDate(obj_name))
@@ -878,8 +883,17 @@ class BuildTool
             if (mCompiler.needsPchObj())
             {
                var pchDir = group.getPchDir();
-               if (pchDir!="")
-                  objs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.mPrecompiledHeader + mCompiler.mExt);
+               if (pchDir != "")
+			   {
+                  if (!mDefines.exists("emscripten"))
+                  {
+                     objs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.mPrecompiledHeader + mCompiler.mExt);
+                  }
+                  else
+                  {
+                     objs.push(group.mPrecompiledHeader + mCompiler.mExt);
+                  }
+			   }
             }
          }
 

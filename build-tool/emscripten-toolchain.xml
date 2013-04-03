@@ -10,7 +10,7 @@
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
-  <flag value="-O2" unless="debug"/>
+  <!-- <flag value="-O2" unless="debug"/> -->
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-DEMSCRIPTEN"/>
@@ -34,7 +34,7 @@
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
   <flag value="-debug" if="debug"/>
   <lib name="-ldl"/>
-  <ext value=".dso"/>
+  <ext value=".so"/>
   <outflag value="-o "/>
 </linker>
 
