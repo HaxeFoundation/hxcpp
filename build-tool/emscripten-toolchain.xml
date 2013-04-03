@@ -1,0 +1,51 @@
+<xml>
+
+<!-- EMCC TOOLS -------------------------------------->
+
+<include name="gcc-toolchain.xml"/>
+
+<compiler id="emscripten" exe="emcc">
+  <exe name="${CXX}" if="CXX" />
+  <flag value="-c"/>
+  <flag value="-fvisibility=hidden"/>
+  <cppflag value="-frtti"/>
+  <flag value="-g" if="debug"/>
+  <flag value="-O2" unless="debug"/>
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <flag value="-DEMSCRIPTEN"/>
+  <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
+  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <include name="common-defines.xml" />
+  <flag value="-I${HXCPP}/include"/>
+  <objdir value="obj/emscripten${OBJEXT}/"/>
+  <outflag value="-o"/>
+  <ext value=".o"/>
+</compiler>
+
+<linker id="dll" exe="emcc">
+  <exe name="${CXX}" if="CXX" />
+  <fromfile value="" if="GCC_OLD" />
+  <flag value="-shared"/>
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
+  <flag value="-Xlinker"/>
+  <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
+  <flag value="-debug" if="debug"/>
+  <lib name="-ldl"/>
+  <ext value=".dso"/>
+  <outflag value="-o "/>
+</linker>
+
+<linker id="exe" exe="emcc">
+  <exe name="${CXX}" if="CXX" />
+  <fromfile value="" if="GCC_OLD" />
+  <flag value="-debug" if="debug"/>
+  <flag value="-rdynamic"/>
+  <lib name="-ldl"/>
+  <ext value=""/>
+  <outflag value="-o "/>
+</linker>
+
+</xml>

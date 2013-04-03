@@ -48,6 +48,10 @@ int __sys_prims() { return 0; }
 #endif
 #endif
 
+#ifdef EMSCRIPTEN
+#include <sys/wait.h>
+#endif
+
 #ifndef IPHONE
 #ifdef NEKO_MAC
 #	include <sys/syslimits.h>
@@ -244,6 +248,8 @@ static value sys_string() {
 	return alloc_string("Android");
 #elif defined(BLACKBERRY)
 	return alloc_string("BlackBerry");
+#elif defined(EMSCRIPTEN)
+	return alloc_string("Emscripten");
 #else
 #error Unknow system string
 #endif

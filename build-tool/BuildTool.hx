@@ -1330,6 +1330,13 @@ class BuildTool
          defines.set("blackberry","blackberry");
          defines.set("BINDIR","BlackBerry");
       }
+	  else if (defines.exists("emcc") || defines.exists("emscripten"))
+	  {
+         defines.set("toolchain","emscripten");
+		 defines.set("emcc","emcc");
+		 defines.set("emscripten","emscripten");
+		 defines.set("BINDIR","Emscripten");
+	  }
       else if (defines.exists("gph"))
       {
          defines.set("toolchain","gph");

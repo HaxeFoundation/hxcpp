@@ -25,6 +25,8 @@
 #else
 #if defined(ANDROID) || defined(BLACKBERRY)
 #define EXT "so"
+#elif defined(EMSCRIPTEN)
+#define EXT "ll"
 #else
 #include <mach-o/dyld.h>
 #define EXT "dylib"

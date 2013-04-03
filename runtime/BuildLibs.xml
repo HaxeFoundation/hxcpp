@@ -21,7 +21,7 @@
   <file name="libs/std/Xml.cpp"/>
   <file name="libs/std/Process.cpp"/>
   <file name="libs/std/Random.cpp"/>
-  <file name="libs/std/Socket.cpp"/>
+  <file name="libs/std/Socket.cpp" unless="emscripten" />
   <file name="libs/std/String.cpp"/>
   <file name="libs/std/File.cpp"/>
   <file name="libs/std/Init.cpp"/>
