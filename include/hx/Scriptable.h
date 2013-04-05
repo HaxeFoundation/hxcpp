@@ -17,7 +17,7 @@ typedef hx::Object * (*ScriptableClassFactory)(Array<Dynamic> inArgs, void **inV
 typedef hx::Object * (*ScriptableInterfaceFactory)(::hx::Object *);
 
 void ScriptableRegisterClass( String inName, String *inFunctions, ScriptableClassFactory inFactory);
-void ScriptableRegisterInterface( String inName, const std::type_info *inType, ScriptableInterfaceFactory inFactory);
+void ScriptableRegisterInterface( String inName, const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
 
 }
 

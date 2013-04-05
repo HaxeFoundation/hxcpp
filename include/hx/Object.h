@@ -62,7 +62,7 @@ public:
    virtual void __Visit(hx::VisitContext *__inCtx) { }
    #endif
    virtual bool __Is(hx::Object *inClass) const { return true; }
-   virtual hx::Object *__ToInterface(const std::type_info &inInterface) { return 0; }
+   virtual hx::Object *__ToInterface(const hx::type_info &inInterface) { return 0; }
    virtual hx::Object *__GetRealObject() { return this; }
 
    // helpers...
