@@ -19,6 +19,10 @@
 #include <stdio.h>
 #endif
 
+#ifdef EMSCRIPTEN
+#include <cstdlib>
+#endif
+
 #ifdef ANDROID
 #include <android/log.h>
 #endif

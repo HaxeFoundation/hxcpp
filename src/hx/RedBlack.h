@@ -34,6 +34,10 @@
 #define HEIGHT_LIMIT 64 /* Tallest allowable tree */
 #endif
 
+#ifdef EMSCRIPTEN
+#include <cstdlib>
+#endif
+
 #define DO_ALLOC(x) hx::InternalNew(x,false)
 
  

@@ -8,7 +8,9 @@
 #else
 #include <sys/time.h>
 #include <stdio.h>
+#ifndef EMSCRIPTEN
 typedef int64_t __int64;
+#endif
 #endif
 
 #ifdef ANDROID
@@ -16,6 +18,11 @@ typedef int64_t __int64;
 #endif
 #ifdef WEBOS
 #include <syslog.h>
+#endif
+
+#ifdef EMSCRIPTEN
+#include <cstdlib>
+#include <unistd.h>
 #endif
 
 #include <string>

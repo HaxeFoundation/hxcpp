@@ -12,9 +12,12 @@ enum { gFillWithJunk = 0 } ;
 #include <android/log.h>
 #endif
 
-
 #ifdef HX_WINDOWS
 #include <windows.h>
+#endif
+
+#ifdef EMSCRIPTEN
+#include <cstdlib>
 #endif
 
 #include <map>

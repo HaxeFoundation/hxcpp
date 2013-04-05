@@ -23,7 +23,9 @@
 
 #include <sys/time.h>
 #include <wchar.h>
+#ifndef EMSCRIPTEN
 typedef  int64_t  __int64;
+#endif
 
 #endif
 
