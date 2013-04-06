@@ -4,9 +4,6 @@
 #include <vector>
 #include <map>
 
-#ifdef EMSCRIPTEN
-#include <cstdlib>
-#endif
 
 namespace hx
 {

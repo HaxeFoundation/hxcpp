@@ -16,10 +16,6 @@ enum { gFillWithJunk = 0 } ;
 #include <windows.h>
 #endif
 
-#ifdef EMSCRIPTEN
-#include <cstdlib>
-#endif
-
 #include <map>
 #include <vector>
 #include <set>

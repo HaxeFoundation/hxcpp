@@ -10,10 +10,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef EMSCRIPTEN
-#include <cstdlib>
-#endif
-
 
 #ifdef HXCPP_LOAD_DEBUG
 bool gLoadDebug = true;

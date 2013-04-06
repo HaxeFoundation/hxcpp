@@ -6,9 +6,6 @@ using namespace hx;
 
 // -------- String ----------------------------------------
 
-#ifdef EMSCRIPTEN
-#include <cstdlib>
-#endif
 
 #ifdef HX_WINDOWS
 

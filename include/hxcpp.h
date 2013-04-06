@@ -20,6 +20,11 @@ typedef  int64_t  __int64;
 #endif
 #endif
 
+#ifdef EMSCRIPTEN
+#include <unistd.h>
+#include <cstdlib>
+#endif
+
 
 #include <string.h>
 

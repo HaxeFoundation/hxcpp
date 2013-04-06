@@ -20,11 +20,6 @@ typedef int64_t __int64;
 #include <syslog.h>
 #endif
 
-#ifdef EMSCRIPTEN
-#include <cstdlib>
-#include <unistd.h>
-#endif
-
 #include <string>
 #include <vector>
 #include <map>

@@ -37,7 +37,7 @@
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
   <flag value="-debug" if="debug"/>
-  <lib name="-ldl"/>
+  <!-- <lib name="-ldl"/> -->
   <ext value=".so"/>
   <outflag value="-o "/>
 </linker>
@@ -47,8 +47,8 @@
   <fromfile value="" if="GCC_OLD" />
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
-  <lib name="-ldl"/>
-  <ext value=""/>
+  <!-- <lib name="-ldl"/> -->
+  <ext value=".js"/>
   <outflag value="-o "/>
 </linker>
 
