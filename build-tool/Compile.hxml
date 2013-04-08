@@ -1,2 +1,3 @@
 -neko ../run.n
 -main BuildTool
+-D neko_v1
