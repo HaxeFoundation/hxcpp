@@ -35,7 +35,9 @@
 #endif
 
 #ifdef EMSCRIPTEN
-#include <cstdlib>
+#ifndef NULL
+#define NULL 0
+#endif
 #endif
 
 #define DO_ALLOC(x) hx::InternalNew(x,false)
