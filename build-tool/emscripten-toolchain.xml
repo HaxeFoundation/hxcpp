@@ -47,6 +47,7 @@
   <fromfile value="" if="GCC_OLD" />
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
+  <flag value="-O2" unless="debug"/>
   <!-- <lib name="-ldl"/> -->
   <ext value=".js"/>
   <outflag value="-o "/>
