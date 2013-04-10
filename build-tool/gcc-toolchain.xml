@@ -7,12 +7,14 @@
 
 <linker id="static_link" exe="ar" unless="windows">
   <ext value=".a"/>
+  <exe name="emcc" if="emscripten" />
   <fromfile value="" if="macos" />
   <fromfile value="" if="GCC_OLD" />
   <fromfile value="" if="iphone" />
   <outflag value="-cr "/>
+  <outflag value="-o " if="emscripten" />
   <recreate value="1" if="iphone" />
-  <ranlib name="ranlib"/>
+  <ranlib name="ranlib" unless="emscripten" />
 </linker>
 
 <set name="nostrip" value="1" if="debug"/>
