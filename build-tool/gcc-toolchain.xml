@@ -7,15 +7,18 @@
 
 <linker id="static_link" exe="ar" unless="windows">
   <ext value=".a"/>
-  <ext value=".so" if="emscripten" />
-  <exe name="emcc" if="emscripten" />
+  <exe name="emar" if="emscripten" />
   <fromfile value="" if="macos" />
   <fromfile value="" if="GCC_OLD" />
   <fromfile value="" if="iphone" />
+  <fromfile value="" if="emscripten" />
   <outflag value="-cr "/>
-  <outflag value="-o " if="emscripten" />
+  <outflag value="cr " if="emscripten" />
+  <!-- <outflag value="-o " if="emscripten" /> -->
   <recreate value="1" if="iphone" />
-  <ranlib name="ranlib" unless="emscripten" />
+  <recreate value="1" if="emscripten" />
+  <ranlib name="ranlib" />
+  <ranlib name="emranlib" if="emscripten" />
 </linker>
 
 <set name="nostrip" value="1" if="debug"/>

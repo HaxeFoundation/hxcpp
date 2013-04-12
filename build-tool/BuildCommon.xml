@@ -14,7 +14,7 @@
 
 <set name="static_link" value="1" if="iphoneos" unless="dll_import" />
 <set name="static_link" value="1" if="iphonesim" unless="dll_import" />
-<!-- <set name="static_link" value="1" if="emscripten" unless="dll_import" /> -->
+<set name="static_link" value="1" if="emscripten" unless="dll_import" />
 
 <set name="STAT" value="-stat" if="static_link" />
 
