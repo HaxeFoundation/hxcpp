@@ -7,6 +7,7 @@
 
 <linker id="static_link" exe="ar" unless="windows">
   <ext value=".a"/>
+  <ext value=".so" if="emscripten" />
   <exe name="emcc" if="emscripten" />
   <fromfile value="" if="macos" />
   <fromfile value="" if="GCC_OLD" />

@@ -36,11 +36,12 @@
   <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
-  <flag value="-debug" if="debug"/>
-  <flag value="-O2" unless="debug"/>
-  <flag value="-DBUILD_AS_SHARED_LIBRARY" />
+  <!-- <flag value="-debug" if="debug"/>
+  <flag value="-O2" unless="debug"/> -->
+  <!-- <flag value="-DBUILD_AS_SHARED_LIBRARY" /> -->
   <!-- <lib name="-ldl"/> -->
-  <ext value=".js"/>
+  <!-- <ext value=".js"/> -->
+  <ext value=".so"/>
   <outflag value="-o "/>
 </linker>
 
@@ -50,6 +51,9 @@
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
   <flag value="-O2" unless="debug"/>
+  <flag value="-s" />
+  <flag value="DISABLE_EXCEPTION_CATCHING=0" unless="debug" />
+  <flag value="DISABLE_EXCEPTION_CATCHING=2" if="debug" />>
   <!-- <lib name="-ldl"/> -->
   <ext value=".js"/>
   <outflag value="-o "/>
