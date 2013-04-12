@@ -53,7 +53,7 @@
   <flag value="-O2" unless="debug"/>
   <flag value="-s" />
   <flag value="DISABLE_EXCEPTION_CATCHING=0" unless="debug" />
-  <flag value="DISABLE_EXCEPTION_CATCHING=2" if="debug" />>
+  <flag value="DISABLE_EXCEPTION_CATCHING=2" if="debug" />
   <!-- <lib name="-ldl"/> -->
   <ext value=".js"/>
   <outflag value="-o "/>
