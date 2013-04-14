@@ -11,7 +11,7 @@
   <fromfile value="" if="macos" />
   <fromfile value="" if="GCC_OLD" />
   <fromfile value="" if="iphone" />
-  <fromfile value="" if="emscripten" />
+  <!-- <fromfile value="" if="emscripten" /> -->
   <outflag value="-cr "/>
   <outflag value="cr " if="emscripten" />
   <!-- <outflag value="-o " if="emscripten" /> -->
