@@ -20,6 +20,7 @@
   <flag value="-Wno-null-dereference" />
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-format-extra-args" />
+  <flag value="-Wno-bool-conversion" />
   <include name="common-defines.xml" />
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/emscripten${OBJEXT}"/>
