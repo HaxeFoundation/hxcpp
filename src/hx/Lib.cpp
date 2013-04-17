@@ -354,7 +354,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
     HX_CSTRING("BlackBerry");
 #elif defined(RASPBERRYPI)
     HX_CSTRING("RPi");
-#elif defined(EMSCRIPTEN);
+#elif defined(EMSCRIPTEN)
 	HX_CSTRING("Emscripten");
 #elif defined(IPHONESIM)
     HX_CSTRING("IPhoneSim");
