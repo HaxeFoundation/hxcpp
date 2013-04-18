@@ -274,7 +274,7 @@ static value sys_is64() {
 	<doc>Run the shell command and return exit code</doc>
 **/
 static value sys_command( value cmd ) {
-   #ifdef HX_WINRT
+   #if defined(HX_WINRT) || defined(EMSCRIPTEN)
 	return alloc_int( -1 );
    #else
 	val_check(cmd,string);
@@ -698,7 +698,7 @@ static value sys_env() {
 	<doc>Read a character from stdin with or without echo</doc>
 **/
 static value sys_getch( value b ) {
-#ifdef HX_WINRT
+#if defined(HX_WINRT) || defined(EMSCRIPTEN)
    return alloc_null();
 #elif defined(NEKO_WINDOWS)
 	val_check(b,bool);
