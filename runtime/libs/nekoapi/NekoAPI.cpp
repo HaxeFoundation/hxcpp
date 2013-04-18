@@ -364,8 +364,7 @@ void api_buffer_append(buffer inBuffer,const char *inStr)
 
 int api_buffer_size(buffer inBuffer)
 {
-	NOT_IMPLEMNETED("api_buffer_size");
-	return 0;
+	return api_val_strlen(buffer_to_string(inBuffer));
 }
 
 void api_buffer_set_size(buffer inBuffer,int inLen)
@@ -389,8 +388,13 @@ void api_buffer_append_char(buffer inBuffer,int inChar)
 
 char * api_buffer_data(buffer inBuffer)
 {
-	NOT_IMPLEMNETED("api_buffer_data");
-	return 0;
+	value data = buffer_to_string(inBuffer);
+	int len = api_val_strlen(data);
+	const char *ptr = api_val_string(data);
+	char *result = alloc_private(len+1);
+	memcpy(result,ptr,len);
+	result[len] = '\0';
+	return result;
 }
 
 

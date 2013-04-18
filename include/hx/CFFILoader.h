@@ -150,6 +150,7 @@ typedef char *(*alloc_private_func)(int);
 typedef neko_value (*copy_string_func)(const char *,int);
 typedef int (*val_id_func)(const char *);
 typedef neko_buffer (*alloc_buffer_func)(const char *);
+typedef neko_value (*val_buffer_func)(neko_buffer);
 typedef void (*buffer_append_sub_func)(neko_buffer,const char *,int);
 typedef void (*fail_func)(neko_value,const char *,int);
 typedef neko_value (*alloc_array_func)(unsigned int);
@@ -165,6 +166,7 @@ static alloc_private_func dyn_alloc_private = 0;
 static copy_string_func dyn_copy_string = 0;
 static val_id_func dyn_val_id = 0;
 static alloc_buffer_func dyn_alloc_buffer = 0;
+static val_buffer_func dyn_val_buffer = 0;
 static fail_func dyn_fail = 0;
 static buffer_append_sub_func dyn_buffer_append_sub = 0;
 static alloc_array_func dyn_alloc_array = 0;
@@ -236,19 +238,6 @@ neko_buffer api_alloc_buffer_len(int inLen)
 }
 
 
-int api_buffer_size(neko_buffer inBuffer) { NOT_IMPLEMNETED("api_buffer_size"); return 0; }
-
-void api_buffer_set_size(neko_buffer inBuffer,int inLen) { NOT_IMPLEMNETED("api_buffer_set_size"); }
-
-
-void api_buffer_append_char(neko_buffer inBuffer,int inChar)
-{
-	char buf[2] = { inChar, '\0' };
-	dyn_buffer_append_sub(inBuffer,buf,1);
-}
-
-char * api_buffer_data(neko_buffer inBuffer) { NOT_IMPLEMNETED("api_buffer_data"); return 0; }
-
 int api_val_strlen(neko_value  arg1)
 {
 	if (neko_val_is_string(arg1))
@@ -259,6 +248,32 @@ int api_val_strlen(neko_value  arg1)
 	if (neko_val_is_int(l))
 		return api_val_int(l);
 	return 0;
+}
+
+
+int api_buffer_size(neko_buffer inBuffer)
+{
+	return api_val_strlen(dyn_val_buffer(inBuffer));
+}
+
+void api_buffer_set_size(neko_buffer inBuffer,int inLen) { NOT_IMPLEMNETED("api_buffer_set_size"); }
+
+
+void api_buffer_append_char(neko_buffer inBuffer,int inChar)
+{
+	char buf[2] = { inChar, '\0' };
+	dyn_buffer_append_sub(inBuffer,buf,1);
+}
+
+char * api_buffer_data(neko_buffer inBuffer)
+{
+	neko_value data = dyn_val_buffer(inBuffer);
+	int len = api_val_strlen(data);
+	const char *ptr = api_val_string(data);
+	char *result = dyn_alloc_private(len+1);
+	memcpy(result,ptr,len);
+	result[len] = '\0';
+	return result;
 }
 
 
@@ -544,6 +559,7 @@ ResolveProc InitDynamicNekoLoader()
       dyn_copy_string = (copy_string_func)LoadNekoFunc("neko_copy_string");
       dyn_val_id = (val_id_func)LoadNekoFunc("neko_val_id");
       dyn_alloc_buffer = (alloc_buffer_func)LoadNekoFunc("neko_alloc_buffer");
+      dyn_val_buffer = (val_buffer_func)LoadNekoFunc("neko_buffer_to_string");
       dyn_fail = (fail_func)LoadNekoFunc("_neko_failure");
       dyn_buffer_append_sub = (buffer_append_sub_func)LoadNekoFunc("neko_buffer_append_sub");
       dyn_alloc_array = (alloc_array_func)LoadNekoFunc("neko_alloc_array");
