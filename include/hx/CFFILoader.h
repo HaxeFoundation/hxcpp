@@ -124,6 +124,7 @@ void *LoadNekoFunc(const char *inName)
 
 static int __a_id = 0;
 static int __s_id = 0;
+static int b_id = 0;
 static int length_id = 0;
 static int push_id = 0;
 
@@ -253,7 +254,7 @@ int api_val_strlen(neko_value  arg1)
 
 int api_buffer_size(neko_buffer inBuffer)
 {
-	return api_val_strlen(dyn_val_buffer(inBuffer));
+	return api_val_int(dyn_val_field((neko_value)inBuffer,length_id));
 }
 
 void api_buffer_set_size(neko_buffer inBuffer,int inLen) { NOT_IMPLEMNETED("api_buffer_set_size"); }
@@ -267,13 +268,7 @@ void api_buffer_append_char(neko_buffer inBuffer,int inChar)
 
 char * api_buffer_data(neko_buffer inBuffer)
 {
-	neko_value data = dyn_val_buffer(inBuffer);
-	int len = api_val_strlen(data);
-	const char *ptr = api_val_string(data);
-	char *result = dyn_alloc_private(len+1);
-	memcpy(result,ptr,len);
-	result[len] = '\0';
-	return result;
+	return (char *)api_val_string(dyn_val_field((neko_value)inBuffer,b_id));
 }
 
 
@@ -574,6 +569,7 @@ ResolveProc InitDynamicNekoLoader()
 
    __a_id = dyn_val_id("__a");
    __s_id = dyn_val_id("__s");
+   b_id = dyn_val_id("b");
    length_id = dyn_val_id("length");
    push_id = dyn_val_id("push");
 

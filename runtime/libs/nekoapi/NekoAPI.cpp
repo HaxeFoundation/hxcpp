@@ -38,6 +38,7 @@ void * hx_cffi(const char *inName)
 
 static int __a_id = val_id("__a");
 static int __s_id = val_id("__s");
+static int b_id = val_id("b");
 static int length_id = val_id("length");
 
 value *gNeko2HaxeString = 0;
@@ -364,7 +365,7 @@ void api_buffer_append(buffer inBuffer,const char *inStr)
 
 int api_buffer_size(buffer inBuffer)
 {
-	return api_val_strlen(buffer_to_string(inBuffer));
+	return val_int(val_field((value)inBuffer,length_id));
 }
 
 void api_buffer_set_size(buffer inBuffer,int inLen)
@@ -388,13 +389,7 @@ void api_buffer_append_char(buffer inBuffer,int inChar)
 
 char * api_buffer_data(buffer inBuffer)
 {
-	value data = buffer_to_string(inBuffer);
-	int len = api_val_strlen(data);
-	const char *ptr = api_val_string(data);
-	char *result = alloc_private(len+1);
-	memcpy(result,ptr,len);
-	result[len] = '\0';
-	return result;
+	return (char *)val_string(val_field((value)inBuffer,b_id));
 }
 
 
