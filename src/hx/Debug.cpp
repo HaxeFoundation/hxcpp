@@ -36,12 +36,12 @@ void CriticalError(const String &inErr)
       return;
    #endif
    
-   DBGLOG("Critical Error: %s\n", inErr.__s);
-   
    #ifdef HXCPP_STACK_TRACE
    __hxcpp_stack_begin_catch_all();
    __hx_dump_stack();
    #endif
+   
+   DBGLOG("Critical Error: %s\n", inErr.__s);
    
    #if defined(HX_WINDOWS) && !defined(HX_WINRT)
    MessageBoxA(0,inErr.__s,"Critial Error - program must terminate",MB_ICONEXCLAMATION|MB_OK);
