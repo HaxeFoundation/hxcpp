@@ -24,7 +24,7 @@
 #endif
 
 
-void __hxcpp_stack_begin_catch_all();
+void __hx_dump_stack_all();
 
 namespace hx
 {
@@ -37,8 +37,7 @@ void CriticalError(const String &inErr)
    #endif
    
    #ifdef HXCPP_STACK_TRACE
-   __hxcpp_stack_begin_catch_all();
-   __hx_dump_stack();
+   __hx_dump_stack_all();
    #endif
    
    DBGLOG("Critical Error: %s\n", inErr.__s);
@@ -659,8 +658,16 @@ void __hx_stack_set_last_exception()
    hx::GetCallStack()->SetLastException();
 }
 
+// In response to caught exception
 void __hx_dump_stack()
 {
+   hx::GetCallStack()->BeginCatch(false);
+   hx::GetCallStack()->DumpExceptionStack();
+}
+
+void __hx_dump_stack_all()
+{
+   __hxcpp_stack_begin_catch_all();
    hx::GetCallStack()->DumpExceptionStack();
 }
 
