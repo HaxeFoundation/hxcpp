@@ -46,7 +46,7 @@ class DirManager
    }
    static public function makeFileDir(inFile:String)
    {
-      var parts = inFile.split("/");
+      var parts = StringTools.replace (inFile, "\\", "/").split("/");
       if (parts.length<2)
          return;
       parts.pop();
