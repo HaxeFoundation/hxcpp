@@ -846,7 +846,7 @@ public:
    void Load(FILE *inFile)
    {
       unsigned int magic;
-      fread(&magic,4,1,inFile);
+      int result = fread(&magic,4,1,inFile);
       if (magic!=0x4F4B454E)
          Error("Bad Magic");
 

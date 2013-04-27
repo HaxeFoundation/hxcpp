@@ -146,7 +146,7 @@ vkind val_kind(hx::Object * arg1) THROWS
    int type = arg1->__GetType();
    if (type<valtAbstractBase)
       hx::Throw( HX_CSTRING("Value has no 'kind'") );
-   return (vkind)(type);
+   return (vkind)(intptr_t)(type);
 }
 
 
