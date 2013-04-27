@@ -87,7 +87,8 @@ public:
 
    virtual int GetElementSize() const = 0;
 
-   virtual void __SetSize(int inLen);
+   void __SetSize(int inLen);
+   void __SetSizeExact(int inLen);
 
    // Dynamic interface
    Dynamic __Field(const String &inString ,bool inCallProp);
@@ -275,6 +276,7 @@ public:
    }
    #endif
 
+   inline Array_obj *__SetSizeExact(int inLen) { ArrayBase::__SetSizeExact(inLen); return this; }
 
    int GetElementSize() const { return sizeof(ELEM_); }
 
@@ -485,7 +487,7 @@ public:
       if (ptr)
       {
          OBJ_ *arr = dynamic_cast<OBJ_ *>(ptr);
-         if (!arr)
+         if (!arr && ptr->__GetClass().mPtr == __SGetClass().mPtr )
          {
             // Non-identical type.
             // Copy elements one-by-one

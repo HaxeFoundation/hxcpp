@@ -78,6 +78,32 @@ void ArrayBase::__SetSize(int inSize)
    }
 }
 
+ 
+void ArrayBase::__SetSizeExact(int inSize)
+{
+   if (inSize!=length || inSize!=mAlloc)
+   {
+      mAlloc = length = inSize;
+      int bytes = mAlloc * GetElementSize();
+      if (mBase)
+      {
+         mBase = (char *)hx::GCRealloc(mBase, bytes );
+      }
+      else if (AllocAtomic())
+      {
+         mBase = (char *)hx::NewGCPrivate(0,bytes);
+      }
+      else
+      {
+         mBase = (char *)hx::NewGCBytes(0,bytes);
+      }
+   }
+}
+
+ 
+
+
+
 
 void ArrayBase::Insert(int inPos)
 {
