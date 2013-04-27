@@ -162,14 +162,18 @@ void __hxcpp_stop_profiler();
 inline int __hxcpp_memory_get_byte(Array<unsigned char> inBuffer ,int addr) { return inBuffer->GetBase()[addr]; }
 inline double __hxcpp_memory_get_double(Array<unsigned char> inBuffer ,int addr) { return *(double *)(inBuffer->GetBase()+addr); }
 inline double __hxcpp_memory_get_float(Array<unsigned char> inBuffer ,int addr) { return *(float *)(inBuffer->GetBase()+addr); }
+inline int __hxcpp_memory_get_i16(Array<unsigned char> inBuffer ,int addr) { return *(short *)(inBuffer->GetBase()+addr); }
 inline int __hxcpp_memory_get_i32(Array<unsigned char> inBuffer ,int addr) { return *(int *)(inBuffer->GetBase()+addr); }
 inline int __hxcpp_memory_get_ui16(Array<unsigned char> inBuffer ,int addr) { return *(unsigned short *)(inBuffer->GetBase()+addr); }
+inline int __hxcpp_memory_get_ui32(Array<unsigned char> inBuffer ,int addr) { return *(unsigned int *)(inBuffer->GetBase()+addr); }
 
 inline void __hxcpp_memory_set_byte(Array<unsigned char> inBuffer ,int addr,int v) { inBuffer->GetBase()[addr] = v; }
 inline void __hxcpp_memory_set_double(Array<unsigned char> inBuffer ,int addr,double v) { *(double *)(inBuffer->GetBase()+addr) = v; }
 inline void __hxcpp_memory_set_float(Array<unsigned char> inBuffer ,int addr,double v) { *(float *)(inBuffer->GetBase()+addr) = v; }
 inline void __hxcpp_memory_set_i16(Array<unsigned char> inBuffer ,int addr,int v) { *(short *)(inBuffer->GetBase()+addr) = v; }
 inline void __hxcpp_memory_set_i32(Array<unsigned char> inBuffer ,int addr,int v) { *(int *)(inBuffer->GetBase()+addr) = v; }
+inline void __hxcpp_memory_set_ui16(Array<unsigned char> inBuffer ,int addr,int v) { *(unsigned short *)(inBuffer->GetBase()+addr) = v; }
+inline void __hxcpp_memory_set_ui32(Array<unsigned char> inBuffer ,int addr,int v) { *(unsigned int *)(inBuffer->GetBase()+addr) = v; }
 
 
 // Uses global pointer...
@@ -182,14 +186,18 @@ inline void __hxcpp_memory_select( Array<unsigned char> inBuffer )
 inline int __hxcpp_memory_get_byte(int addr) { return __hxcpp_memory[addr]; }
 inline double __hxcpp_memory_get_double(int addr) { return *(double *)(__hxcpp_memory+addr); }
 inline double __hxcpp_memory_get_float(int addr) { return *(float *)(__hxcpp_memory+addr); }
+inline int __hxcpp_memory_get_i16(int addr) { return *(short *)(__hxcpp_memory+addr); }
 inline int __hxcpp_memory_get_i32(int addr) { return *(int *)(__hxcpp_memory+addr); }
 inline int __hxcpp_memory_get_ui16(int addr) { return *(unsigned short *)(__hxcpp_memory+addr); }
+inline int __hxcpp_memory_get_ui32(int addr) { return *(unsigned int *)(__hxcpp_memory+addr); }
 
 inline void __hxcpp_memory_set_byte(int addr,int v) { __hxcpp_memory[addr] = v; }
 inline void __hxcpp_memory_set_double(int addr,double v) { *(double *)(__hxcpp_memory+addr) = v; }
 inline void __hxcpp_memory_set_float(int addr,double v) { *(float *)(__hxcpp_memory+addr) = v; }
 inline void __hxcpp_memory_set_i16(int addr,int v) { *(short *)(__hxcpp_memory+addr) = v; }
 inline void __hxcpp_memory_set_i32(int addr,int v) { *(int *)(__hxcpp_memory+addr) = v; }
+inline void __hxcpp_memory_set_ui16(int addr,int v) { *(unsigned short *)(__hxcpp_memory+addr) = v; }
+inline void __hxcpp_memory_set_ui32(int addr,int v) { *(unsigned int *)(__hxcpp_memory+addr) = v; }
 
 
 
