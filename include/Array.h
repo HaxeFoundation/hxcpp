@@ -487,7 +487,7 @@ public:
       if (ptr)
       {
          OBJ_ *arr = dynamic_cast<OBJ_ *>(ptr);
-         if (!arr && ptr->__GetClass().mPtr == __SGetClass().mPtr )
+         if (!arr && ptr->__GetClass().mPtr == super::__SGetClass().mPtr )
          {
             // Non-identical type.
             // Copy elements one-by-one
