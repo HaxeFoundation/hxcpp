@@ -32,6 +32,12 @@ public:
     void Set(double inVal);
     void Set(float inVal);
 
+   template<typename RESULT>
+   inline RESULT StaticCast() const
+   {
+      return RESULT( (typename RESULT::Ptr) mPtr );
+   }
+
    inline operator double () const { return mPtr ? mPtr->__ToDouble() : 0.0; }
    inline operator float () const { return mPtr ? (float)mPtr->__ToDouble() : 0.0f; }
    inline operator int () const { return mPtr ? mPtr->__ToInt() : 0; }
