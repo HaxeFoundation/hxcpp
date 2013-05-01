@@ -690,6 +690,16 @@ static value socket_set_blocking( value o, value b ) {
 	return alloc_bool(true);
 }
 
+
+value socket_set_fast_send( value o, value b )
+{
+	SOCKET sock = val_sock(o);
+	val_check(b,bool);
+   int fast = val_bool(b);
+   setsockopt(sock,IPPROTO_TCP,TCP_NODELAY,(char*)&fast,sizeof(fast));
+   return alloc_null();
+}
+
 /**
 	socket_poll_alloc : int -> 'poll
 	<doc>Allocate memory to perform polling on a given number of sockets</doc>
@@ -906,6 +916,7 @@ DEFINE_PRIM(socket_host,1);
 DEFINE_PRIM(socket_set_timeout,2);
 DEFINE_PRIM(socket_shutdown,3);
 DEFINE_PRIM(socket_set_blocking,2);
+DEFINE_PRIM(socket_set_fast_send,2);
 
 DEFINE_PRIM(socket_poll_alloc,1);
 DEFINE_PRIM(socket_poll,3);
