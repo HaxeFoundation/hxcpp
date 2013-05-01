@@ -7,6 +7,8 @@
 //  provides generic access to its pointer.
 // It uses dynamic_cast to provide strongly-typed access to the real class.
 
+namespace hx { class Interface; }
+
 
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic : public hx::ObjectPtr<hx::Object>
@@ -32,10 +34,19 @@ public:
     void Set(double inVal);
     void Set(float inVal);
 
+
+   // Special case of interfaces - they could be in the array as the actual object,
+   //  or could be delegates.  Direct casting to delegates would be bad, since the are not related.
+   template<typename RESULT>
+   inline hx::Object *BestCast(hx::Interface *) const { return mPtr; } 
+
+   template<typename RESULT>
+   inline RESULT BestCast(...) const { return (RESULT)mPtr; } 
+
    template<typename RESULT>
    inline RESULT StaticCast() const
    {
-      return RESULT( (typename RESULT::Ptr) mPtr );
+      return BestCast<typename RESULT::Ptr>( (typename RESULT::Ptr)0 );
    }
 
    inline operator double () const { return mPtr ? mPtr->__ToDouble() : 0.0; }

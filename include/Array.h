@@ -28,16 +28,21 @@ namespace hx
 // --- ArrayIterator -------------------------------------------
 //
 // An object that conforms to the standard iterator interface for arrays
-template<typename T>
-class ArrayIterator : public cpp::FastIterator_obj<T>
+template<typename FROM,typename TO>
+class ArrayIterator : public cpp::FastIterator_obj<TO>
 {
 public:
-   ArrayIterator(Array<T> inArray) : mArray(inArray), mIdx(0) { }
+   ArrayIterator(Array<FROM> inArray) : mArray(inArray), mIdx(0) { }
 
    // Fast versions ...
    bool hasNext()  { return mIdx < mArray->length; }
-   T next() { return mArray->__get(mIdx++); }
 
+   inline TO toTo(const Dynamic &inD) { return inD.StaticCast<TO>(); }
+
+   template<typename T>
+   inline TO toTo(T inT) { return inT; }
+
+   TO next() { return toTo(mArray->__get(mIdx++)); }
 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
    #ifdef HXCPP_VISIT_ALLOCS
@@ -45,7 +50,7 @@ public:
    #endif
 
    int      mIdx;
-   Array<T> mArray;
+   Array<FROM> mArray;
 };
 
 }
@@ -396,7 +401,10 @@ public:
       std::stable_sort(e, e+length, Sorter(inSorter) );
    }
 
-   Dynamic iterator() { return new hx::ArrayIterator<ELEM_>(this); }
+   Dynamic iterator() { return new hx::ArrayIterator<ELEM_,ELEM_>(this); }
+
+   template<typename TO>
+   Dynamic iteratorFast() { return new hx::ArrayIterator<ELEM_,TO>(this); }
 
    virtual bool IsByteArray() const { return ArrayTraits<ELEM_>::IsByteArray; }
 
