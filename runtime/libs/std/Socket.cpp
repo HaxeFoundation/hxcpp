@@ -154,7 +154,7 @@ static value socket_new( value udp ) {
 		if( old >= 0 ) fcntl(s,F_SETFD,old|FD_CLOEXEC);
 	}
 #	endif
-	return alloc_abstract(k_socket,(void *)s);
+	return alloc_abstract(k_socket,(void *)(socket_int)s);
 }
 
 /**
