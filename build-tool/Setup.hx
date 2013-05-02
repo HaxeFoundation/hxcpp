@@ -98,12 +98,15 @@ class Setup
       }
    }
 
-   public static function setupMSVC(ioDefines:Hash<String> )
+   public static function setupMSVC(ioDefines:Hash<String>, in64:Bool )
    {
       if (!ioDefines.exists("NO_AUTO_MSVC"))
       {
-         var vc_setup_proc = new sys.io.Process("cmd.exe", ["/C", BuildTool.HXCPP + "build-tool\\msvc-setup.bat" ]);
+         var extra = in64 ? "64" : "";
+         var vc_setup_proc = new sys.io.Process("cmd.exe", ["/C", BuildTool.HXCPP + "build-tool\\msvc" + extra + "-setup.bat" ]);
          var vars_found = false;
+         var error_found = false;
+         var output = new Array<String>();
          try{
             while(true)
             {
@@ -111,7 +114,11 @@ class Setup
                if (str=="HXCPP_VARS")
                   vars_found = true;
                else if (!vars_found)
-                  Sys.println(str);
+               {
+                  if (str.substr(0,5)=="Error" || ~/missing/.match(str) )
+                     error_found = true;
+                  output.push(str);
+               }
                else
                {
                   var pos = str.indexOf("=");
@@ -132,8 +139,12 @@ class Setup
           };
 
           vc_setup_proc.close();
-          if (!vars_found)
+          if (!vars_found || error_found)
+          {
+             for(o in output)
+                Sys.println(o);
              throw("Could not automatically setup MSVC");
+          }
        }
       
    

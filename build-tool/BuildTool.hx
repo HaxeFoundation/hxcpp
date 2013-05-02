@@ -1372,7 +1372,7 @@ class BuildTool
             defines.set("BINDIR",m64 ? "Windows64":"Windows");
          }
 
-         Setup.setupMSVC(defines);
+         Setup.setupMSVC(defines,m64);
       }
       else if ( isRPi )
       {
