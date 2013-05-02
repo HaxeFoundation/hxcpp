@@ -34,7 +34,11 @@ void * hx_cffi(const char *inName)
 }
 
 
+#ifndef neko_v1
+#include "neko2.h"
+#else
 #include "neko.h"
+#endif
 
 static int __a_id = val_id("__a");
 static int __s_id = val_id("__s");

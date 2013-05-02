@@ -112,21 +112,23 @@
   <outdir name="../bin/${BINDIR}"/>
 </target>
 
-
 <files id="nekoapi" dir="${RUNTIME}">
   <depend name="libs/nekoapi/neko.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
   <file name="libs/nekoapi/NekoAPI.cpp"/>
+  <compilerflag value="-Dneko_v1" if="neko_v1" />
 </files>
 
 <set name="NEKOPATH" value="${NEKO_INSTALL_PATH}" unless="NEKOPATH" if="NEKO_INSTALL_PATH" />
 <set name="NEKOPATH" value="/usr/lib/neko" unless="NEKOPATH" />
+<set name="neko_v2" value="1" unless="neko_v1" />
 
 <target id="nekoapi" output="nekoapi" tool="linker" toolid="dll">
   <ext value=".ndll"/>
   <files id="nekoapi"/>
-  <lib name="${RUNTIME}/libs/nekoapi/neko.lib" if="windows"/>
+  <lib name="${RUNTIME}/libs/nekoapi/neko.lib" if="windows" unless="neko_v2" />
+  <lib name="${RUNTIME}/libs/nekoapi/neko2.lib" if="windows" unless="neko_v1" />
   <lib name="-L${NEKOPATH}" unless="windows"/>
   <lib name="-lneko" unless="windows"/>
   <outdir name="../bin/${BINDIR}"/>
