@@ -844,7 +844,7 @@ class BuildTool
       var thread_var = Sys.getEnv("HXCPP_COMPILE_THREADS");
       // Don't do this by default
       if (thread_var==null && sAllowNumProcs)
-         thread_var = Sys.getEnv("NUMBER_OF_PROCESSORS");
+         thread_var = getNumberOfProcesses();
       var threads =  (thread_var==null || Std.parseInt(thread_var)<2) ? 1 :
          Std.parseInt(thread_var);
 
@@ -1129,33 +1129,58 @@ class BuildTool
       return mDefines.exists(inString);
    }
 
-	public static function getHaxelib(library:String):String
+   public static function getHaxelib(library:String):String
    {
-		var proc = new sys.io.Process("haxelib",["path",library]);
-		var result = "";
-		
-		try
+      var proc = new sys.io.Process("haxelib",["path",library]);
+      var result = "";
+      try
       {
-			while(true)
+         while(true)
          {
-				var line = proc.stdout.readLine();
-				if (line.substr(0,1) != "-")
+            var line = proc.stdout.readLine();
+            if (line.substr(0,1) != "-")
             {
-					result = line;
+               result = line;
                break;
             }
-			}
-			
-		} catch (e:Dynamic) { };
-		
-		proc.close();
-		
-		if (result == "")
-			throw ("Could not find haxelib path  " + library + " required by a source file.");
-		
-		return result;
-	}
-
+         }
+      
+      } catch (e:Dynamic) { };
+      
+      proc.close();
+      
+      if (result == "")
+         throw ("Could not find haxelib path  " + library + " required by a source file.");
+      
+      return result;
+   }
+   
+   public static function getNumberOfProcesses():String
+   {
+      if (isWindows)
+      {
+         return Sys.getEnv("NUMBER_OF_PROCESSORS");
+      }
+      else
+      {
+         var proc = null;
+         var result = null;
+         if (isLinux)
+         {
+            proc = new sys.io.Process("nproc",[]);
+         }
+         else
+         {
+            proc = new sys.io.Process("usr/sbin/system_profiler", ["-detailLevel", "full", "SPHardwareDataType", "|", "awk", "'/Total Number Of Cores/ {print $5};'"]);	
+         }
+         try
+         {
+            result = proc.stdout.readLine();
+            proc.close ();
+         } catch (e:Dynamic) {}
+         return result;
+      }
+   }
    
    static var mVarMatch = new EReg("\\${(.*?)}","");
    public function substitute(str:String) : String
@@ -1213,7 +1238,7 @@ class BuildTool
       isMac = (new EReg("mac","i")).match(os);
 		if (isMac)
 		   defines.set("mac_host", "1");
-      var isLinux = (new EReg("linux","i")).match(os);
+      isLinux = (new EReg("linux","i")).match(os);
 		if (isLinux)
 		   defines.set("linux_host", "1");
 
