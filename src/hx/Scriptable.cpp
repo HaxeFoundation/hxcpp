@@ -272,6 +272,7 @@ struct ABCReader
       {
          s = String((char *)ptr,len).dup();
          ptr+=len;
+         printf(" -> %s\n", s.__s);
       }
    }
 	void read(Namespace &ns)
@@ -381,6 +382,7 @@ struct ABCReader
       trait.name = readInt();
       trait.flags = readByte();
       trait.kind = (TraitKind)(trait.flags & 0x0f);
+      printf("  trait %d\n", trait.kind);
       switch(trait.kind)
       {
          case Trait_Slot:
@@ -422,11 +424,13 @@ struct ABCReader
       inst.name = readInt();
       printf("Instance Name : %s\n", abc.mStrings[ abc.mMultiNames[inst.name].name].__s);
       inst.superName = readInt();
+      printf(" super : %s\n", abc.mStrings[ abc.mMultiNames[inst.superName].name].__s);
       inst.flags = readByte();
       if (inst.flags & ClassProtectedNs)
          inst.protectedNs = readInt();
       readFull(inst.interfaces);
       inst.iinit = readInt();
+      printf(" iinit = %d\n", inst.iinit);
       readFull(inst.traits);
    }
 
@@ -504,8 +508,6 @@ void LoadABC(const unsigned char *inBytes, int inLen)
    }
 
    stream.read(abc);
-   
-    
 }
 
 
@@ -659,11 +661,7 @@ class NekoModule
 public:
    NekoModule(const char *inFilename)
    {
-      mGlobalCount = 0;
-      mFieldCount = 0;
-      mCodeSize = 0;
-      mOpCodes = 0;
-      mOk = false;
+      init();
 
       FILE *file = fopen(inFilename,"rb");
       if (!file)
@@ -674,7 +672,7 @@ public:
       {
          mFile = file;
          try {
-            Load(file);
+            Load();
          }
          catch (const char *inError)
          {
@@ -683,6 +681,32 @@ public:
          mFile = 0;
          fclose(file);
       }
+   }
+
+   NekoModule(unsigned char *inBytes, int inLength)
+   {
+      init();
+      mBytes = inBytes;
+      mBytesEnd = mBytes + inLength;
+      try {
+          Load();
+      }
+      catch (const char *inError)
+      {
+         printf("Error on load : %s\n", inError);
+      }
+   }
+
+   void init()
+   {
+      mFile = 0;
+      mBytesEnd = 0;
+      mBytes = 0;
+      mGlobalCount = 0;
+      mFieldCount = 0;
+      mCodeSize = 0;
+      mOpCodes = 0;
+      mOk = false;
    }
 
    ~NekoModule()
@@ -720,6 +744,12 @@ public:
 
    int ReadByte()
    {
+      if (mBytes)
+      {
+         if (mBytes+1>mBytesEnd)
+            Error("Unexpected end of data");
+         return *mBytes++;
+      }
       unsigned char byte;
       if (fread(&byte,1,1,mFile)!=1)
          Error("Unexpected end of stream");
@@ -729,7 +759,14 @@ public:
    int ReadInt()
    {
       int i;
-      if (fread(&i,4,1,mFile)!=1)
+      if (mBytes)
+      {
+         if (mBytes+4>mBytesEnd)
+            Error("Unexpected end of data");
+         i = *(int *)mBytes;
+         mBytes += 4;
+      }
+      else if (fread(&i,4,1,mFile)!=1)
          Error("Unexpected end of stream");
       return i;
    }
@@ -737,7 +774,14 @@ public:
    int ReadUInt16()
    {
       unsigned short i;
-      if (fread(&i,2,1,mFile)!=1)
+      if (mBytes)
+      {
+         if (mBytes+2>mBytesEnd)
+            Error("Unexpected end of data");
+         i = *(unsigned short *)mBytes;
+         mBytes += 2;
+      }
+      else if (fread(&i,2,1,mFile)!=1)
          Error("Unexpected end of stream");
       return i;
    }
@@ -765,7 +809,14 @@ public:
          return String("",0).dup();
 
       char *buffer = (char *)malloc(len);
-      if (fread(buffer,len,1,mFile)!=1)
+      if (mBytes)
+      {
+         if (mBytes+len>mBytesEnd)
+            Error("Could not read string16 data");
+         memcpy(buffer,mBytes,len);
+         mBytes += len;
+      }
+      else if (fread(buffer,len,1,mFile)!=1)
       {
          free(buffer);
          Error("Could not read string16");
@@ -843,10 +894,9 @@ public:
    }
 
 
-   void Load(FILE *inFile)
+   void Load( )
    {
-      unsigned int magic;
-      int result = fread(&magic,4,1,inFile);
+      unsigned int magic = ReadInt();
       if (magic!=0x4F4B454E)
          Error("Bad Magic");
 
@@ -857,9 +907,12 @@ public:
       printf("globs=%d, fields=%d, code=%d\n", mGlobalCount, mFieldCount, mCodeSize );
       mGlobals = Array_obj<Dynamic>::__new(mGlobalCount, mGlobalCount);
 
+      int version = 1;
+
       for(int g=0;g<mGlobalCount;g++)
       {
-         switch(ReadByte())
+         int code = ReadByte();
+         switch(code)
          {
             case 1:
                mGlobals[g] = String(ReadString()).dup();
@@ -889,11 +942,17 @@ public:
                ReadDebugInfo();
                break;
 
+            case 6:
+               version = ReadByte();
+               mGlobals[g] = null();
+               break;
+
             default:
+               printf("Code %d\n",code);
                Error("Unknown global code");
          }
       }
-      printf("Read globals %d\n",mGlobalCount);
+      printf("Read globals %d (v=%d)\n",mGlobalCount, version);
 
       printf("Read fields...\n");
       mFields = Array_obj<String>::__new(mFieldCount);
@@ -953,7 +1012,10 @@ public:
    int mEntry;
    int *mOpCodes;
    char mStringBuf[256];
+
    FILE *mFile;
+   const unsigned char *mBytes;
+   const unsigned char *mBytesEnd;
 };
 
 
@@ -1010,6 +1072,13 @@ void __scriptable_load_neko(String inName)
 {
    new hx::NekoModule(inName.__s);
 }
+
+void __scriptable_load_neko_bytes(Array<unsigned char> inBytes)
+{
+   new hx::NekoModule((unsigned char *)inBytes->GetBase(), inBytes->length);
+}
+
+
 
 
 void __scriptable_load_abc(Array<unsigned char> inBytes)

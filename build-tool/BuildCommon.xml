@@ -133,7 +133,7 @@
   <file name = "src/hx/Object.cpp"/>
   <file name = "src/hx/StdLibs.cpp"/>
   <file name = "src/hx/Debug.cpp"/>
-  <file name = "src/hx/Scriptable.cpp"/>
+  <file name = "src/hx/Scriptable.cpp" if="scriptable"/>
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
 

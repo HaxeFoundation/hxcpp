@@ -22,6 +22,7 @@ void ScriptableRegisterInterface( String inName, const hx::type_info *inType, Sc
 }
 
 void __scriptable_load_neko(String inName);
+void __scriptable_load_neko_bytes(Array<unsigned char> inBytes);
 void __scriptable_load_abc(Array<unsigned char> inBytes);
 
 
