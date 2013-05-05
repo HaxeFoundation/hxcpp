@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 
+#define DBGLOG(...) { }
+//#define DBGLOG printf
 
 namespace hx
 {
@@ -23,6 +25,7 @@ enum MultiNameKind
    MultinameA   = 0x0E,
    MultinameL   = 0x1B,
    MultinameLA  = 0x1C,
+   TypeName     = 0x1D,
 };
 
 enum MethodFlags
@@ -71,13 +74,14 @@ struct MultiName
 {
    MultiName() : kind(QNNone), ns(0), name(0), ns_set(0) { }
    MultiNameKind kind;
+   std::vector<int> types;
    int           ns;
    int           name;
    int           ns_set;
 };
 
 
-typedef std::vector<Namespace> NsSet;
+typedef std::vector<Namespace *> NsSet;
 
 struct Optional
 {
@@ -217,7 +221,10 @@ struct ABCReader
 
    bool ok() { return !error; }
 
-   void setError(const char *inError) { error = inError; }
+   void setError(const char *inError)
+   {
+      throw Dynamic(String(inError,strlen(inError)).dup());
+   }
       
 	int readInt()
    {
@@ -267,17 +274,18 @@ struct ABCReader
    {
       int len = readInt();
       if (ptr+len>=end)
-         setError("string too long");
+         setError("String too long");
       else
       {
          s = String((char *)ptr,len).dup();
          ptr+=len;
-         printf(" -> %s\n", s.__s);
+         DBGLOG(" -> %s\n", s.__s);
       }
    }
 	void read(Namespace &ns)
    {
-		switch(readByte())
+		int code = readByte();
+		switch(code)
       {
 		   case 0x05: ns.type = nsPrivate; break;
 		   case 0x08: ns.type = nsNamespace; break;
@@ -286,9 +294,12 @@ struct ABCReader
 		   case 0x18: ns.type = nsProtected; break;
 		   case 0x19: ns.type = nsExplicit; break;
 		   case 0x1A: ns.type = nsStaticProtected; break;
-		   default: setError("unknown namespace type");
+		   default:
+            //setError("unknown namespace type");
+            printf("unknown namespace type %d\n",code);
 		}
       ns.index = readInt();
+      DBGLOG("  ns (%d) ::%s\n",  code, abc.mStrings[ns.index].__s);
    }
 	void read(MultiName &mn)
    {
@@ -297,28 +308,40 @@ struct ABCReader
       {
          case QName      :
          case QNameA     :
-             mn.ns = readByte();
-             mn.name = readByte();
+             mn.ns = readInt();
+             mn.name = readInt();
              break;
          case RTQName    :
-             mn.name = readByte();
+         case RTQNameLA  :
+             mn.name = readInt();
              break;
          case RTQNameA   :
          case RTQNameL   :
-         case RTQNameLA  :
              break;
          case Multiname  :
          case MultinameA :
-             mn.name = readByte();
-             mn.ns_set = readByte();
+             mn.name = readInt();
+             mn.ns_set = readInt();
              break;
          case MultinameL :
          case MultinameLA:
-             mn.ns_set = readByte();
+             mn.ns_set = readInt();
              break;
+        case TypeName:
+             {
+             mn.name = readInt();
+             int c = readInt();
+             DBGLOG("   %d...\n", c);
+             for(int i=0;i<c;i++)
+                mn.types.push_back(readInt());
+             }
+             break;
+
          default:
+             printf("Kind %02d\n", mn.kind);
              setError("Unknown multi-name constant");
       }
+      DBGLOG(" name %s\n", abc.mStrings[mn.name].c_str());
    }
 
    void read(Optional &optional)
@@ -329,15 +352,22 @@ struct ABCReader
 
    void read(Method &method)
    {
+      DBGLOG("Method\n");
       method.paramCount = readInt();
       method.returnType = readInt();
       readFull(method.paramTypes,method.paramCount);
       method.name = readInt();
       method.flags = readByte();
       if (method.flags & HAS_OPTIONAL)
+      {
+         DBGLOG("optionals\n");
          readFull(method.optionals,readInt());
+      }
       if (method.flags & HAS_PARAM_NAMES)
+      {
+         DBGLOG("params\n");
          readFull(method.paramNames,method.paramCount);
+      }
    }
 
    void read(KeyValue &value)
@@ -382,7 +412,7 @@ struct ABCReader
       trait.name = readInt();
       trait.flags = readByte();
       trait.kind = (TraitKind)(trait.flags & 0x0f);
-      printf("  trait %d\n", trait.kind);
+      DBGLOG("  trait %d\n", trait.kind);
       switch(trait.kind)
       {
          case Trait_Slot:
@@ -422,15 +452,15 @@ struct ABCReader
    void read(InstanceInfo &inst)
    {
       inst.name = readInt();
-      printf("Instance Name : %s\n", abc.mStrings[ abc.mMultiNames[inst.name].name].__s);
+      DBGLOG("Instance Name : %s\n", abc.mStrings[ abc.mMultiNames[inst.name].name].__s);
       inst.superName = readInt();
-      printf(" super : %s\n", abc.mStrings[ abc.mMultiNames[inst.superName].name].__s);
+      DBGLOG(" super : %s\n", abc.mStrings[ abc.mMultiNames[inst.superName].name].__s);
       inst.flags = readByte();
       if (inst.flags & ClassProtectedNs)
          inst.protectedNs = readInt();
       readFull(inst.interfaces);
       inst.iinit = readInt();
-      printf(" iinit = %d\n", inst.iinit);
+      DBGLOG(" iinit = %d\n", inst.iinit);
       readFull(inst.traits);
    }
 
@@ -450,6 +480,7 @@ struct ABCReader
       if (n==0)
          n = 1;
          
+      DBGLOG(" %d...\n",n);
       list.resize(n);
       for(int i=1;i<n;i++)
          read(list[i]);
@@ -466,30 +497,77 @@ struct ABCReader
          read(list[i]);
    }
 
+   /*
+   n = readU32()
+            nssets = [null]
+            for (i=1; i < n; i++)
+            {
+                var count:int = readU32()
+                var nsset = nssets[i] = []
+                var nsids = []
+                for (j=0; j < count; j++) {
+                    var nsid = readU32()
+                    nsids.push(nsid)
+                    nsset[j] = namespaces[nsid]
+                }
+                if(doDumpPools)
+                    infoPrint("nsset[" + i + "] = {" + nsids.join(", ") + "}")
+            }
+
+    */
+   void readSets(std::vector<NsSet> &outSets)
+   {
+      int n = readInt();
+      if (n==0)
+         n = 1;
+      outSets.resize(n);
+      DBGLOG("Sets %d\n", n);
+      for(int i=1;i<n;i++)
+      {
+         int c = readInt();
+         DBGLOG(" [%d]\n", c);
+         for(int n=0;n<c;n++)
+            outSets[i].push_back( &abc.mNamespaces[readInt()] );
+      }
+   }
+
 
    void read(ABC &abc)
    {
+      DBGLOG("Ints...\n");
       read(abc.mInts);
+      DBGLOG("UInts...\n");
       read(abc.mUInts);
+      DBGLOG("Double...\n");
       read(abc.mDoubles);
+      DBGLOG("Strings...\n");
       read(abc.mStrings);
+      DBGLOG("Namespaces...\n");
       read(abc.mNamespaces);
-      read(abc.mNsSets);
+      DBGLOG("Namespace sets...\n");
+      readSets(abc.mNsSets);
+      DBGLOG("Multinames...\n");
       read(abc.mMultiNames);
 
+      DBGLOG("Methods...\n");
       readFull(abc.mMethods);
+      DBGLOG("Meta...\n");
       readFull(abc.mMetaData);
 
+      DBGLOG("Classes...\n");
       int classes = readInt();
 
+      DBGLOG("Instance...\n");
       readFull(abc.mInstanceInfo,classes);
+      DBGLOG("Classes...\n");
       readFull(abc.mClassInfo,classes);
+      DBGLOG("Script...\n");
       readFull(abc.mScriptInfo);
 
+      DBGLOG("Bodies...\n");
       readFull(abc.mMethodBody);
 
-      printf("Result : %s\n", error );
-
+      printf("Read ABC!\n");
    }
 
 
@@ -507,7 +585,14 @@ void LoadABC(const unsigned char *inBytes, int inLen)
       return;
    }
 
-   stream.read(abc);
+   try
+   {
+      stream.read(abc);
+   }
+   catch (Dynamic d)
+   {
+      printf("Error on load : %s\n", d->toString().__s);
+   }
 }
 
 
@@ -718,28 +803,32 @@ public:
    {
       int idx = inOp - mOpCodes;
       int arg = inOp[1];
-      printf(" %03d %s", idx, opNames[*inOp]);
+      DBGLOG(" %03d %s", idx, opNames[*inOp]);
       switch(*inOp)
       {
          case opAccField:
             {
             unsigned int fid = mFieldHash[arg & 0x7fffffff];
-            printf(" %s", mFields[fid].__s);
+            DBGLOG(" %s", mFields[fid].__s);
             break;
             }
          case opAccGlobal:
             if (arg>=mGlobalCount || arg<0)
-               printf(" %d ???", arg );
+            {
+               DBGLOG(" %d ???", arg );
+            }
             else
-               printf(" %s", !mGlobals[arg].mPtr ? "(null)" : mGlobals[arg]->__ToString().c_str() );
+            {
+               DBGLOG(" %s", !mGlobals[arg].mPtr ? "(null)" : mGlobals[arg]->__ToString().c_str() );
+            }
             break;
       }
-      printf("\n", idx, opNames[*inOp]);
+      DBGLOG("\n", idx, opNames[*inOp]);
    }
 
    void Error(const char *inMsg)
    {
-      throw inMsg;
+      throw Dynamic(String(inMsg,strlen(inMsg)).dup());
    }
 
    int ReadByte()
@@ -904,7 +993,7 @@ public:
       mFieldCount = ReadInt();
       mCodeSize = ReadInt();
 
-      printf("globs=%d, fields=%d, code=%d\n", mGlobalCount, mFieldCount, mCodeSize );
+      DBGLOG("globs=%d, fields=%d, code=%d\n", mGlobalCount, mFieldCount, mCodeSize );
       mGlobals = Array_obj<Dynamic>::__new(mGlobalCount, mGlobalCount);
 
       int version = 1;
@@ -948,24 +1037,24 @@ public:
                break;
 
             default:
-               printf("Code %d\n",code);
+               DBGLOG("Code %d\n",code);
                Error("Unknown global code");
          }
       }
-      printf("Read globals %d (v=%d)\n",mGlobalCount, version);
+      DBGLOG("Read globals %d (v=%d)\n",mGlobalCount, version);
 
-      printf("Read fields...\n");
+      DBGLOG("Read fields...\n");
       mFields = Array_obj<String>::__new(mFieldCount);
       for(int f=0;f<mFieldCount;f++)
       {
          mFields[f] = String(ReadString()).dup();
          unsigned int id = NekoHash( mFields[f].__s );
          mFieldHash[id] = f;
-         printf(" %08x -> %d\n", id,f );
+         DBGLOG(" %08x -> %d\n", id,f );
       }
-      printf("Read fields\n");
+      DBGLOG("Read fields\n");
 
-      printf("Unpack op codes...\n");
+      DBGLOG("Unpack op codes...\n");
 
       int idx = 0;
       // Unpack opcodes
@@ -998,7 +1087,7 @@ public:
       }
       mOpCodes[idx] = opLast;
       mEntry = (int)mOpCodes[1];
-      printf("Read %d op codes\n",idx);
+      DBGLOG("Read %d op codes\n",idx);
    }
 
    Array<Dynamic> mGlobals;
