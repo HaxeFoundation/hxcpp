@@ -91,6 +91,8 @@ struct Optional
 
 struct Method
 {
+   Method() { body=0; }
+
    int paramCount;
    int returnType;
    std::vector<int> paramTypes;
@@ -98,6 +100,7 @@ struct Method
    int flags;
    std::vector<Optional> optionals;
    std::vector<int> paramNames;
+   struct MethodBody *body;
 };
 
 struct KeyValue
@@ -174,7 +177,11 @@ struct MethodBody
    std::vector<Trait> traits;
 };
 
-
+static String DOT = HX_CSTRING(".");
+static String LANGLE = HX_CSTRING("<");
+static String RANGLE = HX_CSTRING(">");
+static String COMMA = HX_CSTRING(",");
+static String EMPTY = HX_CSTRING(",");
 
 struct ABC
 {
@@ -193,6 +200,87 @@ struct ABC
    std::vector<TraitSet> mScriptInfo;
 
    std::vector<MethodBody> mMethodBody;
+
+   String getMultiNameSet(int inIdx)
+   {
+      NsSet &set = mNsSets[inIdx];
+      String result = DOT;
+      return result;
+   }
+
+   String join(const String &s0, const String &joiner, const String &s1)
+   {
+      if (s0.length==0)
+         return s1;
+      return s0+joiner+s1;
+   }
+
+   String getNamespace(Namespace &inNS)
+   {
+      return mStrings[inNS.index];
+   }
+
+   String getNamespace(int inIdx)
+   {
+      return mStrings[mNamespaces[inIdx].index];
+   }
+
+   String getMultiName(int inIdx)
+   {
+      MultiName &mn = mMultiNames[inIdx];
+      switch(mn.kind)
+      {
+         case QName      :
+         case QNameA     :
+            return join(getNamespace(mn.ns),DOT,mStrings[mn.name]);
+         case RTQName    :
+         case RTQNameLA  :
+            return  mStrings[mn.name];
+         case RTQNameA   :
+         case RTQNameL   :
+            return null();
+         case Multiname  :
+         case MultinameA :
+            return join(getMultiNameSet(mn.ns_set),DOT,mStrings[mn.name]);
+         case MultinameL :
+         case MultinameLA:
+            return getMultiNameSet(mn.ns_set);
+         case TypeName:
+            {
+            String result = mStrings[mn.name];
+            result+=LANGLE;
+            for(int i=0;i<mn.types.size();i++)
+            {
+               result+=getMultiName(mn.types[i]);
+               if (i+1<mn.types.size())
+                  result+=COMMA;
+            }
+            result+=RANGLE;
+            return result;
+            }
+
+      }
+      return null();
+   }
+
+   void buildClasses()
+   {
+      for(int i=0;i<mInstanceInfo.size();i++)
+      {
+         InstanceInfo &inst = mInstanceInfo[i];
+         String className = getMultiName(inst.name);
+
+         Class cls = Class_obj::Resolve(className);
+         if (cls==null())
+         {
+            DBGLOG("New Class %s\n", className.__s);
+         }
+         else
+         {
+            DBGLOG("Already defined %s\n", className.__s);
+         }
+      }
+   }
 };
 
 
@@ -352,20 +440,20 @@ struct ABCReader
 
    void read(Method &method)
    {
-      DBGLOG("Method\n");
       method.paramCount = readInt();
       method.returnType = readInt();
       readFull(method.paramTypes,method.paramCount);
       method.name = readInt();
+      DBGLOG("Method %s(%d)\n", abc.mStrings[method.name].__s, method.paramCount);
       method.flags = readByte();
       if (method.flags & HAS_OPTIONAL)
       {
-         DBGLOG("optionals\n");
+         //DBGLOG("optionals\n");
          readFull(method.optionals,readInt());
       }
       if (method.flags & HAS_PARAM_NAMES)
       {
-         DBGLOG("params\n");
+         //DBGLOG("params\n");
          readFull(method.paramNames,method.paramCount);
       }
    }
@@ -396,6 +484,11 @@ struct ABCReader
    void read(MethodBody &body)
    {
       body.method = readInt();
+      if (body.method<0 || body.method>=abc.mMethods.size())
+         setError("Bad method link");
+      if (abc.mMethods[body.method].body!=0)
+         setError("Duplicate method link");
+      abc.mMethods[body.method].body = &body;
       body.maxStack = readInt();
       body.localCount = readInt();
       body.initScopeDepth = readInt();
@@ -412,7 +505,7 @@ struct ABCReader
       trait.name = readInt();
       trait.flags = readByte();
       trait.kind = (TraitKind)(trait.flags & 0x0f);
-      DBGLOG("  trait %d\n", trait.kind);
+      //DBGLOG("  trait %d\n", trait.kind);
       switch(trait.kind)
       {
          case Trait_Slot:
@@ -452,15 +545,14 @@ struct ABCReader
    void read(InstanceInfo &inst)
    {
       inst.name = readInt();
-      DBGLOG("Instance Name : %s\n", abc.mStrings[ abc.mMultiNames[inst.name].name].__s);
+      DBGLOG("Instance Name : %s", abc.mStrings[ abc.mMultiNames[inst.name].name].__s);
       inst.superName = readInt();
-      DBGLOG(" super : %s\n", abc.mStrings[ abc.mMultiNames[inst.superName].name].__s);
+      DBGLOG(", super : %s\n", abc.mStrings[ abc.mMultiNames[inst.superName].name].__s);
       inst.flags = readByte();
       if (inst.flags & ClassProtectedNs)
          inst.protectedNs = readInt();
       readFull(inst.interfaces);
       inst.iinit = readInt();
-      DBGLOG(" iinit = %d\n", inst.iinit);
       readFull(inst.traits);
    }
 
@@ -497,24 +589,6 @@ struct ABCReader
          read(list[i]);
    }
 
-   /*
-   n = readU32()
-            nssets = [null]
-            for (i=1; i < n; i++)
-            {
-                var count:int = readU32()
-                var nsset = nssets[i] = []
-                var nsids = []
-                for (j=0; j < count; j++) {
-                    var nsid = readU32()
-                    nsids.push(nsid)
-                    nsset[j] = namespaces[nsid]
-                }
-                if(doDumpPools)
-                    infoPrint("nsset[" + i + "] = {" + nsids.join(", ") + "}")
-            }
-
-    */
    void readSets(std::vector<NsSet> &outSets)
    {
       int n = readInt();
@@ -567,7 +641,7 @@ struct ABCReader
       DBGLOG("Bodies...\n");
       readFull(abc.mMethodBody);
 
-      printf("Read ABC!\n");
+      DBGLOG("Read ABC!\n");
    }
 
 
@@ -588,6 +662,7 @@ void LoadABC(const unsigned char *inBytes, int inLen)
    try
    {
       stream.read(abc);
+      abc.buildClasses();
    }
    catch (Dynamic d)
    {
