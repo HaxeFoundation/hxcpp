@@ -88,12 +88,20 @@ public:
 
    bool __HasField(const String &inString);
 
+   virtual Dynamic ConstructEmpty();
+   virtual Dynamic ConstructArgs(hx::DynamicArray inArgs);
+   virtual Dynamic ConstructEnum(String inName,hx::DynamicArray inArgs);
+   virtual bool VCanCast(hx::Object *inPtr) { return false; }
 
    int __GetType() const { return vtObject; }
 
    bool __IsEnum();
 
-	hx::CanCastFunc     CanCast;
+	inline bool CanCast(hx::Object *inPtr) { return mCanCast ? mCanCast(inPtr) : VCanCast(inPtr); }
+
+  
+	hx::CanCastFunc     mCanCast;
+
 
 
    Array<String>      GetInstanceFields();
@@ -104,9 +112,11 @@ public:
    Class              *mSuper;
    String             mName;
    Dynamic            __meta__;
+
 	hx::ConstructArgsFunc  mConstructArgs;
 	hx::ConstructEmptyFunc mConstructEmpty;
 	hx::ConstructEnumFunc  mConstructEnum;
+
 	hx::MarkFunc           mMarkFunc;
    #ifdef HXCPP_VISIT_ALLOCS
 	hx::VisitFunc           mVisitFunc;
@@ -134,6 +144,9 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     , VisitFunc inVisitFunc=0
                     #endif
                     );
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void RegisterClass(const String &inClassName, Class inClass);
 
 template<typename T>
 inline bool TCanCast(hx::Object *inPtr)

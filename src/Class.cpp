@@ -37,6 +37,13 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
    return c;
 }
 
+void RegisterClass(const String &inClassName, Class inClass)
+{
+   if (sClassMap==0)
+      sClassMap = new ClassMap;
+   (*sClassMap)[inClassName] = inClass;
+}
+
 
 
 }
@@ -76,7 +83,7 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
       for(String *m = inMembers; m->length; m++)
          mMembers->Add( *m );
    }
-   CanCast = inCanCast;
+   mCanCast = inCanCast;
 }
 
 Class Class_obj::GetSuper()
@@ -138,6 +145,24 @@ Class Class_obj::Resolve(String inName)
       return null();
    return i->second;
 }
+
+Dynamic Class_obj::ConstructEmpty()
+{
+   return mConstructEmpty();
+}
+
+Dynamic Class_obj::ConstructArgs(DynamicArray inArgs)
+{
+   return mConstructArgs(inArgs);
+}
+
+Dynamic Class_obj::ConstructEnum(String inName,DynamicArray inArgs)
+{
+   if (mConstructEnum==0)
+      return null();
+   return mConstructEnum(inName,inArgs);
+}
+
 
 
 String Class_obj::__ToString() const { return mName; }

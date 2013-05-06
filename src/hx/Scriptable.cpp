@@ -262,26 +262,59 @@ struct ABC
       }
       return null();
    }
-
-   void buildClasses()
-   {
-      for(int i=0;i<mInstanceInfo.size();i++)
-      {
-         InstanceInfo &inst = mInstanceInfo[i];
-         String className = getMultiName(inst.name);
-
-         Class cls = Class_obj::Resolve(className);
-         if (cls==null())
-         {
-            DBGLOG("New Class %s\n", className.__s);
-         }
-         else
-         {
-            DBGLOG("Already defined %s\n", className.__s);
-         }
-      }
-   }
 };
+
+
+class ABCClass_obj : public Class_obj
+{
+public:
+   ABCClass_obj(ABC &abc, InstanceInfo &inst)
+   {
+      mName = abc.getMultiName(inst.name);
+
+      mConstructEmpty = 0;
+      mConstructArgs = 0;
+      mConstructEnum = 0;
+      mMarkFunc = 0;
+      mVisitFunc = 0;
+      mCanCast = 0;
+      mStatics = Array_obj<String>::__new(0,0);
+      mMembers = Array_obj<String>::__new(0,0);
+   }
+
+   void __Mark(hx::MarkContext *__inCtx)
+   {
+      Class_obj::__Mark(__inCtx);
+   }
+   void MarkStatics(hx::MarkContext *__inCtx)
+   {
+   }
+
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      Class_obj::__Visit(__inCtx);
+   }
+   void VisitStatics(hx::VisitContext *__inCtx)
+   {
+   }
+
+   Dynamic ConstructEmpty()
+   {
+      return null();
+   }
+   Dynamic ConstructArgs(hx::DynamicArray inArgs)
+   {
+      return null();
+   }
+   Dynamic ConstructEnum(String inName,hx::DynamicArray inArgs)
+   {
+      return null();
+   }
+
+   bool VCanCast(hx::Object *inPtr) { return false; }
+};
+
+typedef hx::ObjectPtr<ABCClass_obj> ABCClass;
 
 
 struct ABCReader
@@ -644,7 +677,6 @@ struct ABCReader
       DBGLOG("Read ABC!\n");
    }
 
-
 };
 
 void LoadABC(const unsigned char *inBytes, int inLen)
@@ -662,7 +694,23 @@ void LoadABC(const unsigned char *inBytes, int inLen)
    try
    {
       stream.read(abc);
-      abc.buildClasses();
+
+      for(int i=0;i<abc.mInstanceInfo.size();i++)
+      {
+         InstanceInfo &inst = abc.mInstanceInfo[i];
+         String className = abc.getMultiName(inst.name);
+
+         Class cls = Class_obj::Resolve(className);
+         if (cls==null())
+         {
+            ABCClass cls = new ABCClass_obj(abc, inst);
+            RegisterClass(className,cls);
+         }
+         else
+         {
+            DBGLOG("Already defined %s\n", className.__s);
+         }
+      }
    }
    catch (Dynamic d)
    {
