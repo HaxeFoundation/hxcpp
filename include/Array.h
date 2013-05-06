@@ -281,7 +281,7 @@ public:
    }
    #endif
 
-   inline Array_obj *__SetSizeExact(int inLen) { ArrayBase::__SetSizeExact(inLen); return this; }
+   inline Array<ELEM_> __SetSizeExact(int inLen);
 
    int GetElementSize() const { return sizeof(ELEM_); }
 
@@ -604,6 +604,13 @@ Array<ELEM_> Array_obj<ELEM_>::filter(Dynamic inFunc)
       if (inFunc(__unsafe_get(i)))
          result->push(__unsafe_get(i));
    return result;
+}
+
+template<typename ELEM_>
+Array<ELEM_> Array_obj<ELEM_>::__SetSizeExact(int inLen)
+{
+   ArrayBase::__SetSizeExact(inLen);
+   return this;
 }
 
 template<typename ELEM_>
