@@ -64,6 +64,25 @@ enum InstanceFlags
    ClassProtectedNs = 0x08,
 };
 
+enum ConstantKind
+{
+   ConstantInt = 0x03,
+   ConstantUInt = 0x04,
+   ConstantDouble = 0x06,
+   ConstantUtf8 = 0x01,
+   ConstantTrue = 0x0B,
+   ConstantFalse = 0x0A,
+   ConstantNull = 0x0C,
+   ConstantUndefined = 0x00,
+   ConstantNamespace = 0x08,
+   ConstantPackageNamespace = 0x16,
+   ConstantPackageInternalNs = 0x17,
+   ConstantProtectedNamespace = 0x18,
+   ConstantExplicitNamespace = 0x19,
+   ConstantStaticProtectedNs = 0x1A,
+   ConstantPrivateNs = 0x05,
+};
+
 struct Namespace
 {
    Type type;
@@ -115,14 +134,6 @@ struct MetaData
    std::vector<KeyValue> data;
 };
 
-struct TraitSlot
-{
-   int slot;
-   int typeName;
-   int index;
-   int vkind;
-};
-
 struct Trait
 {
    int       name;
@@ -132,7 +143,7 @@ struct Trait
    int slot;
    int type;
    int index;
-   int vkind;
+   ConstantKind vkind;
 
    std::vector<int> metaData;
 };
@@ -262,16 +273,54 @@ struct ABC
       }
       return null();
    }
+
+   Dynamic getConst(Trait &trait)
+   {
+      switch(trait.vkind)
+      {
+         case ConstantInt:
+            return mInts[trait.index];
+         case ConstantUInt:
+            return (int)mUInts[trait.index];
+         case ConstantDouble:
+            return mDoubles[trait.index];
+         case ConstantUtf8:
+            return mStrings[trait.index];
+         case ConstantTrue:
+            return true;
+         case ConstantFalse:
+            return false;
+         case ConstantNull:
+            return null();
+         case ConstantUndefined:
+            return null();
+
+         case ConstantNamespace:
+         case ConstantPackageNamespace:
+         case ConstantPackageInternalNs:
+         case ConstantProtectedNamespace:
+         case ConstantExplicitNamespace:
+         case ConstantStaticProtectedNs:
+         case ConstantPrivateNs:
+            return HX_CSTRING("Namespace");
+      }
+      return HX_CSTRING("???");
+   }
 };
 
 
 class ABCClass_obj : public Class_obj
 {
+   Class mSuper;
+
 public:
    ABCClass_obj(ABC &abc, InstanceInfo &inst)
    {
       mName = abc.getMultiName(inst.name);
+      if (inst.superName>0)
+         mSuper = Class_obj::Resolve( abc.getMultiName(inst.superName) );
 
+      printf("Class %s\n", (mName + HX_CSTRING("::") + mSuper).__s );
       mConstructEmpty = 0;
       mConstructArgs = 0;
       mConstructEnum = 0;
@@ -280,11 +329,56 @@ public:
       mCanCast = 0;
       mStatics = Array_obj<String>::__new(0,0);
       mMembers = Array_obj<String>::__new(0,0);
+
+      for(int t=0;t<inst.traits.size();t++)
+         addInstanceTrait(abc,inst.traits[t]);
+   }
+
+   void addInstanceTrait(ABC &abc, Trait &trait)
+   {
+      String name = abc.getMultiName(trait.name);
+      switch(trait.kind)
+      {
+         case Trait_Slot:
+            {
+            int slot = trait.slot;
+            String typeName = abc.getMultiName(trait.type);
+            printf(" var %s:%s %d\n", name.__s, typeName.__s, slot);
+            }
+            break;
+         case Trait_Method:
+            {
+            printf(" function %s\n", name.__s);
+            }
+            break;
+         case Trait_Getter:
+            {
+            printf(" getter %s\n", name.__s);
+            }
+            break;
+         case Trait_Setter:
+            {
+            printf(" setter %s\n", name.__s);
+            }
+            break;
+         case Trait_Class:
+            printf(" class ?\n");
+            break;
+         case Trait_Function:
+            printf(" function ?\n");
+            break;
+         case Trait_Const:
+            {
+            printf(" const %s %s\n",name.__s, abc.getConst(trait)->toString().__s);
+            }
+            break;
+      }
    }
 
    void __Mark(hx::MarkContext *__inCtx)
    {
       Class_obj::__Mark(__inCtx);
+      hx::MarkMember(mSuper,__inCtx);
    }
    void MarkStatics(hx::MarkContext *__inCtx)
    {
@@ -293,6 +387,7 @@ public:
    void __Visit(hx::VisitContext *__inCtx)
    {
       Class_obj::__Visit(__inCtx);
+      hx::VisitMember(mSuper,__inCtx);
    }
    void VisitStatics(hx::VisitContext *__inCtx)
    {
@@ -547,9 +642,9 @@ struct ABCReader
             trait.type = readInt();
             trait.index = readInt();
             if (trait.index==0)
-               trait.vkind = 0;
+               trait.vkind = ConstantUndefined;
             else
-               trait.vkind = readByte();
+               trait.vkind = (ConstantKind)readByte();
             break;
          case Trait_Method:
          case Trait_Getter:
