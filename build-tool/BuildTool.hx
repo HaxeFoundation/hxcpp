@@ -841,12 +841,21 @@ class BuildTool
       for(sub in target.mSubTargets)
          buildTarget(sub);
  
-      var thread_var = Sys.getEnv("HXCPP_COMPILE_THREADS");
-      // Don't do this by default
-      if (thread_var==null && sAllowNumProcs)
-         thread_var = getNumberOfProcesses();
-      var threads =  (thread_var==null || Std.parseInt(thread_var)<2) ? 1 :
-         Std.parseInt(thread_var);
+      var threads = 1;
+
+      // Old compiler can't use multi-threads because of pdb conflicts
+      if (sAllowNumProcs)
+      {
+         var thread_var = mDefines.exists("HXCPP_COMPILE_THREADS") ?
+            mDefines.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
+
+         if (thread_var==null)
+            thread_var = getNumberOfProcesses();
+         threads =  (thread_var==null || Std.parseInt(thread_var)<2) ? 1 :
+            Std.parseInt(thread_var);
+      }
+
+      // Sys.println("Using " + threads + " threads.");
 
 
       var objs = new Array<String>();
@@ -1155,31 +1164,44 @@ class BuildTool
       return result;
    }
    
+   // Setting HXCPP_COMPILE_THREADS to 2x number or cores can help with hyperthreading
    public static function getNumberOfProcesses():String
    {
-      if (isWindows)
-      {
-         return Sys.getEnv("NUMBER_OF_PROCESSORS");
-      }
-      else
+      var env = Sys.getEnv("NUMBER_OF_PROCESSORS");
+      if (env!=null)
+         return env;
+
+      var result = null;
+      if (isLinux)
       {
          var proc = null;
-         var result = null;
-         if (isLinux)
-         {
-            proc = new sys.io.Process("nproc",[]);
-         }
-         else
-         {
-            proc = new sys.io.Process("usr/sbin/system_profiler", ["-detailLevel", "full", "SPHardwareDataType", "|", "awk", "'/Total Number Of Cores/ {print $5};'"]);	
-         }
+         proc = new sys.io.Process("nproc",[]);
          try
          {
             result = proc.stdout.readLine();
             proc.close ();
          } catch (e:Dynamic) {}
-         return result;
       }
+      else if (isMac)
+      {
+         var proc = new sys.io.Process("/usr/sbin/system_profiler", ["-detailLevel", "full", "SPHardwareDataType"]);	
+         var cores = ~/Total Number of Cores: (\d+)/;
+         try
+         {
+            while(true)
+            {
+               var line = proc.stdout.readLine();
+               if (cores.match(line))
+               {
+                  result = cores.matched(1);
+                  break;
+               }
+            }
+         } catch (e:Dynamic) {}
+         if (proc!=null)
+            proc.close();
+      }
+      return result;
    }
    
    static var mVarMatch = new EReg("\\${(.*?)}","");

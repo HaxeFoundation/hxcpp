@@ -1,3 +1,18 @@
+3.0.1
+------------------------------------------------------------
+* Added nekoapi for linux64
+* Upgrade nekoapi to v2
+* Added haxe vector support
+* Added socket_set_fast_send
+* Fixed android build
+* Expanded native memory access methods
+* Fix exception dump
+* Added initial Emscriptm support
+* Allow specification of ANDROID_HOST
+* Inital work on auto-setup of win64
+* Support call-site casting of Arrays
+
+
 3.0.0
 ------------------------------------------------------------
 * Support haxe3 syntax
