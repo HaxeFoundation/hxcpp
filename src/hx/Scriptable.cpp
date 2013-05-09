@@ -10,6 +10,8 @@
 namespace hx
 {
 
+
+
 enum Type { nsPublic, nsPrivate, nsNamespace, nsInternal, nsProtected, nsExplicit, nsStaticProtected };
 
 enum MultiNameKind
@@ -192,7 +194,6 @@ static String DOT = HX_CSTRING(".");
 static String LANGLE = HX_CSTRING("<");
 static String RANGLE = HX_CSTRING(">");
 static String COMMA = HX_CSTRING(",");
-static String EMPTY = HX_CSTRING(",");
 
 struct ABC
 {
@@ -317,10 +318,16 @@ public:
    ABCClass_obj(ABC &abc, InstanceInfo &inst)
    {
       mName = abc.getMultiName(inst.name);
+      String superName = HX_CSTRING("Object");
       if (inst.superName>0)
-         mSuper = Class_obj::Resolve( abc.getMultiName(inst.superName) );
+      {
+         superName = abc.getMultiName(inst.superName);
+         mSuper = Class_obj::Resolve(superName);
+         if (mSuper==null())
+            superName = HX_CSTRING("Unknown - ") + superName;
+      }
 
-      printf("Class %s\n", (mName + HX_CSTRING("::") + mSuper).__s );
+      printf("Class %s\n", (mName + HX_CSTRING("::") + superName).__s );
       mConstructEmpty = 0;
       mConstructArgs = 0;
       mConstructEnum = 0;
@@ -442,37 +449,37 @@ struct ABCReader
       throw Dynamic(String(inError,strlen(inError)).dup());
    }
       
-	int readInt()
+   int readInt()
    {
-		int a = readByte();
-		if( a < 128 )
-			return a;
-		a &= 0x7F;
-		int b = readByte();
-		if( b < 128 )
-			return (b << 7) | a;
-		b &= 0x7F;
-		int c = readByte();
-		if( c < 128 )
-			return (c << 14) | (b << 7) | a;
-		c &= 0x7F;
-		int d = readByte();
-		if( d < 128 )
-			return (d << 21) | (c << 14) | (b << 7) | a;
-		d &= 0x7F;
-		int e = readByte();
-		if( e > 15 ) setError("bad integer encoding");
-		return (e << 28) | (d << 21) | (c << 14) | (b << 7) | a;
-	}
-	int readUInt30()
+      int a = readByte();
+      if( a < 128 )
+         return a;
+      a &= 0x7F;
+      int b = readByte();
+      if( b < 128 )
+         return (b << 7) | a;
+      b &= 0x7F;
+      int c = readByte();
+      if( c < 128 )
+         return (c << 14) | (b << 7) | a;
+      c &= 0x7F;
+      int d = readByte();
+      if( d < 128 )
+         return (d << 21) | (c << 14) | (b << 7) | a;
+      d &= 0x7F;
+      int e = readByte();
+      if( e > 15 ) setError("bad integer encoding");
+      return (e << 28) | (d << 21) | (c << 14) | (b << 7) | a;
+   }
+   int readUInt30()
    {
-		int ch1 = readByte();
-		int ch2 = readByte();
-		int ch3 = readByte();
-		int ch4 = readByte();
-		if( ch4 >= 64 ) setError("Uint30 out of bounds");
-		return  ch1 | (ch2 << 8) | (ch3 << 16) | (ch4 << 24);
-	}
+      int ch1 = readByte();
+      int ch2 = readByte();
+      int ch3 = readByte();
+      int ch4 = readByte();
+      if( ch4 >= 64 ) setError("Uint30 out of bounds");
+      return  ch1 | (ch2 << 8) | (ch3 << 16) | (ch4 << 24);
+   }
 
    void read(int &i) { i = readInt(); }
    void read(unsigned int &i) { i = readInt(); }
@@ -498,26 +505,26 @@ struct ABCReader
          DBGLOG(" -> %s\n", s.__s);
       }
    }
-	void read(Namespace &ns)
+   void read(Namespace &ns)
    {
-		int code = readByte();
-		switch(code)
+      int code = readByte();
+      switch(code)
       {
-		   case 0x05: ns.type = nsPrivate; break;
-		   case 0x08: ns.type = nsNamespace; break;
-		   case 0x16: ns.type = nsPublic; break;
-		   case 0x17: ns.type = nsInternal; break;
-		   case 0x18: ns.type = nsProtected; break;
-		   case 0x19: ns.type = nsExplicit; break;
-		   case 0x1A: ns.type = nsStaticProtected; break;
-		   default:
+         case 0x05: ns.type = nsPrivate; break;
+         case 0x08: ns.type = nsNamespace; break;
+         case 0x16: ns.type = nsPublic; break;
+         case 0x17: ns.type = nsInternal; break;
+         case 0x18: ns.type = nsProtected; break;
+         case 0x19: ns.type = nsExplicit; break;
+         case 0x1A: ns.type = nsStaticProtected; break;
+         default:
             //setError("unknown namespace type");
             printf("unknown namespace type %d\n",code);
-		}
+      }
       ns.index = readInt();
       DBGLOG("  ns (%d) ::%s\n",  code, abc.mStrings[ns.index].__s);
    }
-	void read(MultiName &mn)
+   void read(MultiName &mn)
    {
       mn.kind = (MultiNameKind)readByte();
       switch(mn.kind)
@@ -774,8 +781,112 @@ struct ABCReader
 
 };
 
+class Object_obj__scriptable : public Object
+{
+   typedef Object_obj__scriptable __ME;
+   typedef Object super;
+
+   void __construct() { }
+   HX_DEFINE_SCRIPTABLE(HX_ARR_LIST0)
+   HX_DEFINE_SCRIPTABLE_DYNAMIC;
+};
+
+
+
+void ScriptableRegisterClass( String inName, String *inFunctions, hx::ScriptableClassFactory inFactory)
+{
+}
+
+
+void ScriptableRegisterInterface( String inName, const hx::type_info *inType, hx::ScriptableInterfaceFactory inFactory)
+{
+}
+
+
+void InitABC()
+{
+   String allFunctions = null();
+   String *__scriptableFunctionNames = &allFunctions;
+
+   HX_SCRIPTABLE_REGISTER_CLASS("Object",Object_obj);
+}
+
+Dynamic ScriptableCall0(void *user, Object *thiz)
+{
+   return null();
+}
+
+Dynamic ScriptableCall1(void *user, Object *thiz,Dynamic)
+{
+   return null();
+}
+
+Dynamic ScriptableCall2(void *user, Object *thiz,Dynamic,Dynamic)
+{
+   return null();
+}
+
+Dynamic ScriptableCall3(void *user, Object *thiz,Dynamic,Dynamic,Dynamic)
+{
+   return null();
+}
+
+Dynamic ScriptableCall4(void *user, Object *thiz,Dynamic,Dynamic,Dynamic,Dynamic)
+{
+   return null();
+}
+
+Dynamic ScriptableCall5(void *user, Object *thiz,Dynamic,Dynamic,Dynamic,Dynamic,Dynamic)
+{
+   return null();
+}
+
+Dynamic ScriptableCallMult(void *user, Object *thiz,Dynamic *inArgs)
+{
+   return null();
+}
+
+void ScriptableMark(ScriptHandler *, unsigned char *, HX_MARK_PARAMS)
+{
+}
+
+void ScriptableVisit(ScriptHandler *, unsigned char **, HX_VISIT_PARAMS)
+{
+}
+
+bool ScriptableField(hx::Object *, const ::String &,bool inCallProp,Dynamic &outResult)
+{
+   return false;
+}
+
+bool ScriptableField(hx::Object *, int inName,bool inCallProp,Float &outResult)
+{
+   return false;
+}
+
+bool ScriptableField(hx::Object *, int inName,bool inCallProp,Dynamic &outResult)
+{
+   return false;
+}
+
+void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields)
+{
+}
+
+bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,bool inCallProp, Dynamic &outValue)
+{
+   return false;
+}
+
+
+static bool sAbcInit = false;
 void LoadABC(const unsigned char *inBytes, int inLen)
 {
+   if (!sAbcInit)
+   {
+      sAbcInit = true;
+      InitABC();
+   }
    ABC abc;
    ABCReader stream(abc, inBytes,inLen);
 
@@ -813,7 +924,7 @@ void LoadABC(const unsigned char *inBytes, int inLen)
    }
 }
 
-
+#if 0
 
 
 enum OpCode
@@ -1192,11 +1303,11 @@ public:
    unsigned int NekoHash(const char *name)
    {
       unsigned int result = 0;
-	   while( *name )
+      while( *name )
       {
-		  result = (223 * result + *((unsigned char*)name));
-		  name++;
-	   }
+        result = (223 * result + *((unsigned char*)name));
+        name++;
+      }
       return result & 0x7fffffff;
    }
 
@@ -1325,68 +1436,25 @@ public:
    const unsigned char *mBytesEnd;
 };
 
-
-void ScriptableRegisterClass( String inName, String *inFunctions, hx::ScriptableClassFactory inFactory)
-{
-}
+#endif
 
 
-void ScriptableRegisterInterface( String inName, const hx::type_info *inType, hx::ScriptableInterfaceFactory inFactory)
-{
-}
-
-
-
-Dynamic ScriptableCall0(void *user, Object *thiz)
-{
-   return null();
-}
-
-Dynamic ScriptableCall1(void *user, Object *thiz,Dynamic)
-{
-   return null();
-}
-
-Dynamic ScriptableCall2(void *user, Object *thiz,Dynamic,Dynamic)
-{
-   return null();
-}
-
-Dynamic ScriptableCall3(void *user, Object *thiz,Dynamic,Dynamic,Dynamic)
-{
-   return null();
-}
-
-Dynamic ScriptableCall4(void *user, Object *thiz,Dynamic,Dynamic,Dynamic,Dynamic)
-{
-   return null();
-}
-
-Dynamic ScriptableCall5(void *user, Object *thiz,Dynamic,Dynamic,Dynamic,Dynamic,Dynamic)
-{
-   return null();
-}
-
-Dynamic ScriptableCallMult(void *user, Object *thiz,Dynamic *inArgs)
-{
-   return null();
-}
 
 
 } // end namespace hx
 
+#if 0
 void __scriptable_load_neko(String inName)
 {
    new hx::NekoModule(inName.__s);
 }
 
+
 void __scriptable_load_neko_bytes(Array<unsigned char> inBytes)
 {
    new hx::NekoModule((unsigned char *)inBytes->GetBase(), inBytes->length);
 }
-
-
-
+#endif
 
 void __scriptable_load_abc(Array<unsigned char> inBytes)
 {

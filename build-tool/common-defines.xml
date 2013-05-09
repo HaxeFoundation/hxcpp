@@ -15,4 +15,5 @@
  <flag value="-DHXCPP_DLL_IMPORT" if="dll_import"/>
  <flag value="-I${dll_import_include}" if="dll_import_include"/>
  <flag value="-DHXCPP_DLL_EXPORT" if="dll_export"/>
+ <flag value="-DHXCPP_SCRIPTABLE" if="scriptable"/>
 </xml>

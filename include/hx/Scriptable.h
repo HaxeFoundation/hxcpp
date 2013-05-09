@@ -13,11 +13,21 @@ Dynamic ScriptableCall4(void *user, ::hx::Object *thiz,Dynamic,Dynamic,Dynamic,D
 Dynamic ScriptableCall5(void *user, ::hx::Object *thiz,Dynamic,Dynamic,Dynamic,Dynamic,Dynamic);
 Dynamic ScriptableCallMult(void *user, ::hx::Object *thiz,Dynamic *inArgs);
 
-typedef hx::Object * (*ScriptableClassFactory)(Array<Dynamic> inArgs, void **inVTable);
+
+typedef hx::Object * (*ScriptableClassFactory)(void **inVTable,ScriptHandler *,unsigned char *);
 typedef hx::Object * (*ScriptableInterfaceFactory)(::hx::Object *);
 
 void ScriptableRegisterClass( String inName, String *inFunctions, ScriptableClassFactory inFactory);
 void ScriptableRegisterInterface( String inName, const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
+
+void ScriptableMark(ScriptHandler *, unsigned char *, HX_MARK_PARAMS);
+void ScriptableVisit(ScriptHandler *, unsigned char **, HX_VISIT_PARAMS);
+bool ScriptableField(hx::Object *, const ::String &,bool inCallProp,Dynamic &outResult);
+bool ScriptableField(hx::Object *, int inName,bool inCallProp,Float &outResult);
+bool ScriptableField(hx::Object *, int inName,bool inCallProp,Dynamic &outResult);
+void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields);
+bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,bool inCallProp, Dynamic &outValue);
+
 
 }
 
@@ -35,12 +45,19 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
 
 #define HX_DEFINE_SCRIPTABLE(ARG_LIST) \
    void **__scriptVTable; \
+   hx::ScriptHandler *__instanceInfo; \
+   unsigned char *__instanceData; \
    public: \
-   static hx::Object *__script_create(Array<Dynamic> inArgs, void **inVTable) { \
-	__ME *result = new __ME(); \
-   result->__scriptVTable = inVTable; \
-   result->__construct(ARG_LIST); \
-   return result; }
+   static hx::Object *__script_create(void **inVTable, hx::ScriptHandler *inInfo, unsigned char *inData) { \
+    __ME *result = new __ME(); \
+    result->__scriptVTable = inVTable; \
+    result->__instanceInfo = inInfo; \
+    result->__instanceData = inData; \
+   return result; } \
+   void __Construct(Array<Dynamic> inArgs) { __construct(ARG_LIST); } \
+   hx::ScriptHandler *__GetScriptHandler() { return __instanceInfo; } \
+   unsigned char *__GetScriptData() { return __instanceData; }
+
 
 #define HX_DEFINE_SCRIPTABLE_INTERFACE \
    Dynamic mDelegate; \
@@ -48,31 +65,31 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
    void __Visit(HX_VISIT_PARAMS) { HX_VISIT_OBJECT(mDelegate.mPtr); } \
    public: \
    static hx::Object *__script_create(hx::Object *inDelegate) { \
-	__ME *result = new __ME(); \
-   result->mDelegate = inDelegate; \
-   return result; }
+    __ME *result = new __ME(); \
+    result->mDelegate = inDelegate; \
+    return result; } \
 
 
 
 #define HX_DEFINE_SCRIPTABLE_DYNAMIC \
-   HX_DECLARE_IMPLEMENT_DYNAMIC \
-	void __Mark(HX_MARK_PARAMS) { super::__Mark(HX_MARK_ARG); HX_MARK_DYNAMIC; } \
-   void __Visit(HX_VISIT_PARAMS) { super::__Visit(HX_VISIT_ARG); HX_VISIT_DYNAMIC; } \
+	void __Mark(HX_MARK_PARAMS) { super::__Mark(HX_MARK_ARG); hx::ScriptableMark(__instanceInfo,__instanceData,HX_MARK_ARG); } \
+   void __Visit(HX_VISIT_PARAMS) { super::__Visit(HX_VISIT_ARG); hx::ScriptableVisit(__instanceInfo,&__instanceData,HX_VISIT_ARG); } \
  \
 	Dynamic __Field(const ::String &inName,bool inCallProp) \
-      { HX_CHECK_DYNAMIC_GET_FIELD(inName); return super::__Field(inName,inCallProp); } \
+      { Dynamic result; if (hx::ScriptableField(this,inName,inCallProp,result)) return result; return super::__Field(inName,inCallProp); } \
 	Float __INumField(int inFieldID) \
-		{ HX_CHECK_DYNAMIC_GET_INT_FIELD(inFieldID); return super::__INumField(inFieldID); } \
+		{ Float result; if (hx::ScriptableField(this,inFieldID,true,result)) return result; return super::__INumField(inFieldID); } \
 	Dynamic __IField(int inFieldID) \
-		{ HX_CHECK_DYNAMIC_GET_INT_FIELD(inFieldID); return super::__IField(inFieldID); } \
+		{ Dynamic result; if (hx::ScriptableField(this,inFieldID,true,result)) return result; return super::__IField(inFieldID); } \
 	Dynamic __SetField(const ::String &inName,const Dynamic &inValue,bool inCallProp) \
    { \
-		try { return super::__SetField(inName,inValue,inCallProp); } \
-		catch(Dynamic e) { HX_DYNAMIC_SET_FIELD(inName,inValue); } \
-		return inValue; \
+      Dynamic value; \
+      if (hx::ScriptableSetField(this, inName, inValue,inCallProp,value)) \
+         return value; \
+		return super::__SetField(inName,inValue,inCallProp); \
    } \
 	void __GetFields(Array< ::String> &outFields) \
-		{ HX_APPEND_DYNAMIC_FIELDS(outFields); super::__GetFields(outFields); }
+		{ super::__GetFields(outFields); hx::ScriptableGetFields(this,outFields); }
 
 
 
