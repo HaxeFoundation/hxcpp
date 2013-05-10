@@ -73,17 +73,13 @@ class Setup
                {
                   var str = fin.readLine();
                   var split = str.split ("=");
-                  var name = StringTools.trim (split[0].substr (split[0].indexOf (" ") + 1));
+                  var name = StringTools.trim (split[0].substr (split[0].lastIndexOf (" ") + 1));
                   switch (name)
                   {
                      case "QNX_HOST", "QNX_TARGET", "QNX_HOST_VERSION", "QNX_TARGET_VERSION":
                      	var value = split[1];
                      	if (StringTools.startsWith (value, "${") && split.length > 2)
                      	{
-                     	    if (Sys.getEnv (name) != null)
-                     	    {
-                     	       continue;
-                     	    }
                      		value = split[2].substr (0, split[2].length - 1);
                      	}
                         if (StringTools.startsWith(value, "\""))
@@ -94,8 +90,20 @@ class Setup
                         {
                            value = value.substr (0, value.length - 1);
                         }
-                        value = StringTools.replace (value, "$QNX_HOST_VERSION", Sys.getEnv("QNX_HOST_VERSION"));
-                        value = StringTools.replace (value, "$QNX_TARGET_VERSION", Sys.getEnv("QNX_TARGET_VERSION"));
+                        if (name == "QNX_HOST_VERSION" || name == "QNX_TARGET_VERSION")
+                        {
+                            if (Sys.getEnv (name) != null)
+                            {
+                               continue;
+                            }
+                        }
+                        else
+                        {
+                           value = StringTools.replace (value, "$QNX_HOST_VERSION", Sys.getEnv("QNX_HOST_VERSION"));
+                           value = StringTools.replace (value, "$QNX_TARGET_VERSION", Sys.getEnv("QNX_TARGET_VERSION"));
+						   value = StringTools.replace (value, "%QNX_HOST_VERSION%", Sys.getEnv("QNX_HOST_VERSION"));
+                           value = StringTools.replace (value, "%QNX_TARGET_VERSION%", Sys.getEnv("QNX_TARGET_VERSION"));
+                        }
                         ioDefines.set(name,value);
                         Sys.putEnv(name,value);
                   }
