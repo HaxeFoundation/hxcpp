@@ -40,7 +40,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
     hx::ScriptableRegisterInterface( HX_CSTRING(#name), &typeid(class), class##__scriptable::__script_create )
 
 #define HX_SCRIPTABLE_REGISTER_CLASS(name,class) \
-    hx::ScriptableRegisterClass( HX_CSTRING(#name), __scriptableFunctionNames, class##__scriptable::__script_create )
+    hx::ScriptableRegisterClass( HX_CSTRING(name), __scriptableFunctionNames, class##__scriptable::__script_create )
 
 
 #define HX_DEFINE_SCRIPTABLE(ARG_LIST) \

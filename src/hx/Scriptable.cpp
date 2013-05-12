@@ -1,7 +1,9 @@
 #include <hxcpp.h>
 #include <hx/Scriptable.h>
+#include <hx/GC.h>
 #include <stdio.h>
 #include <vector>
+#include <string>
 #include <map>
 
 #define DBGLOG(...) { }
@@ -191,9 +193,16 @@ struct MethodBody
 };
 
 static String DOT = HX_CSTRING(".");
+static String FLASH_DOT = HX_CSTRING("flash.");
+static String NATIVE_DOT = HX_CSTRING("native.");
 static String LANGLE = HX_CSTRING("<");
 static String RANGLE = HX_CSTRING(">");
 static String COMMA = HX_CSTRING(",");
+static String NAME_BOOLEAN = HX_CSTRING("Boolean");
+static String NAME_INT = HX_CSTRING("Int");
+static String NAME_UINT = HX_CSTRING("UInt");
+static String NAME_FLOAT = HX_CSTRING("Number");
+static String NAME_STRING = HX_CSTRING("String");
 
 struct ABC
 {
@@ -310,24 +319,227 @@ struct ABC
 };
 
 
-class ABCClass_obj : public Class_obj
+class ScriptRegistered
+{
+public:
+   std::vector<std::string> mVTableEntries;
+   hx::ScriptableClassFactory mFactory;
+
+   ScriptRegistered(String *inFunctions, hx::ScriptableClassFactory inFactory)
+   {
+      mFactory = inFactory;
+      if (inFunctions)
+         for(String *func = inFunctions; *func!=null(); func++)
+            mVTableEntries.push_back( func->__s );
+   }
+};
+
+
+class ScriptRegisteredIntferface
+{
+public:
+   const hx::type_info *mType;
+   ScriptableInterfaceFactory mFactory;
+
+   ScriptRegisteredIntferface(hx::ScriptableInterfaceFactory inFactory,const hx::type_info *inType)
+   {
+      mFactory = inFactory;
+      mType = inType;
+   }
+};
+
+
+typedef std::map<std::string, ScriptRegistered *> ScriptRegisteredMap;
+static ScriptRegisteredMap *sScriptRegistered = 0;
+static ScriptRegistered *sObject = 0;
+
+typedef std::map<std::string, ScriptRegisteredIntferface *> ScriptRegisteredInterfaceMap;
+static ScriptRegisteredInterfaceMap *sScriptRegisteredInterface = 0;
+
+Dynamic sGetBool(const unsigned char *inPtr) { return *(int *)inPtr != 0; }
+void sSetBool(unsigned char *inPtr,Dynamic inVal) { *(int *)inPtr = (bool)inVal; }
+double sFGetBool(const unsigned char *inPtr) { return *(int *)inPtr != 0; }
+void sFSetBool(unsigned char *inPtr,double inVal) { *(int *)inPtr = (bool)inVal; }
+
+Dynamic sGetInt(const unsigned char *inPtr) { return *(int *)inPtr; }
+void sSetInt(unsigned char *inPtr,Dynamic inVal) { *(int *)inPtr = inVal; }
+double sFGetInt(const unsigned char *inPtr) { return *(int *)inPtr; }
+void sFSetInt(unsigned char *inPtr,double inVal) { *(int *)inPtr = inVal; }
+
+Dynamic sGetDouble(const unsigned char *inPtr) { return *(double *)inPtr; }
+void sSetDouble(unsigned char *inPtr,Dynamic inVal) { *(double *)inPtr = inVal; }
+double sFGetDouble(const unsigned char *inPtr) { return *(double *)inPtr; }
+void sFSetDouble(unsigned char *inPtr,double inVal) { *(double *)inPtr = inVal; }
+
+Dynamic sGetString(const unsigned char *inPtr) { return *(String *)inPtr; }
+void sSetString(unsigned char *inPtr,Dynamic inVal) { *(String *)inPtr = inVal; }
+double sFGetString(const unsigned char *inPtr) { return 0; }
+void sFSetString(unsigned char *inPtr,double inVal) {  }
+
+Dynamic sGetObject(const unsigned char *inPtr) { return *(hx::Object **)inPtr; }
+// TODO - cast
+void sSetObject(unsigned char *inPtr,Dynamic inVal) { *(hx::Object **)inPtr = inVal.mPtr; }
+double sFGetObject(const unsigned char *inPtr) { return Dynamic(*(hx::Object **)inPtr); }
+void sFSetObject(unsigned char *inPtr,double inVal) {  *(hx::Object **)inPtr = Dynamic(inVal).mPtr; }
+
+
+
+struct FieldInfo
+{
+   enum Type { typeBool, typeInt, typeDouble, typeString, typeObject };
+
+   FieldInfo(String inName, String inType, int inOffset)
+   {
+      mName = inName;
+      mTypeName = inType.__s ? inType.__s : "Object";
+      mOffset = inOffset;
+      mHandler = 0;
+
+      if (inName==NAME_BOOLEAN)
+      {
+         mType = typeBool;
+         mGetter = sGetBool;
+         mSetter = sSetBool;
+         mFGetter = sFGetBool;
+         mFSetter = sFSetBool;
+         // Aligned ?
+         mBytes = 4;
+      }
+      else if (inName==NAME_INT || inName==NAME_UINT)
+      {
+         mType = typeInt;
+         mGetter = sGetInt;
+         mSetter = sSetInt;
+         mFGetter = sFGetInt;
+         mFSetter = sFSetInt;
+         mBytes = 4;
+      }
+      else if (inName==NAME_FLOAT)
+      {
+         mType = typeDouble;
+         mGetter = sGetDouble;
+         mSetter = sSetDouble;
+         mFGetter = sFGetDouble;
+         mFSetter = sFSetDouble;
+         mBytes = sizeof(double);
+      }
+      else if (inName==NAME_STRING)
+      {
+         mType = typeString;
+         mGetter = sGetString;
+         mSetter = sSetString;
+         mFGetter = sFGetString;
+         mFSetter = sFSetString;
+         mBytes = sizeof(String);
+      }
+
+      else
+      {
+         mType = typeObject;
+         mGetter = sGetObject;
+         mSetter = sSetObject;
+         mFGetter = sFGetObject;
+         mFSetter = sFSetObject;
+         mBytes = sizeof(void *);
+      }
+   }
+
+
+   std::string mName;
+   std::string mTypeName;
+   ScriptHandler *mHandler;
+   Type        mType;
+   int         mOffset;
+   int         mBytes;
+   Dynamic     (*mGetter)(const unsigned char *);
+   void        (*mSetter)(unsigned char *, Dynamic inValue);
+   double      (*mFGetter)(const unsigned char *);
+   void        (*mFSetter)(unsigned char *, double inValue);
+};
+
+String RemapFlash(String inValue)
+{
+   if (inValue.substr(0,6)==FLASH_DOT)
+      return NATIVE_DOT + inValue.substr(6,null());
+   return inValue;
+}
+
+typedef std::map< std::string, int> MethodIndexMap;
+typedef std::map< std::string, int> FieldIndexMap;
+
+class ScriptHandler : public Class_obj
 {
    Class mSuper;
+   ScriptRegistered *mScriptBase;
+   ScriptRegistered *mScript;
+   std::vector<FieldInfo> mFields;
+   bool mIsInterface;
+   int  mDataSize;
+   Method **mVTable;
+   MethodIndexMap         mMethodMap;
+   FieldIndexMap          mFieldMap;
+   std::vector<Method *>  mMethods;
 
 public:
-   ABCClass_obj(ABC &abc, InstanceInfo &inst)
+   ScriptHandler(ABC &abc, InstanceInfo &inst)
    {
+      init();
+
       mName = abc.getMultiName(inst.name);
       String superName = HX_CSTRING("Object");
+      mScriptBase = 0;
+      mIsInterface = inst.flags & ClassInterface;
+
       if (inst.superName>0)
       {
          superName = abc.getMultiName(inst.superName);
-         mSuper = Class_obj::Resolve(superName);
+
+         mSuper = Class_obj::Resolve(RemapFlash(superName));
+
+         if (mIsInterface)
+            mScriptBase = 0;
+         else
+            mScriptBase = sScriptRegistered ? (*sScriptRegistered)[RemapFlash(superName).__s] : 0;
+
          if (mSuper==null())
             superName = HX_CSTRING("Unknown - ") + superName;
       }
+      if (!mScriptBase)
+         mScriptBase = sObject;
 
-      printf("Class %s\n", (mName + HX_CSTRING("::") + superName).__s );
+      printf("Class %s, base %p\n", (mName + HX_CSTRING("::") + superName).__s, mScriptBase );
+
+      RegisterClass(RemapFlash(mName), (Class_obj *)this);
+
+      mScript = mScriptBase;
+      (*sScriptRegistered)[mName.__s] = mScript;
+
+      ScriptHandler *superScript = dynamic_cast<ScriptHandler *>(mSuper.GetPtr());
+      if (superScript)
+      {
+         mFields = superScript->mFields;
+         mFieldMap = superScript->mFieldMap;
+         mMethods = superScript->mMethods;
+         mMethodMap = superScript->mMethodMap;
+      }
+      mDataSize = superScript ? superScript->mDataSize : 0;
+
+      mVTable = new Method*[mScript->mVTableEntries.size()];
+      for(int t=0;t<inst.traits.size();t++)
+         addInstanceTrait(abc,inst.traits[t]);
+   }
+
+   ScriptHandler( )
+   {
+      init();
+      mScript = sObject;
+   }
+
+   void init()
+   {
+      mScriptBase = 0;
+      mScript = 0;
+
       mConstructEmpty = 0;
       mConstructArgs = 0;
       mConstructEnum = 0;
@@ -336,10 +548,53 @@ public:
       mCanCast = 0;
       mStatics = Array_obj<String>::__new(0,0);
       mMembers = Array_obj<String>::__new(0,0);
-
-      for(int t=0;t<inst.traits.size();t++)
-         addInstanceTrait(abc,inst.traits[t]);
    }
+
+   void markFields(unsigned char *inData, HX_MARK_PARAMS)
+   {
+      for(int i=0;i<mFields.size();i++)
+      {
+         FieldInfo &field = mFields[i];
+         if (field.mType==FieldInfo::typeObject)
+         {
+            HX_MARK_OBJECT( (*(hx::Object **)inData) );
+         }
+         else if (field.mType==FieldInfo::typeString)
+         {
+            HX_MARK_STRING( (*(String *)inData).__s );
+         }
+         inData += field.mBytes;
+      }
+   }
+
+   void visitFields(unsigned char *inData, HX_VISIT_PARAMS)
+   {
+      for(int i=0;i<mFields.size();i++)
+      {
+         FieldInfo &field = mFields[i];
+         if (field.mType==FieldInfo::typeObject)
+         {
+            HX_VISIT_OBJECT( (*(hx::Object **)inData) );
+         }
+         else if (field.mType==FieldInfo::typeString)
+         {
+            HX_VISIT_STRING( (*(String *)inData).__s );
+         }
+
+         inData += field.mBytes;
+      }
+   }
+
+   int findVTableSlot(const std::string &inName)
+   {
+      if (!mScript)
+         return -1;
+      for(int i=0;i<mScript->mVTableEntries.size();i++)
+         if (mScript->mVTableEntries[i]==inName)
+            return i;
+      return -1;
+   }
+
 
    void addInstanceTrait(ABC &abc, Trait &trait)
    {
@@ -350,22 +605,38 @@ public:
             {
             int slot = trait.slot;
             String typeName = abc.getMultiName(trait.type);
+            FieldInfo field(name,typeName,mDataSize);
+            mDataSize += field.mBytes;
+            int fid = mFields.size();
+            mFields.push_back(field);
+            mFieldMap[name.__s] = fid;
             printf(" var %s:%s %d\n", name.__s, typeName.__s, slot);
             }
             break;
          case Trait_Method:
-            {
-            printf(" function %s\n", name.__s);
-            }
-            break;
          case Trait_Getter:
-            {
-            printf(" getter %s\n", name.__s);
-            }
-            break;
          case Trait_Setter:
             {
-            printf(" setter %s\n", name.__s);
+               Method *method = &abc.mMethods[trait.index];
+               std::string sname(name.__s);
+               int vslot = findVTableSlot(sname);
+               if (vslot>=0)
+               {
+                  mVTable[vslot] =method;
+                  printf(" override native function %s\n", name.__s);
+               }
+               if (mMethodMap.find(sname)!=mMethodMap.end())
+               {
+                  int slot = mMethodMap[sname];
+                  printf(" override script function %s (%d)\n", name.__s, slot);
+                  mMethods[slot] = method;
+               }
+               else
+               {
+                  int slot = mMethods.size();
+                  mMethodMap[sname] = slot;
+                  mMethods.push_back(method);
+               }
             }
             break;
          case Trait_Class:
@@ -402,11 +673,16 @@ public:
 
    Dynamic ConstructEmpty()
    {
-      return null();
+      unsigned char *data = mDataSize == 0 ? 0 : (unsigned char *)InternalNew(mDataSize,false);
+      hx::Object *result = mScript->mFactory((void **)mVTable, this, data);
+      return result;
    }
    Dynamic ConstructArgs(hx::DynamicArray inArgs)
    {
-      return null();
+      unsigned char *data = mDataSize == 0 ? 0 : (unsigned char *)InternalNew(mDataSize,false);
+      hx::Object *result = mScript->mFactory((void **)mVTable, this, data);
+      result->__Construct(inArgs);
+      return result;
    }
    Dynamic ConstructEnum(String inName,hx::DynamicArray inArgs)
    {
@@ -415,6 +691,8 @@ public:
 
    bool VCanCast(hx::Object *inPtr) { return false; }
 };
+
+typedef ScriptHandler ABCClass_obj;
 
 typedef hx::ObjectPtr<ABCClass_obj> ABCClass;
 
@@ -781,6 +1059,53 @@ struct ABCReader
 
 };
 
+
+class ABCContext
+{
+public:
+   Array<Dynamic> stack;
+
+   ABCContext()
+   {
+      GCAddRoot(&stack.mPtr);
+   }
+   ~ABCContext()
+   {
+      GCRemoveRoot(&stack.mPtr);
+   }
+
+   void push(Dynamic inValue)
+   {
+      stack.push(inValue);
+   }
+
+   Dynamic call(Method *inMethod,int inArgs)
+   {
+      int size = stack.length;
+
+      int localCount;
+      int initScopeDepth;
+
+      MethodBody *body = inMethod->body;
+      const unsigned char *code = &body->code[0];
+      const unsigned char *pc = code;
+      while(pc)
+      {
+      }
+
+      return null();
+   }
+};
+
+
+// TODO: Thread local storage
+ABCContext *gABCContext = 0;
+inline ABCContext *GetABCContext()
+{
+   return gABCContext;
+}
+
+// TODO - toString?
 class Object_obj__scriptable : public Object
 {
    typedef Object_obj__scriptable __ME;
@@ -795,11 +1120,22 @@ class Object_obj__scriptable : public Object
 
 void ScriptableRegisterClass( String inName, String *inFunctions, hx::ScriptableClassFactory inFactory)
 {
+   if (!sScriptRegistered)
+      sScriptRegistered = new ScriptRegisteredMap();
+   ScriptRegistered *registered = new ScriptRegistered(inFunctions,inFactory);
+   (*sScriptRegistered)[inName.__s] = registered;
+   //printf("Registering %s -> %p\n",inName.__s,(*sScriptRegistered)[inName.__s]);
 }
 
 
-void ScriptableRegisterInterface( String inName, const hx::type_info *inType, hx::ScriptableInterfaceFactory inFactory)
+void ScriptableRegisterInterface( String inName, const hx::type_info *inType,
+                                 hx::ScriptableInterfaceFactory inFactory)
 {
+   if (!sScriptRegisteredInterface)
+      sScriptRegisteredInterface = new ScriptRegisteredInterfaceMap();
+   ScriptRegisteredIntferface *registered = new ScriptRegisteredIntferface(inFactory,inType);
+   (*sScriptRegisteredInterface)[inName.__s] = registered;
+   //printf("Registering Interface %s -> %p\n",inName.__s,(*sScriptRegisteredInterface)[inName.__s]);
 }
 
 
@@ -808,50 +1144,99 @@ void InitABC()
    String allFunctions = null();
    String *__scriptableFunctionNames = &allFunctions;
 
+
+   RegisterClass(HX_CSTRING("Object"), new ScriptHandler());
    HX_SCRIPTABLE_REGISTER_CLASS("Object",Object_obj);
+   sObject = (*sScriptRegistered)["Object"];
+
+   gABCContext = new ABCContext();
 }
 
 Dynamic ScriptableCall0(void *user, Object *thiz)
 {
-   return null();
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->push(thiz);
+   return context->call(method,0);
 }
 
-Dynamic ScriptableCall1(void *user, Object *thiz,Dynamic)
+Dynamic ScriptableCall1(void *user, Object *thiz,Dynamic arg0)
 {
-   return null();
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->push(thiz);
+   context->push(arg0);
+   return context->call(method,1);
 }
 
-Dynamic ScriptableCall2(void *user, Object *thiz,Dynamic,Dynamic)
+Dynamic ScriptableCall2(void *user, Object *thiz,Dynamic arg0,Dynamic arg1)
 {
-   return null();
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->push(thiz);
+   context->push(arg0);
+   context->push(arg1);
+   return context->call(method,2);
 }
 
-Dynamic ScriptableCall3(void *user, Object *thiz,Dynamic,Dynamic,Dynamic)
+Dynamic ScriptableCall3(void *user, Object *thiz,Dynamic arg0,Dynamic arg1,Dynamic arg2)
 {
-   return null();
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->push(thiz);
+   context->push(arg0);
+   context->push(arg1);
+   context->push(arg2);
+   return context->call(method,3);
 }
 
-Dynamic ScriptableCall4(void *user, Object *thiz,Dynamic,Dynamic,Dynamic,Dynamic)
+Dynamic ScriptableCall4(void *user, Object *thiz,Dynamic arg0,Dynamic arg1,Dynamic arg2,Dynamic arg3)
 {
-   return null();
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->push(thiz);
+   context->push(arg0);
+   context->push(arg1);
+   context->push(arg2);
+   context->push(arg3);
+   return context->call(method,4);
 }
 
-Dynamic ScriptableCall5(void *user, Object *thiz,Dynamic,Dynamic,Dynamic,Dynamic,Dynamic)
+Dynamic ScriptableCall5(void *user, Object *thiz,Dynamic arg0,Dynamic arg1,Dynamic arg2,Dynamic arg3,Dynamic arg4)
 {
-   return null();
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->push(thiz);
+   context->push(arg0);
+   context->push(arg1);
+   context->push(arg2);
+   context->push(arg3);
+   context->push(arg4);
+   return context->call(method,5);
 }
 
 Dynamic ScriptableCallMult(void *user, Object *thiz,Dynamic *inArgs)
 {
-   return null();
+   Method *method = (Method *)user;
+
+   ABCContext *context = GetABCContext();
+   context->push(thiz);
+   int argc = method->paramNames.size();
+   for(int i=0;i<argc;i++)
+      context->push(inArgs[i]);
+   return context->call(method,argc);
 }
 
-void ScriptableMark(ScriptHandler *, unsigned char *, HX_MARK_PARAMS)
+void ScriptableMark(ScriptHandler *inHandler, unsigned char *inInstanceData, HX_MARK_PARAMS)
 {
+   HX_MARK_ARRAY(inInstanceData);
+   inHandler->markFields(inInstanceData,HX_MARK_ARG);
 }
 
-void ScriptableVisit(ScriptHandler *, unsigned char **, HX_VISIT_PARAMS)
+void ScriptableVisit(ScriptHandler *inHandler, unsigned char **inInstanceDataPtr, HX_VISIT_PARAMS)
 {
+   HX_VISIT_ARRAY(inInstanceDataPtr);
+   inHandler->visitFields(*inInstanceDataPtr,HX_VISIT_ARG);
 }
 
 bool ScriptableField(hx::Object *, const ::String &,bool inCallProp,Dynamic &outResult)
@@ -906,7 +1291,7 @@ void LoadABC(const unsigned char *inBytes, int inLen)
          InstanceInfo &inst = abc.mInstanceInfo[i];
          String className = abc.getMultiName(inst.name);
 
-         Class cls = Class_obj::Resolve(className);
+         Class cls = Class_obj::Resolve(RemapFlash(className));
          if (cls==null())
          {
             ABCClass cls = new ABCClass_obj(abc, inst);
