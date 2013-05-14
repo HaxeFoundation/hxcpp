@@ -16,6 +16,14 @@ namespace hx
 
 enum Type { nsPublic, nsPrivate, nsNamespace, nsInternal, nsProtected, nsExplicit, nsStaticProtected };
 
+
+enum AbcOpCode
+{
+   #define DEFINE_OP(name,code) op_##name = code,
+   #include "AbcOpCodes.h"
+   #undef DEFINE_OP
+};
+
 enum MultiNameKind
 {
    QNNone       = 0x00,
@@ -192,6 +200,7 @@ struct MethodBody
    std::vector<Trait> traits;
 };
 
+
 static String DOT = HX_CSTRING(".");
 static String FLASH_DOT = HX_CSTRING("flash.");
 static String NATIVE_DOT = HX_CSTRING("native.");
@@ -203,6 +212,8 @@ static String NAME_INT = HX_CSTRING("Int");
 static String NAME_UINT = HX_CSTRING("UInt");
 static String NAME_FLOAT = HX_CSTRING("Number");
 static String NAME_STRING = HX_CSTRING("String");
+
+static const char *sOpCodeNames[256];
 
 struct ABC
 {
@@ -465,6 +476,7 @@ String RemapFlash(String inValue)
 }
 
 typedef std::map< std::string, int> MethodIndexMap;
+typedef std::map< std::string, Method *> MethodMap;
 typedef std::map< std::string, int> FieldIndexMap;
 
 class ScriptHandler : public Class_obj
@@ -473,15 +485,21 @@ class ScriptHandler : public Class_obj
    ScriptRegistered *mScriptBase;
    ScriptRegistered *mScript;
    std::vector<FieldInfo> mFields;
+   std::vector<FieldInfo> mStaticFields;
+   std::vector<unsigned char> mStaticData;
    bool mIsInterface;
    int  mDataSize;
    Method **mVTable;
    MethodIndexMap         mMethodMap;
    FieldIndexMap          mFieldMap;
+   MethodMap              mStaticMethodMap;
+   FieldIndexMap          mStaticFieldMap;
    std::vector<Method *>  mMethods;
+   Method                 *mConstructor;
+   Method                 *mStaticInit;
 
 public:
-   ScriptHandler(ABC &abc, InstanceInfo &inst)
+   ScriptHandler(ABC &abc, InstanceInfo &inst, TraitSet &cinfo)
    {
       init();
 
@@ -489,6 +507,8 @@ public:
       String superName = HX_CSTRING("Object");
       mScriptBase = 0;
       mIsInterface = inst.flags & ClassInterface;
+      mConstructor = &abc.mMethods[inst.iinit];
+      mStaticInit = &abc.mMethods[cinfo.init];
 
       if (inst.superName>0)
       {
@@ -507,7 +527,7 @@ public:
       if (!mScriptBase)
          mScriptBase = sObject;
 
-      printf("Class %s, base %p\n", (mName + HX_CSTRING("::") + superName).__s, mScriptBase );
+      DBGLOG("Class %s, base %p\n", (mName + HX_CSTRING("::") + superName).__s, mScriptBase );
 
       RegisterClass(RemapFlash(mName), (Class_obj *)this);
 
@@ -527,6 +547,9 @@ public:
       mVTable = new Method*[mScript->mVTableEntries.size()];
       for(int t=0;t<inst.traits.size();t++)
          addInstanceTrait(abc,inst.traits[t]);
+
+      for(int t=0;t<cinfo.traits.size();t++)
+         addClassTrait(abc,cinfo.traits[t]);
    }
 
    ScriptHandler( )
@@ -610,7 +633,7 @@ public:
             int fid = mFields.size();
             mFields.push_back(field);
             mFieldMap[name.__s] = fid;
-            printf(" var %s:%s %d\n", name.__s, typeName.__s, slot);
+            DBGLOG(" var %s:%s %d\n", name.__s, typeName.__s, slot);
             }
             break;
          case Trait_Method:
@@ -623,12 +646,12 @@ public:
                if (vslot>=0)
                {
                   mVTable[vslot] =method;
-                  printf(" override native function %s\n", name.__s);
+                  DBGLOG(" override native function %s\n", name.__s);
                }
                if (mMethodMap.find(sname)!=mMethodMap.end())
                {
                   int slot = mMethodMap[sname];
-                  printf(" override script function %s (%d)\n", name.__s, slot);
+                  DBGLOG(" override script function %s (%d)\n", name.__s, slot);
                   mMethods[slot] = method;
                }
                else
@@ -647,11 +670,55 @@ public:
             break;
          case Trait_Const:
             {
-            printf(" const %s %s\n",name.__s, abc.getConst(trait)->toString().__s);
+            DBGLOG(" const %s %s\n",name.__s, abc.getConst(trait)->toString().__s);
             }
             break;
       }
    }
+
+
+   void addClassTrait(ABC &abc, Trait &trait)
+   {
+      String name = abc.getMultiName(trait.name);
+      switch(trait.kind)
+      {
+         case Trait_Slot:
+            {
+            int slot = trait.slot;
+            String typeName = abc.getMultiName(trait.type);
+            FieldInfo field(name,typeName,mDataSize);
+            mStaticData.resize( mStaticData.size() + field.mBytes );
+            int fid = mStaticFields.size();
+            mStaticFields.push_back(field);
+            mStaticFieldMap[name.__s] = fid;
+            DBGLOG(" static var %s:%s %d\n", name.__s, typeName.__s, slot);
+            }
+            break;
+         case Trait_Method:
+         case Trait_Getter:
+         case Trait_Setter:
+            {
+               std::string sname(name.__s);
+               Method *method = &abc.mMethods[trait.index];
+               mStaticMethodMap[sname] = method;
+               DBGLOG(" static function %s (%d)\n", name.__s, trait.kind);
+            }
+            break;
+         case Trait_Class:
+            printf(" static class ?\n");
+            break;
+         case Trait_Function:
+            printf(" static function ?\n");
+            break;
+         case Trait_Const:
+            {
+            printf(" static const %s %s\n",name.__s, abc.getConst(trait)->toString().__s);
+            }
+            break;
+      }
+   }
+
+
 
    void __Mark(hx::MarkContext *__inCtx)
    {
@@ -1059,40 +1126,122 @@ struct ABCReader
 
 };
 
+class ABCGlobalObject : public hx::Object
+{
+public:
+   ABC *abc;
+
+   ABCGlobalObject(ABC *inAbc) : abc(inAbc)
+   {
+   }
+};
+
 
 class ABCContext
 {
 public:
    Array<Dynamic> stack;
+   Array<Dynamic> scope;
+   ABCGlobalObject *global;
 
-   ABCContext()
+   ABCContext(ABCGlobalObject *inGlobal)
    {
-      GCAddRoot(&stack.mPtr);
+      GCAddRoot((hx::Object**)&stack.mPtr);
+      GCAddRoot((hx::Object**)&scope.mPtr);
+      GCAddRoot((hx::Object**)&global);
+      stack = Array_obj<Dynamic>::__new(0,0);
+      scope = Array_obj<Dynamic>::__new(0,0);
+      global = inGlobal;
+      scope->push(global);
    }
    ~ABCContext()
    {
-      GCRemoveRoot(&stack.mPtr);
+      GCRemoveRoot((hx::Object**)&stack.mPtr);
+      GCRemoveRoot((hx::Object**)&scope.mPtr);
+      GCRemoveRoot((hx::Object**)&global);
    }
 
-   void push(Dynamic inValue)
+   inline void pushThis(hx::Object *inObj)
    {
-      stack.push(inValue);
+      stack->push(inObj ? inObj : global);
    }
+
+   inline void push(Dynamic inValue)
+   {
+      stack->push(inValue);
+   }
+
+   inline void pushScope(Dynamic inValue)
+   {
+      printf("   push %p\n", inValue.mPtr);
+      scope->push(inValue);
+   }
+
+   int getU30(const unsigned char *&pc)
+   {
+      int a = *pc++;
+      if( a < 128 )
+         return a;
+      a &= 0x7F;
+      int b = *pc++;
+      if( b < 128 )
+         return (b << 7) | a;
+      b &= 0x7F;
+      int c = *pc++;
+      if( c < 128 )
+         return (c << 14) | (b << 7) | a;
+      c &= 0x7F;
+      int d = *pc++;
+      if( d < 128 )
+         return (d << 21) | (c << 14) | (b << 7) | a;
+      d &= 0x7F;
+      int e = *pc++;
+      if( e > 15 )
+         return 0; // ???
+      return (e << 28) | (d << 21) | (c << 14) | (b << 7) | a;
+   }
+
 
    Dynamic call(Method *inMethod,int inArgs)
    {
-      int size = stack.length;
-
-      int localCount;
-      int initScopeDepth;
+      printf("Call, passed %d/%d args\n", inMethod->paramCount, inArgs);
+      int local0 = stack->length - inArgs -1;
+      for(int i=inArgs; i<inMethod->paramCount;i++)
+         push(null());
 
       MethodBody *body = inMethod->body;
+      // Make room for locals...
+
       const unsigned char *code = &body->code[0];
       const unsigned char *pc = code;
-      while(pc)
+      const unsigned char *end = pc + body->code.size();
+      while(pc<end)
       {
+         int code = *pc++;
+         printf("op code %d = %s\n", code, sOpCodeNames[code]);
+         switch(code)
+         {
+            case op_getlex:
+               getU30(pc);
+               break;
+            case op_newclass:
+               getU30(pc);
+               break;
+            case op_initproperty:
+               getU30(pc);
+               break;
+            case op_pushbyte:
+               pc++;
+               break;
+            case op_pushint:
+               getU30(pc);
+               break;
+            case op_returnvoid:
+               return null();
+         }
       }
 
+      printf("Missing return statement?\n");
       return null();
    }
 };
@@ -1104,6 +1253,12 @@ inline ABCContext *GetABCContext()
 {
    return gABCContext;
 }
+
+void CreateABCContext(ABCGlobalObject *inGlobal)
+{
+   gABCContext = new ABCContext(inGlobal);
+}
+
 
 // TODO - toString?
 class Object_obj__scriptable : public Object
@@ -1149,14 +1304,19 @@ void InitABC()
    HX_SCRIPTABLE_REGISTER_CLASS("Object",Object_obj);
    sObject = (*sScriptRegistered)["Object"];
 
-   gABCContext = new ABCContext();
+   for(int i=0;i<256;i++)
+      sOpCodeNames[i] = "unknown";
+
+   #define DEFINE_OP(op,code) sOpCodeNames[code] = #op;
+   #include "AbcOpCodes.h"
+   #undef DEFINE_OP
 }
 
 Dynamic ScriptableCall0(void *user, Object *thiz)
 {
    Method *method = (Method *)user;
    ABCContext *context = GetABCContext();
-   context->push(thiz);
+   context->pushThis(thiz);
    return context->call(method,0);
 }
 
@@ -1164,7 +1324,7 @@ Dynamic ScriptableCall1(void *user, Object *thiz,Dynamic arg0)
 {
    Method *method = (Method *)user;
    ABCContext *context = GetABCContext();
-   context->push(thiz);
+   context->pushThis(thiz);
    context->push(arg0);
    return context->call(method,1);
 }
@@ -1173,7 +1333,7 @@ Dynamic ScriptableCall2(void *user, Object *thiz,Dynamic arg0,Dynamic arg1)
 {
    Method *method = (Method *)user;
    ABCContext *context = GetABCContext();
-   context->push(thiz);
+   context->pushThis(thiz);
    context->push(arg0);
    context->push(arg1);
    return context->call(method,2);
@@ -1183,7 +1343,7 @@ Dynamic ScriptableCall3(void *user, Object *thiz,Dynamic arg0,Dynamic arg1,Dynam
 {
    Method *method = (Method *)user;
    ABCContext *context = GetABCContext();
-   context->push(thiz);
+   context->pushThis(thiz);
    context->push(arg0);
    context->push(arg1);
    context->push(arg2);
@@ -1194,7 +1354,7 @@ Dynamic ScriptableCall4(void *user, Object *thiz,Dynamic arg0,Dynamic arg1,Dynam
 {
    Method *method = (Method *)user;
    ABCContext *context = GetABCContext();
-   context->push(thiz);
+   context->pushThis(thiz);
    context->push(arg0);
    context->push(arg1);
    context->push(arg2);
@@ -1206,7 +1366,7 @@ Dynamic ScriptableCall5(void *user, Object *thiz,Dynamic arg0,Dynamic arg1,Dynam
 {
    Method *method = (Method *)user;
    ABCContext *context = GetABCContext();
-   context->push(thiz);
+   context->pushThis(thiz);
    context->push(arg0);
    context->push(arg1);
    context->push(arg2);
@@ -1220,7 +1380,7 @@ Dynamic ScriptableCallMult(void *user, Object *thiz,Dynamic *inArgs)
    Method *method = (Method *)user;
 
    ABCContext *context = GetABCContext();
-   context->push(thiz);
+   context->pushThis(thiz);
    int argc = method->paramNames.size();
    for(int i=0;i<argc;i++)
       context->push(inArgs[i]);
@@ -1272,7 +1432,9 @@ void LoadABC(const unsigned char *inBytes, int inLen)
       sAbcInit = true;
       InitABC();
    }
-   ABC abc;
+
+   ABC *abcInstance = new ABC();
+   ABC &abc = *abcInstance;
    ABCReader stream(abc, inBytes,inLen);
 
    int version = stream.readUInt30();
@@ -1294,7 +1456,7 @@ void LoadABC(const unsigned char *inBytes, int inLen)
          Class cls = Class_obj::Resolve(RemapFlash(className));
          if (cls==null())
          {
-            ABCClass cls = new ABCClass_obj(abc, inst);
+            ABCClass cls = new ABCClass_obj(abc, inst, abc.mClassInfo[i]);
             RegisterClass(className,cls);
          }
          else
@@ -1302,6 +1464,50 @@ void LoadABC(const unsigned char *inBytes, int inLen)
             DBGLOG("Already defined %s\n", className.__s);
          }
       }
+
+      for(int i=0;i<abc.mScriptInfo.size();i++)
+      {
+         TraitSet &traits = abc.mScriptInfo[i];
+         int scriptInit = traits.init;
+         //printf("Init function %p (%d)\n", &abc.mMethods[scriptInit], scriptInit);
+
+         for(int t=0;t<traits.traits.size();t++)
+         {
+            Trait &trait = traits.traits[t];
+            String name = abc.getMultiName(trait.name);
+            switch(trait.kind)
+            {
+               case Trait_Slot:
+                  {
+                  printf(" script var %s\n", name.__s );
+                  }
+                  break;
+               case Trait_Method:
+               case Trait_Getter:
+               case Trait_Setter:
+                  {
+                  printf(" script function %s ?\n", name.__s );
+                  }
+                  break;
+               case Trait_Class:
+                  //printf(" script class %d->%d\n", trait.index, trait.slot);
+                  break;
+               case Trait_Function:
+                  //printf(" script function %d->%d\n", trait.index, trait.slot);
+                  break;
+               case Trait_Const:
+                  {
+                  printf(" script const %s %s\n",name.__s, abc.getConst(trait)->toString().__s);
+                  }
+                  break;
+             }
+          }
+      }
+
+      int entry = abc.mScriptInfo[ abc.mScriptInfo.size()-1 ].init;
+
+      CreateABCContext(new ABCGlobalObject(abcInstance));
+      ScriptableCall0(&abc.mMethods[entry],0);
    }
    catch (Dynamic d)
    {
