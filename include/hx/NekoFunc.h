@@ -81,7 +81,7 @@ typedef struct {
 #define neko_val_is_null(v)		((v) == val_null)
 #define neko_val_is_int(v)		((((int)(int_val)(v)) & 1) != 0)
 #define neko_val_is_number(v)	(neko_val_is_int(v) || neko_val_tag(v) == VAL_FLOAT)
-#define enko_val_is_float(v)		(!neko_val_is_int(v) && neko_val_tag(v) == VAL_FLOAT)
+#define neko_val_is_float(v)		(!neko_val_is_int(v) && neko_val_tag(v) == VAL_FLOAT)
 #define neko_val_is_string(v)	(!neko_val_is_int(v) && (neko_val_tag(v)&7) == VAL_STRING)
 #define neko_val_is_function(v)	(!neko_val_is_int(v) && (neko_val_tag(v)&7) == VAL_FUNCTION)
 #define neko_val_is_object(v)	(!neko_val_is_int(v) && neko_val_tag(v) == VAL_OBJECT)
