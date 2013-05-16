@@ -6,8 +6,8 @@
 #include <string>
 #include <map>
 
-#define DBGLOG(...) { }
-//#define DBGLOG printf
+//#define DBGLOG(...) { }
+#define DBGLOG printf
 
 namespace hx
 {
@@ -663,10 +663,10 @@ public:
             }
             break;
          case Trait_Class:
-            printf(" class ?\n");
+            DBGLOG(" class ?\n");
             break;
          case Trait_Function:
-            printf(" function ?\n");
+            DBGLOG(" function ?\n");
             break;
          case Trait_Const:
             {
@@ -705,14 +705,14 @@ public:
             }
             break;
          case Trait_Class:
-            printf(" static class ?\n");
+            DBGLOG(" static class ?\n");
             break;
          case Trait_Function:
-            printf(" static function ?\n");
+            DBGLOG(" static function ?\n");
             break;
          case Trait_Const:
             {
-            printf(" static const %s %s\n",name.__s, abc.getConst(trait)->toString().__s);
+            DBGLOG(" static const %s %s\n",name.__s, abc.getConst(trait)->toString().__s);
             }
             break;
       }
@@ -864,7 +864,7 @@ struct ABCReader
          case 0x1A: ns.type = nsStaticProtected; break;
          default:
             //setError("unknown namespace type");
-            printf("unknown namespace type %d\n",code);
+            DBGLOG("unknown namespace type %d\n",code);
       }
       ns.index = readInt();
       DBGLOG("  ns (%d) ::%s\n",  code, abc.mStrings[ns.index].__s);
@@ -906,7 +906,7 @@ struct ABCReader
              break;
 
          default:
-             printf("Kind %02d\n", mn.kind);
+             DBGLOG("Kind %02d\n", mn.kind);
              setError("Unknown multi-name constant");
       }
       DBGLOG(" name %s\n", abc.mStrings[mn.name].c_str());
@@ -1134,6 +1134,17 @@ public:
    ABCGlobalObject(ABC *inAbc) : abc(inAbc)
    {
    }
+   Dynamic __Field(const String &inName, bool inCallProp)
+   {
+      return Class_obj::Resolve(RemapFlash(inName));
+   }
+   bool __HasField(const String &inName)
+   {
+      Class clazz = Class_obj::Resolve(RemapFlash(inName));
+      return clazz.mPtr;
+   }
+
+
 };
 
 
@@ -1173,7 +1184,7 @@ public:
 
    inline void pushScope(Dynamic inValue)
    {
-      printf("   push %p\n", inValue.mPtr);
+      DBGLOG("   push %p\n", inValue.mPtr);
       scope->push(inValue);
    }
 
@@ -1201,10 +1212,25 @@ public:
       return (e << 28) | (d << 21) | (c << 14) | (b << 7) | a;
    }
 
+   void getLex(int inMultinameId)
+   {
+      String name = global->abc->getMultiName(inMultinameId);
+      for(int s = scope->length-1; s>=0; s--)
+      {
+         if (scope[s]->__HasField(name))
+         {
+            stack->push(scope[s]->__Field(name,true));
+            return;
+         }
+      }
+      DBGLOG("getLex %s - not found\n", name.__s);
+      hx::Throw( HX_CSTRING("Invalid field") );
+   }
+
 
    Dynamic call(Method *inMethod,int inArgs)
    {
-      printf("Call, passed %d/%d args\n", inMethod->paramCount, inArgs);
+      DBGLOG("Call, passed %d/%d args\n", inMethod->paramCount, inArgs);
       int local0 = stack->length - inArgs -1;
       for(int i=inArgs; i<inMethod->paramCount;i++)
          push(null());
@@ -1218,12 +1244,10 @@ public:
       while(pc<end)
       {
          int code = *pc++;
-         printf("op code %d = %s\n", code, sOpCodeNames[code]);
+         DBGLOG("op code %d = %s\n", code, sOpCodeNames[code]);
          switch(code)
          {
-            case op_getlex:
-               getU30(pc);
-               break;
+            case op_getlex: getLex(getU30(pc)); break;
             case op_newclass:
                getU30(pc);
                break;
