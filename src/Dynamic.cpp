@@ -161,7 +161,7 @@ Dynamic Dynamic::operator+(const int &i) const
    int t = mPtr ? mPtr->__GetType() : vtNull;
    if (t==vtString)
       return Cast<String>() + String(i);
-   return Cast<Int>() + i;
+   return Cast<double>() + i;
 }
 
 Dynamic Dynamic::operator+(const double &d) const
@@ -178,7 +178,7 @@ Dynamic Dynamic::operator+(const float &f) const
    int t = mPtr ? mPtr->__GetType() : vtNull;
    if (t==vtString)
       return Cast<String>() + String(f);
-   return Cast<float>() + f;
+   return Cast<double>() + f;
 }
 
 
