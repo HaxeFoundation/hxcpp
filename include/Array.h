@@ -349,7 +349,7 @@ public:
    Array<ELEM_> copy( );
    Array<ELEM_> slice(int inPos, Dynamic end = null());
    Array<ELEM_> splice(int inPos, int len);
-   Array<Dynamic> map(Dynamic inFunc);
+   Dynamic map(Dynamic inFunc);
    Array<ELEM_> filter(Dynamic inFunc);
 
    void insert(int inPos, ELEM_ inValue)
@@ -614,7 +614,7 @@ Array<ELEM_> Array_obj<ELEM_>::__SetSizeExact(int inLen)
 }
 
 template<typename ELEM_>
-Array<Dynamic> Array_obj<ELEM_>::map(Dynamic inFunc)
+Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
 {
    Array_obj<Dynamic> *result = new Array_obj<Dynamic>(length,0);
    for(int i=0;i<length;i++)
