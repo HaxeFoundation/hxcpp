@@ -58,6 +58,7 @@
   <depend name="${HXCPP}/include/Class.h"/>
   <depend name="${HXCPP}/include/Enum.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
+  <depend name="${HXCPP}/include/hx/Operators.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/Thread.h"/>
   <depend name="${HXCPP}/include/hx/GC.h"/>
@@ -98,6 +99,7 @@
   <depend name="${HXCPP}/include/Class.h"/>
   <depend name="${HXCPP}/include/Enum.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
+  <depend name="${HXCPP}/include/hx/Operators.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/Thread.h"/>
   <depend name="${HXCPP}/include/hx/GC.h"/>

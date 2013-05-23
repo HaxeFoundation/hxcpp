@@ -252,7 +252,39 @@ inline Array<Dynamic> TCastToArray(Dynamic inVal)
 }
 
 
+   // Special case of interfaces - they could be in the array as the actual object,
+   //  or could be delegates.  Direct casting to delegates would be bad, since the are not related.
+   //  Returning the pointer will invove the interface-from-object* code
+   template<typename RESULT>
+   inline hx::Object *ArrayElemCast(const Dynamic &d,const hx::Interface *) { return d.mPtr; } 
+
+   // For array, may need to create strongly typed version (maybe by copy)
+   // The array-construct-from-dynamic will do this
+   template<typename T>
+   inline Array< ::String> ArrayElemCast(const Dynamic &d,const Array_obj< ::String> *) { return d; } 
+   template<typename T>
+   inline Array<int> ArrayElemCast(const Dynamic &d,const Array_obj<int> *) { return d; } 
+   template<typename T>
+   inline Array<bool> ArrayElemCast(const Dynamic &d,const Array_obj<bool> *) { return d; } 
+   template<typename T>
+   inline Array<double> ArrayElemCast(const Dynamic &d,const Array_obj<double> *) { return d; } 
+   template<typename T>
+   inline Array<float> ArrayElemCast(const Dynamic &d,const Array_obj<float> *) { return d; } 
+   template<typename T>
+   inline Array<unsigned char> ArrayElemCast(const Dynamic &d,const Array_obj<unsigned char> *) { return d; } 
+
+   template<typename RESULT>
+   inline RESULT ArrayElemCast(const Dynamic &d,...) { return (RESULT)d.mPtr; } 
 }
+
+template<typename RESULT>
+inline RESULT Dynamic::StaticCast() const
+{
+   return hx::ArrayElemCast<typename RESULT::Ptr>(*this, (typename RESULT::Ptr)0 );
+}
+
+
+
 
 
 

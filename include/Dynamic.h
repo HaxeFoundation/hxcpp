@@ -35,40 +35,7 @@ public:
     void Set(float inVal);
 
 
-   // Special case of interfaces - they could be in the array as the actual object,
-   //  or could be delegates.  Direct casting to delegates would be bad, since the are not related.
-   //  Returning the pointer will invove the interface-from-object* code
-   template<typename RESULT>
-   inline hx::Object *BestCast(const hx::Interface *) const
-   {
-      return mPtr;
-   } 
-
-   // For array, may need to create strongly typed version (maybe by copy)
-   template<typename RESULT>
-   inline Array<::String> BestCast(const Array_obj<::String> *) const { return *this; } 
-   template<typename RESULT>
-   inline Array<int> BestCast(const Array_obj<int> *) const { return *this; } 
-   template<typename RESULT>
-   inline Array<bool> BestCast(const Array_obj<bool> *) const { return *this; } 
-   template<typename RESULT>
-   inline Array<double> BestCast(const Array_obj<double> *) const { return *this; } 
-   template<typename RESULT>
-   inline Array<float> BestCast(const Array_obj<float> *) const { return *this; } 
-   template<typename RESULT>
-   inline Array<unsigned char> BestCast(const Array_obj<unsigned char> *) const { return *this; } 
-
-   template<typename RESULT>
-   inline RESULT BestCast(...) const
-   {
-      return (RESULT)mPtr;
-   } 
-
-   template<typename RESULT>
-   inline RESULT StaticCast() const
-   {
-      return BestCast<typename RESULT::Ptr>( (typename RESULT::Ptr)0 );
-   }
+   template<typename RESULT> RESULT StaticCast() const;
 
    inline operator double () const { return mPtr ? mPtr->__ToDouble() : 0.0; }
    inline operator float () const { return mPtr ? (float)mPtr->__ToDouble() : 0.0f; }
