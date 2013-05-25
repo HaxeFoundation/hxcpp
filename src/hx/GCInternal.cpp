@@ -1731,7 +1731,7 @@ public:
          id = hx::sFreeObjectIds.pop();
       else
       {
-         id = hx::sObjectIdMap.size() + 1;
+         id = hx::sObjectIdMap.size();
          hx::sIdObjectMap.push(0);
       }
       hx::sObjectIdMap[(hx::Object *)inPtr] = id;
