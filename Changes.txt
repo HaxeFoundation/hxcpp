@@ -1,3 +1,10 @@
+3.0.2
+------------------------------------------------------------
+* Fix Dynamic + Int logic
+* Reverted linux compiler to older version
+* Cast Array at call site if required
+* Tweak Array.map return value
+
 3.0.1
 ------------------------------------------------------------
 * Added nekoapi for linux64

@@ -4,7 +4,7 @@
   "license": "BSD",
   "tags": [],
   "description": "Hxcpp is the runtime support for the c++ backend of the haxe compiler.  This release constains the headers, libries and support code required to generate a fully compiled executable from haxe code.",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "releasenote": "See Changes.txt",
   "contributors": ["gamehaxe"],
   "dependencies": {
