@@ -20,7 +20,7 @@ typedef  int64_t  __int64;
 #endif
 #endif
 
-#ifdef EMSCRIPTEN
+#if defined(EMSCRIPTEN) || defined(HXCPP_CLANG)
 #include <unistd.h>
 #include <cstdlib>
 #endif
@@ -41,8 +41,10 @@ typedef  int64_t  __int64;
 
 
 // Some compilers are over-enthusiastic about what they #define ...
+#ifndef HXCPP_CLANG
 #ifdef NULL
 #undef NULL
+#endif
 #endif
 
 #ifdef assert
