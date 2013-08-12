@@ -20,7 +20,7 @@ typedef  int64_t  __int64;
 #endif
 #endif
 
-#if defined(EMSCRIPTEN) || defined(HXCPP_CLANG)
+#if defined(EMSCRIPTEN) || defined(IPHONE)
 #include <unistd.h>
 #include <cstdlib>
 #endif
@@ -41,7 +41,7 @@ typedef  int64_t  __int64;
 
 
 // Some compilers are over-enthusiastic about what they #define ...
-#ifndef HXCPP_CLANG
+#ifndef IPHONE
 #ifdef NULL
 #undef NULL
 #endif
