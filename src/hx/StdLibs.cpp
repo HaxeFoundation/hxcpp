@@ -131,18 +131,18 @@ int __hxcpp_irand(int inMax)
 
 void __hxcpp_stdlibs_boot()
 {
-   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
-   AttachConsole(ATTACH_PARENT_PROCESS);
-   if (GetConsoleWindow() != NULL)
-   {
-      if (_fileno(stdout) == -1 || _get_osfhandle(fileno(stdout)) == -1)
-	     freopen("CONOUT$", "w", stdout);
-      if (_fileno(stderr) == -1 || _get_osfhandle(fileno(stderr)) == -1)
-	     freopen("CONOUT$", "w", stderr);
-      if (_fileno(stdin) == -1 || _get_osfhandle(fileno(stdin)) == -1)
-	     freopen("CONIN$", "r", stdin);
-   }
-   #endif
+   // #if defined(HX_WINDOWS) && !defined(HX_WINRT)
+   // AttachConsole(ATTACH_PARENT_PROCESS);
+   // if (GetConsoleWindow() != NULL)
+   // {
+   //    if (_fileno(stdout) == -1 || _get_osfhandle(fileno(stdout)) == -1)
+	  //    freopen("CONOUT$", "w", stdout);
+   //    if (_fileno(stderr) == -1 || _get_osfhandle(fileno(stderr)) == -1)
+	  //    freopen("CONOUT$", "w", stderr);
+   //    if (_fileno(stdin) == -1 || _get_osfhandle(fileno(stdin)) == -1)
+	  //    freopen("CONIN$", "r", stdin);
+   // }
+   // #endif
 
    setbuf(stdin, NULL);
    setbuf(stdout, NULL);

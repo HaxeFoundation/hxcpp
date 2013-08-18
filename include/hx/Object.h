@@ -192,14 +192,18 @@ public:
    inline OBJ_ *operator->()
    {
       #ifdef HXCPP_CHECK_POINTER
-      if (!mPtr) NullObjectReference();
+      if (!mPtr) NullReference("Object", true);
+      // The handler might have fixed up the null value
+      if (!mPtr) NullReference("Object", false);
       #endif
       return mPtr;
    }
    inline const OBJ_ *operator->() const
    {
       #ifdef HXCPP_CHECK_POINTER
-      if (!mPtr) NullObjectReference();
+      if (!mPtr) NullReference("Object", true);
+      // The handler might have fixed up the null value
+      if (!mPtr) NullReference("Object", false);
       #endif
       return mPtr;
    }

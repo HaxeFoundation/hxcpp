@@ -453,7 +453,9 @@ public:
    #ifdef HXCPP_DEBUG
    inline OBJ_ *CheckGetPtr() const
    {
-      if (!mPtr) hx::CriticalError(HX_CSTRING("Null Array Reference"));
+      if (!mPtr) hx::NullReference("Array", true);
+      // The handler might have fixed up the null value
+      if (!mPtr) hx::NullReference("Array", false);
       return mPtr;
    }
    #else

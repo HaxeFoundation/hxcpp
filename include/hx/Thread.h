@@ -15,9 +15,16 @@
 #include <windows.h>
 #include <process.h>
 #else
+#include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
 #endif
+
+#ifdef RegisterClass
+#undef RegisterClass
+#endif
+
+
 
 #if defined(HX_WINDOWS)
 
@@ -158,12 +165,13 @@ struct MySemaphore
       WaitForSingleObject(mSemaphore,INFINITE);
       #endif
    }
-   void WaitFor(double inSeconds)
+    // Returns true on success, false on timeout
+   bool WaitSeconds(double inSeconds)
    {
       #ifdef HX_WINRT
-      WaitForSingleObjectEx(mSemaphore,inSeconds*0.001,false);
+      return WaitForSingleObjectEx(mSemaphore,inSeconds*0.001,false) != WAIT_TIMEOUT;
       #else
-      WaitForSingleObject(mSemaphore,inSeconds*0.001);
+      return WaitForSingleObject(mSemaphore,inSeconds*0.001) != WAIT_TIMEOUT;
       #endif
    }
    void Reset() { ResetEvent(mSemaphore); }
@@ -254,7 +262,8 @@ struct MySemaphore
          pthread_cond_wait( &mCondition, &mMutex.mMutex );
       mSet = false;
    }
-   void WaitFor(double inSeconds)
+   // Returns true if the wait was success, false on timeout.
+   bool WaitSeconds(double inSeconds)
    {
       struct timeval tv;
       gettimeofday(&tv, 0);
@@ -262,14 +271,35 @@ struct MySemaphore
       int isec = (int)inSeconds;
       int usec = (int)((inSeconds-isec)*1000000.0);
       timespec spec;
-            spec.tv_nsec = tv.tv_usec + usec * 1000;
+      spec.tv_nsec = (tv.tv_usec + usec) * 1000;
       if (spec.tv_nsec>1000000000)
       {
          spec.tv_nsec-=1000000000;
          isec++;
       }
-      spec.tv_sec = isec;
-      pthread_cond_timedwait( &mCondition, &mMutex.mMutex, &spec );
+      spec.tv_sec = tv.tv_sec + isec;
+
+      AutoLock lock(mMutex);
+      if (mSet) {
+          mSet = false;
+          return true;
+      }
+
+      while (pthread_cond_timedwait
+           ( &mCondition, &mMutex.mMutex, &spec ) != ETIMEDOUT) {
+          if (mSet) {
+              mSet = false;
+              return true;
+          }
+      }
+
+      if (mSet) {
+          mSet = false;
+          return true;
+      }
+      else {
+          return false;
+      }
    }
    void Clean()
    {

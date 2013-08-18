@@ -10,6 +10,12 @@ using namespace Windows::System::Threading;
 
 DECLARE_TLS_DATA(class hxThreadInfo, tlsCurrentThread);
 
+// g_threadInfoMutex allows atomic access to g_nextThreadNumber
+static MyMutex g_threadInfoMutex;
+// Thread number 0 is reserved for the main thread
+static int g_nextThreadNumber = 1;
+
+
 // --- Deque ----------------------------------------------------------
 
 struct Deque : public Array_obj<Dynamic>
@@ -165,7 +171,8 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 class hxThreadInfo : public hx::Object
 {
 public:
-	hxThreadInfo(Dynamic inFunction) : mFunction(inFunction), mTLS(0,0)
+	hxThreadInfo(Dynamic inFunction, int inThreadNumber)
+        : mFunction(inFunction), mThreadNumber(inThreadNumber), mTLS(0,0)
 	{
 		mSemaphore = new MySemaphore;
 		mDeque = Deque::Create();
@@ -175,6 +182,10 @@ public:
 		mSemaphore = 0;
 		mDeque = Deque::Create();
 	}
+    int GetThreadNumber() const
+    {
+        return mThreadNumber;
+    }
 	void Clean()
 	{
 		mDeque->Clean();
@@ -216,6 +227,7 @@ public:
 	Array<Dynamic> mTLS;
 	MySemaphore *mSemaphore;
 	Dynamic mFunction;
+    int mThreadNumber;
 	Deque   *mDeque;
 };
 
@@ -231,11 +243,17 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 	// Release the creation function
 	info->mSemaphore->Set();
 
+    // Call the debugger function to annouce that a thread has been created
+    __hxcpp_dbg_threadCreatedOrTerminated(info->GetThreadNumber(), true);
+
 	if ( info->mFunction.GetPtr() )
 	{
 		// Try ... catch
 		info->mFunction->__run();
 	}
+
+    // Call the debugger function to annouce that a thread has terminated
+    __hxcpp_dbg_threadCreatedOrTerminated(info->GetThreadNumber(), false);
 
 	hx::UnregisterCurrentThread();
 
@@ -248,7 +266,11 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 
 Dynamic __hxcpp_thread_create(Dynamic inStart)
 {
-	hxThreadInfo *info = new hxThreadInfo(inStart);
+    g_threadInfoMutex.Lock();
+    int threadNumber = g_nextThreadNumber++;
+    g_threadInfoMutex.Unlock();
+
+	hxThreadInfo *info = new hxThreadInfo(inStart, threadNumber);
 
 	hx::GCPrepareMultiThreaded();
 
@@ -285,13 +307,13 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 
 static hx::Object *sMainThreadInfo = 0;
 
-static hxThreadInfo *GetCurrentInfo()
+static hxThreadInfo *GetCurrentInfo(bool createNew = true)
 {
 	hxThreadInfo *info = tlsCurrentThread;
-	if (!info)
+	if (!info && createNew)
 	{
 		// Hmm, must be the "main" thead...
-		info = new hxThreadInfo(null());
+		info = new hxThreadInfo(null(), 0);
 		sMainThreadInfo = info;
 		hx::GCAddRoot(&sMainThreadInfo);
 		tlsCurrentThread = info;
@@ -485,7 +507,7 @@ public:
 			if (inTimeout<0)
 				mNotEmpty.Wait( );
 			else
-				mNotEmpty.WaitFor(wait);
+				mNotEmpty.WaitSeconds(wait);
 			hx::ExitGCFreeZone();
 		}
 	}
@@ -524,3 +546,13 @@ void __hxcpp_lock_release(Dynamic inlock)
 }
 
 
+int __hxcpp_GetCurrentThreadNumber()
+{
+    // Can't allow GetCurrentInfo() to create the main thread's info
+    // because that can cause a call loop.
+    hxThreadInfo *threadInfo = GetCurrentInfo(false);
+    if (threadInfo == NULL) {
+        return 0;
+    }
+    return threadInfo->GetThreadNumber();
+}
