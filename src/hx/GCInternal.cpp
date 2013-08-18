@@ -21,6 +21,8 @@ enum { gFillWithJunk = 0 } ;
 #include <set>
 #include <stdio.h>
 
+#include "QuickVec.h"
+
 
 static bool sgAllocInit = 0;
 static bool sgInternalEnable = false;
@@ -81,144 +83,7 @@ void ExitGCFreeZoneLocked();
 
 //#define DEBUG_ALLOC_PTR ((char *)0xb68354)
 
-template<typename T>
-struct QuickVec
-{
-   QuickVec() : mPtr(0), mAlloc(0), mSize(0) { } 
-   inline void push(T inT)
-   {
-      if (mSize+1>=mAlloc)
-      {
-         mAlloc = 10 + (mSize*3/2);
-         mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
-      }
-      mPtr[mSize++]=inT;
-   }
-   void setSize(int inSize)
-   {
-      if (inSize>mAlloc)
-      {
-         mAlloc = inSize;
-         mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
-      }
-      mSize = inSize;
-   }
-   inline T pop()
-   {
-      return mPtr[--mSize];
-   }
-   inline void qerase(int inPos)
-   {
-      --mSize;
-      mPtr[inPos] = mPtr[mSize];
-   }
-   inline void erase(int inPos)
-   {
-      --mSize;
-      if (mSize>inPos)
-         memmove(mPtr+inPos, mPtr+inPos+1, (mSize-inPos)*sizeof(T));
-   }
-   void zero() { memset(mPtr,0,mSize*sizeof(T) ); }
 
-   inline void qerase_val(T inVal)
-   {
-      for(int i=0;i<mSize;i++)
-         if (mPtr[i]==inVal)
-         {
-            --mSize;
-            mPtr[i] = mPtr[mSize];
-            return;
-         }
-   }
-
-   inline bool some_left() { return mSize; }
-   inline bool empty() const { return !mSize; }
-   inline void clear() { mSize = 0; }
-   inline int next()
-   {
-      if (mSize+1>=mAlloc)
-      {
-         mAlloc = 10 + (mSize*3/2);
-         mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
-      }
-      return mSize++;
-   }
-   inline int size() const { return mSize; }
-   inline T &operator[](int inIndex) { return mPtr[inIndex]; }
-
-   int mAlloc;
-   int mSize;
-   T *mPtr;
-};
-
-
-template<typename T>
-class QuickDeque
-{
-    struct Slab
-    {
-       T mElems[1024];
-    };
-
-    QuickVec<Slab *> mSpare;
-    QuickVec<Slab *> mActive;
-
-    int  mHeadPos;
-    int  mTailPos;
-    Slab *mHead;
-    Slab *mTail;
-
-public:
-
-   QuickDeque()
-   {
-      mHead = mTail = 0;
-      mHeadPos = 1024;
-      mTailPos = 1024;
-   }
-   ~QuickDeque()
-   {
-      for(int i=0;i<mSpare.size();i++)
-         delete mSpare[i];
-      for(int i=0;i<mActive.size();i++)
-         delete mActive[i];
-      delete mHead;
-      if (mTail!=mHead)
-         delete mTail;
-   }
-   inline void push(T inObj)
-   {
-      if (mHeadPos<1024)
-      {
-         mHead->mElems[mHeadPos++] = inObj;
-         return;
-      }
-      if (mHead != mTail)
-         mActive.push(mHead);
-      mHead = mSpare.empty() ? new Slab : mSpare.pop();
-      mHead->mElems[0] = inObj;
-      mHeadPos = 1;
-   }
-   inline bool some_left() { return mHead!=mTail || mHeadPos!=mTailPos; }
-   inline T pop()
-   {
-      if (mTailPos<1024)
-         return mTail->mElems[mTailPos++];
-      if (mTail)
-         mSpare.push(mTail);
-      if (mActive.empty())
-      {
-         mTail = mHead;
-      }
-      else
-      {
-         mTail = mActive[0];
-         mActive.erase(0);
-      }
-      mTailPos = 1;
-      return mTail->mElems[0];
-   }
-};
 
 /*
 class IDAllocator
@@ -260,7 +125,7 @@ struct GroupInfo
    int  used;
 };
  
-QuickVec<GroupInfo> gAllocGroups;
+hx::QuickVec<GroupInfo> gAllocGroups;
 
 #endif
 
@@ -392,7 +257,7 @@ struct BlockDataInfo
    bool mPinned;
 };
 
-QuickVec<BlockDataInfo> *gBlockInfo = 0;
+hx::QuickVec<BlockDataInfo> *gBlockInfo = 0;
 
 union BlockData
 {
@@ -430,7 +295,7 @@ union BlockData
    int nextBlockId()
    {
       if (gBlockInfo==0)
-         gBlockInfo = new QuickVec<BlockDataInfo>;
+         gBlockInfo = new hx::QuickVec<BlockDataInfo>;
       for(int i=0;i<gBlockInfo->size();i++)
          if ( !(*gBlockInfo)[i].mPtr )
            return i;
@@ -825,7 +690,7 @@ public:
     int mPos;
     MarkInfo *mInfo;
     // Last in, first out
-    QuickVec<hx::Object *> mDeque;
+    hx::QuickVec<hx::Object *> mDeque;
     // First in, first out
     //QuickDeque<hx::Object *> mDeque;
 };
@@ -915,7 +780,7 @@ void GCRemoveRoot(hx::Object **inRoot)
 #endif
 
 class WeakRef;
-typedef QuickVec<WeakRef *> WeakRefs;
+typedef hx::QuickVec<WeakRef *> WeakRefs;
 
 FILE_SCOPE MyMutex *sFinalizerLock = 0;
 FILE_SCOPE WeakRefs sWeakRefs;
@@ -942,23 +807,23 @@ public:
 
 
 
-typedef QuickVec<InternalFinalizer *> FinalizerList;
+typedef hx::QuickVec<InternalFinalizer *> FinalizerList;
 
 FILE_SCOPE FinalizerList *sgFinalizers = 0;
 
 typedef std::map<hx::Object *,hx::finalizer> FinalizerMap;
 FILE_SCOPE FinalizerMap sFinalizerMap;
 
-QuickVec<int> sFreeObjectIds;
+hx::QuickVec<int> sFreeObjectIds;
 typedef std::map<hx::Object *,int> ObjectIdMap;
-typedef QuickVec<hx::Object *> IdObjectMap;
+typedef hx::QuickVec<hx::Object *> IdObjectMap;
 FILE_SCOPE ObjectIdMap sObjectIdMap;
 FILE_SCOPE IdObjectMap sIdObjectMap;
 
 typedef std::set<hx::Object *> MakeZombieSet;
 FILE_SCOPE MakeZombieSet sMakeZombieSet;
 
-typedef QuickVec<hx::Object *> ZombieList;
+typedef hx::QuickVec<hx::Object *> ZombieList;
 FILE_SCOPE ZombieList sZombieList;
 
 
@@ -1149,9 +1014,9 @@ hx::Object *__hxcpp_weak_ref_get(Dynamic inRef)
 // --- GlobalAllocator -------------------------------------------------------
 
 typedef std::set<BlockData *> PointerSet;
-typedef QuickVec<BlockData *> BlockList;
+typedef hx::QuickVec<BlockData *> BlockList;
 
-typedef QuickVec<unsigned int *> LargeList;
+typedef hx::QuickVec<unsigned int *> LargeList;
 
 enum MemType { memUnmanaged, memBlock, memLarge };
 
@@ -2028,7 +1893,7 @@ public:
    LargeList mLargeList;
    PointerSet mActiveBlocks;
    MyMutex    mLargeListLock;
-   QuickVec<LocalAllocator *> mLocalAllocs;
+   hx::QuickVec<LocalAllocator *> mLocalAllocs;
 };
 
 GlobalAllocator *sGlobalAlloc = 0;

@@ -42,6 +42,9 @@ void __hx_dump_stack();
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void __hxcpp_stack_begin_catch();
 
+// Last chance to throw an exception for null-pointer access
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void __hxcpp_set_critical_error_handler(Dynamic inHandler);
 
 namespace hx
 {
@@ -93,6 +96,8 @@ public:
     // The destructor automatically removes the StackFrame from the list of
     // stack frames for the current thread
     ~StackFrame();
+
+    ::String toString();
 
     // These are constant during the lifetime of the stack frame
     const char *className;
@@ -332,7 +337,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
 
 // Emitted at the beginning of every catch block.  Used to build up the
 // catch stack.
-// Catches are always tracked if HXCPP_STACK_TACE is enabled.
+// Catches are always tracked if HXCPP_STACK_TRACE is enabled.
 #define HX_STACK_BEGIN_CATCH __hxcpp_stack_begin_catch();
 
 // If HXCPP_DEBUGGER is enabled, then a throw is checked to see if it

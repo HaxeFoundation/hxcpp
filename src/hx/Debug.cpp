@@ -4,6 +4,7 @@
 #include <vector>
 #include <hx/Debug.h>
 #include <hx/Thread.h>
+#include "QuickVec.h"
 
 #ifdef ANDROID
 #define DBGLOG(...) __android_log_print(ANDROID_LOG_INFO, "HXCPP", __VA_ARGS__)
@@ -70,6 +71,23 @@ static Dynamic g_addParameterToStackFrameFunction;
 // Signature: inThreadInfo : Dynamic -> inStackFrame : Dynamic -> Void
 static Dynamic g_addStackFrameToThreadInfoFunction;
 
+// User settable String->Void
+//  String  : message
+//  You can 'throw' to prevent default action
+static Dynamic sCriticalErrorHandler;
+
+
+static void setStaticHandler(Dynamic &inStore, Dynamic inValue)
+{
+   if ( inStore==null() != inValue==null())
+   {
+      if ( inValue!=null() )
+         GCAddRoot(&inStore.mPtr);
+      else
+         GCRemoveRoot(&inStore.mPtr);
+   }
+   inStore = inValue;
+}
 
 // This is the thread number of the debugger thread, extracted from
 // information about the thread that called 
@@ -333,6 +351,29 @@ public:
     {
         GetCallerCallStack()->mCanStop = enable;
     }
+    void PushStackFrame(StackFrame *frame)
+    {
+        if (mProfiler)
+            mProfiler->Sample(this);
+
+        mUnwindException = false;
+        mStackFrames.push_back(frame);
+    }
+
+    void PopStackFrame()
+    {
+        if (mProfiler)
+            mProfiler->Sample(this);
+
+        if (mUnwindException)
+        {
+           // Use default operator=
+           mExceptionStack.push( *mStackFrames.back() );
+        }
+
+        mStackFrames.pop_back();
+    }
+
 
     // Note that the stack frames are manipulated without holding any locks.
     // This is because the manipulation of stack frames can only be done by
@@ -342,22 +383,16 @@ public:
     // stack is being acquired is stopped in a breakpoint anyway, thus there
     // can be no contention on the contents of the CallStack in that case
     // either.
-    static void PushStackFrame(StackFrame *frame)
+    inline static void PushCallerStackFrame(StackFrame *frame)
     {
         CallStack *stack = GetCallerCallStack();
-        if (stack->mProfiler) {
-            stack->mProfiler->Sample(stack);
-        }
-        stack->mStackFrames.push_back(frame);
+        stack->PushStackFrame(frame);
     }
 
-    static void PopStackFrame()
+    inline static void PopCallerStackFrame()
     {
         CallStack *stack = GetCallerCallStack();
-        if (stack->mProfiler) {
-            stack->mProfiler->Sample(stack);
-        }
-        stack->mStackFrames.pop_back();
+        stack->PopStackFrame();
     }
 
     static void ContinueThreads(int specialThreadNumber, int count)
@@ -380,7 +415,7 @@ public:
     }
 
     static void StepOneThread(int threadNumber, int &stackLevel)
-{
+    {
         gMutex.Lock();
 
         std::list<CallStack *>::iterator iter = gList.begin();
@@ -396,57 +431,39 @@ public:
         gMutex.Unlock();
     }
 
-    static void GetCurrentCallStackAsStrings(Array<String> &result,
-                                             bool skipLast)
-{
+    static void GetCurrentCallStackAsStrings(Array<String> result, bool skipLast)
+    {
         CallStack *stack = CallStack::GetCallerCallStack();
 
         int n = stack->mStackFrames.size() - (skipLast ? 1 : 0);
         
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
+        {
             StackFrame *frame = stack->mStackFrames[i];
-            // Not sure if the following is even possible but the old debugger
-            // did it so ...
-            char buf[1024];
-            if (!frame->fileName || (frame->fileName[0] == '?')) {
-                snprintf(buf, sizeof(buf), "%s::%s",
-                         frame->className, frame->functionName);
-            }
-            else {
-#ifdef HXCPP_STACK_LINE
-                snprintf(buf, sizeof(buf), "%s::%s::%s::%d",
-                         frame->className, frame->functionName,
-                         frame->fileName, frame->lineNumber);
-#else
-                snprintf(buf, sizeof(buf), "%s::%s::%s::0",
-                         frame->className, frame->functionName,
-                         frame->fileName);
-   #endif
-            }
-            result->push(String(buf));
+            result->push(frame->toString());
         }
     }
 
     // Gets a ThreadInfo for a thread
     static Dynamic GetThreadInfo(int threadNumber, bool unsafe)
-   {
-        if (threadNumber == g_debugThreadNumber) {
+    {
+        if (threadNumber == g_debugThreadNumber)
             return null();
-   }
 
         CallStack *stack;
 
         gMutex.Lock();
 
-        if (gMap.count(threadNumber) == 0) {
+        if (gMap.count(threadNumber) == 0)
+        {
             gMutex.Unlock();
             return null();
         }
-        else {
+        else
             stack = gMap[threadNumber];
-}
 
-        if ((stack->mStatus == STATUS_RUNNING) && !unsafe) {
+        if ((stack->mStatus == STATUS_RUNNING) && !unsafe)
+        {
             gMutex.Unlock();
             return null();
         }
@@ -462,7 +479,7 @@ public:
 
     // Gets a ThreadInfo for each Thread
     static ::Array<Dynamic> GetThreadInfos()
-{
+    {
         gMutex.Lock();
 
         // Latch the current thread numbers from the current list of call
@@ -480,12 +497,12 @@ public:
 
         // Now get each thread info
         std::list<int>::iterator thread_iter = threadNumbers.begin();
-        while (thread_iter != threadNumbers.end()) {
+        while (thread_iter != threadNumbers.end())
+        {
             Dynamic info = GetThreadInfo(*thread_iter++, false);
-            if (info != null()) {
+            if (info != null())
                 ret->push(info);
-            }
-}
+        }
 
         return ret;
     }
@@ -754,13 +771,13 @@ public:
         int size = stack->mExceptionStack.size();
 
         for (int i = 0; i < size; i++) {
-            result->push(stack->mExceptionStack[i]);
+            result->push(stack->mExceptionStack[i].toString());
         }
     }
 
     // Gets the current stack frame of the calling thread
     StackFrame *GetCurrentStackFrame()
-{
+    {
         return mStackFrames.back();
     }
 
@@ -770,19 +787,19 @@ public:
     }
 
     bool CanStop() const
-{
+    {
         return mCanStop;
     }
 
     int GetDepth() const
-   {
+    {
         return mStackFrames.size() - 1;
     }
 
     const char *GetFullNameAtDepth(int depth) const
-      {
+    {
         return mStackFrames[depth]->fullName;
-      }
+    }
         
 
     // Wait for someone to call Continue() on this call stack.  Really only
@@ -828,6 +845,8 @@ public:
     // Called when a throw occurs
     void SetLastException()
     {
+       mExceptionStack.clear();
+       mUnwindException = true;
     }
 
     // Called when a catch block begins to be executed.  hxcpp wants to track
@@ -836,39 +855,20 @@ public:
     // If inAll is false, only the last stack frame is captured.
     void BeginCatch(bool inAll)
     {
-        int depth = mStackFrames.size();
-
-        if (depth == 0) {
-            return;
-        }
-
-        int start = inAll ? 0 : (depth - 1);
-
-        for (int i = start; i < depth; i++) {
-            StackFrame *frame = mStackFrames[i];
-            // Not sure if the following is even possible but the old debugger
-            // did it so ...
-            char buf[1024];
-            if (!frame->fileName || (frame->fileName[0] == '?')) {
-                snprintf(buf, sizeof(buf), "%s::%s",
-                         frame->className, frame->functionName);
-            }
-            else {
-#ifdef HXCPP_STACK_LINE
-                snprintf(buf, sizeof(buf), "%s::%s::%s::%d",
-                         frame->className, frame->functionName,
-                         frame->fileName, frame->lineNumber);
-#else
-                snprintf(buf, sizeof(buf), "%s::%s::%s::0",
-                         frame->className, frame->functionName,
-                         frame->fileName);
-      #endif
-   }
-            mExceptionStack.push_back(String(buf));
-        }
+       if (inAll)
+       {
+          mExceptionStack.clear();
+          // Copy remaineder of stack frames to exception stack...
+          // This will use the default operator=, which will copy the pointers.
+          // This is what we want, since the pointers are pointers to constant data
+          for(int i=mStackFrames.size()-1;i>=0;--i)
+             mExceptionStack.push( *mStackFrames[i] );
+       }
+       // Lock-in the excpetion stack
+       mUnwindException = false;
     }
 
-    void DumpExceptionStack()
+   void DumpExceptionStack()
    {
 #ifdef ANDROID
 #define EXCEPTION_PRINT(...) \
@@ -881,7 +881,7 @@ public:
         int size = mExceptionStack.size();
 
         for (int i = 0; i < size; i++) {
-            EXCEPTION_PRINT("Called from %s\n", mExceptionStack[i].c_str());
+            EXCEPTION_PRINT("Called from %s\n", mExceptionStack[i].toString().__s);
         }
    }
 
@@ -889,7 +889,8 @@ private:
 
     CallStack(int threadNumber)
         : mThreadNumber(threadNumber), mCanStop(true), mStatus(STATUS_RUNNING),
-          mBreakpoint(-1), mWaiting(false), mContinueCount(0), mProfiler(0)
+          mBreakpoint(-1), mWaiting(false), mContinueCount(0), mProfiler(0),
+          mUnwindException(false)
     {
     }
 
@@ -956,7 +957,7 @@ private:
         return ret;
    }
 
-    static Dynamic StackFrameToStackFrame(StackFrame *frame)
+   static Dynamic StackFrameToStackFrame(StackFrame *frame)
    {
         Dynamic ret = g_newStackFrameFunction
             (String(frame->fileName), String(frame->lineNumber),
@@ -966,7 +967,7 @@ private:
         // xxx figure them out later
 
         return ret;
-    }
+   }
 
     int mThreadNumber;
     bool mCanStop;
@@ -974,8 +975,11 @@ private:
     int mBreakpoint;
     String mCriticalErrorDescription;
     std::vector<StackFrame *> mStackFrames;
+
     // Updated only when a thrown exception unwinds the stack
-    std::vector<String> mExceptionStack;
+    bool mUnwindException;
+    hx::QuickVec<StackFrame> mExceptionStack;
+
     int mStepLevel;
     MyMutex mWaitMutex;
     bool mWaiting;
@@ -1695,14 +1699,50 @@ hx::StackFrame::StackFrame(const char *inClassName, const char *inFunctionName,
 	   #endif
       catchables(0)
 {
-    hx::CallStack::PushStackFrame(this);
+    hx::CallStack::PushCallerStackFrame(this);
    }
 
     
 hx::StackFrame::~StackFrame()
 {
-    hx::CallStack::PopStackFrame();
+    hx::CallStack::PopCallerStackFrame();
 }
+
+
+
+::String hx::StackFrame::toString()
+{
+   // Not sure if the following is even possible but the old debugger did it so ...
+   char buf[1024];
+   if (!fileName || (fileName[0] == '?'))
+   {
+       snprintf(buf, sizeof(buf), "%s::%s", className, functionName);
+   }
+   else
+   {
+      #ifdef HXCPP_STACK_LINE
+      // Old-style combined file::class...
+      if (!className || !className[0])
+          snprintf(buf, sizeof(buf), "%s::%s::%d", functionName, fileName, lineNumber);
+      else
+          snprintf(buf, sizeof(buf), "%s::%s::%s::%d",
+                className, functionName,
+                fileName, lineNumber);
+      #else
+      // Old-style combined file::class...
+      if (!className || !className[0])
+        snprintf(buf, sizeof(buf), "%s::%s::0", functionName, fileName);
+      else
+        snprintf(buf, sizeof(buf), "%s::%s::%s::0",
+            className, functionName,
+            fileName);
+      #endif
+   }
+   return ::String(buf);
+}
+
+
+
 
 
 void hx::Profiler::Sample(hx::CallStack *stack)
@@ -1757,6 +1797,9 @@ static void CriticalErrorHandler(String inErr, bool allowFixup)
 }
     }
 #endif
+
+   if (sCriticalErrorHandler!=null())
+      sCriticalErrorHandler(inErr);
 
 #ifdef HXCPP_STACK_TRACE
     hx::CallStack::GetCallerCallStack()->BeginCatch(true);
@@ -1854,3 +1897,9 @@ Array<String> __hxcpp_get_exception_stack()
 
     return result;
 }
+
+void __hxcpp_set_critical_error_handler(Dynamic inHandler)
+{
+   setStaticHandler(hx::sCriticalErrorHandler,inHandler);
+}
+
