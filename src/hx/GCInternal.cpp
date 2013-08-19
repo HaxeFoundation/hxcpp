@@ -65,6 +65,7 @@ static int sgTimeToNextTableUpdate = 0;
 
 
 MyMutex  *gThreadStateChangeLock=0;
+MyMutex  *gSpecialObjectLock=0;
 
 class LocalAllocator;
 enum LocalAllocState { lasNew, lasRunning, lasStopped, lasWaiting, lasTerminal };
@@ -834,7 +835,7 @@ InternalFinalizer::InternalFinalizer(hx::Object *inObj)
    mObject = inObj;
    mFinalizer = 0;
 
-   AutoLock lock(*gThreadStateChangeLock);
+   AutoLock lock(*gSpecialObjectLock);
    sgFinalizers->push(this);
 }
 
@@ -953,7 +954,7 @@ void RunFinalizers()
 // Callback finalizer on non-abstract type;
 void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
 {
-   AutoLock lock(*gThreadStateChangeLock);
+   AutoLock lock(*gSpecialObjectLock);
    if (f==0)
    {
       FinalizerMap::iterator i = sFinalizerMap.find(obj);
@@ -966,13 +967,13 @@ void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
 
 void GCDoNotKill(hx::Object *inObj)
 {
-   AutoLock lock(*gThreadStateChangeLock);
+   AutoLock lock(*gSpecialObjectLock);
    sMakeZombieSet.insert(inObj);
 }
 
 hx::Object *GCGetNextZombie()
 {
-   AutoLock lock(*gThreadStateChangeLock);
+   AutoLock lock(*gSpecialObjectLock);
    if (sZombieList.empty())
       return 0;
    hx::Object *result = sZombieList.pop();
@@ -1056,7 +1057,10 @@ public:
    void AddLocal(LocalAllocator *inAlloc)
    {
       if (!gThreadStateChangeLock)
+      {
          gThreadStateChangeLock = new MyMutex();
+         gSpecialObjectLock = new MyMutex();
+      }
       // Until we add ourselves, the colled will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
       AutoLock lock(*gThreadStateChangeLock);
@@ -1578,7 +1582,7 @@ public:
  
    void *GetIDObject(int inIndex)
    {
-      AutoLock lock(*gThreadStateChangeLock);
+      AutoLock lock(*gSpecialObjectLock);
       if (inIndex<0 || inIndex>hx::sIdObjectMap.size())
          return 0;
       return hx::sIdObjectMap[inIndex];
@@ -1586,7 +1590,7 @@ public:
 
    int GetObjectID(void * inPtr)
    {
-      AutoLock lock(*gThreadStateChangeLock);
+      AutoLock lock(*gSpecialObjectLock);
       hx::ObjectIdMap::iterator i = hx::sObjectIdMap.find( (hx::Object *)inPtr );
       if (i!=hx::sObjectIdMap.end())
          return i->second;
