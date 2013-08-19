@@ -89,7 +89,7 @@ int __hxcpp_get_day(double inSeconds)
 }
 double __hxcpp_date_now()
 {
-   time_t t = time(NULL);
+   time_t t = time(0);
    return t;
 }
 String __hxcpp_to_string(double inSeconds)

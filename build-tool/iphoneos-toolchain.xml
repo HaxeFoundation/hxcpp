@@ -25,14 +25,14 @@
   <flag value="-miphoneos-version-min=5.0" if="HXCPP_ARMV7" />
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
-  <flag value="-Wno-parentheses" if="HXCPP_CLANG" />
-  <flag value="-Wno-null-dereference" if="HXCPP_CLANG" />
-  <flag value="-Wno-unused-value" if="HXCPP_CLANG" />
+  <flag value="-Wno-parentheses" />
+  <flag value="-Wno-null-dereference" />
+  <flag value="-Wno-unused-value" />
+  <flag value="-Wno-bool-conversion" />
   <flag value="-fvisibility=hidden"/>
   <flag value="-fno-stack-protector"/>
   <flag value="-DIPHONE"/>
   <flag value="-DIPHONEOS"/>
-  <flag value="-DHXCPP_CLANG" if="HXCPP_CLANG" />
   <include name="common-defines.xml" />
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-I${HXCPP}/include"/>

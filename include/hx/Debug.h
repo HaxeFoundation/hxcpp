@@ -470,7 +470,8 @@ inline Dynamic __hxcpp_dbg_getStackVariableValue(int, int, String, bool,
                                                  Dynamic, Dynamic)
     { return null(); }
 inline Dynamic __hxcpp_dbg_setStackVariableValue(int, int, String, Dynamic,
-                                                 bool, Dynamic, Dynamic) { }
+                                                 bool, Dynamic, Dynamic)
+    { return null(); }
 inline void __hxcpp_dbg_setNewParameterFunction(Dynamic) { }
 inline void __hxcpp_dbg_setNewStackFrameFunction(Dynamic) { }
 inline void __hxcpp_dbg_setNewThreadInfoFunction(Dynamic) { }

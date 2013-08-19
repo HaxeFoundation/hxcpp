@@ -466,7 +466,7 @@ public:
 	double Now()
 	{
 		struct timeval tv;
-		gettimeofday(&tv,NULL);
+		gettimeofday(&tv,0);
 		return tv.tv_sec + tv.tv_usec*0.000001;
 	}
 	#endif
@@ -551,7 +551,7 @@ int __hxcpp_GetCurrentThreadNumber()
     // Can't allow GetCurrentInfo() to create the main thread's info
     // because that can cause a call loop.
     hxThreadInfo *threadInfo = GetCurrentInfo(false);
-    if (threadInfo == NULL) {
+    if (!threadInfo) {
         return 0;
     }
     return threadInfo->GetThreadNumber();

@@ -144,9 +144,9 @@ void __hxcpp_stdlibs_boot()
    }
    #endif
    
-   setbuf(stdin, NULL);
-   setbuf(stdout, NULL);
-   setbuf(stderr, NULL);
+   setbuf(stdin, 0);
+   setbuf(stdout, 0);
+   setbuf(stderr, 0);
 }
 
 void __trace(Dynamic inObj, Dynamic inData)
@@ -195,7 +195,7 @@ double  __time_stamp()
    return (double)clock() / ( (double)CLOCKS_PER_SEC);
 #else
    struct timeval tv;
-   if( gettimeofday(&tv,NULL) )
+   if( gettimeofday(&tv,0) )
       throw Dynamic("Could not get time");
    double t =  ( tv.tv_sec + ((double)tv.tv_usec) / 1000000.0 );
    if (t0==0) t0 = t;
