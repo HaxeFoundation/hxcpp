@@ -26,9 +26,9 @@
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <flag value="-Wno-parentheses" />
-  <flag value="-Wno-null-dereference" />
+  <flag value="-Wno-null-dereference" if="HXCPP_CLANG"/>
   <flag value="-Wno-unused-value" />
-  <flag value="-Wno-bool-conversion" />
+  <flag value="-Wno-bool-conversion" if="HXCPP_CLANG"/>
   <flag value="-fvisibility=hidden"/>
   <flag value="-fno-stack-protector"/>
   <flag value="-DIPHONE"/>
