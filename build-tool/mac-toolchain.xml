@@ -14,7 +14,7 @@
   <cppflag value="-frtti"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
-  <flag value="-Qunused-arguments" if="LEGACY_MACOSX_SDK" />
+  <flag value="-Qunused-arguments" if="LEGACY_MACOSX_SDK"/>
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-I${HXCPP}/include"/>
@@ -23,10 +23,10 @@
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-Wno-parentheses" />
-  <flag value="-Wno-null-dereference" />
+  <flag value="-Wno-null-dereference" if="HXCPP_CLANG"/>
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-format-extra-args" />
-  <flag value="-Wno-bool-conversion" />
+  <flag value="-Wno-bool-conversion" if="HXCPP_CLANG"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <include name="common-defines.xml" />
