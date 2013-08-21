@@ -83,8 +83,7 @@ void ArrayBase::__SetSizeExact(int inSize)
 {
    if (inSize!=length || inSize!=mAlloc)
    {
-      mAlloc = length = inSize;
-      int bytes = mAlloc * GetElementSize();
+      int bytes = inSize * GetElementSize();
       if (mBase)
       {
          mBase = (char *)hx::GCRealloc(mBase, bytes );
@@ -97,6 +96,7 @@ void ArrayBase::__SetSizeExact(int inSize)
       {
          mBase = (char *)hx::NewGCBytes(0,bytes);
       }
+      mAlloc = length = inSize;
    }
 }
 
