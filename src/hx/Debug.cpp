@@ -7,6 +7,7 @@
 #include "QuickVec.h"
 
 #ifdef ANDROID
+#include <android/log.h>
 #define DBGLOG(...) __android_log_print(ANDROID_LOG_INFO, "HXCPP", __VA_ARGS__)
 #else
 #include <stdio.h>

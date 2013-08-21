@@ -28,7 +28,6 @@
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-bool-conversion" if="HXCPP_CLANG"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
-  <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <include name="common-defines.xml" />
   <objdir value="obj/darwin${OBJEXT}/" />
   <outflag value="-o"/>
@@ -38,7 +37,6 @@
 <linker id="dll" exe="g++" if="macos">
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-Wl,-bundle,-bundle_loader,${dll_import_link}" if="dll_import_link" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
