@@ -450,7 +450,7 @@ public:
    Array(const null &inNull) : super(0) { }
    Array(Ptr inPtr) : super(inPtr) { }
 
-   #ifdef HXCPP_DEBUG
+   #ifdef HXCPP_CHECK_POINTER
    inline OBJ_ *CheckGetPtr() const
    {
       if (!mPtr) hx::NullReference("Array", true);
