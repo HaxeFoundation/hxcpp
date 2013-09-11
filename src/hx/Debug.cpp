@@ -533,7 +533,7 @@ public:
                 StackVariable *variable = 
                     stack->mStackFrames[stackFrameNumber]->variables;
                 while (variable) {
-                    ret->push(variable->mHaxeName);
+                    ret->push(String(variable->mHaxeName));
                     variable = variable->mNext;
                 }
                 break;
