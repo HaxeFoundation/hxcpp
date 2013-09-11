@@ -1003,6 +1003,12 @@ private:
 class Breakpoints
 {
 public:
+    static int Hash(int value, const char *inString)
+    {
+       while(*inString)
+          value = value*223 + *inString++;
+       return value;
+    }
 
     static int Add(String inFileName, int lineNumber)
     {
@@ -1012,13 +1018,12 @@ public:
         if (!fileName) {
             return -1;
         }
-        
+
         gMutex.Lock();
 
         int ret = gNextBreakpointNumber++;
         
-        Breakpoints *newBreakpoints = new Breakpoints
-            (gBreakpoints, ret, fileName, lineNumber);
+        Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, ret, fileName, lineNumber);
         
         gBreakpoints->RemoveRef();
 
@@ -1099,14 +1104,16 @@ public:
             // Replace mBreakpoints with a copy and remove the breakpoint
             // from it
             Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, number);
-        
-            gBreakpoints->RemoveRef();
+            Breakpoints *toRelease = gBreakpoints;
+            gBreakpoints = newBreakpoints;
 
             // Write memory barrier ensures that newBreakpoints values are
             // updated before gBreakpoints is assigned to it
             write_memory_barrier();
 
-            gBreakpoints = newBreakpoints;
+            // Only release after gBreakpoints is set
+            toRelease->RemoveRef();
+
 
             if (gBreakpoints->IsEmpty()) {
                 // Don't need a write memory barrier here, it's harmless to
@@ -1230,28 +1237,24 @@ public:
             }
 
             // If there are breakpoints, then may need to break in one
-            if (!breakpoints->IsEmpty()) {
-                StackFrame *frame = stack->GetCurrentStackFrame();
+            if (!breakpoints->IsEmpty())
+            {
+               StackFrame *frame = stack->GetCurrentStackFrame();
+               if (!breakpoints->QuickRejectClassFunc(frame->classFuncHash))
+               {
+                  // Check for class:function breakpoint if this is the
+                  // first line of the stack frame
+                  if (frame->lineNumber == frame->firstLineNumber)
+                      breakpointNumber = breakpoints->FindClassFunctionBreakpoint(frame);
+               }
 
-                // Check for class:function breakpoint if this is the
-                // first line of the stack frame
-                if (frame->lineNumber == frame->firstLineNumber) {
-                    breakpointNumber = 
-                        breakpoints->FindClassFunctionBreakpoint
-                        (frame->className, frame->functionName);
-                }
-                
-                // If still haven't hit a break point, check for file:line
-                // breakpoint
-                if (breakpointNumber == -1) {
-                    breakpointNumber =
-                        breakpoints->FindFileLineBreakpoint
-                        (frame->fileName, frame->lineNumber);
-                }
-                    
-                if (breakpointNumber != -1) {
-                    breakStatus = STATUS_STOPPED_BREAKPOINT;
-                }
+               // If still haven't hit a break point, check for file:line
+               // breakpoint
+               if (breakpointNumber == -1 && !breakpoints->QuickRejectFileLine(frame->fileLineHash))
+                  breakpointNumber = breakpoints->FindFileLineBreakpoint(frame);
+
+               if (breakpointNumber != -1)
+                  breakStatus = STATUS_STOPPED_BREAKPOINT;
             }
         }
 
@@ -1287,9 +1290,10 @@ public:
 private:
 
     struct Breakpoint
-      {
+    {
         int number;
         int lineNumber;
+        int hash;
 
         bool isFileLine;
 
@@ -1300,25 +1304,28 @@ private:
     // Creates Breakpoints object with no breakpoints and a zero version
     Breakpoints()
         : mRefCount(1), mBreakpointCount(0), mBreakpoints(0)
-         {
-         }
+    {
+       calcCombinedHash();
+    }
 
     // Copies breakpoints from toCopy and adds a new file:line breakpoint
     Breakpoints(const Breakpoints *toCopy, int number,
                 const char *fileName, int lineNumber)
         : mRefCount(1)
-         {
+    {
         mBreakpointCount = toCopy->mBreakpointCount + 1;
         mBreakpoints = new Breakpoint[mBreakpointCount];
-        for (int i = 0; i < toCopy->mBreakpointCount; i++) {
+        for (int i = 0; i < toCopy->mBreakpointCount; i++)
             mBreakpoints[i] = toCopy->mBreakpoints[i];
-         }
+
         mBreakpoints[toCopy->mBreakpointCount].number = number;
         mBreakpoints[toCopy->mBreakpointCount].isFileLine = true;
         mBreakpoints[toCopy->mBreakpointCount].fileOrClassName = fileName;
         mBreakpoints[toCopy->mBreakpointCount].lineNumber = lineNumber;
-      }
-         
+        mBreakpoints[toCopy->mBreakpointCount].hash = Hash(lineNumber, fileName);
+        calcCombinedHash();
+    }
+
     // Copies breakpoints from toCopy and adds a new class:function breakpoint
     Breakpoints(const Breakpoints *toCopy, int number,
                 const char *className, String functionName)
@@ -1333,48 +1340,79 @@ private:
         mBreakpoints[toCopy->mBreakpointCount].isFileLine = false;
         mBreakpoints[toCopy->mBreakpointCount].fileOrClassName = className;
         mBreakpoints[toCopy->mBreakpointCount].functionName = functionName.c_str();
+        int hash = Hash(0,className);
+        hash = Hash(hash,".");
+        hash = Hash(hash,functionName.c_str());
+        //printf("%s.%s -> %08x\n", className, functionName.c_str(), hash );
+        mBreakpoints[toCopy->mBreakpointCount].hash = hash;
+        calcCombinedHash();
    }
 
-    // Copies breakpoints from toCopy except for number
-    Breakpoints(const Breakpoints *toCopy, int number)
+   // Copies breakpoints from toCopy except for number
+   Breakpoints(const Breakpoints *toCopy, int number)
         : mRefCount(1)
    {
-        mBreakpointCount = toCopy->mBreakpointCount - 1;
-        if (mBreakpointCount == 0) {
-            mBreakpoints = 0;
-      }
-        else {
-            mBreakpoints = new Breakpoint[mBreakpointCount];
-            for (int s = 0, d = 0; s < toCopy->mBreakpointCount; s++) {
-                Breakpoint &other = toCopy->mBreakpoints[s];
-                if (other.number == number) {
-                    continue;
-               }
-                mBreakpoints[d++] = mBreakpoints[s];
+     mBreakpointCount = toCopy->mBreakpointCount - 1;
+     if (mBreakpointCount == 0)
+        mBreakpoints = 0;
+     else
+     {
+        mBreakpoints = new Breakpoint[mBreakpointCount];
+        for(int s = 0, d = 0; s < toCopy->mBreakpointCount; s++)
+        {
+           Breakpoint &other = toCopy->mBreakpoints[s];
+           if (other.number != number)
+              mBreakpoints[d++] = toCopy->mBreakpoints[s];
          }
       }
+      calcCombinedHash();
    }
 
-    ~Breakpoints()
-      {
-        delete[] mBreakpoints;
-   }
-
-    void AddRef()
+   void calcCombinedHash()
    {
-        mRefCount += 1;
-    }
+      int allFileLine = 0;
+      int allClassFunc = 0;
 
-    void RemoveRef()
-      {
-        if (--mRefCount == 0) {
-            delete this;
-      }
+      for(int i=0;i<mBreakpointCount;i++)
+         if (mBreakpoints[i].isFileLine)
+            allFileLine |= mBreakpoints[i].hash;
+         else
+            allClassFunc |= mBreakpoints[i].hash;
+
+      mNotInAnyFileLine = ~allFileLine;
+      mNotInAnyClassFunc = ~allClassFunc;
+      //printf("Combined mask -> %08x %08x\n", mNotInAnyFileLine, mNotInAnyClassFunc);
    }
 
-    bool IsEmpty() const
+   ~Breakpoints()
    {
-        return (mBreakpointCount == 0);
+      delete[] mBreakpoints;
+   }
+
+   void AddRef()
+   {
+       mRefCount += 1;
+   }
+
+   void RemoveRef()
+   {
+      if (--mRefCount == 0)
+         delete this;
+   }
+
+   bool IsEmpty() const
+   {
+      return (mBreakpointCount == 0);
+   }
+
+   inline bool QuickRejectClassFunc(int inHash)
+   {
+      return inHash & mNotInAnyClassFunc;
+   }
+
+   inline bool QuickRejectFileLine(int inHash)
+   {
+      return inHash & mNotInAnyFileLine;
    }
 
     bool HasBreakpoint(int number) const
@@ -1387,31 +1425,30 @@ private:
         return false;
          }
 
-    int FindFileLineBreakpoint(const char *fileName, int lineNumber)
-    {
-        for (int i = 0; i < mBreakpointCount; i++)
-        {
-            Breakpoint &breakpoint = mBreakpoints[i];
-            if (breakpoint.isFileLine &&
-                (breakpoint.lineNumber == lineNumber) &&
-                !strcmp(breakpoint.fileOrClassName.c_str(),fileName) )
-               return breakpoint.number;
-        }
-        return -1;
+   int FindFileLineBreakpoint(StackFrame *inFrame)
+   {
+      for (int i = 0; i < mBreakpointCount; i++)
+      {
+         Breakpoint &breakpoint = mBreakpoints[i];
+         if (breakpoint.isFileLine && breakpoint.hash==inFrame->fileLineHash &&
+             (breakpoint.lineNumber == inFrame->lineNumber) &&
+             !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->fileName) )
+            return breakpoint.number;
+      }
+      return -1;
    }
 
-   int FindClassFunctionBreakpoint(const char *className,
-                                    const char *functionName)
+   int FindClassFunctionBreakpoint(StackFrame *inFrame)
    {
-        for (int i = 0; i < mBreakpointCount; i++)
-        {
-            Breakpoint &breakpoint = mBreakpoints[i];
-            if (!breakpoint.isFileLine &&
-                !strcmp(breakpoint.fileOrClassName.c_str(), className)  &&
-                !strcmp(breakpoint.functionName.c_str(), functionName) )
-               return breakpoint.number;
-        }
-        return -1;
+      for (int i = 0; i < mBreakpointCount; i++)
+      {
+         Breakpoint &breakpoint = mBreakpoints[i];
+         if (!breakpoint.isFileLine && breakpoint.hash==inFrame->classFuncHash &&
+             !strcmp(breakpoint.fileOrClassName.c_str(), inFrame->className)  &&
+             !strcmp(breakpoint.functionName.c_str(), inFrame->functionName) )
+            return breakpoint.number;
+      }
+      return -1;
    }
 
     // Looks up the "interned" version of the name, for faster compares
@@ -1440,6 +1477,8 @@ private:
 
     int mRefCount;
     int mBreakpointCount;
+    int mNotInAnyClassFunc;
+    int mNotInAnyFileLine;
     Breakpoint *mBreakpoints;
 
     static MyMutex gMutex;
