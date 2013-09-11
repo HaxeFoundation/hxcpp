@@ -1289,12 +1289,12 @@ private:
     struct Breakpoint
       {
         int number;
+        int lineNumber;
 
         bool isFileLine;
 
-        const char *fileOrClassName;
-        int lineNumber;
-        String functionName;
+        std::string fileOrClassName;
+        std::string functionName;
     };
 
     // Creates Breakpoints object with no breakpoints and a zero version
@@ -1332,7 +1332,7 @@ private:
         mBreakpoints[toCopy->mBreakpointCount].number = number;
         mBreakpoints[toCopy->mBreakpointCount].isFileLine = false;
         mBreakpoints[toCopy->mBreakpointCount].fileOrClassName = className;
-        mBreakpoints[toCopy->mBreakpointCount].functionName = functionName;
+        mBreakpoints[toCopy->mBreakpointCount].functionName = functionName.c_str();
    }
 
     // Copies breakpoints from toCopy except for number
@@ -1388,28 +1388,28 @@ private:
          }
 
     int FindFileLineBreakpoint(const char *fileName, int lineNumber)
-               {
-        for (int i = 0; i < mBreakpointCount; i++) {
+    {
+        for (int i = 0; i < mBreakpointCount; i++)
+        {
             Breakpoint &breakpoint = mBreakpoints[i];
             if (breakpoint.isFileLine &&
-                (breakpoint.fileOrClassName == fileName) &&
-                (breakpoint.lineNumber == lineNumber)) {
-                return breakpoint.number;
-         }
-      }
+                (breakpoint.lineNumber == lineNumber) &&
+                !strcmp(breakpoint.fileOrClassName.c_str(),fileName) )
+               return breakpoint.number;
+        }
         return -1;
    }
 
-    int FindClassFunctionBreakpoint(const char *className,
+   int FindClassFunctionBreakpoint(const char *className,
                                     const char *functionName)
    {
-        for (int i = 0; i < mBreakpointCount; i++) {
+        for (int i = 0; i < mBreakpointCount; i++)
+        {
             Breakpoint &breakpoint = mBreakpoints[i];
             if (!breakpoint.isFileLine &&
-                (breakpoint.fileOrClassName == className) &&
-                (!strcmp(breakpoint.functionName.c_str(), functionName))) {
-                return breakpoint.number;
-   }
+                !strcmp(breakpoint.fileOrClassName.c_str(), className)  &&
+                !strcmp(breakpoint.functionName.c_str(), functionName) )
+               return breakpoint.number;
         }
         return -1;
    }
@@ -1450,6 +1450,7 @@ private:
     static int gStepThread; // If -1, all threads are targeted
     static int gStepCount;
 };
+
 /* static */ MyMutex Breakpoints::gMutex;
 /* static */ int Breakpoints::gNextBreakpointNumber;
 /* static */ Breakpoints * volatile Breakpoints::gBreakpoints = 
@@ -1682,26 +1683,10 @@ Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
 #endif // HXCPP_DEBUGGER
 
 
-hx::StackFrame::StackFrame(const char *inClassName, const char *inFunctionName,
-                           const char *inFullName, const char *inFileName
-#ifdef HXCPP_STACK_LINE
-                           , int inLineNumber
-#endif
-                           )
-    : className(inClassName), functionName(inFunctionName),
-      fullName(inFullName), fileName(inFileName),
-      // No need to keep track of line numbers of HXCPP_STACK_LINE is not
-      // defined
-#ifdef HXCPP_STACK_LINE
-      firstLineNumber(inLineNumber),
-         #endif
-#ifdef HXCPP_STACK_VARS
-      variables(0),
-	   #endif
-      catchables(0)
+void hx::__hxcpp_register_stack_frame(hx::StackFrame *inFrame)
 {
-    hx::CallStack::PushCallerStackFrame(this);
-   }
+    hx::CallStack::PushCallerStackFrame(inFrame);
+}
 
     
 hx::StackFrame::~StackFrame()

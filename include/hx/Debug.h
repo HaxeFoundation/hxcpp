@@ -30,6 +30,10 @@ int __hxcpp_GetCurrentThreadNumber();
 #define HXCPP_STACK_TRACE
 #endif
 
+// Do we care about the debug-breakpoint-lookup-hashes
+#if (defined HXCPP_STACK_LINE) && (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && (!defined(HXCPP_DEBUG_HASHES))
+#define HXCPP_DEBUG_HASHES
+#endif
 
 // Called by the main function when an uncaught exception occurs to dump
 // the stack leading to the exception
@@ -80,18 +84,43 @@ class StackArgument;
 class StackVariable;
 class StackCatchable;
 
+void __hxcpp_register_stack_frame(class StackFrame *inFrame);
+
 class StackFrame
 {
 public:
 
     // The constructor automatically adds the StackFrame to the list of
     // stack frames for the current thread
-    StackFrame(const char *className, const char *functionName,
-               const char *fullName, const char *fileName
-#ifdef HXCPP_STACK_LINE
-               , int lineNumber
-   #endif
-               );
+    inline StackFrame(const char *inClassName, const char *inFunctionName,
+               #ifdef HXCPP_DEBUG_HASHES
+               int inClassFunctionHash,
+               #endif
+               const char *inFullName, const char *inFileName
+               #ifdef HXCPP_STACK_LINE
+               , int inLineNumber
+               #endif
+               #ifdef HXCPP_DEBUG_HASHES
+               , int inFileLineHash
+               #endif
+               )
+
+       : className(inClassName), functionName(inFunctionName),
+         #ifdef HXCPP_DEBUG_HASHES
+         classFuncHash(inClassFunctionHash),
+         fileLineHash(inFileLineHash),
+         #endif
+         fullName(inFullName), fileName(inFileName),
+         #ifdef HXCPP_STACK_LINE
+         firstLineNumber(inLineNumber),
+         #endif
+         #ifdef HXCPP_STACK_VARS
+         variables(0),
+         #endif
+         catchables(0)
+    {
+       __hxcpp_register_stack_frame(this);
+    }
 
     // The destructor automatically removes the StackFrame from the list of
     // stack frames for the current thread
@@ -102,13 +131,18 @@ public:
     // These are constant during the lifetime of the stack frame
     const char *className;
     const char *functionName;
-    const char *fullName; // this is className.functionName
+    const char *fullName; // this is className.functionName - used for profiler
     const char *fileName;
     int firstLineNumber;
 
     // Current line number, changes during the lifetime of the stack frame.
     // Only updated if HXCPP_STACK_LINE is defined.
     int lineNumber;
+
+    #ifdef HXCPP_DEBUG_HASHES
+    int fileLineHash;
+    int classFuncHash;
+    #endif
     
     // Function arguments and local variables in reverse order of their
     // declaration.  If a variable name is in here twice, the first version is
@@ -266,16 +300,26 @@ extern volatile bool gShouldCallHandleBreakpoints;
 // do anything
 #ifdef HXCPP_STACK_TRACE
 
-// Stack frames are always pushed if HXCPP_STACK_TRACE is enabled
+// Stack frames are always pushed if HXCPP_STACK_TRACE is enabled, hashes only if debugger is
 #ifdef HXCPP_STACK_LINE
-#define HX_STACK_FRAME(className, functionName, fullName, fileName,     \
-                       lineNumber)                                      \
-    hx::StackFrame __stackframe(className, functionName, fullName,      \
-                                fileName, lineNumber);
+
+   #ifdef HXCPP_DEBUG_HASHES
+      #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
+                          lineNumber, fileLineHash ) \
+       hx::StackFrame __stackframe(className, functionName, classFunctionHash, fullName,      \
+                                   fileName, lineNumber, fileLineHash);
+   #else
+      #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
+                          lineNumber, fileLineHash ) \
+       hx::StackFrame __stackframe(className, functionName, fullName,      \
+                                   fileName, lineNumber);
+   #endif
 #else
-#define HX_STACK_FRAME(className, functionName, fullName, fileName,     \
-                       lineNumber) \
+
+   #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
+                       lineNumber, fileLineHash ) \
     hx::StackFrame __stackframe(className, functionName, fullName, fileName);
+
 #endif
 
 // Emitted at the beginning of every instance fuction.  ptr is "this".
@@ -354,7 +398,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
 
 // Define any macros not defined already above
 #ifndef HX_STACK_FRAME
-#define HX_STACK_FRAME(className, functionName, fullName, fileName, lineNumber)
+#define HX_STACK_FRAME(className, functionName, classFuncHash, fullName, fileName, lineNumber, fileLineHash )
 #endif
 #ifndef HX_STACK_THIS
 #define HX_STACK_THIS(ptr)
@@ -386,7 +430,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
 
 #undef HX_STACK_PUSH
 #define HX_STACK_PUSH(fullName, fileName, lineNumber)                  \
-    HX_STACK_FRAME("", fullName, fullName, fileName, lineNumber)
+    HX_STACK_FRAME("", fullName, 0, fullName, fileName, lineNumber, 0)
 
 
 #ifdef HXCPP_DEBUGGER
