@@ -999,7 +999,7 @@ private:
 /* static */ std::map<int, CallStack *> CallStack::gMap;
 /* static */ std::list<CallStack *> CallStack::gList;
 
-
+#ifdef HXCPP_DEBUGGER
 class Breakpoints
 {
 public:
@@ -1498,7 +1498,7 @@ private:
 /* static */ int Breakpoints::gStepLevel;
 /* static */ int Breakpoints::gStepThread = -1;
 /* static */ int Breakpoints::gStepCount = -1;
-
+#endif
 
 } // namespace
 
