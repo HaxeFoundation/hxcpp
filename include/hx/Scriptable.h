@@ -32,6 +32,7 @@ bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,bool inC
 }
 
 void __scriptable_load_neko(String inName);
+void __scriptable_load_cppia(String inCode);
 void __scriptable_load_neko_bytes(Array<unsigned char> inBytes);
 void __scriptable_load_abc(Array<unsigned char> inBytes);
 

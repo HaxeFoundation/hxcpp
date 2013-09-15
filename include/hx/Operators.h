@@ -255,6 +255,7 @@ inline Array<Dynamic> TCastToArray(Dynamic inVal)
    // Special case of interfaces - they could be in the array as the actual object,
    //  or could be delegates.  Direct casting to delegates would be bad, since the are not related.
    //  Returning the pointer will invove the interface-from-object* code
+   // This has changed again - interfaces are stored in arrays directly..
    template<typename RESULT>
    inline hx::Object *ArrayElemCast(const Dynamic &d,const hx::Interface *) { return d.mPtr; } 
 

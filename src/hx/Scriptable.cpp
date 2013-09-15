@@ -9,9 +9,457 @@
 //#define DBGLOG(...) { }
 #define DBGLOG printf
 
+
 namespace hx
 {
 
+class ScriptRegistered
+{
+public:
+   std::vector<std::string> mVTableEntries;
+   hx::ScriptableClassFactory mFactory;
+
+   ScriptRegistered(String *inFunctions, hx::ScriptableClassFactory inFactory)
+   {
+      mFactory = inFactory;
+      if (inFunctions)
+         for(String *func = inFunctions; *func!=null(); func++)
+            mVTableEntries.push_back( func->__s );
+   }
+};
+
+class ScriptRegisteredIntferface
+{
+public:
+   const hx::type_info *mType;
+   ScriptableInterfaceFactory mFactory;
+
+   ScriptRegisteredIntferface(hx::ScriptableInterfaceFactory inFactory,const hx::type_info *inType)
+   {
+      mFactory = inFactory;
+      mType = inType;
+   }
+};
+
+
+typedef std::map<std::string, ScriptRegistered *> ScriptRegisteredMap;
+static ScriptRegisteredMap *sScriptRegistered = 0;
+static ScriptRegistered *sObject = 0;
+
+typedef std::map<std::string, ScriptRegisteredIntferface *> ScriptRegisteredInterfaceMap;
+static ScriptRegisteredInterfaceMap *sScriptRegisteredInterface = 0;
+
+
+// TODO - toString?
+class Object_obj__scriptable : public Object
+{
+   typedef Object_obj__scriptable __ME;
+   typedef Object super;
+
+   void __construct() { }
+   HX_DEFINE_SCRIPTABLE(HX_ARR_LIST0)
+   HX_DEFINE_SCRIPTABLE_DYNAMIC;
+};
+
+
+
+void ScriptableRegisterClass( String inName, String *inFunctions, hx::ScriptableClassFactory inFactory)
+{
+   if (!sScriptRegistered)
+      sScriptRegistered = new ScriptRegisteredMap();
+   ScriptRegistered *registered = new ScriptRegistered(inFunctions,inFactory);
+   (*sScriptRegistered)[inName.__s] = registered;
+   //printf("Registering %s -> %p\n",inName.__s,(*sScriptRegistered)[inName.__s]);
+}
+
+
+void ScriptableRegisterInterface( String inName, const hx::type_info *inType,
+                                 hx::ScriptableInterfaceFactory inFactory)
+{
+   if (!sScriptRegisteredInterface)
+      sScriptRegisteredInterface = new ScriptRegisteredInterfaceMap();
+   ScriptRegisteredIntferface *registered = new ScriptRegisteredIntferface(inFactory,inType);
+   (*sScriptRegisteredInterface)[inName.__s] = registered;
+   //printf("Registering Interface %s -> %p\n",inName.__s,(*sScriptRegisteredInterface)[inName.__s]);
+}
+
+
+Dynamic ScriptableCall0(void *user, Object *thiz)
+{
+   /*
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->pushThis(thiz);
+   return context->call(method,0);
+   */
+   return null();
+}
+
+Dynamic ScriptableCall1(void *user, Object *thiz,Dynamic arg0)
+{
+   /*
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->pushThis(thiz);
+   context->push(arg0);
+   return context->call(method,1);
+   */
+   return null();
+}
+
+Dynamic ScriptableCall2(void *user, Object *thiz,Dynamic arg0,Dynamic arg1)
+{
+   /*
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->pushThis(thiz);
+   context->push(arg0);
+   context->push(arg1);
+   return context->call(method,2);
+   */
+   return null();
+}
+
+Dynamic ScriptableCall3(void *user, Object *thiz,Dynamic arg0,Dynamic arg1,Dynamic arg2)
+{
+   /*
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->pushThis(thiz);
+   context->push(arg0);
+   context->push(arg1);
+   context->push(arg2);
+   return context->call(method,3);
+   */
+   return null();
+}
+
+Dynamic ScriptableCall4(void *user, Object *thiz,Dynamic arg0,Dynamic arg1,Dynamic arg2,Dynamic arg3)
+{
+   /*
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->pushThis(thiz);
+   context->push(arg0);
+   context->push(arg1);
+   context->push(arg2);
+   context->push(arg3);
+   return context->call(method,4);
+   */
+   return null();
+}
+
+Dynamic ScriptableCall5(void *user, Object *thiz,Dynamic arg0,Dynamic arg1,Dynamic arg2,Dynamic arg3,Dynamic arg4)
+{
+   /*
+   Method *method = (Method *)user;
+   ABCContext *context = GetABCContext();
+   context->pushThis(thiz);
+   context->push(arg0);
+   context->push(arg1);
+   context->push(arg2);
+   context->push(arg3);
+   context->push(arg4);
+   return context->call(method,5);
+   */
+   return null();
+}
+
+Dynamic ScriptableCallMult(void *user, Object *thiz,Dynamic *inArgs)
+{
+   /*
+   Method *method = (Method *)user;
+
+   ABCContext *context = GetABCContext();
+   context->pushThis(thiz);
+   int argc = method->paramNames.size();
+   for(int i=0;i<argc;i++)
+      context->push(inArgs[i]);
+   return context->call(method,argc);
+   */
+   return null();
+}
+
+void ScriptableMark(ScriptHandler *inHandler, unsigned char *inInstanceData, HX_MARK_PARAMS)
+{
+   //HX_MARK_ARRAY(inInstanceData);
+   //inHandler->markFields(inInstanceData,HX_MARK_ARG);
+}
+
+void ScriptableVisit(ScriptHandler *inHandler, unsigned char **inInstanceDataPtr, HX_VISIT_PARAMS)
+{
+   //HX_VISIT_ARRAY(inInstanceDataPtr);
+   //inHandler->visitFields(*inInstanceDataPtr,HX_VISIT_ARG);
+}
+
+bool ScriptableField(hx::Object *, const ::String &,bool inCallProp,Dynamic &outResult)
+{
+   return false;
+}
+
+bool ScriptableField(hx::Object *, int inName,bool inCallProp,Float &outResult)
+{
+   return false;
+}
+
+bool ScriptableField(hx::Object *, int inName,bool inCallProp,Dynamic &outResult)
+{
+   return false;
+}
+
+void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields)
+{
+}
+
+bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,bool inCallProp, Dynamic &outValue)
+{
+   return false;
+}
+
+
+struct CppiaStream
+{
+   const char *data;
+   const char *max;
+   int line;
+   int pos;
+
+   CppiaStream(const char *inData, int inLen)
+   {
+      data = inData;
+      max = inData + inLen;
+      line = 1;
+      pos = 1;
+   }
+   void skipWhitespace()
+   {
+      while(data<max && *data<=32)
+         skipChar();
+   }
+   void skipChar()
+   {
+      if (data>=max)
+         throw "EOF";
+      if (*data=='\n')
+      {
+         line++;
+         pos = 1;
+      }
+      else
+         pos++;
+      data++;
+   }
+   std::string getToken()
+   {
+      skipWhitespace();
+      const char *data0 = data;
+      while(data<max && *data>32)
+      {
+         data++;
+         pos++;
+      }
+      return std::string(data0,data);
+   }
+   int getInt()
+   {
+      int result = 0;
+      skipWhitespace();
+      while(data<max && *data>32)
+      {
+         int digit = *data - '0';
+         if (digit<0 || digit>9)
+            throw "expected digit";
+         result = result * 10 + digit;
+         pos++;
+         data++;
+      }
+      return result;
+   }
+   void readString(std::string &outString)
+   {
+      int len = getInt();
+      skipChar();
+      const char *data0 = data;
+      for(int i=0;i<len;i++)
+         skipChar();
+      outString = std::string(data0,data);
+   }
+
+};
+
+
+struct TypeData;
+struct ClassData;
+
+struct CppiaData
+{
+   std::vector< std::string > strings;
+   std::vector< TypeData * > types;
+   std::vector< ClassData * > classes;
+};
+
+
+struct TypeData
+{
+   CppiaData *cppia;
+   std::string name;
+
+   TypeData(CppiaData *inCppia,const std::string &inData)
+   {
+      cppia = inCppia;
+      name = inData;
+   }
+};
+
+struct CppiaFunction
+{
+   CppiaData *cppia;
+   bool      isStatic;
+
+   CppiaFunction(CppiaData *inCppia) : cppia(inCppia) { }
+
+   void load(CppiaStream &stream)
+   {
+      isStatic = false;
+   }
+};
+
+
+struct CppiaVar
+{
+   CppiaData *cppia;
+   bool      isStatic;
+
+   CppiaVar(CppiaData *inCppia) : cppia(inCppia) { }
+
+   void load(CppiaStream &stream)
+   {
+      isStatic = false;
+   }
+};
+
+
+struct ClassData
+{
+   CppiaData &cppia;
+   bool      isInterface;
+   int       nameId;
+   int       superId;
+   std::vector<int> implements;
+   std::vector<CppiaFunction *> memberFunctions;
+   std::vector<CppiaVar *> memberVars;
+   std::vector<CppiaFunction *> staticFunctions;
+   std::vector<CppiaVar *> staticVars;
+
+   ClassData(CppiaData *inCppia) : cppia(*inCppia)
+   {
+   }
+   void load(CppiaStream &inStream)
+   {
+      std::string tok = inStream.getToken();
+
+      if (tok=="CLASS")
+         isInterface = false;
+      else if (tok=="INTERFACE")
+         isInterface = true;
+      else
+         throw "Bad class type";
+
+       nameId = inStream.getInt();
+       superId = inStream.getInt();
+       int implementCount = inStream.getInt();
+       implements.resize(implementCount);
+       for(int i=0;i<implementCount;i++)
+          implements[i] = inStream.getInt();
+       printf("Class %s\n", cppia.types[nameId]->name.c_str());
+
+       int fields = inStream.getInt();
+       for(int f=0;f<fields;f++)
+       {
+          tok = inStream.getToken();
+          if (tok=="FUNCTION")
+          {
+             CppiaFunction *func = new CppiaFunction(&cppia);
+             // TODO - leak on throw
+             func->load(inStream);
+             if (func->isStatic)
+                staticFunctions.push_back(func);
+             else
+                memberFunctions.push_back(func);
+          }
+          else if (tok=="VAR")
+          {
+             CppiaVar *var = new CppiaVar(&cppia);
+             // TODO - leak on throw
+             var->load(inStream);
+             if (var->isStatic)
+                staticVars.push_back(var);
+             else
+                memberVars.push_back(var);
+          }
+          else if (tok=="INLINE")
+          {
+             // OK
+          }
+          else
+             throw "unknown field type";
+       }
+   }
+};
+
+
+
+bool LoadCppia(String inValue)
+{
+   CppiaData   *cppia = new CppiaData();
+   CppiaStream stream(inValue.__s, inValue.length);
+   try
+   {
+      std::string tok = stream.getToken();
+      if (tok!="CPPIA")
+         throw "Bad magic";
+
+      int stringCount = stream.getInt();
+      cppia->strings.resize(stringCount);
+      for(int s=0;s<stringCount;s++)
+         stream.readString(cppia->strings[s]);
+
+      int typeCount = stream.getInt();
+      cppia->types.resize(typeCount);
+      for(int t=0;t<typeCount;t++)
+      {
+         std::string val;
+         stream.readString(val);
+         cppia->types[t] = new TypeData(cppia,val);
+      }
+
+      int classCount = stream.getInt();
+      int enumCount = stream.getInt();
+
+      cppia->classes.resize(classCount);
+      for(int c=0;c<classCount;c++)
+      {
+         cppia->classes[c] = new ClassData(cppia);
+         cppia->classes[c]->load(stream);
+      }
+
+      return true;
+   } catch(const char *error)
+   {
+      printf("Error reading file: %s, line %d, char %d\n", error, stream.line, stream.pos);
+   }
+   return false;
+}
+
+
+};
+
+
+
+#if 0
+// Ignore ABC for now
+namespace hx
+{
 
 
 enum Type { nsPublic, nsPrivate, nsNamespace, nsInternal, nsProtected, nsExplicit, nsStaticProtected };
@@ -1539,6 +1987,8 @@ void LoadABC(const unsigned char *inBytes, int inLen)
    }
 }
 
+#endif
+
 #if 0
 
 
@@ -2051,12 +2501,9 @@ public:
    const unsigned char *mBytesEnd;
 };
 
-#endif
-
-
-
-
 } // end namespace hx
+
+#endif
 
 #if 0
 void __scriptable_load_neko(String inName)
@@ -2069,9 +2516,16 @@ void __scriptable_load_neko_bytes(Array<unsigned char> inBytes)
 {
    new hx::NekoModule((unsigned char *)inBytes->GetBase(), inBytes->length);
 }
-#endif
 
 void __scriptable_load_abc(Array<unsigned char> inBytes)
 {
    hx::LoadABC(&inBytes[0], inBytes->length);
 }
+#endif
+
+void __scriptable_load_cppia(String inCode)
+{
+   hx::LoadCppia(inCode);
+}
+
+
