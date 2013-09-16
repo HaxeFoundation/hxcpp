@@ -275,6 +275,25 @@ struct CppiaStream
       }
       return result;
    }
+   bool getBool()
+   {
+      int ival = getInt();
+      if (ival>1)
+         throw "invalid bool";
+      return ival;
+   }
+   bool getStatic()
+   {
+      std::string tok = getToken();
+      if (tok=="s")
+         return true;
+      else if (tok=="m")
+         return false;
+
+      throw "invalid function spec";
+      return false;
+   }
+
    void readString(std::string &outString)
    {
       int len = getInt();
@@ -290,37 +309,85 @@ struct CppiaStream
 
 struct TypeData;
 struct ClassData;
+struct CppiaData;
+
+struct TypeData
+{
+   CppiaData &cppia;
+   std::string name;
+
+   TypeData(CppiaData &inCppia,const std::string &inData)
+      : cppia(inCppia)
+   {
+      name = inData;
+   }
+};
 
 struct CppiaData
 {
    std::vector< std::string > strings;
    std::vector< TypeData * > types;
    std::vector< ClassData * > classes;
-};
 
-
-struct TypeData
-{
-   CppiaData *cppia;
-   std::string name;
-
-   TypeData(CppiaData *inCppia,const std::string &inData)
+   const char *identStr(int inId)
    {
-      cppia = inCppia;
-      name = inData;
+      return strings[inId].c_str();
+   }
+   const char *typeStr(int inId)
+   {
+      return types[inId]->name.c_str();
    }
 };
 
-struct CppiaFunction
+struct ArgInfo
+{
+   int  nameId;
+   bool optional;
+   int  typeId;
+};
+
+struct CppiaExpr
 {
    CppiaData *cppia;
+   int fileId;
+   int line;
+   CppiaExpr() : cppia(0), fileId(0), line(0) {}
+
+   virtual ~CppiaExpr() {}
+};
+
+CppiaExpr *createCppiaExpr(CppiaStream &inStream);
+
+struct CppiaFunction
+{
+   CppiaData &cppia;
+   int       nameId;
    bool      isStatic;
+   int       returnType;
+   int       argCount;
+   std::vector<ArgInfo> args;
+   CppiaExpr *body;
 
-   CppiaFunction(CppiaData *inCppia) : cppia(inCppia) { }
+   CppiaFunction(CppiaData *inCppia,bool inIsStatic) :
+      cppia(*inCppia), isStatic(inIsStatic), body(0) { }
 
-   void load(CppiaStream &stream)
+   void load(CppiaStream &stream,bool inExpectBody)
    {
-      isStatic = false;
+      nameId = stream.getInt();
+      returnType = stream.getInt();
+      argCount = stream.getInt();
+      printf("  Function %s(%d) : %s\n", cppia.identStr(nameId), argCount, cppia.typeStr(returnType));
+      args.resize(argCount);
+      for(int a=0;a<argCount;a++)
+      {
+         ArgInfo arg = args[a];
+         arg.nameId = stream.getInt();
+         arg.optional = stream.getBool();
+         arg.typeId = stream.getInt();
+         printf("    arg %c%s:%s\n", arg.optional?'?':' ', cppia.identStr(arg.nameId), cppia.typeStr(arg.typeId) );
+      }
+      if (inExpectBody)
+         body = createCppiaExpr(stream);
    }
 };
 
@@ -330,13 +397,76 @@ struct CppiaVar
    CppiaData *cppia;
    bool      isStatic;
 
-   CppiaVar(CppiaData *inCppia) : cppia(inCppia) { }
+   CppiaVar(CppiaData *inCppia,bool inIsStatic) :
+      cppia(inCppia), isStatic(inIsStatic) { }
 
    void load(CppiaStream &stream)
    {
-      isStatic = false;
    }
 };
+
+struct CppiaStackVar
+{
+   int  nameId;
+   int  id;
+   bool capture;
+   int  typeId;
+
+   void fromStream(CppiaStream &stream)
+   {
+      nameId = stream.getInt();
+      id = stream.getInt();
+      capture = stream.getBool();
+      typeId = stream.getInt();
+   }
+};
+
+struct CppiaConst
+{
+   enum Type { cInt, cFloat, cString, cBool, cNull, cThis, cSuper };
+
+   Type type;
+   int  ival;
+   double dval;
+
+   CppiaConst() : type(cNull), ival(0), dval(0) { }
+
+   void fromStream(CppiaStream &stream)
+   {
+      std::string tok = stream.getToken();
+      if (tok[0]=='i')
+      {
+         type = cInt;
+         dval = ival = atoi(&tok[1]);
+      }
+      else if (tok[0]=='f')
+      {
+         type = cFloat;
+         dval = atof(&tok[1]);
+      }
+      else if (tok[0]=='s')
+      {
+         type = cString;
+         ival = atoi(&tok[1]);
+      }
+      else if (tok=="TRUE")
+      {
+         type = cInt;
+         dval = ival = 1;
+      }
+      else if (tok=="FALSE")
+         type = cInt;
+      else if (tok=="NULL")
+         type = cNull;
+      else if (tok=="THIS")
+         type = cThis;
+      else if (tok=="SUPER")
+         type = cSuper;
+      else
+         throw "unknown const value";
+   }
+};
+
 
 
 struct ClassData
@@ -351,7 +481,7 @@ struct ClassData
    std::vector<CppiaFunction *> staticFunctions;
    std::vector<CppiaVar *> staticVars;
 
-   ClassData(CppiaData *inCppia) : cppia(*inCppia)
+   ClassData(CppiaData &inCppia) : cppia(inCppia)
    {
    }
    void load(CppiaStream &inStream)
@@ -371,7 +501,7 @@ struct ClassData
        implements.resize(implementCount);
        for(int i=0;i<implementCount;i++)
           implements[i] = inStream.getInt();
-       printf("Class %s\n", cppia.types[nameId]->name.c_str());
+       printf("Class %s\n", cppia.typeStr(nameId));
 
        int fields = inStream.getInt();
        for(int f=0;f<fields;f++)
@@ -379,23 +509,23 @@ struct ClassData
           tok = inStream.getToken();
           if (tok=="FUNCTION")
           {
-             CppiaFunction *func = new CppiaFunction(&cppia);
-             // TODO - leak on throw
-             func->load(inStream);
-             if (func->isStatic)
+             bool isStatic = inStream.getStatic();
+             CppiaFunction *func = new CppiaFunction(&cppia,isStatic);
+             if (isStatic)
                 staticFunctions.push_back(func);
              else
                 memberFunctions.push_back(func);
+             func->load(inStream,!isInterface);
           }
           else if (tok=="VAR")
           {
-             CppiaVar *var = new CppiaVar(&cppia);
-             // TODO - leak on throw
-             var->load(inStream);
-             if (var->isStatic)
+             bool isStatic = inStream.getStatic();
+             CppiaVar *var = new CppiaVar(&cppia,isStatic);
+             if (isStatic)
                 staticVars.push_back(var);
              else
                 memberVars.push_back(var);
+             var->load(inStream);
           }
           else if (tok=="INLINE")
           {
@@ -407,11 +537,124 @@ struct ClassData
    }
 };
 
+struct FunExpr : public CppiaExpr
+{
+   int returnType;
+   int argCount;
+   std::vector<CppiaStackVar> args;
+   std::vector<CppiaConst> initVals;
+   CppiaExpr *body;
+
+   FunExpr(CppiaStream &stream)
+   {
+      body = 0;
+      returnType = stream.getInt();
+      argCount = stream.getInt();
+      args.resize(argCount);
+      for(int a=0;a<argCount;a++)
+      {
+         args[a].fromStream(stream);
+         bool init = stream.getBool();
+         if (init)
+            initVals[a].fromStream(stream);
+      }
+      body = createCppiaExpr(stream);
+   }
+};
+
+struct BlockExpr : public CppiaExpr
+{
+   std::vector<CppiaExpr *> expressions;
+
+   BlockExpr(CppiaStream &stream)
+   {
+      int count = stream.getInt();
+      expressions.resize(count);
+      for(int i=0;i<expressions.size();i++)
+         expressions[i] = createCppiaExpr(stream);
+   }
+};
+
+struct IfElseExpr : public CppiaExpr
+{
+   CppiaExpr *condition;
+   CppiaExpr *doIf;
+   CppiaExpr *doElse;
+
+   IfElseExpr(CppiaStream &stream)
+   {
+      condition = createCppiaExpr(stream);
+      doIf = createCppiaExpr(stream);
+      doElse = createCppiaExpr(stream);
+   }
+};
+
+
+struct IfExpr : public CppiaExpr
+{
+   CppiaExpr *condition;
+   CppiaExpr *doIf;
+
+   IfExpr(CppiaStream &stream)
+   {
+      condition = createCppiaExpr(stream);
+      doIf = createCppiaExpr(stream);
+   }
+};
+
+
+struct IsNull : public CppiaExpr
+{
+   CppiaExpr *condition;
+
+   IsNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
+};
+
+
+struct IsNotNull : public CppiaExpr
+{
+   CppiaExpr *condition;
+
+   IsNotNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
+};
+
+
+CppiaExpr *createCppiaExpr(CppiaStream &stream)
+{
+   int fileId = stream.getInt();
+   int line = stream.getInt();
+   std::string tok = stream.getToken();
+   printf(" expr %s\n", tok.c_str() );
+
+   CppiaExpr *result = 0;
+   if (tok=="FUN")
+      result = new FunExpr(stream);
+   else if (tok=="BLOCK")
+      result = new BlockExpr(stream);
+   else if (tok=="IFELSE")
+      result = new IfElseExpr(stream);
+   else if (tok=="IF")
+      result = new IfExpr(stream);
+   else if (tok=="ISNULL")
+      result = new IsNull(stream);
+   else if (tok=="NOTNULL")
+      result = new IsNotNull(stream);
+
+   if (!result)
+      throw "invalid expression";
+
+   result->fileId = fileId;
+   result->line = line;
+
+   return result;
+}
+
 
 
 bool LoadCppia(String inValue)
 {
-   CppiaData   *cppia = new CppiaData();
+   CppiaData   *cppiaPtr = new CppiaData();
+   CppiaData   &cppia = *cppiaPtr;
    CppiaStream stream(inValue.__s, inValue.length);
    try
    {
@@ -420,27 +663,27 @@ bool LoadCppia(String inValue)
          throw "Bad magic";
 
       int stringCount = stream.getInt();
-      cppia->strings.resize(stringCount);
+      cppia.strings.resize(stringCount);
       for(int s=0;s<stringCount;s++)
-         stream.readString(cppia->strings[s]);
+         stream.readString(cppia.strings[s]);
 
       int typeCount = stream.getInt();
-      cppia->types.resize(typeCount);
+      cppia.types.resize(typeCount);
       for(int t=0;t<typeCount;t++)
       {
          std::string val;
          stream.readString(val);
-         cppia->types[t] = new TypeData(cppia,val);
+         cppia.types[t] = new TypeData(cppia,val);
       }
 
       int classCount = stream.getInt();
       int enumCount = stream.getInt();
 
-      cppia->classes.resize(classCount);
+      cppia.classes.resize(classCount);
       for(int c=0;c<classCount;c++)
       {
-         cppia->classes[c] = new ClassData(cppia);
-         cppia->classes[c]->load(stream);
+         cppia.classes[c] = new ClassData(cppia);
+         cppia.classes[c]->load(stream);
       }
 
       return true;
