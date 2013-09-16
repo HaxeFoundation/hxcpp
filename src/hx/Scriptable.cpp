@@ -310,6 +310,12 @@ struct CppiaStream
 struct TypeData;
 struct ClassData;
 struct CppiaData;
+struct CppiaExpr;
+
+struct CppiaCtx
+{
+};
+
 
 struct TypeData
 {
@@ -328,15 +334,19 @@ struct CppiaData
    std::vector< std::string > strings;
    std::vector< TypeData * > types;
    std::vector< ClassData * > classes;
+   CppiaExpr   *main;
 
-   const char *identStr(int inId)
+   CppiaData()
    {
-      return strings[inId].c_str();
+      main = 0;
    }
-   const char *typeStr(int inId)
-   {
-      return types[inId]->name.c_str();
-   }
+
+   ~CppiaData();
+
+   void link();
+
+   const char *identStr(int inId) { return strings[inId].c_str(); }
+   const char *typeStr(int inId) { return types[inId]->name.c_str(); }
 };
 
 struct ArgInfo
@@ -346,6 +356,17 @@ struct ArgInfo
    int  typeId;
 };
 
+enum ExprType
+{
+  etVoid,
+  etNull,
+  etObject,
+  etString,
+  etDouble,
+  etInt,
+};
+
+
 struct CppiaExpr
 {
    CppiaData *cppia;
@@ -354,9 +375,37 @@ struct CppiaExpr
    CppiaExpr() : cppia(0), fileId(0), line(0) {}
 
    virtual ~CppiaExpr() {}
+
+   virtual CppiaExpr   *link(CppiaData &data)   { return this; }
+
+   virtual ExprType    getType() { return etObject; }
+
+   virtual int         runInt(CppiaCtx *ctx)    { return 0; }
+   virtual double      runDouble(CppiaCtx *ctx) { return runInt(ctx); }
+   virtual ::String    runString(CppiaCtx *ctx)
+   {
+      hx::Object *result = runObject(ctx);
+      if (!result)
+         return null();
+      return result->toString();
+   }
+   virtual hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runDouble(ctx)).mPtr; }
+   virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
 };
 
+typedef std::vector<CppiaExpr *> Expressions;
+
 CppiaExpr *createCppiaExpr(CppiaStream &inStream);
+
+static void ReadExpressions(Expressions &outExpressions, CppiaStream &stream)
+{
+   int count = stream.getInt();
+   outExpressions.resize(count);
+   for(int i=0;i<count;i++)
+      outExpressions[i] =  createCppiaExpr(stream);
+}
+
+
 
 struct CppiaFunction
 {
@@ -394,14 +443,40 @@ struct CppiaFunction
 
 struct CppiaVar
 {
+   enum Access { accNormal, accNo, accResolve, accCall, accRequire } ;
    CppiaData *cppia;
    bool      isStatic;
+   Access    readAccess;
+   Access    writeAccess;
+   int       nameId;
+   int       typeId;
+   
 
    CppiaVar(CppiaData *inCppia,bool inIsStatic) :
       cppia(inCppia), isStatic(inIsStatic) { }
 
    void load(CppiaStream &stream)
    {
+      readAccess = getAccess(stream);
+      writeAccess = getAccess(stream);
+      nameId = stream.getInt();
+      typeId = stream.getInt();
+   }
+   static Access getAccess(CppiaStream &stream)
+   {
+      std::string tok = stream.getToken();
+      if (tok.size()!=1)
+         throw "bad var access length";
+      switch(tok[0])
+      {
+         case 'N': return accNormal;
+         case '!': return accNo;
+         case 'R': return accResolve;
+         case 'C': return accCall;
+         case '?': return accRequire;
+      }
+      throw "bad access code";
+      return accNormal;
    }
 };
 
@@ -564,14 +639,11 @@ struct FunExpr : public CppiaExpr
 
 struct BlockExpr : public CppiaExpr
 {
-   std::vector<CppiaExpr *> expressions;
+   Expressions expressions;
 
    BlockExpr(CppiaStream &stream)
    {
-      int count = stream.getInt();
-      expressions.resize(count);
-      for(int i=0;i<expressions.size();i++)
-         expressions[i] = createCppiaExpr(stream);
+      ReadExpressions(expressions,stream);
    }
 };
 
@@ -619,6 +691,151 @@ struct IsNotNull : public CppiaExpr
 };
 
 
+struct CallStatic : public CppiaExpr
+{
+   int classId;
+   int fieldId;
+   Expressions args;
+  
+   CallStatic(CppiaStream &stream)
+   {
+      classId = stream.getInt();
+      fieldId = stream.getInt();
+      ReadExpressions(args,stream);
+   }
+};
+
+
+struct Call : public CppiaExpr
+{
+   Expressions args;
+   CppiaExpr   *func;
+  
+   Call(CppiaStream &stream)
+   {
+      ReadExpressions(args,stream);
+      func = createCppiaExpr(stream);
+   }
+};
+
+
+struct GetFieldByName : public CppiaExpr
+{
+   int         nameId;
+   CppiaExpr   *object;
+  
+   GetFieldByName(CppiaStream &stream)
+   {
+      nameId = stream.getInt();
+      object = createCppiaExpr(stream);
+   }
+};
+
+
+struct StringVal : public CppiaExpr
+{
+   int stringId;
+
+   StringVal(int inId) : stringId(inId) { }
+};
+
+
+struct FloatVal : public CppiaExpr
+{
+   double value;
+
+   FloatVal(double inValue) : value(inValue) { }
+};
+
+
+
+struct NullVal : public CppiaExpr
+{
+   NullVal() { }
+};
+
+
+struct PosInfo : public CppiaExpr
+{
+   int fileId;
+   int line;
+   int classId;
+   int methodId;
+
+   PosInfo(CppiaStream &stream)
+   {
+      fileId = stream.getInt();
+      line = stream.getInt();
+      classId = stream.getInt();
+      methodId = stream.getInt();
+   }
+};
+
+
+struct VarDecl : public CppiaExpr
+{
+   CppiaStackVar var;
+   CppiaExpr *init;
+
+   VarDecl(CppiaStream &stream,bool inInit)
+   {
+      var.fromStream(stream);
+      init = inInit ? createCppiaExpr(stream) : 0;
+   }
+};
+
+
+
+struct VarGet : public CppiaExpr
+{
+   int varId;
+
+   VarGet(CppiaStream &stream)
+   {
+      varId = stream.getInt();
+   }
+};
+
+
+struct RetVal : public CppiaExpr
+{
+   CppiaExpr *value;
+
+   RetVal(CppiaStream &stream)
+   {
+      value = createCppiaExpr(stream);
+   }
+};
+
+
+struct OpAdd : public CppiaExpr
+{
+   CppiaExpr *left;
+   CppiaExpr *right;
+
+   OpAdd(CppiaStream &stream)
+   {
+      left = createCppiaExpr(stream);
+      right = createCppiaExpr(stream);
+   }
+};
+
+
+struct OpMult : public CppiaExpr
+{
+   CppiaExpr *left;
+   CppiaExpr *right;
+
+   OpMult(CppiaStream &stream)
+   {
+      left = createCppiaExpr(stream);
+      right = createCppiaExpr(stream);
+   }
+};
+
+
+
+
 CppiaExpr *createCppiaExpr(CppiaStream &stream)
 {
    int fileId = stream.getInt();
@@ -639,6 +856,32 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
       result = new IsNull(stream);
    else if (tok=="NOTNULL")
       result = new IsNotNull(stream);
+   else if (tok=="CALLSTATIC")
+      result = new CallStatic(stream);
+   else if (tok[0]=='s')
+      result = new StringVal(atoi(tok.c_str()+1));
+   else if (tok[0]=='f')
+      result = new FloatVal(atof(tok.c_str()+1));
+   else if (tok=="POSINFO")
+      result = new PosInfo(stream);
+   else if (tok=="VAR")
+      result = new VarGet(stream);
+   else if (tok=="RETVAL")
+      result = new RetVal(stream);
+   else if (tok=="CALL")
+      result = new Call(stream);
+   else if (tok=="FNAME")
+      result = new GetFieldByName(stream);
+   else if (tok=="NULL")
+      result = new NullVal();
+   else if (tok=="VARDECL")
+      result = new VarDecl(stream,false);
+   else if (tok=="VARDECLI")
+      result = new VarDecl(stream,true);
+   else if (tok=="+")
+      result = new OpAdd(stream);
+   else if (tok=="*")
+      result = new OpMult(stream);
 
    if (!result)
       throw "invalid expression";
@@ -649,6 +892,16 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    return result;
 }
 
+CppiaData::~CppiaData()
+{
+   delete main;
+   for(int i=0;i<classes.size();i++)
+      delete classes[i];
+}
+
+void CppiaData::link()
+{
+}
 
 
 bool LoadCppia(String inValue)
@@ -686,6 +939,24 @@ bool LoadCppia(String inValue)
          cppia.classes[c]->load(stream);
       }
 
+      tok = stream.getToken();
+      if (tok=="MAIN")
+      {
+         printf("Main...\n");
+         cppia.main = createCppiaExpr(stream);
+      }
+      else if (tok!="NOMAIN")
+         throw "no main specified";
+
+      printf("Link...\n");
+      cppia.link();
+      printf("Run...\n");
+      if (cppia.main)
+      {
+         CppiaCtx ctx;
+         //cppia.main->runVoid(&ctx);
+         printf("Result %s.\n", cppia.main->runString(&ctx).__s);
+      }
       return true;
    } catch(const char *error)
    {
