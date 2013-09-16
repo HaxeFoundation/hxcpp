@@ -294,14 +294,14 @@ struct CppiaStream
       return false;
    }
 
-   void readString(std::string &outString)
+   String readString()
    {
       int len = getInt();
       skipChar();
       const char *data0 = data;
       for(int i=0;i<len;i++)
          skipChar();
-      outString = std::string(data0,data);
+      return String(data0,data-data).dup();
    }
 
 };
@@ -319,34 +319,72 @@ struct CppiaCtx
 
 struct TypeData
 {
-   CppiaData &cppia;
-   std::string name;
+   String name;
+   Class  haxeClass;
+   ClassData *cppiaClass;
 
-   TypeData(CppiaData &inCppia,const std::string &inData)
-      : cppia(inCppia)
+   TypeData(String inData)
    {
       name = inData;
+      cppiaClass = 0;
+      haxeClass = null();
    }
+   void mark(hx::MarkContext *__inCtx)
+   {
+      HX_MARK_MEMBER(name);
+      HX_MARK_MEMBER(haxeClass);
+   }
+   void visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_MEMBER(name);
+      HX_VISIT_MEMBER(haxeClass);
+   }
+
+   void link(CppiaData &inData);
 };
 
 struct CppiaData
 {
-   std::vector< std::string > strings;
+   Array< String > strings;
    std::vector< TypeData * > types;
    std::vector< ClassData * > classes;
+   std::vector< CppiaExpr * > markable;
    CppiaExpr   *main;
 
    CppiaData()
    {
       main = 0;
+      strings = Array_obj<String>::__new(0,0);
    }
+
+   ClassData *findClass(String inName);
 
    ~CppiaData();
 
    void link();
 
-   const char *identStr(int inId) { return strings[inId].c_str(); }
+   void mark(hx::MarkContext *ctx);
+   void visit(hx::VisitContext *ctx);
+
+   const char *identStr(int inId) { return strings[inId].__s; }
    const char *typeStr(int inId) { return types[inId]->name.c_str(); }
+};
+
+class CppiaObject : public hx::Object
+{
+public:
+   CppiaData *data;
+   CppiaObject(CppiaData *inData)
+   {
+      data = inData;
+      GCSetFinalizer( this, onRelease );
+   }
+   static void onRelease(hx::Object *inObj)
+   {
+      delete ((CppiaObject *)inObj)->data;
+   }
+   void __Mark(hx::MarkContext *ctx) { data->mark(ctx); }
+   void __Visit(hx::VisitContext *ctx) { data->visit(ctx); }
 };
 
 struct ArgInfo
@@ -377,8 +415,12 @@ struct CppiaExpr
    virtual ~CppiaExpr() {}
 
    virtual CppiaExpr   *link(CppiaData &data)   { return this; }
+   virtual void mark(hx::MarkContext *ctx) { };
+   virtual void visit(hx::VisitContext *ctx) { };
+
 
    virtual ExprType    getType() { return etObject; }
+
 
    virtual int         runInt(CppiaCtx *ctx)    { return 0; }
    virtual double      runDouble(CppiaCtx *ctx) { return runInt(ctx); }
@@ -403,6 +445,12 @@ static void ReadExpressions(Expressions &outExpressions, CppiaStream &stream)
    outExpressions.resize(count);
    for(int i=0;i<count;i++)
       outExpressions[i] =  createCppiaExpr(stream);
+}
+
+static void LinkExpressions(Expressions &ioExpressions, CppiaData &data)
+{
+   for(int i=0;i<ioExpressions.size();i++)
+      ioExpressions[i] = ioExpressions[i]->link(data);
 }
 
 
@@ -558,6 +606,7 @@ struct ClassData
 
    ClassData(CppiaData &inCppia) : cppia(inCppia)
    {
+
    }
    void load(CppiaStream &inStream)
    {
@@ -610,6 +659,7 @@ struct ClassData
              throw "unknown field type";
        }
    }
+   void link() { }
 };
 
 struct FunExpr : public CppiaExpr
@@ -702,6 +752,13 @@ struct CallStatic : public CppiaExpr
       classId = stream.getInt();
       fieldId = stream.getInt();
       ReadExpressions(args,stream);
+   }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      TypeData *type = inData.types[classId];
+      printf("Static call to %s\n", type->name.c_str() );
+      LinkExpressions(args, inData);
+      return this;
    }
 };
 
@@ -892,6 +949,18 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    return result;
 }
 
+// --- TypeData -------------------------
+
+void TypeData::link(CppiaData &inData)
+{
+   cppiaClass = inData.findClass(name);
+   if (!cppiaClass)
+      haxeClass = Class_obj::Resolve(name);
+   printf("Linked %s -> %p %p\n", name.__s, cppiaClass, haxeClass.mPtr );
+}
+
+// --- CppiaData -------------------------
+
 CppiaData::~CppiaData()
 {
    delete main;
@@ -901,12 +970,51 @@ CppiaData::~CppiaData()
 
 void CppiaData::link()
 {
+   for(int t=0;t<types.size();t++)
+      types[t]->link(*this);
+   for(int i=0;i<classes.size();i++)
+      classes[i]->link();
+   if (main)
+      main = main->link(*this);
 }
 
+ClassData *CppiaData::findClass(String inName)
+{
+   for(int i=0;i<classes.size();i++)
+      if (strings[classes[i]->nameId] == inName)
+         return classes[i];
+   return 0;
+}
+
+
+void CppiaData::mark(hx::MarkContext *__inCtx)
+{
+   HX_MARK_MEMBER(strings);
+   for(int i=0;i<types.size();i++)
+      types[i]->mark(__inCtx);
+   for(int i=0;i<markable.size();i++)
+      markable[i]->mark(__inCtx);
+}
+
+void CppiaData::visit(hx::VisitContext *__inCtx)
+{
+   HX_VISIT_MEMBER(strings);
+   for(int i=0;i<types.size();i++)
+      types[i]->visit(__inCtx);
+   for(int i=0;i<markable.size();i++)
+      markable[i]->visit(__inCtx);
+}
+
+// TODO  - more than one
+static hx::Object *currentCppia = 0;
 
 bool LoadCppia(String inValue)
 {
    CppiaData   *cppiaPtr = new CppiaData();
+   currentCppia = new CppiaObject(cppiaPtr); 
+   GCAddRoot(&currentCppia);
+
+
    CppiaData   &cppia = *cppiaPtr;
    CppiaStream stream(inValue.__s, inValue.length);
    try
@@ -916,18 +1024,13 @@ bool LoadCppia(String inValue)
          throw "Bad magic";
 
       int stringCount = stream.getInt();
-      cppia.strings.resize(stringCount);
       for(int s=0;s<stringCount;s++)
-         stream.readString(cppia.strings[s]);
+         cppia.strings[s] = stream.readString();
 
       int typeCount = stream.getInt();
       cppia.types.resize(typeCount);
       for(int t=0;t<typeCount;t++)
-      {
-         std::string val;
-         stream.readString(val);
-         cppia.types[t] = new TypeData(cppia,val);
-      }
+         cppia.types[t] = new TypeData(stream.readString());
 
       int classCount = stream.getInt();
       int enumCount = stream.getInt();
