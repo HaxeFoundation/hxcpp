@@ -316,7 +316,44 @@ struct CppiaExpr;
 
 struct CppiaCtx
 {
+   std::vector<unsigned char> stack;
+   unsigned char *pointer;
+   unsigned char *frame;
+
+   CppiaCtx() : stack(64*1024)
+   {
+      pointer = &stack[0];
+      push((hx::Object *)0);
+      frame = pointer;
+   }
+
+   template<typename T>
+   void push(T inValue)
+   {
+      *(T *)pointer = inValue;
+      pointer += sizeof(T);
+   }
+
+   void restore(unsigned char *inPointer, unsigned char *inFrame)
+   {
+      pointer = inPointer;
+      if (inFrame)
+         frame = inFrame;
+   }
+
 };
+
+
+enum ExprType
+{
+  etVoid,
+  etNull,
+  etObject,
+  etString,
+  etDouble,
+  etInt,
+};
+
 
 
 struct TypeData
@@ -324,6 +361,7 @@ struct TypeData
    String name;
    Class  haxeClass;
    ClassData *cppiaClass;
+   ExprType  expressionType;
 
    TypeData(String inData)
    {
@@ -399,16 +437,7 @@ struct ArgInfo
    int  typeId;
 };
 
-enum ExprType
-{
-  etVoid,
-  etNull,
-  etObject,
-  etString,
-  etDouble,
-  etInt,
-};
-
+// --- CppiaExpr ----------------------------------------
 
 struct CppiaExpr
 {
@@ -425,7 +454,6 @@ struct CppiaExpr
 
    virtual ExprType    getType() { return etObject; }
 
-
    virtual int         runInt(CppiaCtx *ctx)    { return 0; }
    virtual double      runDouble(CppiaCtx *ctx) { return runInt(ctx); }
    virtual ::String    runString(CppiaCtx *ctx)
@@ -438,6 +466,8 @@ struct CppiaExpr
    virtual hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runDouble(ctx)).mPtr; }
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
 };
+
+// ------------------------------------------------------
 
 typedef std::vector<CppiaExpr *> Expressions;
 
@@ -539,12 +569,19 @@ struct CppiaStackVar
    bool capture;
    int  typeId;
 
+   ExprType expressionType;
+
    void fromStream(CppiaStream &stream)
    {
       nameId = stream.getInt();
       id = stream.getInt();
       capture = stream.getBool();
       typeId = stream.getInt();
+   }
+
+   void link(CppiaData &inData)
+   {
+      expressionType = inData.types[typeId]->expressionType;
    }
 };
 
@@ -616,8 +653,11 @@ struct ClassData
    {
       std::vector<CppiaFunction *> &funcs = inStatic ? staticFunctions : memberFunctions;
       for(int i=0;i<funcs.size();i++)
+      {
+         //printf("%d %d\n", funcs[i]->nameId, inId);
          if (funcs[i]->nameId == inId)
             return funcs[i]->body;
+      }
       return 0;
    }
 
@@ -681,7 +721,8 @@ struct FunExpr : public CppiaExpr
    int returnType;
    int argCount;
    std::vector<CppiaStackVar> args;
-   std::vector<CppiaConst> initVals;
+   std::vector<bool>          hasDefault;
+   std::vector<CppiaConst>    initVals;
    CppiaExpr *body;
 
    FunExpr(CppiaStream &stream)
@@ -690,14 +731,77 @@ struct FunExpr : public CppiaExpr
       returnType = stream.getInt();
       argCount = stream.getInt();
       args.resize(argCount);
+      hasDefault.resize(argCount);
       for(int a=0;a<argCount;a++)
       {
          args[a].fromStream(stream);
          bool init = stream.getBool();
+         hasDefault.push_back(init);
          if (init)
             initVals[a].fromStream(stream);
       }
       body = createCppiaExpr(stream);
+   }
+
+   CppiaExpr *link(CppiaData &inData)
+   {
+      for(int a=0;a<args.size();a++)
+         args[a].link(inData);
+
+      body = body->link(inData);
+      return this;
+   }
+
+   void pushArgs(CppiaCtx *ctx, Expressions &inArgs)
+   {
+      if (argCount!=inArgs.size())
+      {
+         printf("Arg count mismatch?\n");
+         return;
+      }
+
+      for(int a=0;a<argCount;a++)
+      {
+         CppiaStackVar &var = args[a];
+         // TODO capture
+         if (hasDefault[a])
+         {
+            hx::Object *obj = inArgs[a]->runObject(ctx);
+            switch(var.expressionType)
+            {
+               case etInt:
+                  ctx->push( obj ? obj->__ToInt() : initVals[a].ival );
+                  break;
+               case etDouble:
+                  ctx->push( obj ? obj->__ToDouble() : initVals[a].dval );
+                  break;
+               /* todo - default strings.
+               case etString:
+                  ctx.push( obj ? obj->__ToString() : initVals[a].ival );
+                  break;
+               */
+               default:
+                  ctx->push(obj);
+            }
+         }
+         else
+         {
+            switch(var.expressionType)
+            {
+               case etInt:
+                  ctx->push(inArgs[a]->runInt(ctx));
+                  break;
+               case etDouble:
+                  ctx->push(inArgs[a]->runDouble(ctx));
+                  break;
+               case etString:
+                  ctx->push(inArgs[a]->runString(ctx));
+                  break;
+               default:
+                  ctx->push(inArgs[a]->runObject(ctx));
+            }
+         }
+      }
    }
 };
 
@@ -754,18 +858,84 @@ struct IsNotNull : public CppiaExpr
    IsNotNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
 };
 
+struct AutoStack
+{
+   CppiaCtx *ctx;
+   unsigned char *pointer;
+   unsigned char *frame;
+
+   AutoStack(CppiaCtx *inCtx) : ctx(inCtx)
+   {
+      pointer = ctx->pointer;
+      frame = 0;
+   }
+   void beginFrame()
+   {
+      frame = ctx->frame;
+   }
+   ~AutoStack()
+   {
+      ctx->restore(pointer,frame);
+   }
+};
+
+
 struct CallFunExpr : public CppiaExpr
 {
    Expressions args;
-   FunExpr *function;
+   FunExpr     *function;
+   ExprType    returnType;
 
    CallFunExpr(int inFileId, int inLineId, FunExpr *inFunction, Expressions &ioArgs )
       : CppiaExpr(inFileId, inLineId)
    {
       args.swap(ioArgs);
       function = inFunction;
-      //printf("Passing %d args to %d\n", args.size(), function->args.size());
    }
+
+   CppiaExpr *link(CppiaData &inData)
+   {
+      LinkExpressions(args,inData);
+      function = (FunExpr *)function->link(inData);
+      returnType = inData.types[ function->returnType ]->expressionType;
+      return this;
+   }
+
+   ExprType getType() { return returnType; }
+
+   #define CallFunExprVal(ret,funcName) \
+   ret funcName(CppiaCtx *ctx) \
+   { \
+      AutoStack save(ctx); \
+      function->pushArgs(ctx,args); \
+      save.beginFrame(); \
+      try \
+      { \
+         return function->body->funcName(ctx); \
+      } \
+      catch (CppiaExpr *retVal) \
+      { \
+         return retVal->funcName(ctx); \
+      } \
+   }
+   CallFunExprVal(int,runInt);
+   CallFunExprVal(double,runDouble);
+   CallFunExprVal(String,runString);
+   CallFunExprVal(hx::Object *,runObject);
+
+   void runVoid(CppiaCtx *ctx)
+   {
+      AutoStack save(ctx);
+      function->pushArgs(ctx,args);
+      save.beginFrame();
+      try { function->body->runVoid(ctx); }
+      catch (CppiaExpr *retVal)
+      {
+         if (retVal)
+            retVal->runVoid(ctx);
+      }
+   }
+
 };
 
 
@@ -1001,6 +1171,19 @@ void TypeData::link(CppiaData &inData)
       haxeClass = Class_obj::Resolve(name);
       if (!haxeClass.mPtr && !cppiaClass)
          printf("Could not resolve '%s'\n", name.__s);
+
+      if (name==HX_CSTRING("Void"))
+         expressionType = etVoid;
+      else if (name==HX_CSTRING("Null"))
+         expressionType = etNull;
+      else if (name==HX_CSTRING("String"))
+         expressionType = etString;
+      else if (name==HX_CSTRING("Double"))
+         expressionType = etDouble;
+      else if (name==HX_CSTRING("Int") || name==HX_CSTRING("Bool"))
+         expressionType = etInt;
+      else
+         expressionType = etObject;
    }
 }
 
