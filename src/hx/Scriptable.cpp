@@ -65,6 +65,8 @@ class Object_obj__scriptable : public Object
 
 void ScriptableRegisterClass( String inName, String *inFunctions, hx::ScriptableClassFactory inFactory)
 {
+
+   printf("ScriptableRegisterClass %s\n", inName.__s);
    if (!sScriptRegistered)
       sScriptRegistered = new ScriptRegisteredMap();
    ScriptRegistered *registered = new ScriptRegistered(inFunctions,inFactory);
@@ -301,7 +303,7 @@ struct CppiaStream
       const char *data0 = data;
       for(int i=0;i<len;i++)
          skipChar();
-      return String(data0,data-data).dup();
+      return String(data0,data-data0).dup();
    }
 
 };
@@ -325,7 +327,10 @@ struct TypeData
 
    TypeData(String inData)
    {
-      name = inData;
+      Array<String> parts = inData.split(HX_CSTRING("::"));
+      if (parts[0].length==0)
+         parts->shift();
+      name = parts->join(HX_CSTRING("."));
       cppiaClass = 0;
       haxeClass = null();
    }
@@ -357,7 +362,7 @@ struct CppiaData
       strings = Array_obj<String>::__new(0,0);
    }
 
-   ClassData *findClass(String inName);
+   //ClassData *findClass(String inName);
 
    ~CppiaData();
 
@@ -407,10 +412,9 @@ enum ExprType
 
 struct CppiaExpr
 {
-   CppiaData *cppia;
    int fileId;
    int line;
-   CppiaExpr() : cppia(0), fileId(0), line(0) {}
+   CppiaExpr(int inFileId=0, int inLineId=0) : fileId(inFileId), line(inLineId) {}
 
    virtual ~CppiaExpr() {}
 
@@ -606,8 +610,17 @@ struct ClassData
 
    ClassData(CppiaData &inCppia) : cppia(inCppia)
    {
-
    }
+
+   CppiaExpr *findFunction(bool inStatic,int inId)
+   {
+      std::vector<CppiaFunction *> &funcs = inStatic ? staticFunctions : memberFunctions;
+      for(int i=0;i<funcs.size();i++)
+         if (funcs[i]->nameId == inId)
+            return funcs[i]->body;
+      return 0;
+   }
+
    void load(CppiaStream &inStream)
    {
       std::string tok = inStream.getToken();
@@ -620,6 +633,7 @@ struct ClassData
          throw "Bad class type";
 
        nameId = inStream.getInt();
+       cppia.types[nameId]->cppiaClass = this;
        superId = inStream.getInt();
        int implementCount = inStream.getInt();
        implements.resize(implementCount);
@@ -740,6 +754,20 @@ struct IsNotNull : public CppiaExpr
    IsNotNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
 };
 
+struct CallFunExpr : public CppiaExpr
+{
+   Expressions args;
+   FunExpr *function;
+
+   CallFunExpr(int inFileId, int inLineId, FunExpr *inFunction, Expressions &ioArgs )
+      : CppiaExpr(inFileId, inLineId)
+   {
+      args.swap(ioArgs);
+      function = inFunction;
+      //printf("Passing %d args to %d\n", args.size(), function->args.size());
+   }
+};
+
 
 struct CallStatic : public CppiaExpr
 {
@@ -756,7 +784,22 @@ struct CallStatic : public CppiaExpr
    CppiaExpr *link(CppiaData &inData)
    {
       TypeData *type = inData.types[classId];
-      printf("Static call to %s\n", type->name.c_str() );
+      String field = inData.strings[fieldId];
+      if (type->haxeClass.mPtr)
+      {
+         // TODO
+      }
+      else
+      {
+         FunExpr *func = (FunExpr *)type->cppiaClass->findFunction(fieldId,true);
+         if (!func)
+            printf("Could not find static function %s in %s\n", field.__s, type->name.__s);
+         CppiaExpr *replace = new CallFunExpr( fileId, line, func, args );
+         delete this;
+         replace->link(inData);
+         return replace;
+      }
+      printf("Static call to %s::%s\n", type->name.__s, field.__s);
       LinkExpressions(args, inData);
       return this;
    }
@@ -953,10 +996,12 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
 
 void TypeData::link(CppiaData &inData)
 {
-   cppiaClass = inData.findClass(name);
-   if (!cppiaClass)
+   if (name.length>0)
+   {
       haxeClass = Class_obj::Resolve(name);
-   printf("Linked %s -> %p %p\n", name.__s, cppiaClass, haxeClass.mPtr );
+      if (!haxeClass.mPtr && !cppiaClass)
+         printf("Could not resolve '%s'\n", name.__s);
+   }
 }
 
 // --- CppiaData -------------------------
@@ -978,6 +1023,7 @@ void CppiaData::link()
       main = main->link(*this);
 }
 
+/*
 ClassData *CppiaData::findClass(String inName)
 {
    for(int i=0;i<classes.size();i++)
@@ -985,6 +1031,7 @@ ClassData *CppiaData::findClass(String inName)
          return classes[i];
    return 0;
 }
+*/
 
 
 void CppiaData::mark(hx::MarkContext *__inCtx)
@@ -2364,6 +2411,7 @@ class Object_obj__scriptable : public Object
 
 void ScriptableRegisterClass( String inName, String *inFunctions, hx::ScriptableClassFactory inFactory)
 {
+   printf("ScriptableRegisterClass %s\n", inName.__s);
    if (!sScriptRegistered)
       sScriptRegistered = new ScriptRegisteredMap();
    ScriptRegistered *registered = new ScriptRegistered(inFunctions,inFactory);
