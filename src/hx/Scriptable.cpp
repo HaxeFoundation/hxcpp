@@ -813,6 +813,38 @@ struct BlockExpr : public CppiaExpr
    {
       ReadExpressions(expressions,stream);
    }
+
+   CppiaExpr *link(CppiaData &data)
+   {
+      LinkExpressions(expressions,data);
+      return this;
+   }
+
+   virtual ExprType getType()
+   {
+      if (expressions.size()==0)
+         return etNull;
+      return expressions[expressions.size()-1]->getType();
+   }
+
+   #define BlockExprRun(ret,name,defVal) \
+     ret name(CppiaCtx *ctx) \
+     { \
+        for(int a=0;a<expressions.size()-1;a++) \
+          expressions[a]->runVoid(ctx); \
+        if (expressions.size()>0) \
+           return expressions[expressions.size()-1]->name(ctx); \
+        return defVal; \
+     }
+   BlockExprRun(int,runInt,0)
+   BlockExprRun(double,runDouble,0)
+   BlockExprRun(String,runString,null())
+   BlockExprRun(hx::Object *,runObject,0)
+   void  runVoid(CppiaCtx *ctx)
+   {
+      for(int a=0;a<expressions.size();a++)
+         expressions[a]->runVoid(ctx);
+   }
 };
 
 struct IfElseExpr : public CppiaExpr
@@ -938,6 +970,110 @@ struct CallFunExpr : public CppiaExpr
 
 };
 
+struct CallDynamicFunction : public CppiaExpr
+{
+   Expressions args;
+   Dynamic     function;
+
+   CallDynamicFunction(CppiaData &inData, int inFileId, int inLineId,
+                       Dynamic inFunction, Expressions &ioArgs )
+      : CppiaExpr(inFileId, inLineId)
+   {
+      args.swap(ioArgs);
+      function = inFunction;
+      inData.markable.push_back(this);
+   }
+
+   virtual void mark(hx::MarkContext *__inCtx)
+   {
+      HX_MARK_MEMBER(function);
+   }
+   virtual void visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_MEMBER(function);
+   }
+
+   CppiaExpr *link(CppiaData &inData)
+   {
+      LinkExpressions(args,inData);
+      return this;
+   }
+
+   ExprType getType() { return etObject; }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      int n = args.size();
+      printf("Calling %d..\n", n);
+      switch(n)
+      {
+         case 0:
+            return function().mPtr;
+         case 1:
+            {
+               Dynamic arg0( args[0]->runObject(ctx) );
+               return function->__run(arg0).mPtr;
+            }
+         case 2:
+            {
+               Dynamic arg0( args[0]->runObject(ctx) );
+               Dynamic arg1( args[1]->runObject(ctx) );
+               return function->__run(arg0,arg1).mPtr;
+            }
+         case 3:
+            {
+               Dynamic arg0( args[0]->runObject(ctx) );
+               Dynamic arg1( args[1]->runObject(ctx) );
+               Dynamic arg2( args[2]->runObject(ctx) );
+               return function->__run(arg0,arg1,arg2).mPtr;
+            }
+         case 4:
+            {
+               Dynamic arg0( args[0]->runObject(ctx) );
+               Dynamic arg1( args[1]->runObject(ctx) );
+               Dynamic arg2( args[2]->runObject(ctx) );
+               Dynamic arg3( args[3]->runObject(ctx) );
+               return function->__run(arg0,arg1,arg2,arg3).mPtr;
+            }
+         case 5:
+            {
+               Dynamic arg0( args[0]->runObject(ctx) );
+               Dynamic arg1( args[1]->runObject(ctx) );
+               Dynamic arg2( args[2]->runObject(ctx) );
+               Dynamic arg3( args[3]->runObject(ctx) );
+               Dynamic arg4( args[4]->runObject(ctx) );
+               return function->__run(arg0,arg1,arg2,arg3,arg4).mPtr;
+            }
+         }
+
+      Array<Dynamic> argVals = Array_obj<Dynamic>::__new(n,n);
+      for(int a=0;a<n;a++)
+         argVals[a] = Dynamic( args[a]->runObject(ctx) );
+      return function->__Run(argVals).mPtr;
+   }
+
+   void runVoid(CppiaCtx *ctx)
+   {
+      runObject(ctx);
+   }
+   int runInt(CppiaCtx *ctx)
+   {
+      hx::Object *result = runObject(ctx);
+      return result ? result->__ToInt() : 0;
+   }
+   double runDouble(CppiaCtx *ctx)
+   {
+      hx::Object *result = runObject(ctx);
+      return result ? result->__ToDouble() : 0;
+   }
+   String runString(CppiaCtx *ctx)
+   {
+      hx::Object *result = runObject(ctx);
+      return result ? result->__ToString() : 0;
+   }
+};
+
+
 
 struct CallStatic : public CppiaExpr
 {
@@ -957,7 +1093,15 @@ struct CallStatic : public CppiaExpr
       String field = inData.strings[fieldId];
       if (type->haxeClass.mPtr)
       {
-         // TODO
+         // TODO - might change if dynamic function (eg, trace)
+         Dynamic func = type->haxeClass.mPtr->__Field( field, false );
+         if (func.mPtr)
+         {
+            CppiaExpr *replace = new CallDynamicFunction(inData, fileId, line, func, args );
+            delete this;
+            replace->link(inData);
+            return replace;
+         }
       }
       else
       {
@@ -969,8 +1113,7 @@ struct CallStatic : public CppiaExpr
          replace->link(inData);
          return replace;
       }
-      printf("Static call to %s::%s\n", type->name.__s, field.__s);
-      LinkExpressions(args, inData);
+      printf("Unknown call to %s::%s\n", type->name.__s, field.__s);
       return this;
    }
 };
@@ -1005,8 +1148,39 @@ struct GetFieldByName : public CppiaExpr
 struct StringVal : public CppiaExpr
 {
    int stringId;
+   String value;
+   Dynamic cache;
 
-   StringVal(int inId) : stringId(inId) { }
+   StringVal(int inId) : stringId(inId)
+   {
+   }
+
+   CppiaExpr *link(CppiaData &inData)
+   {
+      value = inData.strings[stringId];
+      cache.mPtr = 0;
+      inData.markable.push_back(this);
+      return this;
+   }
+   virtual ::String    runString(CppiaCtx *ctx) { return value; }
+   virtual hx::Object *runObject(CppiaCtx *ctx)
+   {
+      if (!cache.mPtr)
+         cache = value;
+      return cache.mPtr;
+   }
+
+   virtual void mark(hx::MarkContext *__inCtx)
+   {
+      HX_MARK_MEMBER(value);
+      HX_MARK_MEMBER(cache);
+   }
+   virtual void visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_MEMBER(value);
+      HX_VISIT_MEMBER(cache);
+   }
+
 };
 
 
@@ -1031,6 +1205,7 @@ struct PosInfo : public CppiaExpr
    int line;
    int classId;
    int methodId;
+   Dynamic value;
 
    PosInfo(CppiaStream &stream)
    {
@@ -1039,6 +1214,25 @@ struct PosInfo : public CppiaExpr
       classId = stream.getInt();
       methodId = stream.getInt();
    }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      String clazz = inData.strings[classId];
+      String file = inData.strings[fileId];
+      String method = inData.strings[methodId];
+      value = hx::SourceInfo(file,line,clazz,method);
+      inData.markable.push_back(this);
+      return this;
+   }
+   virtual void mark(hx::MarkContext *__inCtx)
+   {
+      HX_MARK_MEMBER(value);
+   }
+   virtual void visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_MEMBER(value);
+   }
+
+   virtual hx::Object *runObject(CppiaCtx *ctx) { return value.mPtr; }
 };
 
 
