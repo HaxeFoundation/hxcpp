@@ -6,13 +6,13 @@
 <path name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />
 
 <compiler id="iPhoneSim" exe="g++" if="iphonesim">
-  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} g++" />
-  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang" if="HXCPP_CLANG" />
+  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} g++" if="HXCPP_GCC" />
+  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
-  <flag value="-stdlib=libc++" />
+  <flag value="-stdlib=libc++" unless="HXCPP_GCC" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fmessage-length=0"/>
@@ -38,9 +38,9 @@
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <flag value="-Wno-parentheses" />
-  <flag value="-Wno-null-dereference" if="HXCPP_CLANG"/>
+  <flag value="-Wno-null-dereference" unless="HXCPP_GCC"/>
   <flag value="-Wno-unused-value" />
-  <flag value="-Wno-bool-conversion" if="HXCPP_CLANG"/>
+  <flag value="-Wno-bool-conversion" unless="HXCPP_GCC"/>
   <include name="common-defines.xml" />
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-I${HXCPP}/include"/>
@@ -52,9 +52,9 @@
 </compiler>
 
 <linker id="dll" exe="g++" >
-  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} g++" />
-  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang" if="HXCPP_CLANG" />
-  <flag value="-stdlib=libc++" />
+  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} g++" if="HXCPP_GCC" />
+  <exe name="xcrun --sdk iphonesimulator${IPHONE_VER} clang" />
+  <flag value="-stdlib=libc++" unless="HXCPP_GCC" />
   <flag value="-dynamiclib"/>
   <flag value="-arch"/>
   <flag value="i386"/>
