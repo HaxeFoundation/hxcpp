@@ -23,6 +23,9 @@ enum { gFillWithJunk = 0 } ;
 
 #include "QuickVec.h"
 
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
 
 static bool sgAllocInit = 0;
 static bool sgInternalEnable = false;
@@ -199,7 +202,7 @@ OBJ = ENDIAN_OBJ_NEXT_BYTE = start is measured from the header pointer
 
 */
 
-#if HX_LITTLE_ENDIAN
+#ifndef HXCPP_BIG_ENDIAN
 #define ENDIAN_MARK_ID_BYTE        -1
 #define ENDIAN_OBJ_NEXT_BYTE       2
 #else
@@ -373,7 +376,11 @@ union BlockData
             if (row_flag!=0)
             {
                GCLOG("Block verification failed on row %d\n",r);
+               #if __has_builtin(__builtin_trap)
+               __builtin_trap();
+               #else
                *(int *)0=0;
+               #endif
             }
          }
       }
@@ -2264,7 +2271,11 @@ LocalAllocator *GetLocalAllocMT()
       );
       #endif
 
+      #if __has_builtin(__builtin_trap)
+      __builtin_trap();
+      #else
       *(int *)0=0;
+      #endif
    }
    return result;
 }

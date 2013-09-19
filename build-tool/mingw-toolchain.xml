@@ -19,7 +19,7 @@
   <flag value="-O2"/>
   <include name="common-defines.xml" />
   <flag value="-DHX_WINDOWS"/>
-  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>

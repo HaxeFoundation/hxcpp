@@ -21,7 +21,7 @@
   <flag value="-DHX_MACOS"/>
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
-  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-Wno-parentheses" />
   <flag value="-Wno-null-dereference" if="HXCPP_CLANG"/>
   <flag value="-Wno-unused-value" />

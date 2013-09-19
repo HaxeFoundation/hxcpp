@@ -18,6 +18,10 @@
 #define snprintf _snprintf
 #endif
 
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
+
 // These should implement write and read memory barrier, but since there are
 // no obvious portable implementations, they are currently left unimplemented
 static void write_memory_barrier()
@@ -1839,7 +1843,11 @@ static void CriticalErrorHandler(String inErr, bool allowFixup)
 #endif
 
     // Good when using gdb, and to collect a core ...
+    #if __has_builtin(__builtin_trap)
+    __builtin_trap();
+    #else
     (* (int *) 0) = 0;
+    #endif
 
     // Just in case that didn't do it ...
     exit(1);

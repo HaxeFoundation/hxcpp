@@ -8,7 +8,7 @@
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-DHX_LINUX"/>
-  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <include name="common-defines.xml" />
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>

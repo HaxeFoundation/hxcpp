@@ -33,7 +33,7 @@
   <cflag value="${C_ABI}" />
   <cppflag value="${CPP_ABI}" />
   <flag value="-DHX_WINDOWS"/>
-  <flag value="-DHX_LITTLE_ENDIAN=0" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-GR"/>
   <flag value="-Zi"/>
   <flag value="-Oy-"/>
