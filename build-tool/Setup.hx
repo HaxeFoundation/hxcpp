@@ -43,6 +43,106 @@ class Setup
       }
    }
 
+   static public function getNdkVersion(inDirName:String) : Int
+   {
+      var extract_version = ~/^android-ndk-r(\d+)/;
+      if (extract_version.match(inDirName))
+         return Std.parseInt( extract_version.matched(1) );
+      throw 'Could not deduce NDK version from "$inDirName"';
+      return 0;
+   }
+
+   static public function setupAndroidNdk(defines: Map<String,String>)
+   {
+     if (!defines.exists("ANDROID_NDK_ROOT"))
+     {
+        if (defines.exists("ANDROID_NDK_DIR"))
+        {
+           var root = Setup.findAndroidNdkRoot( defines.get("ANDROID_NDK_DIR") );
+           if (BuildTool.verbose)
+              Sys.println("Using found ndk root " + root);
+
+           Sys.putEnv("ANDROID_NDK_ROOT", root);
+           defines.set("ANDROID_NDK_ROOT", root);
+        }
+        else
+           throw "ANDROID_NDK_ROOT or ANDROID_NDK_DIR should be set";
+     }
+     else
+     {
+        if (BuildTool.verbose)
+           Sys.println("Using specified ndk root " + defines.get("ANDROID_NDK_ROOT") );
+     }
+
+     var found = true;
+     for(i in 6...20)
+        if (defines.exists("NDK" + i))
+        {
+           found = true;
+           if (BuildTool.verbose)
+              Sys.println("Using specified android NDK " + i);
+           break;
+        }
+     if (!found)
+     {
+        var version =  Setup.getNdkVersion( defines.get("ANDROID_NDK_ROOT") );
+        if (BuildTool.verbose)
+            Sys.println("Deduced android NDK " + version);
+        defines.set("NDK" + version, "1" );
+     }
+   }
+
+
+   static function findAndroidNdkRoot(inDir:String)
+   {
+      var files:Array<String> = null;
+      try
+      {
+         files = FileSystem.readDirectory(inDir);
+      }
+      catch (e:Dynamic)
+      {
+         throw 'ANDROID_NDK_DIR "$inDir" does not point to a valid directory.';
+      }
+
+      var extract_version = ~/^android-ndk-r(\d+)([a-z]?)$/;
+      var bestMajor = 0;
+      var bestMinor = "";
+      var result = "";
+      for(file in files)
+         if (extract_version.match(file))
+         {
+            var major = Std.parseInt( extract_version.matched(1) );
+            var minor = extract_version.matched(2);
+            if ( major>bestMajor || (major==bestMajor && minor>bestMinor))
+            {
+               bestMajor = major;
+               bestMinor = minor;
+               result = inDir + "/" + file;
+            }
+         }
+
+
+      if (BuildTool.verbose)
+      {
+         var message = "Found NDK " + result;
+         Sys.println(message);
+      }
+
+      if (result=="")
+         throw 'ANDROID_NDK_DIR "$inDir" does not contain matching ndk downloads.'; 
+
+      return result;
+   }
+
+   public static function setup(inWhat:String,ioDefines: Map<String,String>)
+   {
+      if (inWhat=="androidNdk")
+         setupAndroidNdk(ioDefines);
+      else
+         throw 'Unknown setup feature $inWhat';
+   }
+
    static function toPath(inPath:String)
    {
       if (!BuildTool.isWindows)

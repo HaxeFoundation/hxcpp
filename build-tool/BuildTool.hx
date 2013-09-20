@@ -754,6 +754,9 @@ class BuildTool
                 case "unset" : 
                    var name = el.att.name;
                    mDefines.remove(name);
+                case "setup" : 
+                   var name = substitute(el.att.name);
+                   Setup.setup(name,mDefines);
                 case "echo" : 
                    Sys.println(substitute(el.att.value));
                 case "setenv" : 
@@ -983,6 +986,8 @@ class BuildTool
                 case "exe" : c.mExe = substitute((el.att.name));
                 case "ext" : c.mExt = substitute((el.att.value));
                 case "pch" : c.setPCH( substitute((el.att.value)) );
+                case "section" :
+                      createCompiler(el,c);
                 case "include" :
                    var name = substitute(el.att.name);
                    var full_name = findIncludeFile(name);
@@ -1043,6 +1048,7 @@ class BuildTool
                 case "recreate" : l.mRecreate = (substitute(el.att.value)) != "";
                 case "fromfile" : l.mFromFile = (substitute(el.att.value));
                 case "exe" : l.mExe = (substitute(el.att.name));
+                case "section" : createLinker(el,l);
             }
       }
 
@@ -1348,6 +1354,7 @@ class BuildTool
          defines.set("toolchain","android");
          defines.set("android","android");
          defines.set("BINDIR","Android");
+
          if (!defines.exists("ANDROID_HOST"))
          {
             if ( (new EReg("mac","i")).match(os) )
