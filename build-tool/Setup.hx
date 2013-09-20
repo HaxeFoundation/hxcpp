@@ -45,11 +45,13 @@ class Setup
 
    static public function getNdkVersion(inDirName:String) : Int
    {
-      var extract_version = ~/^android-ndk-r(\d+)/;
+      var extract_version = ~/android-ndk-r(\d+)*/;
       if (extract_version.match(inDirName))
+      {
          return Std.parseInt( extract_version.matched(1) );
-      throw 'Could not deduce NDK version from "$inDirName"';
-      return 0;
+      }
+      //throw 'Could not deduce NDK version from "$inDirName"';
+      return 8;
    }
 
    static public function setupAndroidNdk(defines: Map<String,String>)
@@ -74,9 +76,9 @@ class Setup
            Sys.println("Using specified ndk root " + defines.get("ANDROID_NDK_ROOT") );
      }
 
-     var found = true;
+     var found = false;
      for(i in 6...20)
-        if (defines.exists("NDK" + i))
+        if (defines.exists("NDKV" + i))
         {
            found = true;
            if (BuildTool.verbose)
@@ -85,10 +87,10 @@ class Setup
         }
      if (!found)
      {
-        var version =  Setup.getNdkVersion( defines.get("ANDROID_NDK_ROOT") );
+        var version = Setup.getNdkVersion( defines.get("ANDROID_NDK_ROOT") );
         if (BuildTool.verbose)
             Sys.println("Deduced android NDK " + version);
-        defines.set("NDK" + version, "1" );
+        defines.set("NDKV" + version, "1" );
      }
    }
 
