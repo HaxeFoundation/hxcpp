@@ -53,6 +53,29 @@ typedef void (*VisitFunc)(hx::VisitContext *__inCtx);
 
 inline bool operator!=(hx::ConstructEnumFunc inFunc,const null &inNull) { return inFunc!=0; }
 
+#ifdef HXCPP_SCRIPTABLE
+namespace hx
+{
+enum FieldStorage
+{
+   fsUnknown = 0,
+   fsBool,
+   fsInt,
+   fsFloat,
+   fsString,
+   fsByte,
+   fsObject,
+};
+struct StorageInfo
+{
+   FieldStorage type;
+   int          offset;
+   String       name;
+};
+
+}
+#endif
+
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Class_obj : public hx::Object
 {
 public:
@@ -63,6 +86,9 @@ public:
              hx::CanCastFunc inCanCast, hx::MarkFunc inMarkFunc
              #ifdef HXCPP_VISIT_ALLOCS
              , hx::VisitFunc inVisitFunc
+             #endif
+             #ifdef HXCPP_SCRIPTABLE
+             ,const hx::StorageInfo *inStorageInfo
              #endif
              );
 
@@ -107,6 +133,10 @@ public:
    Array<String>      GetInstanceFields();
    Array<String>      GetClassFields();
    Class              GetSuper();
+   #ifdef HXCPP_SCRIPTABLE
+   const hx::StorageInfo*  GetMemberStorage(String inName);
+   #endif
+
    static Class       Resolve(String inName);
 
    Class              *mSuper;
@@ -123,6 +153,10 @@ public:
    #endif
    Array<String>      mStatics;
    Array<String>      mMembers;
+
+   #ifdef HXCPP_SCRIPTABLE
+   const hx::StorageInfo*    mMemberStorageInfo;
+   #endif
 };
 
 typedef hx::ObjectPtr<Class_obj> Class;
@@ -142,6 +176,9 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0
                     #ifdef HXCPP_VISIT_ALLOCS
                     , VisitFunc inVisitFunc=0
+                    #endif
+                    #ifdef HXCPP_SCRIPTABLE
+                    ,const hx::StorageInfo *inStorageInfo=0
                     #endif
                     );
 

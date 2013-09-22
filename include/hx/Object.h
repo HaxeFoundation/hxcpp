@@ -40,10 +40,6 @@ class IndexRef;
 typedef Array<Dynamic> DynamicArray;
 
 
-#ifdef HXCPP_SCRIPTABLE
-class ScriptHandler;
-#endif
-
 // --- hx::Object ------------------------------------------------------------
 //
 // Base for all hxcpp objects.
@@ -116,8 +112,7 @@ public:
    virtual int __ArgCount() const { return -1; }
 
    #ifdef HXCPP_SCRIPTABLE
-   virtual ScriptHandler *__GetScriptHandler() { return 0; }
-   virtual unsigned char *__GetScriptData() { return 0; }
+   virtual void **__GetScriptVTable() { return 0; }
    virtual void __Construct(Array<Dynamic> &inArgs) {  }
    #endif
 

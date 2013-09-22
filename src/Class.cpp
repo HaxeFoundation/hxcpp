@@ -20,6 +20,9 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     #ifdef HXCPP_VISIT_ALLOCS
                     ,VisitFunc inVisitFunc
                     #endif
+                    #ifdef HXCPP_SCRIPTABLE
+                    ,const hx::StorageInfo *inStorageInfo
+                    #endif
                     )
 {
    if (sClassMap==0)
@@ -30,6 +33,9 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                                   inConstructEnum, inCanCast, inMarkFunc
                                   #ifdef HXCPP_VISIT_ALLOCS
                                   ,inVisitFunc
+                                  #endif
+                                  #ifdef HXCPP_SCRIPTABLE
+                                  ,inStorageInfo
                                   #endif
                                   );
    Class c(obj);
@@ -60,6 +66,9 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
              #ifdef HXCPP_VISIT_ALLOCS
              ,VisitFunc inVisitFunc
              #endif
+             #ifdef HXCPP_SCRIPTABLE
+             ,const hx::StorageInfo *inStorageInfo
+             #endif
              )
 {
    mName = inClassName;
@@ -71,6 +80,11 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
    #ifdef HXCPP_VISIT_ALLOCS
    mVisitFunc = inVisitFunc;
    #endif
+
+   #ifdef HXCPP_SCRIPTABLE
+   mMemberStorageInfo = inStorageInfo;
+   #endif
+
    if (inStatics)
    {
       mStatics = Array_obj<String>::__new(0,0);
@@ -119,7 +133,7 @@ Class &Class_obj::__SGetClass() { return Class_obj__mClass; }
 
 void Class_obj::__boot()
 {
-Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class_obj>,sNone,sNone, 0,0 , 0 );
+Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class_obj>,sNone,sNone, 0,0 , 0, 0 );
 }
 
 
@@ -235,6 +249,23 @@ bool Class_obj::__IsEnum()
 {
    return mConstructEnum || this==GetVoidClass().GetPtr() || this==GetBoolClass().GetPtr();
 }
+
+#ifdef HXCPP_SCRIPTABLE
+const hx::StorageInfo* Class_obj::GetMemberStorage(String inName)
+{
+   if (mMemberStorageInfo)
+   {
+      for(const StorageInfo *s = mMemberStorageInfo; s->offset; s++)
+      {
+         if (s->name == inName)
+            return s;
+      }
+      if (mSuper)
+         return (*mSuper)->GetMemberStorage(inName);
+   }
+   return 0;
+}
+#endif
 
 
 namespace hx
