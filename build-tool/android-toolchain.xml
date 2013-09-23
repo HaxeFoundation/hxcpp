@@ -36,7 +36,7 @@
 <set name="TOOLCHAIN_VERSION" value="4.4.3" unless="TOOLCHAIN_VERSION" />
 
 <!-- Set architecture -->
-<set name="ARCH" value="-7" if="HXCPP_ARMV7" />
+<set name="ARCH" value="-v7" if="HXCPP_ARMV7" />
 
 <path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}/bin" />
 <path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}_64/bin" />
