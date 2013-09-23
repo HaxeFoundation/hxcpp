@@ -100,9 +100,11 @@ void Object::__boot()
    Static(Object__mClass) = hx::RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0, 0 );
 
    #ifdef HXCPP_SCRIPTABLE
-   hx::ScriptableRegisterClass( HX_CSTRING("hx.Object"), (int)sizeof(hx::Object), 0, Object__scriptable::__script_create );
+   hx::ScriptableRegisterClass( HX_CSTRING("hx.Object"), (int)sizeof(hx::Object), 0, Object__scriptable::__script_create, 0 );
    #endif
 }
+
+void Object::__script_construct(CppiaCtx *) { }
 
 Class &Object::__SGetClass() { return Object__mClass; }
 

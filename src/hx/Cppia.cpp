@@ -39,12 +39,14 @@ class ScriptRegistered
 public:
    std::vector<std::string> vtableEntries;
    hx::ScriptableClassFactory factory;
+   hx::StackFunction  construct;
    int mDataOffset;
 
-   ScriptRegistered(int inDataOffset, String *inFunctions, hx::ScriptableClassFactory inFactory)
+   ScriptRegistered(int inDataOffset, String *inFunctions, hx::ScriptableClassFactory inFactory, StackFunction inConstruct)
    {
       mDataOffset = inDataOffset;
       factory = inFactory;
+      construct = inConstruct;
       if (inFunctions)
          for(String *func = inFunctions; *func!=null(); func++)
             vtableEntries.push_back( func->__s );
@@ -86,20 +88,20 @@ class Object_obj__scriptable : public Object
 
 
 
-void ScriptableRegisterClass( String inName, int inDataOffset, String *inFunctions, hx::ScriptableClassFactory inFactory)
+void ScriptableRegisterClass( String inName, int inDataOffset, String *inFunctions, hx::ScriptableClassFactory inFactory, hx::StackFunction inConstruct)
 {
 
    printf("ScriptableRegisterClass %s\n", inName.__s);
    if (!sScriptRegistered)
       sScriptRegistered = new ScriptRegisteredMap();
-   ScriptRegistered *registered = new ScriptRegistered(inDataOffset, inFunctions,inFactory);
+   ScriptRegistered *registered = new ScriptRegistered(inDataOffset, inFunctions,inFactory, inConstruct);
    (*sScriptRegistered)[inName.__s] = registered;
    //printf("Registering %s -> %p\n",inName.__s,(*sScriptRegistered)[inName.__s]);
 }
 
 
 void ScriptableRegisterInterface( String inName, const hx::type_info *inType,
-                                 hx::ScriptableInterfaceFactory inFactory)
+                                 hx::ScriptableInterfaceFactory inFactory )
 {
    if (!sScriptRegisteredInterface)
       sScriptRegisteredInterface = new ScriptRegisteredInterfaceMap();
@@ -657,6 +659,7 @@ struct ClassData
    std::vector<int> implements;
    std::vector<CppiaFunction *> memberFunctions;
    std::vector<CppiaVar *> memberVars;
+   CppiaFunction *newFunc;
 
    std::vector<CppiaFunction *> staticFunctions;
    std::vector<CppiaVar *> staticVars;
@@ -667,11 +670,13 @@ struct ClassData
       superBase = 0;
       isLinked = false;
       extraData = 0;
+      newFunc = 0;
    }
 
    hx::Object *createInstance(Expressions &inArgs)
    {
       hx::Object *obj = superBase->factory(vtable,extraData);
+     
 
       // Construct
  
@@ -680,6 +685,9 @@ struct ClassData
 
    CppiaExpr *findFunction(bool inStatic,int inId)
    {
+      if (inStatic && !inId)
+         return newFunc ? newFunc->body : 0;
+
       std::vector<CppiaFunction *> &funcs = inStatic ? staticFunctions : memberFunctions;
       for(int i=0;i<funcs.size();i++)
       {
@@ -749,6 +757,18 @@ struct ClassData
 
       isLinked = true;
 
+      for(int i=0;i<staticFunctions.size();i++)
+         staticFunctions[i]->link();
+
+      for(int i=0;i<staticFunctions.size();i++)
+         if (staticFunctions[i]->name == "new")
+         {
+            newFunc = staticFunctions[i];
+            staticFunctions.erase( staticFunctions.begin() + i);
+            break;
+         }
+
+
       for(int i=0;i<memberFunctions.size();i++)
          memberFunctions[i]->link();
 
@@ -758,6 +778,8 @@ struct ClassData
          if (superType->cppiaClass)
          {
             superType->cppiaClass->link();
+            if (!newFunc)
+               newFunc = superType->cppiaClass->newFunc;
             superBase = superType->cppiaClass->superBase;
 
             std::vector<CppiaVar *> combinedVars(superType->cppiaClass->memberVars );
@@ -1260,6 +1282,21 @@ struct NewExpr : public CppiaExpr
    
 };
 
+//template<typname RETURN>
+struct CallHaxe : public CppiaExpr
+{
+   Expressions args;
+   StackFunction function;
+
+   CallHaxe(CppiaExpr *inSrc,StackFunction inFunction, ExprType et, Expressions &ioArgs )
+       : CppiaExpr(inSrc)
+   {
+      args.swap(ioArgs);
+      function = inFunction;
+   }
+
+
+};
 
 struct CallStatic : public CppiaExpr
 {
@@ -1267,10 +1304,13 @@ struct CallStatic : public CppiaExpr
    int fieldId;
    Expressions args;
   
-   CallStatic(CppiaStream &stream)
+   CallStatic(CppiaStream &stream,bool inIsSuperCall)
    {
       classId = stream.getInt();
-      fieldId = stream.getInt();
+      if (inIsSuperCall)
+         fieldId = 0;
+      else
+         fieldId = stream.getInt();
       ReadExpressions(args,stream,true);
    }
    CppiaExpr *link(CppiaData &inData)
@@ -1293,7 +1333,21 @@ struct CallStatic : public CppiaExpr
       {
          FunExpr *func = (FunExpr *)type->cppiaClass->findFunction(true,fieldId);
          if (!func)
-            printf("Could not find static function %s in %s\n", field.__s, type->name.__s);
+         {
+            if (fieldId==0)
+            {
+               ScriptRegistered *super = type->cppiaClass->superBase;
+               if (super)
+               {
+                  CppiaExpr *replace = new CallHaxe(this,super->construct,etVoid,args);
+                  replace->link(inData);
+                  delete this;
+                  return replace;
+               }
+            }
+            else
+               printf("Could not find static function %s in %s\n", field.__s, type->name.__s);
+         }
          else
          {
             CppiaExpr *replace = new CallFunExpr( this, func, args );
@@ -1918,7 +1972,9 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    else if (tok=="NOTNULL")
       result = new IsNotNull(stream);
    else if (tok=="CALLSTATIC")
-      result = new CallStatic(stream);
+      result = new CallStatic(stream,false);
+   else if (tok=="CALLSUPER")
+      result = new CallStatic(stream,true);
    else if (tok[0]=='s')
       result = new StringVal(atoi(tok.c_str()+1));
    else if (tok[0]=='f')

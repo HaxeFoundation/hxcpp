@@ -29,7 +29,6 @@ enum ObjectType
 
 
 
-
 namespace hx
 {
 
@@ -113,7 +112,7 @@ public:
 
    #ifdef HXCPP_SCRIPTABLE
    virtual void **__GetScriptVTable() { return 0; }
-   virtual void __Construct(Array<Dynamic> &inArgs) {  }
+   static void __script_construct(struct CppiaCtx *);
    #endif
 
    inline bool __compare( hx::Object *inRHS )

@@ -97,6 +97,8 @@ struct CppiaCtx
 
 };
 
+typedef void (*StackFunction)(CppiaCtx *ctx);
+
 
 struct AutoStack
 {
@@ -121,19 +123,11 @@ struct AutoStack
 
 
 
-Dynamic ScriptableCall0(void *user, ::hx::Object *thiz);
-Dynamic ScriptableCall1(void *user, ::hx::Object *thiz,Dynamic);
-Dynamic ScriptableCall2(void *user, ::hx::Object *thiz,Dynamic,Dynamic);
-Dynamic ScriptableCall3(void *user, ::hx::Object *thiz,Dynamic,Dynamic,Dynamic);
-Dynamic ScriptableCall4(void *user, ::hx::Object *thiz,Dynamic,Dynamic,Dynamic,Dynamic);
-Dynamic ScriptableCall5(void *user, ::hx::Object *thiz,Dynamic,Dynamic,Dynamic,Dynamic,Dynamic);
-Dynamic ScriptableCallMult(void *user, ::hx::Object *thiz,Dynamic *inArgs);
-
 
 typedef hx::Object * (*ScriptableClassFactory)(void **inVTable,int inDataSize);
 typedef hx::Object * (*ScriptableInterfaceFactory)(::hx::Object *);
 
-void ScriptableRegisterClass( String inName, int inBaseSize, String *inFunctions, ScriptableClassFactory inFactory);
+void ScriptableRegisterClass( String inName, int inBaseSize, String *inFunctions, ScriptableClassFactory inFactory, StackFunction inConstruct);
 void ScriptableRegisterInterface( String inName, const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
 
 void ScriptableMark(void *, hx::Object *, HX_MARK_PARAMS);
@@ -157,7 +151,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
     hx::ScriptableRegisterInterface( HX_CSTRING(#name), &typeid(class), class##__scriptable::__script_create )
 
 #define HX_SCRIPTABLE_REGISTER_CLASS(name,class) \
-    hx::ScriptableRegisterClass( HX_CSTRING(name), (int)sizeof(class), __scriptableFunctionNames, class##__scriptable::__script_create )
+    hx::ScriptableRegisterClass( HX_CSTRING(name), (int)sizeof(class), __scriptableFunctionNames, class##__scriptable::__script_create, class##__scriptable::__script_construct )
 
 
 #define HX_DEFINE_SCRIPTABLE(ARG_LIST) \
@@ -172,7 +166,6 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
     __ME *result = new (inExtra) __ME(); \
     result->__scriptVTable = inVTable; \
    return result; } \
-   void __Construct(Array<Dynamic> &inArgs) { __construct(ARG_LIST); } \
    void ** __GetScriptVTable() { return __scriptVTable; } \
    ::String toString() {  if (__scriptVTable[0] ) \
       { hx::CppiaCtx *ctx = hx::CppiaCtx::getCurrent(); hx::AutoStack a(ctx); ctx->pushObject(this); return ctx->runString(__scriptVTable[0]); } \
