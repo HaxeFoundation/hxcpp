@@ -104,7 +104,9 @@ void Object::__boot()
    #endif
 }
 
+#ifdef HXCPP_SCRIPTABLE
 void Object::__script_construct(CppiaCtx *) { }
+#endif
 
 Class &Object::__SGetClass() { return Object__mClass; }
 
