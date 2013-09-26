@@ -2,6 +2,7 @@
 #include <list>
 #include <map>
 #include <vector>
+#include <string>
 #include <hx/Debug.h>
 #include <hx/Thread.h>
 #include "QuickVec.h"
