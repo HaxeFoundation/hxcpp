@@ -9,6 +9,12 @@
 namespace hx
 {
 
+struct ScriptNamedFunction : public ScriptFunction
+{
+   ScriptNamedFunction(const char *inName,StackExecute inExe,const char *inSig)
+      : ScriptFunction(inExe, inSig), name(inName) { }
+   const char *name;
+};
 
 struct CppiaCtx
 {
@@ -25,6 +31,8 @@ struct CppiaCtx
       *(T *)pointer = inValue;
       pointer += sizeof(T);
    }
+
+   int getFrameSize() const { return pointer-frame; }
 
    static CppiaCtx *getCurrent();
 
@@ -65,6 +73,53 @@ struct CppiaCtx
       pointer += sizeof(hx::Object *);
    }
 
+
+   inline void returnBool(bool b)
+   {
+      *(int *)frame = b;
+   }
+   inline void returnInt(int i)
+   {
+      *(int *)frame = i;
+   }
+   inline void returnFloat(Float f)
+   {
+      *(Float *)frame = f;
+   }
+   inline void returnString(const String &s)
+   {
+      *(String *)frame = s;
+   }
+   inline void returnObject(Dynamic d)
+   {
+      *(hx::Object **)frame = d.mPtr;
+   }
+
+   hx::Object *getThis() { return *(hx::Object **)frame; }
+
+   inline bool getBool(int inPos=0)
+   {
+      return *(bool *)(frame+inPos);
+   }
+   inline int getInt(int inPos=0)
+   {
+      return *(int *)(frame+inPos);
+   }
+   inline Float getFloat(int inPos=0)
+   {
+      return *(Float *)(frame+inPos);
+   }
+   inline String getString(int inPos=0)
+   {
+      return *(String *)(frame+inPos);
+   }
+   inline Dynamic getObject(int inPos=0)
+   {
+      return *(hx::Object **)(frame+inPos);
+   }
+
+
+   /*
    bool popBool()
    {
       pointer-=sizeof(int);
@@ -92,12 +147,20 @@ struct CppiaCtx
       pointer-=sizeof(hx::Object *);
       return Dynamic(*(hx::Object **)pointer);
    }
+   */
 
-   hx::Object *getThis() { return *(hx::Object **)frame; }
 
 };
 
-typedef void (*StackFunction)(CppiaCtx *ctx);
+enum SignatureChar
+{
+   sigVoid = 'v',
+   sigInt = 'i',
+   sigFloat = 'f',
+   sigString = 's',
+   sigObject = 'o',
+};
+
 
 
 struct AutoStack
@@ -110,6 +173,12 @@ struct AutoStack
    {
       frame = ctx->frame;
       pointer = ctx->pointer;
+      ctx->frame = pointer;
+   }
+   AutoStack(CppiaCtx *inCtx,unsigned char *inPointer) : ctx(inCtx)
+   {
+      frame = ctx->frame;
+      pointer = inPointer;
       ctx->frame = pointer;
    }
 
@@ -127,7 +196,7 @@ struct AutoStack
 typedef hx::Object * (*ScriptableClassFactory)(void **inVTable,int inDataSize);
 typedef hx::Object * (*ScriptableInterfaceFactory)(::hx::Object *);
 
-void ScriptableRegisterClass( String inName, int inBaseSize, String *inFunctions, ScriptableClassFactory inFactory, StackFunction inConstruct);
+void ScriptableRegisterClass( String inName, int inBaseSize, ScriptNamedFunction *inFunctions, ScriptableClassFactory inFactory, ScriptFunction inConstruct);
 void ScriptableRegisterInterface( String inName, const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
 
 void ScriptableMark(void *, hx::Object *, HX_MARK_PARAMS);
@@ -151,7 +220,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
     hx::ScriptableRegisterInterface( HX_CSTRING(#name), &typeid(class), class##__scriptable::__script_create )
 
 #define HX_SCRIPTABLE_REGISTER_CLASS(name,class) \
-    hx::ScriptableRegisterClass( HX_CSTRING(name), (int)sizeof(class), __scriptableFunctionNames, class##__scriptable::__script_create, class##__scriptable::__script_construct )
+    hx::ScriptableRegisterClass( HX_CSTRING(name), (int)sizeof(class##__scriptable), __scriptableFunctions, class##__scriptable::__script_create, class##__scriptable::__script_construct )
 
 
 #define HX_DEFINE_SCRIPTABLE(ARG_LIST) \
@@ -169,7 +238,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
    void ** __GetScriptVTable() { return __scriptVTable; } \
    ::String toString() {  if (__scriptVTable[0] ) \
       { hx::CppiaCtx *ctx = hx::CppiaCtx::getCurrent(); hx::AutoStack a(ctx); ctx->pushObject(this); return ctx->runString(__scriptVTable[0]); } \
-      else return __ME::toString(); }
+      else return super::toString(); }
 
 
 #define HX_DEFINE_SCRIPTABLE_INTERFACE \

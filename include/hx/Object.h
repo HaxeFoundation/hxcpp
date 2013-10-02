@@ -38,6 +38,17 @@ class FieldRef;
 class IndexRef;
 typedef Array<Dynamic> DynamicArray;
 
+#ifdef HXCPP_SCRIPTABLE
+typedef void (*StackExecute)(struct CppiaCtx *ctx);
+struct ScriptFunction
+{
+   ScriptFunction(StackExecute inExe=0,const char *inSig=0)
+      : execute(inExe), signature(inSig) { }
+   StackExecute execute;
+   const char   *signature;
+};
+#endif
+
 
 // --- hx::Object ------------------------------------------------------------
 //
@@ -112,7 +123,7 @@ public:
 
    #ifdef HXCPP_SCRIPTABLE
    virtual void **__GetScriptVTable() { return 0; }
-   static void __script_construct(struct CppiaCtx *);
+   static hx::ScriptFunction __script_construct;
    #endif
 
    inline bool __compare( hx::Object *inRHS )

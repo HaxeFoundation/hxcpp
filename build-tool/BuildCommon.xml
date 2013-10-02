@@ -135,6 +135,7 @@
   <file name = "src/hx/StdLibs.cpp"/>
   <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Cppia.cpp" if="scriptable"/>
+  <file name = "src/hx/CppiaBuiltin.cpp" if="scriptable"/>
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
 
