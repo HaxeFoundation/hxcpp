@@ -32,7 +32,7 @@
 
 int __file_prims() { return 0; }
 
-#ifdef ANDROID
+#if defined(ANDROID) || defined(IPHONE)
 typedef std::string Filename;
 typedef char FilenameChar;
 #define val_filename val_string
