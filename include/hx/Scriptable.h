@@ -194,10 +194,10 @@ struct AutoStack
 
 
 typedef hx::Object * (*ScriptableClassFactory)(void **inVTable,int inDataSize);
-typedef hx::Object * (*ScriptableInterfaceFactory)(::hx::Object *);
+typedef hx::Object * (*ScriptableInterfaceFactory)(void **inVTable,::hx::Object *);
 
 void ScriptableRegisterClass( String inName, int inBaseSize, ScriptNamedFunction *inFunctions, ScriptableClassFactory inFactory, ScriptFunction inConstruct);
-void ScriptableRegisterInterface( String inName, const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
+void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions,const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
 
 void ScriptableMark(void *, hx::Object *, HX_MARK_PARAMS);
 void ScriptableVisit(void *, hx::Object *, HX_VISIT_PARAMS);
@@ -217,7 +217,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
 
 
 #define HX_SCRIPTABLE_REGISTER_INTERFACE(name,class) \
-    hx::ScriptableRegisterInterface( HX_CSTRING(#name), &typeid(class), class##__scriptable::__script_create )
+    hx::ScriptableRegisterInterface( HX_CSTRING(name), __scriptableFunctions, &typeid(class), class##__scriptable::__script_create )
 
 #define HX_SCRIPTABLE_REGISTER_CLASS(name,class) \
     hx::ScriptableRegisterClass( HX_CSTRING(name), (int)sizeof(class##__scriptable), __scriptableFunctions, class##__scriptable::__script_create, class##__scriptable::__script_construct )
@@ -242,12 +242,14 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
 
 
 #define HX_DEFINE_SCRIPTABLE_INTERFACE \
+   void **__scriptVTable; \
    Dynamic mDelegate; \
    hx::Object *__GetRealObject() { return mDelegate.mPtr; } \
    void __Visit(HX_VISIT_PARAMS) { HX_VISIT_OBJECT(mDelegate.mPtr); } \
    public: \
-   static hx::Object *__script_create(hx::Object *inDelegate) { \
+   static hx::Object *__script_create(void **inVTable,hx::Object *inDelegate) { \
     __ME *result = new __ME(); \
+    result->__scriptVTable = inVTable; \
     result->mDelegate = inDelegate; \
     return result; } \
 

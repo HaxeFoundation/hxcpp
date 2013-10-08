@@ -83,14 +83,31 @@ public:
 class ScriptRegisteredIntferface
 {
 public:
+   std::string  name;
    const hx::type_info *mType;
    ScriptableInterfaceFactory factory;
+   ScriptNamedFunction *functions;
 
-   ScriptRegisteredIntferface(hx::ScriptableInterfaceFactory inFactory,const hx::type_info *inType)
+   ScriptRegisteredIntferface(const std::string &inName, ScriptNamedFunction *inFunctions,hx::ScriptableInterfaceFactory inFactory,const hx::type_info *inType)
    {
+      functions = inFunctions;
       factory = inFactory;
+      name = inName;
       mType = inType;
    }
+
+   ScriptFunction findFunction(const std::string &inName)
+   {
+      if (functions)
+         for(ScriptNamedFunction *f=functions;f->name;f++)
+            if (inName == f->name)
+               return *f;
+      //if (haxeSuper)
+      //   return haxeSuper->findFunction(inName);
+
+      return ScriptFunction(0,0);
+   }
+
 };
 
 
@@ -117,7 +134,6 @@ class Object_obj__scriptable : public Object
 
 void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, hx::ScriptFunction inConstruct)
 {
-
    printf("ScriptableRegisterClass %s\n", inName.__s);
    if (!sScriptRegistered)
       sScriptRegistered = new ScriptRegisteredMap();
@@ -127,18 +143,21 @@ void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFuncti
 }
 
 
-void ScriptableRegisterInterface( String inName, const hx::type_info *inType,
+void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions, const hx::type_info *inType,
                                  hx::ScriptableInterfaceFactory inFactory )
 {
+   printf("ScriptableInterfaceFactory %s\n",inName.__s);
    if (!sScriptRegisteredInterface)
       sScriptRegisteredInterface = new ScriptRegisteredInterfaceMap();
-   ScriptRegisteredIntferface *registered = new ScriptRegisteredIntferface(inFactory,inType);
+   ScriptRegisteredIntferface *registered = new ScriptRegisteredIntferface(inName.__s, inFunctions, inFactory,inType);
    (*sScriptRegisteredInterface)[inName.__s] = registered;
-   //printf("Registering Interface %s -> %p\n",inName.__s,(*sScriptRegisteredInterface)[inName.__s]);
 }
 
 
 static int sTypeSize[] = { 0, 0, sizeof(hx::Object *), sizeof(String), sizeof(Float), sizeof(int) };
+
+void cppiaClassMark(CppiaClass *inClass,hx::MarkContext *__inCtx);
+void cppiaClassVisit(CppiaClass *inClass,hx::VisitContext *__inCtx);
 
 struct TypeData
 {
@@ -147,7 +166,9 @@ struct TypeData
    CppiaClass       *cppiaClass;
    ExprType         expressionType;
    ScriptRegistered *haxeBase;
+   ScriptRegisteredIntferface *interfaceBase;
    bool             linked;
+   bool             isInterface;
    ArrayType        arrayType;
 
    TypeData(String inData)
@@ -161,16 +182,22 @@ struct TypeData
       haxeBase = 0;
       linked = false;
       arrayType = arrNotArray;
+      interfaceBase = 0;
+      isInterface = false;
    }
    void mark(hx::MarkContext *__inCtx)
    {
       HX_MARK_MEMBER(name);
       HX_MARK_MEMBER(haxeClass);
+      if (cppiaClass)
+         cppiaClassMark(cppiaClass,__inCtx);
    }
    void visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(name);
       HX_VISIT_MEMBER(haxeClass);
+      if (cppiaClass)
+         cppiaClassVisit(cppiaClass,__inCtx);
    }
 
    void link(CppiaData &inData);
@@ -611,6 +638,43 @@ struct CppiaConst
    }
 };
 
+struct CppiaEnumConstructor
+{
+   struct Arg
+   {
+      Arg(int inNameId, int inTypeId) : nameId(inNameId), typeId(inTypeId) { }
+      int nameId;
+      int typeId;
+   };
+ 
+   std::vector<Arg> args;
+   int              nameId;
+   EnumBase         value;
+   int              index;
+   String           name;
+
+   CppiaEnumConstructor(CppiaData &inData, CppiaStream &inStream)
+   {
+      nameId = inStream.getInt();
+      index = -1;
+      name = String();
+      int argCount = inStream.getInt();
+      for(int a=0;a<argCount;a++)
+      {
+         int nameId = inStream.getInt();
+         int typeId = inStream.getInt();
+         args.push_back( Arg(nameId,typeId) );
+      }
+         
+   }
+   hx::Object *create( Array<Dynamic> inArgs )
+   {
+      EnumBase_obj *result = new EnumBase_obj();
+      result->Set(name, index, inArgs);
+      return result;
+   }
+};
+
 
 void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Expressions &inArgs );
 
@@ -620,12 +684,14 @@ struct CppiaClass
    std::vector<int> implements;
    bool      isInterface;
    bool      isLinked;
+   bool      isEnum;
    int       typeId;
    TypeData  *type;
    int       superId;
    int       extraData;
    void      **vtable;
    std::string name;
+   std::map<std::string, void **> interfaceVTables;
 
    ScriptRegistered *haxeBase;
 
@@ -634,6 +700,8 @@ struct CppiaClass
 
    std::vector<CppiaFunction *> staticFunctions;
    std::vector<CppiaVar *> staticVars;
+
+   std::vector<CppiaEnumConstructor *> enumConstructors;
 
    CppiaFunction *newFunc;
 
@@ -670,6 +738,19 @@ struct CppiaClass
       return 0;
    }
 
+   CppiaExpr *findInterfaceFunction(const std::string &inName)
+   {
+      std::vector<CppiaFunction *> &funcs = memberFunctions;
+      for(int i=0;i<funcs.size();i++)
+      {
+         if ( cppia.strings[funcs[i]->nameId].__s == inName)
+            return funcs[i]->funExpr;
+      }
+      return 0;
+   }
+
+
+
    int findFunctionSlot(int inName)
    {
       for(int i=0;i<memberFunctions.size();i++)
@@ -689,60 +770,142 @@ struct CppiaClass
       return 0;
    }
 
+   CppiaEnumConstructor *findEnum(int inFieldId)
+   {
+      for(int i=0;i<enumConstructors.size();i++)
+         if (enumConstructors[i]->nameId==inFieldId)
+            return enumConstructors[i];
+      return 0;
+   }
+
+   void **getInterfaceVTable(const std::string &inName)
+   {
+      return interfaceVTables[inName];
+   }
+
+   void mark(hx::MarkContext *__inCtx)
+   {
+      for(int i=0;i<enumConstructors.size();i++)
+      {
+         HX_MARK_MEMBER(enumConstructors[i]->value);
+         HX_MARK_MEMBER(enumConstructors[i]->name);
+      }
+   }
+   void visit(hx::VisitContext *__inCtx)
+   {
+      for(int i=0;i<enumConstructors.size();i++)
+      {
+         HX_VISIT_MEMBER(enumConstructors[i]->value);
+         HX_VISIT_MEMBER(enumConstructors[i]->name);
+      }
+   }
+
+
 
    void load(CppiaStream &inStream)
    {
       std::string tok = inStream.getToken();
+      isInterface = isEnum = false;
 
       if (tok=="CLASS")
          isInterface = false;
       else if (tok=="INTERFACE")
          isInterface = true;
+      else if (tok=="ENUM")
+         isEnum = true;
       else
          throw "Bad class type";
 
        typeId = inStream.getInt();
        cppia.types[typeId]->cppiaClass = this;
-       superId = inStream.getInt();
-       int implementCount = inStream.getInt();
+
+       superId = isEnum ? 0 : inStream.getInt();
+       int implementCount = isEnum ? 0 : inStream.getInt();
        implements.resize(implementCount);
        for(int i=0;i<implementCount;i++)
           implements[i] = inStream.getInt();
 
        name = cppia.typeStr(typeId);
-       printf("Class %s\n", name.c_str());
+       printf("Class %s %s\n", name.c_str(), isEnum ? "enum" : isInterface ? "interface" : "class" );
 
        int fields = inStream.getInt();
        for(int f=0;f<fields;f++)
        {
-          tok = inStream.getToken();
-          if (tok=="FUNCTION")
+          if (isEnum)
           {
-             bool isStatic = inStream.getStatic();
-             CppiaFunction *func = new CppiaFunction(&cppia,isStatic);
-             if (isStatic)
-                staticFunctions.push_back(func);
-             else
-                memberFunctions.push_back(func);
-             func->load(inStream,!isInterface);
-          }
-          else if (tok=="VAR")
-          {
-             bool isStatic = inStream.getStatic();
-             CppiaVar *var = new CppiaVar(&cppia,isStatic);
-             if (isStatic)
-                staticVars.push_back(var);
-             else
-                memberVars.push_back(var);
-             var->load(inStream);
-          }
-          else if (tok=="INLINE")
-          {
-             // OK
+             CppiaEnumConstructor *enumConstructor = new CppiaEnumConstructor(cppia,inStream);
+             enumConstructors.push_back( enumConstructor );
           }
           else
-             throw "unknown field type";
+          {
+             tok = inStream.getToken();
+             if (tok=="FUNCTION")
+             {
+                bool isStatic = inStream.getStatic();
+                CppiaFunction *func = new CppiaFunction(&cppia,isStatic);
+                if (isStatic)
+                   staticFunctions.push_back(func);
+                else
+                   memberFunctions.push_back(func);
+                func->load(inStream,!isInterface);
+             }
+             else if (tok=="VAR")
+             {
+                bool isStatic = inStream.getStatic();
+                CppiaVar *var = new CppiaVar(&cppia,isStatic);
+                if (isStatic)
+                   staticVars.push_back(var);
+                else
+                   memberVars.push_back(var);
+                var->load(inStream);
+             }
+             else if (tok=="INLINE")
+             {
+                // OK
+             }
+             else
+                throw "unknown field type";
+          }
        }
+   }
+
+   void **createInterfaceVTable(int inTypeId)
+   {
+      std::vector<CppiaExpr *> vtable;
+
+      ScriptRegisteredIntferface *interface = cppia.types[inTypeId]->interfaceBase;
+      // Native-defined interface...
+      if (interface)
+      {
+         vtable.push_back( findInterfaceFunction("toString") );
+         ScriptNamedFunction *functions = interface->functions;
+         for(ScriptNamedFunction *f = functions; f->name; f++)
+            if (strcmp(f->name,"toString"))
+               vtable.push_back( findInterfaceFunction(f->name) );
+            
+      }
+
+      CppiaClass *cls = cppia.types[inTypeId]->cppiaClass;
+      if (!cls && !interface)
+         throw "vtable for unknown class";
+
+      if (cls && !cls->isInterface)
+         throw "vtable for non-interface";
+
+      if (cls)
+      {
+         for(int i=0;i<cls->memberFunctions.size();i++)
+         {
+            CppiaFunction *func = cls->memberFunctions[i];
+            vtable.push_back( findFunction(false,func->nameId) );
+         }
+      }
+
+      void **result = new void *[ vtable.size() + 1];
+      result[0] = this;
+      result++;
+      memcpy(result, &vtable[0], sizeof(void *)*vtable.size());
+      return result;
    }
 
    void linkTypes()
@@ -754,8 +917,14 @@ struct CppiaClass
       type = cppia.types[typeId];
       TypeData *superType = superId ? cppia.types[ superId ] : 0;
       CppiaClass  *cppiaSuper = superType ? superType->cppiaClass : 0;
+      // Link super first
       if (superType && superType->cppiaClass)
          superType->cppiaClass->linkTypes();
+
+      // implemented interfaces before main class
+      for(int i=0;i<implements.size();i++)
+         if (cppia.types[ implements[i] ]->cppiaClass)
+            cppia.types[ implements[i] ]->cppiaClass->linkTypes();
 
       printf(" Linking class '%s' ", type->name.__s);
       if (!superType)
@@ -801,23 +970,29 @@ struct CppiaClass
 
 
       haxeBase = type->haxeBase;
+      if (!haxeBase && !isInterface)
+         throw "No base defined for non-interface";
 
-      // Calculate table offsets...
-      int d0 = haxeBase->mDataOffset;
-      printf("  base haxe size %s = %d\n", haxeBase->name.c_str(), d0);
-      int offset = d0;
-      for(int i=0;i<memberVars.size();i++)
+      if (haxeBase)
       {
-         printf("   link var %s @ %d\n", cppia.identStr(memberVars[i]->nameId), offset);
-         memberVars[i]->link(cppia,offset);
+         // Calculate table offsets...
+         int d0 = haxeBase->mDataOffset;
+         printf("  base haxe size %s = %d\n", haxeBase->name.c_str(), d0);
+         int offset = d0;
+         for(int i=0;i<memberVars.size();i++)
+         {
+            printf("   link var %s @ %d\n", cppia.identStr(memberVars[i]->nameId), offset);
+            memberVars[i]->link(cppia,offset);
+         }
+         extraData = offset - d0;
       }
-      extraData = offset - d0;
       printf("  script member vars size = %d\n", extraData);
 
       // Combine vtable positions...
       printf("  format haxe callable vtable....\n");
       std::vector<std::string> table;
-      haxeBase->addVtableEntries(table);
+      if (haxeBase)
+         haxeBase->addVtableEntries(table);
       for(int i=0;i<table.size();i++)
          printf("   table[%d] = %s\n", i, table[i].c_str() );
 
@@ -845,6 +1020,10 @@ struct CppiaClass
       *vtable++ = this;
       printf("  vtable size %d -> %p\n", vtableSlot, vtable);
 
+      // Create interface vtables...
+      for(int i=0;i<implements.size();i++)
+         interfaceVTables[ cppia.types[ implements[i] ]->name.__s ] = createInterfaceVTable( implements[i] );
+
       // Extract contruct function ...
       for(int i=0;i<staticFunctions.size();i++)
       {
@@ -853,6 +1032,21 @@ struct CppiaClass
             newFunc = staticFunctions[i];
             staticFunctions.erase( staticFunctions.begin() + i);
             break;
+         }
+      }
+
+      for(int i=0;i<enumConstructors.size();i++)
+      {
+         CppiaEnumConstructor &e = *enumConstructors[i];
+         if (e.args.size()==0)
+         {
+            e.value = new EnumBase_obj();
+            e.value->Set( cppia.strings[e.nameId],i,null() );
+         }
+         else
+         {
+            e.name = cppia.strings[e.nameId];
+            e.index = i;
          }
       }
 
@@ -884,6 +1078,17 @@ struct CppiaClass
       //printf("Found haxeBase %s = %p / %d\n", cppia.types[typeId]->name.__s, haxeBase, dataSize );
    }
 };
+
+void cppiaClassMark(CppiaClass *inClass,hx::MarkContext *__inCtx)
+{
+   inClass->mark(__inCtx);
+}
+void cppiaClassVisit(CppiaClass *inClass,hx::VisitContext *__inCtx)
+{
+   inClass->visit(__inCtx);
+}
+
+
 
 hx::Object *createClosure(CppiaCtx *ctx, struct FunExpr *inFunction);
 
@@ -1527,15 +1732,11 @@ struct CallDynamicFunction : public CppiaExprWithValue
 
 struct SetExpr : public CppiaExpr
 {
-   int toTypeId;
-   int fromTypeId;
    CppiaExpr *lvalue;
    CppiaExpr *value;
 
    SetExpr(CppiaStream &stream)
    {
-      toTypeId = stream.getInt();
-      fromTypeId = stream.getInt();
       lvalue = createCppiaExpr(stream);
       value = createCppiaExpr(stream);
    }
@@ -1544,12 +1745,88 @@ struct SetExpr : public CppiaExpr
    {
       lvalue = lvalue->link(inData);
       value = value->link(inData);
-      // TODO cast
       CppiaExpr *result = lvalue->makeSetter(value);
       delete this;
       return result;
    }
 
+};
+
+class CppiaInterface : public hx::Interface
+{
+   typedef CppiaInterface __ME;
+   typedef hx::Interface super;
+   HX_DEFINE_SCRIPTABLE_INTERFACE
+};
+
+
+struct ToInterface : public CppiaExpr
+{
+   int       fromTypeId;
+   int       toTypeId;
+   CppiaExpr *value;
+   bool      useNative;
+   ScriptRegisteredIntferface *interfaceInfo;
+   void      **cppiaVTable;
+
+   ToInterface(CppiaStream &stream)
+   {
+      toTypeId = stream.getInt();
+      fromTypeId = stream.getInt();
+      value = createCppiaExpr(stream);
+      interfaceInfo = 0;
+      useNative = false;
+      cppiaVTable = 0;
+   }
+
+   CppiaExpr *link(CppiaData &inData)
+   {
+      TypeData *toType = inData.types[toTypeId];
+      TypeData *fromType = inData.types[fromTypeId];
+      if (toType->interfaceBase)
+      {
+         interfaceInfo = toType->interfaceBase;
+         if (!fromType->cppiaClass)
+         {
+            printf("native -> native\n");
+            useNative = true;
+         }
+         else
+         {
+            printf("cppa class, native interface\n");
+            cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->interfaceBase->name);
+         }
+      }
+      else if (fromType->cppiaClass)
+      {
+         cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->name.__s);
+         if (!cppiaVTable)
+           printf("Could not find scripting interface implementation");
+      }
+      else
+         throw "Can't implement script interface in native code";
+      value = value->link(inData);
+      return this;
+   }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      hx::Object *obj = value->runObject(ctx);
+      if (interfaceInfo)
+      {
+         if (cppiaVTable)
+            return interfaceInfo->factory(cppiaVTable,obj->__GetRealObject());
+         return obj->__ToInterface(*interfaceInfo->mType);
+      }
+      if (cppiaVTable)
+      {
+         return CppiaInterface::__script_create(cppiaVTable,obj);
+      }
+
+      throw "no vtable for interface call";
+
+      return obj;
+   }
 };
 
 struct NewExpr : public CppiaExpr
@@ -1808,13 +2085,15 @@ struct CallMemberVTable : public CppiaExpr
    CppiaExpr   *thisExpr;
    int         slot;
    ExprType    returnType;
+   bool isInterfaceCall;
 
-   CallMemberVTable(CppiaExpr *inSrc, CppiaExpr *inThis, int inVTableSlot, Expressions &ioArgs)
+   CallMemberVTable(CppiaExpr *inSrc, CppiaExpr *inThis, int inVTableSlot, bool inIsInterfaceCall,Expressions &ioArgs)
       : CppiaExpr(inSrc)
    {
       args.swap(ioArgs);
       slot = inVTableSlot;
       thisExpr = inThis;
+      isInterfaceCall = inIsInterfaceCall;
    }
    CppiaExpr *link(CppiaData &inData)
    {
@@ -1827,6 +2106,7 @@ struct CallMemberVTable : public CppiaExpr
    #define CALL_VTABLE_SETUP \
       hx::Object *thisVal = thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(); \
       FunExpr **vtable = (FunExpr **)thisVal->__GetScriptVTable(); \
+      if (isInterfaceCall) thisVal = thisVal->__GetRealObject(); \
       unsigned char *pointer = ctx->pointer; \
       vtable[slot]->pushArgs(ctx, thisVal, args); \
       AutoStack save(ctx,pointer); \
@@ -1970,10 +2250,10 @@ struct CallMember : public CppiaExpr
       if (type->cppiaClass && !replace)
       {
          int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
-         //printf(" vslot %d\n", vtableSlot);
+         printf(" vslot %d\n", vtableSlot);
          if (vtableSlot>=0)
          {
-            replace = new CallMemberVTable( this, thisExpr, vtableSlot, args );
+            replace = new CallMemberVTable( this, thisExpr, vtableSlot, type->cppiaClass->isInterface, args );
          }
       }
       if (type->haxeBase && !replace)
@@ -1985,6 +2265,17 @@ struct CallMember : public CppiaExpr
             replace = new CallHaxe( this, func, thisExpr, args );
          }
       }
+
+      if (type->interfaceBase && !replace)
+      {
+         ScriptFunction func = type->interfaceBase->findFunction(field.__s);
+         if (func.signature)
+         {
+            //printf(" found function %s\n", func.signature );
+            replace = new CallHaxe( this, func, thisExpr, args );
+         }
+      }
+
 
       if (replace)
       {
@@ -2043,6 +2334,7 @@ struct GetFieldByName : public CppiaDynamicExpr
    int         vtableSlot;
    CppiaExpr   *object;
    String      name;
+   bool        isInterface;
   
    GetFieldByName(CppiaStream &stream,bool isThisObject)
    {
@@ -2050,6 +2342,7 @@ struct GetFieldByName : public CppiaDynamicExpr
       nameId = stream.getInt();
       object = isThisObject ? 0 : createCppiaExpr(stream);
       name.__s = 0;
+      isInterface = false;
       vtableSlot = -1;
    }
    GetFieldByName(const CppiaExpr *inSrc, int inNameId, CppiaExpr *inObject)
@@ -2057,6 +2350,7 @@ struct GetFieldByName : public CppiaDynamicExpr
    {
       nameId = inNameId;
       object = inObject;
+      isInterface = false;
       name.__s = 0;
    }
    CppiaExpr *link(CppiaData &inData)
@@ -2065,7 +2359,10 @@ struct GetFieldByName : public CppiaDynamicExpr
          object = object->link(inData);
       TypeData *type = inData.types[classId];
       if (type->cppiaClass)
+      {
          vtableSlot  = type->cppiaClass->findFunctionSlot(nameId);
+         isInterface = type->cppiaClass->isInterface;
+      }
 
       // Use runtime lookup...
       if (!vtableSlot)
@@ -2081,6 +2378,9 @@ struct GetFieldByName : public CppiaDynamicExpr
       hx::Object *instance = object ? object->runObject(ctx) : ctx->getThis();
       if (vtableSlot>=0)
       {
+         if (isInterface)
+            instance = instance->__GetRealObject();
+ 
          FunExpr **vtable = (FunExpr **)instance->__GetScriptVTable();
          FunExpr *func = vtable[vtableSlot];
          return new (sizeof(hx::Object *)) CppiaClosure(instance, func);
@@ -2754,6 +3054,53 @@ struct OpAdd : public BinOp
    }
 };
 
+struct EnumField : public CppiaExpr
+{
+   int                  enumId;
+   int                  fieldId;
+   CppiaEnumConstructor *value;
+   Expressions          args;
+
+   EnumField(CppiaStream &stream,bool inWithArgs)
+   {
+      enumId = stream.getInt();
+      fieldId = stream.getInt();
+      if (inWithArgs)
+      {
+         int argCount = stream.getInt();
+         for(int a=0;a<argCount;a++)
+            args.push_back( createCppiaExpr(stream) );
+      }
+   }
+
+   CppiaExpr *link(CppiaData &inData)
+   {
+      TypeData *type = inData.types[enumId];
+      if (type->cppiaClass)
+      {
+         if (!type->cppiaClass->isEnum)
+            throw "Field of non-enum";
+         value = type->cppiaClass->findEnum(fieldId);
+      }
+      else
+         throw "External data interface";
+
+      LinkExpressions(args,inData);
+      return this;
+   }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      int s = args.size();
+      if (s==0)
+         return value->value.mPtr;
+      Array<Dynamic> dynArgs = Array_obj<Dynamic>::__new(s,s);
+      for(int a=0;a<s;a++)
+         dynArgs[a] = args[a]->runObject(ctx);
+      return value->create(dynArgs);
+   }
+};
+
 
 
 
@@ -2814,6 +3161,10 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
       result = new GetFieldByName(stream,false);
    else if (tok=="FTHISNAME")
       result = new GetFieldByName(stream,true);
+   else if (tok=="FENUM")
+      result = new EnumField(stream,false);
+   else if (tok=="CREATEENUM")
+      result = new EnumField(stream,true);
    else if (tok=="NULL")
       result = new NullVal();
    else if (tok=="VARDECL")
@@ -2828,6 +3179,8 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
       result = new ArrayDef(stream);
    else if (tok=="SET")
       result = new SetExpr(stream);
+   else if (tok=="TOINTERFACE")
+      result = new ToInterface(stream);
    else if (tok=="+")
       result = new OpAdd(stream);
    else if (tok=="*")
@@ -2878,6 +3231,8 @@ void TypeData::link(CppiaData &inData)
       }
 
       printf(" link type '%s' %s ", name.__s, haxeClass.mPtr ? "native" : "script" );
+      interfaceBase = sScriptRegisteredInterface ? (*sScriptRegisteredInterface)[name.__s] : 0;
+      isInterface = interfaceBase || (cppiaClass && cppiaClass->isInterface);
 
       if (!haxeClass.mPtr && name.substr(0,6)==HX_CSTRING("Array."))
       {
@@ -2911,8 +3266,8 @@ void TypeData::link(CppiaData &inData)
          if ((*sScriptRegistered)[name.__s])
             throw "New class, but with existing def";
 
-         haxeBase = (*sScriptRegistered)["hx.Object"];
-         printf("base\n");
+         haxeBase = isInterface ? 0 : (*sScriptRegistered)["hx.Object"];
+         printf(isInterface ? "interface base\n" : "base\n");
       }
       else
       {
@@ -3065,7 +3420,6 @@ bool LoadCppia(String inValue)
          cppia.types[t] = new TypeData(stream.readString());
 
       int classCount = stream.getInt();
-      int enumCount = stream.getInt();
 
       cppia.classes.resize(classCount);
       for(int c=0;c<classCount;c++)
