@@ -25,6 +25,7 @@ enum ArrayFunc
    afFilter,
    af__get,
    af__set,
+   af__crement,
 };
 
 static int sArgCount[] = 
@@ -48,6 +49,7 @@ static int sArgCount[] =
    1, //afFilter,
    1, //af__get,
    2, //af__set,
+   1, //af__crement,
 };
 
 struct ArrayBuiltinBase : public CppiaExpr
@@ -70,7 +72,11 @@ struct ArrayBuiltinBase : public CppiaExpr
    }
 };
 
-template<typename ELEM, int FUNC>
+
+
+
+
+template<typename ELEM, int FUNC, typename CREMENT>
 struct ArrayBuiltin : public ArrayBuiltinBase
 {
    ArrayBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions)
@@ -96,6 +102,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
          case af__get:
          case af__set:
+         case af__crement:
             return (ExprType)ExprTypeOf<ELEM>::value;
 
          case afPop:
@@ -249,6 +256,12 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          thisVal->Item(i) = runValue(elem,ctx,args[1]);
          return Dynamic(elem).mPtr;
       }
+      if (FUNC==af__crement)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
+         return Dynamic(CREMENT::run(elem)).mPtr;
+      }
 
 
       if (FUNC==afPop)
@@ -369,8 +382,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 };
 
 
-template<int BUILTIN>
-CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *thisExpr, Expressions &args )
+template<int BUILTIN,typename CREMENT>
+CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *thisExpr, Expressions &args)
 {
    if (sArgCount[BUILTIN]!=args.size())
       throw "Bad arg count for array builtin";
@@ -378,17 +391,17 @@ CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *th
    switch(inType)
    {
       case arrBool:
-         return new ArrayBuiltin<bool,BUILTIN>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<bool,BUILTIN,CREMENT>(inSrc, thisExpr, args);
       case arrUnsignedChar:
-         return new ArrayBuiltin<unsigned char,BUILTIN>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<unsigned char,BUILTIN,CREMENT>(inSrc, thisExpr, args);
       case arrInt:
-         return new ArrayBuiltin<int,BUILTIN>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<int,BUILTIN,CREMENT>(inSrc, thisExpr, args);
       case arrFloat:
-         return new ArrayBuiltin<Float,BUILTIN>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<Float,BUILTIN,CREMENT>(inSrc, thisExpr, args);
       case arrString:
-         return new ArrayBuiltin<String,BUILTIN>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<String,BUILTIN,CREMENT>(inSrc, thisExpr, args);
       case arrDynamic:
-         return new ArrayBuiltin<Dynamic,BUILTIN>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<Dynamic,BUILTIN,CREMENT>(inSrc, thisExpr, args);
       case arrNotArray:
          break;
    }
@@ -402,39 +415,47 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
                               Expressions &ioExpressions )
 {
    if (field==HX_CSTRING("concat"))
-      return TCreateArrayBuiltin<afConcat>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afConcat,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("copy"))
-      return TCreateArrayBuiltin<afCopy>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afCopy,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("insert"))
-      return TCreateArrayBuiltin<afInsert>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afInsert,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("iterator"))
-      return TCreateArrayBuiltin<afIterator>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afIterator,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("join"))
-      return TCreateArrayBuiltin<afJoin>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afJoin,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("pop"))
-      return TCreateArrayBuiltin<afPop>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afPop,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("push"))
-      return TCreateArrayBuiltin<afPush>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afPush,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("remove"))
-      return TCreateArrayBuiltin<afRemove>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afRemove,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("reverse"))
-      return TCreateArrayBuiltin<afReverse>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afReverse,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("shift"))
-      return TCreateArrayBuiltin<afShift>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afShift,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("sort"))
-      return TCreateArrayBuiltin<afSort>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afSort,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("toString"))
-      return TCreateArrayBuiltin<afToString>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afToString,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("unshift"))
-      return TCreateArrayBuiltin<afUnshift>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afUnshift,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("map"))
-      return TCreateArrayBuiltin<afMap>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afMap,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("filter"))
-      return TCreateArrayBuiltin<afFilter>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<afFilter,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("__get"))
-      return TCreateArrayBuiltin<af__get>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<af__get,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("__set"))
-      return TCreateArrayBuiltin<af__set>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<af__set,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("__preInc"))
+      return TCreateArrayBuiltin<af__crement,CrementPreInc>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("__postInc"))
+      return TCreateArrayBuiltin<af__crement,CrementPostInc>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("__preDec"))
+      return TCreateArrayBuiltin<af__crement,CrementPreDec>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("__postDec"))
+      return TCreateArrayBuiltin<af__crement,CrementPostDec>(src, inType, inThisExpr, ioExpressions);
 
    throw "Unknown array field";
    return 0;

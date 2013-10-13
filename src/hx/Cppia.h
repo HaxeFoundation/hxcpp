@@ -128,6 +128,33 @@ enum ArrayType
    arrDynamic,
 };
 
+enum CrementOp
+{
+   coNone = -1,
+   coPreInc,
+   coPostInc,
+   coPreDec,
+   coPostDec,
+};
+
+enum AssignOp
+{
+   aoNone = -1,
+   aoSet,
+   aoAdd,
+   aoMult,
+   aoDiv,
+   aoSub,
+   aoAnd,
+   aoOr,
+   aoXOr,
+   aoShl,
+   aoShr,
+   aoUShr,
+   aoMod
+};
+
+
 
 
 struct CppiaExpr
@@ -171,7 +198,8 @@ struct CppiaExpr
    }
    virtual hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
-   virtual CppiaExpr   *makeSetter(CppiaExpr *inValue) { return this; }
+   virtual CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) { throw "makeSetter - not lvalue"; return 0; }
+   virtual CppiaExpr   *makeCrement(CrementOp inOp) { throw "makeCrement - not lvalue"; return 0; }
 
 };
 
@@ -252,6 +280,148 @@ template<> struct ExprTypeOf<unsigned char> { enum { value = etInt }; };
 template<> struct ExprTypeOf<bool> { enum { value = etInt }; };
 template<> struct ExprTypeOf<Float> { enum { value = etFloat }; };
 template<> struct ExprTypeOf<String> { enum { value = etString }; };
+
+
+struct NoCrement
+{
+   template<typename T>
+   static inline T run(const T&inVal) { return inVal; }
+};
+
+struct CrementPreInc
+{
+   template<typename T>
+   static T run(T&inVal) { return ++inVal; }
+   static bool run(bool &inVal) { return inVal; }
+   static String run(String &inVal) { return inVal; }
+};
+
+struct CrementPostInc
+{
+   template<typename T>
+   static T run(T& inVal) { return inVal++; }
+   static bool run(bool &inVal) { return inVal; }
+   static String run(String &inVal) { return inVal; }
+};
+
+struct CrementPreDec
+{
+   template<typename T>
+   static T run(T&inVal) { return --inVal; }
+   static bool run(bool &inVal) { return inVal; }
+   static String run(String &inVal) { return inVal; }
+};
+
+struct CrementPostDec
+{
+   template<typename T>
+   static T run(T& inVal) { return inVal--; }
+   static bool run(bool &inVal) { return inVal; }
+   static String run(String &inVal) { return inVal; }
+};
+
+
+
+struct AssignSet
+{
+   template<typename T>
+   static T run(T& ioVal, CppiaCtx *ctx, CppiaExpr *value )
+   {
+      return runValue(ioVal, ctx, value );
+   }
+};
+
+
+struct AssignAdd
+{
+   template<typename T>
+   static T run(T &ioVal, CppiaCtx *ctx, CppiaExpr *value)
+   {
+      T rhs;
+      ioVal += runValue(rhs,ctx,value);
+      return ioVal;
+   }
+   static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static hx::Object *run(hx::Object * &ioVal, CppiaCtx *ctx, CppiaExpr *value)
+   {
+      ioVal = ( Dynamic(ioVal) + Dynamic(value->runObject(ctx)) ).mPtr;
+      return ioVal;
+   }
+};
+
+
+#define DECL_STRUCT_ASSIGN(NAME,OPEQ,OP) \
+struct NAME \
+{ \
+   template<typename T> \
+   static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      ioVal OPEQ value->runFloat(ctx); \
+      return ioVal; \
+   } \
+   static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      ioVal = Dynamic(Dynamic(ioVal) OP value->runFloat(ctx)).mPtr; \
+      return ioVal; \
+   } \
+};
+
+DECL_STRUCT_ASSIGN(AssignMult,*=,*)
+DECL_STRUCT_ASSIGN(AssignSub,-=,-)
+DECL_STRUCT_ASSIGN(AssignDiv,/=,/)
+
+#define DECL_STRUCT_ASSIGN_FUNC(NAME,OP_FUNC,RUN_FUNC) \
+struct NAME \
+{ \
+   template<typename T> \
+   static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      ioVal = OP_FUNC(ioVal, value->RUN_FUNC(ctx)); \
+      return ioVal; \
+   } \
+   static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      ioVal = Dynamic( OP_FUNC( Dynamic(ioVal) , value->RUN_FUNC(ctx) ) ).mPtr; \
+      return ioVal; \
+   } \
+};
+
+DECL_STRUCT_ASSIGN_FUNC(AssignMod,hx::DoubleMod,runFloat)
+DECL_STRUCT_ASSIGN_FUNC(AssignUShr,hx::UShr,runInt)
+
+
+
+#define DECL_STRUCT_ASSIGN_CAST(NAME,CAST,OP,RUN_FUNC) \
+struct NAME \
+{ \
+   template<typename T> \
+   static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      ioVal = (CAST)ioVal OP value->RUN_FUNC(ctx); \
+      return ioVal; \
+   } \
+   static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      ioVal = Dynamic((CAST)Dynamic(ioVal) OP value->RUN_FUNC(ctx)).mPtr; \
+      return ioVal; \
+   } \
+};
+
+DECL_STRUCT_ASSIGN_CAST(AssignAnd,int,&,runInt)
+DECL_STRUCT_ASSIGN_CAST(AssignOr,int,|,runInt)
+DECL_STRUCT_ASSIGN_CAST(AssignXOr,int,^,runInt)
+
+DECL_STRUCT_ASSIGN_CAST(AssignShl,int,<<,runInt)
+DECL_STRUCT_ASSIGN_CAST(AssignShr,int,>>,runInt)
+
+
+
 
 
 } // end namespace hx
