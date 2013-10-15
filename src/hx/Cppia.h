@@ -180,6 +180,7 @@ struct CppiaExpr
 
    virtual ~CppiaExpr() {}
 
+   virtual const char *getName() { return "CppiaExpr"; }
    virtual CppiaExpr   *link(CppiaData &data)   { return this; }
    virtual void mark(hx::MarkContext *ctx) { };
    virtual void visit(hx::VisitContext *ctx) { };
@@ -198,8 +199,8 @@ struct CppiaExpr
    }
    virtual hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
-   virtual CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) { throw "makeSetter - not lvalue"; return 0; }
-   virtual CppiaExpr   *makeCrement(CrementOp inOp) { throw "makeCrement - not lvalue"; return 0; }
+   virtual CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) { return 0; }
+   virtual CppiaExpr   *makeCrement(CrementOp inOp) { return 0; }
 
 };
 

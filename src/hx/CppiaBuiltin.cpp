@@ -63,6 +63,8 @@ struct ArrayBuiltinBase : public CppiaExpr
       thisExpr = inThisExpr;
       args.swap(ioExpressions);
    }
+   const char *getName() { return "ArrayBuiltinBase"; }
+
    CppiaExpr *link(CppiaData &inData)
    {
       thisExpr = thisExpr->link(inData);
@@ -71,7 +73,6 @@ struct ArrayBuiltinBase : public CppiaExpr
       return this;
    }
 };
-
 
 
 
@@ -379,6 +380,47 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
    }
 
+   CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue)
+   {
+      if (FUNC==af__get)
+      {
+         args.push_back(inValue);
+         // TODO - other setters
+         CppiaExpr *replace = new ArrayBuiltin<ELEM,af__set,NoCrement>(this,thisExpr,args);
+         delete this;
+         return replace;
+      }
+      return 0;
+   }
+
+   CppiaExpr   *makeCrement(CrementOp inOp)
+   {
+      if (FUNC==af__get)
+      {
+         CppiaExpr *replace = 0;
+
+         switch(inOp)
+         {
+            case coPreInc :
+               replace = new ArrayBuiltin<ELEM,af__crement,CrementPreInc>(this,thisExpr,args);
+               break;
+            case coPostInc :
+               replace = new ArrayBuiltin<ELEM,af__crement,CrementPostInc>(this,thisExpr,args);
+               break;
+            case coPreDec :
+               replace = new ArrayBuiltin<ELEM,af__crement,CrementPreDec>(this,thisExpr,args);
+               break;
+            case coPostDec :
+               replace = new ArrayBuiltin<ELEM,af__crement,CrementPostDec>(this,thisExpr,args);
+               break;
+            default:
+               return 0;
+         }
+         return replace;
+      }
+      return 0;
+   }
+
 };
 
 
@@ -448,6 +490,7 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<af__get,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("__set"))
       return TCreateArrayBuiltin<af__set,NoCrement>(src, inType, inThisExpr, ioExpressions);
+/*
    if (field==HX_CSTRING("__preInc"))
       return TCreateArrayBuiltin<af__crement,CrementPreInc>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("__postInc"))
@@ -456,7 +499,7 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<af__crement,CrementPreDec>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("__postDec"))
       return TCreateArrayBuiltin<af__crement,CrementPostDec>(src, inType, inThisExpr, ioExpressions);
-
+*/
    throw "Unknown array field";
    return 0;
 }

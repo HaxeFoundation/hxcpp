@@ -128,6 +128,7 @@ class Object_obj__scriptable : public Object
 {
    typedef Object_obj__scriptable __ME;
    typedef Object super;
+   typedef Object __superString;
 
    void __construct() { }
    HX_DEFINE_SCRIPTABLE(HX_ARR_LIST0)
@@ -223,6 +224,7 @@ struct CppiaData
    CppiaExpr   *main;
 
    StackLayout *layout;
+   CppiaClass  *linkingClass;
 
    CppiaData()
    {
@@ -236,6 +238,11 @@ struct CppiaData
    ~CppiaData();
 
    void link();
+
+   void where(CppiaExpr *e)
+   {
+      printf(" at (%d %s) %s:%d\n",e->fileId, e->getName(), strings[e->fileId].__s, e->line);
+   }
 
    void mark(hx::MarkContext *ctx);
    void visit(hx::VisitContext *ctx);
@@ -443,6 +450,8 @@ struct CppiaDynamicExpr : public CppiaExpr
 {
    CppiaDynamicExpr(const CppiaExpr *inSrc=0) : CppiaExpr(inSrc) {}
 
+   const char *getName() { return "CppiaDynamicExpr"; }
+
    virtual int         runInt(CppiaCtx *ctx)    {
       hx::Object *obj = runObject(ctx);
       return obj->__ToInt();
@@ -462,6 +471,7 @@ struct CppiaIntExpr : public CppiaExpr
 {
    CppiaIntExpr(const CppiaExpr *inSrc=0) : CppiaExpr(inSrc) {}
 
+   const char *getName() { return "CppiaIntExpr"; }
    ExprType getType() { return etInt; }
 
    void runVoid(CppiaCtx *ctx) { runInt(ctx); }
@@ -480,6 +490,7 @@ struct CppiaBoolExpr : public CppiaIntExpr
 {
    CppiaBoolExpr(const CppiaExpr *inSrc=0) : CppiaIntExpr(inSrc) {}
 
+   const char *getName() { return "CppiaBoolExpr"; }
    hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx) ? true : false).mPtr; }
    String runString(CppiaCtx *ctx) { return runInt(ctx)?HX_CSTRING("true") : HX_CSTRING("false");}
 };
@@ -515,6 +526,7 @@ struct CppiaFunction
    CppiaData &cppia;
    int       nameId;
    bool      isStatic;
+   bool      isDynamic;
    int       returnType;
    int       argCount;
    int       vtableSlot;
@@ -534,6 +546,7 @@ struct CppiaFunction
 
    void load(CppiaStream &stream,bool inExpectBody)
    {
+      isDynamic = stream.getInt();
       nameId = stream.getInt();
       name = cppia.strings[ nameId ].__s;
       returnType = stream.getInt();
@@ -1094,7 +1107,10 @@ struct CppiaClass
       }
 
       if (!newFunc && cppiaSuper && cppiaSuper->newFunc)
-         throw "No chaining constructor";
+      {
+         //throw "No chaining constructor";
+         newFunc = cppiaSuper->newFunc;
+      }
 
       printf("  this constructor %p\n", newFunc);
    }
@@ -1104,6 +1120,7 @@ struct CppiaClass
       int newPos = -1;
       for(int i=0;i<staticFunctions.size();i++)
       {
+         printf(" Link %s::%s\n", name.c_str(), staticFunctions[i]->name.c_str() );
          staticFunctions[i]->link();
       }
       if (newFunc)
@@ -1252,6 +1269,7 @@ struct FunExpr : public CppiaExpr
 
    }
 
+   const char *getName() { return "FunExpr"; }
    String runString(CppiaCtx *ctx) { return HX_CSTRING("#function"); }
 
    // Run the actual function
@@ -1519,6 +1537,7 @@ struct BlockExpr : public CppiaExpr
       return this;
    }
 
+   const char *getName() { return "BlockExpr"; }
    virtual ExprType getType()
    {
       if (expressions.size()==0)
@@ -1552,12 +1571,40 @@ struct IfElseExpr : public CppiaExpr
    CppiaExpr *doIf;
    CppiaExpr *doElse;
 
+   const char *getName() { return "IfElseExpr"; }
    IfElseExpr(CppiaStream &stream)
    {
       condition = createCppiaExpr(stream);
       doIf = createCppiaExpr(stream);
       doElse = createCppiaExpr(stream);
    }
+
+   CppiaExpr *link(CppiaData &inData)
+   {
+      condition = condition->link(inData);
+      doIf = doIf->link(inData);
+      doElse = doElse->link(inData);
+      return this;
+   }
+
+   void runVoid(CppiaCtx *ctx)
+   {
+      if (condition->runInt(ctx))
+         doIf->runVoid(ctx);
+      else
+         doElse->runVoid(ctx);
+   }
+   #define IF_ELSE_RUN(TYPE,NAME) \
+   TYPE NAME(CppiaCtx *ctx) \
+   { \
+      if (condition->runInt(ctx)) \
+         return doIf->NAME(ctx); \
+      return doElse->NAME(ctx); \
+   }
+   IF_ELSE_RUN(hx::Object *,runObject)
+   IF_ELSE_RUN(int,runInt)
+   IF_ELSE_RUN(String,runString)
+   IF_ELSE_RUN(Float,runFloat)
 };
 
 
@@ -1571,22 +1618,53 @@ struct IfExpr : public CppiaExpr
       condition = createCppiaExpr(stream);
       doIf = createCppiaExpr(stream);
    }
+
+   const char *getName() { return "IfExpr"; }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      condition = condition->link(inData);
+      doIf = doIf->link(inData);
+      return this;
+   }
+
+   void runVoid(CppiaCtx *ctx)
+   {
+      if (condition->runInt(ctx))
+         doIf->runVoid(ctx);
+   }
 };
 
 
-struct IsNull : public CppiaExpr
+struct IsNull : public CppiaBoolExpr
 {
    CppiaExpr *condition;
 
    IsNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
+
+   const char *getName() { return "IsNull"; }
+   CppiaExpr *link(CppiaData &inData) { condition = condition->link(inData); return this; }
+
+   int runInt(CppiaCtx *ctx)
+   {
+      return condition->runObject(ctx)==0;
+   }
+
 };
 
 
-struct IsNotNull : public CppiaExpr
+struct IsNotNull : public CppiaBoolExpr
 {
    CppiaExpr *condition;
 
    IsNotNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
+
+   const char *getName() { return "IsNotNull"; }
+   CppiaExpr *link(CppiaData &inData) { condition = condition->link(inData); return this; }
+
+   int runInt(CppiaCtx *ctx)
+   {
+      return condition->runObject(ctx)!=0;
+   }
 };
 
 
@@ -1616,6 +1694,7 @@ struct CallFunExpr : public CppiaExpr
       return this;
    }
 
+   const char *getName() { return "CallFunExpr"; }
    ExprType getType() { return returnType; }
 
    #define CallFunExprVal(ret,funcName,def) \
@@ -1671,6 +1750,7 @@ struct CppiaExprWithValue : public CppiaExpr
    void mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(value); }
    void visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(value); }
 
+   const char *getName() { return "CppiaExprWithValue"; }
    CppiaExpr *link(CppiaData &inData)
    {
       inData.markable.push_back(this);
@@ -1705,6 +1785,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
       return this;
    }
 
+   const char *getName() { return "CallDynamicFunction"; }
    ExprType getType() { return etObject; }
 
    hx::Object *runObject(CppiaCtx *ctx)
@@ -1787,11 +1868,18 @@ struct SetExpr : public CppiaExpr
       value = createCppiaExpr(stream);
    }
 
+   const char *getName() { return "SetExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       lvalue = lvalue->link(inData);
       value = value->link(inData);
       CppiaExpr *result = lvalue->makeSetter(op,value);
+      if (!result)
+      {
+         printf("Could not makeSetter.\n");
+         inData.where(lvalue);
+         throw "Bad Set expr";
+      }
       delete this;
       return result;
    }
@@ -1813,6 +1901,7 @@ struct CastExpr : public CppiaExpr
       value = createCppiaExpr(stream);
    }
 
+   const char *getName() { return "CastExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       CppiaExpr *replace = value->link(inData);
@@ -1840,6 +1929,7 @@ struct ToInterface : public CppiaExpr
       cppiaVTable = 0;
    }
 
+   const char *getName() { return "ToInterface"; }
    CppiaExpr *link(CppiaData &inData)
    {
       TypeData *toType = inData.types[toTypeId];
@@ -1905,6 +1995,7 @@ struct NewExpr : public CppiaExpr
       ReadExpressions(args,stream);
    }
 
+   const char *getName() { return "NewExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       type = inData.types[classId];
@@ -2013,6 +2104,7 @@ struct CallHaxe : public CppiaExpr
       return this;
    }
 
+   const char *getName() { return "CallHaxe"; }
 
    template<typename T>
    void run(CppiaCtx *ctx,T &outValue)
@@ -2095,12 +2187,14 @@ struct CallStatic : public CppiaExpr
       ReadExpressions(args,stream);
    }
 
+   const char *getName() { return "CallStatic"; }
    CppiaExpr *link(CppiaData &inData)
    {
 
       TypeData *type = inData.types[classId];
       String field = inData.strings[fieldId];
 
+      CppiaExpr *replace = 0;
       if (type->cppiaClass)
       {
          FunExpr *func = (FunExpr *)type->cppiaClass->findFunction(true,fieldId);
@@ -2110,10 +2204,7 @@ struct CallStatic : public CppiaExpr
          }
          else
          {
-            CppiaExpr *replace = new CallFunExpr( this, 0, func, args );
-            replace->link(inData);
-            delete this;
-            return replace;
+            replace = new CallFunExpr( this, 0, func, args );
          }
       }
 
@@ -2122,15 +2213,23 @@ struct CallStatic : public CppiaExpr
          // TODO - might change if dynamic function (eg, trace)
          Dynamic func = type->haxeClass.mPtr->__Field( field, false );
          if (func.mPtr)
-         {
-            CppiaExpr *replace = new CallDynamicFunction(inData, this, func, args );
-            delete this;
-            replace->link(inData);
-            return replace;
-         }
+            replace = new CallDynamicFunction(inData, this, func, args );
       }
 
-      printf("Unknown call to %s::%s\n", type->name.__s, field.__s);
+      // TODO - optimise...
+      if (!replace && type->name==HX_CSTRING("String") && field==HX_CSTRING("fromCharCode"))
+         replace = new CallDynamicFunction(inData, this, String::fromCharCode_dyn, args );
+         
+
+      if (replace)
+      {
+         delete this;
+         replace->link(inData);
+         return replace;
+      }
+
+      printf("Unknown static call to %s::%s\n", type->name.__s, field.__s);
+      inData.where(this);
       throw "Bad link";
       return this;
    }
@@ -2156,6 +2255,7 @@ struct CallMemberVTable : public CppiaExpr
       thisExpr = inThis;
       isInterfaceCall = inIsInterfaceCall;
    }
+   const char *getName() { return "CallMemberVTable"; }
    CppiaExpr *link(CppiaData &inData)
    {
       if (thisExpr)
@@ -2224,6 +2324,7 @@ struct CallArray : public CppiaExpr
       funcName = inFunc.__s;
    }
 
+   const char *getName() { return "CallArray"; }
    CppiaExpr *link(CppiaData &inData)
    {
       LinkExpressions(args,inData);
@@ -2304,6 +2405,7 @@ struct CallMember : public CppiaExpr
 
 
 
+   const char *getName() { return "CallMember"; }
    CppiaExpr *link(CppiaData &inData)
    {
       if (fieldId==0)
@@ -2311,7 +2413,7 @@ struct CallMember : public CppiaExpr
 
       TypeData *type = inData.types[classId];
       String field = inData.strings[fieldId];
-      printf("Linking %s::%s\n", type->name.__s, field.__s);
+      //printf("  linking call %s::%s\n", type->name.__s, field.__s);
 
       CppiaExpr *replace = 0;
       // TODO - string functions
@@ -2323,7 +2425,7 @@ struct CallMember : public CppiaExpr
       if (type->cppiaClass && !replace)
       {
          int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
-         printf(" vslot %d\n", vtableSlot);
+         //printf("   vslot %d\n", vtableSlot);
          if (vtableSlot>=0)
          {
             replace = new CallMemberVTable( this, thisExpr, vtableSlot, type->cppiaClass->isInterface, args );
@@ -2382,6 +2484,7 @@ struct ClassOfExpr : public CppiaExprWithValue
    {
       typeId = stream.getInt();
    }
+   const char *getName() { return "ClassOfExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       TypeData *type = inData.types[typeId];
@@ -2404,6 +2507,7 @@ struct Call : public CppiaExpr
       func = createCppiaExpr(stream);
       ReadExpressions(args,stream,argCount);
    }
+   const char *getName() { return "Call"; }
    CppiaExpr *link(CppiaData &inData)
    {
       func = func->link(inData);
@@ -2426,6 +2530,53 @@ struct Call : public CppiaExpr
    void runVoid(CppiaCtx *ctx) { runObject(ctx); }
 };
 
+struct SetFieldByName : public CppiaDynamicExpr
+{
+   CppiaExpr   *object;
+   String      name;
+   CppiaExpr   *value;
+   AssignOp    op;
+   Class       staticClass;
+
+   
+   SetFieldByName(CppiaExpr *inSrc, CppiaExpr *inObject, Class inStaticClass, String inName, AssignOp inOp, CppiaExpr *inValue)
+      : CppiaDynamicExpr(inSrc)
+   {
+      object = inObject;
+      staticClass = inStaticClass;
+      name = inName;
+      op = inOp;
+      value = inValue;
+
+      // TODO - inData.markable.push_back(this);
+   }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      hx::Object *instance = object ? object->runObject(ctx) : staticClass.mPtr ? staticClass.mPtr : ctx->getThis();
+      if (op==aoSet)
+      {
+         Dynamic v = value->runObject(ctx);
+         instance->__SetField(name, v,true);
+         return v.mPtr;
+      }
+      // TODO - others
+      return 0;
+   }
+
+   void mark(hx::MarkContext *__inCtx)
+   {
+      HX_MARK_MEMBER(name);
+      HX_MARK_MEMBER(staticClass);
+   }
+   void visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_MEMBER(name);
+      HX_VISIT_MEMBER(staticClass);
+   }
+
+
+};
 
 struct GetFieldByName : public CppiaDynamicExpr
 {
@@ -2458,6 +2609,7 @@ struct GetFieldByName : public CppiaDynamicExpr
       name.__s = 0;
       vtableSlot = -1;
    }
+   const char *getName() { return "GetFieldByName"; }
    CppiaExpr *link(CppiaData &inData)
    {
       if (object)
@@ -2497,7 +2649,19 @@ struct GetFieldByName : public CppiaDynamicExpr
       return instance->__Field(name,true).mPtr;
    }
   
-   // TODO - makeSetter
+   CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue)
+   {
+      // delete this - remove markable?
+      return new SetFieldByName(this, object, staticClass, name, op, inValue);
+   }
+
+   /* TODO
+   CppiaExpr   *makeCrement(CrementOp inOp)
+   {
+      crementOp = inOp;
+      return this;
+   }
+   */
 
    void mark(hx::MarkContext *__inCtx)
    {
@@ -2537,6 +2701,7 @@ struct MemReference : public CppiaExpr
    {
       return (ExprType) ExprTypeOf<T>::value;
    }
+   const char *getName() { return "MemReference"; }
    CppiaExpr *link(CppiaData &inData)
    {
       if (object)
@@ -2694,6 +2859,7 @@ struct GetFieldByLinkage : public CppiaExpr
       fieldId = stream.getInt();
       object = inThisObject ? 0 : createCppiaExpr(stream);
    }
+   const char *getName() { return "GetFieldByLinkage"; }
    CppiaExpr *link(CppiaData &inData)
    {
       TypeData *type = inData.types[typeId];
@@ -2768,6 +2934,16 @@ struct GetFieldByLinkage : public CppiaExpr
              (CppiaExpr*)new MemReference<int,locThis>(this,offset);
       }
 
+      if (!replace && type->name==HX_CSTRING("String") && field==HX_CSTRING("length"))
+      {
+         int offset = (int) offsetof( Array_obj<int>, length );
+         replace = object ?
+             (CppiaExpr*)new MemReference<int,locObj>(this,offset,object):
+             (CppiaExpr*)new MemReference<int,locThis>(this,offset);
+      }
+
+
+
       if (replace)
       {
          replace = replace->link(inData);
@@ -2775,7 +2951,7 @@ struct GetFieldByLinkage : public CppiaExpr
          return replace;
       }
 
-      printf("GetFieldByName %s (%p %p) -> %s fallback\n", type->name.__s, type->haxeClass.mPtr, type->cppiaClass, field.__s);
+      printf("   GetFieldByName %s (%p %p) -> %s fallback\n", type->name.__s, type->haxeClass.mPtr, type->cppiaClass, field.__s);
       CppiaExpr *result = new GetFieldByName(this, fieldId, object);
       result = result->link(inData);
       delete this;
@@ -2797,6 +2973,7 @@ struct StringVal : public CppiaExprWithValue
 
    ExprType getType() { return etString; }
 
+   const char *getName() { return "StringVal"; }
    CppiaExpr *link(CppiaData &inData)
    {
       strVal = inData.strings[stringId];
@@ -2882,6 +3059,7 @@ struct PosInfo : public CppiaExprWithValue
       classId = stream.getInt();
       methodId = stream.getInt();
    }
+   const char *getName() { return "PosInfo"; }
    CppiaExpr *link(CppiaData &inData)
    {
       String clazz = inData.strings[classId];
@@ -2911,6 +3089,7 @@ struct ObjectDef : public CppiaDynamicExpr
       ReadExpressions(values,stream,fieldCount);
    }
 
+   const char *getName() { return "ObjectDef"; }
    CppiaExpr *link(CppiaData &inData)
    {
       data = &inData;
@@ -2939,6 +3118,7 @@ struct ArrayDef : public CppiaExpr
    }
 
 
+   const char *getName() { return "ArrayDef"; }
    CppiaExpr *link(CppiaData &inData)
    {
       TypeData *type = inData.types[classId];
@@ -3005,6 +3185,74 @@ struct ArrayDef : public CppiaExpr
    }
 };
 
+struct DynamicArrayI : public CppiaDynamicExpr
+{
+   CppiaExpr *object;
+   CppiaExpr *index;
+   CppiaExpr *value;
+   AssignOp  assign;
+   CrementOp crement;
+
+   DynamicArrayI(CppiaExpr *inSrc, CppiaExpr *inObj, CppiaExpr *inI)
+     : CppiaDynamicExpr(inSrc)
+   {
+      object = inObj;
+      index = inI;
+      value = 0;
+      assign = aoNone;
+      crement = coNone;
+   }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      hx::Object *obj = object->runObject(ctx);
+      int i = index->runInt(ctx);
+      if (crement==coNone && assign==aoNone)
+         return obj->__GetItem(i).mPtr;
+
+      if (crement!=coNone)
+      {
+         Dynamic val0 = obj->__GetItem(i);
+         Dynamic val1 = val0 + (crement<=coPostInc ? 1 : -1);
+         obj->__SetItem(i, val1);
+         return crement & coPostInc ? val0.mPtr : val1.mPtr;
+      }
+      if (assign == aoSet)
+         return obj->__SetItem(i, value->runObject(ctx)).mPtr;
+
+      Dynamic val0 = obj->__GetItem(i);
+      Dynamic val1;
+
+      switch(assign)
+      {
+         case aoAdd: val1 = val0 + Dynamic(value->runObject(ctx)); break;
+         case aoMult: val1 = val0 * value->runFloat(ctx); break;
+         case aoDiv: val1 = val0 / value->runFloat(ctx); break;
+         case aoSub: val1 = val0 - value->runFloat(ctx); break;
+         case aoAnd: val1 = (int)val0 & value->runInt(ctx); break;
+         case aoOr: val1 = (int)val0 | value->runInt(ctx); break;
+         case aoXOr: val1 = (int)val0 ^ value->runInt(ctx); break;
+         case aoShl: val1 = (int)val0 << value->runInt(ctx); break;
+         case aoShr: val1 = (int)val0 >> value->runInt(ctx); break;
+         case aoUShr: val1 = hx::UShr((int)val0,value->runInt(ctx)); break;
+         case aoMod: val1 = hx::Mod(val0 ,value->runFloat(ctx)); break;
+         default: ;
+      }
+      obj->__SetItem(i,val1);
+      return val1.mPtr;
+   }
+   CppiaExpr  *makeSetter(AssignOp op,CppiaExpr *inValue)
+   {
+      assign = op;
+      value = inValue;
+      return this;
+   }
+   CppiaExpr  *makeCrement(CrementOp inOp)
+   {
+      crement = inOp;
+      return this;
+   }
+};
+
 struct ArrayIExpr : public CppiaExpr
 {
    int       classId;
@@ -3025,50 +3273,31 @@ struct ArrayIExpr : public CppiaExpr
       assignOp = aoNone;
    }
 
-   CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue)
-   {
-      assignOp = op;
-      value = inValue;
-      return this;
-   }
-
-   CppiaExpr   *makeCrement(CrementOp inOp)
-   {
-      crementOp = inOp;
-      return this;
-   }
-
+   const char *getName() { return "ArrayIExpr"; }
 
    CppiaExpr *link(CppiaData &inData)
    {
       TypeData *type = inData.types[classId];
-      if (!type->arrayType)
-      {
-         printf("ARRAYI of non array-type %s\n", type->name.__s);
-         throw "Bad ARRAYI";
-      }
-      Expressions val;
-      val.push_back(iExpr);
 
       CppiaExpr *replace = 0;
-      if (crementOp!=coNone)
+
+      if (type->name==HX_CSTRING("Dynamic"))
       {
-         String funcNames[] = {
-            HX_CSTRING("__preInc"),
-            HX_CSTRING("__postInc"), 
-            HX_CSTRING("__preDec"),
-            HX_CSTRING("__postDec") };
-         replace = createArrayBuiltin(this, type->arrayType, thisExpr, funcNames[crementOp], val);
-      }
-      else if (value)
-      {
-         val.push_back(value);
-         replace = createArrayBuiltin(this, type->arrayType, thisExpr, HX_CSTRING("__set"), val);
+         replace = new DynamicArrayI(this, thisExpr, iExpr);
       }
       else
+      {
+         if (!type->arrayType)
+         {
+            printf("ARRAYI of non array-type %s\n", type->name.__s);
+            throw "Bad ARRAYI";
+         }
+         Expressions val;
+         val.push_back(iExpr);
+   
          replace = createArrayBuiltin(this, type->arrayType, thisExpr, HX_CSTRING("__get"), val);
+      }
 
-      replace->link(inData);
       delete this;
       return replace;
    }
@@ -3090,6 +3319,7 @@ struct EnumIExpr : public CppiaDynamicExpr
       object = createCppiaExpr(stream);
    }
 
+   const char *getName() { return "EnumIExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       object = object->link(inData);
@@ -3140,6 +3370,7 @@ struct VarDecl : public CppiaExpr
       }
    }
 
+   const char *getName() { return "VarDecl"; }
    CppiaExpr *link(CppiaData &inData)
    {
       var.link(inData);
@@ -3162,6 +3393,7 @@ struct ForExpr : public CppiaExpr
       loop = createCppiaExpr(stream);
    }
 
+   const char *getName() { return "ForExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       var.link(inData);
@@ -3219,6 +3451,7 @@ struct WhileExpr : public CppiaExpr
       loop = createCppiaExpr(stream);
    }
 
+   const char *getName() { return "WhileExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       condition = condition->link(inData);
@@ -3278,6 +3511,7 @@ struct SwitchExpr : public CppiaExpr
       defaultCase = hasDefault ? createCppiaExpr(stream) : 0;
    }
 
+   const char *getName() { return "SwitchExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       condition = condition->link(inData);
@@ -3371,6 +3605,7 @@ struct TryExpr : public CppiaExpr
       }
    }
 
+   const char *getName() { return "TryExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       body = body->link(inData);
@@ -3426,12 +3661,16 @@ struct VarRef : public CppiaExpr
 
    ExprType getType() { return type; }
 
+   const char *getName() { return "VarRef"; }
    CppiaExpr *link(CppiaData &inData)
    {
       var = inData.layout->findVar(varId);
       if (!var)
       {
-         printf("Could not link var %d\n", varId);
+         // link to cppia static...
+
+         printf("Could not link var %d (%s)\n", varId, inData.strings[var->nameId].__s);
+         inData.where(this);
          throw "Unknown variable";
       }
 
@@ -3503,6 +3742,7 @@ struct RetVal : public ThrowType<void>
          value = 0;
    }
 
+   const char *getName() { return "RetVal"; }
    CppiaExpr *link(CppiaData &inData)
    {
       if (value)
@@ -3531,6 +3771,7 @@ struct BinOp : public CppiaExpr
       type = etFloat;
    }
 
+   const char *getName() { return "BinOp"; }
    CppiaExpr *link(CppiaData &inData)
    {
       left = left->link(inData);
@@ -3582,6 +3823,7 @@ struct ThrowExpr : public CppiaExpr
    {
       value = createCppiaExpr(stream);
    }
+   const char *getName() { return "ThrowExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       value = value->link(inData);
@@ -3688,6 +3930,7 @@ struct BitAnd : public CppiaIntExpr
       left = createCppiaExpr(stream);
       right = createCppiaExpr(stream);
    }
+   const char *getName() { return "BitAnd"; }
    CppiaExpr *link(CppiaData &inData)
    {
       left = left->link(inData);
@@ -3884,6 +4127,7 @@ struct EnumField : public CppiaExpr
       }
    }
 
+   const char *getName() { return "EnumField"; }
    CppiaExpr *link(CppiaData &inData)
    {
       TypeData *type = inData.types[enumId];
@@ -3922,10 +4166,17 @@ struct CrementExpr : public CppiaExpr
       op = inOp;
       lvalue = createCppiaExpr(stream);
    }
+   const char *getName() { return "CrementExpr"; }
    CppiaExpr *link(CppiaData &inData)
    {
       lvalue = lvalue->link(inData);
       CppiaExpr *replace = lvalue->makeCrement( op );
+      if (!replace)
+      {
+         printf("Could not create increment operator\n");
+         inData.where(this);
+         throw "Bad increment";
+      }
       replace->link(inData);
       delete this;
       return replace;
@@ -3947,6 +4198,7 @@ struct OpCompareBase : public CppiaBoolExpr
       compareType = compDynamic;
    }
 
+   const char *getName() { return "OpCompare"; }
    bool isNumeric(ExprType t) { return t==etInt || t==etFloat; }
 
    CppiaExpr *link(CppiaData &inData)
@@ -4389,7 +4641,12 @@ void CppiaData::link()
    }
 
    for(int i=0;i<classes.size();i++)
+   {
+      linkingClass = classes[i];
       classes[i]->link();
+   }
+   linkingClass = 0;
+
    if (main)
       main = main->link(*this);
 }
@@ -4467,9 +4724,21 @@ bool LoadCppia(String inValue)
       }
       else if (tok!="NOMAIN")
          throw "no main specified";
+   } catch(const char *error)
+   {
+      printf("Error reading file: %s, line %d, char %d\n", error, stream.line, stream.pos);
+   }
 
+   try
+   {
       printf("Link...\n");
       cppia.link();
+   } catch(const char *error)
+   {
+      printf("Error linking : %s\n", error);
+   }
+   try
+   {
       printf("--- Run --------------------------------------------\n");
       if (cppia.main)
       {
@@ -4480,7 +4749,7 @@ bool LoadCppia(String inValue)
       return true;
    } catch(const char *error)
    {
-      printf("Error reading file: %s, line %d, char %d\n", error, stream.line, stream.pos);
+      printf("Error running : %s\n", error);
    }
    return false;
 }
