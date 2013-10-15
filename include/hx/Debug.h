@@ -101,14 +101,14 @@ public:
                , int inLineNumber
                #endif
                #ifdef HXCPP_DEBUG_HASHES
-               , int inFileLineHash
+               , int inFileHash
                #endif
                )
 
        : className(inClassName), functionName(inFunctionName),
          #ifdef HXCPP_DEBUG_HASHES
          classFuncHash(inClassFunctionHash),
-         fileLineHash(inFileLineHash),
+         fileHash(inFileHash),
          #endif
          fullName(inFullName), fileName(inFileName),
          #ifdef HXCPP_STACK_LINE
@@ -140,7 +140,7 @@ public:
     int lineNumber;
 
     #ifdef HXCPP_DEBUG_HASHES
-    int fileLineHash;
+    int fileHash;
     int classFuncHash;
     #endif
     
@@ -305,19 +305,19 @@ extern volatile bool gShouldCallHandleBreakpoints;
 
    #ifdef HXCPP_DEBUG_HASHES
       #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
-                          lineNumber, fileLineHash ) \
+                          lineNumber, fileHash ) \
        hx::StackFrame __stackframe(className, functionName, classFunctionHash, fullName,      \
-                                   fileName, lineNumber, fileLineHash);
+                                   fileName, lineNumber, fileHash);
    #else
       #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
-                          lineNumber, fileLineHash ) \
+                          lineNumber, fileHash ) \
        hx::StackFrame __stackframe(className, functionName, fullName,      \
                                    fileName, lineNumber);
    #endif
 #else
 
    #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
-                       lineNumber, fileLineHash ) \
+                       lineNumber, fileHash ) \
     hx::StackFrame __stackframe(className, functionName, fullName, fileName);
 
 #endif
@@ -398,7 +398,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
 
 // Define any macros not defined already above
 #ifndef HX_STACK_FRAME
-#define HX_STACK_FRAME(className, functionName, classFuncHash, fullName, fileName, lineNumber, fileLineHash )
+#define HX_STACK_FRAME(className, functionName, classFuncHash, fullName, fileName, lineNumber, fileHash )
 #endif
 #ifndef HX_STACK_THIS
 #define HX_STACK_THIS(ptr)

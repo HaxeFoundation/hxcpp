@@ -1255,7 +1255,7 @@ public:
 
                // If still haven't hit a break point, check for file:line
                // breakpoint
-               if (breakpointNumber == -1 && !breakpoints->QuickRejectFileLine(frame->fileLineHash))
+               if (breakpointNumber == -1 && !breakpoints->QuickRejectFileLine(frame->fileHash))
                   breakpointNumber = breakpoints->FindFileLineBreakpoint(frame);
 
                if (breakpointNumber != -1)
@@ -1327,7 +1327,7 @@ private:
         mBreakpoints[toCopy->mBreakpointCount].isFileLine = true;
         mBreakpoints[toCopy->mBreakpointCount].fileOrClassName = fileName;
         mBreakpoints[toCopy->mBreakpointCount].lineNumber = lineNumber;
-        mBreakpoints[toCopy->mBreakpointCount].hash = Hash(lineNumber, fileName);
+        mBreakpoints[toCopy->mBreakpointCount].hash = Hash(0, fileName);
         calcCombinedHash();
     }
 
@@ -1435,7 +1435,7 @@ private:
       for (int i = 0; i < mBreakpointCount; i++)
       {
          Breakpoint &breakpoint = mBreakpoints[i];
-         if (breakpoint.isFileLine && breakpoint.hash==inFrame->fileLineHash &&
+         if (breakpoint.isFileLine && breakpoint.hash==inFrame->fileHash &&
              (breakpoint.lineNumber == inFrame->lineNumber) &&
              !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->fileName) )
             return breakpoint.number;
