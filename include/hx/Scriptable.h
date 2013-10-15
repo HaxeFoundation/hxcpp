@@ -238,7 +238,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
    void ** __GetScriptVTable() { return __scriptVTable; } \
    ::String toString() {  if (__scriptVTable[0] ) \
       { hx::CppiaCtx *ctx = hx::CppiaCtx::getCurrent(); hx::AutoStack a(ctx); ctx->pushObject(this); return ctx->runString(__scriptVTable[0]); } \
-      else return super::toString(); }
+      else return __superString::toString(); }
 
 
 #define HX_DEFINE_SCRIPTABLE_INTERFACE \

@@ -2218,7 +2218,7 @@ struct CallStatic : public CppiaExpr
 
       // TODO - optimise...
       if (!replace && type->name==HX_CSTRING("String") && field==HX_CSTRING("fromCharCode"))
-         replace = new CallDynamicFunction(inData, this, String::fromCharCode_dyn, args );
+         replace = new CallDynamicFunction(inData, this, String::fromCharCode_dyn(), args );
          
 
       if (replace)
@@ -2228,7 +2228,7 @@ struct CallStatic : public CppiaExpr
          return replace;
       }
 
-      printf("Unknown static call to %s::%s\n", type->name.__s, field.__s);
+      printf("Unknown static call to %s::%s (%d)\n", type->name.__s, field.__s, type->cppiaClass);
       inData.where(this);
       throw "Bad link";
       return this;
@@ -2530,38 +2530,76 @@ struct Call : public CppiaExpr
    void runVoid(CppiaCtx *ctx) { runObject(ctx); }
 };
 
-struct SetFieldByName : public CppiaDynamicExpr
+struct FieldByName : public CppiaDynamicExpr
 {
    CppiaExpr   *object;
    String      name;
    CppiaExpr   *value;
-   AssignOp    op;
+   AssignOp    assign;
+   CrementOp   crement;
    Class       staticClass;
 
    
-   SetFieldByName(CppiaExpr *inSrc, CppiaExpr *inObject, Class inStaticClass, String inName, AssignOp inOp, CppiaExpr *inValue)
+   FieldByName(CppiaExpr *inSrc, CppiaExpr *inObject, Class inStaticClass,
+               String inName, AssignOp inAssign, CrementOp inCrement, CppiaExpr *inValue)
       : CppiaDynamicExpr(inSrc)
    {
       object = inObject;
       staticClass = inStaticClass;
       name = inName;
-      op = inOp;
+      assign = inAssign;
+      crement = inCrement;
       value = inValue;
 
-      // TODO - inData.markable.push_back(this);
+   }
+
+   CppiaExpr *link(CppiaData &inData)
+   {
+      if (value)
+         value = value->link(inData);
+      if (object)
+         object = value->link(inData);
+      inData.markable.push_back(this);
+      return this;
    }
 
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      hx::Object *instance = object ? object->runObject(ctx) : staticClass.mPtr ? staticClass.mPtr : ctx->getThis();
-      if (op==aoSet)
+      hx::Object *obj = object ? object->runObject(ctx) : staticClass.mPtr ? staticClass.mPtr : ctx->getThis();
+
+      if (crement==coNone && assign==aoNone)
+         return obj->__Field(name,true).mPtr;
+
+      if (crement!=coNone)
       {
-         Dynamic v = value->runObject(ctx);
-         instance->__SetField(name, v,true);
-         return v.mPtr;
+         Dynamic val0 = obj->__Field(name,true);
+         Dynamic val1 = val0 + (crement<=coPostInc ? 1 : -1);
+         obj->__SetField(name, val1,true);
+         return crement & coPostInc ? val0.mPtr : val1.mPtr;
       }
-      // TODO - others
-      return 0;
+      if (assign == aoSet)
+         return obj->__SetField(name, value->runObject(ctx),true).mPtr;
+
+      Dynamic val0 = obj->__Field(name,true);
+      Dynamic val1;
+
+      switch(assign)
+      {
+         case aoAdd: val1 = val0 + Dynamic(value->runObject(ctx)); break;
+         case aoMult: val1 = val0 * value->runFloat(ctx); break;
+         case aoDiv: val1 = val0 / value->runFloat(ctx); break;
+         case aoSub: val1 = val0 - value->runFloat(ctx); break;
+         case aoAnd: val1 = (int)val0 & value->runInt(ctx); break;
+         case aoOr: val1 = (int)val0 | value->runInt(ctx); break;
+         case aoXOr: val1 = (int)val0 ^ value->runInt(ctx); break;
+         case aoShl: val1 = (int)val0 << value->runInt(ctx); break;
+         case aoShr: val1 = (int)val0 >> value->runInt(ctx); break;
+         case aoUShr: val1 = hx::UShr((int)val0,value->runInt(ctx)); break;
+         case aoMod: val1 = hx::Mod(val0 ,value->runFloat(ctx)); break;
+         default: ;
+      }
+      obj->__SetField(name,val1,true);
+      return val1.mPtr;
    }
 
    void mark(hx::MarkContext *__inCtx)
@@ -2649,19 +2687,17 @@ struct GetFieldByName : public CppiaDynamicExpr
       return instance->__Field(name,true).mPtr;
    }
   
-   CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue)
+   CppiaExpr   *makeSetter(AssignOp inOp,CppiaExpr *inValue)
    {
       // delete this - remove markable?
-      return new SetFieldByName(this, object, staticClass, name, op, inValue);
+      return new FieldByName(this, object, staticClass, name, inOp, coNone, inValue);
    }
 
-   /* TODO
    CppiaExpr   *makeCrement(CrementOp inOp)
    {
-      crementOp = inOp;
-      return this;
+      // delete this - remove markable?
+      return new FieldByName(this, object, staticClass, name, aoNone, inOp, 0);
    }
-   */
 
    void mark(hx::MarkContext *__inCtx)
    {
@@ -4115,6 +4151,9 @@ struct EnumField : public CppiaExpr
    CppiaEnumConstructor *value;
    Expressions          args;
 
+   String               enumName;
+   Class                enumClass;
+
    EnumField(CppiaStream &stream,bool inWithArgs)
    {
       enumId = stream.getInt();
@@ -4138,7 +4177,16 @@ struct EnumField : public CppiaExpr
          value = type->cppiaClass->findEnum(fieldId);
       }
       else
-         throw "External data interface";
+      {
+         enumClass = Class_obj::Resolve(type->name);
+         if (!enumClass.mPtr)
+         {
+            printf("Could not find enum %s\n", type->name.__s );
+            throw "Bad enum";
+         }
+         enumName = enumClass->GetClassFields()[fieldId];
+         inData.markable.push_back(this);
+      }
 
       LinkExpressions(args,inData);
       return this;
@@ -4148,11 +4196,13 @@ struct EnumField : public CppiaExpr
    {
       int s = args.size();
       if (s==0)
-         return value->value.mPtr;
+         return value ? value->value.mPtr : enumClass->ConstructEnum(enumName,null()).mPtr;
+
       Array<Dynamic> dynArgs = Array_obj<Dynamic>::__new(s,s);
       for(int a=0;a<s;a++)
          dynArgs[a] = args[a]->runObject(ctx);
-      return value->create(dynArgs);
+
+      return value ? value->create(dynArgs) : enumClass->ConstructEnum(enumName,dynArgs).mPtr;
    }
 };
 
@@ -4174,7 +4224,7 @@ struct CrementExpr : public CppiaExpr
       if (!replace)
       {
          printf("Could not create increment operator\n");
-         inData.where(this);
+         inData.where(lvalue);
          throw "Bad increment";
       }
       replace->link(inData);

@@ -60,9 +60,9 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
 
 Dynamic Math_obj::__Field(const String &inString, bool inCallProp)
 {
-   if (inString==HX_CSTRING("floor")) return floor_dyn();
-   if (inString==HX_CSTRING("ceil")) return ceil_dyn();
-   if (inString==HX_CSTRING("round")) return round_dyn();
+   if (inString==HX_CSTRING("floor")||inString==HX_CSTRING("ffloor")) return floor_dyn();
+   if (inString==HX_CSTRING("ceil")||inString==HX_CSTRING("fceil")) return ceil_dyn();
+   if (inString==HX_CSTRING("round")||inString==HX_CSTRING("fround")) return round_dyn();
    if (inString==HX_CSTRING("random")) return random_dyn();
    if (inString==HX_CSTRING("sqrt")) return sqrt_dyn();
    if (inString==HX_CSTRING("cos")) return cos_dyn();

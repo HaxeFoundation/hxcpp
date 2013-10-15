@@ -88,6 +88,7 @@ class Object__scriptable : public hx::Object {
    typedef Object__scriptable __ME;
    void __construct() { }
    typedef hx::Object super;
+   typedef hx::Object __superString;
    HX_DEFINE_SCRIPTABLE(HX_ARR_LIST0);
 	HX_DEFINE_SCRIPTABLE_DYNAMIC;
 };

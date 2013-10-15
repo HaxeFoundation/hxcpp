@@ -476,6 +476,10 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<afReverse,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("shift"))
       return TCreateArrayBuiltin<afShift,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("splice"))
+      return TCreateArrayBuiltin<afSplice,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("slice"))
+      return TCreateArrayBuiltin<afSlice,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("sort"))
       return TCreateArrayBuiltin<afSort,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("toString"))
@@ -490,16 +494,8 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<af__get,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("__set"))
       return TCreateArrayBuiltin<af__set,NoCrement>(src, inType, inThisExpr, ioExpressions);
-/*
-   if (field==HX_CSTRING("__preInc"))
-      return TCreateArrayBuiltin<af__crement,CrementPreInc>(src, inType, inThisExpr, ioExpressions);
-   if (field==HX_CSTRING("__postInc"))
-      return TCreateArrayBuiltin<af__crement,CrementPostInc>(src, inType, inThisExpr, ioExpressions);
-   if (field==HX_CSTRING("__preDec"))
-      return TCreateArrayBuiltin<af__crement,CrementPreDec>(src, inType, inThisExpr, ioExpressions);
-   if (field==HX_CSTRING("__postDec"))
-      return TCreateArrayBuiltin<af__crement,CrementPostDec>(src, inType, inThisExpr, ioExpressions);
-*/
+
+   printf("Bad field '%s'\n", field.__s);
    throw "Unknown array field";
    return 0;
 }
