@@ -504,8 +504,230 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
 
 // --- String -------------------------
 
-CppiaExpr *createStringBuiltin(CppiaExpr *src, CppiaExpr *inThisExpr, String field, Expressions &ioExpressions )
+struct StringExpr : public CppiaExpr
 {
+   CppiaExpr *strVal;
+   StringExpr(CppiaExpr *inSrc, CppiaExpr *inThis )
+      : CppiaExpr(inSrc)
+   {
+      strVal = inThis;
+   }
+   ExprType getType() { return etString; }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      strVal = strVal->link(inData);
+      return this;
+   }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      return Dynamic(runString(ctx)).mPtr;
+   }
+};
+
+template<bool SUBSTR>
+struct SubStrExpr : public StringExpr
+{
+   CppiaExpr *a0;
+   CppiaExpr *a1;
+   SubStrExpr(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inA0, CppiaExpr *inA1)
+      : StringExpr(inSrc,inThis)
+   {
+      a0 = inA0;
+      a1 = inA1;
+   }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      a0 = a0->link(inData);
+      a1 = a1->link(inData);
+      return StringExpr::link(inData);
+   }
+   String runString(CppiaCtx *ctx)
+   {
+      String val = strVal->runString(ctx);
+      int start = a0->runInt(ctx);
+      if (SUBSTR)
+         return val.substr(start, a1->runObject(ctx) );
+      else
+         return val.substring(start, a1->runObject(ctx) );
+   }
+};
+
+
+template<bool UPPER>
+struct ToCaseExpr : public StringExpr
+{
+   ToCaseExpr(CppiaExpr *inSrc, CppiaExpr *inThis ) : StringExpr(inSrc,inThis) { }
+   String runString(CppiaCtx *ctx)
+   {
+      String val = strVal->runString(ctx);
+      if (UPPER)
+         return val.toUpperCase();
+      else
+         return val.toLowerCase();
+   }
+};
+
+template<bool CODE>
+struct CharAtExpr : public StringExpr
+{
+   CppiaExpr *a0;
+
+   CharAtExpr(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inIndex ) : StringExpr(inSrc,inThis)
+   {
+      a0 = inIndex;
+   }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      a0 = a0->link(inData);
+      return StringExpr::link(inData);
+   }
+   ExprType getType() { return CODE ? etObject : etString; }
+
+   String runString(CppiaCtx *ctx)
+   {
+      String val = strVal->runString(ctx);
+      return val.charAt(a0->runInt(ctx));
+   }
+   int runInt(CppiaCtx *ctx)
+   {
+      String val = strVal->runString(ctx);
+      return val.charCodeAt(a0->runInt(ctx));
+   }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      String val = strVal->runString(ctx);
+
+      if (CODE)
+         return val.charCodeAt(a0->runInt(ctx)).mPtr;
+      else
+         return Dynamic(val.charAt(a0->runInt(ctx))).mPtr;
+   }
+};
+
+
+
+struct SplitExpr : public CppiaExpr
+{
+   CppiaExpr *strVal;
+   CppiaExpr *a0;
+
+   SplitExpr(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inDelim ) :
+      CppiaExpr(inSrc)
+   {
+      strVal = inThis;
+      a0 = inDelim;
+   }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      strVal = strVal->link(inData);
+      a0 = a0->link(inData);
+      return this;
+   }
+   ExprType getType() { return etObject; }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      String val = strVal->runString(ctx);
+      return val.split( a0->runString(ctx) ).mPtr;
+   }
+};
+
+
+
+template<bool LAST>
+struct IndexOfExpr : public CppiaExpr
+{
+   CppiaExpr *strVal;
+   CppiaExpr *sought;
+   CppiaExpr *start;
+
+   IndexOfExpr(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inSought, CppiaExpr *inStart ) :
+      CppiaExpr(inSrc)
+   {
+      strVal = inThis;
+      sought = inSought;
+      start = inStart;
+   }
+   ExprType getType() { return etInt; }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      strVal = strVal->link(inData);
+      sought = sought->link(inData);
+      start = start->link(inData);
+      return this;
+   }
+   int runInt(CppiaCtx *ctx)
+   {
+      String val = strVal->runString(ctx);
+      String s = sought->runString(ctx);
+      if (LAST)
+         return val.lastIndexOf(s,start->runObject(ctx));
+      else
+         return val.indexOf(s,start->runObject(ctx));
+   }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
+};
+
+
+
+// TODO
+// static function fromCharCode( code : Int ) : String;
+
+
+CppiaExpr *createStringBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, String field, Expressions &ioExpressions )
+{
+   if (field==HX_CSTRING("toString"))
+   {
+      if (ioExpressions.size()!=0) throw "Bad arg count";
+      return inThisExpr;
+   }
+   else if (field==HX_CSTRING("toUpperCase"))
+   {
+      if (ioExpressions.size()!=0) throw "Bad arg count";
+      return new ToCaseExpr<true>(inSrc,inThisExpr);
+   }
+   else if (field==HX_CSTRING("toLowerCase"))
+   {
+      if (ioExpressions.size()!=0) throw "Bad arg count";
+      return new ToCaseExpr<false>(inSrc,inThisExpr);
+   }
+   else if (field==HX_CSTRING("charAt"))
+   {
+      if (ioExpressions.size()!=1) throw "Bad arg count";
+      return new CharAtExpr<false>(inSrc,inThisExpr,ioExpressions[0]);
+   }
+   else if (field==HX_CSTRING("charCodeAt"))
+   {
+      if (ioExpressions.size()!=1) throw "Bad arg count";
+      return new CharAtExpr<true>(inSrc,inThisExpr,ioExpressions[0]);
+   }
+   else if (field==HX_CSTRING("split"))
+   {
+      if (ioExpressions.size()!=1) throw "Bad arg count";
+      return new SplitExpr(inSrc,inThisExpr,ioExpressions[0]);
+   }
+   else if (field==HX_CSTRING("indexOf"))
+   {
+      if (ioExpressions.size()!=2) throw "Bad arg count";
+      return new IndexOfExpr<false>(inSrc,inThisExpr,ioExpressions[0], ioExpressions[1]);
+   }
+   else if (field==HX_CSTRING("lastIndexOf"))
+   {
+      if (ioExpressions.size()!=2) throw "Bad arg count";
+      return new IndexOfExpr<true>(inSrc,inThisExpr,ioExpressions[0], ioExpressions[1]);
+   }
+
+   else if (field==HX_CSTRING("substr"))
+   {
+      if (ioExpressions.size()!=2) throw "Bad arg count";
+      return new SubStrExpr<true>(inSrc,inThisExpr, ioExpressions[0], ioExpressions[1]);
+   }
+   else if (field==HX_CSTRING("substring"))
+   {
+      if (ioExpressions.size()!=2) throw "Bad arg count";
+      return new SubStrExpr<false>(inSrc,inThisExpr, ioExpressions[0], ioExpressions[1]);
+   }
+
    return 0;
 }
 

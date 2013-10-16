@@ -3500,6 +3500,7 @@ struct ArrayIExpr : public CppiaExpr
    
          replace = createArrayBuiltin(this, type->arrayType, thisExpr, HX_CSTRING("__get"), val);
       }
+      replace = replace->link(inData);
 
       delete this;
       return replace;
