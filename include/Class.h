@@ -121,7 +121,7 @@ public:
 
    int __GetType() const { return vtObject; }
 
-   bool __IsEnum();
+   virtual bool __IsEnum();
 
 	inline bool CanCast(hx::Object *inPtr) { return mCanCast ? mCanCast(inPtr) : VCanCast(inPtr); }
 

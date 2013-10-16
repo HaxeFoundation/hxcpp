@@ -502,4 +502,12 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
 
 
 
+// --- String -------------------------
+
+CppiaExpr *createStringBuiltin(CppiaExpr *src, CppiaExpr *inThisExpr, String field, Expressions &ioExpressions )
+{
+   return 0;
+}
+
+
 } // end namespace hx

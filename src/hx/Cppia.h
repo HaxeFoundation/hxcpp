@@ -101,7 +101,7 @@ struct CppiaStream
 
 
 struct TypeData;
-struct CppiaClass;
+struct CppiaClassInfo;
 struct CppiaData;
 struct CppiaExpr;
 class  ScriptRegistered;
@@ -208,6 +208,7 @@ typedef std::vector<CppiaExpr *> Expressions;
 
 CppiaExpr *createArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *inThisExpr,
                               String inField, Expressions &ioExpressions );
+CppiaExpr *createStringBuiltin(CppiaExpr *src, CppiaExpr *inThisExpr, String field, Expressions &ioExpressions );
 
 template<typename T>
 inline T &runValue(T& outValue, CppiaCtx *ctx, CppiaExpr *expr)

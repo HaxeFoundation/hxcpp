@@ -161,14 +161,14 @@ void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunction
 
 static int sTypeSize[] = { 0, 0, sizeof(hx::Object *), sizeof(String), sizeof(Float), sizeof(int) };
 
-void cppiaClassMark(CppiaClass *inClass,hx::MarkContext *__inCtx);
-void cppiaClassVisit(CppiaClass *inClass,hx::VisitContext *__inCtx);
+void cppiaClassMark(CppiaClassInfo *inClass,hx::MarkContext *__inCtx);
+void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx);
 
 struct TypeData
 {
    String           name;
    Class            haxeClass;
-   CppiaClass       *cppiaClass;
+   CppiaClassInfo       *cppiaClass;
    ExprType         expressionType;
    ScriptRegistered *haxeBase;
    ScriptRegisteredIntferface *interfaceBase;
@@ -219,12 +219,12 @@ struct CppiaData
 {
    Array< String > strings;
    std::vector< TypeData * > types;
-   std::vector< CppiaClass * > classes;
+   std::vector< CppiaClassInfo * > classes;
    std::vector< CppiaExpr * > markable;
    CppiaExpr   *main;
 
    StackLayout *layout;
-   CppiaClass  *linkingClass;
+   CppiaClassInfo  *linkingClass;
 
    CppiaData()
    {
@@ -233,7 +233,7 @@ struct CppiaData
       strings = Array_obj<String>::__new(0,0);
    }
 
-   //CppiaClass *findClass(String inName);
+   //CppiaClassInfo *findClass(String inName);
 
    ~CppiaData();
 
@@ -709,6 +709,8 @@ struct CppiaEnumConstructor
    int              index;
    String           name;
 
+   // TODO mark/link
+
    CppiaEnumConstructor(CppiaData &inData, CppiaStream &inStream)
    {
       nameId = inStream.getInt();
@@ -733,8 +735,11 @@ struct CppiaEnumConstructor
 
 
 void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Expressions &inArgs );
+hx::Object *runFunExprDynamic(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
 
-struct CppiaClass
+Class_obj *createCppiaClass(CppiaClassInfo *);
+
+struct CppiaClassInfo
 {
    CppiaData &cppia;
    std::vector<int> implements;
@@ -748,6 +753,7 @@ struct CppiaClass
    void      **vtable;
    std::string name;
    std::map<std::string, void **> interfaceVTables;
+   Class     mClass;
 
    ScriptRegistered *haxeBase;
 
@@ -761,7 +767,7 @@ struct CppiaClass
 
    CppiaFunction *newFunc;
 
-   CppiaClass(CppiaData &inCppia) : cppia(inCppia)
+   CppiaClassInfo(CppiaData &inCppia) : cppia(inCppia)
    {
       isLinked = false;
       haxeBase = 0;
@@ -771,17 +777,39 @@ struct CppiaClass
       typeId = 0;
       vtable = 0;
       type = 0;
+      mClass.mPtr = 0;
    }
 
-   hx::Object *createInstance(CppiaCtx *ctx,Expressions &inArgs)
+   hx::Object *createInstance(CppiaCtx *ctx,Expressions &inArgs, bool inCallNew = true)
    {
       hx::Object *obj = haxeBase->factory(vtable,extraData);
 
-      if (newFunc)
+      if (newFunc && inCallNew)
          runFunExpr(ctx, newFunc->funExpr, obj, inArgs );
 
       return obj;
    }
+
+   hx::Object *createInstance(CppiaCtx *ctx,Array<Dynamic> &inArgs)
+   {
+      hx::Object *obj = haxeBase->factory(vtable,extraData);
+
+      if (newFunc)
+         runFunExprDynamic(ctx, newFunc->funExpr, obj, inArgs );
+
+      return obj;
+   }
+
+   int getEnumIndex(String inName)
+   {
+      for(int i=0;i<enumConstructors.size();i++)
+        if (enumConstructors[i]->name==inName)
+           return i;
+
+      throw Dynamic(HX_CSTRING("Bad enum index"));
+      return 0;
+   }
+
 
    CppiaExpr *findFunction(bool inStatic,int inId)
    {
@@ -841,6 +869,7 @@ struct CppiaClass
 
    void mark(hx::MarkContext *__inCtx)
    {
+      HX_MARK_MEMBER(mClass);
       for(int i=0;i<enumConstructors.size();i++)
       {
          HX_MARK_MEMBER(enumConstructors[i]->value);
@@ -849,6 +878,7 @@ struct CppiaClass
    }
    void visit(hx::VisitContext *__inCtx)
    {
+      HX_VISIT_MEMBER(mClass);
       for(int i=0;i<enumConstructors.size();i++)
       {
          HX_VISIT_MEMBER(enumConstructors[i]->value);
@@ -874,6 +904,7 @@ struct CppiaClass
 
        typeId = inStream.getInt();
        cppia.types[typeId]->cppiaClass = this;
+       mClass.mPtr = createCppiaClass(this);
 
        superId = isEnum ? 0 : inStream.getInt();
        int implementCount = isEnum ? 0 : inStream.getInt();
@@ -941,7 +972,7 @@ struct CppiaClass
             
       }
 
-      CppiaClass *cls = cppia.types[inTypeId]->cppiaClass;
+      CppiaClassInfo *cls = cppia.types[inTypeId]->cppiaClass;
       if (!cls && !interface)
          throw "vtable for unknown class";
 
@@ -972,7 +1003,7 @@ struct CppiaClass
 
       type = cppia.types[typeId];
       TypeData *superType = superId ? cppia.types[ superId ] : 0;
-      CppiaClass  *cppiaSuper = superType ? superType->cppiaClass : 0;
+      CppiaClassInfo  *cppiaSuper = superType ? superType->cppiaClass : 0;
       // Link super first
       if (superType && superType->cppiaClass)
          superType->cppiaClass->linkTypes();
@@ -1139,16 +1170,68 @@ struct CppiaClass
    }
 };
 
-void cppiaClassMark(CppiaClass *inClass,hx::MarkContext *__inCtx)
+void cppiaClassMark(CppiaClassInfo *inClass,hx::MarkContext *__inCtx)
 {
    inClass->mark(__inCtx);
 }
-void cppiaClassVisit(CppiaClass *inClass,hx::VisitContext *__inCtx)
+void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
 {
    inClass->visit(__inCtx);
 }
 
 
+class CppiaClass : public Class_obj
+{
+public:
+   CppiaClassInfo *info;
+
+   CppiaClass(CppiaClassInfo *inInfo)
+   {
+      info = inInfo;
+      mName = String(inInfo->name.c_str(), inInfo->name.length()).dup();
+
+      // TODO mSuper
+      //Array<String>      mStatics;
+      //Array<String>      mMembers;
+   }
+
+   Dynamic ConstructEmpty()
+   {
+      if (info->isEnum)
+         return Dynamic();
+
+      Expressions none;
+      return info->createInstance(CppiaCtx::getCurrent(),none,false);
+   } 
+
+   Dynamic ConstructArgs(hx::DynamicArray inArgs)
+   {
+      return info->createInstance(CppiaCtx::getCurrent(),inArgs);
+   }
+
+   bool __IsEnum() { return info->isEnum; }
+
+   Dynamic ConstructEnum(String inName,hx::DynamicArray inArgs)
+   {
+      if (!info->isEnum)
+         return Dynamic();
+
+      int index = info->getEnumIndex(inName);
+	   return info->enumConstructors[index]->create(inArgs);
+   }
+
+/*
+   Dynamic __Field(const String &inString ,bool inCallProp);
+
+   Dynamic __SetField(const String &inString,const Dynamic &inValue ,bool inCallProp);
+
+   bool __HasField(const String &inString);
+   bool VCanCast(hx::Object *inPtr) { return false; }
+*/
+};
+
+
+Class_obj *createCppiaClass(CppiaClassInfo *inInfo) { return new CppiaClass(inInfo); }
 
 hx::Object *createClosure(CppiaCtx *ctx, struct FunExpr *inFunction);
 
@@ -1261,6 +1344,66 @@ struct FunExpr : public CppiaExpr
          }
       }
    }
+
+
+
+   void pushArgsDynamic(CppiaCtx *ctx, hx::Object *inThis, Array<Dynamic> &inArgs)
+   {
+      if (argCount!=inArgs->length)
+      {
+         printf("Arg count mismatch?\n");
+         return;
+      }
+
+      ctx->push( inThis );
+
+      for(int a=0;a<argCount;a++)
+      {
+         CppiaStackVar &var = args[a];
+         // TODO capture
+         if (hasDefault[a])
+         {
+            hx::Object *obj = inArgs[a].mPtr;
+            switch(var.expressionType)
+            {
+               case etInt:
+                  ctx->pushInt( obj ? obj->__ToInt() : initVals[a].ival );
+                  break;
+               case etFloat:
+                  ctx->pushFloat( (Float)(obj ? obj->__ToDouble() : initVals[a].dval) );
+                  break;
+               /* todo - default strings.
+               case etString:
+                  ctx.push( obj ? obj->__ToString() : initVals[a].ival );
+                  break;
+               */
+               default:
+                  ctx->pushObject(obj);
+            }
+         }
+         else
+         {
+            switch(var.expressionType)
+            {
+               case etInt:
+                  ctx->pushInt(inArgs[a]);
+                  break;
+               case etFloat:
+                  ctx->pushFloat(inArgs[a]);
+                  break;
+               case etString:
+                  ctx->pushString(inArgs[a]);
+                  break;
+               default:
+                  ctx->pushObject(inArgs[a].mPtr);
+            }
+         }
+      }
+   }
+
+
+
+
 
    // Return the closure
    hx::Object *runObject(CppiaCtx *ctx)
@@ -1510,7 +1653,6 @@ hx::Object *createClosure(CppiaCtx *ctx, FunExpr *inFunction)
 
 
 
-
 void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Expressions &inArgs )
 {
    unsigned char *pointer = ctx->pointer;
@@ -1520,6 +1662,23 @@ void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Express
       inFunExpr->runVoid(ctx);
    }
    catch (CppiaExpr *retVal) { }
+}
+
+
+hx::Object *runFunExprDynamic(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs )
+{
+   unsigned char *pointer = ctx->pointer;
+   ((FunExpr *)inFunExpr)->pushArgsDynamic(ctx, inThis, inArgs);
+   AutoStack save(ctx,pointer);
+   try {
+      inFunExpr->runVoid(ctx);
+   }
+   catch (CppiaExpr *retVal)
+   {
+      if (retVal)
+        return retVal->runObject(ctx);
+   }
+   return 0;
 }
 
 struct BlockExpr : public CppiaExpr
@@ -2228,7 +2387,7 @@ struct CallStatic : public CppiaExpr
          return replace;
       }
 
-      printf("Unknown static call to %s::%s (%d)\n", type->name.__s, field.__s, type->cppiaClass);
+      printf("Unknown static call to %s::%s (%d)\n", type->name.__s, field.__s, type->cppiaClass!=0);
       inData.where(this);
       throw "Bad link";
       return this;
@@ -2451,6 +2610,11 @@ struct CallMember : public CppiaExpr
          }
       }
 
+      if (type->name==HX_CSTRING("String") && !replace)
+      {
+         replace = createStringBuiltin(this, thisExpr, field, args);
+      }
+
 
       if (replace)
       {
@@ -2460,6 +2624,8 @@ struct CallMember : public CppiaExpr
       }
 
       printf("Could not link %s::%s\n", type->name.c_str(), field.__s );
+      inData.where(this);
+      throw "Bad linkage";
 
       return this;
    }
@@ -2489,8 +2655,9 @@ struct ClassOfExpr : public CppiaExprWithValue
    {
       TypeData *type = inData.types[typeId];
       if (type->cppiaClass)
-         throw "TODO: class class";
-      value.mPtr = type->haxeClass.mPtr;
+         value.mPtr = type->cppiaClass->mClass.mPtr;
+      else
+         value.mPtr = type->haxeClass.mPtr;
       return CppiaExprWithValue::link(inData);
    }
 };
@@ -4702,7 +4869,7 @@ void CppiaData::link()
 }
 
 /*
-CppiaClass *CppiaData::findClass(String inName)
+CppiaClassInfo *CppiaData::findClass(String inName)
 {
    for(int i=0;i<classes.size();i++)
       if (strings[classes[i]->nameId] == inName)
@@ -4762,7 +4929,7 @@ bool LoadCppia(String inValue)
       cppia.classes.resize(classCount);
       for(int c=0;c<classCount;c++)
       {
-         cppia.classes[c] = new CppiaClass(cppia);
+         cppia.classes[c] = new CppiaClassInfo(cppia);
          cppia.classes[c]->load(stream);
       }
 
