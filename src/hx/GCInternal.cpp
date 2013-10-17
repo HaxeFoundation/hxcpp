@@ -947,6 +947,22 @@ void RunFinalizers()
          // what about the reference?
          hx::Object *r = ref->mRef.mPtr;
          unsigned char mark = ((unsigned char *)r)[ENDIAN_MARK_ID_BYTE];
+
+         // Special case of member closure - check if the 'this' pointer is still alive
+         if ( mark!=gByteMarkID && r->__GetType()==vtFunction)
+         {
+            hx::Object *thiz = (hx::Object *)r->__GetHandle();
+            if (thiz)
+            {
+               mark = ((unsigned char *)thiz)[ENDIAN_MARK_ID_BYTE];
+               if (mark==gByteMarkID)
+               {
+                  // The object is still alive, so mark the closure and continue
+                  MarkAlloc(r,0);
+               }
+            }
+         }
+
          if ( mark!=gByteMarkID )
          {
             ref->mRef.mPtr = 0;
