@@ -47,6 +47,8 @@ struct ScriptFunction
    StackExecute execute;
    const char   *signature;
 };
+struct ScriptCallable;
+
 #endif
 
 
@@ -123,6 +125,7 @@ public:
 
    #ifdef HXCPP_SCRIPTABLE
    virtual void **__GetScriptVTable() { return 0; }
+   virtual hx::ScriptCallable *__GetScriptCallable() { return 0; }
    static hx::ScriptFunction __script_construct;
    #endif
 

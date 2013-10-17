@@ -257,6 +257,7 @@ enum VarLocation
    locObj,
    locThis,
    locStack,
+   locAbsolute,
 };
 
 struct CppiaStackVar
@@ -501,6 +502,7 @@ struct CppiaBoolExpr : public CppiaIntExpr
 
 
 CppiaExpr *createCppiaExpr(CppiaStream &inStream);
+CppiaExpr *createStaticAccess(ExprType inType, void *inPtr);
 
 static void ReadExpressions(Expressions &outExpressions, CppiaStream &stream,int inN=-1)
 {
@@ -588,6 +590,12 @@ struct CppiaVar
    int       typeId;
    int       offset;
    FieldStorage storeType;
+
+   CppiaExpr *access;
+   Dynamic   objVal;
+   int       intVal;
+   Float     floatVal;
+   String    stringVal;
    
 
    CppiaVar(CppiaData *inCppia,bool inIsStatic) :
@@ -598,7 +606,12 @@ struct CppiaVar
       typeId = 0;
       offset = 0;
       type = 0;
+      objVal.mPtr = 0;
+      intVal = 0;
+      floatVal = 0;
+      stringVal = 0;
       storeType = fsUnknown;
+      access = 0;
    }
 
    void load(CppiaStream &stream)
@@ -607,6 +620,20 @@ struct CppiaVar
       writeAccess = getAccess(stream);
       nameId = stream.getInt();
       typeId = stream.getInt();
+   }
+
+   void link(CppiaData &cppia)
+   {
+      switch(type->expressionType)
+      {
+         case etInt: access = createStaticAccess(etInt,&intVal); break;
+         case etFloat: access = createStaticAccess(etFloat,&floatVal); break;
+         case etString: access = createStaticAccess(etString,&stringVal); break;
+         case etObject: access = createStaticAccess(etObject,&objVal); break;
+         case etVoid:
+         case etNull:
+            break;
+      }
    }
 
    void link(CppiaData &cppia, int &ioOffset)
@@ -1074,6 +1101,13 @@ struct CppiaClassInfo
          extraData = offset - d0;
       }
       printf("  script member vars size = %d\n", extraData);
+ 
+      for(int i=0;i<staticVars.size();i++)
+      {
+         printf("   link static var %s\n", cppia.identStr(staticVars[i]->nameId));
+         staticVars[i]->link(cppia);
+      }
+      
 
       // Combine vtable positions...
       printf("  format haxe callable vtable....\n");
@@ -1233,11 +1267,11 @@ public:
 
 Class_obj *createCppiaClass(CppiaClassInfo *inInfo) { return new CppiaClass(inInfo); }
 
-hx::Object *createClosure(CppiaCtx *ctx, struct FunExpr *inFunction);
+hx::Object *createClosure(CppiaCtx *ctx, struct ScriptCallable *inFunction);
 
 static String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
 
-struct FunExpr : public CppiaExpr
+struct ScriptCallable : public CppiaExpr
 {
    int returnType;
    int argCount;
@@ -1251,7 +1285,7 @@ struct FunExpr : public CppiaExpr
    std::vector<CppiaStackVar *> captureVars;
    int                          captureSize;
 
-   FunExpr(CppiaStream &stream)
+   ScriptCallable(CppiaStream &stream)
    {
       body = 0;
       stackSize = 0;
@@ -1412,7 +1446,7 @@ struct FunExpr : public CppiaExpr
 
    }
 
-   const char *getName() { return "FunExpr"; }
+   const char *getName() { return "ScriptCallable"; }
    String runString(CppiaCtx *ctx) { return HX_CSTRING("#function"); }
 
    // Run the actual function
@@ -1483,9 +1517,9 @@ public:
      { return hx::InternalNew(inSize + inExtraDataSize,true); }
    inline void operator delete(void *,int) {}
 
-   FunExpr *function;
+   ScriptCallable *function;
 
-   CppiaClosure(CppiaCtx *ctx, FunExpr *inFunction)
+   CppiaClosure(CppiaCtx *ctx, ScriptCallable *inFunction)
    {
       function = inFunction;
 
@@ -1502,7 +1536,7 @@ public:
    }
 
    // Create member closure...
-   CppiaClosure(hx::Object *inThis, FunExpr *inFunction)
+   CppiaClosure(hx::Object *inThis, ScriptCallable *inFunction)
    {
       function = inFunction;
 
@@ -1646,7 +1680,7 @@ public:
 };
 
 
-hx::Object *createClosure(CppiaCtx *ctx, FunExpr *inFunction)
+hx::Object *createClosure(CppiaCtx *ctx, ScriptCallable *inFunction)
 {
    return new (inFunction->captureSize) CppiaClosure(ctx,inFunction);
 }
@@ -1656,7 +1690,7 @@ hx::Object *createClosure(CppiaCtx *ctx, FunExpr *inFunction)
 void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Expressions &inArgs )
 {
    unsigned char *pointer = ctx->pointer;
-   ((FunExpr *)inFunExpr)->pushArgs(ctx, inThis, inArgs);
+   ((ScriptCallable *)inFunExpr)->pushArgs(ctx, inThis, inArgs);
    AutoStack save(ctx,pointer);
    try {
       inFunExpr->runVoid(ctx);
@@ -1668,7 +1702,7 @@ void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Express
 hx::Object *runFunExprDynamic(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs )
 {
    unsigned char *pointer = ctx->pointer;
-   ((FunExpr *)inFunExpr)->pushArgsDynamic(ctx, inThis, inArgs);
+   ((ScriptCallable *)inFunExpr)->pushArgsDynamic(ctx, inThis, inArgs);
    AutoStack save(ctx,pointer);
    try {
       inFunExpr->runVoid(ctx);
@@ -1831,10 +1865,10 @@ struct CallFunExpr : public CppiaExpr
 {
    Expressions args;
    CppiaExpr   *thisExpr;
-   FunExpr     *function;
+   ScriptCallable     *function;
    ExprType    returnType;
 
-   CallFunExpr(const CppiaExpr *inSrc, CppiaExpr *inThisExpr, FunExpr *inFunction, Expressions &ioArgs )
+   CallFunExpr(const CppiaExpr *inSrc, CppiaExpr *inThisExpr, ScriptCallable *inFunction, Expressions &ioArgs )
       : CppiaExpr(inSrc)
    {
       args.swap(ioArgs);
@@ -1846,7 +1880,7 @@ struct CallFunExpr : public CppiaExpr
    {
       LinkExpressions(args,inData);
       // Should already be linked
-      //function = (FunExpr *)function->link(inData);
+      //function = (ScriptCallable *)function->link(inData);
       if (thisExpr)
          thisExpr = thisExpr->link(inData);
       returnType = inData.types[ function->returnType ]->expressionType;
@@ -2356,7 +2390,7 @@ struct CallStatic : public CppiaExpr
       CppiaExpr *replace = 0;
       if (type->cppiaClass)
       {
-         FunExpr *func = (FunExpr *)type->cppiaClass->findFunction(true,fieldId);
+         ScriptCallable *func = (ScriptCallable *)type->cppiaClass->findFunction(true,fieldId);
          if (!func)
          {
             printf("Could not find static function %s in %s\n", field.__s, type->name.__s);
@@ -2425,7 +2459,7 @@ struct CallMemberVTable : public CppiaExpr
 
    #define CALL_VTABLE_SETUP \
       hx::Object *thisVal = thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(); \
-      FunExpr **vtable = (FunExpr **)thisVal->__GetScriptVTable(); \
+      ScriptCallable **vtable = (ScriptCallable **)thisVal->__GetScriptVTable(); \
       if (isInterfaceCall) thisVal = thisVal->__GetRealObject(); \
       unsigned char *pointer = ctx->pointer; \
       vtable[slot]->pushArgs(ctx, thisVal, args); \
@@ -2537,7 +2571,7 @@ struct CallMember : public CppiaExpr
       if (type->cppiaClass)
       {
          printf("Using cppia super %p %p\n", type->cppiaClass->newFunc, type->cppiaClass->newFunc->funExpr);
-         CppiaExpr *replace = new CallFunExpr( this, 0, (FunExpr*)type->cppiaClass->newFunc->funExpr, args );
+         CppiaExpr *replace = new CallFunExpr( this, 0, (ScriptCallable*)type->cppiaClass->newFunc->funExpr, args );
          replace->link(inData);
          delete this;
          return replace;
@@ -2847,8 +2881,8 @@ struct GetFieldByName : public CppiaDynamicExpr
          if (isInterface)
             instance = instance->__GetRealObject();
  
-         FunExpr **vtable = (FunExpr **)instance->__GetScriptVTable();
-         FunExpr *func = vtable[vtableSlot];
+         ScriptCallable **vtable = (ScriptCallable **)instance->__GetScriptVTable();
+         ScriptCallable *func = vtable[vtableSlot];
          return new (sizeof(hx::Object *)) CppiaClosure(instance, func);
       }
       return instance->__Field(name,true).mPtr;
@@ -2884,14 +2918,16 @@ struct GetFieldByName : public CppiaDynamicExpr
 template<typename T, int REFMODE> 
 struct MemReference : public CppiaExpr
 {
-   int offset;
+   int  offset;
+   T *pointer;
    CppiaExpr *object;
 
    #define MEMGETVAL \
      *(T *)( \
-         ( REFMODE==locObj ? (char *)object->runObject(ctx) : \
-           REFMODE==locThis ?(char *)ctx->getThis() : \
-                             (char *)ctx->frame \
+         ( REFMODE==locObj      ?(char *)object->runObject(ctx) : \
+           REFMODE==locAbsolute ?(char *)pointer : \
+           REFMODE==locThis     ?(char *)ctx->getThis() : \
+                                 (char *)ctx->frame \
          ) + offset )
 
    MemReference(const CppiaExpr *inSrc, int inOffset, CppiaExpr *inExpr=0)
@@ -2899,7 +2935,16 @@ struct MemReference : public CppiaExpr
    {
       object = inExpr;
       offset = inOffset;
+      pointer = 0;
    }
+   MemReference(CppiaExpr *inSrc, T *inPointer)
+      : CppiaExpr(inSrc)
+   {
+      object = 0;
+      offset = 0;
+      pointer = inPointer;
+   }
+ 
    ExprType getType()
    {
       return (ExprType) ExprTypeOf<T>::value;
@@ -2925,10 +2970,26 @@ struct MemReference : public CppiaExpr
    CppiaExpr  *makeCrement(CrementOp inOp);
 };
 
+CppiaExpr *createStaticAccess(ExprType inType, void *inPtr)
+{
+   switch(inType)
+   {
+      case etInt : return new MemReference<int,locAbsolute>(0, (int *)inPtr );
+      case etFloat : return new MemReference<Float,locAbsolute>(0, (Float *)inPtr );
+      case etString : return new MemReference<String,locAbsolute>(0, (String *)inPtr );
+      case etObject : return new MemReference<hx::Object *,locAbsolute>(0, (hx::Object **)inPtr );
+      default:
+         return 0;
+   }
+}
+
+
+
 template<typename T, int REFMODE, typename Assign> 
 struct MemReferenceSetter : public CppiaExpr
 {
    int offset;
+   T         *pointer;
    CppiaExpr *object;
    CppiaExpr *value;
 
@@ -2936,6 +2997,7 @@ struct MemReferenceSetter : public CppiaExpr
    {
       offset = inSrc->offset;
       object = inSrc->object;
+      pointer = inSrc->pointer;
       value = inValue;
    }
    ExprType getType()
@@ -3007,12 +3069,14 @@ template<typename T, int REFMODE,typename CREMENT>
 struct MemReferenceCrement : public CppiaExpr
 {
    int offset;
+   T   *pointer;
    CppiaExpr *object;
 
    MemReferenceCrement(MemReference<T,REFMODE> *inSrc) : CppiaExpr(inSrc)
    {
       offset = inSrc->offset;
       object = inSrc->object;
+      pointer = inSrc->pointer;
    }
    ExprType getType()
    {
@@ -4512,7 +4576,7 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
 
    CppiaExpr *result = 0;
    if (tok=="FUN")
-      result = new FunExpr(stream);
+      result = new ScriptCallable(stream);
    else if (tok=="BLOCK")
       result = new BlockExpr(stream);
    else if (tok=="IFELSE")
