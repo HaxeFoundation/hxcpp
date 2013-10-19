@@ -199,6 +199,9 @@ typedef hx::Object * (*ScriptableInterfaceFactory)(void **inVTable,::hx::Object 
 void ScriptableRegisterClass( String inName, int inBaseSize, ScriptNamedFunction *inFunctions, ScriptableClassFactory inFactory, ScriptFunction inConstruct);
 void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions,const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
 
+::String ScriptableToString(void *);
+Class ScriptableGetClass(void *);
+int ScriptableGetType(void *);
 void ScriptableMark(void *, hx::Object *, HX_MARK_PARAMS);
 void ScriptableVisit(void *, hx::Object *, HX_VISIT_PARAMS);
 bool ScriptableField(hx::Object *, const ::String &,bool inCallProp,Dynamic &outResult);
@@ -220,7 +223,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
     hx::ScriptableRegisterInterface( HX_CSTRING(name), __scriptableFunctions, &typeid(class), class##__scriptable::__script_create )
 
 #define HX_SCRIPTABLE_REGISTER_CLASS(name,class) \
-    hx::ScriptableRegisterClass( HX_CSTRING(name), (int)sizeof(class##__scriptable), __scriptableFunctions, class##__scriptable::__script_create, class##__scriptable::__script_construct )
+   hx::ScriptableRegisterClass( HX_CSTRING(name), (int)sizeof(class##__scriptable), __scriptableFunctions, class##__scriptable::__script_create, class##__scriptable::__script_construct )
 
 
 #define HX_DEFINE_SCRIPTABLE(ARG_LIST) \
@@ -237,8 +240,11 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
    return result; } \
    void ** __GetScriptVTable() { return __scriptVTable; } \
    ::String toString() {  if (__scriptVTable[0] ) \
-      { hx::CppiaCtx *ctx = hx::CppiaCtx::getCurrent(); hx::AutoStack a(ctx); ctx->pushObject(this); return ctx->runString(__scriptVTable[0]); } \
-      else return __superString::toString(); }
+     { hx::CppiaCtx *ctx = hx::CppiaCtx::getCurrent(); hx::AutoStack a(ctx); ctx->pushObject(this); return ctx->runString(__scriptVTable[0]); } \
+      else return __superString::toString(); } \
+   ::String __ToString() const { return hx::ScriptableToString(__scriptVTable[-1]); } \
+   Class __GetClass() const { return hx::ScriptableGetClass(__scriptVTable[-1]); } \
+   int __GetType() const { return hx::ScriptableGetType(__scriptVTable[-1]); } \
 
 
 #define HX_DEFINE_SCRIPTABLE_INTERFACE \

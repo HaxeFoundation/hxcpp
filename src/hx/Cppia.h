@@ -10,15 +10,19 @@
 namespace hx
 {
 
+struct CppiaData;
+
 struct CppiaStream
 {
+   CppiaData  *cppiaData;
    const char *data;
    const char *max;
    int line;
    int pos;
 
-   CppiaStream(const char *inData, int inLen)
+   CppiaStream(CppiaData *inCppiaData,const char *inData, int inLen)
    {
+      cppiaData = inCppiaData;
       data = inData;
       max = inData + inLen;
       line = 1;
@@ -102,7 +106,6 @@ struct CppiaStream
 
 struct TypeData;
 struct CppiaClassInfo;
-struct CppiaData;
 struct CppiaExpr;
 class  ScriptRegistered;
 
@@ -159,22 +162,25 @@ enum AssignOp
 
 struct CppiaExpr
 {
-   int fileId;
    int line;
+   const char *filename;
+   const char *className;
+   const char *functionName;
    int haxeTypeId;
 
-   CppiaExpr() : fileId(0), line(0), haxeTypeId(0) {}
-   CppiaExpr(const CppiaExpr *inSrc)
+
+   CppiaExpr() : line(0), filename(0), className(0), functionName(0)
+   {
+   }
+   CppiaExpr(const CppiaExpr *inSrc) : line(0), filename(0), className(0), functionName(0)
    {
       if (inSrc)
       {
-         fileId = inSrc->fileId;
          line = inSrc->line;
+         filename = inSrc->filename;
+         className = inSrc->className;
+         functionName = inSrc->functionName;
          haxeTypeId = inSrc->haxeTypeId;
-      }
-      else
-      {
-         fileId = line = haxeTypeId = 0;
       }
    }
 
@@ -203,6 +209,16 @@ struct CppiaExpr
    virtual CppiaExpr   *makeCrement(CrementOp inOp) { return 0; }
 
 };
+
+#define CPPIA_STACK_FRAME(expr) \
+ HX_STACK_FRAME(expr->className, expr->functionName, 0, expr->className, expr->filename, expr->line, 0);
+
+
+#ifdef HXCPP_CHECK_POINTER
+   #define CPPIA_CHECK(obj) if (!obj) NullReference("Object", false);
+#else
+   #define CPPIA_CHECK(obj)
+#endif
 
 typedef std::vector<CppiaExpr *> Expressions;
 
@@ -272,8 +288,8 @@ inline static String ValToString( const int &v ) { return String(v); }
 inline static String ValToString( const unsigned char &v ) { return String(v); }
 inline static String ValToString( const Float &v ) { return String(v); }
 inline static String ValToString( const String &v ) { return v; }
-inline static String ValToString( const hx::Object *v ) { return v->__ToString(); }
-inline static String ValToString( const Dynamic &v ) { return v->__ToString(); }
+inline static String ValToString( const hx::Object *v ) { return v ? ((hx::Object *)v)->toString() : HX_CSTRING("null"); }
+inline static String ValToString( const Dynamic &v ) { return v.mPtr ? v.mPtr->toString() : HX_CSTRING("null"); }
 
 template<typename T>
 struct ExprTypeOf { enum { value = etObject }; };
