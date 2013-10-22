@@ -49,6 +49,9 @@ public:
    static Dynamic floor_dyn();
    static Dynamic ceil_dyn();
    static Dynamic round_dyn();
+   static Dynamic ffloor_dyn();
+   static Dynamic fceil_dyn();
+   static Dynamic fround_dyn();
    static Dynamic random_dyn();
    static Dynamic sqrt_dyn();
    static Dynamic cos_dyn();
