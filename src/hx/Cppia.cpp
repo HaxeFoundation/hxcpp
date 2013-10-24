@@ -21,6 +21,7 @@ static CppiaCtx *sCurrent = 0;
 struct LoopBreak { };
 struct LoopContinue { };
 
+static bool isNumeric(ExprType t) { return t==etInt || t==etFloat; }
 
 CppiaCtx::CppiaCtx()
 {
@@ -267,11 +268,7 @@ struct CppiaData
    }
 
 
-   void where(CppiaExpr *e)
-   {
-      printf(" %s at %s:%d %s\n", e->getName(), e->filename, e->line, e->functionName);
-   }
-
+   void where(CppiaExpr *e);
    void mark(hx::MarkContext *ctx);
    void visit(hx::VisitContext *ctx);
 
@@ -580,6 +577,8 @@ struct CppiaFunction
 
    void setVTableSlot(int inSlot) { vtableSlot = inSlot; }
 
+   String getName() { return cppia.strings[nameId]; }
+
    void load(CppiaStream &stream,bool inExpectBody)
    {
       nameId = stream.getInt();
@@ -623,6 +622,7 @@ struct CppiaVar
    int       nameId;
    int       typeId;
    int       offset;
+   String    name;
    FieldStorage storeType;
    CppiaFunction *dynamicFunction;
    ExprType   exprType;
@@ -782,11 +782,13 @@ struct CppiaVar
    {
       HX_MARK_MEMBER(stringVal);
       HX_MARK_MEMBER(objVal);
+      HX_MARK_MEMBER(name);
    }
    void visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(stringVal);
       HX_VISIT_MEMBER(objVal);
+      HX_VISIT_MEMBER(name);
    }
 };
 
@@ -884,6 +886,7 @@ void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Express
 hx::Object *runFunExprDynamic(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
 
 Class_obj *createCppiaClass(CppiaClassInfo *);
+void  linkCppiaClass(Class_obj *inClass, CppiaData &cppia, String inName);
 
 struct CppiaClassInfo
 {
@@ -985,7 +988,30 @@ struct CppiaClassInfo
       return 0;
    }
 
+    CppiaExpr *findMemberFunction(const String &inName)
+   {
+      std::vector<CppiaFunction *> &funcs = memberFunctions;
+      for(int i=0;i<funcs.size();i++)
+      {
+         if ( cppia.strings[funcs[i]->nameId] == inName)
+            return funcs[i]->funExpr;
+      }
+      return 0;
+   }
 
+
+
+   bool getField(hx::Object *inThis, String inName, bool inCallProp, Dynamic &outValue)
+   {
+      CppiaExpr *closure = findMemberFunction(inName);
+      if (closure)
+      {
+         outValue.mPtr = createMemberClosure(inThis,(ScriptCallable*)closure);
+         return true;
+      }
+      printf("Field not found %s\n", inName.__s);
+      return false;
+   }
 
    int findFunctionSlot(int inName)
    {
@@ -1202,6 +1228,19 @@ struct CppiaClassInfo
       return result;
    }
 
+   Class *getSuperClass()
+   {
+      if (!superId)
+         return 0;
+
+      TypeData *superType = cppia.types[ superId ];
+      if (!superType)
+         throw "Unknown super type!";
+      if (superType->cppiaClass)
+         return &superType->cppiaClass->mClass;
+      return &superType->haxeClass;
+   }
+
    void linkTypes()
    {
       if (isLinked)
@@ -1228,6 +1267,9 @@ struct CppiaClassInfo
          printf("extends script '%s'\n", superType->name.__s);
       else
          printf("extends haxe '%s'\n", superType->name.__s);
+
+      // Link class before we combine the function list...
+      linkCppiaClass(mClass.mPtr,cppia,type->name);
 
       // Combine member vars ...
       if (cppiaSuper)
@@ -1298,7 +1340,7 @@ struct CppiaClassInfo
       
 
       // Combine vtable positions...
-      printf("  format haxe callable vtable (%d)....\n", memberFunctions.size());
+      printf("  format haxe callable vtable (%lu)....\n", memberFunctions.size());
       std::vector<std::string> table;
       if (haxeBase)
          haxeBase->addVtableEntries(table);
@@ -1450,10 +1492,26 @@ public:
    CppiaClass(CppiaClassInfo *inInfo)
    {
       info = inInfo;
+   }
 
-      // TODO mSuper
-      //mStatics = Array_obj<String>::__new(0,0);
-      //mMembers = Array_obj<String>::__new(0,0);
+   void linkClass(CppiaData &inData,String inName)
+   {
+      mName = inName;
+      mSuper = info->getSuperClass();
+      mStatics = Array_obj<String>::__new(0,0);
+      mMembers = Array_obj<String>::__new(0,0);
+      /*
+      for(int i=0;i<info->memberVars.size();i++)
+      {
+         CppiaVar *var = info->memberVars[i];
+         mMembers->push( var->name );
+      }
+      */
+      for(int i=0;i<info->memberFunctions.size();i++)
+      {
+         CppiaFunction *func = info->memberFunctions[i];
+         mMembers->push( func->getName() );
+      }
    }
 
    Dynamic ConstructEmpty()
@@ -1481,18 +1539,24 @@ public:
 	   return info->enumConstructors[index]->create(inArgs);
    }
 
+   Dynamic __Field(const String &inString ,bool inCallProp)
+   {
+      printf("Get Field %s\n", inString.__s);
+      return null();
+   }
+
 /*
-   Dynamic __Field(const String &inString ,bool inCallProp);
-
    Dynamic __SetField(const String &inString,const Dynamic &inValue ,bool inCallProp);
-
    bool __HasField(const String &inString);
    bool VCanCast(hx::Object *inPtr) { return false; }
 */
 };
 
-
 Class_obj *createCppiaClass(CppiaClassInfo *inInfo) { return new CppiaClass(inInfo); }
+void  linkCppiaClass(Class_obj *inClass, CppiaData &cppia, String inName)
+{
+   ((CppiaClass *)inClass)->linkClass(cppia,inName);
+}
 
 
 static String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
@@ -1565,7 +1629,7 @@ struct ScriptCallable : public CppiaExpr
    {
       if (argCount!=inArgs.size())
       {
-         printf("Arg count mismatch %d!=%d?\n", argCount, inArgs.size());
+         printf("Arg count mismatch %d!=%lu?\n", argCount, inArgs.size());
          return;
       }
 
@@ -1928,6 +1992,13 @@ hx::Object *createClosure(CppiaCtx *ctx, ScriptCallable *inFunction)
 hx::Object *createMemberClosure(hx::Object *inThis, ScriptCallable *inFunction)
 {
    return new (sizeof(hx::Object *)) CppiaClosure(inThis,inFunction);
+}
+
+
+void CppiaData::where(CppiaExpr *e)
+{
+   printf(" in %s::%p\n", linkingClass->name.c_str(), layout);
+   printf("   %s at %s:%d %s\n", e->getName(), e->filename, e->line, e->functionName);
 }
 
 
@@ -2399,20 +2470,83 @@ class CppiaInterface : public hx::Interface
    HX_DEFINE_SCRIPTABLE_INTERFACE
 };
 
+enum CastOp
+{
+   castNOP,
+   castDataArray,
+   castDynArray,
+};
+
 struct CastExpr : public CppiaExpr
 {
    CppiaExpr *value;
-   CastExpr(CppiaStream &stream)
+   CastOp  op;
+   int     typeId;
+   ArrayType arrayType;
+
+   CastExpr(CppiaStream &stream,CastOp inOp)
    {
+      op = inOp;
+      typeId = 0;
+      if (op==castDataArray)
+         typeId = stream.getInt();
+
       value = createCppiaExpr(stream);
    }
 
+   template<typename T>
+   hx::Object *convert(hx::Object *obj)
+   {
+      int n = obj->__length();
+      Array<T> result = Array_obj<T>::__new(n,n);
+      for(int i=0;i<n;i++)
+         result[i] = obj->__GetItem(i);
+      return result.mPtr;
+   }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      hx::Object *obj = value->runObject(ctx);
+      if (!obj)
+         return 0;
+
+      switch(arrayType)
+      {
+         case arrBool:         return convert<bool>(obj);
+         case arrUnsignedChar: return convert<unsigned char>(obj);
+         case arrInt:          return convert<int>(obj);
+         case arrFloat:        return convert<Float>(obj);
+         case arrString:       return convert<String>(obj);
+         case arrDynamic:      return convert<Dynamic>(obj);
+      }
+      return 0;
+   }
+
    const char *getName() { return "CastExpr"; }
+
    CppiaExpr *link(CppiaData &inData)
    {
-      CppiaExpr *replace = value->link(inData);
-      delete this;
-      return replace;
+      value = value->link(inData);
+
+      if (op==castNOP)
+      {
+         CppiaExpr *replace = value;
+         delete this;
+         return replace;
+      }
+      if (op==castDataArray)
+      {
+         TypeData *t = inData.types[typeId];
+         arrayType = t->arrayType;
+         if (arrayType==arrNotArray)
+         {
+            printf("Cast to %d, %s\n", typeId, t->name.__s);
+            throw "Data cast to non-array";
+         }
+      }
+      else
+         arrayType = arrDynamic;
+      return this;
    }
 };
 
@@ -2422,28 +2556,39 @@ struct ToInterface : public CppiaExpr
    int       toTypeId;
    CppiaExpr *value;
    bool      useNative;
+   bool      array;
    ScriptRegisteredIntferface *interfaceInfo;
    void      **cppiaVTable;
+   TypeData *toType;
 
-   ToInterface(CppiaStream &stream)
+
+   ToInterface(CppiaStream &stream,bool inArray)
    {
       toTypeId = stream.getInt();
-      fromTypeId = stream.getInt();
+      array = inArray;
+      fromTypeId = array ? 0 : stream.getInt();
       value = createCppiaExpr(stream);
       interfaceInfo = 0;
       useNative = false;
       cppiaVTable = 0;
+      toType = 0;
    }
 
-   const char *getName() { return "ToInterface"; }
+   const char *getName() { return array ? "ToInterfaceArray" : "ToInterface"; }
+
    CppiaExpr *link(CppiaData &inData)
    {
-      TypeData *toType = inData.types[toTypeId];
-      TypeData *fromType = inData.types[fromTypeId];
+      toType = inData.types[toTypeId];
+      TypeData *fromType = fromTypeId ? inData.types[fromTypeId] : 0;
+
       if (toType->interfaceBase)
       {
          interfaceInfo = toType->interfaceBase;
-         if (!fromType->cppiaClass)
+         if (!fromType)
+         {
+            useNative = true;
+         }
+         else if (!fromType->cppiaClass)
          {
             printf("native -> native\n");
             useNative = true;
@@ -2454,14 +2599,16 @@ struct ToInterface : public CppiaExpr
             cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->interfaceBase->name);
          }
       }
-      else if (fromType->cppiaClass)
+      else if (fromType && fromType->cppiaClass)
       {
          cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->name.__s);
          if (!cppiaVTable)
            printf("Could not find scripting interface implementation");
       }
       else
-         throw "Can't implement script interface in native code";
+      {
+         // Use dynamic
+      }
       value = value->link(inData);
       return this;
    }
@@ -2469,20 +2616,76 @@ struct ToInterface : public CppiaExpr
    hx::Object *runObject(CppiaCtx *ctx)
    {
       hx::Object *obj = value->runObject(ctx);
+      if (!obj && !array)
+         return 0;
+
       if (interfaceInfo)
       {
          if (cppiaVTable)
+         {
+            if (array)
+            {
+               CPPIA_CHECK(obj);
+               int n = obj->__length();
+               Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
+               for(int i=0;i<n;i++)
+                  result[i] = interfaceInfo->factory(cppiaVTable,obj->__GetItem(i)->__GetRealObject());
+               return result.mPtr;
+            }
             return interfaceInfo->factory(cppiaVTable,obj->__GetRealObject());
+         }
          return obj->__ToInterface(*interfaceInfo->mType);
       }
+
       if (cppiaVTable)
       {
+         if (array)
+         {
+            CPPIA_CHECK(obj);
+            int n = obj->__length();
+            Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
+            for(int i=0;i<n;i++)
+               result[i] = CppiaInterface::__script_create(cppiaVTable,obj->__GetItem(i)->__GetRealObject());
+            return result.mPtr;
+         }
+
          return CppiaInterface::__script_create(cppiaVTable,obj);
       }
 
-      throw "no vtable for interface call";
+      if (array)
+      {
+         CPPIA_CHECK(obj);
+         int n = obj->__length();
+         Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
+         for(int i=0;i<n;i++)
+         {
+            Dynamic o = obj->__GetItem(i)->__GetRealObject();
+            if (o.mPtr)
+            {
+               void **vtable = o->__GetScriptVTable();
+               if (vtable)
+               {
+                  CppiaClassInfo *info = (CppiaClassInfo *)vtable[-1];
+                  void **interfaceVTable = info->getInterfaceVTable(toType->name.__s);
+                  if (interfaceVTable)
+                     result[i] =  CppiaInterface::__script_create(interfaceVTable,o.mPtr);
+               }
+            }
+         }
+         return result.mPtr;
+      }
 
-      return obj;
+      void **vtable = obj->__GetScriptVTable();
+      if (vtable)
+      {
+         CppiaClassInfo *info = (CppiaClassInfo *)vtable[-1];
+         void **interfaceVTable = info->getInterfaceVTable(toType->name.__s);
+         if (!interfaceVTable)
+            return 0;
+         return CppiaInterface::__script_create(interfaceVTable,obj);
+      }
+
+      return 0;
    }
 };
 
@@ -2971,6 +3174,9 @@ struct CallMember : public CppiaExpr
       }
 
       printf("Could not link %s::%s\n", type->name.c_str(), field.__s );
+      printf("%p %p\n", type->cppiaClass, type->haxeBase);
+      if (type->cppiaClass)
+         type->cppiaClass->dump();
       inData.where(this);
       throw "Bad linkage";
 
@@ -3206,7 +3412,7 @@ struct GetFieldByName : public CppiaDynamicExpr
             inData.where(this);
             if (type->cppiaClass)
                type->cppiaClass->dump();
-            printf("Could not link static %s::%s (%d/%p)\n", type->name.c_str(), inData.strings[nameId].__s, nameId );
+            printf("Could not link static %s::%s (%d)\n", type->name.c_str(), inData.strings[nameId].__s, nameId );
             throw "Bad link";
          }
       }
@@ -3817,13 +4023,21 @@ struct DynamicArrayI : public CppiaDynamicExpr
       assign = aoNone;
       crement = coNone;
    }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      object = object->link(inData);
+      index = index->link(inData);
+      return this;
+   }
    hx::Object *runObject(CppiaCtx *ctx)
    {
       hx::Object *obj = object->runObject(ctx);
       CPPIA_CHECK(obj);
       int i = index->runInt(ctx);
       if (crement==coNone && assign==aoNone)
+      {
          return obj->__GetItem(i).mPtr;
+      }
 
       if (crement!=coNone)
       {
@@ -3996,6 +4210,44 @@ struct VarDecl : public CppiaExpr
    }
 };
 
+struct TVars : public CppiaExpr
+{
+   Expressions vars;
+
+   TVars(CppiaStream &stream)
+   {
+      int count = stream.getInt();
+      vars.resize(count);
+      for(int i=0;i<count;i++)
+      {
+         std::string tok = stream.getToken();
+         if (tok=="VARDECL")
+            vars[i] = new VarDecl(stream,false);
+         else if (tok=="VARDECLI")
+            vars[i] = new VarDecl(stream,true);
+         else
+            throw "Bad var decl";
+      }
+   }
+   ExprType getType() { return etVoid; }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      LinkExpressions(vars,inData);
+      return this;
+   }
+   
+   void runVoid(CppiaCtx *ctx)
+   {
+      for(int i=0;i<vars.size();i++)
+         vars[i]->runVoid(ctx);
+   }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      runVoid(ctx);
+      return 0;
+   }
+};
+
 struct ForExpr : public CppiaExpr
 {
    CppiaStackVar var;
@@ -4022,8 +4274,11 @@ struct ForExpr : public CppiaExpr
    void runVoid(CppiaCtx *ctx)
    {
       hx::Object *iterator = init->runObject(ctx);
-      Dynamic  hasNext = iterator->__Field(HX_CSTRING("has_next"),true);
+      CPPIA_CHECK(iterator);
+      Dynamic  hasNext = iterator->__Field(HX_CSTRING("hasNext"),true);
+      CPPIA_CHECK(hasNext.mPtr);
       Dynamic  getNext = iterator->__Field(HX_CSTRING("next"),true);
+      CPPIA_CHECK(getNext.mPtr);
 
       while(hasNext())
       {
@@ -4430,7 +4685,7 @@ struct name : public BinOp \
 
 ARITH_OP(OpMult,*)
 ARITH_OP(OpSub,-)
-ARITH_OP(OpDiv,-)
+ARITH_OP(OpDiv,/)
 
 
 struct ThrowExpr : public CppiaExpr
@@ -4617,7 +4872,7 @@ struct BitShiftL : public BitAnd
 
 
 
-
+template<bool AS_DYNAMIC>
 struct StringAdd : public CppiaExpr
 {
    CppiaExpr *left;
@@ -4631,11 +4886,25 @@ struct StringAdd : public CppiaExpr
    }
    String runString(CppiaCtx *ctx)
    {
-      String lval = left->runString(ctx);
-      return lval + right->runString(ctx);
+      if (AS_DYNAMIC)
+      {
+         Dynamic lval = left->runObject(ctx);
+         return lval + Dynamic(right->runObject(ctx));
+      }
+      else
+      {
+         String lval = left->runString(ctx);
+         return lval + right->runString(ctx);
+      }
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
+      if (AS_DYNAMIC)
+      {
+         Dynamic lval = left->runObject(ctx);
+         return (lval + Dynamic(right->runObject(ctx))).mPtr;
+      }
+ 
       return Dynamic(runString(ctx)).mPtr;
    }
 };
@@ -4683,12 +4952,19 @@ struct OpAdd : public BinOp
    {
       BinOp::link(inData);
 
-      if (left->getType()==etString || right->getType()==etString)
+      if (left->getType()==etString || right->getType()==etString )
       {
-         CppiaExpr *result = new StringAdd(this,left,right);
+         CppiaExpr *result = new StringAdd<false>(this,left,right);
          delete this;
          return result;
       }
+      else if ( !isNumeric(left->getType()) || !isNumeric(right->getType()) )
+      {
+         CppiaExpr *result = new StringAdd<true>(this,left,right);
+         delete this;
+         return result;
+      }
+ 
       return this;
    }
 
@@ -4830,7 +5106,6 @@ struct OpCompareBase : public CppiaBoolExpr
    }
 
    const char *getName() { return "OpCompare"; }
-   bool isNumeric(ExprType t) { return t==etInt || t==etFloat; }
 
    CppiaExpr *link(CppiaData &inData)
    {
@@ -4921,7 +5196,7 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    int fileId = stream.getInt();
    int line = stream.getInt();
    std::string tok = stream.getToken();
-   printf(" expr %s\n", tok.c_str() );
+   //printf(" expr %s\n", tok.c_str() );
 
    CppiaExpr *result = 0;
    if (tok=="FUN")
@@ -4992,10 +5267,8 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
       result = new EnumField(stream,true);
    else if (tok=="NULL")
       result = new NullVal();
-   else if (tok=="VARDECL")
-      result = new VarDecl(stream,false);
-   else if (tok=="VARDECLI")
-      result = new VarDecl(stream,true);
+   else if (tok=="TVARS")
+      result = new TVars(stream);
    else if (tok=="NEW")
       result = new NewExpr(stream);
    else if (tok=="ARRAYI")
@@ -5007,9 +5280,15 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    else if (tok=="OBJDEF")
       result = new ObjectDef(stream);
    else if (tok=="TOINTERFACE")
-      result = new ToInterface(stream);
+      result = new ToInterface(stream,false);
+   else if (tok=="TOINTERFACEARRAY")
+      result = new ToInterface(stream,true);
    else if (tok=="CAST")
-      result = new CastExpr(stream);
+      result = new CastExpr(stream,castNOP);
+   else if (tok=="TODYNARRAY")
+      result = new CastExpr(stream,castDynArray);
+   else if (tok=="TODATAARRAY")
+      result = new CastExpr(stream,castDataArray);
    else if (tok=="SWITCH")
       result = new SwitchExpr(stream);
    else if (tok=="TRY")
@@ -5148,24 +5427,30 @@ void TypeData::link(CppiaData &inData)
       interfaceBase = sScriptRegisteredInterface ? (*sScriptRegisteredInterface)[name.__s] : 0;
       isInterface = interfaceBase || (cppiaClass && cppiaClass->isInterface);
 
-      if (!haxeClass.mPtr && name.substr(0,6)==HX_CSTRING("Array."))
+      if (!haxeClass.mPtr && name.substr(0,6)==HX_CSTRING("Array.") || name==HX_CSTRING("Array") )
       {
          haxeClass = Class_obj::Resolve(HX_CSTRING("Array"));
-         String t = name.substr(6,null());
-         if (t==HX_CSTRING("int"))
-            arrayType = arrInt;
-         else if (t==HX_CSTRING("bool"))
-            arrayType = arrBool;
-         else if (t==HX_CSTRING("Float"))
-            arrayType = arrFloat;
-         else if (t==HX_CSTRING("String"))
-            arrayType = arrString;
-         else if (t==HX_CSTRING("unsigned char"))
-            arrayType = arrUnsignedChar;
-         else if (t==HX_CSTRING("Dynamic"))
+         if (name.length==5)
             arrayType = arrDynamic;
          else
-            throw "Unknown array type";
+         {
+            String t = name.substr(6,null());
+
+            if (t==HX_CSTRING("int"))
+               arrayType = arrInt;
+            else if (t==HX_CSTRING("bool"))
+               arrayType = arrBool;
+            else if (t==HX_CSTRING("Float"))
+               arrayType = arrFloat;
+            else if (t==HX_CSTRING("String"))
+               arrayType = arrString;
+            else if (t==HX_CSTRING("unsigned char"))
+               arrayType = arrUnsignedChar;
+            else if (t==HX_CSTRING("Dynamic"))
+               arrayType = arrDynamic;
+            else
+               throw "Unknown array type";
+         }
 
          printf("array type %d\n",arrayType);
       }
@@ -5330,6 +5615,8 @@ bool LoadCppia(String inValue)
 
    CppiaData   &cppia = *cppiaPtr;
    CppiaStream stream(cppiaPtr,inValue.__s, inValue.length);
+
+   bool ok = true;
    try
    {
       std::string tok = stream.getToken();
@@ -5369,18 +5656,20 @@ bool LoadCppia(String inValue)
    } catch(const char *error)
    {
       printf("Error reading file: %s, line %d, char %d\n", error, stream.line, stream.pos);
+      ok = false;
    }
 
-   bool ok = false;
-   try
-   {
-      printf("Link...\n");
-      cppia.link();
-      ok = true;
-   } catch(const char *error)
-   {
-      printf("Error linking : %s\n", error);
-   }
+   if (ok)
+      try
+      {
+         printf("Link...\n");
+         cppia.link();
+      } catch(const char *error)
+      {
+         printf("Error linking : %s\n", error);
+         ok = false;
+      }
+
    if (ok) try
    {
       printf("--- Run --------------------------------------------\n");
@@ -5432,10 +5721,10 @@ void ScriptableVisit(void *inClass, hx::Object *inThis, HX_VISIT_PARAMS)
    //inHandler->visitFields(*inInstanceDataPtr,HX_VISIT_ARG);
 }
 
-bool ScriptableField(hx::Object *, const ::String &,bool inCallProp,Dynamic &outResult)
+bool ScriptableField(hx::Object *inObj, const ::String &inName,bool inCallProp,Dynamic &outResult)
 {
-   printf("ScriptableField - string\n");
-   return false;
+   void **vtable = inObj->__GetScriptVTable();
+   return ((CppiaClassInfo *)vtable[-1])->getField(inObj,inName,inCallProp,outResult);
 }
 
 bool ScriptableField(hx::Object *, int inName,bool inCallProp,Float &outResult)

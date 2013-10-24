@@ -142,6 +142,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          ELEM elem;
+         runValue(elem,ctx,args[0]);
          return thisVal->remove(runValue(elem,ctx,args[0]));
       }
       if (FUNC==af__get)
@@ -590,6 +591,7 @@ struct CharAtExpr : public StringExpr
    }
    int runInt(CppiaCtx *ctx)
    {
+      printf("Char code at %d INT\n", CODE);
       String val = strVal->runString(ctx);
       return val.charCodeAt(a0->runInt(ctx));
    }

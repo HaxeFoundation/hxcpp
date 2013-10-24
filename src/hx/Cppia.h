@@ -265,6 +265,12 @@ template<> inline hx::Object * &runValue(hx::Object *& outValue, CppiaCtx *ctx, 
    return outValue = expr->runObject(ctx);
 }
 
+template<> inline Dynamic &runValue(Dynamic & outValue, CppiaCtx *ctx, CppiaExpr *expr)
+{
+   return outValue = expr->runObject(ctx);
+}
+
+
 
 
 inline static int ValToInt( const bool &v ) { return v; }
