@@ -298,5 +298,38 @@ class Setup
       proc.close();
       return str.split(" ")[1]=="raspberrypi";
    }
+
+   public static function readStderr(inCommand:String,inArgs:Array<String>)
+   {
+      var result = new Array<String>();
+      var proc = new sys.io.Process(inCommand,inArgs);
+      try
+      {
+         while(true)
+         {
+            var out = proc.stderr.readLine();
+            result.push(out);
+         }
+      } catch(e:Dynamic){}
+      proc.close();
+      return result;
+   }
+
+   public static function readStdout(inCommand:String,inArgs:Array<String>)
+   {
+      var result = new Array<String>();
+      var proc = new sys.io.Process(inCommand,inArgs);
+      try
+      {
+         while(true)
+         {
+            var out = proc.stdout.readLine();
+            result.push(out);
+         }
+      } catch(e:Dynamic){}
+      proc.close();
+      return result;
+   }
+
 }
 

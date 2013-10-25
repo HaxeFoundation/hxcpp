@@ -94,6 +94,10 @@ class Compiler
    public var mPCHFilename:String;
    public var mPCH:String;
 
+   public var mGetCompilerVersion:String;
+   public var mCompilerVersion:String;
+   public var mCached:Bool;
+
    public var mID:String;
 
    public function new(inID,inExe:String,inGCCFileTypes:Bool)
@@ -105,6 +109,7 @@ class Compiler
       mMMFlags = [];
       mPCHFlags = [];
       mAddGCCIdentity = inGCCFileTypes;
+      mCompilerVersion = null;
       mObjDir = "obj";
       mOutFlag = "-o";
       mExe = inExe;
@@ -114,6 +119,7 @@ class Compiler
       mPCHCreate = "-Yc";
       mPCHUse = "-Yu";
       mPCHFilename = "/Fp";
+      mCached = false;
    }
 
    function addIdentity(ext:String,ioArgs:Array<String>)
@@ -150,7 +156,19 @@ class Compiler
 
    public function needsPchObj()
    {
-      return mPCH!="gcc";
+      return !mCached && mPCH!="gcc";
+   }
+
+   public function createCompilerVersion(inGroup:FileGroup)
+   {
+      if (mGetCompilerVersion!=null && mCompilerVersion==null)
+      {
+         var versionString = Setup.readStderr(mGetCompilerVersion,[]).join(" ");
+         mCompilerVersion = haxe.crypto.Md5.encode(versionString);
+         mCached = true;
+      }
+
+      return mCached;
    }
 
    public function precompile(inObjDir:String, inHeader:String,inDir:String,inGroup:FileGroup)
@@ -216,7 +234,8 @@ class Compiler
       else if (ext=="cpp" || ext=="c++")
          args = args.concat(mCPPFlags);
 
-      if (inFile.mGroup.mPrecompiledHeader!="")
+
+      if (!mCached && inFile.mGroup.mPrecompiledHeader!="")
       {
          var pchDir = inFile.mGroup.getPchDir();
          if (mPCHUse!="")
@@ -228,24 +247,52 @@ class Compiler
             args.push("-I"+mObjDir + "/" + pchDir);
       }
 
-      
-      args.push( (new haxe.io.Path( inFile.mDir + inFile.mName)).toString() );
 
-      var out = mOutFlag;
-      if (out.substr(-1)==" ")
+      var found = false;
+      var cacheName:String = null;
+      if (mCompilerVersion!=null)
       {
-         args.push(out.substr(0,out.length-1));
-         out = "";
+         var contents = sys.io.File.getContent(inFile.mDir + inFile.mName);
+         if (contents!="")
+         {
+            var md5 = haxe.crypto.Md5.encode(contents + args.join(" ") +
+                inFile.mGroup.mDependHash + mCompilerVersion + inFile.mDependHash );
+            cacheName = BuildTool.compileCache + "/" + md5;
+            if (FileSystem.exists(cacheName))
+            {
+               sys.io.File.copy(cacheName, obj_name);
+               Sys.println("use cached " + obj_name );
+               found = true;
+            }
+         }
       }
-      args.push(out + obj_name);
-      Sys.println( mExe + " " + args.join(" ") );
-      var result = BuildTool.runCommand( mExe, args );
-      if (result!=0)
+
+      if (!found)
       {
-         if (FileSystem.exists(obj_name))
-            FileSystem.deleteFile(obj_name);
-         throw "Error : " + result + " - build cancelled";
+         args.push( (new haxe.io.Path( inFile.mDir + inFile.mName)).toString() );
+
+         var out = mOutFlag;
+         if (out.substr(-1)==" ")
+         {
+            args.push(out.substr(0,out.length-1));
+            out = "";
+         }
+
+         args.push(out + obj_name);
+         Sys.println( mExe + " " + args.join(" ") );
+         var result = BuildTool.runCommand( mExe, args );
+         if (result!=0)
+         {
+            if (FileSystem.exists(obj_name))
+               FileSystem.deleteFile(obj_name);
+            throw "Error : " + result + " - build cancelled";
+         }
+         if (cacheName!=null)
+         {
+           sys.io.File.copy(obj_name, cacheName );
+         }
       }
+
       return obj_name;
    }
 }
@@ -410,6 +457,25 @@ class File
       mDepends = [];
       mCompilerFlags = [];
    }
+   public function computeDependHash()
+   {
+      mDependHash = "";
+      for(depend in mDepends)
+         mDependHash += getFileHash(depend);
+      mDependHash = haxe.crypto.Md5.encode(mDependHash);
+   }
+
+   public static function getFileHash(inName:String)
+   {
+      if (mFileHashes.exists(inName))
+         return mFileHashes.get(inName);
+
+      var content = sys.io.File.getContent(inName);
+      var md5 = haxe.crypto.Md5.encode(content);
+      mFileHashes.set(inName,md5);
+      return md5;
+   }
+
    public function isOutOfDate(inObj:String)
    {
       if (!FileSystem.exists(inObj))
@@ -433,8 +499,10 @@ class File
       }
       return false;
    }
+   static var mFileHashes = new Map<String,String>();
    public var mName:String;
    public var mDir:String;
+   public var mDependHash:String;
    public var mDepends:Array<String>;
    public var mCompilerFlags:Array<String>;
    public var mGroup:FileGroup;
@@ -491,6 +559,7 @@ class FileGroup
       mFiles = [];
       mCompilerFlags = [];
       mPrecompiledHeader = "";
+      mDepends = [];
       mMissingDepends = [];
       mOptions = [];
       mHLSLs = [];
@@ -502,6 +571,14 @@ class FileGroup
    {
       for(hlsl in mHLSLs)
          hlsl.build();
+
+      if (BuildTool.useCache)
+      {
+         mDependHash = "";
+         for(depend in mDepends)
+            mDependHash += File.getFileHash(depend);
+         mDependHash = haxe.crypto.Md5.encode(mDependHash);
+      }
    }
 
    public function addHLSL(inFile:String,inProfile:String,inVariable:String,inTarget:String)
@@ -522,7 +599,11 @@ class FileGroup
       var stamp =  FileSystem.stat(inFile).mtime.getTime();
       if (stamp>mNewest)
          mNewest = stamp;
+
+      mDepends.push(inFile);
    }
+
+
    public function addOptions(inFile:String)
    {
       mOptions.push(inFile);
@@ -602,6 +683,8 @@ class FileGroup
    public var mHLSLs: Array<HLSL>;
    public var mDir : String;
    public var mId : String;
+   public var mDepends:Array<String>;
+   public var mDependHash : String;
 }
 
 #if haxe3
@@ -685,6 +768,8 @@ class BuildTool
    public static var isWindows = false;
    public static var isLinux = false;
    public static var isMac = false;
+   public static var useCache = false;
+   public static var compileCache:String;
 
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
@@ -693,6 +778,7 @@ class BuildTool
       mDefines = inDefines;
       mFileGroups = new FileGroups();
       mCompiler = null;
+      compileCache = "";
       mStripper = null;
       mTargets = new Targets();
       mLinkers = new Linkers();
@@ -703,6 +789,18 @@ class BuildTool
       
       parseXML(xml,"");
 
+      if (mDefines.exists("HXCPP_COMPILE_CACHE"))
+      {
+         compileCache = mDefines.get("HXCPP_COMPILE_CACHE");
+         if (FileSystem.exists(compileCache) && FileSystem.isDirectory(compileCache))
+         {
+           useCache = true;
+         }
+         else
+            throw "Could not find compiler cache: " + compileCache;
+
+      }
+            trace("USE CACHE " + useCache);
 
       if (mTargets.exists("default"))
          buildTarget("default");
@@ -879,10 +977,16 @@ class BuildTool
             DirManager.make(path.dir);
             objs.push(obj_name);
             if (file.isOutOfDate(obj_name))
+            {
+               if (useCache)
+                  file.computeDependHash();
                to_be_compiled.push(file);
+            }
          }
 
-         if (group.mPrecompiledHeader!="")
+         var cached = useCache && mCompiler.createCompilerVersion(group);
+
+         if (!cached && group.mPrecompiledHeader!="")
          {
             if (to_be_compiled.length>0)
                mCompiler.precompile(mCompiler.mObjDir,group.mPrecompiledHeader, group.mPrecompiledHeaderDir,group);
@@ -986,6 +1090,7 @@ class BuildTool
                 case "exe" : c.mExe = substitute((el.att.name));
                 case "ext" : c.mExt = substitute((el.att.value));
                 case "pch" : c.setPCH( substitute((el.att.value)) );
+                case "getversion" : c.mGetCompilerVersion = substitute((el.att.value));
                 case "section" :
                       createCompiler(el,c);
                 case "include" :

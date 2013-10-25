@@ -15,6 +15,8 @@
 
 <set name="HXCPP_DEBUG_LINK" value="1" if="debug"/>
 
+<set name="OBJCACHE" value="-c" if="HXCPP_COMPILE_CACHE"/>
+
 
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
@@ -46,8 +48,10 @@
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
-  <objdir value="obj/mscv${MSVC_VER}${OBJEXT}" unless="winrt" />
-  <objdir value="obj/mscv${MSVC_VER}-rt${OBJEXT}" if="winrt" />
+  <objdir value="obj/mscv${MSVC_VER}${OBJEXT}${OBJCACHE}" unless="winrt" />
+  <objdir value="obj/mscv${MSVC_VER}-rt${OBJEXT}${OBJCACHE}" if="winrt" />
+
+  <getversion value="cl.exe"/>
 </compiler>
 
 <linker id="dll" exe="link.exe" if="windows">
