@@ -8,7 +8,7 @@
 
 
 <compiler id="darwin" exe="g++" if="macos">
-  <exe name="xcrun --sdk macosx${MACOSX_VER} clang" if="HXCPP_CLANG" />
+  <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
@@ -32,6 +32,7 @@
   <objdir value="obj/darwin${OBJEXT}/" />
   <outflag value="-o"/>
   <ext value=".o"/>
+  <getversion value="xcrun --sdk macosx${MACOSX_VER} clang++ -v" if="HXCPP_CLANG" />
 </compiler>
 
 <linker id="dll" exe="g++" if="macos">

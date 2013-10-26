@@ -163,7 +163,23 @@ class Compiler
    {
       if (mGetCompilerVersion!=null && mCompilerVersion==null)
       {
-         var versionString = Setup.readStderr(mGetCompilerVersion,[]).join(" ");
+         var exe = mGetCompilerVersion;
+         var args = new Array<String>();
+         if (exe.indexOf (" ") > -1)
+         {
+            var splitExe = exe.split(" ");
+            exe = splitExe.shift();
+            args = splitExe.concat(args);
+         }
+ 
+         var versionString = Setup.readStderr(exe,args).join(" ");
+         if (BuildTool.verbose)
+         {
+            Sys.println("--- Compiler verison ---" );
+            Sys.println( versionString );
+            Sys.println("------------------");
+         }
+
          mCompilerVersion = haxe.crypto.Md5.encode(versionString);
          mCached = true;
       }
@@ -252,7 +268,8 @@ class Compiler
       var cacheName:String = null;
       if (mCompilerVersion!=null)
       {
-         var contents = sys.io.File.getContent(inFile.mDir + inFile.mName);
+         var sourceName = inFile.mDir + inFile.mName;
+         var contents = sys.io.File.getContent(sourceName);
          if (contents!="")
          {
             var md5 = haxe.crypto.Md5.encode(contents + args.join(" ") +
@@ -261,10 +278,17 @@ class Compiler
             if (FileSystem.exists(cacheName))
             {
                sys.io.File.copy(cacheName, obj_name);
-               Sys.println("use cached " + obj_name );
+               Sys.println("use cache for " + obj_name + "(" + md5 + ")" );
                found = true;
             }
+            else
+            {
+               if (BuildTool.verbose)
+                  Sys.println(" not in cache " + cacheName);
+            }
          }
+         else
+            throw "Unkown source contents " + sourceName;
       }
 
       if (!found)
@@ -290,6 +314,8 @@ class Compiler
          if (cacheName!=null)
          {
            sys.io.File.copy(obj_name, cacheName );
+           if (BuildTool.verbose)
+              Sys.println(" caching " + cacheName);
          }
       }
 
@@ -783,7 +809,14 @@ class BuildTool
       mTargets = new Targets();
       mLinkers = new Linkers();
       mIncludePath = inIncludePath;
-      var make_contents = sys.io.File.getContent(inMakefile);
+      var make_contents = "";
+      try  {
+         make_contents = sys.io.File.getContent(inMakefile);
+      } catch (e:Dynamic) {
+         Sys.println("Could not open build file '" + inMakefile + "'");
+         Sys.exit(1);
+      }
+
       var xml_slow = Xml.parse(make_contents);
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
       
@@ -800,7 +833,17 @@ class BuildTool
             throw "Could not find compiler cache: " + compileCache;
 
       }
-            trace("USE CACHE " + useCache);
+
+      if (useCache && (!mDefines.exists("haxe_ver") && !mDefines.exists("HXCPP_DEPENDS_OK")))
+      {
+         if (verbose)
+            Sys.println("ignoring cache because of possible missing dependencies");
+           useCache = false;
+      }
+
+      if (useCache && verbose)
+         Sys.println("Using cache " + compileCache );
+
 
       if (mTargets.exists("default"))
          buildTarget("default");
@@ -1391,7 +1434,9 @@ class BuildTool
             if (val=="verbose")
                verbose = true;
          }
-         if (arg.substr(0,2)=="-I")
+         if (arg=="-v" || arg=="-verbose")
+            verbose = true;
+         else if (arg.substr(0,2)=="-I")
             include_path.push(arg.substr(2));
          else if (makefile.length==0)
             makefile = arg;
@@ -1416,6 +1461,9 @@ class BuildTool
          HXCPP = defines.get("HXCPP") + "/";
          defines.set("HXCPP",HXCPP);
       }
+
+      if (verbose)
+         Sys.println("HXCPP : " + HXCPP);
 
 
       include_path.push(".");
