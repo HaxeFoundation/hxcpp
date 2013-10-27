@@ -9,12 +9,12 @@
 
 <compiler id="iPhoneOS" exe="g++" if="iphoneos">
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" if="HXCPP_GCC" />
-  <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang" />
+  <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" />
   <flag value="-c"/>
   <cppflag value="-fvisibility-inlines-hidden"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
-  <flag value="-stdlib=libc++" unless="HXCPP_GCC" />
+  <flag value="-stdlib=libstdc++" unless="HXCPP_GCC" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>
@@ -47,8 +47,8 @@
 
 <linker id="dll" exe="g++" >
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" if="HXCPP_GCC" />
-  <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang" />
-  <flag value="-stdlib=libc++" unless="HXCPP_GCC" />
+  <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" />
+  <flag value="-stdlib=stdlibc++" unless="HXCPP_GCC" />
   <flag value="-dynamiclib"/>
   <flag value="-arch"/>
   <flag value="armv6" unless="HXCPP_ARMV7" />

@@ -11,6 +11,7 @@
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
+  <flag value="-stdlib=libstdc++" unless="HXCPP_GCC" />
   <cppflag value="-frtti"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
@@ -39,6 +40,7 @@
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <fromfile value="" if="GCC_OLD" />
   <flag value="-Wl,-bundle,-bundle_loader,${dll_import_link}" if="dll_import_link" />
+  <flag value="-stdlib=libstdc++" unless="HXCPP_GCC" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
@@ -58,6 +60,7 @@
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
   <fromfile value="" if="GCC_OLD" />
+  <flag value="-stdlib=libstdc++" unless="HXCPP_GCC" />
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
