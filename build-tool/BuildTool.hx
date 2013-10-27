@@ -1234,12 +1234,17 @@ class BuildTool
    }
 
 
-   public function createTarget(inXML:haxe.xml.Fast) : Target
+   public function createTarget(inXML:haxe.xml.Fast,?inTarget:Target) : Target
    {
-      var output = inXML.has.output ? substitute(inXML.att.output) : "";
-      var tool = inXML.has.tool ? inXML.att.tool : "";
-      var toolid = inXML.has.toolid ? substitute(inXML.att.toolid) : "";
-      var target = new Target(output,tool,toolid);
+      var target:Target = inTarget;
+      if (target==null)
+      {
+         var output = inXML.has.output ? substitute(inXML.att.output) : "";
+         var tool = inXML.has.tool ? inXML.att.tool : "";
+         var toolid = inXML.has.toolid ? substitute(inXML.att.toolid) : "";
+         target = new Target(output,tool,toolid);
+      }
+
       for(el in inXML.elements)
       {
          if (valid(el,""))
@@ -1259,6 +1264,7 @@ class BuildTool
                       target.addError( "Could not find filegroup " + id ); 
                    else
                       target.addFiles( mFileGroups.get(id) );
+                case "section" : createTarget(el,target);
             }
       }
 
