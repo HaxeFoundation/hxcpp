@@ -37,7 +37,8 @@
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-GR"/>
-  <flag value="-Zi"/>
+  <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" />
+  <flag value="-Z7" if="HXCPP_COMPILE_CACHE" />
   <flag value="-Oy-"/>
   <flag value="-c"/>
   <flag value="-EHs"/>

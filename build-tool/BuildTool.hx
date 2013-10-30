@@ -825,6 +825,17 @@ class BuildTool
       if (mDefines.exists("HXCPP_COMPILE_CACHE"))
       {
          compileCache = mDefines.get("HXCPP_COMPILE_CACHE");
+         // Don't get upset by trailing slash
+         while(compileCache.length>1)
+         {
+            var l = compileCache.length;
+            var last = compileCache.substr(l-1);
+            if (last=="/" || last=="\\")
+               compileCache = compileCache.substr(0,l-1);
+            else
+               break;
+         }
+
          if (FileSystem.exists(compileCache) && FileSystem.isDirectory(compileCache))
          {
            useCache = true;
