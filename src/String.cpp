@@ -166,7 +166,6 @@ char *TConvertToUTF8(T *inStr, int *ioLen)
 
 String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int inLen)
 {
-   int *base = &inChars[0];
    int len = inChars->length;
    if (inFirst<0)
      inFirst = 0;
@@ -174,7 +173,8 @@ String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int in
    if (inFirst+inLen>len)
       inLen = len-inFirst;
    if (inLen<0)
-      return String();
+      return HX_CSTRING("");
+   int *base = &inChars[0];
    char *result = TConvertToUTF8(base+inFirst,&len);
    return String(result,len);
 }
