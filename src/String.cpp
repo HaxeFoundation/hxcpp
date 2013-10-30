@@ -954,6 +954,7 @@ DEFINE_STRING_FUNC2(indexOf);
 DEFINE_STRING_FUNC2(lastIndexOf);
 DEFINE_STRING_FUNC1(split);
 DEFINE_STRING_FUNC2(substr);
+DEFINE_STRING_FUNC2(substring);
 DEFINE_STRING_FUNC0(toLowerCase);
 DEFINE_STRING_FUNC0(toUpperCase);
 DEFINE_STRING_FUNC0(toString);
@@ -967,6 +968,7 @@ Dynamic String::__Field(const String &inString, bool inCallProp)
    if (HX_FIELD_EQ(inString,"lastIndexOf")) return lastIndexOf_dyn();
    if (HX_FIELD_EQ(inString,"split")) return split_dyn();
    if (HX_FIELD_EQ(inString,"substr")) return substr_dyn();
+   if (HX_FIELD_EQ(inString,"substring")) return substring_dyn();
    if (HX_FIELD_EQ(inString,"toLowerCase")) return toLowerCase_dyn();
    if (HX_FIELD_EQ(inString,"toUpperCase")) return toUpperCase_dyn();
    if (HX_FIELD_EQ(inString,"toString")) return toString_dyn();
@@ -986,6 +988,7 @@ static String sStringFields[] = {
    HX_CSTRING("lastIndexOf"),
    HX_CSTRING("split"),
    HX_CSTRING("substr"),
+   HX_CSTRING("substring"),
    HX_CSTRING("toLowerCase"),
    HX_CSTRING("toUpperCase"),
    HX_CSTRING("toString"),

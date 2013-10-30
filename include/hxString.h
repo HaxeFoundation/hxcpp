@@ -153,6 +153,7 @@ public:
    Dynamic lastIndexOf_dyn();
    Dynamic split_dyn();
    Dynamic substr_dyn();
+   Dynamic substring_dyn();
    Dynamic toLowerCase_dyn();
    Dynamic toString_dyn();
    Dynamic toUpperCase_dyn();
