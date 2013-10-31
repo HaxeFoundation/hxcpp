@@ -515,7 +515,7 @@ double  api_val_field_numeric(value  arg1,int arg2)
 vkind api_alloc_kind()
 {
 	static int id = 1;
-	vkind result = (vkind)id;
+	vkind result = (vkind)(size_t)id;
 	id += 4;
 	return result;
 }
