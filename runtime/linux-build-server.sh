@@ -10,6 +10,15 @@ echo "HXCPP build " $HXCPP
 
 rm -rf obj
 
+
+echo "--- Android -----"
+rm -rf ../bin/Android
+mkdir ../bin/Android
+neko ../run.n BuildLibs.xml -Dandroid
+
+echo "--- Android v7 -----"
+neko ../run.n BuildLibs.xml -Dandroid -DHXCPP_ARMV7
+
 echo "--- Linux32 -----"
 rm -rf ../bin/Linux
 mkdir ../bin/Linux
