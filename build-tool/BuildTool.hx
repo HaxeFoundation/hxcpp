@@ -921,9 +921,12 @@ class BuildTool
                    throw(error);
                 case "path" : 
                    var path = substitute(el.att.name);
+                   if (verbose)
+                      Sys.println("Adding path " + path );
                    var os = Sys.systemName();
                    var sep = mDefines.exists("windows_host") ? ";" : ":";
-                   Sys.putEnv("PATH", path + sep + Sys.getEnv("PATH"));
+                   var add = path + sep + Sys.getEnv("PATH");
+                   Sys.putEnv("PATH", add);
                     //trace(Sys.getEnv("PATH"));
                 case "compiler" : 
                    mCompiler = createCompiler(el,mCompiler);
@@ -1290,6 +1293,9 @@ class BuildTool
 
       if (inEl.has.unless)
          if (defined(inEl.att.unless)) return false;
+
+      if (inEl.has.ifExists)
+         if (!FileSystem.exists( substitute(inEl.att.ifExists) )) return false;
 
       if (inSection!="")
       {

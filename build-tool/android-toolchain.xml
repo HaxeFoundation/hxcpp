@@ -38,9 +38,10 @@
 <!-- Set architecture -->
 <set name="ARCH" value="-v7" if="HXCPP_ARMV7" />
 
-<path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}/bin" />
-<path name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}_64/bin" />
+<set name="prebuiltBase" value="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}" />
 
+<set name="prebuiltBase" value="${prebuiltBase}_64" ifExists="${prebuiltBase}_64" />
+<path name="${prebuiltBase}/bin" />
 
 <compiler id="android-gcc" exe="arm-linux-androideabi-g++">
 
@@ -125,7 +126,7 @@
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/armeabi/libgnustl_static.a" if="NDKV8+" unless="dll_import" />
 
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/arch-arm/usr/lib/crtbegin_so.o"/>
-  <lib name="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}/lib/gcc/arm-linux-androideabi/${TOOLCHAIN_VERSION}/libgcc.a"/>
+  <lib name="${prebuiltBase}/lib/gcc/arm-linux-androideabi/${TOOLCHAIN_VERSION}/libgcc.a"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/arch-arm/usr/lib/libc.so"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/arch-arm/usr/lib/libm.so"/>
   <lib name="-llog"/>
