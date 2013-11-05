@@ -1232,6 +1232,7 @@ class BuildTool
                       if (valid(f,"") && f.name=="depend")
                          file.mDepends.push( substitute(f.att.name) );
                    group.mFiles.push( file );
+                case "section" : createFileGroup(el,group,inName);
                 case "depend" : group.addDepend( substitute(el.att.name) );
                 case "hlsl" : group.addHLSL( substitute(el.att.name), substitute(el.att.profile),
                      substitute(el.att.variable), substitute(el.att.target)  );

@@ -30,6 +30,7 @@
 <set name="LIBEXTRA" value="" if="blackberry" unless="simulator" />
 <set name="LIBPREFIX" value="lib" if="iphoneos"/>
 <set name="LIBPREFIX" value="lib" if="iphonesim"/>
+<set name="LIBPREFIX" value="lib" if="static_link"/>
 
 
 <set name="haxelink" value="exe" unless="static_link"/>
