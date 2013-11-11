@@ -50,6 +50,15 @@ void __hxcpp_stack_begin_catch();
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void __hxcpp_set_critical_error_handler(Dynamic inHandler);
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void __hxcpp_execution_trace(int inLevel);
+
+// Used by debug breakpoints and execution trace
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void __hxcpp_set_stack_frame_line(int);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void __hxcpp_on_line_changed();
+
 namespace hx
 {
 
@@ -119,6 +128,9 @@ public:
          #endif
          catchables(0)
     {
+         #ifdef HXCPP_STACK_LINE
+         lineNumber = firstLineNumber;
+         #endif
        __hxcpp_register_stack_frame(this);
     }
 
@@ -362,7 +374,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
     /* For now, just live with the exceedingly rare cases where */      \
     /* breakpoints are missed */                                        \
     if (hx::gShouldCallHandleBreakpoints) {                             \
-        __hxcpp_dbg_HandleBreakpoints();                               \
+        __hxcpp_on_line_changed();                               \
    }
 #else
 #define HX_STACK_LINE(number) __stackframe.lineNumber = number;
@@ -479,9 +491,8 @@ void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic function);
 // created and terminated
 void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created);
 
-// The following functions are called by the stack macros, but only if
+// The following is called by the stack macros, but only if
 // HXCPP_DEBUGGER is set
-extern void __hxcpp_dbg_HandleBreakpoints();
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow);
 
 #else // !HXCPP_DEBUGGER

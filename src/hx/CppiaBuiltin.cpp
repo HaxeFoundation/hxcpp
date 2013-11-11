@@ -591,7 +591,7 @@ struct CharAtExpr : public StringExpr
    }
    int runInt(CppiaCtx *ctx)
    {
-      printf("Char code at %d INT\n", CODE);
+      //printf("Char code at %d INT\n", CODE);
       String val = strVal->runString(ctx);
       return val.charCodeAt(a0->runInt(ctx));
    }
@@ -698,7 +698,7 @@ CppiaExpr *createStringBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, String f
       if (ioExpressions.size()!=1) throw "Bad arg count";
       return new CharAtExpr<false>(inSrc,inThisExpr,ioExpressions[0]);
    }
-   else if (field==HX_CSTRING("charCodeAt"))
+   else if (field==HX_CSTRING("charCodeAt") || field==HX_CSTRING("cca"))
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
       return new CharAtExpr<true>(inSrc,inThisExpr,ioExpressions[0]);

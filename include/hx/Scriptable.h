@@ -33,6 +33,7 @@ struct CppiaCtx
    }
 
    int getFrameSize() const { return pointer-frame; }
+   void mark(struct MarkContext *__inCtx);
 
    static CppiaCtx *getCurrent();
 

@@ -210,6 +210,13 @@ struct CppiaExpr
 
 };
 
+#ifdef HXCPP_STACK_LINE
+   #define CPPIA_STACK_LINE(expr) \
+          __hxcpp_set_stack_frame_line(expr->line);
+#else
+   #define CPPIA_STACK_LINE(expr)
+#endif
+
 #define CPPIA_STACK_FRAME(expr) \
  HX_STACK_FRAME(expr->className, expr->functionName, 0, expr->className, expr->filename, expr->line, 0);
 

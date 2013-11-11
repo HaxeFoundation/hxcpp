@@ -54,6 +54,14 @@ extern const char *__hxcpp_all_classes[];
 // call.
 volatile bool gShouldCallHandleBreakpoints;
 
+enum ExecutionTrace
+{
+   exeTraceOff = 0,
+   exeTraceFuncs = 1,
+   exeTraceLines = 2,
+};
+static ExecutionTrace sExecutionTrace = exeTraceOff;
+
 // This is the event notification handler, as registered by the debugger
 // thread.
 // Signature: threadNumber : Int -> status: Int  -> Void
@@ -364,6 +372,9 @@ public:
 
         mUnwindException = false;
         mStackFrames.push_back(frame);
+
+        if (sExecutionTrace!=exeTraceOff)
+           Trace();
     }
 
     void PopStackFrame()
@@ -379,6 +390,24 @@ public:
 
         mStackFrames.pop_back();
     }
+    void Trace( )
+    {
+       StackFrame *frame = mStackFrames[mStackFrames.size()-1];
+       #ifdef HXCPP_STACK_LINE
+       DBGLOG("%s::%s : %d\n", frame->className, frame->functionName, frame->lineNumber);
+       #else
+       DBGLOG("%s::%s\n", frame->className, frame->functionName);
+       #endif
+    }
+
+    #ifdef HXCPP_STACK_LINE
+    void SetLine(int inLine)
+    {
+       mStackFrames[mStackFrames.size()-1]->lineNumber = inLine;
+       if (gShouldCallHandleBreakpoints)
+          __hxcpp_on_line_changed();
+    }
+    #endif
 
 
     // Note that the stack frames are manipulated without holding any locks.
@@ -1096,7 +1125,7 @@ public:
 
         // Don't need a write memory barrier here, it's harmless to see
         // gShouldCallHandleBreakpoints update before gStepType has updated
-        gShouldCallHandleBreakpoints = (gStepType != STEP_NONE);
+        gShouldCallHandleBreakpoints = (gStepType != STEP_NONE) || (sExecutionTrace==exeTraceLines);
 
         gMutex.Unlock();
     }
@@ -1124,7 +1153,7 @@ public:
                 // Don't need a write memory barrier here, it's harmless to
                 // see gShouldCallHandleBreakpoints update before gStepType
                 // has updated
-                gShouldCallHandleBreakpoints = (gStepType != STEP_NONE);
+                gShouldCallHandleBreakpoints = (gStepType != STEP_NONE) || (sExecutionTrace==exeTraceLines);
             }
         }
 
@@ -1152,7 +1181,7 @@ public:
     {
         gStepType = STEP_NONE;
 
-        gShouldCallHandleBreakpoints = !gBreakpoints->IsEmpty();
+        gShouldCallHandleBreakpoints = !gBreakpoints->IsEmpty() || (sExecutionTrace==exeTraceLines);
 
         CallStack::ContinueThreads(specialThreadNumber, continueCount);
     }
@@ -1176,6 +1205,8 @@ public:
         int breakpointNumber = -1;
 
         CallStack *stack = CallStack::GetCallerCallStack();
+        if (sExecutionTrace==exeTraceLines)
+           stack->Trace();
 
         // Handle possible immediate break
         if (gStepType == STEP_NONE) {
@@ -1695,36 +1726,48 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created)
     // function milliseconds after it's set to NULL ...
     Dynamic handler = hx::g_eventNotificationHandler;
 
-    if (handler == null()) {
+    if (handler == null())
         return;
-}
 
     // If the thread was not created, remove its call stack
-    if (!created) {
+    if (!created)
         hx::CallStack::RemoveCallStack(threadNumber);
-}
 
     handler(threadNumber, created ? hx::THREAD_CREATED : hx::THREAD_TERMINATED);
 }
 
 
-void __hxcpp_dbg_HandleBreakpoints()
+void __hxcpp_on_line_changed()
 {
     hx::Breakpoints::HandleBreakpoints();
 }
 
 
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
-      {
-    if (!hx::CallStack::CanBeCaught(toThrow)) {
+{
+    if (!hx::CallStack::CanBeCaught(toThrow))
         hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw"), true);
-      }
 
     return hx::Throw(toThrow);
 }
 
 
 #endif // HXCPP_DEBUGGER
+
+
+void __hxcpp_on_line_changed()
+{
+   #ifdef HXCPP_DEBUGGER
+   hx::Breakpoints::HandleBreakpoints();
+   #elif defined(HXCPP_STACK_LINE)
+   if (hx::sExecutionTrace==hx::exeTraceLines)
+   {
+      hx::CallStack *stack = hx::CallStack::GetCallerCallStack();
+      stack->Trace();
+   }
+   #endif
+}
+
 
 
 void hx::__hxcpp_register_stack_frame(hx::StackFrame *inFrame)
@@ -1883,6 +1926,20 @@ void __hxcpp_stop_profiler()
 #endif
 }
 
+void __hxcpp_execution_trace(int inLevel)
+{
+#ifdef HXCPP_STACK_TRACE
+    hx::sExecutionTrace = (hx::ExecutionTrace)inLevel;
+    #ifdef HXCPP_STACK_LINE
+    hx::gShouldCallHandleBreakpoints =
+        #ifdef HXCPP_DEBUGGER
+          !hx::gBreakpoints->IsEmpty() || (hx::gStepType != hx::STEP_NONE) ||
+        #endif
+         (hx::sExecutionTrace==hx::exeTraceLines);
+    #endif
+#endif
+}
+
 
 void __hx_dump_stack()
 {
@@ -1900,6 +1957,12 @@ void __hx_stack_set_last_exception()
 #endif
 }
 
+void __hxcpp_set_stack_frame_line(int inLine)
+{
+#ifdef HXCPP_STACK_LINE
+    hx::CallStack::GetCallerCallStack()->SetLine(inLine);
+#endif
+}
 
 void __hxcpp_stack_begin_catch()
 {

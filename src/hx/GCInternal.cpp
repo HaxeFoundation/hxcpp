@@ -33,7 +33,6 @@ static void *sgObject_root = 0;
 int gInAlloc = false;
 
 
-
 #ifndef HXCPP_GC_MOVING
 // Enable moving collector...
 //#define HXCPP_GC_MOVING
@@ -83,6 +82,9 @@ static void ReleaseFromSafe(LocalAllocator *inAlloc);
 namespace hx {
 int gPauseForCollect = 0;
 void ExitGCFreeZoneLocked();
+#ifdef HXCPP_SCRIPTABLE
+extern void scriptMarkStack(hx::MarkContext *);
+#endif
 }
 
 //#define DEBUG_ALLOC_PTR ((char *)0xb68354)
@@ -1693,6 +1695,11 @@ public:
       for(int i=0;i<mLocalAllocs.size();i++)
          MarkLocalAlloc(mLocalAllocs[i] , &mMarker);
 
+      #ifdef HXCPP_SCRIPTABLE
+      scriptMarkStack(&mMarker);
+      #endif
+
+
       mMarker.Process();
 
       hx::FindZombies(mMarker);
@@ -1924,6 +1931,54 @@ public:
 };
 
 GlobalAllocator *sGlobalAlloc = 0;
+
+
+namespace hx
+{
+
+void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
+{
+   void *prev = 0;
+   for(int *ptr = inBottom ; ptr<inTop; ptr++)
+   {
+      void *vptr = *(void **)ptr;
+      MemType mem;
+      if (vptr && !((size_t)vptr & 0x03) && vptr!=prev &&
+              (mem = sGlobalAlloc->GetMemType(vptr)) != memUnmanaged )
+      {
+         if (mem==memLarge)
+         {
+            unsigned char &mark = ((unsigned char *)(vptr))[ENDIAN_MARK_ID_BYTE];
+            if (mark!=gByteMarkID)
+               mark = gByteMarkID;
+         }
+         else
+         {
+            BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
+            int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
+            AllocType t = block->GetAllocType(pos-sizeof(int),true);
+            if ( t==allocObject )
+            {
+               //GCLOG(" Mark object %p (%p)\n", vptr,ptr);
+               HX_MARK_OBJECT( ((hx::Object *)vptr) );
+               block->pin();
+            }
+            else if (t==allocString)
+            {
+               // GCLOG(" Mark string %p (%p)\n", vptr,ptr);
+               HX_MARK_STRING(vptr);
+               block->pin();
+            }
+            else if (t==allocMarked)
+               block->pin();
+         }
+      }
+      // GCLOG(" rejected %p %p %d %p %d=%d\n", ptr, vptr, !((size_t)vptr & 0x03), prev,
+      //    sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
+   }
+}
+
+} // namespace hx
 
 
 // --- LocalAllocator -------------------------------------------------------
@@ -2187,58 +2242,16 @@ public:
       #ifdef HXCPP_DEBUG
       MarkPushClass("Stack",__inCtx);
       MarkSetMember("Stack",__inCtx);
-      MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
+      hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
       MarkSetMember("Registers",__inCtx);
-      MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) , __inCtx);
+      hx::MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) , __inCtx);
       MarkPopClass(__inCtx);
       #else
-      MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
-      MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) , __inCtx);
+      hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
+      hx::MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) , __inCtx);
       #endif
 
       Reset();
-   }
-
-   void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
-   {
-      void *prev = 0;
-      for(int *ptr = inBottom ; ptr<inTop; ptr++)
-      {
-         void *vptr = *(void **)ptr;
-         MemType mem;
-         if (vptr && !((size_t)vptr & 0x03) && vptr!=prev &&
-                 (mem = sGlobalAlloc->GetMemType(vptr)) != memUnmanaged )
-         {
-            if (mem==memLarge)
-            {
-               unsigned char &mark = ((unsigned char *)(vptr))[ENDIAN_MARK_ID_BYTE];
-               if (mark!=gByteMarkID)
-                  mark = gByteMarkID;
-            }
-            else
-            {
-               BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
-               int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
-               AllocType t = block->GetAllocType(pos-sizeof(int),true);
-               if ( t==allocObject )
-               {
-                  //GCLOG(" Mark object %p (%p)\n", vptr,ptr);
-                  HX_MARK_OBJECT( ((hx::Object *)vptr) );
-                  block->pin();
-               }
-               else if (t==allocString)
-               {
-                  // GCLOG(" Mark string %p (%p)\n", vptr,ptr);
-                  HX_MARK_STRING(vptr);
-                  block->pin();
-               }
-               else if (t==allocMarked)
-                  block->pin();
-            }
-         }
-         // GCLOG(" rejected %p %p %d %p %d=%d\n", ptr, vptr, !((size_t)vptr & 0x03), prev,
-         //    sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
-      }
    }
 
    int mCurrentPos;
@@ -2403,7 +2416,8 @@ void SetTopOfStack(int *inTop,bool inForce)
 
 void *InternalNew(int inSize,bool inIsObject)
 {
-   HX_STACK_FRAME("GC", "new", 0, "GC::new", __FILE__, __LINE__, 0)
+   //HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", __LINE__, 0)
+   HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", inSize, 0)
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {

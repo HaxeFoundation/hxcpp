@@ -41,6 +41,8 @@ namespace hx
 extern int gPauseForCollect;
 void PauseForCollect();
 
+void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
+
 class RegisterCapture
 {
 public:
