@@ -41,9 +41,9 @@ typedef  int64_t  __int64;
 
 
 // Some compilers are over-enthusiastic about what they #define ...
-#ifdef NULL
-#undef NULL
-#endif
+//#ifdef NULL
+//#undef NULL
+//#endif
 
 #ifdef assert
 #undef assert
