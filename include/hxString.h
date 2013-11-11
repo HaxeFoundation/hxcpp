@@ -28,6 +28,12 @@ public:
    #else
    String(const char *inPtr,int inLen);
    #endif
+   #ifdef __OBJC__
+   inline String(NSString *inString)
+   {
+      *this = String([inString UTF8String]);
+   }
+   #endif
    inline String(const ::String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
    String(const int &inRHS);
    String(const cpp::CppInt32__ &inRHS);
