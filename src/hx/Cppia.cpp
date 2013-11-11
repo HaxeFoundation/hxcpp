@@ -347,6 +347,28 @@ struct CppiaStackVar
       typeId = stream.getInt();
    }
 
+   void set(CppiaCtx *inCtx,Dynamic inValue)
+   {
+      switch(expressionType)
+      {
+         case etInt:
+            *(int *)(inCtx->frame + stackPos) = inValue;
+            break;
+         case etFloat:
+            *(Float *)(inCtx->frame + stackPos) = inValue;
+            break;
+         case etString:
+            *(String *)(inCtx->frame + stackPos) = inValue;
+            break;
+         case etObject:
+            *(hx::Object **)(inCtx->frame + stackPos) = inValue.mPtr;
+            break;
+         case etVoid:
+         case etNull:
+            break;
+      }
+   }
+
    void link(CppiaData &inData);
 };
 
@@ -2771,7 +2793,6 @@ struct NewExpr : public CppiaExpr
          int size = 0;
          if (args.size()==1)
             size = args[0]->runInt(ctx);
-         printf("New array %d\n", size);
          switch(type->arrayType)
          {
             case arrBool:
@@ -2792,7 +2813,6 @@ struct NewExpr : public CppiaExpr
       }
       else if (constructor)
       {
-         printf("From constructor....\n");
          int n = args.size();
          Array< Dynamic > argList = Array_obj<Dynamic>::__new(n,n);
          for(int a=0;a<n;a++)
@@ -2802,7 +2822,6 @@ struct NewExpr : public CppiaExpr
       }
       else
       {
-         printf("createInstance....\n");
          return type->cppiaClass->createInstance(ctx,args);
       }
 
@@ -4556,20 +4575,18 @@ struct TryExpr : public CppiaExpr
    {
       try
       {
-         printf("try....\n");
          body->runVoid(ctx);
-         printf("...try\n");
       }
       catch(Dynamic caught)
       {
-         printf("Caugth!\n");
          //Class cls = caught->__GetClass();
          for(int i=0;i<catchCount;i++)
          {
             Catch &c = catches[i];
             if ( c.type->isClassOf(caught) )
             {
-               // HX_STACK_BEGIN_CATCH
+               HX_STACK_BEGIN_CATCH
+               c.var.set(ctx,caught);
                c.body->runVoid(ctx);
                return;
             }
@@ -5310,7 +5327,7 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    int fileId = stream.getInt();
    int line = stream.getInt();
    std::string tok = stream.getToken();
-   printf(" expr %s\n", tok.c_str() );
+   //printf(" expr %s\n", tok.c_str() );
 
    CppiaExpr *result = 0;
    if (tok=="FUN")
@@ -5449,7 +5466,7 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    else if (tok=="SET")
       result = new SetExpr(stream,aoSet);
    else if (tok=="+=")
-      result = new SetExpr(stream,aoAnd);
+      result = new SetExpr(stream,aoAdd);
    else if (tok=="*=")
       result = new SetExpr(stream,aoMult);
    else if (tok=="/=")
