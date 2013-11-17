@@ -1323,6 +1323,11 @@ public:
         stack->Break(breakStatus, breakpointNumber, 0);
       }
 
+      static bool shoudBreakOnLine()
+      {
+         return gBreakpoints->IsEmpty() || gStepType != hx::STEP_NONE;
+      }
+
 private:
 
     struct Breakpoint
@@ -1509,6 +1514,7 @@ private:
         return 0;
    }
 
+
 private:
 
     int mRefCount;
@@ -1525,6 +1531,8 @@ private:
     static int gStepThread; // If -1, all threads are targeted
     static int gStepCount;
 };
+
+
 
 /* static */ MyMutex Breakpoints::gMutex;
 /* static */ int Breakpoints::gNextBreakpointNumber;
@@ -1737,11 +1745,6 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created)
 }
 
 
-void __hxcpp_on_line_changed()
-{
-    hx::Breakpoints::HandleBreakpoints();
-}
-
 
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
 {
@@ -1933,7 +1936,7 @@ void __hxcpp_execution_trace(int inLevel)
     #ifdef HXCPP_STACK_LINE
     hx::gShouldCallHandleBreakpoints =
         #ifdef HXCPP_DEBUGGER
-          !hx::gBreakpoints->IsEmpty() || (hx::gStepType != hx::STEP_NONE) ||
+          hx::Breakpoints::shoudBreakOnLine() ||
         #endif
          (hx::sExecutionTrace==hx::exeTraceLines);
     #endif
