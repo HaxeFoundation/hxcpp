@@ -1,0 +1,57 @@
+<xml>
+
+<path name="c:/SysGCC/Raspberry/bin/" />
+
+<include name="gcc-toolchain.xml"/>
+
+<compiler id="xrpi" exe="g++">
+  <exe name="arm-linux-gnueabihf-g++.exe"  />
+  <flag value="-c"/>
+  <flag value="-fvisibility=hidden"/>
+  <cppflag value="-frtti"/>
+  <flag value="-g" if="debug"/>
+  <!-- <flag value="-O2" unless="debug"/> -->
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <flag value="-DHXCPP_RPI"/>
+  <flag value="-Wno-parentheses" />
+  <flag value="-Wno-null-dereference" />
+  <flag value="-Wno-unused-value" />
+  <flag value="-Wno-format-extra-args" />
+  <flag value="-Wno-bool-conversion" />
+  <include name="common-defines.xml" />
+  <flag value="-I${HXCPP}/include"/>
+  <objdir value="obj/xrpi-hf${OBJEXT}"/>
+  <outflag value="-o "/>
+  <ext value=".o"/>
+</compiler>
+
+<linker id="dll" exe="g++">
+  <exe name="arm-linux-gnueabihf-g++.exe"  />
+  <fromfile value="" if="GCC_OLD" />
+  <flag value="-shared"/>
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <flag value="-Xlinker"/>
+  <flag value="-O2" unless="debug"/> -->
+  <ext value=".dso"/>
+  <outflag value="-o "/>
+</linker>
+
+<linker id="exe" exe="g++">
+  <exe name="arm-linux-gnueabihf-g++.exe"  />
+  <fromfile value="" if="GCC_OLD" />
+  <flag value="-debug" if="debug"/>
+  <flag value="-O2" unless="debug"/>
+  <flag value="-s" />
+  <outflag value="-o "/>
+</linker>
+
+<stripper id="strip" exe="strip" unless="nostrip">
+  <exe name="strip"/>
+  <exe name ="arm-linux-gnueabihf-strip"  />
+  <flag value="-d" />
+</stripper>
+
+
+</xml>

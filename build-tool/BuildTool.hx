@@ -1591,17 +1591,30 @@ class BuildTool
       }
       else if ( (new EReg("window","i")).match(os) )
       {
-         defines.set("toolchain","msvc");
-         defines.set("windows","windows");
-         msvc = true;
-         if ( defines.exists("winrt") )
+         defines.set("windows_host","1");
+         // Cross-compile?
+         if (defines.exists("rpi"))
          {
-            defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
+            defines.set("toolchain","rpi-on-windows");
+            defines.set("linux","linux");
+            defines.set("rpi","1");
+            defines.set("hardfp","1");
+            defines.set("BINDIR", "RPi");
          }
          else
          {
-            defines.set("BINDIR",m64 ? "Windows64":"Windows");
-         }
+            defines.set("toolchain","msvc");
+            defines.set("windows","windows");
+            msvc = true;
+            if ( defines.exists("winrt") )
+            {
+               defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
+            }
+            else
+            {
+               defines.set("BINDIR",m64 ? "Windows64":"Windows");
+            }
+          }
 
          Setup.setupMSVC(defines,m64);
       }
