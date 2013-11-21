@@ -1634,10 +1634,22 @@ class BuildTool
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
-         defines.set("toolchain","mac");
-         defines.set("macos","macos");
-         defines.set("apple","apple");
-         defines.set("BINDIR",m64 ? "Mac64":"Mac");
+         // Cross-compile?
+         if (defines.exists("linux"))
+         {
+            defines.set("mac_host","1");
+            defines.set("linux","linux");
+            defines.set("toolchain","linux");
+            defines.set("xcompile","1");
+            defines.set("BINDIR", m64 ? "Linux64":"Linux");
+         }
+         else
+         {
+            defines.set("toolchain","mac");
+            defines.set("macos","macos");
+            defines.set("apple","apple");
+            defines.set("BINDIR",m64 ? "Mac64":"Mac");
+         }
       }
 
       if (defines.exists("dll_import"))

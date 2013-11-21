@@ -8,6 +8,7 @@
 <linker id="static_link" exe="ar" unless="windows">
   <ext value=".a"/>
   <exe name="emar" if="emscripten" />
+  <exe name="${HXCPP_AR}" if="HXCPP_AR" />
   <fromfile value="" if="macos" />
   <fromfile value="" if="GCC_OLD" />
   <fromfile value="" if="iphone" />
@@ -32,6 +33,7 @@
   <exe name ="arm-linux-androideabi-strip" if="android" />
   <exe name ="ntox86-strip" if="blackberry" />
   <exe name ="ntoarmv7-strip" if="blackberry" unless="simulator" />
+  <exe name ="${HXCPP_STRIP}" if="HXCPP_STRIP" />
   <flag value="-u" if="macos"/>
   <flag value="-r" if="macos"/>
   <flag value="-x" if="macos"/>

@@ -2,6 +2,20 @@
 
 <!-- LINUX TOOLS -------------------------------------->
 
+
+<section if="xcompile" >
+   <section if="HXCPP_M64">
+      <set name="CXX" value="${HXCPP_XLINUX64_CXX}" />
+      <set name="HXCPP_STRIP" value="${HXCPP_XLINUX64_STRIP}" />
+      <set name="HXCPP_AR" value="${HXCPP_XLINUX64_AR}" />
+   </section>
+   <section unless="HXCPP_M64">
+      <set name="CXX" value="${HXCPP_XLINUX32_CXX}" />
+      <set name="HXCPP_STRIP" value="${HXCPP_XLINUX32_STRIP}" />
+      <set name="HXCPP_AR" value="${HXCPP_XLINUX32_AR}" />
+   </section>
+</section>
+
 <include name="gcc-toolchain.xml"/>
 <set name="noM32" value="1" if="HXCPP_M64" />
 <set name="noM32" value="1" if="rpi" />
