@@ -2,6 +2,11 @@
 	@echo "%HXCPP_MSVC%"
 	@call "%HXCPP_MSVC%\..\..\VC\vcvarsall.bat" amd64
 	@set
+) else if exist "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" (
+	@echo "%VS120COMNTOOLS%"
+	@call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
+	@echo HXCPP_VARS
+	@set
 ) else if exist "%VS110COMNTOOLS%\..\..\VC\vcvarsall.bat" (
 	@echo "%VS110COMNTOOLS%"
 	@call "%VS110COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
