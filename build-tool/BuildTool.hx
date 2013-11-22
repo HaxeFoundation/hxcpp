@@ -817,6 +817,9 @@ class BuildTool
          Sys.exit(1);
       }
 
+      if (!mDefines.exists("HXCPP_COMPILE_THREADS"))
+         mDefines.set("HXCPP_COMPILE_THREADS", Std.string(getNumberOfProcesses()));
+
       var xml_slow = Xml.parse(make_contents);
       var xml = new haxe.xml.Fast(xml_slow.firstElement());
       
@@ -854,7 +857,6 @@ class BuildTool
 
       if (useCache && verbose)
          Sys.println("Using cache " + compileCache );
-
 
       if (mTargets.exists("default"))
          buildTarget("default");
@@ -1615,8 +1617,6 @@ class BuildTool
                defines.set("BINDIR",m64 ? "Windows64":"Windows");
             }
           }
-
-         Setup.setupMSVC(defines,m64);
       }
       else if ( isRPi )
       {

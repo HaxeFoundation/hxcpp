@@ -3,6 +3,10 @@
 
 <!-- WINDOWS TOOLS -------------------------------------->
 
+<set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
+
+<setup name="msvc" />
+
 <set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
 <set name="ABI" value="-MT" unless="ABI"/>
@@ -11,13 +15,19 @@
 <set name="ABI" value="-ZW" if="winrt" />
 <set name="CPP_ABI" value="${ABI}" />
 
-
+<set name="XPOBJ" value="xp" if="HXCPP_WINXP_COMPAT" />
 
 <set name="HXCPP_DEBUG_LINK" value="1" if="debug"/>
 
 <set name="OBJCACHE" value="-c" if="HXCPP_COMPILE_CACHE"/>
 
+<unset name="HXCPP_FORCE_PDB_SERVER" if="HXCPP_COMPILE_CACHE" />
 
+<set name="SUBSYSTEMWINDOWS" value="1" if="no_console" unless="HXCPP_DEBUGGER" />
+<set name="SUBSYSTEMCONSOLE" value="1" unless="SUBSYSTEMWINDOWS" />
+
+<set name="CONSOLE_VER" value=",5.01" if="HXCPP_WINXP_COMPAT" />
+<set name="CONSOLE_VER" value="" unless="MSVC17+" />
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
@@ -36,21 +46,23 @@
   <cppflag value="${CPP_ABI}" />
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-D${HXCPP_XP_DEFINE}" if="HXCPP_XP_DEFINE"/>
   <flag value="-GR"/>
   <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" />
   <flag value="-Z7" if="HXCPP_COMPILE_CACHE" />
   <flag value="-Oy-"/>
   <flag value="-c"/>
   <flag value="-EHs"/>
+  <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-I${HXCPP}/include"/>
   <include name="common-defines.xml" />
   <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
-  <flag value="-DHX_WIN_MAIN" if="no_console" unless="HXCPP_DEBUGGER" />
+  <flag value="-DHX_WIN_MAIN" if="SUBSYSTEMWINDOWS" />
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
-  <objdir value="obj/mscv${MSVC_VER}${OBJEXT}${OBJCACHE}" unless="winrt" />
-  <objdir value="obj/mscv${MSVC_VER}-rt${OBJEXT}${OBJCACHE}" if="winrt" />
+  <objdir value="obj/mscv${MSVC_VER}${OBJEXT}${OBJCACHE}${XPOBJ}" unless="winrt" />
+  <objdir value="obj/mscv${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}" if="winrt" />
 
   <getversion value="cl.exe"/>
 </compiler>
@@ -73,7 +85,8 @@
   <flag value="-nologo"/>
   <flag value="-machine:x86"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
-  <flag value="-subsystem:windows" if="no_console" unless="HXCPP_DEBUGGER" />
+  <flag value="-subsystem:windows" if="SUBSYSTEMWINDOWS" />
+  <flag value="-subsystem:console${CONSOLE_VER}" if="SUBSYSTEMCONSOLE" />
   <flag value="-libpath:lib"/>
   <flag value="user32.lib"/>
   <ext value=".exe"/>

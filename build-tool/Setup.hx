@@ -141,6 +141,8 @@ class Setup
    {
       if (inWhat=="androidNdk")
          setupAndroidNdk(ioDefines);
+      else if (inWhat=="msvc")
+         setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"));
       else
          throw 'Unknown setup feature $inWhat';
    }
@@ -223,6 +225,13 @@ class Setup
       if (!ioDefines.exists("NO_AUTO_MSVC"))
       {
          var extra = in64 ? "64" : "";
+         var xpCompat = false;
+         if (ioDefines.exists("HXCPP_WINXP_COMPAT"))
+         {
+            Sys.putEnv("HXCPP_WINXP_COMPAT","1");
+            xpCompat = true;
+         }
+
          var vc_setup_proc = new sys.io.Process("cmd.exe", ["/C", BuildTool.HXCPP + "build-tool\\msvc" + extra + "-setup.bat" ]);
          var vars_found = false;
          var error_found = false;
@@ -237,6 +246,7 @@ class Setup
                {
                   if (str.substr(0,5)=="Error" || ~/missing/.match(str) )
                      error_found = true;
+
                   output.push(str);
                }
                else
@@ -247,7 +257,7 @@ class Setup
                   {
                      case "path", "vcinstalldir", "windowssdkdir","framework35version",
                         "frameworkdir", "frameworkdir32", "frameworkversion",
-                        "frameworkversion32", "devenvdir", "include", "lib", "libpath"
+                        "frameworkversion32", "devenvdir", "include", "lib", "libpath", "hxcpp_xp_define"
                       :
                         var value = str.substr(pos+1);
                         ioDefines.set(name,value);
@@ -284,7 +294,11 @@ class Setup
                 ioDefines.set("MSVC_VER", cl_version+"");
                 if (cl_version>=17)
                    ioDefines.set("MSVC17+","1");
+                if (cl_version>=18)
+                   ioDefines.set("MSVC18+","1");
                 BuildTool.sAllowNumProcs = cl_version >= 14;
+                if (Std.parseInt(ioDefines.get("HXCPP_COMPILE_THREADS"))>1 && cl_version>=18)
+                    ioDefines.set("HXCPP_FORCE_PDB_SERVER","1");
              }
            }
        } catch(e:Dynamic){}
