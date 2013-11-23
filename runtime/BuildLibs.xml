@@ -121,18 +121,20 @@
 </files>
 
 <section if="rpi" >
-   <set name="NEKOPATH" value="libs/nekoapi/rpi" if="windows_host" />
+   <set name="NEKOPATH" value="libs/nekoapi/bin/Linux" if="windows_host" />
 </section>
 <set name="NEKOPATH" value="${NEKO_INSTALL_PATH}" unless="NEKOPATH" if="NEKO_INSTALL_PATH" />
 <set name="NEKOPATH" value="/usr/lib/neko" unless="NEKOPATH" />
 <set name="neko_v2" value="1" unless="neko_v1" />
 
+<set name="NEKO_LIB_DIR" value="${RUNTIME}/libs/nekoapi/bin/${BINDIR}" />
+<set name="NEKO_LIB_DIR" value="${RUNTIME}/libs/nekoapi/bin/Linux" if="rpi" />
+
 <target id="nekoapi" output="nekoapi" tool="linker" toolid="dll">
   <ext value=".ndll"/>
   <files id="nekoapi"/>
-  <lib name="${RUNTIME}/libs/nekoapi/neko.lib" if="windows" unless="neko_v2" />
-  <lib name="${RUNTIME}/libs/nekoapi/neko2.lib" if="windows" unless="neko_v1" />
-  <lib name="-L${NEKOPATH}" unless="windows"/>
+  <lib name="${NEKO_LIB_DIR}/neko.lib" if="windows" />
+  <lib name="-L${NEKO_LIB_DIR}" unless="windows"/>
   <lib name="-lneko" unless="windows"/>
   <outdir name="../bin/${BINDIR}"/>
 </target>
