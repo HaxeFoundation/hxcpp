@@ -9,7 +9,7 @@ class Test
       #if nme_install_tool
       var bytes:haxe.io.Bytes = ApplicationMain.getAsset("Test.hx");
       #else
-      var bytes = cpp.io.File.getBytes("Test.hx");
+      var bytes = sys.io.File.getBytes("Test.hx");
       #end
 
       var compressed = cpp.zip.Compress.run(bytes,5);

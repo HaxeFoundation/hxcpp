@@ -1597,7 +1597,8 @@ class BuildTool
          // Cross-compile?
          if (defines.exists("rpi"))
          {
-            defines.set("toolchain","rpi-on-windows");
+            defines.set("toolchain","linux");
+            defines.set("xcompile","1");
             defines.set("linux","linux");
             defines.set("rpi","1");
             defines.set("hardfp","1");
