@@ -40,7 +40,6 @@
 
 <set name="prebuiltBase" value="${ANDROID_NDK_ROOT}/toolchains/arm-linux-androideabi-${TOOLCHAIN_VERSION}/prebuilt/${ANDROID_HOST}" />
 
-<set name="prebuiltBase" value="${prebuiltBase}_64" ifExists="${prebuiltBase}_64" />
 <path name="${prebuiltBase}/bin" />
 
 <compiler id="android-gcc" exe="arm-linux-androideabi-g++">

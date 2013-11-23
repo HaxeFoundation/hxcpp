@@ -56,11 +56,13 @@ class Setup
 
    static public function setupAndroidNdk(defines: Map<String,String>)
    {
+     var root:String = null;
+
      if (!defines.exists("ANDROID_NDK_ROOT"))
      {
         if (defines.exists("ANDROID_NDK_DIR"))
         {
-           var root = Setup.findAndroidNdkRoot( defines.get("ANDROID_NDK_DIR") );
+           root = Setup.findAndroidNdkRoot( defines.get("ANDROID_NDK_DIR") );
            if (BuildTool.verbose)
               Sys.println("Using found ndk root " + root);
 
@@ -72,9 +74,59 @@ class Setup
      }
      else
      {
+        root = defines.get("ANDROID_NDK_ROOT");
         if (BuildTool.verbose)
-           Sys.println("Using specified ndk root " + defines.get("ANDROID_NDK_ROOT") );
+           Sys.println("Using specified ndk root " + root);
      }
+
+     // Find toolchain
+     if (!defines.exists("TOOLCHAIN_VERSION"))
+     {
+        try
+        {
+          var files = FileSystem.readDirectory(root+"/toolchains");
+
+          // Prefer clang?
+          var extract_version = ~/^arm-linux-androideabi-(\d.*)/;
+          var bestVer="";
+          for(file in files)
+          {
+             if (extract_version.match(file))
+             {
+                var ver = extract_version.matched(1);
+                if ( ver>bestVer || bestVer=="")
+                {
+                   bestVer = ver;
+                }
+             }
+          }
+          if (bestVer!="")
+          {
+             defines.set("TOOLCHAIN_VERSION",bestVer);
+             if (BuildTool.verbose)
+                Sys.println("Found TOOLCHAIN_VERSION " + bestVer);
+          }
+        }
+        catch(e:Dynamic) { }
+     }
+
+     // See what ANDROID_HOST to use ...
+     try
+     {
+        var prebuilt =  root+"/toolchains/arm-linux-androideabi-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
+        var files = FileSystem.readDirectory(prebuilt);
+        if (files.length==1)
+        {
+           defines.set("ANDROID_HOST", files[0]);
+           if (BuildTool.verbose)
+           {
+              Sys.println("Found ANDROID_HOST " + files[0]);
+           }
+        }
+        else if (BuildTool.verbose)
+           Sys.println("Could not work out ANDROID_HOST (" + files + ") - using default");
+     }
+     catch(e:Dynamic) { }
 
      var found = false;
      for(i in 6...20)
