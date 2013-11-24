@@ -296,7 +296,7 @@ public:
 
 
    // Haxe API
-   inline int push( const ELEM_ &inVal )
+   inline int push( ELEM_ inVal )
    {
       int l = length;
       EnsureSize((int)l+1);
