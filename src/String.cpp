@@ -110,7 +110,7 @@ int DecodeAdvanceUTF8(const unsigned char * &ioPtr)
 
    int c2 = *ioPtr++;
    int c3 = *ioPtr++;
-   return ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 << 6) & 0x7F) | ((*ioPtr++) & 0x7F);
+   return ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 & 0x7F) << 6) | ((*ioPtr++) & 0x7F);
  }
 
 
