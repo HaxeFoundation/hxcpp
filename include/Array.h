@@ -105,6 +105,8 @@ public:
    virtual Dynamic __pop() = 0;
    virtual Dynamic __push(const Dynamic &a0) = 0;
    virtual Dynamic __remove(const Dynamic &a0) = 0;
+   virtual Dynamic __indexOf(const Dynamic &a0) = 0;
+   virtual Dynamic __lastIndexOf(const Dynamic &a0) = 0;
    virtual Dynamic __reverse() = 0;
    virtual Dynamic __shift() = 0;
    virtual Dynamic __slice(const Dynamic &a0,const Dynamic &a1) = 0;
@@ -124,6 +126,8 @@ public:
    Dynamic pop_dyn();
    Dynamic push_dyn();
    Dynamic remove_dyn();
+   Dynamic indexOf_dyn();
+   Dynamic lastIndexOf_dyn();
    Dynamic reverse_dyn();
    Dynamic shift_dyn();
    Dynamic slice_dyn();
@@ -336,6 +340,28 @@ public:
       return false;
    }
 
+   int indexOf(ELEM_ inValue)
+   {
+      ELEM_ *e = (ELEM_ *)mBase;
+      for(int i=0;i<length;i++)
+      {
+         if (e[i]==inValue)
+            return i;
+      }
+      return -1;
+   }
+
+   int lastIndexOf(ELEM_ inValue)
+   {
+      ELEM_ *e = (ELEM_ *)mBase;
+      for(int i=length-1;i>=0;i--)
+      {
+         if (e[i]==inValue)
+            return i;
+      }
+      return -1;
+   }
+
    NullType shift()
    {
       if (length==0) return null();
@@ -417,6 +443,8 @@ public:
    virtual Dynamic __pop() { return pop(); }
    virtual Dynamic __push(const Dynamic &a0) { return push(a0);}
    virtual Dynamic __remove(const Dynamic &a0) { return remove(a0); }
+   virtual Dynamic __indexOf(const Dynamic &a0) { return indexOf(a0); }
+   virtual Dynamic __lastIndexOf(const Dynamic &a0) { return lastIndexOf(a0); }
    virtual Dynamic __reverse() { reverse(); return null(); }
    virtual Dynamic __shift() { return shift(); }
    virtual Dynamic __slice(const Dynamic &a0,const Dynamic &a1) { return slice(a0,a1); }
