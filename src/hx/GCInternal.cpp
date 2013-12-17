@@ -1067,6 +1067,8 @@ public:
 
 class GlobalAllocator
 {
+   enum { LOCAL_POOL_SIZE = 2 };
+
 public:
    GlobalAllocator()
    {
@@ -1078,6 +1080,8 @@ public:
       mLargeAllocForceRefresh = mLargeAllocSpace;
       // Start at 1 Meg...
       mTotalAfterLastCollect = 1<<20;
+      for(int p=0;p<LOCAL_POOL_SIZE;p++)
+         mLocalPool[p] = 0;
    }
    void AddLocal(LocalAllocator *inAlloc)
    {
@@ -1092,9 +1096,41 @@ public:
       mLocalAllocs.push(inAlloc);
    }
 
+   bool ReturnToPool(LocalAllocator *inAlloc)
+   {
+      // Until we add ourselves, the colled will not wait
+      //  on us - ie, we are assumed ot be in a GC free zone.
+      AutoLock lock(*gThreadStateChangeLock);
+      for(int p=0;p<LOCAL_POOL_SIZE;p++)
+      {
+         if (!mLocalPool[p])
+         {
+            mLocalPool[p] = inAlloc;
+            return true;
+         }
+      }
+      // I told him we already got one
+      return false;
+   }
+
+   LocalAllocator *GetPooledAllocator()
+   {
+      AutoLock lock(*gThreadStateChangeLock);
+      for(int p=0;p<LOCAL_POOL_SIZE;p++)
+      {
+         if (mLocalPool[p])
+         {
+            LocalAllocator *result = mLocalPool[p];
+            mLocalPool[p] = 0;
+            return result;
+         }
+      }
+      return 0;
+   }
+
    void RemoveLocal(LocalAllocator *inAlloc)
    {
-      // You should be in the GC zone before you call this...
+      // You should be in the GC free zone before you call this...
       AutoLock lock(*gThreadStateChangeLock);
       mLocalAllocs.qerase_val(inAlloc);
    }
@@ -1928,6 +1964,7 @@ public:
    PointerSet mActiveBlocks;
    MyMutex    mLargeListLock;
    hx::QuickVec<LocalAllocator *> mLocalAllocs;
+   LocalAllocator *mLocalPool[LOCAL_POOL_SIZE];
 };
 
 GlobalAllocator *sGlobalAlloc = 0;
@@ -1985,6 +2022,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 //
 // One per thread ...
 
+static int sLocalAllocatorCount = 0;
 class LocalAllocator
 {
 public:
@@ -1993,10 +2031,10 @@ public:
       mTopOfStack = inTopOfStack;
       mRegisterBufSize = 0;
       mGCFreeZone = false;
+      mStackLocks = 0;
       Reset();
-      mState = lasNew;
       sGlobalAlloc->AddLocal(this);
-      mState = lasRunning;
+      sLocalAllocatorCount++;
       #ifdef HX_WINDOWS
       mID = GetCurrentThreadId();
       #endif
@@ -2004,9 +2042,34 @@ public:
 
    ~LocalAllocator()
    {
-      mState = lasTerminal;
       EnterGCFreeZone();
       sGlobalAlloc->RemoveLocal(this);
+      tlsLocalAlloc = 0;
+
+      sLocalAllocatorCount--;
+   }
+
+   void AttachThread(int *inTopOfStack)
+   {
+      mTopOfStack = inTopOfStack;
+      mRegisterBufSize = 0;
+      mStackLocks = 0;
+      #ifdef HX_WINDOWS
+      mID = GetCurrentThreadId();
+      #endif
+
+      // It is in the free zone - wait for 'SetTopOfStack' to activate
+      mGCFreeZone = true;
+   }
+
+   void ReturnToPool()
+   {
+      #ifdef HX_WINDOWS
+      mID = 0;
+      #endif
+      if (!sGlobalAlloc->ReturnToPool(this))
+         delete this;
+      tlsLocalAlloc = 0;
    }
 
    void Reset()
@@ -2020,13 +2083,36 @@ public:
 
    void SetTopOfStack(int *inTop,bool inForce)
    {
-      // stop early to allow for ptr[1] ....
-      if (inTop>mTopOfStack || inForce)
-         mTopOfStack = inTop;
-      if (mTopOfStack && mGCFreeZone)
-         ExitGCFreeZone();
-      else if (!mTopOfStack && !mGCFreeZone)
-         EnterGCFreeZone();
+      if (inTop)
+      {
+         // stop early to allow for ptr[1] ....
+         if (inTop>mTopOfStack || (inForce && mStackLocks==0) )
+            mTopOfStack = inTop;
+
+         if (inForce)
+            mStackLocks++;
+
+         if (mGCFreeZone)
+            ExitGCFreeZone();
+      }
+      else
+      {
+         if (inForce)
+            mTopOfStack = 0;
+
+         if (!mGCFreeZone)
+            EnterGCFreeZone();
+
+         if (inForce)
+         {
+            mStackLocks--;
+            if (mStackLocks<=0)
+            {
+               mStackLocks = 0;
+               ReturnToPool();
+            }
+         }
+      }
    }
 
    void SetBottomOfStack(int *inBottom)
@@ -2272,8 +2358,8 @@ public:
    int  mRegisterBufSize;
 
    bool            mGCFreeZone;
+   int             mStackLocks;
    int             mID;
-   LocalAllocState mState;
    MySemaphore     mReadyForCollect;
    MySemaphore     mCollectDone;
 };
@@ -2394,22 +2480,25 @@ void GCPrepareMultiThreaded()
 
 void SetTopOfStack(int *inTop,bool inForce)
 {
-   if (!sgAllocInit)
-      InitAlloc();
-   else
+   if (inTop)
    {
-      if (tlsLocalAlloc==0)
+      if (!sgAllocInit)
+         InitAlloc();
+      else
       {
-         GCPrepareMultiThreaded();
-         RegisterCurrentThread(inTop);
+         if (tlsLocalAlloc==0)
+         {
+            GCPrepareMultiThreaded();
+            RegisterCurrentThread(inTop);
+         }
       }
+      sgInternalEnable = true;
    }
 
    LocalAllocator *tla = GetLocalAlloc();
 
-   sgInternalEnable = true;
-
-   tla->SetTopOfStack(inTop,inForce);
+   if (tla)
+      tla->SetTopOfStack(inTop,inForce);
 }
 
 
@@ -2486,7 +2575,15 @@ void *InternalRealloc(void *inData,int inSize)
 void RegisterCurrentThread(void *inTopOfStack)
 {
    // Create a local-alloc
-   LocalAllocator *local = new LocalAllocator((int *)inTopOfStack);
+   LocalAllocator *local = sGlobalAlloc->GetPooledAllocator();
+   if (!local)
+   {
+      local = new LocalAllocator((int *)inTopOfStack);
+   }
+   else
+   {
+      local->AttachThread((int *)inTopOfStack);
+   }
    tlsLocalAlloc = local;
 }
 
@@ -2494,7 +2591,6 @@ void UnregisterCurrentThread()
 {
    LocalAllocator *local = tlsLocalAlloc;
    delete local;
-   tlsLocalAlloc = 0;
 }
 
 
