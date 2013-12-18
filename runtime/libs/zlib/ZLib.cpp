@@ -99,7 +99,7 @@ static value deflate_init( value level ) {
 		zlib_error(NULL,err);
 	}
 	s = alloc_abstract(k_stream_def,z);
-	val_gc(s,free_stream_def);
+	//val_gc(s,free_stream_def);
 	return s;
 }
 
@@ -179,7 +179,7 @@ static value inflate_init( value wsize ) {
 		zlib_error(NULL,err);
 	}
 	s = alloc_abstract(k_stream_inf,z);
-	val_gc(s,free_stream_inf);
+	//val_gc(s,free_stream_inf);
 	return s;
 }
 
