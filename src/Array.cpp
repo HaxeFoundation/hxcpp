@@ -253,6 +253,8 @@ DEFINE_ARRAY_FUNC0(pop);
 DEFINE_ARRAY_FUNC0(copy);
 DEFINE_ARRAY_FUNC1(push);
 DEFINE_ARRAY_FUNC1(remove);
+DEFINE_ARRAY_FUNC2(indexOf);
+DEFINE_ARRAY_FUNC2(lastIndexOf);
 DEFINE_ARRAY_FUNC0(reverse);
 DEFINE_ARRAY_FUNC0(shift);
 DEFINE_ARRAY_FUNC2(slice);
@@ -274,6 +276,8 @@ Dynamic ArrayBase::__Field(const String &inString, bool inCallProp)
    if (inString==HX_CSTRING("pop")) return pop_dyn();
    if (inString==HX_CSTRING("push")) return push_dyn();
    if (inString==HX_CSTRING("remove")) return remove_dyn();
+   if (inString==HX_CSTRING("indexOf")) return indexOf_dyn();
+   if (inString==HX_CSTRING("lastIndexOf")) return lastIndexOf_dyn();
    if (inString==HX_CSTRING("reverse")) return reverse_dyn();
    if (inString==HX_CSTRING("shift")) return shift_dyn();
    if (inString==HX_CSTRING("splice")) return splice_dyn();
@@ -297,6 +301,8 @@ static String sArrayFields[] = {
    HX_CSTRING("pop"),
    HX_CSTRING("push"),
    HX_CSTRING("remove"),
+   HX_CSTRING("indexOf"),
+   HX_CSTRING("lastIndexOf"),
    HX_CSTRING("reverse"),
    HX_CSTRING("shift"),
    HX_CSTRING("slice"),

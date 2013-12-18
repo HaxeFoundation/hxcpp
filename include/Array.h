@@ -105,6 +105,8 @@ public:
    virtual Dynamic __pop() = 0;
    virtual Dynamic __push(const Dynamic &a0) = 0;
    virtual Dynamic __remove(const Dynamic &a0) = 0;
+   virtual Dynamic __indexOf(const Dynamic &a0,const Dynamic &a1) = 0;
+   virtual Dynamic __lastIndexOf(const Dynamic &a0,const Dynamic &a1) = 0;
    virtual Dynamic __reverse() = 0;
    virtual Dynamic __shift() = 0;
    virtual Dynamic __slice(const Dynamic &a0,const Dynamic &a1) = 0;
@@ -124,6 +126,8 @@ public:
    Dynamic pop_dyn();
    Dynamic push_dyn();
    Dynamic remove_dyn();
+   Dynamic indexOf_dyn();
+   Dynamic lastIndexOf_dyn();
    Dynamic reverse_dyn();
    Dynamic shift_dyn();
    Dynamic slice_dyn();
@@ -336,6 +340,43 @@ public:
       return false;
    }
 
+   int indexOf(ELEM_ inValue, Dynamic fromIndex = null())
+   {
+      int len = length;
+      int i = fromIndex==null() ? 0 : fromIndex->__ToInt();
+      ELEM_ *e = (ELEM_ *)mBase;
+      if (i < 0)
+      {
+         i += len;
+         if (i < 0) i = 0;
+      }
+      while(i<len)
+      {
+         if (e[i]==inValue)
+            return i;
+         i++;
+      }
+      return -1;
+   }
+
+   int lastIndexOf(ELEM_ inValue, Dynamic fromIndex = null())
+   {
+      int len = length;
+      int i = fromIndex==null() ? len-1 : fromIndex->__ToInt();
+      ELEM_ *e = (ELEM_ *)mBase;
+      if (i >= len)
+         i = len - 1;
+      else if (i < 0)
+         i += len;
+      while(i>=0)
+      {
+         if (e[i]==inValue)
+            return i;
+         i--;
+      }
+      return -1;
+   }
+
    NullType shift()
    {
       if (length==0) return null();
@@ -417,6 +458,8 @@ public:
    virtual Dynamic __pop() { return pop(); }
    virtual Dynamic __push(const Dynamic &a0) { return push(a0);}
    virtual Dynamic __remove(const Dynamic &a0) { return remove(a0); }
+   virtual Dynamic __indexOf(const Dynamic &a0,const Dynamic &a1) { return indexOf(a0, a1); }
+   virtual Dynamic __lastIndexOf(const Dynamic &a0,const Dynamic &a1) { return lastIndexOf(a0, a1); }
    virtual Dynamic __reverse() { reverse(); return null(); }
    virtual Dynamic __shift() { return shift(); }
    virtual Dynamic __slice(const Dynamic &a0,const Dynamic &a1) { return slice(a0,a1); }
