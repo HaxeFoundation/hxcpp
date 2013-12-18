@@ -78,6 +78,7 @@ DECLARE_TLS_DATA(LocalAllocator, tlsLocalAlloc);
 static void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx);
 static void WaitForSafe(LocalAllocator *inAlloc);
 static void ReleaseFromSafe(LocalAllocator *inAlloc);
+static void CollectFromThisThread();
 
 namespace hx {
 int gPauseForCollect = 0;
@@ -1137,12 +1138,15 @@ public:
 
    void *AllocLarge(int inSize)
    {
+      if (hx::gPauseForCollect)
+         __hxcpp_gc_safe_point();
+
       //Should we force a collect ? - the 'large' data are not considered when allocating objects
       // from the blocks, and can 'pile up' between smalll object allocations
       if (inSize+mLargeAllocated > mLargeAllocForceRefresh)
       {
          //GCLOG("Large alloc causing collection");
-         Collect(true,false);
+         CollectFromThisThread();
       }
 
       inSize = (inSize +3) & ~3;
@@ -1154,7 +1158,7 @@ public:
       if (!result)
       {
          //GCLOG("Large alloc panic!");
-         Collect(true,false);
+         CollectFromThisThread();
          result = (unsigned int *)malloc(inSize + sizeof(int)*2);
       }
       result[0] = inSize;
@@ -1747,8 +1751,9 @@ public:
    int Collect(bool inMajor, bool inForceCompact)
    {
       HX_STACK_FRAME("GC", "collect", 0, "GC::collect", __FILE__, __LINE__,0)
-      #ifdef ANDROID
-      //__android_log_print(ANDROID_LOG_ERROR, "hxcpp", "Collect...");
+      #ifdef SHOW_MEM_EVENTS
+      int here = 0;
+      GCLOG("=== Collect === %p\n",&here);
       #endif
      
       int largeAlloced = mLargeAllocated;
@@ -1915,8 +1920,8 @@ public:
          gThreadStateChangeLock->Unlock();
       }
 
-      #ifdef ANDROID
-      //__android_log_print(ANDROID_LOG_INFO, "hxcpp", "Collect Done");
+      #ifdef SHOW_MEM_EVENTS
+      GCLOG("Collect Done\n");
       #endif
 
       return want_more;
@@ -1975,6 +1980,11 @@ namespace hx
 
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 {
+   #ifdef SHOW_MEM_EVENTS
+   GCLOG("Mark conservative %p...%p (%d)\n", inBottom, inTop, (inTop-inBottom) );
+   #endif
+
+
    void *prev = 0;
    for(int *ptr = inBottom ; ptr<inTop; ptr++)
    {
@@ -2418,6 +2428,13 @@ void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx)
    inAlloc->Mark(__inCtx);
 }
 
+
+void CollectFromThisThread()
+{
+   LocalAllocator *la = GetLocalAlloc();
+   la->SetupStack();
+   sGlobalAlloc->Collect(true,false);
+}
 
 namespace hx
 {
