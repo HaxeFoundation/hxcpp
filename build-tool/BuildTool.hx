@@ -1552,6 +1552,19 @@ class BuildTool
          defines.set("webos","webos");
          defines.set("BINDIR","webOS");
       }
+      else if (defines.exists("tizen"))
+      {
+         if (defines.exists ("simulator"))
+         {
+            defines.set("toolchain","tizen-x86");
+         }
+         else
+         {
+            defines.set("toolchain","tizen");
+         }
+         defines.set("tizen","tizen");
+         defines.set("BINDIR","Tizen");
+      }
 	  else if (defines.exists("blackberry"))
       {
 		 if (defines.exists("simulator"))

@@ -19,6 +19,9 @@ typedef int64_t __int64;
 #ifdef WEBOS
 #include <syslog.h>
 #endif
+#ifdef TIZEN
+extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumber, const char* pFormat, ...);
+#endif
 
 #include <string>
 #include <vector>
@@ -151,6 +154,11 @@ void __hxcpp_stdlibs_boot()
 
 void __trace(Dynamic inObj, Dynamic inData)
 {
+#ifdef TIZEN
+   AppLogInternal(inData==null() ? "?" : inData->__Field( HX_CSTRING("fileName") , true) ->toString().__s,
+      inData==null() ? 0 : inData->__Field( HX_CSTRING("lineNumber") , true)->__ToInt(),
+      "%s\n", inObj.GetPtr() ? inObj->toString().__s : "null" );
+#else
 #ifdef HX_UTF8_STRINGS
    #ifdef ANDROID
    __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",
@@ -167,6 +175,7 @@ void __trace(Dynamic inObj, Dynamic inData)
                inData->__Field( HX_CSTRING("fileName") , true)->__ToString().__s,
                inData->__Field( HX_CSTRING("lineNumber") , true)->__ToInt(),
                inObj.GetPtr() ? inObj->toString().__s : L"null" );
+#endif
 #endif
 }
 

@@ -328,7 +328,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
     HX_CSTRING(".sim.dylib");
 #elif defined(__APPLE__)
     HX_CSTRING(".dylib");
-#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)  || defined(BLACKBERRY) || defined(EMSCRIPTEN)
+#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)  || defined(BLACKBERRY) || defined(EMSCRIPTEN) || defined(TIZEN)
     HX_CSTRING(".so");
 #else
     HX_CSTRING(".dso");
@@ -356,6 +356,8 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
     HX_CSTRING("RPi");
 #elif defined(EMSCRIPTEN)
 	HX_CSTRING("Emscripten");
+#elif defined(TIZEN)
+    HX_CSTRING("Tizen");
 #elif defined(IPHONESIM)
     HX_CSTRING("IPhoneSim");
 #elif defined(IPHONEOS)

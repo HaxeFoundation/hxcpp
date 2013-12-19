@@ -33,6 +33,8 @@
   <exe name ="arm-linux-androideabi-strip" if="android" />
   <exe name ="ntox86-strip" if="blackberry" />
   <exe name ="ntoarmv7-strip" if="blackberry" unless="simulator" />
+  <exe name ="i386-linux-gnueabi-strip" if="tizen" />
+  <exe name ="arm-linux-gnueabi-strip" if="tizen" unless="simulator" />
   <exe name ="${HXCPP_STRIP}" if="HXCPP_STRIP" />
   <flag value="-u" if="macos"/>
   <flag value="-r" if="macos"/>
