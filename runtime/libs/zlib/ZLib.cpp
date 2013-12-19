@@ -99,7 +99,7 @@ static value deflate_init( value level ) {
 		zlib_error(NULL,err);
 	}
 	s = alloc_abstract(k_stream_def,z);
-	//val_gc(s,free_stream_def);
+	val_gc(s,free_stream_def);
 	return s;
 }
 
@@ -149,8 +149,6 @@ static value deflate_buffer( value s, value src, value srcpos, value dst, value 
 	<doc>Close a compression stream</doc>
 **/
 static value deflate_end( value s ) {
-	if (val_is_null(s))
-		return alloc_null();
 	val_check_kind(s,k_stream_def);
 	free_stream_def(s);
 	return alloc_null();
@@ -179,7 +177,7 @@ static value inflate_init( value wsize ) {
 		zlib_error(NULL,err);
 	}
 	s = alloc_abstract(k_stream_inf,z);
-	//val_gc(s,free_stream_inf);
+	val_gc(s,free_stream_inf);
 	return s;
 }
 
@@ -232,8 +230,6 @@ static value inflate_buffer( value s, value src, value srcpos, value dst, value 
 	<doc>Close a decompression stream</doc>
 **/
 static value inflate_end( value s ) {
-	if (val_is_null(s))
-		return alloc_null();
 	val_check_kind(s,k_stream_inf);
 	free_stream_inf(s);
 	return alloc_null();
