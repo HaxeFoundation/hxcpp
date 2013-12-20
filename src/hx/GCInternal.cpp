@@ -2074,8 +2074,6 @@ public:
 
    void ReturnToPool()
    {
-      mTopOfStack = mBottomOfStack= 0;
-      Reset();
       #ifdef HX_WINDOWS
       mID = 0;
       #endif
@@ -2330,7 +2328,10 @@ public:
    void Mark(hx::MarkContext *__inCtx)
    {
       if (!mTopOfStack)
+      {
+         Reset();
          return;
+      }
 
       #ifdef SHOW_MEM_EVENTS
       //int here = 0;
