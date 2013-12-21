@@ -16,7 +16,11 @@ namespace hx { typedef ::type_info type_info; }
 namespace hx { typedef std::type_info type_info; }
 #ifndef EMSCRIPTEN
 using hx::type_info;
-typedef  int64_t  __int64;
+#ifdef __MINGW32__
+#include <stdint.h>
+#else
+typedef int64_t  __int64;
+#endif
 #endif
 #endif
 
