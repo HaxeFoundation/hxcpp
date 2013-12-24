@@ -56,8 +56,12 @@ void __hxcpp_execution_trace(int inLevel);
 // Used by debug breakpoints and execution trace
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void __hxcpp_set_stack_frame_line(int);
+
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void __hxcpp_on_line_changed();
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPaths);
 
 namespace hx
 {

@@ -35,6 +35,9 @@ static void read_memory_barrier()
     // currently unimplemented
 }
 
+// Newer versions of haxe compiler will set these too (or might be null for haxe 3.0)
+static const char **__all_files_fullpath = 0;
+static const char **__all_classes = 0;
 
 namespace hx
 {
@@ -43,7 +46,7 @@ static void CriticalErrorHandler(String inErr, bool allowFixup);
 
 // These are emitted elsewhere by the haxe compiler
 extern const char *__hxcpp_all_files[];
-extern const char *__hxcpp_all_classes[];
+
 
 // This global boolean is set whenever there are any breakpoints (normal or
 // immediate), and can relatively quickly gate debugged threads from making
@@ -1504,14 +1507,15 @@ private:
         return 0;
    }
 
-    static const char *LookupClassName(String className)
+   static const char *LookupClassName(String className)
+   {
+      if (__all_classes)
+         for (const char **ptr = __all_classes; *ptr; ptr++)
          {
-        for (const char **ptr = hx::__hxcpp_all_classes; *ptr; ptr++) {
-            if (!strcmp(*ptr, className)) {
-                return *ptr;
+            if (!strcmp(*ptr, className.__s))
+               return *ptr;
          }
-      }
-        return 0;
+      return 0;
    }
 
 
@@ -1585,15 +1589,17 @@ Array<Dynamic> __hxcpp_dbg_getFiles()
 
 
 Array<Dynamic> __hxcpp_dbg_getClasses()
-   {
+{
     Array< ::String> ret = Array_obj< ::String>::__new();
 
-    for (const char **ptr = hx::__hxcpp_all_classes; *ptr; ptr++) {
-        ret->push(String(*ptr));
-            }
+    if (__all_classes)
+    {
+       for (const char **ptr = __all_classes; *ptr; ptr++)
+         ret->push(String(*ptr));
+    }
 
     return ret;
-   }
+}
 
 
 Array<Dynamic> __hxcpp_dbg_getThreadInfos()
@@ -2003,3 +2009,9 @@ void __hxcpp_set_critical_error_handler(Dynamic inHandler)
    setStaticHandler(hx::sCriticalErrorHandler,inHandler);
 }
 
+void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPaths)
+{
+   __all_classes = inAllClasses;
+   __all_files_fullpath = inFullPaths;
+}
+   
