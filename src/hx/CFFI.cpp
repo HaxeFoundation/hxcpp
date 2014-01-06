@@ -52,7 +52,8 @@ public:
    {
       if (!inFinalizer)
       {
-         mFinalizer->Detach();
+         if (mFinalizer)
+            mFinalizer->Detach();
          mFinalizer = 0;
       }
       else
