@@ -2694,7 +2694,7 @@ int __hxcpp_obj_id(Dynamic inObj)
    hx::Object *obj = inObj->__GetRealObject();
    if (!obj) return 0;
    #ifdef HXCPP_USE_OBJECT_MAP
-   return sGlobalAlloc->GetObjectID(inObj.GetPtr());
+   return sGlobalAlloc->GetObjectID(obj);
    #else
    return (int)(obj);
    #endif
