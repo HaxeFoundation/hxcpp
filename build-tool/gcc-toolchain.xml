@@ -6,7 +6,7 @@
 <set name="USE_GCC_FILETYPES" value="1"/>
 
 <linker id="static_link" exe="ar" unless="windows">
-  <ext value=".a"/>
+  <ext value="${LIB_ARCH_SUFFIX}.a"/>
   <exe name="emar" if="emscripten" />
   <exe name="${HXCPP_AR}" if="HXCPP_AR" />
   <fromfile value="" if="macos" />
@@ -30,7 +30,7 @@
 <stripper id="strip" exe="strip" unless="nostrip">
   <exe name="strip"/>
   <exe name ="arm-none-linux-gnueabi-strip" if="webos" />
-  <exe name ="arm-linux-androideabi-strip" if="android" />
+  <exe name ="${EXEPREFIX}-strip" if="android" />
   <exe name ="ntox86-strip" if="blackberry" />
   <exe name ="ntoarmv7-strip" if="blackberry" unless="simulator" />
   <exe name ="i386-linux-gnueabi-strip" if="tizen" />
