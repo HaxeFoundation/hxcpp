@@ -229,10 +229,20 @@ class Compiler
       }
    }
 
+   public function getObjName(inFile:File)
+   {
+      var uniqueId = "";
+      if (BuildTool.staticLibraryName!="")
+         uniqueId = haxe.crypto.Md5.encode(BuildTool.staticLibraryName + inFile.mName).substr(0,8) + "-";
+
+      var path = new haxe.io.Path(mObjDir + "/" + inFile.mName);
+      return path.dir + "/" + uniqueId + path.file + mExt;
+   }
+
    public function compile(inFile:File)
    {
       var path = new haxe.io.Path(mObjDir + "/" + inFile.mName);
-      var obj_name = path.dir + "/" + path.file + mExt;
+      var obj_name = getObjName(inFile);
 
       var args = new Array<String>();
       
@@ -738,6 +748,7 @@ class Target
       mErrors=[];
       mDirs=[];
    }
+
    public function addFiles(inGroup:FileGroup)
    {
       mFiles = mFiles.concat(inGroup.mFiles);
@@ -759,6 +770,13 @@ class Target
          Sys.println("Remove " + dir + "...");
          DirManager.deleteRecurse(dir);
       }
+   }
+
+   public function getStaticLibraryName()
+   {
+      if (mTool=="linker" && mToolID=="static_link")
+         return mOutput + mExt;
+      return "";
    }
 
    public var mOutput:String;
@@ -796,6 +814,7 @@ class BuildTool
    public static var isMac = false;
    public static var useCache = false;
    public static var compileCache:String;
+   public static var staticLibraryName:String;
 
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
@@ -1017,6 +1036,8 @@ class BuildTool
 
       // Sys.println("Using " + threads + " threads.");
 
+      staticLibraryName = target.getStaticLibraryName();
+ 
 
       var objs = new Array<String>();
       for(group in target.mFileGroups)
@@ -1032,7 +1053,7 @@ class BuildTool
          for(file in group.mFiles)
          {
             var path = new haxe.io.Path(mCompiler.mObjDir + "/" + file.mName);
-            var obj_name = path.dir + "/" + path.file + mCompiler.mExt;
+            var obj_name = mCompiler.getObjName(file);
             DirManager.make(path.dir);
             objs.push(obj_name);
             if (file.isOutOfDate(obj_name))

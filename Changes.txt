@@ -1,3 +1,5 @@
+* Give obj files in libraries unique names
+
 3.0.2
 ------------------------------------------------------------
 * Fix Dynamic + Int logic

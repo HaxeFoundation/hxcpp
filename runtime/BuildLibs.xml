@@ -28,7 +28,7 @@
   <file name="libs/std/File.cpp"/>
   <file name="libs/std/Init.cpp"/>
   <file name="libs/std/Misc.cpp"/>
-  <file name="libs/std/Interface.cpp"/>
+  <file name="libs/std/Interface.cpp" unless="static_link" />
 
 
 </files>
