@@ -1,0 +1,16 @@
+package hxcpp;
+
+@:cppFileCode( 'extern "C" void zlib_register_prims();')
+@:buildXml("
+<target id='haxe'>
+  <lib name='${HXCPP}/bin/${BINDIR}/libzlib${LIBEXTRA}${LIBEXT}'/>
+</target>
+")
+@:keep class StaticZlib
+{
+   static function __init__()
+   {
+     untyped __cpp__("zlib_register_prims();");
+   }
+}
+

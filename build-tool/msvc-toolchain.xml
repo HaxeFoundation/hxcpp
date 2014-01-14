@@ -115,7 +115,7 @@
 <linker id="static_link" exe="lib.exe" if="windows">
   <fromfile value="@"/>
   <flag value="-nologo"/>
-  <ext value=".lib"/>
+  <ext value="${LIBEXT}"/>
   <outflag value="-out:"/>
 </linker>
 

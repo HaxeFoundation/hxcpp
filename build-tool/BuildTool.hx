@@ -984,8 +984,11 @@ class BuildTool
                       throw "Could not find include file " + name;
                    }
                 case "target" : 
-                   var name = el.att.id;
-                   mTargets.set(name,createTarget(el));
+                   var name = substitute(el.att.id);
+                   if (mTargets.exists(name))
+                      createTarget(el,mTargets.get(name));
+                   else
+                      mTargets.set( name, createTarget(el,null) );
                 case "section" : 
                    parseXML(el,"");
             }

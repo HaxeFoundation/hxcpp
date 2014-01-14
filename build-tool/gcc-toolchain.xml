@@ -6,7 +6,7 @@
 <set name="USE_GCC_FILETYPES" value="1"/>
 
 <linker id="static_link" exe="ar" unless="windows">
-  <ext value=".a"/>
+  <ext value="${LIBEXT}"/>
   <exe name="emar" if="emscripten" />
   <exe name="${HXCPP_AR}" if="HXCPP_AR" />
   <fromfile value="" if="macos" />
