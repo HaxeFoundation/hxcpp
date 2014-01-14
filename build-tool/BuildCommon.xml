@@ -30,6 +30,8 @@
 <set name="LIBEXTRA" value="" if="blackberry" unless="simulator" />
 <set name="LIBEXTRA" value="-x86" if="HXCPP_X86" />
 <set name="LIBEXTRA" value="-v7" if="HXCPP_ARMV7" unless="LIBEXTRA" />
+<set name="LIBEXTRA" value="-x86" if="tizen"/>
+<set name="LIBEXTRA" value="" if="tizen" unless="simulator" />
 <set name="LIBPREFIX" value="lib" if="iphoneos"/>
 <set name="LIBPREFIX" value="lib" if="iphonesim"/>
 <set name="LIBPREFIX" value="lib" if="static_link"/>
