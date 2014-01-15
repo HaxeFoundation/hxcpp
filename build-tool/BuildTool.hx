@@ -985,7 +985,12 @@ class BuildTool
                    }
                 case "target" : 
                    var name = substitute(el.att.id);
-                   if (mTargets.exists(name))
+                   var overwrite = name=="default";
+                   if (el.has.overwrite)
+                      overwrite = true;
+                   if (el.has.append)
+                      overwrite = false;
+                   if (mTargets.exists(name) && !overwrite)
                       createTarget(el,mTargets.get(name));
                    else
                       mTargets.set( name, createTarget(el,null) );
