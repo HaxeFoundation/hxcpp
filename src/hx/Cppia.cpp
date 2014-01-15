@@ -1583,10 +1583,21 @@ public:
       return null();
    }
 
+   bool VCanCast(hx::Object *inPtr)
+   {
+      Class c = inPtr->__GetClass();
+      if (info->isInterface)
+      {
+         // TODO
+      }
+      if (c.mPtr==this)
+         return true;
+      return c->GetSuper()->CanCast(inPtr);
+   }
+
 /*
    Dynamic __SetField(const String &inString,const Dynamic &inValue ,bool inCallProp);
    bool __HasField(const String &inString);
-   bool VCanCast(hx::Object *inPtr) { return false; }
 */
 };
 
