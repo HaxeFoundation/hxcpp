@@ -89,7 +89,11 @@ String __hxcpp_resource_string(String inName)
    for(Resource *reso  = sgResources; reso->mData; reso++)
    {
       if (reso->mName == inName)
+      #if (HXCPP_API_LEVEL > 0)
           return String((const char *) reso->mData, reso->mDataLength );
+      #else
+          return String((const char *) reso->mData, reso->mDataLength ).dup();
+      #endif
    }
    return null();
 }
