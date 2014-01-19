@@ -1,3 +1,4 @@
+* Fix GC error in string resources
 * Give obj files in libraries unique names
 
 3.0.2
