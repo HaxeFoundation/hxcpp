@@ -475,7 +475,10 @@ String String::__URLDecode() const
 
 String &String::dup()
 {
-   __s = GCStringDup(__s,length,&length);
+   // Take copy incase GCStringDup generates GC event
+   const HX_CHAR *oldString = __s;
+   __s = 0;
+   __s = GCStringDup(oldString,length,&length);
    return *this;
 }
 
