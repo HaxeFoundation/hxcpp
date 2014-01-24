@@ -97,11 +97,11 @@ inline int Mod(int inLHS,int inRHS) { return inLHS % inRHS; }
 template<typename L, typename R>
 inline L& AddEq(L &inLHS, R inRHS) { inLHS = inLHS + inRHS; return inLHS; }
 template<typename L, typename R>
-inline L& MultEq(L &inLHS, R inRHS) { inLHS = (double)inLHS * (double)inRHS; return inLHS; }
+inline L& MultEq(L &inLHS, R inRHS) { inLHS = inLHS * inRHS; return inLHS; }
 template<typename L, typename R>
 inline L& DivEq(L &inLHS, R inRHS) { inLHS = (double)inLHS / (double)inRHS; return inLHS; }
 template<typename L, typename R>
-inline L& SubEq(L &inLHS, R inRHS) { inLHS = (double)inLHS - (double)inRHS; return inLHS; }
+inline L& SubEq(L &inLHS, R inRHS) { inLHS = inLHS - inRHS; return inLHS; }
 template<typename L, typename R>
 inline L& AndEq(L &inLHS, R inRHS) { inLHS = (int)inLHS & (int)inRHS; return inLHS; }
 template<typename L, typename R>
@@ -121,11 +121,11 @@ inline L& ModEq(L &inLHS, R inRHS) { inLHS = DoubleMod(inLHS,inRHS); return inLH
 template<typename R>
 inline hx::FieldRef AddEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS + inRHS; return inLHS; }
 template<typename R>
-inline hx::FieldRef MultEq(hx::FieldRef inLHS, R inRHS) { inLHS = (double)inLHS * (double)inRHS; return inLHS; }
+inline hx::FieldRef MultEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS * inRHS; return inLHS; }
 template<typename R>
 inline hx::FieldRef DivEq(hx::FieldRef inLHS, R inRHS) { inLHS = (double)inLHS / (double)inRHS; return inLHS; }
 template<typename R>
-inline hx::FieldRef SubEq(hx::FieldRef inLHS, R inRHS) { inLHS = (double)inLHS - (double)inRHS; return inLHS; }
+inline hx::FieldRef SubEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS - inRHS; return inLHS; }
 template<typename R>
 inline hx::FieldRef AndEq(hx::FieldRef inLHS, R inRHS) { inLHS = (int)inLHS & (int)inRHS; return inLHS; }
 template<typename R>
