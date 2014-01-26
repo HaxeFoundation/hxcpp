@@ -219,8 +219,7 @@ class Compiler
 
 
       Sys.println("Creating " + pch_name + "...");
-      Sys.println( mExe + " " + args.join(" ") );
-      var result = BuildTool.runCommand( mExe, args );
+      var result = BuildTool.runCommand( mExe, args, true );
       if (result!=0)
       {
          if (FileSystem.exists(pch_name))
@@ -238,7 +237,7 @@ class Compiler
       return mObjDir + "/" + dirId + path.file + mExt;
    }
 
-   public function compile(inFile:File)
+   public function compile(inFile:File,inTid:Int)
    {
       var path = new haxe.io.Path(mObjDir + "/" + inFile.mName);
       var obj_name = getObjName(inFile);
@@ -312,8 +311,7 @@ class Compiler
          }
 
          args.push(out + obj_name);
-         Sys.println( mExe + " " + args.join(" ") );
-         var result = BuildTool.runCommand( mExe, args );
+         var result = BuildTool.runCommand( mExe, args, true );
          if (result!=0)
          {
             if (FileSystem.exists(obj_name))
@@ -412,16 +410,14 @@ class Linker
          args = args.concat(inTarget.mLibs);
          args = args.concat(mLibs);
 
-         Sys.println( mExe + " " + args.join(" ") );
-         var result = BuildTool.runCommand( mExe, args );
+         var result = BuildTool.runCommand( mExe, args, true );
          if (result!=0)
             throw "Error : " + result + " - build cancelled";
 
          if (mRanLib!="")
          {
             args = [out_name];
-            Sys.println( mRanLib + " " + args.join(" ") );
-            var result = BuildTool.runCommand( mRanLib, args );
+            var result = BuildTool.runCommand( mRanLib, args, true );
             if (result!=0)
                throw "Error : " + result + " - build cancelled";
          }
@@ -473,8 +469,7 @@ class Stripper
 
       args.push(inTarget);
 
-      Sys.println( mExe + " " + args.join(" ") );
-      var result = BuildTool.runCommand( mExe, args );
+      var result = BuildTool.runCommand( mExe, args, true );
       if (result!=0)
          throw "Error : " + result + " - build cancelled";
    }
@@ -573,9 +568,7 @@ class HLSL
       {
          var exe = "fxc.exe";
          var args =  [ "/nologo", "/T", profile, file, "/Vn", variable, "/Fh", target ];
-         if (BuildTool.verbose)
-            Sys.println(exe + " " + args.join(" ") );
-         var result = BuildTool.runCommand(exe,args);
+         var result = BuildTool.runCommand(exe,args,BuildTool.verbose);
          if (result!=0)
          {
             throw "Error : Could not compile shader " + file + " - build cancelled";
@@ -814,6 +807,7 @@ class BuildTool
    public static var useCache = false;
    public static var compileCache:String;
    public static var staticLibraryName:String;
+   static var printMutex:Mutex;
 
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
@@ -1001,7 +995,7 @@ class BuildTool
    }
    
    
-   public static function runCommand(exe:String, args:Array<String>):Int
+   public static function runCommand(exe:String, args:Array<String>,inPrint:Bool):Int
    {
       if (exe.indexOf (" ") > -1)
       {
@@ -1009,7 +1003,42 @@ class BuildTool
          exe = splitExe.shift ();
          args = splitExe.concat (args);
       }
-      return Sys.command(exe, args);
+
+      var output = new Array<String>();
+      if (inPrint)
+         output.push(exe + " " + args.join(" "));
+      var proc = new sys.io.Process(exe, args);
+      var err = proc.stderr;
+      var out = proc.stdout;
+      try
+      {
+         while(true)
+         {
+            var line = err.readLine();
+            output.push(line);
+         }
+      }
+      catch(e:Dynamic){}
+      try
+      {
+         while(true)
+         {
+            var line = out.readLine();
+            output.push(line);
+         }
+      }
+      catch(e:Dynamic){}
+      var code = proc.exitCode();
+      proc.close();
+      if (output.length>0)
+      {
+         if (printMutex!=null)
+            printMutex.acquire();
+         Sys.println(output.join("\n"));
+         if (printMutex!=null)
+            printMutex.release();
+      }
+      return code;
    }
 
 
@@ -1041,11 +1070,8 @@ class BuildTool
             Std.parseInt(thread_var);
       }
 
-      // Sys.println("Using " + threads + " threads.");
-
       staticLibraryName = target.getStaticLibraryName();
  
-
       var objs = new Array<String>();
       DirManager.make(mCompiler.mObjDir);
       for(group in target.mFileGroups)
@@ -1090,11 +1116,13 @@ class BuildTool
          if (threads<2)
          {
             for(file in to_be_compiled)
-               mCompiler.compile(file);
+               mCompiler.compile(file,-1);
          }
          else
          {
             var mutex = new Mutex();
+            if (printMutex!=null)
+               printMutex = new Mutex();
             var main_thread = Thread.current();
             var compiler = mCompiler;
             for(t in 0...threads)
@@ -1114,7 +1142,7 @@ class BuildTool
                      var file = to_be_compiled.shift();
                      mutex.release();
 
-                     compiler.compile(file);
+                     compiler.compile(file,t);
                   }
                   } catch (error:Dynamic)
                   {
