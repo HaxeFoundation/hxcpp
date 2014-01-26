@@ -231,12 +231,11 @@ class Compiler
 
    public function getObjName(inFile:File)
    {
-      var uniqueId = "";
-      if (BuildTool.staticLibraryName!="")
-         uniqueId = haxe.crypto.Md5.encode(BuildTool.staticLibraryName + inFile.mName).substr(0,8) + "-";
+      var path = new haxe.io.Path(inFile.mName);
+      var dirId =
+         haxe.crypto.Md5.encode(BuildTool.staticLibraryName + path.dir).substr(0,8) + "_";
 
-      var path = new haxe.io.Path(mObjDir + "/" + inFile.mName);
-      return path.dir + "/" + uniqueId + path.file + mExt;
+      return mObjDir + "/" + dirId + path.file + mExt;
    }
 
    public function compile(inFile:File)
@@ -1048,6 +1047,7 @@ class BuildTool
  
 
       var objs = new Array<String>();
+      DirManager.make(mCompiler.mObjDir);
       for(group in target.mFileGroups)
       {
          group.checkOptions(mCompiler.mObjDir);
@@ -1060,9 +1060,7 @@ class BuildTool
 
          for(file in group.mFiles)
          {
-            var path = new haxe.io.Path(mCompiler.mObjDir + "/" + file.mName);
             var obj_name = mCompiler.getObjName(file);
-            DirManager.make(path.dir);
             objs.push(obj_name);
             if (file.isOutOfDate(obj_name))
             {
