@@ -32,7 +32,7 @@ class Setup
          {
             try {
                if (BuildTool.verbose)
-                   Sys.println("Copy config: " + src + " -> " + config );
+                   BuildTool.println("Copy config: " + src + " -> " + config );
 
                sys.io.File.copy(src,config);
             } catch(e:Dynamic)
@@ -64,7 +64,7 @@ class Setup
         {
            root = Setup.findAndroidNdkRoot( defines.get("ANDROID_NDK_DIR") );
            if (BuildTool.verbose)
-              Sys.println("Using found ndk root " + root);
+              BuildTool.println("Using found ndk root " + root);
 
            Sys.putEnv("ANDROID_NDK_ROOT", root);
            defines.set("ANDROID_NDK_ROOT", root);
@@ -76,7 +76,7 @@ class Setup
      {
         root = defines.get("ANDROID_NDK_ROOT");
         if (BuildTool.verbose)
-           Sys.println("Using specified ndk root " + root);
+           BuildTool.println("Using specified ndk root " + root);
      }
 
      // Find toolchain
@@ -104,7 +104,7 @@ class Setup
           {
              defines.set("TOOLCHAIN_VERSION",bestVer);
              if (BuildTool.verbose)
-                Sys.println("Found TOOLCHAIN_VERSION " + bestVer);
+                BuildTool.println("Found TOOLCHAIN_VERSION " + bestVer);
           }
         }
         catch(e:Dynamic) { }
@@ -120,11 +120,11 @@ class Setup
            defines.set("ANDROID_HOST", files[0]);
            if (BuildTool.verbose)
            {
-              Sys.println("Found ANDROID_HOST " + files[0]);
+              BuildTool.println("Found ANDROID_HOST " + files[0]);
            }
         }
         else if (BuildTool.verbose)
-           Sys.println("Could not work out ANDROID_HOST (" + files + ") - using default");
+           BuildTool.println("Could not work out ANDROID_HOST (" + files + ") - using default");
      }
      catch(e:Dynamic) { }
 
@@ -134,14 +134,14 @@ class Setup
         {
            found = true;
            if (BuildTool.verbose)
-              Sys.println("Using specified android NDK " + i);
+              BuildTool.println("Using specified android NDK " + i);
            break;
         }
      if (!found)
      {
         var version = Setup.getNdkVersion( defines.get("ANDROID_NDK_ROOT") );
         if (BuildTool.verbose)
-            Sys.println("Deduced android NDK " + version);
+            BuildTool.println("Deduced android NDK " + version);
         defines.set("NDKV" + version, "1" );
      }
    }
@@ -180,7 +180,7 @@ class Setup
       if (BuildTool.verbose)
       {
          var message = "Found NDK " + result;
-         Sys.println(message);
+         BuildTool.println(message);
       }
 
       if (result=="")
@@ -324,7 +324,7 @@ class Setup
           if (!vars_found || error_found)
           {
              for(o in output)
-                Sys.println(o);
+                BuildTool.println(o);
              throw("Could not automatically setup MSVC");
           }
        }
@@ -342,7 +342,7 @@ class Setup
              {
                 var cl_version = Std.parseInt(reg.matched(1));
                 if (BuildTool.verbose)
-                   Sys.println("Using msvc cl version " + cl_version);
+                   BuildTool.println("Using msvc cl version " + cl_version);
                 ioDefines.set("MSVC_VER", cl_version+"");
                 if (cl_version>=17)
                    ioDefines.set("MSVC17+","1");
@@ -354,7 +354,7 @@ class Setup
              }
            }
        } catch(e:Dynamic){}
-            //if (cl_version!="") Sys.println("Using cl version: " + cl_version);
+            //if (cl_version!="") BuildTool.println("Using cl version: " + cl_version);
     }
 
    public static function isRaspberryPi()

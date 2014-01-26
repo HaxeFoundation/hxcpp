@@ -175,9 +175,9 @@ class Compiler
          var versionString = Setup.readStderr(exe,args).join(" ");
          if (BuildTool.verbose)
          {
-            Sys.println("--- Compiler verison ---" );
-            Sys.println( versionString );
-            Sys.println("------------------");
+            BuildTool.println("--- Compiler verison ---" );
+            BuildTool.println( versionString );
+            BuildTool.println("------------------");
          }
 
          mCompilerVersion = haxe.crypto.Md5.encode(versionString);
@@ -218,7 +218,7 @@ class Compiler
       }
 
 
-      Sys.println("Creating " + pch_name + "...");
+      BuildTool.println("Creating " + pch_name + "...");
       var result = BuildTool.runCommand( mExe, args, true );
       if (result!=0)
       {
@@ -286,13 +286,13 @@ class Compiler
             if (FileSystem.exists(cacheName))
             {
                sys.io.File.copy(cacheName, obj_name);
-               Sys.println("use cache for " + obj_name + "(" + md5 + ")" );
+               BuildTool.println("use cache for " + obj_name + "(" + md5 + ")" );
                found = true;
             }
             else
             {
                if (BuildTool.verbose)
-                  Sys.println(" not in cache " + cacheName);
+                  BuildTool.println(" not in cache " + cacheName);
             }
          }
          else
@@ -322,7 +322,7 @@ class Compiler
          {
            sys.io.File.copy(obj_name, cacheName );
            if (BuildTool.verbose)
-              Sys.println(" caching " + cacheName);
+              BuildTool.println(" caching " + cacheName);
          }
       }
 
@@ -386,7 +386,7 @@ class Linker
          {
             if (mRecreate && FileSystem.exists(out_name))
             {
-               Sys.println(" clean " + out_name );
+               BuildTool.println(" clean " + out_name );
                FileSystem.deleteFile(out_name);
             }
             args.push(out + out_name);
@@ -759,7 +759,7 @@ class Target
    {
       for(dir in mDirs)
       {
-         Sys.println("Remove " + dir + "...");
+         BuildTool.println("Remove " + dir + "...");
          DirManager.deleteRecurse(dir);
       }
    }
@@ -825,7 +825,7 @@ class BuildTool
       try  {
          make_contents = sys.io.File.getContent(inMakefile);
       } catch (e:Dynamic) {
-         Sys.println("Could not open build file '" + inMakefile + "'");
+         println("Could not open build file '" + inMakefile + "'");
          Sys.exit(1);
       }
 
@@ -863,18 +863,23 @@ class BuildTool
       if (useCache && (!mDefines.exists("haxe_ver") && !mDefines.exists("HXCPP_DEPENDS_OK")))
       {
          if (verbose)
-            Sys.println("ignoring cache because of possible missing dependencies");
-           useCache = false;
+            println("ignoring cache because of possible missing dependencies");
+         useCache = false;
       }
 
       if (useCache && verbose)
-         Sys.println("Using cache " + compileCache );
+         println("Using cache " + compileCache );
 
       if (mTargets.exists("default"))
          buildTarget("default");
       else
          for(target in inTargets)
             buildTarget(target);
+   }
+
+   inline public static function println(s:String)
+   {
+      Sys.println(s);
    }
 
 
@@ -936,7 +941,7 @@ class BuildTool
                 case "path" : 
                    var path = substitute(el.att.name);
                    if (verbose)
-                      Sys.println("Adding path " + path );
+                      println("Adding path " + path );
                    var os = Sys.systemName();
                    var sep = mDefines.exists("windows_host") ? ";" : ":";
                    var add = path + sep + Sys.getEnv("PATH");
@@ -1004,41 +1009,52 @@ class BuildTool
          args = splitExe.concat (args);
       }
 
-      var output = new Array<String>();
-      if (inPrint)
-         output.push(exe + " " + args.join(" "));
-      var proc = new sys.io.Process(exe, args);
-      var err = proc.stderr;
-      var out = proc.stdout;
-      try
+      var useSysCommand = false;
+      
+      if ( useSysCommand )
       {
-         while(true)
+         if (inPrint)
+            println(exe + " " + args.join(" "));
+         return Sys.command(exe,args);
+      }
+      else
+      {
+         var output = new Array<String>();
+         if (inPrint)
+            output.push(exe + " " + args.join(" "));
+         var proc = new sys.io.Process(exe, args);
+         var err = proc.stderr;
+         var out = proc.stdout;
+         try
          {
-            var line = err.readLine();
-            output.push(line);
+            while(true)
+            {
+               var line = err.readLine();
+               output.push(line);
+            }
          }
-      }
-      catch(e:Dynamic){}
-      try
-      {
-         while(true)
+         catch(e:Dynamic){}
+         try
          {
-            var line = out.readLine();
-            output.push(line);
+            while(true)
+            {
+               var line = out.readLine();
+               output.push(line);
+            }
          }
+         catch(e:Dynamic){}
+         var code = proc.exitCode();
+         proc.close();
+         if (output.length>0)
+         {
+            if (printMutex!=null)
+               printMutex.acquire();
+            println(output.join("\n"));
+            if (printMutex!=null)
+               printMutex.release();
+         }
+         return code;
       }
-      catch(e:Dynamic){}
-      var code = proc.exitCode();
-      proc.close();
-      if (output.length>0)
-      {
-         if (printMutex!=null)
-            printMutex.acquire();
-         Sys.println(output.join("\n"));
-         if (printMutex!=null)
-            printMutex.release();
-      }
-      return code;
    }
 
 
@@ -1544,7 +1560,7 @@ class BuildTool
       }
 
       if (verbose)
-         Sys.println("HXCPP : " + HXCPP);
+         BuildTool.println("HXCPP : " + HXCPP);
 
 
       include_path.push(".");
