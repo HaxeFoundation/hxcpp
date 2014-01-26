@@ -144,15 +144,25 @@ public:
    double operator--(int) {double val = mPtr->__ToDouble(); *this = val-1; return val; }
 
 
+   double operator / (const Dynamic &inRHS) const { return (double)(*this) / (double)inRHS; } \
+   double operator / (const double &inRHS) const { return (double)(*this) / (double)inRHS; } \
+   double operator / (const float &inRHS) const { return (double)(*this) / (double)inRHS; } \
+   double operator / (const int &inRHS) const { return (double)(*this) / (double)inRHS; }
+
    #define DYNAMIC_ARITH( op ) \
-      double operator op (const Dynamic &inRHS) const { return (double)(*this) op (double)inRHS; } \
       double operator op (const double &inRHS) const { return (double)(*this) op (double)inRHS; } \
       double operator op (const float &inRHS) const { return (double)(*this) op (double)inRHS; } \
-      double operator op (const int &inRHS) const { return (double)(*this) op (double)inRHS; }
+      Dynamic operator op (const Dynamic &inRHS) const \
+        { return mPtr->__GetType()==vtInt && inRHS.mPtr->__GetType()==vtInt ? \
+              Dynamic((int)(*this) op (int)inRHS) : \
+              Dynamic( (double)(*this) op (double)inRHS); } \
+      Dynamic operator op (const int &inRHS) const \
+        { return mPtr->__GetType()==vtInt ? \
+              Dynamic((int)(*this) op inRHS) : \
+              Dynamic((double)(*this) op inRHS); } \
 
    DYNAMIC_ARITH( - )
    DYNAMIC_ARITH( * )
-   DYNAMIC_ARITH( / )
 
    static void ThrowBadFunctionError();
    inline void CheckFPtr() { if (!mPtr) ThrowBadFunctionError(); }
