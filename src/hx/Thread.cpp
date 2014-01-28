@@ -296,17 +296,28 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
    }
 
    #elif defined(HX_WINDOWS)
-      _beginthreadex(0,0,hxThreadFunc,info,0,0);
+      bool ok = _beginthreadex(0,0,hxThreadFunc,info,0,0) != 0;
    #else
-      pthread_t result;
-      pthread_create(&result,0,hxThreadFunc,info);
-	#endif
+      pthread_t result = 0;
+      int created = pthread_create(&result,0,hxThreadFunc,info);
+      bool ok = created==0;
+   #endif
 
 
+     if (ok)
+     {
+        #ifndef HX_WINDOWS
+        pthread_detach(result);
+        #endif
 	info->mSemaphore->Wait();
-	hx::ExitGCFreeZone();
-	info->CleanSemaphore();
-	return info;
+     }
+
+    hx::ExitGCFreeZone();
+    info->CleanSemaphore();
+
+    if (!ok)
+       throw Dynamic( HX_CSTRING("Could not create thread") );
+    return info;
 }
 
 static hx::Object *sMainThreadInfo = 0;
