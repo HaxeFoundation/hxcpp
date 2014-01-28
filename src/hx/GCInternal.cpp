@@ -763,19 +763,27 @@ void MarkObjectAlloc(hx::Object *inPtr,hx::MarkContext *__inCtx)
 
 
 
+#ifdef HXCPP_DEBUG
+#define FILE_SCOPE
+#else
+#define FILE_SCOPE static
+#endif
 
 // --- Roots -------------------------------
 
+FILE_SCOPE MyMutex *sGCRootLock = 0;
 typedef std::set<hx::Object **> RootSet;
 static RootSet sgRootSet;
 
 void GCAddRoot(hx::Object **inRoot)
 {
+   AutoLock lock(*sGCRootLock);
    sgRootSet.insert(inRoot);
 }
 
 void GCRemoveRoot(hx::Object **inRoot)
 {
+   AutoLock lock(*sGCRootLock);
    sgRootSet.erase(inRoot);
 }
 
@@ -784,11 +792,6 @@ void GCRemoveRoot(hx::Object **inRoot)
 
 // --- Finalizers -------------------------------
 
-#ifdef HXCPP_DEBUG
-#define FILE_SCOPE
-#else
-#define FILE_SCOPE static
-#endif
 
 class WeakRef;
 typedef hx::QuickVec<WeakRef *> WeakRefs;
@@ -2482,6 +2485,7 @@ void InitAlloc()
    sGlobalAlloc = new GlobalAllocator();
    sgFinalizers = new FinalizerList();
    sFinalizerLock = new MyMutex();
+   sGCRootLock = new MyMutex();
    hx::Object tmp;
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
