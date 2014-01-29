@@ -105,8 +105,11 @@ public:
 
    int __Compare(const hx::Object *inRHS) const
    {
-      double diff = mValue - inRHS->__ToDouble();
-      return diff < 0 ? -1 : diff==0 ? 0 : 1;
+      double rval = inRHS->__ToDouble();
+      if (rval==mValue)
+         return 0;
+
+      return mValue < rval ? -1 :  1;
    }
 
 
