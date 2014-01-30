@@ -197,6 +197,9 @@ Array<String> Class_obj::GetInstanceFields()
 
 Array<String> Class_obj::GetClassFields()
 {
+   if (!mStatics.mPtr)
+      return new Array_obj<String>(0,0);
+
    // Class fields do not include user fields...
    return mStatics->copy();
    /*
