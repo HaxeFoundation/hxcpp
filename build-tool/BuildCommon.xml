@@ -177,6 +177,7 @@
   <depend name="Options.txt"/>
   <ext value="${IOS_EXT}" if="iphoneos" unless="dll_import" />
   <ext value=".iphonesim.a" if="iphonesim" unless="dll_import" />
+  <ext value="${LIBEXTRA}.so" if="android"/>
   <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>
   <files id="runtime" unless="dll_import" />

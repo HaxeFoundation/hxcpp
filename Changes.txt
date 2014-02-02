@@ -1,3 +1,5 @@
+
+* Change process lauching to get better thread usage on mac
 * Fix GC error in string resources
 * Give obj files in libraries unique names
 
