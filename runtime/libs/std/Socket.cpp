@@ -719,6 +719,7 @@ void free_sock(value v)
 	val_gc_remove_root(&p->ridx);
 	val_gc_remove_root(&p->widx);
 	free(p);
+   free_abstract(v);
 }
 
 static value socket_poll_alloc( value nsocks ) {

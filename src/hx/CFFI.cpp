@@ -63,6 +63,12 @@ public:
          mFinalizer->mFinalizer = inFinalizer;
       }
    }
+   void Clear()
+   {
+      SetFinalizer(0);
+      mType = 0;
+      mHandle = 0;
+   }
 
    hx::InternalFinalizer *mFinalizer;
    void *mHandle;
@@ -123,10 +129,13 @@ void val_throw(hx::Object * arg1) THROWS
 }
 
 
-void hx_fail(const char * arg1,const char * arg2,int arg3)
+void hx_fail(const char * inMessage,const char * inFile,int inLine)
 {
-   fprintf(stderr,"Terminal error %s, File %s, line %d\n", arg1,arg2,arg3);
-   exit(1);
+   if (inFile!=0 && inLine!=0)
+      throw Dynamic( HX_CSTRING("Failure ") + String(inMessage) + HX_CSTRING(" @ ") +
+                    String(inFile) + HX_CSTRING(":") + Dynamic(inLine) );
+   else
+      throw Dynamic( HX_CSTRING("Failure ") + String(inMessage) );
 }
 
 
@@ -223,6 +232,17 @@ hx::Object * alloc_abstract(vkind arg1,void * arg2)
 {
    int type = (int)(intptr_t)arg1;
    return new hx::Abstract_obj(type,arg2);
+}
+
+
+void free_abstract(hx::Object *obj)
+{
+   if (obj)
+   {
+      hx::Abstract_obj *abstract = dynamic_cast<hx::Abstract_obj *>(obj);
+      if (abstract)
+         abstract->Clear();
+   }
 }
 
 hx::Object * alloc_best_int(int arg1) { return Dynamic(arg1).GetPtr(); }

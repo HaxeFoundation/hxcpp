@@ -175,6 +175,12 @@ value  api_alloc_abstract(vkind arg1,void * arg2)
 	return alloc_abstract(arg1,arg2);
 }
 
+void api_free_abstract(value inAbstract)
+{
+   val_gc(inAbstract,0);
+   val_kind(inAbstract) = 0;
+}
+
 value  api_alloc_best_int(int arg1) { return alloc_best_int(arg1); }
 value  api_alloc_int32(int arg1) { return  alloc_int32(arg1); }
 

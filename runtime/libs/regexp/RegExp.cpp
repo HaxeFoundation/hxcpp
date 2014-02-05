@@ -56,6 +56,7 @@ static void free_regexp( value p ) {
         val_gc_remove_root(&pdata->str);
 	pcre_free( pdata->r );
         free(pdata);
+   free_abstract(p);
 }
 
 /**

@@ -387,7 +387,7 @@ static value process_pid( value vp ) {
 static value process_close( value vp ) {   
    val_check_kind(vp,k_process);
    free_process(vp);
-   val_gc(vp,NULL);
+   free_abstract(vp);
    return val_null;
 }
 

@@ -93,7 +93,7 @@ static void free_file( value v )
 	fio *file =  val_file(v);
 	file->close();
 	delete file;
-	val_gc(v,NULL);
+	free_abstract(v);
 }
 
 static void free_stdfile( value v )
@@ -101,7 +101,7 @@ static void free_stdfile( value v )
         // Delete, but do not close...
 	fio *file =  val_file(v);
 	delete file;
-	val_gc(v,NULL);
+	free_abstract(v);
 }
 
 

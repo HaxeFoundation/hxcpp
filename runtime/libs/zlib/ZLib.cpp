@@ -54,14 +54,14 @@ static void free_stream_def( value v ) {
 	z_stream *s = val_stream(v);
 	deflateEnd(s); // no error
 	free(s);
-	val_gc(v,NULL);
+	free_abstract(v);
 }
 
 static void free_stream_inf( value v ) {
 	z_stream *s = val_stream(v);
 	inflateEnd(s); // no error
 	free(s);
-	val_gc(v,NULL);
+	free_abstract(v);
 }
 
 static void zlib_error( z_stream *z, int err ) {

@@ -1,4 +1,6 @@
-import cpp.zip.Compress;
+import haxe.zip.Compress;
+import haxe.zip.Uncompress;
+import haxe.zip.FlushMode;
 
 //XML<xml value="Hello World!"/>
 
@@ -12,8 +14,27 @@ class Test
       var bytes = sys.io.File.getBytes("Test.hx");
       #end
 
-      var compressed = cpp.zip.Compress.run(bytes,5);
-      var decompressed = cpp.zip.Uncompress.run(compressed);
+      var compress = new Compress(9);
+      compress.setFlushMode(FlushMode.FINISH);
+      var buffer = haxe.io.Bytes.alloc(bytes.length * 2 + 100);
+      var r = compress.execute(bytes,0,buffer,0);
+      compress.close();
+      var compressed = buffer.sub(0,r.write);
+
+      var caughtError = false;
+      try
+      {
+         compress.close();
+      }
+      catch(e:Dynamic)
+      {
+         Sys.println("That was close (" + e + ")");
+         caughtError = true;
+      }
+      if (!caughtError)
+         throw("Oops, I closed it again");
+
+      var decompressed = Uncompress.run(compressed);
 
       var match = ~/^..XML/;
       try {

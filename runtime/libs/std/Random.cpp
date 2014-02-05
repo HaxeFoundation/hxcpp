@@ -129,6 +129,7 @@ static double rnd_float( rnd *r ) {
 void free_rand(value v)
 {
    free(val_data(v));
+   free_abstract(v);
 }
 
 static value random_new() {
