@@ -52,15 +52,21 @@ void zlib_main() {
 
 static void free_stream_def( value v ) {
 	z_stream *s = val_stream(v);
-	deflateEnd(s); // no error
-	free(s);
+	if (s) {
+	   deflateEnd(s); // no error
+	   free(s);
+	   s = NULL;
+	}
 	val_gc(v,NULL);
 }
 
 static void free_stream_inf( value v ) {
 	z_stream *s = val_stream(v);
-	inflateEnd(s); // no error
-	free(s);
+	if (s) {
+	   inflateEnd(s); // no error
+	   free(s);
+	   s = NULL;
+	}
 	val_gc(v,NULL);
 }
 
