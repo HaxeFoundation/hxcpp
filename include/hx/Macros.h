@@ -733,6 +733,7 @@ int main(Platform::Array<Platform::String^>^) \
    } \
    catch (Dynamic e){ \
       __hx_dump_stack(); \
+      return -1; \
    } \
    return 0; \
 }
@@ -776,6 +777,7 @@ extern "C" EXPORT_EXTRA int OspMain (int argc, char* pArgv[]){ \
         catch (Dynamic e){ \
                 __hx_dump_stack(); \
                 printf("Error : %s\n",e->toString().__CStr()); \
+                return -1; \
         } \
         return 0; \
 }
@@ -797,6 +799,7 @@ int main(int argc,char **argv){ \
 	catch (Dynamic e){ \
 		__hx_dump_stack(); \
 		printf("Error : %s\n",e->toString().__CStr()); \
+		return -1; \
 	} \
 	return 0; \
 }
