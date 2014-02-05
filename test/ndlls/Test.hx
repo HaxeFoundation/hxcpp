@@ -36,6 +36,9 @@ class Test
 
       var decompressed = Uncompress.run(compressed);
 
+      //  su©©ess
+      var success = false;
+      var utf8Match = ~/su©+ess/u;
       var match = ~/^..XML/;
       try {
         var input = new haxe.io.BytesInput(decompressed);
@@ -47,7 +50,14 @@ class Test
               var xml = Xml.parse(line.substr(5));
               trace(xml.firstElement().get("value"));
            }
+           if (utf8Match.match(line))
+           {
+              trace(utf8Match.matched(0));
+              success = true;
+           }
         }
       } catch (e:Dynamic) { }
+      if (!success)
+        throw "Could not find success in utf8 code";
    }
 }

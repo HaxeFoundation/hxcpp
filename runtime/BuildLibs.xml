@@ -37,6 +37,7 @@
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
 
   <compilerflag value="-DPCRE_STATIC"/>
+  <compilerflag value="-DSUPPORT_UTF8"/>
   <compilerflag value="-I${PCRE_DIR}"/>
 
   <file name="libs/regexp/RegExp.cpp"/>
