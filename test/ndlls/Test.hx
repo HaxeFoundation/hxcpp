@@ -6,6 +6,15 @@ import sys.db.Connection;
 import sys.db.Sqlite;
 import sys.db.Mysql;
 
+#if static_ndll
+import hxcpp.StaticStd;
+import hxcpp.StaticRegexp;
+import hxcpp.StaticZlib;
+import hxcpp.StaticMysql;
+import hxcpp.StaticSqlite;
+#end
+
+
 //XML<xml value="Hello World!"/>
 
 class Test

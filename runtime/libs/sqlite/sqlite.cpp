@@ -28,6 +28,10 @@
 #include <string.h>
 #include "sqlite3.h"
 
+
+// Put in anon-namespace to avoid conflicts if static-linked
+namespace {
+
 /**
 	<doc>
 	<h1>SQLite</h1>
@@ -38,8 +42,8 @@
 	</doc>
 **/
 
-DEFINE_KIND(k_db);
-DEFINE_KIND(k_result);
+DEFINE_KIND(k_sqlite_db);
+DEFINE_KIND(k_sqlite_result);
 
 #define val_db(v)	((database*)val_data(v))
 #define val_result(v) ((result*)val_data(v))
@@ -102,7 +106,7 @@ static void free_db( value v ) {
 static value sqlite_connect( value filename ) {
 	int err;
 	val_check(filename,string);
-	value v = create_abstract(k_db,sizeof(database),free_db);
+	value v = create_abstract(k_sqlite_db,sizeof(database),free_db);
 	database *db = val_db(v);
 	db->last = NULL;
 	if( (err = sqlite3_open(val_string(filename),&db->db)) != SQLITE_OK ) {
@@ -120,7 +124,7 @@ static value sqlite_connect( value filename ) {
 	<doc>Closes the database.</doc>
 **/
 static value close( value v ) {
-	val_check_kind(v,k_db);
+	val_check_kind(v,k_sqlite_db);
 
 	database *db = val_db(v);
 	if( db->last != NULL )
@@ -137,7 +141,7 @@ static value close( value v ) {
 	<doc>Returns the last inserted auto_increment id.</doc>
 **/
 static value last_insert_id( value db ) {
-	val_check_kind(db,k_db);
+	val_check_kind(db,k_sqlite_db);
 	return alloc_int(sqlite3_last_insert_rowid(val_db(db)->db));
 }
 
@@ -149,10 +153,10 @@ static value request( value v, value sql ) {
 	database *db;
 	const char *tl;
 	int i,j;
-	val_check_kind(v,k_db);
+	val_check_kind(v,k_sqlite_db);
 	val_check(sql,string);
 	db = val_db(v);
-   value abstract = create_abstract( k_result, sizeof(result), free_abstract );
+   value abstract = create_abstract( k_sqlite_result, sizeof(result), free_abstract );
 	result *r = val_result(abstract);
 	r->db = db;
 	if( sqlite3_prepare(db->db,val_string(sql),val_strlen(sql),&r->r,&tl) != SQLITE_OK ) {
@@ -207,7 +211,7 @@ static value request( value v, value sql ) {
 **/
 static value result_get_length( value v ) {
 	result *r;
-	val_check_kind(v,k_result);
+	val_check_kind(v,k_sqlite_result);
 	r = val_result(v);
 	if( r->ncols != 0 )
 		neko_error(); // ???
@@ -219,7 +223,7 @@ static value result_get_length( value v ) {
 	<doc>Returns the number of fields in the result.</doc>
 **/
 static value result_get_nfields( value r ) {
-	val_check_kind(r,k_result);
+	val_check_kind(r,k_sqlite_result);
 	return alloc_int(val_result(r)->ncols);
 }
 
@@ -230,7 +234,7 @@ static value result_get_nfields( value r ) {
 static value result_next( value v ) {
 	int i;
 	result *r;
-	val_check_kind(v,k_result);
+	val_check_kind(v,k_sqlite_result);
 	r = val_result(v);
 	if( r->done )
 		return val_null;
@@ -291,7 +295,7 @@ static value result_next( value v ) {
 **/
 static value result_get( value v, value n ) {
 	result *r;
-	val_check_kind(v,k_result);
+	val_check_kind(v,k_sqlite_result);
 	r = val_result(v);
 	if( val_int(n) < 0 || val_int(n) >= r->ncols )
 		neko_error();
@@ -308,7 +312,7 @@ static value result_get( value v, value n ) {
 **/
 static value result_get_int( value v, value n ) {
 	result *r;
-	val_check_kind(v,k_result);
+	val_check_kind(v,k_sqlite_result);
 	r = val_result(v);
 	if( val_int(n) < 0 || val_int(n) >= r->ncols )
 		neko_error();
@@ -325,7 +329,7 @@ static value result_get_int( value v, value n ) {
 **/
 static value result_get_float( value v, value n ) {
 	result *r;
-	val_check_kind(v,k_result);
+	val_check_kind(v,k_sqlite_result);
 	r = val_result(v);
 	if( val_int(n) < 0 || val_int(n) >= r->ncols )
 		neko_error();
@@ -334,12 +338,6 @@ static value result_get_float( value v, value n ) {
 	if( r->done )
 		neko_error();
 	return alloc_float(sqlite3_column_double(r->r,val_int(n)));
-}
-
-
-extern "C" int sqlite_register_prims()
-{
-   return 0;
 }
 
 DEFINE_PRIM(sqlite_connect,1);
@@ -356,3 +354,13 @@ DEFINE_PRIM(result_get_int,2);
 DEFINE_PRIM(result_get_float,2);
 
 /* ************************************************************************ */
+
+} // End anon-namespace
+
+
+extern "C" int sqlite_register_prims()
+{
+   return 0;
+}
+
+

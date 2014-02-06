@@ -57,8 +57,8 @@ typedef struct {
 	value conv_string;
 } connection;
 
-DEFINE_KIND(k_connection);
-DEFINE_KIND(k_result);
+DEFINE_KIND(k_mysql_connection);
+DEFINE_KIND(k_mysql_result);
 
 static void error( MYSQL *m, const char *msg ) {
 	buffer b = alloc_buffer(msg);
@@ -110,7 +110,7 @@ static value result_set_conv_date( value o, value c ) {
 	val_check_function(c,1);
 	if( val_is_int(o) )
 		return val_true;
-	val_check_kind(o,k_result);
+	val_check_kind(o,k_mysql_result);
 	RESULT(o)->conv_date = c;
 	return val_true;
 }
@@ -122,7 +122,7 @@ static value result_set_conv_date( value o, value c ) {
 static value result_get_length( value o ) {
 	if( val_is_int(o) )
 		return o;
-	val_check_kind(o,k_result);
+	val_check_kind(o,k_mysql_result);
 	return alloc_int( (int)mysql_num_rows(RESULT(o)->r) );
 }
 
@@ -131,7 +131,7 @@ static value result_get_length( value o ) {
 	<doc>Return the number of fields in a result row</doc>
 **/
 static value result_get_nfields( value o ) {
-	val_check_kind(o,k_result);
+	val_check_kind(o,k_mysql_result);
 	return alloc_int(RESULT(o)->nfields);
 }
 
@@ -144,7 +144,7 @@ static value result_get_fields_names( value o ) {
 	value a;
 	int k;
 	MYSQL_FIELD *fields;
-	val_check_kind(o,k_result);
+	val_check_kind(o,k_mysql_result);
 	r = RESULT(o);
 	fields = mysql_fetch_fields(r->r);
 	a = alloc_array(r->nfields);
@@ -171,7 +171,7 @@ static value result_next( value o ) {
 	result *r;
 	unsigned long *lengths = NULL;
 	MYSQL_ROW row;
-	val_check_kind(o,k_result);
+	val_check_kind(o,k_mysql_result);
 	r = RESULT(o);
 	row = mysql_fetch_row(r->r);
 	if( row == NULL )
@@ -252,7 +252,7 @@ static value result_next( value o ) {
 static value result_get( value o, value n ) {
 	result *r;
 	const char *s;
-	val_check_kind(o,k_result);
+	val_check_kind(o,k_mysql_result);
 	val_check(n,int);
 	r = RESULT(o);
 	if( val_int(n) < 0 || val_int(n) >= r->nfields )
@@ -273,7 +273,7 @@ static value result_get( value o, value n ) {
 static value result_get_int( value o, value n ) {
 	result *r;
 	const char *s;
-	val_check_kind(o,k_result);
+	val_check_kind(o,k_mysql_result);
 	val_check(n,int);
 	r = RESULT(o);
 	if( val_int(n) < 0 || val_int(n) >= r->nfields )
@@ -294,7 +294,7 @@ static value result_get_int( value o, value n ) {
 static value result_get_float( value o, value n ) {
 	result *r;
 	const char *s;
-	val_check_kind(o,k_result);
+	val_check_kind(o,k_mysql_result);
 	val_check(n,int);
 	r = RESULT(o);
 	if( val_int(n) < 0 || val_int(n) >= r->nfields )
@@ -353,7 +353,7 @@ static CONV convert_type( enum enum_field_types t, int flags, unsigned int lengt
 }
 
 static value alloc_result( connection *c, MYSQL_RES *r ) {
-	value o = create_abstract(k_result,sizeof(result),free_result);
+	value o = create_abstract(k_mysql_result,sizeof(result),free_result);
 	result *res = RESULT(o);
 	int num_fields = mysql_num_fields(r);
 	int i,j;
@@ -402,7 +402,7 @@ static value alloc_result( connection *c, MYSQL_RES *r ) {
 	<doc>Close the connection. Any subsequent operation will fail on it</doc>
 **/
 static value close( value o ) {
-	val_check_kind(o,k_connection);
+	val_check_kind(o,k_mysql_connection);
 	mysql_close(CNX(o)->m);
    free_abstract(o);
 	return val_true;
@@ -413,7 +413,7 @@ static value close( value o ) {
 	<doc>Select the database</doc>
 **/
 static value select_db( value o, value db ) {
-	val_check_kind(o,k_connection);
+	val_check_kind(o,k_mysql_connection);
 	val_check(db,string);
 	if( mysql_select_db(CNX(o)->m,val_string(db)) != 0 )
 		error(CNX(o)->m,"Failed to select database :");
@@ -427,7 +427,7 @@ static value select_db( value o, value db ) {
 static value request( value o, value r )  {
 	MYSQL_RES *res;
 	connection *c;
-	val_check_kind(o,k_connection);
+	val_check_kind(o,k_mysql_connection);
 	val_check(r,string);
 	c = CNX(o);
 	if( mysql_real_query(c->m,val_string(r),val_strlen(r)) != 0 )
@@ -448,7 +448,7 @@ static value request( value o, value r )  {
 **/
 static value escape( value o, value s ) {
 	int len;
-	val_check_kind(o,k_connection);
+	val_check_kind(o,k_mysql_connection);
 	val_check(s,string);
 	len = val_strlen(s) * 2 + 1;
    std::vector<char> sout(len);
@@ -466,7 +466,7 @@ static value escape( value o, value s ) {
 	<doc>Set three wrapper methods to be be called when creating a string, a date, and binary data in results</doc>
 **/
 static value set_conv_funs( value o, value fstring, value fdate, value fbytes ) {
-	val_check_kind(o,k_connection);
+	val_check_kind(o,k_mysql_connection);
 	val_check_function(fstring,1);
 	val_check_function(fdate,1);
 	val_check_function(fbytes,1);
@@ -511,7 +511,7 @@ static value mysql_connect( value params  ) {
 			bfailure(b);
 		}
 
-		value v = create_abstract(k_connection,sizeof(connection),free_connection);
+		value v = create_abstract(k_mysql_connection,sizeof(connection),free_connection);
 		connection *c = CNX(v);
 		c->m = cnx;
 		return v;

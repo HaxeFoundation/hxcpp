@@ -173,9 +173,11 @@
    <target id="zlib"/>
    <target id="mysql"/>
    <target id="sqlite"/>
-   <target id="nekoapi" if="windows" unless="HXCPP_M64"/>
-   <target id="nekoapi" if="macos" />
-   <target id="nekoapi" if="linux" />
+   <section unless="static_link">
+      <target id="nekoapi" if="windows" unless="HXCPP_M64"/>
+      <target id="nekoapi" if="macos" />
+      <target id="nekoapi" if="linux" />
+   </section>
 </target>
 
 
