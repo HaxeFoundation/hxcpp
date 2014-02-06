@@ -31,6 +31,8 @@ DEFFUNC_1(value,alloc_int,int)
 DEFFUNC_1(value,alloc_float,double)
 DEFFUNC_0(value,alloc_empty_object)
 DEFFUNC_2(value,alloc_abstract,vkind,void *)
+// Allocates conservative-collected memory
+DEFFUNC_3(value,create_abstract,vkind,int,hxFinalizer)
 DEFFUNC_1(void,free_abstract,value)
 DEFFUNC_1(value,alloc_best_int,int)
 DEFFUNC_1(value,alloc_int32,int)

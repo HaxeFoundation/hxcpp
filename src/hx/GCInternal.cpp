@@ -1987,6 +1987,12 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    GCLOG("Mark conservative %p...%p (%d)\n", inBottom, inTop, (inTop-inBottom) );
    #endif
 
+   if (sizeof(int)==4 && sizeof(void *)==8)
+   {
+      // Can't start pointer on last integer boundary...
+      inTop--;
+   }
+
 
    void *prev = 0;
    for(int *ptr = inBottom ; ptr<inTop; ptr++)

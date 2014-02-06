@@ -23,7 +23,25 @@ public:
       mType = inType;
       mHandle = inData;
       mFinalizer = 0;
+      mMarkSize = 0;
    }
+
+   Abstract_obj(int inType,int inSize, finalizer inFinalizer)
+   {
+      mType = inType;
+      mFinalizer = 0;
+      mMarkSize = 0;
+      mHandle = 0;
+      if (inSize)
+      {
+         mMarkSize = inSize;
+         mHandle = malloc(inSize);
+         memset(mHandle,0,mMarkSize);
+      }
+
+      SetFinalizer(inFinalizer);
+   }
+
 
    virtual int __GetType() const { return mType; }
    virtual hx::ObjectPtr<Class_obj> __GetClass() const { return 0; }
@@ -38,6 +56,10 @@ public:
    {
       if (mFinalizer)
          mFinalizer->Mark();
+      if (mMarkSize>=sizeof(void *) && mHandle)
+      {
+         hx::MarkConservative((int *)mHandle, ((int *)mHandle) + (mMarkSize/sizeof(int)), __inCtx );
+      }
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
@@ -67,12 +89,15 @@ public:
    {
       SetFinalizer(0);
       mType = 0;
+      if (mMarkSize && mHandle)
+         free(mHandle);
       mHandle = 0;
    }
 
    hx::InternalFinalizer *mFinalizer;
    void *mHandle;
    int mType;
+   int mMarkSize;
 };
 
 typedef ObjectPtr<Abstract_obj> Abstract;
@@ -131,6 +156,7 @@ void val_throw(hx::Object * arg1) THROWS
 
 void hx_fail(const char * inMessage,const char * inFile,int inLine)
 {
+   printf("Failure !");
    if (inFile!=0 && inLine!=0)
       throw Dynamic( HX_CSTRING("Failure ") + String(inMessage) + HX_CSTRING(" @ ") +
                     String(inFile) + HX_CSTRING(":") + Dynamic(inLine) );
@@ -232,6 +258,13 @@ hx::Object * alloc_abstract(vkind arg1,void * arg2)
 {
    int type = (int)(intptr_t)arg1;
    return new hx::Abstract_obj(type,arg2);
+}
+
+hx::Object *create_abstract(vkind inKind,int inMemSize, hx::finalizer inFree )
+{
+   int type = (int)(intptr_t)inKind;
+
+   return new hx::Abstract_obj(type,inMemSize,inFree);
 }
 
 

@@ -1,4 +1,5 @@
 
+* Some initial support for mysql and sqlite databases
 * Add free_abstract for safe releasing of data references
 * Change process lauching to get better thread usage on mac
 * Fix GC error in string resources

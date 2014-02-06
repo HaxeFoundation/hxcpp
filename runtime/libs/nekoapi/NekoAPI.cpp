@@ -181,6 +181,15 @@ void api_free_abstract(value inAbstract)
    val_kind(inAbstract) = 0;
 }
 
+value api_create_abstract(vkind inKind,int inMemSize, finalizer inFree )
+{
+   void *mem = alloc(inMemSize);
+   value result = alloc_abstract(inKind, mem );
+   val_gc(result, inFree);
+   return result;
+}
+
+
 value  api_alloc_best_int(int arg1) { return alloc_best_int(arg1); }
 value  api_alloc_int32(int arg1) { return  alloc_int32(arg1); }
 
