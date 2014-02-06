@@ -134,6 +134,7 @@
 <target id="sqlite" output="${LIBPREFIX}sqlite${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="sqlite"/>
   <outdir name="../bin/${BINDIR}"/>
+  <lib name="-lpthread" if="linux"/>
 </target>
 
 
