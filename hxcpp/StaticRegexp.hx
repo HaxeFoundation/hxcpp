@@ -3,7 +3,7 @@ package hxcpp;
 @:cppFileCode( 'extern "C" void regexp_register_prims();')
 @:buildXml("
 <target id='haxe'>
-  <lib name='${HXCPP}/bin/${BINDIR}/libregexp${LIBEXTRA}${LIBEXT}'/>
+  <lib name='${HXCPP}/lib/${BINDIR}/libregexp${LIBEXTRA}${LIBEXT}'/>
 </target>
 ")
 @:keep class StaticRegexp

@@ -3,9 +3,12 @@ import sys.FileSystem;
 #if neko
 import neko.vm.Thread;
 import neko.vm.Mutex;
+import neko.vm.Tls;
+import neko.vm.Tls;
 #else
 import cpp.vm.Thread;
 import cpp.vm.Mutex;
+import cpp.vm.Tls;
 #end
 
 class DirManager
@@ -44,6 +47,10 @@ class DirManager
       }
       return true;
    }
+   public static function reset()
+   {
+      mMade = new Hash<Bool>();
+   }
    static public function makeFileDir(inFile:String)
    {
       var parts = StringTools.replace (inFile, "\\", "/").split("/");
@@ -52,6 +59,26 @@ class DirManager
       parts.pop();
       make(parts.join("/"));
    }
+
+   static public function deleteFile(inName:String)
+   {
+      if (FileSystem.exists(inName))
+      {
+         BuildTool.log("rm " + inName);
+         FileSystem.deleteFile(inName);
+      }
+   }
+
+   static public function deleteExtension(inExt:String)
+   {
+      var contents = FileSystem.readDirectory(".");
+      for(item in contents)
+      {
+         if (item.length > inExt.length && item.substr(item.length-inExt.length)==inExt)
+            deleteFile(item);
+      }
+   }
+
    static public function deleteRecurse(inDir:String)
    {
       if (FileSystem.exists(inDir))
@@ -65,9 +92,13 @@ class DirManager
                if (FileSystem.isDirectory(name))
                   deleteRecurse(name);
                else
+               {
+                  BuildTool.log("rm " + name);
                   FileSystem.deleteFile(name);
+               }
             }
-    }
+         }
+         BuildTool.log("rmdir " + inDir);
          FileSystem.deleteDirectory(inDir);
       }
    }
@@ -232,7 +263,7 @@ class Compiler
    {
       var path = new haxe.io.Path(inFile.mName);
       var dirId =
-         haxe.crypto.Md5.encode(BuildTool.staticLibraryName + path.dir).substr(0,8) + "_";
+         haxe.crypto.Md5.encode(BuildTool.targetKey + path.dir).substr(0,8) + "_";
 
       return mObjDir + "/" + dirId + path.file + mExt;
    }
@@ -291,8 +322,7 @@ class Compiler
             }
             else
             {
-               if (BuildTool.verbose)
-                  BuildTool.println(" not in cache " + cacheName);
+               BuildTool.log(" not in cache " + cacheName);
             }
          }
          else
@@ -321,8 +351,7 @@ class Compiler
          if (cacheName!=null)
          {
            sys.io.File.copy(obj_name, cacheName );
-           if (BuildTool.verbose)
-              BuildTool.println(" caching " + cacheName);
+           BuildTool.log(" caching " + cacheName);
          }
       }
 
@@ -558,7 +587,7 @@ class HLSL
    {
 	  if (!FileSystem.exists (Path.directory (target))) 
 	  {
-	     DirManager.make (Path.directory (target));
+	     DirManager.make(Path.directory (target));
 	  }
 	  
       DirManager.makeFileDir(target);
@@ -727,6 +756,7 @@ class Target
    {
       mOutput = inOutput;
       mOutputDir = "";
+      mBuildDir = "";
       mToolID = inToolID;
       mTool = inTool;
       mFiles = [];
@@ -764,13 +794,12 @@ class Target
       }
    }
 
-   public function getStaticLibraryName()
+   public function getKey()
    {
-      if (mTool=="linker" && mToolID=="static_link")
-         return mOutput + mExt;
-      return "";
+      return mOutput + mExt;
    }
 
+   public var mBuildDir:String;
    public var mOutput:String;
    public var mOutputDir:String;
    public var mTool:String;
@@ -806,7 +835,8 @@ class BuildTool
    public static var isMac = false;
    public static var useCache = false;
    public static var compileCache:String;
-   public static var staticLibraryName:String;
+   public static var targetKey:String;
+   public static var helperThread = new Tls<Thread>();
    static var printMutex:Mutex;
 
 
@@ -870,12 +900,25 @@ class BuildTool
       if (useCache && verbose)
          println("Using cache " + compileCache );
 
-      if (mTargets.exists("default"))
-         buildTarget("default");
-      else
-         for(target in inTargets)
-            buildTarget(target);
+      if (inTargets.remove("clear"))
+         for(target in mTargets.keys())
+            cleanTarget(target,false);
+
+      if (inTargets.remove("clean"))
+         for(target in mTargets.keys())
+            cleanTarget(target,true);
+
+      for(target in inTargets)
+         buildTarget(target);
    }
+
+   inline public static function log(s:String)
+   {
+      if (verbose)
+         Sys.println(s);
+   }
+
+
 
    inline public static function println(s:String)
    {
@@ -1025,15 +1068,36 @@ class BuildTool
          var proc = new sys.io.Process(exe, args);
          var err = proc.stderr;
          var out = proc.stdout;
-         try
+         var reader = BuildTool.helperThread.value;
+         // Read stderr in separate hreead to avoid blocking ...
+         if (reader==null)
          {
-            while(true)
+            var contoller = Thread.current();
+            BuildTool.helperThread.value = reader = Thread.create(function()
             {
-               var line = err.readLine();
-               output.push(line);
-            }
+               while(true)
+               {
+                  var message = Thread.readMessage(true);
+                  var stream = message.stream;
+                  var output = message.output;
+                  try
+                  {
+                     while(true)
+                     {
+                        var line = stream.readLine();
+                        output.push(line);
+                     }
+                  }
+                  catch(e:Dynamic){}
+                  contoller.sendMessage(null);
+               }
+            });
          }
-         catch(e:Dynamic){}
+
+         // Start up the error reader ...
+         var errOut = new Array<String>();
+         reader.sendMessage({sream:err, output:errOut});
+
          try
          {
             while(true)
@@ -1043,8 +1107,14 @@ class BuildTool
             }
          }
          catch(e:Dynamic){}
+
+         var done = Thread.readMessage(true);
+
          var code = proc.exitCode();
          proc.close();
+         if (errOut.length>0)
+            output = output.concat(errOut);
+
          if (output.length>0)
          {
             if (printMutex!=null)
@@ -1056,6 +1126,41 @@ class BuildTool
          return code;
       }
    }
+
+   public function cleanTarget(inTarget:String,allObj:Bool)
+   {
+      // Sys.println("Build : " + inTarget );
+      if (!mTargets.exists(inTarget))
+         throw "Could not find target '" + inTarget + "' to build.";
+      if (mCompiler==null)
+         throw "No compiler defined";
+
+      var target = mTargets.get(inTarget);
+      target.checkError();
+
+      for(sub in target.mSubTargets)
+         cleanTarget(sub,allObj);
+
+      var restoreDir = "";
+      if (target.mBuildDir!="")
+      {
+         restoreDir = Sys.getCwd();
+         if (verbose)
+            Sys.println("Enter " + target.mBuildDir);
+         Sys.setCwd(target.mBuildDir);
+      }
+
+      DirManager.deleteRecurse(mCompiler.mObjDir);
+      DirManager.deleteFile("all_objs");
+      DirManager.deleteExtension(".pdb");
+      if (allObj)
+         DirManager.deleteRecurse("obj");
+
+      if (restoreDir!="")
+         Sys.setCwd(restoreDir);
+   }
+ 
+
 
 
    public function buildTarget(inTarget:String)
@@ -1086,10 +1191,22 @@ class BuildTool
             Std.parseInt(thread_var);
       }
 
-      staticLibraryName = target.getStaticLibraryName();
+      DirManager.reset();
+      var restoreDir = "";
+      if (target.mBuildDir!="")
+      {
+         restoreDir = Sys.getCwd();
+         if (verbose)
+            Sys.println("Enter " + target.mBuildDir);
+         Sys.setCwd(target.mBuildDir);
+      }
+
+      targetKey = inTarget + target.getKey();
  
       var objs = new Array<String>();
-      DirManager.make(mCompiler.mObjDir);
+
+      if (target.mFileGroups.length > 0)
+         DirManager.make(mCompiler.mObjDir);
       for(group in target.mFileGroups)
       {
          group.checkOptions(mCompiler.mObjDir);
@@ -1188,10 +1305,10 @@ class BuildTool
             if (exe!="" && mStripper!=null)
                if (target.mToolID=="exe" || target.mToolID=="dll")
                   mStripper.strip(exe);
-
-         case "clean":
-            target.clean();
       }
+
+      if (restoreDir!="")
+         Sys.setCwd(restoreDir);
    }
 
    public function createCompiler(inXML:haxe.xml.Fast,inBase:Compiler) : Compiler
@@ -1347,6 +1464,7 @@ class BuildTool
                 case "dir" : target.mDirs.push( substitute(el.att.name) );
                 case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
                 case "ext" : target.mExt = (substitute(el.att.value));
+                case "builddir" : target.mBuildDir = substitute(el.att.name);
                 case "files" : var id = el.att.id;
                    if (!mFileGroups.exists(id))
                       target.addError( "Could not find filegroup " + id ); 
@@ -1474,6 +1592,20 @@ class BuildTool
 
       return str;
    }
+
+   static function set64(outDefines:Hash<String>, in64:Bool)
+   {
+      if (in64)
+      {
+         outDefines.set("HXCPP_M64","1");
+         outDefines.remove("HXCPP_32");
+      }
+      else
+      {
+         outDefines.set("HXCPP_M32","1");
+         outDefines.remove("HXCPP_M64");
+      }
+   }
    
    
    // Process args and environment.
@@ -1531,7 +1663,7 @@ class BuildTool
             if (val=="verbose")
                verbose = true;
          }
-         if (arg=="-v" || arg=="-verbose")
+         else if (arg=="-v" || arg=="-verbose")
             verbose = true;
          else if (arg.substr(0,2)=="-I")
             include_path.push(arg.substr(2));
@@ -1571,6 +1703,15 @@ class BuildTool
       include_path.push(HXCPP + "/build-tool");
 
       var m64 = defines.exists("HXCPP_M64");
+      var m32 = defines.exists("HXCPP_M32");
+      if (m64==m32)
+      {
+         // Default to the current version of neko...
+         var os = Sys.systemName();
+         m64 = (~/64$/).match(os);
+         m32 = !m64;
+      }
+
       var msvc = false;
 	  
 	   if (defines.exists("ios"))
@@ -1664,12 +1805,14 @@ class BuildTool
       }
       else if (defines.exists("mingw") || env.exists("HXCPP_MINGW") )
       {
+         set64(defines,m64);
          defines.set("toolchain","mingw");
          defines.set("mingw","mingw");
          defines.set("BINDIR",m64 ? "Windows64":"Windows");
       }
       else if (defines.exists("cygwin") || env.exists("HXCPP_CYGWIN"))
       {
+         set64(defines,m64);
          defines.set("toolchain","cygwin");
          defines.set("cygwin","cygwin");
          defines.set("linux","linux");
@@ -1690,6 +1833,7 @@ class BuildTool
          }
          else
          {
+            set64(defines,m64);
             defines.set("toolchain","msvc");
             defines.set("windows","windows");
             msvc = true;
@@ -1713,12 +1857,14 @@ class BuildTool
       }
       else if ( (new EReg("linux","i")).match(os) )
       {
+         set64(defines,m64);
          defines.set("toolchain","linux");
          defines.set("linux","linux");
          defines.set("BINDIR", m64 ? "Linux64":"Linux");
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
+         set64(defines,m64);
          // Cross-compile?
          if (defines.exists("linux"))
          {

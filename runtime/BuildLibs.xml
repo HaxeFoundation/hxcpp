@@ -7,28 +7,29 @@
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
 
-  <file name="libs/std/Sys.cpp"/>
-  <file name="libs/std/Xml.cpp"/>
-  <file name="libs/std/Process.cpp"/>
-  <file name="libs/std/Random.cpp"/>
-  <file name="libs/std/Socket.cpp" unless="emscripten" />
-  <file name="libs/std/String.cpp"/>
-  <file name="libs/std/File.cpp"/>
-  <file name="libs/std/Init.cpp"/>
-  <file name="libs/std/Misc.cpp"/>
-  <file name="libs/std/Interface.cpp" unless="static_link" />
+  <file name="Sys.cpp"/>
+  <file name="Xml.cpp"/>
+  <file name="Process.cpp"/>
+  <file name="Random.cpp"/>
+  <file name="Socket.cpp" unless="emscripten" />
+  <file name="String.cpp"/>
+  <file name="File.cpp"/>
+  <file name="Init.cpp"/>
+  <file name="Misc.cpp"/>
+  <file name="Interface.cpp" unless="static_link" />
 
 </files>
 
 
 
 <target id="std" output="${LIBPREFIX}std${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <builddir name="libs/std" />
   <files id="std"/>
-  <lib name="wsock32.lib" if="windows"/>
-  <outdir name="../bin/${BINDIR}"/>
+  <lib name="wsock32.lib" if="windows" unless="static_link" />
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
 
-<set name="PCRE_DIR" value="thirdparty/pcre-7.8" />
+<set name="PCRE_DIR" value="../../thirdparty/pcre-7.8" />
 
 <files id="regexp" >
   <depend name="${HXCPP}/include/hx/Macros.h"/>
@@ -38,7 +39,7 @@
   <compilerflag value="-DSUPPORT_UTF8"/>
   <compilerflag value="-I${PCRE_DIR}"/>
 
-  <file name="libs/regexp/RegExp.cpp"/>
+  <file name="RegExp.cpp"/>
 
   <file name="${PCRE_DIR}/pcre_get.c"/>
   <file name="${PCRE_DIR}/pcre_study.c"/>
@@ -67,10 +68,11 @@
 
 <target id="regexp" output="${LIBPREFIX}regexp${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="regexp"/>
-  <outdir name="../bin/${BINDIR}"/>
+  <builddir name="libs/regexp" />
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
 
-<set name="ZLIB_DIR" value="thirdparty/zlib-1.2.3"/>
+<set name="ZLIB_DIR" value="../../thirdparty/zlib-1.2.3"/>
 
 <files id="zlib" >
   <depend name="${HXCPP}/include/hx/Macros.h"/>
@@ -78,7 +80,7 @@
 
   <compilerflag value="-I${ZLIB_DIR}"/>
 
-  <file name="libs/zlib/ZLib.cpp"/>
+  <file name="ZLib.cpp"/>
 
   <file name="${ZLIB_DIR}/adler32.c"/>
   <file name="${ZLIB_DIR}/crc32.c"/>
@@ -99,7 +101,8 @@
 
 <target id="zlib" output="${LIBPREFIX}zlib${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="zlib"/>
-  <outdir name="../bin/${BINDIR}"/>
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <builddir name="libs/zlib"/>
 </target>
 
 
@@ -107,18 +110,19 @@
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
 
-  <file name="libs/mysql/mysql.cpp"/>
-  <file name="libs/mysql/my_proto/my_api.cpp"/>
-  <file name="libs/mysql/my_proto/my_proto.cpp"/>
-  <file name="libs/common/socket.cpp"/>
-  <file name="libs/common/sha1.cpp"/>
+  <file name="mysql.cpp"/>
+  <file name="my_proto/my_api.cpp"/>
+  <file name="my_proto/my_proto.cpp"/>
+  <file name="../common/socket.cpp"/>
+  <file name="../common/sha1.cpp"/>
 </files>
 
 
 <target id="mysql" output="${LIBPREFIX}mysql5${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="mysql"/>
-  <lib name="wsock32.lib" if="windows"/>
-  <outdir name="../bin/${BINDIR}"/>
+  <builddir name="libs/mysql"/>
+  <lib name="wsock32.lib" if="windows" unless="static_link" />
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
 
 
@@ -126,18 +130,17 @@
 <files id="sqlite" >
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
-  <file name="libs/sqlite/sqlite3.c"/>
-  <file name="libs/sqlite/sqlite.cpp"/>
+  <file name="sqlite3.c"/>
+  <file name="sqlite.cpp"/>
 </files>
 
 
 <target id="sqlite" output="${LIBPREFIX}sqlite${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="sqlite"/>
-  <outdir name="../bin/${BINDIR}"/>
-  <lib name="-lpthread" if="linux"/>
+  <builddir name="libs/sqlite"/>
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <lib name="-lpthread" if="linux" unless="static_link" />
 </target>
-
-
 
 
 
@@ -146,7 +149,7 @@
   <depend name="libs/nekoapi/neko.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
-  <file name="libs/nekoapi/NekoAPI.cpp"/>
+  <file name="NekoAPI.cpp"/>
   <compilerflag value="-Dneko_v1" if="neko_v1" />
 </files>
 
@@ -154,15 +157,16 @@
 
 <set name="neko_v2" value="1" unless="neko_v1" />
 
-<set name="NEKO_LIB_DIR" value="libs/nekoapi/bin/${BINDIR}" />
+<set name="NEKO_LIB_DIR" value="bin/${BINDIR}" />
 
 <target id="nekoapi" output="nekoapi" tool="linker" toolid="dll">
   <ext value=".ndll"/>
   <files id="nekoapi"/>
+  <builddir name="libs/nekoapi"/>
   <lib name="${NEKO_LIB_DIR}/neko.lib" if="windows" />
   <lib name="-L${NEKO_LIB_DIR}" unless="windows"/>
   <lib name="-lneko" unless="windows"/>
-  <outdir name="../bin/${BINDIR}"/>
+  <outdir name="../../../bin/${BINDIR}"/>
 </target>
 
 

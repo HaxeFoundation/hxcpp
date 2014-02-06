@@ -3,7 +3,7 @@ package hxcpp;
 @:cppFileCode( 'extern "C" void sqlite_register_prims();')
 @:buildXml("
 <target id='haxe'>
-  <lib name='${HXCPP}/bin/${BINDIR}/libsqlite${LIBEXTRA}${LIBEXT}'/>
+  <lib name='${HXCPP}/lib/${BINDIR}/libsqlite${LIBEXTRA}${LIBEXT}'/>
   <lib name='-lpthread' if='linux'/>
 </target>
 ")

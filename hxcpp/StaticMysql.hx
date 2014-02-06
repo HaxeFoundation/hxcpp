@@ -3,7 +3,8 @@ package hxcpp;
 @:cppFileCode( 'extern "C" void mysql_register_prims();')
 @:buildXml("
 <target id='haxe'>
-  <lib name='${HXCPP}/bin/${BINDIR}/libmysql5${LIBEXTRA}${LIBEXT}'/>
+  <lib name='${HXCPP}/lib/${BINDIR}/libmysql5${LIBEXTRA}${LIBEXT}'/>
+  <lib name='wsock32.lib' if='windows'/>
 </target>
 ")
 @:keep class StaticMysql

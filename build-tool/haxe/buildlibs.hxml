@@ -1,0 +1,4 @@
+-neko ../../runtime/buildlibs.n
+-main BuildLibs
+-D neko_v1
+-debug
