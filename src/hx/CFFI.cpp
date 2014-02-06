@@ -156,7 +156,6 @@ void val_throw(hx::Object * arg1) THROWS
 
 void hx_fail(const char * inMessage,const char * inFile,int inLine)
 {
-   printf("Failure !");
    if (inFile!=0 && inLine!=0)
       throw Dynamic( HX_CSTRING("Failure ") + String(inMessage) + HX_CSTRING(" @ ") +
                     String(inFile) + HX_CSTRING(":") + Dynamic(inLine) );

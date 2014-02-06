@@ -27,9 +27,6 @@
 #ifdef OS_WINDOWS
 	static int init_done = 0;
 	static WSADATA init_data;
-#	define POSIX_LABEL(x)
-#	define HANDLE_EINTR(x)
-
 #else
 #	include <sys/types.h>
 #	include <sys/socket.h>
@@ -45,8 +42,6 @@
 #	include <poll.h>
 #	define closesocket close
 #	define SOCKET_ERROR (-1)
-#	define POSIX_LABEL(x)	x:
-#	define HANDLE_EINTR(x)	if( errno == EINTR ) goto x
 #endif
 
 #if defined(OS_WINDOWS) || defined(OS_MAC)

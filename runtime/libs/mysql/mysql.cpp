@@ -47,6 +47,9 @@
 #define CNX(o)			((connection*)val_data(o))
 #define RESULT(o)		((result*)val_data(o))
 
+namespace
+{
+
 typedef struct {
 	MYSQL *m;
 	value conv_date;
@@ -515,12 +518,6 @@ static value mysql_connect( value params  ) {
 	}
 }
 
-
-extern "C" int mysql_register_prims()
-{
-   return 0;
-}
-
 // ---------------------------------------------------------------
 // Registers
 
@@ -542,3 +539,14 @@ DEFINE_PRIM(result_set_conv_date,2);
 DEFINE_PRIM(set_conv_funs,4);
 
 /* ************************************************************************ */
+
+}
+
+
+extern "C" int mysql_register_prims()
+{
+   return 0;
+}
+
+
+
