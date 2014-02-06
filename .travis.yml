@@ -9,9 +9,9 @@ before_install:
   - haxelib dev hxcpp $TRAVIS_BUILD_DIR
 
 script:
-  - cd build-tool
-  - haxe Compile.hxml
-  - cd ../runtime
+  - cd build-tool/haxe
+  - haxe run.hxml
+  - cd ../../runtime
   - haxelib run hxcpp BuildLibs.xml
   - haxelib run hxcpp BuildLibs.xml -DHXCPP_M64
   - cd ../test/ndlls
