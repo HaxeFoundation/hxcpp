@@ -23,6 +23,8 @@ enum ArrayFunc
    afUnshift,
    afMap,
    afFilter,
+   afIndexOf,
+   afLastIndexOf,
    af__get,
    af__set,
    af__crement,
@@ -47,6 +49,8 @@ static int sArgCount[] =
    1, //afUnshift,
    1, //afMap,
    1, //afFilter,
+   2, //afIndexOf,
+   2, //afLastIndexOf,
    1, //af__get,
    2, //af__set,
    1, //af__crement,
@@ -99,6 +103,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
          case afPush:
          case afRemove:
+         case afIndexOf:
+         case afLastIndexOf:
             return etInt;
 
          case af__get:
@@ -142,8 +148,21 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          ELEM elem;
-         runValue(elem,ctx,args[0]);
          return thisVal->remove(runValue(elem,ctx,args[0]));
+      }
+      if (FUNC==afIndexOf)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         ELEM elem;
+         runValue(elem,ctx,args[0]);
+         return thisVal->indexOf(elem, args[1]->runObject(ctx));
+      }
+      if (FUNC==afLastIndexOf)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         ELEM elem;
+         runValue(elem,ctx,args[0]);
+         return thisVal->lastIndexOf(elem, args[1]->runObject(ctx));
       }
       if (FUNC==af__get)
       {
@@ -491,6 +510,10 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<afMap,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("filter"))
       return TCreateArrayBuiltin<afFilter,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("indexOf"))
+      return TCreateArrayBuiltin<afIndexOf,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("lastIndexOf"))
+      return TCreateArrayBuiltin<afLastIndexOf,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("__get"))
       return TCreateArrayBuiltin<af__get,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("__set"))
