@@ -60,10 +60,26 @@ class BuildLibs
 
             switch(arg)
             {
-               case "clean", "ios", "android", "windows", "linux", "mac",
-                             "static-android", "static-windows", "static-linux", "static-mac" :
+               case "clean":
                   if (!Lambda.exists(targets, function(x)return x==arg))
                      targets.push(arg);
+
+               case "ios", "android", "windows", "linux", "mac":
+                  var stat = "static-" + arg;
+                  if (!Lambda.exists(targets, function(x)return x==stat))
+                     targets.push(stat);
+                  var dyn = arg;
+                  if (!Lambda.exists(targets, function(x)return x==dyn))
+                     targets.push(dyn);
+
+               case "static-ios", "static-android", "static-windows", "static-linux", "static-mac" :
+                  if (!Lambda.exists(targets, function(x)return x==arg))
+                     targets.push(arg);
+
+               case "ios-legacy", "android-ndll", "windows-ndll", "linux-ndll", "mac-ndll" :
+                  var target = arg.split("-")[0];
+                  if (!Lambda.exists(targets, function(x)return x==target))
+                     targets.push(target);
 
                case "-armv5", "-armv6", "-armv7", "-arm64", "-x86", "-m32", "-m64":
                   var arch = arg.substr(1);
@@ -100,13 +116,15 @@ class BuildLibs
          for(target in targets)
          {
             var validArchs = new Map<String, Array<String>>();
-            var isStatic = target=="ios";
+            var isStatic = false;
             if (target.substr(0,7)=="static-")
             {
                isStatic = true;
                target = target.substr(7);
             }
             var staticFlag = isStatic ? "-Dstatic_link" : "";
+            if (target=="ios" && !isStatic)
+               staticFlag = "-DHXCPP_IOS_LEGACY";
 
             switch(target)
             {
@@ -122,12 +140,6 @@ class BuildLibs
                   validArchs.set("armv7", ["-Diphoneos", "-DHXCPP_ARMV7", staticFlag] );
                   //validArchs.push("armv64");
                   validArchs.set("x86", ["-Diphonesim", staticFlag] );
-
-               case "ios-legacy":
-                  validArchs.set("armv6", ["-Diphoneos", "-DHXCPP_FORCE_BIN", staticFlag] );
-                  validArchs.set("armv7", ["-Diphoneos", "-DHXCPP_ARMV7", "-DHXCPP_FORCE_BIN", staticFlag] );
-                  //validArchs.push("armv64");
-                  validArchs.set("x86", ["-Diphonesim", "-DHXCPP_FORCE_BIN", staticFlag] );
 
                case "android":
                   validArchs.set("armv5", ["-Dandroid", staticFlag] );
