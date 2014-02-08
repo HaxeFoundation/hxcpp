@@ -7,6 +7,12 @@
 <include name="gcc-toolchain.xml"/>
 <path name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin" />
 
+<set name="FORCE_LIBGCC" value="1" if="HXCPP_IOS_STDCPP" unless="HXCPP_GCC" />
+<set name="OBJGCC" value="-c11" if="HXCPP_CPP11" />
+<set name="OBJGCC" value="-gcc" if="HXCPP_GCC" />
+<set name="OBJDBG" value="-dbg" if="debug" />
+
+
 <compiler id="iPhoneOS" exe="g++" if="iphoneos">
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" if="HXCPP_GCC" />
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" />
@@ -14,7 +20,8 @@
   <cppflag value="-fvisibility-inlines-hidden"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
-  <flag value="-stdlib=libstdc++" unless="HXCPP_GCC" />
+  <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>
@@ -41,14 +48,14 @@
   <cppflag value="-frtti"/>
   <outflag value="-o"/>
   <ext value=".o"/>
-  <objdir value="obj/iphoneos${ARCH}/" unless="debug"/>
-  <objdir value="obj/iphoneos-dbg${ARCH}/" if="debug"/>
+  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}${ARCH}/" />
 </compiler>
 
 <linker id="dll" exe="g++" >
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" if="HXCPP_GCC" />
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" />
-  <flag value="-stdlib=stdlibc++" unless="HXCPP_GCC" />
+  <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-dynamiclib"/>
   <flag value="-arch"/>
   <flag value="armv6" unless="HXCPP_ARMV7" />

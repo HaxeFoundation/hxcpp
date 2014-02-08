@@ -123,8 +123,8 @@ class BuildLibs
                target = target.substr(7);
             }
             var staticFlag = isStatic ? "-Dstatic_link" : "";
-            if (target=="ios" && !isStatic)
-               staticFlag = "-DHXCPP_IOS_LEGACY";
+            if (target=="ios" && isStatic)
+               staticFlag = "-DHXCPP_CPP11";
 
             switch(target)
             {

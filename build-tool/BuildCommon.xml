@@ -44,8 +44,10 @@
 <set name="haxelink" value="dll" if="android"/>
 <set name="haxelink" value="dll" if="dll_import"/>
 
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11"/>
+
 <set name="DESTDIR" value="bin" />
-<set name="DESTDIR" value="lib" if="static_link" unless="HXCPP_FORCE_BIN"/>
+<set name="DESTDIR" value="lib" if="static_link" unless="HXCPP_IOS_STDCPP"/>
 
 <include name="${HXCPP_CONFIG}" section="vars" noerror="1"/>
 
