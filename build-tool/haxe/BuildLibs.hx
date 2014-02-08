@@ -30,13 +30,24 @@ class BuildLibs
 
    static function run(inFlags:Array<String>)
    {
-       var args = ["run", "hxcpp", "BuildLibs.xml"].concat(inFlags);
+       var args = ["run.n", "BuildLibs.xml"].concat(inFlags);
+       var here = Sys.getCwd().split("\\").join("/");
 
-       Sys.println("haxelib " + args.join(" ")); 
-       if (Sys.command("haxelib",args)!=0)
+       var parts = here.split("/");
+       if (parts.length>0 && parts[parts.length-1]=="")
+          parts.pop();
+       if (parts.length>0)
+          parts.pop();
+       var hxcppDir = parts.join("/");
+
+       Sys.setCwd(hxcppDir);
+       args.push(here);
+       Sys.println("neko " + args.join(" ")); 
+       if (Sys.command("neko",args)!=0)
        {
-          Sys.println("#### Error building " + inFlags.join(" "));
+          Sys.println("#### Error building neko " + inFlags.join(" "));
        }
+       Sys.setCwd(here);
    }
 
 
