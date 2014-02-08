@@ -250,7 +250,7 @@ class Compiler
 
 
       BuildTool.println("Creating " + pch_name + "...");
-      var result = BuildTool.runCommand( mExe, args, true );
+      var result = BuildTool.runCommand( mExe, args, true, false );
       if (result!=0)
       {
          if (FileSystem.exists(pch_name))
@@ -341,7 +341,7 @@ class Compiler
          }
 
          args.push(out + obj_name);
-         var result = BuildTool.runCommand( mExe, args, true );
+         var result = BuildTool.runCommand( mExe, args, true, inTid>=0 );
          if (result!=0)
          {
             if (FileSystem.exists(obj_name))
@@ -439,14 +439,14 @@ class Linker
          args = args.concat(inTarget.mLibs);
          args = args.concat(mLibs);
 
-         var result = BuildTool.runCommand( mExe, args, true );
+         var result = BuildTool.runCommand( mExe, args, true, false );
          if (result!=0)
             throw "Error : " + result + " - build cancelled";
 
          if (mRanLib!="")
          {
             args = [out_name];
-            var result = BuildTool.runCommand( mRanLib, args, true );
+            var result = BuildTool.runCommand( mRanLib, args, true, false );
             if (result!=0)
                throw "Error : " + result + " - build cancelled";
          }
@@ -498,7 +498,7 @@ class Stripper
 
       args.push(inTarget);
 
-      var result = BuildTool.runCommand( mExe, args, true );
+      var result = BuildTool.runCommand( mExe, args, true,false );
       if (result!=0)
          throw "Error : " + result + " - build cancelled";
    }
@@ -597,7 +597,7 @@ class HLSL
       {
          var exe = "fxc.exe";
          var args =  [ "/nologo", "/T", profile, file, "/Vn", variable, "/Fh", target ];
-         var result = BuildTool.runCommand(exe,args,BuildTool.verbose);
+         var result = BuildTool.runCommand(exe,args,BuildTool.verbose,false);
          if (result!=0)
          {
             throw "Error : Could not compile shader " + file + " - build cancelled";
@@ -1043,7 +1043,7 @@ class BuildTool
    }
    
    
-   public static function runCommand(exe:String, args:Array<String>,inPrint:Bool):Int
+   public static function runCommand(exe:String, args:Array<String>,inPrint:Bool, inMultiThread:Bool ):Int
    {
       if (exe.indexOf (" ") > -1)
       {
@@ -1052,7 +1052,7 @@ class BuildTool
          args = splitExe.concat (args);
       }
 
-      var useSysCommand = false;
+      var useSysCommand = !inMultiThread;
       
       if ( useSysCommand )
       {
@@ -1077,26 +1077,27 @@ class BuildTool
             {
                while(true)
                {
-                  var message = Thread.readMessage(true);
-                  var stream = message.stream;
-                  var output = message.output;
+                  var stream = Thread.readMessage(true);
+                  var output:Array<String> = null;
                   try
                   {
                      while(true)
                      {
                         var line = stream.readLine();
-                        output.push(line);
+                        if (output==null)
+                           output = [ line ];
+                        else
+                           output.push(line);
                      }
                   }
-                  catch(e:Dynamic){}
-                  contoller.sendMessage(null);
+                  catch(e:Dynamic){ }
+                  contoller.sendMessage(output);
                }
             });
          }
 
          // Start up the error reader ...
-         var errOut = new Array<String>();
-         reader.sendMessage({sream:err, output:errOut});
+         reader.sendMessage(err);
 
          try
          {
@@ -1106,13 +1107,11 @@ class BuildTool
                output.push(line);
             }
          }
-         catch(e:Dynamic){}
+         catch(e:Dynamic){ }
 
-         var done = Thread.readMessage(true);
+         var errOut:Array<String> = Thread.readMessage(true);
 
-         var code = proc.exitCode();
-         proc.close();
-         if (errOut.length>0)
+         if (errOut!=null && errOut.length>0)
             output = output.concat(errOut);
 
          if (output.length>0)
@@ -1123,6 +1122,9 @@ class BuildTool
             if (printMutex!=null)
                printMutex.release();
          }
+
+         var code = proc.exitCode();
+         proc.close();
          return code;
       }
    }
