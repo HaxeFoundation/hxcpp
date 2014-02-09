@@ -16,7 +16,7 @@
 /* ************************************************************************ */
 #include <hx/CFFI.h>
 #include <stdio.h>
-#include <string>
+#include <string.h>
 #ifdef NEKO_WINDOWS
 #	include <windows.h>
 #endif
@@ -33,7 +33,6 @@
 int __file_prims() { return 0; }
 
 #if defined(ANDROID) || defined(IPHONE)
-typedef std::string Filename;
 typedef char FilenameChar;
 #define val_filename val_string
 #define alloc_filename alloc_string
@@ -50,7 +49,6 @@ typedef char FilenameChar;
 
 
 #else
-typedef std::wstring Filename;
 typedef wchar_t FilenameChar;
 #define val_filename val_wstring
 #define alloc_filename alloc_wstring
@@ -70,8 +68,19 @@ typedef wchar_t FilenameChar;
 
 struct fio
 {
-   fio(const FilenameChar *inName, FILE *inFile=0) : io(inFile), name(inName) { }
-   ~fio() { }
+   fio(const FilenameChar *inName, FILE *inFile=0) : io(inFile)
+   {
+      int len = 0;
+      for(const FilenameChar *p = inName; *p; p++)
+         len++;
+      name = new FilenameChar[len+1];
+      memcpy(name, inName, len*sizeof(FilenameChar));
+      name[len] = '\0';
+   }
+   ~fio()
+   {
+      delete [] name;
+   }
 
    void close()
    {
@@ -82,7 +91,7 @@ struct fio
       }
    }
  
-   Filename name;
+   FilenameChar *name;
    FILE         *io;
 };
 
@@ -113,7 +122,7 @@ static void file_error( const char *msg, fio *f, bool delete_f = false ) {
 	gc_exit_blocking();
 	value a = alloc_array(2);
 	val_array_set_i(a,0,alloc_string(msg));
-	val_array_set_i(a,1,alloc_filename(f->name.c_str()));
+	val_array_set_i(a,1,alloc_filename(f->name));
 	if (delete_f)
 		delete f;
 	val_throw(a);
@@ -162,7 +171,7 @@ static value file_close( value o ) {
 **/
 static value file_name( value o ) {
 	val_check_kind(o,k_file);
-	return alloc_filename(val_file(o)->name.c_str());
+	return alloc_filename(val_file(o)->name);
 }
 
 /**
