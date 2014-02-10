@@ -280,26 +280,28 @@ struct MySemaphore
       spec.tv_sec = tv.tv_sec + isec;
 
       AutoLock lock(mMutex);
-      if (mSet) {
-          mSet = false;
-          return true;
+
+      int result = 0;
+      // Wait for set to be true...
+      while( !mSet &&  (result=pthread_cond_timedwait( &mCondition, &mMutex.mMutex, &spec )) != ETIMEDOUT)
+      {
+         if (result!=0)
+         {
+            // Error - something's gone wrong...
+            if (result==EINVAL) 
+               hx::CriticalError(HX_CSTRING("Condition EINVAL"));
+            else if (result==EPERM)
+               hx::CriticalError(HX_CSTRING("Condition EPERM"));
+            else
+               hx::CriticalError(HX_CSTRING("Condition unknown error"));
+            break;
+         }
+         // Condition signalled - but try mSet again ...
       }
 
-      while (pthread_cond_timedwait
-           ( &mCondition, &mMutex.mMutex, &spec ) != ETIMEDOUT) {
-          if (mSet) {
-              mSet = false;
-              return true;
-          }
-      }
-
-      if (mSet) {
-          mSet = false;
-          return true;
-      }
-      else {
-          return false;
-      }
+      bool wasSet = mSet;
+      mSet = false;
+      return wasSet;
    }
    void Clean()
    {
