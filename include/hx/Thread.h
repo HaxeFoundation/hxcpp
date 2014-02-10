@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <stdio.h>
 #endif
 
 #ifdef RegisterClass
@@ -289,11 +290,11 @@ struct MySemaphore
          {
             // Error - something's gone wrong...
             if (result==EINVAL) 
-               hx::CriticalError(HX_CSTRING("Condition EINVAL"));
+               printf("ERROR: Condition EINVAL\n");
             else if (result==EPERM)
-               hx::CriticalError(HX_CSTRING("Condition EPERM"));
+               printf("ERROR: Condition EPERM\n");
             else
-               hx::CriticalError(HX_CSTRING("Condition unknown error"));
+               printf("ERROR: Condition unknown error\n");
             break;
          }
          // Condition signalled - but try mSet again ...
