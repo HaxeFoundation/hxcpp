@@ -12,7 +12,6 @@
   <fromfile value="" if="macos" />
   <fromfile value="" if="GCC_OLD" />
   <fromfile value="" if="iphone" />
-  <fromfile value="" if="android" />
   <!-- <fromfile value="" if="emscripten" /> -->
   <outflag value="-cr "/>
   <outflag value="cr " if="emscripten" />
@@ -20,6 +19,8 @@
   <recreate value="1" if="iphone" />
   <recreate value="1" if="emscripten" />
   <recreate value="1" if="android" />
+  <expandAr value="1" if="android" />
+  <expandAr value="1" if="linux" />
   <ranlib name="ranlib" />
   <ranlib name ="${EXEPREFIX}-ranlib" if="android" />
   <ranlib name="emranlib" if="emscripten" />

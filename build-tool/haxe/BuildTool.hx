@@ -371,6 +371,7 @@ class Linker
    public var mRanLib:String;
    public var mFromFile:String;
    public var mLibs:Array<String>;
+   public var mExpandArchives : Bool;
    public var mRecreate:Bool;
 
    public function new(inExe:String)
@@ -381,12 +382,13 @@ class Linker
       mNamePrefix = "";
       mLibDir = "";
       mRanLib = "";
+      mExpandArchives = false;
       // Default to on...
       mFromFile = "@";
       mLibs = [];
       mRecreate = false;
    }
-   public function link(inTarget:Target,inObjs:Array<String>)
+   public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler)
    {
       var ext = inTarget.mExt=="" ? mExt : inTarget.mExt;
       var file_name = mNamePrefix + inTarget.mOutput + ext;
@@ -421,23 +423,51 @@ class Linker
             args.push(out + out_name);
          }
 
-          args = args.concat(mFlags).concat(inTarget.mFlags);
+         args = args.concat(mFlags).concat(inTarget.mFlags);
+
+         var libs = inTarget.mLibs.concat(mLibs);
+         var objs = inObjs.copy();
+
+         if (mExpandArchives)
+         {
+            var isArchive = ~/\.a$/;
+            var libArgs = new Array<String>();
+            for(lib in libs)
+            {
+               if (isArchive.match(lib))
+               {
+                  var libName = Path.withoutDirectory(lib);
+                  var libObjs = Setup.readStdout( mExe ,  ["t", lib] );
+                  var objDir = inCompiler.mObjDir + "/" + libName;
+                  DirManager.make(objDir);
+                  var here = Sys.getCwd();
+                  Sys.setCwd(objDir);
+                  BuildTool.runCommand( mExe ,  ["x", lib], true, false );
+                  Sys.setCwd(here);
+                  for(obj in libObjs)
+                     objs.push( objDir+"/"+obj );
+               }
+               else
+                  libArgs.push(lib);
+            }
+            libs = libArgs;
+         }
+
 
          // Place list of obj files in a file called "all_objs"
          if (mFromFile=="@")
          {
             var fname = "all_objs";
             var fout = sys.io.File.write(fname,false);
-            for(obj in inObjs)
+            for(obj in objs)
                fout.writeString(obj + "\n");
             fout.close();
             args.push("@" + fname );
          }
          else
-            args = args.concat(inObjs);
+            args = args.concat(objs);
 
-         args = args.concat(inTarget.mLibs);
-         args = args.concat(mLibs);
+         args = args.concat(libs);
 
          var result = BuildTool.runCommand( mExe, args, true, false );
          if (result!=0)
@@ -1303,7 +1333,7 @@ class BuildTool
             if (!mLinkers.exists(target.mToolID))
                throw "Missing linker :\"" + target.mToolID + "\"";
 
-            var exe = mLinkers.get(target.mToolID).link(target,objs);
+            var exe = mLinkers.get(target.mToolID).link(target,objs, mCompiler);
             if (exe!="" && mStripper!=null)
                if (target.mToolID=="exe" || target.mToolID=="dll")
                   mStripper.strip(exe);
@@ -1400,6 +1430,7 @@ class BuildTool
                 case "prefix" : l.mNamePrefix = substitute(el.att.value);
                 case "ranlib" : l.mRanLib = (substitute(el.att.name));
                 case "recreate" : l.mRecreate = (substitute(el.att.value)) != "";
+                case "expandAr" : l.mExpandArchives = substitute(el.att.value) != "";
                 case "fromfile" : l.mFromFile = (substitute(el.att.value));
                 case "exe" : l.mExe = (substitute(el.att.name));
                 case "section" : createLinker(el,l);
@@ -1621,6 +1652,10 @@ class BuildTool
       include_path.push(".");
 
       var args = Sys.args();
+      var env = Sys.environment();
+
+      verbose = env.exists("HXCPP_VERBOSE");
+
       // Check for calling from haxelib ...
       if (args.length>0)
       {
@@ -1676,8 +1711,6 @@ class BuildTool
       }
 
       Setup.initHXCPPConfig(defines);
-
-      var env = Sys.environment();
 
       if (HXCPP=="" && env.exists("HXCPP"))
       {

@@ -144,6 +144,36 @@ class Setup
             BuildTool.println("Deduced android NDK " + version);
         defines.set("NDKV" + version, "1" );
      }
+
+     if (defines.exists("PLATFORM"))
+     {
+        BuildTool.log("Using specified android PLATFORM " +  defines.get("PLATFORM") );
+     }
+     else
+     {
+        var base = defines.get("ANDROID_NDK_ROOT") + "/platforms";
+        var best = 0;
+        try
+        {
+           for(file in FileSystem.readDirectory(base))
+           {
+              if (file.substr(0,8)=="android-")
+              {
+                 var platform = Std.parseInt(file.substr(8));
+                 if (platform>best)
+                    best = platform;
+              }
+           }
+        } catch(e:Dynamic)
+        {
+        }
+
+        if (best==0)
+           throw "Could not find platform in " + base;
+
+        BuildTool.log("Using biggest platform " + best);
+        defines.set("PLATFORM", "android-" + best );
+     }
    }
 
 
