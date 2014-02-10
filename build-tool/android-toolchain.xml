@@ -51,11 +51,13 @@
    <set name="PLATFORM" value="android-5" unless="PLATFORM" />
 </section>
 
-<include name="gcc-toolchain.xml"/>
-
 <set name="prebuiltBase" value="${ANDROID_NDK_ROOT}/toolchains/${TOOLCHAIN}/prebuilt/${ANDROID_HOST}" />
 
 <path name="${prebuiltBase}/bin" />
+
+<set name="HXCPP_AR" value="${EXEPREFIX}-ar" />
+
+<include name="gcc-toolchain.xml"/>
 
 <compiler id="android-gcc" exe="g++">
 
