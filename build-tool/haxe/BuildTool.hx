@@ -222,13 +222,13 @@ class Compiler
    {
       var header = inGroup.mPrecompiledHeader;
       var file = inGroup.getPchName();
-      var dir = inGroup.mPrecompiledHeader;
 
       var args = inGroup.mCompilerFlags.concat(mFlags).concat( mCPPFlags ).concat( mPCHFlags );
 
       var dir = inObjDir + "/" + inGroup.getPchDir() + "/";
       var pch_name = dir + file + mPCHExt;
 
+      BuildTool.log("Make pch dir " + dir );
       DirManager.make(dir);
 
       if (mPCH!="gcc")
@@ -247,9 +247,11 @@ class Compiler
       }
       else
       {
+         BuildTool.log("Make pch dir " + dir + header );
+         DirManager.make(dir + header);
          args.push( "-o" );
          args.push(pch_name);
-         args.push( dir + "/"  + header + ".h" );
+         args.push( inGroup.mPrecompiledHeaderDir + "/" + inGroup.mPrecompiledHeader + ".h" );
       }
 
 
@@ -307,7 +309,7 @@ class Compiler
             args.push(mPCHFilename + mObjDir + "/" + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
          }
          else
-            args.push("-I"+mObjDir + "/" + pchDir);
+            args.unshift("-I"+mObjDir + "/" + pchDir);
       }
 
 
