@@ -218,34 +218,38 @@ class Compiler
       return mCached;
    }
 
-   public function precompile(inObjDir:String, inHeader:String,inDir:String,inGroup:FileGroup)
+   public function precompile(inObjDir:String,inGroup:FileGroup)
    {
+      var header = inGroup.mPrecompiledHeader;
+      var file = inGroup.getPchName();
+      var dir = inGroup.mPrecompiledHeader;
+
       var args = inGroup.mCompilerFlags.concat(mFlags).concat( mCPPFlags ).concat( mPCHFlags );
 
       var dir = inObjDir + "/" + inGroup.getPchDir() + "/";
-      var pch_name = dir + inHeader + mPCHExt;
+      var pch_name = dir + file + mPCHExt;
 
       DirManager.make(dir);
 
       if (mPCH!="gcc")
       {
-         args.push( mPCHCreate + inHeader + ".h" );
+         args.push( mPCHCreate + header + ".h" );
 
          // Create a temp file for including ...
-         var tmp_cpp = dir + inHeader + ".cpp";
-         var file = sys.io.File.write(tmp_cpp,false);
-         file.writeString("#include <" + inHeader + ".h>\n");
-         file.close();
+         var tmp_cpp = dir + file + ".cpp";
+         var outFile = sys.io.File.write(tmp_cpp,false);
+         outFile.writeString("#include <" + header + ".h>\n");
+         outFile.close();
 
          args.push( tmp_cpp );
          args.push(mPCHFilename + pch_name);
-         args.push(mOutFlag + dir + inHeader + mExt);
+         args.push(mOutFlag + dir + file + mExt);
       }
       else
       {
          args.push( "-o" );
          args.push(pch_name);
-         args.push( inDir + "/"  + inHeader + ".h" );
+         args.push( dir + "/"  + header + ".h" );
       }
 
 
@@ -280,6 +284,7 @@ class Compiler
       var ext = path.ext.toLowerCase();
       addIdentity(ext,args);
 
+      var allowPch = false;
       if (ext=="c")
          args = args.concat(mCFlags);
       else if (ext=="m")
@@ -287,16 +292,19 @@ class Compiler
       else if (ext=="mm")
          args = args.concat(mMMFlags);
       else if (ext=="cpp" || ext=="c++")
+      {
+         allowPch = true;
          args = args.concat(mCPPFlags);
+      }
 
 
-      if (!mCached && inFile.mGroup.mPrecompiledHeader!="")
+      if (!mCached && inFile.mGroup.mPrecompiledHeader!="" && allowPch)
       {
          var pchDir = inFile.mGroup.getPchDir();
          if (mPCHUse!="")
          {
             args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
-            args.push(mPCHFilename + mObjDir + "/" + pchDir + "/" + inFile.mGroup.mPrecompiledHeader + mPCHExt);
+            args.push(mPCHFilename + mObjDir + "/" + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
          }
          else
             args.push("-I"+mObjDir + "/" + pchDir);
@@ -757,6 +765,10 @@ class FileGroup
    {
       mPrecompiledHeader = inFile;
       mPrecompiledHeaderDir = inDir;
+   }
+   public function getPchName()
+   {
+      return Path.withoutDirectory(mPrecompiledHeader);
    }
 
 
@@ -1266,14 +1278,14 @@ class BuildTool
          if (!cached && group.mPrecompiledHeader!="")
          {
             if (to_be_compiled.length>0)
-               mCompiler.precompile(mCompiler.mObjDir,group.mPrecompiledHeader, group.mPrecompiledHeaderDir,group);
+               mCompiler.precompile(mCompiler.mObjDir, group);
 
             if (mCompiler.needsPchObj())
             {
                var pchDir = group.getPchDir();
                if (pchDir != "")
 			   {
-                  objs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.mPrecompiledHeader + mCompiler.mExt);
+                  objs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.getPchName() + mCompiler.mExt);
 			   }
             }
          }

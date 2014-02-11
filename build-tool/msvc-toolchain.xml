@@ -48,12 +48,14 @@
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-D${HXCPP_XP_DEFINE}" if="HXCPP_XP_DEFINE"/>
   <flag value="-GR"/>
-  <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" />
-  <flag value="-Z7" if="HXCPP_COMPILE_CACHE" />
+  <section if="HXCPP_DEBUG_LINK">
+     <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" />
+     <flag value="-Z7" if="HXCPP_COMPILE_CACHE" />
+     <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
+  </section>
   <flag value="-Oy-"/>
   <flag value="-c"/>
   <flag value="-EHs"/>
-  <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-I${HXCPP}/include"/>
   <include name="common-defines.xml" />
   <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
