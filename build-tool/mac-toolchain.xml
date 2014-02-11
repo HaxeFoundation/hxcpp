@@ -1,6 +1,7 @@
 <xml>
 <!-- MACOS TOOLS -------------------------------------------------->
 
+<set name="HXCPP_USE_LIBTOOL" value="1" />
 <include name="gcc-toolchain.xml"/>
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.7" if="OBJC_ARC" unless="MACOSX_DEPLOYMENT_TARGET" />
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.5" unless="MACOSX_DEPLOYMENT_TARGET" />

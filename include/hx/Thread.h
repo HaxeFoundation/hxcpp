@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <stdio.h>
 #endif
 
 #ifdef RegisterClass
@@ -280,26 +281,28 @@ struct MySemaphore
       spec.tv_sec = tv.tv_sec + isec;
 
       AutoLock lock(mMutex);
-      if (mSet) {
-          mSet = false;
-          return true;
+
+      int result = 0;
+      // Wait for set to be true...
+      while( !mSet &&  (result=pthread_cond_timedwait( &mCondition, &mMutex.mMutex, &spec )) != ETIMEDOUT)
+      {
+         if (result!=0)
+         {
+            // Error - something's gone wrong...
+            if (result==EINVAL) 
+               printf("ERROR: Condition EINVAL\n");
+            else if (result==EPERM)
+               printf("ERROR: Condition EPERM\n");
+            else
+               printf("ERROR: Condition unknown error\n");
+            break;
+         }
+         // Condition signalled - but try mSet again ...
       }
 
-      while (pthread_cond_timedwait
-           ( &mCondition, &mMutex.mMutex, &spec ) != ETIMEDOUT) {
-          if (mSet) {
-              mSet = false;
-              return true;
-          }
-      }
-
-      if (mSet) {
-          mSet = false;
-          return true;
-      }
-      else {
-          return false;
-      }
+      bool wasSet = mSet;
+      mSet = false;
+      return wasSet;
    }
    void Clean()
    {

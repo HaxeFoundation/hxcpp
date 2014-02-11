@@ -2,6 +2,7 @@
 
 <echo value="Using iOS SDK ${IPHONE_VER}" if="VERBOSE"/>
 
+<set name="HXCPP_USE_LIBTOOL" value="1" />
 <include name="gcc-toolchain.xml"/>
 <path name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />
 
