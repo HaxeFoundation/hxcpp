@@ -28,6 +28,7 @@
      <ranlib name="ranlib" />
      <ranlib name ="${EXEPREFIX}-ranlib" if="android" />
      <ranlib name="emranlib" if="emscripten" />
+     <ranlib name="${HXCPP_RANLIB}" if="HXCPP_RANLIB" />
   </section>
 </linker>
 
