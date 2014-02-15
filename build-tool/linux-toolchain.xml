@@ -8,13 +8,13 @@
       <set name="CXX" value="${HXCPP_XLINUX64_CXX}" />
       <set name="HXCPP_STRIP" value="${HXCPP_XLINUX64_STRIP}" />
       <set name="HXCPP_AR" value="${HXCPP_XLINUX64_AR}" />
-      <set name="HXCPP_RANLIB" value="${HXCPP_XLINUX64_AR}" />
+      <set name="HXCPP_RANLIB" value="${HXCPP_XLINUX64_RANLIB}" />
    </section>
    <section unless="HXCPP_M64">
       <set name="CXX" value="${HXCPP_XLINUX32_CXX}" />
       <set name="HXCPP_STRIP" value="${HXCPP_XLINUX32_STRIP}" />
       <set name="HXCPP_AR" value="${HXCPP_XLINUX32_AR}" />
-      <set name="HXCPP_RANLIB" value="${HXCPP_XLINUX32_AR}" />
+      <set name="HXCPP_RANLIB" value="${HXCPP_XLINUX32_RANLIB}" />
    </section>
    <section if="rpi">
       <path name="c:/SysGCC/Raspberry/bin/" unless="HXCPP_XCOMPILE_RPI_PATH" />
