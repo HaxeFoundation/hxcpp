@@ -71,7 +71,8 @@ struct RBTree {
  
    int Insert(const KEY &inKey, const VALUE &inValue)
    {
-      if ( !this->root ) {
+      if ( !this->root )
+      {
         /*
           We have an empty tree; attach the
           new node directly to the root
@@ -81,7 +82,14 @@ struct RBTree {
         if ( !root )
           return 0;
       }
-      else {
+      else
+      {
+        VALUE *existing = Find(inKey);
+        if (existing)
+        {
+           *existing = inValue;
+           return 1;
+        }
         tmp_head = (Node *)DO_ALLOC ( sizeof(Node) );
         Node *g, *t;     /* Grandparent & parent */
         Node *p, *q;     /* Iterator & parent */
