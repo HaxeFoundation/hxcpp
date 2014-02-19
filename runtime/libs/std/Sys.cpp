@@ -25,12 +25,10 @@
 
 int __sys_prims() { return 0; }
 
-
 #ifdef NEKO_WINDOWS
 #	include <windows.h>
 #	include <direct.h>
 #	include <conio.h>
-#	include <string>
 #       include <locale.h>
 #else
 #	include <errno.h>
@@ -491,6 +489,7 @@ static value sys_remove_dir( value path ) {
 static value sys_time() {
 #ifdef NEKO_WINDOWS
 #define EPOCH_DIFF	(134774*24*60*60.0)
+   /*
 	SYSTEMTIME t;
 	FILETIME ft;
     ULARGE_INTEGER ui;
@@ -500,6 +499,8 @@ static value sys_time() {
     ui.LowPart = ft.dwLowDateTime;
     ui.HighPart = ft.dwHighDateTime;
 	return alloc_float( ((double)ui.QuadPart) / 10000000.0 - EPOCH_DIFF );
+   */
+   return alloc_null();
 #else
 	struct timeval tv;
 	if( gettimeofday(&tv,NULL) != 0 )
@@ -544,18 +545,27 @@ static value sys_read_dir( value p) {
       val_array_push(result,alloc_wstring(results->GetAt(i)->Path->Data()));
 
 #elif defined(NEKO_WINDOWS)
-	std::wstring path = val_wstring(p);
-	int len = path.length();
+	const wchar_t *path = val_wstring(p);
+	size_t len = wcslen(path);
+   if (len>MAX_PATH)
+      return alloc_null();
 
 	WIN32_FIND_DATAW d;
 	HANDLE handle;
 	buffer b;
+   wchar_t searchPath[ MAX_PATH + 4 ];
+   memcpy(searchPath,path, len*sizeof(wchar_t));
+
+
 	if( len && path[len-1] != '/' && path[len-1] != '\\' )
-		path += L"/*.*";
-	else
-		path += L"*.*";
+      searchPath[len++] = '/';
+   searchPath[len++] = '*';
+   searchPath[len++] = '.';
+   searchPath[len++] = '*';
+   searchPath[len] = '\0';
+
 	gc_enter_blocking();
-	handle = FindFirstFileW(path.c_str(),&d);
+	handle = FindFirstFileW(searchPath,&d);
 	if( handle == INVALID_HANDLE_VALUE )
 	{
 		gc_exit_blocking();

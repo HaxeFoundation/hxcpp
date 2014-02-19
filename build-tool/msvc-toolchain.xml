@@ -56,6 +56,8 @@
   <flag value="-Oy-"/>
   <flag value="-c"/>
   <flag value="-EHs"/>
+  <flag value="-GS-"/>
+  <flag value="-arch:SSE"/>
   <flag value="-I${HXCPP}/include"/>
   <include name="common-defines.xml" />
   <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
