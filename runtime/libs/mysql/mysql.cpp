@@ -33,7 +33,6 @@
 #include <time.h>
 #include "my_proto/mysql.h"
 #include <string.h>
-#include <vector>
 
 /**
 	<doc>
@@ -446,19 +445,26 @@ static value request( value o, value r )  {
 	escape : 'connection -> string -> string
 	<doc>Escape the string for inserting into a SQL request</doc>
 **/
+struct AutoBuf
+{
+   AutoBuf(int inLen) { buffer = new char[inLen]; }
+   ~AutoBuf() { delete [] buffer; }
+   char *buffer;
+};
+
 static value escape( value o, value s ) {
 	int len;
 	val_check_kind(o,k_mysql_connection);
 	val_check(s,string);
 	len = val_strlen(s) * 2 + 1;
-   std::vector<char> sout(len);
-	len = mysql_real_escape_string(CNX(o)->m,&sout[0],val_string(s),val_strlen(s));
+   AutoBuf sout(len);
+	len = mysql_real_escape_string(CNX(o)->m,sout.buffer,val_string(s),val_strlen(s));
 	if( len < 0 ) {
 		buffer b = alloc_buffer("Unsupported charset : ");
 		buffer_append(b,mysql_character_set_name(CNX(o)->m));
 		bfailure(b);
 	}
-	return alloc_string_len(&sout[0],len);
+	return alloc_string_len(sout.buffer,len);
 }
 
 /**

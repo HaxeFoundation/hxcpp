@@ -289,12 +289,14 @@ struct MySemaphore
          if (result!=0)
          {
             // Error - something's gone wrong...
+            /*
             if (result==EINVAL) 
                printf("ERROR: Condition EINVAL\n");
             else if (result==EPERM)
                printf("ERROR: Condition EPERM\n");
             else
                printf("ERROR: Condition unknown error\n");
+            */
             break;
          }
          // Condition signalled - but try mSet again ...

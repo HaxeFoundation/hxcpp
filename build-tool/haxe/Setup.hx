@@ -304,7 +304,43 @@ class Setup
 
    public static function setupMSVC(ioDefines:Hash<String>, in64:Bool )
    {
-      if (!ioDefines.exists("NO_AUTO_MSVC"))
+      var detectMsvc = !ioDefines.exists("NO_AUTO_MSVC");
+
+      if (ioDefines.exists("HXCPP_MSVC_VER"))
+      {
+         var val = ioDefines.get("HXCPP_MSVC_VER");
+         if (val=="")
+            detectMsvc = false;
+         else
+         {
+            var ival = Std.parseInt(ioDefines.get("HXCPP_MSVC_VER"));
+            if (ival>0)
+            {
+               var varName = "VS" + ival+ "COMNTOOLS";
+               var where = Sys.getEnv(varName);
+               if (where==null)
+               {
+                  for(env in Sys.environment().keys())
+                  {
+                     if (env.substr(0,2)=="VS")
+                        Sys.println("Found VS variable " + env);
+                  }
+                  throw "Could not find specified MSCV version " + ival;
+               }
+               ioDefines.set("HXCPP_MSVC", where );
+               Sys.putEnv("HXCPP_MSVC", where);
+               BuildTool.log('Using MSVC Ver $ival in $where ($varName)');
+            }
+            else
+            {
+               BuildTool.log('Using specified MSVC Ver $val');
+               ioDefines.set("HXCPP_MSVC", val );
+               Sys.putEnv("HXCPP_MSVC", val);
+            }
+        }
+      }
+
+      if (detectMsvc)
       {
          var extra = in64 ? "64" : "";
          var xpCompat = false;
