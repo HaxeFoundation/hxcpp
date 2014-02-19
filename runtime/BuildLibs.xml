@@ -144,6 +144,19 @@
 
 
 
+<files id="msvccompat" >
+  <file name="StlLink.cpp"/>
+</files>
+
+
+<target id="msvccompat" output="${LIBPREFIX}msvccompat${DBG}-${MSVC_VER}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <files id="msvccompat"/>
+  <builddir name="libs/msvccompat"/>
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+</target>
+
+
+
 
 <files id="nekoapi" >
   <depend name="libs/nekoapi/neko.h"/>
@@ -177,6 +190,9 @@
    <target id="zlib"/>
    <target id="mysql"/>
    <target id="sqlite"/>
+   <section if="static_link">
+      <target id="msvccompat" if="windows" />
+   </section>
    <section unless="static_link">
       <target id="nekoapi" if="windows" unless="HXCPP_M64"/>
       <target id="nekoapi" if="macos" />

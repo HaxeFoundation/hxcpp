@@ -62,6 +62,12 @@
 
 <include name="${toolchain}-toolchain.xml"/>
 
+<section if="static_link" >
+   <set name="MSVC_LIB_VERSION" value="-${MSVC_VER}" if="windows" />
+</section>
+
+
+
 
 <!-- Library files & targets -------------------------------------->
 

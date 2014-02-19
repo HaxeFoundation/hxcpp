@@ -436,6 +436,46 @@ class Linker
          args = args.concat(mFlags).concat(inTarget.mFlags);
 
          var libs = inTarget.mLibs.concat(mLibs);
+         var v18Added = false;
+         for(i in 0...libs.length)
+         {
+            var lib = libs[i];
+            var parts = lib.split("{MSVC_VER}");
+            if (parts.length==2)
+            {
+                var ver = "";
+               if (BuildTool.isWindows)
+               {
+                  var current = parts[0] + "-" + BuildTool.getMsvcVer() + parts[1];
+                  if (FileSystem.exists(current))
+                  {
+                     BuildTool.log("Using current compiler library " + current);
+                     libs[i]=current;
+                  }
+                  else
+                  {
+                     var v18 = parts[0] + "-18" + parts[1];
+                     if (FileSystem.exists(v18))
+                     {
+                        BuildTool.log("Using msvc18 compatible library " + v18);
+                        libs[i]=v18;
+                        if (!v18Added)
+                        {
+                           v18Added=true;
+                           libs.push( BuildTool.HXCPP + "/lib/Windows/libmsvccompat-18.lib");
+                        }
+                     }
+                     else
+                     {
+                        throw "Could not find compatible library for " + lib;
+                     }
+                  }
+               }
+               else
+                  libs[i] = parts[0] + parts[1];
+            }
+         }
+
          var objs = inObjs.copy();
 
          if (mExpandArchives)
@@ -881,6 +921,7 @@ class BuildTool
    public static var compileCache:String;
    public static var targetKey:String;
    public static var helperThread = new Tls<Thread>();
+   public static var instance:BuildTool;
    static var printMutex:Mutex;
 
 
@@ -895,6 +936,7 @@ class BuildTool
       mTargets = new Targets();
       mLinkers = new Linkers();
       mIncludePath = inIncludePath;
+      instance = this;
       var make_contents = "";
       try  {
          make_contents = sys.io.File.getContent(inMakefile);
@@ -954,6 +996,11 @@ class BuildTool
 
       for(target in inTargets)
          buildTarget(target);
+   }
+
+   static public function getMsvcVer()
+   {
+      return instance.mDefines.get("MSVC_VER");
    }
 
    inline public static function log(s:String)

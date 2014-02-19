@@ -61,6 +61,8 @@
   <flag value="-I${HXCPP}/include"/>
   <include name="common-defines.xml" />
   <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
+  <flag value="-D_ALLOW_MSC_VER_MISMATCH"/>
+  <flag value="-D_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH"/>
   <flag value="-DHX_WIN_MAIN" if="SUBSYSTEMWINDOWS" />
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>

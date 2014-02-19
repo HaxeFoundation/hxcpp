@@ -60,7 +60,20 @@ int Object::__Compare(const Object *inRHS) const
 }
 
 
-Dynamic Object::__Field(const String &inString, bool inCallProp) { return null(); }
+Dynamic Object::__Field(const String &inString, bool inCallProp)
+{
+   #if 0
+   // Will be true for 'Implements dynamic'
+   if (inCallProp && __GetFieldMap())
+   {
+      Dynamic resolve = __Field(HX_CSTRING("resolve"), false);
+      if (resolve.mPtr)
+         return resolve(inString);
+   }
+   #endif
+   return null();
+}
+
 bool Object::__HasField(const String &inString)
 {
    return false;
