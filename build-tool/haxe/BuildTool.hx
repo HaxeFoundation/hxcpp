@@ -407,7 +407,58 @@ class Linker
          throw "Unable to create output directory " + inTarget.mOutputDir;
       }
       var out_name = inTarget.mOutputDir + file_name;
-      if (isOutOfDate(out_name,inObjs) || isOutOfDate(out_name,inTarget.mDepends))
+
+      var libs = inTarget.mLibs.concat(mLibs);
+      var v18Added = false;
+      var isOutOfDateLibs = false;
+
+      for(i in 0...libs.length)
+      {
+         var lib = libs[i];
+         var parts = lib.split("{MSVC_VER}");
+         if (parts.length==2)
+         {
+            var ver = "";
+            if (BuildTool.isWindows)
+            {
+               var current = parts[0] + "-" + BuildTool.getMsvcVer() + parts[1];
+               if (FileSystem.exists(current))
+               {
+                  BuildTool.log("Using current compiler library " + current);
+                  libs[i]=current;
+               }
+               else
+               {
+                  var v18 = parts[0] + "-18" + parts[1];
+                  if (FileSystem.exists(v18))
+                  {
+                     BuildTool.log("Using msvc18 compatible library " + v18);
+                     libs[i]=v18;
+                     if (!v18Added)
+                     {
+                        v18Added=true;
+                        libs.push( BuildTool.HXCPP + "/lib/Windows/libmsvccompat-18.lib");
+                     }
+                  }
+                  else
+                  {
+                     throw "Could not find compatible library for " + lib;
+                  }
+               }
+            }
+            else
+               libs[i] = parts[0] + parts[1];
+         }
+         if (!isOutOfDateLibs)
+         {
+            var lib = libs[i];
+            if (FileSystem.exists(lib))
+               isOutOfDateLibs = isOutOfDate(out_name,[lib]);
+         }
+      }
+
+
+      if (isOutOfDateLibs || isOutOfDate(out_name,inObjs) || isOutOfDate(out_name,inTarget.mDepends))
       {
          var args = new Array<String>();
          var out = mOutFlag;
@@ -435,46 +486,6 @@ class Linker
 
          args = args.concat(mFlags).concat(inTarget.mFlags);
 
-         var libs = inTarget.mLibs.concat(mLibs);
-         var v18Added = false;
-         for(i in 0...libs.length)
-         {
-            var lib = libs[i];
-            var parts = lib.split("{MSVC_VER}");
-            if (parts.length==2)
-            {
-                var ver = "";
-               if (BuildTool.isWindows)
-               {
-                  var current = parts[0] + "-" + BuildTool.getMsvcVer() + parts[1];
-                  if (FileSystem.exists(current))
-                  {
-                     BuildTool.log("Using current compiler library " + current);
-                     libs[i]=current;
-                  }
-                  else
-                  {
-                     var v18 = parts[0] + "-18" + parts[1];
-                     if (FileSystem.exists(v18))
-                     {
-                        BuildTool.log("Using msvc18 compatible library " + v18);
-                        libs[i]=v18;
-                        if (!v18Added)
-                        {
-                           v18Added=true;
-                           libs.push( BuildTool.HXCPP + "/lib/Windows/libmsvccompat-18.lib");
-                        }
-                     }
-                     else
-                     {
-                        throw "Could not find compatible library for " + lib;
-                     }
-                  }
-               }
-               else
-                  libs[i] = parts[0] + parts[1];
-            }
-         }
 
          var objs = inObjs.copy();
 
