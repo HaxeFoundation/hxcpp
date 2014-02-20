@@ -158,6 +158,20 @@
 
 
 
+
+<files id="linuxcompat" >
+  <file name="FdeltChk.c"/>
+</files>
+
+
+<target id="linuxcompat" output="${LIBPREFIX}linuxcompat${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <files id="linuxcompat"/>
+  <builddir name="libs/linuxcompat"/>
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+</target>
+
+
+
 <files id="nekoapi" >
   <depend name="libs/nekoapi/neko.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
@@ -192,6 +206,7 @@
    <target id="sqlite"/>
    <section if="static_link">
       <target id="msvccompat" if="windows" />
+      <target id="linuxcompat" if="linux" />
    </section>
    <section unless="static_link">
       <target id="nekoapi" if="windows" unless="HXCPP_M64"/>
