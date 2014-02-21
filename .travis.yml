@@ -11,9 +11,9 @@ before_install:
 script:
   - cd build-tool/haxe
   - haxe run.hxml
-  - cd ../../runtime
-  - haxelib run hxcpp BuildLibs.xml
-  - haxelib run hxcpp BuildLibs.xml -DHXCPP_M64
+  - cd ../../project
+  - haxelib run hxcpp Build.xml
+  - haxelib run hxcpp Build.xml -DHXCPP_M64
   - cd ../test/ndlls
   - haxe compile.hxml && ./cpp/Test
   - haxe compile64.hxml && ./cpp64/Test

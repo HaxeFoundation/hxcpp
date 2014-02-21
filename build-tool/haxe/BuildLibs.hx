@@ -5,7 +5,7 @@ class BuildLibs
 {
    static function showUsage()
    {
-      Sys.println("Usage : neko buildlibs.n [target ...] [arch] [-debug] [-verbose] [-D...]");
+      Sys.println("Usage : neko build.n [target ...] [arch] [-debug] [-verbose] [-D...]");
       Sys.println("  target  : clean, ios, android, windows, linux, mac, ios-legacy");
       Sys.println("          : static-android, static-windows, static-linux, static-mac,");
       Sys.println("            default (=current system)");
@@ -30,7 +30,7 @@ class BuildLibs
 
    static function run(inFlags:Array<String>)
    {
-       var args = ["run.n", "BuildLibs.xml"].concat(inFlags);
+       var args = ["run.n", "Build.xml"].concat(inFlags);
        var here = Sys.getCwd().split("\\").join("/");
 
        var parts = here.split("/");

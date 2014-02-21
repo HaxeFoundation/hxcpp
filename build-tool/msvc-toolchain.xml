@@ -29,6 +29,9 @@
 <set name="CONSOLE_VER" value=",5.01" if="HXCPP_WINXP_COMPAT" />
 <set name="CONSOLE_VER" value="" unless="MSVC17+" />
 
+<set name="MSVC_OBJ_DIR" value="obj/mscv${MSVC_VER}${OBJEXT}${OBJCACHE}${XPOBJ}" unless="winrt" />
+<set name="MSVC_OBJ_DIR" value="obj/mscv${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}" if="winrt" />
+
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
   <flag value="-Od" if="debug"/>
@@ -52,6 +55,7 @@
      <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" />
      <flag value="-Z7" if="HXCPP_COMPILE_CACHE" />
      <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
+     <flag value="-Fd${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" />
   </section>
   <flag value="-Oy-"/>
   <flag value="-c"/>
@@ -67,8 +71,7 @@
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
-  <objdir value="obj/mscv${MSVC_VER}${OBJEXT}${OBJCACHE}${XPOBJ}" unless="winrt" />
-  <objdir value="obj/mscv${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}" if="winrt" />
+  <objdir value="${MSVC_OBJ_DIR}" />
 
   <getversion value="cl.exe"/>
 </compiler>

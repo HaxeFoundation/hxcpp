@@ -518,7 +518,7 @@ class Linker
          // Place list of obj files in a file called "all_objs"
          if (mFromFile=="@")
          {
-            var fname = "all_objs";
+            var fname = inCompiler.mObjDir + "/all_objs";
             var fout = sys.io.File.write(fname,false);
             for(obj in objs)
                fout.writeString(obj + "\n");
