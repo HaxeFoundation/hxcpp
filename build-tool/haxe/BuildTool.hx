@@ -419,7 +419,7 @@ class Linker
          if (parts.length==2)
          {
             var ver = "";
-            if (BuildTool.isWindows)
+            if (BuildTool.isMsvc())
             {
                var current = parts[0] + "-" + BuildTool.getMsvcVer() + parts[1];
                if (FileSystem.exists(current))
@@ -1009,6 +1009,10 @@ class BuildTool
          buildTarget(target);
    }
 
+   public static function isMsvc()
+   {
+      return instance.mDefines.get("toolchain")=="msvc";
+   }
    static public function getMsvcVer()
    {
       return instance.mDefines.get("MSVC_VER");
