@@ -456,8 +456,9 @@ extern volatile bool gShouldCallHandleBreakpoints;
 void __hxcpp_dbg_setEventNotificationHandler(Dynamic handler);
 void __hxcpp_dbg_enableCurrentThreadDebugging(bool enable);
 int __hxcpp_dbg_getCurrentThreadNumber();
-Array<Dynamic> __hxcpp_dbg_getFiles();
-Array<Dynamic> __hxcpp_dbg_getClasses();
+Array<::String> __hxcpp_dbg_getFiles();
+Array<::String> __hxcpp_dbg_getFilesFullPath();
+Array<::String> __hxcpp_dbg_getClasses();
 Array<Dynamic> __hxcpp_dbg_getThreadInfos();
 Dynamic __hxcpp_dbg_getThreadInfo(int threadNumber, bool unsafe);
 int __hxcpp_dbg_addFileLineBreakpoint(String fileName, int lineNumber);
@@ -508,9 +509,11 @@ inline void __hxcpp_dbg_setEventNotificationHandler(Dynamic)
                 "rebuilding it with the -D HXCPP_DEBUGGER option"); }
 inline void __hxcpp_dbg_enableCurrentThreadDebugging(bool) { }
 inline int __hxcpp_dbg_getCurrentThreadNumber() { return -1; }
-inline Array<Dynamic> __hxcpp_dbg_getFiles()
+inline Array<::String> __hxcpp_dbg_getFiles()
     { return Array_obj< String>::__new(); }
-inline Array<Dynamic> __hxcpp_dbg_getClasses()
+inline Array<::String> __hxcpp_dbg_getFilesFullPath()
+    { return Array_obj< String>::__new(); }
+inline Array<::String> __hxcpp_dbg_getClasses()
     { return Array_obj< String>::__new(); }
 inline Array<Dynamic> __hxcpp_dbg_getThreadInfos()
     { return Array_obj< ::Dynamic>::__new(); }

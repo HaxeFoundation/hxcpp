@@ -1571,24 +1571,38 @@ void __hxcpp_dbg_enableCurrentThreadDebugging(bool enable)
 
 
 int __hxcpp_dbg_getCurrentThreadNumber()
-         {
+{
     return __hxcpp_GetCurrentThreadNumber();
-         }
+}
  
 
-Array<Dynamic> __hxcpp_dbg_getFiles()
-   {
+Array<::String> __hxcpp_dbg_getFiles()
+{
     Array< ::String> ret = Array_obj< ::String>::__new();
 
-    for (const char **ptr = hx::__hxcpp_all_files; *ptr; ptr++) {
-        ret->push(String(*ptr));
-      }
- 
+    for (const char **ptr = hx::__hxcpp_all_files; *ptr; ptr++)
+    {
+       ret->push(String(*ptr));
+    }
+
     return ret;
-   }
+}
+
+Array<::String> __hxcpp_dbg_getFilesFullPath()
+{
+    Array< ::String> ret = Array_obj< ::String>::__new();
+
+    for (const char **ptr = __all_files_fullpath;ptr && *ptr; ptr++)
+    {
+        ret->push(String(*ptr));
+    }
+
+    return ret;
+}
 
 
-Array<Dynamic> __hxcpp_dbg_getClasses()
+
+Array<::String> __hxcpp_dbg_getClasses()
 {
     Array< ::String> ret = Array_obj< ::String>::__new();
 
