@@ -159,7 +159,7 @@ public:
     int fileHash;
     int classFuncHash;
     #endif
-    
+
     // Function arguments and local variables in reverse order of their
     // declaration.  If a variable name is in here twice, the first version is
     // the most recently scoped one and should be used.  Only updated if
@@ -393,7 +393,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
     hx::StackCatchable __stackcatchable_##n                             \
         (__stackframe, reinterpret_cast<T *>(&__stackframe));
 #endif // HXCPP_DEBUGGER
- 
+
 
 // Emitted at the beginning of every catch block.  Used to build up the
 // catch stack.
@@ -509,11 +509,11 @@ inline void __hxcpp_dbg_setEventNotificationHandler(Dynamic)
                 "rebuilding it with the -D HXCPP_DEBUGGER option"); }
 inline void __hxcpp_dbg_enableCurrentThreadDebugging(bool) { }
 inline int __hxcpp_dbg_getCurrentThreadNumber() { return -1; }
-inline Array<::String> __hxcpp_dbg_getFiles()
+inline Array< ::String> __hxcpp_dbg_getFiles()
     { return Array_obj< String>::__new(); }
-inline Array<::String> __hxcpp_dbg_getFilesFullPath()
+inline Array< ::String> __hxcpp_dbg_getFilesFullPath()
     { return Array_obj< String>::__new(); }
-inline Array<::String> __hxcpp_dbg_getClasses()
+inline Array< ::String> __hxcpp_dbg_getClasses()
     { return Array_obj< String>::__new(); }
 inline Array<Dynamic> __hxcpp_dbg_getThreadInfos()
     { return Array_obj< ::Dynamic>::__new(); }
