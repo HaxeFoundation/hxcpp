@@ -40,8 +40,8 @@ class Builder
 
 
             var parts = arg.split("-");
-            var linkStatic = true;
-            var linkNdll = true;
+            var linkStatic = allowStatic();
+            var linkNdll = allowNdll();
             if (parts[0]=="static")
             {
                linkNdll = false;
@@ -143,14 +143,8 @@ class Builder
                      flags.push("-Ddebug");
 
                   flags = flags.concat(buildArgs);
-                  var args = ["run", "hxcpp", getBuildFile() ].concat(flags);
 
-                  Sys.println('\nBuild $target, link=' + (isStatic?"lib":"ndll")+' arch=$arch');
-                  Sys.println("haxelib " + args.join(" ")); 
-                  if (Sys.command("haxelib",args)!=0)
-                  {
-                     Sys.println("#### Error building " + arch);
-                  }
+                  runBuild(target, isStatic, arch, flags);
                }
             }
          }
@@ -163,24 +157,44 @@ class Builder
       }
    }
 
+   public function allowNdll() { return true; }
+   public function allowStatic() { return true; }
+
+   public function runBuild(target:String, isStatic:Bool, arch:String, buildFlags:Array<String>)
+   {
+      var args = ["run", "hxcpp", getBuildFile() ].concat(buildFlags);
+
+      Sys.println('\nBuild $target, link=' + (isStatic?"lib":"ndll")+' arch=$arch');
+      Sys.println("haxelib " + args.join(" ")); 
+      if (Sys.command("haxelib",args)!=0)
+      {
+         Sys.println("#### Error building " + arch);
+      }
+   }
+
    public function getBuildFile()
    {
       return "Build.xml";
    }
 
+   public function getCleanDir()
+   {
+      return "obj";
+   }
 
    public function cleanAll() : Bool
    {
+      var dir = getCleanDir();
       try
       {
          if (verbose)
-            Sys.println("delete obj...");
-         deleteRecurse("obj");
+            Sys.println('delete $dir...');
+         deleteRecurse(dir);
          return true;
       }
       catch(e:Dynamic)
       {
-         Sys.println("Could not remove 'obj' directory");
+         Sys.println('Could not remove "$dir" directory');
       }
       return false;
    }
@@ -215,15 +229,21 @@ class Builder
 
    public function showUsage(inShowSpecifyMessage:Bool) : Void
    {
-      Sys.println("Usage : neko build.n [clean] [[link-]target[-arch][-arch] ...] [-debug] [-verbose] [-D...]");
+      var link = allowStatic() && allowNdll() ? "[link-]" : "";
+      Sys.println("Usage : neko build.n [clean] " + link +
+                  "target[-arch][-arch] ...] [-debug] [-verbose] [-D...]");
       Sys.println("  target  : ios, android, windows, linux, mac");
       Sys.println("            default (=current system)");
-      Sys.println("  link    : ndll- or static-");
-      Sys.println("            (none specified = both link types");
+      if (link!="")
+      {
+         Sys.println("  link    : ndll- or static-");
+         Sys.println("            (none specified = both link types");
+      }
       Sys.println("  arch    : -armv5 -armv6 -armv7 -arm64 -x86 -m32 -m64");
       Sys.println("            (none specified = all valid architectures");
       Sys.println("  -D...   : defines passed to hxcpp build system");
-      Sys.println(" eg: neko build.n clean ndll-mac-m32-m64 = rebuild both mac ndlls");
+      if (link!="")
+         Sys.println(" eg: neko build.n clean ndll-mac-m32-m64 = rebuild both mac ndlls");
       if (inShowSpecifyMessage)
          Sys.println(" Specify target or 'default' to remove this message");
    }
