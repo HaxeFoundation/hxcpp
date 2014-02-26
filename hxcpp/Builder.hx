@@ -65,6 +65,12 @@ class Builder
                   {
                      var stat = "static-" + target;
                      targets.set(stat, parts);
+
+                     if (target=="ios" && wantLegacyIosBuild())
+                     {
+                        var stat = "static-" + "ioslegacy";
+                        targets.set(stat, parts);
+                     }
                   }
                   if (linkNdll && target!="ios")
                      targets.set(target, parts);
@@ -117,7 +123,7 @@ class Builder
                case "windows":
                   validArchs.set("m32", ["-D"+target, "-DHXCPP_M32", staticFlag] );
 
-               case "ios":
+               case "ios", "ioslegacy":
                   validArchs.set("armv6", ["-Diphoneos", staticFlag] );
                   validArchs.set("armv7", ["-Diphoneos", "-DHXCPP_ARMV7", staticFlag] );
                   //validArchs.push("armv64");
@@ -159,6 +165,7 @@ class Builder
 
    public function allowNdll() { return true; }
    public function allowStatic() { return true; }
+   public function wantLegacyIosBuild() { return false; }
 
    public function runBuild(target:String, isStatic:Bool, arch:String, buildFlags:Array<String>)
    {

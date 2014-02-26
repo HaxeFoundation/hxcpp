@@ -1,4 +1,5 @@
 -neko ../../project/build.n
--main BuildLibs
+-main Build
 -D neko_v1
+-lib hxcpp
 -debug
