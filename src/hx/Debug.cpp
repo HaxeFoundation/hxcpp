@@ -1576,7 +1576,7 @@ int __hxcpp_dbg_getCurrentThreadNumber()
 }
  
 
-Array<::String> __hxcpp_dbg_getFiles()
+Array< ::String> __hxcpp_dbg_getFiles()
 {
     Array< ::String> ret = Array_obj< ::String>::__new();
 
@@ -1588,7 +1588,7 @@ Array<::String> __hxcpp_dbg_getFiles()
     return ret;
 }
 
-Array<::String> __hxcpp_dbg_getFilesFullPath()
+Array< ::String> __hxcpp_dbg_getFilesFullPath()
 {
     Array< ::String> ret = Array_obj< ::String>::__new();
 
@@ -1602,7 +1602,7 @@ Array<::String> __hxcpp_dbg_getFilesFullPath()
 
 
 
-Array<::String> __hxcpp_dbg_getClasses()
+Array< ::String> __hxcpp_dbg_getClasses()
 {
     Array< ::String> ret = Array_obj< ::String>::__new();
 
