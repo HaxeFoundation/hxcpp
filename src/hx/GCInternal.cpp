@@ -260,7 +260,8 @@ void CriticalGCError(const char *inMessage)
    printf("Critical Error: %s\n", inMessage);
    #endif
 
-   #if DEFINED(__has_builtin) && __has_builtin(__builtin_trap)
+
+   #if __has_builtin(__builtin_trap)
    __builtin_trap();
    #else
    (* (volatile int *) 0) = 0;
