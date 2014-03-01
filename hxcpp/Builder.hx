@@ -176,6 +176,7 @@ class Builder
       if (Sys.command("haxelib",args)!=0)
       {
          Sys.println("#### Error building " + arch);
+         Sys.exit(-1);
       }
    }
 

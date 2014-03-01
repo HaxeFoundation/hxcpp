@@ -24,6 +24,7 @@ class Build extends hxcpp.Builder
        if (Sys.command("neko",args)!=0)
        {
           Sys.println("#### Error building neko " + inFlags.join(" "));
+          Sys.exit(-1);
        }
        Sys.setCwd(here);
    }

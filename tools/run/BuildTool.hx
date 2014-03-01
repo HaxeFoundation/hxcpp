@@ -442,7 +442,7 @@ class Linker
                   }
                   else
                   {
-                     throw "Could not find compatible library for " + lib;
+                     throw "Could not find compatible library for " + lib + ", " + v18 + " does not exist";
                   }
                }
             }
