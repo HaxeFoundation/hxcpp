@@ -250,6 +250,27 @@ OBJ = ENDIAN_OBJ_NEXT_BYTE = start is measured from the header pointer
 #endif
 
 
+void CriticalGCError(const char *inMessage)
+{
+   // Can't perfrom normal handling because it needs the GC system
+
+   #ifdef ANDROID
+   __android_log_print(ANDROID_LOG_ERROR, "HXCPP", "Critical Error: %s", inMessage);
+   #else
+   printf("Critical Error: %s\n", inMessage);
+   #endif
+
+
+   #if __has_builtin(__builtin_trap)
+   __builtin_trap();
+   #else
+   (* (volatile int *) 0) = 0;
+   #endif
+}
+
+
+
+
 
 enum AllocType { allocNone, allocString, allocObject, allocMarked };
 
@@ -2171,6 +2192,11 @@ public:
 
    void ExitGCFreeZone()
    {
+      #ifdef HXCPP_DEBUG
+      if (!mGCFreeZone)
+         CriticalGCError("GCFree Zone mismatch");
+      #endif
+
       if (sMultiThreadMode)
       {
          AutoLock lock(*gThreadStateChangeLock);
@@ -2209,6 +2235,10 @@ public:
 
    void *Alloc(int inSize,bool inIsObject)
    {
+      #ifdef HXCPP_DEBUG
+      if (mGCFreeZone)
+         CriticalGCError("Alloacting from a GC-free thread");
+      #endif
       if (hx::gPauseForCollect)
          PauseForCollect();
 
