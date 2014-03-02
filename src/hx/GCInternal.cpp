@@ -1797,7 +1797,6 @@ public:
       int here = 0;
       GCLOG("=== Collect === %p\n",&here);
       #endif
-      GCLOG("=== Collect === ");
      
       int largeAlloced = mLargeAllocated;
       LocalAllocator *this_local = 0;
