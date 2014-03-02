@@ -117,6 +117,8 @@ int    __hxcpp_get_day(double inSeconds);
 String __hxcpp_to_string(double inSeconds);
 double __hxcpp_date_now();
 
+double __hxcpp_time_stamp();
+
 // --- vm/threading --------------------------------------------------------------------
 
 Dynamic __hxcpp_thread_create(Dynamic inFunc);

@@ -39,6 +39,8 @@ Dynamic DynEmptyString;
 class IntData : public hx::Object
 {
 public:
+   inline void *operator new( size_t inSize, bool inContainer=false)
+      { return hx::Object::operator new(inSize,false); }
    IntData(int inValue=0) : mValue(inValue) {};
 
    Class __GetClass() const { return __IntClass; }
@@ -65,6 +67,8 @@ public:
 class BoolData : public hx::Object
 {
 public:
+   inline void *operator new( size_t inSize, bool inContainer=false)
+      { return hx::Object::operator new(inSize,false); }
    BoolData(bool inValue=false) : mValue(inValue) {};
 
    Class __GetClass() const { return __BoolClass; }
@@ -92,6 +96,8 @@ public:
 class DoubleData : public hx::Object
 {
 public:
+   inline void *operator new( size_t inSize, bool inContainer=false)
+       { return hx::Object::operator new(inSize,false); }
    DoubleData(double inValue=0) : mValue(inValue) {};
 
    Class __GetClass() const { return __FloatClass; }

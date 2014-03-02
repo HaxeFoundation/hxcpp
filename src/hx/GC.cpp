@@ -15,15 +15,6 @@
 
 #include "RedBlack.h"
 
-namespace hx
-{
-
-void *Object::operator new( size_t inSize, bool inContainer )
-{
-   return InternalNew(inSize,true);
-}
-
-}
 
 
 void *String::operator new( size_t inSize )

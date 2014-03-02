@@ -769,28 +769,30 @@ void MarkAlloc(void *inPtr,hx::MarkContext *__inCtx)
 void MarkObjectAlloc(hx::Object *inPtr,hx::MarkContext *__inCtx)
 {
    MARK_ROWS
-
-   #ifdef HXCPP_DEBUG
-   if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
+   if (flags & IMMIX_ALLOC_IS_OBJECT)
    {
-		gCollectTraceCount++;
-		if (gCollectTraceDoPrint)
-          __inCtx->Trace();
-   }
-   #endif
-   
-   #ifdef HXCPP_DEBUG
-      // Recursive mark so stack stays intact..
-      if (gCollectTrace)
-         inPtr->__Mark(__inCtx);
-      else
-   #endif
+      #ifdef HXCPP_DEBUG
+      if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
+      {
+         gCollectTraceCount++;
+         if (gCollectTraceDoPrint)
+             __inCtx->Trace();
+      }
+      #endif
+      
+      #ifdef HXCPP_DEBUG
+         // Recursive mark so stack stays intact..
+         if (gCollectTrace)
+            inPtr->__Mark(__inCtx);
+         else
+      #endif
 
-      // There is a slight performance gain by calling recursively, but you
-      //   run the risk of stack overflow.  Also, a parallel mark algorithm could be
-      //   done when the marking is stack based.
-      //inPtr->__Mark(__inCtx);
-      __inCtx->PushMark(inPtr);
+         // There is a slight performance gain by calling recursively, but you
+         //   run the risk of stack overflow.  Also, a parallel mark algorithm could be
+         //   done when the marking is stack based.
+         //inPtr->__Mark(__inCtx);
+         __inCtx->PushMark(inPtr);
+   }
 }
 
 
@@ -1797,6 +1799,7 @@ public:
       int here = 0;
       GCLOG("=== Collect === %p\n",&here);
       #endif
+      //double t0 = __hxcpp_time_stamp();
      
       int largeAlloced = mLargeAllocated;
       LocalAllocator *this_local = 0;
@@ -1968,6 +1971,7 @@ public:
       #ifdef SHOW_MEM_EVENTS
       GCLOG("Collect Done\n");
       #endif
+      // GCLOG("Collect time %f.2ms\n", (__hxcpp_time_stamp()-t0)*1000);
 
       return want_more;
    }
@@ -2619,6 +2623,8 @@ void *InternalNew(int inSize,bool inIsObject)
    }
 }
 
+
+
 // Force global collection - should only be called from 1 thread.
 int InternalCollect(bool inMajor,bool inCompact)
 {
@@ -2694,6 +2700,25 @@ void UnregisterCurrentThread()
 
 
 } // end namespace hx
+
+
+
+namespace hx
+{
+
+void *Object::operator new( size_t inSize, bool inContainer )
+{
+   #if defined(HXCPP_DEBUG)
+   if (inSize>=IMMIX_LARGE_OBJ_SIZE)
+      throw Dynamic(HX_CSTRING("Object size violation"));
+   #endif
+
+   LocalAllocator *tla = GetLocalAlloc();
+
+   return tla->Alloc(inSize,inContainer);
+}
+
+}
 
 
 
