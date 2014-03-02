@@ -33,6 +33,17 @@ static void *sgObject_root = 0;
 int gInAlloc = false;
 
 
+
+enum
+{
+   MEM_INFO_USAGE = 0,
+   MEM_INFO_RESERVED = 1,
+   MEM_INFO_CURRENT = 2,
+   MEM_INFO_LARGE = 3,
+};
+
+
+
 #ifndef HXCPP_GC_MOVING
 // Enable moving collector...
 //#define HXCPP_GC_MOVING
@@ -304,6 +315,7 @@ union BlockData
       info.mPinned = 0;
       info.mPtr = this;
    }
+   inline int GetFreeRows() const { return (IMMIX_USEFUL_LINES - getUsedRows()); }
    inline int GetFreeData() const { return (IMMIX_USEFUL_LINES - getUsedRows())<<IMMIX_LINE_BITS; }
    void ClearEmpty()
    {
@@ -1105,6 +1117,8 @@ public:
       mLargeAllocForceRefresh = mLargeAllocSpace;
       // Start at 1 Meg...
       mTotalAfterLastCollect = 1<<20;
+      mCurrentRowsInUse = 0;
+      mAllBlocksCount = 0;
       for(int p=0;p<LOCAL_POOL_SIZE;p++)
          mLocalPool[p] = 0;
    }
@@ -1245,6 +1259,8 @@ public:
 
          if (!result)
             result = GetEmptyBlock(pass==0);
+         else
+            mCurrentRowsInUse += result->GetFreeRows();
       }
 
       if (sMultiThreadMode)
@@ -1322,6 +1338,7 @@ public:
                mAllBlocks.push(block);
                mEmptyBlocks.push(block);
             }
+            mAllBlocksCount = mAllBlocks.size();
             #ifdef SHOW_MEM_EVENTS
             GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
             #endif
@@ -1331,6 +1348,7 @@ public:
       BlockData *block = mEmptyBlocks[mNextEmpty++];
       block->ClearEmpty();
       mActiveBlocks.insert(block);
+      mCurrentRowsInUse += IMMIX_USEFUL_LINES;
       return block;
    }
 
@@ -1779,6 +1797,7 @@ public:
       int here = 0;
       GCLOG("=== Collect === %p\n",&here);
       #endif
+      GCLOG("=== Collect === ");
      
       int largeAlloced = mLargeAllocated;
       LocalAllocator *this_local = 0;
@@ -1918,6 +1937,7 @@ public:
 
 
       // IMMIX suggest filling up in creation order ....
+      mRowsInUse = 0;
       for(int i=0;i<mAllBlocks.size();i++)
       {
          BlockData *block = mAllBlocks[i];
@@ -1932,6 +1952,8 @@ public:
                mRecycledBlock.push(block);
          }
       }
+      mAllBlocksCount   = mAllBlocks.size();
+      mCurrentRowsInUse = mRowsInUse;
 
 
       if (sMultiThreadMode)
@@ -1949,6 +1971,21 @@ public:
       #endif
 
       return want_more;
+   }
+
+   size_t MemLarge()
+   {
+      return mLargeAllocated;
+   }
+
+   size_t MemReserved()
+   {
+      return mLargeAllocated + (mAllBlocksCount*IMMIX_USEFUL_LINES<<IMMIX_LINE_BITS);
+   }
+
+   size_t MemCurrent()
+   {
+      return mLargeAllocated + (mCurrentRowsInUse<<IMMIX_LINE_BITS);
    }
 
    size_t MemUsage()
@@ -1976,10 +2013,12 @@ public:
 
 
    size_t mRowsInUse;
+   size_t mCurrentRowsInUse;
    size_t mLargeAllocSpace;
    size_t mLargeAllocForceRefresh;
    size_t mLargeAllocated;
    size_t mTotalAfterLastCollect;
+   size_t mAllBlocksCount;
 
    hx::MarkContext mMarker;
 
@@ -2678,6 +2717,31 @@ int __hxcpp_gc_trace(Class inClass,bool inPrint)
     #endif
 }
 
+int   __hxcpp_gc_large_bytes()
+{
+   return sGlobalAlloc->MemLarge();
+}
+
+int   __hxcpp_gc_reserved_bytes()
+{
+   return sGlobalAlloc->MemReserved();
+}
+
+int __hxcpp_gc_mem_info(int inWhich)
+{
+   switch(inWhich)
+   {
+      case MEM_INFO_USAGE:
+         return (int)sGlobalAlloc->MemUsage();
+      case MEM_INFO_RESERVED:
+         return (int)sGlobalAlloc->MemReserved();
+      case MEM_INFO_CURRENT:
+         return (int)sGlobalAlloc->MemCurrent();
+      case MEM_INFO_LARGE:
+         return (int)sGlobalAlloc->MemLarge();
+   }
+   return 0;
+}
 
 int   __hxcpp_gc_used_bytes()
 {
