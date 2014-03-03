@@ -1,11 +1,10 @@
 #include <hxcpp.h>
 
-
+#include <time.h>
 
 #ifdef HX_WINDOWS
   #include <windows.h>
   #include <Shlobj.h>
-  #include <time.h>
 #else
   #include <sys/time.h>
   #include <stdint.h>
