@@ -62,6 +62,18 @@ inline int HxAtomicDec(volatile int *ioWhere)
    { return OSAtomicDecrement32Barrier(ioWhere)-1; }
 
 
+#elif defined(HX_LINUX)
+
+#define HX_HAS_ATOMIC 1
+
+inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
+   { return __sync_bool_compare_and_swap(ioWhere, inTest, inNewVal); }
+// Returns old value naturally
+inline int HxAtomicInc(volatile int *ioWhere)
+   { return __sync_fetch_and_add(ioWhere,1); }
+inline int HxAtomicDec(volatile int *ioWhere)
+   { return __sync_fetch_and_sub(ioWhere,1); }
+
 #else
 
 #define HX_HAS_ATOMIC 0
