@@ -25,6 +25,64 @@
 #undef RegisterClass
 #endif
 
+#if defined(ANDROID)
+
+#define HX_HAS_ATOMIC 1
+#include <sys/atomics.h>
+inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
+   { return __atomic_cmpxchg(inTest, inNewVal, ioWhere)==inNewVal; }
+// Returns old value naturally
+inline int HxAtomicInc(volatile int *ioWhere)
+   { return __atomic_inc(ioWhere); }
+inline int HxAtomicDec(volatile int *ioWhere)
+   { return __atomic_dec(ioWhere); }
+
+#elif defined(HX_WINDOWS)
+
+inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
+   { return InterlockedCompareExchange((volatile LONG *)ioWhere, inNewVal, inTest)==inNewVal; }
+// Make it return old value
+inline int HxAtomicInc(volatile int *ioWhere)
+   { return InterlockedIncrement((volatile LONG *)ioWhere)-1; }
+inline int HxAtomicDec(volatile int *ioWhere)
+   { return InterlockedDecrement((volatile LONG *)ioWhere)+1; }
+
+#define HX_HAS_ATOMIC 1
+
+#elif defined(HX_MACOS) || defined(IPHONE)
+#include <libkern/OSAtomic.h>
+
+#define HX_HAS_ATOMIC 1
+
+inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
+   { return OSAtomicCompareAndSwap32Barrier(inTest, inNewVal, ioWhere); }
+inline int HxAtomicInc(volatile int *ioWhere)
+   { return OSAtomicIncrement32Barrier(ioWhere)-1; }
+inline int HxAtomicDec(volatile int *ioWhere)
+   { return OSAtomicDecrement32Barrier(ioWhere)-1; }
+
+
+#else
+
+#define HX_HAS_ATOMIC 0
+
+inline int HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
+{
+   if (*ioWhere == inTest)
+   {
+      *ioWhere = inNewVal;
+      return true;
+   }
+   return false;
+}
+inline int HxAtomicInc(volatile int *ioWhere)
+   { return (*ioWhere)++; }
+inline int HxAtomicDec(volatile int *ioWhere)
+   { return (*ioWhere)--; }
+
+
+#endif
+
 
 
 #if defined(HX_WINDOWS)

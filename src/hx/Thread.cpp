@@ -309,7 +309,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
         #ifndef HX_WINDOWS
         pthread_detach(result);
         #endif
-	info->mSemaphore->Wait();
+        info->mSemaphore->Wait();
      }
 
     hx::ExitGCFreeZone();
