@@ -1,7 +1,7 @@
 setlocal enabledelayedexpansion
 @if exist "%HXCPP_MSVC%\..\..\VC\" (
 	@if not exist "%HXCPP_MSVC%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat" (
-		@echo Error: the specified MSVC version does not have vcvarsx86_amd64.bat setup script"
+		@echo Error: the specified MSVC version does not have vcvarsx86_amd64.bat setup script
 	) else (
 		@echo "%HXCPP_MSVC%"
 		@call "%HXCPP_MSVC%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat"
