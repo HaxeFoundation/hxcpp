@@ -1,55 +1,23 @@
 setlocal enabledelayedexpansion
-@if exist "%HXCPP_MSVC%\..\..\VC\vcvarsall.bat" (
-	@echo "%HXCPP_MSVC%"
-	@call "%HXCPP_MSVC%\..\..\VC\vcvarsall.bat" amd64
-	@set
-) else if exist "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" (
+@if exist "%HXCPP_MSVC%\..\..\VC\" (
+	@if not exist "%HXCPP_MSVC%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat" (
+		@echo Error: the specified MSVC version does not have vcvarsx86_amd64.bat setup script"
+	) else (
+		@echo "%HXCPP_MSVC%"
+		@call "%HXCPP_MSVC%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat"
+		@echo HXCPP_VARS
+		@set
+	)
+) else if exist "%VS120COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat" (
 	@echo "%VS120COMNTOOLS%"
-	@call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
+	@call "%VS120COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat"
 	@echo HXCPP_VARS
-   @if defined HXCPP_WINXP_COMPAT (
-     @set "INCLUDE=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Include;!INCLUDE!"
-     @set "PATH=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Bin;!PATH!"
-     @set "LIB=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Lib;!LIB!"
-     @set HXCPP_XP_DEFINE=_USING_V120_SDK71_
-   )
 	@set
-) else if exist "%VS110COMNTOOLS%\..\..\VC\vcvarsall.bat" (
+) else if exist "%VS110COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat" (
 	@echo "%VS110COMNTOOLS%"
-	@call "%VS110COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
-	@echo HXCPP_VARS
-   @if defined HXCPP_WINXP_COMPAT (
-     @set "INCLUDE=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Include;!INCLUDE!"
-     @set "PATH=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Bin;!PATH!"
-     @set "LIB=%ProgramFiles(x86)%\Microsoft SDKs\Windows\7.1A\Lib;!LIB!"
-     @set HXCPP_XP_DEFINE=_USING_V110_SDK71_
-   )
-	@set
-) else if exist "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" (
-	@echo "%VS100COMNTOOLS%"
-	@call "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
-	@echo HXCPP_VARS
-	@set
-) else if exist "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" (
-	@echo "%VS90COMNTOOLS%"
-	@call "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
-	@echo HXCPP_VARS
-	@set
-) else if exist "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" (
-	@echo "%VS80COMNTOOLS%"
-	@call "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
-	@echo HXCPP_VARS
-	@set
-) else if exist "%VS71COMNTOOLS%\..\..\VC\vcvarsall.bat" (
-	@echo "%VS71COMNTOOLS%"
-	@call "%VS71COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
-	@echo HXCPP_VARS
-	@set
-) else if exist "%VS70COMNTOOLS%\..\..\VC\vcvarsall.bat" (
-	@echo "%VS70COMNTOOLS%"
-	@call "%VS70COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
+	@call "%VS110COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat"
 	@echo HXCPP_VARS
 	@set
 ) else (
-	echo Warning: Could not find environment variables for Visual Studio 64
+	echo Error: 64bit is not autmatically supported for this version of VC. Set HXCPP_MSVC_CUSTOM and manually configure the executable, library and include paths
 )
