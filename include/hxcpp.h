@@ -200,6 +200,7 @@ public:
 #include <hx/Debug.h>
 #include <hx/Boot.h>
 #include <hx/Undefine.h>
+#include <cpp/Pointer.h>
 
 #endif
 
