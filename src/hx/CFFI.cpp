@@ -142,25 +142,25 @@ extern "C" {
 
 void hx_error() THROWS
 {
-   throw Dynamic( HX_CSTRING("ERROR") );
+   hx::Throw( HX_CSTRING("ERROR") );
 }
 
 
 void val_throw(hx::Object * arg1) THROWS
 {
    if (arg1==0)
-      throw Dynamic(null());
-   throw Dynamic(arg1);
+      hx::Throw( null() );
+   hx::Throw( arg1 );
 }
 
 
 void hx_fail(const char * inMessage,const char * inFile,int inLine)
 {
    if (inFile!=0 && inLine!=0)
-      throw Dynamic( HX_CSTRING("Failure ") + String(inMessage) + HX_CSTRING(" @ ") +
+      hx::Throw( HX_CSTRING("Failure ") + String(inMessage) + HX_CSTRING(" @ ") +
                     String(inFile) + HX_CSTRING(":") + Dynamic(inLine) );
    else
-      throw Dynamic( HX_CSTRING("Failure ") + String(inMessage) );
+      hx::Throw( HX_CSTRING("Failure ") + String(inMessage) );
 }
 
 

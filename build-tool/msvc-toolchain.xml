@@ -4,6 +4,7 @@
 <!-- WINDOWS TOOLS -------------------------------------->
 
 <set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
+<unset name="HXCPP_WINXP_COMPAT" if="HXCPP_M64" />
 
 <setup name="msvc" />
 
@@ -31,6 +32,9 @@
 
 <set name="MSVC_OBJ_DIR" value="obj/mscv${MSVC_VER}${OBJEXT}${OBJCACHE}${XPOBJ}" unless="winrt" />
 <set name="MSVC_OBJ_DIR" value="obj/mscv${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}" if="winrt" />
+
+<set name="MACHINE" value="x86" />
+<set name="MACHINE" value="x64" if="HXCPP_M64" />
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
@@ -61,7 +65,7 @@
   <flag value="-c"/>
   <flag value="-EHs"/>
   <flag value="-GS-"/>
-  <flag value="-arch:SSE"/>
+  <flag value="-arch:SSE" unless="HXCPP_M64" />
   <flag value="-I${HXCPP}/include"/>
   <include name="common-defines.xml" />
   <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
@@ -78,7 +82,7 @@
 
 <linker id="dll" exe="link.exe" if="windows">
   <flag value="-nologo"/>
-  <flag value="-machine:x86"/>
+  <flag value="-machine:${MACHINE}"/>
   <flag value="-dll"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
   <lib name="${dll_import_link}" if="dll_import_link" />
@@ -92,7 +96,7 @@
 <linker id="exe" exe="link.exe" unless="winrt">
   <fromfile value="@"/>
   <flag value="-nologo"/>
-  <flag value="-machine:x86"/>
+  <flag value="-machine:${MACHINE}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
   <flag value="-subsystem:windows" if="SUBSYSTEMWINDOWS" />
   <flag value="-subsystem:console${CONSOLE_VER}" if="SUBSYSTEMCONSOLE" />
