@@ -12,7 +12,7 @@ public:
 
 
    inline Pointer( ) { }
-   inline Pointer( const Pointer &inRHS ) : value(inRHS.value) { printf("From rhs\n"); }
+   inline Pointer( const Pointer &inRHS ) : value(inRHS.value) {  }
    inline Pointer( const Dynamic &inRHS) { }
    inline Pointer( const null &inRHS ) { }
    inline Pointer( T *inValue ) : value(inValue) { }
