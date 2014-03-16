@@ -1,4 +1,13 @@
 
+3.1.1
+------------------------------------------------------------
+* Fixed MSVC support for 64-bit targets (vc11, vc12)
+* Initial work on cpp.Pointer (not fully functional)
+* Fixed callstack when throwing from native function
+
+3.1.0
+------------------------------------------------------------
+
 * VC 2013 support - used as default now
 * Add winxp compatibility flags
 * Allow cross-compiling from mac to linux
