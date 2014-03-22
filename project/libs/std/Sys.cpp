@@ -489,7 +489,6 @@ static value sys_remove_dir( value path ) {
 static value sys_time() {
 #ifdef NEKO_WINDOWS
 #define EPOCH_DIFF	(134774*24*60*60.0)
-   /*
 	SYSTEMTIME t;
 	FILETIME ft;
     ULARGE_INTEGER ui;
@@ -499,8 +498,6 @@ static value sys_time() {
     ui.LowPart = ft.dwLowDateTime;
     ui.HighPart = ft.dwHighDateTime;
 	return alloc_float( ((double)ui.QuadPart) / 10000000.0 - EPOCH_DIFF );
-   */
-   return alloc_null();
 #else
 	struct timeval tv;
 	if( gettimeofday(&tv,NULL) != 0 )
