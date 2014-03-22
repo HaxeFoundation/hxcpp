@@ -16,7 +16,7 @@
 /* ************************************************************************ */
 #include <hx/CFFI.h>
 
-#ifndef HX_WINRT
+#if !defined(HX_WINRT) && !defined(EPPC)
 
 #ifdef NEKO_WINDOWS
 #   include <windows.h>
