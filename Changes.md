@@ -1,4 +1,6 @@
 
+* Restore sys_time for windows
+
 3.1.1
 ------------------------------------------------------------
 * Fixed MSVC support for 64-bit targets (vc11, vc12)
