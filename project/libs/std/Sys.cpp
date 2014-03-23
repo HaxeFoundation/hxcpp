@@ -148,8 +148,10 @@ static value sys_sleep( value f ) {
 		t.tv_sec = (int)val_number(f);
 		t.tv_nsec = (int)((val_number(f) - t.tv_sec) * 1e9);
 		while( nanosleep(&t,&tmp) == -1 ) {
-			if( errno != EINTR )
+			if( errno != EINTR ) {
+				gc_exit_blocking();
 				return alloc_null();
+         }
 			t = tmp;
 		}
 	}
