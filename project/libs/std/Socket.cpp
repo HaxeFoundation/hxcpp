@@ -15,7 +15,7 @@
 /*																			*/
 /* ************************************************************************ */
 
-#ifndef HX_WINRT
+#if !defined(HX_WINRT) && !defined(EPPC)
 
 #include <string.h>
 #include <hx/CFFI.h>

@@ -15,7 +15,11 @@
 /*																			*/
 /* ************************************************************************ */
 #include <hx/CFFI.h>
+#ifdef EPPC
+#include <memory>
+#else
 #include <memory.h>
+#endif
 
 
 #ifdef HXCPP

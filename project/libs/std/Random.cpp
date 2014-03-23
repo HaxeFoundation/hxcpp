@@ -20,6 +20,8 @@
 #ifdef NEKO_WINDOWS
 #	include <windows.h>
 #	include <process.h>
+#elif defined(EPPC)
+#	include <time.h>
 #else
 #	include <sys/time.h>
 #	include <sys/types.h>
@@ -77,21 +79,27 @@ static rnd *rnd_init( void *data ) {
 	rnd *r = (rnd*)data;
    #ifdef HX_WINRT
 	int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
+   #elif defined(EPPC)
+	int pid = 1;
    #else
 	int pid = getpid();
    #endif
 
-	unsigned int time;
+	unsigned int t;
 #ifdef HX_WINRT
-	time = clock();
+	t = clock();
 #elif defined(NEKO_WINDOWS)
-	time = GetTickCount();
+	t = GetTickCount();
+#elif defined(EPPC)
+	time_t tod;
+	time(&tod);
+	t = (double)tod;
 #else
-	struct timeval t;
-	gettimeofday(&t,NULL);
-	time = t.tv_sec * 1000000 + t.tv_usec;
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+	t = tv.tv_sec * 1000000 + tv.tv_usec;
 #endif	
-	rnd_set_seed(r,time ^ (pid | (pid << 16)));
+	rnd_set_seed(r,t ^ (pid | (pid << 16)));
 	return r;
 }
 
