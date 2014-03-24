@@ -14,9 +14,16 @@ class Stripper
       var args = new Array<String>();
       args = args.concat(mFlags);
       args.push(inTarget);
+      
+      var split = mExe.split(" ");
+      var exe = split.shift();
+      args = split.concat(args);
 
-      var result = BuildTool.runCommand( mExe, args, true,false );
+      var result = ProcessManager.runCommand("", exe, args, true, false, true);
       if (result!=0)
-         throw "Error : " + result + " - build cancelled";
+      {
+         Sys.exit(result);
+         //throw "Error : " + result + " - build cancelled";
+      }
    }
 }

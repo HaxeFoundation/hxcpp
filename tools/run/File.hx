@@ -50,14 +50,20 @@ class File
 
       var source_name = mDir+mName;
       if (!FileSystem.exists(source_name))
-         throw "Could not find source '" + source_name + "'";
+      {
+         LogManager.error("Could not find source file \"" + source_name + "\"");
+         //throw "Could not find source '" + source_name + "'";
+      }
       var source_stamp = FileSystem.stat(source_name).mtime.getTime();
       if (obj_stamp < source_stamp)
          return true;
       for(depend in mDepends)
       {
          if (!FileSystem.exists(depend))
-            throw "Could not find dependency '" + depend + "' for '" + mName + "'";
+         {
+            LogManager.error("Could not find dependency \"" + depend + "\" for \"" + mName + "\"");
+            //throw "Could not find dependency '" + depend + "' for '" + mName + "'";
+         }
          if (FileSystem.stat(depend).mtime.getTime() > obj_stamp )
             return true;
       }

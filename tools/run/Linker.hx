@@ -38,8 +38,11 @@ class Linker
       for(obj in inObjs)
       {
          if (!FileSystem.exists(obj))
-            throw "Could not find " + obj + " required by " + inName;
-         var obj_stamp =  FileSystem.stat(obj).mtime.getTime();
+         {
+            LogManager.error("Could not find \"" + obj + "\" required by \"" + inName + "\"");
+            //throw "Could not find " + obj + " required by " + inName;
+         }
+         var obj_stamp = FileSystem.stat(obj).mtime.getTime();
          if (obj_stamp > stamp)
             return true;
       }
@@ -50,10 +53,17 @@ class Linker
    {
       var ext = inTarget.mExt=="" ? mExt : inTarget.mExt;
       var file_name = mNamePrefix + inTarget.mOutput + ext;
-      if(!DirManager.make(inTarget.mOutputDir))
+      
+      try
       {
-         throw "Unable to create output directory " + inTarget.mOutputDir;
+         PathManager.mkdir(inTarget.mOutputDir);  
       }
+      catch (e:Dynamic)
+      {
+         LogManager.error("Unable to create output directory \"" + inTarget.mOutputDir + "\"");
+         //throw "Unable to create output directory " + inTarget.mOutputDir; 
+      }
+      
       var out_name = inTarget.mOutputDir + file_name;
 
       var libs = inTarget.mLibs.concat(mLibs);
@@ -72,7 +82,7 @@ class Linker
                var current = parts[0] + "-" + BuildTool.getMsvcVer() + parts[1];
                if (FileSystem.exists(current))
                {
-                  BuildTool.log("Using current compiler library " + current);
+                  LogManager.info("", "Using current compiler library " + current);
                   libs[i]=current;
                }
                else
@@ -80,7 +90,7 @@ class Linker
                   var v18 = parts[0] + "-18" + parts[1];
                   if (FileSystem.exists(v18))
                   {
-                     BuildTool.log("Using msvc18 compatible library " + v18);
+                     LogManager.info("", "Using msvc18 compatible library " + v18);
                      libs[i]=v18;
                      if (!v18Added)
                      {
@@ -118,14 +128,14 @@ class Linker
          //  creates stays out of the way
          if (mLibDir!="")
          {
-            DirManager.make(mLibDir);
+            PathManager.mkdir(mLibDir);
             args.push(out + mLibDir + "/" + file_name);
          }
          else
          {
             if (mRecreate && FileSystem.exists(out_name))
             {
-               BuildTool.println(" clean " + out_name );
+               LogManager.info(" clean " + out_name );
                FileSystem.deleteFile(out_name);
             }
             args.push(out + out_name);
@@ -144,13 +154,10 @@ class Linker
                if (isArchive.match(lib))
                {
                   var libName = Path.withoutDirectory(lib);
-                  var libObjs = Setup.readStdout( mExe ,  ["t", lib] );
+                  var libObjs = Setup.readStdout(mExe, ["t", lib ]);
                   var objDir = inCompiler.mObjDir + "/" + libName;
-                  DirManager.make(objDir);
-                  var here = Sys.getCwd();
-                  Sys.setCwd(objDir);
-                  BuildTool.runCommand( mExe ,  ["x", lib], true, false );
-                  Sys.setCwd(here);
+                  PathManager.mkdir(objDir);
+                  ProcessManager.runCommand (objDir, mExe, ["x", lib], true, false, true);
                   for(obj in libObjs)
                      objs.push( objDir+"/"+obj );
                }
@@ -174,17 +181,27 @@ class Linker
             args = args.concat(objs);
 
          args = args.concat(libs);
-
-         var result = BuildTool.runCommand( mExe, args, true, false );
+         
+         var split = mExe.split (" ");
+         var exe = split.shift ();
+         args = split.concat (args);
+         
+         var result = ProcessManager.runCommand("", exe, args, true, false, true);
          if (result!=0)
-            throw "Error : " + result + " - build cancelled";
+         {
+            Sys.exit(result);
+            //throw "Error : " + result + " - build cancelled";
+         }
 
          if (mRanLib!="")
          {
             args = [out_name];
-            var result = BuildTool.runCommand( mRanLib, args, true, false );
+            var result = ProcessManager.runCommand("", mRanLib, args, true, false, true);
             if (result!=0)
-               throw "Error : " + result + " - build cancelled";
+            {
+               Sys.exit(result);
+               //throw "Error : " + result + " - build cancelled";
+            }
          }
 
          if (mLibDir!="")
@@ -192,7 +209,7 @@ class Linker
             sys.io.File.copy( mLibDir+"/"+file_name, out_name );
             FileSystem.deleteFile( mLibDir+"/"+file_name );
          }
-         return  out_name;
+         return out_name;
       }
 
       return "";

@@ -64,7 +64,10 @@ class FileGroup
    public function checkDependsExist()
    {
       if (mMissingDepends.length>0)
-         throw "Could not find dependencies: " + mMissingDepends.join(",");
+      {
+         LogManager.error("Could not find dependencies: [ " + mMissingDepends.join (", ") + " ]");
+         //throw "Could not find dependencies: " + mMissingDepends.join(",");
+      }
    }
 
    public function checkOptions(inObjDir:String)
@@ -80,7 +83,7 @@ class FileGroup
          {
             var contents = sys.io.File.getContent(option);
 
-            var dest = inObjDir + "/" + haxe.io.Path.withoutDirectory(option);
+            var dest = inObjDir + "/" + Path.withoutDirectory(option);
             var skip = false;
 
             if (FileSystem.exists(dest))
@@ -91,7 +94,7 @@ class FileGroup
             }
             if (!skip)
             {
-               DirManager.make(inObjDir);
+               PathManager.mkdir(inObjDir);
                var stream = sys.io.File.write(dest,true);
                stream.writeString(contents);
                stream.close();

@@ -73,14 +73,12 @@ class Compiler
 
    public function compile(inFile:File,inTid:Int)
    {
-      var path = new Path(mObjDir + "/" + inFile.mName);
       var obj_name = getObjName(inFile);
-
       var args = new Array<String>();
       
       args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
 
-      var ext = path.ext.toLowerCase();
+      var ext = mExt.toLowerCase();
       addIdentity(ext,args);
 
       var allowPch = false;
@@ -116,18 +114,18 @@ class Compiler
          var contents = sys.io.File.getContent(sourceName);
          if (contents!="")
          {
-            var md5 = haxe.crypto.Md5.encode(contents + args.join(" ") +
+            var md5 = Md5.encode(contents + args.join(" ") +
                 inFile.mGroup.mDependHash + mCompilerVersion + inFile.mDependHash );
             cacheName = BuildTool.compileCache + "/" + md5;
             if (FileSystem.exists(cacheName))
             {
                sys.io.File.copy(cacheName, obj_name);
-               BuildTool.println("use cache for " + obj_name + "(" + md5 + ")" );
+               LogManager.info("use cache for " + obj_name + "(" + md5 + ")" );
                found = true;
             }
             else
             {
-               BuildTool.log(" not in cache " + cacheName);
+               LogManager.info("", " not in cache " + cacheName);
             }
          }
          else
@@ -146,17 +144,31 @@ class Compiler
          }
 
          args.push(out + obj_name);
-         var result = BuildTool.runCommand( mExe, args, true, inTid>=0 );
-         if (result!=0)
+         
+         var split = mExe.split (" ");
+         var exe = split.shift ();
+         args = split.concat (args);
+         
+         if (inTid >= 0)
          {
-            if (FileSystem.exists(obj_name))
-               FileSystem.deleteFile(obj_name);
-            throw "Error : " + result + " - build cancelled";
+            ProcessManager.runProcess("", exe, args);
          }
+         else
+         {
+            var result = ProcessManager.runCommand("", exe, args);
+            if (result!=0)
+            {
+               if (FileSystem.exists(obj_name))
+                  FileSystem.deleteFile(obj_name);
+               Sys.exit (result);
+               //throw "Error : " + result + " - build cancelled";
+            }
+         }
+         
          if (cacheName!=null)
          {
-           sys.io.File.copy(obj_name, cacheName );
-           BuildTool.log(" caching " + cacheName);
+            sys.io.File.copy(obj_name, cacheName);
+            LogManager.info("", " caching " + cacheName);
          }
       }
 
@@ -177,14 +189,11 @@ class Compiler
          }
  
          var versionString = Setup.readStderr(exe,args).join(" ");
-         if (BuildTool.verbose)
-         {
-            BuildTool.println("--- Compiler verison ---" );
-            BuildTool.println( versionString );
-            BuildTool.println("------------------");
-         }
+         LogManager.info("", "--- Compiler version ---");
+         LogManager.info("", versionString);
+         LogManager.info("", "------------------------");
 
-         mCompilerVersion = haxe.crypto.Md5.encode(versionString);
+         mCompilerVersion = Md5.encode(versionString);
          mCached = true;
       }
 
@@ -214,8 +223,8 @@ class Compiler
       var dir = inObjDir + "/" + inGroup.getPchDir() + "/";
       var pch_name = dir + file + mPCHExt;
 
-      BuildTool.log("Make pch dir " + dir );
-      DirManager.make(dir);
+      //LogManager.info("", "Make pch dir " + dir );
+      PathManager.mkdir(dir);
 
       if (mPCH!="gcc")
       {
@@ -233,20 +242,26 @@ class Compiler
       }
       else
       {
-         BuildTool.log("Make pch dir " + dir + header );
-         DirManager.make(dir + header);
+         //LogManager.info("", "Creating PCH directory \"" + dir + header + "\"");
+         PathManager.mkdir(dir + header);
          args.push( "-o" );
          args.push(pch_name);
          args.push( inGroup.mPrecompiledHeaderDir + "/" + inGroup.mPrecompiledHeader + ".h" );
       }
 
-      BuildTool.println("Creating " + pch_name + "...");
-      var result = BuildTool.runCommand( mExe, args, true, false );
+      //LogManager.info("Creating " + pch_name + "...");
+      
+      var split = mExe.split (" ");
+      var exe = split.shift ();
+      args = split.concat (args);
+      
+      var result = ProcessManager.runCommand("", exe, args, true, false, true);
       if (result!=0)
       {
          if (FileSystem.exists(pch_name))
             FileSystem.deleteFile(pch_name);
-         throw "Error creating pch: " + result + " - build cancelled";
+         LogManager.error("Could not create PCH");
+         //throw "Error creating pch: " + result + " - build cancelled";
       }
    }
 

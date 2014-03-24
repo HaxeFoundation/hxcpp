@@ -20,20 +20,24 @@ class HLSL
    {
       if (!FileSystem.exists(Path.directory (target))) 
       {
-         DirManager.make(Path.directory (target));
+         PathManager.mkdir(Path.directory (target));
       }
      
-      DirManager.makeFileDir(target);
+      //DirManager.makeFileDir(target);
 
       var srcStamp = FileSystem.stat(file).mtime.getTime();
       if (!FileSystem.exists(target) || FileSystem.stat(target).mtime.getTime() < srcStamp)
       {
          var exe = "fxc.exe";
          var args =  [ "/nologo", "/T", profile, file, "/Vn", variable, "/Fh", target ];
-         var result = BuildTool.runCommand(exe,args,BuildTool.verbose,false);
+         
+         LogManager.info("", exe + " " + args.join(" "));
+         
+         var result = ProcessManager.runCommand("", exe, args);
          if (result!=0)
          {
-            throw "Error : Could not compile shader " + file + " - build cancelled";
+            LogManager.error("Could not compile shader \"" + file + "\"");
+            //throw "Error : Could not compile shader " + file + " - build cancelled";
          }
       }
    }

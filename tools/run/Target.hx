@@ -47,16 +47,19 @@ class Target
 
    public function checkError()
    {
-       if (mErrors.length>0)
-          throw mErrors.join("/");
+      if (mErrors.length>0)
+      {
+         LogManager.error(mErrors.join(", "));
+         //throw mErrors.join("/");
+      }
    }
 
    public function clean()
    {
       for(dir in mDirs)
       {
-         BuildTool.println("Remove " + dir + "...");
-         DirManager.deleteRecurse(dir);
+         LogManager.info("Remove " + dir + "...");
+         PathManager.removeDirectory(dir);
       }
    }
 
