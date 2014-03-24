@@ -50,7 +50,7 @@
   <cppflag value="-frtti"/>
   <outflag value="-o"/>
   <ext value=".o"/>
-  <objdir value="obj/iphonesim${OBJGCC}${OBJDBG}${ARCH}/" />
+  <objdir value="obj/iphoneos${OBJGCC}${OBJDBG}${ARCH}/" />
 </compiler>
 
 <linker id="dll" exe="g++" >

@@ -1,5 +1,9 @@
 <xml>
 
+<path name="${EMSCRIPTEN_SDK}" />
+
+<setenv name="EMCC_LLVM_TARGET" value="i386-pc-linux-gnu" />
+
 <!-- EMCC TOOLS -------------------------------------->
 
 <include name="gcc-toolchain.xml"/>
@@ -9,6 +13,8 @@
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
+  <pchflag value="-x" />
+  <pchflag value="c++-header" />
   <flag value="-g" if="debug"/>
   <!-- <flag value="-O2" unless="debug"/> -->
   <flag value="-fpic"/>
@@ -21,6 +27,7 @@
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-bool-conversion" />
+  <flag value="-Wno-warn-absolute-paths" />
   <include name="common-defines.xml" />
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/emscripten${OBJEXT}"/>
