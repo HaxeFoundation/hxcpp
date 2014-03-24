@@ -3,6 +3,19 @@ import sys.FileSystem;
 
 class FileGroup
 {
+   public var mNewest:Float;
+   public var mCompilerFlags:Array<String>;
+   public var mMissingDepends:Array<String>;
+   public var mOptions:Array<String>;
+   public var mPrecompiledHeader:String;
+   public var mPrecompiledHeaderDir:String;
+   public var mFiles:Array<File>;
+   public var mHLSLs:Array<HLSL>;
+   public var mDir:String;
+   public var mId:String;
+   public var mDepends:Array<String>;
+   public var mDependHash:String;
+   
    public function new(inDir:String,inId:String)
    {
       mNewest = 0;
@@ -17,27 +30,10 @@ class FileGroup
       mId = inId;
    }
 
-   public function preBuild()
+   public function addCompilerFlag(inFlag:String)
    {
-      for(hlsl in mHLSLs)
-         hlsl.build();
-
-      if (BuildTool.useCache)
-      {
-         mDependHash = "";
-         for(depend in mDepends)
-            mDependHash += File.getFileHash(depend);
-         mDependHash = haxe.crypto.Md5.encode(mDependHash);
-      }
+      mCompilerFlags.push(inFlag);
    }
-
-   public function addHLSL(inFile:String,inProfile:String,inVariable:String,inTarget:String)
-   {
-      addDepend(inFile);
-
-      mHLSLs.push( new HLSL(inFile,inProfile,inVariable,inTarget) );
-   }
-
 
    public function addDepend(inFile:String)
    {
@@ -53,15 +49,22 @@ class FileGroup
       mDepends.push(inFile);
    }
 
+   public function addHLSL(inFile:String,inProfile:String,inVariable:String,inTarget:String)
+   {
+      addDepend(inFile);
+
+      mHLSLs.push( new HLSL(inFile,inProfile,inVariable,inTarget) );
+   }
 
    public function addOptions(inFile:String)
    {
       mOptions.push(inFile);
    }
 
-   public function getPchDir()
+   public function checkDependsExist()
    {
-      return "__pch/" + mId ;
+      if (mMissingDepends.length>0)
+         throw "Could not find dependencies: " + mMissingDepends.join(",");
    }
 
    public function checkOptions(inObjDir:String)
@@ -100,15 +103,14 @@ class FileGroup
       return changed;
    }
 
-   public function checkDependsExist()
+   public function getPchDir()
    {
-      if (mMissingDepends.length>0)
-         throw "Could not find dependencies: " + mMissingDepends.join(",");
+      return "__pch/" + mId ;
    }
 
-   public function addCompilerFlag(inFlag:String)
+   public function getPchName()
    {
-      mCompilerFlags.push(inFlag);
+      return Path.withoutDirectory(mPrecompiledHeader);
    }
 
    public function isOutOfDate(inStamp:Float)
@@ -116,27 +118,23 @@ class FileGroup
       return inStamp<mNewest;
    }
 
+   public function preBuild()
+   {
+      for(hlsl in mHLSLs)
+         hlsl.build();
+
+      if (BuildTool.useCache)
+      {
+         mDependHash = "";
+         for(depend in mDepends)
+            mDependHash += File.getFileHash(depend);
+         mDependHash = haxe.crypto.Md5.encode(mDependHash);
+      }
+   }
+
    public function setPrecompiled(inFile:String, inDir:String)
    {
       mPrecompiledHeader = inFile;
       mPrecompiledHeaderDir = inDir;
    }
-   public function getPchName()
-   {
-      return Path.withoutDirectory(mPrecompiledHeader);
-   }
-
-
-   public var mNewest:Float;
-   public var mCompilerFlags:Array<String>;
-   public var mMissingDepends:Array<String>;
-   public var mOptions:Array<String>;
-   public var mPrecompiledHeader:String;
-   public var mPrecompiledHeaderDir:String;
-   public var mFiles: Array<File>;
-   public var mHLSLs: Array<HLSL>;
-   public var mDir : String;
-   public var mId : String;
-   public var mDepends:Array<String>;
-   public var mDependHash : String;
 }

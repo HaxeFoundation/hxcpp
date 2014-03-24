@@ -1,5 +1,5 @@
+import haxe.xml.Fast;
 import sys.FileSystem;
-
 #if neko
 import neko.vm.Thread;
 import neko.vm.Mutex;
@@ -14,20 +14,19 @@ import cpp.vm.Tls;
 #if haxe3
 typedef Hash<T> = haxe.ds.StringMap<T>;
 #end
-
 typedef FileGroups = Hash<FileGroup>;
 typedef Targets = Hash<Target>;
 typedef Linkers = Hash<Linker>;
 
 class BuildTool
 {
-   var mDefines : Hash<String>;
+   var mDefines:Hash<String>;
    var mIncludePath:Array<String>;
-   var mCompiler : Compiler;
-   var mStripper : Stripper;
-   var mLinkers : Linkers;
-   var mFileGroups : FileGroups;
-   var mTargets : Targets;
+   var mCompiler:Compiler;
+   var mStripper:Stripper;
+   var mLinkers:Linkers;
+   var mFileGroups:FileGroups;
+   var mTargets:Targets;
    public static var sAllowNumProcs = true;
    public static var HXCPP = "";
    public static var verbose = false;
@@ -40,7 +39,7 @@ class BuildTool
    public static var helperThread = new Tls<Thread>();
    public static var instance:BuildTool;
    static var printMutex:Mutex;
-
+   static var mVarMatch = new EReg("\\${(.*?)}","");
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
         inIncludePath:Array<String> )
@@ -55,7 +54,7 @@ class BuildTool
       mIncludePath = inIncludePath;
       instance = this;
       var make_contents = "";
-      try  {
+      try {
          make_contents = sys.io.File.getContent(inMakefile);
       } catch (e:Dynamic) {
          println("Could not open build file '" + inMakefile + "'");
@@ -66,7 +65,7 @@ class BuildTool
          mDefines.set("HXCPP_COMPILE_THREADS", Std.string(getNumberOfProcesses()));
 
       var xml_slow = Xml.parse(make_contents);
-      var xml = new haxe.xml.Fast(xml_slow.firstElement());
+      var xml = new Fast(xml_slow.firstElement());
       
       parseXML(xml,"");
 
@@ -114,268 +113,6 @@ class BuildTool
       for(target in inTargets)
          buildTarget(target);
    }
-
-   public static function isMsvc()
-   {
-      return instance.mDefines.get("toolchain")=="msvc";
-   }
-   static public function getMsvcVer()
-   {
-      return instance.mDefines.get("MSVC_VER");
-   }
-
-   inline public static function log(s:String)
-   {
-      if (verbose)
-         Sys.println(s);
-   }
-
-
-
-   inline public static function println(s:String)
-   {
-      Sys.println(s);
-   }
-
-
-   function findIncludeFile(inBase:String) : String
-   {
-      if (inBase=="") return "";
-     var c0 = inBase.substr(0,1);
-     if (c0!="/" && c0!="\\")
-     {
-        var c1 = inBase.substr(1,1);
-        if (c1!=":")
-        {
-           for(p in mIncludePath)
-           {
-              var name = p + "/" + inBase;
-              if (FileSystem.exists(name))
-                 return name;
-           }
-           return "";
-        }
-     }
-     if (FileSystem.exists(inBase))
-        return inBase;
-      return "";
-   }
-
-   function parseXML(inXML:haxe.xml.Fast,inSection :String)
-   {
-      for(el in inXML.elements)
-      {
-         if (valid(el,inSection))
-         {
-            switch(el.name)
-            {
-                case "set" : 
-                   var name = el.att.name;
-                   var value = substitute(el.att.value);
-                   mDefines.set(name,value);
-                   if (name == "BLACKBERRY_NDK_ROOT")
-                   {
-                      Setup.setupBlackBerryNativeSDK(mDefines);
-         		   }
-                case "unset" : 
-                   var name = el.att.name;
-                   mDefines.remove(name);
-                case "setup" : 
-                   var name = substitute(el.att.name);
-                   Setup.setup(name,mDefines);
-                case "echo" : 
-                   Sys.println(substitute(el.att.value));
-                case "setenv" : 
-                   var name = el.att.name;
-                   var value = substitute(el.att.value);
-                   mDefines.set(name,value);
-                   Sys.putEnv(name,value);
-                case "error" : 
-                   var error = substitute(el.att.value);
-                   throw(error);
-                case "path" : 
-                   var path = substitute(el.att.name);
-                   if (verbose)
-                      println("Adding path " + path );
-                   var os = Sys.systemName();
-                   var sep = mDefines.exists("windows_host") ? ";" : ":";
-                   var add = path + sep + Sys.getEnv("PATH");
-                   Sys.putEnv("PATH", add);
-                    //trace(Sys.getEnv("PATH"));
-                case "compiler" : 
-                   mCompiler = createCompiler(el,mCompiler);
-
-                case "stripper" : 
-                   mStripper = createStripper(el,mStripper);
-
-                case "linker" : 
-                   if (mLinkers.exists(el.att.id))
-                      createLinker(el,mLinkers.get(el.att.id));
-                   else
-                      mLinkers.set( el.att.id, createLinker(el,null) );
-
-                case "files" : 
-                   var name = el.att.id;
-                   if (mFileGroups.exists(name))
-                      createFileGroup(el, mFileGroups.get(name), name);
-                   else
-                      mFileGroups.set(name,createFileGroup(el,null,name));
-
-                case "include" : 
-                   var name = substitute(el.att.name);
-                   var full_name = findIncludeFile(name);
-                   if (full_name!="")
-                   {
-                      var make_contents = sys.io.File.getContent(full_name);
-                      var xml_slow = Xml.parse(make_contents);
-                      var section = el.has.section ? el.att.section : "";
-
-                      parseXML(new haxe.xml.Fast(xml_slow.firstElement()),section);
-                   }
-                   else if (!el.has.noerror)
-                   {
-                      throw "Could not find include file " + name;
-                   }
-                case "target" : 
-                   var name = substitute(el.att.id);
-                   var overwrite = name=="default";
-                   if (el.has.overwrite)
-                      overwrite = true;
-                   if (el.has.append)
-                      overwrite = false;
-                   if (mTargets.exists(name) && !overwrite)
-                      createTarget(el,mTargets.get(name));
-                   else
-                      mTargets.set( name, createTarget(el,null) );
-                case "section" : 
-                   parseXML(el,"");
-            }
-         }
-      }
-   }
-   
-   
-   public static function runCommand(exe:String, args:Array<String>,inPrint:Bool, inMultiThread:Bool ):Int
-   {
-      if (exe.indexOf (" ") > -1)
-      {
-         var splitExe = exe.split (" ");
-         exe = splitExe.shift ();
-         args = splitExe.concat (args);
-      }
-
-      var useSysCommand = !inMultiThread;
-      
-      if ( useSysCommand )
-      {
-         if (inPrint)
-            println(exe + " " + args.join(" "));
-         return Sys.command(exe,args);
-      }
-      else
-      {
-         var output = new Array<String>();
-         if (inPrint)
-            output.push(exe + " " + args.join(" "));
-         var proc = new sys.io.Process(exe, args);
-         var err = proc.stderr;
-         var out = proc.stdout;
-         var reader = BuildTool.helperThread.value;
-         // Read stderr in separate hreead to avoid blocking ...
-         if (reader==null)
-         {
-            var contoller = Thread.current();
-            BuildTool.helperThread.value = reader = Thread.create(function()
-            {
-               while(true)
-               {
-                  var stream = Thread.readMessage(true);
-                  var output:Array<String> = null;
-                  try
-                  {
-                     while(true)
-                     {
-                        var line = stream.readLine();
-                        if (output==null)
-                           output = [ line ];
-                        else
-                           output.push(line);
-                     }
-                  }
-                  catch(e:Dynamic){ }
-                  contoller.sendMessage(output);
-               }
-            });
-         }
-
-         // Start up the error reader ...
-         reader.sendMessage(err);
-
-         try
-         {
-            while(true)
-            {
-               var line = out.readLine();
-               output.push(line);
-            }
-         }
-         catch(e:Dynamic){ }
-
-         var errOut:Array<String> = Thread.readMessage(true);
-
-         if (errOut!=null && errOut.length>0)
-            output = output.concat(errOut);
-
-         if (output.length>0)
-         {
-            if (printMutex!=null)
-               printMutex.acquire();
-            println(output.join("\n"));
-            if (printMutex!=null)
-               printMutex.release();
-         }
-
-         var code = proc.exitCode();
-         proc.close();
-         return code;
-      }
-   }
-
-   public function cleanTarget(inTarget:String,allObj:Bool)
-   {
-      // Sys.println("Build : " + inTarget );
-      if (!mTargets.exists(inTarget))
-         throw "Could not find target '" + inTarget + "' to build.";
-      if (mCompiler==null)
-         throw "No compiler defined";
-
-      var target = mTargets.get(inTarget);
-      target.checkError();
-
-      for(sub in target.mSubTargets)
-         cleanTarget(sub,allObj);
-
-      var restoreDir = "";
-      if (target.mBuildDir!="")
-      {
-         restoreDir = Sys.getCwd();
-         if (verbose)
-            Sys.println("Enter " + target.mBuildDir);
-         Sys.setCwd(target.mBuildDir);
-      }
-
-      DirManager.deleteRecurse(mCompiler.mObjDir);
-      DirManager.deleteFile("all_objs");
-      DirManager.deleteExtension(".pdb");
-      if (allObj)
-         DirManager.deleteRecurse("obj");
-
-      if (restoreDir!="")
-         Sys.setCwd(restoreDir);
-   }
- 
-
-
 
    public function buildTarget(inTarget:String)
    {
@@ -454,9 +191,9 @@ class BuildTool
             {
                var pchDir = group.getPchDir();
                if (pchDir != "")
-			   {
+            {
                   objs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.getPchName() + mCompiler.mExt);
-			   }
+            }
             }
          }
 
@@ -525,7 +262,40 @@ class BuildTool
          Sys.setCwd(restoreDir);
    }
 
-   public function createCompiler(inXML:haxe.xml.Fast,inBase:Compiler) : Compiler
+   public function cleanTarget(inTarget:String,allObj:Bool)
+   {
+      // Sys.println("Build : " + inTarget );
+      if (!mTargets.exists(inTarget))
+         throw "Could not find target '" + inTarget + "' to build.";
+      if (mCompiler==null)
+         throw "No compiler defined";
+
+      var target = mTargets.get(inTarget);
+      target.checkError();
+
+      for(sub in target.mSubTargets)
+         cleanTarget(sub,allObj);
+
+      var restoreDir = "";
+      if (target.mBuildDir!="")
+      {
+         restoreDir = Sys.getCwd();
+         if (verbose)
+            Sys.println("Enter " + target.mBuildDir);
+         Sys.setCwd(target.mBuildDir);
+      }
+
+      DirManager.deleteRecurse(mCompiler.mObjDir);
+      DirManager.deleteFile("all_objs");
+      DirManager.deleteExtension(".pdb");
+      if (allObj)
+         DirManager.deleteRecurse("obj");
+
+      if (restoreDir!="")
+         Sys.setCwd(restoreDir);
+   }
+
+   public function createCompiler(inXML:Fast,inBase:Compiler) : Compiler
    {
       var c = inBase;
       if (inBase==null || inXML.has.replace)
@@ -540,44 +310,100 @@ class BuildTool
          if (valid(el,""))
             switch(el.name)
             {
-                case "flag" : c.mFlags.push(substitute(el.att.value));
-                case "cflag" : c.mCFlags.push(substitute(el.att.value));
-                case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
-                case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
-                case "mmflag" : c.mMMFlags.push(substitute(el.att.value));
-                case "pchflag" : c.mPCHFlags.push(substitute(el.att.value));
-                case "objdir" : c.mObjDir = substitute((el.att.value));
-                case "outflag" : c.mOutFlag = substitute((el.att.value));
-                case "exe" : c.mExe = substitute((el.att.name));
-                case "ext" : c.mExt = substitute((el.att.value));
-                case "pch" : c.setPCH( substitute((el.att.value)) );
-                case "getversion" : c.mGetCompilerVersion = substitute((el.att.value));
-                case "section" :
-                      createCompiler(el,c);
-                case "include" :
-                   var name = substitute(el.att.name);
-                   var full_name = findIncludeFile(name);
-                   if (full_name!="")
-                   {
-                      var make_contents = sys.io.File.getContent(full_name);
-                      var xml_slow = Xml.parse(make_contents);
-                      createCompiler(new haxe.xml.Fast(xml_slow.firstElement()),c);
-                   }
-                   else if (!el.has.noerror)
-                   {
-                      throw "Could not find include file " + name;
-                   }
+               case "flag" : c.mFlags.push(substitute(el.att.value));
+               case "cflag" : c.mCFlags.push(substitute(el.att.value));
+               case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
+               case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
+               case "mmflag" : c.mMMFlags.push(substitute(el.att.value));
+               case "pchflag" : c.mPCHFlags.push(substitute(el.att.value));
+               case "objdir" : c.mObjDir = substitute((el.att.value));
+               case "outflag" : c.mOutFlag = substitute((el.att.value));
+               case "exe" : c.mExe = substitute((el.att.name));
+               case "ext" : c.mExt = substitute((el.att.value));
+               case "pch" : c.setPCH( substitute((el.att.value)) );
+               case "getversion" : c.mGetCompilerVersion = substitute((el.att.value));
+               case "section" : createCompiler(el,c);
+               case "include" :
+                  var name = substitute(el.att.name);
+                  var full_name = findIncludeFile(name);
+                  if (full_name!="")
+                  {
+                     var make_contents = sys.io.File.getContent(full_name);
+                     var xml_slow = Xml.parse(make_contents);
+                     createCompiler(new haxe.xml.Fast(xml_slow.firstElement()),c);
+                  }
+                  else if (!el.has.noerror)
+                  {
+                     throw "Could not find include file " + name;
+                  }
                default:
-                   throw "Unknown compiler option: '" + el.name + "'";
-         
- 
+                  throw "Unknown compiler option: '" + el.name + "'";
             }
       }
 
       return c;
    }
 
-   public function createStripper(inXML:haxe.xml.Fast,inBase:Stripper) : Stripper
+   public function createFileGroup(inXML:Fast,inFiles:FileGroup,inName:String):FileGroup
+   {
+      var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
+      var group = inFiles==null ? new FileGroup(dir,inName) : inFiles;
+      for(el in inXML.elements)
+      {
+         if (valid(el,""))
+            switch(el.name)
+            {
+               case "file" :
+                  var file = new File(substitute(el.att.name),group);
+                  for(f in el.elements)
+                     if (valid(f,"") && f.name=="depend")
+                        file.mDepends.push( substitute(f.att.name) );
+                  group.mFiles.push( file );
+               case "section" : createFileGroup(el,group,inName);
+               case "depend" : group.addDepend( substitute(el.att.name) );
+               case "hlsl" :
+                  group.addHLSL( substitute(el.att.name), substitute(el.att.profile),
+                  substitute(el.att.variable), substitute(el.att.target)  );
+               case "options" : group.addOptions( substitute(el.att.name) );
+               case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
+               case "compilervalue" : 
+                  group.addCompilerFlag( substitute(el.att.name) );
+                  group.addCompilerFlag( substitute(el.att.value) );
+               case "precompiledheader" : 
+                  group.setPrecompiled( substitute(el.att.name), substitute(el.att.dir) );
+            }
+      }
+
+      return group;
+   }
+
+   public function createLinker(inXML:Fast,inBase:Linker):Linker
+   {
+      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(inXML.att.exe);
+      for(el in inXML.elements)
+      {
+         if (valid(el,""))
+            switch(el.name)
+            {
+               case "flag" : l.mFlags.push(substitute(el.att.value));
+               case "ext" : l.mExt = (substitute(el.att.value));
+               case "outflag" : l.mOutFlag = (substitute(el.att.value));
+               case "libdir" : l.mLibDir = (substitute(el.att.name));
+               case "lib" : l.mLibs.push( substitute(el.att.name) );
+               case "prefix" : l.mNamePrefix = substitute(el.att.value);
+               case "ranlib" : l.mRanLib = (substitute(el.att.name));
+               case "recreate" : l.mRecreate = (substitute(el.att.value)) != "";
+               case "expandAr" : l.mExpandArchives = substitute(el.att.value) != "";
+               case "fromfile" : l.mFromFile = (substitute(el.att.value));
+               case "exe" : l.mExe = (substitute(el.att.name));
+               case "section" : createLinker(el,l);
+            }
+      }
+
+      return l;
+   }
+
+   public function createStripper(inXML:Fast,inBase:Stripper):Stripper
    {
       var s = (inBase!=null && !inXML.has.replace) ? inBase :
                  new Stripper(inXML.att.exe);
@@ -593,66 +419,6 @@ class BuildTool
 
       return s;
    }
-
-
-
-   public function createLinker(inXML:haxe.xml.Fast,inBase:Linker) : Linker
-   {
-      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(inXML.att.exe);
-      for(el in inXML.elements)
-      {
-         if (valid(el,""))
-            switch(el.name)
-            {
-                case "flag" : l.mFlags.push(substitute(el.att.value));
-                case "ext" : l.mExt = (substitute(el.att.value));
-                case "outflag" : l.mOutFlag = (substitute(el.att.value));
-                case "libdir" : l.mLibDir = (substitute(el.att.name));
-                case "lib" : l.mLibs.push( substitute(el.att.name) );
-                case "prefix" : l.mNamePrefix = substitute(el.att.value);
-                case "ranlib" : l.mRanLib = (substitute(el.att.name));
-                case "recreate" : l.mRecreate = (substitute(el.att.value)) != "";
-                case "expandAr" : l.mExpandArchives = substitute(el.att.value) != "";
-                case "fromfile" : l.mFromFile = (substitute(el.att.value));
-                case "exe" : l.mExe = (substitute(el.att.name));
-                case "section" : createLinker(el,l);
-            }
-      }
-
-      return l;
-   }
-
-   public function createFileGroup(inXML:haxe.xml.Fast,inFiles:FileGroup,inName:String) : FileGroup
-   {
-      var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
-      var group = inFiles==null ? new FileGroup(dir,inName) : inFiles;
-      for(el in inXML.elements)
-      {
-         if (valid(el,""))
-            switch(el.name)
-            {
-                case "file" :
-                   var file = new File(substitute(el.att.name),group);
-                   for(f in el.elements)
-                      if (valid(f,"") && f.name=="depend")
-                         file.mDepends.push( substitute(f.att.name) );
-                   group.mFiles.push( file );
-                case "section" : createFileGroup(el,group,inName);
-                case "depend" : group.addDepend( substitute(el.att.name) );
-                case "hlsl" : group.addHLSL( substitute(el.att.name), substitute(el.att.profile),
-                     substitute(el.att.variable), substitute(el.att.target)  );
-                case "options" : group.addOptions( substitute(el.att.name) );
-                case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
-                case "compilervalue" : group.addCompilerFlag( substitute(el.att.name) );
-                                       group.addCompilerFlag( substitute(el.att.value) );
-                case "precompiledheader" : group.setPrecompiled( substitute(el.att.name),
-                          substitute(el.att.dir) );
-            }
-      }
-
-      return group;
-   }
-
 
    public function createTarget(inXML:haxe.xml.Fast,?inTarget:Target) : Target
    {
@@ -670,61 +436,61 @@ class BuildTool
          if (valid(el,""))
             switch(el.name)
             {
-                case "target" : target.mSubTargets.push( substitute(el.att.id) );
-                case "lib" : target.mLibs.push( substitute(el.att.name) );
-                case "flag" : target.mFlags.push( substitute(el.att.value) );
-                case "depend" : target.mDepends.push( substitute(el.att.name) );
-                case "vflag" : target.mFlags.push( substitute(el.att.name) );
-                               target.mFlags.push( substitute(el.att.value) );
-                case "dir" : target.mDirs.push( substitute(el.att.name) );
-                case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
-                case "ext" : target.mExt = (substitute(el.att.value));
-                case "builddir" : target.mBuildDir = substitute(el.att.name);
-                case "files" : var id = el.att.id;
-                   if (!mFileGroups.exists(id))
-                      target.addError( "Could not find filegroup " + id ); 
-                   else
-                      target.addFiles( mFileGroups.get(id) );
-                case "section" : createTarget(el,target);
+               case "target" : target.mSubTargets.push( substitute(el.att.id) );
+               case "lib" : target.mLibs.push( substitute(el.att.name) );
+               case "flag" : target.mFlags.push( substitute(el.att.value) );
+               case "depend" : target.mDepends.push( substitute(el.att.name) );
+               case "vflag" :
+                  target.mFlags.push( substitute(el.att.name) );
+                  target.mFlags.push( substitute(el.att.value) );
+               case "dir" : target.mDirs.push( substitute(el.att.name) );
+               case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
+               case "ext" : target.mExt = (substitute(el.att.value));
+               case "builddir" : target.mBuildDir = substitute(el.att.name);
+               case "files" :
+                  var id = el.att.id;
+                  if (!mFileGroups.exists(id))
+                     target.addError( "Could not find filegroup " + id ); 
+                  else
+                     target.addFiles( mFileGroups.get(id) );
+               case "section" : createTarget(el,target);
             }
       }
 
       return target;
    }
 
-
-   public function valid(inEl:haxe.xml.Fast,inSection:String) : Bool
-   {
-      if (inEl.x.get("if")!=null)
-         if (!defined(inEl.x.get("if"))) return false;
-
-      if (inEl.has.unless)
-         if (defined(inEl.att.unless)) return false;
-
-      if (inEl.has.ifExists)
-         if (!FileSystem.exists( substitute(inEl.att.ifExists) )) return false;
-
-      if (inSection!="")
-      {
-         if (inEl.name!="section")
-            return false;
-         if (!inEl.has.id)
-            return false;
-         if (inEl.att.id!=inSection)
-            return false;
-      }
-
-      return true;
-   }
-
-   public function defined(inString:String) : Bool
+   public function defined(inString:String):Bool
    {
       return mDefines.exists(inString);
    }
 
+   function findIncludeFile(inBase:String):String
+   {
+      if (inBase=="") return "";
+      var c0 = inBase.substr(0,1);
+      if (c0!="/" && c0!="\\")
+      {
+         var c1 = inBase.substr(1,1);
+         if (c1!=":")
+         {
+            for(p in mIncludePath)
+            {
+               var name = p + "/" + inBase;
+               if (FileSystem.exists(name))
+                  return name;
+            }
+            return "";
+         }
+      }
+      if (FileSystem.exists(inBase))
+         return inBase;
+      return "";
+   }
+
    public static function getHaxelib(library:String):String
    {
-      var proc = new sys.io.Process("haxelib",["path",library]);
+      var proc = new Process("haxelib",["path",library]);
       var result = "";
       try
       {
@@ -747,7 +513,12 @@ class BuildTool
       
       return result;
    }
-   
+
+   static public function getMsvcVer()
+   {
+      return instance.mDefines.get("MSVC_VER");
+   }
+
    // Setting HXCPP_COMPILE_THREADS to 2x number or cores can help with hyperthreading
    public static function getNumberOfProcesses():String
    {
@@ -759,7 +530,7 @@ class BuildTool
       if (isLinux)
       {
          var proc = null;
-         proc = new sys.io.Process("nproc",[]);
+         proc = new Process("nproc",[]);
          try
          {
             result = proc.stdout.readLine();
@@ -768,7 +539,7 @@ class BuildTool
       }
       else if (isMac)
       {
-         var proc = new sys.io.Process("/usr/sbin/system_profiler", ["-detailLevel", "full", "SPHardwareDataType"]);	
+         var proc = new Process("/usr/sbin/system_profiler", ["-detailLevel", "full", "SPHardwareDataType"]); 
          var cores = ~/Total Number of Cores: (\d+)/;
          try
          {
@@ -787,42 +558,18 @@ class BuildTool
       }
       return result;
    }
-   
-   static var mVarMatch = new EReg("\\${(.*?)}","");
-   public function substitute(str:String) : String
+
+   public static function isMsvc()
    {
-      while( mVarMatch.match(str) )
-      {
-         var sub = mVarMatch.matched(1);
-         if (sub.substr(0,8)=="haxelib:")
-         {
-            sub = getHaxelib(sub.substr(8));
-         }
-         else
-            sub = mDefines.get(sub);
-
-         if (sub==null) sub="";
-         str = mVarMatch.matchedLeft() + sub + mVarMatch.matchedRight();
-      }
-
-      return str;
+      return instance.mDefines.get("toolchain")=="msvc";
    }
 
-   static function set64(outDefines:Hash<String>, in64:Bool)
+   inline public static function log(s:String)
    {
-      if (in64)
-      {
-         outDefines.set("HXCPP_M64","1");
-         outDefines.remove("HXCPP_32");
-      }
-      else
-      {
-         outDefines.set("HXCPP_M32","1");
-         outDefines.remove("HXCPP_M64");
-      }
+      if (verbose)
+         Sys.println(s);
    }
-   
-   
+
    // Process args and environment.
    static public function main()
    {
@@ -857,17 +604,16 @@ class BuildTool
       }
       var os = Sys.systemName();
       isWindows = (new EReg("window","i")).match(os);
-		if (isWindows)
-		   defines.set("windows_host", "1");
+      if (isWindows)
+         defines.set("windows_host", "1");
       isMac = (new EReg("mac","i")).match(os);
-		if (isMac)
-		   defines.set("mac_host", "1");
+      if (isMac)
+         defines.set("mac_host", "1");
       isLinux = (new EReg("linux","i")).match(os);
-		if (isLinux)
-		   defines.set("linux_host", "1");
+      if (isLinux)
+         defines.set("linux_host", "1");
 
       var isRPi = isLinux && Setup.isRaspberryPi();
-
 
       for(arg in args)
       {
@@ -911,7 +657,6 @@ class BuildTool
       if (verbose)
          BuildTool.println("HXCPP : " + HXCPP);
 
-
       include_path.push(".");
       if (env.exists("HOME"))
         include_path.push(env.get("HOME"));
@@ -930,22 +675,22 @@ class BuildTool
       }
 
       var msvc = false;
-	  
-	   if (defines.exists("ios"))
-	   {
-		  if (defines.exists("simulator"))
-		  {
-			 defines.set("iphonesim", "iphonesim");
-		  }
-		  else if (!defines.exists ("iphonesim"))
-		  {
-			 defines.set("iphoneos", "iphoneos");
-		  }
-	   }
+     
+      if (defines.exists("ios"))
+      {
+        if (defines.exists("simulator"))
+        {
+          defines.set("iphonesim", "iphonesim");
+        }
+        else if (!defines.exists ("iphonesim"))
+        {
+          defines.set("iphoneos", "iphoneos");
+        }
+      }
 
       if (defines.exists("iphoneos"))
       {
-		 defines.set("toolchain","iphoneos");
+       defines.set("toolchain","iphoneos");
          defines.set("iphone","iphone");
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
@@ -994,26 +739,26 @@ class BuildTool
          defines.set("tizen","tizen");
          defines.set("BINDIR","Tizen");
       }
-	  else if (defines.exists("blackberry"))
+     else if (defines.exists("blackberry"))
       {
-		 if (defines.exists("simulator"))
-		 {
-			 defines.set("toolchain", "blackberry-x86");
-		 }
-		 else
-		 {
-		     defines.set("toolchain", "blackberry");
-		 }
+       if (defines.exists("simulator"))
+       {
+          defines.set("toolchain", "blackberry-x86");
+       }
+       else
+       {
+           defines.set("toolchain", "blackberry");
+       }
          defines.set("blackberry","blackberry");
          defines.set("BINDIR","BlackBerry");
       }
-	  else if (defines.exists("emcc") || defines.exists("emscripten"))
-	  {
+     else if (defines.exists("emcc") || defines.exists("emscripten"))
+     {
          defines.set("toolchain","emscripten");
-		 defines.set("emcc","emcc");
-		 defines.set("emscripten","emscripten");
-		 defines.set("BINDIR","Emscripten");
-	  }
+       defines.set("emcc","emcc");
+       defines.set("emscripten","emscripten");
+       defines.set("BINDIR","Emscripten");
+     }
       else if (defines.exists("gph"))
       {
          defines.set("toolchain","gph");
@@ -1116,7 +861,7 @@ class BuildTool
           var developer_dir = proc.stdout.readLine();
           proc.close();
           if (developer_dir == "" || developer_dir.indexOf ("Run xcode-select") > -1)
-          	 developer_dir = "/Applications/Xcode.app/Contents/Developer";
+             developer_dir = "/Applications/Xcode.app/Contents/Developer";
           if (developer_dir == "/Developer")
              defines.set("LEGACY_XCODE_LOCATION","1");
           defines.set("DEVELOPER_DIR",developer_dir);
@@ -1186,5 +931,241 @@ class BuildTool
          new BuildTool(makefile,defines,targets,include_path);
       }
    }
-   
+
+   function parseXML(inXML:Fast,inSection:String)
+   {
+      for(el in inXML.elements)
+      {
+         if (valid(el,inSection))
+         {
+            switch(el.name)
+            {
+               case "set" : 
+                  var name = el.att.name;
+                  var value = substitute(el.att.value);
+                  mDefines.set(name,value);
+                  if (name == "BLACKBERRY_NDK_ROOT")
+                  {
+                     Setup.setupBlackBerryNativeSDK(mDefines);
+                  }
+               case "unset" : 
+                  var name = el.att.name;
+                  mDefines.remove(name);
+               case "setup" : 
+                  var name = substitute(el.att.name);
+                  Setup.setup(name,mDefines);
+               case "echo" : 
+                  Sys.println(substitute(el.att.value));
+               case "setenv" : 
+                  var name = el.att.name;
+                  var value = substitute(el.att.value);
+                  mDefines.set(name,value);
+                  Sys.putEnv(name,value);
+               case "error" : 
+                  var error = substitute(el.att.value);
+                  throw(error);
+               case "path" : 
+                  var path = substitute(el.att.name);
+                  if (verbose)
+                     println("Adding path " + path );
+                  var os = Sys.systemName();
+                  var sep = mDefines.exists("windows_host") ? ";" : ":";
+                  var add = path + sep + Sys.getEnv("PATH");
+                  Sys.putEnv("PATH", add);
+                  //trace(Sys.getEnv("PATH"));
+               case "compiler" : 
+                  mCompiler = createCompiler(el,mCompiler);
+               case "stripper" : 
+                  mStripper = createStripper(el,mStripper);
+               case "linker" : 
+                  if (mLinkers.exists(el.att.id))
+                     createLinker(el,mLinkers.get(el.att.id));
+                  else
+                     mLinkers.set( el.att.id, createLinker(el,null) );
+               case "files" : 
+                  var name = el.att.id;
+                  if (mFileGroups.exists(name))
+                     createFileGroup(el, mFileGroups.get(name), name);
+                  else
+                     mFileGroups.set(name,createFileGroup(el,null,name));
+               case "include" : 
+                  var name = substitute(el.att.name);
+                  var full_name = findIncludeFile(name);
+                  if (full_name!="")
+                  {
+                     var make_contents = sys.io.File.getContent(full_name);
+                     var xml_slow = Xml.parse(make_contents);
+                     var section = el.has.section ? el.att.section : "";
+
+                     parseXML(new Fast(xml_slow.firstElement()),section);
+                  }
+                  else if (!el.has.noerror)
+                  {
+                     throw "Could not find include file " + name;
+                  }
+               case "target" : 
+                  var name = substitute(el.att.id);
+                  var overwrite = name=="default";
+                  if (el.has.overwrite)
+                     overwrite = true;
+                  if (el.has.append)
+                     overwrite = false;
+                  if (mTargets.exists(name) && !overwrite)
+                     createTarget(el,mTargets.get(name));
+                  else
+                     mTargets.set( name, createTarget(el,null) );
+               case "section" : 
+                  parseXML(el,"");
+            }
+         }
+      }
+   }
+
+   inline public static function println(s:String)
+   {
+      Sys.println(s);
+   }
+
+   public static function runCommand(exe:String,args:Array<String>,inPrint:Bool,inMultiThread:Bool):Int
+   {
+      if (exe.indexOf (" ") > -1)
+      {
+         var splitExe = exe.split (" ");
+         exe = splitExe.shift ();
+         args = splitExe.concat (args);
+      }
+
+      var useSysCommand = !inMultiThread;
+      
+      if ( useSysCommand )
+      {
+         if (inPrint)
+            println(exe + " " + args.join(" "));
+         return Sys.command(exe,args);
+      }
+      else
+      {
+         var output = new Array<String>();
+         if (inPrint)
+            output.push(exe + " " + args.join(" "));
+         var proc = new sys.io.Process(exe, args);
+         var err = proc.stderr;
+         var out = proc.stdout;
+         var reader = BuildTool.helperThread.value;
+         // Read stderr in separate hreead to avoid blocking ...
+         if (reader==null)
+         {
+            var contoller = Thread.current();
+            BuildTool.helperThread.value = reader = Thread.create(function()
+            {
+               while(true)
+               {
+                  var stream = Thread.readMessage(true);
+                  var output:Array<String> = null;
+                  try
+                  {
+                     while(true)
+                     {
+                        var line = stream.readLine();
+                        if (output==null)
+                           output = [ line ];
+                        else
+                           output.push(line);
+                     }
+                  }
+                  catch(e:Dynamic){ }
+                  contoller.sendMessage(output);
+               }
+            });
+         }
+
+         // Start up the error reader ...
+         reader.sendMessage(err);
+
+         try
+         {
+            while(true)
+            {
+               var line = out.readLine();
+               output.push(line);
+            }
+         }
+         catch(e:Dynamic){ }
+
+         var errOut:Array<String> = Thread.readMessage(true);
+
+         if (errOut!=null && errOut.length>0)
+            output = output.concat(errOut);
+
+         if (output.length>0)
+         {
+            if (printMutex!=null)
+               printMutex.acquire();
+            println(output.join("\n"));
+            if (printMutex!=null)
+               printMutex.release();
+         }
+
+         var code = proc.exitCode();
+         proc.close();
+         return code;
+      }
+   }
+
+   static function set64(outDefines:Hash<String>, in64:Bool)
+   {
+      if (in64)
+      {
+         outDefines.set("HXCPP_M64","1");
+         outDefines.remove("HXCPP_32");
+      }
+      else
+      {
+         outDefines.set("HXCPP_M32","1");
+         outDefines.remove("HXCPP_M64");
+      }
+   }
+
+   public function substitute(str:String):String
+   {
+      while( mVarMatch.match(str) )
+      {
+         var sub = mVarMatch.matched(1);
+         if (sub.substr(0,8)=="haxelib:")
+         {
+            sub = getHaxelib(sub.substr(8));
+         }
+         else
+            sub = mDefines.get(sub);
+
+         if (sub==null) sub="";
+         str = mVarMatch.matchedLeft() + sub + mVarMatch.matchedRight();
+      }
+
+      return str;
+   }
+
+   public function valid(inEl:Fast,inSection:String):Bool
+   {
+      if (inEl.x.get("if")!=null)
+         if (!defined(inEl.x.get("if"))) return false;
+
+      if (inEl.has.unless)
+         if (defined(inEl.att.unless)) return false;
+
+      if (inEl.has.ifExists)
+         if (!FileSystem.exists( substitute(inEl.att.ifExists) )) return false;
+
+      if (inSection!="")
+      {
+         if (inEl.name!="section")
+            return false;
+         if (!inEl.has.id)
+            return false;
+         if (inEl.att.id!=inSection)
+            return false;
+      }
+
+      return true;
+   }
 }

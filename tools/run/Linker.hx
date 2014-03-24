@@ -4,7 +4,7 @@ import sys.FileSystem;
 class Linker
 {
    public var mExe:String;
-   public var mFlags : Array<String>;
+   public var mFlags:Array<String>;
    public var mOutFlag:String;
    public var mExt:String;
    public var mNamePrefix:String;
@@ -12,7 +12,7 @@ class Linker
    public var mRanLib:String;
    public var mFromFile:String;
    public var mLibs:Array<String>;
-   public var mExpandArchives : Bool;
+   public var mExpandArchives:Bool;
    public var mRecreate:Bool;
 
    public function new(inExe:String)
@@ -29,6 +29,23 @@ class Linker
       mLibs = [];
       mRecreate = false;
    }
+
+   function isOutOfDate(inName:String, inObjs:Array<String>)
+   {
+      if (!FileSystem.exists(inName))
+         return true;
+      var stamp = FileSystem.stat(inName).mtime.getTime();
+      for(obj in inObjs)
+      {
+         if (!FileSystem.exists(obj))
+            throw "Could not find " + obj + " required by " + inName;
+         var obj_stamp =  FileSystem.stat(obj).mtime.getTime();
+         if (obj_stamp > stamp)
+            return true;
+      }
+      return false;
+   }
+
    public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler)
    {
       var ext = inTarget.mExt=="" ? mExt : inTarget.mExt;
@@ -88,7 +105,6 @@ class Linker
          }
       }
 
-
       if (isOutOfDateLibs || isOutOfDate(out_name,inObjs) || isOutOfDate(out_name,inTarget.mDepends))
       {
          var args = new Array<String>();
@@ -117,7 +133,6 @@ class Linker
 
          args = args.concat(mFlags).concat(inTarget.mFlags);
 
-
          var objs = inObjs.copy();
 
          if (mExpandArchives)
@@ -144,7 +159,6 @@ class Linker
             }
             libs = libArgs;
          }
-
 
          // Place list of obj files in a file called "all_objs"
          if (mFromFile=="@")
@@ -182,20 +196,5 @@ class Linker
       }
 
       return "";
-   }
-   function isOutOfDate(inName:String, inObjs:Array<String>)
-   {
-      if (!FileSystem.exists(inName))
-         return true;
-      var stamp = FileSystem.stat(inName).mtime.getTime();
-      for(obj in inObjs)
-      {
-         if (!FileSystem.exists(obj))
-            throw "Could not find " + obj + " required by " + inName;
-         var obj_stamp =  FileSystem.stat(obj).mtime.getTime();
-         if (obj_stamp > stamp)
-            return true;
-      }
-      return false;
    }
 }

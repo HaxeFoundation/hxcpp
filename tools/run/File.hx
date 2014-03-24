@@ -2,6 +2,14 @@ import sys.FileSystem;
 
 class File
 {
+   static var mFileHashes = new Map<String,String>();
+   public var mName:String;
+   public var mDir:String;
+   public var mDependHash:String;
+   public var mDepends:Array<String>;
+   public var mCompilerFlags:Array<String>;
+   public var mGroup:FileGroup;
+   
    public function new(inName:String, inGroup:FileGroup)
    {
       mName = inName;
@@ -12,6 +20,7 @@ class File
       mDepends = [];
       mCompilerFlags = [];
    }
+   
    public function computeDependHash()
    {
       mDependHash = "";
@@ -54,11 +63,4 @@ class File
       }
       return false;
    }
-   static var mFileHashes = new Map<String,String>();
-   public var mName:String;
-   public var mDir:String;
-   public var mDependHash:String;
-   public var mDepends:Array<String>;
-   public var mCompilerFlags:Array<String>;
-   public var mGroup:FileGroup;
 }

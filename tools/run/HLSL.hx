@@ -18,15 +18,15 @@ class HLSL
 
    public function build()
    {
-	  if (!FileSystem.exists (Path.directory (target))) 
-	  {
-	     DirManager.make(Path.directory (target));
-	  }
-	  
+      if (!FileSystem.exists(Path.directory (target))) 
+      {
+         DirManager.make(Path.directory (target));
+      }
+     
       DirManager.makeFileDir(target);
 
       var srcStamp = FileSystem.stat(file).mtime.getTime();
-      if ( !FileSystem.exists(target) || FileSystem.stat(target).mtime.getTime() < srcStamp)
+      if (!FileSystem.exists(target) || FileSystem.stat(target).mtime.getTime() < srcStamp)
       {
          var exe = "fxc.exe";
          var args =  [ "/nologo", "/T", profile, file, "/Vn", variable, "/Fh", target ];

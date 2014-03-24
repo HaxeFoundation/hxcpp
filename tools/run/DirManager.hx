@@ -5,6 +5,49 @@ class DirManager
 {
    static var mMade = new Hash<Bool>();
 
+   static public function deleteExtension(inExt:String)
+   {
+      var contents = FileSystem.readDirectory(".");
+      for(item in contents)
+      {
+         if (item.length > inExt.length && item.substr(item.length-inExt.length)==inExt)
+            deleteFile(item);
+      }
+   }
+
+   static public function deleteFile(inName:String)
+   {
+      if (FileSystem.exists(inName))
+      {
+         BuildTool.log("rm " + inName);
+         FileSystem.deleteFile(inName);
+      }
+   }
+
+   static public function deleteRecurse(inDir:String)
+   {
+      if (FileSystem.exists(inDir))
+      {
+         var contents = FileSystem.readDirectory(inDir);
+         for(item in contents)
+         {
+            if (item!="." && item!="..")
+            {
+               var name = inDir + "/" + item;
+               if (FileSystem.isDirectory(name))
+                  deleteRecurse(name);
+               else
+               {
+                  BuildTool.log("rm " + name);
+                  FileSystem.deleteFile(name);
+               }
+            }
+         }
+         BuildTool.log("rmdir " + inDir);
+         FileSystem.deleteDirectory(inDir);
+      }
+   }
+
    static public function make(inDir:String)
    {
       var parts = inDir.split("/");
@@ -37,10 +80,7 @@ class DirManager
       }
       return true;
    }
-   public static function reset()
-   {
-      mMade = new Hash<Bool>();
-   }
+
    static public function makeFileDir(inFile:String)
    {
       var parts = StringTools.replace (inFile, "\\", "/").split("/");
@@ -50,47 +90,8 @@ class DirManager
       make(parts.join("/"));
    }
 
-   static public function deleteFile(inName:String)
+   public static function reset()
    {
-      if (FileSystem.exists(inName))
-      {
-         BuildTool.log("rm " + inName);
-         FileSystem.deleteFile(inName);
-      }
+      mMade = new Hash<Bool>();
    }
-
-   static public function deleteExtension(inExt:String)
-   {
-      var contents = FileSystem.readDirectory(".");
-      for(item in contents)
-      {
-         if (item.length > inExt.length && item.substr(item.length-inExt.length)==inExt)
-            deleteFile(item);
-      }
-   }
-
-   static public function deleteRecurse(inDir:String)
-   {
-      if (FileSystem.exists(inDir))
-      {
-         var contents = FileSystem.readDirectory(inDir);
-         for(item in contents)
-         {
-            if (item!="." && item!="..")
-            {
-               var name = inDir + "/" + item;
-               if (FileSystem.isDirectory(name))
-                  deleteRecurse(name);
-               else
-               {
-                  BuildTool.log("rm " + name);
-                  FileSystem.deleteFile(name);
-               }
-            }
-         }
-         BuildTool.log("rmdir " + inDir);
-         FileSystem.deleteDirectory(inDir);
-      }
-   }
-
 }

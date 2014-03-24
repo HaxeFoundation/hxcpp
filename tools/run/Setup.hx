@@ -1,10 +1,63 @@
+import haxe.io.Eof;
+import sys.io.Process;
 import sys.FileSystem;
 import BuildTool;
 
-
 class Setup
 {
-   public static function initHXCPPConfig(ioDefines:Hash<String> )
+   static function findAndroidNdkRoot(inDir:String)
+   {
+      var files:Array<String> = null;
+      try
+      {
+         files = FileSystem.readDirectory(inDir);
+      }
+      catch (e:Dynamic)
+      {
+         throw 'ANDROID_NDK_DIR "$inDir" does not point to a valid directory.';
+      }
+
+      var extract_version = ~/^android-ndk-r(\d+)([a-z]?)$/;
+      var bestMajor = 0;
+      var bestMinor = "";
+      var result = "";
+      for(file in files)
+         if (extract_version.match(file))
+         {
+            var major = Std.parseInt( extract_version.matched(1) );
+            var minor = extract_version.matched(2);
+            if ( major>bestMajor || (major==bestMajor && minor>bestMinor))
+            {
+               bestMajor = major;
+               bestMinor = minor;
+               result = inDir + "/" + file;
+            }
+         }
+
+      if (BuildTool.verbose)
+      {
+         var message = "Found NDK " + result;
+         BuildTool.println(message);
+      }
+
+      if (result=="")
+         throw 'ANDROID_NDK_DIR "$inDir" does not contain matching ndk downloads.'; 
+
+      return result;
+   }
+
+   static public function getNdkVersion(inDirName:String):Int
+   {
+      var extract_version = ~/android-ndk-r(\d+)*/;
+      if (extract_version.match(inDirName))
+      {
+         return Std.parseInt( extract_version.matched(1) );
+      }
+      //throw 'Could not deduce NDK version from "$inDirName"';
+      return 8;
+   }
+   
+   public static function initHXCPPConfig(ioDefines:Hash<String>)
    {
       var env = Sys.environment();
       // If the user has set it themselves, they mush know what they are doing...
@@ -13,9 +66,9 @@ class Setup
 
       var home = "";
       if (env.exists("HOME"))
-        home = env.get("HOME");
+         home = env.get("HOME");
       else if (env.exists("USERPROFILE"))
-        home = env.get("USERPROFILE");
+         home = env.get("USERPROFILE");
       else
       {
          Sys.println("Warning: No 'HOME' variable set - .hxcpp_config.xml might be missing.");
@@ -32,7 +85,7 @@ class Setup
          {
             try {
                if (BuildTool.verbose)
-                   BuildTool.println("Copy config: " + src + " -> " + config );
+                  BuildTool.println("Copy config: " + src + " -> " + config );
 
                sys.io.File.copy(src,config);
             } catch(e:Dynamic)
@@ -43,18 +96,57 @@ class Setup
       }
    }
 
-   static public function getNdkVersion(inDirName:String) : Int
+   public static function isRaspberryPi()
    {
-      var extract_version = ~/android-ndk-r(\d+)*/;
-      if (extract_version.match(inDirName))
-      {
-         return Std.parseInt( extract_version.matched(1) );
-      }
-      //throw 'Could not deduce NDK version from "$inDirName"';
-      return 8;
+      var proc = new Process("uname",["-a"]);
+      var str = proc.stdout.readLine();
+      proc.close();
+      return str.split(" ")[1]=="raspberrypi";
    }
 
-   static public function setupAndroidNdk(defines: Map<String,String>)
+   public static function readStderr(inCommand:String,inArgs:Array<String>)
+   {
+      var result = new Array<String>();
+      var proc = new Process(inCommand,inArgs);
+      try
+      {
+         while(true)
+         {
+            var out = proc.stderr.readLine();
+            result.push(out);
+         }
+      } catch(e:Dynamic){}
+      proc.close();
+      return result;
+   }
+
+   public static function readStdout(inCommand:String,inArgs:Array<String>)
+   {
+      var result = new Array<String>();
+      var proc = new Process(inCommand,inArgs);
+      try
+      {
+         while(true)
+         {
+            var out = proc.stdout.readLine();
+            result.push(out);
+         }
+      } catch(e:Dynamic){}
+      proc.close();
+      return result;
+   }
+
+   public static function setup(inWhat:String,ioDefines: Map<String,String>)
+   {
+      if (inWhat=="androidNdk")
+         setupAndroidNdk(ioDefines);
+      else if (inWhat=="msvc")
+         setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"));
+      else
+         throw 'Unknown setup feature $inWhat';
+   }
+
+   static public function setupAndroidNdk(defines:Map<String,String>)
    {
      var root:String = null;
 
@@ -176,67 +268,6 @@ class Setup
      }
    }
 
-
-   static function findAndroidNdkRoot(inDir:String)
-   {
-      var files:Array<String> = null;
-      try
-      {
-         files = FileSystem.readDirectory(inDir);
-      }
-      catch (e:Dynamic)
-      {
-         throw 'ANDROID_NDK_DIR "$inDir" does not point to a valid directory.';
-      }
-
-      var extract_version = ~/^android-ndk-r(\d+)([a-z]?)$/;
-      var bestMajor = 0;
-      var bestMinor = "";
-      var result = "";
-      for(file in files)
-         if (extract_version.match(file))
-         {
-            var major = Std.parseInt( extract_version.matched(1) );
-            var minor = extract_version.matched(2);
-            if ( major>bestMajor || (major==bestMajor && minor>bestMinor))
-            {
-               bestMajor = major;
-               bestMinor = minor;
-               result = inDir + "/" + file;
-            }
-         }
-
-
-      if (BuildTool.verbose)
-      {
-         var message = "Found NDK " + result;
-         BuildTool.println(message);
-      }
-
-      if (result=="")
-         throw 'ANDROID_NDK_DIR "$inDir" does not contain matching ndk downloads.'; 
-
-      return result;
-   }
-
-   public static function setup(inWhat:String,ioDefines: Map<String,String>)
-   {
-      if (inWhat=="androidNdk")
-         setupAndroidNdk(ioDefines);
-      else if (inWhat=="msvc")
-         setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"));
-      else
-         throw 'Unknown setup feature $inWhat';
-   }
-
-   static function toPath(inPath:String)
-   {
-      if (!BuildTool.isWindows)
-         return inPath;
-      var bits = inPath.split("/");
-      return bits.join("\\");
-   }
-   
    public static function setupBlackBerryNativeSDK(ioDefines:Hash<String>)
    {
       if (ioDefines.exists ("BLACKBERRY_NDK_ROOT") && (!ioDefines.exists("QNX_HOST") || !ioDefines.exists("QNX_TARGET")))
@@ -263,11 +294,11 @@ class Setup
                   switch (name)
                   {
                      case "QNX_HOST", "QNX_TARGET", "QNX_HOST_VERSION", "QNX_TARGET_VERSION":
-                     	var value = split[1];
-                     	if (StringTools.startsWith (value, "${") && split.length > 2)
-                     	{
-                     		value = split[2].substr (0, split[2].length - 1);
-                     	}
+                        var value = split[1];
+                        if (StringTools.startsWith (value, "${") && split.length > 2)
+                        {
+                           value = split[2].substr (0, split[2].length - 1);
+                        }
                         if (StringTools.startsWith(value, "\""))
                         {
                            value = value.substr (1);
@@ -287,7 +318,7 @@ class Setup
                         {
                            value = StringTools.replace (value, "$QNX_HOST_VERSION", Sys.getEnv("QNX_HOST_VERSION"));
                            value = StringTools.replace (value, "$QNX_TARGET_VERSION", Sys.getEnv("QNX_TARGET_VERSION"));
-						   value = StringTools.replace (value, "%QNX_HOST_VERSION%", Sys.getEnv("QNX_HOST_VERSION"));
+                           value = StringTools.replace (value, "%QNX_HOST_VERSION%", Sys.getEnv("QNX_HOST_VERSION"));
                            value = StringTools.replace (value, "%QNX_TARGET_VERSION%", Sys.getEnv("QNX_TARGET_VERSION"));
                         }
                         ioDefines.set(name,value);
@@ -295,14 +326,14 @@ class Setup
                   }
                }
             }
-            catch( ex:haxe.io.Eof ) 
+            catch( ex:Eof ) 
             {}
             fin.close();
          }
       }
    }
 
-   public static function setupMSVC(ioDefines:Hash<String>, in64:Bool )
+   public static function setupMSVC(ioDefines:Hash<String>, in64:Bool)
    {
       var detectMsvc = !ioDefines.exists("NO_AUTO_MSVC") &&
                        !ioDefines.exists("HXCPP_MSVC_CUSTOM");
@@ -351,7 +382,7 @@ class Setup
             xpCompat = true;
          }
 
-         var vc_setup_proc = new sys.io.Process("cmd.exe", ["/C", BuildTool.HXCPP + "build-tool\\msvc" + extra + "-setup.bat" ]);
+         var vc_setup_proc = new Process("cmd.exe", ["/C", BuildTool.HXCPP + "build-tool\\msvc" + extra + "-setup.bat" ]);
          var vars_found = false;
          var error_string = "";
          var output = new Array<String>();
@@ -384,90 +415,55 @@ class Setup
                   }
                }
             }
-          } catch (e:Dynamic) {
-          };
+         } catch (e:Dynamic) {
+         };
 
-          vc_setup_proc.close();
-          if (!vars_found || error_string!="")
-          {
-             for(o in output)
-                BuildTool.println(o);
-             if (error_string!="")
-                throw(error_string);
-             else
-                BuildTool.println("Missing HXCPP_VARS");
+         vc_setup_proc.close();
+         if (!vars_found || error_string!="")
+         {
+            for(o in output)
+               BuildTool.println(o);
+            if (error_string!="")
+               throw(error_string);
+            else
+               BuildTool.println("Missing HXCPP_VARS");
 
-             throw("Could not automatically setup MSVC");
-          }
-       }
-      
-   
-       try
-       {
-          var proc = new sys.io.Process("cl.exe",[]);
-          var str = proc.stderr.readLine();
-          proc.close();
-          if (str>"")
-          {
-             var reg = ~/Version\s+(\d+)/i;
-             if (reg.match(str))
-             {
-                var cl_version = Std.parseInt(reg.matched(1));
-                if (BuildTool.verbose)
-                   BuildTool.println("Using msvc cl version " + cl_version);
-                ioDefines.set("MSVC_VER", cl_version+"");
-                if (cl_version>=17)
-                   ioDefines.set("MSVC17+","1");
-                if (cl_version>=18)
-                   ioDefines.set("MSVC18+","1");
-                BuildTool.sAllowNumProcs = cl_version >= 14;
-                if (Std.parseInt(ioDefines.get("HXCPP_COMPILE_THREADS"))>1 && cl_version>=18)
-                    ioDefines.set("HXCPP_FORCE_PDB_SERVER","1");
-             }
-           }
-       } catch(e:Dynamic){}
-            //if (cl_version!="") BuildTool.println("Using cl version: " + cl_version);
-    }
+            throw("Could not automatically setup MSVC");
+         }
+      }
 
-   public static function isRaspberryPi()
-   {
-      var proc = new sys.io.Process("uname",["-a"]);
-      var str = proc.stdout.readLine();
-      proc.close();
-      return str.split(" ")[1]=="raspberrypi";
-   }
-
-   public static function readStderr(inCommand:String,inArgs:Array<String>)
-   {
-      var result = new Array<String>();
-      var proc = new sys.io.Process(inCommand,inArgs);
       try
       {
-         while(true)
+         var proc = new Process("cl.exe",[]);
+         var str = proc.stderr.readLine();
+         proc.close();
+         if (str>"")
          {
-            var out = proc.stderr.readLine();
-            result.push(out);
+            var reg = ~/Version\s+(\d+)/i;
+            if (reg.match(str))
+            {
+               var cl_version = Std.parseInt(reg.matched(1));
+               if (BuildTool.verbose)
+                  BuildTool.println("Using msvc cl version " + cl_version);
+               ioDefines.set("MSVC_VER", cl_version+"");
+               if (cl_version>=17)
+                  ioDefines.set("MSVC17+","1");
+               if (cl_version>=18)
+                  ioDefines.set("MSVC18+","1");
+               BuildTool.sAllowNumProcs = cl_version >= 14;
+               if (Std.parseInt(ioDefines.get("HXCPP_COMPILE_THREADS"))>1 && cl_version>=18)
+                  ioDefines.set("HXCPP_FORCE_PDB_SERVER","1");
+            }
          }
       } catch(e:Dynamic){}
-      proc.close();
-      return result;
+      //if (cl_version!="") BuildTool.println("Using cl version: " + cl_version);
    }
 
-   public static function readStdout(inCommand:String,inArgs:Array<String>)
+   static function toPath(inPath:String)
    {
-      var result = new Array<String>();
-      var proc = new sys.io.Process(inCommand,inArgs);
-      try
-      {
-         while(true)
-         {
-            var out = proc.stdout.readLine();
-            result.push(out);
-         }
-      } catch(e:Dynamic){}
-      proc.close();
-      return result;
+      if (!BuildTool.isWindows)
+         return inPath;
+      var bits = inPath.split("/");
+      return bits.join("\\");
    }
-
 }
-

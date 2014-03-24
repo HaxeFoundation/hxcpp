@@ -1,14 +1,16 @@
+import haxe.crypto.Md5;
+import haxe.io.Path;
 import sys.FileSystem;
 
 class Compiler
 {
-   public var mFlags : Array<String>;
-   public var mCFlags : Array<String>;
-   public var mMMFlags : Array<String>;
-   public var mCPPFlags : Array<String>;
-   public var mOBJCFlags : Array<String>;
-   public var mPCHFlags : Array<String>;
-   public var mAddGCCIdentity: Bool;
+   public var mFlags:Array<String>;
+   public var mCFlags:Array<String>;
+   public var mMMFlags:Array<String>;
+   public var mCPPFlags:Array<String>;
+   public var mOBJCFlags:Array<String>;
+   public var mPCHFlags:Array<String>;
+   public var mAddGCCIdentity:Bool;
    public var mExe:String;
    public var mOutFlag:String;
    public var mObjDir:String;
@@ -69,20 +71,96 @@ class Compiler
       }
    }
 
-   public function setPCH(inPCH:String)
+   public function compile(inFile:File,inTid:Int)
    {
-      mPCH = inPCH;
-      if (mPCH=="gcc")
-      {
-          mPCHExt = ".h.gch";
-          mPCHUse = "";
-          mPCHFilename = "";
-      }
-   }
+      var path = new Path(mObjDir + "/" + inFile.mName);
+      var obj_name = getObjName(inFile);
 
-   public function needsPchObj()
-   {
-      return !mCached && mPCH!="gcc";
+      var args = new Array<String>();
+      
+      args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
+
+      var ext = path.ext.toLowerCase();
+      addIdentity(ext,args);
+
+      var allowPch = false;
+      if (ext=="c")
+         args = args.concat(mCFlags);
+      else if (ext=="m")
+         args = args.concat(mOBJCFlags);
+      else if (ext=="mm")
+         args = args.concat(mMMFlags);
+      else if (ext=="cpp" || ext=="c++")
+      {
+         allowPch = true;
+         args = args.concat(mCPPFlags);
+      }
+
+      if (!mCached && inFile.mGroup.mPrecompiledHeader!="" && allowPch)
+      {
+         var pchDir = inFile.mGroup.getPchDir();
+         if (mPCHUse!="")
+         {
+            args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
+            args.push(mPCHFilename + mObjDir + "/" + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
+         }
+         else
+            args.unshift("-I"+mObjDir + "/" + pchDir);
+      }
+
+      var found = false;
+      var cacheName:String = null;
+      if (mCompilerVersion!=null)
+      {
+         var sourceName = inFile.mDir + inFile.mName;
+         var contents = sys.io.File.getContent(sourceName);
+         if (contents!="")
+         {
+            var md5 = haxe.crypto.Md5.encode(contents + args.join(" ") +
+                inFile.mGroup.mDependHash + mCompilerVersion + inFile.mDependHash );
+            cacheName = BuildTool.compileCache + "/" + md5;
+            if (FileSystem.exists(cacheName))
+            {
+               sys.io.File.copy(cacheName, obj_name);
+               BuildTool.println("use cache for " + obj_name + "(" + md5 + ")" );
+               found = true;
+            }
+            else
+            {
+               BuildTool.log(" not in cache " + cacheName);
+            }
+         }
+         else
+            throw "Unkown source contents " + sourceName;
+      }
+
+      if (!found)
+      {
+         args.push( (new Path( inFile.mDir + inFile.mName)).toString() );
+
+         var out = mOutFlag;
+         if (out.substr(-1)==" ")
+         {
+            args.push(out.substr(0,out.length-1));
+            out = "";
+         }
+
+         args.push(out + obj_name);
+         var result = BuildTool.runCommand( mExe, args, true, inTid>=0 );
+         if (result!=0)
+         {
+            if (FileSystem.exists(obj_name))
+               FileSystem.deleteFile(obj_name);
+            throw "Error : " + result + " - build cancelled";
+         }
+         if (cacheName!=null)
+         {
+           sys.io.File.copy(obj_name, cacheName );
+           BuildTool.log(" caching " + cacheName);
+         }
+      }
+
+      return obj_name;
    }
 
    public function createCompilerVersion(inGroup:FileGroup)
@@ -111,6 +189,19 @@ class Compiler
       }
 
       return mCached;
+   }
+
+   public function getObjName(inFile:File)
+   {
+      var path = new Path(inFile.mName);
+      var dirId = Md5.encode(BuildTool.targetKey + path.dir).substr(0,8) + "_";
+
+      return mObjDir + "/" + dirId + path.file + mExt;
+   }
+
+   public function needsPchObj()
+   {
+      return !mCached && mPCH!="gcc";
    }
 
    public function precompile(inObjDir:String,inGroup:FileGroup)
@@ -149,7 +240,6 @@ class Compiler
          args.push( inGroup.mPrecompiledHeaderDir + "/" + inGroup.mPrecompiledHeader + ".h" );
       }
 
-
       BuildTool.println("Creating " + pch_name + "...");
       var result = BuildTool.runCommand( mExe, args, true, false );
       if (result!=0)
@@ -160,106 +250,14 @@ class Compiler
       }
    }
 
-   public function getObjName(inFile:File)
+   public function setPCH(inPCH:String)
    {
-      var path = new haxe.io.Path(inFile.mName);
-      var dirId =
-         haxe.crypto.Md5.encode(BuildTool.targetKey + path.dir).substr(0,8) + "_";
-
-      return mObjDir + "/" + dirId + path.file + mExt;
-   }
-
-   public function compile(inFile:File,inTid:Int)
-   {
-      var path = new haxe.io.Path(mObjDir + "/" + inFile.mName);
-      var obj_name = getObjName(inFile);
-
-      var args = new Array<String>();
-      
-      args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
-
-      var ext = path.ext.toLowerCase();
-      addIdentity(ext,args);
-
-      var allowPch = false;
-      if (ext=="c")
-         args = args.concat(mCFlags);
-      else if (ext=="m")
-         args = args.concat(mOBJCFlags);
-      else if (ext=="mm")
-         args = args.concat(mMMFlags);
-      else if (ext=="cpp" || ext=="c++")
+      mPCH = inPCH;
+      if (mPCH=="gcc")
       {
-         allowPch = true;
-         args = args.concat(mCPPFlags);
+         mPCHExt = ".h.gch";
+         mPCHUse = "";
+         mPCHFilename = "";
       }
-
-
-      if (!mCached && inFile.mGroup.mPrecompiledHeader!="" && allowPch)
-      {
-         var pchDir = inFile.mGroup.getPchDir();
-         if (mPCHUse!="")
-         {
-            args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
-            args.push(mPCHFilename + mObjDir + "/" + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
-         }
-         else
-            args.unshift("-I"+mObjDir + "/" + pchDir);
-      }
-
-
-      var found = false;
-      var cacheName:String = null;
-      if (mCompilerVersion!=null)
-      {
-         var sourceName = inFile.mDir + inFile.mName;
-         var contents = sys.io.File.getContent(sourceName);
-         if (contents!="")
-         {
-            var md5 = haxe.crypto.Md5.encode(contents + args.join(" ") +
-                inFile.mGroup.mDependHash + mCompilerVersion + inFile.mDependHash );
-            cacheName = BuildTool.compileCache + "/" + md5;
-            if (FileSystem.exists(cacheName))
-            {
-               sys.io.File.copy(cacheName, obj_name);
-               BuildTool.println("use cache for " + obj_name + "(" + md5 + ")" );
-               found = true;
-            }
-            else
-            {
-               BuildTool.log(" not in cache " + cacheName);
-            }
-         }
-         else
-            throw "Unkown source contents " + sourceName;
-      }
-
-      if (!found)
-      {
-         args.push( (new haxe.io.Path( inFile.mDir + inFile.mName)).toString() );
-
-         var out = mOutFlag;
-         if (out.substr(-1)==" ")
-         {
-            args.push(out.substr(0,out.length-1));
-            out = "";
-         }
-
-         args.push(out + obj_name);
-         var result = BuildTool.runCommand( mExe, args, true, inTid>=0 );
-         if (result!=0)
-         {
-            if (FileSystem.exists(obj_name))
-               FileSystem.deleteFile(obj_name);
-            throw "Error : " + result + " - build cancelled";
-         }
-         if (cacheName!=null)
-         {
-           sys.io.File.copy(obj_name, cacheName );
-           BuildTool.log(" caching " + cacheName);
-         }
-      }
-
-      return obj_name;
    }
 }
