@@ -106,7 +106,7 @@ class PathManager
          
          try
          {
-            output = ProcessManager.runProcess(Sys.getEnv ("HAXEPATH"), "haxelib", [ "path", name ], true, true, true);  
+            output = ProcessManager.runProcess(Sys.getEnv ("HAXEPATH"), "haxelib", [ "path", name ]);  
          }
          catch (e:Dynamic) {}
          
@@ -198,10 +198,10 @@ class PathManager
             
             if (!directoryCache.exists (total))
             {
-               directoryCache.set(total, true);
+               //directoryCache.set(total, true);
                if (!FileSystem.exists(total))
                {
-                  LogManager.info("", " - \x1b[1mCreating directory:\x1b[0m " + total);
+                  LogManager.info("", "\x1b[1mCreating directory:\x1b[0m " + total);
                   FileSystem.createDirectory(total);
                }
             }
@@ -245,7 +245,7 @@ class PathManager
             catch (e:Dynamic) {}
          }
          
-         LogManager.info("", " - \x1b[1mRemoving directory:\x1b[0m " + directory);
+         LogManager.info("", "\x1b[1mRemoving directory:\x1b[0m " + directory);
          
          try
          {   
@@ -259,7 +259,7 @@ class PathManager
    {
       if (FileSystem.exists(file))
       {
-         LogManager.info("", " - \x1b[1mRemoving file:\x1b[0m " + file);
+         LogManager.info("", "\x1b[1mRemoving file:\x1b[0m " + file);
          FileSystem.deleteFile(file);
       }
    }
@@ -280,7 +280,7 @@ class PathManager
    }
 
    public static function standardize(path:String, trailingSlash:Bool = false):String
-   {   
+   {
       path = StringTools.replace (path, "\\", "/");
       path = StringTools.replace (path, "//", "/");
       path = StringTools.replace (path, "//", "/");

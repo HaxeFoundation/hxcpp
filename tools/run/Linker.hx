@@ -157,7 +157,7 @@ class Linker
                   var libObjs = Setup.readStdout(mExe, ["t", lib ]);
                   var objDir = inCompiler.mObjDir + "/" + libName;
                   PathManager.mkdir(objDir);
-                  ProcessManager.runCommand (objDir, mExe, ["x", lib], true, false, true);
+                  ProcessManager.runCommand (objDir, mExe, ["x", lib]);
                   for(obj in libObjs)
                      objs.push( objDir+"/"+obj );
                }
@@ -186,7 +186,7 @@ class Linker
          var exe = split.shift ();
          args = split.concat (args);
          
-         var result = ProcessManager.runCommand("", exe, args, true, false, true);
+         var result = ProcessManager.runCommand("", exe, args);
          if (result!=0)
          {
             Sys.exit(result);
@@ -196,7 +196,7 @@ class Linker
          if (mRanLib!="")
          {
             args = [out_name];
-            var result = ProcessManager.runCommand("", mRanLib, args, true, false, true);
+            var result = ProcessManager.runCommand("", mRanLib, args);
             if (result!=0)
             {
                Sys.exit(result);

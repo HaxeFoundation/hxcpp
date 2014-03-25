@@ -6,7 +6,6 @@ import sys.FileSystem;
 import neko.vm.Thread;
 import neko.vm.Mutex;
 import neko.vm.Tls;
-import neko.vm.Tls;
 #else
 import cpp.vm.Thread;
 import cpp.vm.Mutex;
@@ -39,7 +38,8 @@ class BuildTool
    public static var compileCache:String;
    public static var targetKey:String;
    public static var instance:BuildTool;
-   static var printMutex:Mutex;
+   public static var helperThread = new Tls<Thread>();
+   public static var printMutex:Mutex;
    static var mVarMatch = new EReg("\\${(.*?)}","");
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
@@ -162,7 +162,8 @@ class BuildTool
       if (target.mBuildDir!="")
       {
          restoreDir = Sys.getCwd();
-         LogManager.info("", "Enter \"" + target.mBuildDir + "\"");
+         Sys.println(target.mBuildDir);
+         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + target.mBuildDir);
          Sys.setCwd(target.mBuildDir);
       }
 
@@ -307,7 +308,7 @@ class BuildTool
       if (target.mBuildDir!="")
       {
          restoreDir = Sys.getCwd();
-         LogManager.info("", "Enter \"" + target.mBuildDir + "\"");
+         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + target.mBuildDir);
          Sys.setCwd(target.mBuildDir);
       }
 
@@ -568,10 +569,10 @@ class BuildTool
       }
       else if (isLinux)
       {
-         result = ProcessManager.runProcess("", "nproc", [], true, true, true);
+         result = ProcessManager.runProcess("", "nproc", []);
          if (result == null)
          {
-            var cpuinfo = ProcessManager.runProcess("", "cat", [ "/proc/cpuinfo" ], true, true, true);
+            var cpuinfo = ProcessManager.runProcess("", "cat", [ "/proc/cpuinfo" ]);
             if (cpuinfo != null)
             {      
                var split = cpuinfo.split("processor");
@@ -582,7 +583,7 @@ class BuildTool
       else if (isMac)
       {
          var cores = ~/Total Number of Cores: (\d+)/;
-         var output = ProcessManager.runProcess("", "/usr/sbin/system_profiler", [ "-detailLevel", "full", "SPHardwareDataType" ]);
+         var output = ProcessManager.runProcess("", "/usr/sbin/system_profiler", [ "-detailLevel", "full", "SPHardwareDataType" ], true, false);
          if (cores.match(output))
          {
             result = cores.matched(1); 
@@ -905,7 +906,7 @@ class BuildTool
 
       if (defines.exists("apple") && !defines.exists("DEVELOPER_DIR"))
       {
-         var developer_dir = ProcessManager.runProcess("", "xcode-select", ["--print-path"]);
+         var developer_dir = ProcessManager.runProcess("", "xcode-select", ["--print-path"], true, false);
          if (developer_dir == null || developer_dir == "" || developer_dir.indexOf ("Run xcode-select") > -1)
             developer_dir = "/Applications/Xcode.app/Contents/Developer";
          if (developer_dir == "/Developer")

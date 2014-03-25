@@ -33,7 +33,7 @@ class HLSL
          
          LogManager.info("", exe + " " + args.join(" "));
          
-         var result = ProcessManager.runCommand("", exe, args);
+         var result = ProcessManager.runCommand("", exe, args, false);
          if (result!=0)
          {
             LogManager.error("Could not compile shader \"" + file + "\"");

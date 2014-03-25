@@ -19,7 +19,7 @@ class Stripper
       var exe = split.shift();
       args = split.concat(args);
 
-      var result = ProcessManager.runCommand("", exe, args, true, false, true);
+      var result = ProcessManager.runCommand("", exe, args);
       if (result!=0)
       {
          Sys.exit(result);

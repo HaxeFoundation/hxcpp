@@ -87,7 +87,7 @@ class LogManager
          }
       }
       
-      if (colorSupported)
+      if (true || colorSupported)
       {
          return output;
       }

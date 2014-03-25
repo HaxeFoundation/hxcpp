@@ -151,7 +151,7 @@ class Compiler
          
          if (inTid >= 0)
          {
-            ProcessManager.runProcess("", exe, args);
+            ProcessManager.runProcessThreaded("", exe, args);
          }
          else
          {
@@ -255,7 +255,7 @@ class Compiler
       var exe = split.shift ();
       args = split.concat (args);
       
-      var result = ProcessManager.runCommand("", exe, args, true, false, true);
+      var result = ProcessManager.runCommand("", exe, args);
       if (result!=0)
       {
          if (FileSystem.exists(pch_name))

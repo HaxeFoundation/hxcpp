@@ -3,26 +3,41 @@ import haxe.io.Eof;
 import haxe.io.Path;
 import sys.io.Process;
 import sys.FileSystem;
+#if neko
+import neko.vm.Thread;
+#else
+import cpp.vm.Thread;
+#end
 
 class ProcessManager
-{  
-   public static function runCommand(path:String, command:String, args:Array<String>, safeExecute:Bool = true, ignoreErrors:Bool = false, print:Bool = false):Int
+{
+   private static function printCommand(command:String, args:Array<String>):Void
    {
-      if (print)
+      var message = "\x1b[34;1m" + command + "\x1b[0m";
+      for (arg in args)
       {
-         var message = command;
-         for (arg in args)
+         if (StringTools.endsWith(arg, ".cpp") || StringTools.endsWith(arg, ".h"))
          {
-            if (arg.indexOf(" ") > -1)
-            {
-               message += " \"" + arg + "\"";
-            }
-            else
-            {
-               message += " " + arg;
-            }
+            arg = "\x1b[1m" + arg + "\x1b[0m";
          }
-         LogManager.info(message);
+         
+         if (arg.indexOf(" ") > -1)
+         {
+            message += " \"" + arg + "\"";
+         }
+         else
+         {
+            message += " " + arg;
+         }
+      }
+      LogManager.info(message);
+   }
+
+   public static function runCommand(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):Int
+   {
+      if (print && !LogManager.verbose)
+      {
+         printCommand(command, args);
       }
       
       command = PathManager.escape(command);
@@ -54,23 +69,11 @@ class ProcessManager
       }
    }
 
-   public static function runProcess(path:String, command:String, args:Array<String>, waitForOutput:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false, print:Bool = false):String
+   public static function runProcess(path:String, command:String, args:Array<String>, waitForOutput:Bool = true, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):String
    {
-      if (print)
+      if (print && !LogManager.verbose)
       {
-         var message = command;
-         for (arg in args)
-         {
-            if (arg.indexOf(" ") > -1)
-            {
-               message += " \"" + arg + "\"";
-            }
-            else
-            {
-               message += " " + arg;
-            }
-         }
-         LogManager.info(message);
+         printCommand(command, args);
       }
       
       command = PathManager.escape(command);
@@ -100,13 +103,47 @@ class ProcessManager
       }
    }
    
+   public static function runProcessThreaded(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):Int
+   {
+      if (print && !LogManager.verbose)
+      {
+         printCommand(command, args);
+      }
+      
+      command = PathManager.escape(command);
+      
+      if (safeExecute)
+      {
+         try
+         {
+            if (path != null && path != "" && !FileSystem.exists(FileSystem.fullPath(path)) && !FileSystem.exists(FileSystem.fullPath(new Path(path).dir)))
+            {
+               LogManager.error("The specified target path \"" + path + "\" does not exist");
+            }
+            return _runProcessThreaded(path, command, args, ignoreErrors);
+         }
+         catch (e:Dynamic)
+         {
+            if (!ignoreErrors)
+            {
+               LogManager.error("", e);
+            }
+            return null;
+         }
+      }
+      else
+      {  
+         return _runProcessThreaded(path, command, args, ignoreErrors);   
+      }
+   }
+   
    private static function _runCommand(path:String, command:String, args:Array<String>):Int
    {
       var oldPath:String = "";
       
       if (path != null && path != "")
       {  
-         LogManager.info("", " - \x1b[1mChanging directory:\x1b[0m " + path + "");
+         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + path + "");
          
          oldPath = Sys.getCwd();
          Sys.setCwd(path);
@@ -126,7 +163,7 @@ class ProcessManager
          }
       }
       
-      LogManager.info("", " - \x1b[1mRunning command:\x1b[0m " + command + argString);
+      LogManager.info("", "\x1b[1mRunning command:\x1b[0m " + command + argString);
       
       var result = 0;
       
@@ -158,7 +195,7 @@ class ProcessManager
       
       if (path != null && path != "")
       {
-         LogManager.info("", " - \x1b[1mChanging directory:\x1b[0m " + path + "");
+         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + path + "");
          
          oldPath = Sys.getCwd();
          Sys.setCwd(path);
@@ -178,7 +215,7 @@ class ProcessManager
          }
       }
       
-      LogManager.info("", " - \x1b[1mRunning process:\x1b[0m " + command + argString);
+      LogManager.info("", "\x1b[1mRunning process:\x1b[0m " + command + argString);
       
       var output = "";
       var result = 0;
@@ -240,5 +277,104 @@ class ProcessManager
       }
       
       return output;
+   }
+
+   private static function _runProcessThreaded(path:String, command:String, args:Array<String>, ignoreErrors:Bool):Int
+   {
+      var oldPath:String = "";
+      
+      if (path != null && path != "")
+      {
+         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + path + "");
+         
+         oldPath = Sys.getCwd();
+         Sys.setCwd(path);
+      }
+      
+      var argString = "";
+      
+      for (arg in args)
+      {
+         if (arg.indexOf(" ") > -1)
+         {
+            argString += " \"" + arg + "\"";
+         }
+         else
+         {
+            argString += " " + arg;
+         }
+      }
+      
+      LogManager.info("", "\x1b[1mRunning process:\x1b[0m " + command + argString);
+      
+      var output = new Array<String>();
+      var process = new Process(command, args);
+      var err = process.stderr;
+      var out = process.stdout;
+      var reader = BuildTool.helperThread.value;
+      
+      // Read stderr in separate thread to avoid blocking
+      if (reader==null)
+      {
+         var controller = Thread.current();
+         BuildTool.helperThread.value = reader = Thread.create(function()
+         {
+            while(true)
+            {
+               var stream = Thread.readMessage(true);
+               var output:Array<String> = null;
+               try
+               {
+                  while(true)
+                  {
+                     var line = stream.readLine();
+                     if (output==null)
+                        output = [ line ];
+                     else
+                        output.push(line);
+                  }
+               }
+               catch(e:Dynamic){ }
+               controller.sendMessage(output);
+            }
+         });
+      }
+      
+      // Start-up the error reader
+      reader.sendMessage(err);
+
+      try
+      {
+         while(true)
+         {
+            var line = out.readLine();
+            output.push(line);
+         }
+      }
+      catch(e:Dynamic){ }
+
+      var errOut:Array<String> = Thread.readMessage(true);
+      
+      var code = process.exitCode();
+      process.close();
+      
+      if (code > 0 && !ignoreErrors)
+      {
+         LogManager.error(errOut.join ("\n"));
+      }
+      
+      if (errOut!=null && errOut.length>0)
+         output = output.concat(errOut);
+         
+      if (output.length>0)
+      {
+         if (BuildTool.printMutex!=null)
+            BuildTool.printMutex.acquire();
+         LogManager.info(output.join("\n"));
+         if (BuildTool.printMutex!=null)
+            BuildTool.printMutex.release();
+      }
+      
+      return code;
    }
 }
