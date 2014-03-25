@@ -6,7 +6,7 @@ import neko.Lib;
 import cpp.Lib;
 #end
 
-class LogManager
+class Log
 {
    public static var mute:Bool;
    public static var verbose:Bool = false;

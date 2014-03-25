@@ -14,7 +14,7 @@ class Setup
       }
       catch (e:Dynamic)
       {
-         LogManager.error('ANDROID_NDK_DIR "$inDir" does not point to a valid directory');
+         Log.error('ANDROID_NDK_DIR "$inDir" does not point to a valid directory');
          //throw 'ANDROID_NDK_DIR "$inDir" does not point to a valid directory.';
       }
 
@@ -35,11 +35,11 @@ class Setup
             }
          }
       
-      LogManager.info("", "Found NDK " + result);
+      Log.info("", "Found NDK " + result);
 
       if (result=="")
       {
-         LogManager.error('ANDROID_NDK_DIR "$inDir" does not contain matching NDK downloads'); 
+         Log.error('ANDROID_NDK_DIR "$inDir" does not contain matching NDK downloads'); 
          //throw 'ANDROID_NDK_DIR "$inDir" does not contain matching ndk downloads.'; 
       }
 
@@ -71,7 +71,7 @@ class Setup
          home = env.get("USERPROFILE");
       else
       {
-         LogManager.warn("No $HOME variable set, \".hxcpp_config.xml\" might be missing");
+         Log.warn("No $HOME variable set, \".hxcpp_config.xml\" might be missing");
          //Sys.println("Warning: No 'HOME' variable set - .hxcpp_config.xml might be missing.");
          return;
       }
@@ -86,12 +86,12 @@ class Setup
          {
             try
             {
-               LogManager.info("", "Copying HXCPP config \"" + src + "\" to \"" + config + "\"");
+               Log.info("", "Copying HXCPP config \"" + src + "\" to \"" + config + "\"");
                sys.io.File.copy(src,config);
             }
             catch(e:Dynamic)
             {
-               LogManager.warn("Could not create HXCPP config \"" + config + "\"");
+               Log.warn("Could not create HXCPP config \"" + config + "\"");
                //Sys.println("Warning : could not create config: " + config );
             }
          }
@@ -150,7 +150,7 @@ class Setup
       }
       else
       {
-         LogManager.error('Unknown setup feature "$inWhat"');
+         Log.error('Unknown setup feature "$inWhat"');
          //throw 'Unknown setup feature $inWhat';
       }
    }
@@ -164,21 +164,21 @@ class Setup
          if (defines.exists("ANDROID_NDK_DIR"))
          {
             root = Setup.findAndroidNdkRoot( defines.get("ANDROID_NDK_DIR") );
-            LogManager.info("", "Using found NDK root \"" + root + "\"");
+            Log.info("", "Using found NDK root \"" + root + "\"");
 
             Sys.putEnv("ANDROID_NDK_ROOT", root);
             defines.set("ANDROID_NDK_ROOT", root);
          }
          else
          {
-            LogManager.error("Could not find ANDROID_NDK_ROOT or ANDROID_NDK_DIR variable");
+            Log.error("Could not find ANDROID_NDK_ROOT or ANDROID_NDK_DIR variable");
             //throw "ANDROID_NDK_ROOT or ANDROID_NDK_DIR should be set";
          }
       }
       else
       {
          root = defines.get("ANDROID_NDK_ROOT");
-         LogManager.info("", "Using specified NDK root \"" + root + "\"");
+         Log.info("", "Using specified NDK root \"" + root + "\"");
       }
 
       // Find toolchain
@@ -205,7 +205,7 @@ class Setup
             if (bestVer!="")
             {
                defines.set("TOOLCHAIN_VERSION",bestVer);
-               LogManager.info("", "Found TOOLCHAIN_VERSION " + bestVer);
+               Log.info("", "Found TOOLCHAIN_VERSION " + bestVer);
             }
          }
          catch(e:Dynamic) { }
@@ -219,11 +219,11 @@ class Setup
          if (files.length==1)
          {
             defines.set("ANDROID_HOST", files[0]);
-            LogManager.info("", "Found ANDROID_HOST " + files[0]);
+            Log.info("", "Found ANDROID_HOST " + files[0]);
          }
          else
          {
-            LogManager.info("", "Could not work out ANDROID_HOST (" + files + ") - using default");
+            Log.info("", "Could not work out ANDROID_HOST (" + files + ") - using default");
          }
       }
       catch(e:Dynamic) { }
@@ -233,19 +233,19 @@ class Setup
          if (defines.exists("NDKV" + i))
          {
             found = true;
-            LogManager.info("", "Using specified android NDK " + i);
+            Log.info("", "Using specified android NDK " + i);
             break;
          }
       if (!found)
       {
          var version = Setup.getNdkVersion( defines.get("ANDROID_NDK_ROOT") );
-         LogManager.info("", "Deduced android NDK " + version);
+         Log.info("", "Deduced android NDK " + version);
          defines.set("NDKV" + version, "1" );
       }
 
       if (defines.exists("PLATFORM"))
       {
-         LogManager.info("", "Using specified android PLATFORM " + defines.get("PLATFORM"));
+         Log.info("", "Using specified android PLATFORM " + defines.get("PLATFORM"));
       }
       else
       {
@@ -266,11 +266,11 @@ class Setup
 
          if (best==0)
          {
-            LogManager.error("Could not find NDK platform in \"" + base + "\"");
+            Log.error("Could not find NDK platform in \"" + base + "\"");
             //throw "Could not find platform in " + base;
          }
 
-         LogManager.info("", "Using newest NDK platform: " + best);
+         Log.info("", "Using newest NDK platform: " + best);
          defines.set("PLATFORM", "android-" + best);
       }
    }
@@ -363,20 +363,20 @@ class Setup
                   {
                      if (env.substr(0,2)=="VS")
                      {
-                        LogManager.info("Found VS variable: " + env);
+                        Log.info("Found VS variable: " + env);
                         //Sys.println("Found VS variable " + env);
                      }
                   }
-                  LogManager.error("Could not find specified MSCV version: " + ival);
+                  Log.error("Could not find specified MSCV version: " + ival);
                   //throw "Could not find specified MSCV version " + ival;
                }
                ioDefines.set("HXCPP_MSVC", where );
                Sys.putEnv("HXCPP_MSVC", where);
-               LogManager.info("", 'Using MSVC Ver $ival in $where ($varName)');
+               Log.info("", 'Using MSVC Ver $ival in $where ($varName)');
             }
             else
             {
-               LogManager.info("", 'Using specified MSVC Ver $val');
+               Log.info("", 'Using specified MSVC Ver $val');
                ioDefines.set("HXCPP_MSVC", val );
                Sys.putEnv("HXCPP_MSVC", val);
             }
@@ -434,21 +434,21 @@ class Setup
          {
             for(o in output)
             {
-               LogManager.info(o);
+               Log.info(o);
                //BuildTool.println(o);
             }
             if (error_string!="")
             {
-               LogManager.error (error_string);
+               Log.error (error_string);
                //throw(error_string);
             }
             else
             {
-               LogManager.info("Missing HXCPP_VARS");
+               Log.info("Missing HXCPP_VARS");
                //BuildTool.println("Missing HXCPP_VARS");
             }
             
-            LogManager.error("Could not automatically setup MSVC");
+            Log.error("Could not automatically setup MSVC");
             //throw("Could not automatically setup MSVC");
          }
       }
@@ -464,7 +464,7 @@ class Setup
             if (reg.match(str))
             {
                var cl_version = Std.parseInt(reg.matched(1));
-               LogManager.info("", "Using msvc cl version " + cl_version);
+               Log.info("", "Using msvc cl version " + cl_version);
                ioDefines.set("MSVC_VER", cl_version+"");
                if (cl_version>=17)
                   ioDefines.set("MSVC17+","1");

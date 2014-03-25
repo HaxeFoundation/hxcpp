@@ -100,17 +100,17 @@ class PathManager
       
       if (!haxelibPaths.exists(name))
       {
-         var cache = LogManager.verbose;
-         LogManager.verbose = false;
+         var cache = Log.verbose;
+         Log.verbose = false;
          var output = "";
          
          try
          {
-            output = ProcessManager.runProcess(Sys.getEnv ("HAXEPATH"), "haxelib", [ "path", name ]);  
+            output = ProcessManager.runProcess(Sys.getEnv ("HAXEPATH"), "haxelib", [ "path", name ], true, false);  
          }
          catch (e:Dynamic) {}
          
-         LogManager.verbose = cache;
+         Log.verbose = cache;
          
          var lines = output.split("\n");
          var result = "";
@@ -143,17 +143,17 @@ class PathManager
                      directoryName = BuildTool.is64 ? "Linux64" : "Linux";
                   }
                   
-                  LogManager.error ("haxelib \"" + haxelib + "\" does not have an \"ndll/" + directoryName + "\" directory");
+                  Log.error ("haxelib \"" + haxelib + "\" does not have an \"ndll/" + directoryName + "\" directory");
                }
                else
                {
                   if (version != "")
                   {
-                     LogManager.error("Could not find haxelib \"" + haxelib + "\" version \"" + version + "\", does it need to be installed?");
+                     Log.error("Could not find haxelib \"" + haxelib + "\" version \"" + version + "\", does it need to be installed?");
                   }
                   else
                   {
-                     LogManager.error("Could not find haxelib \"" + haxelib + "\", does it need to be installed?");
+                     Log.error("Could not find haxelib \"" + haxelib + "\", does it need to be installed?");
                   }
                }
             }
@@ -201,7 +201,7 @@ class PathManager
                //directoryCache.set(total, true);
                if (!FileSystem.exists(total))
                {
-                  LogManager.info("", "\x1b[1mCreating directory:\x1b[0m " + total);
+                  Log.info("", " - \x1b[1mCreating directory:\x1b[0m " + total);
                   FileSystem.createDirectory(total);
                }
             }
@@ -245,7 +245,7 @@ class PathManager
             catch (e:Dynamic) {}
          }
          
-         LogManager.info("", "\x1b[1mRemoving directory:\x1b[0m " + directory);
+         Log.info("", " - \x1b[1mRemoving directory:\x1b[0m " + directory);
          
          try
          {   
@@ -259,7 +259,7 @@ class PathManager
    {
       if (FileSystem.exists(file))
       {
-         LogManager.info("", "\x1b[1mRemoving file:\x1b[0m " + file);
+         Log.info("", " - \x1b[1mRemoving file:\x1b[0m " + file);
          FileSystem.deleteFile(file);
       }
    }

@@ -1,5 +1,6 @@
 import haxe.io.Path;
 import haxe.xml.Fast;
+import haxe.Json;
 import sys.io.Process;
 import sys.FileSystem;
 #if neko
@@ -58,7 +59,7 @@ class BuildTool
       try {
          make_contents = sys.io.File.getContent(inMakefile);
       } catch (e:Dynamic) {
-         LogManager.error("Could not open build file \"" + inMakefile + "\"");
+         Log.error("Could not open build file \"" + inMakefile + "\"");
          //println("Could not open build file '" + inMakefile + "'");
          //Sys.exit(1);
       }
@@ -91,20 +92,20 @@ class BuildTool
          }
          else
          {
-            LogManager.error("Could not find compiler cache \"" + compileCache + "\"");
+            Log.error("Could not find compiler cache \"" + compileCache + "\"");
             //throw "Could not find compiler cache: " + compileCache;
          }
       }
 
       if (useCache && (!mDefines.exists("haxe_ver") && !mDefines.exists("HXCPP_DEPENDS_OK")))
       {
-         LogManager.info("", "Ignoring compiler cache because of possible missing dependencies");
+         Log.info("", "Ignoring compiler cache because of possible missing dependencies");
          useCache = false;
       }
 
       if (useCache)
       {
-         LogManager.info("", "Using compiler cache \"" + compileCache + "\"");
+         Log.info("", "Using compiler cache \"" + compileCache + "\"");
       }
 
       if (inTargets.remove("clear"))
@@ -124,12 +125,12 @@ class BuildTool
       // Sys.println("Build : " + inTarget );
       if (!mTargets.exists(inTarget))
       {
-         LogManager.error ("Could not find build target \"" + inTarget + "\"");
+         Log.error ("Could not find build target \"" + inTarget + "\"");
          //throw "Could not find target '" + inTarget + "' to build.";
       }
       if (mCompiler==null)
       {
-         LogManager.error("No compiler defined for the current build target");
+         Log.error("No compiler defined for the current build target");
          //throw "No compiler defined";
       }
 
@@ -162,8 +163,7 @@ class BuildTool
       if (target.mBuildDir!="")
       {
          restoreDir = Sys.getCwd();
-         Sys.println(target.mBuildDir);
-         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + target.mBuildDir);
+         Log.info("", " - \x1b[1mChanging directory:\x1b[0m " + target.mBuildDir);
          Sys.setCwd(target.mBuildDir);
       }
 
@@ -270,7 +270,7 @@ class BuildTool
          case "linker":
             if (!mLinkers.exists(target.mToolID))
             {
-               LogManager.error ("Could not find linker for \"" + target.mToolID + "\"");
+               Log.error ("Could not find linker for \"" + target.mToolID + "\"");
                //throw "Missing linker :\"" + target.mToolID + "\"";
             }
 
@@ -289,12 +289,12 @@ class BuildTool
       // Sys.println("Build : " + inTarget );
       if (!mTargets.exists(inTarget))
       {
-         LogManager.error("Could not find build target \"" + inTarget + "\"");
+         Log.error("Could not find build target \"" + inTarget + "\"");
          //throw "Could not find target '" + inTarget + "' to build.";
       }
       if (mCompiler==null)
       {
-         LogManager.error("No compiler defined");
+         Log.error("No compiler defined");
          //throw "No compiler defined";
       }
 
@@ -308,7 +308,7 @@ class BuildTool
       if (target.mBuildDir!="")
       {
          restoreDir = Sys.getCwd();
-         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + target.mBuildDir);
+         Log.info("", " - \x1b[1mChanging directory:\x1b[0m " + target.mBuildDir);
          Sys.setCwd(target.mBuildDir);
       }
 
@@ -361,11 +361,11 @@ class BuildTool
                   }
                   else if (!el.has.noerror)
                   {
-                     LogManager.error("Could not find include file \"" + name + "\"");
+                     Log.error("Could not find include file \"" + name + "\"");
                      //throw "Could not find include file " + name;
                   }
                default:
-                  LogManager.error("Unknown compiler option \"" + el.name + "\"");
+                  Log.error("Unknown compiler option \"" + el.name + "\"");
                   //throw "Unknown compiler option: '" + el.name + "'";
             }
       }
@@ -569,10 +569,10 @@ class BuildTool
       }
       else if (isLinux)
       {
-         result = ProcessManager.runProcess("", "nproc", []);
+         result = ProcessManager.runProcess("", "nproc", [], true, false);
          if (result == null)
          {
-            var cpuinfo = ProcessManager.runProcess("", "cat", [ "/proc/cpuinfo" ]);
+            var cpuinfo = ProcessManager.runProcess("", "cat", [ "/proc/cpuinfo" ], true, false);
             if (cpuinfo != null)
             {      
                var split = cpuinfo.split("processor");
@@ -599,6 +599,19 @@ class BuildTool
          return Std.parseInt(result);
       }
    }
+   
+   private static function getVersion():String
+   {
+      try
+      {
+         var json = Json.parse (sys.io.File.getContent (PathManager.getHaxelib ("hxcpp") + "/haxelib.json"));
+         return json.version;
+      }
+      catch (e:Dynamic)
+      {
+         return "0.0.0";
+      }
+   }
 
    public static function isMsvc()
    {
@@ -618,7 +631,7 @@ class BuildTool
       var args = Sys.args();
       var env = Sys.environment();
 
-      LogManager.verbose = env.exists("HXCPP_VERBOSE");
+      Log.verbose = env.exists("HXCPP_VERBOSE");
 
       // Check for calling from haxelib ...
       if (args.length>0)
@@ -662,10 +675,10 @@ class BuildTool
             else
                defines.set(val,"");
             if (val=="verbose")
-               LogManager.verbose = true;
+               Log.verbose = true;
          }
          else if (arg=="-v" || arg=="-verbose")
-            LogManager.verbose = true;
+            Log.verbose = true;
          else if (arg.substr(0,2)=="-I")
             include_path.push(PathManager.standardize(arg.substr(2)));
          else if (makefile.length==0)
@@ -686,14 +699,14 @@ class BuildTool
       {
          if (!defines.exists("HXCPP"))
          {
-            LogManager.error("Please run hxcpp using haxelib");
+            Log.error("Please run hxcpp using haxelib");
             //throw "HXCPP not set, and not run from haxelib";
          }
          HXCPP = PathManager.standardize(defines.get("HXCPP"));
          defines.set("HXCPP",HXCPP);
       }
       
-      LogManager.info("", "HXCPP : " + HXCPP);
+      //Log.info("", "HXCPP : " + HXCPP);
       
       include_path.push(".");
       if (env.exists("HOME"))
@@ -724,20 +737,20 @@ class BuildTool
       
       if (defines.exists("ios"))
       {
-        if (defines.exists("simulator"))
-        {
-          defines.set("iphonesim", "iphonesim");
-        }
-        else if (!defines.exists ("iphonesim"))
-        {
-          defines.set("iphoneos", "iphoneos");
-        }
-        defines.set("iphone", "iphone");
+         if (defines.exists("simulator"))
+         {
+            defines.set("iphonesim", "iphonesim");
+         }
+         else if (!defines.exists ("iphonesim"))
+         {
+            defines.set("iphoneos", "iphoneos");
+         }
+         defines.set("iphone", "iphone");
       }
 
       if (defines.exists("iphoneos"))
       {
-       defines.set("toolchain","iphoneos");
+         defines.set("toolchain","iphoneos");
          defines.set("iphone","iphone");
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
@@ -765,7 +778,7 @@ class BuildTool
                defines.set("ANDROID_HOST","linux-x86");
             else
             {
-               LogManager.error ("Unknown android host \"" + os + "\"");
+               Log.error ("Unknown android host \"" + os + "\"");
                //throw "Unknown android host:" + os;
             }
          }
@@ -965,13 +978,40 @@ class BuildTool
 
       if (targets.length==0)
          targets.push("default");
-   
+      
+      if (makefile=="" || Log.verbose)
+      {
+         Log.println("\x1b[33;1m __                          ");             
+         Log.println("/\\ \\                                      ");
+         Log.println("\\ \\ \\___    __  _   ___   _____   _____   ");
+         Log.println(" \\ \\  _ `\\ /\\ \\/'\\ /'___\\/\\ '__`\\/\\ '__`\\ ");
+         Log.println("  \\ \\ \\ \\ \\\\/>  <//\\ \\__/\\ \\ \\L\\ \\ \\ \\L\\ \\");
+         Log.println("   \\ \\_\\ \\_\\/\\_/\\_\\ \\____\\\\ \\ ,__/\\ \\ ,__/");
+         Log.println("    \\/_/\\/_/\\//\\/_/\\/____/ \\ \\ \\/  \\ \\ \\/ ");
+         Log.println("                            \\ \\_\\   \\ \\_\\ ");
+         Log.println("                             \\/_/    \\/_/ \x1b[0m");
+         Log.println("");
+         Log.println("\x1b[1mhxcpp \x1b[0m\x1b[3;37m(Haxe C++ Runtime Support)\x1b[0m \x1b[1m(" + getVersion() + ")\x1b[0m");
+         Log.println("");
+      }
+      
       if (makefile=="")
       {
-         LogManager.info("Usage :  BuildTool makefile.xml [-DFLAG1] ...  [-DFLAGN] ... [target1]...[targetN]");
+         Log.println(" \x1b[33;1mUsage:\x1b[0m\x1b[1m haxelib run hxcpp\x1b[0m Build.xml \x1b[3;37m[options]\x1b[0m");
+         Log.println("");
+         Log.println(" \x1b[33;1mOptions:\x1b[0m ");
+         Log.println("");
+         Log.println("  \x1b[1m-D\x1b[0;3mvalue\x1b[0m -- Specify a define to use when processing other commands");
+         Log.println("  \x1b[1m-verbose\x1b[0m -- Print additional information (when available)");
+         Log.println("");
       }
       else
       {
+         Log.info("", "\x1b[33;1mUsing makefile: " + makefile + "\x1b[0m");
+         Log.info("", "\x1b[33;1mReading HXCPP config: " + defines.get("HXCPP_CONFIG") + "\x1b[0m");
+         Log.info("", "\x1b[33;1mUsing target toolchain: " + defines.get("toolchain") + "\x1b[0m");
+         if (Log.verbose) Log.println("");
+         
          for(e in env.keys())
             defines.set(e, Sys.getEnv(e) );
 
@@ -1002,7 +1042,7 @@ class BuildTool
                   var name = substitute(el.att.name);
                   Setup.setup(name,mDefines);
                case "echo" : 
-                  LogManager.info(substitute(el.att.value));
+                  Log.info(substitute(el.att.value));
                case "setenv" : 
                   var name = el.att.name;
                   var value = substitute(el.att.value);
@@ -1013,7 +1053,7 @@ class BuildTool
                   throw(error);
                case "path" : 
                   var path = substitute(el.att.name);
-                  LogManager.info("", "Adding path " + path);
+                  Log.info("", "Adding path " + path);
                   var os = Sys.systemName();
                   var sep = mDefines.exists("windows_host") ? ";" : ":";
                   var add = path + sep + Sys.getEnv("PATH");
@@ -1047,7 +1087,7 @@ class BuildTool
                   }
                   else if (!el.has.noerror)
                   {
-                     LogManager.error("Could not find include file \"" + name + "\"");
+                     Log.error("Could not find include file \"" + name + "\"");
                      //throw "Could not find include file " + name;
                   }
                case "target" : 
