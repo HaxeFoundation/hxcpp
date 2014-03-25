@@ -79,6 +79,7 @@ class Compiler
       args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
 
       var ext = mExt.toLowerCase();
+      var ext = new Path(inFile.mName).ext.toLowerCase();
       addIdentity(ext,args);
 
       var allowPch = false;
