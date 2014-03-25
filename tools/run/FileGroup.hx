@@ -65,7 +65,7 @@ class FileGroup
    {
       if (mMissingDepends.length>0)
       {
-         LogManager.error("Could not find dependencies: [ " + mMissingDepends.join (", ") + " ]");
+         Log.error("Could not find dependencies: [ " + mMissingDepends.join (", ") + " ]");
          //throw "Could not find dependencies: " + mMissingDepends.join(",");
       }
    }

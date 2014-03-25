@@ -49,7 +49,7 @@ class Target
    {
       if (mErrors.length>0)
       {
-         LogManager.error(mErrors.join(", "));
+         Log.error(mErrors.join(", "));
          //throw mErrors.join("/");
       }
    }
@@ -58,7 +58,7 @@ class Target
    {
       for(dir in mDirs)
       {
-         LogManager.info("Remove " + dir + "...");
+         Log.info("Remove " + dir + "...");
          PathManager.removeDirectory(dir);
       }
    }

@@ -11,14 +11,36 @@ import cpp.vm.Thread;
 
 class ProcessManager
 {
-   private static function printCommand(command:String, args:Array<String>):Void
+   private static function formatMessage(command:String, args:Array<String>, colorize:Bool = true):String
    {
-      var message = "\x1b[34;1m" + command + "\x1b[0m";
+      var message = "";
+      
+      if (colorize)
+      {
+         message = "\x1b[33;1m" + command + "\x1b[0m";
+      }
+      else
+      {
+         message = command;
+      }
+      
       for (arg in args)
       {
-         if (StringTools.endsWith(arg, ".cpp") || StringTools.endsWith(arg, ".h"))
+         if (colorize)
          {
-            arg = "\x1b[1m" + arg + "\x1b[0m";
+            var ext = Path.extension(arg);
+            if (ext == "cpp" || ext == "c" || ext == "h" || ext == "hpp" || ext == "m" || ext == "mm")
+            {
+               arg = "\x1b[33;3;1m" + arg + "\x1b[0m";
+            }
+            else if (StringTools.startsWith(arg, "-D"))
+            {
+               arg = "\x1b[0m" + arg + "\x1b[0m";
+            }
+            else
+            {
+               arg = "\x1b[37m" + arg + "\x1b[0m";
+            }
          }
          
          if (arg.indexOf(" ") > -1)
@@ -30,14 +52,14 @@ class ProcessManager
             message += " " + arg;
          }
       }
-      LogManager.info(message);
+      return message;
    }
 
    public static function runCommand(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):Int
    {
-      if (print && !LogManager.verbose)
+      if (print && !Log.verbose)
       {
-         printCommand(command, args);
+         Log.info(formatMessage(command, args));
       }
       
       command = PathManager.escape(command);
@@ -48,7 +70,7 @@ class ProcessManager
          {
             if (path != null && path != "" && !FileSystem.exists(FileSystem.fullPath(path)) && !FileSystem.exists(FileSystem.fullPath(new Path(path).dir)))
             {
-               LogManager.error ("The specified target path \"" + path + "\" does not exist");
+               Log.error ("The specified target path \"" + path + "\" does not exist");
                return 1;
             }
             return _runCommand(path, command, args);
@@ -57,7 +79,7 @@ class ProcessManager
          {
             if (!ignoreErrors)
             {
-               LogManager.error("", e);
+               Log.error("", e);
                return 1;
             }
             return 0;
@@ -71,9 +93,9 @@ class ProcessManager
 
    public static function runProcess(path:String, command:String, args:Array<String>, waitForOutput:Bool = true, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):String
    {
-      if (print && !LogManager.verbose)
+      if (print && !Log.verbose)
       {
-         printCommand(command, args);
+         Log.info(formatMessage(command, args));
       }
       
       command = PathManager.escape(command);
@@ -84,7 +106,7 @@ class ProcessManager
          {
             if (path != null && path != "" && !FileSystem.exists(FileSystem.fullPath(path)) && !FileSystem.exists(FileSystem.fullPath(new Path(path).dir)))
             {
-               LogManager.error("The specified target path \"" + path + "\" does not exist");
+               Log.error("The specified target path \"" + path + "\" does not exist");
             }
             return _runProcess(path, command, args, waitForOutput, ignoreErrors);
          }
@@ -92,7 +114,7 @@ class ProcessManager
          {
             if (!ignoreErrors)
             {
-               LogManager.error("", e);
+               Log.error("", e);
             }
             return null;
          }
@@ -105,9 +127,9 @@ class ProcessManager
    
    public static function runProcessThreaded(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):Int
    {
-      if (print && !LogManager.verbose)
+      if (print && !Log.verbose)
       {
-         printCommand(command, args);
+         Log.info(formatMessage(command, args));
       }
       
       command = PathManager.escape(command);
@@ -118,7 +140,7 @@ class ProcessManager
          {
             if (path != null && path != "" && !FileSystem.exists(FileSystem.fullPath(path)) && !FileSystem.exists(FileSystem.fullPath(new Path(path).dir)))
             {
-               LogManager.error("The specified target path \"" + path + "\" does not exist");
+               Log.error("The specified target path \"" + path + "\" does not exist");
             }
             return _runProcessThreaded(path, command, args, ignoreErrors);
          }
@@ -126,7 +148,7 @@ class ProcessManager
          {
             if (!ignoreErrors)
             {
-               LogManager.error("", e);
+               Log.error("", e);
             }
             return null;
          }
@@ -143,27 +165,13 @@ class ProcessManager
       
       if (path != null && path != "")
       {  
-         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + path + "");
+         Log.info("", " - \x1b[1mChanging directory:\x1b[0m " + path + "");
          
          oldPath = Sys.getCwd();
          Sys.setCwd(path);
       }
       
-      var argString = "";
-      
-      for (arg in args)
-      {  
-         if (arg.indexOf(" ") > -1)
-         {  
-            argString += " \"" + arg + "\"";
-         }
-         else
-         {
-            argString += " " + arg;
-         }
-      }
-      
-      LogManager.info("", "\x1b[1mRunning command:\x1b[0m " + command + argString);
+      Log.info("", " - \x1b[1mRunning command:\x1b[0m " + formatMessage(command, args));
       
       var result = 0;
       
@@ -195,27 +203,13 @@ class ProcessManager
       
       if (path != null && path != "")
       {
-         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + path + "");
+         Log.info("", " - \x1b[1m - Changing directory:\x1b[0m " + path + "");
          
          oldPath = Sys.getCwd();
          Sys.setCwd(path);
       }
       
-      var argString = "";
-      
-      for (arg in args)
-      {
-         if (arg.indexOf(" ") > -1)
-         {
-            argString += " \"" + arg + "\"";
-         }
-         else
-         {
-            argString += " " + arg;
-         }
-      }
-      
-      LogManager.info("", "\x1b[1mRunning process:\x1b[0m " + command + argString);
+      Log.info("", " - \x1b[1mRunning process:\x1b[0m " + formatMessage(command, args));
       
       var output = "";
       var result = 0;
@@ -258,14 +252,14 @@ class ProcessManager
                }
                else
                {
-                  LogManager.error(error);
+                  Log.error(error);
                }
                
                return null;
                
                /*if (error != "")
                {
-                  LogManager.error(error);
+                  Log.error(error);
                }*/
             }
          //}
@@ -285,27 +279,13 @@ class ProcessManager
       
       if (path != null && path != "")
       {
-         LogManager.info("", "\x1b[1mChanging directory:\x1b[0m " + path + "");
+         Log.info("", " - \x1b[1mChanging directory:\x1b[0m " + path + "");
          
          oldPath = Sys.getCwd();
          Sys.setCwd(path);
       }
       
-      var argString = "";
-      
-      for (arg in args)
-      {
-         if (arg.indexOf(" ") > -1)
-         {
-            argString += " \"" + arg + "\"";
-         }
-         else
-         {
-            argString += " " + arg;
-         }
-      }
-      
-      LogManager.info("", "\x1b[1mRunning process:\x1b[0m " + command + argString);
+      Log.info("", " - \x1b[1mRunning process:\x1b[0m " + formatMessage(command, args));
       
       var output = new Array<String>();
       var process = new Process(command, args);
@@ -360,7 +340,7 @@ class ProcessManager
       
       if (code > 0 && !ignoreErrors)
       {
-         LogManager.error(errOut.join ("\n"));
+         Log.error(errOut.join ("\n"));
       }
       
       if (errOut!=null && errOut.length>0)
@@ -370,7 +350,7 @@ class ProcessManager
       {
          if (BuildTool.printMutex!=null)
             BuildTool.printMutex.acquire();
-         LogManager.info(output.join("\n"));
+         Log.info(output.join("\n"));
          if (BuildTool.printMutex!=null)
             BuildTool.printMutex.release();
       }

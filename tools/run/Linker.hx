@@ -39,7 +39,7 @@ class Linker
       {
          if (!FileSystem.exists(obj))
          {
-            LogManager.error("Could not find \"" + obj + "\" required by \"" + inName + "\"");
+            Log.error("Could not find \"" + obj + "\" required by \"" + inName + "\"");
             //throw "Could not find " + obj + " required by " + inName;
          }
          var obj_stamp = FileSystem.stat(obj).mtime.getTime();
@@ -60,7 +60,7 @@ class Linker
       }
       catch (e:Dynamic)
       {
-         LogManager.error("Unable to create output directory \"" + inTarget.mOutputDir + "\"");
+         Log.error("Unable to create output directory \"" + inTarget.mOutputDir + "\"");
          //throw "Unable to create output directory " + inTarget.mOutputDir; 
       }
       
@@ -82,7 +82,7 @@ class Linker
                var current = parts[0] + "-" + BuildTool.getMsvcVer() + parts[1];
                if (FileSystem.exists(current))
                {
-                  LogManager.info("", "Using current compiler library " + current);
+                  Log.info("", "Using current compiler library " + current);
                   libs[i]=current;
                }
                else
@@ -90,7 +90,7 @@ class Linker
                   var v18 = parts[0] + "-18" + parts[1];
                   if (FileSystem.exists(v18))
                   {
-                     LogManager.info("", "Using msvc18 compatible library " + v18);
+                     Log.info("", "Using msvc18 compatible library " + v18);
                      libs[i]=v18;
                      if (!v18Added)
                      {
@@ -135,7 +135,7 @@ class Linker
          {
             if (mRecreate && FileSystem.exists(out_name))
             {
-               LogManager.info(" clean " + out_name );
+               Log.info(" clean " + out_name );
                FileSystem.deleteFile(out_name);
             }
             args.push(out + out_name);

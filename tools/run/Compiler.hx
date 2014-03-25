@@ -120,12 +120,12 @@ class Compiler
             if (FileSystem.exists(cacheName))
             {
                sys.io.File.copy(cacheName, obj_name);
-               LogManager.info("use cache for " + obj_name + "(" + md5 + ")" );
+               Log.info("use cache for " + obj_name + "(" + md5 + ")" );
                found = true;
             }
             else
             {
-               LogManager.info("", " not in cache " + cacheName);
+               Log.info("", " not in cache " + cacheName);
             }
          }
          else
@@ -168,7 +168,7 @@ class Compiler
          if (cacheName!=null)
          {
             sys.io.File.copy(obj_name, cacheName);
-            LogManager.info("", " caching " + cacheName);
+            Log.info("", " caching " + cacheName);
          }
       }
 
@@ -189,9 +189,9 @@ class Compiler
          }
  
          var versionString = Setup.readStderr(exe,args).join(" ");
-         LogManager.info("", "--- Compiler version ---");
-         LogManager.info("", versionString);
-         LogManager.info("", "------------------------");
+         Log.info("", "--- Compiler version ---");
+         Log.info("", versionString);
+         Log.info("", "------------------------");
 
          mCompilerVersion = Md5.encode(versionString);
          mCached = true;
@@ -223,7 +223,7 @@ class Compiler
       var dir = inObjDir + "/" + inGroup.getPchDir() + "/";
       var pch_name = dir + file + mPCHExt;
 
-      //LogManager.info("", "Make pch dir " + dir );
+      //Log.info("", "Make pch dir " + dir );
       PathManager.mkdir(dir);
 
       if (mPCH!="gcc")
@@ -242,14 +242,14 @@ class Compiler
       }
       else
       {
-         //LogManager.info("", "Creating PCH directory \"" + dir + header + "\"");
+         //Log.info("", "Creating PCH directory \"" + dir + header + "\"");
          PathManager.mkdir(dir + header);
          args.push( "-o" );
          args.push(pch_name);
          args.push( inGroup.mPrecompiledHeaderDir + "/" + inGroup.mPrecompiledHeader + ".h" );
       }
 
-      //LogManager.info("Creating " + pch_name + "...");
+      //Log.info("Creating " + pch_name + "...");
       
       var split = mExe.split (" ");
       var exe = split.shift ();
@@ -260,7 +260,7 @@ class Compiler
       {
          if (FileSystem.exists(pch_name))
             FileSystem.deleteFile(pch_name);
-         LogManager.error("Could not create PCH");
+         Log.error("Could not create PCH");
          //throw "Error creating pch: " + result + " - build cancelled";
       }
    }

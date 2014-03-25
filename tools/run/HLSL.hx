@@ -31,12 +31,10 @@ class HLSL
          var exe = "fxc.exe";
          var args =  [ "/nologo", "/T", profile, file, "/Vn", variable, "/Fh", target ];
          
-         LogManager.info("", exe + " " + args.join(" "));
-         
-         var result = ProcessManager.runCommand("", exe, args, false);
+         var result = ProcessManager.runCommand("", exe, args);
          if (result!=0)
          {
-            LogManager.error("Could not compile shader \"" + file + "\"");
+            Log.error("Could not compile shader \"" + file + "\"");
             //throw "Error : Could not compile shader " + file + " - build cancelled";
          }
       }
