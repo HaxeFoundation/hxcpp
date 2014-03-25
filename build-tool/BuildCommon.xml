@@ -94,7 +94,7 @@
   <depend name="${HXCPP}/src/hx/RedBlack.h"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
-  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
+  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml" ifExists="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>
   <options name="Options.txt"/>
 
@@ -104,13 +104,13 @@
 <files id="__main__">
   <compilerflag value="-DHX_DECLARE_MAIN"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
-  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
+  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml" ifExists="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
 </files>
 
 <files id="__lib__">
   <compilerflag value="-DHX_DECLARE_MAIN"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
-  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
+  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml" ifExists="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
 </files>
 
 <files id="runtime" dir="${HXCPP}">
@@ -135,7 +135,7 @@
   <depend name="${HXCPP}/include/hx/OS.h"/>
   <depend name="${HXCPP}/src/hx/RedBlack.h"/>
   <depend name="${HXCPP}/build-tool/BuildCommon.xml"/>
-  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
+  <depend name="${HXCPP}/build-tool/${toolchain}-toolchain.xml" ifExists="${HXCPP}/build-tool/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>
   <options name="Options.txt"/>
 
