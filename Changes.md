@@ -1,4 +1,6 @@
 
+* Avoid blocking in gethostbyname
+* Upgrade run tool output and layout
 * Restore sys_time for windows
 
 3.1.1
