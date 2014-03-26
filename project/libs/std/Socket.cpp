@@ -333,21 +333,27 @@ static value socket_read( value o ) {
 static value host_resolve( value host ) {
 	unsigned int ip;
 	val_check(host,string);
-	ip = inet_addr(val_string(host));
+
+   const char *hostName = val_string(host);
+   gc_enter_blocking();
+	ip = inet_addr(hostName);
 	if( ip == INADDR_NONE ) {
 		struct hostent *h;
 #	if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(BLACKBERRY)
-		h = gethostbyname(val_string(host));
+		h = gethostbyname(hostName);
 #	else
 		struct hostent hbase;
 		char buf[1024];
 		int errcode;
-		gethostbyname_r(val_string(host),&hbase,buf,1024,&h,&errcode);
+		gethostbyname_r(hostName,&hbase,buf,1024,&h,&errcode);
 #	endif
-		if( h == NULL )
+		if( h == NULL ) {
+         gc_exit_blocking();
 			return alloc_null();
+      }
 		ip = *((unsigned int*)h->h_addr);
 	}
+   gc_exit_blocking();
 	return alloc_int32(ip);
 }
 
@@ -371,6 +377,7 @@ static value host_reverse( value host ) {
 	unsigned int ip;
 	val_check(host,int);
 	ip = val_int(host);
+   gc_enter_blocking();
 #	if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY)
 	h = gethostbyaddr((char *)&ip,4,AF_INET);
 #	else
@@ -379,6 +386,7 @@ static value host_reverse( value host ) {
 	char buf[1024];
 	gethostbyaddr_r((char *)&ip,4,AF_INET,&htmp,buf,1024,&h,&errcode);
 #	endif
+   gc_exit_blocking();
 	if( h == NULL )
 		return alloc_null();
 	return alloc_string( h->h_name );
@@ -390,8 +398,13 @@ static value host_reverse( value host ) {
 **/
 static value host_local() {
 	char buf[256];
+   gc_enter_blocking();
 	if( gethostname(buf,256) == SOCKET_ERROR )
+   {
+      gc_exit_blocking();
 		return alloc_null();
+   }
+   gc_exit_blocking();
 	return alloc_string(buf);
 }
 
@@ -584,8 +597,13 @@ static value socket_peer( value o ) {
 	struct sockaddr_in addr;
 	SockLen addrlen = sizeof(addr);
 	value ret;
+   gc_enter_blocking();
 	if( getpeername(sock,(struct sockaddr*)&addr,&addrlen) == SOCKET_ERROR )
+   {
+      gc_exit_blocking();
 		return alloc_null();
+   }
+   gc_exit_blocking();
 	ret = alloc_array(2);
 	val_array_set_i(ret,0,alloc_int32(*(int*)&addr.sin_addr));
 	val_array_set_i(ret,1,alloc_int(ntohs(addr.sin_port)));
@@ -601,8 +619,13 @@ static value socket_host( value o ) {
 	struct sockaddr_in addr;
 	SockLen addrlen = sizeof(addr);
 	value ret;
+   gc_enter_blocking();
 	if( getsockname(sock,(struct sockaddr*)&addr,&addrlen) == SOCKET_ERROR )
+   {
+      gc_exit_blocking();
 		return alloc_null();
+   }
+   gc_exit_blocking();
 	ret = alloc_array(2);
 	val_array_set_i(ret,0,alloc_int32(*(int*)&addr.sin_addr));
 	val_array_set_i(ret,1,alloc_int(ntohs(addr.sin_port)));
@@ -633,10 +656,18 @@ static value socket_set_timeout( value o, value t ) {
 		init_timeval(val_number(t),&time);
 	}
 #endif
+   gc_enter_blocking();
 	if( setsockopt(sock,SOL_SOCKET,SO_SNDTIMEO,(char*)&time,sizeof(time)) != 0 )
+   {
+      gc_exit_blocking();
 		return alloc_null();
+   }
 	if( setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,(char*)&time,sizeof(time)) != 0 )
+   {
+      gc_exit_blocking();
 		return alloc_null();
+   }
+   gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -669,25 +700,36 @@ static value socket_shutdown( value o, value r, value w ) {
 static value socket_set_blocking( value o, value b ) {
 	SOCKET sock = val_sock(o);
 	val_check(b,bool);
+   gc_enter_blocking();
 #ifdef NEKO_WINDOWS
 	{
 		unsigned long arg = val_bool(b)?0:1;
 		if( ioctlsocket(sock,FIONBIO,&arg) != 0 )
+      {
+         gc_exit_blocking();
 			return alloc_null();
+      }
 	}
 #else
 	{
 		int rights = fcntl(sock,F_GETFL);
 		if( rights == -1 )
+      {
+         gc_exit_blocking();
 			return alloc_null();
+      }
 		if( val_bool(b) )
 			rights &= ~O_NONBLOCK;
 		else
 			rights |= O_NONBLOCK;
 		if( fcntl(sock,F_SETFL,rights) == -1 )
+      {
+         gc_exit_blocking();
 			return alloc_null();
+      }
 	}
 #endif
+   gc_exit_blocking();
 	return alloc_bool(true);
 }
 
@@ -697,7 +739,9 @@ value socket_set_fast_send( value o, value b )
 	SOCKET sock = val_sock(o);
 	val_check(b,bool);
    int fast = val_bool(b);
+   gc_enter_blocking();
    setsockopt(sock,IPPROTO_TCP,TCP_NODELAY,(char*)&fast,sizeof(fast));
+   gc_exit_blocking();
    return alloc_null();
 }
 
