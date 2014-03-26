@@ -569,7 +569,7 @@ class BuildTool
       }
       else if (isLinux)
       {
-         result = ProcessManager.runProcess("", "nproc", [], true, false);
+         result = ProcessManager.runProcessLine("", "nproc", [], true, false);
          if (result == null)
          {
             var cpuinfo = ProcessManager.runProcess("", "cat", [ "/proc/cpuinfo" ], true, false);
@@ -919,7 +919,7 @@ class BuildTool
 
       if (defines.exists("apple") && !defines.exists("DEVELOPER_DIR"))
       {
-         var developer_dir = ProcessManager.runProcess("", "xcode-select", ["--print-path"], true, false);
+         var developer_dir = ProcessManager.runProcessLine("", "xcode-select", ["--print-path"], true, false);
          if (developer_dir == null || developer_dir == "" || developer_dir.indexOf ("Run xcode-select") > -1)
             developer_dir = "/Applications/Xcode.app/Contents/Developer";
          if (developer_dir == "/Developer")

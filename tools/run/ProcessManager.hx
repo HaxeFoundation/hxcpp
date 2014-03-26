@@ -124,6 +124,13 @@ class ProcessManager
          return _runProcess(path, command, args, waitForOutput, ignoreErrors);   
       }
    }
+   public static function runProcessLine(path:String, command:String, args:Array<String>, waitForOutput:Bool = true, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):String
+   {
+      var result = runProcess(path, command, args, waitForOutput, print, safeExecute, ignoreErrors);
+      if (result!=null)
+         return result.split("\n")[0];
+      return result;
+   }
    
    public static function runProcessThreaded(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):Int
    {
