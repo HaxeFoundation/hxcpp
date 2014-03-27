@@ -31,7 +31,15 @@ class ProcessManager
             var ext = Path.extension(arg);
             if (ext == "cpp" || ext == "c" || ext == "h" || ext == "hpp" || ext == "m" || ext == "mm")
             {
-               arg = "\x1b[3;1m" + arg + "\x1b[0m";
+               var split = arg.split ("/");
+               if (split.length > 1)
+               {
+                  arg = "\x1b[0m" + split.slice(0, split.length - 1).join("/") + "/\x1b[1m" + split[split.length - 1] + "\x1b[0m";
+               }
+               else
+               {
+                  arg = "\x1b[1m" + arg + "\x1b[0m";
+               }
             }
             else if (StringTools.startsWith(arg, "-D"))
             {

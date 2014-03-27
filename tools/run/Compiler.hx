@@ -206,7 +206,7 @@ class Compiler
       var path = new Path(inFile.mName);
       var dirId = Md5.encode(BuildTool.targetKey + path.dir).substr(0,8) + "_";
 
-      return mObjDir + "/" + dirId + path.file + mExt;
+      return PathManager.combine(mObjDir, dirId + path.file + mExt);
    }
 
    public function needsPchObj()
@@ -239,7 +239,7 @@ class Compiler
 
          args.push( tmp_cpp );
          args.push(mPCHFilename + pch_name);
-         args.push(mOutFlag + dir + file + mExt);
+         args.push(mOutFlag + PathManager.combine(dir, file + mExt));
       }
       else
       {
