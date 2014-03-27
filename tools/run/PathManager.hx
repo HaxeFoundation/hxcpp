@@ -165,6 +165,25 @@ class PathManager
       return haxelibPaths.get(name);
    }
 
+   public static function isAbsolute(path:String):Bool
+   {
+      if (BuildTool.isWindows)
+      {
+         if (path != null && path.length > 2 && path.charAt(1) == ":" && (path.charAt(2) == "\\" || path.charAt(2) == "/"))
+         {
+            return true;
+         }
+      }
+      else
+      {
+         if (StringTools.startsWith(path, "/") || StringTools.startsWith(path, "\\"))
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
    public static function mkdir(directory:String):Void
    {
       directory = StringTools.replace(directory, "\\", "/");

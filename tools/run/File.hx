@@ -13,7 +13,9 @@ class File
    public function new(inName:String, inGroup:FileGroup)
    {
       mName = inName;
-      mDir = inGroup.mDir;
+      mDir = "";
+      if (inGroup.mDir != "" && !PathManager.isAbsolute(mName))
+         mDir = inGroup.mDir;
       if (mDir!="") mDir += "/";
       // Do not take copy - use reference so it can be updated
       mGroup = inGroup;
