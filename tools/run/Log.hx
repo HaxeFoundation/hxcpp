@@ -11,7 +11,6 @@ class Log
    public static var mute:Bool;
    public static var verbose:Bool = false;
    
-   private static var colorCodes:EReg = ~/\x1b\[[^m]+m/g;
    private static var colorSupported:Null<Bool>;
    private static var sentWarnings = new Map<String,Bool>();
    
@@ -93,6 +92,7 @@ class Log
       }
       else
       {
+         var colorCodes:EReg = ~/\x1b\[[^m]+m/g;
          return colorCodes.replace(output, "");
       }
    }
