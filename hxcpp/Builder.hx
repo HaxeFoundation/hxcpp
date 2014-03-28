@@ -59,7 +59,7 @@ class Builder
 
             switch(target)
             {
-               case "ios", "android", "windows", "linux", "mac":
+               case "ios", "android", "blackberry", "tizen", "emscripten", "webos", "windows", "linux", "mac":
                   defaultTarget = false;
                   if (linkStatic)
                   {
@@ -133,6 +133,21 @@ class Builder
                   validArchs.set("armv5", ["-Dandroid", staticFlag] );
                   validArchs.set("armv7", ["-Dandroid", "-DHXCPP_ARMV7", staticFlag ] );
                   validArchs.set("x86", ["-Dandroid", "-DHXCPP_X86", staticFlag ] );
+               
+               case "blackberry":
+                  validArchs.set("armv7", ["-Dblackberry", staticFlag] );
+                  validArchs.set("x86", ["-Dblackberry", "-Dsimulator", staticFlag ] );
+               
+               case "tizen":
+                  validArchs.set("armv7", ["-Dtizen", staticFlag] );
+                  validArchs.set("x86", ["-Dtizen", "-Dsimulator", staticFlag ] );
+               
+               case "emscripten":
+                  validArchs.set("x86", ["-Demscripten", staticFlag] );
+               
+               case "webos":
+                  validArchs.set("armv7", ["-Dwebos", staticFlag] );
+               
             }
 
 
