@@ -58,6 +58,7 @@
 	<flag value="-L${TIZEN_PLATFORM}/usr/lib" />
 	<flag value="-L${TIZEN_PLATFORM}/usr/lib/osp" />
 	<lib name="-losp-appfw" />
+	<lib name="-lrt" />
 	<!-- <flag value="-fpic"/>
 	<flag value="-fPIC"/> -->
 	<ext value=".exe"/>
