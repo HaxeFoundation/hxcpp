@@ -1,6 +1,6 @@
 <xml>
 
-<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+<include name="${HXCPP}/toolchains/BuildCommon.xml"/>
 
 
 <files id="std" >

@@ -497,6 +497,13 @@ class BuildTool
    function findIncludeFile(inBase:String):String
    {
       if (inBase == null || inBase=="") return "";
+      if (StringTools.startsWith(inBase, BuildTool.HXCPP))
+      {
+         if (inBase.indexOf("build-tool") > -1)
+         {
+            inBase = StringTools.replace(inBase, "build-tool", "toolchains");
+         }
+      }
       var c0 = inBase.substr(0,1);
       if (c0!="/" && c0!="\\")
       {
@@ -713,7 +720,7 @@ class BuildTool
         include_path.push(env.get("HOME"));
       if (env.exists("USERPROFILE"))
         include_path.push(env.get("USERPROFILE"));
-      include_path.push(HXCPP + "/build-tool");
+      include_path.push(HXCPP + "/toolchains");
 
       var m64 = defines.exists("HXCPP_M64");
       var m32 = defines.exists("HXCPP_M32");
