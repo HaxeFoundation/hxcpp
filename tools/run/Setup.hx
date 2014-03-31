@@ -196,7 +196,7 @@ class Setup
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  if ( ver>bestVer || bestVer=="")
+                  if ( ver<bestVer || bestVer=="")
                   {
                      bestVer = ver;
                   }
