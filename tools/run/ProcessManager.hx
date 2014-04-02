@@ -34,7 +34,7 @@ class ProcessManager
                var split = arg.split ("/");
                if (split.length > 1)
                {
-                  arg = "\x1b[0m" + split.slice(0, split.length - 1).join("/") + "/\x1b[1m" + split[split.length - 1] + "\x1b[0m";
+                  arg = "\x1b[33m" + split.slice(0, split.length - 1).join("/") + "/\x1b[33;1m" + split[split.length - 1] + "\x1b[0m";
                }
                else
                {
@@ -43,11 +43,11 @@ class ProcessManager
             }
             else if (StringTools.startsWith(arg, "-D"))
             {
-               arg = "\x1b[0m" + arg + "\x1b[0m";
+               arg = "\x1b[1m" + arg + "\x1b[0m";
             }
             else
             {
-               arg = "\x1b[37m" + arg + "\x1b[0m";
+               arg = "\x1b[0m" + arg + "\x1b[0m";
             }
          }
          
