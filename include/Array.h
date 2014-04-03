@@ -260,6 +260,12 @@ public:
       * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
    }
 
+   inline void __unsafe_zeroMemory(){
+      std::memset( mBase , 0,sizeof(ELEM_)*length);
+   }
+   
+   //resize dest array if need be
+   inline void __unsafe_blit(const int dst_offset, Array<ELEM_> & src, const int src_offset, const int nb);
 
    void __Mark(hx::MarkContext *__inCtx)
    {
@@ -665,6 +671,18 @@ Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
    for(int i=0;i<length;i++)
       result->__unsafe_set(i,inFunc(__unsafe_get(i)));
    return result;
+}
+
+template<typename ELEM_>
+//we don't care of reading OOB
+inline void Array_obj<ELEM_>::__unsafe_blit(const int dst_offset, Array<ELEM_> & src, const int src_offset, const int nb){
+	if( length <= dst_offset + nb )
+		EnsureSize( dst_offset + nb + 1 );
+		
+	if(mBase != (char*)&src[0] )
+		std::memcpy		( mBase + dst_offset * sizeof(ELEM_), ((char*)&src[0]) + src_offset * sizeof(ELEM_), nb * sizeof(ELEM_) );
+	else 
+		std::memmove	( mBase + dst_offset * sizeof(ELEM_), ((char*)&src[0]) + src_offset * sizeof(ELEM_), nb * sizeof(ELEM_) );
 }
 
 
