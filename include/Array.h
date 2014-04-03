@@ -255,9 +255,9 @@ public:
 
    // Does not check for size valid - use with care
    inline ELEM_ &__unsafe_get(int inIndex) { return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)); }
-   inline void __unsafe_set(int inIndex, const ELEM_ &inValue)
+   inline ELEM_ & __unsafe_set(int inIndex, const ELEM_ &inValue)
    {
-      * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
+      return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
    }
 
 
