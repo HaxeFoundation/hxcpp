@@ -713,7 +713,7 @@ class BuildTool
         include_path.push(env.get("USERPROFILE"));
       include_path.push(HXCPP + "/toolchains");
 
-      trace(include_path);
+      //trace(include_path);
 
       var m64 = defines.exists("HXCPP_M64");
       var m32 = defines.exists("HXCPP_M32");
