@@ -154,6 +154,11 @@ public:
 
    void reserve(int inN);
 
+   // Set numeric values to 0, pointers to null, bools to false
+   void zero(Dynamic inFirst, Dynamic inCount);
+
+   // Copy section of other array.
+   void Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceElement, int inElementCount);
 
    String join(String inSeparator);
 
@@ -258,6 +263,13 @@ public:
    inline ELEM_ & __unsafe_set(int inIndex, const ELEM_ &inValue)
    {
       return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
+   }
+
+
+   inline void blit(int inDestElement,  Array<ELEM_> inSourceArray,
+                    int inSourceElement, int inElementCount)
+   {
+      ArrayBase::Blit(inDestElement, inSourceArray.GetPtr(), inSourceElement, inElementCount);
    }
 
 

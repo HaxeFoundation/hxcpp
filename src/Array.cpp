@@ -48,6 +48,51 @@ void ArrayBase::EnsureSize(int inSize) const
    }
 }
 
+// Set numeric values to 0, pointers to null, bools to false
+void ArrayBase::zero(Dynamic inFirst, Dynamic inCount)
+{
+   int first = inFirst==null() ? 0 : inFirst->__ToInt();
+   if (first<0)
+      first+=length;
+   if (first<0 || first>=length)
+      return;
+
+   int count = length;
+   if (inCount!=null())
+      count = inCount->__ToInt();
+   if (count<0)
+      count += length;
+   if (count<0)
+      return;
+
+   if (first+count > length)
+      count = length - first;
+
+   int size = GetElementSize();
+   memset(mBase + first*size, 0, count*size);
+}
+
+void ArrayBase::Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceElement, int inElementCount)
+{
+   int srcSize = inSourceArray->GetElementSize();
+   int srcElems = inSourceArray->length;
+   if (inDestElement<0 || inSourceElement<0 || inSourceElement+inElementCount>srcElems)
+      hx::Throw( HX_CSTRING("blit out of bounds") );
+   if (srcSize!=GetElementSize())
+      hx::Throw( HX_CSTRING("blit array mismatch") );
+
+   int newSize = inDestElement + inElementCount;
+   if (newSize>length)
+      __SetSize(newSize);
+
+   const char *src = inSourceArray->mBase + inSourceElement*srcSize;
+   char *dest = mBase + inDestElement*srcSize;
+   int len = inElementCount*srcSize;
+   if (src+len < dest || dest+len<src)
+      memcpy(dest,src,len);
+   else
+      memmove(dest,src,len);
+}
 
 
 
