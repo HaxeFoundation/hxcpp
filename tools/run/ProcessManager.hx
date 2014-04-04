@@ -155,7 +155,8 @@ class ProcessManager
          {
             if (path != null && path != "" && !FileSystem.exists(FileSystem.fullPath(path)) && !FileSystem.exists(FileSystem.fullPath(new Path(path).dir)))
             {
-               Log.error("The specified target path \"" + path + "\" does not exist");
+               Log.error("The specified target path \"" + path + "\" does not exist","",null,false);
+               throw "Bad target path";
             }
             return _runProcessThreaded(path, command, args, ignoreErrors);
          }
@@ -163,7 +164,8 @@ class ProcessManager
          {
             if (!ignoreErrors)
             {
-               Log.error("", e);
+               // This will throw...
+               Log.error(e, e, e, false);
             }
             return null;
          }
@@ -353,9 +355,14 @@ class ProcessManager
       var code = process.exitCode();
       process.close();
       
-      if (code > 0 && !ignoreErrors)
+      if (code != 0 && !ignoreErrors)
       {
-         Log.error(errOut.join ("\n"));
+         var fullLog = [ "ERROR while running:", formatMessage(command,args) ].concat(output);
+         if (errOut!=null)
+            fullLog = fullLog.concat(errOut);
+         fullLog.push('Process exit code $code');
+         Log.error(fullLog.join("\n"),"",null,false);
+         throw "Compiler Error";
       }
       
       if (errOut!=null && errOut.length>0)
@@ -363,11 +370,7 @@ class ProcessManager
          
       if (output.length>0)
       {
-         if (BuildTool.printMutex!=null)
-            BuildTool.printMutex.acquire();
          Log.info(output.join("\n"));
-         if (BuildTool.printMutex!=null)
-            BuildTool.printMutex.release();
       }
       
       return code;

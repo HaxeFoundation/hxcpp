@@ -2,8 +2,10 @@ import haxe.io.Bytes;
 import sys.io.Process;
 #if neko
 import neko.Lib;
+import neko.vm.Mutex;
 #else
 import cpp.Lib;
+import cpp.vm.Mutex;
 #end
 
 class Log
@@ -13,8 +15,16 @@ class Log
    
    private static var colorSupported:Null<Bool>;
    private static var sentWarnings = new Map<String,Bool>();
+
+   public static var printMutex:Mutex;
+
+   public static function initMultiThreaded()
+   {
+     if (printMutex!=null)
+        printMutex = new Mutex();
+   }
    
-   public static function error(message:String, verboseMessage:String = "", e:Dynamic = null):Void
+   public static function error(message:String, verboseMessage:String = "", e:Dynamic = null, terminate:Bool = true):Void
    {
       if (message != "" && !mute)
       {
@@ -27,21 +37,26 @@ class Log
          {
             output = "\x1b[31;1mError:\x1b[0m \x1b[1m" + message + "\x1b[0m\n";  
          }
+         if (printMutex!=null)
+            printMutex.acquire();
          Sys.stderr().write(Bytes.ofString(stripColor(output)));
+         if (printMutex!=null)
+            printMutex.release();
       }
-      
-      if (verbose && e != null)
-      {
+ 
+      if ((verbose || !terminate) && e != null)
          Lib.rethrow(e);   
-      }
-      
-      Sys.exit(1);
+
+      if (terminate)
+         Sys.exit(1);
    }
 
    public static function info(message:String, verboseMessage:String = ""):Void
    {
       if (!mute)
       {
+         if (printMutex!=null)
+            printMutex.acquire();
          if (verbose && verboseMessage != "")
          {
             println(verboseMessage);   
@@ -50,17 +65,27 @@ class Log
          {
             println(message); 
          }
+         if (printMutex!=null)
+            printMutex.release();
       }
    }
 
    public static function print(message:String):Void
    {
+      if (printMutex!=null)
+        printMutex.acquire();
       Sys.print(stripColor(message));  
+         if (printMutex!=null)
+            printMutex.release();
    }
 
    public static function println(message:String):Void
    {
+      if (printMutex!=null)
+        printMutex.acquire();
       Sys.println(stripColor(message));
+      if (printMutex!=null)
+         printMutex.release();
    }
 
    private static function stripColor(output:String):String
@@ -117,7 +142,12 @@ class Log
          }
          
          sentWarnings.set(output, true);
+
+         if (printMutex!=null)
+            printMutex.acquire();
          println(output);
+         if (printMutex!=null)
+            printMutex.release();
       }
    }
 }

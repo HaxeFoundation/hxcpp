@@ -40,7 +40,6 @@ class BuildTool
    public static var targetKey:String;
    public static var instance:BuildTool;
    public static var helperThread = new Tls<Thread>();
-   public static var printMutex:Mutex;
    static var mVarMatch = new EReg("\\${(.*?)}","");
 
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
@@ -220,8 +219,7 @@ class BuildTool
          else
          {
             var mutex = new Mutex();
-            if (printMutex!=null)
-               printMutex = new Mutex();
+            Log.initMultiThreaded();
             var main_thread = Thread.current();
             var compiler = mCompiler;
             for(t in 0...threads)
