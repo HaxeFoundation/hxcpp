@@ -357,12 +357,18 @@ class ProcessManager
       
       if (code != 0 && !ignoreErrors)
       {
-         var fullLog = [ "ERROR while running:", formatMessage(command,args) ].concat(output);
+         var message = "";
+         if (errOut != null) message = errOut.join("\n");
+         
+         Log.error(message, "", null, false);
+         Sys.exit(code);
+         
+         /*var fullLog = [ "ERROR while running:", formatMessage(command,args) ].concat(output);
          if (errOut!=null)
             fullLog = fullLog.concat(errOut);
          fullLog.push('Process exit code $code');
          Log.error(fullLog.join("\n"),"",null,false);
-         throw "Compiler Error";
+         throw "Compiler Error";*/
       }
       
       if (errOut!=null && errOut.length>0)
