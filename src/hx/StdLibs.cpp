@@ -499,6 +499,18 @@ void __hxcpp_check_overflow(int x)
       throw Dynamic(HX_CSTRING("Overflow ")+x);
 }
 
+// --- Memory ---------------------------------------------------------------------
+
 unsigned char *__hxcpp_memory = 0;
 
+void  __hxcpp_memory_memset(Array<unsigned char> &inBuffer ,int pos, int len, int value)
+{
+   if (pos<inBuffer->length)
+   {
+      if (pos+len>inBuffer->length)
+         len = inBuffer->length - pos;
+      if (len>0)
+         memset( inBuffer->Pointer() + pos, value, len);
+   }
+}
 

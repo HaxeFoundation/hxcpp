@@ -161,6 +161,8 @@ void __hxcpp_stop_profiler();
 
 
 // Threadsafe methods - takes buffer
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_memory_memset(Array<unsigned char> &inBuffer ,int pos, int len, int value);
+
 inline int __hxcpp_memory_get_byte(Array<unsigned char> inBuffer ,int addr) { return inBuffer->GetBase()[addr]; }
 inline double __hxcpp_memory_get_double(Array<unsigned char> inBuffer ,int addr) { return *(double *)(inBuffer->GetBase()+addr); }
 inline double __hxcpp_memory_get_float(Array<unsigned char> inBuffer ,int addr) { return *(float *)(inBuffer->GetBase()+addr); }

@@ -157,6 +157,8 @@ public:
    // Set numeric values to 0, pointers to null, bools to false
    void zero(Dynamic inFirst, Dynamic inCount);
 
+   int Memcmp(ArrayBase *inArray);
+
    // Copy section of other array.
    void Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceElement, int inElementCount);
 
@@ -265,6 +267,10 @@ public:
       return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
    }
 
+   inline int memcmp(Array<ELEM_> inOther)
+   {
+      return ArrayBase::Memcmp(inOther.GetPtr());
+   }
 
    inline void blit(int inDestElement,  Array<ELEM_> inSourceArray,
                     int inSourceElement, int inElementCount)

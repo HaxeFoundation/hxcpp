@@ -72,6 +72,17 @@ void ArrayBase::zero(Dynamic inFirst, Dynamic inCount)
    memset(mBase + first*size, 0, count*size);
 }
 
+int ArrayBase::Memcmp(ArrayBase *inOther)
+{
+   int bytesA = length * GetElementSize();
+   int bytesB = inOther->length * inOther->GetElementSize();
+   int common = bytesA<bytesB ? bytesA : bytesB;
+   int result = memcmp(mBase, inOther->mBase, common);
+   if (result)
+      return result;
+   return bytesA - bytesB;
+}
+
 void ArrayBase::Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceElement, int inElementCount)
 {
    int srcSize = inSourceArray->GetElementSize();
