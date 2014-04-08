@@ -18,9 +18,10 @@ class Log
 
    public static var printMutex:Mutex;
 
-   public static inline var RED = "\x1b[31";
+   public static inline var RED = "\x1b[31m";
    public static inline var NORMAL = "\x1b[0m";
    public static inline var BOLD = "\x1b[1m";
+   public static inline var ITALIC = "\x1b[3m";
 
    public static function initMultiThreaded()
    {

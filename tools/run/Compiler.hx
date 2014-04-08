@@ -152,9 +152,12 @@ class Compiler
          
          if (inTid >= 0)
          {
-            var err = ProcessManager.runProcessThreaded(exe, args);
-            if (err!=0)
-               BuildTool.setThreadError(err);
+            if (BuildTool.threadExitCode == 0)
+            {
+               var err = ProcessManager.runProcessThreaded(exe, args);
+               if (err!=0)
+                  BuildTool.setThreadError(err);
+            }
          }
          else
          {

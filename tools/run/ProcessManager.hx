@@ -318,15 +318,26 @@ class ProcessManager
       
       if (code != 0)
       {
-         Log.lock();
-         Log.info('${Log.RED}${Log.BOLD}Error exit code $code${Log.NORMAL} while running: ' + formatMessage(command,args) );
-         if (output.length > 0)
+         if (BuildTool.threadExitCode == 0)
          {
-            Log.info(output.join("\n"));
+            Log.lock();
+            var message = "";
+            if (Log.verbose)
+            {
+               message += '${Log.RED}${Log.BOLD}Error in building thread${Log.NORMAL}\n';
+               message += '${Log.ITALIC}' + formatMessage(command,args) + '${Log.NORMAL}\n';
+            }
+            if (output.length > 0)
+            {
+               message += output.join("\n") + "\n";
+            }
+            if (errOut != null)
+            {
+               message += '${Log.RED}${Log.BOLD}Error:${Log.NORMAL} ${Log.BOLD}' + errOut.join("\n") + '${Log.NORMAL}';
+            }
+            Log.info (message);
+            Log.unlock();
          }
-         if (errOut!=null)
-            Log.error(errOut.join("\n"), "", null, false);
-         Log.unlock();
          
          return code;
       }
