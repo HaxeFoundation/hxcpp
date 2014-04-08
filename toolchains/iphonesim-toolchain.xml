@@ -40,8 +40,8 @@
   <flag value="-fvisibility=hidden"/>
   <!-- <flag value="-miphoneos-version-min=${IPHONE_VER}"/> -->
   <flag value="-miphoneos-version-min=5.0"/>
-  <flag value="-DIPHONE"/>
-  <flag value="-DIPHONESIM"/>
+  <flag value="-DIPHONE=IPHONE"/>
+  <flag value="-DIPHONESIM=IPHONESIM"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <flag value="-Wno-parentheses" />

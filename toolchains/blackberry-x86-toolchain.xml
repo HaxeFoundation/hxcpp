@@ -13,7 +13,7 @@
 	<flag value="-O2" unless="debug"/>
 	<flag value="-I${HXCPP}/include"/>
 	<flag value="-I${QNX_TARGET}/usr/include"/>
-	<flag value="-DBLACKBERRY"/>
+	<flag value="-DBLACKBERRY=BLACKBERRY"/>
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
 	<include name="common-defines.xml" />

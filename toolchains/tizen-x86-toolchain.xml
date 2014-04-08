@@ -19,7 +19,7 @@
 	<flag value="-O2" unless="debug"/>
 	<flag value="-I${HXCPP}/include"/>
 	<flag value="-I${TIZEN_PLATFORM}/usr/include"/>
-	<flag value="-DTIZEN"/>
+	<flag value="-DTIZEN=TIZEN"/>
 	<flag value="-D_APP_LOG"/>
 	<include name="common-defines.xml" />
 	<flag value="-fvisibility=hidden"/>

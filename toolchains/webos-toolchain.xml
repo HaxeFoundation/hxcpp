@@ -25,7 +25,7 @@
 	<flag value="-mcpu=arm1136jf-s" if="armv6" />
 	<flag value="-mfpu=vfp" if="armv6" />
 	<flag value="-mfloat-abi=softfp"/>
-	<flag value="-DWEBOS"/>
+	<flag value="-DWEBOS=WEBOS"/>
 	<include name="common-defines.xml" />
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>

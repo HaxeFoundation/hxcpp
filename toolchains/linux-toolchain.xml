@@ -40,7 +40,7 @@
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-DHX_LINUX"/>
-  <flag value="-DRASPBERRYPI" if="rpi"/>
+  <flag value="-DRASPBERRYPI=RASPBERRYPI" if="rpi"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <include name="common-defines.xml" />
