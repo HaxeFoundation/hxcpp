@@ -1,0 +1,66 @@
+<xml>
+
+<set name="DBG" value="-debug" if="debug"/>
+<set name="M64" value="64" if="HXCPP_M64"/>
+<set name="F32" value="-f32" if="HXCPP_FLOAT32"/>
+<set name="NEEDS_NC" value="-nc" if="windows"/>
+<set name="NOCONSOLE" value="${NEEDS_NC}" if="no_console"/>
+<set name="RPI" value="-rpi" if="rpi"/>
+<set name="APIFP" value="-hfp" if="hardfp"/>
+
+<set name="STD_MODULE_LINK" value="dll"/>
+
+<set name="static_link" value="1" if="iphoneos" unless="dll_import" />
+<set name="static_link" value="1" if="iphonesim" unless="dll_import" />
+<set name="static_link" value="1" if="emscripten" unless="dll_import" />
+
+<set name="STAT" value="-stat" if="static_link" />
+
+<set name="OBJEXT" value="${M64}${F32}${STAT}${DBG}${NOCONSOLE}${RPI}${APIFP}" />
+
+<set name="STD_MODULE_LINK" value="static_link" if="static_link"/>
+
+
+<set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
+<set name="LIBEXTRA" value=".iphoneos-v7" if="iphoneos"/>
+<set name="LIBEXTRA" value=".iphoneos" if="iphoneos" unless="HXCPP_ARMV7" />
+<set name="LIBEXTRA" value="-x86" if="blackberry"/>
+<set name="LIBEXTRA" value="" if="blackberry" unless="simulator" />
+<set name="LIBEXTRA" value="-x86" if="HXCPP_X86" />
+<set name="LIBEXTRA" value="-v7" if="HXCPP_ARMV7" unless="LIBEXTRA" />
+<set name="LIBEXTRA" value="-x86" if="tizen"/>
+<set name="LIBEXTRA" value="" if="tizen" unless="simulator" />
+<set name="LIBPREFIX" value="lib" if="iphoneos"/>
+<set name="LIBPREFIX" value="lib" if="iphonesim"/>
+<set name="LIBPREFIX" value="lib" if="static_link"/>
+<set name="LIBEXT" value=".a" />
+<set name="LIBEXT" value=".lib" if="windows"/>
+
+
+<set name="haxelink" value="exe" unless="static_link"/>
+<set name="haxelink" value="static_link" if="static_link"/>
+<set name="haxelink" value="dll" if="android"/>
+<set name="haxelink" value="dll" if="dll_import"/>
+
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphoneos"/>
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphonesim"/>
+
+<set name="DESTDIR" value="bin" />
+<set name="DESTDIR" value="lib" if="static_link" unless="HXCPP_IOS_STDCPP"/>
+<set name="NDLLDIR" value="ndll" />
+<set name="NDLLDIR" value="lib" if="static_link" />
+
+<include name="${HXCPP_CONFIG}" section="vars" noerror="1"/>
+
+<set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
+
+
+<!-- You can override the exes an "exe" section on your own .hxcpp_config -->
+<!-- You can use replace="1" to change the compiler, or omit to add flags -->
+
+<include name="toolchain/${toolchain}-toolchain.xml"/>
+
+
+</xml>
+
+

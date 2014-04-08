@@ -23,17 +23,22 @@ typedef Linkers = Hash<Linker>;
 class BuildTool
 {
    var mDefines:Hash<String>;
+   var mCurrentIncludeFile:String;
    var mIncludePath:Array<String>;
    var mCompiler:Compiler;
    var mStripper:Stripper;
    var mLinkers:Linkers;
    var mFileGroups:FileGroups;
    var mTargets:Targets;
+   var m64:Bool;
+   var m32:Bool;
+   public static var os="";
    public static var sAllowNumProcs = true;
    public static var HXCPP = "";
    public static var is64 = false;
    public static var isWindows = false;
    public static var isLinux = false;
+   public static var isRPi = false;
    public static var isMac = false;
    public static var useCache = false;
    public static var compileCache:String;
@@ -55,8 +60,50 @@ class BuildTool
       mStripper = null;
       mTargets = new Targets();
       mLinkers = new Linkers();
+      mCurrentIncludeFile = "";
       mIncludePath = inIncludePath;
       instance = this;
+
+      m64 = mDefines.exists("HXCPP_M64");
+      m32 = mDefines.exists("HXCPP_M32");
+      if (m64==m32)
+      {
+         // Default to the current version of neko...
+         m64 = (~/64$/).match(os);
+         m32 = !m64;
+         mDefines.remove(m32 ? "HXCPP_M64" : "HXCPP_M32");
+      }
+
+
+      include("toolchain/setup.xml");
+
+
+      if (mDefines.exists("toolchain"))
+      {   
+         if (!mDefines.exists("BINDIR"))
+         {   
+            mDefines.set("BINDIR", Path.withoutDirectory(Path.withoutExtension(mDefines.get("toolchain"))));  
+         }
+      }
+      else
+         setDefaultToolchain(mDefines);
+
+
+      if (mDefines.exists("dll_import"))
+      {
+         var path = new Path(mDefines.get("dll_import"));
+         if (!mDefines.exists("dll_import_include"))
+            mDefines.set("dll_import_include", path.dir + "/include" );
+         if (!mDefines.exists("dll_import_link"))
+            mDefines.set("dll_import_link", mDefines.get("dll_import") );
+      }
+
+      setupAppleDirectories(mDefines);
+
+
+      include("toolchain/finish-setup.xml");
+
+
       var make_contents = "";
       try {
          make_contents = sys.io.File.getContent(inMakefile);
@@ -511,6 +558,14 @@ class BuildTool
          var c1 = inBase.substr(1,1);
          if (c1!=":")
          {
+            if (mCurrentIncludeFile!="")
+            {
+               var relative = Path.directory(mCurrentIncludeFile);
+               var name = PathManager.combine(relative, inBase);
+               if (FileSystem.exists(name))
+                  return name;
+            }
+
             for(p in mIncludePath)
             {
                var name = PathManager.combine(p, inBase);
@@ -639,8 +694,9 @@ class BuildTool
       var args = Sys.args();
       var env = Sys.environment();
 
-      Log.verbose = env.exists("HXCPP_VERBOSE");
-      exitOnThreadError = env.exists("HXCPP_EXIT_ON_ERROR");
+      for(e in env.keys())
+         defines.set(e, Sys.getEnv(e) );
+
 
       // Check for calling from haxelib ...
       if (args.length>0)
@@ -659,7 +715,13 @@ class BuildTool
             Sys.setCwd(last);
          }
       }
-      var os = Sys.systemName();
+
+      Log.verbose = defines.exists("HXCPP_VERBOSE");
+      exitOnThreadError = defines.exists("HXCPP_EXIT_ON_ERROR");
+
+
+      os = Sys.systemName();
+
       isWindows = (new EReg("window","i")).match(os);
       if (isWindows)
          defines.set("windows_host", "1");
@@ -670,7 +732,8 @@ class BuildTool
       if (isLinux)
          defines.set("linux_host", "1");
 
-      var isRPi = isLinux && Setup.isRaspberryPi();
+      isRPi = isLinux && Setup.isRaspberryPi();
+
       is64 = getIs64();
       
       for(arg in args)
@@ -722,43 +785,73 @@ class BuildTool
         include_path.push(env.get("HOME"));
       if (env.exists("USERPROFILE"))
         include_path.push(env.get("USERPROFILE"));
-      include_path.push(HXCPP + "/toolchains");
+      include_path.push(HXCPP);
 
       //trace(include_path);
 
-      var m64 = defines.exists("HXCPP_M64");
-      var m32 = defines.exists("HXCPP_M32");
-      if (m64==m32)
-      {
-         // Default to the current version of neko...
-         var os = Sys.systemName();
-         m64 = (~/64$/).match(os);
-         m32 = !m64;
-      }
-
-      var msvc = false;
-     
-      if (defines.exists ("toolchain"))
-      {   
-         if (!defines.exists ("BINDIR"))
-         {   
-            defines.set ("BINDIR", Path.withoutDirectory(Path.withoutExtension(defines.get ("toolchain"))));  
-         }
-      }
+      //var msvc = false;
       
+      // Create alias...
       if (defines.exists("ios"))
       {
          if (defines.exists("simulator"))
-         {
             defines.set("iphonesim", "iphonesim");
-         }
          else if (!defines.exists ("iphonesim"))
-         {
             defines.set("iphoneos", "iphoneos");
-         }
          defines.set("iphone", "iphone");
       }
 
+ 
+     
+
+      if (makefile=="" || Log.verbose)
+      {
+         printBanner();
+      }
+      
+      if (makefile=="")
+      {
+         Log.println(" \x1b[33;1mUsage:\x1b[0m\x1b[1m haxelib run hxcpp\x1b[0m Build.xml \x1b[3;37m[options]\x1b[0m");
+         Log.println("");
+         Log.println(" \x1b[33;1mOptions:\x1b[0m ");
+         Log.println("");
+         Log.println("  \x1b[1m-D\x1b[0;3mvalue\x1b[0m -- Specify a define to use when processing other commands");
+         Log.println("  \x1b[1m-verbose\x1b[0m -- Print additional information (when available)");
+         Log.println("");
+      }
+      else
+      {
+         Log.info("", "\x1b[33;1mUsing makefile: " + makefile + "\x1b[0m");
+         Log.info("", "\x1b[33;1mReading HXCPP config: " + defines.get("HXCPP_CONFIG") + "\x1b[0m");
+         Log.info("", "\x1b[33;1mUsing target toolchain: " + defines.get("toolchain") + "\x1b[0m");
+         if (Log.verbose) Log.println("");
+ 
+
+         if (targets.length==0)
+            targets.push("default");
+     
+         new BuildTool(makefile,defines,targets,include_path);
+      }
+   }
+
+   static function printBanner()
+   {
+      Log.println("\x1b[33;1m __                          ");             
+      Log.println("/\\ \\                                      ");
+      Log.println("\\ \\ \\___    __  _   ___   _____   _____   ");
+      Log.println(" \\ \\  _ `\\ /\\ \\/'\\ /'___\\/\\ '__`\\/\\ '__`\\ ");
+      Log.println("  \\ \\ \\ \\ \\\\/>  <//\\ \\__/\\ \\ \\L\\ \\ \\ \\L\\ \\");
+      Log.println("   \\ \\_\\ \\_\\/\\_/\\_\\ \\____\\\\ \\ ,__/\\ \\ ,__/");
+      Log.println("    \\/_/\\/_/\\//\\/_/\\/____/ \\ \\ \\/  \\ \\ \\/ ");
+      Log.println("                            \\ \\_\\   \\ \\_\\ ");
+      Log.println("                             \\/_/    \\/_/ \x1b[0m");
+      Log.println("");
+      Log.println("\x1b[1mhxcpp \x1b[0m\x1b[3;37m(Haxe C++ Runtime Support)\x1b[0m \x1b[1m(" + getVersion() + ")\x1b[0m");
+      Log.println("");
+   }
+
+   function setDefaultToolchain(defines:Hash<String>)
+   {
       if (defines.exists("iphoneos"))
       {
          defines.set("toolchain","iphoneos");
@@ -839,14 +932,14 @@ class BuildTool
          defines.set("gph","gph");
          defines.set("BINDIR","GPH");
       }
-      else if (defines.exists("mingw") || env.exists("HXCPP_MINGW") )
+      else if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") )
       {
          set64(defines,m64);
          defines.set("toolchain","mingw");
          defines.set("mingw","mingw");
          defines.set("BINDIR",m64 ? "Windows64":"Windows");
       }
-      else if (defines.exists("cygwin") || env.exists("HXCPP_CYGWIN"))
+      else if (defines.exists("cygwin") || defines.exists("HXCPP_CYGWIN"))
       {
          set64(defines,m64);
          defines.set("toolchain","cygwin");
@@ -872,7 +965,7 @@ class BuildTool
             set64(defines,m64);
             defines.set("toolchain","msvc");
             defines.set("windows","windows");
-            msvc = true;
+            //msvc = true;
             if ( defines.exists("winrt") )
             {
                defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
@@ -918,16 +1011,12 @@ class BuildTool
             defines.set("BINDIR",m64 ? "Mac64":"Mac");
          }
       }
+   }
 
-      if (defines.exists("dll_import"))
-      {
-         var path = new Path(defines.get("dll_import"));
-         if (!defines.exists("dll_import_include"))
-            defines.set("dll_import_include", path.dir + "/include" );
-         if (!defines.exists("dll_import_link"))
-            defines.set("dll_import_link", defines.get("dll_import") );
-      }
 
+
+   function setupAppleDirectories(defines:Hash<String>)
+   {
       if (defines.exists("apple") && !defines.exists("DEVELOPER_DIR"))
       {
          var developer_dir = ProcessManager.runProcessLine("", "xcode-select", ["--print-path"], true, false);
@@ -986,48 +1075,6 @@ class BuildTool
       {
          defines.set("LEGACY_MACOSX_SDK","1");
       }
-
-      if (targets.length==0)
-         targets.push("default");
-      
-      if (makefile=="" || Log.verbose)
-      {
-         Log.println("\x1b[33;1m __                          ");             
-         Log.println("/\\ \\                                      ");
-         Log.println("\\ \\ \\___    __  _   ___   _____   _____   ");
-         Log.println(" \\ \\  _ `\\ /\\ \\/'\\ /'___\\/\\ '__`\\/\\ '__`\\ ");
-         Log.println("  \\ \\ \\ \\ \\\\/>  <//\\ \\__/\\ \\ \\L\\ \\ \\ \\L\\ \\");
-         Log.println("   \\ \\_\\ \\_\\/\\_/\\_\\ \\____\\\\ \\ ,__/\\ \\ ,__/");
-         Log.println("    \\/_/\\/_/\\//\\/_/\\/____/ \\ \\ \\/  \\ \\ \\/ ");
-         Log.println("                            \\ \\_\\   \\ \\_\\ ");
-         Log.println("                             \\/_/    \\/_/ \x1b[0m");
-         Log.println("");
-         Log.println("\x1b[1mhxcpp \x1b[0m\x1b[3;37m(Haxe C++ Runtime Support)\x1b[0m \x1b[1m(" + getVersion() + ")\x1b[0m");
-         Log.println("");
-      }
-      
-      if (makefile=="")
-      {
-         Log.println(" \x1b[33;1mUsage:\x1b[0m\x1b[1m haxelib run hxcpp\x1b[0m Build.xml \x1b[3;37m[options]\x1b[0m");
-         Log.println("");
-         Log.println(" \x1b[33;1mOptions:\x1b[0m ");
-         Log.println("");
-         Log.println("  \x1b[1m-D\x1b[0;3mvalue\x1b[0m -- Specify a define to use when processing other commands");
-         Log.println("  \x1b[1m-verbose\x1b[0m -- Print additional information (when available)");
-         Log.println("");
-      }
-      else
-      {
-         Log.info("", "\x1b[33;1mUsing makefile: " + makefile + "\x1b[0m");
-         Log.info("", "\x1b[33;1mReading HXCPP config: " + defines.get("HXCPP_CONFIG") + "\x1b[0m");
-         Log.info("", "\x1b[33;1mUsing target toolchain: " + defines.get("toolchain") + "\x1b[0m");
-         if (Log.verbose) Log.println("");
-         
-         for(e in env.keys())
-            defines.set(e, Sys.getEnv(e) );
-
-         new BuildTool(makefile,defines,targets,include_path);
-      }
    }
 
    function parseXML(inXML:Fast,inSection:String)
@@ -1065,7 +1112,6 @@ class BuildTool
                case "path" : 
                   var path = substitute(el.att.name);
                   Log.info("", "Adding path " + path);
-                  var os = Sys.systemName();
                   var sep = mDefines.exists("windows_host") ? ";" : ":";
                   var add = path + sep + Sys.getEnv("PATH");
                   Sys.putEnv("PATH", add);
@@ -1087,20 +1133,8 @@ class BuildTool
                      mFileGroups.set(name,createFileGroup(el,null,name));
                case "include" : 
                   var name = substitute(el.att.name);
-                  var full_name = findIncludeFile(name);
-                  if (full_name!="")
-                  {
-                     var make_contents = sys.io.File.getContent(full_name);
-                     var xml_slow = Xml.parse(make_contents);
-                     var section = el.has.section ? el.att.section : "";
-
-                     parseXML(new Fast(xml_slow.firstElement()),section);
-                  }
-                  else if (!el.has.noerror)
-                  {
-                     Log.error("Could not find include file \"" + name + "\"");
-                     //throw "Could not find include file " + name;
-                  }
+                  var section = el.has.section ? el.att.section : "";
+                  include(name, section, el.has.noerror);
                case "target" : 
                   var name = substitute(el.att.id);
                   var overwrite = name=="default";
@@ -1118,6 +1152,31 @@ class BuildTool
          }
       }
    }
+
+
+   public function include(inName:String, inSection:String="", inAllowMissing:Bool = false)
+   {
+      var full_name = findIncludeFile(inName);
+      if (full_name!="")
+      {
+         var oldInclude = mCurrentIncludeFile;
+         mCurrentIncludeFile = full_name;
+
+         var make_contents = sys.io.File.getContent(full_name);
+         var xml_slow = Xml.parse(make_contents);
+
+         parseXML(new Fast(xml_slow.firstElement()),inSection);
+
+         mCurrentIncludeFile = oldInclude;
+      }
+      else if (!inAllowMissing)
+      {
+         Log.error("Could not find include file \"" + inName + "\"");
+         //throw "Could not find include file " + name;
+      }
+   }
+
+
 
    static function set64(outDefines:Hash<String>, in64:Bool)
    {

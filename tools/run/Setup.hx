@@ -81,7 +81,7 @@ class Setup
 
       if (BuildTool.HXCPP!="")
       {
-         var src = toPath(BuildTool.HXCPP + "/toolchains/example.hxcpp_config.xml");
+         var src = toPath(BuildTool.HXCPP + "/toolchain/example.hxcpp_config.xml");
          if (!sys.FileSystem.exists(config))
          {
             try
@@ -393,7 +393,7 @@ class Setup
             xpCompat = true;
          }
 
-         var vc_setup_proc = new Process("cmd.exe", ["/C", BuildTool.HXCPP + "\\toolchains\\msvc" + extra + "-setup.bat" ]);
+         var vc_setup_proc = new Process("cmd.exe", ["/C", BuildTool.HXCPP + "\\toolchain\\msvc" + extra + "-setup.bat" ]);
          var vars_found = false;
          var error_string = "";
          var output = new Array<String>();
