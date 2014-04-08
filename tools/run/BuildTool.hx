@@ -42,6 +42,9 @@ class BuildTool
    public static var helperThread = new Tls<Thread>();
    static var mVarMatch = new EReg("\\${(.*?)}","");
 
+   public static var exitOnThreadError = false;
+   public static var threadExitCode = 0;
+
    public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
         inIncludePath:Array<String> )
    {
@@ -117,6 +120,13 @@ class BuildTool
 
       for(target in inTargets)
          buildTarget(target);
+   }
+
+   public static function setThreadError(inCode:Int)
+   {
+      threadExitCode = inCode;
+      if (exitOnThreadError)
+         Sys.exit(inCode);
    }
 
    public function buildTarget(inTarget:String)
@@ -228,7 +238,7 @@ class BuildTool
                {
                   try
                   {
-                  while(true)
+                  while(threadExitCode==0)
                   {
                      mutex.acquire();
                      if (to_be_compiled.length==0)
@@ -241,9 +251,11 @@ class BuildTool
 
                      compiler.compile(file,t);
                   }
-                  } catch (error:Dynamic)
+                  }
+                  catch (error:Dynamic)
                   {
-                     main_thread.sendMessage("Error");
+                     if (threadExitCode!=0)
+                        setThreadError(-1);
                   }
                   main_thread.sendMessage("Done");
                });
@@ -252,14 +264,12 @@ class BuildTool
             // Wait for theads to finish...
             for(t in 0...threads)
             {
-               var result = Thread.readMessage(true);
-               if (result=="Error")
-               {
-                  // Already printed the error from the thread, just need to exit
-                  Sys.exit (1);
-                  //throw "Error in building thread";
-               }
+               Thread.readMessage(true);
             }
+
+            // Already printed the error from the thread, just need to exit
+            if (threadExitCode!=0)
+               Sys.exit(threadExitCode);
          }
       }
 
@@ -630,6 +640,7 @@ class BuildTool
       var env = Sys.environment();
 
       Log.verbose = env.exists("HXCPP_VERBOSE");
+      exitOnThreadError = env.exists("HXCPP_EXIT_ON_ERROR");
 
       // Check for calling from haxelib ...
       if (args.length>0)

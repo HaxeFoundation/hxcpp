@@ -140,42 +140,7 @@ class ProcessManager
       return result;
    }
    
-   public static function runProcessThreaded(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):Int
-   {
-      if (print && !Log.verbose)
-      {
-         Log.info(formatMessage(command, args));
-      }
-      
-      command = PathManager.escape(command);
-      
-      if (safeExecute)
-      {
-         try
-         {
-            if (path != null && path != "" && !FileSystem.exists(FileSystem.fullPath(path)) && !FileSystem.exists(FileSystem.fullPath(new Path(path).dir)))
-            {
-               Log.error("The specified target path \"" + path + "\" does not exist","",null,false);
-               throw "Bad target path";
-            }
-            return _runProcessThreaded(path, command, args, ignoreErrors);
-         }
-         catch (e:Dynamic)
-         {
-            if (!ignoreErrors)
-            {
-               // This will throw...
-               Log.error(e, e, e, false);
-            }
-            return null;
-         }
-      }
-      else
-      {  
-         return _runProcessThreaded(path, command, args, ignoreErrors);   
-      }
-   }
-   
+  
    private static function _runCommand(path:String, command:String, args:Array<String>):Int
    {
       var oldPath:String = "";
@@ -290,18 +255,14 @@ class ProcessManager
       return output;
    }
 
-   private static function _runProcessThreaded(path:String, command:String, args:Array<String>, ignoreErrors:Bool):Int
+   // This function will return 0 on success, or non-zero error code
+   public static function runProcessThreaded(command:String, args:Array<String>):Int
    {
-      var oldPath:String = "";
+      if (!Log.verbose)
+         Log.info(formatMessage(command, args));
       
-      if (path != null && path != "")
-      {
-         Log.info("", " - \x1b[1mChanging directory:\x1b[0m " + path + "");
-         
-         oldPath = Sys.getCwd();
-         Sys.setCwd(path);
-      }
-      
+      command = PathManager.escape(command);
+
       Log.info("", " - \x1b[1mRunning process:\x1b[0m " + formatMessage(command, args));
       
       var output = new Array<String>();
@@ -355,24 +316,19 @@ class ProcessManager
       var code = process.exitCode();
       process.close();
       
-      if (code != 0 && !ignoreErrors)
+      if (code != 0)
       {
+         Log.lock();
+         Log.info('${Log.RED}${Log.BOLD}Error exit code $code${Log.NORMAL} while running: ' + formatMessage(command,args) );
          if (output.length > 0)
          {
             Log.info(output.join("\n"));
          }
-         var message = "Compiler error (" + code + ")";
-         if (errOut != null) message = errOut.join("\n");
-         Log.error(message, "", null, false);
+         if (errOut!=null)
+            Log.error(errOut.join("\n"), "", null, false);
+         Log.unlock();
          
-         //var fullLog = [ "ERROR while running:", formatMessage(command,args) ].concat(output);
-         //if (errOut!=null)
-            //fullLog = fullLog.concat(errOut);
-         //fullLog.push('Process exit code $code');
-         //Log.error(fullLog.join("\n"));
-         //throw "Compiler Error";
-
-         Sys.exit(code);
+         return code;
       }
       
       if (errOut!=null && errOut.length>0)
@@ -383,6 +339,6 @@ class ProcessManager
          Log.info(output.join("\n"));
       }
       
-      return code;
+      return 0;
    }
 }
