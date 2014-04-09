@@ -79,7 +79,7 @@ typedef char HX_CHAR;
 
 #define HX_CSTRING2(wide,len,utf8) HX_STRI(utf8)
 
-#define HX_FIELD_EQ(name,field) !memcmp(name.__s, field, sizeof(field)/sizeof(char))
+#define HX_FIELD_EQ(name,field) !strcmp(name.__s, field)
 
 
 #if (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && !defined HXCPP_CHECK_POINTER
