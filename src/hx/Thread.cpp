@@ -506,6 +506,8 @@ public:
 			if (mAvailable)
 			{
 				--mAvailable;
+		      if (mAvailable>0)
+               mNotEmpty.Set();
 				mAvailableLock.Unlock();
 				return true;
 			}
