@@ -288,8 +288,9 @@ typedef hx::QuickVec<hx::Object *> ObjectStack;
 // For threaded marking
 static int sActiveThreads = 0;
 static int sRunningThreads = 0;
+static bool sMarkThreadsInit = false;
 static MySemaphore *sThreadWake[MAX_MARK_THREADS];
-static MySemaphore *sMarkDone = 0;
+static MySemaphore *sMarkDone[MAX_MARK_THREADS];
 
 
 struct AtomicLock
@@ -796,7 +797,6 @@ struct GlobalChunks
             for(int i=0;i<sActiveThreads;i++)
                if (i!=inThreadId)
                   sThreadWake[i]->Set();
-            sMarkDone->Set();
             return 0;
          }
          else // wait to be woken....
@@ -2037,9 +2037,9 @@ public:
 
       if (MAX_MARK_THREADS>1)
       {
-         if (!sMarkDone)
+         if (!sMarkThreadsInit)
          {
-            sMarkDone = new MySemaphore();
+            sMarkThreadsInit = true;
             for(int i=0;i<MAX_MARK_THREADS;i++)
                CreateMarker(i);
          }
@@ -2052,7 +2052,9 @@ public:
          for(int i=0;i<sActiveThreads;i++)
             sThreadWake[i]->Set();
 
-         sMarkDone->Wait();
+         // Join the workers...
+         for(int i=0;i<sActiveThreads;i++)
+            sMarkDone[i]->Wait();
          sActiveThreads = 0;
       }
       else
@@ -2072,6 +2074,7 @@ public:
       {
          sThreadWake[inId]->Wait();
          context.Process();
+         sMarkDone[inId]->Set();
       }
    }
 
@@ -2084,6 +2087,7 @@ public:
    void CreateMarker(int inId)
    {
       sThreadWake[inId] = new MySemaphore();
+      sMarkDone[inId] = new MySemaphore();
 
       void *info = (void *)(size_t)inId;
     #ifdef HX_WINRT
