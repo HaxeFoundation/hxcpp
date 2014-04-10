@@ -50,10 +50,8 @@
 <set name="NDLLDIR" value="ndll" />
 <set name="NDLLDIR" value="lib" if="static_link" />
 
-<include name="${HXCPP_CONFIG}" section="vars" noerror="1"/>
 
 <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
-
 
 <!-- You can override the exes an "exe" section on your own .hxcpp_config -->
 <!-- You can use replace="1" to change the compiler, or omit to add flags -->

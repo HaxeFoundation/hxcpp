@@ -74,6 +74,10 @@ class Log
             printMutex.release();
       }
    }
+   inline public static function v(verboseMessage:String):Void
+   {
+      Log.info("",verboseMessage);
+   }
 
    public static function lock():Void
    {

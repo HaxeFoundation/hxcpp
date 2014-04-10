@@ -1,6 +1,9 @@
 <xml>
 
-   <!-- You can override this file to setup your own toolchain -->
+   <!-- You can override this file to setup your own toolchain. 
+        You should peobably include thie following line -->
+
+   <include name="${HXCPP_CONFIG}" section="vars" noerror="1"/>
 
 </xml>
 

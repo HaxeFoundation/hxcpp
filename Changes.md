@@ -1,4 +1,10 @@
 
+* Fix issues when using names like ANDROID or IPHONE in an enum
+* Added more info in verbose mode (setenv HXCPP_VERBOSE)
+* Refactor build files to allow greater customisation
+* Fix bug with 'lock' where some threads may not get released
+* Add optimised arrays access
+* Add optimised memory operations for arrays and haxe.io.Bytes
 * Avoid blocking in gethostbyname
 * Upgrade run tool output and layout
 * Restore sys_time for windows

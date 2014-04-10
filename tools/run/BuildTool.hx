@@ -32,8 +32,10 @@ class BuildTool
    var mTargets:Targets;
    var m64:Bool;
    var m32:Bool;
+
    public static var os="";
    public static var sAllowNumProcs = true;
+   public static var sCompileThreadCount = 1;
    public static var HXCPP = "";
    public static var is64 = false;
    public static var isWindows = false;
@@ -76,6 +78,23 @@ class BuildTool
 
 
       include("toolchain/setup.xml");
+
+      if (sAllowNumProcs)
+      {
+         var thread_var = mDefines.exists("HXCPP_COMPILE_THREADS") ?
+            mDefines.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
+
+         if (thread_var == null)
+         {
+            sCompileThreadCount = getNumberOfProcesses();
+         }
+         else
+         {
+            sCompileThreadCount = (Std.parseInt(thread_var)<2) ? 1 : Std.parseInt(thread_var);
+         }
+         Log.v("Using " + sCompileThreadCount + " compile threads");
+      }
+
 
 
       if (mDefines.exists("toolchain"))
@@ -196,23 +215,7 @@ class BuildTool
       for(sub in target.mSubTargets)
          buildTarget(sub);
  
-      var threads = 1;
-
-      // Old compiler can't use multi-threads because of pdb conflicts
-      if (sAllowNumProcs)
-      {
-         var thread_var = mDefines.exists("HXCPP_COMPILE_THREADS") ?
-            mDefines.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
-         
-         if (thread_var == null)
-         {
-            threads = getNumberOfProcesses();
-         }
-         else
-         {
-            threads = (Std.parseInt(thread_var)<2) ? 1 : Std.parseInt(thread_var);
-         }
-      }
+      var threads = BuildTool.sCompileThreadCount;
 
       PathManager.resetDirectoryCache();
       var restoreDir = "";
