@@ -10,7 +10,7 @@
   <exe name="emar" if="emscripten" />
   <exe name="${HXCPP_AR}" if="HXCPP_AR" />
   <fromfile value="" if="GCC_OLD" />
-  <!-- <fromfile value="" if="emscripten" /> -->
+  <fromfile value="" if="tizen" />
   <outflag value="-cr "/>
   <outflag value="cr " if="emscripten" />
   <section if="HXCPP_USE_LIBTOOL">
