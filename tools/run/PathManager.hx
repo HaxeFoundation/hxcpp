@@ -85,7 +85,7 @@ class PathManager
       return path;
    }
 
-   public static function getHaxelib (haxelib:String, version:String = "", validate:Bool = false, clearCache:Bool = false):String
+   public static function getHaxelib (haxelib:String, version:String = "", validate:Bool = true, clearCache:Bool = false):String
    {   
       var name = haxelib;
       if (version != "")
@@ -120,6 +120,24 @@ class PathManager
             if (StringTools.trim(lines[i]) == "-D " + haxelib)
             {
                result = StringTools.trim(lines[i - 1]);
+            }
+         }
+         
+         if (result == "")
+         {   
+            for (line in lines)
+            {
+               if (line != "" && line.substr(0, 1) != "-")
+               {
+                  try
+                  {
+                     if (FileSystem.exists(line))
+                     {
+                        result = line;
+                     }
+                  }
+                  catch (e:Dynamic) {}
+               }
             }
          }
          
