@@ -7,7 +7,7 @@
 
 <path name="${MINGW_ROOT}/bin"/>
 
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 
 <unset name="USE_PRECOMPILED_HEADERS"/>
 
@@ -17,7 +17,7 @@
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
   <flag value="-O2"/>
-  <include name="common-defines.xml" />
+  <include name="toolchain/common-defines.xml" />
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-m32" unless="HXCPP_M64"/>

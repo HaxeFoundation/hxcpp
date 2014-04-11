@@ -57,7 +57,7 @@
 
 <set name="HXCPP_AR" value="${EXEPREFIX}-ar" />
 
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 
 <compiler id="android-gcc" exe="g++">
 
@@ -74,7 +74,7 @@
    <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/include" />
  </section>
 
- <include name="common-defines.xml" />
+ <include name="toolchain/common-defines.xml" />
  <flag value="-I${HXCPP}/include"/>
  <flag value="-Iinclude"/>
  <flag value="-fpic"/>

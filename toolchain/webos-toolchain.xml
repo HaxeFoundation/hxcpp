@@ -9,7 +9,7 @@
 <set name="CodeSourcery" value="C:\Program Files (x86)\CodeSourcery\Sourcery G++ Lite" unless = "CodeSourcery" />
 <path name="${CodeSourcery}/bin" if="windows_host"/>
  
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 
 
 <!-- WEBOS TOOLS -------------------------------------------------->
@@ -26,7 +26,7 @@
 	<flag value="-mfpu=vfp" if="armv6" />
 	<flag value="-mfloat-abi=softfp"/>
 	<flag value="-DWEBOS=WEBOS"/>
-	<include name="common-defines.xml" />
+	<include name="toolchain/common-defines.xml" />
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
 	<flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>

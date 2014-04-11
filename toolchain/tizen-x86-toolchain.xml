@@ -8,7 +8,7 @@
 
 <path name="${TIZEN_SDK}/tools/i386-linux-gnueabi-gcc-4.5/bin" />
  
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 
 
 <!-- TIZEN TOOLS -------------------------------------------------->
@@ -21,7 +21,7 @@
 	<flag value="-I${TIZEN_PLATFORM}/usr/include"/>
 	<flag value="-DTIZEN=TIZEN"/>
 	<flag value="-D_APP_LOG"/>
-	<include name="common-defines.xml" />
+	<include name="toolchain/common-defines.xml" />
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
 	<flag value="-fpic"/>

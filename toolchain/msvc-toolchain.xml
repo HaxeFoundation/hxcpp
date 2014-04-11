@@ -67,7 +67,7 @@
   <flag value="-GS-"/>
   <flag value="-arch:SSE" unless="HXCPP_M64" />
   <flag value="-I${HXCPP}/include"/>
-  <include name="common-defines.xml" />
+  <include name="toolchain/common-defines.xml" />
   <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
   <flag value="-D_ALLOW_MSC_VER_MISMATCH"/>
   <flag value="-D_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH"/>

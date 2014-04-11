@@ -8,7 +8,7 @@
 
 <path name="${TIZEN_SDK}/tools/arm-linux-gnueabi-gcc-4.5/bin" />
  
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 
 
 <!-- TIZEN TOOLS -------------------------------------------------->
@@ -25,7 +25,7 @@
 	<flag value="-mfloat-abi=softfp"/>
 	<flag value="-mfpu=vfpv3-d16"/>
 	<flag value="-mtune=cortex-a8"/>
-	<include name="common-defines.xml" />
+	<include name="toolchain/common-defines.xml" />
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
 	<flag value="-fpic"/>

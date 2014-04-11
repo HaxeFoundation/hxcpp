@@ -3,7 +3,7 @@
 <echo value="Using iOS SDK ${IPHONE_VER}" if="VERBOSE"/>
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 <path name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />
 
 <set name="FORCE_LIBGCC" value="1" if="HXCPP_IOS_STDCPP" unless="HXCPP_GCC" />
@@ -48,7 +48,7 @@
   <flag value="-Wno-null-dereference" unless="HXCPP_GCC"/>
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-bool-conversion" unless="HXCPP_GCC"/>
-  <include name="common-defines.xml" />
+  <include name="toolchain/common-defines.xml" />
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-I${HXCPP}/include"/>
   <cppflag value="-frtti"/>

@@ -6,7 +6,7 @@
 
 <!-- EMCC TOOLS -------------------------------------->
 
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 
 <compiler id="emscripten" exe="emcc">
   <exe name="${CXX}" if="CXX" />
@@ -28,7 +28,7 @@
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-bool-conversion" />
   <flag value="-Wno-warn-absolute-paths" />
-  <include name="common-defines.xml" />
+  <include name="toolchain/common-defines.xml" />
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/emscripten${OBJEXT}"/>
   <outflag value="-o "/>

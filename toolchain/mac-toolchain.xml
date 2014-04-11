@@ -2,7 +2,7 @@
 <!-- MACOS TOOLS -------------------------------------------------->
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.7" if="OBJC_ARC" unless="MACOSX_DEPLOYMENT_TARGET" />
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.5" unless="MACOSX_DEPLOYMENT_TARGET" />
 <path name="${DEVELOPER_DIR}/usr/bin" />
@@ -30,7 +30,7 @@
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-bool-conversion" if="HXCPP_CLANG"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
-  <include name="common-defines.xml" />
+  <include name="toolchain/common-defines.xml" />
   <objdir value="obj/darwin${OBJEXT}/" />
   <outflag value="-o"/>
   <ext value=".o"/>

@@ -2,7 +2,7 @@
 
 
 <path name="${QNX_HOST}/usr/bin/" /> 
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 
 
 <!-- BLACKBERRY TOOLS -------------------------------------------------->
@@ -16,7 +16,7 @@
 	<flag value="-DBLACKBERRY=BLACKBERRY"/>
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
-	<include name="common-defines.xml" />
+	<include name="toolchain/common-defines.xml" />
 	<flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
 	<flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
 	<flag value="-fpic"/>

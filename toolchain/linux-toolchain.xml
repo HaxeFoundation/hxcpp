@@ -26,7 +26,7 @@
    </section>
 </section>
 
-<include name="gcc-toolchain.xml"/>
+<include name="toolchain/gcc-toolchain.xml"/>
 <set name="noM32" value="1" if="HXCPP_M64" />
 <set name="noM32" value="1" if="rpi" />
 
@@ -43,7 +43,7 @@
   <flag value="-DRASPBERRYPI=RASPBERRYPI" if="rpi"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
-  <include name="common-defines.xml" />
+  <include name="toolchain/common-defines.xml" />
   <flag value="-m32" unless="noM32"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
