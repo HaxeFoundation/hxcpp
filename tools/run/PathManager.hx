@@ -85,7 +85,7 @@ class PathManager
       return path;
    }
 
-   public static function getHaxelib (haxelib:String, version:String = "", validate:Bool = false, clearCache:Bool = false):String
+   public static function getHaxelib (haxelib:String, version:String = "", validate:Bool = true, clearCache:Bool = false):String
    {   
       var name = haxelib;
       if (version != "")
