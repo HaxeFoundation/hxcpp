@@ -1,4 +1,5 @@
 
+* Add BlackBerry and Tizen binaries
 * Fix issues when using names like ANDROID or IPHONE in an enum
 * Added more info in verbose mode (setenv HXCPP_VERBOSE)
 * Refactor build files to allow greater customisation
