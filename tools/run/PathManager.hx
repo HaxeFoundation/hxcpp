@@ -123,6 +123,24 @@ class PathManager
             }
          }
          
+         if (result == "")
+         {   
+            for (line in lines)
+            {
+               if (line != "" && line.substr(0, 1) != "-")
+               {
+                  try
+                  {
+                     if (FileSystem.exists(line))
+                     {
+                        result = line;
+                     }
+                  }
+                  catch (e:Dynamic) {}
+               }
+            }
+         }
+         
          if (validate)
          {
             if (result == "")
