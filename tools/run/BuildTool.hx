@@ -458,6 +458,20 @@ class BuildTool
                   group.addCompilerFlag( substitute(el.att.value) );
                case "precompiledheader" : 
                   group.setPrecompiled( substitute(el.att.name), substitute(el.att.dir) );
+               case "include" : 
+                  var subbed_name = substitute(el.att.name);
+                  var full_name = findIncludeFile(subbed_name);
+                  if (full_name!="")
+                  {
+                     var make_contents = sys.io.File.getContent(full_name);
+                     var xml_slow = Xml.parse(make_contents);
+                     createFileGroup(new Fast(xml_slow.firstElement()), group, inName);
+                  } 
+                  else
+                  {
+                     Log.error("Could not find include file \"" + subbed_name + "\"");
+
+                  }
             }
       }
 
