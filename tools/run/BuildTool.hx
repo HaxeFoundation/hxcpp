@@ -948,8 +948,11 @@ class BuildTool
          defines.set("toolchain","gph");
          defines.set("gph","gph");
          defines.set("BINDIR","GPH");
-      }
-      else if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") )
+      } else if (defines.exists ("gcw0")) {
+	 defines.set ("toolchain", "gcw0");
+	 defines.set ("gcw0", "gcw0");
+	 defines.set ("BINDIR", "GCW0");
+      } else if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") )
       {
          set64(defines,m64);
          defines.set("toolchain","mingw");
