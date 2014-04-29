@@ -196,7 +196,7 @@ String GetFileContents(String inFile)
    if (bytes<1)
       return null();
    buf[bytes]='\0';
-   return String(buf,strlen(buf));
+   return String(buf,strlen(buf)).dup();
 }
 
 #ifndef HX_WINRT
