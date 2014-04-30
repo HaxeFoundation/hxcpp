@@ -217,7 +217,7 @@ String FindHaxelib(String inLib)
    if (haxepath.length==0)
    {
        #ifdef _WIN32
-	   String home = GetEnv("HOMEDRIVE") + GetEnv("HOMEPATH") + HX_CSTRING("/.haxelib");
+       String home = GetEnv("HOMEDRIVE") + GetEnv("HOMEPATH") + HX_CSTRING("/.haxelib");
        #else
        String home = GetEnv("HOME") + HX_CSTRING("/.haxelib");
        #endif
