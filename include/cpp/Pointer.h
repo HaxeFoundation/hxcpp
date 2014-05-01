@@ -8,31 +8,32 @@ template<typename T>
 class Pointer
 {
 public:
-   T *value;
-
+   T *ptr;
 
    inline Pointer( ) { }
-   inline Pointer( const Pointer &inRHS ) : value(inRHS.value) {  }
+   inline Pointer( const Pointer &inRHS ) : ptr(inRHS.ptr) {  }
    inline Pointer( const Dynamic &inRHS) { }
    inline Pointer( const null &inRHS ) { }
-   inline Pointer( T *inValue ) : value(inValue) { }
-   inline Pointer operator=( Pointer &inRHS ) { return value = inRHS.value; }
+   inline Pointer( T *inValue ) : ptr(inValue) { }
+   inline Pointer operator=( Pointer &inRHS ) { return ptr = inRHS.ptr; }
    inline Dynamic operator=( Dynamic &inValue ) { return inValue; }
    inline Dynamic operator=( null &inValue ) { return inValue; }
 
    // Allow '->' syntax
    inline Pointer *operator->() { return this; }
- 	inline void inc() { ++value; }
-	inline void dec() { -- value; }
-	inline void add(int inInt) { value+=inInt; }
+ 	inline void inc() { ++ptr; }
+	inline void dec() { -- ptr; }
+	inline void add(int inInt) { ptr+=inInt; }
 
 
-   inline T *ref() { return value; }
-   inline T &__get(int inIndex) { return value[inIndex]; }
-   inline T &__set(int inIndex, T inValue) { T *p = value+inIndex; *p = inValue; return *p; }
+   inline T &__get(int inIndex) { return ptr[inIndex]; }
+   inline T &__set(int inIndex, T inValue) { T *p = ptr+inIndex; *p = inValue; return *p; }
+
+   inline T get_value() { return *ptr; }
+   inline T set_value(T inValue) { return *ptr = inValue;  }
 
    operator Dynamic () { return null(); }
-   operator T * () { return value; }
+   operator T * () { return ptr; }
 
 };
 
@@ -42,7 +43,7 @@ class Pointer_obj
 {
 public:
    template<typename T>
-	inline static Pointer<T> fromArray(Array<T> array, int index)  { return Pointer<T>(&array[index]); }
+	inline static Pointer<T> addressOf(T &value)  { return Pointer<T>(&value); }
 };
 
 
