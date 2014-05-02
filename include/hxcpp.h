@@ -8,25 +8,25 @@
 
 
 #ifdef _MSC_VER
-#include <typeinfo.h>
-namespace hx { typedef ::type_info type_info; }
+   #include <typeinfo.h>
+   namespace hx { typedef ::type_info type_info; }
 #else
-#include <typeinfo>
-#include <stdint.h>
-namespace hx { typedef std::type_info type_info; }
-#ifndef EMSCRIPTEN
-using hx::type_info;
-#ifdef __MINGW32__
-#include <stdint.h>
-#else
-typedef int64_t  __int64;
-#endif
-#endif
+   #include <typeinfo>
+   #include <stdint.h>
+   namespace hx { typedef std::type_info type_info; }
+   #ifndef EMSCRIPTEN
+      using hx::type_info;
+      #ifdef __MINGW32__
+         #include <stdint.h>
+      #else
+         typedef int64_t  __int64;
+      #endif
+   #endif
 #endif
 
 #if defined(EMSCRIPTEN) || defined(IPHONE)
-#include <unistd.h>
-#include <cstdlib>
+  #include <unistd.h>
+  #include <cstdlib>
 #endif
 
 
@@ -37,8 +37,8 @@ typedef int64_t  __int64;
 #include <wchar.h>
 
 #ifdef HX_LINUX
-#include <unistd.h>
-#include <cstdio>
+  #include <unistd.h>
+  #include <cstdio>
 #endif
 
 
@@ -138,9 +138,31 @@ typedef float Float;
 typedef double Float;
 #endif
 
+// Extended mapping - cpp namespace
+namespace cpp
+{
+   typedef signed char Int8;
+   typedef unsigned char UInt8;
+   typedef signed short Int16;
+   typedef unsigned short UInt16;
+   typedef signed int Int32;
+   typedef unsigned int UInt32;
+   #ifdef _WIN32
+   typedef __int64 Int64;
+   typedef unsigned __int64 UInt64;
+   // TODO - EMSCRIPTEN?
+   #elif !defined(EMSCRIPTEN)
+   typedef int64_t Int64;
+   typedef uint64_t __int64 UInt64;
+   #endif
+   typedef float Float32;
+   typedef double Float64;
+};
+// Extended mapping - old way
+namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
+
 // --- Forward decalarations --------------------------------------------
 
-namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
 namespace cpp { class CppInt32__; }
 namespace hx { class Object; }
 namespace hx { class FieldMap; }
