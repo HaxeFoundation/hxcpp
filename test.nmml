@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+
+    <app main="TestMain" path="openflTest_bin" file="TestMain" />
+
+    <source path="openflTest" />
+
+    <haxelib name="openfl" />
+    <haxelib name="munit" />
+
+    <set name="SHOW_CONSOLE" value="1"/>
+    <haxedef name="SHOW_CONSOLE"/>
+
+</project>
