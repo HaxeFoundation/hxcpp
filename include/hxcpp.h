@@ -153,7 +153,7 @@ namespace cpp
    // TODO - EMSCRIPTEN?
    #elif !defined(EMSCRIPTEN)
    typedef int64_t Int64;
-   typedef uint64_t __int64 UInt64;
+   typedef uint64_t UInt64;
    #endif
    typedef float Float32;
    typedef double Float64;
