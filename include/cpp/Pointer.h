@@ -11,6 +11,8 @@ struct AutoCast
    explicit inline AutoCast(void *inValue) : value(inValue) { }
 };
 
+Dynamic CreateDynamicPointer(void *inValue);
+
 template<typename T>
 class Pointer
 {
@@ -21,9 +23,10 @@ public:
    inline Pointer( const Pointer &inRHS ) : ptr(inRHS.ptr) {  }
    inline Pointer( const Dynamic &inRHS) { ptr = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
    inline Pointer( const null &inRHS ) { }
-   inline Pointer( T *inValue ) : ptr(inValue) { }
+   inline Pointer( const T *inValue ) : ptr((T*)(inValue)) { }
+   //inline Pointer( T *inValue ) : ptr(inValue) { }
    inline Pointer( AutoCast inValue ) : ptr( (T*)inValue.value) { }
-   inline Pointer operator=( Pointer &inRHS ) { return ptr = inRHS.ptr; }
+   inline Pointer operator=( const Pointer &inRHS ) { return ptr = inRHS.ptr; }
    inline Dynamic operator=( Dynamic &inValue )
    {
       ptr = inValue==null() ? 0 : (T*) inValue->__GetHandle();
@@ -39,13 +42,16 @@ public:
  	inline Pointer postIncBy(int inDiff) { T *result = ptr; ptr+=inDiff; return result; }
 
 
+   inline const T &at(int inIndex) { return ptr[inIndex]; }
+
    inline T &__get(int inIndex) { return ptr[inIndex]; }
    inline T &__set(int inIndex, T inValue) { T *p = ptr+inIndex; *p = inValue; return *p; }
 
-   inline T get_value() { return *ptr; }
-   inline T set_value(T inValue) { return *ptr = inValue;  }
+   inline const T &get_value() { return *ptr; }
+   inline const T &get_ref() { return *ptr; }
+   inline const T &set_ref(T inValue) { return *ptr = inValue;  }
 
-   //operator Dynamic () { return null(); }
+   operator Dynamic () { return CreateDynamicPointer((void *)ptr); }
    operator T * () { return ptr; }
 
    inline void destroy() { delete ptr; }
@@ -58,6 +64,14 @@ public:
 
 };
 
+class Function_obj
+{
+public:
+	inline static AutoCast getProcAddress(String inLib, String inPrim)
+   {
+      return AutoCast(__hxcpp_get_proc_address(inLib, inPrim,false));
+   }
+};
 
 
 class Pointer_obj

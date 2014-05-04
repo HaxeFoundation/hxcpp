@@ -143,6 +143,7 @@ namespace cpp
 {
    typedef signed char Int8;
    typedef unsigned char UInt8;
+   typedef char Char;
    typedef signed short Int16;
    typedef unsigned short UInt16;
    typedef signed int Int32;
