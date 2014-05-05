@@ -39,7 +39,8 @@ public:
 	inline Pointer dec() { return --ptr; }
 	inline Pointer add(int inInt) { return ptr+inInt; }
  	inline Pointer incBy(int inDiff) { ptr+=inDiff; return ptr; }
- 	inline Pointer postIncBy(int inDiff) { T *result = ptr; ptr+=inDiff; return result; }
+ 	inline T &postIncRef() { return *ptr++; }
+ 	inline T &postIncVal() { return *ptr++; }
 
 
    inline const T &at(int inIndex) { return ptr[inIndex]; }
@@ -47,9 +48,9 @@ public:
    inline T &__get(int inIndex) { return ptr[inIndex]; }
    inline T &__set(int inIndex, T inValue) { T *p = ptr+inIndex; *p = inValue; return *p; }
 
-   inline const T &get_value() { return *ptr; }
-   inline const T &get_ref() { return *ptr; }
-   inline const T &set_ref(T inValue) { return *ptr = inValue;  }
+   inline T &get_value() { return *ptr; }
+   inline T &get_ref() { return *ptr; }
+   inline T &set_ref(T inValue) { return *ptr = inValue;  }
 
    operator Dynamic () { return CreateDynamicPointer((void *)ptr); }
    operator T * () { return ptr; }
