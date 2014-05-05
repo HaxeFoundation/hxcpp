@@ -106,7 +106,8 @@ typedef ObjectPtr<Abstract_obj> Abstract;
 
 vkind k_int32 = (vkind)vtAbstractBase;
 vkind k_hash = (vkind)(vtAbstractBase + 1);
-static int sgKinds = (int)(vtAbstractBase + 2);
+vkind k_cpp_pointer = (vkind)(vtAbstractBase + 2);
+static int sgKinds = (int)(vtAbstractBase + 3);
 typedef std::map<std::string,int> KindMap;
 static KindMap sgKindMap;
 
