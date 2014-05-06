@@ -65,6 +65,60 @@ public:
 };
 
 
+template<typename T>
+class Function
+{
+public:
+   T *call;
+
+   inline Function( ) { }
+   inline Function( const Function &inRHS ) : call(inRHS.call) {  }
+   inline Function( const Dynamic &inRHS) { call = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
+   inline Function( const null &inRHS ) { }
+   inline Function( T *inValue ) : call((T*)(inValue)) { }
+   //inline Function( T *inValue ) : call(inValue) { }
+   inline Function( AutoCast inValue ) : call( (T*)inValue.value) { }
+   inline Function operator=( const Function &inRHS ) { return call = inRHS.call; }
+   inline Dynamic operator=( Dynamic &inValue )
+   {
+      call = inValue==null() ? 0 : (T*) inValue->__GetHandle();
+   }
+   inline Dynamic operator=( null &inValue ) { call=0; return inValue; }
+
+   operator Dynamic () { return CreateDynamicPointer((void *)call); }
+   operator T * () { return call; }
+
+   inline T &get_call() { return *call; }
+
+   inline bool lt(Function inOther) { return call < inOther.call; }
+   inline bool gt(Function inOther) { return call > inOther.call; }
+   inline bool leq(Function inOther) { return call <= inOther.call; }
+   inline bool geq(Function inOther) { return call >= inOther.call; }
+
+};
+
+
+
+class Function_obj
+{
+public:
+
+	inline static AutoCast getProcAddress(String inLib, String inPrim)
+   {
+      return AutoCast(__hxcpp_get_proc_address(inLib, inPrim,false));
+   }
+
+
+   template<typename T>
+	inline static AutoCast fromStaticFunction(T *inFunction)
+   {
+      return AutoCast(inFunction);
+   }
+
+
+};
+
+
 class Pointer_obj
 {
 public:
@@ -82,12 +136,6 @@ public:
 
    template<typename T>
 	inline static Pointer<T> fromPointer(T *value)  { return Pointer<T>(value); }
-
-	inline static AutoCast getProcAddress(String inLib, String inPrim)
-   {
-      return AutoCast(__hxcpp_get_proc_address(inLib, inPrim,false));
-   }
-
 };
 
 
