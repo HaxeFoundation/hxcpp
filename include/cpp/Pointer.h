@@ -32,6 +32,7 @@ public:
       ptr = inValue==null() ? 0 : (T*) inValue->__GetHandle();
    }
    inline Dynamic operator=( null &inValue ) { ptr=0; return inValue; }
+   inline AutoCast reinterpret() { return AutoCast(ptr); }
 
    // Allow '->' syntax
    inline Pointer *operator->() { return this; }
