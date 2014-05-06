@@ -23,7 +23,7 @@ public:
    inline Pointer( const Pointer &inRHS ) : ptr(inRHS.ptr) {  }
    inline Pointer( const Dynamic &inRHS) { ptr = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
    inline Pointer( const null &inRHS ) { }
-   inline Pointer( const T *inValue ) : ptr((T*)(inValue)) { }
+   inline Pointer( T *inValue ) : ptr((T*)(inValue)) { }
    //inline Pointer( T *inValue ) : ptr(inValue) { }
    inline Pointer( AutoCast inValue ) : ptr( (T*)inValue.value) { }
    inline Pointer operator=( const Pointer &inRHS ) { return ptr = inRHS.ptr; }
@@ -42,8 +42,7 @@ public:
  	inline T &postIncRef() { return *ptr++; }
  	inline T &postIncVal() { return *ptr++; }
 
-
-   inline const T &at(int inIndex) { return ptr[inIndex]; }
+   inline T &at(int inIndex) { return ptr[inIndex]; }
 
    inline T &__get(int inIndex) { return ptr[inIndex]; }
    inline T &__set(int inIndex, T inValue) { T *p = ptr+inIndex; *p = inValue; return *p; }
@@ -65,15 +64,6 @@ public:
 
 };
 
-class Function_obj
-{
-public:
-	inline static AutoCast getProcAddress(String inLib, String inPrim)
-   {
-      return AutoCast(__hxcpp_get_proc_address(inLib, inPrim,false));
-   }
-};
-
 
 class Pointer_obj
 {
@@ -89,6 +79,15 @@ public:
    }
    template<typename T>
 	inline static Pointer<T> addressOf(T &value)  { return Pointer<T>(&value); }
+
+   template<typename T>
+	inline static Pointer<T> fromPointer(T *value)  { return Pointer<T>(value); }
+
+	inline static AutoCast getProcAddress(String inLib, String inPrim)
+   {
+      return AutoCast(__hxcpp_get_proc_address(inLib, inPrim,false));
+   }
+
 };
 
 

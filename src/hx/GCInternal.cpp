@@ -3101,6 +3101,11 @@ hx::Object *__hxcpp_get_next_zombie()
    return hx::GCGetNextZombie();
 }
 
+void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
+{
+   GCSetFinalizer( inObj.mPtr, (hx::finalizer) inFunc );
+}
+
 extern "C"
 {
 void hxcpp_set_top_of_stack()
