@@ -44,7 +44,7 @@ int __sys_prims() { return 0; }
 #	include <limits.h>
 #ifndef ANDROID
 #	include <locale.h>
-#if !defined(BLACKBERRY) && !defined(EPPC)
+#if !defined(BLACKBERRY) && !defined(EPPC) && !defined(GCW0)
 #	include <xlocale.h>
 #endif
 #endif
@@ -165,7 +165,7 @@ static value sys_sleep( value f ) {
 	<doc>Set the locale for LC_TIME, returns true on success</doc>
 **/
 static value set_time_locale( value l ) {
-#ifdef ANDROID
+#if defined(ANDROID) || defined(GCW0)
         return alloc_null();
 #else
 

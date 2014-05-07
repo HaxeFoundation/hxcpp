@@ -47,6 +47,7 @@
   <exe name ="i386-linux-gnueabi-strip" if="tizen" />
   <exe name ="arm-linux-gnueabi-strip" if="tizen" unless="simulator" />
   <exe name ="${HXCPP_STRIP}" if="HXCPP_STRIP" />
+  <exe name="mipsel-linux-strip" if="gcw0" />
   <flag value="-u" if="macos"/>
   <flag value="-r" if="macos"/>
   <flag value="-x" if="macos"/>
