@@ -34,6 +34,7 @@ Class &GetVoidClass() { return __VoidClass; }
 
 Dynamic DynZero;
 Dynamic DynOne;
+Dynamic DynMinusOne;
 Dynamic DynTrue;
 Dynamic DynFalse;
 Dynamic DynEmptyString;
@@ -178,13 +179,26 @@ Dynamic CreateDynamicPointer(void *inValue) { return new hx::PointerData(inValue
 
 Dynamic::Dynamic(bool inVal) : super( inVal ? hx::DynTrue.mPtr : hx::DynFalse.mPtr ) { }
 Dynamic::Dynamic(int inVal) :
-  super( inVal==0 ? hx::DynZero.mPtr : inVal==1 ? hx::DynOne.mPtr : (hx::Object *)new IntData(inVal) ) { }
+  super( inVal==0 ? hx::DynZero.mPtr :
+         inVal==1 ? hx::DynOne.mPtr :
+         inVal==-1 ? hx::DynMinusOne.mPtr :
+                (hx::Object *)new IntData(inVal) ) { }
+
 Dynamic::Dynamic(double inVal) :
-  super(inVal==0 ? hx::DynZero.mPtr : inVal==1 ? hx::DynOne.mPtr :  (hx::Object *)new DoubleData(inVal) ) { }
+  super(inVal==0 ? hx::DynZero.mPtr :
+        inVal==1 ? hx::DynOne.mPtr :
+        inVal==-1 ? hx::DynMinusOne.mPtr :
+               (hx::Object *)new DoubleData(inVal) ) { }
 Dynamic::Dynamic(float inVal) :
-  super(inVal==0 ? hx::DynZero.mPtr : inVal==1 ? hx::DynOne.mPtr :  (hx::Object *)new DoubleData(inVal) ) { }
+  super(inVal==0 ? hx::DynZero.mPtr :
+        inVal==1 ? hx::DynOne.mPtr :
+        inVal==-1 ? hx::DynMinusOne.mPtr :
+               (hx::Object *)new DoubleData(inVal) ) { }
 Dynamic::Dynamic(const cpp::CppInt32__ &inVal) :
-  super(inVal.mValue==0 ? hx::DynZero.mPtr : inVal.mValue==1 ? hx::DynOne.mPtr :  (hx::Object *)new IntData((int)inVal) ) { }
+  super(inVal.mValue==0 ? hx::DynZero.mPtr :
+        inVal.mValue==1 ? hx::DynOne.mPtr :
+        inVal.mValue==-1 ? hx::DynMinusOne.mPtr :
+                (hx::Object *)new IntData((int)inVal) ) { }
 Dynamic::Dynamic(const String &inVal) :
   super( inVal.__s ? (inVal.length==0 ? DynEmptyString.mPtr : inVal.__ToObject() ) : 0 ) { }
 Dynamic::Dynamic(const HX_CHAR *inVal) :
@@ -333,6 +347,7 @@ static void sVisitStatics(HX_VISIT_PARAMS) {
 	HX_VISIT_MEMBER(hx::hxEnumBase_obj__mClass);
 	HX_VISIT_MEMBER(hx::DynZero);
 	HX_VISIT_MEMBER(hx::DynOne);
+	HX_VISIT_MEMBER(hx::DynMinusOne);
 	HX_VISIT_MEMBER(hx::DynTrue);
 	HX_VISIT_MEMBER(hx::DynFalse);
 	HX_VISIT_MEMBER(hx::DynEmptyString);
@@ -354,6 +369,7 @@ void Dynamic::__boot()
    Static(__PointerClass) = hx::RegisterClass(HX_CSTRING("cpp::Pointer"),IsPointer,sNone,sNone, 0,0,&__PointerClass );
    DynZero = Dynamic( new hx::IntData(0) );
    DynOne = Dynamic( new hx::IntData(1) );
+   DynMinusOne = Dynamic( new hx::IntData(-1) );
    DynTrue = Dynamic( new hx::BoolData(true) );
    DynFalse = Dynamic( new hx::BoolData(false) );
    DynEmptyString = Dynamic(HX_CSTRING("").__ToObject());
