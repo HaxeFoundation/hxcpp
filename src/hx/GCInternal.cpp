@@ -1157,6 +1157,7 @@ void FindZombies(MarkContext &inContext)
          sMakeZombieSet.erase(i);
 
          // Mark now to prevent secondary zombies...
+         inContext.init();
          hx::MarkObjectAlloc(obj , &inContext );
          inContext.Process();
       }
