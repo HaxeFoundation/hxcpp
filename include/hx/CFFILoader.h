@@ -27,6 +27,7 @@
 #define EXT "so"
 #elif defined(EMSCRIPTEN)
 #define EXT "ll"
+#elif defined(NEKO_GCC)
 #else
 #include <mach-o/dyld.h>
 #define EXT "dylib"
