@@ -115,8 +115,6 @@ public:
    {
       return AutoCast(inFunction);
    }
-
-
 };
 
 
@@ -137,6 +135,13 @@ public:
 
    template<typename T>
 	inline static Pointer<T> fromPointer(T *value)  { return Pointer<T>(value); }
+
+   inline static AutoCast fromHandle(Dynamic inValue, String inKind)
+   {
+      if (inValue==null() || (inKind!=null() && inKind!=__hxcpp_get_kind(inValue)))
+         return AutoCast(0);
+      return AutoCast(inValue->__GetHandle());
+   }
 };
 
 

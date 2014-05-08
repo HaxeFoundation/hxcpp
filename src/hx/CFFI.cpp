@@ -109,7 +109,9 @@ vkind k_hash = (vkind)(vtAbstractBase + 1);
 vkind k_cpp_pointer = (vkind)(vtAbstractBase + 2);
 static int sgKinds = (int)(vtAbstractBase + 3);
 typedef std::map<std::string,int> KindMap;
+typedef std::map<int,std::string> ReverseKindMap;
 static KindMap sgKindMap;
+static ReverseKindMap sgReverseKindMap;
 
 
 int hxcpp_alloc_kind()
@@ -124,7 +126,22 @@ void hxcpp_kind_share(int &ioKind,const char *inName)
    if (kind==0)
       kind = hxcpp_alloc_kind();
    ioKind = kind;
+   sgReverseKindMap[kind] = inName;
 }
+
+String __hxcpp_get_kind(Dynamic inObject)
+{
+   int type = inObject->__GetType();
+   if (type<vtAbstractBase)
+      return null();
+   if (type==(int)k_cpp_pointer)
+      return HX_CSTRING("cpp.Pointer");
+   ReverseKindMap::const_iterator it = sgReverseKindMap.find(type);
+   if (it==sgReverseKindMap.end())
+      return null();
+   return String(it->second.c_str(), it->second.size()).dup();
+}
+
 
 #define THROWS throw(Dynamic)
 //#define THROWS
