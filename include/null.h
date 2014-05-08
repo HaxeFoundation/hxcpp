@@ -83,9 +83,14 @@ class null
      operator wchar_t * () { return 0; }
      operator bool () { return false; }
      operator int () { return 0; }
+     operator unsigned int () { return 0; }
      operator double () { return 0; }
      operator float () { return 0; }
+     operator char () { return 0; }
      operator unsigned char () { return 0; }
+     operator signed char () { return 0; }
+     operator short () { return 0; }
+     operator unsigned short () { return 0; }
 
      bool operator == (null inRHS) const { return true; }
      bool operator != (null inRHS) const { return false; }

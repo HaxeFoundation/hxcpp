@@ -271,6 +271,31 @@ String ArrayBase::join(String inSeparator)
    return String(buf,len);
 }
 
+template<typename T>
+struct ArrayBaseSorter
+{
+   ArrayBaseSorter(Dynamic inFunc) : mFunc(inFunc) { }
+   bool operator()(const T &inA, const T &inB)
+      { return mFunc(inA, inB)->__ToInt() < 0; }
+   Dynamic mFunc;
+};
+
+void ArrayBase::safeSort(Dynamic inSorter, bool inIsString)
+{
+   if (inIsString)
+   {
+      String *array = (String *)mBase;
+      std::sort(array, array+length, ArrayBaseSorter<String>(inSorter) );
+   }
+   else
+   {
+      Dynamic *array = (Dynamic *)mBase;
+      std::sort(array, array+length, ArrayBaseSorter<Dynamic>(inSorter) );
+   }
+}
+
+
+
 #define DEFINE_ARRAY_FUNC(func,array_list,dynamic_arg_list,arg_list,ARG_C) \
 struct ArrayBase_##func : public hx::Object \
 { \

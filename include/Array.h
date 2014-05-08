@@ -15,7 +15,12 @@ template<> struct ReturnNull<int> { typedef Dynamic type; };
 template<> struct ReturnNull<double> { typedef Dynamic type; };
 template<> struct ReturnNull<float> { typedef Dynamic type; };
 template<> struct ReturnNull<bool> { typedef Dynamic type; };
-// ? template<> struct ReturnNull<unsigned char> { typedef Dynamic type; };
+template<> struct ReturnNull<char> { typedef Dynamic type; };
+template<> struct ReturnNull<signed char> { typedef Dynamic type; };
+template<> struct ReturnNull<unsigned char> { typedef Dynamic type; };
+template<> struct ReturnNull<short> { typedef Dynamic type; };
+template<> struct ReturnNull<unsigned short> { typedef Dynamic type; };
+template<> struct ReturnNull<unsigned int> { typedef Dynamic type; };
 
 }
 
@@ -94,6 +99,8 @@ public:
 
    void __SetSize(int inLen);
    void __SetSizeExact(int inLen);
+
+   void safeSort(Dynamic sorter, bool isString);
 
    // Dynamic interface
    Dynamic __Field(const String &inString ,bool inCallProp);
@@ -217,11 +224,13 @@ template<> inline unsigned char *NewNull<unsigned char>() { unsigned char u=0; r
 
 
 template<typename T>
-struct ArrayTraits { enum { IsByteArray = 0, IsDynamic = 0 }; };
+struct ArrayTraits { enum { IsByteArray = 0, IsDynamic = 0, IsString = 0  }; };
 template<>
-struct ArrayTraits<unsigned char> { enum { IsByteArray = 1, IsDynamic = 0 }; };
+struct ArrayTraits<unsigned char> { enum { IsByteArray = 1, IsDynamic = 0, IsString = 0  }; };
 template<>
-struct ArrayTraits<Dynamic> { enum { IsByteArray = 0, IsDynamic = 1 }; };
+struct ArrayTraits<Dynamic> { enum { IsByteArray = 0, IsDynamic = 1, IsString = 0  }; };
+template<>
+struct ArrayTraits<String> { enum { IsByteArray = 0, IsDynamic = 0, IsString = 1  }; };
 
 template<typename ELEM_>
 class Array_obj : public hx::ArrayBase
@@ -441,6 +450,19 @@ public:
       }
    }
 
+   // Will do random pointer sorting for object pointers
+   inline void sortAscending()
+   {
+      ELEM_ *e = (ELEM_ *)mBase;
+      std::sort(e, e+length);
+   }
+   static inline bool greaterThan(const ELEM_ &inA, const ELEM_ &inB) { return inB < inA; }
+   inline void sortDescending()
+   {
+      ELEM_ *e = (ELEM_ *)mBase;
+      std::sort(e, e+length, greaterThan);
+   }
+
 
    struct Sorter
    {
@@ -454,10 +476,24 @@ public:
       Dynamic mFunc;
    };
 
-   void sort(Dynamic inSorter)
+   inline void qsort(Dynamic inSorter)
    {
       ELEM_ *e = (ELEM_ *)mBase;
-      std::stable_sort(e, e+length, Sorter(inSorter) );
+      std::sort(e, e+length, Sorter(inSorter) );
+   }
+
+   void sort(Dynamic inSorter)
+   {
+      if ( ArrayTraits<ELEM_>::IsDynamic || ArrayTraits<ELEM_>::IsString)
+      {
+         // Keep references from being hidden inside sorters buffers
+         safeSort(inSorter, ArrayTraits<ELEM_>::IsString);
+      }
+      else
+      {
+         ELEM_ *e = (ELEM_ *)mBase;
+         std::stable_sort(e, e+length, Sorter(inSorter) );
+      }
    }
 
    Dynamic iterator() { return new hx::ArrayIterator<ELEM_,ELEM_>(this); }
