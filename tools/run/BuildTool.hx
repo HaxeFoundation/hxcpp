@@ -18,6 +18,7 @@ typedef Hash<T> = haxe.ds.StringMap<T>;
 #end
 typedef FileGroups = Hash<FileGroup>;
 typedef Targets = Hash<Target>;
+typedef Prelinkers = Hash<Prelinker>;
 typedef Linkers = Hash<Linker>;
 
 class BuildTool
@@ -27,6 +28,7 @@ class BuildTool
    var mIncludePath:Array<String>;
    var mCompiler:Compiler;
    var mStripper:Stripper;
+   var mPrelinkers:Prelinkers;
    var mLinkers:Linkers;
    var mFileGroups:FileGroups;
    var mTargets:Targets;
@@ -61,6 +63,7 @@ class BuildTool
       compileCache = "";
       mStripper = null;
       mTargets = new Targets();
+      mPrelinkers = new Prelinkers();
       mLinkers = new Linkers();
       mCurrentIncludeFile = "";
       mIncludePath = inIncludePath;
@@ -326,6 +329,14 @@ class BuildTool
       switch(target.mTool)
       {
          case "linker":
+            if (mPrelinkers.exists(target.mToolID))
+            {
+               var result = mPrelinkers.get(target.mToolID).prelink(target,objs, mCompiler);
+               if (result != "")
+                  objs.push(result);
+               //throw "Missing linker :\"" + target.mToolID + "\"";
+            }
+            
             if (!mLinkers.exists(target.mToolID))
             {
                Log.error ("Could not find linker for \"" + target.mToolID + "\"");
@@ -498,6 +509,27 @@ class BuildTool
                case "fromfile" : l.mFromFile = (substitute(el.att.value));
                case "exe" : l.mExe = (substitute(el.att.name));
                case "section" : createLinker(el,l);
+            }
+      }
+
+      return l;
+   }
+
+   public function createPrelinker(inXML:Fast,inBase:Prelinker):Prelinker
+   {
+      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Prelinker(inXML.att.exe);
+      for(el in inXML.elements)
+      {
+         if (valid(el,""))
+            switch(el.name)
+            {
+               case "flag" : l.mFlags.push(substitute(el.att.value));
+               //case "ext" : l.mExt = (substitute(el.att.value));
+               case "outflag" : l.mOutFlag = (substitute(el.att.value));
+               case "expandAr" : l.mExpandArchives = substitute(el.att.value) != "";
+               case "fromfile" : l.mFromFile = (substitute(el.att.value));
+               case "exe" : l.mExe = (substitute(el.att.name));
+               case "section" : createPrelinker(el,l);
             }
       }
 
@@ -1140,6 +1172,11 @@ class BuildTool
                   mCompiler = createCompiler(el,mCompiler);
                case "stripper" : 
                   mStripper = createStripper(el,mStripper);
+               case "prelinker" : 
+                  if (mPrelinkers.exists(el.att.id))
+                     createPrelinker(el,mPrelinkers.get(el.att.id));
+                  else
+                     mPrelinkers.set( el.att.id, createPrelinker(el,null) );
                case "linker" : 
                   if (mLinkers.exists(el.att.id))
                      createLinker(el,mLinkers.get(el.att.id));
