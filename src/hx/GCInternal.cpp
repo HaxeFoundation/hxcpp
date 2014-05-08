@@ -1089,10 +1089,13 @@ class WeakRef : public hx::Object
 public:
    WeakRef(Dynamic inRef)
    {
-      sFinalizerLock->Lock();
-      sWeakRefs.push(this);
-      sFinalizerLock->Unlock();
       mRef = inRef;
+      if (mRef.mPtr)
+      {
+         sFinalizerLock->Lock();
+         sWeakRefs.push(this);
+         sFinalizerLock->Unlock();
+      }
    }
 
    // Don't mark our ref !
