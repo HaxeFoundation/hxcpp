@@ -134,7 +134,7 @@ String __hxcpp_get_kind(Dynamic inObject)
    int type = inObject->__GetType();
    if (type<vtAbstractBase)
       return null();
-   if (type==(int)k_cpp_pointer)
+   if (type==(int)(size_t)k_cpp_pointer)
       return HX_CSTRING("cpp.Pointer");
    ReverseKindMap::const_iterator it = sgReverseKindMap.find(type);
    if (it==sgReverseKindMap.end())
