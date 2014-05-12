@@ -145,11 +145,11 @@ void __hxcpp_stdlibs_boot()
    AttachConsole(ATTACH_PARENT_PROCESS);
    if (GetConsoleWindow() != NULL)
    {
-      if (_fileno(stdout) == -1 || _get_osfhandle(fileno(stdout)) == -1)
+      if (_fileno(stdout) < 0 || _get_osfhandle(fileno(stdout)) < 0)
          freopen("CONOUT$", "w", stdout);
-      if (_fileno(stderr) == -1 || _get_osfhandle(fileno(stderr)) == -1)
+      if (_fileno(stderr) < 0 || _get_osfhandle(fileno(stderr)) < 0)
          freopen("CONOUT$", "w", stderr);
-      if (_fileno(stdin) == -1 || _get_osfhandle(fileno(stdin)) == -1)
+      if (_fileno(stdin) < 0 || _get_osfhandle(fileno(stdin)) < 0)
          freopen("CONIN$", "r", stdin);
    }
    #endif
