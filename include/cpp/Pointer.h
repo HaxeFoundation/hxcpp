@@ -34,6 +34,9 @@ public:
    inline Dynamic operator=( null &inValue ) { ptr=0; return inValue; }
    inline AutoCast reinterpret() { return AutoCast(ptr); }
 
+   inline bool operator==( const null &inValue ) const { return ptr==0; }
+   inline bool operator!=( const null &inValue ) const { return ptr!=0; }
+
    // Allow '->' syntax
    inline Pointer *operator->() { return this; }
  	inline Pointer inc() { return ++ptr; }
@@ -46,11 +49,11 @@ public:
    inline T &at(int inIndex) { return ptr[inIndex]; }
 
    inline T &__get(int inIndex) { return ptr[inIndex]; }
-   inline T &__set(int inIndex, T inValue) { T *p = ptr+inIndex; *p = inValue; return *p; }
+   inline T &__set(int inIndex, T &inValue) { T *p = ptr+inIndex; *p = inValue; return *p; }
 
    inline T &get_value() { return *ptr; }
    inline T &get_ref() { return *ptr; }
-   inline T &set_ref(T inValue) { return *ptr = inValue;  }
+   inline T &set_ref(T &inValue) { return *ptr = inValue;  }
 
    operator Dynamic () { return CreateDynamicPointer((void *)ptr); }
    operator T * () { return ptr; }
@@ -64,6 +67,11 @@ public:
    inline bool geq(Pointer inOther) { return ptr >= inOther.ptr; }
 
 };
+
+template<typename T>
+inline bool operator == (const null &, Pointer<T> inPtr) { return inPtr.ptr==0; }
+template<typename T>
+inline bool operator != (const null &, Pointer<T> inPtr) { return inPtr.ptr!=0; }
 
 
 template<typename T>
@@ -85,6 +93,9 @@ public:
       call = inValue==null() ? 0 : (T*) inValue->__GetHandle();
    }
    inline Dynamic operator=( null &inValue ) { call=0; return inValue; }
+   inline bool operator==( const null &inValue ) const { return call==0; }
+   inline bool operator!=( const null &inValue ) const { return call!=0; }
+
 
    operator Dynamic () { return CreateDynamicPointer((void *)call); }
    operator T * () { return call; }
@@ -97,6 +108,12 @@ public:
    inline bool geq(Function inOther) { return call >= inOther.call; }
 
 };
+
+
+template<typename T>
+inline bool operator == (const null &, Function<T> inPtr) { return inPtr.call==0; }
+template<typename T>
+inline bool operator != (const null &, Function<T> inPtr) { return inPtr.call!=0; }
 
 
 
