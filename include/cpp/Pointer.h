@@ -23,7 +23,7 @@ public:
    inline Pointer( const Pointer &inRHS ) : ptr(inRHS.ptr) {  }
    inline Pointer( const Dynamic &inRHS) { ptr = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
    inline Pointer( const null &inRHS ) { }
-   inline Pointer( T *inValue ) : ptr((T*)(inValue)) { }
+   inline Pointer( const T *inValue ) : ptr( (T*) inValue) { }
    //inline Pointer( T *inValue ) : ptr(inValue) { }
    inline Pointer( AutoCast inValue ) : ptr( (T*)inValue.value) { }
    inline Pointer operator=( const Pointer &inRHS ) { return ptr = inRHS.ptr; }
@@ -49,11 +49,11 @@ public:
    inline T &at(int inIndex) { return ptr[inIndex]; }
 
    inline T &__get(int inIndex) { return ptr[inIndex]; }
-   inline T &__set(int inIndex, T &inValue) { T *p = ptr+inIndex; *p = inValue; return *p; }
+   inline T &__set(int inIndex, const T &inValue) { T *p = ptr+inIndex; *p = inValue; return *p; }
 
    inline T &get_value() { return *ptr; }
    inline T &get_ref() { return *ptr; }
-   inline T &set_ref(T &inValue) { return *ptr = inValue;  }
+   inline T &set_ref(const T &inValue) { return *ptr = inValue;  }
 
    operator Dynamic () { return CreateDynamicPointer((void *)ptr); }
    operator T * () { return ptr; }
