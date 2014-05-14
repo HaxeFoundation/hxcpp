@@ -98,7 +98,7 @@ public:
    virtual int GetElementSize() const = 0;
 
    void __SetSize(int inLen);
-   void __SetSizeExact(int inLen);
+   void __SetSizeExact(int inLen=0);
 
    void safeSort(Dynamic sorter, bool isString);
 
@@ -123,6 +123,9 @@ public:
    virtual Dynamic __unshift(const Dynamic &a0) = 0;
    virtual Dynamic __map(const Dynamic &func) = 0;
    virtual Dynamic __filter(const Dynamic &func) = 0;
+   inline Dynamic ____SetSizeExact(const Dynamic &len)  { __SetSizeExact(len); return this; } 
+   inline Dynamic ____unsafe_set(const Dynamic &i, const Dynamic &val)  { return __SetItem(i,val); } 
+   inline Dynamic ____unsafe_get(const Dynamic &i)  { return __GetItem(i); } 
 
 
    Dynamic concat_dyn();
@@ -144,6 +147,9 @@ public:
    Dynamic unshift_dyn();
    Dynamic map_dyn();
    Dynamic filter_dyn();
+   Dynamic __SetSizeExact_dyn();
+   Dynamic __unsafe_get_dyn();
+   Dynamic __unsafe_set_dyn();
 
    void EnsureSize(int inLen) const;
 

@@ -345,6 +345,9 @@ DEFINE_ARRAY_FUNC0(toString);
 DEFINE_ARRAY_FUNC1(unshift);
 DEFINE_ARRAY_FUNC1(map);
 DEFINE_ARRAY_FUNC1(filter);
+DEFINE_ARRAY_FUNC1(__SetSizeExact);
+DEFINE_ARRAY_FUNC1(__unsafe_get);
+DEFINE_ARRAY_FUNC2(__unsafe_set);
 
 Dynamic ArrayBase::__Field(const String &inString, bool inCallProp)
 {
@@ -368,6 +371,9 @@ Dynamic ArrayBase::__Field(const String &inString, bool inCallProp)
    if (inString==HX_CSTRING("unshift")) return unshift_dyn();
    if (inString==HX_CSTRING("filter")) return filter_dyn();
    if (inString==HX_CSTRING("map")) return map_dyn();
+   if (inString==HX_CSTRING("__SetSizeExact")) return __SetSizeExact_dyn();
+   if (inString==HX_CSTRING("__unsafe_get")) return __unsafe_get_dyn();
+   if (inString==HX_CSTRING("__unsafe_set")) return __unsafe_set_dyn();
    return null();
 }
 
