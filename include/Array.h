@@ -127,9 +127,9 @@ public:
    inline Dynamic ____SetSizeExact(const Dynamic &len)  { __SetSizeExact(len); return this; } 
    inline Dynamic ____unsafe_set(const Dynamic &i, const Dynamic &val)  { return __SetItem(i,val); } 
    inline Dynamic ____unsafe_get(const Dynamic &i)  { return __GetItem(i); } 
-   inline Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3)  { blit(a0,a1,a2,a3); return null(); }
+   virtual Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3) = 0;
    inline Dynamic __zero(const Dynamic &a0,const Dynamic &a1)  { zero(a0,a1); return null(); }
-   inline Dynamic __memcmp(const Dynamic &a0)  { return memcmp(a0); }
+   virtual Dynamic __memcmp(const Dynamic &a0) = 0;
 
 
    Dynamic concat_dyn();
@@ -537,6 +537,9 @@ public:
    virtual Dynamic __unshift(const Dynamic &a0) { unshift(a0); return null(); }
    virtual Dynamic __map(const Dynamic &func) { return map(func); }
    virtual Dynamic __filter(const Dynamic &func) { return filter(func); }
+   virtual Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3) { blit(a0,a1,a2,a3); return null(); }
+   virtual Dynamic __memcmp(const Dynamic &a0) { return memcmp(a0); }
+
 };
 
 
