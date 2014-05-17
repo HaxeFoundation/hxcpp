@@ -152,6 +152,8 @@ public:
 
    template<typename T>
 	inline static Pointer<T> fromPointer(T *value)  { return Pointer<T>(value); }
+   template<typename T>
+	inline static Pointer<T> fromPointer(const T *value)  { return Pointer<T>(value); }
 
    inline static AutoCast fromHandle(Dynamic inValue, String inKind)
    {
