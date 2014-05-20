@@ -27,6 +27,7 @@
 </section>
 
 <include name="toolchain/gcc-toolchain.xml"/>
+<set name="noM32" value="1" if="HXCPP_NO_M32" />
 <set name="noM32" value="1" if="HXCPP_M64" />
 <set name="noM32" value="1" if="rpi" />
 
