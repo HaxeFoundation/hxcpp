@@ -9,6 +9,10 @@
   <ext value="${LIBEXT}"/>
   <exe name="emar" if="emscripten" />
   <exe name="${HXCPP_AR}" if="HXCPP_AR" />
+  <exe name="ntoarmv7-ar" if="blackberry" unless="simulator" />
+  <exe name="ntox86-ar" if="blackberry simulator" />
+  <exe name="arm-linux-gnueabi-ar" if="tizen" unless="simulator" />
+  <exe name="i386-linux-gnueabi-ar" if="tizen simulator" />
   <fromfile value="" if="GCC_OLD" />
   <fromfile value="" if="tizen" />
   <fromfile value="" if="blackberry" />
