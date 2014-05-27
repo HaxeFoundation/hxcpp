@@ -802,6 +802,8 @@ class BuildTool
          }
          else if (arg=="-v" || arg=="-verbose")
             Log.verbose = true;
+         else if (arg=="-nocolor")
+            Log.colorSupported = false;
          else if (arg.substr(0,2)=="-I")
             include_path.push(PathManager.standardize(arg.substr(2)));
          else if (makefile.length==0)
