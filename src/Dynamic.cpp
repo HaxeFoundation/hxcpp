@@ -2,6 +2,10 @@
 #include <math.h>
 #include <hxMath.h>
 
+#ifdef GCW0
+#include <stdio.h>
+#endif
+
 using namespace hx;
 
 
