@@ -27,6 +27,8 @@
 #define EXT "so"
 #elif defined(EMSCRIPTEN)
 #define EXT "ll"
+//#elif defined(NEKO_GCC)
+//todo - NEKO_EXT ?
 #else
 #include <mach-o/dyld.h>
 #define EXT "dylib"
@@ -667,7 +669,11 @@ void *LoadFunc(const char *inName)
       __android_log_print(ANDROID_LOG_ERROR, "CFFILoader.h", "Could not API %s", inName);
       return 0;
       #else
+      #ifdef NEKO_COMPATIBLE
+      fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d) - with neko\n",__LINE__);
+      #else
       fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d)\n",__LINE__);
+      #endif
       exit(1);
       #endif
    }

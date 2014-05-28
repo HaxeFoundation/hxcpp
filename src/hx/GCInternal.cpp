@@ -1089,10 +1089,13 @@ class WeakRef : public hx::Object
 public:
    WeakRef(Dynamic inRef)
    {
-      sFinalizerLock->Lock();
-      sWeakRefs.push(this);
-      sFinalizerLock->Unlock();
       mRef = inRef;
+      if (mRef.mPtr)
+      {
+         sFinalizerLock->Lock();
+         sWeakRefs.push(this);
+         sFinalizerLock->Unlock();
+      }
    }
 
    // Don't mark our ref !
@@ -1157,6 +1160,7 @@ void FindZombies(MarkContext &inContext)
          sMakeZombieSet.erase(i);
 
          // Mark now to prevent secondary zombies...
+         inContext.init();
          hx::MarkObjectAlloc(obj , &inContext );
          inContext.Process();
       }
@@ -3099,6 +3103,11 @@ void  __hxcpp_gc_do_not_kill(Dynamic inObj)
 hx::Object *__hxcpp_get_next_zombie()
 {
    return hx::GCGetNextZombie();
+}
+
+void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
+{
+   GCSetFinalizer( inObj.mPtr, (hx::finalizer) inFunc );
 }
 
 extern "C"

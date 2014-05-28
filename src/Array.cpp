@@ -271,6 +271,31 @@ String ArrayBase::join(String inSeparator)
    return String(buf,len);
 }
 
+template<typename T>
+struct ArrayBaseSorter
+{
+   ArrayBaseSorter(Dynamic inFunc) : mFunc(inFunc) { }
+   bool operator()(const T &inA, const T &inB)
+      { return mFunc(inA, inB)->__ToInt() < 0; }
+   Dynamic mFunc;
+};
+
+void ArrayBase::safeSort(Dynamic inSorter, bool inIsString)
+{
+   if (inIsString)
+   {
+      String *array = (String *)mBase;
+      std::sort(array, array+length, ArrayBaseSorter<String>(inSorter) );
+   }
+   else
+   {
+      Dynamic *array = (Dynamic *)mBase;
+      std::sort(array, array+length, ArrayBaseSorter<Dynamic>(inSorter) );
+   }
+}
+
+
+
 #define DEFINE_ARRAY_FUNC(func,array_list,dynamic_arg_list,arg_list,ARG_C) \
 struct ArrayBase_##func : public hx::Object \
 { \
@@ -299,6 +324,8 @@ Dynamic ArrayBase::func##_dyn()  { return new ArrayBase_##func(this);  }
 #define DEFINE_ARRAY_FUNC0(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST0,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0,0)
 #define DEFINE_ARRAY_FUNC1(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST1,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1,1)
 #define DEFINE_ARRAY_FUNC2(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST2,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2,2)
+#define DEFINE_ARRAY_FUNC3(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST3,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3,3)
+#define DEFINE_ARRAY_FUNC4(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST4,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4,4)
 
 
 DEFINE_ARRAY_FUNC1(concat);
@@ -320,6 +347,13 @@ DEFINE_ARRAY_FUNC0(toString);
 DEFINE_ARRAY_FUNC1(unshift);
 DEFINE_ARRAY_FUNC1(map);
 DEFINE_ARRAY_FUNC1(filter);
+DEFINE_ARRAY_FUNC1(__SetSize);
+DEFINE_ARRAY_FUNC1(__SetSizeExact);
+DEFINE_ARRAY_FUNC1(__unsafe_get);
+DEFINE_ARRAY_FUNC2(__unsafe_set);
+DEFINE_ARRAY_FUNC4(blit);
+DEFINE_ARRAY_FUNC2(zero);
+DEFINE_ARRAY_FUNC1(memcmp);
 
 Dynamic ArrayBase::__Field(const String &inString, bool inCallProp)
 {
@@ -343,6 +377,13 @@ Dynamic ArrayBase::__Field(const String &inString, bool inCallProp)
    if (inString==HX_CSTRING("unshift")) return unshift_dyn();
    if (inString==HX_CSTRING("filter")) return filter_dyn();
    if (inString==HX_CSTRING("map")) return map_dyn();
+   if (inString==HX_CSTRING("__SetSize")) return __SetSize_dyn();
+   if (inString==HX_CSTRING("__SetSizeExact")) return __SetSizeExact_dyn();
+   if (inString==HX_CSTRING("__unsafe_get")) return __unsafe_get_dyn();
+   if (inString==HX_CSTRING("__unsafe_set")) return __unsafe_set_dyn();
+   if (inString==HX_CSTRING("blit")) return blit_dyn();
+   if (inString==HX_CSTRING("zero")) return zero_dyn();
+   if (inString==HX_CSTRING("memcmp")) return memcmp_dyn();
    return null();
 }
 

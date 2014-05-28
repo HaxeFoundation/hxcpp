@@ -27,6 +27,7 @@
 </section>
 
 <include name="toolchain/gcc-toolchain.xml"/>
+<set name="noM32" value="1" if="HXCPP_NO_M32" />
 <set name="noM32" value="1" if="HXCPP_M64" />
 <set name="noM32" value="1" if="rpi" />
 
@@ -59,7 +60,7 @@
   <flag value="-shared"/>
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
-  <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m32" unless="noM32"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>

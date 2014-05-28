@@ -9,6 +9,10 @@
   <ext value="${LIBEXT}"/>
   <exe name="emar" if="emscripten" />
   <exe name="${HXCPP_AR}" if="HXCPP_AR" />
+  <exe name="ntoarmv7-ar" if="blackberry" unless="simulator" />
+  <exe name="ntox86-ar" if="blackberry simulator" />
+  <exe name="arm-linux-gnueabi-ar" if="tizen" unless="simulator" />
+  <exe name="i386-linux-gnueabi-ar" if="tizen simulator" />
   <fromfile value="" if="GCC_OLD" />
   <fromfile value="" if="tizen" />
   <fromfile value="" if="blackberry" />
@@ -27,7 +31,11 @@
   <expandAr value="1" if="linux" />
   <section unless="HXCPP_USE_LIBTOOL">
      <ranlib name="ranlib" />
-     <ranlib name ="${EXEPREFIX}-ranlib" if="android" />
+     <ranlib name="${EXEPREFIX}-ranlib" if="android" />
+     <ranlib name="ntoarmv7-ranlib" if="blackberry" unless="simulator" />
+     <ranlib name="ntox86-ranlib" if="blackberry simulator" />
+     <ranlib name="arm-linux-gnueabi-ranlib" if="tizen" unless="simulator" />
+     <ranlib name="i386-linux-gnueabi-ranlib" if="tizen simulator" />
      <ranlib name="emranlib" if="emscripten" />
      <ranlib name="${HXCPP_RANLIB}" if="HXCPP_RANLIB" />
   </section>
@@ -40,13 +48,13 @@
 
 <stripper id="strip" exe="strip" unless="nostrip">
   <exe name="strip"/>
-  <exe name ="arm-none-linux-gnueabi-strip" if="webos" />
-  <exe name ="${EXEPREFIX}-strip" if="android" />
-  <exe name ="ntox86-strip" if="blackberry" />
-  <exe name ="ntoarmv7-strip" if="blackberry" unless="simulator" />
-  <exe name ="i386-linux-gnueabi-strip" if="tizen" />
-  <exe name ="arm-linux-gnueabi-strip" if="tizen" unless="simulator" />
-  <exe name ="${HXCPP_STRIP}" if="HXCPP_STRIP" />
+  <exe name="arm-none-linux-gnueabi-strip" if="webos" />
+  <exe name="${EXEPREFIX}-strip" if="android" />
+  <exe name="ntox86-strip" if="blackberry" />
+  <exe name="ntoarmv7-strip" if="blackberry" unless="simulator" />
+  <exe name="i386-linux-gnueabi-strip" if="tizen" />
+  <exe name="arm-linux-gnueabi-strip" if="tizen" unless="simulator" />
+  <exe name="${HXCPP_STRIP}" if="HXCPP_STRIP" />
   <exe name="mipsel-linux-strip" if="gcw0" />
   <flag value="-u" if="macos"/>
   <flag value="-r" if="macos"/>

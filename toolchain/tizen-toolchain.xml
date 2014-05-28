@@ -1,7 +1,7 @@
 <xml>
 
 
-<error name="Error: TIZEN_SDK must be defined to build for Tizen" unless="TIZEN_SDK" />
+<error value="Error: TIZEN_SDK must be defined to build for Tizen" unless="TIZEN_SDK" />
 
 <set name="TIZEN_PLATFORM" value="${TIZEN_SDK}/platforms/tizen2.2/rootstraps/tizen-device-2.2.native" />
 

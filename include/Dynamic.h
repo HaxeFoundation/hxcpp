@@ -40,7 +40,12 @@ public:
    inline operator double () const { return mPtr ? mPtr->__ToDouble() : 0.0; }
    inline operator float () const { return mPtr ? (float)mPtr->__ToDouble() : 0.0f; }
    inline operator int () const { return mPtr ? mPtr->__ToInt() : 0; }
+   inline operator unsigned int () const { return mPtr ? mPtr->__ToInt() : 0; }
+   inline operator short () const { return mPtr ? mPtr->__ToInt() : 0; }
+   inline operator unsigned short () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator unsigned char () const { return mPtr ? mPtr->__ToInt() : 0; }
+   inline operator char () const { return mPtr ? mPtr->__ToInt() : 0; }
+   inline operator signed char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
    inline bool operator !() const { return !mPtr || !mPtr->__ToInt(); }
 

@@ -13,7 +13,7 @@ class Log
    public static var mute:Bool;
    public static var verbose:Bool = false;
    
-   private static var colorSupported:Null<Bool>;
+   public  static var colorSupported:Null<Bool> = null;
    private static var sentWarnings = new Map<String,Bool>();
 
    public static var printMutex:Mutex;

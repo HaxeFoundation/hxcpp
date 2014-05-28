@@ -1,4 +1,15 @@
 
+* Add support for prelinker
+* Cygwin toolchain fix
+* Add HXCPP_NO_COLOUR  and HXCPP_NO_M32
+* Fix windows trace output
+* Add initial support for GCWO compile
+* Fix bug with losing GC references in Array.sort
+* Fix bug with zombie marking
+* Add support for optimised sort routines
+* Add support for haxe.ds.Vector optimisation
+* Add support for cpp.Pointer, cpp.NativeArray, cpp.NativeString
+------------------------------------------------------------
 * Add BlackBerry and Tizen binaries
 * Fix issues when using names like ANDROID or IPHONE in an enum
 * Added more info in verbose mode (setenv HXCPP_VERBOSE)

@@ -77,6 +77,8 @@ inline hx::AnyCast __hxcpp_cast_get_proc_address(String inLib, String inPrim)
    return hx::AnyCast(__hxcpp_get_proc_address(inLib,inPrim,false));
 }
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_get_kind(Dynamic inObject);
+
 // Loading functions via name (dummy return value)
 
 

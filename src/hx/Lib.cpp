@@ -196,7 +196,7 @@ String GetFileContents(String inFile)
    if (bytes<1)
       return null();
    buf[bytes]='\0';
-   return String(buf,strlen(buf));
+   return String(buf,strlen(buf)).dup();
 }
 
 #ifndef HX_WINRT
@@ -216,7 +216,11 @@ String FindHaxelib(String inLib)
    if (loadDebug) printf("HAXEPATH env:%s\n", haxepath.__s);
    if (haxepath.length==0)
    {
+       #ifdef _WIN32
+       String home = GetEnv("HOMEDRIVE") + GetEnv("HOMEPATH") + HX_CSTRING("/.haxelib");
+       #else
        String home = GetEnv("HOME") + HX_CSTRING("/.haxelib");
+       #endif
        haxepath = GetFileContents(home);
        if (loadDebug) printf("HAXEPATH home:%s\n", haxepath.__s);
    }
@@ -235,7 +239,7 @@ String FindHaxelib(String inLib)
    if (haxepath.length==0)
    {
       #ifdef _WIN32
-      haxepath = HX_CSTRING("C:\\Program Files\\Motion-Twin\\haxe\\lib");
+      haxepath = HX_CSTRING("C:\\HaxeToolkit\\haxe\\lib");
       #else
       haxepath = HX_CSTRING("/usr/lib/haxe/lib");
       #endif

@@ -15,7 +15,12 @@ template<> struct ReturnNull<int> { typedef Dynamic type; };
 template<> struct ReturnNull<double> { typedef Dynamic type; };
 template<> struct ReturnNull<float> { typedef Dynamic type; };
 template<> struct ReturnNull<bool> { typedef Dynamic type; };
-// ? template<> struct ReturnNull<unsigned char> { typedef Dynamic type; };
+template<> struct ReturnNull<char> { typedef Dynamic type; };
+template<> struct ReturnNull<signed char> { typedef Dynamic type; };
+template<> struct ReturnNull<unsigned char> { typedef Dynamic type; };
+template<> struct ReturnNull<short> { typedef Dynamic type; };
+template<> struct ReturnNull<unsigned short> { typedef Dynamic type; };
+template<> struct ReturnNull<unsigned int> { typedef Dynamic type; };
 
 }
 
@@ -93,7 +98,9 @@ public:
    virtual int GetElementSize() const = 0;
 
    void __SetSize(int inLen);
-   void __SetSizeExact(int inLen);
+   void __SetSizeExact(int inLen=0);
+
+   void safeSort(Dynamic sorter, bool isString);
 
    // Dynamic interface
    Dynamic __Field(const String &inString ,bool inCallProp);
@@ -116,6 +123,13 @@ public:
    virtual Dynamic __unshift(const Dynamic &a0) = 0;
    virtual Dynamic __map(const Dynamic &func) = 0;
    virtual Dynamic __filter(const Dynamic &func) = 0;
+   inline Dynamic ____SetSize(const Dynamic &len)  { __SetSize(len); return this; } 
+   inline Dynamic ____SetSizeExact(const Dynamic &len)  { __SetSizeExact(len); return this; } 
+   inline Dynamic ____unsafe_set(const Dynamic &i, const Dynamic &val)  { return __SetItem(i,val); } 
+   inline Dynamic ____unsafe_get(const Dynamic &i)  { return __GetItem(i); } 
+   virtual Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3) = 0;
+   inline Dynamic __zero(const Dynamic &a0,const Dynamic &a1)  { zero(a0,a1); return null(); }
+   virtual Dynamic __memcmp(const Dynamic &a0) = 0;
 
 
    Dynamic concat_dyn();
@@ -137,6 +151,13 @@ public:
    Dynamic unshift_dyn();
    Dynamic map_dyn();
    Dynamic filter_dyn();
+   Dynamic __SetSize_dyn();
+   Dynamic __SetSizeExact_dyn();
+   Dynamic __unsafe_get_dyn();
+   Dynamic __unsafe_set_dyn();
+   Dynamic blit_dyn();
+   Dynamic zero_dyn();
+   Dynamic memcmp_dyn();
 
    void EnsureSize(int inLen) const;
 
@@ -217,11 +238,13 @@ template<> inline unsigned char *NewNull<unsigned char>() { unsigned char u=0; r
 
 
 template<typename T>
-struct ArrayTraits { enum { IsByteArray = 0, IsDynamic = 0 }; };
+struct ArrayTraits { enum { IsByteArray = 0, IsDynamic = 0, IsString = 0  }; };
 template<>
-struct ArrayTraits<unsigned char> { enum { IsByteArray = 1, IsDynamic = 0 }; };
+struct ArrayTraits<unsigned char> { enum { IsByteArray = 1, IsDynamic = 0, IsString = 0  }; };
 template<>
-struct ArrayTraits<Dynamic> { enum { IsByteArray = 0, IsDynamic = 1 }; };
+struct ArrayTraits<Dynamic> { enum { IsByteArray = 0, IsDynamic = 1, IsString = 0  }; };
+template<>
+struct ArrayTraits<String> { enum { IsByteArray = 0, IsDynamic = 0, IsString = 1  }; };
 
 template<typename ELEM_>
 class Array_obj : public hx::ArrayBase
@@ -441,6 +464,19 @@ public:
       }
    }
 
+   // Will do random pointer sorting for object pointers
+   inline void sortAscending()
+   {
+      ELEM_ *e = (ELEM_ *)mBase;
+      std::sort(e, e+length);
+   }
+   static inline bool greaterThan(const ELEM_ &inA, const ELEM_ &inB) { return inB < inA; }
+   inline void sortDescending()
+   {
+      ELEM_ *e = (ELEM_ *)mBase;
+      std::sort(e, e+length, greaterThan);
+   }
+
 
    struct Sorter
    {
@@ -454,10 +490,24 @@ public:
       Dynamic mFunc;
    };
 
-   void sort(Dynamic inSorter)
+   inline void qsort(Dynamic inSorter)
    {
       ELEM_ *e = (ELEM_ *)mBase;
-      std::stable_sort(e, e+length, Sorter(inSorter) );
+      std::sort(e, e+length, Sorter(inSorter) );
+   }
+
+   void sort(Dynamic inSorter)
+   {
+      if ( ArrayTraits<ELEM_>::IsDynamic || ArrayTraits<ELEM_>::IsString)
+      {
+         // Keep references from being hidden inside sorters buffers
+         safeSort(inSorter, ArrayTraits<ELEM_>::IsString);
+      }
+      else
+      {
+         ELEM_ *e = (ELEM_ *)mBase;
+         std::stable_sort(e, e+length, Sorter(inSorter) );
+      }
    }
 
    Dynamic iterator() { return new hx::ArrayIterator<ELEM_,ELEM_>(this); }
@@ -487,6 +537,9 @@ public:
    virtual Dynamic __unshift(const Dynamic &a0) { unshift(a0); return null(); }
    virtual Dynamic __map(const Dynamic &func) { return map(func); }
    virtual Dynamic __filter(const Dynamic &func) { return filter(func); }
+   virtual Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3) { blit(a0,a1,a2,a3); return null(); }
+   virtual Dynamic __memcmp(const Dynamic &a0) { return memcmp(a0); }
+
 };
 
 
