@@ -17,6 +17,6 @@
  <flag value="-DHXCPP_DLL_EXPORT" if="dll_export"/>
  <flag value="-DHXCPP_SCRIPTABLE" if="scriptable"/>
  <flag value='-DHXCPP_DEBUG_HOST="${HXCPP_DEBUG_HOST}"' if="HXCPP_DEBUG_HOST" />
- <flag value='-DHXCPP_API_LEVEL=${HXCPP_API_LEVEL}' if="HXCPP_API_LEVEL" />
- <flag value='-DHXCPP_API_LEVEL=0' unless="HXCPP_API_LEVEL" />
+ <flag value='-DHXCPP_API_LEVEL=${hxcpp_api_level}' if="hxcpp_api_level" />
+ <flag value='-DHXCPP_API_LEVEL=0' unless="hxcpp_api_level" />
 </xml>
