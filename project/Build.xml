@@ -207,6 +207,7 @@
    <section if="static_link">
       <target id="msvccompat" if="windows" />
       <target id="linuxcompat" if="linux" />
+      <target id="linuxcompat" if="gcw0" />
    </section>
    <section unless="static_link">
       <target id="nekoapi" if="windows" unless="HXCPP_M64"/>
