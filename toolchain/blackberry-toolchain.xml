@@ -1,13 +1,29 @@
 <xml>
 
 
-<path name="${QNX_HOST}/usr/bin/" /> 
+<set name="HXCPP_X86" value="1" if="simulator" />
+
+<section if="HXCPP_X86">
+	<set name="ARCH" value="-x86" />
+	<set name="PLATFORM_ARCH" value="x86" />
+	<set name="EXEPREFIX" value="ntox86" />
+</section>
+
+<section unless="HXCPP_X86">
+	<set name="ARCH" value="-v7" />
+	<set name="PLATFORM_ARCH" value="armle-v7" />
+	<set name="EXEPREFIX" value="ntoarmv7" />
+</section>
+
+<setup name="blackberry" />
+
+<path name="${QNX_HOST}/usr/bin/" />
 <include name="toolchain/gcc-toolchain.xml"/>
 
 
 <!-- BLACKBERRY TOOLS -------------------------------------------------->
 	
-<compiler id="blackberry" exe="ntoarmv7-g++" if="blackberry">
+<compiler id="blackberry" exe="${EXEPREFIX}-g++" if="blackberry">
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
@@ -23,29 +39,28 @@
 	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
 	<outflag value="-o"/>
-	<objdir value="./obj/blackberry-dbg" if="debug"/>
-	<objdir value="./obj/blackberry" unless="debug"/>
+	<objdir value="./obj/blackberry${OBJEXT}${ARCH}"/>
 </compiler>
 
 
-<linker id="exe" exe="ntoarmv7-g++" if="blackberry">
+<linker id="exe" exe="${EXEPREFIX}-g++" if="blackberry">
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
 	<!-- <flag value="-rdynamic"/> -->
-	<flag value="-L${QNX_TARGET}/armle-v7/lib"/>
+	<flag value="-L${QNX_TARGET}/${PLATFORM_ARCH}/lib"/>
 	<ext value=""/>
 	<outflag value="-o"/>
 	<!-- <lib name="-lpthread"/> -->
 	<!-- <lib name="-ldl"/> -->
 </linker>
 	
-<linker id="dll" exe="ntoarmv7-g++" if="blackberry">
+<linker id="dll" exe="${EXEPREFIX}-g++" if="blackberry">
 	<flag value="-shared"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
-	<flag value="-L${QNX_TARGET}/armle-v7/lib"/>
+	<flag value="-L${QNX_TARGET}/${PLATFORM_ARCH}/lib"/>
 	<cppflag value="-frtti"/>
 	<!-- <lib name="-lpthread"/> -->
 	<flag value="-fpic"/>

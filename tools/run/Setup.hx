@@ -144,6 +144,10 @@ class Setup
       {
          setupAndroidNdk(ioDefines);
       }
+      else if (inWhat=="blackberry")
+      {
+         setupBlackBerryNativeSDK(ioDefines);
+      }
       else if (inWhat=="msvc")
       {
          setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"));
@@ -277,66 +281,73 @@ class Setup
 
    public static function setupBlackBerryNativeSDK(ioDefines:Hash<String>)
    {
-      if (ioDefines.exists ("BLACKBERRY_NDK_ROOT") && (!ioDefines.exists("QNX_HOST") || !ioDefines.exists("QNX_TARGET")))
+      if (!ioDefines.exists ("BLACKBERRY_NDK_ROOT"))
       {
-         var fileName = ioDefines.get ("BLACKBERRY_NDK_ROOT");
-         if (BuildTool.isWindows)
+          Log.error("Could not find BLACKBERRY_NDK_ROOT variable");
+      }
+      
+      var fileName = ioDefines.get ("BLACKBERRY_NDK_ROOT");
+      if (BuildTool.isWindows)
+      {
+         fileName += "\\bbndk-env.bat";
+      }
+      else
+      {
+         fileName += "/bbndk-env.sh";
+      }
+      
+      if (FileSystem.exists (fileName))
+      {
+         var fin = sys.io.File.read(fileName, false);
+         try
          {
-            fileName += "\\bbndk-env.bat";
-         }
-         else
-         {
-            fileName += "/bbndk-env.sh";
-         }
-         if (FileSystem.exists (fileName))
-         {
-            var fin = sys.io.File.read(fileName, false);
-            try
+            while(true)
             {
-               while(true)
+               var str = fin.readLine();
+               var split = str.split ("=");
+               var name = StringTools.trim (split[0].substr (split[0].lastIndexOf (" ") + 1));
+               switch (name)
                {
-                  var str = fin.readLine();
-                  var split = str.split ("=");
-                  var name = StringTools.trim (split[0].substr (split[0].lastIndexOf (" ") + 1));
-                  switch (name)
-                  {
-                     case "QNX_HOST", "QNX_TARGET", "QNX_HOST_VERSION", "QNX_TARGET_VERSION":
-                        var value = split[1];
-                        if (StringTools.startsWith (value, "${") && split.length > 2)
+                  case "QNX_HOST", "QNX_TARGET", "QNX_HOST_VERSION", "QNX_TARGET_VERSION":
+                     var value = split[1];
+                     if (StringTools.startsWith (value, "${") && split.length > 2)
+                     {
+                        value = split[2].substr (0, split[2].length - 1);
+                     }
+                     if (StringTools.startsWith(value, "\""))
+                     {
+                        value = value.substr (1);
+                     }
+                     if (StringTools.endsWith(value, "\""))
+                     {
+                        value = value.substr (0, value.length - 1);
+                     }
+                     if (name == "QNX_HOST_VERSION" || name == "QNX_TARGET_VERSION")
+                     {
+                        if (Sys.getEnv (name) != null)
                         {
-                           value = split[2].substr (0, split[2].length - 1);
+                           continue;
                         }
-                        if (StringTools.startsWith(value, "\""))
-                        {
-                           value = value.substr (1);
-                        }
-                        if (StringTools.endsWith(value, "\""))
-                        {
-                           value = value.substr (0, value.length - 1);
-                        }
-                        if (name == "QNX_HOST_VERSION" || name == "QNX_TARGET_VERSION")
-                        {
-                            if (Sys.getEnv (name) != null)
-                            {
-                               continue;
-                            }
-                        }
-                        else
-                        {
-                           value = StringTools.replace (value, "$QNX_HOST_VERSION", Sys.getEnv("QNX_HOST_VERSION"));
-                           value = StringTools.replace (value, "$QNX_TARGET_VERSION", Sys.getEnv("QNX_TARGET_VERSION"));
-                           value = StringTools.replace (value, "%QNX_HOST_VERSION%", Sys.getEnv("QNX_HOST_VERSION"));
-                           value = StringTools.replace (value, "%QNX_TARGET_VERSION%", Sys.getEnv("QNX_TARGET_VERSION"));
-                        }
-                        ioDefines.set(name,value);
-                        Sys.putEnv(name,value);
-                  }
+                     }
+                     else
+                     {
+                        value = StringTools.replace (value, "$QNX_HOST_VERSION", Sys.getEnv("QNX_HOST_VERSION"));
+                        value = StringTools.replace (value, "$QNX_TARGET_VERSION", Sys.getEnv("QNX_TARGET_VERSION"));
+                        value = StringTools.replace (value, "%QNX_HOST_VERSION%", Sys.getEnv("QNX_HOST_VERSION"));
+                        value = StringTools.replace (value, "%QNX_TARGET_VERSION%", Sys.getEnv("QNX_TARGET_VERSION"));
+                     }
+                     ioDefines.set(name,value);
+                     Sys.putEnv(name,value);
                }
             }
-            catch( ex:Eof ) 
-            {}
-            fin.close();
          }
+         catch( ex:Eof ) 
+         {}
+         fin.close();
+      }
+      else
+      {
+         Log.error("Could not find \"" + fileName + "\"");
       }
    }
 

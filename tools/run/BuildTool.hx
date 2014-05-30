@@ -491,7 +491,7 @@ class BuildTool
 
    public function createLinker(inXML:Fast,inBase:Linker):Linker
    {
-      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(inXML.att.exe);
+      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(substitute(inXML.att.exe));
       for(el in inXML.elements)
       {
          if (valid(el,""))
@@ -517,7 +517,7 @@ class BuildTool
 
    public function createPrelinker(inXML:Fast,inBase:Prelinker):Prelinker
    {
-      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Prelinker(inXML.att.exe);
+      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Prelinker(substitute(inXML.att.exe));
       for(el in inXML.elements)
       {
          if (valid(el,""))
@@ -539,7 +539,7 @@ class BuildTool
    public function createStripper(inXML:Fast,inBase:Stripper):Stripper
    {
       var s = (inBase!=null && !inXML.has.replace) ? inBase :
-                 new Stripper(inXML.att.exe);
+                 new Stripper(substitute(inXML.att.exe));
       for(el in inXML.elements)
       {
          if (valid(el,""))
@@ -559,7 +559,7 @@ class BuildTool
       if (target==null)
       {
          var output = inXML.has.output ? substitute(inXML.att.output) : "";
-         var tool = inXML.has.tool ? inXML.att.tool : "";
+         var tool = inXML.has.tool ? substitute(inXML.att.tool) : "";
          var toolid = inXML.has.toolid ? substitute(inXML.att.toolid) : "";
          target = new Target(output,tool,toolid);
       }
@@ -948,27 +948,13 @@ class BuildTool
       }
       else if (defines.exists("tizen"))
       {
-         if (defines.exists ("simulator"))
-         {
-            defines.set("toolchain","tizen-x86");
-         }
-         else
-         {
-            defines.set("toolchain","tizen");
-         }
+         defines.set("toolchain","tizen");
          defines.set("tizen","tizen");
          defines.set("BINDIR","Tizen");
       }
       else if (defines.exists("blackberry"))
       {
-         if (defines.exists("simulator"))
-         {
-            defines.set("toolchain", "blackberry-x86");
-         }
-         else
-         {
-            defines.set("toolchain", "blackberry");
-         }
+         defines.set("toolchain", "blackberry");
          defines.set("blackberry","blackberry");
          defines.set("BINDIR","BlackBerry");
       }
@@ -1142,15 +1128,11 @@ class BuildTool
             switch(el.name)
             {
                case "set" : 
-                  var name = el.att.name;
+                  var name = substitute(el.att.name);
                   var value = substitute(el.att.value);
                   mDefines.set(name,value);
-                  if (name == "BLACKBERRY_NDK_ROOT")
-                  {
-                     Setup.setupBlackBerryNativeSDK(mDefines);
-                  }
                case "unset" : 
-                  var name = el.att.name;
+                  var name = substitute(el.att.name);
                   mDefines.remove(name);
                case "setup" : 
                   var name = substitute(el.att.name);
@@ -1158,13 +1140,13 @@ class BuildTool
                case "echo" : 
                   Log.info(substitute(el.att.value));
                case "setenv" : 
-                  var name = el.att.name;
+                  var name = substitute(el.att.name);
                   var value = substitute(el.att.value);
                   mDefines.set(name,value);
                   Sys.putEnv(name,value);
                case "error" : 
                   var error = substitute(el.att.value);
-                  throw(error);
+                  Log.error(error);
                case "path" : 
                   var path = substitute(el.att.name);
                   Log.info("", "Adding path " + path);
@@ -1177,24 +1159,26 @@ class BuildTool
                case "stripper" : 
                   mStripper = createStripper(el,mStripper);
                case "prelinker" : 
-                  if (mPrelinkers.exists(el.att.id))
-                     createPrelinker(el,mPrelinkers.get(el.att.id));
+                  var name = substitute(el.att.id);
+                  if (mPrelinkers.exists(name))
+                     createPrelinker(el,mPrelinkers.get(name));
                   else
-                     mPrelinkers.set( el.att.id, createPrelinker(el,null) );
+                     mPrelinkers.set(name, createPrelinker(el,null) );
                case "linker" : 
-                  if (mLinkers.exists(el.att.id))
-                     createLinker(el,mLinkers.get(el.att.id));
+                  var name = substitute(el.att.id);
+                  if (mLinkers.exists(name))
+                     createLinker(el,mLinkers.get(name));
                   else
-                     mLinkers.set( el.att.id, createLinker(el,null) );
+                     mLinkers.set(name, createLinker(el,null) );
                case "files" : 
-                  var name = el.att.id;
+                  var name = substitute(el.att.id);
                   if (mFileGroups.exists(name))
                      createFileGroup(el, mFileGroups.get(name), name);
                   else
                      mFileGroups.set(name,createFileGroup(el,null,name));
                case "include" : 
                   var name = substitute(el.att.name);
-                  var section = el.has.section ? el.att.section : "";
+                  var section = el.has.section ? substitute(el.att.section) : "";
                   include(name, section, el.has.noerror);
                case "target" : 
                   var name = substitute(el.att.id);
