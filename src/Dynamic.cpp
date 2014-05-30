@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <math.h>
 #include <hxMath.h>
+#include <stdio.h>
 
 using namespace hx;
 
