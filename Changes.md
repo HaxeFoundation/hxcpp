@@ -1,4 +1,9 @@
 
+------------------------------------------------------------
+* Compile fix for blackberry
+* Pass on haxe_api_level
+* Add -nocolor flag
+------------------------------------------------------------
 * Add support for prelinker
 * Cygwin toolchain fix
 * Add HXCPP_NO_COLOUR  and HXCPP_NO_M32
