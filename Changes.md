@@ -1,4 +1,5 @@
 
+* Fix file read (and copy) from thread
 ------------------------------------------------------------
 * Compile fix for blackberry
 * Pass on haxe_api_level

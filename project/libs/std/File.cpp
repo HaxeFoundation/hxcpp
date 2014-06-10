@@ -246,6 +246,7 @@ static value file_read( value o, value s, value pp, value n ) {
 			HANDLE_FINTR(f->io,file_read_again);
 			if( size == 0 )
 				file_error("file_read",f);
+			gc_exit_blocking();
 			return alloc_int(size);
 		}
 		p += d;
