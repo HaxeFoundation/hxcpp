@@ -69,12 +69,12 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int           __hxcpp_register_prim(const HX_CHAR 
 
 // Get function pointer from dll file
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *__hxcpp_get_proc_address(String inLib, String inPrim,bool inNdllProc=true);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *__hxcpp_get_proc_address(String inLib, String inPrim,bool inNdll, bool inQuietFail=false);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_run_dll(String inLib, String inPrim);
 // Can assign to function pointer without error
-inline hx::AnyCast __hxcpp_cast_get_proc_address(String inLib, String inPrim)
+inline hx::AnyCast __hxcpp_cast_get_proc_address(String inLib, String inPrim,bool inQuietFail=false)
 {
-   return hx::AnyCast(__hxcpp_get_proc_address(inLib,inPrim,false));
+   return hx::AnyCast(__hxcpp_get_proc_address(inLib,inPrim,false,inQuietFail));
 }
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_get_kind(Dynamic inObject);

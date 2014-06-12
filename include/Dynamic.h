@@ -183,6 +183,9 @@ public:
 
 namespace hx
 {
+
+inline hx::Object *DynamicPtr(Dynamic inVal) { return inVal.mPtr; }
+
 typedef Dynamic (*MemberFunction0)(hx::Object *inObj);
 typedef Dynamic (*MemberFunction1)(hx::Object *inObj,const Dynamic &inArg0);
 typedef Dynamic (*MemberFunction2)(hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1);

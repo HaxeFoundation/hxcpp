@@ -308,12 +308,13 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    return null();
 }
 
-void *__hxcpp_get_proc_address(String inLib, String inPrim,bool)
+void *__hxcpp_get_proc_address(String inLib, String inPrim,bool ,bool inQuietFail)
 {
    if (sgRegisteredPrims)
       return (*sgRegisteredPrims)[inPrim.__CStr()];
 
-   printf("Primitive not found : %s\n", inPrim.__CStr() );
+   if (!inQuietFail)
+      printf("Primitive not found : %s\n", inPrim.__CStr() );
    return 0;
 }
 
@@ -323,7 +324,7 @@ void *__hxcpp_get_proc_address(String inLib, String inPrim,bool)
 
 extern "C" void *hx_cffi(const char *inName);
 
-void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
+void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bool inQuietFail)
 {
 #ifdef ANDROID
    inLib = HX_CSTRING("lib") + inLib;
@@ -540,7 +541,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
    }
 
    FundFunc proc_query = (FundFunc)hxFindSymbol(module,full_name.__CStr());
-   if (!proc_query)
+   if (!proc_query && !inQuietFail)
    {
       #ifdef ANDROID
        __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not find primitive %s in %p",
@@ -555,17 +556,14 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc)
       return (void *)proc_query;
 
    void *proc = proc_query();
-   if (!proc)
+   if (!proc && !inQuietFail)
    {
-#ifdef ANDROID
-      __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
-      fprintf(stderr,"Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
-#elif defined(ANDROID)
-   __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s",
+      #ifdef ANDROID
+      __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s",
         inPrim.__CStr(), inLib.__CStr() );
-#else
-   fprintf(stderr,"Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
-#endif
+      #else
+      fprintf(stderr,"Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
+      #endif
    }
 
    return proc;
