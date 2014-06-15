@@ -6,19 +6,20 @@
    bool __Is(hx::Object *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; } \
 
 
-#define HX_DO_RTTI \
+#define HX_DO_RTTI_ALL \
    HX_DO_RTTI_BASE \
    static hx::ObjectPtr<Class_obj> __mClass; \
    hx::ObjectPtr<Class_obj > __GetClass() const { return __mClass; } \
-   static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
-   Dynamic __Field(const ::String &inString, bool inCallProp); \
-   void __GetFields(Array< ::String> &outFields); \
-   Dynamic __SetField(const ::String &inString,const Dynamic &inValue, bool inCallProp); \
-   virtual int __GetType() const { return vtClass; } \
+   inline static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
    inline operator super *() { return this; } 
 
+#define HX_DO_RTTI \
+   HX_DO_RTTI_ALL \
+   Dynamic __Field(const ::String &inString, bool inCallProp); \
+   Dynamic __SetField(const ::String &inString,const Dynamic &inValue, bool inCallProp); \
+   void __GetFields(Array< ::String> &outFields);
+
 #define HX_DO_INTERFACE_RTTI \
-   int __GetType() const { return vtClass; } \
    static hx::ObjectPtr<Class_obj> __mClass; \
    static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
 	static void __register();
@@ -329,6 +330,7 @@ int main(Platform::NS::Array<Platform::NS::String^>^) \
    } \
    catch (Dynamic e){ \
       __hx_dump_stack(); \
+      return -1; \
    } \
    return 0; \
 }
@@ -351,8 +353,30 @@ int __stdcall WinMain( void * hInstance, void * hPrevInstance, const char *lpCmd
 	catch (Dynamic e){ \
 		__hx_dump_stack(); \
 		MessageBoxA(0,  e->toString().__CStr(), "Error", 0); \
+      return -1; \
 	} \
 	return 0; \
+}
+
+#elif defined(TIZEN)
+
+
+#define HX_BEGIN_MAIN \
+\
+extern "C" EXPORT_EXTRA int OspMain (int argc, char* pArgv[]){ \
+        HX_TOP_OF_STACK \
+        hx::Boot(); \
+        try{ \
+                __boot_all();
+
+#define HX_END_MAIN \
+        } \
+        catch (Dynamic e){ \
+                __hx_dump_stack(); \
+                printf("Error : %s\n",e->toString().__CStr()); \
+                return -1; \
+        } \
+        return 0; \
 }
 
 
@@ -372,6 +396,7 @@ int main(int argc,char **argv){ \
 	catch (Dynamic e){ \
 		__hx_dump_stack(); \
 		printf("Error : %s\n",e->toString().__CStr()); \
+      return -1; \
 	} \
 	return 0; \
 }

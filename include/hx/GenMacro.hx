@@ -15,7 +15,13 @@ import neko.io.FileOutput;
 
 class GenMacro
 {
-   static var warning = "// DO NOT EDIT\n// This file is generated from the .tpl file\n";
+   static var warning =
+    "//   ##  ##  ##   ##   ####   ##  ## ## ##  ##  ####    ##\n" +
+    "//   ##  ##  ## ##  ## ##  ## ### ## ## ### ## ##       ##\n" +
+    "//    ## ## ##  ###### ###### ###### ## ###### ## ###   ##\n" +
+    "//    ## ## ##  ##  ## ## ##  ## ### ## ## ### ##  ##     \n" +
+    "//     ## ##    ##  ## ##  ## ##  ## ## ##  ##  ####    ##\n\n" +
+    "// DO NOT EDIT\n// This file is generated from the .tpl file\n";
 
    public function new()
    {
