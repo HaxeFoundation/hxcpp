@@ -560,7 +560,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    {
       #ifdef ANDROID
       __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s",
-        inPrim.__CStr(), inLib.__CStr() );
+        full_name.__CStr(), inLib.__CStr() );
       #else
       fprintf(stderr,"Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
       #endif
