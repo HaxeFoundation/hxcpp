@@ -29,7 +29,7 @@ enum { gFillWithJunk = 0 } ;
 #endif
 
 static bool sgAllocInit = 0;
-static bool sgInternalEnable = false;
+static bool sgInternalEnable = true;
 static void *sgObject_root = 0;
 int gInAlloc = false;
 
@@ -1300,6 +1300,7 @@ hx::Object *GCGetNextZombie()
 
 void InternalEnableGC(bool inEnable)
 {
+   printf("Enable %d\n", sgInternalEnable);
    sgInternalEnable = inEnable;
 }
 
@@ -1439,7 +1440,7 @@ public:
 
       //Should we force a collect ? - the 'large' data are not considered when allocating objects
       // from the blocks, and can 'pile up' between smalll object allocations
-      if (inSize+mLargeAllocated > mLargeAllocForceRefresh)
+      if ((inSize+mLargeAllocated > mLargeAllocForceRefresh) && sgInternalEnable)
       {
          //GCLOG("Large alloc causing collection");
          CollectFromThisThread();
@@ -1453,7 +1454,10 @@ public:
       unsigned int *result = (unsigned int *)malloc(inSize + sizeof(int)*2);
       if (!result)
       {
-         //GCLOG("Large alloc panic!");
+         #ifdef SHOW_MEM_EVENTS
+         GCLOG("Large alloc failed - forcing collect\n");
+         #endif
+
          CollectFromThisThread();
          result = (unsigned int *)malloc(inSize + sizeof(int)*2);
       }
@@ -1491,6 +1495,9 @@ public:
 
       for(int pass= 0 ;pass<2 && result==0;pass++)
       {
+         // Try for recycled first
+         //   pass0 - any lying around before a collect
+         //   pass1 - any lying around after a collect
          if (mNextRecycled < mRecycledBlock.size())
          {
             if (mRecycledBlock[mNextRecycled]->getFreeInARow()>=inRequiredRows)
@@ -1512,13 +1519,16 @@ public:
             if (result)
             {
                result->ClearRecycled();
+               mCurrentRowsInUse += result->GetFreeRows();
+               break;
             }
          }
 
-         if (!result)
-            result = GetEmptyBlock(pass==0);
-         else
-            mCurrentRowsInUse += result->GetFreeRows();
+         // No recycled blocks
+         //   pass0 - Allow a collect if no free block, allocat more if tight
+         //   pass1 - We have already tried the collect, so force allocate
+         //  without sgInternalEnable, force allocation of there are no blocks
+         result = GetEmptyBlock(pass==0 && sgInternalEnable);
       }
 
       if (sMultiThreadMode)
@@ -1560,6 +1570,15 @@ public:
             int result = posix_memalign( (void **)&chunk, IMMIX_BLOCK_SIZE, IMMIX_BLOCK_SIZE );
             if (chunk==0)
             {
+               // We really really have to try collect!
+               if (inTryCollect==false)
+               {
+                  #ifdef SHOW_MEM_EVENTS
+                  GCLOG("Alloc failed - forcing collect\n");
+                  #endif
+                  return GetEmptyBlock(true);
+               }
+
                GCLOG("Error in posix_memalign %d!!!\n", result);
             }
             char *aligned = chunk;
@@ -1576,10 +1595,20 @@ public:
                }
             if (gid<0)
               gid = gAllocGroups.next();
-   
-   			char *chunk = (char *)malloc( 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS) );
+
+            char *chunk = (char *)malloc( 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS) );
+            // We really really have to try collect!
+            if (chunk==0 && !inTryCollect)
+            {
+               #ifdef SHOW_MEM_EVENTS
+               GCLOG("Alloc failed - forcing collect\n");
+               #endif
+               return GetEmptyBlock(true);
+            }
+
+
             int n = 1<<IMMIX_BLOCK_GROUP_BITS;
-   
+
             char *aligned = (char *)( (((size_t)chunk) + IMMIX_BLOCK_SIZE-1) & IMMIX_BLOCK_BASE_MASK);
             if (aligned!=chunk)
                n--;
@@ -1587,8 +1616,8 @@ public:
             // Only do one group allocation
             want_more = 0;
             #endif
-        
-   
+
+
             for(int i=0;i<n;i++)
             {
                BlockData *block = (BlockData *)(aligned + i*IMMIX_BLOCK_SIZE);
@@ -2195,6 +2224,8 @@ public:
       int  want_more = delta>0 ? (delta >> IMMIX_LINE_COUNT_BITS ) : 0;
       int  want_less = (delta < -(IMMIX_USEFUL_LINES<<IMMIX_BLOCK_GROUP_BITS)) ?
                             ((-delta) >> IMMIX_LINE_COUNT_BITS ) : 0;
+      if (!sgInternalEnable)
+         want_less = 0;
       if (inForceCompact)
       {
          want_less = mAllBlocks.size();
@@ -2917,7 +2948,6 @@ void SetTopOfStack(int *inTop,bool inForce)
             RegisterCurrentThread(inTop);
          }
       }
-      sgInternalEnable = true;
    }
 
    LocalAllocator *tla = GetLocalAlloc();
