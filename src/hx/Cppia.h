@@ -285,16 +285,16 @@ inline static int ValToInt( const int &v ) { return v; }
 inline static int ValToInt( const unsigned char &v ) { return v; }
 inline static int ValToInt( const Float &v ) { return v; }
 inline static int ValToInt( const String &v ) { return 0; }
-inline static int ValToInt( const hx::Object *v ) { return v->__ToInt(); }
-inline static int ValToInt( const Dynamic &v ) { return v->__ToInt(); }
+inline static int ValToInt( const hx::Object *v ) { return v ? v->__ToInt() : 0; }
+inline static int ValToInt( const Dynamic &v ) { return v.mPtr ? v->__ToInt() : 0; }
 
 inline static Float ValToFloat( const bool &v ) { return v; }
 inline static Float ValToFloat( const int &v ) { return v; }
 inline static Float ValToFloat( const unsigned char &v ) { return v; }
 inline static Float ValToFloat( const Float &v ) { return v; }
 inline static Float ValToFloat( const String &v ) { return 0; }
-inline static Float ValToFloat( const hx::Object *v ) { return v->__ToDouble(); }
-inline static Float ValToFloat( const Dynamic &v ) { return v->__ToDouble(); }
+inline static Float ValToFloat( const hx::Object *v ) { return v ? v->__ToDouble() : 0; }
+inline static Float ValToFloat( const Dynamic &v ) { return v.mPtr ? v->__ToDouble() : 0.0; }
 
 inline static String ValToString( const bool &v ) { return v?HX_CSTRING("true") : HX_CSTRING("false"); }
 inline static String ValToString( const int &v ) { return String(v); }
@@ -378,6 +378,11 @@ struct AssignAdd
       ioVal = ( Dynamic(ioVal) + Dynamic(value->runObject(ctx)) ).mPtr;
       return ioVal;
    }
+   static hx::Object *run(Dynamic &ioVal, CppiaCtx *ctx, CppiaExpr *value)
+   {
+      ioVal = ioVal + Dynamic(value->runObject(ctx));
+      return ioVal.mPtr;
+   }
 };
 
 
@@ -385,7 +390,7 @@ struct AssignAdd
 struct NAME \
 { \
    template<typename T> \
-   static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   inline static T &run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
       ioVal OPEQ value->runFloat(ctx); \
       return ioVal; \
@@ -395,6 +400,11 @@ struct NAME \
    static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
       ioVal = Dynamic(Dynamic(ioVal) OP value->runFloat(ctx)).mPtr; \
+      return ioVal; \
+   } \
+   static Dynamic &run(Dynamic &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
+   { \
+      ioVal = Dynamic(ioVal) OP value->runFloat(ctx); \
       return ioVal; \
    } \
 };

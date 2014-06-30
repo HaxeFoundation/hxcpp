@@ -253,6 +253,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
    Dynamic mDelegate; \
    hx::Object *__GetRealObject() { return mDelegate.mPtr; } \
    void __Visit(HX_VISIT_PARAMS) { HX_VISIT_OBJECT(mDelegate.mPtr); } \
+   void ** __GetScriptVTable() { return __scriptVTable; } \
    public: \
    static hx::Object *__script_create(void **inVTable,hx::Object *inDelegate) { \
     __ME *result = new __ME(); \

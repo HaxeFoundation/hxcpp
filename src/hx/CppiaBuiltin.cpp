@@ -78,6 +78,71 @@ struct ArrayBuiltinBase : public CppiaExpr
    }
 };
 
+struct ArrayEq
+{
+   template<typename ELEM>
+   inline static void set(ELEM &elem, CppiaCtx *ctx, CppiaExpr *expr)
+   {
+      elem = runValue(elem,ctx,expr);
+   }
+};
+
+
+struct ArrayAddEq
+{
+   template<typename ELEM>
+   inline static void set(ELEM &elem, CppiaCtx *ctx, CppiaExpr *expr)
+   {
+      elem = runValue(elem,ctx,expr);
+   }
+};
+
+
+
+template<typename ELEM, typename FUNC>
+struct ArraySetter : public ArrayBuiltinBase
+{
+   ArraySetter(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions)
+      : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
+   {
+   }
+   virtual ExprType getType()
+   {
+      return (ExprType)ExprTypeOf<ELEM>::value;
+   }
+   int runInt(CppiaCtx *ctx)
+   {
+      Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+      int i = args[0]->runInt(ctx);
+      ELEM &elem = thisVal->Item(i);
+      FUNC::run(elem, ctx, args[1]);
+      return ValToInt(elem);
+   }
+   Float  runFloat(CppiaCtx *ctx)
+   {
+      Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+      int i = args[0]->runInt(ctx);
+      ELEM &elem = thisVal->Item(i);
+      FUNC::run(elem, ctx, args[1]);
+      return ValToFloat(elem);
+   }
+   String  runString(CppiaCtx *ctx)
+   {
+      Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+      int i = args[0]->runInt(ctx);
+      ELEM &elem = thisVal->Item(i);
+      FUNC::run(elem, ctx, args[1]);
+      return ValToString(elem);
+   }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+      int i = args[0]->runInt(ctx);
+      ELEM &elem = thisVal->Item(i);
+      FUNC::run(elem, ctx, args[1]);
+      return Dynamic(elem).mPtr;
+   }
+};
 
 
 
@@ -177,6 +242,13 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          thisVal->Item(i) = runValue(elem,ctx,args[1]);
          return ValToInt(elem);
       }
+      if (FUNC==af__crement)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
+         return ValToInt(CREMENT::run(elem));
+      }
+
 
 
 
@@ -207,6 +279,13 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          thisVal->Item(i) = runValue(elem,ctx,args[1]);
          return ValToFloat(elem);
       }
+      if (FUNC==af__crement)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
+         return ValToFloat(CREMENT::run(elem));
+      }
+
 
 
 
@@ -241,8 +320,12 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          thisVal->Item(i) = runValue(elem,ctx,args[1]);
          return ValToString(elem);
       }
-
-
+      if (FUNC==af__crement)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
+         return ValToString(CREMENT::run(elem));
+      }
 
 
       if (FUNC==afJoin)
@@ -283,7 +366,6 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
          return Dynamic(CREMENT::run(elem)).mPtr;
       }
-
 
       if (FUNC==afPop)
       {
@@ -339,8 +421,11 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          return thisVal->iterator().mPtr;
       }
 
-      if (FUNC==afPush || FUNC==afRemove)
+      if (FUNC==afPush)
          return Dynamic(runInt(ctx)).mPtr;
+
+      if (FUNC==afRemove)
+         return Dynamic((bool)runInt(ctx)).mPtr;
 
       if (FUNC==afJoin)
          return Dynamic(runString(ctx)).mPtr;
@@ -367,6 +452,13 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM elem;
          thisVal->Item(i) = runValue(elem,ctx,args[1]);
       }
+      if (FUNC==af__crement)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
+         CREMENT::run(elem);
+      }
+
 
       if (FUNC==afPush || FUNC==afRemove)
          runInt(ctx);
@@ -405,8 +497,52 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==af__get)
       {
          args.push_back(inValue);
-         // TODO - other setters
-         CppiaExpr *replace = new ArrayBuiltin<ELEM,af__set,NoCrement>(this,thisExpr,args);
+         CppiaExpr *replace = 0;
+
+         switch(op)
+         {
+            case aoSet:
+               replace = new ArraySetter<ELEM,AssignSet>(this,thisExpr,args);
+               break;
+            case aoAdd:
+               replace = new ArraySetter<ELEM,AssignAdd>(this,thisExpr,args);
+               break;
+            case aoMult:
+               replace = new ArraySetter<ELEM,AssignMult>(this,thisExpr,args);
+               break;
+            case aoDiv:
+               replace = new ArraySetter<ELEM,AssignDiv>(this,thisExpr,args);
+               break;
+            case aoSub:
+               replace = new ArraySetter<ELEM,AssignSub>(this,thisExpr,args);
+               break;
+            case aoAnd:
+               replace = new ArraySetter<ELEM,AssignAnd>(this,thisExpr,args);
+               break;
+            case aoOr:
+               replace = new ArraySetter<ELEM,AssignOr>(this,thisExpr,args);
+               break;
+            case aoXOr:
+               replace = new ArraySetter<ELEM,AssignXOr>(this,thisExpr,args);
+               break;
+            case aoShl:
+               replace = new ArraySetter<ELEM,AssignShl>(this,thisExpr,args);
+               break;
+            case aoShr:
+               replace = new ArraySetter<ELEM,AssignShr>(this,thisExpr,args);
+               break;
+            case aoUShr:
+               replace = new ArraySetter<ELEM,AssignUShr>(this,thisExpr,args);
+               break;
+            case aoMod:
+               replace = new ArraySetter<ELEM,AssignMod>(this,thisExpr,args);
+               break;
+      
+            default: ;
+               printf("make setter %d\n", op);
+               throw "setter not implemented";
+         }
+
          delete this;
          return replace;
       }
@@ -721,7 +857,12 @@ CppiaExpr *createStringBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, String f
       if (ioExpressions.size()!=1) throw "Bad arg count";
       return new CharAtExpr<false>(inSrc,inThisExpr,ioExpressions[0]);
    }
-   else if (field==HX_CSTRING("charCodeAt") || field==HX_CSTRING("cca"))
+   else if (field==HX_CSTRING("cca"))
+   {
+      if (ioExpressions.size()!=1) throw "Bad arg count";
+      return new CharAtExpr<true>(inSrc,inThisExpr,ioExpressions[0]);
+   }
+   else if (field==HX_CSTRING("charCodeAt"))
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
       return new CharAtExpr<true>(inSrc,inThisExpr,ioExpressions[0]);
