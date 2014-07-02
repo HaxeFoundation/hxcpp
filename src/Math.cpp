@@ -86,6 +86,11 @@ Dynamic Math_obj::__Field(const String &inString, bool inCallProp)
    if (inString==HX_CSTRING("exp")) return max_dyn();
    if (inString==HX_CSTRING("isNaN")) return isNaN_dyn();
    if (inString==HX_CSTRING("isFinite")) return isFinite_dyn();
+
+   if (inString==HX_CSTRING("NEGATIVE_INFINITY")) return NEGATIVE_INFINITY;
+   if (inString==HX_CSTRING("POSITIVE_INFINITY")) return POSITIVE_INFINITY;
+   if (inString==HX_CSTRING("PI")) return PI;
+   if (inString==HX_CSTRING("NaN")) return NaN;
    return null();
 }
 

@@ -100,6 +100,13 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
    mCanCast = inCanCast;
 }
 
+void Class_obj::registerScriptable(bool inOverwrite)
+{
+   if (!inOverwrite && sClassMap->find(mName)!=sClassMap->end())
+      return;
+   (*sClassMap)[ mName ] = this;
+}
+
 Class Class_obj::GetSuper()
 {
    if (!mSuper)
@@ -156,7 +163,12 @@ Class Class_obj::Resolve(String inName)
 {
    ClassMap::const_iterator i = sClassMap->find(inName);
    if (i==sClassMap->end())
+   {
+      // Class class...
+      if (inName==HX_CSTRING("Enum"))
+         return Class_obj__mClass;
       return null();
+   }
    return i->second;
 }
 

@@ -329,10 +329,13 @@ void __hxcpp_println(Dynamic &inV)
 
 bool __instanceof(const Dynamic &inValue, const Dynamic &inType)
 {
-   if (inType==hx::Object::__SGetClass()) return true;
-   if (inValue==null()) return false;
+   if (inType==hx::Object::__SGetClass())
+      return true;
+   if (inValue==null())
+      return false;
    Class c = inType;
-   if (c==null()) return false;
+   if (c==null())
+      return false;
    return c->CanCast(inValue.GetPtr());
 }
 

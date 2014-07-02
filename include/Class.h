@@ -7,7 +7,7 @@ namespace hx
 // --- hxClassOf --------------------------------------------------------------
 //
 // Gets the class definition that relates to a specific type.
-// Most classes have their own class data, by the standard types (non-classes)
+// Most classes have their own class data, but the standard types (non-classes)
 //  use the template traits to get the class
 
 
@@ -125,6 +125,7 @@ public:
 
 	inline bool CanCast(hx::Object *inPtr) { return mCanCast ? mCanCast(inPtr) : VCanCast(inPtr); }
 
+   void registerScriptable(bool inOverwrite);
   
 	hx::CanCastFunc     mCanCast;
 
