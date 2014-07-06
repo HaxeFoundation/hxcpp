@@ -108,6 +108,7 @@ public:
 
    operator Dynamic () { return CreateDynamicPointer((void *)call); }
    operator T * () { return call; }
+   operator void * () { return (void *)call; }
 
    inline T &get_call() { return *call; }
 
