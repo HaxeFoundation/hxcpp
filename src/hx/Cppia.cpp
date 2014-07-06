@@ -8,8 +8,8 @@
 
 #include "Cppia.h"
 
-//#define DBGLOG(...) { }
-#define DBGLOG printf
+#define DBGLOG(...) { }
+//#define DBGLOG printf
 
 
 namespace hx
@@ -153,7 +153,7 @@ class Object_obj__scriptable : public Object
 
 void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, hx::ScriptFunction inConstruct)
 {
-   printf("ScriptableRegisterClass %s\n", inName.__s);
+   DBGLOG("ScriptableRegisterClass %s\n", inName.__s);
    if (!sScriptRegistered)
       sScriptRegistered = new ScriptRegisteredMap();
    ScriptRegistered *registered = new ScriptRegistered(inName.__s,inDataOffset, inFunctions,inFactory, inConstruct);
@@ -165,7 +165,7 @@ void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFuncti
 void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions, const hx::type_info *inType,
                                  hx::ScriptableInterfaceFactory inFactory )
 {
-   printf("ScriptableInterfaceFactory %s\n",inName.__s);
+   DBGLOG("ScriptableInterfaceFactory %s\n",inName.__s);
    if (!sScriptRegisteredInterface)
       sScriptRegisteredInterface = new ScriptRegisteredInterfaceMap();
    ScriptRegisteredIntferface *registered = new ScriptRegisteredIntferface(inName.__s, inFunctions, inFactory,inType);
@@ -299,6 +299,8 @@ enum VarLocation
    locAbsolute,
 };
 
+
+std::map<int,int> sVarIdNameMap;
 struct CppiaStackVar
 {
    int  nameId;
@@ -308,6 +310,7 @@ struct CppiaStackVar
    int  stackPos;
    int  fromStackPos;
    int  capturePos;
+
 
    ExprType expressionType;
 
@@ -327,6 +330,7 @@ struct CppiaStackVar
    {
       nameId = inVar->nameId;
       id = inVar->id;
+      sVarIdNameMap[id] = nameId;
       capture = inVar->capture;
       typeId = inVar->typeId;
       expressionType = inVar->expressionType;
@@ -388,6 +392,17 @@ struct StackLayout
       size( sizeof(void *) ), captureSize(sizeof(void *)), parent(inParent)
    {
    }
+
+
+   void dump(Array<String> &inStrings, std::string inIndent)
+   {
+      printf("%sCapture:\n",inIndent.c_str());
+      for(int i=0;i<captureVars.size();i++)
+         printf("%s %s\n", inIndent.c_str(), inStrings[captureVars[i]->nameId].__s );
+      if (parent)
+         parent->dump(inStrings,inIndent + "   ");
+   }
+
 
    CppiaStackVar *findVar(int inId)
    {
@@ -653,6 +668,7 @@ struct CppiaVar
    enum Access { accNormal, accNo, accResolve, accCall, accRequire } ;
    TypeData  *type;
    bool      isStatic;
+   bool      isVirtual;
    Access    readAccess;
    Access    writeAccess;
    int       nameId;
@@ -707,6 +723,7 @@ struct CppiaVar
    {
       readAccess = getAccess(stream);
       writeAccess = getAccess(stream);
+      isVirtual = stream.getBool();
       nameId = stream.getInt();
       typeId = stream.getInt();
       if (stream.getInt())
@@ -726,14 +743,17 @@ struct CppiaVar
       name = cppia.strings[nameId];
       exprType = typeId==0 ? etObject : type->expressionType;
 
-      switch(exprType)
+      if (!isVirtual)
       {
-         case etInt: valPointer = &intVal; storeType=fsInt; break;
-         case etFloat: valPointer = &floatVal; storeType=fsFloat; break;
-         case etString: valPointer = &stringVal;storeType=fsString;  break;
-         case etObject: valPointer = &objVal;storeType=fsObject;  break;
-         default:
-           ;
+         switch(exprType)
+         {
+            case etInt: valPointer = &intVal; storeType=fsInt; break;
+            case etFloat: valPointer = &floatVal; storeType=fsFloat; break;
+            case etString: valPointer = &stringVal;storeType=fsString;  break;
+            case etObject: valPointer = &objVal;storeType=fsObject;  break;
+            default:
+              ;
+         }
       }
    }
 
@@ -777,6 +797,8 @@ struct CppiaVar
    {
       if (valPointer)
          return createStaticAccess(inSrc, exprType, valPointer);
+      if (isVirtual)
+         throw "Direct access to extern field";
       throw "Unlinked static variable";
       return 0;
    }
@@ -789,19 +811,22 @@ struct CppiaVar
          //dynamicFunction->linkTypes(cppia);
          nameId = dynamicFunction->nameId;
       }
-      offset = ioOffset;
       type = cppia.types[typeId];
-      exprType = typeId==0 ? etObject : type->expressionType;
-      
-      switch(exprType)
+      if (!isVirtual)
       {
-         case etInt: ioOffset += sizeof(int); storeType=fsInt; break;
-         case etFloat: ioOffset += sizeof(Float);storeType=fsFloat;  break;
-         case etString: ioOffset += sizeof(String);storeType=fsString;  break;
-         case etObject: ioOffset += sizeof(hx::Object *);storeType=fsObject;  break;
-         case etVoid:
-         case etNull:
-            break;
+         offset = ioOffset;
+         exprType = typeId==0 ? etObject : type->expressionType;
+         
+         switch(exprType)
+         {
+            case etInt: ioOffset += sizeof(int); storeType=fsInt; break;
+            case etFloat: ioOffset += sizeof(Float);storeType=fsFloat;  break;
+            case etString: ioOffset += sizeof(String);storeType=fsString;  break;
+            case etObject: ioOffset += sizeof(hx::Object *);storeType=fsObject;  break;
+            case etVoid:
+            case etNull:
+               break;
+         }
       }
    }
 
@@ -892,6 +917,25 @@ struct CppiaVar
                case etObject: objVal = init->runObject(ctx); break;
                default: ;
             }
+      }
+   }
+
+   inline void mark(hx::Object *inThis,hx::MarkContext *__inCtx)
+   {
+      switch(storeType)
+      {
+         case fsString: HX_MARK_MEMBER(*(String *)((char *)inThis + offset));
+         case fsObject: HX_MARK_MEMBER(*(hx::Object **)((char *)inThis + offset));
+         default:;
+      }
+   }
+   inline void visit(hx::Object *inThis,hx::VisitContext *__inCtx)
+   {
+      switch(storeType)
+      {
+         case fsString: HX_VISIT_MEMBER(*(String *)((char *)inThis + offset));
+         case fsObject: HX_VISIT_MEMBER(*(hx::Object **)((char *)inThis + offset));
+         default:;
       }
    }
 
@@ -1062,6 +1106,7 @@ struct CppiaClassInfo
 
    CppiaFunction *newFunc;
    CppiaExpr     *initFunc;
+   CppiaExpr     *enumMeta;
 
    CppiaClassInfo(CppiaData &inCppia) : cppia(inCppia)
    {
@@ -1070,6 +1115,7 @@ struct CppiaClassInfo
       extraData = 0;
       newFunc = 0;
       initFunc = 0;
+      enumMeta = 0;
       isInterface = false;
       superType = 0;
       typeId = 0;
@@ -1077,6 +1123,13 @@ struct CppiaClassInfo
       type = 0;
       mClass.mPtr = 0;
    }
+
+   /*
+   class CppiaClass *getCppiaClass()
+   {
+      return (class CppiaClass *)mClass.mPtr;
+   }
+   */
 
    hx::Object *createInstance(CppiaCtx *ctx,Expressions &inArgs, bool inCallNew = true)
    {
@@ -1243,7 +1296,7 @@ struct CppiaClassInfo
       if (superType && superType->cppiaClass)
          return superType->cppiaClass->getField(inThis, inName, inCallProp, outValue);
 
-      printf("Get field not found (%s) %s\n", inThis->toString().__s,inName.__s);
+      //printf("Get field not found (%s) %s\n", inThis->toString().__s,inName.__s);
       return false;
    }
 
@@ -1477,6 +1530,11 @@ struct CppiaClassInfo
              else
                 throw "unknown field type";
           }
+       }
+       if (isEnum)
+       {
+          if (inStream.getBool())
+             enumMeta = createCppiaExpr(inStream);
        }
        inStream.cppiaData->creatingClass = 0;
        return isNew;
@@ -1798,7 +1856,11 @@ struct CppiaClassInfo
 
       }
 
+      if (enumMeta)
+         enumMeta = enumMeta->link(cppia);
 
+
+      mClass->mStatics = GetClassFields();
       //printf("Found haxeBase %s = %p / %d\n", cppia.types[typeId]->name.__s, haxeBase, dataSize );
    }
 
@@ -1807,7 +1869,19 @@ struct CppiaClassInfo
       if (inPhase==0)
       {
          for(int i=0;i<staticVars.size();i++)
+         {
             staticVars[i]->runInit(ctx);
+            if (staticVars[i]->name==HX_CSTRING("__meta__"))
+            {
+               // Todo - delete/clean value
+               mClass->__meta__ = staticVars[i]->objVal;
+               staticVars.erase( staticVars.begin() + i );
+               i--;
+            }
+         }
+         if (enumMeta)
+            mClass->__meta__ = enumMeta->runObject(ctx);
+
          for(int i=0;i<staticDynamicFunctions.size();i++)
             staticDynamicFunctions[i]->runInit(ctx);
       }
@@ -1895,9 +1969,76 @@ struct CppiaClassInfo
 
    }
 
+   void GetInstanceFields(hx::Object *inObject, Array<String> &ioFields)
+   {
+      for(int i=0;i<memberVars.size();i++)
+      {
+         CppiaVar &var = *memberVars[i];
+         ioFields->push(var.name);
+      }
+
+      if (inObject)
+      {
+         hx::FieldMap *map = inObject->__GetFieldMap();
+         if (map)
+            FieldMapAppendFields(map, ioFields);
+      }
+   }
+   
+   Array<String> GetClassFields()
+   {
+      Array<String> result = Array_obj<String>::__new();
+
+      if (isEnum)
+      {
+         for(int i=0;i<enumConstructors.size();i++)
+            result->push(enumConstructors[i]->name);
+      }
+      else
+      {
+
+         for(int i=0;i<staticVars.size();i++)
+         {
+            CppiaVar &var = *staticVars[i];
+            if (var.isVirtual)
+               continue;
+            result->push(var.name);
+         }
+
+         for(int i=0;i<staticDynamicFunctions.size();i++)
+         {
+            CppiaVar &var = *staticDynamicFunctions[i];
+            if (var.isVirtual)
+               continue;
+            result->push(var.name);
+         }
+
+         for(int i=0;i<staticFunctions.size();i++)
+         {
+            CppiaFunction &func = *staticFunctions[i];
+            result->push(func.getName());
+         }
+      }
+
+      return result;
+   }
 
 
+   inline void markInstance(hx::Object *inThis, hx::MarkContext *__inCtx)
+   {
+      for(int i=0;i<dynamicFunctions.size();i++)
+         dynamicFunctions[i]->mark(inThis, __inCtx);
+      for(int i=0;i<memberVars.size();i++)
+         memberVars[i]->mark(inThis, __inCtx);
+   }
 
+   inline void visitInstance(hx::Object *inThis, hx::VisitContext *__inCtx)
+   {
+      for(int i=0;i<dynamicFunctions.size();i++)
+         dynamicFunctions[i]->visit(inThis, __inCtx);
+      for(int i=0;i<memberVars.size();i++)
+         memberVars[i]->visit(inThis, __inCtx);
+   }
 };
 
 
@@ -1955,22 +2096,45 @@ public:
       mSuper = info->getSuperClass();
       DBGLOG("LINK %p ########################### %s -> %p\n", this, mName.__s, mSuper );
       mStatics = Array_obj<String>::__new(0,0);
-      mMembers = Array_obj<String>::__new(0,0);
-      /*
-      for(int i=0;i<info->memberVars.size();i++)
-      {
-         CppiaVar *var = info->memberVars[i];
-         mMembers->push( var->name );
-      }
-      */
+
+
+      Array<String> base;
+      if (mSuper)
+         base = (*mSuper)->mMembers;
+
+      mMembers = base==null() ?Array_obj<String>::__new(0,0) : base->copy();
+
       for(int i=0;i<info->memberFunctions.size();i++)
       {
          CppiaFunction *func = info->memberFunctions[i];
-         mMembers->push( func->getName() );
+         String name = func->getName();
+         if (base==null() || base->Find(name)<0)
+            mMembers->push(name);
+      }
+
+      for(int i=0;i<info->memberVars.size();i++)
+      {
+         CppiaVar *var = info->memberVars[i];
+         if (var->isVirtual)
+            continue;
+         String name = inData.strings[var->nameId];
+         if (base==null() || base->Find(name)<0)
+            mMembers->push( name );
+      }
+
+      for(int i=0;i<info->dynamicFunctions.size();i++)
+      {
+         CppiaVar *var = info->dynamicFunctions[i];
+         if (var->isVirtual)
+            continue;
+         String name = inData.strings[var->nameId];
+         if (base==null() || base->Find(name)<0)
+            mMembers->push(name);
       }
 
       registerScriptable(false);
    }
+
 
    Dynamic ConstructEmpty()
    {
@@ -2023,8 +2187,11 @@ public:
       return false;
    }
 
+
    Dynamic __Field(const String &inName,bool inCallProp)
    {
+      if (inName==HX_CSTRING("__meta__"))
+         return __meta__;
       return info->getStaticValue(inName,inCallProp);
    }
 
@@ -3731,10 +3898,11 @@ struct CallMember : public CppiaExpr
 
       TypeData *type = inData.types[classId];
       String field = inData.strings[fieldId];
+
       //printf("  linking call %s::%s\n", type->name.__s, field.__s);
 
       CppiaExpr *replace = 0;
-      // TODO - string functions
+      
       if (type->arrayType)
       {
          replace = createArrayBuiltin(this, type->arrayType, thisExpr, field, args);
@@ -3742,11 +3910,19 @@ struct CallMember : public CppiaExpr
 
       if (type->cppiaClass && !replace)
       {
-         int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
-         //printf("   vslot %d\n", vtableSlot);
-         if (vtableSlot>=0)
+         if (callSuperField)
          {
-            replace = new CallMemberVTable( this, thisExpr, vtableSlot, type->cppiaClass->isInterface, args );
+            // Bind now ...
+            ScriptCallable *func = (ScriptCallable *)type->cppiaClass->findFunction(false, fieldId) ;
+            if (func)
+               replace = new CallFunExpr( this, thisExpr, func, args );
+         }
+         else
+         {
+            int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
+            //printf("   vslot %d\n", vtableSlot);
+            if (vtableSlot>=0)
+                replace = new CallMemberVTable( this, thisExpr, vtableSlot, type->cppiaClass->isInterface, args );
          }
       }
       if (type->haxeBase && !replace)
@@ -5011,18 +5187,41 @@ struct SwitchExpr : public CppiaExpr
       return this;
    }
 
-   CppiaExpr *getBody(CppiaCtx *ctx)
+   template<typename T>
+   CppiaExpr *TGetBody(CppiaCtx *ctx)
    {
-      // todo - int/map ?
-      int value = condition->runInt(ctx);
+      T value;
+      runValue(value,ctx,condition);
       for(int i=0;i<caseCount;i++)
       {
          Case &c = cases[i];
          for(int j=0;j<c.conditions.size();j++)
-            if (value==c.conditions[j]->runInt(ctx))
+         {
+            T caseVal;
+            runValue(caseVal,ctx,c.conditions[j]);
+            if (value==caseVal)
                return c.body;
+         }
       }
       return defaultCase;
+   }
+
+
+   CppiaExpr *getBody(CppiaCtx *ctx)
+   {
+      switch(condition->getType())
+      {
+         case etInt :
+             // todo - int/map ?
+             return TGetBody<int>(ctx);
+         case etString : return TGetBody<String>(ctx);
+         case etFloat : return TGetBody<Float>(ctx);
+         // Enum
+         case etObject : return TGetBody<Dynamic>(ctx);
+         default: ;
+      }
+
+     return defaultCase;
    }
 
    void runVoid(CppiaCtx *ctx)
@@ -5156,7 +5355,8 @@ struct VarRef : public CppiaExpr
       {
          // link to cppia static...
 
-         printf("Could not link var %d (%s)\n", varId, inData.strings[varId].__s);
+         printf("Could not link var %d %s.\n", varId, inData.strings[ sVarIdNameMap[varId] ].__s );
+         inData.layout->dump(inData.strings,"");
          inData.where(this);
          throw "Unknown variable";
       }
@@ -6289,6 +6489,8 @@ void CppiaData::visit(hx::VisitContext *__inCtx)
 // TODO  - more than one
 static hx::Object *currentCppia = 0;
 
+std::vector<hx::Resource> scriptResources;
+
 bool LoadCppia(String inValue)
 {
    CppiaData   *cppiaPtr = new CppiaData();
@@ -6338,6 +6540,41 @@ bool LoadCppia(String inValue)
       }
       else if (tok!="NOMAIN")
          throw "no main specified";
+
+      tok = stream.getToken();
+      if (tok=="RESOURCES")
+      {
+         int count = stream.getInt( );
+         scriptResources.resize(count+1);
+         for(int r=0;r<count;r++)
+         {
+            tok = stream.getToken();
+            if (tok!="RESO")
+               throw "no reso tag";
+            
+            scriptResources[r].mName = cppia.strings[stream.getInt()];
+            scriptResources[r].mDataLength = stream.getInt();
+         }
+         stream.skipChar();
+         for(int r=0;r<count;r++)
+         {
+            int len = scriptResources[r].mDataLength;
+            unsigned char *buffer = (unsigned char *)malloc(len+5);
+            *(int *)buffer = 0xffffffff;
+            buffer[len+5-1] = '\0';
+            stream.readBytes(buffer+4, len);
+            scriptResources[r].mData = buffer + 4;
+         }
+         scriptResources[count].mDataLength = 0;
+         scriptResources[count].mData = 0;
+         scriptResources[count].mName = String();
+         
+         RegisterResources(&scriptResources[0]);
+      }
+      else
+         throw "no resources tag";
+
+
    } catch(const char *error)
    {
       printf("Error reading file: %s, line %d, char %d\n", error, stream.line, stream.pos);
@@ -6394,16 +6631,14 @@ Class ScriptableGetClass(void *inClass)
 
 
 // Called by haxe generated code ...
-void ScriptableMark(void *inClass, hx::Object *inThis, HX_MARK_PARAMS)
+void ScriptableMark(void *inClass, hx::Object *inThis, hx::MarkContext *__inCtx)
 {
-   printf("ScriptableMark\n");
-   //inHandler->markFields(inInstanceData,HX_MARK_ARG);
+   ((CppiaClassInfo *)inClass)->markInstance(inThis, __inCtx);
 }
 
-void ScriptableVisit(void *inClass, hx::Object *inThis, HX_VISIT_PARAMS)
+void ScriptableVisit(void *inClass, hx::Object *inThis, hx::VisitContext *__inCtx)
 {
-   printf("ScriptablVisit\n");
-   //inHandler->visitFields(*inInstanceDataPtr,HX_VISIT_ARG);
+   ((CppiaClassInfo *)inClass)->visitInstance(inThis, __inCtx);
 }
 
 bool ScriptableField(hx::Object *inObj, const ::String &inName,bool inCallProp,Dynamic &outResult)
@@ -6426,7 +6661,8 @@ bool ScriptableField(hx::Object *, int inName,bool inCallProp,Dynamic &outResult
 
 void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields)
 {
-   printf("ScriptableGetFields\n");
+   void **vtable = inObject->__GetScriptVTable();
+   return ((CppiaClassInfo *)vtable[-1])->GetInstanceFields(inObject,outFields);
 }
 
 bool ScriptableSetField(hx::Object *inObj, const ::String &inName, Dynamic inValue,bool inCallProp, Dynamic &outResult)

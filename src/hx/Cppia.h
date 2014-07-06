@@ -101,6 +101,14 @@ struct CppiaStream
       return String(data0,data-data0).dup();
    }
 
+   void readBytes(unsigned char *outBytes, int inLen)
+   {
+      if (data+inLen>max)
+         throw "EOF";
+      memcpy(outBytes, data, inLen);
+      data+=inLen;
+   }
+
 };
 
 
