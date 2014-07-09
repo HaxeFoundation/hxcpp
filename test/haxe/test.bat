@@ -1,1 +1,2 @@
-haxe compile.hxml -cmd bin/TestMain-debug.exe
+haxe compile.hxml
+"bin/TestMain.exe"

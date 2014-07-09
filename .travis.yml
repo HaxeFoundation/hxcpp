@@ -23,7 +23,7 @@ script:
   - haxe compile.hxml && ./cpp/Test
   - haxe compile64.hxml && ./cpp64/Test
   - cd ${TRAVIS_BUILD_DIR}/test/haxe
-  - haxe compile.hxml && ./bin/TestMain-debug
+  - haxe compile.hxml -debug && ./bin/TestMain-debug
   - cd ~/haxe/tests/unit
   - haxe compile-cpp.hxml && ./cpp/Test-debug && rm -rf cpp
   - haxe compile-cpp.hxml -D HXCPP_M64 && ./cpp/Test-debug
