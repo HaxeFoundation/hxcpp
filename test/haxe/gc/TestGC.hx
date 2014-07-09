@@ -26,6 +26,7 @@ class TestGC extends haxe.unit.TestCase {
     function create123():Void {
             var object:Null<Int> = 123;
             Gc.doNotKill(object);
+            object = null;
     };
  
     public function testBoxedInt():Void {
