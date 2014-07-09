@@ -20,9 +20,9 @@ class TestGC extends haxe.unit.TestCase {
         assertEquals("abc", zombie.test);
     }
 
-    public function testInt():Void {
+    public function testBoxedInt():Void {
         function innerFunction():Void {
-            var object = 123;
+            var object:Null<Int> = 123;
             Gc.doNotKill(object);
             Gc.run(true);
             assertTrue(Gc.getNextZombie() == null);
