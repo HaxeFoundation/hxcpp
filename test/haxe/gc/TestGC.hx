@@ -1,37 +1,74 @@
 package gc;
 import haxe.io.Bytes;
 import cpp.vm.Gc;
+
+class CustomObject {
+    public function new():Void {}
+}
+
 class TestGC extends haxe.unit.TestCase {
-
-    public function testObjectLeak():Void {
-        var object:CustomObject = new CustomObject();
-        Gc.doNotKill(object);
+    public function testObject():Void {
+        function innerFunction():Void {
+            var object = { test: "abc" };
+            Gc.doNotKill(object);
+            Gc.run(true);
+            assertTrue(Gc.getNextZombie() == null);
+        }();
         Gc.run(true);
-        assertTrue(isLeak());
-        object = null;
-        Gc.run(true);
-        assertFalse(isLeak());
+        var zombie = Gc.getNextZombie();
+        assertTrue(zombie != null);
+        assertEquals("abc", zombie.test);
     }
 
-    public function testObjectNonLeak():Void {
-        var object:CustomObject = new CustomObject();
-        Gc.doNotKill(object);
-        object = null;
+    public function testInt():Void {
+        function innerFunction():Void {
+            var object = 123;
+            Gc.doNotKill(object);
+            Gc.run(true);
+            assertTrue(Gc.getNextZombie() == null);
+        }();
         Gc.run(true);
-        assertFalse(Gc.getNextZombie() == null);
+        var zombie:Dynamic = Gc.getNextZombie();
+        assertTrue(zombie != null);
+        assertEquals(123, zombie);
     }
 
-    public function testBytesLeak():Void {
-        var object:Bytes = Bytes.alloc(1);
-        Gc.doNotKill(object);
+    public function testFunc():Void {
+        function innerFunction():Void {
+            var object = function() return "abc";
+            Gc.doNotKill(object);
+            Gc.run(true);
+            assertTrue(Gc.getNextZombie() == null);
+        }();
         Gc.run(true);
-        assertTrue(isLeak());
-        object = null;
-        Gc.run(true);
-        assertFalse(isLeak());
+        var zombie = Gc.getNextZombie();
+        assertTrue(zombie != null);
+        assertEquals("abc", zombie());
     }
 
-    function isLeak():Bool {
-        return Gc.getNextZombie() == null;
+    public function testCustomObject():Void {
+        function innerFunction():Void {
+            var object = new CustomObject();
+            Gc.doNotKill(object);
+            Gc.run(true);
+            assertTrue(Gc.getNextZombie() == null);
+        }();
+        Gc.run(true);
+        var zombie = Gc.getNextZombie();
+        assertTrue(zombie != null);
+        assertTrue(Std.is(zombie, CustomObject));
+    }
+
+    public function testBytes():Void {
+        function innerFunction():Void {
+            var object = Bytes.alloc(1);
+            Gc.doNotKill(object);
+            Gc.run(true);
+            assertTrue(Gc.getNextZombie() == null);
+        }();
+        Gc.run(true);
+        var zombie = Gc.getNextZombie();
+        assertTrue(zombie != null);
+        assertTrue(Std.is(zombie, Bytes));
     }
 }

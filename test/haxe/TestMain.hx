@@ -5,6 +5,7 @@ class TestMain {
     static function main(){
         var r = new haxe.unit.TestRunner();
         r.add(new TestGC());
-        r.run();
+        var success = r.run();
+        Sys.exit(success ? 0 : 1);
     }
 }

@@ -1,4 +1,1 @@
-haxe compile.hxml
-cd ../../bin/test/haxe
-TestMain-debug.exe
-cd ../../../test/haxe
+haxe compile.hxml -cmd bin/TestMain-debug.exe

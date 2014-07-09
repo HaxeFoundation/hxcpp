@@ -1,2 +1,5 @@
-obj/
-bin/
+obj
+bin
+lib
+test/ndlls/cpp
+test/ndlls/cpp64
