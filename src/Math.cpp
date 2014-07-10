@@ -80,9 +80,9 @@ Dynamic Math_obj::__Field(const String &inString, bool inCallProp)
    if (inString==HX_CSTRING("log")) return log_dyn();
    if (inString==HX_CSTRING("min")) return min_dyn();
    if (inString==HX_CSTRING("max")) return max_dyn();
-   if (inString==HX_CSTRING("atan")) return max_dyn();
-   if (inString==HX_CSTRING("acos")) return max_dyn();
-   if (inString==HX_CSTRING("asin")) return max_dyn();
+   if (inString==HX_CSTRING("atan")) return atan_dyn();
+   if (inString==HX_CSTRING("acos")) return acos_dyn();
+   if (inString==HX_CSTRING("asin")) return asin_dyn();
    if (inString==HX_CSTRING("exp")) return max_dyn();
    if (inString==HX_CSTRING("isNaN")) return isNaN_dyn();
    if (inString==HX_CSTRING("isFinite")) return isFinite_dyn();
