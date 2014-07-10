@@ -69,6 +69,7 @@ struct ArrayBuiltinBase : public CppiaExpr
    }
    const char *getName() { return "ArrayBuiltinBase"; }
 
+
    CppiaExpr *link(CppiaData &inData)
    {
       thisExpr = thisExpr->link(inData);
@@ -153,17 +154,29 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
    {
    }
-   virtual ExprType getType()
+
+   ExprType getType()
    {
       switch(FUNC)
       {
+         case af__get:
+         case af__set:
+         case af__crement:
+            return (ExprType)ExprTypeOf<ELEM>::value;
+
+         case afPop:
+         //case afUnshift:
+            if (ExprTypeOf<ELEM>::value==etString)
+               return etString;
+            return etObject;
+
          case afJoin:
          case afToString:
             return etString;
 
          case afSort:
          case afInsert:
-         case afShift:
+         case afUnshift:
             return etVoid;
 
          case afPush:
@@ -171,17 +184,6 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          case afIndexOf:
          case afLastIndexOf:
             return etInt;
-
-         case af__get:
-         case af__set:
-         case af__crement:
-            return (ExprType)ExprTypeOf<ELEM>::value;
-
-         case afPop:
-         case afUnshift:
-            if (ExprTypeOf<ELEM>::value==etString)
-               return etString;
-            return etObject;
 
          default:
             return etObject;
@@ -191,13 +193,14 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    }
 
 
-   int         runInt(CppiaCtx *ctx)
+   int runInt(CppiaCtx *ctx)
    {
       if (FUNC==afPush)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          ELEM elem;
-         return thisVal->push( runValue(elem,ctx,args[0]) );
+         int result =  thisVal->push( runValue(elem,ctx,args[0]) );
+         return result;
       }
       if (FUNC==afPop)
       {
@@ -406,8 +409,10 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       }
       if (FUNC==afMap)
       {
+         // TODO - maybe make this more efficient
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         return thisVal->map(args[0]->runObject(ctx)).mPtr;
+         Array<ELEM> result = thisVal->map(args[0]->runObject(ctx));
+         return result.mPtr;
       }
       if (FUNC==afFilter)
       {
@@ -580,6 +585,359 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 };
 
 
+
+
+template<int FUNC,int OP>
+struct ArrayBuiltinAny : public ArrayBuiltinBase
+{
+   ArrayBuiltinAny(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions)
+      : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
+   {
+   }
+
+   int  runInt(CppiaCtx *ctx)
+   {
+      if (FUNC==afPush)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         return thisVal->__push( args[0]->runObject(ctx) );
+      }
+      if (FUNC==afRemove)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         return thisVal->__remove( args[0]->runObject(ctx) );
+      }
+      if (FUNC==afIndexOf)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         Dynamic a0 = args[0]->runObject(ctx);
+         return thisVal->__indexOf( a0, args[1]->runObject(ctx) );
+      }
+      if (FUNC==afLastIndexOf)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         Dynamic a0 = args[0]->runObject(ctx);
+         return thisVal->__lastIndexOf( a0, args[1]->runObject(ctx) );
+      }
+
+      return Dynamic( runObject(ctx) );
+   }
+
+   Float runFloat(CppiaCtx *ctx)
+   {
+      return runInt(ctx);
+   }
+
+
+   ::String    runString(CppiaCtx *ctx)
+   {
+      if (FUNC==afJoin)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         return thisVal->__join( args[0]->runObject(ctx) );
+      }
+
+      if (FUNC==afToString)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         return thisVal->toString();
+      }
+
+      return runObject(ctx)->toString();
+   }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      if (FUNC==afPush || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
+         return Dynamic(runInt(ctx)).mPtr;
+
+      if (FUNC==afRemove)
+         return Dynamic((bool)runInt(ctx)).mPtr;
+
+      if (FUNC==afJoin || FUNC==afToString)
+         return Dynamic(runString(ctx)).mPtr;
+
+      if (FUNC==afSort || FUNC==afInsert || FUNC==afUnshift)
+      {
+         runVoid(ctx);
+         return 0;
+      }
+
+
+      ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+      CPPIA_CHECK(thisVal);
+
+      if (FUNC==af__get)
+      {
+         return thisVal->__GetItem(args[0]->runInt(ctx)).mPtr;
+      }
+      if (FUNC==af__set)
+      {
+         int i = args[0]->runInt(ctx);
+         Dynamic val = args[1]->runObject(ctx);
+         if (OP==aoSet)
+            return thisVal->__SetItem(i, val).mPtr;
+
+         Dynamic orig = thisVal->__GetItem(i);
+         CPPIA_CHECK(orig);
+         switch(OP)
+         {
+            case aoSet: break;
+
+            case aoAdd:
+               val = orig + val;
+               break;
+            case aoMult:
+               val = orig * val;
+               break;
+            case aoDiv:
+               val = orig / val;
+               break;
+            case aoSub:
+               val = orig - val;
+               break;
+            case aoAnd:
+               val = orig->__ToInt() & val->__ToInt();
+               break;
+            case aoOr:
+               val = orig->__ToInt() | val->__ToInt();
+               break;
+            case aoXOr:
+               val = orig->__ToInt() ^ val->__ToInt();
+               break;
+            case aoShl:
+               val = orig->__ToInt() << val->__ToInt();
+               break;
+            case aoShr:
+               val = orig->__ToInt() >> val->__ToInt();
+               break;
+            case aoUShr:
+               val = hx::UShr(orig,val);
+               break;
+            case aoMod:
+               val = orig % val;
+               break;
+            default: ;
+         }
+         return thisVal->__SetItem(i,val).mPtr;
+      }
+      if (FUNC==af__crement)
+      {
+         int i = args[0]->runInt(ctx);
+         if (OP==coPreInc)
+            return thisVal->__SetItem(i, thisVal->__GetItem(i) + 1).mPtr;
+         if (OP==coPreDec)
+            return thisVal->__SetItem(i, thisVal->__GetItem(i) - 1).mPtr;
+
+         Dynamic result = thisVal->__GetItem(i);
+         if (OP==coPostDec)
+            thisVal->__SetItem(i, thisVal->__GetItem(i) - 1);
+         if (OP==coPostInc)
+            thisVal->__SetItem(i, thisVal->__GetItem(i) + 1);
+         return result.mPtr;
+      }
+
+      if (FUNC==afPop)
+      {
+         return thisVal->__pop().mPtr;
+      }
+      if (FUNC==afShift)
+      {
+         return thisVal->__shift().mPtr;
+      }
+
+      if (FUNC==afConcat)
+      {
+         return thisVal->__concat(args[0]->runObject(ctx)).mPtr;
+      }
+      if (FUNC==afCopy)
+      {
+         return thisVal->__copy().mPtr;
+      }
+      if (FUNC==afSplice)
+      {
+         Dynamic pos = args[0]->runObject(ctx);
+         Dynamic end = args[1]->runObject(ctx);
+         return thisVal->__splice(pos,end).mPtr;
+      }
+      if (FUNC==afSlice)
+      {
+         Dynamic pos = args[0]->runObject(ctx);
+         Dynamic end = args[1]->runObject(ctx);
+         return thisVal->__slice(pos,end).mPtr;
+      }
+      if (FUNC==afMap)
+      {
+         return thisVal->__map(args[0]->runObject(ctx)).mPtr;
+      }
+      if (FUNC==afFilter)
+      {
+         return thisVal->__filter(args[0]->runObject(ctx)).mPtr;
+      }
+
+      if (FUNC==afIterator)
+      {
+         return thisVal->__iterator().mPtr;
+      }
+
+      return 0;
+   }
+   void runVoid(CppiaCtx *ctx)
+   {
+      if (FUNC==afSort)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         thisVal->__sort(args[0]->runObject(ctx));
+         return;
+      }
+      if (FUNC==afInsert)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         Dynamic pos = args[0]->runObject(ctx);
+         thisVal->__insert(pos, args[1]->runObject(ctx));
+         return;
+      }
+      if (FUNC==afUnshift)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         thisVal->__unshift(args[0]->runObject(ctx));
+         return;
+      }
+
+      switch(inlineGetType())
+      {
+         case etString:
+            runString(ctx);
+            return;
+         case etInt:
+            runInt(ctx);
+            return;
+         default:
+            runObject(ctx);
+      }
+   }
+
+   CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue)
+   {
+      if (FUNC==af__get)
+      {
+         args.push_back(inValue);
+         CppiaExpr *replace = 0;
+
+         switch(op)
+         {
+            case aoSet:
+               replace = new ArrayBuiltinAny<af__set,aoSet>(this,thisExpr,args);
+               break;
+            case aoAdd:
+               replace = new ArrayBuiltinAny<af__set,aoAdd>(this,thisExpr,args);
+               break;
+            case aoMult:
+               replace = new ArrayBuiltinAny<af__set,aoMult>(this,thisExpr,args);
+               break;
+            case aoDiv:
+               replace = new ArrayBuiltinAny<af__set,aoDiv>(this,thisExpr,args);
+               break;
+            case aoSub:
+               replace = new ArrayBuiltinAny<af__set,aoSub>(this,thisExpr,args);
+               break;
+            case aoAnd:
+               replace = new ArrayBuiltinAny<af__set,aoAnd>(this,thisExpr,args);
+               break;
+            case aoOr:
+               replace = new ArrayBuiltinAny<af__set,aoOr>(this,thisExpr,args);
+               break;
+            case aoXOr:
+               replace = new ArrayBuiltinAny<af__set,aoXOr>(this,thisExpr,args);
+               break;
+            case aoShl:
+               replace = new ArrayBuiltinAny<af__set,aoShl>(this,thisExpr,args);
+               break;
+            case aoShr:
+               replace = new ArrayBuiltinAny<af__set,aoShr>(this,thisExpr,args);
+               break;
+            case aoUShr:
+               replace = new ArrayBuiltinAny<af__set,aoUShr>(this,thisExpr,args);
+               break;
+            case aoMod:
+               replace = new ArrayBuiltinAny<af__set,aoMod>(this,thisExpr,args);
+               break;
+      
+            default: ;
+               printf("make setter %d\n", op);
+               throw "setter not implemented";
+         }
+
+         delete this;
+         return replace;
+      }
+      return 0;
+   }
+
+   CppiaExpr   *makeCrement(CrementOp inOp)
+   {
+      if (FUNC==af__get)
+      {
+         CppiaExpr *replace = 0;
+
+         switch(inOp)
+         {
+            case coPreInc :
+               replace = new ArrayBuiltinAny<af__crement,coPreInc>(this,thisExpr,args);
+               break;
+            case coPostInc :
+               replace = new ArrayBuiltinAny<af__crement,coPostInc>(this,thisExpr,args);
+               break;
+            case coPreDec :
+               replace = new ArrayBuiltinAny<af__crement,coPreDec>(this,thisExpr,args);
+               break;
+            case coPostDec :
+               replace = new ArrayBuiltinAny<af__crement,coPostDec>(this,thisExpr,args);
+               break;
+            default:
+               return 0;
+         }
+         return replace;
+      }
+      return 0;
+   }
+
+
+   inline ExprType inlineGetType()
+   {
+      switch(FUNC)
+      {
+         case afJoin:
+         case afToString:
+            return etString;
+
+         case afSort:
+         case afInsert:
+         case afUnshift:
+            return etVoid;
+
+         case afPush:
+         case afRemove:
+         case afIndexOf:
+         case afLastIndexOf:
+            return etInt;
+
+         default:
+            return etObject;
+      }
+
+      return etObject;
+   }
+   ExprType getType() { return inlineGetType(); }
+
+
+
+
+};
+
+
+
+
 template<int BUILTIN,typename CREMENT>
 CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *thisExpr, Expressions &args)
 {
@@ -598,8 +956,10 @@ CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *th
          return new ArrayBuiltin<Float,BUILTIN,CREMENT>(inSrc, thisExpr, args);
       case arrString:
          return new ArrayBuiltin<String,BUILTIN,CREMENT>(inSrc, thisExpr, args);
-      case arrDynamic:
+      case arrObject:
          return new ArrayBuiltin<Dynamic,BUILTIN,CREMENT>(inSrc, thisExpr, args);
+      case arrAny:
+         return new ArrayBuiltinAny<BUILTIN,CREMENT::OP>(inSrc, thisExpr, args);
       case arrNotArray:
          break;
    }

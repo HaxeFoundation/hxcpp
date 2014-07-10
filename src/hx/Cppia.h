@@ -136,7 +136,8 @@ enum ArrayType
    arrFloat,
    arrUnsignedChar,
    arrString,
-   arrDynamic,
+   arrObject,
+   arrAny,
 };
 
 enum CrementOp
@@ -235,6 +236,8 @@ struct CppiaExpr
    #define CPPIA_CHECK(obj)
 #endif
 
+#define CPPIA_CHECK_FUNC(obj) if (!obj) Dynamic::ThrowBadFunctionError()
+
 typedef std::vector<CppiaExpr *> Expressions;
 
 CppiaExpr *createArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *inThisExpr,
@@ -245,7 +248,7 @@ template<typename T>
 inline T &runValue(T& outValue, CppiaCtx *ctx, CppiaExpr *expr)
 {
    expr->runVoid(ctx);
-   return outValue;
+   return null();
 }
 
 template<> inline int &runValue(int& outValue, CppiaCtx *ctx, CppiaExpr *expr)
@@ -293,7 +296,7 @@ inline static int ValToInt( const int &v ) { return v; }
 inline static int ValToInt( const unsigned char &v ) { return v; }
 inline static int ValToInt( const Float &v ) { return v; }
 inline static int ValToInt( const String &v ) { return 0; }
-inline static int ValToInt( const hx::Object *v ) { return v ? v->__ToInt() : 0; }
+inline static int ValToInt( hx::Object *v ) { return v ? v->__ToInt() : 0; }
 inline static int ValToInt( const Dynamic &v ) { return v.mPtr ? v->__ToInt() : 0; }
 
 inline static Float ValToFloat( const bool &v ) { return v; }
@@ -301,16 +304,16 @@ inline static Float ValToFloat( const int &v ) { return v; }
 inline static Float ValToFloat( const unsigned char &v ) { return v; }
 inline static Float ValToFloat( const Float &v ) { return v; }
 inline static Float ValToFloat( const String &v ) { return 0; }
-inline static Float ValToFloat( const hx::Object *v ) { return v ? v->__ToDouble() : 0; }
+inline static Float ValToFloat( hx::Object *v ) { return v ? v->__ToDouble() : 0; }
 inline static Float ValToFloat( const Dynamic &v ) { return v.mPtr ? v->__ToDouble() : 0.0; }
 
-inline static String ValToString( const bool &v ) { return v?HX_CSTRING("true") : HX_CSTRING("false"); }
+inline static String ValToString( const bool &v ) { return v; }
 inline static String ValToString( const int &v ) { return String(v); }
 inline static String ValToString( const unsigned char &v ) { return String(v); }
 inline static String ValToString( const Float &v ) { return String(v); }
 inline static String ValToString( const String &v ) { return v; }
-inline static String ValToString( const hx::Object *v ) { return v ? ((hx::Object *)v)->toString() : HX_CSTRING("null"); }
-inline static String ValToString( const Dynamic &v ) { return v.mPtr ? v.mPtr->toString() : HX_CSTRING("null"); }
+inline static String ValToString( hx::Object *v ) { return v ? ((hx::Object *)v)->toString() : String(); }
+inline static String ValToString( const Dynamic &v ) { return v.mPtr ? v.mPtr->toString() : String(); }
 
 template<typename T>
 struct ExprTypeOf { enum { value = etObject }; };
@@ -323,12 +326,14 @@ template<> struct ExprTypeOf<String> { enum { value = etString }; };
 
 struct NoCrement
 {
+   enum { OP = coNone };
    template<typename T>
    static inline T run(const T&inVal) { return inVal; }
 };
 
 struct CrementPreInc
 {
+   enum { OP = hx::coPreInc };
    template<typename T>
    static T run(T&inVal) { return ++inVal; }
    static bool run(bool &inVal) { return inVal; }
@@ -337,6 +342,7 @@ struct CrementPreInc
 
 struct CrementPostInc
 {
+   enum { OP = hx::coPostInc };
    template<typename T>
    static T run(T& inVal) { return inVal++; }
    static bool run(bool &inVal) { return inVal; }
@@ -345,6 +351,7 @@ struct CrementPostInc
 
 struct CrementPreDec
 {
+   enum { OP = hx::coPreDec };
    template<typename T>
    static T run(T&inVal) { return --inVal; }
    static bool run(bool &inVal) { return inVal; }
@@ -353,6 +360,7 @@ struct CrementPreDec
 
 struct CrementPostDec
 {
+   enum { OP = hx::coPostDec };
    template<typename T>
    static T run(T& inVal) { return inVal--; }
    static bool run(bool &inVal) { return inVal; }

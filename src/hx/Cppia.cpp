@@ -539,7 +539,11 @@ struct CppiaDynamicExpr : public CppiaExpr
       return obj->__ToInt();
    }
    virtual Float       runFloat(CppiaCtx *ctx) { return runObject(ctx)->__ToDouble(); }
-   virtual ::String    runString(CppiaCtx *ctx) { return runObject(ctx)->toString(); }
+   virtual ::String    runString(CppiaCtx *ctx)
+   {
+      hx::Object *result = runObject(ctx);
+      return result ? result->toString() : String();
+   }
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
    virtual hx::Object *runObject(CppiaCtx *ctx) = 0;
 };
@@ -1054,6 +1058,8 @@ struct CppiaEnumConstructor
       bool ok = inArgs.mPtr ? (inArgs->length==args.size()) : args.size()==0;
       if (!ok)
          throw Dynamic(HX_CSTRING("Bad enum arg count"));
+      if (args.size()==0)
+         return value.mPtr;
       EnumBase_obj *result = new CppiaEnumBase(classInfo);
       result->Set(name, index, inArgs);
       return result;
@@ -1082,7 +1088,9 @@ struct CppiaClassInfo
    TypeData  *type;
    int       superId;
    TypeData *superType;
+   int       classSize;
    int       extraData;
+   int       dynamicMapOffset;
    void      **vtable;
    std::string name;
    std::map<std::string, void **> interfaceVTables;
@@ -1113,6 +1121,7 @@ struct CppiaClassInfo
       isLinked = false;
       haxeBase = 0;
       extraData = 0;
+      classSize = 0;
       newFunc = 0;
       initFunc = 0;
       enumMeta = 0;
@@ -1122,6 +1131,7 @@ struct CppiaClassInfo
       vtable = 0;
       type = 0;
       mClass.mPtr = 0;
+      dynamicMapOffset = 0;
    }
 
    /*
@@ -1158,8 +1168,8 @@ struct CppiaClassInfo
 
    inline void createDynamicFunctions(hx::Object *inThis)
    {
-      if (superType && superType->cppiaClass)
-         superType->cppiaClass->createDynamicFunctions(inThis);
+      if (dynamicMapOffset)
+         *(hx::FieldMap **)( (char *)inThis + dynamicMapOffset ) =  hx::FieldMapCreate();
 
       for(int d=0;d<dynamicFunctions.size();d++)
          dynamicFunctions[d]->createDynamic(inThis);
@@ -1293,8 +1303,13 @@ struct CppiaClassInfo
          }
       }
 
-      if (superType && superType->cppiaClass)
-         return superType->cppiaClass->getField(inThis, inName, inCallProp, outValue);
+      hx::FieldMap *map = dynamicMapOffset ? *(hx::FieldMap **)( (char *)inThis + dynamicMapOffset ) :
+                           inThis->__GetFieldMap();
+      if (map)
+      {
+         if (hx::FieldMapGet(map,inName,outValue))
+            return true;
+      }
 
       //printf("Get field not found (%s) %s\n", inThis->toString().__s,inName.__s);
       return false;
@@ -1336,8 +1351,14 @@ struct CppiaClassInfo
          }
       }
 
-      if (superType && superType->cppiaClass)
-         return superType->cppiaClass->setField(inThis, inName, inValue, inCallProp, outValue);
+      hx::FieldMap *map = dynamicMapOffset ? *(hx::FieldMap **)( (char *)inThis + dynamicMapOffset ) :
+                           inThis->__GetFieldMap();
+      if (map)
+      {
+         FieldMapSet(map, inName, inValue);
+         outValue = inValue;
+         return true;
+      }
 
       printf("Set field not found (%s) %s\n", inThis->toString().__s,inName.__s);
       return false;
@@ -1523,6 +1544,11 @@ struct CppiaClassInfo
                    memberVars.push_back(var);
                 var->load(inStream);
              }
+             else if (tok=="IMPLDYNAMIC")
+             {
+                // Fill in later
+                dynamicMapOffset = -1;
+             }
              else if (tok=="INLINE")
              {
                 // OK
@@ -1630,23 +1656,49 @@ struct CppiaClassInfo
       // Link class before we combine the function list...
       linkCppiaClass(mClass.mPtr,cppia,type->name);
 
+
+      haxeBase = type->haxeBase;
+      if (!haxeBase && !isInterface)
+         throw "No base defined for non-interface";
+
+      classSize = haxeBase ? haxeBase->mDataOffset : 0;
+
       // Combine member vars ...
       if (cppiaSuper)
       {
+         classSize = cppiaSuper->classSize;
+
+         if (cppiaSuper->dynamicMapOffset!=0)
+            dynamicMapOffset = cppiaSuper->dynamicMapOffset;
+
          std::vector<CppiaVar *> combinedVars(cppiaSuper->memberVars );
          for(int i=0;i<memberVars.size();i++)
          {
-           for(int j=0;j<combinedVars.size();j++)
-              if (combinedVars[j]->nameId==memberVars[i]->nameId)
-                printf("Warning duplicate member var %s\n", cppia.strings[memberVars[i]->nameId].__s);
+            for(int j=0;j<combinedVars.size();j++)
+               if (combinedVars[j]->nameId==memberVars[i]->nameId)
+                  printf("Warning duplicate member var %s\n", cppia.strings[memberVars[i]->nameId].__s);
             combinedVars.push_back(memberVars[i]);
          }
          memberVars.swap(combinedVars);
-      }
 
-      // Combine member functions ...
-      if (cppiaSuper)
-      {
+         std::vector<CppiaVar *> combinedDynamics(cppiaSuper->dynamicFunctions );
+         for(int i=0;i<dynamicFunctions.size();i++)
+         {
+            bool found = false;
+            for(int j=0;j<combinedDynamics.size() && !found;j++)
+               if (dynamicFunctions[i]->nameId == combinedDynamics[j]->nameId)
+               {
+                  // Overwrite
+                  dynamicFunctions[i]->offset = combinedDynamics[j]->offset;
+                  combinedDynamics[j] = dynamicFunctions[i];
+                  found = true;
+               }
+            if (!found)
+               combinedDynamics.push_back(dynamicFunctions[i]);
+         }
+         dynamicFunctions.swap(combinedDynamics);
+
+         // Combine member functions ...
          Functions combinedFunctions(cppiaSuper->memberFunctions );
          for(int i=0;i<memberFunctions.size();i++)
          {
@@ -1665,29 +1717,46 @@ struct CppiaClassInfo
       }
 
 
-      haxeBase = type->haxeBase;
-      if (!haxeBase && !isInterface)
-         throw "No base defined for non-interface";
-
+      // Non-interface classes will have haxeBase
       if (haxeBase)
       {
          // Calculate table offsets...
-         int d0 = haxeBase->mDataOffset;
-         DBGLOG("  base haxe size %s = %d\n", haxeBase->name.c_str(), d0);
-         int offset = d0;
+         DBGLOG("  base haxe size %s = %d\n", haxeBase->name.c_str(), classSize);
          for(int i=0;i<memberVars.size();i++)
          {
-            DBGLOG("   link var %s @ %d\n", cppia.identStr(memberVars[i]->nameId), offset);
-            memberVars[i]->linkVarTypes(cppia,offset);
+            if (memberVars[i]->offset)
+            {
+               DBGLOG("   super var %s @ %d\n", cppia.identStr(memberVars[i]->nameId), memberVars[i]->offset);
+            }
+            else
+            {
+               DBGLOG("   link var %s @ %d\n", cppia.identStr(memberVars[i]->nameId), classSize);
+               memberVars[i]->linkVarTypes(cppia,classSize);
+            }
          }
          for(int i=0;i<dynamicFunctions.size();i++)
          {
-            DBGLOG("   link dynamic function %s @ %d\n", cppia.identStr(dynamicFunctions[i]->nameId), offset);
-            dynamicFunctions[i]->linkVarTypes(cppia,offset);
+            if (dynamicFunctions[i]->offset)
+            {
+               DBGLOG("   super dynamic function %s @ %d\n", cppia.identStr(dynamicFunctions[i]->nameId), dynamicFunctions[i]->offset);
+            }
+            else
+            {
+               DBGLOG("   link dynamic function %s @ %d\n", cppia.identStr(dynamicFunctions[i]->nameId), classSize);
+               dynamicFunctions[i]->linkVarTypes(cppia,classSize);
+            }
          }
 
-         extraData = offset - d0;
+         if (dynamicMapOffset==-1)
+         {
+            dynamicMapOffset = classSize;
+            classSize += sizeof( hx::FieldMap * );
+         }
+
+         extraData = classSize - haxeBase->mDataOffset;
       }
+
+
       DBGLOG("  script member vars size = %d\n", extraData);
  
       for(int i=0;i<staticVars.size();i++)
@@ -2026,6 +2095,9 @@ struct CppiaClassInfo
 
    inline void markInstance(hx::Object *inThis, hx::MarkContext *__inCtx)
    {
+      if (dynamicMapOffset)
+         hx::FieldMapMark( (*(hx::FieldMap **)( (char *)inThis + dynamicMapOffset )), __inCtx);
+
       for(int i=0;i<dynamicFunctions.size();i++)
          dynamicFunctions[i]->mark(inThis, __inCtx);
       for(int i=0;i<memberVars.size();i++)
@@ -2034,6 +2106,9 @@ struct CppiaClassInfo
 
    inline void visitInstance(hx::Object *inThis, hx::VisitContext *__inCtx)
    {
+      if (dynamicMapOffset)
+         hx::FieldMapVisit( ((hx::FieldMap **)( (char *)inThis + dynamicMapOffset )), __inCtx);
+
       for(int i=0;i<dynamicFunctions.size();i++)
          dynamicFunctions[i]->visit(inThis, __inCtx);
       for(int i=0;i<memberVars.size();i++)
@@ -2778,7 +2853,11 @@ void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Express
    try {
       inFunExpr->runVoid(ctx);
    }
-   catch (CppiaExpr *retVal) { }
+   catch (CppiaExpr *retVal)
+   {
+      if (retVal)
+         retVal->runVoid(ctx);
+   }
 }
 
 
@@ -3063,7 +3142,7 @@ struct CallFunExpr : public CppiaExpr
    }
    CallFunExprVal(int,runInt,0);
    CallFunExprVal(Float ,runFloat,0);
-   CallFunExprVal(String,runString,null());
+   CallFunExprVal(String,runString,String());
    CallFunExprVal(hx::Object *,runObject,0);
 
    void runVoid(CppiaCtx *ctx)
@@ -3141,7 +3220,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
       switch(n)
       {
          case 0:
-            return value().mPtr;
+            return value->__run().mPtr;
          case 1:
             {
                Dynamic arg0( args[0]->runObject(ctx) );
@@ -3198,7 +3277,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
    String runString(CppiaCtx *ctx)
    {
       hx::Object *result = runObject(ctx);
-      return result ? result->toString() : 0;
+      return result ? result->toString() : String();
    }
 };
 
@@ -3267,6 +3346,9 @@ struct CastExpr : public CppiaExpr
    template<typename T>
    hx::Object *convert(hx::Object *obj)
    {
+      Array_obj<T> *alreadyGood = dynamic_cast<Array_obj<T> *>(obj);
+      if (alreadyGood)
+         return alreadyGood;
       int n = obj->__length();
       Array<T> result = Array_obj<T>::__new(n,n);
       for(int i=0;i<n;i++)
@@ -3287,7 +3369,8 @@ struct CastExpr : public CppiaExpr
          case arrInt:          return convert<int>(obj);
          case arrFloat:        return convert<Float>(obj);
          case arrString:       return convert<String>(obj);
-         case arrDynamic:      return convert<Dynamic>(obj);
+         case arrAny:          return convert<Dynamic>(obj);
+         case arrObject:       return obj;
          case arrNotArray:     throw "Bad cast";
       }
       return 0;
@@ -3316,7 +3399,7 @@ struct CastExpr : public CppiaExpr
          }
       }
       else
-         arrayType = arrDynamic;
+         arrayType = arrObject;
       return this;
    }
 };
@@ -3504,7 +3587,8 @@ struct NewExpr : public CppiaExpr
                return Array_obj<Float>::__new(size,size).mPtr;
             case arrString:
                return Array_obj<String>::__new(size,size).mPtr;
-            case arrDynamic:
+            case arrObject:
+            case arrAny:
                return Array_obj<Dynamic>::__new(size,size).mPtr;
             default:
                return 0;
@@ -3717,6 +3801,99 @@ struct CallStatic : public CppiaExpr
 
 
 
+struct CallGetIndex : public CppiaIntExpr
+{
+   CppiaExpr   *thisExpr;
+  
+   CallGetIndex(CppiaExpr *inSrc, CppiaExpr *inThis) : CppiaIntExpr(inSrc)
+   {
+      thisExpr = inThis;
+   }
+
+   const char *getName() { return "__Index"; }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      thisExpr = thisExpr->link(inData);
+      return this;
+   }
+   int runInt(CppiaCtx *ctx)
+   {
+      hx::Object *obj = thisExpr->runObject(ctx);
+      CPPIA_CHECK(obj);
+      return obj->__Index();
+   }
+};
+
+
+struct CallSetField : public CppiaExpr
+{
+   CppiaExpr   *thisExpr;
+   CppiaExpr   *nameExpr;
+   CppiaExpr   *valueExpr;
+   CppiaExpr   *isPropExpr;
+  
+   CallSetField(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inName, CppiaExpr *inValue, CppiaExpr *inProp) : CppiaExpr(inSrc)
+   {
+      thisExpr = inThis;
+      nameExpr = inName;
+      valueExpr = inValue;
+      isPropExpr = inProp;
+   }
+
+   const char *getName() { return "__SetField"; }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      thisExpr = thisExpr->link(inData);
+      nameExpr = nameExpr->link(inData);
+      valueExpr = valueExpr->link(inData);
+      isPropExpr = isPropExpr->link(inData);
+      return this;
+   }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      hx::Object *obj = thisExpr->runObject(ctx);
+      CPPIA_CHECK(obj);
+      String name = nameExpr->runString(ctx);
+      hx::Object *value = valueExpr->runObject(ctx);
+      bool isProp = isPropExpr->runInt(ctx);
+      return obj->__SetField(name, Dynamic(value), isProp).mPtr;
+   }
+};
+
+
+struct CallGetField : public CppiaExpr
+{
+   CppiaExpr   *thisExpr;
+   CppiaExpr   *nameExpr;
+   CppiaExpr   *isPropExpr;
+  
+   CallGetField(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inName, CppiaExpr *inProp) : CppiaExpr(inSrc)
+   {
+      thisExpr = inThis;
+      nameExpr = inName;
+      isPropExpr = inProp;
+   }
+
+   const char *getName() { return "__Field"; }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      thisExpr = thisExpr->link(inData);
+      nameExpr = nameExpr->link(inData);
+      isPropExpr = isPropExpr->link(inData);
+      return this;
+   }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      hx::Object *obj = thisExpr->runObject(ctx);
+      CPPIA_CHECK(obj);
+      String name = nameExpr->runString(ctx);
+      bool isProp = isPropExpr->runInt(ctx);
+      return obj->__Field(name,isProp).mPtr;
+   }
+};
+
+
+
 
 
 struct CallMemberVTable : public CppiaExpr
@@ -3759,7 +3936,7 @@ struct CallMemberVTable : public CppiaExpr
    void runVoid(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      catch (CppiaExpr *retVal) { }
+      catch (CppiaExpr *retVal) { if (retVal) retVal->runVoid(ctx); }
    }
    int runInt(CppiaCtx *ctx)
    {
@@ -3908,7 +4085,7 @@ struct CallMember : public CppiaExpr
          replace = createArrayBuiltin(this, type->arrayType, thisExpr, field, args);
       }
 
-      if (type->cppiaClass && !replace)
+      if (!replace && type->cppiaClass)
       {
          if (callSuperField)
          {
@@ -3925,7 +4102,7 @@ struct CallMember : public CppiaExpr
                 replace = new CallMemberVTable( this, thisExpr, vtableSlot, type->cppiaClass->isInterface, args );
          }
       }
-      if (type->haxeBase && !replace)
+      if (!replace && type->haxeBase)
       {
          ScriptFunction func = type->haxeBase->findFunction(field.__s);
          if (func.signature)
@@ -3935,7 +4112,7 @@ struct CallMember : public CppiaExpr
          }
       }
 
-      if (type->interfaceBase && !replace)
+      if (!replace && type->interfaceBase)
       {
          ScriptFunction func = type->interfaceBase->findFunction(field.__s);
          if (func.signature)
@@ -3945,10 +4122,17 @@ struct CallMember : public CppiaExpr
          }
       }
 
-      if (type->name==HX_CSTRING("String") && !replace)
+      if (!replace && type->name==HX_CSTRING("String"))
       {
          replace = createStringBuiltin(this, thisExpr, field, args);
       }
+
+      if (!replace && field==HX_CSTRING("__Index"))
+         replace = new CallGetIndex(this, thisExpr);
+      if (!replace && field==HX_CSTRING("__SetField") && args.size()==3)
+         replace = new CallSetField(this, thisExpr, args[0], args[1], args[2]);
+      if (!replace && field==HX_CSTRING("__Field") && args.size()==2)
+         replace = new CallGetField(this, thisExpr, args[0], args[1]);
 
 
       if (replace)
@@ -4022,7 +4206,7 @@ struct Call : public CppiaExpr
    hx::Object *runObject(CppiaCtx *ctx)
    {
       hx::Object *funcVal = func->runObject(ctx);
-      CPPIA_CHECK(funcVal);
+      CPPIA_CHECK_FUNC(funcVal);
       int size = args.size();
       Array<Dynamic> argArray = Array_obj<Dynamic>::__new(size,size);
       for(int s=0;s<size;s++)
@@ -4782,7 +4966,8 @@ struct ArrayDef : public CppiaExpr
                result[i] = items[i]->runString(ctx);
             return result.mPtr;
             }
-         case arrDynamic:
+         case arrObject:
+         case arrAny:
             { 
             Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
             for(int i=0;i<n;i++)
@@ -4978,6 +5163,7 @@ struct VarDecl : public CppiaExpr
    {
       if (init)
       {
+         // TODO  - store type
          switch(var.expressionType)
          {
             case etInt: *(int *)(ctx->frame+var.stackPos) = init->runInt(ctx); break;
@@ -6040,7 +6226,7 @@ struct OpCompare : public OpCompareBase
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      return Dynamic( runInt(ctx) ? true : false ).mPtr;
+      return Dynamic( (bool)runInt(ctx) ).mPtr;
    }
 };
 
@@ -6305,7 +6491,7 @@ void TypeData::link(CppiaData &inData)
       {
          haxeClass = Class_obj::Resolve(HX_CSTRING("Array"));
          if (name.length==5)
-            arrayType = arrDynamic;
+            arrayType = arrAny;
          else
          {
             String t = name.substr(6,null());
@@ -6320,8 +6506,10 @@ void TypeData::link(CppiaData &inData)
                arrayType = arrString;
             else if (t==HX_CSTRING("unsigned char"))
                arrayType = arrUnsignedChar;
-            else if (t==HX_CSTRING("Dynamic"))
-               arrayType = arrDynamic;
+            else if (t==HX_CSTRING("Any"))
+               arrayType = arrAny;
+            else if (t==HX_CSTRING("Object"))
+               arrayType = arrObject;
             else
                throw "Unknown array type";
          }
