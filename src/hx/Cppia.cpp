@@ -1880,28 +1880,34 @@ struct CppiaClassInfo
          vtable[ memberFunctions[i]->vtableSlot ] = memberFunctions[i]->funExpr;
 
       // Vars ...
-      for(int i=0;i<memberVars.size();i++)
+      if (!isInterface)
       {
-         CppiaVar &var = *memberVars[i];
-         var.link(cppia);
-         if (var.readAccess == CppiaVar::accCall)
+         for(int i=0;i<memberVars.size();i++)
          {
-            CppiaExpr *getter = findFunction(false,HX_CSTRING("get_") + var.name);
-            if (!getter)
-               throw Dynamic(HX_CSTRING("Could not find getter for ") + var.name);
-            DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.__s);
-            memberGetters[var.name.__s] = getter;
-         }
-         if (var.writeAccess == CppiaVar::accCall)
-         {
-            CppiaExpr *setter = findFunction(false,HX_CSTRING("set_") + var.name);
-            if (!setter)
-               throw Dynamic(HX_CSTRING("Could not find setter for ") + var.name);
-            DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.__s);
-            memberSetters[var.name.__s] = setter;
+            CppiaVar &var = *memberVars[i];
+            var.link(cppia);
+            if (var.readAccess == CppiaVar::accCall)
+            {
+               CppiaExpr *getter = findFunction(false,HX_CSTRING("get_") + var.name);
+               if (!getter)
+               {
+                  dump();
+                  throw Dynamic(HX_CSTRING("Could not find getter for ") + var.name);
+               }
+               DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.__s);
+               memberGetters[var.name.__s] = getter;
+            }
+            if (var.writeAccess == CppiaVar::accCall)
+            {
+               CppiaExpr *setter = findFunction(false,HX_CSTRING("set_") + var.name);
+               if (!setter)
+                  throw Dynamic(HX_CSTRING("Could not find setter for ") + var.name);
+               DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.__s);
+               memberSetters[var.name.__s] = setter;
+            }
          }
       }
-
+   
       for(int i=0;i<staticVars.size();i++)
       {
          CppiaVar &var = *staticVars[i];
