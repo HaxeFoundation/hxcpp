@@ -400,7 +400,7 @@ struct CppiaStackVar
             HX_VISIT_MEMBER(*(String *)(inBase + capturePos));
             break;
          case etObject:
-            HX_VISIT_MEMBER(*(hx::Object **)(inBase + capturePos));
+            HX_VISIT_MEMBER(*(Dynamic *)(inBase + capturePos));
             break;
          default: ;
       }
@@ -582,6 +582,24 @@ struct CppiaDynamicExpr : public CppiaExpr
    virtual hx::Object *runObject(CppiaCtx *ctx) = 0;
 };
 
+// --- CppiaVoidExpr ----------------------------------------
+// Delegates to 'runInt'
+struct CppiaVoidExpr : public CppiaExpr
+{
+   CppiaVoidExpr(const CppiaExpr *inSrc=0) : CppiaExpr(inSrc) {}
+
+   const char *getName() { return "CppiaVoidExpr"; }
+
+   ExprType getType() { return etVoid; }
+
+   virtual int  runInt(CppiaCtx *ctx) { runVoid(ctx); return 0; }
+   virtual Float       runFloat(CppiaCtx *ctx) { runVoid(ctx); return 0.0; }
+   virtual ::String    runString(CppiaCtx *ctx) { runVoid(ctx); return String(); }
+   virtual hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
+   virtual void        runVoid(CppiaCtx *ctx) = 0;
+};
+
+
 
 
 // --- CppiaIntExpr ----------------------------------------
@@ -707,7 +725,6 @@ struct CppiaVar
    TypeData  *type;
    bool      isStatic;
    bool      isVirtual;
-   bool      isScript;
    Access    readAccess;
    Access    writeAccess;
    int       nameId;
@@ -753,7 +770,6 @@ struct CppiaVar
       floatVal = 0;
       stringVal = 0;
       valPointer = 0;
-      isScript = false;
       storeType = fsUnknown;
       dynamicFunction = 0;
       init = 0;
@@ -764,7 +780,6 @@ struct CppiaVar
       readAccess = getAccess(stream);
       writeAccess = getAccess(stream);
       isVirtual = stream.getBool();
-      isScript = !isVirtual;
       nameId = stream.getInt();
       typeId = stream.getInt();
       if (stream.getInt())
@@ -963,11 +978,10 @@ struct CppiaVar
 
    inline void mark(hx::Object *inThis,hx::MarkContext *__inCtx)
    {
-      //printf("Mark %s %d\n", name.__s, isScript);
       switch(storeType)
       {
          case fsString: HX_MARK_MEMBER(*(String *)((char *)inThis + offset));
-         case fsObject: HX_MARK_MEMBER(*(hx::Object **)((char *)inThis + offset));
+         case fsObject: HX_MARK_MEMBER(*(Dynamic*)((char *)inThis + offset));
          default:;
       }
    }
@@ -976,7 +990,7 @@ struct CppiaVar
       switch(storeType)
       {
          case fsString: HX_VISIT_MEMBER(*(String *)((char *)inThis + offset));
-         case fsObject: HX_VISIT_MEMBER(*(hx::Object **)((char *)inThis + offset));
+         case fsObject: HX_VISIT_MEMBER(*(Dynamic *)((char *)inThis + offset));
          default:;
       }
    }
@@ -1357,6 +1371,7 @@ struct CppiaClassInfo
    {
       if (inCallProp)
       {
+         //printf("Set field %s %s = %s\n", inThis->toString().__s, inName.__s, inValue->toString().__s);
          CppiaExpr *setter = findMemberSetter(inName);
          if (setter)
          {
@@ -1398,7 +1413,9 @@ struct CppiaClassInfo
          return true;
       }
 
-      printf("Set field not found (%s) %s\n", inThis->toString().__s,inName.__s);
+      // Fall though to haxe base
+      //printf("Set field not found (%s) %s\n", inThis->toString().__s,inName.__s);
+
       return false;
    }
 
@@ -1469,6 +1486,8 @@ struct CppiaClassInfo
 
    void **getInterfaceVTable(const std::string &inName)
    {
+      if (!interfaceVTables[inName] && superType->cppiaClass)
+         return superType->cppiaClass->getInterfaceVTable(inName);
       return interfaceVTables[inName];
    }
 
@@ -2336,7 +2355,7 @@ void  linkCppiaClass(Class_obj *inClass, CppiaData &cppia, String inName)
 
 static String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
 
-struct ScriptCallable : public CppiaExpr
+struct ScriptCallable : public CppiaDynamicExpr
 {
    int returnType;
    int argCount;
@@ -2373,7 +2392,7 @@ struct ScriptCallable : public CppiaExpr
       body = createCppiaExpr(stream);
    }
 
-   ScriptCallable(CppiaExpr *inBody) : CppiaExpr(inBody)
+   ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
    {
       returnType = 0;
       argCount = 0;
@@ -2414,8 +2433,12 @@ struct ScriptCallable : public CppiaExpr
 
       if (badCount)
       {
-         printf("Arg count mismatch %d!=%lu?\n", argCount, inArgs.size());
-         return;
+         printf("Arg count mismatch %d!=%lu ?\n", argCount, inArgs.size());
+         printf(" %s at %s:%d %s\n", getName(), filename, line, functionName);
+         printf(" %s \n", inArgs[0]->runString(ctx).__s );
+         CPPIA_CHECK(0);
+         throw Dynamic(HX_CSTRING("Arg count error"));
+         //return;
       }
 
 
@@ -2886,7 +2909,8 @@ hx::Object *createEnumClosure(CppiaEnumConstructor &inContructor)
 
 void CppiaData::where(CppiaExpr *e)
 {
-   printf(" in %s::%p\n", linkingClass->name.c_str(), layout);
+   if (linkingClass && layout)
+      printf(" in %s::%p\n", linkingClass->name.c_str(), layout);
    printf("   %s at %s:%d %s\n", e->getName(), e->filename, e->line, e->functionName);
 }
 
@@ -3077,7 +3101,7 @@ struct IfElseExpr : public CppiaExpr
 };
 
 
-struct IfExpr : public CppiaExpr
+struct IfExpr : public CppiaDynamicExpr
 {
    CppiaExpr *condition;
    CppiaExpr *doIf;
@@ -3096,6 +3120,7 @@ struct IfExpr : public CppiaExpr
       return this;
    }
 
+   hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
    void runVoid(CppiaCtx *ctx)
    {
       if (condition->runInt(ctx))
@@ -3213,11 +3238,11 @@ struct CallFunExpr : public CppiaExpr
 // ---
 
 
-struct CppiaExprWithValue : public CppiaExpr
+struct CppiaExprWithValue : public CppiaDynamicExpr
 {
    Dynamic     value;
 
-   CppiaExprWithValue(const CppiaExpr *inSrc=0) : CppiaExpr(inSrc)
+   CppiaExprWithValue(const CppiaExpr *inSrc=0) : CppiaDynamicExpr(inSrc)
    {
       value.mPtr = 0;
    }
@@ -3375,7 +3400,7 @@ enum CastOp
    castDynArray,
 };
 
-struct CastExpr : public CppiaExpr
+struct CastExpr : public CppiaDynamicExpr
 {
    CppiaExpr *value;
    CastOp  op;
@@ -3453,7 +3478,7 @@ struct CastExpr : public CppiaExpr
    }
 };
 
-struct ToInterface : public CppiaExpr
+struct ToInterface : public CppiaDynamicExpr
 {
    int       fromTypeId;
    int       toTypeId;
@@ -3506,7 +3531,7 @@ struct ToInterface : public CppiaExpr
       {
          cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->name.__s);
          if (!cppiaVTable)
-           printf("Could not find scripting interface implementation");
+           printf("Could not find scripting interface implementation %s on %s\n", toType->name.__s, fromType->name.__s);
       }
       else
       {
@@ -3592,7 +3617,7 @@ struct ToInterface : public CppiaExpr
    }
 };
 
-struct NewExpr : public CppiaExpr
+struct NewExpr : public CppiaDynamicExpr
 {
    int classId;
    TypeData *type;
@@ -3874,14 +3899,15 @@ struct CallGetIndex : public CppiaIntExpr
 };
 
 
-struct CallSetField : public CppiaExpr
+struct CallSetField : public CppiaDynamicExpr
 {
    CppiaExpr   *thisExpr;
    CppiaExpr   *nameExpr;
    CppiaExpr   *valueExpr;
    CppiaExpr   *isPropExpr;
   
-   CallSetField(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inName, CppiaExpr *inValue, CppiaExpr *inProp) : CppiaExpr(inSrc)
+   CallSetField(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inName, CppiaExpr *inValue, CppiaExpr *inProp) :
+      CppiaDynamicExpr(inSrc)
    {
       thisExpr = inThis;
       nameExpr = inName;
@@ -3910,13 +3936,13 @@ struct CallSetField : public CppiaExpr
 };
 
 
-struct CallGetField : public CppiaExpr
+struct CallGetField : public CppiaDynamicExpr
 {
    CppiaExpr   *thisExpr;
    CppiaExpr   *nameExpr;
    CppiaExpr   *isPropExpr;
   
-   CallGetField(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inName, CppiaExpr *inProp) : CppiaExpr(inSrc)
+   CallGetField(CppiaExpr *inSrc, CppiaExpr *inThis, CppiaExpr *inName, CppiaExpr *inProp) : CppiaDynamicExpr(inSrc)
    {
       thisExpr = inThis;
       nameExpr = inName;
@@ -4019,6 +4045,7 @@ struct CallMemberVTable : public CppiaExpr
 
 };
 
+/*
 template<typename T>
 struct CallArray : public CppiaExpr
 {
@@ -4052,6 +4079,7 @@ struct CallArray : public CppiaExpr
       }
    }
 };
+*/
 
 enum MemberCallType
 {
@@ -4132,7 +4160,17 @@ struct CallMember : public CppiaExpr
       if (type->arrayType)
       {
          replace = createArrayBuiltin(this, type->arrayType, thisExpr, field, args);
+         if (!replace)
+         {
+            if (field!=HX_CSTRING("__SetField") && field!=HX_CSTRING("__Field") && field!=HX_CSTRING("__Index"))
+            {
+               printf("Bad array field '%s'\n", field.__s);
+               inData.where(this);
+               throw "Unknown array field";
+            }
+         }
       }
+
 
       if (!replace && type->cppiaClass)
       {
@@ -4234,7 +4272,7 @@ struct ClassOfExpr : public CppiaExprWithValue
 };
 
 
-struct Call : public CppiaExpr
+struct Call : public CppiaDynamicExpr
 {
    Expressions args;
    CppiaExpr   *func;
@@ -4306,10 +4344,6 @@ struct Call : public CppiaExpr
       }
       return 0;
    }
-   int runInt(CppiaCtx *ctx) { return runObject(ctx)->__ToInt(); }
-   Float runFloat(CppiaCtx *ctx) { return runObject(ctx)->__ToDouble(); }
-   String runString(CppiaCtx *ctx) { return runObject(ctx)->toString(); }
-   void runVoid(CppiaCtx *ctx) { runObject(ctx); }
 };
 
 struct FieldByName : public CppiaDynamicExpr
@@ -5024,7 +5058,7 @@ struct ObjectDef : public CppiaDynamicExpr
    }
 };
 
-struct ArrayDef : public CppiaExpr
+struct ArrayDef : public CppiaDynamicExpr
 {
    int classId;
    Expressions items;
@@ -5266,7 +5300,7 @@ struct EnumIExpr : public CppiaDynamicExpr
 
 
 
-struct VarDecl : public CppiaExpr
+struct VarDecl : public CppiaVoidExpr
 {
    CppiaStackVar var;
    CppiaExpr *init;
@@ -5310,7 +5344,7 @@ struct VarDecl : public CppiaExpr
    }
 };
 
-struct TVars : public CppiaExpr
+struct TVars : public CppiaVoidExpr
 {
    Expressions vars;
 
@@ -5329,7 +5363,6 @@ struct TVars : public CppiaExpr
             throw "Bad var decl";
       }
    }
-   ExprType getType() { return etVoid; }
    CppiaExpr *link(CppiaData &inData)
    {
       LinkExpressions(vars,inData);
@@ -5341,14 +5374,9 @@ struct TVars : public CppiaExpr
       for(int i=0;i<vars.size();i++)
          vars[i]->runVoid(ctx);
    }
-   hx::Object *runObject(CppiaCtx *ctx)
-   {
-      runVoid(ctx);
-      return 0;
-   }
 };
 
-struct ForExpr : public CppiaExpr
+struct ForExpr : public CppiaVoidExpr
 {
    CppiaStackVar var;
    CppiaExpr *init;
@@ -5409,7 +5437,7 @@ struct ForExpr : public CppiaExpr
    }
 };
 
-struct WhileExpr : public CppiaExpr
+struct WhileExpr : public CppiaVoidExpr
 {
    bool      isWhileDo;
    CppiaExpr *condition;
@@ -5575,7 +5603,7 @@ struct SwitchExpr : public CppiaExpr
 };
 
 
-struct TryExpr : public CppiaExpr
+struct TryExpr : public CppiaVoidExpr
 {
    struct Catch
    {
@@ -5706,21 +5734,16 @@ struct VarRef : public CppiaExpr
 
 
 template<typename T>
-struct ThrowType : public CppiaExpr
+struct ThrowType : public CppiaVoidExpr
 {
    T* value;
 
    ThrowType(T *inValue=0) { value = inValue; }
-   ExprType getType() { return etVoid; }
    void runVoid(CppiaCtx *ctx)
    {
       throw value;
    }
    const char *getName() { return "Break/Continue"; }
-   hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
-   int runInt(CppiaCtx *ctx) { runVoid(ctx); return 0; }
-   Float runFloat(CppiaCtx *ctx) { runVoid(ctx); return 0; }
-   String runString(CppiaCtx *ctx) { runVoid(ctx); return null(); }
 
 };
 
@@ -5820,7 +5843,7 @@ ARITH_OP(OpSub,-)
 ARITH_OP(OpDiv,/)
 
 
-struct ThrowExpr : public CppiaExpr
+struct ThrowExpr : public CppiaVoidExpr
 {
    CppiaExpr *value;
    ThrowExpr(CppiaStream &stream)
@@ -5833,25 +5856,9 @@ struct ThrowExpr : public CppiaExpr
       value = value->link(inData);
       return this;
    }
-   int runInt(CppiaCtx *ctx)
+   void runVoid(CppiaCtx *ctx)
    {
       throw Dynamic( value->runObject(ctx) );
-      return 0;
-   }
-   Float runFloat(CppiaCtx *ctx)
-   {
-      throw Dynamic( value->runObject(ctx) );
-      return 0;
-   }
-   hx::Object *runObject(CppiaCtx *ctx)
-   {
-      throw Dynamic( value->runObject(ctx) );
-      return 0;
-   }
-   String runString(CppiaCtx *ctx)
-   {
-      throw Dynamic( value->runObject(ctx) );
-      return String();
    }
 };
 
@@ -6167,7 +6174,7 @@ struct OpMod : public BinOp
 };
 
 
-struct EnumField : public CppiaExpr
+struct EnumField : public CppiaDynamicExpr
 {
    int                  enumId;
    int                  fieldId;
@@ -6769,7 +6776,7 @@ CppiaClassInfo *CppiaData::findClass(String inName)
 
 void CppiaData::mark(hx::MarkContext *__inCtx)
 {
-   printf(" --- MARK --- \n");
+   DBGLOG(" --- MARK --- \n");
    HX_MARK_MEMBER(strings);
    for(int i=0;i<types.size();i++)
    {
@@ -6907,7 +6914,7 @@ bool LoadCppia(String inValue)
    if (ok) try
    {
       //__hxcpp_enable(false);
-      printf("--- Run --------------------------------------------\n");
+      DBGLOG("--- Run --------------------------------------------\n");
 
       cppia.boot(&sCppiaCtx);
       if (cppia.main)
@@ -6966,8 +6973,11 @@ bool ScriptableField(hx::Object *inObj, int inName,bool inCallProp,Float &outRes
    Dynamic result;
    if ( ((CppiaClassInfo *)vtable[-1])->getField(inObj,__hxcpp_field_from_id(inName),inCallProp,result) )
    {
-      CPPIA_CHECK(result);
-      outResult = result->__ToDouble();
+      //CPPIA_CHECK(result);
+      if (result.mPtr)
+         outResult = result->__ToDouble();
+      else
+         outResult = 0;
       return true;
    }
    return false;

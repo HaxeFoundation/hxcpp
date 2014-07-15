@@ -1015,8 +1015,6 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
    if (field==HX_CSTRING("__set"))
       return TCreateArrayBuiltin<af__set,NoCrement>(src, inType, inThisExpr, ioExpressions);
 
-   printf("Bad array field '%s'\n", field.__s);
-   throw "Unknown array field";
    return 0;
 }
 

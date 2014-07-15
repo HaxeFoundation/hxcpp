@@ -203,8 +203,8 @@ struct CppiaExpr
 
    virtual ExprType    getType() { return etObject; }
 
-   virtual int         runInt(CppiaCtx *ctx)    { return 0; }
-   virtual Float       runFloat(CppiaCtx *ctx) { return runInt(ctx); }
+   virtual int         runInt(CppiaCtx *ctx)    { return runFloat(ctx); }
+   virtual Float       runFloat(CppiaCtx *ctx) { return 0.0; }
    virtual ::String    runString(CppiaCtx *ctx)
    {
       hx::Object *result = runObject(ctx);
