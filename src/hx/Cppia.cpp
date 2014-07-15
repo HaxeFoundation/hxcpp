@@ -980,8 +980,8 @@ struct CppiaVar
    {
       switch(storeType)
       {
-         case fsString: HX_MARK_MEMBER(*(String *)((char *)inThis + offset));
-         case fsObject: HX_MARK_MEMBER(*(Dynamic*)((char *)inThis + offset));
+         case fsString: HX_MARK_MEMBER(*(String *)((char *)inThis + offset)); break;
+         case fsObject: HX_MARK_MEMBER(*(Dynamic*)((char *)inThis + offset)); break;
          default:;
       }
    }
@@ -989,8 +989,8 @@ struct CppiaVar
    {
       switch(storeType)
       {
-         case fsString: HX_VISIT_MEMBER(*(String *)((char *)inThis + offset));
-         case fsObject: HX_VISIT_MEMBER(*(Dynamic *)((char *)inThis + offset));
+         case fsString: HX_VISIT_MEMBER(*(String *)((char *)inThis + offset)); break;
+         case fsObject: HX_VISIT_MEMBER(*(Dynamic *)((char *)inThis + offset)); break;
          default:;
       }
    }

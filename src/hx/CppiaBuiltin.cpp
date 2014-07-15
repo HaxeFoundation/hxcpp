@@ -679,7 +679,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             return thisVal->__SetItem(i, val).mPtr;
 
          Dynamic orig = thisVal->__GetItem(i);
-         CPPIA_CHECK(orig);
+         CPPIA_CHECK(orig.mPtr);
          switch(OP)
          {
             case aoSet: break;

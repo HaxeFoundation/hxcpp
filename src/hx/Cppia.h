@@ -231,7 +231,11 @@ struct CppiaExpr
 
 
 #ifdef HXCPP_CHECK_POINTER
-   #define CPPIA_CHECK(obj) if (!obj) NullReference("Object", false);
+   #ifdef HXCPP_GC_CHECK_POINTER
+      #define CPPIA_CHECK(obj) if (!obj) NullReference("Object", false);  GCCheckPointer(obj);
+   #else
+      #define CPPIA_CHECK(obj) if (!obj) NullReference("Object", false);
+   #endif
 #else
    #define CPPIA_CHECK(obj)
 #endif

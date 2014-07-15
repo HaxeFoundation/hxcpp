@@ -203,6 +203,9 @@ public:
       if (!mPtr) NullReference("Object", true);
       // The handler might have fixed up the null value
       if (!mPtr) NullReference("Object", false);
+      #ifdef HXCPP_GC_CHECK_POINTER
+         GCCheckPointer(mPtr);
+      #endif
       #endif
       return mPtr;
    }
@@ -212,6 +215,9 @@ public:
       if (!mPtr) NullReference("Object", true);
       // The handler might have fixed up the null value
       if (!mPtr) NullReference("Object", false);
+      #ifdef HXCPP_GC_CHECK_POINTER
+         GCCheckPointer(mPtr);
+      #endif
       #endif
       return mPtr;
    }

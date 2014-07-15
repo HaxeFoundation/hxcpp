@@ -710,6 +710,16 @@ union BlockData
 namespace hx
 {
 
+void GCCheckPointer(void *inPtr)
+{
+   unsigned char&mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE];
+   if ( mark!=0xff && mark!=gByteMarkID  )
+   {
+      GCLOG("Old object %s\n", ((hx::Object *)inPtr)->toString().__s );
+      NullReference("Object", false);
+   }
+}
+
 // --- Marking ------------------------------------
 
 struct MarkInfo

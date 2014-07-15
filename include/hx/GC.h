@@ -92,6 +92,7 @@ typedef void (*finalizer)(hx::Object *v);
 void  GCSetFinalizer( hx::Object *, hx::finalizer f );
 
 
+void GCCheckPointer(void *);
 void *InternalNew(int inSize,bool inIsObject);
 void *InternalRealloc(void *inData,int inSize);
 void InternalEnableGC(bool inEnable);
