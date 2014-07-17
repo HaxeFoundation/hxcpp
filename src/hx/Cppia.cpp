@@ -23,6 +23,10 @@ LoopBreak sLoopBreak;
 struct LoopContinue { virtual ~LoopContinue() {} };
 LoopContinue sLoopContinue;
 
+#ifdef DEBUG_RETURN_TYPE
+int gLastRet = etVoid;
+#endif
+
 static bool isNumeric(ExprType t) { return t==etInt || t==etFloat; }
 
 CppiaCtx::CppiaCtx()
@@ -32,6 +36,8 @@ CppiaCtx::CppiaCtx()
    push((hx::Object *)0);
    frame = pointer;
    sCurrent = this;
+   returnJumpBuf = 0;
+   loopJumpBuf = 0;
 }
 
 CppiaCtx::~CppiaCtx()
@@ -239,6 +245,8 @@ struct StackLayout;
 
 void cppiaClassInit(CppiaClassInfo *inClass, CppiaCtx *ctx, int inPhase);
 
+
+
 struct CppiaData
 {
    Array< String > strings;
@@ -418,6 +426,7 @@ struct StackLayout
    std::map<int,CppiaStackVar *> varMap;
    std::vector<CppiaStackVar *>  captureVars;
    StackLayout *parent;
+   ExprType    returnType;
    int captureSize;
    int size;
 
@@ -491,71 +500,126 @@ struct ArgInfo
 
 // --- CppiaCtx functions ----------------------------------------
 
+#ifdef DEBUG_RETURN_TYPE
+   #define DEBUG_RETURN_TYPE_CHECK \
+       if (gLastRet!=CHECK && CHECK!=etVoid) { printf("BAD RETURN TYPE, got %d, expected %d!\n",gLastRet,CHECK); CPPIA_CHECK(0); }
+#else
+   #define DEBUG_RETURN_TYPE_CHECK
+#endif
+
+
+#define GET_RETURN_VAL(RET,CHECK) \
+   CPPIA_STACK_FRAME(((CppiaExpr *)vtable)); \
+   jmp_buf here; \
+   jmp_buf *old = returnJumpBuf; \
+   returnJumpBuf = &here; \
+   if (setjmp(here)) \
+   { \
+       DEBUG_RETURN_TYPE_CHECK \
+       returnJumpBuf = old; \
+       RET; \
+   } \
+   ((CppiaExpr *)vtable)->runVoid(this); \
+   returnJumpBuf = old;
+
+ 
+
+void CppiaCtx::runVoid(void *vtable)
+{
+   GET_RETURN_VAL(return,etVoid);
+   /* Reached end of routine without return */
+}
+
 int CppiaCtx::runInt(void *vtable)
 {
-   CPPIA_STACK_FRAME(((CppiaExpr *)vtable));
-   try
-   {
-      ((CppiaExpr *)vtable)->runVoid(this);
-   }
-   catch (CppiaExpr *retVal)
-   {
-      return retVal->runInt(this);
-   }
+   GET_RETURN_VAL(return getInt(), etInt );
+   //printf("No Int return?\n");
+   // Should not really get here...
    return 0;
 }
 Float CppiaCtx::runFloat(void *vtable)
 {
-   CPPIA_STACK_FRAME(((CppiaExpr *)vtable));
-   try
-   {
-      ((CppiaExpr *)vtable)->runVoid(this);
-   }
-   catch (CppiaExpr *retVal)
-   {
-      return retVal->runFloat(this);
-   }
+   GET_RETURN_VAL(return getFloat(),etFloat );
+   // Should not really get here...
+   //printf("No Float return?\n");
    return 0;
 }
 String CppiaCtx::runString(void *vtable)
 {
-   CPPIA_STACK_FRAME(((CppiaExpr *)vtable));
-   try
-   {
-      ((CppiaExpr *)vtable)->runVoid(this);
-   }
-   catch (CppiaExpr *retVal)
-   {
-      return retVal->runString(this);
-   }
+   GET_RETURN_VAL(return getString(),etString );
+   // Should not really get here...
+   //printf("No String return?\n");
    return null();
-}
-void CppiaCtx::runVoid(void *vtable)
-{
-   CPPIA_STACK_FRAME(((CppiaExpr *)vtable));
-   try
-   {
-      ((CppiaExpr *)vtable)->runVoid(this);
-   }
-   catch (CppiaExpr *retVal)
-   {
-      if (retVal)
-         retVal->runVoid(this);
-   }
 }
 Dynamic CppiaCtx::runObject(void *vtable)
 {
-   CPPIA_STACK_FRAME(((CppiaExpr *)vtable));
-   try
-   {
-      ((CppiaExpr *)vtable)->runVoid(this);
-   }
-   catch (CppiaExpr *retVal)
-   {
-      return retVal->runObject(this);
-   }
+   GET_RETURN_VAL(return getObject(),etObject );
+   //printf("No Object return?\n");
    return null();
 }
+hx::Object *CppiaCtx::runObjectPtr(void *vtable)
+{
+   GET_RETURN_VAL(return getObjectPtr(),etObject );
+   //printf("No Object return?\n");
+   return 0;
+}
+
+
+int runContextConvertInt(CppiaCtx *ctx, ExprType inType, void *inFunc)
+{
+   switch(inType)
+   {
+      case etInt: return ctx->runInt(inFunc);
+      case etFloat: return ctx->runFloat(inFunc);
+      case etObject: return ctx->runObject(inFunc);
+      default:
+          ctx->runVoid(inFunc);
+   }
+   return 0;
+}
+
+
+Float runContextConvertFloat(CppiaCtx *ctx, ExprType inType, void *inFunc)
+{
+   switch(inType)
+   {
+      case etInt: return ctx->runInt(inFunc);
+      case etFloat: return ctx->runFloat(inFunc);
+      case etObject: return ctx->runObject(inFunc);
+      default:
+          ctx->runVoid(inFunc);
+   }
+   return 0;
+}
+
+String runContextConvertString(CppiaCtx *ctx, ExprType inType, void *inFunc)
+{
+   switch(inType)
+   {
+      case etInt: return String(ctx->runInt(inFunc));
+      case etFloat: return String(ctx->runFloat(inFunc));
+      case etObject: return ctx->runObject(inFunc);
+      case etString: return ctx->runString(inFunc);
+      default:
+          ctx->runVoid(inFunc);
+   }
+   return 0;
+}
+
+hx::Object *runContextConvertObject(CppiaCtx *ctx, ExprType inType, void *inFunc)
+{
+   switch(inType)
+   {
+      case etInt: return Dynamic(ctx->runInt(inFunc)).mPtr;
+      case etFloat: return Dynamic(ctx->runFloat(inFunc)).mPtr;
+      case etObject: return ctx->runObject(inFunc).mPtr;
+      case etString: return Dynamic(ctx->runString(inFunc)).mPtr;
+      default:
+          ctx->runVoid(inFunc);
+   }
+   return 0;
+}
+
 
 
 
@@ -1121,6 +1185,7 @@ struct CppiaEnumConstructor
 
 void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Expressions &inArgs );
 hx::Object *runFunExprDynamic(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
+void runFunExprDynamicVoid(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
 
 Class_obj *createCppiaClass(CppiaClassInfo *);
 void  linkCppiaClass(Class_obj *inClass, CppiaData &cppia, String inName);
@@ -1212,7 +1277,7 @@ struct CppiaClassInfo
       createDynamicFunctions(obj);
 
       if (newFunc)
-         runFunExprDynamic(ctx, newFunc->funExpr, obj, inArgs );
+         runFunExprDynamicVoid(ctx, newFunc->funExpr, obj, inArgs );
 
       return obj;
    }
@@ -1427,6 +1492,15 @@ struct CppiaClassInfo
             return memberFunctions[i]->vtableSlot;
       return -1;
    }
+
+   ExprType findFunctionType(CppiaData &inData, int inName)
+   {
+      for(int i=0;i<memberFunctions.size();i++)
+         if (memberFunctions[i]->nameId==inName)
+            return inData.types[ memberFunctions[i]->returnType ]->expressionType;
+      return etVoid;
+   }
+
 
    CppiaVar *findVar(bool inStatic,int inId)
    {
@@ -1925,7 +1999,10 @@ struct CppiaClassInfo
 
       // Functions
       for(int i=0;i<memberFunctions.size();i++)
+      {
+         DBGLOG(" Link member %s::%s\n", name.c_str(), memberFunctions[i]->name.c_str() );
          memberFunctions[i]->link();
+      }
 
       for(int i=0;i<staticDynamicFunctions.size();i++)
          staticDynamicFunctions[i]->link(cppia);
@@ -2357,7 +2434,8 @@ static String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
 
 struct ScriptCallable : public CppiaDynamicExpr
 {
-   int returnType;
+   int returnTypeId;
+   ExprType returnType;
    int argCount;
    int stackSize;
    
@@ -2375,7 +2453,7 @@ struct ScriptCallable : public CppiaDynamicExpr
       body = 0;
       stackSize = 0;
       data = 0;
-      returnType = stream.getInt();
+      returnTypeId = stream.getInt();
       argCount = stream.getInt();
       args.resize(argCount);
       hasDefault.resize(argCount);
@@ -2394,7 +2472,8 @@ struct ScriptCallable : public CppiaDynamicExpr
 
    ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
    {
-      returnType = 0;
+      returnTypeId = 0;
+      returnType = etVoid;
       argCount = 0;
       stackSize = 0;
       captureSize = 0;
@@ -2408,7 +2487,9 @@ struct ScriptCallable : public CppiaDynamicExpr
       inData.layout = &layout;
       data = &inData;
 
-      // TODO - if returnType==0 returnType="Void"
+      returnType = inData.types[ returnTypeId ]->expressionType;
+      layout.returnType = returnType;
+
       for(int a=0;a<args.size();a++)
          args[a].link(inData);
 
@@ -2421,6 +2502,8 @@ struct ScriptCallable : public CppiaDynamicExpr
       inData.layout = oldLayout;
       return this;
    }
+
+   ExprType getType() { return returnType; }
 
    void pushArgs(CppiaCtx *ctx, hx::Object *inThis, Expressions &inArgs)
    {
@@ -2724,15 +2807,19 @@ public:
          memcpy( ctx->frame+var->stackPos, base + var->capturePos, size);
       }
 
-      CPPIA_STACK_FRAME(function->body);
-      try {
-         function->body->runVoid(ctx);
-      }
-      catch (CppiaExpr *retVal)
+      switch(function->returnType)
       {
-         if (retVal)
-            return retVal->runObject(ctx);
+         case etFloat:
+            return ctx->runFloat( function->body );
+         case etInt:
+            return ctx->runInt( function->body );
+         case etString:
+            return ctx->runString( function->body );
+         case etObject:
+            return ctx->runObject( function->body );
+         default: break;
       }
+      ctx->runVoid( function->body );
       return null();
    }
 
@@ -2922,15 +3009,7 @@ void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Express
    unsigned char *pointer = ctx->pointer;
    ((ScriptCallable *)inFunExpr)->pushArgs(ctx, inThis, inArgs);
    AutoStack save(ctx,pointer);
-   CPPIA_STACK_FRAME(inFunExpr);
-   try {
-      inFunExpr->runVoid(ctx);
-   }
-   catch (CppiaExpr *retVal)
-   {
-      if (retVal)
-         retVal->runVoid(ctx);
-   }
+   ctx->runVoid( inFunExpr );
 }
 
 
@@ -2940,17 +3019,19 @@ hx::Object *runFunExprDynamic(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *i
    unsigned char *pointer = ctx->pointer;
    ((ScriptCallable *)inFunExpr)->pushArgsDynamic(ctx, inThis, inArgs);
    AutoStack save(ctx,pointer);
-   CPPIA_STACK_FRAME(inFunExpr);
-   try {
-      inFunExpr->runVoid(ctx);
-   }
-   catch (CppiaExpr *retVal)
-   {
-      if (retVal)
-        return retVal->runObject(ctx);
-   }
-   return 0;
+   return runContextConvertObject(ctx, inFunExpr->getType(), inFunExpr );
 }
+
+
+void runFunExprDynamicVoid(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs )
+{
+
+   unsigned char *pointer = ctx->pointer;
+   ((ScriptCallable *)inFunExpr)->pushArgsDynamic(ctx, inThis, inArgs);
+   AutoStack save(ctx,pointer);
+   ctx->runVoid(inFunExpr);
+}
+
 
 
 struct BlockCallable : public ScriptCallable
@@ -3196,41 +3277,26 @@ struct CallFunExpr : public CppiaExpr
    const char *getName() { return "CallFunExpr"; }
    ExprType getType() { return returnType; }
 
-   #define CallFunExprVal(ret,funcName,def) \
-   ret funcName(CppiaCtx *ctx) \
+   #define CallFunExprVal(ret,name,funcName) \
+   ret name(CppiaCtx *ctx) \
    { \
       unsigned char *pointer = ctx->pointer; \
       function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):0,args); \
       AutoStack save(ctx,pointer); \
-      CPPIA_STACK_FRAME(function); \
-      try \
-      { \
-         function->runVoid(ctx); \
-      } \
-      catch (CppiaExpr *retVal) \
-      { \
-         if (retVal) \
-            return retVal->funcName(ctx); \
-      } \
-      return def; \
+      return funcName(ctx, function->getType(), function); \
    }
-   CallFunExprVal(int,runInt,0);
-   CallFunExprVal(Float ,runFloat,0);
-   CallFunExprVal(String,runString,String());
-   CallFunExprVal(hx::Object *,runObject,0);
+   CallFunExprVal(int,runInt, runContextConvertInt);
+   CallFunExprVal(Float ,runFloat, runContextConvertFloat);
+   CallFunExprVal(String,runString, runContextConvertString);
+   CallFunExprVal(hx::Object *,runObject,  runContextConvertObject);
+
 
    void runVoid(CppiaCtx *ctx)
    {
       unsigned char *pointer = ctx->pointer;
       function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(),args);
       AutoStack save(ctx,pointer);
-      CPPIA_STACK_FRAME(function);
-      try { function->runVoid(ctx); }
-      catch (CppiaExpr *retVal)
-      {
-         if (retVal)
-            retVal->runVoid(ctx);
-      }
+      ctx->runVoid(function);
    }
 
 };
@@ -3707,6 +3773,7 @@ struct CallHaxe : public CppiaExpr
    Expressions args;
    CppiaExpr *thisExpr;
    ScriptFunction function;
+   ExprType returnType;
 
    CallHaxe(CppiaExpr *inSrc,ScriptFunction inFunction, CppiaExpr *inThis, Expressions &ioArgs )
        : CppiaExpr(inSrc)
@@ -3715,6 +3782,7 @@ struct CallHaxe : public CppiaExpr
       thisExpr = inThis;
       function = inFunction;
    }
+   ExprType getType() { return returnType; }
    CppiaExpr *link(CppiaData &inData)
    {
       if (strlen(function.signature) != args.size()+1)
@@ -3732,6 +3800,15 @@ struct CallHaxe : public CppiaExpr
             default:
                throw "Bad haxe signature";
          }
+      }
+      switch(function.signature[0])
+      {
+         case sigInt: returnType = etInt; break;
+         case sigFloat: returnType = etFloat; break;
+         case sigString: returnType = etString; break;
+         case sigObject: returnType = etObject; break;
+         case sigVoid: returnType = etVoid; break;
+         default: ;
       }
 
       if (thisExpr)
@@ -3764,18 +3841,20 @@ struct CallHaxe : public CppiaExpr
       }
 
       AutoStack a(ctx,pointer);
-      //printf("Execute %p %p\n", function.execute, ctx->getThis());
       function.execute(ctx);
 
+      #ifdef DEBUG_RETURN_TYPE
+      gLastRet = returnType;
+      #endif
       if (sizeof(outValue)>0)
       {
-         if (function.signature[0]==sigInt)
+         if (returnType == etInt)
             SetVal(outValue,ctx->getInt());
-         else if (function.signature[0]==sigFloat)
+         else if (returnType == etFloat)
             SetVal(outValue,ctx->getFloat());
-         else if (function.signature[0]==sigString)
+         else if (returnType == etString)
             SetVal(outValue,ctx->getString());
-         else if (function.signature[0]==sigObject)
+         else if (returnType == etObject)
             SetVal(outValue,ctx->getObject());
       }
    }
@@ -3979,8 +4058,9 @@ struct CallMemberVTable : public CppiaExpr
    ExprType    returnType;
    bool isInterfaceCall;
 
-   CallMemberVTable(CppiaExpr *inSrc, CppiaExpr *inThis, int inVTableSlot, bool inIsInterfaceCall,Expressions &ioArgs)
-      : CppiaExpr(inSrc)
+   CallMemberVTable(CppiaExpr *inSrc, CppiaExpr *inThis, int inVTableSlot, ExprType inReturnType,
+             bool inIsInterfaceCall,Expressions &ioArgs)
+      : CppiaExpr(inSrc), returnType(inReturnType)
    {
       args.swap(ioArgs);
       slot = inVTableSlot;
@@ -3995,6 +4075,7 @@ struct CallMemberVTable : public CppiaExpr
       LinkExpressions(args,inData);
       return this;
    }
+   ExprType getType() { return returnType; }
 
    #define CALL_VTABLE_SETUP \
       hx::Object *thisVal = thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(); \
@@ -4002,44 +4083,33 @@ struct CallMemberVTable : public CppiaExpr
       if (isInterfaceCall) thisVal = thisVal->__GetRealObject(); \
       unsigned char *pointer = ctx->pointer; \
       vtable[slot]->pushArgs(ctx, thisVal, args); \
-      AutoStack save(ctx,pointer); \
-      CPPIA_STACK_FRAME(vtable[slot]); \
-      try { \
-         vtable[slot]->runVoid(ctx); \
-      }
+      AutoStack save(ctx,pointer);
 
    void runVoid(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      catch (CppiaExpr *retVal) { if (retVal) retVal->runVoid(ctx); }
+      ctx->runVoid(vtable[slot]);
    }
    int runInt(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      catch (CppiaExpr *retVal) { return retVal->runInt(ctx); }
-      return 0;
+      return runContextConvertInt(ctx, returnType, vtable[slot]); 
    }
  
    Float runFloat(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      catch (CppiaExpr *retVal) { return retVal->runFloat(ctx); }
-      return 0.0;
+      return runContextConvertFloat(ctx, returnType, vtable[slot]); 
    }
    String runString(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      catch (CppiaExpr *retVal) { return retVal->runString(ctx); }
-      return null();
+      return runContextConvertString(ctx, returnType, vtable[slot]); 
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      catch (CppiaExpr *retVal) {
-         if (!retVal) throw Dynamic( HX_CSTRING("No retval?") );
-         return retVal->runObject(ctx);
-      }
-      return 0;
+      return runContextConvertObject(ctx, returnType, vtable[slot]); 
    }
 
 
@@ -4186,7 +4256,10 @@ struct CallMember : public CppiaExpr
             int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
             //printf("   vslot %d\n", vtableSlot);
             if (vtableSlot>=0)
-                replace = new CallMemberVTable( this, thisExpr, vtableSlot, type->cppiaClass->isInterface, args );
+            {
+               ExprType returnType = type->cppiaClass->findFunctionType(inData,fieldId);
+               replace = new CallMemberVTable( this, thisExpr, vtableSlot, returnType, type->cppiaClass->isInterface, args );
+            }
          }
       }
       if (!replace && type->haxeBase)
@@ -4904,7 +4977,14 @@ struct GetFieldByLinkage : public CppiaExpr
          return replace;
       }
 
-      printf("   GetFieldByName %s (%p %p) -> %s fallback\n", type->name.__s, type->haxeClass.mPtr, type->cppiaClass, field.__s);
+      // It is ok for interfaces to look up members by name
+      if (!type->isInterface)
+      {
+         printf("   GetFieldByLinkage %s (%p %p) '%s' fallback\n", type->name.__s, type->haxeClass.mPtr, type->cppiaClass, field.__s);
+         if (type->cppiaClass)
+            type->cppiaClass->dump();
+      }
+
       CppiaExpr *result = new GetFieldByName(this, fieldId, object);
       result = result->link(inData);
       delete this;
@@ -5747,10 +5827,11 @@ struct ThrowType : public CppiaVoidExpr
 
 };
 
-struct RetVal : public ThrowType<void>
+struct RetVal : public CppiaVoidExpr
 {
    bool      retVal;
    CppiaExpr *value;
+   ExprType  returnType;
 
    RetVal(CppiaStream &stream,bool inRetVal)
    {
@@ -5769,13 +5850,39 @@ struct RetVal : public ThrowType<void>
    CppiaExpr *link(CppiaData &inData)
    {
       if (value)
+      {
          value = value->link(inData);
+         returnType = inData.layout->returnType;
+      }
+      else
+         returnType = etNull;
       return this;
    }
 
    void runVoid(CppiaCtx *ctx)
    {
-      throw value;
+      #ifdef DEBUG_RETURN_TYPE
+      gLastRet = returnType;
+      #endif
+      switch(returnType)
+      {
+         case etInt:
+            ctx->returnInt( value->runInt(ctx) );
+            ctx->longJump();
+         case etFloat:
+            ctx->returnFloat( value->runFloat(ctx) );
+            ctx->longJump();
+         case etString:
+            ctx->returnString( value->runString(ctx) );
+            ctx->longJump();
+         case etObject:
+            ctx->returnObject( value->runObject(ctx) );
+            ctx->longJump();
+         default:
+            if (value)
+               value->runVoid(ctx);
+      }
+      ctx->longJump();
    }
 };
 
