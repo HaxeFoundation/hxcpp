@@ -18,6 +18,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES String
 public:
   // These allocate the function using the garbage-colleced malloc
    void *operator new( size_t inSize );
+   inline void* operator new( size_t, void* ptr ) { return ptr; }
    void operator delete( void * ) { }
 
    inline String() : length(0), __s(0) { }
