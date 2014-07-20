@@ -242,6 +242,12 @@ struct CppiaExpr
 
 #define CPPIA_CHECK_FUNC(obj) if (!obj) Dynamic::ThrowBadFunctionError()
 
+
+#define BCR_CHECK if (ctx->breakContReturn) return null();
+#define BCR_VCHECK if (ctx->breakContReturn) return;
+
+
+
 typedef std::vector<CppiaExpr *> Expressions;
 
 CppiaExpr *createArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *inThisExpr,
@@ -297,9 +303,8 @@ template<> inline Dynamic &runValue(Dynamic & outValue, CppiaCtx *ctx, CppiaExpr
 
 
 
-inline static int ValToInt( const bool &v ) { return v; }
-inline static int ValToInt( const int &v ) { return v; }
-inline static int ValToInt( const unsigned char &v ) { return v; }
+inline static int ValToInt( bool v ) { return v; }
+inline static int ValToInt( int v ) { return v; }
 inline static int ValToInt( const Float &v ) { return v; }
 inline static int ValToInt( const String &v ) { return 0; }
 inline static int ValToInt( hx::Object *v ) { return v ? v->__ToInt() : 0; }

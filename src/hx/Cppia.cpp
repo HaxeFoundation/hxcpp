@@ -23,6 +23,7 @@ LoopBreak sLoopBreak;
 struct LoopContinue { virtual ~LoopContinue() {} };
 LoopContinue sLoopContinue;
 #define JUMP_BREAK 1
+//#define FLAG_BREAK 1
 
 
 #ifdef DEBUG_RETURN_TYPE
@@ -40,6 +41,7 @@ CppiaCtx::CppiaCtx()
    sCurrent = this;
    returnJumpBuf = 0;
    loopJumpBuf = 0;
+   breakContReturn = 0;
 }
 
 CppiaCtx::~CppiaCtx()
@@ -3137,6 +3139,9 @@ struct BlockExpr : public CppiaExpr
       {
          CPPIA_STACK_LINE(expressions[a]);
          expressions[a]->runVoid(ctx);
+         #ifdef FLAG_BREAK
+         BCR_VCHECK;
+         #endif
       }
    }
 };
@@ -5581,6 +5586,10 @@ struct WhileExpr : public CppiaVoidExpr
       if (isWhileDo && !condition->runInt(ctx))
          return;
 
+      #ifdef FLAG_BREAK
+      BCR_VCHECK;
+      #endif
+
       #ifdef JUMP_BREAK
       jmp_buf here;
       jmp_buf *old = ctx->loopJumpBuf;
@@ -5591,9 +5600,11 @@ struct WhileExpr : public CppiaVoidExpr
           return;
       }
       #endif
+
  
-      do
+      while(true)
       {
+         #ifdef JUMP_BREAK
          try
          {
             loop->runVoid(ctx);
@@ -5606,8 +5617,23 @@ struct WhileExpr : public CppiaVoidExpr
          {
             // fallthrough
          }
+         #else
+         loop->runVoid(ctx);
+         if (ctx->breakContReturn)
+         {
+            if (ctx->breakContReturn & (bcrBreak|bcrReturn))
+               break;
+            // Continue
+            ctx->breakContReturn = 0;
+         }
+         #endif
+
+         if ( !condition->runInt(ctx) || ctx->breakContReturn)
+            break;
       }
-      while( condition->runInt(ctx) );
+      #ifdef FLAG_BREAK
+      ctx->breakContReturn &= ~bcrLoop;
+      #endif
    }
 };
 
@@ -5872,6 +5898,20 @@ struct JumpBreak : public CppiaVoidExpr
 
 };
 
+struct FlagBreak : public CppiaVoidExpr
+{
+   FlagBreak() {  }
+   void runVoid(CppiaCtx *ctx)
+   {
+      CPPIA_CHECK(0);
+      ctx->breakFlag();
+   }
+   const char *getName() { return "FlagBreak"; }
+
+};
+
+
+
 
 template<typename T>
 struct ThrowType : public CppiaVoidExpr
@@ -5961,6 +6001,8 @@ struct BinOp : public CppiaExpr
       type = etFloat;
    }
 
+   ExprType getType() { return type; }
+
    const char *getName() { return "BinOp"; }
    CppiaExpr *link(CppiaData &inData)
    {
@@ -6005,9 +6047,26 @@ struct name : public BinOp \
    } \
 };
 
+struct OpDiv : public BinOp
+{
+   OpDiv(CppiaStream &stream) : BinOp(stream) { }
+
+   ExprType getType() { return etFloat; }
+   int runInt(CppiaCtx *ctx)
+   {
+      int lval = left->runInt(ctx);
+      return lval / right->runInt(ctx);
+   }
+   Float runFloat(CppiaCtx *ctx)
+   {
+      Float lval = left->runFloat(ctx);
+      return lval / right->runFloat(ctx);
+   }
+};
+
+
 ARITH_OP(OpMult,*)
 ARITH_OP(OpSub,-)
-ARITH_OP(OpDiv,/)
 
 
 struct ThrowExpr : public CppiaVoidExpr
@@ -6299,7 +6358,7 @@ struct OpAdd : public BinOp
          delete this;
          return result;
       }
- 
+
       return this;
    }
 
@@ -6356,6 +6415,7 @@ struct EnumField : public CppiaDynamicExpr
    {
       enumId = stream.getInt();
       fieldId = stream.getInt();
+      value= 0;
       if (inWithArgs)
       {
          int argCount = stream.getInt();
@@ -6653,7 +6713,9 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    else if (tok=="TRY")
       result = new TryExpr(stream);
    else if (tok=="BREAK")
-      #ifdef JUMP_BREAK
+      #ifdef FLAG_BREAK
+      result = new FlagBreak();
+      #elif defined(JUMP_BREAK)
       result = new JumpBreak();
       #else
       result = new ThrowType<LoopBreak>(&sLoopBreak);

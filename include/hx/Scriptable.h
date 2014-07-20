@@ -18,6 +18,15 @@ struct ScriptNamedFunction : public ScriptFunction
    const char *name;
 };
 
+enum
+{
+   bcrBreak    = 0x01,
+   bcrContinue = 0x02,
+   bcrReturn   = 0x04,
+
+   bcrLoop     = (bcrBreak | bcrContinue),
+};
+
 struct CppiaCtx
 {
    CppiaCtx();
@@ -29,6 +38,8 @@ struct CppiaCtx
 
    jmp_buf *returnJumpBuf;
    jmp_buf *loopJumpBuf;
+
+   unsigned int breakContReturn;
 
    template<typename T>
    void push(T inValue)
@@ -134,6 +145,9 @@ struct CppiaCtx
    }
 
 
+   void breakFlag() { breakContReturn |= bcrBreak; }
+   void continueFlag() { breakContReturn |= bcrContinue; }
+   void returnFlag() { breakContReturn |= bcrReturn; }
 
    void breakJump()
    {
