@@ -248,6 +248,8 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *inT
                               String inField, Expressions &ioExpressions );
 CppiaExpr *createStringBuiltin(CppiaExpr *src, CppiaExpr *inThisExpr, String field, Expressions &ioExpressions );
 
+CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioExpressions );
+
 template<typename T>
 inline T &runValue(T& outValue, CppiaCtx *ctx, CppiaExpr *expr)
 {

@@ -22,6 +22,8 @@ struct LoopBreak { virtual ~LoopBreak() {} };
 LoopBreak sLoopBreak;
 struct LoopContinue { virtual ~LoopContinue() {} };
 LoopContinue sLoopContinue;
+#define JUMP_BREAK 1
+
 
 #ifdef DEBUG_RETURN_TYPE
 int gLastRet = etVoid;
@@ -4345,6 +4347,29 @@ struct ClassOfExpr : public CppiaExprWithValue
 };
 
 
+struct CallGlobal : public CppiaExpr
+{
+   int fieldId;
+   Expressions args;
+  
+   CallGlobal(CppiaStream &stream)
+   {
+      fieldId = stream.getInt();
+      int n = stream.getInt();
+      ReadExpressions(args,stream,n);
+   }
+
+   const char *getName() { return "CallGlobal"; }
+   CppiaExpr *link(CppiaData &inData)
+   {
+      String name = inData.strings[fieldId];
+      LinkExpressions(args,inData);
+      return createGlobalBuiltin(this, name, args );
+   }
+};
+
+
+
 struct Call : public CppiaDynamicExpr
 {
    Expressions args;
@@ -5488,6 +5513,18 @@ struct ForExpr : public CppiaVoidExpr
       Dynamic  getNext = iterator->__Field(HX_CSTRING("next"),true);
       CPPIA_CHECK(getNext.mPtr);
 
+      #ifdef JUMP_BREAK
+      jmp_buf here;
+      jmp_buf *old = ctx->loopJumpBuf;
+      ctx->loopJumpBuf = &here; \
+      if (setjmp(here))
+      {
+          ctx->loopJumpBuf = old;
+          return;
+      }
+      #endif
+ 
+
       while(hasNext())
       {
          switch(var.expressionType)
@@ -5544,6 +5581,17 @@ struct WhileExpr : public CppiaVoidExpr
       if (isWhileDo && !condition->runInt(ctx))
          return;
 
+      #ifdef JUMP_BREAK
+      jmp_buf here;
+      jmp_buf *old = ctx->loopJumpBuf;
+      ctx->loopJumpBuf = &here; \
+      if (setjmp(here))
+      {
+          ctx->loopJumpBuf = old;
+          return;
+      }
+      #endif
+ 
       do
       {
          try
@@ -5810,6 +5858,18 @@ struct VarRef : public CppiaExpr
 
       return this;
    }
+};
+
+
+struct JumpBreak : public CppiaVoidExpr
+{
+   JumpBreak() {  }
+   void runVoid(CppiaCtx *ctx)
+   {
+      ctx->breakJump();
+   }
+   const char *getName() { return "JumpBreak"; }
+
 };
 
 
@@ -6518,6 +6578,8 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
       result = new CallMember(stream,callSuper);
    else if (tok=="CALLMEMBER")
       result = new CallMember(stream,callObject);
+   else if (tok=="CALLGLOBAL")
+      result = new CallGlobal(stream);
    else if (tok=="true")
       result = new DataVal<bool>(true);
    else if (tok=="false")
@@ -6591,7 +6653,11 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    else if (tok=="TRY")
       result = new TryExpr(stream);
    else if (tok=="BREAK")
+      #ifdef JUMP_BREAK
+      result = new JumpBreak();
+      #else
       result = new ThrowType<LoopBreak>(&sLoopBreak);
+      #endif
    else if (tok=="CONTINUE")
       result = new ThrowType<LoopContinue>(&sLoopContinue);
    // Uniops..
