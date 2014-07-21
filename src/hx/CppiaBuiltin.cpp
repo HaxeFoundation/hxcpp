@@ -114,7 +114,9 @@ struct ArraySetter : public ArrayBuiltinBase
    int runInt(CppiaCtx *ctx)
    {
       Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+      BCR_CHECK;
       int i = args[0]->runInt(ctx);
+      BCR_CHECK;
       ELEM &elem = thisVal->Item(i);
       FUNC::run(elem, ctx, args[1]);
       return ValToInt(elem);
@@ -122,7 +124,9 @@ struct ArraySetter : public ArrayBuiltinBase
    Float  runFloat(CppiaCtx *ctx)
    {
       Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+      BCR_CHECK;
       int i = args[0]->runInt(ctx);
+      BCR_CHECK;
       ELEM &elem = thisVal->Item(i);
       FUNC::run(elem, ctx, args[1]);
       return ValToFloat(elem);
@@ -130,7 +134,9 @@ struct ArraySetter : public ArrayBuiltinBase
    String  runString(CppiaCtx *ctx)
    {
       Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+      BCR_CHECK;
       int i = args[0]->runInt(ctx);
+      BCR_CHECK;
       ELEM &elem = thisVal->Item(i);
       FUNC::run(elem, ctx, args[1]);
       return ValToString(elem);
@@ -138,7 +144,9 @@ struct ArraySetter : public ArrayBuiltinBase
    hx::Object *runObject(CppiaCtx *ctx)
    {
       Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+      BCR_CHECK;
       int i = args[0]->runInt(ctx);
+      BCR_CHECK;
       ELEM &elem = thisVal->Item(i);
       FUNC::run(elem, ctx, args[1]);
       return Dynamic(elem).mPtr;
@@ -198,61 +206,85 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==afPush)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          ELEM elem;
-         int result =  thisVal->push( runValue(elem,ctx,args[0]) );
+         runValue(elem,ctx,args[0]);
+         BCR_CHECK;
+         int result =  thisVal->push(elem);
          return result;
       }
       if (FUNC==afPop)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return ValToInt(thisVal->pop());
       }
       if (FUNC==afShift)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return ValToInt(thisVal->shift());
       }
       if (FUNC==afRemove)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          ELEM elem;
-         return thisVal->remove(runValue(elem,ctx,args[0]));
+         runValue(elem,ctx,args[0]);
+         BCR_CHECK;
+         return thisVal->remove(elem);
       }
       if (FUNC==afIndexOf)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          ELEM elem;
          runValue(elem,ctx,args[0]);
-         return thisVal->indexOf(elem, args[1]->runObject(ctx));
+         BCR_CHECK;
+         hx::Object *start = args[1]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->indexOf(elem,start);
       }
       if (FUNC==afLastIndexOf)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          ELEM elem;
          runValue(elem,ctx,args[0]);
-         return thisVal->lastIndexOf(elem, args[1]->runObject(ctx));
+         BCR_CHECK;
+         hx::Object *start = args[1]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->lastIndexOf(elem, start);
       }
       if (FUNC==af__get)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         return ValToInt(thisVal->__get(args[0]->runInt(ctx)));
+         BCR_CHECK;
+         int idx = args[0]->runInt(ctx);
+         BCR_CHECK;
+         return ValToInt(thisVal->__get(idx));
       }
       if (FUNC==af__set)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          int i = args[0]->runInt(ctx);
+         BCR_CHECK;
          ELEM elem;
-         thisVal->Item(i) = runValue(elem,ctx,args[1]);
+         runValue(elem,ctx,args[1]);
+         BCR_CHECK;
+         thisVal->Item(i) = elem;
          return ValToInt(elem);
       }
       if (FUNC==af__crement)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
+         BCR_CHECK;
+         int idx = args[0]->runInt(ctx);
+         BCR_CHECK;
+         ELEM &elem = thisVal->Item(idx);
          return ValToInt(CREMENT::run(elem));
       }
-
-
 
 
       return 0;
@@ -262,24 +294,30 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==afPop)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return ValToFloat(thisVal->pop());
       }
       if (FUNC==afShift)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return ValToFloat(thisVal->shift());
       }
       if (FUNC==af__get)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return ValToFloat(thisVal->__get(args[0]->runInt(ctx)));
       }
       if (FUNC==af__set)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          int i = args[0]->runInt(ctx);
          ELEM elem;
-         thisVal->Item(i) = runValue(elem,ctx,args[1]);
+         runValue(elem,ctx,args[1]);
+         BCR_CHECK;
+         thisVal->Item(i) = elem;
          return ValToFloat(elem);
       }
       if (FUNC==af__crement)
@@ -288,9 +326,6 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
          return ValToFloat(CREMENT::run(elem));
       }
-
-
-
 
       if (FUNC==afPush)
          return runInt(ctx);
@@ -303,30 +338,41 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==afPop)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return ValToString(thisVal->pop());
       }
       if (FUNC==afShift)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return ValToString(thisVal->shift());
       }
       if (FUNC==af__get)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         return ValToString(thisVal->__get(args[0]->runInt(ctx)));
+         BCR_CHECK;
+         int idx = args[0]->runInt(ctx);
+         BCR_CHECK;
+         return ValToString(thisVal->__get(idx));
       }
       if (FUNC==af__set)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          int i = args[0]->runInt(ctx);
+         BCR_CHECK;
          ELEM elem;
-         thisVal->Item(i) = runValue(elem,ctx,args[1]);
-         return ValToString(elem);
+         runValue(elem,ctx,args[1]);
+         BCR_CHECK;
+         return ValToString( thisVal->Item(i) = elem);
       }
       if (FUNC==af__crement)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
+         BCR_CHECK;
+         int idx = args[0]->runInt(ctx);
+         BCR_CHECK;
+         ELEM &elem = thisVal->Item(idx);
          return ValToString(CREMENT::run(elem));
       }
 
@@ -334,12 +380,16 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==afJoin)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         return thisVal->join( args[0]->runString(ctx) );
+         BCR_CHECK;
+         String space = args[0]->runString(ctx);
+         BCR_CHECK;
+         return thisVal->join(space);
       }
 
       if (FUNC==afToString)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return thisVal->toString();
       }
 
@@ -353,12 +403,17 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==af__get)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         return thisVal->__GetItem(args[0]->runInt(ctx)).mPtr;
+         BCR_CHECK;
+         int idx = args[0]->runInt(ctx);
+         BCR_CHECK;
+         return thisVal->__GetItem(idx).mPtr;
       }
       if (FUNC==af__set)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          int i = args[0]->runInt(ctx);
+         BCR_CHECK;
          ELEM elem;
          thisVal->Item(i) = runValue(elem,ctx,args[1]);
          return Dynamic(elem).mPtr;
@@ -366,18 +421,23 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==af__crement)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
+         BCR_CHECK;
+         int idx = args[0]->runInt(ctx);
+         BCR_CHECK;
+         ELEM &elem = thisVal->Item(idx);
          return Dynamic(CREMENT::run(elem)).mPtr;
       }
 
       if (FUNC==afPop)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return Dynamic(thisVal->pop()).mPtr;
       }
       if (FUNC==afShift)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return Dynamic(thisVal->shift()).mPtr;
       }
 
@@ -385,44 +445,60 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==afConcat)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          Array_obj<ELEM> *inVal = (Array_obj<ELEM>*)args[0]->runObject(ctx);
+         BCR_CHECK;
          return thisVal->concat(inVal).mPtr;
       }
       if (FUNC==afCopy)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return thisVal->copy().mPtr;
       }
       if (FUNC==afSplice)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          int pos = args[0]->runInt(ctx);
+         BCR_CHECK;
          int end = args[1]->runInt(ctx);
+         BCR_CHECK;
          return thisVal->splice(pos,end).mPtr;
       }
       if (FUNC==afSlice)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          int pos = args[0]->runInt(ctx);
+         BCR_CHECK;
          hx::Object *end = args[1]->runObject(ctx);
+         BCR_CHECK;
          return thisVal->slice(pos,end).mPtr;
       }
       if (FUNC==afMap)
       {
          // TODO - maybe make this more efficient
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         Array<ELEM> result = thisVal->map(args[0]->runObject(ctx));
+         BCR_CHECK;
+         hx::Object *func = args[0]->runObject(ctx);
+         BCR_CHECK;
+         Array<ELEM> result = thisVal->map(func);
          return result.mPtr;
       }
       if (FUNC==afFilter)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         return thisVal->filter(args[0]->runObject(ctx)).mPtr;
+         BCR_CHECK;
+         hx::Object *func = args[0]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->filter(func).mPtr;
       }
 
       if (FUNC==afIterator)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return thisVal->iterator().mPtr;
       }
 
@@ -443,24 +519,31 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==afPop)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_VCHECK;
          thisVal->pop();
       }
       if (FUNC==afShift)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_VCHECK;
          thisVal->shift();
       }
       if (FUNC==af__set)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_VCHECK;
          int i = args[0]->runInt(ctx);
+         BCR_VCHECK;
          ELEM elem;
          thisVal->Item(i) = runValue(elem,ctx,args[1]);
       }
       if (FUNC==af__crement)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         ELEM &elem = thisVal->Item(args[0]->runInt(ctx));
+         BCR_VCHECK;
+         int idx = args[0]->runInt(ctx);
+         BCR_VCHECK;
+         ELEM &elem = thisVal->Item(idx);
          CREMENT::run(elem);
       }
 
@@ -473,25 +556,36 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==afReverse)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_VCHECK;
          thisVal->reverse();
       }
       if (FUNC==afSort)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
-         thisVal->sort(args[0]->runObject(ctx));
+         BCR_VCHECK;
+         hx::Object * func = args[0]->runObject(ctx);
+         BCR_VCHECK;
+         thisVal->sort(func);
       }
       if (FUNC==afInsert)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_VCHECK;
          int pos = args[0]->runInt(ctx);
+         BCR_VCHECK;
          ELEM elem;
-         thisVal->insert(pos,runValue(elem,ctx,args[1]));
+         runValue(elem,ctx,args[1]);
+         BCR_VCHECK;
+         thisVal->insert(pos,elem);
       }
       if (FUNC==afUnshift)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_VCHECK;
          ELEM elem;
-         thisVal->unshift(runValue(elem,ctx,args[0]));
+         runValue(elem,ctx,args[0]);
+         BCR_VCHECK;
+         thisVal->unshift(elem);
       }
 
 
@@ -600,24 +694,38 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       if (FUNC==afPush)
       {
          ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
-         return thisVal->__push( args[0]->runObject(ctx) );
+         BCR_CHECK;
+         hx::Object * val = args[0]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->__push(val);
       }
       if (FUNC==afRemove)
       {
          ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
-         return thisVal->__remove( args[0]->runObject(ctx) );
+         BCR_CHECK;
+         hx::Object * val = args[0]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->__remove(val);
       }
       if (FUNC==afIndexOf)
       {
          ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         BCR_CHECK;
          Dynamic a0 = args[0]->runObject(ctx);
-         return thisVal->__indexOf( a0, args[1]->runObject(ctx) );
+         BCR_CHECK;
+         hx::Object *a1 = args[1]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->__indexOf( a0, a1 );
       }
       if (FUNC==afLastIndexOf)
       {
          ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         BCR_CHECK;
          Dynamic a0 = args[0]->runObject(ctx);
-         return thisVal->__lastIndexOf( a0, args[1]->runObject(ctx) );
+         BCR_CHECK;
+         hx::Object *a1 = args[1]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->__lastIndexOf( a0, a1 );
       }
 
       return Dynamic( runObject(ctx) );
@@ -634,12 +742,16 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       if (FUNC==afJoin)
       {
          ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
-         return thisVal->__join( args[0]->runObject(ctx) );
+         BCR_CHECK;
+         Dynamic a0 = args[0]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->__join( a0 );
       }
 
       if (FUNC==afToString)
       {
          ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         BCR_CHECK;
          return thisVal->toString();
       }
 
@@ -665,16 +777,21 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
 
       ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+      BCR_CHECK;
       CPPIA_CHECK(thisVal);
 
       if (FUNC==af__get)
       {
-         return thisVal->__GetItem(args[0]->runInt(ctx)).mPtr;
+         int idx = args[0]->runInt(ctx);
+         BCR_CHECK;
+         return thisVal->__GetItem(idx).mPtr;
       }
       if (FUNC==af__set)
       {
          int i = args[0]->runInt(ctx);
+         BCR_CHECK;
          Dynamic val = args[1]->runObject(ctx);
+         BCR_CHECK;
          if (OP==aoSet)
             return thisVal->__SetItem(i, val).mPtr;
 
@@ -724,6 +841,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       if (FUNC==af__crement)
       {
          int i = args[0]->runInt(ctx);
+         BCR_CHECK;
          if (OP==coPreInc)
             return thisVal->__SetItem(i, thisVal->__GetItem(i) + 1).mPtr;
          if (OP==coPreDec)
@@ -748,7 +866,9 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
       if (FUNC==afConcat)
       {
-         return thisVal->__concat(args[0]->runObject(ctx)).mPtr;
+         Dynamic val = args[0]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->__concat(val).mPtr;
       }
       if (FUNC==afCopy)
       {
@@ -757,22 +877,30 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       if (FUNC==afSplice)
       {
          Dynamic pos = args[0]->runObject(ctx);
+         BCR_CHECK;
          Dynamic end = args[1]->runObject(ctx);
+         BCR_CHECK;
          return thisVal->__splice(pos,end).mPtr;
       }
       if (FUNC==afSlice)
       {
          Dynamic pos = args[0]->runObject(ctx);
+         BCR_CHECK;
          Dynamic end = args[1]->runObject(ctx);
+         BCR_CHECK;
          return thisVal->__slice(pos,end).mPtr;
       }
       if (FUNC==afMap)
       {
-         return thisVal->__map(args[0]->runObject(ctx)).mPtr;
+         Dynamic a0 = args[0]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->__map(a0).mPtr;
       }
       if (FUNC==afFilter)
       {
-         return thisVal->__filter(args[0]->runObject(ctx)).mPtr;
+         Dynamic a0 = args[0]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->__filter(a0).mPtr;
       }
 
       if (FUNC==afIterator)
@@ -787,20 +915,30 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       if (FUNC==afSort)
       {
          ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
-         thisVal->__sort(args[0]->runObject(ctx));
+         BCR_VCHECK;
+         Dynamic a0 = args[0]->runObject(ctx);
+         BCR_VCHECK;
+         thisVal->__sort(a0);
          return;
       }
       if (FUNC==afInsert)
       {
          ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         BCR_VCHECK;
          Dynamic pos = args[0]->runObject(ctx);
-         thisVal->__insert(pos, args[1]->runObject(ctx));
+         BCR_VCHECK;
+         Dynamic val = args[1]->runObject(ctx);
+         BCR_VCHECK;
+         thisVal->__insert(pos, val);
          return;
       }
       if (FUNC==afUnshift)
       {
          ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
-         thisVal->__unshift(args[0]->runObject(ctx));
+         BCR_VCHECK;
+         Dynamic val = args[0]->runObject(ctx);
+         BCR_VCHECK;
+         thisVal->__unshift(val);
          return;
       }
 
@@ -1062,11 +1200,15 @@ struct SubStrExpr : public StringExpr
    String runString(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
+      BCR_CHECK;
       int start = a0->runInt(ctx);
+      BCR_CHECK;
+      Dynamic end = a1->runObject(ctx);
+      BCR_CHECK;
       if (SUBSTR)
-         return val.substr(start, a1->runObject(ctx) );
+         return val.substr(start,end);
       else
-         return val.substring(start, a1->runObject(ctx) );
+         return val.substring(start,end);
    }
 };
 
@@ -1078,6 +1220,7 @@ struct ToCaseExpr : public StringExpr
    String runString(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
+      BCR_CHECK;
       if (UPPER)
          return val.toUpperCase();
       else
@@ -1104,22 +1247,31 @@ struct CharAtExpr : public StringExpr
    String runString(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
-      return val.charAt(a0->runInt(ctx));
+      BCR_CHECK;
+      int idx = a0->runInt(ctx);
+      BCR_CHECK;
+      return val.charAt(idx);
    }
    int runInt(CppiaCtx *ctx)
    {
       //printf("Char code at %d INT\n", CODE);
       String val = strVal->runString(ctx);
-      return val.charCodeAt(a0->runInt(ctx));
+      BCR_CHECK;
+      int idx = a0->runInt(ctx);
+      BCR_CHECK;
+      return val.charCodeAt(idx);
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
+      BCR_CHECK;
+      int idx = a0->runInt(ctx);
+      BCR_CHECK;
 
       if (CODE)
-         return val.charCodeAt(a0->runInt(ctx)).mPtr;
+         return val.charCodeAt(idx).mPtr;
       else
-         return Dynamic(val.charAt(a0->runInt(ctx))).mPtr;
+         return Dynamic(val.charAt(idx)).mPtr;
    }
 };
 
@@ -1147,7 +1299,10 @@ struct SplitExpr : public CppiaExpr
    hx::Object *runObject(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
-      return val.split( a0->runString(ctx) ).mPtr;
+      BCR_CHECK;
+      String separator = a0->runString(ctx);
+      BCR_CHECK;
+      return val.split(separator).mPtr;
    }
 };
 
@@ -1178,11 +1333,15 @@ struct IndexOfExpr : public CppiaExpr
    int runInt(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
+      BCR_CHECK;
       String s = sought->runString(ctx);
+      BCR_CHECK;
+      hx::Object *first = start->runObject(ctx);
+      BCR_CHECK;
       if (LAST)
-         return val.lastIndexOf(s,start->runObject(ctx));
+         return val.lastIndexOf(s,first);
       else
-         return val.indexOf(s,start->runObject(ctx));
+         return val.indexOf(s,first);
    }
    hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
 };
@@ -1276,6 +1435,7 @@ public:
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);
+      BCR_CHECK;
       return FUNC(val0);
    }
 };
@@ -1299,9 +1459,11 @@ public:
    void runVoid(CppiaCtx *ctx)
    {
       ARG0 val0;
-      ARG1 val1;
       runValue(val0, ctx, args[0]);
+      BCR_VCHECK;
+      ARG1 val1;
       runValue(val1, ctx, args[1]);
+      BCR_VCHECK;
       FUNC(val0,val1);
    }
 };
