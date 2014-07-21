@@ -22,6 +22,7 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     #endif
                     #ifdef HXCPP_SCRIPTABLE
                     ,const hx::StorageInfo *inStorageInfo
+                    ,const hx::StaticInfo *inStaticInfo
                     #endif
                     )
 {
@@ -36,6 +37,7 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                                   #endif
                                   #ifdef HXCPP_SCRIPTABLE
                                   ,inStorageInfo
+                                  ,inStaticInfo
                                   #endif
                                   );
    Class c(obj);
@@ -68,6 +70,7 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
              #endif
              #ifdef HXCPP_SCRIPTABLE
              ,const hx::StorageInfo *inStorageInfo
+             ,const hx::StaticInfo *inStaticInfo
              #endif
              )
 {
@@ -83,6 +86,7 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
 
    #ifdef HXCPP_SCRIPTABLE
    mMemberStorageInfo = inStorageInfo;
+   mStaticStorageInfo = inStaticInfo;
    #endif
 
    if (inStatics)
@@ -280,6 +284,22 @@ const hx::StorageInfo* Class_obj::GetMemberStorage(String inName)
    }
    return 0;
 }
+
+
+const hx::StaticInfo* Class_obj::GetStaticStorage(String inName)
+{
+   if (mStaticStorageInfo)
+   {
+      for(const StaticInfo *s = mStaticStorageInfo; s->address; s++)
+      {
+         if (s->name == inName)
+            return s;
+      }
+   }
+   return 0;
+}
+
+
 #endif
 
 

@@ -18,13 +18,8 @@ namespace hx
 // todo - TLS
 static CppiaCtx *sCurrent = 0;
 
-struct LoopBreak { virtual ~LoopBreak() {} };
-LoopBreak sLoopBreak;
-struct LoopContinue { virtual ~LoopContinue() {} };
-LoopContinue sLoopContinue;
 
-#define SJLJ_RETURN 1
-
+//#define SJLJ_RETURN 1
 
 
 #ifdef DEBUG_RETURN_TYPE
@@ -738,6 +733,7 @@ struct CppiaBoolExpr : public CppiaIntExpr
 
 CppiaExpr *createCppiaExpr(CppiaStream &inStream);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, ExprType inType, void *inPtr);
+CppiaExpr *createStaticAccess(CppiaExpr *inSrc, FieldStorage inType, void *inPtr);
 
 static void ReadExpressions(Expressions &outExpressions, CppiaStream &stream,int inN=-1)
 {
@@ -3174,12 +3170,12 @@ struct BlockExpr : public CppiaExpr
    BlockExprRun(hx::Object *,runObject,0)
    void  runVoid(CppiaCtx *ctx)
    {
-      int len = expressions.size();
-      for(int a=0;a<len;a++)
+      CppiaExpr **e = &expressions[0];
+      CppiaExpr **end = e+expressions.size();
+      for(;e<end && !ctx->breakContReturn;e++)
       {
-         CPPIA_STACK_LINE(expressions[a]);
-         expressions[a]->runVoid(ctx);
-         BCR_VCHECK;
+         CPPIA_STACK_LINE((*e));
+         (*e)->runVoid(ctx);
       }
    }
 };
@@ -3999,7 +3995,9 @@ struct CallStatic : public CppiaExpr
 
       if (!replace && type->haxeClass.mPtr)
       {
-         // TODO - might change if dynamic function (eg, trace)
+         //const StaticInfo *info = type->haxeClass->GetStaticStorage(field);
+         //printf("INFO %s -> %p\n", field.__s,  info);
+         // TODO - create proper glue for static functions
          Dynamic func = type->haxeClass.mPtr->__Field( field, false );
          if (func.mPtr)
             replace = new CallDynamicFunction(inData, this, func, args );
@@ -4675,6 +4673,15 @@ struct GetFieldByName : public CppiaDynamicExpr
             printf("Could not link static %s::%s (%d)\n", type->name.c_str(), inData.strings[nameId].__s, nameId );
             throw "Bad link";
          }
+         name = inData.strings[nameId];
+         const StaticInfo *info = staticClass->GetStaticStorage(name);
+         if (info)
+         {
+            CppiaExpr *replace = createStaticAccess(this, info->type, info->address);
+            replace->link(inData);
+            delete this;
+            return replace;
+         }
       }
 
       // Use runtime lookup...
@@ -4800,7 +4807,6 @@ struct MemReference : public CppiaExpr
 };
 
 
-// TODO - strore type
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc,ExprType inType, void *inPtr)
 {
    switch(inType)
@@ -4813,6 +4819,22 @@ CppiaExpr *createStaticAccess(CppiaExpr *inSrc,ExprType inType, void *inPtr)
          return 0;
    }
 }
+
+CppiaExpr *createStaticAccess(CppiaExpr *inSrc,FieldStorage inType, void *inPtr)
+{
+   switch(inType)
+   {
+      case fsBool : return new MemReference<bool,locAbsolute>(inSrc, (bool *)inPtr );
+      case fsInt : return new MemReference<int,locAbsolute>(inSrc, (int *)inPtr );
+      case fsByte : return new MemReference<unsigned char,locAbsolute>(inSrc, (unsigned char *)inPtr );
+      case fsFloat : return new MemReference<Float,locAbsolute>(inSrc, (Float *)inPtr );
+      case fsString : return new MemReference<String,locAbsolute>(inSrc, (String *)inPtr );
+      case fsObject : return new MemReference<hx::Object *,locAbsolute>(inSrc, (hx::Object **)inPtr );
+      default:
+         return 0;
+   }
+}
+
 
 
 
@@ -5604,11 +5626,10 @@ struct TVars : public CppiaVoidExpr
    
    void runVoid(CppiaCtx *ctx)
    {
-      for(int i=0;i<vars.size();i++)
-      {
-         vars[i]->runVoid(ctx);
-         BCR_VCHECK;
-      }
+      CppiaExpr **v = &vars[0];
+      CppiaExpr **end = v + vars.size();
+      for(;v<end && !ctx->breakContReturn;v++)
+         (*v)->runVoid(ctx);
    }
 };
 
