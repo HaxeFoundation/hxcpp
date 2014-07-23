@@ -3329,7 +3329,7 @@ struct CallFunExpr : public CppiaExpr
    ret name(CppiaCtx *ctx) \
    { \
       unsigned char *pointer = ctx->pointer; \
-      function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):0,args); \
+      function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(),args); \
       BCR_CHECK; \
       AutoStack save(ctx,pointer); \
       return funcName(ctx, function->getType(), function); \
