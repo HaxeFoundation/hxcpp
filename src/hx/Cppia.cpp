@@ -5670,17 +5670,7 @@ struct ForExpr : public CppiaVoidExpr
 
       while(hasNext())
       {
-         switch(var.expressionType)
-         {
-            case etInt: *(int *)(ctx->frame+var.stackPos) = getNext(); break;
-            case etFloat: *(Float *)(ctx->frame+var.stackPos) = getNext(); break;
-            case etString: *(String *)(ctx->frame+var.stackPos) = getNext(); break;
-            case etObject: *(hx::Object **)(ctx->frame+var.stackPos) = getNext().mPtr; break;
-            case etVoid:
-            case etNull:
-               break;
-         }
-
+         var.set(ctx,getNext());
          loop->runVoid(ctx);
 
          if (ctx->breakContReturn)

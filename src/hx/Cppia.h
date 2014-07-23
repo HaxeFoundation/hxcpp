@@ -247,6 +247,7 @@ struct BCRReturn
 {
    inline BCRReturn() {}
    inline operator hx::Object *() const {  return 0; }
+   inline operator bool() const {  return false; }
    inline operator int() const {  return 0; }
    inline operator unsigned char() const {  return 0; }
    inline operator char() const {  return 0; }
@@ -402,7 +403,10 @@ struct AssignSet
    template<typename T>
    static T run(T& ioVal, CppiaCtx *ctx, CppiaExpr *value )
    {
-      return runValue(ioVal, ctx, value );
+      T val;
+      runValue(val, ctx, value );
+      BCR_CHECK;
+      return ioVal = val;
    }
 };
 
@@ -413,18 +417,24 @@ struct AssignAdd
    static T run(T &ioVal, CppiaCtx *ctx, CppiaExpr *value)
    {
       T rhs;
-      ioVal += runValue(rhs,ctx,value);
+      runValue(rhs,ctx,value);
+      BCR_CHECK;
+      ioVal += rhs;
       return ioVal;
    }
    static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static hx::Object *run(hx::Object * &ioVal, CppiaCtx *ctx, CppiaExpr *value)
    {
-      ioVal = ( Dynamic(ioVal) + Dynamic(value->runObject(ctx)) ).mPtr;
+      Dynamic rhs(value->runObject(ctx));
+      BCR_CHECK;
+      ioVal = ( Dynamic(ioVal) + rhs).mPtr;
       return ioVal;
    }
    static hx::Object *run(Dynamic &ioVal, CppiaCtx *ctx, CppiaExpr *value)
    {
-      ioVal = ioVal + Dynamic(value->runObject(ctx));
+      Dynamic rhs(value->runObject(ctx));
+      BCR_CHECK;
+      ioVal = ioVal + rhs;
       return ioVal.mPtr;
    }
 };
