@@ -408,7 +408,7 @@ struct CppiaStackVar
             HX_VISIT_MEMBER(*(String *)(inBase + capturePos));
             break;
          case etObject:
-            HX_VISIT_MEMBER(*(Dynamic *)(inBase + capturePos));
+            HX_VISIT_MEMBER(*(hx::Object **)(inBase + capturePos));
             break;
          default: ;
       }
@@ -1342,12 +1342,6 @@ struct CppiaClassInfo
       for(int i=0;i<implements.size();i++)
          if (implements[i] == inInterface->typeId)
             return true;
-      if (!superId)
-         return false;
-
-      TypeData *superType = cppia.types[ superId ];
-      if (superType->cppiaClass)
-         return superType->cppiaClass->implementsInterface(inInterface);
       return false;
    }
 
@@ -1590,8 +1584,6 @@ struct CppiaClassInfo
 
    void **getInterfaceVTable(const std::string &inName)
    {
-      if (!interfaceVTables[inName] && superType->cppiaClass)
-         return superType->cppiaClass->getInterfaceVTable(inName);
       return interfaceVTables[inName];
    }
 
@@ -1800,6 +1792,30 @@ struct CppiaClassInfo
          if (cppia.types[ implements[i] ]->cppiaClass)
             cppia.types[ implements[i] ]->cppiaClass->linkTypes();
 
+
+      // Add super interfaces ...
+      TypeData *extraInterfaces = cppia.types[ superId ];
+      while(extraInterfaces)
+      {
+         if (extraInterfaces->cppiaClass)
+         {
+            CppiaClassInfo &parent = *extraInterfaces->cppiaClass;
+            std::vector<int> &impl = parent.implements;
+            for(int i=0;i<impl.size();i++)
+            {
+               bool found = false;
+               for(int j=0;j<implements.size() && !found; j++)
+                  found = implements[j] == impl[i];
+               if (!found)
+                  implements.push_back(impl[i]);
+            }
+            extraInterfaces = cppia.types[ parent.superId ];
+         }
+         else
+            break;
+      }
+
+
       DBGLOG(" Linking class '%s' ", type->name.__s);
       if (!superType)
       {
@@ -1964,6 +1980,7 @@ struct CppiaClassInfo
       memset(vtable, 0, sizeof(void *)*(vtableSlot+1));
       *vtable++ = this;
       DBGLOG("  vtable size %d -> %p\n", vtableSlot, vtable);
+
 
       // Create interface vtables...
       for(int i=0;i<implements.size();i++)
