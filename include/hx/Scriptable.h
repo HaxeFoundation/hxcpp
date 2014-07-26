@@ -1,6 +1,8 @@
 #ifndef INCLUDED_HX_SCRIPTABLE
 #define INCLUDED_HX_SCRIPTABLE
 
+#include <setjmp.h> 
+
 #include <typeinfo>
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
@@ -16,6 +18,15 @@ struct ScriptNamedFunction : public ScriptFunction
    const char *name;
 };
 
+enum
+{
+   bcrBreak    = 0x01,
+   bcrContinue = 0x02,
+   bcrReturn   = 0x04,
+
+   bcrLoop     = (bcrBreak | bcrContinue),
+};
+
 struct CppiaCtx
 {
    CppiaCtx();
@@ -24,6 +35,11 @@ struct CppiaCtx
    unsigned char *stack;
    unsigned char *pointer;
    unsigned char *frame;
+
+   jmp_buf *returnJumpBuf;
+   jmp_buf *loopJumpBuf;
+
+   unsigned int breakContReturn;
 
    template<typename T>
    void push(T inValue)
@@ -42,6 +58,7 @@ struct CppiaCtx
    String runString(void *vtable);
    void runVoid(void *vtable);
    Dynamic runObject(void *vtable);
+   hx::Object *runObjectPtr(void *vtable);
 
    void push(bool &inValue)
    {
@@ -74,7 +91,6 @@ struct CppiaCtx
       pointer += sizeof(hx::Object *);
    }
 
-
    inline void returnBool(bool b)
    {
       *(int *)frame = b;
@@ -94,6 +110,11 @@ struct CppiaCtx
    inline void returnObject(Dynamic d)
    {
       *(hx::Object **)frame = d.mPtr;
+   }
+
+   void longJump()
+   {
+      longjmp(*returnJumpBuf,1);
    }
 
    hx::Object *getThis() { return *(hx::Object **)frame; }
@@ -118,39 +139,24 @@ struct CppiaCtx
    {
       return *(hx::Object **)(frame+inPos);
    }
-
-
-   /*
-   bool popBool()
+   inline hx::Object *getObjectPtr(int inPos=0)
    {
-      pointer-=sizeof(int);
-      return *(int *)pointer;
+      return *(hx::Object **)(frame+inPos);
    }
 
-   int popInt()
-   {
-      pointer-=sizeof(int);
-      return *(int *)pointer;
-   }
 
-   Float popFloat()
-   {
-      pointer-=sizeof(Float);
-      return *(Float *)pointer;
-   }
-   String popString()
-   {
-      pointer-=sizeof(String);
-      return *(String *)pointer;
-   }
-   Dynamic popObject()
-   {
-      pointer-=sizeof(hx::Object *);
-      return Dynamic(*(hx::Object **)pointer);
-   }
-   */
+   void breakFlag() { breakContReturn |= bcrBreak; }
+   void continueFlag() { breakContReturn |= bcrContinue; }
+   void returnFlag() { breakContReturn |= bcrReturn; }
 
-
+   void breakJump()
+   {
+      longjmp(*loopJumpBuf,2);
+   }
+   void continueJump()
+   {
+      longjmp(*loopJumpBuf,3);
+   }
 };
 
 enum SignatureChar

@@ -1310,7 +1310,7 @@ hx::Object *GCGetNextZombie()
 
 void InternalEnableGC(bool inEnable)
 {
-   printf("Enable %d\n", sgInternalEnable);
+   //printf("Enable %d\n", sgInternalEnable);
    sgInternalEnable = inEnable;
 }
 

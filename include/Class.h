@@ -72,6 +72,12 @@ struct StorageInfo
    int          offset;
    String       name;
 };
+struct StaticInfo
+{
+   FieldStorage type;
+   void         *address;
+   String       name;
+};
 
 }
 #endif
@@ -89,6 +95,7 @@ public:
              #endif
              #ifdef HXCPP_SCRIPTABLE
              ,const hx::StorageInfo *inStorageInfo
+             ,const hx::StaticInfo *inStaticInfo
              #endif
              );
 
@@ -136,6 +143,7 @@ public:
    Class              GetSuper();
    #ifdef HXCPP_SCRIPTABLE
    const hx::StorageInfo*  GetMemberStorage(String inName);
+   const hx::StaticInfo*  GetStaticStorage(String inName);
    #endif
 
    static Class       Resolve(String inName);
@@ -157,6 +165,7 @@ public:
 
    #ifdef HXCPP_SCRIPTABLE
    const hx::StorageInfo*    mMemberStorageInfo;
+   const hx::StaticInfo*    mStaticStorageInfo;
    #endif
 };
 
@@ -180,6 +189,7 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     #endif
                     #ifdef HXCPP_SCRIPTABLE
                     ,const hx::StorageInfo *inStorageInfo=0
+                    ,const hx::StaticInfo *inStaticInfo=0
                     #endif
                     );
 

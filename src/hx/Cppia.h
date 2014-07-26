@@ -242,11 +242,37 @@ struct CppiaExpr
 
 #define CPPIA_CHECK_FUNC(obj) if (!obj) Dynamic::ThrowBadFunctionError()
 
+
+struct BCRReturn
+{
+   inline BCRReturn() {}
+   inline operator hx::Object *() const {  return 0; }
+   inline operator bool() const {  return false; }
+   inline operator int() const {  return 0; }
+   inline operator unsigned char() const {  return 0; }
+   inline operator char() const {  return 0; }
+   inline operator short() const {  return 0; }
+   inline operator unsigned short() const {  return 0; }
+   inline operator float() const {  return 0; }
+   inline operator double() const {  return 0; }
+   inline operator Dynamic() const {  return null(); }
+   inline operator String() const {  return String(); }
+};
+
+
+#define BCR_CHECK if (ctx->breakContReturn) return BCRReturn();
+#define BCR_CHECK_RET(x) if (ctx->breakContReturn) return x;
+#define BCR_VCHECK if (ctx->breakContReturn) return;
+
+
+
 typedef std::vector<CppiaExpr *> Expressions;
 
 CppiaExpr *createArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *inThisExpr,
                               String inField, Expressions &ioExpressions );
 CppiaExpr *createStringBuiltin(CppiaExpr *src, CppiaExpr *inThisExpr, String field, Expressions &ioExpressions );
+
+CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioExpressions );
 
 template<typename T>
 inline T &runValue(T& outValue, CppiaCtx *ctx, CppiaExpr *expr)
@@ -295,9 +321,8 @@ template<> inline Dynamic &runValue(Dynamic & outValue, CppiaCtx *ctx, CppiaExpr
 
 
 
-inline static int ValToInt( const bool &v ) { return v; }
-inline static int ValToInt( const int &v ) { return v; }
-inline static int ValToInt( const unsigned char &v ) { return v; }
+inline static int ValToInt( bool v ) { return v; }
+inline static int ValToInt( int v ) { return v; }
 inline static int ValToInt( const Float &v ) { return v; }
 inline static int ValToInt( const String &v ) { return 0; }
 inline static int ValToInt( hx::Object *v ) { return v ? v->__ToInt() : 0; }
@@ -378,7 +403,10 @@ struct AssignSet
    template<typename T>
    static T run(T& ioVal, CppiaCtx *ctx, CppiaExpr *value )
    {
-      return runValue(ioVal, ctx, value );
+      T val;
+      runValue(val, ctx, value );
+      BCR_CHECK;
+      return ioVal = val;
    }
 };
 
@@ -389,18 +417,24 @@ struct AssignAdd
    static T run(T &ioVal, CppiaCtx *ctx, CppiaExpr *value)
    {
       T rhs;
-      ioVal += runValue(rhs,ctx,value);
+      runValue(rhs,ctx,value);
+      BCR_CHECK;
+      ioVal += rhs;
       return ioVal;
    }
    static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static hx::Object *run(hx::Object * &ioVal, CppiaCtx *ctx, CppiaExpr *value)
    {
-      ioVal = ( Dynamic(ioVal) + Dynamic(value->runObject(ctx)) ).mPtr;
+      Dynamic rhs(value->runObject(ctx));
+      BCR_CHECK;
+      ioVal = ( Dynamic(ioVal) + rhs).mPtr;
       return ioVal;
    }
    static hx::Object *run(Dynamic &ioVal, CppiaCtx *ctx, CppiaExpr *value)
    {
-      ioVal = ioVal + Dynamic(value->runObject(ctx));
+      Dynamic rhs(value->runObject(ctx));
+      BCR_CHECK;
+      ioVal = ioVal + rhs;
       return ioVal.mPtr;
    }
 };
@@ -412,19 +446,25 @@ struct NAME \
    template<typename T> \
    inline static T &run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
-      ioVal OPEQ value->runFloat(ctx); \
+      Float f = value->runFloat(ctx); \
+      BCR_CHECK_RET(ioVal); \
+      ioVal OPEQ f; \
       return ioVal; \
    } \
    static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
-      ioVal = Dynamic(Dynamic(ioVal) OP value->runFloat(ctx)).mPtr; \
+      Float f =  value->runFloat(ctx); \
+      BCR_CHECK_RET(ioVal); \
+      ioVal = Dynamic(Dynamic(ioVal) OP f).mPtr; \
       return ioVal; \
    } \
    static Dynamic &run(Dynamic &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
-      ioVal = Dynamic(ioVal) OP value->runFloat(ctx); \
+      Float f = value->runFloat(ctx); \
+      BCR_CHECK_RET(ioVal); \
+      ioVal = Dynamic(ioVal) OP f; \
       return ioVal; \
    } \
 };
@@ -433,26 +473,30 @@ DECL_STRUCT_ASSIGN(AssignMult,*=,*)
 DECL_STRUCT_ASSIGN(AssignSub,-=,-)
 DECL_STRUCT_ASSIGN(AssignDiv,/=,/)
 
-#define DECL_STRUCT_ASSIGN_FUNC(NAME,OP_FUNC,RUN_FUNC) \
+#define DECL_STRUCT_ASSIGN_FUNC(NAME,OP_FUNC,RUN_FUNC,TMP) \
 struct NAME \
 { \
    template<typename T> \
    static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
-      ioVal = OP_FUNC(ioVal, value->RUN_FUNC(ctx)); \
+      TMP t = value->RUN_FUNC(ctx); \
+      BCR_CHECK; \
+      ioVal = OP_FUNC(ioVal, t); \
       return ioVal; \
    } \
    static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
-      ioVal = Dynamic( OP_FUNC( Dynamic(ioVal) , value->RUN_FUNC(ctx) ) ).mPtr; \
+      TMP t = value->RUN_FUNC(ctx); \
+      BCR_CHECK; \
+      ioVal = Dynamic( OP_FUNC( Dynamic(ioVal),t )).mPtr; \
       return ioVal; \
    } \
 };
 
-DECL_STRUCT_ASSIGN_FUNC(AssignMod,hx::DoubleMod,runFloat)
-DECL_STRUCT_ASSIGN_FUNC(AssignUShr,hx::UShr,runInt)
+DECL_STRUCT_ASSIGN_FUNC(AssignMod,hx::DoubleMod,runFloat,Float)
+DECL_STRUCT_ASSIGN_FUNC(AssignUShr,hx::UShr,runInt,int)
 
 
 
@@ -462,14 +506,18 @@ struct NAME \
    template<typename T> \
    static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
-      ioVal = (CAST)ioVal OP value->RUN_FUNC(ctx); \
+      CAST t = value->RUN_FUNC(ctx); \
+      BCR_CHECK; \
+      ioVal = (CAST)ioVal OP t; \
       return ioVal; \
    } \
    static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
    static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
-      ioVal = Dynamic((CAST)Dynamic(ioVal) OP value->RUN_FUNC(ctx)).mPtr; \
+      CAST t = value->RUN_FUNC(ctx); \
+      BCR_CHECK; \
+      ioVal = Dynamic((CAST)Dynamic(ioVal) OP t).mPtr; \
       return ioVal; \
    } \
 };

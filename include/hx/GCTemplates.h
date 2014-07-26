@@ -21,6 +21,10 @@ template<typename T> inline void MarkMember(Array<T> &outT,hx::MarkContext *__in
 {
 	HX_MARK_OBJECT(outT.mPtr);
 }
+template<> inline void MarkMember<hx::Object *>(hx::Object *&outT,hx::MarkContext *__inCtx)
+{
+   HX_MARK_OBJECT(outT);
+}
 template<> inline void MarkMember<int>(int &outT,hx::MarkContext *__inCtx) {  }
 template<> inline void MarkMember<bool>(bool &outT,hx::MarkContext *__inCtx) {  }
 template<> inline void MarkMember<double>(double &outT,hx::MarkContext *__inCtx) {  }
@@ -42,6 +46,10 @@ template<typename T> inline void VisitMember(hx::ObjectPtr<T> &outT,hx::VisitCon
 template<> inline void VisitMember(Dynamic &outT,hx::VisitContext *__inCtx)
 {
 	HX_VISIT_OBJECT(outT.mPtr);
+}
+template<> inline void VisitMember<hx::Object *>(hx::Object *&outT,hx::VisitContext *__inCtx)
+{
+	HX_VISIT_OBJECT(outT);
 }
 template<typename T> inline void VisitMember(Array<T> &outT,hx::VisitContext *__inCtx)
 {
