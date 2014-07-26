@@ -129,7 +129,7 @@ class Log
          }
          else
          {
-            colorSupported = (Sys.getEnv("ANSICON") != null);
+            colorSupported = (Sys.getEnv("TERM") == "xterm" || Sys.getEnv("ANSICON") != null);
          }
       }
       
