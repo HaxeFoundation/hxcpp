@@ -189,7 +189,7 @@ public:
    void __Mark(hx::MarkContext *__inCtx)
    {
       mFinalizer->Mark();
-      if (NeedsMarking<typename Hash::Key>::Yes || NeedsMarking<typename Hash::Value>::Yes)
+      if (NeedsMarking<Hash::Key>::Yes || NeedsMarking<Hash::Value>::Yes)
       {
          HashMarker<Hash> marker(__inCtx);
          hash.iterate(marker);
@@ -201,7 +201,7 @@ public:
    {
       if (mFinalizer)
          mFinalizer->Visit(__inCtx);
-      if (NeedsMarking<typename Hash::Key>::Yes || NeedsMarking<typename Hash::Value>::Yes)
+      if (NeedsMarking<Hash::Key>::Yes || NeedsMarking<Hash::Value>::Yes)
       {
         HashVisitor<Hash> vistor(__inCtx);
         hash.iterate(vistor);
