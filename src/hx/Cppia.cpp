@@ -2983,14 +2983,16 @@ public:
    void __Mark(hx::MarkContext *__inCtx)
    {
       HX_MARK_MEMBER(*getThis());
+      char *base = ((char *)this) + sizeof(CppiaClosure);
       for(int i=0;i<function->captureVars.size();i++)
-         function->captureVars[i]->markClosure((char *)this,__inCtx);
+         function->captureVars[i]->markClosure(base,__inCtx);
    }
    void __Visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(*getThis());
+      char *base = ((char *)this) + sizeof(CppiaClosure);
       for(int i=0;i<function->captureVars.size();i++)
-         function->captureVars[i]->visitClosure((char *)this,__inCtx);
+         function->captureVars[i]->visitClosure(base,__inCtx);
    }
    virtual void *__GetHandle() const { return *getThis(); }
 
@@ -4702,7 +4704,7 @@ struct GetFieldByName : public CppiaDynamicExpr
       }
 
       // Use runtime lookup...
-      if (vtableSlot<0)
+      if (vtableSlot<0 || staticClass.mPtr)
       {
          name = inData.strings[nameId];
          inData.markable.push_back(this);
