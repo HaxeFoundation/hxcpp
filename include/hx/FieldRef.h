@@ -271,10 +271,10 @@ template<typename _OBJ>
 class __TArrayImplRef
 {
 public:
-   _OBJ &mObject;
+   _OBJ mObject;
    int mIndex;
 
-   explicit __TArrayImplRef(_OBJ &inObj,int inIndex) : mObject(inObj), mIndex(inIndex) { }
+   explicit __TArrayImplRef(_OBJ inObj,int inIndex) : mObject(inObj), mIndex(inIndex) { }
 
    template<typename _DATA>
    inline void operator=(_DATA inRHS)
@@ -284,7 +284,7 @@ public:
 };
 
 template<typename _OBJ>
-__TArrayImplRef<_OBJ> __ArrayImplRef(_OBJ &inObj, int inIndex)
+__TArrayImplRef<_OBJ> __ArrayImplRef(_OBJ inObj, int inIndex)
 {
    return __TArrayImplRef<_OBJ>(inObj,inIndex);
 }
