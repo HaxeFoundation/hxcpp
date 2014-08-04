@@ -124,131 +124,176 @@ void FieldMapVisit(FieldMap **inMap,hx::VisitContext *__inCtx)
 #endif
 
 
-class IntHash : public Object
+}
+
+
+
+namespace
 {
-   typedef hx::Hash< TIntElement<Dynamic> > Hash;
+typedef hx::HashBase<Int>                IntHashBase;
+typedef hx::Hash< TIntElement<Dynamic> > IntHashObject;
+typedef hx::Hash< TIntElement<int> >     IntHashInt;
+typedef hx::Hash< TIntElement<Float> >   IntHashFloat;
+typedef hx::Hash< TIntElement<String> >  IntHashString;
+}
 
-   Hash hash;
-	hx::InternalFinalizer *mFinalizer;
-
-public:
-   IntHash()
+void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (!hash)
    {
-      mFinalizer = new hx::InternalFinalizer(this);
-      mFinalizer->mFinalizer = Destroy;
-   }
-
-   void set(int inKey,const Dynamic &inValue)
-   {
-      hash.set(inKey,inValue);
-   }
-
-   static void Destroy(Object *inObj)
-   {
-      IntHash *hash = dynamic_cast<IntHash *>(inObj);
-      if (hash)
-         hash->hash.destroy();
-   }
-
-   Dynamic get(int inKey)
-   {
-      Dynamic result = null();
-      hash.query(inKey,result);
-      return result;
-   }
-   bool exists(int inKey)
-   {
-      return hash.exists(inKey);
-   }
-   bool remove(int inKey)
-   {
-      return hash.remove(inKey);
-   }
-
-
-
-   Dynamic keys()
-   {
-      KeyBuilder<Int> builder(hash.getSize());
-      hash.iterate(builder);
-      return builder.array;;
-   }
-   Dynamic values()
-   {
-      ValueBuilder<Dynamic> builder(hash.getSize());
-      hash.iterate(builder);
-      return builder.array;;
-   }
-   String toString()
-   {
-      StringBuilder builder(hash.getSize());
-      hash.iterate(builder);
-      return builder.toString();
-   }
-
-   void __Mark(hx::MarkContext *__inCtx)
-   {
-      mFinalizer->Mark();
-      if (NeedsMarking<typename Hash::Key>::Yes || NeedsMarking<typename Hash::Value>::Yes)
+      if (value==null())
       {
-         HashMarker<Hash> marker(__inCtx);
-         hash.iterate(marker);
+         hash = new IntHashObject();
+      }
+      else
+      {
+         ObjectType type = (ObjectType)value->__GetType();
+         if (type==vtBool || type==vtInt)
+            hash = new IntHashInt();
+         else if (type==vtFloat)
+            hash = new IntHashFloat();
+         else if (type==vtString)
+            hash = new IntHashString();
+         else
+            hash = new IntHashObject();
+      }
+      ioHash = hash;
+   }
+   else if (hash->store!=hashObject)
+   {
+      HashStore want = hashObject;
+      if (value!=null())
+      {
+         ObjectType type = (ObjectType)value->__GetType();
+         if (type==vtBool || type==vtInt)
+         {
+            if (hash->store==hashFloat)
+               want = hashFloat;
+            else if (hash->store==hashInt)
+               want = hashInt;
+         }
+         else if (type==vtFloat)
+         {
+            if (hash->store==hashInt || hash->store==hashFloat) 
+               want =hashFloat;
+         }
+         else if (type==vtString)
+         {
+            if (hash->store==hashString)
+               want = hashString;
+         }
+      }
+      if (hash->store!=want)
+      {
+         hash = hash->convertStore(want);
+         ioHash = hash;
       }
    }
 
-   #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   hash->set(inKey,value);
+}
+
+void __int_hash_set_int(Dynamic &ioHash,int inKey,int inValue)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (!hash)
    {
-      if (mFinalizer)
-         mFinalizer->Visit(__inCtx);
-      if (NeedsMarking<typename Hash::Key>::Yes || NeedsMarking<typename Hash::Value>::Yes)
-      {
-        HashVisitor<Hash> vistor(__inCtx);
-        hash.iterate(vistor);
-      }
+      hash = new IntHashInt();
+      ioHash = hash;
    }
-   #endif
-};
+   else if (hash->store==hashString)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+   }
 
-
+   hash->set(inKey,inValue);
 }
 
 
-Object * __int_hash_create() { return new IntHash; }
-
-void __int_hash_set(Dynamic inHash,int inKey,const Dynamic &value)
+void __int_hash_set_float(Dynamic &ioHash,int inKey,Float inValue)
 {
-   IntHash *h = static_cast<IntHash *>(inHash.GetPtr());
-   h->set(inKey,value);
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (!hash)
+   {
+      hash = new IntHashFloat();
+      ioHash = hash;
+   }
+   else if (hash->store==hashString)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+   }
+   else if (hash->store==hashInt)
+   {
+      hash = hash->convertStore(hashFloat);
+      ioHash = hash;
+   }
+
+   hash->set(inKey,inValue);
 }
 
-Dynamic  __int_hash_get(Dynamic inHash,int inKey)
+
+
+void __int_hash_set_string(Dynamic &ioHash,int inKey, ::String inValue)
 {
-   IntHash *h = static_cast<IntHash *>(inHash.GetPtr());
-   return h->get(inKey);
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (!hash)
+   {
+      hash = new IntHashString();
+      ioHash = hash;
+   }
+   else if (hash->store==hashInt || hash->store==hashFloat)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+   }
+
+   hash->set(inKey,inValue);
 }
 
-bool  __int_hash_exists(Dynamic inHash,int inKey)
+Dynamic  __int_hash_get(Dynamic &ioHash,int inKey)
 {
-   IntHash *h = static_cast<IntHash *>(inHash.GetPtr());
-   return h->exists(inKey);
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (!hash)
+      return null();
+
+   Dynamic result = null();
+   hash->query(inKey,result);
+   return result;
 }
 
-bool  __int_hash_remove(Dynamic inHash,int inKey)
+
+bool  __int_hash_exists(Dynamic &ioHash,int inKey)
 {
-   IntHash *h = static_cast<IntHash *>(inHash.GetPtr());
-   return h->remove(inKey);
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (!hash)
+      return false;
+   return hash->exists(inKey);
 }
 
-Dynamic __int_hash_keys(Dynamic inHash)
+bool  __int_hash_remove(Dynamic &ioHash,int inKey)
 {
-   IntHash *h = static_cast<IntHash *>(inHash.GetPtr());
-   return h->keys();
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (!hash)
+      return false;
+   return hash->remove(inKey);
 }
 
-Dynamic __int_hash_values(Dynamic inHash)
+Dynamic __int_hash_keys(Dynamic &ioHash)
 {
-   IntHash *h = static_cast<IntHash *>(inHash.GetPtr());
-   return h->values();
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (!hash)
+      return Array_obj<Int>::__new();
+   return hash->keys();
+}
+
+Dynamic __int_hash_values(Dynamic &ioHash)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (!hash)
+      return Array_obj<Dynamic>::__new();
+   return hash->values();
 }
 

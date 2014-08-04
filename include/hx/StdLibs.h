@@ -96,13 +96,20 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_utf8_string_to_char_bytes(String &i
 
 // --- IntHash ----------------------------------------------------------------------
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Object   *__int_hash_create();
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set(Dynamic inHash,int inKey,const Dynamic &value);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_get(Dynamic inHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_exists(Dynamic inHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_remove(Dynamic inHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_keys(Dynamic inHash);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_values(Dynamic inHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES inline hx::Object   *__int_hash_create() { return 0; }
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_get(Dynamic &ioHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_exists(Dynamic &ioHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_remove(Dynamic &ioHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_keys(Dynamic &ioHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_values(Dynamic &ioHash);
+// Typed IntHash access...
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_int(Dynamic &ioHash,int inKey,int inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_string(Dynamic &ioHash,int inKey,::String inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_float(Dynamic &ioHash,int inKey,Float inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __int_hash_get_int(Dynamic &ioHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_get_string(Dynamic &ioHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __int_hash_get_float(Dynamic &ioHash,int inKey);
 
 
 // --- Date --------------------------------------------------------------------------
