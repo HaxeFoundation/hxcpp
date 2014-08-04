@@ -43,10 +43,10 @@ using namespace hx;
 #endif
 
 #ifdef HX_UTF8_STRINGS
-#define HX_DOUBLE_PATTERN "%.10g"
+#define HX_DOUBLE_PATTERN "%.15g"
 #define HX_INT_PATTERN "%d"
 #else
-#define HX_DOUBLE_PATTERN L"%.10g"
+#define HX_DOUBLE_PATTERN L"%.15g"
 #define HX_INT_PATTERN L"%d"
 #endif
 
