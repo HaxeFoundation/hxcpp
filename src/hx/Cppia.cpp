@@ -2122,6 +2122,10 @@ struct CppiaClassInfo
 
    void init(CppiaCtx *ctx, int inPhase)
    {
+      unsigned char *pointer = ctx->pointer;
+      ctx->push( (hx::Object *) 0 ); // this
+      AutoStack save(ctx,pointer);
+ 
       if (inPhase==0)
       {
          for(int i=0;i<staticVars.size();i++)
