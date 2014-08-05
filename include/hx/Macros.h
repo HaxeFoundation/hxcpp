@@ -748,6 +748,18 @@ int main(Platform::Array<Platform::String^>^) \
 #elif defined(HX_WIN_MAIN)
 
 
+#ifdef HAVE_WINDOWS_H
+
+#define HX_BEGIN_MAIN \
+int __stdcall WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) \
+{ \
+	HX_TOP_OF_STACK \
+	hx::Boot(); \
+	try{ \
+		__boot_all();
+
+#else
+
 #define HX_BEGIN_MAIN \
 extern "C" int __stdcall MessageBoxA(void *,const char *,const char *,int); \
 \
@@ -758,6 +770,8 @@ int __stdcall WinMain( void * hInstance, void * hPrevInstance, const char *lpCmd
 	try{ \
 		__boot_all();
 
+#endif
+
 #define HX_END_MAIN \
 	} \
 	catch (Dynamic e){ \
@@ -767,6 +781,7 @@ int __stdcall WinMain( void * hInstance, void * hPrevInstance, const char *lpCmd
 	} \
 	return 0; \
 }
+
 
 #elif defined(TIZEN)
 
