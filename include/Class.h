@@ -175,6 +175,9 @@ void __hxcpp_boot_std_classes();
 
 
 // --- All classes should be registered with this function via the "__boot" method
+#ifdef RegisterClass
+#undef RegisterClass
+#endif
 
 namespace hx
 {

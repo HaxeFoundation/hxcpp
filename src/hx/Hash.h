@@ -323,8 +323,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    }
 
 
-   template<typename OUT>
-   bool TQuery(Key inKey,OUT &outValue)
+   template<typename OUT_VALUE>
+   bool TQuery(Key inKey,OUT_VALUE &outValue)
    {
       Element *result = find( HashCalcHash(inKey), inKey );
       if (!result)

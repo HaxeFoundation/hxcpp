@@ -16,7 +16,9 @@
 #endif
 
 #if _MSC_VER
+#ifndef snprintf
 #define snprintf _snprintf
+#endif
 #endif
 
 #ifndef __has_builtin
