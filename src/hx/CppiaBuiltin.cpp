@@ -174,7 +174,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
          case afPop:
          //case afUnshift:
-            if (ExprTypeOf<ELEM>::value==etString)
+            if (ExprTypeOf<ELEM>::value==(int)etString)
                return etString;
             return etObject;
 

@@ -1,4 +1,3 @@
-#include <hxcpp.h>
 #include <hx/Scriptable.h>
 #include <hx/GC.h>
 #include <stdio.h>
