@@ -2506,6 +2506,7 @@ struct ScriptCallable : public CppiaDynamicExpr
       stackSize = 0;
       data = 0;
       returnTypeId = stream.getInt();
+      returnType = etVoid;
       argCount = stream.getInt();
       args.resize(argCount);
       hasDefault.resize(argCount);
@@ -2898,7 +2899,7 @@ public:
             ctx->pushFloat(inValue->__ToDouble());
             break;
          case etString:
-            ctx->pushString(inValue->toString());
+            ctx->pushString(inValue.mPtr ? inValue->toString() : String());
             break;
          default:
             ctx->pushObject(inValue.mPtr);
@@ -3332,6 +3333,7 @@ struct CallFunExpr : public CppiaExpr
       args.swap(ioArgs);
       function = inFunction;
       thisExpr = inThisExpr;
+      returnType = etVoid;
    }
 
    CppiaExpr *link(CppiaData &inData)
@@ -3341,7 +3343,7 @@ struct CallFunExpr : public CppiaExpr
       //function = (ScriptCallable *)function->link(inData);
       if (thisExpr)
          thisExpr = thisExpr->link(inData);
-      returnType = inData.types[ function->returnType ]->expressionType;
+      returnType = inData.types[ function->returnTypeId ]->expressionType;
       return this;
    }
 
@@ -4767,6 +4769,9 @@ struct MemReference : public CppiaExpr
    T *pointer;
    CppiaExpr *object;
 
+   #define CHECKVAL \
+      if (REFMODE==locObj) CPPIA_CHECK(object);
+
    #define MEMGETVAL \
      *(T *)( \
          ( REFMODE==locObj      ?(char *)object->runObject(ctx) : \
@@ -4810,18 +4815,25 @@ struct MemReference : public CppiaExpr
 
 
    void        runVoid(CppiaCtx *ctx) { }
-   int runInt(CppiaCtx *ctx) { return ValToInt( MEMGETVAL ); }
+   int runInt(CppiaCtx *ctx)
+   {
+      CHECKVAL;
+      return ValToInt( MEMGETVAL );
+   }
    Float       runFloat(CppiaCtx *ctx)
    {
+      CHECKVAL;
       return ValToFloat( MEMGETVAL );
    }
    ::String    runString(CppiaCtx *ctx) {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       return ValToString(t);
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
+      CHECKVAL;
       return Dynamic( MEMGETVAL ).mPtr;
    }
 
@@ -4883,30 +4895,35 @@ struct MemReferenceSetter : public CppiaExpr
 
    void runVoid(CppiaCtx *ctx)
    {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_VCHECK;
       Assign::run( t, ctx, value);
    }
    int runInt(CppiaCtx *ctx)
    {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       return ValToInt( Assign::run(t,ctx, value ) );
    }
    Float runFloat(CppiaCtx *ctx)
    {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       return ValToFloat( Assign::run(t,ctx, value) );
    }
    ::String runString(CppiaCtx *ctx)
    {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       return ValToString( Assign::run(t,ctx, value) );
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       return Dynamic( Assign::run(t,ctx,value) ).mPtr;
@@ -4982,25 +4999,30 @@ struct MemReferenceCrement : public CppiaExpr
    }
 
    void        runVoid(CppiaCtx *ctx) {
+      CHECKVAL;
        CREMENT::run( MEMGETVAL );
    }
    int runInt(CppiaCtx *ctx) {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       return ValToInt( CREMENT::run(t) );
    }
    Float       runFloat(CppiaCtx *ctx) {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       return ValToFloat( CREMENT::run(t));
    }
    ::String    runString(CppiaCtx *ctx) {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       return ValToString( CREMENT::run(t) );
    }
 
    hx::Object *runObject(CppiaCtx *ctx) {
+      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       return Dynamic( CREMENT::run(t) ).mPtr;

@@ -239,7 +239,12 @@ struct CppiaExpr
    #define CPPIA_CHECK(obj)
 #endif
 
-#define CPPIA_CHECK_FUNC(obj) if (!obj) Dynamic::ThrowBadFunctionError()
+#ifdef HXCPP_CHECK_POINTER
+   #define CPPIA_CHECK_FUNC(obj) if (!obj) Dynamic::ThrowBadFunctionError(); GCCheckPointer(obj);
+#else
+   #define CPPIA_CHECK_FUNC(obj) if (!obj) Dynamic::ThrowBadFunctionError();
+#endif
+
 
 
 struct BCRReturn
