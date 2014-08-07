@@ -168,7 +168,6 @@ inline hx::IndexRef ModEq(hx::IndexRef inLHS, R inRHS) { inLHS = DoubleMod(inLHS
 
 #endif // __GNUC__
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES null BadCast();
 
 template<typename T> inline T TCastObject(hx::Object *inObj) { return hx::BadCast(); }
 template<> inline bool TCastObject<bool>(hx::Object *inObj)

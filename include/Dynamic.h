@@ -62,7 +62,7 @@ public:
    RETURN_ Cast() const { return RETURN_(*this); }
 
    template<typename CLASS_>
-   bool IsClass() { return CLASS_(mPtr).mPtr; }
+   bool IsClass() { return CLASS_(mPtr,false).mPtr; }
 
 	static void __boot();
 

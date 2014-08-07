@@ -37,6 +37,7 @@ namespace hx
 class FieldRef;
 class IndexRef;
 typedef Array<Dynamic> DynamicArray;
+HXCPP_EXTERN_CLASS_ATTRIBUTES null BadCast();
 
 #ifdef HXCPP_SCRIPTABLE
 typedef void (*StackExecute)(struct CppiaCtx *ctx);
@@ -151,13 +152,15 @@ class ObjectPtr
    }
    inline bool SetPtr(...) { return false; }
 
-   inline void CastPtr(hx::Object *inPtr)
+   inline void CastPtr(hx::Object *inPtr,bool inThrowOnInvalid)
    {
       if (inPtr)
       {
          mPtr = dynamic_cast<OBJ_ *>(inPtr->__GetRealObject());
          if (!mPtr)
             mPtr = (Ptr)inPtr->__ToInterface(typeid(Obj));
+         if (inThrowOnInvalid && !mPtr)
+            ::hx::BadCast();
       }
       else
          mPtr = 0;
@@ -176,14 +179,14 @@ public:
    inline ObjectPtr(const ObjectPtr<SOURCE_> &inObjectPtr)
    {
       if (!SetPtr(inObjectPtr.mPtr))
-         CastPtr(inObjectPtr.mPtr);
+         CastPtr(inObjectPtr.mPtr,true);
    }
 
    template<typename SOURCE_>
-   inline ObjectPtr(const SOURCE_ *inPtr)
+   inline ObjectPtr(const SOURCE_ *inPtr,bool inCheckCast=true)
    {
       if (!SetPtr(const_cast<SOURCE_ *>(inPtr)))
-         CastPtr(const_cast<SOURCE_ *>(inPtr));
+         CastPtr(const_cast<SOURCE_ *>(inPtr),inCheckCast);
    }
 
    inline ObjectPtr &operator=(const null &inNull) { mPtr = 0; return *this; }
@@ -222,14 +225,18 @@ public:
       return mPtr;
    }
 
-   inline bool operator==(const ObjectPtr &inRHS) const
+   template<typename T>
+   inline bool operator==(const T &inTRHS) const
    {
+      ObjectPtr inRHS(inTRHS.mPtr,false);
       if (mPtr==inRHS.mPtr) return true;
       if (!mPtr || !inRHS.mPtr) return false;
       return !mPtr->__compare(inRHS.mPtr);
    }
-   inline bool operator!=(const ObjectPtr &inRHS) const
+   template<typename T>
+   inline bool operator!=(const T &inTRHS) const
    {
+      ObjectPtr inRHS(inTRHS.mPtr,false);
       if (mPtr==inRHS.mPtr) return false;
       if (!mPtr || !inRHS.mPtr) return true;
       return mPtr->__compare(inRHS.mPtr);
