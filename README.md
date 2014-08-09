@@ -13,7 +13,7 @@ haxelib run hxcpp build.xml clean
 haxelib run hxcpp build.xml
 ```
 
-In the same folder, you can cross build to other platforms using the run.n with the said paltform name.
+In the same folder, you can cross build to other platforms using the run.n with the said platform name.
 
 For example : 
 
