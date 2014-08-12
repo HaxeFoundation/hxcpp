@@ -880,6 +880,7 @@ struct CppiaVar
       valPointer = 0;
       storeType = fsUnknown;
       dynamicFunction = 0;
+      isVirtual = false;
       init = 0;
    }
 
