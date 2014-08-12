@@ -94,6 +94,20 @@ public:
             outVtable.push_back( func->name );
    }
 
+   void dump()
+   {
+      printf("ScriptRegistered %s\n", name.c_str());
+
+      if (functions)
+         for(ScriptNamedFunction *f=functions;f->name;f++)
+            printf("  func %s\n", f->name );
+      if (haxeSuper)
+      {
+         printf("super:\n");
+         haxeSuper->dump();
+      }
+   }
+
    ScriptFunction findFunction(const std::string &inName)
    {
       if (functions)
@@ -1641,8 +1655,9 @@ struct CppiaClassInfo
 
        name = cppia.typeStr(typeId);
        DBGLOG("Class %s %s\n", name.c_str(), isEnum ? "enum" : isInterface ? "interface" : "class" );
-       bool isNew = Class_obj::Resolve( cppia.types[typeId]->name ) == null() &&
-                    sScriptRegistered->find(name)==sScriptRegistered->end();
+
+       bool isNew = //(resolved == null() || !IsCppiaClass(resolved) ) &&
+                   !(*sScriptRegistered)[name];
 
        if (isNew)
        {
@@ -1650,7 +1665,7 @@ struct CppiaClassInfo
        }
        else
        {
-          DBGLOG(" -- IGNORE --\n");
+          DBGLOG("Already has registered %s - ignore\n",name.c_str());
        }
 
        inStream.cppiaData->creatingClass = name.c_str();
@@ -3108,7 +3123,7 @@ struct BlockCallable : public ScriptCallable
    void runVoid(CppiaCtx *ctx)
    {
       unsigned char *pointer = ctx->pointer;
-      ctx->push( ctx->getThis() );
+      ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
       addStackVarsSpace(ctx);
       CPPIA_STACK_FRAME(this);
@@ -3117,7 +3132,7 @@ struct BlockCallable : public ScriptCallable
    int runInt(CppiaCtx *ctx)
    {
       unsigned char *pointer = ctx->pointer;
-      ctx->push( ctx->getThis() );
+      ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
       addStackVarsSpace(ctx);
       CPPIA_STACK_FRAME(this);
@@ -3126,7 +3141,7 @@ struct BlockCallable : public ScriptCallable
    Float runFloat(CppiaCtx *ctx)
    {
       unsigned char *pointer = ctx->pointer;
-      ctx->push( ctx->getThis() );
+      ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
       addStackVarsSpace(ctx);
       CPPIA_STACK_FRAME(this);
@@ -3135,7 +3150,7 @@ struct BlockCallable : public ScriptCallable
    hx::Object *runObject(CppiaCtx *ctx)
    {
       unsigned char *pointer = ctx->pointer;
-      ctx->push( ctx->getThis() );
+      ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
       addStackVarsSpace(ctx);
       CPPIA_STACK_FRAME(this);
@@ -3354,7 +3369,7 @@ struct CallFunExpr : public CppiaExpr
    ret name(CppiaCtx *ctx) \
    { \
       unsigned char *pointer = ctx->pointer; \
-      function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(),args); \
+      function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(false),args); \
       BCR_CHECK; \
       AutoStack save(ctx,pointer); \
       return funcName(ctx, function->getType(), function); \
@@ -3368,7 +3383,7 @@ struct CallFunExpr : public CppiaExpr
    void runVoid(CppiaCtx *ctx)
    {
       unsigned char *pointer = ctx->pointer;
-      function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(),args);
+      function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(false),args);
       BCR_VCHECK;
       AutoStack save(ctx,pointer);
       ctx->runVoid(function);
@@ -3918,7 +3933,7 @@ struct CallHaxe : public CppiaExpr
    void run(CppiaCtx *ctx,T &outValue)
    {
       unsigned char *pointer = ctx->pointer;
-      ctx->pushObject(thisExpr ? thisExpr->runObject(ctx) : ctx->getThis());
+      ctx->pushObject(thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(false));
 
       const char *s = function.signature+1;
       for(int a=0;a<args.size();a++)
@@ -4368,6 +4383,8 @@ struct CallMember : public CppiaExpr
       printf("%p %p\n", type->cppiaClass, type->haxeBase);
       if (type->cppiaClass)
          type->cppiaClass->dump();
+      if (type->haxeBase)
+         type->haxeBase->dump();
       inData.where(this);
       throw "Bad linkage";
 
@@ -4559,7 +4576,7 @@ struct FieldByName : public CppiaDynamicExpr
 
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      hx::Object *obj = object ? object->runObject(ctx) : staticClass.mPtr ? staticClass.mPtr : ctx->getThis();
+      hx::Object *obj = object ? object->runObject(ctx) : staticClass.mPtr ? staticClass.mPtr : ctx->getThis(false);
       BCR_CHECK;
       CPPIA_CHECK(obj);
 
@@ -4720,7 +4737,7 @@ struct GetFieldByName : public CppiaDynamicExpr
 
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      hx::Object *instance = object ? object->runObject(ctx) : isStatic ? staticClass.mPtr : ctx->getThis();
+      hx::Object *instance = object ? object->runObject(ctx) : isStatic ? staticClass.mPtr : ctx->getThis(false);
       BCR_CHECK;
       CPPIA_CHECK(instance);
       if (vtableSlot>=0)
@@ -7072,9 +7089,14 @@ void TypeData::link(CppiaData &inData)
       {
          haxeBase = isInterface ? 0 : (*sScriptRegistered)["hx.Object"];
 
+         /*
          if (!isInterface && (*sScriptRegistered)[name.__s])
+         {
+            printf("Base class %s\n", name.__s);
+            (*sScriptRegistered)[name.__s]->dump();
             throw "New class, but with existing def";
-
+         }
+         */
          DBGLOG(isInterface ? "interface base\n" : "base\n");
       }
       else
@@ -7126,9 +7148,10 @@ void CppiaData::link()
    ScriptRegistered *hxObj = (*sScriptRegistered)["hx.Object"];
    for(ScriptRegisteredMap::iterator i = sScriptRegistered->begin(); i!=sScriptRegistered->end();++i)
    {
+      if (!i->second)
+         continue;
+
       DBGLOG("== %s ==\n", i->first.c_str());
-      if (i->second == 0)
-         i->second = hxObj;
       if (i->second == hxObj)
       {
          DBGLOG(" super =0\n");
@@ -7221,15 +7244,16 @@ void CppiaData::visit(hx::VisitContext *__inCtx)
 }
 
 // TODO  - more than one
-static hx::Object *currentCppia = 0;
+//static hx::Object *currentCppia = 0;
 
 std::vector<hx::Resource> scriptResources;
 
 bool LoadCppia(String inValue)
 {
    CppiaData   *cppiaPtr = new CppiaData();
-   currentCppia = new CppiaObject(cppiaPtr); 
-   GCAddRoot(&currentCppia);
+   hx::Object **ptrPtr = new hx::Object*[1];
+   *ptrPtr = new CppiaObject(cppiaPtr); 
+   GCAddRoot(ptrPtr);
 
 
    CppiaData   &cppia = *cppiaPtr;

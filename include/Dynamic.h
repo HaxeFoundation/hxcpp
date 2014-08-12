@@ -281,6 +281,8 @@ template<>
 inline bool Dynamic::IsClass<null>() { return !mPtr; }
 template<>
 inline bool Dynamic::IsClass<String>() { return mPtr && mPtr->__GetClass()==hx::GetStringClass(); }
+template<>
+inline bool Dynamic::IsClass<Dynamic>() { return mPtr; }
 
 inline String Dynamic::operator+(const String &s) const { return Cast<String>() + s; }
 

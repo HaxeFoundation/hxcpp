@@ -117,7 +117,19 @@ struct CppiaCtx
       longjmp(*returnJumpBuf,1);
    }
 
-   hx::Object *getThis() { return *(hx::Object **)frame; }
+   inline hx::Object *getThis(bool inCheckPtr=true)
+   {
+      #ifdef HXCPP_CHECK_POINTER
+         if (inCheckPtr)
+         {
+            if (!*(hx::Object **)frame) NullReference("This", false);
+            #ifdef HXCPP_GC_CHECK_POINTER
+            GCCheckPointer(*(hx::Object **)frame);
+            #endif
+         }
+      #endif
+      return *(hx::Object **)frame;
+   }
 
    inline bool getBool(int inPos=0)
    {
