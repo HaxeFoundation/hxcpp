@@ -205,6 +205,7 @@ hx::Object *createMemberClosure(hx::Object *, struct ScriptCallable *inFunction)
 hx::Object *createEnumClosure(struct CppiaEnumConstructor &inContructor);
 void cppiaClassMark(CppiaClassInfo *inClass,hx::MarkContext *__inCtx);
 void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx);
+int getScriptId(Class inClass);
 
 struct TypeData
 {
@@ -260,6 +261,7 @@ struct StackLayout;
 void cppiaClassInit(CppiaClassInfo *inClass, CppiaCtx *ctx, int inPhase);
 
 
+static int sScriptId = 0;
 
 struct CppiaData
 {
@@ -274,6 +276,7 @@ struct CppiaData
    CppiaClassInfo  *linkingClass;
    const char *creatingClass;
    const char *creatingFunction;
+   int   scriptId;
 
    CppiaData()
    {
@@ -281,6 +284,7 @@ struct CppiaData
       layout = 0;
       creatingClass = 0;
       creatingFunction = 0;
+      scriptId = ++sScriptId;
       strings = Array_obj<String>::__new(0,0);
    }
 
@@ -2340,7 +2344,6 @@ void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
    inClass->visit(__inCtx);
 }
 
-
 // --- Enum Base ---
 ::hx::ObjectPtr<Class_obj > CppiaEnumBase::__GetClass() const
 {
@@ -2495,6 +2498,20 @@ void  linkCppiaClass(Class_obj *inClass, CppiaData &cppia, String inName)
 {
    ((CppiaClass *)inClass)->linkClass(cppia,inName);
 }
+
+
+int getScriptId(Class inClass)
+{
+   Class_obj *ptr = inClass.mPtr;
+   if (!ptr)
+      return 0;
+   CppiaClass *cls = dynamic_cast<CppiaClass *>(ptr);
+   if (!cls)
+      return 0;
+   return cls->info->cppia.scriptId;
+}
+
+
 
 
 
@@ -7030,6 +7047,12 @@ void TypeData::link(CppiaData &inData)
    if (name.length>0)
    {
       haxeClass = Class_obj::Resolve(name);
+      int scriptId = getScriptId(haxeClass);
+      if (scriptId>0 && scriptId!=inData.scriptId)
+      {
+         DBGLOG("Reference to old script %s - ignoring\n", haxeClass.mPtr->Name.__s);
+         haxeClass.mPtr = 0;
+      }
       DBGLOG("Link %s, haxe=%s\n", name.__s, haxeClass.mPtr ? haxeClass.mPtr->mName.__s : "?" );
       if (!haxeClass.mPtr && !cppiaClass && name==HX_CSTRING("int"))
       {
