@@ -31,16 +31,20 @@ class Log
    
    public static function error(message:String, verboseMessage:String = "", e:Dynamic = null, terminate:Bool = true):Void
    {
-      if (message != "" && !mute)
+      if (!mute)
       {
          var output;
          if (verbose && verboseMessage != "")
          {
             output = "\x1b[31;1mError:\x1b[0m\x1b[1m " + verboseMessage + "\x1b[0m\n";
          }
-         else
+         else if (message != "")
          {
             output = "\x1b[31;1mError:\x1b[0m \x1b[1m" + message + "\x1b[0m\n";  
+         }
+         else
+         {
+            output = "\x1b[31;1mError\x1b[0m\n";  
          }
          if (printMutex!=null)
             printMutex.acquire();
