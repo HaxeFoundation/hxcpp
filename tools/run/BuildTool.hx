@@ -681,10 +681,10 @@ class BuildTool
       }
       else if (isLinux)
       {
-         result = ProcessManager.runProcessLine("", "nproc", [], true, false);
+         result = ProcessManager.runProcessLine("", "nproc", [], true, false, true, true);
          if (result == null)
          {
-            var cpuinfo = ProcessManager.runProcess("", "cat", [ "/proc/cpuinfo" ], true, false);
+            var cpuinfo = ProcessManager.runProcess("", "cat", [ "/proc/cpuinfo" ], true, false, true, true);
             if (cpuinfo != null)
             {      
                var split = cpuinfo.split("processor");
@@ -695,7 +695,7 @@ class BuildTool
       else if (isMac)
       {
          var cores = ~/Total Number of Cores: (\d+)/;
-         var output = ProcessManager.runProcess("", "/usr/sbin/system_profiler", [ "-detailLevel", "full", "SPHardwareDataType" ], true, false);
+         var output = ProcessManager.runProcess("", "/usr/sbin/system_profiler", [ "-detailLevel", "full", "SPHardwareDataType" ], true, false, true, true);
          if (cores.match(output))
          {
             result = cores.matched(1); 
