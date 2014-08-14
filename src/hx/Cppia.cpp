@@ -7242,7 +7242,8 @@ void CppiaData::mark(hx::MarkContext *__inCtx)
    HX_MARK_MEMBER(strings);
    for(int i=0;i<types.size();i++)
    {
-      types[i]->mark(__inCtx);
+      if (types[i]) /* May be partially constructed */
+         types[i]->mark(__inCtx);
    }
    for(int i=0;i<markable.size();i++)
    {
