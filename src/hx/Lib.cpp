@@ -38,7 +38,7 @@ Module hxLoadLibrary(String inLib)
 #endif
 
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return (void *)GetProcAddress(inModule,inSymbol); }
-#elif (defined (IPHONE) || defined(EMSCRIPTEN)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
+#elif (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
 
 typedef void *Module;
 Module hxLoadLibrary(const String &) { return 0; }
@@ -51,7 +51,7 @@ typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
    int flags = RTLD_GLOBAL;
-   #if defined(HXCPP_RTLD_LAZY) || defined(IPHONE) || defined(EMSCRIPTEN)
+   #if defined(HXCPP_RTLD_LAZY) || defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)
    flags |= RTLD_LAZY;
    #else
    flags |= RTLD_NOW;
@@ -277,7 +277,7 @@ typedef std::map<std::string,void *> RegistrationMap;
 RegistrationMap *sgRegisteredPrims=0;
 
 
-#if (defined(IPHONE) || defined(EMSCRIPTEN)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
+#if (defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
 
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
@@ -474,7 +474,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
       }
       #endif
 
-      #if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE) && !defined(EMSCRIPTEN)
+      #if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE) && !defined(EMSCRIPTEN) && !defined(STATIC_LINK)
       if (!module)
       {
          String hxcpp = GetEnv("HXCPP");
