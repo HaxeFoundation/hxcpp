@@ -621,7 +621,6 @@ static value sys_read_dir( value p) {
 			break;
 	}
 	FindClose(handle);
-	gc_exit_blocking();
 #elif !defined(EPPC)
 	DIR *d;
 	struct dirent *e;

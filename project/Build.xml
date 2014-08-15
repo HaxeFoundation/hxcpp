@@ -22,7 +22,7 @@
 
 
 
-<target id="std" output="${LIBPREFIX}std${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="std" output="${LIBPREFIX}std${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <builddir name="libs/std" />
   <files id="std"/>
   <lib name="wsock32.lib" if="windows" unless="static_link" />
@@ -66,7 +66,7 @@
 
 
 
-<target id="regexp" output="${LIBPREFIX}regexp${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="regexp" output="${LIBPREFIX}regexp${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="regexp"/>
   <builddir name="libs/regexp" />
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
@@ -99,7 +99,7 @@
 
 
 
-<target id="zlib" output="${LIBPREFIX}zlib${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="zlib" output="${LIBPREFIX}zlib${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="zlib"/>
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
   <builddir name="libs/zlib"/>
@@ -118,7 +118,7 @@
 </files>
 
 
-<target id="mysql" output="${LIBPREFIX}mysql5${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="mysql" output="${LIBPREFIX}mysql5${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="mysql"/>
   <builddir name="libs/mysql"/>
   <lib name="wsock32.lib" if="windows" unless="static_link" />
@@ -135,7 +135,7 @@
 </files>
 
 
-<target id="sqlite" output="${LIBPREFIX}sqlite${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="sqlite" output="${LIBPREFIX}sqlite${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="sqlite"/>
   <builddir name="libs/sqlite"/>
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
@@ -149,7 +149,7 @@
 </files>
 
 
-<target id="msvccompat" output="${LIBPREFIX}msvccompat${DBG}-${MSVC_VER}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="msvccompat" output="${LIBPREFIX}msvccompat${LIB_DBG}-${MSVC_VER}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="msvccompat"/>
   <builddir name="libs/msvccompat"/>
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
