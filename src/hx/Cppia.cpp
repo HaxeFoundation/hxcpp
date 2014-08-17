@@ -2863,7 +2863,7 @@ public:
 
       unsigned char *base = ((unsigned char *)this) + sizeof(CppiaClosure);
 
-      *(hx::Object **)base = ctx->getThis();
+      *(hx::Object **)base = ctx->getThis(false);
 
       for(int i=0;i<function->captureVars.size();i++)
       {
@@ -7050,7 +7050,7 @@ void TypeData::link(CppiaData &inData)
       int scriptId = getScriptId(haxeClass);
       if (scriptId>0 && scriptId!=inData.scriptId)
       {
-         DBGLOG("Reference to old script %s - ignoring\n", haxeClass.mPtr->Name.__s);
+         DBGLOG("Reference to old script %s - ignoring\n", haxeClass.mPtr->mName.__s);
          haxeClass.mPtr = 0;
       }
       DBGLOG("Link %s, haxe=%s\n", name.__s, haxeClass.mPtr ? haxeClass.mPtr->mName.__s : "?" );
