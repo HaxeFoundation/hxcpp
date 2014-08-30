@@ -82,22 +82,6 @@ class BuildTool
 
       include("toolchain/setup.xml");
 
-      if (sAllowNumProcs)
-      {
-         var thread_var = mDefines.exists("HXCPP_COMPILE_THREADS") ?
-            mDefines.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
-
-         if (thread_var == null)
-         {
-            sCompileThreadCount = getNumberOfProcesses();
-         }
-         else
-         {
-            sCompileThreadCount = (Std.parseInt(thread_var)<2) ? 1 : Std.parseInt(thread_var);
-         }
-         Log.v("Using " + sCompileThreadCount + " compile threads");
-      }
-
 
 
       if (mDefines.exists("toolchain"))
@@ -135,8 +119,6 @@ class BuildTool
          //Sys.exit(1);
       }
 
-      if (!mDefines.exists("HXCPP_COMPILE_THREADS"))
-         mDefines.set("HXCPP_COMPILE_THREADS", Std.string(getNumberOfProcesses()));
 
       var xml_slow = Xml.parse(make_contents);
       var xml = new Fast(xml_slow.firstElement());
@@ -144,6 +126,23 @@ class BuildTool
       parseXML(xml,"");
 
       include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml");
+
+      if (sAllowNumProcs)
+      {
+         var thread_var = mDefines.exists("HXCPP_COMPILE_THREADS") ?
+            mDefines.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
+
+         if (thread_var == null)
+         {
+            sCompileThreadCount = getNumberOfProcesses();
+         }
+         else
+         {
+            sCompileThreadCount = (Std.parseInt(thread_var)<2) ? 1 : Std.parseInt(thread_var);
+         }
+         Log.v("Using " + sCompileThreadCount + " compile threads");
+      }
+
 
       if (mDefines.exists("HXCPP_COMPILE_CACHE"))
       {
