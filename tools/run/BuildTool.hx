@@ -143,6 +143,8 @@ class BuildTool
       
       parseXML(xml,"");
 
+      include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml");
+
       if (mDefines.exists("HXCPP_COMPILE_CACHE"))
       {
          compileCache = mDefines.get("HXCPP_COMPILE_CACHE");

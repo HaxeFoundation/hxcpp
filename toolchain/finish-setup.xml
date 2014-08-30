@@ -53,12 +53,6 @@
 
 <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
 
-<!-- You can override the exes an "exe" section on your own .hxcpp_config -->
-<!-- You can use replace="1" to change the compiler, or omit to add flags -->
-
-<include name="toolchain/${toolchain}-toolchain.xml"/>
-
-
 </xml>
 
 
