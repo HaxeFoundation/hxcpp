@@ -482,7 +482,8 @@ class Setup
                if (cl_version>=18)
                   ioDefines.set("MSVC18+","1");
                BuildTool.sAllowNumProcs = cl_version >= 14;
-               if (BuildTool.sCompileThreadCount>1 && cl_version>=18)
+               var threads = BuildTool.getThreadCount();
+               if (threads>1 && cl_version>=18)
                   ioDefines.set("HXCPP_FORCE_PDB_SERVER","1");
             }
          }

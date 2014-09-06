@@ -32,6 +32,7 @@ class BuildTool
    var mLinkers:Linkers;
    var mFileGroups:FileGroups;
    var mTargets:Targets;
+   var mFileStack:Array<String>;
    var m64:Bool;
    var m32:Bool;
 
@@ -66,6 +67,7 @@ class BuildTool
       mPrelinkers = new Prelinkers();
       mLinkers = new Linkers();
       mCurrentIncludeFile = "";
+      mFileStack = [];
       mIncludePath = inIncludePath;
       instance = this;
 
@@ -110,6 +112,7 @@ class BuildTool
       include("toolchain/finish-setup.xml");
 
 
+      pushFile(inMakefile,"makefile");
       var make_contents = "";
       try {
          make_contents = sys.io.File.getContent(inMakefile);
@@ -122,26 +125,16 @@ class BuildTool
 
       var xml_slow = Xml.parse(make_contents);
       var xml = new Fast(xml_slow.firstElement());
-      
+
       parseXML(xml,"");
+      popFile();
 
       include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml");
 
-      if (sAllowNumProcs)
-      {
-         var thread_var = mDefines.exists("HXCPP_COMPILE_THREADS") ?
-            mDefines.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
+      // MSVC needs this before the toolchain file, Emscripten wants to set HXCPP_COMPILE_THREADS
+      // If not already calculated in "setup"
+      getThreadCount();
 
-         if (thread_var == null)
-         {
-            sCompileThreadCount = getNumberOfProcesses();
-         }
-         else
-         {
-            sCompileThreadCount = (Std.parseInt(thread_var)<2) ? 1 : Std.parseInt(thread_var);
-         }
-         Log.v("Using " + sCompileThreadCount + " compile threads");
-      }
 
 
       if (mDefines.exists("HXCPP_COMPILE_CACHE"))
@@ -190,6 +183,40 @@ class BuildTool
 
       for(target in inTargets)
          buildTarget(target);
+   }
+
+   public function pushFile(inFilename:String, inWhy:String, inSection:String="")
+   {
+      Log.v('Parsing $inWhy: $inFilename' + (inSection==""?"":' (section $inSection)'));
+      mFileStack.push(inFilename);
+   }
+
+   public function popFile()
+   {
+      mFileStack.pop();
+   }
+
+   public static function getThreadCount() : Int
+   {
+      if (instance==null)
+         return sCompileThreadCount;
+      var defs = instance.mDefines;
+      if (sAllowNumProcs)
+      {
+         var thread_var = defs.exists("HXCPP_COMPILE_THREADS") ?
+            defs.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
+
+         if (thread_var == null)
+         {
+            sCompileThreadCount = getNumberOfProcesses();
+         }
+         else
+         {
+            sCompileThreadCount = (Std.parseInt(thread_var)<2) ? 1 : Std.parseInt(thread_var);
+         }
+         Log.v("Using " + sCompileThreadCount + " compile threads");
+      }
+      return sCompileThreadCount;
    }
 
    public static function setThreadError(inCode:Int)
@@ -397,6 +424,11 @@ class BuildTool
       var c = inBase;
       if (inBase==null || inXML.has.replace)
       {
+         if (!inXML.has.id)
+            Log.e("Compiler element defined without 'id' attribute included from:" + mFileStack);
+         if (!inXML.has.exe)
+            Log.e("Compiler element defined without 'exe' attribute included from:" + mFileStack);
+
          c = new Compiler(substitute(inXML.att.id),substitute(inXML.att.exe),mDefines.exists("USE_GCC_FILETYPES"));
          if (mDefines.exists("USE_PRECOMPILED_HEADERS"))
             c.setPCH(mDefines.get("USE_PRECOMPILED_HEADERS"));
@@ -425,9 +457,11 @@ class BuildTool
                   var full_name = findIncludeFile(name);
                   if (full_name!="")
                   {
+                     pushFile(full_name,"compiler");
                      var make_contents = sys.io.File.getContent(full_name);
                      var xml_slow = Xml.parse(make_contents);
                      createCompiler(new Fast(xml_slow.firstElement()),c);
+                     popFile();
                   }
                   else if (!el.has.noerror)
                   {
@@ -475,9 +509,11 @@ class BuildTool
                   var full_name = findIncludeFile(subbed_name);
                   if (full_name!="")
                   {
+                     pushFile(full_name, "FileGroup");
                      var make_contents = sys.io.File.getContent(full_name);
                      var xml_slow = Xml.parse(make_contents);
                      createFileGroup(new Fast(xml_slow.firstElement()), group, inName);
+                     popFile();
                   } 
                   else
                   {
@@ -875,10 +911,13 @@ class BuildTool
       }
       else
       {
-         Log.info("", "\x1b[33;1mUsing makefile: " + makefile + "\x1b[0m");
-         Log.info("", "\x1b[33;1mReading HXCPP config: " + defines.get("HXCPP_CONFIG") + "\x1b[0m");
-         Log.info("", "\x1b[33;1mUsing target toolchain: " + defines.get("toolchain") + "\x1b[0m");
-         if (Log.verbose) Log.println("");
+         Log.v("\x1b[33;1mUsing makefile: " + makefile + "\x1b[0m");
+         Log.v("\x1b[33;1mReading HXCPP config: " + defines.get("HXCPP_CONFIG") + "\x1b[0m");
+         if (defines.exists("toolchain"))
+            Log.v("\x1b[33;1mUsing target toolchain: " + defines.get("toolchain") + "\x1b[0m");
+         else
+            Log.v("\x1b[33;1mNo specified toolchain\x1b[0m");
+         Log.v("\n");
  
 
          if (targets.length==0)
@@ -1205,6 +1244,8 @@ class BuildTool
       var full_name = findIncludeFile(inName);
       if (full_name!="")
       {
+         pushFile(full_name, "include", inSection);
+         // TODO - use mFileStack?
          var oldInclude = mCurrentIncludeFile;
          mCurrentIncludeFile = full_name;
 
@@ -1214,6 +1255,7 @@ class BuildTool
          parseXML(new Fast(xml_slow.firstElement()),inSection);
 
          mCurrentIncludeFile = oldInclude;
+         popFile();
       }
       else if (!inAllowMissing)
       {

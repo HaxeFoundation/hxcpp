@@ -29,6 +29,10 @@ class Log
         printMutex = new Mutex();
    }
    
+   public static function e(message:String):Void
+   {
+      error(message);
+   }
    public static function error(message:String, verboseMessage:String = "", e:Dynamic = null, terminate:Bool = true):Void
    {
       if (message != "" && !mute)
