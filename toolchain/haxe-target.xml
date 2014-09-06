@@ -129,9 +129,6 @@
   <lib name="-ldl" if="linux" unless="static_link" />
 </target>
 
-<!-- Add user config if provided, "exes" section ------------------>
-
-<include name="${HXCPP_CONFIG}" section="exes" if ="HXCPP_CONFIG" noerror="1"/>
 
 </xml>
 

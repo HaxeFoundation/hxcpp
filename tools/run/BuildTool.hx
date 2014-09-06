@@ -39,6 +39,7 @@ class BuildTool
    public static var os="";
    public static var sAllowNumProcs = true;
    public static var sCompileThreadCount = 1;
+   public static var sReportedThreads = -1;
    public static var HXCPP = "";
    public static var is64 = false;
    public static var isWindows = false;
@@ -136,6 +137,8 @@ class BuildTool
       getThreadCount();
 
 
+      if (mDefines.exists("HXCPP_CONFIG"))
+         include(mDefines.get("HXCPP_CONFIG"),"exes",true);
 
       if (mDefines.exists("HXCPP_COMPILE_CACHE"))
       {
@@ -214,7 +217,11 @@ class BuildTool
          {
             sCompileThreadCount = (Std.parseInt(thread_var)<2) ? 1 : Std.parseInt(thread_var);
          }
-         Log.v("Using " + sCompileThreadCount + " compile threads");
+         if (sCompileThreadCount!=sReportedThreads)
+         {
+            sReportedThreads = sCompileThreadCount;
+            Log.v("Using " + sCompileThreadCount + " compile threads");
+         }
       }
       return sCompileThreadCount;
    }
