@@ -240,9 +240,9 @@ struct MySemaphore
    bool WaitSeconds(double inSeconds)
    {
       #ifdef HX_WINRT
-      return WaitForSingleObjectEx(mSemaphore,inSeconds*0.001,false) != WAIT_TIMEOUT;
+      return WaitForSingleObjectEx(mSemaphore,inSeconds*1000.0,false) != WAIT_TIMEOUT;
       #else
-      return WaitForSingleObject(mSemaphore,inSeconds*0.001) != WAIT_TIMEOUT;
+      return WaitForSingleObject(mSemaphore,inSeconds*1000.0) != WAIT_TIMEOUT;
       #endif
    }
    void Reset() { ResetEvent(mSemaphore); }
