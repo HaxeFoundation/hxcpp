@@ -140,6 +140,9 @@ class Setup
 
    public static function setup(inWhat:String,ioDefines: Map<String,String>)
    {
+      if (ioDefines.exists("HXCPP_CLEAN_ONLY"))
+         return;
+
       if (inWhat=="androidNdk")
       {
          setupAndroidNdk(ioDefines);

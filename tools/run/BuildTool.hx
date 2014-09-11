@@ -1106,6 +1106,9 @@ class BuildTool
 
    function setupAppleDirectories(defines:Hash<String>)
    {
+      if (defines.exists("HXCPP_CLEAN_ONLY"))
+         return;
+
       if (defines.exists("apple") && !defines.exists("DEVELOPER_DIR"))
       {
          var developer_dir = ProcessManager.runProcessLine("", "xcode-select", ["--print-path"], true, false);

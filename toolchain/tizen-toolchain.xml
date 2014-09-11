@@ -1,7 +1,9 @@
 <xml>
 
 
-<error value="TIZEN_SDK must be defined to build for Tizen" unless="TIZEN_SDK" />
+<section unless="HXCPP_CLEAN_ONLY" >
+   <error value="TIZEN_SDK must be defined to build for Tizen" unless="TIZEN_SDK" />
+</section>
 
 <set name="HXCPP_X86" value="1" if="simulator" />
 

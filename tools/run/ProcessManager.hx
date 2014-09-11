@@ -78,7 +78,7 @@ class ProcessManager
          {
             if (path != null && path != "" && !FileSystem.exists(FileSystem.fullPath(path)) && !FileSystem.exists(FileSystem.fullPath(new Path(path).dir)))
             {
-               Log.error ("The specified target path \"" + path + "\" does not exist");
+               Log.error("The specified target path \"" + path + "\" does not exist");
                return 1;
             }
             return _runCommand(path, command, args);
@@ -87,7 +87,8 @@ class ProcessManager
          {
             if (!ignoreErrors)
             {
-               Log.error("", e);
+               var text = formatMessage(command, args);
+               Log.error("error running " + text , e);
                return 1;
             }
             return 0;
@@ -122,7 +123,7 @@ class ProcessManager
          {
             if (!ignoreErrors)
             {
-               Log.error("", e);
+               Log.error("error running " + formatMessage(command,args), e);
             }
             return null;
          }
@@ -234,15 +235,12 @@ class ProcessManager
                }
                else
                {
+                  if (error==null || error=="")
+                     error = "error running " + formatMessage(command, args);
                   Log.error(error);
                }
-               
+
                return null;
-               
-               /*if (error != "")
-               {
-                  Log.error(error);
-               }*/
             }
          //}
       }

@@ -85,8 +85,9 @@ class Builder
 
          if (clean)
          {
-            if (!cleanAll())
+            if (!cleanAll(buildArgs))
                return;
+
             if (defaultTarget) // Just clean
                return;
          }
@@ -205,21 +206,17 @@ class Builder
       return "obj";
    }
 
-   public function cleanAll() : Bool
+   public function cleanAll(inBuildFlags:Array<String>) : Bool
    {
-      var dir = getCleanDir();
-      try
+      var args = ["run", "hxcpp", getBuildFile(), "clean", "-DHXCPP_CLEAN_ONLY"].concat(inBuildFlags);
+
+      Sys.println("haxelib " + args.join(" ")); 
+      if (Sys.command("haxelib",args)!=0)
       {
-         if (verbose)
-            Sys.println('delete $dir...');
-         deleteRecurse(dir);
-         return true;
+         Sys.println("#### Error cleaning");
+         Sys.exit(-1);
       }
-      catch(e:Dynamic)
-      {
-         Sys.println('Could not remove "$dir" directory');
-      }
-      return false;
+      return true;
    }
 
 
