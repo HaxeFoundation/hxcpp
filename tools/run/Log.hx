@@ -42,12 +42,16 @@ class Log
          {
             output = "\x1b[31;1mError:\x1b[0m\x1b[1m " + verboseMessage + "\x1b[0m\n";
          }
-         else
+         else if (message != "")
          {
             if (message=="")
                output = "\x1b[31;1mError\x1b[0m\n";
             else
                output = "\x1b[31;1mError:\x1b[0m \x1b[1m" + message + "\x1b[0m\n";
+         }
+         else
+         {
+            output = "\x1b[31;1mError\x1b[0m\n";  
          }
          if (printMutex!=null)
             printMutex.acquire();
