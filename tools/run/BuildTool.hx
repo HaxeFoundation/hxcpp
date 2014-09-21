@@ -957,20 +957,20 @@ class BuildTool
          defines.set("toolchain","iphoneos");
          defines.set("iphone","iphone");
          defines.set("apple","apple");
-         defines.set("BINDIR","iPhone");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR","iPhone");
       }
       else if (defines.exists("iphonesim"))
       {
          defines.set("toolchain","iphonesim");
          defines.set("iphone","iphone");
          defines.set("apple","apple");
-         defines.set("BINDIR","iPhone");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR","iPhone");
       }
       else if (defines.exists("android"))
       {
          defines.set("toolchain","android");
          defines.set("android","android");
-         defines.set("BINDIR","Android");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR","Android");
 
          if (!defines.exists("ANDROID_HOST"))
          {
@@ -991,42 +991,42 @@ class BuildTool
       {
          defines.set("toolchain","webos");
          defines.set("webos","webos");
-         defines.set("BINDIR","webOS");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR","webOS");
       }
       else if (defines.exists("tizen"))
       {
          defines.set("toolchain","tizen");
          defines.set("tizen","tizen");
-         defines.set("BINDIR","Tizen");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR","Tizen");
       }
       else if (defines.exists("blackberry"))
       {
          defines.set("toolchain", "blackberry");
          defines.set("blackberry","blackberry");
-         defines.set("BINDIR","BlackBerry");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR","BlackBerry");
       }
       else if (defines.exists("emcc") || defines.exists("emscripten"))
       {
          defines.set("toolchain","emscripten");
          defines.set("emcc","emcc");
          defines.set("emscripten","emscripten");
-         defines.set("BINDIR","Emscripten");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR","Emscripten");
       }
       else if (defines.exists("gph"))
       {
          defines.set("toolchain","gph");
          defines.set("gph","gph");
-         defines.set("BINDIR","GPH");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR","GPH");
       } else if (defines.exists ("gcw0")) {
-	 defines.set ("toolchain", "gcw0");
-	 defines.set ("gcw0", "gcw0");
-	 defines.set ("BINDIR", "GCW0");
+         defines.set ("toolchain", "gcw0");
+         defines.set ("gcw0", "gcw0");
+         if (!defines.exists("BINDIR")) defines.set ("BINDIR", "GCW0");
       } else if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") )
       {
          set64(defines,m64);
          defines.set("toolchain","mingw");
          defines.set("mingw","mingw");
-         defines.set("BINDIR",m64 ? "Windows64":"Windows");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "Windows64":"Windows");
       }
       else if (defines.exists("cygwin") || defines.exists("HXCPP_CYGWIN"))
       {
@@ -1034,7 +1034,7 @@ class BuildTool
          defines.set("toolchain","cygwin");
          defines.set("cygwin","cygwin");
          defines.set("linux","linux");
-         defines.set("BINDIR",m64 ? "Cygwin64":"Cygwin");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "Cygwin64":"Cygwin");
       }
       else if ( (new EReg("window","i")).match(os) )
       {
@@ -1047,7 +1047,7 @@ class BuildTool
             defines.set("linux","linux");
             defines.set("rpi","1");
             defines.set("hardfp","1");
-            defines.set("BINDIR", "RPi");
+            if (!defines.exists("BINDIR")) defines.set("BINDIR", "RPi");
          }
          else
          {
@@ -1057,11 +1057,11 @@ class BuildTool
             //msvc = true;
             if ( defines.exists("winrt") )
             {
-               defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
+               if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
             }
             else
             {
-               defines.set("BINDIR",m64 ? "Windows64":"Windows");
+               if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "Windows64":"Windows");
             }
          }
       }
@@ -1071,14 +1071,14 @@ class BuildTool
          defines.set("linux","linux");
          defines.set("rpi","1");
          defines.set("hardfp","1");
-         defines.set("BINDIR", "RPi");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR", "RPi");
       }
       else if ( (new EReg("linux","i")).match(os) )
       {
          set64(defines,m64);
          defines.set("toolchain","linux");
          defines.set("linux","linux");
-         defines.set("BINDIR", m64 ? "Linux64":"Linux");
+         if (!defines.exists("BINDIR")) defines.set("BINDIR", m64 ? "Linux64":"Linux");
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
@@ -1090,14 +1090,14 @@ class BuildTool
             defines.set("linux","linux");
             defines.set("toolchain","linux");
             defines.set("xcompile","1");
-            defines.set("BINDIR", m64 ? "Linux64":"Linux");
+            if (!defines.exists("BINDIR")) defines.set("BINDIR", m64 ? "Linux64":"Linux");
          }
          else
          {
             defines.set("toolchain","mac");
             defines.set("macos","macos");
             defines.set("apple","apple");
-            defines.set("BINDIR",m64 ? "Mac64":"Mac");
+            if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "Mac64":"Mac");
          }
       }
    }
