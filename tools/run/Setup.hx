@@ -165,13 +165,15 @@ class Setup
    static public function setupAndroidNdk(defines:Map<String,String>)
    {
       var root:String = null;
+      
+      if (Log.verbose) Log.println("");
 
       if (!defines.exists("ANDROID_NDK_ROOT"))
       {
          if (defines.exists("ANDROID_NDK_DIR"))
          {
             root = Setup.findAndroidNdkRoot( defines.get("ANDROID_NDK_DIR") );
-            Log.info("", "Using found NDK root \"" + root + "\"");
+            Log.info("", "\x1b[33;1mDetected Android NDK root: " + root + "\x1b[0m");
 
             Sys.putEnv("ANDROID_NDK_ROOT", root);
             defines.set("ANDROID_NDK_ROOT", root);
@@ -185,7 +187,22 @@ class Setup
       else
       {
          root = defines.get("ANDROID_NDK_ROOT");
-         Log.info("", "Using specified NDK root \"" + root + "\"");
+         Log.info("", "\x1b[33;1mUsing Android NDK root: " + root + "\x1b[0m");
+      }
+      
+      var found = false;
+      for(i in 6...20)
+         if (defines.exists("NDKV" + i))
+         {
+            found = true;
+            Log.info("", "\x1b[33;1mUsing Android NDK r" + i + "\x1b[0m");
+            break;
+         }
+      if (!found)
+      {
+         var version = Setup.getNdkVersion( defines.get("ANDROID_NDK_ROOT") );
+         Log.info("", "\x1b[33;1mDetected Android NDK r" + version + "\x1b[0m");
+         defines.set("NDKV" + version, "1" );
       }
 
       // Find toolchain
@@ -212,7 +229,7 @@ class Setup
             if (bestVer!="")
             {
                defines.set("TOOLCHAIN_VERSION",bestVer);
-               Log.info("", "Found TOOLCHAIN_VERSION " + bestVer);
+               Log.info("", "\x1b[33;1mDetected Android toolchain: arm-linux-androideabi-" + bestVer + "\x1b[0m");
             }
          }
          catch(e:Dynamic) { }
@@ -226,33 +243,18 @@ class Setup
          if (files.length==1)
          {
             defines.set("ANDROID_HOST", files[0]);
-            Log.info("", "Found ANDROID_HOST " + files[0]);
+            Log.info("", "\x1b[33;1mDetected Android host: " + files[0] + "\x1b[0m");
          }
          else
          {
-            Log.info("", "Could not work out ANDROID_HOST (" + files + ") - using default");
+            Log.info("", "\x1b[33;1mCould not detect ANDROID_HOST (" + files + ") - using default\x1b[0m");
          }
       }
       catch(e:Dynamic) { }
 
-      var found = false;
-      for(i in 6...20)
-         if (defines.exists("NDKV" + i))
-         {
-            found = true;
-            Log.info("", "Using specified android NDK " + i);
-            break;
-         }
-      if (!found)
-      {
-         var version = Setup.getNdkVersion( defines.get("ANDROID_NDK_ROOT") );
-         Log.info("", "Deduced android NDK " + version);
-         defines.set("NDKV" + version, "1" );
-      }
-
       if (defines.exists("PLATFORM"))
       {
-         Log.info("", "Using specified android PLATFORM " + defines.get("PLATFORM"));
+         Log.info("", "\x1b[33;1mUsing Android NDK platform: " + defines.get("PLATFORM") + "\x1b[0m");
       }
       else
       {
@@ -273,13 +275,14 @@ class Setup
 
          if (best==0)
          {
-            Log.error("Could not find NDK platform in \"" + base + "\"");
+            Log.error("Could not detect Android API platforms in \"" + base + "\"");
             //throw "Could not find platform in " + base;
          }
 
-         Log.info("", "Using newest NDK platform: " + best);
+         Log.info("", "\x1b[33;1mUsing newest Android NDK platform: " + best + "\x1b[0m");
          defines.set("PLATFORM", "android-" + best);
       }
+      if (Log.verbose) Log.println("");
    }
 
    public static function setupBlackBerryNativeSDK(ioDefines:Hash<String>)

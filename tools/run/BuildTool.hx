@@ -131,15 +131,16 @@ class BuildTool
       popFile();
 
       include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml");
-
+      
+      if (mDefines.exists("HXCPP_CONFIG"))
+         include(mDefines.get("HXCPP_CONFIG"),"exes",true);
+      
+      if (Log.verbose) Log.println ("");
+      
       // MSVC needs this before the toolchain file, Emscripten wants to set HXCPP_COMPILE_THREADS
       // If not already calculated in "setup"
       getThreadCount();
-
-
-      if (mDefines.exists("HXCPP_CONFIG"))
-         include(mDefines.get("HXCPP_CONFIG"),"exes",true);
-
+      
       if (mDefines.exists("HXCPP_COMPILE_CACHE"))
       {
          compileCache = mDefines.get("HXCPP_COMPILE_CACHE");
@@ -173,8 +174,10 @@ class BuildTool
 
       if (useCache)
       {
-         Log.info("", "Using compiler cache \"" + compileCache + "\"");
+         Log.info("", "\x1b[33;1mUsing compiler cache: " + compileCache + "\x1b[0m");
       }
+      
+      if (Log.verbose) Log.println ("");
 
       if (inTargets.remove("clear"))
          for(target in mTargets.keys())
@@ -190,7 +193,7 @@ class BuildTool
 
    public function pushFile(inFilename:String, inWhy:String, inSection:String="")
    {
-      Log.v('Parsing $inWhy: $inFilename' + (inSection==""?"":' (section $inSection)'));
+      Log.info("", " - \x1b[1mParsing " + inWhy + ":\x1b[0m " + inFilename + (inSection == "" ? "" : " (section \"" + inSection + "\")"));
       mFileStack.push(inFilename);
    }
 
@@ -208,7 +211,7 @@ class BuildTool
       {
          var thread_var = defs.exists("HXCPP_COMPILE_THREADS") ?
             defs.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
-
+         
          if (thread_var == null)
          {
             sCompileThreadCount = getNumberOfProcesses();
@@ -220,7 +223,7 @@ class BuildTool
          if (sCompileThreadCount!=sReportedThreads)
          {
             sReportedThreads = sCompileThreadCount;
-            Log.v("Using " + sCompileThreadCount + " compile threads");
+            Log.v("\x1b[33;1mUsing compile threads: " + sCompileThreadCount + "\x1b[0m");
          }
       }
       return sCompileThreadCount;
@@ -714,6 +717,9 @@ class BuildTool
    // Setting HXCPP_COMPILE_THREADS to 2x number or cores can help with hyperthreading
    public static function getNumberOfProcesses():Int
    {
+      var cache = Log.verbose;
+      Log.verbose = false;
+      
       var result = null;
       if (isWindows)
       {
@@ -745,6 +751,8 @@ class BuildTool
             result = cores.matched(1); 
          }
       }
+      
+      Log.verbose = cache;
       
       if (result == null || Std.parseInt(result) < 1)
       {   
@@ -924,7 +932,7 @@ class BuildTool
             Log.v("\x1b[33;1mUsing target toolchain: " + defines.get("toolchain") + "\x1b[0m");
          else
             Log.v("\x1b[33;1mNo specified toolchain\x1b[0m");
-         Log.v("\n");
+         if (Log.verbose) Log.println("");
  
 
          if (targets.length==0)
@@ -957,20 +965,20 @@ class BuildTool
          defines.set("toolchain","iphoneos");
          defines.set("iphone","iphone");
          defines.set("apple","apple");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR","iPhone");
+         defines.set("BINDIR","iPhone");
       }
       else if (defines.exists("iphonesim"))
       {
          defines.set("toolchain","iphonesim");
          defines.set("iphone","iphone");
          defines.set("apple","apple");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR","iPhone");
+         defines.set("BINDIR","iPhone");
       }
       else if (defines.exists("android"))
       {
          defines.set("toolchain","android");
          defines.set("android","android");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR","Android");
+         defines.set("BINDIR","Android");
 
          if (!defines.exists("ANDROID_HOST"))
          {
@@ -991,42 +999,42 @@ class BuildTool
       {
          defines.set("toolchain","webos");
          defines.set("webos","webos");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR","webOS");
+         defines.set("BINDIR","webOS");
       }
       else if (defines.exists("tizen"))
       {
          defines.set("toolchain","tizen");
          defines.set("tizen","tizen");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR","Tizen");
+         defines.set("BINDIR","Tizen");
       }
       else if (defines.exists("blackberry"))
       {
          defines.set("toolchain", "blackberry");
          defines.set("blackberry","blackberry");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR","BlackBerry");
+         defines.set("BINDIR","BlackBerry");
       }
       else if (defines.exists("emcc") || defines.exists("emscripten"))
       {
          defines.set("toolchain","emscripten");
          defines.set("emcc","emcc");
          defines.set("emscripten","emscripten");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR","Emscripten");
+         defines.set("BINDIR","Emscripten");
       }
       else if (defines.exists("gph"))
       {
          defines.set("toolchain","gph");
          defines.set("gph","gph");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR","GPH");
+         defines.set("BINDIR","GPH");
       } else if (defines.exists ("gcw0")) {
-         defines.set ("toolchain", "gcw0");
-         defines.set ("gcw0", "gcw0");
-         if (!defines.exists("BINDIR")) defines.set ("BINDIR", "GCW0");
+	 defines.set ("toolchain", "gcw0");
+	 defines.set ("gcw0", "gcw0");
+	 defines.set ("BINDIR", "GCW0");
       } else if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") )
       {
          set64(defines,m64);
          defines.set("toolchain","mingw");
          defines.set("mingw","mingw");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "Windows64":"Windows");
+         defines.set("BINDIR",m64 ? "Windows64":"Windows");
       }
       else if (defines.exists("cygwin") || defines.exists("HXCPP_CYGWIN"))
       {
@@ -1034,7 +1042,7 @@ class BuildTool
          defines.set("toolchain","cygwin");
          defines.set("cygwin","cygwin");
          defines.set("linux","linux");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "Cygwin64":"Cygwin");
+         defines.set("BINDIR",m64 ? "Cygwin64":"Cygwin");
       }
       else if ( (new EReg("window","i")).match(os) )
       {
@@ -1047,7 +1055,7 @@ class BuildTool
             defines.set("linux","linux");
             defines.set("rpi","1");
             defines.set("hardfp","1");
-            if (!defines.exists("BINDIR")) defines.set("BINDIR", "RPi");
+            defines.set("BINDIR", "RPi");
          }
          else
          {
@@ -1057,11 +1065,11 @@ class BuildTool
             //msvc = true;
             if ( defines.exists("winrt") )
             {
-               if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
+               defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
             }
             else
             {
-               if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "Windows64":"Windows");
+               defines.set("BINDIR",m64 ? "Windows64":"Windows");
             }
          }
       }
@@ -1071,14 +1079,14 @@ class BuildTool
          defines.set("linux","linux");
          defines.set("rpi","1");
          defines.set("hardfp","1");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR", "RPi");
+         defines.set("BINDIR", "RPi");
       }
       else if ( (new EReg("linux","i")).match(os) )
       {
          set64(defines,m64);
          defines.set("toolchain","linux");
          defines.set("linux","linux");
-         if (!defines.exists("BINDIR")) defines.set("BINDIR", m64 ? "Linux64":"Linux");
+         defines.set("BINDIR", m64 ? "Linux64":"Linux");
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
@@ -1090,14 +1098,14 @@ class BuildTool
             defines.set("linux","linux");
             defines.set("toolchain","linux");
             defines.set("xcompile","1");
-            if (!defines.exists("BINDIR")) defines.set("BINDIR", m64 ? "Linux64":"Linux");
+            defines.set("BINDIR", m64 ? "Linux64":"Linux");
          }
          else
          {
             defines.set("toolchain","mac");
             defines.set("macos","macos");
             defines.set("apple","apple");
-            if (!defines.exists("BINDIR")) defines.set("BINDIR",m64 ? "Mac64":"Mac");
+            defines.set("BINDIR",m64 ? "Mac64":"Mac");
          }
       }
    }
@@ -1199,7 +1207,7 @@ class BuildTool
                   Log.error(error);
                case "path" : 
                   var path = substitute(el.att.name);
-                  Log.info("", "Adding path " + path);
+                  Log.info("", " - \x1b[1mAdding path:\x1b[0m " + path);
                   var sep = mDefines.exists("windows_host") ? ";" : ":";
                   var add = path + sep + Sys.getEnv("PATH");
                   Sys.putEnv("PATH", add);

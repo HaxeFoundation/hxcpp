@@ -82,7 +82,7 @@ class Linker
                var current = parts[0] + "-" + BuildTool.getMsvcVer() + parts[1];
                if (FileSystem.exists(current))
                {
-                  Log.info("", "Using current compiler library " + current);
+                  Log.info("", " - \x1b[1mUsing current compiler library:\x1b[0m " + current);
                   libs[i]=current;
                }
                else
@@ -90,7 +90,7 @@ class Linker
                   var v18 = parts[0] + "-18" + parts[1];
                   if (FileSystem.exists(v18))
                   {
-                     Log.info("", "Using msvc18 compatible library " + v18);
+                     Log.info("", " - \x1b[1mUsing MSVC18 compatible library:\x1b[0m " + v18);
                      libs[i]=v18;
                      if (!v18Added)
                      {
@@ -100,7 +100,7 @@ class Linker
                   }
                   else
                   {
-                     throw "Could not find compatible library for " + lib + ", " + v18 + " does not exist";
+                     Log.error("Could not find compatible library for " + lib + ", " + v18 + " does not exist");
                   }
                }
             }
