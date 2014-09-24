@@ -26,6 +26,7 @@
   <builddir name="libs/std" />
   <files id="std"/>
   <lib name="wsock32.lib" if="windows" unless="static_link" />
+  <lib name="-lsocket" if="blackberry" unless="static_link" />
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
 
