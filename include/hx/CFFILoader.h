@@ -315,11 +315,52 @@ neko_value api_alloc_string_len(const char *inStr,int inLen)
 
 neko_value api_alloc_wstring_len(const wchar_t *inStr,int inLen)
 {
-	char *result = dyn_alloc_private(inLen+1);
-	for(int i=0;i<inLen;i++)
-		result[i] = inStr[i];
-	result[inLen] = 0;
-   return api_alloc_string_len(result,inLen);
+	//char *result = dyn_alloc_private(inLen+1);
+	//for(int i=0;i<inLen;i++)
+	//	result[i] = inStr[i];
+	//result[inLen] = 0;
+   //return api_alloc_string_len(result,inLen);
+
+  int len = 0;
+  const wchar_t *chars = inStr;
+  for(int i=0;i<inLen;i++)
+   {
+      int c = chars[i];
+      if( c <= 0x7F ) len++;
+      else if( c <= 0x7FF ) len+=2;
+      else if( c <= 0xFFFF ) len+=3;
+      else len+= 4;
+   }
+
+   char *result = dyn_alloc_private(len);//+1?
+   unsigned char *data =  (unsigned char *) &result[0];
+   for(int i=0;i<inLen;i++)
+   {
+      int c = chars[i];
+      if( c <= 0x7F )
+         *data++ = c;
+      else if( c <= 0x7FF )
+      {
+         *data++ = 0xC0 | (c >> 6);
+         *data++ = 0x80 | (c & 63);
+      }
+      else if( c <= 0xFFFF )
+      {
+         *data++ = 0xE0 | (c >> 12);
+         *data++ = 0x80 | ((c >> 6) & 63);
+         *data++ = 0x80 | (c & 63);
+      }
+      else
+      {
+         *data++ = 0xF0 | (c >> 18);
+         *data++ = 0x80 | ((c >> 12) & 63);
+         *data++ = 0x80 | ((c >> 6) & 63);
+         *data++ = 0x80 | (c & 63);
+      }
+   }
+   //result[len] = 0;
+
+   return api_alloc_string_len(result,len);
 }
 
 
