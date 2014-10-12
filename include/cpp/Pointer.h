@@ -19,10 +19,10 @@ class Pointer
 public:
    T *ptr;
 
-   inline Pointer( ) { }
+   inline Pointer( ) : ptr(0) { }
    inline Pointer( const Pointer &inRHS ) : ptr(inRHS.ptr) {  }
    inline Pointer( const Dynamic &inRHS) { ptr = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
-   inline Pointer( const null &inRHS ) { }
+   inline Pointer( const null &inRHS ) : ptr(0) { }
    inline Pointer( const T *inValue ) : ptr( (T*) inValue) { }
    //inline Pointer( T *inValue ) : ptr(inValue) { }
    inline Pointer( AutoCast inValue ) : ptr( (T*)inValue.value) { }
@@ -30,6 +30,7 @@ public:
    inline Dynamic operator=( Dynamic &inValue )
    {
       ptr = inValue==null() ? 0 : (T*) inValue->__GetHandle();
+      return inValue;
    }
    inline Dynamic operator=( null &inValue ) { ptr=0; return inValue; }
    inline AutoCast reinterpret() { return AutoCast(ptr); }
