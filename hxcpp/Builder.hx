@@ -128,7 +128,7 @@ class Builder
                   validArchs.set("armv6", ["-Diphoneos", staticFlag] );
                   validArchs.set("armv7", ["-Diphoneos", "-DHXCPP_ARMV7", staticFlag] );
                   validArchs.set("armv7s", ["-Diphoneos", "-DHXCPP_ARMV7S", staticFlag] );
-                  validArchs.set("arm64", ["-Diphoneos", "-DHXCPP_ARM64", staticFlag] );
+                  validArchs.set("arm64", ["-Diphoneos", "-DHXCPP_ARM64", "-DHXCPP_M64", staticFlag] );
                   //validArchs.push("armv64");
                   validArchs.set("x86", ["-Diphonesim", staticFlag] );
                   validArchs.set("x86_64", ["-Diphonesim", "-DHXCPP_M64", staticFlag] );
