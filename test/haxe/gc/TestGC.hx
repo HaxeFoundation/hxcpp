@@ -7,85 +7,85 @@ class CustomObject {
 }
 
 class TestGC extends haxe.unit.TestCase {
-	static var delaySeconds:Float = 2;
+	/**
+		Repeatly call gc to get a zombie.
+	*/
+	function gc():Dynamic {
+		var zombie = null;
+		for (i in 0...20) {
+			Sys.sleep(0.01);
+			Gc.run(true);
+			if ((zombie = Gc.getNextZombie()) != null) {
+				return zombie;
+			}
+		}
+		return zombie;
+	}
+
+	/**
+		For avoiding the simple call being optimized in some way.
+	*/
+	function create(f:Void->Void):Void {
+		f();
+	}
 
 	function createAbc():Void {
 		var object = { test: "abc" };
 		Gc.doNotKill(object);
 	}
 	public function testObject():Void {
-		createAbc();
-		Sys.sleep(delaySeconds);
-		Gc.run(true);
-		var zombie = Gc.getNextZombie();
+		create(createAbc);
+		var zombie = gc();
 		assertTrue(zombie != null);
 		assertEquals("abc", zombie.test);
-		Gc.run(true);
-		assertTrue(Gc.getNextZombie() == null);
+		assertTrue(gc() == null);
 	}
 
 	function create123():Void {
 		var object:Null<Int> = 123;
 		Gc.doNotKill(object);
 	};
- 
 	public function testBoxedInt():Void {
-		create123();
-		Sys.sleep(delaySeconds);
-		Gc.run(true);
-		var zombie:Dynamic = Gc.getNextZombie();
+		create(create123);
+		var zombie:Dynamic = gc();
 		assertTrue(zombie != null);
 		assertEquals(123, zombie);
-		Gc.run(true);
-		assertTrue(Gc.getNextZombie() == null);
+		assertTrue(gc() == null);
 	}
 
 	function createFunction():Void {
 		var object = function() return "abc";
 		Gc.doNotKill(object);
 	};
-
 	public function testFunc():Void {
-		createFunction();
-		Sys.sleep(delaySeconds);
-		Gc.run(true);
-		var zombie = Gc.getNextZombie();
+		create(createFunction);
+		var zombie = gc();
 		assertTrue(zombie != null);
 		assertEquals("abc", zombie());
-		Gc.run(true);
-		assertTrue(Gc.getNextZombie() == null);
+		assertTrue(gc() == null);
 	}
 
 	function createCustom():Void {
 		var object = new CustomObject();
 		Gc.doNotKill(object);
 	};
- 
 	public function testCustomObject():Void {
-		createCustom();
-		Sys.sleep(delaySeconds);
-		Gc.run(true);
-		var zombie = Gc.getNextZombie();
+		create(createCustom);
+		var zombie = gc();
 		assertTrue(zombie != null);
 		assertTrue(Std.is(zombie, CustomObject));
-		Gc.run(true);
-		assertTrue(Gc.getNextZombie() == null);
+		assertTrue(gc() == null);
 	}
 
 	function createBytes():Void {
 		var object = Bytes.alloc(1);
 		Gc.doNotKill(object);
 	};
-  
-
 	public function testBytes():Void {
-		createBytes();
-		Sys.sleep(delaySeconds);
-		Gc.run(true);
-		var zombie = Gc.getNextZombie();
+		create(createBytes);
+		var zombie = gc();
 		assertTrue(zombie != null);
 		assertTrue(Std.is(zombie, Bytes));
-		Gc.run(true);
-		assertTrue(Gc.getNextZombie() == null);
+		assertTrue(gc() == null);
 	}
 }
