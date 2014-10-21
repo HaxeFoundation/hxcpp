@@ -49,7 +49,7 @@ void           __hxcpp_stdlibs_boot();
 
 // --- Maths ---------------------------------------------------------
 double __hxcpp_drand();
-int __hxcpp_irand(int inMax);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int __hxcpp_irand(int inMax);
 
 // --- Casting/Converting ---------------------------------------------------------
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool  __instanceof(const Dynamic &inValue, const Dynamic &inType);

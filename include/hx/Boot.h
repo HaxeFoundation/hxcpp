@@ -8,7 +8,7 @@ namespace hx
 {
 
 // Initializer the hxcpp runtime system
-void Boot();
+HXCPP_EXTERN_CLASS_ATTRIBUTES void Boot();
 
 }
 
