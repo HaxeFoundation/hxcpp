@@ -65,7 +65,7 @@ int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)) + \
 #define DEFFUNC_5(ret,name,t1,t2,t3,t4,t5) DEFFUNC(name,ret, (t1 a1, t2 a2, t3 a3, t4 a4,t5 a5), (a1,a2,a3,a4,a5))
  
 
-enum ValueType
+enum HxCppValueType
 {
    valtUnknown = -1,
    valtInt = 0xff,
