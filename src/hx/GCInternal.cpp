@@ -602,8 +602,20 @@ union BlockData
          pos = row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_LINK_MASK;
 
       if (pos==sought)
-         return (*(unsigned int *)(mRow[0] + inOffset) & IMMIX_ALLOC_IS_OBJECT) ?
-            allocObject: allocString;
+      {
+         if (*(unsigned int *)(mRow[0] + inOffset) & IMMIX_ALLOC_IS_OBJECT)
+         {
+            // See if object::new has been called, but not constructor yet ...
+            void **vtable = (void **)(mRow[0] + inOffset + sizeof(int));
+            if (vtable[0]==0)
+            {
+               // GCLOG("Partially constructed object.");
+               return allocString;
+            }
+            return allocObject;
+         }
+         return allocString;
+      }
 
       if (inReport)
       {

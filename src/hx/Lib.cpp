@@ -587,7 +587,12 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    void *proc = __hxcpp_get_proc_address(inLib,full_name,true);
 
    if (proc)
-      return Dynamic( new ExternalPrimitive(proc,inArgCount,inLib+HX_CSTRING("@")+full_name) );
+   {
+      // Split this to avoid a collect after ExternalPrimitive::new, but before its
+      //  inline constructor is run...
+      String primName = inLib+HX_CSTRING("@")+full_name;
+      return Dynamic( new ExternalPrimitive(proc,inArgCount,primName) );
+   }
    return null();
 }
 
