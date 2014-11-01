@@ -240,6 +240,13 @@ class Setup
       {
          var prebuilt =  root+"/toolchains/arm-linux-androideabi-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
          var files = FileSystem.readDirectory(prebuilt);
+         for (file in files)
+         {  
+            if (!FileSystem.isDirectory (prebuilt + "/" + file))
+            {
+               files.remove (file);
+            }
+         }
          if (files.length==1)
          {
             defines.set("ANDROID_HOST", files[0]);
