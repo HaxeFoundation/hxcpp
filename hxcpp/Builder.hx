@@ -127,8 +127,11 @@ class Builder
                case "ios", "ioslegacy":
                   validArchs.set("armv6", ["-Diphoneos", staticFlag] );
                   validArchs.set("armv7", ["-Diphoneos", "-DHXCPP_ARMV7", staticFlag] );
+                  validArchs.set("armv7s", ["-Diphoneos", "-DHXCPP_ARMV7S", staticFlag] );
+                  validArchs.set("arm64", ["-Diphoneos", "-DHXCPP_ARM64", "-DHXCPP_M64", staticFlag] );
                   //validArchs.push("armv64");
                   validArchs.set("x86", ["-Diphonesim", staticFlag] );
+                  validArchs.set("x86_64", ["-Diphonesim", "-DHXCPP_M64", staticFlag] );
 
                case "android":
                   validArchs.set("armv5", ["-Dandroid", staticFlag] );
@@ -259,7 +262,7 @@ class Builder
          Sys.println("  link    : ndll- or static-");
          Sys.println("            (none specified = both link types");
       }
-      Sys.println("  arch    : -armv5 -armv6 -armv7 -arm64 -x86 -m32 -m64");
+      Sys.println("  arch    : -armv5 -armv6 -armv7 -arm64 -x86 -x86_64 -m32 -m64");
       Sys.println("            (none specified = all valid architectures");
       Sys.println("  -D...   : defines passed to hxcpp build system");
       if (link!="")
