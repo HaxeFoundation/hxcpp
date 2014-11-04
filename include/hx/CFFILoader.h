@@ -137,6 +137,18 @@ neko_value gNekoTrue = 0;
 neko_value gNekoFalse = 0;
 
 
+namespace
+{
+void CheckInitDynamicNekoLoader()
+{
+   if (!gNekoNull)
+   {
+      printf("Haxe code is missing a call to hxcpp.NekoInit.nekoInit().\n");
+   }
+}
+}
+
+
 /*
 
 
@@ -179,6 +191,7 @@ static val_ocall1_func dyn_val_ocall1 = 0;
 
 neko_value api_alloc_string(const char *inString)
 {
+   CheckInitDynamicNekoLoader();
    neko_value neko_string = dyn_alloc_string(inString);
    if (gNeko2HaxeString)
       return dyn_val_call1(*gNeko2HaxeString,neko_string);
@@ -196,7 +209,7 @@ double api_val_float(neko_value  arg1) { return *(double *)( ((char *)arg1) + 4 
 double api_val_number(neko_value  arg1) { return neko_val_is_int(arg1) ? neko_val_int(arg1) : api_val_float(arg1); }
 
 
-neko_value api_alloc_bool(bool arg1) { return arg1 ? gNekoTrue : gNekoFalse; }
+neko_value api_alloc_bool(bool arg1) { CheckInitDynamicNekoLoader(); return arg1 ? gNekoTrue : gNekoFalse; }
 neko_value api_alloc_int(int arg1) { return neko_alloc_int(arg1); }
 neko_value api_alloc_empty_object()
 {
@@ -373,7 +386,11 @@ int api_alloc_kind()
 	id += 4;
 	return result;
 }
-neko_value api_alloc_null() { return gNekoNull; }
+neko_value api_alloc_null()
+{
+   CheckInitDynamicNekoLoader();
+   return gNekoNull;
+}
 
 
 void api_hx_error()
