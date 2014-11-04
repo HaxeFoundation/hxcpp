@@ -326,13 +326,45 @@ neko_value api_alloc_string_len(const char *inStr,int inLen)
 }
 
 
-neko_value api_alloc_wstring_len(const wchar_t *inStr,int inLen)
+const wchar_t *api_val_wstring(neko_value  arg1)
 {
-	char *result = dyn_alloc_private(inLen+1);
-	for(int i=0;i<inLen;i++)
-		result[i] = inStr[i];
-	result[inLen] = 0;
-   return api_alloc_string_len(result,inLen);
+
+	int len = api_val_strlen(arg1);
+	/*unsigned char *ptr = (unsigned char *)api_val_string(arg1);
+	wchar_t *result = (wchar_t *)dyn_alloc_private((len+1)*sizeof(wchar_t));
+	for(int i=0;i<len;i++)
+		result[i] = ptr[i];
+	result[len] = 0;*/
+
+        unsigned char *b = (unsigned char *)api_val_string(arg1);
+        wchar_t *result = (wchar_t *)dyn_alloc_private((len+1)*sizeof(wchar_t));
+        int l = 0;
+
+        for(int i=0;i<len;)
+        {
+            int c = b[i++];
+            if (c==0) break;
+            else if( c < 0x80 )
+            {
+                result[l++] = c;
+            }
+            else if( c < 0xE0 )
+                result[l++] = ( ((c & 0x3F) << 6) | (b[i++] & 0x7F) );
+            else if( c < 0xF0 )
+            {
+                int c2 = b[i++];
+                result[l++] = ( ((c & 0x1F) << 12) | ((c2 & 0x7F) << 6) | ( b[i++] & 0x7F) );
+            }
+            else
+            {
+                int c2 = b[i++];
+                int c3 = b[i++];
+                result[l++] = ( ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 << 6) & 0x7F) | (b[i++] & 0x7F) );
+            }
+        }
+        result[l] = '\0';
+
+        return result;
 }
 
 
