@@ -1,4 +1,10 @@
 
+* Dont append -debug to dll name
+* Reorder xml includes to allow early parts to correctly influence older parts
+* Fix busy wait in semaphore lock
+* Fixed GC issue when constructing exrernal primitive objects
+* Added armv7s and arm64 targets for ios
+* Some fixes for neko cffi - wstring and warning for neko_init
 * Fix file read (and copy) from thread
 ------------------------------------------------------------
 * Compile fix for blackberry
