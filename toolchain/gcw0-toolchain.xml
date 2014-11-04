@@ -42,7 +42,7 @@
 	<flag value="-L${GCW0_PLATFORM}/usr/lib" />
 	<!-- <flag value="-fpic"/>
 	<flag value="-fPIC"/> -->
-	<ext value=".dge"/>
+	<ext value=""/>
 	<outflag value="-o"/>
 	<lib name="-ldl"/>
 </linker>
@@ -62,7 +62,7 @@
 	<flag value="-fPIC"/> -->
 	<!-- <flag value="-pie" /> -->
 	<lib name="-ldl"/>
-	<ext value=".so"/>
+	<ext value=".dso"/>
 	<outflag value="-o"/>
 </linker>
 
