@@ -30,6 +30,7 @@ class BuildTool
    var mStripper:Stripper;
    var mPrelinkers:Prelinkers;
    var mLinkers:Linkers;
+   var mCopyFiles:Array<CopyFile>;
    var mFileGroups:FileGroups;
    var mTargets:Targets;
    var mFileStack:Array<String>;
@@ -69,6 +70,7 @@ class BuildTool
       mLinkers = new Linkers();
       mCurrentIncludeFile = "";
       mFileStack = [];
+      mCopyFiles = [];
       mIncludePath = inIncludePath;
       instance = this;
 
@@ -385,7 +387,12 @@ class BuildTool
             if (exe!="" && mStripper!=null)
                if (target.mToolID=="exe" || target.mToolID=="dll")
                   mStripper.strip(exe);
+
       }
+
+      for(copyFile in mCopyFiles)
+         if (copyFile.toolId==null || copyFile.toolId==target.mToolID)
+            copyFile.copy(target.mOutputDir);
 
       if (restoreDir!="")
          Sys.setCwd(restoreDir);
@@ -782,6 +789,12 @@ class BuildTool
       return instance.mDefines.get("toolchain")=="msvc";
    }
 
+   public static function isMingw()
+   {
+      return instance.mDefines.get("toolchain")=="mingw";
+   }
+
+
    // Process args and environment.
    static public function main()
    {
@@ -1034,6 +1047,7 @@ class BuildTool
          set64(defines,m64);
          defines.set("toolchain","mingw");
          defines.set("mingw","mingw");
+         defines.set("windows","windows");
          defines.set("BINDIR",m64 ? "Windows64":"Windows");
       }
       else if (defines.exists("cygwin") || defines.exists("HXCPP_CYGWIN"))
@@ -1249,6 +1263,12 @@ class BuildTool
                      createTarget(el,mTargets.get(name));
                   else
                      mTargets.set( name, createTarget(el,null) );
+               case "copyFile" : 
+                  mCopyFiles.push(
+                      new CopyFile(substitute(el.att.name),
+                                   substitute(el.att.from),
+                                   el.has.allowMissing ?  subBool(el.att.allowMissing) : false,
+                                   el.has.toolId ?  substitute(el.att.toolId) : null ) );
                case "section" : 
                   parseXML(el,"");
             }
@@ -1316,6 +1336,12 @@ class BuildTool
       }
 
       return str;
+   }
+
+   public function subBool(str:String):Bool
+   {
+      var result = substitute(str);
+      return result=="t" || result=="true" || result=="1";
    }
 
    public function valid(inEl:Fast,inSection:String):Bool

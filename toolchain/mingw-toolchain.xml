@@ -33,7 +33,7 @@
   <flag value="-shared"/>
   <flag value="--enable-auto-import"/>
   <flag value="-m32" unless="HXCPP_M64"/>
-  <flag value="-W,l--unresolved-symbols=report-all"/>
+  <!--<flag value="-W,l--unresolved-symbols=report-all"/>-->
   <flag value="-debug" if="debug"/>
   <ext value=".dll"/>
   <outflag value="-o "/>
@@ -46,6 +46,30 @@
   <flag value="-m32" unless="HXCPP_M64"/>
   <ext value=".exe"/>
   <outflag value="-o "/>
+</linker>
+
+<copyFile toolId="exe" name="libgcc_s_dw2-1.dll" from="${MINGW_ROOT}/bin" allowMissing="true"/>
+<copyFile toolId="exe" name="libstdc++-6.dll" from="${MINGW_ROOT}/bin" allowMissing="true"/>
+
+
+<linker id="static_link" exe="ar" >
+  <ext value="${LIBEXT}"/>
+  <exe name="${EXEPREFIX}-ar" if="EXEPREFIX" />
+  <exe name="${HXCPP_AR}" if="HXCPP_AR" />
+  <fromfile value="" if="GCC_OLD" />
+  <outflag value="-cr "/>
+  <section if="HXCPP_USE_LIBTOOL">
+     <exe name="libtool"  />
+     <outflag value="-o "  />
+     <fromfile value="-filelist " />
+  </section>
+  <!-- <outflag value="-o " if="emscripten" /> -->
+  <section unless="HXCPP_USE_LIBTOOL">
+     <ranlib name="ranlib" />
+     <ranlib name="${EXEPREFIX}-ranlib" if="EXEPREFIX" />
+     <ranlib name="emranlib" if="emscripten" />
+     <ranlib name="${HXCPP_RANLIB}" if="HXCPP_RANLIB" />
+  </section>
 </linker>
 
 
