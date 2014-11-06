@@ -4,7 +4,7 @@ package hxcpp;
 @:buildXml("
 <target id='haxe'>
   <lib name='${HXCPP}/lib/${BINDIR}/libmysql5${LIBEXTRA}${LIBEXT}'/>
-  <lib name='wsock32.lib' if='windows'/>
+  <lib name='ws2_32.lib' if='windows'/>
 </target>
 ")
 @:keep class StaticMysql
