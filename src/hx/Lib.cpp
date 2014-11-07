@@ -298,6 +298,9 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    if (sgRegisteredPrims)
    {
       void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
+      // Try with lib name ...
+      if (!registered)
+         registered = (*sgRegisteredPrims)[(inLib + HX_CSTRING("_") + full_name).__CStr()];
       if (registered)
       {
          return Dynamic( new ExternalPrimitive(registered,inArgCount,HX_CSTRING("registered@")+full_name) );
@@ -405,6 +408,10 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    if (!module && sgRegisteredPrims)
    {
       void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
+      // Try with lib name ...
+      if (!registered)
+         registered = (*sgRegisteredPrims)[(inLib + HX_CSTRING("_") + full_name).__CStr()];
+
       if (registered)
          return registered;
    }
@@ -541,6 +548,9 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    }
 
    FundFunc proc_query = (FundFunc)hxFindSymbol(module,full_name.__CStr());
+   if (!proc_query)
+       proc_query = (FundFunc)hxFindSymbol(module, (inLib + HX_CSTRING("_") + full_name).__CStr());
+
    if (!proc_query && !inQuietFail)
    {
       #ifdef ANDROID
@@ -614,7 +624,12 @@ int __hxcpp_register_prim(const char *inName,void *inProc)
 {
    if (sgRegisteredPrims==0)
       sgRegisteredPrims = new RegistrationMap();
-   (*sgRegisteredPrims)[inName] = inProc;
+   void * &proc = (*sgRegisteredPrims)[inName];
+   if (proc)
+   {
+      printf("Warning : duplicate symbol %s\n", inName);
+   }
+   proc = inProc;
    return 0;
 }
 

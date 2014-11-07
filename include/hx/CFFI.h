@@ -26,6 +26,12 @@ int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)) + \
                    hx_register_prim(#func "__" #ext,(void *)(&func##_##ext)) ; 
 
 
+#define DEFINE_LIB_PRIM_MULT(lib,func) \
+int __reg_##func = hx_register_prim(lib "_" #func "__MULT",(void *)(&func)); \
+
+#define DEFINE_LIB_PRIM(lib,func,nargs) \
+int __reg_##func = hx_register_prim(lib "_" #func "__" #nargs,(void *)(&func)); \
+
 
 #else
 
@@ -50,6 +56,18 @@ int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)) + \
   EXPORT void *func##__##nargs() { return (void*)(&func); } \
   EXPORT void *func##__##ext() { return (void*)(&func##_##ext); } \
 }
+
+
+#define DEFINE_LIB_PRIM_MULT(lib,func) extern "C" { \
+  EXPORT void *func##__MULT() { return (void*)(&func); } \
+}
+
+
+#define DEFINE_LIB_PRIM(lib,func,nargs) extern "C" { \
+  EXPORT void *func##__##nargs() { return (void*)(&func); } \
+}
+
+
 
 #endif // !STATIC_LINK
 
