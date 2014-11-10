@@ -2,8 +2,7 @@
 
 <!-- MINGW TOOLS -------------------------------------->
 
-<set name="MINGW_ROOT" value="c:/MinGW" unless="MINGW_ROOT" />
-
+<setup name="mingw" />
 
 <path name="${MINGW_ROOT}/bin"/>
 
@@ -12,7 +11,7 @@
 <unset name="USE_PRECOMPILED_HEADERS"/>
 
 <compiler id="mingw" exe="gcc">
-  <exe name="${MINGW_ROOT}/bin/g++.exe"/>
+  <exe name="g++.exe"/>
   <flag value="-c"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
@@ -29,7 +28,7 @@
 </compiler>
 
 <linker id="dll" exe="g++">
-  <exe name="${MINGW_ROOT}/bin/g++.exe"/>
+  <exe name="g++.exe"/>
   <flag value="-shared"/>
   <flag value="--enable-auto-import"/>
   <flag value="-m32" unless="HXCPP_M64"/>
@@ -40,7 +39,7 @@
 </linker>
 
 <linker id="exe" exe="g++">
-  <exe name="${MINGW_ROOT}/bin/g++.exe"/>
+  <exe name="g++.exe"/>
   <flag value="-debug" if="debug"/>
   <flag value="-Wl,--enable-auto-import"/>
   <flag value="-m32" unless="HXCPP_M64"/>

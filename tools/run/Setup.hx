@@ -98,6 +98,35 @@ class Setup
       }
    }
 
+   public static function setupMingw(ioDefines:Hash<String>)
+   {
+      // Setup MINGW_ROOT or fail
+      if (!ioDefines.exists("MINGW_ROOT"))
+      {
+       
+         var haxelib = PathManager.getHaxelib("minimingw","",false);
+         if (haxelib!=null && haxelib!="")
+         {
+            ioDefines.set("MINGW_ROOT", haxelib);
+            Log.v('Using haxelib version of MinGW, $haxelib');
+            return;
+         }
+
+         var guesses = ["c:/MinGW"];
+         for(guess in guesses )
+         {
+            if (FileSystem.exists(guess))
+            {
+               ioDefines.set("MINGW_ROOT", guess);
+               Log.v('Using default version of MinGW, $guess');
+               return;
+            }
+         }
+
+         Log.error('Could not guess MINGW_ROOT (tried $guesses) - please set explicitly');
+      }
+   }
+
    public static function isRaspberryPi()
    {
       var proc = new Process("uname",["-a"]);
@@ -154,6 +183,10 @@ class Setup
       else if (inWhat=="msvc")
       {
          setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"));
+      }
+      else if (inWhat=="mingw")
+      {
+         setupMingw(ioDefines);
       }
       else
       {

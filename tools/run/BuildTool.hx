@@ -1038,17 +1038,12 @@ class BuildTool
          defines.set("toolchain","gph");
          defines.set("gph","gph");
          defines.set("BINDIR","GPH");
-      } else if (defines.exists ("gcw0")) {
-	 defines.set ("toolchain", "gcw0");
-	 defines.set ("gcw0", "gcw0");
-	 defines.set ("BINDIR", "GCW0");
-      } else if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") )
+      }
+      else if (defines.exists ("gcw0"))
       {
-         set64(defines,m64);
-         defines.set("toolchain","mingw");
-         defines.set("mingw","mingw");
-         defines.set("windows","windows");
-         defines.set("BINDIR",m64 ? "Windows64":"Windows");
+         defines.set ("toolchain", "gcw0");
+         defines.set ("gcw0", "gcw0");
+         defines.set ("BINDIR", "GCW0");
       }
       else if (defines.exists("cygwin") || defines.exists("HXCPP_CYGWIN"))
       {
@@ -1074,16 +1069,40 @@ class BuildTool
          else
          {
             set64(defines,m64);
-            defines.set("toolchain","msvc");
             defines.set("windows","windows");
-            //msvc = true;
-            if ( defines.exists("winrt") )
+            defines.set("BINDIR",m64 ? "Windows64":"Windows");
+
+            // Choose between MSVC and MINGW
+            var useMsvc = false;
+
+            if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") || defines.exists("minimingw"))
+               useMsvc = false;
+            else if ( defines.exists("winrt") || defines.exists("HXCPP_MSVC_VER"))
+               useMsvc = true;
+            else
             {
-               defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
+                for(i in 8...24)
+                {
+                   if (Sys.getEnv("VS" + i + "0COMNTOOLS")!=null)
+                   {
+                      useMsvc = true;
+                      break;
+                   }
+                }
+
+                Log.v("Using default windows compiler : " + (useMsvc ? "MSVC" : "MinGW") );
+            }
+
+            if (useMsvc)
+            {
+               defines.set("toolchain","msvc");
+               if ( defines.exists("winrt") )
+                  defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
             }
             else
             {
-               defines.set("BINDIR",m64 ? "Windows64":"Windows");
+               defines.set("toolchain","mingw");
+               defines.set("mingw","mingw");
             }
          }
       }
