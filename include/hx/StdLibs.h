@@ -22,7 +22,8 @@ void RegisterResources(hx::Resource *inResources);
 
 struct AnyCast
 {
-   AnyCast(void *inPtr) : mPtr(inPtr) { }
+   template<typename T>
+   explicit AnyCast(T* inPtr) : mPtr((void *)inPtr) { }
 
    template<typename T>
    operator T*() const { return (T*)mPtr; }
