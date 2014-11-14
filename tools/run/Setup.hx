@@ -292,8 +292,14 @@ class Setup
       }
       catch(e:Dynamic) { }
 
+      var androidPlatform = 5;
       if (defines.exists("PLATFORM"))
       {
+         var platform = defines.get("PLATFORM");
+         var id = Std.parseInt( platform.substr("android-".length) );
+         if (id==0 || id==null)
+            Log.error('Badly formed android PLATFORM "$platform" - should be like android-123');
+         androidPlatform = id;
          Log.info("", "\x1b[33;1mUsing Android NDK platform: " + defines.get("PLATFORM") + "\x1b[0m");
       }
       else
@@ -321,7 +327,9 @@ class Setup
 
          Log.info("", "\x1b[33;1mUsing newest Android NDK platform: " + best + "\x1b[0m");
          defines.set("PLATFORM", "android-" + best);
+         androidPlatform = best;
       }
+      defines.set("ANDROID_PLATFORM_DEFINE", "-DHXCPP_ANDROID_PLATFORM=" + androidPlatform);
       if (Log.verbose) Log.println("");
    }
 

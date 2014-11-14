@@ -10,7 +10,6 @@ enum { gFillWithJunk = 0 } ;
 
 #ifdef ANDROID
 #include <android/log.h>
-#include <sys/atomics.h>
 #endif
 
 #ifdef HX_WINDOWS
