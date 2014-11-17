@@ -2059,7 +2059,8 @@ public:
 
    void MarkAll(bool inDoClear)
    {
-      gByteMarkID = (gByteMarkID+1) & 0xff;
+      // Bit 0x80 is reserved for "const allocation"
+      gByteMarkID = (gByteMarkID+1) & 0x7f;
       gMarkID = gByteMarkID << 24;
       gBlockStack = 0;
 
