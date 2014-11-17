@@ -2,6 +2,8 @@
 #include <hxMath.h>
 
 #ifdef HX_WINDOWS
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501
 #include <windows.h>
 #include <stdio.h>
 #include <io.h>
