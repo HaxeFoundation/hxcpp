@@ -42,6 +42,8 @@ int gInAlloc = false;
   enum { MAX_MARK_THREADS = 1 };
 #endif
 
+enum { MARK_BYTE_MASK = 0x7f };
+
 
 enum
 {
@@ -576,7 +578,7 @@ union BlockData
          return allocNone;
       }
       unsigned char time = mRow[0][inOffset+ENDIAN_MARK_ID_BYTE_HEADER];
-      if ( ((time+1) & 0xff) != gByteMarkID )
+      if ( ((time+1) & MARK_BYTE_MASK) != gByteMarkID )
       {
          // Object is either out-of-date, or already marked....
          if (inReport)
@@ -724,7 +726,7 @@ namespace hx
 void GCCheckPointer(void *inPtr)
 {
    unsigned char&mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE];
-   if ( mark!=0xff && mark!=gByteMarkID  )
+   if ( !(mark & HX_GC_CONST_ALLOC_BIT) && mark!=gByteMarkID  )
    {
       GCLOG("Old object %s\n", ((hx::Object *)inPtr)->toString().__s );
       NullReference("Object", false);
@@ -2060,7 +2062,7 @@ public:
    void MarkAll(bool inDoClear)
    {
       // Bit 0x80 is reserved for "const allocation"
-      gByteMarkID = (gByteMarkID+1) & 0x7f;
+      gByteMarkID = (gByteMarkID+1) & MARK_BYTE_MASK;
       gMarkID = gByteMarkID << 24;
       gBlockStack = 0;
 
