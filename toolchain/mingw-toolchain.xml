@@ -15,11 +15,15 @@
   <flag value="-c"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
-  <flag value="-O2"/>
+  <flag value="-O2" unless="O3"/>
+  <flag value="-O3" if="O3"/>
   <include name="toolchain/common-defines.xml" />
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-static" if="no_shared_libs"/>
+  <flag value="-static-libgcc" if="no_shared_libs"/>
+  <flag value="-static-libstdc++" if="no_shared_libs"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/mingw${OBJEXT}/"/>
@@ -32,7 +36,7 @@
   <flag value="-shared"/>
   <flag value="--enable-auto-import"/>
   <flag value="-m32" unless="HXCPP_M64"/>
-  <!--<flag value="-W,l--unresolved-symbols=report-all"/>-->
+  <!-- <flag value="-W,l--unresolved-symbols=report-all"/> -->
   <flag value="-debug" if="debug"/>
   <ext value=".dll"/>
   <outflag value="-o "/>
@@ -47,9 +51,8 @@
   <outflag value="-o "/>
 </linker>
 
-<copyFile toolId="exe" name="libgcc_s_dw2-1.dll" from="${MINGW_ROOT}/bin" allowMissing="true"/>
-<copyFile toolId="exe" name="libstdc++-6.dll" from="${MINGW_ROOT}/bin" allowMissing="true"/>
-
+<copyFile toolId="exe" name="libgcc_s_dw2-1.dll" from="${MINGW_ROOT}/bin" allowMissing="true" unless="no_shared_libs"/>
+<copyFile toolId="exe" name="libstdc++-6.dll" from="${MINGW_ROOT}/bin" allowMissing="true" unless="no_shared_libs"/>
 
 <linker id="static_link" exe="ar" >
   <ext value="${LIBEXT}"/>
