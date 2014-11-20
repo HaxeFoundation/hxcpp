@@ -42,6 +42,7 @@ class Builder
             var parts = arg.split("-");
             var linkStatic = allowStatic();
             var linkNdll = allowNdll();
+            var explicitNdll = false;
             if (parts[0]=="static")
             {
                linkNdll = false;
@@ -50,6 +51,7 @@ class Builder
             else if (parts[0]=="ndll")
             {
                linkStatic = false;
+               explicitNdll = true;
                parts.shift();
             }
 
@@ -59,7 +61,7 @@ class Builder
 
             switch(target)
             {
-               case "ios", "android", "blackberry", "tizen", "emscripten", "webos", "windows", "linux", "mac":
+               case "ios", "android", "blackberry", "tizen", "emscripten", "webos", "windows", "linux", "mac", "mingw":
                   defaultTarget = false;
                   if (linkStatic)
                   {
@@ -72,7 +74,7 @@ class Builder
                         targets.set(stat, parts);
                      }
                   }
-                  if (linkNdll && target!="ios")
+                  if (linkNdll && target!="ios" /*&& (target!="mingw" || explicitNdll)*/ )
                      targets.set(target, parts);
 
                default:
@@ -95,7 +97,8 @@ class Builder
          if (defaultTarget)
          {
             var target = getDefault();
-            targets.set(target,[]);
+            if (target!="mingw")
+               targets.set(target,[]);
             targets.set("static-" +target,[]);
             onEmptyTarget();
             Sys.println("\nUsing default = " + target);
@@ -123,6 +126,9 @@ class Builder
 
                case "windows":
                   validArchs.set("m32", ["-D"+target, "-DHXCPP_M32", staticFlag] );
+
+               case "mingw":
+                  validArchs.set("m32", ["-Dwindows", "-DHXCPP_MINGW", "-DHXCPP_M32", staticFlag] );
 
                case "ios", "ioslegacy":
                   validArchs.set("armv6", ["-Diphoneos", staticFlag] );
@@ -255,12 +261,12 @@ class Builder
       var link = allowStatic() && allowNdll() ? "[link-]" : "";
       Sys.println("Usage : neko build.n [clean] " + link +
                   "target[-arch][-arch] ...] [-debug] [-verbose] [-D...]");
-      Sys.println("  target  : ios, android, windows, linux, mac");
+      Sys.println("  target  : ios, android, windows, linux, mac, mingw");
       Sys.println("            default (=current system)");
       if (link!="")
       {
          Sys.println("  link    : ndll- or static-");
-         Sys.println("            (none specified = both link types");
+         Sys.println("            (none specified = both link types, mingw static only");
       }
       Sys.println("  arch    : -armv5 -armv6 -armv7 -arm64 -x86 -x86_64 -m32 -m64");
       Sys.println("            (none specified = all valid architectures");

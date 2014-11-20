@@ -155,10 +155,11 @@ inline void EnsureObjPtr(hx::Object *) { }
 
 #define HX_MARK_OBJECT(ioPtr) if (ioPtr) hx::MarkObjectAlloc(ioPtr, __inCtx );
 
-#define HX_GC_CONST_STRING  0xffffffff
+
+#define HX_GC_CONST_ALLOC_BIT  0x80000000
 
 #define HX_MARK_STRING(ioPtr) \
-   if (ioPtr && (((int *)ioPtr)[-1] != HX_GC_CONST_STRING) ) hx::MarkAlloc((void *)ioPtr, __inCtx );
+   if (ioPtr && !(((unsigned int *)ioPtr)[-1] & HX_GC_CONST_ALLOC_BIT) ) hx::MarkAlloc((void *)ioPtr, __inCtx );
 
 #define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx ); }
 
@@ -172,7 +173,7 @@ inline void EnsureObjPtr(hx::Object *) { }
   { hx::EnsureObjPtr(ioPtr); if (ioPtr) __inCtx->visitObject( (hx::Object **)&ioPtr); }
 
 #define HX_VISIT_STRING(ioPtr) \
-   if (ioPtr && (((int *)ioPtr)[-1] != HX_GC_CONST_STRING) ) __inCtx->visitAlloc((void **)&ioPtr);
+   if (ioPtr && !(((unsigned int *)ioPtr)[-1] & HX_GC_CONST_ALLOC_BIT) ) __inCtx->visitAlloc((void **)&ioPtr);
 
 #define HX_VISIT_ARRAY(ioPtr) { if (ioPtr) __inCtx->visitAlloc((void **)&ioPtr); }
 

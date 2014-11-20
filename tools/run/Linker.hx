@@ -107,12 +107,21 @@ class Linker
             else
                libs[i] = parts[0] + parts[1];
          }
+
          if (!isOutOfDateLibs)
          {
             var lib = libs[i];
             if (FileSystem.exists(lib))
                isOutOfDateLibs = isOutOfDate(out_name,[lib]);
          }
+
+         if (BuildTool.isMingw())
+         {
+            var libMatch = ~/^([a-zA-Z0-9_]+).lib$/;
+            if (libMatch.match(libs[i]))
+               libs[i] = "-l" + libMatch.matched(1);
+         }
+
       }
 
       if (isOutOfDateLibs || isOutOfDate(out_name,inObjs) || isOutOfDate(out_name,inTarget.mDepends))

@@ -197,7 +197,18 @@ class ProcessManager
       var output = "";
       var result = 0;
       
-      var process = new Process(command, args);
+      var process:Process = null;
+      try
+      {
+         process = new Process(command, args);
+      }
+      catch(e:Dynamic)
+      {
+         if (ignoreErrors)
+            return null;
+         Log.error(e+"");
+      }
+
       var buffer = new BytesOutput();
       
       if (waitForOutput)
@@ -261,10 +272,35 @@ class ProcessManager
       
       command = PathManager.escape(command);
 
-      Log.info("", " - \x1b[1mRunning process:\x1b[0m " + formatMessage(command, args));
-      
+      Log.lock();
+      // Other thread may have already thrown an error
+      if (BuildTool.threadExitCode!=0)
+      {
+         Log.unlock();
+         return BuildTool.threadExitCode;
+      }
+      Log.info("", " - \x1b[1mRunning process :\x1b[0m " + formatMessage(command, args));
+      Log.unlock();
+
       var output = new Array<String>();
-      var process = new Process(command, args);
+      var process:Process = null;
+      try
+      {
+         process = new Process(command, args);
+      }
+      catch(e:Dynamic)
+      {
+         Log.lock();
+         if (BuildTool.threadExitCode == 0)
+         {
+            Log.info('${Log.RED}${Log.BOLD}$e${Log.NORMAL}\n');
+            BuildTool.setThreadError(-1);
+         }
+         Log.unlock();
+         return -1;
+      }
+
+
       var err = process.stderr;
       var out = process.stdout;
       var reader = BuildTool.helperThread.value;

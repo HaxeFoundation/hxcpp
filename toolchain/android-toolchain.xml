@@ -114,6 +114,7 @@
  <flag value="-fno-strict-aliasing"/>
  <flag value="-finline-limit=10000"/>
  <flag value="-DANDROID=ANDROID"/>
+ <flag value="${ANDROID_PLATFORM_DEFINE}"/>
  <!-- todo <flag value="-Werror"/> -->
  <flag value="-Wa,--noexecstack"/>
  <flag value="-O2" unless="debug"/>

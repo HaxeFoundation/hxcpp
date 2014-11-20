@@ -142,15 +142,27 @@ int __hxcpp_irand(int inMax)
 void __hxcpp_stdlibs_boot()
 {
    #if defined(HX_WINDOWS) && !defined(HX_WINRT)
-   AttachConsole(ATTACH_PARENT_PROCESS);
-   if (GetConsoleWindow() != NULL)
+   HMODULE kernel32 = LoadLibraryA("kernel32");
+   if (kernel32)
    {
-      if (_fileno(stdout) < 0 || _get_osfhandle(fileno(stdout)) < 0)
-         freopen("CONOUT$", "w", stdout);
-      if (_fileno(stderr) < 0 || _get_osfhandle(fileno(stderr)) < 0)
-         freopen("CONOUT$", "w", stderr);
-      if (_fileno(stdin) < 0 || _get_osfhandle(fileno(stdin)) < 0)
-         freopen("CONIN$", "r", stdin);
+      typedef BOOL (WINAPI *AttachConsoleFunc)(DWORD);
+      typedef HWND (WINAPI *GetConsoleWindowFunc)(void);
+      AttachConsoleFunc attach = (AttachConsoleFunc)GetProcAddress(kernel32,"AttachConsole");
+      GetConsoleWindowFunc getConsole = (GetConsoleWindowFunc)GetProcAddress(kernel32,"GetConsoleWindow");
+      if (attach && getConsole)
+      {
+         attach( /*ATTACH_PARENT_PROCESS*/ (DWORD)-1 );
+
+         if (getConsole())
+         {
+            if (_fileno(stdout) < 0 || _get_osfhandle(fileno(stdout)) < 0)
+               freopen("CONOUT$", "w", stdout);
+            if (_fileno(stderr) < 0 || _get_osfhandle(fileno(stderr)) < 0)
+               freopen("CONOUT$", "w", stderr);
+            if (_fileno(stdin) < 0 || _get_osfhandle(fileno(stdin)) < 0)
+               freopen("CONIN$", "r", stdin);
+         }
+      }
    }
    #endif
    

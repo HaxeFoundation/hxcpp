@@ -40,7 +40,7 @@
 <set name="LIBPREFIX" value="lib" if="iphonesim"/>
 <set name="LIBPREFIX" value="lib" if="static_link"/>
 <set name="LIBEXT" value=".a" />
-<set name="LIBEXT" value=".lib" if="windows"/>
+<set name="LIBEXT" value=".lib" if="windows" unless="mingw" />
 
 
 <set name="haxelink" value="exe" unless="static_link"/>

@@ -98,6 +98,35 @@ class Setup
       }
    }
 
+   public static function setupMingw(ioDefines:Hash<String>)
+   {
+      // Setup MINGW_ROOT or fail
+      if (!ioDefines.exists("MINGW_ROOT"))
+      {
+       
+         var haxelib = PathManager.getHaxelib("minimingw","",false);
+         if (haxelib!=null && haxelib!="")
+         {
+            ioDefines.set("MINGW_ROOT", haxelib);
+            Log.v('Using haxelib version of MinGW, $haxelib');
+            return;
+         }
+
+         var guesses = ["c:/MinGW"];
+         for(guess in guesses )
+         {
+            if (FileSystem.exists(guess))
+            {
+               ioDefines.set("MINGW_ROOT", guess);
+               Log.v('Using default version of MinGW, $guess');
+               return;
+            }
+         }
+
+         Log.error('Could not guess MINGW_ROOT (tried $guesses) - please set explicitly');
+      }
+   }
+
    public static function isRaspberryPi()
    {
       var proc = new Process("uname",["-a"]);
@@ -154,6 +183,10 @@ class Setup
       else if (inWhat=="msvc")
       {
          setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"));
+      }
+      else if (inWhat=="mingw")
+      {
+         setupMingw(ioDefines);
       }
       else
       {
@@ -259,8 +292,14 @@ class Setup
       }
       catch(e:Dynamic) { }
 
+      var androidPlatform = 5;
       if (defines.exists("PLATFORM"))
       {
+         var platform = defines.get("PLATFORM");
+         var id = Std.parseInt( platform.substr("android-".length) );
+         if (id==0 || id==null)
+            Log.error('Badly formed android PLATFORM "$platform" - should be like android-123');
+         androidPlatform = id;
          Log.info("", "\x1b[33;1mUsing Android NDK platform: " + defines.get("PLATFORM") + "\x1b[0m");
       }
       else
@@ -288,7 +327,9 @@ class Setup
 
          Log.info("", "\x1b[33;1mUsing newest Android NDK platform: " + best + "\x1b[0m");
          defines.set("PLATFORM", "android-" + best);
+         androidPlatform = best;
       }
+      defines.set("ANDROID_PLATFORM_DEFINE", "-DHXCPP_ANDROID_PLATFORM=" + androidPlatform);
       if (Log.verbose) Log.println("");
    }
 

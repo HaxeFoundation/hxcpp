@@ -341,17 +341,17 @@ static value result_get_float( value v, value n ) {
 }
 
 DEFINE_PRIM(sqlite_connect,1);
-DEFINE_PRIM(close,1);
-DEFINE_PRIM(request,2);
-DEFINE_PRIM(last_insert_id,1);
+DEFINE_LIB_PRIM("sqlite",close,1);
+DEFINE_LIB_PRIM("sqlite",request,2);
+DEFINE_LIB_PRIM("sqlite",last_insert_id,1);
 
-DEFINE_PRIM(result_get_length,1);
-DEFINE_PRIM(result_get_nfields,1);
+DEFINE_LIB_PRIM("sqlite",result_get_length,1);
+DEFINE_LIB_PRIM("sqlite",result_get_nfields,1);
 
-DEFINE_PRIM(result_next,1);
-DEFINE_PRIM(result_get,2);
-DEFINE_PRIM(result_get_int,2);
-DEFINE_PRIM(result_get_float,2);
+DEFINE_LIB_PRIM("sqlite",result_next,1);
+DEFINE_LIB_PRIM("sqlite",result_get,2);
+DEFINE_LIB_PRIM("sqlite",result_get_int,2);
+DEFINE_LIB_PRIM("sqlite",result_get_float,2);
 
 /* ************************************************************************ */
 

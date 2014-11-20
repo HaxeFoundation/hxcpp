@@ -25,7 +25,7 @@ class Log
 
    public static function initMultiThreaded()
    {
-     if (printMutex!=null)
+     if (printMutex==null)
         printMutex = new Mutex();
    }
    

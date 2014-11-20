@@ -30,6 +30,7 @@ class BuildTool
    var mStripper:Stripper;
    var mPrelinkers:Prelinkers;
    var mLinkers:Linkers;
+   var mCopyFiles:Array<CopyFile>;
    var mFileGroups:FileGroups;
    var mTargets:Targets;
    var mFileStack:Array<String>;
@@ -69,6 +70,7 @@ class BuildTool
       mLinkers = new Linkers();
       mCurrentIncludeFile = "";
       mFileStack = [];
+      mCopyFiles = [];
       mIncludePath = inIncludePath;
       instance = this;
 
@@ -385,7 +387,12 @@ class BuildTool
             if (exe!="" && mStripper!=null)
                if (target.mToolID=="exe" || target.mToolID=="dll")
                   mStripper.strip(exe);
+
       }
+
+      for(copyFile in mCopyFiles)
+         if (copyFile.toolId==null || copyFile.toolId==target.mToolID)
+            copyFile.copy(target.mOutputDir);
 
       if (restoreDir!="")
          Sys.setCwd(restoreDir);
@@ -782,6 +789,12 @@ class BuildTool
       return instance.mDefines.get("toolchain")=="msvc";
    }
 
+   public static function isMingw()
+   {
+      return instance.mDefines.get("toolchain")=="mingw";
+   }
+
+
    // Process args and environment.
    static public function main()
    {
@@ -1025,16 +1038,12 @@ class BuildTool
          defines.set("toolchain","gph");
          defines.set("gph","gph");
          defines.set("BINDIR","GPH");
-      } else if (defines.exists ("gcw0")) {
-	 defines.set ("toolchain", "gcw0");
-	 defines.set ("gcw0", "gcw0");
-	 defines.set ("BINDIR", "GCW0");
-      } else if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") )
+      }
+      else if (defines.exists ("gcw0"))
       {
-         set64(defines,m64);
-         defines.set("toolchain","mingw");
-         defines.set("mingw","mingw");
-         defines.set("BINDIR",m64 ? "Windows64":"Windows");
+         defines.set ("toolchain", "gcw0");
+         defines.set ("gcw0", "gcw0");
+         defines.set ("BINDIR", "GCW0");
       }
       else if (defines.exists("cygwin") || defines.exists("HXCPP_CYGWIN"))
       {
@@ -1060,16 +1069,40 @@ class BuildTool
          else
          {
             set64(defines,m64);
-            defines.set("toolchain","msvc");
             defines.set("windows","windows");
-            //msvc = true;
-            if ( defines.exists("winrt") )
+            defines.set("BINDIR",m64 ? "Windows64":"Windows");
+
+            // Choose between MSVC and MINGW
+            var useMsvc = false;
+
+            if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") || defines.exists("minimingw"))
+               useMsvc = false;
+            else if ( defines.exists("winrt") || defines.exists("HXCPP_MSVC_VER"))
+               useMsvc = true;
+            else
             {
-               defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
+                for(i in 8...24)
+                {
+                   if (Sys.getEnv("VS" + i + "0COMNTOOLS")!=null)
+                   {
+                      useMsvc = true;
+                      break;
+                   }
+                }
+
+                Log.v("Using default windows compiler : " + (useMsvc ? "MSVC" : "MinGW") );
+            }
+
+            if (useMsvc)
+            {
+               defines.set("toolchain","msvc");
+               if ( defines.exists("winrt") )
+                  defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
             }
             else
             {
-               defines.set("BINDIR",m64 ? "Windows64":"Windows");
+               defines.set("toolchain","mingw");
+               defines.set("mingw","mingw");
             }
          }
       }
@@ -1249,6 +1282,12 @@ class BuildTool
                      createTarget(el,mTargets.get(name));
                   else
                      mTargets.set( name, createTarget(el,null) );
+               case "copyFile" : 
+                  mCopyFiles.push(
+                      new CopyFile(substitute(el.att.name),
+                                   substitute(el.att.from),
+                                   el.has.allowMissing ?  subBool(el.att.allowMissing) : false,
+                                   el.has.toolId ?  substitute(el.att.toolId) : null ) );
                case "section" : 
                   parseXML(el,"");
             }
@@ -1316,6 +1355,12 @@ class BuildTool
       }
 
       return str;
+   }
+
+   public function subBool(str:String):Bool
+   {
+      var result = substitute(str);
+      return result=="t" || result=="true" || result=="1";
    }
 
    public function valid(inEl:Fast,inSection:String):Bool

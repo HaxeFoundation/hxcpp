@@ -86,6 +86,7 @@
 
 typedef char HX_CHAR;
 
+
 #define HX_STRINGI(s,len) ::String( (const HX_CHAR *)(("\xff\xff\xff\xff" s)) + 4 ,len)
 
 #define HX_STRI(s) HX_STRINGI(s,sizeof(s)/sizeof(HX_CHAR)-1)
@@ -129,6 +130,13 @@ typedef char HX_CHAR;
   #ifdef HXCPP_BIG_ENDIAN
   #undef HXCPP_BIG_ENDIAN
   #endif
+#endif
+
+
+#ifdef HXCPP_BIG_ENDIAN
+#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((h3 h2 h1 h0 "\x80\x00\x00\x00" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
+#else
+#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((h0 h1 h2 h3 "\x00\x00\x00\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
 #endif
 
 

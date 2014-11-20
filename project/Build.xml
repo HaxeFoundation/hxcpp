@@ -25,7 +25,7 @@
 <target id="std" output="${LIBPREFIX}std${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <builddir name="libs/std" />
   <files id="std"/>
-  <lib name="wsock32.lib" if="windows" unless="static_link" />
+  <lib name="ws2_32.lib" if="windows" unless="static_link" />
   <lib name="-lsocket" if="blackberry" unless="static_link" />
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
@@ -122,7 +122,7 @@
 <target id="mysql" output="${LIBPREFIX}mysql5${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="mysql"/>
   <builddir name="libs/mysql"/>
-  <lib name="wsock32.lib" if="windows" unless="static_link" />
+  <lib name="ws2_32.lib" if="windows" unless="static_link" />
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
 
@@ -206,12 +206,14 @@
    <target id="mysql"/>
    <target id="sqlite"/>
    <section if="static_link">
-      <target id="msvccompat" if="windows" />
+      <target id="msvccompat" if="windows" unless="mingw" />
       <target id="linuxcompat" if="linux" />
       <target id="linuxcompat" if="gcw0" />
    </section>
    <section unless="static_link">
-      <target id="nekoapi" if="windows" unless="HXCPP_M64"/>
+      <section unless="mingw">
+         <target id="nekoapi" if="windows" unless="HXCPP_M64"/>
+      </section>
       <target id="nekoapi" if="macos" />
       <target id="nekoapi" if="linux" />
    </section>
