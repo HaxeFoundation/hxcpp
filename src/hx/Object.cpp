@@ -51,7 +51,7 @@ double Object::__INumField(int inFieldID)
 	return __IField(inFieldID);
 }
 
-hx::FieldMap *Object::__GetFieldMap() { return 0; }
+Dynamic *Object::__GetFieldMap() { return 0; }
 
 
 int Object::__Compare(const Object *inRHS) const
@@ -179,7 +179,7 @@ void Object::__GetFields(Array<String> &outFields)
 
 String Object::toString()
 {
-   FieldMap *m = __GetFieldMap();
+   Dynamic *m = __GetFieldMap();
    if (m)
    {
       Dynamic func;

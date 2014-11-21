@@ -13,9 +13,6 @@
 #endif
 
 
-#include "RedBlack.h"
-
-
 
 void *String::operator new( size_t inSize )
 {

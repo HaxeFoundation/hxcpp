@@ -101,6 +101,18 @@ public:
    inline bool operator!=(const null &inRHS) const { return __s!=0; }
 
    inline int getChar( int index ) { return __s[index]; }
+   inline unsigned int hash( ) const
+   {
+      if (__s==0) return 0;
+      //Need to fix for characters not in 0...128
+      //if ( (((unsigned int *)__s)[-1] & HX_GC_NO_HASH_MASK) == HX_GC_CONST_ALLOC_BIT)
+      //   return ((unsigned int *)__s)[-2];
+
+      unsigned int result = 0;
+      for(int i=0;i<length;i++)
+         result = result*223 + __s[i];
+      return result;
+   }
 
 
    inline int compare(const ::String &inRHS) const

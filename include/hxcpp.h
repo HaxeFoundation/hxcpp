@@ -189,7 +189,6 @@ namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
 
 namespace cpp { class CppInt32__; }
 namespace hx { class Object; }
-namespace hx { class FieldMap; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
 namespace hx { template<typename O> class ObjectPtr; }

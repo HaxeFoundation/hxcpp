@@ -157,6 +157,8 @@ inline void EnsureObjPtr(hx::Object *) { }
 
 
 #define HX_GC_CONST_ALLOC_BIT  0x80000000
+#define HX_GC_NO_STRING_HASH   0x40000000
+#define HX_GC_NO_HASH_MASK     (HX_GC_CONST_ALLOC_BIT | HX_GC_NO_STRING_HASH)
 
 #define HX_MARK_STRING(ioPtr) \
    if (ioPtr && !(((unsigned int *)ioPtr)[-1] & HX_GC_CONST_ALLOC_BIT) ) hx::MarkAlloc((void *)ioPtr, __inCtx );

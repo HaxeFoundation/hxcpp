@@ -100,7 +100,7 @@ public:
    virtual Dynamic __SetField(const String &inField,const Dynamic &inValue, bool inCallProp);
    virtual void  __SetThis(Dynamic inThis);
    virtual Dynamic __Run(const Array<Dynamic> &inArgs);
-   virtual hx::FieldMap *__GetFieldMap();
+   virtual Dynamic *__GetFieldMap();
    virtual void __GetFields(Array<String> &outFields);
    virtual Class __GetClass() const;
 

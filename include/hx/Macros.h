@@ -45,31 +45,27 @@
    static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; }
 
 
-#define HX_DECLARE_IMPLEMENT_DYNAMIC  hx::FieldMap *__mDynamicFields; \
-    hx::FieldMap *__GetFieldMap() { return __mDynamicFields; } \
+#define HX_DECLARE_IMPLEMENT_DYNAMIC  Dynamic __mDynamicFields; \
+    Dynamic *__GetFieldMap() { return &__mDynamicFields; } \
     bool __HasField(const String &inString) \
-      { return hx::FieldMapHas(__mDynamicFields,inString) || super::__HasField(inString); } 
+      { return hx::FieldMapHas(&__mDynamicFields,inString) || super::__HasField(inString); } 
 
 
-#define HX_INIT_IMPLEMENT_DYNAMIC __mDynamicFields = hx::FieldMapCreate();
+#define HX_INIT_IMPLEMENT_DYNAMIC 
 
-#define HX_IMPLEMENT_HAS_FIELD(class) \
-    bool class::__HasField(const String &inString) \
-    {  if (hx::FieldMap::
+#define HX_MARK_DYNAMIC HX_MARK_MEMBER(__mDynamicFields)
 
-#define HX_MARK_DYNAMIC hx::FieldMapMark(__mDynamicFields, __inCtx);
-
-#define HX_VISIT_DYNAMIC hx::FieldMapVisit(&__mDynamicFields, __inCtx);
+#define HX_VISIT_DYNAMIC HX_VISIT_MEMBER(__mDynamicFields);
 
 #define HX_CHECK_DYNAMIC_GET_FIELD(inName) \
-   { Dynamic d;  if (hx::FieldMapGet(__mDynamicFields,inName,d)) return d; }
+   { Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inName,d)) return d; }
 
 #define HX_CHECK_DYNAMIC_GET_INT_FIELD(inID) \
-   { Dynamic d;  if (hx::FieldMapGet(__mDynamicFields,inID,d)) return d; }
+   { Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inID,d)) return d; }
 
-#define HX_DYNAMIC_SET_FIELD(inName,inValue) hx::FieldMapSet(__mDynamicFields,inName,inValue) 
+#define HX_DYNAMIC_SET_FIELD(inName,inValue) hx::FieldMapSet(&__mDynamicFields,inName,inValue) 
 
-#define HX_APPEND_DYNAMIC_FIELDS(outFields) hx::FieldMapAppendFields(__mDynamicFields,outFields)
+#define HX_APPEND_DYNAMIC_FIELDS(outFields) hx::FieldMapAppendFields(&__mDynamicFields,outFields)
 
 
 #define HX_ARR_LIST0 

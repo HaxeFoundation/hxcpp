@@ -6,6 +6,8 @@ namespace hx
 
 
 inline unsigned int HashCalcHash(int inKey) { return inKey; }
+inline unsigned int HashCalcHash(const String &inKey) { return inKey.hash(); }
+
 inline void HashClear(int &ioValue) { }
 inline void HashClear(Dynamic &ioValue) { ioValue=null(); }
 inline void HashClear(String &ioValue) { ioValue=String(); }
@@ -60,6 +62,31 @@ public:
    Key          key;
    int          next;
 };
+
+
+// An string element gets hash from string or calculates it
+template<typename VALUE>
+struct TStringElement
+{
+   typedef String Key;
+   typedef VALUE  Value;
+
+   enum { IgnoreHash = 0 };
+public:
+   inline void  setKey(String inKey, unsigned int inHash)
+   {
+      key = inKey;
+      hash = inHash;
+   }
+   inline unsigned int getHash() { return hash; }
+
+   Value        value;
+   Key          key;
+   unsigned int hash;
+   int          next;
+};
+
+
 
 
 enum HashStore
@@ -125,7 +152,7 @@ struct HashBase : public Object
 
    virtual bool remove(KEY inKey) = 0;
    virtual bool exists(KEY inKey) = 0;
-   virtual Dynamic keys() = 0;
+   virtual Array<KEY> keys() = 0;
    virtual Dynamic values() = 0;
 
    int getSize() { return size-holes; }
@@ -311,7 +338,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       switch(inStore)
       {
          case hashInt:
-            return TConvertStore< TIntElement<Key> >();
+            return TConvertStore< TElement<Key, int> >();
          case hashFloat:
             return TConvertStore< TElement<Key,Float> >();
          case hashString:
@@ -434,7 +461,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          array->push(elem.key);
       }
    };
-   Dynamic keys()
+   Array<Key> keys()
    {
       KeyBuilder builder(getSize());
       iterate(builder);
@@ -477,7 +504,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       void operator()(typename Hash::Element &elem)
       {
          if (array->length>1)
-            array->push(HX_CSTRING(","));
+            array->push(HX_CSTRING(", "));
          array->push(String(elem.key));
          array->push(HX_CSTRING(" => "));
          array->push(String(elem.value));

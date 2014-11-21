@@ -1,6 +1,36 @@
 #ifndef HX_ANON_H
 #define HX_ANON_H
 
+
+namespace hx
+{
+
+typedef Dynamic FieldMap;
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+Dynamic FieldMapCreate();
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+bool FieldMapGet(Dynamic *inMap, const ::String &inName, ::Dynamic &outValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+bool FieldMapHas(Dynamic *inMap, const ::String &inName);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+bool FieldMapGet(Dynamic *inMap, int inID, ::Dynamic &outValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void FieldMapSet(Dynamic *inMap, const ::String &inName, const ::Dynamic &inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void FieldMapAppendFields(Dynamic *inMap,::Array< ::String> &outFields);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void FieldMapMark(Dynamic *inMap,hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+void FieldMapVisit(Dynamic **inMap,hx::VisitContext *__inCtx);
+
+
+} // end namespace hx
+
+
+
+
 namespace hx
 {
 
@@ -8,34 +38,13 @@ namespace hx
 //
 // The hx::Anon_obj contains an arbitrary string map of fields.
 
-class FieldMap;
-
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-FieldMap *FieldMapCreate();
-
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-bool FieldMapGet(hx::FieldMap *inMap, const ::String &inName, ::Dynamic &outValue);
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-bool FieldMapHas(hx::FieldMap *inMap, const ::String &inName);
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-bool FieldMapGet(hx::FieldMap *inMap, int inID, ::Dynamic &outValue);
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void FieldMapSet(hx::FieldMap *inMap, const ::String &inName, const ::Dynamic &inValue);
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void FieldMapAppendFields(hx::FieldMap *inMap,::Array< ::String> &outFields);
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void FieldMapMark(hx::FieldMap *inMap,hx::MarkContext *__inCtx);
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void FieldMapVisit(hx::FieldMap **inMap,hx::VisitContext *__inCtx);
-
-
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Anon_obj : public hx::Object
 {
    typedef hx::Anon_obj OBJ_;
    typedef hx::ObjectPtr<hx::Anon_obj> Anon;
    typedef hx::Object super;
 
-   hx::FieldMap *mFields;
+   Dynamic mFields;
 
 public:
    Anon_obj();
@@ -50,10 +59,7 @@ public:
    bool __HasField(const String &inString);
    Dynamic __SetField(const String &inString,const Dynamic &inValue ,bool inCallProp);
    virtual void __GetFields(Array<String> &outFields);
-	hx::FieldMap *__GetFieldMap() { return mFields; }
-
-
-   static void Destroy(hx::Object * inObj);
+   Dynamic *__GetFieldMap() { return &mFields; }
 
    virtual int __GetType() const { return vtObject; }
 

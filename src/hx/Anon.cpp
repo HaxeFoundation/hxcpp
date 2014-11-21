@@ -1,8 +1,47 @@
 #include <hxcpp.h>
-#include "FieldMap.h"
 
 namespace hx
 {
+
+Dynamic FieldMapCreate() { return Dynamic(); }
+
+bool FieldMapGet(FieldMap *inMap, const String &inName, Dynamic &outValue)
+{
+   if (!inMap || !inMap->mPtr)
+      return false;
+
+   if (!__string_hash_exists(*inMap,inName))
+      return false;
+   outValue = __string_hash_get(*inMap, inName);
+   return true;
+}
+
+
+bool FieldMapHas(FieldMap *inMap, const String &inName)
+{
+   return inMap && inMap->mPtr &&  __string_hash_exists(*inMap,inName);
+}
+
+
+void FieldMapSet(FieldMap *inMap, const String &inName, const Dynamic &inValue)
+{
+   __string_hash_set(*inMap, inName, inValue);
+}
+
+
+void FieldMapAppendFields(FieldMap *inMap,Array<String> &outFields)
+{
+   Array<String> keys = __string_hash_keys(*inMap);
+   if (outFields->length==0)
+      outFields = keys;
+   else
+      outFields = outFields->concat(keys);
+}
+
+
+// -- Anon_obj -------------------------------------------------
+
+
 
 Anon_obj::Anon_obj()
 {
@@ -11,101 +50,62 @@ Anon_obj::Anon_obj()
 
 void Anon_obj::__Mark(hx::MarkContext *__inCtx)
 {
-   // We will get mFields=0 here if we collect in the constructor before mFields is assigned
-   if (mFields)
-   {
-      hx::MarkAlloc(mFields , __inCtx);
-      hx::FieldMapMark(mFields , __inCtx);
-   }
+   HX_MARK_MEMBER(mFields);
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
 void Anon_obj::__Visit(hx::VisitContext *__inCtx)
 {
-   // We will get mFields=0 here if we collect in the constructor before mFields is assigned
-   if (mFields)
-   {
-      hx::FieldMapVisit(&mFields , __inCtx);
-   }
+   HX_VISIT_MEMBER(mFields);
 }
 #endif
 
-Dynamic Anon_obj::__Field(const String &inString, bool inCallProp)
+Dynamic Anon_obj::__Field(const String &inName, bool inCallProp)
 {
-   Dynamic *v = mFields->Find(inString);
-   if (!v)
-      return null();
-   return *v;
+   return __string_hash_get(mFields,inName);
 }
 
-bool Anon_obj::__HasField(const String &inString)
+bool Anon_obj::__HasField(const String &inName)
 {
-   return mFields->Find(inString);
+   return __string_hash_exists(mFields,inName);
 }
-
 
 bool Anon_obj::__Remove(String inKey)
 {
-   return mFields->Erase(inKey);
+   return __string_hash_remove(mFields,inKey);
 }
 
 
-Dynamic Anon_obj::__SetField(const String &inString,const Dynamic &inValue, bool inCallProp)
+Dynamic Anon_obj::__SetField(const String &inName,const Dynamic &inValue, bool inCallProp)
 {
-   mFields->Insert(inString,inValue);
+   __string_hash_set(mFields,inName,inValue);
    return inValue;
 }
 
 Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetThisPointer)
 {
-   mFields->Insert(inName,inValue);
+   __string_hash_set(mFields,inName,inValue);
    if (inSetThisPointer && inValue.GetPtr())
       inValue.GetPtr()->__SetThis(this);
    return this;
 }
 
-
-struct Stringer
-{
-   Stringer(String &inString) : result(inString), first(true) { }
-   void VisitNode(void **) { }
-   void VisitValue(const String &inStr, Dynamic &inDyn)
-   {
-      if (first)
-      {
-         result += inStr + HX_CSTRING(" => ") + (String)(inDyn);
-         first = false;
-      }
-      else
-         result += HX_CSTRING(", ") + inStr + HX_CSTRING(" => ") + (String)(inDyn);
-   }
-
-   bool first;
-   String &result;
-};
-
 String Anon_obj::toString()
 {
    Dynamic func;
-   if (FieldMapGet(mFields, HX_CSTRING("toString"), func))
+   if (FieldMapGet(&mFields, HX_CSTRING("toString"), func))
        return func();
 
-   String result = HX_CSTRING("{ ");
-   Stringer stringer(result);
-   mFields->Iterate(stringer);
-   return result + HX_CSTRING(" }");
+   return __string_hash_to_string(mFields);
 }
 
 void Anon_obj::__GetFields(Array<String> &outFields)
 {
-   KeyGetter getter(outFields);
-   mFields->Iterate(getter);
+   outFields = __string_hash_keys(mFields);
 }
 
 
-
 String Anon_obj::__ToString() const { return HX_CSTRING("Anon"); }
-
 
 Dynamic Anon_obj::__Create(DynamicArray inArgs) { return Anon(new Anon_obj); }
 
@@ -135,9 +135,9 @@ Anon SourceInfo(String inFile, int inLine, String inClass, String inMethod)
 
 bool __hxcpp_anon_remove(Dynamic inObj,String inKey)
 {
-   hx::FieldMap *map = inObj->__GetFieldMap();
+   Dynamic *map = inObj->__GetFieldMap();
    if (map)
-      return map->Erase(inKey);
+      return __string_hash_remove(*map,inKey);
    return false;
 }
 
