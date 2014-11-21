@@ -362,7 +362,11 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
 
    String bin =
 #ifdef _WIN32
+  #ifdef HXCPP_M64
+    HX_CSTRING("Windows64");
+  #else
     HX_CSTRING("Windows");
+  #endif
 // Unix...
 #elif defined(__APPLE__)
   #ifdef HXCPP_M64
