@@ -7,6 +7,10 @@ namespace hx
 
 inline unsigned int HashCalcHash(int inKey) { return inKey; }
 inline unsigned int HashCalcHash(const String &inKey) { return inKey.hash(); }
+inline unsigned int HashCalcHash(const Dynamic &inKey)
+{
+   return __hxcpp_obj_hash(inKey);
+}
 
 inline void HashClear(int &ioValue) { }
 inline void HashClear(Dynamic &ioValue) { ioValue=null(); }
@@ -18,31 +22,6 @@ struct NeedsMarking { enum { Yes = 0 }; };
 template<> struct NeedsMarking<Dynamic> { enum { Yes = 1 }; };
 template<> struct NeedsMarking<String> { enum { Yes = 1 }; };
 
-
-template<typename KEY, typename VALUE>
-struct TElement
-{
-   typedef KEY   Key;
-   typedef VALUE Value;
-
-   enum { IgnoreHash = 0 };
-
-private:
-   unsigned int hash;
-
-public:
-   inline void  setKey(KEY inKey, unsigned int inHash)
-   {
-      key = inKey;
-      hash = inHash;
-   }
-   inline unsigned int getHash()   { return hash; }
-
-   Value        value;
-   Key          key;
-   int          next;
-};
-
 // An int element has key = hash
 template<typename VALUE>
 struct TIntElement
@@ -51,6 +30,13 @@ struct TIntElement
    typedef VALUE Value;
 
    enum { IgnoreHash = 1 };
+   enum { WeakKeys = 0 };
+
+   typedef TIntElement<Int>     IntValue;
+   typedef TIntElement<Float>   FloatValue;
+   typedef TIntElement<Dynamic> DynamicValue;
+   typedef TIntElement<String>  StringValue;
+
 public:
    inline void  setKey(int inKey, unsigned int )
    {
@@ -72,8 +58,47 @@ struct TStringElement
    typedef VALUE  Value;
 
    enum { IgnoreHash = 0 };
+   enum { WeakKeys = 0 };
+
+   typedef TStringElement<Int>     IntValue;
+   typedef TStringElement<Float>   FloatValue;
+   typedef TStringElement<Dynamic> DynamicValue;
+   typedef TStringElement<String>  StringValue;
+
+
 public:
    inline void  setKey(String inKey, unsigned int inHash)
+   {
+      key = inKey;
+      hash = inHash;
+   }
+   inline unsigned int getHash() { return hash; }
+
+   Value        value;
+   Key          key;
+   unsigned int hash;
+   int          next;
+};
+
+
+
+// An Dyanamic element must use the GC code get get a hash
+template<typename VALUE,bool WEAK>
+struct TDynamicElement
+{
+   typedef Dynamic Key;
+   typedef VALUE   Value;
+
+   enum { IgnoreHash = 0 };
+   enum { WeakKeys = WEAK };
+
+   typedef TDynamicElement<Int,WEAK>     IntValue;
+   typedef TDynamicElement<Float,WEAK>   FloatValue;
+   typedef TDynamicElement<Dynamic,WEAK> DynamicValue;
+   typedef TDynamicElement<String,WEAK>  StringValue;
+
+public:
+   inline void  setKey(Dynamic inKey, unsigned int inHash)
    {
       key = inKey;
       hash = inHash;
@@ -155,9 +180,15 @@ struct HashBase : public Object
    virtual Array<KEY> keys() = 0;
    virtual Dynamic values() = 0;
 
+   virtual void updateAfterGc() = 0;
+
    int getSize() { return size-holes; }
 
 };
+
+extern void RegisterWeakHash(HashBase<Dynamic> *);
+inline void RegisterWeakHash(HashBase<Int> *) { };
+inline void RegisterWeakHash(HashBase< ::String> *) { };
 
 
 
@@ -185,6 +216,42 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    Hash() : HashBase<Key>( StoreOf<Value>::store )
    {
       element = 0;
+      if (ELEMENT::WeakKeys)
+         RegisterWeakHash(this);
+   }
+
+   template<typename T>
+   bool TIsWeakRefValid(T &) { return true; }
+   bool TIsWeakRefValid(Dynamic &key) { return IsWeakRefValid(key.mPtr); }
+
+
+   void updateAfterGc()
+   {
+      if (ELEMENT::WeakKeys)
+      {
+         for(int b=0;b<bucketCount;b++)
+         {
+            int *headPtr = &bucket[b];
+            while(*headPtr>=0)
+            {
+               int slot = *headPtr;
+               Element &el = element[slot];
+               if (!TIsWeakRefValid(el.key))
+               {
+                  *headPtr = el.next;
+                  HashClear(el.key);
+                  HashClear(el.value);
+                  el.next = firstHole;
+                  firstHole = slot;
+                  holes++;
+               }
+               else
+               {
+                  headPtr = &el.next;
+               }
+            }
+         }
+      }
    }
 
    void rebucket(int inNewCount)
@@ -267,7 +334,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          {
             int slot = *head;
             *head = el.next;
-            HashClear(el.value);
+            HashClear(el.key);
             el.next = firstHole;
             firstHole = slot;
             holes++;
@@ -338,13 +405,13 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       switch(inStore)
       {
          case hashInt:
-            return TConvertStore< TElement<Key, int> >();
+            return TConvertStore< typename ELEMENT::IntValue >();
          case hashFloat:
-            return TConvertStore< TElement<Key,Float> >();
+            return TConvertStore< typename ELEMENT::FloatValue >();
          case hashString:
-            return TConvertStore< TElement<Key, ::String > >();
+            return TConvertStore< typename ELEMENT::StringValue >();
          case hashObject:
-            return TConvertStore< TElement<Key,Dynamic> >();
+            return TConvertStore< typename ELEMENT::DynamicValue >();
       }
       return 0;
    }
@@ -531,7 +598,10 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       HashMarker(hx::MarkContext *ctx) : __inCtx(ctx) { }
       void operator()(typename Hash::Element &inElem)
       {
-         HX_MARK_MEMBER(inElem.key);
+         if (!Hash::Element::WeakKeys)
+         {
+            HX_MARK_MEMBER(inElem.key);
+         }
          HX_MARK_MEMBER(inElem.value);
       }
    };
@@ -541,7 +611,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       HX_MARK_ARRAY(bucket);
       HX_MARK_ARRAY(element);
 
-      if (NeedsMarking<Key>::Yes || NeedsMarking<Value>::Yes)
+      if ( (NeedsMarking<Key>::Yes && !ELEMENT::WeakKeys) || NeedsMarking<Value>::Yes)
       {
          HashMarker marker(__inCtx);
          iterate(marker);

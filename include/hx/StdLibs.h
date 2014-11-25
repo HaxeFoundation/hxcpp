@@ -115,14 +115,13 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __int_hash_get_float(Dynamic &ioHash
 
 // --- StringHash ----------------------------------------------------------------------
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES inline hx::Object   *__string_hash_create() { return 0; }
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_get(Dynamic &ioHash,String inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __string_hash_exists(Dynamic &ioHash,String inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __string_hash_remove(Dynamic &ioHash,String inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Array< ::String> __string_hash_keys(Dynamic &ioHash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_values(Dynamic &ioHash);
-// Typed IntHash access...
+// Typed StringHash access...
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_int(Dynamic &ioHash,String inKey,int inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_string(Dynamic &ioHash,String inKey,::String inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_float(Dynamic &ioHash,String inKey,Float inValue);
@@ -130,6 +129,24 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int           __string_hash_get_int(Dynamic &ioHas
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_get_string(Dynamic &ioHash,String inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __string_hash_get_float(Dynamic &ioHash,String inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string(Dynamic &ioHash);
+
+
+// --- ObjectHash ----------------------------------------------------------------------
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool inWeakKey=false);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __object_hash_get(Dynamic &ioHash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __object_hash_exists(Dynamic &ioHash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __object_hash_remove(Dynamic &ioHash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array< ::Dynamic> __object_hash_keys(Dynamic &ioHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __object_hash_values(Dynamic &ioHash);
+// Typed ObjectHash access...
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_int(Dynamic &ioHash,Dynamic inKey,int inValue,bool inWeakKey=false);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_string(Dynamic &ioHash,Dynamic inKey,::String inValue,bool inWeakKey=false);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_float(Dynamic &ioHash,Dynamic inKey,Float inValue,bool inWeakKey=false);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __object_hash_get_int(Dynamic &ioHash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __object_hash_get_string(Dynamic &ioHash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __object_hash_get_float(Dynamic &ioHash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __object_hash_to_string(Dynamic &ioHash);
 
 
 // --- Date --------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 
 #include <hx/GC.h>
 #include <hx/Thread.h>
+#include "Hash.h"
 
 int gByteMarkID = 0;
 int gMarkID = 0;
@@ -1151,6 +1152,9 @@ FILE_SCOPE MakeZombieSet sMakeZombieSet;
 typedef hx::QuickVec<hx::Object *> ZombieList;
 FILE_SCOPE ZombieList sZombieList;
 
+typedef hx::QuickVec<hx::HashBase<Dynamic> *> WeakHashList;
+FILE_SCOPE WeakHashList sWeakHashList;
+
 
 InternalFinalizer::InternalFinalizer(hx::Object *inObj)
 {
@@ -1191,6 +1195,30 @@ void FindZombies(MarkContext &inContext)
       i = next;
    }
 }
+
+bool IsWeakRefValid(hx::Object *inPtr)
+{
+   unsigned char mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE];
+
+    // Special case of member closure - check if the 'this' pointer is still alive
+    bool isCurrent = mark==gByteMarkID;
+    if ( !isCurrent && inPtr->__GetType()==vtFunction)
+    {
+        hx::Object *thiz = (hx::Object *)inPtr->__GetHandle();
+        if (thiz)
+        {
+            mark = ((unsigned char *)thiz)[ENDIAN_MARK_ID_BYTE];
+            if (mark==gByteMarkID)
+            {
+               // The object is still alive, so mark the closure and continue
+               MarkAlloc(inPtr,0);
+               return true;
+            }
+         }
+    }
+    return isCurrent;
+}
+
 
 void RunFinalizers()
 {
@@ -1249,6 +1277,25 @@ void RunFinalizers()
 
       i = next;
    }
+
+   for(int i=0;i<sWeakHashList.size();    )
+   {
+      HashBase<Dynamic> *ref = sWeakHashList[i];
+      unsigned char mark = ((unsigned char *)ref)[ENDIAN_MARK_ID_BYTE];
+      // Object itself is gone - no need to worrk about that again
+      if ( mark!=gByteMarkID )
+      {
+         sWeakHashList.qerase(i);
+         // no i++ ...
+      }
+      else
+      {
+         ref->updateAfterGc();
+         i++;
+      }
+   }
+
+
 
    for(int i=0;i<sWeakRefs.size();    )
    {
@@ -1320,6 +1367,14 @@ hx::Object *GCGetNextZombie()
    hx::Object *result = sZombieList.pop();
    return result;
 }
+
+void RegisterWeakHash(HashBase<Dynamic> *inHash)
+{
+   AutoLock lock(*gSpecialObjectLock);
+   sWeakHashList.push(inHash);
+}
+
+
 
 void InternalEnableGC(bool inEnable)
 {
@@ -1688,6 +1743,8 @@ public:
           hx::sObjectIdMap[inTo] = id->second;
           hx::sObjectIdMap.erase(id);
        }
+
+       // Maybe do something faster with weakmaps
    }
 
 
@@ -3218,6 +3275,26 @@ hx::Object *__hxcpp_id_obj(int inId)
    return (hx::Object *)(inId);
    #endif
 }
+
+#if defined(HXCPP_GC_MOVING) || defined(HXCPP_FORCE_OBJ_MAP)
+unsigned int __hxcpp_obj_hash(Dynamic inObj)
+{
+   return __hxcpp_obj_id(inObj);
+}
+#else
+unsigned int __hxcpp_obj_hash(Dynamic inObj)
+{
+   if (!inObj.mPtr) return 0;
+   hx::Object *obj = inObj->__GetRealObject();
+   #if defined(HXCPP_M64)
+   size_t h64 = (size_t)obj;
+   return (unsigned int)(h64>>2) | (unsigned int)(h64>>32);
+   #else
+   return ((unsigned int)inObj.mPtr) >> 4;
+   #endif
+}
+#endif
+
 
 
 

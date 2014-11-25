@@ -34,6 +34,7 @@ hx::Object *__hxcpp_weak_ref_create(Dynamic inObject);
 hx::Object *__hxcpp_weak_ref_get(Dynamic inRef);
 
 
+unsigned int __hxcpp_obj_hash(Dynamic inObj);
 int __hxcpp_obj_id(Dynamic inObj);
 hx::Object *__hxcpp_id_obj(int);
 
@@ -42,6 +43,7 @@ namespace hx
 
 extern int gPauseForCollect;
 void PauseForCollect();
+bool IsWeakRefValid(hx::Object *inPtr);
 
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
 
