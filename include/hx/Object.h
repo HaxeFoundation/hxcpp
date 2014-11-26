@@ -52,6 +52,13 @@ struct ScriptCallable;
 
 #endif
 
+enum NewObjectType
+{
+   NewObjAlloc,
+   NewObjContainer,
+   NewObjConst,
+};
+
 
 // --- hx::Object ------------------------------------------------------------
 //
@@ -65,8 +72,13 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES Object
 {
 public:
    // These allocate the function using the garbage-colleced malloc
-   void *operator new( size_t inSize, bool inContainer=true );
+   void *operator new( size_t inSize, hx::NewObjectType );
+   inline void *operator new( size_t inSize, bool inContainer=true )
+   {
+      return operator new(inSize, inContainer ? hx::NewObjContainer : hx::NewObjAlloc);
+   }
    void operator delete( void *, bool ) { }
+   void operator delete( void *, hx::NewObjectType ) { }
 
    //virtual void *__root();
    virtual void __Mark(hx::MarkContext *__inCtx) { }

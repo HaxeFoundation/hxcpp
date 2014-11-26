@@ -54,6 +54,8 @@ using namespace hx;
 
 Class __StringClass;
 
+String  sConstStrings[256];
+Dynamic sConstDynamicStrings[256];
 
 static int UTF8Bytes(int c)
 {
@@ -564,45 +566,19 @@ Dynamic String::charCodeAt(int inPos) const
 
 String String::fromCharCode( int c )
 {
-   char buf[2];
-   buf[0] = c;
-   buf[1] = '\0';
-   return String( GCStringDup(buf,1,0), 1 );
-   #if 0
-   #ifdef HX_UTF8_STRINGS
-   int len = 0;
-   char buf[5];
+   int idx = c<0 ? c+256 : c;
+   if (idx<0 || idx>255)
+      return null();
 
-      if( c <= 0x7F )
-         buf[len++] = (c);
-      else if( c <= 0x7FF )
-      {
-         buf[len++] = ( 0xC0 | (c >> 6) );
-         buf[len++] = ( 0x80 | (c & 63) );
-      }
-      else if( c <= 0xFFFF )
-      {
-         buf[len++] = ( 0xE0 | (c >> 12) );
-         buf[len++] = ( 0x80 | ((c >> 6) & 63) );
-         buf[len++] = ( 0x80 | (c & 63) );
-      }
-      else
-      {
-         buf[len++] = ( 0xF0 | (c >> 18) );
-         buf[len++] = ( 0x80 | ((c >> 12) & 63) );
-         buf[len++] = ( 0x80 | ((c >> 6) & 63) );
-         buf[len++] = ( 0x80 | (c & 63) );
-      }
-   buf[len] = '\0';
-   return String( GCStringDup(buf,len,0), len );
-
-   #else
-   wchar_t *result = hx::NewString(1);
-   result[0] = c;
-   result[1] = '\0';
-   return String(result,1);
-   #endif
-   #endif
+   if (!sConstStrings[idx].__s)
+   {
+      HX_CHAR buf[2];
+      buf[0] = c;
+      buf[1] = '\0';
+      sConstStrings[idx].__s = (HX_CHAR *)InternalCreateConstBuffer(buf,2,true);
+      sConstStrings[idx].length = 1;
+   }
+   return sConstStrings[idx];
 }
 
 String String::charAt( int at ) const
@@ -1054,6 +1030,10 @@ inline int _wtoi(const wchar_t *inStr)
 class StringData : public hx::Object
 {
 public:
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=hx::NewObjContainer)
+      { return hx::Object::operator new(inSize,inAlloc); }
+
+
    StringData(String inValue) : mValue(inValue) {};
 
    Class __GetClass() const { return __StringClass; }
@@ -1114,7 +1094,24 @@ Class &GetStringClass() { return __StringClass; }
 
 }
 
-hx::Object *String::__ToObject() const { return new StringData(*this); }
+hx::Object *String::__ToObject() const
+{
+   if (!__s)
+      return 0;
+
+   if (length==1)
+   {
+      int idx = ((unsigned char *)__s)[0];
+      if (sConstDynamicStrings[idx].mPtr)
+         return  sConstDynamicStrings[idx].mPtr;
+
+      return sConstDynamicStrings[idx].mPtr = new (hx::NewObjConst)StringData(fromCharCode(idx));
+   }
+
+   NewObjectType type = ((unsigned int *)__s)[-1] &  HX_GC_CONST_ALLOC_BIT ?
+                           NewObjAlloc : NewObjContainer;
+   return new (type) StringData(*this);
+}
 
 
 

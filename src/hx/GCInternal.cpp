@@ -696,7 +696,7 @@ union BlockData
 
 #define MARK_ROWS \
    unsigned char &mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE]; \
-   if ( mark==gByteMarkID  ) \
+   if ( mark==gByteMarkID || mark & HX_GC_CONST_ALLOC_BIT) \
       return; \
    mark = gByteMarkID; \
  \
@@ -1383,14 +1383,29 @@ void InternalEnableGC(bool inEnable)
 }
 
 
-void *InternalCreateConstBuffer(const void *inData,int inSize)
+void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash)
 {
-   int *result = (int *)malloc(inSize + sizeof(int));
+   bool addHash = inAddStringHash && inData && inSize>0;
 
-   *result = 0xffffffff;
-   memcpy(result+1,inData,inSize);
+   int *result = (int *)malloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
+   int flags = HX_GC_CONST_ALLOC_BIT;
+   if (addHash)
+   {
+      result[0] =  String( (HX_CHAR *)inData, inSize-1).hash();
+      result++;
+      *result++ = HX_GC_CONST_ALLOC_BIT;
+   }
+   else
+   {
+      *result++ = HX_GC_CONST_ALLOC_BIT | HX_GC_NO_STRING_HASH;
+   }
 
-   return result+1;
+   if (inData)
+      memcpy(result,inData,inSize);
+   else
+      memset(result,0,inSize);
+
+   return result;
 }
 
 
@@ -3108,8 +3123,6 @@ void *InternalRealloc(void *inData,int inSize)
    return new_data;
 }
 
-
-
 void RegisterCurrentThread(void *inTopOfStack)
 {
    // Create a local-alloc
@@ -3140,16 +3153,19 @@ void UnregisterCurrentThread()
 namespace hx
 {
 
-void *Object::operator new( size_t inSize, bool inContainer )
+void *Object::operator new( size_t inSize, NewObjectType inType )
 {
    #if defined(HXCPP_DEBUG)
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
       throw Dynamic(HX_CSTRING("Object size violation"));
    #endif
 
+   if (inType==NewObjConst)
+      return InternalCreateConstBuffer(0,inSize);
+
    LocalAllocator *tla = GetLocalAlloc();
 
-   return tla->Alloc(inSize,inContainer);
+   return tla->Alloc(inSize,inType==NewObjContainer);
 }
 
 }
@@ -3288,7 +3304,7 @@ unsigned int __hxcpp_obj_hash(Dynamic inObj)
    hx::Object *obj = inObj->__GetRealObject();
    #if defined(HXCPP_M64)
    size_t h64 = (size_t)obj;
-   return (unsigned int)(h64>>2) | (unsigned int)(h64>>32);
+   return (unsigned int)(h64>>2) ^ (unsigned int)(h64>>32);
    #else
    return ((unsigned int)inObj.mPtr) >> 4;
    #endif
