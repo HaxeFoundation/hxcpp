@@ -1334,9 +1334,6 @@ struct CppiaClassInfo
 
    inline void createDynamicFunctions(hx::Object *inThis)
    {
-      if (dynamicMapOffset)
-         *(hx::FieldMap **)( (char *)inThis + dynamicMapOffset ) =  hx::FieldMapCreate();
-
       for(int d=0;d<dynamicFunctions.size();d++)
          dynamicFunctions[d]->createDynamic(inThis);
    }
@@ -2303,11 +2300,16 @@ struct CppiaClassInfo
       return result;
    }
 
+   inline Dynamic &getFieldMap(hx::Object *inThis)
+   {
+      return *(Dynamic *)( (char *)inThis + dynamicMapOffset );
+   }
+
 
    inline void markInstance(hx::Object *inThis, hx::MarkContext *__inCtx)
    {
       if (dynamicMapOffset)
-         hx::FieldMapMark( (*(hx::FieldMap **)( (char *)inThis + dynamicMapOffset )), __inCtx);
+         HX_MARK_MEMBER(getFieldMap(inThis));
 
       for(int i=0;i<dynamicFunctions.size();i++)
          dynamicFunctions[i]->mark(inThis, __inCtx);
@@ -2319,7 +2321,7 @@ struct CppiaClassInfo
    inline void visitInstance(hx::Object *inThis, hx::VisitContext *__inCtx)
    {
       if (dynamicMapOffset)
-         hx::FieldMapVisit( ((hx::FieldMap **)( (char *)inThis + dynamicMapOffset )), __inCtx);
+         HX_VISIT_MEMBER(getFieldMap(inThis));
 
       for(int i=0;i<dynamicFunctions.size();i++)
          dynamicFunctions[i]->visit(inThis, __inCtx);

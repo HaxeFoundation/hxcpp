@@ -17,6 +17,21 @@ bool FieldMapGet(FieldMap *inMap, const String &inName, Dynamic &outValue)
 }
 
 
+bool FieldMapGet(FieldMap *inMap, int inId, Dynamic &outValue)
+{
+   if (!inMap || !inMap->mPtr)
+      return false;
+
+   const String &key = __hxcpp_field_from_id(inId);
+   if (!__string_hash_exists(*inMap,key))
+      return false;
+   outValue = __string_hash_get(*inMap, key);
+   return true;
+}
+
+
+
+
 bool FieldMapHas(FieldMap *inMap, const String &inName)
 {
    return inMap && inMap->mPtr &&  __string_hash_exists(*inMap,inName);
