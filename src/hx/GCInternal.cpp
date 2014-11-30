@@ -696,7 +696,7 @@ union BlockData
 
 #define MARK_ROWS \
    unsigned char &mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE]; \
-   if ( mark==gByteMarkID || mark & HX_GC_CONST_ALLOC_BIT) \
+   if ( mark==gByteMarkID || mark & HX_GC_CONST_ALLOC_MARK_BIT) \
       return; \
    mark = gByteMarkID; \
  \
@@ -727,7 +727,7 @@ namespace hx
 void GCCheckPointer(void *inPtr)
 {
    unsigned char&mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE];
-   if ( !(mark & HX_GC_CONST_ALLOC_BIT) && mark!=gByteMarkID  )
+   if ( !(mark & HX_GC_CONST_ALLOC_MARK_BIT) && mark!=gByteMarkID  )
    {
       GCLOG("Old object %s\n", ((hx::Object *)inPtr)->toString().__s );
       NullReference("Object", false);
@@ -1342,6 +1342,11 @@ void RunFinalizers()
 // Callback finalizer on non-abstract type;
 void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
 {
+   if (!obj)
+      throw Dynamic(HX_CSTRING("set_finalizer - invalid null object"));
+   if (((unsigned int *)obj)[-1] & HX_GC_CONST_ALLOC_BIT)
+      throw Dynamic(HX_CSTRING("set_finalizer - invalid const object"));
+
    AutoLock lock(*gSpecialObjectLock);
    if (f==0)
    {
@@ -1355,6 +1360,11 @@ void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
 
 void GCDoNotKill(hx::Object *inObj)
 {
+   if (!inObj)
+      throw Dynamic(HX_CSTRING("doNotKill - invalid null object"));
+   if (((unsigned int *)inObj)[-1] & HX_GC_CONST_ALLOC_BIT)
+      throw Dynamic(HX_CSTRING("doNotKill - invalid const object"));
+
    AutoLock lock(*gSpecialObjectLock);
    sMakeZombieSet.insert(inObj);
 }
@@ -1388,7 +1398,6 @@ void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHa
    bool addHash = inAddStringHash && inData && inSize>0;
 
    int *result = (int *)malloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
-   int flags = HX_GC_CONST_ALLOC_BIT;
    if (addHash)
    {
       result[0] =  String( (HX_CHAR *)inData, inSize-1).hash();

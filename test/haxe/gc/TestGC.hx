@@ -7,19 +7,20 @@ class CustomObject {
 }
 
 class TestGC extends haxe.unit.TestCase {
-	/**
-		Repeatly call gc to get a zombie.
-	*/
+	function createDummy(val:Dynamic):Dynamic {
+      return { dummy: val };
+   }
+
 	function gc():Dynamic {
-		var zombie = null;
-		for (i in 0...20) {
-			Sys.sleep(0.01);
-			Gc.run(true);
-			if ((zombie = Gc.getNextZombie()) != null) {
-				return zombie;
-			}
-		}
-		return zombie;
+      // Put some dummy values on the stack
+      var a = createDummy(null);
+      var b = createDummy(a);
+      var c = createDummy(b);
+      var d = createDummy(c);
+      var e = createDummy(d);
+      var f = createDummy(e);
+      Gc.run(true);
+		return Gc.getNextZombie();
 	}
 
 	/**
@@ -41,17 +42,21 @@ class TestGC extends haxe.unit.TestCase {
 		assertTrue(gc() == null);
 	}
 
-	function create123():Void {
-		var object:Null<Int> = 123;
+   // Null<int> for numbers < 256 are special cases
+   // Infact, there are no guarantees that Null<Int> will be actual objects in the future
+   /*
+	function create1234():Void {
+		var object:Null<Int> = 1234;
 		Gc.doNotKill(object);
 	};
 	public function testBoxedInt():Void {
-		create(create123);
+		create(create1234);
 		var zombie:Dynamic = gc();
 		assertTrue(zombie != null);
-		assertEquals(123, zombie);
+		assertEquals(1234, zombie);
 		assertTrue(gc() == null);
 	}
+   */
 
 	function createFunction():Void {
 		var object = function() return "abc";
