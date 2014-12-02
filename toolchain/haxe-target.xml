@@ -46,6 +46,39 @@
   <depend name="${HXCPP}/toolchains/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchains/${toolchain}-toolchain.xml"/>
 </files>
 
+
+<files id="cppia" dir="${HXCPP}" >
+  <depend name="${HXCPP}/include/hxcpp.h"/>
+  <depend name="${HXCPP}/include/Array.h"/>
+  <depend name="${HXCPP}/include/Dynamic.h"/>
+  <depend name="${HXCPP}/include/hxString.h"/>
+  <depend name="${HXCPP}/include/hxMath.h"/>
+  <depend name="${HXCPP}/include/null.h"/>
+  <depend name="${HXCPP}/include/Class.h"/>
+  <depend name="${HXCPP}/include/Enum.h"/>
+  <depend name="${HXCPP}/include/hx/Debug.h"/>
+  <depend name="${HXCPP}/include/hx/Object.h"/>
+  <depend name="${HXCPP}/include/hx/Operators.h"/>
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/Thread.h"/>
+  <depend name="${HXCPP}/include/hx/GC.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
+  <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
+  <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
+  <depend name="${HXCPP}/include/hx/StdLibs.h"/>
+  <depend name="${HXCPP}/include/hx/OS.h"/>
+  <depend name="${HXCPP}/toolchain/haxe-target.xml"/>
+  <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml"/>
+ 
+  <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
+  <depend name="${HXCPP}/include/hx/Scriptable.h"/>
+
+
+  <file name = "src/hx/cppia/Cppia.cpp" />
+  <file name = "src/hx/cppia/CppiaBuiltin.cpp" />
+</files>
+
+
 <files id="runtime" dir="${HXCPP}">
   <depend name="${HXCPP}/include/hxcpp.h"/>
   <depend name="${HXCPP}/include/Array.h"/>
@@ -90,8 +123,6 @@
   <file name = "src/hx/Object.cpp"/>
   <file name = "src/hx/StdLibs.cpp"/>
   <file name = "src/hx/Debug.cpp"/>
-  <file name = "src/hx/Cppia.cpp" if="scriptable"/>
-  <file name = "src/hx/CppiaBuiltin.cpp" if="scriptable"/>
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
 
@@ -123,6 +154,7 @@
   <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>
   <files id="runtime" unless="dll_import" />
+  <files id="cppia" if="scriptable" />
   <lib name="-lpthread" if="linux" unless="static_link" />
   <lib name="-ldl" if="linux" unless="static_link" />
 </target>

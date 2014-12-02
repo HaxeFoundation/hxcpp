@@ -179,6 +179,15 @@ Dynamic __int_hash_values(Dynamic &ioHash)
 }
 
 
+String __int_hash_to_string(Dynamic &ioHash)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   if (hash)
+      return hash->toString();
+   return String();
+
+}
+
 
 
 // --- StringHash ----------------------------------------------------

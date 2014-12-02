@@ -111,6 +111,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_float(Dynamic &ioHash
 HXCPP_EXTERN_CLASS_ATTRIBUTES int           __int_hash_get_int(Dynamic &ioHash,int inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_get_string(Dynamic &ioHash,int inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __int_hash_get_float(Dynamic &ioHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_to_string(Dynamic &ioHash);
 
 
 // --- StringHash ----------------------------------------------------------------------
