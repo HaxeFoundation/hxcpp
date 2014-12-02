@@ -245,7 +245,7 @@ static value process_stdout_read( value vp, value str, value pos, value len ) {
    if( nbytes <= 0 )
    {
       gc_exit_blocking();
-      alloc_null();
+      return alloc_null();
    }
    gc_exit_blocking();
    return alloc_int(nbytes);
