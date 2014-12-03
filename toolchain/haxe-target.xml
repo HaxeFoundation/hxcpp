@@ -5,8 +5,8 @@
 
 <!-- Library files & targets -------------------------------------->
 
-<!-- Additional dependencies for haxe target -->
-<files id="haxe">
+
+<files id="hxcpp-depends">
   <depend name="${HXCPP}/include/hxcpp.h"/>
   <depend name="${HXCPP}/include/Array.h"/>
   <depend name="${HXCPP}/include/Dynamic.h"/>
@@ -29,50 +29,35 @@
   <depend name="${HXCPP}/toolchain/haxe-target.xml"/>
   <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml"/>
   <depend name="${HXCPP}/run.n"/>
+</files>
+ 
+
+
+<!-- Additional dependencies for haxe target -->
+<files id="haxe">
+  <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 </files>
 
 <files id="__main__">
+  <depend files="hxcpp-depends"/>
+  <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
-  <depend name="${HXCPP}/include/hx/Macros.h"/>
-  <depend name="${HXCPP}/toolchains/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchains/${toolchain}-toolchain.xml"/>
 </files>
 
 <files id="__lib__">
+  <depend files="hxcpp-depends"/>
+  <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
-  <depend name="${HXCPP}/include/hx/Macros.h"/>
-  <depend name="${HXCPP}/toolchains/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchains/${toolchain}-toolchain.xml"/>
 </files>
 
 
 <files id="cppia" dir="${HXCPP}" >
-  <depend name="${HXCPP}/include/hxcpp.h"/>
-  <depend name="${HXCPP}/include/Array.h"/>
-  <depend name="${HXCPP}/include/Dynamic.h"/>
-  <depend name="${HXCPP}/include/hxString.h"/>
-  <depend name="${HXCPP}/include/hxMath.h"/>
-  <depend name="${HXCPP}/include/null.h"/>
-  <depend name="${HXCPP}/include/Class.h"/>
-  <depend name="${HXCPP}/include/Enum.h"/>
-  <depend name="${HXCPP}/include/hx/Debug.h"/>
-  <depend name="${HXCPP}/include/hx/Object.h"/>
-  <depend name="${HXCPP}/include/hx/Operators.h"/>
-  <depend name="${HXCPP}/include/hx/Macros.h"/>
-  <depend name="${HXCPP}/include/hx/Thread.h"/>
-  <depend name="${HXCPP}/include/hx/GC.h"/>
-  <depend name="${HXCPP}/include/hx/CFFI.h"/>
-  <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
-  <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
-  <depend name="${HXCPP}/include/hx/StdLibs.h"/>
-  <depend name="${HXCPP}/include/hx/OS.h"/>
-  <depend name="${HXCPP}/toolchain/haxe-target.xml"/>
-  <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml"/>
- 
+  <depend files="hxcpp-depends"/>
+  <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
-  <depend name="${HXCPP}/include/hx/Scriptable.h"/>
-
 
   <file name = "src/hx/cppia/Cppia.cpp" />
   <file name = "src/hx/cppia/CppiaBuiltin.cpp" />
@@ -80,28 +65,7 @@
 
 
 <files id="runtime" dir="${HXCPP}">
-  <depend name="${HXCPP}/include/hxcpp.h"/>
-  <depend name="${HXCPP}/include/Array.h"/>
-  <depend name="${HXCPP}/include/Dynamic.h"/>
-  <depend name="${HXCPP}/include/hxString.h"/>
-  <depend name="${HXCPP}/include/hxMath.h"/>
-  <depend name="${HXCPP}/include/null.h"/>
-  <depend name="${HXCPP}/include/Class.h"/>
-  <depend name="${HXCPP}/include/Enum.h"/>
-  <depend name="${HXCPP}/include/hx/Debug.h"/>
-  <depend name="${HXCPP}/include/hx/Object.h"/>
-  <depend name="${HXCPP}/include/hx/Operators.h"/>
-  <depend name="${HXCPP}/include/hx/Macros.h"/>
-  <depend name="${HXCPP}/include/hx/Thread.h"/>
-  <depend name="${HXCPP}/include/hx/GC.h"/>
-  <depend name="${HXCPP}/include/hx/CFFI.h"/>
-  <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
-  <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
-  <depend name="${HXCPP}/include/hx/StdLibs.h"/>
-  <depend name="${HXCPP}/include/hx/OS.h"/>
-  <depend name="${HXCPP}/toolchain/haxe-target.xml"/>
-  <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml"/>
-  <depend name="${HXCPP}/run.n"/>
+  <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
 
 

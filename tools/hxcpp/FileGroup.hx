@@ -49,6 +49,13 @@ class FileGroup
       mDepends.push(inFile);
    }
 
+   public function addDependFiles(inGroup:FileGroup)
+   {
+      for(depend in inGroup.mDepends)
+         addDepend(depend);
+   }
+
+
    public function addHLSL(inFile:String,inProfile:String,inVariable:String,inTarget:String)
    {
       addDepend(inFile);

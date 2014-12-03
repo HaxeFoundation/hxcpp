@@ -510,7 +510,18 @@ class BuildTool
                         file.mDepends.push( substitute(f.att.name) );
                   group.mFiles.push( file );
                case "section" : createFileGroup(el,group,inName);
-               case "depend" : group.addDepend( substitute(el.att.name) );
+               case "depend" :
+                  if (el.has.name)
+                     group.addDepend( substitute(el.att.name) );
+                  else if (el.has.files)
+                  {
+                     var name = substitute(el.att.files);
+                     if (!mFileGroups.exists(name))
+                         Log.error( "Could not find filegroup for depend node:" + name ); 
+                     group.addDependFiles(mFileGroups.get(name));
+                  }
+                  else
+                     Log.error("depend node must have 'name' or 'files' attribute");
                case "hlsl" :
                   group.addHLSL( substitute(el.att.name), substitute(el.att.profile),
                   substitute(el.att.variable), substitute(el.att.target)  );
