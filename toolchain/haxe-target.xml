@@ -28,7 +28,7 @@
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
   <depend name="${HXCPP}/toolchain/haxe-target.xml"/>
   <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml"/>
-  <depend name="${HXCPP}/run.n"/>
+  <depend name="${HXCPP}/hxcpp.n" ifExists="${HXCPP}/hxcpp.n" />
 </files>
  
 
