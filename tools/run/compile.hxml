@@ -1,0 +1,4 @@
+-neko ../../run.n
+-main RunMain
+-D neko_v1
+-debug
