@@ -58,9 +58,15 @@
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
+  <depend name="${HXCPP}/src/hx/cppia/CppiaStream.h" />
 
   <file name = "src/hx/cppia/Cppia.cpp" />
-  <file name = "src/hx/cppia/CppiaBuiltin.cpp" />
+  <file name = "src/hx/cppia/CppiaCtx.cpp" />
+  <file name = "src/hx/cppia/ArrayBuiltin.cpp" />
+  <file name = "src/hx/cppia/StringBuiltin.cpp" />
+  <file name = "src/hx/cppia/GLobalBuiltin.cpp" />
+  <file name = "src/hx/cppia/HaxeNative.cpp" />
+  <file name = "src/hx/cppia/CppiaVars.cpp" />
 </files>
 
 
