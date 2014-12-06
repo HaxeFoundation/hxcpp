@@ -12,13 +12,6 @@ class TestGC extends haxe.unit.TestCase {
    }
 
 	function gc():Dynamic {
-      // Put some dummy values on the stack
-      var a = createDummy(null);
-      var b = createDummy(a);
-      var c = createDummy(b);
-      var d = createDummy(c);
-      var e = createDummy(d);
-      var f = createDummy(e);
       Gc.run(true);
 		return Gc.getNextZombie();
 	}
@@ -28,7 +21,16 @@ class TestGC extends haxe.unit.TestCase {
 	*/
 	function create(f:Void->Void):Void {
 		f();
+      clearStack(10);
 	}
+
+   function clearStack(count:Int, ?nothing:Dynamic):Dynamic
+   {
+      if (count==0)
+         return 0;
+      return clearStack(count-1);
+   }
+
 
 	function createAbc():Void {
 		var object = { test: "abc" };
