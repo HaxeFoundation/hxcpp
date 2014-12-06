@@ -9,112 +9,21 @@
 namespace hx
 {
 
-struct CppiaData;
+class CppiaModule;
 
-struct CppiaStream
-{
-   CppiaData  *cppiaData;
-   const char *data;
-   const char *max;
-   int line;
-   int pos;
-
-   CppiaStream(CppiaData *inCppiaData,const char *inData, int inLen)
-   {
-      cppiaData = inCppiaData;
-      data = inData;
-      max = inData + inLen;
-      line = 1;
-      pos = 1;
-   }
-   void skipWhitespace()
-   {
-      while(data<max && *data<=32)
-         skipChar();
-   }
-   void skipChar()
-   {
-      if (data>=max)
-         throw "EOF";
-      if (*data=='\n')
-      {
-         line++;
-         pos = 1;
-      }
-      else
-         pos++;
-      data++;
-   }
-   std::string getToken()
-   {
-      skipWhitespace();
-      const char *data0 = data;
-      while(data<max && *data>32)
-      {
-         data++;
-         pos++;
-      }
-      return std::string(data0,data);
-   }
-   int getInt()
-   {
-      int result = 0;
-      skipWhitespace();
-      while(data<max && *data>32)
-      {
-         int digit = *data - '0';
-         if (digit<0 || digit>9)
-            throw "expected digit";
-         result = result * 10 + digit;
-         pos++;
-         data++;
-      }
-      return result;
-   }
-   bool getBool()
-   {
-      int ival = getInt();
-      if (ival>1)
-         throw "invalid bool";
-      return ival;
-   }
-   bool getStatic()
-   {
-      std::string tok = getToken();
-      if (tok=="s")
-         return true;
-      else if (tok=="m")
-         return false;
-
-      throw "invalid function spec";
-      return false;
-   }
-
-   String readString()
-   {
-      int len = getInt();
-      skipChar();
-      const char *data0 = data;
-      for(int i=0;i<len;i++)
-         skipChar();
-      return String(data0,data-data0).dup();
-   }
-
-   void readBytes(unsigned char *outBytes, int inLen)
-   {
-      if (data+inLen>max)
-         throw "EOF";
-      memcpy(outBytes, data, inLen);
-      data+=inLen;
-   }
-
-};
-
+#define DBGLOG(...) { }
+//#define DBGLOG printf
 
 struct TypeData;
 struct CppiaClassInfo;
 struct CppiaExpr;
+struct CppiaStream;
+struct CppiaStackVar;
+struct StackLayout;
 class  ScriptRegistered;
+class  HaxeNativeClass;
+class  HaxeNativeInterface;
+
 
 
 enum ExprType
@@ -166,6 +75,15 @@ enum AssignOp
 };
 
 
+enum VarLocation
+{
+   locObj,
+   locThis,
+   locStack,
+   locAbsolute,
+};
+
+
 
 
 struct CppiaExpr
@@ -195,7 +113,7 @@ struct CppiaExpr
    virtual ~CppiaExpr() {}
 
    virtual const char *getName() { return "CppiaExpr"; }
-   virtual CppiaExpr   *link(CppiaData &data)   { return this; }
+   virtual CppiaExpr   *link(CppiaModule &data)   { return this; }
    virtual void mark(hx::MarkContext *ctx) { };
    virtual void visit(hx::VisitContext *ctx) { };
 
@@ -217,6 +135,251 @@ struct CppiaExpr
    virtual CppiaExpr   *makeCrement(CrementOp inOp) { return 0; }
 
 };
+
+CppiaExpr *createCppiaExpr(CppiaStream &inStream);
+CppiaExpr *createStaticAccess(CppiaExpr *inSrc, ExprType inType, void *inPtr);
+CppiaExpr *createStaticAccess(CppiaExpr *inSrc, FieldStorage inType, void *inPtr);
+hx::Object *createClosure(CppiaCtx *ctx, struct ScriptCallable *inFunction);
+hx::Object *createMemberClosure(hx::Object *, struct ScriptCallable *inFunction);
+hx::Object *createEnumClosure(struct CppiaEnumConstructor &inContructor);
+
+
+
+struct TypeData
+{
+   String              name;
+   Class               haxeClass;
+   CppiaClassInfo      *cppiaClass;
+   ExprType            expressionType;
+   HaxeNativeClass     *haxeBase;
+   HaxeNativeInterface *interfaceBase;
+   bool                linked;
+   bool                isInterface;
+   ArrayType           arrayType;
+
+   TypeData(String inData);
+
+   bool isClassOf(Dynamic inInstance);
+   void mark(hx::MarkContext *__inCtx);
+   void visit(hx::VisitContext *__inCtx);
+   void link(CppiaModule &inData);
+};
+
+
+
+class CppiaModule
+{
+public:
+   Array< String >                 strings;
+   std::vector< std::string >      cStrings;
+   std::vector< TypeData * >       types;
+   std::vector< CppiaClassInfo * > classes;
+   std::vector< CppiaExpr * >      markable;
+
+   StackLayout                     *layout;
+   CppiaClassInfo                  *linkingClass;
+   const char                      *creatingClass;
+   const char                      *creatingFunction;
+   int                             scriptId;
+
+   CppiaExpr                       *main;
+
+   CppiaModule();
+   ~CppiaModule();
+
+   void link();
+   void setDebug(CppiaExpr *outExpr, int inFileId, int inLine);
+   void boot(CppiaCtx *ctx);
+   void where(CppiaExpr *e);
+   void mark(hx::MarkContext *ctx);
+   void visit(hx::VisitContext *ctx);
+
+   inline const char *identStr(int inId) { return strings[inId].__s; }
+   inline const char *typeStr(int inId) { return types[inId]->name.c_str(); }
+};
+
+
+struct StackLayout
+{
+   std::map<int,CppiaStackVar *> varMap;
+   std::vector<CppiaStackVar *>  captureVars;
+   StackLayout                   *parent;
+   ExprType                      returnType;
+   int                           captureSize;
+   int                           size;
+
+   StackLayout(StackLayout *inParent);
+
+   void dump(Array<String> &inStrings, std::string inIndent);
+   CppiaStackVar *findVar(int inId);
+};
+
+
+
+struct ArgInfo
+{
+   int  nameId;
+   bool optional;
+   int  typeId;
+};
+
+
+struct CppiaFunction
+{
+   CppiaModule          &cppia;
+   int                  nameId;
+   bool                 isStatic;
+   bool                 isDynamic;
+   int                  returnType;
+   int                  argCount;
+   int                  vtableSlot;
+   bool                 linked;
+   std::string          name;
+   std::vector<ArgInfo> args;
+   CppiaExpr            *funExpr;
+
+   CppiaFunction(CppiaModule *inCppia,bool inIsStatic,bool inIsDynamic);
+
+   inline void setVTableSlot(int inSlot) { vtableSlot = inSlot; }
+   inline String getName() { return cppia.strings[nameId]; }
+   void load(CppiaStream &stream,bool inExpectBody);
+   void link( );
+};
+
+
+struct CppiaStackVar
+{
+   int      nameId;
+   int      id;
+   bool     capture;
+   int      typeId;
+   int      stackPos;
+   int      fromStackPos;
+   int      capturePos;
+   ExprType expressionType;
+
+   CppiaStackVar();
+   CppiaStackVar(CppiaStackVar *inVar,int &ioSize, int &ioCaptureSize);
+
+   void fromStream(CppiaStream &stream);
+   void set(CppiaCtx *inCtx,Dynamic inValue);
+   void markClosure(char *inBase, hx::MarkContext *__inCtx);
+   void visitClosure(char *inBase, hx::VisitContext *__inCtx);
+   void link(CppiaModule &inModule);
+};
+
+
+int getStackVarNameId(int inVarId);
+
+
+struct CppiaVar
+{
+   enum Access { accNormal, accNo, accResolve, accCall, accRequire } ;
+
+   TypeData         *type;
+   bool             isStatic;
+   bool             isVirtual;
+   Access           readAccess;
+   Access           writeAccess;
+   int              nameId;
+   int              typeId;
+   int              offset;
+   String           name;
+   FieldStorage     storeType;
+   CppiaFunction    *dynamicFunction;
+   ExprType         exprType;
+
+   CppiaExpr        *init;
+   Dynamic          objVal;
+   int              intVal;
+   Float            floatVal;
+   String           stringVal;
+   void             *valPointer;
+   
+
+   CppiaVar(bool inIsStatic);
+   CppiaVar(CppiaFunction *inDynamicFunction);
+
+   void clear();
+   void load(CppiaStream &stream);
+   inline ExprType getType() { return exprType; }
+   void linkVarTypes(CppiaModule &cppia);
+   Dynamic getStaticValue();
+   Dynamic setStaticValue(Dynamic inValue);
+   CppiaExpr *createAccess(CppiaExpr *inSrc);
+   void linkVarTypes(CppiaModule &cppia, int &ioOffset);
+   void createDynamic(hx::Object *inBase);
+   Dynamic getValue(hx::Object *inThis);
+   Dynamic setValue(hx::Object *inThis, Dynamic inValue);
+   void link(CppiaModule &inModule);
+   static Access getAccess(CppiaStream &stream);
+   void runInit(CppiaCtx *ctx);
+
+   inline void mark(hx::Object *inThis,hx::MarkContext *__inCtx)
+   {
+      switch(storeType)
+      {
+         case fsString: HX_MARK_MEMBER(*(String *)((char *)inThis + offset)); break;
+         case fsObject: HX_MARK_MEMBER(*(Dynamic*)((char *)inThis + offset)); break;
+         default:;
+      }
+   }
+   inline void visit(hx::Object *inThis,hx::VisitContext *__inCtx)
+   {
+      switch(storeType)
+      {
+         case fsString: HX_VISIT_MEMBER(*(String *)((char *)inThis + offset)); break;
+         case fsObject: HX_VISIT_MEMBER(*(Dynamic *)((char *)inThis + offset)); break;
+         default:;
+      }
+   }
+
+   void mark(hx::MarkContext *__inCtx);
+   void visit(hx::VisitContext *__inCtx);
+};
+
+
+
+
+class HaxeNativeClass
+{
+public:
+   std::string  name;
+   hx::ScriptableClassFactory factory;
+   hx::ScriptFunction  construct;
+   ScriptNamedFunction *functions;
+   HaxeNativeClass *haxeSuper;
+   int mDataOffset;
+
+   HaxeNativeClass(const std::string &inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, ScriptFunction inConstruct);
+
+   void addVtableEntries( std::vector<std::string> &outVtable);
+   void dump();
+   ScriptFunction findFunction(const std::string &inName);
+
+   static HaxeNativeClass *findClass(const std::string &inName);
+   static HaxeNativeClass *hxObject();
+   static void link();
+};
+
+class HaxeNativeInterface
+{
+public:
+   std::string  name;
+   const hx::type_info *mType;
+   ScriptableInterfaceFactory factory;
+   ScriptNamedFunction *functions;
+
+   HaxeNativeInterface(const std::string &inName, ScriptNamedFunction *inFunctions,hx::ScriptableInterfaceFactory inFactory,const hx::type_info *inType);
+   ScriptFunction findFunction(const std::string &inName);
+
+   static HaxeNativeInterface *findInterface(const std::string &inName);
+};
+
+
+
+
+
 
 #ifdef HXCPP_STACK_LINE
    #define CPPIA_STACK_LINE(expr) \
@@ -533,6 +696,11 @@ DECL_STRUCT_ASSIGN_CAST(AssignXOr,int,^,runInt)
 DECL_STRUCT_ASSIGN_CAST(AssignShl,int,<<,runInt)
 DECL_STRUCT_ASSIGN_CAST(AssignShr,int,>>,runInt)
 
+
+int runContextConvertInt(CppiaCtx *ctx, ExprType inType, void *inFunc);
+Float runContextConvertFloat(CppiaCtx *ctx, ExprType inType, void *inFunc);
+String runContextConvertString(CppiaCtx *ctx, ExprType inType, void *inFunc);
+hx::Object *runContextConvertObject(CppiaCtx *ctx, ExprType inType, void *inFunc);
 
 
 
