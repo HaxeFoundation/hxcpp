@@ -106,7 +106,7 @@ class PathManager
          
          try
          {
-            output = ProcessManager.runProcess(Sys.getEnv ("HAXEPATH"), "haxelib", [ "path", name ], true, false);  
+            output = ProcessManager.runProcess(Sys.getEnv ("HAXEPATH"), "haxelib", [ "path", name ], true, false);
          }
          catch (e:Dynamic) {}
          
@@ -117,7 +117,7 @@ class PathManager
          
          for (i in 1...lines.length)
          {
-            if (StringTools.trim(lines[i]) == "-D " + haxelib)
+            if (StringTools.startsWith(StringTools.trim(lines[i]), "-D " + haxelib))
             {
                result = StringTools.trim(lines[i - 1]);
             }
