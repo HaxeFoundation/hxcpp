@@ -114,10 +114,10 @@ class PathManager
          
          var lines = output.split("\n");
          var result = "";
-         
+         var re = new EReg("^-D " + haxelib + "(=.*)?$", ""); //matches "-D hxcpp=3.1.0" or "-D hxcpp", but not "-D hxcpp-extras"
          for (i in 1...lines.length)
          {
-            if (StringTools.startsWith(StringTools.trim(lines[i]), "-D " + haxelib))
+            if (re.match(StringTools.trim(lines[i])))
             {
                result = StringTools.trim(lines[i - 1]);
             }
