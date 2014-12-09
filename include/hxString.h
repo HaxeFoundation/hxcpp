@@ -104,8 +104,8 @@ public:
    inline unsigned int hash( ) const
    {
       if (__s==0) return 0;
-      if ( (((unsigned int *)__s)[-1] & HX_GC_NO_HASH_MASK) == HX_GC_CONST_ALLOC_BIT)
-         return ((unsigned int *)__s)[-2];
+      //if ( (((unsigned int *)__s)[-1] & HX_GC_NO_HASH_MASK) == HX_GC_CONST_ALLOC_BIT)
+      //   return ((unsigned int *)__s)[-2];
 
       unsigned int result = 0;
       for(int i=0;i<length;i++)
