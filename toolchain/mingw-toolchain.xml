@@ -15,7 +15,7 @@
   <flag value="-c"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="debug"/>
-  <flag value="-O2" unless="O3"/>
+  <flag value="-O2" unless="debug||O3"/>
   <flag value="-O3" if="O3"/>
   <include name="toolchain/common-defines.xml" />
   <flag value="-DHX_WINDOWS"/>
