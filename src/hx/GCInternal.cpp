@@ -1400,7 +1400,11 @@ void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHa
    int *result = (int *)malloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
    if (addHash)
    {
-      result[0] =  String( (HX_CHAR *)inData, inSize-1).hash();
+      unsigned int hash = 0;
+      for(int i=0;i<inSize-1;i++)
+         hash = hash*223 + ((unsigned char *)inData)[i];
+
+      result[0] = hash;
       result++;
       *result++ = HX_GC_CONST_ALLOC_BIT;
    }

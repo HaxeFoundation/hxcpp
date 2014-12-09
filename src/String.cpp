@@ -196,6 +196,7 @@ Array<int> __hxcpp_utf8_string_to_char_array(String &inString)
    return result;
 }
 
+
 String __hxcpp_char_bytes_to_utf8_string(String &inBytes)
 {
    int len = inBytes.length;
@@ -364,6 +365,36 @@ String::String(const bool &inRHS)
    {
       *this = HX_CSTRING("false");
    }
+}
+
+
+unsigned int String::hash() const
+{
+   if (__s==0) return 0;
+   if ( (((unsigned int *)__s)[-1] & HX_GC_NO_HASH_MASK) == HX_GC_CONST_ALLOC_BIT)
+   {
+         /*
+         unsigned int result = 0;
+         for(int i=0;i<length;i++)
+            result = result*223 + ((unsigned char *)__s)[i];
+
+         if  ( ((unsigned int *)__s)[-2] != result )
+         {
+             printf("Bad string hash for %s\n", __s );
+             printf(" Is %08x\n", result );
+             printf(" Baked %08x\n",  ((unsigned int *)__s)[-2]  );
+             printf(" Mark %08x\n",    ((unsigned int *)__s)[-1]  );
+             throw Dynamic(HX_CSTRING("Bad Hash!"));
+         }
+         */
+      return ((unsigned int *)__s)[-2];
+   }
+
+   unsigned int result = 0;
+   for(int i=0;i<length;i++)
+      result = result*223 + ((unsigned char *)__s)[i];
+
+   return result;
 }
 
 
