@@ -11,6 +11,13 @@
 #endif
 
 
+#if !defined(HX_WINRT) && !defined(EPPC)
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
+
+
 #ifdef HXCPP_LOAD_DEBUG
 bool gLoadDebug = true;
 #else
@@ -212,23 +219,41 @@ String FindHaxelib(String inLib)
    bool loadDebug = getenv("HXCPP_LOAD_DEBUG");
 
    // printf("FindHaxelib %S\n", inLib.__s);
-   String haxepath = GetEnv("HAXEPATH");
-   if (loadDebug) printf("HAXEPATH env:%s\n", haxepath.__s);
+
+   String haxepath;
+
+   #if !defined(HX_WINRT) && !defined(EPPC)
+      struct stat s;
+      if ( (stat(".haxelib",&s)==0 && (s.st_mode & S_IFDIR) ) )
+         haxepath = HX_CSTRING(".haxelib");
+      if (loadDebug)
+          printf( haxepath.length ? "Found local .haxelib\n" : "No local .haxelib\n");
+   #endif
+
    if (haxepath.length==0)
    {
-       #ifdef _WIN32
-       String home = GetEnv("HOMEDRIVE") + GetEnv("HOMEPATH") + HX_CSTRING("/.haxelib");
-       #else
-       String home = GetEnv("HOME") + HX_CSTRING("/.haxelib");
-       #endif
-       haxepath = GetFileContents(home);
-       if (loadDebug) printf("HAXEPATH home:%s\n", haxepath.__s);
+      haxepath = GetEnv("HAXEPATH");
+      if (loadDebug)
+         printf("HAXEPATH env:%s\n", haxepath.__s);
+      if (haxepath.length==0)
+      {
+          #ifdef _WIN32
+          String home = GetEnv("HOMEDRIVE") + GetEnv("HOMEPATH") + HX_CSTRING("/.haxelib");
+          #else
+          String home = GetEnv("HOME") + HX_CSTRING("/.haxelib");
+          #endif
+          haxepath = GetFileContents(home);
+          if (loadDebug)
+             printf("HAXEPATH home:%s\n", haxepath.__s);
+      }
+      else
+      {
+         haxepath += HX_CSTRING("/lib");
+      }
    }
-   else
-   {
-      haxepath += HX_CSTRING("/lib");
-   }
-   if (loadDebug) printf("HAXEPATH dir:%s\n", haxepath.__s);
+
+   if (loadDebug)
+      printf("HAXEPATH dir:%s\n", haxepath.__s);
 
    if (haxepath.length==0)
    {
