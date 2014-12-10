@@ -11,6 +11,7 @@
  <flag value="-DHXCPP_STACK_LINE" if="HXCPP_STACK_LINE"/>
  <flag value="-DHXCPP_STACK_VARS" if="HXCPP_STACK_VARS"/>
  <flag value="-DHXCPP_DEBUGGER" if="HXCPP_DEBUGGER"/>
+ <flag value="-DHXCPP_PARANOID" if="HXCPP_PARANOID"/>
  <flag value="-DHXCPP_GC_MOVING" if="HXCPP_GC_MOVING"/>
  <flag value="-DHXCPP_GC_CHECK_POINTER" if="HXCPP_GC_CHECK_POINTER"/>
  <flag value="-DHXCPP_DLL_IMPORT" if="dll_import"/>
