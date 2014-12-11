@@ -19,7 +19,6 @@ environment:
         MINGW_ARCH: i686
 
 install:
-    - 'git submodule update --init --recursive --depth 1'
     # Install ocaml using wodi
     - '%CYG_ROOT%\setup-%CYG_ARCH%.exe -q -R "%CYG_ROOT%" -P wget -P dos2unix -P diffutils -P cpio -P make -P patch -P mingw64-%MINGW_ARCH%-gcc-core -P mingw64-%MINGW_ARCH%-gcc-g++ >NUL'
     - '%CYG_ROOT%\bin\bash -lc "cygcheck -dc cygwin"'
