@@ -59,8 +59,8 @@ build_script:
     - neko build.n -verbose
 
 test_script:
-    - cd %APPVEYOR_BUILD_FOLDER%\test\ndlls
-    - haxe compile.hxml && .\cpp\Test
+    # - cd %APPVEYOR_BUILD_FOLDER%\test\ndlls
+    # - haxe compile.hxml && .\cpp\Test
     # - haxe compile64.hxml && .\cpp64\Test
     - cd %APPVEYOR_BUILD_FOLDER%\test\haxe
     - haxe compile.hxml -debug && .\bin\TestMain-debug
