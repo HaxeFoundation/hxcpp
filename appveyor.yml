@@ -19,7 +19,7 @@ environment:
         MINGW_ARCH: i686
 
 install:
-    - 'git submodule update --init --recursive'
+    - 'git submodule update --init --recursive --depth 1'
     # Install ocaml using wodi
     - '%CYG_ROOT%\setup-%CYG_ARCH%.exe -q -R "%CYG_ROOT%" -P wget -P dos2unix -P diffutils -P cpio -P make -P patch -P mingw64-%MINGW_ARCH%-gcc-core -P mingw64-%MINGW_ARCH%-gcc-g++ >NUL'
     - '%CYG_ROOT%\bin\bash -lc "cygcheck -dc cygwin"'
@@ -30,7 +30,7 @@ install:
     # Install neko
     - cinst make
     - cinst SQLite -version 3.8.5
-    - 'git clone --recursive https://github.com/HaxeFoundation/neko.git %NEKO_ROOT%'
+    - 'git clone --recursive --depth 1 https://github.com/HaxeFoundation/neko.git %NEKO_ROOT%'
     - 'cd %NEKO_ROOT%'
     - set PATH=%PATH%;%NEKO_ROOT%\bin
     - msbuild neko_vc10.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
@@ -41,11 +41,11 @@ install:
     - neko tools\install -nolibs
     - neko -version
     # Install haxe
-    - git clone --recursive https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
+    - git clone --recursive --depth 1 https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
     - 'cd %HAXE_ROOT%'
     - 'set PATH=%PATH%;%HAXE_ROOT%'
-    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -f Makefile.win WODI=wodi%WODI_ARCH%"'
-    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -f Makefile.win WODI=wodi%WODI_ARCH% tools"'
+    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH%"'
+    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH% tools"'
     - cd %APPVEYOR_BUILD_FOLDER%
     - mkdir "%HAXELIB_ROOT%"
     - haxelib setup "%HAXELIB_ROOT%"
