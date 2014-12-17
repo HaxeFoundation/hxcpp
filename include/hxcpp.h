@@ -3,8 +3,7 @@
 
 // Standard headers ....
 
-// Basic mapping from Haxe <--> c++
-#define Class HxcppClass
+// Basic mapping from haxe -> c++
 // It allows to build lib (with `D static_link`) and use in Xcode-project:
 typedef int Int;
 typedef bool Bool;
