@@ -1358,6 +1358,13 @@ class BuildTool
             sub = PathManager.getHaxelib(sub.substr(8));
             sub = PathManager.standardize(sub);
          }
+         else if (sub.substr(0,13)=="removeQuotes:")
+         {
+            sub = mDefines.get(sub.substr(13));
+            var len = sub.length;
+            if (len>1 && sub.substr(0,1)=="\"" && sub.substr(len-1)=="\"")
+               sub = sub.substr(1,len-2);
+         }
          else
             sub = mDefines.get(sub);
 
