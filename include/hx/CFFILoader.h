@@ -113,7 +113,7 @@ void *LoadNekoFunc(const char *inName)
 
 
    #ifdef HX_WINDOWS
-   void *result = GetProcAddress((HMODULE)sNekoDllHandle,inName);
+   void *result = (void *)GetProcAddress((HMODULE)sNekoDllHandle,inName);
    #else
    void *result = dlsym(sNekoDllHandle,inName);
    #endif
