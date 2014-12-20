@@ -37,7 +37,7 @@
   <flag value="-static" if="no_shared_libs"/>
   <flag value="-static-libgcc" if="no_shared_libs"/>
   <flag value="-static-libstdc++" if="no_shared_libs"/>
-  <!-- <flag value="-W,l--unresolved-symbols=report-all"/> -->
+  <flag value="-L${MINGW_ROOT}/lib/libs" />
   <ext value=".dll"/>
   <outflag value="-o "/>
 </linker>
@@ -50,6 +50,7 @@
   <flag value="-static" if="no_shared_libs"/>
   <flag value="-static-libgcc" if="no_shared_libs"/>
   <flag value="-static-libstdc++" if="no_shared_libs"/>
+  <flag value="-L${MINGW_ROOT}/lib/libs" />
   <ext value=".exe"/>
   <outflag value="-o "/>
 </linker>
@@ -63,6 +64,7 @@
   <exe name="${HXCPP_AR}" if="HXCPP_AR" />
   <fromfile value="" if="GCC_OLD" />
   <outflag value="-cr "/>
+  <expandAr value="true" unless="HXCPP_USE_LIBTOOL" />
   <section if="HXCPP_USE_LIBTOOL">
      <exe name="libtool"  />
      <outflag value="-o "  />
