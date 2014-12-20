@@ -111,6 +111,8 @@ class BuildTool
 
       setupAppleDirectories(mDefines);
 
+      if (isMsvc())
+         mDefines.set("isMsvc","1");
 
       include("toolchain/finish-setup.xml");
 

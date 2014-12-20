@@ -59,6 +59,13 @@
 
 <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
 
+
+<section if="isMsvc">
+   <set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
+   <unset name="HXCPP_WINXP_COMPAT" if="HXCPP_M64" />
+   <setup name="msvc"/>
+</section>
+
 </xml>
 
 
