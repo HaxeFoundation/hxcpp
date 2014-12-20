@@ -1,4 +1,5 @@
 
+* Improved mingw support
 * Dont append -debug to dll name
 * Reorder xml includes to allow early parts to correctly influence older parts
 * Fix busy wait in semaphore lock
