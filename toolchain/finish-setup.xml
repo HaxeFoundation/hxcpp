@@ -64,8 +64,11 @@
    <set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
    <unset name="HXCPP_WINXP_COMPAT" if="HXCPP_M64" />
    <setup name="msvc"/>
-</section>
 
+   <section if="static_link" >
+      <set name="MSVC_LIB_VERSION" value="-${MSVC_VER}" />
+   </section>
+</section>
 </xml>
 
 
