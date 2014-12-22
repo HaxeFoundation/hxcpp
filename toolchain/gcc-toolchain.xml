@@ -17,6 +17,7 @@
   <outflag value="cr " if="emscripten" />
   <section if="HXCPP_USE_LIBTOOL">
      <exe name="libtool"  />
+     <exe name="${HXCPP_LIBTOOL}" if="HXCPP_LIBTOOL" />
      <outflag value="-o "  />
      <fromfile value="-filelist " />
   </section>
