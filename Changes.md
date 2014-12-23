@@ -1,4 +1,9 @@
 
+------------------------------------------------------------
+* Cached dynamic versions of small ints and 1-char-strings for speed
+* Added support for weak hashes - needs latest haxe version
+* Use internal hash structure for maps - now faster.  New version of haxe makes it faster still.
+* Changed the way development versions are bootstrapped to avoid committing binaries
 * Improved mingw support
 * Dont append -debug to dll name
 * Reorder xml includes to allow early parts to correctly influence older parts
