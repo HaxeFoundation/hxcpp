@@ -1303,9 +1303,19 @@ class BuildTool
                                    el.has.toolId ?  substitute(el.att.toolId) : null ) );
                case "section" : 
                   parseXML(el,"");
+
+               case "pleaseUpdateHxcppTool" : 
+                  checkToolVersion( substitute(el.att.version) );
             }
          }
       }
+   }
+
+   public function checkToolVersion(inVersion:String)
+   {
+      var ver = Std.parseInt(inVersion);
+      if (ver<1)
+         Log.error("Your version of hxcpp.n is out-of-date.  Please update.");
    }
 
 

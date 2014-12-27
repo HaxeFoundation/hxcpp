@@ -1,10 +1,12 @@
 <xml>
 
+<!-- make sure hxcpp.n is up to date -->
+<pleaseUpdateHxcppTool version="1" />
+
 <!-- You can override the exes an "exe" section on your own .hxcpp_config -->
 <!-- You can use replace="1" to change the compiler, or omit to add flags -->
 
 <!-- Library files & targets -------------------------------------->
-
 
 <files id="hxcpp-depends">
   <depend name="${HXCPP}/include/hxcpp.h"/>
