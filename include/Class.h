@@ -111,8 +111,8 @@ public:
 
 
    // the "Class class"
-   Class              __GetClass() const;
-   static Class      & __SGetClass();
+   hx::Class              __GetClass() const;
+   static hx::Class      & __SGetClass();
 	static void       __boot();
 
    Dynamic __Field(const String &inString ,bool inCallProp);
