@@ -193,6 +193,9 @@ class BuildTool
 
       for(target in inTargets)
          buildTarget(target);
+      
+      if (threadExitCode != 0)
+         Sys.exit(threadExitCode);
    }
 
    public function pushFile(inFilename:String, inWhy:String, inSection:String="")
