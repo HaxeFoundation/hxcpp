@@ -196,6 +196,7 @@ template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 class Class_obj;
 typedef hx::ObjectPtr<Class_obj> Class;
+namespace hx { typedef ObjectPtr<Class_obj> Class; }
 class Dynamic;
 class String;
 
