@@ -18,6 +18,7 @@
  <flag value="-I${dll_import_include}" if="dll_import_include"/>
  <flag value="-DHXCPP_DLL_EXPORT" if="dll_export"/>
  <flag value="-DHXCPP_SCRIPTABLE" if="scriptable"/>
+ <flag value="-DHXCPP_STRICT_CASTS" if="HXCPP_STRICT_CASTS"/>
  <flag value='-DHXCPP_DEBUG_HOST="${HXCPP_DEBUG_HOST}"' if="HXCPP_DEBUG_HOST" />
  <flag value='-DHXCPP_API_LEVEL=${removeQuotes:hxcpp_api_level}' if="hxcpp_api_level" />
  <flag value='-DHXCPP_API_LEVEL=0' unless="hxcpp_api_level" />

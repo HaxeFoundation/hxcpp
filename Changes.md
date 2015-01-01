@@ -1,4 +1,5 @@
 
+* Reverted change that automatically threw 'BadCast'.  Now required HXCPP_STRICT_CASTS
 ------------------------------------------------------------
 * Cached dynamic versions of small ints and 1-char-strings for speed
 * Added support for weak hashes - needs latest haxe version
