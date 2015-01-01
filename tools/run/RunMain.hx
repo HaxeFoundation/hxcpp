@@ -4,7 +4,22 @@ class RunMain
    public static function log(s:String) Sys.println(s);
    public static function showMessage()
    {
-      log("This version of hxcpp appears to be a source/developement version.");
+      var varName = "HXCPP_NONINTERACTIVE";
+      var nonInteractive:Bool =Sys.getEnv(varName)!=null;
+      if (!nonInteractive)
+         for(arg in Sys.args())
+            if (arg.indexOf("-D"+varName)==0 )
+               nonInteractive = true;
+
+      var dir = Sys.getCwd();
+
+      if (nonInteractive)
+      {
+         Sys.println('HXCPP in $dir is missing hxcpp.n');
+         Sys.exit(-1);
+      }
+
+      log('This version of hxcpp ($dir) appears to be a source/developement version.');
       log("Before this can be used, you need to:");
       log(" 1. Rebuild the main command-line tool, this can be done with:");
       log("     cd tools/hxcpp");
@@ -30,7 +45,9 @@ class RunMain
          if (answer=="n" || answer=="N")
             break;
       }
-      log("");
+
+      Sys.println("\nCan't continue without hxcpp.n");
+      Sys.exit(-1);
    }
 
    public static function setup()
@@ -63,6 +80,13 @@ class RunMain
       }
       catch(e:Dynamic)
       {
+         var s = Std.string(e);
+         var notFound = "Module not found";
+         if (s.indexOf(notFound)<0)
+         {
+            trace("====="+s);
+            neko.Lib.rethrow(e);
+         }
       }
       return false;
    }
