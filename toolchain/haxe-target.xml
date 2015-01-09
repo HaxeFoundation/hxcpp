@@ -61,6 +61,7 @@
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
   <depend name="${HXCPP}/src/hx/cppia/CppiaStream.h" />
+  <depend name="${HXCPP}/src/hx/cppia/CppiaCompiler.h" />
 
   <file name = "src/hx/cppia/Cppia.cpp" />
   <file name = "src/hx/cppia/CppiaCtx.cpp" />
@@ -69,6 +70,7 @@
   <file name = "src/hx/cppia/GLobalBuiltin.cpp" />
   <file name = "src/hx/cppia/HaxeNative.cpp" />
   <file name = "src/hx/cppia/CppiaVars.cpp" />
+  <file name = "src/hx/cppia/CppiaCompiler.cpp" />
 </files>
 
 

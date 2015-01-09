@@ -1,10 +1,13 @@
+#ifndef HX_CPPIA_INCLUDED_H
+#define HX_CPPIA_INCLUDED_H
+
 #include <hx/Scriptable.h>
 #include <hx/GC.h>
 #include <stdio.h>
 #include <vector>
 #include <string>
 #include <map>
-
+#include "CppiaCompiler.h"
 
 namespace hx
 {
@@ -20,6 +23,7 @@ struct CppiaExpr;
 struct CppiaStream;
 struct CppiaStackVar;
 struct StackLayout;
+struct ScriptCallable;
 class  ScriptRegistered;
 class  HaxeNativeClass;
 class  HaxeNativeInterface;
@@ -134,13 +138,16 @@ struct CppiaExpr
    virtual CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) { return 0; }
    virtual CppiaExpr   *makeCrement(CrementOp inOp) { return 0; }
 
+   virtual void preGen(CppiaCompiler &compiler) { }
+   virtual void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType);
+
 };
 
 CppiaExpr *createCppiaExpr(CppiaStream &inStream);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, ExprType inType, void *inPtr);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, FieldStorage inType, void *inPtr);
-hx::Object *createClosure(CppiaCtx *ctx, struct ScriptCallable *inFunction);
-hx::Object *createMemberClosure(hx::Object *, struct ScriptCallable *inFunction);
+hx::Object *createClosure(CppiaCtx *ctx, ScriptCallable *inFunction);
+hx::Object *createMemberClosure(hx::Object *, ScriptCallable *inFunction);
 hx::Object *createEnumClosure(struct CppiaEnumConstructor &inContructor);
 
 
@@ -182,12 +189,13 @@ public:
    const char                      *creatingFunction;
    int                             scriptId;
 
-   CppiaExpr                       *main;
+   ScriptCallable                  *main;
 
    CppiaModule();
    ~CppiaModule();
 
    void link();
+   void compile();
    void setDebug(CppiaExpr *outExpr, int inFileId, int inLine);
    void boot(CppiaCtx *ctx);
    void where(CppiaExpr *e);
@@ -236,7 +244,7 @@ struct CppiaFunction
    bool                 linked;
    std::string          name;
    std::vector<ArgInfo> args;
-   CppiaExpr            *funExpr;
+   ScriptCallable       *funExpr;
 
    CppiaFunction(CppiaModule *inCppia,bool inIsStatic,bool inIsDynamic);
 
@@ -244,6 +252,7 @@ struct CppiaFunction
    inline String getName() { return cppia.strings[nameId]; }
    void load(CppiaStream &stream,bool inExpectBody);
    void link( );
+   void compile();
 };
 
 
@@ -399,7 +408,7 @@ public:
       #define CPPIA_CHECK(obj) if (!obj) NullReference("Object", false);
    #endif
 #else
-   #define CPPIA_CHECK(obj)
+   #define CPPIA_CHECK(obj) { }
 #endif
 
 #ifdef HXCPP_CHECK_POINTER
@@ -709,4 +718,4 @@ hx::Object *runContextConvertObject(CppiaCtx *ctx, ExprType inType, void *inFunc
 
 
 
-
+#endif

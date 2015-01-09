@@ -19,6 +19,7 @@ CppiaCtx::CppiaCtx()
    push((hx::Object *)0);
    frame = pointer;
    sCurrent = this;
+   exception = 0;
    returnJumpBuf = 0;
    loopJumpBuf = 0;
    breakContReturn = 0;

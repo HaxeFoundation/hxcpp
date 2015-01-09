@@ -140,6 +140,32 @@ CppiaStackVar *StackLayout::findVar(int inId)
 
 // --- CppiaCtx functions ----------------------------------------
 
+void CppiaExpr::genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
+{
+   compiler.trace(getName());
+}
+
+
+
+int objectToInt(hx::Object *obj) { return obj->__ToInt(); }
+void frameToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
+//void objectToInt(CppiaCtx *inCtx) { inCtx->returnInt( inCtx->getObject() ); }
+void objectToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
+void objectToDoublePointer(CppiaCtx *inCtx)
+{
+   *(double *)inCtx->pointer = (*(hx::Object **)inCtx->pointer)->__ToDouble();
+}
+void objectToStringPointer(CppiaCtx *inCtx)
+{
+   *(String *)inCtx->pointer = (*(hx::Object **)inCtx->pointer)->toString();
+}
+void objectToString(CppiaCtx *inCtx) { inCtx->returnString( inCtx->getObject() ); }
+void stringToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getString() ); }
+void intToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getInt() ); }
+void doubleToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getFloat() ); }
+
+
+
 
 
 // --- CppiaDynamicExpr ----------------------------------------
@@ -164,6 +190,45 @@ struct CppiaDynamicExpr : public CppiaExpr
    }
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
    virtual hx::Object *runObject(CppiaCtx *ctx) = 0;
+
+   virtual void genObject(CppiaCompiler &compiler, const Addr &inDest)  { }
+
+   //void preGen(CppiaCompiler &compiler) { }
+
+   void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
+   {
+      switch(resultType)
+      {
+         case etInt:
+            genObject(compiler, Reg(0));
+            compiler.call( objectToInt, 1 );
+            if (inDest!=Reg(0))
+               compiler.move32( inDest, Reg(0) );
+            break;
+         case etFloat:
+            {
+            CtxMemberStar pointer(offsetof(CppiaCtx, pointer));
+            genObject(compiler, pointer );
+            compiler.call( objectToDoublePointer, 1 );
+            compiler.emitf( SLJIT_DMOV, inDest, pointer );
+            }
+            break;
+         case etString:
+            {
+            CtxMemberStar pointer(offsetof(CppiaCtx, pointer));
+            genObject(compiler, pointer );
+            compiler.call( objectToStringPointer, 1 );
+            compiler.move32( inDest, pointer );
+            compiler.move( inDest.offset(4), pointer.offset(4) );
+            }
+            break;
+ 
+         default:
+            genObject(compiler, inDest);
+      }
+   }
+
+
 };
 
 // --- CppiaVoidExpr ----------------------------------------
@@ -244,46 +309,8 @@ static void LinkExpressions(Expressions &ioExpressions, CppiaModule &data)
 
 CppiaExpr *convertToFunction(CppiaExpr *inExpr);
 
-// --- CppiaFunction ----
 
-CppiaFunction::CppiaFunction(CppiaModule *inCppia,bool inIsStatic,bool inIsDynamic) :
-   cppia(*inCppia), isStatic(inIsStatic), isDynamic(inIsDynamic), funExpr(0)
-{
-   linked = false;
-   vtableSlot = -1;
-}
-
-void CppiaFunction::load(CppiaStream &stream,bool inExpectBody)
-{
-   nameId = stream.getInt();
-   name = cppia.strings[ nameId ].__s;
-   stream.module->creatingFunction = name.c_str();
-   returnType = stream.getInt();
-   argCount = stream.getInt();
-   DBGLOG("  Function %s(%d) : %s %s%s\n", name.c_str(), argCount, cppia.typeStr(returnType), isStatic?"static":"instance", isDynamic ? " DYNAMIC": "");
-   args.resize(argCount);
-   for(int a=0;a<argCount;a++)
-   {
-      ArgInfo arg = args[a];
-      arg.nameId = stream.getInt();
-      arg.optional = stream.getBool();
-      arg.typeId = stream.getInt();
-      DBGLOG("    arg %c%s:%s\n", arg.optional?'?':' ', cppia.identStr(arg.nameId), cppia.typeStr(arg.typeId) );
-   }
-   if (inExpectBody)
-      funExpr = createCppiaExpr(stream);
-   stream.module->creatingFunction = 0;
-}
-void CppiaFunction::link( )
-{
-   if (!linked)
-   {
-      linked = true;
-      if (funExpr)
-         funExpr = funExpr->link(cppia);
-   }
-}
-
+// --- CppiaConst -------------------------------------------
 
 struct CppiaConst
 {
@@ -333,6 +360,595 @@ struct CppiaConst
          throw "unknown const value";
    }
 };
+
+
+
+
+// --- ScriptCallable ----------------------------------------------------
+
+static String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
+
+
+void argToInt(CppiaCtx *ctx) { ctx->pushInt( (* (hx::Object **)(ctx->pointer))->__ToInt() ); }
+void argToDouble(CppiaCtx *ctx) { ctx->pushFloat( (* (hx::Object **)(ctx->pointer))->__ToDouble() ); }
+void argToString(CppiaCtx *ctx) { ctx->pushString( (* (hx::Object **)(ctx->pointer))->__ToString() ); }
+
+struct ScriptCallable : public CppiaDynamicExpr
+{
+   int returnTypeId;
+   ExprType returnType;
+   int argCount;
+   int stackSize;
+   
+   std::vector<CppiaStackVar> args;
+   std::vector<bool>          hasDefault;
+   std::vector<CppiaConst>    initVals;
+   CppiaExpr *body;
+   CppiaModule *data;
+   CppiaCompiled compiled;
+
+   std::vector<CppiaStackVar *> captureVars;
+   int                          captureSize;
+
+   ScriptCallable(CppiaStream &stream)
+   {
+      body = 0;
+      stackSize = 0;
+      data = 0;
+      returnTypeId = stream.getInt();
+      returnType = etVoid;
+      argCount = stream.getInt();
+      args.resize(argCount);
+      hasDefault.resize(argCount);
+      initVals.resize(argCount);
+      captureSize = 0;
+      compiled = 0;
+      for(int a=0;a<argCount;a++)
+      {
+         args[a].fromStream(stream);
+         bool init = stream.getBool();
+         hasDefault[a] = init;
+         if (init)
+            initVals[a].fromStream(stream);
+      }
+      body = createCppiaExpr(stream);
+   }
+
+   ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
+   {
+      returnTypeId = 0;
+      returnType = etVoid;
+      argCount = 0;
+      stackSize = 0;
+      captureSize = 0;
+      body = inBody;
+      compiled = 0;
+   }
+
+   ~ScriptCallable()
+   {
+      if (compiled)
+         CppiaCompiler::freeCompiled(compiled);
+   }
+
+   CppiaExpr *link(CppiaModule &inModule)
+   {
+      StackLayout *oldLayout = inModule.layout;
+      StackLayout layout(oldLayout);
+      inModule.layout = &layout;
+      data = &inModule;
+
+      returnType = inModule.types[ returnTypeId ]->expressionType;
+      layout.returnType = returnType;
+
+      for(int a=0;a<args.size();a++)
+         args[a].link(inModule);
+
+      body = body->link(inModule);
+
+      captureVars.swap(layout.captureVars);
+      captureSize = layout.captureSize;
+
+      stackSize = layout.size;
+      inModule.layout = oldLayout;
+      return this;
+   }
+
+   ExprType getType() { return returnType; }
+
+
+   void preGenArgs(CppiaCompiler &compiler, CppiaExpr *inThis, Expressions &inArgs)
+   {
+      if (inThis)
+        inThis->preGen(compiler);
+
+      for(int a=0;a<argCount && a<inArgs.size();a++)
+         inArgs[a]->preGen(compiler);
+   }
+
+
+   void genPushDefault(CppiaCompiler &compiler, int inArg, bool pushNullToo)
+   {
+      CtxMemberStar pointer(offsetof(CppiaCtx, pointer));
+      CtxMemberVal stack(offsetof(CppiaCtx, pointer));
+
+      CppiaStackVar &var = args[inArg];
+      switch(var.expressionType)
+      {
+          case etInt:
+             compiler.move32( pointer, ConstValue(initVals[inArg].ival) );
+             compiler.add( stack, stack, ConstValue( sizeof(int) ) );
+             break;
+          case etFloat:
+             compiler.move( pointer, ConstRef(&initVals[inArg].dval), SLJIT_DMOV );
+             compiler.add( stack, stack, ConstValue( sizeof(double) ) );
+             break;
+          case etString:
+             {
+                // TODO - const string
+                const String &str = data->strings[ initVals[inArg].ival ];
+                compiler.move32( pointer, ConstValue(str.length) );
+                compiler.add( stack, stack, ConstValue( sizeof(int) ) );
+                compiler.move( pointer, ConstValue(str.__s) );
+                compiler.add( stack, stack, ConstValue( sizeof(void *) ) );
+             }
+             break;
+          default:
+             {
+                // TODO : GC on CppiaConst Dynamixc...
+                Dynamic val;
+                switch(initVals[inArg].type)
+                {
+                    case CppiaConst::cInt: val = initVals[inArg].ival; break;
+                    case CppiaConst::cFloat: val = initVals[inArg].dval; break;
+                    case CppiaConst::cString: val = data->strings[ initVals[inArg].ival ]; break;
+                    default: ;
+                }
+                if (val.mPtr || pushNullToo)
+                {
+                   compiler.move( pointer, ConstValue(val.mPtr) );
+                   compiler.add( stack, stack, ConstValue( sizeof(void *) ) );
+                }
+             }
+       }
+   }
+ 
+
+   void genArgs(CppiaCompiler &compiler, CppiaExpr *inThis, Expressions &inArgs)
+   {
+      int inCount = inArgs.size();
+      bool badCount = argCount<inCount;
+
+      for(int i=inCount;i<argCount && !badCount;i++)
+         if (!hasDefault[i])
+            badCount = true;
+
+      if (badCount)
+      {
+         printf("Arg count mismatch %d!=%lu ?\n", argCount, inArgs.size());
+         printf(" %s at %s:%d %s\n", getName(), filename, line, functionName);
+         CPPIA_CHECK(0);
+         throw Dynamic(HX_CSTRING("Arg count error"));
+         //return;
+      }
+
+      CtxMemberStar pointer(offsetof(CppiaCtx, pointer));
+      CtxMemberVal stack(offsetof(CppiaCtx, pointer));
+
+
+      // Push this ...
+      if (inThis)
+         inThis->genCode(compiler, pointer, etObject);
+      else
+         compiler.move( pointer, ConstValue(0) );
+
+      compiler.add( pointer, pointer, ConstValue( sizeof(void *) ) );
+
+
+      for(int a=0;a<argCount;a++)
+      {
+         CppiaStackVar &var = args[a];
+         // TODO capture
+         if (hasDefault[a])
+         {
+            if (a>=inCount)
+               genPushDefault(compiler,a,true);
+            else
+            {
+                // Gen Object onto stack ...
+                inArgs[a]->genCode(compiler, pointer, etObject );
+                if (var.expressionType!=etObject)
+                {
+                   // Check for null
+                   sljit_jump *notNull = compiler.ifNotZero( pointer );
+                
+                   genPushDefault(compiler,a,false);
+
+                   sljit_jump *doneArg = compiler.jump(SLJIT_JUMP);
+
+                   compiler.jumpHere(notNull);
+
+                   switch(var.expressionType)
+                   {
+                      case etInt:
+                         compiler.move( Reg(0), CtxReg() );
+                         compiler.call( argToInt, 1);
+                         break;
+                      case etFloat:
+                         compiler.move( Reg(0), CtxReg() );
+                         compiler.call( argToDouble, 1);
+                         break;
+                      case etString:
+                         compiler.move( Reg(0), CtxReg() );
+                         compiler.call( argToString, 1);
+                         break;
+                      default:
+
+                   compiler.jumpHere(doneArg);
+                   }
+                }
+             }
+         }
+         else
+         {
+            switch(var.expressionType)
+            {
+               case etInt:
+                  inArgs[a]->genCode(compiler, pointer, etInt);
+                  compiler.add( stack, stack, ConstValue( sizeof(int) ) );
+                  break;
+               case etFloat:
+                  inArgs[a]->genCode(compiler, pointer, etFloat);
+                  compiler.add( stack, stack, ConstValue( sizeof(double) ) );
+                  break;
+               case etString:
+                  inArgs[a]->genCode(compiler, pointer, etString);
+                  compiler.add( stack, stack, ConstValue( sizeof(String) ) );
+                  break;
+               default:
+                  inArgs[a]->genCode(compiler, pointer, etObject);
+                  compiler.add( stack, stack, ConstValue( sizeof(void *) ) );
+            }
+         }
+      }
+   }
+
+
+
+
+
+
+
+   void pushArgs(CppiaCtx *ctx, hx::Object *inThis, Expressions &inArgs)
+   {
+      BCR_VCHECK;
+      int inCount = inArgs.size();
+      bool badCount = argCount<inCount;
+
+      for(int i=inCount;i<argCount && !badCount;i++)
+         if (!hasDefault[i])
+            badCount = true;
+
+      if (badCount)
+      {
+         printf("Arg count mismatch %d!=%lu ?\n", argCount, inArgs.size());
+         printf(" %s at %s:%d %s\n", getName(), filename, line, functionName);
+         printf(" %s \n", inArgs[0]->runString(ctx).__s );
+         CPPIA_CHECK(0);
+         throw Dynamic(HX_CSTRING("Arg count error"));
+         //return;
+      }
+
+
+      ctx->push( inThis );
+
+      for(int a=0;a<argCount;a++)
+      {
+         CppiaStackVar &var = args[a];
+         // TODO capture
+         if (hasDefault[a])
+         {
+            bool makeNull = a>=inCount;
+            hx::Object *obj = makeNull ? 0 : inArgs[a]->runObject(ctx);
+            BCR_VCHECK;
+            switch(var.expressionType)
+            {
+               case etInt:
+                  ctx->pushInt( obj ? obj->__ToInt() : initVals[a].ival );
+                  break;
+               case etFloat:
+                  ctx->pushFloat( (Float)(obj ? obj->__ToDouble() : initVals[a].dval) );
+                  break;
+               case etString:
+                  ctx->push( obj ? obj->__ToString() : data->strings[ initVals[a].ival ] );
+                  break;
+               default:
+                  if (obj)
+                     ctx->pushObject(obj);
+                  else
+                  {
+                     switch(initVals[a].type)
+                     {
+                        case CppiaConst::cInt:
+                           ctx->pushObject( Dynamic(initVals[a].ival).mPtr );
+                           break;
+                        case CppiaConst::cFloat:
+                           ctx->pushObject( Dynamic(initVals[a].dval).mPtr );
+                           break;
+                        case CppiaConst::cString:
+                           ctx->pushObject( Dynamic(data->strings[ initVals[a].ival ]).mPtr );
+                           break;
+                        default:
+                           ctx->pushObject(0);
+                     }
+
+                  }
+            }
+         }
+         else
+         {
+            switch(var.expressionType)
+            {
+               case etInt:
+                  ctx->pushInt(inArgs[a]->runInt(ctx));
+                  break;
+               case etFloat:
+                  ctx->pushFloat(inArgs[a]->runFloat(ctx));
+                  break;
+               case etString:
+                  ctx->pushString(inArgs[a]->runString(ctx));
+                  break;
+               default:
+                  ctx->pushObject(inArgs[a]->runObject(ctx));
+            }
+            BCR_VCHECK;
+         }
+      }
+   }
+
+
+
+   void pushArgsDynamic(CppiaCtx *ctx, hx::Object *inThis, Array<Dynamic> &inArgs)
+   {
+      BCR_VCHECK;
+      int inLen = inArgs==null() ? 0 : inArgs->length;
+      if (argCount!=inLen)
+      {
+         printf("Arg count mismatch?\n");
+         return;
+      }
+
+      ctx->push( inThis );
+
+      for(int a=0;a<argCount;a++)
+      {
+         CppiaStackVar &var = args[a];
+         // TODO capture
+         if (hasDefault[a])
+         {
+            hx::Object *obj = inArgs[a].mPtr;
+            BCR_VCHECK;
+            switch(var.expressionType)
+            {
+               case etInt:
+                  ctx->pushInt( obj ? obj->__ToInt() : initVals[a].ival );
+                  break;
+               case etFloat:
+                  ctx->pushFloat( (Float)(obj ? obj->__ToDouble() : initVals[a].dval) );
+                  break;
+               case etString:
+                  ctx->push( obj ? obj->toString() : data->strings[ initVals[a].ival ] );
+                  break;
+               default:
+                  if (obj)
+                     ctx->pushObject(obj);
+                  else
+                  {
+                     switch(initVals[a].type)
+                     {
+                        case CppiaConst::cInt:
+                           ctx->pushObject( Dynamic(initVals[a].ival).mPtr );
+                           break;
+                        case CppiaConst::cFloat:
+                           ctx->pushObject( Dynamic(initVals[a].dval).mPtr );
+                           break;
+                        case CppiaConst::cString:
+                           ctx->pushObject( Dynamic(data->strings[ initVals[a].ival ]).mPtr );
+                           break;
+                        default:
+                           ctx->pushObject(0);
+                     }
+
+                  }
+            }
+         }
+         else
+         {
+            switch(var.expressionType)
+            {
+               case etInt:
+                  ctx->pushInt(inArgs[a]);
+                  break;
+               case etFloat:
+                  ctx->pushFloat(inArgs[a]);
+                  break;
+               case etString:
+                  ctx->pushString(inArgs[a]);
+                  break;
+               default:
+                  ctx->pushObject(inArgs[a].mPtr);
+            }
+            BCR_VCHECK;
+         }
+      }
+   }
+
+
+   // Return the closure
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      return createClosure(ctx,this);
+
+   }
+
+   const char *getName() { return "ScriptCallable"; }
+   String runString(CppiaCtx *ctx) { return HX_CSTRING("#function"); }
+
+   // Run the actual function
+   void runVoid(CppiaCtx *ctx)
+   {
+      if (compiled)
+      {
+         //printf("Running compiled code...\n");
+         compiled(ctx);
+         //printf("Done.\n");
+      }
+      else
+      {
+         if (stackSize)
+         {
+            memset(ctx->pointer, 0 , stackSize );
+            ctx->pointer += stackSize;
+         }
+         body->runVoid(ctx);
+      }
+   }
+
+   void addStackVarsSpace(CppiaCtx *ctx)
+   {
+      if (stackSize)
+      {
+         memset(ctx->pointer, 0 , stackSize );
+         ctx->pointer += stackSize;
+      }
+   }
+
+   
+   bool pushDefault(CppiaCtx *ctx,int arg)
+   {
+      if (!hasDefault[arg])
+         return false;
+
+      switch(args[arg].expressionType)
+      {
+         case etInt:
+            if (initVals[arg].type==CppiaConst::cFloat)
+               ctx->pushInt( initVals[arg].dval );
+            else
+               ctx->pushInt( initVals[arg].ival );
+            break;
+         case etFloat:
+            if (initVals[arg].type==CppiaConst::cFloat)
+               ctx->pushFloat( initVals[arg].dval );
+            else
+               ctx->pushFloat( initVals[arg].ival );
+            break;
+         case etString:
+            ctx->pushString( data->strings[initVals[arg].ival] );
+            break;
+         default:
+            switch(initVals[arg].type)
+            {
+               case CppiaConst::cInt:
+                  ctx->pushObject( Dynamic(initVals[arg].ival).mPtr );
+                  break;
+               case CppiaConst::cFloat:
+                  ctx->pushObject( Dynamic(initVals[arg].dval).mPtr );
+                  break;
+               case CppiaConst::cString:
+                  ctx->pushObject( Dynamic(data->strings[ initVals[arg].ival ]).mPtr );
+                  break;
+               default:
+                  ctx->pushObject(0);
+            }
+
+      }
+      return true;
+   }
+
+   void addExtraDefaults(CppiaCtx *ctx,int inHave)
+   {
+      if (inHave>argCount)
+         throw sInvalidArgCount;
+
+      for(int a=inHave;a<argCount;a++)
+      {
+         CppiaStackVar &var = args[a];
+         if (!pushDefault(ctx,a))
+            throw sInvalidArgCount;
+      }
+   }
+
+
+   void compile()
+   {
+      if (!compiled && body)
+      {
+         CppiaCompiler compiler;
+
+         body->preGen(compiler);
+
+         compiler.enter(0, stackSize);
+
+         body->genCode(compiler, AddrVoid(), etVoid);
+
+         compiler.ret();
+         compiled = compiler.generate();
+      }
+   }
+
+};
+
+
+
+
+// --- CppiaFunction ----
+
+CppiaFunction::CppiaFunction(CppiaModule *inCppia,bool inIsStatic,bool inIsDynamic) :
+   cppia(*inCppia), isStatic(inIsStatic), isDynamic(inIsDynamic), funExpr(0)
+{
+   linked = false;
+   vtableSlot = -1;
+}
+
+void CppiaFunction::load(CppiaStream &stream,bool inExpectBody)
+{
+   nameId = stream.getInt();
+   name = cppia.strings[ nameId ].__s;
+   stream.module->creatingFunction = name.c_str();
+   returnType = stream.getInt();
+   argCount = stream.getInt();
+   DBGLOG("  Function %s(%d) : %s %s%s\n", name.c_str(), argCount, cppia.typeStr(returnType), isStatic?"static":"instance", isDynamic ? " DYNAMIC": "");
+   args.resize(argCount);
+   for(int a=0;a<argCount;a++)
+   {
+      ArgInfo arg = args[a];
+      arg.nameId = stream.getInt();
+      arg.optional = stream.getBool();
+      arg.typeId = stream.getInt();
+      DBGLOG("    arg %c%s:%s\n", arg.optional?'?':' ', cppia.identStr(arg.nameId), cppia.typeStr(arg.typeId) );
+   }
+   if (inExpectBody)
+      funExpr = (ScriptCallable *)createCppiaExpr(stream);
+   stream.module->creatingFunction = 0;
+}
+
+void CppiaFunction::link( )
+{
+   if (!linked)
+   {
+      linked = true;
+      if (funExpr)
+         funExpr = (ScriptCallable *)(funExpr->link(cppia));
+   }
+}
+
+void CppiaFunction::compile()
+{
+   if (funExpr)
+      funExpr->compile();
+}
+
 
 
 class CppiaEnumBase : public EnumBase_obj
@@ -440,9 +1056,9 @@ struct CppiaClassInfo
 
    std::vector<CppiaEnumConstructor *> enumConstructors;
 
-   CppiaFunction *newFunc;
-   CppiaExpr     *initFunc;
-   CppiaExpr     *enumMeta;
+   CppiaFunction  *newFunc;
+   ScriptCallable *initFunc;
+   CppiaExpr      *enumMeta;
 
    CppiaClassInfo(CppiaModule &inCppia) : cppia(inCppia)
    {
@@ -1209,6 +1825,27 @@ struct CppiaClassInfo
       DBGLOG("  this constructor %p\n", newFunc);
    }
 
+   void compile()
+   {
+      for(int i=0;i<staticFunctions.size();i++)
+      {
+         DBGLOG(" Compile %s::%s\n", name.c_str(), staticFunctions[i]->name.c_str() );
+         staticFunctions[i]->compile();
+      }
+      if (newFunc)
+         newFunc->compile();
+
+      if (initFunc)
+         initFunc->compile();
+
+      // Functions
+      for(int i=0;i<memberFunctions.size();i++)
+      {
+         DBGLOG(" Compile member %s::%s\n", name.c_str(), memberFunctions[i]->name.c_str() );
+         memberFunctions[i]->compile();
+      }
+   }
+
    void link()
    {
       int newPos = -1;
@@ -1221,7 +1858,7 @@ struct CppiaClassInfo
          newFunc->link();
 
       if (initFunc)
-         initFunc = initFunc->link(cppia);
+         initFunc = (ScriptCallable *)initFunc->link(cppia);
 
       // Functions
       for(int i=0;i<memberFunctions.size();i++)
@@ -1678,336 +2315,6 @@ int getScriptId(Class inClass)
 
 
 
-
-static String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
-
-struct ScriptCallable : public CppiaDynamicExpr
-{
-   int returnTypeId;
-   ExprType returnType;
-   int argCount;
-   int stackSize;
-   
-   std::vector<CppiaStackVar> args;
-   std::vector<bool>          hasDefault;
-   std::vector<CppiaConst>    initVals;
-   CppiaExpr *body;
-   CppiaModule *data;
-
-   std::vector<CppiaStackVar *> captureVars;
-   int                          captureSize;
-
-   ScriptCallable(CppiaStream &stream)
-   {
-      body = 0;
-      stackSize = 0;
-      data = 0;
-      returnTypeId = stream.getInt();
-      returnType = etVoid;
-      argCount = stream.getInt();
-      args.resize(argCount);
-      hasDefault.resize(argCount);
-      initVals.resize(argCount);
-      captureSize = 0;
-      for(int a=0;a<argCount;a++)
-      {
-         args[a].fromStream(stream);
-         bool init = stream.getBool();
-         hasDefault[a] = init;
-         if (init)
-            initVals[a].fromStream(stream);
-      }
-      body = createCppiaExpr(stream);
-   }
-
-   ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
-   {
-      returnTypeId = 0;
-      returnType = etVoid;
-      argCount = 0;
-      stackSize = 0;
-      captureSize = 0;
-      body = inBody;
-   }
-
-   CppiaExpr *link(CppiaModule &inModule)
-   {
-      StackLayout *oldLayout = inModule.layout;
-      StackLayout layout(oldLayout);
-      inModule.layout = &layout;
-      data = &inModule;
-
-      returnType = inModule.types[ returnTypeId ]->expressionType;
-      layout.returnType = returnType;
-
-      for(int a=0;a<args.size();a++)
-         args[a].link(inModule);
-
-      body = body->link(inModule);
-
-      captureVars.swap(layout.captureVars);
-      captureSize = layout.captureSize;
-
-      stackSize = layout.size;
-      inModule.layout = oldLayout;
-      return this;
-   }
-
-   ExprType getType() { return returnType; }
-
-   void pushArgs(CppiaCtx *ctx, hx::Object *inThis, Expressions &inArgs)
-   {
-      BCR_VCHECK;
-      int inCount = inArgs.size();
-      bool badCount = argCount<inCount;
-
-      for(int i=inCount;i<argCount && !badCount;i++)
-         if (!hasDefault[i])
-            badCount = true;
-
-      if (badCount)
-      {
-         printf("Arg count mismatch %d!=%lu ?\n", argCount, inArgs.size());
-         printf(" %s at %s:%d %s\n", getName(), filename, line, functionName);
-         printf(" %s \n", inArgs[0]->runString(ctx).__s );
-         CPPIA_CHECK(0);
-         throw Dynamic(HX_CSTRING("Arg count error"));
-         //return;
-      }
-
-
-      ctx->push( inThis );
-
-      for(int a=0;a<argCount;a++)
-      {
-         CppiaStackVar &var = args[a];
-         // TODO capture
-         if (hasDefault[a])
-         {
-            bool makeNull = a>=inCount;
-            hx::Object *obj = makeNull ? 0 : inArgs[a]->runObject(ctx);
-            BCR_VCHECK;
-            switch(var.expressionType)
-            {
-               case etInt:
-                  ctx->pushInt( obj ? obj->__ToInt() : initVals[a].ival );
-                  break;
-               case etFloat:
-                  ctx->pushFloat( (Float)(obj ? obj->__ToDouble() : initVals[a].dval) );
-                  break;
-               case etString:
-                  ctx->push( obj ? obj->__ToString() : data->strings[ initVals[a].ival ] );
-                  break;
-               default:
-                  if (obj)
-                     ctx->pushObject(obj);
-                  else
-                  {
-                     switch(initVals[a].type)
-                     {
-                        case CppiaConst::cInt:
-                           ctx->pushObject( Dynamic(initVals[a].ival).mPtr );
-                           break;
-                        case CppiaConst::cFloat:
-                           ctx->pushObject( Dynamic(initVals[a].dval).mPtr );
-                           break;
-                        case CppiaConst::cString:
-                           ctx->pushObject( Dynamic(data->strings[ initVals[a].ival ]).mPtr );
-                           break;
-                        default:
-                           ctx->pushObject(0);
-                     }
-
-                  }
-            }
-         }
-         else
-         {
-            switch(var.expressionType)
-            {
-               case etInt:
-                  ctx->pushInt(inArgs[a]->runInt(ctx));
-                  break;
-               case etFloat:
-                  ctx->pushFloat(inArgs[a]->runFloat(ctx));
-                  break;
-               case etString:
-                  ctx->pushString(inArgs[a]->runString(ctx));
-                  break;
-               default:
-                  ctx->pushObject(inArgs[a]->runObject(ctx));
-            }
-            BCR_VCHECK;
-         }
-      }
-   }
-
-
-
-   void pushArgsDynamic(CppiaCtx *ctx, hx::Object *inThis, Array<Dynamic> &inArgs)
-   {
-      BCR_VCHECK;
-      int inLen = inArgs==null() ? 0 : inArgs->length;
-      if (argCount!=inLen)
-      {
-         printf("Arg count mismatch?\n");
-         return;
-      }
-
-      ctx->push( inThis );
-
-      for(int a=0;a<argCount;a++)
-      {
-         CppiaStackVar &var = args[a];
-         // TODO capture
-         if (hasDefault[a])
-         {
-            hx::Object *obj = inArgs[a].mPtr;
-            BCR_VCHECK;
-            switch(var.expressionType)
-            {
-               case etInt:
-                  ctx->pushInt( obj ? obj->__ToInt() : initVals[a].ival );
-                  break;
-               case etFloat:
-                  ctx->pushFloat( (Float)(obj ? obj->__ToDouble() : initVals[a].dval) );
-                  break;
-               case etString:
-                  ctx->push( obj ? obj->toString() : data->strings[ initVals[a].ival ] );
-                  break;
-               default:
-                  if (obj)
-                     ctx->pushObject(obj);
-                  else
-                  {
-                     switch(initVals[a].type)
-                     {
-                        case CppiaConst::cInt:
-                           ctx->pushObject( Dynamic(initVals[a].ival).mPtr );
-                           break;
-                        case CppiaConst::cFloat:
-                           ctx->pushObject( Dynamic(initVals[a].dval).mPtr );
-                           break;
-                        case CppiaConst::cString:
-                           ctx->pushObject( Dynamic(data->strings[ initVals[a].ival ]).mPtr );
-                           break;
-                        default:
-                           ctx->pushObject(0);
-                     }
-
-                  }
-            }
-         }
-         else
-         {
-            switch(var.expressionType)
-            {
-               case etInt:
-                  ctx->pushInt(inArgs[a]);
-                  break;
-               case etFloat:
-                  ctx->pushFloat(inArgs[a]);
-                  break;
-               case etString:
-                  ctx->pushString(inArgs[a]);
-                  break;
-               default:
-                  ctx->pushObject(inArgs[a].mPtr);
-            }
-            BCR_VCHECK;
-         }
-      }
-   }
-
-
-   // Return the closure
-   hx::Object *runObject(CppiaCtx *ctx)
-   {
-      return createClosure(ctx,this);
-
-   }
-
-   const char *getName() { return "ScriptCallable"; }
-   String runString(CppiaCtx *ctx) { return HX_CSTRING("#function"); }
-
-   // Run the actual function
-   void runVoid(CppiaCtx *ctx)
-   {
-      if (stackSize)
-      {
-         memset(ctx->pointer, 0 , stackSize );
-         ctx->pointer += stackSize;
-      }
-      body->runVoid(ctx);
-   }
-
-   void addStackVarsSpace(CppiaCtx *ctx)
-   {
-      if (stackSize)
-      {
-         memset(ctx->pointer, 0 , stackSize );
-         ctx->pointer += stackSize;
-      }
-   }
-
-   
-   bool pushDefault(CppiaCtx *ctx,int arg)
-   {
-      if (!hasDefault[arg])
-         return false;
-
-      switch(args[arg].expressionType)
-      {
-         case etInt:
-            if (initVals[arg].type==CppiaConst::cFloat)
-               ctx->pushInt( initVals[arg].dval );
-            else
-               ctx->pushInt( initVals[arg].ival );
-            break;
-         case etFloat:
-            if (initVals[arg].type==CppiaConst::cFloat)
-               ctx->pushFloat( initVals[arg].dval );
-            else
-               ctx->pushFloat( initVals[arg].ival );
-            break;
-         case etString:
-            ctx->pushString( data->strings[initVals[arg].ival] );
-            break;
-         default:
-            switch(initVals[arg].type)
-            {
-               case CppiaConst::cInt:
-                  ctx->pushObject( Dynamic(initVals[arg].ival).mPtr );
-                  break;
-               case CppiaConst::cFloat:
-                  ctx->pushObject( Dynamic(initVals[arg].dval).mPtr );
-                  break;
-               case CppiaConst::cString:
-                  ctx->pushObject( Dynamic(data->strings[ initVals[arg].ival ]).mPtr );
-                  break;
-               default:
-                  ctx->pushObject(0);
-            }
-
-      }
-      return true;
-   }
-
-   void addExtraDefaults(CppiaCtx *ctx,int inHave)
-   {
-      if (inHave>argCount)
-         throw sInvalidArgCount;
-
-      for(int a=inHave;a<argCount;a++)
-      {
-         CppiaStackVar &var = args[a];
-         if (!pushDefault(ctx,a))
-            throw sInvalidArgCount;
-      }
-   }
-
-};
-
 CppiaExpr *convertToFunction(CppiaExpr *inExpr) { return new ScriptCallable(inExpr); }
 
 
@@ -2399,6 +2706,29 @@ struct BlockExpr : public CppiaExpr
          (*e)->runVoid(ctx);
       }
    }
+
+
+   void preGen(CppiaCompiler &compiler)
+   {
+      for(int i=0;i<expressions.size();i++)
+          expressions[i]->preGen(compiler);
+   }
+
+   void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
+   {
+      int n = expressions.size();
+      for(int i=0;i<n;i++)
+      {
+         if (i<n-1 || resultType==etVoid)
+            expressions[i]->genCode(compiler, AddrVoid(), etVoid);
+         else
+         {
+            // TODO - store save register?
+            expressions[i]->genCode(compiler, inDest, resultType);
+         }
+      }
+   }
+
 };
 
 struct IfElseExpr : public CppiaExpr
@@ -2517,6 +2847,110 @@ struct IsNotNull : public CppiaBoolExpr
 };
 
 
+void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType, ExprType srcType)
+{
+   CtxMemberStar src(offsetof(CppiaCtx,frame));
+
+   // hmm
+   if (srcType==etVoid)
+      return;
+
+      switch(destType)
+      {
+         case etInt:
+            switch(srcType)
+            {
+               case etInt:
+                  compiler.move32( dest, src);
+                  break;
+               case etFloat:
+                  compiler.emitf( SLJIT_CONVI_FROMD, dest, src );
+                  break;
+               case etObject:
+                  if (src!=Reg(0))
+                     compiler.move( Reg(0), src );
+                  compiler.call( objectToInt, 1 );
+                  if (dest!=Reg(0))
+                     compiler.move( dest, Reg(0) );
+                  break;
+               case etString:
+                  // Hmm
+                  break;
+               default: ;
+            }
+            break;
+
+         case etFloat:
+            switch(srcType)
+            {
+               case etInt:
+                  compiler.emitf( SLJIT_CONVD_FROMI, dest, src );
+                  break;
+               case etFloat:
+                  compiler.emitf( SLJIT_DMOV, dest, src );
+                  break;
+               case etObject:
+                  compiler.move( Reg(0), CtxReg() );
+                  compiler.call( objectToDouble, 1 );
+                  compiler.emitf( SLJIT_DMOV, dest, src );
+                  break;
+               case etString:
+                  // Hmm
+                  break;
+               default: ;
+            }
+            break;
+
+         case etObject:
+            switch(srcType)
+            {
+               case etInt:
+                  compiler.move( Reg(0), CtxReg() );
+                  compiler.call( intToObject, 1 );
+                  break;
+               case etFloat:
+                  compiler.move( Reg(0), CtxReg() );
+                  compiler.call( doubleToObject, 1 );
+                  break;
+               case etObject:
+                  break;
+               case etString:
+                  compiler.move( Reg(0), CtxReg() );
+                  compiler.call( stringToObject, 1 );
+                  break;
+               default: ;
+            }
+            compiler.move( dest,src );
+            break;
+ 
+
+
+         case etString:
+            switch(srcType)
+            {
+               case etInt:
+                  // Hmm
+                  break;
+               case etFloat:
+                  // Hmm
+                  break;
+               case etObject:
+                  break;
+               case etString:
+                  compiler.move( Reg(0), CtxReg() );
+                  compiler.call( objectToString, 1 );
+               default: ;
+            }
+            compiler.move32( dest,src );
+            compiler.move( dest.offset(4),src.offset(4) );
+            break;
+ 
+         default: ;
+      }
+}
+
+
+
 struct CallFunExpr : public CppiaExpr
 {
    Expressions args;
@@ -2566,9 +3000,68 @@ struct CallFunExpr : public CppiaExpr
    {
       unsigned char *pointer = ctx->pointer;
       function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(false),args);
-      BCR_VCHECK;
+      if (ctx->breakContReturn) return;
+
+
       AutoStack save(ctx,pointer);
       ctx->runVoid(function);
+   }
+
+   void preGen(CppiaCompiler &compiler)
+   {
+      AllocTemp pointer(compiler);
+      AllocTemp frame(compiler);
+      function->preGenArgs(compiler,thisExpr, args);
+   }
+
+   static void callScriptable(CppiaCtx *inCtx, ScriptCallable *inScriptable)
+   {
+      // compiled?
+      inScriptable->runVoid(inCtx);
+   }
+
+   void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
+   {
+      compiler.trace("Function called implementation");
+
+      AllocTemp pointer(compiler);
+      AllocTemp frame(compiler);
+
+      // AutoStack
+      compiler.move(pointer, CtxMemberVal(offsetof(CppiaCtx,pointer) ) );
+      compiler.move(frame, CtxMemberVal(offsetof(CppiaCtx,frame) ) );
+ 
+      // Push args
+      function->genArgs(compiler,thisExpr,args);
+
+      // Set frame=pointer for new function
+      compiler.move(CtxMemberVal(offsetof(CppiaCtx,frame) ), pointer );
+
+      // call function / leave hole for calling?
+      // Result is at pointer
+      compiler.move( Reg(0), CtxReg() );
+
+      // TODO - compiled version
+      compiler.move( Reg(1), ConstValue(function) );
+      compiler.call( callScriptable, 2 );
+
+      // ~AutoStack
+      compiler.move(CtxMemberVal(offsetof(CppiaCtx,frame) ), frame );
+      compiler.move(CtxMemberVal(offsetof(CppiaCtx,pointer) ), pointer );
+
+      if (compiler.exceptionHandler)
+      {
+         sljit_jump *notZero = compiler.ifNotZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
+         compiler.exceptionHandler->push_back(notZero);
+      }
+      else
+      {
+         sljit_jump *isZero = compiler.ifZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
+         compiler.ret( );
+         compiler.jumpHere(isZero);
+      }
+
+      convertResult(compiler, inDest, resultType, function->getType() );
    }
 
 };
@@ -3627,6 +4120,47 @@ struct CallGlobal : public CppiaExpr
    }
 };
 
+void callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
+{
+   // ctx.pointer points to end-of-args
+   hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
+   try
+   {
+      switch(inArgs)
+      {
+         case 0:
+            base[0] = inFunction->__run().mPtr;
+            break;
+         case 1:
+            base[0] = inFunction->__run(base[0]).mPtr;
+            break;
+         case 2:
+            base[0] = inFunction->__run(base[0],base[1]).mPtr;
+            break;
+         case 3:
+            base[0] = inFunction->__run(base[0],base[1],base[2]).mPtr;
+            break;
+         case 4:
+            base[0] = inFunction->__run(base[0],base[1],base[2],base[3]).mPtr;
+            break;
+         case 5:
+            base[0] = inFunction->__run(base[0],base[1],base[2],base[3],base[4]).mPtr;
+            break;
+         default:
+            {
+            Array<Dynamic> argArray = Array_obj<Dynamic>::__new(inArgs,inArgs);
+            for(int s=0;s<inArgs;s++)
+               argArray[s] = base[s];
+            base[0] = inFunction->__Run(argArray).mPtr;
+            }
+      }
+   }
+   catch(Dynamic e)
+   {
+      ctx->exception = e.mPtr;
+   }
+   ctx->pointer = (unsigned char *)base;
+}
 
 
 struct Call : public CppiaDynamicExpr
@@ -3721,6 +4255,51 @@ struct Call : public CppiaDynamicExpr
             return funcVal->__Run(argArray).mPtr;
       }
       return 0;
+   }
+
+   void preGen(CppiaCompiler &compiler)
+   {
+      AllocTemp frame(compiler);
+      for(int a=0;a<args.size();a++)
+          args[a]->preGen(compiler);
+   }
+
+   void genObject(CppiaCompiler &compiler, const Addr &inDest)
+   {
+      func->genCode(compiler, TempReg(), etObject );
+
+      AllocTemp pointerSave(compiler);
+      compiler.move(pointerSave, CtxMemberVal(offsetof(CppiaCtx,pointer) ) );
+ 
+
+      CtxMemberStar pointer(offsetof(CppiaCtx,pointer));
+      // TODO - shortcut for script->script
+      for(int a=0;a<args.size();a++)
+      {
+         args[a]->genCode(compiler, pointer, etObject);
+         compiler.add( pointer, pointer, ConstValue( sizeof(void *) ) );
+      }
+
+      compiler.move(Reg(0), CtxReg());
+      compiler.move(Reg(1), TempReg());
+      compiler.move(Reg(2), ConstValue( args.size() ));
+      compiler.call( callDynamic, 3 );
+
+      if (compiler.exceptionHandler)
+      {
+         sljit_jump *notZero = compiler.ifNotZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
+         compiler.exceptionHandler->push_back(notZero);
+      }
+      else
+      {
+         sljit_jump *isZero = compiler.ifZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
+         compiler.ret( );
+         compiler.jumpHere(isZero);
+      }
+
+      // Result is at pointer
+      if (inDest!=pointer)
+         compiler.move( inDest, pointer );
    }
 };
 
@@ -6353,8 +6932,20 @@ void CppiaModule::link()
    linkingClass = 0;
 
    if (main)
-      main = main->link(*this);
+      main = (ScriptCallable *)main->link(*this);
 }
+
+
+void CppiaModule::compile()
+{
+   for(int i=0;i<classes.size();i++)
+      classes[i]->compile();
+
+   if (main)
+      main->compile();
+}
+
+
 
 /*
 CppiaClassInfo *CppiaModule::findClass(String inName)
@@ -6473,7 +7064,7 @@ bool LoadCppia(String inValue)
       if (tok=="MAIN")
       {
          DBGLOG("Main...\n");
-         cppia.main = createCppiaExpr(stream);
+         cppia.main = new ScriptCallable(createCppiaExpr(stream));
       }
       else if (tok!="NOMAIN")
          throw "no main specified";
@@ -6528,6 +7119,20 @@ bool LoadCppia(String inValue)
          printf("Error linking : %s\n", error);
          ok = false;
       }
+
+   /*
+   if (ok)
+      try
+      {
+         DBGLOG("Compile...\n");
+         cppia.compile();
+      } catch(const char *error)
+      {
+         printf("Error compiling : %s\n", error);
+         ok = false;
+      }
+   */
+
 
    if (ok) try
    {

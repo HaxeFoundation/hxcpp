@@ -35,6 +35,7 @@ struct CppiaCtx
    unsigned char *stack;
    unsigned char *pointer;
    unsigned char *frame;
+   class Object  *exception;
 
    jmp_buf *returnJumpBuf;
    jmp_buf *loopJumpBuf;
