@@ -359,7 +359,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       int newSize = size + 1;
       if (newSize>=alloc)
       {
-         alloc = (newSize+10)*3/2;
+         alloc = size==0 ? 4 : (newSize)*3/2;
          element = (Element *)InternalRealloc(element, sizeof(Element)*alloc);
       }
       expandBuckets(newSize);
@@ -375,11 +375,12 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       {
          int newCount = bucketCount;
          if (newCount==0)
-            newCount = 8;
+            newCount = 2;
          else
             while( inSize > (newCount<<LOG_ELEMS_PER_BUCKET) )
                newCount<<=1;
-         rebucket(newCount);
+         if (newCount!=bucketCount)
+            rebucket(newCount);
       }
    }
 

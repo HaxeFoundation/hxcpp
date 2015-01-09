@@ -1,4 +1,5 @@
 
+* Re-tuned Hash for small objects too (improves Anon object perforamce)
 * Reverted change that automatically threw 'BadCast'.  Now required HXCPP_STRICT_CASTS
 ------------------------------------------------------------
 * Cached dynamic versions of small ints and 1-char-strings for speed

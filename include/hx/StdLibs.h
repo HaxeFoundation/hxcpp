@@ -116,7 +116,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_to_string(Dynamic &ioHash
 
 // --- StringHash ----------------------------------------------------------------------
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value,bool inForceDynamic=false);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_get(Dynamic &ioHash,String inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __string_hash_exists(Dynamic &ioHash,String inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __string_hash_remove(Dynamic &ioHash,String inKey);

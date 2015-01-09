@@ -203,12 +203,12 @@ typedef hx::Hash< TStringElement<String> >  StringHashString;
 }
 
 
-void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value)
+void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool inForceDynamic)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
-      if (value==null())
+      if (inForceDynamic || value==null())
       {
          hash = new StringHashObject();
       }

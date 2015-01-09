@@ -40,7 +40,7 @@ bool FieldMapHas(FieldMap *inMap, const String &inName)
 
 void FieldMapSet(FieldMap *inMap, const String &inName, const Dynamic &inValue)
 {
-   __string_hash_set(*inMap, inName, inValue);
+   __string_hash_set(*inMap, inName, inValue,true);
 }
 
 
@@ -93,13 +93,13 @@ bool Anon_obj::__Remove(String inKey)
 
 Dynamic Anon_obj::__SetField(const String &inName,const Dynamic &inValue, bool inCallProp)
 {
-   __string_hash_set(mFields,inName,inValue);
+   __string_hash_set(mFields,inName,inValue,true);
    return inValue;
 }
 
 Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetThisPointer)
 {
-   __string_hash_set(mFields,inName,inValue);
+   __string_hash_set(mFields,inName,inValue,true);
    if (inSetThisPointer && inValue.GetPtr())
       inValue.GetPtr()->__SetThis(this);
    return this;
