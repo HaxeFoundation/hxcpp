@@ -31,6 +31,12 @@ extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumbe
 #include <map>
 #include <time.h>
 
+
+#ifdef HX_ANDROID
+#define rand() lrand48()
+#define srand(x) srand48(x)
+#endif
+
 void __hx_stack_set_last_exception();
 
 namespace hx

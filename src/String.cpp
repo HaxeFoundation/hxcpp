@@ -1021,13 +1021,13 @@ inline double _wtof(const wchar_t *inStr)
    for(int i=0;i<100 && inStr[i];i++)
       buf[i] = inStr[i];
    buf[i] = '\0';
-   return atof(buf);
+   return strtod(buf, 0);
    #else
    return wcstod(inStr,0);
    #endif
 }
 
-#ifdef ANDROID
+#ifdef HX_ANDROID
 int my_wtol(const wchar_t *inStr,wchar_t ** end, int inBase)
 {
    char buf[101];
@@ -1077,7 +1077,11 @@ public:
    {
       if (!mValue.__s) return 0;
       #ifdef HX_UTF8_STRINGS
-      return atof(mValue.__s);
+         #ifdef HX_ANDROID
+         return strtod(mValue.__s,0);
+         #else
+         return atof(mValue.__s);
+         #endif
       #else
       return _wtof(mValue.__s);
       #endif

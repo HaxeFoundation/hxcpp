@@ -1,4 +1,5 @@
 
+* Fix for google changing inlining in platform21 headers (atof, rand, srand)
 * Re-tuned Hash for small objects too (improves Anon object perforamce)
 * Reverted change that automatically threw 'BadCast'.  Now required HXCPP_STRICT_CASTS
 ------------------------------------------------------------
