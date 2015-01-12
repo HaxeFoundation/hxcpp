@@ -72,7 +72,7 @@ void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
       }
    }
 
-   hash->set(inKey,value);
+   ioHash.mPtr = hash->set(inKey,value);
 }
 
 void __int_hash_set_int(Dynamic &ioHash,int inKey,int inValue)
@@ -89,7 +89,7 @@ void __int_hash_set_int(Dynamic &ioHash,int inKey,int inValue)
       ioHash = hash;
    }
 
-   hash->set(inKey,inValue);
+   ioHash.mPtr = hash->set(inKey,inValue);
 }
 
 
@@ -112,7 +112,7 @@ void __int_hash_set_float(Dynamic &ioHash,int inKey,Float inValue)
       ioHash = hash;
    }
 
-   hash->set(inKey,inValue);
+   ioHash.mPtr = hash->set(inKey,inValue);
 }
 
 
@@ -131,7 +131,7 @@ void __int_hash_set_string(Dynamic &ioHash,int inKey, ::String inValue)
       ioHash = hash;
    }
 
-   hash->set(inKey,inValue);
+   ioHash.mPtr = hash->set(inKey,inValue);
 }
 
 Dynamic  __int_hash_get(Dynamic &ioHash,int inKey)
@@ -196,10 +196,10 @@ String __int_hash_to_string(Dynamic &ioHash)
 namespace
 {
 typedef hx::HashBase<String>                StringHashBase;
-typedef hx::Hash< TStringElement<Dynamic> > StringHashObject;
-typedef hx::Hash< TStringElement<int> >     StringHashInt;
-typedef hx::Hash< TStringElement<Float> >   StringHashFloat;
-typedef hx::Hash< TStringElement<String> >  StringHashString;
+typedef hx::TinyHash< TStringElement<Dynamic> > StringHashObject;
+typedef hx::TinyHash< TStringElement<int> >     StringHashInt;
+typedef hx::TinyHash< TStringElement<Float> >   StringHashFloat;
+typedef hx::TinyHash< TStringElement<String> >  StringHashString;
 }
 
 
@@ -208,7 +208,7 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
-      if (inForceDynamic || value==null())
+      if (inForceDynamic || value==null() )
       {
          hash = new StringHashObject();
       }
@@ -259,7 +259,7 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
       }
    }
 
-   hash->set(inKey,value);
+   ioHash.mPtr = hash->set(inKey,value);
 }
 
 void __string_hash_set_int(Dynamic &ioHash,String inKey,int inValue)
@@ -276,7 +276,7 @@ void __string_hash_set_int(Dynamic &ioHash,String inKey,int inValue)
       ioHash = hash;
    }
 
-   hash->set(inKey,inValue);
+   ioHash.mPtr = hash->set(inKey,inValue);
 }
 
 
@@ -299,7 +299,7 @@ void __string_hash_set_float(Dynamic &ioHash,String inKey,Float inValue)
       ioHash = hash;
    }
 
-   hash->set(inKey,inValue);
+   ioHash.mPtr = hash->set(inKey,inValue);
 }
 
 
@@ -318,7 +318,7 @@ void __string_hash_set_string(Dynamic &ioHash,String inKey, ::String inValue)
       ioHash = hash;
    }
 
-   hash->set(inKey,inValue);
+   ioHash.mPtr = hash->set(inKey,inValue);
 }
 
 Dynamic  __string_hash_get(Dynamic &ioHash,String inKey)
@@ -458,7 +458,7 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
       }
    }
 
-   hash->set(inKey,value);
+   ioHash.mPtr = hash->set(inKey,value);
 }
 
 void __object_hash_set_int(Dynamic &ioHash,Dynamic inKey,int inValue,bool inWeakKeys)
@@ -476,7 +476,7 @@ void __object_hash_set_int(Dynamic &ioHash,Dynamic inKey,int inValue,bool inWeak
       ioHash = hash;
    }
 
-   hash->set(inKey,inValue);
+   ioHash.mPtr = hash->set(inKey,inValue);
 }
 
 
@@ -500,7 +500,7 @@ void __object_hash_set_float(Dynamic &ioHash,Dynamic inKey,Float inValue,bool in
       ioHash = hash;
    }
 
-   hash->set(inKey,inValue);
+   ioHash.mPtr = hash->set(inKey,inValue);
 }
 
 
@@ -520,7 +520,7 @@ void __object_hash_set_string(Dynamic &ioHash,Dynamic inKey, ::String inValue,bo
       ioHash = hash;
    }
 
-   hash->set(inKey,inValue);
+   ioHash.mPtr = hash->set(inKey,inValue);
 }
 
 Dynamic  __object_hash_get(Dynamic &ioHash,Dynamic inKey)
