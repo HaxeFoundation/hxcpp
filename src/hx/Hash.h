@@ -747,7 +747,7 @@ struct TinyHash : public HashBase< typename ELEMENT::Key >
       }
       if (count>=MAX_SIZE)
       {
-         HashBase<Key> *result = convertStore(store);
+         HashBase<Key> *result = convertStore( HashBase<Key>::store );
          result->set(inKey,inValue);
          return result;
       }
