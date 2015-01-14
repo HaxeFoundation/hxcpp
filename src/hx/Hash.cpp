@@ -5,9 +5,9 @@
 
 using namespace hx;
 
+#define HX_DYNAMIC_HASH_VALUES
 
 // --- IntHash ----------------------------------------------------
-
 
 namespace
 {
@@ -23,6 +23,9 @@ void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
+      #ifdef HX_DYNAMIC_HASH_VALUES
+      hash = new IntHashObject();
+      #else
       if (value==null())
       {
          hash = new IntHashObject();
@@ -39,6 +42,7 @@ void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
          else
             hash = new IntHashObject();
       }
+      #endif
       ioHash = hash;
    }
    else if (hash->store!=hashObject)
@@ -208,6 +212,9 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
+      #ifdef HX_DYNAMIC_HASH_VALUES
+      hash = new StringHashObject();
+      #else
       if (inForceDynamic || value==null() )
       {
          hash = new StringHashObject();
@@ -226,6 +233,7 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
          else
             hash = new StringHashObject();
       }
+      #endif
       ioHash = hash;
    }
    else if (hash->store!=hashObject)
@@ -402,6 +410,10 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
+      #ifdef HX_DYNAMIC_HASH_VALUES
+      hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
+                          (DynamicHashBase *)new DynamicHashObject();
+      #else
       if (value==null())
       {
          hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
@@ -425,6 +437,7 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
             hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
                                 (DynamicHashBase *)new DynamicHashObject();
       }
+      #endif
       ioHash = hash;
    }
    else if (hash->store!=hashObject)
