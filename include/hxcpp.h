@@ -25,6 +25,8 @@
    #undef DIFFERENCE
    #undef POINT
    #undef RECT
+   #undef OVERFLOW
+   #undef UNDERFLOW
 #else
    #include <typeinfo>
    #include <stdint.h>
