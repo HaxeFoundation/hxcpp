@@ -30,5 +30,7 @@
 #undef DIFFERENCE
 #undef POINT
 #undef RECT
+#undef OVERFLOW
+#undef UNDERFLOW
 
 #endif
