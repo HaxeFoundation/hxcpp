@@ -23,8 +23,8 @@
 
 #define HX_DO_RTTI \
    HX_DO_RTTI_ALL \
-   Dynamic __Field(const ::String &inString, bool inCallProp); \
-   Dynamic __SetField(const ::String &inString,const Dynamic &inValue, bool inCallProp); \
+   Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
+   Dynamic __SetField(const ::String &inString,const Dynamic &inValue, hx::PropertyAccess inCallProp); \
    void __GetFields(Array< ::String> &outFields);
 
 #define HX_DO_INTERFACE_RTTI \
@@ -34,7 +34,7 @@
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
    HX_DO_RTTI_BASE  \
-   Dynamic __Field(const ::String &inString, bool inCallProp); \
+   Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
    static int __FindIndex(::String inName); \
    static int __FindArgCount(::String inName);
 
@@ -435,7 +435,7 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
    int count =  enum_obj::__FindArgCount(inName); \
    int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
    if (args!=count)  hx::Throw(HX_INVALID_ARG_COUNT); \
-   if (args==0) { Dynamic result =(new enum_obj())->__Field(inName,true); if (result!=null()) return result; } \
+   if (args==0) { Dynamic result =(new enum_obj())->__Field(inName,HX_PROP_DYNAMIC); if (result!=null()) return result; } \
    return hx::CreateEnum<enum_obj >(inName,idx,inArgs); \
 }
 

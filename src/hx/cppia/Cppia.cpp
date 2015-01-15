@@ -2321,14 +2321,14 @@ public:
    }
 
 
-   Dynamic __Field(const String &inName,bool inCallProp)
+   Dynamic __Field(const String &inName,hx::PropertyAccess inCallProp)
    {
       if (inName==HX_CSTRING("__meta__"))
          return __meta__;
       return info->getStaticValue(inName,inCallProp);
    }
 
-   Dynamic __SetField(const String &inName,const Dynamic &inValue ,bool inCallProp)
+   Dynamic __SetField(const String &inName,const Dynamic &inValue ,hx::PropertyAccess inCallProp)
    {
       return info->setStaticValue(inName,inValue,inCallProp);
    }
@@ -3767,7 +3767,7 @@ struct CallStatic : public CppiaExpr
          //const StaticInfo *info = type->haxeClass->GetStaticStorage(field);
          //printf("INFO %s -> %p\n", field.__s,  info);
          // TODO - create proper glue for static functions
-         Dynamic func = type->haxeClass.mPtr->__Field( field, false );
+         Dynamic func = type->haxeClass.mPtr->__Field( field, HX_PROP_NEVER );
          if (func.mPtr)
             replace = new CallDynamicFunction(inModule, this, func, args );
       }
@@ -3849,8 +3849,8 @@ struct CallSetField : public CppiaDynamicExpr
       CPPIA_CHECK(obj);
       String name = nameExpr->runString(ctx);
       hx::Object *value = valueExpr->runObject(ctx);
-      bool isProp = isPropExpr->runInt(ctx);
-      return obj->__SetField(name, Dynamic(value), isProp).mPtr;
+      int isProp = isPropExpr->runInt(ctx);
+      return obj->__SetField(name, Dynamic(value), (hx::PropertyAccess)isProp).mPtr;
    }
 };
 
@@ -3881,8 +3881,8 @@ struct CallGetField : public CppiaDynamicExpr
       hx::Object *obj = thisExpr->runObject(ctx);
       CPPIA_CHECK(obj);
       String name = nameExpr->runString(ctx);
-      bool isProp = isPropExpr->runInt(ctx);
-      return obj->__Field(name,isProp).mPtr;
+      int isProp = isPropExpr->runInt(ctx);
+      return obj->__Field(name,(hx::PropertyAccess)isProp).mPtr;
    }
 };
 
@@ -4400,14 +4400,14 @@ struct FieldByName : public CppiaDynamicExpr
       CPPIA_CHECK(obj);
 
       if (crement==coNone && assign==aoNone)
-         return obj->__Field(name,true).mPtr;
+         return obj->__Field(name,HX_PROP_DYNAMIC).mPtr;
 
       if (crement!=coNone)
       {
-         Dynamic val0 = obj->__Field(name,true);
+         Dynamic val0 = obj->__Field(name,HX_PROP_DYNAMIC);
          BCR_CHECK;
          Dynamic val1 = val0 + (crement<=coPostInc ? 1 : -1);
-         obj->__SetField(name, val1,true);
+         obj->__SetField(name, val1,HX_PROP_DYNAMIC);
          BCR_CHECK;
          return crement & coPostInc ? val0.mPtr : val1.mPtr;
       }
@@ -4415,10 +4415,10 @@ struct FieldByName : public CppiaDynamicExpr
       {
          hx::Object *val = value->runObject(ctx);
          BCR_CHECK;
-         return obj->__SetField(name,val,true).mPtr;
+         return obj->__SetField(name,val,HX_PROP_DYNAMIC).mPtr;
       }
 
-      Dynamic val0 = obj->__Field(name,true);
+      Dynamic val0 = obj->__Field(name,HX_PROP_DYNAMIC);
       BCR_CHECK;
       Dynamic val1;
 
@@ -4438,7 +4438,7 @@ struct FieldByName : public CppiaDynamicExpr
          default: ;
       }
       BCR_CHECK;
-      obj->__SetField(name,val1,true);
+      obj->__SetField(name,val1,HX_PROP_DYNAMIC);
       return val1.mPtr;
    }
 
@@ -4568,7 +4568,7 @@ struct GetFieldByName : public CppiaDynamicExpr
          ScriptCallable *func = vtable[vtableSlot];
          return new (sizeof(hx::Object *)) CppiaClosure(instance, func);
       }
-      return instance->__Field(name,true).mPtr;
+      return instance->__Field(name,HX_PROP_DYNAMIC).mPtr;
    }
   
    CppiaExpr   *makeSetter(AssignOp inOp,CppiaExpr *inValue)
@@ -5542,10 +5542,10 @@ struct ForExpr : public CppiaVoidExpr
       hx::Object *iterator = init->runObject(ctx);
       CPPIA_CHECK(iterator);
       BCR_VCHECK;
-      Dynamic  hasNext = iterator->__Field(HX_CSTRING("hasNext"),true);
+      Dynamic  hasNext = iterator->__Field(HX_CSTRING("hasNext"),HX_PROP_DYNAMIC);
       BCR_VCHECK;
       CPPIA_CHECK(hasNext.mPtr);
-      Dynamic  getNext = iterator->__Field(HX_CSTRING("next"),true);
+      Dynamic  getNext = iterator->__Field(HX_CSTRING("next"),HX_PROP_DYNAMIC);
       BCR_VCHECK;
       CPPIA_CHECK(getNext.mPtr);
 

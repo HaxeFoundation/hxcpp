@@ -20,9 +20,9 @@ public:
 	const char * __CStr() const;
 	::String toString();
 	bool __HasField(const ::String &);
-	Dynamic __Field(const ::String &, bool inCallProp);
+	Dynamic __Field(const ::String &, hx::PropertyAccess inCallProp);
 	Dynamic __IField(int);
-	Dynamic __SetField(const ::String &,const Dynamic &, bool inCallProp);
+	Dynamic __SetField(const ::String &,const Dynamic &, hx::PropertyAccess inCallProp);
 	void __SetThis(Dynamic);
 	void __GetFields(Array< ::String> &);
 	Class __GetClass() const;

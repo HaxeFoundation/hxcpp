@@ -40,49 +40,49 @@ public:
 
    Dynamic operator=(const Dynamic &inRHS)
    {
-      return mObject->__SetField(mName,inRHS,true );
+      return mObject->__SetField(mName,inRHS, HX_PROP_DYNAMIC );
    }
-   inline operator Dynamic() const { return mObject ? mObject->__Field(mName,true) : null(); }
-   inline operator double() const { return mObject->__Field(mName,true); }
-   inline operator float() const { return mObject->__Field(mName,true); }
-   inline operator int() const { return mObject->__Field(mName,true); }
+   inline operator Dynamic() const { return mObject ? mObject->__Field(mName, HX_PROP_DYNAMIC) : null(); }
+   inline operator double() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
+   inline operator float() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
+   inline operator int() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
 
 
    // post-increment
    inline double operator++(int)
    {
-      double d = mObject->__Field(mName,true)->__ToDouble();
-      mObject->__SetField(mName,d+1,true);
+      double d = mObject->__Field(mName, HX_PROP_DYNAMIC)->__ToDouble();
+      mObject->__SetField(mName,d+1, HX_PROP_DYNAMIC);
       return d;
    }
    // pre-increment
    inline double operator++()
    {
-      double d = mObject->__Field(mName,true)->__ToDouble() + 1;
-      mObject->__SetField(mName,d,true);
+      double d = mObject->__Field(mName, HX_PROP_DYNAMIC)->__ToDouble() + 1;
+      mObject->__SetField(mName,d, HX_PROP_DYNAMIC);
       return d;
    }
    // post-decrement
    inline double operator--(int)
    {
-      double d = mObject->__Field(mName,true)->__ToDouble();
-      mObject->__SetField(mName,d-1,true);
+      double d = mObject->__Field(mName, HX_PROP_DYNAMIC)->__ToDouble();
+      mObject->__SetField(mName,d-1, HX_PROP_DYNAMIC);
       return d;
    }
    // pre-decrement
    inline double operator--()
    {
-      double d = mObject->__Field(mName,true)->__ToDouble() - 1;
-      mObject->__SetField(mName,d, true);
+      double d = mObject->__Field(mName, HX_PROP_DYNAMIC)->__ToDouble() - 1;
+      mObject->__SetField(mName,d,  HX_PROP_DYNAMIC);
       return d;
    }
-   bool operator !() { return ! mObject->__Field(mName, true)->__ToInt(); }
-   int operator ~() { return ~ mObject->__Field(mName, true)->__ToInt(); }
+   bool operator !() { return ! mObject->__Field(mName,  HX_PROP_DYNAMIC)->__ToInt(); }
+   int operator ~() { return ~ mObject->__Field(mName,  HX_PROP_DYNAMIC)->__ToInt(); }
 
    inline bool operator==(const null &) const { return !mObject; }
    inline bool operator!=(const null &) const { return mObject; }
 
-   double operator -() { return - mObject->__Field(mName, true)->__ToDouble(); }
+   double operator -() { return - mObject->__Field(mName,  HX_PROP_DYNAMIC)->__ToDouble(); }
 
 	bool HasPointer() const { return mObject; }
 

@@ -55,9 +55,9 @@ public:
    static Dynamic __CreateEmpty() { return Anon(new hx::Anon_obj); }
    static Dynamic __Create(DynamicArray inArgs);
    static void __boot();
-   Dynamic __Field(const String &inString ,bool inCallProp);
+   Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
    bool __HasField(const String &inString);
-   Dynamic __SetField(const String &inString,const Dynamic &inValue ,bool inCallProp);
+   Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp);
    virtual void __GetFields(Array<String> &outFields);
    Dynamic *__GetFieldMap() { return &mFields; }
 

@@ -75,7 +75,7 @@ void Anon_obj::__Visit(hx::VisitContext *__inCtx)
 }
 #endif
 
-Dynamic Anon_obj::__Field(const String &inName, bool inCallProp)
+Dynamic Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
 {
    return __string_hash_get(mFields,inName);
 }
@@ -91,7 +91,7 @@ bool Anon_obj::__Remove(String inKey)
 }
 
 
-Dynamic Anon_obj::__SetField(const String &inName,const Dynamic &inValue, bool inCallProp)
+Dynamic Anon_obj::__SetField(const String &inName,const Dynamic &inValue, hx::PropertyAccess inCallProp)
 {
    __string_hash_set(mFields,inName,inValue,true);
    return inValue;

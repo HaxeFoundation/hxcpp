@@ -115,9 +115,9 @@ public:
    static Class      & __SGetClass();
 	static void       __boot();
 
-   Dynamic __Field(const String &inString ,bool inCallProp);
+   Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
 
-   Dynamic __SetField(const String &inString,const Dynamic &inValue ,bool inCallProp);
+   Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp);
 
    bool __HasField(const String &inString);
 

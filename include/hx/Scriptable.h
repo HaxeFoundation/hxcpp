@@ -286,13 +286,13 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
 	void __Mark(HX_MARK_PARAMS) { super::__Mark(HX_MARK_ARG); hx::ScriptableMark(__scriptVTable[-1],this,HX_MARK_ARG); } \
    void __Visit(HX_VISIT_PARAMS) { super::__Visit(HX_VISIT_ARG); hx::ScriptableVisit(__scriptVTable[-1],this,HX_VISIT_ARG); } \
  \
-	Dynamic __Field(const ::String &inName,bool inCallProp) \
+	Dynamic __Field(const ::String &inName,hx::PropertyAccess inCallProp) \
       { Dynamic result; if (hx::ScriptableField(this,inName,inCallProp,result)) return result; return super::__Field(inName,inCallProp); } \
 	Float __INumField(int inFieldID) \
 		{ Float result; if (hx::ScriptableField(this,inFieldID,true,result)) return result; return super::__INumField(inFieldID); } \
 	Dynamic __IField(int inFieldID) \
 		{ Dynamic result; if (hx::ScriptableField(this,inFieldID,true,result)) return result; return super::__IField(inFieldID); } \
-	Dynamic __SetField(const ::String &inName,const Dynamic &inValue,bool inCallProp) \
+	Dynamic __SetField(const ::String &inName,const Dynamic &inValue,hx::PropertyAccess inCallProp) \
    { \
       Dynamic value; \
       if (hx::ScriptableSetField(this, inName, inValue,inCallProp,value)) \

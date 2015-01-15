@@ -1138,7 +1138,7 @@ public:
    ABCGlobalObject(ABC *inAbc) : abc(inAbc)
    {
    }
-   Dynamic __Field(const String &inName, bool inCallProp)
+   Dynamic __Field(const String &inName, hx::PropertyAccess inCallProp)
    {
       return Class_obj::Resolve(RemapFlash(inName));
    }
@@ -1223,7 +1223,7 @@ public:
       {
          if (scope[s]->__HasField(name))
          {
-            stack->push(scope[s]->__Field(name,true));
+            stack->push(scope[s]->__Field(name,HX_PROP_DYNAMIC));
             return;
          }
       }
