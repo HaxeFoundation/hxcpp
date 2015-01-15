@@ -14,4 +14,21 @@
 #undef INT32_MAX
 #undef UINT32_MAX
 
+
+#undef TRUE
+#undef FALSE
+#undef BOOLEAN
+#undef ERROR
+#undef NO_ERROR
+#undef DELETE
+#undef OPTIONS
+#undef IN
+#undef OUT
+#undef ALTERNATE
+#undef OPTIONAL
+#undef DOUBLE_CLICK
+#undef DIFFERENCE
+#undef POINT
+#undef RECT
+
 #endif

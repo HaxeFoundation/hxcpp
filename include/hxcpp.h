@@ -10,23 +10,6 @@
 #ifdef _MSC_VER
    #include <typeinfo.h>
    namespace hx { typedef ::type_info type_info; }
-   #undef TRUE
-   #undef FALSE
-   #undef BOOLEAN
-   #undef ERROR
-   #undef NO_ERROR
-   #undef DELETE
-   #undef OPTIONS
-   #undef IN
-   #undef OUT
-   #undef ALTERNATE
-   #undef OPTIONAL
-   #undef DOUBLE_CLICK
-   #undef DIFFERENCE
-   #undef POINT
-   #undef RECT
-   #undef OVERFLOW
-   #undef UNDERFLOW
 #else
    #include <typeinfo>
    #include <stdint.h>

@@ -147,22 +147,22 @@ void CppiaExpr::genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType re
 
 
 
-int objectToInt(hx::Object *obj) { return obj->__ToInt(); }
-void frameToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
+int SLJIT_CALL objectToInt(hx::Object *obj) { return obj->__ToInt(); }
+void SLJIT_CALL frameToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
 //void objectToInt(CppiaCtx *inCtx) { inCtx->returnInt( inCtx->getObject() ); }
-void objectToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
-void objectToDoublePointer(CppiaCtx *inCtx)
+void SLJIT_CALL objectToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
+void SLJIT_CALL objectToDoublePointer(CppiaCtx *inCtx)
 {
    *(double *)inCtx->pointer = (*(hx::Object **)inCtx->pointer)->__ToDouble();
 }
-void objectToStringPointer(CppiaCtx *inCtx)
+void SLJIT_CALL objectToStringPointer(CppiaCtx *inCtx)
 {
    *(String *)inCtx->pointer = (*(hx::Object **)inCtx->pointer)->toString();
 }
-void objectToString(CppiaCtx *inCtx) { inCtx->returnString( inCtx->getObject() ); }
-void stringToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getString() ); }
-void intToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getInt() ); }
-void doubleToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getFloat() ); }
+void SLJIT_CALL objectToString(CppiaCtx *inCtx) { inCtx->returnString( inCtx->getObject() ); }
+void SLJIT_CALL stringToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getString() ); }
+void SLJIT_CALL intToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getInt() ); }
+void SLJIT_CALL doubleToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getFloat() ); }
 
 
 
@@ -193,7 +193,10 @@ struct CppiaDynamicExpr : public CppiaExpr
 
    virtual void genObject(CppiaCompiler &compiler, const Addr &inDest)  { }
 
-   //void preGen(CppiaCompiler &compiler) { }
+   void preGen(CppiaCompiler &compiler)
+   {
+      AllocTemp pointerSave(compiler);
+   }
 
    void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
    {
@@ -207,19 +210,23 @@ struct CppiaDynamicExpr : public CppiaExpr
             break;
          case etFloat:
             {
-            CtxMemberStar pointer(offsetof(CppiaCtx, pointer));
-            genObject(compiler, pointer );
+            genObject(compiler, Reg(0) );
+            CtxMemberVal pointer(offsetof(CppiaCtx, pointer));
+            compiler.move(TempReg(),pointer);
+            compiler.move(StarAddr(TempReg()),Reg(0));
             compiler.call( objectToDoublePointer, 1 );
-            compiler.emitf( SLJIT_DMOV, inDest, pointer );
+            compiler.emitf( SLJIT_DMOV, inDest, TempReg() );
             }
             break;
          case etString:
             {
-            CtxMemberStar pointer(offsetof(CppiaCtx, pointer));
-            genObject(compiler, pointer );
+            genObject(compiler, Reg(0) );
+            CtxMemberVal pointer(offsetof(CppiaCtx, pointer));
+            compiler.move(TempReg(),pointer);
+            compiler.move(StarAddr(TempReg()),Reg(0));
             compiler.call( objectToStringPointer, 1 );
-            compiler.move32( inDest, pointer );
-            compiler.move( inDest.offset(4), pointer.offset(4) );
+            compiler.move32( inDest, StarAddr(TempReg()) );
+            compiler.move( inDest.offset(4), StarAddr(TempReg(),(4)) );
             }
             break;
  
@@ -369,9 +376,9 @@ struct CppiaConst
 static String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
 
 
-void argToInt(CppiaCtx *ctx) { ctx->pushInt( (* (hx::Object **)(ctx->pointer))->__ToInt() ); }
-void argToDouble(CppiaCtx *ctx) { ctx->pushFloat( (* (hx::Object **)(ctx->pointer))->__ToDouble() ); }
-void argToString(CppiaCtx *ctx) { ctx->pushString( (* (hx::Object **)(ctx->pointer))->__ToString() ); }
+void SLJIT_CALL argToInt(CppiaCtx *ctx) { ctx->pushInt( (* (hx::Object **)(ctx->pointer))->__ToInt() ); }
+void SLJIT_CALL argToDouble(CppiaCtx *ctx) { ctx->pushFloat( (* (hx::Object **)(ctx->pointer))->__ToDouble() ); }
+void SLJIT_CALL argToString(CppiaCtx *ctx) { ctx->pushString( (* (hx::Object **)(ctx->pointer))->__ToString() ); }
 
 struct ScriptCallable : public CppiaDynamicExpr
 {
@@ -463,34 +470,47 @@ struct ScriptCallable : public CppiaDynamicExpr
         inThis->preGen(compiler);
 
       for(int a=0;a<argCount && a<inArgs.size();a++)
-         inArgs[a]->preGen(compiler);
+      {
+         CppiaStackVar &var = args[a];
+         if (!hasDefault[a] && var.expressionType==etString)
+         {
+            AllocTemp result(compiler);
+            inArgs[a]->preGen(compiler);
+         }
+         else
+         {
+            if (!hasDefault[a] && var.expressionType==etFloat)
+               compiler.registerFTemp();
+            inArgs[a]->preGen(compiler);
+         }
+      }
    }
 
 
    void genPushDefault(CppiaCompiler &compiler, int inArg, bool pushNullToo)
    {
-      CtxMemberStar pointer(offsetof(CppiaCtx, pointer));
       CtxMemberVal stack(offsetof(CppiaCtx, pointer));
+      compiler.move(Reg(0),stack);
+      StarAddr pointer(Reg(0));
 
       CppiaStackVar &var = args[inArg];
       switch(var.expressionType)
       {
           case etInt:
              compiler.move32( pointer, ConstValue(initVals[inArg].ival) );
-             compiler.add( stack, stack, ConstValue( sizeof(int) ) );
+             compiler.add( stack, Reg(0), ConstValue( sizeof(int) ) );
              break;
           case etFloat:
              compiler.move( pointer, ConstRef(&initVals[inArg].dval), SLJIT_DMOV );
-             compiler.add( stack, stack, ConstValue( sizeof(double) ) );
+             compiler.add( stack, Reg(0), ConstValue( sizeof(double) ) );
              break;
           case etString:
              {
                 // TODO - const string
                 const String &str = data->strings[ initVals[inArg].ival ];
                 compiler.move32( pointer, ConstValue(str.length) );
-                compiler.add( stack, stack, ConstValue( sizeof(int) ) );
-                compiler.move( pointer, ConstValue(str.__s) );
-                compiler.add( stack, stack, ConstValue( sizeof(void *) ) );
+                compiler.move( pointer.offset(4), ConstValue(str.__s) );
+                compiler.add( stack, Reg(0), ConstValue( sizeof(int) + sizeof(void*) ) );
              }
              break;
           default:
@@ -507,7 +527,7 @@ struct ScriptCallable : public CppiaDynamicExpr
                 if (val.mPtr || pushNullToo)
                 {
                    compiler.move( pointer, ConstValue(val.mPtr) );
-                   compiler.add( stack, stack, ConstValue( sizeof(void *) ) );
+                   compiler.add( stack, Reg(0), ConstValue( sizeof(void *) ) );
                 }
              }
        }
@@ -532,17 +552,25 @@ struct ScriptCallable : public CppiaDynamicExpr
          //return;
       }
 
-      CtxMemberStar pointer(offsetof(CppiaCtx, pointer));
       CtxMemberVal stack(offsetof(CppiaCtx, pointer));
 
 
+      StarAddr pointer(Reg(1));
       // Push this ...
       if (inThis)
-         inThis->genCode(compiler, pointer, etObject);
+      {
+         inThis->genCode(compiler, Reg(0), etObject);
+         compiler.move(Reg(1),stack);
+         compiler.move(pointer,Reg(0));
+      }
       else
+      {
+         compiler.move(Reg(1),stack);
+         StarAddr pointer(Reg(1));
          compiler.move( pointer, ConstValue(0) );
+      }
 
-      compiler.add( pointer, pointer, ConstValue( sizeof(void *) ) );
+      compiler.add( stack, Reg(1), ConstValue( sizeof(void *) ) );
 
 
       for(int a=0;a<argCount;a++)
@@ -556,58 +584,76 @@ struct ScriptCallable : public CppiaDynamicExpr
             else
             {
                 // Gen Object onto stack ...
-                inArgs[a]->genCode(compiler, pointer, etObject );
+                inArgs[a]->genCode(compiler, Reg(1), etObject );
                 if (var.expressionType!=etObject)
                 {
                    // Check for null
-                   sljit_jump *notNull = compiler.ifNotZero( pointer );
-                
+                   sljit_jump *notNull = compiler.ifNotZero( Reg(1) );
+
                    genPushDefault(compiler,a,false);
 
                    sljit_jump *doneArg = compiler.jump(SLJIT_JUMP);
 
                    compiler.jumpHere(notNull);
 
+                   // Reg1 holds object
                    switch(var.expressionType)
                    {
                       case etInt:
                          compiler.move( Reg(0), CtxReg() );
-                         compiler.call( argToInt, 1);
+                         compiler.call( objectToInt, 2);
                          break;
                       case etFloat:
                          compiler.move( Reg(0), CtxReg() );
-                         compiler.call( argToDouble, 1);
+                         compiler.call( objectToDouble, 1);
                          break;
                       case etString:
                          compiler.move( Reg(0), CtxReg() );
-                         compiler.call( argToString, 1);
+                         compiler.call( objectToString, 1);
                          break;
                       default:
 
                    compiler.jumpHere(doneArg);
                    }
                 }
+                else
+                {
+                   compiler.move(Reg(1),stack);
+                   StarAddr pointer(Reg(1));
+                   compiler.move(pointer,Reg(2));
+                }
              }
          }
          else
          {
+            StarAddr pointer(Reg(1));
             switch(var.expressionType)
             {
                case etInt:
-                  inArgs[a]->genCode(compiler, pointer, etInt);
-                  compiler.add( stack, stack, ConstValue( sizeof(int) ) );
+                  inArgs[a]->genCode(compiler, Reg(0), etInt);
+                  compiler.move(Reg(1),stack);
+                  compiler.move(pointer,Reg(0));
+                  compiler.add( stack, Reg(1), ConstValue( sizeof(int) ) );
                   break;
                case etFloat:
-                  inArgs[a]->genCode(compiler, pointer, etFloat);
-                  compiler.add( stack, stack, ConstValue( sizeof(double) ) );
+                  inArgs[a]->genCode(compiler, FReg(0), etFloat);
+                  compiler.move(Reg(1),stack);
+                  compiler.move(pointer,FReg(0),SLJIT_DMOV);
+                  compiler.add( stack, Reg(1), ConstValue( sizeof(double) ) );
                   break;
                case etString:
-                  inArgs[a]->genCode(compiler, pointer, etString);
-                  compiler.add( stack, stack, ConstValue( sizeof(String) ) );
+                  {
+                  AllocTemp result(compiler);
+                  inArgs[a]->genCode(compiler, result, etString);
+                  compiler.move(Reg(1),stack);
+                  compiler.move32(pointer,result);
+                  compiler.move(pointer.offset(4),result.offset(4));
+                  compiler.add( stack, Reg(1), ConstValue( sizeof(String) ) );
+                  }
                   break;
                default:
-                  inArgs[a]->genCode(compiler, pointer, etObject);
-                  compiler.add( stack, stack, ConstValue( sizeof(void *) ) );
+                  inArgs[a]->genCode(compiler, Reg(0), etObject);
+                  compiler.add( stack, Reg(1), ConstValue( sizeof(void *) ) );
             }
          }
       }
@@ -2849,7 +2895,9 @@ struct IsNotNull : public CppiaBoolExpr
 
 void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType, ExprType srcType)
 {
-   CtxMemberStar src(offsetof(CppiaCtx,frame));
+   CtxMemberVal returnAddr(offsetof(CppiaCtx,frame));
+   compiler.move( TempReg(), returnAddr );
+   StarAddr returnVal(TempReg(),0);
 
    // hmm
    if (srcType==etVoid)
@@ -2861,14 +2909,13 @@ void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType,
             switch(srcType)
             {
                case etInt:
-                  compiler.move32( dest, src);
+                  compiler.move32( dest, StarAddr(Reg(0)) );
                   break;
                case etFloat:
-                  compiler.emitf( SLJIT_CONVI_FROMD, dest, src );
+                  compiler.emitf( SLJIT_CONVI_FROMD, dest, returnVal );
                   break;
                case etObject:
-                  if (src!=Reg(0))
-                     compiler.move( Reg(0), src );
+                  compiler.move( Reg(0), returnVal );
                   compiler.call( objectToInt, 1 );
                   if (dest!=Reg(0))
                      compiler.move( dest, Reg(0) );
@@ -2884,15 +2931,15 @@ void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType,
             switch(srcType)
             {
                case etInt:
-                  compiler.emitf( SLJIT_CONVD_FROMI, dest, src );
+                  compiler.emitf( SLJIT_CONVD_FROMI, dest, returnVal );
                   break;
                case etFloat:
-                  compiler.emitf( SLJIT_DMOV, dest, src );
+                  compiler.emitf( SLJIT_DMOV, dest, returnVal );
                   break;
                case etObject:
                   compiler.move( Reg(0), CtxReg() );
                   compiler.call( objectToDouble, 1 );
-                  compiler.emitf( SLJIT_DMOV, dest, src );
+                  compiler.emitf( SLJIT_DMOV, dest, returnVal );
                   break;
                case etString:
                   // Hmm
@@ -2920,7 +2967,7 @@ void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType,
                   break;
                default: ;
             }
-            compiler.move( dest,src );
+            compiler.move( dest, returnVal );
             break;
  
 
@@ -2941,8 +2988,8 @@ void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType,
                   compiler.call( objectToString, 1 );
                default: ;
             }
-            compiler.move32( dest,src );
-            compiler.move( dest.offset(4),src.offset(4) );
+            compiler.move32( dest,returnVal );
+            compiler.move( dest.offset(4),returnVal.offset(4) );
             break;
  
          default: ;
@@ -3014,10 +3061,13 @@ struct CallFunExpr : public CppiaExpr
       function->preGenArgs(compiler,thisExpr, args);
    }
 
-   static void callScriptable(CppiaCtx *inCtx, ScriptCallable *inScriptable)
+   static void SLJIT_CALL callScriptable(CppiaCtx *inCtx, ScriptCallable *inScriptable)
    {
       // compiled?
+      printf("callScriptable %p(%p) -> %p\n", inCtx, CppiaCtx::getCurrent(), inScriptable );
+      printf(" name = %s\n", inScriptable->getName());
       inScriptable->runVoid(inCtx);
+      printf(" Done scipt callable\n");
    }
 
    void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
@@ -3031,12 +3081,15 @@ struct CallFunExpr : public CppiaExpr
       compiler.move(pointer, CtxMemberVal(offsetof(CppiaCtx,pointer) ) );
       compiler.move(frame, CtxMemberVal(offsetof(CppiaCtx,frame) ) );
  
+      compiler.trace("gen args...");
       // Push args
       function->genArgs(compiler,thisExpr,args);
 
+      compiler.trace("set frame...");
       // Set frame=pointer for new function
       compiler.move(CtxMemberVal(offsetof(CppiaCtx,frame) ), pointer );
 
+      compiler.trace("Call out...");
       // call function / leave hole for calling?
       // Result is at pointer
       compiler.move( Reg(0), CtxReg() );
@@ -3045,6 +3098,7 @@ struct CallFunExpr : public CppiaExpr
       compiler.move( Reg(1), ConstValue(function) );
       compiler.call( callScriptable, 2 );
 
+      compiler.trace("Restore stack...");
       // ~AutoStack
       compiler.move(CtxMemberVal(offsetof(CppiaCtx,frame) ), frame );
       compiler.move(CtxMemberVal(offsetof(CppiaCtx,pointer) ), pointer );
@@ -4269,15 +4323,19 @@ struct Call : public CppiaDynamicExpr
       func->genCode(compiler, TempReg(), etObject );
 
       AllocTemp pointerSave(compiler);
-      compiler.move(pointerSave, CtxMemberVal(offsetof(CppiaCtx,pointer) ) );
+      CtxMemberVal pointer(offsetof(CppiaCtx,pointer));
+      compiler.move(pointerSave, pointer);
+
  
 
-      CtxMemberStar pointer(offsetof(CppiaCtx,pointer));
+
       // TODO - shortcut for script->script
       for(int a=0;a<args.size();a++)
       {
-         args[a]->genCode(compiler, pointer, etObject);
-         compiler.add( pointer, pointer, ConstValue( sizeof(void *) ) );
+         args[a]->genCode(compiler, Reg(0), etObject);
+         compiler.move( Reg(1), pointer );
+         compiler.move( StarAddr(Reg(1)), Reg(0) );
+         compiler.add( pointer, Reg(1), ConstValue( sizeof(void *) ) );
       }
 
       compiler.move(Reg(0), CtxReg());
@@ -7120,7 +7178,7 @@ bool LoadCppia(String inValue)
          ok = false;
       }
 
-   /*
+   #ifdef CPPIA_JIT
    if (ok)
       try
       {
@@ -7131,7 +7189,7 @@ bool LoadCppia(String inValue)
          printf("Error compiling : %s\n", error);
          ok = false;
       }
-   */
+   #endif
 
 
    if (ok) try

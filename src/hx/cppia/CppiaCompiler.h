@@ -42,6 +42,13 @@ struct Reg : public Addr
 };
 
 
+struct FReg : public Reg
+{
+   inline FReg(int inReg) : Reg(SLJIT_FR0+inReg) { }
+};
+
+
+
 struct SReg : public Reg
 {
    inline SReg(int inReg) : Reg(SLJIT_S(inReg)-SLJIT_R0) { }
@@ -87,17 +94,10 @@ struct StarAddr : public Addr
        Addr(SLJIT_MEM1(inRegBase.getReg()), inOffset) { }
 };
 
-struct CtxMemberStar : public StarAddr
+struct CtxMemberVal : public StarAddr
 {
-   inline CtxMemberStar(int inOffset) : StarAddr(CtxReg(), inOffset) { }
+   inline CtxMemberVal(int inOffset) : StarAddr(CtxReg(), inOffset) { }
 };
-
-struct CtxMemberVal : public Addr
-{
-   inline CtxMemberVal(int inOffset) : Addr(CtxReg().base, inOffset) { }
-};
-
-
 
 
 struct AddrStack : public Addr
@@ -133,6 +133,7 @@ class CppiaCompiler
    int             maxTempSize;
    int             tempSize;
    bool            useThis;
+   bool            useFTemp;
 
 public:
    ComeFrom        *exceptionHandler;
@@ -142,6 +143,7 @@ public:
        compiler = sljit_create_compiler();
        tempSize = maxTempSize = 0;
        useThis = false;
+       useFTemp = false;
        exceptionHandler = 0;
     }
     ~CppiaCompiler()
@@ -150,6 +152,7 @@ public:
     }
  
     void registerThis() { useThis = true; }
+    void registerFTemp() { useFTemp = true; }
 
     int addTemp(int inSize)
     {
@@ -168,9 +171,9 @@ public:
     //Addr getCtx() { return AddrStack(ctxOffset); }
  
 
-    static void doTrace(const char *inVal)
+    static void SLJIT_CALL doTrace(const char *inVal)
     {
-       printf("trace %s\n",inVal);
+       printf("trace %s\n",inVal,inVal);
     }
 
     void trace(const char *inText)
@@ -184,15 +187,18 @@ public:
        int args = 1;
        int saved = 3;
        int localSize = inStackSize + maxTempSize;
-       int fscratches = 0;
+       int fscratches = useFTemp ? 1 : 0;
        int fsaved = 0;
        int scratches = 3;
        sljit_emit_enter(compiler, options, args, scratches, saved, fscratches, fsaved, localSize);
        // S0 = Arg0 = Ctx 
        // S1 = this
        // S2 = temp
-       if (saved>1)
-          move( SReg(1), CtxMemberStar( offsetof(CppiaCtx, frame) ) );
+       if (useThis)
+       {
+          move( Reg(0), CtxMemberVal( offsetof(CppiaCtx, frame) ) );
+          move( SReg(1), StarAddr(Reg(0)) );
+       }
        if (inStackSize>0 && inStackSize<=20)
        {
           for(int i=0;i<inStackSize;i+=4)

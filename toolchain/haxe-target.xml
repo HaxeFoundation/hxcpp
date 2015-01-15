@@ -62,6 +62,8 @@
   <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
   <depend name="${HXCPP}/src/hx/cppia/CppiaStream.h" />
   <depend name="${HXCPP}/src/hx/cppia/CppiaCompiler.h" />
+  <compilerflag value="-DHX_UNDEFINE_H" />
+  <compilerflag value="-DCPPIA_JIT" if="CPPIA_JIT" />
 
   <file name = "src/hx/cppia/Cppia.cpp" />
   <file name = "src/hx/cppia/CppiaCtx.cpp" />
