@@ -9,6 +9,7 @@
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
 <set name="HXCPP_LIBTOOL" value="xcrun --sdk iphoneos${IPHONE_VER} libtool" />
+<set name="HXCPP_DEBUG_INFO" value="1" if="debug" />
 <include name="toolchain/gcc-toolchain.xml"/>
 <!--<path name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin" />-->
 
@@ -28,7 +29,7 @@
   <pchflag value="c++-header" />
   <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
-  <flag value="-g" if="debug"/>
+  <flag value="-g" if="HXCPP_DEBUG_INFO"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>
   <flag value="armv6" if="HXCPP_ARMV6" />
