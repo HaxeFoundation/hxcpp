@@ -5,7 +5,7 @@
 
 using namespace hx;
 
-#define HX_DYNAMIC_HASH_VALUES
+//#define HX_DYNAMIC_HASH_VALUES
 
 // --- IntHash ----------------------------------------------------
 
@@ -200,10 +200,10 @@ String __int_hash_to_string(Dynamic &ioHash)
 namespace
 {
 typedef hx::HashBase<String>                StringHashBase;
-typedef hx::TinyHash< TStringElement<Dynamic> > StringHashObject;
-typedef hx::TinyHash< TStringElement<int> >     StringHashInt;
-typedef hx::TinyHash< TStringElement<Float> >   StringHashFloat;
-typedef hx::TinyHash< TStringElement<String> >  StringHashString;
+typedef hx::Hash< TStringElement<Dynamic> > StringHashObject;
+typedef hx::Hash< TStringElement<int> >     StringHashInt;
+typedef hx::Hash< TStringElement<Float> >   StringHashFloat;
+typedef hx::Hash< TStringElement<String> >  StringHashString;
 }
 
 

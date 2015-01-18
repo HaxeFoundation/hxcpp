@@ -1,4 +1,5 @@
 
+* Even more optimizations for hashes
 * Some more optimizations for small hashes
 * Fix for google changing inlining in platform21 headers (atof, rand, srand)
 * Re-tuned Hash for small objects too (improves Anon object perforamce)
