@@ -250,37 +250,37 @@ inline Array<Dynamic> TCastToArray(Dynamic inVal)
    return inVal;
 }
 
+template<typename PTRTYPE>
+struct DynamicConvertType { enum { Convert = 0 }; };
 
-   // Special case of interfaces - they could be in the array as the actual object,
-   //  or could be delegates.  Direct casting to delegates would be bad, since the are not related.
-   //  Returning the pointer will invove the interface-from-object* code
-   // This has changed again - interfaces are stored in arrays directly..
-   template<typename RESULT>
-   inline hx::Object *ArrayElemCast(const Dynamic &d,const hx::Interface *) { return d.mPtr; } 
+template<> struct DynamicConvertType< hx::Interface * > { enum { Convert = 1 }; };
+template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert = 1 }; };
+template<> struct DynamicConvertType< Array_obj<int> *> { enum { Convert = 1 }; };
+template<> struct DynamicConvertType< Array_obj<bool> * > { enum { Convert = 1 }; };
+template<> struct DynamicConvertType< Array_obj<double> *> { enum { Convert = 1 }; };
+template<> struct DynamicConvertType< Array_obj<float> * > { enum { Convert = 1 }; };
+template<> struct DynamicConvertType< Array_obj<unsigned char> * > { enum { Convert = 1 }; };
+template<> struct DynamicConvertType< Array_obj<signed char> * > { enum { Convert = 1 }; };
+template<> struct DynamicConvertType< Array_obj<char> * > { enum { Convert = 1 }; };
 
-   // For array, may need to create strongly typed version (maybe by copy)
-   // The array-construct-from-dynamic will do this
-   template<typename T>
-   inline Array< ::String> ArrayElemCast(const Dynamic &d,const Array_obj< ::String> *) { return d; } 
-   template<typename T>
-   inline Array<int> ArrayElemCast(const Dynamic &d,const Array_obj<int> *) { return d; } 
-   template<typename T>
-   inline Array<bool> ArrayElemCast(const Dynamic &d,const Array_obj<bool> *) { return d; } 
-   template<typename T>
-   inline Array<double> ArrayElemCast(const Dynamic &d,const Array_obj<double> *) { return d; } 
-   template<typename T>
-   inline Array<float> ArrayElemCast(const Dynamic &d,const Array_obj<float> *) { return d; } 
-   template<typename T>
-   inline Array<unsigned char> ArrayElemCast(const Dynamic &d,const Array_obj<unsigned char> *) { return d; } 
-
-   template<typename RESULT>
-   inline RESULT ArrayElemCast(const Dynamic &d,...) { return (RESULT)d.mPtr; } 
 }
 
 template<typename RESULT>
 inline RESULT Dynamic::StaticCast() const
 {
-   return hx::ArrayElemCast<typename RESULT::Ptr>(*this, (typename RESULT::Ptr)0 );
+   typedef typename RESULT::Ptr type;
+
+   if (hx::DynamicConvertType<type>::Convert)
+   {
+      // Constructing the result from the Dynamic value will check for a conversion
+      //  using something like dynamic_cast
+      return *this;
+   }
+   else
+   {
+      // Simple reinterpret_cast
+      return (typename RESULT::Ptr)mPtr;
+   }
 }
 
 namespace hx
