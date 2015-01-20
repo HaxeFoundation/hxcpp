@@ -6,7 +6,10 @@
 #endif
 
 
-
+// Telemetry.h file?
+#ifdef HXCPP_TELEMETRY
+  extern void __hxt_new_hxobject(void* obj, size_t inSize);
+#endif
 
 // --- Constants -------------------------------------------------------
 
@@ -75,7 +78,13 @@ public:
    void *operator new( size_t inSize, hx::NewObjectType );
    inline void *operator new( size_t inSize, bool inContainer=true )
    {
+#ifdef HXCPP_TELEMETRY
+      void* result = operator new(inSize, inContainer ? hx::NewObjContainer : hx::NewObjAlloc);
+      __hxt_new_hxobject(result, inSize);
+      return result;
+#else
       return operator new(inSize, inContainer ? hx::NewObjContainer : hx::NewObjAlloc);
+#endif
    }
    void operator delete( void *, bool ) { }
    void operator delete( void *, hx::NewObjectType ) { }

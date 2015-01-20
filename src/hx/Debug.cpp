@@ -336,8 +336,11 @@ public:
     Telemetry()
         : mT0(0)
 {
-        hxtNames.push_back("1-indexed");
-        hxtNamesDumped = 1;
+        names.push_back("1-indexed");
+        namesDumped = 1;
+        callStackIdx = 0;
+        ignoreAllocs = false;
+        pendingAlloc.ptr = 0;
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
@@ -369,38 +372,91 @@ public:
         gThreadMutex.Unlock();
 }
 
-    void Sample(CallStack *stack);
+    void Sample(CallStack *stack, StackFrame *frame);
 
     void DumpHXTSamples(Array<int> &result)
     {
-      // Lock as the profiler thread will push into hxtSamples
-      gSampleMutex.Lock();
-      int n = hxtSamples.size();
-      for (int i = 0; i < n; i++)
-      {
-        int idx = hxtSamples.at(i);
-        result->push(idx);
-      }
-      hxtSamples.clear();
-      gSampleMutex.Unlock();
+        // Lock as the profiler thread will push into samples
+        gSampleMutex.Lock();
+        int n = samples.size();
+        for (int i = 0; i < n; i++)
+        {
+            int idx = samples.at(i);
+            result->push(idx);
+        }
+        samples.clear();
+        gSampleMutex.Unlock();
     }
 
     void DumpHXTNames(Array<String> &result)
     {
-      gSampleMutex.Lock();
-      int n = hxtNames.size();
-      //if (n>hxtNamesDumped) DBGLOG("Profiler at %d\n", ref_id);
-      gSampleMutex.Unlock();
-      for (int i = hxtNamesDumped; i < n; i++)
-      {
-        String name = String(hxtNames.at(i));
-        //DBGLOG(" - Dumping: %s\n", hxtNames.at(i));
-        result->push(name);
-      }
-      hxtNamesDumped = n;
+        gSampleMutex.Lock();
+        int n = names.size();
+        //if (n>namesDumped) DBGLOG("Profiler at %d\n", ref_id);
+        gSampleMutex.Unlock();
+        for (int i = namesDumped; i < n; i++)
+        {
+            String name = String(names.at(i));
+            //DBGLOG(" - Dumping: %s\n", names.at(i));
+            result->push(name);
+        }
+        namesDumped = n;
+    }
+
+    void DumpHXTAllocs(Array<String> &types, Array<int> &details)
+    {
+        gSampleMutex.Lock();
+        int n = allocations.size();
+        for (int i = namesDumped; i < n; i++)
+        {
+            AllocEntry ae = allocations.at(i);
+            //DBGLOG(" - Dumping: %s\n", ae.type.__CStr());
+            types->push(ae.type);
+            details->push(ae.id);
+            details->push(ae.size);
+            details->push(ae.stackid);
+        }
+        allocations.clear();
+        gSampleMutex.Unlock();
+    }
+
+    void IgnoreAllocs(bool val)
+    {
+        ignoreAllocs = val;
+    }
+
+    void NewHXObject(void* obj, size_t inSize)
+    {
+        if (ignoreAllocs) return;
+
+        gSampleMutex.Lock();
+
+        AllocPending ap;
+        ap.ptr = (hx::Object*)obj;
+        ap.size = inSize;
+        allocsPending.push_back(ap);
+
+        // pendingAlloc.ptr = (hx::Object*)obj;
+        // pendingAlloc.size = inSize;
+
+        gSampleMutex.Unlock();
     }
 
 private:
+
+    struct AllocPending
+    {
+        hx::Object *ptr;
+        size_t size;
+    };
+
+    struct AllocEntry
+    {
+        String type;
+        int stackid;
+        long id;
+        int size;
+    };
 
     static THREAD_FUNC_TYPE ProfileMainLoop(void *)
     {
@@ -430,11 +486,17 @@ private:
 
     int mT0;
 
-    std::map<const char *, int> hxtNameMap;
-    std::vector<const char *> hxtNames;
-    std::vector<int> hxtSamples;
-    int hxtNamesDumped;
+    std::map<const char *, int> nameMap;
+    std::vector<const char *> names;
+    std::vector<int> samples;
+    int namesDumped;
+    int callStackIdx;
     static MyMutex gSampleMutex;
+    bool ignoreAllocs;
+
+    std::vector<AllocPending> allocsPending;
+    AllocPending pendingAlloc;
+    std::vector<AllocEntry> allocations;
 
     static MyMutex gThreadMutex;
     static int gThreadRefCount;
@@ -498,7 +560,7 @@ public:
             mProfiler->Sample(this);
 
 #ifdef HXCPP_TELEMETRY
-        if (mTelemetry) mTelemetry->Sample(this);
+        if (mTelemetry) mTelemetry->Sample(this, frame);
 #endif
 
         mUnwindException = false;
@@ -514,7 +576,7 @@ public:
             mProfiler->Sample(this);
 
 #ifdef HXCPP_TELEMETRY
-        if (mTelemetry) mTelemetry->Sample(this);
+        if (mTelemetry) mTelemetry->Sample(this, 0);
 #endif
 
         if (mUnwindException)
@@ -957,6 +1019,31 @@ public:
         CallStack *stack = CallStack::GetCallerCallStack();
         stack->mTelemetry->DumpHXTNames(result);
     }
+
+    static void DumpCurrentHXTAllocs(Array<String> &types, Array<int> &details)
+    {
+        CallStack *stack = CallStack::GetCallerCallStack();
+        stack->mTelemetry->DumpHXTAllocs(types, details);
+    }
+
+    static void IgnoreAllocs(bool val)
+    {
+        CallStack *stack = hx::CallStack::GetCallerCallStack();
+        Telemetry *telemetry = stack->mTelemetry;
+        if (telemetry) {
+            telemetry->IgnoreAllocs(val);
+        }
+    }
+
+    static void NewHXObject(void* obj, size_t inSize)
+    {
+        CallStack *stack = hx::CallStack::GetCallerCallStack();
+        Telemetry *telemetry = stack->mTelemetry;
+        if (telemetry) {
+            telemetry->NewHXObject(obj, inSize);
+        }
+    }
+
 #endif
 
     static void GetCurrentExceptionStackAsStrings(Array<String> &result)
@@ -2043,8 +2130,20 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 
 
 #ifdef HXCPP_TELEMETRY
-void hx::Telemetry::Sample(hx::CallStack *stack)
+void hx::Telemetry::Sample(hx::CallStack *stack, StackFrame *frame)
 {
+    // if (frame && pendingAlloc.ptr && strcmp(frame->functionName, "new")==0 && strcmp(frame->className, "GC")!=0) {
+    //     printf(" ====> HxObject construction: %s::%s\n", frame->className, frame->functionName);
+    //     if (strstr(pendingAlloc.ptr->__GetClass()->__CStr(), frame->className)==0) printf("Error, unexpected class alloc! -- shouldn't get this...\n");
+    //     AllocEntry ae;
+    //     ae.type = pendingAlloc.ptr->__GetClass()->toString();
+    //     ae.stackid = callStackIdx;
+    //     ae.size = (int)pendingAlloc.size; // data loss?
+    //     ae.id = (long)pendingAlloc.ptr;    // data loss?
+    //     allocations.push_back(ae);
+    //     pendingAlloc.ptr = 0;
+    // }
+
     if (mT0 == gProfileClock) {
         return;
     }
@@ -2062,19 +2161,34 @@ void hx::Telemetry::Sample(hx::CallStack *stack)
 
     // Collect function names and callstacks (as indexes into the names vector)
     gSampleMutex.Lock();
-    hxtSamples.push_back(depth);
+    samples.push_back(depth);
     for (int i = 0; i < depth; i++) {
         const char *fullName = stack->GetFullNameAtDepth(i);
-        int idx = hxtNameMap[fullName];
+        int idx = nameMap[fullName];
         if (idx==0) {
-            idx = hxtNames.size();
-            hxtNameMap[fullName] = idx;
-            hxtNames.push_back(fullName);
-            //DBGLOG("New hxt name[%d]: %s\n", hxtNames.size()-1, fullName);
+            idx = names.size();
+            nameMap[fullName] = idx;
+            names.push_back(fullName);
+            //DBGLOG("New hxt name[%d]: %s\n", names.size()-1, fullName);
         }
-        hxtSamples.push_back(idx);
+        samples.push_back(idx);
     }
-    hxtSamples.push_back(delta);
+    samples.push_back(delta);
+
+    // Collect allocations and attribute to this callStackIdx
+    depth = allocsPending.size();
+    for (int i = 0; i < depth; i++) {
+        AllocPending ap = allocsPending.at(i);
+        AllocEntry ae;
+        ae.type = ap.ptr->__GetClass()->toString();
+        ae.stackid = callStackIdx;
+        ae.size = (int)ap.size; // data loss?
+        ae.id = (long)ap.ptr;    // data loss?
+        allocations.push_back(ae);
+    }
+    allocsPending.clear();
+    callStackIdx++;
+
     gSampleMutex.Unlock();
 }
 #endif
@@ -2149,7 +2263,7 @@ void __hxcpp_stop_profiler()
 #endif
 }
 
-
+// These globals are called by HXTelemetry.hx
 #ifdef HXCPP_TELEMETRY
   void __hxcpp_start_telemetry()
   {
@@ -2171,6 +2285,31 @@ void __hxcpp_stop_profiler()
     hx::CallStack::DumpCurrentHXTNames(result);
   #endif
   }
+
+  void __hxcpp_dump_hxt_allocations(Array<String> &types, Array<int> &details)
+  {
+  #ifdef HXCPP_STACK_TRACE
+      hx::CallStack::DumpCurrentHXTAllocs(types, details);
+  #endif
+  }
+
+  void __hxcpp_hxt_ignore_allocs(bool val)
+  {
+  #ifdef HXCPP_STACK_TRACE
+      hx::CallStack::IgnoreAllocs(val);
+  #endif
+  }
+#endif
+
+
+// These globals are called by other cpp files
+#ifdef HXCPP_TELEMETRY
+void __hxt_new_hxobject(void* obj, size_t inSize)
+{
+  #ifdef HXCPP_STACK_TRACE
+    hx::CallStack::NewHXObject(obj, inSize);
+  #endif
+}
 #endif
 
 
