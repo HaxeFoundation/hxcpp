@@ -8,6 +8,7 @@
  <flag value="-DHXCPP_FLOAT32" if="HXCPP_FLOAT32"/>
  <flag value="-DHXCPP_CHECK_POINTER" if="HXCPP_CHECK_POINTER"/>
  <flag value="-DHXCPP_STACK_TRACE" if="HXCPP_STACK_TRACE"/>
+ <flag value="-DHXCPP_TELEMETRY" if="HXCPP_TELEMETRY"/>
  <flag value="-DHXCPP_STACK_LINE" if="HXCPP_STACK_LINE"/>
  <flag value="-DHXCPP_STACK_VARS" if="HXCPP_STACK_VARS"/>
  <flag value="-DHXCPP_DEBUGGER" if="HXCPP_DEBUGGER"/>

@@ -326,6 +326,90 @@ struct ProfileEntry
 /* static */ int Profiler::gProfileClock;
 
 
+#ifdef HXCPP_TELEMETRY
+
+// Telemetry functionality
+class Telemetry
+{
+public:
+
+    Telemetry()
+        : mT0(0)
+{
+   
+        // When a profiler exists, the profiler thread needs to exist
+        gThreadMutex.Lock();
+   
+        gThreadRefCount += 1;
+   
+        if (gThreadRefCount == 1) {
+#if defined(HX_WINDOWS)
+#ifndef HX_WINRT
+            _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
+#else
+        // TODO
+#endif
+#else
+            pthread_t result;
+            pthread_create(&result, 0, ProfileMainLoop, 0);
+   #endif
+}
+
+        gThreadMutex.Unlock();
+    }
+
+    ~Telemetry()
+{
+        gThreadMutex.Lock();
+
+        gThreadRefCount -= 1;
+
+        gThreadMutex.Unlock();
+}
+
+    void Sample(CallStack *stack);
+
+private:
+
+    static THREAD_FUNC_TYPE ProfileMainLoop(void *)
+    {
+        int millis = 1;
+
+        while (gThreadRefCount > 0) { 
+#ifdef HX_WINDOWS
+#ifndef HX_WINRT
+            Sleep(millis);
+#else
+            // TODO
+#endif
+#else
+            struct timespec t;
+            struct timespec tmp;
+            t.tv_sec = 0;
+            t.tv_nsec = millis * 1000000;
+            nanosleep(&t, &tmp);
+#endif
+
+            int count = gProfileClock + 1;
+            gProfileClock = (count < 0) ? 0 : count;
+        }
+
+        THREAD_FUNC_RET
+    }
+
+    int mT0;
+
+    static MyMutex gThreadMutex;
+    static int gThreadRefCount;
+    static int gProfileClock;
+};
+/* static */ MyMutex Telemetry::gThreadMutex;
+/* static */ int Telemetry::gThreadRefCount;
+/* static */ int Telemetry::gProfileClock;
+
+#endif // HXCPP_TELEMETRY
+
+
 class CallStack
 {
 public:
@@ -375,6 +459,10 @@ public:
         if (mProfiler)
             mProfiler->Sample(this);
 
+#ifdef HXCPP_TELEMETRY
+  if (mTelemetry) mTelemetry->Sample(this);
+#endif
+
         mUnwindException = false;
         mStackFrames.push_back(frame);
 
@@ -386,6 +474,10 @@ public:
     {
         if (mProfiler)
             mProfiler->Sample(this);
+
+#ifdef HXCPP_TELEMETRY
+  if (mTelemetry) mTelemetry->Sample(this);
+#endif
 
         if (mUnwindException)
         {
@@ -1028,6 +1120,11 @@ private:
 
     // Profiling support
     Profiler *mProfiler;
+
+#ifdef HXCPP_TELEMETRY
+    // Telemetry support
+    Telemetry *mTelemetry;
+#endif
 
     // gMutex protects gMap and gList
     static MyMutex gMutex;
@@ -1880,6 +1977,29 @@ void hx::Profiler::Sample(hx::CallStack *stack)
         mProfileStats[stack->GetFullNameAtDepth(depth - 1)].self += delta;
 }
 }
+
+
+#ifdef HXCPP_TELEMETRY
+void hx::Telemetry::Sample(hx::CallStack *stack)
+{
+  if (mT0 == gProfileClock) {
+    return;
+  }
+
+  // Latch the profile clock and calculate the time since the last profile
+  // clock tick
+  int clock = gProfileClock;
+  int delta = clock - mT0;
+  if (delta < 0) {
+    delta = 1;
+  }
+  mT0 = clock;
+
+  int depth = stack->GetDepth();
+
+  // TODO: sample
+}
+#endif
 
 
 // The old Debug.cpp had this here.  Why is this here????
