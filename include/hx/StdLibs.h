@@ -203,6 +203,12 @@ void __hxcpp_start_profiler(::String inDumpFile);
 void __hxcpp_stop_profiler();
 
 
+// --- Telemetry -----------------------------------------------------------------
+
+void __hxcpp_start_telemetry();
+void __hxcpp_dump_hxt_samples(Array<int> &result);
+void __hxcpp_dump_hxt_names(Array<String> &result);
+
 
 // --- Memory --------------------------------------------------------------------------
 

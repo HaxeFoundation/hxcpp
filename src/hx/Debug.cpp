@@ -336,7 +336,9 @@ public:
     Telemetry()
         : mT0(0)
 {
-   
+        hxtNames.push_back("1-indexed");
+        hxtNamesDumped = 1;
+
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
    
@@ -369,6 +371,35 @@ public:
 
     void Sample(CallStack *stack);
 
+    void DumpHXTSamples(Array<int> &result)
+    {
+      // Lock as the profiler thread will push into hxtSamples
+      gSampleMutex.Lock();
+      int n = hxtSamples.size();
+      for (int i = 0; i < n; i++)
+      {
+        int idx = hxtSamples.at(i);
+        result->push(idx);
+      }
+      hxtSamples.clear();
+      gSampleMutex.Unlock();
+    }
+
+    void DumpHXTNames(Array<String> &result)
+    {
+      gSampleMutex.Lock();
+      int n = hxtNames.size();
+      //if (n>hxtNamesDumped) DBGLOG("Profiler at %d\n", ref_id);
+      gSampleMutex.Unlock();
+      for (int i = hxtNamesDumped; i < n; i++)
+      {
+        String name = String(hxtNames.at(i));
+        //DBGLOG(" - Dumping: %s\n", hxtNames.at(i));
+        result->push(name);
+      }
+      hxtNamesDumped = n;
+    }
+
 private:
 
     static THREAD_FUNC_TYPE ProfileMainLoop(void *)
@@ -399,10 +430,17 @@ private:
 
     int mT0;
 
+    std::map<const char *, int> hxtNameMap;
+    std::vector<const char *> hxtNames;
+    std::vector<int> hxtSamples;
+    int hxtNamesDumped;
+    static MyMutex gSampleMutex;
+
     static MyMutex gThreadMutex;
     static int gThreadRefCount;
     static int gProfileClock;
 };
+/* static */ MyMutex Telemetry::gSampleMutex;
 /* static */ MyMutex Telemetry::gThreadMutex;
 /* static */ int Telemetry::gThreadRefCount;
 /* static */ int Telemetry::gProfileClock;
@@ -460,7 +498,7 @@ public:
             mProfiler->Sample(this);
 
 #ifdef HXCPP_TELEMETRY
-  if (mTelemetry) mTelemetry->Sample(this);
+        if (mTelemetry) mTelemetry->Sample(this);
 #endif
 
         mUnwindException = false;
@@ -476,7 +514,7 @@ public:
             mProfiler->Sample(this);
 
 #ifdef HXCPP_TELEMETRY
-  if (mTelemetry) mTelemetry->Sample(this);
+        if (mTelemetry) mTelemetry->Sample(this);
 #endif
 
         if (mUnwindException)
@@ -895,6 +933,31 @@ public:
             stack->mProfiler = 0;
         }
     }
+
+#ifdef HXCPP_TELEMETRY
+    static void StartCurrentThreadTelemetry()
+    {
+        CallStack *stack = GetCallerCallStack();
+
+        if (stack->mTelemetry) {
+            delete stack->mTelemetry;
+        }
+
+        stack->mTelemetry = new Telemetry();
+    }
+
+    static void DumpCurrentHXTSamples(Array<int> &result)
+    {
+        CallStack *stack = CallStack::GetCallerCallStack();
+        stack->mTelemetry->DumpHXTSamples(result);
+    }
+
+    static void DumpCurrentHXTNames(Array<String> &result)
+    {
+        CallStack *stack = CallStack::GetCallerCallStack();
+        stack->mTelemetry->DumpHXTNames(result);
+    }
+#endif
 
     static void GetCurrentExceptionStackAsStrings(Array<String> &result)
     {
@@ -1944,7 +2007,7 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 {
     if (mT0 == gProfileClock) {
         return;
-   }
+    }
 
     // Latch the profile clock and calculate the time since the last profile
     // clock tick
@@ -1952,7 +2015,7 @@ void hx::Profiler::Sample(hx::CallStack *stack)
     int delta = clock - mT0;
     if (delta < 0) {
         delta = 1;
-}
+    }
     mT0 = clock;
 
     int depth = stack->GetDepth();
@@ -1982,22 +2045,37 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 #ifdef HXCPP_TELEMETRY
 void hx::Telemetry::Sample(hx::CallStack *stack)
 {
-  if (mT0 == gProfileClock) {
-    return;
-  }
+    if (mT0 == gProfileClock) {
+        return;
+    }
 
-  // Latch the profile clock and calculate the time since the last profile
-  // clock tick
-  int clock = gProfileClock;
-  int delta = clock - mT0;
-  if (delta < 0) {
-    delta = 1;
-  }
-  mT0 = clock;
+    // Latch the profile clock and calculate the time since the last profile
+    // clock tick
+    int clock = gProfileClock;
+    int delta = clock - mT0;
+    if (delta < 0) {
+        delta = 1;
+    }
+    mT0 = clock;
 
-  int depth = stack->GetDepth();
+    int depth = stack->GetDepth();
 
-  // TODO: sample
+    // Collect function names and callstacks (as indexes into the names vector)
+    gSampleMutex.Lock();
+    hxtSamples.push_back(depth);
+    for (int i = 0; i < depth; i++) {
+        const char *fullName = stack->GetFullNameAtDepth(i);
+        int idx = hxtNameMap[fullName];
+        if (idx==0) {
+            idx = hxtNames.size();
+            hxtNameMap[fullName] = idx;
+            hxtNames.push_back(fullName);
+            //DBGLOG("New hxt name[%d]: %s\n", hxtNames.size()-1, fullName);
+        }
+        hxtSamples.push_back(idx);
+    }
+    hxtSamples.push_back(delta);
+    gSampleMutex.Unlock();
 }
 #endif
 
@@ -2070,6 +2148,31 @@ void __hxcpp_stop_profiler()
     hx::CallStack::StopCurrentThreadProfiler();
 #endif
 }
+
+
+#ifdef HXCPP_TELEMETRY
+  void __hxcpp_start_telemetry()
+  {
+  #ifdef HXCPP_STACK_TRACE
+    hx::CallStack::StartCurrentThreadTelemetry();
+  #endif
+  }
+
+  void __hxcpp_dump_hxt_samples(Array<int> &result)
+  {
+  #ifdef HXCPP_STACK_TRACE
+    hx::CallStack::DumpCurrentHXTSamples(result);
+  #endif
+  }
+
+  void __hxcpp_dump_hxt_names(Array<String> &result)
+  {
+  #ifdef HXCPP_STACK_TRACE
+    hx::CallStack::DumpCurrentHXTNames(result);
+  #endif
+  }
+#endif
+
 
 void __hxcpp_execution_trace(int inLevel)
 {
