@@ -372,7 +372,7 @@ public:
         gThreadMutex.Unlock();
 }
 
-    void Sample(CallStack *stack, StackFrame *frame);
+    void StackUpdate(CallStack *stack, StackFrame *frame);
 
     void DumpHXTSamples(Array<int> &result)
     {
@@ -431,13 +431,8 @@ public:
 
         gSampleMutex.Lock();
 
-        AllocPending ap;
-        ap.ptr = (hx::Object*)obj;
-        ap.size = inSize;
-        allocsPending.push_back(ap);
-
-        // pendingAlloc.ptr = (hx::Object*)obj;
-        // pendingAlloc.size = inSize;
+        pendingAlloc.ptr = (hx::Object*)obj;
+        pendingAlloc.size = inSize;
 
         gSampleMutex.Unlock();
     }
@@ -491,7 +486,7 @@ private:
     std::vector<int> samples;
     int namesDumped;
     int callStackIdx;
-    static MyMutex gSampleMutex;
+    static MyMutex gSampleMutex; // TODO: separate gAllocMutex?
     bool ignoreAllocs;
 
     std::vector<AllocPending> allocsPending;
@@ -560,7 +555,7 @@ public:
             mProfiler->Sample(this);
 
 #ifdef HXCPP_TELEMETRY
-        if (mTelemetry) mTelemetry->Sample(this, frame);
+        if (mTelemetry) mTelemetry->StackUpdate(this, frame);
 #endif
 
         mUnwindException = false;
@@ -576,7 +571,7 @@ public:
             mProfiler->Sample(this);
 
 #ifdef HXCPP_TELEMETRY
-        if (mTelemetry) mTelemetry->Sample(this, 0);
+        if (mTelemetry) mTelemetry->StackUpdate(this, 0);
 #endif
 
         if (mUnwindException)
@@ -2130,19 +2125,25 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 
 
 #ifdef HXCPP_TELEMETRY
-void hx::Telemetry::Sample(hx::CallStack *stack, StackFrame *frame)
+void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
 {
-    // if (frame && pendingAlloc.ptr && strcmp(frame->functionName, "new")==0 && strcmp(frame->className, "GC")!=0) {
-    //     printf(" ====> HxObject construction: %s::%s\n", frame->className, frame->functionName);
-    //     if (strstr(pendingAlloc.ptr->__GetClass()->__CStr(), frame->className)==0) printf("Error, unexpected class alloc! -- shouldn't get this...\n");
-    //     AllocEntry ae;
-    //     ae.type = pendingAlloc.ptr->__GetClass()->toString();
-    //     ae.stackid = callStackIdx;
-    //     ae.size = (int)pendingAlloc.size; // data loss?
-    //     ae.id = (long)pendingAlloc.ptr;    // data loss?
-    //     allocations.push_back(ae);
-    //     pendingAlloc.ptr = 0;
-    // }
+    // TODO: performance: change short strcmp into masked int comparisons
+    // TODO: performance: allocations dis/enabled flag
+    gSampleMutex.Lock();
+    if (pushed_frame && pendingAlloc.ptr && strcmp(pushed_frame->functionName, "new")==0 && strcmp(pushed_frame->className, "GC")!=0) {
+        printf(" ====> HxObject construction: %s::%s\n", pushed_frame->className, pushed_frame->functionName);
+        #ifdef HXT_DEBUG
+        if (strstr(pendingAlloc.ptr->__GetClass()->__CStr(), pushed_frame->className)==0) printf("Error, unexpected class alloc! -- shouldn't get this...\n");
+        #endif
+        AllocEntry ae;
+        ae.type = pendingAlloc.ptr->__GetClass()->toString();
+        ae.stackid = callStackIdx;
+        ae.size = (int)pendingAlloc.size; // TODO: data loss?
+        ae.id = (long)pendingAlloc.ptr;   // TODO: data loss?
+        allocations.push_back(ae);
+        pendingAlloc.ptr = 0;
+    }
+    gSampleMutex.Unlock();
 
     if (mT0 == gProfileClock) {
         return;
@@ -2176,17 +2177,17 @@ void hx::Telemetry::Sample(hx::CallStack *stack, StackFrame *frame)
     samples.push_back(delta);
 
     // Collect allocations and attribute to this callStackIdx
-    depth = allocsPending.size();
-    for (int i = 0; i < depth; i++) {
-        AllocPending ap = allocsPending.at(i);
-        AllocEntry ae;
-        ae.type = ap.ptr->__GetClass()->toString();
-        ae.stackid = callStackIdx;
-        ae.size = (int)ap.size; // data loss?
-        ae.id = (long)ap.ptr;    // data loss?
-        allocations.push_back(ae);
-    }
-    allocsPending.clear();
+    //depth = allocsPending.size();
+    //for (int i = 0; i < depth; i++) {
+    //    AllocPending ap = allocsPending.at(i);
+    //    AllocEntry ae;
+    //    ae.type = ap.ptr->__GetClass()->toString();
+    //    ae.stackid = callStackIdx;
+    //    ae.size = (int)ap.size; // data loss?
+    //    ae.id = (long)ap.ptr;    // data loss?
+    //    allocations.push_back(ae);
+    //}
+    //allocsPending.clear();
     callStackIdx++;
 
     gSampleMutex.Unlock();
