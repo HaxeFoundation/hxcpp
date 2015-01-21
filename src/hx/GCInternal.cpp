@@ -94,6 +94,10 @@ static int gCollectTraceCount = 0;
    #define STAMP(t)
 #endif
 
+// TODO: Telemetry.h ?
+#ifdef HXCPP_TELEMETRY
+extern void __hxt_gc_reclaim(void* obj);
+#endif
 
 static int sgTimeToNextTableUpdate = 0;
 
@@ -516,6 +520,13 @@ union BlockData
                   unsigned char *row = mRow[r];
                   unsigned char *last_link = &row_flag;
                   int pos = (row_flag & IMMIX_ROW_LINK_MASK);
+
+#ifdef HXCPP_TELEMETRY
+                  unsigned int header = *(unsigned int *)(row + pos);
+                  //int size = header & IMMIX_ALLOC_SIZE_MASK;
+                  //printf(" ---- RECLAIM: Goodbye %d bytes at %#018x\n", size, (row+pos+4));
+                  __hxt_gc_reclaim(row+pos+4);
+#endif
 
                   while(1)
                   {

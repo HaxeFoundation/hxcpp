@@ -425,7 +425,7 @@ public:
         ignoreAllocs = val;
     }
 
-    void NewAllocation(void* obj, size_t inSize, const char* type=0)
+    void HXTAllocation(void* obj, size_t inSize, const char* type=0)
     {
         if (ignoreAllocs) return;
 
@@ -445,6 +445,13 @@ public:
         }
 
         gSampleMutex.Unlock();
+    }
+
+    static void HXTReclaim(void* obj)
+    {
+#ifdef HXT_DEBUG
+      printf("TODO: - track reclaims / .mem.deleteObject, goodbye %#018x\n", obj);
+#endif
     }
 
 private:
@@ -1045,12 +1052,21 @@ public:
         }
     }
 
-    static void NewAllocation(void* obj, size_t inSize, const char* type=0)
+    static void HXTAllocation(void* obj, size_t inSize, const char* type=0)
     {
         CallStack *stack = hx::CallStack::GetCallerCallStack();
         Telemetry *telemetry = stack->mTelemetry;
         if (telemetry) {
-          telemetry->NewAllocation(obj, inSize, type);
+          telemetry->HXTAllocation(obj, inSize, type);
+        }
+    }
+
+    static void HXTReclaim(void* obj)
+    {
+        CallStack *stack = hx::CallStack::GetCallerCallStack();
+        Telemetry *telemetry = stack->mTelemetry;
+        if (telemetry) {
+          telemetry->HXTReclaim(obj);
         }
     }
 
@@ -2146,6 +2162,7 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
     // TODO: performance: allocations dis/enabled flag
     gSampleMutex.Lock();
     if (pushed_frame && pendingAlloc.ptr && strcmp(pushed_frame->functionName, "new")==0 && strcmp(pushed_frame->className, "GC")!=0) {
+  printf("Optimization: Read %#08x for 'new'\n", &((int*)pushed_frame->functionName));
         #ifdef HXT_DEBUG
         if (strstr(pendingAlloc.ptr->__GetClass()->__CStr(), pushed_frame->className)==0) printf("Error, unexpected class alloc! -- shouldn't get this...\n");
         #endif
@@ -2323,14 +2340,18 @@ void __hxcpp_stop_profiler()
 void __hxt_new_hxobject(void* obj, size_t inSize)
 {
   #ifdef HXCPP_STACK_TRACE
-    hx::CallStack::NewAllocation(obj, inSize);
+    hx::CallStack::HXTAllocation(obj, inSize);
   #endif
 }
 void __hxt_new_string(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE
-  hx::CallStack::NewAllocation(obj, inSize, (const char*)"String");
+  hx::CallStack::HXTAllocation(obj, inSize, (const char*)"String");
   #endif
+}
+void __hxt_gc_reclaim(void* obj)
+{
+  hx::CallStack::HXTReclaim(obj);
 }
 #endif
 
