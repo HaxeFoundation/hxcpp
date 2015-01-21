@@ -407,7 +407,7 @@ public:
     {
         gSampleMutex.Lock();
         int n = allocations.size();
-        for (int i = namesDumped; i < n; i++)
+        for (int i = 0; i < n; i++)
         {
             AllocEntry ae = allocations.at(i);
             //DBGLOG(" - Dumping: %s\n", ae.type.__CStr());
@@ -2158,11 +2158,10 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 #ifdef HXCPP_TELEMETRY
 void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
 {
-    // TODO: performance: change short strcmp into masked int comparisons
+    // TODO: performance: change short strcmp into masked int comparisons / memcpy https://gist.github.com/socantre/3472964 ?
     // TODO: performance: allocations dis/enabled flag
     gSampleMutex.Lock();
     if (pushed_frame && pendingAlloc.ptr && strcmp(pushed_frame->functionName, "new")==0 && strcmp(pushed_frame->className, "GC")!=0) {
-  printf("Optimization: Read %#08x for 'new'\n", &((int*)pushed_frame->functionName));
         #ifdef HXT_DEBUG
         if (strstr(pendingAlloc.ptr->__GetClass()->__CStr(), pushed_frame->className)==0) printf("Error, unexpected class alloc! -- shouldn't get this...\n");
         #endif
@@ -2220,6 +2219,9 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
     //    allocations.push_back(ae);
     //}
     //allocsPending.clear();
+
+    // CallStackIdx isn't working... The alloc call stacks need their own stackIdMap,
+    // though they do share the name map with the profiler.
     callStackIdx++;
 
     gSampleMutex.Unlock();
