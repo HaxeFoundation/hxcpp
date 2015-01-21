@@ -3,15 +3,19 @@
 #include <time.h>
 
 #ifdef HX_WINDOWS
-  #include <windows.h>
-  #include <Shlobj.h>
+   #include <windows.h>
+   #include <Shlobj.h>
 #else
-  #include <sys/time.h>
-  #include <stdint.h>
-  #ifdef HX_LINUX
-    #include<unistd.h>
-    #include<stdio.h>
-  #endif
+   #ifdef EPPC
+      #include <time.h>
+   #else
+      #include <sys/time.h>
+   #endif
+   #include <stdint.h>
+   #ifdef HX_LINUX
+      #include <unistd.h>
+      #include <stdio.h>
+   #endif
 #endif
 
 #ifdef HX_MACOS
@@ -61,20 +65,24 @@ double __hxcpp_time_stamp()
    double r =  mach_absolute_time() * time_scale;  
    return mach_absolute_time() * time_scale;  
 #else
-   #if  defined(IPHONE)
+   #if defined(IPHONE)
       double t = CACurrentMediaTime(); 
    #elif defined(GPH) || defined(HX_LINUX) || defined(EMSCRIPTEN)
-	     struct timeval tv;
-        if( gettimeofday(&tv,NULL) )
-          return 0;
-        double t =  ( tv.tv_sec + ((double)tv.tv_usec) / 1000000.0 );
+      struct timeval tv;
+      if( gettimeofday(&tv,NULL) )
+         return 0;
+      double t =  ( tv.tv_sec + ((double)tv.tv_usec) / 1000000.0 );
+   #elif defined(EPPC)
+      time_t tod;
+      time(&tod);
+      double t = (double)tod;
    #else
-	    struct timespec ts;
-       clock_gettime(CLOCK_MONOTONIC, &ts);
-       double t =  ( ts.tv_sec + ((double)ts.tv_nsec)*1e-9  );
+      struct timespec ts;
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      double t =  ( ts.tv_sec + ((double)ts.tv_nsec)*1e-9  );
    #endif
-    if (t0==0) t0 = t;
-    return t-t0;
+   if (t0==0) t0 = t;
+   return t-t0;
 #endif
 }
 
@@ -86,7 +94,7 @@ double __hxcpp_new_date(int inYear,int inMonth,int inDay,int inHour, int inMin, 
    struct tm time;
    time.tm_year = inYear;
 
-	time.tm_isdst = -1;
+   time.tm_isdst = -1;
    time.tm_year = inYear - 1900;
    time.tm_mon = inMonth;
    time.tm_mday = inDay;
