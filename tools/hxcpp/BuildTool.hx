@@ -133,6 +133,13 @@ class BuildTool
 
       parseXML(xml,"");
       popFile();
+      
+      if (mFileStack.length == 0) {
+         
+         Log.info("", "\n\x1b[33;1mNo files, skipping build\x1b[0m");
+         return;
+         
+      }
 
       include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml");
       
