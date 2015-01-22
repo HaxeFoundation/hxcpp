@@ -373,6 +373,7 @@ public:
 }
 
     void StackUpdate(CallStack *stack, StackFrame *frame);
+    void HXTAllocation(void* obj, size_t inSize, const char* type=0);
 
     void DumpHXTSamples(Array<int> &result)
     {
@@ -425,28 +426,6 @@ public:
         ignoreAllocs = val;
     }
 
-    void HXTAllocation(void* obj, size_t inSize, const char* type=0)
-    {
-        if (ignoreAllocs) return;
-
-        gSampleMutex.Lock();
-
-        if (type==0) { // Will wait for 'TYPE::new' stack frame
-            pendingAlloc.ptr = (hx::Object*)obj;
-            pendingAlloc.size = inSize;
-        } else {
-            AllocEntry ae;
-            ae.type = type;
-            ae.stackid = callStackIdx;
-            ae.size = (int)inSize;
-            ae.id = (long)obj;
-            allocations.push_back(ae);
-            debug_allocation(ae);
-        }
-
-        gSampleMutex.Unlock();
-    }
-
     static void HXTReclaim(void* obj)
     {
 #ifdef HXT_DEBUG
@@ -470,10 +449,7 @@ private:
         int size;
     };
 
-    void debug_allocation(AllocEntry ae)
-    {
-      printf(" ====> Allocation: %s, %d bytes at %#018x\n", ae.type, ae.size, ae.id);
-    }
+    void debug_allocation(AllocEntry ae);
 
     static THREAD_FUNC_TYPE ProfileMainLoop(void *)
     {
@@ -692,6 +668,18 @@ public:
             result->push(frame->toString());
         }
     }
+
+//    void PrintCurrentCallStack(bool skipLast)
+//    {
+//        int n = mStackFrames.size() - (skipLast ? 1 : 0);
+//        
+//        for (int i = 0; i < n; i++)
+//        {
+//            StackFrame *frame = mStackFrames[i];
+//            printf("%s::%s -> ", frame->className, frame->functionName);
+//        }
+//        printf("\n");
+//    }
 
     // Gets a ThreadInfo for a thread
     static Dynamic GetThreadInfo(int threadNumber, bool unsafe)
@@ -1052,7 +1040,7 @@ public:
         }
     }
 
-    static void HXTAllocation(void* obj, size_t inSize, const char* type=0)
+    static void HXTAllocation(void* obj, size_t inSize, const char* type)
     {
         CallStack *stack = hx::CallStack::GetCallerCallStack();
         Telemetry *telemetry = stack->mTelemetry;
@@ -2158,21 +2146,23 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 #ifdef HXCPP_TELEMETRY
 void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
 {
-    // TODO: performance: change short strcmp into masked int comparisons / memcpy https://gist.github.com/socantre/3472964 ?
     // TODO: performance: allocations dis/enabled flag
     gSampleMutex.Lock();
     if (pushed_frame && pendingAlloc.ptr && strcmp(pushed_frame->functionName, "new")==0 && strcmp(pushed_frame->className, "GC")!=0) {
-        #ifdef HXT_DEBUG
-        if (strstr(pendingAlloc.ptr->__GetClass()->__CStr(), pushed_frame->className)==0) printf("Error, unexpected class alloc! -- shouldn't get this...\n");
-        #endif
+      if (strcmp(pendingAlloc.ptr->__GetClass()->__CStr(), pushed_frame->className)) {
+        // This is not unexpected, it happens regularly allocating
+        // haxe.io.Bytes waiting for Dynamic and Array
+        //printf("Error, unexpected class alloc of %s, waiting for %s\n", pushed_frame->className, pendingAlloc.ptr->__GetClass()->__CStr());
+      } else {
         AllocEntry ae;
         ae.type = pendingAlloc.ptr->__GetClass()->__CStr();
         ae.stackid = callStackIdx;
         ae.size = (int)pendingAlloc.size; // TODO: data loss?
         ae.id = (long)pendingAlloc.ptr;   // TODO: data loss?
         allocations.push_back(ae);
-        debug_allocation(ae);
+        //debug_allocation(ae);
         pendingAlloc.ptr = 0;
+      }
     }
     gSampleMutex.Unlock();
 
@@ -2225,6 +2215,36 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
     callStackIdx++;
 
     gSampleMutex.Unlock();
+}
+
+void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
+{
+    if (ignoreAllocs) return;
+
+    gSampleMutex.Lock();
+
+    if (type==0) { // Will wait for 'TYPE::new' stack frame
+        pendingAlloc.ptr = (hx::Object*)obj;
+        pendingAlloc.size = inSize;
+    } else {
+        AllocEntry ae;
+        ae.type = type;
+        ae.stackid = callStackIdx;
+        ae.size = (int)inSize;
+        ae.id = (long)obj;
+        allocations.push_back(ae);
+        //debug_allocation(ae);
+    }
+
+    gSampleMutex.Unlock();
+}
+
+void hx::Telemetry::debug_allocation(AllocEntry ae)
+{
+  //if (strcmp(ae.type, "String")==0) {
+  //  printf(" ====> Allocation: %8s, %5d bytes at %#018x From", ae.type, ae.size, ae.id);
+  //  CallStack::GetCallerCallStack()->PrintCurrentCallStack(false);
+  //}
 }
 #endif
 
@@ -2342,7 +2362,7 @@ void __hxcpp_stop_profiler()
 void __hxt_new_hxobject(void* obj, size_t inSize)
 {
   #ifdef HXCPP_STACK_TRACE
-    hx::CallStack::HXTAllocation(obj, inSize);
+  hx::CallStack::HXTAllocation(obj, inSize, 0);
   #endif
 }
 void __hxt_new_string(void* obj, int inSize)
