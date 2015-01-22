@@ -208,7 +208,7 @@ void __hxcpp_stop_profiler();
 void __hxcpp_start_telemetry();
 void __hxcpp_dump_hxt_samples(Array<int> &result);
 void __hxcpp_dump_hxt_names(Array<String> &result);
-void __hxcpp_dump_hxt_allocations(Array<String> &types, Array<int> &details);
+void __hxcpp_dump_hxt_allocations(Array<String> &types, Array<int> &details, Array<int> &updatedStackIdMap);
 void __hxcpp_hxt_ignore_allocs(bool val);
 
 

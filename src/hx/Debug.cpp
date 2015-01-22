@@ -338,9 +338,11 @@ public:
 {
         names.push_back("1-indexed");
         namesDumped = 1;
-        callStackIdx = 0;
         ignoreAllocs = false;
         pendingAlloc.ptr = 0;
+        allocStacksDumped = 0;
+        allocStackIdMax = 0;
+        allocStackIdMapRoot.terminationStackId = 0;
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
@@ -373,7 +375,7 @@ public:
 }
 
     void StackUpdate(CallStack *stack, StackFrame *frame);
-    void HXTAllocation(void* obj, size_t inSize, const char* type=0);
+    void HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type=0);
 
     void DumpHXTSamples(Array<int> &result)
     {
@@ -404,7 +406,7 @@ public:
         namesDumped = n;
     }
 
-    void DumpHXTAllocs(Array<String> &types, Array<int> &details)
+    void DumpHXTAllocs(Array<String> &types, Array<int> &details, Array<int> &updatedStackIdMap)
     {
         gSampleMutex.Lock();
         int n = allocations.size();
@@ -418,6 +420,12 @@ public:
             details->push(ae.stackid);
         }
         allocations.clear();
+
+        // Dump additions to stackIdMap
+        n = allocStacks.size();
+        for (int i = allocStacksDumped; i < n; i++) updatedStackIdMap->push(allocStacks.at(i));
+        allocStacksDumped = n;
+
         gSampleMutex.Unlock();
     }
 
@@ -449,7 +457,16 @@ private:
         int size;
     };
 
+    struct AllocStackIdMapEntry
+    {
+        int terminationStackId;
+        std::map<int, AllocStackIdMapEntry*> children;
+    };
+
     void debug_allocation(AllocEntry ae);
+
+    void push_callstack_ids_into(hx::CallStack *stack, std::vector<int> *list);
+    int ComputeCallStackId(hx::CallStack *stack);
 
     static THREAD_FUNC_TYPE ProfileMainLoop(void *)
     {
@@ -483,7 +500,12 @@ private:
     std::vector<const char *> names;
     std::vector<int> samples;
     int namesDumped;
-    int callStackIdx;
+
+    std::vector<int> allocStacks;
+    int allocStacksDumped;
+    int allocStackIdMax;
+    AllocStackIdMapEntry allocStackIdMapRoot;
+
     static MyMutex gSampleMutex; // TODO: separate gAllocMutex?
     bool ignoreAllocs;
 
@@ -667,18 +689,6 @@ public:
             result->push(frame->toString());
         }
     }
-
-//    void PrintCurrentCallStack(bool skipLast)
-//    {
-//        int n = mStackFrames.size() - (skipLast ? 1 : 0);
-//        
-//        for (int i = 0; i < n; i++)
-//        {
-//            StackFrame *frame = mStackFrames[i];
-//            printf("%s::%s -> ", frame->className, frame->functionName);
-//        }
-//        printf("\n");
-//    }
 
     // Gets a ThreadInfo for a thread
     static Dynamic GetThreadInfo(int threadNumber, bool unsafe)
@@ -1024,10 +1034,10 @@ public:
         stack->mTelemetry->DumpHXTNames(result);
     }
 
-    static void DumpCurrentHXTAllocs(Array<String> &types, Array<int> &details)
+    static void DumpCurrentHXTAllocs(Array<String> &types, Array<int> &details, Array<int> &updatedStackIdMap)
     {
         CallStack *stack = CallStack::GetCallerCallStack();
-        stack->mTelemetry->DumpHXTAllocs(types, details);
+        stack->mTelemetry->DumpHXTAllocs(types, details, updatedStackIdMap);
     }
 
     static void IgnoreAllocs(bool val)
@@ -1044,7 +1054,7 @@ public:
         CallStack *stack = hx::CallStack::GetCallerCallStack();
         Telemetry *telemetry = stack->mTelemetry;
         if (telemetry) {
-          telemetry->HXTAllocation(obj, inSize, type);
+          telemetry->HXTAllocation(stack, obj, inSize, type);
         }
     }
 
@@ -2143,6 +2153,67 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 
 
 #ifdef HXCPP_TELEMETRY
+void hx::Telemetry::push_callstack_ids_into(hx::CallStack *stack, std::vector<int> *list)
+{
+    int depth = stack->GetDepth();
+    for (int i = 0; i < depth; i++) {
+        const char *fullName = stack->GetFullNameAtDepth(i);
+        int idx = nameMap[fullName];
+        if (idx==0) {
+            idx = names.size();
+            nameMap[fullName] = idx;
+            names.push_back(fullName);
+            //DBGLOG("New hxt name[%d]: %s\n", names.size()-1, fullName);
+        }
+        list->push_back(idx);
+    }
+}
+
+int hx::Telemetry::ComputeCallStackId(hx::CallStack *stack) {
+    std::vector<int> callstack;
+    int stackId;
+
+    gSampleMutex.Lock();
+
+    push_callstack_ids_into(stack, &callstack);
+    int size = callstack.size();
+
+    AllocStackIdMapEntry *asime = &allocStackIdMapRoot;
+
+    int i=0;
+    while (i<size) {
+        int name_id = callstack.at(i++);
+        //printf("Finding child with id=%d, asime now %#010x\n", name_id, asime);
+        std::map<int, AllocStackIdMapEntry*>::iterator lb = asime->children.lower_bound(name_id);
+         
+        if (lb != asime->children.end() && !(asime->children.key_comp()(name_id, lb->first)))
+        {   // key already exists
+            asime = lb->second;
+        } else {
+            // the key does not exist in the map, add it
+            AllocStackIdMapEntry *newEntry = new AllocStackIdMapEntry();
+            newEntry->terminationStackId = -1;
+            asime->children.insert(lb, std::map<int, AllocStackIdMapEntry*>::value_type(name_id, newEntry));
+            asime = newEntry;
+        }
+    }
+
+    if (asime->terminationStackId == -1) {
+        // This is a new stackId
+        stackId = asime->terminationStackId = allocStackIdMax;
+        allocStacks.push_back(size);
+        int i = size-1;
+        while (i>=0) allocStacks.push_back(callstack.at(i--));
+        allocStackIdMax++;
+    } else {
+        stackId = asime->terminationStackId;
+        //printf(" - existing callstack id %d\n", stackId);
+    }
+
+    gSampleMutex.Unlock();
+
+    return stackId;
+}
 void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
 {
     // TODO: performance: allocations dis/enabled flag
@@ -2155,7 +2226,7 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
       } else {
         AllocEntry ae;
         ae.type = pendingAlloc.ptr->__GetClass()->__CStr();
-        ae.stackid = callStackIdx;
+        ae.stackid = ComputeCallStackId(stack);
         ae.size = (int)pendingAlloc.size; // TODO: data loss?
         ae.id = (long)pendingAlloc.ptr;   // TODO: data loss?
         allocations.push_back(ae);
@@ -2183,27 +2254,13 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
     // Collect function names and callstacks (as indexes into the names vector)
     gSampleMutex.Lock();
     samples.push_back(depth);
-    for (int i = 0; i < depth; i++) {
-        const char *fullName = stack->GetFullNameAtDepth(i);
-        int idx = nameMap[fullName];
-        if (idx==0) {
-            idx = names.size();
-            nameMap[fullName] = idx;
-            names.push_back(fullName);
-            //DBGLOG("New hxt name[%d]: %s\n", names.size()-1, fullName);
-        }
-        samples.push_back(idx);
-    }
+    push_callstack_ids_into(stack, &samples);
     samples.push_back(delta);
-
-    // CallStackIdx isn't working... The alloc call stacks need their own stackIdMap,
-    // though they do share the name map with the profiler.
-    callStackIdx++;
 
     gSampleMutex.Unlock();
 }
 
-void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
+void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type)
 {
     if (ignoreAllocs) return;
 
@@ -2215,7 +2272,7 @@ void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
     } else {
         AllocEntry ae;
         ae.type = type;
-        ae.stackid = callStackIdx;
+        ae.stackid = ComputeCallStackId(stack);
         ae.size = (int)inSize;
         ae.id = (long)obj;
         allocations.push_back(ae);
@@ -2327,10 +2384,10 @@ void __hxcpp_stop_profiler()
   #endif
   }
 
-  void __hxcpp_dump_hxt_allocations(Array<String> &types, Array<int> &details)
+  void __hxcpp_dump_hxt_allocations(Array<String> &types, Array<int> &details, Array<int> &updatedStackIdMap)
   {
   #ifdef HXCPP_STACK_TRACE
-      hx::CallStack::DumpCurrentHXTAllocs(types, details);
+      hx::CallStack::DumpCurrentHXTAllocs(types, details, updatedStackIdMap);
   #endif
   }
 
