@@ -290,10 +290,11 @@ struct Hash : public HashBase< typename ELEMENT::Key >
                   lastPtr = & (*lastPtr)->next;
                *lastPtr = oldHead;
             }
+            bucket[b] = 0;
          }
       }
       bucketCount = newSize;
-      bucket = (Element **)InternalRealloc(bucket, sizeof(int)*bucketCount );
+      bucket = (Element **)InternalRealloc(bucket, sizeof(ELEMENT *)*bucketCount );
    }
 
    bool remove(Key inKey)
@@ -309,7 +310,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          {
             *head = el.next;
             size--;
-            if (bucketCount>8 && size < bucketCount )
+            if (bucketCount>8 && size < (bucketCount>>1) )
                compact();
             return true;
          }

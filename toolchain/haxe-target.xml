@@ -79,7 +79,7 @@
 <files id="runtime" dir="${HXCPP}">
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
-
+  <depend name="${HXCPP}/src/hx/Hash.h"/>
 
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
