@@ -179,6 +179,7 @@ class Linker
          // Place list of obj files in a file called "all_objs"
          if (mFromFile=="@")
          {
+            PathManager.mkdir(inCompiler.mObjDir);
             var fname = inCompiler.mObjDir + "/all_objs";
             var fout = sys.io.File.write(fname,false);
             for(obj in objs)
