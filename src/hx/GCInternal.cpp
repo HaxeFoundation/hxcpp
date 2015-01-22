@@ -76,6 +76,8 @@ enum
 static hx::Object *gCollectTrace = 0;
 static bool gCollectTraceDoPrint = false;
 static int gCollectTraceCount = 0;
+static int sgSpamCollects = 0;
+static int sgAllocsSinceLastSpam = 0;
 #endif
 
 #ifdef ANDROID
@@ -2245,6 +2247,10 @@ public:
 
    int Collect(bool inMajor, bool inForceCompact)
    {
+      #ifdef DEBUG
+      sgAllocsSinceLastSpam = 0;
+      #endif
+
       HX_STACK_FRAME("GC", "collect", 0, "GC::collect", __FILE__, __LINE__,0)
       #ifdef SHOW_MEM_EVENTS
       int here = 0;
@@ -3072,6 +3078,15 @@ void *InternalNew(int inSize,bool inIsObject)
    //HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", __LINE__, 0)
    HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", inSize, 0)
 
+   #ifdef HXCPP_DEBUG
+   if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
+   {
+      //GCLOG("InternalNew spam\n");
+      CollectFromThisThread();
+   }
+   sgAllocsSinceLastSpam++;
+   #endif
+
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
       void *result = sGlobalAlloc->AllocLarge(inSize);
@@ -3108,6 +3123,16 @@ void *InternalRealloc(void *inData,int inSize)
       return hx::InternalNew(inSize,false);
 
    HX_STACK_FRAME("GC", "realloc", 0, "GC::relloc", __FILE__ , __LINE__, 0)
+
+   #ifdef HXCPP_DEBUG
+   if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
+   {
+      //GCLOG("InternalNew spam\n");
+      CollectFromThisThread();
+   }
+   sgAllocsSinceLastSpam++;
+   #endif
+
 
    unsigned int header = ((unsigned int *)(inData))[-1];
 
@@ -3183,7 +3208,14 @@ void *Object::operator new( size_t inSize, NewObjectType inType )
 
 }
 
-
+void __hxcpp_spam_collects(int inEveryNCalls)
+{
+   #ifdef HXCPP_DEBUG
+   sgSpamCollects = inEveryNCalls;
+   #else
+   GCLOG("Spam collects only available on debug versions\n");
+   #endif
+}
 
 int __hxcpp_gc_trace(Class inClass,bool inPrint)
 {
