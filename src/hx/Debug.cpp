@@ -487,7 +487,6 @@ private:
     static MyMutex gSampleMutex; // TODO: separate gAllocMutex?
     bool ignoreAllocs;
 
-    std::vector<AllocPending> allocsPending;
     AllocPending pendingAlloc;
     std::vector<AllocEntry> allocations;
 
@@ -2196,19 +2195,6 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
         samples.push_back(idx);
     }
     samples.push_back(delta);
-
-    // Collect allocations and attribute to this callStackIdx
-    //depth = allocsPending.size();
-    //for (int i = 0; i < depth; i++) {
-    //    AllocPending ap = allocsPending.at(i);
-    //    AllocEntry ae;
-    //    ae.type = ap.ptr->__GetClass()->toString();
-    //    ae.stackid = callStackIdx;
-    //    ae.size = (int)ap.size; // data loss?
-    //    ae.id = (long)ap.ptr;    // data loss?
-    //    allocations.push_back(ae);
-    //}
-    //allocsPending.clear();
 
     // CallStackIdx isn't working... The alloc call stacks need their own stackIdMap,
     // though they do share the name map with the profiler.
