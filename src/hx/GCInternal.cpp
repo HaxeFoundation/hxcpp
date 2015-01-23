@@ -97,6 +97,8 @@ static int gCollectTraceCount = 0;
 // TODO: Telemetry.h ?
 #ifdef HXCPP_TELEMETRY
 extern void __hxt_gc_reclaim(void* obj);
+extern void __hxt_gc_start();
+extern void __hxt_gc_end();
 #endif
 
 static int sgTimeToNextTableUpdate = 0;
@@ -2262,7 +2264,10 @@ public:
       GCLOG("=== Collect === %p\n",&here);
       #endif
       STAMP(t0)
-     
+
+#ifdef HXCPP_TELEMETRY
+      __hxt_gc_start();
+#endif
       int largeAlloced = mLargeAllocated;
       LocalAllocator *this_local = 0;
       if (sMultiThreadMode)
@@ -2274,6 +2279,9 @@ public:
          if (hx::gPauseForCollect)
          {
             gThreadStateChangeLock->Unlock();
+#ifdef HXCPP_TELEMETRY
+            __hxt_gc_end();
+#endif
             return false;
          }
 
@@ -2447,6 +2455,10 @@ public:
       GCLOG("Collect time %.2f  %.2f/%.2f/%.2f/%.2f\n", (t4-t0)*1000,
               (t1-t0)*1000, (t2-t1)*1000, (t3-t2)*1000, (t4-t3)*1000 );
       #endif
+
+#ifdef HXCPP_TELEMETRY
+      __hxt_gc_end();
+#endif
 
       return want_more;
    }

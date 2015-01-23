@@ -343,6 +343,8 @@ public:
         allocStacksDumped = 0;
         allocStackIdMax = 0;
         allocStackIdMapRoot.terminationStackId = 0;
+        gcTimer = 0;
+        gcTimerTemp = 0;
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
@@ -376,6 +378,15 @@ public:
 
     void StackUpdate(CallStack *stack, StackFrame *frame);
     void HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type=0);
+
+    int DumpHXTGCTime()
+    {
+        gSampleMutex.Lock();
+        int gctime = gcTimer*1000000;
+        gcTimer = 0;
+        gSampleMutex.Unlock();
+        return gctime;
+    }
 
     void DumpHXTSamples(Array<int> &result)
     {
@@ -432,6 +443,19 @@ public:
     void IgnoreAllocs(int delta)
     {
         ignoreAllocs += delta;
+    }
+
+    void GCStart()
+    {
+        gcTimerTemp = __hxcpp_time_stamp();
+    }
+
+    void GCEnd()
+    {
+        // TODO: mutex?
+        //gSampleMutex.Lock();
+        gcTimer += __hxcpp_time_stamp() - gcTimerTemp;
+        //gSampleMutex.Unlock();
     }
 
     static void HXTReclaim(void* obj)
@@ -505,6 +529,9 @@ private:
     int allocStacksDumped;
     int allocStackIdMax;
     AllocStackIdMapEntry allocStackIdMapRoot;
+
+    double gcTimer;
+    double gcTimerTemp;
 
     static MyMutex gSampleMutex; // TODO: separate gAllocMutex?
     int ignoreAllocs;
@@ -1022,6 +1049,12 @@ public:
         stack->mTelemetry = new Telemetry();
     }
 
+    static int DumpCurrentHXTGCTime()
+    {
+        CallStack *stack = CallStack::GetCallerCallStack();
+        return stack->mTelemetry->DumpHXTGCTime();
+    }
+
     static void DumpCurrentHXTSamples(Array<int> &result)
     {
         CallStack *stack = CallStack::GetCallerCallStack();
@@ -1064,6 +1097,24 @@ public:
         Telemetry *telemetry = stack->mTelemetry;
         if (telemetry) {
           telemetry->HXTReclaim(obj);
+        }
+    }
+
+    static void HXTGCStart()
+    {
+        CallStack *stack = hx::CallStack::GetCallerCallStack();
+        Telemetry *telemetry = stack->mTelemetry;
+        if (telemetry) {
+          telemetry->GCStart();
+        }
+    }
+
+    static void HXTGCEnd()
+    {
+        CallStack *stack = hx::CallStack::GetCallerCallStack();
+        Telemetry *telemetry = stack->mTelemetry;
+        if (telemetry) {
+          telemetry->GCEnd();
         }
     }
 
@@ -2409,6 +2460,11 @@ void __hxcpp_stop_profiler()
       hx::CallStack::IgnoreAllocs(delta);
   #endif
   }
+
+  int __hxcpp_hxt_dump_gctime()
+  {
+    return hx::CallStack::DumpCurrentHXTGCTime();
+  }
 #endif
 
 
@@ -2429,6 +2485,14 @@ void __hxt_new_string(void* obj, int inSize)
 void __hxt_gc_reclaim(void* obj)
 {
   hx::CallStack::HXTReclaim(obj);
+}
+void __hxt_gc_start()
+{
+  hx::CallStack::HXTGCStart();
+}
+void __hxt_gc_end()
+{
+  hx::CallStack::HXTGCEnd();
 }
 #endif
 

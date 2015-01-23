@@ -210,6 +210,7 @@ void __hxcpp_hxt_dump_samples(Array<int> &result);
 void __hxcpp_hxt_dump_names(Array<String> &result);
 void __hxcpp_hxt_dump_allocations(Array<String> &types, Array<int> &details, Array<int> &updatedStackIdMap);
 void __hxcpp_hxt_ignore_allocs(int delta);
+int __hxcpp_hxt_dump_gctime();
 
 
 // --- Memory --------------------------------------------------------------------------
