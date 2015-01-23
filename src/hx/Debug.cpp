@@ -338,7 +338,7 @@ public:
 {
         names.push_back("1-indexed");
         namesDumped = 1;
-        ignoreAllocs = false;
+        ignoreAllocs = 1; // initial bias to ignore
         pendingAlloc.ptr = 0;
         allocStacksDumped = 0;
         allocStackIdMax = 0;
@@ -429,9 +429,9 @@ public:
         gSampleMutex.Unlock();
     }
 
-    void IgnoreAllocs(bool val)
+    void IgnoreAllocs(int delta)
     {
-        ignoreAllocs = val;
+        ignoreAllocs += delta;
     }
 
     static void HXTReclaim(void* obj)
@@ -507,7 +507,7 @@ private:
     AllocStackIdMapEntry allocStackIdMapRoot;
 
     static MyMutex gSampleMutex; // TODO: separate gAllocMutex?
-    bool ignoreAllocs;
+    int ignoreAllocs;
 
     AllocPending pendingAlloc;
     std::vector<AllocEntry> allocations;
@@ -1040,12 +1040,12 @@ public:
         stack->mTelemetry->DumpHXTAllocs(types, details, updatedStackIdMap);
     }
 
-    static void IgnoreAllocs(bool val)
+    static void IgnoreAllocs(int delta)
     {
         CallStack *stack = hx::CallStack::GetCallerCallStack();
         Telemetry *telemetry = stack->mTelemetry;
         if (telemetry) {
-            telemetry->IgnoreAllocs(val);
+            telemetry->IgnoreAllocs(delta);
         }
     }
 
@@ -2262,7 +2262,7 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
 
 void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type)
 {
-    if (ignoreAllocs) return;
+    if (ignoreAllocs>0) return;
 
     gSampleMutex.Lock();
 
@@ -2282,13 +2282,25 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     gSampleMutex.Unlock();
 }
 
-void hx::Telemetry::debug_allocation(AllocEntry ae)
-{
-  //if (strcmp(ae.type, "String")==0) {
-  //  printf(" ====> Allocation: %8s, %5d bytes at %#018x From", ae.type, ae.size, ae.id);
-  //  CallStack::GetCallerCallStack()->PrintCurrentCallStack(false);
-  //}
-}
+//void hx::Telemetry::debug_allocation(AllocEntry ae)
+//{
+//  if (strcmp(ae.type, "openfl._v2.utils.ByteArray")==0) {
+//    CallStack *stack = CallStack::GetCallerCallStack();
+//    printf(" ====> Allocation: %8s, %5d bytes at %#018x From [%d] ", ae.type, ae.size, ae.id, ComputeCallStackId(stack));
+// 
+//    std::vector<int> callstack;
+//    gSampleMutex.Lock();
+//    push_callstack_ids_into(stack, &callstack);
+//    gSampleMutex.Unlock();
+//    int size = callstack.size();
+//    int last = 0;
+//    printf("[\n");
+//    for (int j=0; j<size; j++) { printf("%d, ", callstack.at(j)); last = callstack.at(j); }
+//    printf("] -- last is %s\n", names.at(last));
+// 
+//    //stack->PrintCurrentCallStack(false);
+//  }
+//}
 #endif
 
 
@@ -2391,10 +2403,10 @@ void __hxcpp_stop_profiler()
   #endif
   }
 
-  void __hxcpp_hxt_ignore_allocs(bool val)
+  void __hxcpp_hxt_ignore_allocs(int delta)
   {
   #ifdef HXCPP_STACK_TRACE
-      hx::CallStack::IgnoreAllocs(val);
+      hx::CallStack::IgnoreAllocs(delta);
   #endif
   }
 #endif
