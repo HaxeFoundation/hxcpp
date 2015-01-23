@@ -2155,8 +2155,8 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 #ifdef HXCPP_TELEMETRY
 void hx::Telemetry::push_callstack_ids_into(hx::CallStack *stack, std::vector<int> *list)
 {
-    int depth = stack->GetDepth();
-    for (int i = 0; i < depth; i++) {
+    int size = stack->GetDepth()+1;
+    for (int i = 0; i < size; i++) {
         const char *fullName = stack->GetFullNameAtDepth(i);
         int idx = nameMap[fullName];
         if (idx==0) {
@@ -2249,11 +2249,11 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
     }
     mT0 = clock;
 
-    int depth = stack->GetDepth();
+    int size = stack->GetDepth()+1;
 
     // Collect function names and callstacks (as indexes into the names vector)
     gSampleMutex.Lock();
-    samples.push_back(depth);
+    samples.push_back(size);
     push_callstack_ids_into(stack, &samples);
     samples.push_back(delta);
 
