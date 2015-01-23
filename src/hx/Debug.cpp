@@ -2375,28 +2375,28 @@ void __hxcpp_stop_profiler()
 
 // These globals are called by HXTelemetry.hx
 #ifdef HXCPP_TELEMETRY
-  void __hxcpp_start_telemetry()
+  void __hxcpp_hxt_start_telemetry()
   {
   #ifdef HXCPP_STACK_TRACE
     hx::CallStack::StartCurrentThreadTelemetry();
   #endif
   }
 
-  void __hxcpp_dump_hxt_samples(Array<int> &result)
+  void __hxcpp_hxt_dump_samples(Array<int> &result)
   {
   #ifdef HXCPP_STACK_TRACE
     hx::CallStack::DumpCurrentHXTSamples(result);
   #endif
   }
 
-  void __hxcpp_dump_hxt_names(Array<String> &result)
+  void __hxcpp_hxt_dump_names(Array<String> &result)
   {
   #ifdef HXCPP_STACK_TRACE
     hx::CallStack::DumpCurrentHXTNames(result);
   #endif
   }
 
-  void __hxcpp_dump_hxt_allocations(Array<String> &types, Array<int> &details, Array<int> &updatedStackIdMap)
+  void __hxcpp_hxt_dump_allocations(Array<String> &types, Array<int> &details, Array<int> &updatedStackIdMap)
   {
   #ifdef HXCPP_STACK_TRACE
       hx::CallStack::DumpCurrentHXTAllocs(types, details, updatedStackIdMap);
