@@ -28,10 +28,22 @@ class RunMain
       log("     cd project");
       log("     neko build.n");
 
+      var gotUserResponse = false;
+      neko.vm.Thread.create(function() {
+         Sys.sleep(30);
+         if (!gotUserResponse)
+         {
+            Sys.println("\nTimeout waiting for response.");
+            Sys.println("Can't continue without hxcpp.n");
+            Sys.exit(-1);
+         }
+      } );
+
       while(true)
       {
          Sys.print("\nWould you like to do this now [y/n]");
          var code = Sys.getChar(true);
+         gotUserResponse = true;
          if (code<=32)
             break;
          var answer = String.fromCharCode(code);
@@ -39,7 +51,8 @@ class RunMain
          {
             log("");
             setup();
-            executeHxcpp();
+            if (!executeHxcpp())
+               break;
             return;
          }
          if (answer=="n" || answer=="N")
@@ -74,21 +87,10 @@ class RunMain
 
    public static function executeHxcpp()
    {
-      try
-      {
-         return neko.vm.Loader.local().loadModule("./hxcpp.n")!=null;
-      }
-      catch(e:Dynamic)
-      {
-         var s = Std.string(e);
-         var notFound = "Module not found";
-         if (s.indexOf(notFound)<0)
-         {
-            trace("====="+s);
-            neko.Lib.rethrow(e);
-         }
-      }
-      return false;
+      if (!sys.FileSystem.exists("./hxcpp.n"))
+         return false;
+      neko.vm.Loader.local().loadModule("./hxcpp.n");
+      return true;
    }
 
    public static function main()
