@@ -33,13 +33,13 @@ void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
       else
       {
          ObjectType type = (ObjectType)value->__GetType();
-         if (type==vtBool || type==vtInt)
+         if (type==vtInt)
             hash = new IntHashInt();
          else if (type==vtFloat)
             hash = new IntHashFloat();
          else if (type==vtString)
             hash = new IntHashString();
-         else
+         else // Object or bool
             hash = new IntHashObject();
       }
       #endif
@@ -51,7 +51,7 @@ void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
       if (value!=null())
       {
          ObjectType type = (ObjectType)value->__GetType();
-         if (type==vtBool || type==vtInt)
+         if ( type==vtInt)
          {
             if (hash->store==hashFloat)
                want = hashFloat;
@@ -222,7 +222,7 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
       else
       {
          ObjectType type = (ObjectType)value->__GetType();
-         if (type==vtBool || type==vtInt)
+         if (type==vtInt)
          {
             hash = new StringHashInt();
          }
@@ -242,7 +242,7 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
       if (value!=null())
       {
          ObjectType type = (ObjectType)value->__GetType();
-         if (type==vtBool || type==vtInt)
+         if (type==vtInt)
          {
             if (hash->store==hashFloat)
                want = hashFloat;
@@ -422,7 +422,7 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
       else
       {
          ObjectType type = (ObjectType)value->__GetType();
-         if (type==vtBool || type==vtInt)
+         if (type==vtInt)
          {
             hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashInt() :
                                 (DynamicHashBase *)new DynamicHashInt();
@@ -446,7 +446,7 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
       if (value!=null())
       {
          ObjectType type = (ObjectType)value->__GetType();
-         if (type==vtBool || type==vtInt)
+         if (type==vtInt)
          {
             if (hash->store==hashFloat)
                want = hashFloat;
