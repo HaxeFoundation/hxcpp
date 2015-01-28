@@ -63,6 +63,10 @@ void __hxcpp_on_line_changed();
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPaths);
 
+#ifdef HXCPP_TELEMETRY
+    extern void __hxt_new_object(void* ptr);
+#endif
+
 namespace hx
 {
 
@@ -316,17 +320,30 @@ extern volatile bool gShouldCallHandleBreakpoints;
 // do anything
 #ifdef HXCPP_STACK_TRACE
 
+// Track object allocations with HXCPP_TELEMETRY. To avoid a strcmp, ideally
+// gencpp.ml would be updated to call HX_STACK_THIS(this, isConstructor)
+// and just pass a true when generating the __construct() function.
+#ifdef HXCPP_TELEMETRY
+    #define SET_STACK_IS_CONSTRUCTOR(functionName) bool __isConstructor = strcmp(functionName, "new")==0;
+    #define TRACK_CONSTRUCTOR(isConstructor, ptr) if (__isConstructor) __hxt_new_object(ptr);
+#else
+    #define SET_STACK_IS_CONSTRUCTOR(functionName)
+    #define TRACK_CONSTRUCTOR(isConstructor, ptr)
+#endif
+
 // Stack frames are always pushed if HXCPP_STACK_TRACE is enabled, hashes only if debugger is
 #ifdef HXCPP_STACK_LINE
 
    #ifdef HXCPP_DEBUG_HASHES
       #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
                           lineNumber, fileHash ) \
+       SET_STACK_IS_CONSTRUCTOR(functionName) \
        hx::StackFrame __stackframe(className, functionName, classFunctionHash, fullName,      \
                                    fileName, lineNumber, fileHash);
    #else
       #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
                           lineNumber, fileHash ) \
+       SET_STACK_IS_CONSTRUCTOR(functionName) \
        hx::StackFrame __stackframe(className, functionName, fullName,      \
                                    fileName, lineNumber);
    #endif
@@ -334,6 +351,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
 
    #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
                        lineNumber, fileHash ) \
+    SET_STACK_IS_CONSTRUCTOR(functionName) \
     hx::StackFrame __stackframe(className, functionName, fullName, fileName);
 
 #endif
@@ -341,7 +359,8 @@ extern volatile bool gShouldCallHandleBreakpoints;
 // Emitted at the beginning of every instance fuction.  ptr is "this".
 // Only if stack variables are to be tracked
 #ifdef HXCPP_STACK_VARS
-#define HX_STACK_THIS(ptr) hx::StackThis __stackthis                    \
+#define HX_STACK_THIS(ptr) hx::StackThis __stackthis        \
+     TRACK_CONSTRUCTOR(__isConstructor, ptr)                \
      (__stackframe.variables, ptr);
 #endif // HXCPP_STACK_VARS
 
@@ -417,7 +436,12 @@ extern volatile bool gShouldCallHandleBreakpoints;
 #define HX_STACK_FRAME(className, functionName, classFuncHash, fullName, fileName, lineNumber, fileHash )
 #endif
 #ifndef HX_STACK_THIS
-#define HX_STACK_THIS(ptr)
+  #ifdef HXCPP_TELEMETRY
+    #define HX_STACK_THIS(ptr) \
+      TRACK_CONSTRUCTOR(__isConstructor, ptr);
+  #else
+    #define HX_STACK_THIS(ptr)
+  #endif
 #endif
 #ifndef HX_STACK_ARG
 #define HX_STACK_ARG(cpp_var, haxe_name)

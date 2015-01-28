@@ -339,7 +339,7 @@ public:
         names.push_back("1-indexed");
         namesDumped = 1;
         ignoreAllocs = 1; // initial bias to ignore
-        pendingAlloc.ptr = 0;
+        //pendingAlloc.ptr = 0;
         allocStacksDumped = 0;
         allocStackIdMax = 0;
         allocStackIdMapRoot.terminationStackId = 0;
@@ -467,12 +467,6 @@ public:
 
 private:
 
-    struct AllocPending
-    {
-        hx::Object *ptr;
-        size_t size;
-    };
-
     struct AllocEntry
     {
         const char *type;
@@ -487,7 +481,7 @@ private:
         std::map<int, AllocStackIdMapEntry*> children;
     };
 
-    void debug_allocation(AllocEntry ae);
+    //void debug_allocation(AllocEntry ae);
 
     void push_callstack_ids_into(hx::CallStack *stack, std::vector<int> *list);
     int ComputeCallStackId(hx::CallStack *stack);
@@ -536,7 +530,6 @@ private:
     static MyMutex gSampleMutex; // TODO: separate gAllocMutex?
     int ignoreAllocs;
 
-    AllocPending pendingAlloc;
     std::vector<AllocEntry> allocations;
 
     static MyMutex gThreadMutex;
@@ -2267,26 +2260,6 @@ int hx::Telemetry::ComputeCallStackId(hx::CallStack *stack) {
 }
 void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
 {
-    // TODO: performance: allocations dis/enabled flag
-    gSampleMutex.Lock();
-    if (pushed_frame && pendingAlloc.ptr && strcmp(pushed_frame->functionName, "new")==0 && strcmp(pushed_frame->className, "GC")!=0) {
-      if (strcmp(pendingAlloc.ptr->__GetClass()->__CStr(), pushed_frame->className)) {
-        // This is not unexpected, it happens regularly allocating
-        // haxe.io.Bytes waiting for Dynamic and Array
-        //printf("Error, unexpected class alloc of %s, waiting for %s\n", pushed_frame->className, pendingAlloc.ptr->__GetClass()->__CStr());
-      } else {
-        AllocEntry ae;
-        ae.type = pendingAlloc.ptr->__GetClass()->__CStr();
-        ae.stackid = ComputeCallStackId(stack);
-        ae.size = (int)pendingAlloc.size; // TODO: data loss?
-        ae.id = (long)pendingAlloc.ptr;   // TODO: data loss?
-        allocations.push_back(ae);
-        //debug_allocation(ae);
-        pendingAlloc.ptr = 0;
-      }
-    }
-    gSampleMutex.Unlock();
-
     if (mT0 == gProfileClock) {
         return;
     }
@@ -2317,40 +2290,34 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
 
     gSampleMutex.Lock();
 
-    if (type==0) { // Will wait for 'TYPE::new' stack frame
-        pendingAlloc.ptr = (hx::Object*)obj;
-        pendingAlloc.size = inSize;
-    } else {
-        AllocEntry ae;
-        ae.type = type;
-        ae.stackid = ComputeCallStackId(stack);
-        ae.size = (int)inSize;
-        ae.id = (long)obj;
-        allocations.push_back(ae);
-        //debug_allocation(ae);
-    }
+    AllocEntry ae;
+    ae.type = type;
+    ae.stackid = ComputeCallStackId(stack);
+    ae.size = (int)inSize;
+    ae.id = (long)obj;
+    allocations.push_back(ae);
+    //debug_allocation(ae);
 
     gSampleMutex.Unlock();
 }
 
 //void hx::Telemetry::debug_allocation(AllocEntry ae)
 //{
-//  if (strcmp(ae.type, "openfl._v2.utils.ByteArray")==0) {
+//  //if (strcmp(ae.type, "String")!=0) {
 //    CallStack *stack = CallStack::GetCallerCallStack();
-//    printf(" ====> Allocation: %8s, %5d bytes at %#018x From [%d] ", ae.type, ae.size, ae.id, ComputeCallStackId(stack));
-// 
-//    std::vector<int> callstack;
-//    gSampleMutex.Lock();
-//    push_callstack_ids_into(stack, &callstack);
-//    gSampleMutex.Unlock();
-//    int size = callstack.size();
-//    int last = 0;
-//    printf("[\n");
-//    for (int j=0; j<size; j++) { printf("%d, ", callstack.at(j)); last = callstack.at(j); }
-//    printf("] -- last is %s\n", names.at(last));
-// 
-//    //stack->PrintCurrentCallStack(false);
-//  }
+//    printf(" ====> Allocation: %8s, %5d bytes at %#018x From [%d]\n", ae.type, ae.size, ae.id, ComputeCallStackId(stack));
+//  //  std::vector<int> callstack;
+//  //  gSampleMutex.Lock();
+//  //  push_callstack_ids_into(stack, &callstack);
+//  //  gSampleMutex.Unlock();
+//  //  int size = callstack.size();
+//  //  int last = 0;
+//  //  printf("[\n");
+//  //  for (int j=0; j<size; j++) { printf("%d, ", callstack.at(j)); last = callstack.at(j); }
+//  //  printf("] -- last is %s\n", names.at(last));
+//  // 
+//  //  //stack->PrintCurrentCallStack(false);
+//  //}
 //}
 #endif
 
@@ -2470,10 +2437,13 @@ void __hxcpp_stop_profiler()
 
 // These globals are called by other cpp files
 #ifdef HXCPP_TELEMETRY
-void __hxt_new_hxobject(void* obj, size_t inSize)
+
+extern unsigned int __hxcpp_gc_obj_size(void* obj);
+void __hxt_new_object(void* ptr)
 {
   #ifdef HXCPP_STACK_TRACE
-  hx::CallStack::HXTAllocation(obj, inSize, 0);
+  unsigned int size = __hxcpp_gc_obj_size(ptr);
+  hx::CallStack::HXTAllocation(ptr, size, hx::CallStack::GetCallerCallStack()->GetCurrentStackFrame()->className);
   #endif
 }
 void __hxt_new_string(void* obj, int inSize)

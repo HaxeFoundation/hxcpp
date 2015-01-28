@@ -3124,6 +3124,13 @@ int InternalCollect(bool inMajor,bool inCompact)
    return sGlobalAlloc->MemUsage();
 }
 
+inline unsigned int ObjectSize(void *inData)
+{
+   unsigned int header = ((unsigned int *)(inData))[-1];
+
+   return (header & ( IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ)) ?
+         (header & IMMIX_ALLOC_SIZE_MASK) :  ((unsigned int *)(inData))[-2];
+}
 
 void *InternalRealloc(void *inData,int inSize)
 {
@@ -3132,10 +3139,7 @@ void *InternalRealloc(void *inData,int inSize)
 
    HX_STACK_FRAME("GC", "realloc", 0, "GC::relloc", __FILE__ , __LINE__, 0)
 
-   unsigned int header = ((unsigned int *)(inData))[-1];
-
-   unsigned int s = (header & ( IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ)) ?
-         (header & IMMIX_ALLOC_SIZE_MASK) :  ((unsigned int *)(inData))[-2];
+   unsigned int s = ObjectSize(inData);
 
    void *new_data = 0;
 
@@ -3300,6 +3304,12 @@ void __hxcpp_gc_safe_point()
       hx::PauseForCollect();
 }
 
+// Warning, this function has no checks on whether the
+// inData pointer is actually a valid object in the GC.
+unsigned int __hxcpp_gc_obj_size(void* inData)
+{
+    return hx::ObjectSize(inData);
+}
 
 
 //#define HXCPP_FORCE_OBJ_MAP
