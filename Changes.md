@@ -1,4 +1,6 @@
 
+* Make compares between Dynamic and numeric types false, unless the Dynamic is actaully numeric
+------------------------------------------------------------
 * Even more optimizations for hashes
 * Some more optimizations for small hashes
 * Fix for google changing inlining in platform21 headers (atof, rand, srand)
