@@ -381,17 +381,17 @@ public:
 
     int DumpHXTGCTime()
     {
-        gSampleMutex.Lock();
+        //gSampleMutex.Lock();
         int gctime = gcTimer*1000000;
         gcTimer = 0;
-        gSampleMutex.Unlock();
+        //gSampleMutex.Unlock();
         return gctime;
     }
 
     void DumpHXTSamples(Array<int> &result)
     {
         // Lock as the profiler thread will push into samples
-        gSampleMutex.Lock();
+        //gSampleMutex.Lock();
         int n = samples.size();
         for (int i = 0; i < n; i++)
         {
@@ -399,15 +399,15 @@ public:
             result->push(idx);
         }
         samples.clear();
-        gSampleMutex.Unlock();
+        //gSampleMutex.Unlock();
     }
 
     void DumpHXTNames(Array<String> &result)
     {
-        gSampleMutex.Lock();
+        //gSampleMutex.Lock();
         int n = names.size();
         //if (n>namesDumped) DBGLOG("Profiler at %d\n", ref_id);
-        gSampleMutex.Unlock();
+        //gSampleMutex.Unlock();
         for (int i = namesDumped; i < n; i++)
         {
             String name = String(names.at(i));
@@ -419,7 +419,7 @@ public:
 
     void DumpHXTAllocs(Array<String> &types, Array<int> &details, Array<int> &updatedStackIdMap)
     {
-        gSampleMutex.Lock();
+        //gSampleMutex.Lock();
         int n = allocations.size();
         for (int i = 0; i < n; i++)
         {
@@ -437,7 +437,7 @@ public:
         for (int i = allocStacksDumped; i < n; i++) updatedStackIdMap->push(allocStacks.at(i));
         allocStacksDumped = n;
 
-        gSampleMutex.Unlock();
+        //gSampleMutex.Unlock();
     }
 
     void IgnoreAllocs(int delta)
@@ -527,7 +527,7 @@ private:
     double gcTimer;
     double gcTimerTemp;
 
-    static MyMutex gSampleMutex; // TODO: separate gAllocMutex?
+    //static MyMutex gSampleMutex; // TODO: separate gAllocMutex?
     int ignoreAllocs;
 
     std::vector<AllocEntry> allocations;
@@ -536,7 +536,7 @@ private:
     static int gThreadRefCount;
     static int gProfileClock;
 };
-/* static */ MyMutex Telemetry::gSampleMutex;
+/* static */ //MyMutex Telemetry::gSampleMutex;
 /* static */ MyMutex Telemetry::gThreadMutex;
 /* static */ int Telemetry::gThreadRefCount;
 /* static */ int Telemetry::gProfileClock;
@@ -2217,7 +2217,7 @@ int hx::Telemetry::ComputeCallStackId(hx::CallStack *stack) {
     std::vector<int> callstack;
     int stackId;
 
-    gSampleMutex.Lock();
+    //gSampleMutex.Lock();
 
     push_callstack_ids_into(stack, &callstack);
     int size = callstack.size();
@@ -2254,7 +2254,7 @@ int hx::Telemetry::ComputeCallStackId(hx::CallStack *stack) {
         //printf(" - existing callstack id %d\n", stackId);
     }
 
-    gSampleMutex.Unlock();
+    //gSampleMutex.Unlock();
 
     return stackId;
 }
@@ -2276,19 +2276,19 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
     int size = stack->GetDepth()+1;
 
     // Collect function names and callstacks (as indexes into the names vector)
-    gSampleMutex.Lock();
+    //gSampleMutex.Lock();
     samples.push_back(size);
     push_callstack_ids_into(stack, &samples);
     samples.push_back(delta);
 
-    gSampleMutex.Unlock();
+    //gSampleMutex.Unlock();
 }
 
 void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type)
 {
     if (ignoreAllocs>0) return;
 
-    gSampleMutex.Lock();
+    //gSampleMutex.Lock();
 
     AllocEntry ae;
     ae.type = type;
@@ -2298,7 +2298,7 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     allocations.push_back(ae);
     //debug_allocation(ae);
 
-    gSampleMutex.Unlock();
+    //gSampleMutex.Unlock();
 }
 
 //void hx::Telemetry::debug_allocation(AllocEntry ae)
