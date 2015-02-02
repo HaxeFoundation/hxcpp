@@ -254,5 +254,62 @@ inline void __hxcpp_memory_set_ui16(int addr,int v) { *(unsigned short *)(__hxcp
 inline void __hxcpp_memory_set_ui32(int addr,int v) { *(unsigned int *)(__hxcpp_memory+addr) = v; }
 inline void __hxcpp_memory_set_f32(int addr,float v) { *(float *)(__hxcpp_memory+addr) = v; }
 
+// FPHelper conversion
+
+inline void __hxcpp_reverse_endian(int &ioData)
+{
+   ioData =   (((ioData>>24) & 0xff )    )|
+              (((ioData>>16) & 0xff )<<8 )|
+              (((ioData>>8 ) & 0xff )<<16 )|
+              (((ioData    ) & 0xff )<<24  );
+}
+
+inline float __hxcpp_reinterpret_le_int32_as_float32(int inInt)
+{
+   #ifdef HXCPP_BIG_ENDIAN
+   __hxcpp_reverse_endian(inInt);
+   #endif
+   return *(float*)(&inInt);
+}
+
+
+inline int __hxcpp_reinterpret_float32_as_le_int32(float inFloat)
+{
+   #ifdef HXCPP_BIG_ENDIAN
+   __hxcpp_reverse_endian(inFloat);
+   #endif
+   return *(int*)(&inFloat);
+}
+
+
+inline double __hxcpp_reinterpret_le_int32s_as_float64(int inLow, int inHigh)
+{
+   int vals[2] = {inLow, inHigh};
+   #ifdef HXCPP_BIG_ENDIAN
+   __hxcpp_reverse_endian(vals[0]);
+   __hxcpp_reverse_endian(vals[1]);
+   #endif
+   return *(double*)(vals);
+}
+
+
+inline int __hxcpp_reinterpret_float64_as_le_int32_low(double inValue)
+{
+   int *asInts = (int *)&inValue;
+   #ifdef HXCPP_BIG_ENDIAN
+   __hxcpp_reverse_endian(asInts[0]);
+   #endif
+   return asInts[0];
+}
+
+
+inline int __hxcpp_reinterpret_float64_as_le_int32_high(double inValue)
+{
+   int *asInts = (int *)&inValue;
+   #ifdef HXCPP_BIG_ENDIAN
+   __hxcpp_reverse_endian(asInts[1]);
+   #endif
+   return asInts[1];
+}
 
 #endif
