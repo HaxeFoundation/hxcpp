@@ -440,9 +440,19 @@ public:
         //gSampleMutex.Unlock();
     }
 
+    void DumpHXTCollections(Array<int>collected)
+    {
+        //gSampleMutex.Lock();
+        int n = collections.size();
+        for (int i = 0; i < n; i++) collected->push(collections.at(i));
+        collections.clear();
+        //gSampleMutex.Unlock();
+    }
+
     void IgnoreAllocs(int delta)
     {
         ignoreAllocs += delta;
+        //printf("Set ignore to %d\n", ignoreAllocs);
     }
 
     void GCStart()
@@ -458,11 +468,15 @@ public:
         //gSampleMutex.Unlock();
     }
 
-    static void HXTReclaim(void* obj)
+    void HXTReclaim(void* obj)
     {
-#ifdef HXT_DEBUG
-      printf("TODO: - track reclaims / .mem.deleteObject, goodbye %#018x\n", obj);
-#endif
+      unsigned long id = (unsigned long)obj;
+      std::map<unsigned long, bool>::iterator exist = alloc_map.find(id);
+      if (exist != alloc_map.end()) {
+        alloc_map.erase(exist);
+        collections.push_back(id);
+        //printf(".mem.deleteObject, goodbye %#018x, %ul\n", obj, id);
+      }
     }
 
 private:
@@ -531,6 +545,8 @@ private:
     int ignoreAllocs;
 
     std::vector<AllocEntry> allocations;
+    std::map<unsigned long, bool> alloc_map;
+    std::vector<unsigned long> collections;
 
     static MyMutex gThreadMutex;
     static int gThreadRefCount;
@@ -1064,6 +1080,12 @@ public:
     {
         CallStack *stack = CallStack::GetCallerCallStack();
         stack->mTelemetry->DumpHXTAllocs(types, details, updatedStackIdMap);
+    }
+
+    static void DumpCurrentHXTCollections(Array<int> &collected)
+    {
+        CallStack *stack = CallStack::GetCallerCallStack();
+        stack->mTelemetry->DumpHXTCollections(collected);
     }
 
     static void IgnoreAllocs(int delta)
@@ -2294,8 +2316,9 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     ae.type = type;
     ae.stackid = ComputeCallStackId(stack);
     ae.size = (int)inSize;
-    ae.id = (long)obj;
+    ae.id = (unsigned long)obj;
     allocations.push_back(ae);
+    alloc_map[ae.id] = true; // TODO: timestamp?
     //debug_allocation(ae);
 
     //gSampleMutex.Unlock();
@@ -2418,6 +2441,13 @@ void __hxcpp_stop_profiler()
   {
   #ifdef HXCPP_STACK_TRACE
       hx::CallStack::DumpCurrentHXTAllocs(types, details, updatedStackIdMap);
+  #endif
+  }
+
+  void __hxcpp_hxt_dump_collections(Array<int> &collected)
+  {
+  #ifdef HXCPP_STACK_TRACE
+      hx::CallStack::DumpCurrentHXTCollections(collected);
   #endif
   }
 
