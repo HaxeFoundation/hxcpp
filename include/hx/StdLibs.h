@@ -264,6 +264,7 @@ inline void __hxcpp_reverse_endian(int &ioData)
               (((ioData    ) & 0xff )<<24  );
 }
 
+
 inline float __hxcpp_reinterpret_le_int32_as_float32(int inInt)
 {
    #ifdef HXCPP_BIG_ENDIAN
@@ -276,7 +277,7 @@ inline float __hxcpp_reinterpret_le_int32_as_float32(int inInt)
 inline int __hxcpp_reinterpret_float32_as_le_int32(float inFloat)
 {
    #ifdef HXCPP_BIG_ENDIAN
-   __hxcpp_reverse_endian(inFloat);
+   __hxcpp_reverse_endian(*(int *)&inFloat);
    #endif
    return *(int*)(&inFloat);
 }
