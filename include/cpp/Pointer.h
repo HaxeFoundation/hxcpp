@@ -12,6 +12,10 @@ struct AutoCast
 };
 
 Dynamic CreateDynamicPointer(void *inValue);
+Dynamic CreateDynamicStruct(const void *inValue, int inSize);
+
+template<typename T> class Reference;
+
 
 template<typename T>
 class Pointer
@@ -74,6 +78,77 @@ template<typename T>
 inline bool operator == (const null &, Pointer<T> inPtr) { return inPtr.ptr==0; }
 template<typename T>
 inline bool operator != (const null &, Pointer<T> inPtr) { return inPtr.ptr!=0; }
+
+
+
+template<typename T>
+class Reference : public Pointer<T>
+{
+   using Pointer<T>::ptr;
+
+public:
+
+   inline Reference( const T &inRHS ) : Pointer<T>(&inRHS) {  }
+   inline Reference( T &inRHS ) : Pointer<T>(&inRHS) {  }
+
+   inline Reference( ) : Pointer<T>(0) { }
+   inline Reference( const Reference &inRHS ) : Pointer<T>(inRHS.ptr) {  }
+   inline Reference( const Dynamic &inRHS) { ptr = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
+   inline Reference( const null &inRHS ) : Pointer<T>(0) { }
+   inline Reference( const T *inValue ) : Pointer<T>( (T*) inValue) { }
+   //inline Reference( T *inValue ) : Pointer(inValue) { }
+   inline Reference( AutoCast inValue ) : Pointer<T>( (T*)inValue.value) { }
+   inline Reference operator=( const Reference &inRHS ) { return ptr = inRHS.ptr; }
+
+
+   inline T *operator->() { return ptr; }
+
+};
+
+
+template<typename T>
+class Struct
+{
+   T value;
+public:
+
+   inline Struct( ) {  }
+   inline Struct( const T &inRHS ) : value(&inRHS) {  }
+   inline Struct<T> &operator=( const T &inRHS ) { return value = inRHS; return *this; }
+
+
+   inline T *operator->() { return &value; }
+
+   inline Struct( const null &)
+   {
+      value = T();
+   }
+
+   inline Struct( const Dynamic &inRHS)
+   {
+      hx::Object *ptr = inRHS.mPtr;
+      if (!ptr)
+      {
+         value = T();
+         return;
+      }
+      T *data = ptr->__GetHandle();
+      int len = ptr->__length();
+      if (!data || len<sizeof(T))
+      {
+         hx::NullReference("DynamicData", true);
+         return;
+      }
+      value = *data;
+   }
+
+   inline Struct &operator=(const null &) { value = T(); return *this; }
+
+   inline operator T& () { return value; }
+
+   operator Dynamic() { return CreateDynamicStruct(&value,sizeof(T)); }
+};
+
 
 
 template<typename T>
@@ -172,6 +247,13 @@ public:
          return AutoCast(0);
       return AutoCast(inValue->__GetHandle());
    }
+};
+
+
+class Reference_obj
+{
+public:
+
 };
 
 

@@ -157,16 +157,74 @@ public:
 };
 
 
+class StructData : public hx::Object
+{
+public:
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
+      { return hx::Object::operator new(inSize,inAlloc); }
+
+   StructData(const void *inValue,int inLength)
+   {
+      mLength= inLength;
+      mValue = InternalNew(inLength,false);
+      memcpy(mValue, inValue, inLength);
+   }
+
+   Class __GetClass() const { return __PointerClass; }
+   bool __Is(hx::Object *inClass) const { return dynamic_cast< StructData *>(inClass); }
+
+   // k_cpp_struct
+   int __GetType() const { return vtAbstractBase + 3; }
+   void * __GetHandle() const { return mValue; }
+   String toString()
+   {
+      char buf[100];
+      sprintf(buf,"Struct(x%d)", mLength);
+      return String(buf);
+   }
+   String __ToString() const { return String(mValue); }
+
+   int __Compare(const hx::Object *inRHS) const
+   {
+      void *r = inRHS==0 ? 0 : inRHS->__GetHandle();
+      return mValue < r ? -1 : mValue==r ? 0 : 1;
+   }
+
+   int __length() const { return mLength; }
+
+   void __Mark(hx::MarkContext *__inCtx)
+   {
+      HX_MARK_ARRAY(mValue);
+   }
+
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_ARRAY(mValue);
+   }
+   #endif
+
+   int  mLength;
+   void *mValue;
+};
+
+
 
 
 
 }
 
-// --- Pointer -------------------------------------------------
 
 namespace cpp
 {
+// --- Pointer -------------------------------------------------
+
 Dynamic CreateDynamicPointer(void *inValue) { return new hx::PointerData(inValue); }
+
+// --- Struct -------------------------------------------------
+
+Dynamic CreateDynamicStruct(const void *inValue, int inLength) { return new hx::StructData(inValue,inLength); }
+
 }
 
 
