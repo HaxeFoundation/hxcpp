@@ -208,10 +208,12 @@ void __hxcpp_stop_profiler();
 void __hxcpp_hxt_start_telemetry();
 void __hxcpp_hxt_dump_samples(Array<int> &result);
 void __hxcpp_hxt_dump_names(Array<String> &result);
-void __hxcpp_hxt_dump_allocations(Array<String> &types, Array<int> &details, Array<int> &updatedStackIdMap);
+Dynamic __hxcpp_hxt_dump_allocations(Array<int> &updatedStackIdMap);
 void __hxcpp_hxt_dump_collections(Array<int> &collected);
 void __hxcpp_hxt_ignore_allocs(int delta);
 int __hxcpp_hxt_dump_gctime();
+
+int __hxcpp_gc_reserved_bytes();
 
 
 // --- Memory --------------------------------------------------------------------------
