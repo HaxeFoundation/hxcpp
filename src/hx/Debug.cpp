@@ -49,7 +49,6 @@ static void CriticalErrorHandler(String inErr, bool allowFixup);
 // These are emitted elsewhere by the haxe compiler
 extern const char *__hxcpp_all_files[];
 
-
 // This global boolean is set whenever there are any breakpoints (normal or
 // immediate), and can relatively quickly gate debugged threads from making
 // more expensive breakpoint check calls when there are no breakpoints set.
@@ -328,6 +327,8 @@ struct ProfileEntry
 
 #ifdef HXCPP_TELEMETRY
 
+#define ALLOCTYPE void*
+
 // Telemetry functionality
 class Telemetry
 {
@@ -419,10 +420,10 @@ public:
         namesDumped = n;
     }
 
-    Dynamic DumpHXTAllocs(Array<int> &updatedStackIdMap)
+    ALLOCTYPE DumpHXTAllocs(Array<int> &updatedStackIdMap)
     {
         // TODO: return pointer to allocations
-        Dynamic ptr = allocations;
+        ALLOCTYPE rtn = (ALLOCTYPE)allocations;
         allocations = new std::map<int, AllocsPerStackId>();
 
         // Dump additions to stackIdMap
@@ -430,7 +431,7 @@ public:
         for (int i = allocStacksDumped; i < n; i++) updatedStackIdMap->push(allocStacks.at(i));
         allocStacksDumped = n;
 
-        return ptr;
+        return rtn;
 
         //gSampleMutex.Lock();
         // for(std::map<int, AllocsPerStackId>::iterator iter = allocations.begin(); iter!=allocations.end(); ++iter) {
@@ -1093,7 +1094,7 @@ public:
         stack->mTelemetry->DumpHXTNames(result);
     }
 
-    static Dynamic DumpCurrentHXTAllocs(Array<int> &updatedStackIdMap)
+    static ALLOCTYPE DumpCurrentHXTAllocs(Array<int> &updatedStackIdMap)
     {
         CallStack *stack = CallStack::GetCallerCallStack();
         stack->mTelemetry->DumpHXTAllocs(updatedStackIdMap);
@@ -2470,7 +2471,9 @@ void __hxcpp_stop_profiler()
   Dynamic __hxcpp_hxt_dump_allocations(Array<int> &updatedStackIdMap)
   {
   #ifdef HXCPP_STACK_TRACE
-      return hx::CallStack::DumpCurrentHXTAllocs(updatedStackIdMap);
+    Dynamic ptr = cpp::CreateDynamicPointer(hx::CallStack::DumpCurrentHXTAllocs(updatedStackIdMap));
+    //printf("Dumping: %s\n", ptr->toString().__CStr());
+    return ptr;
   #endif
   }
 
