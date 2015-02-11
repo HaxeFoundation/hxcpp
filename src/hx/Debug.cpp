@@ -329,6 +329,33 @@ struct ProfileEntry
 
 #define ALLOCTYPE void*
 
+  struct AllocsPerStackId
+  {
+    const char *type;
+    int stackid;
+    int size;
+    std::vector<unsigned long> ids; // TODO: intptr_t, __hxcpp_obj_id ?
+  };
+
+  struct AllocStackIdMapEntry
+  {
+    int terminationStackId;
+    std::map<int, AllocStackIdMapEntry*> children;
+  };
+
+  struct TelemetryDump
+  {
+    std::vector<int> *samples;
+    std::map<int, AllocsPerStackId> *allocations;
+    std::vector<unsigned long> *collections;
+    double gctime;
+    int namesStart;
+    int namesEnd;
+    int stackIdStart;
+    int stackIdEnd;
+  };
+
+
 // Telemetry functionality
 class Telemetry
 {
@@ -342,12 +369,14 @@ public:
         ignoreAllocs = 1; // initial bias to ignore
         //pendingAlloc.ptr = 0;
         allocStacksDumped = 0;
-        allocStackIdMax = 0;
+        allocStackIdNext = 0;
         allocStackIdMapRoot.terminationStackId = 0;
         gcTimer = 0;
         gcTimerTemp = 0;
 
         allocations = new std::map<int, AllocsPerStackId>();
+        collections = new std::vector<unsigned long>();
+        samples = new std::vector<int>();
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
@@ -382,89 +411,30 @@ public:
     void StackUpdate(CallStack *stack, StackFrame *frame);
     void HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type=0);
 
-    int DumpHXTGCTime()
+    void Dump()
     {
-        //gSampleMutex.Lock();
-        int gctime = gcTimer*1000000;
-        gcTimer = 0;
-        //gSampleMutex.Unlock();
-        return gctime;
-    }
+      TelemetryDump dump;
 
-    void DumpHXTSamples(Array<int> &result)
-    {
-        // Lock as the profiler thread will push into samples
-        //gSampleMutex.Lock();
-        int n = samples.size();
-        for (int i = 0; i < n; i++)
-        {
-            int idx = samples.at(i);
-            result->push(idx);
-        }
-        samples.clear();
-        //gSampleMutex.Unlock();
-    }
+      dump.gctime = gcTimer;
+      gcTimer = 0;
 
-    void DumpHXTNames(Array<String> &result)
-    {
-        //gSampleMutex.Lock();
-        int n = names.size();
-        //if (n>namesDumped) DBGLOG("Profiler at %d\n", ref_id);
-        //gSampleMutex.Unlock();
-        for (int i = namesDumped; i < n; i++)
-        {
-            String name = String(names.at(i));
-            //DBGLOG(" - Dumping: %s\n", names.at(i));
-            result->push(name);
-        }
-        namesDumped = n;
-    }
+      dump.allocations = allocations;
+      dump.collections = collections;
+      dump.samples = samples;
 
-    ALLOCTYPE DumpHXTAllocs(Array<int> &updatedStackIdMap)
-    {
-        // TODO: return pointer to allocations
-        ALLOCTYPE rtn = (ALLOCTYPE)allocations;
-        allocations = new std::map<int, AllocsPerStackId>();
+      allocations = new std::map<int, AllocsPerStackId>();
+      collections = new std::vector<unsigned long>();
+      samples = new std::vector<int>();
 
-        // Dump additions to stackIdMap
-        int n = allocStacks.size();
-        for (int i = allocStacksDumped; i < n; i++) updatedStackIdMap->push(allocStacks.at(i));
-        allocStacksDumped = n;
+      dump.namesStart = namesDumped;
+      dump.namesEnd = names.size() - 1;
+      namesDumped = names.size();
 
-        return rtn;
+      dump.stackIdStart = allocStacksDumped;
+      dump.stackIdEnd = allocStacks.size() - 1;
+      allocStacksDumped = allocStacks.size();
 
-        //gSampleMutex.Lock();
-        // for(std::map<int, AllocsPerStackId>::iterator iter = allocations.begin(); iter!=allocations.end(); ++iter) {
-        //     int stackid = iter->first;
-        //     AllocsPerStackId allocs = iter->second;
-
-        // stdint n = allocations.size();
-        // for (int i = 0; i < n; i++)
-        // {
-        //     AllocsPerStackId ae = allocations.at(i);
-        //     //DBGLOG(" - Dumping: %s\n", ae.type.__CStr());
-        //     types->push(String(ae.type)); // TODO: Hmm, wasted copy?
-        //     details->push(ae.id);
-        //     details->push(ae.size);
-        //     details->push(ae.stackid);
-        // }
-        // allocations.clear();
-
-        // Dump additions to stackIdMap
-        // n = allocStacks.size();
-        // for (int i = allocStacksDumped; i < n; i++) updatedStackIdMap->push(allocStacks.at(i));
-        // allocStacksDumped = n;
-
-        //gSampleMutex.Unlock();
-    }
-
-    void DumpHXTCollections(Array<int>collected)
-    {
-        //gSampleMutex.Lock();
-        int n = collections.size();
-        for (int i = 0; i < n; i++) collected->push(collections.at(i));
-        collections.clear();
-        //gSampleMutex.Unlock();
+      dumped.push_back(dump);
     }
 
     void IgnoreAllocs(int delta)
@@ -492,26 +462,12 @@ public:
       std::map<unsigned long, bool>::iterator exist = alloc_map.find(id);
       if (exist != alloc_map.end()) {
         alloc_map.erase(exist);
-        collections.push_back(id);
+        collections->push_back(id);
         //printf(".mem.deleteObject, goodbye %#018x, %ul\n", obj, id);
       }
     }
 
 private:
-
-    struct AllocsPerStackId
-    {
-        const char *type;
-        int stackid;
-        int size;
-        std::vector<unsigned long> ids; // TODO: intptr_t, __hxcpp_obj_id ?
-    };
-
-    struct AllocStackIdMapEntry
-    {
-        int terminationStackId;
-        std::map<int, AllocStackIdMapEntry*> children;
-    };
 
     //void debug_allocation(AllocsPerStackId ae);
 
@@ -546,14 +502,16 @@ private:
 
     int mT0;
 
+    std::vector<TelemetryDump> dumped;
+
     std::map<const char *, int> nameMap;
     std::vector<const char *> names;
-    std::vector<int> samples;
+    std::vector<int> *samples;
     int namesDumped;
 
     std::vector<int> allocStacks;
     int allocStacksDumped;
-    int allocStackIdMax;
+    int allocStackIdNext;
     AllocStackIdMapEntry allocStackIdMapRoot;
 
     double gcTimer;
@@ -564,7 +522,7 @@ private:
 
     std::map<int, AllocsPerStackId> *allocations;
     std::map<unsigned long, bool> alloc_map;
-    std::vector<unsigned long> collections;
+    std::vector<unsigned long> *collections;
 
     static MyMutex gThreadMutex;
     static int gThreadRefCount;
@@ -1076,34 +1034,10 @@ public:
         stack->mTelemetry = new Telemetry();
     }
 
-    static int DumpCurrentHXTGCTime()
+    static void DumpCurrentThreadTelemetry()
     {
         CallStack *stack = CallStack::GetCallerCallStack();
-        return stack->mTelemetry->DumpHXTGCTime();
-    }
-
-    static void DumpCurrentHXTSamples(Array<int> &result)
-    {
-        CallStack *stack = CallStack::GetCallerCallStack();
-        stack->mTelemetry->DumpHXTSamples(result);
-    }
-
-    static void DumpCurrentHXTNames(Array<String> &result)
-    {
-        CallStack *stack = CallStack::GetCallerCallStack();
-        stack->mTelemetry->DumpHXTNames(result);
-    }
-
-    static ALLOCTYPE DumpCurrentHXTAllocs(Array<int> &updatedStackIdMap)
-    {
-        CallStack *stack = CallStack::GetCallerCallStack();
-        stack->mTelemetry->DumpHXTAllocs(updatedStackIdMap);
-    }
-
-    static void DumpCurrentHXTCollections(Array<int> &collected)
-    {
-        CallStack *stack = CallStack::GetCallerCallStack();
-        stack->mTelemetry->DumpHXTCollections(collected);
+        stack->mTelemetry->Dump();
     }
 
     static void IgnoreAllocs(int delta)
@@ -2284,11 +2218,11 @@ int hx::Telemetry::ComputeCallStackId(hx::CallStack *stack) {
 
     if (asime->terminationStackId == -1) {
         // This is a new stackId
-        stackId = asime->terminationStackId = allocStackIdMax;
+        stackId = asime->terminationStackId = allocStackIdNext;
         allocStacks.push_back(size);
         int i = size-1;
         while (i>=0) allocStacks.push_back(callstack.at(i--));
-        allocStackIdMax++;
+        allocStackIdNext++;
     } else {
         stackId = asime->terminationStackId;
         //printf(" - existing callstack id %d\n", stackId);
@@ -2317,9 +2251,9 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
 
     // Collect function names and callstacks (as indexes into the names vector)
     //gSampleMutex.Lock();
-    samples.push_back(size);
-    push_callstack_ids_into(stack, &samples);
-    samples.push_back(delta);
+    samples->push_back(size);
+    push_callstack_ids_into(stack, samples);
+    samples->push_back(delta);
 
     //gSampleMutex.Unlock();
 }
@@ -2454,33 +2388,10 @@ void __hxcpp_stop_profiler()
   #endif
   }
 
-  void __hxcpp_hxt_dump_samples(Array<int> &result)
+  void __hxcpp_hxt_dump_telemetry()
   {
   #ifdef HXCPP_STACK_TRACE
-    hx::CallStack::DumpCurrentHXTSamples(result);
-  #endif
-  }
-
-  void __hxcpp_hxt_dump_names(Array<String> &result)
-  {
-  #ifdef HXCPP_STACK_TRACE
-    hx::CallStack::DumpCurrentHXTNames(result);
-  #endif
-  }
-
-  Dynamic __hxcpp_hxt_dump_allocations(Array<int> &updatedStackIdMap)
-  {
-  #ifdef HXCPP_STACK_TRACE
-    Dynamic ptr = cpp::CreateDynamicPointer(hx::CallStack::DumpCurrentHXTAllocs(updatedStackIdMap));
-    //printf("Dumping: %s\n", ptr->toString().__CStr());
-    return ptr;
-  #endif
-  }
-
-  void __hxcpp_hxt_dump_collections(Array<int> &collected)
-  {
-  #ifdef HXCPP_STACK_TRACE
-      hx::CallStack::DumpCurrentHXTCollections(collected);
+    hx::CallStack::DumpCurrentThreadTelemetry();
   #endif
   }
 
@@ -2489,11 +2400,6 @@ void __hxcpp_stop_profiler()
   #ifdef HXCPP_STACK_TRACE
       hx::CallStack::IgnoreAllocs(delta);
   #endif
-  }
-
-  int __hxcpp_hxt_dump_gctime()
-  {
-    return hx::CallStack::DumpCurrentHXTGCTime();
   }
 #endif
 
