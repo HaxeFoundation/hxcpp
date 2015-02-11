@@ -205,8 +205,9 @@ void __hxcpp_stop_profiler();
 
 // --- Telemetry -----------------------------------------------------------------
 
-void __hxcpp_hxt_start_telemetry();
-void __hxcpp_hxt_dump_telemetry();
+int __hxcpp_hxt_start_telemetry(bool profiler, bool allocations);
+void __hxcpp_hxt_stash_telemetry();
+void __hxcpp_hxt_dump_telemetry(int thread_num, Dynamic socket);
 void __hxcpp_hxt_ignore_allocs(int delta);
 int __hxcpp_hxt_dump_gctime();
 
