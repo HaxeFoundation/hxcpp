@@ -746,6 +746,23 @@ static value sys_env() {
 	return result;
 }
 
+#ifdef HX_ANDROID
+   #define tcsetattr(fd,opt,s) ioctl(fd,opt,s)
+   #define tcgetattr(fd,s) ioctl(fd,TCGETS,s)
+
+   static __inline__ void inline_cfmakeraw(struct termios *s)
+   {
+       s->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
+       s->c_oflag &= ~OPOST;
+       s->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+       s->c_cflag &= ~(CSIZE|PARENB);
+       s->c_cflag |= CS8;
+   }
+
+   #define cfmakeraw inline_cfmakeraw
+
+#endif
+
 /**
 	sys_getch : bool -> int
 	<doc>Read a character from stdin with or without echo</doc>
