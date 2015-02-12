@@ -5,6 +5,7 @@
 #include <string>
 #include <hx/Debug.h>
 #include <hx/Thread.h>
+#include <hx/HXTelemetry.h>
 #include "QuickVec.h"
 
 #ifdef ANDROID
@@ -331,30 +332,10 @@ struct ProfileEntry
 
 #define ALLOCTYPE void*
 
-  struct AllocsPerStackId
-  {
-    const char *type;
-    int stackid;
-    int size;
-    std::vector<unsigned long> ids; // TODO: intptr_t, __hxcpp_obj_id ?
-  };
-
   struct AllocStackIdMapEntry
   {
     int terminationStackId;
     std::map<int, AllocStackIdMapEntry*> children;
-  };
-
-  struct TelemetryStash
-  {
-    std::vector<int> *samples;
-    std::map<int, AllocsPerStackId> *allocations;
-    std::vector<unsigned long> *collections;
-    double gctime;
-    int namesStart;
-    int namesEnd;
-    int stackIdStart;
-    int stackIdEnd;
   };
 
 
@@ -380,13 +361,9 @@ public:
         allocations_enabled = profiler_en && allocs_en;
         printf("Profiler %d, allocs %d\n", profiler_enabled?1:0, allocations_enabled?1:0);
 
-        if (profiler_enabled) {
-          samples = new std::vector<int>();
-          if (allocations_enabled) {
-            allocations = new std::map<int, AllocsPerStackId>();
-            collections = new std::vector<unsigned long>();
-          }
-        }
+        samples = profiler_enabled ? new std::vector<int>() : 0;
+        allocations = allocations_enabled ? new std::map<int, AllocsPerStackId>() : 0;
+        collections = allocations_enabled ? new std::vector<unsigned long>() : 0;
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
@@ -423,7 +400,7 @@ public:
 
     void Stash()
     {
-      TelemetryStash stash;
+      TelemetryFrame stash;
 
       stash.gctime = gcTimer;
       gcTimer = 0;
@@ -432,23 +409,28 @@ public:
       stash.collections = collections;
       stash.samples = samples;
 
-      if (profiler_enabled) {
-        samples = new std::vector<int>();
-        if (allocations_enabled) {
-          allocations = new std::map<int, AllocsPerStackId>();
-          collections = new std::vector<unsigned long>();
-        }
-      }
+      samples = profiler_enabled ? new std::vector<int>() : 0;
+      allocations = allocations_enabled ? new std::map<int, AllocsPerStackId>() : 0;
+      collections = allocations_enabled ? new std::vector<unsigned long>() : 0;
 
+      int i,size;
       if (profiler_enabled) {
-        stash.namesStart = namesStashed;
-        stash.namesEnd = names.size() - 1;
+        size = names.size();
+        for (i=namesStashed; i<size; i++) {
+          stash.names.push_back(names.at(i));
+        }
+        //stash.namesStart = namesStashed;
+        //stash.namesEnd = names.size() - 1;
         namesStashed = names.size();
       }
 
       if (allocations_enabled) {
-        stash.stackIdStart = allocStacksStashed;
-        stash.stackIdEnd = allocStacks.size() - 1;
+        size = allocStacks.size();
+        for (i=allocStacksStashed; i<size; i++) {
+          stash.stacks.push_back(allocStacks.at(i));
+        }
+        //stash.stackIdStart = allocStacksStashed;
+        //stash.stackIdEnd = allocStacks.size() - 1;
         allocStacksStashed = allocStacks.size();
       }
 
@@ -457,19 +439,20 @@ public:
       gStashMutex.Unlock();
     }
 
-    void Dump(SOCKETTYPE socket)
+    TelemetryFrame* Dump()
     {
       gStashMutex.Lock();
       if (stashed.size()==0) {
         gStashMutex.Unlock();
-        return;
+        return 0;
       }
-      TelemetryStash stash = stashed.front();
+      TelemetryFrame* stash = &stashed.front();
       stashed.pop_front();
       gStashMutex.Unlock();
 
       //printf("Called Dump, num stashed: %d, num samples: %d, num colls: %d\n", stashed.size()+1, stash.samples->size(), stash.collections->size());
-      printf("Socket: %s\n", socket->toString().__CStr());
+      //printf("Socket: %s\n", socket->toString().__CStr());
+      return stash;
     }
 
     void IgnoreAllocs(int delta)
@@ -537,7 +520,7 @@ private:
 
     int mT0;
 
-    std::list<TelemetryStash> stashed;
+    std::list<TelemetryFrame> stashed;
 
     std::map<const char *, int> nameMap;
     std::vector<const char *> names;
@@ -1079,7 +1062,7 @@ public:
         stack->mTelemetry->Stash();
     }
 
-  static void DumpThreadTelemetry(int thread_num, SOCKETTYPE socket)
+    static TelemetryFrame* DumpThreadTelemetry(int thread_num)
     {
       CallStack *stack;
       gMutex.Lock();
@@ -1087,7 +1070,7 @@ public:
       gMutex.Unlock();
 
       //stack->mTelemetry->Dump(Array<int> &samples, Array<String> &names, Array<int> &updatedStackIdMap, Array<int> &collected);
-      stack->mTelemetry->Dump(socket);
+      return stack->mTelemetry->Dump();
     }
 
     static void IgnoreAllocs(int delta)
@@ -2451,10 +2434,10 @@ void __hxcpp_stop_profiler()
   }
 
   // Operates on the socket writer thread
-  void __hxcpp_hxt_dump_telemetry(int thread_num, SOCKETTYPE socket)
+  TelemetryFrame* __hxcpp_hxt_dump_telemetry(int thread_num)
   {
   #ifdef HXCPP_STACK_TRACE
-    hx::CallStack::DumpThreadTelemetry(thread_num, socket);
+    return hx::CallStack::DumpThreadTelemetry(thread_num);
   #endif
   }
 
