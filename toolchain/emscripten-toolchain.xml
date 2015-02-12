@@ -2,8 +2,6 @@
 
 <path name="${EMSCRIPTEN_SDK}" if="EMSCRIPTEN_SDK" />
 
-<setenv name="EMCC_LLVM_TARGET" value="i386-pc-linux-gnu" />
-
 <!-- EMCC TOOLS -------------------------------------->
 
 <include name="toolchain/gcc-toolchain.xml"/>
