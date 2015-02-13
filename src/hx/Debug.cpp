@@ -330,6 +330,36 @@ struct ProfileEntry
 
 #ifdef HXCPP_TELEMETRY
 
+  struct AllocsPerStackId
+  {
+    const char *type;
+    int stackid;
+    int size;
+    std::vector<unsigned int> ids;
+  };
+
+  struct TelemetryFrame
+  {
+    // Array<int> samples;
+    std::vector<int> *samples;
+    std::map<int, AllocsPerStackId> *allocations;
+    std::vector<int> *collections;
+
+    double gctime;
+    Array<String> names;
+    Array<int> stacks;
+  };
+
+  inline unsigned int __hxt_ptr_id(void* obj)
+  {
+#if defined(HXCPP_M64)
+    size_t h64 = (size_t)obj;
+    return (unsigned int)(h64>>2) ^ (unsigned int)(h64>>32);
+#else
+    return ((unsigned int)obj) >> 4;
+#endif
+  }
+
 #define ALLOCTYPE void*
 
   struct AllocStackIdMapEntry
@@ -363,7 +393,7 @@ public:
 
         samples = profiler_enabled ? new std::vector<int>() : 0;
         allocations = allocations_enabled ? new std::map<int, AllocsPerStackId>() : 0;
-        collections = allocations_enabled ? new std::vector<unsigned long>() : 0;
+        collections = allocations_enabled ? new std::vector<int>() : 0;
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
@@ -402,6 +432,8 @@ public:
     {
       TelemetryFrame stash;
 
+      IgnoreAllocs(1);
+
       stash.gctime = gcTimer;
       gcTimer = 0;
 
@@ -411,13 +443,14 @@ public:
 
       samples = profiler_enabled ? new std::vector<int>() : 0;
       allocations = allocations_enabled ? new std::map<int, AllocsPerStackId>() : 0;
-      collections = allocations_enabled ? new std::vector<unsigned long>() : 0;
+      collections = allocations_enabled ? new std::vector<int>() : 0;
 
       int i,size;
       if (profiler_enabled) {
+        stash.names = Array_obj<String>::__new();
         size = names.size();
         for (i=namesStashed; i<size; i++) {
-          stash.names.push_back(names.at(i));
+          stash.names->push(String(names.at(i)));
         }
         //stash.namesStart = namesStashed;
         //stash.namesEnd = names.size() - 1;
@@ -425,9 +458,10 @@ public:
       }
 
       if (allocations_enabled) {
+        stash.stacks = Array_obj<int>::__new();
         size = allocStacks.size();
         for (i=allocStacksStashed; i<size; i++) {
-          stash.stacks.push_back(allocStacks.at(i));
+          stash.stacks->push(allocStacks.at(i));
         }
         //stash.stackIdStart = allocStacksStashed;
         //stash.stackIdEnd = allocStacks.size() - 1;
@@ -437,22 +471,81 @@ public:
       gStashMutex.Lock();
       stashed.push_back(stash);
       gStashMutex.Unlock();
+
+      IgnoreAllocs(-1);
     }
 
-    TelemetryFrame* Dump()
+    Dynamic Dump()
     {
       gStashMutex.Lock();
       if (stashed.size()==0) {
         gStashMutex.Unlock();
         return 0;
       }
-      TelemetryFrame* stash = &stashed.front();
+      TelemetryFrame stash = stashed.front();
       stashed.pop_front();
       gStashMutex.Unlock();
 
-      //printf("Called Dump, num stashed: %d, num samples: %d, num colls: %d\n", stashed.size()+1, stash.samples->size(), stash.collections->size());
-      //printf("Socket: %s\n", socket->toString().__CStr());
-      return stash;
+      IgnoreAllocs(1);
+
+      // We collected stats into std::vector's, now (on the background
+      // telemetry socket writer thread) convert to Haxe types.
+      int i, size;
+      Dynamic frame = hx::Anon_obj::Create();
+
+      // samples
+      if (profiler_enabled) {
+        Array<int> samples = Array_obj<int>::__new();
+        size = stash.samples->size();
+        for (i=0; i<size; ++i) {
+          samples->push(stash.samples->at(i));
+        }
+        delete stash.samples;
+        frame->__FieldRef(HX_CSTRING("samples")) = samples;
+      }
+
+      // allocations
+      if (allocations_enabled) {
+        
+        Array<int> allocs = Array_obj<int>::__new();
+        std::map<int, AllocsPerStackId>::iterator iter = 
+            stash.allocations->begin();
+        while (iter != stash.allocations->end()) {
+          AllocsPerStackId ae = iter->second;
+          // allocs->push(ae.type);  // TODO: inject type into names list...
+          allocs->push(ae.stackid);
+          allocs->push(ae.size); // TODO: Size can vary, esp for Strings...
+          allocs->push(ae.ids.size());
+          size = ae.ids.size();
+          for (i=0; i<size; ++i) {
+            allocs->push(ae.ids.at(i));
+          }
+          iter++;
+        }
+        delete stash.allocations;
+        frame->__FieldRef(HX_CSTRING("allocs")) = allocs;
+      }
+
+      // collections
+      if (allocations_enabled) {
+        Array<int> collections = Array_obj<int>::__new();
+        size = stash.collections->size();
+        for (i=0; i<size; ++i) {
+          collections->push(stash.collections->at(i));
+        }
+        delete stash.collections;
+        frame->__FieldRef(HX_CSTRING("collections")) = collections;
+      }
+
+      frame->__FieldRef(HX_CSTRING("gctime")) = stash.gctime;
+
+      // Already Haxe-friendly arrays
+      frame->__FieldRef(HX_CSTRING("names")) = stash.names;
+      frame->__FieldRef(HX_CSTRING("stacks")) = stash.stacks;
+
+      IgnoreAllocs(-1);
+
+      return frame;
     }
 
     void IgnoreAllocs(int delta)
@@ -476,8 +569,10 @@ public:
 
     void HXTReclaim(void* obj)
     {
-      unsigned long id = (unsigned long)obj;
-      std::map<unsigned long, bool>::iterator exist = alloc_map.find(id);
+      if (!allocations_enabled) return;
+
+      int id = __hxt_ptr_id(obj);
+      std::map<unsigned int, bool>::iterator exist = alloc_map.find(id);
       if (exist != alloc_map.end()) {
         alloc_map.erase(exist);
         collections->push_back(id);
@@ -542,8 +637,8 @@ private:
     int ignoreAllocs;
 
     std::map<int, AllocsPerStackId> *allocations;
-    std::map<unsigned long, bool> alloc_map;
-    std::vector<unsigned long> *collections;
+    std::map<unsigned int, bool> alloc_map;
+    std::vector<int> *collections;
 
     static  MyMutex gStashMutex;
     static MyMutex gThreadMutex;
@@ -1062,14 +1157,13 @@ public:
         stack->mTelemetry->Stash();
     }
 
-    static TelemetryFrame* DumpThreadTelemetry(int thread_num)
+    static Dynamic DumpThreadTelemetry(int thread_num)
     {
       CallStack *stack;
       gMutex.Lock();
       stack = gMap[thread_num];
       gMutex.Unlock();
 
-      //stack->mTelemetry->Dump(Array<int> &samples, Array<String> &names, Array<int> &updatedStackIdMap, Array<int> &collected);
       return stack->mTelemetry->Dump();
     }
 
@@ -2297,7 +2391,7 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     if (ignoreAllocs>0 || !allocations_enabled) return;
 
     //gSampleMutex.Lock();
-    unsigned long obj_id = (unsigned long)obj;
+    unsigned int obj_id = __hxt_ptr_id(obj);
 
     int stackid = ComputeCallStackId(stack);
     AllocsPerStackId *ae;
@@ -2434,7 +2528,7 @@ void __hxcpp_stop_profiler()
   }
 
   // Operates on the socket writer thread
-  TelemetryFrame* __hxcpp_hxt_dump_telemetry(int thread_num)
+  Dynamic __hxcpp_hxt_dump_telemetry(int thread_num)
   {
   #ifdef HXCPP_STACK_TRACE
     return hx::CallStack::DumpThreadTelemetry(thread_num);
