@@ -5,7 +5,7 @@
 #include <string>
 #include <hx/Debug.h>
 #include <hx/Thread.h>
-#include <hx/HXTelemetry.h>
+#include <hx/Telemetry.h>
 #include "QuickVec.h"
 
 #ifdef ANDROID
@@ -332,7 +332,7 @@ struct ProfileEntry
 
   struct AllocsPerStackId
   {
-    const char *type;
+    int type;
     int stackid;
     int size;
     std::vector<unsigned int> ids;
@@ -389,7 +389,6 @@ public:
 
         profiler_enabled = profiler_en;
         allocations_enabled = profiler_en && allocs_en;
-        printf("Profiler %d, allocs %d\n", profiler_enabled?1:0, allocations_enabled?1:0);
 
         samples = profiler_enabled ? new std::vector<int>() : 0;
         allocations = allocations_enabled ? new std::map<int, AllocsPerStackId>() : 0;
@@ -512,7 +511,7 @@ public:
             stash.allocations->begin();
         while (iter != stash.allocations->end()) {
           AllocsPerStackId ae = iter->second;
-          // allocs->push(ae.type);  // TODO: inject type into names list...
+          allocs->push(ae.type);
           allocs->push(ae.stackid);
           allocs->push(ae.size); // TODO: Size can vary, esp for Strings...
           allocs->push(ae.ids.size());
@@ -585,6 +584,7 @@ private:
     //void debug_allocation(AllocsPerStackId ae);
 
     void push_callstack_ids_into(hx::CallStack *stack, std::vector<int> *list);
+    int GetNameIdx(const char *fullName);
     int ComputeCallStackId(hx::CallStack *stack);
 
     static THREAD_FUNC_TYPE ProfileMainLoop(void *)
@@ -2303,15 +2303,19 @@ void hx::Telemetry::push_callstack_ids_into(hx::CallStack *stack, std::vector<in
     int size = stack->GetDepth()+1;
     for (int i = 0; i < size; i++) {
         const char *fullName = stack->GetFullNameAtDepth(i);
-        int idx = nameMap[fullName];
-        if (idx==0) {
-            idx = names.size();
-            nameMap[fullName] = idx;
-            names.push_back(fullName);
-            //DBGLOG("New hxt name[%d]: %s\n", names.size()-1, fullName);
-        }
-        list->push_back(idx);
+        list->push_back(GetNameIdx(fullName));
     }
+}
+
+// TODO: careful of int / unsigned int
+int hx::Telemetry::GetNameIdx(const char *fullName) {
+  int idx = nameMap[fullName];
+  if (idx==0) {
+    idx = names.size();
+    nameMap[fullName] = idx;
+    names.push_back(fullName);
+  }
+  return idx;
 }
 
 int hx::Telemetry::ComputeCallStackId(hx::CallStack *stack) {
@@ -2401,13 +2405,21 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
       // key already exists
       ae = &lower_bound->second;
       ae->ids.push_back(obj_id);
+      if (GetNameIdx(type) != ae->type) {
+        printf("Telemetry assumption error, stackid %d, types: %s != %s\n", ae->stackid, names.at(ae->type), type);
+      }
+      if (ae->size != (int)inSize) {
+        if (strcmp(type,  "String")!=0) {
+          printf("Oh no, size isn't common for %s, %d != %d\n", type, ae->size, inSize);
+        }
+      }
     } else {
       // the key does not exist in the map, add it
       ae = new AllocsPerStackId();
       ae->stackid = stackid;
       ae->ids.push_back(obj_id);
       ae->size = (int)inSize;
-      ae->type = type;
+      ae->type = GetNameIdx(type);
       allocations->insert(lower_bound, std::map<int, AllocsPerStackId>::value_type(stackid, *ae));
     }
 

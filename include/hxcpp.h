@@ -239,7 +239,7 @@ public:
 #include "Class.h"
 #include "Enum.h"
 #include <hx/Interface.h>
-#include <hx/HXTelemetry.h>
+#include <hx/Telemetry.h>
 #include <hx/StdLibs.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>

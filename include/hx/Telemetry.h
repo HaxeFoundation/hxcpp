@@ -1,9 +1,7 @@
 #ifndef HX_TELEMETRY_H
 #define HX_TELEMETRY_H
 
-#include <list>
-#include <map>
-#include <vector>
+#include <hxcpp.h>
 
 // --- Telemetry -----------------------------------------------------------------
 
