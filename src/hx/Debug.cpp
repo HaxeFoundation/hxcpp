@@ -370,9 +370,12 @@ public:
         profiler_enabled = profiler_en;
         allocations_enabled = profiler_en && allocs_en;
 
-        samples = profiler_enabled ? new std::vector<int>() : 0;
-        allocations = allocations_enabled ? new std::vector<int>() : 0;
-        collections = allocations_enabled ? new std::vector<int>() : 0;
+        samples = 0;
+        allocations = 0;
+        collections = 0;
+
+        // Push a blank (destroyed on first Dump)
+        Stash();
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
@@ -409,46 +412,49 @@ public:
 
     void Stash()
     {
-      TelemetryFrame stash;
+      TelemetryFrame *stash = new TelemetryFrame();
 
       IgnoreAllocs(1);
 
-      stash.gctime = gcTimer;
+      stash->gctime = gcTimer;
       gcTimer = 0;
 
-      stash.allocations = allocations;
-      stash.collections = collections;
-      stash.samples = samples;
+      stash->allocations = allocations;
+      stash->collections = collections;
+      stash->samples = samples;
 
       samples = profiler_enabled ? new std::vector<int>() : 0;
       allocations = allocations_enabled ? new std::vector<int>() : 0;
       collections = allocations_enabled ? new std::vector<int>() : 0;
 
       int i,size;
+      stash->names = 0;
       if (profiler_enabled) {
-        stash.names = Array_obj<String>::__new();
+        stash->names = new std::vector<const char*>();
         size = names.size();
         for (i=namesStashed; i<size; i++) {
-          stash.names->push(String(names.at(i)));
+          stash->names->push_back(names.at(i));
         }
-        //stash.namesStart = namesStashed;
-        //stash.namesEnd = names.size() - 1;
+        //printf("Stash pushed %d names, %d\n", (size-namesStashed), stash->names->size());
+        //stash->namesStart = namesStashed;
+        //stash->namesEnd = names.size() - 1;
         namesStashed = names.size();
       }
 
+      stash->stacks = 0;
       if (allocations_enabled) {
-        stash.stacks = Array_obj<int>::__new();
+        stash->stacks = new std::vector<int>();
         size = allocStacks.size();
         for (i=allocStacksStashed; i<size; i++) {
-          stash.stacks->push(allocStacks.at(i));
+          stash->stacks->push_back(allocStacks.at(i));
         }
-        //stash.stackIdStart = allocStacksStashed;
-        //stash.stackIdEnd = allocStacks.size() - 1;
+        //stash->stackIdStart = allocStacksStashed;
+        //stash->stackIdEnd = allocStacks.size() - 1;
         allocStacksStashed = allocStacks.size();
       }
 
       gStashMutex.Lock();
-      stashed.push_back(stash);
+      stashed.push_back(*stash);
       gStashMutex.Unlock();
 
       IgnoreAllocs(-1);
@@ -457,17 +463,19 @@ public:
     TelemetryFrame* Dump()
     {
       gStashMutex.Lock();
-      if (stashed.size()==0) {
+      if (stashed.size()<1) {
         gStashMutex.Unlock();
         return 0;
       }
-      TelemetryFrame *stash = &stashed.front();
-      stashed.pop_front();
+      stashed.pop_front(); // Destroy item that was Dumped last call
+      TelemetryFrame *front = &stashed.front();
       gStashMutex.Unlock();
 
       IgnoreAllocs(1);
 
-      return stash;
+      //printf(" -- dumped stash, allocs=%d, alloc[max]=%d\n", front->allocations->size(), front->allocations->size()>0 ? front->allocations->at(front->allocations->size()-1) : 0);
+
+      return front;
     }
 
     void IgnoreAllocs(int delta)

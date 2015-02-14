@@ -6,13 +6,17 @@
 
 struct TelemetryFrame
 {
+  // Always valid
+  double gctime;
+
+  // Valid only if profiler is enabled
   std::vector<int> *samples;
+  std::vector<const char*> *names;
+
+  // Valid only if allocations (and profiler) are enabled
   std::vector<int> *allocations;
   std::vector<int> *collections;
-
-  double gctime;
-  Array<String> names;
-  Array<int> stacks;
+  std::vector<int> *stacks;
 };
 
 // --- Telemetry -----------------------------------------------------------------
