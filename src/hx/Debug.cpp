@@ -26,8 +26,6 @@
 #define __has_builtin(x) 0
 #endif
 
-#define SOCKETTYPE Dynamic
-
 // These should implement write and read memory barrier, but since there are
 // no obvious portable implementations, they are currently left unimplemented
 static void write_memory_barrier()
@@ -339,8 +337,6 @@ struct ProfileEntry
     return ((unsigned int)obj) >> 4;
 #endif
   }
-
-#define ALLOCTYPE void*
 
   struct AllocStackIdMapEntry
   {
