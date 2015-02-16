@@ -121,12 +121,18 @@
   <dir name="obj"/>
 </target>
 
-<target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT}${DBG}">
+<target id="haxe" tool="linker" toolid="${haxelink}" output="${LIBPREFIX}${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
   <depend name="Options.txt"/>
   <ext value="${LIBEXTRA}.a" if="iphoneos" unless="dll_import" />
   <ext value="${LIBEXTRA}.a" if="iphonesim" unless="dll_import" />
-  <ext value="${LIBEXTRA}.so" if="android"/>
+
+  <section if="android">
+     <ext value="${LIBEXTRA}.so" />
+     <ext value="${LIBEXTRA}.a"  if="static_link" />
+     <ext value="${LIBEXTRA}" if="exe_link" />
+  </section>
+
   <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>
   <files id="runtime" unless="dll_import" />

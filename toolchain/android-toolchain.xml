@@ -158,4 +158,35 @@
   <lib name="-ldl"/>
 </linker>
 
+
+
+<linker id="exe" exe="g++" >
+
+  <exe name="${EXEPREFIX}-g++" />
+
+  <ext value=""/>
+  <outflag value="-o"/>
+  <prefix value=""/>
+
+  <flag value="-frtti"/>
+  <flag value="-nostdlib"/>
+  <flag value="-Wl,--no-undefined" unless="dll_import" />
+  <flag value="-Wl,--unresolved-symbols=ignore-in-object-files" if="dll_import" />
+  <flag value="-Wl,-z,noexecstack"/>
+  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}"/>
+  <flag value="-L${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib"/>
+
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/libstdc++.a" if="NDKV6" unless="dll_import" />
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/libgnustl_static.a" if="NDKV7" unless="dll_import" />
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/libgnustl_static.a" if="NDKV8+" unless="dll_import" />
+
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtbegin_static.o"/>
+  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}/libgcc.a"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libc.so"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libm.so"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtend_android.o"/>
+  <lib name="-llog"/>
+  <lib name="-ldl"/>
+</linker>
+
 </xml>

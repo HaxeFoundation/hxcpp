@@ -13,7 +13,7 @@ class Target
    public var mFlags:Array<String>;
    public var mErrors:Array<String>;
    public var mDirs:Array<String>;
-   public var mExt:String;
+   private var mExt:String;
    
    public function new(inOutput:String, inTool:String,inToolID:String)
    {
@@ -26,12 +26,22 @@ class Target
       mDepends = [];
       mLibs = [];
       mFlags = [];
-      mExt = "";
+      mExt = null;
       mSubTargets = [];
       mFileGroups = [];
       mFlags = [];
       mErrors=[];
       mDirs=[];
+   }
+
+   public function getExt(inDefault:String)
+   {
+      return mExt==null ? inDefault : mExt;
+   }
+
+   public function setExt(inExt:String)
+   {
+      mExt = inExt;
    }
 
    public function addError(inError:String)
@@ -65,6 +75,6 @@ class Target
 
    public function getKey()
    {
-      return mOutput + mExt;
+      return mOutput + (mExt==null ? "" : mExt);
    }
 }

@@ -51,7 +51,7 @@ class Linker
 
    public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler)
    {
-      var ext = inTarget.mExt=="" ? mExt : inTarget.mExt;
+      var ext = inTarget.getExt(mExt);
       var file_name = mNamePrefix + inTarget.mOutput + ext;
       
       try

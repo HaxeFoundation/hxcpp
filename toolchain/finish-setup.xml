@@ -36,8 +36,6 @@
 <set name="LIBEXTRA" value="-v7" if="HXCPP_ARMV7" unless="LIBEXTRA" />
 <set name="LIBEXTRA" value="-x86" if="tizen"/>
 <set name="LIBEXTRA" value="" if="tizen" unless="simulator" />
-<set name="LIBPREFIX" value="lib" if="iphoneos"/>
-<set name="LIBPREFIX" value="lib" if="iphonesim"/>
 <set name="LIBPREFIX" value="lib" if="static_link"/>
 <set name="LIBEXT" value=".a" />
 <set name="LIBEXT" value=".lib" if="windows" unless="mingw" />
@@ -45,7 +43,8 @@
 
 <set name="haxelink" value="exe" unless="static_link"/>
 <set name="haxelink" value="static_link" if="static_link"/>
-<set name="haxelink" value="dll" if="android"/>
+<set name="haxelink" value="dll" if="android" unless="static_link" />
+<set name="haxelink" value="exe" if="exe_link"/>
 <set name="haxelink" value="dll" if="dll_import"/>
 
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphoneos"/>
