@@ -109,20 +109,25 @@ public:
 template<typename T>
 class Struct
 {
-   T value;
 public:
+   T value;
+   // This allows 'StaticCast' to be used from arrays
+   typedef Dynamic Ptr;
 
    inline Struct( ) {  }
-   inline Struct( const T &inRHS ) : value(&inRHS) {  }
-   inline Struct<T> &operator=( const T &inRHS ) { return value = inRHS; return *this; }
+   inline Struct( const T &inRHS ) : value(inRHS) {  }
+   inline Struct<T> &operator=( const T &inRHS ) { value = inRHS; return *this; }
 
 
-   inline T *operator->() { return &value; }
+   // Haxe uses -> notation
+   inline Struct *operator->() { return this; }
 
    inline Struct( const null &)
    {
       value = T();
    }
+
+   T &get() { return value; }
 
    inline Struct( const Dynamic &inRHS)
    {
@@ -132,7 +137,7 @@ public:
          value = T();
          return;
       }
-      T *data = ptr->__GetHandle();
+      T *data = (T*)ptr->__GetHandle();
       int len = ptr->__length();
       if (!data || len<sizeof(T))
       {

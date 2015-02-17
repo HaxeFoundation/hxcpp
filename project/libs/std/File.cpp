@@ -361,7 +361,7 @@ static value file_flush( value o ) {
 	<doc>Read the content of the file [f] and return it.</doc>
 **/
 static value file_contents( value name ) {
-	buffer s;
+	buffer s=0;
 	int len;
 	int p;
 	val_check(name,string);

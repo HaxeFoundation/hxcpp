@@ -347,6 +347,14 @@ String::String(const double &inRHS)
 }
 
 
+String::String(const cpp::Int64 &inRHS)
+{
+   HX_CHAR buf[100];
+   SPRINTF(buf,100,"%lld",inRHS);
+   buf[99]='\0';
+   __s = GCStringDup(buf,-1,&length);
+}
+
 String::String(const float &inRHS)
 {
    HX_CHAR buf[100];
