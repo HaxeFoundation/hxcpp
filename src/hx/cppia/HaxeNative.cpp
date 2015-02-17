@@ -153,8 +153,10 @@ void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFuncti
 }
 
 
-void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions, const hx::type_info *inType,
-                                 hx::ScriptableInterfaceFactory inFactory )
+void ScriptableRegisterInterface( String inName,
+                                  ScriptNamedFunction *inFunctions,
+                                  const hx::type_info *inType,
+                                  hx::ScriptableInterfaceFactory inFactory )
 {
    DBGLOG("ScriptableInterfaceFactory %s\n",inName.__s);
    if (!sScriptRegisteredInterface)

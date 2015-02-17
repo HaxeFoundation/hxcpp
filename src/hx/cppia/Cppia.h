@@ -280,6 +280,7 @@ struct CppiaStackVar
 
 int getStackVarNameId(int inVarId);
 
+hx::Object *ObjectToInterface(hx::Object *inObject, TypeData *toType);
 
 struct CppiaVar
 {

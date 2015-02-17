@@ -188,7 +188,12 @@ Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
       case fsBool: *(bool *)(base) = inValue; return inValue;
       case fsFloat: *(Float *)(base) = inValue; return inValue;
       case fsString: *(String *)(base) = inValue; return inValue;
-      case fsObject: *(hx::Object **)(base) = inValue.mPtr; return inValue;
+      case fsObject:
+             if (type->isInterface)
+                *(hx::Object **)(base) = ObjectToInterface(inValue.mPtr,type);
+             else
+                *(hx::Object **)(base) = inValue.mPtr;
+             return inValue;
       case fsUnknown:
          break;
    }
