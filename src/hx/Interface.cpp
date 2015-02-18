@@ -83,7 +83,7 @@ void Interface::__GetFields(Array< ::String> &a)
 	return __GetRealObject()->__GetFields(a);
 }
 
-Class Interface::__GetClass() const
+hx::Class Interface::__GetClass() const
 {
 	return const_cast<Interface *>(this)->__GetRealObject()->__GetClass();
 }

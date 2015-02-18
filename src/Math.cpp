@@ -124,7 +124,7 @@ Dynamic Math_obj::__SetField(const String &inString,const Dynamic &inValue, hx::
 
 Dynamic Math_obj::__CreateEmpty() { return new Math_obj; }
 
-Class Math_obj::__mClass;
+hx::Class Math_obj::__mClass;
 
 /*
 Class &Math_obj::__SGetClass() { return __mClass; }

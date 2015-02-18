@@ -44,8 +44,8 @@ public:
 
 
    virtual int __GetType() const { return mType; }
-   virtual hx::ObjectPtr<Class_obj> __GetClass() const { return 0; }
-   virtual bool __IsClass(Class inClass ) const { return false; }
+   virtual hx::ObjectPtr<hx::Class_obj> __GetClass() const { return 0; }
+   virtual bool __IsClass(hx::Class inClass ) const { return false; }
 
    virtual void *__GetHandle() const
    {

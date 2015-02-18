@@ -124,7 +124,7 @@ String Anon_obj::__ToString() const { return HX_CSTRING("Anon"); }
 
 Dynamic Anon_obj::__Create(DynamicArray inArgs) { return Anon(new Anon_obj); }
 
-Class Anon_obj::__mClass;
+hx::Class Anon_obj::__mClass;
 
 
 void Anon_obj::__boot()

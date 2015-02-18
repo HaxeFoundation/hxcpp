@@ -72,10 +72,10 @@ public:
    String __ToString() const;
    String toString();
 
-   static hx::ObjectPtr<Class_obj> __mClass; \
-   static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; }
+   static hx::ObjectPtr<hx::Class_obj> __mClass; \
+   static hx::ObjectPtr<hx::Class_obj> &__SGetClass() { return __mClass; }
    bool __Is(hx::Object *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; }
-   hx::ObjectPtr<Class_obj > __GetClass() const { return __mClass; }
+   hx::ObjectPtr<hx::Class_obj > __GetClass() const { return __mClass; }
 
    bool __Remove(String inKey);
 };

@@ -415,7 +415,7 @@ static String sArrayFields[] = {
 
 
 // TODO;
-Class ArrayBase::__mClass;
+hx::Class ArrayBase::__mClass;
 
 Dynamic ArrayCreateEmpty() { return new Array<Dynamic>(0,0); }
 Dynamic ArrayCreateArgs(DynamicArray inArgs)

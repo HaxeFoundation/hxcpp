@@ -4,7 +4,7 @@
 
 
 // Enum (ie enum object class def)  is the same as Class.
-typedef Class Enum;
+typedef hx::Class Enum;
 
 
 namespace hx
@@ -29,7 +29,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
 
    public:
       HX_DO_ENUM_RTTI_INTERNAL;
-      static hx::ObjectPtr<Class_obj> &__SGetClass();
+      static hx::ObjectPtr<hx::Class_obj> &__SGetClass();
 
 
       String toString();

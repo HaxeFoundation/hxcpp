@@ -5,6 +5,9 @@
 #error "Please include hxcpp.h, not hx/Object.h"
 #endif
 
+#ifdef __OBJC__
+#import <Foundation/Foundation.h>
+#endif
 
 // --- String --------------------------------------------------------
 //

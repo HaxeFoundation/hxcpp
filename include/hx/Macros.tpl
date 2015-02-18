@@ -8,9 +8,9 @@
 
 #define HX_DO_RTTI_ALL \
    HX_DO_RTTI_BASE \
-   static hx::ObjectPtr<Class_obj> __mClass; \
-   hx::ObjectPtr<Class_obj > __GetClass() const { return __mClass; } \
-   inline static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
+   static hx::NS::ObjectPtr<hx::NS::Class_obj> __mClass; \
+   hx::NS::ObjectPtr<hx::NS::Class_obj > __GetClass() const { return __mClass; } \
+   inline static hx::NS::ObjectPtr<hx::NS::Class_obj> &__SGetClass() { return __mClass; } \
    inline operator super *() { return this; } 
 
 #define HX_DO_RTTI \
@@ -20,8 +20,8 @@
    void __GetFields(Array< ::String> &outFields);
 
 #define HX_DO_INTERFACE_RTTI \
-   static hx::ObjectPtr<Class_obj> __mClass; \
-   static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; } \
+   static hx::NS::ObjectPtr<hx::NS::Class_obj> __mClass; \
+   static hx::NS::ObjectPtr<hx::NS::Class_obj> &__SGetClass() { return __mClass; } \
 	static void __register();
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
@@ -32,9 +32,9 @@
 
 #define HX_DO_ENUM_RTTI \
    HX_DO_ENUM_RTTI_INTERNAL \
-   static hx::ObjectPtr<Class_obj> __mClass; \
-   hx::ObjectPtr<Class_obj > __GetClass() const { return __mClass; } \
-   static hx::ObjectPtr<Class_obj> &__SGetClass() { return __mClass; }
+   static hx::NS::ObjectPtr<hx::NS::Class_obj> __mClass; \
+   hx::NS::ObjectPtr<hx::NS::Class_obj > __GetClass() const { return __mClass; } \
+   static hx::NS::ObjectPtr<hx::NS::Class_obj> &__SGetClass() { return __mClass; }
 
 
 #define HX_DECLARE_IMPLEMENT_DYNAMIC  Dynamic __mDynamicFields; \

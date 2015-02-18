@@ -12,25 +12,25 @@ namespace hx
 
 
 template<typename T> 
-inline Class &ClassOf() { typedef typename T::Obj Obj; return Obj::__SGetClass(); }
+inline hx::Class &ClassOf() { typedef typename T::Obj Obj; return Obj::__SGetClass(); }
 
 template<> 
-inline Class &ClassOf<int>() { return GetIntClass(); }
+inline hx::Class &ClassOf<int>() { return GetIntClass(); }
 
 template<> 
-inline Class &ClassOf<double>() { return GetFloatClass(); }
+inline hx::Class &ClassOf<double>() { return GetFloatClass(); }
 
 template<> 
-inline Class &ClassOf<float>() { return GetFloatClass(); }
+inline hx::Class &ClassOf<float>() { return GetFloatClass(); }
 
 template<> 
-inline Class &ClassOf<bool>() { return GetBoolClass(); }
+inline hx::Class &ClassOf<bool>() { return GetBoolClass(); }
 
 template<> 
-inline Class &ClassOf<null>() { return GetVoidClass(); }
+inline hx::Class &ClassOf<null>() { return GetVoidClass(); }
 
 template<> 
-inline Class &ClassOf<String>() { return GetStringClass(); }
+inline hx::Class &ClassOf<String>() { return GetStringClass(); }
 
 } // end namespace hx
 
@@ -82,13 +82,16 @@ struct StaticInfo
 }
 #endif
 
+namespace hx
+{
+
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Class_obj : public hx::Object
 {
 public:
    Class_obj() : mSuper(0) { };
    Class_obj(const String &inClassName, String inStatics[], String inMembers[],
              hx::ConstructEmptyFunc inConstructEmpty, hx::ConstructArgsFunc inConstructArgs,
-             Class *inSuperClass, hx::ConstructEnumFunc inConstructEnum,
+             hx::Class *inSuperClass, hx::ConstructEnumFunc inConstructEnum,
              hx::CanCastFunc inCanCast, hx::MarkFunc inMarkFunc
              #ifdef HXCPP_VISIT_ALLOCS
              , hx::VisitFunc inVisitFunc
@@ -111,8 +114,8 @@ public:
 
 
    // the "Class class"
-   Class              __GetClass() const;
-   static Class      & __SGetClass();
+   hx::Class              __GetClass() const;
+   static hx::Class      & __SGetClass();
 	static void       __boot();
 
    Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
@@ -140,15 +143,15 @@ public:
 
    Array<String>      GetInstanceFields();
    Array<String>      GetClassFields();
-   Class              GetSuper();
+   hx::Class              GetSuper();
    #ifdef HXCPP_SCRIPTABLE
    const hx::StorageInfo*  GetMemberStorage(String inName);
    const hx::StaticInfo*  GetStaticStorage(String inName);
    #endif
 
-   static Class       Resolve(String inName);
+   static hx::Class       Resolve(String inName);
 
-   Class              *mSuper;
+   hx::Class              *mSuper;
    String             mName;
    Dynamic            __meta__;
 
@@ -169,7 +172,7 @@ public:
    #endif
 };
 
-typedef hx::ObjectPtr<Class_obj> Class;
+} // end namespace hx
 
 void __hxcpp_boot_std_classes();
 
@@ -183,10 +186,10 @@ namespace hx
 {
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
+hx::Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
-                    Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0
+                    hx::Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0
                     #ifdef HXCPP_VISIT_ALLOCS
                     , VisitFunc inVisitFunc=0
                     #endif
@@ -197,7 +200,7 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     );
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-void RegisterClass(const String &inClassName, Class inClass);
+void RegisterClass(const String &inClassName, hx::Class inClass);
 
 template<typename T>
 inline bool TCanCast(hx::Object *inPtr)

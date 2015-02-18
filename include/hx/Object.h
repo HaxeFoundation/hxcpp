@@ -114,7 +114,7 @@ public:
    virtual Dynamic __Run(const Array<Dynamic> &inArgs);
    virtual Dynamic *__GetFieldMap();
    virtual void __GetFields(Array<String> &outFields);
-   virtual Class __GetClass() const;
+   virtual hx::Class __GetClass() const;
 
    virtual int __Compare(const hx::Object *inRHS) const;
    virtual DynamicArray __EnumParams();
@@ -145,7 +145,7 @@ public:
    inline bool __compare( hx::Object *inRHS )
       { return __GetRealObject()!=inRHS->__GetRealObject(); }
 
-   static Class &__SGetClass();
+   static hx::Class &__SGetClass();
    static void __boot();
 };
 
@@ -268,7 +268,7 @@ public:
    // This is defined in the "FieldRef" class...
    inline class hx::FieldRef FieldRef(const String &inString);
    inline class hx::IndexRef IndexRef(int inString);
-   inline static Class &__SGetClass() { return OBJ_::__SGetClass(); }
+   inline static hx::Class &__SGetClass() { return OBJ_::__SGetClass(); }
 
    OBJ_ *mPtr;
 };

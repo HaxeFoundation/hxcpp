@@ -79,9 +79,9 @@ public:
 
    Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp) { return null(); }
 
-   static Class __mClass;
-   static Class &__SGetClass() { return __mClass; }
-   Class __GetClass() const { return __mClass; }
+   static hx::Class __mClass;
+   static hx::Class &__SGetClass() { return __mClass; }
+   hx::Class __GetClass() const { return __mClass; }
    String toString();
    String __ToString() const;
 

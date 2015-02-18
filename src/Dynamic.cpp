@@ -7,26 +7,26 @@ using namespace hx;
 
 
 
-extern Class __StringClass;
+extern hx::Class __StringClass;
 namespace hx
 {
 
-extern Class hxEnumBase_obj__mClass;
-extern Class Object__mClass;
+extern hx::Class hxEnumBase_obj__mClass;
+extern hx::Class Object__mClass;
 
 
-Class __BoolClass;
-Class __IntClass;
-Class __FloatClass;
-Class __PointerClass;
-Class __VoidClass;
+hx::Class __BoolClass;
+hx::Class __IntClass;
+hx::Class __FloatClass;
+hx::Class __PointerClass;
+hx::Class __VoidClass;
 
 
-Class &GetBoolClass() { return __BoolClass; }
-Class &GetIntClass() { return __IntClass; }
-Class &GetFloatClass() { return __FloatClass; }
-Class &GetPointerClass() { return __PointerClass; }
-Class &GetVoidClass() { return __VoidClass; }
+hx::Class &GetBoolClass() { return __BoolClass; }
+hx::Class &GetIntClass() { return __IntClass; }
+hx::Class &GetFloatClass() { return __FloatClass; }
+hx::Class &GetPointerClass() { return __PointerClass; }
+hx::Class &GetVoidClass() { return __VoidClass; }
 
 
 
@@ -44,7 +44,7 @@ public:
       { return hx::Object::operator new(inSize,inAlloc); }
    IntData(int inValue=0) : mValue(inValue) {};
 
-   Class __GetClass() const { return __IntClass; }
+   hx::Class __GetClass() const { return __IntClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< IntData *>(inClass); }
 
    virtual int __GetType() const { return vtInt; }
@@ -72,7 +72,7 @@ public:
       { return hx::Object::operator new(inSize,inAlloc); }
    BoolData(bool inValue=false) : mValue(inValue) {};
 
-   Class __GetClass() const { return __BoolClass; }
+   hx::Class __GetClass() const { return __BoolClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< BoolData *>(inClass); }
 
    virtual int __GetType() const { return vtBool; }
@@ -101,7 +101,7 @@ public:
       { return hx::Object::operator new(inSize,inAlloc); }
    DoubleData(double inValue=0) : mValue(inValue) {};
 
-   Class __GetClass() const { return __FloatClass; }
+   hx::Class __GetClass() const { return __FloatClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< DoubleData *>(inClass); }
 
    virtual int __GetType() const { return vtFloat; }
@@ -132,7 +132,7 @@ public:
 
    PointerData(void *inValue) : mValue(inValue) {};
 
-   Class __GetClass() const { return __PointerClass; }
+   hx::Class __GetClass() const { return __PointerClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< PointerData *>(inClass); }
 
    // k_cpp_pointer
@@ -170,7 +170,7 @@ public:
       memcpy(mValue, inValue, inLength);
    }
 
-   Class __GetClass() const { return __PointerClass; }
+   hx::Class __GetClass() const { return __PointerClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< StructData *>(inClass); }
 
    // k_cpp_struct

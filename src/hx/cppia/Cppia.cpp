@@ -25,7 +25,7 @@ static int sTypeSize[] = { 0, 0, sizeof(hx::Object *), sizeof(String), sizeof(Fl
 
 void cppiaClassMark(CppiaClassInfo *inClass,hx::MarkContext *__inCtx);
 void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx);
-int getScriptId(Class inClass);
+int getScriptId(hx::Class inClass);
 
 // --- TypeData ----
 TypeData::TypeData(String inModule)
@@ -1026,7 +1026,7 @@ public:
 
    CppiaEnumBase(CppiaClassInfo *inInfo) : classInfo(inInfo) { }
 
-   ::hx::ObjectPtr<Class_obj > __GetClass() const;
+   ::hx::ObjectPtr<hx::Class_obj > __GetClass() const;
 	::String GetEnumName( ) const;
 	::String __ToString() const;
 };
@@ -1082,8 +1082,8 @@ void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Express
 hx::Object *runFunExprDynamic(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
 void runFunExprDynamicVoid(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
 
-Class_obj *createCppiaClass(CppiaClassInfo *);
-void  linkCppiaClass(Class_obj *inClass, CppiaModule &cppia, String inName);
+hx::Class_obj *createCppiaClass(CppiaClassInfo *);
+void  linkCppiaClass(hx::Class_obj *inClass, CppiaModule &cppia, String inName);
 
 
 typedef std::vector<CppiaFunction *> Functions;
@@ -1106,7 +1106,7 @@ struct CppiaClassInfo
    void      **vtable;
    std::string name;
    std::map<std::string, void **> interfaceVTables;
-   Class     mClass;
+   hx::Class     mClass;
 
    HaxeNativeClass *haxeBase;
 
@@ -1621,7 +1621,7 @@ struct CppiaClassInfo
       return result;
    }
 
-   Class *getSuperClass()
+   hx::Class *getSuperClass()
    {
       DBGLOG("getSuperClass %s %d\n", name.c_str(), superId);
       if (!superId)
@@ -2214,7 +2214,7 @@ void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
 }
 
 // --- Enum Base ---
-::hx::ObjectPtr<Class_obj > CppiaEnumBase::__GetClass() const
+::hx::ObjectPtr<hx::Class_obj > CppiaEnumBase::__GetClass() const
 {
    return classInfo->mClass;
 }
@@ -2235,7 +2235,7 @@ void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
 
 
 
-class CppiaClass : public Class_obj
+class CppiaClass : public hx::Class_obj
 {
 public:
    CppiaClassInfo *info;
@@ -2318,7 +2318,7 @@ public:
 
    bool VCanCast(hx::Object *inPtr)
    {
-      Class c = inPtr->__GetClass();
+      hx::Class c = inPtr->__GetClass();
       if (!c.mPtr)
          return false;
 
@@ -2362,16 +2362,16 @@ public:
    }
 };
 
-Class_obj *createCppiaClass(CppiaClassInfo *inInfo) { return new CppiaClass(inInfo); }
-void  linkCppiaClass(Class_obj *inClass, CppiaModule &cppia, String inName)
+hx::Class_obj *createCppiaClass(CppiaClassInfo *inInfo) { return new CppiaClass(inInfo); }
+void  linkCppiaClass(hx::Class_obj *inClass, CppiaModule &cppia, String inName)
 {
    ((CppiaClass *)inClass)->linkClass(cppia,inName);
 }
 
 
-int getScriptId(Class inClass)
+int getScriptId(hx::Class inClass)
 {
-   Class_obj *ptr = inClass.mPtr;
+   hx::Class_obj *ptr = inClass.mPtr;
    if (!ptr)
       return 0;
    CppiaClass *cls = dynamic_cast<CppiaClass *>(ptr);
@@ -4116,10 +4116,10 @@ struct FieldByName : public CppiaDynamicExpr
    CppiaExpr   *value;
    AssignOp    assign;
    CrementOp   crement;
-   Class       staticClass;
+   hx::Class       staticClass;
 
    
-   FieldByName(CppiaExpr *inSrc, CppiaExpr *inObject, Class inStaticClass,
+   FieldByName(CppiaExpr *inSrc, CppiaExpr *inObject, hx::Class inStaticClass,
                String inName, AssignOp inAssign, CrementOp inCrement, CppiaExpr *inValue)
       : CppiaDynamicExpr(inSrc)
    {
@@ -4213,7 +4213,7 @@ struct GetFieldByName : public CppiaDynamicExpr
    String      name;
    bool        isInterface;
    bool        isStatic;
-   Class       staticClass;
+   hx::Class       staticClass;
   
    GetFieldByName(CppiaStream &stream,bool isThisObject,bool inIsStatic=false)
    {
@@ -6494,7 +6494,7 @@ struct EnumField : public CppiaDynamicExpr
 
    // Mark class?
    String               enumName;
-   Class                enumClass;
+   hx::Class                enumClass;
 
    EnumField(CppiaStream &stream,bool inWithArgs)
    {
@@ -6521,7 +6521,7 @@ struct EnumField : public CppiaDynamicExpr
       }
       else
       {
-         enumClass = Class_obj::Resolve(type->name);
+         enumClass = hx::Class_obj::Resolve(type->name);
          if (!enumClass.mPtr)
          {
             printf("Could not find enum %s\n", type->name.__s );
@@ -6917,7 +6917,7 @@ void TypeData::link(CppiaModule &inModule)
 
    if (name.length>0)
    {
-      haxeClass = Class_obj::Resolve(name);
+      haxeClass = hx::Class_obj::Resolve(name);
       int scriptId = getScriptId(haxeClass);
       if (scriptId>0 && scriptId!=inModule.scriptId)
       {
@@ -6928,17 +6928,17 @@ void TypeData::link(CppiaModule &inModule)
       if (!haxeClass.mPtr && !cppiaClass && name==HX_CSTRING("int"))
       {
          name = HX_CSTRING("Int");
-         haxeClass = Class_obj::Resolve(name);
+         haxeClass = hx::Class_obj::Resolve(name);
       }
       if (!haxeClass.mPtr && !cppiaClass && name==HX_CSTRING("bool"))
       {
          name = HX_CSTRING("Bool");
-         haxeClass = Class_obj::Resolve(name);
+         haxeClass = hx::Class_obj::Resolve(name);
       }
       if (!haxeClass.mPtr && !cppiaClass && (name==HX_CSTRING("float") || name==HX_CSTRING("double")))
       {
          name = HX_CSTRING("Float");
-         haxeClass = Class_obj::Resolve(name);
+         haxeClass = hx::Class_obj::Resolve(name);
       }
 
       DBGLOG(" link type '%s' %s ", name.__s, haxeClass.mPtr ? "native" : "script" );
@@ -6947,7 +6947,7 @@ void TypeData::link(CppiaModule &inModule)
 
       if (!haxeClass.mPtr && name.substr(0,6)==HX_CSTRING("Array.") || name==HX_CSTRING("Array") )
       {
-         haxeClass = Class_obj::Resolve(HX_CSTRING("Array"));
+         haxeClass = hx::Class_obj::Resolve(HX_CSTRING("Array"));
          if (name.length==5)
             arrayType = arrAny;
          else
@@ -7024,7 +7024,7 @@ void TypeData::link(CppiaModule &inModule)
    else
    {
       haxeBase = HaxeNativeClass::hxObject();
-      haxeClass = Class_obj::Resolve(HX_CSTRING("Dynamic"));
+      haxeClass = hx::Class_obj::Resolve(HX_CSTRING("Dynamic"));
    }
 }
 
@@ -7295,7 +7295,7 @@ int ScriptableGetType(void *inClass)
 }
 
 
-Class ScriptableGetClass(void *inClass)
+hx::Class ScriptableGetClass(void *inClass)
 {
    CppiaClassInfo *info = (CppiaClassInfo *)inClass;
    return info->mClass;

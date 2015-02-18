@@ -3217,7 +3217,7 @@ void __hxcpp_spam_collects(int inEveryNCalls)
    #endif
 }
 
-int __hxcpp_gc_trace(Class inClass,bool inPrint)
+int __hxcpp_gc_trace(hx::Class inClass,bool inPrint)
 {
     #if  !defined(HXCPP_DEBUG)
        #ifdef ANDROID

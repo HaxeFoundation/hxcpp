@@ -25,7 +25,7 @@ public:
 	Dynamic __SetField(const ::String &,const Dynamic &, hx::PropertyAccess inCallProp);
 	void __SetThis(Dynamic);
 	void __GetFields(Array< ::String> &);
-	Class __GetClass() const;
+	hx::Class __GetClass() const;
 	int __Compare(const hx::Object *) const;
 
    /* No need for enum options - not in interfaces */

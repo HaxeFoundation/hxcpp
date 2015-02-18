@@ -351,7 +351,7 @@ bool __instanceof(const Dynamic &inValue, const Dynamic &inType)
       return true;
    if (inValue==null())
       return false;
-   Class c = inType;
+   hx::Class c = inType;
    if (c==null())
       return false;
    return c->CanCast(inValue.GetPtr());

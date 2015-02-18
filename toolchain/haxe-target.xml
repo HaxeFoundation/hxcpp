@@ -15,7 +15,7 @@
   <depend name="${HXCPP}/include/hxString.h"/>
   <depend name="${HXCPP}/include/hxMath.h"/>
   <depend name="${HXCPP}/include/null.h"/>
-  <depend name="${HXCPP}/include/Class.h"/>
+  <depend name="${HXCPP}/include/hx/Class.h"/>
   <depend name="${HXCPP}/include/Enum.h"/>
   <depend name="${HXCPP}/include/hx/Debug.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
@@ -103,7 +103,7 @@
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
 
   <file name = "src/Array.cpp"/>
-  <file name = "src/Class.cpp"/>
+  <file name = "src/hx/Class.cpp"/>
   <file name = "src/Dynamic.cpp"/>
   <file name = "src/Enum.cpp"/>
   <file name = "src/Math.cpp"/>

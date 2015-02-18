@@ -18,7 +18,7 @@ void  __hxcpp_reachable(hx::Object *inKeep);
 void  __hxcpp_enable(bool inEnable);
 void  __hxcpp_collect(bool inMajor=true);
 void   __hxcpp_gc_compact();
-int   __hxcpp_gc_trace(Class inClass, bool inPrint);
+int   __hxcpp_gc_trace(hx::Class inClass, bool inPrint);
 int   __hxcpp_gc_used_bytes();
 int   __hxcpp_gc_mem_info(int inWhat);
 void  __hxcpp_enter_gc_free_zone();

@@ -483,9 +483,9 @@ typedef std::map< std::string, int> MethodIndexMap;
 typedef std::map< std::string, Method *> MethodMap;
 typedef std::map< std::string, int> FieldIndexMap;
 
-class ScriptHandler : public Class_obj
+class ScriptHandler : public hx::Class_obj
 {
-   Class mSuper;
+   hx::Class mSuper;
    ScriptRegistered *mScriptBase;
    ScriptRegistered *mScript;
    std::vector<FieldInfo> mFields;
@@ -518,7 +518,7 @@ public:
       {
          superName = abc.getMultiName(inst.superName);
 
-         mSuper = Class_obj::Resolve(RemapFlash(superName));
+         mSuper = hx::Class_obj::Resolve(RemapFlash(superName));
 
          if (mIsInterface)
             mScriptBase = 0;
@@ -533,7 +533,7 @@ public:
 
       DBGLOG("Class %s, base %p\n", (mName + HX_CSTRING("::") + superName).__s, mScriptBase );
 
-      RegisterClass(RemapFlash(mName), (Class_obj *)this);
+      RegisterClass(RemapFlash(mName), (hx::Class_obj *)this);
 
       mScript = mScriptBase;
       (*sScriptRegistered)[mName.__s] = mScript;
@@ -726,7 +726,7 @@ public:
 
    void __Mark(hx::MarkContext *__inCtx)
    {
-      Class_obj::__Mark(__inCtx);
+      hx::Class_obj::__Mark(__inCtx);
       hx::MarkMember(mSuper,__inCtx);
    }
    void MarkStatics(hx::MarkContext *__inCtx)
@@ -735,7 +735,7 @@ public:
 
    void __Visit(hx::VisitContext *__inCtx)
    {
-      Class_obj::__Visit(__inCtx);
+      hx::Class_obj::__Visit(__inCtx);
       hx::VisitMember(mSuper,__inCtx);
    }
    void VisitStatics(hx::VisitContext *__inCtx)
@@ -1140,11 +1140,11 @@ public:
    }
    Dynamic __Field(const String &inName, hx::PropertyAccess inCallProp)
    {
-      return Class_obj::Resolve(RemapFlash(inName));
+      return hx::Class_obj::Resolve(RemapFlash(inName));
    }
    bool __HasField(const String &inName)
    {
-      Class clazz = Class_obj::Resolve(RemapFlash(inName));
+      hx::Class clazz = hx::Class_obj::Resolve(RemapFlash(inName));
       return clazz.mPtr;
    }
 
@@ -1482,7 +1482,7 @@ void LoadABC(const unsigned char *inBytes, int inLen)
          InstanceInfo &inst = abc.mInstanceInfo[i];
          String className = abc.getMultiName(inst.name);
 
-         Class cls = Class_obj::Resolve(RemapFlash(className));
+         hx::Class cls = hx::Class_obj::Resolve(RemapFlash(className));
          if (cls==null())
          {
             ABCClass cls = new ABCClass_obj(abc, inst, abc.mClassInfo[i]);

@@ -89,7 +89,7 @@ void Object::__SetThis(Dynamic inThis) { }
 
 bool Object::__Is(Dynamic inClass ) const { return __Is(inClass.GetPtr()); }
 
-Class Object__mClass;
+hx::Class Object__mClass;
 
 bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
@@ -127,9 +127,9 @@ void Object::__boot()
 }
 
 
-Class &Object::__SGetClass() { return Object__mClass; }
+hx::Class &Object::__SGetClass() { return Object__mClass; }
 
-Class Object::__GetClass() const { return Object__mClass; }
+hx::Class Object::__GetClass() const { return Object__mClass; }
 
 hx::FieldRef Object::__FieldRef(const String &inString) { return hx::FieldRef(this,inString); }
 

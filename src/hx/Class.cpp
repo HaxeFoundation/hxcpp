@@ -54,10 +54,6 @@ void RegisterClass(const String &inClassName, Class inClass)
 
 
 
-}
-
-using namespace hx;
-
 // -------- Class ---------------------------------------
 
 
@@ -303,8 +299,6 @@ const hx::StaticInfo* Class_obj::GetStaticStorage(String inName)
 #endif
 
 
-namespace hx
-{
 
 void MarkClassStatics(hx::MarkContext *__inCtx)
 {
@@ -355,6 +349,6 @@ void VisitClassStatics(hx::VisitContext *__inCtx)
 #endif
 
 
-}
+} // End namespace hx
 
 

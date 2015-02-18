@@ -220,7 +220,7 @@ void ScriptableRegisterClass( String inName, int inBaseSize, ScriptNamedFunction
 void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions,const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
 
 ::String ScriptableToString(void *);
-Class ScriptableGetClass(void *);
+hx::Class ScriptableGetClass(void *);
 int ScriptableGetType(void *);
 void ScriptableMark(void *, hx::Object *, HX_MARK_PARAMS);
 void ScriptableVisit(void *, hx::Object *, HX_VISIT_PARAMS);
@@ -263,7 +263,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
      { hx::CppiaCtx *ctx = hx::CppiaCtx::getCurrent(); hx::AutoStack a(ctx); ctx->pushObject(this); return ctx->runString(__scriptVTable[0]); } \
       else return __superString::toString(); } \
    ::String __ToString() const { return hx::ScriptableToString(__scriptVTable[-1]); } \
-   Class __GetClass() const { return hx::ScriptableGetClass(__scriptVTable[-1]); } \
+   hx::Class __GetClass() const { return hx::ScriptableGetClass(__scriptVTable[-1]); } \
    int __GetType() const { return hx::ScriptableGetType(__scriptVTable[-1]); } \
 
 

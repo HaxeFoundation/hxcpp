@@ -155,7 +155,7 @@ hx::Object *createEnumClosure(struct CppiaEnumConstructor &inContructor);
 struct TypeData
 {
    String              name;
-   Class               haxeClass;
+   hx::Class               haxeClass;
    CppiaClassInfo      *cppiaClass;
    ExprType            expressionType;
    HaxeNativeClass     *haxeBase;
