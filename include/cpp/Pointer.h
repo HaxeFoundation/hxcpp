@@ -120,7 +120,7 @@ public:
 
 
    // Haxe uses -> notation
-   inline Struct *operator->() { return this; }
+   inline T *operator->() { return &value; }
 
    inline Struct( const null &)
    {
