@@ -185,7 +185,7 @@ namespace hx {
    typedef hx::ObjectPtr<hx::Class_obj> Class;
 }
 
-#if (HXCPP_API_LEVEL < 320)
+#if (HXCPP_API_LEVEL < 320) && !defined(__OBJC__)
 typedef hx::Class Class;
 typedef hx::Class_obj Class_obj;
 #endif
