@@ -4,6 +4,9 @@ class Build extends hxcpp.Builder
    //  This flasg should not make a difference because hxcpp does not use stdlibc++
    override public function wantLegacyIosBuild() { return true; }
 
+   override public function wantWindows64() { return true; }
+
+
    // Override to ensure this version if hxcpp is used, even if haxelib says otherwise
    override public function runBuild(target:String, isStatic:Bool, arch:String, inFlags:Array<String>)
    {

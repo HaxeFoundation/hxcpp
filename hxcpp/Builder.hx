@@ -126,6 +126,8 @@ class Builder
 
                case "windows":
                   validArchs.set("m32", ["-D"+target, "-DHXCPP_M32", staticFlag] );
+                  if (wantWindows64())
+                     validArchs.set("m64", ["-D"+target, "-DHXCPP_M64", staticFlag] );
 
                case "mingw":
                   validArchs.set("m32", ["-Dwindows", "-DHXCPP_MINGW", "-DHXCPP_M32", staticFlag] );
@@ -191,6 +193,7 @@ class Builder
    public function allowNdll() { return true; }
    public function allowStatic() { return true; }
    public function wantLegacyIosBuild() { return false; }
+   public function wantWindows64() { return false; }
 
    public function runBuild(target:String, isStatic:Bool, arch:String, buildFlags:Array<String>)
    {
