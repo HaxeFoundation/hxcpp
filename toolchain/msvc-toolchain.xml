@@ -27,8 +27,8 @@
 <set name="CONSOLE_VER" value=",5.01" if="HXCPP_WINXP_COMPAT" />
 <set name="CONSOLE_VER" value="" unless="MSVC17+" />
 
-<set name="MSVC_OBJ_DIR" value="obj/mscv${MSVC_VER}${OBJEXT}${OBJCACHE}${XPOBJ}" unless="winrt" />
-<set name="MSVC_OBJ_DIR" value="obj/mscv${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}" if="winrt" />
+<set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}${OBJEXT}${OBJCACHE}${XPOBJ}" unless="winrt" />
+<set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}" if="winrt" />
 
 <set name="MACHINE" value="x86" />
 <set name="MACHINE" value="x64" if="HXCPP_M64" />
@@ -113,7 +113,7 @@
   <flag value="-MANIFEST:NO" />
   <flag value="-WINMD" />
   <flag value="-APPCONTAINER" />
-  <flag value="-WINMDFILE:obj/mscv${MSVC_VER}-rt${OBJEXT}/app.winmd" />
+  <flag value="-WINMDFILE:obj/msvc${MSVC_VER}-rt${OBJEXT}/app.winmd" />
   <flag value="-DYNAMICBASE" />
   <flag value="-NXCOMPAT" />
   <flag value="-libpath:lib"/>

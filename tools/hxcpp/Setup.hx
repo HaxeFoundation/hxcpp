@@ -436,8 +436,8 @@ class Setup
                         //Sys.println("Found VS variable " + env);
                      }
                   }
-                  Log.error("Could not find specified MSCV version: " + ival);
-                  //throw "Could not find specified MSCV version " + ival;
+                  Log.error("Could not find specified MSVC version: " + ival);
+                  //throw "Could not find specified MSVC version " + ival;
                }
                ioDefines.set("HXCPP_MSVC", where );
                Sys.putEnv("HXCPP_MSVC", where);
