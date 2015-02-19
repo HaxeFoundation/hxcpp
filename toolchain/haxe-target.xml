@@ -18,6 +18,7 @@
   <depend name="${HXCPP}/include/Class.h"/>
   <depend name="${HXCPP}/include/Enum.h"/>
   <depend name="${HXCPP}/include/hx/Debug.h"/>
+  <depend name="${HXCPP}/include/hx/Telemetry.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
   <depend name="${HXCPP}/include/hx/Operators.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>

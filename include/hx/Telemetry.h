@@ -6,8 +6,8 @@
 
 struct TelemetryFrame
 {
-  // Always valid
-  double gctime;
+  // microseconds, always valid
+  int gctime;
 
   // Valid only if profiler is enabled
   std::vector<int> *samples;

@@ -412,7 +412,7 @@ public:
 
       IgnoreAllocs(1);
 
-      stash->gctime = gcTimer;
+      stash->gctime = gcTimer*1000000; // usec
       gcTimer = 0;
 
       stash->allocations = allocations;
