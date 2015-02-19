@@ -467,8 +467,6 @@ public:
       TelemetryFrame *front = &stashed.front();
       gStashMutex.Unlock();
 
-      IgnoreAllocs(1);
-
       //printf(" -- dumped stash, allocs=%d, alloc[max]=%d\n", front->allocations->size(), front->allocations->size()>0 ? front->allocations->at(front->allocations->size()-1) : 0);
 
       return front;
