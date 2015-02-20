@@ -27,6 +27,8 @@ TelemetryFrame* __hxcpp_hxt_dump_telemetry(int thread_num);
 void __hxcpp_hxt_ignore_allocs(int delta);
 int __hxcpp_hxt_dump_gctime();
 
+// expose these from GCInternal (could belong elsewhere)
 int __hxcpp_gc_reserved_bytes();
+int __hxcpp_gc_used_bytes();
 
 #endif
