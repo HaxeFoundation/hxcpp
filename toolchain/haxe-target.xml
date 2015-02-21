@@ -45,6 +45,7 @@
 
 <files id="__main__">
   <depend files="hxcpp-depends"/>
+  <depend name="${HXCPP}/include/hx/HxcppMain.h"/>
   <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
 </files>
