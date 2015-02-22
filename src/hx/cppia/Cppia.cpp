@@ -775,7 +775,7 @@ struct ScriptCallable : public CppiaDynamicExpr
 
       if (badCount)
       {
-         printf("Dynamic Arg count mismatch %d!=%lu ?\n", argCount, inCount);
+         printf("Dynamic Arg count mismatch %d!=%d ?\n", argCount, inCount);
          printf(" %s at %s:%d %s\n", getName(), filename, line, functionName);
          CPPIA_CHECK(0);
          throw Dynamic(HX_CSTRING("Arg count error"));
@@ -1847,7 +1847,20 @@ struct CppiaClassInfo
 
       // Create interface vtables...
       for(int i=0;i<implements.size();i++)
-         interfaceVTables[ cppia.types[ implements[i] ]->name.__s ] = createInterfaceVTable( implements[i] );
+      {
+         int id = implements[i];
+         void **vtable = createInterfaceVTable(id);
+         while(id > 0)
+         {
+            TypeData *interface = cppia.types[id];
+            interfaceVTables[ interface->name.__s ] = vtable;
+ 
+            CppiaClassInfo  *cppiaInterface = interface->cppiaClass;
+            if (!cppiaInterface)
+                break;
+            id =  cppiaInterface->superId;
+         }
+      }
 
       // Extract special function ...
       for(int i=0;i<staticFunctions.size(); )
@@ -3324,6 +3337,8 @@ enum CastOp
    castNOP,
    castDataArray,
    castDynArray,
+   castInt,
+   castBool,
 };
 
 struct CastExpr : public CppiaDynamicExpr
@@ -3342,6 +3357,7 @@ struct CastExpr : public CppiaDynamicExpr
 
       value = createCppiaExpr(stream);
    }
+   ExprType getType() { return op==castInt ? etInt : etObject; }
 
    template<typename T>
    hx::Object *convert(hx::Object *obj)
@@ -3356,8 +3372,18 @@ struct CastExpr : public CppiaDynamicExpr
       return result.mPtr;
    }
 
+   int runInt(CppiaCtx *ctx)
+   {
+      return value->runInt(ctx);
+   }
+
    hx::Object *runObject(CppiaCtx *ctx)
    {
+      if (op==castInt)
+         return Dynamic(value->runInt(ctx)).mPtr;
+      else if (op==castBool)
+         return Dynamic((bool)value->runInt(ctx)).mPtr;
+
       hx::Object *obj = value->runObject(ctx);
       if (!obj)
          return 0;
@@ -3384,7 +3410,7 @@ struct CastExpr : public CppiaDynamicExpr
    {
       value = value->link(inModule);
 
-      if (op==castNOP)
+      if (op==castNOP || op==castInt || op==castBool )
       {
          return this;
          //CppiaExpr *replace = value;
@@ -4039,6 +4065,7 @@ struct ClassOfExpr : public CppiaExprWithValue
          value.mPtr = type->cppiaClass->mClass.mPtr;
       else
          value.mPtr = type->haxeClass.mPtr;
+
       return CppiaExprWithValue::link(inModule);
    }
 };
@@ -6452,6 +6479,7 @@ struct OpAdd : public BinOp
    {
       int lval = left->runInt(ctx);
       BCR_CHECK;
+      int rval = right->runInt(ctx);
       return lval + right->runInt(ctx);
    }
    Float runFloat(CppiaCtx *ctx)
@@ -6628,6 +6656,12 @@ struct OpCompareBase : public CppiaBoolExpr
 
       return this;
    }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      bool result = runInt(ctx);
+      return Dynamic(result).mPtr;
+   }
 };
 
 template<typename COMPARE>
@@ -6673,10 +6707,6 @@ struct OpCompare : public OpCompareBase
       }
 
       return 0;
-   }
-   hx::Object *runObject(CppiaCtx *ctx)
-   {
-      return Dynamic( (bool)runInt(ctx) ).mPtr;
    }
 };
 
@@ -6796,6 +6826,10 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
       result = new ToInterface(stream,true);
    else if (tok=="CAST")
       result = new CastExpr(stream,castNOP);
+   else if (tok=="CASTINT")
+      result = new CastExpr(stream,castInt);
+   else if (tok=="CASTBOOL")
+      result = new CastExpr(stream,castBool);
    else if (tok=="TODYNARRAY")
       result = new CastExpr(stream,castDynArray);
    else if (tok=="TODATAARRAY")
