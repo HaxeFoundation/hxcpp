@@ -1152,8 +1152,6 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
    if (field==HX_CSTRING("__set"))
       return TCreateArrayBuiltin<af__set,NoCrement>(src, inType, inThisExpr, ioExpressions);
 
-   throw "Unknown createArrayBuiltin";
-
    return 0;
 }
 

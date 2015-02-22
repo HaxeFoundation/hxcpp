@@ -135,8 +135,12 @@ struct CppiaExpr
    }
    virtual hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
+
+   virtual void        runFunction(CppiaCtx *ctx)   { NullReference("Function", false); }
+
    virtual CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) { return 0; }
    virtual CppiaExpr   *makeCrement(CrementOp inOp) { return 0; }
+
 
    virtual void preGen(CppiaCompiler &compiler) { }
    virtual void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType);

@@ -103,13 +103,13 @@ struct AutoJmpBuf
        DEBUG_RETURN_TYPE_CHECK \
        RET; \
    } \
-   ((CppiaExpr *)vtable)->runVoid(this);
+   ((CppiaExpr *)vtable)->runFunction(this);
 
 #else
 
 #define GET_RETURN_VAL(RET,CHECK) \
    CPPIA_STACK_FRAME(((CppiaExpr *)vtable)); \
-   ((CppiaExpr *)vtable)->runVoid(this); \
+   ((CppiaExpr *)vtable)->runFunction(this); \
    breakContReturn = 0; \
    DEBUG_RETURN_TYPE_CHECK \
    RET;

@@ -657,11 +657,6 @@ struct ScriptCallable : public CppiaDynamicExpr
    }
 
 
-
-
-
-
-
    void pushArgs(CppiaCtx *ctx, hx::Object *inThis, Expressions &inArgs)
    {
       BCR_VCHECK;
@@ -856,14 +851,15 @@ struct ScriptCallable : public CppiaDynamicExpr
    hx::Object *runObject(CppiaCtx *ctx)
    {
       return createClosure(ctx,this);
-
    }
 
    const char *getName() { return "ScriptCallable"; }
    String runString(CppiaCtx *ctx) { return HX_CSTRING("#function"); }
 
+   void runVoid(CppiaCtx *ctx) { }
+
    // Run the actual function
-   void runVoid(CppiaCtx *ctx)
+   void runFunction(CppiaCtx *ctx)
    {
       if (compiled)
       {
@@ -1078,16 +1074,16 @@ struct CppiaEnumConstructor
 };
 
 
-void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Expressions &inArgs );
-hx::Object *runFunExprDynamic(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
-void runFunExprDynamicVoid(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
+void runFunExpr(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Expressions &inArgs );
+hx::Object *runFunExprDynamic(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
+void runFunExprDynamicVoid(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
 
 hx::Class_obj *createCppiaClass(CppiaClassInfo *);
 void  linkCppiaClass(hx::Class_obj *inClass, CppiaModule &cppia, String inName);
 
 
 typedef std::vector<CppiaFunction *> Functions;
-typedef std::map<std::string, CppiaExpr *> FunctionMap;
+typedef std::map<std::string, ScriptCallable *> FunctionMap;
 
 struct CppiaClassInfo
 {
@@ -1208,7 +1204,7 @@ struct CppiaClassInfo
    }
 
 
-   CppiaExpr *findFunction(bool inStatic,int inId)
+   ScriptCallable *findFunction(bool inStatic,int inId)
    {
       Functions &funcs = inStatic ? staticFunctions : memberFunctions;
       for(int i=0;i<funcs.size();i++)
@@ -1219,7 +1215,7 @@ struct CppiaClassInfo
       return 0;
    }
 
-   CppiaExpr *findInterfaceFunction(const std::string &inName)
+   ScriptCallable *findInterfaceFunction(const std::string &inName)
    {
       Functions &funcs = memberFunctions;
       for(int i=0;i<funcs.size();i++)
@@ -1230,7 +1226,7 @@ struct CppiaClassInfo
       return 0;
    }
 
-   CppiaExpr *findFunction(bool inStatic, const String &inName)
+   ScriptCallable *findFunction(bool inStatic, const String &inName)
    {
       Functions &funcs = inStatic ? staticFunctions : memberFunctions;
       for(int i=0;i<funcs.size();i++)
@@ -1241,7 +1237,7 @@ struct CppiaClassInfo
       return 0;
    }
 
-   inline CppiaExpr *findFunction(FunctionMap &inMap,const String &inName)
+   inline ScriptCallable *findFunction(FunctionMap &inMap,const String &inName)
    {
       FunctionMap::iterator it = inMap.find(inName.__s);
       if (it!=inMap.end())
@@ -1250,16 +1246,16 @@ struct CppiaClassInfo
 
    }
 
-   inline CppiaExpr *findMemberGetter(const String &inName)
+   inline ScriptCallable *findMemberGetter(const String &inName)
       { return findFunction(memberGetters,inName); }
 
-   inline CppiaExpr *findMemberSetter(const String &inName)
+   inline ScriptCallable *findMemberSetter(const String &inName)
       { return findFunction(memberSetters,inName); }
 
-   inline CppiaExpr *findStaticGetter(const String &inName)
+   inline ScriptCallable *findStaticGetter(const String &inName)
       { return findFunction(staticGetters,inName); }
 
-   inline CppiaExpr *findStaticSetter(const String &inName)
+   inline ScriptCallable *findStaticSetter(const String &inName)
       { return findFunction(staticSetters,inName); }
 
 
@@ -1267,7 +1263,7 @@ struct CppiaClassInfo
    {
       if (inCallProp)
       {
-         CppiaExpr *getter = findMemberGetter(inName);
+         ScriptCallable *getter = findMemberGetter(inName);
          if (getter)
          {
             Array<Dynamic> empty;
@@ -1323,7 +1319,7 @@ struct CppiaClassInfo
       if (inCallProp)
       {
          //printf("Set field %s %s = %s\n", inThis->toString().__s, inName.__s, inValue->toString().__s);
-         CppiaExpr *setter = findMemberSetter(inName);
+         ScriptCallable *setter = findMemberSetter(inName);
          if (setter)
          {
             Array<Dynamic> args = Array_obj<Dynamic>::__new(1,1);
@@ -1966,7 +1962,7 @@ struct CppiaClassInfo
             var.link(cppia);
             if (var.readAccess == CppiaVar::accCall)
             {
-               CppiaExpr *getter = findFunction(false,HX_CSTRING("get_") + var.name);
+               ScriptCallable *getter = findFunction(false,HX_CSTRING("get_") + var.name);
                if (!getter)
                {
                   dump();
@@ -1977,7 +1973,7 @@ struct CppiaClassInfo
             }
             if (var.writeAccess == CppiaVar::accCall)
             {
-               CppiaExpr *setter = findFunction(false,HX_CSTRING("set_") + var.name);
+               ScriptCallable *setter = findFunction(false,HX_CSTRING("set_") + var.name);
                if (!setter)
                   throw Dynamic(HX_CSTRING("Could not find setter for ") + var.name);
                DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.__s);
@@ -1992,7 +1988,7 @@ struct CppiaClassInfo
          var.link(cppia);
          if (var.readAccess == CppiaVar::accCall)
          {
-            CppiaExpr *getter = findFunction(true,HX_CSTRING("get_") + var.name);
+            ScriptCallable *getter = findFunction(true,HX_CSTRING("get_") + var.name);
             if (!getter)
                throw Dynamic(HX_CSTRING("Could not find getter for ") + var.name);
             DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.__s);
@@ -2000,7 +1996,7 @@ struct CppiaClassInfo
          }
          if (var.writeAccess == CppiaVar::accCall)
          {
-            CppiaExpr *setter = findFunction(true,HX_CSTRING("set_") + var.name);
+            ScriptCallable *setter = findFunction(true,HX_CSTRING("set_") + var.name);
             if (!setter)
                throw Dynamic(HX_CSTRING("Could not find setter for ") + var.name);
             DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.__s);
@@ -2054,7 +2050,7 @@ struct CppiaClassInfo
    {
       if (inCallProp)
       {
-         CppiaExpr *getter = findStaticGetter(inName);
+         ScriptCallable *getter = findStaticGetter(inName);
          if (getter)
          {
             Array<Dynamic> empty;
@@ -2092,7 +2088,7 @@ struct CppiaClassInfo
    {
       if (inCallProp)
       {
-         CppiaExpr *setter = findStaticSetter(inName);
+         ScriptCallable *setter = findStaticSetter(inName);
          if (setter)
          {
             Array<Dynamic> args = Array_obj<Dynamic>::__new(1,1);
@@ -2457,16 +2453,16 @@ public:
       switch(function->returnType)
       {
          case etFloat:
-            return ctx->runFloat( function->body );
+            return ctx->runFloat( function );
          case etInt:
-            return ctx->runInt( function->body );
+            return ctx->runInt( function );
          case etString:
-            return ctx->runString( function->body );
+            return ctx->runString( function );
          case etObject:
-            return ctx->runObject( function->body );
+            return ctx->runObject( function );
          default: break;
       }
-      ctx->runVoid( function->body );
+      ctx->runVoid( function );
       return null();
    }
 
@@ -2653,29 +2649,29 @@ void CppiaModule::where(CppiaExpr *e)
 
 
 
-void runFunExpr(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Expressions &inArgs )
+void runFunExpr(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Expressions &inArgs )
 {
    unsigned char *pointer = ctx->pointer;
-   ((ScriptCallable *)inFunExpr)->pushArgs(ctx, inThis, inArgs);
+   inFunExpr->pushArgs(ctx, inThis, inArgs);
    BCR_VCHECK;
    AutoStack save(ctx,pointer);
    ctx->runVoid( inFunExpr );
 }
 
 
-hx::Object *runFunExprDynamic(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs )
+hx::Object *runFunExprDynamic(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs )
 {
    unsigned char *pointer = ctx->pointer;
-   ((ScriptCallable *)inFunExpr)->pushArgsDynamic(ctx, inThis, inArgs);
+   inFunExpr->pushArgsDynamic(ctx, inThis, inArgs);
    AutoStack save(ctx,pointer);
    return runContextConvertObject(ctx, inFunExpr->getType(), inFunExpr );
 }
 
 
-void runFunExprDynamicVoid(CppiaCtx *ctx, CppiaExpr *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs )
+void runFunExprDynamicVoid(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs )
 {
    unsigned char *pointer = ctx->pointer;
-   ((ScriptCallable *)inFunExpr)->pushArgsDynamic(ctx, inThis, inArgs);
+   inFunExpr->pushArgsDynamic(ctx, inThis, inArgs);
    AutoStack save(ctx,pointer);
    ctx->runVoid(inFunExpr);
 }
@@ -3101,7 +3097,7 @@ struct CallFunExpr : public CppiaExpr
       // compiled?
       printf("callScriptable %p(%p) -> %p\n", inCtx, CppiaCtx::getCurrent(), inScriptable );
       printf(" name = %s\n", inScriptable->getName());
-      inScriptable->runVoid(inCtx);
+      inScriptable->runFunction(inCtx);
       printf(" Done scipt callable\n");
    }
 
@@ -4273,6 +4269,7 @@ struct GetFieldByName : public CppiaDynamicExpr
       {
          vtableSlot  = type->cppiaClass->findFunctionSlot(nameId);
          isInterface = type->cppiaClass->isInterface;
+         name = inModule.strings[nameId];
       }
       else if (isStatic)
       {
@@ -4336,11 +4333,16 @@ struct GetFieldByName : public CppiaDynamicExpr
       CPPIA_CHECK(instance);
       if (vtableSlot>=0)
       {
-         if (isInterface)
-            instance = instance->__GetRealObject();
+         //if (isInterface)
+         //   instance = instance->__GetRealObject();
  
          ScriptCallable **vtable = (ScriptCallable **)instance->__GetScriptVTable();
          ScriptCallable *func = vtable[vtableSlot];
+         if (func==0)
+         {
+            printf("Could not find vtable entry %s intf=%d (%d)\n", name.__s, isInterface, vtableSlot);
+            return 0;
+         }
          return new (sizeof(hx::Object *)) CppiaClosure(instance, func);
       }
       return instance->__Field(name,HX_PROP_DYNAMIC).mPtr;
@@ -7305,7 +7307,7 @@ bool LoadCppia(String inValue)
       cppia.boot(ctx);
       if (cppia.main)
       {
-         cppia.main->runVoid(ctx);
+         ctx->runVoid(cppia.main);
          //printf("Result %s.\n", cppia.main->runString(&ctx).__s);
       }
       return true;
