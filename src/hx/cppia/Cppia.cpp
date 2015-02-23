@@ -1302,7 +1302,7 @@ struct CppiaClassInfo
          }
       }
 
-      hx::FieldMap *map = dynamicMapOffset ? *(hx::FieldMap **)( (char *)inThis + dynamicMapOffset ) :
+      hx::FieldMap *map = dynamicMapOffset ? (hx::FieldMap *)( (char *)inThis + dynamicMapOffset ) :
                            inThis->__GetFieldMap();
       if (map)
       {
@@ -1351,7 +1351,7 @@ struct CppiaClassInfo
          }
       }
 
-      hx::FieldMap *map = dynamicMapOffset ? *(hx::FieldMap **)( (char *)inThis + dynamicMapOffset ) :
+      hx::FieldMap *map = dynamicMapOffset ? (hx::FieldMap *)( (char *)inThis + dynamicMapOffset ) :
                            inThis->__GetFieldMap();
       if (map)
       {
@@ -1361,7 +1361,7 @@ struct CppiaClassInfo
       }
 
       // Fall though to haxe base
-      //printf("Set field not found (%s) %s\n", inThis->toString().__s,inName.__s);
+      //printf("Set field not found (%s) %s map=%p o=%d\n", inThis->toString().__s,inName.__s, map, dynamicMapOffset);
 
       return false;
    }
@@ -4769,6 +4769,7 @@ struct MemReference : public CppiaExpr
    hx::Object *runObject(CppiaCtx *ctx)
    {
       CHECKVAL;
+      Dynamic v( MEMGETVAL );
       return Dynamic( MEMGETVAL ).mPtr;
    }
 
@@ -4777,6 +4778,7 @@ struct MemReference : public CppiaExpr
 };
 
 
+/*
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc,ExprType inType, void *inPtr)
 {
    switch(inType)
@@ -4789,6 +4791,7 @@ CppiaExpr *createStaticAccess(CppiaExpr *inSrc,ExprType inType, void *inPtr)
          return 0;
    }
 }
+*/
 
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc,FieldStorage inType, void *inPtr)
 {
@@ -5908,6 +5911,7 @@ struct VarRef : public CppiaExpr
    int varId;
    CppiaStackVar *var;
    ExprType type;
+   FieldStorage store;
    int      stackPos;
 
    VarRef(CppiaStream &stream)
@@ -5916,6 +5920,7 @@ struct VarRef : public CppiaExpr
       var = 0;
       type = etVoid;
       stackPos = 0;
+      store = fsUnknown;
    }
 
    ExprType getType() { return type; }
@@ -5934,27 +5939,30 @@ struct VarRef : public CppiaExpr
          throw "Unknown variable";
       }
 
-      stackPos = var->stackPos;
       type = var->expressionType;
+      stackPos = var->stackPos;
+      store = var->storeType;
 
       CppiaExpr *replace = 0;
-      switch(type)
+      switch(store)
       {
-         case etInt:
-            replace = new MemReference<int,locStack>(this,var->stackPos);
+         case fsBool:
+             replace = new MemReference<bool,locStack>(this,var->stackPos);
+             break;
+         case fsByte:
+         case fsInt:
+               replace = new MemReference<int,locStack>(this,var->stackPos);
             break;
-         case etFloat:
+         case fsFloat:
             replace = new MemReference<Float,locStack>(this,var->stackPos);
             break;
-         case etString:
+         case fsString:
             replace = new MemReference<String,locStack>(this,var->stackPos);
             break;
-         case etObject:
+         case fsObject:
             replace = new MemReference<hx::Object *,locStack>(this,var->stackPos);
             break;
-         case etVoid:
-         case etNull:
-            break;
+         default: ;
       }
       if (replace)
       {

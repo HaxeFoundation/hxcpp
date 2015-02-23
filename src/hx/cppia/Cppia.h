@@ -269,6 +269,7 @@ struct CppiaStackVar
    int      stackPos;
    int      fromStackPos;
    int      capturePos;
+   FieldStorage storeType;
    ExprType expressionType;
 
    CppiaStackVar();
@@ -305,6 +306,7 @@ struct CppiaVar
 
    CppiaExpr        *init;
    Dynamic          objVal;
+   bool             boolVal;
    int              intVal;
    Float            floatVal;
    String           stringVal;

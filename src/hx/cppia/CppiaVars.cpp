@@ -8,6 +8,27 @@ namespace hx
 static int sTypeSize[] = { 0, 0, sizeof(hx::Object *), sizeof(String), sizeof(Float), sizeof(int) };
 
 
+FieldStorage fieldStorageFromType(TypeData *inType)
+{
+   if (!inType)
+      return fsObject;
+
+   switch(inType->expressionType)
+   {
+      case etInt:
+         if (inType->name==HX_CSTRING("Bool"))
+            return fsBool;
+         return fsInt;
+      case etFloat: return fsFloat;
+      case etString: return fsString;
+      case etObject: return fsObject;
+      default:
+           ;
+   }
+   return fsUnknown;
+}
+
+
 // --- CppiaVar ----
 
 CppiaVar::CppiaVar(bool inIsStatic) : isStatic(inIsStatic)
@@ -33,6 +54,7 @@ void CppiaVar::clear()
    offset = 0;
    type = 0;
    objVal.mPtr = 0;
+   boolVal = 0;
    intVal = 0;
    floatVal = 0;
    stringVal = 0;
@@ -68,17 +90,23 @@ void CppiaVar::linkVarTypes(CppiaModule &cppia)
 
    if (!isVirtual)
    {
-      switch(exprType)
+      storeType = typeId==0 ? fsObject : fieldStorageFromType(type);
+
+      switch(storeType)
       {
-         case etInt: valPointer = &intVal; storeType=fsInt; break;
-         case etFloat: valPointer = &floatVal; storeType=fsFloat; break;
-         case etString: valPointer = &stringVal;storeType=fsString;  break;
-         case etObject: valPointer = &objVal;storeType=fsObject;  break;
+         case fsBool: valPointer = &boolVal;  break;
+         case fsByte:
+         case fsInt: valPointer = &intVal;  break;
+         case fsFloat: valPointer = &floatVal; break;
+         case fsString: valPointer = &stringVal; break;
+         case fsObject: valPointer = &objVal; break;
          default:
-           ;
+            valPointer = 0;
+            throw "Unkown store type";
       }
    }
 }
+
 
 Dynamic CppiaVar::getStaticValue()
 {
@@ -119,10 +147,10 @@ Dynamic CppiaVar::setStaticValue(Dynamic inValue)
 CppiaExpr *CppiaVar::createAccess(CppiaExpr *inSrc)
 {
    if (valPointer)
-      return createStaticAccess(inSrc, exprType, valPointer);
+      return createStaticAccess(inSrc, storeType, valPointer);
    if (isVirtual)
       throw "Direct access to extern field";
-   throw "Unlinked static variable";
+   //throw "Unlinked static variable";
    return 0;
 }
 
@@ -237,13 +265,14 @@ void CppiaVar::runInit(CppiaCtx *ctx)
       if (dynamicFunction)
          objVal = createMemberClosure(0,(ScriptCallable*)dynamicFunction->funExpr);
       else if (init)
-         switch(exprType)
+         switch(storeType)
          {
-            case etInt: intVal = init->runInt(ctx); break;
-            case etFloat: floatVal = init->runFloat(ctx); break;
-            case etString: stringVal = init->runString(ctx); break;
-            case etObject: objVal = init->runObject(ctx); break;
-            default: ;
+            case fsBool: boolVal = init->runInt(ctx); break;
+            case fsByte:
+            case fsInt: intVal = init->runInt(ctx); break;
+            case fsFloat: floatVal = init->runFloat(ctx); break;
+            case fsString: stringVal = init->runString(ctx); break;
+            case fsObject: objVal = init->runObject(ctx); break;
          }
    }
 }
@@ -286,6 +315,7 @@ CppiaStackVar::CppiaStackVar()
    fromStackPos = 0;
    capturePos = 0;
    expressionType = etNull;
+   storeType = fsUnknown;
 }
 
 CppiaStackVar::CppiaStackVar(CppiaStackVar *inVar,int &ioSize, int &ioCaptureSize)
@@ -298,6 +328,7 @@ CppiaStackVar::CppiaStackVar(CppiaStackVar *inVar,int &ioSize, int &ioCaptureSiz
    expressionType = inVar->expressionType;
 
    fromStackPos = inVar->stackPos;
+   storeType = inVar->storeType;
    stackPos = ioSize;
    capturePos = ioCaptureSize;
    ioSize += sTypeSize[expressionType];
@@ -318,7 +349,10 @@ void CppiaStackVar::set(CppiaCtx *inCtx,Dynamic inValue)
    switch(expressionType)
    {
       case etInt:
-         *(int *)(inCtx->frame + stackPos) = inValue;
+         if (storeType==fsBool)
+            *(bool *)(inCtx->frame + stackPos) = inValue;
+         else
+            *(int *)(inCtx->frame + stackPos) = inValue;
          break;
       case etFloat:
          *(Float *)(inCtx->frame + stackPos) = inValue;
@@ -366,6 +400,7 @@ void CppiaStackVar::visitClosure(char *inBase, hx::VisitContext *__inCtx)
 void CppiaStackVar::link(CppiaModule &inModule)
 {
    expressionType = inModule.types[typeId]->expressionType;
+   storeType = typeId==0 ? fsObject : fieldStorageFromType(inModule.types[typeId]);
    inModule.layout->varMap[id] = this;
    stackPos = inModule.layout->size;
    inModule.layout->size += sTypeSize[expressionType];
