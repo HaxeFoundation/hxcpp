@@ -546,6 +546,7 @@ struct CrementPreInc
    enum { OP = hx::coPreInc };
    template<typename T>
    static T run(T&inVal) { return ++inVal; }
+   static hx::Object *run(hx::Object *&inVal) { return inVal = Dynamic(Dynamic(inVal) + 1).mPtr; }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
 };
@@ -555,6 +556,12 @@ struct CrementPostInc
    enum { OP = hx::coPostInc };
    template<typename T>
    static T run(T& inVal) { return inVal++; }
+   static hx::Object *run(hx::Object *&inVal)
+   {
+      hx::Object *result(inVal);
+      inVal = Dynamic(Dynamic(inVal) + 1).mPtr;
+      return result;
+   }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
 };
@@ -566,6 +573,7 @@ struct CrementPreDec
    static T run(T&inVal) { return --inVal; }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
+   static hx::Object *run(hx::Object *&inVal) { return inVal = Dynamic(Dynamic(inVal) - 1).mPtr; }
 };
 
 struct CrementPostDec
@@ -575,6 +583,13 @@ struct CrementPostDec
    static T run(T& inVal) { return inVal--; }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
+   static hx::Object *run(hx::Object *&inVal)
+   {
+      hx::Object *result(inVal);
+      inVal = Dynamic(Dynamic(inVal) + 1).mPtr;
+      return result;
+   }
+ 
 };
 
 

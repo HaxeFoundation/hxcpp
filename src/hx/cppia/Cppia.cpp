@@ -6645,7 +6645,7 @@ struct OpCompareBase : public CppiaBoolExpr
       ExprType t1 = left->getType();
       ExprType t2 = right->getType();
 
-      if (isNumeric(t1) || isNumeric(t2))
+      if (isNumeric(t1) && isNumeric(t2))
       {
          compareType = t1==etInt && t2==etInt ? compInt : compFloat;
       }
