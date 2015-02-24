@@ -249,10 +249,9 @@ CppiaVar::Access CppiaVar::getAccess(CppiaStream &stream)
    switch(tok[0])
    {
       case 'N': return accNormal;
-      case '!': return accNo;
+      case 'n': return accNo;
       case 'R': return accResolve;
       case 'C': return accCall;
-      case '?': return accRequire;
    }
    throw "bad access code";
    return accNormal;
@@ -273,6 +272,7 @@ void CppiaVar::runInit(CppiaCtx *ctx)
             case fsFloat: floatVal = init->runFloat(ctx); break;
             case fsString: stringVal = init->runString(ctx); break;
             case fsObject: objVal = init->runObject(ctx); break;
+            case fsUnknown: ; // ?
          }
    }
 }

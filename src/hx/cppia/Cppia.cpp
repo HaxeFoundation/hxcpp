@@ -332,7 +332,8 @@ struct CppiaConst
       if (tok[0]=='i')
       {
          type = cInt;
-         dval = ival = atoi(&tok[1]);
+
+         dval = ival = stream.getInt();
       }
       else if (tok=="true")
       {
@@ -347,12 +348,15 @@ struct CppiaConst
       else if (tok[0]=='f')
       {
          type = cFloat;
-         dval = atof(&tok[1]);
+         int strIndex = stream.getInt();
+         String val = stream.module->strings[strIndex];
+         printf("parse float %s\n", val.__s);
+         dval = atof(val.__s);
       }
       else if (tok[0]=='s')
       {
          type = cString;
-         ival = atoi(&tok[1]);
+         ival = stream.getInt();
       }
       else if (tok=="NULL")
          type = cNull;
@@ -6776,12 +6780,12 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
       result = new DataVal<bool>(true);
    else if (tok=="false")
       result = new DataVal<bool>(false);
-   else if (tok[0]=='s')
-      result = new StringVal(atoi(tok.c_str()+1));
-   else if (tok[0]=='f')
-      result = new DataVal<Float>(atof(tok.c_str()+1));
-   else if (tok[0]=='i')
-      result = new DataVal<int>(atoi(tok.c_str()+1));
+   else if (tok=="s")
+      result = new StringVal(stream.getInt());
+   else if (tok=="f")
+      result = new DataVal<Float>(atof( stream.module->strings[stream.getInt()].__s ));
+   else if (tok=="i")
+      result = new DataVal<int>(stream.getInt());
    else if (tok=="POSINFO")
       result = new PosInfo(stream);
    else if (tok=="VAR")

@@ -52,17 +52,23 @@ struct CppiaStream
    int getInt()
    {
       int result = 0;
+      int sign = 1;
       skipWhitespace();
       while(data<max && *data>32)
       {
-         int digit = *data - '0';
-         if (digit<0 || digit>9)
-            throw "expected digit";
-         result = result * 10 + digit;
+         if (*data=='-')
+            sign = -1;
+         else
+         {
+            int digit = *data - '0';
+            if (digit<0 || digit>9)
+               throw "expected digit";
+            result = result * 10 + digit;
+         }
          pos++;
          data++;
       }
-      return result;
+      return result*sign;
    }
    bool getBool()
    {
@@ -73,14 +79,7 @@ struct CppiaStream
    }
    bool getStatic()
    {
-      std::string tok = getToken();
-      if (tok=="s")
-         return true;
-      else if (tok=="m")
-         return false;
-
-      throw "invalid function spec";
-      return false;
+      return getBool();
    }
 
    String readString()
