@@ -28,6 +28,12 @@ class  ScriptRegistered;
 class  HaxeNativeClass;
 class  HaxeNativeInterface;
 
+enum CppiaOp
+{
+   #define CPPIA_OP(ident, name, val) ident = val,
+   #include "CppiaOps.inc"
+   #undef CPPIA_OP
+};
 
 
 enum ExprType

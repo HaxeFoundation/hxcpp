@@ -350,7 +350,6 @@ struct CppiaConst
          type = cFloat;
          int strIndex = stream.getInt();
          String val = stream.module->strings[strIndex];
-         printf("parse float %s\n", val.__s);
          dval = atof(val.__s);
       }
       else if (tok[0]=='s')
@@ -1480,17 +1479,22 @@ struct CppiaClassInfo
 
    bool load(CppiaStream &inStream)
    {
-      std::string tok = inStream.getToken();
+      CppiaOp op = inStream.getOp();
       isInterface = isEnum = false;
 
-      if (tok=="CLASS")
+      if (op==IaClass)
          isInterface = false;
-      else if (tok=="INTERFACE")
+      else if (op==IaInterface)
          isInterface = true;
-      else if (tok=="ENUM")
+      else if (op==IaEnum)
          isEnum = true;
       else
+      {
+         DBGLOG("Invalid class field op %d\n", op);
          throw "Bad class type";
+      }
+
+      std::string tok;
 
        typeId = inStream.getInt();
        mClass.mPtr = createCppiaClass(this);
@@ -6746,8 +6750,8 @@ DEFINE_COMPARE_OP(CompareNotEqual,!=);
 
 CppiaExpr *createCppiaExpr(CppiaStream &stream)
 {
-   int fileId = stream.getInt();
-   int line = stream.getInt();
+   int fileId = stream.getFileId();
+   int line = stream.getLineId();
    std::string tok = stream.getToken();
    //DBGLOG(" expr %s\n", tok.c_str() );
 
@@ -7208,11 +7212,13 @@ bool LoadCppia(String inValue)
    bool ok = true;
    try
    {
-      std::string tok = stream.getToken();
-      if (tok!="CPPIA")
+      std::string tok = stream.getAsciiToken();
+      if (tok!="CPPIA" && tok!="CPPIB")
          throw "Bad magic";
 
-      int stringCount = stream.getInt();
+      stream.setBinary(tok=="CPPIB");
+
+      int stringCount = stream.getAsciiInt();
       cppia.cStrings.resize(stringCount);
       for(int s=0;s<stringCount;s++)
       {
@@ -7220,13 +7226,21 @@ bool LoadCppia(String inValue)
          cppia.cStrings[s] = std::string(cppia.strings[s].__s,cppia.strings[s].length);
       }
 
-      int typeCount = stream.getInt();
+      int typeCount = stream.getAsciiInt();
       cppia.types.resize(typeCount);
       DBGLOG("Type count : %d\n", typeCount);
       for(int t=0;t<typeCount;t++)
          cppia.types[t] = new TypeData(stream.readString());
 
-      int classCount = stream.getInt();
+      int classCount = stream.getAsciiInt();
+      DBGLOG("Class count : %d\n", classCount);
+
+      if (stream.binary)
+      {
+         int newLine = stream.getByte();
+         if (newLine!='\n')
+            throw "Missing new-line after class count";
+      }
 
       cppia.classes.reserve(classCount);
       for(int c=0;c<classCount;c++)
@@ -7259,7 +7273,9 @@ bool LoadCppia(String inValue)
             scriptResources[r].mName = cppia.strings[stream.getInt()];
             scriptResources[r].mDataLength = stream.getInt();
          }
-         stream.skipChar();
+         if (!stream.binary)
+            stream.skipChar();
+
          for(int r=0;r<count;r++)
          {
             int len = scriptResources[r].mDataLength;
