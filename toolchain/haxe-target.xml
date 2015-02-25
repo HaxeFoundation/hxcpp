@@ -3,6 +3,10 @@
 <!-- make sure hxcpp.n is up to date -->
 <pleaseUpdateHxcppTool version="1" />
 
+
+<!-- Use value from Build.xml file unless one is specified from the haxe defines -->
+<set name="hxcpp_api_level" value="${HXCPP_API_LEVEL}" unless="hxcpp_api_level" if="HXCPP_API_LEVEL"  />
+
 <!-- You can override the exes an "exe" section on your own .hxcpp_config -->
 <!-- You can use replace="1" to change the compiler, or omit to add flags -->
 
