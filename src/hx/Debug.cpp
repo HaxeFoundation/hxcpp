@@ -479,7 +479,8 @@ public:
         
         for (int i = 0; i < n; i++)
         {
-            StackFrame *frame = stack->mStackFrames[i];
+            // Reverse call stack to match exception stack
+            StackFrame *frame = stack->mStackFrames[n-1-i];
             result->push(frame->toString());
         }
     }
@@ -921,7 +922,7 @@ public:
         int size = mExceptionStack.size();
 
         for (int i = size - 1; i >= 0; i--) {
-            EXCEPTION_PRINT("Called from %s\n", mExceptionStack[i].toString().__s);
+            EXCEPTION_PRINT("Called from %s\n", mExceptionStack[i].toDisplay().__s);
         }
    }
 
@@ -1806,6 +1807,36 @@ hx::StackFrame::~StackFrame()
     hx::CallStack::PopCallerStackFrame();
 }
 
+::String hx::StackFrame::toDisplay()
+{
+   // Not sure if the following is even possible but the old debugger did it so ...
+   char buf[1024];
+   if (!fileName || (fileName[0] == '?'))
+   {
+       snprintf(buf, sizeof(buf), "%s::%s", className, functionName);
+   }
+   else
+   {
+      #ifdef HXCPP_STACK_LINE
+      // Old-style combined file::class...
+      if (!className || !className[0])
+          snprintf(buf, sizeof(buf), "%s %s line %d", functionName, fileName, lineNumber);
+      else
+          snprintf(buf, sizeof(buf), "%s::%s %s line %d",
+                className, functionName,
+                fileName, lineNumber);
+      #else
+      // Old-style combined file::class...
+      if (!className || !className[0])
+        snprintf(buf, sizeof(buf), "%s %s", functionName, fileName);
+      else
+        snprintf(buf, sizeof(buf), "%s::%s %s",
+            className, functionName,
+            fileName);
+      #endif
+   }
+   return ::String(buf);
+}
 
 
 ::String hx::StackFrame::toString()

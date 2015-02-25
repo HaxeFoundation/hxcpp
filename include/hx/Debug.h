@@ -143,6 +143,7 @@ public:
     ~StackFrame();
 
     ::String toString();
+    ::String toDisplay();
 
     // These are constant during the lifetime of the stack frame
     const char *className;
