@@ -54,6 +54,7 @@ using namespace hx;
 
 hx::Class __StringClass;
 
+String  sEmptyString = HX_CSTRING("");
 String  sConstStrings[256];
 Dynamic sConstDynamicStrings[256];
 
@@ -253,7 +254,7 @@ static HX_CHAR *GCStringDup(const HX_CHAR *inStr,int inLen, int *outLen=0)
    {
       if (outLen)
          outLen = 0;
-      return 0;
+      return (HX_CHAR *)sEmptyString.__s;
    }
 
    if (inLen==-1)
