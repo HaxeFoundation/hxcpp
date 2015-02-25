@@ -49,7 +49,6 @@
 typedef void *(*ResolveProc)(const char *inName);
 static ResolveProc sResolveProc = 0;
 
-#if defined(ANDROID) || defined(HX_WINRT)
 extern "C" {
 EXPORT void hx_set_loader(ResolveProc inProc)
 {
@@ -59,8 +58,6 @@ EXPORT void hx_set_loader(ResolveProc inProc)
    sResolveProc = inProc;
 }
 }
-#endif
-
 
 
 #ifdef STATIC_LINK
