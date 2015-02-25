@@ -102,6 +102,13 @@ public:
 
    void safeSort(Dynamic sorter, bool isString);
 
+   inline void __unsafeStringReference(String inString)
+   {
+      mBase = (char *)inString.__s;
+      length = inString.length / GetElementSize();
+      mAlloc = length;
+   }
+
    // Dynamic interface
    Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
    virtual Dynamic __concat(const Dynamic &a0) = 0;

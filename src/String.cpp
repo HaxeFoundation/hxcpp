@@ -661,10 +661,13 @@ void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inStri
    #endif
 }
 
-void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len)
+void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len,bool inCopyPointer)
 {
    #ifdef HX_UTF8_STRINGS
-   outString = String( GCStringDup(inBytes->GetBase()+pos, len, 0), len);
+   if (inCopyPointer)
+      outString = String( (const HX_CHAR *)inBytes->GetBase(), inBytes->length);
+   else
+      outString = String( GCStringDup(inBytes->GetBase()+pos, len, 0), len);
    #else
    const unsigned char *ptr = (unsigned char *)inBytes->GetBase() + pos;
    const unsigned char *last = ptr + len;
