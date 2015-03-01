@@ -2,6 +2,7 @@
 #define HX_UNDEFINE_H
 
 
+#if (HXCPP_API_LEVEL < 321)
 #undef INT_MIN
 #undef INT_MAX
 #undef INT8_MIN
@@ -13,6 +14,7 @@
 #undef INT32_MIN
 #undef INT32_MAX
 #undef UINT32_MAX
+#endif
 
 
 #undef TRUE
