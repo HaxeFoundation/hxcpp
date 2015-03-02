@@ -154,14 +154,14 @@ class Compiler
          {
             if (BuildTool.threadExitCode == 0)
             {
-               var err = ProcessManager.runProcessThreaded(exe, args);
+               var err = ProcessManager.runProcessThreaded(exe, args, "Compiling " + inFile.mName);
                if (err!=0)
                   BuildTool.setThreadError(err);
             }
          }
          else
          {
-            var result = ProcessManager.runCommand("", exe, args);
+            var result = ProcessManager.runCommand("", exe, args, true, true, false, "Compiling " + inFile.mName);
             if (result!=0)
             {
                if (FileSystem.exists(obj_name))
