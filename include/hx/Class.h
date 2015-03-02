@@ -154,6 +154,7 @@ public:
    hx::Class              *mSuper;
    String             mName;
    Dynamic            __meta__;
+   String             __rtti__;
 
 	hx::ConstructArgsFunc  mConstructArgs;
 	hx::ConstructEmptyFunc mConstructEmpty;

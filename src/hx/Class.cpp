@@ -147,6 +147,7 @@ Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class
 void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(__meta__);
+   HX_MARK_MEMBER(__rtti__);
    if (mMarkFunc)
        mMarkFunc(__inCtx);
 }
@@ -154,6 +155,7 @@ void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 void Class_obj::VisitStatics(hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(__meta__);
+   HX_VISIT_MEMBER(__rtti__);
    if (mVisitFunc)
        mVisitFunc(__inCtx);
 }
@@ -209,28 +211,17 @@ Array<String> Class_obj::GetInstanceFields()
 
 Array<String> Class_obj::GetClassFields()
 {
-   if (!mStatics.mPtr)
-      return new Array_obj<String>(0,0);
-
-   // Class fields do not include user fields...
-   return mStatics->copy();
-   /*
-   Array<String> result = mSuper ? (*mSuper)->GetClassFields() : Array<String>(0,0);
-   if (mStatics.mPtr)
-   {
-      for(int s=0;s<mStatics->size();s++)
-      {
-         const String &mem = mStatics[s];
-         if (result->Find(mem)==-1)
-            result.Add(mem);
-      }
-   }
+   Array<String> result = mStatics.mPtr ? mStatics->copy() : new Array_obj<String>(0,0);
+   if (__rtti__.__s)
+      result->push( HX_CSTRING("__rtti") );
    return result;
-   */
 }
 
 bool Class_obj::__HasField(const String &inString)
 {
+   if (__rtti__.__s && inString==HX_CSTRING("__rtti"))
+      return true;
+
    if (mStatics.mPtr)
       for(int s=0;s<mStatics->size();s++)
          if (mStatics[s]==inString)
@@ -244,6 +235,10 @@ Dynamic Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp
 {
    if (inString==HX_CSTRING("__meta__"))
       return __meta__;
+   #if (HXCPP_API_LEVEL>320)
+   if (inString==HX_CSTRING("__rtti"))
+      return __rtti__;
+   #endif
    // Not the most efficient way of doing this!
    if (!mConstructEmpty)
       return null();
