@@ -85,19 +85,31 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
    mStaticStorageInfo = inStaticInfo;
    #endif
 
-   if (inStatics)
-   {
-      mStatics = Array_obj<String>::__new(0,0);
-      for(String *s = inStatics; s->length; s++)
-         mStatics->Add( *s );
-   }
-   if (inMembers)
-   {
-      mMembers = Array_obj<String>::__new(0,0);
-      for(String *m = inMembers; m->length; m++)
-         mMembers->Add( *m );
-   }
+   mStatics = dupFunctions(inStatics);
+   mMembers = dupFunctions(inMembers);
    mCanCast = inCanCast;
+}
+
+bool Class_obj::GetNoStaticField(const String &inString, Dynamic &outValue, hx::PropertyAccess inCallProp)
+{
+   return false;
+}
+bool Class_obj::SetNoStaticField(const String &inString, Dynamic &ioValue, hx::PropertyAccess inCallProp)
+{
+   return false;
+}
+
+
+
+::Array< ::String > Class_obj::dupFunctions(String inFuncs[])
+{
+   if (!inFuncs)
+      return null();
+
+   Array<String> result = Array_obj<String>::__new(0,0);
+   for(String *s = inFuncs; s->length; s++)
+         result->Add( *s );
+    return result;
 }
 
 void Class_obj::registerScriptable(bool inOverwrite)
@@ -239,6 +251,17 @@ Dynamic Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp
    if (inString==HX_CSTRING("__rtti"))
       return __rtti__;
    #endif
+
+   if (mGetStaticField)
+   {
+      Dynamic result;
+      if (mGetStaticField(inString,result,inCallProp))
+         return result;
+ 
+      // Throw ?
+      return null();
+   }
+
    // Not the most efficient way of doing this!
    if (!mConstructEmpty)
       return null();
@@ -248,6 +271,20 @@ Dynamic Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp
 
 Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue, hx::PropertyAccess inCallProp)
 {
+
+   if (mSetStaticField)
+   {
+      Dynamic result = inValue;
+      if (mSetStaticField(inString,result,inCallProp))
+         return result;
+ 
+      // Throw ?
+      return inValue;
+   }
+
+
+
+
    // Not the most efficient way of doing this!
    if (!mConstructEmpty)
       return null();

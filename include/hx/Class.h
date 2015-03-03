@@ -49,6 +49,8 @@ typedef bool (*CanCastFunc)(hx::Object *inPtr);
 #ifdef HXCPP_VISIT_ALLOCS
 typedef void (*VisitFunc)(hx::VisitContext *__inCtx);
 #endif
+typedef bool (*GetStaticFieldFunc)(const String &inString, Dynamic &outValue, hx::PropertyAccess inCallProp);
+typedef bool (*SetStaticFieldFunc)(const String &inString, Dynamic &ioValue, hx::PropertyAccess inCallProp);
 }
 
 inline bool operator!=(hx::ConstructEnumFunc inFunc,const null &inNull) { return inFunc!=0; }
@@ -112,6 +114,7 @@ public:
    void VisitStatics(hx::VisitContext *__inCtx);
    #endif
 
+   static ::Array< ::String > dupFunctions(String inStatics[]);
 
    // the "Class class"
    hx::Class              __GetClass() const;
@@ -134,6 +137,8 @@ public:
    virtual bool __IsEnum();
 
 	inline bool CanCast(hx::Object *inPtr) { return mCanCast ? mCanCast(inPtr) : VCanCast(inPtr); }
+   static bool GetNoStaticField(const String &inString, Dynamic &outValue, hx::PropertyAccess inCallProp);
+   static bool SetNoStaticField(const String &inString, Dynamic &ioValue, hx::PropertyAccess inCallProp);
 
    void registerScriptable(bool inOverwrite);
   
@@ -151,6 +156,7 @@ public:
 
    static hx::Class       Resolve(String inName);
 
+
    hx::Class              *mSuper;
    String             mName;
    Dynamic            __meta__;
@@ -159,6 +165,8 @@ public:
 	hx::ConstructArgsFunc  mConstructArgs;
 	hx::ConstructEmptyFunc mConstructEmpty;
 	hx::ConstructEnumFunc  mConstructEnum;
+   hx::GetStaticFieldFunc mGetStaticField;
+   hx::SetStaticFieldFunc mSetStaticField;
 
 	hx::MarkFunc           mMarkFunc;
    #ifdef HXCPP_VISIT_ALLOCS
