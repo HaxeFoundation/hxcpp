@@ -87,7 +87,7 @@ SOCKET val_sock(value inValue)
       if (val_is_kind(inValue,k_socket) )
          return ((SOCKET)(socket_int)val_data(inValue));
    }
-   val_throw(alloc_string("Invalid soket handle"));
+   val_throw(alloc_string("Invalid socket handle"));
    return 0;
 }
 
