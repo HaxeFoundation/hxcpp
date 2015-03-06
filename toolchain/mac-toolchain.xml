@@ -28,6 +28,7 @@
   <flag value="-Wno-null-dereference" if="HXCPP_CLANG"/>
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-format-extra-args" />
+  <flag value="-Wno-invalid-offsetof" />
   <flag value="-Wno-bool-conversion" if="HXCPP_CLANG"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <include name="toolchain/common-defines.xml" />
