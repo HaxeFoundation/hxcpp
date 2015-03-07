@@ -76,6 +76,7 @@
   CPPIA_OP( IaNoMain , "NOMAIN", 76)
   CPPIA_OP( IaResources , "RESOURCES", 77)
   CPPIA_OP( IaReso , "RESO", 78)
+  CPPIA_OP( IaNoCast , "NOCAST", 78)
   CPPIA_OP( IaBinOpAdd , "+", 101)
   CPPIA_OP( IaBinOpMult , "*", 102)
   CPPIA_OP( IaBinOpDiv , "/", 103)

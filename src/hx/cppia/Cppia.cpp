@@ -3339,6 +3339,7 @@ class CppiaInterface : public hx::Interface
 enum CastOp
 {
    castNOP,
+   castDynamic,
    castDataArray,
    castDynArray,
    castInt,
@@ -3391,7 +3392,7 @@ struct CastExpr : public CppiaDynamicExpr
       hx::Object *obj = value->runObject(ctx);
       if (!obj)
          return 0;
-      if (op==castNOP)
+      if (op==castDynamic)
          return obj->__GetRealObject();
 
       switch(arrayType)
@@ -3414,7 +3415,13 @@ struct CastExpr : public CppiaDynamicExpr
    {
       value = value->link(inModule);
 
-      if (op==castNOP || op==castInt || op==castBool )
+      if (op==castNOP)
+      {
+         delete this;
+         return value;
+      }
+
+      if (op==castDynamic || op==castInt || op==castBool )
       {
          return this;
          //CppiaExpr *replace = value;
@@ -6843,6 +6850,8 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    else if (tok=="TOINTERFACEARRAY")
       result = new ToInterface(stream,true);
    else if (tok=="CAST")
+      result = new CastExpr(stream,castDynamic);
+   else if (tok=="NOCAST")
       result = new CastExpr(stream,castNOP);
    else if (tok=="CASTINT")
       result = new CastExpr(stream,castInt);
@@ -7051,8 +7060,16 @@ void TypeData::link(CppiaModule &inModule)
          haxeBase = HaxeNativeClass::findClass(name.__s);
          if (!haxeBase)
          {
-            DBGLOG("assumed base (todo - register)\n");
-            haxeBase = HaxeNativeClass::hxObject();
+            if (isInterface)
+            {
+               DBGLOG("interface base\n");
+               haxeBase = 0;
+            }
+            else
+            {
+               DBGLOG("assumed base (todo - register)\n");
+               haxeBase = HaxeNativeClass::hxObject();
+            }
          }
          else
          {
