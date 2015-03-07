@@ -4687,15 +4687,19 @@ struct CallMember : public CppiaExpr
          return replace;
       }
 
-      if (type->name == HX_CSTRING("Dynamic") || true)
+      if (type->name != HX_CSTRING("Dynamic"))
       {
          printf("   CallMember %s (%p %p) '%s' fallback\n", type->name.__s, type->haxeClass.mPtr, type->cppiaClass, field.__s);
+      }
+
+      {
          replace = new Call( this, fieldId, thisExpr, args );
          replace->link(inModule);
          delete this;
          return replace;
       }
 
+      /*
       printf("Could not link %s::%s\n", type->name.c_str(), field.__s );
       printf("%p %p\n", type->cppiaClass, type->haxeBase);
       if (type->cppiaClass)
@@ -4706,6 +4710,7 @@ struct CallMember : public CppiaExpr
       throw "Bad linkage";
 
       return this;
+      */
    }
 };
 
