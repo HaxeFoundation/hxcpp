@@ -128,7 +128,7 @@
 
 <target id="haxe" tool="linker" toolid="${haxelink}" output="${LIBPREFIX}${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
-  <depend name="Options.txt"/>
+  <options name="Options.txt"/>
   <ext value="${LIBEXTRA}.a" if="iphoneos" unless="dll_import" />
   <ext value="${LIBEXTRA}.a" if="iphonesim" unless="dll_import" />
 

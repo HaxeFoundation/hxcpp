@@ -34,6 +34,7 @@ class BuildTool
    var mFileGroups:FileGroups;
    var mTargets:Targets;
    var mFileStack:Array<String>;
+   var mMakefile:String;
    var m64:Bool;
    var m32:Bool;
 
@@ -52,6 +53,7 @@ class BuildTool
    public static var targetKey:String;
    public static var instance:BuildTool;
    public static var helperThread = new Tls<Thread>();
+   public static var destination:String;
    static var mVarMatch = new EReg("\\${(.*?)}","");
 
    public static var exitOnThreadError = false;
@@ -72,6 +74,11 @@ class BuildTool
       mFileStack = [];
       mCopyFiles = [];
       mIncludePath = inIncludePath;
+      mMakefile = inMakefile;
+
+      if (!PathManager.isAbsolute(mMakefile) && sys.FileSystem.exists(mMakefile))
+          mMakefile = sys.FileSystem.fullPath(mMakefile);
+
       instance = this;
 
       m64 = mDefines.exists("HXCPP_M64");
@@ -191,9 +198,15 @@ class BuildTool
          for(target in mTargets.keys())
             cleanTarget(target,true);
 
+      if (destination!=null && inTargets.length!=1)
+      {
+         Log.warn("Exactly one target must be specified with 'destination'.  Specified:" + inTargets );
+         destination = null;
+      }
+
       for(target in inTargets)
-         buildTarget(target);
-      
+         buildTarget(target,destination);
+
       if (threadExitCode != 0)
          Sys.exit(threadExitCode);
    }
@@ -243,7 +256,7 @@ class BuildTool
          Sys.exit(inCode);
    }
 
-   public function buildTarget(inTarget:String)
+   public function buildTarget(inTarget:String, inDestination:String)
    {
       // Sys.println("Build : " + inTarget );
       if (!mTargets.exists(inTarget))
@@ -261,7 +274,7 @@ class BuildTool
       target.checkError();
 
       for(sub in target.mSubTargets)
-         buildTarget(sub);
+         buildTarget(sub,null);
  
       var threads = BuildTool.sCompileThreadCount;
 
@@ -381,18 +394,41 @@ class BuildTool
                   objs.push(result);
                //throw "Missing linker :\"" + target.mToolID + "\"";
             }
-            
+
             if (!mLinkers.exists(target.mToolID))
             {
                Log.error ("Could not find linker for \"" + target.mToolID + "\"");
                //throw "Missing linker :\"" + target.mToolID + "\"";
             }
 
-            var exe = mLinkers.get(target.mToolID).link(target,objs, mCompiler);
-            if (exe!="" && mStripper!=null)
+            var output = mLinkers.get(target.mToolID).link(target,objs, mCompiler);
+            if (output!="" && mStripper!=null)
                if (target.mToolID=="exe" || target.mToolID=="dll")
-                  mStripper.strip(exe);
+                  mStripper.strip(output);
 
+            if (output!="" && inDestination!=null)
+
+         if (inDestination!=null)
+         {
+            inDestination = substitute(inDestination);
+            if (inDestination!="")
+            {
+               if (!PathManager.isAbsolute(inDestination) && sys.FileSystem.exists(mMakefile))
+               {
+                  var baseFile = PathManager.standardize(mMakefile);
+                  var parts = baseFile.split("/");
+                  parts[ parts.length-1 ] = inDestination;
+                  inDestination = parts.join("/");
+               }
+
+               inDestination = PathManager.clean(inDestination);
+               var fileParts = inDestination.split("/");
+               fileParts.pop();
+               PathManager.mkdir(fileParts.join("/"));
+
+               CopyFile.copyFile(output, inDestination);
+            }
+         }
       }
 
       for(copyFile in mCopyFiles)
@@ -875,7 +911,14 @@ class BuildTool
             var val = arg.substr(2);
             var equals = val.indexOf("=");
             if (equals>0)
-               defines.set(val.substr(0,equals), val.substr(equals+1) );
+            {
+               var name = val.substr(0,equals);
+               var value = val.substr(equals+1);
+               if (name=="destination")
+                  destination = value;
+               else
+                  defines.set(name,value);
+            }
             else
                defines.set(val,"");
             if (val=="verbose")
@@ -966,7 +1009,8 @@ class BuildTool
 
          if (targets.length==0)
             targets.push("default");
-     
+
+
          new BuildTool(makefile,defines,targets,include_path);
       }
    }

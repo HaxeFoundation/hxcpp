@@ -19,7 +19,12 @@ class CopyFile
    {
       var fromFile = from + "/" + name;
       var toFile = inTo + name;
+      copyFile(fromFile, toFile, allowMissing);
+   }
 
+
+   public static function copyFile(fromFile:String, toFile:String, allowMissing = false)
+   {
       if (!FileSystem.exists(fromFile))
       {
          if (allowMissing)
@@ -41,7 +46,7 @@ class CopyFile
             Log.v('Could not copy to $toFile - ignore');
             return;
          }
-         Log.error("Error - could not cooy to " + toFile);
+         Log.error("Error - could not copy to " + toFile);
       }
    }
 }

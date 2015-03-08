@@ -34,6 +34,8 @@ class Target
       mDirs=[];
    }
 
+   public function toString() return mToolID;
+
    public function getExt(inDefault:String)
    {
       return mExt==null ? inDefault : mExt;
