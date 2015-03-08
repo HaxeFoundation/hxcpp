@@ -183,7 +183,7 @@ struct CppiaStream
       const char *data0 = data;
       for(int i=0;i<len;i++)
          skipChar();
-      return String(data0,data-data0).dup();
+      return String(data0,data-data0).dupConst();
    }
 
    void readBytes(unsigned char *outBytes, int inLen)

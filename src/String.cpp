@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <set>
 
 using namespace hx;
 
@@ -57,6 +58,8 @@ hx::Class __StringClass;
 String  sEmptyString = HX_CSTRING("");
 String  sConstStrings[256];
 Dynamic sConstDynamicStrings[256];
+typedef std::set<String> ConstStringSet;
+ConstStringSet sConstStringSet;
 
 static int UTF8Bytes(int c)
 {
@@ -523,6 +526,27 @@ String &String::dup()
    __s = GCStringDup(oldString,length,&length);
    return *this;
 }
+
+
+String &String::dupConst()
+{
+   ConstStringSet::iterator sit = sConstStringSet.find(*this);
+   if (sit!=sConstStringSet.end())
+   {
+      __s = sit->__s;
+   }
+   else
+   {
+      HX_CHAR *ch  = (HX_CHAR *)InternalCreateConstBuffer(__s,length+1,true);
+      ch[length] = '\0';
+      __s = ch;
+      sConstStringSet.insert(*this);
+   }
+
+   return *this;
+}
+
+
 
 int String::indexOf(const String &inValue, Dynamic inStart) const
 {

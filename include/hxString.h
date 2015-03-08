@@ -83,6 +83,7 @@ public:
     ::String __URLDecode() const;
 
     ::String &dup();
+    ::String &dupConst();
 
     ::String toUpperCase() const;
     ::String toLowerCase() const;

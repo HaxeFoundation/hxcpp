@@ -252,6 +252,7 @@ CppiaVar::Access CppiaVar::getAccess(CppiaStream &stream)
       case 'n': return accNo;
       case 'R': return accResolve;
       case 'C': return accCall;
+      case 'V': return accCallNative;
    }
    throw "bad access code";
    return accNormal;

@@ -224,11 +224,11 @@ hx::Class ScriptableGetClass(void *);
 int ScriptableGetType(void *);
 void ScriptableMark(void *, hx::Object *, HX_MARK_PARAMS);
 void ScriptableVisit(void *, hx::Object *, HX_VISIT_PARAMS);
-bool ScriptableField(hx::Object *, const ::String &,bool inCallProp,Dynamic &outResult);
-bool ScriptableField(hx::Object *, int inName,bool inCallProp,Float &outResult);
-bool ScriptableField(hx::Object *, int inName,bool inCallProp,Dynamic &outResult);
+bool ScriptableField(hx::Object *, const ::String &,hx::PropertyAccess inCallProp,Dynamic &outResult);
+bool ScriptableField(hx::Object *, int inName,hx::PropertyAccess inCallProp,Float &outResult);
+bool ScriptableField(hx::Object *, int inName,hx::PropertyAccess inCallProp,Dynamic &outResult);
 void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields);
-bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,bool inCallProp, Dynamic &outValue);
+bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,hx::PropertyAccess inCallProp, Dynamic &outValue);
 
 
 }
@@ -289,9 +289,9 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
 	Dynamic __Field(const ::String &inName,hx::PropertyAccess inCallProp) \
       { Dynamic result; if (hx::ScriptableField(this,inName,inCallProp,result)) return result; return super::__Field(inName,inCallProp); } \
 	Float __INumField(int inFieldID) \
-		{ Float result; if (hx::ScriptableField(this,inFieldID,true,result)) return result; return super::__INumField(inFieldID); } \
+		{ Float result; if (hx::ScriptableField(this,inFieldID,hx::paccAlways,result)) return result; return super::__INumField(inFieldID); } \
 	Dynamic __IField(int inFieldID) \
-		{ Dynamic result; if (hx::ScriptableField(this,inFieldID,true,result)) return result; return super::__IField(inFieldID); } \
+		{ Dynamic result; if (hx::ScriptableField(this,inFieldID,hx::paccAlways,result)) return result; return super::__IField(inFieldID); } \
 	Dynamic __SetField(const ::String &inName,const Dynamic &inValue,hx::PropertyAccess inCallProp) \
    { \
       Dynamic value; \

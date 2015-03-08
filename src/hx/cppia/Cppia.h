@@ -295,7 +295,7 @@ hx::Object *ObjectToInterface(hx::Object *inObject, TypeData *toType);
 
 struct CppiaVar
 {
-   enum Access { accNormal, accNo, accResolve, accCall, accRequire } ;
+   enum Access { accNormal, accNo, accResolve, accCall, accRequire, accCallNative } ;
 
    TypeData         *type;
    bool             isStatic;

@@ -77,6 +77,7 @@
   CPPIA_OP( IaResources , "RESOURCES", 77)
   CPPIA_OP( IaReso , "RESO", 78)
   CPPIA_OP( IaNoCast , "NOCAST", 79)
+  CPPIA_OP( IaAccessCallNative , "V", 80)
   CPPIA_OP( IaBinOpAdd , "+", 101)
   CPPIA_OP( IaBinOpMult , "*", 102)
   CPPIA_OP( IaBinOpDiv , "/", 103)

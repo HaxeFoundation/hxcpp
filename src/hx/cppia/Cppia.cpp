@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 
 #include "Cppia.h"
 #include "CppiaStream.h"
@@ -1105,6 +1106,7 @@ struct CppiaClassInfo
    void      **vtable;
    std::string name;
    std::map<std::string, void **> interfaceVTables;
+   std::set<String> nativeProperties;
    hx::Class     mClass;
 
    HaxeNativeClass *haxeBase;
@@ -1183,6 +1185,10 @@ struct CppiaClassInfo
          dynamicFunctions[d]->createDynamic(inThis);
    }
 
+   inline bool isNativeProperty(const String &inString)
+   {
+      return nativeProperties.find(inString) != nativeProperties.end();
+   }
 
    int __GetType() { return isEnum ? vtEnum : vtClass; }
 
@@ -1262,8 +1268,11 @@ struct CppiaClassInfo
       { return findFunction(staticSetters,inName); }
 
 
-   bool getField(hx::Object *inThis, String inName, bool inCallProp, Dynamic &outValue)
+   bool getField(hx::Object *inThis, String inName, hx::PropertyAccess  inCallProp, Dynamic &outValue)
    {
+      if (inCallProp==paccDynamic)
+         inCallProp = isNativeProperty(inName) ? paccAlways : paccNever;
+
       if (inCallProp)
       {
          ScriptCallable *getter = findMemberGetter(inName);
@@ -1317,8 +1326,11 @@ struct CppiaClassInfo
       return false;
    }
 
-   bool setField(hx::Object *inThis, String inName, Dynamic inValue, bool inCallProp, Dynamic &outValue)
+   bool setField(hx::Object *inThis, String inName, Dynamic inValue, hx::PropertyAccess  inCallProp, Dynamic &outValue)
    {
+      if (inCallProp==paccDynamic)
+         inCallProp = isNativeProperty(inName) ? paccAlways : paccNever;
+
       if (inCallProp)
       {
          //printf("Set field %s %s = %s\n", inThis->toString().__s, inName.__s, inValue->toString().__s);
@@ -1968,7 +1980,7 @@ struct CppiaClassInfo
          {
             CppiaVar &var = *memberVars[i];
             var.link(cppia);
-            if (var.readAccess == CppiaVar::accCall)
+            if (var.readAccess == CppiaVar::accCall || var.readAccess==CppiaVar::accCallNative)
             {
                ScriptCallable *getter = findFunction(false,HX_CSTRING("get_") + var.name);
                if (!getter)
@@ -1979,7 +1991,7 @@ struct CppiaClassInfo
                DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.__s);
                memberGetters[var.name.__s] = getter;
             }
-            if (var.writeAccess == CppiaVar::accCall)
+            if (var.writeAccess == CppiaVar::accCall || var.writeAccess==CppiaVar::accCallNative)
             {
                ScriptCallable *setter = findFunction(false,HX_CSTRING("set_") + var.name);
                if (!setter)
@@ -1987,6 +1999,9 @@ struct CppiaClassInfo
                DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.__s);
                memberSetters[var.name.__s] = setter;
             }
+
+            if (var.readAccess == CppiaVar::accCallNative || var.writeAccess == CppiaVar::accCallNative)
+               nativeProperties.insert( var.name );
          }
       }
    
@@ -1994,7 +2009,7 @@ struct CppiaClassInfo
       {
          CppiaVar &var = *staticVars[i];
          var.link(cppia);
-         if (var.readAccess == CppiaVar::accCall)
+         if (var.readAccess == CppiaVar::accCall || var.readAccess == CppiaVar::accCallNative)
          {
             ScriptCallable *getter = findFunction(true,HX_CSTRING("get_") + var.name);
             if (!getter)
@@ -2002,7 +2017,7 @@ struct CppiaClassInfo
             DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.__s);
             staticGetters[var.name.__s] = getter;
          }
-         if (var.writeAccess == CppiaVar::accCall)
+         if (var.writeAccess == CppiaVar::accCall || var.writeAccess == CppiaVar::accCallNative)
          {
             ScriptCallable *setter = findFunction(true,HX_CSTRING("set_") + var.name);
             if (!setter)
@@ -2011,6 +2026,8 @@ struct CppiaClassInfo
             staticSetters[var.name.__s] = setter;
          }
 
+         if (var.readAccess == CppiaVar::accCallNative || var.writeAccess == CppiaVar::accCallNative)
+            nativeProperties.insert( var.name );
       }
 
       if (enumMeta)
@@ -2054,8 +2071,10 @@ struct CppiaClassInfo
    }
 
 
-   Dynamic getStaticValue(const String &inName,bool inCallProp)
+   Dynamic getStaticValue(const String &inName,hx::PropertyAccess  inCallProp)
    {
+      if (inCallProp==paccDynamic)
+         inCallProp = isNativeProperty(inName) ? paccAlways : paccNever;
       if (inCallProp)
       {
          ScriptCallable *getter = findStaticGetter(inName);
@@ -2092,8 +2111,10 @@ struct CppiaClassInfo
       return null();
    }
 
-   Dynamic setStaticValue(const String &inName,const Dynamic &inValue ,bool inCallProp)
+   Dynamic setStaticValue(const String &inName,const Dynamic &inValue ,hx::PropertyAccess  inCallProp)
    {
+      if (inCallProp==paccDynamic)
+         inCallProp = isNativeProperty(inName) ? paccAlways : paccNever;
       if (inCallProp)
       {
          ScriptCallable *setter = findStaticSetter(inName);
@@ -7399,13 +7420,13 @@ void ScriptableVisit(void *inClass, hx::Object *inThis, hx::VisitContext *__inCt
    ((CppiaClassInfo *)inClass)->visitInstance(inThis, __inCtx);
 }
 
-bool ScriptableField(hx::Object *inObj, const ::String &inName,bool inCallProp,Dynamic &outResult)
+bool ScriptableField(hx::Object *inObj, const ::String &inName,hx::PropertyAccess  inCallProp,Dynamic &outResult)
 {
    void **vtable = inObj->__GetScriptVTable();
    return ((CppiaClassInfo *)vtable[-1])->getField(inObj,inName,inCallProp,outResult);
 }
 
-bool ScriptableField(hx::Object *inObj, int inName,bool inCallProp,Float &outResult)
+bool ScriptableField(hx::Object *inObj, int inName,hx::PropertyAccess  inCallProp,Float &outResult)
 {
    void **vtable = inObj->__GetScriptVTable();
    Dynamic result;
@@ -7421,7 +7442,7 @@ bool ScriptableField(hx::Object *inObj, int inName,bool inCallProp,Float &outRes
    return false;
 }
 
-bool ScriptableField(hx::Object *inObj, int inName,bool inCallProp,Dynamic &outResult)
+bool ScriptableField(hx::Object *inObj, int inName,hx::PropertyAccess  inCallProp,Dynamic &outResult)
 {
    void **vtable = inObj->__GetScriptVTable();
    return ((CppiaClassInfo *)vtable[-1])->getField(inObj,__hxcpp_field_from_id(inName),inCallProp,outResult);
@@ -7433,7 +7454,7 @@ void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields)
    return ((CppiaClassInfo *)vtable[-1])->GetInstanceFields(inObject,outFields);
 }
 
-bool ScriptableSetField(hx::Object *inObj, const ::String &inName, Dynamic inValue,bool inCallProp, Dynamic &outResult)
+bool ScriptableSetField(hx::Object *inObj, const ::String &inName, Dynamic inValue,hx::PropertyAccess  inCallProp, Dynamic &outResult)
 {
    void **vtable = inObj->__GetScriptVTable();
    return ((CppiaClassInfo *)vtable[-1])->setField(inObj,inName,inValue,inCallProp,outResult);
