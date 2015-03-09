@@ -43,13 +43,23 @@ using namespace hx;
 
 #endif
 
+namespace hx
+{
 #ifdef HX_UTF8_STRINGS
-#define HX_DOUBLE_PATTERN "%.15g"
+char HX_DOUBLE_PATTERN[20] = "%.15g";
 #define HX_INT_PATTERN "%d"
 #else
-#define HX_DOUBLE_PATTERN L"%.15g"
+wchar_t HX_DOUBLE_PATTERN[20] =  L"%.15g";
 #define HX_INT_PATTERN L"%d"
 #endif
+}
+
+void __hxcpp_set_float_format(String inFormat)
+{
+  int last = inFormat.length < 19 ? inFormat.length : 19;
+  memcpy(HX_DOUBLE_PATTERN, inFormat.__s, last*sizeof(HX_CHAR) );
+  HX_DOUBLE_PATTERN[last] = '\0';
+}
 
 // --- GC helper
 
