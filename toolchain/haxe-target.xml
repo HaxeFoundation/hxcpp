@@ -47,6 +47,12 @@
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 </files>
 
+
+<files id="__resources__">
+</files>
+
+
+
 <files id="__main__">
   <depend files="hxcpp-depends"/>
   <depend name="${HXCPP}/include/hx/HxcppMain.h"/>
@@ -140,6 +146,7 @@
 
   <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>
+  <files id="__resources__" />
   <files id="runtime" unless="dll_import" />
   <files id="cppia" if="scriptable" />
   <lib name="-lpthread" if="linux" unless="static_link" />
