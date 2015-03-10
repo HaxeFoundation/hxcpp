@@ -882,6 +882,7 @@ class BuildTool
          }
       }
 
+
       if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
          Log.colorSupported = false;
       Log.verbose = defines.exists("HXCPP_VERBOSE");
@@ -900,10 +901,19 @@ class BuildTool
       if (isLinux)
          defines.set("linux_host", "1");
 
+
+      if (args.length>0 && args[0].substr( args[0].length - 6)==".cppia")
+      {
+         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
+         if (binDir==null)
+            Log.error("Cppia is not supported on this host.");
+         Sys.exit( Sys.command( '$HXCPP/bin/$binDir/Cppia', args ) );
+      }
+
       isRPi = isLinux && Setup.isRaspberryPi();
 
       is64 = getIs64();
-      
+
       for(arg in args)
       {
          if (arg.substr(0,2)=="-D")

@@ -29,24 +29,24 @@ class CopyFile
       {
          if (allowMissing)
          {
-            Log.v('Missing $fromFile - ignore');
+            Log.v('Missing "$fromFile" - ignore');
             return;
          }
          Log.error("Error - source file does not exist " + fromFile);
       }
       try
       {
-         Log.v('Copy $fromFile to $toFile');
+         Log.v('Copy "$fromFile" to "$toFile"');
          sys.io.File.copy( fromFile, toFile );
       }
       catch(e:Dynamic)
       {
          if (allowMissing)
          {
-            Log.v('Could not copy to $toFile - ignore');
+            Log.v('Could not copy to "$toFile" - ignore');
             return;
          }
-         Log.error("Error - could not copy to " + toFile);
+         Log.error('Error $e - could not copy to "$toFile"');
       }
    }
 }

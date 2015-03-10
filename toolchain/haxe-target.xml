@@ -134,6 +134,8 @@
   <dir name="obj"/>
 </target>
 
+<set name="EXESUFFIX" value=".exe" if="windows" />
+
 <target id="haxe" tool="linker" toolid="${haxelink}" output="${LIBPREFIX}${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
   <options name="Options.txt"/>
