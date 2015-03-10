@@ -3,4 +3,4 @@
 -D dll_export=
 -dce no
 -cpp cppia_bin
--D destination=../../bin/${BINDIR}/Cppia${EXESUFFIX}
+-D destination=../../bin/{BINDIR}/Cppia{EXESUFFIX}

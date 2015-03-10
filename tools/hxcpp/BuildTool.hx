@@ -55,6 +55,7 @@ class BuildTool
    public static var helperThread = new Tls<Thread>();
    public static var destination:String;
    static var mVarMatch = new EReg("\\${(.*?)}","");
+   static var mNoDollarMatch = new EReg("{(.*?)}","");
 
    public static var exitOnThreadError = false;
    public static var threadExitCode = 0;
@@ -410,7 +411,7 @@ class BuildTool
 
          if (inDestination!=null)
          {
-            inDestination = substitute(inDestination);
+            inDestination = substitute(inDestination,false);
             if (inDestination!="")
             {
                if (!PathManager.isAbsolute(inDestination) && sys.FileSystem.exists(mMakefile))
@@ -426,7 +427,8 @@ class BuildTool
                fileParts.pop();
                PathManager.mkdir(fileParts.join("/"));
 
-               CopyFile.copyFile(output, inDestination);
+               var chmod = isWindows ? false : target.mToolID=="exe";
+               CopyFile.copyFile(output, inDestination, false, chmod);
             }
          }
       }
@@ -925,7 +927,9 @@ class BuildTool
                var name = val.substr(0,equals);
                var value = val.substr(equals+1);
                if (name=="destination")
+               {
                   destination = value;
+               }
                else
                   defines.set(name,value);
             }
@@ -1417,11 +1421,12 @@ class BuildTool
       }
    }
 
-   public function substitute(str:String):String
+   public function substitute(str:String,needDollar=true):String
    {
-      while( mVarMatch.match(str) )
+      var match = needDollar ? mVarMatch : mNoDollarMatch;
+      while( match.match(str) )
       {
-         var sub = mVarMatch.matched(1);
+         var sub = match.matched(1);
          if (sub.substr(0,8)=="haxelib:")
          {
             sub = PathManager.getHaxelib(sub.substr(8));
@@ -1438,7 +1443,7 @@ class BuildTool
             sub = mDefines.get(sub);
 
          if (sub==null) sub="";
-         str = mVarMatch.matchedLeft() + sub + mVarMatch.matchedRight();
+         str = match.matchedLeft() + sub + match.matchedRight();
       }
 
       return str;

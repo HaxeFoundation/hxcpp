@@ -3539,7 +3539,7 @@ struct ToInterface : public CppiaDynamicExpr
       {
          cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->name.__s);
          if (!cppiaVTable)
-           printf("Could not find scripting interface implementation %s on %s\n", toType->name.__s, fromType->name.__s);
+           DBGLOG("Could not find scripting interface implementation %s on %s, use dynamic\n", toType->name.__s, fromType->name.__s);
       }
       else
       {
