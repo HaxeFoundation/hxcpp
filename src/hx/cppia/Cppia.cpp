@@ -5147,8 +5147,9 @@ struct GetFieldByLinkage : public CppiaExpr
          return replace;
       }
 
-      // It is ok for interfaces to look up members by name
-      if (!type->isInterface)
+      // It is ok for interfaces to look up members by name - and variables that turn
+      //  out to actaully be Dynamic (eg template types)
+      if (!type->isInterface && type->name!=HX_CSTRING("Dynamic") )
       {
          printf("   GetFieldByLinkage %s (%p %p) '%s' fallback\n", type->name.__s, type->haxeClass.mPtr, type->cppiaClass, field.__s);
          if (type->cppiaClass)
