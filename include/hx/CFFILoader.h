@@ -240,6 +240,11 @@ double  api_val_field_numeric(neko_value  arg1,int arg2)
 // Byte arrays
 neko_buffer api_val_to_buffer(neko_value  arg1) { return dyn_alloc_buffer(api_val_string(arg1)); } 
 
+bool api_val_is_buffer(neko_value  arg1)
+{
+   return false;
+} 
+
 
 neko_buffer api_alloc_buffer_len(int inLen)
 {
@@ -584,6 +589,7 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(alloc_string_len)
    IMPLEMENT_HERE(alloc_wstring_len)
 
+   IMPLEMENT_HERE(val_is_buffer)
    IMPLEMENT_HERE(val_to_buffer)
    IMPLEMENT_HERE(alloc_buffer_len)
    IMPLEMENT_HERE(buffer_size)

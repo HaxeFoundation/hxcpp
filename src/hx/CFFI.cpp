@@ -473,6 +473,8 @@ buffer val_to_buffer(hx::Object * arg1)
    return (buffer)b;
 }
 
+bool val_is_buffer(value inVal) { return val_to_buffer((hx::Object *)inVal)!=0; }
+
 
 
 buffer alloc_buffer(const char *inStr)

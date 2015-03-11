@@ -65,6 +65,7 @@ DEFFUNC_1(value *,val_array_value,value)
 
 // Byte arrays
 // The byte array may be a string or a Array<bytes> depending on implementation
+DEFFUNC_1(bool,val_is_buffer,value)
 DEFFUNC_1(buffer,val_to_buffer,value)
 DEFFUNC_1(buffer,alloc_buffer,const char *)
 DEFFUNC_1(buffer,alloc_buffer_len,int)
