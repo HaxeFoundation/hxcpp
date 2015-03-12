@@ -558,6 +558,11 @@ void * api_alloc_private(int arg1)
 	return alloc_private(arg1);
 }
 
+void api_gc_change_managed_memory(int,const char *)
+{
+   // Nothing to do here
+}
+
 
 void  api_val_gc(value  arg1,finalizer arg2)
 {

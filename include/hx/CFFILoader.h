@@ -535,6 +535,11 @@ void api_val_gc(neko_value obj, void *finalizer)
    }
 }
 
+void api_gc_change_managed_memory(int,const char *)
+{
+   // Nothing to do here
+}
+
 
 #define IMPLEMENT_HERE(x) if (!strcmp(inName,#x)) return (void *)api_##x;
 #define IGNORE_API(x) if (!strcmp(inName,#x)) return (void *)api_empty;
@@ -565,6 +570,7 @@ void *DynamicNekoLoader(const char *inName)
    IGNORE_API(gc_add_root)
    IGNORE_API(gc_remove_root)
    IGNORE_API(gc_set_top_of_stack)
+   IGNORE_API(gc_change_managed_memory)
    IGNORE_API(create_root)
    IGNORE_API(query_root)
    IGNORE_API(destroy_root)
@@ -684,7 +690,36 @@ neko_value neko_init(neko_value inNewString,neko_value inNewArray,neko_value inN
 #endif // NEKO_COMPATIBLE
 
 
+// This code will get run when the library is compiled against a newer version of hxcpp,
+//  and the application code uses an older version.
+bool default_val_is_buffer(void *inBuffer)
+{
+   typedef void *(ValToBufferFunc)(void *);
+   static ValToBufferFunc *valToBuffer = 0;
+   if (!valToBuffer)
+      valToBuffer = (ValToBufferFunc *)sResolveProc("val_to_buffer");
 
+   if (valToBuffer)
+      return valToBuffer(inBuffer)!=0;
+
+   return false;
+}
+
+
+// Do nothing on earlier versions of hxcpp that do not know what to do
+void default_gc_change_managed_memory(int,const char *) { }
+
+void *ResolveDefault(const char *inName)
+{
+   void *result = sResolveProc(inName);
+   if (result)
+      return result;
+   if (!strcmp(inName,"val_is_buffer"))
+      return (void *)default_val_is_buffer;
+   if (!strcmp(inName,"gc_change_managed_memory"))
+      return (void *)default_gc_change_managed_memory;
+   return 0;
+}
 
 #ifdef NEKO_WINDOWS
 
@@ -717,7 +752,7 @@ void *LoadFunc(const char *inName)
       fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d)\n",__LINE__);
       exit(1);
    }
-   return sResolveProc(inName);
+   return ResolveDefault(inName);
 }
 
 #else // not windows
@@ -756,7 +791,7 @@ void *LoadFunc(const char *inName)
       exit(1);
       #endif
    }
-   return sResolveProc(inName);
+   return ResolveDefault(inName);
 }
 
 #undef EXT
@@ -776,7 +811,7 @@ ret IMPL_##name def_args \
    name = (FUNC_##name)LoadFunc(#name); \
    if (!name) \
    { \
-      fprintf(stderr,"Could find function " #name " \n"); \
+      fprintf(stderr,"Could not find function:" #name " \n"); \
       exit(1); \
    } \
    return name call_args; \
@@ -798,7 +833,7 @@ ret IMPL_##name def_args \
    name = (FUNC_##name)LoadFunc(#name); \
    if (!name) \
    { \
-      __android_log_print(ANDROID_LOG_ERROR,"CFFILoader", "Could not resolve :" #name "\n"); \
+      __android_log_print(ANDROID_LOG_ERROR,"CFFILoader", "Could not find function:" #name "\n"); \
    } \
    return name call_args; \
 }\

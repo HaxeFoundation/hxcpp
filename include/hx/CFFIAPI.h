@@ -119,6 +119,7 @@ DEFFUNC_2(void, val_gc,value,hxFinalizer)
 DEFFUNC_2(void, val_gc_ptr,void *,hxPtrFinalizer)
 DEFFUNC_0(value *, alloc_root)
 DEFFUNC_1(void, free_root,value *)
+DEFFUNC_2(void, gc_change_managed_memory,int,const char *)
 
 // Only available on cpp target...
 DEFFUNC_1(void, val_gc_add_root,value *)

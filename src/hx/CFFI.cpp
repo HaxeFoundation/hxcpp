@@ -783,6 +783,13 @@ void  gc_set_top_of_stack(int *inTopOfStack,bool inForce)
 }
 
 
+void gc_change_managed_memory(int inDelta, const char *inWhy)
+{
+   hx::GCChangeManagedMemory(inDelta, inWhy);
+}
+
+
+
 class Root *sgRootHead = 0;
 
 class Root

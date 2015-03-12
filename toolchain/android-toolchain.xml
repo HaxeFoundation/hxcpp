@@ -83,7 +83,7 @@
  <flag value="-funwind-tables"/>
  <flag value="-fstack-protector"/>
  <flag value="-fno-short-enums"/>
- <flag value="-Wno-invalid-offsetof" />
+ <cppflag value="-Wno-invalid-offsetof" />
  <cppflag value="-frtti"/>
  <flag value="-D_LINUX_STDDEF_H "/> <!-- Avoid compiler including 2 version of file -->
  <flag value="-Wno-psabi" />
