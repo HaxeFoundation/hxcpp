@@ -715,7 +715,7 @@ void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
 
       for(int i=0;i<fields->length;i++)
       {
-         inFunc((value)inObj, __hxcpp_field_to_id(fields[i].__CStr()), inCookie);
+         inFunc((value)inObj->__Field(fields[i], hx::paccNever ).mPtr, __hxcpp_field_to_id(fields[i].__CStr()), inCookie);
       }
    }
 }
