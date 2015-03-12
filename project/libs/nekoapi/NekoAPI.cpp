@@ -392,6 +392,10 @@ void api_buffer_set_size(buffer inBuffer,int inLen)
 	NOT_IMPLEMNETED("api_buffer_set_size");
 }
 
+bool api_val_is_buffer(value inVal)
+{
+   return false;
+}
 
 void api_buffer_append_sub(buffer inBuffer,const char *inStr,int inLen)
 {
