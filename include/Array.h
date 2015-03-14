@@ -505,6 +505,7 @@ public:
 
    void sort(Dynamic inSorter)
    {
+      hx::EnterGCFreeZone();
       if ( ArrayTraits<ELEM_>::IsDynamic || ArrayTraits<ELEM_>::IsString)
       {
          // Keep references from being hidden inside sorters buffers
@@ -515,6 +516,7 @@ public:
          ELEM_ *e = (ELEM_ *)mBase;
          std::stable_sort(e, e+length, Sorter(inSorter) );
       }
+      hx::ExitGCFreeZone();
    }
 
    Dynamic iterator() { return new hx::ArrayIterator<ELEM_,ELEM_>(this); }
