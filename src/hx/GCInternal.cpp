@@ -3229,7 +3229,7 @@ void UnregisterCurrentThread()
 namespace hx
 {
 
-void *Object::operator new( size_t inSize, NewObjectType inType )
+void *Object::operator new( size_t inSize, NewObjectType inType, const char *inName )
 {
    #if defined(HXCPP_DEBUG)
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
