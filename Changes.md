@@ -1,4 +1,6 @@
 
+* Remove NekoApi binaries
+* Add Cppia binaries
 * Add Windows64 binaries
 * Make compares between Dynamic and numeric types false, unless the Dynamic is actaully numeric
 ------------------------------------------------------------
