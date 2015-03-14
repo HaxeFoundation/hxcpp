@@ -21,6 +21,7 @@ script:
   - haxe compile.hxml
   - cd ${TRAVIS_BUILD_DIR}/project
   - neko build.n -verbose
+  - haxe compile_cppia.hxml
   - cd ${TRAVIS_BUILD_DIR}/test/ndlls
   - haxe compile.hxml && ./cpp/Test
   - haxe compile64.hxml && ./cpp64/Test
@@ -29,3 +30,4 @@ script:
   - cd ~/haxe/tests/unit
   - haxe compile-cpp.hxml && ./bin/cpp/Test-debug && rm -rf bin/cpp
   - haxe compile-cpp.hxml -D HXCPP_M64 && ./bin/cpp/Test-debug
+  - haxe compile-cppia.hxml -debug && haxelib run hxcpp unit.cppia

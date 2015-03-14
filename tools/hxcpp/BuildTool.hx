@@ -86,8 +86,8 @@ class BuildTool
       m32 = mDefines.exists("HXCPP_M32");
       if (m64==m32)
       {
-         // Default to the current version of neko...
-         m64 = (~/64$/).match(os);
+         // Default to the current OS version
+         m64 = !isWindows && getIs64();
          m32 = !m64;
          mDefines.remove(m32 ? "HXCPP_M64" : "HXCPP_M32");
       }
@@ -210,6 +210,10 @@ class BuildTool
 
       if (threadExitCode != 0)
          Sys.exit(threadExitCode);
+   }
+
+   public static function isDefault64()
+   {
    }
 
    public function pushFile(inFilename:String, inWhy:String, inSection:String="")
