@@ -21,7 +21,7 @@ script:
   - haxe compile.hxml
   - cd ${TRAVIS_BUILD_DIR}/project
   - neko build.n -verbose
-  - haxe compile_cppia.hxml
+  - haxe compile-cppia.hxml
   - cd ${TRAVIS_BUILD_DIR}/test/ndlls
   - haxe compile.hxml && ./cpp/Test
   - haxe compile64.hxml && ./cpp64/Test
