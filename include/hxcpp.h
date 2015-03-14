@@ -39,6 +39,7 @@
 #ifdef HX_LINUX
   #include <unistd.h>
   #include <cstdio>
+  #include <stddef.h>
 #endif
 
 
