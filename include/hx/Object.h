@@ -72,7 +72,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES Object
 {
 public:
    // These allocate the function using the garbage-colleced malloc
-   void *operator new( size_t inSize, hx::NewObjectType, const char *inName );
+   void *operator new( size_t inSize, hx::NewObjectType, const char *inName=0 );
    inline void *operator new( size_t inSize, bool inContainer=true, const char *inName=0 )
    {
       return operator new(inSize, inContainer ? hx::NewObjContainer : hx::NewObjAlloc, inName);
