@@ -518,6 +518,15 @@ neko_value  api_val_call0_traceexcept(neko_value  arg1)
 }
 
 
+int  api_val_fun_nargs(neko_value arg1)
+{
+   if (!arg1 || !neko_val_is_function(arg1) )
+      return faNotFunction;
+   return neko_val_fun_nargs(arg1);
+}
+
+
+
 void api_val_gc(neko_value obj, void *finalizer)
 {
    // Let neko deal with ints or abstracts ...
@@ -586,6 +595,9 @@ void *DynamicNekoLoader(const char *inName)
    if (!strcmp(inName,"buffer_val"))
       return LoadNekoFunc("neko_buffer_to_string");
 
+   if (!strcmp(inName,"val_iter_field_vals"))
+      return LoadNekoFunc("neko_val_iter_fields");
+
    IMPLEMENT_HERE(val_strlen)
    IMPLEMENT_HERE(val_wstring)
    IMPLEMENT_HERE(val_string)
@@ -612,6 +624,8 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(val_array_push)
    IMPLEMENT_HERE(alloc_array)
    IMPLEMENT_HERE(val_array_value)
+
+   IMPLEMENT_HERE(val_fun_nargs)
 
    IMPLEMENT_HERE(val_call0_traceexcept)
 

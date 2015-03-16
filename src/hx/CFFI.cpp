@@ -705,7 +705,7 @@ value val_field_name(field inField)
 }
 
 
-void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
+void val_iter_field_vals(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
 {
    if (inObj)
    {
@@ -719,6 +719,23 @@ void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
       }
    }
 }
+
+
+void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
+{
+   if (inObj)
+   {
+      Array<String> fields = Array_obj<String>::__new(0,0);
+
+      inObj->__GetFields(fields);
+
+      for(int i=0;i<fields->length;i++)
+      {
+         inFunc((value)inObj, __hxcpp_field_to_id(fields[i].__CStr()), inCookie);
+      }
+   }
+}
+
 
 
    // Abstract types
