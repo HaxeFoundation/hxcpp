@@ -6531,7 +6531,6 @@ struct OpAdd : public BinOp
    {
       int lval = left->runInt(ctx);
       BCR_CHECK;
-      int rval = right->runInt(ctx);
       return lval + right->runInt(ctx);
    }
    Float runFloat(CppiaCtx *ctx)
