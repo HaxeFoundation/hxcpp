@@ -162,7 +162,7 @@ namespace cpp
    typedef __int64 Int64;
    typedef unsigned __int64 UInt64;
    // TODO - EMSCRIPTEN?
-   #elif !defined(EMSCRIPTEN)
+   #else
    typedef int64_t Int64;
    typedef uint64_t UInt64;
    #endif
