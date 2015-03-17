@@ -999,32 +999,33 @@ class BuildTool
       if ( optionsTxt!="" && makefile!="")
       {
          var path = PathManager.combine(haxe.io.Path.directory(makefile), optionsTxt);
-         try
-         {
-            var contents = sys.io.File.getContent(path); 
-            if (contents.substr(0,1)!=" ") // Is it New-style?
-               for(def in contents.split("\n"))
-               {
-                  var equals = def.indexOf("=");
-                  if (equals>0)
+         if (FileSystem.exists(path))
+            try
+            {
+               var contents = sys.io.File.getContent(path); 
+               if (contents.substr(0,1)!=" ") // Is it New-style?
+                  for(def in contents.split("\n"))
                   {
-                     var name = def.substr(0,equals);
-                     var value = def.substr(equals+1);
-                     if (name=="hxcpp")
+                     var equals = def.indexOf("=");
+                     if (equals>0)
                      {
-                        // Ignore
+                        var name = def.substr(0,equals);
+                        var value = def.substr(equals+1);
+                        if (name=="hxcpp")
+                        {
+                           // Ignore
+                        }
+                        else if (name=="destination")
+                            destination = value;
+                        else
+                           defines.set(name,value);
                      }
-                     else if (name=="destination")
-                         destination = value;
-                     else
-                        defines.set(name,value);
                   }
-               }
-        }
-        catch(e:Dynamic)
-        {
-           Log.error('Could not parse options file $path ($e)');
-        }
+           }
+           catch(e:Dynamic)
+           {
+              Log.error('Could not parse options file $path ($e)');
+           }
       }
 
       Setup.initHXCPPConfig(defines);
