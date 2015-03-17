@@ -860,6 +860,7 @@ class BuildTool
       var defines = new Hash<String>();
       var include_path = new Array<String>();
       var makefile:String="";
+      var optionsTxt = "Options.txt";
 
       include_path.push(".");
 
@@ -913,18 +914,48 @@ class BuildTool
          var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
          if (binDir==null)
             Log.error("Cppia is not supported on this host.");
-         Sys.exit( Sys.command( '$HXCPP/bin/$binDir/Cppia', args ) );
+         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
+         var exe = '$HXCPP/bin/$binDir/Cppia' + (isWindows ? ".exe" : "");
+         if (!isWindows)
+         {
+            var phase = "find";
+            try
+            {
+               var stat = FileSystem.stat(exe);
+               if (stat==null)
+                  throw "Could not find exe";
+               var mode = stat.mode;
+               var exeFlags = (1<<0) | (1<<3) | (1<<6);
+               if ( (mode&exeFlags) != exeFlags )
+               {
+                  var phase = "add exe permissions to";
+                  if (Sys.command( "chmod", ["755", exe])!=0)
+                     Log.error('Please use root access to add execute permissions to $exe');
+               }
+            }
+            catch(e:Dynamic)
+            {
+               Log.error('Could not $phase Cppia host $exe ($e)');
+            }
+         }
+
+         if (isWindows)
+            exe = '"$exe"';
+
+         Sys.exit( Sys.command( exe, args ) );
       }
 
       isRPi = isLinux && Setup.isRaspberryPi();
 
       is64 = getIs64();
 
-      for(arg in args)
+      var a = 0;
+      while(a < args.length)
       {
-         if (arg.substr(0,2)=="-D")
+         var arg = args[a];
+         if (arg.substr(0,2)=="-D" || (~/^[a-zA-Z0-9_]*=/).match(arg) )
          {
-            var val = arg.substr(2);
+            var val = arg.substr(0,2)=="-D" ? arg.substr(2) : arg;
             var equals = val.indexOf("=");
             if (equals>0)
             {
@@ -942,6 +973,15 @@ class BuildTool
             if (val=="verbose")
                Log.verbose = true;
          }
+         else if (arg=="-no-options")
+            optionsTxt = "";
+         else if (arg=="-options")
+         {
+            a++;
+            optionsTxt = args[a];
+            if (optionsTxt==null)
+               optionsTxt = "";
+         }
          else if (arg=="-v" || arg=="-verbose")
             Log.verbose = true;
          else if (arg=="-nocolor")
@@ -952,6 +992,39 @@ class BuildTool
             makefile = arg;
          else
             targets.push(arg);
+
+         a++;
+      }
+
+      if ( optionsTxt!="" && makefile!="")
+      {
+         var path = PathManager.combine(haxe.io.Path.directory(makefile), optionsTxt);
+         try
+         {
+            var contents = sys.io.File.getContent(path); 
+            if (contents.substr(0,1)!=" ") // Is it New-style?
+               for(def in contents.split("\n"))
+               {
+                  var equals = def.indexOf("=");
+                  if (equals>0)
+                  {
+                     var name = def.substr(0,equals);
+                     var value = def.substr(equals+1);
+                     if (name=="hxcpp")
+                     {
+                        // Ignore
+                     }
+                     else if (name=="destination")
+                         destination = value;
+                     else
+                        defines.set(name,value);
+                  }
+               }
+        }
+        catch(e:Dynamic)
+        {
+           Log.error('Could not parse options file $path ($e)');
+        }
       }
 
       Setup.initHXCPPConfig(defines);
@@ -1023,7 +1096,7 @@ class BuildTool
          else
             Log.v("\x1b[33;1mNo specified toolchain\x1b[0m");
          if (Log.verbose) Log.println("");
- 
+
 
          if (targets.length==0)
             targets.push("default");
