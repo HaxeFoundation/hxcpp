@@ -179,6 +179,7 @@ namespace hx { class Object; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
 namespace hx { template<typename O> class ObjectPtr; }
+namespace cpp { template<typename S,typename H> class Struct; }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {

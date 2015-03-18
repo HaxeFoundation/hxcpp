@@ -52,6 +52,11 @@ public:
 
 	hx::Object *__ToObject() const;
 
+   template<typename T,typename S>
+   explicit inline String(const cpp::Struct<T,S> &inRHS);
+
+
+
    /*
     This causes ambiguous problem with Object==Dynamic (String==Dynamic vs Object==Object)
      and syntactically, String(Dynamic) should be enough I think.

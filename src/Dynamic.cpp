@@ -163,11 +163,13 @@ public:
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
       { return hx::Object::operator new(inSize,inAlloc); }
 
-   StructData(const void *inValue,int inLength)
+   StructData(const void *inValue,int inLength, const char *inName, cpp::DynamicToStringFunc inToString)
    {
       mLength= inLength;
       mValue = InternalNew(inLength,false);
       memcpy(mValue, inValue, inLength);
+      name = inName;
+      toStringFunc = inToString;
    }
 
    hx::Class __GetClass() const { return __PointerClass; }
@@ -178,11 +180,10 @@ public:
    void * __GetHandle() const { return mValue; }
    String toString()
    {
-      char buf[100];
-      sprintf(buf,"Struct(x%d)", mLength);
-      return String(buf);
+      return toStringFunc(mValue);
    }
    String __ToString() const { return String(mValue); }
+   const char *__CStr() const { return name; }
 
    int __Compare(const hx::Object *inRHS) const
    {
@@ -206,6 +207,8 @@ public:
 
    int  mLength;
    void *mValue;
+   const char *name;
+   cpp::DynamicToStringFunc toStringFunc;
 };
 
 
@@ -223,8 +226,9 @@ Dynamic CreateDynamicPointer(void *inValue) { return new hx::PointerData(inValue
 
 // --- Struct -------------------------------------------------
 
-Dynamic CreateDynamicStruct(const void *inValue, int inLength) { return new hx::StructData(inValue,inLength); }
-
+Dynamic CreateDynamicStruct(const void *inValue, int inSize, const char *inClassName, cpp::DynamicToStringFunc inFunc)
+{
+   return new hx::StructData(inValue,inSize, inClassName, inFunc); }
 }
 
 

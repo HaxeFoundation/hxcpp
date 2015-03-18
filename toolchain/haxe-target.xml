@@ -31,6 +31,7 @@
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/StdLibs.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
+  <depend name="${HXCPP}/include/cpp/Pointer.h"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
   <depend name="${HXCPP}/toolchain/haxe-target.xml"/>
   <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml"/>
