@@ -210,13 +210,6 @@
       <target id="linuxcompat" if="linux" />
       <target id="linuxcompat" if="gcw0" />
    </section>
-   <section unless="static_link">
-      <section unless="mingw">
-         <target id="nekoapi" if="windows" unless="HXCPP_M64"/>
-      </section>
-      <target id="nekoapi" if="macos" />
-      <target id="nekoapi" if="linux" />
-   </section>
 </target>
 
 

@@ -1584,6 +1584,39 @@ public:
 
       return result+2;
    }
+
+   void onMemoryChange(int inDelta, const char *inWhy)
+   {
+      if (hx::gPauseForCollect)
+         __hxcpp_gc_safe_point();
+
+      if (inDelta>0)
+      {
+         //Should we force a collect ? - the 'large' data are not considered when allocating objects
+         // from the blocks, and can 'pile up' between smalll object allocations
+         if (inDelta>0 && (inDelta+mLargeAllocated > mLargeAllocForceRefresh) && sgInternalEnable)
+         {
+            //GCLOG("onMemoryChange alloc causing collection");
+            CollectFromThisThread();
+         }
+
+         int rounded = (inDelta +3) & ~3;
+   
+         if (rounded<<1 > mLargeAllocSpace)
+            mLargeAllocSpace = rounded<<1;
+      }
+
+      bool do_lock = sMultiThreadMode;
+      if (do_lock)
+         mLargeListLock.Lock();
+
+      mLargeAllocated += inDelta;
+
+      if (do_lock)
+         mLargeListLock.Unlock();
+   }
+
+
    // Making this function "virtual" is actually a (big) performance enhancement!
    // On the iphone, sjlj (set-jump-long-jump) exceptions are used, which incur a
    //  performance overhead.  It seems that the overhead in only in routines that call
@@ -3116,6 +3149,11 @@ int InternalCollect(bool inMajor,bool inCompact)
    return sGlobalAlloc->MemUsage();
 }
 
+void GCChangeManagedMemory(int inDelta, const char *inWhy)
+{
+   sGlobalAlloc->onMemoryChange(inDelta, inWhy);
+}
+
 
 void *InternalRealloc(void *inData,int inSize)
 {
@@ -3191,7 +3229,7 @@ void UnregisterCurrentThread()
 namespace hx
 {
 
-void *Object::operator new( size_t inSize, NewObjectType inType )
+void *Object::operator new( size_t inSize, NewObjectType inType, const char *inName )
 {
    #if defined(HXCPP_DEBUG)
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)

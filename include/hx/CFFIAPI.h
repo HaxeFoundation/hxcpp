@@ -65,6 +65,7 @@ DEFFUNC_1(value *,val_array_value,value)
 
 // Byte arrays
 // The byte array may be a string or a Array<bytes> depending on implementation
+DEFFUNC_1(bool,val_is_buffer,value)
 DEFFUNC_1(buffer,val_to_buffer,value)
 DEFFUNC_1(buffer,alloc_buffer,const char *)
 DEFFUNC_1(buffer,alloc_buffer_len,int)
@@ -107,6 +108,7 @@ DEFFUNC_2(double,val_field_numeric,value,int)
 
 DEFFUNC_1(value,val_field_name,field)
 DEFFUNC_3(void,val_iter_fields,value,__hx_field_iter,void *)
+DEFFUNC_3(void,val_iter_field_vals,value,__hx_field_iter,void *)
 
 // Abstract types
 DEFFUNC_0(vkind,alloc_kind)
@@ -118,6 +120,7 @@ DEFFUNC_2(void, val_gc,value,hxFinalizer)
 DEFFUNC_2(void, val_gc_ptr,void *,hxPtrFinalizer)
 DEFFUNC_0(value *, alloc_root)
 DEFFUNC_1(void, free_root,value *)
+DEFFUNC_2(void, gc_change_managed_memory,int,const char *)
 
 // Only available on cpp target...
 DEFFUNC_1(void, val_gc_add_root,value *)

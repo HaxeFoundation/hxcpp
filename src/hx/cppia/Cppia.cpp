@@ -3539,7 +3539,7 @@ struct ToInterface : public CppiaDynamicExpr
       {
          cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->name.__s);
          if (!cppiaVTable)
-           printf("Could not find scripting interface implementation %s on %s\n", toType->name.__s, fromType->name.__s);
+           DBGLOG("Could not find scripting interface implementation %s on %s, use dynamic\n", toType->name.__s, fromType->name.__s);
       }
       else
       {
@@ -5147,8 +5147,9 @@ struct GetFieldByLinkage : public CppiaExpr
          return replace;
       }
 
-      // It is ok for interfaces to look up members by name
-      if (!type->isInterface)
+      // It is ok for interfaces to look up members by name - and variables that turn
+      //  out to actaully be Dynamic (eg template types)
+      if (!type->isInterface && type->name!=HX_CSTRING("Dynamic") )
       {
          printf("   GetFieldByLinkage %s (%p %p) '%s' fallback\n", type->name.__s, type->haxeClass.mPtr, type->cppiaClass, field.__s);
          if (type->cppiaClass)
@@ -6530,7 +6531,6 @@ struct OpAdd : public BinOp
    {
       int lval = left->runInt(ctx);
       BCR_CHECK;
-      int rval = right->runInt(ctx);
       return lval + right->runInt(ctx);
    }
    Float runFloat(CppiaCtx *ctx)

@@ -240,6 +240,11 @@ double  api_val_field_numeric(neko_value  arg1,int arg2)
 // Byte arrays
 neko_buffer api_val_to_buffer(neko_value  arg1) { return dyn_alloc_buffer(api_val_string(arg1)); } 
 
+bool api_val_is_buffer(neko_value  arg1)
+{
+   return false;
+} 
+
 
 neko_buffer api_alloc_buffer_len(int inLen)
 {
@@ -513,6 +518,15 @@ neko_value  api_val_call0_traceexcept(neko_value  arg1)
 }
 
 
+int  api_val_fun_nargs(neko_value arg1)
+{
+   if (!arg1 || !neko_val_is_function(arg1) )
+      return faNotFunction;
+   return neko_val_fun_nargs(arg1);
+}
+
+
+
 void api_val_gc(neko_value obj, void *finalizer)
 {
    // Let neko deal with ints or abstracts ...
@@ -528,6 +542,11 @@ void api_val_gc(neko_value obj, void *finalizer)
       dyn_val_gc(obj,finalizer);
       neko_val_tag(obj) = old_tag;
    }
+}
+
+void api_gc_change_managed_memory(int,const char *)
+{
+   // Nothing to do here
 }
 
 
@@ -560,6 +579,7 @@ void *DynamicNekoLoader(const char *inName)
    IGNORE_API(gc_add_root)
    IGNORE_API(gc_remove_root)
    IGNORE_API(gc_set_top_of_stack)
+   IGNORE_API(gc_change_managed_memory)
    IGNORE_API(create_root)
    IGNORE_API(query_root)
    IGNORE_API(destroy_root)
@@ -575,6 +595,9 @@ void *DynamicNekoLoader(const char *inName)
    if (!strcmp(inName,"buffer_val"))
       return LoadNekoFunc("neko_buffer_to_string");
 
+   if (!strcmp(inName,"val_iter_field_vals"))
+      return LoadNekoFunc("neko_val_iter_fields");
+
    IMPLEMENT_HERE(val_strlen)
    IMPLEMENT_HERE(val_wstring)
    IMPLEMENT_HERE(val_string)
@@ -584,6 +607,7 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(alloc_string_len)
    IMPLEMENT_HERE(alloc_wstring_len)
 
+   IMPLEMENT_HERE(val_is_buffer)
    IMPLEMENT_HERE(val_to_buffer)
    IMPLEMENT_HERE(alloc_buffer_len)
    IMPLEMENT_HERE(buffer_size)
@@ -600,6 +624,8 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(val_array_push)
    IMPLEMENT_HERE(alloc_array)
    IMPLEMENT_HERE(val_array_value)
+
+   IMPLEMENT_HERE(val_fun_nargs)
 
    IMPLEMENT_HERE(val_call0_traceexcept)
 
@@ -678,7 +704,36 @@ neko_value neko_init(neko_value inNewString,neko_value inNewArray,neko_value inN
 #endif // NEKO_COMPATIBLE
 
 
+// This code will get run when the library is compiled against a newer version of hxcpp,
+//  and the application code uses an older version.
+bool default_val_is_buffer(void *inBuffer)
+{
+   typedef void *(ValToBufferFunc)(void *);
+   static ValToBufferFunc *valToBuffer = 0;
+   if (!valToBuffer)
+      valToBuffer = (ValToBufferFunc *)sResolveProc("val_to_buffer");
 
+   if (valToBuffer)
+      return valToBuffer(inBuffer)!=0;
+
+   return false;
+}
+
+
+// Do nothing on earlier versions of hxcpp that do not know what to do
+void default_gc_change_managed_memory(int,const char *) { }
+
+void *ResolveDefault(const char *inName)
+{
+   void *result = sResolveProc(inName);
+   if (result)
+      return result;
+   if (!strcmp(inName,"val_is_buffer"))
+      return (void *)default_val_is_buffer;
+   if (!strcmp(inName,"gc_change_managed_memory"))
+      return (void *)default_gc_change_managed_memory;
+   return 0;
+}
 
 #ifdef NEKO_WINDOWS
 
@@ -711,7 +766,7 @@ void *LoadFunc(const char *inName)
       fprintf(stderr,"Could not link plugin to process (hxCFFILoader.h %d)\n",__LINE__);
       exit(1);
    }
-   return sResolveProc(inName);
+   return ResolveDefault(inName);
 }
 
 #else // not windows
@@ -750,7 +805,7 @@ void *LoadFunc(const char *inName)
       exit(1);
       #endif
    }
-   return sResolveProc(inName);
+   return ResolveDefault(inName);
 }
 
 #undef EXT
@@ -770,7 +825,7 @@ ret IMPL_##name def_args \
    name = (FUNC_##name)LoadFunc(#name); \
    if (!name) \
    { \
-      fprintf(stderr,"Could find function " #name " \n"); \
+      fprintf(stderr,"Could not find function:" #name " \n"); \
       exit(1); \
    } \
    return name call_args; \
@@ -792,7 +847,7 @@ ret IMPL_##name def_args \
    name = (FUNC_##name)LoadFunc(#name); \
    if (!name) \
    { \
-      __android_log_print(ANDROID_LOG_ERROR,"CFFILoader", "Could not resolve :" #name "\n"); \
+      __android_log_print(ANDROID_LOG_ERROR,"CFFILoader", "Could not find function:" #name "\n"); \
    } \
    return name call_args; \
 }\

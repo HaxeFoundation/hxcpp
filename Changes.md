@@ -1,4 +1,19 @@
 
+* Only put a minimal run.n in source-control, and use this to boot hxcpp.n
+* Added cpp.Struct and cpp.Reference classes, which are handy for extern classes
+* Moved Class to hx namespace
+* Simplified 'main' logic
+* Allow new android compilers to work for old devices (thanks google)
+* Correctly read hxcpp_api_level from Build.xml
+* Verbose logging prints which file is being compiled
+* Handle undefining the INT_ constants differently to allow std::string to still compile
+* Remove entries form Options.txt that do not influence the cpp build
+* Add optional destination= command-line option to allow copying the result to named file
+* Static libraries will be prefixed with 'lib' now
+* val_is_buffer always returns false on neko
+* Add val_iter_field_vals, which is like val_iter_fields but consistent with neko
+* Remove NekoApi binaries
+* Add Cppia binaries
 * Add Windows64 binaries
 * Make compares between Dynamic and numeric types false, unless the Dynamic is actaully numeric
 ------------------------------------------------------------

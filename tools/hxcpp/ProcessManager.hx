@@ -155,7 +155,7 @@ class ProcessManager
       }
       
       var text = inText==null ?  "Running command" : inText;
-      Log.info("", " - \x1b[1m" + inText + ":\x1b[0m " + formatMessage(command, args));
+      Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
       
       var result = 0;
       
@@ -283,7 +283,7 @@ class ProcessManager
       }
 
       var text = inText==null ? "Running process" : inText;
-      Log.info("", " - \x1b[1m" + inText + " :\x1b[0m " + formatMessage(command, args));
+      Log.info("", " - \x1b[1m" + text + " :\x1b[0m " + formatMessage(command, args));
       Log.unlock();
 
       var output = new Array<String>();

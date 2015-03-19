@@ -392,6 +392,10 @@ void api_buffer_set_size(buffer inBuffer,int inLen)
 	NOT_IMPLEMNETED("api_buffer_set_size");
 }
 
+bool api_val_is_buffer(value inVal)
+{
+   return false;
+}
 
 void api_buffer_append_sub(buffer inBuffer,const char *inStr,int inLen)
 {
@@ -552,6 +556,11 @@ void * api_hx_alloc(int arg1)
 void * api_alloc_private(int arg1)
 {
 	return alloc_private(arg1);
+}
+
+void api_gc_change_managed_memory(int,const char *)
+{
+   // Nothing to do here
 }
 
 

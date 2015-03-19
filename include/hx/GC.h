@@ -103,6 +103,7 @@ void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHa
 void RegisterNewThread(void *inTopOfStack);
 void SetTopOfStack(void *inTopOfStack,bool inForce=false);
 int InternalCollect(bool inMajor,bool inCompact);
+void GCChangeManagedMemory(int inDelta, const char *inWhy=0);
 
 void EnterGCFreeZone();
 void ExitGCFreeZone();

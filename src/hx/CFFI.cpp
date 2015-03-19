@@ -473,6 +473,8 @@ buffer val_to_buffer(hx::Object * arg1)
    return (buffer)b;
 }
 
+bool val_is_buffer(value inVal) { return val_to_buffer((hx::Object *)inVal)!=0; }
+
 
 
 buffer alloc_buffer(const char *inStr)
@@ -703,6 +705,22 @@ value val_field_name(field inField)
 }
 
 
+void val_iter_field_vals(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
+{
+   if (inObj)
+   {
+      Array<String> fields = Array_obj<String>::__new(0,0);
+
+      inObj->__GetFields(fields);
+
+      for(int i=0;i<fields->length;i++)
+      {
+         inFunc((value)inObj->__Field(fields[i], HX_PROP_NEVER ).mPtr, __hxcpp_field_to_id(fields[i].__CStr()), inCookie);
+      }
+   }
+}
+
+
 void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
 {
    if (inObj)
@@ -717,6 +735,7 @@ void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
       }
    }
 }
+
 
 
    // Abstract types
@@ -779,6 +798,13 @@ void  gc_set_top_of_stack(int *inTopOfStack,bool inForce)
 {
    hx::SetTopOfStack(inTopOfStack,inForce);
 }
+
+
+void gc_change_managed_memory(int inDelta, const char *inWhy)
+{
+   hx::GCChangeManagedMemory(inDelta, inWhy);
+}
+
 
 
 class Root *sgRootHead = 0;

@@ -29,6 +29,10 @@ public:
    Dynamic(const Dynamic &inRHS) : super(inRHS.mPtr) { }
    explicit Dynamic(const HX_CHAR *inStr);
 
+   template<typename T,typename S>
+   explicit Dynamic(const cpp::Struct<T,S> &inRHS) { *this = inRHS; }
+
+
     void Set(bool inVal);
     void Set(int inVal);
     void Set(double inVal);
@@ -355,6 +359,8 @@ ARITH_DYNAMIC( * )
 double operator%(const int &inLHS,const Dynamic &inRHS);
 double operator%(const double &inLHS,const Dynamic &inRHS);
 double operator%(const float &inLHS,const Dynamic &inRHS);
+
+template<typename T,typename H> String::String(const cpp::Struct<T,H> &inRHS) { *this = (String)inRHS; }
 
 
 

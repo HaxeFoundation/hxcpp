@@ -30,7 +30,7 @@
   <flag value="-pipe"/>
   <flag value="-Wno-trigraphs"/>
   <flag value="-fno-stack-protector"/>
-  <flag value="-Wno-invalid-offsetof" />
+  <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-fpascal-strings"/>
   <flag value="-fasm-blocks"/>
   <flag value="-Wreturn-type"/>
