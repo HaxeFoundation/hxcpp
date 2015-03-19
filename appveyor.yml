@@ -42,8 +42,8 @@ install:
     - git clone --recursive --depth 1 https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
     - 'cd %HAXE_ROOT%'
     - 'set PATH=%PATH%;%HAXE_ROOT%'
-    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH%"'
-    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH% tools"'
+    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH% OCAMLOPT=ocamlopt.opt"'
+    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH% OCAMLOPT=ocamlopt.opt tools"'
     - cd %APPVEYOR_BUILD_FOLDER%
     - mkdir "%HAXELIB_ROOT%"
     - haxelib setup "%HAXELIB_ROOT%"
