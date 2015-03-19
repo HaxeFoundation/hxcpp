@@ -368,6 +368,7 @@ public:
 
         samples = 0;
         allocations = 0;
+        reallocations = 0;
         collections = 0;
 
         // Push a blank (destroyed on first Dump)
@@ -405,6 +406,7 @@ public:
 
     void StackUpdate(CallStack *stack, StackFrame *frame);
     void HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type=0);
+    void HXTRealloc(void* old_obj, void* new_obj, int new_Size);
 
     void Stash()
     {
@@ -416,12 +418,16 @@ public:
       gcTimer = 0;
 
       stash->allocations = allocations;
+      stash->reallocations = reallocations;
       stash->collections = collections;
       stash->samples = samples;
 
       samples = profiler_enabled ? new std::vector<int>() : 0;
-      allocations = allocations_enabled ? new std::vector<int>() : 0;
-      collections = allocations_enabled ? new std::vector<int>() : 0;
+      if (allocations_enabled) {
+        allocations = new std::vector<int>();
+        reallocations = new std::vector<int>();
+        collections = new std::vector<int>();
+      }
 
       int i,size;
       stash->names = 0;
@@ -555,6 +561,7 @@ private:
     int ignoreAllocs;
 
     std::vector<int> *allocations;
+    std::vector<int> *reallocations;
     std::map<int, bool> alloc_map;
     std::vector<int> *collections;
 
@@ -1100,6 +1107,15 @@ public:
         Telemetry *telemetry = stack->mTelemetry;
         if (telemetry) {
           telemetry->HXTAllocation(stack, obj, inSize, type);
+        }
+    }
+
+    static void HXTRealloc(void* old_obj, void* new_obj, int new_size)
+    {
+        CallStack *stack = hx::CallStack::GetCallerCallStack();
+        Telemetry *telemetry = stack->mTelemetry;
+        if (telemetry) {
+          telemetry->HXTRealloc(old_obj, new_obj, new_size);
         }
     }
 
@@ -2314,6 +2330,30 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     allocations->push_back(stackid);
     allocations->push_back((int)inSize);
     alloc_map[obj_id] = true; // TODO: timestamp?
+
+    //printf("Tracking alloc at %018x\n", obj);
+}
+
+void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
+{
+    if (!allocations_enabled) return;
+    int old_obj_id = __hxt_ptr_id(old_obj);
+    int new_obj_id = __hxt_ptr_id(new_obj);
+
+    // Only track reallocations of objects currently known to be allocated
+    std::map<int, bool>::iterator exist = alloc_map.find(old_obj_id);
+    if (exist != alloc_map.end()) {
+      reallocations->push_back(old_obj_id);
+      reallocations->push_back(new_obj_id);
+      reallocations->push_back(new_size);
+
+      printf("Object at %018x moving to %018x, new_size = %d bytes\n", old_obj, new_obj, new_size);
+
+      alloc_map.erase(exist);
+      alloc_map[new_obj_id] = true;
+    }
+
+    
 }
 
 #endif
@@ -2440,6 +2480,18 @@ void __hxt_new_string(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE
   hx::CallStack::HXTAllocation(obj, inSize, (const char*)"String");
+  #endif
+}
+void __hxt_new_array(void* obj, int inSize)
+{
+  #ifdef HXCPP_STACK_TRACE
+  hx::CallStack::HXTAllocation(obj, inSize, (const char*)"Array");
+  #endif
+}
+void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size)
+{
+  #ifdef HXCPP_STACK_TRACE
+  hx::CallStack::HXTRealloc(old_obj, new_obj, new_size);
   #endif
 }
 void __hxt_gc_reclaim(void* obj)

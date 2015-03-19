@@ -12,6 +12,9 @@
 
 #endif
 
+#ifdef HXCPP_TELEMETRY
+extern void __hxt_new_string(void* result, int size);
+#endif
 
 
 void *String::operator new( size_t inSize )
@@ -37,13 +40,6 @@ void __hxcpp_gc_compact()
       mem = compact;
    }
 }
-
-
-
-// TODO: Telemetry.h ?
-#ifdef HXCPP_TELEMETRY
-extern void __hxt_new_string(void* result, int size);
-#endif
 
 namespace hx
 {

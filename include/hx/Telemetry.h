@@ -15,6 +15,7 @@ struct TelemetryFrame
 
   // Valid only if allocations (and profiler) are enabled
   std::vector<int> *allocations;
+  std::vector<int> *reallocations;
   std::vector<int> *collections;
   std::vector<int> *stacks;
 };

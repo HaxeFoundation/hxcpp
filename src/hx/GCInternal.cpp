@@ -96,6 +96,7 @@ static int gCollectTraceCount = 0;
 
 // TODO: Telemetry.h ?
 #ifdef HXCPP_TELEMETRY
+extern void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size);
 extern void __hxt_gc_reclaim(void* obj);
 extern void __hxt_gc_start();
 extern void __hxt_gc_end();
@@ -3155,6 +3156,11 @@ void *InternalRealloc(void *inData,int inSize)
 
       new_data = tla->Alloc(inSize,false);
    }
+
+#ifdef HXCPP_TELEMETRY
+   //printf(" -- reallocating %018x to %018x, size from %d to %d\n", inData, new_data, s, inSize);
+   __hxt_gc_realloc(inData, new_data, inSize);
+#endif
 
    int min_size = s < inSize ? s : inSize;
 
