@@ -12,8 +12,14 @@ struct AutoCast
 };
 
 Dynamic CreateDynamicPointer(void *inValue);
-typedef String (*DynamicToStringFunc)(const void *);
-Dynamic CreateDynamicStruct(const void *inValue, int inSize, const char *inClassName, DynamicToStringFunc inFunc);
+
+enum DynamicHandlerOp
+{
+   dhoGetClassName,
+   dhoToString,
+};
+typedef void (*DynamicHandlerFunc)(DynamicHandlerOp op, const void *inData, void *outResult);
+Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc inFunc);
 
 template<typename T> class Reference;
 
@@ -111,13 +117,28 @@ class DefaultStructHandler
    public:
       static inline const char *getName() { return "unknown"; }
       static inline String toString( const void *inData ) { return HX_CSTRING("Struct"); }
+
+      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
+      {
+         if (op==dhoToString)
+            *(String *)outResult = toString(inData);
+         else if (op==dhoGetClassName)
+            *(const char **)outResult = getName();
+      }
 };
 
-class Int64Handler : public DefaultStructHandler
+class Int64Handler
 {
    public:
       static inline const char *getName() { return "cpp.Int64"; }
       static inline String toString( const void *inData ) { return String( *(Int64 *)inData ); }
+      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
+      {
+         if (op==dhoToString)
+            *(String *)outResult = toString(inData);
+         else if (op==dhoGetClassName)
+            *(const char **)outResult = getName();
+      }
 };
 
 
@@ -137,7 +158,7 @@ public:
    inline Struct<T,HANDLER> &operator=( const null & ) { value = T(); }
    inline Struct<T,HANDLER> &operator=( const Dynamic &inRHS ) { return *this = Struct<T,HANDLER>(inRHS); }
 
-   operator Dynamic() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::getName(), &HANDLER::toString ); }
+   operator Dynamic() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
    operator String() const { return HANDLER::toString(value); }
 
    bool operator==(const Struct<T,HANDLER> &inRHS) const { return value==inRHS.value; }
