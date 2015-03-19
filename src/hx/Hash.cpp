@@ -555,7 +555,7 @@ Dynamic  __object_hash_get(Dynamic &ioHash,Dynamic inKey)
       return null();
 
    Dynamic result = null();
-   hash->query(inKey==null() ? inKey : inKey->__GetRealObject(),result);
+   hash->query(inKey,result);
    return result;
 }
 

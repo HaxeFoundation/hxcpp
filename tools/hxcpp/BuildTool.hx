@@ -1004,7 +1004,7 @@ class BuildTool
             {
                var contents = sys.io.File.getContent(path); 
                if (contents.substr(0,1)!=" ") // Is it New-style?
-                  for(def in contents.split("\n"))
+                  for(def in contents.split("\r").join("").split("\n"))
                   {
                      var equals = def.indexOf("=");
                      if (equals>0)
