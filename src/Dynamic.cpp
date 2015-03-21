@@ -40,8 +40,8 @@ Dynamic DynEmptyString;
 class IntData : public hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc, const char *inName="Int")
+      { return hx::Object::operator new(inSize,inAlloc,inName); }
    IntData(int inValue=0) : mValue(inValue) {};
 
    hx::Class __GetClass() const { return __IntClass; }
@@ -68,8 +68,8 @@ public:
 class BoolData : public hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Bool")
+      { return hx::Object::operator new(inSize,inAlloc,"Bool"); }
    BoolData(bool inValue=false) : mValue(inValue) {};
 
    hx::Class __GetClass() const { return __BoolClass; }
@@ -97,8 +97,8 @@ public:
 class DoubleData : public hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Float")
+      { return hx::Object::operator new(inSize,inAlloc,inName); }
    DoubleData(double inValue=0) : mValue(inValue) {};
 
    hx::Class __GetClass() const { return __FloatClass; }
@@ -127,8 +127,8 @@ public:
 class PointerData : public hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="cpp.Pointer")
+      { return hx::Object::operator new(inSize,inAlloc,inName); }
 
    PointerData(void *inValue) : mValue(inValue) {};
 
@@ -160,8 +160,8 @@ public:
 class StructData : public hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjContainer,const char *inName="cpp.Struct")
+      { return hx::Object::operator new(inSize,inAlloc,inName); }
 
    StructData(const void *inValue,int inLength, cpp::DynamicHandlerFunc inHandler)
    {
