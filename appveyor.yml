@@ -2,15 +2,11 @@ version: "{build}"
 
 os: unstable #http://help.appveyor.com/discussions/suggestions/427-pre-install-cygwin
 
-platform:
-    - Win32
-
 clone_folder: C:\projects\hxcpp
 
 environment:
     global:
         HAXE_ROOT: C:\projects\haxe
-        NEKO_ROOT: C:\projects\neko
         HAXELIB_ROOT: C:\projects\haxelib
         CYG_ARCH: x86
         CYG_ROOT: C:\cygwin
@@ -26,18 +22,8 @@ install:
     - '%CYG_ROOT%\bin\bash -lc "cd /tmp && rm -rf wodi%WODI_ARCH% && tar -xf wodi%WODI_ARCH%.tar.xz && bash wodi%WODI_ARCH%/install.sh"'
     - '%CYG_ROOT%\bin\bash -lc "godi_add godi-zip"'
     - 'set PATH=%PATH%;%CYG_ROOT%\opt\wodi%WODI_ARCH%\bin'
-    # Install neko
-    - cinst make -y
-    - 'git clone --recursive --depth 1 https://github.com/HaxeFoundation/neko.git %NEKO_ROOT%'
-    - 'cd %NEKO_ROOT%'
-    - set PATH=%PATH%;%NEKO_ROOT%\bin
-    - msbuild neko_vc10.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-    - msbuild libs\libs_vc10.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-    - copy /y libs\include\gc\gc.dll bin
-    - cd %NEKO_ROOT%\src
-    - neko ..\boot\nekoc tools\install.neko
-    - neko tools\install -nolibs
-    - neko -version
+    # Install neko. Just download the chocolatey package instead of building from source in order to save time...
+    - cinst neko -y
     # Install haxe
     - git clone --recursive --depth 1 https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
     - 'cd %HAXE_ROOT%'
