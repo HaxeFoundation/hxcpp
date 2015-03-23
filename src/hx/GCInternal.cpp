@@ -1142,6 +1142,10 @@ FILE_SCOPE FinalizerList *sgFinalizers = 0;
 typedef std::map<hx::Object *,hx::finalizer> FinalizerMap;
 FILE_SCOPE FinalizerMap sFinalizerMap;
 
+typedef void (*HaxeFinalizer)(Dynamic);
+typedef std::map<hx::Object *,HaxeFinalizer> HaxeFinalizerMap;
+FILE_SCOPE HaxeFinalizerMap sHaxeFinalizerMap;
+
 hx::QuickVec<int> sFreeObjectIds;
 typedef std::map<hx::Object *,int> ObjectIdMap;
 typedef hx::QuickVec<hx::Object *> IdObjectMap;
@@ -1264,6 +1268,24 @@ void RunFinalizers()
       i = next;
    }
 
+
+   for(HaxeFinalizerMap::iterator i=sHaxeFinalizerMap.begin(); i!=sHaxeFinalizerMap.end(); )
+   {
+      hx::Object *obj = i->first;
+      HaxeFinalizerMap::iterator next = i;
+      ++next;
+
+      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
+      if ( mark!=gByteMarkID )
+      {
+         (*i->second)(obj);
+         sHaxeFinalizerMap.erase(i);
+      }
+
+      i = next;
+   }
+
+
    for(ObjectIdMap::iterator i=sObjectIdMap.begin(); i!=sObjectIdMap.end(); )
    {
       ObjectIdMap::iterator next = i;
@@ -1359,6 +1381,27 @@ void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
    else
       sFinalizerMap[obj] = f;
 }
+
+
+// Callback finalizer on non-abstract type;
+void  GCSetHaxeFinalizer( hx::Object *obj, HaxeFinalizer f )
+{
+   if (!obj)
+      throw Dynamic(HX_CSTRING("set_finalizer - invalid null object"));
+   if (((unsigned int *)obj)[-1] & HX_GC_CONST_ALLOC_BIT)
+      throw Dynamic(HX_CSTRING("set_finalizer - invalid const object"));
+
+   AutoLock lock(*gSpecialObjectLock);
+   if (f==0)
+   {
+      HaxeFinalizerMap::iterator i = sHaxeFinalizerMap.find(obj);
+      if (i!=sHaxeFinalizerMap.end())
+         sHaxeFinalizerMap.erase(i);
+   }
+   else
+      sHaxeFinalizerMap[obj] = f;
+}
+
 
 void GCDoNotKill(hx::Object *inObj)
 {
@@ -1790,6 +1833,14 @@ public:
           hx::finalizer f = i->second;
           hx::sFinalizerMap.erase(i);
           hx::sFinalizerMap[inTo] = f;
+       }
+
+       hx::HaxeFinalizerMap::iterator h = hx::sHaxeFinalizerMap.find(inFrom);
+       if (h!=hx::sHaxeFinalizerMap.end())
+       {
+          hx::HaxeFinalizer f = h->second;
+          hx::sHaxeFinalizerMap.erase(h);
+          hx::sHaxeFinalizerMap[inTo] = f;
        }
 
        hx::MakeZombieSet::iterator mz = hx::sMakeZombieSet.find(inFrom);
@@ -3317,7 +3368,7 @@ hx::Object *__hxcpp_get_next_zombie()
 
 void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
 {
-   GCSetFinalizer( inObj.mPtr, (hx::finalizer) inFunc );
+   GCSetHaxeFinalizer( inObj.mPtr, (hx::HaxeFinalizer) inFunc );
 }
 
 extern "C"
