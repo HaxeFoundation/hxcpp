@@ -17,7 +17,7 @@ class TestSort extends haxe.unit.TestCase
    public function testObjects()
    {
       var tests = new Array<SortData>();
-      for(i in 0...1000000)
+      for(i in 0...100000)
          tests.push( new SortData() );
 
       var sorted = tests.copy();
