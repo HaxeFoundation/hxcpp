@@ -1,0 +1,14 @@
+<xml>
+   <include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+
+   <files id="prime">
+      <file name="Project.cpp" />
+   </files>
+
+   <target id="default" output="${LIBPREFIX}prime${MSVC_LIB_VERSION}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+
+      <outdir name="ndll/${BINDIR}" />
+      <files id="prime"/>
+   </target>
+
+</xml>
