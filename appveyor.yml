@@ -17,17 +17,17 @@ environment:
 install:
     # Install ocaml using wodi
     - appveyor DownloadFile "http://cygwin.com/setup-%CYG_ARCH%.exe" -FileName "%CYG_ROOT%\setup.exe"
-    - '%CYG_ROOT%\setup.exe -q -R "%CYG_ROOT%" -P dos2unix -P diffutils -P cpio -P make -P patch -P mingw64-%MINGW_ARCH%-gcc-core -P mingw64-%MINGW_ARCH%-gcc-g++ >log.txt || type log.txt'
-    - '%CYG_ROOT%\bin\bash -lc "cygcheck -dc cygwin"'
+    - '%CYG_ROOT%\setup.exe -q -R "%CYG_ROOT%" -P dos2unix -P diffutils -P cpio -P make -P patch -P mingw64-%MINGW_ARCH%-gcc-core -P mingw64-%MINGW_ARCH%-gcc-g++ > log.txt || type log.txt'
+    - '%CYG_ROOT%\bin\bash -lc "cygcheck -dc cygwin" > log.txt || type log.txt'
     - '%CYG_ROOT%\bin\bash -lc "wget -q http://ml.ignorelist.com/wodi/8/wodi%WODI_ARCH%.tar.xz -O /tmp/wodi%WODI_ARCH%.tar.xz"'
-    - '%CYG_ROOT%\bin\bash -lc "cd /tmp && rm -rf wodi%WODI_ARCH% && tar -xf wodi%WODI_ARCH%.tar.xz && bash wodi%WODI_ARCH%/install.sh"'
-    - '%CYG_ROOT%\bin\bash -lc "godi_add godi-zip"'
+    - '%CYG_ROOT%\bin\bash -lc "cd /tmp && rm -rf wodi%WODI_ARCH% && tar -xf wodi%WODI_ARCH%.tar.xz && bash wodi%WODI_ARCH%/install.sh" > log.txt || type log.txt'
+    - '%CYG_ROOT%\bin\bash -lc "godi_add godi-zip" > log.txt || type log.txt'
     - 'set PATH=%PATH%;%CYG_ROOT%\opt\wodi%WODI_ARCH%\bin'
     # Install neko. Just download the chocolatey package instead of building from source in order to save time...
     - cinst neko -y
     - RefreshEnv
     # Install haxe
-    - git clone --recursive --depth 1 https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
+    - git clone --recursive --depth 1 -q https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
     - 'cd %HAXE_ROOT%'
     - 'set PATH=%PATH%;%HAXE_ROOT%'
     - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH% OCAMLOPT=ocamlopt.opt"'
