@@ -24,8 +24,12 @@
 <set name="SUBSYSTEMWINDOWS" value="1" if="no_console" unless="HXCPP_DEBUGGER" />
 <set name="SUBSYSTEMCONSOLE" value="1" unless="SUBSYSTEMWINDOWS" />
 
-<set name="CONSOLE_VER" value=",5.01" if="HXCPP_WINXP_COMPAT" />
-<set name="CONSOLE_VER" value="" unless="MSVC17+" />
+<section if="HXCPP_WINXP_COMPAT">
+  <set name="SUBSYSTEM_VER" value=",5.01" unless="HXCPP_M64" />
+  <set name="SUBSYSTEM_VER" value=",5.02" if="HXCPP_M64" />
+</section>
+
+<set name="SUBSYSTEM_VER" value="" unless="MSVC17+" />
 
 <set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}${OBJEXT}${OBJCACHE}${XPOBJ}" unless="winrt" />
 <set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}" if="winrt" />
@@ -95,8 +99,8 @@
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
-  <flag value="-subsystem:windows" if="SUBSYSTEMWINDOWS" />
-  <flag value="-subsystem:console${CONSOLE_VER}" if="SUBSYSTEMCONSOLE" />
+  <flag value="-subsystem:windows${SUBSYSTEM_VER}" if="SUBSYSTEMWINDOWS" />
+  <flag value="-subsystem:console${SUBSYSTEM_VER}" if="SUBSYSTEMCONSOLE" />
   <flag value="-libpath:lib"/>
   <flag value="user32.lib"/>
   <ext value=".exe"/>
