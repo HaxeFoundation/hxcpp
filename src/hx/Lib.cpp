@@ -302,55 +302,6 @@ typedef std::map<std::string,void *> RegistrationMap;
 RegistrationMap *sgRegisteredPrims=0;
 
 
-#if (defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
-
-Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
-{
-   String full_name = inPrim;
-   switch(inArgCount)
-   {
-      case 0: full_name += HX_CSTRING("__0"); break;
-      case 1: full_name += HX_CSTRING("__1"); break;
-      case 2: full_name += HX_CSTRING("__2"); break;
-      case 3: full_name += HX_CSTRING("__3"); break;
-      case 4: full_name += HX_CSTRING("__4"); break;
-      case 5: full_name += HX_CSTRING("__5"); break;
-      default:
-          full_name += HX_CSTRING("__MULT");
-   }
-
-
-   if (sgRegisteredPrims)
-   {
-      void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
-      // Try with lib name ...
-      if (!registered)
-         registered = (*sgRegisteredPrims)[(inLib + HX_CSTRING("_") + full_name).__CStr()];
-      if (registered)
-      {
-         return Dynamic( new ExternalPrimitive(registered,inArgCount,HX_CSTRING("registered@")+full_name) );
-      }
-   }
-
-   printf("Primitive not found : %s\n", full_name.__CStr() );
-   return null();
-}
-
-void *__hxcpp_get_proc_address(String inLib, String inPrim,bool ,bool inQuietFail)
-{
-   if (sgRegisteredPrims)
-      return (*sgRegisteredPrims)[inPrim.__CStr()];
-
-   if (!inQuietFail)
-      printf("Primitive not found : %s\n", inPrim.__CStr() );
-   return 0;
-}
-
-
-#else
-
-
-extern "C" void *hx_cffi(const char *inName);
 
 static std::vector<std::string> sgLibPath;
 static bool sgLibPathIsInit = false;
@@ -422,6 +373,63 @@ void __hxcpp_push_dll_path(String inPath)
    else
       sgLibPath.push_back( inPath.__s );
 }
+
+
+
+
+
+
+
+
+#if (defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
+
+Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
+{
+   String full_name = inPrim;
+   switch(inArgCount)
+   {
+      case 0: full_name += HX_CSTRING("__0"); break;
+      case 1: full_name += HX_CSTRING("__1"); break;
+      case 2: full_name += HX_CSTRING("__2"); break;
+      case 3: full_name += HX_CSTRING("__3"); break;
+      case 4: full_name += HX_CSTRING("__4"); break;
+      case 5: full_name += HX_CSTRING("__5"); break;
+      default:
+          full_name += HX_CSTRING("__MULT");
+   }
+
+
+   if (sgRegisteredPrims)
+   {
+      void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
+      // Try with lib name ...
+      if (!registered)
+         registered = (*sgRegisteredPrims)[(inLib + HX_CSTRING("_") + full_name).__CStr()];
+      if (registered)
+      {
+         return Dynamic( new ExternalPrimitive(registered,inArgCount,HX_CSTRING("registered@")+full_name) );
+      }
+   }
+
+   printf("Primitive not found : %s\n", full_name.__CStr() );
+   return null();
+}
+
+void *__hxcpp_get_proc_address(String inLib, String inPrim,bool ,bool inQuietFail)
+{
+   if (sgRegisteredPrims)
+      return (*sgRegisteredPrims)[inPrim.__CStr()];
+
+   if (!inQuietFail)
+      printf("Primitive not found : %s\n", inPrim.__CStr() );
+   return 0;
+}
+
+
+#else
+
+
+extern "C" void *hx_cffi(const char *inName);
 
 
 #if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE) && !defined(EMSCRIPTEN) && !defined(STATIC_LINK)
