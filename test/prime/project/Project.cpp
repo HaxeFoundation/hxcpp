@@ -36,6 +36,16 @@ void fields(value object)
 DEFINE_PRIME1v(fields);
 
 
+HxString stringVal(HxString inString)
+{
+   printf("String : %s (%d)\n", inString.__s, inString.length);
+   return HxString("Ok");
+}
+DEFINE_PRIME1(stringVal);
+
+
+// Conflict with name - use anon-namespace
+namespace {
 value select(int which, value object0, value object1, value object2, value object3)
 {
    switch(which)
@@ -48,6 +58,7 @@ value select(int which, value object0, value object1, value object2, value objec
    }
 }
 DEFINE_PRIME5(select);
+}
 
 float floats(bool add, float firstVal, float secondVal)
 {

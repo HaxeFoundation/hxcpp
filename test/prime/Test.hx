@@ -9,14 +9,15 @@ class Test
    static var fields = Loader.load("fields", "ov" );
    static var select = Loader.load("select", "iooooo" );
    static var floats = Loader.load("floats", "bfff" );
-   static var multi5 = Loader.load("multi5", "iiiiii" );
-   static var multi6 = Loader.load("multi6", "iiiiiii" );
-   static var multi7 = Loader.load("multi7", "iiiiiiii" );
-   static var multi8 = Loader.load("multi8", "iiiiiiiii" );
-   static var multi9 = Loader.load("multi9", "iiiiiiiiii" );
-   static var multi10 = Loader.load("multi10", "iiiiiiiiiii" );
-   static var multi11 = Loader.load("multi11", "iiiiiiiiiiii" );
-   static var multi12 = Loader.load("multi12", "iiiiiiiiiiiii" );
+   static var stringVal = Loader.load("stringVal", "ss" );
+   static var multi5 = Loader.load("multi5",  "iiiiii" );
+   static var multi6 = Loader.load("multi6",  "iiiiiii" );
+   static var multi7 = Loader.load("multi7",  "iiiiiiii" );
+   static var multi8 = Loader.load("multi8",  "iiiiiiiii" );
+   static var multi9 = Loader.load("multi9",  "iiiiiiiiii" );
+   static var multi10 = Loader.load("multi10","iiiiiiiiiii" );
+   static var multi11 = Loader.load("multi11","iiiiiiiiiiii" );
+   static var multi12 = Loader.load("multi12","iiiiiiiiiiiii" );
 
    public static function main()
    {
@@ -35,7 +36,8 @@ class Test
 
       fields.call( { x:11, name:"Hello" } );
 
-      var o0 = [1];
+      var result = stringVal.call("HxString");
+      trace(result);
 
       for(i in 0...4)
          trace( select.call(i, [1], "Hello", {x:1}, add) );

@@ -4,14 +4,21 @@
 #include "CFFI.h"
 
 
-namespace cffi
-{
-
 struct HxString
 {
+   inline HxString(const char *inS,int inLen=-1) : length(inLen), __s(inS)
+   {
+      if (length<0)
+         for(length=0; __s[length]; length++) { }
+   }
+   inline HxString() : length(0), __s(0) { }
    int length;
    const char *__s;
 };
+
+
+namespace cffi
+{
 
 inline value alloc_pointer(void *inPtr) { return alloc_abstract((vkind)(0x100 + 2),inPtr); }
 
@@ -145,7 +152,7 @@ bool CheckSig9( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7,A8), const char *inSig)
           SigType<A7>::Char==inSig[7] &&
           SigType<A8>::Char==inSig[8] &&
           SigType<RET>::Char==inSig[9] &&
-          0 == inSig[0];
+          0 == inSig[10];
 }
 
 template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9>
@@ -211,7 +218,7 @@ inline value ToValue(float inVal) { return alloc_float(inVal); }
 inline value ToValue(double inVal) { return alloc_float(inVal); }
 inline value ToValue(value inVal) { return inVal; }
 inline value ToValue(bool inVal) { return alloc_bool(inVal); }
-//inline value ToValue(HxString inVal) { return 0; }
+inline value ToValue(HxString inVal) { return alloc_string_len(inVal.__s,inVal.length); }
 
 struct AutoValue
 {
@@ -223,7 +230,7 @@ struct AutoValue
    inline operator float() { return val_number(mValue); }
    inline operator bool() { return val_bool(mValue); }
    inline operator const char *() { return val_string(mValue); }
-   //inline operator HxString() { return HxString(); }
+   inline operator HxString() { return HxString(val_string(mValue), val_strlen(mValue)); }
 };
 
 
