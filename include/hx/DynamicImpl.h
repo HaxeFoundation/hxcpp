@@ -640,6 +640,48 @@ Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dy
    return mPtr->__Run(Array_obj<Dynamic>::__new(0,20)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19));
 }
 
+ 
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,21)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20));
+}
+
+ 
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,22)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21));
+}
+
+ 
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,23)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21)->Add(inArg22));
+}
+
+ 
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,24)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21)->Add(inArg22)->Add(inArg23));
+}
+
+ 
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,25)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21)->Add(inArg22)->Add(inArg23)->Add(inArg24));
+}
+
+ 
+Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24,const Dynamic &inArg25)
+{
+   CheckFPtr();
+   return mPtr->__Run(Array_obj<Dynamic>::__new(0,26)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21)->Add(inArg22)->Add(inArg23)->Add(inArg24)->Add(inArg25));
+}
+
 
 
 namespace hx
