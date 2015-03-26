@@ -404,7 +404,11 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
       void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
       // Try with lib name ...
       if (!registered)
-         registered = (*sgRegisteredPrims)[(inLib + HX_CSTRING("_") + full_name).__CStr()];
+      {
+         String libString = inLib + HX_CSTRING("_") + full_name;
+         registered = (*sgRegisteredPrims)[libString.__CStr()];
+      }
+
       if (registered)
       {
          return Dynamic( new ExternalPrimitive(registered,inArgCount,HX_CSTRING("registered@")+full_name) );
@@ -490,7 +494,10 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
       void *registered = (*sgRegisteredPrims)[full_name.__CStr()];
       // Try with lib name ...
       if (!registered)
-         registered = (*sgRegisteredPrims)[(inLib + HX_CSTRING("_") + full_name).__CStr()];
+      {
+         String libString = inLib + HX_CSTRING("_") + full_name;
+         registered = (*sgRegisteredPrims)[libString.__CStr()];
+      }
 
       if (registered)
          return registered;

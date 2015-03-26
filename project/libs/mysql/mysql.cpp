@@ -532,21 +532,21 @@ static value mysql_connect( value params  ) {
 // Registers
 
 DEFINE_PRIM(mysql_connect,1);
-DEFINE_LIB_PRIM("mysql",close,1);
-DEFINE_LIB_PRIM("mysql",request,2);
-DEFINE_LIB_PRIM("mysql",select_db,2);
-DEFINE_LIB_PRIM("mysql",escape,2);
+DEFINE_LIB_PRIM("mysql5",close,1);
+DEFINE_LIB_PRIM("mysql5",request,2);
+DEFINE_LIB_PRIM("mysql5",select_db,2);
+DEFINE_LIB_PRIM("mysql5",escape,2);
 
-DEFINE_LIB_PRIM("mysql",result_get_length,1);
-DEFINE_LIB_PRIM("mysql",result_get_nfields,1);
-DEFINE_LIB_PRIM("mysql",result_get_fields_names,1);
-DEFINE_LIB_PRIM("mysql",result_next,1);
-DEFINE_LIB_PRIM("mysql",result_get,2);
-DEFINE_LIB_PRIM("mysql",result_get_int,2);
-DEFINE_LIB_PRIM("mysql",result_get_float,2);
-DEFINE_LIB_PRIM("mysql",result_set_conv_date,2);
+DEFINE_LIB_PRIM("mysql5",result_get_length,1);
+DEFINE_LIB_PRIM("mysql5",result_get_nfields,1);
+DEFINE_LIB_PRIM("mysql5",result_get_fields_names,1);
+DEFINE_LIB_PRIM("mysql5",result_next,1);
+DEFINE_LIB_PRIM("mysql5",result_get,2);
+DEFINE_LIB_PRIM("mysql5",result_get_int,2);
+DEFINE_LIB_PRIM("mysql5",result_get_float,2);
+DEFINE_LIB_PRIM("mysql5",result_set_conv_date,2);
 
-DEFINE_LIB_PRIM("mysql",set_conv_funs,4);
+DEFINE_LIB_PRIM("mysql5",set_conv_funs,4);
 
 /* ************************************************************************ */
 

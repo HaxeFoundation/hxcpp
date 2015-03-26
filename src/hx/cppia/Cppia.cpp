@@ -138,6 +138,7 @@ CppiaStackVar *StackLayout::findVar(int inId)
 
 // --- CppiaCtx functions ----------------------------------------
 
+#ifdef CPPIA_JIT
 void CppiaExpr::genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
 {
    compiler.trace(getName());
@@ -162,6 +163,7 @@ void SLJIT_CALL stringToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->ge
 void SLJIT_CALL intToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getInt() ); }
 void SLJIT_CALL doubleToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getFloat() ); }
 
+#endif
 
 
 
@@ -189,6 +191,7 @@ struct CppiaDynamicExpr : public CppiaExpr
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
    virtual hx::Object *runObject(CppiaCtx *ctx) = 0;
 
+   #ifdef CPPIA_JIT
    virtual void genObject(CppiaCompiler &compiler, const Addr &inDest)  { }
 
    void preGen(CppiaCompiler &compiler)
@@ -232,6 +235,7 @@ struct CppiaDynamicExpr : public CppiaExpr
             genObject(compiler, inDest);
       }
    }
+   #endif
 
 
 };
@@ -377,9 +381,11 @@ struct CppiaConst
 static String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
 
 
+#ifdef CPPIA_JIT
 void SLJIT_CALL argToInt(CppiaCtx *ctx) { ctx->pushInt( (* (hx::Object **)(ctx->pointer))->__ToInt() ); }
 void SLJIT_CALL argToDouble(CppiaCtx *ctx) { ctx->pushFloat( (* (hx::Object **)(ctx->pointer))->__ToDouble() ); }
 void SLJIT_CALL argToString(CppiaCtx *ctx) { ctx->pushString( (* (hx::Object **)(ctx->pointer))->__ToString() ); }
+#endif
 
 struct ScriptCallable : public CppiaDynamicExpr
 {
@@ -393,7 +399,11 @@ struct ScriptCallable : public CppiaDynamicExpr
    std::vector<CppiaConst>    initVals;
    CppiaExpr *body;
    CppiaModule *data;
+   #ifdef CPPIA_JIT
    CppiaCompiled compiled;
+   #else
+   void    *compiled;
+   #endif
 
    std::vector<CppiaStackVar *> captureVars;
    int                          captureSize;
@@ -435,8 +445,10 @@ struct ScriptCallable : public CppiaDynamicExpr
 
    ~ScriptCallable()
    {
+      #ifdef CPPIA_JIT
       if (compiled)
          CppiaCompiler::freeCompiled(compiled);
+      #endif
    }
 
    CppiaExpr *link(CppiaModule &inModule)
@@ -465,6 +477,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    ExprType getType() { return returnType; }
 
 
+   #ifdef CPPIA_JIT
    void preGenArgs(CppiaCompiler &compiler, CppiaExpr *inThis, Expressions &inArgs)
    {
       if (inThis)
@@ -659,6 +672,7 @@ struct ScriptCallable : public CppiaDynamicExpr
          }
       }
    }
+   #endif
 
 
    void pushArgs(CppiaCtx *ctx, hx::Object *inThis, Expressions &inArgs)
@@ -865,6 +879,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    // Run the actual function
    void runFunction(CppiaCtx *ctx)
    {
+      #ifdef CPPIA_JIT
       if (compiled)
       {
          //printf("Running compiled code...\n");
@@ -872,6 +887,7 @@ struct ScriptCallable : public CppiaDynamicExpr
          //printf("Done.\n");
       }
       else
+      #endif
       {
          if (stackSize)
          {
@@ -948,6 +964,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    }
 
 
+   #ifdef CPPIA_JIT
    void compile()
    {
       if (!compiled && body)
@@ -964,6 +981,7 @@ struct ScriptCallable : public CppiaDynamicExpr
          compiled = compiler.generate();
       }
    }
+   #endif
 
 };
 
@@ -1011,12 +1029,13 @@ void CppiaFunction::link( )
    }
 }
 
+#ifdef CPPIA_JIT
 void CppiaFunction::compile()
 {
    if (funExpr)
       funExpr->compile();
 }
-
+#endif
 
 
 class CppiaEnumBase : public EnumBase_obj
@@ -1922,6 +1941,7 @@ struct CppiaClassInfo
       DBGLOG("  this constructor %p\n", newFunc);
    }
 
+   #ifdef CPPIA_JIT
    void compile()
    {
       for(int i=0;i<staticFunctions.size();i++)
@@ -1942,6 +1962,7 @@ struct CppiaClassInfo
          memberFunctions[i]->compile();
       }
    }
+   #endif
 
    void link()
    {
@@ -2814,6 +2835,7 @@ struct BlockExpr : public CppiaExpr
    }
 
 
+   #ifdef CPPIA_JIT
    void preGen(CppiaCompiler &compiler)
    {
       for(int i=0;i<expressions.size();i++)
@@ -2834,6 +2856,7 @@ struct BlockExpr : public CppiaExpr
          }
       }
    }
+   #endif
 
 };
 
@@ -2953,6 +2976,7 @@ struct IsNotNull : public CppiaBoolExpr
 };
 
 
+#ifdef CPPIA_JIT
 void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType, ExprType srcType)
 {
    CtxMemberVal returnAddr(offsetof(CppiaCtx,frame));
@@ -3055,6 +3079,7 @@ void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType,
          default: ;
       }
 }
+#endif
 
 
 
@@ -3114,6 +3139,7 @@ struct CallFunExpr : public CppiaExpr
       ctx->runVoid(function);
    }
 
+   #ifdef CPPIA_JIT
    void preGen(CppiaCompiler &compiler)
    {
       AllocTemp pointer(compiler);
@@ -3177,6 +3203,7 @@ struct CallFunExpr : public CppiaExpr
 
       convertResult(compiler, inDest, resultType, function->getType() );
    }
+   #endif
 
 };
 
@@ -4515,6 +4542,7 @@ struct Call : public CppiaDynamicExpr
       return 0;
    }
 
+   #ifdef CPPIA_JIT
    void preGen(CppiaCompiler &compiler)
    {
       AllocTemp frame(compiler);
@@ -4563,6 +4591,7 @@ struct Call : public CppiaDynamicExpr
       if (inDest!=pointer)
          compiler.move( inDest, pointer );
    }
+   #endif
 };
 
 struct CallMember : public CppiaExpr
@@ -7158,7 +7187,7 @@ void CppiaModule::link()
       main = (ScriptCallable *)main->link(*this);
 }
 
-
+#ifdef CPPIA_JIT
 void CppiaModule::compile()
 {
    for(int i=0;i<classes.size();i++)
@@ -7167,7 +7196,7 @@ void CppiaModule::compile()
    if (main)
       main->compile();
 }
-
+#endif
 
 
 /*

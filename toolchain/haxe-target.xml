@@ -75,7 +75,7 @@
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
   <depend name="${HXCPP}/src/hx/cppia/CppiaStream.h" />
-  <depend name="${HXCPP}/src/hx/cppia/CppiaCompiler.h" />
+  <depend name="${HXCPP}/src/hx/cppia/CppiaCompiler.h"  if="CPPIA_JIT" />
   <compilerflag value="-DHX_UNDEFINE_H" />
   <compilerflag value="-DCPPIA_JIT" if="CPPIA_JIT" />
 
@@ -86,7 +86,7 @@
   <file name = "src/hx/cppia/GlobalBuiltin.cpp" />
   <file name = "src/hx/cppia/HaxeNative.cpp" />
   <file name = "src/hx/cppia/CppiaVars.cpp" />
-  <file name = "src/hx/cppia/CppiaCompiler.cpp" />
+  <file name = "src/hx/cppia/CppiaCompiler.cpp" if="CPPIA_JIT" />
 </files>
 
 

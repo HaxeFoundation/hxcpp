@@ -173,7 +173,7 @@ public:
 
     static void SLJIT_CALL doTrace(const char *inVal)
     {
-       printf("trace %s\n",inVal,inVal);
+       printf("trace %s\n",inVal);
     }
 
     void trace(const char *inText)
