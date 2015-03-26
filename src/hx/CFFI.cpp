@@ -1,4 +1,4 @@
-   #include <hxcpp.h>
+#include <hxcpp.h>
 #include <stdio.h>
 // Get headers etc.
 #include <hx/OS.h>
@@ -881,6 +881,16 @@ void gc_exit_blocking()
 void gc_safe_point()
 {
    __SAFE_POINT;
+}
+
+void gc_collect()
+{
+    hx::InternalCollect(true, false);
+}
+
+void gc_compact()
+{
+    hx::InternalCollect(true, true);
 }
 
 gcroot create_root(value) { return 0; }

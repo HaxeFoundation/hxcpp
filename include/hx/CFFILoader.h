@@ -168,6 +168,7 @@ typedef void (*fail_func)(neko_value,const char *,int);
 typedef neko_value (*alloc_array_func)(unsigned int);
 typedef void (*val_gc_func)(neko_value,void *);
 typedef void (*val_ocall1_func)(neko_value,int,neko_value);
+typedef void (*gc_collect_func)();
 
 static alloc_object_func dyn_alloc_object = 0;
 static alloc_string_func dyn_alloc_string = 0;
@@ -184,6 +185,8 @@ static buffer_append_sub_func dyn_buffer_append_sub = 0;
 static alloc_array_func dyn_alloc_array = 0;
 static val_gc_func dyn_val_gc = 0;
 static val_ocall1_func dyn_val_ocall1 = 0;
+static gc_collect_func dyn_gc_collect = 0;
+static gc_collect_func dyn_gc_compact = 0;
 
 
 neko_value api_alloc_string(const char *inString)
@@ -549,6 +552,17 @@ void api_gc_change_managed_memory(int,const char *)
    // Nothing to do here
 }
 
+void api_gc_collect()
+{
+    dyn_gc_collect();
+}
+
+
+void api_gc_compact()
+{
+    dyn_gc_compact();
+}
+
 
 #define IMPLEMENT_HERE(x) if (!strcmp(inName,#x)) return (void *)api_##x;
 #define IGNORE_API(x) if (!strcmp(inName,#x)) return (void *)api_empty;
@@ -572,6 +586,8 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(alloc_empty_object)
    IMPLEMENT_HERE(alloc_root)
    IMPLEMENT_HERE(val_gc)
+   IMPLEMENT_HERE(gc_collect)
+   IMPLEMENT_HERE(gc_compact)
 
    IGNORE_API(gc_enter_blocking)
    IGNORE_API(gc_exit_blocking)
@@ -661,6 +677,8 @@ ResolveProc InitDynamicNekoLoader()
       dyn_alloc_array = (alloc_array_func)LoadNekoFunc("neko_alloc_array");
       dyn_val_gc = (val_gc_func)LoadNekoFunc("neko_val_gc");
       dyn_val_ocall1 = (val_ocall1_func)LoadNekoFunc("neko_val_ocall1");
+      dyn_gc_collect = (gc_collect_func)LoadNekoFunc("neko_gc_collect");
+      dyn_gc_compact = (gc_collect_func)LoadNekoFunc("neko_gc_compact");
       init = true;
    }
 
