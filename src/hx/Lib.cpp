@@ -312,7 +312,7 @@ typedef std::map<std::string,void *> RegistrationMap;
 void __unload_all()
 {
 #ifdef HX_WINRT
-#elif (defined (IPHONE) || defined(EMSCRIPTEN)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
+#elif (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
 #else
     /* Unload all loaded libraries so that any atexit() that they
        registered runs as well.  Unload in the reverse order of loading */
