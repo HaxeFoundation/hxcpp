@@ -1106,7 +1106,7 @@ void  linkCppiaClass(hx::Class_obj *inClass, CppiaModule &cppia, String inName);
 
 
 typedef std::vector<CppiaFunction *> Functions;
-typedef std::unordered_map<std::string, ScriptCallable *> FunctionMap;
+typedef std::tr1::unordered_map<std::string, ScriptCallable *> FunctionMap;
 
 struct CppiaClassInfo
 {
@@ -1124,7 +1124,7 @@ struct CppiaClassInfo
    int       dynamicMapOffset;
    void      **vtable;
    std::string name;
-   std::unordered_map<std::string, void **> interfaceVTables;
+   std::tr1::unordered_map<std::string, void **> interfaceVTables;
    std::set<String> nativeProperties;
    hx::Class     mClass;
 

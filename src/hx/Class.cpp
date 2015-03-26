@@ -115,9 +115,9 @@ bool Class_obj::SetNoStaticField(const String &inString, Dynamic &ioValue, hx::P
 
 void Class_obj::registerScriptable(bool inOverwrite)
 {
-   if (!inOverwrite && sClassMap->find(mName)!=sClassMap->end())
+   if (!inOverwrite && sClassMap->find(mName.c_str())!=sClassMap->end())
       return;
-   (*sClassMap)[ mName ] = this;
+   (*sClassMap)[ mName.c_str() ] = this;
 }
 
 Class Class_obj::GetSuper()
@@ -370,9 +370,6 @@ void VisitClassStatics(hx::VisitContext *__inCtx)
    ClassMap::iterator end = sClassMap->end();
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
-      // all strings should be constants anyhow - should not be needed?
-      HX_VISIT_STRING(i->first.__s);
-
       HX_VISIT_OBJECT(i->second.mPtr);
 
       i->second->VisitStatics(__inCtx);
