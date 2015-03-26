@@ -2,7 +2,7 @@
 
 #include <neko.h>
 
-#include <map>
+#include <tr1/unordered_map>
 #include <vector>
 #include <string>
 //#include <gc.h>
@@ -12,7 +12,7 @@ vkind k_int32 = vtAbstractBase;
 vkind k_hash = (int)vtAbstractBase + 1;
 static int sgKinds = (int)vtAbstractBase + 2;
 
-typedef std::map<std:;string,int> KindMap;
+typedef std::tr1::unordered_map<std:;string,int> KindMap;
 
 int hxcpp_alloc_kind()
 {

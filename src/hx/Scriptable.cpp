@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
-#include <map>
+#include <tr1/unordered_map>
 
 //#define DBGLOG(...) { }
 #define DBGLOG printf
@@ -205,17 +205,17 @@ struct MethodBody
 };
 
 
-static String DOT = HX_CSTRING(".");
-static String FLASH_DOT = HX_CSTRING("flash.");
-static String NATIVE_DOT = HX_CSTRING("native.");
-static String LANGLE = HX_CSTRING("<");
-static String RANGLE = HX_CSTRING(">");
-static String COMMA = HX_CSTRING(",");
-static String NAME_BOOLEAN = HX_CSTRING("Boolean");
-static String NAME_INT = HX_CSTRING("Int");
-static String NAME_UINT = HX_CSTRING("UInt");
-static String NAME_FLOAT = HX_CSTRING("Number");
-static String NAME_STRING = HX_CSTRING("String");
+static const char *DOT = ".";
+static const char *FLASH_DOT = "flash.";
+static const char *NATIVE_DOT = "native.";
+static const char *LANGLE = "<";
+static const char *RANGLE = ">";
+static const char *COMMA = ",";
+static const char *NAME_BOOLEAN = "Boolean";
+static const char *NAME_INT = "Int";
+static const char *NAME_UINT = "UInt";
+static const char *NAME_FLOAT = "Number";
+static const char *NAME_STRING = "String";
 
 static const char *sOpCodeNames[256];
 
@@ -364,11 +364,11 @@ public:
 };
 
 
-typedef std::map<std::string, ScriptRegistered *> ScriptRegisteredMap;
+typedef std::tr1::unordered_map<std::string, ScriptRegistered *> ScriptRegisteredMap;
 static ScriptRegisteredMap *sScriptRegistered = 0;
 static ScriptRegistered *sObject = 0;
 
-typedef std::map<std::string, ScriptRegisteredIntferface *> ScriptRegisteredInterfaceMap;
+typedef std::tr1::unordered_map<std::string, ScriptRegisteredIntferface *> ScriptRegisteredInterfaceMap;
 static ScriptRegisteredInterfaceMap *sScriptRegisteredInterface = 0;
 
 Dynamic sGetBool(const unsigned char *inPtr) { return *(int *)inPtr != 0; }
@@ -479,9 +479,9 @@ String RemapFlash(String inValue)
    return inValue;
 }
 
-typedef std::map< std::string, int> MethodIndexMap;
-typedef std::map< std::string, Method *> MethodMap;
-typedef std::map< std::string, int> FieldIndexMap;
+typedef std::tr1::unordered_map< std::string, int> MethodIndexMap;
+typedef std::tr1::unordered_map< std::string, Method *> MethodMap;
+typedef std::tr1::unordered_map< std::string, int> FieldIndexMap;
 
 class ScriptHandler : public hx::Class_obj
 {
@@ -2043,7 +2043,7 @@ public:
 
    Array<Dynamic> mGlobals;
    Array<String>  mFields;
-   std::map<unsigned int,int> mFieldHash;
+   std::tr1::unordered_map<unsigned int,int> mFieldHash;
 
    bool mOk;
    int mGlobalCount;
