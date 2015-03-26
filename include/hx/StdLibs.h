@@ -47,6 +47,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_print(Dynamic &inV);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_println(Dynamic &inV);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __trace(Dynamic inPtr, Dynamic inData);
 void           __hxcpp_stdlibs_boot();
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_sys_exit(Dynamic ecode);
 
 // --- Maths ---------------------------------------------------------
 double __hxcpp_drand();
@@ -71,6 +72,9 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int           __hxcpp_register_prim(const HX_CHAR 
 
 // Get function pointer from dll file
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __loadprim(String inLib, String inPrim,int inArgCount);
+// Unload all dll files loaded via __loadprim.  Necessary before program
+// exit to ensure clean shutdown.
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __unload_all();
 HXCPP_EXTERN_CLASS_ATTRIBUTES void *__hxcpp_get_proc_address(String inLib, String inPrim,bool inNdll, bool inQuietFail=false);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_run_dll(String inLib, String inPrim);
 // Can assign to function pointer without error

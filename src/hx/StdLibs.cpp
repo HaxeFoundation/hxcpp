@@ -341,6 +341,11 @@ void __hxcpp_println(Dynamic &inV)
    #endif
 }
 
+void __hxcpp_sys_exit(Dynamic ecode)
+{
+   exit((int) ecode);
+}
+
 
 // --- Casting/Converting ---------------------------------------------------------
 

@@ -54,6 +54,11 @@ Module hxLoadLibrary(const String &) { return 0; }
 typedef void *Module;
 
 #include <dlfcn.h>
+#include <pthread.h>
+
+static pthread_mutex_t g_dlopened_mutex = PTHREAD_MUTEX_INITIALIZER;
+std::vector<void *> g_dlopened;
+
 typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
@@ -71,6 +76,11 @@ Module hxLoadLibrary(String inLib)
          printf("Loaded : %s.\n", inLib.__CStr());
       else
          printf("Error loading library: (%s) %s\n", inLib.__CStr(), dlerror());
+   }
+   if (result) {
+       pthread_mutex_lock(&g_dlopened_mutex);
+       g_dlopened.push_back(result);
+       pthread_mutex_unlock(&g_dlopened_mutex);      
    }
    return result;
 }
@@ -299,6 +309,20 @@ String FindHaxelib(String inLib)
 #endif
 
 typedef std::map<std::string,void *> RegistrationMap;
+void __unload_all()
+{
+#ifdef HX_WINRT
+#elif (defined (IPHONE) || defined(EMSCRIPTEN)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
+#else
+    /* Unload all loaded libraries so that any atexit() that they
+       registered runs as well.  Unload in the reverse order of loading */
+    while (g_dlopened.size()) {
+        dlclose(g_dlopened.back());
+        g_dlopened.pop_back();
+    }
+#endif
+}
+
 RegistrationMap *sgRegisteredPrims=0;
 
 
