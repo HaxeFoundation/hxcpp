@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
-#include <map>
+#include <tr1/unordered_map>
 #include <set>
 
 #include "Cppia.h"
@@ -1087,7 +1087,7 @@ void  linkCppiaClass(hx::Class_obj *inClass, CppiaModule &cppia, String inName);
 
 
 typedef std::vector<CppiaFunction *> Functions;
-typedef std::map<std::string, ScriptCallable *> FunctionMap;
+typedef std::unordered_map<std::string, ScriptCallable *> FunctionMap;
 
 struct CppiaClassInfo
 {
@@ -1105,7 +1105,7 @@ struct CppiaClassInfo
    int       dynamicMapOffset;
    void      **vtable;
    std::string name;
-   std::map<std::string, void **> interfaceVTables;
+   std::unordered_map<std::string, void **> interfaceVTables;
    std::set<String> nativeProperties;
    hx::Class     mClass;
 

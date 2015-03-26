@@ -1,5 +1,6 @@
 #include <hxcpp.h>
-#include <map>
+#include <string>
+#include <tr1/unordered_map>
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -9,7 +10,7 @@
 namespace hx
 {
 
-typedef std::map<String,Class> ClassMap;
+typedef std::tr1::unordered_map<std::string,Class> ClassMap;
 static ClassMap *sClassMap = 0;
 
 Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
@@ -41,7 +42,7 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                                   #endif
                                   );
    Class c(obj);
-   (*sClassMap)[inClassName] = c;
+   (*sClassMap)[inClassName.c_str()] = c;
    return c;
 }
 
@@ -49,7 +50,7 @@ void RegisterClass(const String &inClassName, Class inClass)
 {
    if (sClassMap==0)
       sClassMap = new ClassMap;
-   (*sClassMap)[inClassName] = inClass;
+   (*sClassMap)[inClassName.c_str()] = inClass;
 }
 
 
@@ -175,7 +176,7 @@ void Class_obj::VisitStatics(hx::VisitContext *__inCtx)
 
 Class Class_obj::Resolve(String inName)
 {
-   ClassMap::const_iterator i = sClassMap->find(inName);
+   ClassMap::const_iterator i = sClassMap->find(inName.c_str());
    if (i==sClassMap->end())
    {
       // Class class...
@@ -346,7 +347,7 @@ void MarkClassStatics(hx::MarkContext *__inCtx)
       HX_MARK_OBJECT(i->second.mPtr);
 
       #ifdef HXCPP_DEBUG
-      hx::MarkPushClass(i->first.__s,__inCtx);
+      hx::MarkPushClass(i->first.c_str(),__inCtx);
       hx::MarkSetMember("statics",__inCtx);
       #endif
    
