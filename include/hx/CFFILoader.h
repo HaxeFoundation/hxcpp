@@ -140,7 +140,7 @@ void CheckInitDynamicNekoLoader()
 {
    if (!gNekoNull)
    {
-      printf("Haxe code is missing a call to hxcpp.NekoInit.nekoInit().\n");
+      printf("Haxe code is missing a call to cpp.Prime.nekoInit().\n");
    }
 }
 }

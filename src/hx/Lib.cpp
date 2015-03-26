@@ -302,6 +302,85 @@ typedef std::map<std::string,void *> RegistrationMap;
 RegistrationMap *sgRegisteredPrims=0;
 
 
+
+static std::vector<std::string> sgLibPath;
+static bool sgLibPathIsInit = false;
+
+String __hxcpp_get_bin_dir()
+{
+   return
+#ifdef _WIN32
+  #ifdef HXCPP_M64
+    HX_CSTRING("Windows64");
+  #else
+    HX_CSTRING("Windows");
+  #endif
+// Unix...
+#elif defined(__APPLE__)
+  #ifdef HXCPP_M64
+    HX_CSTRING("Mac64");
+  #else
+    HX_CSTRING("Mac");
+  #endif
+#elif defined (ANDROID)
+    HX_CSTRING("Android");
+#elif defined(WEBOS)
+    HX_CSTRING("webOS");
+#elif defined(BLACKBERRY)
+    HX_CSTRING("BlackBerry");
+#elif defined(RASPBERRYPI)
+    HX_CSTRING("RPi");
+#elif defined(EMSCRIPTEN)
+	HX_CSTRING("Emscripten");
+#elif defined(TIZEN)
+    HX_CSTRING("Tizen");
+#elif defined(IPHONESIM)
+    HX_CSTRING("IPhoneSim");
+#elif defined(IPHONEOS)
+    HX_CSTRING("IPhoneOs");
+#else
+  #ifdef HXCPP_M64
+    HX_CSTRING("Linux64");
+  #else
+    HX_CSTRING("Linux");
+  #endif
+#endif
+}
+
+String __hxcpp_get_dll_extension()
+{
+   return
+#if defined(_WIN32)
+    HX_CSTRING(".dll");
+#elif defined(IPHONEOS)
+    HX_CSTRING(".ios.dylib");
+#elif defined(IPHONESIM)
+    HX_CSTRING(".sim.dylib");
+#elif defined(__APPLE__)
+    HX_CSTRING(".dylib");
+#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)  || defined(BLACKBERRY) || defined(EMSCRIPTEN) || defined(TIZEN)
+    HX_CSTRING(".so");
+#else
+    HX_CSTRING(".dso");
+#endif
+}
+
+void __hxcpp_push_dll_path(String inPath)
+{
+   int last = inPath.length-1;
+   if (last>=0 && inPath.__s[last]!='\\' && inPath.__s[last]!='/')
+      sgLibPath.push_back( (inPath + HX_CSTRING("/")).__s );
+   else
+      sgLibPath.push_back( inPath.__s );
+}
+
+
+
+
+
+
+
+
 #if (defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
 
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
@@ -352,13 +431,22 @@ void *__hxcpp_get_proc_address(String inLib, String inPrim,bool ,bool inQuietFai
 
 extern "C" void *hx_cffi(const char *inName);
 
+
+#if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE) && !defined(EMSCRIPTEN) && !defined(STATIC_LINK)
+    #define HXCPP_TRY_HAXELIB
+#endif
+
+
+
 void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bool inQuietFail)
 {
-#ifdef ANDROID
-   inLib = HX_CSTRING("lib") + inLib;
+   String bin = __hxcpp_get_bin_dir();
+   String deviceExt = __hxcpp_get_dll_extension();
 
-   //__android_log_print(ANDROID_LOG_INFO, "loader", "%s: %s", inLib.__CStr(), inPrim.__CStr() );
-#endif
+
+   #ifdef ANDROID
+   inLib = HX_CSTRING("lib") + inLib;
+   #endif
 
    #ifdef IPHONE
    gLoadDebug = true;
@@ -368,62 +456,25 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    gLoadDebug = gLoadDebug || getenv("HXCPP_LOAD_DEBUG");
    #endif
 
-   String ext =
-#if defined(_WIN32)
-    HX_CSTRING(".dll");
-#elif defined(IPHONEOS)
-    HX_CSTRING(".ios.dylib");
-#elif defined(IPHONESIM)
-    HX_CSTRING(".sim.dylib");
-#elif defined(__APPLE__)
-    HX_CSTRING(".dylib");
-#elif defined(ANDROID) || defined(GPH) || defined(WEBOS)  || defined(BLACKBERRY) || defined(EMSCRIPTEN) || defined(TIZEN)
-    HX_CSTRING(".so");
-#else
-    HX_CSTRING(".dso");
-#endif
+   if (!sgLibPathIsInit)
+   {
+      sgLibPathIsInit = true;
 
+      sgLibPath.push_back("./");
+      #ifdef HX_MACOS
+      sgLibPath.push_back("@executable_path/");
+      #endif
+      sgLibPath.push_back("");
 
+      #ifdef HXCPP_TRY_HAXELIB
+      String hxcpp = GetEnv("HXCPP");
+      if (hxcpp.length==0)
+         hxcpp = FindHaxelib( HX_CSTRING("hxcpp") );
+      if (hxcpp.length!=0)
+         __hxcpp_push_dll_path(hxcpp+HX_CSTRING("/bin/") + bin + HX_CSTRING("/"));
+      #endif
+   }
 
-   String bin =
-#ifdef _WIN32
-  #ifdef HXCPP_M64
-    HX_CSTRING("Windows64");
-  #else
-    HX_CSTRING("Windows");
-  #endif
-// Unix...
-#elif defined(__APPLE__)
-  #ifdef HXCPP_M64
-    HX_CSTRING("Mac64");
-  #else
-    HX_CSTRING("Mac");
-  #endif
-#elif defined (ANDROID)
-    HX_CSTRING("Android");
-#elif defined(WEBOS)
-    HX_CSTRING("webOS");
-#elif defined(BLACKBERRY)
-    HX_CSTRING("BlackBerry");
-#elif defined(RASPBERRYPI)
-    HX_CSTRING("RPi");
-#elif defined(EMSCRIPTEN)
-	HX_CSTRING("Emscripten");
-#elif defined(TIZEN)
-    HX_CSTRING("Tizen");
-#elif defined(IPHONESIM)
-    HX_CSTRING("IPhoneSim");
-#elif defined(IPHONEOS)
-    HX_CSTRING("IPhoneOs");
-#else
-  #ifdef HXCPP_M64
-    HX_CSTRING("Linux64");
-  #else
-    HX_CSTRING("Linux");
-  #endif
-#endif
-
-    int passes = 4;
 
    #ifdef ANDROID
    std::string module_name = inLib.__CStr();
@@ -454,96 +505,54 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
       #endif
    }
 
+   String haxelibPath;
 
-   for(int pass=0;module==0 && pass<2;pass++)
+   for(int e=0; module==0 && e<3; e++)
    {
-      String dll_ext = HX_CSTRING("./") + inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
+      String extension = e==0 ? deviceExt : e==1 ? HX_CSTRING(".ndll") : HX_CSTRING("");
 
-      // Try Current directory first ...
-      if (gLoadDebug)
+      for(int path=0;path<sgLibPath.size();path++)
       {
-         #ifndef ANDROID
-         printf(" try %s...\n", dll_ext.__CStr());
-         #else
-         __android_log_print(ANDROID_LOG_INFO, "loader", "Try %s", dll_ext.__CStr());
-         #endif
-      }
-      module = hxLoadLibrary(dll_ext);
-      if (module)
-         break;
-      
-      dll_ext = inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
-      if (gLoadDebug)
-      {
-         #ifndef ANDROID
-         printf(" try %s...\n", dll_ext.__CStr());
-         #else
-         __android_log_print(ANDROID_LOG_INFO, "loader", "Try %s", dll_ext.__CStr());
-         #endif
-      }
-      module = hxLoadLibrary(dll_ext);
-
-      // Try exactly as specified...
-      if (!module)
-      {
-         String dll_ext = pass==0 ? inLib : HX_CSTRING("./") + inLib;
+         String testPath = String( sgLibPath[path].c_str() ) +  inLib + extension;
          if (gLoadDebug)
          {
             #ifndef ANDROID
-            printf(" try %s...\n", dll_ext.__CStr());
+            printf(" try %s...\n", testPath.__s);
             #else
-            __android_log_print(ANDROID_LOG_INFO, "loader", "Try %s", dll_ext.__CStr());
+            __android_log_print(ANDROID_LOG_INFO, "loader", "Try %s", testPath.__s);
             #endif
          }
-         module = hxLoadLibrary(dll_ext);
-      }
-     
-      #ifdef HX_MACOS
-      if (!module)
-      {
-         String exe_path = HX_CSTRING("@executable_path/") + inLib + ( (pass&1) ? HX_CSTRING(".ndll") : ext );
-         if (gLoadDebug)
+         module = hxLoadLibrary(testPath);
+         if (module)
          {
-            printf(" try %s...\n", exe_path.__CStr());
-         }
-         module = hxLoadLibrary(exe_path);
-      }
-      #endif
-
-      #if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE) && !defined(EMSCRIPTEN) && !defined(STATIC_LINK)
-      if (!module)
-      {
-         String hxcpp = GetEnv("HXCPP");
-         if (hxcpp.length!=0)
-         {
-             String name = hxcpp + HX_CSTRING("/bin/") + bin + HX_CSTRING("/") + dll_ext;
-             if (gLoadDebug)
-                printf(" try %s...\n", name.__CStr());
-             module = hxLoadLibrary(name);
-         }
-      }
-   
-      if (!module)
-      {
-         String hxcpp = FindHaxelib( HX_CSTRING("hxcpp") );
-         if (hxcpp.length!=0)
-         {
-             String name = hxcpp + HX_CSTRING("/bin/") + bin + HX_CSTRING("/") + dll_ext;
-             if (gLoadDebug)
-                printf(" try %s...\n", name.__CStr());
-             module = hxLoadLibrary(name);
-         }
-      }
-
-      if (!module)
-      {
-         String path = FindHaxelib(inLib);
-         if (path.length!=0)
-         {
-            String full_path  = path + HX_CSTRING("/ndll/") + bin + HX_CSTRING("/") + dll_ext;
             if (gLoadDebug)
-               printf(" try %s...\n", full_path.__CStr());
-            module = hxLoadLibrary(full_path);
+            {
+               #ifndef ANDROID
+               printf("Found %s\n", testPath.__s);
+               #else
+               __android_log_print(ANDROID_LOG_INFO, "loader", "Found %s", testPath.__s);
+               #endif
+            }
+            break;
+         }
+      }
+
+      #ifdef HXCPP_TRY_HAXELIB
+      if (!module)
+      {
+         if (e==0)
+            haxelibPath = FindHaxelib(inLib);
+
+         if (haxelibPath.length!=0)
+         {
+            String testPath  = haxelibPath + HX_CSTRING("/ndll/") + bin + HX_CSTRING("/") + inLib + extension;
+            if (gLoadDebug)
+               printf(" try %s...\n", testPath.__s);
+            module = hxLoadLibrary(testPath);
+            if (module && gLoadDebug)
+            {
+               printf("Found %s\n", testPath.__s);
+            }
          }
       }
       #endif
@@ -551,7 +560,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
 
    if (!module)
    {
-     throw Dynamic(HX_CSTRING("Could not load module ") + inLib + HX_CSTRING("@") + full_name);
+      hx::Throw(HX_CSTRING("Could not load module ") + inLib + HX_CSTRING("@") + full_name);
    }
 
 

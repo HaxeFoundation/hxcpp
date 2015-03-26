@@ -11,6 +11,9 @@ class TestMain {
 		r.add(new TestStringHash());
 		r.add(new TestObjectHash());
 		r.add(new TestWeakHash());
+      #if cpp
+		r.add(new native.TestFinalizer());
+      #end
       var t0 = haxe.Timer.stamp();
 		var success = r.run();
       trace(" Time : " + (haxe.Timer.stamp()-t0)*1000 );
