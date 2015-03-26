@@ -49,6 +49,8 @@ functions whose names all begin with "_pcre_". */
 
 #if 0
 #define DEBUG
+#else
+#undef DEBUG
 #endif
 
 /* Use a macro for debugging printing, 'cause that eliminates the use of #ifdef
