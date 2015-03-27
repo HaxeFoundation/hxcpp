@@ -2347,7 +2347,7 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
       reallocations->push_back(new_obj_id);
       reallocations->push_back(new_size);
 
-      printf("Object at %018x moving to %018x, new_size = %d bytes\n", old_obj, new_obj, new_size);
+      //printf("Object at %018x moving to %018x, new_size = %d bytes\n", old_obj, new_obj, new_size);
 
       alloc_map.erase(exist);
       alloc_map[new_obj_id] = true;
