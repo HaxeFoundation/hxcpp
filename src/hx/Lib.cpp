@@ -30,8 +30,10 @@ bool gLoadDebug = false;
 typedef HMODULE Module;
 
 #ifdef HX_WINRT
+
 Module hxLoadLibrary(String inLib) { return LoadPackagedLibrary(inLib.__WCStr(),0); }
-#else
+
+#else // Windows, not WinRT
 Module hxLoadLibrary(String inLib)
 {
    HMODULE result = LoadLibraryW(inLib.__WCStr());
@@ -45,10 +47,15 @@ Module hxLoadLibrary(String inLib)
 #endif
 
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return (void *)GetProcAddress(inModule,inSymbol); }
+
+void hxFreeLibrary(Module inModule) { FreeLibrary(inModule); }
+
 #elif (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
 
 typedef void *Module;
 Module hxLoadLibrary(const String &) { return 0; }
+void hxFreeLibrary(Module) { }
+
 #else
 
 typedef void *Module;
@@ -75,6 +82,9 @@ Module hxLoadLibrary(String inLib)
    return result;
 }
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return dlsym(inModule,inSymbol); }
+
+void hxFreeLibrary(Module inModule) { dlclose(inModule); }
+
 #endif
 
 #ifdef HX_UTF8_STRINGS
@@ -84,6 +94,8 @@ typedef std::map<std::wstring,Module> LoadedModule;
 #endif
 
 static LoadedModule sgLoadedModule;
+typedef std::vector<Module> ModuleList;
+static ModuleList sgOrderedModules;
 
 typedef hx::Object * (*prim_0)();
 typedef hx::Object * (*prim_1)(hx::Object *);
@@ -579,6 +591,8 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
       sgLoadedModule[inLib.__s] = module;
       #endif
 
+      sgOrderedModules.push_back(module);
+
       SetLoaderProcFunc set_loader = (SetLoaderProcFunc)hxFindSymbol(module,"hx_set_loader");
       if (set_loader)
          set_loader(hx_cffi);
@@ -622,6 +636,19 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    }
 
    return proc;
+}
+
+int __hxcpp_unload_all_libraries()
+{
+   int unloaded = 0;
+   while(sgOrderedModules.size())
+   {
+      Module module = sgOrderedModules.back();
+      sgOrderedModules.pop_back();
+      hxFreeLibrary(module);
+      unloaded++;
+   }
+   return unloaded;
 }
 
 
