@@ -67,34 +67,34 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
 
 Dynamic Math_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
-   if (inString==HX_CSTRING("floor")) return floor_dyn();
-   if (inString==HX_CSTRING("ffloor")) return ffloor_dyn();
-   if (inString==HX_CSTRING("ceil")) return ceil_dyn();
-   if (inString==HX_CSTRING("fceil")) return fceil_dyn();
-   if (inString==HX_CSTRING("round")) return round_dyn();
-   if (inString==HX_CSTRING("fround")) return fround_dyn();
-   if (inString==HX_CSTRING("random")) return random_dyn();
-   if (inString==HX_CSTRING("sqrt")) return sqrt_dyn();
-   if (inString==HX_CSTRING("cos")) return cos_dyn();
-   if (inString==HX_CSTRING("sin")) return sin_dyn();
-   if (inString==HX_CSTRING("tan")) return tan_dyn();
-   if (inString==HX_CSTRING("atan2")) return atan2_dyn();
-   if (inString==HX_CSTRING("abs")) return abs_dyn();
-   if (inString==HX_CSTRING("pow")) return pow_dyn();
-   if (inString==HX_CSTRING("log")) return log_dyn();
-   if (inString==HX_CSTRING("min")) return min_dyn();
-   if (inString==HX_CSTRING("max")) return max_dyn();
-   if (inString==HX_CSTRING("atan")) return atan_dyn();
-   if (inString==HX_CSTRING("acos")) return acos_dyn();
-   if (inString==HX_CSTRING("asin")) return asin_dyn();
-   if (inString==HX_CSTRING("exp")) return exp_dyn();
-   if (inString==HX_CSTRING("isNaN")) return isNaN_dyn();
-   if (inString==HX_CSTRING("isFinite")) return isFinite_dyn();
+   if (inString=="floor") return floor_dyn();
+   if (inString=="ffloor") return ffloor_dyn();
+   if (inString=="ceil") return ceil_dyn();
+   if (inString=="fceil") return fceil_dyn();
+   if (inString=="round") return round_dyn();
+   if (inString=="fround") return fround_dyn();
+   if (inString=="random") return random_dyn();
+   if (inString=="sqrt") return sqrt_dyn();
+   if (inString=="cos") return cos_dyn();
+   if (inString=="sin") return sin_dyn();
+   if (inString=="tan") return tan_dyn();
+   if (inString=="atan2") return atan2_dyn();
+   if (inString=="abs") return abs_dyn();
+   if (inString=="pow") return pow_dyn();
+   if (inString=="log") return log_dyn();
+   if (inString=="min") return min_dyn();
+   if (inString=="max") return max_dyn();
+   if (inString=="atan") return atan_dyn();
+   if (inString=="acos") return acos_dyn();
+   if (inString=="asin") return asin_dyn();
+   if (inString=="exp") return exp_dyn();
+   if (inString=="isNaN") return isNaN_dyn();
+   if (inString=="isFinite") return isFinite_dyn();
 
-   if (inString==HX_CSTRING("NEGATIVE_INFINITY")) return NEGATIVE_INFINITY;
-   if (inString==HX_CSTRING("POSITIVE_INFINITY")) return POSITIVE_INFINITY;
-   if (inString==HX_CSTRING("PI")) return PI;
-   if (inString==HX_CSTRING("NaN")) return NaN;
+   if (inString=="NEGATIVE_INFINITY") return NEGATIVE_INFINITY;
+   if (inString=="POSITIVE_INFINITY") return POSITIVE_INFINITY;
+   if (inString=="PI") return PI;
+   if (inString=="NaN") return NaN;
    return null();
 }
 

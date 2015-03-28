@@ -179,7 +179,7 @@ Class Class_obj::Resolve(String inName)
    if (i==sClassMap->end())
    {
       // Class class...
-      if (inName==HX_CSTRING("Enum"))
+      if (inName=="Enum")
          return Class_obj__mClass;
       return null();
    }
@@ -231,7 +231,7 @@ Array<String> Class_obj::GetClassFields()
 
 bool Class_obj::__HasField(const String &inString)
 {
-   if (__rtti__.__s && inString==HX_CSTRING("__rtti"))
+   if (__rtti__.__s && inString=="__rtti")
       return true;
 
    if (mStatics.mPtr)
@@ -245,10 +245,10 @@ bool Class_obj::__HasField(const String &inString)
 
 Dynamic Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
-   if (inString==HX_CSTRING("__meta__"))
+   if (inString=="__meta__")
       return __meta__;
    #if (HXCPP_API_LEVEL>320)
-   if (inString==HX_CSTRING("__rtti"))
+   if (inString=="__rtti")
       return __rtti__;
    #endif
 

@@ -149,6 +149,8 @@ public:
 
    inline bool operator==(const ::String &inRHS) const
                      { return length==inRHS.length && compare(inRHS)==0; }
+   inline bool operator==(const char *other) const
+      { return other ? __s ? (strcmp(other, __s) == 0) : false : !__s; }
    inline bool operator!=(const ::String &inRHS) const
                      { return length != inRHS.length || compare(inRHS)!=0; }
    inline bool operator<(const ::String &inRHS) const { return compare(inRHS)<0; }

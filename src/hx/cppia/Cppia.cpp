@@ -2070,7 +2070,7 @@ struct CppiaClassInfo
          for(int i=0;i<staticVars.size();i++)
          {
             staticVars[i]->runInit(ctx);
-            if (staticVars[i]->name==HX_CSTRING("__meta__"))
+            if (staticVars[i]->name=="__meta__")
             {
                // Todo - delete/clean value
                mClass->__meta__ = staticVars[i]->objVal;
@@ -2404,7 +2404,7 @@ public:
 
    Dynamic __Field(const String &inName,hx::PropertyAccess inCallProp)
    {
-      if (inName==HX_CSTRING("__meta__"))
+      if (inName=="__meta__")
          return __meta__;
       return info->getStaticValue(inName,inCallProp);
    }
@@ -3905,7 +3905,7 @@ struct CallStatic : public CppiaExpr
       }
 
       // TODO - optimise...
-      if (!replace && type->name==HX_CSTRING("String") && field==HX_CSTRING("fromCharCode"))
+      if (!replace && type->name=="String" && field=="fromCharCode")
          replace = new CallDynamicFunction(inModule, this, String::fromCharCode_dyn(), args );
          
 
@@ -4717,16 +4717,16 @@ struct CallMember : public CppiaExpr
          }
       }
 
-      if (!replace && type->name==HX_CSTRING("String"))
+      if (!replace && type->name=="String")
       {
          replace = createStringBuiltin(this, thisExpr, field, args);
       }
 
-      if (!replace && field==HX_CSTRING("__Index"))
+      if (!replace && field=="__Index")
          replace = new CallGetIndex(this, thisExpr);
-      if (!replace && field==HX_CSTRING("__SetField") && args.size()==3)
+      if (!replace && field=="__SetField" && args.size()==3)
          replace = new CallSetField(this, thisExpr, args[0], args[1], args[2]);
-      if (!replace && field==HX_CSTRING("__Field") && args.size()==2)
+      if (!replace && field=="__Field" && args.size()==2)
          replace = new CallGetField(this, thisExpr, args[0], args[1]);
 
 
@@ -5151,7 +5151,7 @@ struct GetFieldByLinkage : public CppiaExpr
          }
       }
 
-      if (!replace && type->arrayType!=arrNotArray && field==HX_CSTRING("length"))
+      if (!replace && type->arrayType!=arrNotArray && field=="length")
       {
          int offset = (int) offsetof( Array_obj<int>, length );
          replace = object ?
@@ -5159,7 +5159,7 @@ struct GetFieldByLinkage : public CppiaExpr
              (CppiaExpr*)new MemReference<int,locThis>(this,offset);
       }
 
-      if (!replace && type->name==HX_CSTRING("String") && field==HX_CSTRING("length"))
+      if (!replace && type->name=="String" && field=="length")
       {
          int offset = (int) offsetof( Array_obj<int>, length );
          replace = object ?
@@ -5552,7 +5552,7 @@ struct ArrayIExpr : public CppiaExpr
 
       CppiaExpr *replace = 0;
 
-      if (type->name==HX_CSTRING("Dynamic"))
+      if (type->name=="Dynamic")
       {
          replace = new DynamicArrayI(this, thisExpr, iExpr);
       }
@@ -7041,17 +7041,17 @@ void TypeData::link(CppiaModule &inModule)
          haxeClass.mPtr = 0;
       }
       DBGLOG("Link %s, haxe=%s\n", name.__s, haxeClass.mPtr ? haxeClass.mPtr->mName.__s : "?" );
-      if (!haxeClass.mPtr && !cppiaClass && name==HX_CSTRING("int"))
+      if (!haxeClass.mPtr && !cppiaClass && name=="int")
       {
          name = HX_CSTRING("Int");
          haxeClass = hx::Class_obj::Resolve(name);
       }
-      if (!haxeClass.mPtr && !cppiaClass && name==HX_CSTRING("bool"))
+      if (!haxeClass.mPtr && !cppiaClass && name=="bool")
       {
          name = HX_CSTRING("Bool");
          haxeClass = hx::Class_obj::Resolve(name);
       }
-      if (!haxeClass.mPtr && !cppiaClass && (name==HX_CSTRING("float") || name==HX_CSTRING("double")))
+      if (!haxeClass.mPtr && !cppiaClass && (name=="float" || name=="double"))
       {
          name = HX_CSTRING("Float");
          haxeClass = hx::Class_obj::Resolve(name);
@@ -7061,7 +7061,7 @@ void TypeData::link(CppiaModule &inModule)
       interfaceBase = HaxeNativeInterface::findInterface(name.__s);
       isInterface = interfaceBase || (cppiaClass && cppiaClass->isInterface);
 
-      if (!haxeClass.mPtr && name.substr(0,6)==HX_CSTRING("Array.") || name==HX_CSTRING("Array") )
+      if (!haxeClass.mPtr && name.substr(0,6)=="Array." || name=="Array" )
       {
          haxeClass = hx::Class_obj::Resolve(HX_CSTRING("Array"));
          if (name.length==5)
@@ -7070,19 +7070,19 @@ void TypeData::link(CppiaModule &inModule)
          {
             String t = name.substr(6,null());
 
-            if (t==HX_CSTRING("int"))
+            if (t=="int")
                arrayType = arrInt;
-            else if (t==HX_CSTRING("bool"))
+            else if (t=="bool")
                arrayType = arrBool;
-            else if (t==HX_CSTRING("Float"))
+            else if (t=="Float")
                arrayType = arrFloat;
-            else if (t==HX_CSTRING("String"))
+            else if (t=="String")
                arrayType = arrString;
-            else if (t==HX_CSTRING("unsigned char"))
+            else if (t=="unsigned char")
                arrayType = arrUnsignedChar;
-            else if (t==HX_CSTRING("Any"))
+            else if (t=="Any")
                arrayType = arrAny;
-            else if (t==HX_CSTRING("Object"))
+            else if (t=="Object")
                arrayType = arrObject;
             else
                throw "Unknown array type";
@@ -7132,15 +7132,15 @@ void TypeData::link(CppiaModule &inModule)
          }
       }
 
-      if (name==HX_CSTRING("Void"))
+      if (name=="Void")
          expressionType = etVoid;
-      else if (name==HX_CSTRING("Null"))
+      else if (name=="Null")
          expressionType = etNull;
-      else if (name==HX_CSTRING("String"))
+      else if (name=="String")
          expressionType = etString;
-      else if (name==HX_CSTRING("Float"))
+      else if (name=="Float")
          expressionType = etFloat;
-      else if (name==HX_CSTRING("Int") || name==HX_CSTRING("Bool"))
+      else if (name=="Int" || name=="Bool")
          expressionType = etInt;
       else
          expressionType = etObject;
