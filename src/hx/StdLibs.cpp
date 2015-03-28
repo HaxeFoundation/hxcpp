@@ -204,6 +204,11 @@ void __trace(Dynamic inObj, Dynamic inData)
 #endif
 }
 
+void __hxcpp_exit(int inExitCode)
+{
+   exit(inExitCode);
+}
+
 static double t0 = 0;
 double  __time_stamp()
 {

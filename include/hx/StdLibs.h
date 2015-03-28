@@ -46,6 +46,7 @@ double         __time_stamp();
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_print(Dynamic &inV);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_println(Dynamic &inV);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __trace(Dynamic inPtr, Dynamic inData);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_exit(int inExitCode);
 void           __hxcpp_stdlibs_boot();
 
 // --- Maths ---------------------------------------------------------
