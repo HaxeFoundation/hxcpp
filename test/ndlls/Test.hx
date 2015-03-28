@@ -115,5 +115,14 @@ class Test
       } catch(e:Dynamic) {
          trace("Mysql is untested : " + e );
       }
+
+      #if cpp
+      var unloaded = cpp.Lib.unloadAllLibraries();
+      var expected = #if static_ndll 0 #else 5 #end ;
+      if (unloaded!=expected)
+         throw 'Unloaded $unloaded libraries, but expected to unload $expected.';
+      trace('Unloaded $unloaded libraries');
+      #end
+      Sys.exit(0);
    }
 }
