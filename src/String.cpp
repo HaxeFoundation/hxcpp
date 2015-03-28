@@ -495,35 +495,34 @@ static int hex(int inChar)
 
 String String::__URLDecode() const
 {
-   Array<unsigned char> bytes(0,length);
-   for(int i=0;i<length;i++)
-   {
-      int c = __s[i];
-      if (c>127)
-         bytes->push('?');
-      else if (c=='+')
-         bytes->push(' ');
-      else if (c=='%')
-      {
-         i++;
-         int h0 = __s[i];
-         if (h0!=0)
-         {
-            i++;
-            int h1 = __s[i];
-            bytes->push( (hex(h0)<<4) | hex(h1) );
-         }
-      }
-      else
-         bytes->push(c);
+    // Create the decoded string; the decoded form might have fewer than
+    // [length] characters, but it won't have more.  If it has fewer than
+    // [length], some memory will be wasted here, but on the assumption that
+    // most URLs have only a few '%NN' encodings in them, don't bother
+    // counting the number of characters in the resulting string first.
+    HX_CHAR *decoded = NewString(length), *d = decoded;
+
+    for (int i = 0; i < length; i++) {
+        int c = __s[i];
+        if (c > 127) {
+            *d++ = '?';
+        }
+        else if (c == '+') {
+            *d++ = ' ';
+        }
+        else if ((c == '%') && (i < (length - 2))) {
+            *d++ = ((hex(__s[i + 1]) << 4) | (hex(__s[i + 2])));
+            i += 2;
+        }
+        else {
+            *d++ = c;
+        }
    }
-   // utf8 -> unicode ...
-   int len = bytes->__length();
-   bytes->push(' ');
+
    #ifdef HX_UTF8_STRINGS
-   return String( bytes->GetBase(), len ).dup();
+   return String( decoded, (d - decoded) );
    #else
-   return String( GCStringDup(bytes->GetBase(),len,0), len );
+   return String( GCStringDup(decoded, (d - decoded), 0), (d - decoded) );
    #endif
 }
 
