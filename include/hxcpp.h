@@ -6,6 +6,9 @@
 // Windows hack
 #define NOMINMAX
 
+#ifndef HXCPP_API_LEVEL
+   #define HXCPP_API_LEVEL 0
+#endif
 
 #ifdef _MSC_VER
    #include <typeinfo.h>
