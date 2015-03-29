@@ -160,7 +160,9 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __object_hash_to_string(Dynamic &ioH
 
 // --- Date --------------------------------------------------------------------------
 
-double __hxcpp_new_date(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds);
+// returns Epoch UTC timestamp (in seconds); assumes that input date parts are considered to be in local timezone date/time representation
+double __hxcpp_new_date(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds,int inMilliseconds = 0);
+
 double __hxcpp_utc_date(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds);
 int    __hxcpp_get_hours(double inSeconds);
 int    __hxcpp_get_minutes(double inSeconds);
@@ -171,6 +173,22 @@ int    __hxcpp_get_date(double inSeconds);
 int    __hxcpp_get_day(double inSeconds);
 String __hxcpp_to_string(double inSeconds);
 double __hxcpp_date_now();
+
+
+int    __hxcpp_get_utc_hours(double inSeconds); /* returns hour part of UTC date/time representation of input time (Epoch, in seconds), 0-23 */
+int    __hxcpp_get_utc_minutes(double inSeconds); /* returns minutes part of UTC date/time representation of input time (Epoch, in seconds), 0-59 */
+int    __hxcpp_get_utc_seconds(double inSeconds); /* returns seconds part of UTC date/time representation of input time (Epoch, in seconds), 0-59 */
+int    __hxcpp_get_utc_year(double inSeconds); /* returns year part of UTC date/time representation of input time (Epoch, in seconds) */
+int    __hxcpp_get_utc_month(double inSeconds); /* returns month part of UTC date/time representation of input time (Epoch, in seconds), 0-January...11-December */
+int    __hxcpp_get_utc_date(double inSeconds); /* returns day of the month part of UTC date/time representation of input time (Epoch, in seconds), 1-31 */
+int    __hxcpp_get_utc_day(double inSeconds); /* returns day of the week part of UTC date/time representation of input time (Epoch, in seconds), 0-Sunday...6-Saturday */
+String __hxcpp_to_utc_string(double inSeconds); /* same as __hxcpp_to_string but in corresponding UTC format */
+
+int    __hxcpp_is_dst(double inSeconds); /* is input time (Epoch UTC timestamp, in seconds)'s local time in DST ? 1 for true, 0 for false */
+double __hxcpp_timezone_offset(double inSeconds); /* input time (Epoch UTC timestamp, in seconds)'s local time zone offset from UTC, in seconds */
+double __hxcpp_from_utc(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds, int inMilliSeconds); /* returns Epoch timestamp (in seconds); assumes that input date parts are considered to be in UTC date/time representation */ 
+
+
 
 double __hxcpp_time_stamp();
 
