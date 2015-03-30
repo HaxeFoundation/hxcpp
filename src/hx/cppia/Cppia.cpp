@@ -2346,7 +2346,12 @@ public:
             mMembers->push(name);
       }
 
-      registerScriptable(false);
+      bool overwrite = false;
+      hx::Class old = hx::Class_obj::Resolve(inName);
+      // Overwrite cppia classes
+      if (old.mPtr && dynamic_cast<CppiaClass *>( old.mPtr ) )
+         overwrite = true;
+      registerScriptable(overwrite);
    }
 
 
