@@ -77,6 +77,12 @@ public:
 
    typedef hx::Object super;
 
+   // Used by cpp.ArrayBase
+   inline int getElementSize() const { return GetElementSize(); }
+   inline int getByteCount() const { return GetElementSize()*length; }
+   inline char * getBase() const { return mBase; }
+
+
    Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp) { return null(); }
 
    static hx::Class __mClass;
@@ -89,6 +95,7 @@ public:
 
    inline size_t size() const { return length; }
    inline int __length() const { return (int)length; }
+
    virtual String ItemString(int inI)  = 0;
 
    const char * __CStr() const { return mBase; }
@@ -204,7 +211,15 @@ protected:
    mutable char  *mBase;
 };
 
-} // end namespace ArrayBase
+} // end namespace hx for ArrayBase
+
+namespace cpp
+{
+   // Use by cpp.ArrayBase extern
+   typedef hx::ObjectPtr<hx::ArrayBase> ArrayBase;
+}
+
+
 
 // --- Array_obj ------------------------------------------------------------------
 //
