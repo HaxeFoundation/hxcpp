@@ -66,8 +66,9 @@
 
 
 <section if="isMsvc">
-   <set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
-   <unset name="HXCPP_WINXP_COMPAT" if="HXCPP_M64" />
+   <section unless="HXCPP_M64">
+      <set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
+   </section>
    <setup name="msvc"/>
 
    <section if="static_link" >
