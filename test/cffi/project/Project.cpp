@@ -121,6 +121,19 @@ int multi12(int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7, int 
 DEFINE_PRIME12(multi12);
 
 
+// Old-style CFFI
+value isBool(value inVal)
+{
+   return alloc_bool( val_is_bool(inVal) );
+}
+DEFINE_PRIM(isBool,1);
+
+value isNull(value inVal)
+{
+   return alloc_bool( val_is_null(inVal) );
+}
+DEFINE_PRIM(isNull,1);
+
 
 
 

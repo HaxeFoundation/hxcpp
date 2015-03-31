@@ -47,6 +47,14 @@ class Test
       var bytes = sys.io.File.getBytes("Test.hx");
       #end
 
+      var now = Date.now();
+      trace(now);
+
+      trace(DateTools.makeUtc(1996,5,4,17,55,11));
+
+      var diff:Float = untyped __global__.__hxcpp_timezone_offset(now.mSeconds);
+      trace("Diff " + diff);
+
       var compress = new Compress(9);
       compress.setFlushMode(FlushMode.FINISH);
       var buffer = haxe.io.Bytes.alloc(bytes.length * 2 + 100);
