@@ -8,6 +8,7 @@ class TestCffi extends TestBase
 {
    static var isBool:Dynamic->Bool = Lib.load("prime", "isBool", 1);
    static var isNull:Dynamic->Bool = Lib.load("prime", "isNull", 1);
+   static var allocNull:Void->Dynamic = Lib.load("prime", "allocNull", 0);
 
    public function testCffi()
    {
@@ -25,6 +26,9 @@ class TestCffi extends TestBase
       assertFalse( isNull(false) );
       assertFalse( isNull(32) );
       assertFalse( isNull("") );
+
+      assertTrue( allocNull!=null );
+      assertEquals(null, allocNull() );
    }
 }
 

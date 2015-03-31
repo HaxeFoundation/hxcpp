@@ -135,6 +135,13 @@ value isNull(value inVal)
 DEFINE_PRIM(isNull,1);
 
 
+value allocNull()
+{
+   return alloc_null();
+}
+DEFINE_PRIM(allocNull,0);
+
+
 
 
 
