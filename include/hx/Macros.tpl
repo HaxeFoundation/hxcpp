@@ -177,10 +177,10 @@ Dynamic class::func##_dyn() \
 static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 { \
    int idx =  enum_obj::__FindIndex(inName); \
-   if (idx<0) hx::Throw(HX_INVALID_CONSTRUCTOR); \
+   if (idx<0) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_CONSTRUCTOR(#enum_obj, inName)); \
    int count =  enum_obj::__FindArgCount(inName); \
    int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
-   if (args!=count)  hx::Throw(HX_INVALID_ARG_COUNT); \
+   if (args!=count) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_ARG_COUNT(#enum_obj, inName, count, args)); \
    if (args==0) { Dynamic result =(new enum_obj())->__Field(inName,HX_PROP_DYNAMIC); if (result!=null()) return result; } \
    return hx::CreateEnum<enum_obj >(inName,idx,inArgs); \
 }

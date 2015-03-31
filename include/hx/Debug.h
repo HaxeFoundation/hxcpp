@@ -545,6 +545,12 @@ inline void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic) { }
 // created and terminated
 inline void __hxcpp_dbg_threadCreatedOrTerminated(int, bool) { }
 
+inline Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
+{
+    hx::Throw(toThrow);
+    return null();
+}
+
 #endif // HXCPP_DEBUGGER
 
 
