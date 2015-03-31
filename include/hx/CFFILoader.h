@@ -414,7 +414,7 @@ int api_val_type(neko_value  arg1)
 			return valtString;
 	}
 	if (t<7)
-		return (ValueType)t;
+		return (hxValueType)t;
 	if (t==VAL_ABSTRACT)
 		return valtAbstractBase;
 
