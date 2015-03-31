@@ -15,7 +15,6 @@
 
 <set name="XPOBJ" value="xp" if="HXCPP_WINXP_COMPAT" />
 
-<set name="HXCPP_DEBUG_LINK" value="1" if="debug"/>
 
 <set name="OBJCACHE" value="-c" if="HXCPP_COMPILE_CACHE"/>
 

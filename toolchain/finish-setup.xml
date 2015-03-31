@@ -64,6 +64,7 @@
 
 <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
 
+<set name="HXCPP_DEBUG_LINK" value="1" if="debug"/>
 
 <section if="isMsvc">
    <section unless="HXCPP_M64">

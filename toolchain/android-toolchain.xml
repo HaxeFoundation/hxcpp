@@ -121,6 +121,7 @@
  <flag value="-Wa,--noexecstack"/>
  <flag value="-O2" unless="debug"/>
  <flag value="-O0" if="debug"/>
+ <flag value="-g" if="HXCPP_FULL_DEBUG_LINK"/>
  <flag value="-DNDEBUG"/>
  <flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
  <flag value="-c"/>
