@@ -499,6 +499,7 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created);
 
 // The following is called by the stack macros, but only if
 // HXCPP_DEBUGGER is set
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow);
 
 #else // !HXCPP_DEBUGGER
@@ -544,6 +545,8 @@ inline void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic) { }
 // The following functions are called by Thread.cpp to notify of thread
 // created and terminated
 inline void __hxcpp_dbg_threadCreatedOrTerminated(int, bool) { }
+
+inline Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow) { return hx::Throw(toThrow); }
 
 #endif // HXCPP_DEBUGGER
 
