@@ -238,8 +238,6 @@ bool Class_obj::__HasField(const String &inString)
       for(int s=0;s<mStatics->size();s++)
          if (mStatics[s]==inString)
             return true;
-   if (mSuper)
-      return (*mSuper)->__HasField(inString);
    return false;
 }
 
