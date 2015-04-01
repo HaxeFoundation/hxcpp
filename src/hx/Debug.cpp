@@ -5,6 +5,7 @@
 #include <string>
 #include <hx/Debug.h>
 #include <hx/Thread.h>
+#include <hx/OS.h>
 #include "QuickVec.h"
 
 #ifdef ANDROID
@@ -692,7 +693,16 @@ public:
 
     static bool BreakCriticalError(const String &inErr)
     {
-        GetCallerCallStack()->DoBreak
+        CallStack *stack = GetCallerCallStack();
+
+        //if the thread with the critical error is the debugger one,
+        //we don't break as it would block debugging since the debugger thread
+        //is the only one which can wake up application threads.
+        if (stack->GetThreadNumber() == g_debugThreadNumber) {
+           return false;
+        }
+
+        stack->DoBreak
             (STATUS_STOPPED_CRITICAL_ERROR, -1, &inErr);
 
         return true;
@@ -1771,8 +1781,10 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created)
 
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
 {
-    if (!hx::CallStack::CanBeCaught(toThrow))
-        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw"), true);
+    if (!hx::CallStack::CanBeCaught(toThrow)) {
+        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " +
+                                            toThrow->toString()), true);
+      }
 
     return hx::Throw(toThrow);
 }
@@ -1923,7 +1935,10 @@ static void CriticalErrorHandler(String inErr, bool allowFixup)
     if (allowFixup && (hx::g_eventNotificationHandler != null())) {
         if (hx::CallStack::BreakCriticalError(inErr)) {
             return;
-}
+        }
+        else {
+            hx::Throw(HX_CSTRING("Critical Error in the debugger thread"));
+        }
     }
 #endif
 
@@ -1958,10 +1973,21 @@ void CriticalError(const String &inErr)
     CriticalErrorHandler(inErr, false);
 }
 
-void NullReference(const char *type, bool allowFixup)
+EXPORT void NullReference(const char *type, bool allowFixup)
 {
-    CriticalErrorHandler(String("Null ") + String(type) + String(" Reference"),
-                         allowFixup);
+#ifdef HXCPP_DEBUGGER
+    if (allowFixup && (hx::g_eventNotificationHandler != null())) {
+        if (hx::CallStack::BreakCriticalError
+        (String("Null ") + String(type) + String(" Reference"))) {
+            return;
+        }
+        else {
+            hx::Throw(HX_CSTRING("Null pointer reference in the debugger thread"));
+        }
+    }
+#endif
+
+    __hxcpp_dbg_checkedThrow(HX_CSTRING("Null Object Reference"));
 }
 
 } // namespace
