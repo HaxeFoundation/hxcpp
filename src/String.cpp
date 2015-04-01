@@ -972,6 +972,12 @@ String &String::operator+=(String inRHS)
    return *this;
 }
 
+#ifdef HXCPP_VISIT_ALLOCS
+#define STRING_VISIT_FUNC \
+    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_STRING(mThis.__s); }
+#else
+#define STRING_VISIT_FUNC
+#endif
 
 #define DEFINE_STRING_FUNC(func,array_list,dynamic_arg_list,arg_list,ARG_C) \
 struct __String_##func : public hx::Object \
@@ -993,7 +999,7 @@ struct __String_##func : public hx::Object \
       return mThis.func(arg_list); return Dynamic(); \
    } \
 	void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.__s); } \
-	void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_STRING(mThis.__s); } \
+	STRING_VISIT_FUNC \
 	void  __SetThis(Dynamic inThis) { mThis = inThis; } \
 }; \
 Dynamic String::func##_dyn()  { return new __String_##func(*this);  }
