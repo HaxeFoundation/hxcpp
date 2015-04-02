@@ -122,6 +122,9 @@ public:
          #ifdef HXCPP_DEBUG_HASHES
          classFuncHash(inClassFunctionHash),
          fileHash(inFileHash),
+         #else
+         classFuncHash(0),
+         fileHash(0),
          #endif
          fullName(inFullName), fileName(inFileName),
          #ifdef HXCPP_STACK_LINE
@@ -156,10 +159,9 @@ public:
     // Only updated if HXCPP_STACK_LINE is defined.
     int lineNumber;
 
-    #ifdef HXCPP_DEBUG_HASHES
+    // These are only used if HXCPP_DEBUG_HASHES is defined
     int fileHash;
     int classFuncHash;
-    #endif
 
     // Function arguments and local variables in reverse order of their
     // declaration.  If a variable name is in here twice, the first version is
