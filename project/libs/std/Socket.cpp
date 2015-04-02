@@ -110,6 +110,9 @@ static value block_error() {
 	if( errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS || errno == EALREADY )
 #endif
 		val_throw(alloc_string("Blocking"));
+    else {
+        val_throw(alloc_string("EOF"));
+    }
 	return alloc_null();
 }
 
@@ -423,7 +426,12 @@ static value socket_connect( value o, value host, value port ) {
 	gc_enter_blocking();
 	if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
 	{
-		gc_exit_blocking();
+		// This will throw a "Blocking" exception if the "error" was because
+		// it's a non-blocking socket with connection in progress, otherwise
+		// it will do nothing.
+		(void) block_error();
+		// If the previous line did not throw an exception, then it was a real
+		// connect failure.
 		val_throw(alloc_string("std@socket_connect"));
 	}
 	gc_exit_blocking();
@@ -488,6 +496,28 @@ static value make_array_result( value a, fd_set *tmp ) {
 	return r;
 }
 
+static void make_array_result_inplace(value a, fd_set *tmp)
+{
+    if (tmp == NULL) {
+        val_array_set_size(a, 0);
+        return;
+    }
+    int len = val_array_size(a);
+    value *results = (value *) malloc(sizeof(value) * len);
+    int result_len = 0;
+    for (int i = 0; i < len; i++) {
+        value s = val_array_i(a, i);
+        if (FD_ISSET(val_sock(s), tmp)) {
+            results[result_len++] = s;
+        }
+    }
+    val_array_set_size(a, result_len);
+    for (int i = 0; i < result_len; i++) {
+        val_array_set_i(a, i, results[i]);
+    }
+    free(results);
+}
+
 static void init_timeval( double f, struct timeval *t ) {
 	t->tv_usec = (f - (int)f ) * 1000000;
 	t->tv_sec = (int)f;
@@ -534,6 +564,49 @@ static value socket_select( value rs, value ws, value es, value timeout ) {
 	val_array_set_i(r,1,make_array_result(ws,wa));
 	val_array_set_i(r,2,make_array_result(es,ea));
 	return r;
+}
+
+/**
+	socket_select : read : 'socket array -> write : 'socket array -> others : 'socket array -> timeout:number?
+	<doc>Perform the [select] operation. Timeout is in seconds or [null] if infinite</doc>
+**/
+static value socket_fast_select( value rs, value ws, value es, value timeout )
+{
+    struct timeval tval;
+    struct timeval *tt;
+    SOCKET n = 0;
+    fd_set rx, wx, ex;
+    fd_set *ra, *wa, *ea;
+    value r;
+    POSIX_LABEL(select_again);
+    ra = make_socket_array(rs,&rx,&n);
+    wa = make_socket_array(ws,&wx,&n);
+    ea = make_socket_array(es,&ex,&n);
+    if( ra == &INVALID || wa == &INVALID || ea == &INVALID )
+    {
+            val_throw( alloc_string("No valid sockets") );
+            return alloc_null();
+    }
+    if( val_is_null(timeout) )
+            tt = NULL;
+    else {
+            val_check(timeout,number);
+            tt = &tval;
+            init_timeval(val_number(timeout),tt);
+    }
+    gc_enter_blocking();
+    if( select((int)(n+1),ra,wa,ea,tt) == SOCKET_ERROR ) {
+            HANDLE_EINTR(select_again);
+            gc_exit_blocking();
+            char buf[100];
+            sprintf(buf,"Select error %d", errno );
+            val_throw( alloc_string(buf) );
+    }
+    gc_exit_blocking();
+    make_array_result_inplace(rs, ra);
+    make_array_result_inplace(ws, wa);
+    make_array_result_inplace(es, ea);
+    return alloc_null();
 }
 
 /**
@@ -955,6 +1028,7 @@ DEFINE_PRIM(socket_close,1);
 DEFINE_PRIM(socket_connect,3);
 DEFINE_PRIM(socket_listen,2);
 DEFINE_PRIM(socket_select,4);
+DEFINE_PRIM(socket_fast_select,4);
 DEFINE_PRIM(socket_bind,3);
 DEFINE_PRIM(socket_accept,1);
 DEFINE_PRIM(socket_peer,1);
