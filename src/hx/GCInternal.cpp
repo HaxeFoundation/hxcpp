@@ -97,7 +97,6 @@ static int gCollectTraceCount = 0;
 // TODO: Telemetry.h ?
 #ifdef HXCPP_TELEMETRY
 extern void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size);
-extern void __hxt_gc_reclaim(void* obj);
 extern void __hxt_gc_start();
 extern void __hxt_gc_end();
 #endif
@@ -524,13 +523,6 @@ union BlockData
                   unsigned char *last_link = &row_flag;
                   int pos = (row_flag & IMMIX_ROW_LINK_MASK);
 
-#ifdef HXCPP_TELEMETRY
-                  unsigned int header = *(unsigned int *)(row + pos);
-                  //int size = header & IMMIX_ALLOC_SIZE_MASK;
-                  //printf(" ---- RECLAIM: Goodbye %d bytes at %#018x\n", size, (row+pos+4));
-                  __hxt_gc_reclaim(row+pos+4);
-#endif
-
                   while(1)
                   {
                      // Still current ....
@@ -539,12 +531,15 @@ union BlockData
                         *last_link = pos | IMMIX_ROW_HAS_OBJ_LINK;
                         last_link = row+pos+ENDIAN_OBJ_NEXT_BYTE;
                      }
-                     else if (gFillWithJunk)
+                     else
                      {
-                         unsigned int header = *(unsigned int *)(row + pos);
-                         int size = header & IMMIX_ALLOC_SIZE_MASK;
-                         //GCLOG("Fill %d (%p+%d=%p) mark=%d/%d\n",size, row,pos, row+pos+4,row[pos+ENDIAN_MARK_ID_BYTE_HEADER], gByteMarkID);
-                         memset(row+pos+4,0x55,size);
+                       if (gFillWithJunk)
+                       {
+                           unsigned int header = *(unsigned int *)(row + pos);
+                           int size = header & IMMIX_ALLOC_SIZE_MASK;
+                           //GCLOG("Fill %d (%p+%d=%p) mark=%d/%d\n",size, row,pos, row+pos+4,row[pos+ENDIAN_MARK_ID_BYTE_HEADER], gByteMarkID);
+                           memset(row+pos+4,0x55,size);
+                       }
                      }
                      if (row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_HAS_OBJ_LINK)
                         pos = row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_LINK_MASK;
@@ -1153,6 +1148,9 @@ FILE_SCOPE FinalizerList *sgFinalizers = 0;
 
 typedef std::map<hx::Object *,hx::finalizer> FinalizerMap;
 FILE_SCOPE FinalizerMap sFinalizerMap;
+#ifdef HXCPP_TELEMETRY
+FILE_SCOPE FinalizerMap hxtFinalizerMap;
+#endif
 
 hx::QuickVec<int> sFreeObjectIds;
 typedef std::map<hx::Object *,int> ObjectIdMap;
@@ -1260,7 +1258,8 @@ void RunFinalizers()
       }
    }
 
-   for(FinalizerMap::iterator i=sFinalizerMap.begin(); i!=sFinalizerMap.end(); )
+   FinalizerMap::iterator i;
+   for(i=sFinalizerMap.begin(); i!=sFinalizerMap.end(); )
    {
       hx::Object *obj = i->first;
       FinalizerMap::iterator next = i;
@@ -1275,6 +1274,25 @@ void RunFinalizers()
 
       i = next;
    }
+
+
+   #ifdef HXCPP_TELEMETRY
+   for(i=hxtFinalizerMap.begin(); i!=hxtFinalizerMap.end(); )
+   {
+      hx::Object *obj = i->first;
+      FinalizerMap::iterator next = i;
+      ++next;
+
+      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
+      if ( mark!=gByteMarkID )
+      {
+         (*i->second)(obj);
+         hxtFinalizerMap.erase(i);
+      }
+
+      i = next;
+   }
+   #endif
 
    for(ObjectIdMap::iterator i=sObjectIdMap.begin(); i!=sObjectIdMap.end(); )
    {
@@ -1371,6 +1389,21 @@ void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
    else
       sFinalizerMap[obj] = f;
 }
+
+#ifdef HXCPP_TELEMETRY
+// Callback finalizer on non-abstract type;
+void  GCSetHXTFinalizer( void*obj, hx::finalizer f )
+{
+   if (!obj)
+      throw Dynamic(HX_CSTRING("set_hxt_finalizer - invalid null object"));
+   //if (((unsigned int *)obj)[-1] & HX_GC_CONST_ALLOC_BIT) return;
+
+   //printf("Setting hxt finalizer on %018x\n", obj);
+
+   AutoLock lock(*gSpecialObjectLock);
+   hxtFinalizerMap[(hx::Object*)obj] = f;
+}
+#endif
 
 void GCDoNotKill(hx::Object *inObj)
 {
@@ -1770,6 +1803,17 @@ public:
           hx::sFinalizerMap.erase(i);
           hx::sFinalizerMap[inTo] = f;
        }
+
+       #ifdef HXCPP_TELEMETRY
+       i = hx::hxtFinalizerMap.find(inFrom);
+       if (i!=hx::hxtFinalizerMap.end())
+       {
+          hx::finalizer f = i->second;
+          hx::hxtFinalizerMap.erase(i);
+          hx::hxtFinalizerMap[inTo] = f;
+          printf("HXT TODO: potential lost collection / ID collision, maintain alloc_map across move?");
+       }
+       #endif
 
        hx::MakeZombieSet::iterator mz = hx::sMakeZombieSet.find(inFrom);
        if (mz!=hx::sMakeZombieSet.end())
@@ -3282,6 +3326,13 @@ void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
 {
    GCSetFinalizer( inObj.mPtr, (hx::finalizer) inFunc );
 }
+
+#ifdef HXCPP_TELEMETRY
+void __hxcpp_set_hxt_finalizer(void* inObj, void *inFunc)
+{
+   GCSetHXTFinalizer( inObj, (hx::finalizer) inFunc );
+}
+#endif
 
 extern "C"
 {
