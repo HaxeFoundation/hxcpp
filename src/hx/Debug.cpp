@@ -2007,7 +2007,7 @@ EXPORT void NullReference(const char *type, bool allowFixup)
 #ifdef HXCPP_DEBUGGER
     if (allowFixup && (hx::g_eventNotificationHandler != null())) {
         if (hx::CallStack::BreakCriticalError
-        (String("Null ") + String(type) + String(" Reference"))) {
+        (HX_CSTRING("Null ") + String(type) + HX_CSTRING(" Reference"))) {
             return;
         }
         else {
