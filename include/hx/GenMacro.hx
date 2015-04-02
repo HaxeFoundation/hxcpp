@@ -34,7 +34,7 @@ class GenMacro
       var dynamic_var_args = new Array<String>();
       var dynamic_adds = new Array<String>();
 
-      for(arg in 0...21)
+      for(arg in 0...27)
       {
          if (arg>0)
          {
