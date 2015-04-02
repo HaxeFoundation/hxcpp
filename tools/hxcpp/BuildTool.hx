@@ -13,6 +13,8 @@ import cpp.vm.Mutex;
 import cpp.vm.Tls;
 #end
 
+using StringTools;
+
 #if haxe3
 typedef Hash<T> = haxe.ds.StringMap<T>;
 #end
@@ -944,6 +946,28 @@ class BuildTool
 
          Sys.exit( Sys.command( exe, args ) );
       }
+      else if (args.length==1 && args[0]=="defines")
+      {
+         var dir = '$HXCPP/tools/hxcpp';
+         try
+         {
+            var defineMatch = ~/m*defines\.\w+\("(\w+)"/i;
+            var allDefines = new Map<String,Bool>();
+            for(file in FileSystem.readDirectory(dir))
+               if (file.endsWith(".hx"))
+                  for(line in sys.io.File.getContent(file).split("\n"))
+                     if (defineMatch.match(line))
+                        allDefines.set(defineMatch.matched(1),true);
+            for(key in allDefines.keys())
+               Sys.println(key);
+         }
+         catch(e:Dynamic)
+         {
+            Log.error('Could not read $dir : $e');
+         }
+         return;
+      }
+
 
       isRPi = isLinux && Setup.isRaspberryPi();
 
