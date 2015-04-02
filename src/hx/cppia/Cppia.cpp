@@ -55,6 +55,8 @@ void TypeData::mark(hx::MarkContext *__inCtx)
    if (cppiaClass)
       cppiaClassMark(cppiaClass,__inCtx);
 }
+
+#ifdef HXCPP_VISIT_ALLOCS
 void TypeData::visit(hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(name);
@@ -62,6 +64,7 @@ void TypeData::visit(hx::VisitContext *__inCtx)
    if (cppiaClass)
       cppiaClassVisit(cppiaClass,__inCtx);
 }
+#endif
 
 
 struct StackLayout;
@@ -1492,6 +1495,7 @@ struct CppiaClassInfo
       for(int i=0;i<staticDynamicFunctions.size();i++)
          staticDynamicFunctions[i]->mark(__inCtx);
    }
+#ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(mClass);
@@ -1505,6 +1509,7 @@ struct CppiaClassInfo
       for(int i=0;i<staticDynamicFunctions.size();i++)
          staticDynamicFunctions[i]->visit(__inCtx);
    }
+#endif
 
 
 
@@ -2244,6 +2249,7 @@ struct CppiaClassInfo
          memberVars[i]->mark(inThis, __inCtx);
    }
 
+#ifdef HXCPP_VISIT_ALLOCS
    inline void visitInstance(hx::Object *inThis, hx::VisitContext *__inCtx)
    {
       if (dynamicMapOffset)
@@ -2254,6 +2260,7 @@ struct CppiaClassInfo
       for(int i=0;i<memberVars.size();i++)
          memberVars[i]->visit(inThis, __inCtx);
    }
+#endif
 };
 
 
@@ -2267,10 +2274,12 @@ void cppiaClassMark(CppiaClassInfo *inClass,hx::MarkContext *__inCtx)
 {
    inClass->mark(__inCtx);
 }
+#ifdef HXCPP_VISIT_ALLOCS
 void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
 {
    inClass->visit(__inCtx);
 }
+#endif
 
 // --- Enum Base ---
 ::hx::ObjectPtr<hx::Class_obj > CppiaEnumBase::__GetClass() const
@@ -2628,6 +2637,7 @@ public:
       for(int i=0;i<function->captureVars.size();i++)
          function->captureVars[i]->markClosure(base,__inCtx);
    }
+#ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(*getThis());
@@ -2635,6 +2645,7 @@ public:
       for(int i=0;i<function->captureVars.size();i++)
          function->captureVars[i]->visitClosure(base,__inCtx);
    }
+#endif
    virtual void *__GetHandle() const { return *getThis(); }
 
    int __Compare(const hx::Object *inRHS) const
@@ -3226,7 +3237,9 @@ struct CppiaExprWithValue : public CppiaDynamicExpr
 
    hx::Object *runObject(CppiaCtx *ctx) { return value.mPtr; }
    void mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(value); }
+#ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(value); }
+#endif
 
    const char *getName() { return "CppiaExprWithValue"; }
    CppiaExpr *link(CppiaModule &inModule)
@@ -4286,12 +4299,13 @@ struct FieldByName : public CppiaDynamicExpr
       HX_MARK_MEMBER(name);
       HX_MARK_MEMBER(staticClass);
    }
+#ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(name);
       HX_VISIT_MEMBER(staticClass);
    }
-
+#endif
 
 };
 
@@ -4433,12 +4447,13 @@ struct GetFieldByName : public CppiaDynamicExpr
       HX_MARK_MEMBER(name);
       HX_MARK_MEMBER(staticClass);
    }
+#ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(name);
       HX_VISIT_MEMBER(staticClass);
    }
-
+#endif
 };
 
 
@@ -4821,7 +4836,9 @@ struct MemReference : public CppiaExpr
    }
 
    void mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER( *pointer ); }
+#ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER( *pointer ); }
+#endif
 
 
    void        runVoid(CppiaCtx *ctx) { }
@@ -4943,7 +4960,9 @@ struct MemReferenceSetter : public CppiaExpr
    }
 
    void mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER( *pointer ); }
+#ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER( *pointer ); }
+#endif
 
    CppiaExpr *link(CppiaModule &inModule)
    {
@@ -5043,7 +5062,9 @@ struct MemReferenceCrement : public CppiaExpr
 
 
    void mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER( *pointer ); }
+#ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER( *pointer ); }
+#endif
 
    CppiaExpr *link(CppiaModule &inModule)
    {
@@ -5234,12 +5255,13 @@ struct StringVal : public CppiaExprWithValue
       HX_MARK_MEMBER(value);
       HX_MARK_MEMBER(strVal);
    }
+#ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(value);
       HX_VISIT_MEMBER(strVal);
    }
-
+#endif
 };
 
 
@@ -6669,12 +6691,13 @@ struct EnumField : public CppiaDynamicExpr
       HX_MARK_MEMBER(enumName);
       HX_MARK_MEMBER(enumClass);
    }
+#ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(enumName);
       HX_VISIT_MEMBER(enumClass);
    }
-
+#endif
 };
 
 struct CrementExpr : public CppiaExpr 
@@ -7235,6 +7258,7 @@ void CppiaModule::mark(hx::MarkContext *__inCtx)
       }
 }
 
+#ifdef HXCPP_VISIT_ALLOCS
 void CppiaModule::visit(hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(strings);
@@ -7246,6 +7270,7 @@ void CppiaModule::visit(hx::VisitContext *__inCtx)
       if (classes[i])
          classes[i]->visit(__inCtx);
 }
+#endif
 
 // TODO  - more than one
 //static hx::Object *currentCppia = 0;
@@ -7268,7 +7293,9 @@ public:
       delete ((CppiaObject *)inObj)->data;
    }
    void __Mark(hx::MarkContext *ctx) { data->mark(ctx); }
+#ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *ctx) { data->visit(ctx); }
+#endif
 };
 
 
@@ -7449,10 +7476,12 @@ void ScriptableMark(void *inClass, hx::Object *inThis, hx::MarkContext *__inCtx)
    ((CppiaClassInfo *)inClass)->markInstance(inThis, __inCtx);
 }
 
+#ifdef HXCPP_VISIT_ALLOCS
 void ScriptableVisit(void *inClass, hx::Object *inThis, hx::VisitContext *__inCtx)
 {
    ((CppiaClassInfo *)inClass)->visitInstance(inThis, __inCtx);
 }
+#endif
 
 bool ScriptableField(hx::Object *inObj, const ::String &inName,hx::PropertyAccess  inCallProp,Dynamic &outResult)
 {

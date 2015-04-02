@@ -586,6 +586,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       iterate(marker);
    }
 
+#ifdef HXCPP_VISIT_ALLOCS
    // Vist ...
    struct HashVisitor
    {
@@ -609,6 +610,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       HashVisitor vistor(__inCtx);
       iterateAddr(vistor);
    }
+#endif
 };
 
 
@@ -823,6 +825,7 @@ struct TinyHash : public HashBase< typename ELEMENT::Key >
       }
    }
 
+#ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_ARRAY(element);
@@ -835,6 +838,7 @@ struct TinyHash : public HashBase< typename ELEMENT::Key >
          }
       }
    }
+#endif
 };
 
 } // end namespace hx

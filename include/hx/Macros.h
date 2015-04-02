@@ -55,7 +55,15 @@
 
 #define HX_MARK_DYNAMIC HX_MARK_MEMBER(__mDynamicFields)
 
+
+#ifdef HX_VISIT_ALLOCS
+
 #define HX_VISIT_DYNAMIC HX_VISIT_MEMBER(__mDynamicFields);
+#else
+
+#define HX_VISIT_DYNAMIC do { } while (0);
+
+#endif
 
 #define HX_CHECK_DYNAMIC_GET_FIELD(inName) \
    { Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inName,d)) return d; }
@@ -483,108 +491,168 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 #define HX_DYNAMIC_CALL19(ret,func) HX_DYNAMIC_CALL(ret,func,HX_ARR_LIST19,HX_DYNAMIC_ARG_LIST19,HX_ARG_LIST19)
 #define HX_DYNAMIC_CALL20(ret,func) HX_DYNAMIC_CALL(ret,func,HX_ARR_LIST20,HX_DYNAMIC_ARG_LIST20,HX_ARG_LIST20)
 
+#ifdef HXCPP_VISIT_ALLOCS
+#define HX_DEFAULT_VISIT_FUNC \
+    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
+#else
+#define HX_DEFAULT_VISIT_FUNC
+#endif
+
 #define HX_BEGIN_DEFAULT_FUNC(name,t0) \
 	namespace { \
    struct name : public hx::Object { int __GetType() const { return vtFunction; } \
    hx::ObjectPtr<t0> __this; \
    name(hx::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
+   HX_DEFAULT_VISIT_FUNC
 
 
 #define HX_END_DEFAULT_FUNC \
 }
 
+#ifdef HXCPP_VISIT_ALLOCS
+#define HX_LOCAL_VISIT_FUNC \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); }
+#else
+#define HX_LOCAL_VISIT_FUNC
+#endif
+
 #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
    struct name : public SUPER { \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); } \
+   HX_LOCAL_VISIT_FUNC \
    name() {}
+
+#ifdef HXCPP_VISIT_ALLOCS
+#define HX_LOCAL_VISIT_0(v0) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); }
+#define HX_LOCAL_VISIT_1(v0, v1) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); }
+#define HX_LOCAL_VISIT_2(v0, v1, v2) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); }
+#define HX_LOCAL_VISIT_3(v0, v1, v2, v3) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); }
+#define HX_LOCAL_VISIT_4(v0, v1, v2, v3, v4) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); }
+#define HX_LOCAL_VISIT_5(v0, v1, v2, v3, v4, v5) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); }
+#define HX_LOCAL_VISIT_6(v0, v1, v2, v3, v4, v5, v6) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); }
+#define HX_LOCAL_VISIT_7(v0, v1, v2, v3, v4, v5, v6, v7) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); }
+#define HX_LOCAL_VISIT_8(v0, v1, v2, v3, v4, v5, v6, v7, v8) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); }
+#define HX_LOCAL_VISIT_9(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); }
+#define HX_LOCAL_VISIT_10(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); }
+#define HX_LOCAL_VISIT_11(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); }
+#define HX_LOCAL_VISIT_12(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); }
+#define HX_LOCAL_VISIT_13(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) \
+    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); HX_VISIT_MEMBER(v13); }
+#else
+#define HX_LOCAL_VISIT_0(v0)
+#define HX_LOCAL_VISIT_1(v0, v1)
+#define HX_LOCAL_VISIT_2(v0, v1, v2)
+#define HX_LOCAL_VISIT_3(v0, v1, v2, v3)
+#define HX_LOCAL_VISIT_4(v0, v1, v2, v3, v4)
+#define HX_LOCAL_VISIT_5(v0, v1, v2, v3, v4, v5)
+#define HX_LOCAL_VISIT_6(v0, v1, v2, v3, v4, v5, v6)
+#define HX_LOCAL_VISIT_7(v0, v1, v2, v3, v4, v5, v6, v7)
+#define HX_LOCAL_VISIT_8(v0, v1, v2, v3, v4, v5, v6, v7, v8)
+#define HX_LOCAL_VISIT_9(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9)
+#define HX_LOCAL_VISIT_10(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10)
+#define HX_LOCAL_VISIT_11(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)
+#define HX_LOCAL_VISIT_12(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12)
+#define HX_LOCAL_VISIT_13(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13)
+#endif
 
 
 #define HX_BEGIN_LOCAL_FUNC_S1(SUPER,name,t0,v0) \
    struct name : public SUPER { \
    t0 v0; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); } \
+   HX_LOCAL_VISIT_0(v0) \
    name(t0 __0) : v0(__0) {}
 #define HX_BEGIN_LOCAL_FUNC_S2(SUPER,name,t0,v0,t1,v1) \
    struct name : public SUPER { \
    t0 v0;t1 v1; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); } \
+   HX_LOCAL_VISIT_1(v0, v1) \
    name(t0 __0,t1 __1) : v0(__0),v1(__1) {}
 #define HX_BEGIN_LOCAL_FUNC_S3(SUPER,name,t0,v0,t1,v1,t2,v2) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); } \
+   HX_LOCAL_VISIT_2(v0, v1, v2) \
    name(t0 __0,t1 __1,t2 __2) : v0(__0),v1(__1),v2(__2) {}
 #define HX_BEGIN_LOCAL_FUNC_S4(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); } \
+   HX_LOCAL_VISIT_3(v0, v1, v2, v3) \
    name(t0 __0,t1 __1,t2 __2,t3 __3) : v0(__0),v1(__1),v2(__2),v3(__3) {}
 #define HX_BEGIN_LOCAL_FUNC_S5(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); } \
+   HX_LOCAL_VISIT_4(v0, v1, v2, v3, v4) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4) {}
 #define HX_BEGIN_LOCAL_FUNC_S6(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); } \
+   HX_LOCAL_VISIT_5(v0, v1, v2, v3, v4, v5) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5) {}
 #define HX_BEGIN_LOCAL_FUNC_S7(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); } \
+   HX_LOCAL_VISIT_6(v0, v1, v2, v3, v4, v5, v6) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6) {}
 #define HX_BEGIN_LOCAL_FUNC_S8(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); } \
+   HX_LOCAL_VISIT_7(v0, v1, v2, v3, v4, v5, v6, v7) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7) {}
 #define HX_BEGIN_LOCAL_FUNC_S9(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); } \
+   HX_LOCAL_VISIT_8(v0, v1, v2, v3, v4, v5, v6, v7, v8) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8) {}
 #define HX_BEGIN_LOCAL_FUNC_S10(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); } \
+   HX_LOCAL_VISIT_9(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9) {}
 #define HX_BEGIN_LOCAL_FUNC_S11(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); } \
+   HX_LOCAL_VISIT_10(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10) {}
 #define HX_BEGIN_LOCAL_FUNC_S12(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); } \
+   HX_LOCAL_VISIT_11(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11) {}
 #define HX_BEGIN_LOCAL_FUNC_S13(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11;t12 v12; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); } \
+   HX_LOCAL_VISIT_12(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12) {}
 #define HX_BEGIN_LOCAL_FUNC_S14(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13) \
    struct name : public SUPER { \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11;t12 v12;t13 v13; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); HX_MARK_MEMBER(v13); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); HX_VISIT_MEMBER(v13); } \
+   HX_LOCAL_VISIT_13(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12,t13 __13) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12),v13(__13) {}
 
 

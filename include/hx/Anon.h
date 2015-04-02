@@ -22,9 +22,10 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES
 void FieldMapAppendFields(Dynamic *inMap,::Array< ::String> &outFields);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void FieldMapMark(Dynamic *inMap,hx::MarkContext *__inCtx);
+#ifdef HXCPP_VISIT_ALLOCS
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void FieldMapVisit(Dynamic **inMap,hx::VisitContext *__inCtx);
-
+#endif
 
 } // end namespace hx
 

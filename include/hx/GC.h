@@ -7,8 +7,13 @@
 #define HX_MARK_PARAMS hx::MarkContext *__inCtx
 //#define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
 
+#ifdef HXCPP_VISIT_ALLOCS
 #define HX_VISIT_ARG __inCtx
 #define HX_VISIT_PARAMS hx::VisitContext *__inCtx
+#else
+#define HX_VISIT_ARG
+#define HX_VISIT_PARAMS
+#endif
 
 // Tell compiler the extra functions are supported
 #define HXCPP_GC_FUNCTIONS_1

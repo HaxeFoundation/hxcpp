@@ -47,7 +47,16 @@
 
 #define HX_MARK_DYNAMIC HX_MARK_MEMBER(__mDynamicFields)
 
+
+#ifdef HX_VISIT_ALLOCS
+
 #define HX_VISIT_DYNAMIC HX_VISIT_MEMBER(__mDynamicFields);
+
+#else
+
+#define HX_VISIT_DYNAMIC do { } while (0);
+
+#endif
 
 #define HX_CHECK_DYNAMIC_GET_FIELD(inName) \
    { Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inName,d)) return d; }
