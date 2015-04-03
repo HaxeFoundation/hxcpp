@@ -508,7 +508,12 @@ public:
     static void HXTReclaim(void* obj)
     {
       alloc_mutex.Lock();
+      HXTReclaimInternal(obj);
+      alloc_mutex.Unlock();
+    }
 
+    static void HXTReclaimInternal(void* obj)
+    {
       int obj_id = __hxt_ptr_id(obj);
       std::map<int, hx::Telemetry*>::iterator exist = alloc_map.find(obj_id);
       if (exist != alloc_map.end()) {
@@ -516,14 +521,14 @@ public:
         if (telemetry) {
           telemetry->reclaim(telemetry, obj_id);
           alloc_map.erase(exist);
+          //printf("Reclaimed %016lx, id=%016lx\n", obj, obj_id);
         } else {
           printf("HXT ERR: we shouldn't get: Telemetry lookup failed!\n");
         }
       } else {
-        printf("HXT ERR: we shouldn't get: Reclaim a non-tracked object %018x, id=%018x -- was there an object ID collision?\n", obj, obj_id);
+        // Ignore, assume object was already 
+        //printf("HXT ERR: we shouldn't get: Reclaim a non-tracked object %016lx, id=%016lx -- was there an object ID collision?\n", obj, obj_id);
       }
-
-      alloc_mutex.Unlock();
     }
 
 private:
@@ -1098,7 +1103,7 @@ public:
         }
 
         stack->mTelemetry = new Telemetry(profiler, allocations);
-        //printf("Inst telemetry %018x on stack %018x\n", stack->mTelemetry, stack);
+        //printf("Inst telemetry %016lx on stack %016lx\n", stack->mTelemetry, stack);
     }
 
     static void StashCurrentThreadTelemetry()
@@ -1131,7 +1136,7 @@ public:
         CallStack *stack = hx::CallStack::GetCallerCallStack();
         Telemetry *telemetry = stack->mTelemetry;
         if (telemetry) {
-          //printf("Telemetry %018x allocating %s at %018x of size %d\n", telemetry, type, obj, inSize); 
+          //printf("Telemetry %016lx allocating %s at %016lx of size %d\n", telemetry, type, obj, inSize); 
           telemetry->HXTAllocation(stack, obj, inSize, type);
         }
     }
@@ -2340,12 +2345,6 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     if (ignoreAllocs>0 || !allocations_enabled) return;
 
     int obj_id = __hxt_ptr_id(obj);
-    int stackid = ComputeCallStackId(stack);
-
-    allocations->push_back(obj_id);
-    allocations->push_back(GetNameIdx(type));
-    allocations->push_back(stackid);
-    allocations->push_back((int)inSize);
 
     alloc_mutex.Lock();
 
@@ -2353,17 +2352,28 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     if (true) {
       std::map<int, hx::Telemetry*>::iterator exist = alloc_map.find(obj_id);
       if (exist != alloc_map.end()) {
-        printf("HXT ERR: Object id collision! at %018x\n", obj_id);
+        // Class extension hits here, so just ignore the lower classes' constructors
+        //printf("HXT ERR: Object id collision! at on %016lx, id=%016lx\n", obj, obj_id);
+        //printf("NEW: Tracking alloc %s at %016lx, id=%016lx, s=%d for telemetry %016lx, ts=%f\n", type, obj, obj_id, inSize, this, __hxcpp_time_stamp());
+        alloc_mutex.Unlock();
+        return;
       }
     }
 
-    alloc_map[obj_id] = this;
+    int stackid = ComputeCallStackId(stack);
 
-    alloc_mutex.Unlock();
+    allocations->push_back(obj_id);
+    allocations->push_back(GetNameIdx(type));
+    allocations->push_back(stackid);
+    allocations->push_back((int)inSize);
+
+    alloc_map[obj_id] = this;
 
     __hxcpp_set_hxt_finalizer(obj, (void*)Telemetry::HXTReclaim);
 
-    //printf("Tracking alloc %s at %018x for telemetry %018x\n", type, obj, this);
+    //printf("Tracking alloc %s at %016lx, id=%016lx, s=%d for telemetry %016lx, ts=%f\n", type, obj, obj_id, inSize, this, __hxcpp_time_stamp());
+
+    alloc_mutex.Unlock();
 }
 
 void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
@@ -2382,11 +2392,25 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
       t->reallocations->push_back(new_obj_id);
       t->reallocations->push_back(new_size);
 
-      //printf("Object at %018x moving to %018x, new_size = %d bytes\n", old_obj, new_obj, new_size);
+      //printf("Object at %016lx moving to %016lx, new_size = %d bytes\n", old_obj, new_obj, new_size);
 
-      // alloc_map.erase(exist); // This one still gets finalized later
-      alloc_map[new_obj_id] = t;
+      // Debug, id collision
+      if (true) {
+        std::map<int, hx::Telemetry*>::iterator exist_new = alloc_map.find(new_obj_id);
+        if (exist_new != alloc_map.end()) {
+          printf("HXT ERR: Object id collision (reloc)! at on %016lx, id=%016lx\n", (unsigned long)new_obj, (unsigned long)new_obj_id);
+          throw "uh oh";
+        }
+      }
+
+      __hxcpp_set_hxt_finalizer(old_obj, (void*)0); // remove old finalizer -- should GCInternal.InternalRealloc do this?
+      HXTReclaimInternal(old_obj); // count old as reclaimed
     }
+
+    alloc_map[new_obj_id] = this;
+    __hxcpp_set_hxt_finalizer(new_obj, (void*)HXTReclaim);
+
+    //printf("Tracking re-alloc from %016lx, id=%016lx to %016lx, id=%016lx at %f\n", old_obj, old_obj_id, new_obj, new_obj_id, __hxcpp_time_stamp());
 
     alloc_mutex.Unlock();
 }
@@ -2508,6 +2532,7 @@ void __hxt_new_object(void* ptr)
 {
   #ifdef HXCPP_STACK_TRACE
   unsigned int size = __hxcpp_gc_obj_size(ptr);
+  //printf(" -- %s, %s\n", hx::CallStack::GetCallerCallStack()->GetCurrentStackFrame()->className, hx::CallStack::GetCallerCallStack()->GetCurrentStackFrame()->functionName);
   hx::CallStack::HXTAllocation(ptr, size, hx::CallStack::GetCallerCallStack()->GetCurrentStackFrame()->className);
   #endif
 }
@@ -2520,14 +2545,14 @@ void __hxt_new_string(void* obj, int inSize)
 void __hxt_new_array(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE
-  //printf("Alloc Array at %018x\n", obj);
+  //printf("Alloc Array at %016lx\n", obj);
   hx::CallStack::HXTAllocation(obj, inSize, (const char*)"Array");
   #endif
 }
 void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size)
 {
   #ifdef HXCPP_STACK_TRACE
-  //if (new_size>300) printf("RE-Alloc Array at %018x to %018x, now %d bytes\n", old_obj, new_obj, new_size);
+  //if (new_size>300) printf("RE-Alloc Array at %016lx to %016lx, now %d bytes\n", old_obj, new_obj, new_size);
   hx::CallStack::HXTRealloc(old_obj, new_obj, new_size);
   #endif
 }

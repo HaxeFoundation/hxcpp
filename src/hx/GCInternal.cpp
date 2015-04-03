@@ -1401,7 +1401,14 @@ void  GCSetHXTFinalizer( void*obj, hx::finalizer f )
    //printf("Setting hxt finalizer on %018x\n", obj);
 
    AutoLock lock(*gSpecialObjectLock);
-   hxtFinalizerMap[(hx::Object*)obj] = f;
+   if (f==0)
+   {
+     FinalizerMap::iterator i = hxtFinalizerMap.find((hx::Object*)obj);
+      if (i!=hxtFinalizerMap.end())
+         hxtFinalizerMap.erase(i);
+   }
+   else
+     hxtFinalizerMap[(hx::Object*)obj] = f;
 }
 #endif
 
