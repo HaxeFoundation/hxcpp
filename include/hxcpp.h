@@ -45,6 +45,10 @@
   #include <stddef.h>
 #endif
 
+#ifdef EMSCRIPTEN
+#define HXCPP_ALIGN_FLOAT
+#endif
+
 
 
 
