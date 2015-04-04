@@ -1,6 +1,6 @@
 package hxcpp;
 
-@:cppFileCode( 'extern "C" void zlib_register_prims();')
+@:cppFileCode( 'extern "C" int zlib_register_prims();')
 @:buildXml("
 <target id='haxe'>
   <lib name='${HXCPP}/lib/${BINDIR}/libzlib${LIBEXTRA}${LIBEXT}'/>
