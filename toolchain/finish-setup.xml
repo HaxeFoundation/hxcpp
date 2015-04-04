@@ -12,9 +12,8 @@
 
 <set name="STD_MODULE_LINK" value="dll"/>
 
-<set name="static_link" value="1" if="iphoneos" unless="dll_import" />
-<set name="static_link" value="1" if="iphonesim" unless="dll_import" />
-<set name="static_link" value="1" if="emscripten" unless="dll_import" />
+<set name="static_link" value="1" if="iphoneos" unless="dll_import||exe_link" />
+<set name="static_link" value="1" if="iphonesim" unless="dll_import||exe_link" />
 
 <set name="LIBPREFIX" value="lib" if="static_link" unless="STATICLIBPREFIX" />
 <set name="LIBPREFIX" value="${STATICLIBPREFIX}" if="static_link" unless="LIBPREFIX" />

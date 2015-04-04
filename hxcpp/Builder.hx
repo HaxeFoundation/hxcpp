@@ -74,7 +74,7 @@ class Builder
                         targets.set(stat, parts);
                      }
                   }
-                  if (linkNdll && target!="ios" /*&& (target!="mingw" || explicitNdll)*/ )
+                  if (linkNdll && target!="ios" && target!="emscripten" /*&& (target!="mingw" || explicitNdll)*/ )
                      targets.set(target, parts);
 
                default:

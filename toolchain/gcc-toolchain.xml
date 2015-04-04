@@ -26,6 +26,7 @@
   <recreate value="1" if="emscripten" />
   <recreate value="1" if="android" />
   <expandAr value="1" if="android" />
+  <expandAr value="1" if="emscripten" />
   <expandAr value="1" if="linux" />
   <section unless="HXCPP_USE_LIBTOOL">
      <ranlib name="ranlib" />

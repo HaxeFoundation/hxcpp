@@ -87,7 +87,11 @@ class FileGroup
       for(def in contents.split("\n"))
       {
          var name = def.split("=")[0].toLowerCase();
-         if (name.indexOf("hxcpp")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" )
+         if (name.indexOf("hxcpp_link")>=0)
+         {
+            // Only effects linking, not compiling
+         }
+         else if (name.indexOf("hxcpp")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" )
             result.push(def);
       }
 

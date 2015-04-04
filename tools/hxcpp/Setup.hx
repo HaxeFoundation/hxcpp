@@ -75,6 +75,8 @@ class Setup
          //Sys.println("Warning: No 'HOME' variable set - .hxcpp_config.xml might be missing.");
          return;
       }
+ 
+      ioDefines.set("HXCPP_HOME", home);
 
       var  config = toPath(home+"/.hxcpp_config.xml");
       ioDefines.set("HXCPP_CONFIG",config);
@@ -126,6 +128,34 @@ class Setup
          Log.error('Could not guess MINGW_ROOT (tried $guesses) - please set explicitly');
       }
    }
+
+
+   public static function setupEmscripten(ioDefines:Hash<String>)
+   {
+      // Setup EMSCRIPTEN_SDK if possible - else assume developer has it in path
+      if (!ioDefines.exists("EMSCRIPTEN_SDK"))
+      {
+         var home = ioDefines.get("HXCPP_HOME");
+         var file = home + "/.emscripten";
+         if (FileSystem.exists(file))
+         {
+            var content = sys.io.File.getContent(file);
+            content = content.split("\r").join("");
+            var value = ~/^(\w*)\s*=\s*'(.*)'/;
+            for(line in content.split("\n"))
+            {
+               if (value.match(line))
+               {
+                  var name = value.matched(1);
+                  var val= value.matched(2);
+                  if (name=="EMSCRIPTEN_ROOT")
+                     ioDefines.set("EMSCRIPTEN_SDK", val);
+               }
+            }
+         }
+      }
+   }
+
 
    public static function isRaspberryPi()
    {
@@ -187,6 +217,10 @@ class Setup
       else if (inWhat=="mingw")
       {
          setupMingw(ioDefines);
+      }
+      else if (inWhat=="emscripten")
+      {
+         setupEmscripten(ioDefines);
       }
       else
       {
