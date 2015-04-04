@@ -2320,6 +2320,8 @@ public:
       void *info = (void *)(size_t)inId;
     #ifdef HX_WINRT
       // TODO
+    #elif defined(EMSCRIPTEN)
+    // Only one thread
     #elif defined(HX_WINDOWS)
       bool ok = _beginthreadex(0,0,SMarkerFunc,info,0,0) != 0;
     #else
@@ -2603,6 +2605,11 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    GCLOG("Mark conservative %p...%p (%d)\n", inBottom, inTop, (inTop-inBottom) );
    #endif
 
+   #ifdef EMSCRIPTEN
+   if (inTop<inBottom)
+      std::swap(inBottom,inTop);
+   #endif
+
    if (sizeof(int)==4 && sizeof(void *)==8)
    {
       // Can't start pointer on last integer boundary...
@@ -2830,6 +2837,12 @@ public:
 
    void *Alloc(int inSize,bool inIsObject)
    {
+      #ifdef HXCPP_ALIGN_FLOAT
+         #define HXCPP_ALIGN_ALLOC
+      #endif
+
+
+
       #ifdef HXCPP_DEBUG
       if (mGCFreeZone)
          CriticalGCError("Alloacting from a GC-free thread");
@@ -2845,9 +2858,23 @@ public:
       #endif
 
       int s = inSize +sizeof(int);
-      // Try to squeeze it on this line ...
-      if (mCurrentPos > 0)
+
+      #ifdef HXCPP_ALIGN_ALLOC
+      if (mCurrentPos >= IMMIX_LINE_LEN-4)
       {
+         mCurrentPos = 0;
+         mCurrentLine++;
+      }
+      #endif
+      // Try to squeeze it on this line ...
+      if (mCurrentPos > 0
+          )
+      {
+         #ifdef HXCPP_ALIGN_ALLOC
+         // Since we add sizeof(int), must be unaligned initially
+         if ( !(mCurrentPos & 0x4))
+            mCurrentPos += 4;
+         #endif
          int skip = 1;
          int extra_lines = (s + mCurrentPos-1) >> IMMIX_LINE_BITS;
 
@@ -2903,6 +2930,9 @@ public:
       int required_rows = (s + IMMIX_LINE_LEN-1) >> IMMIX_LINE_BITS;
       int last_start = IMMIX_LINES - required_rows;
 
+      #ifdef HXCPP_ALIGN_ALLOC
+      s+=4;
+      #endif
       while(1)
       {
          // Alloc new block, if required ...
@@ -2937,18 +2967,25 @@ public:
             // Ok, found a gap
             unsigned char *row = mCurrent->mRow[mCurrentLine];
 
-            int *result = (int *)(row + mCurrentPos);
+            int *result = (int *)(row /*+ mCurrentPos*/);
+            #ifdef HXCPP_ALIGN_ALLOC
+            result++;
+            #endif
             *result = inSize | gMarkID |
                (required_rows==1 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
 
             if (inIsObject)
                *result |= IMMIX_ALLOC_IS_OBJECT;
 
-            mCurrent->mRowFlags[mCurrentLine] = mCurrentPos | IMMIX_ROW_HAS_OBJ_LINK;
+            #ifdef HXCPP_ALIGN_ALLOC
+            mCurrent->mRowFlags[mCurrentLine] = 4 | IMMIX_ROW_HAS_OBJ_LINK;
+            #else
+            mCurrent->mRowFlags[mCurrentLine] = /*mCurrentPos |*/ IMMIX_ROW_HAS_OBJ_LINK;
+            #endif
 
             //mCurrent->DirtyLines(mCurrentLine,required_rows);
             mCurrentLine += required_rows - 1;
-            mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
+            mCurrentPos = (/*mCurrentPos +*/ s) & (IMMIX_LINE_LEN-1);
             if (mCurrentPos==0)
                mCurrentLine++;
 
@@ -3183,7 +3220,6 @@ void *InternalNew(int inSize,bool inIsObject)
       return tla->Alloc(inSize,inIsObject);
    }
 }
-
 
 
 // Force global collection - should only be called from 1 thread.
