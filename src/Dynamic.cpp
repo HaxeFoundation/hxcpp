@@ -196,8 +196,18 @@ public:
 
    int __Compare(const hx::Object *inRHS) const
    {
-      void *r = inRHS==0 ? 0 : inRHS->__GetHandle();
-      return mValue < r ? -1 : mValue==r ? 0 : 1;
+      if (!inRHS)
+         return 1;
+
+      int diff = __length() - inRHS->__length();
+      if (diff==0)
+         diff = __GetType() - inRHS->__GetType();
+      if (diff==0)
+         diff = memcmp( mValue, inRHS->__GetHandle(), mLength );
+       
+      if (diff<0) return -1;
+      if (diff>0) return 1;
+      return 0;
    }
 
    int __length() const { return mLength; }
