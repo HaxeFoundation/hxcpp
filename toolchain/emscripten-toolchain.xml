@@ -4,10 +4,22 @@
 <set name="HXCPP_LINK_EMSCRIPTEN_EXT" value=".js" unless="HXCPP_LINK_EMSCRIPTEN_EXT" />
 
 <path name="${EMSCRIPTEN_SDK}" if="EMSCRIPTEN_SDK" />
+<path name="${dir:EMSCRIPTEN_PYTHON}" if="EMSCRIPTEN_PYTHON" />
+<set name="HXCPP_RANLIB" value="emranlib" />
+<set name="HXCPP_AR" value="emar" />
+
+<section if="windows_host">
+   <set name="HXCPP_RANLIB" value='python "${EMSCRIPTEN_SDK}/emranlib"' />
+   <set name="HXCPP_AR" value='python "${EMSCRIPTEN_SDK}/emar"' />
+   <set name="CXX" value='python "${EMSCRIPTEN_SDK}/emcc"' />
+</section>
+
+<set name="nostrip" value="1" if="emscripten"/>
+
+<include name="toolchain/gcc-toolchain.xml"/>
 
 <!-- EMCC TOOLS -------------------------------------->
 
-<include name="toolchain/gcc-toolchain.xml"/>
 
 <section unless="HXCPP_OPTIM_LEVEL" >
    <!-- O2 generates stack-overflow when running unit tests - not sure what best default value is

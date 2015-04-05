@@ -11,6 +11,46 @@ import cpp.vm.Thread;
 
 class ProcessManager
 {
+   static function dup(inArgs:Array<String>)
+   {
+      if (inArgs==null)
+         return [];
+      return inArgs.copy();
+   }
+
+   // Command may be a pseudo command, like "xcrun --sdk abc", or 'python "some script"'
+   // Here we split the first word into command and move the rest into args, being careful
+   //  to preserve quoted words
+   static function combineCommand(command:String, args:Array<String>)
+   {
+      var parts = new Array<String>();
+      var c = command;
+      var quoted = ~/^\s*"([^"]+)"(.*)/;
+      var word = ~/^\s*(\S+)(.*)/;
+      while(c.length>0)
+      {
+         if (quoted.match(c))
+         {
+            parts.push( quoted.matched(1) );
+            c = quoted.matched(2);
+         }
+         else if (word.match(c))
+         {
+            parts.push( word.matched(1) );
+            c = word.matched(2);
+         }
+         else
+            break;
+      }
+      if (parts.length>1)
+      {
+         command = parts.shift();
+         while(parts.length>0)
+            args.unshift( parts.pop() );
+      }
+      return PathManager.escape(command);
+   }
+
    private static function formatMessage(command:String, args:Array<String>, colorize:Bool = true):String
    {
       var message = "";
@@ -65,12 +105,15 @@ class ProcessManager
 
    public static function runCommand(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false,?text:String):Int
    {
+      args = dup(args);
+      command = combineCommand(command,args);
+
+
       if (print && !Log.verbose)
       {
          Log.info(formatMessage(command, args));
       }
       
-      command = PathManager.escape(command);
       
       if (safeExecute)
       {
@@ -100,15 +143,56 @@ class ProcessManager
       }
    }
 
+   public static function readStderr(inCommand:String,inArgs:Array<String>)
+   {
+      inArgs = dup(inArgs);
+      inCommand = combineCommand(inCommand,inArgs);
+
+      var result = new Array<String>();
+      var proc = new Process(inCommand,inArgs);
+      try
+      {
+         while(true)
+         {
+            var out = proc.stderr.readLine();
+            result.push(out);
+         }
+      } catch(e:Dynamic){}
+      proc.close();
+      return result;
+   }
+
+   public static function readStdout(command:String,args:Array<String>)
+   {
+      args = dup(args);
+      command = combineCommand(command,args);
+
+
+      var result = new Array<String>();
+      var proc = new Process(command,args);
+      try
+      {
+         while(true)
+         {
+            var out = proc.stdout.readLine();
+            result.push(out);
+         }
+      } catch(e:Dynamic){}
+      proc.close();
+      return result;
+   }
+
    public static function runProcess(path:String, command:String, args:Array<String>, waitForOutput:Bool = true, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false, ?text:String):String
    {
+      args = dup(args);
+      command = combineCommand(command,args);
+
       if (print && !Log.verbose)
       {
          Log.info(formatMessage(command, args));
       }
-      
-      command = PathManager.escape(command);
-      
+
+
       if (safeExecute)
       {
          try
@@ -269,11 +353,12 @@ class ProcessManager
    // This function will return 0 on success, or non-zero error code
    public static function runProcessThreaded(command:String, args:Array<String>, inText:String):Int
    {
+      args = dup(args);
+      command = combineCommand(command,args);
+
       if (!Log.verbose)
          Log.info(formatMessage(command, args));
       
-      command = PathManager.escape(command);
-
       Log.lock();
       // Other thread may have already thrown an error
       if (BuildTool.threadExitCode!=0)

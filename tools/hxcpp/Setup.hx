@@ -149,7 +149,13 @@ class Setup
                   var name = value.matched(1);
                   var val= value.matched(2);
                   if (name=="EMSCRIPTEN_ROOT")
+                  {
                      ioDefines.set("EMSCRIPTEN_SDK", val);
+                  }
+                  if (name=="PYTHON")
+                     ioDefines.set("EMSCRIPTEN_PYTHON", val);
+                  if (name=="NODE_JS")
+                     ioDefines.set("EMSCRIPTEN_NODE_JS", val);
                }
             }
          }
@@ -165,37 +171,8 @@ class Setup
       return str.split(" ")[1]=="raspberrypi";
    }
 
-   public static function readStderr(inCommand:String,inArgs:Array<String>)
-   {
-      var result = new Array<String>();
-      var proc = new Process(inCommand,inArgs);
-      try
-      {
-         while(true)
-         {
-            var out = proc.stderr.readLine();
-            result.push(out);
-         }
-      } catch(e:Dynamic){}
-      proc.close();
-      return result;
-   }
 
-   public static function readStdout(inCommand:String,inArgs:Array<String>)
-   {
-      var result = new Array<String>();
-      var proc = new Process(inCommand,inArgs);
-      try
-      {
-         while(true)
-         {
-            var out = proc.stdout.readLine();
-            result.push(out);
-         }
-      } catch(e:Dynamic){}
-      proc.close();
-      return result;
-   }
+
 
    public static function setup(inWhat:String,ioDefines: Map<String,String>)
    {

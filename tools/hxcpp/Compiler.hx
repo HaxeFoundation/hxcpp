@@ -145,23 +145,19 @@ class Compiler
          }
 
          args.push(out + obj_name);
-         
-         var split = mExe.split (" ");
-         var exe = split.shift ();
-         args = split.concat (args);
-         
+
          if (inTid >= 0)
          {
             if (BuildTool.threadExitCode == 0)
             {
-               var err = ProcessManager.runProcessThreaded(exe, args, "Compiling " + inFile.mName);
+               var err = ProcessManager.runProcessThreaded(mExe, args, "Compiling " + inFile.mName);
                if (err!=0)
                   BuildTool.setThreadError(err);
             }
          }
          else
          {
-            var result = ProcessManager.runCommand("", exe, args, true, true, false, "Compiling " + inFile.mName);
+            var result = ProcessManager.runProcessThreaded(mExe, args, "Compiling " + inFile.mName);
             if (result!=0)
             {
                if (FileSystem.exists(obj_name))
@@ -187,14 +183,8 @@ class Compiler
       {
          var exe = mGetCompilerVersion;
          var args = new Array<String>();
-         if (exe.indexOf (" ") > -1)
-         {
-            var splitExe = exe.split(" ");
-            exe = splitExe.shift();
-            args = splitExe.concat(args);
-         }
  
-         var versionString = Setup.readStderr(exe,args).join(" ");
+         var versionString = ProcessManager.readStderr(exe,args).join(" ");
          Log.info("", "--- Compiler version ---");
          Log.info("", versionString);
          Log.info("", "------------------------");
@@ -257,11 +247,7 @@ class Compiler
 
       //Log.info("Creating " + pch_name + "...");
       
-      var split = mExe.split (" ");
-      var exe = split.shift ();
-      args = split.concat (args);
-      
-      var result = ProcessManager.runCommand("", exe, args);
+      var result = ProcessManager.runCommand("", mExe, args);
       if (result!=0)
       {
          if (FileSystem.exists(pch_name))
