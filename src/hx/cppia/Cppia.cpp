@@ -43,11 +43,6 @@ TypeData::TypeData(String inModule)
    interfaceBase = 0;
    isInterface = false;
 }
-bool TypeData::isClassOf(Dynamic inInstance)
-{
-   // TODO script class
-   return __instanceof(inInstance,haxeClass);
-}
 void TypeData::mark(hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(name);
@@ -2264,6 +2259,18 @@ struct CppiaClassInfo
 };
 
 
+bool TypeData::isClassOf(Dynamic inInstance)
+{
+   if (cppiaClass)
+      return cppiaClass->mClass->VCanCast(inInstance.mPtr);
+   else if (haxeClass.mPtr)
+      return __instanceof(inInstance,haxeClass);
+
+   return false;
+}
+
+
+
 void cppiaClassInit(CppiaClassInfo *inClass, CppiaCtx *ctx, int inPhase)
 {
    inClass->init(ctx,inPhase);
@@ -2391,12 +2398,16 @@ public:
 
    bool VCanCast(hx::Object *inPtr)
    {
+      if (!inPtr)
+         return false;
+
       hx::Class c = inPtr->__GetClass();
       if (!c.mPtr)
          return false;
 
       if (info->isInterface)
       {
+         // Can only be this cppia interface if it is a cppia class...
          CppiaClass *cppiaClass = dynamic_cast<CppiaClass *>(c.mPtr);
          if (!cppiaClass)
             return false;
@@ -2404,14 +2415,16 @@ public:
       }
 
 
-      while(c.mPtr)
+      hx::Class_obj *classPtr = c.mPtr;
+      while(classPtr)
       {
-         if (c.mPtr==this)
+         if (classPtr==this)
             return true;
          if (info->isEnum)
             return false;
-         c = c->GetSuper();
+         classPtr = classPtr->GetSuper().mPtr;
       }
+
       return false;
    }
 
@@ -5986,7 +5999,7 @@ struct TryExpr : public CppiaVoidExpr
       }
       catch(Dynamic caught)
       {
-         //Class cls = caught->__GetClass();
+         //Class cls = caught.mPtr ? caught->__GetClass() : 0;
          for(int i=0;i<catchCount;i++)
          {
             Catch &c = catches[i];
