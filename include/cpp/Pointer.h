@@ -67,7 +67,7 @@ public:
    inline T &get_ref() { return *ptr; }
    inline T &set_ref(const T &inValue) { return *ptr = inValue;  }
 
-   operator Dynamic () { return CreateDynamicPointer((void *)ptr); }
+   operator Dynamic () const { return CreateDynamicPointer((void *)ptr); }
    operator T * () { return ptr; }
    T * get_raw() { return ptr; }
 
