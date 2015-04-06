@@ -238,7 +238,7 @@ public:
    inline bool operator!=( const null &inValue ) const { return call!=0; }
 
 
-   operator Dynamic () { return CreateDynamicPointer((void *)call); }
+   operator Dynamic () const { return CreateDynamicPointer((void *)call); }
    operator T * () { return call; }
    operator void * () { return (void *)call; }
 
