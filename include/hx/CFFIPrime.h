@@ -6,6 +6,11 @@
 
 struct HxString
 {
+   inline HxString(const HxString &inRHS)
+   {
+      length = inRHS.length;
+      __s = inRHS.__s;
+   }
    inline HxString(const char *inS,int inLen=-1) : length(inLen), __s(inS)
    {
       if (length<0)
@@ -14,6 +19,7 @@ struct HxString
    inline HxString() : length(0), __s(0) { }
    int length;
    const char *__s;
+
 };
 
 

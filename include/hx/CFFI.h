@@ -118,6 +118,8 @@ typedef struct _vkind  *vkind;
 typedef struct _buffer  *buffer;
 #endif
 
+typedef buffer cffiByteBuffer;
+
 typedef struct _gcroot  *gcroot;
 
 typedef void (*hxFinalizer)(value v);

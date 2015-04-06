@@ -249,19 +249,6 @@ double  api_val_field_numeric(neko_value  arg1,int arg2)
 
 
 
-
-// Byte arrays
-neko_buffer api_val_to_buffer(neko_value  arg1)
-{
-   const char *data = api_val_string(arg1);
-   return dyn_alloc_buffer(data ? data : "");
-}
-
-bool api_val_is_buffer(neko_value  arg1)
-{
-} 
-
-
 neko_buffer api_alloc_buffer_len(int inLen)
 {
 	char *s=dyn_alloc_private(inLen+1);
@@ -285,13 +272,6 @@ int api_val_strlen(neko_value  arg1)
    }
 	return 0;
 }
-
-
-int api_buffer_size(neko_buffer inBuffer)
-{
-	return api_val_int(dyn_val_field((neko_value)inBuffer,length_id));
-}
-
 void api_buffer_set_size(neko_buffer inBuffer,int inLen) { NOT_IMPLEMNETED("api_buffer_set_size"); }
 
 
@@ -299,6 +279,27 @@ void api_buffer_append_char(neko_buffer inBuffer,int inChar)
 {
 	char buf[2] = { inChar, '\0' };
 	dyn_buffer_append_sub(inBuffer,buf,1);
+}
+
+
+
+
+
+// Byte arrays
+neko_buffer api_val_to_buffer(neko_value  arg1)
+{
+   const char *data = api_val_string(arg1);
+   return dyn_alloc_buffer(data ? data : "");
+}
+
+bool api_val_is_buffer(neko_value  arg1)
+{
+   return false;
+} 
+
+int api_buffer_size(neko_buffer inBuffer)
+{
+	return api_val_int(dyn_val_field((neko_value)inBuffer,length_id));
 }
 
 char * api_buffer_data(neko_buffer inBuffer)

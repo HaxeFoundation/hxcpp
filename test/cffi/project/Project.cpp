@@ -159,6 +159,17 @@ value bufferToString(value bufVal)
 DEFINE_PRIM(bufferToString, 1);
 
 
+value valToString(value a, value b)
+{
+   buffer buf = alloc_buffer("String:");
+   val_buffer(buf,a);
+   val_buffer(buf,b);
+   return buffer_to_string(buf);
+}
+DEFINE_PRIM(valToString, 2);
+
+
+
 value valIsBuffer(value bufVal)
 {
    return alloc_bool( val_is_buffer(bufVal) );
@@ -166,6 +177,25 @@ value valIsBuffer(value bufVal)
 DEFINE_PRIM(valIsBuffer, 1);
 
 
+value subBuffer(value inString, value inLen)
+{
+   buffer buf = alloc_buffer("Cold as ");
+   const char *string = val_string(inString);
+   buffer_append_sub(buf,string, val_int(inLen) );
+   return buffer_to_string(buf);
+}
+DEFINE_PRIM(subBuffer, 2);
+
+
+value charString(value inC0, value inC1, value inC2)
+{
+   buffer buf = alloc_buffer("A ");
+   buffer_append_char(buf,val_int(inC0));
+   buffer_append_char(buf,val_int(inC1));
+   buffer_append_char(buf,val_int(inC2));
+   return buffer_to_string(buf);
+}
+DEFINE_PRIM(charString, 3);
 
 
 

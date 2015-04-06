@@ -8,7 +8,7 @@ class Loader
    #if cpp
    public static function __init__()
    {
-      untyped cpp.Lib.pushDllSearchPath( "project/ndll/" + cpp.Lib.getBinDirectory() );
+      cpp.Lib.pushDllSearchPath( "project/ndll/" + cpp.Lib.getBinDirectory() );
    }
    #end
 

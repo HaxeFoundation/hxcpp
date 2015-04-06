@@ -6,5 +6,13 @@ class TestBase extends haxe.unit.TestCase
     {
        assertTrue( Math.abs(inWant-inGot) < 0.001, c );
     }
+
+    public function assertEq<T>(inWant:T, inGot:T,  ?c : PosInfos )
+    {
+       var same = inWant==inGot;
+       if (!same)
+          trace('Expected $inWant, got $inGot');
+       assertTrue(same, c);
+    }
 }
 

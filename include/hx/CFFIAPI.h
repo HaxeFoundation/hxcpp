@@ -64,21 +64,43 @@ DEFFUNC_1(float *,val_array_float,value)
 DEFFUNC_1(value *,val_array_value,value)
 
 // Byte arrays
-// The byte array may be a string or a Array<bytes> depending on implementation
-DEFFUNC_1(bool,val_is_buffer,value)
-DEFFUNC_1(buffer,val_to_buffer,value)
+// A 'buffer' is a tool for joining strings together, or temp byte storage
+// The C++ implementation is haxe.io.BytesData
+// The neko implementation is something else again, and can't be passes as a value, only copied to a string
+
+// Create a buffer from string of an empty buffer of a given length
 DEFFUNC_1(buffer,alloc_buffer,const char *)
 DEFFUNC_1(buffer,alloc_buffer_len,int)
-DEFFUNC_1(value,buffer_val,buffer)
-DEFFUNC_1(value,buffer_to_string,buffer)
-DEFFUNC_2(void,buffer_append,buffer,const char *)
-DEFFUNC_1(int,buffer_size,buffer)
-DEFFUNC_2(void,buffer_set_size,buffer,int)
-DEFFUNC_3(void,buffer_append_sub,buffer,const char *,int)
-DEFFUNC_2(void,buffer_append_char,buffer,int)
-DEFFUNC_1(char *,buffer_data,buffer)
-// Append value to buffer
+
+// Append a string representation of a value to the buffer
 DEFFUNC_2(void,val_buffer,buffer,value)
+
+// Append a c-string to a buffer
+DEFFUNC_2(void,buffer_append,buffer,const char *)
+
+// Append given number of bytes of a c-string to the buffer
+DEFFUNC_3(void,buffer_append_sub,buffer,const char *,int)
+
+// Append given character to string
+DEFFUNC_2(void,buffer_append_char,buffer,int)
+
+// Convert buffer back into string value
+DEFFUNC_1(value,buffer_to_string,buffer)
+
+
+
+// Byte-buffer access for c++ hosts
+// This will never return true on a neko host. A c++ host will check to see if it is BytesData
+DEFFUNC_1(bool,val_is_buffer,value)
+
+DEFFUNC_1(cffiByteBuffer,val_to_buffer,value)
+
+// Direct access to cffiByteByffer
+DEFFUNC_1(int,buffer_size,cffiByteBuffer)
+DEFFUNC_1(char *,buffer_data,cffiByteBuffer)
+DEFFUNC_1(value,buffer_val,cffiByteBuffer)
+
+DEFFUNC_2(void,buffer_set_size,cffiByteBuffer,int)
 
 //DEFFUNC_2(unsigned char,buffer_i,buffer,int)
 //DEFFUNC_2(void,buffer_push,buffer,unsigned char)
