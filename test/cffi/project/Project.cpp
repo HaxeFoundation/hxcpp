@@ -142,6 +142,29 @@ value allocNull()
 DEFINE_PRIM(allocNull,0);
 
 
+value appendString(value bufVal, value stringVal)
+{
+   buffer buf = val_to_buffer(bufVal);
+   val_buffer(buf,stringVal);
+   return buffer_val(buf);
+}
+DEFINE_PRIM(appendString,2);
+
+
+value bufferToString(value bufVal)
+{
+   buffer buf = val_to_buffer(bufVal);
+   return buffer_to_string(buf);
+}
+DEFINE_PRIM(bufferToString, 1);
+
+
+value valIsBuffer(value bufVal)
+{
+   return alloc_bool( val_is_buffer(bufVal) );
+}
+DEFINE_PRIM(valIsBuffer, 1);
+
 
 
 

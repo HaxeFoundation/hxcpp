@@ -213,14 +213,27 @@ neko_value api_alloc_empty_object()
    return dyn_alloc_object(gNekoNull);
 }
 
+neko_value api_buffer_to_string(neko_buffer arg1)
+{
+   neko_value neko_string = dyn_val_buffer(arg1);
+   if (gNeko2HaxeString)
+      return dyn_val_call1(*gNeko2HaxeString,neko_string);
+   return neko_string;
+}
+
 const char * api_val_string(neko_value  arg1)
 {
 	if (neko_val_is_string(arg1))
 	   return neko_val_string(arg1);
 
-	neko_value s = dyn_val_field(arg1,__s_id);
+	if (neko_val_is_object(arg1))
+   {
+	   neko_value s = dyn_val_field(arg1,__s_id);
+      if (neko_val_is_string(s))
+	      return neko_val_string(s);
+   }
 
-	return neko_val_string(s);
+   return 0;
 }
 
 
@@ -238,11 +251,14 @@ double  api_val_field_numeric(neko_value  arg1,int arg2)
 
 
 // Byte arrays
-neko_buffer api_val_to_buffer(neko_value  arg1) { return dyn_alloc_buffer(api_val_string(arg1)); } 
+neko_buffer api_val_to_buffer(neko_value  arg1)
+{
+   const char *data = api_val_string(arg1);
+   return dyn_alloc_buffer(data ? data : "");
+}
 
 bool api_val_is_buffer(neko_value  arg1)
 {
-   return false;
 } 
 
 
@@ -261,10 +277,12 @@ int api_val_strlen(neko_value  arg1)
 	if (neko_val_is_string(arg1))
 	   return neko_val_strlen(arg1);
 
-
-	neko_value l =  dyn_val_field(arg1,length_id);
-	if (neko_val_is_int(l))
-		return api_val_int(l);
+	if (neko_val_is_object(arg1))
+   {
+      neko_value l =  dyn_val_field(arg1,length_id);
+      if (neko_val_is_int(l))
+         return api_val_int(l);
+   }
 	return 0;
 }
 
@@ -293,7 +311,6 @@ char * api_buffer_data(neko_buffer inBuffer)
 
 char * api_val_dup_string(neko_value inVal)
 {
-
 	int len = api_val_strlen(inVal);
 	const char *ptr = api_val_string(inVal);
 	char *result = dyn_alloc_private(len+1);
@@ -591,6 +608,8 @@ void *DynamicNekoLoader(const char *inName)
 
    if (!strcmp(inName,"hx_alloc"))
       return LoadNekoFunc("neko_alloc");
+
+   IMPLEMENT_HERE(buffer_to_string)
 
    if (!strcmp(inName,"buffer_val"))
       return LoadNekoFunc("neko_buffer_to_string");
