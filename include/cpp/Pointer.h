@@ -36,6 +36,111 @@ Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc 
 template<typename T> class Reference;
 
 
+
+
+
+class DefaultStructHandler
+{
+   public:
+      static inline const char *getName() { return "unknown"; }
+      static inline String toString( const void *inData ) { return HX_CSTRING("Struct"); }
+
+      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
+      {
+         if (op==dhoToString)
+            *(String *)outResult = toString(inData);
+         else if (op==dhoGetClassName)
+            *(const char **)outResult = getName();
+      }
+};
+
+class Int64Handler
+{
+   public:
+      static inline const char *getName() { return "cpp.Int64"; }
+      static inline String toString( const void *inData ) { return String( *(Int64 *)inData ); }
+      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
+      {
+         if (op==dhoToString)
+            *(String *)outResult = toString(inData);
+         else if (op==dhoGetClassName)
+            *(const char **)outResult = getName();
+      }
+};
+
+
+template<typename T, typename HANDLER = DefaultStructHandler >
+class Struct
+{
+public:
+   T value;
+   // This allows 'StaticCast' to be used from arrays
+   typedef Dynamic Ptr;
+
+   inline Struct( ) {  }
+   inline Struct( const T &inRHS ) : value(inRHS) {  }
+   inline Struct( const null &) { value = T(); }
+   inline Struct( const Reference<T> &);
+
+   inline Struct<T,HANDLER> &operator=( const T &inRHS ) { value = inRHS; return *this; }
+   inline Struct<T,HANDLER> &operator=( const null & ) { value = T(); }
+   inline Struct<T,HANDLER> &operator=( const Dynamic &inRHS ) { return *this = Struct<T,HANDLER>(inRHS); }
+
+   operator Dynamic() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
+   operator String() const { return HANDLER::toString(value); }
+
+   bool operator==(const Struct<T,HANDLER> &inRHS) const { return value==inRHS.value; }
+
+   // Haxe uses -> notation
+   inline T *operator->() { return &value; }
+
+   T &get() { return value; }
+
+   static inline bool is( const Dynamic &inRHS)
+   {
+      hx::Object *ptr = inRHS.mPtr;
+      if (!ptr)
+         return false;
+      if (!ptr->__GetHandle())
+         return false;
+      if (ptr->__length() != sizeof(T))
+         return false;
+      return ptr->__CStr() == HANDLER::getName();
+   }
+
+   inline Struct( const Dynamic &inRHS)
+   {
+      hx::Object *ptr = inRHS.mPtr;
+      if (!ptr)
+      {
+         value = T();
+         return;
+      }
+      T *data = (T*)ptr->__GetHandle();
+      int len = ptr->__length();
+      if (!data || len<sizeof(T))
+      {
+         hx::NullReference("DynamicData", true);
+         return;
+      }
+      value = *data;
+   }
+
+
+   inline operator T& () { return value; }
+
+};
+
+typedef Struct<Int64,Int64Handler> Int64Struct;
+
+
+
+
+
+
+
+
+
 template<typename T>
 class Pointer
 {
@@ -49,6 +154,11 @@ public:
    inline Pointer( const T *inValue ) : ptr( (T*) inValue) { }
    //inline Pointer( T *inValue ) : ptr(inValue) { }
    inline Pointer( AutoCast inValue ) : ptr( (T*)inValue.value) { }
+
+   template<typename H>
+   inline Pointer( const Struct<T,H> &structVal ) : ptr( &structVal.value ) { }
+
+
    inline Pointer operator=( const Pointer &inRHS ) { return ptr = inRHS.ptr; }
    inline Dynamic operator=( Dynamic &inValue )
    {
@@ -104,9 +214,9 @@ inline bool operator != (const null &, Pointer<T> inPtr) { return inPtr.ptr!=0; 
 template<typename T>
 class Reference : public Pointer<T>
 {
+public:
    using Pointer<T>::ptr;
 
-public:
 
    inline Reference( const T &inRHS ) : Pointer<T>(&inRHS) {  }
    inline Reference( T &inRHS ) : Pointer<T>(&inRHS) {  }
@@ -118,6 +228,10 @@ public:
    inline Reference( const T *inValue ) : Pointer<T>( (T*) inValue) { }
    //inline Reference( T *inValue ) : Pointer(inValue) { }
    inline Reference( AutoCast inValue ) : Pointer<T>( (T*)inValue.value) { }
+
+   template<typename H>
+   inline Reference( const Struct<T,H> &structVal ) : Pointer<T>( &structVal.value ) { }
+
    inline Reference operator=( const Reference &inRHS ) { return ptr = inRHS.ptr; }
 
 
@@ -125,98 +239,8 @@ public:
 
 };
 
-class DefaultStructHandler
-{
-   public:
-      static inline const char *getName() { return "unknown"; }
-      static inline String toString( const void *inData ) { return HX_CSTRING("Struct"); }
-
-      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
-      {
-         if (op==dhoToString)
-            *(String *)outResult = toString(inData);
-         else if (op==dhoGetClassName)
-            *(const char **)outResult = getName();
-      }
-};
-
-class Int64Handler
-{
-   public:
-      static inline const char *getName() { return "cpp.Int64"; }
-      static inline String toString( const void *inData ) { return String( *(Int64 *)inData ); }
-      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
-      {
-         if (op==dhoToString)
-            *(String *)outResult = toString(inData);
-         else if (op==dhoGetClassName)
-            *(const char **)outResult = getName();
-      }
-};
-
-
-template<typename T, typename HANDLER = DefaultStructHandler >
-class Struct
-{
-public:
-   T value;
-   // This allows 'StaticCast' to be used from arrays
-   typedef Dynamic Ptr;
-
-   inline Struct( ) {  }
-   inline Struct( const T &inRHS ) : value(inRHS) {  }
-   inline Struct( const null &) { value = T(); }
-
-   inline Struct<T,HANDLER> &operator=( const T &inRHS ) { value = inRHS; return *this; }
-   inline Struct<T,HANDLER> &operator=( const null & ) { value = T(); }
-   inline Struct<T,HANDLER> &operator=( const Dynamic &inRHS ) { return *this = Struct<T,HANDLER>(inRHS); }
-
-   operator Dynamic() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
-   operator String() const { return HANDLER::toString(value); }
-
-   bool operator==(const Struct<T,HANDLER> &inRHS) const { return value==inRHS.value; }
-
-   // Haxe uses -> notation
-   inline T *operator->() { return &value; }
-
-   T &get() { return value; }
-
-   static inline bool is( const Dynamic &inRHS)
-   {
-      hx::Object *ptr = inRHS.mPtr;
-      if (!ptr)
-         return false;
-      if (!ptr->__GetHandle())
-         return false;
-      if (ptr->__length() != sizeof(T))
-         return false;
-      return ptr->__CStr() == HANDLER::getName();
-   }
-
-   inline Struct( const Dynamic &inRHS)
-   {
-      hx::Object *ptr = inRHS.mPtr;
-      if (!ptr)
-      {
-         value = T();
-         return;
-      }
-      T *data = (T*)ptr->__GetHandle();
-      int len = ptr->__length();
-      if (!data || len<sizeof(T))
-      {
-         hx::NullReference("DynamicData", true);
-         return;
-      }
-      value = *data;
-   }
-
-
-   inline operator T& () { return value; }
-
-};
-
-typedef Struct<Int64,Int64Handler> Int64Struct;
+template<typename T,typename H>
+Struct<T,H>::Struct( const Reference<T> &ref ) : value(*ref.ptr) { };
 
 
 
