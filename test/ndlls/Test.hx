@@ -7,11 +7,11 @@ import sys.db.Sqlite;
 import sys.db.Mysql;
 
 #if static_ndll
-import hxcpp.StaticStd;
-import hxcpp.StaticRegexp;
-import hxcpp.StaticZlib;
-import hxcpp.StaticMysql;
-import hxcpp.StaticSqlite;
+import cpp.link.StaticStd;
+import cpp.link.StaticRegexp;
+import cpp.link.StaticZlib;
+import cpp.link.StaticMysql;
+import cpp.link.StaticSqlite;
 #end
 
 

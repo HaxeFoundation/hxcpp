@@ -1009,6 +1009,8 @@ class BuildTool
             if (val=="verbose")
                Log.verbose = true;
          }
+         else if (arg=="-debug")
+               defines.set("debug","1");
          else if (arg=="-no-options")
             optionsTxt = "";
          else if (arg=="-options")
