@@ -369,9 +369,9 @@ public:
         allocations_enabled = profiler_en && allocs_en;
 
         samples = 0;
-        allocations = 0;
-        reallocations = 0;
-        collections = 0;
+        allocation_data = 0;
+        //reallocations = 0;
+        //collections = 0;
 
         // Push a blank (destroyed on first Dump)
         Stash();
@@ -420,16 +420,16 @@ public:
 
       alloc_mutex.Lock();
 
-      stash->allocations = allocations;
-      stash->reallocations = reallocations;
-      stash->collections = collections;
+      stash->allocation_data = allocation_data;
+      //stash->reallocations = reallocations;
+      //stash->collections = collections;
       stash->samples = samples;
 
       samples = profiler_enabled ? new std::vector<int>() : 0;
       if (allocations_enabled) {
-        allocations = new std::vector<int>();
-        reallocations = new std::vector<int>();
-        collections = new std::vector<int>();
+        allocation_data = new std::vector<int>();
+        //reallocations = new std::vector<int>();
+        //collections = new std::vector<int>();
       }
 
       alloc_mutex.Unlock();
@@ -498,11 +498,12 @@ public:
         gcTimer += __hxcpp_time_stamp() - gcTimerTemp;
     }
 
-    void reclaim(Telemetry* t, int id)
+    void reclaim(int id)
     {
       if (!allocations_enabled) return;
 
-      t->collections->push_back(id);
+      allocation_data->push_back(1); // collect flag
+      allocation_data->push_back(id);
     }
 
     static void HXTReclaim(void* obj)
@@ -519,9 +520,9 @@ public:
       if (exist != alloc_map.end()) {
         Telemetry* telemetry = exist->second;
         if (telemetry) {
-          telemetry->reclaim(telemetry, obj_id);
+          telemetry->reclaim(obj_id);
           alloc_map.erase(exist);
-          //printf("Reclaimed %016lx, id=%016lx\n", obj, obj_id);
+          //printf("Tracking collection %016lx, id=%016lx\n", obj, obj_id);
         } else {
           printf("HXT ERR: we shouldn't get: Telemetry lookup failed!\n");
         }
@@ -585,9 +586,9 @@ private:
 
     int ignoreAllocs;
 
-    std::vector<int> *allocations;
-    std::vector<int> *reallocations;
-    std::vector<int> *collections;
+    std::vector<int> *allocation_data;
+    //std::vector<int> *reallocations;
+    //std::vector<int> *collections;
 
     static  MyMutex gStashMutex;
     static MyMutex gThreadMutex;
@@ -2354,7 +2355,6 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
       if (exist != alloc_map.end()) {
         // Class extension hits here, so just ignore the lower classes' constructors
         //printf("HXT ERR: Object id collision! at on %016lx, id=%016lx\n", obj, obj_id);
-        //printf("NEW: Tracking alloc %s at %016lx, id=%016lx, s=%d for telemetry %016lx, ts=%f\n", type, obj, obj_id, inSize, this, __hxcpp_time_stamp());
         alloc_mutex.Unlock();
         return;
       }
@@ -2362,10 +2362,11 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
 
     int stackid = ComputeCallStackId(stack);
 
-    allocations->push_back(obj_id);
-    allocations->push_back(GetNameIdx(type));
-    allocations->push_back(stackid);
-    allocations->push_back((int)inSize);
+    allocation_data->push_back(0); // alloc flag
+    allocation_data->push_back(obj_id);
+    allocation_data->push_back(GetNameIdx(type));
+    allocation_data->push_back((int)inSize);
+    allocation_data->push_back(stackid);
 
     alloc_map[obj_id] = this;
 
@@ -2388,9 +2389,10 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
     std::map<int, hx::Telemetry*>::iterator exist = alloc_map.find(old_obj_id);
     if (exist != alloc_map.end()) {
       Telemetry* t = exist->second;
-      t->reallocations->push_back(old_obj_id);
-      t->reallocations->push_back(new_obj_id);
-      t->reallocations->push_back(new_size);
+      t->allocation_data->push_back(2); // realloc flag (necessary?)
+      t->allocation_data->push_back(old_obj_id);
+      t->allocation_data->push_back(new_obj_id);
+      t->allocation_data->push_back(new_size);
 
       //printf("Object at %016lx moving to %016lx, new_size = %d bytes\n", old_obj, new_obj, new_size);
 
@@ -2405,6 +2407,10 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
 
       __hxcpp_set_hxt_finalizer(old_obj, (void*)0); // remove old finalizer -- should GCInternal.InternalRealloc do this?
       HXTReclaimInternal(old_obj); // count old as reclaimed
+    } else {
+      //printf("Not tracking re-alloc of untracked %016lx, id=%016lx\n", old_obj, old_obj_id);
+      alloc_mutex.Unlock();
+      return;
     }
 
     alloc_map[new_obj_id] = this;
