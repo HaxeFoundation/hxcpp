@@ -91,6 +91,21 @@ public:
    String toString();
    String __ToString() const;
 
+   void setData(void *inData, int inElements)
+   {
+      mBase = (char *)inData;
+      length = inElements;
+      mAlloc = inElements;
+   }
+
+   void setUnmanagedData(void *inData, int inElements)
+   {
+      mBase = (char *)inData;
+      length = inElements;
+      mAlloc = -1;
+   }
+
+
    int __GetType() const { return vtArray; }
 
    inline size_t size() const { return length; }
@@ -332,13 +347,13 @@ public:
          for(int i=0;i<length;i++)
             HX_MARK_MEMBER(ptr[i]);
       }
-      HX_MARK_ARRAY(mBase);
+      if (mAlloc>0) hx::MarkAlloc((void *)mBase, __inCtx );
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
    {
-      HX_VISIT_ARRAY(mBase);
+      if (mAlloc>0) __inCtx->visitAlloc((void **)&mBase);
       if (hx::ContainsPointers<ELEM_>())
       {
          ELEM_ *ptr = (ELEM_ *)mBase;

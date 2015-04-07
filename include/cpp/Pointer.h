@@ -11,6 +11,18 @@ struct AutoCast
    explicit inline AutoCast(void *inValue) : value(inValue) { }
 };
 
+
+struct RawAutoCast
+{
+   void *value;
+
+   explicit inline RawAutoCast(void *inValue) : value(inValue) { }
+
+   template<typename T>
+   operator T*() const { return (T*)value; }
+};
+
+
 Dynamic CreateDynamicPointer(void *inValue);
 
 enum DynamicHandlerOp
@@ -45,6 +57,7 @@ public:
    }
    inline Dynamic operator=( null &inValue ) { ptr=0; return inValue; }
    inline AutoCast reinterpret() { return AutoCast(ptr); }
+   inline RawAutoCast rawCast() { return RawAutoCast(ptr); }
 
    inline bool operator==( const null &inValue ) const { return ptr==0; }
    inline bool operator!=( const null &inValue ) const { return ptr!=0; }
@@ -296,6 +309,12 @@ public:
 	inline static Pointer<T> fromPointer(T *value)  { return Pointer<T>(value); }
    template<typename T>
 	inline static Pointer<T> fromPointer(const T *value)  { return Pointer<T>(value); }
+
+   template<typename T>
+	inline static Pointer<T> fromRaw(T *value)  { return Pointer<T>(value); }
+   template<typename T>
+	inline static Pointer<T> fromRaw(const T *value)  { return Pointer<T>(value); }
+
 
    inline static AutoCast fromHandle(Dynamic inValue, String inKind)
    {

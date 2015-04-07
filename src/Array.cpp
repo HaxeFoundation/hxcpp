@@ -30,11 +30,20 @@ void ArrayBase::EnsureSize(int inSize) const
    {
       if (s>mAlloc)
       {
+         bool wasUnamanaged = mAlloc<0;
+
          mAlloc = s*3/2 + 10;
          int bytes = mAlloc * GetElementSize();
          if (mBase)
          {
-            mBase = (char *)hx::GCRealloc(mBase, bytes );
+            if (wasUnamanaged)
+            {
+               char *base=(char *)(AllocAtomic() ? hx::NewGCPrivate(0,bytes) : hx::NewGCBytes(0,bytes));
+               memcpy(base,mBase,length*GetElementSize());
+               mBase = base;
+            }
+            else
+               mBase = (char *)hx::GCRealloc(mBase, bytes );
          }
          else if (AllocAtomic())
          {
@@ -143,7 +152,16 @@ void ArrayBase::__SetSizeExact(int inSize)
       int bytes = inSize * GetElementSize();
       if (mBase)
       {
-         mBase = (char *)hx::GCRealloc(mBase, bytes );
+         bool wasUnamanaged = mAlloc<0;
+
+         if (wasUnamanaged)
+         {
+            char *base=(char *)(AllocAtomic() ? hx::NewGCPrivate(0,bytes) : hx::NewGCBytes(0,bytes));
+            memcpy(base,mBase,std::min(length,inSize)*GetElementSize());
+            mBase = base;
+         }
+         else
+            mBase = (char *)hx::GCRealloc(mBase, bytes );
       }
       else if (AllocAtomic())
       {
