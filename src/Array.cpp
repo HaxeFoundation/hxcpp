@@ -12,14 +12,15 @@ namespace hx
 ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
 {
    length = inSize;
-   mAlloc = inSize < inReserve ? inReserve : inSize;
-   if (mAlloc)
+   int alloc = inSize < inReserve ? inReserve : inSize;
+   if (alloc)
    {
       mBase = (char *)( (!inAtomic) ?
-        hx::NewGCBytes(0, mAlloc * inElementSize ) : hx::NewGCPrivate(0,mAlloc*inElementSize));
+        hx::NewGCBytes(0, alloc * inElementSize ) : hx::NewGCPrivate(0,alloc*inElementSize));
    }
    else
       mBase = 0;
+   mAlloc = alloc;
 }
 
 
@@ -31,9 +32,8 @@ void ArrayBase::EnsureSize(int inSize) const
       if (s>mAlloc)
       {
          bool wasUnamanaged = mAlloc<0;
-
-         mAlloc = s*3/2 + 10;
-         int bytes = mAlloc * GetElementSize();
+         int newAlloc = s*3/2 + 10;
+         int bytes = newAlloc * GetElementSize();
          if (mBase)
          {
             if (wasUnamanaged)
@@ -53,6 +53,7 @@ void ArrayBase::EnsureSize(int inSize) const
          {
             mBase = (char *)hx::NewGCBytes(0,bytes);
          }
+         mAlloc = newAlloc;
       }
       length = s;
    }
