@@ -10,7 +10,9 @@ install:
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then travis_retry brew update; travis_retry brew install ocaml camlp4; fi
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then travis_retry git clone https://github.com/HaxeFoundation/neko.git ~/neko && cd ~/neko && make os=${TRAVIS_OS_NAME} && sudo make install && cd $TRAVIS_BUILD_DIR; fi
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then travis_retry brew install neko --HEAD; fi
-  - git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe && cd ~/haxe && make OCAMLOPT=ocamlopt.opt && make tools && sudo make install && cd $TRAVIS_BUILD_DIR
+  - neko -version
+  - git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe && cd ~/haxe && make OCAMLOPT=ocamlopt.opt ADD_REVISION=1 && make tools && sudo make install && cd $TRAVIS_BUILD_DIR
+  - haxe -version
   - mkdir ~/haxelib && haxelib setup ~/haxelib
   - haxelib dev hxcpp $TRAVIS_BUILD_DIR
 
