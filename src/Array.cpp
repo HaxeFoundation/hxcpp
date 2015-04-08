@@ -9,6 +9,9 @@ using namespace hx;
 namespace hx
 {
 
+Array<Dynamic> ArrayBase::__new(int inSize,int inReserve)
+ { return  Array<Dynamic>(new Array_obj<Dynamic>(inSize,inReserve)); }
+
 ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
 {
    length = inSize;

@@ -718,11 +718,6 @@ Array<ELEM_> Array_obj<ELEM_>::__new(int inSize,int inReserve)
  { return  Array<ELEM_>(new Array_obj(inSize,inReserve)); }
 
 
-namespace hx {
-Array<Dynamic> ArrayBase::__new(int inSize,int inReserve)
- { return  Array<Dynamic>(new Array_obj<Dynamic>(inSize,inReserve)); }
-}
-
 template<>
 inline bool Dynamic::IsClass<Array<Dynamic> >()
    { return mPtr && mPtr->__GetClass()== hx::ArrayBase::__mClass; }
