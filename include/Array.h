@@ -651,7 +651,7 @@ public:
       }
    }
 
-   Array( const Dynamic &inRHS ) : super(0)
+   inline void setDynamic( const Dynamic &inRHS )
    {
       hx::Object *ptr = inRHS.GetPtr(); 
       if (ptr)
@@ -672,6 +672,9 @@ public:
       }
    }
 
+   Array( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }
+   Array( const cpp::ArrayBase &inRHS ) : super(0) { setDynamic(inRHS); }
+
 
    // operator= exact match...
    Array &operator=( Array<ELEM_> inRHS )
@@ -690,9 +693,16 @@ public:
 
    Array &operator=( const Dynamic &inRHS )
    {
-      *this = Array(inRHS);
+      setDynamic(inRHS);
       return *this;
    }
+
+   Array &operator=( const cpp::ArrayBase &inRHS )
+   {
+      setDynamic(inRHS);
+      return *this;
+   }
+
 
    Array &operator=( const null &inNull )
    {
