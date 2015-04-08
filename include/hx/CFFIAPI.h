@@ -63,8 +63,8 @@ DEFFUNC_1(double *,val_array_double,value)
 DEFFUNC_1(float *,val_array_float,value)
 DEFFUNC_1(value *,val_array_value,value)
 
-// Byte arrays
-// A 'buffer' is a tool for joining strings together, or temp byte storage
+// String Buffer
+// A 'buffer' is a tool for joining strings together.
 // The C++ implementation is haxe.io.BytesData
 // The neko implementation is something else again, and can't be passes as a value, only copied to a string
 
@@ -89,22 +89,30 @@ DEFFUNC_1(value,buffer_to_string,buffer)
 
 
 
-// Byte-buffer access for c++ hosts
-// This will never return true on a neko host. A c++ host will check to see if it is BytesData
+// These routines are for direct access to the c++ BytesData structure
+// Use getByteData and resizeByteData for more generic access to haxe.io.Bytes
+
+// This will never return true on a neko host.
 DEFFUNC_1(bool,val_is_buffer,value)
 
+// These functions are only valid if val_is_buffer returns true
+// Currently, cffiByteBuffer is the same struct as buffer, but the usage is quite different
 DEFFUNC_1(cffiByteBuffer,val_to_buffer,value)
 
-// Direct access to cffiByteByffer
+// Number of byes in the array
 DEFFUNC_1(int,buffer_size,cffiByteBuffer)
+
+// Pointer to the byte data - will become invalid if the array is resized
 DEFFUNC_1(char *,buffer_data,cffiByteBuffer)
+
+// Convert c++ ByteBuffer back to 'value' - no copy involved
 DEFFUNC_1(value,buffer_val,cffiByteBuffer)
 
+// Resize the array - will invalidate the data
 DEFFUNC_2(void,buffer_set_size,cffiByteBuffer,int)
 
-//DEFFUNC_2(unsigned char,buffer_i,buffer,int)
-//DEFFUNC_2(void,buffer_push,buffer,unsigned char)
-//DEFFUNC_2(void,buffer_resize,buffer,int)
+// This is used by resizeByteData for manipulating bytes directly on neko
+DEFFUNC_1(value,alloc_raw_string,int)
 
 // Call Function 
 DEFFUNC_1(value,val_call0,value)

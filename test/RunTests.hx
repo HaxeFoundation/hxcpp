@@ -1,12 +1,13 @@
 class RunTests
 {
    static var baseDir:String;
-   static var allGood = true;
+   static var errors = new Array<String>();
    static var binDir = "";
    static var ext = "";
    static var m64 = true;
    static var m64Def = "HXCPP_M64";
    static var windows = false;
+   static var sep = "/";
 
    public static function cffi()
    {
@@ -17,10 +18,11 @@ class RunTests
       setDir("cffi");
       command("haxe", ["compile.hxml", "-debug"] );
       command("haxe", ["compile-neko.hxml", "-debug"] );
+
       copy('project/ndll/$binDir/prime$ext', 'bin/neko/prime.ndll');
 
       setDir("cffi");
-      command("bin/cpp/TestMain-debug",[]);
+      command("bin" + sep + "cpp" + sep + "TestMain-debug",[]);
 
       setDir("cffi/bin/neko");
       command("neko", ["TestMain.n"]);
@@ -30,7 +32,7 @@ class RunTests
    {
       setDir("haxe");
       command("haxe", ["compile.hxml", "-debug", "-D", m64Def] );
-      command("bin/TestMain-debug",[]);
+      command("bin" + sep + "TestMain-debug",[]);
    }
 
 
@@ -39,13 +41,13 @@ class RunTests
       setDir("ndlls");
 
       command("haxe", ["compile.hxml"] );
-      command("cpp/Test",[]);
+      command("cpp"+sep+"Test",[]);
 
       command("haxe", ["compile64.hxml"] );
-      command("cpp64/Test",[]);
+      command("cpp64"+sep+"Test",[]);
 
       command("haxe", ["compile-static.hxml"]);
-      command("scpp/Test",[]);
+      command("scpp"+sep+"Test",[]);
    }
 
 
@@ -73,12 +75,17 @@ class RunTests
       catch(e:Dynamic)
       {
          trace('Error running $name : $e');
-         allGood = false;
+         errors.push('Error running $name : $e');
       }
    }
 
    public static function copy(from:String, to:String)
    {
+      if (windows)
+      {
+         from = from.split("/").join("\\");
+         to = to.split("/").join("\\");
+      }
       command( windows ? "copy" : "cp", [ from, to ] );
    }
 
@@ -100,6 +107,7 @@ class RunTests
             binDir = "Windows";
             ext = ".dll";
             windows = true;
+            sep = "\\";
          default:
             throw 'Unknown system "$systemName"';
       }
@@ -112,7 +120,17 @@ class RunTests
       run("haxe", runHaxe);
       run("ndlls", ndlls);
 
-      Sys.exit( allGood ? 0 : -1 );
+      Sys.println("");
+
+      if (errors.length==0)
+      {
+         Sys.println("All good!");
+         Sys.exit(0);
+      }
+      Sys.println("There were errors:");
+      for(error in errors)
+         Sys.println(error);
+      Sys.exit(-1);
    }
 }
 

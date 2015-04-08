@@ -333,6 +333,7 @@ hx::Object * alloc_string(const char * arg1)
 #endif
 }
 
+
 wchar_t * val_dup_wstring(value inVal)
 {
    hx::Object *obj = (hx::Object *)inVal;
@@ -765,6 +766,10 @@ void * alloc_private(int arg1)
    return hx::NewGCPrivate(0,arg1);
 }
 
+hx::Object * alloc_raw_string(int length)
+{
+   return Dynamic( String( (HX_CHAR *) alloc_private(length+1), length) ).GetPtr();
+}
 
 void  val_gc(hx::Object * arg1,hx::finalizer arg2) THROWS
 {

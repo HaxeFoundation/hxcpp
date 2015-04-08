@@ -198,6 +198,25 @@ value charString(value inC0, value inC1, value inC2)
 DEFINE_PRIM(charString, 3);
 
 
+value byteDataSize(value byteData)
+{
+   CffiBytes bytes = getByteData(byteData);
+   if (bytes.data==0)
+      return alloc_null();
+   return alloc_int(bytes.length);
+}
+DEFINE_PRIM(byteDataSize, 1);
+
+
+value byteDataByte(value byteData, value inIndex)
+{
+   CffiBytes bytes = getByteData(byteData);
+   if (bytes.data==0)
+      return alloc_null();
+
+   return alloc_int(bytes.data[ val_int(inIndex) ]);
+}
+DEFINE_PRIM(byteDataByte, 2);
 
 
 

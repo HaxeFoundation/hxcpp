@@ -19,6 +19,8 @@ class TestCffi extends TestBase
    static var valToString:Dynamic->Dynamic->String = Lib.load("prime", "valToString", 2);
    static var subBuffer:String->Int->String = Lib.load("prime", "subBuffer", 2);
    static var charString:Int->Int->Int->String = Lib.load("prime", "charString", 3);
+   static var byteDataSize:haxe.io.Bytes->Int = Lib.load("prime", "byteDataSize", 1);
+   static var byteDataByte:haxe.io.Bytes->Int->Int = Lib.load("prime", "byteDataByte", 2);
 
    public function testCffi()
    {
@@ -42,11 +44,26 @@ class TestCffi extends TestBase
 
       assertTrue( appendString!=null );
       assertTrue( bufferToString!=null );
+
+
+      assertFalse( valIsBuffer(null) );
+      assertFalse( valIsBuffer(1) );
+      assertFalse( valIsBuffer({}) );
+      assertFalse( valIsBuffer("String Buf") );
+
+
       var base = "Hello ";
       var bytes = haxe.io.Bytes.ofString(base).getData();
+
+      #if neko
+      assertFalse( valIsBuffer(bytes) );
+      #else
+      assertTrue( valIsBuffer(bytes) );
+      // Can't acess neko buffer from haxe code
       bytes = appendString(bytes,"World");
       var result = bufferToString(bytes);
       assertEq(result,"Hello World");
+      #end
 
       assertEq(valToString(null,1),"String:null1");
       assertEq(valToString("x",1.1),"String:x1.1");
@@ -57,18 +74,9 @@ class TestCffi extends TestBase
 
       assertEq(charString(99,97,116),"A cat");
 
-
-      #if neko
-      assertFalse( valIsBuffer(bytes) );
-      #else
-      assertTrue( valIsBuffer(bytes) );
-      #end
-      assertFalse( valIsBuffer(null) );
-      assertFalse( valIsBuffer(1) );
-      assertFalse( valIsBuffer({}) );
-      assertFalse( valIsBuffer("String Buf") );
-
-      //assertTrue( bufferToString(null) == null );
+      var bytes = haxe.io.Bytes.ofString("String Buffer");
+      assertEq( byteDataSize(bytes), 13 );
+      assertEq( byteDataByte(bytes,1), 't'.code );
    }
 }
 
