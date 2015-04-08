@@ -31,7 +31,7 @@ install:
     - git clone --recursive --depth 1 -q https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
     - 'cd %HAXE_ROOT%'
     - 'set PATH=%PATH%;%HAXE_ROOT%'
-    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH% OCAMLOPT=ocamlopt.opt ADD_REVISION=1"'
+    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH% OCAMLOPT=ocamlopt.opt"'
     - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win WODI=wodi%WODI_ARCH% OCAMLOPT=ocamlopt.opt tools"'
     - haxe -version
     - cd %APPVEYOR_BUILD_FOLDER%
