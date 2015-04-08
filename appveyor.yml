@@ -55,5 +55,5 @@ test_script:
     - haxe compile.hxml -debug && .\bin\TestMain-debug
     # tests from haxe repo
     - cd %HAXE_ROOT%\tests\unit
-    - haxe compile-cpp.hxml && .\bin\cpp\Test-debug #&& rd /s /q bin\cpp
-    # - haxe compile-cpp.hxml -D HXCPP_M64 && .\bin\cpp\Test-debug
+    - haxe compile-cpp.hxml -D HXCPP_M32 && .\bin\cpp\Test-debug && rd /s /q bin\cpp
+    - haxe compile-cpp.hxml -D HXCPP_M64 && .\bin\cpp\Test-debug
