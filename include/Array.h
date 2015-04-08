@@ -73,6 +73,10 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayBase : public hx::Object
 public:
    ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic);
 
+   // Defined later so we can use "Array"
+   static Array<Dynamic> __new(int inSize=0,int inReserve=0);
+
+
    static void __boot();
 
    typedef hx::Object super;
@@ -220,6 +224,9 @@ public:
    virtual bool IsByteArray() const = 0;
 
 
+   inline Dynamic __get(int inIndex) const { return __GetItem(inIndex); }
+
+
    mutable int length;
 protected:
    mutable int mAlloc;
@@ -230,8 +237,10 @@ protected:
 
 namespace cpp
 {
+   typedef hx::ArrayBase ArrayBase_obj;
+
    // Use by cpp.ArrayBase extern
-   typedef hx::ObjectPtr<hx::ArrayBase> ArrayBase;
+   typedef hx::ObjectPtr<ArrayBase_obj> ArrayBase;
 }
 
 
@@ -708,6 +717,11 @@ template<typename ELEM_>
 Array<ELEM_> Array_obj<ELEM_>::__new(int inSize,int inReserve)
  { return  Array<ELEM_>(new Array_obj(inSize,inReserve)); }
 
+
+namespace hx {
+Array<Dynamic> ArrayBase::__new(int inSize,int inReserve)
+ { return  Array<Dynamic>(new Array_obj<Dynamic>(inSize,inReserve)); }
+}
 
 template<>
 inline bool Dynamic::IsClass<Array<Dynamic> >()
