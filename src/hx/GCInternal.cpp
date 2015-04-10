@@ -96,6 +96,8 @@ static int gCollectTraceCount = 0;
 
 // TODO: Telemetry.h ?
 #ifdef HXCPP_TELEMETRY
+extern void __hxt_gc_new(void* obj, int inSize);
+extern void __hxt_resolve(void* obj);
 extern void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size);
 extern void __hxt_gc_start();
 extern void __hxt_gc_end();
@@ -3151,12 +3153,21 @@ void *InternalNew(int inSize,bool inIsObject)
    {
       void *result = sGlobalAlloc->AllocLarge(inSize);
       memset(result,0,inSize);
+#ifdef HXCPP_TELEMETRY
+      //__hxt_gc_new(result, inSize);
+#endif
       return result;
    }
    else
    {
       LocalAllocator *tla = GetLocalAlloc();
-      return tla->Alloc(inSize,inIsObject);
+      void* result = tla->Alloc(inSize,inIsObject);
+#ifdef HXCPP_TELEMETRY
+      //printf(" -- InternalNew!\n");
+      //__hxt_gc_new(result, inSize);
+      //__hxt_resolve(result);
+#endif
+       return result;
    }
 }
 

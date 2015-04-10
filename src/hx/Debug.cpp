@@ -364,6 +364,7 @@ public:
         allocStackIdMapRoot.terminationStackId = 0;
         gcTimer = 0;
         gcTimerTemp = 0;
+        _last_obj = 0;
 
         profiler_enabled = profiler_en;
         allocations_enabled = profiler_en && allocs_en;
@@ -407,6 +408,7 @@ public:
 
     void StackUpdate(CallStack *stack, StackFrame *frame);
     void HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type=0);
+    void HXTResolve(void* obj);
     void HXTRealloc(void* old_obj, void* new_obj, int new_Size);
 
     void Stash()
@@ -419,6 +421,8 @@ public:
       gcTimer = 0;
 
       alloc_mutex.Lock();
+
+      if (_last_obj!=0) lookup_last_object_type();
 
       stash->allocation_data = allocation_data;
       //stash->reallocations = reallocations;
@@ -433,6 +437,27 @@ public:
       }
 
       alloc_mutex.Unlock();
+
+      // // Deferred type resolution of allocaitons
+      // int i,size;
+      // if (stash->allocation_data!=0) {
+      //   i=0;
+      //   size = stash->allocation_data->size();
+      //   printf("Deferred lookup in %d items...\n", size);
+      //   while (i<size) {
+      //     int op = stash->allocation_data->at(i);
+      //     if (op==0) { // alloc
+      //       int id = stash->allocation_data->at(i+1);
+      //       int type = stash->allocation_data->at(i+2);
+      //       printf(" -- Lookup deferred type of %016lx, id=%016lx\n", type, id);
+      //       printf("  = %s", ((hx::Object*)type)->__CStr());
+      //       //printf(" -- Lookup deferred type of %016lx, id=%016lx, %s\n", type, id, ((hx::Object*)type)->__CStr());
+      //       i += 5;
+      //     }
+      //     else if (op==1) i += 2;
+      //     else if (op==2) i += 4;
+      //   }
+      // }
 
       int i,size;
       stash->names = 0;
@@ -496,6 +521,36 @@ public:
     void GCEnd()
     {
         gcTimer += __hxcpp_time_stamp() - gcTimerTemp;
+    }
+
+    void lookup_last_object_type()
+    {
+      if (_last_obj==0) return;
+
+      const char* type = "_uninitialized";
+
+      int obj_id = __hxt_ptr_id(_last_obj);
+      alloc_mutex.Lock();
+      std::map<int, hx::Telemetry*>::iterator exist = alloc_map.find(obj_id);
+      if (exist != alloc_map.end() && _last_obj!=(NULL)) {
+        type = "_unknown";
+        int vtt = _last_obj->__GetType();
+        if (vtt==vtInt || vtt==vtFloat || vtt==vtBool) type = "_non_class";
+        else if (vtt==vtObject ||
+                 vtt==vtString ||
+                 vtt==vtArray ||
+                 vtt==vtClass ||
+                 vtt==vtFunction ||
+                 vtt==vtEnum ||
+                 vtt==vtAbstractBase) {
+          //printf("About to resolve...\n");
+          type = _last_obj->__GetClass()->mName; //__CStr();
+          //printf("Updating last allocation %016lx type to %s\n", _last_obj, type);
+        }
+      }
+      alloc_mutex.Unlock();
+      allocation_data->at(_last_loc+2) = GetNameIdx(type);
+      _last_obj = 0;
     }
 
     void reclaim(int id)
@@ -585,6 +640,9 @@ private:
     double gcTimerTemp;
 
     int ignoreAllocs;
+
+    hx::Object* _last_obj;
+    int _last_loc;
 
     std::vector<int> *allocation_data;
     //std::vector<int> *reallocations;
@@ -1139,6 +1197,16 @@ public:
         if (telemetry) {
           //printf("Telemetry %016lx allocating %s at %016lx of size %d\n", telemetry, type, obj, inSize); 
           telemetry->HXTAllocation(stack, obj, inSize, type);
+        }
+    }
+
+    static void HXTResolve(void* obj)
+    {
+        CallStack *stack = hx::CallStack::GetCallerCallStack();
+        Telemetry *telemetry = stack->mTelemetry;
+        if (telemetry) {
+          //printf("Telemetry %016lx allocating %s at %016lx of size %d\n", telemetry, type, obj, inSize); 
+          telemetry->HXTResolve(obj);
         }
     }
 
@@ -2341,6 +2409,11 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
     samples->push_back(delta);
 }
 
+void hx::Telemetry::HXTResolve(void* obj)
+{
+    if (_last_obj==(hx::Object*)obj) lookup_last_object_type();
+}
+
 void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type)
 {
     if (ignoreAllocs>0 || !allocations_enabled) return;
@@ -2362,9 +2435,16 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
 
     int stackid = ComputeCallStackId(stack);
 
+    if (_last_obj!=0) lookup_last_object_type();
+    if (type==0) {
+      _last_obj = (hx::Object*)obj;
+      _last_loc = allocation_data->size();
+      type = "unresolved";
+    }
+
     allocation_data->push_back(0); // alloc flag
     allocation_data->push_back(obj_id);
-    allocation_data->push_back(GetNameIdx(type));
+    allocation_data->push_back(GetNameIdx(type)); // defer lookup
     allocation_data->push_back((int)inSize);
     allocation_data->push_back(stackid);
 
@@ -2533,26 +2613,40 @@ void __hxcpp_stop_profiler()
 // These globals are called by other cpp files
 #ifdef HXCPP_TELEMETRY
 
+void __hxt_resolve(void* obj)
+{
+  #ifdef HXCPP_STACK_TRACE
+  hx::CallStack::HXTResolve(obj);
+  #endif
+}
+
 extern unsigned int __hxcpp_gc_obj_size(void* obj);
 void __hxt_new_object(void* ptr)
 {
   #ifdef HXCPP_STACK_TRACE
   unsigned int size = __hxcpp_gc_obj_size(ptr);
   //printf(" -- %s, %s\n", hx::CallStack::GetCallerCallStack()->GetCurrentStackFrame()->className, hx::CallStack::GetCallerCallStack()->GetCurrentStackFrame()->functionName);
-  hx::CallStack::HXTAllocation(ptr, size, hx::CallStack::GetCallerCallStack()->GetCurrentStackFrame()->className);
+  //hx::CallStack::HXTAllocation(ptr, size, hx::CallStack::GetCallerCallStack()->GetCurrentStackFrame()->className);
   #endif
 }
 void __hxt_new_string(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE
-  hx::CallStack::HXTAllocation(obj, inSize, (const char*)"String");
+  //hx::CallStack::HXTAllocation(obj, inSize, (const char*)"String");
   #endif
 }
 void __hxt_new_array(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE
   //printf("Alloc Array at %016lx\n", obj);
-  hx::CallStack::HXTAllocation(obj, inSize, (const char*)"Array");
+  //hx::CallStack::HXTAllocation(obj, inSize, (const char*)"Array");
+  #endif
+}
+void __hxt_gc_new(void* obj, int inSize)
+{
+  #ifdef HXCPP_STACK_TRACE
+  //printf("Alloc Array at %016lx\n", obj);
+  hx::CallStack::HXTAllocation(obj, inSize, (const char*)0);
   #endif
 }
 void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size)
