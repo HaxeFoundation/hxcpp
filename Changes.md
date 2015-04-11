@@ -1,4 +1,28 @@
-
+* Allow dll_load path to be set programatically and simplified the dll search sequence.
+* Improved cffi_prime, and added String class
+* Fixed static linking of mysql5
+* Moved static link code in general to cpp.link package, not hxcpp package
+* URL decode now does not need to performe reallocs
+* Ensure HXCPP_API_LEVEL is always defined
+* Added __hxcpp_unload_all_libraries to cleanly unload dlls
+* Added some utc date functions
+* Better support for non-console apps in windows XP 64
+* Increased use of HXCPP_DEBUG_LINK for gcc based targets
+* Class 'hasField' is now more consistent with other functions/targets
+* 'haxelib run hxcpp test.cppia' will run Cppia on the specified file
+* Add fast-select option for sockets
+* Allow code to run without HXCPP_VISIT_ALLOCS defined
+* Fix debugger thread deadlocks
+* Allow up to 27 dynamic arguements
+* Fixes for Emscripten - byte align access and disable threads
+* Allow emscripten to generate 'executables' (.js/.html) and add options for specifying memory
+* Allow spaces in exe names again
+* Make cpp::Struct compare via memcmp, and mark correctly
+* Fix catch block in cppia
+* Treat '-debug' as an alias for "-Ddebug"
+* Expose ArrayBase for use with some generic or external code
+* Clarify the role of 'buffer' in cffi
+------------------------------------------------------------
 * Only put a minimal run.n in source-control, and use this to boot hxcpp.n
 * Added cpp.Struct and cpp.Reference classes, which are handy for extern classes
 * Moved Class to hx namespace
