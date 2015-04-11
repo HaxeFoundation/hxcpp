@@ -25,7 +25,11 @@ script:
   - neko build.n -verbose
   - haxe compile-cppia.hxml
   - cd ${TRAVIS_BUILD_DIR}/test
-  - haxe --run RunTests
+  - haxe --run RunTests cffi
+  - haxe --run RunTests haxe
+  - haxe --run RunTests ndll-dynamic
+  - haxe --run RunTests ndll-static
+  - haxe --run RunTests ndll-64
   - cd ~/haxe/tests/unit
   - haxe compile-cpp.hxml -D HXCPP_M32 && ./bin/cpp/Test-debug && rm -rf bin/cpp
   - haxe compile-cpp.hxml -D HXCPP_M64 && ./bin/cpp/Test-debug

@@ -36,20 +36,30 @@ class RunTests
    }
 
 
-   public static function ndlls()
+   public static function ndllDynamic()
    {
       setDir("ndlls");
 
       command("haxe", ["compile.hxml"] );
       command("cpp"+sep+"Test",[]);
+   }
+
+   public static function ndllDynamic64()
+   {
+      setDir("ndlls");
 
       command("haxe", ["compile64.hxml"] );
       command("cpp64"+sep+"Test",[]);
+   }
+
+
+   public static function ndllStatic()
+   {
+      setDir("ndlls");
 
       command("haxe", ["compile-static.hxml"]);
       command("scpp"+sep+"Test",[]);
    }
-
 
 
    public static function setDir(name:String)
@@ -68,6 +78,13 @@ class RunTests
 
    public static function run(name:String, func:Void->Void)
    {
+      var args = Sys.args();
+      if (args.length>0 && args.indexOf(name)<0)
+      {
+         Sys.println("Skip test " + name);
+         return;
+      }
+
       try
       {
          func();
@@ -118,7 +135,9 @@ class RunTests
 
       run("cffi", cffi);
       run("haxe", runHaxe);
-      run("ndlls", ndlls);
+      run("ndll-dynamic", ndllDynamic);
+      run("ndll-static", ndllStatic);
+      run("ndll-64", ndllDynamic64);
 
       Sys.println("");
 
