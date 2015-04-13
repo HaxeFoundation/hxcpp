@@ -4,14 +4,27 @@
 #include "CFFI.h"
 
 
-namespace cffi
-{
-
 struct HxString
 {
+   inline HxString(const HxString &inRHS)
+   {
+      length = inRHS.length;
+      __s = inRHS.__s;
+   }
+   inline HxString(const char *inS,int inLen=-1) : length(inLen), __s(inS)
+   {
+      if (length<0)
+         for(length=0; __s[length]; length++) { }
+   }
+   inline HxString() : length(0), __s(0) { }
    int length;
    const char *__s;
+
 };
+
+
+namespace cffi
+{
 
 inline value alloc_pointer(void *inPtr) { return alloc_abstract((vkind)(0x100 + 2),inPtr); }
 
@@ -35,7 +48,7 @@ bool CheckSig0( RET (func)(), const char *inSig)
 
 
 template<typename RET, typename A0>
-bool CheckSig2( RET (func)(A0), const char *inSig)
+bool CheckSig1( RET (func)(A0), const char *inSig)
 {
    return SigType<A0>::Char==inSig[0] &&
           SigType<RET>::Char==inSig[1] &&
@@ -88,6 +101,122 @@ bool CheckSig5( RET (func)(A0,A1,A2,A3,A4), const char *inSig)
           0 == inSig[6];
 }
 
+template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5>
+bool CheckSig6( RET (func)(A0,A1,A2,A3,A4,A5), const char *inSig)
+{
+   return SigType<A0>::Char==inSig[0] &&
+          SigType<A1>::Char==inSig[1] &&
+          SigType<A2>::Char==inSig[2] &&
+          SigType<A3>::Char==inSig[3] &&
+          SigType<A4>::Char==inSig[4] &&
+          SigType<A5>::Char==inSig[5] &&
+          SigType<RET>::Char==inSig[6] &&
+          0 == inSig[7];
+}
+
+
+template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6>
+bool CheckSig7( RET (func)(A0,A1,A2,A3,A4,A5,A6), const char *inSig)
+{
+   return SigType<A0>::Char==inSig[0] &&
+          SigType<A1>::Char==inSig[1] &&
+          SigType<A2>::Char==inSig[2] &&
+          SigType<A3>::Char==inSig[3] &&
+          SigType<A4>::Char==inSig[4] &&
+          SigType<A5>::Char==inSig[5] &&
+          SigType<A6>::Char==inSig[6] &&
+          SigType<RET>::Char==inSig[7] &&
+          0 == inSig[8];
+}
+
+template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7>
+bool CheckSig8( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7), const char *inSig)
+{
+   return SigType<A0>::Char==inSig[0] &&
+          SigType<A1>::Char==inSig[1] &&
+          SigType<A2>::Char==inSig[2] &&
+          SigType<A3>::Char==inSig[3] &&
+          SigType<A4>::Char==inSig[4] &&
+          SigType<A5>::Char==inSig[5] &&
+          SigType<A6>::Char==inSig[6] &&
+          SigType<A7>::Char==inSig[7] &&
+          SigType<RET>::Char==inSig[8] &&
+          0 == inSig[9];
+}
+
+
+template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8>
+bool CheckSig9( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7,A8), const char *inSig)
+{
+   return SigType<A0>::Char==inSig[0] &&
+          SigType<A1>::Char==inSig[1] &&
+          SigType<A2>::Char==inSig[2] &&
+          SigType<A3>::Char==inSig[3] &&
+          SigType<A4>::Char==inSig[4] &&
+          SigType<A5>::Char==inSig[5] &&
+          SigType<A6>::Char==inSig[6] &&
+          SigType<A7>::Char==inSig[7] &&
+          SigType<A8>::Char==inSig[8] &&
+          SigType<RET>::Char==inSig[9] &&
+          0 == inSig[10];
+}
+
+template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9>
+bool CheckSig10( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7,A8,A9), const char *inSig)
+{
+   return SigType<A0>::Char==inSig[0] &&
+          SigType<A1>::Char==inSig[1] &&
+          SigType<A2>::Char==inSig[2] &&
+          SigType<A3>::Char==inSig[3] &&
+          SigType<A4>::Char==inSig[4] &&
+          SigType<A5>::Char==inSig[5] &&
+          SigType<A6>::Char==inSig[6] &&
+          SigType<A7>::Char==inSig[7] &&
+          SigType<A8>::Char==inSig[8] &&
+          SigType<A9>::Char==inSig[9] &&
+          SigType<RET>::Char==inSig[10] &&
+          0 == inSig[11];
+}
+
+template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9, typename A10>
+bool CheckSig11( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7,A8,A9, A10), const char *inSig)
+{
+   return SigType<A0>::Char==inSig[0] &&
+          SigType<A1>::Char==inSig[1] &&
+          SigType<A2>::Char==inSig[2] &&
+          SigType<A3>::Char==inSig[3] &&
+          SigType<A4>::Char==inSig[4] &&
+          SigType<A5>::Char==inSig[5] &&
+          SigType<A6>::Char==inSig[6] &&
+          SigType<A7>::Char==inSig[7] &&
+          SigType<A8>::Char==inSig[8] &&
+          SigType<A9>::Char==inSig[9] &&
+          SigType<A10>::Char==inSig[10] &&
+          SigType<RET>::Char==inSig[11] &&
+          0 == inSig[12];
+}
+
+
+template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9, typename A10, typename A11>
+bool CheckSig12( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7,A8,A9, A10, A11), const char *inSig)
+{
+   return SigType<A0>::Char==inSig[0] &&
+          SigType<A1>::Char==inSig[1] &&
+          SigType<A2>::Char==inSig[2] &&
+          SigType<A3>::Char==inSig[3] &&
+          SigType<A4>::Char==inSig[4] &&
+          SigType<A5>::Char==inSig[5] &&
+          SigType<A6>::Char==inSig[6] &&
+          SigType<A7>::Char==inSig[7] &&
+          SigType<A8>::Char==inSig[8] &&
+          SigType<A9>::Char==inSig[9] &&
+          SigType<A10>::Char==inSig[10] &&
+          SigType<A11>::Char==inSig[11] &&
+          SigType<RET>::Char==inSig[12] &&
+          0 == inSig[13];
+}
+
+
 
 
 inline value ToValue(int inVal) { return alloc_int(inVal); }
@@ -95,7 +224,7 @@ inline value ToValue(float inVal) { return alloc_float(inVal); }
 inline value ToValue(double inVal) { return alloc_float(inVal); }
 inline value ToValue(value inVal) { return inVal; }
 inline value ToValue(bool inVal) { return alloc_bool(inVal); }
-//inline value ToValue(HxString inVal) { return 0; }
+inline value ToValue(HxString inVal) { return alloc_string_len(inVal.__s,inVal.length); }
 
 struct AutoValue
 {
@@ -104,8 +233,10 @@ struct AutoValue
    inline operator int()  { return val_int(mValue); }
    inline operator value() { return mValue; }
    inline operator double() { return val_number(mValue); }
+   inline operator float() { return val_number(mValue); }
    inline operator bool() { return val_bool(mValue); }
-   //inline operator HxString() { return HxString(); }
+   inline operator const char *() { return val_string(mValue); }
+   inline operator HxString() { return HxString(val_string(mValue), val_strlen(mValue)); }
 };
 
 
@@ -125,6 +256,13 @@ struct AutoValue
 #define PRIME_ARG_LIST3 PRIME_ARG_LIST2, a2
 #define PRIME_ARG_LIST4 PRIME_ARG_LIST3, a3
 #define PRIME_ARG_LIST5 PRIME_ARG_LIST4, a4
+#define PRIME_ARG_LIST6 arg[0],arg[1],arg[2],arg[3],arg[4],arg[5]
+#define PRIME_ARG_LIST7 PRIME_ARG_LIST6 ,arg[6]
+#define PRIME_ARG_LIST8 PRIME_ARG_LIST7 ,arg[7]
+#define PRIME_ARG_LIST9 PRIME_ARG_LIST8 ,arg[8]
+#define PRIME_ARG_LIST10 PRIME_ARG_LIST9 ,arg[9]
+#define PRIME_ARG_LIST11 PRIME_ARG_LIST10 ,arg[10]
+#define PRIME_ARG_LIST12 PRIME_ARG_LIST11 ,arg[11]
 
 
 #define DEFINE_PRIME0(func) extern "C" { \
@@ -215,6 +353,110 @@ struct AutoValue
   value func##__wrap(PRIME_ARG_DECL5) { func(PRIME_ARG_LIST5); return alloc_null(); } \
   EXPORT void *func##__5() { return (void*)(&func##__wrap); } \
 }
+
+
+#define DEFINE_PRIME6(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig6(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST6) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME6v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig6(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST6); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+
+#define DEFINE_PRIME7(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig7(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST7) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME7v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig7(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST7); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME8(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig8(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST8) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME8v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig8(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST8); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+
+#define DEFINE_PRIME9(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig9(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST9) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME9v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig9(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST9); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME10(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig10(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST10) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME10v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig10(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST10); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+
+#define DEFINE_PRIME11(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig11(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST11) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME11v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig11(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST11); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+
+#define DEFINE_PRIME12(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig12(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST12) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME12v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig12(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST12); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
 
 
 #endif

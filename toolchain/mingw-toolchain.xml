@@ -14,7 +14,7 @@
   <exe name="g++.exe"/>
   <flag value="-c"/>
   <cppflag value="-frtti"/>
-  <flag value="-g" if="debug"/>
+  <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug||O3"/>
   <flag value="-O3" if="O3"/>
   <include name="toolchain/common-defines.xml" />

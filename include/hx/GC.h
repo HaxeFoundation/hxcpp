@@ -7,8 +7,13 @@
 #define HX_MARK_PARAMS hx::MarkContext *__inCtx
 //#define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
 
+#ifdef HXCPP_VISIT_ALLOCS
 #define HX_VISIT_ARG __inCtx
 #define HX_VISIT_PARAMS hx::VisitContext *__inCtx
+#else
+#define HX_VISIT_ARG
+#define HX_VISIT_PARAMS
+#endif
 
 // Tell compiler the extra functions are supported
 #define HXCPP_GC_FUNCTIONS_1
@@ -18,12 +23,13 @@ void  __hxcpp_reachable(hx::Object *inKeep);
 void  __hxcpp_enable(bool inEnable);
 void  __hxcpp_collect(bool inMajor=true);
 void   __hxcpp_gc_compact();
-int   __hxcpp_gc_trace(Class inClass, bool inPrint);
+int   __hxcpp_gc_trace(hx::Class inClass, bool inPrint);
 int   __hxcpp_gc_used_bytes();
 int   __hxcpp_gc_mem_info(int inWhat);
 void  __hxcpp_enter_gc_free_zone();
 void  __hxcpp_exit_gc_free_zone();
 void  __hxcpp_gc_safe_point();
+void  __hxcpp_spam_collects(int inEveryNCalls);
 
 // Finalizers from haxe code...
 void  __hxcpp_gc_do_not_kill(Dynamic inObj);
@@ -106,6 +112,7 @@ void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHa
 void RegisterNewThread(void *inTopOfStack);
 void SetTopOfStack(void *inTopOfStack,bool inForce=false);
 int InternalCollect(bool inMajor,bool inCompact);
+void GCChangeManagedMemory(int inDelta, const char *inWhy=0);
 
 void EnterGCFreeZone();
 void ExitGCFreeZone();

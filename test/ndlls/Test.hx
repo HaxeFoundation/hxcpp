@@ -7,11 +7,11 @@ import sys.db.Sqlite;
 import sys.db.Mysql;
 
 #if static_ndll
-import hxcpp.StaticStd;
-import hxcpp.StaticRegexp;
-import hxcpp.StaticZlib;
-import hxcpp.StaticMysql;
-import hxcpp.StaticSqlite;
+import cpp.link.StaticStd;
+import cpp.link.StaticRegexp;
+import cpp.link.StaticZlib;
+import cpp.link.StaticMysql;
+import cpp.link.StaticSqlite;
 #end
 
 
@@ -46,6 +46,14 @@ class Test
       #else
       var bytes = sys.io.File.getBytes("Test.hx");
       #end
+
+      var now = Date.now();
+      trace(now);
+
+      trace(DateTools.makeUtc(1996,5,4,17,55,11));
+
+      var diff:Float = untyped __global__.__hxcpp_timezone_offset(now.mSeconds);
+      trace("Diff " + diff);
 
       var compress = new Compress(9);
       compress.setFlushMode(FlushMode.FINISH);
@@ -115,5 +123,14 @@ class Test
       } catch(e:Dynamic) {
          trace("Mysql is untested : " + e );
       }
+
+      #if cpp
+      var unloaded = cpp.Lib.unloadAllLibraries();
+      var expected = #if static_ndll 0 #else 5 #end ;
+      if (unloaded!=expected)
+         throw 'Unloaded $unloaded libraries, but expected to unload $expected.';
+      trace('Unloaded $unloaded libraries');
+      #end
+      Sys.exit(0);
    }
 }

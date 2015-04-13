@@ -1,6 +1,7 @@
 <xml>
  <flag value="-DHXCPP_DEBUG" if="debug"/>
  <flag value="-DSTATIC_LINK" if="static_link"/>
+ <flag value="-DHXCPP_EXE_LINK" if="exe_link"/>
  <flag value="-DHXCPP_M64" if="HXCPP_M64||HXCPP_ARM64"/>
  <flag value="-DHXCPP_VISIT_ALLOCS" />
  <flag value="-Dhaxe_210" if="haxe_210"/>

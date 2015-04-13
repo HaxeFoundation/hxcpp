@@ -91,10 +91,10 @@ void HaxeNativeClass::link()
          DBGLOG(" super =0\n");
          continue;
       }
-      Class cls = Class_obj::Resolve( String(i->first.c_str() ) );
+      hx::Class cls = hx::Class_obj::Resolve( String(i->first.c_str() ) );
       if (cls.mPtr)
       {
-         Class superClass = cls->GetSuper();
+         hx::Class superClass = cls->GetSuper();
          if (superClass.mPtr)
          {
             HaxeNativeClass *superRef = (*sScriptRegistered)[superClass.mPtr->mName.__s];
@@ -153,8 +153,10 @@ void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFuncti
 }
 
 
-void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions, const hx::type_info *inType,
-                                 hx::ScriptableInterfaceFactory inFactory )
+void ScriptableRegisterInterface( String inName,
+                                  ScriptNamedFunction *inFunctions,
+                                  const hx::type_info *inType,
+                                  hx::ScriptableInterfaceFactory inFactory )
 {
    DBGLOG("ScriptableInterfaceFactory %s\n",inName.__s);
    if (!sScriptRegisteredInterface)

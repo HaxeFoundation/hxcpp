@@ -5,6 +5,9 @@
 #error "Please include hxcpp.h, not hx/Object.h"
 #endif
 
+#ifdef __OBJC__
+#import <Foundation/Foundation.h>
+#endif
 
 // --- String --------------------------------------------------------
 //
@@ -40,6 +43,7 @@ public:
    String(const cpp::CppInt32__ &inRHS);
    String(const double &inRHS);
    String(const float &inRHS);
+   String(const cpp::Int64 &inRHS);
    explicit String(const bool &inRHS);
    inline String(const null &inRHS) : __s(0), length(0) { }
    String(hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
@@ -47,6 +51,11 @@ public:
    static void __boot();
 
 	hx::Object *__ToObject() const;
+
+   template<typename T,typename S>
+   explicit inline String(const cpp::Struct<T,S> &inRHS);
+
+
 
    /*
     This causes ambiguous problem with Object==Dynamic (String==Dynamic vs Object==Object)
@@ -79,6 +88,7 @@ public:
     ::String __URLDecode() const;
 
     ::String &dup();
+    ::String &dupConst();
 
     ::String toUpperCase() const;
     ::String toLowerCase() const;
@@ -167,7 +177,7 @@ public:
    Dynamic toUpperCase_dyn();
 
 	// This is used by the string-wrapped-as-dynamic class
-   Dynamic __Field(const ::String &inString, bool inCallProp);
+   Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp);
 
 	// The actual implementation.
 	// Note that "__s" is const - if you want to change it, you should create a new string.

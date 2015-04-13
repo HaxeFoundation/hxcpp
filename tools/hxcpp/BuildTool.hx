@@ -13,6 +13,8 @@ import cpp.vm.Mutex;
 import cpp.vm.Tls;
 #end
 
+using StringTools;
+
 #if haxe3
 typedef Hash<T> = haxe.ds.StringMap<T>;
 #end
@@ -34,6 +36,7 @@ class BuildTool
    var mFileGroups:FileGroups;
    var mTargets:Targets;
    var mFileStack:Array<String>;
+   var mMakefile:String;
    var m64:Bool;
    var m32:Bool;
 
@@ -52,7 +55,9 @@ class BuildTool
    public static var targetKey:String;
    public static var instance:BuildTool;
    public static var helperThread = new Tls<Thread>();
+   public static var destination:String;
    static var mVarMatch = new EReg("\\${(.*?)}","");
+   static var mNoDollarMatch = new EReg("{(.*?)}","");
 
    public static var exitOnThreadError = false;
    public static var threadExitCode = 0;
@@ -72,14 +77,19 @@ class BuildTool
       mFileStack = [];
       mCopyFiles = [];
       mIncludePath = inIncludePath;
+      mMakefile = inMakefile;
+
+      if (!PathManager.isAbsolute(mMakefile) && sys.FileSystem.exists(mMakefile))
+          mMakefile = sys.FileSystem.fullPath(mMakefile);
+
       instance = this;
 
       m64 = mDefines.exists("HXCPP_M64");
       m32 = mDefines.exists("HXCPP_M32");
       if (m64==m32)
       {
-         // Default to the current version of neko...
-         m64 = (~/64$/).match(os);
+         // Default to the current OS version
+         m64 = !isWindows && getIs64();
          m32 = !m64;
          mDefines.remove(m32 ? "HXCPP_M64" : "HXCPP_M32");
       }
@@ -133,7 +143,7 @@ class BuildTool
 
       parseXML(xml,"");
       popFile();
-
+      
       include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml");
       
       if (mDefines.exists("HXCPP_CONFIG"))
@@ -191,11 +201,21 @@ class BuildTool
          for(target in mTargets.keys())
             cleanTarget(target,true);
 
+      if (destination!=null && inTargets.length!=1)
+      {
+         Log.warn("Exactly one target must be specified with 'destination'.  Specified:" + inTargets );
+         destination = null;
+      }
+
       for(target in inTargets)
-         buildTarget(target);
-      
+         buildTarget(target,destination);
+
       if (threadExitCode != 0)
          Sys.exit(threadExitCode);
+   }
+
+   public static function isDefault64()
+   {
    }
 
    public function pushFile(inFilename:String, inWhy:String, inSection:String="")
@@ -243,7 +263,7 @@ class BuildTool
          Sys.exit(inCode);
    }
 
-   public function buildTarget(inTarget:String)
+   public function buildTarget(inTarget:String, inDestination:String)
    {
       // Sys.println("Build : " + inTarget );
       if (!mTargets.exists(inTarget))
@@ -261,7 +281,7 @@ class BuildTool
       target.checkError();
 
       for(sub in target.mSubTargets)
-         buildTarget(sub);
+         buildTarget(sub,null);
  
       var threads = BuildTool.sCompileThreadCount;
 
@@ -381,18 +401,42 @@ class BuildTool
                   objs.push(result);
                //throw "Missing linker :\"" + target.mToolID + "\"";
             }
-            
+
             if (!mLinkers.exists(target.mToolID))
             {
                Log.error ("Could not find linker for \"" + target.mToolID + "\"");
                //throw "Missing linker :\"" + target.mToolID + "\"";
             }
 
-            var exe = mLinkers.get(target.mToolID).link(target,objs, mCompiler);
-            if (exe!="" && mStripper!=null)
+            var output = mLinkers.get(target.mToolID).link(target,objs, mCompiler);
+            if (output!="" && mStripper!=null)
                if (target.mToolID=="exe" || target.mToolID=="dll")
-                  mStripper.strip(exe);
+                  mStripper.strip(output);
 
+            if (output!="" && inDestination!=null)
+
+         if (inDestination!=null)
+         {
+            inDestination = substitute(inDestination,false);
+            if (inDestination!="")
+            {
+               if (!PathManager.isAbsolute(inDestination) && sys.FileSystem.exists(mMakefile))
+               {
+                  var baseFile = PathManager.standardize(mMakefile);
+                  var parts = baseFile.split("/");
+                  parts[ parts.length-1 ] = inDestination;
+                  inDestination = parts.join("/");
+               }
+
+               inDestination = PathManager.clean(inDestination);
+               var fileParts = inDestination.split("/");
+               fileParts.pop();
+               PathManager.mkdir(fileParts.join("/"));
+
+               var chmod = isWindows ? false : target.mToolID=="exe";
+               CopyFile.copyFile(output, inDestination, false, chmod);
+            }
+         }
       }
 
       for(copyFile in mCopyFiles)
@@ -648,7 +692,7 @@ class BuildTool
                   target.mFlags.push( substitute(el.att.value) );
                case "dir" : target.mDirs.push( substitute(el.att.name) );
                case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
-               case "ext" : target.mExt = (substitute(el.att.value));
+               case "ext" : target.setExt( (substitute(el.att.value)) );
                case "builddir" : target.mBuildDir = substitute(el.att.name);
                case "files" :
                   var id = el.att.id;
@@ -818,6 +862,7 @@ class BuildTool
       var defines = new Hash<String>();
       var include_path = new Array<String>();
       var makefile:String="";
+      var optionsTxt = "Options.txt";
 
       include_path.push(".");
 
@@ -846,6 +891,7 @@ class BuildTool
          }
       }
 
+
       if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
          Log.colorSupported = false;
       Log.verbose = defines.exists("HXCPP_VERBOSE");
@@ -864,22 +910,115 @@ class BuildTool
       if (isLinux)
          defines.set("linux_host", "1");
 
+
+      if (args.length>0 && args[0].endsWith(".cppia"))
+      {
+         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
+         if (binDir==null)
+            Log.error("Cppia is not supported on this host.");
+         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
+         var exe = '$HXCPP/bin/$binDir/Cppia' + (isWindows ? ".exe" : "");
+         if (!isWindows)
+         {
+            var phase = "find";
+            try
+            {
+               var stat = FileSystem.stat(exe);
+               if (stat==null)
+                  throw "Could not find exe";
+               var mode = stat.mode;
+               var exeFlags = (1<<0) | (1<<3) | (1<<6);
+               if ( (mode&exeFlags) != exeFlags )
+               {
+                  var phase = "add exe permissions to";
+                  if (Sys.command( "chmod", ["755", exe])!=0)
+                     Log.error('Please use root access to add execute permissions to $exe');
+               }
+            }
+            catch(e:Dynamic)
+            {
+               Log.error('Could not $phase Cppia host $exe ($e)');
+            }
+         }
+
+         if (isWindows)
+            exe = '"$exe"';
+
+         Sys.exit( Sys.command( exe, args ) );
+      }
+      else if (args.length>0 && args[0].endsWith(".js"))
+      {
+         Setup.initHXCPPConfig(defines);
+         Setup.setupEmscripten(defines);
+         var node = defines.get("EMSCRIPTEN_NODE_JS");
+         Log.v( node==null ? "EMSCRIPTEN_NODE_JS undefined, using 'node'" : 'Using $node from EMSCRIPTEN_NODE_JS');
+         if (node=="" || node==null)
+            node = "node";
+
+         Log.v(  node + " " + args.join(" ") );
+         Sys.exit( Sys.command( node, args ) );
+      }
+      else if (args.length==1 && args[0]=="defines")
+      {
+         var dir = '$HXCPP/tools/hxcpp';
+         try
+         {
+            var defineMatch = ~/m*defines\.\w+\("(\w+)"/i;
+            var allDefines = new Map<String,Bool>();
+            for(file in FileSystem.readDirectory(dir))
+               if (file.endsWith(".hx"))
+                  for(line in sys.io.File.getContent(file).split("\n"))
+                     if (defineMatch.match(line))
+                        allDefines.set(defineMatch.matched(1),true);
+            for(key in allDefines.keys())
+               Sys.println(key);
+         }
+         catch(e:Dynamic)
+         {
+            Log.error('Could not read $dir : $e');
+         }
+         return;
+      }
+
+
       isRPi = isLinux && Setup.isRaspberryPi();
 
       is64 = getIs64();
-      
-      for(arg in args)
+
+      var a = 0;
+      while(a < args.length)
       {
-         if (arg.substr(0,2)=="-D")
+         var arg = args[a];
+         if (arg.substr(0,2)=="-D" || (~/^[a-zA-Z0-9_]*=/).match(arg) )
          {
-            var val = arg.substr(2);
+            var val = arg.substr(0,2)=="-D" ? arg.substr(2) : arg;
             var equals = val.indexOf("=");
             if (equals>0)
-               defines.set(val.substr(0,equals), val.substr(equals+1) );
+            {
+               var name = val.substr(0,equals);
+               var value = val.substr(equals+1);
+               if (name=="destination")
+               {
+                  destination = value;
+               }
+               else
+                  defines.set(name,value);
+            }
             else
                defines.set(val,"");
             if (val=="verbose")
                Log.verbose = true;
+         }
+         else if (arg=="-debug")
+               defines.set("debug","1");
+         else if (arg=="-no-options")
+            optionsTxt = "";
+         else if (arg=="-options")
+         {
+            a++;
+            optionsTxt = args[a];
+            if (optionsTxt==null)
+               optionsTxt = "";
          }
          else if (arg=="-v" || arg=="-verbose")
             Log.verbose = true;
@@ -891,6 +1030,40 @@ class BuildTool
             makefile = arg;
          else
             targets.push(arg);
+
+         a++;
+      }
+
+      if ( optionsTxt!="" && makefile!="")
+      {
+         var path = PathManager.combine(haxe.io.Path.directory(makefile), optionsTxt);
+         if (FileSystem.exists(path))
+            try
+            {
+               var contents = sys.io.File.getContent(path); 
+               if (contents.substr(0,1)!=" ") // Is it New-style?
+                  for(def in contents.split("\r").join("").split("\n"))
+                  {
+                     var equals = def.indexOf("=");
+                     if (equals>0)
+                     {
+                        var name = def.substr(0,equals);
+                        var value = def.substr(equals+1);
+                        if (name=="hxcpp")
+                        {
+                           // Ignore
+                        }
+                        else if (name=="destination")
+                            destination = value;
+                        else
+                           defines.set(name,value);
+                     }
+                  }
+           }
+           catch(e:Dynamic)
+           {
+              Log.error('Could not parse options file $path ($e)');
+           }
       }
 
       Setup.initHXCPPConfig(defines);
@@ -962,11 +1135,12 @@ class BuildTool
          else
             Log.v("\x1b[33;1mNo specified toolchain\x1b[0m");
          if (Log.verbose) Log.println("");
- 
+
 
          if (targets.length==0)
             targets.push("default");
-     
+
+
          new BuildTool(makefile,defines,targets,include_path);
       }
    }
@@ -1363,28 +1537,73 @@ class BuildTool
       }
    }
 
-   public function substitute(str:String):String
+   public function dospath(path:String) : String
    {
-      while( mVarMatch.match(str) )
+      if (mDefines.exists("windows_host"))
       {
-         var sub = mVarMatch.matched(1);
-         if (sub.substr(0,8)=="haxelib:")
+         path = path.split("\\").join("/");
+         var filename = "";
+         var parts = path.split("/");
+         if (!FileSystem.isDirectory(path))
+            filename = parts.pop();
+
+         var oldDir = Sys.getCwd();
+         var output = "";
+         var err = "";
+         Sys.setCwd(parts.join("\\"));
+         try {
+            var bat = '$HXCPP/toolchain/dospath.bat'.split("/").join("\\");
+            var process = new Process(bat,[]);
+            output = process.stdout.readAll().toString();
+            output = output.split("\r")[0].split("\n")[0];
+            err  = process.stderr.readAll().toString();
+            process.close();
+         } catch (e:Dynamic) { Log.error(e); }
+         Sys.setCwd(oldDir);
+
+         if (output=="")
+            Log.error("Could not find dos path for " + path + " " + err);
+         return output + "\\" + filename;
+      }
+
+      return path;
+   }
+
+   public function substitute(str:String,needDollar=true):String
+   {
+      var match = needDollar ? mVarMatch : mNoDollarMatch;
+      while( match.match(str) )
+      {
+         var sub = match.matched(1);
+         if (sub.startsWith("haxelib:"))
          {
             sub = PathManager.getHaxelib(sub.substr(8));
             sub = PathManager.standardize(sub);
          }
-         else if (sub.substr(0,13)=="removeQuotes:")
+         else if (sub.startsWith("removeQuotes:"))
          {
             sub = mDefines.get(sub.substr(13));
             var len = sub.length;
             if (len>1 && sub.substr(0,1)=="\"" && sub.substr(len-1)=="\"")
                sub = sub.substr(1,len-2);
          }
+         else if (sub.startsWith("dospath:") )
+         {
+            sub = dospath( mDefines.get(sub.substr(8)) );
+         }
+         else if (sub.startsWith("dir:") )
+         {
+            sub = dospath( mDefines.get(sub.substr(4)) );
+            if (!FileSystem.isDirectory(sub))
+            {
+               sub = haxe.io.Path.directory(sub);
+            }
+         }
          else
             sub = mDefines.get(sub);
 
          if (sub==null) sub="";
-         str = mVarMatch.matchedLeft() + sub + mVarMatch.matchedRight();
+         str = match.matchedLeft() + sub + match.matchedRight();
       }
 
       return str;

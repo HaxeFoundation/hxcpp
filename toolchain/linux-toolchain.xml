@@ -40,6 +40,7 @@
   <flag value="-O2" unless="debug"/>
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
+  <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-DHX_LINUX"/>
   <flag value="-DRASPBERRYPI=RASPBERRYPI" if="rpi"/>
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>

@@ -75,6 +75,8 @@ class Setup
          //Sys.println("Warning: No 'HOME' variable set - .hxcpp_config.xml might be missing.");
          return;
       }
+ 
+      ioDefines.set("HXCPP_HOME", home);
 
       var  config = toPath(home+"/.hxcpp_config.xml");
       ioDefines.set("HXCPP_CONFIG",config);
@@ -127,6 +129,40 @@ class Setup
       }
    }
 
+
+   public static function setupEmscripten(ioDefines:Hash<String>)
+   {
+      // Setup EMSCRIPTEN_SDK if possible - else assume developer has it in path
+      if (!ioDefines.exists("EMSCRIPTEN_SDK"))
+      {
+         var home = ioDefines.get("HXCPP_HOME");
+         var file = home + "/.emscripten";
+         if (FileSystem.exists(file))
+         {
+            var content = sys.io.File.getContent(file);
+            content = content.split("\r").join("");
+            var value = ~/^(\w*)\s*=\s*'(.*)'/;
+            for(line in content.split("\n"))
+            {
+               if (value.match(line))
+               {
+                  var name = value.matched(1);
+                  var val= value.matched(2);
+                  if (name=="EMSCRIPTEN_ROOT")
+                  {
+                     ioDefines.set("EMSCRIPTEN_SDK", val);
+                  }
+                  if (name=="PYTHON")
+                     ioDefines.set("EMSCRIPTEN_PYTHON", val);
+                  if (name=="NODE_JS")
+                     ioDefines.set("EMSCRIPTEN_NODE_JS", val);
+               }
+            }
+         }
+      }
+   }
+
+
    public static function isRaspberryPi()
    {
       var proc = new Process("uname",["-a"]);
@@ -135,37 +171,8 @@ class Setup
       return str.split(" ")[1]=="raspberrypi";
    }
 
-   public static function readStderr(inCommand:String,inArgs:Array<String>)
-   {
-      var result = new Array<String>();
-      var proc = new Process(inCommand,inArgs);
-      try
-      {
-         while(true)
-         {
-            var out = proc.stderr.readLine();
-            result.push(out);
-         }
-      } catch(e:Dynamic){}
-      proc.close();
-      return result;
-   }
 
-   public static function readStdout(inCommand:String,inArgs:Array<String>)
-   {
-      var result = new Array<String>();
-      var proc = new Process(inCommand,inArgs);
-      try
-      {
-         while(true)
-         {
-            var out = proc.stdout.readLine();
-            result.push(out);
-         }
-      } catch(e:Dynamic){}
-      proc.close();
-      return result;
-   }
+
 
    public static function setup(inWhat:String,ioDefines: Map<String,String>)
    {
@@ -187,6 +194,10 @@ class Setup
       else if (inWhat=="mingw")
       {
          setupMingw(ioDefines);
+      }
+      else if (inWhat=="emscripten")
+      {
+         setupEmscripten(ioDefines);
       }
       else
       {
@@ -436,8 +447,8 @@ class Setup
                         //Sys.println("Found VS variable " + env);
                      }
                   }
-                  Log.error("Could not find specified MSCV version: " + ival);
-                  //throw "Could not find specified MSCV version " + ival;
+                  Log.error("Could not find specified MSVC version: " + ival);
+                  //throw "Could not find specified MSVC version " + ival;
                }
                ioDefines.set("HXCPP_MSVC", where );
                Sys.putEnv("HXCPP_MSVC", where);

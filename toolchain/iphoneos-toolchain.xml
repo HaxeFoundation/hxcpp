@@ -28,7 +28,7 @@
   <pchflag value="c++-header" />
   <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
-  <flag value="-g" if="debug"/>
+  <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>
   <flag value="armv6" if="HXCPP_ARMV6" />
@@ -45,6 +45,7 @@
   <flag value="-Wno-parentheses" />
   <flag value="-Wno-null-dereference" unless="HXCPP_GCC"/>
   <flag value="-Wno-unused-value" />
+  <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-Wno-bool-conversion" unless="HXCPP_GCC"/>
   <!-- Removed for iOS 8 -->
   <!-- <flag value="-fvisibility=hidden"/> -->

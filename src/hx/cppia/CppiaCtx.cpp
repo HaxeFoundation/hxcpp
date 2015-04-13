@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <hx/Scriptable.h>
 #include <hx/GC.h>
+#include <hx/Thread.h>
 #include <stdio.h>
 
 #include "Cppia.h"
@@ -9,8 +10,13 @@
 namespace hx
 {
 
-static CppiaCtx *sCurrent = 0;
+static MyMutex *sCppiaCtxLock = 0;
+
+DECLARE_TLS_DATA(CppiaCtx,tlsCppiaCtx)
+
 CppiaCtx sCppiaCtx;
+
+static std::vector<CppiaCtx *> sAllContexts;
 
 CppiaCtx::CppiaCtx()
 {
@@ -18,7 +24,6 @@ CppiaCtx::CppiaCtx()
    pointer = &stack[0];
    push((hx::Object *)0);
    frame = pointer;
-   sCurrent = this;
    exception = 0;
    returnJumpBuf = 0;
    loopJumpBuf = 0;
@@ -31,7 +36,21 @@ CppiaCtx::~CppiaCtx()
 }
 
 
-CppiaCtx *CppiaCtx::getCurrent() { return sCurrent; }
+CppiaCtx *CppiaCtx::getCurrent()
+{
+   CppiaCtx *result = tlsCppiaCtx;
+   if (!result)
+   {
+      tlsCppiaCtx = result = new CppiaCtx();
+
+      if (!sCppiaCtxLock)
+         sCppiaCtxLock = new MyMutex();
+      sCppiaCtxLock->Lock();
+      sAllContexts.push_back(result);
+      sCppiaCtxLock->Unlock();
+   }
+   return result;
+}
 
 void CppiaCtx::mark(hx::MarkContext *__inCtx)
 {
@@ -40,8 +59,15 @@ void CppiaCtx::mark(hx::MarkContext *__inCtx)
 
 void scriptMarkStack(hx::MarkContext *__inCtx)
 {
-   if (sCurrent)
-      sCurrent->mark(__inCtx);
+   MyMutex *m = sCppiaCtxLock;
+   if (m)
+       m->Lock();
+
+   for(int i=0;i<sAllContexts.size();i++)
+      sAllContexts[i]->mark(__inCtx);
+
+   if (m)
+       m->Unlock();
 }
 
 
@@ -77,13 +103,13 @@ struct AutoJmpBuf
        DEBUG_RETURN_TYPE_CHECK \
        RET; \
    } \
-   ((CppiaExpr *)vtable)->runVoid(this);
+   ((CppiaExpr *)vtable)->runFunction(this);
 
 #else
 
 #define GET_RETURN_VAL(RET,CHECK) \
    CPPIA_STACK_FRAME(((CppiaExpr *)vtable)); \
-   ((CppiaExpr *)vtable)->runVoid(this); \
+   ((CppiaExpr *)vtable)->runFunction(this); \
    breakContReturn = 0; \
    DEBUG_RETURN_TYPE_CHECK \
    RET;

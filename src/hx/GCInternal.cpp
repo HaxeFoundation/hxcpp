@@ -76,6 +76,8 @@ enum
 static hx::Object *gCollectTrace = 0;
 static bool gCollectTraceDoPrint = false;
 static int gCollectTraceCount = 0;
+static int sgSpamCollects = 0;
+static int sgAllocsSinceLastSpam = 0;
 #endif
 
 #ifdef ANDROID
@@ -1154,6 +1156,10 @@ FILE_SCOPE FinalizerMap sFinalizerMap;
 FILE_SCOPE FinalizerMap hxtFinalizerMap;
 #endif
 
+typedef void (*HaxeFinalizer)(Dynamic);
+typedef std::map<hx::Object *,HaxeFinalizer> HaxeFinalizerMap;
+FILE_SCOPE HaxeFinalizerMap sHaxeFinalizerMap;
+
 hx::QuickVec<int> sFreeObjectIds;
 typedef std::map<hx::Object *,int> ObjectIdMap;
 typedef hx::QuickVec<hx::Object *> IdObjectMap;
@@ -1260,8 +1266,7 @@ void RunFinalizers()
       }
    }
 
-   FinalizerMap::iterator i;
-   for(i=sFinalizerMap.begin(); i!=sFinalizerMap.end(); )
+   for(FinalizerMap::iterator i=sFinalizerMap.begin(); i!=sFinalizerMap.end(); )
    {
       hx::Object *obj = i->first;
       FinalizerMap::iterator next = i;
@@ -1278,8 +1283,24 @@ void RunFinalizers()
    }
 
 
+   for(HaxeFinalizerMap::iterator i=sHaxeFinalizerMap.begin(); i!=sHaxeFinalizerMap.end(); )
+   {
+      hx::Object *obj = i->first;
+      HaxeFinalizerMap::iterator next = i;
+      ++next;
+
+      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
+      if ( mark!=gByteMarkID )
+      {
+         (*i->second)(obj);
+         sHaxeFinalizerMap.erase(i);
+      }
+
+      i = next;
+   }
+
    #ifdef HXCPP_TELEMETRY
-   for(i=hxtFinalizerMap.begin(); i!=hxtFinalizerMap.end(); )
+   for(FinalizerMap::iterator i=hxtFinalizerMap.begin(); i!=hxtFinalizerMap.end(); )
    {
       hx::Object *obj = i->first;
       FinalizerMap::iterator next = i;
@@ -1390,6 +1411,26 @@ void  GCSetFinalizer( hx::Object *obj, hx::finalizer f )
    }
    else
       sFinalizerMap[obj] = f;
+}
+
+
+// Callback finalizer on non-abstract type;
+void  GCSetHaxeFinalizer( hx::Object *obj, HaxeFinalizer f )
+{
+   if (!obj)
+      throw Dynamic(HX_CSTRING("set_finalizer - invalid null object"));
+   if (((unsigned int *)obj)[-1] & HX_GC_CONST_ALLOC_BIT)
+      throw Dynamic(HX_CSTRING("set_finalizer - invalid const object"));
+
+   AutoLock lock(*gSpecialObjectLock);
+   if (f==0)
+   {
+      HaxeFinalizerMap::iterator i = sHaxeFinalizerMap.find(obj);
+      if (i!=sHaxeFinalizerMap.end())
+         sHaxeFinalizerMap.erase(i);
+   }
+   else
+      sHaxeFinalizerMap[obj] = f;
 }
 
 #ifdef HXCPP_TELEMETRY
@@ -1638,6 +1679,39 @@ public:
 
       return result+2;
    }
+
+   void onMemoryChange(int inDelta, const char *inWhy)
+   {
+      if (hx::gPauseForCollect)
+         __hxcpp_gc_safe_point();
+
+      if (inDelta>0)
+      {
+         //Should we force a collect ? - the 'large' data are not considered when allocating objects
+         // from the blocks, and can 'pile up' between smalll object allocations
+         if (inDelta>0 && (inDelta+mLargeAllocated > mLargeAllocForceRefresh) && sgInternalEnable)
+         {
+            //GCLOG("onMemoryChange alloc causing collection");
+            CollectFromThisThread();
+         }
+
+         int rounded = (inDelta +3) & ~3;
+   
+         if (rounded<<1 > mLargeAllocSpace)
+            mLargeAllocSpace = rounded<<1;
+      }
+
+      bool do_lock = sMultiThreadMode;
+      if (do_lock)
+         mLargeListLock.Lock();
+
+      mLargeAllocated += inDelta;
+
+      if (do_lock)
+         mLargeListLock.Unlock();
+   }
+
+
    // Making this function "virtual" is actually a (big) performance enhancement!
    // On the iphone, sjlj (set-jump-long-jump) exceptions are used, which incur a
    //  performance overhead.  It seems that the overhead in only in routines that call
@@ -1811,6 +1885,14 @@ public:
           hx::finalizer f = i->second;
           hx::sFinalizerMap.erase(i);
           hx::sFinalizerMap[inTo] = f;
+       }
+
+       hx::HaxeFinalizerMap::iterator h = hx::sHaxeFinalizerMap.find(inFrom);
+       if (h!=hx::sHaxeFinalizerMap.end())
+       {
+          hx::HaxeFinalizer f = h->second;
+          hx::sHaxeFinalizerMap.erase(h);
+          hx::sHaxeFinalizerMap[inTo] = f;
        }
 
        #ifdef HXCPP_TELEMETRY
@@ -2301,6 +2383,8 @@ public:
       void *info = (void *)(size_t)inId;
     #ifdef HX_WINRT
       // TODO
+    #elif defined(EMSCRIPTEN)
+    // Only one thread
     #elif defined(HX_WINDOWS)
       bool ok = _beginthreadex(0,0,SMarkerFunc,info,0,0) != 0;
     #else
@@ -2312,6 +2396,10 @@ public:
 
    int Collect(bool inMajor, bool inForceCompact)
    {
+      #ifdef DEBUG
+      sgAllocsSinceLastSpam = 0;
+      #endif
+
       HX_STACK_FRAME("GC", "collect", 0, "GC::collect", __FILE__, __LINE__,0)
       #ifdef SHOW_MEM_EVENTS
       int here = 0;
@@ -2590,6 +2678,11 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    GCLOG("Mark conservative %p...%p (%d)\n", inBottom, inTop, (inTop-inBottom) );
    #endif
 
+   #ifdef EMSCRIPTEN
+   if (inTop<inBottom)
+      std::swap(inBottom,inTop);
+   #endif
+
    if (sizeof(int)==4 && sizeof(void *)==8)
    {
       // Can't start pointer on last integer boundary...
@@ -2817,6 +2910,12 @@ public:
 
    void *Alloc(int inSize,bool inIsObject)
    {
+      #ifdef HXCPP_ALIGN_FLOAT
+         #define HXCPP_ALIGN_ALLOC
+      #endif
+
+
+
       #ifdef HXCPP_DEBUG
       if (mGCFreeZone)
          CriticalGCError("Alloacting from a GC-free thread");
@@ -2832,9 +2931,23 @@ public:
       #endif
 
       int s = inSize +sizeof(int);
-      // Try to squeeze it on this line ...
-      if (mCurrentPos > 0)
+
+      #ifdef HXCPP_ALIGN_ALLOC
+      if (mCurrentPos >= IMMIX_LINE_LEN-4)
       {
+         mCurrentPos = 0;
+         mCurrentLine++;
+      }
+      #endif
+      // Try to squeeze it on this line ...
+      if (mCurrentPos > 0
+          )
+      {
+         #ifdef HXCPP_ALIGN_ALLOC
+         // Since we add sizeof(int), must be unaligned initially
+         if ( !(mCurrentPos & 0x4))
+            mCurrentPos += 4;
+         #endif
          int skip = 1;
          int extra_lines = (s + mCurrentPos-1) >> IMMIX_LINE_BITS;
 
@@ -2890,6 +3003,9 @@ public:
       int required_rows = (s + IMMIX_LINE_LEN-1) >> IMMIX_LINE_BITS;
       int last_start = IMMIX_LINES - required_rows;
 
+      #ifdef HXCPP_ALIGN_ALLOC
+      s+=4;
+      #endif
       while(1)
       {
          // Alloc new block, if required ...
@@ -2924,18 +3040,25 @@ public:
             // Ok, found a gap
             unsigned char *row = mCurrent->mRow[mCurrentLine];
 
-            int *result = (int *)(row + mCurrentPos);
+            int *result = (int *)(row /*+ mCurrentPos*/);
+            #ifdef HXCPP_ALIGN_ALLOC
+            result++;
+            #endif
             *result = inSize | gMarkID |
                (required_rows==1 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
 
             if (inIsObject)
                *result |= IMMIX_ALLOC_IS_OBJECT;
 
-            mCurrent->mRowFlags[mCurrentLine] = mCurrentPos | IMMIX_ROW_HAS_OBJ_LINK;
+            #ifdef HXCPP_ALIGN_ALLOC
+            mCurrent->mRowFlags[mCurrentLine] = 4 | IMMIX_ROW_HAS_OBJ_LINK;
+            #else
+            mCurrent->mRowFlags[mCurrentLine] = /*mCurrentPos |*/ IMMIX_ROW_HAS_OBJ_LINK;
+            #endif
 
             //mCurrent->DirtyLines(mCurrentLine,required_rows);
             mCurrentLine += required_rows - 1;
-            mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
+            mCurrentPos = (/*mCurrentPos +*/ s) & (IMMIX_LINE_LEN-1);
             if (mCurrentPos==0)
                mCurrentLine++;
 
@@ -3149,6 +3272,15 @@ void *InternalNew(int inSize,bool inIsObject)
    //HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", __LINE__, 0)
    HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", inSize, 0)
 
+   #ifdef HXCPP_DEBUG
+   if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
+   {
+      //GCLOG("InternalNew spam\n");
+      CollectFromThisThread();
+   }
+   sgAllocsSinceLastSpam++;
+   #endif
+
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
       void *result = sGlobalAlloc->AllocLarge(inSize);
@@ -3170,7 +3302,6 @@ void *InternalNew(int inSize,bool inIsObject)
        return result;
    }
 }
-
 
 
 // Force global collection - should only be called from 1 thread.
@@ -3195,12 +3326,27 @@ inline unsigned int ObjectSize(void *inData)
          (header & IMMIX_ALLOC_SIZE_MASK) :  ((unsigned int *)(inData))[-2];
 }
 
+void GCChangeManagedMemory(int inDelta, const char *inWhy)
+{
+   sGlobalAlloc->onMemoryChange(inDelta, inWhy);
+}
+
+
 void *InternalRealloc(void *inData,int inSize)
 {
    if (inData==0)
       return hx::InternalNew(inSize,false);
 
    HX_STACK_FRAME("GC", "realloc", 0, "GC::relloc", __FILE__ , __LINE__, 0)
+
+   #ifdef HXCPP_DEBUG
+   if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
+   {
+      //GCLOG("InternalNew spam\n");
+      CollectFromThisThread();
+   }
+   sgAllocsSinceLastSpam++;
+   #endif
 
    unsigned int s = ObjectSize(inData);
 
@@ -3261,7 +3407,7 @@ void UnregisterCurrentThread()
 namespace hx
 {
 
-void *Object::operator new( size_t inSize, NewObjectType inType )
+void *Object::operator new( size_t inSize, NewObjectType inType, const char *inName )
 {
    #if defined(HXCPP_DEBUG)
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
@@ -3278,9 +3424,16 @@ void *Object::operator new( size_t inSize, NewObjectType inType )
 
 }
 
+void __hxcpp_spam_collects(int inEveryNCalls)
+{
+   #ifdef HXCPP_DEBUG
+   sgSpamCollects = inEveryNCalls;
+   #else
+   GCLOG("Spam collects only available on debug versions\n");
+   #endif
+}
 
-
-int __hxcpp_gc_trace(Class inClass,bool inPrint)
+int __hxcpp_gc_trace(hx::Class inClass,bool inPrint)
 {
     #if  !defined(HXCPP_DEBUG)
        #ifdef ANDROID
@@ -3342,7 +3495,7 @@ hx::Object *__hxcpp_get_next_zombie()
 
 void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
 {
-   GCSetFinalizer( inObj.mPtr, (hx::finalizer) inFunc );
+   GCSetHaxeFinalizer( inObj.mPtr, (hx::HaxeFinalizer) inFunc );
 }
 
 #ifdef HXCPP_TELEMETRY

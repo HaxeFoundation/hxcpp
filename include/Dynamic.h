@@ -29,6 +29,10 @@ public:
    Dynamic(const Dynamic &inRHS) : super(inRHS.mPtr) { }
    explicit Dynamic(const HX_CHAR *inStr);
 
+   template<typename T,typename S>
+   explicit Dynamic(const cpp::Struct<T,S> &inRHS) { *this = inRHS; }
+
+
     void Set(bool inVal);
     void Set(int inVal);
     void Set(double inVal);
@@ -73,6 +77,13 @@ public:
 		return t==vtInt || t==vtFloat;
 	}
 
+	inline bool IsBool() const
+	{
+		if (!mPtr) return false;
+		int t = mPtr->__GetType();
+		return t==vtBool;
+	}
+
 
    int Compare(const Dynamic &inRHS) const
    {
@@ -87,10 +98,10 @@ public:
 
    bool operator != (const Dynamic &inRHS) const { return (Compare(inRHS) != 0); }
    bool operator != (const String &inRHS)  const { return !mPtr || ((String)(*this) != inRHS); }
-   bool operator != (double inRHS)  const { return !mPtr || ((double)(*this) != inRHS); }
-   bool operator != (float inRHS)  const { return !mPtr || ((double)(*this) != inRHS); }
-   bool operator != (int inRHS)  const { return !mPtr || ((double)(*this) != (double)inRHS); }
-   bool operator != (bool inRHS)  const { return !mPtr || ((double)(*this) != (double)inRHS); }
+   bool operator != (double inRHS)  const { return !IsNumeric() || ((double)(*this) != inRHS); }
+   bool operator != (float inRHS)  const { return !IsNumeric() || ((double)(*this) != inRHS); }
+   bool operator != (int inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
+   bool operator != (bool inRHS)  const { return !IsBool() || ((double)(*this) != (double)inRHS); }
 
    bool operator == (const Dynamic &inRHS) const
    {
@@ -101,10 +112,10 @@ public:
 
    #define DYNAMIC_COMPARE_OP( op ) \
       bool operator op (const String &inRHS)  const { return mPtr && ((String)(*this) op inRHS); } \
-      bool operator op (double inRHS)  const { return mPtr && ((double)(*this) op inRHS); } \
-      bool operator op (float inRHS)  const { return mPtr && ((double)(*this) op inRHS); } \
-      bool operator op (int inRHS)  const { return mPtr && ((double)(*this) op (double)inRHS); } \
-      bool operator op (bool inRHS)  const { return mPtr && ((double)(*this) op (double)inRHS); } \
+      bool operator op (double inRHS)  const { return IsNumeric() && ((double)(*this) op inRHS); } \
+      bool operator op (float inRHS)  const { return IsNumeric() && ((double)(*this) op inRHS); } \
+      bool operator op (int inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
+      bool operator op (bool inRHS)  const { return IsBool() && ((double)(*this) op (double)inRHS); } \
 
    #define DYNAMIC_COMPARE_OP_ALL( op ) \
       bool operator op (const Dynamic &inRHS) const { return mPtr && (Compare(inRHS) op 0); } \
@@ -262,11 +273,11 @@ inline String Dynamic::Cast<String>() const { return mPtr ? mPtr->toString() : S
 
 namespace hx
 {
-HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetIntClass();
-HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetFloatClass();
-HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetBoolClass();
-HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetVoidClass();
-HXCPP_EXTERN_CLASS_ATTRIBUTES Class &GetStringClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetIntClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetFloatClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetBoolClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetVoidClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetStringClass();
 }
 
 template<>
@@ -348,6 +359,8 @@ ARITH_DYNAMIC( * )
 double operator%(const int &inLHS,const Dynamic &inRHS);
 double operator%(const double &inLHS,const Dynamic &inRHS);
 double operator%(const float &inLHS,const Dynamic &inRHS);
+
+template<typename T,typename H> String::String(const cpp::Struct<T,H> &inRHS) { *this = (String)inRHS; }
 
 
 

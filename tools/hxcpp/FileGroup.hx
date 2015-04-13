@@ -77,6 +77,27 @@ class FileGroup
       }
    }
 
+   public function filterOptions(contents:String)
+   {
+      // Old-style
+      if (contents.substr(0,1)==" ")
+         return contents;
+
+      var result = new Array<String>();
+      for(def in contents.split("\n"))
+      {
+         var name = def.split("=")[0].toLowerCase();
+         if (name.indexOf("hxcpp_link")>=0)
+         {
+            // Only effects linking, not compiling
+         }
+         else if (name.indexOf("hxcpp")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" )
+            result.push(def);
+      }
+
+      return result.join("\n");
+   }
+
    public function checkOptions(inObjDir:String)
    {
       var changed = false;
@@ -88,7 +109,7 @@ class FileGroup
          }
          else
          {
-            var contents = sys.io.File.getContent(option);
+            var contents = filterOptions(sys.io.File.getContent(option));
 
             var dest = inObjDir + "/" + Path.withoutDirectory(option);
             var skip = false;

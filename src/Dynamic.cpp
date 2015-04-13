@@ -7,26 +7,26 @@ using namespace hx;
 
 
 
-extern Class __StringClass;
+extern hx::Class __StringClass;
 namespace hx
 {
 
-extern Class hxEnumBase_obj__mClass;
-extern Class Object__mClass;
+extern hx::Class hxEnumBase_obj__mClass;
+extern hx::Class Object__mClass;
 
 
-Class __BoolClass;
-Class __IntClass;
-Class __FloatClass;
-Class __PointerClass;
-Class __VoidClass;
+hx::Class __BoolClass;
+hx::Class __IntClass;
+hx::Class __FloatClass;
+hx::Class __PointerClass;
+hx::Class __VoidClass;
 
 
-Class &GetBoolClass() { return __BoolClass; }
-Class &GetIntClass() { return __IntClass; }
-Class &GetFloatClass() { return __FloatClass; }
-Class &GetPointerClass() { return __PointerClass; }
-Class &GetVoidClass() { return __VoidClass; }
+hx::Class &GetBoolClass() { return __BoolClass; }
+hx::Class &GetIntClass() { return __IntClass; }
+hx::Class &GetFloatClass() { return __FloatClass; }
+hx::Class &GetPointerClass() { return __PointerClass; }
+hx::Class &GetVoidClass() { return __VoidClass; }
 
 
 
@@ -40,11 +40,11 @@ Dynamic DynEmptyString;
 class IntData : public hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc, const char *inName="Int")
+      { return hx::Object::operator new(inSize,inAlloc,inName); }
    IntData(int inValue=0) : mValue(inValue) {};
 
-   Class __GetClass() const { return __IntClass; }
+   hx::Class __GetClass() const { return __IntClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< IntData *>(inClass); }
 
    virtual int __GetType() const { return vtInt; }
@@ -68,11 +68,11 @@ public:
 class BoolData : public hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Bool")
+      { return hx::Object::operator new(inSize,inAlloc,"Bool"); }
    BoolData(bool inValue=false) : mValue(inValue) {};
 
-   Class __GetClass() const { return __BoolClass; }
+   hx::Class __GetClass() const { return __BoolClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< BoolData *>(inClass); }
 
    virtual int __GetType() const { return vtBool; }
@@ -97,11 +97,11 @@ public:
 class DoubleData : public hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Float")
+      { return hx::Object::operator new(inSize,inAlloc,inName); }
    DoubleData(double inValue=0) : mValue(inValue) {};
 
-   Class __GetClass() const { return __FloatClass; }
+   hx::Class __GetClass() const { return __FloatClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< DoubleData *>(inClass); }
 
    virtual int __GetType() const { return vtFloat; }
@@ -127,12 +127,12 @@ public:
 class PointerData : public hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="cpp.Pointer")
+      { return hx::Object::operator new(inSize,inAlloc,inName); }
 
    PointerData(void *inValue) : mValue(inValue) {};
 
-   Class __GetClass() const { return __PointerClass; }
+   hx::Class __GetClass() const { return __PointerClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< PointerData *>(inClass); }
 
    // k_cpp_pointer
@@ -157,16 +157,97 @@ public:
 };
 
 
+class StructData : public hx::Object
+{
+public:
+   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjContainer,const char *inName="cpp.Struct")
+      { return hx::Object::operator new(inSize,inAlloc,inName); }
+
+   StructData(const void *inValue,int inLength, cpp::DynamicHandlerFunc inHandler)
+   {
+      mLength= inLength;
+      mValue = InternalNew(inLength,false);
+      memcpy(mValue, inValue, inLength);
+      mHandler = inHandler;
+   }
+
+   hx::Class __GetClass() const { return __PointerClass; }
+   bool __Is(hx::Object *inClass) const { return dynamic_cast< StructData *>(inClass); }
+
+   // k_cpp_struct
+   int __GetType() const { return vtAbstractBase + 3; }
+   void * __GetHandle() const { return mValue; }
+   String toString()
+   {
+      return __ToString();
+   }
+   String __ToString() const
+   {
+      String result;
+      mHandler(cpp::dhoToString, mValue, &result );
+      return result;
+   }
+   const char *__CStr() const
+   {
+      const char *result = "unknown";
+      mHandler(cpp::dhoGetClassName, mValue, &result );
+      return result;
+   }
+
+   int __Compare(const hx::Object *inRHS) const
+   {
+      if (!inRHS)
+         return 1;
+
+      int diff = __length() - inRHS->__length();
+      if (diff==0)
+         diff = __GetType() - inRHS->__GetType();
+      if (diff==0)
+         diff = memcmp( mValue, inRHS->__GetHandle(), mLength );
+       
+      if (diff<0) return -1;
+      if (diff>0) return 1;
+      return 0;
+   }
+
+   int __length() const { return mLength; }
+
+   void __Mark(hx::MarkContext *__inCtx)
+   {
+      HX_MARK_ARRAY(mValue);
+   }
+
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_ARRAY(mValue);
+   }
+   #endif
+
+   int  mLength;
+   void *mValue;
+   cpp::DynamicHandlerFunc mHandler;
+};
+
+
 
 
 
 }
 
-// --- Pointer -------------------------------------------------
 
 namespace cpp
 {
+// --- Pointer -------------------------------------------------
+
 Dynamic CreateDynamicPointer(void *inValue) { return new hx::PointerData(inValue); }
+
+// --- Struct -------------------------------------------------
+
+Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc inFunc)
+
+{
+   return new hx::StructData(inValue,inSize,inFunc); }
 }
 
 

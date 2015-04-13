@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <set>
 
 using namespace hx;
 
@@ -42,20 +43,33 @@ using namespace hx;
 
 #endif
 
+namespace hx
+{
 #ifdef HX_UTF8_STRINGS
-#define HX_DOUBLE_PATTERN "%.15g"
+char HX_DOUBLE_PATTERN[20] = "%.15g";
 #define HX_INT_PATTERN "%d"
 #else
-#define HX_DOUBLE_PATTERN L"%.15g"
+wchar_t HX_DOUBLE_PATTERN[20] =  L"%.15g";
 #define HX_INT_PATTERN L"%d"
 #endif
+}
+
+void __hxcpp_set_float_format(String inFormat)
+{
+  int last = inFormat.length < 19 ? inFormat.length : 19;
+  memcpy(HX_DOUBLE_PATTERN, inFormat.__s, last*sizeof(HX_CHAR) );
+  HX_DOUBLE_PATTERN[last] = '\0';
+}
 
 // --- GC helper
 
-Class __StringClass;
+hx::Class __StringClass;
 
+String  sEmptyString = HX_CSTRING("");
 String  sConstStrings[256];
 Dynamic sConstDynamicStrings[256];
+typedef std::set<String> ConstStringSet;
+ConstStringSet sConstStringSet;
 
 static int UTF8Bytes(int c)
 {
@@ -253,7 +267,7 @@ static HX_CHAR *GCStringDup(const HX_CHAR *inStr,int inLen, int *outLen=0)
    {
       if (outLen)
          outLen = 0;
-      return 0;
+      return (HX_CHAR *)sEmptyString.__s;
    }
 
    if (inLen==-1)
@@ -346,6 +360,14 @@ String::String(const double &inRHS)
    __s = GCStringDup(buf,-1,&length);
 }
 
+
+String::String(const cpp::Int64 &inRHS)
+{
+   HX_CHAR buf[100];
+   SPRINTF(buf,100,"%lld",inRHS);
+   buf[99]='\0';
+   __s = GCStringDup(buf,-1,&length);
+}
 
 String::String(const float &inRHS)
 {
@@ -473,35 +495,34 @@ static int hex(int inChar)
 
 String String::__URLDecode() const
 {
-   Array<unsigned char> bytes(0,length);
-   for(int i=0;i<length;i++)
-   {
-      int c = __s[i];
-      if (c>127)
-         bytes->push('?');
-      else if (c=='+')
-         bytes->push(' ');
-      else if (c=='%')
-      {
-         i++;
-         int h0 = __s[i];
-         if (h0!=0)
-         {
-            i++;
-            int h1 = __s[i];
-            bytes->push( (hex(h0)<<4) | hex(h1) );
-         }
-      }
-      else
-         bytes->push(c);
+    // Create the decoded string; the decoded form might have fewer than
+    // [length] characters, but it won't have more.  If it has fewer than
+    // [length], some memory will be wasted here, but on the assumption that
+    // most URLs have only a few '%NN' encodings in them, don't bother
+    // counting the number of characters in the resulting string first.
+    HX_CHAR *decoded = NewString(length), *d = decoded;
+
+    for (int i = 0; i < length; i++) {
+        int c = __s[i];
+        if (c > 127) {
+            *d++ = '?';
+        }
+        else if (c == '+') {
+            *d++ = ' ';
+        }
+        else if ((c == '%') && (i < (length - 2))) {
+            *d++ = ((hex(__s[i + 1]) << 4) | (hex(__s[i + 2])));
+            i += 2;
+        }
+        else {
+            *d++ = c;
+        }
    }
-   // utf8 -> unicode ...
-   int len = bytes->__length();
-   bytes->push(' ');
+
    #ifdef HX_UTF8_STRINGS
-   return String( bytes->GetBase(), len ).dup();
+   return String( decoded, (d - decoded) );
    #else
-   return String( GCStringDup(bytes->GetBase(),len,0), len );
+   return String( GCStringDup(decoded, (d - decoded), 0), (d - decoded) );
    #endif
 }
 
@@ -514,6 +535,27 @@ String &String::dup()
    __s = GCStringDup(oldString,length,&length);
    return *this;
 }
+
+
+String &String::dupConst()
+{
+   ConstStringSet::iterator sit = sConstStringSet.find(*this);
+   if (sit!=sConstStringSet.end())
+   {
+      __s = sit->__s;
+   }
+   else
+   {
+      HX_CHAR *ch  = (HX_CHAR *)InternalCreateConstBuffer(__s,length+1,true);
+      ch[length] = '\0';
+      __s = ch;
+      sConstStringSet.insert(*this);
+   }
+
+   return *this;
+}
+
+
 
 int String::indexOf(const String &inValue, Dynamic inStart) const
 {
@@ -652,10 +694,13 @@ void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inStri
    #endif
 }
 
-void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len)
+void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len,bool inCopyPointer)
 {
    #ifdef HX_UTF8_STRINGS
-   outString = String( GCStringDup(inBytes->GetBase()+pos, len, 0), len);
+   if (inCopyPointer)
+      outString = String( (const HX_CHAR *)inBytes->GetBase(), inBytes->length);
+   else
+      outString = String( GCStringDup(inBytes->GetBase()+pos, len, 0), len);
    #else
    const unsigned char *ptr = (unsigned char *)inBytes->GetBase() + pos;
    const unsigned char *last = ptr + len;
@@ -927,6 +972,12 @@ String &String::operator+=(String inRHS)
    return *this;
 }
 
+#ifdef HXCPP_VISIT_ALLOCS
+#define STRING_VISIT_FUNC \
+    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_STRING(mThis.__s); }
+#else
+#define STRING_VISIT_FUNC
+#endif
 
 #define DEFINE_STRING_FUNC(func,array_list,dynamic_arg_list,arg_list,ARG_C) \
 struct __String_##func : public hx::Object \
@@ -948,7 +999,7 @@ struct __String_##func : public hx::Object \
       return mThis.func(arg_list); return Dynamic(); \
    } \
 	void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.__s); } \
-	void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_STRING(mThis.__s); } \
+	STRING_VISIT_FUNC \
 	void  __SetThis(Dynamic inThis) { mThis = inThis; } \
 }; \
 Dynamic String::func##_dyn()  { return new __String_##func(*this);  }
@@ -969,7 +1020,7 @@ DEFINE_STRING_FUNC0(toLowerCase);
 DEFINE_STRING_FUNC0(toUpperCase);
 DEFINE_STRING_FUNC0(toString);
 
-Dynamic String::__Field(const String &inString, bool inCallProp)
+Dynamic String::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (HX_FIELD_EQ(inString,"length")) return length;
    if (HX_FIELD_EQ(inString,"charAt")) return charAt_dyn();
@@ -1021,13 +1072,13 @@ inline double _wtof(const wchar_t *inStr)
    for(int i=0;i<100 && inStr[i];i++)
       buf[i] = inStr[i];
    buf[i] = '\0';
-   return atof(buf);
+   return strtod(buf, 0);
    #else
    return wcstod(inStr,0);
    #endif
 }
 
-#ifdef ANDROID
+#ifdef HX_ANDROID
 int my_wtol(const wchar_t *inStr,wchar_t ** end, int inBase)
 {
    char buf[101];
@@ -1067,7 +1118,7 @@ public:
 
    StringData(String inValue) : mValue(inValue) {};
 
-   Class __GetClass() const { return __StringClass; }
+   hx::Class __GetClass() const { return __StringClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< StringData *>(inClass); }
 
    virtual int __GetType() const { return vtString; }
@@ -1077,7 +1128,11 @@ public:
    {
       if (!mValue.__s) return 0;
       #ifdef HX_UTF8_STRINGS
-      return atof(mValue.__s);
+         #ifdef HX_ANDROID
+         return strtod(mValue.__s,0);
+         #else
+         return atof(mValue.__s);
+         #endif
       #else
       return _wtof(mValue.__s);
       #endif
@@ -1112,7 +1167,7 @@ public:
       return mValue.compare( const_cast<hx::Object*>(inRHS)->toString() );
    }
 
-   Dynamic __Field(const String &inString, bool inCallProp)
+   Dynamic __Field(const String &inString, hx::PropertyAccess inCallProp)
    {
       return mValue.__Field(inString, inCallProp);
    }
@@ -1121,7 +1176,7 @@ public:
    String mValue;
 };
 
-Class &GetStringClass() { return __StringClass; }
+hx::Class &GetStringClass() { return __StringClass; }
 
 }
 

@@ -7,7 +7,7 @@
 
 <linker id="static_link" exe="ar" unless="windows">
   <ext value="${LIBEXT}"/>
-  <exe name="emar" if="emscripten" />
+
   <exe name="${EXEPREFIX}-ar" if="EXEPREFIX" />
   <exe name="${HXCPP_AR}" if="HXCPP_AR" />
   <fromfile value="" if="GCC_OLD" />
@@ -26,11 +26,11 @@
   <recreate value="1" if="emscripten" />
   <recreate value="1" if="android" />
   <expandAr value="1" if="android" />
+  <expandAr value="1" if="emscripten" />
   <expandAr value="1" if="linux" />
   <section unless="HXCPP_USE_LIBTOOL">
      <ranlib name="ranlib" />
      <ranlib name="${EXEPREFIX}-ranlib" if="EXEPREFIX" />
-     <ranlib name="emranlib" if="emscripten" />
      <ranlib name="${HXCPP_RANLIB}" if="HXCPP_RANLIB" />
   </section>
 </linker>
@@ -38,7 +38,8 @@
 <set name="nostrip" value="1" if="debug"/>
 <set name="nostrip" value="1" if="dll_import"/>
 <set name="nostrip" value="1" if="dll_export"/>
-<set name="nostrip" value="1" if="emscripten"/>
+<set name="nostrip" value="1" if="HXCPP_DEBUG_LINK"/>
+
 
 <stripper id="strip" exe="strip" unless="nostrip">
   <exe name="strip"/>

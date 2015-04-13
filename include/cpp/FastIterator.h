@@ -7,7 +7,7 @@ namespace cpp
 class HXCPP_EXTERN_CLASS_ATTRIBUTES IteratorBase : public hx::Object
 {
 public:
-   Dynamic __Field(const String &inString ,bool inCallProp);
+   Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
    virtual bool hasNext() = 0;
    virtual Dynamic _dynamicNext() = 0;
 
@@ -38,8 +38,8 @@ public:
 
    DynamicIterator(Dynamic inValue)
    {
-      mNext = inValue->__Field(HX_CSTRING("next"), true);
-      mHasNext = inValue->__Field(HX_CSTRING("hasNext"), true);
+      mNext = inValue->__Field(HX_CSTRING("next"), HX_PROP_ALWAYS);
+      mHasNext = inValue->__Field(HX_CSTRING("hasNext"), HX_PROP_ALWAYS);
    }
 
    bool hasNext() { return mHasNext(); }

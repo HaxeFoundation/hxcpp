@@ -1,12 +1,33 @@
 <xml>
 
-<path name="${EMSCRIPTEN_SDK}" if="EMSCRIPTEN_SDK" />
+<setup name="emscripten" />
+<set name="HXCPP_LINK_EMSCRIPTEN_EXT" value=".js" unless="HXCPP_LINK_EMSCRIPTEN_EXT" />
 
-<setenv name="EMCC_LLVM_TARGET" value="i386-pc-linux-gnu" />
+<path name="${EMSCRIPTEN_SDK}" if="EMSCRIPTEN_SDK" />
+<path name="${dir:EMSCRIPTEN_PYTHON}" if="EMSCRIPTEN_PYTHON" />
+<set name="HXCPP_RANLIB" value="emranlib" />
+<set name="HXCPP_AR" value="emar" />
+
+<section if="windows_host">
+   <set name="HXCPP_RANLIB" value='python "${EMSCRIPTEN_SDK}/emranlib"' />
+   <set name="HXCPP_AR" value='python "${EMSCRIPTEN_SDK}/emar"' />
+   <set name="CXX" value='python "${EMSCRIPTEN_SDK}/emcc"' />
+</section>
+
+<set name="nostrip" value="1" if="emscripten"/>
+
+<include name="toolchain/gcc-toolchain.xml"/>
 
 <!-- EMCC TOOLS -------------------------------------->
 
-<include name="toolchain/gcc-toolchain.xml"/>
+
+<section unless="HXCPP_OPTIM_LEVEL" >
+   <!-- O2 generates stack-overflow when running unit tests - not sure what best default value is
+   <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
+   -->
+   <set name="HXCPP_OPTIM_LEVEL" value="-O1" />
+   <set name="HXCPP_OPTIM_LEVEL" value="-g" if="debug" />
+</section>
 
 <compiler id="emscripten" exe="emcc">
   <exe name="${CXX}" if="CXX" />
@@ -15,8 +36,7 @@
   <cppflag value="-frtti"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
-  <flag value="-g" if="debug"/>
-  <!-- <flag value="-O2" unless="debug"/> -->
+  <flag value="${HXCPP_OPTIM_LEVEL}" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-DEMSCRIPTEN"/>
@@ -44,8 +64,8 @@
   <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
-  <!-- <flag value="-debug" if="debug"/>
-  <flag value="-O2" unless="debug"/> -->
+  <flag value="-O2" unless="HXCPP_DEBUG_LINK"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
   <!-- <flag value="-DBUILD_AS_SHARED_LIBRARY" /> -->
   <!-- <lib name="-ldl"/> -->
   <!-- <ext value=".js"/> -->
@@ -53,17 +73,41 @@
   <outflag value="-o "/>
 </linker>
 
+
+<section unless="HXCPP_LINK_OPTIM_LEVEL" >
+   <!-- O2 generates dodgy 'else' statement
+   <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
+   -->
+   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-O1" />
+   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-g" if="debug" />
+</section>
+
+
 <linker id="exe" exe="emcc">
   <exe name="${CXX}" if="CXX" />
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
-  <flag value="-O2" unless="debug"/>
-  <flag value="-s" />
-  <flag value="DISABLE_EXCEPTION_CATCHING=0" unless="debug" />
-  <flag value="DISABLE_EXCEPTION_CATCHING=2" if="debug" />
+  <flag value="${HXCPP_LINK_OPTIM_LEVEL}" />
+
+  <section unless="HXCPP_LINK_NO_EXCEPTIONS" >
+     <flag value="-s" />
+     <flag value="DISABLE_EXCEPTION_CATCHING=0" />
+  </section>
+
+  <section if="HXCPP_LINK_MEMORY_GROWTH" >
+     <flag value="-s" />
+     <flag value="ALLOW_MEMORY_GROWTH=1" />
+  </section>
+
+  <section if="HXCPP_LINK_TOTAL_MEMORY" >
+     <flag value="-s" />
+     <flag value="TOTAL_MEMORY=${HXCPP_LINK_TOTAL_MEMORY}" />
+  </section>
+
+  <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
+  <flag value="--emrun" if="HXCPP_LINK_EMRUM" />
   <!-- <lib name="-ldl"/> -->
-  <ext value=".js"/>
+  <ext value="${HXCPP_LINK_EMSCRIPTEN_EXT}"/>
   <outflag value="-o "/>
 </linker>
 

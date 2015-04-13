@@ -483,9 +483,9 @@ typedef std::map< std::string, int> MethodIndexMap;
 typedef std::map< std::string, Method *> MethodMap;
 typedef std::map< std::string, int> FieldIndexMap;
 
-class ScriptHandler : public Class_obj
+class ScriptHandler : public hx::Class_obj
 {
-   Class mSuper;
+   hx::Class mSuper;
    ScriptRegistered *mScriptBase;
    ScriptRegistered *mScript;
    std::vector<FieldInfo> mFields;
@@ -518,7 +518,7 @@ public:
       {
          superName = abc.getMultiName(inst.superName);
 
-         mSuper = Class_obj::Resolve(RemapFlash(superName));
+         mSuper = hx::Class_obj::Resolve(RemapFlash(superName));
 
          if (mIsInterface)
             mScriptBase = 0;
@@ -533,7 +533,7 @@ public:
 
       DBGLOG("Class %s, base %p\n", (mName + HX_CSTRING("::") + superName).__s, mScriptBase );
 
-      RegisterClass(RemapFlash(mName), (Class_obj *)this);
+      RegisterClass(RemapFlash(mName), (hx::Class_obj *)this);
 
       mScript = mScriptBase;
       (*sScriptRegistered)[mName.__s] = mScript;
@@ -594,6 +594,7 @@ public:
       }
    }
 
+#ifdef HXCPP_VISIT_ALLOCS
    void visitFields(unsigned char *inData, HX_VISIT_PARAMS)
    {
       for(int i=0;i<mFields.size();i++)
@@ -611,6 +612,7 @@ public:
          inData += field.mBytes;
       }
    }
+#endif
 
    int findVTableSlot(const std::string &inName)
    {
@@ -726,21 +728,23 @@ public:
 
    void __Mark(hx::MarkContext *__inCtx)
    {
-      Class_obj::__Mark(__inCtx);
+      hx::Class_obj::__Mark(__inCtx);
       hx::MarkMember(mSuper,__inCtx);
    }
    void MarkStatics(hx::MarkContext *__inCtx)
    {
    }
 
+#ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
    {
-      Class_obj::__Visit(__inCtx);
+      hx::Class_obj::__Visit(__inCtx);
       hx::VisitMember(mSuper,__inCtx);
    }
    void VisitStatics(hx::VisitContext *__inCtx)
    {
    }
+#endif
 
    Dynamic ConstructEmpty()
    {
@@ -1138,13 +1142,13 @@ public:
    ABCGlobalObject(ABC *inAbc) : abc(inAbc)
    {
    }
-   Dynamic __Field(const String &inName, bool inCallProp)
+   Dynamic __Field(const String &inName, hx::PropertyAccess inCallProp)
    {
-      return Class_obj::Resolve(RemapFlash(inName));
+      return hx::Class_obj::Resolve(RemapFlash(inName));
    }
    bool __HasField(const String &inName)
    {
-      Class clazz = Class_obj::Resolve(RemapFlash(inName));
+      hx::Class clazz = hx::Class_obj::Resolve(RemapFlash(inName));
       return clazz.mPtr;
    }
 
@@ -1223,7 +1227,7 @@ public:
       {
          if (scope[s]->__HasField(name))
          {
-            stack->push(scope[s]->__Field(name,true));
+            stack->push(scope[s]->__Field(name,HX_PROP_DYNAMIC));
             return;
          }
       }
@@ -1422,11 +1426,13 @@ void ScriptableMark(ScriptHandler *inHandler, unsigned char *inInstanceData, HX_
    inHandler->markFields(inInstanceData,HX_MARK_ARG);
 }
 
+#ifdef HXCPP_VISIT_ALLOCS
 void ScriptableVisit(ScriptHandler *inHandler, unsigned char **inInstanceDataPtr, HX_VISIT_PARAMS)
 {
    HX_VISIT_ARRAY(inInstanceDataPtr);
    inHandler->visitFields(*inInstanceDataPtr,HX_VISIT_ARG);
 }
+#endif
 
 bool ScriptableField(hx::Object *, const ::String &,bool inCallProp,Dynamic &outResult)
 {
@@ -1482,7 +1488,7 @@ void LoadABC(const unsigned char *inBytes, int inLen)
          InstanceInfo &inst = abc.mInstanceInfo[i];
          String className = abc.getMultiName(inst.name);
 
-         Class cls = Class_obj::Resolve(RemapFlash(className));
+         hx::Class cls = hx::Class_obj::Resolve(RemapFlash(className));
          if (cls==null())
          {
             ABCClass cls = new ABCClass_obj(abc, inst, abc.mClassInfo[i]);

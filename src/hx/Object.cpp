@@ -43,7 +43,7 @@ String sNone[] = { String(null()) };
 
 Dynamic Object::__IField(int inFieldID)
 {
-   return __Field( __hxcpp_field_from_id(inFieldID), true );
+   return __Field( __hxcpp_field_from_id(inFieldID), HX_PROP_DYNAMIC );
 }
 
 double Object::__INumField(int inFieldID)
@@ -60,7 +60,7 @@ int Object::__Compare(const Object *inRHS) const
 }
 
 
-Dynamic Object::__Field(const String &inString, bool inCallProp)
+Dynamic Object::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    #if 0
    // Will be true for 'Implements dynamic'
@@ -89,7 +89,7 @@ void Object::__SetThis(Dynamic inThis) { }
 
 bool Object::__Is(Dynamic inClass ) const { return __Is(inClass.GetPtr()); }
 
-Class Object__mClass;
+hx::Class Object__mClass;
 
 bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
@@ -127,9 +127,9 @@ void Object::__boot()
 }
 
 
-Class &Object::__SGetClass() { return Object__mClass; }
+hx::Class &Object::__SGetClass() { return Object__mClass; }
 
-Class Object::__GetClass() const { return Object__mClass; }
+hx::Class Object::__GetClass() const { return Object__mClass; }
 
 hx::FieldRef Object::__FieldRef(const String &inString) { return hx::FieldRef(this,inString); }
 
@@ -138,7 +138,7 @@ String Object::__ToString() const { return HX_CSTRING("Object"); }
 const char * Object::__CStr() const { return __ToString().__CStr(); }
 
 
-Dynamic Object::__SetField(const String &inField,const Dynamic &inValue, bool inCallProp)
+Dynamic Object::__SetField(const String &inField,const Dynamic &inValue, hx::PropertyAccess inCallProp)
 {
 	throw Dynamic( HX_CSTRING("Invalid field:") + inField );
 	return null();

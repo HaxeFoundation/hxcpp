@@ -1,0 +1,3 @@
+-cp src
+-main TestMain
+-neko bin/neko/TestMain.n

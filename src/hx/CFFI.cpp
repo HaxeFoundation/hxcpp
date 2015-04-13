@@ -44,8 +44,8 @@ public:
 
 
    virtual int __GetType() const { return mType; }
-   virtual hx::ObjectPtr<Class_obj> __GetClass() const { return 0; }
-   virtual bool __IsClass(Class inClass ) const { return false; }
+   virtual hx::ObjectPtr<hx::Class_obj> __GetClass() const { return 0; }
+   virtual bool __IsClass(hx::Class inClass ) const { return false; }
 
    virtual void *__GetHandle() const
    {
@@ -107,7 +107,9 @@ typedef ObjectPtr<Abstract_obj> Abstract;
 vkind k_int32 = (vkind)vtAbstractBase;
 vkind k_hash = (vkind)(vtAbstractBase + 1);
 vkind k_cpp_pointer = (vkind)(vtAbstractBase + 2);
-static int sgKinds = (int)(vtAbstractBase + 3);
+vkind k_cpp_struct = (vkind)(vtAbstractBase + 3);
+static int sgKinds = (int)(vtAbstractBase + 4);
+
 typedef std::map<std::string,int> KindMap;
 typedef std::map<int,std::string> ReverseKindMap;
 static KindMap sgKindMap;
@@ -331,6 +333,7 @@ hx::Object * alloc_string(const char * arg1)
 #endif
 }
 
+
 wchar_t * val_dup_wstring(value inVal)
 {
    hx::Object *obj = (hx::Object *)inVal;
@@ -470,6 +473,8 @@ buffer val_to_buffer(hx::Object * arg1)
    ByteArray b = dynamic_cast< ByteArray >(arg1);
    return (buffer)b;
 }
+
+bool val_is_buffer(value inVal) { return val_to_buffer((hx::Object *)inVal)!=0; }
 
 
 
@@ -675,7 +680,7 @@ void alloc_field(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
 {
    //hx::InternalCollect();
    if (!arg1) hx::Throw(HX_INVALID_OBJECT);
-   arg1->__SetField(__hxcpp_field_from_id(arg2),arg3,true);
+   arg1->__SetField(__hxcpp_field_from_id(arg2),arg3, HX_PROP_DYNAMIC );
 }
 void hxcpp_alloc_field(hx::Object * arg1,int arg2,hx::Object * arg3)
 {
@@ -701,6 +706,22 @@ value val_field_name(field inField)
 }
 
 
+void val_iter_field_vals(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
+{
+   if (inObj)
+   {
+      Array<String> fields = Array_obj<String>::__new(0,0);
+
+      inObj->__GetFields(fields);
+
+      for(int i=0;i<fields->length;i++)
+      {
+         inFunc((value)inObj->__Field(fields[i], HX_PROP_NEVER ).mPtr, __hxcpp_field_to_id(fields[i].__CStr()), inCookie);
+      }
+   }
+}
+
+
 void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
 {
    if (inObj)
@@ -715,6 +736,7 @@ void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
       }
    }
 }
+
 
 
    // Abstract types
@@ -744,6 +766,10 @@ void * alloc_private(int arg1)
    return hx::NewGCPrivate(0,arg1);
 }
 
+hx::Object * alloc_raw_string(int length)
+{
+   return Dynamic( String( (HX_CHAR *) alloc_private(length+1), length) ).GetPtr();
+}
 
 void  val_gc(hx::Object * arg1,hx::finalizer arg2) THROWS
 {
@@ -777,6 +803,13 @@ void  gc_set_top_of_stack(int *inTopOfStack,bool inForce)
 {
    hx::SetTopOfStack(inTopOfStack,inForce);
 }
+
+
+void gc_change_managed_memory(int inDelta, const char *inWhy)
+{
+   hx::GCChangeManagedMemory(inDelta, inWhy);
+}
+
 
 
 class Root *sgRootHead = 0;

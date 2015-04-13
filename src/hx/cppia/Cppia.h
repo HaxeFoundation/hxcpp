@@ -7,7 +7,10 @@
 #include <vector>
 #include <string>
 #include <map>
+
+#ifdef CPPIA_JIT
 #include "CppiaCompiler.h"
+#endif
 
 namespace hx
 {
@@ -28,6 +31,12 @@ class  ScriptRegistered;
 class  HaxeNativeClass;
 class  HaxeNativeInterface;
 
+enum CppiaOp
+{
+   #define CPPIA_OP(ident, name, val) ident = val,
+   #include "CppiaOps.inc"
+   #undef CPPIA_OP
+};
 
 
 enum ExprType
@@ -135,12 +144,17 @@ struct CppiaExpr
    }
    virtual hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
+
+   virtual void        runFunction(CppiaCtx *ctx)   { NullReference("Function", false); }
+
    virtual CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) { return 0; }
    virtual CppiaExpr   *makeCrement(CrementOp inOp) { return 0; }
 
+
+   #ifdef CPPIA_JIT
    virtual void preGen(CppiaCompiler &compiler) { }
    virtual void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType);
-
+   #endif
 };
 
 CppiaExpr *createCppiaExpr(CppiaStream &inStream);
@@ -155,7 +169,7 @@ hx::Object *createEnumClosure(struct CppiaEnumConstructor &inContructor);
 struct TypeData
 {
    String              name;
-   Class               haxeClass;
+   hx::Class               haxeClass;
    CppiaClassInfo      *cppiaClass;
    ExprType            expressionType;
    HaxeNativeClass     *haxeBase;
@@ -265,6 +279,7 @@ struct CppiaStackVar
    int      stackPos;
    int      fromStackPos;
    int      capturePos;
+   FieldStorage storeType;
    ExprType expressionType;
 
    CppiaStackVar();
@@ -280,10 +295,11 @@ struct CppiaStackVar
 
 int getStackVarNameId(int inVarId);
 
+hx::Object *ObjectToInterface(hx::Object *inObject, TypeData *toType);
 
 struct CppiaVar
 {
-   enum Access { accNormal, accNo, accResolve, accCall, accRequire } ;
+   enum Access { accNormal, accNo, accResolve, accCall, accRequire, accCallNative } ;
 
    TypeData         *type;
    bool             isStatic;
@@ -300,6 +316,7 @@ struct CppiaVar
 
    CppiaExpr        *init;
    Dynamic          objVal;
+   bool             boolVal;
    int              intVal;
    Float            floatVal;
    String           stringVal;
@@ -541,6 +558,7 @@ struct CrementPreInc
    enum { OP = hx::coPreInc };
    template<typename T>
    static T run(T&inVal) { return ++inVal; }
+   static hx::Object *run(hx::Object *&inVal) { return inVal = Dynamic(Dynamic(inVal) + 1).mPtr; }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
 };
@@ -550,6 +568,12 @@ struct CrementPostInc
    enum { OP = hx::coPostInc };
    template<typename T>
    static T run(T& inVal) { return inVal++; }
+   static hx::Object *run(hx::Object *&inVal)
+   {
+      hx::Object *result(inVal);
+      inVal = Dynamic(Dynamic(inVal) + 1).mPtr;
+      return result;
+   }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
 };
@@ -561,6 +585,7 @@ struct CrementPreDec
    static T run(T&inVal) { return --inVal; }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
+   static hx::Object *run(hx::Object *&inVal) { return inVal = Dynamic(Dynamic(inVal) - 1).mPtr; }
 };
 
 struct CrementPostDec
@@ -570,6 +595,13 @@ struct CrementPostDec
    static T run(T& inVal) { return inVal--; }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
+   static hx::Object *run(hx::Object *&inVal)
+   {
+      hx::Object *result(inVal);
+      inVal = Dynamic(Dynamic(inVal) + 1).mPtr;
+      return result;
+   }
+ 
 };
 
 

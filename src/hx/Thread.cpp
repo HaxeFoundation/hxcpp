@@ -270,6 +270,9 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 
 Dynamic __hxcpp_thread_create(Dynamic inStart)
 {
+    #ifdef EMSCRIPTEN
+    return hx::Throw( HX_CSTRING("Threads are not supported on Emscripten") );
+    #else
     g_threadInfoMutex.Lock();
     int threadNumber = g_nextThreadNumber++;
     g_threadInfoMutex.Unlock();
@@ -318,6 +321,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
     if (!ok)
        throw Dynamic( HX_CSTRING("Could not create thread") );
     return info;
+    #endif
 }
 
 static hx::Object *sMainThreadInfo = 0;

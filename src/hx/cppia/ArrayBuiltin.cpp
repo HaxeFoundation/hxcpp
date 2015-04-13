@@ -393,7 +393,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          return thisVal->toString();
       }
 
-      if (FUNC==afPush)
+      if (FUNC==afPush || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          return Dynamic(runInt(ctx))->toString();
 
       return runObject(ctx)->toString();
@@ -502,11 +502,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          return thisVal->iterator().mPtr;
       }
 
-      if (FUNC==afPush)
+      if (FUNC==afPush || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          return Dynamic(runInt(ctx)).mPtr;
-
-      if (FUNC==afRemove)
-         return Dynamic((bool)runInt(ctx)).mPtr;
 
       if (FUNC==afJoin)
          return Dynamic(runString(ctx)).mPtr;
@@ -548,11 +545,13 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       }
 
 
-      if (FUNC==afPush || FUNC==afRemove)
+      if (FUNC==afPush || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          runInt(ctx);
+
       if (FUNC==afConcat || FUNC==afCopy || FUNC==afReverse || FUNC==afSplice || FUNC==afSlice ||
            FUNC==afMap || FUNC==afFilter)
          runObject(ctx);
+
       if (FUNC==afReverse)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);

@@ -1,6 +1,6 @@
 package hxcpp;
 
-@:cppFileCode( 'extern "C" void sqlite_register_prims();')
+@:cppFileCode( 'extern "C" int sqlite_register_prims();')
 @:buildXml("
 <target id='haxe'>
   <lib name='${HXCPP}/lib/${BINDIR}/libsqlite${LIBEXTRA}${LIBEXT}'/>

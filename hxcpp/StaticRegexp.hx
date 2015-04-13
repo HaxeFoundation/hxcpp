@@ -1,6 +1,6 @@
 package hxcpp;
 
-@:cppFileCode( 'extern "C" void regexp_register_prims();')
+@:cppFileCode( 'extern "C" int regexp_register_prims();')
 @:buildXml("
 <target id='haxe'>
   <lib name='${HXCPP}/lib/${BINDIR}/libregexp${LIBEXTRA}${LIBEXT}'/>

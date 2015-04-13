@@ -73,22 +73,48 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayBase : public hx::Object
 public:
    ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic);
 
+   // Defined later so we can use "Array"
+   static Array<Dynamic> __new(int inSize=0,int inReserve=0);
+
+
    static void __boot();
 
    typedef hx::Object super;
 
-   Dynamic __SetField(const String &inString,const Dynamic &inValue ,bool inCallProp) { return null(); }
+   // Used by cpp.ArrayBase
+   inline int getElementSize() const { return GetElementSize(); }
+   inline int getByteCount() const { return GetElementSize()*length; }
+   inline char * getBase() const { return mBase; }
 
-   static Class __mClass;
-   static Class &__SGetClass() { return __mClass; }
-   Class __GetClass() const { return __mClass; }
+
+   Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp) { return null(); }
+
+   static hx::Class __mClass;
+   static hx::Class &__SGetClass() { return __mClass; }
+   hx::Class __GetClass() const { return __mClass; }
    String toString();
    String __ToString() const;
+
+   void setData(void *inData, int inElements)
+   {
+      mBase = (char *)inData;
+      length = inElements;
+      mAlloc = inElements;
+   }
+
+   void setUnmanagedData(void *inData, int inElements)
+   {
+      mBase = (char *)inData;
+      length = inElements;
+      mAlloc = -1;
+   }
+
 
    int __GetType() const { return vtArray; }
 
    inline size_t size() const { return length; }
    inline int __length() const { return (int)length; }
+
    virtual String ItemString(int inI)  = 0;
 
    const char * __CStr() const { return mBase; }
@@ -102,8 +128,15 @@ public:
 
    void safeSort(Dynamic sorter, bool isString);
 
+   inline void __unsafeStringReference(String inString)
+   {
+      mBase = (char *)inString.__s;
+      length = inString.length / GetElementSize();
+      mAlloc = length;
+   }
+
    // Dynamic interface
-   Dynamic __Field(const String &inString ,bool inCallProp);
+   Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
    virtual Dynamic __concat(const Dynamic &a0) = 0;
    virtual Dynamic __copy() = 0;
    virtual Dynamic __insert(const Dynamic &a0,const Dynamic &a1) = 0;
@@ -191,13 +224,26 @@ public:
    virtual bool IsByteArray() const = 0;
 
 
+   inline Dynamic __get(int inIndex) const { return __GetItem(inIndex); }
+
+
    mutable int length;
 protected:
    mutable int mAlloc;
    mutable char  *mBase;
 };
 
-} // end namespace ArrayBase
+} // end namespace hx for ArrayBase
+
+namespace cpp
+{
+   typedef hx::ArrayBase ArrayBase_obj;
+
+   // Use by cpp.ArrayBase extern
+   typedef hx::ObjectPtr<ArrayBase_obj> ArrayBase;
+}
+
+
 
 // --- Array_obj ------------------------------------------------------------------
 //
@@ -310,13 +356,13 @@ public:
          for(int i=0;i<length;i++)
             HX_MARK_MEMBER(ptr[i]);
       }
-      HX_MARK_ARRAY(mBase);
+      if (mAlloc>0) hx::MarkAlloc((void *)mBase, __inCtx );
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
    {
-      HX_VISIT_ARRAY(mBase);
+      if (mAlloc>0) __inCtx->visitAlloc((void **)&mBase);
       if (hx::ContainsPointers<ELEM_>())
       {
          ELEM_ *ptr = (ELEM_ *)mBase;
@@ -605,7 +651,7 @@ public:
       }
    }
 
-   Array( const Dynamic &inRHS ) : super(0)
+   inline void setDynamic( const Dynamic &inRHS )
    {
       hx::Object *ptr = inRHS.GetPtr(); 
       if (ptr)
@@ -626,6 +672,9 @@ public:
       }
    }
 
+   Array( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }
+   Array( const cpp::ArrayBase &inRHS ) : super(0) { setDynamic(inRHS); }
+
 
    // operator= exact match...
    Array &operator=( Array<ELEM_> inRHS )
@@ -644,9 +693,16 @@ public:
 
    Array &operator=( const Dynamic &inRHS )
    {
-      *this = Array(inRHS);
+      setDynamic(inRHS);
       return *this;
    }
+
+   Array &operator=( const cpp::ArrayBase &inRHS )
+   {
+      setDynamic(inRHS);
+      return *this;
+   }
+
 
    Array &operator=( const null &inNull )
    {

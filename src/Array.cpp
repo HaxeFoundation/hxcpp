@@ -1,9 +1,9 @@
 #include <hxcpp.h>
+#include <vector>
 
 #ifdef HXCPP_TELEMETRY
 extern void __hxt_new_array(void* obj, int size);
 #endif
-
 
 using namespace hx;
 
@@ -13,22 +13,24 @@ using namespace hx;
 namespace hx
 {
 
+Array<Dynamic> ArrayBase::__new(int inSize,int inReserve)
+ { return  Array<Dynamic>(new Array_obj<Dynamic>(inSize,inReserve)); }
+
 ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
 {
    length = inSize;
-   mAlloc = inSize < inReserve ? inReserve : inSize;
-   if (mAlloc)
+   int alloc = inSize < inReserve ? inReserve : inSize;
+   if (alloc)
    {
       mBase = (char *)( (!inAtomic) ?
-        hx::NewGCBytes(0, mAlloc * inElementSize ) : hx::NewGCPrivate(0,mAlloc*inElementSize));
-
+        hx::NewGCBytes(0, alloc * inElementSize ) : hx::NewGCPrivate(0,alloc*inElementSize));
 #ifdef HXCPP_TELEMETRY
-   __hxt_new_array(mBase, mAlloc * inElementSize);
+      __hxt_new_array(mBase, alloc * inElementSize);
 #endif
-
    }
    else
       mBase = 0;
+   mAlloc = alloc;
 }
 
 
@@ -39,11 +41,19 @@ void ArrayBase::EnsureSize(int inSize) const
    {
       if (s>mAlloc)
       {
-         mAlloc = s*3/2 + 10;
-         int bytes = mAlloc * GetElementSize();
+         bool wasUnamanaged = mAlloc<0;
+         int newAlloc = s*3/2 + 10;
+         int bytes = newAlloc * GetElementSize();
          if (mBase)
          {
-            mBase = (char *)hx::GCRealloc(mBase, bytes );
+            if (wasUnamanaged)
+            {
+               char *base=(char *)(AllocAtomic() ? hx::NewGCPrivate(0,bytes) : hx::NewGCBytes(0,bytes));
+               memcpy(base,mBase,length*GetElementSize());
+               mBase = base;
+            }
+            else
+               mBase = (char *)hx::GCRealloc(mBase, bytes );
          }
          else if (AllocAtomic())
          {
@@ -59,6 +69,7 @@ void ArrayBase::EnsureSize(int inSize) const
             __hxt_new_array(mBase, bytes);
 #endif
          }
+         mAlloc = newAlloc;
       }
       length = s;
    }
@@ -158,7 +169,16 @@ void ArrayBase::__SetSizeExact(int inSize)
       int bytes = inSize * GetElementSize();
       if (mBase)
       {
-         mBase = (char *)hx::GCRealloc(mBase, bytes );
+         bool wasUnamanaged = mAlloc<0;
+
+         if (wasUnamanaged)
+         {
+            char *base=(char *)(AllocAtomic() ? hx::NewGCPrivate(0,bytes) : hx::NewGCBytes(0,bytes));
+            memcpy(base,mBase,std::min(length,inSize)*GetElementSize());
+            mBase = base;
+         }
+         else
+            mBase = (char *)hx::GCRealloc(mBase, bytes );
       }
       else if (AllocAtomic())
       {
@@ -296,27 +316,71 @@ String ArrayBase::join(String inSeparator)
 template<typename T>
 struct ArrayBaseSorter
 {
-   ArrayBaseSorter(Dynamic inFunc) : mFunc(inFunc) { }
-   bool operator()(const T &inA, const T &inB)
-      { return mFunc(inA, inB)->__ToInt() < 0; }
+   ArrayBaseSorter(T *inArray, Dynamic inFunc)
+   {
+      mFunc = inFunc;
+      mArray = inArray;
+   }
+
+   bool operator()(int inA, int inB)
+      { return mFunc(mArray[inA], mArray[inB])->__ToInt() < 0; }
+
    Dynamic mFunc;
+   T*      mArray;
 };
+
+template<typename T,typename STORE>
+void TArraySortLen(T *inArray, int inLength, Dynamic inSorter)
+{
+   std::vector<STORE> index(inLength);
+   for(int i=0;i<inLength;i++)
+      index[i] = (STORE)i;
+
+   std::stable_sort(index.begin(), index.end(), ArrayBaseSorter<T>(inArray,inSorter) );
+
+   // Put the results back ...
+   for(int i=0;i<inLength;i++)
+   {
+      int from = index[i];
+      while(from < i)
+         from = index[from];
+      if (from!=i)
+      {
+         std::swap(inArray[i],inArray[from]);
+         index[i] = from;
+      }
+   }
+}
+
+template<typename T>
+void TArraySort(T *inArray, int inLength, Dynamic inSorter)
+{
+   if (inLength<2)
+      return;
+   if (inLength<=256)
+      TArraySortLen<T,unsigned char >(inArray, inLength, inSorter);
+   else if (inLength<=65536)
+      TArraySortLen<T,unsigned short >(inArray, inLength, inSorter);
+   else
+      TArraySortLen<T,unsigned int >(inArray, inLength, inSorter);
+}
 
 void ArrayBase::safeSort(Dynamic inSorter, bool inIsString)
 {
    if (inIsString)
-   {
-      String *array = (String *)mBase;
-      std::sort(array, array+length, ArrayBaseSorter<String>(inSorter) );
-   }
+      TArraySort((String *)mBase, length,inSorter);
    else
-   {
-      Dynamic *array = (Dynamic *)mBase;
-      std::sort(array, array+length, ArrayBaseSorter<Dynamic>(inSorter) );
-   }
+      TArraySort((Dynamic *)mBase, length,inSorter);
 }
 
 
+
+#ifdef HXCPP_VISIT_ALLOCS
+#define ARRAY_VISIT_FUNC \
+    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
+#else
+#define ARRAY_VISIT_FUNC
+#endif
 
 #define DEFINE_ARRAY_FUNC(func,array_list,dynamic_arg_list,arg_list,ARG_C) \
 struct ArrayBase_##func : public hx::Object \
@@ -330,7 +394,7 @@ struct ArrayBase_##func : public hx::Object \
    void *__GetHandle() const { return mThis; } \
    int __ArgCount() const { return ARG_C; } \
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } \
+   ARRAY_VISIT_FUNC \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
       return mThis->__##func(array_list); return Dynamic(); \
@@ -377,7 +441,7 @@ DEFINE_ARRAY_FUNC4(blit);
 DEFINE_ARRAY_FUNC2(zero);
 DEFINE_ARRAY_FUNC1(memcmp);
 
-Dynamic ArrayBase::__Field(const String &inString, bool inCallProp)
+Dynamic ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("length")) return Dynamic((int)size());
    if (inString==HX_CSTRING("concat")) return concat_dyn();
@@ -437,7 +501,7 @@ static String sArrayFields[] = {
 
 
 // TODO;
-Class ArrayBase::__mClass;
+hx::Class ArrayBase::__mClass;
 
 Dynamic ArrayCreateEmpty() { return new Array<Dynamic>(0,0); }
 Dynamic ArrayCreateArgs(DynamicArray inArgs)
@@ -469,7 +533,7 @@ Dynamic IteratorBase::next_dyn()
    return hx::CreateMemberFunction0(this,__IteratorBase_dynamicNext);
 }
 
-Dynamic IteratorBase::__Field(const String &inString, bool inCallProp)
+Dynamic IteratorBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("hasNext")) return hasNext_dyn();
    if (inString==HX_CSTRING("next")) return _dynamicNext_dyn();

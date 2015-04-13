@@ -51,7 +51,7 @@ class Linker
 
    public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler)
    {
-      var ext = inTarget.mExt=="" ? mExt : inTarget.mExt;
+      var ext = inTarget.getExt(mExt);
       var file_name = mNamePrefix + inTarget.mOutput + ext;
       
       try
@@ -163,7 +163,7 @@ class Linker
                if (isArchive.match(lib))
                {
                   var libName = Path.withoutDirectory(lib);
-                  var libObjs = Setup.readStdout(mExe, ["t", lib ]);
+                  var libObjs = ProcessManager.readStdout(mExe, ["t", lib ]);
                   var objDir = inCompiler.mObjDir + "/" + libName;
                   PathManager.mkdir(objDir);
                   ProcessManager.runCommand (objDir, mExe, ["x", lib]);
@@ -179,6 +179,7 @@ class Linker
          // Place list of obj files in a file called "all_objs"
          if (mFromFile=="@")
          {
+            PathManager.mkdir(inCompiler.mObjDir);
             var fname = inCompiler.mObjDir + "/all_objs";
             var fout = sys.io.File.write(fname,false);
             for(obj in objs)
@@ -191,11 +192,7 @@ class Linker
 
          args = args.concat(libs);
          
-         var split = mExe.split (" ");
-         var exe = split.shift ();
-         args = split.concat (args);
-         
-         var result = ProcessManager.runCommand("", exe, args);
+         var result = ProcessManager.runCommand("", mExe, args);
          if (result!=0)
          {
             Sys.exit(result);

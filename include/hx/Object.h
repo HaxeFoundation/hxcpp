@@ -74,17 +74,19 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES Object
 {
 public:
    // These allocate the function using the garbage-colleced malloc
-   void *operator new( size_t inSize, hx::NewObjectType );
-   inline void *operator new( size_t inSize, bool inContainer=true )
+   void *operator new( size_t inSize, hx::NewObjectType, const char *inName=0 );
+   inline void *operator new( size_t inSize, bool inContainer=true, const char *inName=0 )
    {
-     void* result = operator new(inSize, inContainer ? hx::NewObjContainer : hx::NewObjAlloc);
+      void* result = operator new(inSize, inContainer ? hx::NewObjContainer : hx::NewObjAlloc, inName);
 #ifdef HXCPP_TELEMETRY
       __hxt_gc_new(result, inSize);
 #endif
-     return result;
+      return result;
    }
-   void operator delete( void *, bool ) { }
-   void operator delete( void *, hx::NewObjectType ) { }
+   void operator delete( void *, bool) { }
+   void operator delete( void *, bool, const char * ) { }
+   void operator delete( void *, hx::NewObjectType) { }
+   void operator delete( void *, hx::NewObjectType, const char * ) { }
 
    //virtual void *__root();
    virtual void __Mark(hx::MarkContext *__inCtx) { }
@@ -112,15 +114,15 @@ public:
    virtual const char * __CStr() const;
    virtual String toString();
    virtual bool __HasField(const String &inString);
-   virtual Dynamic __Field(const String &inString, bool inCallProp);
+   virtual Dynamic __Field(const String &inString, hx::PropertyAccess inCallProp);
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
-   virtual Dynamic __SetField(const String &inField,const Dynamic &inValue, bool inCallProp);
+   virtual Dynamic __SetField(const String &inField,const Dynamic &inValue, hx::PropertyAccess inCallProp);
    virtual void  __SetThis(Dynamic inThis);
    virtual Dynamic __Run(const Array<Dynamic> &inArgs);
    virtual Dynamic *__GetFieldMap();
    virtual void __GetFields(Array<String> &outFields);
-   virtual Class __GetClass() const;
+   virtual hx::Class __GetClass() const;
 
    virtual int __Compare(const hx::Object *inRHS) const;
    virtual DynamicArray __EnumParams();
@@ -151,7 +153,7 @@ public:
    inline bool __compare( hx::Object *inRHS )
       { return __GetRealObject()!=inRHS->__GetRealObject(); }
 
-   static Class &__SGetClass();
+   static hx::Class &__SGetClass();
    static void __boot();
 };
 
@@ -274,7 +276,7 @@ public:
    // This is defined in the "FieldRef" class...
    inline class hx::FieldRef FieldRef(const String &inString);
    inline class hx::IndexRef IndexRef(int inString);
-   inline static Class &__SGetClass() { return OBJ_::__SGetClass(); }
+   inline static hx::Class &__SGetClass() { return OBJ_::__SGetClass(); }
 
    OBJ_ *mPtr;
 };

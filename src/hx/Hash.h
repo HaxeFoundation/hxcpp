@@ -44,9 +44,9 @@ public:
    }
    inline unsigned int getHash()   { return key; }
 
-   Value        value;
-   Key          key;
-   int          next;
+   Value               value;
+   Key                 key;
+   TIntElement<VALUE>  *next;
 };
 
 
@@ -74,10 +74,10 @@ public:
    }
    inline unsigned int getHash() { return hash; }
 
-   Value        value;
-   Key          key;
-   unsigned int hash;
-   int          next;
+   Value                  value;
+   Key                    key;
+   unsigned int           hash;
+   TStringElement<VALUE>  *next;
 };
 
 
@@ -105,10 +105,10 @@ public:
    }
    inline unsigned int getHash() { return hash; }
 
-   Value        value;
-   Key          key;
-   unsigned int hash;
-   int          next;
+   Value                        value;
+   Key                          key;
+   unsigned int                 hash;
+   TDynamicElement<VALUE,WEAK>  *next;
 };
 
 
@@ -145,33 +145,22 @@ template<typename KEY>
 struct HashBase : public Object
 {
    HashStore store;
-   int       size;
-   int       holes;
-   int       mask;
-   int       alloc;
-   int       bucketCount;
-   int       *bucket;
-   int       firstHole;
 
    HashBase(int inStore)
    {
       store = (HashStore)inStore;
-      bucket = 0;
-      size = alloc = holes = 0;
-      mask = 0;
-      bucketCount = 0;
-      firstHole = -1;
    }
+
 
    virtual bool query(KEY inKey,int &outValue) = 0;
    virtual bool query(KEY inKey,::String &outValue) = 0;
    virtual bool query(KEY inKey,Float &outValue) = 0;
    virtual bool query(KEY inKey,Dynamic &outValue) = 0;
 
-   virtual void set(KEY inKey, const int &inValue) = 0;
-   virtual void set(KEY inKey, const ::String &inValue) = 0;
-   virtual void set(KEY inKey, const Float &inValue) = 0;
-   virtual void set(KEY inKey, const Dynamic &inValue) = 0;
+   virtual HashBase<KEY> * set(KEY inKey, const int &inValue) = 0;
+   virtual HashBase<KEY> * set(KEY inKey, const ::String &inValue) = 0;
+   virtual HashBase<KEY> * set(KEY inKey, const Float &inValue) = 0;
+   virtual HashBase<KEY> * set(KEY inKey, const Dynamic &inValue) = 0;
 
    virtual HashBase<KEY> *convertStore(HashStore inStore) = 0;
 
@@ -181,9 +170,6 @@ struct HashBase : public Object
    virtual Dynamic values() = 0;
 
    virtual void updateAfterGc() = 0;
-
-   int getSize() { return size-holes; }
-
 };
 
 extern void RegisterWeakHash(HashBase<Dynamic> *);
@@ -199,26 +185,25 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    typedef typename ELEMENT::Value Value;
 
    typedef ELEMENT Element;
-
-   using HashBase<Key>::mask;
-   using HashBase<Key>::alloc;
-   using HashBase<Key>::bucketCount;
-   using HashBase<Key>::firstHole;
-   using HashBase<Key>::bucket;
-   using HashBase<Key>::holes;
-   using HashBase<Key>::size;
-   using HashBase<Key>::getSize;
-
    enum { IgnoreHash = Element::IgnoreHash };
 
-   Element *element;
+
+   int       size;
+   int       mask;
+   int       bucketCount;
+   ELEMENT   **bucket;
+
 
    Hash() : HashBase<Key>( StoreOf<Value>::store )
    {
-      element = 0;
+      bucket = 0;
+      size = 0;
+      mask = 0;
+      bucketCount = 0;
       if (ELEMENT::WeakKeys)
          RegisterWeakHash(this);
    }
+   inline int getSize() { return size; }
 
    template<typename T>
    bool TIsWeakRefValid(T &) { return true; }
@@ -227,28 +212,21 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
    void updateAfterGc()
    {
-      if (ELEMENT::WeakKeys)
+      if (Element::WeakKeys)
       {
          for(int b=0;b<bucketCount;b++)
          {
-            int *headPtr = &bucket[b];
-            while(*headPtr>=0)
+            Element **headPtr = &bucket[b];
+            while(*headPtr)
             {
-               int slot = *headPtr;
-               Element &el = element[slot];
+               Element &el = **headPtr;
                if (!TIsWeakRefValid(el.key))
                {
                   *headPtr = el.next;
-                  HashClear(el.key);
-                  HashClear(el.value);
-                  el.next = firstHole;
-                  firstHole = slot;
-                  holes++;
+                  size--;
                }
                else
-               {
                   headPtr = &el.next;
-               }
             }
          }
       }
@@ -258,23 +236,22 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    {
       mask = inNewCount-1;
       //printf("expand %d -> %d\n",bucketCount, inNewCount);
-      bucket = (int *)InternalRealloc(bucket,inNewCount*sizeof(int));
-      for(int b=bucketCount;b<inNewCount;b++)
-         bucket[b] = -1;
+      bucket = (Element **)InternalRealloc(bucket,inNewCount*sizeof(ELEMENT *));
+      //for(int b=bucketCount;b<inNewCount;b++)
+      //   bucket[b] = 0;
 
       for(int b=0;b<bucketCount;b++)
       {
-         int *head = &bucket[b];
-         while(*head >= 0)
+         Element **head = &bucket[b];
+         while(*head)
          {
-            Element &e = element[*head];
+            Element &e = **head;
             int newBucket = e.getHash()&mask;
             if ( newBucket != b )
             {
-               int slot = *head;
                *head = e.next;
                e.next = bucket[newBucket];
-               bucket[newBucket] = slot;
+               bucket[newBucket] = &e;;
             }
             else
                head = &e.next;
@@ -286,14 +263,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
    void reserve(int inSize)
    {
-      if (alloc!=0)
-         return;
-
       if (inSize<8)
           inSize = 8;
-
-      alloc = inSize;
-      element = (Element *)InternalRealloc(element, sizeof(Element)*alloc);
 
       expandBuckets(inSize);
    }
@@ -301,24 +272,29 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    void compact()
    {
       int newSize = bucketCount>>1;
-      //printf("compact -> %d\n", newSize);
+      // printf("compact -> %d\n", newSize);
       mask = newSize-1;
       for(int b=newSize; b<bucketCount; b++)
       {
-         int head = bucket[b];
-         if (head>=0)
+         Element *head = bucket[b];
+         if (head)
          {
-            int oldHead = bucket[b-newSize];
+            Element *oldHead = bucket[b-newSize];
             bucket[b-newSize] = head;
 
-            int *lastPtr = &element[head].next;
-            while(*lastPtr >= 0)
-               lastPtr = &element[ *lastPtr ].next;
-            *lastPtr = oldHead;
+            if (oldHead)
+            {
+               // Append to last element
+               Element **lastPtr = &(head->next);
+               while(*lastPtr)
+                  lastPtr = & (*lastPtr)->next;
+               *lastPtr = oldHead;
+            }
+            bucket[b] = 0;
          }
       }
       bucketCount = newSize;
-      bucket = (int *)InternalRealloc(bucket, sizeof(int)*bucketCount );
+      bucket = (Element **)InternalRealloc(bucket, sizeof(ELEMENT *)*bucketCount );
    }
 
    bool remove(Key inKey)
@@ -326,19 +302,15 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       if (!bucket)
          return false;
       unsigned int hash = HashCalcHash(inKey);
-      int *head = bucket + (hash&mask);
-      while(*head>=0)
+      Element **head = bucket + (hash&mask);
+      while(*head)
       {
-         Element &el = element[*head];
+         Element &el = **head;
          if ( (IgnoreHash || el.getHash()==hash) && el.key==inKey)
          {
-            int slot = *head;
             *head = el.next;
-            HashClear(el.key);
-            el.next = firstHole;
-            firstHole = slot;
-            holes++;
-            if (bucketCount>8 && size-holes < bucketCount )
+            size--;
+            if (bucketCount>8 && size < (bucketCount>>1) )
                compact();
             return true;
          }
@@ -347,24 +319,12 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       return false;
    }
 
-   int allocElement()
+   ELEMENT *allocElement()
    {
-      if (firstHole>=0)
-      {
-         int result = firstHole;
-         firstHole = element[firstHole].next;
-         holes--;
-         return result;
-      }
-      int newSize = size + 1;
-      if (newSize>=alloc)
-      {
-         alloc = (newSize+10)*3/2;
-         element = (Element *)InternalRealloc(element, sizeof(Element)*alloc);
-      }
-      expandBuckets(newSize);
-
-      return size++;
+      ELEMENT *result = (ELEMENT *)InternalNew( sizeof(ELEMENT), false );
+      size++;
+      expandBuckets(size);
+      return result;
    }
 
    inline void expandBuckets(int inSize)
@@ -375,24 +335,24 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       {
          int newCount = bucketCount;
          if (newCount==0)
-            newCount = 8;
+            newCount = 2;
          else
             while( inSize > (newCount<<LOG_ELEMS_PER_BUCKET) )
                newCount<<=1;
-         rebucket(newCount);
+         if (newCount!=bucketCount)
+            rebucket(newCount);
       }
    }
 
    Element *find(int inHash, Key inKey)
    {
       if (!bucket) return 0;
-      int slot = bucket[inHash & mask];
-      while(slot>=0)
+      Element *head = bucket[inHash & mask];
+      while(head)
       {
-         Element &el = element[slot];
-         if ( (IgnoreHash || el.getHash()==inHash) && el.key==inKey)
-            return &el;
-         slot = el.next;
+         if ( (IgnoreHash || head->getHash()==inHash) && head->key==inKey)
+            return head;
+         head = head->next;
       }
       return 0;
    }
@@ -452,18 +412,32 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          CopyValue(el->value,inValue);
          return;
       }
-      int slot = allocElement();
-      el = element+slot;
+      el = allocElement();
       el->setKey(inKey,hash);
       CopyValue(el->value,inValue);
       el->next = bucket[hash&mask];
-      bucket[hash&mask] = slot;
+      bucket[hash&mask] = el;
    }
 
-   void set(Key inKey, const int &inValue) { TSet(inKey, inValue); }
-   void set(Key inKey, const ::String &inValue)  { TSet(inKey, inValue); }
-   void set(Key inKey, const Float &inValue)  { TSet(inKey, inValue); }
-   void set(Key inKey, const Dynamic &inValue)  { TSet(inKey, inValue); }
+   HashBase<Key> * set(Key inKey, const int &inValue) { TSet(inKey, inValue); return this; }
+   HashBase<Key> * set(Key inKey, const ::String &inValue)  { TSet(inKey, inValue); return this; }
+   HashBase<Key> * set(Key inKey, const Float &inValue)  { TSet(inKey, inValue); return this; }
+   HashBase<Key> * set(Key inKey, const Dynamic &inValue)  { TSet(inKey, inValue); return this; }
+
+
+   template<typename F>
+   void iterateAddr(F &inFunc)
+   {
+      for(int b=0;b<bucketCount;b++)
+      {
+         Element **el = &bucket[b];
+         while(*el)
+         {
+            inFunc(el);
+            el = &(*el)->next;
+         }
+      }
+   }
 
 
    template<typename F>
@@ -471,14 +445,11 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    {
       for(int b=0;b<bucketCount;b++)
       {
-         int head = bucket[b];
-         while(head>=0)
+         Element *el = bucket[b];
+         while(el)
          {
-            Element &el = element[head];
-
-            inFunc(el);
-
-            head = el.next;
+            inFunc(*el);
+            el = el->next;
          }
       }
    }
@@ -598,6 +569,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       HashMarker(hx::MarkContext *ctx) : __inCtx(ctx) { }
       void operator()(typename Hash::Element &inElem)
       {
+         HX_MARK_ARRAY(&inElem);
          if (!Hash::Element::WeakKeys)
          {
             HX_MARK_MEMBER(inElem.key);
@@ -609,44 +581,265 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    void __Mark(hx::MarkContext *__inCtx)
    {
       HX_MARK_ARRAY(bucket);
-      HX_MARK_ARRAY(element);
 
-      if ( (NeedsMarking<Key>::Yes && !ELEMENT::WeakKeys) || NeedsMarking<Value>::Yes)
-      {
-         HashMarker marker(__inCtx);
-         iterate(marker);
-      }
+      HashMarker marker(__inCtx);
+      iterate(marker);
    }
 
+#ifdef HXCPP_VISIT_ALLOCS
    // Vist ...
    struct HashVisitor
    {
       hx::VisitContext *__inCtx;
       HashVisitor(hx::VisitContext *ctx) : __inCtx(ctx) { }
-      void operator()(typename Hash::Element &inElem)
+      void operator()(typename Hash::Element **inElem)
       {
-         HX_VISIT_MEMBER(inElem.key);
-         HX_VISIT_MEMBER(inElem.value);
+         if ( (NeedsMarking<Key>::Yes && !ELEMENT::WeakKeys) || NeedsMarking<Value>::Yes)
+         {
+             typename Hash::Element &el = **inElem;
+             HX_VISIT_MEMBER(el.key);
+             HX_VISIT_MEMBER(el.value);
+         }
+         HX_VISIT_ARRAY(*inElem);
       }
    };
 
    void __Visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_ARRAY(bucket);
-      HX_VISIT_ARRAY(element);
-
-      if (NeedsMarking<Key>::Yes || NeedsMarking<Value>::Yes)
-      {
-        HashVisitor vistor(__inCtx);
-        iterate(vistor);
-      }
+      HashVisitor vistor(__inCtx);
+      iterateAddr(vistor);
    }
+#endif
 };
 
 
+template<typename ELEMENT>
+struct TinyHash : public HashBase< typename ELEMENT::Key >
+{
+   typedef typename ELEMENT::Key   Key;
+   typedef typename ELEMENT::Value Value;
+
+   typedef ELEMENT Element;
+
+   enum { START_SIZE = 4 };
+   enum { MAX_SIZE = 8 };
+
+   struct KeyValue
+   {
+      Key   key;
+      Value value;
+   };
+
+   int      count;
+   int      alloc;
+   KeyValue *element;
+
+   TinyHash() : HashBase<Key>( StoreOf<Value>::store )
+   {
+      count = 0;
+      alloc = START_SIZE;
+      element = (KeyValue *)InternalRealloc(element, sizeof(KeyValue)*(alloc));
+      if (ELEMENT::WeakKeys)
+         RegisterWeakHash(this);
+   }
+
+   template<typename T>
+   bool TIsWeakRefValid(T &) { return true; }
+   bool TIsWeakRefValid(Dynamic &key) { return IsWeakRefValid(key.mPtr); }
 
 
-}
+   void updateAfterGc()
+   {
+      if (ELEMENT::WeakKeys)
+      {
+         for(int i=0;i<count;i++)
+         {
+            if (!TIsWeakRefValid(element[i].key))
+            {
+               element[i] = element[count-1];
+               count--;
+               i--;
+            }
+         }
+      }
+   }
 
 
+   inline int find(const Key &inKey)
+   {
+      for(int i=0;i<count;i++)
+         if (inKey == element[i].key)
+            return i;
+      return -1;
+   }
+
+   bool exists(Key inKey) { return find(inKey)>=0; }
+
+   
+   bool remove(Key inKey)
+   {
+      int idx = find(inKey);
+      if (idx<0)
+         return false;
+      element[idx] = element[count-1];
+      count--;
+      return true;
+   }
+
+
+   template<typename OUT_VALUE>
+   bool TQuery(Key inKey,OUT_VALUE &outValue)
+   {
+      int idx = find(inKey);
+      if (idx<0)
+         return false;
+      CopyValue(outValue,element[idx].value);
+      return true;
+   }
+
+   bool query(Key inKey,int &outValue) { return TQuery(inKey,outValue); }
+   bool query(Key inKey,::String &outValue) { return TQuery(inKey,outValue); }
+   bool query(Key inKey,Float &outValue) { return TQuery(inKey,outValue); }
+   bool query(Key inKey,Dynamic &outValue) { return TQuery(inKey,outValue); }
+
+
+   Value get(Key inKey)
+   {
+      int idx = find(inKey);
+      if (idx>=0)
+         return element[idx].value;
+      return 0;
+   }
+
+
+   template<typename SET>
+   HashBase<Key> *TSet(Key inKey, const SET &inValue)
+   {
+      int idx = find(inKey);
+      if (idx>=0)
+      {
+         CopyValue(element[idx].value,inValue);
+         return this;
+      }
+      if (count>=MAX_SIZE)
+      {
+         HashBase<Key> *result = convertStore( HashBase<Key>::store );
+         result->set(inKey,inValue);
+         return result;
+      }
+      if (count>=alloc)
+      {
+         alloc *= 2;
+         element = (KeyValue *)InternalRealloc(element, sizeof(KeyValue)*alloc);
+      }
+
+      idx = count++;
+      element[idx].key = inKey;
+      CopyValue(element[idx].value,inValue);
+      return this;
+   }
+
+   HashBase<Key> *set(Key inKey, const int &inValue) { return TSet(inKey, inValue); }
+   HashBase<Key> *set(Key inKey, const ::String &inValue)  { return TSet(inKey, inValue); }
+   HashBase<Key> *set(Key inKey, const Float &inValue)  { return TSet(inKey, inValue); }
+   HashBase<Key> *set(Key inKey, const Dynamic &inValue)  { return TSet(inKey, inValue); }
+
+   Array<Key> keys()
+   {
+      Array<Key> result(0,count);
+      for(int i=0;i<count;i++)
+         result->push(element[i].key);
+      return result;
+   }
+
+
+   Dynamic values()
+   {
+      Array<Value> result(0,count);
+      for(int i=0;i<count;i++)
+         result->push(element[i].value);
+      return result;
+   }
+
+   String toString()
+   {
+      Array<String> strings(0,count*4+1);
+      strings->push(HX_CSTRING("{ "));
+      for(int i=0;i<count;i++)
+      {
+         KeyValue &elem = element[i];
+         if (i>0)
+            strings->push(HX_CSTRING(", "));
+         strings->push(String(elem.key));
+         strings->push(HX_CSTRING(" => "));
+         strings->push(String(elem.value));
+      }
+      strings->push(HX_CSTRING("}"));
+      return strings->join(HX_CSTRING(""));
+   }
+
+
+   template<typename NEW_ELEM>
+   HashBase<Key> *TConvertStore()
+   {
+      Hash<NEW_ELEM> *result = new Hash<NEW_ELEM>();
+
+      result->reserve(count*3/2+1);
+
+      for(int i=0;i<count;i++)
+         result->set( element[i].key, element[i].value );
+
+      return result;
+   }
+
+
+   HashBase<Key> *convertStore(HashStore inStore)
+   {
+      switch(inStore)
+      {
+         case hashInt:
+            return TConvertStore< typename ELEMENT::IntValue >();
+         case hashFloat:
+            return TConvertStore< typename ELEMENT::FloatValue >();
+         case hashString:
+            return TConvertStore< typename ELEMENT::StringValue >();
+         case hashObject:
+            return TConvertStore< typename ELEMENT::DynamicValue >();
+      }
+      return 0;
+   }
+
+
+
+   void __Mark(hx::MarkContext *__inCtx)
+   {
+      HX_MARK_ARRAY(element);
+      if ( (NeedsMarking<Key>::Yes && !ELEMENT::WeakKeys) || NeedsMarking<Value>::Yes)
+      {
+         for(int i=0;i<count;i++)
+         {
+            HX_MARK_MEMBER(element[i].key);
+            HX_MARK_MEMBER(element[i].value);
+         }
+      }
+   }
+
+#ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      HX_VISIT_ARRAY(element);
+      if (NeedsMarking<Key>::Yes || NeedsMarking<Value>::Yes)
+      {
+         for(int i=0;i<count;i++)
+         {
+            HX_VISIT_MEMBER(element[i].key);
+            HX_VISIT_MEMBER(element[i].value);
+         }
+      }
+   }
+#endif
+};
+
+} // end namespace hx
 

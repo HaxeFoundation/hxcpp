@@ -1,6 +1,6 @@
 package hxcpp;
 
-@:cppFileCode( 'extern "C" void mysql_register_prims();')
+@:cppFileCode( 'extern "C" int mysql_register_prims();')
 @:buildXml("
 <target id='haxe'>
   <lib name='${HXCPP}/lib/${BINDIR}/libmysql5${LIBEXTRA}${LIBEXT}'/>

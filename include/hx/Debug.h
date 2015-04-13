@@ -122,6 +122,9 @@ public:
          #ifdef HXCPP_DEBUG_HASHES
          classFuncHash(inClassFunctionHash),
          fileHash(inFileHash),
+         #else
+         classFuncHash(0),
+         fileHash(0),
          #endif
          fullName(inFullName), fileName(inFileName),
          #ifdef HXCPP_STACK_LINE
@@ -143,6 +146,7 @@ public:
     ~StackFrame();
 
     ::String toString();
+    ::String toDisplay();
 
     // These are constant during the lifetime of the stack frame
     const char *className;
@@ -155,10 +159,9 @@ public:
     // Only updated if HXCPP_STACK_LINE is defined.
     int lineNumber;
 
-    #ifdef HXCPP_DEBUG_HASHES
+    // These are only used if HXCPP_DEBUG_HASHES is defined
     int fileHash;
     int classFuncHash;
-    #endif
 
     // Function arguments and local variables in reverse order of their
     // declaration.  If a variable name is in here twice, the first version is
@@ -498,6 +501,7 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created);
 
 // The following is called by the stack macros, but only if
 // HXCPP_DEBUGGER is set
+HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow);
 
 #else // !HXCPP_DEBUGGER
@@ -543,6 +547,8 @@ inline void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic) { }
 // The following functions are called by Thread.cpp to notify of thread
 // created and terminated
 inline void __hxcpp_dbg_threadCreatedOrTerminated(int, bool) { }
+
+inline Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow) { return hx::Throw(toThrow); }
 
 #endif // HXCPP_DEBUGGER
 

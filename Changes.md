@@ -1,4 +1,50 @@
-
+* Allow dll_load path to be set programatically and simplified the dll search sequence.
+* Improved cffi_prime, and added String class
+* Fixed static linking of mysql5
+* Moved static link code in general to cpp.link package, not hxcpp package
+* URL decode now does not need to performe reallocs
+* Ensure HXCPP_API_LEVEL is always defined
+* Added __hxcpp_unload_all_libraries to cleanly unload dlls
+* Added some utc date functions
+* Better support for non-console apps in windows XP 64
+* Increased use of HXCPP_DEBUG_LINK for gcc based targets
+* Class 'hasField' is now more consistent with other functions/targets
+* 'haxelib run hxcpp test.cppia' will run Cppia on the specified file
+* Add fast-select option for sockets
+* Allow code to run without HXCPP_VISIT_ALLOCS defined
+* Fix debugger thread deadlocks
+* Allow up to 27 dynamic arguements
+* Fixes for Emscripten - byte align access and disable threads
+* Allow emscripten to generate 'executables' (.js/.html) and add options for specifying memory
+* Allow spaces in exe names again
+* Make cpp::Struct compare via memcmp, and mark correctly
+* Fix catch block in cppia
+* Treat '-debug' as an alias for "-Ddebug"
+* Expose ArrayBase for use with some generic or external code
+* Clarify the role of 'buffer' in cffi
+------------------------------------------------------------
+* Only put a minimal run.n in source-control, and use this to boot hxcpp.n
+* Added cpp.Struct and cpp.Reference classes, which are handy for extern classes
+* Moved Class to hx namespace
+* Simplified 'main' logic
+* Allow new android compilers to work for old devices (thanks google)
+* Correctly read hxcpp_api_level from Build.xml
+* Verbose logging prints which file is being compiled
+* Handle undefining the INT_ constants differently to allow std::string to still compile
+* Remove entries form Options.txt that do not influence the cpp build
+* Add optional destination= command-line option to allow copying the result to named file
+* Static libraries will be prefixed with 'lib' now
+* val_is_buffer always returns false on neko
+* Add val_iter_field_vals, which is like val_iter_fields but consistent with neko
+* Remove NekoApi binaries
+* Add Cppia binaries
+* Add Windows64 binaries
+* Make compares between Dynamic and numeric types false, unless the Dynamic is actaully numeric
+------------------------------------------------------------
+* Even more optimizations for hashes
+* Some more optimizations for small hashes
+* Fix for google changing inlining in platform21 headers (atof, rand, srand)
+* Re-tuned Hash for small objects too (improves Anon object perforamce)
 * Reverted change that automatically threw 'BadCast'.  Now required HXCPP_STRICT_CASTS
 ------------------------------------------------------------
 * Cached dynamic versions of small ints and 1-char-strings for speed

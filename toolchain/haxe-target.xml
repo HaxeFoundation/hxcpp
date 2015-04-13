@@ -3,6 +3,10 @@
 <!-- make sure hxcpp.n is up to date -->
 <pleaseUpdateHxcppTool version="1" />
 
+
+<!-- Use value from Build.xml file unless one is specified from the haxe defines -->
+<set name="hxcpp_api_level" value="${HXCPP_API_LEVEL}" unless="hxcpp_api_level" if="HXCPP_API_LEVEL"  />
+
 <!-- You can override the exes an "exe" section on your own .hxcpp_config -->
 <!-- You can use replace="1" to change the compiler, or omit to add flags -->
 
@@ -15,7 +19,7 @@
   <depend name="${HXCPP}/include/hxString.h"/>
   <depend name="${HXCPP}/include/hxMath.h"/>
   <depend name="${HXCPP}/include/null.h"/>
-  <depend name="${HXCPP}/include/Class.h"/>
+  <depend name="${HXCPP}/include/hx/Class.h"/>
   <depend name="${HXCPP}/include/Enum.h"/>
   <depend name="${HXCPP}/include/hx/Debug.h"/>
   <depend name="${HXCPP}/include/hx/Telemetry.h"/>
@@ -28,10 +32,13 @@
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/StdLibs.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
+  <depend name="${HXCPP}/include/cpp/Pointer.h"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
-  <depend name="${HXCPP}/toolchain/haxe-target.xml"/>
-  <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml"/>
-  <depend name="${HXCPP}/hxcpp.n" ifExists="${HXCPP}/hxcpp.n" />
+  <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
+     <depend name="${HXCPP}/toolchain/haxe-target.xml"/>
+     <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml"/>
+     <depend name="${HXCPP}/hxcpp.n" ifExists="${HXCPP}/hxcpp.n" />
+  </section>
 </files>
  
 
@@ -44,8 +51,17 @@
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
 </files>
 
+
+<files id="__resources__">
+</files>
+
+<files id="__externs__">
+</files>
+
+
 <files id="__main__">
   <depend files="hxcpp-depends"/>
+  <depend name="${HXCPP}/include/hx/HxcppMain.h"/>
   <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
 </files>
@@ -62,23 +78,25 @@
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
   <depend name="${HXCPP}/src/hx/cppia/CppiaStream.h" />
-  <depend name="${HXCPP}/src/hx/cppia/CppiaCompiler.h" />
+  <depend name="${HXCPP}/src/hx/cppia/CppiaCompiler.h"  if="CPPIA_JIT" />
+  <compilerflag value="-DHX_UNDEFINE_H" />
+  <compilerflag value="-DCPPIA_JIT" if="CPPIA_JIT" />
 
   <file name = "src/hx/cppia/Cppia.cpp" />
   <file name = "src/hx/cppia/CppiaCtx.cpp" />
   <file name = "src/hx/cppia/ArrayBuiltin.cpp" />
   <file name = "src/hx/cppia/StringBuiltin.cpp" />
-  <file name = "src/hx/cppia/GLobalBuiltin.cpp" />
+  <file name = "src/hx/cppia/GlobalBuiltin.cpp" />
   <file name = "src/hx/cppia/HaxeNative.cpp" />
   <file name = "src/hx/cppia/CppiaVars.cpp" />
-  <file name = "src/hx/cppia/CppiaCompiler.cpp" />
+  <file name = "src/hx/cppia/CppiaCompiler.cpp" if="CPPIA_JIT" />
 </files>
 
 
 <files id="runtime" dir="${HXCPP}">
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
-
+  <depend name="${HXCPP}/src/hx/Hash.h"/>
 
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
@@ -102,7 +120,7 @@
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
 
   <file name = "src/Array.cpp"/>
-  <file name = "src/Class.cpp"/>
+  <file name = "src/hx/Class.cpp"/>
   <file name = "src/Dynamic.cpp"/>
   <file name = "src/Enum.cpp"/>
   <file name = "src/Math.cpp"/>
@@ -120,14 +138,24 @@
   <dir name="obj"/>
 </target>
 
-<target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT}${DBG}">
+<set name="EXESUFFIX" value=".exe" if="windows" />
+
+<target id="haxe" tool="linker" toolid="${haxelink}" output="${LIBPREFIX}${HAXE_OUTPUT}${DBG}">
   <files id="haxe"/>
-  <depend name="Options.txt"/>
+  <options name="Options.txt"/>
   <ext value="${LIBEXTRA}.a" if="iphoneos" unless="dll_import" />
   <ext value="${LIBEXTRA}.a" if="iphonesim" unless="dll_import" />
-  <ext value="${LIBEXTRA}.so" if="android"/>
+
+  <section if="android">
+     <ext value="${LIBEXTRA}.so" />
+     <ext value="${LIBEXTRA}.a"  if="static_link" />
+     <ext value="${LIBEXTRA}" if="exe_link" />
+  </section>
+
   <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>
+  <files id="__resources__" />
+  <files id="__externs__" />
   <files id="runtime" unless="dll_import" />
   <files id="cppia" if="scriptable" />
   <lib name="-lpthread" if="linux" unless="static_link" />

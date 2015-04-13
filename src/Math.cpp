@@ -12,6 +12,10 @@
 #include <process.h>
 #endif
 
+#ifdef HX_ANDROID
+#define rand() lrand48()
+#define srand(x) srand48(x)
+#endif
 
 // -------- Math ---------------------------------------
 
@@ -61,7 +65,7 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,exp,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isNaN,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
 
-Dynamic Math_obj::__Field(const String &inString, bool inCallProp)
+Dynamic Math_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("floor")) return floor_dyn();
    if (inString==HX_CSTRING("ffloor")) return ffloor_dyn();
@@ -116,11 +120,11 @@ static String sMathFields[] = {
    String(null()) };
 
 
-Dynamic Math_obj::__SetField(const String &inString,const Dynamic &inValue, bool inCallProp) { return null(); }
+Dynamic Math_obj::__SetField(const String &inString,const Dynamic &inValue, hx::PropertyAccess inCallProp) { return null(); }
 
 Dynamic Math_obj::__CreateEmpty() { return new Math_obj; }
 
-Class Math_obj::__mClass;
+hx::Class Math_obj::__mClass;
 
 /*
 Class &Math_obj::__SGetClass() { return __mClass; }

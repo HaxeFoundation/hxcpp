@@ -220,15 +220,15 @@ void ScriptableRegisterClass( String inName, int inBaseSize, ScriptNamedFunction
 void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions,const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
 
 ::String ScriptableToString(void *);
-Class ScriptableGetClass(void *);
+hx::Class ScriptableGetClass(void *);
 int ScriptableGetType(void *);
 void ScriptableMark(void *, hx::Object *, HX_MARK_PARAMS);
 void ScriptableVisit(void *, hx::Object *, HX_VISIT_PARAMS);
-bool ScriptableField(hx::Object *, const ::String &,bool inCallProp,Dynamic &outResult);
-bool ScriptableField(hx::Object *, int inName,bool inCallProp,Float &outResult);
-bool ScriptableField(hx::Object *, int inName,bool inCallProp,Dynamic &outResult);
+bool ScriptableField(hx::Object *, const ::String &,hx::PropertyAccess inCallProp,Dynamic &outResult);
+bool ScriptableField(hx::Object *, int inName,hx::PropertyAccess inCallProp,Float &outResult);
+bool ScriptableField(hx::Object *, int inName,hx::PropertyAccess inCallProp,Dynamic &outResult);
 void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields);
-bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,bool inCallProp, Dynamic &outValue);
+bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,hx::PropertyAccess inCallProp, Dynamic &outValue);
 
 
 }
@@ -263,36 +263,49 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
      { hx::CppiaCtx *ctx = hx::CppiaCtx::getCurrent(); hx::AutoStack a(ctx); ctx->pushObject(this); return ctx->runString(__scriptVTable[0]); } \
       else return __superString::toString(); } \
    ::String __ToString() const { return hx::ScriptableToString(__scriptVTable[-1]); } \
-   Class __GetClass() const { return hx::ScriptableGetClass(__scriptVTable[-1]); } \
+   hx::Class __GetClass() const { return hx::ScriptableGetClass(__scriptVTable[-1]); } \
    int __GetType() const { return hx::ScriptableGetType(__scriptVTable[-1]); } \
 
+
+#ifdef HXCPP_VISIT_ALLOCS
+#define SCRIPTABLE_VISIT_FUNCTION \
+void __Visit(HX_VISIT_PARAMS) { HX_VISIT_OBJECT(mDelegate.mPtr); }
+#else
+#define SCRIPTABLE_VISIT_FUNCTION
+#endif
 
 #define HX_DEFINE_SCRIPTABLE_INTERFACE \
    void **__scriptVTable; \
    Dynamic mDelegate; \
    hx::Object *__GetRealObject() { return mDelegate.mPtr; } \
-   void __Visit(HX_VISIT_PARAMS) { HX_VISIT_OBJECT(mDelegate.mPtr); } \
+   SCRIPTABLE_VISIT_FUNCTION \
    void ** __GetScriptVTable() { return __scriptVTable; } \
    public: \
    static hx::Object *__script_create(void **inVTable,hx::Object *inDelegate) { \
     __ME *result = new __ME(); \
     result->__scriptVTable = inVTable; \
     result->mDelegate = inDelegate; \
-    return result; } \
+    return result; }
 
 
+#ifdef HXCPP_VISIT_ALLOCS
+#define SCRIPTABLE_DYNAMIC_VISIT_FUNCTION \
+void __Visit(HX_VISIT_PARAMS) { super::__Visit(HX_VISIT_ARG); hx::ScriptableVisit(__scriptVTable[-1],this,HX_VISIT_ARG); }
+#else
+#define SCRIPTABLE_DYNAMIC_VISIT_FUNCTION
+#endif
 
 #define HX_DEFINE_SCRIPTABLE_DYNAMIC \
 	void __Mark(HX_MARK_PARAMS) { super::__Mark(HX_MARK_ARG); hx::ScriptableMark(__scriptVTable[-1],this,HX_MARK_ARG); } \
-   void __Visit(HX_VISIT_PARAMS) { super::__Visit(HX_VISIT_ARG); hx::ScriptableVisit(__scriptVTable[-1],this,HX_VISIT_ARG); } \
+   SCRIPTABLE_DYNAMIC_VISIT_FUNCTION \
  \
-	Dynamic __Field(const ::String &inName,bool inCallProp) \
+	Dynamic __Field(const ::String &inName,hx::PropertyAccess inCallProp) \
       { Dynamic result; if (hx::ScriptableField(this,inName,inCallProp,result)) return result; return super::__Field(inName,inCallProp); } \
 	Float __INumField(int inFieldID) \
-		{ Float result; if (hx::ScriptableField(this,inFieldID,true,result)) return result; return super::__INumField(inFieldID); } \
+		{ Float result; if (hx::ScriptableField(this,inFieldID,hx::paccAlways,result)) return result; return super::__INumField(inFieldID); } \
 	Dynamic __IField(int inFieldID) \
-		{ Dynamic result; if (hx::ScriptableField(this,inFieldID,true,result)) return result; return super::__IField(inFieldID); } \
-	Dynamic __SetField(const ::String &inName,const Dynamic &inValue,bool inCallProp) \
+		{ Dynamic result; if (hx::ScriptableField(this,inFieldID,hx::paccAlways,result)) return result; return super::__IField(inFieldID); } \
+	Dynamic __SetField(const ::String &inName,const Dynamic &inValue,hx::PropertyAccess inCallProp) \
    { \
       Dynamic value; \
       if (hx::ScriptableSetField(this, inName, inValue,inCallProp,value)) \

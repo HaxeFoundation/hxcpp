@@ -333,4 +333,24 @@ class PathManager
       
       return path;
    }
+
+   public static function clean(path:String)
+   {
+      var result = new Array<String>();
+      for(part in standardize(path).split("/"))
+      {
+         if (part!=".")
+         {
+            if (part=="..")
+            {
+               if (result.length==0)
+                  Log.error("Bad relative path " + path);
+               result.pop();
+            }
+            else
+               result.push(part);
+         }
+      }
+      return result.join("/");
+   }
 }

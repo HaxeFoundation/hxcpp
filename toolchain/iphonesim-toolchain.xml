@@ -24,12 +24,13 @@
   <pchflag value="c++-header" />
   <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
-  <flag value="-g" if="debug"/>
+  <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fmessage-length=0"/>
   <flag value="-pipe"/>
   <flag value="-Wno-trigraphs"/>
   <flag value="-fno-stack-protector"/>
+  <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-fpascal-strings"/>
   <flag value="-fasm-blocks"/>
   <flag value="-Wreturn-type"/>

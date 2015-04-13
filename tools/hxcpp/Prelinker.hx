@@ -107,11 +107,7 @@ class Prelinker
 
          //args = args.concat(libs);
          
-         var split = mExe.split (" ");
-         var exe = split.shift ();
-         args = split.concat (args);
-         
-         var result = ProcessManager.runCommand("", exe, args);
+         var result = ProcessManager.runCommand("", mExe, args);
          if (result!=0)
          {
             Sys.exit(result);

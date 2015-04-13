@@ -6,25 +6,13 @@
 // Windows hack
 #define NOMINMAX
 
+#ifndef HXCPP_API_LEVEL
+   #define HXCPP_API_LEVEL 0
+#endif
 
 #ifdef _MSC_VER
    #include <typeinfo.h>
    namespace hx { typedef ::type_info type_info; }
-   #undef TRUE
-   #undef FALSE
-   #undef BOOLEAN
-   #undef ERROR
-   #undef NO_ERROR
-   #undef DELETE
-   #undef OPTIONS
-   #undef IN
-   #undef OUT
-   #undef ALTERNATE
-   #undef OPTIONAL
-   #undef DOUBLE_CLICK
-   #undef DIFFERENCE
-   #undef POINT
-   #undef RECT
 #else
    #include <typeinfo>
    #include <stdint.h>
@@ -54,6 +42,11 @@
 #ifdef HX_LINUX
   #include <unistd.h>
   #include <cstdio>
+  #include <stddef.h>
+#endif
+
+#ifdef EMSCRIPTEN
+#define HXCPP_ALIGN_FLOAT
 #endif
 
 
@@ -161,6 +154,7 @@ typedef float Float;
 typedef double Float;
 #endif
 
+
 // Extended mapping - cpp namespace
 namespace cpp
 {
@@ -175,7 +169,7 @@ namespace cpp
    typedef __int64 Int64;
    typedef unsigned __int64 UInt64;
    // TODO - EMSCRIPTEN?
-   #elif !defined(EMSCRIPTEN)
+   #else
    typedef int64_t Int64;
    typedef uint64_t UInt64;
    #endif
@@ -192,17 +186,26 @@ namespace hx { class Object; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
 namespace hx { template<typename O> class ObjectPtr; }
+namespace cpp { template<typename S,typename H> class Struct; }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
-class Class_obj;
-typedef hx::ObjectPtr<Class_obj> Class;
+namespace hx {
+   class Class_obj;
+   typedef hx::ObjectPtr<hx::Class_obj> Class;
+}
+
+#if (HXCPP_API_LEVEL < 320) && !defined(__OBJC__)
+typedef hx::Class Class;
+typedef hx::Class_obj Class_obj;
+#endif
+
 class Dynamic;
 class String;
 
 // Use an external routine to throw to avoid sjlj overhead on iphone.
 namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic Throw(Dynamic inDynamic); }
-namespace hx { extern void CriticalError(const String &inError); }
-namespace hx { extern void NullReference(const char *type, bool allowFixup); }
+namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES void CriticalError(const String &inError); }
+namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES void NullReference(const char *type, bool allowFixup); }
 namespace hx { extern String sNone[]; }
 void __hxcpp_check_overflow(int inVal);
 
@@ -217,7 +220,28 @@ public:
    virtual void visitAlloc(void **ioPtr)=0;
 };
 
+
+
+#if (HXCPP_API_LEVEL >= 313)
+enum PropertyAccessMode
+{
+   paccNever   = 0,
+   paccDynamic = 1,
+   paccAlways  = 2,
+};
+typedef PropertyAccessMode PropertyAccess;
+#define HX_PROP_NEVER  hx::paccNever
+#define HX_PROP_DYNAMIC hx::paccDynamic
+#define HX_PROP_ALWAYS hx::paccAlways
+#else
+typedef bool PropertyAccess;
+#define HX_PROP_NEVER  false
+#define HX_PROP_DYNAMIC true
+#define HX_PROP_ALWAYS true
+#endif
+
 } // end namespace hx
+
 
 
 
@@ -236,17 +260,17 @@ public:
 #include <hx/FieldRef.h>
 #include <hx/Anon.h>
 #include "Array.h"
-#include "Class.h"
+#include <hx/Class.h>
 #include "Enum.h"
 #include <hx/Interface.h>
 #include <hx/Telemetry.h>
 #include <hx/StdLibs.h>
+#include <cpp/Pointer.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>
 #include <hx/Debug.h>
 #include <hx/Boot.h>
 #include <hx/Undefine.h>
-#include <cpp/Pointer.h>
 
 #endif
 

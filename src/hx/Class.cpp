@@ -54,10 +54,6 @@ void RegisterClass(const String &inClassName, Class inClass)
 
 
 
-}
-
-using namespace hx;
-
 // -------- Class ---------------------------------------
 
 
@@ -89,19 +85,31 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
    mStaticStorageInfo = inStaticInfo;
    #endif
 
-   if (inStatics)
-   {
-      mStatics = Array_obj<String>::__new(0,0);
-      for(String *s = inStatics; s->length; s++)
-         mStatics->Add( *s );
-   }
-   if (inMembers)
-   {
-      mMembers = Array_obj<String>::__new(0,0);
-      for(String *m = inMembers; m->length; m++)
-         mMembers->Add( *m );
-   }
+   mStatics = dupFunctions(inStatics);
+   mMembers = dupFunctions(inMembers);
    mCanCast = inCanCast;
+}
+
+bool Class_obj::GetNoStaticField(const String &inString, Dynamic &outValue, hx::PropertyAccess inCallProp)
+{
+   return false;
+}
+bool Class_obj::SetNoStaticField(const String &inString, Dynamic &ioValue, hx::PropertyAccess inCallProp)
+{
+   return false;
+}
+
+
+
+::Array< ::String > Class_obj::dupFunctions(String inFuncs[])
+{
+   if (!inFuncs)
+      return null();
+
+   Array<String> result = Array_obj<String>::__new(0,0);
+   for(String *s = inFuncs; s->length; s++)
+         result->Add( *s );
+    return result;
 }
 
 void Class_obj::registerScriptable(bool inOverwrite)
@@ -151,6 +159,7 @@ Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class
 void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(__meta__);
+   HX_MARK_MEMBER(__rtti__);
    if (mMarkFunc)
        mMarkFunc(__inCtx);
 }
@@ -158,6 +167,7 @@ void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 void Class_obj::VisitStatics(hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(__meta__);
+   HX_VISIT_MEMBER(__rtti__);
    if (mVisitFunc)
        mVisitFunc(__inCtx);
 }
@@ -213,41 +223,43 @@ Array<String> Class_obj::GetInstanceFields()
 
 Array<String> Class_obj::GetClassFields()
 {
-   if (!mStatics.mPtr)
-      return new Array_obj<String>(0,0);
-
-   // Class fields do not include user fields...
-   return mStatics->copy();
-   /*
-   Array<String> result = mSuper ? (*mSuper)->GetClassFields() : Array<String>(0,0);
-   if (mStatics.mPtr)
-   {
-      for(int s=0;s<mStatics->size();s++)
-      {
-         const String &mem = mStatics[s];
-         if (result->Find(mem)==-1)
-            result.Add(mem);
-      }
-   }
+   Array<String> result = mStatics.mPtr ? mStatics->copy() : new Array_obj<String>(0,0);
+   if (__rtti__.__s)
+      result->push( HX_CSTRING("__rtti") );
    return result;
-   */
 }
 
 bool Class_obj::__HasField(const String &inString)
 {
+   if (__rtti__.__s && inString==HX_CSTRING("__rtti"))
+      return true;
+
    if (mStatics.mPtr)
       for(int s=0;s<mStatics->size();s++)
          if (mStatics[s]==inString)
             return true;
-   if (mSuper)
-      return (*mSuper)->__HasField(inString);
    return false;
 }
 
-Dynamic Class_obj::__Field(const String &inString, bool inCallProp)
+Dynamic Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("__meta__"))
       return __meta__;
+   #if (HXCPP_API_LEVEL>320)
+   if (inString==HX_CSTRING("__rtti"))
+      return __rtti__;
+   #endif
+
+   if (mGetStaticField)
+   {
+      Dynamic result;
+      if (mGetStaticField(inString,result,inCallProp))
+         return result;
+ 
+      // Throw ?
+      return null();
+   }
+
    // Not the most efficient way of doing this!
    if (!mConstructEmpty)
       return null();
@@ -255,8 +267,22 @@ Dynamic Class_obj::__Field(const String &inString, bool inCallProp)
    return instance->__Field(inString, inCallProp);
 }
 
-Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue, bool inCallProp)
+Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue, hx::PropertyAccess inCallProp)
 {
+
+   if (mSetStaticField)
+   {
+      Dynamic result = inValue;
+      if (mSetStaticField(inString,result,inCallProp))
+         return result;
+ 
+      // Throw ?
+      return inValue;
+   }
+
+
+
+
    // Not the most efficient way of doing this!
    if (!mConstructEmpty)
       return null();
@@ -303,8 +329,6 @@ const hx::StaticInfo* Class_obj::GetStaticStorage(String inName)
 #endif
 
 
-namespace hx
-{
 
 void MarkClassStatics(hx::MarkContext *__inCtx)
 {
@@ -355,6 +379,6 @@ void VisitClassStatics(hx::VisitContext *__inCtx)
 #endif
 
 
-}
+} // End namespace hx
 
 

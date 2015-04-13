@@ -36,7 +36,7 @@ template<> inline void MarkMember<String>(String &outT,hx::MarkContext *__inCtx)
 template<> inline void MarkMember<Void>(Void &outT,hx::MarkContext *__inCtx) {  }
 
 
-
+#ifdef HXCPP_VISIT_ALLOCS
 template<typename T> inline void VisitMember(T &outT,hx::VisitContext *__inCtx) { }
 
 template<typename T> inline void VisitMember(hx::ObjectPtr<T> &outT,hx::VisitContext *__inCtx)
@@ -64,7 +64,7 @@ template<> inline void VisitMember<String>(String &outT,hx::VisitContext *__inCt
    HX_VISIT_STRING(outT.__s);
 }
 template<> inline void VisitMember<Void>(Void &outT,hx::VisitContext *__inCtx) {  }
-
+#endif
 
 
 

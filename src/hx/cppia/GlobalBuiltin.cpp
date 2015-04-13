@@ -57,6 +57,37 @@ public:
    }
 };
 
+double memory_get_float( Dynamic inValue, int inIndex) 
+{
+   return __hxcpp_memory_get_float(inValue, inIndex);
+}
+
+template<typename ARG0, typename ARG1, double (*FUNC)(ARG0,ARG1)>
+class FloatBuiltin2 : public CppiaExpr
+{
+public:
+   Expressions args;
+
+   FloatBuiltin2(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
+
+   const char *getName() { return "FloatBuiltin2"; }
+   ExprType getType() { return etFloat; }
+
+   int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
+   void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
+   String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
+   Float runFloat(CppiaCtx *ctx)
+   {
+      ARG0 val0;
+      runValue(val0, ctx, args[0]);
+      BCR_CHECK;
+      ARG1 val1;
+      runValue(val1, ctx, args[1]);
+      BCR_CHECK;
+      return  FUNC(val0,val1);
+   }
+};
 
 
 
@@ -70,6 +101,10 @@ CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioE
    if (function==HX_CSTRING("__hxcpp_memory_set_byte") )
    {
       return new VoidBuiltin2<int,int,__hxcpp_memory_set_byte>(src,ioExpressions);
+   }
+   else if (function==HX_CSTRING("__hxcpp_memory_get_float") )
+   {
+      return new FloatBuiltin2< Dynamic,int, memory_get_float>(src,ioExpressions);
    }
  
    printf("Unknown function : %s\n", function.__s );

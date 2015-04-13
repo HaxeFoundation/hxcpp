@@ -11,6 +11,46 @@ import cpp.vm.Thread;
 
 class ProcessManager
 {
+   static function dup(inArgs:Array<String>)
+   {
+      if (inArgs==null)
+         return [];
+      return inArgs.copy();
+   }
+
+   // Command may be a pseudo command, like "xcrun --sdk abc", or 'python "some script"'
+   // Here we split the first word into command and move the rest into args, being careful
+   //  to preserve quoted words
+   static function combineCommand(command:String, args:Array<String>)
+   {
+      var parts = new Array<String>();
+      var c = command;
+      var quoted = ~/^\s*"([^"]+)"(.*)/;
+      var word = ~/^\s*(\S+)(.*)/;
+      while(c.length>0)
+      {
+         if (quoted.match(c))
+         {
+            parts.push( quoted.matched(1) );
+            c = quoted.matched(2);
+         }
+         else if (word.match(c))
+         {
+            parts.push( word.matched(1) );
+            c = word.matched(2);
+         }
+         else
+            break;
+      }
+      if (parts.length>1)
+      {
+         command = parts.shift();
+         while(parts.length>0)
+            args.unshift( parts.pop() );
+      }
+      return PathManager.escape(command);
+   }
+
    private static function formatMessage(command:String, args:Array<String>, colorize:Bool = true):String
    {
       var message = "";
@@ -63,14 +103,17 @@ class ProcessManager
       return message;
    }
 
-   public static function runCommand(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):Int
+   public static function runCommand(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false,?text:String):Int
    {
+      args = dup(args);
+      command = combineCommand(command,args);
+
+
       if (print && !Log.verbose)
       {
          Log.info(formatMessage(command, args));
       }
       
-      command = PathManager.escape(command);
       
       if (safeExecute)
       {
@@ -81,7 +124,7 @@ class ProcessManager
                Log.error("The specified target path \"" + path + "\" does not exist");
                return 1;
             }
-            return _runCommand(path, command, args);
+            return _runCommand(path, command, args, text);
          }
          catch (e:Dynamic)
          {
@@ -96,19 +139,60 @@ class ProcessManager
       }
       else
       {
-         return _runCommand(path, command, args);
+         return _runCommand(path, command, args, text);
       }
    }
 
-   public static function runProcess(path:String, command:String, args:Array<String>, waitForOutput:Bool = true, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):String
+   public static function readStderr(inCommand:String,inArgs:Array<String>)
    {
+      inArgs = dup(inArgs);
+      inCommand = combineCommand(inCommand,inArgs);
+
+      var result = new Array<String>();
+      var proc = new Process(inCommand,inArgs);
+      try
+      {
+         while(true)
+         {
+            var out = proc.stderr.readLine();
+            result.push(out);
+         }
+      } catch(e:Dynamic){}
+      proc.close();
+      return result;
+   }
+
+   public static function readStdout(command:String,args:Array<String>)
+   {
+      args = dup(args);
+      command = combineCommand(command,args);
+
+
+      var result = new Array<String>();
+      var proc = new Process(command,args);
+      try
+      {
+         while(true)
+         {
+            var out = proc.stdout.readLine();
+            result.push(out);
+         }
+      } catch(e:Dynamic){}
+      proc.close();
+      return result;
+   }
+
+   public static function runProcess(path:String, command:String, args:Array<String>, waitForOutput:Bool = true, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false, ?text:String):String
+   {
+      args = dup(args);
+      command = combineCommand(command,args);
+
       if (print && !Log.verbose)
       {
          Log.info(formatMessage(command, args));
       }
-      
-      command = PathManager.escape(command);
-      
+
+
       if (safeExecute)
       {
          try
@@ -117,7 +201,7 @@ class ProcessManager
             {
                Log.error("The specified target path \"" + path + "\" does not exist");
             }
-            return _runProcess(path, command, args, waitForOutput, ignoreErrors);
+            return _runProcess(path, command, args, waitForOutput, ignoreErrors, text);
          }
          catch (e:Dynamic)
          {
@@ -130,7 +214,7 @@ class ProcessManager
       }
       else
       {  
-         return _runProcess(path, command, args, waitForOutput, ignoreErrors);   
+         return _runProcess(path, command, args, waitForOutput, ignoreErrors, text);
       }
    }
    public static function runProcessLine(path:String, command:String, args:Array<String>, waitForOutput:Bool = true, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false):String
@@ -142,7 +226,7 @@ class ProcessManager
    }
    
   
-   private static function _runCommand(path:String, command:String, args:Array<String>):Int
+   private static function _runCommand(path:String, command:String, args:Array<String>, inText:String):Int
    {
       var oldPath:String = "";
       
@@ -154,7 +238,8 @@ class ProcessManager
          Sys.setCwd(path);
       }
       
-      Log.info("", " - \x1b[1mRunning command:\x1b[0m " + formatMessage(command, args));
+      var text = inText==null ?  "Running command" : inText;
+      Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
       
       var result = 0;
       
@@ -180,7 +265,7 @@ class ProcessManager
       return result;
    }
 
-   private static function _runProcess(path:String, command:String, args:Array<String>, waitForOutput:Bool, ignoreErrors:Bool):String
+   private static function _runProcess(path:String, command:String, args:Array<String>, waitForOutput:Bool, ignoreErrors:Bool, inText:String):String
    {
       var oldPath:String = "";
       
@@ -192,7 +277,8 @@ class ProcessManager
          Sys.setCwd(path);
       }
       
-      Log.info("", " - \x1b[1mRunning process:\x1b[0m " + formatMessage(command, args));
+      var text = inText==null ? "Running process" : inText;
+      Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
       
       var output = "";
       var result = 0;
@@ -265,13 +351,14 @@ class ProcessManager
    }
 
    // This function will return 0 on success, or non-zero error code
-   public static function runProcessThreaded(command:String, args:Array<String>):Int
+   public static function runProcessThreaded(command:String, args:Array<String>, inText:String):Int
    {
+      args = dup(args);
+      command = combineCommand(command,args);
+
       if (!Log.verbose)
          Log.info(formatMessage(command, args));
       
-      command = PathManager.escape(command);
-
       Log.lock();
       // Other thread may have already thrown an error
       if (BuildTool.threadExitCode!=0)
@@ -279,7 +366,9 @@ class ProcessManager
          Log.unlock();
          return BuildTool.threadExitCode;
       }
-      Log.info("", " - \x1b[1mRunning process :\x1b[0m " + formatMessage(command, args));
+
+      var text = inText==null ? "Running process" : inText;
+      Log.info("", " - \x1b[1m" + text + " :\x1b[0m " + formatMessage(command, args));
       Log.unlock();
 
       var output = new Array<String>();

@@ -40,7 +40,7 @@ bool FieldMapHas(FieldMap *inMap, const String &inName)
 
 void FieldMapSet(FieldMap *inMap, const String &inName, const Dynamic &inValue)
 {
-   __string_hash_set(*inMap, inName, inValue);
+   __string_hash_set(*inMap, inName, inValue,true);
 }
 
 
@@ -75,7 +75,7 @@ void Anon_obj::__Visit(hx::VisitContext *__inCtx)
 }
 #endif
 
-Dynamic Anon_obj::__Field(const String &inName, bool inCallProp)
+Dynamic Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
 {
    return __string_hash_get(mFields,inName);
 }
@@ -91,15 +91,15 @@ bool Anon_obj::__Remove(String inKey)
 }
 
 
-Dynamic Anon_obj::__SetField(const String &inName,const Dynamic &inValue, bool inCallProp)
+Dynamic Anon_obj::__SetField(const String &inName,const Dynamic &inValue, hx::PropertyAccess inCallProp)
 {
-   __string_hash_set(mFields,inName,inValue);
+   __string_hash_set(mFields,inName,inValue,true);
    return inValue;
 }
 
 Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetThisPointer)
 {
-   __string_hash_set(mFields,inName,inValue);
+   __string_hash_set(mFields,inName,inValue,true);
    if (inSetThisPointer && inValue.GetPtr())
       inValue.GetPtr()->__SetThis(this);
    return this;
@@ -124,7 +124,7 @@ String Anon_obj::__ToString() const { return HX_CSTRING("Anon"); }
 
 Dynamic Anon_obj::__Create(DynamicArray inArgs) { return Anon(new Anon_obj); }
 
-Class Anon_obj::__mClass;
+hx::Class Anon_obj::__mClass;
 
 
 void Anon_obj::__boot()
