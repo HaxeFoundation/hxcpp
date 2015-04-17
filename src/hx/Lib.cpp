@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <cstdlib>
 
 #ifdef ANDROID
 #include <android/log.h>
