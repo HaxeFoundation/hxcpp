@@ -2715,6 +2715,12 @@ void __hxt_new_array(void* obj, int inSize)
   hx::CallStack::HXTAllocation(obj, inSize, (const char*)"Array");
   #endif
 }
+void __hxt_new_hash(void* obj, int inSize)
+{
+  #ifdef HXCPP_STACK_TRACE
+  hx::CallStack::HXTAllocation(obj, inSize, (const char*)"Hash");
+  #endif
+}
 void __hxt_gc_new(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE
