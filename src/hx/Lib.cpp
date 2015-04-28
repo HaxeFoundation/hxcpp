@@ -107,6 +107,7 @@ typedef hx::Object * (*prim_mult)(hx::Object **inArray,int inArgs);
 
 typedef void *(*FundFunc)(); 
 
+extern const char* EXTERN_CFFI_CSTRING;
 
 class ExternalPrimitive : public hx::Object
 {
@@ -114,7 +115,11 @@ public:
    ExternalPrimitive(void *inProc,int inArgCount,const String &inName) :
        mProc(inProc), mArgCount(inArgCount), mName(inName)
    {
+#ifdef HXCPP_PROFILE_EXTERNS
      cmName = ("extern::cffi "+mName).dupConst().__CStr();
+#else
+     cmName = EXTERN_CFFI_CSTRING; // must be exact reference
+#endif
    }
 
    virtual int __GetType() const { return vtFunction; }
@@ -122,7 +127,7 @@ public:
 
    Dynamic __run()
    {
-      HX_STACK_FRAME("extern", "cffi",0,cmName, __FILE__, __LINE__,0);
+      HX_STACK_FRAME("extern", "cffi",0, cmName, __FILE__, __LINE__,0);
       if (mArgCount!=0) throw HX_INVALID_ARG_COUNT;
       if (mProc==0) hx::Throw( HX_NULL_FUNCTION_POINTER );
       return ((prim_0)mProc)();

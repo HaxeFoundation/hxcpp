@@ -27,6 +27,10 @@
 #define __has_builtin(x) 0
 #endif
 
+#ifndef HXCPP_PROFILE_EXTERNS
+const char* EXTERN_CFFI_CSTRING = "extern::cffi";
+#endif
+
 // These should implement write and read memory barrier, but since there are
 // no obvious portable implementations, they are currently left unimplemented
 static void write_memory_barrier()
@@ -2504,6 +2508,17 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     // }
 
     int stackid = ComputeCallStackId(stack);
+
+    // Optionally ignore from extern::cffi - very expensive to track allocs
+    // for every external call, hashes for every SDL event (Lime's
+    // ExternalInterface.external_handler()), etc
+#ifndef HXCPP_PROFILE_EXTERNS
+    int depth = stack->GetDepth();
+    if (stack->GetFullNameAtDepth(depth)==EXTERN_CFFI_CSTRING) {
+      alloc_mutex.Unlock();
+      return;
+    }
+#endif
 
     if (_last_obj!=0) lookup_last_object_type();
     if (type==0) {
