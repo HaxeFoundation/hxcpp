@@ -28,7 +28,7 @@
 #endif
 
 #ifndef HXCPP_PROFILE_EXTERNS
-const char* EXTERN_CFFI_CSTRING = "extern::cffi";
+const char* EXTERN_CLASS_NAME = "extern";
 #endif
 
 // These should implement write and read memory barrier, but since there are
@@ -2494,6 +2494,17 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
 {
     if (ignoreAllocs>0 || !allocations_enabled) return;
 
+    // Optionally ignore from extern::cffi - very expensive to track allocs
+    // for every external call, hashes for every SDL event (Lime's
+    // ExternalInterface.external_handler()), etc
+#ifndef HXCPP_PROFILE_EXTERNS
+    int depth = stack->GetDepth();
+    if (stack->GetCurrentStackFrame()->className==EXTERN_CLASS_NAME) {
+      alloc_mutex.Unlock();
+      return;
+    }
+#endif
+
     int obj_id = __hxt_ptr_id(obj);
 
     alloc_mutex.Lock();
@@ -2508,17 +2519,6 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     // }
 
     int stackid = ComputeCallStackId(stack);
-
-    // Optionally ignore from extern::cffi - very expensive to track allocs
-    // for every external call, hashes for every SDL event (Lime's
-    // ExternalInterface.external_handler()), etc
-#ifndef HXCPP_PROFILE_EXTERNS
-    int depth = stack->GetDepth();
-    if (stack->GetFullNameAtDepth(depth)==EXTERN_CFFI_CSTRING) {
-      alloc_mutex.Unlock();
-      return;
-    }
-#endif
 
     if (_last_obj!=0) lookup_last_object_type();
     if (type==0) {
