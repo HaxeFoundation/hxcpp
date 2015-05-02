@@ -305,9 +305,9 @@ const hx::StorageInfo* Class_obj::GetMemberStorage(String inName)
          if (s->name == inName)
             return s;
       }
-      if (mSuper)
-         return (*mSuper)->GetMemberStorage(inName);
    }
+   if (mSuper)
+      return (*mSuper)->GetMemberStorage(inName);
    return 0;
 }
 

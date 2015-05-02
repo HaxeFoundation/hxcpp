@@ -951,13 +951,19 @@ struct ScriptCallable : public CppiaDynamicExpr
    void addExtraDefaults(CppiaCtx *ctx,int inHave)
    {
       if (inHave>argCount)
-         throw sInvalidArgCount;
+      {
+         return;
+         //throw sInvalidArgCount;
+      }
 
       for(int a=inHave;a<argCount;a++)
       {
          CppiaStackVar &var = args[a];
          if (!pushDefault(ctx,a))
+         {
+            return;
             throw sInvalidArgCount;
+         }
       }
    }
 
@@ -2132,6 +2138,32 @@ struct CppiaClassInfo
       return null();
    }
 
+
+   bool hasStaticValue(const String &inName)
+   {
+      if (findStaticGetter(inName))
+         return true;
+
+      CppiaExpr *closure = findFunction(true,inName);
+      if (closure)
+         return true;
+
+      // Look for dynamic function (variable)
+      for(int i=0;i<staticDynamicFunctions.size();i++)
+         if (cppia.strings[ staticDynamicFunctions[i]->nameId  ]==inName)
+            return true;
+
+      for(int i=0;i<staticVars.size();i++)
+      {
+         CppiaVar &var = *staticVars[i];
+         if (var.name==inName)
+            return true;
+      }
+
+      return false;
+   }
+
+
    Dynamic setStaticValue(const String &inName,const Dynamic &inValue ,hx::PropertyAccess  inCallProp)
    {
       if (inCallProp==paccDynamic)
@@ -2441,12 +2473,15 @@ public:
       return info->setStaticValue(inName,inValue,inCallProp);
    }
 
-   bool __HasField(const String &inString)
+   bool __HasField(const String &inName)
    {
-      printf("Static has field!\n");
-      return null();
+      if (inName==HX_CSTRING("__meta__"))
+         return __meta__!=null();
+
+      return info->hasStaticValue(inName);
    }
 };
+
 
 hx::Class_obj *createCppiaClass(CppiaClassInfo *inInfo) { return new CppiaClass(inInfo); }
 void  linkCppiaClass(hx::Class_obj *inClass, CppiaModule &cppia, String inName)
@@ -5186,6 +5221,7 @@ struct GetFieldByLinkage : public CppiaExpr
                   break;
             case fsByte:
             case fsUnknown:
+                printf("TODO - byte/unkown GetFieldByLinkage\n");
                 ;// todo
          }
       }
@@ -5219,9 +5255,11 @@ struct GetFieldByLinkage : public CppiaExpr
       //  out to actaully be Dynamic (eg template types)
       if (!type->isInterface && type->name!=HX_CSTRING("Dynamic") )
       {
-         printf("   GetFieldByLinkage %s (%p %p) '%s' fallback\n", type->name.__s, type->haxeClass.mPtr, type->cppiaClass, field.__s);
+         printf("   GetFieldByLinkage %s (%p %p %p) '%s' fallback\n", type->name.__s, object, type->haxeClass.mPtr, type->cppiaClass, field.__s);
          if (type->cppiaClass)
             type->cppiaClass->dump();
+         else
+           printf(" - is Native class\n");
       }
 
       CppiaExpr *result = new GetFieldByName(this, fieldId, object);

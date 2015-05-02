@@ -29,7 +29,6 @@ extern class RGB
 @:native("cpp.Reference<RGB>")
 extern class RGBRef extends RGB
 {
-	public var value(get,never):RGBStruct;
 }
 
 
