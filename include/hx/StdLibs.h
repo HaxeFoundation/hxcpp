@@ -222,6 +222,8 @@ void    __hxcpp_tls_set(int inID,Dynamic inVal);
 
 Array<String> __hxcpp_get_call_stack(bool inSkipLast);
 Array<String> __hxcpp_get_exception_stack();
+#define HXCPP_HAS_CLASSLIST
+Array<String> __hxcpp_get_class_list();
 
 // --- Profile -------------------------------------------------------------------
 

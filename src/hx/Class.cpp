@@ -381,4 +381,18 @@ void VisitClassStatics(hx::VisitContext *__inCtx)
 
 } // End namespace hx
 
+Array<String> __hxcpp_get_class_list()
+{
+   Array<String> result = Array_obj<String>::__new();
+   if (hx::sClassMap)
+   {
+      for(hx::ClassMap::iterator i=hx::sClassMap->begin(); i!=hx::sClassMap->end(); ++i)
+      {
+         if (i->second.mPtr)
+            result->push( i->first );
+      }
+   }
+   return result;
+}
+
 
