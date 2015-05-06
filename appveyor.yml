@@ -15,6 +15,9 @@ environment:
         ADD_REVISION: 1
         OCAMLOPT: ocamlopt.opt
         MINGW_ARCH: i686
+    matrix:
+        - HXCPP_ARCH: "32"
+        - HXCPP_ARCH: "64"
 
 install:
     # Install ocaml using wodi
@@ -48,15 +51,13 @@ build_script:
     - cd %APPVEYOR_BUILD_FOLDER%\tools\hxcpp
     - haxe compile.hxml
     - cd %APPVEYOR_BUILD_FOLDER%\project
-    - neko build.n -verbose
+    - neko build.n windows-m%HXCPP_ARCH% -verbose
 
 test_script:
-    # - cd %APPVEYOR_BUILD_FOLDER%\test\ndlls
-    # - haxe compile.hxml && .\cpp\Test
-    # - haxe compile64.hxml && .\cpp64\Test
+    - cd %APPVEYOR_BUILD_FOLDER%\test\ndlls
+    - haxe compile%HXCPP_ARCH%.hxml && .\cpp%HXCPP_ARCH%\Test
     - cd %APPVEYOR_BUILD_FOLDER%\test\haxe
-    - haxe compile.hxml -debug && .\bin\TestMain-debug
+    - haxe compile.hxml -debug -D HXCPP_M%HXCPP_ARCH% && .\bin\TestMain-debug
     # tests from haxe repo
     - cd %HAXE_ROOT%\tests\unit
-    - haxe compile-cpp.hxml -D HXCPP_M32 && .\bin\cpp\Test-debug && rd /s /q bin\cpp
-    - haxe compile-cpp.hxml -D HXCPP_M64 && .\bin\cpp\Test-debug
+    - haxe compile-cpp.hxml -D HXCPP_M%HXCPP_ARCH% && .\bin\cpp\Test-debug
