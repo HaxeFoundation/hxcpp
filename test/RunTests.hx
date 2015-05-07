@@ -41,7 +41,7 @@ class RunTests
       setDir("ndlls");
 
       command("haxe", ["compile32.hxml"] );
-      command("cpp"+sep+"Test",[]);
+      command("cpp32"+sep+"Test",[]);
    }
 
    public static function ndllDynamic64()
