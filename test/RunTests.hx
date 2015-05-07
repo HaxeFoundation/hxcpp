@@ -40,7 +40,7 @@ class RunTests
    {
       setDir("ndlls");
 
-      command("haxe", ["compile.hxml"] );
+      command("haxe", ["compile32.hxml"] );
       command("cpp"+sep+"Test",[]);
    }
 
