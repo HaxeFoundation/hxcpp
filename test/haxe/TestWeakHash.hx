@@ -42,7 +42,7 @@ class TestWeakHash extends haxe.unit.TestCase
       }
       // There may be one or two values lurking on the stack, which is conservatively marked
       if (oddFound>2)
-         trace("Too many odd values retained " + oddFound);
+         trace('\nToo many odd values retained $oddFound\n');
       assertTrue(valid==expect);
    }
 
@@ -65,7 +65,7 @@ class TestWeakHash extends haxe.unit.TestCase
       }
       catch(e:Dynamic)
       {
-         trace(e);
+         Sys.println('\nError: $e\n');
          err = e;
       }
       assertTrue(err=="");
