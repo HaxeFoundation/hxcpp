@@ -491,7 +491,13 @@ template<> inline bool &runValue(bool& outValue, CppiaCtx *ctx, CppiaExpr *expr)
 }
 
 
-template<> inline Float &runValue(Float& outValue, CppiaCtx *ctx, CppiaExpr *expr)
+template<> inline double &runValue(double& outValue, CppiaCtx *ctx, CppiaExpr *expr)
+{
+   return outValue = expr->runFloat(ctx);
+}
+
+
+template<> inline float &runValue(float& outValue, CppiaCtx *ctx, CppiaExpr *expr)
 {
    return outValue = expr->runFloat(ctx);
 }

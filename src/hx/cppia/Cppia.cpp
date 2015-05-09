@@ -5158,6 +5158,7 @@ struct GetFieldByLinkage : public CppiaExpr
       fieldId = stream.getInt();
       object = inThisObject ? 0 : createCppiaExpr(stream);
    }
+
    const char *getName() { return "GetFieldByLinkage"; }
    CppiaExpr *link(CppiaModule &inModule)
    {
@@ -5602,6 +5603,245 @@ struct DynamicArrayI : public CppiaDynamicExpr
    }
 };
 
+
+
+struct ArrayAccessI : public CppiaDynamicExpr
+{
+   CppiaExpr *object;
+   CppiaExpr *index;
+   CppiaExpr *value;
+
+   int            classId;
+   ScriptFunction __get;
+   ScriptFunction __set;
+   ExprType  accessType;
+
+   AssignOp  assign;
+   CrementOp crement;
+
+   ArrayAccessI(CppiaExpr *inSrc, int inClassId, CppiaExpr *inObj, CppiaExpr *inI)
+     : CppiaDynamicExpr(inSrc)
+   {
+      object = inObj;
+      index = inI;
+      value = 0;
+      assign = aoNone;
+      crement = coNone;
+      classId = inClassId;
+      __get = 0;
+      __set = 0;
+   }
+   CppiaExpr *link(CppiaModule &inModule)
+   {
+      if (object)
+         object = object->link(inModule);
+
+
+      index = index->link(inModule);
+
+      TypeData *type = inModule.types[classId];
+      // TODO - not always cppiaClass
+      if (type->cppiaClass)
+         throw "ArrayAccess interface can't be implemented in cppia";
+
+      __get = type->haxeBase->findFunction("__get");
+      if (!__get.execute)
+      {
+         printf("Class %s missing __get\n", type->name.__s);
+         throw "Bad array access - __get";
+      }
+      __set = type->haxeBase->findFunction("__set");
+      if (!__set.execute)
+      {
+         printf("Class %s missing __set\n", type->name.__s);
+         throw "Bad array access - __set";
+      }
+
+      if (__get.signature[1]!='i' || __set.signature[1]!='i')
+         throw "__get/__set should take an int";
+
+      if (__get.signature[0]!=__set.signature[2])
+         throw "Mismatch __get/__set array access";
+
+      switch(__get.signature[0])
+      {
+         case sigInt: accessType = etInt; break;
+         case sigFloat: accessType = etFloat; break;
+         case sigString: accessType = etString; break;
+         case sigObject: accessType = etObject; break;
+         default: throw "Bad signature on __get";
+      }
+
+      if (value)
+         value = value->link(inModule);
+
+      DBGLOG("Created ARRAYI wrapper %s %d %s / %s\n", type->name.__s, accessType, __get.signature, __set.signature);
+
+      return this;
+   }
+
+   template<typename T>
+   void setResult(CppiaCtx *ctx,T &outValue)
+   {
+      #ifdef DEBUG_RETURN_TYPE
+      gLastRet = accessType;
+      #endif
+      if (sizeof(outValue)>0)
+      {
+         if (accessType == etInt)
+            SetVal(outValue,ctx->getInt());
+         else if (accessType == etFloat)
+            SetVal(outValue,ctx->getFloat());
+         else if (accessType == etString)
+            SetVal(outValue,ctx->getString());
+         else if (accessType == etObject)
+            SetVal(outValue,ctx->getObject());
+      }
+   }
+
+   
+   template<typename T>
+   void run(CppiaCtx *ctx,T &outValue)
+   {
+      unsigned char *pointer = ctx->pointer;
+      unsigned char *frame = ctx->frame;
+
+      hx::Object *obj = object ? object->runObject(ctx) : ctx->getThis(false);
+
+      BCR_VCHECK;
+      CPPIA_CHECK(obj);
+      int i = index->runInt(ctx);
+      BCR_VCHECK;
+
+      if (crement==coNone && (assign==aoNone || assign==aoSet) )
+      {
+         unsigned char *pointer = ctx->pointer;
+
+         if (assign==aoSet)
+         {
+            if (accessType == etInt)
+            {
+               int val = value->runInt(ctx);
+               BCR_VCHECK;
+               ctx->pushObject(obj);
+               ctx->pushInt(i);
+               ctx->pushInt(val);
+            }
+            else if (accessType == etFloat)
+            {
+               Float val = value->runFloat(ctx);
+               BCR_VCHECK;
+               ctx->pushObject(obj);
+               ctx->pushInt(i);
+               ctx->pushFloat(val);
+            }
+            else if (accessType == etString)
+            {
+               String val = value->runString(ctx);
+               BCR_VCHECK;
+               ctx->pushObject(obj);
+               ctx->pushInt(i);
+               ctx->pushString(val);
+            }
+            else if (accessType == etObject)
+            {
+               hx::Object *val = value->runObject(ctx);
+               BCR_VCHECK;
+               ctx->pushObject(obj);
+               ctx->pushInt(i);
+               ctx->pushObject(val);
+            }
+
+            AutoStack a(ctx,pointer);
+            __set.execute(ctx);
+            BCR_VCHECK;
+            setResult(ctx,outValue);
+         }
+         else
+         {
+            ctx->pushObject(obj);
+            ctx->pushInt(i);
+
+            AutoStack a(ctx,pointer);
+            BCR_VCHECK;
+            setResult(ctx,outValue);
+         }
+
+         return;
+      }
+
+
+   #if 0
+      if (crement!=coNone)
+      {
+         Dynamic val0 = obj->__GetItem(i);
+         Dynamic val1 = val0 + (crement<=coPostInc ? 1 : -1);
+         obj->__SetItem(i, val1);
+         return crement & coPostInc ? val0.mPtr : val1.mPtr;
+      }
+      if (assign == aoSet)
+      {
+         hx::Object *val = value->runObject(ctx);
+         BCR_CHECK;
+         return obj->__SetItem(i, val).mPtr;
+      }
+
+      Dynamic val0 = obj->__GetItem(i);
+      Dynamic val1;
+
+      switch(assign)
+      {
+         case aoAdd: val1 = val0 + Dynamic(value->runObject(ctx)); break;
+         case aoMult: val1 = val0 * value->runFloat(ctx); break;
+         case aoDiv: val1 = val0 / value->runFloat(ctx); break;
+         case aoSub: val1 = val0 - value->runFloat(ctx); break;
+         case aoAnd: val1 = (int)val0 & value->runInt(ctx); break;
+         case aoOr: val1 = (int)val0 | value->runInt(ctx); break;
+         case aoXOr: val1 = (int)val0 ^ value->runInt(ctx); break;
+         case aoShl: val1 = (int)val0 << value->runInt(ctx); break;
+         case aoShr: val1 = (int)val0 >> value->runInt(ctx); break;
+         case aoUShr: val1 = hx::UShr((int)val0,value->runInt(ctx)); break;
+         case aoMod: val1 = hx::Mod(val0 ,value->runFloat(ctx)); break;
+         default: ;
+      }
+      BCR_CHECK;
+      obj->__SetItem(i,val1);
+      return val1.mPtr;
+   #endif
+   }
+
+   CppiaExpr  *makeSetter(AssignOp op,CppiaExpr *inValue)
+   {
+      if (op!=aoSet)
+         throw "TODO - arrayAccess undefined setter";
+      assign = op;
+      value = inValue;
+      return this;
+   }
+   CppiaExpr  *makeCrement(CrementOp inOp)
+   {
+      throw "TODO - arrayAccess makeCrement";
+      crement = inOp;
+      return this;
+   }
+
+   void runVoid(CppiaCtx *ctx)
+      { null val; run(ctx,val); BCR_VCHECK; }
+
+   int runInt(CppiaCtx *ctx)
+      { int val; run(ctx,val); BCR_CHECK; return val; }
+
+   Float runFloat(CppiaCtx *ctx)
+      { Float val; run(ctx,val); BCR_CHECK; return val; }
+
+   ::String    runString(CppiaCtx *ctx)
+      { String val; run(ctx,val); BCR_CHECK; return val; }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+      { Dynamic val; run(ctx,val); BCR_CHECK; return val.mPtr; }
+};
+
+
 struct ArrayIExpr : public CppiaExpr
 {
    int       classId;
@@ -5638,13 +5878,14 @@ struct ArrayIExpr : public CppiaExpr
       {
          if (!type->arrayType)
          {
-            printf("ARRAYI of non array-type %s\n", type->name.__s);
-            throw "Bad ARRAYI";
+            replace = new ArrayAccessI(this,classId, thisExpr, iExpr);
          }
-         Expressions val;
-         val.push_back(iExpr);
-   
-         replace = createArrayBuiltin(this, type->arrayType, thisExpr, HX_CSTRING("__get"), val);
+         else
+         {
+            Expressions val;
+            val.push_back(iExpr);
+            replace = createArrayBuiltin(this, type->arrayType, thisExpr, HX_CSTRING("__get"), val);
+         }
       }
       replace = replace->link(inModule);
 
@@ -5684,7 +5925,6 @@ struct EnumIExpr : public CppiaDynamicExpr
    }
 
 };
-
 
 
 struct VarDecl : public CppiaVoidExpr
