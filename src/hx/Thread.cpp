@@ -284,6 +284,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 
    #if defined(HX_WINRT)
 
+   bool ok = true;
    try
    {
      auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
@@ -296,6 +297,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
    }
    catch (...)
    {
+      ok = false;
    }
 
    #elif defined(HX_WINDOWS)
