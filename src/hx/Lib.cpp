@@ -244,21 +244,29 @@ String FindHaxelib(String inLib)
 
    if (haxepath.length==0)
    {
+      haxepath = GetEnv("HAXELIB_PATH");
+      if (loadDebug)
+         printf("HAXELIB_PATH env:%s\n", haxepath.__s);
+   }
+
+   if (haxepath.length==0)
+   {
+       #ifdef _WIN32
+       String home = GetEnv("HOMEDRIVE") + GetEnv("HOMEPATH") + HX_CSTRING("/.haxelib");
+       #else
+       String home = GetEnv("HOME") + HX_CSTRING("/.haxelib");
+       #endif
+       haxepath = GetFileContents(home);
+       if (loadDebug)
+          printf("HAXEPATH home:%s\n", haxepath.__s);
+   }
+
+   if (haxepath.length==0)
+   {
       haxepath = GetEnv("HAXEPATH");
       if (loadDebug)
          printf("HAXEPATH env:%s\n", haxepath.__s);
-      if (haxepath.length==0)
-      {
-          #ifdef _WIN32
-          String home = GetEnv("HOMEDRIVE") + GetEnv("HOMEPATH") + HX_CSTRING("/.haxelib");
-          #else
-          String home = GetEnv("HOME") + HX_CSTRING("/.haxelib");
-          #endif
-          haxepath = GetFileContents(home);
-          if (loadDebug)
-             printf("HAXEPATH home:%s\n", haxepath.__s);
-      }
-      else
+      if (haxepath.length>0)
       {
          haxepath += HX_CSTRING("/lib");
       }
