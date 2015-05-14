@@ -1382,6 +1382,10 @@ private:
           mBreakpoint(-1), mWaiting(false), mContinueCount(0), mProfiler(0),
           mUnwindException(false)
     {
+      mProfiler = 0;
+#ifdef HXCPP_TELEMETRY
+      mTelemetry = 0;
+#endif
     }
 
     void DoBreak(ThreadStatus status, int breakpoint,
