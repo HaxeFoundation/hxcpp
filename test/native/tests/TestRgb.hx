@@ -14,6 +14,8 @@ class TestRgb extends haxe.unit.TestCase
       // Structure-like syntax
       var rgbStruct:RGBStruct = null;
       rgbStruct.r = 1;
+      rgbStruct = null;
+      rgbStruct.r = 1;
       rgbStruct.g = 2;
       rgbStruct.b = 3;
       assertTrue( rgbStruct.toInt() == 0x010203 );

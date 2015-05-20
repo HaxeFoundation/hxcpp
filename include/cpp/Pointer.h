@@ -83,7 +83,7 @@ public:
    inline Struct( const Reference<T> &);
 
    inline Struct<T,HANDLER> &operator=( const T &inRHS ) { value = inRHS; return *this; }
-   inline Struct<T,HANDLER> &operator=( const null & ) { value = T(); }
+   inline Struct<T,HANDLER> &operator=( const null & ) { value = T(); return *this; }
    inline Struct<T,HANDLER> &operator=( const Dynamic &inRHS ) { return *this = Struct<T,HANDLER>(inRHS); }
 
    operator Dynamic() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
