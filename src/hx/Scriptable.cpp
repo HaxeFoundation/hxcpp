@@ -10,6 +10,11 @@
 #define DBGLOG printf
 
 
+#ifdef HX_ANDROID
+  #define atof(x) strtod(x,0)
+#endif
+
+
 namespace hx
 {
 #if 0

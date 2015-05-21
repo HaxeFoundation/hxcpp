@@ -11,6 +11,12 @@
 #include "CppiaStream.h"
 
 
+#ifdef HX_ANDROID
+  #define atof(x) strtod(x,0)
+#endif
+
+
+
 namespace hx
 {
 //#define SJLJ_RETURN 1

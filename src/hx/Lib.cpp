@@ -468,8 +468,10 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    String deviceExt = __hxcpp_get_dll_extension();
 
 
-   #ifdef ANDROID
-   inLib = HX_CSTRING("lib") + inLib;
+   #ifdef HX_ANDROID
+   String module_name = HX_CSTRING("lib") + inLib;
+   #else
+   String module_name = inLib;
    #endif
 
    #ifdef IPHONE
@@ -500,14 +502,9 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    }
 
 
-   #ifdef ANDROID
-   std::string module_name = inLib.__CStr();
-   Module module = sgLoadedModule[module_name];
-   #else
-   Module module = sgLoadedModule[inLib.__s];
-   #endif
-   bool new_module = module==0;
+   Module module = sgLoadedModule[module_name.__s];
 
+   bool new_module = module==0;
 
    if (!module && sgRegisteredPrims)
    {
@@ -526,9 +523,9 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    if (!module && gLoadDebug)
    {
       #ifdef ANDROID
-       __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", module_name.c_str());
+       __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", module_name.__s);
       #else
-      printf("Searching for %s...\n", inLib.__CStr());
+      printf("Searching for %s...\n", inLib.__s);
       #endif
    }
 
@@ -540,7 +537,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
 
       for(int path=0;path<sgLibPath.size();path++)
       {
-         String testPath = String( sgLibPath[path].c_str() ) +  inLib + extension;
+         String testPath = String( sgLibPath[path].c_str() ) +  module_name + extension;
          if (gLoadDebug)
          {
             #ifndef ANDROID
@@ -593,11 +590,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
 
    if (new_module)
    {
-      #ifdef ANDROID
-      sgLoadedModule[module_name] = module;
-      #else
-      sgLoadedModule[inLib.__s] = module;
-      #endif
+      sgLoadedModule[module_name.__s] = module;
 
       sgOrderedModules.push_back(module);
 
