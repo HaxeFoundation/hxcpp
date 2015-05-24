@@ -1554,6 +1554,16 @@ struct CppiaClassInfo
        bool isNew = //(resolved == null() || !IsCppiaClass(resolved) ) &&
                    !HaxeNativeClass::findClass(name);
 
+       if (isNew && isEnum)
+       {
+          hx::Class cls =  hx::Class_obj::Resolve(String(name.c_str()));
+          if (cls.mPtr && getScriptId(cls)==0)
+          {
+             DBGLOG("Found existing enum %s - ignore\n", name.c_str());
+             isNew = false;
+          }
+       }
+
        if (isNew)
        {
           cppia.types[typeId]->cppiaClass = this;
