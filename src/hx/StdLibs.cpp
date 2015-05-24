@@ -67,16 +67,15 @@ namespace hx
 //typedef std::map<std::wstring,Resource> ResourceSet;
 //static ResourceSet sgResources;
 
-Resource *sgResources;
+Resource *sgResources = 0;
+Resource *sgSecondResources = 0;
 
 void RegisterResources(Resource *inResources)
 {
-   sgResources = inResources;
-   //while(inResources->mData)
-   //{
-      //sgResources[inResources->mName.__s] = *inResources;
-      //inResources++;
-   //}
+   if (sgResources)
+      sgSecondResources = inResources;
+   else
+      sgResources = inResources;
 }
 
 }
@@ -87,38 +86,64 @@ Array<String> __hxcpp_resource_names()
 {
    Array<String> result(0,0);
 
-   for(Resource *reso  = sgResources; reso->mData; reso++)
-      result->push( reso->mName );
+   if (sgResources)
+      for(Resource *reso  = sgResources; reso->mData; reso++)
+         result->push( reso->mName );
+
+   if (sgSecondResources)
+      for(Resource *reso  = sgSecondResources; reso->mData; reso++)
+         result->push( reso->mName );
 
    return result;
 }
 
 String __hxcpp_resource_string(String inName)
 {
-   for(Resource *reso  = sgResources; reso->mData; reso++)
+   if (sgResources)
+      for(Resource *reso  = sgResources; reso->mData; reso++)
+      {
+         if (reso->mName == inName)
+         #if (HXCPP_API_LEVEL > 0)
+             return String((const char *) reso->mData, reso->mDataLength );
+         #else
+             return String((const char *) reso->mData, reso->mDataLength ).dup();
+         #endif
+      }
+
+   if (sgSecondResources)
    {
-      if (reso->mName == inName)
-      #if (HXCPP_API_LEVEL > 0)
-          return String((const char *) reso->mData, reso->mDataLength );
-      #else
-          return String((const char *) reso->mData, reso->mDataLength ).dup();
-      #endif
+      for(Resource *reso  = sgSecondResources; reso->mData; reso++)
+         if (reso->mName == inName)
+            return String((const char *) reso->mData, reso->mDataLength );
    }
    return null();
 }
 
 Array<unsigned char> __hxcpp_resource_bytes(String inName)
 {
-   for(Resource *reso  = sgResources; reso->mData; reso++)
-   {
-      if (reso->mName == inName)
+   if (sgResources)
+      for(Resource *reso  = sgResources; reso->mData; reso++)
       {
-         int len = reso->mDataLength;
-         Array<unsigned char> result( len, 0);
-         memcpy( result->GetBase() , reso->mData, len );
-         return result;
+         if (reso->mName == inName)
+         {
+            int len = reso->mDataLength;
+            Array<unsigned char> result( len, 0);
+            memcpy( result->GetBase() , reso->mData, len );
+            return result;
+         }
       }
-   }
+   if (sgSecondResources)
+      for(Resource *reso  = sgSecondResources; reso->mData; reso++)
+      {
+         if (reso->mName == inName)
+         {
+            int len = reso->mDataLength;
+            Array<unsigned char> result( len, 0);
+            memcpy( result->GetBase() , reso->mData, len );
+            return result;
+         }
+      }
+ 
    return null();
 }
 
