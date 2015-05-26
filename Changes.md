@@ -1,4 +1,11 @@
 
+
+------------------------------------------------------------
+* Fix gc_lock error in remove_dir
+* Some cppia bug fixes - enum and resources overrides
+* More android atof fixes
+* Improved haxelib seek logic
+
 Haxe 3.2.0
 ------------------------------------------------------------
 
