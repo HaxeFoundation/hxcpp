@@ -509,12 +509,9 @@ static value sys_remove_dir( value path ) {
 	#else
 	val_check(path,string);
 	gc_enter_blocking();
-	if( rmdir(val_string(path)) != 0 )
-	{
-		gc_exit_blocking();
-		return alloc_null();
-	}
-	return alloc_bool(true);
+	bool ok = rmdir(val_string(path)) != 0;
+	gc_exit_blocking();
+	return alloc_bool(ok);
 	#endif
 }
 
