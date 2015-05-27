@@ -25,7 +25,7 @@ Haxe 3.2.0
 * Add fast-select option for sockets
 * Allow code to run without HXCPP_VISIT_ALLOCS defined
 * Fix debugger thread deadlocks
-* Allow up to 27 dynamic arguements
+* Allow up to 27 dynamic arguments
 * Fixes for Emscripten - byte align access and disable threads
 * Allow emscripten to generate 'executables' (.js/.html) and add options for specifying memory
 * Allow spaces in exe names again
