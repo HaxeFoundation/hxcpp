@@ -99,7 +99,6 @@ static int sgAllocsSinceLastSpam = 0;
 // TODO: Telemetry.h ?
 #ifdef HXCPP_TELEMETRY
 extern void __hxt_gc_new(void* obj, int inSize);
-extern void __hxt_resolve(void* obj);
 extern void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size);
 extern void __hxt_gc_start();
 extern void __hxt_gc_end();
@@ -3285,20 +3284,12 @@ void *InternalNew(int inSize,bool inIsObject)
    {
       void *result = sGlobalAlloc->AllocLarge(inSize);
       memset(result,0,inSize);
-#ifdef HXCPP_TELEMETRY
-      //__hxt_gc_new(result, inSize);
-#endif
       return result;
    }
    else
    {
       LocalAllocator *tla = GetLocalAlloc();
       void* result = tla->Alloc(inSize,inIsObject);
-#ifdef HXCPP_TELEMETRY
-      //printf(" -- InternalNew!\n");
-      //__hxt_gc_new(result, inSize);
-      //__hxt_resolve(result);
-#endif
        return result;
    }
 }
@@ -3531,14 +3522,6 @@ void __hxcpp_gc_safe_point()
     if (hx::gPauseForCollect)
       hx::PauseForCollect();
 }
-
-// Warning, this function has no checks on whether the
-// inData pointer is actually a valid object in the GC.
-unsigned int __hxcpp_gc_obj_size(void* inData)
-{
-    return hx::ObjectSize(inData);
-}
-
 
 //#define HXCPP_FORCE_OBJ_MAP
 

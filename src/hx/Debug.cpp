@@ -363,7 +363,6 @@ public:
         names.push_back("1-indexed");
         namesStashed = 1;
         ignoreAllocs = allocs_en ? 0 : 1;
-        //pendingAlloc.ptr = 0;
         allocStacksStashed = 0;
         allocStackIdNext = 0;
         allocStackIdMapRoot.terminationStackId = 0;
@@ -376,8 +375,6 @@ public:
 
         samples = 0;
         allocation_data = 0;
-        //reallocations = 0;
-        //collections = 0;
 
         // Push a blank (destroyed on first Dump)
         Stash();
@@ -413,7 +410,6 @@ public:
 
     void StackUpdate(CallStack *stack, StackFrame *frame);
     void HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type=0);
-    void HXTResolve(void* obj);
     void HXTRealloc(void* old_obj, void* new_obj, int new_Size);
 
     void Stash()
@@ -430,39 +426,14 @@ public:
       if (_last_obj!=0) lookup_last_object_type();
 
       stash->allocation_data = allocation_data;
-      //stash->reallocations = reallocations;
-      //stash->collections = collections;
       stash->samples = samples;
 
       samples = profiler_enabled ? new std::vector<int>() : 0;
       if (allocations_enabled) {
         allocation_data = new std::vector<int>();
-        //reallocations = new std::vector<int>();
-        //collections = new std::vector<int>();
       }
 
       alloc_mutex.Unlock();
-
-      // // Deferred type resolution of allocaitons
-      // int i,size;
-      // if (stash->allocation_data!=0) {
-      //   i=0;
-      //   size = stash->allocation_data->size();
-      //   printf("Deferred lookup in %d items...\n", size);
-      //   while (i<size) {
-      //     int op = stash->allocation_data->at(i);
-      //     if (op==0) { // alloc
-      //       int id = stash->allocation_data->at(i+1);
-      //       int type = stash->allocation_data->at(i+2);
-      //       printf(" -- Lookup deferred type of %016lx, id=%016lx\n", type, id);
-      //       printf("  = %s", ((hx::Object*)type)->__CStr());
-      //       //printf(" -- Lookup deferred type of %016lx, id=%016lx, %s\n", type, id, ((hx::Object*)type)->__CStr());
-      //       i += 5;
-      //     }
-      //     else if (op==1) i += 2;
-      //     else if (op==2) i += 4;
-      //   }
-      // }
 
       int i,size;
       stash->names = 0;
@@ -473,8 +444,6 @@ public:
           stash->names->push_back(names.at(i));
         }
         //printf("Stash pushed %d names, %d\n", (size-namesStashed), stash->names->size());
-        //stash->namesStart = namesStashed;
-        //stash->namesEnd = names.size() - 1;
         namesStashed = names.size();
       }
 
@@ -485,8 +454,6 @@ public:
         for (i=allocStacksStashed; i<size; i++) {
           stash->stacks->push_back(allocStacks.at(i));
         }
-        //stash->stackIdStart = allocStacksStashed;
-        //stash->stackIdEnd = allocStacks.size() - 1;
         allocStacksStashed = allocStacks.size();
       }
 
@@ -587,7 +554,7 @@ public:
           printf("HXT ERR: we shouldn't get: Telemetry lookup failed!\n");
         }
       } else {
-        // Ignore, assume object was already 
+        // Ignore, assume object was already reclaimed
         //printf("HXT ERR: we shouldn't get: Reclaim a non-tracked object %016lx, id=%016lx -- was there an object ID collision?\n", obj, obj_id);
       }
     }
@@ -650,8 +617,6 @@ private:
     int _last_loc;
 
     std::vector<int> *allocation_data;
-    //std::vector<int> *reallocations;
-    //std::vector<int> *collections;
 
     static  MyMutex gStashMutex;
     static MyMutex gThreadMutex;
@@ -1212,16 +1177,6 @@ public:
         if (telemetry) {
           //printf("Telemetry %016lx allocating %s at %016lx of size %d\n", telemetry, type, obj, inSize); 
           telemetry->HXTAllocation(stack, obj, inSize, type);
-        }
-    }
-
-    static void HXTResolve(void* obj)
-    {
-        CallStack *stack = hx::CallStack::GetCallerCallStack();
-        Telemetry *telemetry = stack->mTelemetry;
-        if (telemetry) {
-          //printf("Telemetry %016lx allocating %s at %016lx of size %d\n", telemetry, type, obj, inSize); 
-          telemetry->HXTResolve(obj);
         }
     }
 
@@ -2412,7 +2367,6 @@ void hx::Telemetry::push_callstack_ids_into(hx::CallStack *stack, std::vector<in
     }
 }
 
-// TODO: careful of int / unsigned int
 int hx::Telemetry::GetNameIdx(const char *fullName) {
   int idx = nameMap[fullName];
   if (idx==0) {
@@ -2489,11 +2443,6 @@ void hx::Telemetry::StackUpdate(hx::CallStack *stack, StackFrame *pushed_frame)
     samples->push_back(delta);
 }
 
-void hx::Telemetry::HXTResolve(void* obj)
-{
-  if (_last_obj==(hx::Object*)obj) lookup_last_object_type();
-}
-
 void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, const char* type)
 {
     if (ignoreAllocs>0 || !allocations_enabled) return;
@@ -2514,13 +2463,15 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     alloc_mutex.Lock();
 
     // HXT debug: Check for id collision
-    // std::map<int, hx::Telemetry*>::iterator exist = alloc_map.find(obj_id);
-    // if (exist != alloc_map.end()) {
-    //   printf("HXT ERR: Object id collision! at on %016lx, id=%016lx\n", obj, obj_id);
-    //   throw "uh oh";
-    //   alloc_mutex.Unlock();
-    //   return;
-    // }
+#ifdef HXCPP_TELEMETRY_DEBUG
+    std::map<int, hx::Telemetry*>::iterator exist = alloc_map.find(obj_id);
+    if (exist != alloc_map.end()) {
+      printf("HXT ERR: Object id collision! at on %016lx, id=%016lx\n", obj, obj_id);
+      throw "uh oh";
+      alloc_mutex.Unlock();
+      return;
+    }
+#endif
 
     int stackid = ComputeCallStackId(stack);
 
@@ -2566,11 +2517,13 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
       //printf("Object at %016lx moving to %016lx, new_size = %d bytes\n", old_obj, new_obj, new_size);
 
       // HXT debug: Check for id collision
-      // std::map<int, hx::Telemetry*>::iterator exist_new = alloc_map.find(new_obj_id);
-      // if (exist_new != alloc_map.end()) {
-      //   printf("HXT ERR: Object id collision (reloc)! at on %016lx, id=%016lx\n", (unsigned long)new_obj, (unsigned long)new_obj_id);
-      //   throw "uh oh";
-      // }
+#ifdef HXCPP_TELEMETRY_DEBUG
+      std::map<int, hx::Telemetry*>::iterator exist_new = alloc_map.find(new_obj_id);
+      if (exist_new != alloc_map.end()) {
+        printf("HXT ERR: Object id collision (reloc)! at on %016lx, id=%016lx\n", (unsigned long)new_obj, (unsigned long)new_obj_id);
+        throw "uh oh";
+      }
+#endif
 
       __hxcpp_set_hxt_finalizer(old_obj, (void*)0); // remove old finalizer -- should GCInternal.InternalRealloc do this?
       HXTReclaimInternal(old_obj); // count old as reclaimed
@@ -2714,14 +2667,6 @@ void __hxcpp_stop_profiler()
 // These globals are called by other cpp files
 #ifdef HXCPP_TELEMETRY
 
-void __hxt_resolve(void* obj)
-{
-  #ifdef HXCPP_STACK_TRACE
-  hx::CallStack::HXTResolve(obj);
-  #endif
-}
-
-extern unsigned int __hxcpp_gc_obj_size(void* obj);
 void __hxt_new_string(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE

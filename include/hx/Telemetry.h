@@ -15,8 +15,6 @@ struct TelemetryFrame
 
   // Valid only if allocations (and profiler) are enabled
   std::vector<int> *allocation_data;
-  //std::vector<int> *reallocations;
-  //std::vector<int> *collections;
   std::vector<int> *stacks;
 };
 
@@ -28,7 +26,7 @@ TelemetryFrame* __hxcpp_hxt_dump_telemetry(int thread_num);
 void __hxcpp_hxt_ignore_allocs(int delta);
 int __hxcpp_hxt_dump_gctime();
 
-// expose these from GCInternal (could belong elsewhere)
+// expose these from GCInternal
 int __hxcpp_gc_reserved_bytes();
 int __hxcpp_gc_used_bytes();
 
