@@ -563,7 +563,7 @@ struct ScriptCallable : public CppiaDynamicExpr
 
       if (badCount)
       {
-         printf("Arg count mismatch %d!=%lu ?\n", argCount, inArgs.size());
+         printf("Arg count mismatch %d!=%d ?\n", argCount, (int)inArgs.size());
          printf(" %s at %s:%d %s\n", getName(), filename, line, functionName);
          CPPIA_CHECK(0);
          throw Dynamic(HX_CSTRING("Arg count error"));
@@ -691,7 +691,7 @@ struct ScriptCallable : public CppiaDynamicExpr
 
       if (badCount)
       {
-         printf("Arg count mismatch %d!=%lu ?\n", argCount, inArgs.size());
+         printf("Arg count mismatch %d!=%d ?\n", argCount, (int)inArgs.size());
          printf(" %s at %s:%d %s\n", getName(), filename, line, functionName);
          CPPIA_CHECK(0);
          throw Dynamic(HX_CSTRING("Arg count error"));
@@ -1870,7 +1870,7 @@ struct CppiaClassInfo
 
 
       // Combine vtable positions...
-      DBGLOG("  format haxe callable vtable (%lu)....\n", memberFunctions.size());
+      DBGLOG("  format haxe callable vtable (%d)....\n", (int)memberFunctions.size());
       std::vector<std::string> table;
       if (haxeBase)
          haxeBase->addVtableEntries(table);
@@ -4925,13 +4925,13 @@ struct MemReference : public CppiaExpr
    hx::Object *runObject(CppiaCtx *ctx)
    {
       CHECKVAL;
-      Dynamic v( MEMGETVAL );
       return Dynamic( MEMGETVAL ).mPtr;
    }
 
    CppiaExpr  *makeSetter(AssignOp op,CppiaExpr *value);
    CppiaExpr  *makeCrement(CrementOp inOp);
 };
+
 
 
 /*
@@ -5161,6 +5161,113 @@ CppiaExpr *MemReference<T,REFMODE>::makeCrement(CrementOp inOp)
    throw "bad crement op";
    return 0;
 }
+
+
+struct MemStackFloatSetter : public CppiaExpr
+{
+   int offset;
+   CppiaExpr *value;
+   AssignOp op;
+
+   MemStackFloatSetter(const CppiaExpr *inSrc, int inOffset, AssignOp inOp, CppiaExpr *inValue)
+      : CppiaExpr(inSrc), offset(inOffset), op(inOp), value(inValue){ } 
+   ExprType getType() { return etFloat; }
+
+   inline Float doRun(CppiaCtx *ctx)
+   {
+      Float v = value->runFloat(ctx);
+      BCR_CHECK;
+
+      void *ptr = (char*)ctx->frame + offset;
+      switch(op)
+      {
+         case aoAdd: v = GetFloatAligned(ptr) + v; break;
+         case aoMult: v = GetFloatAligned(ptr) * v; break;
+         case aoDiv: v = GetFloatAligned(ptr) / v; break;
+         case aoSub: v = GetFloatAligned(ptr) - v; break;
+         case aoAnd: v = GetFloatAligned(ptr) && v; break;
+         case aoOr: v = GetFloatAligned(ptr) || v; break;
+         case aoMod: v = hx::DoubleMod( GetFloatAligned(ptr),  v); break;
+         default: ;
+      }
+      SetFloatAligned(ptr, v);
+      return v;
+   }
+
+
+   void        runVoid(CppiaCtx *ctx) { doRun(ctx); }
+   int runInt(CppiaCtx *ctx) { return doRun(ctx); }
+   Float       runFloat(CppiaCtx *ctx) { return doRun(ctx); }
+   ::String    runString(CppiaCtx *ctx) { return ValToString(doRun(ctx)); }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(doRun(ctx)).mPtr; }
+};
+
+
+struct MemStackFloatCrement : public CppiaExpr
+{
+   int offset;
+   CrementOp op;
+
+   MemStackFloatCrement(const CppiaExpr *inSrc, int inOffset, CrementOp inOp)
+      : CppiaExpr(inSrc), offset(inOffset), op(inOp) { } 
+   ExprType getType() { return etFloat; }
+
+   inline Float doRun(CppiaCtx *ctx)
+   {
+      void *ptr = (char*)ctx->frame + offset;
+      Float v = GetFloatAligned(ptr);
+      switch(op)
+      {
+         case coPreInc: SetFloatAligned(ptr,++v); break;
+         case coPostInc: SetFloatAligned(ptr,v+1); break;
+         case coPreDec: SetFloatAligned(ptr,--v); break;
+         case coPostDec: SetFloatAligned(ptr,v-1); break;
+         default: ;
+      }
+      return v;
+   }
+
+   void        runVoid(CppiaCtx *ctx) { doRun(ctx); }
+   int runInt(CppiaCtx *ctx) { return doRun(ctx); }
+   Float       runFloat(CppiaCtx *ctx) { return doRun(ctx); }
+   ::String    runString(CppiaCtx *ctx) { return ValToString(doRun(ctx)); }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(doRun(ctx)).mPtr; }
+};
+
+
+
+struct MemStackFloatReference : public CppiaExpr
+{
+   int  offset;
+
+   MemStackFloatReference(const CppiaExpr *inSrc, int inOffset)
+      : CppiaExpr(inSrc), offset(inOffset) { }
+
+   ExprType getType() { return etFloat; }
+   const char *getName() { return "MemStackFloatReference"; }
+   CppiaExpr *link(CppiaModule &inModule) { return this; }
+
+   void        runVoid(CppiaCtx *ctx) { }
+   int runInt(CppiaCtx *ctx) { return GetFloatAligned( ((char *)ctx->frame) + offset ); }
+   Float  runFloat(CppiaCtx *ctx) { return GetFloatAligned( ((char *)ctx->frame) + offset ); }
+   ::String    runString(CppiaCtx *ctx) { return ValToString( GetFloatAligned( ((char *)ctx->frame) + offset )); }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      return Dynamic( GetFloatAligned( ((char *)ctx->frame) + offset ) ).mPtr;
+   }
+
+   CppiaExpr  *makeSetter(AssignOp op,CppiaExpr *value)
+   {
+      return new MemStackFloatSetter(this, offset, op, value);
+   }
+   CppiaExpr  *makeCrement(CrementOp inOp)
+   {
+      return new MemStackFloatCrement(this, offset, inOp);
+   }
+};
+
+
+
 
 struct GetFieldByLinkage : public CppiaExpr
 {
@@ -5968,7 +6075,7 @@ struct VarDecl : public CppiaVoidExpr
          switch(var.expressionType)
          {
             case etInt: *(int *)(ctx->frame+var.stackPos) = init->runInt(ctx); break;
-            case etFloat: *(Float *)(ctx->frame+var.stackPos) = init->runFloat(ctx); break;
+            case etFloat: SetFloatAligned(ctx->frame+var.stackPos,init->runFloat(ctx)); break;
             case etString: *(String *)(ctx->frame+var.stackPos) = init->runString(ctx); break;
             case etObject: *(hx::Object **)(ctx->frame+var.stackPos) = init->runObject(ctx); break;
             case etVoid:
@@ -6359,7 +6466,11 @@ struct VarRef : public CppiaExpr
                replace = new MemReference<int,locStack>(this,var->stackPos);
             break;
          case fsFloat:
+            #ifdef HXCPP_ALIGN_FLOAT
+            replace = new MemStackFloatReference(this,var->stackPos);
+            #else
             replace = new MemReference<Float,locStack>(this,var->stackPos);
+            #endif
             break;
          case fsString:
             replace = new MemReference<String,locStack>(this,var->stackPos);

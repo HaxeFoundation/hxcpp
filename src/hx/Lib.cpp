@@ -50,7 +50,7 @@ void *hxFindSymbol(Module inModule, const char *inSymbol) { return (void *)GetPr
 
 void hxFreeLibrary(Module inModule) { FreeLibrary(inModule); }
 
-#elif (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
+#elif (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && (!defined(HXCPP_DLL_EXPORT) || defined(HXCPP_SCRIPTABLE) )
 
 typedef void *Module;
 Module hxLoadLibrary(const String &) { return 0; }
@@ -401,7 +401,7 @@ void __hxcpp_push_dll_path(String inPath)
 
 
 
-#if (defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && !defined(HXCPP_DLL_EXPORT)
+#if (defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && (!defined(HXCPP_DLL_EXPORT) || defined(HXCPP_SCRIPTABLE) )
 
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
@@ -448,6 +448,8 @@ void *__hxcpp_get_proc_address(String inLib, String inPrim,bool ,bool inQuietFai
       printf("Primitive not found : %s\n", inPrim.__CStr() );
    return 0;
 }
+
+int __hxcpp_unload_all_libraries() { return 0; }
 
 
 #else

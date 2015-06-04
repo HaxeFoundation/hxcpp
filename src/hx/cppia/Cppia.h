@@ -97,8 +97,6 @@ enum VarLocation
 };
 
 
-
-
 struct CppiaExpr
 {
    int line;

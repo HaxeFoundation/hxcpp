@@ -11,7 +11,7 @@
   <file name="Xml.cpp"/>
   <file name="Process.cpp"/>
   <file name="Random.cpp"/>
-  <file name="Socket.cpp" unless="emscripten" />
+  <file name="Socket.cpp" />
   <file name="String.cpp"/>
   <file name="File.cpp"/>
   <file name="Init.cpp"/>

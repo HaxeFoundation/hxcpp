@@ -7,6 +7,14 @@ namespace hx
 
 static int sTypeSize[] = { 0, 0, sizeof(hx::Object *), sizeof(String), sizeof(Float), sizeof(int) };
 
+inline void AlignOffset(ExprType type, int &ioOffset)
+{
+   #ifdef HXCPP_ALIGN_FLOAT
+   if (type==etFloat && (ioOffset & 0x7) )
+      ioOffset = (ioOffset + 7) & ~7;
+   #endif
+}
+
 
 FieldStorage fieldStorageFromType(TypeData *inType)
 {
@@ -165,8 +173,9 @@ void CppiaVar::linkVarTypes(CppiaModule &cppia, int &ioOffset)
    type = cppia.types[typeId];
    if (!isVirtual)
    {
-      offset = ioOffset;
       exprType = typeId==0 ? etObject : type->expressionType;
+      AlignOffset(exprType, ioOffset);
+      offset = ioOffset;
       
       switch(exprType)
       {
@@ -356,7 +365,7 @@ void CppiaStackVar::set(CppiaCtx *inCtx,Dynamic inValue)
             *(int *)(inCtx->frame + stackPos) = inValue;
          break;
       case etFloat:
-         *(Float *)(inCtx->frame + stackPos) = inValue;
+         SetFloatAligned(inCtx->frame + stackPos,inValue);
          break;
       case etString:
          *(String *)(inCtx->frame + stackPos) = inValue;

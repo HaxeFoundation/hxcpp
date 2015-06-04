@@ -27,6 +27,34 @@ enum
    bcrLoop     = (bcrBreak | bcrContinue),
 };
 
+inline void SetFloatAligned(void *inPtr, const Float &inValue)
+{
+   #ifdef HXCPP_ALIGN_FLOAT
+   int *dest = (int *)inPtr;
+   const int *src = (const int *)&inValue;
+   dest[0] = src[0];
+   dest[1] = src[1];
+   #else
+   *(Float *)inPtr = inValue;
+   #endif
+}
+
+
+inline Float GetFloatAligned(const void *inPtr)
+{
+   #ifdef HXCPP_ALIGN_FLOAT
+   Float result;
+   int *dest = (int *)&result;
+   const int *src = (const int *)inPtr;
+   dest[0] = src[0];
+   dest[1] = src[1];
+   return result;
+   #else
+   return *(Float *)inPtr;
+   #endif
+}
+
+
 struct CppiaCtx
 {
    CppiaCtx();
@@ -78,7 +106,7 @@ struct CppiaCtx
    }
    inline void pushFloat(Float f)
    {
-      *(Float *)pointer = f;
+      SetFloatAligned(pointer, f);
       pointer += sizeof(Float);
    }
    inline void pushString(const String &s)
@@ -102,7 +130,7 @@ struct CppiaCtx
    }
    inline void returnFloat(Float f)
    {
-      *(Float *)frame = f;
+      SetFloatAligned(frame, f);
    }
    inline void returnString(const String &s)
    {
@@ -142,7 +170,7 @@ struct CppiaCtx
    }
    inline Float getFloat(int inPos=0)
    {
-      return *(Float *)(frame+inPos);
+      return GetFloatAligned(frame+inPos);
    }
    inline String getString(int inPos=0)
    {
