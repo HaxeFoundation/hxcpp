@@ -23,9 +23,10 @@
 
 <section unless="HXCPP_OPTIM_LEVEL" >
    <!-- O2 generates stack-overflow when running unit tests - not sure what best default value is
+        But you may be able to adjust the node stack size ti fix this.
    <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
    -->
-   <set name="HXCPP_OPTIM_LEVEL" value="-O1" />
+   <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
    <set name="HXCPP_OPTIM_LEVEL" value="-g" if="debug" />
 </section>
 
@@ -75,10 +76,10 @@
 
 
 <section unless="HXCPP_LINK_OPTIM_LEVEL" >
-   <!-- O2 generates dodgy 'else' statement
+   <!-- O2 generates dodgy 'else' statement - seems ok now
    <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
    -->
-   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-O1" />
+   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-O2" />
    <set name="HXCPP_LINK_OPTIM_LEVEL" value="-g" if="debug" />
 </section>
 
@@ -104,8 +105,17 @@
      <flag value="TOTAL_MEMORY=${HXCPP_LINK_TOTAL_MEMORY}" />
   </section>
 
+  <section if="HXCPP_LINK_MEM_FILE" >
+    <flag value="--memory-init-file"/>
+    <flag value="${HXCPP_LINK_MEM_FILE}"/>
+  </section>
+
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
-  <flag value="--emrun" if="HXCPP_LINK_EMRUM" />
+  <section if="HXCPP_LINK_EMRUN" >
+     <flag value="--emrun" />
+     <flag value="-s" />
+     <flag value="DEMANGLE_SUPPORT=1" />
+  </section>
   <!-- <lib name="-ldl"/> -->
   <ext value="${HXCPP_LINK_EMSCRIPTEN_EXT}"/>
   <outflag value="-o "/>
