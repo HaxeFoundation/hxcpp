@@ -36,6 +36,10 @@ void  __hxcpp_gc_do_not_kill(Dynamic inObj);
 void  __hxcpp_set_finalizer(Dynamic inObj, void *inFunction);
 hx::Object *__hxcpp_get_next_zombie();
 
+#ifdef HXCPP_TELEMETRY
+void __hxcpp_set_hxt_finalizer(void* inObj, void *inFunc);
+#endif
+
 hx::Object *__hxcpp_weak_ref_create(Dynamic inObject);
 hx::Object *__hxcpp_weak_ref_get(Dynamic inRef);
 

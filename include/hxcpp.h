@@ -263,6 +263,7 @@ typedef bool PropertyAccess;
 #include <hx/Class.h>
 #include "Enum.h"
 #include <hx/Interface.h>
+#include <hx/Telemetry.h>
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
 #include <hx/Operators.h>

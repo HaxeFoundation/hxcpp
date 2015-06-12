@@ -12,6 +12,9 @@
 
 #endif
 
+#ifdef HXCPP_TELEMETRY
+extern void __hxt_new_string(void* result, int size);
+#endif
 
 
 void *String::operator new( size_t inSize )
@@ -38,9 +41,6 @@ void __hxcpp_gc_compact()
    }
 }
 
-
-
-
 namespace hx
 {
 
@@ -52,12 +52,13 @@ void GCAddFinalizer(hx::Object *v, finalizer f)
    }
 }
 
-
-
 HX_CHAR *NewString(int inLen)
 {
    HX_CHAR *result =  (HX_CHAR *)hx::InternalNew( (inLen+1)*sizeof(HX_CHAR), false );
    result[inLen] = '\0';
+#ifdef HXCPP_TELEMETRY
+   __hxt_new_string(result, inLen+1);
+#endif
    return result;
 
 }

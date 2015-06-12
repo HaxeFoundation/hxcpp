@@ -96,6 +96,13 @@ static int sgAllocsSinceLastSpam = 0;
    #define STAMP(t)
 #endif
 
+// TODO: Telemetry.h ?
+#ifdef HXCPP_TELEMETRY
+extern void __hxt_gc_new(void* obj, int inSize);
+extern void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size);
+extern void __hxt_gc_start();
+extern void __hxt_gc_end();
+#endif
 
 static int sgTimeToNextTableUpdate = 0;
 
@@ -527,12 +534,15 @@ union BlockData
                         *last_link = pos | IMMIX_ROW_HAS_OBJ_LINK;
                         last_link = row+pos+ENDIAN_OBJ_NEXT_BYTE;
                      }
-                     else if (gFillWithJunk)
+                     else
                      {
-                         unsigned int header = *(unsigned int *)(row + pos);
-                         int size = header & IMMIX_ALLOC_SIZE_MASK;
-                         //GCLOG("Fill %d (%p+%d=%p) mark=%d/%d\n",size, row,pos, row+pos+4,row[pos+ENDIAN_MARK_ID_BYTE_HEADER], gByteMarkID);
-                         memset(row+pos+4,0x55,size);
+                       if (gFillWithJunk)
+                       {
+                           unsigned int header = *(unsigned int *)(row + pos);
+                           int size = header & IMMIX_ALLOC_SIZE_MASK;
+                           //GCLOG("Fill %d (%p+%d=%p) mark=%d/%d\n",size, row,pos, row+pos+4,row[pos+ENDIAN_MARK_ID_BYTE_HEADER], gByteMarkID);
+                           memset(row+pos+4,0x55,size);
+                       }
                      }
                      if (row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_HAS_OBJ_LINK)
                         pos = row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_LINK_MASK;
@@ -1141,6 +1151,9 @@ FILE_SCOPE FinalizerList *sgFinalizers = 0;
 
 typedef std::map<hx::Object *,hx::finalizer> FinalizerMap;
 FILE_SCOPE FinalizerMap sFinalizerMap;
+#ifdef HXCPP_TELEMETRY
+FILE_SCOPE FinalizerMap hxtFinalizerMap;
+#endif
 
 typedef void (*HaxeFinalizer)(Dynamic);
 typedef std::map<hx::Object *,HaxeFinalizer> HaxeFinalizerMap;
@@ -1285,6 +1298,23 @@ void RunFinalizers()
       i = next;
    }
 
+   #ifdef HXCPP_TELEMETRY
+   for(FinalizerMap::iterator i=hxtFinalizerMap.begin(); i!=hxtFinalizerMap.end(); )
+   {
+      hx::Object *obj = i->first;
+      FinalizerMap::iterator next = i;
+      ++next;
+
+      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
+      if ( mark!=gByteMarkID )
+      {
+         (*i->second)(obj);
+         hxtFinalizerMap.erase(i);
+      }
+
+      i = next;
+   }
+   #endif
 
    for(ObjectIdMap::iterator i=sObjectIdMap.begin(); i!=sObjectIdMap.end(); )
    {
@@ -1402,6 +1432,27 @@ void  GCSetHaxeFinalizer( hx::Object *obj, HaxeFinalizer f )
       sHaxeFinalizerMap[obj] = f;
 }
 
+#ifdef HXCPP_TELEMETRY
+// Callback finalizer on non-abstract type;
+void  GCSetHXTFinalizer( void*obj, hx::finalizer f )
+{
+   if (!obj)
+      throw Dynamic(HX_CSTRING("set_hxt_finalizer - invalid null object"));
+   //if (((unsigned int *)obj)[-1] & HX_GC_CONST_ALLOC_BIT) return;
+
+   //printf("Setting hxt finalizer on %018x\n", obj);
+
+   AutoLock lock(*gSpecialObjectLock);
+   if (f==0)
+   {
+     FinalizerMap::iterator i = hxtFinalizerMap.find((hx::Object*)obj);
+      if (i!=hxtFinalizerMap.end())
+         hxtFinalizerMap.erase(i);
+   }
+   else
+     hxtFinalizerMap[(hx::Object*)obj] = f;
+}
+#endif
 
 void GCDoNotKill(hx::Object *inObj)
 {
@@ -1842,6 +1893,17 @@ public:
           hx::sHaxeFinalizerMap.erase(h);
           hx::sHaxeFinalizerMap[inTo] = f;
        }
+
+       #ifdef HXCPP_TELEMETRY
+       i = hx::hxtFinalizerMap.find(inFrom);
+       if (i!=hx::hxtFinalizerMap.end())
+       {
+          hx::finalizer f = i->second;
+          hx::hxtFinalizerMap.erase(i);
+          hx::hxtFinalizerMap[inTo] = f;
+          printf("HXT TODO: potential lost collection / ID collision, maintain alloc_map across move?");
+       }
+       #endif
 
        hx::MakeZombieSet::iterator mz = hx::sMakeZombieSet.find(inFrom);
        if (mz!=hx::sMakeZombieSet.end())
@@ -2343,7 +2405,10 @@ public:
       GCLOG("=== Collect === %p\n",&here);
       #endif
       STAMP(t0)
-     
+
+#ifdef HXCPP_TELEMETRY
+      __hxt_gc_start();
+#endif
       int largeAlloced = mLargeAllocated;
       LocalAllocator *this_local = 0;
       if (sMultiThreadMode)
@@ -2355,6 +2420,9 @@ public:
          if (hx::gPauseForCollect)
          {
             gThreadStateChangeLock->Unlock();
+#ifdef HXCPP_TELEMETRY
+            __hxt_gc_end();
+#endif
             return false;
          }
 
@@ -2528,6 +2596,10 @@ public:
       GCLOG("Collect time %.2f  %.2f/%.2f/%.2f/%.2f\n", (t4-t0)*1000,
               (t1-t0)*1000, (t2-t1)*1000, (t3-t2)*1000, (t4-t3)*1000 );
       #endif
+
+#ifdef HXCPP_TELEMETRY
+      __hxt_gc_end();
+#endif
 
       return want_more;
    }
@@ -3217,7 +3289,8 @@ void *InternalNew(int inSize,bool inIsObject)
    else
    {
       LocalAllocator *tla = GetLocalAlloc();
-      return tla->Alloc(inSize,inIsObject);
+      void* result = tla->Alloc(inSize,inIsObject);
+       return result;
    }
 }
 
@@ -3234,6 +3307,14 @@ int InternalCollect(bool inMajor,bool inCompact)
    sGlobalAlloc->Collect(inMajor,inCompact);
 
    return sGlobalAlloc->MemUsage();
+}
+
+inline unsigned int ObjectSize(void *inData)
+{
+   unsigned int header = ((unsigned int *)(inData))[-1];
+
+   return (header & ( IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ)) ?
+         (header & IMMIX_ALLOC_SIZE_MASK) :  ((unsigned int *)(inData))[-2];
 }
 
 void GCChangeManagedMemory(int inDelta, const char *inWhy)
@@ -3258,11 +3339,7 @@ void *InternalRealloc(void *inData,int inSize)
    sgAllocsSinceLastSpam++;
    #endif
 
-
-   unsigned int header = ((unsigned int *)(inData))[-1];
-
-   unsigned int s = (header & ( IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ)) ?
-         (header & IMMIX_ALLOC_SIZE_MASK) :  ((unsigned int *)(inData))[-2];
+   unsigned int s = ObjectSize(inData);
 
    void *new_data = 0;
 
@@ -3278,6 +3355,11 @@ void *InternalRealloc(void *inData,int inSize)
 
       new_data = tla->Alloc(inSize,false);
    }
+
+#ifdef HXCPP_TELEMETRY
+   //printf(" -- reallocating %018x to %018x, size from %d to %d\n", inData, new_data, s, inSize);
+   __hxt_gc_realloc(inData, new_data, inSize);
+#endif
 
    int min_size = s < inSize ? s : inSize;
 
@@ -3407,6 +3489,13 @@ void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
    GCSetHaxeFinalizer( inObj.mPtr, (hx::HaxeFinalizer) inFunc );
 }
 
+#ifdef HXCPP_TELEMETRY
+void __hxcpp_set_hxt_finalizer(void* inObj, void *inFunc)
+{
+   GCSetHXTFinalizer( inObj, (hx::finalizer) inFunc );
+}
+#endif
+
 extern "C"
 {
 void hxcpp_set_top_of_stack()
@@ -3433,8 +3522,6 @@ void __hxcpp_gc_safe_point()
     if (hx::gPauseForCollect)
       hx::PauseForCollect();
 }
-
-
 
 //#define HXCPP_FORCE_OBJ_MAP
 

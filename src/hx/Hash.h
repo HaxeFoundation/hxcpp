@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef HXCPP_TELEMETRY
+extern void __hxt_new_hash(void* obj, int size);
+#endif
+
 namespace hx
 {
 
@@ -234,11 +238,19 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
    void rebucket(int inNewCount)
    {
+#ifdef HXCPP_TELEMETRY
+      bool is_new = bucket==0;
+#endif
       mask = inNewCount-1;
       //printf("expand %d -> %d\n",bucketCount, inNewCount);
       bucket = (Element **)InternalRealloc(bucket,inNewCount*sizeof(ELEMENT *));
       //for(int b=bucketCount;b<inNewCount;b++)
       //   bucket[b] = 0;
+
+#ifdef HXCPP_TELEMETRY
+      if (is_new) __hxt_new_hash(bucket, inNewCount*sizeof(ELEMENT *));
+#endif
+
 
       for(int b=0;b<bucketCount;b++)
       {

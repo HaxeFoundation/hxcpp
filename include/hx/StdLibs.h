@@ -231,7 +231,6 @@ void __hxcpp_start_profiler(::String inDumpFile);
 void __hxcpp_stop_profiler();
 
 
-
 // --- Memory --------------------------------------------------------------------------
 
 inline void __hxcpp_align_set_float32( unsigned char *base, int addr, float v)
