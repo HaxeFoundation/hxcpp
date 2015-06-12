@@ -1,6 +1,10 @@
 #include <hxcpp.h>
 #include <vector>
 
+#ifdef HXCPP_TELEMETRY
+extern void __hxt_new_array(void* obj, int size);
+#endif
+
 using namespace hx;
 
 
@@ -20,6 +24,9 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
    {
       mBase = (char *)( (!inAtomic) ?
         hx::NewGCBytes(0, alloc * inElementSize ) : hx::NewGCPrivate(0,alloc*inElementSize));
+#ifdef HXCPP_TELEMETRY
+      __hxt_new_array(mBase, alloc * inElementSize);
+#endif
    }
    else
       mBase = 0;
@@ -51,10 +58,16 @@ void ArrayBase::EnsureSize(int inSize) const
          else if (AllocAtomic())
          {
             mBase = (char *)hx::NewGCPrivate(0,bytes);
+#ifdef HXCPP_TELEMETRY
+            __hxt_new_array(mBase, bytes);
+#endif
          }
          else
          {
             mBase = (char *)hx::NewGCBytes(0,bytes);
+#ifdef HXCPP_TELEMETRY
+            __hxt_new_array(mBase, bytes);
+#endif
          }
          mAlloc = newAlloc;
       }
@@ -170,10 +183,16 @@ void ArrayBase::__SetSizeExact(int inSize)
       else if (AllocAtomic())
       {
          mBase = (char *)hx::NewGCPrivate(0,bytes);
+#ifdef HXCPP_TELEMETRY
+         __hxt_new_array(mBase, bytes);
+#endif
       }
       else
       {
          mBase = (char *)hx::NewGCBytes(0,bytes);
+#ifdef HXCPP_TELEMETRY
+         __hxt_new_array(mBase, bytes);
+#endif
       }
       mAlloc = length = inSize;
    }

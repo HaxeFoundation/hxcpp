@@ -5,7 +5,9 @@
 #error "Please include hxcpp.h, not hx/Object.h"
 #endif
 
-
+#ifdef HXCPP_TELEMETRY
+extern void __hxt_gc_new(void* obj, int inSize);
+#endif
 
 
 // --- Constants -------------------------------------------------------
@@ -75,7 +77,11 @@ public:
    void *operator new( size_t inSize, hx::NewObjectType, const char *inName=0 );
    inline void *operator new( size_t inSize, bool inContainer=true, const char *inName=0 )
    {
-      return operator new(inSize, inContainer ? hx::NewObjContainer : hx::NewObjAlloc, inName);
+      void* result = operator new(inSize, inContainer ? hx::NewObjContainer : hx::NewObjAlloc, inName);
+#ifdef HXCPP_TELEMETRY
+      __hxt_gc_new(result, inSize);
+#endif
+      return result;
    }
    void operator delete( void *, bool) { }
    void operator delete( void *, bool, const char * ) { }
