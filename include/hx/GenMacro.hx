@@ -72,6 +72,10 @@ class GenMacro
             construct_args.push( "t" + vid +" __" + vid  );
             construct_vars.push( "v" + vid +"(__" + vid + ")"  );
          }
+      }
+
+      for(arg in 1...20)
+      {
          locals.push( {
              ARG : arg,
              MARKS : marks.join(" "),
