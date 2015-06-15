@@ -65,11 +65,8 @@ class GenMacro
          var vid = arg-1;
          if (vid>=0)
          {
-            if (arg<15)
-            {
-               marks.push( "HX_MARK_MEMBER(v" + vid +");" );
-               visits.push( "HX_VISIT_MEMBER(v" + vid +");" );
-            }
+            marks.push( "HX_MARK_MEMBER(v" + vid +");" );
+            visits.push( "HX_VISIT_MEMBER(v" + vid +");" );
             type_args.push( "t" + vid +",v" + vid  );
             type_vars.push( "t" + vid +" v" + vid  );
             construct_args.push( "t" + vid +" __" + vid  );
