@@ -60,22 +60,22 @@ class GenMacro
       var type_args = new Array<String>();
       var construct_args = new Array<String>();
       var construct_vars = new Array<String>();
-      for(arg in 1...15)
+      for(arg in 1...20)
       {
          var vid = arg-1;
          if (vid>=0)
          {
-            marks.push( "HX_MARK_MEMBER(v" + vid +");" );
-            visits.push( "HX_VISIT_MEMBER(v" + vid +");" );
+            if (arg<15)
+            {
+               marks.push( "HX_MARK_MEMBER(v" + vid +");" );
+               visits.push( "HX_VISIT_MEMBER(v" + vid +");" );
+            }
             type_args.push( "t" + vid +",v" + vid  );
             type_vars.push( "t" + vid +" v" + vid  );
             construct_args.push( "t" + vid +" __" + vid  );
             construct_vars.push( "v" + vid +"(__" + vid + ")"  );
          }
-      }
 
-      for(arg in 1...20)
-      {
          locals.push( {
              ARG : arg,
              MARKS : marks.join(" "),
