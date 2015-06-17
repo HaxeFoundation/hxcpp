@@ -31,8 +31,16 @@ int __hxcpp_GetCurrentThreadNumber();
 #endif
 
 // Do we care about the debug-breakpoint-lookup-hashes
-#if (defined HXCPP_STACK_LINE) && (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && (!defined(HXCPP_DEBUG_HASHES))
-#define HXCPP_DEBUG_HASHES
+// This feature does not work.  The hashes are used to "quick reject"
+// breakpoints and this quick reject evaluation will cause any breakpoint that
+// is not the first line of a function to always be rejected, meaning that
+// breakpoints essentially do not work when HXCPP_DEBUG_HASHES is enabled.
+//#if (defined HXCPP_STACK_LINE) && (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && (!defined(HXCPP_DEBUG_HASHES))
+//#define HXCPP_DEBUG_HASHES
+//#endif
+#ifdef HXCPP_DEBUG_HASHES
+#warning "HXCPP_DEBUG_HASHES does not work, please do not use."
+#undef HXCPP_DEBUG_HASHES
 #endif
 
 // Called by the main function when an uncaught exception occurs to dump
