@@ -1789,7 +1789,7 @@ private:
         mBreakpoints[toCopy->mBreakpointCount].lineNumber = lineNumber;
 
 #ifdef HXCPP_DEBUG_HASHES
-        mBreakpoints[toCopy->mBreakpointCount].hash = Hash(lineNumber, fileName);
+        mBreakpoints[toCopy->mBreakpointCount].hash = Hash(0, fileName);
         calcCombinedHash();
 #else
         mBreakpoints[toCopy->mBreakpointCount].hash = 0;
