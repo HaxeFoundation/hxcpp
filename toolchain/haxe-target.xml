@@ -122,6 +122,7 @@
   <file name = "src/Array.cpp"/>
   <file name = "src/hx/Class.cpp"/>
   <file name = "src/Dynamic.cpp"/>
+  <file name = "src/ObjcData.mm" if="objc"/>
   <file name = "src/Enum.cpp"/>
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp"/>
