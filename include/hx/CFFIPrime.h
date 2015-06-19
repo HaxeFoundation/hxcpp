@@ -4,6 +4,10 @@
 #include "CFFI.h"
 
 
+#ifdef HXCPP_JS_PRIME
+#include <string>
+typedef std::string HxString;
+#else
 struct HxString
 {
    inline HxString(const HxString &inRHS)
@@ -16,11 +20,17 @@ struct HxString
       if (length<0)
          for(length=0; __s[length]; length++) { }
    }
+
+   inline int size() { return length; }
+   inline const char *c_str() { return __s; }
+
    inline HxString() : length(0), __s(0) { }
+
    int length;
    const char *__s;
 
 };
+#endif
 
 
 namespace cffi
@@ -224,7 +234,7 @@ inline value ToValue(float inVal) { return alloc_float(inVal); }
 inline value ToValue(double inVal) { return alloc_float(inVal); }
 inline value ToValue(value inVal) { return inVal; }
 inline value ToValue(bool inVal) { return alloc_bool(inVal); }
-inline value ToValue(HxString inVal) { return alloc_string_len(inVal.__s,inVal.length); }
+inline value ToValue(HxString inVal) { return alloc_string_len(inVal.c_str(),inVal.size()); }
 
 struct AutoValue
 {
@@ -242,6 +252,7 @@ struct AutoValue
 
 
 } // end namespace cffi
+
 
 #define PRIME_ARG_DECL0
 #define PRIME_ARG_DECL1 cffi::AutoValue a0
@@ -263,6 +274,42 @@ struct AutoValue
 #define PRIME_ARG_LIST10 PRIME_ARG_LIST9 ,arg[9]
 #define PRIME_ARG_LIST11 PRIME_ARG_LIST10 ,arg[10]
 #define PRIME_ARG_LIST12 PRIME_ARG_LIST11 ,arg[11]
+
+
+
+#ifdef HXCPP_JS_PRIME
+
+#define DEFINE_PRIME0(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME1(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME2(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME3(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME4(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME5(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME6(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME7(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME8(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME9(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME10(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME11(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME12(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+
+
+#define DEFINE_PRIME0v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME1v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME2v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME3v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME4v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME5(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME6v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME7vv(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME8v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME9v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME10v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME11v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME12v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+
+
+#else
 
 
 #define DEFINE_PRIME0(func) extern "C" { \
@@ -456,8 +503,7 @@ struct AutoValue
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST12); return alloc_null(); } \
   EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
 }
-
-
+#endif
 
 #endif
 

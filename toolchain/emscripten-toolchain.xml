@@ -18,6 +18,8 @@
 
 <include name="toolchain/gcc-toolchain.xml"/>
 
+
+
 <!-- EMCC TOOLS -------------------------------------->
 
 
@@ -37,19 +39,23 @@
   <cppflag value="-frtti"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
+  <cppflag value="--std=c++11" />
   <flag value="${HXCPP_OPTIM_LEVEL}" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-DEMSCRIPTEN"/>
+  <flag value="-DHXCPP_JS_PRIME" if="HXCPP_JS_PRIME" />
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <cppflag value="-Wno-invalid-offsetof" />
+  <cppflag value="-Wno-return-type-c-linkage" />
   <flag value="-Wno-parentheses" />
   <flag value="-Wno-null-dereference" />
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-bool-conversion" />
   <flag value="-Wno-warn-absolute-paths" />
+  <flag value="--bind" if="HXCPP_JS_PRIME" />
   <include name="toolchain/common-defines.xml" />
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/emscripten${OBJEXT}"/>
@@ -88,7 +94,6 @@
 <linker id="exe" exe="emcc">
   <exe name="${CXX}" if="CXX" />
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-rdynamic"/>
   <flag value="${HXCPP_LINK_OPTIM_LEVEL}" />
 
   <section unless="HXCPP_LINK_NO_EXCEPTIONS" >
@@ -111,12 +116,14 @@
     <flag value="${HXCPP_LINK_MEM_FILE}"/>
   </section>
 
-  <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
   <section if="HXCPP_LINK_EMRUN" >
      <flag value="--emrun" />
      <flag value="-s" />
      <flag value="DEMANGLE_SUPPORT=1" />
   </section>
+
+  <flag value="--bind" if="HXCPP_JS_PRIME" />
+
   <!-- <lib name="-ldl"/> -->
   <ext value="${HXCPP_LINK_EMSCRIPTEN_EXT}"/>
   <outflag value="-o "/>

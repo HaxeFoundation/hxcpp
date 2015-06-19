@@ -6,6 +6,7 @@
 // Include neko glue....
 #define NEKO_COMPATIBLE
 #endif
+
 #include <hx/CFFIPrime.h>
 #include <math.h>
 
@@ -38,11 +39,10 @@ DEFINE_PRIME1v(fields);
 
 HxString stringVal(HxString inString)
 {
-   printf("String : %s (%d)\n", inString.__s, inString.length);
+   printf("String : %s (%d)\n", inString.c_str(), inString.size());
    return HxString("Ok");
 }
 DEFINE_PRIME1(stringVal);
-
 
 // Conflict with name - use anon-namespace
 namespace {

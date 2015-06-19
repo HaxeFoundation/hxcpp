@@ -18,12 +18,16 @@
 <set name="LIBPREFIX" value="lib" if="static_link" unless="STATICLIBPREFIX" />
 <set name="LIBPREFIX" value="${STATICLIBPREFIX}" if="static_link" unless="LIBPREFIX" />
 
-
+<unset name="HXCPP_JS_PRIME" if="static_link" />
 <set name="STAT" value="-stat" if="static_link" />
+<set name="PRIME" value=""  />
+<set name="PRIME" value="-p" if="HXCPP_JS_PRIME" />
 
-<set name="OBJEXT" value="${M64}${F32}${STAT}${DBG}${NOCONSOLE}${RPI}${APIFP}" />
+
+<set name="OBJEXT" value="${M64}${F32}${STAT}${DBG}${NOCONSOLE}${RPI}${APIFP}${PRIME}" />
 
 <set name="STD_MODULE_LINK" value="static_link" if="static_link"/>
+<set name="STD_MODULE_LINK" value="exe" if="HXCPP_JS_PRIME"/>
 
 
 <set name="LIBEXTRA" value=".iphonesim-64" if="iphonesim"/>
