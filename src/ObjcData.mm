@@ -6,7 +6,7 @@
 using namespace hx;
 
 namespace hx {
-extern hx::Class __PointerClass;
+extern hx::Class __ObjcClass;
 
 class ObjcData : public hx::Object
 {
@@ -33,7 +33,7 @@ public:
 	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
    #endif
 
-   hx::Class __GetClass() const { return __PointerClass; }
+   hx::Class __GetClass() const { return __ObjcClass; }
    bool __Is(hx::Object *inClass) const { return dynamic_cast< ObjcData *>(inClass); }
 
    // k_cpp_objc
@@ -43,7 +43,7 @@ public:
    {
       return String(!mValue ? "null" : [[mValue description] UTF8String]);
    }
-   String __ToString() const { return String(!mValue ? "(null)" : [[mValue description] UTF8String]); }
+   String __ToString() const { return String(!mValue ? "null" : [[mValue description] UTF8String]); }
 
    int __Compare(const hx::Object *inRHS) const
    {
