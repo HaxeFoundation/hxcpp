@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <string>
-#include <map>
+#include <tr1/unordered_map>
 #include <vector>
 
 #ifdef ANDROID
@@ -88,9 +88,9 @@ void hxFreeLibrary(Module inModule) { dlclose(inModule); }
 #endif
 
 #ifdef HX_UTF8_STRINGS
-typedef std::map<std::string,Module> LoadedModule;
+typedef std::tr1::unordered_map<std::string,Module> LoadedModule;
 #else
-typedef std::map<std::wstring,Module> LoadedModule;
+typedef std::tr1::unordered_map<std::wstring,Module> LoadedModule;
 #endif
 
 static LoadedModule sgLoadedModule;
@@ -321,7 +321,7 @@ String FindHaxelib(String inLib)
 
 #endif
 
-typedef std::map<std::string,void *> RegistrationMap;
+typedef std::tr1::unordered_map<std::string,void *> RegistrationMap;
 RegistrationMap *sgRegisteredPrims=0;
 
 

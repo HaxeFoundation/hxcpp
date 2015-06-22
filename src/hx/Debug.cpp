@@ -1,6 +1,6 @@
 #include <hxcpp.h>
 #include <list>
-#include <map>
+#include <tr1/unordered_map>
 #include <vector>
 #include <string>
 #include <hx/Debug.h>
@@ -187,7 +187,7 @@ public:
         results.reserve(mProfileStats.size());
 
         int total = 0;
-        std::map<const char *, ProfileEntry>::iterator iter = 
+        std::tr1::unordered_map<const char *, ProfileEntry>::iterator iter =
             mProfileStats.begin();
         while (iter != mProfileStats.end()) {
             ProfileEntry &pe = iter->second;
@@ -199,7 +199,7 @@ public:
             ChildEntry internal;
             internal.fullName = "(internal)";
             internal.self = re.self;
-            std::map<const char *, int>::iterator childIter =
+            std::tr1::unordered_map<const char *, int>::iterator childIter =
                 pe.children.begin();
             int childTotal = 0;
             while (childIter != pe.children.end()) {
@@ -262,7 +262,7 @@ struct ProfileEntry
         }
 
         int self;
-        std::map<const char *, int> children;
+        std::tr1::unordered_map<const char *, int> children;
         int total;
 };
 
@@ -320,7 +320,7 @@ struct ProfileEntry
 
     String mDumpFile;
     int mT0;
-    std::map<const char *, ProfileEntry> mProfileStats;
+    std::tr1::unordered_map<const char *, ProfileEntry> mProfileStats;
 
     static MyMutex gThreadMutex;
     static int gThreadRefCount;
@@ -1445,11 +1445,11 @@ private:
 
     // gMutex protects gMap and gList
     static MyMutex gMutex;
-    static std::map<int, CallStack *> gMap;
+    static std::tr1::unordered_map<int, CallStack *> gMap;
     static std::list<CallStack *> gList;
 };
 /* static */ MyMutex CallStack::gMutex;
-/* static */ std::map<int, CallStack *> CallStack::gMap;
+/* static */ std::tr1::unordered_map<int, CallStack *> CallStack::gMap;
 /* static */ std::list<CallStack *> CallStack::gList;
 
 #ifdef HXCPP_DEBUGGER
@@ -2335,7 +2335,7 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 
     int depth = stack->GetDepth();
 
-    std::map<const char *, bool> alreadySeen;
+    std::tr1::unordered_map<const char *, bool> alreadySeen;
 
     // Add children time in to each stack element
     for (int i = 0; i < (depth - 1); i++) {
