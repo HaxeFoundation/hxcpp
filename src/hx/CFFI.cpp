@@ -108,7 +108,8 @@ vkind k_int32 = (vkind)vtAbstractBase;
 vkind k_hash = (vkind)(vtAbstractBase + 1);
 vkind k_cpp_pointer = (vkind)(vtAbstractBase + 2);
 vkind k_cpp_struct = (vkind)(vtAbstractBase + 3);
-static int sgKinds = (int)(vtAbstractBase + 4);
+vkind k_cpp_objc = (vkind)(vtAbstractBase + 4);
+static int sgKinds = (int)(vtAbstractBase + 5);
 
 typedef std::map<std::string,int> KindMap;
 typedef std::map<int,std::string> ReverseKindMap;

@@ -30,7 +30,7 @@ public:
    explicit Dynamic(const HX_CHAR *inStr);
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
-   Dynamic(const NSObject *inObjc);
+   Dynamic(const id inObjc);
 #endif
 #endif
 
@@ -58,7 +58,7 @@ public:
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
-   inline operator NSObject * () const { return mPtr ? (NSObject *)mPtr->__GetHandle() : 0; }
+   inline operator id() const { return mPtr ? (id)mPtr->__GetHandle() : 0; }
 #endif
 #endif
    inline bool operator !() const { return !mPtr || !mPtr->__ToInt(); }

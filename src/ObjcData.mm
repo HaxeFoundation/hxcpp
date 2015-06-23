@@ -14,7 +14,7 @@ public:
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="objc.BoxedType")
       { return hx::Object::operator new(inSize,inAlloc,inName); }
 
-   ObjcData(const NSObject *inValue) : mValue(inValue) 
+   ObjcData(const id inValue) : mValue(inValue) 
    {
       [ inValue retain ];
 		mFinalizer = new hx::InternalFinalizer(this);
@@ -60,12 +60,12 @@ public:
    }
 
 
-   const NSObject *mValue;
+   const id mValue;
    hx::InternalFinalizer *mFinalizer;
 };
 }
 
-Dynamic::Dynamic(const NSObject *inVal)
+Dynamic::Dynamic(const id inVal)
 {
    mPtr = inVal ? (hx::Object *)new ObjcData(inVal) : 0;
 }
