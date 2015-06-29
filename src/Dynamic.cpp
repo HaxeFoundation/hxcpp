@@ -20,6 +20,9 @@ hx::Class __IntClass;
 hx::Class __FloatClass;
 hx::Class __PointerClass;
 hx::Class __VoidClass;
+#ifdef HXCPP_OBJC
+hx::Class __ObjcClass;
+#endif
 
 
 hx::Class &GetBoolClass() { return __BoolClass; }
@@ -417,6 +420,9 @@ static void sMarkStatics(HX_MARK_PARAMS) {
 	HX_MARK_MEMBER(Anon_obj::__mClass);
 	HX_MARK_MEMBER(hx::hxEnumBase_obj__mClass);
 	HX_MARK_MEMBER(hx::DynEmptyString);
+#ifdef HXCPP_OBJC
+	HX_MARK_MEMBER(__ObjcClass);
+#endif
 };
 
 
@@ -435,6 +441,9 @@ static void sVisitStatics(HX_VISIT_PARAMS) {
 	HX_VISIT_MEMBER(Anon_obj::__mClass);
 	HX_VISIT_MEMBER(hx::hxEnumBase_obj__mClass);
 	HX_VISIT_MEMBER(hx::DynEmptyString);
+#ifdef HXCPP_OBJC
+	HX_VISIT_MEMBER(__ObjcClass);
+#endif
 };
 
 #endif
@@ -454,6 +463,9 @@ void Dynamic::__boot()
    DynTrue = Dynamic( new (hx::NewObjConst) hx::BoolData(true) );
    DynFalse = Dynamic( new (hx::NewObjConst) hx::BoolData(false) );
    DynEmptyString = Dynamic(HX_CSTRING("").__ToObject());
+#ifdef HXCPP_OBJC
+   Static(__ObjcClass) = hx::RegisterClass(HX_CSTRING("objc::BoxedType"),IsPointer,sNone,sNone, 0,0,&__ObjcClass );
+#endif
 }
 
 
