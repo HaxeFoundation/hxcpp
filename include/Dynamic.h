@@ -28,6 +28,11 @@ public:
    Dynamic(const null &inNull) : super(0) { }
    Dynamic(const Dynamic &inRHS) : super(inRHS.mPtr) { }
    explicit Dynamic(const HX_CHAR *inStr);
+#ifdef __OBJC__
+#ifdef HXCPP_OBJC
+   Dynamic(const id inObjc);
+#endif
+#endif
 
    template<typename T,typename S>
    explicit Dynamic(const cpp::Struct<T,S> &inRHS) { *this = inRHS; }
@@ -51,6 +56,11 @@ public:
    inline operator char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator signed char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
+#ifdef __OBJC__
+#ifdef HXCPP_OBJC
+   inline operator id() const { return mPtr ? (id)mPtr->__GetHandle() : 0; }
+#endif
+#endif
    inline bool operator !() const { return !mPtr || !mPtr->__ToInt(); }
 
    hx::IndexRef operator[](int inIndex);

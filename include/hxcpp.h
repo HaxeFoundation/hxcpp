@@ -32,6 +32,12 @@
   #include <cstdlib>
 #endif
 
+#ifdef __OBJC__
+#ifdef HXCPP_OBJC
+  #import <Foundation/Foundation.h>
+#endif
+#endif
+
 
 #include <string.h>
 
