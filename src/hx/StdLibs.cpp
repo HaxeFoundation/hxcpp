@@ -22,10 +22,9 @@ typedef int64_t __int64;
 #ifdef TIZEN
 extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumber, const char* pFormat, ...);
 #endif
-#ifdef GCW0
+#if defined(BLACKBERRY) || defined(GCW0)
 #include <unistd.h>
 #endif
-
 #include <string>
 #include <vector>
 #include <map>
