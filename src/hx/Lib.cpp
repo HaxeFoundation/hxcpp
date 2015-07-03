@@ -15,9 +15,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
-
-
-
+#if defined(BLACKBERRY)
+using namespace std;
+#endif
 #ifdef HXCPP_LOAD_DEBUG
 bool gLoadDebug = true;
 #else
