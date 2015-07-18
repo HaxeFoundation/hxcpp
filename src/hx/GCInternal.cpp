@@ -2917,7 +2917,7 @@ public:
 
       #ifdef HXCPP_DEBUG
       if (mGCFreeZone)
-         CriticalGCError("Alloacting from a GC-free thread");
+         CriticalGCError("Allocating from a GC-free thread");
       #endif
       if (hx::gPauseForCollect)
          PauseForCollect();
