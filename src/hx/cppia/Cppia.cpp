@@ -105,6 +105,27 @@ void CppiaModule::boot(CppiaCtx *ctx)
       cppiaClassInit(classes[i],ctx,1);
 }
 
+int CppiaModule::getInterfaceSlot(const std::string &inName)
+{
+   InterfaceSlots::iterator it = interfaceSlots.find(inName);
+   if (it==interfaceSlots.end())
+   {
+      int result = interfaceSlots.size()+2;
+      interfaceSlots[inName] = result;
+      return result;
+   }
+   return it->second;
+}
+
+
+int CppiaModule::findInterfaceSlot(const std::string &inName)
+{
+   InterfaceSlots::iterator it = interfaceSlots.find(inName);
+   if (it==interfaceSlots.end())
+      return -1;
+   return it->second;
+}
+
 // --- StackLayout ---
 
 
@@ -1132,6 +1153,7 @@ struct CppiaClassInfo
    int       classSize;
    int       extraData;
    int       dynamicMapOffset;
+   int       interfaceSlotSize;
    void      **vtable;
    std::string name;
    std::map<std::string, void **> interfaceVTables;
@@ -1168,6 +1190,7 @@ struct CppiaClassInfo
       initFunc = 0;
       enumMeta = 0;
       isInterface = false;
+      interfaceSlotSize = 0;
       superType = 0;
       typeId = 0;
       vtable = 0;
@@ -1896,10 +1919,6 @@ struct CppiaClassInfo
             DBGLOG("   override slot [%d] = %s\n", idx, memberFunctions[i]->name.c_str() );
          memberFunctions[i]->setVTableSlot(idx);
       }
-      vtable = new void*[vtableSlot + 1];
-      memset(vtable, 0, sizeof(void *)*(vtableSlot+1));
-      *vtable++ = this;
-      DBGLOG("  vtable size %d -> %p\n", vtableSlot, vtable);
 
 
       // Create interface vtables...
@@ -1915,9 +1934,27 @@ struct CppiaClassInfo
             CppiaClassInfo  *cppiaInterface = interface->cppiaClass;
             if (!cppiaInterface)
                 break;
+            Functions &intfFuncs = cppiaInterface->memberFunctions;
+            for(int f=0;f<intfFuncs.size();f++)
+            {
+               int slot = cppia.getInterfaceSlot(intfFuncs[f]->name);
+               if (slot>interfaceSlotSize)
+                  interfaceSlotSize = slot;
+            }
             id =  cppiaInterface->superId;
          }
       }
+
+      if (interfaceSlotSize)
+         interfaceSlotSize++;
+
+      vtable = new void*[vtableSlot + 2 + interfaceSlotSize];
+      memset(vtable, 0, sizeof(void *)*(vtableSlot+2+interfaceSlotSize));
+      vtable += interfaceSlotSize;
+      *vtable++ = this;
+
+      DBGLOG("  vtable size %d -> %p\n", vtableSlot, vtable);
+
 
       // Extract special function ...
       for(int i=0;i<staticFunctions.size(); )
@@ -2014,7 +2051,15 @@ struct CppiaClassInfo
          dynamicFunctions[i]->link(cppia);
 
       for(int i=0;i<memberFunctions.size();i++)
+      {
          vtable[ memberFunctions[i]->vtableSlot ] = memberFunctions[i]->funExpr;
+         if (interfaceSlotSize)
+         {
+            int interfaceSlot = cppia.findInterfaceSlot( memberFunctions[i]->name );
+            if (interfaceSlot>0 && interfaceSlot<interfaceSlotSize)
+               vtable[ -interfaceSlot ] = memberFunctions[i]->funExpr;
+         }
+      }
 
       // Vars ...
       if (!isInterface)
