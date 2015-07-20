@@ -229,7 +229,7 @@ Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
              if (type->isInterface)
                 *(hx::Object **)(base) = ObjectToInterface(inValue.mPtr,type);
              else
-                *(hx::Object **)(base) = inValue.mPtr;
+                *(hx::Object **)(base) = inValue.mPtr ? inValue.mPtr->__GetRealObject() : 0;
              return inValue;
       case fsUnknown:
          break;
