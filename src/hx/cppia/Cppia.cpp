@@ -16,7 +16,6 @@
 #endif
 
 
-
 namespace hx
 {
 //#define SJLJ_RETURN 1
@@ -1900,6 +1899,7 @@ struct CppiaClassInfo
       for(int i=0;i<table.size();i++)
          DBGLOG("   base table[%d] = %s\n", i, table[i].c_str() );
 
+
       int vtableSlot = table.size();
       for(int i=0;i<memberFunctions.size();i++)
       {
@@ -1912,8 +1912,21 @@ struct CppiaClassInfo
             }
          if (idx<0)
          {
-            idx = vtableSlot++;
-            DBGLOG("   cppia slot [%d] = %s\n", idx, memberFunctions[i]->name.c_str() );
+            if (isInterface)
+            {
+               idx = cppia.getInterfaceSlot(memberFunctions[i]->name);
+               if (idx==-1)
+                  throw "Missing function in interface";
+               if (idx>interfaceSlotSize)
+                  interfaceSlotSize = idx;
+               idx = -idx;
+               DBGLOG("Using interface vtable[%d] = %s\n", idx, memberFunctions[i]->name.c_str() );
+            }
+            else
+            {
+               idx = vtableSlot++;
+               DBGLOG("   cppia slot [%d] = %s\n", idx, memberFunctions[i]->name.c_str() );
+            }
          }
          else
             DBGLOG("   override slot [%d] = %s\n", idx, memberFunctions[i]->name.c_str() );
@@ -3364,6 +3377,7 @@ struct CppiaExprWithValue : public CppiaDynamicExpr
 // ---
 
 
+static int idx = 0;
 
 struct CallDynamicFunction : public CppiaExprWithValue
 {
@@ -3685,15 +3699,22 @@ struct ToInterface : public CppiaDynamicExpr
          }
          else
          {
-            DBGLOG("cppa class, native interface\n");
+            DBGLOG("cppia class, native interface\n");
             cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->interfaceBase->name);
          }
       }
       else if (fromType && fromType->cppiaClass)
       {
+         DBGLOG("cppia class, cppia interface - no cast required\n");
+
+         CppiaExpr *linked = value->link(inModule);
+         delete this;
+         return linked;
+         /*
          cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->name.__s);
          if (!cppiaVTable)
            DBGLOG("Could not find scripting interface implementation %s on %s, use dynamic\n", toType->name.__s, fromType->name.__s);
+         */
       }
       else
       {
@@ -4509,7 +4530,7 @@ struct GetFieldByName : public CppiaDynamicExpr
       }
 
       // Use runtime lookup...
-      if (vtableSlot<0 || staticClass.mPtr)
+      if (vtableSlot==-1 || staticClass.mPtr)
       {
          name = inModule.strings[nameId];
          inModule.markable.push_back(this);
@@ -4522,7 +4543,7 @@ struct GetFieldByName : public CppiaDynamicExpr
       hx::Object *instance = object ? object->runObject(ctx) : isStatic ? staticClass.mPtr : ctx->getThis(false);
       BCR_CHECK;
       CPPIA_CHECK(instance);
-      if (vtableSlot>=0)
+      if (vtableSlot!=-1)
       {
          //if (isInterface)
          //   instance = instance->__GetRealObject();
@@ -4819,7 +4840,7 @@ struct CallMember : public CppiaExpr
          {
             int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
             //printf("   vslot %d\n", vtableSlot);
-            if (vtableSlot>=0)
+            if (vtableSlot!=-1)
             {
                ExprType returnType = type->cppiaClass->findFunctionType(inModule,fieldId);
                replace = new CallMemberVTable( this, thisExpr, vtableSlot, returnType, type->cppiaClass->isInterface, args );
