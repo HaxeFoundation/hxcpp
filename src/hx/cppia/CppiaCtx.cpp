@@ -20,7 +20,7 @@ static std::vector<CppiaCtx *> sAllContexts;
 
 CppiaCtx::CppiaCtx()
 {
-   stack = new unsigned char[64*1024];
+   stack = new unsigned char[128*1024];
    pointer = &stack[0];
    push((hx::Object *)0);
    frame = pointer;

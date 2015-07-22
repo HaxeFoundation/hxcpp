@@ -2671,6 +2671,10 @@ public:
 
    void pushArg(CppiaCtx *ctx, int a, Dynamic inValue)
    {
+      // Developer has used dynamic to call a closure with wrong # parameters
+      if (a>=function->args.size())
+         return;
+
       if (!inValue.mPtr && function->pushDefault(ctx,a) )
           return;
 
@@ -3650,26 +3654,6 @@ struct CastExpr : public CppiaDynamicExpr
    }
 };
 
-hx::Object *ObjectToInterface(hx::Object *inObject, TypeData *toType)
-{
-   if (!inObject)
-      return 0;
-
-   inObject = inObject->__GetRealObject();
-
-   void **vtable = inObject->__GetScriptVTable();
-   if (vtable)
-   {
-      CppiaClassInfo *info = (CppiaClassInfo *)vtable[-1];
-      void **interfaceVTable = info->getInterfaceVTable(toType->name.__s);
-      if (!interfaceVTable)
-         return 0;
-      return CppiaInterface::__script_create(interfaceVTable,inObject);
-   }
-
-   return inObject->__ToInterface(*(toType->interfaceBase->mType));
-}
-
 
 struct ToInterface : public CppiaDynamicExpr
 {
@@ -3719,26 +3703,16 @@ struct ToInterface : public CppiaDynamicExpr
             DBGLOG("cppia class, native interface\n");
             cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->interfaceBase->name);
          }
+         value = value->link(inModule);
+         return this;
       }
-      else if (fromType && fromType->cppiaClass)
-      {
-         DBGLOG("cppia class, cppia interface - no cast required\n");
 
-         CppiaExpr *linked = value->link(inModule);
-         delete this;
-         return linked;
-         /*
-         cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->name.__s);
-         if (!cppiaVTable)
-           DBGLOG("Could not find scripting interface implementation %s on %s, use dynamic\n", toType->name.__s, fromType->name.__s);
-         */
-      }
-      else
-      {
-         // Use dynamic
-      }
-      value = value->link(inModule);
-      return this;
+
+      DBGLOG("cppia class, cppia interface - no cast required\n");
+
+      CppiaExpr *linked = value->link(inModule);
+      delete this;
+      return linked;
    }
 
    hx::Object *runObject(CppiaCtx *ctx)
@@ -3749,72 +3723,21 @@ struct ToInterface : public CppiaDynamicExpr
       if (obj)
          obj = obj->__GetRealObject();
 
-      if (interfaceInfo)
-      {
-         if (cppiaVTable)
-         {
-            if (array)
-            {
-               CPPIA_CHECK(obj);
-               int n = obj->__length();
-               Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
-               for(int i=0;i<n;i++)
-                  result[i] = interfaceInfo->factory(cppiaVTable,obj->__GetItem(i)->__GetRealObject());
-               return result.mPtr;
-            }
-            return interfaceInfo->factory(cppiaVTable,obj);
-         }
-         return obj->__ToInterface(*interfaceInfo->mType);
-      }
-
       if (cppiaVTable)
       {
          if (array)
          {
+            CPPIA_CHECK(obj);
             int n = obj->__length();
             Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
             for(int i=0;i<n;i++)
-               result[i] = CppiaInterface::__script_create(cppiaVTable,obj->__GetItem(i)->__GetRealObject());
+               result[i] = interfaceInfo->factory(cppiaVTable,obj->__GetItem(i)->__GetRealObject());
             return result.mPtr;
          }
-
-         return CppiaInterface::__script_create(cppiaVTable,obj);
+         return interfaceInfo->factory(cppiaVTable,obj);
       }
-
-      if (array)
-      {
-         CPPIA_CHECK(obj);
-         int n = obj->__length();
-         Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
-         for(int i=0;i<n;i++)
-         {
-            Dynamic o = obj->__GetItem(i)->__GetRealObject();
-            if (o.mPtr)
-            {
-               void **vtable = o->__GetScriptVTable();
-               if (vtable)
-               {
-                  CppiaClassInfo *info = (CppiaClassInfo *)vtable[-1];
-                  void **interfaceVTable = info->getInterfaceVTable(toType->name.__s);
-                  if (interfaceVTable)
-                     result[i] =  CppiaInterface::__script_create(interfaceVTable,o.mPtr);
-               }
-            }
-         }
-         return result.mPtr;
-      }
-
-      void **vtable = obj->__GetScriptVTable();
-      if (vtable)
-      {
-         CppiaClassInfo *info = (CppiaClassInfo *)vtable[-1];
-         void **interfaceVTable = info->getInterfaceVTable(toType->name.__s);
-         if (!interfaceVTable)
-            return 0;
-         return CppiaInterface::__script_create(interfaceVTable,obj);
-      }
-
-      return 0;
+      hx::Object *result = obj->__ToInterface(*interfaceInfo->mType);
+      return result;
    }
 };
 
@@ -4218,7 +4141,6 @@ struct CallMemberVTable : public CppiaExpr
       hx::Object *thisVal = thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(); \
       CPPIA_CHECK(thisVal); \
       ScriptCallable **vtable = (ScriptCallable **)thisVal->__GetScriptVTable(); \
-      if (isInterfaceCall) thisVal = thisVal->__GetRealObject(); \
       unsigned char *pointer = ctx->pointer; \
       vtable[slot]->pushArgs(ctx, thisVal, args); \
       /* TODO */; \
