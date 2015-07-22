@@ -1714,6 +1714,16 @@ struct CppiaClassInfo
       return &superType->haxeClass;
    }
 
+   void addMemberFunction(Functions &ioCombined, CppiaFunction *inNewFunc)
+   {
+      for(int j=0;j<ioCombined.size();j++)
+         if (ioCombined[j]->name==inNewFunc->name)
+         {
+            ioCombined[j] = inNewFunc;
+            return;
+         }
+      ioCombined.push_back(inNewFunc);
+   }
 
    void linkTypes()
    {
@@ -1819,19 +1829,26 @@ struct CppiaClassInfo
 
          // Combine member functions ...
          Functions combinedFunctions(cppiaSuper->memberFunctions );
-         for(int i=0;i<memberFunctions.size();i++)
+         if (isInterface)
          {
-            bool found = false;
-            for(int j=0;j<combinedFunctions.size();j++)
-               if (combinedFunctions[j]->name==memberFunctions[i]->name)
+            // 'implements' interfaces are like extra super-classes for interfaces
+            // For non-interface classes, these function will show up in the members anyhow
+            for(int i=0;i<implements.size();i++)
+            {
+               CppiaClassInfo  *cppiaInterface = cppia.types[implements[i]]->cppiaClass;
+               if (cppiaInterface)
                {
-                  combinedFunctions[j] = memberFunctions[i];
-                  found = true;
-                  break;
+                  Functions &intfFuncs = cppiaInterface->memberFunctions;
+                  for(int j=0;j<intfFuncs.size();j++)
+                     addMemberFunction(combinedFunctions, intfFuncs[j]);
                }
-            if (!found)
-               combinedFunctions.push_back(memberFunctions[i]);
+            }
          }
+
+
+         for(int i=0;i<memberFunctions.size();i++)
+            addMemberFunction(combinedFunctions, memberFunctions[i]);
+
          memberFunctions.swap(combinedFunctions);
       }
 
