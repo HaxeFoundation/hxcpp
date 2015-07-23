@@ -6673,9 +6673,10 @@ struct OpDiv : public BinOp
    ExprType getType() { return etFloat; }
    int runInt(CppiaCtx *ctx)
    {
-      int lval = left->runInt(ctx);
+      // Int division - if you use 'cast' - do as float then cast to int
+      Float lval = left->runFloat(ctx);
       BCR_CHECK;
-      return lval / right->runInt(ctx);
+      return lval / right->runFloat(ctx);
    }
    Float runFloat(CppiaCtx *ctx)
    {
