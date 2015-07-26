@@ -225,7 +225,33 @@ Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
       case fsBool: *(bool *)(base) = inValue; return inValue;
       case fsFloat: *(Float *)(base) = inValue; return inValue;
       case fsString: *(String *)(base) = inValue; return inValue;
-      case fsObject: *(hx::Object **)(base) = inValue.mPtr; return inValue;
+      case fsObject:
+            switch(type->arrayType)
+            {
+               case arrNotArray:
+                  *(hx::Object **)(base) = inValue.mPtr;
+                  break;
+               case arrBool:
+                  *(Array<Bool> *)(base) = inValue;
+                  break;
+               case arrInt:
+                  *(Array<Int> *)(base) = inValue;
+                  break;
+               case arrFloat:
+                  *(Array<Float> *)(base) = inValue;
+                  break;
+               case arrUnsignedChar:
+                  *(Array<unsigned char> *)(base) = inValue;
+                  break;
+               case arrString:
+                  *(Array<String> *)(base) = inValue;
+                  break;
+               case arrObject:
+               case arrAny:
+                  *(Array<Dynamic> *)(base) = inValue;
+                  break;
+            }
+            return inValue;
       case fsUnknown:
          break;
    }
@@ -351,37 +377,39 @@ void CppiaStackVar::fromStream(CppiaStream &stream)
 
 void CppiaStackVar::set(CppiaCtx *inCtx,Dynamic inValue)
 {
-   switch(expressionType)
+   switch(storeType)
    {
-      case etInt:
-         if (storeType==fsBool)
-            *(bool *)(inCtx->frame + stackPos) = inValue;
-         else
-            *(int *)(inCtx->frame + stackPos) = inValue;
+      case fsByte:
+         *(unsigned *)(inCtx->frame + stackPos) = (int)inValue;
          break;
-      case etFloat:
+      case fsBool:
+         *(bool *)(inCtx->frame + stackPos) = inValue;
+         break;
+      case fsInt:
+         *(int *)(inCtx->frame + stackPos) = inValue;
+         break;
+      case fsFloat:
          SetFloatAligned(inCtx->frame + stackPos,inValue);
          break;
-      case etString:
+      case fsString:
          *(String *)(inCtx->frame + stackPos) = inValue;
          break;
-      case etObject:
+      case fsObject:
          *(hx::Object **)(inCtx->frame + stackPos) = inValue.mPtr;
          break;
-      case etVoid:
-      case etNull:
+      case fsUnknown:
          break;
    }
 }
 
 void CppiaStackVar::markClosure(char *inBase, hx::MarkContext *__inCtx)
 {
-   switch(expressionType)
+   switch(storeType)
    {
-      case etString:
+      case fsString:
          HX_MARK_MEMBER(*(String *)(inBase + capturePos));
          break;
-      case etObject:
+      case fsObject:
          HX_MARK_MEMBER(*(hx::Object **)(inBase + capturePos));
          break;
       default: ;
@@ -390,12 +418,12 @@ void CppiaStackVar::markClosure(char *inBase, hx::MarkContext *__inCtx)
 
 void CppiaStackVar::visitClosure(char *inBase, hx::VisitContext *__inCtx)
 {
-   switch(expressionType)
+   switch(storeType)
    {
-      case etString:
+      case fsString:
          HX_VISIT_MEMBER(*(String *)(inBase + capturePos));
          break;
-      case etObject:
+      case fsObject:
          HX_VISIT_MEMBER(*(hx::Object **)(inBase + capturePos));
          break;
       default: ;

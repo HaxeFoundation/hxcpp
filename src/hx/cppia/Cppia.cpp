@@ -805,6 +805,7 @@ struct ScriptCallable : public CppiaDynamicExpr
       BCR_VCHECK;
 
       int inCount = inArgs==null() ? 0 : inArgs->length;
+      /*
       bool badCount = argCount<inCount;
       for(int i=inCount;i<argCount && !badCount;i++)
          if (!hasDefault[i])
@@ -818,6 +819,7 @@ struct ScriptCallable : public CppiaDynamicExpr
          throw Dynamic(HX_CSTRING("Arg count error"));
          //return;
       }
+      */
 
 
       ctx->push( inThis );
@@ -867,7 +869,7 @@ struct ScriptCallable : public CppiaDynamicExpr
                   }
             }
          }
-         else
+         else if (a<inCount)
          {
             switch(var.expressionType)
             {
@@ -884,6 +886,25 @@ struct ScriptCallable : public CppiaDynamicExpr
                   ctx->pushObject(inArgs[a].mPtr);
             }
             BCR_VCHECK;
+         }
+         else
+         {
+            // Push cpp defaults...
+            switch(var.expressionType)
+            {
+               case etInt:
+                  ctx->pushInt(0);
+                  break;
+               case etFloat:
+                  ctx->pushFloat(0.0);
+                  break;
+               case etString:
+                  ctx->pushString(String());
+                  break;
+               default:
+                  ctx->pushObject(0);
+            }
+ 
          }
       }
    }
