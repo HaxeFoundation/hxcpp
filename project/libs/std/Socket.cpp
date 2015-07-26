@@ -131,7 +131,8 @@ static value socket_new( value udp ) {
 	if( s == INVALID_SOCKET )
 		return alloc_null();
 #	ifdef NEKO_MAC
-	setsockopt(s,SOL_SOCKET,SO_NOSIGPIPE,NULL,0);
+	int set = 1;
+	setsockopt(s,SOL_SOCKET,SO_NOSIGPIPE,(void *)&set, sizeof(int));
 #	endif
 #	ifdef NEKO_POSIX
 	// we don't want sockets to be inherited in case of exec
