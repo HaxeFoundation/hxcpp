@@ -460,7 +460,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          Element *el = bucket[b];
          while(el)
          {
-            inFunc(*el);
+            inFunc(el);
             el = el->next;
          }
       }
@@ -474,9 +474,9 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
       Converter(NEW *inResult) : result(inResult) { }
 
-      void operator()(typename Hash::Element &elem)
+      void operator()(typename Hash::Element *elem)
       {
-         result->set(elem.key,elem.value);
+         result->set(elem->key,elem->value);
       }
    };
 
@@ -506,9 +506,9 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       {
          array = Array<Key>(0,inReserve);
       }
-      void operator()(typename Hash::Element &elem)
+      void operator()(typename Hash::Element *elem)
       {
-         array->push(elem.key);
+         array->push(elem->key);
       }
    };
    Array<Key> keys()
@@ -528,9 +528,9 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          array = Array<Value>(0,inReserve);
       }
 
-      void operator()(typename Hash::Element &elem)
+      void operator()(typename Hash::Element *elem)
       {
-         array->push(elem.value);
+         array->push(elem->value);
       }
    };
    Dynamic values()
@@ -551,13 +551,13 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          array = Array<String>(0,inReserve*4+1);
          array->push(HX_CSTRING("{ "));
       }
-      void operator()(typename Hash::Element &elem)
+      void operator()(typename Hash::Element *elem)
       {
          if (array->length>1)
             array->push(HX_CSTRING(", "));
-         array->push(String(elem.key));
+         array->push(String(elem->key));
          array->push(HX_CSTRING(" => "));
-         array->push(String(elem.value));
+         array->push(String(elem->value));
       }
       ::String toString()
       {
@@ -579,14 +579,14 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    {
       hx::MarkContext *__inCtx;
       HashMarker(hx::MarkContext *ctx) : __inCtx(ctx) { }
-      void operator()(typename Hash::Element &inElem)
+      void operator()(typename Hash::Element *inElem)
       {
-         HX_MARK_ARRAY(&inElem);
+         HX_MARK_ARRAY(inElem);
          if (!Hash::Element::WeakKeys)
          {
-            HX_MARK_MEMBER(inElem.key);
+            HX_MARK_MEMBER(inElem->key);
          }
-         HX_MARK_MEMBER(inElem.value);
+         HX_MARK_MEMBER(inElem->value);
       }
    };
 
