@@ -74,7 +74,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
          return 0;
       }
 
-      void Set( const String &inName,int inIndex,DynamicArray inArgs)
+      void __Set( const String &inName,int inIndex,DynamicArray inArgs)
       {
          tag = inName;
          index = inIndex;
@@ -96,7 +96,7 @@ template<typename ENUM>
 hx::ObjectPtr<ENUM> CreateEnum(const String &inName,int inIndex, DynamicArray inArgs=DynamicArray())
 {
    ENUM *result = new ENUM;
-   result->Set(inName,inIndex,inArgs);
+   result->__Set(inName,inIndex,inArgs);
    return result;
 }
 } // end namespace hx
@@ -104,7 +104,7 @@ hx::ObjectPtr<ENUM> CreateEnum(const String &inName,int inIndex, DynamicArray in
 inline void __hxcpp_enum_force(hx::EnumBase inEnum,String inForceName, int inIndex)
 {
    hx::DynamicArray empty;
-   inEnum->Set(inForceName, inIndex, empty);
+   inEnum->__Set(inForceName, inIndex, empty);
 }
 
 
