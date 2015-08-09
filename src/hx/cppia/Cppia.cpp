@@ -1142,7 +1142,7 @@ struct CppiaEnumConstructor
       if (args.size()==0)
          return value.mPtr;
       EnumBase_obj *result = new CppiaEnumBase(classInfo);
-      result->Set(name, index, inArgs);
+      result->__Set(name, index, inArgs);
       return result;
    }
 };
@@ -2033,7 +2033,7 @@ struct CppiaClassInfo
          {
             EnumBase base = new CppiaEnumBase(this);
             e.value = base;
-            base->Set( cppia.strings[e.nameId],i,null() );
+            base->__Set( cppia.strings[e.nameId],i,null() );
          }
          else
          {
@@ -2724,7 +2724,7 @@ public:
       AutoStack a(ctx);
       ctx->pointer += sizeof(hx::Object *);
 
-      int haveArgs = inArgs->length;
+      int haveArgs = !inArgs.mPtr ? 0 : inArgs->length;
       if (haveArgs>function->argCount)
          throw sInvalidArgCount;
 
