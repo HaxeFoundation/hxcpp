@@ -989,7 +989,7 @@ class BuildTool
       while(a < args.length)
       {
          var arg = args[a];
-         if (arg.substr(0,2)=="-D" || (~/^[a-zA-Z0-9_]*=/).match(arg) )
+         if (arg.substr(0,2)=="-D" || (~/^[a-zA-Z0-9_][a-zA-Z0-9_-]*=/).match(arg) )
          {
             var val = arg.substr(0,2)=="-D" ? arg.substr(2) : arg;
             var equals = val.indexOf("=");
