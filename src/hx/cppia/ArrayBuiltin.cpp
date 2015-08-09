@@ -754,7 +754,8 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          return thisVal->toString();
       }
 
-      return runObject(ctx)->toString();
+      hx::Object *obj = runObject(ctx);
+      return obj ? obj->toString() : ::String();
    }
 
    hx::Object *runObject(CppiaCtx *ctx)
