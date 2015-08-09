@@ -236,6 +236,8 @@ public:
 
 
    inline T *operator->() { return ptr; }
+   
+   inline operator T &() { return *ptr; }
 
 };
 
