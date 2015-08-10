@@ -11,7 +11,7 @@ class PathManager
       {   
          return secondPath;  
       }
-      else if (secondPath != null && secondPath != "")
+      else if (secondPath != null && secondPath != "" && secondPath!=".")
       {
          if (BuildTool.isWindows)
          {

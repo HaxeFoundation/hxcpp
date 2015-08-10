@@ -124,7 +124,7 @@ class BuildTool
       if (isMsvc())
          mDefines.set("isMsvc","1");
 
-      include("toolchain/finish-setup.xml");
+      include("toolchain/finish-setup.xml", false);
 
 
       pushFile(inMakefile,"makefile");
@@ -141,10 +141,10 @@ class BuildTool
       var xml_slow = Xml.parse(make_contents);
       var xml = new Fast(xml_slow.firstElement());
 
-      parseXML(xml,"");
+      parseXML(xml,"",false);
       popFile();
       
-      include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml");
+      include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml", false);
       
       if (mDefines.exists("HXCPP_CONFIG"))
          include(mDefines.get("HXCPP_CONFIG"),"exes",true);
@@ -285,6 +285,7 @@ class BuildTool
  
       var threads = BuildTool.sCompileThreadCount;
 
+
       PathManager.resetDirectoryCache();
       var restoreDir = "";
       if (target.mBuildDir!="")
@@ -298,10 +299,16 @@ class BuildTool
  
       var objs = new Array<String>();
 
+      mCompiler.objToAbsolute();
+
       if (target.mFileGroups.length > 0)
          PathManager.mkdir(mCompiler.mObjDir);
+
+      var baseDir = Sys.getCwd();
       for(group in target.mFileGroups)
       {
+         if (group.mDir!=".")
+            Sys.setCwd( PathManager.combine(baseDir, group.mDir ) );
          group.checkOptions(mCompiler.mObjDir);
 
          group.checkDependsExist();
@@ -389,6 +396,9 @@ class BuildTool
             if (threadExitCode!=0)
                Sys.exit(threadExitCode);
          }
+
+         if (group.mDir!=".")
+            Sys.setCwd( baseDir );
       }
 
       switch(target.mTool)
@@ -543,9 +553,11 @@ class BuildTool
       return c;
    }
 
-   public function createFileGroup(inXML:Fast,inFiles:FileGroup,inName:String):FileGroup
+   public function createFileGroup(inXML:Fast,inFiles:FileGroup,inName:String, inForceRelative:Bool):FileGroup
    {
       var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
+      if (inForceRelative)
+         dir = PathManager.combine( Path.directory(mCurrentIncludeFile), dir );
       var group = inFiles==null ? new FileGroup(dir,inName) : inFiles;
       for(el in inXML.elements)
       {
@@ -558,7 +570,7 @@ class BuildTool
                      if (valid(f,"") && f.name=="depend")
                         file.mDepends.push( substitute(f.att.name) );
                   group.mFiles.push( file );
-               case "section" : createFileGroup(el,group,inName);
+               case "section" : createFileGroup(el,group,inName,inForceRelative);
                case "depend" :
                   if (el.has.name)
                      group.addDepend( substitute(el.att.name) );
@@ -589,7 +601,7 @@ class BuildTool
                      pushFile(full_name, "FileGroup");
                      var make_contents = sys.io.File.getContent(full_name);
                      var xml_slow = Xml.parse(make_contents);
-                     createFileGroup(new Fast(xml_slow.firstElement()), group, inName);
+                     createFileGroup(new Fast(xml_slow.firstElement()), group, inName, false);
                      popFile();
                   } 
                   else
@@ -1400,7 +1412,7 @@ class BuildTool
       }
    }
 
-   function parseXML(inXML:Fast,inSection:String)
+   function parseXML(inXML:Fast,inSection:String, forceRelative:Bool)
    {
       for(el in inXML.elements)
       {
@@ -1454,13 +1466,13 @@ class BuildTool
                case "files" : 
                   var name = substitute(el.att.id);
                   if (mFileGroups.exists(name))
-                     createFileGroup(el, mFileGroups.get(name), name);
+                     createFileGroup(el, mFileGroups.get(name), name, false);
                   else
-                     mFileGroups.set(name,createFileGroup(el,null,name));
-               case "include" : 
+                     mFileGroups.set(name,createFileGroup(el,null,name, forceRelative));
+               case "include", "import" : 
                   var name = substitute(el.att.name);
                   var section = el.has.section ? substitute(el.att.section) : "";
-                  include(name, section, el.has.noerror);
+                  include(name, section, el.has.noerror, el.name=="import" );
                case "target" : 
                   var name = substitute(el.att.id);
                   var overwrite = name=="default";
@@ -1479,7 +1491,7 @@ class BuildTool
                                    el.has.allowMissing ?  subBool(el.att.allowMissing) : false,
                                    el.has.toolId ?  substitute(el.att.toolId) : null ) );
                case "section" : 
-                  parseXML(el,"");
+                  parseXML(el,"",forceRelative);
 
                case "pleaseUpdateHxcppTool" : 
                   checkToolVersion( substitute(el.att.version) );
@@ -1496,7 +1508,7 @@ class BuildTool
    }
 
 
-   public function include(inName:String, inSection:String="", inAllowMissing:Bool = false)
+   public function include(inName:String, inSection:String="", inAllowMissing:Bool = false, forceRelative=false)
    {
       var full_name = findIncludeFile(inName);
       if (full_name!="")
@@ -1509,7 +1521,7 @@ class BuildTool
          var make_contents = sys.io.File.getContent(full_name);
          var xml_slow = Xml.parse(make_contents);
 
-         parseXML(new Fast(xml_slow.firstElement()),inSection);
+         parseXML(new Fast(xml_slow.firstElement()),inSection, forceRelative);
 
          mCurrentIncludeFile = oldInclude;
          popFile();

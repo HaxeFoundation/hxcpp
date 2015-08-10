@@ -50,6 +50,11 @@ class Compiler
       mCached = false;
    }
 
+   public function objToAbsolute()
+   {
+      mObjDir = PathManager.combine( Sys.getCwd(), mObjDir );
+   }
+
    function addIdentity(ext:String,ioArgs:Array<String>)
    {
       if (mAddGCCIdentity)
