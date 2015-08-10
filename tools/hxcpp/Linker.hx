@@ -14,6 +14,7 @@ class Linker
    public var mLibs:Array<String>;
    public var mExpandArchives:Bool;
    public var mRecreate:Bool;
+   public var mLastOutName:String;
 
    public function new(inExe:String)
    {
@@ -65,6 +66,7 @@ class Linker
       }
       
       var out_name = inTarget.mOutputDir + file_name;
+      mLastOutName = out_name;
 
       var libs = inTarget.mLibs.concat(mLibs);
       var v18Added = false;

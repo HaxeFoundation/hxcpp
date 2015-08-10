@@ -51,8 +51,9 @@ class Target
       mErrors.push(inError);
    }
 
-   public function addFiles(inGroup:FileGroup)
+   public function addFiles(inGroup:FileGroup, inAsLibrary:Bool)
    {
+      inGroup.mAsLibrary=inAsLibrary;
       mFiles = mFiles.concat(inGroup.mFiles);
       mFileGroups.push(inGroup);
    }

@@ -12,6 +12,8 @@ import cpp.vm.Thread;
 import cpp.vm.Mutex;
 import cpp.vm.Tls;
 #end
+import haxe.crypto.Md5;
+
 
 using StringTools;
 
@@ -307,6 +309,8 @@ class BuildTool
       var baseDir = Sys.getCwd();
       for(group in target.mFileGroups)
       {
+         var groupObjs = new Array<String>();
+
          if (group.mDir!=".")
             Sys.setCwd( PathManager.combine(baseDir, group.mDir ) );
          group.checkOptions(mCompiler.mObjDir);
@@ -320,7 +324,7 @@ class BuildTool
          for(file in group.mFiles)
          {
             var obj_name = mCompiler.getObjName(file);
-            objs.push(obj_name);
+            groupObjs.push(obj_name);
             if (file.isOutOfDate(obj_name))
             {
                if (useCache)
@@ -340,9 +344,9 @@ class BuildTool
             {
                var pchDir = group.getPchDir();
                if (pchDir != "")
-            {
-                  objs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.getPchName() + mCompiler.mExt);
-            }
+               {
+                  groupObjs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.getPchName() + mCompiler.mExt);
+               }
             }
          }
 
@@ -395,6 +399,20 @@ class BuildTool
             // Already printed the error from the thread, just need to exit
             if (threadExitCode!=0)
                Sys.exit(threadExitCode);
+         }
+
+         if (group.mAsLibrary && mLinkers.exists("static_link"))
+         {
+            var linker = mLinkers.get("static_link");
+            var md5 = Md5.encode(groupObjs.join(";")).substr(0,8);
+            var tmpName = mCompiler.mObjDir + "/" + md5 + "_" + group.mId;
+            var libTarget = new Target(tmpName, "linker", "static_link" );
+            linker.link(libTarget,groupObjs, mCompiler );
+            target.mLibs.push(linker.mLastOutName);
+         }
+         else
+         {
+            objs = objs.concat(groupObjs);
          }
 
          if (group.mDir!=".")
@@ -711,7 +729,7 @@ class BuildTool
                   if (!mFileGroups.exists(id))
                      target.addError( "Could not find filegroup " + id ); 
                   else
-                     target.addFiles( mFileGroups.get(id) );
+                     target.addFiles( mFileGroups.get(id), el.has.asLibrary );
                case "section" : createTarget(el,target);
             }
       }

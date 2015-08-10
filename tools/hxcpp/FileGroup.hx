@@ -15,6 +15,7 @@ class FileGroup
    public var mId:String;
    public var mDepends:Array<String>;
    public var mDependHash:String;
+   public var mAsLibrary:Bool;
    
    public function new(inDir:String,inId:String)
    {
@@ -28,6 +29,7 @@ class FileGroup
       mHLSLs = [];
       mDir = inDir;
       mId = inId;
+      mAsLibrary = false;
    }
 
    public function addCompilerFlag(inFlag:String)
