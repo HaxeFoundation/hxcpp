@@ -311,7 +311,7 @@ class BuildTool
       {
          var groupObjs = new Array<String>();
 
-         if (group.mDir!=".")
+         if (group.mDir!="." && group.mSetImportDir)
             Sys.setCwd( PathManager.combine(baseDir, group.mDir ) );
          group.checkOptions(mCompiler.mObjDir);
 
@@ -415,7 +415,7 @@ class BuildTool
             objs = objs.concat(groupObjs);
          }
 
-         if (group.mDir!=".")
+         if (group.mDir!="." && group.mSetImportDir)
             Sys.setCwd( baseDir );
       }
 
@@ -576,7 +576,7 @@ class BuildTool
       var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
       if (inForceRelative)
          dir = PathManager.combine( Path.directory(mCurrentIncludeFile), dir );
-      var group = inFiles==null ? new FileGroup(dir,inName) : inFiles;
+      var group = inFiles==null ? new FileGroup(dir,inName, inForceRelative) : inFiles;
       for(el in inXML.elements)
       {
          if (valid(el,""))

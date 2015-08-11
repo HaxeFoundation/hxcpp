@@ -16,8 +16,9 @@ class FileGroup
    public var mDepends:Array<String>;
    public var mDependHash:String;
    public var mAsLibrary:Bool;
+   public var mSetImportDir:Bool;
    
-   public function new(inDir:String,inId:String)
+   public function new(inDir:String,inId:String,inSetImportDir = false)
    {
       mNewest = 0;
       mFiles = [];
@@ -30,6 +31,7 @@ class FileGroup
       mDir = inDir;
       mId = inId;
       mAsLibrary = false;
+      mSetImportDir = inSetImportDir;
    }
 
    public function addCompilerFlag(inFlag:String)
