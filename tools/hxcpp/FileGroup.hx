@@ -43,6 +43,8 @@ class FileGroup
 
    public function addDepend(inFile:String)
    {
+      if (mSetImportDir)
+         inFile = PathManager.combine(mDir, inFile);
       if (!FileSystem.exists(inFile))
       {
          mMissingDepends.push(inFile);
@@ -50,7 +52,9 @@ class FileGroup
       }
       var stamp =  FileSystem.stat(inFile).mtime.getTime();
       if (stamp>mNewest)
+      {
          mNewest = stamp;
+      }
 
       mDepends.push(inFile);
    }
@@ -59,6 +63,8 @@ class FileGroup
    {
       for(depend in inGroup.mDepends)
          addDepend(depend);
+      for(missing in inGroup.mMissingDepends)
+         mMissingDepends.push(missing);
    }
 
 
@@ -78,7 +84,7 @@ class FileGroup
    {
       if (mMissingDepends.length>0)
       {
-         Log.error("Could not find dependencies: [ " + mMissingDepends.join (", ") + " ]");
+         Log.error("Could not find dependencies for " + mId + " : [ " + mMissingDepends.join (", ") + " ]");
          //throw "Could not find dependencies: " + mMissingDepends.join(",");
       }
    }
@@ -160,7 +166,7 @@ class FileGroup
       for(hlsl in mHLSLs)
          hlsl.build();
 
-      if (BuildTool.hasCache)
+      if (BuildTool.hasCache && mUseCache)
       {
          mDependHash = "";
          for(depend in mDepends)

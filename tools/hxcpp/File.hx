@@ -46,6 +46,7 @@ class File
    {
       if (!FileSystem.exists(inObj))
          return true;
+
       var obj_stamp = FileSystem.stat(inObj).mtime.getTime();
       if (mGroup.isOutOfDate(obj_stamp))
          return true;

@@ -264,6 +264,7 @@ class Compiler
          Log.error("Could not create PCH");
          //throw "Error creating pch: " + result + " - build cancelled";
       }
+
    }
 
    public function setPCH(inPCH:String)
