@@ -126,12 +126,12 @@ class Compiler
             if (FileSystem.exists(cacheName))
             {
                sys.io.File.copy(cacheName, obj_name);
-               Log.info("use cache for " + obj_name + "(" + md5 + ")" );
+               Log.info(" use cache for " + obj_name );
                found = true;
             }
             else
             {
-               Log.info("", " not in cache " + cacheName);
+               // Log.info("", " not in cache " + cacheName);
             }
          }
          else

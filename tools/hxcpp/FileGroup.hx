@@ -17,6 +17,7 @@ class FileGroup
    public var mDependHash:String;
    public var mAsLibrary:Bool;
    public var mSetImportDir:Bool;
+   public var mUseCache:Bool;
    
    public function new(inDir:String,inId:String,inSetImportDir = false)
    {
@@ -32,6 +33,7 @@ class FileGroup
       mId = inId;
       mAsLibrary = false;
       mSetImportDir = inSetImportDir;
+      mUseCache = false;
    }
 
    public function addCompilerFlag(inFlag:String)
@@ -158,7 +160,7 @@ class FileGroup
       for(hlsl in mHLSLs)
          hlsl.build();
 
-      if (BuildTool.useCache)
+      if (BuildTool.hasCache)
       {
          mDependHash = "";
          for(depend in mDepends)

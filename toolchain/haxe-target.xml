@@ -1,7 +1,7 @@
 <xml>
 
 <!-- make sure hxcpp.n is up to date -->
-<pleaseUpdateHxcppTool version="1" />
+<pleaseUpdateHxcppTool version="2" />
 
 
 <!-- Use value from Build.xml file unless one is specified from the haxe defines -->
@@ -49,13 +49,16 @@
   <options name="Options.txt"/>
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
+  <cache value="1" />
 </files>
 
 
 <files id="__resources__">
+  <cache value="1" />
 </files>
 
 <files id="__externs__">
+  <cache value="1" />
 </files>
 
 
@@ -64,12 +67,14 @@
   <depend name="${HXCPP}/include/hx/HxcppMain.h"/>
   <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
+  <cache value="1" />
 </files>
 
 <files id="__lib__">
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
+  <cache value="1" />
 </files>
 
 
@@ -90,6 +95,7 @@
   <file name = "src/hx/cppia/HaxeNative.cpp" />
   <file name = "src/hx/cppia/CppiaVars.cpp" />
   <file name = "src/hx/cppia/CppiaCompiler.cpp" if="CPPIA_JIT" />
+  <cache value="1" />
 </files>
 
 
@@ -127,6 +133,7 @@
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp"/>
 
+  <cache value="1" />
 </files>
 
 

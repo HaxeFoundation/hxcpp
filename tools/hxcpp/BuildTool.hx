@@ -52,7 +52,7 @@ class BuildTool
    public static var isLinux = false;
    public static var isRPi = false;
    public static var isMac = false;
-   public static var useCache = false;
+   public static var hasCache = false;
    public static var compileCache:String;
    public static var targetKey:String;
    public static var instance:BuildTool;
@@ -173,7 +173,7 @@ class BuildTool
 
          if (FileSystem.exists(compileCache) && FileSystem.isDirectory(compileCache))
          {
-            useCache = true;
+            hasCache = true;
          }
          else
          {
@@ -182,13 +182,8 @@ class BuildTool
          }
       }
 
-      if (useCache && (!mDefines.exists("haxe_ver") && !mDefines.exists("HXCPP_DEPENDS_OK")))
-      {
-         Log.info("", "Ignoring compiler cache because of possible missing dependencies");
-         useCache = false;
-      }
 
-      if (useCache)
+      if (hasCache)
       {
          Log.info("", "\x1b[33;1mUsing compiler cache: " + compileCache + "\x1b[0m");
       }
@@ -309,6 +304,10 @@ class BuildTool
       var baseDir = Sys.getCwd();
       for(group in target.mFileGroups)
       {
+         var useCache = hasCache && group.mUseCache;
+         if (hasCache && !useCache)
+            Log.info("", "Ignoring compiler cache for " + group.mId + " because of possible missing dependencies");
+
          var groupObjs = new Array<String>();
 
          if (group.mDir!="." && group.mSetImportDir)
@@ -576,7 +575,9 @@ class BuildTool
       var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
       if (inForceRelative)
          dir = PathManager.combine( Path.directory(mCurrentIncludeFile), dir );
+
       var group = inFiles==null ? new FileGroup(dir,inName, inForceRelative) : inFiles;
+
       for(el in inXML.elements)
       {
          if (valid(el,""))
@@ -589,6 +590,8 @@ class BuildTool
                         file.mDepends.push( substitute(f.att.name) );
                   group.mFiles.push( file );
                case "section" : createFileGroup(el,group,inName,inForceRelative);
+               case "cache" :
+                  group.mUseCache = parseBool( substitute(el.att.value) );
                case "depend" :
                   if (el.has.name)
                      group.addDepend( substitute(el.att.name) );
@@ -740,6 +743,11 @@ class BuildTool
    public function defined(inString:String):Bool
    {
       return mDefines.exists(inString);
+   }
+ 
+   public function parseBool(inValue:String):Bool
+   {
+      return inValue=="1" || inValue=="t" || inValue=="true";
    }
 
    function findIncludeFile(inBase:String):String
@@ -1521,7 +1529,7 @@ class BuildTool
    public function checkToolVersion(inVersion:String)
    {
       var ver = Std.parseInt(inVersion);
-      if (ver<1)
+      if (ver>2)
          Log.error("Your version of hxcpp.n is out-of-date.  Please update.");
    }
 
