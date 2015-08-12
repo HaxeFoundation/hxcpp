@@ -208,10 +208,6 @@ class Compiler
          mCompilerVersion = Md5.encode(versionString);
          mCached = true;
       }
-      else if (mGetCompilerVersion==null)
-      {
-         Log.info("", "Do not know how to get compiler version for caching");
-      }
 
       return mCached;
    }

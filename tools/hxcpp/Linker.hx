@@ -166,7 +166,7 @@ class Linker
                {
                   var libName = Path.withoutDirectory(lib);
                   var libObjs = ProcessManager.readStdout(mExe, ["t", lib ]);
-                  var objDir = inCompiler.mObjDir + "/" + libName;
+                  var objDir = inCompiler.mObjDir + "/" + libName + ".unpack";
                   PathManager.mkdir(objDir);
                   ProcessManager.runCommand (objDir, mExe, ["x", lib]);
                   for(obj in libObjs)
