@@ -184,15 +184,26 @@ class Compiler
 
    public function createCompilerVersion(inGroup:FileGroup)
    {
-      if (mGetCompilerVersion!=null && mCompilerVersion==null)
+      if ( mCompilerVersion==null)
       {
-         var exe = mGetCompilerVersion;
-         var args = new Array<String>();
- 
-         var versionString = ProcessManager.readStderr(exe,args).join(" ");
-         Log.info("", "--- Compiler version ---");
-         Log.info("", versionString);
-         Log.info("", "------------------------");
+         var versionString = "";
+         var command = "";
+
+         if (mGetCompilerVersion==null)
+         {
+            command = mExe + " --version";
+            versionString = ProcessManager.readStdout(mExe,["--version"]).join(" ");
+         }
+         else
+         {
+            command = mGetCompilerVersion;
+            versionString = ProcessManager.readStderr(mGetCompilerVersion,[]).join(" ");
+         }
+
+         if (versionString=="" || versionString==null)
+            Log.error("Could not deduce compiler version with " + command);
+
+         Log.info("", "Compiler version: " +  versionString);
 
          mCompilerVersion = Md5.encode(versionString);
          mCached = true;
