@@ -717,6 +717,12 @@ class BuildTool
             switch(el.name)
             {
                case "target" : target.mSubTargets.push( substitute(el.att.id) );
+               case "merge" :
+                  var name = substitute(el.att.id);
+                  if (!mTargets.exists(name))
+                     Log.error("Could not find target " + name + " to merge.");
+                  target.merge( mTargets.get(name) );
+
                case "lib" : target.mLibs.push( substitute(el.att.name) );
                case "flag" : target.mFlags.push( substitute(el.att.value) );
                case "depend" : target.mDepends.push( substitute(el.att.name) );

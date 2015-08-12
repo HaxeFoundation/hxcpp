@@ -5,6 +5,9 @@ class Target
    public var mOutputDir:String;
    public var mTool:String;
    public var mToolID:String;
+   private var mExt:String;
+
+   // These attributes are merged by the "merge" command
    public var mFiles:Array<File>;
    public var mFileGroups:Array<FileGroup>;
    public var mDepends:Array<String>;
@@ -13,7 +16,6 @@ class Target
    public var mFlags:Array<String>;
    public var mErrors:Array<String>;
    public var mDirs:Array<String>;
-   private var mExt:String;
    
    public function new(inOutput:String, inTool:String,inToolID:String)
    {
@@ -32,6 +34,18 @@ class Target
       mFlags = [];
       mErrors=[];
       mDirs=[];
+   }
+
+   public function merge(other:Target)
+   {
+      mFiles = mFiles.concat(other.mFiles);
+      mFileGroups = mFileGroups.concat(other.mFileGroups);
+      mDepends = mDepends.concat(other.mDepends);
+      mSubTargets = mSubTargets.concat(other.mSubTargets);
+      mLibs = mLibs.concat(other.mLibs);
+      mFlags = mFlags.concat(other.mFlags);
+      mErrors = mErrors.concat(other.mErrors);
+      mDirs = mDirs.concat(other.mDirs);
    }
 
    public function toString() return mToolID;
