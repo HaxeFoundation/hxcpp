@@ -748,6 +748,8 @@ class BuildTool
 
    public function defined(inString:String):Bool
    {
+      if (inString=="this_dir")
+         return true;
       return mDefines.exists(inString);
    }
  
@@ -1642,6 +1644,10 @@ class BuildTool
             {
                sub = haxe.io.Path.directory(sub);
             }
+         }
+         else if (sub=="this_dir")
+         {
+            sub = Path.directory(mCurrentIncludeFile);
          }
          else
             sub = mDefines.get(sub);
