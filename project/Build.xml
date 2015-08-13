@@ -27,7 +27,7 @@
   <files id="std"/>
   <lib name="ws2_32.lib" if="windows" unless="static_link" />
   <lib name="-lsocket" if="blackberry" unless="static_link" />
-  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <outdir name="${DESTDIR}/${BINDIR}"/>
 </target>
 
 <set name="PCRE_DIR" value="../../thirdparty/pcre-7.8" />
@@ -70,7 +70,7 @@
 <target id="regexp" output="${LIBPREFIX}regexp${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="regexp"/>
   <builddir name="libs/regexp" />
-  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <outdir name="${DESTDIR}/${BINDIR}"/>
 </target>
 
 <set name="ZLIB_DIR" value="../../thirdparty/zlib-1.2.3"/>
@@ -102,7 +102,7 @@
 
 <target id="zlib" output="${LIBPREFIX}zlib${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="zlib"/>
-  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <outdir name="${DESTDIR}/${BINDIR}"/>
   <builddir name="libs/zlib"/>
 </target>
 
@@ -123,7 +123,7 @@
   <files id="mysql"/>
   <builddir name="libs/mysql"/>
   <lib name="ws2_32.lib" if="windows" unless="static_link" />
-  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <outdir name="${DESTDIR}/${BINDIR}"/>
 </target>
 
 
@@ -139,7 +139,7 @@
 <target id="sqlite" output="${LIBPREFIX}sqlite${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="sqlite"/>
   <builddir name="libs/sqlite"/>
-  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <outdir name="${DESTDIR}/${BINDIR}"/>
   <lib name="-lpthread" if="linux" unless="static_link" />
 </target>
 
@@ -153,7 +153,7 @@
 <target id="msvccompat" output="${LIBPREFIX}msvccompat${LIB_DBG}-${MSVC_VER}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="msvccompat"/>
   <builddir name="libs/msvccompat"/>
-  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <outdir name="${DESTDIR}/${BINDIR}"/>
 </target>
 
 
@@ -168,7 +168,7 @@
 <target id="linuxcompat" output="${LIBPREFIX}linuxcompat${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="linuxcompat"/>
   <builddir name="libs/linuxcompat"/>
-  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <outdir name="${DESTDIR}/${BINDIR}"/>
 </target>
 
 
@@ -185,7 +185,7 @@
 
 <set name="neko_v2" value="1" unless="neko_v1" />
 
-<set name="NEKO_LIB_DIR" value="bin/${BINDIR}" />
+<set name="NEKO_LIB_DIR" value="bin/${BINDIR}" unless="NEKO_LIB_DIR" />
 
 <target id="nekoapi" output="nekoapi" tool="linker" toolid="dll">
   <ext value=".ndll"/>
@@ -194,7 +194,7 @@
   <lib name="${NEKO_LIB_DIR}/neko.lib" if="windows" />
   <lib name="-L${NEKO_LIB_DIR}" unless="windows"/>
   <lib name="-lneko" unless="windows"/>
-  <outdir name="../../../bin/${BINDIR}"/>
+  <outdir name="${DESTDIR}/${BINDIR}"/>
 </target>
 
 

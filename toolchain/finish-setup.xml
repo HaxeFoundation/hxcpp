@@ -59,8 +59,8 @@
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphoneos"/>
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphonesim"/>
 
-<set name="DESTDIR" value="bin" />
-<set name="DESTDIR" value="lib" if="static_link" unless="HXCPP_IOS_STDCPP"/>
+<set name="DESTDIR" value="../../../bin" unless="DESTDIR"/>
+<set name="DESTDIR" value="../../../lib" if="static_link" unless="HXCPP_IOS_STDCPP"/>
 <set name="NDLLDIR" value="ndll" />
 <set name="NDLLDIR" value="lib" if="static_link" />
 
