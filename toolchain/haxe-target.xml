@@ -148,7 +148,7 @@
 
 <set name="EXESUFFIX" value=".exe" if="windows" />
 
-<set name="HAXE_OUTPUT_PART" value="$HAXE_OUTPUT}" unless="HAXE_OUTPUT_PART" />
+<set name="HAXE_OUTPUT_PART" value="${HAXE_OUTPUT}" unless="HAXE_OUTPUT_PART" />
 
 <set name="HAXE_OUTPUT_FILE" value="${LIBPREFIX}${HAXE_OUTPUT_PART}${DBG}" unless="HAXE_OUTPUT_FILE" />
 
