@@ -1,9 +1,6 @@
 <xml>
-   <section unless="haxe_target_included">
-      <set name="haxe_target_included" value="1" />
-      <set name="build_common_included" value="1" />
-      <include name="toolchain/haxe-target.xml" />
-   </section>
+   <pragma once="true" />
+   <include name="toolchain/haxe-target.xml" />
 </xml>
 
 

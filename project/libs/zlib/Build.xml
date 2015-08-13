@@ -1,0 +1,41 @@
+<xml>
+
+<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+
+<set name="ZLIB_DIR" value="${this_dir}/../../thirdparty/zlib-1.2.3"/>
+
+<files id="hxcpp-zlib" >
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <compilerflag value="-DSTATIC_LINK" unless="static_link||dynamic_link" />
+
+  <compilerflag value="-I${ZLIB_DIR}"/>
+
+  <file name="ZLib.cpp"/>
+
+  <file name="${ZLIB_DIR}/adler32.c"/>
+  <file name="${ZLIB_DIR}/crc32.c"/>
+  <file name="${ZLIB_DIR}/infback.c"/>
+  <file name="${ZLIB_DIR}/inflate.c"/>
+  <file name="${ZLIB_DIR}/uncompr.c"/>
+  <file name="${ZLIB_DIR}/compress.c"/>
+  <file name="${ZLIB_DIR}/deflate.c"/>
+  <file name="${ZLIB_DIR}/gzio.c"/>
+  <file name="${ZLIB_DIR}/inffast.c"/>
+  <file name="${ZLIB_DIR}/inftrees.c"/>
+  <file name="${ZLIB_DIR}/trees.c"/>
+  <file name="${ZLIB_DIR}/zutil.c"/>
+</files>
+
+<target id="haxe">
+  <files id="hxcpp-zlib" />
+</target>
+
+
+<target id="zlib" output="${LIBPREFIX}zlib${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <files id="hxcpp-zlib"/>
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+</target>
+
+</xml>

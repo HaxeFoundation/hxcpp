@@ -1,0 +1,56 @@
+<xml>
+
+<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+
+
+<set name="PCRE_DIR" value="../../thirdparty/pcre-7.8" />
+
+<files id="regexp" >
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
+  <cache value="true" />
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <compilerflag value="-DSTATIC_LINK" unless="static_link||dynamic_link" />
+
+  <compilerflag value="-DPCRE_STATIC"/>
+  <compilerflag value="-DSUPPORT_UTF8"/>
+  <compilerflag value="-I${PCRE_DIR}"/>
+
+  <file name="RegExp.cpp"/>
+
+  <file name="${PCRE_DIR}/pcre_get.c"/>
+  <file name="${PCRE_DIR}/pcre_study.c"/>
+  <file name="${PCRE_DIR}/pcre_chartables.c"/>
+  <file name="${PCRE_DIR}/pcre_globals.c"/>
+  <file name="${PCRE_DIR}/pcre_tables.c"/>
+  <file name="${PCRE_DIR}/pcre_compile.c"/>
+  <file name="${PCRE_DIR}/pcre_info.c"/>
+  <file name="${PCRE_DIR}/pcre_try_flipped.c"/>
+  <file name="${PCRE_DIR}/pcre_config.c"/>
+  <file name="${PCRE_DIR}/pcre_maketables.c"/>
+  <file name="${PCRE_DIR}/pcre_ucd.c"/>
+  <file name="${PCRE_DIR}/pcre_dfa_exec.c"/>
+  <file name="${PCRE_DIR}/pcre_newline.c"/>
+  <file name="${PCRE_DIR}/pcre_valid_utf8.c"/>
+  <file name="${PCRE_DIR}/pcre_exec.c"/>
+  <file name="${PCRE_DIR}/pcre_ord2utf8.c"/>
+  <file name="${PCRE_DIR}/pcre_version.c"/>
+  <file name="${PCRE_DIR}/pcre_fullinfo.c"/>
+  <file name="${PCRE_DIR}/pcre_refcount.c"/>
+  <file name="${PCRE_DIR}/pcre_xclass.c"/>
+
+</files>
+
+
+<target id="haxe">
+  <files id="regexp" />
+</target>
+
+
+
+<target id="regexp" output="${LIBPREFIX}regexp${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <files id="regexp"/>
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+</target>
+
+</xml>

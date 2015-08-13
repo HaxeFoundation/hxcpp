@@ -39,6 +39,8 @@ class BuildTool
    var mTargets:Targets;
    var mFileStack:Array<String>;
    var mMakefile:String;
+   var mMagicLibs:Array<{name:String, replace:String}>;
+   var mPragmaOnce:Map<String,Bool>;
    var m64:Bool;
    var m32:Bool;
 
@@ -80,6 +82,8 @@ class BuildTool
       mCopyFiles = [];
       mIncludePath = inIncludePath;
       mMakefile = inMakefile;
+      mPragmaOnce = new Map<String,Bool>();
+      mMagicLibs = [];
 
       if (!PathManager.isAbsolute(mMakefile) && sys.FileSystem.exists(mMakefile))
           mMakefile = sys.FileSystem.fullPath(mMakefile);
@@ -124,7 +128,11 @@ class BuildTool
       setupAppleDirectories(mDefines);
 
       if (isMsvc())
+      {
          mDefines.set("isMsvc","1");
+         if (Std.parseInt(mDefines.get("MSVC_VER"))>=18)
+            mDefines.set("MSVC18+","1");
+      }
 
       include("toolchain/finish-setup.xml", false);
 
@@ -594,7 +602,10 @@ class BuildTool
                   group.mUseCache = parseBool( substitute(el.att.value) );
                case "depend" :
                   if (el.has.name)
-                     group.addDepend( substitute(el.att.name) );
+                  {
+                     var dateOnly = el.has.dateOnly && parseBool( substitute(el.att.dateOnly) );
+                     group.addDepend( substitute(el.att.name), dateOnly );
+                  }
                   else if (el.has.files)
                   {
                      var name = substitute(el.att.files);
@@ -619,11 +630,14 @@ class BuildTool
                   var full_name = findIncludeFile(subbed_name);
                   if (full_name!="")
                   {
-                     pushFile(full_name, "FileGroup");
-                     var make_contents = sys.io.File.getContent(full_name);
-                     var xml_slow = Xml.parse(make_contents);
-                     createFileGroup(new Fast(xml_slow.firstElement()), group, inName, false);
-                     popFile();
+                     if (!mPragmaOnce.get(full_name))
+                     {
+                        pushFile(full_name, "FileGroup");
+                        var make_contents = sys.io.File.getContent(full_name);
+                        var xml_slow = Xml.parse(make_contents);
+                        createFileGroup(new Fast(xml_slow.firstElement()), group, inName, false);
+                        popFile();
+                     }
                   } 
                   else
                   {
@@ -733,7 +747,22 @@ class BuildTool
                      Log.error("Could not find target " + name + " to merge.");
                   target.merge( mTargets.get(name) );
 
-               case "lib" : target.mLibs.push( substitute(el.att.name) );
+               case "lib" :
+                   var lib = substitute(el.att.name);
+                   var found = false;
+                   for(magicLib in mMagicLibs)
+                   {
+                      if (lib.endsWith(magicLib.name))
+                      {
+                         var replace = lib.substr(0, lib.length-magicLib.name.length) +
+                                           magicLib.replace;
+                         Log.v('Using $replace instead of $lib');
+                         found = true;
+                         include(replace, "", false, true );
+                      }
+                   }
+                   if (!found)
+                      target.mLibs.push(lib);
                case "flag" : target.mFlags.push( substitute(el.att.value) );
                case "depend" : target.mDepends.push( substitute(el.att.name) );
                case "vflag" :
@@ -768,7 +797,7 @@ class BuildTool
       return inValue=="1" || inValue=="t" || inValue=="true";
    }
 
-   function findIncludeFile(inBase:String):String
+   function findLocalIncludeFile(inBase:String):String
    {
       if (inBase == null || inBase=="") return "";
       var c0 = inBase.substr(0,1);
@@ -789,7 +818,9 @@ class BuildTool
             {
                var name = PathManager.combine(p, inBase);
                if (FileSystem.exists(name))
+               {
                   return name;
+               }
             }
             return "";
          }
@@ -797,6 +828,14 @@ class BuildTool
       if (FileSystem.exists(inBase))
          return inBase;
       return "";
+   }
+
+   function findIncludeFile(inBase:String):String
+   {
+      var result = findLocalIncludeFile(inBase);
+      if (result!="" && !Path.isAbsolute(result))
+         result =  Path.normalize( PathManager.combine( mCurrentIncludeFile=="" ? Sys.getCwd() : Path.directory(mCurrentIncludeFile), result ) );
+      return result;
    }
    
    private static function getIs64():Bool
@@ -1539,6 +1578,13 @@ class BuildTool
 
                case "pleaseUpdateHxcppTool" : 
                   checkToolVersion( substitute(el.att.version) );
+
+               case "magiclib" : 
+                  mMagicLibs.push( {name: substitute(el.att.name),
+                                    replace:substitute(el.att.replace) } );
+               case "pragma" : 
+                  if (el.has.once)
+                     mPragmaOnce.set(mCurrentIncludeFile, parseBool(substitute(el.att.once)));
             }
          }
       }
@@ -1557,6 +1603,9 @@ class BuildTool
       var full_name = findIncludeFile(inName);
       if (full_name!="")
       {
+         if (mPragmaOnce.get(full_name))
+            return;
+
          pushFile(full_name, "include", inSection);
          // TODO - use mFileStack?
          var oldInclude = mCurrentIncludeFile;

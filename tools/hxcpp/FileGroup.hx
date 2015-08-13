@@ -13,7 +13,7 @@ class FileGroup
    public var mHLSLs:Array<HLSL>;
    public var mDir:String;
    public var mId:String;
-   public var mDepends:Array<String>;
+   public var mCacheDepends:Array<String>;
    public var mDependHash:String;
    public var mAsLibrary:Bool;
    public var mSetImportDir:Bool;
@@ -25,7 +25,7 @@ class FileGroup
       mFiles = [];
       mCompilerFlags = [];
       mPrecompiledHeader = "";
-      mDepends = [];
+      mCacheDepends = [];
       mMissingDepends = [];
       mOptions = [];
       mHLSLs = [];
@@ -41,9 +41,11 @@ class FileGroup
       mCompilerFlags.push(inFlag);
    }
 
-   public function addDepend(inFile:String)
+   public function addDepend(inFile:String, inDateOnly:Bool)
    {
-      if (mSetImportDir)
+   trace("$$$$ " + inFile + " " + mDir );
+
+      if (mSetImportDir && !Path.isAbsolute(inFile) )
          inFile = PathManager.combine(mDir, inFile);
       if (!FileSystem.exists(inFile))
       {
@@ -56,13 +58,18 @@ class FileGroup
          mNewest = stamp;
       }
 
-      mDepends.push(inFile);
+      if (!inDateOnly)
+         mCacheDepends.push(inFile);
    }
 
    public function addDependFiles(inGroup:FileGroup)
    {
-      for(depend in inGroup.mDepends)
-         addDepend(depend);
+      if (inGroup.mNewest>mNewest)
+         mNewest = inGroup.mNewest;
+
+      for(depend in inGroup.mCacheDepends)
+         mCacheDepends.push(depend);
+
       for(missing in inGroup.mMissingDepends)
          mMissingDepends.push(missing);
    }
@@ -70,7 +77,7 @@ class FileGroup
 
    public function addHLSL(inFile:String,inProfile:String,inVariable:String,inTarget:String)
    {
-      addDepend(inFile);
+      addDepend(inFile, true );
 
       mHLSLs.push( new HLSL(inFile,inProfile,inVariable,inTarget) );
    }
@@ -140,7 +147,7 @@ class FileGroup
                stream.close();
                changed = true;
             }
-            addDepend(dest);
+            addDepend(dest,true);
          }
       }
       return changed;
@@ -169,7 +176,7 @@ class FileGroup
       if (BuildTool.hasCache && mUseCache)
       {
          mDependHash = "";
-         for(depend in mDepends)
+         for(depend in mCacheDepends)
             mDependHash += File.getFileHash(depend);
          mDependHash = haxe.crypto.Md5.encode(mDependHash);
       }
