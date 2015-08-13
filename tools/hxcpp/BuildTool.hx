@@ -703,12 +703,22 @@ class BuildTool
    public function createTarget(inXML:Fast,?inTarget:Target) : Target
    {
       var target:Target = inTarget;
+      var output = inXML.has.output ? substitute(inXML.att.output) : "";
+      var tool = inXML.has.tool ? substitute(inXML.att.tool) : "";
+      var toolid = inXML.has.toolid ? substitute(inXML.att.toolid) : "";
+
       if (target==null)
       {
-         var output = inXML.has.output ? substitute(inXML.att.output) : "";
-         var tool = inXML.has.tool ? substitute(inXML.att.tool) : "";
-         var toolid = inXML.has.toolid ? substitute(inXML.att.toolid) : "";
          target = new Target(output,tool,toolid);
+      }
+      else
+      {
+         if (output!="")
+            target.mOutput = output;
+         if (tool!="")
+            target.mTool = tool;
+         if (toolid!="")
+            target.mToolID = toolid;
       }
 
       for(el in inXML.elements)

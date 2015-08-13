@@ -148,7 +148,11 @@
 
 <set name="EXESUFFIX" value=".exe" if="windows" />
 
-<target id="haxe" tool="linker" toolid="${haxelink}" output="${LIBPREFIX}${HAXE_OUTPUT}${DBG}">
+<set name="HAXE_OUTPUT_PART" value="$HAXE_OUTPUT}" unless="HAXE_OUTPUT_PART" />
+
+<set name="HAXE_OUTPUT_FILE" value="${LIBPREFIX}${HAXE_OUTPUT_PART}${DBG}" unless="HAXE_OUTPUT_FILE" />
+
+<target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT_FILE}">
   <files id="haxe"/>
   <options name="Options.txt"/>
   <ext value="${LIBEXTRA}.a" if="iphoneos" unless="dll_import" />
