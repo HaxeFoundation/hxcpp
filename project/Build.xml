@@ -32,7 +32,7 @@
 <target id="linuxcompat" output="${LIBPREFIX}linuxcompat${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="linuxcompat"/>
   <builddir name="libs/linuxcompat"/>
-  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <outdir name="${this_dir}/../${DESTDIR}/${BINDIR}"/>
 </target>
 
 
@@ -58,7 +58,7 @@
   <lib name="${NEKO_LIB_DIR}/neko.lib" if="windows" />
   <lib name="-L${NEKO_LIB_DIR}" unless="windows"/>
   <lib name="-lneko" unless="windows"/>
-  <outdir name="../../../bin/${BINDIR}"/>
+  <outdir name="${this_dir}/../bin/${BINDIR}"/>
 </target>
 
 
