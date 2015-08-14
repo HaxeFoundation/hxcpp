@@ -43,8 +43,6 @@ class FileGroup
 
    public function addDepend(inFile:String, inDateOnly:Bool)
    {
-   trace("$$$$ " + inFile + " " + mDir );
-
       if (mSetImportDir && !Path.isAbsolute(inFile) )
          inFile = PathManager.combine(mDir, inFile);
       if (!FileSystem.exists(inFile))

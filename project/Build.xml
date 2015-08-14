@@ -2,7 +2,7 @@
 
 <include name="${HXCPP}/build-tool/BuildCommon.xml"/>
 
-<set nme="dynamic_link" value="1" unless="static_link" />
+<set name="dynamic_link" value="1" unless="static_link" />
 
 <import name="libs/std/Build.xml" />
 <import name="libs/zlib/Build.xml" />
