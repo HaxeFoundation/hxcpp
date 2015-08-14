@@ -17,15 +17,11 @@
   <file name="StlLink.cpp"/>
 </files>
 
-
 <target id="msvccompat" output="${LIBPREFIX}msvccompat${LIB_DBG}-${MSVC_VER}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="msvccompat"/>
   <builddir name="libs/msvccompat"/>
-  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+  <outdir name="${this_dir}/../${DESTDIR}/${BINDIR}"/>
 </target>
-
-
-
 
 
 <files id="linuxcompat" >

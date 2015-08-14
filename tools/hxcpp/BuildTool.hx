@@ -714,7 +714,7 @@ class BuildTool
       return s;
    }
 
-   public function createTarget(inXML:Fast,?inTarget:Target) : Target
+   public function createTarget(inXML:Fast,?inTarget:Target, inForceRelative) : Target
    {
       var target:Target = inTarget;
       var output = inXML.has.output ? substitute(inXML.att.output) : "";
@@ -724,6 +724,8 @@ class BuildTool
       if (target==null)
       {
          target = new Target(output,tool,toolid);
+         if (inForceRelative)
+            target.mBuildDir = Path.directory(mCurrentIncludeFile);
       }
       else
       {
@@ -759,17 +761,19 @@ class BuildTool
                          Log.v('Using $replace instead of $lib');
                          found = true;
                          include(replace, "", false, true );
+                         break;
                       }
                    }
                    if (!found)
                       target.mLibs.push(lib);
+
                case "flag" : target.mFlags.push( substitute(el.att.value) );
                case "depend" : target.mDepends.push( substitute(el.att.name) );
                case "vflag" :
                   target.mFlags.push( substitute(el.att.name) );
                   target.mFlags.push( substitute(el.att.value) );
                case "dir" : target.mDirs.push( substitute(el.att.name) );
-               case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
+               case "outdir" : PathManager.combine( mCurrentIncludeFile, target.mOutputDir = substitute(el.att.name)+"/");
                case "ext" : target.setExt( (substitute(el.att.value)) );
                case "builddir" : target.mBuildDir = substitute(el.att.name);
                case "files" :
@@ -778,7 +782,7 @@ class BuildTool
                      target.addError( "Could not find filegroup " + id ); 
                   else
                      target.addFiles( mFileGroups.get(id), el.has.asLibrary );
-               case "section" : createTarget(el,target);
+               case "section" : createTarget(el,target,false);
             }
       }
 
@@ -1564,9 +1568,9 @@ class BuildTool
                   if (el.has.append)
                      overwrite = false;
                   if (mTargets.exists(name) && !overwrite)
-                     createTarget(el,mTargets.get(name));
+                     createTarget(el,mTargets.get(name), forceRelative);
                   else
-                     mTargets.set( name, createTarget(el,null) );
+                     mTargets.set( name, createTarget(el,null, forceRelative) );
                case "copyFile" : 
                   mCopyFiles.push(
                       new CopyFile(substitute(el.att.name),
@@ -1597,6 +1601,11 @@ class BuildTool
          Log.error("Your version of hxcpp.n is out-of-date.  Please update.");
    }
 
+   public function resolvePath(inPath:String)
+   {
+      return PathManager.combine( mCurrentIncludeFile=="" ? Sys.getCwd() : Path.directory(mCurrentIncludeFile),
+           inPath);
+   }
 
    public function include(inName:String, inSection:String="", inAllowMissing:Bool = false, forceRelative=false)
    {
@@ -1706,7 +1715,7 @@ class BuildTool
          }
          else if (sub=="this_dir")
          {
-            sub = Path.directory(mCurrentIncludeFile);
+            sub = Path.normalize(mCurrentIncludeFile=="" ? Sys.getCwd() :  Path.directory(mCurrentIncludeFile));
          }
          else
             sub = mDefines.get(sub);

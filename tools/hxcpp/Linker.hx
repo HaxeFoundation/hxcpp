@@ -65,10 +65,24 @@ class Linker
          //throw "Unable to create output directory " + inTarget.mOutputDir; 
       }
       
-      var out_name = inTarget.mOutputDir + file_name;
+      var out_name = Path.normalize(PathManager.combine( inTarget.mBuildDir, inTarget.mOutputDir + file_name));
       mLastOutName = out_name;
 
-      var libs = inTarget.mLibs.concat(mLibs);
+      var lastLib = "";
+      var libs = new Array<String>();
+      for(l in inTarget.mLibs)
+         if (l!=lastLib)
+         {
+            libs.push(l);
+            lastLib = l;
+         }
+      for(l in mLibs)
+         if (l!=lastLib)
+         {
+            libs.push(l);
+            lastLib = l;
+         }
+
       var v18Added = false;
       var isOutOfDateLibs = false;
 
@@ -185,7 +199,7 @@ class Linker
             var fname = inCompiler.mObjDir + "/all_objs";
             var fout = sys.io.File.write(fname,false);
             for(obj in objs)
-               fout.writeString(obj + "\n");
+               fout.writeString('"' + obj + '"\n');
             fout.close();
             args.push("@" + fname );
          }

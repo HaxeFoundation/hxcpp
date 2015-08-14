@@ -52,7 +52,7 @@ class Compiler
 
    public function objToAbsolute()
    {
-      mObjDir = PathManager.combine( Sys.getCwd(), mObjDir );
+      mObjDir = Path.normalize( PathManager.combine( Sys.getCwd(), mObjDir ) );
    }
 
    function addIdentity(ext:String,ioArgs:Array<String>)
