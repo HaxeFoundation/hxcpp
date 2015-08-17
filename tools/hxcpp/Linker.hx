@@ -1,6 +1,8 @@
 import haxe.io.Path;
 import sys.FileSystem;
 
+using StringTools;
+
 class Linker
 {
    public var mExe:String;
@@ -190,6 +192,15 @@ class Linker
                   libArgs.push(lib);
             }
             libs = libArgs;
+         }
+
+         var here = Path.normalize(Sys.getCwd()) + "/";
+         var hereLen = here.length;
+         for(oid in 0...objs.length)
+         {
+            var obj = Path.normalize( objs[oid] );
+            if (obj.startsWith(here))
+               objs[oid] = obj.substr(hereLen);
          }
 
          // Place list of obj files in a file called "all_objs"
