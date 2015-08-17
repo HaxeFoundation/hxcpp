@@ -171,7 +171,7 @@ class FileGroup
       for(hlsl in mHLSLs)
          hlsl.build();
 
-      if (BuildTool.hasCache && mUseCache)
+      if (CompileCache.hasCache && mUseCache)
       {
          mDependHash = "";
          for(depend in mCacheDepends)

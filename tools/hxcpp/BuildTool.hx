@@ -54,8 +54,6 @@ class BuildTool
    public static var isLinux = false;
    public static var isRPi = false;
    public static var isMac = false;
-   public static var hasCache = false;
-   public static var compileCache:String;
    public static var targetKey:String;
    public static var instance:BuildTool;
    public static var helperThread = new Tls<Thread>();
@@ -72,7 +70,6 @@ class BuildTool
       mDefines = inDefines;
       mFileGroups = new FileGroups();
       mCompiler = null;
-      compileCache = "";
       mStripper = null;
       mTargets = new Targets();
       mPrelinkers = new Prelinkers();
@@ -165,36 +162,8 @@ class BuildTool
       // If not already calculated in "setup"
       getThreadCount();
       
-      if (mDefines.exists("HXCPP_COMPILE_CACHE"))
-      {
-         compileCache = mDefines.get("HXCPP_COMPILE_CACHE");
-         // Don't get upset by trailing slash
-         while(compileCache.length>1)
-         {
-            var l = compileCache.length;
-            var last = compileCache.substr(l-1);
-            if (last=="/" || last=="\\")
-               compileCache = compileCache.substr(0,l-1);
-            else
-               break;
-         }
+      CompileCache.init(mDefines);
 
-         if (FileSystem.exists(compileCache) && FileSystem.isDirectory(compileCache))
-         {
-            hasCache = true;
-         }
-         else
-         {
-            Log.error("Could not find compiler cache \"" + compileCache + "\"");
-            //throw "Could not find compiler cache: " + compileCache;
-         }
-      }
-
-
-      if (hasCache)
-      {
-         Log.info("", "\x1b[33;1mUsing compiler cache: " + compileCache + "\x1b[0m");
-      }
       
       if (Log.verbose) Log.println ("");
 
@@ -312,8 +281,8 @@ class BuildTool
       var baseDir = Sys.getCwd();
       for(group in target.mFileGroups)
       {
-         var useCache = hasCache && group.mUseCache;
-         if (hasCache && !useCache)
+         var useCache = CompileCache.hasCache && group.mUseCache;
+         if (CompileCache.hasCache && !useCache)
             Log.info("", "Ignoring compiler cache for " + group.mId + " because of possible missing dependencies");
 
          var groupObjs = new Array<String>();

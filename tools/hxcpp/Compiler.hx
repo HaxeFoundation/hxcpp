@@ -122,7 +122,7 @@ class Compiler
          {
             var md5 = Md5.encode(contents + args.join(" ") +
                 inFile.mGroup.mDependHash + mCompilerVersion + inFile.mDependHash );
-            cacheName = BuildTool.compileCache + "/" + md5;
+            cacheName = CompileCache.getCacheName(md5);
             if (FileSystem.exists(cacheName))
             {
                sys.io.File.copy(cacheName, obj_name);
