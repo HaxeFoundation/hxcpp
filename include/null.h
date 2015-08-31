@@ -91,6 +91,7 @@ class null
      operator signed char () { return 0; }
      operator short () { return 0; }
      operator unsigned short () { return 0; }
+     operator hx::Object * () { return 0; }
 
      bool operator == (null inRHS) const { return true; }
      bool operator != (null inRHS) const { return false; }
