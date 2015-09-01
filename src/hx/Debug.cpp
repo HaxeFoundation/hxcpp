@@ -471,8 +471,17 @@ public:
         gStashMutex.Unlock();
         return 0;
       }
-      stashed.pop_front(); // Destroy item that was Dumped last call
+
+      // Destroy item that was dumped last call
       TelemetryFrame *front = &stashed.front();
+      if (front->samples!=0) delete front->samples;
+      if (front->names!=0) delete front->names;
+      if (front->allocation_data!=0) delete front->allocation_data;
+      if (front->stacks!=0) delete front->stacks;
+      //delete front; // delete happens via pop_front:
+      stashed.pop_front(); // Destroy item that was Dumped last call
+
+      front = &stashed.front();
       gStashMutex.Unlock();
 
       //printf(" -- dumped stash, allocs=%d, alloc[max]=%d\n", front->allocations->size(), front->allocations->size()>0 ? front->allocations->at(front->allocations->size()-1) : 0);
