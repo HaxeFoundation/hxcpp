@@ -10,6 +10,11 @@
 #include <hx/CFFIPrime.h>
 #include <math.h>
 
+int getInt()
+{
+   return 42;
+}
+DEFINE_PRIME0(getInt);
 
 int addInts(int a, int b)
 {
