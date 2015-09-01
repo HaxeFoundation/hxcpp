@@ -34,5 +34,6 @@
 #undef RECT
 #undef OVERFLOW
 #undef UNDERFLOW
+#undef DOMAIN
 
 #endif
