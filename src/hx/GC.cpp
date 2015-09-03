@@ -90,6 +90,30 @@ void *GCRealloc(void *inData,int inSize)
    return InternalRealloc(inData,inSize);
 }
 
+#ifdef HXCPP_CAPTURE_x86 // {
+
+void CaptureX86(RegisterCaptureBuffer &outBuffer)
+{
+   void *regEsi;
+   void *regEdi;
+   void *regEbx;
+   #ifdef __GNUC__
+   asm ("mov %0, %%esi\n\t" : "=r" (regEsi) );
+   asm ("mov %0, %%edi\n\t" : "=r" (regEdi) );
+   asm ("mov %0, %%ebx\n\t" : "=r" (regEbx) );
+   #else
+   __asm {
+      mov regEsi, esi
+      mov regEdi, edi
+      mov regEbx, ebx
+   }
+   #endif
+   outBuffer.esi = regEsi;
+   outBuffer.edi = regEdi;
+   outBuffer.ebx = regEbx;
+}
+
+#else // }  {
 
 // Put this function here so we can be reasonablly sure that "this" register and
 // the 4 registers that may be used to pass args are on the stack.
@@ -112,6 +136,8 @@ RegisterCapture *RegisterCapture::Instance()
 		gRegisterCaptureInstance = new RegisterCapture();
 	return gRegisterCaptureInstance;
 }
+
+#endif // }
 
 
 } // end namespace hx

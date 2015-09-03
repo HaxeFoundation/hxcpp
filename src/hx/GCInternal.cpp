@@ -2839,7 +2839,7 @@ public:
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
       SetTopOfStack(mBottomOfStack,false);
-      hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
+      CAPTURE_REGS;
    }
 
 
@@ -2847,8 +2847,7 @@ public:
    {
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
-      hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
- 
+      CAPTURE_REGS;
       mReadyForCollect.Set();
       mCollectDone.Wait();
    }
@@ -2859,8 +2858,9 @@ public:
       mBottomOfStack = (int *)&dummy;
       mGCFreeZone = true;
       if (mTopOfStack)
-         hx::RegisterCapture::Instance()->Capture(mTopOfStack,
-                mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
+      {
+         CAPTURE_REGS;
+      }
       mReadyForCollect.Set();
    }
 
@@ -3012,7 +3012,7 @@ public:
          {
             volatile int dummy = 1;
             mBottomOfStack = (int *)&dummy;
-            hx::RegisterCapture::Instance()->Capture(mTopOfStack,mRegisterBuf,mRegisterBufSize,20,mBottomOfStack);
+            CAPTURE_REGS;
             mCurrent = sGlobalAlloc->GetRecycledBlock(required_rows);
             //mCurrent->Verify();
             // Start on line 2 (there are 256 line-markers at the beginning)
@@ -3086,11 +3086,11 @@ public:
       MarkSetMember("Stack",__inCtx);
       hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
       MarkSetMember("Registers",__inCtx);
-      hx::MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) , __inCtx);
+      hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
       MarkPopClass(__inCtx);
       #else
       hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
-      hx::MarkConservative((int *)mRegisterBuf, (int *)(mRegisterBuf+mRegisterBufSize) , __inCtx);
+      hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
       #endif
 
       Reset();
@@ -3110,8 +3110,8 @@ public:
    int *mTopOfStack;
    int *mBottomOfStack;
 
-   int  *mRegisterBuf[20];
-   int  mRegisterBufSize;
+   hx::RegisterCaptureBuffer mRegisterBuf;
+   int                   mRegisterBufSize;
 
    bool            mGCFreeZone;
    int             mStackLocks;

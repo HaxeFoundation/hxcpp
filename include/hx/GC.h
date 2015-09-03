@@ -57,12 +57,47 @@ bool IsWeakRefValid(hx::Object *inPtr);
 
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
 
+#ifdef HX_WINDOWS
+#define HXCPP_CAPTURE_x86
+#endif
+
+#ifdef HXCPP_CAPTURE_x86
+
+struct RegisterCaptureBuffer
+{
+   void *ebx;
+   void *edi;
+   void *esi;
+};
+
+void CaptureX86(RegisterCaptureBuffer &outBuffer);
+
+#define CAPTURE_REGS \
+   hx::CaptureX86(mRegisterBuf);
+
+#define CAPTURE_REG_START (int *)(&mRegisterBuf)
+#define CAPTURE_REG_END (int *)(&mRegisterBuf+1)
+
+#else
+
 class RegisterCapture
 {
 public:
 	virtual int Capture(int *inTopOfStack,int **inBuf,int &outSize,int inMaxSize,int *inDummy);
    static RegisterCapture *Instance();
 };
+
+typedef int  *hx::RegisterCaptureBuffer[20];
+
+#define CAPTURE_REGS \
+   hx::RegisterCapture::Instance()->Capture(mTopOfStack, \
+                mRegisterBuf,mRegisterBufSize,20,mBottomOfStack); \
+
+#define CAPTURE_REG_START (int *)mRegisterBuf
+#define CAPTURE_REG_END (int *)(mRegisterBuf+mRegisterBufSize)
+
+#endif
+
 
 #ifdef HXCPP_MULTI_THREADED
 #define __SAFE_POINT if (hx::gPauseForCollect) hx::PauseForCollect();
