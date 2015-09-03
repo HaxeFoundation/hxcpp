@@ -57,7 +57,7 @@ bool IsWeakRefValid(hx::Object *inPtr);
 
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
 
-#ifdef HX_WINDOWS
+#if defined(HX_WINDOWS) && !defined(HXCPP_M64)
 #define HXCPP_CAPTURE_x86
 #endif
 
@@ -87,7 +87,7 @@ public:
    static RegisterCapture *Instance();
 };
 
-typedef int  *hx::RegisterCaptureBuffer[20];
+typedef int *RegisterCaptureBuffer[20];
 
 #define CAPTURE_REGS \
    hx::RegisterCapture::Instance()->Capture(mTopOfStack, \
