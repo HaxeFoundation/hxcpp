@@ -15,8 +15,8 @@
 
 #define HX_DO_RTTI \
    HX_DO_RTTI_ALL \
-   Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
-   Dynamic __SetField(const ::String &inString,const Dynamic &inValue, hx::PropertyAccess inCallProp); \
+    ::NS::Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
+    ::NS::Dynamic __SetField(const ::String &inString,const  ::NS::Dynamic &inValue, hx::PropertyAccess inCallProp); \
    void __GetFields(Array< ::String> &outFields);
 
 #define HX_DO_INTERFACE_RTTI \
@@ -26,7 +26,7 @@
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
    HX_DO_RTTI_BASE  \
-   Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
+    ::NS::Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
    static int __FindIndex(::String inName); \
    static int __FindArgCount(::String inName);
 
@@ -37,8 +37,8 @@
    static hx::NS::ObjectPtr<hx::NS::Class_obj> &__SGetClass() { return __mClass; }
 
 
-#define HX_DECLARE_IMPLEMENT_DYNAMIC  Dynamic __mDynamicFields; \
-    Dynamic *__GetFieldMap() { return &__mDynamicFields; } \
+#define HX_DECLARE_IMPLEMENT_DYNAMIC   ::NS::Dynamic __mDynamicFields; \
+     ::NS::Dynamic *__GetFieldMap() { return &__mDynamicFields; } \
     bool __HasField(const String &inString) \
       { return hx::FieldMapHas(&__mDynamicFields,inString) || super::__HasField(inString); } 
 
@@ -59,10 +59,10 @@
 #endif
 
 #define HX_CHECK_DYNAMIC_GET_FIELD(inName) \
-   { Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inName,d)) return d; }
+   {  ::NS::Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inName,d)) return d; }
 
 #define HX_CHECK_DYNAMIC_GET_INT_FIELD(inID) \
-   { Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inID,d)) return d; }
+   {  ::NS::Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inID,d)) return d; }
 
 #define HX_DYNAMIC_SET_FIELD(inName,inValue) hx::FieldMapSet(&__mDynamicFields,inName,inValue) 
 
@@ -78,33 +78,33 @@
 #define HX_ARG_LIST::ARG:: ::ARG_LIST::::end::
 
 #define HX_DEFINE_DYNAMIC_FUNC0(class,func,ret) \
-Dynamic __##class##func(hx::NS::Object *inObj) \
+ ::NS::Dynamic __##class##func(hx::NS::Object *inObj) \
 { \
-      ret reinterpret_cast<class *>(inObj)->func(); return Dynamic(); \
+      ret reinterpret_cast<class *>(inObj)->func(); return  ::NS::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::NS::Dynamic class::func##_dyn() \
 {\
    return hx::NS::CreateMemberFunction0(this,__##class##func); \
 }
 
 
 #define HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-Dynamic __##class##func(hx::NS::Object *inObj, dynamic_arg_list) \
+ ::NS::Dynamic __##class##func(hx::NS::Object *inObj, dynamic_arg_list) \
 { \
-      ret reinterpret_cast<class *>(inObj)->func(arg_list); return Dynamic(); \
+      ret reinterpret_cast<class *>(inObj)->func(arg_list); return  ::NS::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::NS::Dynamic class::func##_dyn() \
 {\
    return hx::NS::CreateMemberFunction##N(this,__##class##func); \
 }
 
 
 #define HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-Dynamic __##class##func(hx::NS::Object *inObj, const Array<Dynamic> &inArgs) \
+ ::NS::Dynamic __##class##func(hx::NS::Object *inObj, const Array< ::NS::Dynamic> &inArgs) \
 { \
-      ret reinterpret_cast<class *>(inObj)->func(array_list); return Dynamic(); \
+      ret reinterpret_cast<class *>(inObj)->func(array_list); return  ::NS::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::NS::Dynamic class::func##_dyn() \
 {\
    return hx::NS::CreateMemberFunctionVar(this,__##class##func,N); \
 }
@@ -121,10 +121,10 @@ Dynamic class::func##_dyn() \
 
 
 #define HX_DECLARE_DYNAMIC_FUNC(func,dynamic_arg_list) \
-   Dynamic func##_dyn(dynamic_arg_list);
+    ::NS::Dynamic func##_dyn(dynamic_arg_list);
 
 #define STATIC_HX_DECLARE_DYNAMIC_FUNC(func,dynamic_arg_list) \
-   static Dynamic func##_dyn(dynamic_arg_list);
+   static  ::NS::Dynamic func##_dyn(dynamic_arg_list);
 
 
 ::foreach PARAMS::
@@ -139,33 +139,33 @@ Dynamic class::func##_dyn() \
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC0(class,func,ret) \
-Dynamic __##class##func() \
+ ::NS::Dynamic __##class##func() \
 { \
-      ret class::func(); return Dynamic(); \
+      ret class::func(); return  ::NS::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::NS::Dynamic class::func##_dyn() \
 {\
    return hx::NS::CreateStaticFunction0(__##class##func); \
 }
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-Dynamic __##class##func(dynamic_arg_list) \
+ ::NS::Dynamic __##class##func(dynamic_arg_list) \
 { \
-      ret class::func(arg_list); return Dynamic(); \
+      ret class::func(arg_list); return  ::NS::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::NS::Dynamic class::func##_dyn() \
 {\
    return hx::NS::CreateStaticFunction##N(__##class##func); \
 }
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-Dynamic __##class##func(const Array<Dynamic> &inArgs) \
+ ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
 { \
-      ret class::func(array_list); return Dynamic(); \
+      ret class::func(array_list); return  ::NS::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::NS::Dynamic class::func##_dyn() \
 {\
    return hx::NS::CreateStaticFunctionVar(__##class##func,N); \
 }
@@ -183,14 +183,14 @@ Dynamic class::func##_dyn() \
 ::end::::end::
 
 #define HX_DEFINE_CREATE_ENUM(enum_obj) \
-static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
+static  ::NS::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 { \
    int idx =  enum_obj::__FindIndex(inName); \
    if (idx<0) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_CONSTRUCTOR(#enum_obj, inName)); \
    int count =  enum_obj::__FindArgCount(inName); \
    int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
    if (args!=count) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_ARG_COUNT(#enum_obj, inName, count, args)); \
-   if (args==0) { Dynamic result =(new enum_obj())->__Field(inName,HX_PROP_DYNAMIC); if (result!=null()) return result; } \
+   if (args==0) {  ::NS::Dynamic result =(new enum_obj())->__Field(inName,HX_PROP_DYNAMIC); if (result!=null()) return result; } \
    return hx::CreateEnum<enum_obj >(inName,idx,inArgs); \
 }
 
@@ -212,8 +212,8 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 
 
 #define HX_DYNAMIC_CALL(ret,func,array_args,dyn_arg_list,arg_list) \
-   Dynamic __Run(const Array<Dynamic> &inArgs) { ret func( array_args ); return null();} \
-   Dynamic __run(dyn_arg_list) { ret func( arg_list ); return null();}
+    ::NS::Dynamic __Run(const Array< ::NS::Dynamic> &inArgs) { ret func( array_args ); return null();} \
+    ::NS::Dynamic __run(dyn_arg_list) { ret func( arg_list ); return null();}
 
 ::foreach PARAMS::
 #define HX_DYNAMIC_CALL::ARG::(ret,func) HX_DYNAMIC_CALL(ret,func,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)::end::
@@ -258,8 +258,8 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 
 
 #define HX_DECLARE_DYNAMIC_FUNCTIONS \
-::foreach PARAMS:: ::if (ARG<6):: inline Dynamic operator()(::DYNAMIC_ARG_LIST::) { CheckFPtr(); return mPtr->__run(::ARG_LIST::); } \
-::else:: Dynamic operator()(::DYNAMIC_ARG_LIST::); \
+::foreach PARAMS:: ::if (ARG<6):: inline  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::) { CheckFPtr(); return mPtr->__run(::ARG_LIST::); } \
+::else::  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::); \
 ::end:: ::end::
 
 
@@ -304,7 +304,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void SetTopOfStack(int *inTopOfStack,bool);
 
    #define HX_END_MAIN \
       } \
-      catch (Dynamic e){ \
+      catch ( ::NS::Dynamic e){ \
          __hx_dump_stack(); \
          printf("Error : %s\n",e->toString().__CStr()); \
          return -1; \
@@ -327,7 +327,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void SetTopOfStack(int *inTopOfStack,bool);
 
 
    #define HX_END_MAIN \
-           } catch (Dynamic e) { \
+           } catch ( ::NS::Dynamic e) { \
         __hx_dump_stack(); \
              __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e->toString().__CStr()); \
            }\
@@ -354,7 +354,7 @@ int main(Platform::NS::Array<Platform::NS::String^>^) \
 
 #define HX_END_MAIN \
    } \
-   catch (Dynamic e){ \
+   catch ( ::NS::Dynamic e){ \
       __hx_dump_stack(); \
       return -1; \
    } \
@@ -390,7 +390,7 @@ int __stdcall WinMain( void * hInstance, void * hPrevInstance, const char *lpCmd
 
 #define HX_END_MAIN \
 	} \
-	catch (Dynamic e){ \
+	catch ( ::NS::Dynamic e){ \
 		__hx_dump_stack(); \
 		MessageBoxA(0,  e->toString().__CStr(), "Error", 0); \
       return -1; \
@@ -412,7 +412,7 @@ extern "C" EXPORT_EXTRA int OspMain (int argc, char* pArgv[]){ \
 
 #define HX_END_MAIN \
         } \
-        catch (Dynamic e){ \
+        catch ( ::NS::Dynamic e){ \
                 __hx_dump_stack(); \
                 printf("Error : %s\n",e->toString().__CStr()); \
                 return -1; \
@@ -434,7 +434,7 @@ int main(int argc,char **argv){ \
 
 #define HX_END_MAIN \
 	} \
-	catch (Dynamic e){ \
+	catch ( ::NS::Dynamic e){ \
 		__hx_dump_stack(); \
 		printf("Error : %s\n",e->toString().__CStr()); \
       return -1; \
