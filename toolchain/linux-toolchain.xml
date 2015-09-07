@@ -77,7 +77,7 @@
   <fromfile value="" if="GCC_OLD" />
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
-  <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m32" unless="noM32"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <lib name="-ldl"/>
   <ext value=""/>
