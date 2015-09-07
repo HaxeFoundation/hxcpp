@@ -350,11 +350,10 @@ public:
 
    void __Mark(hx::MarkContext *__inCtx)
    {
-      if (hx::ContainsPointers<ELEM_>())
+      if (length && hx::ContainsPointers<ELEM_>())
       {
          ELEM_ *ptr = (ELEM_ *)mBase;
-         for(int i=0;i<length;i++)
-            HX_MARK_MEMBER(ptr[i]);
+         HX_MARK_MEMBER_ARRAY(ptr,length);
       }
       if (mAlloc>0) hx::MarkAlloc((void *)mBase, __inCtx );
    }

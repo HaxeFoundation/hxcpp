@@ -36,6 +36,36 @@ template<> inline void MarkMember<String>(String &outT,hx::MarkContext *__inCtx)
 template<> inline void MarkMember<Void>(Void &outT,hx::MarkContext *__inCtx) {  }
 
 
+
+
+template<typename T> inline void MarkMemberArray(T *,int, hx::MarkContext *__inCtx)
+{
+   //*(int *)0=0;
+}
+template<> inline void MarkMemberArray<String>(String *ioStrings,int inLen,hx::MarkContext *__inCtx)
+{
+   hx::MarkStringArray(ioStrings,inLen,__inCtx);
+}
+template<typename T> inline void MarkMemberArray(hx::ObjectPtr<T> *inObjects, int inLen, hx::MarkContext *__inCtx)
+{
+   hx::MarkObjectArray( (hx::Object **)inObjects ,inLen,__inCtx);
+}
+template<> inline void MarkMemberArray(Dynamic *outT,int inLen, hx::MarkContext *__inCtx)
+{
+   hx::MarkObjectArray( (hx::Object **)outT ,inLen,__inCtx);
+}
+template<> inline void MarkMemberArray(hx::Object **outT,int inLen, hx::MarkContext *__inCtx)
+{
+   hx::MarkObjectArray( outT ,inLen,__inCtx);
+}
+template<typename T> inline void MarkMemberArray(Array<T> *outT,int inLen,hx::MarkContext *__inCtx)
+{
+   hx::MarkObjectArray( (hx::Object **)outT ,inLen,__inCtx);
+}
+
+
+
+
 #ifdef HXCPP_VISIT_ALLOCS
 template<typename T> inline void VisitMember(T &outT,hx::VisitContext *__inCtx) { }
 

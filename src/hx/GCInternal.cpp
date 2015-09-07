@@ -1082,7 +1082,20 @@ void MarkObjectAlloc(hx::Object *inPtr,hx::MarkContext *__inCtx)
 }
 
 
+void MarkObjectArray(hx::Object **inPtr, int inLength, hx::MarkContext *__inCtx)
+{
+   for(int i=0;i<inLength;i++)
+      if (inPtr[i]) MarkObjectAlloc(inPtr[i],__inCtx);
+}
 
+void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
+{
+   for(int i=0;i<inLength;i++)
+   {
+      const char *str = inPtr[i].__s;
+      HX_MARK_STRING(str);
+   }
+}
 
 #ifdef HXCPP_DEBUG
 #define FILE_SCOPE

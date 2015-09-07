@@ -198,6 +198,8 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES
 void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx);
+void MarkObjectArray(hx::Object **inPtr, int inLength, hx::MarkContext *__inCtx);
+void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx);
 
 #ifdef HXCPP_DEBUG
 HXCPP_EXTERN_CLASS_ATTRIBUTES
@@ -219,6 +221,7 @@ inline void EnsureObjPtr(hx::Object *) { }
 #define HX_MARK_BEGIN_CLASS(x) hx::MarkPushClass(#x, __inCtx );
 #define HX_MARK_END_CLASS() hx::MarkPopClass(__inCtx );
 #define HX_MARK_MEMBER(x) { hx::MarkSetMember(0, __inCtx); hx::MarkMember(x, __inCtx ); }
+#define HX_MARK_MEMBER_ARRAY(x,len) { hx::MarkSetMember(0, __inCtx); hx::MarkMemberArray(x, len, __inCtx ); }
 
 #else
 
@@ -226,6 +229,7 @@ inline void EnsureObjPtr(hx::Object *) { }
 #define HX_MARK_BEGIN_CLASS(x)
 #define HX_MARK_END_CLASS()
 #define HX_MARK_MEMBER(x) hx::MarkMember(x, __inCtx )
+#define HX_MARK_MEMBER_ARRAY(x,len) hx::MarkMemberArray(x, len, __inCtx )
 
 #endif
 
