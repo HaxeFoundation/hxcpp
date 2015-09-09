@@ -4,8 +4,14 @@
 #include <hx/Thread.h>
 #include "Hash.h"
 
-int gByteMarkID = 0;
-int gMarkID = 0;
+static int gByteMarkID = 0x10;
+static int gMarkID = 0x10 << 24;
+
+namespace hx
+{
+   unsigned int gPrevMarkIdMask = 0;
+}
+
 
 enum { gFillWithJunk = 0 } ;
 
@@ -43,7 +49,7 @@ int gInAlloc = false;
   enum { MAX_MARK_THREADS = 1 };
 #endif
 
-enum { MARK_BYTE_MASK = 0x7f };
+enum { MARK_BYTE_MASK = 0x0f };
 
 
 enum
@@ -351,9 +357,17 @@ struct AtomicLock
 
    volatile int mCount;
 };
-typedef TAutoLock<AtomicLock> AutoAtomic;
 
-AtomicLock gMarkMutex;
+#define HXCPP_GC_SPIN_LOCK
+
+#ifdef HXCPP_GC_SPIN_LOCK
+typedef AtomicLock GcLock;
+#else
+typedef MyMutex GcLock;
+#endif
+
+typedef TAutoLock<GcLock> AutoGcLock;
+
 namespace hx { void MarkerReleaseWorkerLocked(); }
 
 
@@ -591,7 +605,7 @@ union BlockData
          return allocNone;
       }
       unsigned char time = mRow[0][inOffset+ENDIAN_MARK_ID_BYTE_HEADER];
-      if ( ((time+1) & MARK_BYTE_MASK) != gByteMarkID )
+      if ( ((time+1) & MARK_BYTE_MASK) != (gByteMarkID & MARK_BYTE_MASK)  )
       {
          // Object is either out-of-date, or already marked....
          if (inReport)
@@ -706,18 +720,16 @@ union BlockData
 };
 
 
-#define MARK_ROWS \
-   unsigned char &mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE]; \
-   if ( mark==gByteMarkID || mark & HX_GC_CONST_ALLOC_MARK_BIT) \
-      return; \
-   mark = gByteMarkID; \
+#define MARK_ROWS_UNCHECKED \
+   ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE] = gByteMarkID; \
  \
-   register size_t ptr_i = ((size_t)inPtr)-sizeof(int); \
+   size_t ptr_i = ((size_t)inPtr)-sizeof(int); \
    unsigned int flags =  *((unsigned int *)ptr_i); \
  \
-   char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK); \
+   char *block; \
    if ( flags & (IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ) ) \
    { \
+      block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK); \
       char *base = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS); \
       *base |= IMMIX_ROW_MARKED; \
  \
@@ -777,13 +789,13 @@ struct MarkChunk
 
 struct GlobalChunks
 {
-   AtomicLock lock;
-   hx::QuickVec< MarkChunk * >   chunks;
+   GcLock lock;
+   hx::QuickVec< MarkChunk * > chunks;
    hx::QuickVec< MarkChunk * > spare;
 
    MarkChunk *pushJob(MarkChunk *inChunk)
    {
-      AutoAtomic l(lock);
+      AutoGcLock l(lock);
       chunks.push(inChunk);
 
       if (sActiveThreads)
@@ -847,15 +859,17 @@ struct GlobalChunks
 
    void free(MarkChunk *inChunk)
    {
-      AutoAtomic l(lock);
+      AutoGcLock l(lock);
       spare.push(inChunk);
    }
 
    MarkChunk *alloc()
    {
-      AutoAtomic l(lock);
+      AutoGcLock l(lock);
       if (spare.size()==0)
+      {
          return new MarkChunk;
+      }
       return spare.pop();
    }
 };
@@ -1044,14 +1058,14 @@ void MarkPopClass(hx::MarkContext *__inCtx)
 
 
 
-void MarkAlloc(void *inPtr,hx::MarkContext *__inCtx)
+void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
 {
-   MARK_ROWS
+   MARK_ROWS_UNCHECKED
 }
 
-void MarkObjectAlloc(hx::Object *inPtr,hx::MarkContext *__inCtx)
+void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
 {
-   MARK_ROWS
+   MARK_ROWS_UNCHECKED
    if (flags & IMMIX_ALLOC_IS_OBJECT)
    {
       #ifdef HXCPP_DEBUG
@@ -2307,9 +2321,25 @@ public:
 
    void MarkAll(bool inDoClear)
    {
-      // Bit 0x80 is reserved for "const allocation"
-      gByteMarkID = (gByteMarkID+1) & MARK_BYTE_MASK;
+      // The most-significant header byte looks like:
+      // C nH Odd Even  c c c c
+      //  C = "is const alloc bit" - in this case Odd and Even will be false
+      // nH = non-hashed const string bit
+      // Odd = true if cycle is odd
+      // Even = true if cycle is even
+      // c c c c = 4 bit cycle code
+      //
+      hx::gPrevMarkIdMask = gMarkID & 0x30000000;
+
+      // 4 bits of cycle
+      gByteMarkID = (gByteMarkID + 1) & 0x0f;
+      if (gByteMarkID & 0x1)
+         gByteMarkID |= 0x20;
+      else
+         gByteMarkID |= 0x10;
+
       gMarkID = gByteMarkID << 24;
+
       gBlockStack = 0;
 
       if (inDoClear)
@@ -2459,7 +2489,7 @@ public:
 
       sgTimeToNextTableUpdate--;
       if (sgTimeToNextTableUpdate<0)
-         sgTimeToNextTableUpdate = 20;
+         sgTimeToNextTableUpdate = 15;
       bool full = inMajor || (sgTimeToNextTableUpdate==0) || inForceCompact;
 
 
@@ -2503,6 +2533,10 @@ public:
       int free_rows = mAllBlocks.size()*IMMIX_USEFUL_LINES - mRowsInUse;
       // Aim for 50% free space...
       int  delta = mRowsInUse - free_rows;
+      // 50M total ...
+      //int  delta = (50*1024*1024>>IMMIX_LINE_BITS) - mAllBlocks.size()*IMMIX_USEFUL_LINES;
+      // 50M free ...
+      //int  delta = (50*1024*1024>>IMMIX_LINE_BITS) - free_rows;
       int  want_more = delta>0 ? (delta >> IMMIX_LINE_COUNT_BITS ) : 0;
       int  want_less = (delta < -(IMMIX_USEFUL_LINES<<IMMIX_BLOCK_GROUP_BITS)) ?
                             ((-delta) >> IMMIX_LINE_COUNT_BITS ) : 0;

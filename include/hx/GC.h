@@ -193,11 +193,26 @@ void GCPrepareMultiThreaded();
 
 void PrologDone();
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES extern unsigned int gPrevMarkIdMask;
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx);
+void MarkAllocUnchecked(void *inPtr ,hx::MarkContext *__inCtx);
+
+inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
+{
+   if ( ((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask )
+      MarkAllocUnchecked(inPtr,__inCtx);
+}
+
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx);
+void MarkObjectAllocUnchecked(hx::Object *inPtr ,hx::MarkContext *__inCtx);
+
+inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
+{
+   if ( ((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask )
+      MarkObjectAllocUnchecked(inPtr,__inCtx);
+}
+
 void MarkObjectArray(hx::Object **inPtr, int inLength, hx::MarkContext *__inCtx);
 void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx);
 
@@ -233,9 +248,8 @@ inline void EnsureObjPtr(hx::Object *) { }
 
 #endif
 
-
-
 #define HX_MARK_OBJECT(ioPtr) if (ioPtr) hx::MarkObjectAlloc(ioPtr, __inCtx );
+
 
 
 #define HX_GC_CONST_ALLOC_BIT  0x80000000
@@ -244,7 +258,7 @@ inline void EnsureObjPtr(hx::Object *) { }
 #define HX_GC_NO_HASH_MASK     (HX_GC_CONST_ALLOC_BIT | HX_GC_NO_STRING_HASH)
 
 #define HX_MARK_STRING(ioPtr) \
-   if (ioPtr && !(((unsigned int *)ioPtr)[-1] & HX_GC_CONST_ALLOC_BIT) ) hx::MarkAlloc((void *)ioPtr, __inCtx );
+   if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx );
 
 #define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx ); }
 
