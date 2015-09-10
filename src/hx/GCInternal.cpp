@@ -50,6 +50,7 @@ int gInAlloc = false;
 #endif
 
 enum { MARK_BYTE_MASK = 0x0f };
+enum { FULL_MARK_BYTE_MASK = 0x3f };
 
 
 enum
@@ -138,6 +139,12 @@ extern void scriptMarkStack(hx::MarkContext *);
 //#define DEBUG_ALLOC_PTR ((char *)0xb68354)
 
 
+#ifdef HX_WINDOWS
+#define ZERO_MEM(ptr, n) ZeroMemory(ptr,n)
+#else
+#define ZERO_MEM(ptr, n) memset(ptr,0,n)
+#endif
+
 
 #ifndef USE_POSIX_MEMALIGN
 
@@ -187,12 +194,12 @@ hx::QuickVec<GroupInfo> gAllocGroups;
 #define IMMIX_LINES             (1<<IMMIX_LINE_COUNT_BITS)
 #define IMMIX_HEADER_LINES      (IMMIX_LINES>>IMMIX_LINE_BITS)
 #define IMMIX_USEFUL_LINES      (IMMIX_LINES - IMMIX_HEADER_LINES)
-#define IMMIX_LINE_POS_MASK     ((size_t)(IMMIX_LINE_LEN-1))
-#define IMMIX_START_OF_ROW_MASK  (~IMMIX_LINE_POS_MASK)
 
 #define IMMIX_MAX_ALLOC_GROUPS_SIZE  (1<<IMMIX_BLOCK_GROUP_BITS)
 
 
+// Every second line used
+#define MAX_HOLES (IMMIX_USEFUL_LINES>>1)
 
 /*
 
@@ -202,7 +209,7 @@ hx::QuickVec<GroupInfo> gAllocGroups;
  The header is placed in the 4 bytes before the object pointer, and it is placed there using a uint32.
  When addressed as the uint32, you can use the bitmasks below to extract the various data.
 
- The "mark id" and "obj next" elements can conveniently be interpreted as bytes, however the offsets well
+ The "mark id" can conveniently be interpreted as a byte, however the offsets well
   be different depending on whether the system is little endian or big endian.
 
 
@@ -210,7 +217,7 @@ hx::QuickVec<GroupInfo> gAllocGroups;
 
  7   0 15 8 23 16 31 24
  -----------------------
- |    |    | OBJ | MID  | obj start here .....
+ |    |    |     | MID  | obj start here .....
  -----------------------
 
 
@@ -219,52 +226,35 @@ hx::QuickVec<GroupInfo> gAllocGroups;
 
  31 24 23 16 15 8 7   0
  -----------------------
- |MID |OBJ |     |      | obj start here .....
+ |MID |    |     |      | obj start here .....
  -----------------------
 
 MID = ENDIAN_MARK_ID_BYTE = is measured from the object pointer
       ENDIAN_MARK_ID_BYTE_HEADER = is measured from the header pointer (4 bytes before object)
-
-OBJ = ENDIAN_OBJ_NEXT_BYTE = start is measured from the header pointer
 
 
 */
 
 #ifndef HXCPP_BIG_ENDIAN
 #define ENDIAN_MARK_ID_BYTE        -1
-#define ENDIAN_OBJ_NEXT_BYTE       2
 #else
 #define ENDIAN_MARK_ID_BYTE        -4
-#define ENDIAN_OBJ_NEXT_BYTE       1
 #endif
 #define ENDIAN_MARK_ID_BYTE_HEADER (ENDIAN_MARK_ID_BYTE + 4)
 
 
-#define IMMIX_ALLOC_MARK_ID     0xff000000
-#define IMMIX_ALLOC_OBJ_NEXT    0x00ff0000
-#define IMMIX_ALLOC_IS_OBJECT   0x00008000
-#define IMMIX_ALLOC_IS_PINNED   0x00004000
-#define IMMIX_ALLOC_SIZE_MASK   0x00003ffc
-#define IMMIX_ALLOC_MEDIUM_OBJ  0x00000002
-#define IMMIX_ALLOC_SMALL_OBJ   0x00000001
+// Used by strings
+// HX_GC_CONST_ALLOC_BIT  0x80000000
+
+#define IMMIX_ALLOC_MARK_ID     0x3f000000
+#define IMMIX_ALLOC_IS_CONTAINER   0x00800000
+#define IMMIX_ALLOC_IS_PINNED   0x00400000
+#define IMMIX_ALLOC_SIZE_MASK   0x003fff00
+#define IMMIX_ALLOC_SIZE_SHIFT  8
+#define IMMIX_ALLOC_ROW_COUNT   0x000000ff
 
 
-
-
-
-
-#define IMMIX_OBJECT_HAS_MOVED (~IMMIX_ALLOC_MEDIUM_OBJ)
-
-/*
-
- IMMIX Row Header - 8 bits
-
-*/
-#define IMMIX_ROW_CLEAR           0x80
-#define IMMIX_ROW_LINK_MASK       0x7C
-#define IMMIX_ROW_HAS_OBJ_LINK    0x02
-#define IMMIX_ROW_MARKED          0x01
-#define IMMIX_NOT_MARKED_MASK     (~IMMIX_ROW_MARKED)
+#define IMMIX_OBJECT_HAS_MOVED 0x000000fe;
 
 
 // Bigger than this, and they go in the large object pool
@@ -370,21 +360,61 @@ typedef TAutoLock<GcLock> AutoGcLock;
 
 namespace hx { void MarkerReleaseWorkerLocked(); }
 
+struct HoleRange
+{
+   unsigned short start;
+   unsigned short length;
+};
 
 struct BlockDataInfo
 {
-   enum { MAX_STACK = 32 };
-
-   int mId;
-   int mGroupId;
-   int mUsedRows;
-   int mFreeInARow;
-   int mHoles;
+   int             mId;
+   int             mGroupId;
    union BlockData *mPtr;
-   bool mPinned;
+
+   unsigned int allocStart[IMMIX_LINES];
+   int          mUsedRows;
+   bool         mPinned;
+   HoleRange    mRanges[MAX_HOLES];
+   int          mHoles;
+   int          mMaxHoleSize;
+
+
+   void clear()
+   {
+      mUsedRows = 0;
+      mPinned = false;
+      ZERO_MEM(allocStart,sizeof(int)*IMMIX_LINES);
+      mRanges[0].start = IMMIX_HEADER_LINES << IMMIX_LINE_BITS;
+      mRanges[0].length = IMMIX_USEFUL_LINES << IMMIX_LINE_BITS;
+      mMaxHoleSize = mRanges[0].length;
+      mHoles = 1;
+   }
 };
 
 hx::QuickVec<BlockDataInfo> *gBlockInfo = 0;
+
+
+#define CLEAR_ROW(row) \
+            row[0] = 0; \
+            row[1] = 0; \
+            row[2] = 0; \
+            row[3] = 0; \
+            row[4] = 0; \
+            row[5] = 0; \
+            row[6] = 0; \
+            row[7] = 0; \
+            row[8] = 0; \
+            row[9] = 0; \
+            row[10] = 0; \
+            row[11] = 0; \
+            row[12] = 0; \
+            row[13] = 0; \
+            row[14] = 0; \
+            row[15] = 0; 
+
+
+
 
 union BlockData
 {
@@ -397,19 +427,45 @@ union BlockData
       BlockDataInfo &info = getInfo();
       info.mId = mId;
       info.mGroupId = inGID;
-      info.mUsedRows = 0;
-      info.mFreeInARow = 0;
-      info.mHoles = 0;
-      info.mPinned = 0;
       info.mPtr = this;
+      info.clear();
    }
    inline int GetFreeRows() const { return (IMMIX_USEFUL_LINES - getUsedRows()); }
    inline int GetFreeData() const { return (IMMIX_USEFUL_LINES - getUsedRows())<<IMMIX_LINE_BITS; }
    void ClearEmpty()
    {
-      memset((char *)this + 2,0,IMMIX_HEADER_LINES * IMMIX_LINE_LEN - 2);
-      memset(mRow[IMMIX_HEADER_LINES],0,IMMIX_USEFUL_LINES * IMMIX_LINE_LEN);
-      getInfo().mUsedRows = 0;
+      if (0)
+      {
+         ((short *)this)[1] = 0;
+         ((int *)this)[1] = 0;
+         double *row = (double *)this;
+         row[1] = 0;
+         row[2] = 0;
+         row[3] = 0;
+         row[4] = 0;
+         row[5] = 0;
+         row[6] = 0;
+         row[7] = 0;
+         row[8] = 0;
+         row[9] = 0;
+         row[10] = 0;
+         row[11] = 0;
+         row[12] = 0;
+         row[13] = 0;
+         row[14] = 0;
+         row[15] = 0; 
+
+         for(int r=1; r<IMMIX_LINES; r++)
+         {
+            double *row = (double *)mRow[r];
+            CLEAR_ROW(row);
+         }
+      }
+      else
+      {
+         ZERO_MEM((char *)this + 2,IMMIX_BLOCK_SIZE - 2);
+      }
+      getInfo().clear();
    }
 
    void destroy()
@@ -434,41 +490,30 @@ union BlockData
 
    void ClearRecycled()
    {
-      for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
+      if (0)
       {
-         unsigned char &flags = mRowFlags[r];
-         if (!(flags & IMMIX_ROW_MARKED) /*&& !(flags & IMMIX_ROW_CLEAR) */)
+         unsigned int *allocStart = getInfo().allocStart;
+         for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
          {
-            //__int64 *row = (__int64 *)mRow[r];
-            double *row = (double *)mRow[r];
-            row[0] = 0;
-            row[1] = 0;
-            row[2] = 0;
-            row[3] = 0;
-            row[4] = 0;
-            row[5] = 0;
-            row[6] = 0;
-            row[7] = 0;
-            row[8] = 0;
-            row[9] = 0;
-            row[10] = 0;
-            row[11] = 0;
-            row[12] = 0;
-            row[13] = 0;
-            row[14] = 0;
-            row[15] = 0;
-            //flags = IMMIX_ROW_CLEAR;
-            flags = 0;
+            unsigned char &flags = mRowMarked[r];
+            if (!flags)
+            {
+               //allocStart[r] = 0;
+               //__int64 *row = (__int64 *)mRow[r];
+               double *row = (double *)mRow[r];
+               CLEAR_ROW(row);
+            }
          }
       }
-   }
-   void DirtyLines(int inFirst,int inN)
-   {
-      unsigned char *ptr = mRowFlags + inFirst;
-      for(int i=0;i<inN;i++)
-         ptr[i] &= ~(IMMIX_ROW_CLEAR);
+      else
+      {
+         BlockDataInfo &info =  getInfo();
+         for(int i=0;i<info.mHoles;i++)
+            ZERO_MEM( mRow[0]+info.mRanges[i].start, info.mRanges[i].length );
+      }
    }
 
+   /*
    void FillTo(int inRow, int inPos)
    {
       BlockDataInfo &info = getInfo();
@@ -479,33 +524,30 @@ union BlockData
       if (offset< IMMIX_BLOCK_SIZE)
          memset(&mRow[0][0] + offset, 0, IMMIX_BLOCK_SIZE-offset);
       for(int i=0;i<info.mUsedRows;i++)
-         mRowFlags[i+IMMIX_HEADER_LINES] |= IMMIX_ROW_MARKED;
+         mRowMarked[i+IMMIX_HEADER_LINES] |= IMMIX_ROW_MARKED;
    }
-
+   */
 
    bool IsEmpty() const { return getUsedRows() == 0; }
    bool IsFull() const { return getUsedRows() == IMMIX_USEFUL_LINES; }
    int getUsedRows() const { return getInfo().mUsedRows; }
-   int getFreeInARow() const { return getInfo().mFreeInARow; }
+   int getMaxFree() const { return getInfo().mMaxHoleSize; }
    int isPinned() const { return getInfo().mPinned; }
-   inline bool IsRowUsed(int inRow) const { return mRowFlags[inRow] & IMMIX_ROW_MARKED; }
 
    void Verify()
    {
+      unsigned int *allocStart = getInfo().allocStart;
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
-         unsigned char &row_flag = mRowFlags[r];
-         if ( !(row_flag & IMMIX_ROW_MARKED) )
+         unsigned char &row_flag = mRowMarked[r];
+         if (mRowMarked[r] && allocStart[r])
          {
-            if (row_flag!=0)
-            {
-               GCLOG("Block verification failed on row %d\n",r);
-               #if __has_builtin(__builtin_trap)
-               __builtin_trap();
-               #else
-               *(int *)0=0;
-               #endif
-            }
+            GCLOG("Block verification failed on row %d\n",r);
+            #if __has_builtin(__builtin_trap)
+            __builtin_trap();
+            #else
+            *(int *)0=0;
+            #endif
          }
       }
    }
@@ -515,79 +557,70 @@ union BlockData
        memset(&mRow[0][0] + 2, 0x55, IMMIX_BLOCK_SIZE-2 );
    }
 
-   #define CHECK_TABLE_LIVE \
-      if (*table && ((row[*table]) !=  gByteMarkID)) *table = 0;
-
    void Reclaim(bool inFull)
    {
       int free = 0;
-      int max_free_in_a_row = 0;
-      int free_in_a_row = 0;
-      int holes = 0;
+      int hole = 0;
+      int firstFreeRow = 0;
       bool update_table = inFull || gFillWithJunk;
+      BlockDataInfo &info = getInfo();
+      unsigned int *allocStart = info.allocStart;
 
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
-         unsigned char &row_flag = mRowFlags[r];
-         if (row_flag & IMMIX_ROW_MARKED)
+         if (mRowMarked[r])
          {
+            if (firstFreeRow)
+            {
+               info.mRanges[hole].start  = firstFreeRow<<IMMIX_LINE_BITS;
+               info.mRanges[hole].length = (r-firstFreeRow)<<IMMIX_LINE_BITS;
+               if (info.mRanges[hole].length > info.mMaxHoleSize)
+                  info.mMaxHoleSize = info.mRanges[hole].length;
+               hole++;
+               firstFreeRow = 0;
+            }
             if (update_table)
             {
-               // Must update from the object mark flag ...
-               if (row_flag & IMMIX_ROW_HAS_OBJ_LINK)
+               unsigned int &starts = allocStart[r];
+               if (starts)
                {
-                  unsigned char *row = mRow[r];
-                  unsigned char *last_link = &row_flag;
-                  int pos = (row_flag & IMMIX_ROW_LINK_MASK);
-
-                  while(1)
-                  {
-                     // Still current ....
-                     if (row[pos+ENDIAN_MARK_ID_BYTE_HEADER] == gByteMarkID)
+                  for(int i=0;i<32;i++)
+                     if ( starts & (1<<i) )
                      {
-                        *last_link = pos | IMMIX_ROW_HAS_OBJ_LINK;
-                        last_link = row+pos+ENDIAN_OBJ_NEXT_BYTE;
+                        unsigned int header = ((int *)mRow[r])[i];
+                        // Old object start?
+                        if ( (header & IMMIX_ALLOC_MARK_ID) != gMarkID )
+                        {
+                           starts &= ~(1<<i);
+                           if (!starts)
+                              break;
+                        }
                      }
-                     else
-                     {
-                       if (gFillWithJunk)
-                       {
-                           unsigned int header = *(unsigned int *)(row + pos);
-                           int size = header & IMMIX_ALLOC_SIZE_MASK;
-                           //GCLOG("Fill %d (%p+%d=%p) mark=%d/%d\n",size, row,pos, row+pos+4,row[pos+ENDIAN_MARK_ID_BYTE_HEADER], gByteMarkID);
-                           memset(row+pos+4,0x55,size);
-                       }
-                     }
-                     if (row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_HAS_OBJ_LINK)
-                        pos = row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_LINK_MASK;
-                     else
-                        break;
-                  }
-                  *last_link = 0;
-                  row_flag |= IMMIX_ROW_MARKED;
                }
             }
-            free_in_a_row = 0;
          }
          else
          {
-            if (free_in_a_row==0)
-               holes++;
-            row_flag = 0;
-            free_in_a_row++;
+            allocStart[r] = 0;
+            if (!firstFreeRow)
+               firstFreeRow = r;
             if (gFillWithJunk)
-              memset(mRow[r],0x55,IMMIX_LINE_LEN);
-
-            if (free_in_a_row>max_free_in_a_row)
-               max_free_in_a_row = free_in_a_row;
+               memset(mRow[r],0x55,IMMIX_LINE_LEN);
             free++;
          }
       }
 
-      BlockDataInfo &info = getInfo();
+      if (firstFreeRow)
+      {
+         info.mRanges[hole].start  = firstFreeRow<<IMMIX_LINE_BITS;
+         info.mRanges[hole].length = (IMMIX_LINES-firstFreeRow)<<IMMIX_LINE_BITS;
+         if (info.mRanges[hole].length > info.mMaxHoleSize)
+            info.mMaxHoleSize = info.mRanges[hole].length;
+         hole++;
+      }
       info.mUsedRows = IMMIX_USEFUL_LINES - free;
-      info.mFreeInARow = max_free_in_a_row;
-      info.mHoles = holes;
+      info.mHoles = hole;
+
       // GCLOG("Used %f, biggest=%f, holes=%d\n", (float)mUsedRows/IMMIX_USEFUL_LINES, (float)mFreeInARow/IMMIX_USEFUL_LINES, holes );
 
       //Verify();
@@ -604,7 +637,16 @@ union BlockData
             GCLOG("  bad row %d (off=%d)\n", r, inOffset);
          return allocNone;
       }
-      unsigned char time = mRow[0][inOffset+ENDIAN_MARK_ID_BYTE_HEADER];
+
+      if ( !( getInfo().allocStart[r] & (1<<((inOffset>>2) & 31)) ) )
+      {
+         // Not a actual start...
+         return allocNone;
+      }
+
+
+
+      char time = mRow[0][inOffset+ENDIAN_MARK_ID_BYTE_HEADER];
       if ( ((time+1) & MARK_BYTE_MASK) != (gByteMarkID & MARK_BYTE_MASK)  )
       {
          // Object is either out-of-date, or already marked....
@@ -613,53 +655,20 @@ union BlockData
          return time==gByteMarkID ? allocMarked : allocNone;
       }
 
-      int flags = mRowFlags[r];
-      if (!(flags & (IMMIX_ROW_HAS_OBJ_LINK)))
+
+      if (*(unsigned int *)(mRow[0] + inOffset) & IMMIX_ALLOC_IS_CONTAINER)
       {
-         if (inReport)
-            GCLOG("  row has no new objs :[%d] = %d\n", r, flags );
-         return allocNone;
-      }
-
-
-      int sought = (inOffset & IMMIX_LINE_POS_MASK);
-      unsigned char *row = mRow[r];
-      int pos = (flags & IMMIX_ROW_LINK_MASK);
-
-      while( pos!=sought && (row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_HAS_OBJ_LINK) )
-         pos = row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_LINK_MASK;
-
-      if (pos==sought)
-      {
-         if (*(unsigned int *)(mRow[0] + inOffset) & IMMIX_ALLOC_IS_OBJECT)
+         // See if object::new has been called, but not constructor yet ...
+         void **vtable = (void **)(mRow[0] + inOffset + sizeof(int));
+         if (vtable[0]==0)
          {
-            // See if object::new has been called, but not constructor yet ...
-            void **vtable = (void **)(mRow[0] + inOffset + sizeof(int));
-            if (vtable[0]==0)
-            {
-               // GCLOG("Partially constructed object.");
-               return allocString;
-            }
-            return allocObject;
+            // GCLOG("Partially constructed object.");
+            return allocString;
          }
-         return allocString;
+         return allocObject;
       }
 
-      if (inReport)
-      {
-         GCLOG("  not found in table (r=%p,sought =%d): ", row, sought);
-         int pos = (flags & IMMIX_ROW_LINK_MASK);
-         GCLOG(" %d ", pos );
-         while( pos!=sought && (row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_HAS_OBJ_LINK) )
-         {
-            pos = row[pos+ENDIAN_OBJ_NEXT_BYTE] & IMMIX_ROW_LINK_MASK;
-            GCLOG(" %d ", pos );
-         }
-
-         GCLOG("\n");
-      }
-
-      return allocNone;
+      return allocString;
    }
 
    void pin() { getInfo().mPinned = true; }
@@ -667,10 +676,7 @@ union BlockData
    void ClearRowMarks()
    {
       getInfo().mPinned = false;
-      unsigned char *header = mRowFlags + IMMIX_HEADER_LINES;
-      unsigned char *header_end = header + IMMIX_USEFUL_LINES;
-      while(header !=  header_end)
-         *header++ &= IMMIX_NOT_MARKED_MASK;
+      ZERO_MEM(mRowMarked+IMMIX_HEADER_LINES, IMMIX_USEFUL_LINES);
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
@@ -679,29 +685,25 @@ union BlockData
       if (IsEmpty())
          return;
 
+      unsigned int *allocStart = getInfo().allocStart;
       for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
       {
-         if ((mRowFlags[r] & (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED)) ==
-                            (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED) )
+         if (mRowMarked[r])
          {
-            int pos = (mRowFlags[r] & IMMIX_ROW_LINK_MASK);
+            unsigned int starts = allocStart[r];
             unsigned char *row = mRow[r];
-
-            while(true)
+            for(int i=0;i<32;i++)
             {
-               if (row[pos+ENDIAN_MARK_ID_BYTE_HEADER] == gByteMarkID)
-               {
-                  if ( (*(unsigned int *)(row+pos)) & IMMIX_ALLOC_IS_OBJECT )
+               int pos = i<<2;
+               if ( (starts & (1<<i)) &&
+                   (row[pos+ENDIAN_MARK_ID_BYTE_HEADER]&FULL_MARK_BYTE_MASK) == gByteMarkID)
                   {
-                     hx::Object *obj = (hx::Object *)(row+pos+4);
-                     obj->__Visit(inCtx);
+                     if ( (*(unsigned int *)(row+pos)) & IMMIX_ALLOC_IS_CONTAINER )
+                     {
+                        hx::Object *obj = (hx::Object *)(row+pos+4);
+                        obj->__Visit(inCtx);
+                     }
                   }
-               }
-
-               int next = row[pos+ENDIAN_OBJ_NEXT_BYTE];
-               if (! (next & IMMIX_ROW_HAS_OBJ_LINK) )
-                  break;
-               pos = next & IMMIX_ROW_LINK_MASK;
             }
          }
       }
@@ -714,36 +716,41 @@ union BlockData
    unsigned short mId;
 
    // First 2 rows contain a byte-flag-per-row 
-   unsigned char  mRowFlags[IMMIX_LINES];
+   unsigned char  mRowMarked[IMMIX_LINES];
    // Row data as union - don't use first 2 rows
    unsigned char  mRow[IMMIX_LINES][IMMIX_LINE_LEN];
 };
 
 
-#define MARK_ROWS_UNCHECKED \
+#define MARK_ROWS_UNCHECKED_BEGIN \
    ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE] = gByteMarkID; \
  \
    size_t ptr_i = ((size_t)inPtr)-sizeof(int); \
    unsigned int flags =  *((unsigned int *)ptr_i); \
  \
-   char *block; \
-   if ( flags & (IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ) ) \
+   int rows = flags & IMMIX_ALLOC_ROW_COUNT; \
+   if (rows) \
    { \
-      block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK); \
-      char *base = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS); \
-      *base |= IMMIX_ROW_MARKED; \
- \
-      if (flags & IMMIX_ALLOC_MEDIUM_OBJ) \
+      char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK); \
+      char *rowMark = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS); \
+      *rowMark = 1;\
+      if (rows>1) \
       { \
-         int rows = (( (flags & IMMIX_ALLOC_SIZE_MASK) + sizeof(int) + \
-                (ptr_i & (IMMIX_LINE_LEN-1)) -1 ) >> IMMIX_LINE_BITS); \
-         for(int i=1;i<=rows;i++) \
-            base[i] |= IMMIX_ROW_MARKED; \
+         rowMark[1] = 1; \
+         if (rows>2) \
+         { \
+            rowMark[2] = 1; \
+            if (rows>3) \
+            { \
+               rowMark[3] = 1; \
+               for(int r=4; r<rows; r++) \
+                  rowMark[r]=1; \
+            } \
+         } \
       } \
-   }
 
-
-
+#define MARK_ROWS_UNCHECKED_END \
+    }
 
 namespace hx
 {
@@ -1060,13 +1067,15 @@ void MarkPopClass(hx::MarkContext *__inCtx)
 
 void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
 {
-   MARK_ROWS_UNCHECKED
+   MARK_ROWS_UNCHECKED_BEGIN
+   MARK_ROWS_UNCHECKED_END
 }
 
 void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
 {
-   MARK_ROWS_UNCHECKED
-   if (flags & IMMIX_ALLOC_IS_OBJECT)
+   MARK_ROWS_UNCHECKED_BEGIN
+
+   if (flags & IMMIX_ALLOC_IS_CONTAINER)
    {
       #ifdef HXCPP_DEBUG
       if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
@@ -1093,6 +1102,8 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
       else
          __inCtx->pushObj(inPtr);
    }
+
+   MARK_ROWS_UNCHECKED_END
 }
 
 
@@ -1662,7 +1673,7 @@ public:
       mLocalAllocs.qerase_val(inAlloc);
    }
 
-   void *AllocLarge(int inSize)
+   void *AllocLarge(int inSize, bool inClear)
    {
       if (hx::gPauseForCollect)
          __hxcpp_gc_safe_point();
@@ -1680,7 +1691,9 @@ public:
       if (inSize<<1 > mLargeAllocSpace)
          mLargeAllocSpace = inSize<<1;
 
-      unsigned int *result = (unsigned int *)malloc(inSize + sizeof(int)*2);
+      unsigned int *result = inClear ? 
+                             (unsigned int *)calloc(1,inSize + sizeof(int)*2) :
+                             (unsigned int *)malloc(inSize + sizeof(int)*2);
       if (!result)
       {
          #ifdef SHOW_MEM_EVENTS
@@ -1744,7 +1757,7 @@ public:
    //  malloc/new.  This is not called very often, so the overhead should be minimal.
    //  However, gcc inlines this function!  requiring every alloc the have sjlj overhead.
    //  Making it virtual prevents the overhead.
-   virtual BlockData * GetRecycledBlock(int inRequiredRows)
+   virtual BlockData * GetRecycledBlock(int inRequiredBytes)
    {
       if (sMultiThreadMode)
       {
@@ -1762,7 +1775,7 @@ public:
          //   pass1 - any lying around after a collect
          if (mNextRecycled < mRecycledBlock.size())
          {
-            if (mRecycledBlock[mNextRecycled]->getFreeInARow()>=inRequiredRows)
+            if (mRecycledBlock[mNextRecycled]->getMaxFree()>=inRequiredBytes)
             {
                result = mRecycledBlock[mNextRecycled++];
             }
@@ -1770,7 +1783,7 @@ public:
             {
                for(int block = mNextRecycled+1; block<mRecycledBlock.size(); block++)
                {
-                  if (mRecycledBlock[block]->getFreeInARow()>=inRequiredRows)
+                  if (mRecycledBlock[block]->getMaxFree()>=inRequiredBytes)
                   {
                      result = mRecycledBlock[block];
                      mRecycledBlock.erase(block);
@@ -1952,7 +1965,7 @@ public:
 
 
 
-   #ifdef HXCPP_VISIT_ALLOCS // {
+   #if 0 && defined(HXCPP_VISIT_ALLOCS) // {
    void MoveBlocks(BlockData **inFrom, BlockData **inTo, int inCount)
    {
       BlockData *dest = *inTo++;
@@ -1969,10 +1982,10 @@ public:
 
          for(int r=IMMIX_HEADER_LINES;r<IMMIX_LINES;r++)
          {
-            if ((from.mRowFlags[r] & (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED)) ==
+            if ((from.mRowMarked[r] & (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED)) ==
                                (IMMIX_ROW_HAS_OBJ_LINK|IMMIX_ROW_MARKED) )
             {
-               int pos = (from.mRowFlags[r] & IMMIX_ROW_LINK_MASK);
+               int pos = (from.mRowMarked[r] & IMMIX_ROW_LINK_MASK);
                unsigned char *row = from.mRow[r];
    
                while(true)
@@ -1982,7 +1995,7 @@ public:
                   if (row[pos+ENDIAN_MARK_ID_BYTE_HEADER] == gByteMarkID)
                   {
                      unsigned int &flags = *(unsigned int *)(row+pos);
-                     bool isObject = flags & IMMIX_ALLOC_IS_OBJECT;
+                     bool isObject = flags & IMMIX_ALLOC_IS_CONTAINER;
                      int size = flags & IMMIX_ALLOC_SIZE_MASK;
                      void **ptr = (void **)(&flags + 1);
 
@@ -2008,14 +2021,14 @@ public:
                      
                      // Append to current position...
                      unsigned char *row = dest->mRow[destRow];
-                     unsigned char &row_flag = dest->mRowFlags[destRow];
+                     unsigned char &row_flag = dest->mRowMarked[destRow];
 
                      int *result = (int *)(row + destPos);
                      *result = size | gMarkID | (row_flag<<16) |
                            (extra_lines==0 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
 
                      if (isObject)
-                        *result |= IMMIX_ALLOC_IS_OBJECT;
+                        *result |= IMMIX_ALLOC_IS_CONTAINER;
 
                      row_flag =  destPos | IMMIX_ROW_HAS_OBJ_LINK | IMMIX_ROW_MARKED;
 
@@ -2319,7 +2332,7 @@ public:
    }
    #endif
 
-   void MarkAll(bool inDoClear)
+   void MarkAll()
    {
       // The most-significant header byte looks like:
       // C nH Odd Even  c c c c
@@ -2342,8 +2355,7 @@ public:
 
       gBlockStack = 0;
 
-      if (inDoClear)
-         ClearRowMarks();
+      ClearRowMarks();
 
       mMarker.init();
 
@@ -2481,7 +2493,7 @@ public:
 
       STAMP(t1)
 
-      MarkAll(true);
+      MarkAll();
 
       STAMP(t2)
 
@@ -2754,7 +2766,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
          {
             BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
             int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
-            AllocType t = block->GetAllocType(pos-sizeof(int),true);
+            AllocType t = block->GetAllocType(pos-sizeof(int),false);
             if ( t==allocObject )
             {
                //GCLOG(" Mark object %p (%p)\n", vptr,ptr);
@@ -2768,7 +2780,9 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                block->pin();
             }
             else if (t==allocMarked)
+            {
                block->pin();
+            }
          }
       }
       // GCLOG(" rejected %p %p %d %p %d=%d\n", ptr, vptr, !((size_t)vptr & 0x03), prev,
@@ -2836,10 +2850,11 @@ public:
    void Reset()
    {
       mCurrent = 0;
-      mOverflow = 0;
-      mCurrentLine = IMMIX_LINES;
-      mCurrentPos = 0;
-      mLinesSinceLastCollect = 0; 
+      mCurrentHole = 0;
+      mCurrentHoles = 0;
+      mLength = 0;
+      mStart = 0;
+      mMoreHoles = false;
    }
 
    void SetTopOfStack(int *inTop,bool inForce)
@@ -2954,13 +2969,11 @@ public:
 
 
 
-   void *Alloc(int inSize,bool inIsObject)
+   inline void *CallAlloc(int inSize,unsigned int inObjectFlags)
    {
       #ifdef HXCPP_ALIGN_FLOAT
          #define HXCPP_ALIGN_ALLOC
       #endif
-
-
 
       #ifdef HXCPP_DEBUG
       if (mGCFreeZone)
@@ -2969,146 +2982,62 @@ public:
       if (hx::gPauseForCollect)
          PauseForCollect();
 
-      inSize = (inSize + 3 ) & ~3;
-      #ifdef HXCPP_VISIT_ALLOCS
+      #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
       // Make sure we can fit a relocation pointer
-      if (sizeof(void *)>4 && inSize<sizeof(void *))
-         inSize = sizeof(void *);
+      int allocSize = sizeof(int) + std::max(8,inSize);
+      #else
+      int allocSize = sizeof(int) + inSize;
       #endif
-
-      int s = inSize +sizeof(int);
 
       #ifdef HXCPP_ALIGN_ALLOC
-      if (mCurrentPos >= IMMIX_LINE_LEN-4)
-      {
-         mCurrentPos = 0;
-         mCurrentLine++;
-      }
+      // If we start in even-int offset, we need to skip 8 bytes to get alloc on even-int
+      int skip4 = allocSize>mLength || !(mStart & 7) ? 4 : 0;
+      #else
+      enum { skip4 = 0 };
       #endif
-      // Try to squeeze it on this line ...
-      if (mCurrentPos > 0
-          )
-      {
-         #ifdef HXCPP_ALIGN_ALLOC
-         // Since we add sizeof(int), must be unaligned initially
-         if ( !(mCurrentPos & 0x4))
-            mCurrentPos += 4;
-         #endif
-         int skip = 1;
-         int extra_lines = (s + mCurrentPos-1) >> IMMIX_LINE_BITS;
 
-         //GCLOG("check for %d extra lines ...\n", extra_lines);
-         if (mCurrentLine + extra_lines < IMMIX_LINES)
-         {
-            int test = 0;
-            if (extra_lines)
-            {
-               const unsigned char *used = mCurrent->mRowFlags + mCurrentLine+test+1;
-               for(test=0;test<extra_lines;test++)
-                  if ( used[test] & IMMIX_ROW_MARKED)
-                     break;
-            }
-            //GCLOG(" found %d extra lines\n", test);
-            if (test==extra_lines)
-            {
-               // Ok, fits on the line! - setup object table
-               unsigned char *row = mCurrent->mRow[mCurrentLine];
-               unsigned char &row_flag = mCurrent->mRowFlags[mCurrentLine];
-
-               int *result = (int *)(row + mCurrentPos);
-               *result = inSize | gMarkID |
-                  (row_flag<<16) |
-                  (extra_lines==0 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
-
-               if (inIsObject)
-                  *result |= IMMIX_ALLOC_IS_OBJECT;
-
-               row_flag =  mCurrentPos | IMMIX_ROW_HAS_OBJ_LINK;
-
-               mCurrentLine += extra_lines;
-               mCurrentPos = (mCurrentPos + s) & (IMMIX_LINE_LEN-1);
-               if (mCurrentPos==0)
-                  mCurrentLine++;
-
-               //GCLOG("Alloced %d - %d/%d now\n", s, mCurrentPos, mCurrentLine);
-
-               return result + 1;
-            }
-            //GCLOG("not enought extra lines - skip %d\n",skip);
-            skip = test + 1;
-         }
-         else
-            skip = extra_lines;
-
-         // Does not fit on this line - we may also know how many to skip, so
-         //  jump down those lines...
-         mCurrentPos = 0;
-         mCurrentLine += skip;
-      }
-
-      int required_rows = (s + IMMIX_LINE_LEN-1) >> IMMIX_LINE_BITS;
-      int last_start = IMMIX_LINES - required_rows;
-
-      #ifdef HXCPP_ALIGN_ALLOC
-      s+=4;
-      #endif
       while(1)
       {
-         // Alloc new block, if required ...
-         if (!mCurrent || mCurrentLine>last_start)
+         if (allocSize + skip4 <= mLength)
+         {
+            #ifdef HXCPP_ALIGN_ALLOC
+            mStart += skip4;
+            #endif
+
+            int startRow = mStart>>IMMIX_LINE_BITS;
+            mCurrentStarts[ startRow ] |= 1<<( (mStart>>2) & 31);
+
+            int endRow = 1 + ((mStart+allocSize-1)>>IMMIX_LINE_BITS);
+
+            unsigned char *buffer = (unsigned char *)mCurrent + mStart;
+            *(unsigned int *)(buffer) = inObjectFlags |
+                  gMarkID | (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
+
+            mLength -= allocSize;
+            mStart += allocSize;
+            return buffer + sizeof(int);
+         }
+         else if (mMoreHoles)
+         {
+            mStart = mCurrentRange[mCurrentHole].start;
+            mLength = mCurrentRange[mCurrentHole].length;
+            mCurrentHole++;
+            mMoreHoles = mCurrentHole<mCurrentHoles;
+         }
+         else
          {
             volatile int dummy = 1;
             mBottomOfStack = (int *)&dummy;
             CAPTURE_REGS;
-            mCurrent = sGlobalAlloc->GetRecycledBlock(required_rows);
-            //mCurrent->Verify();
-            // Start on line 2 (there are 256 line-markers at the beginning)
-            mCurrentLine = IMMIX_HEADER_LINES;
-         }
-
-         // Look for N in a row ....
-         while(mCurrentLine <= last_start)
-         {
-            int test = 0;
-            const unsigned char *used = mCurrent->mRowFlags + mCurrentLine+test;
-            for(;test<required_rows;test++)
-               if ( used[test] & IMMIX_ROW_MARKED)
-                  break;
-
-            // Not enough room...
-            if (test<required_rows)
-            {
-               mCurrentLine += test+1;
-               //GCLOG("  Only found %d good - skip to %d\n",test,mCurrentLine);
-               continue;
-            }
-
-            // Ok, found a gap
-            unsigned char *row = mCurrent->mRow[mCurrentLine];
-
-            int *result = (int *)(row /*+ mCurrentPos*/);
-            #ifdef HXCPP_ALIGN_ALLOC
-            result++;
-            #endif
-            *result = inSize | gMarkID |
-               (required_rows==1 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
-
-            if (inIsObject)
-               *result |= IMMIX_ALLOC_IS_OBJECT;
-
-            #ifdef HXCPP_ALIGN_ALLOC
-            mCurrent->mRowFlags[mCurrentLine] = 4 | IMMIX_ROW_HAS_OBJ_LINK;
-            #else
-            mCurrent->mRowFlags[mCurrentLine] = /*mCurrentPos |*/ IMMIX_ROW_HAS_OBJ_LINK;
-            #endif
-
-            //mCurrent->DirtyLines(mCurrentLine,required_rows);
-            mCurrentLine += required_rows - 1;
-            mCurrentPos = (/*mCurrentPos +*/ s) & (IMMIX_LINE_LEN-1);
-            if (mCurrentPos==0)
-               mCurrentLine++;
-
-            return result + 1;
+            mCurrent = sGlobalAlloc->GetRecycledBlock(allocSize);
+            BlockDataInfo &info = mCurrent->getInfo();
+            mCurrentRange = info.mRanges;
+            mCurrentStarts = info.allocStart;
+            mCurrentHoles = info.mHoles;
+            mStart = mCurrentRange->start;
+            mLength = mCurrentRange->length;
+            mCurrentHole = 1;
+            mMoreHoles = mCurrentHole<mCurrentHoles;
          }
       }
       return 0;
@@ -3143,16 +3072,15 @@ public:
       Reset();
    }
 
-   int mCurrentPos;
-   int mCurrentLine;
+   BlockData     *mCurrent;
+   unsigned int  *mCurrentStarts;
+   int            mCurrentHole;
+   int            mCurrentHoles;
+   HoleRange     *mCurrentRange;
 
-   int mOverflowPos;
-   int mOverflowLine;
-
-   int mLinesSinceLastCollect;
-
-   BlockData * mCurrent;
-   BlockData * mOverflow;
+   int            mStart;
+   int            mLength;
+   bool           mMoreHoles;
 
    int *mTopOfStack;
    int *mBottomOfStack;
@@ -3329,15 +3257,23 @@ void *InternalNew(int inSize,bool inIsObject)
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
-      void *result = sGlobalAlloc->AllocLarge(inSize);
-      memset(result,0,inSize);
+      void *result = sGlobalAlloc->AllocLarge(inSize, true);
       return result;
    }
    else
    {
       LocalAllocator *tla = GetLocalAlloc();
-      void* result = tla->Alloc(inSize,inIsObject);
-       return result;
+
+      if (inIsObject)
+      {
+         void* result = tla->CallAlloc(inSize,IMMIX_ALLOC_IS_CONTAINER);
+         return result;
+      }
+      else
+      {
+         void* result = tla->CallAlloc( (inSize+3)&~3,0);
+         return result;
+      }
    }
 }
 
@@ -3360,8 +3296,9 @@ inline unsigned int ObjectSize(void *inData)
 {
    unsigned int header = ((unsigned int *)(inData))[-1];
 
-   return (header & ( IMMIX_ALLOC_SMALL_OBJ | IMMIX_ALLOC_MEDIUM_OBJ)) ?
-         (header & IMMIX_ALLOC_SIZE_MASK) :  ((unsigned int *)(inData))[-2];
+   return (header & IMMIX_ALLOC_ROW_COUNT) ?
+            ( (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT) :
+             ((unsigned int *)(inData))[-2];
 }
 
 void GCChangeManagedMemory(int inDelta, const char *inWhy)
@@ -3392,15 +3329,15 @@ void *InternalRealloc(void *inData,int inSize)
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
-      new_data = sGlobalAlloc->AllocLarge(inSize);
+      new_data = sGlobalAlloc->AllocLarge(inSize, false);
       if (inSize>s)
-         memset((char *)new_data + s,0,inSize-s);
+         ZERO_MEM((char *)new_data + s,inSize-s);
    }
    else
    {
       LocalAllocator *tla = GetLocalAlloc();
 
-      new_data = tla->Alloc(inSize,false);
+      new_data = tla->CallAlloc((inSize+3)&~3,0);
    }
 
 #ifdef HXCPP_TELEMETRY
@@ -3445,19 +3382,49 @@ void UnregisterCurrentThread()
 namespace hx
 {
 
-void *Object::operator new( size_t inSize, NewObjectType inType, const char *inName )
+void *NewHaxeContainer(size_t inSize)
 {
-   #if defined(HXCPP_DEBUG)
-   if (inSize>=IMMIX_LARGE_OBJ_SIZE)
-      throw Dynamic(HX_CSTRING("Object size violation"));
+   return GetLocalAlloc()->CallAlloc(inSize, IMMIX_ALLOC_IS_CONTAINER);
+}
+
+
+void *NewHaxeObject(size_t inSize)
+{
+   LocalAllocator *alloc =  GetLocalAlloc();
+
+   /*
+    TODO : Inline
+   if (hx::gPauseForCollect)
+      return alloc->CallAlloc(inSize,0);
+
+   #ifndef HXCPP_ALIGN_ALLOC
+
+   #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
+   // Make sure we can fit a relocation pointer
+   int allocSize = sizeof(int) + std::max(8,inSize);
+   #else
+   int allocSize = sizeof(int) + inSize;
    #endif
 
-   if (inType==NewObjConst)
-      return InternalCreateConstBuffer(0,inSize);
+   if (allocSize <= alloc->mLength)
+   {
+      int start = alloc->mStart;
+      int startRow = start>>IMMIX_LINE_BITS;
+      alloc->mCurrentStarts[ startRow ] |= 1<<( (start>>2) & 31);
 
-   LocalAllocator *tla = GetLocalAlloc();
+      int endRow = 1 + ((start+allocSize-1)>>IMMIX_LINE_BITS);
 
-   return tla->Alloc(inSize,inType==NewObjContainer);
+      unsigned char *buffer = (unsigned char *)alloc->mCurrent + start;
+      *(unsigned int *)(buffer) = gMarkID | (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
+
+      alloc->mStart = start + allocSize;
+      alloc->mLength -= allocSize;
+      return buffer + sizeof(int);
+   }
+   #endif
+   */
+
+   return alloc->CallAlloc(inSize, 0);
 }
 
 }

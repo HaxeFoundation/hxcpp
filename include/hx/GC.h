@@ -168,6 +168,13 @@ typedef void (*finalizer)(hx::Object *v);
 
 void  GCSetFinalizer( hx::Object *, hx::finalizer f );
 
+// These two functions are optimised for haxe-generated objects
+//  inSize is known to be "small" and a multiple of 4 bytes
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeObject(size_t inSize);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeContainer(size_t inSize);
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeConstObject(size_t inSize);
+
 
 void GCCheckPointer(void *);
 void *InternalNew(int inSize,bool inIsObject);
