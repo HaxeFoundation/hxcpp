@@ -3384,7 +3384,32 @@ namespace hx
 
 void *NewHaxeContainer(size_t inSize)
 {
-   return GetLocalAlloc()->CallAlloc(inSize, IMMIX_ALLOC_IS_CONTAINER);
+   LocalAllocator *alloc =  GetLocalAlloc();
+
+   // Inline the fast-path if we can
+   // We know the object can hold a pointer (vtable) and that the size is int-aligned
+   #ifndef HXCPP_ALIGN_ALLOC
+
+   int allocSize = sizeof(int) + inSize;
+   if (!hx::gPauseForCollect && allocSize <= alloc->mLength)
+   {
+      int start = alloc->mStart;
+      int startRow = start>>IMMIX_LINE_BITS;
+      alloc->mCurrentStarts[ startRow ] |= 1<<( (start>>2) & 31);
+
+      int endRow = 1 + ((start+allocSize-1)>>IMMIX_LINE_BITS);
+
+      unsigned char *buffer = (unsigned char *)alloc->mCurrent + start;
+      *(unsigned int *)(buffer) = gMarkID | (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow)
+                                  | IMMIX_ALLOC_IS_CONTAINER;
+
+      alloc->mStart = start + allocSize;
+      alloc->mLength -= allocSize;
+      return buffer + sizeof(int);
+   }
+   #endif
+
+   return alloc->CallAlloc(inSize, IMMIX_ALLOC_IS_CONTAINER);
 }
 
 
@@ -3392,21 +3417,12 @@ void *NewHaxeObject(size_t inSize)
 {
    LocalAllocator *alloc =  GetLocalAlloc();
 
-   /*
-    TODO : Inline
-   if (hx::gPauseForCollect)
-      return alloc->CallAlloc(inSize,0);
-
+   // Inline the fast-path if we can
+   // We know the object can hold a pointer (vtable) and that the size is int-aligned
    #ifndef HXCPP_ALIGN_ALLOC
 
-   #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
-   // Make sure we can fit a relocation pointer
-   int allocSize = sizeof(int) + std::max(8,inSize);
-   #else
    int allocSize = sizeof(int) + inSize;
-   #endif
-
-   if (allocSize <= alloc->mLength)
+   if (!hx::gPauseForCollect && allocSize <= alloc->mLength )
    {
       int start = alloc->mStart;
       int startRow = start>>IMMIX_LINE_BITS;
@@ -3422,7 +3438,6 @@ void *NewHaxeObject(size_t inSize)
       return buffer + sizeof(int);
    }
    #endif
-   */
 
    return alloc->CallAlloc(inSize, 0);
 }
