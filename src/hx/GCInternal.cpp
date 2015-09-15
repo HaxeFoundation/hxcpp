@@ -2655,8 +2655,10 @@ public:
 
          #ifdef HX_GC_PTHREADS
          ThreadPoolAutoLock lock(sThreadPoolLock);
+         sThreadJobDoneSleeping = true;
          while(sRunningThreads)
              WaitThreadLocked(sThreadJobDone);
+         sThreadJobDoneSleeping = false;
          #else
          sThreadJobDone.Wait();
          #endif
