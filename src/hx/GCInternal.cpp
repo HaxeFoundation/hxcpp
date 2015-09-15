@@ -349,17 +349,23 @@ enum ThreadPoolJob
    tpjReclaimFull,
 };
 
+int sgThreadCount = 0;
 static ThreadPoolJob sgThreadPoolJob = tpjUnknown;
 static bool sgThreadPoolAbort = false;
 
+// Pthreads enters the sleep state while holding a mutex, so it no cost to update
+//  the sleeping state and thereby avoid over-signalling the condition
+bool             sThreadSleeping[MAX_MARK_THREADS];
 ThreadPoolSignal sThreadWake[MAX_MARK_THREADS];
+bool             sThreadJobDoneSleeping = false;
 ThreadPoolSignal sThreadJobDone;
 
 
-inline void SignalThreadPool(ThreadPoolSignal &ioSignal)
+inline void SignalThreadPool(ThreadPoolSignal &ioSignal, bool sThreadSleeping)
 {
    #ifdef HX_GC_PTHREADS
-   pthread_cond_signal(&ioSignal);
+   if (sThreadSleeping)
+      pthread_cond_signal(&ioSignal);
    #else
    ioSignal.Set();
    #endif
@@ -777,13 +783,12 @@ struct GlobalChunks
          chunks.push(inChunk);
          MarkChunk *reult = allocLocked();
 
-         unsigned int lazyThreads = sAllThreads ^ sRunningThreads;
-         if (lazyThreads)
+         if (sAllThreads ^ sRunningThreads)
          {
             #define CHECK_THREAD_WAKE(tid) \
-            if (MAX_MARK_THREADS>tid && (lazyThreads & (1<<tid))) { \
+            if (MAX_MARK_THREADS >tid && sgThreadCount>tid && (!(sAllThreads & (1<<tid)))) { \
                sRunningThreads |= (1<<tid); \
-               SignalThreadPool(sThreadWake[tid]); \
+               SignalThreadPool(sThreadWake[tid],sThreadSleeping[tid]); \
             }
 
             CHECK_THREAD_WAKE(0)
@@ -815,9 +820,8 @@ struct GlobalChunks
          return 0;
 
       int count = 0;
-      unsigned int lazyThreads = sAllThreads ^ sRunningThreads;
-      for(int i=0;i<MAX_MARK_THREADS;i++)
-         if ( lazyThreads & (1<<i) )
+      for(int i=0;i<sgThreadCount ;i++)
+         if ( !(sRunningThreads & (1<<i)) )
             count++;
 
       // Items per thread, rounded up to multiple of 16 ...
@@ -830,11 +834,11 @@ struct GlobalChunks
       objectArrayJob = inPtr;
 
       // Wake othter threads...
-      for(int i=0;i<MAX_MARK_THREADS;i++)
-         if ( lazyThreads & (1<<i) )
+      for(int i=0;i<sgThreadCount ;i++)
+         if ( !(sRunningThreads & (1<<i)) )
          {
             sRunningThreads |= (1<<i);
-            SignalThreadPool(sThreadWake[i]);
+            SignalThreadPool(sThreadWake[i],sThreadSleeping[i]);
          }
 
       // Return how many to skip
@@ -858,7 +862,7 @@ struct GlobalChunks
    {
       sRunningThreads &= ~(1<<inThreadId);
       if (!sRunningThreads)
-         SignalThreadPool(sThreadJobDone);
+         SignalThreadPool(sThreadJobDone,sThreadJobDoneSleeping);
    }
 
 
@@ -1041,18 +1045,10 @@ public:
           spare = sGlobalChunks.pushJob(spare);
     }
 
-    bool InitChunkLocked()
+    void InitChunkLocked()
     {
        if (!marking)
-       {
           marking = sGlobalChunks.popJobLocked(marking);
-          if (!marking)
-          {
-             sGlobalChunks.completeThreadLocked(mThreadId);
-             return false;
-          }
-       }
-       return true;
     }
 
     void Process()
@@ -1755,6 +1751,7 @@ public:
 
 
 class GlobalAllocator *sGlobalAlloc = 0;
+
 
 class GlobalAllocator
 {
@@ -2574,7 +2571,7 @@ public:
       ThreadPoolAutoLock l(sThreadPoolLock);
       sRunningThreads &= ~(1<<inThreadId);
       if (!sRunningThreads)
-         SignalThreadPool(sThreadJobDone);
+         SignalThreadPool(sThreadJobDone,sThreadJobDoneSleeping);
    }
 
 
@@ -2587,14 +2584,21 @@ public:
          #ifdef HX_GC_PTHREADS
          {
             ThreadPoolAutoLock l(sThreadPoolLock);
+            int count = 0;
+ 
+            // May be woken multiple times if sRunningThreads is set to 0 then 1 before we sleep
+            sThreadSleeping[inId] = true;
+            // Spurious wake?
             while( !(sRunningThreads & (1<<inId) ) )
                WaitThreadLocked(sThreadWake[inId]);
+            sThreadSleeping[inId] = false;
 
             if (sgThreadPoolJob==tpjMark)
             {
                // Pthread Api requires that we have the lock - so may as well use it
-               if (!context.InitChunkLocked())
-                  continue;
+               // See if there is a chunk waiting...
+               context.InitChunkLocked();
+               // Otherwise fall though - there might be an array job
             }
          }
          #else
@@ -2621,6 +2625,7 @@ public:
 
       #ifdef HX_GC_PTHREADS
          pthread_cond_init(&sThreadWake[inId],0);
+         sThreadSleeping[inId] = false;
          if (inId==0)
             pthread_cond_init(&sThreadJobDone,0);
 
@@ -2658,7 +2663,7 @@ public:
    }
 
 
-   void StartThreadJobs(ThreadPoolJob inJob, int inWorkers, bool inWait)
+   void StartThreadJobs(ThreadPoolJob inJob, int inWorkers, bool inWait, int inThreadLimit = -1)
    {
       if (!inWorkers)
          return;
@@ -2676,21 +2681,25 @@ public:
 
       sgThreadPoolJob = inJob;
 
-      int start = std::min(inWorkers, (int)MAX_MARK_THREADS);
+      sgThreadCount = inThreadLimit<0 ? MAX_MARK_THREADS : std::min((int)MAX_MARK_THREADS, inThreadLimit) ;
 
-      sAllThreads = (1<<MAX_MARK_THREADS) - 1;
+      int start = std::min(inWorkers, sgThreadCount );
+
+      sAllThreads = (1<<sgThreadCount) - 1;
 
       sRunningThreads = (1<<start) - 1;
 
       for(int i=0;i<start;i++)
-         SignalThreadPool(sThreadWake[i]);
+         SignalThreadPool(sThreadWake[i],sThreadSleeping[i]);
 
       if (inWait)
       {
          // Join the workers...
          #ifdef HX_GC_PTHREADS
+         sThreadJobDoneSleeping = true;
          while(sRunningThreads)
             WaitThreadLocked(sThreadJobDone);
+         sThreadJobDoneSleeping = false;
          #else
          sThreadJobDone.Wait();
          #endif
@@ -2896,7 +2905,7 @@ public:
       mNextFreeBlock = 0;
       mNextReclaim = 0;
 
-      bool asyncReclaim = MAX_MARK_THREADS > 1;
+      bool asyncReclaim =  MAX_MARK_THREADS > 1;
 
       for(int i=0;i<mAllBlocks.size();i++)
       {
@@ -2921,7 +2930,9 @@ public:
          for(int i=0;i<4;i++)
             mReclaimList[mNextReclaim++]->Reclaim(full,false);
 
-         StartThreadJobs(full ? tpjReclaimFull : tpjReclaim, mReclaimList.size(), false);
+         // Only use one thread for parallel zeroing.  Try to get though the work wihout
+         //  slowing down the main thread
+         StartThreadJobs(full ? tpjReclaimFull : tpjReclaim, mReclaimList.size(), false, 1);
       }
       else
          mReclaimList.clear();
