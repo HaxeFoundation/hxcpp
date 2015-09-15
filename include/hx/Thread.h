@@ -138,7 +138,7 @@ struct MyMutex
 };
 
 #ifndef HX_WINRT
-template<typename DATA>
+template<typename DATA,bool FAST=false>
 struct TLSData
 {
    TLSData()
@@ -151,7 +151,23 @@ struct TLSData
       TlsSetValue(mSlot,inData);
       return inData;
    }
-   inline operator DATA *() { return (DATA *)TlsGetValue(mSlot); }
+
+   inline operator DATA *()
+   {
+      #if !defined(HXCPP_M64) && !defined(__GNUC__)
+      const size_t kTibInlineTlsOffset = 0xE10;
+      const size_t kTibExtraTlsOffset = 0xF94;
+      const size_t kMaxInlineSlots = 64;
+
+      if (FAST || mSlot < kMaxInlineSlots)
+        return (DATA *)(__readfsdword(kTibInlineTlsOffset + sizeof(void *) * mSlot));
+
+      DATA **extra = (DATA **)(__readfsdword(kTibExtraTlsOffset));
+      return extra[mSlot - kMaxInlineSlots];
+      #else
+      return (DATA *)TlsGetValue(mSlot);
+      #endif
+   }
 
    int mSlot;
 };
@@ -199,11 +215,15 @@ struct MyMutex
 
 #define DECLARE_TLS_DATA(TYPE,NAME) \
    __declspec(thread) TYPE * NAME = nullptr;
+#define DECLARE_FAST_TLS_DATA(TYPE,NAME) \
+   __declspec(thread) TYPE * NAME = nullptr;
 
 #else
 
 #define DECLARE_TLS_DATA(TYPE,NAME) \
    TLSData<TYPE> NAME;
+#define DECLARE_FAST_TLS_DATA(TYPE,NAME) \
+   TLSData<TYPE,true> NAME;
 
 #endif
 
