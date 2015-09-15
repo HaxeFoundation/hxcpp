@@ -2002,8 +2002,9 @@ public:
    }
 
 
-   BlockData * GetFreeBlock(int inRequiredBytes)
+   BlockData * GetFreeBlock(int inRequiredBytes, int **inCallersStack)
    {
+      volatile int dummy = 1;
       if (sMultiThreadMode)
       {
          hx::EnterGCFreeZone();
@@ -2020,6 +2021,8 @@ public:
 
       if (!result)
       {
+         volatile int dummy = 1;
+         *inCallersStack = (int *)&dummy;
          Collect(false,false);
          result = GetNextFree(inRequiredBytes);
       }
@@ -3366,10 +3369,15 @@ public:
          }
          else
          {
+            // For opmtimized windows 64 builds, this dummy var technique does not
+            //  quite work, since the compiler might recycle one of the earlier stack
+            //  slots, and place dummy behind the stack values we are actually trying to
+            //  capture.  Moving the dummy into the GetFreeBlock seems to have fixed this.
+            //  Not 100% sure this is the best answer, but it is working.
             volatile int dummy = 1;
             mBottomOfStack = (int *)&dummy;
             CAPTURE_REGS;
-            mCurrent = sGlobalAlloc->GetFreeBlock(allocSize);
+            mCurrent = sGlobalAlloc->GetFreeBlock(allocSize,&mBottomOfStack);
             BlockDataInfo &info = mCurrent->getInfo();
             mCurrentRange = info.mRanges;
             mCurrentStarts = info.allocStart;
