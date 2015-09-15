@@ -4,6 +4,11 @@
 #include <vector>
 #include <set>
 
+#if defined(HXCPP_CAPTURE_x64) && !defined(__GNUC__)
+#include <windows.h>
+#endif
+
+
 
 #ifdef _WIN32
 
@@ -92,6 +97,9 @@ void *GCRealloc(void *inData,int inSize)
 
 #ifdef HXCPP_CAPTURE_x86 // {
 
+#pragma optimize( "", off )
+
+
 void CaptureX86(RegisterCaptureBuffer &outBuffer)
 {
    void *regEsi;
@@ -117,35 +125,41 @@ void CaptureX86(RegisterCaptureBuffer &outBuffer)
 
 void CaptureX64(RegisterCaptureBuffer &outBuffer)
 {
-   void *regBx;
-   void *regBp;
-   void *reg12;
-   void *reg13;
-   void *reg14;
-   void *reg15;
-   #ifdef __GNUC__
-   asm ("movq %%rbx, %0\n\t" : "=r" (regBx) );
-   asm ("movq %%rbp, %0\n\t" : "=r" (regBp) );
-   asm ("movq %%r12, %0\n\t" : "=r" (reg12) );
-   asm ("movq %%r13, %0\n\t" : "=r" (reg13) );
-   asm ("movq %%r14, %0\n\t" : "=r" (reg14) );
-   asm ("movq %%r15, %0\n\t" : "=r" (reg15) );
+   #if !defined(__GNUC__)
+      CONTEXT context;
+
+      context.ContextFlags = CONTEXT_INTEGER;
+      RtlCaptureContext(&context);
+
+      outBuffer.rbx = (void *)context.Rbx;
+      outBuffer.rbp = (void *)context.Rbp;
+      outBuffer.rdi = (void *)context.Rdi;
+      outBuffer.r12 = (void *)context.R12;
+      outBuffer.r13 = (void *)context.R13;
+      outBuffer.r14 = (void *)context.R14;
+      outBuffer.r15 = (void *)context.R15;
    #else
-   __asm {
-      mov regBx, rbx
-      mov regBp, rbp
-      mov reg12, r12
-      mov reg13, r13
-      mov reg14, r14
-      mov reg15, r15
-   }
+      void *regBx;
+      void *regBp;
+      void *regDi;
+      void *reg12;
+      void *reg13;
+      void *reg14;
+      void *reg15;
+      asm ("movq %%rbx, %0\n\t" : "=r" (regBx) );
+      asm ("movq %%rbp, %0\n\t" : "=r" (regBp) );
+      asm ("movq %%rdi, %0\n\t" : "=r" (regDi) );
+      asm ("movq %%r12, %0\n\t" : "=r" (reg12) );
+      asm ("movq %%r13, %0\n\t" : "=r" (reg13) );
+      asm ("movq %%r14, %0\n\t" : "=r" (reg14) );
+      asm ("movq %%r15, %0\n\t" : "=r" (reg15) );
+      outBuffer.rbx = regBx;
+      outBuffer.rbp = regBp;
+      outBuffer.r12 = reg12;
+      outBuffer.r13 = reg13;
+      outBuffer.r14 = reg14;
+      outBuffer.r15 = reg15;
    #endif
-   outBuffer.rbx = regBx;
-   outBuffer.rbp = regBp;
-   outBuffer.r12 = reg12;
-   outBuffer.r13 = reg13;
-   outBuffer.r14 = reg14;
-   outBuffer.r15 = reg15;
 }
 
 

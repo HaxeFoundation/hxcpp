@@ -61,7 +61,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
 #define HXCPP_CAPTURE_x86
 #endif
 
-#if defined(HX_MACOS) && defined(HXCPP_M64)
+#if (defined(HX_MACOS) || defined(HX_WINDOWS)) && defined(HXCPP_M64)
 #define HXCPP_CAPTURE_x64
 #endif
 
@@ -91,6 +91,7 @@ struct RegisterCaptureBuffer
 {
    void *rbx;
    void *rbp;
+   void *rdi;
    void *r12;
    void *r13;
    void *r14;
