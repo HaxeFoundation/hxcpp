@@ -18,6 +18,9 @@ namespace hx
 
 enum { gFillWithJunk = 0 } ;
 
+
+// #define HXCPP_SINGLE_THREADED_APP
+
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -143,7 +146,7 @@ class LocalAllocator;
 enum LocalAllocState { lasNew, lasRunning, lasStopped, lasWaiting, lasTerminal };
 static bool sMultiThreadMode = false;
 
-DECLARE_TLS_DATA(LocalAllocator, tlsLocalAlloc);
+DECLARE_FAST_TLS_DATA(LocalAllocator, tlsLocalAlloc);
 
 static void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx);
 static void WaitForSafe(LocalAllocator *inAlloc);
@@ -3448,39 +3451,42 @@ public:
 LocalAllocator *sMainThreadAlloc = 0;
 
 
-LocalAllocator *GetLocalAllocMT()
-{
-   LocalAllocator *result =  tlsLocalAlloc;
-   if (!result)
-   {
-      #ifdef ANDROID
-      __android_log_print(ANDROID_LOG_ERROR, "hxcpp",
-      #else
-      fprintf(stderr,
-      #endif
-
-      "GetLocalAllocMT - requesting memory from unregistered thread!"
-
-      #ifdef ANDROID
-      );
-      #else
-      );
-      #endif
-
-      #if __has_builtin(__builtin_trap)
-      __builtin_trap();
-      #else
-      *(int *)0=0;
-      #endif
-   }
-   return result;
-}
-
-
 inline LocalAllocator *GetLocalAlloc()
 {
+   #ifndef HXCPP_SINGLE_THREADED_APP
    if (sMultiThreadMode)
-      return GetLocalAllocMT();
+   {
+      #ifdef HXCPP_DEBUG
+      LocalAllocator *result =  tlsLocalAlloc;
+      if (!result)
+      {
+         #ifdef ANDROID
+         __android_log_print(ANDROID_LOG_ERROR, "hxcpp",
+         #else
+         fprintf(stderr,
+         #endif
+
+         "GetLocalAllocMT - requesting memory from unregistered thread!"
+
+         #ifdef ANDROID
+         );
+         #else
+         );
+         #endif
+
+         #if __has_builtin(__builtin_trap)
+         __builtin_trap();
+         #else
+         *(int *)0=0;
+         #endif
+      }
+      return result;
+      #else
+      return tlsLocalAlloc;
+      #endif
+   }
+   #endif
+
    return sMainThreadAlloc;
 }
 
@@ -3734,6 +3740,13 @@ void UnregisterCurrentThread()
 namespace hx
 {
 
+// The gPauseForCollect bits will turn mEnd negative, and so force the slow path
+#ifndef HXCPP_SINGLE_THREADED_APP
+   #define WITH_PAUSE_FOR_COLLECT_FLAG | hx::gPauseForCollect
+#else
+   #define WITH_PAUSE_FOR_COLLECT_FLAG
+#endif
+
 void *NewHaxeContainer(size_t inSize)
 {
    LocalAllocator *alloc =  GetLocalAlloc();
@@ -3745,7 +3758,7 @@ void *NewHaxeContainer(size_t inSize)
    int start = alloc->mStart;
    int end = start + sizeof(int) + inSize;
 
-   if ( end <= (alloc->mEnd | hx::gPauseForCollect) )
+   if ( end <= (alloc->mEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
    {
       alloc->mStart = end;
 
@@ -3754,10 +3767,14 @@ void *NewHaxeContainer(size_t inSize)
       alloc->mCurrentStarts[ startRow ] |= sObjectFlag[start&127];
       //alloc->mCurrentStarts[ startRow ] |= (1<<( (start>>2) & 31) );
 
-      unsigned char *buffer = (unsigned char *)alloc->mCurrent + start;
-      *(unsigned int *)(buffer) = gMarkIDWithContainer | (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (1 + ((end-1)>>IMMIX_LINE_BITS)-startRow);
 
-      return buffer + sizeof(int);
+      unsigned int *buffer = (unsigned int *)((unsigned char *)alloc->mCurrent + start);
+
+      *buffer++ = (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
+                  (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+                  gMarkIDWithContainer;
+
+      return buffer;
    }
    #endif
 
@@ -3776,8 +3793,7 @@ void *NewHaxeObject(size_t inSize)
    int start = alloc->mStart;
    int end = start + sizeof(int) + inSize;
 
-   // The gPauseForCollect bits will turn mEnd negative, and so use the slow path
-   if ( end <= (alloc->mEnd | hx::gPauseForCollect) )
+   if ( end <= (alloc->mEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
    {
       alloc->mStart = end;
 
@@ -3786,10 +3802,13 @@ void *NewHaxeObject(size_t inSize)
       alloc->mCurrentStarts[ startRow ] |= sObjectFlag[start&127];
       //alloc->mCurrentStarts[ startRow ] |= (1<<( (start>>2) & 31) );
 
-      unsigned char *buffer = (unsigned char *)alloc->mCurrent + start;
-      *(unsigned int *)(buffer) = gMarkID | (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow);
+      unsigned int *buffer = (unsigned int *)((unsigned char *)alloc->mCurrent + start);
 
-      return buffer + sizeof(int);
+      *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
+                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+                   gMarkID;
+
+      return buffer;
     }
 
    #endif

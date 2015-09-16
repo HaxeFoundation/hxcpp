@@ -141,10 +141,20 @@ struct MyMutex
 template<typename DATA,bool FAST=false>
 struct TLSData
 {
+   static const size_t kMaxInlineSlots = 64;
+
    TLSData()
    {
       mSlot = TlsAlloc();
       TlsSetValue(mSlot,0);
+      #ifdef HXCPP_M64
+      mFastOffset = mSlot*sizeof(void *) + 0x1480;
+      #else
+      if (FAST || mSlot < kMaxInlineSlots)
+         mFastOffset = mSlot*sizeof(void *) + 0xE10;
+      else
+         mFastOffset = mSlot - kMaxInlineSlots;
+      #endif
    }
    inline DATA *operator=(DATA *inData)
    {
@@ -154,22 +164,23 @@ struct TLSData
 
    inline operator DATA *()
    {
-      #if !defined(HXCPP_M64) && !defined(__GNUC__)
-      const size_t kTibInlineTlsOffset = 0xE10;
+      #if !defined(HXCPP_M64) && (_MSC_VER >= 1400)
       const size_t kTibExtraTlsOffset = 0xF94;
-      const size_t kMaxInlineSlots = 64;
 
       if (FAST || mSlot < kMaxInlineSlots)
-        return (DATA *)(__readfsdword(kTibInlineTlsOffset + sizeof(void *) * mSlot));
+        return (DATA *)__readfsdword(mFastOffset);
 
       DATA **extra = (DATA **)(__readfsdword(kTibExtraTlsOffset));
-      return extra[mSlot - kMaxInlineSlots];
+      return extra[mFastOffset];
+      #elif (_MSC_VER >= 1400) // 64 bit version...
+      return (DATA *)__readgsqword(mFastOffset);
       #else
       return (DATA *)TlsGetValue(mSlot);
       #endif
    }
 
    int mSlot;
+   int mFastOffset;
 };
 
 #endif
