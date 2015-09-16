@@ -29,6 +29,7 @@
   <depend name="${HXCPP}/include/hx/Operators.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/GC.h"/>
+  <depend name="${HXCPP}/include/hx/GcTypeInference.h"/>
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
@@ -105,6 +106,7 @@
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/Hash.h"/>
+  <depend name="${HXCPP}/src/hx/gc/GcRegCapture.h"/>
 
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
@@ -116,8 +118,9 @@
   <file name = "src/hx/Boot.cpp"/>
   <file name = "src/hx/CFFI.cpp"/>
   <file name = "src/hx/Date.cpp"/>
-  <file name = "src/hx/GC.cpp"/>
-  <file name = "src/hx/GCInternal.cpp"/>
+  <file name = "src/hx/gc/GcCommon.cpp"/>
+  <file name = "src/hx/gc/Immix.cpp"/>
+  <file name = "src/hx/gc/GcRegCapture.cpp"/>
   <file name = "src/hx/Hash.cpp"/>
   <file name = "src/hx/Interface.cpp"/>
   <file name = "src/hx/Lib.cpp"/>

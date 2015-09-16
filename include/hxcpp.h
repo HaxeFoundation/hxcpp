@@ -267,7 +267,7 @@ typedef bool PropertyAccess;
 #include "Dynamic.h"
 #include <cpp/CppInt32__.h>
 // This needs to "see" other declarations ...
-#include <hx/GCTemplates.h>
+#include <hx/GcTypeInference.h>
 #include <hx/FieldRef.h>
 #include <hx/Anon.h>
 #include "Array.h"

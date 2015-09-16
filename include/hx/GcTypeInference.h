@@ -1,7 +1,9 @@
-#ifndef HX_GC_TEMPLATES_H
-#define HX_GC_TEMPLATES_H
+#ifndef HX_GC_TYPE_INFERENCE_H
+#define HX_GC_TYPE_INFERENCE_H
 
 
+// These templates allow you to call MarkMember(x) or VisitMember(x) and the
+// compiler will direct the call to the correct function
 
 namespace hx
 {
@@ -11,15 +13,15 @@ template<typename T> inline void MarkMember(T &outT,hx::MarkContext *__inCtx) { 
 
 template<typename T> inline void MarkMember(hx::ObjectPtr<T> &outT,hx::MarkContext *__inCtx)
 {
-	HX_MARK_OBJECT(outT.mPtr);
+   HX_MARK_OBJECT(outT.mPtr);
 }
 template<> inline void MarkMember(Dynamic &outT,hx::MarkContext *__inCtx)
 {
-	HX_MARK_OBJECT(outT.mPtr);
+   HX_MARK_OBJECT(outT.mPtr);
 }
 template<typename T> inline void MarkMember(Array<T> &outT,hx::MarkContext *__inCtx)
 {
-	HX_MARK_OBJECT(outT.mPtr);
+   HX_MARK_OBJECT(outT.mPtr);
 }
 template<> inline void MarkMember<hx::Object *>(hx::Object *&outT,hx::MarkContext *__inCtx)
 {
@@ -71,19 +73,19 @@ template<typename T> inline void VisitMember(T &outT,hx::VisitContext *__inCtx) 
 
 template<typename T> inline void VisitMember(hx::ObjectPtr<T> &outT,hx::VisitContext *__inCtx)
 {
-	HX_VISIT_OBJECT(outT.mPtr);
+   HX_VISIT_OBJECT(outT.mPtr);
 }
 template<> inline void VisitMember(Dynamic &outT,hx::VisitContext *__inCtx)
 {
-	HX_VISIT_OBJECT(outT.mPtr);
+   HX_VISIT_OBJECT(outT.mPtr);
 }
 template<> inline void VisitMember<hx::Object *>(hx::Object *&outT,hx::VisitContext *__inCtx)
 {
-	HX_VISIT_OBJECT(outT);
+   HX_VISIT_OBJECT(outT);
 }
 template<typename T> inline void VisitMember(Array<T> &outT,hx::VisitContext *__inCtx)
 {
-	HX_VISIT_OBJECT(outT.mPtr);
+   HX_VISIT_OBJECT(outT.mPtr);
 }
 template<> inline void VisitMember<int>(int &outT,hx::VisitContext *__inCtx) {  }
 template<> inline void VisitMember<bool>(bool &outT,hx::VisitContext *__inCtx) {  }

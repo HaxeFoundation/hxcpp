@@ -886,7 +886,8 @@ void gc_exit_blocking()
 
 void gc_safe_point()
 {
-   __SAFE_POINT;
+   if (hx::gPauseForCollect)
+      hx::PauseForCollect();
 }
 
 gcroot create_root(value) { return 0; }

@@ -17,8 +17,7 @@ public:
    ObjcData(const id inValue) : mValue(inValue) 
    {
       [ inValue retain ];
-		mFinalizer = new hx::InternalFinalizer(this);
-		mFinalizer->mFinalizer = clean;
+		mFinalizer = new hx::InternalFinalizer(this,clean);
    };
 
 	static void clean(hx::Object *inObj)

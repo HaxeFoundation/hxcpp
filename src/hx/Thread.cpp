@@ -25,8 +25,7 @@ struct Deque : public Array_obj<Dynamic>
 	static Deque *Create()
 	{
 		Deque *result = new Deque();
-		result->mFinalizer = new hx::InternalFinalizer(result);
-		result->mFinalizer->mFinalizer = clean;
+		result->mFinalizer = new hx::InternalFinalizer(result,clean);
 		return result;
 	}
 	static void clean(hx::Object *inObj)

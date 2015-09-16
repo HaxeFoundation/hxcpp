@@ -53,7 +53,7 @@ void ArrayBase::EnsureSize(int inSize) const
                mBase = base;
             }
             else
-               mBase = (char *)hx::GCRealloc(mBase, bytes );
+               mBase = (char *)hx::InternalRealloc(mBase, bytes );
          }
          else if (AllocAtomic())
          {
@@ -178,7 +178,7 @@ void ArrayBase::__SetSizeExact(int inSize)
             mBase = base;
          }
          else
-            mBase = (char *)hx::GCRealloc(mBase, bytes );
+            mBase = (char *)hx::InternalRealloc(mBase, bytes );
       }
       else if (AllocAtomic())
       {

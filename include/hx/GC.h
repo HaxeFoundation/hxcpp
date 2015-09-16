@@ -2,21 +2,24 @@
 #define HX_GC_H
 
 
-#define HX_MARK_ARG __inCtx
-//#define HX_MARK_ADD_ARG ,__inCtx
-#define HX_MARK_PARAMS hx::MarkContext *__inCtx
-//#define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
+// Under the current scheme (as defined by HX_HCSTRING/HX_CSTRING in hxcpp.h)
+//  each constant string data is prepended with a 4-byte header that says the string
+//  is constant (ie, not part of GC) and whether there is(not) a pre-computed hash at
+//  the end of the data.
 
-#ifdef HXCPP_VISIT_ALLOCS
-#define HX_VISIT_ARG __inCtx
-#define HX_VISIT_PARAMS hx::VisitContext *__inCtx
-#else
-#define HX_VISIT_ARG
-#define HX_VISIT_PARAMS
-#endif
+#define HX_GC_CONST_ALLOC_BIT  0x80000000
+#define HX_GC_CONST_ALLOC_MARK_BIT  0x80
+#define HX_GC_NO_STRING_HASH   0x40000000
+#define HX_GC_NO_HASH_MASK     (HX_GC_CONST_ALLOC_BIT | HX_GC_NO_STRING_HASH)
+
+
+
 
 // Tell compiler the extra functions are supported
 #define HXCPP_GC_FUNCTIONS_1
+
+// Function called by the haxe code...
+
 
 // Helpers for debugging code
 void  __hxcpp_reachable(hx::Object *inKeep);
@@ -48,98 +51,73 @@ unsigned int __hxcpp_obj_hash(Dynamic inObj);
 int __hxcpp_obj_id(Dynamic inObj);
 hx::Object *__hxcpp_id_obj(int);
 
+
+
+
+
+
 namespace hx
 {
+// These functions are optimised for haxe-generated objects
+//  inSize is known to be "small", a multiple of 4 bytes and big enough to hold a pointer
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeObject(size_t inSize);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeContainer(size_t inSize);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeConstObject(size_t inSize);
 
+// Generic allocation routine.
+// If inSize is small (<4k) it will be allocated from the immix pool.
+// Larger, and it will be allocated from a separate memory pool
+// inIsObject specifies whether "__Mark"  should be called on the resulting object
+void *InternalNew(int inSize,bool inIsObject);
+
+// Used internall - realloc array data
+void *InternalRealloc(void *inData,int inSize);
+
+// Called after collection by an unspecified thread
+typedef void (*finalizer)(hx::Object *v);
+
+// Used internally by the runtime.
+// The constructor will add this object to the internal list of finalizers.
+// You must call "Mark" on this object within every collection loop to keep it alive,
+//  otherwise the Gc system will call the finalizer and delete this object.
+// This would typically be done in response to a "__Mark" call on another object
+struct InternalFinalizer
+{
+   InternalFinalizer(hx::Object *inObj, finalizer inFinalizer=0);
+
+   void Mark() { mUsed=true; }
+   #ifdef HXCPP_VISIT_ALLOCS
+   void Visit(VisitContext *__inCtx);
+   #endif
+   void Detach();
+
+   bool      mUsed;
+   bool      mValid;
+   finalizer mFinalizer;
+   hx::Object  *mObject;
+};
+
+// If another thread wants to do a collect, it will signal this variable.
+// This automatically gets checked when you call "new", but if you are in long-running
+//  loop with no new call, you might starve another thread if you to not check this.
+//  0xffffffff = pause requested
 extern int gPauseForCollect;
+// Call in response to a gPauseForCollect. Normally, this is done for you in "new"
 void PauseForCollect();
+
+
+// Used by WeakHash to work out if it needs to dispose its keys
 bool IsWeakRefValid(hx::Object *inPtr);
 
+// Used by CFFI to scan a block of memory for GC Pointers. May picks up random crap
+//  that points to real, active objects.
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
 
-#if (defined(HX_WINDOWS) || defined(HX_MACOS)) && !defined(HXCPP_M64)
-#define HXCPP_CAPTURE_x86
-#endif
 
-#if (defined(HX_MACOS) || defined(HX_WINDOWS)) && defined(HXCPP_M64)
-#define HXCPP_CAPTURE_x64
-#endif
-
-
-
-#ifdef HXCPP_CAPTURE_x86
-
-struct RegisterCaptureBuffer
-{
-   void *ebx;
-   void *edi;
-   void *esi;
-};
-
-void CaptureX86(RegisterCaptureBuffer &outBuffer);
-
-#define CAPTURE_REGS \
-   hx::CaptureX86(mRegisterBuf);
-
-#define CAPTURE_REG_START (int *)(&mRegisterBuf)
-#define CAPTURE_REG_END (int *)(&mRegisterBuf+1)
-
-#elif defined(HXCPP_CAPTURE_x64)
-
-
-struct RegisterCaptureBuffer
-{
-   void *rbx;
-   void *rbp;
-   void *rdi;
-   void *r12;
-   void *r13;
-   void *r14;
-   void *r15;
-};
-
-void CaptureX64(RegisterCaptureBuffer &outBuffer);
-
-#define CAPTURE_REGS \
-   hx::CaptureX64(mRegisterBuf);
-
-#define CAPTURE_REG_START (int *)(&mRegisterBuf)
-#define CAPTURE_REG_END (int *)(&mRegisterBuf+1)
-
-
-#else
-
-
-
-class RegisterCapture
-{
-public:
-	virtual int Capture(int *inTopOfStack,int **inBuf,int &outSize,int inMaxSize,int *inDummy);
-   static RegisterCapture *Instance();
-};
-
-typedef int *RegisterCaptureBuffer[20];
-
-#define CAPTURE_REGS \
-   hx::RegisterCapture::Instance()->Capture(mTopOfStack, \
-                mRegisterBuf,mRegisterBufSize,20,mBottomOfStack); \
-
-#define CAPTURE_REG_START (int *)mRegisterBuf
-#define CAPTURE_REG_END (int *)(mRegisterBuf+mRegisterBufSize)
-
-#endif
-
-
-#ifdef HXCPP_MULTI_THREADED
-#define __SAFE_POINT if (hx::gPauseForCollect) hx::PauseForCollect();
-#else
-#define __SAFE_POINT
-#endif
-
-
-// Create a new root.
+// Create/Remove a root.
 // All statics are explicitly registered - this saves adding the whole data segment
-// to the collection list.
+//  to the collection list.
+// It takes a pointer-pointer so it can move the contents, and the caller can change the contents
 void GCAddRoot(hx::Object **inRoot);
 void GCRemoveRoot(hx::Object **inRoot);
 
@@ -147,39 +125,29 @@ void GCRemoveRoot(hx::Object **inRoot);
 
 
 // This is used internally in hxcpp
+// It calls InternalNew, and takes care of null-terminating the result
 HX_CHAR *NewString(int inLen);
 
-// Internal for arrays
-void *GCRealloc(void *inData,int inSize);
-void GCInit();
+// The concept of 'private' is from the old conservative Gc method.
+// Now with explicit marking, these functions do the same thing, which is
+//  to allocate some GC memory and optionally copy the 'inData' into those bytes
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCBytes(void *inData,int inSize);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCPrivate(void *inData,int inSize);
+
+
+// Defined in Class.cpp, these function is called from the Gc to start the marking/visiting
 void MarkClassStatics(hx::MarkContext *__inCtx);
-void LibMark();
-void GCMark(Object *inPtr);
 #ifdef HXCPP_VISIT_ALLOCS
 void VisitClassStatics(hx::VisitContext *__inCtx);
 #endif
 
-// This will be GC'ed
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCBytes(void *inData,int inSize);
-// This wont be GC'ed
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCPrivate(void *inData,int inSize);
 
 
-typedef void (*finalizer)(hx::Object *v);
 
 void  GCSetFinalizer( hx::Object *, hx::finalizer f );
 
-// These two functions are optimised for haxe-generated objects
-//  inSize is known to be "small" and a multiple of 4 bytes
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeObject(size_t inSize);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeContainer(size_t inSize);
-
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeConstObject(size_t inSize);
-
 
 void GCCheckPointer(void *);
-void *InternalNew(int inSize,bool inIsObject);
-void *InternalRealloc(void *inData,int inSize);
 void InternalEnableGC(bool inEnable);
 void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash=false);
 void RegisterNewThread(void *inTopOfStack);
@@ -198,8 +166,6 @@ void GCPrepareMultiThreaded();
 
 
 
-
-void PrologDone();
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES extern unsigned int gPrevMarkIdMask;
 
@@ -238,6 +204,33 @@ inline void EnsureObjPtr(hx::Object *) { }
 
 } // end namespace hx
 
+
+
+// It was theoretically possible to redefine the MarkContext arg type (or skip it)
+//  incase the particular GC scheme did not need it.  This may take a bit of extra
+//  work to get going again
+
+#define HX_MARK_ARG __inCtx
+//#define HX_MARK_ADD_ARG ,__inCtx
+#define HX_MARK_PARAMS hx::MarkContext *__inCtx
+//#define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
+
+#ifdef HXCPP_VISIT_ALLOCS
+#define HX_VISIT_ARG __inCtx
+#define HX_VISIT_PARAMS hx::VisitContext *__inCtx
+#else
+#define HX_VISIT_ARG
+#define HX_VISIT_PARAMS
+#endif
+
+
+
+
+
+// These macros add debug to the mark/visit calls if required
+// They also perform some inline checking to avoid function calls if possible
+
+
 #ifdef HXCPP_DEBUG
 
 #define HX_MARK_MEMBER_NAME(x,name) { hx::MarkSetMember(name, __inCtx); hx::MarkMember(x, __inCtx ); }
@@ -260,10 +253,6 @@ inline void EnsureObjPtr(hx::Object *) { }
 
 
 
-#define HX_GC_CONST_ALLOC_BIT  0x80000000
-#define HX_GC_CONST_ALLOC_MARK_BIT  0x80
-#define HX_GC_NO_STRING_HASH   0x40000000
-#define HX_GC_NO_HASH_MASK     (HX_GC_CONST_ALLOC_BIT | HX_GC_NO_STRING_HASH)
 
 #define HX_MARK_STRING(ioPtr) \
    if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx );
@@ -286,27 +275,8 @@ inline void EnsureObjPtr(hx::Object *) { }
 
 
 
-namespace hx
-{
-
-struct InternalFinalizer
-{
-	InternalFinalizer(hx::Object *inObj);
-
-	void Mark() { mUsed=true; }
-   #ifdef HXCPP_VISIT_ALLOCS
-	void Visit(VisitContext *__inCtx) { HX_VISIT_OBJECT(mObject); }
-   #endif
-	void Detach();
-
-	bool      mUsed;
-	bool      mValid;
-	finalizer mFinalizer;
-	hx::Object  *mObject;
-};
 
 
-} // end namespace hx
 
 
 #endif

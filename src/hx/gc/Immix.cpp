@@ -2,7 +2,8 @@
 
 #include <hx/GC.h>
 #include <hx/Thread.h>
-#include "Hash.h"
+#include "../Hash.h"
+#include "GcRegCapture.h"
 
 #define IMMIX_ALLOC_IS_CONTAINER   0x00800000
 
@@ -34,7 +35,7 @@ enum { gFillWithJunk = 0 } ;
 #include <set>
 #include <stdio.h>
 
-#include "QuickVec.h"
+#include "../QuickVec.h"
 
 #ifndef __has_builtin
 #define __has_builtin(x) 0
@@ -1367,16 +1368,20 @@ typedef hx::QuickVec<hx::HashBase<Dynamic> *> WeakHashList;
 FILE_SCOPE WeakHashList sWeakHashList;
 
 
-InternalFinalizer::InternalFinalizer(hx::Object *inObj)
+InternalFinalizer::InternalFinalizer(hx::Object *inObj, finalizer inFinalizer)
 {
    mUsed = false;
    mValid = true;
    mObject = inObj;
-   mFinalizer = 0;
+   mFinalizer = inFinalizer;
 
    AutoLock lock(*gSpecialObjectLock);
    sgFinalizers->push(this);
 }
+
+#ifdef HXCPP_VISIT_ALLOCS
+void InternalFinalizer::Visit(VisitContext *__inCtx) { HX_VISIT_OBJECT(mObject); }
+#endif
 
 void InternalFinalizer::Detach()
 {
