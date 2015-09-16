@@ -294,7 +294,7 @@ struct MySemaphore
 #else
 
 
-template<typename DATA>
+template<typename DATA,bool FAST=false>
 struct TLSData
 {
    TLSData()
