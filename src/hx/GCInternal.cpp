@@ -2929,21 +2929,28 @@ public:
       }
       std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), MostUsedFirst );
 
-      if (asyncReclaim && mFreeBlocks.size()>4)
+      mReclaimList.clear();
+      if (asyncReclaim)
       {
-         mReclaimList.setSize(mFreeBlocks.size());
-         memcpy( &mReclaimList[0], &mFreeBlocks[0], mFreeBlocks.size()*sizeof(void *));
+         if (mFreeBlocks.size()<=4)
+         {
+            for(int i=0;i<mFreeBlocks.size();i++)
+               mFreeBlocks[i]->Reclaim(full,false);
+         }
+         else
+         {
+            mReclaimList.setSize(mFreeBlocks.size());
+            memcpy( &mReclaimList[0], &mFreeBlocks[0], mFreeBlocks.size()*sizeof(void *));
 
-         // Clear the first few synchnonously, to avoid spin lock..
-         for(int i=0;i<4;i++)
-            mReclaimList[mNextReclaim++]->Reclaim(full,false);
+            // Clear the first few synchnonously, to avoid spin lock..
+            for(int i=0;i<4;i++)
+               mReclaimList[mNextReclaim++]->Reclaim(full,false);
 
-         // Only use one thread for parallel zeroing.  Try to get though the work wihout
-         //  slowing down the main thread
-         StartThreadJobs(full ? tpjReclaimFull : tpjReclaim, mReclaimList.size(), false, 1);
+            // Only use one thread for parallel zeroing.  Try to get though the work wihout
+            //  slowing down the main thread
+            StartThreadJobs(full ? tpjReclaimFull : tpjReclaim, mReclaimList.size(), false, 1);
+         }
       }
-      else
-         mReclaimList.clear();
 
       mAllBlocksCount   = mAllBlocks.size();
       mCurrentRowsInUse = mRowsInUse;
@@ -3082,7 +3089,7 @@ namespace hx
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 {
    #ifdef SHOW_MEM_EVENTS
-   GCLOG("Mark conservative %p...%p (%d)\n", inBottom, inTop, (inTop-inBottom) );
+   GCLOG("Mark conservative %p...%p (%d)\n", inBottom, inTop, (int)(inTop-inBottom) );
    #endif
 
    #ifdef EMSCRIPTEN
