@@ -2604,7 +2604,7 @@ public:
 
    void ReclaimAsync(int inThreadId)
    {
-      while(!sgThreadPoolAbort)
+      while(!sgThreadPoolAbort || sgThreadPoolJob==tpjReclaimFull)
       {
          int blockId = HxAtomicInc( &mNextReclaim );
          if (blockId<mReclaimList.size())
