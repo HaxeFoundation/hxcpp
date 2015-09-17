@@ -31,6 +31,10 @@ void CaptureX86(RegisterCaptureBuffer &outBuffer)
 
 #elif defined(HXCPP_CAPTURE_x64) // {
 
+#if !defined(__GNUC__)
+#include <windows.h>
+#endif
+
 void CaptureX64(RegisterCaptureBuffer &outBuffer)
 {
    #if !defined(__GNUC__)
@@ -73,7 +77,7 @@ void CaptureX64(RegisterCaptureBuffer &outBuffer)
 
 #else // }  {
 
-#include <stdlib.h>
+#include <string.h>
 
 // Put this function here so we can be reasonablly sure that "this" register and
 // the 4 registers that may be used to pass args are on the stack.
