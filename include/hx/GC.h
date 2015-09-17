@@ -1,6 +1,7 @@
 #ifndef HX_GC_H
 #define HX_GC_H
 
+#include <hx/Thread.h>
 
 // Under the current scheme (as defined by HX_HCSTRING/HX_CSTRING in hxcpp.h)
 //  each constant string data is prepended with a 4-byte header that says the string
@@ -12,6 +13,10 @@
 #define HX_GC_NO_STRING_HASH   0x40000000
 #define HX_GC_NO_HASH_MASK     (HX_GC_CONST_ALLOC_BIT | HX_GC_NO_STRING_HASH)
 
+// Must allign allocs to 8 bytes to match floating point requirement?
+#ifdef HXCPP_ALIGN_FLOAT
+   #define HXCPP_ALIGN_ALLOC
+#endif
 
 
 
@@ -73,6 +78,10 @@ void *InternalNew(int inSize,bool inIsObject);
 // Used internall - realloc array data
 void *InternalRealloc(void *inData,int inSize);
 
+// Const buffers are allocated outside the GC system, and do not require marking
+// String buffers can optionally have a pre-computed hash appended with this method
+void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash=false);
+
 // Called after collection by an unspecified thread
 typedef void (*finalizer)(hx::Object *v);
 
@@ -96,6 +105,10 @@ struct InternalFinalizer
    finalizer mFinalizer;
    hx::Object  *mObject;
 };
+
+// Attach a finalizer to any object allocation.  This can be called from haxe code, but be aware that
+// you can't make any GC calls from the finalizer.
+void  GCSetFinalizer( hx::Object *, hx::finalizer f );
 
 // If another thread wants to do a collect, it will signal this variable.
 // This automatically gets checked when you call "new", but if you are in long-running
@@ -122,8 +135,6 @@ void GCAddRoot(hx::Object **inRoot);
 void GCRemoveRoot(hx::Object **inRoot);
 
 
-
-
 // This is used internally in hxcpp
 // It calls InternalNew, and takes care of null-terminating the result
 HX_CHAR *NewString(int inLen);
@@ -134,6 +145,24 @@ HX_CHAR *NewString(int inLen);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCBytes(void *inData,int inSize);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewGCPrivate(void *inData,int inSize);
 
+// Force a collect from the calling thread
+// Only one thread should call this at a time
+int InternalCollect(bool inMajor,bool inCompact);
+
+
+// Disable the garbage collector.  It will try to increase its internal buffers to honour extra requests.
+//  If it runs out of memory, it will actually try to do a collect.
+void InternalEnableGC(bool inEnable);
+
+// Record that fact that external memory has been allocated and associated with a haxe object
+//  eg. BitmapData.  This will help the collector know when to collect
+void GCChangeManagedMemory(int inDelta, const char *inWhy=0);
+
+// Haxe threads can center GC free zones, where they can't make GC allocation calls, and should not mess with GC memory.
+// This means that they do not need to pause while the GC collections happen, and other threads will not
+//  wait for them to "check in" before collecting.  The standard runtime makes these calls around OS calls, such as "Sleep"
+void EnterGCFreeZone();
+void ExitGCFreeZone();
 
 // Defined in Class.cpp, these function is called from the Gc to start the marking/visiting
 void MarkClassStatics(hx::MarkContext *__inCtx);
@@ -142,67 +171,203 @@ void VisitClassStatics(hx::VisitContext *__inCtx);
 #endif
 
 
+// Called by haxe/application code to mark allocations.
+//  "Object" allocs will recursively call __Mark
+inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx);
+inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx);
+
+// Implemented differently for efficiency
+void MarkObjectArray(hx::Object **inPtr, int inLength, hx::MarkContext *__inCtx);
+void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx);
+
+// Provide extra debug info to the marking routines
+#ifdef HXCPP_DEBUG
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkSetMember(const char *inName ,hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkPushClass(const char *inName ,hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkPopClass(hx::MarkContext *__inCtx);
+#endif
 
 
-void  GCSetFinalizer( hx::Object *, hx::finalizer f );
-
-
+// Used by runtime if it is being paranoid about pointers.  It checks that the pointer is real and alive at last collect.
 void GCCheckPointer(void *);
-void InternalEnableGC(bool inEnable);
-void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash=false);
-void RegisterNewThread(void *inTopOfStack);
-void SetTopOfStack(void *inTopOfStack,bool inForce=false);
-int InternalCollect(bool inMajor,bool inCompact);
-void GCChangeManagedMemory(int inDelta, const char *inWhy=0);
 
-void EnterGCFreeZone();
-void ExitGCFreeZone();
+
+void SetTopOfStack(void *inTopOfStack,bool inForce=false);
+
 
 // Threading ...
+void RegisterNewThread(void *inTopOfStack);
 void RegisterCurrentThread(void *inTopOfStack);
 void UnregisterCurrentThread();
-void EnterSafePoint();
 void GCPrepareMultiThreaded();
+
+
+
+} // end namespace hx
+
+
+
+// Inline code tied to the immix implementation
+
+namespace hx
+{
+
+// Each line ast 128 bytes (2^7)
+#define IMMIX_LINE_BITS    7
+#define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
+
+// The size info is stored in the header 8 bits to the right
+#define IMMIX_ALLOC_SIZE_SHIFT  8
+
+
+extern bool gMultiThreadMode;
+
+
+class ImmixAllocator
+{
+public:
+   virtual ~ImmixAllocator() {}
+   virtual void *CallAlloc(int inSize,unsigned int inObjectFlags) = 0;
+
+   int            spaceStart;
+   int            spaceEnd;
+   unsigned int   *allocStartFlags;
+   unsigned char  *allocBase;
+};
+
+EXTERN_FAST_TLS_DATA(ImmixAllocator, tlsImmixAllocator);
+
+extern ImmixAllocator *gMainThreadAlloc;
+extern unsigned int gImmixStartFlag[128];
+extern int gMarkID;
+extern int gMarkIDWithContainer;
+extern void BadImmixAlloc();
+
+
+// The gPauseForCollect bits will turn spaceEnd negative, and so force the slow path
+#ifndef HXCPP_SINGLE_THREADED_APP
+   #define WITH_PAUSE_FOR_COLLECT_FLAG | hx::gPauseForCollect
+#else
+   #define WITH_PAUSE_FOR_COLLECT_FLAG
+#endif
+
+
+inline void *NewHaxeObject(size_t inSize)
+{
+   ImmixAllocator *alloc =  hx::gMultiThreadMode ? tlsImmixAllocator : gMainThreadAlloc;
+
+   #ifdef HXCPP_DEBUG
+   if (!alloc)
+      BadImmixAlloc();
+   #endif
+
+
+   // Inline the fast-path if we can
+   // We know the object can hold a pointer (vtable) and that the size is int-aligned
+   #ifndef HXCPP_ALIGN_ALLOC
+
+   int start = alloc->spaceStart;
+   int end = start + sizeof(int) + inSize;
+
+   if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
+   {
+      alloc->spaceStart = end;
+
+      int startRow = start>>IMMIX_LINE_BITS;
+
+      alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
+      //alloc->allocBase[ startRow ] |= (1<<( (start>>2) & 31) );
+
+      unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
+
+      *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
+                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+                   gMarkID;
+
+      return buffer;
+    }
+
+   #endif
+
+   return alloc->CallAlloc(inSize, 0);
+}
+
+
+inline void *NewHaxeContainer(size_t inSize)
+{
+   ImmixAllocator *alloc =  hx::gMultiThreadMode ? tlsImmixAllocator : gMainThreadAlloc;
+
+   #ifdef HXCPP_DEBUG
+   if (!alloc)
+      BadImmixAlloc();
+   #endif
+
+
+   // Inline the fast-path if we can
+   // We know the object can hold a pointer (vtable) and that the size is int-aligned
+   #ifndef HXCPP_ALIGN_ALLOC
+
+   int start = alloc->spaceStart;
+   int end = start + sizeof(int) + inSize;
+
+   if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
+   {
+      alloc->spaceStart = end;
+
+      int startRow = start>>IMMIX_LINE_BITS;
+
+      alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
+      //alloc->allocBase[ startRow ] |= (1<<( (start>>2) & 31) );
+
+      unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
+
+      *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
+                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
+                   gMarkIDWithContainer;
+
+      return buffer;
+    }
+
+   #endif
+
+   return alloc->CallAlloc(inSize, 0);
+}
+
 
 
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES extern unsigned int gPrevMarkIdMask;
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void MarkAllocUnchecked(void *inPtr ,hx::MarkContext *__inCtx);
+// Called only once it is determined that a new mark is required
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkAllocUnchecked(void *inPtr ,hx::MarkContext *__inCtx); 
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkObjectAllocUnchecked(hx::Object *inPtr ,hx::MarkContext *__inCtx);
 
 inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
 {
+   // This will also skip const regions
    if ( ((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask )
       MarkAllocUnchecked(inPtr,__inCtx);
 }
-
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void MarkObjectAllocUnchecked(hx::Object *inPtr ,hx::MarkContext *__inCtx);
-
 inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 {
+   // This will also skip const regions
    if ( ((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask )
       MarkObjectAllocUnchecked(inPtr,__inCtx);
 }
 
-void MarkObjectArray(hx::Object **inPtr, int inLength, hx::MarkContext *__inCtx);
-void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx);
-
-#ifdef HXCPP_DEBUG
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void MarkSetMember(const char *inName ,hx::MarkContext *__inCtx);
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void MarkPushClass(const char *inName ,hx::MarkContext *__inCtx);
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void MarkPopClass(hx::MarkContext *__inCtx);
-#endif
-
-// Make sure we can do a conversion to hx::Object **
-inline void EnsureObjPtr(hx::Object *) { }
 
 } // end namespace hx
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -266,7 +431,7 @@ inline void EnsureObjPtr(hx::Object *) { }
 #define HX_VISIT_MEMBER(x) hx::VisitMember(x, __inCtx )
 
 #define HX_VISIT_OBJECT(ioPtr) \
-  { hx::EnsureObjPtr(ioPtr); if (ioPtr) __inCtx->visitObject( (hx::Object **)&ioPtr); }
+  { if (ioPtr) __inCtx->visitObject( (hx::Object **)&ioPtr); }
 
 #define HX_VISIT_STRING(ioPtr) \
    if (ioPtr && !(((unsigned int *)ioPtr)[-1] & HX_GC_CONST_ALLOC_BIT) ) __inCtx->visitAlloc((void **)&ioPtr);

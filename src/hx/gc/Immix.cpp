@@ -8,8 +8,6 @@
 #define IMMIX_ALLOC_IS_CONTAINER   0x00800000
 
 static int gByteMarkID = 0x10;
-static int gMarkID = 0x10 << 24;
-static int gMarkIDWithContainer = (0x10 << 24) | IMMIX_ALLOC_IS_CONTAINER;
 
 namespace hx
 {
@@ -59,7 +57,6 @@ static int sgMinimumFreeSpace           = 4*1024*1024;
 // Once you use more than the minimum, this kicks in...
 static int sgTargetFreeSpacePercentage  = 100;
 
-static unsigned int sObjectFlag[128];
 
 
 
@@ -145,18 +142,31 @@ MyMutex  *gSpecialObjectLock=0;
 
 class LocalAllocator;
 enum LocalAllocState { lasNew, lasRunning, lasStopped, lasWaiting, lasTerminal };
-static bool sMultiThreadMode = false;
 
-DECLARE_FAST_TLS_DATA(LocalAllocator, tlsLocalAlloc);
 
 static void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx);
 static void WaitForSafe(LocalAllocator *inAlloc);
 static void ReleaseFromSafe(LocalAllocator *inAlloc);
 static void CollectFromThisThread();
 
-namespace hx {
+namespace hx
+{
 int gPauseForCollect = 0x00000000;
+
+bool gMultiThreadMode = false;
+
+ImmixAllocator *gMainThreadAlloc = 0;
+
+unsigned int gImmixStartFlag[128];
+
+int gMarkID = 0x10 << 24;
+
+int gMarkIDWithContainer = (0x10 << 24) | IMMIX_ALLOC_IS_CONTAINER;
+
 void ExitGCFreeZoneLocked();
+
+DECLARE_FAST_TLS_DATA(ImmixAllocator, tlsImmixAllocator);
+
 #ifdef HXCPP_SCRIPTABLE
 extern void scriptMarkStack(hx::MarkContext *);
 #endif
@@ -210,14 +220,14 @@ hx::QuickVec<GroupInfo> gAllocGroups;
 */
 
 #define IMMIX_BLOCK_BITS      15
-#define IMMIX_LINE_BITS        7
 
 #define IMMIX_BLOCK_SIZE        (1<<IMMIX_BLOCK_BITS)
 #define IMMIX_BLOCK_OFFSET_MASK (IMMIX_BLOCK_SIZE-1)
 #define IMMIX_BLOCK_BASE_MASK   (~(size_t)(IMMIX_BLOCK_OFFSET_MASK))
-#define IMMIX_LINE_LEN          (1<<IMMIX_LINE_BITS)
 #define IMMIX_LINE_COUNT_BITS   (IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)
 #define IMMIX_LINES             (1<<IMMIX_LINE_COUNT_BITS)
+
+
 #define IMMIX_HEADER_LINES      (IMMIX_LINES>>IMMIX_LINE_BITS)
 #define IMMIX_USEFUL_LINES      (IMMIX_LINES - IMMIX_HEADER_LINES)
 
@@ -275,7 +285,6 @@ MID = ENDIAN_MARK_ID_BYTE = is measured from the object pointer
 #define IMMIX_ALLOC_MARK_ID     0x3f000000
 #define IMMIX_ALLOC_IS_PINNED   0x00400000
 #define IMMIX_ALLOC_SIZE_MASK   0x003fff00
-#define IMMIX_ALLOC_SIZE_SHIFT  8
 #define IMMIX_ALLOC_ROW_COUNT   0x000000ff
 
 
@@ -540,7 +549,7 @@ union BlockData
                      {
                         unsigned int header = ((int *)mRow[r])[i];
                         // Old object start?
-                        if ( (header & IMMIX_ALLOC_MARK_ID) != gMarkID )
+                        if ( (header & IMMIX_ALLOC_MARK_ID) != hx::gMarkID )
                         {
                            starts &= ~(1<<i);
                            if (!starts)
@@ -720,6 +729,33 @@ bool MostUsedFirst(BlockData *inA, BlockData *inB)
 
 namespace hx
 {
+
+
+
+void BadImmixAlloc()
+{
+   #ifdef ANDROID
+   __android_log_print(ANDROID_LOG_ERROR, "hxcpp",
+   #else
+   fprintf(stderr,
+   #endif
+
+   "Bad local allocator - requesting memory from unregistered thread!"
+
+   #ifdef ANDROID
+   );
+   #else
+   );
+   #endif
+
+   #if __has_builtin(__builtin_trap)
+   __builtin_trap();
+   #else
+   *(int *)0=0;
+   #endif
+}
+
+
 
 void GCCheckPointer(void *inPtr)
 {
@@ -1864,9 +1900,9 @@ public:
          result = (unsigned int *)malloc(inSize + sizeof(int)*2);
       }
       result[0] = inSize;
-      result[1] = gMarkID;
+      result[1] = hx::gMarkID;
 
-      bool do_lock = sMultiThreadMode;
+      bool do_lock = hx::gMultiThreadMode;
       if (do_lock)
          mLargeListLock.Lock();
 
@@ -1900,7 +1936,7 @@ public:
             mLargeAllocSpace = rounded<<1;
       }
 
-      bool do_lock = sMultiThreadMode;
+      bool do_lock = hx::gMultiThreadMode;
       if (do_lock)
          mLargeListLock.Lock();
 
@@ -2013,7 +2049,7 @@ public:
    BlockData * GetFreeBlock(int inRequiredBytes, int **inCallersStack)
    {
       volatile int dummy = 1;
-      if (sMultiThreadMode)
+      if (hx::gMultiThreadMode)
       {
          hx::EnterGCFreeZone();
          gThreadStateChangeLock->Lock();
@@ -2046,7 +2082,7 @@ public:
 
       BlockDataInfo &info = result->getInfo();
 
-      if (sMultiThreadMode)
+      if (hx::gMultiThreadMode)
          gThreadStateChangeLock->Unlock();
 
       while(!info.mReady)
@@ -2206,7 +2242,7 @@ public:
                      unsigned char &row_flag = dest->mRowMarked[destRow];
 
                      int *result = (int *)(row + destPos);
-                     *result = size | gMarkID | (row_flag<<16) |
+                     *result = size | hx::gMarkID | (row_flag<<16) |
                            (extra_lines==0 ? IMMIX_ALLOC_SMALL_OBJ : IMMIX_ALLOC_MEDIUM_OBJ );
 
                      if (isObject)
@@ -2732,7 +2768,7 @@ public:
       // Even = true if cycle is even
       // c c c c = 4 bit cycle code
       //
-      hx::gPrevMarkIdMask = gMarkID & 0x30000000;
+      hx::gPrevMarkIdMask = hx::gMarkID & 0x30000000;
 
       // 4 bits of cycle
       gByteMarkID = (gByteMarkID + 1) & 0x0f;
@@ -2741,8 +2777,8 @@ public:
       else
          gByteMarkID |= 0x10;
 
-      gMarkID = gByteMarkID << 24;
-      gMarkIDWithContainer = gMarkID | IMMIX_ALLOC_IS_CONTAINER;
+      hx::gMarkID = gByteMarkID << 24;
+      hx::gMarkIDWithContainer = hx::gMarkID | IMMIX_ALLOC_IS_CONTAINER;
 
       gBlockStack = 0;
 
@@ -2813,7 +2849,7 @@ public:
       #endif
       int largeAlloced = mLargeAllocated;
       LocalAllocator *this_local = 0;
-      if (sMultiThreadMode)
+      if (hx::gMultiThreadMode)
       {
          hx::EnterGCFreeZone();
          gThreadStateChangeLock->Lock();
@@ -2830,7 +2866,7 @@ public:
 
          hx::gPauseForCollect = 0xffffffff;
 
-         this_local = tlsLocalAlloc;
+         this_local = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
          for(int i=0;i<mLocalAllocs.size();i++)
             if (mLocalAllocs[i]!=this_local)
                WaitForSafe(mLocalAllocs[i]);
@@ -2849,7 +2885,7 @@ public:
       while(idx<mLargeList.size())
       {
          unsigned int *blob = mLargeList[idx];
-         if ( (blob[1] & IMMIX_ALLOC_MARK_ID) != gMarkID )
+         if ( (blob[1] & IMMIX_ALLOC_MARK_ID) != hx::gMarkID )
          {
             mLargeAllocated -= *blob;
             free(mLargeList[idx]);
@@ -2960,7 +2996,7 @@ public:
       mAllBlocksCount   = mAllBlocks.size();
       mCurrentRowsInUse = mRowsInUse;
 
-      if (sMultiThreadMode)
+      if (hx::gMultiThreadMode)
       {
          for(int i=0;i<mLocalAllocs.size();i++)
          if (mLocalAllocs[i]!=this_local)
@@ -3159,7 +3195,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 // One per thread ...
 
 static int sLocalAllocatorCount = 0;
-class LocalAllocator
+class LocalAllocator : public hx::ImmixAllocator
 {
 public:
    LocalAllocator(int *inTopOfStack=0)
@@ -3180,7 +3216,7 @@ public:
    {
       EnterGCFreeZone();
       sGlobalAlloc->RemoveLocal(this);
-      tlsLocalAlloc = 0;
+      hx::tlsImmixAllocator = 0;
 
       sLocalAllocatorCount--;
    }
@@ -3205,16 +3241,16 @@ public:
       #endif
       if (!sGlobalAlloc->ReturnToPool(this))
          delete this;
-      tlsLocalAlloc = 0;
+      hx::tlsImmixAllocator = 0;
    }
 
    void Reset()
    {
-      mCurrent = 0;
+      allocBase = 0;
       mCurrentHole = 0;
       mCurrentHoles = 0;
-      mEnd = 0;
-      mStart = 0;
+      spaceEnd = 0;
+      spaceStart = 0;
       mMoreHoles = false;
    }
 
@@ -3294,7 +3330,7 @@ public:
          CriticalGCError("GCFree Zone mismatch");
       #endif
 
-      if (sMultiThreadMode)
+      if (hx::gMultiThreadMode)
       {
          AutoLock lock(*gThreadStateChangeLock);
          mReadyForCollect.Reset();
@@ -3304,7 +3340,7 @@ public:
         // For when we already hold the lock
    void ExitGCFreeZoneLocked()
    {
-      if (sMultiThreadMode)
+      if (hx::gMultiThreadMode)
       {
          mReadyForCollect.Reset();
          mGCFreeZone = false;
@@ -3330,12 +3366,8 @@ public:
 
 
 
-   virtual void *CallAlloc(int inSize,unsigned int inObjectFlags)
+   void *CallAlloc(int inSize,unsigned int inObjectFlags)
    {
-      #ifdef HXCPP_ALIGN_FLOAT
-         #define HXCPP_ALIGN_ALLOC
-      #endif
-
       #ifdef HXCPP_DEBUG
       if (mGCFreeZone)
          CriticalGCError("Allocating from a GC-free thread");
@@ -3352,35 +3384,35 @@ public:
 
       #ifdef HXCPP_ALIGN_ALLOC
       // If we start in even-int offset, we need to skip 8 bytes to get alloc on even-int
-      int skip4 = allocSize+mStart>mEnd || !(mStart & 7) ? 4 : 0;
+      int skip4 = allocSize+spaceStart>spaceEnd || !(spaceStart & 7) ? 4 : 0;
       #else
       enum { skip4 = 0 };
       #endif
 
       while(1)
       {
-         if (mStart + allocSize + skip4 <= mEnd)
+         if (spaceStart + allocSize + skip4 <= spaceEnd)
          {
             #ifdef HXCPP_ALIGN_ALLOC
-            mStart += skip4;
+            spaceStart += skip4;
             #endif
 
-            int startRow = mStart>>IMMIX_LINE_BITS;
-            mCurrentStarts[ startRow ] |= 1<<( (mStart>>2) & 31);
+            int startRow = spaceStart>>IMMIX_LINE_BITS;
+            allocStartFlags[ startRow ] |= 1<<( (spaceStart>>2) & 31);
 
-            int endRow = 1 + ((mStart+allocSize-1)>>IMMIX_LINE_BITS);
+            int endRow = 1 + ((spaceStart+allocSize-1)>>IMMIX_LINE_BITS);
 
-            unsigned char *buffer = (unsigned char *)mCurrent + mStart;
+            unsigned char *buffer = allocBase + spaceStart;
             *(unsigned int *)(buffer) = inObjectFlags |
-                  gMarkID | (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
+                  hx::gMarkID | (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
 
-            mStart += allocSize;
+            spaceStart += allocSize;
             return buffer + sizeof(int);
          }
          else if (mMoreHoles)
          {
-            mStart = mCurrentRange[mCurrentHole].start;
-            mEnd = mStart + mCurrentRange[mCurrentHole].length;
+            spaceStart = mCurrentRange[mCurrentHole].start;
+            spaceEnd = spaceStart + mCurrentRange[mCurrentHole].length;
             mCurrentHole++;
             mMoreHoles = mCurrentHole<mCurrentHoles;
          }
@@ -3394,13 +3426,15 @@ public:
             volatile int dummy = 1;
             mBottomOfStack = (int *)&dummy;
             CAPTURE_REGS;
-            mCurrent = sGlobalAlloc->GetFreeBlock(allocSize,&mBottomOfStack);
-            BlockDataInfo &info = mCurrent->getInfo();
+
+            BlockData *block = sGlobalAlloc->GetFreeBlock(allocSize,&mBottomOfStack);
+            allocBase = (unsigned char *)block;
+            BlockDataInfo &info = block->getInfo();
             mCurrentRange = info.mRanges;
-            mCurrentStarts = info.allocStart;
+            allocStartFlags = info.allocStart;
             mCurrentHoles = info.mHoles;
-            mStart = mCurrentRange->start;
-            mEnd = mStart + mCurrentRange->length;
+            spaceStart = mCurrentRange->start;
+            spaceEnd = spaceStart + mCurrentRange->length;
             mCurrentHole = 1;
             mMoreHoles = mCurrentHole<mCurrentHoles;
          }
@@ -3437,15 +3471,11 @@ public:
       Reset();
    }
 
-   BlockData     *mCurrent;
-   unsigned int  *mCurrentStarts;
    int            mCurrentHole;
    int            mCurrentHoles;
    HoleRange     *mCurrentRange;
 
-   int            mStart;
-   int            mEnd;
-   bool           mMoreHoles;
+     bool           mMoreHoles;
 
    int *mTopOfStack;
    int *mBottomOfStack;
@@ -3460,46 +3490,28 @@ public:
    MySemaphore     mCollectDone;
 };
 
-LocalAllocator *sMainThreadAlloc = 0;
+
 
 
 inline LocalAllocator *GetLocalAlloc()
 {
    #ifndef HXCPP_SINGLE_THREADED_APP
-   if (sMultiThreadMode)
+   if (hx::gMultiThreadMode)
    {
       #ifdef HXCPP_DEBUG
-      LocalAllocator *result =  tlsLocalAlloc;
+      LocalAllocator *result = (LocalAllocator *)(hx::ImmixAllocator *)tlsImmixAllocator;
       if (!result)
       {
-         #ifdef ANDROID
-         __android_log_print(ANDROID_LOG_ERROR, "hxcpp",
-         #else
-         fprintf(stderr,
-         #endif
-
-         "GetLocalAllocMT - requesting memory from unregistered thread!"
-
-         #ifdef ANDROID
-         );
-         #else
-         );
-         #endif
-
-         #if __has_builtin(__builtin_trap)
-         __builtin_trap();
-         #else
-         *(int *)0=0;
-         #endif
+         BadImmixAlloc();
       }
       return result;
       #else
-      return tlsLocalAlloc;
+      return (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
       #endif
    }
    #endif
 
-   return sMainThreadAlloc;
+   return (LocalAllocator *)hx::gMainThreadAlloc;
 }
 
 void WaitForSafe(LocalAllocator *inAlloc)
@@ -3537,7 +3549,7 @@ void PauseForCollect()
 
 void EnterGCFreeZone()
 {
-   if (sMultiThreadMode)
+   if (hx::gMultiThreadMode)
    {
       LocalAllocator *tla = GetLocalAlloc();
       tla->EnterGCFreeZone();
@@ -3546,7 +3558,7 @@ void EnterGCFreeZone()
 
 void ExitGCFreeZone()
 {
-   if (sMultiThreadMode)
+   if (hx::gMultiThreadMode)
    {
       LocalAllocator *tla = GetLocalAlloc();
       tla->ExitGCFreeZone();
@@ -3555,7 +3567,7 @@ void ExitGCFreeZone()
 
 void ExitGCFreeZoneLocked()
 {
-   if (sMultiThreadMode)
+   if (hx::gMultiThreadMode)
    {
       LocalAllocator *tla = GetLocalAlloc();
       tla->ExitGCFreeZoneLocked();
@@ -3573,17 +3585,17 @@ void InitAlloc()
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
    //GCLOG("__root pointer %p\n", sgObject_root);
-   sMainThreadAlloc =  new LocalAllocator();
-   tlsLocalAlloc = sMainThreadAlloc;
+   gMainThreadAlloc =  new LocalAllocator();
+   tlsImmixAllocator = gMainThreadAlloc;
    for(int i=0;i<IMMIX_LINE_LEN;i++)
-      sObjectFlag[i] = 1<<( i>>2 ) ;
+      gImmixStartFlag[i] = 1<<( i>>2 ) ;
 }
 
 
 void GCPrepareMultiThreaded()
 {
-   if (!sMultiThreadMode)
-      sMultiThreadMode = true;
+   if (!hx::gMultiThreadMode)
+      hx::gMultiThreadMode = true;
 }
 
 
@@ -3595,7 +3607,7 @@ void SetTopOfStack(int *inTop,bool inForce)
          InitAlloc();
       else
       {
-         if (tlsLocalAlloc==0)
+         if (tlsImmixAllocator==0)
          {
             GCPrepareMultiThreaded();
             RegisterCurrentThread(inTop);
@@ -3603,7 +3615,7 @@ void SetTopOfStack(int *inTop,bool inForce)
       }
    }
 
-   LocalAllocator *tla = GetLocalAlloc();
+   LocalAllocator *tla = (LocalAllocator *)(hx::ImmixAllocator *)tlsImmixAllocator;
 
    if (tla)
       tla->SetTopOfStack(inTop,inForce);
@@ -3734,12 +3746,12 @@ void RegisterCurrentThread(void *inTopOfStack)
    {
       local->AttachThread((int *)inTopOfStack);
    }
-   tlsLocalAlloc = local;
+   tlsImmixAllocator = local;
 }
 
 void UnregisterCurrentThread()
 {
-   LocalAllocator *local = tlsLocalAlloc;
+   LocalAllocator *local = (LocalAllocator *)(hx::ImmixAllocator *)tlsImmixAllocator;
    delete local;
 }
 
@@ -3749,86 +3761,6 @@ void UnregisterCurrentThread()
 
 
 
-namespace hx
-{
-
-// The gPauseForCollect bits will turn mEnd negative, and so force the slow path
-#ifndef HXCPP_SINGLE_THREADED_APP
-   #define WITH_PAUSE_FOR_COLLECT_FLAG | hx::gPauseForCollect
-#else
-   #define WITH_PAUSE_FOR_COLLECT_FLAG
-#endif
-
-void *NewHaxeContainer(size_t inSize)
-{
-   LocalAllocator *alloc =  GetLocalAlloc();
-
-   // Inline the fast-path if we can
-   // We know the object can hold a pointer (vtable) and that the size is int-aligned
-   #ifndef HXCPP_ALIGN_ALLOC
-
-   int start = alloc->mStart;
-   int end = start + sizeof(int) + inSize;
-
-   if ( end <= (alloc->mEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
-   {
-      alloc->mStart = end;
-
-      int startRow = start>>IMMIX_LINE_BITS;
-
-      alloc->mCurrentStarts[ startRow ] |= sObjectFlag[start&127];
-      //alloc->mCurrentStarts[ startRow ] |= (1<<( (start>>2) & 31) );
-
-
-      unsigned int *buffer = (unsigned int *)((unsigned char *)alloc->mCurrent + start);
-
-      *buffer++ = (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                  (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                  gMarkIDWithContainer;
-
-      return buffer;
-   }
-   #endif
-
-   return alloc->CallAlloc(inSize, IMMIX_ALLOC_IS_CONTAINER);
-}
-
-
-void *NewHaxeObject(size_t inSize)
-{
-   LocalAllocator *alloc =  GetLocalAlloc();
-
-   // Inline the fast-path if we can
-   // We know the object can hold a pointer (vtable) and that the size is int-aligned
-   #ifndef HXCPP_ALIGN_ALLOC
-
-   int start = alloc->mStart;
-   int end = start + sizeof(int) + inSize;
-
-   if ( end <= (alloc->mEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
-   {
-      alloc->mStart = end;
-
-      int startRow = start>>IMMIX_LINE_BITS;
-
-      alloc->mCurrentStarts[ startRow ] |= sObjectFlag[start&127];
-      //alloc->mCurrentStarts[ startRow ] |= (1<<( (start>>2) & 31) );
-
-      unsigned int *buffer = (unsigned int *)((unsigned char *)alloc->mCurrent + start);
-
-      *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                   gMarkID;
-
-      return buffer;
-    }
-
-   #endif
-
-   return alloc->CallAlloc(inSize, 0);
-}
-
-}
 
 void __hxcpp_spam_collects(int inEveryNCalls)
 {

@@ -228,6 +228,10 @@ struct MyMutex
    __declspec(thread) TYPE * NAME = nullptr;
 #define DECLARE_FAST_TLS_DATA(TYPE,NAME) \
    __declspec(thread) TYPE * NAME = nullptr;
+#define EXTERN_TLS_DATA(TYPE,NAME) \
+   __declspec(thread) extern TYPE * NAME = nullptr;
+#define EXTERN_FAST_TLS_DATA(TYPE,NAME) \
+   __declspec(thread) extern TYPE * NAME = nullptr;
 
 #else
 
@@ -235,6 +239,10 @@ struct MyMutex
    TLSData<TYPE> NAME;
 #define DECLARE_FAST_TLS_DATA(TYPE,NAME) \
    TLSData<TYPE,true> NAME;
+#define EXTERN_TLS_DATA(TYPE,NAME) \
+   extern TLSData<TYPE> NAME;
+#define EXTERN_FAST_TLS_DATA(TYPE,NAME) \
+   extern TLSData<TYPE,true> NAME;
 
 #endif
 
