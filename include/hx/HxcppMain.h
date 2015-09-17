@@ -59,7 +59,13 @@
 
 #else
 
-   #if defined(HX_WIN_MAIN) && !defined(HAVE_WINDOWS_H)
+   #if defined(HX_WIN_MAIN) && !defined(_WINDOWS_)
+   #ifndef HINSTANCE
+   #define HINSTANCE void*
+   #endif
+   #ifndef LPSTR
+   #define LPSTR char*
+   #endif
    extern "C" int __stdcall MessageBoxA(void *,const char *,const char *,int);
    #endif
 
@@ -67,7 +73,7 @@
    #if defined(TIZEN)
    extern "C" EXPORT_EXTRA int OspMain (int argc, char* pArgv[])
    #elif defined(HX_WIN_MAIN)
-   int __stdcall WinMain( void * hInstance, void * hPrevInstance, const char *lpCmdLine, int nCmdShow)
+   int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
    #else
    int main(int argc,char **argv)
    #endif
