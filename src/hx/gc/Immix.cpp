@@ -3499,10 +3499,10 @@ inline LocalAllocator *GetLocalAlloc()
    if (hx::gMultiThreadMode)
    {
       #ifdef HXCPP_DEBUG
-      LocalAllocator *result = (LocalAllocator *)(hx::ImmixAllocator *)tlsImmixAllocator;
+      LocalAllocator *result = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
       if (!result)
       {
-         BadImmixAlloc();
+         hx::BadImmixAlloc();
       }
       return result;
       #else
