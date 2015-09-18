@@ -422,7 +422,8 @@ struct BlockDataInfo
    }
 };
 
-hx::QuickVec<BlockDataInfo> *gBlockInfo = 0;
+hx::QuickVec<BlockDataInfo *> *gBlockInfo = 0;
+static int gBlockInfoEmptySlots = 0;
 
 
 
@@ -432,7 +433,6 @@ union BlockData
    void Init(int inGID)
    {
       mId = nextBlockId();
-      gBlockInfo->push( BlockDataInfo() );
       BlockDataInfo &info = getInfo();
       info.mId = mId;
       info.mGroupId = inGID;
@@ -454,7 +454,9 @@ union BlockData
    
    void destroy()
    {
-      (*gBlockInfo)[mId].mPtr = 0;
+      delete (*gBlockInfo)[mId];
+      (*gBlockInfo)[mId] = 0;
+      gBlockInfoEmptySlots++;
       #ifdef USE_POSIX_MEMALIGN
       free(this);
       #endif
@@ -463,14 +465,23 @@ union BlockData
    int nextBlockId()
    {
       if (gBlockInfo==0)
-         gBlockInfo = new hx::QuickVec<BlockDataInfo>;
-      for(int i=0;i<gBlockInfo->size();i++)
-         if ( !(*gBlockInfo)[i].mPtr )
-           return i;
-      return  gBlockInfo->next();
+         gBlockInfo = new hx::QuickVec<BlockDataInfo *>;
+      if (gBlockInfoEmptySlots)
+      {
+         for(int i=0;i<gBlockInfo->size();i++)
+            if ( !(*gBlockInfo)[i] )
+            {
+               gBlockInfoEmptySlots--;
+               (*gBlockInfo)[i] = new BlockDataInfo;
+               return i;
+            }
+      }
+      int result = gBlockInfo->size();
+      gBlockInfo->push( new BlockDataInfo );
+      return result;
    }
 
-   inline BlockDataInfo &getInfo() const { return (*gBlockInfo)[mId]; }
+   inline BlockDataInfo &getInfo() const { return *(*gBlockInfo)[mId]; }
 
 
    bool IsEmpty() const { return getUsedRows() == 0; }
