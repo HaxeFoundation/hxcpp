@@ -63,12 +63,6 @@ hx::Object *__hxcpp_id_obj(int);
 
 namespace hx
 {
-// These functions are optimised for haxe-generated objects
-//  inSize is known to be "small", a multiple of 4 bytes and big enough to hold a pointer
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeObject(size_t inSize);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeContainer(size_t inSize);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeConstObject(size_t inSize);
-
 // Generic allocation routine.
 // If inSize is small (<4k) it will be allocated from the immix pool.
 // Larger, and it will be allocated from a separate memory pool
@@ -212,6 +206,8 @@ void GCPrepareMultiThreaded();
 namespace hx
 {
 
+#define HX_USE_INLINE_IMMIX_OPERATOR_NEW
+
 // Each line ast 128 bytes (2^7)
 #define IMMIX_LINE_BITS    7
 #define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
@@ -253,90 +249,6 @@ extern void BadImmixAlloc();
 #else
    #define WITH_PAUSE_FOR_COLLECT_FLAG
 #endif
-
-
-inline void *NewHaxeObject(size_t inSize)
-{
-   ImmixAllocator *alloc =  hx::gMultiThreadMode ? tlsImmixAllocator : gMainThreadAlloc;
-
-   #ifdef HXCPP_DEBUG
-   if (!alloc)
-      BadImmixAlloc();
-   #endif
-
-
-   // Inline the fast-path if we can
-   // We know the object can hold a pointer (vtable) and that the size is int-aligned
-   #ifndef HXCPP_ALIGN_ALLOC
-
-   int start = alloc->spaceStart;
-   int end = start + sizeof(int) + inSize;
-
-   if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
-   {
-      alloc->spaceStart = end;
-
-      int startRow = start>>IMMIX_LINE_BITS;
-
-      alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
-      //alloc->allocBase[ startRow ] |= (1<<( (start>>2) & 31) );
-
-      unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
-
-      *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                   gMarkID;
-
-      return buffer;
-    }
-
-   #endif
-
-   return alloc->CallAlloc(inSize, 0);
-}
-
-
-inline void *NewHaxeContainer(size_t inSize)
-{
-   ImmixAllocator *alloc =  hx::gMultiThreadMode ? tlsImmixAllocator : gMainThreadAlloc;
-
-   #ifdef HXCPP_DEBUG
-   if (!alloc)
-      BadImmixAlloc();
-   #endif
-
-
-   // Inline the fast-path if we can
-   // We know the object can hold a pointer (vtable) and that the size is int-aligned
-   #ifndef HXCPP_ALIGN_ALLOC
-
-   int start = alloc->spaceStart;
-   int end = start + sizeof(int) + inSize;
-
-   if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
-   {
-      alloc->spaceStart = end;
-
-      int startRow = start>>IMMIX_LINE_BITS;
-
-      alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
-      //alloc->allocBase[ startRow ] |= (1<<( (start>>2) & 31) );
-
-      unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
-
-      *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                   gMarkIDWithContainer;
-
-      return buffer;
-    }
-
-   #endif
-
-   return alloc->CallAlloc(inSize, IMMIX_ALLOC_IS_CONTAINER);
-}
-
-
 
 
 
