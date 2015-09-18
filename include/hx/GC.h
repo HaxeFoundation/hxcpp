@@ -219,6 +219,9 @@ namespace hx
 // The size info is stored in the header 8 bits to the right
 #define IMMIX_ALLOC_SIZE_SHIFT  8
 
+// Indicates that __Mark must be called recursively
+#define IMMIX_ALLOC_IS_CONTAINER   0x00800000
+
 
 extern bool gMultiThreadMode;
 
@@ -330,7 +333,7 @@ inline void *NewHaxeContainer(size_t inSize)
 
    #endif
 
-   return alloc->CallAlloc(inSize, 0);
+   return alloc->CallAlloc(inSize, IMMIX_ALLOC_IS_CONTAINER);
 }
 
 

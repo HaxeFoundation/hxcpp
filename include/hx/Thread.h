@@ -172,7 +172,7 @@ struct TLSData
 
       DATA **extra = (DATA **)(__readfsdword(kTibExtraTlsOffset));
       return extra[mFastOffset];
-      #elif (_MSC_VER >= 1400) // 64 bit version...
+      #elif (_MSC_VER >= 1400) & !defined(HXCPP_DEBUG)// 64 bit version...
       return (DATA *)__readgsqword(mFastOffset);
       #else
       return (DATA *)TlsGetValue(mSlot);

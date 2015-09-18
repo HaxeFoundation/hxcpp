@@ -5,7 +5,7 @@
 #include "../Hash.h"
 #include "GcRegCapture.h"
 
-#define IMMIX_ALLOC_IS_CONTAINER   0x00800000
+
 
 static int gByteMarkID = 0x10;
 
