@@ -1464,7 +1464,7 @@ class BuildTool
                {
                   var ver = extract_version.matched(1);
                   if (debugTravis)
-                     Log.v("  found version " + Std.parseFloat(best));
+                     Log.v("  found version " + Std.parseFloat(ver));
                   if (Std.parseFloat(ver) > Std.parseFloat(best))
                      best = ver;
                }
