@@ -18,7 +18,7 @@
    </section>
    <section if="rpi">
       <path name="c:/SysGCC/Raspberry/bin/" unless="HXCPP_XCOMPILE_RPI_PATH" />
-      <path name="${HXCPP_XCOMPILE_RPI_PATH" if="HXCPP_XCOMPILE_RPI_PATH" />
+      <path name="${HXCPP_XCOMPILE_RPI_PATH}" if="HXCPP_XCOMPILE_RPI_PATH" />
       <set name="CXX" value="arm-linux-gnueabihf-g++" />
       <set name="HXCPP_STRIP" value="arm-linux-gnueabihf-strip" />
       <set name="HXCPP_AR" value="arm-linux-gnueabihf-ar" />
