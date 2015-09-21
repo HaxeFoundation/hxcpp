@@ -1453,7 +1453,7 @@ class BuildTool
             Log.v('Checking dev path $dev_path');
          if (FileSystem.exists(dev_path))
          {
-            var best="";
+            var best="0.0";
             var files = FileSystem.readDirectory(dev_path);
             var extract_version = ~/^MacOSX(.*).sdk$/;
             for(file in files)
@@ -1463,7 +1463,9 @@ class BuildTool
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  if (Std.parseFloat (ver)>Std.parseFloat (best))
+                  if (debugTravis)
+                     Log.v("  found version " + Std.parseFloat(best));
+                  if (Std.parseFloat(ver) > Std.parseFloat(best))
                      best = ver;
                }
             }
