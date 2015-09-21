@@ -540,7 +540,7 @@ class Setup
          proc.close();
          if (str>"")
          {
-            var reg = ~/Version\s+(\d+)/i;
+            var reg = ~/(\d{2})\.\d+/i;
             if (reg.match(str))
             {
                var cl_version = Std.parseInt(reg.matched(1));
