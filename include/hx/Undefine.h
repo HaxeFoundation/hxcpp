@@ -36,5 +36,6 @@
 #undef UNDERFLOW
 #undef DOMAIN
 #undef TRANSPARENT
+#undef CONST
 
 #endif
