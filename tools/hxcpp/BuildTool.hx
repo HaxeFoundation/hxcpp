@@ -962,7 +962,7 @@ class BuildTool
 
       if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
          Log.colorSupported = false;
-      Log.verbose = defines.exists("HXCPP_VERBOSE");
+      Log.verbose = defines.exists("HXCPP_VERBOSE") || defines.exists("TRAVIS_OS_NAME");
       exitOnThreadError = defines.exists("HXCPP_EXIT_ON_ERROR");
 
 
@@ -1405,12 +1405,18 @@ class BuildTool
 
    function setupAppleDirectories(defines:Hash<String>)
    {
+      var debugTravis = defines.get("TRAVIS_OS_NAME")=="osx";
+      if (debugTravis)
+          Log.v("Setting apple directories ( apple=" + defines.get("apple") + ", DEVELOPER_DIR=" + defines.get("DEVELOPER_DIR") +" )");
+
       if (defines.exists("HXCPP_CLEAN_ONLY"))
          return;
 
       if (defines.exists("apple") && !defines.exists("DEVELOPER_DIR"))
       {
          var developer_dir = ProcessManager.runProcessLine("", "xcode-select", ["--print-path"], true, false);
+         if (debugTravis)
+            Log.v('Got developer_dir $developer_dir.');
          if (developer_dir == null || developer_dir == "" || developer_dir.indexOf ("Run xcode-select") > -1)
             developer_dir = "/Applications/Xcode.app/Contents/Developer";
          if (developer_dir == "/Developer")
@@ -1443,6 +1449,8 @@ class BuildTool
       if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
       {
          var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/";
+         if (debugTravis)
+            Log.v('Checking dev path $dev_path');
          if (FileSystem.exists(dev_path))
          {
             var best="";
@@ -1450,6 +1458,8 @@ class BuildTool
             var extract_version = ~/^MacOSX(.*).sdk$/;
             for(file in files)
             {
+               if (debugTravis)
+                  Log.v("Looking for sdk match " + file);
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
@@ -1459,6 +1469,8 @@ class BuildTool
             }
             if (best!="")
                defines.set("MACOSX_VER",best);
+            else if (debugTravis)
+               Log.v("Could not find MACOSX_VER!");
          }
       }
       

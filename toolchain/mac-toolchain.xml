@@ -6,7 +6,6 @@
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.7" if="OBJC_ARC" unless="MACOSX_DEPLOYMENT_TARGET" />
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.5" unless="MACOSX_DEPLOYMENT_TARGET" />
 <path name="${DEVELOPER_DIR}/usr/bin" />
-<set name="HXCPP_CLANG" unless="HXCPP_MAC_GCC" />
 
 
 <compiler id="darwin" exe="g++" if="macos">
