@@ -325,7 +325,7 @@ public:
    }
    inline ELEM_ __get(int inIndex) const
    {
-      if (inIndex>=(int)length || inIndex<0) return null();
+      if ((unsigned int)inIndex>=(unsigned int)length ) return null();
       return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_));
    }
 
