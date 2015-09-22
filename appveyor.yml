@@ -12,6 +12,7 @@ environment:
         WODI: wodi32
         ADD_REVISION: 1
         OCAMLOPT: ocamlopt.opt
+        MINGW_ROOT: C:\Qt\Tools\mingw492_32
         MINGW_ARCH: i686
     matrix:
         - HXCPP_ARCH: "32"
@@ -59,3 +60,8 @@ test_script:
     # tests from haxe repo
     - cd %HAXE_ROOT%\tests\unit
     - haxe compile-cpp.hxml -D HXCPP_M%HXCPP_ARCH% && .\bin\cpp\Test-debug
+    # tests from mingw
+    - cd %APPVEYOR_BUILD_FOLDER%\test\haxe
+    - haxe compile.hxml -debug -D HXCPP_M%HXCPP_ARCH% -D mingw -D no_shared_libs && .\bin\TestMain-debug
+    - cd %HAXE_ROOT%\tests\unit
+    - haxe compile-cpp.hxml -D HXCPP_M%HXCPP_ARCH% -D mingw -D no_shared_libs && .\bin\cpp\Test-debug
