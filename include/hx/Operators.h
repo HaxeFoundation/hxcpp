@@ -253,16 +253,21 @@ inline Array<Dynamic> TCastToArray(Dynamic inVal)
 template<typename PTRTYPE>
 struct DynamicConvertType { enum { Convert = 0 }; };
 
-template<> struct DynamicConvertType< hx::Interface * > { enum { Convert = 1 }; };
-template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert = 1 }; };
-template<> struct DynamicConvertType< Array_obj<int> *> { enum { Convert = 1 }; };
-template<> struct DynamicConvertType< Array_obj<bool> * > { enum { Convert = 1 }; };
-template<> struct DynamicConvertType< Array_obj<double> *> { enum { Convert = 1 }; };
-template<> struct DynamicConvertType< Array_obj<float> * > { enum { Convert = 1 }; };
-template<> struct DynamicConvertType< Array_obj<unsigned char> * > { enum { Convert = 1 }; };
-template<> struct DynamicConvertType< Array_obj<signed char> * > { enum { Convert = 1 }; };
-template<> struct DynamicConvertType< Array_obj<char> * > { enum { Convert = 1 }; };
+enum { DynamicConvertStringPodId = 0x4000 };
 
+// Always convert ...
+template<> struct DynamicConvertType< hx::Interface * > { enum { Convert = -1 }; };
+// Convert if different size
+template<> struct DynamicConvertType< Array_obj<int> *> { enum { Convert = sizeof(int) }; };
+template<> struct DynamicConvertType< Array_obj<bool> * > { enum { Convert = sizeof(bool) }; };
+template<> struct DynamicConvertType< Array_obj<double> *> { enum { Convert = sizeof(double) }; };
+template<> struct DynamicConvertType< Array_obj<float> * > { enum { Convert = sizeof(float) }; };
+template<> struct DynamicConvertType< Array_obj<unsigned char> * > { enum { Convert = sizeof(char) }; };
+template<> struct DynamicConvertType< Array_obj<signed char> * > { enum { Convert = sizeof(char) }; };
+template<> struct DynamicConvertType< Array_obj<char> * > { enum { Convert = sizeof(char) }; };
+
+// String uses special key so it does not confuse { ptr, int } with { double } of 8 bytes
+template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert = DynamicConvertStringPodId }; };
 }
 
 template<typename RESULT>
@@ -270,7 +275,9 @@ inline RESULT Dynamic::StaticCast() const
 {
    typedef typename RESULT::Ptr type;
 
-   if (hx::DynamicConvertType<type>::Convert)
+   if ( (hx::DynamicConvertType<type>::Convert<0) ||
+       (hx::DynamicConvertType<type>::Convert > 0 &&
+          hx::DynamicConvertType<type>::Convert != ((hx::ArrayBase *)mPtr)->getPodSize()) )
    {
       // Constructing the result from the Dynamic value will check for a conversion
       //  using something like dynamic_cast

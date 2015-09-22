@@ -22,8 +22,7 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
    int alloc = inSize < inReserve ? inReserve : inSize;
    if (alloc)
    {
-      mBase = (char *)( (!inAtomic) ?
-        hx::NewGCBytes(0, alloc * inElementSize ) : hx::NewGCPrivate(0,alloc*inElementSize));
+      mBase = (char *)hx::InternalNew(alloc * inElementSize,false);
 #ifdef HXCPP_TELEMETRY
       __hxt_new_array(mBase, alloc * inElementSize);
 #endif
@@ -31,6 +30,8 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
    else
       mBase = 0;
    mAlloc = alloc;
+   mPodSize = inAtomic ? inElementSize :
+               inElementSize==sizeof(String) ? DynamicConvertStringPodId : 0;
 }
 
 

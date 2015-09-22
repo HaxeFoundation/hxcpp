@@ -15,6 +15,11 @@
   #define atof(x) strtod(x,0)
 #endif
 
+// Really microsoft?
+#ifdef interface
+  #undef interface
+#endif
+
 
 namespace hx
 {
