@@ -56,9 +56,9 @@
   <section if="HXCPP_DEBUG_LINK">
      <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" />
      <flag value="-Z7" if="HXCPP_COMPILE_CACHE" />
-     <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
      <flag value="-Fd${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" />
   </section>
+  <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
   <flag value="-c"/>
   <flag value="-EHs"/>
