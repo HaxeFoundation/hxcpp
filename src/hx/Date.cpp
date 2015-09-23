@@ -4,7 +4,7 @@
 
 #ifdef HX_WINDOWS
    #include <windows.h>
-   #include <Shlobj.h>
+   #include <shlobj.h>
 #else
    #ifdef EPPC
       #include <time.h>
