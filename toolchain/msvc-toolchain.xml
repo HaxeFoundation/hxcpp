@@ -35,6 +35,7 @@
 <set name="MACHINE" value="x64" if="HXCPP_M64" />
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
+  <flag value="-FS"/>
   <flag value="-nologo"/>
   <flag value="-Od" if="debug"/>
   <!-- -O2 is back ! -->
