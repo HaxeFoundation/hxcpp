@@ -37,5 +37,6 @@
 #undef DOMAIN
 #undef TRANSPARENT
 #undef CONST
+#undef CopyFile
 
 #endif

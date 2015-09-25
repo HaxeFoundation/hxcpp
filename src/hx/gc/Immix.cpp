@@ -923,7 +923,8 @@ struct GlobalChunks
             *outArrayJob = objectArrayJob;
             objectArrayJob += items;
             arrayJobLen -= items;
-            return 0;
+            // Ensure that the array marker has something to recurse into if required
+            return allocLocked();
          }
 
          MarkChunk *result =  popJobLocked(inChunk);
