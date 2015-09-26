@@ -14,7 +14,8 @@
 
 <compiler id="mingw" exe="gcc">
   <exe name="g++.exe" unless="linux_host"/>
-  <exe name="i686-w64-mingw32-g++" if="linux_host"/>
+  <exe name="i686-w64-mingw32-g++" if="linux_host" unless="HXCPP_M64"/>
+  <exe name="x86_64-w64-mingw32-g++" if="linux_host" if="HXCPP_M64"/>
   <flag value="-c"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
@@ -33,7 +34,8 @@
 
 <linker id="dll" exe="g++">
   <exe name="g++.exe" unless="linux_host"/>
-  <exe name="i686-w64-mingw32-g++" if="linux_host"/>
+  <exe name="i686-w64-mingw32-g++" if="linux_host" unless="HXCPP_M64"/>
+  <exe name="x86_64-w64-mingw32-g++" if="linux_host" if="HXCPP_M64"/>
   <flag value="-shared"/>
   <flag value="-debug" if="debug"/>
   <flag value="--enable-auto-import"/>
@@ -48,7 +50,8 @@
 
 <linker id="exe" exe="g++">
   <exe name="g++.exe" unless="linux_host"/>
-  <exe name="i686-w64-mingw32-g++" if="linux_host"/>
+  <exe name="i686-w64-mingw32-g++" if="linux_host" unless="HXCPP_M64"/>
+  <exe name="x86_64-w64-mingw32-g++" if="linux_host" if="HXCPP_M64"/>
   <flag value="-debug" if="debug"/>
   <flag value="-Wl,--enable-auto-import"/>
   <flag value="-mwindows" if="SUBSYSTEMWINDOWS" />
