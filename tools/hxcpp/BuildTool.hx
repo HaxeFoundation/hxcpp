@@ -1245,6 +1245,12 @@ class BuildTool
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
       }
+      else if (defines.exists("tvos"))
+      {
+         defines.set("toolchain","tvos");
+         defines.set("apple","apple");
+         defines.set("BINDIR","tvOS");
+      }
       else if (defines.exists("android"))
       {
          defines.set("toolchain","android");
@@ -1437,6 +1443,28 @@ class BuildTool
             }
             if (best!="")
                defines.set("IPHONE_VER",best);
+         }
+      }
+
+      if (defines.exists("tvos") && !defines.exists("TVOS_VER"))
+      {
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/tvOS.platform/Developer/SDKs/";
+         if (FileSystem.exists(dev_path))
+         {
+            var best="";
+            var files = FileSystem.readDirectory(dev_path);
+            var extract_version = ~/^tvOS(.*).sdk$/;
+            for(file in files)
+            {
+               if (extract_version.match(file))
+               {
+                  var ver = extract_version.matched(1);
+                  if (Std.parseFloat (ver)>Std.parseFloat (best))
+                     best = ver;
+               }
+            }
+            if (best!="")
+               defines.set("TVOS_VER",best);
          }
       }
       

@@ -14,6 +14,7 @@
 
 <set name="static_link" value="1" if="iphoneos" unless="dll_import||exe_link" />
 <set name="static_link" value="1" if="iphonesim" unless="dll_import||exe_link" />
+<set name="static_link" value="1" if="tvos" unless="dll_import||exe_link" />
 
 <set name="LIBPREFIX" value="lib" if="static_link" unless="STATICLIBPREFIX" />
 <set name="LIBPREFIX" value="${STATICLIBPREFIX}" if="static_link" unless="LIBPREFIX" />
@@ -39,6 +40,10 @@
 	<set name="HXCPP_ARMV6" value="1" unless="LIBEXTRA"/>
 	<set name="LIBEXTRA" value=".iphoneos" if = "HXCPP_ARMV6"/>
 </section>
+<section if="tvos">
+   <set name="LIBEXTRA" value=".tvos-64" if="HXCPP_ARM64"/>
+   <set name="HXCPP_ARMV64" value="1" unless="LIBEXTRA"/>
+</section>
 <set name="LIBEXTRA" value="-x86" if="blackberry"/>
 <set name="LIBEXTRA" value="" if="blackberry" unless="simulator" />
 <set name="LIBEXTRA" value="-x86" if="HXCPP_X86" />
@@ -58,6 +63,7 @@
 
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphoneos"/>
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphonesim"/>
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="tvos"/>
 
 <set name="DESTDIR" value="bin" />
 <set name="DESTDIR" value="lib" if="static_link" unless="HXCPP_IOS_STDCPP"/>

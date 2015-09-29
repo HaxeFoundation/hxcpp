@@ -61,7 +61,7 @@ class Builder
 
             switch(target)
             {
-               case "ios", "android", "blackberry", "tizen", "emscripten", "webos", "windows", "linux", "mac", "mingw":
+               case "ios", "android", "blackberry", "tizen", "emscripten", "webos", "windows", "linux", "mac", "mingw", "tvos":
                   defaultTarget = false;
                   if (linkStatic)
                   {
@@ -74,7 +74,7 @@ class Builder
                         targets.set(stat, parts);
                      }
                   }
-                  if (linkNdll && target!="ios" && target!="emscripten" /*&& (target!="mingw" || explicitNdll)*/ )
+                  if (linkNdll && target!="ios" && target!="emscripten" && target!="tvos" /*&& (target!="mingw" || explicitNdll)*/ )
                      targets.set(target, parts);
 
                default:
@@ -115,7 +115,7 @@ class Builder
                target = target.substr(7);
             }
             var staticFlag = isStatic ? "-Dstatic_link" : "";
-            if (target=="ios")
+            if (target=="ios" || target=="tvos")
                staticFlag = "-DHXCPP_CPP11";
 
             switch(target)
@@ -160,6 +160,11 @@ class Builder
                case "webos":
                   validArchs.set("armv7", ["-Dwebos", staticFlag] );
                
+               case "tvos":
+                  validArchs.set("arm64", ["-Dappletvos", "-DHXCPP_ARM64", "-DHXCPP_M64", staticFlag] );
+                  validArchs.set("x86", ["-Dappletvsim", staticFlag] );
+                  validArchs.set("x86_64", ["-Dappletvsim", "-DHXCPP_M64", staticFlag] );
+
             }
 
 
@@ -264,7 +269,7 @@ class Builder
       var link = allowStatic() && allowNdll() ? "[link-]" : "";
       Sys.println("Usage : neko build.n [clean] " + link +
                   "target[-arch][-arch] ...] [-debug] [-verbose] [-D...]");
-      Sys.println("  target  : ios, android, windows, linux, mac, mingw");
+      Sys.println("  target  : ios, android, windows, linux, mac, mingw, tvos");
       Sys.println("            default (=current system)");
       if (link!="")
       {
