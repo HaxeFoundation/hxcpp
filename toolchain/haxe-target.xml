@@ -172,7 +172,8 @@
   <options name="Options.txt"/>
   <ext value="${LIBEXTRA}.a" if="iphoneos" unless="dll_import" />
   <ext value="${LIBEXTRA}.a" if="iphonesim" unless="dll_import" />
-  <ext value="${LIBEXTRA}.a" if="tvos" unless="dll_import" />
+  <ext value="${LIBEXTRA}.a" if="appletvos" unless="dll_import" />
+  <ext value="${LIBEXTRA}.a" if="appletvsim" unless="dll_import" />
 
   <section if="android">
      <ext value="${LIBEXTRA}.so" />

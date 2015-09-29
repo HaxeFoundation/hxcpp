@@ -1245,11 +1245,19 @@ class BuildTool
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
       }
-      else if (defines.exists("tvos"))
+      else if (defines.exists("appletvos"))
       {
-         defines.set("toolchain","tvos");
+         defines.set("toolchain","appletvos");
+         defines.set("appletv","appletv");
          defines.set("apple","apple");
-         defines.set("BINDIR","tvOS");
+         defines.set("BINDIR","AppleTV");
+      }
+      else if (defines.exists("appletvsim"))
+      {
+         defines.set("toolchain","appletvsim");
+         defines.set("appletv","appletv");
+         defines.set("apple","apple");
+         defines.set("BINDIR","AppleTV");
       }
       else if (defines.exists("android"))
       {
@@ -1446,14 +1454,14 @@ class BuildTool
          }
       }
 
-      if (defines.exists("tvos") && !defines.exists("TVOS_VER"))
+      if (defines.exists("appletv") && !defines.exists("TVOS_VER"))
       {
-         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/tvOS.platform/Developer/SDKs/";
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/AppleTVOS.platform/Developer/SDKs/";
          if (FileSystem.exists(dev_path))
          {
             var best="";
             var files = FileSystem.readDirectory(dev_path);
-            var extract_version = ~/^tvOS(.*).sdk$/;
+            var extract_version = ~/^AppleTVOS(.*).sdk$/;
             for(file in files)
             {
                if (extract_version.match(file))

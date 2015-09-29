@@ -24,7 +24,7 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
-#if defined(IPHONE) || defined(TVOS)
+#if defined(IPHONE) || defined(APPLETV)
 #include <QuartzCore/QuartzCore.h>
 #endif
 

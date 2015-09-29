@@ -6,7 +6,7 @@
 <set name="ARCH" value ="-64" if="HXCPP_ARM64" />
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
-<set name="HXCPP_LIBTOOL" value="xcrun --sdk tvos${TVOS_VER} libtool" />
+<set name="HXCPP_LIBTOOL" value="xcrun --sdk appletvos${TVOS_VER} libtool" />
 <include name="toolchain/gcc-toolchain.xml"/>
 <!--<path name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin" />-->
 
@@ -16,9 +16,9 @@
 <set name="OBJDBG" value="-dbg" if="debug" />
 
 
-<compiler id="tvOS" exe="g++" if="tvos">
-  <exe name="xcrun --sdk tvos${TVOS_VER} g++" if="HXCPP_GCC" />
-  <exe name="xcrun --sdk tvos${TVOS_VER} clang++" />
+<compiler id="tvOS" exe="g++" if="appletvos">
+  <exe name="xcrun --sdk appletvos${TVOS_VER} g++" if="HXCPP_GCC" />
+  <exe name="xcrun --sdk appletvos${TVOS_VER} clang++" />
   <flag value="-c"/>
   <!-- Removed for iOS 8 -->
   <!-- <cppflag value="-fvisibility-inlines-hidden"/> -->
@@ -31,10 +31,10 @@
   <flag value="-arch"/>
   <flag value="arm64" if="HXCPP_ARM64" />
   <flag value="-isysroot"/>
-  <flag value="${DEVELOPER_DIR}/Platforms/tvOS.platform/Developer/SDKs/tvOS${TVOS_VER}.sdk"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS${TVOS_VER}.sdk"/>
   <!-- <flag value="-miphoneos-version-min=3.0" if="HXCPP_GCC" unless="HXCPP_ARMV7" />
   <flag value="-miphoneos-version-min=5.0" if="HXCPP_ARMV7" /> -->
-  <flag value="-mtvos-version-min=9.0" unless="HXCPP_GCC" />
+  <flag value="-mappletvos-version-min=9.0" unless="HXCPP_GCC" />
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <flag value="-Wno-parentheses" />
@@ -45,7 +45,8 @@
   <!-- Removed for iOS 8 -->
   <!-- <flag value="-fvisibility=hidden"/> -->
   <flag value="-fno-stack-protector"/>
-  <flag value="-DTVOS=TVOS"/>
+  <flag value="-DAPPLETV=APPLETV"/>
+  <flag value="-DAPPLETVOS=APPLETVOS"/>
   <include name="toolchain/common-defines.xml" />
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-I${HXCPP}/include"/>
@@ -59,19 +60,19 @@
 
   <outflag value="-o"/>
   <ext value=".o"/>
-  <objdir value="obj/tvos${OBJGCC}${OBJDBG}${ARCH}/" />
+  <objdir value="obj/appletvos${OBJGCC}${OBJDBG}${ARCH}/" />
 </compiler>
 
 <linker id="dll" exe="g++" >
-  <exe name="xcrun --sdk tvos${TVOS_VER} g++" if="HXCPP_GCC" />
-  <exe name="xcrun --sdk tvos${TVOS_VER} clang++" />
+  <exe name="xcrun --sdk appletvos${TVOS_VER} g++" if="HXCPP_GCC" />
+  <exe name="xcrun --sdk appletvos${TVOS_VER} clang++" />
   <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-dynamiclib"/>
   <flag value="-arch"/>
   <flag value="arm64" if="HXCPP_ARM64" />
   <flag value="-isysroot"/>
-  <flag value="${DEVELOPER_DIR}/Platforms/tvOS.platform/Developer/SDKs/tvOS${TVOS_VER}.sdk"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS${TVOS_VER}.sdk"/>
   <flag value="-Wl,-undefined,dynamic_lookup"/>
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
