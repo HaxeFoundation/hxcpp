@@ -80,6 +80,9 @@ static void free_process( value vp ) {
    </doc>
 **/
 static value process_run( value cmd, value vargs ) {
+   #ifdef APPLETV
+   return alloc_null();
+   #else
    int i;
    vprocess *p;
    val_check(cmd,string);
@@ -184,6 +187,7 @@ static value process_run( value cmd, value vargs ) {
       val_gc(vp,free_process);
       return vp;
    }
+   #endif
 }
 
 // CPP streams are byte-based, not char based ...
