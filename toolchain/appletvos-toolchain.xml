@@ -16,7 +16,7 @@
 <set name="OBJDBG" value="-dbg" if="debug" />
 
 
-<compiler id="tvOS" exe="g++" if="appletvos">
+<compiler id="AppleTVOS" exe="g++" if="appletvos">
   <exe name="xcrun --sdk appletvos${TVOS_VER} g++" if="HXCPP_GCC" />
   <exe name="xcrun --sdk appletvos${TVOS_VER} clang++" />
   <flag value="-c"/>
