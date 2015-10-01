@@ -217,7 +217,7 @@ void api_buffer_set_size(neko_buffer inBuffer,int inLen) { NOT_IMPLEMNETED("api_
 
 void api_buffer_append_char(neko_buffer inBuffer,int inChar)
 {
-	char buf[2] = { inChar, '\0' };
+	char buf[2] = { (char)inChar, '\0' };
 	dyn_buffer_append_sub(inBuffer,buf,1);
 }
 

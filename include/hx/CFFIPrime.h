@@ -309,7 +309,7 @@ struct AutoValue
 #define DEFINE_PRIME12v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 
 
-#elif STATIC_LINK
+#elif defined(STATIC_LINK)
 
 
 #define DEFINE_PRIME0(func) extern "C" { \
@@ -711,6 +711,8 @@ struct AutoValue
 #define DEFINE_PRIME10(func) extern "C" { \
   EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig10(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST10) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
 }
 
 #define DEFINE_PRIME10v(func) extern "C" { \
