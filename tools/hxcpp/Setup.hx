@@ -571,6 +571,8 @@ class Setup
                   ioDefines.set("MSVC17+","1");
                if (cl_version>=18)
                   ioDefines.set("MSVC18+","1");
+               if (cl_version==19)
+                  ioDefines.set("MSVC19","1");
                BuildTool.sAllowNumProcs = cl_version >= 14;
                var threads = BuildTool.getThreadCount();
                if (threads>1 && cl_version>=18)

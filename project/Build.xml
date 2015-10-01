@@ -17,7 +17,7 @@
   <file name="StlLink.cpp"/>
 </files>
 
-<target id="msvccompat" output="${LIBPREFIX}msvccompat${LIB_DBG}-${MSVC_VER}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="msvccompat" output="${HX_TARGET_PREFIX}msvccompat${LIB_DBG}-${MSVC_VER}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="msvccompat"/>
   <builddir name="libs/msvccompat"/>
   <outdir name="${this_dir}/../${DESTDIR}/${BINDIR}"/>
@@ -29,7 +29,7 @@
 </files>
 
 
-<target id="linuxcompat" output="${LIBPREFIX}linuxcompat${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="linuxcompat" output="${HX_TARGET_PREFIX}linuxcompat${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="linuxcompat"/>
   <builddir name="libs/linuxcompat"/>
   <outdir name="${this_dir}/../${DESTDIR}/${BINDIR}"/>
@@ -70,7 +70,7 @@
    <target id="mysql"/>
    <target id="sqlite"/>
    <section if="static_link">
-      <target id="msvccompat" if="windows" unless="mingw" />
+      <target id="msvccompat" if="windows" unless="mingw||MSVC19" />
       <target id="linuxcompat" if="linux" />
       <target id="linuxcompat" if="gcw0" />
    </section>

@@ -30,6 +30,7 @@
 <set name="STD_MODULE_LINK" value="exe" if="HXCPP_JS_PRIME"/>
 
 
+
 <set name="LIBEXTRA" value=".iphonesim-64" if="iphonesim"/>
 <set name="LIBEXTRA" value=".iphonesim" if="iphonesim" unless="HXCPP_M64"/>
 <section if="iphoneos">
@@ -69,6 +70,10 @@
 
 <set name="HXCPP_DEBUG_LINK" value="1" if="debug"/>
 
+<set name="HX_LINK_SUFFIX" value="${LIBEXTRA}" />
+<set name="HX_TARGET_SUFFIX" value="${LIBEXTRA}" />
+<set name="HX_TARGET_PREFIX" value="${LIBPREFIX}" />
+
 <section if="isMsvc">
    <section unless="HXCPP_M64">
       <set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
@@ -78,6 +83,11 @@
    <section if="static_link" >
       <set name="MSVC_LIB_VERSION" value="-${MSVC_VER}" />
    </section>
+
+   <set name="LIBEXTRA" value="-19" if="MSVC19" />
+   <set name="HX_LINK_SUFFIX" value="-19" if="MSVC19" />
+   <set name="HX_TARGET_SUFFIX" value="-19" if="MSVC19 static_link" />
+
 </section>
 </xml>
 

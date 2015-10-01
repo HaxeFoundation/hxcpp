@@ -48,7 +48,7 @@
 
 
 
-<target id="regexp" output="${LIBPREFIX}regexp${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="regexp" output="${HX_TARGET_PREFIX}regexp${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="regexp"/>
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
