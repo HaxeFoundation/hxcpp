@@ -65,7 +65,7 @@ double __hxcpp_time_stamp()
    double r =  mach_absolute_time() * time_scale;
    return mach_absolute_time() * time_scale;
 #else
-   #if defined(IPHONE) || defined(TVOS)
+   #if defined(IPHONE) || defined(APPLETV)
       double t = CACurrentMediaTime();
    #elif defined(GPH) || defined(HX_LINUX) || defined(EMSCRIPTEN)
       struct timeval tv;
