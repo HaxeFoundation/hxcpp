@@ -44,7 +44,6 @@
 <set name="LIBEXTRA" value=".appletvsim-64" if="appletvsim"/>
 <section if="appletvos">
    <set name="LIBEXTRA" value=".appletvos-64" if="HXCPP_ARM64"/>
-   <set name="HXCPP_ARMV64" value="1" unless="LIBEXTRA"/>
 </section>
 <set name="LIBEXTRA" value="-x86" if="blackberry"/>
 <set name="LIBEXTRA" value="" if="blackberry" unless="simulator" />
