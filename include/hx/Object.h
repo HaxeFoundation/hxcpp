@@ -12,7 +12,8 @@ extern void __hxt_gc_new(void* obj, int inSize);
 
 // --- Constants -------------------------------------------------------
 
-enum ObjectType
+// These values are returned from the "__GetType" function
+enum hxObjectType
 {
    vtUnknown = -1,
    vtInt = 0xff,
