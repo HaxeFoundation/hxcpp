@@ -1,4 +1,4 @@
-;import haxe.io.Path;
+import haxe.io.Path;
 import haxe.xml.Fast;
 import haxe.Json;
 import sys.io.Process;
