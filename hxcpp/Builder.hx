@@ -61,7 +61,7 @@ class Builder
 
             switch(target)
             {
-               case "ios", "android", "blackberry", "tizen", "emscripten", "webos", "windows", "linux", "mac", "mingw", "tvos":
+               case "ios", "android", "blackberry", "tizen", "emscripten", "webos", "windows", "msvc", "linux", "mac", "mingw", "tvos":
                   defaultTarget = false;
                   if (linkStatic)
                   {
@@ -128,6 +128,24 @@ class Builder
                   validArchs.set("m32", ["-D"+target, "-DHXCPP_M32", staticFlag] );
                   if (wantWindows64())
                      validArchs.set("m64", ["-D"+target, "-DHXCPP_M64", staticFlag] );
+
+               case "msvc":
+                  if (isStatic)
+                  {
+                     validArchs.set("2013m32", ["-D"+target, "-DHXCPP_M32", "HXCPP_MSVC_VER=120", staticFlag] );
+                     validArchs.set("2015m32", ["-D"+target, "-DHXCPP_M32", "HXCPP_MSVC_VER=140", staticFlag] );
+                     if (wantWindows64())
+                     {
+                        validArchs.set("2013m64", ["-D"+target, "-DHXCPP_M64", "HXCPP_MSVC_VER=120", staticFlag] );
+                        validArchs.set("2015m64", ["-D"+target, "-DHXCPP_M64", "HXCPP_MSVC_VER=140", staticFlag] );
+                     }
+                  }
+                  else
+                  {
+                     validArchs.set("m32", ["-D"+target, "-DHXCPP_M32"] );
+                     if (wantWindows64())
+                        validArchs.set("m64", ["-D"+target, "-DHXCPP_M64"] );
+                  }
 
                case "mingw":
                   validArchs.set("m32", ["-Dwindows", "-DHXCPP_MINGW", "-DHXCPP_M32", staticFlag] );
