@@ -1397,19 +1397,9 @@ class BuildTool
       else if ( (new EReg("linux","i")).match(os) )
       {
          set64(defines,m64);
-         if(defines.exists("windows"))
-         {
-            defines.set("toolchain","mingw");
-            defines.set("mingw","mingw");
-            defines.set("xcompile","1");
-            defines.set("BINDIR", m64 ? "Windows64":"Windows");
-         }
-         else
-         {
-            defines.set("toolchain","linux");
-            defines.set("linux","linux");
-            defines.set("BINDIR", m64 ? "Linux64":"Linux");
-         }
+         defines.set("toolchain","linux");
+         defines.set("linux","linux");
+         defines.set("BINDIR", m64 ? "Linux64":"Linux");
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
@@ -1613,4 +1603,222 @@ class BuildTool
                                     replace:substitute(el.att.replace) } );
                case "pragma" : 
                   if (el.has.once)
-                     mPragma
+                     mPragmaOnce.set(mCurrentIncludeFile, parseBool(substitute(el.att.once)));
+            }
+         }
+      }
+   }
+
+   public function checkToolVersion(inVersion:String)
+   {
+      var ver = Std.parseInt(inVersion);
+      if (ver>2)
+         Log.error("Your version of hxcpp.n is out-of-date.  Please update.");
+   }
+
+   public function resolvePath(inPath:String)
+   {
+      return PathManager.combine( mCurrentIncludeFile=="" ? Sys.getCwd() : Path.directory(mCurrentIncludeFile),
+           inPath);
+   }
+
+   public function include(inName:String, inSection:String="", inAllowMissing:Bool = false, forceRelative=false)
+   {
+      var full_name = findIncludeFile(inName);
+      if (full_name!="")
+      {
+         if (mPragmaOnce.get(full_name))
+            return;
+
+         pushFile(full_name, "include", inSection);
+         // TODO - use mFileStack?
+         var oldInclude = mCurrentIncludeFile;
+         mCurrentIncludeFile = full_name;
+
+         var make_contents = sys.io.File.getContent(full_name);
+         var xml_slow = Xml.parse(make_contents);
+
+         parseXML(new Fast(xml_slow.firstElement()),inSection, forceRelative);
+
+         mCurrentIncludeFile = oldInclude;
+         popFile();
+      }
+      else if (!inAllowMissing)
+      {
+         Log.error("Could not find include file \"" + inName + "\"");
+         //throw "Could not find include file " + name;
+      }
+   }
+
+
+
+   static function set64(outDefines:Hash<String>, in64:Bool)
+   {
+      if (in64)
+      {
+         outDefines.set("HXCPP_M64","1");
+         outDefines.remove("HXCPP_32");
+      }
+      else
+      {
+         outDefines.set("HXCPP_M32","1");
+         outDefines.remove("HXCPP_M64");
+      }
+   }
+
+   public function dospath(path:String) : String
+   {
+      if (mDefines.exists("windows_host"))
+      {
+         path = path.split("\\").join("/");
+         var filename = "";
+         var parts = path.split("/");
+         if (!FileSystem.isDirectory(path))
+            filename = parts.pop();
+
+         var oldDir = Sys.getCwd();
+         var output = "";
+         var err = "";
+         Sys.setCwd(parts.join("\\"));
+         try {
+            var bat = '$HXCPP/toolchain/dospath.bat'.split("/").join("\\");
+            var process = new Process(bat,[]);
+            output = process.stdout.readAll().toString();
+            output = output.split("\r")[0].split("\n")[0];
+            err  = process.stderr.readAll().toString();
+            process.close();
+         } catch (e:Dynamic) { Log.error(e); }
+         Sys.setCwd(oldDir);
+
+         if (output=="")
+            Log.error("Could not find dos path for " + path + " " + err);
+         return output + "\\" + filename;
+      }
+
+      return path;
+   }
+
+   public function substitute(str:String,needDollar=true):String
+   {
+      var match = needDollar ? mVarMatch : mNoDollarMatch;
+      while( match.match(str) )
+      {
+         var sub = match.matched(1);
+         if (sub.startsWith("haxelib:"))
+         {
+            sub = PathManager.getHaxelib(sub.substr(8));
+            sub = PathManager.standardize(sub);
+         }
+         else if (sub.startsWith("removeQuotes:"))
+         {
+            sub = mDefines.get(sub.substr(13));
+            var len = sub.length;
+            if (len>1 && sub.substr(0,1)=="\"" && sub.substr(len-1)=="\"")
+               sub = sub.substr(1,len-2);
+         }
+         else if (sub.startsWith("dospath:") )
+         {
+            sub = dospath( mDefines.get(sub.substr(8)) );
+         }
+         else if (sub.startsWith("dir:") )
+         {
+            sub = dospath( mDefines.get(sub.substr(4)) );
+            if (!FileSystem.isDirectory(sub))
+            {
+               sub = haxe.io.Path.directory(sub);
+            }
+         }
+         else if (sub=="this_dir")
+         {
+            sub = Path.normalize(mCurrentIncludeFile=="" ? Sys.getCwd() :  Path.directory(mCurrentIncludeFile));
+         }
+         else
+            sub = mDefines.get(sub);
+
+         if (sub==null) sub="";
+         str = match.matchedLeft() + sub + match.matchedRight();
+      }
+
+      return str;
+   }
+
+   public function subBool(str:String):Bool
+   {
+      var result = substitute(str);
+      return result=="t" || result=="true" || result=="1";
+   }
+
+   public function valid(inEl:Fast,inSection:String):Bool
+   {
+      if (inEl.x.get("if") != null)
+      {   
+         var value = inEl.x.get("if");
+         var optionalDefines = value.split("||");
+         var matchOptional = false;
+         for (optional in optionalDefines)
+         {
+            var requiredDefines = optional.split(" ");
+            var matchRequired = true;
+            for (required in requiredDefines)
+            {
+               var check = StringTools.trim(required);
+               if (check != "" && !defined(check))
+               {   
+                  matchRequired = false;
+               }
+            }
+            if (matchRequired)
+            {   
+               matchOptional = true;
+            }
+         }
+         if (optionalDefines.length > 0 && !matchOptional)
+         {
+            return false;
+         }
+      }
+      
+      if (inEl.has.unless)
+      {
+         var value = substitute(inEl.att.unless);
+         var optionalDefines = value.split("||");
+         var matchOptional = false;
+         for (optional in optionalDefines)
+         {
+            var requiredDefines = optional.split(" ");
+            var matchRequired = true;
+            for (required in requiredDefines)
+            {
+               var check = StringTools.trim(required);
+               if (check != "" && !defined(check))
+               {
+                  matchRequired = false;
+               }
+            }
+            if (matchRequired)
+            {
+               matchOptional = true;
+            }
+         }
+         if (optionalDefines.length > 0 && matchOptional)
+         {
+            return false;
+         }
+      }
+      
+      if (inEl.has.ifExists)
+         if (!FileSystem.exists( substitute(inEl.att.ifExists) )) return false;
+      
+      if (inSection!="")
+      {
+         if (inEl.name!="section")
+            return false;
+         if (!inEl.has.id)
+            return false;
+         if (inEl.att.id!=inSection)
+            return false;
+      }
+      
+      return true;
+   }
+}
