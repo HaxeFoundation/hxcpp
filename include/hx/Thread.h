@@ -58,7 +58,7 @@ inline int HxAtomicDec(volatile int *ioWhere)
 
 #define HX_HAS_ATOMIC 1
 
-#elif defined(HX_MACOS) || defined(IPHONE)
+#elif defined(HX_MACOS) || defined(IPHONE) || defined(APPLETV)
 #include <libkern/OSAtomic.h>
 
 #define HX_HAS_ATOMIC 1

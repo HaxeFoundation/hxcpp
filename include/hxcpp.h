@@ -27,7 +27,7 @@
    #endif
 #endif
 
-#if defined(EMSCRIPTEN) || defined(IPHONE)
+#if defined(EMSCRIPTEN) || defined(IPHONE) || defined(APPLETV)
   #include <unistd.h>
   #include <cstdlib>
 #endif

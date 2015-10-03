@@ -23,6 +23,7 @@
   </section>
   <!-- <outflag value="-o " if="emscripten" /> -->
   <recreate value="1" if="iphone" />
+  <recreate value="1" if="appletv" />
   <recreate value="1" if="emscripten" />
   <recreate value="1" if="android" />
   <expandAr value="1" if="android" />

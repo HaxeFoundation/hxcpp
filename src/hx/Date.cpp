@@ -24,7 +24,7 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
-#ifdef IPHONE
+#if defined(IPHONE) || defined(APPLETV)
 #include <QuartzCore/QuartzCore.h>
 #endif
 
@@ -65,7 +65,7 @@ double __hxcpp_time_stamp()
    double r =  mach_absolute_time() * time_scale;
    return mach_absolute_time() * time_scale;
 #else
-   #if defined(IPHONE)
+   #if defined(IPHONE) || defined(APPLETV)
       double t = CACurrentMediaTime();
    #elif defined(GPH) || defined(HX_LINUX) || defined(EMSCRIPTEN)
       struct timeval tv;

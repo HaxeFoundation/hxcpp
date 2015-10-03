@@ -1176,6 +1176,14 @@ class BuildTool
          defines.set("iphone", "iphone");
       }
 
+      if (defines.exists("tvos"))
+      {
+         if (defines.exists("simulator"))
+            defines.set("appletvsim", "appletvsim");
+         else if (!defines.exists ("appletvsim"))
+            defines.set("appletvosos", "appletvos");
+         defines.set("appletv", "appletv");
+      }
  
      
 
@@ -1244,6 +1252,20 @@ class BuildTool
          defines.set("iphone","iphone");
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
+      }
+      else if (defines.exists("appletvos"))
+      {
+         defines.set("toolchain","appletvos");
+         defines.set("appletv","appletv");
+         defines.set("apple","apple");
+         defines.set("BINDIR","AppleTV");
+      }
+      else if (defines.exists("appletvsim"))
+      {
+         defines.set("toolchain","appletvsim");
+         defines.set("appletv","appletv");
+         defines.set("apple","apple");
+         defines.set("BINDIR","AppleTV");
       }
       else if (defines.exists("android"))
       {
@@ -1437,6 +1459,28 @@ class BuildTool
             }
             if (best!="")
                defines.set("IPHONE_VER",best);
+         }
+      }
+
+      if (defines.exists("appletv") && !defines.exists("TVOS_VER"))
+      {
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/AppleTVOS.platform/Developer/SDKs/";
+         if (FileSystem.exists(dev_path))
+         {
+            var best="";
+            var files = FileSystem.readDirectory(dev_path);
+            var extract_version = ~/^AppleTVOS(.*).sdk$/;
+            for(file in files)
+            {
+               if (extract_version.match(file))
+               {
+                  var ver = extract_version.matched(1);
+                  if (Std.parseFloat (ver)>Std.parseFloat (best))
+                     best = ver;
+               }
+            }
+            if (best!="")
+               defines.set("TVOS_VER",best);
          }
       }
       
