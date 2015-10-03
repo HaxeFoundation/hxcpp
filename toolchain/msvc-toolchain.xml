@@ -34,6 +34,9 @@
 <set name="MACHINE" value="x86" />
 <set name="MACHINE" value="x64" if="HXCPP_M64" />
 
+<!-- Seem vc does not know how to start its own pdbserver in 64 bit mode -->
+<setup name="pdbserver" if="HXCPP_DEBUG_LINK HXCPP_HACK_PDBSRV HXCPP_FORCE_PDB_SERVER" />
+
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
   <flag value="-Od" if="debug"/>
@@ -56,9 +59,9 @@
   <section if="HXCPP_DEBUG_LINK">
      <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" />
      <flag value="-Z7" if="HXCPP_COMPILE_CACHE" />
-     <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
      <flag value="-Fd${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" />
   </section>
+  <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
   <flag value="-c"/>
   <flag value="-EHs"/>

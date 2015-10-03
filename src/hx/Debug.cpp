@@ -2601,7 +2601,7 @@ void CriticalError(const String &inErr)
     CriticalErrorHandler(inErr, false);
 }
 
-EXPORT void NullReference(const char *type, bool allowFixup)
+HXCPP_EXTERN_CLASS_ATTRIBUTES void NullReference(const char *type, bool allowFixup)
 {
 #ifdef HXCPP_DEBUGGER
     if (allowFixup && (hx::g_eventNotificationHandler != null())) {

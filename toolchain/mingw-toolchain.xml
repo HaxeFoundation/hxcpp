@@ -10,6 +10,8 @@
 
 <unset name="USE_PRECOMPILED_HEADERS"/>
 
+<set name="SUBSYSTEMWINDOWS" value="1" if="no_console" unless="HXCPP_DEBUGGER" />
+
 <compiler id="mingw" exe="gcc">
   <exe name="g++.exe"/>
   <flag value="-c"/>
@@ -46,6 +48,7 @@
   <exe name="g++.exe"/>
   <flag value="-debug" if="debug"/>
   <flag value="-Wl,--enable-auto-import"/>
+  <flag value="-mwindows" if="SUBSYSTEMWINDOWS" />
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-static" if="no_shared_libs"/>
   <flag value="-static-libgcc" if="no_shared_libs"/>

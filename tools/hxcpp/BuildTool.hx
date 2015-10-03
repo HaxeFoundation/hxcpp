@@ -962,7 +962,7 @@ class BuildTool
 
       if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
          Log.colorSupported = false;
-      Log.verbose = defines.exists("HXCPP_VERBOSE");
+      Log.verbose = defines.exists("HXCPP_VERBOSE") || defines.exists("TRAVIS_OS_NAME");
       exitOnThreadError = defines.exists("HXCPP_EXIT_ON_ERROR");
 
 
@@ -1059,22 +1059,22 @@ class BuildTool
          var arg = args[a];
          if (arg.substr(0,2)=="-D" || (~/^[a-zA-Z0-9_][a-zA-Z0-9_-]*=/).match(arg) )
          {
-            var val = arg.substr(0,2)=="-D" ? arg.substr(2) : arg;
-            var equals = val.indexOf("=");
+            var define = arg.substr(0,2)=="-D" ? arg.substr(2) : arg;
+            var equals = define.indexOf("=");
             if (equals>0)
             {
-               var name = val.substr(0,equals);
-               var value = val.substr(equals+1);
-               if (name=="destination")
+               var value = define.substr(equals+1);
+               define = define.substr(0,equals);
+               if (define=="destination")
                {
                   destination = value;
                }
                else
-                  defines.set(name,value);
+                  defines.set(define,value);
             }
             else
-               defines.set(val,"");
-            if (val=="verbose")
+               defines.set(define,"");
+            if (define=="verbose")
                Log.verbose = true;
          }
          else if (arg=="-debug")
@@ -1176,6 +1176,14 @@ class BuildTool
          defines.set("iphone", "iphone");
       }
 
+      if (defines.exists("tvos"))
+      {
+         if (defines.exists("simulator"))
+            defines.set("appletvsim", "appletvsim");
+         else if (!defines.exists ("appletvsim"))
+            defines.set("appletvosos", "appletvos");
+         defines.set("appletv", "appletv");
+      }
  
      
 
@@ -1244,6 +1252,20 @@ class BuildTool
          defines.set("iphone","iphone");
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
+      }
+      else if (defines.exists("appletvos"))
+      {
+         defines.set("toolchain","appletvos");
+         defines.set("appletv","appletv");
+         defines.set("apple","apple");
+         defines.set("BINDIR","AppleTV");
+      }
+      else if (defines.exists("appletvsim"))
+      {
+         defines.set("toolchain","appletvsim");
+         defines.set("appletv","appletv");
+         defines.set("apple","apple");
+         defines.set("BINDIR","AppleTV");
       }
       else if (defines.exists("android"))
       {
@@ -1374,10 +1396,20 @@ class BuildTool
       }
       else if ( (new EReg("linux","i")).match(os) )
       {
-         set64(defines,m64);
-         defines.set("toolchain","linux");
-         defines.set("linux","linux");
-         defines.set("BINDIR", m64 ? "Linux64":"Linux");
+         if(defines.exists("windows"))
+         {
+            defines.set("toolchain","mingw");
+            defines.set("mingw","mingw");
+            defines.set("xcompile","1");
+            defines.set("BINDIR", m64 ? "Windows64":"Windows");
+         }
+         else
+         {
+            set64(defines,m64);
+            defines.set("toolchain","linux");
+            defines.set("linux","linux");
+            defines.set("BINDIR", m64 ? "Linux64":"Linux");
+         }
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
@@ -1439,15 +1471,15 @@ class BuildTool
                defines.set("IPHONE_VER",best);
          }
       }
-      
-      if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
+
+      if (defines.exists("appletv") && !defines.exists("TVOS_VER"))
       {
-         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/";
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/AppleTVOS.platform/Developer/SDKs/";
          if (FileSystem.exists(dev_path))
          {
             var best="";
             var files = FileSystem.readDirectory(dev_path);
-            var extract_version = ~/^MacOSX(.*).sdk$/;
+            var extract_version = ~/^AppleTVOS(.*).sdk$/;
             for(file in files)
             {
                if (extract_version.match(file))
@@ -1458,7 +1490,31 @@ class BuildTool
                }
             }
             if (best!="")
+               defines.set("TVOS_VER",best);
+         }
+      }
+      
+      if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
+      {
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/";
+         if (FileSystem.exists(dev_path))
+         {
+            var best="0.0";
+            var files = FileSystem.readDirectory(dev_path);
+            var extract_version = ~/^MacOSX(.*).sdk$/;
+            for(file in files)
+            {
+               if (extract_version.match(file))
+               {
+                  var ver = extract_version.matched(1);
+                  if (Std.parseFloat(ver) > Std.parseFloat(best))
+                     best = ver;
+               }
+            }
+            if (best!="0.0")
                defines.set("MACOSX_VER",best);
+            else
+               Log.v("Could not find MACOSX_VER!");
          }
       }
       

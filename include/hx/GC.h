@@ -1,7 +1,7 @@
 #ifndef HX_GC_H
 #define HX_GC_H
 
-#include <hx/Thread.h>
+#include <hx/Tls.h>
 
 // Under the current scheme (as defined by HX_HCSTRING/HX_CSTRING in hxcpp.h)
 //  each constant string data is prepended with a 4-byte header that says the string
@@ -27,17 +27,20 @@
 
 
 // Helpers for debugging code
-void  __hxcpp_reachable(hx::Object *inKeep);
-void  __hxcpp_enable(bool inEnable);
-void  __hxcpp_collect(bool inMajor=true);
-void   __hxcpp_gc_compact();
-int   __hxcpp_gc_trace(hx::Class inClass, bool inPrint);
-int   __hxcpp_gc_used_bytes();
-int   __hxcpp_gc_mem_info(int inWhat);
-void  __hxcpp_enter_gc_free_zone();
-void  __hxcpp_exit_gc_free_zone();
-void  __hxcpp_gc_safe_point();
-void  __hxcpp_spam_collects(int inEveryNCalls);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_reachable(hx::Object *inKeep);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_enable(bool inEnable);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_collect(bool inMajor=true);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void   __hxcpp_gc_compact();
+HXCPP_EXTERN_CLASS_ATTRIBUTES int   __hxcpp_gc_trace(hx::Class inClass, bool inPrint);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int   __hxcpp_gc_used_bytes();
+HXCPP_EXTERN_CLASS_ATTRIBUTES int   __hxcpp_gc_mem_info(int inWhat);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_enter_gc_free_zone();
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_exit_gc_free_zone();
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_gc_safe_point();
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_spam_collects(int inEveryNCalls);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_minimum_working_memory(int inBytes);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_minimum_free_space(int inBytes);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_target_free_space_percentage(int inPercentage);
 
 // Finalizers from haxe code...
 void  __hxcpp_gc_do_not_kill(Dynamic inObj);
@@ -63,12 +66,6 @@ hx::Object *__hxcpp_id_obj(int);
 
 namespace hx
 {
-// These functions are optimised for haxe-generated objects
-//  inSize is known to be "small", a multiple of 4 bytes and big enough to hold a pointer
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeObject(size_t inSize);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeContainer(size_t inSize);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void *NewHaxeConstObject(size_t inSize);
-
 // Generic allocation routine.
 // If inSize is small (<4k) it will be allocated from the immix pool.
 // Larger, and it will be allocated from a separate memory pool
@@ -115,6 +112,18 @@ void  GCSetFinalizer( hx::Object *, hx::finalizer f );
 //  loop with no new call, you might starve another thread if you to not check this.
 //  0xffffffff = pause requested
 extern int gPauseForCollect;
+
+
+// Minimum total memory - used + buffer for new objects
+extern int sgMinimumWorkingMemory;
+
+// Minimum free memory - not counting used memory
+extern int sgMinimumFreeSpace;
+
+// Also ensure that the free memory is larger than this amount of used memory
+extern int sgTargetFreeSpacePercentage;
+
+
 // Call in response to a gPauseForCollect. Normally, this is done for you in "new"
 void PauseForCollect();
 
@@ -194,12 +203,16 @@ void GCCheckPointer(void *);
 
 void SetTopOfStack(void *inTopOfStack,bool inForce=false);
 
+// Called internally before and GC operations
+void CommonInitAlloc();
+
 
 // Threading ...
 void RegisterNewThread(void *inTopOfStack);
 void RegisterCurrentThread(void *inTopOfStack);
 void UnregisterCurrentThread();
 void GCPrepareMultiThreaded();
+
 
 
 
@@ -212,12 +225,17 @@ void GCPrepareMultiThreaded();
 namespace hx
 {
 
+#define HX_USE_INLINE_IMMIX_OPERATOR_NEW
+
 // Each line ast 128 bytes (2^7)
 #define IMMIX_LINE_BITS    7
 #define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
 
 // The size info is stored in the header 8 bits to the right
 #define IMMIX_ALLOC_SIZE_SHIFT  8
+
+// Indicates that __Mark must be called recursively
+#define IMMIX_ALLOC_IS_CONTAINER   0x00800000
 
 
 extern bool gMultiThreadMode;
@@ -250,90 +268,6 @@ extern void BadImmixAlloc();
 #else
    #define WITH_PAUSE_FOR_COLLECT_FLAG
 #endif
-
-
-inline void *NewHaxeObject(size_t inSize)
-{
-   ImmixAllocator *alloc =  hx::gMultiThreadMode ? tlsImmixAllocator : gMainThreadAlloc;
-
-   #ifdef HXCPP_DEBUG
-   if (!alloc)
-      BadImmixAlloc();
-   #endif
-
-
-   // Inline the fast-path if we can
-   // We know the object can hold a pointer (vtable) and that the size is int-aligned
-   #ifndef HXCPP_ALIGN_ALLOC
-
-   int start = alloc->spaceStart;
-   int end = start + sizeof(int) + inSize;
-
-   if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
-   {
-      alloc->spaceStart = end;
-
-      int startRow = start>>IMMIX_LINE_BITS;
-
-      alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
-      //alloc->allocBase[ startRow ] |= (1<<( (start>>2) & 31) );
-
-      unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
-
-      *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                   gMarkID;
-
-      return buffer;
-    }
-
-   #endif
-
-   return alloc->CallAlloc(inSize, 0);
-}
-
-
-inline void *NewHaxeContainer(size_t inSize)
-{
-   ImmixAllocator *alloc =  hx::gMultiThreadMode ? tlsImmixAllocator : gMainThreadAlloc;
-
-   #ifdef HXCPP_DEBUG
-   if (!alloc)
-      BadImmixAlloc();
-   #endif
-
-
-   // Inline the fast-path if we can
-   // We know the object can hold a pointer (vtable) and that the size is int-aligned
-   #ifndef HXCPP_ALIGN_ALLOC
-
-   int start = alloc->spaceStart;
-   int end = start + sizeof(int) + inSize;
-
-   if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
-   {
-      alloc->spaceStart = end;
-
-      int startRow = start>>IMMIX_LINE_BITS;
-
-      alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
-      //alloc->allocBase[ startRow ] |= (1<<( (start>>2) & 31) );
-
-      unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
-
-      *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                   gMarkIDWithContainer;
-
-      return buffer;
-    }
-
-   #endif
-
-   return alloc->CallAlloc(inSize, 0);
-}
-
-
 
 
 

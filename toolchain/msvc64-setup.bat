@@ -8,6 +8,12 @@ setlocal enabledelayedexpansion
 		@echo HXCPP_VARS
 		@set
 	)
+) else if exist "%VS140COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat" (
+	@echo "%VS140COMNTOOLS%"
+	@call "%VS140COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat"
+	@echo HXCPP_VARS
+	@set
+	@echo HXCPP_HACK_PDBSRV=1
 ) else if exist "%VS120COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat" (
 	@echo "%VS120COMNTOOLS%"
 	@call "%VS120COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat"

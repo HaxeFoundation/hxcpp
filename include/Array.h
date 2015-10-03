@@ -226,11 +226,14 @@ public:
 
    inline Dynamic __get(int inIndex) const { return __GetItem(inIndex); }
 
+   // Plain old data element size - or 0 if not plain-old-data
+   int getPodSize() const { return mPodSize; }
 
    mutable int length;
 protected:
    mutable int mAlloc;
    mutable char  *mBase;
+   int mPodSize;
 };
 
 } // end namespace hx for ArrayBase
@@ -325,7 +328,7 @@ public:
    }
    inline ELEM_ __get(int inIndex) const
    {
-      if (inIndex>=(int)length || inIndex<0) return null();
+      if ((unsigned int)inIndex>=(unsigned int)length ) return null();
       return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_));
    }
 

@@ -124,6 +124,28 @@ public:
    }
 };
 
+
+template<typename RET, RET (*FUNC)()>
+class FloatBuiltin0 : public CppiaExpr
+{
+public:
+   Expressions args;
+
+   FloatBuiltin0(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
+
+   const char *getName() { return "FloatBuiltin0"; }
+   ExprType getType() { return etFloat; }
+
+   int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
+   void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
+   String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
+   Float runFloat(CppiaCtx *ctx)
+   {
+      return  FUNC();
+   }
+};
+
 template<typename ARG0, typename RET, RET (*FUNC)(ARG0)>
 class FloatBuiltin1 : public CppiaExpr
 {
@@ -258,8 +280,14 @@ CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioE
          return new VoidBuiltin2<int,double,__hxcpp_memory_set_double>(src,ioExpressions);
       return new VoidBuiltin3<Array<unsigned char>,int,double,__hxcpp_memory_set_double>(src,ioExpressions);
    }
+   if (function==HX_CSTRING("__time_stamp") )
+   {
+      if (ioExpressions.size()==0)
+         return new FloatBuiltin0<double,__time_stamp>(src,ioExpressions);
+   }
 
-   printf("Unknown function : %s\n", function.__s );
+
+   printf("Unknown function : %s(%d)\n", function.__s, ioExpressions.size() );
    throw "Unknown global";
    return 0;
 }

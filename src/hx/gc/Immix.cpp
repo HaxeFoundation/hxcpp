@@ -5,7 +5,7 @@
 #include "../Hash.h"
 #include "GcRegCapture.h"
 
-#define IMMIX_ALLOC_IS_CONTAINER   0x00800000
+
 
 static int gByteMarkID = 0x10;
 
@@ -45,18 +45,7 @@ static void *sgObject_root = 0;
 int gInAlloc = false;
 
 // This is recalculated from the other parameters
-static int sgWorkingMemorySize          = 10*1024*1024;
-
-#if defined(HX_MACOS) || defined(HX_WINDOWS) || defined(HX_LINUX)
-static int sgMinimumWorkingMemory       = 20*1024*1024;
-static int sgMinimumFreeSpace           = 10*1024*1024;
-#else
-static int sgMinimumWorkingMemory       = 8*1024*1024;
-static int sgMinimumFreeSpace           = 4*1024*1024;
-#endif
-// Once you use more than the minimum, this kicks in...
-static int sgTargetFreeSpacePercentage  = 100;
-
+static int sWorkingMemorySize          = 10*1024*1024;
 
 
 
@@ -422,7 +411,8 @@ struct BlockDataInfo
    }
 };
 
-hx::QuickVec<BlockDataInfo> *gBlockInfo = 0;
+hx::QuickVec<BlockDataInfo *> *gBlockInfo = 0;
+static int gBlockInfoEmptySlots = 0;
 
 
 
@@ -432,7 +422,6 @@ union BlockData
    void Init(int inGID)
    {
       mId = nextBlockId();
-      gBlockInfo->push( BlockDataInfo() );
       BlockDataInfo &info = getInfo();
       info.mId = mId;
       info.mGroupId = inGID;
@@ -454,7 +443,9 @@ union BlockData
    
    void destroy()
    {
-      (*gBlockInfo)[mId].mPtr = 0;
+      delete (*gBlockInfo)[mId];
+      (*gBlockInfo)[mId] = 0;
+      gBlockInfoEmptySlots++;
       #ifdef USE_POSIX_MEMALIGN
       free(this);
       #endif
@@ -463,14 +454,23 @@ union BlockData
    int nextBlockId()
    {
       if (gBlockInfo==0)
-         gBlockInfo = new hx::QuickVec<BlockDataInfo>;
-      for(int i=0;i<gBlockInfo->size();i++)
-         if ( !(*gBlockInfo)[i].mPtr )
-           return i;
-      return  gBlockInfo->next();
+         gBlockInfo = new hx::QuickVec<BlockDataInfo *>;
+      if (gBlockInfoEmptySlots)
+      {
+         for(int i=0;i<gBlockInfo->size();i++)
+            if ( !(*gBlockInfo)[i] )
+            {
+               gBlockInfoEmptySlots--;
+               (*gBlockInfo)[i] = new BlockDataInfo;
+               return i;
+            }
+      }
+      int result = gBlockInfo->size();
+      gBlockInfo->push( new BlockDataInfo );
+      return result;
    }
 
-   inline BlockDataInfo &getInfo() const { return (*gBlockInfo)[mId]; }
+   inline BlockDataInfo &getInfo() const { return *(*gBlockInfo)[mId]; }
 
 
    bool IsEmpty() const { return getUsedRows() == 0; }
@@ -923,7 +923,8 @@ struct GlobalChunks
             *outArrayJob = objectArrayJob;
             objectArrayJob += items;
             arrayJobLen -= items;
-            return 0;
+            // Ensure that the array marker has something to recurse into if required
+            return allocLocked();
          }
 
          MarkChunk *result =  popJobLocked(inChunk);
@@ -1979,6 +1980,22 @@ public:
    virtual void AllocMoreBlocks()
    {
       #ifdef USE_POSIX_MEMALIGN
+      enum { newBlockCount = 1 };
+      #else
+      enum { newBlockCount = 1<<(IMMIX_BLOCK_GROUP_BITS) };
+      #endif
+
+      // Currently, we only have 2 bytes for a block header
+      if (mAllBlocks.size()+newBlockCount >= 0xfffe )
+      {
+         #ifdef SHOW_MEM_EVENTS
+         GCLOG("Block id count used - collect");
+         #endif
+         return;
+      }
+
+
+      #ifdef USE_POSIX_MEMALIGN
       // One aligned block that can be freed on its on
       int gid = 0;
       char *chunk = 0;
@@ -2057,7 +2074,7 @@ public:
       }
 
       BlockData *result = GetNextFree(inRequiredBytes);
-      if (!result && (!sgInternalEnable || GetWorkingMemory()<sgWorkingMemorySize))
+      if (!result && (!sgInternalEnable || GetWorkingMemory()<sWorkingMemorySize))
       {
          AllocMoreBlocks();
          result = GetNextFree(inRequiredBytes);
@@ -2905,8 +2922,8 @@ public:
          mRowsInUse += mAllBlocks[i]->CountUsedRows();
 
       int mem = (mRowsInUse<<IMMIX_LINE_BITS);
-      int targetFree = std::max(sgMinimumFreeSpace, mem*sgTargetFreeSpacePercentage/100 );
-      sgWorkingMemorySize = std::max( mem + targetFree, sgMinimumWorkingMemory);
+      int targetFree = std::max(hx::sgMinimumFreeSpace, mem*hx::sgTargetFreeSpacePercentage/100 );
+      sWorkingMemorySize = std::max( mem + targetFree, hx::sgMinimumWorkingMemory);
  
       // Large alloc target
       int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
@@ -2926,7 +2943,7 @@ public:
          released = ReleaseBlocks( mAllBlocks.size() );
       else if (sgInternalEnable)
       {
-         int releaseBytes = blockSize - sgWorkingMemorySize;
+         int releaseBytes = blockSize - sWorkingMemorySize;
          if (releaseBytes>0)
          {
             int releaseGroups = releaseBytes >> (IMMIX_BLOCK_SIZE<<IMMIX_BLOCK_GROUP_BITS);
@@ -3576,6 +3593,7 @@ void ExitGCFreeZoneLocked()
 
 void InitAlloc()
 {
+   hx::CommonInitAlloc();
    sgAllocInit = true;
    sGlobalAlloc = new GlobalAllocator();
    sgFinalizers = new FinalizerList();

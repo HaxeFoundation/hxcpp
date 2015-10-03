@@ -20,7 +20,7 @@
   <lib name="-lpthread" if="linux" unless="static_link" />
 </target>
 
-<target id="sqlite" output="${LIBPREFIX}sqlite${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="sqlite" output="${HX_TARGET_PREFIX}sqlite${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="sqlite"/>
   <lib name="-lpthread" if="linux" unless="static_link" />
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
