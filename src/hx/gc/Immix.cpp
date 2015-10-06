@@ -2848,22 +2848,6 @@ public:
 
    void Collect(bool inMajor, bool inForceCompact)
    {
-      StopThreadJobs(true);
-
-      #ifdef DEBUG
-      sgAllocsSinceLastSpam = 0;
-      #endif
-
-      HX_STACK_FRAME("GC", "collect", 0, "GC::collect", __FILE__, __LINE__,0)
-      #ifdef SHOW_MEM_EVENTS
-      int here = 0;
-      GCLOG("=== Collect === %p\n",&here);
-      #endif
-      STAMP(t0)
-
-      #ifdef HXCPP_TELEMETRY
-      __hxt_gc_start();
-      #endif
       int largeAlloced = mLargeAllocated;
       LocalAllocator *this_local = 0;
       if (hx::gMultiThreadMode)
@@ -2888,6 +2872,23 @@ public:
             if (mLocalAllocs[i]!=this_local)
                WaitForSafe(mLocalAllocs[i]);
       }
+
+      StopThreadJobs(true);
+      #ifdef DEBUG
+      sgAllocsSinceLastSpam = 0;
+      #endif
+
+      HX_STACK_FRAME("GC", "collect", 0, "GC::collect", __FILE__, __LINE__,0)
+      #ifdef SHOW_MEM_EVENTS
+      int here = 0;
+      GCLOG("=== Collect === %p\n",&here);
+      #endif
+      STAMP(t0)
+
+      #ifdef HXCPP_TELEMETRY
+      __hxt_gc_start();
+      #endif
+
 
       // Now all threads have mTopOfStack & mBottomOfStack set.
 
