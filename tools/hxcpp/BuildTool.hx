@@ -1397,20 +1397,9 @@ class BuildTool
       else if ( (new EReg("linux","i")).match(os) )
       {
          set64(defines,m64);
-         // Cross-compile?
-         if(defines.exists("windows"))
-         {
-            defines.set("toolchain","mingw");
-            defines.set("xcompile","1");
-            defines.set("BINDIR", m64 ? "Windows64":"Windows");
-         }
-         else
-         {
-            defines.set("toolchain","linux");
-            defines.set("linux","linux");
-            defines.set("BINDIR", m64 ? "Linux64":"Linux");
-         }
-
+         defines.set("toolchain","linux");
+         defines.set("linux","linux");
+         defines.set("BINDIR", m64 ? "Linux64":"Linux");
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
