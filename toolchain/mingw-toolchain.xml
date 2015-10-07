@@ -11,6 +11,8 @@
    </section>
 </section>
 
+<set name="CXX" value="g++.exe" unless="xcompile"/>
+
 <setup name="mingw" />
 
 <path name="${MINGW_ROOT}/bin"/>
