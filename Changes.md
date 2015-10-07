@@ -1,4 +1,8 @@
 
+* Fix overflow error that meant GC would work with a too-small buffer in some cases
+
+3.2.180
+------------------------------------------------------------
 * Initial support for tvos
 * Change name of ObjectType to hxObjectType to avoid clashes with iOS
 * Try to keep windows.h out of haxe-generated code

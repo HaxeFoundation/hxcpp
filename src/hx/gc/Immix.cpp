@@ -2920,7 +2920,7 @@ public:
          mRowsInUse += mAllBlocks[i]->CountUsedRows();
 
       int mem = (mRowsInUse<<IMMIX_LINE_BITS);
-      int targetFree = std::max(hx::sgMinimumFreeSpace, mem*hx::sgTargetFreeSpacePercentage/100 );
+      int targetFree = std::max(hx::sgMinimumFreeSpace, mem/100 *hx::sgTargetFreeSpacePercentage );
       sWorkingMemorySize = std::max( mem + targetFree, hx::sgMinimumWorkingMemory);
  
       // Large alloc target
