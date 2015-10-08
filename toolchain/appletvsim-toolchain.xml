@@ -50,6 +50,7 @@
   <flag value="-DAPPLETV=APPLETV"/>
   <flag value="-DAPPLETVSIM=APPLETVSIM"/>
   <flag value="-DENABLE_BITCODE=YES"/>
+  <flag value="-fembed-bitcode"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <flag value="-Wno-parentheses" />
