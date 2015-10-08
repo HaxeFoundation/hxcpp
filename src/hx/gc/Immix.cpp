@@ -2084,7 +2084,7 @@ public:
       {
          volatile int dummy = 1;
          *inCallersStack = (int *)&dummy;
-         Collect(false,false);
+         Collect(false,false,true);
          result = GetNextFree(inRequiredBytes);
       }
 
@@ -2846,10 +2846,31 @@ public:
 
 
 
-   void Collect(bool inMajor, bool inForceCompact)
+   void Collect(bool inMajor, bool inForceCompact, bool inLocked=false)
    {
-      StopThreadJobs(true);
+      // If we set the flag from 0 -> 0xffffffff then we are the collector
+      //  otherwise, someone else is collecting at the moment - so wait...
+      if (!HxAtomicExchangeIf(0, 0xffffffff,(volatile int *)&hx::gPauseForCollect))
+      {
+         hx::PauseForCollect();
+         return;
+      }
 
+      // We are the collector - all must wait for us
+      LocalAllocator *this_local = 0;
+      if (hx::gMultiThreadMode)
+      {
+         this_local = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
+
+         if (!inLocked)
+            gThreadStateChangeLock->Lock();
+
+         for(int i=0;i<mLocalAllocs.size();i++)
+            if (mLocalAllocs[i]!=this_local)
+               WaitForSafe(mLocalAllocs[i]);
+      }
+
+      StopThreadJobs(true);
       #ifdef DEBUG
       sgAllocsSinceLastSpam = 0;
       #endif
@@ -2864,30 +2885,7 @@ public:
       #ifdef HXCPP_TELEMETRY
       __hxt_gc_start();
       #endif
-      int largeAlloced = mLargeAllocated;
-      LocalAllocator *this_local = 0;
-      if (hx::gMultiThreadMode)
-      {
-         hx::EnterGCFreeZone();
-         gThreadStateChangeLock->Lock();
-         hx::ExitGCFreeZoneLocked();
-         // Someone else beat us to it ...
-         if (hx::gPauseForCollect)
-         {
-            gThreadStateChangeLock->Unlock();
-            #ifdef HXCPP_TELEMETRY
-            __hxt_gc_end();
-            #endif
-            return;
-         }
 
-         hx::gPauseForCollect = 0xffffffff;
-
-         this_local = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
-         for(int i=0;i<mLocalAllocs.size();i++)
-            if (mLocalAllocs[i]!=this_local)
-               WaitForSafe(mLocalAllocs[i]);
-      }
 
       // Now all threads have mTopOfStack & mBottomOfStack set.
 
@@ -2922,7 +2920,7 @@ public:
          mRowsInUse += mAllBlocks[i]->CountUsedRows();
 
       int mem = (mRowsInUse<<IMMIX_LINE_BITS);
-      int targetFree = std::max(hx::sgMinimumFreeSpace, mem*hx::sgTargetFreeSpacePercentage/100 );
+      int targetFree = std::max(hx::sgMinimumFreeSpace, mem/100 *hx::sgTargetFreeSpacePercentage );
       sWorkingMemorySize = std::max( mem + targetFree, hx::sgMinimumWorkingMemory);
  
       // Large alloc target
@@ -3013,16 +3011,6 @@ public:
       mAllBlocksCount   = mAllBlocks.size();
       mCurrentRowsInUse = mRowsInUse;
 
-      if (hx::gMultiThreadMode)
-      {
-         for(int i=0;i<mLocalAllocs.size();i++)
-         if (mLocalAllocs[i]!=this_local)
-            ReleaseFromSafe(mLocalAllocs[i]);
-
-         hx::gPauseForCollect = 0x00000000;
-         gThreadStateChangeLock->Unlock();
-      }
-
       #ifdef SHOW_MEM_EVENTS
       GCLOG("Collect Done\n");
       #endif
@@ -3036,6 +3024,18 @@ public:
       #ifdef HXCPP_TELEMETRY
       __hxt_gc_end();
       #endif
+
+
+      hx::gPauseForCollect = 0x00000000;
+      if (hx::gMultiThreadMode)
+      {
+         for(int i=0;i<mLocalAllocs.size();i++)
+         if (mLocalAllocs[i]!=this_local)
+            ReleaseFromSafe(mLocalAllocs[i]);
+
+         if (!inLocked)
+            gThreadStateChangeLock->Unlock();
+      }
    }
 
    size_t MemLarge()

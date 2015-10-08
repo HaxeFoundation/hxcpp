@@ -49,7 +49,7 @@ inline int HxAtomicDec(volatile int *ioWhere)
 #elif defined(HX_WINDOWS)
 
 inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
-   { return InterlockedCompareExchange((volatile LONG *)ioWhere, inNewVal, inTest)==inNewVal; }
+   { return InterlockedCompareExchange((volatile LONG *)ioWhere, inNewVal, inTest)==inTest; }
 // Make it return old value
 inline int HxAtomicInc(volatile int *ioWhere)
    { return InterlockedIncrement((volatile LONG *)ioWhere)-1; }
