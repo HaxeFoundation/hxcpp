@@ -114,7 +114,7 @@ class Setup
             return;
          }
 
-         var guesses = ["c:/MinGW","/usr/i686-w64-mingw32"];
+         var guesses = ["c:/MinGW"];
          for(guess in guesses )
          {
             if (FileSystem.exists(guess))
