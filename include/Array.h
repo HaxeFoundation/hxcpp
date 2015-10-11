@@ -344,6 +344,15 @@ public:
       return ArrayBase::Memcmp(inOther.GetPtr());
    }
 
+
+   inline void memcpy(int inStart, ELEM_ *inData, int inElements)
+   {
+      EnsureSize(inStart+inElements+1);
+      int s = GetElementSize();
+      ::memcpy(mBase + s*inStart, inData, s*inElements);
+   }
+
+
    inline void blit(int inDestElement,  Array<ELEM_> inSourceArray,
                     int inSourceElement, int inElementCount)
    {
@@ -747,7 +756,7 @@ template<typename ELEM_>
 Array<ELEM_> Array_obj<ELEM_>::copy( )
 {
    Array_obj *result = new Array_obj((int)length,0);
-   memcpy(result->GetBase(),GetBase(),length*sizeof(ELEM_));
+   ::memcpy(result->GetBase(),GetBase(),length*sizeof(ELEM_));
    return result;
 }
 
