@@ -171,6 +171,22 @@ class Setup
       return str.split(" ")[1]=="raspberrypi";
    }
 
+   static public function startPdbServer()
+   {
+      var oldPath = Sys.getCwd();
+      try
+      {
+         // Run it in hxcpp directory so it does not lock the build directory after build finishes
+         Sys.setCwd(BuildTool.HXCPP);
+         var proc = new Process("mspdbsrv.exe",["-start"]);
+      }
+      catch(e:Dynamic)
+      {
+         Log.v("Could not start mspdbsrv:" + e);
+      }
+      Sys.setCwd(oldPath);
+   }
+
 
 
 
@@ -190,6 +206,10 @@ class Setup
       else if (inWhat=="msvc")
       {
          setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"));
+      }
+      else if (inWhat=="pdbserver")
+      {
+         startPdbServer();
       }
       else if (inWhat=="mingw")
       {
@@ -498,7 +518,8 @@ class Setup
                   {
                      case "path", "vcinstalldir", "windowssdkdir","framework35version",
                         "frameworkdir", "frameworkdir32", "frameworkversion",
-                        "frameworkversion32", "devenvdir", "include", "lib", "libpath", "hxcpp_xp_define"
+                        "frameworkversion32", "devenvdir", "include", "lib", "libpath", "hxcpp_xp_define",
+                        "hxcpp_hack_pdbsrv"
                       :
                         var value = str.substr(pos+1);
                         ioDefines.set(name,value);
@@ -550,6 +571,8 @@ class Setup
                   ioDefines.set("MSVC17+","1");
                if (cl_version>=18)
                   ioDefines.set("MSVC18+","1");
+               if (cl_version==19)
+                  ioDefines.set("MSVC19","1");
                BuildTool.sAllowNumProcs = cl_version >= 14;
                var threads = BuildTool.getThreadCount();
                if (threads>1 && cl_version>=18)

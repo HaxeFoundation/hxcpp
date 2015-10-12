@@ -49,7 +49,7 @@ inline int HxAtomicDec(volatile int *ioWhere)
 #elif defined(HX_WINDOWS)
 
 inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
-   { return InterlockedCompareExchange((volatile LONG *)ioWhere, inNewVal, inTest)==inNewVal; }
+   { return InterlockedCompareExchange((volatile LONG *)ioWhere, inNewVal, inTest)==inTest; }
 // Make it return old value
 inline int HxAtomicInc(volatile int *ioWhere)
    { return InterlockedIncrement((volatile LONG *)ioWhere)-1; }
@@ -58,7 +58,7 @@ inline int HxAtomicDec(volatile int *ioWhere)
 
 #define HX_HAS_ATOMIC 1
 
-#elif defined(HX_MACOS) || defined(IPHONE)
+#elif defined(HX_MACOS) || defined(IPHONE) || defined(APPLETV)
 #include <libkern/OSAtomic.h>
 
 #define HX_HAS_ATOMIC 1
@@ -137,54 +137,6 @@ struct MyMutex
    CRITICAL_SECTION mCritSec;
 };
 
-#ifndef HX_WINRT
-template<typename DATA,bool FAST=false>
-struct TLSData
-{
-   static const size_t kMaxInlineSlots = 64;
-
-   TLSData()
-   {
-      mSlot = TlsAlloc();
-      TlsSetValue(mSlot,0);
-      #ifdef HXCPP_M64
-      mFastOffset = mSlot*sizeof(void *) + 0x1480;
-      #else
-      if (FAST || mSlot < kMaxInlineSlots)
-         mFastOffset = mSlot*sizeof(void *) + 0xE10;
-      else
-         mFastOffset = mSlot - kMaxInlineSlots;
-      #endif
-   }
-   inline DATA *operator=(DATA *inData)
-   {
-      TlsSetValue(mSlot,inData);
-      return inData;
-   }
-
-   inline operator DATA *()
-   {
-      #if !defined(HXCPP_M64) && (_MSC_VER >= 1400)
-      const size_t kTibExtraTlsOffset = 0xF94;
-
-      if (FAST || mSlot < kMaxInlineSlots)
-        return (DATA *)__readfsdword(mFastOffset);
-
-      DATA **extra = (DATA **)(__readfsdword(kTibExtraTlsOffset));
-      return extra[mFastOffset];
-      #elif (_MSC_VER >= 1400) & !defined(HXCPP_DEBUG)// 64 bit version...
-      return (DATA *)__readgsqword(mFastOffset);
-      #else
-      return (DATA *)TlsGetValue(mSlot);
-      #endif
-   }
-
-   int mSlot;
-   int mFastOffset;
-};
-
-#endif
-
 
 #define THREAD_FUNC_TYPE unsigned int WINAPI
 #define THREAD_FUNC_RET return 0;
@@ -220,31 +172,6 @@ struct MyMutex
 
 #endif
 
-
-
-#ifdef HX_WINRT
-
-#define DECLARE_TLS_DATA(TYPE,NAME) \
-   __declspec(thread) TYPE * NAME = nullptr;
-#define DECLARE_FAST_TLS_DATA(TYPE,NAME) \
-   __declspec(thread) TYPE * NAME = nullptr;
-#define EXTERN_TLS_DATA(TYPE,NAME) \
-   __declspec(thread) extern TYPE * NAME = nullptr;
-#define EXTERN_FAST_TLS_DATA(TYPE,NAME) \
-   __declspec(thread) extern TYPE * NAME = nullptr;
-
-#else
-
-#define DECLARE_TLS_DATA(TYPE,NAME) \
-   TLSData<TYPE> NAME;
-#define DECLARE_FAST_TLS_DATA(TYPE,NAME) \
-   TLSData<TYPE,true> NAME;
-#define EXTERN_TLS_DATA(TYPE,NAME) \
-   extern TLSData<TYPE> NAME;
-#define EXTERN_FAST_TLS_DATA(TYPE,NAME) \
-   extern TLSData<TYPE,true> NAME;
-
-#endif
 
 
 
@@ -300,34 +227,6 @@ struct MySemaphore
 };
 
 #else
-
-
-template<typename DATA,bool FAST=false>
-struct TLSData
-{
-   TLSData()
-   {
-      pthread_key_create(&mSlot, 0);
-   }
-   DATA *Get()
-   {
-      return (DATA *)pthread_getspecific(mSlot);
-   }
-   void Set(DATA *inData)
-   {
-      pthread_setspecific(mSlot,inData);
-   }
-   inline DATA *operator=(DATA *inData)
-   {
-      pthread_setspecific(mSlot,inData);
-      return inData;
-   }
-   inline operator DATA *() { return (DATA *)pthread_getspecific(mSlot); }
-
-   pthread_key_t mSlot;
-};
-
-
 
 
 struct MySemaphore

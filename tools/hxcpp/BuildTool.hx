@@ -1059,22 +1059,22 @@ class BuildTool
          var arg = args[a];
          if (arg.substr(0,2)=="-D" || (~/^[a-zA-Z0-9_][a-zA-Z0-9_-]*=/).match(arg) )
          {
-            var val = arg.substr(0,2)=="-D" ? arg.substr(2) : arg;
-            var equals = val.indexOf("=");
+            var define = arg.substr(0,2)=="-D" ? arg.substr(2) : arg;
+            var equals = define.indexOf("=");
             if (equals>0)
             {
-               var name = val.substr(0,equals);
-               var value = val.substr(equals+1);
-               if (name=="destination")
+               var value = define.substr(equals+1);
+               define = define.substr(0,equals);
+               if (define=="destination")
                {
                   destination = value;
                }
                else
-                  defines.set(name,value);
+                  defines.set(define,value);
             }
             else
-               defines.set(val,"");
-            if (val=="verbose")
+               defines.set(define,"");
+            if (define=="verbose")
                Log.verbose = true;
          }
          else if (arg=="-debug")
@@ -1176,6 +1176,14 @@ class BuildTool
          defines.set("iphone", "iphone");
       }
 
+      if (defines.exists("tvos"))
+      {
+         if (defines.exists("simulator"))
+            defines.set("appletvsim", "appletvsim");
+         else if (!defines.exists ("appletvsim"))
+            defines.set("appletvosos", "appletvos");
+         defines.set("appletv", "appletv");
+      }
  
      
 
@@ -1244,6 +1252,20 @@ class BuildTool
          defines.set("iphone","iphone");
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
+      }
+      else if (defines.exists("appletvos"))
+      {
+         defines.set("toolchain","appletvos");
+         defines.set("appletv","appletv");
+         defines.set("apple","apple");
+         defines.set("BINDIR","AppleTV");
+      }
+      else if (defines.exists("appletvsim"))
+      {
+         defines.set("toolchain","appletvsim");
+         defines.set("appletv","appletv");
+         defines.set("apple","apple");
+         defines.set("BINDIR","AppleTV");
       }
       else if (defines.exists("android"))
       {
@@ -1405,18 +1427,12 @@ class BuildTool
 
    function setupAppleDirectories(defines:Hash<String>)
    {
-      var debugTravis = defines.get("TRAVIS_OS_NAME")=="osx";
-      if (debugTravis)
-          Log.v("Setting apple directories ( apple=" + defines.get("apple") + ", DEVELOPER_DIR=" + defines.get("DEVELOPER_DIR") +" )");
-
       if (defines.exists("HXCPP_CLEAN_ONLY"))
          return;
 
       if (defines.exists("apple") && !defines.exists("DEVELOPER_DIR"))
       {
          var developer_dir = ProcessManager.runProcessLine("", "xcode-select", ["--print-path"], true, false);
-         if (debugTravis)
-            Log.v('Got developer_dir $developer_dir.');
          if (developer_dir == null || developer_dir == "" || developer_dir.indexOf ("Run xcode-select") > -1)
             developer_dir = "/Applications/Xcode.app/Contents/Developer";
          if (developer_dir == "/Developer")
@@ -1445,12 +1461,32 @@ class BuildTool
                defines.set("IPHONE_VER",best);
          }
       }
+
+      if (defines.exists("appletv") && !defines.exists("TVOS_VER"))
+      {
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/AppleTVOS.platform/Developer/SDKs/";
+         if (FileSystem.exists(dev_path))
+         {
+            var best="";
+            var files = FileSystem.readDirectory(dev_path);
+            var extract_version = ~/^AppleTVOS(.*).sdk$/;
+            for(file in files)
+            {
+               if (extract_version.match(file))
+               {
+                  var ver = extract_version.matched(1);
+                  if (Std.parseFloat (ver)>Std.parseFloat (best))
+                     best = ver;
+               }
+            }
+            if (best!="")
+               defines.set("TVOS_VER",best);
+         }
+      }
       
       if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
       {
          var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/";
-         if (debugTravis)
-            Log.v('Checking dev path $dev_path');
          if (FileSystem.exists(dev_path))
          {
             var best="0.0";
@@ -1458,20 +1494,16 @@ class BuildTool
             var extract_version = ~/^MacOSX(.*).sdk$/;
             for(file in files)
             {
-               if (debugTravis)
-                  Log.v("Looking for sdk match " + file);
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  if (debugTravis)
-                     Log.v("  found version " + Std.parseFloat(ver));
                   if (Std.parseFloat(ver) > Std.parseFloat(best))
                      best = ver;
                }
             }
-            if (best!="")
+            if (best!="0.0")
                defines.set("MACOSX_VER",best);
-            else if (debugTravis)
+            else
                Log.v("Could not find MACOSX_VER!");
          }
       }

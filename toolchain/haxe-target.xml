@@ -29,6 +29,7 @@
   <depend name="${HXCPP}/include/hx/Operators.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/GC.h"/>
+  <depend name="${HXCPP}/include/hx/Tls.h"/>
   <depend name="${HXCPP}/include/hx/GcTypeInference.h"/>
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
@@ -157,7 +158,7 @@
 
 <set name="HAXE_OUTPUT_FILE" value="${LIBPREFIX}${HAXE_OUTPUT_PART}${DBG}" unless="HAXE_OUTPUT_FILE" />
 
-<set name="magiclibs" value="1" if="MSVC18+" />
+<!-- <set name="magiclibs" value="1" if="MSVC18+" /> -->
 
 <section if="magiclibs" >
    <magiclib name="lib/${BINDIR}/libstd${LIBEXTRA}${LIBEXT}" replace="project/libs/std/Build.xml" />
@@ -172,6 +173,8 @@
   <options name="Options.txt"/>
   <ext value="${LIBEXTRA}.a" if="iphoneos" unless="dll_import" />
   <ext value="${LIBEXTRA}.a" if="iphonesim" unless="dll_import" />
+  <ext value="${LIBEXTRA}.a" if="appletvos" unless="dll_import" />
+  <ext value="${LIBEXTRA}.a" if="appletvsim" unless="dll_import" />
 
   <section if="android">
      <ext value="${LIBEXTRA}.so" />

@@ -6,7 +6,16 @@
 hxcpp is the runtime support for the c++ backend of the [haxe](http://haxe.org/) compiler. This contains the headers, libraries and support code required to generate a fully compiled executable from haxe code.
 
 
-# rebuilding
+# building
+
+Build the tools.
+
+```
+cd tools/hxcpp
+haxe compile.hxml
+cd ../build
+haxe compile.hxml
+```
 
 Running neko on the build.n script will rebuild the supported architectures on your current platform.
 

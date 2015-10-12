@@ -1,4 +1,42 @@
 
+* Initial support for tvos
+* Change name of ObjectType to hxObjectType to avoid clashes with iOS
+* Try to keep windows.h out of haxe-generated code
+* Fix null access bug in array-of-array
+* Create separate library for msvc 19
+
+------------------------------------------------------------
+* Try to get the pdb server working better for MSVS 2015
+* So not export symbols on windows unless HXCPP_DLL_EXPORT is set (-D dll_export) - makes exe smaller
+* Avoid dynamic-cast if possible when converting 2D arrays
+* Some RPi fixes
+* Some CFFI Prime fixes (thanks Joshua)
+* Fix build tool for next version of neko
+* Improve msvc cl.exe version checking for non-English environments
+* Add more control over how much Gc memory is used
+* Add faster(inline) thread local storage for Gc on windows.
+* Add some Gc load balancing when marking large arrays with multiple threads
+* Change the Gc memory layout to be a bit larger, but simpler.  This allows most of the allocation to be simplified and inlined.
+* Explicitly scan registers for Gc references because the stack scanning was missing them sometimes
+* Some additions to Undefine.h for windows
+* When static linking using MSVC 2015, compile the libraries directly into the exe to avoid compatibility issues
+* Move standard libraries into their own build.xml files
+* Make it easier to change the generated output filename
+* Allow targets from one build.xml file to be merged into another
+* Some more work on HXCPP_COMPILE_CACHE
+* Allow automatic grouping of obj files into librarys to avoid linking all the symbols in all obj files
+* Add implicit conversion to referenced type from cpp.Reference
+* Allow build.xml files to be imported relative to importing file
+* Allow '-' in command-line defines
+* Fix warnings from Hash class
+* Fix setsockopt for Mac
+* Support to MSVC2015
+* Fix for Blackberry 10.3
+* Fix debug break by linenumber
+* Better objc integration (thanks Caue)
+* Increase number of variables captured in closures to 20
+* Initial support for telemetry (thanks Jeff)
+* Align allocations for better emscripten support
 
 ------------------------------------------------------------
 * Fix gc_lock error in remove_dir

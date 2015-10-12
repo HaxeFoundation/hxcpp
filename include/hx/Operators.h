@@ -276,7 +276,7 @@ inline RESULT Dynamic::StaticCast() const
    typedef typename RESULT::Ptr type;
 
    if ( (hx::DynamicConvertType<type>::Convert<0) ||
-       (hx::DynamicConvertType<type>::Convert > 0 &&
+       (hx::DynamicConvertType<type>::Convert > 0 && mPtr && 
           hx::DynamicConvertType<type>::Convert != ((hx::ArrayBase *)mPtr)->getPodSize()) )
    {
       // Constructing the result from the Dynamic value will check for a conversion

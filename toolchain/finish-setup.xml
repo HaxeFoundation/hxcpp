@@ -14,6 +14,8 @@
 
 <set name="static_link" value="1" if="iphoneos" unless="dll_import||exe_link" />
 <set name="static_link" value="1" if="iphonesim" unless="dll_import||exe_link" />
+<set name="static_link" value="1" if="appletvos" unless="dll_import||exe_link" />
+<set name="static_link" value="1" if="appletvsim" unless="dll_import||exe_link" />
 
 <set name="LIBPREFIX" value="lib" if="static_link" unless="STATICLIBPREFIX" />
 <set name="LIBPREFIX" value="${STATICLIBPREFIX}" if="static_link" unless="LIBPREFIX" />
@@ -30,6 +32,7 @@
 <set name="STD_MODULE_LINK" value="exe" if="HXCPP_JS_PRIME"/>
 
 
+
 <set name="LIBEXTRA" value=".iphonesim-64" if="iphonesim"/>
 <set name="LIBEXTRA" value=".iphonesim" if="iphonesim" unless="HXCPP_M64"/>
 <section if="iphoneos">
@@ -38,6 +41,10 @@
 	<set name="LIBEXTRA" value=".iphoneos-64" if="HXCPP_ARM64"/>
 	<set name="HXCPP_ARMV6" value="1" unless="LIBEXTRA"/>
 	<set name="LIBEXTRA" value=".iphoneos" if = "HXCPP_ARMV6"/>
+</section>
+<set name="LIBEXTRA" value=".appletvsim-64" if="appletvsim"/>
+<section if="appletvos">
+   <set name="LIBEXTRA" value=".appletvos-64" if="HXCPP_ARM64"/>
 </section>
 <set name="LIBEXTRA" value="-x86" if="blackberry"/>
 <set name="LIBEXTRA" value="" if="blackberry" unless="simulator" />
@@ -58,6 +65,8 @@
 
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphoneos"/>
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphonesim"/>
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="appletvos"/>
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="appletvsim"/>
 
 <set name="DESTDIR" value="bin" />
 <set name="DESTDIR" value="lib" if="static_link" unless="HXCPP_IOS_STDCPP"/>
@@ -69,6 +78,10 @@
 
 <set name="HXCPP_DEBUG_LINK" value="1" if="debug"/>
 
+<set name="HX_LINK_SUFFIX" value="${LIBEXTRA}" />
+<set name="HX_TARGET_SUFFIX" value="${LIBEXTRA}" />
+<set name="HX_TARGET_PREFIX" value="${LIBPREFIX}" />
+
 <section if="isMsvc">
    <section unless="HXCPP_M64">
       <set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
@@ -78,6 +91,11 @@
    <section if="static_link" >
       <set name="MSVC_LIB_VERSION" value="-${MSVC_VER}" />
    </section>
+
+   <set name="LIBEXTRA" value="-19" if="MSVC19" />
+   <set name="HX_LINK_SUFFIX" value="-19" if="MSVC19" />
+   <set name="HX_TARGET_SUFFIX" value="-19" if="MSVC19 static_link" />
+
 </section>
 </xml>
 

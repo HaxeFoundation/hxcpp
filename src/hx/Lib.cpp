@@ -50,7 +50,7 @@ void *hxFindSymbol(Module inModule, const char *inSymbol) { return (void *)GetPr
 
 void hxFreeLibrary(Module inModule) { FreeLibrary(inModule); }
 
-#elif (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && (!defined(HXCPP_DLL_EXPORT) || defined(HXCPP_SCRIPTABLE) )
+#elif (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK) || defined(APPLETV) ) && !defined(HXCPP_DLL_IMPORT) && (!defined(HXCPP_DLL_EXPORT) || defined(HXCPP_SCRIPTABLE) )
 
 typedef void *Module;
 Module hxLoadLibrary(const String &) { return 0; }
@@ -65,7 +65,7 @@ typedef void *Module;
 Module hxLoadLibrary(String inLib)
 {
    int flags = RTLD_GLOBAL;
-   #if defined(HXCPP_RTLD_LAZY) || defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)
+   #if defined(HXCPP_RTLD_LAZY) || defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK) || defined(APPLETV)
    flags |= RTLD_LAZY;
    #else
    flags |= RTLD_NOW;
@@ -361,6 +361,10 @@ String __hxcpp_get_bin_dir()
     HX_CSTRING("IPhoneSim");
 #elif defined(IPHONEOS)
     HX_CSTRING("IPhoneOs");
+#elif defined(APPLETVSIM)
+    HX_CSTRING("AppleTVSim");
+#elif defined(APPLETVOS)
+    HX_CSTRING("AppleTVOS");
 #else
   #ifdef HXCPP_M64
     HX_CSTRING("Linux64");
@@ -378,6 +382,10 @@ String __hxcpp_get_dll_extension()
 #elif defined(IPHONEOS)
     HX_CSTRING(".ios.dylib");
 #elif defined(IPHONESIM)
+    HX_CSTRING(".sim.dylib");
+#elif defined(APPLETVOS)
+    HX_CSTRING(".tvos.dylib");
+#elif defined(APPLETVSIM)
     HX_CSTRING(".sim.dylib");
 #elif defined(__APPLE__)
     HX_CSTRING(".dylib");
@@ -404,7 +412,7 @@ void __hxcpp_push_dll_path(String inPath)
 
 
 
-#if (defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK)) && !defined(HXCPP_DLL_IMPORT) && (!defined(HXCPP_DLL_EXPORT) || defined(HXCPP_SCRIPTABLE) )
+#if (defined(IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK) || defined(APPLETV) ) && !defined(HXCPP_DLL_IMPORT) && (!defined(HXCPP_DLL_EXPORT) || defined(HXCPP_SCRIPTABLE) )
 
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
@@ -461,7 +469,7 @@ int __hxcpp_unload_all_libraries() { return 0; }
 extern "C" void *hx_cffi(const char *inName);
 
 
-#if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE) && !defined(EMSCRIPTEN) && !defined(STATIC_LINK)
+#if !defined(ANDROID) && !defined(HX_WINRT) && !defined(IPHONE) && !defined(EMSCRIPTEN) && !defined(STATIC_LINK) && !defined(APPLETV)
     #define HXCPP_TRY_HAXELIB
 #endif
 
@@ -479,7 +487,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    String module_name = inLib;
    #endif
 
-   #ifdef IPHONE
+   #if defined(IPHONE) || defined(APPLETV)
    gLoadDebug = true;
    setenv("DYLD_PRINT_APIS","1",true);
 

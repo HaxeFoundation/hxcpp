@@ -45,18 +45,7 @@ static void *sgObject_root = 0;
 int gInAlloc = false;
 
 // This is recalculated from the other parameters
-static int sgWorkingMemorySize          = 10*1024*1024;
-
-#if defined(HX_MACOS) || defined(HX_WINDOWS) || defined(HX_LINUX)
-static int sgMinimumWorkingMemory       = 20*1024*1024;
-static int sgMinimumFreeSpace           = 10*1024*1024;
-#else
-static int sgMinimumWorkingMemory       = 8*1024*1024;
-static int sgMinimumFreeSpace           = 4*1024*1024;
-#endif
-// Once you use more than the minimum, this kicks in...
-static int sgTargetFreeSpacePercentage  = 100;
-
+static int sWorkingMemorySize          = 10*1024*1024;
 
 
 
@@ -934,7 +923,8 @@ struct GlobalChunks
             *outArrayJob = objectArrayJob;
             objectArrayJob += items;
             arrayJobLen -= items;
-            return 0;
+            // Ensure that the array marker has something to recurse into if required
+            return allocLocked();
          }
 
          MarkChunk *result =  popJobLocked(inChunk);
@@ -1990,6 +1980,22 @@ public:
    virtual void AllocMoreBlocks()
    {
       #ifdef USE_POSIX_MEMALIGN
+      enum { newBlockCount = 1 };
+      #else
+      enum { newBlockCount = 1<<(IMMIX_BLOCK_GROUP_BITS) };
+      #endif
+
+      // Currently, we only have 2 bytes for a block header
+      if (mAllBlocks.size()+newBlockCount >= 0xfffe )
+      {
+         #ifdef SHOW_MEM_EVENTS
+         GCLOG("Block id count used - collect");
+         #endif
+         return;
+      }
+
+
+      #ifdef USE_POSIX_MEMALIGN
       // One aligned block that can be freed on its on
       int gid = 0;
       char *chunk = 0;
@@ -2068,7 +2074,7 @@ public:
       }
 
       BlockData *result = GetNextFree(inRequiredBytes);
-      if (!result && (!sgInternalEnable || GetWorkingMemory()<sgWorkingMemorySize))
+      if (!result && (!sgInternalEnable || GetWorkingMemory()<sWorkingMemorySize))
       {
          AllocMoreBlocks();
          result = GetNextFree(inRequiredBytes);
@@ -2078,7 +2084,7 @@ public:
       {
          volatile int dummy = 1;
          *inCallersStack = (int *)&dummy;
-         Collect(false,false);
+         Collect(false,false,true);
          result = GetNextFree(inRequiredBytes);
       }
 
@@ -2840,10 +2846,31 @@ public:
 
 
 
-   void Collect(bool inMajor, bool inForceCompact)
+   void Collect(bool inMajor, bool inForceCompact, bool inLocked=false)
    {
-      StopThreadJobs(true);
+      // If we set the flag from 0 -> 0xffffffff then we are the collector
+      //  otherwise, someone else is collecting at the moment - so wait...
+      if (!HxAtomicExchangeIf(0, 0xffffffff,(volatile int *)&hx::gPauseForCollect))
+      {
+         hx::PauseForCollect();
+         return;
+      }
 
+      // We are the collector - all must wait for us
+      LocalAllocator *this_local = 0;
+      if (hx::gMultiThreadMode)
+      {
+         this_local = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
+
+         if (!inLocked)
+            gThreadStateChangeLock->Lock();
+
+         for(int i=0;i<mLocalAllocs.size();i++)
+            if (mLocalAllocs[i]!=this_local)
+               WaitForSafe(mLocalAllocs[i]);
+      }
+
+      StopThreadJobs(true);
       #ifdef DEBUG
       sgAllocsSinceLastSpam = 0;
       #endif
@@ -2858,30 +2885,7 @@ public:
       #ifdef HXCPP_TELEMETRY
       __hxt_gc_start();
       #endif
-      int largeAlloced = mLargeAllocated;
-      LocalAllocator *this_local = 0;
-      if (hx::gMultiThreadMode)
-      {
-         hx::EnterGCFreeZone();
-         gThreadStateChangeLock->Lock();
-         hx::ExitGCFreeZoneLocked();
-         // Someone else beat us to it ...
-         if (hx::gPauseForCollect)
-         {
-            gThreadStateChangeLock->Unlock();
-            #ifdef HXCPP_TELEMETRY
-            __hxt_gc_end();
-            #endif
-            return;
-         }
 
-         hx::gPauseForCollect = 0xffffffff;
-
-         this_local = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
-         for(int i=0;i<mLocalAllocs.size();i++)
-            if (mLocalAllocs[i]!=this_local)
-               WaitForSafe(mLocalAllocs[i]);
-      }
 
       // Now all threads have mTopOfStack & mBottomOfStack set.
 
@@ -2916,8 +2920,8 @@ public:
          mRowsInUse += mAllBlocks[i]->CountUsedRows();
 
       int mem = (mRowsInUse<<IMMIX_LINE_BITS);
-      int targetFree = std::max(sgMinimumFreeSpace, mem*sgTargetFreeSpacePercentage/100 );
-      sgWorkingMemorySize = std::max( mem + targetFree, sgMinimumWorkingMemory);
+      int targetFree = std::max(hx::sgMinimumFreeSpace, mem*hx::sgTargetFreeSpacePercentage/100 );
+      sWorkingMemorySize = std::max( mem + targetFree, hx::sgMinimumWorkingMemory);
  
       // Large alloc target
       int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
@@ -2937,7 +2941,7 @@ public:
          released = ReleaseBlocks( mAllBlocks.size() );
       else if (sgInternalEnable)
       {
-         int releaseBytes = blockSize - sgWorkingMemorySize;
+         int releaseBytes = blockSize - sWorkingMemorySize;
          if (releaseBytes>0)
          {
             int releaseGroups = releaseBytes >> (IMMIX_BLOCK_SIZE<<IMMIX_BLOCK_GROUP_BITS);
@@ -3007,16 +3011,6 @@ public:
       mAllBlocksCount   = mAllBlocks.size();
       mCurrentRowsInUse = mRowsInUse;
 
-      if (hx::gMultiThreadMode)
-      {
-         for(int i=0;i<mLocalAllocs.size();i++)
-         if (mLocalAllocs[i]!=this_local)
-            ReleaseFromSafe(mLocalAllocs[i]);
-
-         hx::gPauseForCollect = 0x00000000;
-         gThreadStateChangeLock->Unlock();
-      }
-
       #ifdef SHOW_MEM_EVENTS
       GCLOG("Collect Done\n");
       #endif
@@ -3030,6 +3024,18 @@ public:
       #ifdef HXCPP_TELEMETRY
       __hxt_gc_end();
       #endif
+
+
+      hx::gPauseForCollect = 0x00000000;
+      if (hx::gMultiThreadMode)
+      {
+         for(int i=0;i<mLocalAllocs.size();i++)
+         if (mLocalAllocs[i]!=this_local)
+            ReleaseFromSafe(mLocalAllocs[i]);
+
+         if (!inLocked)
+            gThreadStateChangeLock->Unlock();
+      }
    }
 
    size_t MemLarge()
@@ -3587,6 +3593,7 @@ void ExitGCFreeZoneLocked()
 
 void InitAlloc()
 {
+   hx::CommonInitAlloc();
    sgAllocInit = true;
    sGlobalAlloc = new GlobalAllocator();
    sgFinalizers = new FinalizerList();

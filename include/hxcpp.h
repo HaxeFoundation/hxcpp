@@ -27,7 +27,7 @@
    #endif
 #endif
 
-#if defined(EMSCRIPTEN) || defined(IPHONE)
+#if defined(EMSCRIPTEN) || defined(IPHONE) || defined(APPLETV)
   #include <unistd.h>
   #include <cstdlib>
 #endif
@@ -72,8 +72,10 @@
 #ifdef _MSC_VER
   #if defined(HXCPP_DLL_IMPORT)
      #define HXCPP_EXTERN_CLASS_ATTRIBUTES __declspec(dllimport)
-  #else
+  #elif defined (HXCPP_DLL_EXPORT)
      #define HXCPP_EXTERN_CLASS_ATTRIBUTES __declspec(dllexport)
+  #else
+     #define HXCPP_EXTERN_CLASS_ATTRIBUTES
   #endif
 #else
   #if defined(HXCPP_DLL_EXPORT)

@@ -268,7 +268,7 @@ double  __time_stamp()
 
 
 #ifdef __APPLE__
- #ifndef IPHONE
+ #if !defined(IPHONE) && !defined(APPLETV)
    extern "C" {
    extern int *_NSGetArgc(void);
    extern char ***_NSGetArgv(void);
@@ -310,7 +310,7 @@ Array<String> __get_args()
    #else
    #ifdef __APPLE__
 
-   #ifndef IPHONE
+   #if !defined(IPHONE) && !defined(APPLETV)
    int argc = *_NSGetArgc();
    char **argv = *_NSGetArgv();
    for(int i=1;i<argc;i++)
