@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <set>
+#include <cstdlib>
 
 using namespace hx;
 
