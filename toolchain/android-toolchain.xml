@@ -31,6 +31,7 @@
 
 <set name="TOOLCHAIN_VERSION" value="4.8" unless="TOOLCHAIN_VERSION" if="NDKV9+" />
 <set name="TOOLCHAIN_VERSION" value="4.4.3" unless="TOOLCHAIN_VERSION" />
+<set name="HXCPP_CPP11" value="1" if="NDKV9+" unless="HXCPP_NO_CPP11" />
 
 <!-- Set architecture -->
 <section if="HXCPP_X86">
@@ -87,6 +88,8 @@
  <cppflag value="-frtti"/>
  <flag value="-D_LINUX_STDDEF_H "/> <!-- Avoid compiler including 2 version of file -->
  <flag value="-Wno-psabi" />
+ <flag value="-std=c++11" if="HXCPP_CPP11"/>
+ <flag value="-DHXCPP_CPP11" if="HXCPP_CPP11"/>
 
  <section unless="HXCPP_X86">
    <flag value="-D__ARM_ARCH_5__"/>
@@ -141,6 +144,7 @@
 
   <flag value="-frtti"/>
   <flag value="-nostdlib"/>
+  <flag value="-std=c++11" if="HXCPP_CPP11"/>
   <flag value="-Wl,-shared,-Bsymbolic"/>
   <flag value="-Wl,--no-undefined" unless="dll_import" />
   <flag value="-Wl,--unresolved-symbols=ignore-in-object-files" if="dll_import" />
@@ -172,6 +176,7 @@
 
   <flag value="-frtti"/>
   <flag value="-nostdlib"/>
+  <flag value="-std=c++11" if="HXCPP_CPP11"/>
   <flag value="-Wl,--no-undefined" unless="dll_import" />
   <flag value="-Wl,--unresolved-symbols=ignore-in-object-files" if="dll_import" />
   <flag value="-Wl,-z,noexecstack"/>

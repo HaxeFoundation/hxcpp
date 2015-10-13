@@ -36,6 +36,7 @@
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/StdLibs.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
+  <depend name="${HXCPP}/include/hx/Unordered.h"/>
   <depend name="${HXCPP}/include/cpp/Pointer.h"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >

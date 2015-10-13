@@ -4,6 +4,7 @@
 #include <hx/Thread.h>
 #include "../Hash.h"
 #include "GcRegCapture.h"
+#include <hx/Unordered.h>
 
 
 
@@ -24,9 +25,7 @@ namespace hx
 #include <windows.h>
 #endif
 
-#include <map>
 #include <vector>
-#include <set>
 #include <stdio.h>
 
 #include "../QuickVec.h"
@@ -1434,7 +1433,7 @@ void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
 // --- Roots -------------------------------
 
 FILE_SCOPE MyMutex *sGCRootLock = 0;
-typedef std::set<hx::Object **> RootSet;
+typedef hx::UnorderedSet<hx::Object **> RootSet;
 static RootSet sgRootSet;
 
 void GCAddRoot(hx::Object **inRoot)
@@ -1490,23 +1489,23 @@ typedef hx::QuickVec<InternalFinalizer *> FinalizerList;
 
 FILE_SCOPE FinalizerList *sgFinalizers = 0;
 
-typedef std::map<hx::Object *,hx::finalizer> FinalizerMap;
+typedef hx::UnorderedMap<hx::Object *,hx::finalizer> FinalizerMap;
 FILE_SCOPE FinalizerMap sFinalizerMap;
 #ifdef HXCPP_TELEMETRY
 FILE_SCOPE FinalizerMap hxtFinalizerMap;
 #endif
 
 typedef void (*HaxeFinalizer)(Dynamic);
-typedef std::map<hx::Object *,HaxeFinalizer> HaxeFinalizerMap;
+typedef hx::UnorderedMap<hx::Object *,HaxeFinalizer> HaxeFinalizerMap;
 FILE_SCOPE HaxeFinalizerMap sHaxeFinalizerMap;
 
 hx::QuickVec<int> sFreeObjectIds;
-typedef std::map<hx::Object *,int> ObjectIdMap;
+typedef hx::UnorderedMap<hx::Object *,int> ObjectIdMap;
 typedef hx::QuickVec<hx::Object *> IdObjectMap;
 FILE_SCOPE ObjectIdMap sObjectIdMap;
 FILE_SCOPE IdObjectMap sIdObjectMap;
 
-typedef std::set<hx::Object *> MakeZombieSet;
+typedef hx::UnorderedSet<hx::Object *> MakeZombieSet;
 FILE_SCOPE MakeZombieSet sMakeZombieSet;
 
 typedef hx::QuickVec<hx::Object *> ZombieList;
@@ -1880,7 +1879,6 @@ hx::Object *__hxcpp_weak_ref_get(Dynamic inRef)
 
 // --- GlobalAllocator -------------------------------------------------------
 
-typedef std::set<BlockData *> PointerSet;
 typedef hx::QuickVec<BlockDataInfo *> BlockList;
 
 typedef hx::QuickVec<unsigned int *> LargeList;
