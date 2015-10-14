@@ -1,4 +1,15 @@
 
+* Fix overflow error that meant GC would work with a too-small buffer in some cases
+
+3.2.180
+------------------------------------------------------------
+* Initial support for tvos
+* Change name of ObjectType to hxObjectType to avoid clashes with iOS
+* Try to keep windows.h out of haxe-generated code
+* Fix null access bug in array-of-array
+* Create separate library for msvc 19
+
+------------------------------------------------------------
 * Try to get the pdb server working better for MSVS 2015
 * So not export symbols on windows unless HXCPP_DLL_EXPORT is set (-D dll_export) - makes exe smaller
 * Avoid dynamic-cast if possible when converting 2D arrays

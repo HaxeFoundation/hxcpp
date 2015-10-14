@@ -31,7 +31,7 @@
 </target>
 
 
-<target id="std" output="${LIBPREFIX}std${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="std" output="${HX_TARGET_PREFIX}std${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="std"/>
   <lib name="ws2_32.lib" if="windows" unless="static_link" />
   <lib name="-lsocket" if="blackberry" unless="static_link" />

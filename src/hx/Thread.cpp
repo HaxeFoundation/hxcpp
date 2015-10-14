@@ -239,7 +239,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
    info[0] = (hxThreadInfo *)inInfo;
    info[1] = 0;
 
-	hx::RegisterCurrentThread((int *)&info[1]);
+	hx::SetTopOfStack((int *)&info[1], true);
 
 	tlsCurrentThread = info[0];
 

@@ -33,7 +33,7 @@
 </target>
 
 
-<target id="zlib" output="${LIBPREFIX}zlib${LIB_DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+<target id="zlib" output="${HX_TARGET_PREFIX}zlib${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="hxcpp-zlib"/>
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
