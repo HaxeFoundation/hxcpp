@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <set>
 
 using namespace hx;
