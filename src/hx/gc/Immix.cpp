@@ -3483,6 +3483,7 @@ public:
 
       // It is in the free zone - wait for 'SetTopOfStack' to activate
       mGCFreeZone = true;
+      mReadyForCollect.Set();
    }
 
    void ReturnToPool()
