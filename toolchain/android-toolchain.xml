@@ -88,7 +88,7 @@
  <cppflag value="-frtti"/>
  <flag value="-D_LINUX_STDDEF_H "/> <!-- Avoid compiler including 2 version of file -->
  <flag value="-Wno-psabi" />
- <flag value="-std=c++11" if="HXCPP_CPP11"/>
+ <cppflag value="-std=c++11" if="HXCPP_CPP11"/>
  <flag value="-DHXCPP_CPP11" if="HXCPP_CPP11"/>
 
  <section unless="HXCPP_X86">
