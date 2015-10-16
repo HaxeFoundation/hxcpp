@@ -192,7 +192,17 @@ public:
    Dynamic zero_dyn();
    Dynamic memcmp_dyn();
 
-   void EnsureSize(int inLen) const;
+   void Realloc(int inLen) const;
+
+   inline void EnsureSize(int inLen) const
+   {
+      if (inLen>length)
+      {
+         if (inLen>mAlloc)
+            Realloc(inLen);
+         length = inLen;
+      }
+   }
 
    void RemoveElement(int inIndex);
 
@@ -378,7 +388,9 @@ public:
       {
          ELEM_ *ptr = (ELEM_ *)mBase;
          for(int i=0;i<length;i++)
+         {
             HX_VISIT_MEMBER(ptr[i]);
+         }
       }
    }
    #endif
