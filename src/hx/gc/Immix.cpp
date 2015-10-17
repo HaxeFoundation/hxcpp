@@ -934,7 +934,7 @@ struct GlobalChunks
       {
          ThreadPoolAutoLock l(sThreadPoolLock);
          chunks.push(inChunk);
-         MarkChunk *reult = allocLocked();
+         MarkChunk *result = allocLocked();
 
          if (sAllThreads ^ sRunningThreads)
          {
@@ -954,7 +954,7 @@ struct GlobalChunks
             else CHECK_THREAD_WAKE(7)
          }
 
-         return allocLocked();
+         return result;
       }
       else
       {
@@ -3099,7 +3099,7 @@ public:
          GCLOG("Total memory : %d\n", mAllBlocks.size()*IMMIX_USEFUL_LINES*IMMIX_LINE_LEN);
          GCLOG("Total rows   : %d\n", (int)(mRowsInUse*IMMIX_LINE_LEN));
          GCLOG("Total bytes  : %d\n", stats.bytesInUse);
-         GCLOG("Large size   : %d\n", mLargeAllocated);
+         GCLOG("Large size   : %d\n", (int)mLargeAllocated);
          GCLOG("Empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
          GCLOG("Fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
          GCLOG("Fragged score : %f\n", (double)stats.fragScore/mAllBlocks.size() );
