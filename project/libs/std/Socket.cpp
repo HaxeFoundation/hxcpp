@@ -33,6 +33,13 @@
 #	define MSG_NOSIGNAL 0
 #endif
 
+#ifdef _WIN32
+   typedef int SockLen;
+#elif defined(ANDROID)
+   typedef socklen_t SockLen;
+#else
+   typedef unsigned int SockLen;
+#endif
 
 typedef struct {
 	int max;
@@ -56,6 +63,9 @@ DECLARE_KIND(k_poll);
 typedef size_t socket_int;
 
 #define val_poll(o)		((polldata*)val_data(o))
+
+static field f_host;
+static field f_port;
 
 extern field id___s;
 
@@ -113,6 +123,8 @@ static value socket_init() {
 		init_done = true;
 	}
 #endif
+	f_host = val_id("host");
+	f_port = val_id("port");
 	return alloc_bool(true);
 }
 
@@ -252,6 +264,80 @@ static value socket_recv_char( value o ) {
 	if( ret == 0 )
 		val_throw(alloc_string("Connection closed"));
 	return alloc_int(cc);
+}
+
+
+/**
+	socket_send_to : 'socket -> buf:string -> pos:int -> len:int -> addr:'sys.net.Address -> int
+	<doc>Send up to [len] bytes from [buf] starting at [pos] to address [addr] over an unconnected socket.
+	Return the number of bytes sent.</doc>
+**/
+static value socket_send_to( value o, value data, value pos, value len, value vaddr ) {
+	int p,l,dlen;
+	value host, port;
+    struct sockaddr_in addr;
+	SOCKET sock = val_sock(o);
+	val_check(pos,int);
+	val_check(len,int);
+	val_check(vaddr,object);
+	host = val_field(vaddr, f_host);
+	port = val_field(vaddr, f_port);
+	val_check(host,int);
+	val_check(port,int);
+        buffer buf = val_to_buffer(data);
+        if (!buf)
+           hx_failure("not bytebuffer");
+	p = val_int(pos);
+	l = val_int(len);
+	dlen = buffer_size(buf);
+	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
+		return alloc_null();
+	memset(&addr,0,sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(val_int(port));
+	*(int*)&addr.sin_addr.s_addr = val_int(host);
+	gc_enter_blocking();
+	dlen = sendto(sock, buffer_data(buf) + p , l, MSG_NOSIGNAL, (struct sockaddr*)&addr, sizeof(addr));
+	if( dlen == SOCKET_ERROR )
+		return block_error();
+	gc_exit_blocking();
+	return alloc_int(dlen);
+}
+
+/**
+	socket_recv_from : 'socket -> buf:string -> pos:int -> len:int -> addr:'sys.net.Address -> int
+	<doc>Read up to [len] bytes from [buf] starting at [pos] from an unconnected socket.
+    [addr] will be filled with the address of the peer.
+    If the received datagram is larger than [len], the remaining data will be discarded
+    or an error will be thrown (platform-dependant).
+	Return the number of bytes readed.</doc>
+**/
+static value socket_recv_from( value o, value data, value pos, value len, value vaddr ) {
+	int p,l,dlen;
+    struct sockaddr_in addr;
+    SockLen addrlen = sizeof(addr);
+	SOCKET sock = val_sock(o);
+	val_check(data,buffer);
+	buffer buf = val_to_buffer(data);
+	val_check(pos,int);
+	val_check(len,int);
+	val_check(vaddr,object);
+	p = val_int(pos);
+	l = val_int(len);
+	dlen = buffer_size(buf);
+	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
+		return alloc_null();
+	gc_enter_blocking();
+	POSIX_LABEL(recv_again);
+	dlen = recvfrom(sock, buffer_data(buf) + p, l, MSG_NOSIGNAL, (struct sockaddr*)&addr, &addrlen);
+	if( dlen == SOCKET_ERROR ) {
+        HANDLE_EINTR(recv_again);
+        return block_error();
+	}
+	gc_exit_blocking();
+	alloc_field(vaddr,f_host,alloc_int32(*(int*)&addr.sin_addr));
+	alloc_field(vaddr,f_port,alloc_int(ntohs(addr.sin_port)));
+	return alloc_int(dlen);
 }
 
 
@@ -624,14 +710,6 @@ static value socket_bind( value o, value host, value port ) {
 	socket_accept : 'socket -> 'socket
 	<doc>Accept an incoming connection request</doc>
 **/
-
-#ifdef _WIN32
-   typedef int SockLen;
-#elif defined(ANDROID)
-   typedef socklen_t SockLen;
-#else
-   typedef unsigned int SockLen;
-#endif
 static value socket_accept( value o ) {
 	SOCKET sock = val_sock(o);
 	struct sockaddr_in addr;
@@ -1006,6 +1084,8 @@ DEFINE_PRIM(socket_send,4);
 DEFINE_PRIM(socket_send_char,2);
 DEFINE_PRIM(socket_recv,4);
 DEFINE_PRIM(socket_recv_char,1);
+DEFINE_PRIM(socket_send_to,5);
+DEFINE_PRIM(socket_recv_from,5);
 DEFINE_PRIM(socket_write,2);
 DEFINE_PRIM(socket_read,1);
 DEFINE_PRIM(socket_close,1);
