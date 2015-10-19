@@ -12,12 +12,22 @@ environment:
         WODI: wodi32
         ADD_REVISION: 1
         OCAMLOPT: ocamlopt.opt
+        MINGW_ROOT_32: C:\tools\mingw32
+        MINGW_ROOT_64: C:\tools\mingw64
         MINGW_ARCH: i686
     matrix:
         - HXCPP_ARCH: "32"
         - HXCPP_ARCH: "64"
 
+cache:
+  - C:\projects\mingw32.7z
+  - C:\projects\mingw64.7z
+
 install:
+    - ps: if ($env:HXCPP_ARCH -eq "32") {if (!(Test-Path C:\projects\mingw32.7z)) { Invoke-WebRequest -Uri http://downloads.sourceforge.net/project/mingw-w64/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/5.2.0/threads-posix/dwarf/i686-5.2.0-release-posix-dwarf-rt_v4-rev0.7z -OutFile C:\projects\mingw32.7z -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox }}
+    - IF [%HXCPP_ARCH%]==[32] 7z x -oC:\tools C:\projects\mingw32.7z > nul
+    - ps: if ($env:HXCPP_ARCH -eq "64") {if (!(Test-Path C:\projects\mingw64.7z)) { Invoke-WebRequest -Uri http://downloads.sourceforge.net/project/mingw-w64/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/5.2.0/threads-posix/seh/x86_64-5.2.0-release-posix-seh-rt_v4-rev0.7z -OutFile C:\projects\mingw64.7z -UserAgent [Microsoft.PowerShell.Commands.PSUserAgent]::FireFox }}
+    - IF [%HXCPP_ARCH%]==[64] 7z x -oC:\tools C:\projects\mingw64.7z > nul
     # Install ocaml using wodi
     - appveyor DownloadFile "http://cygwin.com/setup-%CYG_ARCH%.exe" -FileName "%CYG_ROOT%\setup.exe"
     - '%CYG_ROOT%\setup.exe -g -q -R "%CYG_ROOT%" -P dos2unix -P diffutils -P cpio -P make -P patch -P mingw64-%MINGW_ARCH%-gcc-core -P mingw64-%MINGW_ARCH%-gcc-g++ > log.txt || type log.txt'
@@ -59,3 +69,8 @@ test_script:
     # tests from haxe repo
     - cd %HAXE_ROOT%\tests\unit
     - haxe compile-cpp.hxml -D HXCPP_M%HXCPP_ARCH% && .\bin\cpp\Test-debug
+    # tests from mingw
+    - cd %APPVEYOR_BUILD_FOLDER%\test\haxe
+    - haxe compile.hxml -debug -D HXCPP_M%HXCPP_ARCH% -D mingw -D no_shared_libs && .\bin\TestMain-debug
+    - cd %HAXE_ROOT%\tests\unit
+    - haxe compile-cpp.hxml -D HXCPP_M%HXCPP_ARCH% -D mingw -D no_shared_libs && .\bin\cpp\Test-debug

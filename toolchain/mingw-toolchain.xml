@@ -15,6 +15,13 @@
 
 <setup name="mingw" />
 
+<section if="MINGW_ROOT_32" >
+  <set name="MINGW_ROOT" value="${MINGW_ROOT_32}" unless="HXCPP_M64"/>
+</section>
+<section if="MINGW_ROOT_64" >
+  <set name="MINGW_ROOT" value="${MINGW_ROOT_64}" if="HXCPP_M64"/>
+</section>
+
 <path name="${MINGW_ROOT}/bin"/>
 
 <include name="toolchain/gcc-toolchain.xml"/>
