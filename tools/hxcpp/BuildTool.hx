@@ -1181,7 +1181,7 @@ class BuildTool
          if (defines.exists("simulator"))
             defines.set("appletvsim", "appletvsim");
          else if (!defines.exists ("appletvsim"))
-            defines.set("appletvosos", "appletvos");
+            defines.set("appletvos", "appletvos");
          defines.set("appletv", "appletv");
       }
  

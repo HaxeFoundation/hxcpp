@@ -43,6 +43,7 @@
 	<set name="LIBEXTRA" value=".iphoneos" if = "HXCPP_ARMV6"/>
 </section>
 <set name="LIBEXTRA" value=".appletvsim-64" if="appletvsim"/>
+<set name="LIBEXTRA" value=".appletvsim" if="appletvsim" unless="HXCPP_M64"/>
 <section if="appletvos">
    <set name="LIBEXTRA" value=".appletvos-64" if="HXCPP_ARM64"/>
 </section>

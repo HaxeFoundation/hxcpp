@@ -47,6 +47,8 @@
   <flag value="-fno-stack-protector"/>
   <flag value="-DAPPLETV=APPLETV"/>
   <flag value="-DAPPLETVOS=APPLETVOS"/>
+  <flag value="-fembed-bitcode"/>
+  <flag value="-DENABLE_BITCODE=YES"/>
   <include name="toolchain/common-defines.xml" />
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-I${HXCPP}/include"/>
