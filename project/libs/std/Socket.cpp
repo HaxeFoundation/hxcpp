@@ -10,6 +10,7 @@
 #	define SHUT_RDWR	SD_BOTH
 	static bool init_done = false;
 	static WSADATA init_data;
+typedef int SocketLen;
 #else
 #	include <sys/types.h>
 #	include <sys/socket.h>
@@ -27,6 +28,7 @@
 #	define closesocket close
 #	define SOCKET_ERROR (-1)
 #	define INVALID_SOCKET (-1)
+typedef socklen_t SocketLen;
 #endif
 
 #if defined(NEKO_WINDOWS) || defined(NEKO_MAC)
@@ -1059,7 +1061,7 @@ static value socket_recv_from( value o, value dataBuf, value pos, value len, val
 	int p,l,ret;
 	int retry = 0;
 	struct sockaddr_in saddr;
-	int slen = sizeof(saddr);
+	SockLen slen = sizeof(saddr);
 	val_check_kind(o,k_socket);
 	val_check(dataBuf,buffer);
 	buffer buf = val_to_buffer(dataBuf);
