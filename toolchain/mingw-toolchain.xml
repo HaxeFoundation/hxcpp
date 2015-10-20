@@ -5,6 +5,7 @@
 <section if="xcompile" >
    <section if="linux_host">
       <set name="CXX" value="i686-w64-mingw32-g++"/>
+      <set name="MINGW_ROOT" value="/usr/i686-w64-mingw32"/>
    </section>
    <section if="windows_host">
       <set name="CXX" value="g++.exe" />
