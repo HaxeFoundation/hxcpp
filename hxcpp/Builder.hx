@@ -151,33 +151,33 @@ class Builder
                   validArchs.set("m32", ["-Dwindows", "-DHXCPP_MINGW", "-DHXCPP_M32", staticFlag] );
 
                case "ios", "ioslegacy":
-                  validArchs.set("armv6", ["-Diphoneos", staticFlag] );
-                  validArchs.set("armv7", ["-Diphoneos", "-DHXCPP_ARMV7", staticFlag] );
-                  validArchs.set("armv7s", ["-Diphoneos", "-DHXCPP_ARMV7S", staticFlag] );
-                  validArchs.set("arm64", ["-Diphoneos", "-DHXCPP_ARM64", "-DHXCPP_M64", staticFlag] );
+                  validArchs.set("armv6", ["-Diphoneos", "-DENABLE_BITCODE", staticFlag] );
+                  validArchs.set("armv7", ["-Diphoneos", "-DHXCPP_ARMV7", "-DENABLE_BITCODE", staticFlag] );
+                  validArchs.set("armv7s", ["-Diphoneos", "-DHXCPP_ARMV7S", "-DENABLE_BITCODE", staticFlag] );
+                  validArchs.set("arm64", ["-Diphoneos", "-DHXCPP_ARM64", "-DHXCPP_M64", "-DENABLE_BITCODE", staticFlag] );
                   //validArchs.push("armv64");
-                  validArchs.set("x86", ["-Diphonesim", staticFlag] );
-                  validArchs.set("x86_64", ["-Diphonesim", "-DHXCPP_M64", staticFlag] );
+                  validArchs.set("x86", ["-Diphonesim", "-DENABLE_BITCODE", staticFlag] );
+                  validArchs.set("x86_64", ["-Diphonesim", "-DHXCPP_M64", "-DENABLE_BITCODE", staticFlag] );
 
                case "android":
                   validArchs.set("armv5", ["-Dandroid", staticFlag] );
                   validArchs.set("armv7", ["-Dandroid", "-DHXCPP_ARMV7", staticFlag ] );
                   validArchs.set("x86", ["-Dandroid", "-DHXCPP_X86", staticFlag ] );
-               
+
                case "blackberry":
                   validArchs.set("armv7", ["-Dblackberry", staticFlag] );
                   validArchs.set("x86", ["-Dblackberry", "-Dsimulator", staticFlag ] );
-               
+
                case "tizen":
                   validArchs.set("armv7", ["-Dtizen", staticFlag] );
                   validArchs.set("x86", ["-Dtizen", "-Dsimulator", staticFlag ] );
-               
+
                case "emscripten":
                   validArchs.set("x86", ["-Demscripten", staticFlag] );
-               
+
                case "webos":
                   validArchs.set("armv7", ["-Dwebos", staticFlag] );
-               
+
                case "tvos":
                   validArchs.set("arm64", ["-Dappletvos", "-DHXCPP_ARM64", "-DHXCPP_M64", "-DENABLE_BITCODE", staticFlag] );
                   validArchs.set("x86", ["-Dappletvsim", "-DENABLE_BITCODE", staticFlag] );
@@ -223,7 +223,7 @@ class Builder
       var args = ["run", "hxcpp", getBuildFile() ].concat(buildFlags);
 
       Sys.println('\nBuild $target, link=' + (isStatic?"lib":"ndll")+' arch=$arch');
-      Sys.println("haxelib " + args.join(" ")); 
+      Sys.println("haxelib " + args.join(" "));
       if (Sys.command("haxelib",args)!=0)
       {
          Sys.println("#### Error building " + arch);
@@ -245,7 +245,7 @@ class Builder
    {
       var args = ["run", "hxcpp", getBuildFile(), "clean", "-DHXCPP_CLEAN_ONLY"].concat(inBuildFlags);
 
-      Sys.println("haxelib " + args.join(" ")); 
+      Sys.println("haxelib " + args.join(" "));
       if (Sys.command("haxelib",args)!=0)
       {
          Sys.println("#### Error cleaning");
@@ -322,4 +322,3 @@ class Builder
       new Builder( Sys.args() );
    }
 }
-
