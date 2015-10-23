@@ -1,6 +1,8 @@
 #ifndef HX_GC_HELPERS_INCLUDED
 #define HX_GC_HELPERS_INCLUDED
 
+#include <string.h>
+
 namespace hx
 {
 
