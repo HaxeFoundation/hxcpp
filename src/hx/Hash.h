@@ -606,13 +606,13 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       HashVisitor(hx::VisitContext *ctx) : __inCtx(ctx) { }
       void operator()(typename Hash::Element **inElem)
       {
+         HX_VISIT_ARRAY(*inElem);
          if ( (NeedsMarking<Key>::Yes && !ELEMENT::WeakKeys) || NeedsMarking<Value>::Yes)
          {
              typename Hash::Element &el = **inElem;
              HX_VISIT_MEMBER(el.key);
              HX_VISIT_MEMBER(el.value);
          }
-         HX_VISIT_ARRAY(*inElem);
       }
    };
 
