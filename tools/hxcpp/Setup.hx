@@ -125,7 +125,16 @@ class Setup
             }
          }
 
-         Log.error('Could not guess MINGW_ROOT (tried $guesses) - please set explicitly');
+         if (ioDefines.exists("mingw"))
+         {
+            //when mingw is explicitly indicated but not properly configured, this log will be shown
+            Log.error('Could not guess MINGW_ROOT (tried $guesses) - please set explicitly');          
+         }
+         else
+         {
+            //when both mingw and MSVC is not properly configured, this log will be shown
+            Log.error('Could not setup any C++ compiler, please install or reinstall a valid C++ compiler');
+         }
       }
    }
 
