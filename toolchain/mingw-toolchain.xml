@@ -2,17 +2,13 @@
 
 <!-- MINGW TOOLS -------------------------------------->
 
-<section if="xcompile" >
-   <section if="linux_host">
-      <set name="CXX" value="i686-w64-mingw32-g++"/>
-      <set name="MINGW_ROOT" value="/usr/i686-w64-mingw32"/>
-   </section>
-   <section if="windows_host">
-      <set name="CXX" value="g++.exe" />
-   </section>
+<section if="linux_host">
+  <set name="HXCPP_MINGW_EXE" value="i686-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
+  <set name="MINGW_ROOT" value="/usr/i686-w64-mingw32" unless="MINGW_ROOT" />
 </section>
 
-<set name="CXX" value="g++.exe" unless="xcompile"/>
+<set name="HXCPP_MINGW_EXE" value="g++.exe" unless="HXCPP_MINGW_EXE"/>
+
 
 <setup name="mingw" />
 
@@ -25,7 +21,7 @@
 <set name="SUBSYSTEMWINDOWS" value="1" if="no_console" unless="HXCPP_DEBUGGER" />
 
 <compiler id="mingw" exe="gcc">
-  <exe name="${CXX}" if="CXX"/>
+  <exe name="${HXCPP_MINGW_EXE}" />
   <flag value="-c"/>
   <cppflag value="-frtti"/>
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
@@ -43,7 +39,7 @@
 </compiler>
 
 <linker id="dll" exe="g++">
-  <exe name="${CXX}" if="CXX"/>
+  <exe name="${HXCPP_MINGW_EXE}" />
   <flag value="-shared"/>
   <flag value="-debug" if="debug"/>
   <flag value="--enable-auto-import"/>
@@ -57,7 +53,7 @@
 </linker>
 
 <linker id="exe" exe="g++">
-  <exe name="${CXX}" if="CXX"/>
+  <exe name="${HXCPP_MINGW_EXE}" />
   <flag value="-debug" if="debug"/>
   <flag value="-Wl,--enable-auto-import"/>
   <flag value="-mwindows" if="SUBSYSTEMWINDOWS" />
