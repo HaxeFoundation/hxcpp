@@ -1,4 +1,10 @@
 
+* Some improvements for tvos
+* Start on some GC defragging code
+* Fix android thread access to GC structures
+* Add socket socket_recv_from and socket_send_to
+* Fixed memory leak in GC collection code
+* Allow cross-compile to windows via MINGW
 * Fix overflow error that meant GC would work with a too-small buffer in some cases
 
 3.2.180
