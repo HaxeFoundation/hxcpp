@@ -6,7 +6,7 @@
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
 
-#include <malloc.h>
+#include <stdlib.h>
 
 
 static int gByteMarkID = 0x10;
