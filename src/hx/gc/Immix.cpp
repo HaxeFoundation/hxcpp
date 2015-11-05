@@ -3906,7 +3906,7 @@ void *InternalNew(int inSize,bool inIsObject)
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
    {
       //GCLOG("InternalNew spam\n");
-      CollectFromThisThread();
+      CollectFromThisThread(false);
    }
    sgAllocsSinceLastSpam++;
    #endif
@@ -3974,7 +3974,7 @@ void *InternalRealloc(void *inData,int inSize)
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
    {
       //GCLOG("InternalNew spam\n");
-      CollectFromThisThread();
+      CollectFromThisThread(false);
    }
    sgAllocsSinceLastSpam++;
    #endif
