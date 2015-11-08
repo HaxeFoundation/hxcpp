@@ -6,6 +6,7 @@
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
 
+#include <stdlib.h>
 
 
 static int gByteMarkID = 0x10;
@@ -132,7 +133,7 @@ enum LocalAllocState { lasNew, lasRunning, lasStopped, lasWaiting, lasTerminal }
 static void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx);
 static void WaitForSafe(LocalAllocator *inAlloc);
 static void ReleaseFromSafe(LocalAllocator *inAlloc);
-static void CollectFromThisThread();
+static void CollectFromThisThread(bool inMajor);
 
 namespace hx
 {
@@ -2054,8 +2055,10 @@ public:
       // from the blocks, and can 'pile up' between smalll object allocations
       if ((inSize+mLargeAllocated > mLargeAllocForceRefresh) && sgInternalEnable)
       {
+         #ifdef SHOW_MEM_EVENTS
          //GCLOG("Large alloc causing collection");
-         CollectFromThisThread();
+         #endif
+         CollectFromThisThread(false);
       }
 
       inSize = (inSize +3) & ~3;
@@ -2072,7 +2075,7 @@ public:
          GCLOG("Large alloc failed - forcing collect\n");
          #endif
 
-         CollectFromThisThread();
+         CollectFromThisThread(true);
          result = (unsigned int *)malloc(inSize + sizeof(int)*2);
       }
       result[0] = inSize;
@@ -2103,7 +2106,7 @@ public:
          if (inDelta>0 && (inDelta+mLargeAllocated > mLargeAllocForceRefresh) && sgInternalEnable)
          {
             //GCLOG("onMemoryChange alloc causing collection");
-            CollectFromThisThread();
+            CollectFromThisThread(false);
          }
 
          int rounded = (inDelta +3) & ~3;
@@ -3060,20 +3063,37 @@ public:
 
       // Sweep large
       int idx = 0;
+      int l0 = mLargeList.size();
+      // Android apprears to be really slow calling free - consider
+      //  doing this async, or maybe using a freeList
+      #ifdef ASYNC_FREE
+      hx::QuickVec<void *> freeList;
+      #endif
       while(idx<mLargeList.size())
       {
          unsigned int *blob = mLargeList[idx];
          if ( (blob[1] & IMMIX_ALLOC_MARK_ID) != hx::gMarkID )
          {
             mLargeAllocated -= *blob;
+            #ifdef ASYNC_FREE
+            freeList.push(mLargeList[idx]);
+            #else
             free(mLargeList[idx]);
+            #endif
+
             mLargeList.qerase(idx);
          }
          else
             idx++;
       }
+      #ifdef ASYNC_FREE
+      for(int i=0;i<freeList.size();i++)
+         free(freeList[i]);
+      #endif
 
+      int l1 = mLargeList.size();
       STAMP(t3)
+
 
 
       // Sweep blocks
@@ -3190,7 +3210,6 @@ public:
 
 
       createFreeList();
-
       mAllBlocksCount   = mAllBlocks.size();
       mCurrentRowsInUse = mRowsInUse;
 
@@ -3202,9 +3221,9 @@ public:
       STAMP(t5)
       double period = t5-sLastCollect;
       sLastCollect=t5;
-      GCLOG("Collect time total=%.2fms =%.1f%% sync=%.2f, mark=%.2f, large=%.2f, block=%.2f\n",
+      GCLOG("Collect time total=%.2fms =%.1f%% sync=%.2f, mark=%.2f, large(%d-%d)=%.2f, block=%.2f\n",
               (t5-t0)*1000, (t5-t0)*100.0/period,
-              (t1-t0)*1000, (t2-t1)*1000, (t3-t2)*1000, (t4-t3)*1000 );
+              (t1-t0)*1000, (t2-t1)*1000, l0, l1, (t3-t2)*1000, (t4-t3)*1000 );
       #endif
 
       #ifdef HXCPP_TELEMETRY
@@ -3784,11 +3803,11 @@ void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx)
 }
 
 
-void CollectFromThisThread()
+void CollectFromThisThread(bool inMajor)
 {
    LocalAllocator *la = GetLocalAlloc();
    la->SetupStack();
-   sGlobalAlloc->Collect(true,false);
+   sGlobalAlloc->Collect(inMajor,false);
 }
 
 namespace hx
@@ -3887,7 +3906,7 @@ void *InternalNew(int inSize,bool inIsObject)
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
    {
       //GCLOG("InternalNew spam\n");
-      CollectFromThisThread();
+      CollectFromThisThread(false);
    }
    sgAllocsSinceLastSpam++;
    #endif
@@ -3955,7 +3974,7 @@ void *InternalRealloc(void *inData,int inSize)
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
    {
       //GCLOG("InternalNew spam\n");
-      CollectFromThisThread();
+      CollectFromThisThread(false);
    }
    sgAllocsSinceLastSpam++;
    #endif

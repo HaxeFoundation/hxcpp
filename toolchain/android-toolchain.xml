@@ -33,6 +33,7 @@
 <set name="TOOLCHAIN_VERSION" value="4.4.3" unless="TOOLCHAIN_VERSION" />
 <set name="HXCPP_CPP11" value="1" if="NDKV9+" unless="HXCPP_NO_CPP11" />
 
+
 <!-- Set architecture -->
 <section if="HXCPP_X86">
    <set name="ARCH" value="-x86" />
@@ -124,7 +125,7 @@
  <flag value="-Wa,--noexecstack"/>
  <flag value="-O2" unless="debug"/>
  <flag value="-O0" if="debug"/>
- <flag value="-g" if="HXCPP_FULL_DEBUG_LINK"/>
+ <flag value="-g" if="HXCPP_DEBUG_LINK"/>
  <flag value="-DNDEBUG"/>
  <flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
  <flag value="-c"/>

@@ -1,12 +1,12 @@
 #include "GcRegCapture.h"
 
-namespace hx
-{
 
 #ifdef HXCPP_CAPTURE_x86 // {
 
 #pragma optimize( "", off )
 
+
+namespace hx {
 
 void CaptureX86(RegisterCaptureBuffer &outBuffer)
 {
@@ -29,11 +29,15 @@ void CaptureX86(RegisterCaptureBuffer &outBuffer)
    outBuffer.ebx = regEbx;
 }
 
+} // end namespace hx
+
 #elif defined(HXCPP_CAPTURE_x64) // {
 
 #if !defined(__GNUC__)
 #include <windows.h>
 #endif
+
+namespace hx {
 
 void CaptureX64(RegisterCaptureBuffer &outBuffer)
 {
@@ -74,10 +78,14 @@ void CaptureX64(RegisterCaptureBuffer &outBuffer)
    #endif
 }
 
+} // end namespace hx
+
 
 #else // }  {
 
 #include <string.h>
+
+namespace hx {
 
 // Put this function here so we can be reasonablly sure that "this" register and
 // the 4 registers that may be used to pass args are on the stack.
@@ -101,6 +109,7 @@ RegisterCapture *RegisterCapture::Instance()
 	return gRegisterCaptureInstance;
 }
 
+} // end namespace hx
+
 #endif // }
 
-}

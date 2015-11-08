@@ -9,6 +9,7 @@
 
 #include "Cppia.h"
 #include "CppiaStream.h"
+#include <stdlib.h>
 
 
 #ifdef HX_ANDROID
