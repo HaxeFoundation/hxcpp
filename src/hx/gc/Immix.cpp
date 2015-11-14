@@ -2243,7 +2243,7 @@ public:
 
    #if  defined(HXCPP_VISIT_ALLOCS) // {
 
-   void MoveSpecial(hx::Object *inTo, hx::Object *inFrom)
+  void MoveSpecial(hx::Object *inTo, hx::Object *inFrom, int size)
    {
        // FinalizerList will get visited...
 
@@ -2279,6 +2279,12 @@ public:
        }
 
        // Maybe do something faster with weakmaps
+
+#ifdef HXCPP_TELEMETRY
+       //printf(" -- moving %018x to %018x, size %d\n", inFrom, inTo, size);
+       __hxt_gc_realloc(inFrom, inTo, size);
+#endif
+
    }
 
 
@@ -2388,7 +2394,7 @@ public:
 
                         unsigned int *src = row + i + 1;
 
-                        MoveSpecial((hx::Object *)buffer,(hx::Object *)src);
+                        MoveSpecial((hx::Object *)buffer,(hx::Object *)src, size);
 
                         // Result has moved - store movement in original position...
                         memcpy(buffer, src, size);
