@@ -6,7 +6,7 @@
 #endif
 
 #ifdef HXCPP_TELEMETRY
-extern void __hxt_gc_new(void* obj, int inSize);
+extern void __hxt_gc_new(void* obj, int inSize, const char *inName);
 #endif
 
 
@@ -113,7 +113,7 @@ public:
                                gMarkID;
 
                #ifdef HXCPP_TELEMETRY
-                  __hxt_gc_new(buffer, inSize);
+               __hxt_gc_new(buffer, inSize, inName);
                #endif
                return buffer;
             }
@@ -130,7 +130,7 @@ public:
 
 
       #ifdef HXCPP_TELEMETRY
-         __hxt_gc_new(result, inSize);
+         __hxt_gc_new(result, inSize, inName);
       #endif
       return result;
    }

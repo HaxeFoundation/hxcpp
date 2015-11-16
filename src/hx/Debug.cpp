@@ -2723,10 +2723,10 @@ void __hxt_new_hash(void* obj, int inSize)
   hx::CallStack::HXTAllocation(obj, inSize, (const char*)"Hash");
   #endif
 }
-void __hxt_gc_new(void* obj, int inSize)
+void __hxt_gc_new(void* obj, int inSize, const char* name)
 {
   #ifdef HXCPP_STACK_TRACE
-  hx::CallStack::HXTAllocation(obj, inSize, (const char*)0);
+  hx::CallStack::HXTAllocation(obj, inSize, name);
   #endif
 }
 void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size)

@@ -112,7 +112,6 @@ static int sgAllocsSinceLastSpam = 0;
 
 // TODO: Telemetry.h ?
 #ifdef HXCPP_TELEMETRY
-extern void __hxt_gc_new(void* obj, int inSize);
 extern void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size);
 extern void __hxt_gc_start();
 extern void __hxt_gc_end();
