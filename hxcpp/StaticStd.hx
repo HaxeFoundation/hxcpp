@@ -4,7 +4,7 @@ package hxcpp;
 @:buildXml("
 <target id='haxe'>
   <lib name='${HXCPP}/lib/${BINDIR}/libstd${LIBEXTRA}${LIBEXT}'/>
-   <lib name='ws2_32.lib' if='windows'/>
+   <lib name='ws2_32.lib' if='windows' unless='static_link' />
 </target>
 ")
 @:keep class StaticStd
