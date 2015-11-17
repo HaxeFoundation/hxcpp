@@ -145,6 +145,7 @@ public:
    virtual Dynamic __pop() = 0;
    virtual Dynamic __push(const Dynamic &a0) = 0;
    virtual Dynamic __remove(const Dynamic &a0) = 0;
+   virtual Dynamic __removeAt(const Dynamic &a0) = 0;
    virtual Dynamic __indexOf(const Dynamic &a0,const Dynamic &a1) = 0;
    virtual Dynamic __lastIndexOf(const Dynamic &a0,const Dynamic &a1) = 0;
    virtual Dynamic __reverse() = 0;
@@ -173,6 +174,7 @@ public:
    Dynamic pop_dyn();
    Dynamic push_dyn();
    Dynamic remove_dyn();
+   Dynamic removeAt_dyn();
    Dynamic indexOf_dyn();
    Dynamic lastIndexOf_dyn();
    Dynamic reverse_dyn();
@@ -450,6 +452,18 @@ public:
       return false;
    }
 
+   NullType removeAt( int idx )
+   { 
+      if (length==0) return null(); 
+      if( idx < 0 ) idx += length; 
+      if (idx>=length) return null(); 
+
+      ELEM_ e = __get(idx); 
+      RemoveElement(idx); 
+      return e; 
+   }
+
+
    int indexOf(ELEM_ inValue, Dynamic fromIndex = null())
    {
       int len = length;
@@ -595,6 +609,7 @@ public:
    virtual Dynamic __pop() { return pop(); }
    virtual Dynamic __push(const Dynamic &a0) { return push(a0);}
    virtual Dynamic __remove(const Dynamic &a0) { return remove(a0); }
+   virtual Dynamic __removeAt(const Dynamic &a0) { return removeAt(a0); }
    virtual Dynamic __indexOf(const Dynamic &a0,const Dynamic &a1) { return indexOf(a0, a1); }
    virtual Dynamic __lastIndexOf(const Dynamic &a0,const Dynamic &a1) { return lastIndexOf(a0, a1); }
    virtual Dynamic __reverse() { reverse(); return null(); }
