@@ -14,6 +14,7 @@ class Compiler
    public var mExe:String;
    public var mOutFlag:String;
    public var mObjDir:String;
+   public var mRelObjDir:String;
    public var mExt:String;
 
    public var mPCHExt:String;
@@ -52,7 +53,9 @@ class Compiler
 
    public function objToAbsolute()
    {
-      mObjDir = Path.normalize( PathManager.combine( Sys.getCwd(), mObjDir ) );
+      if (mRelObjDir==null)
+         mRelObjDir = mObjDir;
+      mObjDir = Path.normalize( PathManager.combine( Sys.getCwd(), mRelObjDir ) );
    }
 
    function addIdentity(ext:String,ioArgs:Array<String>)
