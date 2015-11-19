@@ -39,7 +39,10 @@ class TestPrime extends TestBase
       assertEquals("Ok", stringVal.call("HxString"));
 
       assertEquals( ""+[1], ""+select.call(0, [1], "Hello", {x:1}, add) );
-      assertEquals( "null", ""+select.call(0, null, "Hello", {x:1}, add) );
+      var shouldBeNull:String = "" + select.call(0, null, "Hello", {x:1}, add);
+      trace( "null ?" +  shouldBeNull + "/" + shouldBeNull.length );
+      assertEquals( "null", shouldBeNull );
+      //assertEquals( "null", ""+select.call(0, null, "Hello", {x:1}, add) );
       assertEquals( ""+"Hello", ""+select.call(1, [1], "Hello", {x:1}, add));
       assertEquals( ""+{x:1}, ""+select.call(2, [1], "Hello", {x:1}, add) );
       assertEquals( ""+add, ""+select.call(3, [1], "Hello", {x:1}, add) );
