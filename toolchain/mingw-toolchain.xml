@@ -3,8 +3,14 @@
 <!-- MINGW TOOLS -------------------------------------->
 
 <section if="linux_host">
-  <set name="HXCPP_MINGW_EXE" value="i686-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
-  <set name="MINGW_ROOT" value="/usr/i686-w64-mingw32" unless="MINGW_ROOT" />
+  <section if="HXCPP_M64">
+    <set name="HXCPP_MINGW_EXE" value="x86_64-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
+    <set name="MINGW_ROOT" value="/usr/x86_64-w64-mingw32" unless="MINGW_ROOT" />
+  </section>
+  <section unless="HXCPP_M64">
+    <set name="HXCPP_MINGW_EXE" value="i686-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
+    <set name="MINGW_ROOT" value="/usr/i686-w64-mingw32" unless="MINGW_ROOT" />
+  </section>
 </section>
 
 <set name="HXCPP_MINGW_EXE" value="g++.exe" unless="HXCPP_MINGW_EXE"/>
