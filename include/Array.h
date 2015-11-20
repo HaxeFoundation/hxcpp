@@ -454,9 +454,8 @@ public:
 
    NullType removeAt( int idx )
    { 
-      if (length==0) return null(); 
       if( idx < 0 ) idx += length; 
-      if (idx>=length) return null(); 
+      if (idx>=length || idx<0) return null(); 
 
       ELEM_ e = __get(idx); 
       RemoveElement(idx); 
