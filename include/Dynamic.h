@@ -115,7 +115,9 @@ public:
 
    bool operator == (const Dynamic &inRHS) const
    {
-      if (mPtr==inRHS.mPtr) return true;
+      // Comparing pointers fails in the case on Nan==Nan
+      //if (mPtr==inRHS.mPtr) return true;
+      if (!mPtr && !inRHS.mPtr) return true;
       if (!mPtr || !inRHS.mPtr) return false;
       return mPtr->__Compare(inRHS.mPtr->__GetRealObject())==0;
    }
