@@ -102,6 +102,10 @@ static int sgAllocsSinceLastSpam = 0;
 #endif
 
 
+#ifdef HX_WINRT
+using namespace Windows::Foundation;
+using namespace Windows::System::Threading;
+#endif
 
 #ifdef PROFILE_COLLECT
    #define STAMP(t) double t = __hxcpp_time_stamp();
@@ -850,6 +854,8 @@ void BadImmixAlloc()
 {
    #ifdef ANDROID
    __android_log_print(ANDROID_LOG_ERROR, "hxcpp",
+   #elif defined( HX_WINRT )
+   WINRT_LOG(
    #else
    fprintf(stderr,
    #endif
@@ -2850,7 +2856,22 @@ public:
          bool ok = created==0;
       #else
          #ifdef HX_WINRT
-         // TODO
+	      bool ok = true;
+	      try
+	      {
+	        auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
+	           {
+	               SThreadLoop(info);
+	           }, Platform::CallbackContext::Any);
+
+	         ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
+	      }
+	      catch (...)
+	      {
+	         ERROR_LOG(".");
+	         ok = false;
+	      }
+
          #elif defined(EMSCRIPTEN)
          // Only one thread
          #elif defined(HX_WINDOWS)
