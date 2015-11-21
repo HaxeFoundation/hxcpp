@@ -154,6 +154,7 @@ int gMarkIDWithContainer = (0x10 << 24) | IMMIX_ALLOC_IS_CONTAINER;
 
 void ExitGCFreeZoneLocked();
 
+
 DECLARE_FAST_TLS_DATA(ImmixAllocator, tlsImmixAllocator);
 
 #ifdef HXCPP_SCRIPTABLE
@@ -852,10 +853,11 @@ namespace hx
 
 void BadImmixAlloc()
 {
+   #ifdef HX_WINRT
+     WINRT_LOG("Bad local allocator - requesting memory from unregistered thread!");
+   #else
    #ifdef ANDROID
    __android_log_print(ANDROID_LOG_ERROR, "hxcpp",
-   #elif defined( HX_WINRT )
-   WINRT_LOG(
    #else
    fprintf(stderr,
    #endif
@@ -866,6 +868,7 @@ void BadImmixAlloc()
    );
    #else
    );
+   #endif
    #endif
 
    #if __has_builtin(__builtin_trap)
@@ -2868,7 +2871,7 @@ public:
 	      }
 	      catch (...)
 	      {
-	         ERROR_LOG(".");
+	         WINRT_LOG(".");
 	         ok = false;
 	      }
 

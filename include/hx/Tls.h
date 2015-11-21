@@ -127,9 +127,9 @@ struct TLSData
 #define DECLARE_FAST_TLS_DATA(TYPE,NAME) \
    __declspec(thread) TYPE * NAME = nullptr;
 #define EXTERN_TLS_DATA(TYPE,NAME) \
-   __declspec(thread) extern TYPE * NAME = nullptr;
+   __declspec(thread) extern TYPE * NAME;
 #define EXTERN_FAST_TLS_DATA(TYPE,NAME) \
-   __declspec(thread) extern TYPE * NAME = nullptr;
+   __declspec(thread) extern TYPE * NAME;
 
 #else
 
