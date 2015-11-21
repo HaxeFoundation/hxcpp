@@ -2267,8 +2267,14 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created)
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
 {
     if (!hx::CallStack::CanBeCaught(toThrow)) {
+	#ifdef HX_WINRT
+	//todo
+        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " ), true);
+	
+	#else
         hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " +
                                             toThrow->toString()), true);
+	#endif
       }
 
     return hx::Throw(toThrow);
