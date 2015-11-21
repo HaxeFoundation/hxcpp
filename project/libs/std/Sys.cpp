@@ -110,7 +110,8 @@ static value put_env( value e, value v ) {
 **/
 
 #ifdef HX_WINRT
-DECLARE_TLS_DATA(void,tlsSleepEvent)
+//DECLARE_TLS_DATA(void,tlsSleepEvent)
+__declspec(thread) void * tlsSleepEvent = nullptr;
 #endif
 
 static value sys_sleep( value f ) {

@@ -48,7 +48,7 @@ inline int HxAtomicInc(volatile int *ioWhere)
 inline int HxAtomicDec(volatile int *ioWhere)
    { return __atomic_dec(ioWhere); }
 
-#elif defined(HX_WINDOWS)
+#elif defined(HX_WINDOWS) && !defined(HX_WINRT) //winrt test
 
 inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
    { return InterlockedCompareExchange((volatile LONG *)ioWhere, inNewVal, inTest)==inTest; }

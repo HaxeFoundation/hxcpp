@@ -38,6 +38,16 @@ public:
       *this = String([inString UTF8String]);
    }
    #endif
+   #ifdef HX_WINRT
+   inline String(Platform::String^ inString)
+   {
+      *this = String(inString->Data());
+   }
+   inline String(Platform::StringReference inString)
+   {
+      *this = String(inString.Data());
+   }
+   #endif
    inline String(const ::String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
    String(const int &inRHS);
    String(const cpp::CppInt32__ &inRHS);
