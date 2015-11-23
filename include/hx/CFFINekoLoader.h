@@ -26,9 +26,14 @@ void *LoadNekoFunc(const char *inName)
       sNekoDllHandle = GetModuleHandleA("neko.dll");
       #else
       sNekoDllHandle = dlopen("libneko." NEKO_EXT, RTLD_NOW);
-      // Look for libneko.so.0 too ...
+      // The debian package creates libneko.so.0 without libneko.so...
+      // The fedora/openSUSE rpm packages create libneko.so.1...
       if (!sNekoDllHandle)
          sNekoDllHandle = dlopen("libneko." NEKO_EXT ".0", RTLD_NOW);
+      if (!sNekoDllHandle)
+         sNekoDllHandle = dlopen("libneko." NEKO_EXT ".1", RTLD_NOW);
+      if (!sNekoDllHandle)
+         sNekoDllHandle = dlopen("libneko." NEKO_EXT ".2", RTLD_NOW);
       #endif
   
       if (!sNekoDllHandle)
