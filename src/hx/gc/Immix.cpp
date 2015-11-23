@@ -853,9 +853,11 @@ namespace hx
 
 void BadImmixAlloc()
 {
+
    #ifdef HX_WINRT
-   WINRT_LOG(
-   #elif defined(ANDROID)
+   WINRT_LOG("Bad local allocator - requesting memory from unregistered thread!");
+   #else
+   #ifdef ANDROID
    __android_log_print(ANDROID_LOG_ERROR, "hxcpp",
    #else
    fprintf(stderr,
@@ -867,6 +869,7 @@ void BadImmixAlloc()
    );
    #else
    );
+   #endif
    #endif
 
    #if __has_builtin(__builtin_trap)
