@@ -162,7 +162,6 @@ public:
 	   {
 	     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
 	        {
-	            // Run the user callback.
 	            ProfileMainLoop(0);
 	        }, Platform::CallbackContext::Any);
 
@@ -420,7 +419,6 @@ public:
 		   {
 		     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
 		        {
-		            // Run the user callback.
 		            ProfileMainLoop(0);
 		        }, Platform::CallbackContext::Any);
 
@@ -626,7 +624,6 @@ private:
 #ifndef HX_WINRT
             Sleep(millis);
 #else
-            // TODO
             Sleep(millis);
 #endif
 #else
