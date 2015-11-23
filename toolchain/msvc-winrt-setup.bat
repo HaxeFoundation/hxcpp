@@ -1,5 +1,5 @@
 setlocal enabledelayedexpansion
-
+@if exist "%VS140COMNTOOLS%\vsvars32.bat" (
 	@call "%VS140COMNTOOLS%\vsvars32.bat"
 		@set "INCLUDE=%ProgramFiles(x86)%\Windows Kits\10\Include;!INCLUDE!"
 		@set "PATH=%ProgramFiles(x86)%\Windows Kits\10\bin\x86;!PATH!"
@@ -8,3 +8,7 @@ setlocal enabledelayedexpansion
 
 	@echo HXCPP_VARS
 	@set
+
+) else (
+	echo Warning: Could not find environment variables for Visual Studio 2015
+)

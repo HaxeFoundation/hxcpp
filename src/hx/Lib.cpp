@@ -599,7 +599,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
             if (gLoadDebug)
             {
                #ifdef HX_WINRT
-                WINRT_LOG("Found %s\n", testPath.__s);
+               WINRT_LOG("Found %s\n", testPath.__s);
                #elif !defined(ANDROID)
                printf("Found %s\n", testPath.__s);
                #else

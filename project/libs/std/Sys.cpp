@@ -48,6 +48,7 @@ int __sys_prims() { return 0; }
 
 #ifdef HX_WINRT
 #include <hx/Thread.h>
+#include <hx/Tls.h>
 #endif
 
 #ifndef CLK_TCK
@@ -110,8 +111,7 @@ static value put_env( value e, value v ) {
 **/
 
 #ifdef HX_WINRT
-//DECLARE_TLS_DATA(void,tlsSleepEvent)
-__declspec(thread) void * tlsSleepEvent = nullptr;
+DECLARE_TLS_DATA(void,tlsSleepEvent)
 #endif
 
 static value sys_sleep( value f ) {
