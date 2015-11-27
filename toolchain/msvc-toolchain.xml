@@ -49,6 +49,7 @@
   <flag value = "/fp:precise" if="MSVC17+" />
   <flag value = "-DWINAPI_FAMILY=WINAPI_FAMILY_APP" if="winrt" />
   <flag value = "-DHX_WINRT" if="winrt" />
+  <flag value = "-errorReport:prompt" if="winrt" />
 
   <cflag value="${C_ABI}" />
   <cppflag value="${CPP_ABI}" />
@@ -64,7 +65,8 @@
   <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
   <flag value="-c"/>
-  <flag value="-EHs"/>
+  <flag value="-EHs" unless="winrt"/>
+  <flag value="-EHsc" if="winrt"/>
   <flag value="-GS-"/>
   <flag value="-arch:SSE" unless="HXCPP_M64" />
   <flag value="-I${HXCPP}/include"/>

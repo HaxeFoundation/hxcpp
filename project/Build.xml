@@ -68,7 +68,7 @@
    <target id="regexp"/>
    <target id="zlib"/>
    <target id="mysql"/>
-   <target id="sqlite"/>
+   <target id="sqlite" unless="winrt"/><!-- TODO -->
    <section if="static_link">
       <target id="msvccompat" if="windows" unless="mingw||MSVC19" />
       <target id="linuxcompat" if="linux" />

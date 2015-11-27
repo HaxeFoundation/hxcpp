@@ -93,6 +93,12 @@ typedef char HX_CHAR;
 #define HXCPP_CHECK_POINTER
 #endif
 
+#ifdef HX_WINRT
+
+#define WINRT_LOG(fmt, ...) {char buf[1024];sprintf(buf,"****LOG: %s(%d): %s \n    [" fmt "]\n",__FILE__,__LINE__,__FUNCTION__, __VA_ARGS__);OutputDebugString(buf);}
+#define WINRT_PRINTF(fmt, ...) {char buf[2048];sprintf(buf,"fmt", __VA_ARGS__);OutputDebugString(buf);}
+
+#endif
 
 
 #ifdef BIG_ENDIAN
@@ -128,16 +134,22 @@ typedef char HX_CHAR;
 // HX_CSTRING is for constant strings without built-in hashes
 //     HX_GC_CONST_ALLOC_BIT | HX_GC_NO_STRING_HASH
 
+
+
 #ifdef HXCPP_BIG_ENDIAN
 #define HX_HCSTRING(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((h3 h2 h1 h0 "\x80\x00\x00\x00" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
 #define HX_STRINGI(s,len) ::String( (const HX_CHAR *)(("\xc0\x00\x00\x00" s)) + 4 ,len)
 #else
 
+#ifdef HX_WINRT
+#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( const_cast<char *>((h0 h1 h2 h3 "\x00\x00\x00\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
+#define HX_STRINGI(s,len) ::String( const_cast<char *>(("\x00\x00\x0\xc0" s)) + 4 ,len)
+#else
 #define HX_HCSTRING(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((h0 h1 h2 h3 "\x00\x00\x00\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
 
 #define HX_STRINGI(s,len) ::String( (const HX_CHAR *)(("\x00\x00\x0\xc0" s)) + 4 ,len)
 #endif
-
+#endif
 
 
 #define HX_STRI(s) HX_STRINGI(s,sizeof(s)/sizeof(HX_CHAR)-1)

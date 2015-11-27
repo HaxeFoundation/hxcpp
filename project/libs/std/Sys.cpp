@@ -48,6 +48,7 @@ int __sys_prims() { return 0; }
 
 #ifdef HX_WINRT
 #include <hx/Thread.h>
+#include <hx/Tls.h>
 #endif
 
 #ifndef CLK_TCK

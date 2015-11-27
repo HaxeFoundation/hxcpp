@@ -102,6 +102,10 @@ static int sgAllocsSinceLastSpam = 0;
 #endif
 
 
+#ifdef HX_WINRT
+using namespace Windows::Foundation;
+using namespace Windows::System::Threading;
+#endif
 
 #ifdef PROFILE_COLLECT
    #define STAMP(t) double t = __hxcpp_time_stamp();
@@ -149,6 +153,7 @@ int gMarkID = 0x10 << 24;
 int gMarkIDWithContainer = (0x10 << 24) | IMMIX_ALLOC_IS_CONTAINER;
 
 void ExitGCFreeZoneLocked();
+
 
 DECLARE_FAST_TLS_DATA(ImmixAllocator, tlsImmixAllocator);
 
@@ -848,6 +853,10 @@ namespace hx
 
 void BadImmixAlloc()
 {
+
+   #ifdef HX_WINRT
+   WINRT_LOG("Bad local allocator - requesting memory from unregistered thread!");
+   #else
    #ifdef ANDROID
    __android_log_print(ANDROID_LOG_ERROR, "hxcpp",
    #else
@@ -860,6 +869,7 @@ void BadImmixAlloc()
    );
    #else
    );
+   #endif
    #endif
 
    #if __has_builtin(__builtin_trap)
@@ -2802,7 +2812,22 @@ public:
          bool ok = created==0;
       #else
          #ifdef HX_WINRT
-         // TODO
+	      bool ok = true;
+	      try
+	      {
+	        auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
+	           {
+	               SThreadLoop(info);
+	           }, Platform::CallbackContext::Any);
+
+	         ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
+	      }
+	      catch (...)
+	      {
+	         WINRT_LOG(".");
+	         ok = false;
+	      }
+
          #elif defined(EMSCRIPTEN)
          // Only one thread
          #elif defined(HX_WINDOWS)

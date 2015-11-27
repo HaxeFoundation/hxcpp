@@ -9,12 +9,19 @@
 #include <hx/OS.h>
 #include "QuickVec.h"
 
-#ifdef ANDROID
+#ifdef HX_WINRT
+#define DBGLOG WINRT_LOG
+#elif defined(ANDROID)
 #include <android/log.h>
 #define DBGLOG(...) __android_log_print(ANDROID_LOG_INFO, "HXCPP", __VA_ARGS__)
 #else
 #include <stdio.h>
 #define DBGLOG printf
+#endif
+
+#ifdef HX_WINRT
+using namespace Windows::Foundation;
+using namespace Windows::System::Threading;
 #endif
 
 #if _MSC_VER
@@ -150,7 +157,22 @@ public:
 #ifndef HX_WINRT
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
 #else
-        // TODO
+	   bool ok = true;
+	   try
+	   {
+	     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
+	        {
+	            ProfileMainLoop(0);
+	        }, Platform::CallbackContext::Any);
+
+	      ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
+	   }
+	   catch (...)
+	   {
+	      ok = false;
+	   }
+
+
 #endif
 #else
             pthread_t result;
@@ -223,6 +245,9 @@ public:
 
         int size = results.size();
 
+#ifdef HX_WINRT
+#define PROFILE_PRINT WINRT_LOG
+#else
 #define PROFILE_PRINT(...)                      \
         if (out) {                              \
             fprintf(out, __VA_ARGS__);          \
@@ -230,7 +255,7 @@ public:
         else {                                  \
             DBGLOG(__VA_ARGS__);                \
         }
-
+#endif
         for (int i = 0; i < size; i++) {
             ResultsEntry &re = results[i];
             PROFILE_PRINT("%s %.2f%%/%.2f%%\n", re.fullName, re.total * scale,
@@ -302,6 +327,7 @@ struct ProfileEntry
             Sleep(millis);
 #else
             // TODO
+            Sleep(millis);
 #endif
 #else
             struct timespec t;
@@ -389,7 +415,22 @@ public:
 #ifndef HX_WINRT
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
 #else
-        // TODO
+		   bool ok = true;
+		   try
+		   {
+		     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
+		        {
+		            ProfileMainLoop(0);
+		        }, Platform::CallbackContext::Any);
+
+		      ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
+		   }
+		   catch (...)
+		   {
+		      WINRT_LOG(".");
+		      ok = false;
+		   }
+
 #endif
 #else
             pthread_t result;
@@ -611,7 +652,7 @@ private:
 #ifndef HX_WINRT
             Sleep(millis);
 #else
-            // TODO
+            Sleep(millis);
 #endif
 #else
             struct timespec t;
@@ -2252,8 +2293,14 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created)
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
 {
     if (!hx::CallStack::CanBeCaught(toThrow)) {
+	#ifdef HX_WINRT
+	//todo
+        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " ), true);
+	
+	#else
         hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " +
                                             toThrow->toString()), true);
+	#endif
       }
 
     return hx::Throw(toThrow);

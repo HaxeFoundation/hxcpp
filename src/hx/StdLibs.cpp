@@ -354,19 +354,27 @@ Array<String> __get_args()
 
 void __hxcpp_print(Dynamic &inV)
 {
+   #ifdef HX_WINRT
+   WINRT_PRINTF("%s",inV->toString().__s);
+   #else
    #ifdef HX_UTF8_STRINGS
    printf("%s",inV->toString().__s);
    #else
    printf("%S",inV->toString().__s);
    #endif
+   #endif
 }
 
 void __hxcpp_println(Dynamic &inV)
 {
+   #ifdef HX_WINRT
+   WINRT_PRINTF("%s\n",inV->toString().__s);
+   #else
    #ifdef HX_UTF8_STRINGS
    printf("%s\n",inV->toString().__s);
    #else
    printf("%S\n",inV->toString().__s);
+   #endif
    #endif
 }
 
