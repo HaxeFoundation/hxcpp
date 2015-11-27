@@ -112,10 +112,10 @@ static int sgAllocsSinceLastSpam = 0;
 
 // TODO: Telemetry.h ?
 #ifdef HXCPP_TELEMETRY
-extern void __hxt_gc_new(void* obj, int inSize);
 extern void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size);
 extern void __hxt_gc_start();
 extern void __hxt_gc_end();
+extern void __hxt_gc_after_mark(int gByteMarkID, int ENDIAN_MARK_ID_BYTE);
 #endif
 
 static int sgTimeToNextTableUpdate = 1;
@@ -1495,9 +1495,6 @@ FILE_SCOPE FinalizerList *sgFinalizers = 0;
 
 typedef hx::UnorderedMap<hx::Object *,hx::finalizer> FinalizerMap;
 FILE_SCOPE FinalizerMap sFinalizerMap;
-#ifdef HXCPP_TELEMETRY
-FILE_SCOPE FinalizerMap hxtFinalizerMap;
-#endif
 
 typedef void (*HaxeFinalizer)(Dynamic);
 typedef hx::UnorderedMap<hx::Object *,HaxeFinalizer> HaxeFinalizerMap;
@@ -1646,24 +1643,6 @@ void RunFinalizers()
       i = next;
    }
 
-   #ifdef HXCPP_TELEMETRY
-   for(FinalizerMap::iterator i=hxtFinalizerMap.begin(); i!=hxtFinalizerMap.end(); )
-   {
-      hx::Object *obj = i->first;
-      FinalizerMap::iterator next = i;
-      ++next;
-
-      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
-      if ( mark!=gByteMarkID )
-      {
-         (*i->second)(obj);
-         hxtFinalizerMap.erase(i);
-      }
-
-      i = next;
-   }
-   #endif
-
    for(ObjectIdMap::iterator i=sObjectIdMap.begin(); i!=sObjectIdMap.end(); )
    {
       ObjectIdMap::iterator next = i;
@@ -1779,28 +1758,6 @@ void  GCSetHaxeFinalizer( hx::Object *obj, HaxeFinalizer f )
    else
       sHaxeFinalizerMap[obj] = f;
 }
-
-#ifdef HXCPP_TELEMETRY
-// Callback finalizer on non-abstract type;
-void  GCSetHXTFinalizer( void*obj, hx::finalizer f )
-{
-   if (!obj)
-      throw Dynamic(HX_CSTRING("set_hxt_finalizer - invalid null object"));
-   //if (((unsigned int *)obj)[-1] & HX_GC_CONST_ALLOC_BIT) return;
-
-   //printf("Setting hxt finalizer on %018x\n", obj);
-
-   AutoLock lock(*gSpecialObjectLock);
-   if (f==0)
-   {
-     FinalizerMap::iterator i = hxtFinalizerMap.find((hx::Object*)obj);
-      if (i!=hxtFinalizerMap.end())
-         hxtFinalizerMap.erase(i);
-   }
-   else
-     hxtFinalizerMap[(hx::Object*)obj] = f;
-}
-#endif
 
 void GCDoNotKill(hx::Object *inObj)
 {
@@ -2285,7 +2242,7 @@ public:
 
    #if  defined(HXCPP_VISIT_ALLOCS) // {
 
-   void MoveSpecial(hx::Object *inTo, hx::Object *inFrom)
+  void MoveSpecial(hx::Object *inTo, hx::Object *inFrom, int size)
    {
        // FinalizerList will get visited...
 
@@ -2305,17 +2262,6 @@ public:
           hx::sHaxeFinalizerMap[inTo] = f;
        }
 
-       #ifdef HXCPP_TELEMETRY
-       i = hx::hxtFinalizerMap.find(inFrom);
-       if (i!=hx::hxtFinalizerMap.end())
-       {
-          hx::finalizer f = i->second;
-          hx::hxtFinalizerMap.erase(i);
-          hx::hxtFinalizerMap[inTo] = f;
-          printf("HXT TODO: potential lost collection / ID collision, maintain alloc_map across move?");
-       }
-       #endif
-
        hx::MakeZombieSet::iterator mz = hx::sMakeZombieSet.find(inFrom);
        if (mz!=hx::sMakeZombieSet.end())
        {
@@ -2332,6 +2278,12 @@ public:
        }
 
        // Maybe do something faster with weakmaps
+
+#ifdef HXCPP_TELEMETRY
+       //printf(" -- moving %018x to %018x, size %d\n", inFrom, inTo, size);
+       __hxt_gc_realloc(inFrom, inTo, size);
+#endif
+
    }
 
 
@@ -2441,7 +2393,7 @@ public:
 
                         unsigned int *src = row + i + 1;
 
-                        MoveSpecial((hx::Object *)buffer,(hx::Object *)src);
+                        MoveSpecial((hx::Object *)buffer,(hx::Object *)src, size);
 
                         // Result has moved - store movement in original position...
                         memcpy(buffer, src, size);
@@ -3060,6 +3012,12 @@ public:
       MarkAll();
 
       STAMP(t2)
+
+
+      #ifdef HXCPP_TELEMETRY
+      // Detect deallocations - TODO: add STAMP() ?
+      __hxt_gc_after_mark(gByteMarkID, ENDIAN_MARK_ID_BYTE);
+      #endif
 
       // Sweep large
       int idx = 0;
@@ -4110,13 +4068,6 @@ void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
 {
    GCSetHaxeFinalizer( inObj.mPtr, (hx::HaxeFinalizer) inFunc );
 }
-
-#ifdef HXCPP_TELEMETRY
-void __hxcpp_set_hxt_finalizer(void* inObj, void *inFunc)
-{
-   GCSetHXTFinalizer( inObj, (hx::finalizer) inFunc );
-}
-#endif
 
 extern "C"
 {
