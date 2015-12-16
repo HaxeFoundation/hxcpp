@@ -364,7 +364,10 @@ hx::IndexRef Dynamic::operator[](int inIndex)
 
 void Dynamic::ThrowBadFunctionError()
 {
-	hx::Throw( HX_NULL_FUNCTION_POINTER );
+   #ifdef HXCPP_DEBUGGER
+   NullReference("Function", true);
+   #endif
+   hx::Throw( HX_NULL_FUNCTION_POINTER );
 }
 
 #include <hx/DynamicImpl.h>
