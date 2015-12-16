@@ -13,6 +13,7 @@ environment:
         ADD_REVISION: 1
         OCAMLOPT: ocamlopt.opt
         MINGW_ARCH: i686
+        HAXEPATH: "%APPVEYOR_BUILD_FOLDER%"
     matrix:
         - HXCPP_ARCH: "32"
         - HXCPP_ARCH: "64"
