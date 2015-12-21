@@ -95,4 +95,29 @@ class TestGC extends haxe.unit.TestCase {
 		assertTrue(Std.is(zombie, Bytes));
 		assertTrue(gc() == null);
 	}
+
+	public function testConstStrings():Void {
+      // Const strings void Gc overhead
+      var strings = new Array<String>();
+      strings.push( haxe.Resource.getString("TestMain.hx") );
+      strings.push( "some string" );
+      var chars = "abc123";
+      // Optimization for single chars...
+      for(c in 0...chars.length)
+         strings.push( chars.substr(c,1) );
+      for(string in strings)
+         assertTrue( untyped __global__.__hxcpp_is_const_string(string) );
+      Gc.run(true);
+      for(string in strings)
+         assertTrue( untyped __global__.__hxcpp_is_const_string(string) );
+
+      var strings = new Array<String>();
+      strings.push( haxe.Resource.getString("TestMain.hx").substr(10) );
+      strings.push( "some string" + chars );
+      for(c in 0...chars.length-1)
+         strings.push( chars.substr(c,2) );
+
+      for(string in strings)
+         assertFalse( untyped __global__.__hxcpp_is_const_string(string) );
+   }
 }

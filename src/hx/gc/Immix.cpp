@@ -2916,7 +2916,7 @@ public:
       // Even = true if cycle is even
       // c c c c = 4 bit cycle code
       //
-      hx::gPrevMarkIdMask = hx::gMarkID & 0x30000000;
+      hx::gPrevMarkIdMask = ((~hx::gMarkID) & 0x30000000) | HX_GC_CONST_ALLOC_BIT;
 
       // 4 bits of cycle
       gByteMarkID = (gByteMarkID + 1) & 0x0f;

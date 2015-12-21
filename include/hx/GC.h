@@ -41,6 +41,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_spam_collects(int inEveryNCalls);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_minimum_working_memory(int inBytes);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_minimum_free_space(int inBytes);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_target_free_space_percentage(int inPercentage);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool __hxcpp_is_const_string(const ::String &inString);
 
 // Finalizers from haxe code...
 void  __hxcpp_gc_do_not_kill(Dynamic inObj);
@@ -280,13 +281,13 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkObjectAllocUnchecked(hx::Object *inPtr ,h
 inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
 {
    // This will also skip const regions
-   if ( ((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask )
+   if ( !(((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask) )
       MarkAllocUnchecked(inPtr,__inCtx);
 }
 inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 {
    // This will also skip const regions
-   if ( ((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask )
+   if ( !(((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask) )
       MarkObjectAllocUnchecked(inPtr,__inCtx);
 }
 

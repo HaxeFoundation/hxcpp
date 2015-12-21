@@ -913,6 +913,9 @@ String String::substr(int inFirst, Dynamic inLen) const
    if (len==0)
       return HX_CSTRING("");
 
+   if (len==1)
+      return fromCharCode(__s[inFirst]);
+
    HX_CHAR *ptr = hx::NewString(len);
    memcpy(ptr,__s+inFirst,len*sizeof(HX_CHAR));
    ptr[len] = 0;
@@ -939,7 +942,7 @@ String String::substring(int startIndex, Dynamic inEndIndex) const
       startIndex = endIndex;
       endIndex = tmp;
    }
-   
+
    return substr( startIndex, endIndex - startIndex );
 }
 
