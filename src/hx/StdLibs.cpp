@@ -328,16 +328,16 @@ Array<String> __get_args()
    bool real_arg = 0;
    if (cmd)
    {
-      String arg;
+      String arg("");
       buf[0] = '\0';
       while (fread(buf, 1, 1, cmd))
       {
-         if ((unsigned char)buf[0]<32) // line terminator
+         if ((unsigned char)buf[0] == 0) // line terminator
          {
             if (real_arg)
                result->push(arg);
             real_arg = true;
-            arg = String();
+            arg = String("");
          }
          else
             arg += String::fromCharCode(buf[0]);
