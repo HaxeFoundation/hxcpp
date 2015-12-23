@@ -26,4 +26,5 @@
  <flag value='-DHXCPP_API_LEVEL=${removeQuotes:hxcpp_api_level}' if="hxcpp_api_level" />
  <flag value='-DHXCPP_API_LEVEL=0' unless="hxcpp_api_level" />
  <flag value='-DHXCPP_OBJC' if="objc" />
+ <flag value='-DHXCPP_GC_DEBUG_LEVEL=${HXCPP_GC_DEBUG_LEVEL}' if="HXCPP_GC_DEBUG_LEVEL" />
 </xml>

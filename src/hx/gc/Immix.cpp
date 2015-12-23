@@ -43,9 +43,29 @@ int gInAlloc = false;
 // This is recalculated from the other parameters
 static int sWorkingMemorySize          = 10*1024*1024;
 
+//#define HXCPP_GC_DEBUG_LEVEL 4
+
+#ifndef HXCPP_GC_DEBUG_LEVEL
+#define HXCPP_GC_DEBUG_LEVEL 0
+#endif
+
+#if HXCPP_GC_DEBUG_LEVEL>1
+  #define PROFILE_COLLECT
+  #if HXCPP_GC_DEBUG_LEVEL>2
+     #define SHOW_FRAGMENTATION
+     #if HXCPP_GC_DEBUG_LEVEL>3
+        #define SHOW_MEM_EVENTS
+     #endif
+  #endif
+#endif
+
+//#define PROFILE_COLLECT
+//#define HX_GC_VERIFY
+//#define SHOW_MEM_EVENTS
+//#define SHOW_FRAGMENTATION
 
 
-#if HX_HAS_ATOMIC
+#if HX_HAS_ATOMIC && (HXCPP_GC_DEBUG_LEVEL==0)
   #if defined(HX_MACOS) || defined(HX_WINDOWS) || defined(HX_LINUX)
   enum { MAX_MARK_THREADS = 4 };
   #else
@@ -73,10 +93,6 @@ enum
 //#define HXCPP_GC_MOVING
 #endif
 
-//#define PROFILE_COLLECT
-//#define HX_GC_VERIFY
-//#define SHOW_MEM_EVENTS
-//#define SHOW_FRAGMENTATION
 // Allocate this many blocks at a time - this will increase memory usage % when rounding to block size must be done.
 // However, a bigger number makes it harder to release blocks due to pinning
 #define IMMIX_BLOCK_GROUP_BITS  5
@@ -1334,10 +1350,15 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
       //   run the risk of stack overflow.  Also, a parallel mark algorithm could be
       //   done when the marking is stack based.
       //inPtr->__Mark(__inCtx);
+  
+      #if (HXCPP_GC_DEBUG_LEVEL>0)
+      inPtr->__Mark(__inCtx);
+      #else
       if ( block==__inCtx->block)
          inPtr->__Mark(__inCtx);
       else
          __inCtx->pushObj(inPtr);
+      #endif
    }
 
    MARK_ROWS_UNCHECKED_END
