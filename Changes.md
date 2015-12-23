@@ -1,4 +1,18 @@
 
+
+* Initial support for HXCPP_OPTIMIZE_FOR_SIZE
+* Support HXCPP_DEBUG_LINK on more targets
+* Support for cross compiling to windows from linux
+* Added array removeAt
+* Some telemety fixes (thanks Jeff)
+* Check contents when comparing Dynamics with same pointer (Math.Nan!=Math.Nan)
+* Numerous WinRT fixes (thanks madrazo)
+* Fixed bug causing GC to crash marking constant strings (eg, resources)
+* Updated default SDK for Tizen (thanks Joshua)
+* Fixed command line args on linux (thanks Andy)
+
+3.2.193
+------------------------------------------------------------
 * Some improvements for tvos
 * Start on some GC defragging code
 * Fix android thread access to GC structures
