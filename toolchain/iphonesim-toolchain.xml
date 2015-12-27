@@ -49,6 +49,8 @@
   <flag value="-miphoneos-version-min=5.0"/>
   <flag value="-DIPHONE=IPHONE"/>
   <flag value="-DIPHONESIM=IPHONESIM"/>
+  <flag value="-fembed-bitcode"/>
+  <flag value="-DENABLE_BITCODE=YES"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <flag value="-Wno-parentheses" />
