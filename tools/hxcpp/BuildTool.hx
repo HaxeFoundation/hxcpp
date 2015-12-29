@@ -1009,8 +1009,12 @@ class BuildTool
             }
          }
 
+         #if (haxe_ver < 3.3)
+         // avoid issue of path with spaces
+         // https://github.com/HaxeFoundation/haxe/issues/3603
          if (isWindows)
             exe = '"$exe"';
+         #end
 
          Sys.exit( Sys.command( exe, args ) );
       }
