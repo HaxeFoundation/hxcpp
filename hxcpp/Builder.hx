@@ -114,30 +114,30 @@ class Builder
                isStatic = true;
                target = target.substr(7);
             }
-            var staticFlag = isStatic ? "-Dstatic_link" : "";
+            var staticFlags = isStatic ? ["-Dstatic_link"] : [];
             if (target=="ios" || target=="tvos")
-               staticFlag = "-DHXCPP_CPP11";
+               staticFlags = ["-DHXCPP_CPP11"];
 
             switch(target)
             {
                case "linux", "mac":
-                  validArchs.set("m32", ["-D"+target, "-DHXCPP_M32", staticFlag] );
-                  validArchs.set("m64", ["-D"+target, "-DHXCPP_M64", staticFlag] );
+                  validArchs.set("m32", ["-D"+target, "-DHXCPP_M32"].concat(staticFlags) );
+                  validArchs.set("m64", ["-D"+target, "-DHXCPP_M64"].concat(staticFlags) );
 
                case "windows":
-                  validArchs.set("m32", ["-D"+target, "-DHXCPP_M32", staticFlag] );
+                  validArchs.set("m32", ["-D"+target, "-DHXCPP_M32"].concat(staticFlags) );
                   if (wantWindows64())
-                     validArchs.set("m64", ["-D"+target, "-DHXCPP_M64", staticFlag] );
+                     validArchs.set("m64", ["-D"+target, "-DHXCPP_M64"].concat(staticFlags) );
 
                case "msvc":
                   if (isStatic)
                   {
-                     validArchs.set("2013m32", ["-D"+target, "-DHXCPP_M32", "HXCPP_MSVC_VER=120", staticFlag] );
-                     validArchs.set("2015m32", ["-D"+target, "-DHXCPP_M32", "HXCPP_MSVC_VER=140", staticFlag] );
+                     validArchs.set("2013m32", ["-D"+target, "-DHXCPP_M32", "HXCPP_MSVC_VER=120"].concat(staticFlags) );
+                     validArchs.set("2015m32", ["-D"+target, "-DHXCPP_M32", "HXCPP_MSVC_VER=140"].concat(staticFlags) );
                      if (wantWindows64())
                      {
-                        validArchs.set("2013m64", ["-D"+target, "-DHXCPP_M64", "HXCPP_MSVC_VER=120", staticFlag] );
-                        validArchs.set("2015m64", ["-D"+target, "-DHXCPP_M64", "HXCPP_MSVC_VER=140", staticFlag] );
+                        validArchs.set("2013m64", ["-D"+target, "-DHXCPP_M64", "HXCPP_MSVC_VER=120"].concat(staticFlags) );
+                        validArchs.set("2015m64", ["-D"+target, "-DHXCPP_M64", "HXCPP_MSVC_VER=140"].concat(staticFlags) );
                      }
                   }
                   else
@@ -148,40 +148,40 @@ class Builder
                   }
 
                case "mingw":
-                  validArchs.set("m32", ["-Dwindows", "-DHXCPP_MINGW", "-DHXCPP_M32", staticFlag] );
+                  validArchs.set("m32", ["-Dwindows", "-DHXCPP_MINGW", "-DHXCPP_M32"].concat(staticFlags) );
 
                case "ios", "ioslegacy":
-                  validArchs.set("armv6", ["-Diphoneos", staticFlag] );
-                  validArchs.set("armv7", ["-Diphoneos", "-DHXCPP_ARMV7", staticFlag] );
-                  validArchs.set("armv7s", ["-Diphoneos", "-DHXCPP_ARMV7S", staticFlag] );
-                  validArchs.set("arm64", ["-Diphoneos", "-DHXCPP_ARM64", "-DHXCPP_M64", staticFlag] );
+                  validArchs.set("armv6", ["-Diphoneos"].concat(staticFlags) );
+                  validArchs.set("armv7", ["-Diphoneos", "-DHXCPP_ARMV7"].concat(staticFlags) );
+                  validArchs.set("armv7s", ["-Diphoneos", "-DHXCPP_ARMV7S"].concat(staticFlags) );
+                  validArchs.set("arm64", ["-Diphoneos", "-DHXCPP_ARM64", "-DHXCPP_M64"].concat(staticFlags) );
                   //validArchs.push("armv64");
-                  validArchs.set("x86", ["-Diphonesim", staticFlag] );
-                  validArchs.set("x86_64", ["-Diphonesim", "-DHXCPP_M64", staticFlag] );
+                  validArchs.set("x86", ["-Diphonesim"].concat(staticFlags) );
+                  validArchs.set("x86_64", ["-Diphonesim", "-DHXCPP_M64"].concat(staticFlags) );
 
                case "android":
-                  validArchs.set("armv5", ["-Dandroid", staticFlag] );
-                  validArchs.set("armv7", ["-Dandroid", "-DHXCPP_ARMV7", staticFlag ] );
-                  validArchs.set("x86", ["-Dandroid", "-DHXCPP_X86", staticFlag ] );
+                  validArchs.set("armv5", ["-Dandroid"].concat(staticFlags) );
+                  validArchs.set("armv7", ["-Dandroid", "-DHXCPP_ARMV7"].concat(staticFlags) );
+                  validArchs.set("x86", ["-Dandroid", "-DHXCPP_X86"].concat(staticFlags) );
                
                case "blackberry":
-                  validArchs.set("armv7", ["-Dblackberry", staticFlag] );
-                  validArchs.set("x86", ["-Dblackberry", "-Dsimulator", staticFlag ] );
+                  validArchs.set("armv7", ["-Dblackberry"].concat(staticFlags) );
+                  validArchs.set("x86", ["-Dblackberry", "-Dsimulator"].concat(staticFlags) );
                
                case "tizen":
-                  validArchs.set("armv7", ["-Dtizen", staticFlag] );
-                  validArchs.set("x86", ["-Dtizen", "-Dsimulator", staticFlag ] );
+                  validArchs.set("armv7", ["-Dtizen"].concat(staticFlags) );
+                  validArchs.set("x86", ["-Dtizen", "-Dsimulator"].concat(staticFlags) );
                
                case "emscripten":
-                  validArchs.set("x86", ["-Demscripten", staticFlag] );
+                  validArchs.set("x86", ["-Demscripten"].concat(staticFlags) );
                
                case "webos":
-                  validArchs.set("armv7", ["-Dwebos", staticFlag] );
+                  validArchs.set("armv7", ["-Dwebos"].concat(staticFlags) );
                
                case "tvos":
-                  validArchs.set("arm64", ["-Dappletvos", "-DHXCPP_ARM64", "-DHXCPP_M64", "-DENABLE_BITCODE", staticFlag] );
-                  validArchs.set("x86", ["-Dappletvsim", "-DENABLE_BITCODE", staticFlag] );
-                  validArchs.set("x86_64", ["-Dappletvsim", "-DHXCPP_M64", "-DENABLE_BITCODE", staticFlag] );
+                  validArchs.set("arm64", ["-Dappletvos", "-DHXCPP_ARM64", "-DHXCPP_M64", "-DENABLE_BITCODE"].concat(staticFlags) );
+                  validArchs.set("x86", ["-Dappletvsim", "-DENABLE_BITCODE"].concat(staticFlags) );
+                  validArchs.set("x86_64", ["-Dappletvsim", "-DHXCPP_M64", "-DENABLE_BITCODE"].concat(staticFlags) );
 
             }
 
