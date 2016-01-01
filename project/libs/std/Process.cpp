@@ -94,19 +94,52 @@ static value process_run( value cmd, value vargs ) {
       HANDLE proc = GetCurrentProcess();
       HANDLE oread,eread,iwrite;
       // creates commandline
-      buffer b = alloc_buffer("\"");
+      buffer b = alloc_buffer(NULL);
+      value sargs;
+      buffer_append(b,"\"");
       val_buffer(b,cmd);
       buffer_append(b,"\"");
-
-      int n = val_array_size(vargs);
-      for(i=0;i<n;i++) {
-         value v = val_array_i(vargs,i);
+      for(i=0;i<val_array_size(vargs);i++) {
+         value v = val_array_i(vargs, i);
+         int j,len;
+         unsigned int bs_count = 0;
+         unsigned int k;
          val_check(v,string);
+         len = val_strlen(v);
          buffer_append(b," \"");
-         val_buffer(b,v);
+         for(j=0;j<len;j++) {
+            char c = val_string(v)[j];
+            switch( c ) {
+            case '"':
+               // Double backslashes.
+               for (k=0;k<bs_count*2;k++) {
+                  buffer_append(b,"\\");
+               }
+               bs_count = 0;
+               buffer_append(b, "\\\"");
+               break;
+            case '\\':
+               // Don't know if we need to double yet.
+               bs_count++;
+               break;
+            default:
+               // Normal char
+               for (k=0;k<bs_count;k++) {
+                  buffer_append(b,"\\");
+               }
+               bs_count = 0;
+               buffer_append_char(b,c);
+               break;
+            }
+         }
+         // Add remaining backslashes, if any.
+         for (k=0;k<bs_count*2;k++) {
+            buffer_append(b,"\\");
+         }
          buffer_append(b,"\"");
       }
-      wchar_t *name = val_dup_wstring(buffer_to_string(b));
+      sargs = buffer_to_string(b);
+      wchar_t *name = val_dup_wstring(sargs);
       gc_enter_blocking();
       p = (vprocess*)malloc(sizeof(vprocess));
       // startup process
