@@ -72,7 +72,7 @@ struct ToCaseExpr : public StringExpr
    }
 };
 
-template<bool CODE>
+template<bool CODE,bool AS_INT>
 struct CharAtExpr : public StringExpr
 {
    CppiaExpr *a0;
@@ -86,7 +86,7 @@ struct CharAtExpr : public StringExpr
       a0 = a0->link(inData);
       return StringExpr::link(inData);
    }
-   ExprType getType() { return CODE ? etObject : etString; }
+   ExprType getType() { return CODE ? (AS_INT ? etInt : etObject) : etString; }
 
    String runString(CppiaCtx *ctx)
    {
@@ -103,7 +103,11 @@ struct CharAtExpr : public StringExpr
       BCR_CHECK;
       int idx = a0->runInt(ctx);
       BCR_CHECK;
-      return val.charCodeAt(idx);
+
+      if (AS_INT)
+         return (int)( ((unsigned char *)val.__s) [idx]);
+      else
+         return val.charCodeAt(idx);
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
@@ -113,7 +117,12 @@ struct CharAtExpr : public StringExpr
       BCR_CHECK;
 
       if (CODE)
-         return val.charCodeAt(idx).mPtr;
+      {
+         if (AS_INT)
+            return Dynamic( (int)( ((unsigned char *)val.__s) [idx]) ).mPtr;
+         else
+            return val.charCodeAt(idx).mPtr;
+      }
       else
          return Dynamic(val.charAt(idx)).mPtr;
    }
@@ -216,17 +225,17 @@ CppiaExpr *createStringBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, String f
    else if (field==HX_CSTRING("charAt"))
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
-      return new CharAtExpr<false>(inSrc,inThisExpr,ioExpressions[0]);
+      return new CharAtExpr<false,false>(inSrc,inThisExpr,ioExpressions[0]);
    }
    else if (field==HX_CSTRING("cca"))
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
-      return new CharAtExpr<true>(inSrc,inThisExpr,ioExpressions[0]);
+      return new CharAtExpr<true,true>(inSrc,inThisExpr,ioExpressions[0]);
    }
    else if (field==HX_CSTRING("charCodeAt"))
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
-      return new CharAtExpr<true>(inSrc,inThisExpr,ioExpressions[0]);
+      return new CharAtExpr<true,false>(inSrc,inThisExpr,ioExpressions[0]);
    }
    else if (field==HX_CSTRING("split"))
    {
