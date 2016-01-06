@@ -1,7 +1,9 @@
 #if cpp
 import cpp.Lib;
+import cpp.vm.Gc;
 #elseif neko
 import neko.Lib;
+import neko.vm.Gc;
 #end
 
 import Loader;
@@ -21,6 +23,9 @@ class TestCffi extends TestBase
    static var charString:Int->Int->Int->String = Lib.load("prime", "charString", 3);
    static var byteDataSize:haxe.io.Bytes->Int = Lib.load("prime", "byteDataSize", 1);
    static var byteDataByte:haxe.io.Bytes->Int->Int = Lib.load("prime", "byteDataByte", 2);
+   static var setRoot:Int->Dynamic->Void = Lib.load("prime", "setRoot", 2);
+   static var getRoot:Int->Dynamic = Lib.load("prime", "getRoot", 1);
+   static var clearRoots:Void->Void = Lib.load("prime", "clearRoots", 0);
 
    public function testCffi()
    {
@@ -44,12 +49,21 @@ class TestCffi extends TestBase
 
       assertTrue( appendString!=null );
       assertTrue( bufferToString!=null );
+      assertTrue( getRoot!=null );
+      assertTrue( setRoot!=null );
 
 
       assertFalse( valIsBuffer(null) );
       assertFalse( valIsBuffer(1) );
       assertFalse( valIsBuffer({}) );
       assertFalse( valIsBuffer("String Buf") );
+
+
+      for(i in 0...100)
+        setRoot(i,[i]);
+
+      Gc.run(true);
+
 
 
       var base = "Hello ";
@@ -77,6 +91,16 @@ class TestCffi extends TestBase
       var bytes = haxe.io.Bytes.ofString("String Buffer");
       assertEq( byteDataSize(bytes), 13 );
       assertEq( byteDataByte(bytes,1), 't'.code );
+
+      Gc.run(true);
+
+      for(i in 0...100)
+        assertEq( getRoot(i)+"", [i]+"" );
+
+      clearRoots();
+
+      for(i in 0...100)
+        assertEq( getRoot(i), null );
    }
 }
 

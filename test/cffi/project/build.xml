@@ -5,7 +5,7 @@
       <file name="Project.cpp" />
    </files>
 
-   <target id="default" output="${LIBPREFIX}prime${MSVC_LIB_VERSION}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+   <target id="default" output="${LIBPREFIX}prime${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
 
       <outdir name="${NDLLDIR}/${BINDIR}" />
       <files id="prime"/>

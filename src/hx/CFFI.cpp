@@ -812,57 +812,17 @@ void gc_change_managed_memory(int inDelta, const char *inWhy)
 }
 
 
-
-class Root *sgRootHead = 0;
-
-class Root
-{
-public:
-   Root()
-   {
-      mNext = 0;
-      mPrev = 0;
-      mValue = 0;
-      hx::GCAddRoot(&mValue);
-   }
-   ~Root()
-   {
-      hx::GCRemoveRoot(&mValue);
-   }
-
-   Root *mNext;
-   Root *mPrev;
-   hx::Object *mValue;
-};
-
-
-
 value *alloc_root()
 {
-   if (!sgRootHead)
-      sgRootHead = new Root;
-
-   Root *root = new Root;
-   root->mNext = sgRootHead->mNext;
-   if (root->mNext)
-      root->mNext->mPrev = root;
-
-   sgRootHead->mNext = root;
-   root->mPrev = sgRootHead;
-
-   return (value *)&root->mValue;
+   hx::Object ** result = new hx::Object *();
+   hx::GCAddRoot(result);
+   return (value *)result;
 }
 
 void free_root(value *inValue)
 {
-   int diff =(char *)(&sgRootHead->mValue) - (char *)sgRootHead;
-   Root *root = (Root *)( (char *)inValue - diff );
-
-   if (root->mPrev)
-      root->mPrev->mNext = root->mNext;
-   if (root->mNext)
-      root->mNext->mPrev = root->mPrev;
-
+   hx::Object **root = (hx::Object **) inValue;
+   hx::GCRemoveRoot(root);
    delete root;
 }
 
