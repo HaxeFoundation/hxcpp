@@ -3568,7 +3568,7 @@ public:
       mBottomOfStack = inBottom;
    }
 
-   void SetupStack()
+   virtual void SetupStack()
    {
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
