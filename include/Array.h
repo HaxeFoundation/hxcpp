@@ -156,6 +156,7 @@ public:
    virtual Dynamic __toString() = 0;
    virtual Dynamic __unshift(const Dynamic &a0) = 0;
    virtual Dynamic __map(const Dynamic &func) = 0;
+   virtual Dynamic __reduce(const Dynamic &a0, const Dynamic &a1) = 0;
    virtual Dynamic __filter(const Dynamic &func) = 0;
    inline Dynamic ____SetSize(const Dynamic &len)  { __SetSize(len); return this; } 
    inline Dynamic ____SetSizeExact(const Dynamic &len)  { __SetSizeExact(len); return this; } 
@@ -185,6 +186,7 @@ public:
    Dynamic toString_dyn();
    Dynamic unshift_dyn();
    Dynamic map_dyn();
+   Dynamic reduce_dyn();
    Dynamic filter_dyn();
    Dynamic __SetSize_dyn();
    Dynamic __SetSizeExact_dyn();
@@ -514,6 +516,7 @@ public:
    Array<ELEM_> slice(int inPos, Dynamic end = null());
    Array<ELEM_> splice(int inPos, int len);
    Dynamic map(Dynamic inFunc);
+   Dynamic reduce(Dynamic inFunc, Dynamic first);
    Array<ELEM_> filter(Dynamic inFunc);
 
    void insert(int inPos, ELEM_ inValue)
@@ -619,6 +622,7 @@ public:
    virtual Dynamic __toString() { return toString(); }
    virtual Dynamic __unshift(const Dynamic &a0) { unshift(a0); return null(); }
    virtual Dynamic __map(const Dynamic &func) { return map(func); }
+   virtual Dynamic __reduce(const Dynamic &a0,const Dynamic &a1) { return reduce(a0, a1); }
    virtual Dynamic __filter(const Dynamic &func) { return filter(func); }
    virtual Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3) { blit(a0,a1,a2,a3); return null(); }
    virtual Dynamic __memcmp(const Dynamic &a0) { return memcmp(a0); }
@@ -829,6 +833,14 @@ Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
    for(int i=0;i<length;i++)
       result->__unsafe_set(i,inFunc(__unsafe_get(i)));
    return result;
+}
+
+template<typename ELEM_>
+Dynamic Array_obj<ELEM_>::reduce(Dynamic inFunc, Dynamic first)
+{
+   for(int i=0;i<length;i++)
+      first = inFunc(first, __unsafe_get(i));
+   return first;
 }
 
 

@@ -422,6 +422,7 @@ DEFINE_ARRAY_FUNC1(sort);
 DEFINE_ARRAY_FUNC0(toString);
 DEFINE_ARRAY_FUNC1(unshift);
 DEFINE_ARRAY_FUNC1(map);
+DEFINE_ARRAY_FUNC2(reduce);
 DEFINE_ARRAY_FUNC1(filter);
 DEFINE_ARRAY_FUNC1(__SetSize);
 DEFINE_ARRAY_FUNC1(__SetSizeExact);
@@ -454,6 +455,7 @@ Dynamic ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp
    if (inString==HX_CSTRING("unshift")) return unshift_dyn();
    if (inString==HX_CSTRING("filter")) return filter_dyn();
    if (inString==HX_CSTRING("map")) return map_dyn();
+   if (inString==HX_CSTRING("reduce")) return reduce_dyn();
    if (inString==HX_CSTRING("__SetSize")) return __SetSize_dyn();
    if (inString==HX_CSTRING("__SetSizeExact")) return __SetSizeExact_dyn();
    if (inString==HX_CSTRING("__unsafe_get")) return __unsafe_get_dyn();
@@ -487,6 +489,7 @@ static String sArrayFields[] = {
    HX_CSTRING("unshift"),
    HX_CSTRING("filter"),
    HX_CSTRING("map"),
+   HX_CSTRING("reduce"),
    String(null())
 };
 
