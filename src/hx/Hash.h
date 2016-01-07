@@ -607,7 +607,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       void operator()(typename Hash::Element **inElem)
       {
          HX_VISIT_ARRAY(*inElem);
-         if ( (NeedsMarking<Key>::Yes && !ELEMENT::WeakKeys) || NeedsMarking<Value>::Yes)
+         if ( NeedsMarking<Key>::Yes || NeedsMarking<Value>::Yes)
          {
              typename Hash::Element &el = **inElem;
              HX_VISIT_MEMBER(el.key);

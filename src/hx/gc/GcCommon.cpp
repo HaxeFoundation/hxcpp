@@ -84,7 +84,7 @@ void *String::operator new( size_t inSize )
 
 void __hxcpp_collect(bool inMajor)
 {
-	hx::InternalCollect(inMajor,false);
+	hx::InternalCollect(inMajor,inMajor);
 }
 
 

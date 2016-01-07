@@ -1694,7 +1694,7 @@ void RunFinalizers()
    {
       HashBase<Dynamic> *ref = sWeakHashList[i];
       unsigned char mark = ((unsigned char *)ref)[ENDIAN_MARK_ID_BYTE];
-      // Object itself is gone - no need to worrk about that again
+      // Object itself is gone - no need to worry about that again
       if ( mark!=gByteMarkID )
       {
          sWeakHashList.qerase(i);
@@ -2686,19 +2686,18 @@ public:
       {
          hx::Object **obj = &**i;
          if (*obj)
-         {
             inCtx->visitObject(obj);
-            (*obj)->__Visit(inCtx);
-         }
       }
       for(int i=0;i<hx::sZombieList.size();i++)
-      {
          inCtx->visitObject( &hx::sZombieList[i] );
 
-         hx::sZombieList[i]->__Visit(inCtx);
-      }
+      for(int i=0;i<hx::sWeakRefs.size(); i++)
+         inCtx->visitObject( (hx::Object **) &hx::sWeakRefs[i] );
 
+      for(int i=0;i<hx::sWeakHashList.size();i++)
+         inCtx->visitObject( (hx::Object **) &hx::sWeakHashList[i] );
    }
+
    #endif
 
    void ReclaimAsync(BlockDataStats &outStats)
