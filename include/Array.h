@@ -452,14 +452,14 @@ public:
       return false;
    }
 
-   NullType removeAt( int idx )
+   bool removeAt( int idx )
    { 
       if( idx < 0 ) idx += length; 
-      if (idx>=length || idx<0) return null(); 
+      if (idx>=length || idx<0) return false; 
 
       ELEM_ e = __get(idx); 
       RemoveElement(idx); 
-      return e; 
+      return true; 
    }
 
 
