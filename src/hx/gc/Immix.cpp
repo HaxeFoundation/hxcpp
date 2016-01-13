@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 
 #include <hx/GC.h>
+#include <hx/Memory.h>
 #include <hx/Thread.h>
 #include "../Hash.h"
 #include "GcRegCapture.h"
@@ -103,11 +104,6 @@ enum
 // Allocate this many blocks at a time - this will increase memory usage % when rounding to block size must be done.
 // However, a bigger number makes it harder to release blocks due to pinning
 #define IMMIX_BLOCK_GROUP_BITS  5
-
-#ifdef __GNUC__
-// Not sure if this is worth it ....
-//#define USE_POSIX_MEMALIGN
-#endif
 
 
 #ifdef HXCPP_DEBUG
@@ -1989,7 +1985,7 @@ void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHa
 {
    bool addHash = inAddStringHash && inData && inSize>0;
 
-   int *result = (int *)malloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
+   int *result = (int *)HxAlloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
    if (addHash)
    {
       unsigned int hash = 0;
@@ -2224,9 +2220,11 @@ public:
       if (inSize<<1 > mLargeAllocSpace)
          mLargeAllocSpace = inSize<<1;
 
-      unsigned int *result = inClear ? 
-                             (unsigned int *)calloc(1,inSize + sizeof(int)*2) :
-                             (unsigned int *)malloc(inSize + sizeof(int)*2);
+      unsigned int *result = (unsigned int *)HxAlloc(inSize + sizeof(int)*2);
+      if (inClear)
+      {
+         memset(result, 0, inSize + sizeof(int)*2);
+      }
       if (!result)
       {
          #ifdef SHOW_MEM_EVENTS
@@ -2234,7 +2232,7 @@ public:
          #endif
 
          CollectFromThisThread(true);
-         result = (unsigned int *)malloc(inSize + sizeof(int)*2);
+         result = (unsigned int *)HxAlloc(inSize + sizeof(int)*2);
       }
       result[0] = inSize;
       result[1] = hx::gMarkID;
@@ -2357,18 +2355,7 @@ public:
       if (gid<0)
         gid = gAllocGroups.next();
 
-      int size = 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS);
-      #ifdef USE_POSIX_MEMALIGN
-         char *chunk = 0;
-         #ifdef ANDROID
-            chunk = (char *)memalign( IMMIX_BLOCK_SIZE, size );
-         #else
-             posix_memalign( (void **)&chunk, IMMIX_BLOCK_SIZE, size);
-         #endif
-      #else
-      char *chunk = (char *)malloc(size);
-      #endif
-
+      char *chunk = (char *)HxAllocGCBlock( 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS) );
       if (!chunk)
       {
          #ifdef SHOW_MEM_EVENTS
@@ -2711,12 +2698,7 @@ public:
             GCLOG("Release group %d\n", i);
             #endif
 
-            #ifdef USE_POSIX_MEMALIGN
-            // Can just call free?
-            free(g.alloc);
-            #else
-            free(g.alloc);
-            #endif
+            HxFree(g.alloc);
             g.alloc = 0;
          }
       }
@@ -3271,7 +3253,7 @@ public:
             #ifdef ASYNC_FREE
             freeList.push(mLargeList[idx]);
             #else
-            free(mLargeList[idx]);
+            HxFree(mLargeList[idx]);
             #endif
 
             mLargeList.qerase(idx);
@@ -3281,7 +3263,7 @@ public:
       }
       #ifdef ASYNC_FREE
       for(int i=0;i<freeList.size();i++)
-         free(freeList[i]);
+         HxFree(freeList[i]);
       #endif
 
       int l1 = mLargeList.size();

@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <hx/Scriptable.h>
 #include <hx/GC.h>
+#include <hx/Memory.h>
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -1859,7 +1860,7 @@ public:
       if (len==0)
          return String("",0).dup();
 
-      char *buffer = (char *)malloc(len);
+      char *buffer = (char *)HxAlloc(len);
       if (mBytes)
       {
          if (mBytes+len>mBytesEnd)
@@ -1869,11 +1870,11 @@ public:
       }
       else if (fread(buffer,len,1,mFile)!=1)
       {
-         free(buffer);
+         HxFree(buffer);
          Error("Could not read string16");
       }
       Dynamic result = String(buffer,len).dup();
-      free(buffer);
+      HxFree(buffer);
       return result;
    }
 

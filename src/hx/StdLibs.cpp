@@ -1,5 +1,6 @@
 #include <hxcpp.h>
 #include <hxMath.h>
+#include <hx/Memory.h>
 
 #ifdef HX_WINDOWS
 #include <windows.h>
@@ -681,7 +682,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    if (!sgFieldToStringAlloc)
    {
       sgFieldToStringAlloc = 100;
-      sgFieldToString = (String *)malloc(sgFieldToStringAlloc * sizeof(String));
+      sgFieldToString = (String *)HxAlloc(sgFieldToStringAlloc * sizeof(String));
 
       sgStringToField = new StringToField;
    }
