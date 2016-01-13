@@ -15,7 +15,7 @@ typedef struct _buffer  *buffer;
 #include "OS.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #if defined(BLACKBERRY)
 using namespace std;
 #endif
