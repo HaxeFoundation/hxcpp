@@ -1923,7 +1923,11 @@ hx::Object *__hxcpp_weak_ref_create(Dynamic inObject)
 
 hx::Object *__hxcpp_weak_ref_get(Dynamic inRef)
 {
+   #ifdef HXCPP_DEBUG
    hx::WeakRef *ref = dynamic_cast<hx::WeakRef *>(inRef.mPtr);
+   #else
+   hx::WeakRef *ref = static_cast<hx::WeakRef *>(inRef.mPtr);
+   #endif
    return ref->mRef.mPtr;
 }
 
