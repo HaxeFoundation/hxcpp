@@ -47,11 +47,11 @@ public:
    inline void checkBase() const
    {
       #ifdef HXCPP_CHECK_POINTER
-      if (store==arrayNull)
+      if (store==hx::arrayNull)
       {
          hx::NullReference("Array", true);
          // The handler might have fixed up the null value
-         if (store==arrayNull) hx::NullReference("Array", false);
+         if (store==hx::arrayNull) hx::NullReference("Array", false);
       }
       #endif
    }

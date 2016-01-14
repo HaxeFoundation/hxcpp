@@ -602,11 +602,11 @@ public:
 
    void sort(Dynamic inSorter)
    {
-      if ( hx::ArrayTraits<ELEM_>::StoreType==hx::arrayObject ||
-          hx::ArrayTraits<ELEM_>::StoreType==hx::arrayString)
+      if ( hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayObject ||
+          hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayString)
       {
          // Keep references from being hidden inside sorters buffers
-         safeSort(inSorter, hx::ArrayTraits<ELEM_>::StoreType==hx::arrayString);
+         safeSort(inSorter, hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayString);
       }
       else
       {
