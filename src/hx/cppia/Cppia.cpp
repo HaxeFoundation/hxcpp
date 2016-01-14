@@ -1698,9 +1698,11 @@ struct CppiaClassInfo
       {
          vtable.push_back( findInterfaceFunction("toString") );
          ScriptNamedFunction *functions = interface->functions;
-         for(ScriptNamedFunction *f = functions; f->name; f++)
-            if (strcmp(f->name,"toString"))
-               vtable.push_back( findInterfaceFunction(f->name) );
+         if (functions != 0) {
+            for(ScriptNamedFunction *f = functions; f->name; f++)
+               if (strcmp(f->name,"toString"))
+                  vtable.push_back( findInterfaceFunction(f->name) );
+         }
             
       }
 
