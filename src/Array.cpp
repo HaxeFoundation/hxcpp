@@ -534,4 +534,185 @@ Dynamic IteratorBase::__Field(const String &inString, hx::PropertyAccess inCallP
 }
 
 
+#ifdef HX_VARRAY_DEFINED
+// -------- VirtualArray -------------------------------------
 
+namespace cpp
+{
+
+
+
+#define DEFINE_VARRAY_FUNC(ret, func,array_list,dynamic_arg_list,arg_list,ARG_C) \
+struct VirtualArray_##func : public hx::Object \
+{ \
+   bool __IsFunction() const { return true; } \
+   VirtualArray mThis; \
+   VirtualArray_##func(VirtualArray inThis) : mThis(inThis) { } \
+   String toString() const{ return HX_CSTRING(#func) ; } \
+   String __ToString() const{ return HX_CSTRING(#func) ; } \
+   int __GetType() const { return vtFunction; } \
+   void *__GetHandle() const { return mThis.mPtr; } \
+   int __ArgCount() const { return ARG_C; } \
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+   ARRAY_VISIT_FUNC \
+   Dynamic __Run(const Array<Dynamic> &inArgs) \
+   { \
+      ret mThis->func(array_list); return Dynamic(); \
+   } \
+   Dynamic __run(dynamic_arg_list) \
+   { \
+      ret mThis->func(arg_list); return Dynamic(); \
+   } \
+}; \
+Dynamic VirtualArray_obj::func##_dyn()  { return new VirtualArray_##func(this);  }
+
+
+#define DEFINE_VARRAY_FUNC0(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST0,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0,0)
+#define DEFINE_VARRAY_FUNC1(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST1,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1,1)
+#define DEFINE_VARRAY_FUNC2(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST2,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2,2)
+#define DEFINE_VARRAY_FUNC3(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST3,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3,3)
+#define DEFINE_VARRAY_FUNC4(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST4,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4,4)
+
+
+DEFINE_VARRAY_FUNC1(return,concat);
+DEFINE_VARRAY_FUNC2(,insert);
+DEFINE_VARRAY_FUNC0(return,iterator);
+DEFINE_VARRAY_FUNC1(return,join);
+DEFINE_VARRAY_FUNC0(return,pop);
+DEFINE_VARRAY_FUNC0(return,copy);
+DEFINE_VARRAY_FUNC1(return,push);
+DEFINE_VARRAY_FUNC1(return,remove);
+DEFINE_VARRAY_FUNC2(return,indexOf);
+DEFINE_VARRAY_FUNC2(return,lastIndexOf);
+DEFINE_VARRAY_FUNC0(,reverse);
+DEFINE_VARRAY_FUNC0(return,shift);
+DEFINE_VARRAY_FUNC2(return,slice);
+DEFINE_VARRAY_FUNC2(return,splice);
+DEFINE_VARRAY_FUNC1(,sort);
+DEFINE_VARRAY_FUNC0(return,toString);
+DEFINE_VARRAY_FUNC1(,unshift);
+DEFINE_VARRAY_FUNC1(return,map);
+DEFINE_VARRAY_FUNC1(return,filter);
+DEFINE_VARRAY_FUNC1(,__SetSize);
+DEFINE_VARRAY_FUNC1(,__SetSizeExact);
+DEFINE_VARRAY_FUNC2(,zero);
+DEFINE_VARRAY_FUNC1(,memcmp);
+
+
+
+
+hx::Class VirtualArray_obj::__GetClass() const { return ArrayBase::__mClass; }
+String VirtualArray_obj::toString()
+{
+   if (!base)
+   {
+      if (store==arrayEmpty)
+         return HX_CSTRING("[]");
+      return HX_CSTRING("null");
+   }
+   return base->toString();
+
+}
+
+void VirtualArray_obj::EnsureArrayStorage(Dynamic inValue)
+{
+}
+
+void VirtualArray_obj::MakeIntArray()
+{
+   if (!base)
+      base = new Array_obj<int>(0,0);
+   else
+   {
+      Array<Int> result = Dynamic(base);
+      base = result.mPtr;
+   }
+   store = arrayInt;
+}
+
+
+void VirtualArray_obj::MakeObjectArray()
+{
+   if (!base)
+      base = new Array_obj<Dynamic>(0,0);
+   else
+   {
+      Array<Dynamic> result = Dynamic(base);
+      base = result.mPtr;
+   }
+   store = arrayObject;
+}
+
+
+void VirtualArray_obj::MakeStringArray()
+{
+   if (!base)
+      base = new Array_obj<String>(0,0);
+   else
+   {
+      Array<String> result = Dynamic(base);
+      base = result.mPtr;
+   }
+   store = arrayString;
+}
+
+
+void VirtualArray_obj::MakeBoolArray()
+{
+   if (!base)
+      base = new Array_obj<Bool>(0,0);
+   else
+   {
+      Array<Bool> result = Dynamic(base);
+      base = result.mPtr;
+   }
+   store = arrayBool;
+}
+
+
+void VirtualArray_obj::MakeFloatArray()
+{
+   if (!base)
+      base = new Array_obj<Float>(0,0);
+   else
+   {
+      Array<Float> result = Dynamic(base);
+      base = result.mPtr;
+   }
+   store = arrayFloat;
+}
+
+
+
+void VirtualArray_obj::EnsureBase()
+{
+   if (!base)
+   {
+      base = new Array_obj<unsigned char>(0,0);
+      store = arrayInt;
+   }
+}
+
+// TODO
+VirtualArray VirtualArray_obj::splice(int inPos, int len)
+{
+   return null();
+}
+
+Dynamic VirtualArray_obj::map(Dynamic inFunc)
+{
+   return null();
+}
+
+VirtualArray VirtualArray_obj::filter(Dynamic inFunc)
+{
+   return null();
+}
+
+
+
+
+} // End namespace cpp
+
+
+#endif
