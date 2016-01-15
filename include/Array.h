@@ -739,11 +739,6 @@ public:
       return *this;
    }
 
-   operator cpp::VirtualArray () const
-   {
-      return new cpp::VirtualArray_obj( mPtr, mPtr);
-   }
-
    #endif
 
    inline void setDynamic( const Dynamic &inRHS, bool inIgnoreVirtualArray=false )

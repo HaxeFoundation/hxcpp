@@ -5,6 +5,29 @@ namespace cpp
 #ifndef HX_VARRAY_DEFINED
 #define HX_VARRAY_DEFINED
 
+class VirtualArray_obj;
+
+class VirtualArray : public hx::ObjectPtr<VirtualArray_obj>
+{
+   typedef hx::ObjectPtr<VirtualArray_obj> Base;
+public:
+   inline VirtualArray() : Base(0) { }
+   inline VirtualArray(VirtualArray_obj *inObj) : Base(inObj) { }
+   inline VirtualArray(const null &inNull) : Base(0) { }
+   inline VirtualArray(const VirtualArray &inOther) : Base( inOther.mPtr ) {  }
+
+   // Build from foreign array
+   template<typename SOURCE_> inline VirtualArray( const Array<SOURCE_> &inRHS );
+
+   inline VirtualArray &operator=(const null &inNull) { mPtr = 0; return *this; }
+   inline VirtualArray &operator=(Ptr inRHS) { mPtr = inRHS; return *this; }
+   inline VirtualArray &operator=(const VirtualArray &inRHS) { mPtr = inRHS.mPtr; return *this; }
+};
+
+
+
+
+
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public hx::Object
 {
@@ -13,13 +36,12 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public hx::Object
 
 public:
    typedef hx::Object super;
-   typedef hx::ObjectPtr<VirtualArray_obj> VirtualArray;
    ArrayStore  store;
    ArrayBase   *base;
 
    VirtualArray_obj(ArrayBase *inBase=0, bool inFixed=false) : base(inBase)
    {
-      store = inFixed ? hx::arrayFixed : base ? base->getStoreType() : hx::arrayEmpty;
+      store = inFixed && inBase ? hx::arrayFixed : base ? base->getStoreType() : hx::arrayEmpty;
    }
 
    VirtualArray_obj(ArrayStore inStore)
@@ -27,11 +49,13 @@ public:
       store = inStore;
    }
 
-   static hx::ObjectPtr<VirtualArray_obj> __new(int inSize=0,int inReserve=0)
+
+   inline static VirtualArray __new(int inSize=0,int inReserve=0)
    {
       // TODO - size/reserve
       return new VirtualArray_obj(hx::arrayEmpty);
    }
+
 
    inline int get_length() const
    {
@@ -377,9 +401,21 @@ public:
    Dynamic memcmp_dyn();
 };
 
-typedef hx::ObjectPtr< VirtualArray_obj > VirtualArray;
+
+//typedef hx::ObjectPtr< VirtualArray_obj > VirtualArray;
+
+
 
 #else // !HX_VARRAY_DEFINED
+
+
+// Build dynamic array from foreign array
+template<typename SOURCE_>
+VirtualArray::VirtualArray( const Array<SOURCE_> &inRHS )
+   : Base( new VirtualArray_obj( inRHS.mPtr, true) )
+{
+}
+
 
 template<typename F>
 void VirtualArray_obj::fixType()

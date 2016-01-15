@@ -225,6 +225,7 @@ public:
 template<typename OBJ_>
 class ObjectPtr
 {
+protected:
    inline bool SetPtr(OBJ_ *inPtr)
    {
       mPtr = inPtr;
