@@ -12,7 +12,7 @@
 #endif
 
 
-#if !defined(HX_WINRT) && !defined(EPPC)
+#if !defined(HX_WINRT) && !defined(STATIC_LINK)
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
@@ -229,7 +229,7 @@ static String GetFileContents(String inFile)
    return String(buf,strlen(buf)).dup();
 }
 
-#ifndef HX_WINRT
+#if !defined(HX_WINRT) && !defined(STATIC_LINK)
 static String GetEnv(const char *inPath)
 {
    const char *env  = getenv(inPath);
@@ -245,13 +245,11 @@ static String FindHaxelib(String inLib)
 
    String haxepath;
 
-   #if !defined(HX_WINRT) && !defined(EPPC)
-      struct stat s;
-      if ( (stat(".haxelib",&s)==0 && (s.st_mode & S_IFDIR) ) )
-         haxepath = HX_CSTRING(".haxelib");
-      if (loadDebug)
-          printf( haxepath.length ? "Found local .haxelib\n" : "No local .haxelib\n");
-   #endif
+   struct stat s;
+   if ( (stat(".haxelib",&s)==0 && (s.st_mode & S_IFDIR) ) )
+      haxepath = HX_CSTRING(".haxelib");
+   if (loadDebug)
+      printf( haxepath.length ? "Found local .haxelib\n" : "No local .haxelib\n");
 
    if (haxepath.length==0)
    {
