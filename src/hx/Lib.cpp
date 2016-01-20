@@ -207,7 +207,7 @@ typedef void (*SetLoaderProcFunc)(void *(*)(const char *));
 typedef void *(*GetNekoEntryFunc)();
 typedef void (*NekoEntryFunc)();
 
-String GetFileContents(String inFile)
+static String GetFileContents(String inFile)
 {
 #ifndef _WIN32
    FILE *file = fopen(inFile.__CStr(),"rb");
@@ -230,14 +230,14 @@ String GetFileContents(String inFile)
 }
 
 #ifndef HX_WINRT
-String GetEnv(const char *inPath)
+static String GetEnv(const char *inPath)
 {
    const char *env  = getenv(inPath);
    String result(env,env?strlen(env):0);
    return result;
 }
 
-String FindHaxelib(String inLib)
+static String FindHaxelib(String inLib)
 {
    bool loadDebug = getenv("HXCPP_LOAD_DEBUG");
 
