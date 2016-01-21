@@ -582,6 +582,7 @@ DEFINE_VARRAY_FUNC0(return,pop);
 DEFINE_VARRAY_FUNC0(return,copy);
 DEFINE_VARRAY_FUNC1(return,push);
 DEFINE_VARRAY_FUNC1(return,remove);
+DEFINE_VARRAY_FUNC1(return,removeAt);
 DEFINE_VARRAY_FUNC2(return,indexOf);
 DEFINE_VARRAY_FUNC2(return,lastIndexOf);
 DEFINE_VARRAY_FUNC0(,reverse);
@@ -597,8 +598,59 @@ DEFINE_VARRAY_FUNC1(,__SetSize);
 DEFINE_VARRAY_FUNC1(,__SetSizeExact);
 DEFINE_VARRAY_FUNC2(,zero);
 DEFINE_VARRAY_FUNC1(,memcmp);
+DEFINE_VARRAY_FUNC1(return,__unsafe_get);
+DEFINE_VARRAY_FUNC2(return,__unsafe_set);
+DEFINE_VARRAY_FUNC4(,blit);
 
+Dynamic VirtualArray_obj::__GetItem(int inIndex) const
+{
+   checkBase();
+   if (store==hx::arrayEmpty) return
+      null();
+   return base->__GetItem(inIndex);
+}
 
+Dynamic VirtualArray_obj::__SetItem(int inIndex,Dynamic inValue)
+{
+   checkBase();
+   EnsureStorage(inValue);
+   base->__SetItem(inIndex,inValue);
+   return inValue;
+}
+
+Dynamic VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
+{
+   if (inString==HX_CSTRING("length")) return Dynamic((int)size());
+   if (inString==HX_CSTRING("concat")) return concat_dyn();
+   if (inString==HX_CSTRING("insert")) return insert_dyn();
+   if (inString==HX_CSTRING("copy")) return copy_dyn();
+   if (inString==HX_CSTRING("iterator")) return iterator_dyn();
+   if (inString==HX_CSTRING("join")) return join_dyn();
+   if (inString==HX_CSTRING("pop")) return pop_dyn();
+   if (inString==HX_CSTRING("push")) return push_dyn();
+   if (inString==HX_CSTRING("remove")) return remove_dyn();
+   if (inString==HX_CSTRING("removeAt")) return removeAt_dyn();
+   if (inString==HX_CSTRING("indexOf")) return indexOf_dyn();
+   if (inString==HX_CSTRING("lastIndexOf")) return lastIndexOf_dyn();
+   if (inString==HX_CSTRING("reverse")) return reverse_dyn();
+   if (inString==HX_CSTRING("shift")) return shift_dyn();
+   if (inString==HX_CSTRING("splice")) return splice_dyn();
+   if (inString==HX_CSTRING("slice")) return slice_dyn();
+   if (inString==HX_CSTRING("sort")) return sort_dyn();
+   if (inString==HX_CSTRING("toString")) return toString_dyn();
+   if (inString==HX_CSTRING("unshift")) return unshift_dyn();
+   if (inString==HX_CSTRING("filter")) return filter_dyn();
+   if (inString==HX_CSTRING("map")) return map_dyn();
+   if (inString==HX_CSTRING("__SetSize")) return __SetSize_dyn();
+   if (inString==HX_CSTRING("__SetSizeExact")) return __SetSizeExact_dyn();
+   if (inString==HX_CSTRING("__unsafe_get")) return __unsafe_get_dyn();
+   if (inString==HX_CSTRING("__unsafe_set")) return __unsafe_set_dyn();
+   if (inString==HX_CSTRING("blit")) return blit_dyn();
+   if (inString==HX_CSTRING("zero")) return zero_dyn();
+   if (inString==HX_CSTRING("memcmp")) return memcmp_dyn();
+   return null();
+
+}
 
 
 hx::Class VirtualArray_obj::__GetClass() const { return ArrayBase::__mClass; }

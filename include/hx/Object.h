@@ -192,6 +192,7 @@ public:
    virtual int __length() const { return 0; }
    virtual Dynamic __GetItem(int inIndex) const;
    virtual Dynamic __SetItem(int inIndex,Dynamic inValue);
+
    virtual void __SetSize(int inLen) { }
 
    typedef const Dynamic &D;

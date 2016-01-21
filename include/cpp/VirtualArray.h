@@ -9,19 +9,29 @@ class VirtualArray_obj;
 
 class VirtualArray : public hx::ObjectPtr<VirtualArray_obj>
 {
-   typedef hx::ObjectPtr<VirtualArray_obj> Base;
+   typedef hx::ObjectPtr<VirtualArray_obj> super;
 public:
-   inline VirtualArray() : Base(0) { }
-   inline VirtualArray(VirtualArray_obj *inObj) : Base(inObj) { }
-   inline VirtualArray(const null &inNull) : Base(0) { }
-   inline VirtualArray(const VirtualArray &inOther) : Base( inOther.mPtr ) {  }
+   inline VirtualArray() : super(0) { }
+   inline VirtualArray(VirtualArray_obj *inObj) : super(inObj) { }
+   inline VirtualArray(const null &inNull) : super(0) { }
+   inline VirtualArray(const VirtualArray &inOther) : super( inOther.mPtr ) {  }
 
    // Build from foreign array
    template<typename SOURCE_> inline VirtualArray( const Array<SOURCE_> &inRHS );
 
+
+   VirtualArray( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }
+   VirtualArray( const cpp::ArrayBase &inRHS ) : super(0) { setDynamic(inRHS); }
+
    inline VirtualArray &operator=(const null &inNull) { mPtr = 0; return *this; }
    inline VirtualArray &operator=(Ptr inRHS) { mPtr = inRHS; return *this; }
    inline VirtualArray &operator=(const VirtualArray &inRHS) { mPtr = inRHS.mPtr; return *this; }
+
+   inline void setDynamic( const Dynamic &inRHS );
+
+   template<typename T>
+   inline VirtualArray Add(const T &inVal);
+
 };
 
 
@@ -58,12 +68,6 @@ public:
 
 
    inline int get_length() const
-   {
-      return base ? base->length : 0;
-   }
-
-
-   inline int getLength() const
    {
       return base ? base->length : 0;
    }
@@ -271,6 +275,9 @@ public:
    inline void __unsafeStringReference(String inString) { if (base) base->__unsafeStringReference(inString); }
 
 
+   Dynamic __GetItem(int inIndex) const;
+   Dynamic __SetItem(int inIndex,Dynamic inValue);
+   Dynamic __Field(const String &inString, hx::PropertyAccess inCallProp);
 
 
    template<typename T>
@@ -279,6 +286,8 @@ public:
       if (store!=hx::arrayFixed) EnsureStorage(inVal);
       return base->__push(Dynamic(inVal));
    }
+
+
    template<typename T>
    inline VirtualArray_obj *Add(const T &inVal)
    {
@@ -290,6 +299,7 @@ public:
    inline Dynamic pop() { checkBase(); return store==hx::arrayEmpty ? null() : base->__pop(); }
 
    inline bool remove(Dynamic inValue) { checkBase(); return (store!=hx::arrayEmpty) && base->__remove(inValue); }
+   inline bool removeAt(int inIndex) { checkBase(); return (store!=hx::arrayEmpty) && base->__removeAt(inIndex); }
 
    int indexOf(Dynamic inValue, Dynamic fromIndex = null())
    {
@@ -328,6 +338,10 @@ public:
    VirtualArray splice(int inPos, int len);
    Dynamic map(Dynamic inFunc);
    VirtualArray filter(Dynamic inFunc);
+
+   inline Dynamic __unsafe_set(int inIndex, const Dynamic &val)  { return __SetItem(inIndex,val); } 
+   inline Dynamic __unsafe_get(int inIndex)  { return __GetItem(inIndex); } 
+
 
    template<typename T>
    inline void insert(int inPos, const T &inValue)
@@ -381,6 +395,7 @@ public:
    Dynamic pop_dyn();
    Dynamic push_dyn();
    Dynamic remove_dyn();
+   Dynamic removeAt_dyn();
    Dynamic indexOf_dyn();
    Dynamic lastIndexOf_dyn();
    Dynamic reverse_dyn();
@@ -412,9 +427,35 @@ public:
 // Build dynamic array from foreign array
 template<typename SOURCE_>
 VirtualArray::VirtualArray( const Array<SOURCE_> &inRHS )
-   : Base( new VirtualArray_obj( inRHS.mPtr, true) )
+   : super( new VirtualArray_obj( inRHS.mPtr, true) )
 {
 }
+
+
+template<typename T>
+inline VirtualArray VirtualArray::Add(const T &inVal)
+{
+   mPtr->push(inVal);
+   return *this;
+}
+
+
+inline void VirtualArray::setDynamic( const Dynamic &inRHS )
+{
+   hx::Object *ptr = inRHS.GetPtr(); 
+   if (ptr)
+   {
+      if (ptr->__GetClass().mPtr == super::__SGetClass().mPtr )
+      {
+         cpp::VirtualArray_obj *varray = dynamic_cast<cpp::VirtualArray_obj *>(ptr);
+         if (varray)
+            mPtr = varray;
+         else
+            mPtr = new VirtualArray_obj(dynamic_cast<cpp::ArrayBase_obj *>(ptr), true);
+      }
+   }
+}
+
 
 
 template<typename F>
@@ -434,7 +475,6 @@ void VirtualArray_obj::fixType()
       base = new Array_obj<F>(0,0);
    }
 }
-
 
 template<typename ARRAY >
 ARRAY VirtualArray_obj::castArray()
