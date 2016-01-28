@@ -3006,12 +3006,10 @@ public:
          pthread_t result = 0;
          int created = pthread_create(&result,0,SThreadLoop,info);
          bool ok = created==0;
-      #else
-         #ifdef EMSCRIPTEN
+      #elif defined(EMSCRIPTEN)
          // Only one thread
-         #elif defined(HX_WINDOWS)
-         bool ok = _beginthreadex(0,0,SThreadLoop,info,0,0) != 0;
-         #endif
+      #else
+         bool ok = HxCreateDetachedThread(SThreadLoop, info);
       #endif
    }
 

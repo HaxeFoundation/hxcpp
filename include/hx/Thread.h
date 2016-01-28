@@ -1,3 +1,9 @@
+#ifdef HX_THREAD_H_OVERRIDE
+// Users can define their own header to use here, but there is no API
+// compatibility gaurantee for future changes.
+#include HX_THREAD_H_OVERRIDE
+#else
+
 #ifndef HX_THREAD_H
 #define HX_THREAD_H
 
@@ -141,8 +147,31 @@ struct MyMutex
 };
 
 
-#define THREAD_FUNC_TYPE unsigned int WINAPI
+#define THREAD_FUNC_TYPE DWORD WINAPI
 #define THREAD_FUNC_RET return 0;
+
+inline bool HxCreateDetachedThread(DWORD (WINAPI *func)(void *), void *param)
+{
+#if defined HX_WINRT && defined __cplusplus_winrt
+	try
+	{
+		auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
+			{
+				// Run the user callback.
+				func(param);
+			}, Platform::CallbackContext::Any);
+
+		ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
+	}
+	catch (...)
+	{
+		return false;
+	}
+	return true;
+#else
+	return (CreateThread(NULL, 0, func, param, 0, 0) != 0);
+#endif
+}
 
 #else
 
@@ -173,6 +202,21 @@ struct MyMutex
 
 #define THREAD_FUNC_TYPE void *
 #define THREAD_FUNC_RET return 0;
+
+inline bool HxCreateDetachedThread(void *(*func)(void *), void *param)
+{
+	pthread_t t;
+	pthread_attr_t attr;
+	if (pthread_attr_init(&attr) != 0)
+		return false;
+	if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
+		return false;
+	if (pthread_create(&t, &attr, func, param) != 0 )
+		return false;
+	if (pthread_attr_destroy(&attr) != 0)
+		return false;
+	return true;
+}
 
 #endif
 
@@ -232,6 +276,8 @@ struct MySemaphore
 
 #else
 
+
+#define HX_THREAD_SEMAPHORE_LOCKABLE
 
 struct MySemaphore
 {
@@ -348,5 +394,33 @@ struct MySemaphore
 #endif
 
 
+#if defined HX_WINRT
 
+inline void HxSleep(unsigned int ms)
+{
+	::Sleep(ms);
+}
+
+#elif defined HX_WINDOWS
+
+inline void HxSleep(unsigned int ms)
+{
+	::Sleep(ms);
+}
+
+#else
+
+inline void HxSleep(unsigned int ms)
+{
+   struct timespec t;
+   struct timespec tmp;
+   t.tv_sec = 0;
+   t.tv_nsec = ms * 1000000;
+   nanosleep(&t, &tmp);
+}
+
+#endif
+
+
+#endif
 #endif

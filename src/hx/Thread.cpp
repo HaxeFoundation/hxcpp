@@ -51,7 +51,7 @@ struct Deque : public Array_obj<Dynamic>
    #endif
 
 
-	#ifdef HX_WINDOWS
+	#ifndef HX_THREAD_SEMAPHORE_LOCKABLE
 	MyMutex     mMutex;
 	void PushBack(Dynamic inValue)
 	{
@@ -276,22 +276,11 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 	hx::GCPrepareMultiThreaded();
 	hx::EnterGCFreeZone();
 
-   #ifdef HX_WINDOWS
-      bool ok = _beginthreadex(0,0,hxThreadFunc,info,0,0) != 0;
-   #else
-      pthread_t result = 0;
-      int created = pthread_create(&result,0,hxThreadFunc,info);
-      bool ok = created==0;
-   #endif
-
-
-     if (ok)
-     {
-        #ifndef HX_WINDOWS
-        pthread_detach(result);
-        #endif
-        info->mSemaphore->Wait();
-     }
+    bool ok = HxCreateDetachedThread(hxThreadFunc, info);
+    if (ok)
+    {
+       info->mSemaphore->Wait();
+    }
 
     hx::ExitGCFreeZone();
     info->CleanSemaphore();
