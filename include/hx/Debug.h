@@ -105,6 +105,7 @@ public:
 
     // The constructor automatically adds the StackFrame to the list of
     // stack frames for the current thread
+    //cs116 - modify to take column numbers
     inline StackFrame(const char *inClassName, const char *inFunctionName,
                #ifdef HXCPP_DEBUG_HASHES
                int inClassFunctionHash,
@@ -157,6 +158,7 @@ public:
 
     // Current line number, changes during the lifetime of the stack frame.
     // Only updated if HXCPP_STACK_LINE is defined.
+    //cs116 - add coumn numbers (possibly first column number)
     int lineNumber;
 
     // These are only used if HXCPP_DEBUG_HASHES is defined

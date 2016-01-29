@@ -121,7 +121,7 @@ static void setStaticHandler(Dynamic &inStore, Dynamic inValue)
 }
 
 // This is the thread number of the debugger thread, extracted from
-// information about the thread that called 
+// information about the thread that called
 // __hxcpp_dbg_setEventNotificationHandler
 static unsigned int g_debugThreadNumber = -1;
 
@@ -146,12 +146,12 @@ public:
         : mT0(0)
 {
         mDumpFile = inDumpFile;
-   
+
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
-   
+
         gThreadRefCount += 1;
-   
+
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
 #ifndef HX_WINRT
@@ -209,7 +209,7 @@ public:
         results.reserve(mProfileStats.size());
 
         int total = 0;
-        std::map<const char *, ProfileEntry>::iterator iter = 
+        std::map<const char *, ProfileEntry>::iterator iter =
             mProfileStats.begin();
         while (iter != mProfileStats.end()) {
             ProfileEntry &pe = iter->second;
@@ -309,7 +309,7 @@ struct ProfileEntry
             return ((total > inRHS.total) ||
                     ((total == inRHS.total) && (self < inRHS.self)));
         }
-        
+
         const char *fullName;
         int self;
         std::vector<ChildEntry> children;
@@ -321,7 +321,7 @@ struct ProfileEntry
     {
         int millis = 1;
 
-        while (gThreadRefCount > 0) { 
+        while (gThreadRefCount > 0) {
 #ifdef HX_WINDOWS
 #ifndef HX_WINRT
             Sleep(millis);
@@ -408,7 +408,7 @@ public:
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
-   
+
         gThreadRefCount += 1;
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
@@ -647,7 +647,7 @@ private:
     {
         int millis = 1;
 
-        while (gThreadRefCount > 0) { 
+        while (gThreadRefCount > 0) {
 #ifdef HX_WINDOWS
 #ifndef HX_WINRT
             Sleep(millis);
@@ -723,7 +723,7 @@ public:
     static CallStack *GetCallerCallStack()
     {
         CallStack *stack = tlsCallStack;
- 
+
         if (!stack) {
             int threadNumber = __hxcpp_GetCurrentThreadNumber();
 
@@ -741,7 +741,7 @@ public:
     }
 
     static void RemoveCallStack(int threadNumber)
-{ 
+{
         gMutex.Lock();
 
         CallStack *stack = gMap[threadNumber];
@@ -802,6 +802,7 @@ public:
        #endif
     }
 
+    //cs116 - modify to set column number as well
     #ifdef HXCPP_STACK_LINE
     void SetLine(int inLine)
     {
@@ -873,7 +874,7 @@ public:
         CallStack *stack = CallStack::GetCallerCallStack();
 
         int n = stack->mStackFrames.size() - (skipLast ? 1 : 0);
-        
+
         for (int i = 0; i < n; i++)
         {
             // Reverse call stack to match exception stack
@@ -928,7 +929,7 @@ public:
             CallStack *stack = *stack_iter++;
             threadNumbers.push_back(stack->mThreadNumber);
         }
-        
+
         gMutex.Unlock();
 
         ::Array<Dynamic> ret = Array_obj<Dynamic>::__new();
@@ -967,7 +968,7 @@ public:
                 if (stack->mStackFrames.size() <= stackFrameNumber) {
                     break;
                 }
-                StackVariable *variable = 
+                StackVariable *variable =
                     stack->mStackFrames[stackFrameNumber]->variables;
                 while (variable) {
                     ret->push(String(variable->mHaxeName));
@@ -1017,7 +1018,7 @@ public:
         if ((stackFrameNumber < 0) || (stackFrameNumber >= size)) {
             return markNonexistent;
         }
-        
+
         const char *nameToFind = name.c_str();
 
         StackVariable *sv = stack->mStackFrames[stackFrameNumber]->variables;
@@ -1083,7 +1084,7 @@ public:
             }
             sv = sv->mNext;
         }
-        
+
         return markNonexistent;
     }
 
@@ -1173,7 +1174,7 @@ public:
     {
         CallStack *stack = GetCallerCallStack();
 
-        std::vector<StackFrame *>::reverse_iterator iter = 
+        std::vector<StackFrame *>::reverse_iterator iter =
             stack->mStackFrames.rbegin();
         while (iter != stack->mStackFrames.rend()) {
             StackFrame *frame = *iter++;
@@ -1254,7 +1255,7 @@ public:
         CallStack *stack = hx::CallStack::GetCallerCallStack();
         Telemetry *telemetry = stack->mTelemetry;
         if (telemetry) {
-          //printf("Telemetry %016lx allocating %s at %016lx of size %d\n", telemetry, type, obj, inSize); 
+          //printf("Telemetry %016lx allocating %s at %016lx of size %d\n", telemetry, type, obj, inSize);
           telemetry->HXTAllocation(stack, obj, inSize, type);
         }
     }
@@ -1324,7 +1325,7 @@ public:
     {
         return mStackFrames[depth]->fullName;
     }
-        
+
 
     // Wait for someone to call Continue() on this call stack.  Really only
     // the thread that owns this call stack should call Wait().
@@ -1401,7 +1402,7 @@ public:
 #define EXCEPTION_PRINT(...) \
         printf(__VA_ARGS__)
 #endif
-        
+
         int size = mExceptionStack.size();
 
         for (int i = size - 1; i >= 0; i--) {
@@ -1490,7 +1491,7 @@ private:
         Dynamic ret = g_newStackFrameFunction
             (String(frame->fileName), String(frame->lineNumber),
              String(frame->className), String(frame->functionName));
-        
+
         // Don't do parameters for now
         // xxx figure them out later
 
@@ -1557,9 +1558,9 @@ public:
         gMutex.Lock();
 
         int ret = gNextBreakpointNumber++;
-        
+
         Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, ret, fileName, lineNumber);
-        
+
         gBreakpoints->RemoveRef();
 
         // Write memory barrier ensures that newBreakpoints values are updated
@@ -1585,14 +1586,14 @@ public:
         if (!className) {
             return -1;
         }
-        
+
         gMutex.Lock();
 
         int ret = gNextBreakpointNumber++;
-        
+
         Breakpoints *newBreakpoints = new Breakpoints
             (gBreakpoints, ret, className, functionName);
-        
+
         gBreakpoints->RemoveRef();
 
         // Write memory barrier ensures that newBreakpoints values are updated
@@ -1613,7 +1614,7 @@ public:
     static void DeleteAll()
     {
         gMutex.Lock();
-        
+
         Breakpoints *newBreakpoints = new Breakpoints();
 
         gBreakpoints->RemoveRef();
@@ -1634,7 +1635,7 @@ public:
     static void Delete(int number)
     {
         gMutex.Lock();
-        
+
         if (gBreakpoints->HasBreakpoint(number)) {
             // Replace mBreakpoints with a copy and remove the breakpoint
             // from it
@@ -1693,7 +1694,7 @@ public:
         gStepThread = threadNumber;
         gStepType = stepType;
         gStepCount = stepCount;
-        
+
         CallStack::StepOneThread(threadNumber, gStepLevel);
     }
 
@@ -2064,7 +2065,7 @@ private:
 
 /* static */ MyMutex Breakpoints::gMutex;
 /* static */ int Breakpoints::gNextBreakpointNumber;
-/* static */ Breakpoints * volatile Breakpoints::gBreakpoints = 
+/* static */ Breakpoints * volatile Breakpoints::gBreakpoints =
     new Breakpoints();
 /* static */ StepType Breakpoints::gStepType = STEP_NONE;
 /* static */ int Breakpoints::gStepLevel;
@@ -2086,7 +2087,7 @@ void __hxcpp_dbg_setEventNotificationHandler(Dynamic handler)
     hx::g_eventNotificationHandler = handler;
     GCAddRoot(&(hx::g_eventNotificationHandler.mPtr));
       }
- 
+
 
 void __hxcpp_dbg_enableCurrentThreadDebugging(bool enable)
    {
@@ -2098,7 +2099,7 @@ int __hxcpp_dbg_getCurrentThreadNumber()
 {
     return __hxcpp_GetCurrentThreadNumber();
 }
- 
+
 
 Array< ::String> __hxcpp_dbg_getFiles()
 {
@@ -2212,7 +2213,7 @@ Dynamic __hxcpp_dbg_getStackVariableValue(int threadNumber,
                                           bool unsafe, Dynamic markNonexistent,
                                           Dynamic markThreadNotStopped)
 {
-    return hx::CallStack::GetVariableValue(threadNumber, stackFrameNumber, 
+    return hx::CallStack::GetVariableValue(threadNumber, stackFrameNumber,
                                            name, unsafe, markNonexistent,
                                            markThreadNotStopped);
 }
@@ -2296,7 +2297,7 @@ Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
 	#ifdef HX_WINRT
 	//todo
         hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " ), true);
-	
+
 	#else
         hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " +
                                             toThrow->toString()), true);
@@ -2330,7 +2331,7 @@ void hx::__hxcpp_register_stack_frame(hx::StackFrame *inFrame)
     hx::CallStack::PushCallerStackFrame(inFrame);
 }
 
-    
+
 hx::StackFrame::~StackFrame()
 {
     hx::CallStack::PopCallerStackFrame();
@@ -2476,7 +2477,7 @@ int hx::Telemetry::ComputeCallStackId(hx::CallStack *stack) {
         int name_id = callstack.at(i++);
         //printf("Finding child with id=%d, asime now %#010x\n", name_id, asime);
         std::map<int, AllocStackIdMapEntry*>::iterator lb = asime->children.lower_bound(name_id);
-         
+
         if (lb != asime->children.end() && !(asime->children.key_comp()(name_id, lb->first)))
         {   // key already exists
             asime = lb->second;
@@ -2831,6 +2832,7 @@ void __hx_stack_set_last_exception()
 
 void __hxcpp_set_stack_frame_line(int inLine)
 {
+//cs116 - modify to accept column numbers
 #ifdef HXCPP_STACK_LINE
     hx::CallStack::GetCallerCallStack()->SetLine(inLine);
 #endif
@@ -2877,4 +2879,3 @@ void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPat
    __all_classes = inAllClasses;
    __all_files_fullpath = inFullPaths;
 }
-   
