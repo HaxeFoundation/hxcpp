@@ -438,21 +438,6 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
 
    template<typename F>
-   void iterateAddr(F &inFunc)
-   {
-      for(int b=0;b<bucketCount;b++)
-      {
-         Element **el = &bucket[b];
-         while(*el)
-         {
-            inFunc(el);
-            el = &(*el)->next;
-         }
-      }
-   }
-
-
-   template<typename F>
    void iterate(F &inFunc)
    {
       for(int b=0;b<bucketCount;b++)
@@ -599,28 +584,23 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    }
 
 #ifdef HXCPP_VISIT_ALLOCS
-   // Vist ...
-   struct HashVisitor
-   {
-      hx::VisitContext *__inCtx;
-      HashVisitor(hx::VisitContext *ctx) : __inCtx(ctx) { }
-      void operator()(typename Hash::Element **inElem)
-      {
-         HX_VISIT_ARRAY(*inElem);
-         if ( NeedsMarking<Key>::Yes || NeedsMarking<Value>::Yes)
-         {
-             typename Hash::Element &el = **inElem;
-             HX_VISIT_MEMBER(el.key);
-             HX_VISIT_MEMBER(el.value);
-         }
-      }
-   };
 
    void __Visit(hx::VisitContext *__inCtx)
    {
+      //printf(" visit hash %p\n", this);
       HX_VISIT_ARRAY(bucket);
-      HashVisitor vistor(__inCtx);
-      iterateAddr(vistor);
+      for(int b=0;b<bucketCount;b++)
+      {
+         HX_VISIT_ARRAY(bucket[b]);
+         Element *el = bucket[b];
+         while(el)
+         {
+            HX_VISIT_MEMBER(el->key);
+            HX_VISIT_MEMBER(el->value);
+            HX_VISIT_ARRAY(el->next);
+            el = el->next;
+         }
+      }
    }
 #endif
 };

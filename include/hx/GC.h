@@ -247,6 +247,7 @@ class ImmixAllocator
 public:
    virtual ~ImmixAllocator() {}
    virtual void *CallAlloc(int inSize,unsigned int inObjectFlags) = 0;
+   virtual void SetupStack() = 0;
 
    int            spaceStart;
    int            spaceEnd;
