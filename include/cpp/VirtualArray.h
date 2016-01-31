@@ -382,7 +382,7 @@ public:
       base->__blit(inDestElement, inSourceArray, inSourceElement, inElementCount);
    }
 
-   String join(String inSeparator) { checkBase(); if (store==hx::arrayEmpty) return HX_CSTRING(""); return base->join(inSeparator); }
+   String join(String inSeparator) { checkBase(); if (store==hx::arrayEmpty) return HX_CSTRING(""); return base->__join(inSeparator); }
 
 
    Dynamic __get(int inIndex) const { checkBase(); if (store==hx::arrayEmpty) return null(); return base->__GetItem(inIndex); }

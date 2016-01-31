@@ -258,8 +258,8 @@ public:
    // Copy section of other array.
    void Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceElement, int inElementCount);
 
-   String join(String inSeparator);
-
+   static String joinArray(hx::ArrayBase *inBase, String inSeparator);
+   static String joinArray(Array_obj<String> *inArray, String inSeparator);
 
    virtual bool AllocAtomic() const { return false; }
 
@@ -530,6 +530,7 @@ public:
       return result;
    }
 
+   String join(String inSeparator) { return ArrayBase::joinArray(this, inSeparator); }
 
    Array<ELEM_> concat( Array<ELEM_> inTail );
    Array<ELEM_> copy( );

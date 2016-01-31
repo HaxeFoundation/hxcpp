@@ -132,7 +132,7 @@ String ArrayBase::toString()
       return String( (const char *) mBase, length);
    }
 
-   return HX_CSTRING("[") + join(HX_CSTRING(",")) + HX_CSTRING("]");
+   return HX_CSTRING("[") + __join(HX_CSTRING(",")) + HX_CSTRING("]");
 }
 
 void ArrayBase::__SetSize(int inSize)
@@ -273,14 +273,19 @@ void ArrayBase::Concat(ArrayBase *outResult,const char *inSecond,int inLen)
 }
 
 
-String ArrayBase::join(String inSeparator)
+String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
 {
+   int length = inArray->length;
+   if (length==0)
+      return HX_CSTRING("");
+
    int len = 0;
    for(int i=0;i<length;i++)
    {
-      len += ItemString(i).length;
+      String strI = inArray->__unsafe_get(i);
+      len += strI.__s ? strI.length : 4;
    }
-   if (length) len += (length-1) * inSeparator.length;
+   len += (length-1) * inSeparator.length;
 
    HX_CHAR *buf = hx::NewString(len);
 
@@ -288,9 +293,17 @@ String ArrayBase::join(String inSeparator)
    bool separated = inSeparator.length>0;
    for(int i=0;i<length;i++)
    {
-      String s = ItemString(i);
-      memcpy(buf+pos,s.__s,s.length*sizeof(HX_CHAR));
-      pos += s.length;
+      String strI = inArray->__unsafe_get(i);
+      if (!strI.__s)
+      {
+         memcpy(buf+pos,"null",4);
+         pos+=4;
+      }
+      else
+      {
+         memcpy(buf+pos,strI.__s,strI.length*sizeof(HX_CHAR));
+         pos += strI.length;
+      }
       if (separated && (i+1<length) )
       {
          memcpy(buf+pos,inSeparator.__s,inSeparator.length*sizeof(HX_CHAR));
@@ -300,6 +313,21 @@ String ArrayBase::join(String inSeparator)
    buf[len] = '\0';
 
    return String(buf,len);
+}
+
+
+
+String ArrayBase::joinArray(ArrayBase *inBase, String inSeparator)
+{
+   int length = inBase->length;
+   if (length==0)
+      return HX_CSTRING("");
+
+   Array<String> stringArray = Array_obj<String>::__new(length, length);
+   for(int i=0;i<length;i++)
+      stringArray->__unsafe_set(i, inBase->ItemString(i));
+
+   return stringArray->join(inSeparator);
 }
 
 template<typename T>
