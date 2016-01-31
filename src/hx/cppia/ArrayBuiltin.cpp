@@ -383,7 +383,9 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_CHECK;
          String space = args[0]->runString(ctx);
          BCR_CHECK;
-         return thisVal->join(space);
+         //  TODO: There is a bug in the Array<Dynamic> typing here.
+         //  But use this to get the unit test to pass for now.
+         return thisVal->__join(space);
       }
 
       if (FUNC==afToString)
