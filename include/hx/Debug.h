@@ -400,7 +400,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
 #ifdef HXCPP_STACK_LINE
 // If the debugger is enabled, must check for a breakpoint at every line.
 #ifdef HXCPP_DEBUGGER
-#define HX_STACK_LINE(number)                                           \
+#define HX_STACK_LINE(number, column)                                           \
     __stackframe.lineNumber = number;                                   \
     /* This is incorrect - a read memory barrier is needed here. */     \
     /* For now, just live with the exceedingly rare cases where */      \
@@ -409,7 +409,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
         __hxcpp_on_line_changed();                               \
    }
 #else
-#define HX_STACK_LINE(number) __stackframe.lineNumber = number;
+#define HX_STACK_LINE(number, column) __stackframe.lineNumber = number;
 #endif // HXCPP_DEBUGGER
 #endif // HXCPP_STACK_LINE
 
@@ -454,7 +454,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
 #define HX_STACK_VAR(cpp_var, haxe_name)
 #endif
 #ifndef HX_STACK_LINE
-#define HX_STACK_LINE(number)
+#define HX_STACK_LINE(number, column)
 #endif
 #ifndef HX_STACK_CATCHABLE
 #define HX_STACK_CATCHABLE(T, n)
