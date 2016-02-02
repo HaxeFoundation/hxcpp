@@ -140,8 +140,8 @@ const char * Object::__CStr() const { return __ToString().__CStr(); }
 
 Dynamic Object::__SetField(const String &inField,const Dynamic &inValue, hx::PropertyAccess inCallProp)
 {
-	throw Dynamic( HX_CSTRING("Invalid field:") + inField );
-	return null();
+   hx::Throw( HX_CSTRING("Invalid field:") + inField );
+   return null();
 }
 
 Dynamic Object::__run()
