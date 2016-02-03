@@ -31,6 +31,9 @@ namespace hx
 
 #include "../QuickVec.h"
 
+// #define HXCPP_GC_BIG_BLOCKS
+
+
 #ifndef __has_builtin
 #define __has_builtin(x) 0
 #endif
@@ -202,7 +205,13 @@ extern void scriptMarkStack(hx::MarkContext *);
 
 */
 
-#define IMMIX_BLOCK_BITS      15
+#ifdef HXCPP_GC_BIG_BLOCKS
+   #define IMMIX_BLOCK_BITS      16
+   typedef unsigned int BlockIdType;
+#else
+   #define IMMIX_BLOCK_BITS      15
+   typedef unsigned short BlockIdType;
+#endif
 
 #define IMMIX_BLOCK_SIZE        (1<<IMMIX_BLOCK_BITS)
 #define IMMIX_BLOCK_OFFSET_MASK (IMMIX_BLOCK_SIZE-1)
@@ -374,12 +383,12 @@ inline void SignalThreadPool(ThreadPoolSignal &ioSignal, bool sThreadSleeping)
 
 union BlockData
 {
-   // First 2 bytes are not needed for row markers (first 2 rows are for flags)
-   unsigned short mId;
+   // First 2/4 bytes are not needed for row markers (first 2/4 rows are for flags)
+   BlockIdType mId;
 
-   // First 2 rows contain a byte-flag-per-row 
+   // First 2/4 rows contain a byte-flag-per-row 
    unsigned char  mRowMarked[IMMIX_LINES];
-   // Row data as union - don't use first 2 rows
+   // Row data as union - don't use first 2/4 rows
    unsigned char  mRow[IMMIX_LINES][IMMIX_LINE_LEN];
 
 };
@@ -397,7 +406,7 @@ struct BlockDataStats
    }
 
    int rowsInUse;
-   int bytesInUse;
+   size_t bytesInUse;
    int emptyBlocks;
    int fragScore;
    int fraggedBlocks;
@@ -2219,6 +2228,7 @@ public:
    {
       enum { newBlockCount = 1<<(IMMIX_BLOCK_GROUP_BITS) };
 
+      #ifndef HXCPP_GC_BIG_BLOCKS
       // Currently, we only have 2 bytes for a block header
       if (mAllBlocks.size()+newBlockCount >= 0xfffe )
       {
@@ -2229,6 +2239,7 @@ public:
          outForceCompact = false;
          return;
       }
+      #endif
 
       // Find spare group...
       int gid = -1;
