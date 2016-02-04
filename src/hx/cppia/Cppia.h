@@ -100,6 +100,7 @@ enum VarLocation
 struct CppiaExpr
 {
    int line;
+   int column;
    const char *filename;
    const char *className;
    const char *functionName;
@@ -323,7 +324,7 @@ struct CppiaVar
    Float            floatVal;
    String           stringVal;
    void             *valPointer;
-   
+
 
    CppiaVar(bool inIsStatic);
    CppiaVar(CppiaFunction *inDynamicFunction);
@@ -411,7 +412,7 @@ public:
 
 #ifdef HXCPP_STACK_LINE
    #define CPPIA_STACK_LINE(expr) \
-          __hxcpp_set_stack_frame_line(expr->line);
+          __hxcpp_set_stack_frame_line(expr->line, expr->column);
 #else
    #define CPPIA_STACK_LINE(expr)
 #endif
@@ -609,7 +610,7 @@ struct CrementPostDec
       inVal = Dynamic(Dynamic(inVal) + 1).mPtr;
       return result;
    }
- 
+
 };
 
 

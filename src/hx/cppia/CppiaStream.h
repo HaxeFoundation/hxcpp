@@ -13,6 +13,7 @@ struct CppiaStream
    const char *data;
    const char *max;
    int line;
+   int column;
    int pos;
 
    CppiaStream(class CppiaModule *inModule,const char *inData, int inLen)
@@ -197,5 +198,3 @@ struct CppiaStream
 };
 
 } // end namespace hx
-
-

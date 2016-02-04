@@ -55,7 +55,7 @@ void __hxcpp_execution_trace(int inLevel);
 
 // Used by debug breakpoints and execution trace
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-void __hxcpp_set_stack_frame_line(int);
+void __hxcpp_set_stack_frame_line(int, int);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void __hxcpp_on_line_changed();
@@ -155,11 +155,13 @@ public:
     const char *fullName; // this is className.functionName - used for profiler
     const char *fileName;
     int firstLineNumber;
+    int firstColumnNumber;
 
     // Current line number, changes during the lifetime of the stack frame.
     // Only updated if HXCPP_STACK_LINE is defined.
     //cs116 - add coumn numbers (possibly first column number)
     int lineNumber;
+    int columnNumber;
 
     // These are only used if HXCPP_DEBUG_HASHES is defined
     int fileHash;
@@ -401,7 +403,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
 // If the debugger is enabled, must check for a breakpoint at every line.
 #ifdef HXCPP_DEBUGGER
 #define HX_STACK_LINE(number, column)                                           \
-    __stackframe.lineNumber = number;                                   \
+    __stackframe.lineNumber = number; __stackframe.columnNumber = column;                                   \
     /* This is incorrect - a read memory barrier is needed here. */     \
     /* For now, just live with the exceedingly rare cases where */      \
     /* breakpoints are missed */                                        \
@@ -409,7 +411,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
         __hxcpp_on_line_changed();                               \
    }
 #else
-#define HX_STACK_LINE(number, column) __stackframe.lineNumber = number;
+#define HX_STACK_LINE(number, column) __stackframe.lineNumber = number; __stackframe.columnNumber = column;
 #endif // HXCPP_DEBUGGER
 #endif // HXCPP_STACK_LINE
 

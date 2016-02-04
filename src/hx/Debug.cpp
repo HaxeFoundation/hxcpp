@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <stdio.h>
 #include <hx/Debug.h>
 #include <hx/Thread.h>
 #include <hx/Telemetry.h>
@@ -796,7 +797,7 @@ public:
     {
        StackFrame *frame = mStackFrames[mStackFrames.size()-1];
        #ifdef HXCPP_STACK_LINE
-       DBGLOG("%s::%s : %d\n", frame->className, frame->functionName, frame->lineNumber);
+       DBGLOG("%s::%s : %d.%d\n", frame->className, frame->functionName, frame->lineNumber, frame->columnNumber);
        #else
        DBGLOG("%s::%s\n", frame->className, frame->functionName);
        #endif
@@ -804,9 +805,11 @@ public:
 
     //cs116 - modify to set column number as well
     #ifdef HXCPP_STACK_LINE
-    void SetLine(int inLine)
+    void SetLine(int inLine, int inColumn)
     {
+       printf("Line: %d, Column: %d\n", inLine, inColumn);
        mStackFrames[mStackFrames.size()-1]->lineNumber = inLine;
+       mStackFrames[mStackFrames.size()-1]->columnNumber = inColumn;
        if (gShouldCallHandleBreakpoints)
           __hxcpp_on_line_changed();
     }
@@ -2830,11 +2833,11 @@ void __hx_stack_set_last_exception()
 #endif
 }
 
-void __hxcpp_set_stack_frame_line(int inLine)
+void __hxcpp_set_stack_frame_line(int inLine, int inColumn)
 {
 //cs116 - modify to accept column numbers
 #ifdef HXCPP_STACK_LINE
-    hx::CallStack::GetCallerCallStack()->SetLine(inLine);
+    hx::CallStack::GetCallerCallStack()->SetLine(inLine, inColumn);
 #endif
 }
 
