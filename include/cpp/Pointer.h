@@ -229,6 +229,13 @@ public:
    //inline Reference( T *inValue ) : Pointer(inValue) { }
    inline Reference( AutoCast inValue ) : Pointer<T>( (T*)inValue.value) { }
 
+   template<typename OTHER>
+   inline Reference( const Reference<OTHER> &inOther )
+   {
+      // Allow reinterpret or not?
+      ptr = (T*)inOther.ptr;
+   }
+
    template<typename H>
    inline Reference( const Struct<T,H> &structVal ) : Pointer<T>( &structVal.value ) { }
 
