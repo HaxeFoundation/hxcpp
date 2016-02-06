@@ -854,7 +854,7 @@ public:
 
         gMutex.Unlock();
     }
-
+    //cs116
     static void StepOneThread(int threadNumber, int &stackLevel)
     {
         gMutex.Lock();
@@ -1549,7 +1549,7 @@ public:
     }
 #endif
 
-    static int Add(String inFileName, int lineNumber)
+    static int Add(String inFileName, int lineNumber, int columnNumber)
     {
         // Look up the filename constant
         const char *fileName = LookupFileName(inFileName);
@@ -1562,7 +1562,7 @@ public:
 
         int ret = gNextBreakpointNumber++;
 
-        Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, ret, fileName, lineNumber);
+        Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, ret, fileName, lineNumber, columnNumber);
 
         gBreakpoints->RemoveRef();
 
@@ -1839,6 +1839,7 @@ private:
     {
         int number;
         int lineNumber;
+        int columnNumber;
         int hash;
 
         bool isFileLine;
@@ -1858,7 +1859,7 @@ private:
 
     // Copies breakpoints from toCopy and adds a new file:line breakpoint
     Breakpoints(const Breakpoints *toCopy, int number,
-                const char *fileName, int lineNumber)
+                const char *fileName, int lineNumber, int columnNumber)
         : mRefCount(1)
     {
         mBreakpointCount = toCopy->mBreakpointCount + 1;
@@ -1870,6 +1871,7 @@ private:
         mBreakpoints[toCopy->mBreakpointCount].isFileLine = true;
         mBreakpoints[toCopy->mBreakpointCount].fileOrClassName = fileName;
         mBreakpoints[toCopy->mBreakpointCount].lineNumber = lineNumber;
+        mBreakpoints[toCopy->mBreakpointCount].columnNumber = columnNumber;
 
 #ifdef HXCPP_DEBUG_HASHES
         mBreakpoints[toCopy->mBreakpointCount].hash = Hash(0, fileName);
@@ -2156,9 +2158,9 @@ Dynamic __hxcpp_dbg_getThreadInfo(int threadNumber, bool unsafe)
 }
 
 
-int __hxcpp_dbg_addFileLineBreakpoint(String fileName, int lineNumber)
+int __hxcpp_dbg_addFileLineBreakpoint(String fileName, int lineNumber, int columnNumber)
       {
-    return hx::Breakpoints::Add(fileName, lineNumber);
+    return hx::Breakpoints::Add(fileName, lineNumber,  columnNumber);
    }
 
 

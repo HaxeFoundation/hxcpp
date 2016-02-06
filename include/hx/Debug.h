@@ -491,7 +491,7 @@ Array< ::String> __hxcpp_dbg_getFilesFullPath();
 Array< ::String> __hxcpp_dbg_getClasses();
 Array<Dynamic> __hxcpp_dbg_getThreadInfos();
 Dynamic __hxcpp_dbg_getThreadInfo(int threadNumber, bool unsafe);
-int __hxcpp_dbg_addFileLineBreakpoint(String fileName, int lineNumber);
+int __hxcpp_dbg_addFileLineBreakpoint(String fileName, int lineNumber, int columnNumber);
 int __hxcpp_dbg_addClassFunctionBreakpoint(String className,
                                             String functionName);
 void __hxcpp_dbg_deleteAllBreakpoints();
