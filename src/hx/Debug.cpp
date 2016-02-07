@@ -1997,13 +1997,15 @@ private:
         return false;
          }
 
+   //CS116 - We added columnNumber conditional.
    int FindFileLineBreakpoint(StackFrame *inFrame)
    {
+      printf("FindFileLineBreakpoint(), inFrame.columnNumber = %d\n", inFrame->columnNumber);
       for (int i = 0; i < mBreakpointCount; i++)
       {
          Breakpoint &breakpoint = mBreakpoints[i];
          if (breakpoint.isFileLine && breakpoint.hash==inFrame->fileHash &&
-             (breakpoint.lineNumber == inFrame->lineNumber) &&
+             (breakpoint.lineNumber == inFrame->lineNumber) && (breakpoint.columnNumber == inFrame->columnNumber) &&
              !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->fileName) )
             return breakpoint.number;
       }
