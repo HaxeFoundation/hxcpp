@@ -363,7 +363,8 @@ public:
 
    inline void sort(Dynamic inSorter) { checkBase(); if (store!=hx::arrayEmpty) base->__sort(inSorter); }
 
-   Dynamic iterator() { checkBase(); return base->__iterator(); }
+   Dynamic iterator() { checkBase(); return  store==hx::arrayEmpty ? getEmptyIterator() :  base->__iterator(); }
+   static Dynamic getEmptyIterator();
 
    bool IsByteArray() const { checkBase(); return store!=hx::arrayEmpty && base->IsByteArray(); }
 

@@ -529,9 +529,14 @@ Dynamic ArrayCreateArgs(DynamicArray inArgs)
    return inArgs->__copy();
 }
 
+static bool ArrayCanCast(hx::Object *inInstance)
+{
+   return inInstance->__GetClass().mPtr == ArrayBase::__mClass.mPtr;
+}
+
 void ArrayBase::__boot()
 {
-   Static(__mClass) = hx::RegisterClass(HX_CSTRING("Array"),TCanCast<ArrayBase>,sNone,sArrayFields,
+   Static(__mClass) = hx::RegisterClass(HX_CSTRING("Array"),ArrayCanCast,sNone,sArrayFields,
                                     ArrayCreateEmpty,ArrayCreateArgs,0,0);
 }
 
@@ -676,6 +681,7 @@ Dynamic VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inC
    if (inString==HX_CSTRING("blit")) return blit_dyn();
    if (inString==HX_CSTRING("zero")) return zero_dyn();
    if (inString==HX_CSTRING("memcmp")) return memcmp_dyn();
+
    return null();
 
 }
@@ -773,22 +779,52 @@ void VirtualArray_obj::EnsureBase()
    }
 }
 
-// TODO
 VirtualArray VirtualArray_obj::splice(int inPos, int len)
 {
-   return null();
+   if ( store==hx::arrayEmpty )
+      return new VirtualArray_obj();
+
+   Dynamic cut = base->__splice(inPos, len);
+
+   VirtualArray result = new VirtualArray_obj( dynamic_cast<cpp::ArrayBase_obj *>(cut.mPtr), false);
+   result->store = store;
+   return result;
 }
 
 Dynamic VirtualArray_obj::map(Dynamic inFunc)
 {
-   return null();
+   VirtualArray result = new VirtualArray_obj( );
+   int len = get_length();
+   for(int i=0;i<len;i++)
+      result->push( inFunc(  base->__GetItem(i)  ) );
+   return result;
 }
 
 VirtualArray VirtualArray_obj::filter(Dynamic inFunc)
 {
-   return null();
+   if ( store==hx::arrayEmpty )
+      return new VirtualArray_obj();
+
+   Dynamic filtered = base->__filter(inFunc);
+
+   VirtualArray result = new VirtualArray_obj( dynamic_cast<cpp::ArrayBase_obj *>(filtered.mPtr), false);
+   result->store = store;
+   return result;
 }
 
+class EmptyIterator : public IteratorBase
+{
+public:
+   bool hasNext() { return false; }
+   Dynamic _dynamicNext() { return null(); }
+};
+
+
+
+Dynamic VirtualArray_obj::getEmptyIterator()
+{
+   return new EmptyIterator();
+}
 
 
 
