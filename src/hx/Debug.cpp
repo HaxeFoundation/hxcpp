@@ -2004,13 +2004,19 @@ private:
       //printf("FindFileLineBreakpoint(), inFrame.columnNumber = %d\n", inFrame->columnNumber);
       for (int i = 0; i < mBreakpointCount; i++)
       {
-         Breakpoint &breakpoint = mBreakpoints[i];
-         if (breakpoint.isFileLine && breakpoint.hash==inFrame->fileHash &&
-             (breakpoint.lineNumber == inFrame->lineNumber) && (breakpoint.columnNumber == inFrame->columnNumber) &&
-             !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->fileName) ) {
-            printf("Breakpoint reached at %s:%d:%d\n", inFrame->fileName, inFrame->lineNumber, inFrame->columnNumber);
-            return breakpoint.number;
-          }
+        Breakpoint &breakpoint = mBreakpoints[i];
+        bool hasCol = true;
+        if(breakpoint.columnNumber == -1) hasCol = false;
+        //Breakpoint &breakpoint = mBreakpoints[i];
+        bool lineCondition = (breakpoint.isFileLine && breakpoint.hash==inFrame->fileHash &&
+            (breakpoint.lineNumber == inFrame->lineNumber) &&
+            !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->fileName) );
+
+        if(hasCol && lineCondition && (breakpoint.columnNumber == inFrame->columnNumber)) {
+          return breakpoint.number;
+        }else if((!hasCol) && lineCondition) {
+          return breakpoint.number;
+        }
       }
       return -1;
    }
