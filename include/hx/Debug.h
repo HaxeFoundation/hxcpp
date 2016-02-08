@@ -112,7 +112,7 @@ public:
                #endif
                const char *inFullName, const char *inFileName
                #ifdef HXCPP_STACK_LINE
-               , int inLineNumber
+               , int inLineNumber, int inColumnNumber
                #endif
                #ifdef HXCPP_DEBUG_HASHES
                , int inFileHash
@@ -351,19 +351,19 @@ extern volatile bool gShouldCallHandleBreakpoints;
 
    #ifdef HXCPP_DEBUG_HASHES
       #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
-                          lineNumber, fileHash ) \
+                          lineNumber, columnNumber, fileHash ) \
        hx::StackFrame __stackframe(className, functionName, classFunctionHash, fullName,      \
-                                   fileName, lineNumber, fileHash);
+                                   fileName, lineNumber, columnNumber, fileHash);
    #else
       #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
-                          lineNumber, fileHash ) \
+                          lineNumber, columnNumber, fileHash ) \
        hx::StackFrame __stackframe(className, functionName, fullName,      \
-                                   fileName, lineNumber);
+                                   fileName, lineNumber, columnNumber);
    #endif
 #else
 
    #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
-                       lineNumber, fileHash ) \
+                       lineNumber, columnNumber, fileHash ) \
     hx::StackFrame __stackframe(className, functionName, fullName, fileName);
 
 #endif
@@ -444,7 +444,7 @@ extern volatile bool gShouldCallHandleBreakpoints;
 
 // Define any macros not defined already above
 #ifndef HX_STACK_FRAME
-#define HX_STACK_FRAME(className, functionName, classFuncHash, fullName, fileName, lineNumber, fileHash )
+#define HX_STACK_FRAME(className, functionName, classFuncHash, fullName, fileName, lineNumber, columnNumber, fileHash )
 #endif
 #ifndef HX_STACK_THIS
 #define HX_STACK_THIS(ptr)
@@ -475,8 +475,8 @@ extern volatile bool gShouldCallHandleBreakpoints;
 // use debugging, you really should upgrade to a newer haxe compiler.
 
 #undef HX_STACK_PUSH
-#define HX_STACK_PUSH(fullName, fileName, lineNumber)                  \
-    HX_STACK_FRAME("", fullName, 0, fullName, fileName, lineNumber, 0)
+#define HX_STACK_PUSH(fullName, fileName, lineNumber, columnNumber)                  \
+    HX_STACK_FRAME("", fullName, 0, fullName, fileName, lineNumber, columnNumber, 0)
 
 
 #ifdef HXCPP_DEBUGGER

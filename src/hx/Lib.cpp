@@ -71,7 +71,7 @@ Module hxLoadLibrary(String inLib)
    #else
    flags |= RTLD_NOW;
    #endif
-   
+
    Module result = dlopen(inLib.__CStr(), flags);
    if (gLoadDebug)
    {
@@ -113,7 +113,7 @@ typedef hx::Object * (*prim_4)(hx::Object *,hx::Object *,hx::Object *,hx::Object
 typedef hx::Object * (*prim_5)(hx::Object *,hx::Object *,hx::Object *,hx::Object *,hx::Object *);
 typedef hx::Object * (*prim_mult)(hx::Object **inArray,int inArgs);
 
-typedef void *(*FundFunc)(); 
+typedef void *(*FundFunc)();
 
  extern const char* EXTERN_CLASS_NAME;
 
@@ -131,42 +131,42 @@ public:
 
    Dynamic __run()
    {
-      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0, functionName, __FILE__, __LINE__,0);
+      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0, functionName, __FILE__, __LINE__, 5,0);
       if (mArgCount!=0) throw HX_INVALID_ARG_COUNT;
       if (mProc==0) hx::Throw( HX_NULL_FUNCTION_POINTER );
       return ((prim_0)mProc)();
    }
    Dynamic __run(D a)
    {
-      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__,0);
+      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__, 5, 0);
       if (mArgCount!=1) throw HX_INVALID_ARG_COUNT;
       if (mProc==0) hx::Throw( HX_NULL_FUNCTION_POINTER );
       return ((prim_1)mProc)(a.GetPtr());
    }
    Dynamic __run(D a,D b)
    {
-      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__,0);
+      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__, 5, 0);
       if (mArgCount!=2) throw HX_INVALID_ARG_COUNT;
       if (mProc==0) hx::Throw( HX_NULL_FUNCTION_POINTER );
       return ((prim_2)mProc)(a.GetPtr(),b.GetPtr());
    }
    Dynamic __run(D a,D b,D c)
    {
-      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__,0);
+      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__, 5, 0);
       if (mArgCount!=3) throw HX_INVALID_ARG_COUNT;
       if (mProc==0) hx::Throw( HX_NULL_FUNCTION_POINTER );
       return ((prim_3)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d)
    {
-      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__,0);
+      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__, 5, 0);
       if (mArgCount!=4) throw HX_INVALID_ARG_COUNT;
       if (mProc==0) hx::Throw( HX_NULL_FUNCTION_POINTER );
       return ((prim_4)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr());
    }
    Dynamic __run(D a,D b,D c,D d,D e)
    {
-      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__,0);
+      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__, 5, 0);
       if (mArgCount!=5) throw HX_INVALID_ARG_COUNT;
       if (mProc==0) hx::Throw( HX_NULL_FUNCTION_POINTER );
       return ((prim_5)mProc)(a.GetPtr(),b.GetPtr(),c.GetPtr(),d.GetPtr(),e.GetPtr());
@@ -174,7 +174,7 @@ public:
 
    Dynamic __Run(const Array<Dynamic> &inArgs)
    {
-      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__,0);
+      HX_STACK_FRAME(EXTERN_CLASS_NAME, "cffi",0,  functionName, __FILE__, __LINE__, 5, 0);
       if (mArgCount!=-1 && mArgCount!=inArgs->length)
          throw HX_INVALID_ARG_COUNT;
       if (mProc==0) hx::Throw( HX_NULL_FUNCTION_POINTER );
@@ -502,7 +502,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    #endif
 
    #if defined(HX_WINRT) && defined(HXCPP_DEBUG_LINK)
-   gLoadDebug = true;   
+   gLoadDebug = true;
    #elif defined(IPHONE) || defined(APPLETV)
    gLoadDebug = true;
    setenv("DYLD_PRINT_APIS","1",true);
@@ -514,7 +514,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    if (!sgLibPathIsInit)
    {
       sgLibPathIsInit = true;
-      #ifndef HX_WINRT 
+      #ifndef HX_WINRT
       sgLibPath.push_back("./");
 	  #endif
       #ifdef HX_MACOS
@@ -754,4 +754,3 @@ int __hxcpp_register_prim(const char *inName,void *inProc)
    proc = inProc;
    return 0;
 }
-

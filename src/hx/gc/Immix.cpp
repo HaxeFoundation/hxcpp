@@ -377,7 +377,7 @@ union BlockData
    // First 2 bytes are not needed for row markers (first 2 rows are for flags)
    unsigned short mId;
 
-   // First 2 rows contain a byte-flag-per-row 
+   // First 2 rows contain a byte-flag-per-row
    unsigned char  mRowMarked[IMMIX_LINES];
    // Row data as union - don't use first 2 rows
    unsigned char  mRow[IMMIX_LINES][IMMIX_LINE_LEN];
@@ -407,7 +407,7 @@ static BlockDataStats sThreadBlockDataStats[MAX_MARK_THREADS];
 #ifdef HXCPP_VISIT_ALLOCS
 static hx::VisitContext *sThreadVisitContext = 0;
 #endif
-   
+
 
 
 namespace hx { void MarkerReleaseWorkerLocked(); }
@@ -434,7 +434,7 @@ struct GroupInfo
    int  free;
    int  used;
 };
- 
+
 hx::QuickVec<GroupInfo> gAllocGroups;
 
 
@@ -502,7 +502,7 @@ struct BlockDataInfo
       mUsedRows = 0;
       mPinned = false;
       ZERO_MEM(allocStart,sizeof(int)*IMMIX_LINES);
-      ZERO_MEM(mPtr->mRowMarked+IMMIX_HEADER_LINES, IMMIX_USEFUL_LINES); 
+      ZERO_MEM(mPtr->mRowMarked+IMMIX_HEADER_LINES, IMMIX_USEFUL_LINES);
       mRanges[0].start = IMMIX_HEADER_LINES << IMMIX_LINE_BITS;
       mRanges[0].length = IMMIX_USEFUL_LINES << IMMIX_LINE_BITS;
       mMaxHoleSize = mRanges[0].length;
@@ -515,7 +515,7 @@ struct BlockDataInfo
    void makeFull()
    {
       mUsedRows = IMMIX_USEFUL_LINES;
-      memset(mPtr->mRowMarked+IMMIX_HEADER_LINES, 1,IMMIX_USEFUL_LINES); 
+      memset(mPtr->mRowMarked+IMMIX_HEADER_LINES, 1,IMMIX_USEFUL_LINES);
       mRanges[0].start = 0;
       mRanges[0].length = 0;
       mMaxHoleSize = mRanges[0].length;
@@ -1338,7 +1338,7 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
              __inCtx->Trace();
       }
       #endif
-      
+
       #ifdef HXCPP_DEBUG
          // Recursive mark so stack stays intact..
          if (gCollectTrace)
@@ -1350,7 +1350,7 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
       //   run the risk of stack overflow.  Also, a parallel mark algorithm could be
       //   done when the marking is stack based.
       //inPtr->__Mark(__inCtx);
-  
+
       #if (HXCPP_GC_DEBUG_LEVEL>0)
       inPtr->__Mark(__inCtx);
       #else
@@ -2054,7 +2054,7 @@ public:
       if (inSize<<1 > mLargeAllocSpace)
          mLargeAllocSpace = inSize<<1;
 
-      unsigned int *result = inClear ? 
+      unsigned int *result = inClear ?
                              (unsigned int *)calloc(1,inSize + sizeof(int)*2) :
                              (unsigned int *)malloc(inSize + sizeof(int)*2);
       if (!result)
@@ -2098,7 +2098,7 @@ public:
          }
 
          int rounded = (inDelta +3) & ~3;
-   
+
          if (rounded<<1 > mLargeAllocSpace)
             mLargeAllocSpace = rounded<<1;
       }
@@ -2492,7 +2492,7 @@ public:
          GlobalAllocator *mAlloc;
       public:
          AdjustPointer(GlobalAllocator *inAlloc) : mAlloc(inAlloc) {  }
-      
+
          void visitObject(hx::Object **ioPtr)
          {
             if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
@@ -2631,7 +2631,7 @@ public:
 
    }
    #endif // } defined(HXCPP_VISIT_ALLOCS)
- 
+
    void *GetIDObject(int inIndex)
    {
       AutoLock lock(*gSpecialObjectLock);
@@ -2767,7 +2767,7 @@ public:
          {
             ThreadPoolAutoLock l(sThreadPoolLock);
             int count = 0;
- 
+
             // May be woken multiple times if sRunningThreads is set to 0 then 1 before we sleep
             sThreadSleeping[inId] = true;
             // Spurious wake?
@@ -3039,7 +3039,7 @@ public:
       sgAllocsSinceLastSpam = 0;
       #endif
 
-      HX_STACK_FRAME("GC", "collect", 0, "GC::collect", __FILE__, __LINE__,0)
+      HX_STACK_FRAME("GC", "collect", 0, "GC::collect", __FILE__, __LINE__, 5, 0)
       #ifdef SHOW_MEM_EVENTS
       int here = 0;
       GCLOG("=== Collect === %p\n",&here);
@@ -3201,7 +3201,7 @@ public:
       int mem = stats.rowsInUse<<IMMIX_LINE_BITS;
       int targetFree = std::max(hx::sgMinimumFreeSpace, mem/100 *hx::sgTargetFreeSpacePercentage );
       sWorkingMemorySize = std::max( mem + targetFree, hx::sgMinimumWorkingMemory);
- 
+
       // Large alloc target
       int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
       if (blockSize > mLargeAllocSpace)
@@ -3903,7 +3903,7 @@ void SetTopOfStack(int *inTop,bool inForce)
 void *InternalNew(int inSize,bool inIsObject)
 {
    //HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", __LINE__, 0)
-   HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", inSize, 0)
+   HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", inSize, 5, 0)
 
    #ifdef HXCPP_DEBUG
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
@@ -3971,7 +3971,7 @@ void *InternalRealloc(void *inData,int inSize)
    if (inData==0)
       return hx::InternalNew(inSize,false);
 
-   HX_STACK_FRAME("GC", "realloc", 0, "GC::relloc", __FILE__ , __LINE__, 0)
+   HX_STACK_FRAME("GC", "realloc", 0, "GC::relloc", __FILE__ , __LINE__, 5, 0)
 
    #ifdef HXCPP_DEBUG
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
@@ -4190,4 +4190,3 @@ unsigned int __hxcpp_obj_hash(Dynamic inObj)
 
 
 void DummyFunction(void *inPtr) { }
-
