@@ -10,7 +10,6 @@
 #ifdef _WIN32
 
 #include <windows.h>
-#include <time.h>
 // Stoopid windows ...
 #ifdef RegisterClass
 #undef RegisterClass
@@ -21,7 +20,6 @@
 
 #else
 
-#include <sys/time.h>
 #include <wchar.h>
 #ifndef EMSCRIPTEN
 typedef  int64_t  __int64;
