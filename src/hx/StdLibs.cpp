@@ -232,7 +232,6 @@ void __hxcpp_exit(int inExitCode)
    exit(inExitCode);
 }
 
-static double t0 = 0;
 double  __time_stamp()
 {
 #ifdef HX_WINDOWS
@@ -253,15 +252,17 @@ double  __time_stamp()
       if (period!=0)
          return (now-t0)*period;
    }
-
    return (double)clock() / ( (double)CLOCKS_PER_SEC);
-#else
+#elif defined __unix__ || defined __APPLE__
+   static double t0 = 0;
    struct timeval tv;
    if( gettimeofday(&tv,0) )
       throw Dynamic("Could not get time");
    double t =  ( tv.tv_sec + ((double)tv.tv_usec) / 1000000.0 );
    if (t0==0) t0 = t;
    return t-t0;
+#else
+   return (double)clock() / ( (double)CLOCKS_PER_SEC);
 #endif
 }
 
@@ -447,8 +448,7 @@ Array<String> __get_args()
    #else
    #ifdef ANDROID
    // TODO: Get from java
-   #else // linux
-
+   #elif defined(__linux__)
    char buf[80];
    sprintf(buf, "/proc/%d/cmdline", getpid());
    FILE *cmd = fopen(buf,"rb");
