@@ -3,11 +3,9 @@
 
 #ifdef HX_WINDOWS
 #include <windows.h>
-#include <stdio.h>
 #include <io.h>
-#else
+#elif defined __unix__ || defined __APPLE__
 #include <sys/time.h>
-#include <stdio.h>
 #ifndef EMSCRIPTEN
 typedef int64_t __int64;
 #endif
@@ -28,6 +26,7 @@ extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumbe
 #include <string>
 #include <vector>
 #include <map>
+#include <stdio.h>
 #include <time.h>
 
 
