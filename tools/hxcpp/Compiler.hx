@@ -97,7 +97,7 @@ class Compiler
          args = args.concat(mOBJCFlags);
       else if (ext=="mm")
          args = args.concat(mMMFlags);
-      else if (ext=="cpp" || ext=="c++")
+      else if (ext=="cpp" || ext=="c++" || ext=="cc")
       {
          allowPch = true;
          args = args.concat(mCPPFlags);
