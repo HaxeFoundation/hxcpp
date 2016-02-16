@@ -139,6 +139,7 @@ Anon SourceInfo(String inFile, int inLine, String inClass, String inMethod)
    Anon result = Anon_obj::Create();
    result->Add(HX_CSTRING("fileName"),inFile);
    result->Add(HX_CSTRING("lineNumber"),inLine);
+   //CS116 result->Add(HX_CSTRING("columnNumber"),inColumn);
    result->Add(HX_CSTRING("className"),inClass);
    result->Add(HX_CSTRING("methodName"),inMethod);
    return result;
@@ -155,5 +156,3 @@ bool __hxcpp_anon_remove(Dynamic inObj,String inKey)
       return __string_hash_remove(*map,inKey);
    return false;
 }
-
-

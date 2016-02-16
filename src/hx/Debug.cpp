@@ -39,6 +39,8 @@ using namespace Windows::System::Threading;
 const char* EXTERN_CLASS_NAME = "extern";
 #endif
 
+#define NO_COL_SPEC -1
+
 // These should implement write and read memory barrier, but since there are
 // no obvious portable implementations, they are currently left unimplemented
 static void write_memory_barrier()
@@ -1494,6 +1496,7 @@ private:
    {
         Dynamic ret = g_newStackFrameFunction
             (String(frame->fileName), String(frame->lineNumber),
+             String(frame->columnNumber),
              String(frame->className), String(frame->functionName));
 
         // Don't do parameters for now
@@ -1729,6 +1732,7 @@ public:
                 (gStepThread == stack->GetThreadNumber())) {
                 if (gStepType == STEP_OVER) {
                     if (stack->GetDepth() <= gStepLevel) {
+                        //printf("Break immediate: stack->GetDepth=%d, gStepLevel=%d\n", stack->GetDepth(), gStepLevel);
                         breakStatus = STATUS_STOPPED_BREAK_IMMEDIATE;
                     }
                 }
@@ -1909,6 +1913,7 @@ private:
 #endif
    }
 
+
    // Copies breakpoints from toCopy except for number
    Breakpoints(const Breakpoints *toCopy, int number)
         : mRefCount(1)
@@ -2001,12 +2006,12 @@ private:
    //CS116 - We added columnNumber conditional.
    int FindFileLineBreakpoint(StackFrame *inFrame)
    {
-      //printf("FindFileLineBreakpoint(), inFrame.columnNumber = %d\n", inFrame->columnNumber);
       for (int i = 0; i < mBreakpointCount; i++)
       {
         Breakpoint &breakpoint = mBreakpoints[i];
-        bool hasCol = true;
-        if(breakpoint.columnNumber == -1) hasCol = false;
+        bool hasCol = (breakpoint.columnNumber != NO_COL_SPEC);
+        if(hasCol) {
+        }
         //Breakpoint &breakpoint = mBreakpoints[i];
         bool lineCondition = (breakpoint.isFileLine && breakpoint.hash==inFrame->fileHash &&
             (breakpoint.lineNumber == inFrame->lineNumber) &&

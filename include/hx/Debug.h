@@ -130,6 +130,8 @@ public:
          fullName(inFullName), fileName(inFileName),
          #ifdef HXCPP_STACK_LINE
          firstLineNumber(inLineNumber),
+         //CS116
+         firstColumnNumber(inColumnNumber),
          #endif
          #ifdef HXCPP_STACK_VARS
          variables(0),
@@ -138,6 +140,7 @@ public:
     {
          #ifdef HXCPP_STACK_LINE
          lineNumber = firstLineNumber;
+         columnNumber = firstColumnNumber;
          #endif
        __hxcpp_register_stack_frame(this);
     }
