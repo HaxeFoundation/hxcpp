@@ -2010,8 +2010,6 @@ private:
       {
         Breakpoint &breakpoint = mBreakpoints[i];
         bool hasCol = (breakpoint.columnNumber != NO_COL_SPEC);
-        if(hasCol) {
-        }
         //Breakpoint &breakpoint = mBreakpoints[i];
         bool lineCondition = (breakpoint.isFileLine && breakpoint.hash==inFrame->fileHash &&
             (breakpoint.lineNumber == inFrame->lineNumber) &&
