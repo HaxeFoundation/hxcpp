@@ -120,7 +120,7 @@ static int sgAllocsSinceLastSpam = 0;
 #define GCLOG printf
 #endif
 
-#if defined(WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
+#if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
 using namespace Windows::Foundation;
 using namespace Windows::System::Threading;
 #endif
@@ -2906,7 +2906,7 @@ public:
          int created = pthread_create(&result,0,SThreadLoop,info);
          bool ok = created==0;
       #else
-         #if defined(WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
+         #if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
 	      bool ok = true;
 	      try
 	      {

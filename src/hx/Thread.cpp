@@ -3,7 +3,7 @@
 #include <hx/Thread.h>
 #include <time.h>
 
-#if defined(WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
+#if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
 using namespace Windows::Foundation;
 using namespace Windows::System::Threading;
 #endif
@@ -281,7 +281,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 	hx::GCPrepareMultiThreaded();
 	hx::EnterGCFreeZone();
 
-   #if defined(WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
+   #if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
 
    bool ok = true;
    try

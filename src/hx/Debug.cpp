@@ -19,7 +19,7 @@
 #define DBGLOG printf
 #endif
 
-#if defined(WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
+#if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
 using namespace Windows::Foundation;
 using namespace Windows::System::Threading;
 #endif
@@ -154,7 +154,7 @@ public:
    
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
-#if !(defined(WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
+#if !(defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
 #else
 	   bool ok = true;
@@ -407,7 +407,7 @@ public:
         gThreadRefCount += 1;
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
-#if !(defined(WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
+#if !(defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
 #else
 		   bool ok = true;
