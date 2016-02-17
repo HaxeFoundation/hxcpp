@@ -494,8 +494,11 @@ class Setup
 
       if (detectMsvc)
       {
-         var extra = in64 ? "64" : "";
-         extra += isWinRT? "-winrt" : "";
+        var extra:String = "";
+        if( isWinRT )
+            extra += "-winrt";
+        if( in64 )
+            extra += "64";
          var xpCompat = false;
          if (ioDefines.exists("HXCPP_WINXP_COMPAT"))
          {

@@ -7,10 +7,14 @@
 
 <set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
-<set name="ABI" value="-MT" unless="ABI"/>
-<set name="C_ABI" value="${ABI}" />
 
-<set name="ABI" value="-ZW" if="winrt" />
+<!--<set name="ABI" value="-MD" if="winrt static_link" unless="ABI"/>-->
+<set name="C_ABI" value="${ABI}" if="ABI"/>
+<section unless="ABI">
+   <set name="ABI" value="-MT"/>
+   <set name="C_ABI" value="${ABI}" />
+   <set name="ABI" value="-ZW" if="winrt" />
+</section>
 <set name="CPP_ABI" value="${ABI}" />
 
 <set name="XPOBJ" value="xp" if="HXCPP_WINXP_COMPAT" />
@@ -113,13 +117,13 @@
 <linker id="exe" exe="link.exe" if="winrt">
   <fromfile value="@"/>
   <flag value="-nologo"/>
-  <flag value="-machine:x86"/>
+  <flag value="-machine:${MACHINE}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
   <flag value="-subsystem:windows" />
   <flag value="-MANIFEST:NO" />
   <flag value="-WINMD" />
   <flag value="-APPCONTAINER" />
-  <flag value="-WINMDFILE:obj/msvc${MSVC_VER}-rt${OBJEXT}/app.winmd" />
+  <flag value="-WINMDFILE:obj/msvc${MSVC_VER}-rt${OBJEXT}/app.winmd"  unless="static_link"/>
   <flag value="-DYNAMICBASE" />
   <flag value="-NXCOMPAT" />
   <flag value="-libpath:lib"/>
@@ -131,6 +135,7 @@
 <linker id="static_link" exe="lib.exe" if="windows">
   <fromfile value="@"/>
   <flag value="-nologo"/>
+  <!--<flag value="-IGNORE: 4264" if="winrt static_link"/>-->
   <ext value="${LIBEXT}"/>
   <outflag value="-out:"/>
 </linker>

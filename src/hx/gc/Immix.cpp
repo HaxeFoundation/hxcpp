@@ -120,8 +120,7 @@ static int sgAllocsSinceLastSpam = 0;
 #define GCLOG printf
 #endif
 
-
-#ifdef HX_WINRT
+#if defined(WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
 using namespace Windows::Foundation;
 using namespace Windows::System::Threading;
 #endif
@@ -294,8 +293,9 @@ MID = ENDIAN_MARK_ID_BYTE = is measured from the object pointer
 void CriticalGCError(const char *inMessage)
 {
    // Can't perfrom normal handling because it needs the GC system
-
-   #ifdef ANDROID
+   #ifdef HX_WINRT
+      WINRT_LOG("HXCPP Critical Error: %s\n", inMessage);
+   #elif ANDROID
    __android_log_print(ANDROID_LOG_ERROR, "HXCPP", "Critical Error: %s", inMessage);
    #else
    printf("Critical Error: %s\n", inMessage);
@@ -328,7 +328,7 @@ typedef MyMutex ThreadPoolLock;
 
 static ThreadPoolLock sThreadPoolLock;
 
-#if !defined(HX_WINDOWS) && !defined(EMSCRIPTEN) && !defined(HX_WINRT)
+#if !defined(HX_WINDOWS) && !defined(EMSCRIPTEN)
 #define HX_GC_PTHREADS
 typedef pthread_cond_t ThreadPoolSignal;
 inline void WaitThreadLocked(ThreadPoolSignal &ioSignal)
@@ -2906,7 +2906,7 @@ public:
          int created = pthread_create(&result,0,SThreadLoop,info);
          bool ok = created==0;
       #else
-         #ifdef HX_WINRT
+         #if defined(WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
 	      bool ok = true;
 	      try
 	      {

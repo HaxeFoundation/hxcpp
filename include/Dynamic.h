@@ -330,7 +330,7 @@ inline bool operator <= (bool inLHS,const Dynamic &inRHS) { return false; }
 inline bool operator >= (bool inLHS,const Dynamic &inRHS) { return false; }
 inline bool operator > (bool inLHS,const Dynamic &inRHS) { return false; }
 
-#ifdef HX_WINRT
+#if defined(HX_WINRT) && defined(__cplusplus_winrt)
 // Try to avoid the compiler using injected Box::operator int and Dynamic(null) when doing ==
 template<typename T>
 bool operator==(Platform::Box<T> ^inPtr, nullptr_t)

@@ -586,7 +586,6 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
          {
             #ifdef HX_WINRT
             WINRT_LOG(" try %s...\n", testPath.__s);
-
             #elif !defined(ANDROID)
             printf(" try %s...\n", testPath.__s);
             #else
