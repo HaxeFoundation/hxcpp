@@ -647,15 +647,15 @@ static value sys_read_dir( value p) {
 **/
 static value file_full_path( value path ) {
 #if defined(HX_WINRT)
-	#ifndef __cplusplus_winrt
-		printf("Sys.cpp file_full_path not implemented, compile with ABI=-ZW");
-		return path;
-	#else
-   Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
-   Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
-   Platform::String^ output = "Installed Location: " + installedLocation->Path;
-   return path;
-   #endif
+	#ifdef __cplusplus_winrt
+	Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
+	Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
+	Platform::String^ output = "Installed Location: " + installedLocation->Path;
+	std::wstring tempWStr(output->Begin());
+	std::string tempStr(tempWStr.begin(), tempWStr.end());
+	WINRT_LOG("%s",tempStr.c_str());
+	#endif
+	return path;
 #elif defined(NEKO_WINDOWS)
 	char buf[MAX_PATH+1];
 	val_check(path,string);
