@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #else
-#ifdef HX_WINRT && !defined(__cplusplus_winrt)
+#if defined(HX_WINRT) && !defined(__cplusplus_winrt)
 #include <windows.h>
 #endif
 #include <process.h>
