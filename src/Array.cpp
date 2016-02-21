@@ -188,7 +188,16 @@ void ArrayBase::__SetSizeExact(int inSize)
 }
 
  
+Dynamic ArrayBase::__unsafe_get(const Dynamic &i)
+{
+   return __GetItem(i);
+}
 
+
+Dynamic ArrayBase::__unsafe_set(const Dynamic &i, const Dynamic &val)
+{
+   return __SetItem(i,val);
+} 
 
 
 

@@ -150,6 +150,9 @@ public:
 
    void __SetSize(int inLen);
    void __SetSizeExact(int inLen=0);
+   
+   Dynamic __unsafe_get(const Dynamic &i);
+   Dynamic __unsafe_set(const Dynamic &i, const Dynamic &val);
 
    void safeSort(Dynamic sorter, bool isString);
 
