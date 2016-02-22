@@ -575,7 +575,7 @@ class Setup
             if (reg.match(str))
             {
                var cl_version = Std.parseInt(reg.matched(1));
-               Log.info("", "Using msvc cl version " + cl_version);
+               Log.info("", "Using MSVC version: " + cl_version);
                ioDefines.set("MSVC_VER", cl_version+"");
                if (cl_version>=17)
                   ioDefines.set("MSVC17+","1");

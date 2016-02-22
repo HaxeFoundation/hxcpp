@@ -351,15 +351,19 @@ class ProcessManager
    }
 
    // This function will return 0 on success, or non-zero error code
-   public static function runProcessThreaded(command:String, args:Array<String>, inText:String):Int
+   public static function runProcessThreaded(command:String, args:Array<String>, inText:String = null):Int
    {
       args = dup(args);
       command = combineCommand(command,args);
 
+      Log.lock();
+      if (inText != null)
+         Log.v(inText);
+
       if (!Log.verbose)
          Log.info(formatMessage(command, args));
       
-      Log.lock();
+      
       // Other thread may have already thrown an error
       if (BuildTool.threadExitCode!=0)
       {
@@ -367,8 +371,7 @@ class ProcessManager
          return BuildTool.threadExitCode;
       }
 
-      var text = inText==null ? "Running process" : inText;
-      Log.info("", " - \x1b[1m" + text + " :\x1b[0m " + formatMessage(command, args));
+      Log.info("", " - \x1b[1mRunning process:\x1b[0m " + formatMessage(command, args));
       Log.unlock();
 
       var output = new Array<String>();

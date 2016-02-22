@@ -158,14 +158,14 @@ class Compiler
          {
             if (BuildTool.threadExitCode == 0)
             {
-               var err = ProcessManager.runProcessThreaded(mExe, args, "Compiling " + inFile.mName);
+               var err = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompiling file:\x1b[0m " + inFile.mName);
                if (err!=0)
                   BuildTool.setThreadError(err);
             }
          }
          else
          {
-            var result = ProcessManager.runProcessThreaded(mExe, args, "Compiling " + inFile.mName);
+            var result = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompiling file:\x1b[0m " + inFile.mName);
             if (result!=0)
             {
                if (FileSystem.exists(obj_name))
