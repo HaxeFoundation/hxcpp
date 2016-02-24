@@ -278,6 +278,10 @@ class Setup
          defines.set("NDKV" + version, "1" );
       }
 
+      var arm_type = 'arm-linux-androideabi';
+      var arm_64 = defines.exists('HXCPP_ARM64');
+      if(arm_64) arm_type = 'aarch64-linux-android';
+
       // Find toolchain
       if (!defines.exists("TOOLCHAIN_VERSION"))
       {
@@ -287,6 +291,8 @@ class Setup
 
             // Prefer clang?
             var extract_version = ~/^arm-linux-androideabi-(\d.*)/;
+            if(arm_64) extract_version = ~/^aarch64-linux-android-(\d.*)/;
+
             var bestVer="";
             for(file in files)
             {
@@ -302,7 +308,7 @@ class Setup
             if (bestVer!="")
             {
                defines.set("TOOLCHAIN_VERSION",bestVer);
-               Log.info("", "\x1b[33;1mDetected Android toolchain: arm-linux-androideabi-" + bestVer + "\x1b[0m");
+               Log.info("", "\x1b[33;1mDetected Android toolchain: "+arm_type+"-" + bestVer + "\x1b[0m");
             }
          }
          catch(e:Dynamic) { }
@@ -311,7 +317,7 @@ class Setup
       // See what ANDROID_HOST to use ...
       try
       {
-         var prebuilt =  root+"/toolchains/arm-linux-androideabi-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
+         var prebuilt =  root+"/toolchains/"+arm_type+"-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
          var files = FileSystem.readDirectory(prebuilt);
          for (file in files)
          {  

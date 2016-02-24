@@ -162,6 +162,7 @@ class Builder
                case "android":
                   validArchs.set("armv5", ["-Dandroid"].concat(staticFlags) );
                   validArchs.set("armv7", ["-Dandroid", "-DHXCPP_ARMV7"].concat(staticFlags) );
+                  validArchs.set("arm64", ["-Dandroid", "-DHXCPP_ARM64"].concat(staticFlags) );
                   validArchs.set("x86", ["-Dandroid", "-DHXCPP_X86"].concat(staticFlags) );
                
                case "blackberry":
