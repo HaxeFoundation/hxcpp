@@ -13,7 +13,7 @@ setlocal enabledelayedexpansion
                 @set "LIB=%KitsRoot10Path%Lib\10.0.10240.0\um\x64;!LIB!"
             )
             @set "LIBPATH=%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\lib\store\references;!LIBPATH!"
-            '@echo HXCPP_VARS
+            @echo HXCPP_VARS
             @set
             @echo HXCPP_HACK_PDBSRV=1
         ) else (
