@@ -14,7 +14,7 @@ struct Variant
       typeBool,
       typePointer,
       typeString,
-      typeDynamic,
+      typeObject,
       typeObjC,
    };
 
@@ -24,8 +24,12 @@ struct Variant
       int valInt;
       double valDouble;
       bool valBool;
-      String valString;
-      Dynamic valDynamic;
+      struct
+      {
+         unsigned int valStringLen;
+         const char *valStringPtr;
+      };
+      hx::Object *valObject;
       void *valPointer;
       #if defined(__OBJC__) && defined(HXCPP_OBJC)
       id  valObjC;
@@ -37,13 +41,13 @@ struct Variant
    inline Variant(bool inValue) : type(typeBool), valBool(inValue) { }
    inline Variant(int inValue) : type(typeInt), valInt(inValue) { }
    inline Variant(double inValue) : type(typeDouble), valDouble(inValue) { }
-   inline Variant(::String inValue) : type(typeString), valString(inValue) { }
+   inline Variant(::String inValue) : type(typeString), valStringPtr(inValue.__s), valStringLen(inValue.length) { }
    #if defined(__OBJC__) && defined(HXCPP_OBJC)
    inline Variant(const id inValue) : type(typeObjC), valObjC(inValue) { }
    #endif
 
-   inline explicit Variant(const Dynamic &inRHS) : type(typeDynamic), valDynamic(inRHS) { }
-   inline Variant(hx::Object *inValue) : type(typeDynamic), valDynamic(inValue) { }
+   inline explicit Variant(const Dynamic &inRHS) : type(typeObject), valObject(inRHS.mPtr) { }
+   inline Variant(hx::Object *inValue) : type(typeObject), valObject(inValue) { }
    inline Variant(void *inValue) : type(typePointer), valPointer(inValue) { }
 
 
@@ -52,11 +56,11 @@ struct Variant
    {
       if (type==typeString)
       {
-         HX_MARK_STRING(valString.__s);
+         HX_MARK_STRING(valStringPtr);
       }
-      else if (type==typeDynamic)
+      else if (type==typeObject)
       {
-         HX_MARK_OBJECT(valDynamic.mPtr);
+         HX_MARK_OBJECT(valObject);
       }
    }
    #ifdef HXCPP_VISIT_ALLOCS
@@ -64,11 +68,11 @@ struct Variant
    {
       if (type==typeString)
       {
-         HX_VISIT_STRING(valString.__s);
+         HX_VISIT_STRING(valStringPtr);
       }
-      else if (type==typeDynamic)
+      else if (type==typeObject)
       {
-         HX_VISIT_OBJECT(valDynamic.mPtr);
+         HX_VISIT_OBJECT(valObject);
       }
    }
    #endif
