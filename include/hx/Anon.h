@@ -45,17 +45,44 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES Anon_obj : public hx::Object
    typedef hx::ObjectPtr<hx::Anon_obj> Anon;
    typedef hx::Object super;
 
+   inline void *operator new( size_t inSize, int inExtra )
+   {
+      return hx::Object::operator new(inSize+inExtra, true, 0);
+   }
+
+   struct VariantKey
+   {
+      String key;
+      cpp::Variant value;
+   };
+
    Dynamic mFields;
+   int     mFixedFields;
 
 public:
-   Anon_obj();
+   inline void *operator new( size_t inSize )
+   {
+      return hx::Object::operator new(inSize, true, 0);
+   }
 
-   static Anon Create() { return Anon(new hx::Anon_obj); }
-   static Anon Create(const Dynamic &inSrc) { return Anon(new hx::Anon_obj); }
 
-   static Dynamic __CreateEmpty() { return Anon(new hx::Anon_obj); }
+   Anon_obj(int inFixedFields = 0);
+
+   static Anon Create(int inElements)
+   {
+      return Anon(new (inElements*sizeof(VariantKey) ) hx::Anon_obj(inElements) );
+   }
+
+   static Anon Create() { return Anon(new (0) hx::Anon_obj); }
+   static Anon Create(const Dynamic &inSrc) { return Anon(new (0) hx::Anon_obj); }
+
+   static Dynamic __CreateEmpty() { return Anon(new (0) hx::Anon_obj); }
    static Dynamic __Create(DynamicArray inArgs);
    static void __boot();
+
+   void operator delete( void *, int) { }
+
+
    Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
    bool __HasField(const String &inString);
    Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp);

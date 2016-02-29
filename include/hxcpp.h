@@ -280,6 +280,7 @@ typedef bool PropertyAccess;
 #include "hxString.h"
 #include "Dynamic.h"
 #include <cpp/CppInt32__.h>
+#include <cpp/Variant.h>
 // This needs to "see" other declarations ...
 #include <hx/GcTypeInference.h>
 #include <hx/FieldRef.h>

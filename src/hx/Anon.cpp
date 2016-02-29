@@ -58,9 +58,10 @@ void FieldMapAppendFields(FieldMap *inMap,Array<String> &outFields)
 
 
 
-Anon_obj::Anon_obj()
+Anon_obj::Anon_obj(int inElements)
 {
-   mFields = hx::FieldMapCreate();
+   mFixedFields = inElements;
+   //mFields = hx::FieldMapCreate();
 }
 
 void Anon_obj::__Mark(hx::MarkContext *__inCtx)
@@ -77,28 +78,40 @@ void Anon_obj::__Visit(hx::VisitContext *__inCtx)
 
 Dynamic Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
 {
+   if (!mFields.mPtr)
+      return null();
    return __string_hash_get(mFields,inName);
 }
 
 bool Anon_obj::__HasField(const String &inName)
 {
+   if (!mFields.mPtr)
+      return false;
    return __string_hash_exists(mFields,inName);
 }
 
 bool Anon_obj::__Remove(String inKey)
 {
+   if (!mFields.mPtr)
+      return false;
    return __string_hash_remove(mFields,inKey);
 }
 
 
 Dynamic Anon_obj::__SetField(const String &inName,const Dynamic &inValue, hx::PropertyAccess inCallProp)
 {
+   if (!mFields.mPtr)
+      mFields = hx::FieldMapCreate();
+
    __string_hash_set(mFields,inName,inValue,true);
    return inValue;
 }
 
 Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetThisPointer)
 {
+   if (!mFields.mPtr)
+      mFields = hx::FieldMapCreate();
+
    __string_hash_set(mFields,inName,inValue,true);
    if (inSetThisPointer && inValue.GetPtr())
       inValue.GetPtr()->__SetThis(this);
@@ -107,6 +120,9 @@ Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetTh
 
 String Anon_obj::toString()
 {
+   if (!mFields.mPtr)
+      return HX_CSTRING("{ }");
+
    Dynamic func;
    if (FieldMapGet(&mFields, HX_CSTRING("toString"), func))
        return func();
@@ -116,13 +132,14 @@ String Anon_obj::toString()
 
 void Anon_obj::__GetFields(Array<String> &outFields)
 {
-   outFields = __string_hash_keys(mFields);
+   if (mFields.mPtr)
+      outFields = __string_hash_keys(mFields);
 }
 
 
 String Anon_obj::__ToString() const { return HX_CSTRING("Anon"); }
 
-Dynamic Anon_obj::__Create(DynamicArray inArgs) { return Anon(new Anon_obj); }
+Dynamic Anon_obj::__Create(DynamicArray inArgs) { return Anon(new (0) Anon_obj); }
 
 hx::Class Anon_obj::__mClass;
 
