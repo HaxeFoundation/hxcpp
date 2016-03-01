@@ -464,6 +464,10 @@ extern volatile bool gShouldCallHandleBreakpoints;
 #define HX_STACK_DO_THROW(e) hx::Throw(e)
 #endif
 
+// For tidier generated code
+#define HXLINE(number) HX_STACK_LINE(number)
+#define HXDLIN(number) HX_STACK_LINE(number)
+
 // To support older versions of the haxe compiler that emit HX_STACK_PUSH
 // instead of HX_STACK_FRAME.  If the old haxe compiler is used with this
 // new debugger implementation, className.functionName breakpoints will

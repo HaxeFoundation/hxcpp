@@ -135,17 +135,29 @@ typedef char HX_CHAR;
 //     HX_GC_CONST_ALLOC_BIT | HX_GC_NO_STRING_HASH
 
 
+// For making generated code easier to read
+#define HX_HASH_JOIN(A, B) A ## B
+#define HX_JOIN_PARTS(A, B) HX_HASH_JOIN(A, B)
+#define HX_HASH_OF(A) #A
+#define HX_STR_QUOTE(A) HX_HASH_OF(A)
+#define HX_HEX_QUOTE(hex) HX_STR_QUOTE(HX_JOIN_PARTS(\x,hex))
+
+
+
 
 #ifdef HXCPP_BIG_ENDIAN
 #define HX_HCSTRING(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((h3 h2 h1 h0 "\x80\x00\x00\x00" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
+#define HX_(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((HX_HEX_QUOTE(h3) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h0) "\x80\x00\x00\x00" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
 #define HX_STRINGI(s,len) ::String( (const HX_CHAR *)(("\xc0\x00\x00\x00" s)) + 4 ,len)
 #else
 
 #ifdef HX_WINRT
 #define HX_HCSTRING(s,h0,h1,h2,h3) ::String( const_cast<char *>((h0 h1 h2 h3 "\x00\x00\x00\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
+#define HX_(s,h0,h1,h2,h3) ::String( const_cast<char *>((HX_HEX_QUOTE(h0) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h3) "\x00\x00\x00\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
 #define HX_STRINGI(s,len) ::String( const_cast<char *>(("\x00\x00\x0\xc0" s)) + 4 ,len)
 #else
 #define HX_HCSTRING(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((h0 h1 h2 h3 "\x00\x00\x00\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
+#define HX_(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((HX_HEX_QUOTE(h0) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h3) "\x00\x00\x00\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
 
 #define HX_STRINGI(s,len) ::String( (const HX_CHAR *)(("\x00\x00\x0\xc0" s)) + 4 ,len)
 #endif
