@@ -339,6 +339,15 @@ public:
    Dynamic map(Dynamic inFunc);
    VirtualArray filter(Dynamic inFunc);
 
+   template<typename T>
+   inline VirtualArray init(int inIndex, const T &inVal)
+   {
+      if (store!=hx::arrayFixed) EnsureStorage(inVal);
+      // TODO
+      __SetItem(inIndex,inVal);
+      return this;
+   } 
+
    inline Dynamic __unsafe_set(int inIndex, const Dynamic &val)  { return __SetItem(inIndex,val); } 
    inline Dynamic __unsafe_get(int inIndex)  { return __GetItem(inIndex); } 
 
