@@ -52,6 +52,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES Anon_obj : public hx::Object
 
    struct VariantKey
    {
+      int    hash;
       String key;
       cpp::Variant value;
    };
@@ -64,6 +65,24 @@ public:
    {
       return hx::Object::operator new(inSize, true, 0);
    }
+   inline void operator delete(void *, size_t inSize ) { }
+   inline void operator delete(void *, size_t inSize, int inExtra ) { }
+
+   inline Anon_obj *setFixed(int index, const String &inName, const ::cpp::Variant &inValue)
+   {
+      VariantKey *fixed = getFixed() + index;
+      fixed->hash = inName.hash();
+      fixed->key = inName;
+      fixed->value = inValue;
+      return this;
+   }
+   inline VariantKey *getFixed()
+   {
+      return (VariantKey *)(this + 1);
+   }
+   int findFixed(const ::String &inKey);
+
+
 
 
    Anon_obj(int inFixedFields = 0);

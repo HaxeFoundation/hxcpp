@@ -46,10 +46,42 @@ struct Variant
    inline Variant(const id inValue) : type(typeObjC), valObjC(inValue) { }
    #endif
 
-   inline explicit Variant(const Dynamic &inRHS) : type(typeObject), valObject(inRHS.mPtr) { }
+   inline Variant(Dynamic &inRHS) : type(typeObject), valObject(inRHS.mPtr) { }
    inline Variant(hx::Object *inValue) : type(typeObject), valObject(inValue) { }
    inline Variant(void *inValue) : type(typePointer), valPointer(inValue) { }
 
+   inline operator Dynamic ()
+   {
+      switch(type)
+      {
+         case typeNull: return null();
+         case typeInt: return valInt;
+         case typeDouble: return valDouble;
+         case typeBool: return valBool;
+         case typeString: return String(valStringPtr, valStringLen);
+         case typeObject: return valObject;
+         case typePointer: return null(); // todo
+         case typeObjC: return null(); // todo
+      }
+      return null();
+   }
+
+
+   inline operator String()
+   {
+      switch(type)
+      {
+         case typeNull: return String();
+         case typeInt: return String(valInt);
+         case typeDouble: return String(valDouble);
+         case typeBool: return String(valBool);
+         case typeString: return String(valStringPtr, valStringLen);
+         case typeObject: return Dynamic(valObject);
+         case typePointer: return String(); // todo
+         case typeObjC: return String(); // todo
+      }
+      return String();
+   }
 
 
    inline void mark(hx::MarkContext *__inCtx)
