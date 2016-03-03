@@ -133,6 +133,7 @@ namespace cpp
          case typeDouble: return valDouble;
          case typeBool: return valBool;
          case typeObject: return valObject ? valObject->__ToInt() : 0;
+         default: ;
       }
       return 0;
    }
@@ -147,6 +148,7 @@ namespace cpp
          case typeDouble: return valDouble;
          case typeBool: return valBool;
          case typeObject: return valObject ? valObject->__ToDouble() : 0;
+         default: ;
       }
       return 0;
    }
@@ -160,6 +162,7 @@ namespace cpp
          case typeBool: return valBool;
          case typeString: return String(valStringPtr, valStringLen);
          case typeObject: return valObject;
+         default: ;
       }
       return null();
    }
@@ -196,6 +199,7 @@ namespace cpp
          case typeBool: return String(valBool);
          case typeString: return String(valStringPtr, valStringLen);
          case typeObject: return valObject ? valObject->toString() : String();
+         default: ;
       }
       return String();
    }
@@ -231,6 +235,7 @@ namespace cpp
          case typeString: return String(valStringPtr, valStringLen)==(String)inRHS ? 1 : 0;
          case typeObject:
                return valObject->__Compare( inRHS.mPtr->__GetRealObject() );
+         default: ;
 
       }
       return 0;
