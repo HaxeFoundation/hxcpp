@@ -7,14 +7,12 @@
 
 <set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
-
 <set name="ABI" value="-MD" if="winrt static_link HXCPP_WINRT_NATIVE_LIBS" unless="ABI"/>
-<set name="C_ABI" value="${ABI}" if="ABI"/>
-<section unless="ABI">
-   <set name="ABI" value="-MT"/>
-   <set name="C_ABI" value="${ABI}" />
-   <set name="ABI" value="-ZW" if="winrt" />
-</section>
+<set name="ABI" value="-MT" unless="ABI"/>
+<set name="C_ABI" value="${ABI}" />
+
+<set name="ABI" value="-ZW" if="winrt" unless="ABI"/>
+
 <set name="CPP_ABI" value="${ABI}" />
 
 <set name="XPOBJ" value="xp" if="HXCPP_WINXP_COMPAT" />
@@ -123,7 +121,7 @@
   <flag value="-MANIFEST:NO" />
   <flag value="-WINMD" />
   <flag value="-APPCONTAINER" />
-  <flag value="-WINMDFILE:obj/msvc${MSVC_VER}-rt${OBJEXT}/app.winmd"  unless="HXCPP_WINRT_NATIVE_LIBS"/>
+  <flag value="-WINMDFILE:obj/msvc${MSVC_VER}-rt${OBJEXT}/app.winmd" />
   <flag value="-DYNAMICBASE" />
   <flag value="-NXCOMPAT" />
   <flag value="-libpath:lib"/>
