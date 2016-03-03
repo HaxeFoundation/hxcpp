@@ -263,6 +263,18 @@ static  ::NS::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) 
 ::end:: ::end::
 
 
+#define HX_DECLARE_VARIANT_FUNCTIONS \
+::foreach PARAMS:: ::if (ARG<6):: inline  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::); \
+::else::  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::); \
+::end:: ::end::
+
+
+#define HX_IMPLEMNET_INLINE_VARIANT_FUNCTIONS \
+::foreach PARAMS:: ::if (ARG<6):: ::NS::Dynamic Variant::NS::operator()(::DYNAMIC_ARG_LIST::) { CheckFPtr(); return valObject->__run(::ARG_LIST::); } \
+::end:: ::end::
+
+
+
 
 namespace hx {
 HXCPP_EXTERN_CLASS_ATTRIBUTES void SetTopOfStack(int *inTopOfStack,bool);

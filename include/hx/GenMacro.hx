@@ -41,7 +41,7 @@ class GenMacro
             arr_list.push( "inArgs[" + (arg-1) + "]");
             arg_list.push( "inArg" + (arg-1));
             dynamic_arg_list.push("const Dynamic &inArg" + (arg-1) );
-            dynamic_adds.push( "->Add(inArg" + (arg-1) + ")" );
+            dynamic_adds.push( "->init(" + (arg-1) + ",inArg" + (arg-1) + ")" );
          }
 
          params.push( {

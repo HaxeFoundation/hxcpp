@@ -539,148 +539,379 @@ Dynamic CreateStaticFunction5(StaticFunction5 inFunc)
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,6)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(6)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(6)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,7)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(7)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(7)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,8)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(8)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(8)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,9)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(9)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(9)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,10)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(10)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(10)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,11)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(11)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(11)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,12)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(12)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(12)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,13)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(13)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(13)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,14)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(14)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(14)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,15)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(15)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(15)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,16)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(16)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(16)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,17)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(17)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(17)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,18)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(18)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(18)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,19)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(19)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(19)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,20)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(20)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(20)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,21)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(21)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(21)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,22)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(22)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(22)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,23)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21)->Add(inArg22));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(23)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(23)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,24)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21)->Add(inArg22)->Add(inArg23));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(24)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(24)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,25)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21)->Add(inArg22)->Add(inArg23)->Add(inArg24));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(25)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23)->init(24,inArg24));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(25)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23)->init(24,inArg24));
+}
+}
+
+
 
  
 Dynamic Dynamic::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24,const Dynamic &inArg25)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::__new(0,26)->Add(inArg0)->Add(inArg1)->Add(inArg2)->Add(inArg3)->Add(inArg4)->Add(inArg5)->Add(inArg6)->Add(inArg7)->Add(inArg8)->Add(inArg9)->Add(inArg10)->Add(inArg11)->Add(inArg12)->Add(inArg13)->Add(inArg14)->Add(inArg15)->Add(inArg16)->Add(inArg17)->Add(inArg18)->Add(inArg19)->Add(inArg20)->Add(inArg21)->Add(inArg22)->Add(inArg23)->Add(inArg24)->Add(inArg25));
+   return mPtr->__Run(Array_obj<Dynamic>::__new(26)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23)->init(24,inArg24)->init(25,inArg25));
 }
+
+namespace cpp
+{
+::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24,const Dynamic &inArg25)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::__new(26)->init(0,inArg0)->init(1,inArg1)->init(2,inArg2)->init(3,inArg3)->init(4,inArg4)->init(5,inArg5)->init(6,inArg6)->init(7,inArg7)->init(8,inArg8)->init(9,inArg9)->init(10,inArg10)->init(11,inArg11)->init(12,inArg12)->init(13,inArg13)->init(14,inArg14)->init(15,inArg15)->init(16,inArg16)->init(17,inArg17)->init(18,inArg18)->init(19,inArg19)->init(20,inArg20)->init(21,inArg21)->init(22,inArg22)->init(23,inArg23)->init(24,inArg24)->init(25,inArg25));
+}
+}
+
+
 
 
 

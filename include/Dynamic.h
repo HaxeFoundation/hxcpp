@@ -180,6 +180,10 @@ public:
    #define DYNAMIC_ARITH( op ) \
       double operator op (const double &inRHS) const { return (double)(*this) op (double)inRHS; } \
       double operator op (const float &inRHS) const { return (double)(*this) op (double)inRHS; } \
+      Dynamic operator op (const cpp::Variant &inRHS) const \
+        { return mPtr->__GetType()==vtInt && inRHS.isInt() ? \
+              Dynamic((int)(*this) op (int)inRHS) : \
+              Dynamic( (double)(*this) op (double)inRHS); } \
       Dynamic operator op (const Dynamic &inRHS) const \
         { return mPtr->__GetType()==vtInt && inRHS.mPtr->__GetType()==vtInt ? \
               Dynamic((int)(*this) op (int)inRHS) : \

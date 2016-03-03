@@ -294,8 +294,8 @@ typedef bool PropertyAccess;
 // You should not include the individual files, just this one.
 
 // First time ...
-#include <cpp/Variant.h>
 #include <hx/Macros.h>
+#include <cpp/Variant.h>
 #include <hx/ErrorCodes.h>
 #include <hx/GC.h>
 #include "null.h"

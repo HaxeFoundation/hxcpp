@@ -5,41 +5,50 @@ namespace cpp
 #ifndef CPP_VARIANT_ONCE_H
 #define CPP_VARIANT_ONCE_H
 
+   template<typename T>
+   inline bool isIntType(const T &inRHS) { return false; }
+   template<> inline bool isIntType(const int &inRHS) { return true; }
+   template<> inline bool isIntType(const Dynamic &inRHS);
+   template<> inline bool isIntType(const cpp::Variant &inRHS);
+
+   template<typename T>
+   inline bool isStringType(const T &inRHS) { return false; }
+   template<> inline bool isStringType(const String &inRHS) { return true; }
+   template<> inline bool isStringType(const Dynamic &inRHS);
+   template<> inline bool isStringType(const cpp::Variant &inRHS);
+
+
    struct Variant
    {
       enum Type
       {
          typeObject = 0,
-         typeInt,
-         typeDouble,
-         typeBool,
-         typePointer,
          typeString,
-         typeObjC,
+         typeDouble,
+         typeInt,
+         typeBool,
       };
 
-      Type type;
       union
       {
-         int valInt;
-         double valDouble;
-         bool valBool;
          struct
          {
-            unsigned int valStringLen;
             const char *valStringPtr;
+            unsigned int valStringLen;
          };
          hx::Object *valObject;
-         void *valPointer;
-         #if defined(__OBJC__) && defined(HXCPP_OBJC)
-         id  valObjC;
-         #endif
+         double valDouble;
+         int valInt;
+         bool valBool;
       };
+      Type type;
 
       inline bool isNull() const { return type==typeObject && !valObject; }
       inline bool isNumeric() const;
       inline bool isBool() const;
       inline int asInt() const;
+      inline bool isInt() const;
+      inline bool isString() const;
       inline double asDouble() const;
       inline String asString() const;
 
@@ -53,14 +62,8 @@ namespace cpp
       template<typename SOURCE_>
       Variant(const hx::ObjectPtr<SOURCE_> &inObjectPtr);
 
-      #if defined(__OBJC__) && defined(HXCPP_OBJC)
-      inline Variant(const id inValue) : type(typeObjC), valObjC(inValue) { }
-      #endif
-
       inline Variant(Dynamic &inRHS); // later
       inline Variant(hx::Object *inValue) : type(typeObject), valObject(inValue) { }
-      inline Variant(void *inValue) : type(typePointer), valPointer(inValue) { }
-
       inline operator Dynamic() const; // later
       inline operator String() const;
       inline operator double() const { return asDouble(); }
@@ -77,13 +80,8 @@ namespace cpp
 
       inline int Compare(const Dynamic &inRHS) const;
 
-      #ifdef __OBJC__
-      #ifdef HXCPP_OBJC
-      inline id asId() const;
-      inline operator id() const { return asId(); }
-      #endif
-      #endif
-
+      inline double set(const double &inValue) { type=typeDouble; return valDouble=inValue; }
+      inline double set(const float &inValue) { type=typeDouble; return valDouble=inValue; }
 
       inline void mark(hx::MarkContext *__inCtx); // later
       #ifdef HXCPP_VISIT_ALLOCS
@@ -106,12 +104,71 @@ namespace cpp
       template<typename RETURN_>
       RETURN_ Cast() const { return RETURN_(*this); }
 
-      //inline void CheckFPtr();
+      void CheckFPtr();
+      HX_DECLARE_VARIANT_FUNCTIONS
+
+
+    // Operator + is different, since it must consider strings too...
+    inline String operator+(const String &s) const;
+    template<typename T>
+    inline cpp::Variant operator + (const T &inRHS) const;
+
+    inline double operator%(const Dynamic &inRHS) const;
+    inline double operator-() const { return -asDouble(); }
+    inline double operator++() { return set(asDouble()+1); }
+    inline double operator++(int) {double val = asDouble(); set(val+1); return val; }
+    inline double operator--() { return set(asDouble()-1); }
+    inline double operator--(int) {double val = asDouble(); set(val-1); return val; }
+
+    template<typename T>
+    inline double operator / (const T &inRHS) const { return asDouble() / (double)inRHS; } \
+
+    template<typename T>
+    inline cpp::Variant operator - (const T &inRHS) const
+    {
+       if (isInt() && ::cpp::isIntType(inRHS))
+          return asInt() - (int)inRHS;
+       return asDouble() - inRHS.asDouble();
+    }
+
+    template<typename T>
+    inline cpp::Variant operator * (const T &inRHS) const
+    {
+       if (isInt() && ::cpp::isIntType(inRHS))
+          return asInt() - (int)inRHS;
+       return asDouble() - inRHS.asDouble();
+    }
+
    };
 
 #else // Second time ...
    #define CPP_VARIANT_TWICE_H
 
+   bool Variant::isInt() const
+   {
+      return type==typeInt || (type==typeObject && valObject && valObject->__GetType()==vtInt);
+   }
+   bool Variant::isString() const
+   {
+      return type==typeString || (type==typeObject && valObject && valObject->__GetType()==vtString);
+   }
+
+
+   template<> inline bool isIntType(const Dynamic &inRHS) { return inRHS->__GetType()==vtInt; }
+   template<> inline bool isIntType(const cpp::Variant &inRHS) { return inRHS.isInt(); }
+   template<> inline bool isStringType(const Dynamic &inRHS) { return inRHS.mPtr && inRHS->__GetType()==vtString; }
+   template<> inline bool isStringType(const cpp::Variant &inRHS) { return inRHS.isString(); }
+
+
+#define HX_ARITH_VARIANT( op ) \
+   inline double operator op (const double &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS;} \
+   inline double operator op (const float &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS;} \
+   inline double operator op (const int &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS; } \
+
+   HX_ARITH_VARIANT( - )
+   HX_ARITH_VARIANT( + )
+   HX_ARITH_VARIANT( / )
+   HX_ARITH_VARIANT( * )
 
    Variant::Variant(const ::String &inValue) : type(typeString), valStringPtr(inValue.__s), valStringLen(inValue.length) { }
 
@@ -121,11 +178,17 @@ namespace cpp
    Variant::Variant(const hx::ObjectPtr<SOURCE_> &inObjectPtr) :
        type(typeObject), valObject(inObjectPtr.mPtr) { }
 
-   // void Variant::CheckFPtr() { if (isNull()) hx::ThrowBadFunctionError(); }
+   inline void Variant::CheckFPtr()
+   {
+      if (isNull())  Dynamic::ThrowBadFunctionError();
+   }
+
+   HX_IMPLEMNET_INLINE_VARIANT_FUNCTIONS
+
 
    int Variant::asInt() const
    {
-      if (type==valInt)
+      if (type==typeInt)
          return valInt;
 
       switch(type)
@@ -140,17 +203,13 @@ namespace cpp
 
    double Variant::asDouble() const
    {
-      if (type==valDouble)
+      if (type==typeDouble)
          return valDouble;
-
-      switch(type)
-      {
-         case typeDouble: return valDouble;
-         case typeBool: return valBool;
-         case typeObject: return valObject ? valObject->__ToDouble() : 0;
-         default: ;
-      }
-      return 0;
+      else if (type==typeInt)
+         return valInt;
+      else if (type==typeObject)
+         return valObject ? valObject->__ToDouble() : 0.0;
+      return 0.0;
    }
 
    Variant::operator Dynamic() const
@@ -241,6 +300,20 @@ namespace cpp
       return 0;
    }
 
+   String cpp::Variant::operator+(const String &s) const
+   {
+      return asString() + s;
+   }
+   template<typename T>
+   cpp::Variant Variant::operator + (const T &inRHS) const
+   {
+      if (isString() || ::cpp::isStringType(inRHS))
+         return asString() + String(inRHS);
+      return asDouble() + (double)inRHS;
+   }
+
+
+
    #ifdef __OBJC__
    #ifdef HXCPP_OBJC
    inline Variant::asId() const
@@ -250,7 +323,6 @@ namespace cpp
    }
    #endif
    #endif
-
 
 
    #ifdef HXCPP_VISIT_ALLOCS

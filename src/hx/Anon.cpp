@@ -95,10 +95,11 @@ int Anon_obj::findFixed(const ::String &inKey)
    VariantKey *fixed = getFixed();
 
    int sought = inKey.hash();
-   if (mFixedFields<2)
+   if (mFixedFields<5)
    {
       for(int i=0;i<mFixedFields;i++)
-         if (fixed[i].hash==sought && fixed[i].key==inKey)
+         if (fixed[i].hash==sought && (fixed[i].key.__s == inKey.__s ||
+                (fixed[i].key.length == inKey.length && !memcmp(fixed[i].key.__s,inKey.__s, inKey.length))))
             return i;
       return -1;
    }
@@ -134,6 +135,8 @@ int Anon_obj::findFixed(const ::String &inKey)
    while(fixed[min].hash==sought)
    {
       if (fixed[min].key==inKey)
+         if (fixed[min].hash==sought && (fixed[min].key.__s == inKey.__s ||
+                (fixed[min].key.length == inKey.length && !memcmp(fixed[min].key.__s,inKey.__s, inKey.length))))
          return min;
 
       min++;
