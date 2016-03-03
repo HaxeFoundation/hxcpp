@@ -468,7 +468,7 @@ DEFINE_ARRAY_FUNC4(blit);
 DEFINE_ARRAY_FUNC2(zero);
 DEFINE_ARRAY_FUNC1(memcmp);
 
-Dynamic ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("length")) return Dynamic((int)size());
    if (inString==HX_CSTRING("concat")) return concat_dyn();
@@ -567,7 +567,7 @@ Dynamic IteratorBase::next_dyn()
    return hx::CreateMemberFunction0(this,__IteratorBase_dynamicNext);
 }
 
-Dynamic IteratorBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val IteratorBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("hasNext")) return hasNext_dyn();
    if (inString==HX_CSTRING("next")) return _dynamicNext_dyn();

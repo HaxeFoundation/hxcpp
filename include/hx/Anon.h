@@ -102,9 +102,9 @@ public:
    void operator delete( void *, int) { }
 
 
-   Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
+   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp);
    bool __HasField(const String &inString);
-   Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp);
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp);
    virtual void __GetFields(Array<String> &outFields);
    Dynamic *__GetFieldMap() { return &mFields; }
 

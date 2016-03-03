@@ -1,5 +1,5 @@
 #include <hxcpp.h>
-
+#undef RegisterClass
 namespace hx
 {
 
@@ -129,28 +129,30 @@ int Anon_obj::findFixed(const ::String &inKey)
          else
             max = mid;
       }
-      while(fixed[min].hash==sought)
-      {
-         if (fixed[min].key==inKey)
-            return min;
-
-         min++;
-         if (min>=mFixedFields)
-            return -1;
-      }
    }
+
+   while(fixed[min].hash==sought)
+   {
+      if (fixed[min].key==inKey)
+         return min;
+
+      min++;
+      if (min>=mFixedFields)
+         return -1;
+   }
+
    return -1;
 }
 
-Dynamic Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
+hx::Val Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
 {
    int fixed = findFixed(inName);
    if (fixed>=0)
-   {
       return getFixed()[fixed].value;
-   }
+
    if (!mFields.mPtr)
       return null();
+
    return __string_hash_get(mFields,inName);
 }
 
@@ -184,7 +186,7 @@ bool Anon_obj::__Remove(String inKey)
 }
 
 
-Dynamic Anon_obj::__SetField(const String &inName,const Dynamic &inValue, hx::PropertyAccess inCallProp)
+hx::Val Anon_obj::__SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
 {
    // TODO - fixed
    if (!mFields.mPtr)

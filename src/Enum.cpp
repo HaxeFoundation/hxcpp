@@ -20,7 +20,7 @@ int EnumBase_obj::__FindArgCount(String inName)
    if (inName==HX_CSTRING("__")) return 0;
    return -1;
 }
-Dynamic EnumBase_obj::__Field(const String &inString, hx::PropertyAccess inCallProp) { return null(); }
+hx::Val EnumBase_obj::__Field(const String &inString, hx::PropertyAccess inCallProp) { return null(); }
 
 hx::Class hxEnumBase_obj__mClass;
 hx::Class &EnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }

@@ -65,7 +65,7 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,exp,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isNaN,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
 
-Dynamic Math_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val Math_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("floor")) return floor_dyn();
    if (inString==HX_CSTRING("ffloor")) return ffloor_dyn();
@@ -120,7 +120,7 @@ static String sMathFields[] = {
    String(null()) };
 
 
-Dynamic Math_obj::__SetField(const String &inString,const Dynamic &inValue, hx::PropertyAccess inCallProp) { return null(); }
+hx::Val Math_obj::__SetField(const String &inString,const hx::Val &inValue, hx::PropertyAccess inCallProp) { return null(); }
 
 Dynamic Math_obj::__CreateEmpty() { return new Math_obj; }
 

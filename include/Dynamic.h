@@ -56,6 +56,7 @@ public:
    inline operator char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator signed char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
+   inline operator cpp::Variant() const { return cpp::Variant(mPtr); }
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
    inline operator id() const { return mPtr ? (id)mPtr->__GetHandle() : 0; }

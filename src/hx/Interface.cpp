@@ -58,7 +58,7 @@ bool Interface::__HasField(const ::String &s)
 	return __GetRealObject()->__HasField(s);
 }
 
-Dynamic Interface::__Field(const ::String &s, hx::PropertyAccess inCallProp)
+hx::Val Interface::__Field(const ::String &s, hx::PropertyAccess inCallProp)
 {
 	return __GetRealObject()->__Field(s,inCallProp);
 }
@@ -68,7 +68,7 @@ Dynamic Interface::__IField(int i)
 	return __GetRealObject()->__IField( i);
 }
 
-Dynamic Interface::__SetField(const ::String &s,const Dynamic &d, hx::PropertyAccess inCallProp)
+hx::Val Interface::__SetField(const ::String &s,const hx::Val &d, hx::PropertyAccess inCallProp)
 {
 	return __GetRealObject()->__SetField(s,d,inCallProp);
 }

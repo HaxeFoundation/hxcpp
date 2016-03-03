@@ -187,7 +187,7 @@ public:
    Dynamic toUpperCase_dyn();
 
 	// This is used by the string-wrapped-as-dynamic class
-   Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp);
+   hx::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp);
 
 	// The actual implementation.
 	// Note that "__s" is const - if you want to change it, you should create a new string.

@@ -219,7 +219,9 @@ namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
 
 // --- Forward decalarations --------------------------------------------
 
+class null;
 namespace cpp { class CppInt32__; }
+namespace cpp { struct Variant; }
 namespace hx { class Object; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
@@ -258,6 +260,12 @@ public:
    virtual void visitAlloc(void **ioPtr)=0;
 };
 
+#if (HXCPP_API_LEVEL >= 330)
+typedef ::cpp::Variant Val;
+#else
+typedef ::Dynamic Val;
+#endif
+
 
 #if (HXCPP_API_LEVEL >= 313)
 enum PropertyAccessMode
@@ -284,6 +292,9 @@ typedef bool PropertyAccess;
 
 // The order of these includes has been chosen to minimize forward declarations.
 // You should not include the individual files, just this one.
+
+// First time ...
+#include <cpp/Variant.h>
 #include <hx/Macros.h>
 #include <hx/ErrorCodes.h>
 #include <hx/GC.h>
@@ -292,7 +303,6 @@ typedef bool PropertyAccess;
 #include "hxString.h"
 #include "Dynamic.h"
 #include <cpp/CppInt32__.h>
-#include <cpp/Variant.h>
 // This needs to "see" other declarations ...
 #include <hx/GcTypeInference.h>
 #include <hx/FieldRef.h>
@@ -306,6 +316,8 @@ typedef bool PropertyAccess;
 #include <cpp/Pointer.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>
+// second time ...
+#include <cpp/Variant.h>
 #include <hx/Debug.h>
 #include <hx/Boot.h>
 #include <hx/Undefine.h>

@@ -112,7 +112,7 @@ public:
    inline char * getBase() const { return mBase; }
 
 
-   Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp) { return null(); }
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) { return null(); }
 
    static hx::Class __mClass;
    static hx::Class &__SGetClass() { return __mClass; }
@@ -168,7 +168,7 @@ public:
 
 
    // Dynamic interface
-   Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
+   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp);
    virtual Dynamic __concat(const Dynamic &a0) = 0;
    virtual Dynamic __copy() = 0;
    virtual Dynamic __insert(const Dynamic &a0,const Dynamic &a1) = 0;
@@ -812,6 +812,16 @@ public:
    Array &operator=( const cpp::ArrayBase &inRHS )
    {
       setDynamic(inRHS);
+      return *this;
+   }
+
+
+   Array &operator=( const cpp::Variant &inRHS )
+   {
+      if (inRHS.type!=cpp::Variant::typeObject)
+         setDynamic( null() );
+      else
+         setDynamic(inRHS.valObject);
       return *this;
    }
 

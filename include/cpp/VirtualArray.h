@@ -234,9 +234,17 @@ public:
 
    void EnsureArrayStorage(Dynamic inValue);
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(base); }
+   void __Mark(hx::MarkContext *__inCtx)
+   {
+      if (base)
+         hx::MarkObjectAlloc(base, __inCtx );
+   }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(base); }
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      if (base)
+        __inCtx->visitObject( (hx::Object **)&base);
+   }
    #endif
 
 
@@ -244,7 +252,7 @@ public:
    inline int getElementSize() const { return base ? base->GetElementSize() : 0; }
    inline int getByteCount() const { return base ? base->getByteCount() : 0; }
    inline char * getBase() const { return base ? base->GetBase() : 0; }
-   Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp) { return null(); }
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) { return null(); }
 
    static hx::Class &__SGetClass() { return hx::ArrayBase::__mClass; }
    hx::Class __GetClass() const;
@@ -277,7 +285,7 @@ public:
 
    Dynamic __GetItem(int inIndex) const;
    Dynamic __SetItem(int inIndex,Dynamic inValue);
-   Dynamic __Field(const String &inString, hx::PropertyAccess inCallProp);
+   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp);
 
 
    template<typename T>

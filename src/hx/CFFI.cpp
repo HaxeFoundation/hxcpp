@@ -717,7 +717,7 @@ void val_iter_field_vals(hx::Object *inObj, __hx_field_iter inFunc ,void *inCook
 
       for(int i=0;i<fields->length;i++)
       {
-         inFunc((value)inObj->__Field(fields[i], HX_PROP_NEVER ).mPtr, __hxcpp_field_to_id(fields[i].__CStr()), inCookie);
+         inFunc((value)Dynamic(inObj->__Field(fields[i], HX_PROP_NEVER )).mPtr, __hxcpp_field_to_id(fields[i].__CStr()), inCookie);
       }
    }
 }

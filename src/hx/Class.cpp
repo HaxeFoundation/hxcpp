@@ -241,7 +241,7 @@ bool Class_obj::__HasField(const String &inString)
    return false;
 }
 
-Dynamic Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("__meta__"))
       return __meta__;
@@ -267,7 +267,7 @@ Dynamic Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp
    return instance->__Field(inString, inCallProp);
 }
 
-Dynamic Class_obj::__SetField(const String &inString,const Dynamic &inValue, hx::PropertyAccess inCallProp)
+hx::Val Class_obj::__SetField(const String &inString,const hx::Val &inValue, hx::PropertyAccess inCallProp)
 {
 
    if (mSetStaticField)
