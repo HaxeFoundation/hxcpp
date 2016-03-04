@@ -126,17 +126,17 @@ namespace cpp
     template<typename T>
     inline cpp::Variant operator - (const T &inRHS) const
     {
-       if (isInt() && ::cpp::isIntType(inRHS))
+       if (::cpp::isIntType(inRHS) && isInt() )
           return asInt() - (int)inRHS;
-       return asDouble() - inRHS.asDouble();
+       return asDouble() - (double)inRHS;
     }
 
     template<typename T>
     inline cpp::Variant operator * (const T &inRHS) const
     {
-       if (isInt() && ::cpp::isIntType(inRHS))
-          return asInt() - (int)inRHS;
-       return asDouble() - inRHS.asDouble();
+       if (::cpp::isIntType(inRHS) && isInt())
+          return asInt() * (int)inRHS;
+       return asDouble() * (double)inRHS;
     }
 
    };

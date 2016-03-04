@@ -191,6 +191,13 @@ bool Anon_obj::__Remove(String inKey)
 
 hx::Val Anon_obj::__SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
 {
+   int slot = findFixed(inName);
+   if (slot>=0)
+   {
+      getFixed()[slot].value=inValue;
+      return inValue;
+   }
+
    // TODO - fixed
    if (!mFields.mPtr)
       mFields = hx::FieldMapCreate();
