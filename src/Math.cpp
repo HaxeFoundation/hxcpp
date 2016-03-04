@@ -8,6 +8,9 @@
 #include <unistd.h>
 #include <sys/time.h>
 #elif defined(HX_WINDOWS)
+#if defined(HX_WINRT) && !defined(__cplusplus_winrt)
+#include <windows.h>
+#endif
 #include <process.h>
 #endif
 
