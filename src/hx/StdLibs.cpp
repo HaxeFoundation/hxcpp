@@ -266,7 +266,7 @@ double  __time_stamp()
 #endif
 }
 
-#if defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP || !defined(WINAPI_FAMILY))
+#if defined(HX_WINDOWS) && && !defined(HX_WINRT)
 
 /*
 ISWHITE and ParseCommandLine are based on the implementation of the 
@@ -430,7 +430,7 @@ Array<String> __get_args()
 {
    Array<String> result(0,0);
 
-   #if defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP || !defined(WINAPI_FAMILY))
+   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
    LPTSTR str =  GetCommandLine();
    ParseCommandLine(str, result);
    #else
