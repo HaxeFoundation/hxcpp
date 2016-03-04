@@ -313,18 +313,6 @@ namespace cpp
    }
 
 
-
-   #ifdef __OBJC__
-   #ifdef HXCPP_OBJC
-   inline Variant::asId() const
-   {
-      return type==typeObjC ?  valObjC : 
-            type==valObject && valObject ? valObject->__GetHandle() : 0;
-   }
-   #endif
-   #endif
-
-
    #ifdef HXCPP_VISIT_ALLOCS
    void Variant::visit(hx::VisitContext *__inCtx)
    {
