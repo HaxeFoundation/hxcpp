@@ -2,16 +2,12 @@
 #include <limits>
 #include <hxMath.h>
 
-
 #include <stdlib.h>
 #include <time.h>
-#ifndef HX_WINDOWS
+#if defined(__unix__) || defined(__APPLE__)
 #include <unistd.h>
 #include <sys/time.h>
-#else
-#if defined(HX_WINRT) && !defined(__cplusplus_winrt)
-#include <windows.h>
-#endif
+#elif defined(HX_WINDOWS)
 #include <process.h>
 #endif
 
@@ -140,22 +136,29 @@ void Math_obj::__boot()
 {
    Static(Math_obj::__mClass) = hx::RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
 
-	unsigned int t;
-#ifdef HX_WINDOWS
-	t = clock();
-   #if defined(HX_WINRT) && defined(__cplusplus_winrt)
-    int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
-   #elif defined(HX_WINRT) 
-    int pid = GetCurrentProcessId();
+#if defined(HX_WINDOWS) || defined(__SNC__)
+   unsigned int t = clock();
+#elif defined(__unix__) || defined(__APPLE__)
+   struct timeval tv;
+   gettimeofday(&tv,0);
+   unsigned int t = tv.tv_sec * 1000000 + tv.tv_usec;
+#endif
+
+#if defined(HX_WINDOWS) && defined(HX_WINRT)
+   #if defined(__cplusplus_winrt)
+   int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
    #else
-	int pid = _getpid();
+   int pid = GetCurrentProcessId();
    #endif
-#else
-	int pid = getpid();
-	struct timeval tv;
-	gettimeofday(&tv,0);
-	t = tv.tv_sec * 1000000 + tv.tv_usec;
-#endif	
+#elif defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP || !defined(WINAPI_FAMILY))
+   int pid = _getpid();
+#elif defined(__unix__) || defined(__APPLE__)
+   int pid = getpid();
+#elif \
+   (defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_TV_TITLE)) || \
+   defined(__SNC__)
+   int pid = (int)&t; // As a last resort, rely on ASLR.
+#endif  
 
   srand(t ^ (pid | (pid << 16)));
   rand();
@@ -170,5 +173,4 @@ double DoubleMod(double inLHS,double inRHS)
 }
 
 }
-
 

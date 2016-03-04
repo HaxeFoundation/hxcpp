@@ -120,6 +120,7 @@ static int sgAllocsSinceLastSpam = 0;
 #define GCLOG printf
 #endif
 
+
 #if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
 using namespace Windows::Foundation;
 using namespace Windows::System::Threading;
@@ -328,7 +329,8 @@ typedef MyMutex ThreadPoolLock;
 
 static ThreadPoolLock sThreadPoolLock;
 
-#if !defined(HX_WINDOWS) && !defined(EMSCRIPTEN)
+#if !defined(HX_WINDOWS) && !defined(EMSCRIPTEN) && \
+   !defined(__SNC__) && !defined(__ORBIS__)
 #define HX_GC_PTHREADS
 typedef pthread_cond_t ThreadPoolSignal;
 inline void WaitThreadLocked(ThreadPoolSignal &ioSignal)
@@ -2907,21 +2909,21 @@ public:
          bool ok = created==0;
       #else
          #if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
-	      bool ok = true;
-	      try
-	      {
-	        auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-	           {
-	               SThreadLoop(info);
-	           }, Platform::CallbackContext::Any);
+         bool ok = true;
+         try
+         {
+           auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
+              {
+                  SThreadLoop(info);
+              }, Platform::CallbackContext::Any);
 
-	         ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-	      }
-	      catch (...)
-	      {
-	         WINRT_LOG(".");
-	         ok = false;
-	      }
+            ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
+         }
+         catch (...)
+         {
+            WINRT_LOG(".");
+            ok = false;
+         }
 
          #elif defined(EMSCRIPTEN)
          // Only one thread
@@ -4138,14 +4140,14 @@ int __hxcpp_gc_trace(hx::Class inClass,bool inPrint)
        #else
           printf("WARNING : GC trace not enabled in release build.\n");
        #endif
-		 return 0;
+       return 0;
     #else
        gCollectTrace = inClass.GetPtr();
        gCollectTraceCount = 0;
        gCollectTraceDoPrint = inPrint;
        hx::InternalCollect(false,false);
        gCollectTrace = 0;
-		 return gCollectTraceCount;
+       return gCollectTraceCount;
     #endif
 }
 
@@ -4271,4 +4273,3 @@ unsigned int __hxcpp_obj_hash(Dynamic inObj)
 
 
 void DummyFunction(void *inPtr) { }
-

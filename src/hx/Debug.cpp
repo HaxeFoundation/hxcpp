@@ -157,22 +157,19 @@ public:
 #if !(defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
 #else
-	   bool ok = true;
-	   try
-	   {
-	     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-	        {
-	            ProfileMainLoop(0);
-	        }, Platform::CallbackContext::Any);
-
-	      ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-	   }
-	   catch (...)
-	   {
-	      ok = false;
-	   }
-
-
+            bool ok = true;
+            try
+            {
+            auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
+            {
+               ProfileMainLoop(0);
+            }, Platform::CallbackContext::Any);
+            ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
+            }
+            catch (...)
+            {
+               ok = false;
+            }
 #endif
 #else
             pthread_t result;
@@ -410,21 +407,21 @@ public:
 #if !(defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
 #else
-		   bool ok = true;
-		   try
-		   {
-		     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-		        {
-		            ProfileMainLoop(0);
-		        }, Platform::CallbackContext::Any);
+       bool ok = true;
+       try
+       {
+         auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
+            {
+                ProfileMainLoop(0);
+            }, Platform::CallbackContext::Any);
 
-		      ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-		   }
-		   catch (...)
-		   {
-		      WINRT_LOG(".");
-		      ok = false;
-		   }
+          ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
+       }
+       catch (...)
+       {
+          WINRT_LOG(".");
+          ok = false;
+       }
 
 #endif
 #else
@@ -644,7 +641,11 @@ private:
 
         while (gThreadRefCount > 0) { 
 #ifdef HX_WINDOWS
+#ifndef HX_WINRT
             Sleep(millis);
+#else
+            Sleep(millis);
+#endif
 #else
             struct timespec t;
             struct timespec tmp;
@@ -2639,7 +2640,7 @@ static void CriticalErrorHandler(String inErr, bool allowFixup)
 
     DBGLOG("Critical Error: %s\n", inErr.__s);
 
-#if defined(HX_WINDOWS) && !defined(HX_WINRT)
+#if defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP || !defined(WINAPI_FAMILY))
     MessageBoxA(0, inErr.__s, "Critial Error - program must terminate",
         MB_ICONEXCLAMATION|MB_OK);
 #endif

@@ -44,7 +44,8 @@ int sgTargetFreeSpacePercentage  = 100;
 // Called internally before and GC operations
 void CommonInitAlloc()
 {
-   #ifndef HX_WINRT
+   #if !defined(HX_WINRT) && !defined(__SNC__) && !defined(__ORBIS__) && \
+       !(defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP))
    const char *minimumWorking = getenv("HXCPP_MINIMUM_WORKING_MEMORY");
    if (minimumWorking)
    {
@@ -84,7 +85,7 @@ void *String::operator new( size_t inSize )
 
 void __hxcpp_collect(bool inMajor)
 {
-	hx::InternalCollect(inMajor,inMajor);
+   hx::InternalCollect(inMajor,inMajor);
 }
 
 
@@ -152,7 +153,7 @@ void *NewGCPrivate(void *inData,int inSize)
 
 void __hxcpp_enable(bool inEnable)
 {
-	hx::InternalEnableGC(inEnable);
+   hx::InternalEnableGC(inEnable);
 }
 
 void  __hxcpp_set_minimum_working_memory(int inBytes)
@@ -174,4 +175,3 @@ bool __hxcpp_is_const_string(const ::String &inString)
 {
    return ((unsigned int *)inString.__s)[-1] & HX_GC_CONST_ALLOC_BIT;
 }
-
