@@ -87,7 +87,7 @@ public:
    inline Struct<T,HANDLER> &operator=( const Dynamic &inRHS ) { return *this = Struct<T,HANDLER>(inRHS); }
 
    operator Dynamic() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
-   operator hx::Val() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
+   //operator hx::Val() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
    operator String() const { return HANDLER::toString(value); }
 
    bool operator==(const Struct<T,HANDLER> &inRHS) const { return value==inRHS.value; }
@@ -192,7 +192,7 @@ public:
    inline T &set_ref(const T &inValue) { return *ptr = inValue;  }
 
    operator Dynamic () const { return CreateDynamicPointer((void *)ptr); }
-   operator hx::Val () const { return CreateDynamicPointer((void *)ptr); }
+   //operator hx::Val () const { return CreateDynamicPointer((void *)ptr); }
    operator T * () { return ptr; }
    T * get_raw() { return ptr; }
 
@@ -288,7 +288,7 @@ public:
 
 
    operator Dynamic () const { return CreateDynamicPointer((void *)call); }
-   operator hx::Val () const { return CreateDynamicPointer((void *)call); }
+   //operator hx::Val () const { return CreateDynamicPointer((void *)call); }
    operator T * () { return call; }
    operator void * () { return (void *)call; }
 
