@@ -230,6 +230,8 @@ static  ::NS::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) 
 #define HX_END_DEFAULT_FUNC \
 }
 
+#define HXARGC(x) int __ArgCount() const { return x; }
+
 #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
    struct name : public SUPER { \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \

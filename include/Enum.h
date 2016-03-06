@@ -46,7 +46,15 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       #endif
 
       static hx::ObjectPtr<EnumBase_obj> Resolve(String inName);
+
       Dynamic __Param(int inID) { return mArgs[inID]; }
+
+      inline Dynamic getObject(int inId) { return __Param(inId); }
+      inline int getInt(int inId) { return __Param(inId); }
+      inline Float getFloat(int inId) { return __Param(inId); }
+      inline bool getBool(int inId) { return __Param(inId); }
+      inline ::String getString(int inId) { return __Param(inId); }
+
       inline int GetIndex() { return index; }
 
       DynamicArray __EnumParams() { return mArgs; }

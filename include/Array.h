@@ -786,7 +786,10 @@ public:
 
    Array( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }
    Array( const cpp::ArrayBase &inRHS ) : super(0) { setDynamic(inRHS); }
-
+   inline Array(const ::cpp::Variant &inVariant) : super(0)
+   {
+      setDynamic(inVariant.asObject());
+   }
 
    // operator= exact match...
    Array &operator=( Array<ELEM_> inRHS )

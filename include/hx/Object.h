@@ -268,6 +268,18 @@ public:
       #endif
    }
 
+
+   inline ObjectPtr(const ::cpp::Variant &inVariant)
+   {
+      hx::Object *object = inVariant.asObject();
+      if (!SetPtr(object))
+      #ifdef HXCPP_STRICT_CASTS
+         CastPtr(object,true);
+      #else
+         CastPtr(object,false);
+      #endif
+   }
+
    template<typename SOURCE_>
    inline ObjectPtr(const SOURCE_ *inPtr,bool inCheckCast=true)
    {

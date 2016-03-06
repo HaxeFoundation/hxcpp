@@ -50,6 +50,7 @@ namespace cpp
       inline bool isInt() const;
       inline bool isString() const;
       inline double asDouble() const;
+      inline hx::Object *asObject() const { return type==typeObject ? valObject : 0; }
       inline String asString() const;
 
       inline Variant() : type(typeObject), valObject(0) { }

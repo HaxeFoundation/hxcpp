@@ -20,8 +20,12 @@ public:
    template<typename SOURCE_> inline VirtualArray( const Array<SOURCE_> &inRHS );
 
 
-   VirtualArray( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }
-   VirtualArray( const cpp::ArrayBase &inRHS ) : super(0) { setDynamic(inRHS); }
+   inline VirtualArray( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }
+   inline VirtualArray( const cpp::ArrayBase &inRHS ) : super(0) { setDynamic(inRHS); }
+   inline VirtualArray(const ::cpp::Variant &inVariant) { setDynamic(inVariant.asObject()); }
+
+
+
 
    inline VirtualArray &operator=(const null &inNull) { mPtr = 0; return *this; }
    inline VirtualArray &operator=(Ptr inRHS) { mPtr = inRHS; return *this; }
