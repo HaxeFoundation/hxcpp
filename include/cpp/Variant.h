@@ -1,5 +1,6 @@
 #ifndef CPP_VARIANT_TWICE_H
 
+
 namespace cpp
 {
 #ifndef CPP_VARIANT_ONCE_H
@@ -17,7 +18,6 @@ namespace cpp
    template<> inline bool isStringType(const Dynamic &inRHS);
    template<> inline bool isStringType(const cpp::Variant &inRHS);
 
-
    struct Variant
    {
       enum Type
@@ -31,17 +31,17 @@ namespace cpp
 
       union
       {
-         struct
-         {
-            const char *valStringPtr;
-            unsigned int valStringLen;
-         };
+         const char *valStringPtr;
          hx::Object *valObject;
          double valDouble;
+         cpp::Int64 valInt64;
          int valInt;
          bool valBool;
       };
       Type type;
+      unsigned int valStringLen;
+
+
 
       inline bool isNull() const { return type==typeObject && !valObject; }
       inline bool isNumeric() const;
@@ -53,7 +53,8 @@ namespace cpp
       inline hx::Object *asObject() const { return type==typeObject ? valObject : 0; }
       inline String asString() const;
 
-      inline Variant() : type(typeObject), valObject(0) { }
+      inline Variant() : valInt64(0), type(typeObject) { }
+      //inline Variant() { copyBuf.b[0] = copyBuf.b[1] = 0; }
       inline Variant(const null &) : type(typeObject), valObject(0) { }
       inline Variant(bool inValue) : type(typeBool), valBool(inValue) { }
       inline Variant(int inValue) : type(typeInt), valInt(inValue) { }
@@ -90,6 +91,7 @@ namespace cpp
       #endif
 
 
+      //inline Variant &operator=(const Variant &inRhs) { copyBuf = inRhs.copyBuf; return *this; }
 
       inline bool operator==(const null &inRHS) const { return isNull(); }
       inline bool operator!=(const null &inRHS) const { return !isNull(); }

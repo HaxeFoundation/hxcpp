@@ -121,8 +121,32 @@ public:
    inline bool operator!=(const null &inRHS) const { return __s!=0; }
 
    inline int getChar( int index ) { return __s[index]; }
-   unsigned int hash( ) const;
+   inline unsigned int hash( ) const
+   {
+      if (!__s) return 0;
+      if ( (((unsigned int *)__s)[-1] & HX_GC_NO_HASH_MASK) == HX_GC_CONST_ALLOC_BIT)
+      {
+         #ifdef HXCPP_PARANOID
+         unsigned int result = 0;
+         for(int i=0;i<length;i++)
+            result = result*223 + ((unsigned char *)__s)[i];
 
+         if  ( ((unsigned int *)__s)[-2] != result )
+         {
+             printf("Bad string hash for %s\n", __s );
+             printf(" Is %08x\n", result );
+             printf(" Baked %08x\n",  ((unsigned int *)__s)[-2]  );
+             printf(" Mark %08x\n",    ((unsigned int *)__s)[-1]  );
+             throw Dynamic(HX_CSTRING("Bad Hash!"));
+         }
+         #endif
+         return ((unsigned int *)__s)[-2];
+      }
+      // Slow path..
+      return calcHash();
+   }
+
+   unsigned int calcHash() const;
 
    inline int compare(const ::String &inRHS) const
    {
@@ -157,10 +181,31 @@ public:
    inline ::String operator+(const hx::ObjectPtr<T> &inRHS) const
       { return *this + (inRHS.mPtr ? const_cast<hx::ObjectPtr<T>&>(inRHS)->toString() : HX_CSTRING("null") ); }
 
+   // Strings are known not to be null...
+   inline bool eq(const ::String &inRHS) const
+   {
+      return __s==inRHS.__s || (length==inRHS.length && !memcmp(__s,inRHS.__s,length));
+   }
+
+
+
    inline bool operator==(const ::String &inRHS) const
-                     { return length==inRHS.length && compare(inRHS)==0; }
+   {
+      if (__s==inRHS.__s) return true;
+      if (!__s || !inRHS.__s) return false;
+      if (length!=inRHS.length) return false;
+      if (length==0) return true;
+      return memcmp(__s,inRHS.__s,length)==0;
+   }
    inline bool operator!=(const ::String &inRHS) const
-                     { return length != inRHS.length || compare(inRHS)!=0; }
+   {
+      if (__s==inRHS.__s) return false;
+      if (!__s || !inRHS.__s) return true;
+      if (length!=inRHS.length) return true;
+      if (length==0) return false;
+      return memcmp(__s,inRHS.__s,length);
+   }
+
    inline bool operator<(const ::String &inRHS) const { return compare(inRHS)<0; }
    inline bool operator<=(const ::String &inRHS) const { return compare(inRHS)<=0; }
    inline bool operator>(const ::String &inRHS) const { return compare(inRHS)>0; }

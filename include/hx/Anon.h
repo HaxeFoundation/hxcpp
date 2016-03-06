@@ -80,7 +80,7 @@ public:
    {
       return (VariantKey *)(this + 1);
    }
-   int findFixed(const ::String &inKey);
+   inline int findFixed(const ::String &inKey,bool inSkip5 = false);
 
 
 

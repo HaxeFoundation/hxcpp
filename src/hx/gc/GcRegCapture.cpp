@@ -54,6 +54,7 @@ void CaptureX64(RegisterCaptureBuffer &outBuffer)
       outBuffer.r13 = (void *)context.R13;
       outBuffer.r14 = (void *)context.R14;
       outBuffer.r15 = (void *)context.R15;
+      memcpy(outBuffer.xmm, &context.Xmm0, sizeof(outBuffer.xmm));
    #else
       void *regBx;
       void *regBp;

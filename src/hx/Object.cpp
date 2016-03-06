@@ -93,6 +93,12 @@ hx::Class Object__mClass;
 
 bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
+#if (HXCPP_API_LEVEL >= 330)
+double hx::Object::_hx_Numeric(const String &inString, hx::PropertyAccess inCallProp)
+{
+   return __Field(inString, inCallProp);
+}
+#endif
 
 
 #ifdef HXCPP_SCRIPTABLE

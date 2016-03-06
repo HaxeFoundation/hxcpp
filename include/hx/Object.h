@@ -175,9 +175,19 @@ public:
    virtual String toString();
    virtual bool __HasField(const String &inString);
    virtual hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp);
+
+   #if (HXCPP_API_LEVEL >= 330)
+   // Non-virtual
+   Dynamic __IField(int inFieldID);
+   double __INumField(int inFieldID);
+
+   virtual double _hx_Numeric(const String &inString, hx::PropertyAccess inCallProp);
+   #else
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
+   #endif
    virtual hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp);
+
    virtual void  __SetThis(Dynamic inThis);
    virtual Dynamic __Run(const Array<Dynamic> &inArgs);
    virtual Dynamic *__GetFieldMap();

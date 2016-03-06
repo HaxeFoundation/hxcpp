@@ -88,20 +88,23 @@ void Anon_obj::__Visit(hx::VisitContext *__inCtx)
 }
 #endif
 
-int Anon_obj::findFixed(const ::String &inKey)
+inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
 {
    if (!mFixedFields)
       return -1;
    VariantKey *fixed = getFixed();
-
    int sought = inKey.hash();
-   if (mFixedFields<5)
+
+   if (!inSkip5)
    {
-      for(int i=0;i<mFixedFields;i++)
-         if (fixed[i].hash==sought && (fixed[i].key.__s == inKey.__s ||
-                (fixed[i].key.length == inKey.length && !memcmp(fixed[i].key.__s,inKey.__s, inKey.length))))
-            return i;
-      return -1;
+      if (mFixedFields<5)
+      {
+         for(int i=0;i<mFixedFields;i++)
+            if (fixed[i].hash==sought && (fixed[i].key.__s == inKey.__s ||
+                   (fixed[i].key.length == inKey.length && !memcmp(fixed[i].key.__s,inKey.__s, inKey.length))))
+               return i;
+         return -1;
+      }
    }
 
    // Find node with same hash...
@@ -113,10 +116,10 @@ int Anon_obj::findFixed(const ::String &inKey)
       [4] =  4  <- max
    */
 
-   int min = 0;
-   if (fixed[0].hash>sought)
+   int min = inSkip5 ? 5 : 0;
+   if (fixed[min].hash>sought)
       return -1;
-   if (fixed[0].hash!=sought)
+   if (fixed[min].hash!=sought)
    {
       int max = mFixedFields;
       if (fixed[max-1].hash<sought)
@@ -149,12 +152,45 @@ int Anon_obj::findFixed(const ::String &inKey)
 
 hx::Val Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
 {
-   int fixed = findFixed(inName);
-   if (fixed>=0)
-      return getFixed()[fixed].value;
+   if (mFixedFields>0)
+   {
+      VariantKey *fixed = getFixed();
+      int hash = inName.hash();
+      if (fixed->hash==hash && fixed->key.eq(inName))
+         return fixed->value;
+      if (mFixedFields>1)
+      {
+         fixed++;
+         if (fixed->hash==hash && fixed->key.eq(inName))
+           return fixed->value;
+         if (mFixedFields>2)
+         {
+            fixed++;
+            if (fixed->hash==hash && fixed->key.eq(inName))
+              return fixed->value;
+            if (mFixedFields>3)
+            {
+               fixed++;
+               if (fixed->hash==hash && fixed->key.eq(inName))
+                 return fixed->value;
+               if (mFixedFields>4)
+               {
+                  fixed++;
+                  if (fixed->hash==hash && fixed->key.eq(inName))
+                     return fixed->value;
+
+                  int fixed = findFixed(inName,true);
+                  if (fixed>=0)
+                     return getFixed()[fixed].value;
+               }
+            }
+         }
+      }
+   }
+
 
    if (!mFields.mPtr)
-      return null();
+      return hx::Val();
 
    return __string_hash_get(mFields,inName);
 }
