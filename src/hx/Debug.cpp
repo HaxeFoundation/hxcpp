@@ -722,6 +722,10 @@ class CallStack
 {
 public:
 
+    static void setPrint(bool in) {
+      printf("setPrint()\n");
+    }
+
     // Gets the call stack of the calling thread
     static CallStack *GetCallerCallStack()
     {
@@ -870,8 +874,45 @@ public:
                 break;
             }
         }
+    }
 
-        gMutex.Unlock();
+    static CallStack* getStack() {
+      std::list<CallStack *>::iterator iter = gList.begin();
+      CallStack *stack = *iter;
+
+      return stack;
+    }
+
+    static std::vector<StackFrame*> getStackFrames(CallStack* stack) {
+      return stack->mStackFrames;
+    }
+
+    static void StepOneThreadLine(int threadNumber, int &stackLevel, int start_line)
+    {
+      gMutex.Lock();
+
+      std::list<CallStack *>::iterator iter = gList.begin();
+      CallStack* stack = *iter++;
+
+      while (iter != gList.end()) {
+
+          if (stack->mThreadNumber == threadNumber) {
+              stackLevel = stack->mStackFrames.size() - 1;
+              while(1) {
+                int current_line = stack->mStackFrames[stackLevel]->lineNumber;
+                // != to account for loops and lines not lesser value than
+                //starting line.
+                if((current_line != start_line)) {
+                  break;
+                }
+                stack->Continue(1);
+              }
+              break;
+          }
+          stack = *iter++;
+      }
+
+      gMutex.Unlock();
     }
 
     static void GetCurrentCallStackAsStrings(Array<String> result, bool skipLast)
@@ -1705,6 +1746,19 @@ public:
         CallStack::StepOneThread(threadNumber, gStepLevel);
     }
 
+    static void StepThreadLine(int threadNumber, StepType stepType) {
+      gStepThread = threadNumber;
+      gStepType = stepType;
+      gStepCount = 1;
+
+      CallStack* stack = CallStack::getStack();
+      std::vector<StackFrame*> frames =  CallStack::getStackFrames(stack);
+
+      int start_line = frames[frames.size()-1]->lineNumber;
+
+      CallStack::StepOneThreadLine(threadNumber, gStepLevel, start_line);
+    }
+
     // Note that HandleBreakpoints is called immediately after a read memory
     // barrier by the HX_STACK_LINE macro
     static void HandleBreakpoints()
@@ -2215,6 +2269,14 @@ void __hxcpp_dbg_stepThread(int threadNumber, int stepType, int stepCount)
                                 stepCount);
 }
 
+void __hxcpp_dbg_stepThreadLine(int threadNumber, int stepType) {
+
+  hx::Breakpoints::StepThreadLine(threadNumber, (hx::StepType) stepType);
+}
+
+void __hxcpp_dbg_setPrint(bool in) {
+  hx::CallStack::setPrint(in);
+}
 
 Array<Dynamic> __hxcpp_dbg_getStackVariables(int threadNumber,
                                              int stackFrameNumber,

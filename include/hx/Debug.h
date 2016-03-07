@@ -502,6 +502,8 @@ void __hxcpp_dbg_deleteBreakpoint(int number);
 void __hxcpp_dbg_breakNow(bool wait);
 void __hxcpp_dbg_continueThreads(int threadNumber, int count);
 void __hxcpp_dbg_stepThread(int threadNumber, int stepType, int stepCount);
+void __hxcpp_dbg_stepThreadLine(int threadNumber, int stepType);
+void __hxcpp_dbg_setPrint(bool in);
 Array<Dynamic> __hxcpp_dbg_getStackVariables(int threadNumber,
                                              int stackFrameNumber,
                                              bool unsafe,
@@ -560,6 +562,8 @@ inline void __hxcpp_dbg_deleteBreakpoint(int) { }
 inline void __hxcpp_dbg_breakNow(bool) { }
 inline void __hxcpp_dbg_continueThreads(int, int) { }
 inline void __hxcpp_dbg_stepThread(int, int, int) { }
+inline void __hxcpp_dbg_stepThreadLine(int, int) { }
+void __hxcpp_dbg_setPrint(bool) { }
 inline Array<Dynamic> __hxcpp_dbg_getStackVariables(int, int, bool, Dynamic)
     { return Array_obj< String>::__new(); }
 inline Dynamic __hxcpp_dbg_getStackVariableValue(int, int, String, bool,
