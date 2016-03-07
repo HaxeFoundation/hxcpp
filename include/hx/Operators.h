@@ -243,6 +243,14 @@ template<typename T> struct TCast< ObjectPtr<T> >
    }
 };
 
+
+// Cast to struct
+template<typename T,typename H> struct TCast< cpp::Struct<T,H> >
+{
+   static inline cpp::Struct<T,H> cast( const cpp::Struct<T,H> &inObj ) { return inObj; }
+};
+
+
 inline Array<Dynamic> TCastToArray(Dynamic inVal)
 {
    Dynamic result = inVal;
