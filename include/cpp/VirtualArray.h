@@ -20,8 +20,12 @@ public:
    template<typename SOURCE_> inline VirtualArray( const Array<SOURCE_> &inRHS );
 
 
-   VirtualArray( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }
-   VirtualArray( const cpp::ArrayBase &inRHS ) : super(0) { setDynamic(inRHS); }
+   inline VirtualArray( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }
+   inline VirtualArray( const cpp::ArrayBase &inRHS ) : super(0) { setDynamic(inRHS); }
+   inline VirtualArray(const ::cpp::Variant &inVariant) { setDynamic(inVariant.asObject()); }
+
+
+
 
    inline VirtualArray &operator=(const null &inNull) { mPtr = 0; return *this; }
    inline VirtualArray &operator=(Ptr inRHS) { mPtr = inRHS; return *this; }
@@ -234,9 +238,17 @@ public:
 
    void EnsureArrayStorage(Dynamic inValue);
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(base); }
+   void __Mark(hx::MarkContext *__inCtx)
+   {
+      if (base)
+         hx::MarkObjectAlloc(base, __inCtx );
+   }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(base); }
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      if (base)
+        __inCtx->visitObject( (hx::Object **)&base);
+   }
    #endif
 
 
@@ -244,7 +256,7 @@ public:
    inline int getElementSize() const { return base ? base->GetElementSize() : 0; }
    inline int getByteCount() const { return base ? base->getByteCount() : 0; }
    inline char * getBase() const { return base ? base->GetBase() : 0; }
-   Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp) { return null(); }
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) { return null(); }
 
    static hx::Class &__SGetClass() { return hx::ArrayBase::__mClass; }
    hx::Class __GetClass() const;
@@ -277,7 +289,7 @@ public:
 
    Dynamic __GetItem(int inIndex) const;
    Dynamic __SetItem(int inIndex,Dynamic inValue);
-   Dynamic __Field(const String &inString, hx::PropertyAccess inCallProp);
+   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp);
 
 
    template<typename T>
@@ -338,6 +350,15 @@ public:
    VirtualArray splice(int inPos, int len);
    Dynamic map(Dynamic inFunc);
    VirtualArray filter(Dynamic inFunc);
+
+   template<typename T>
+   inline VirtualArray init(int inIndex, const T &inVal)
+   {
+      if (store!=hx::arrayFixed) EnsureStorage(inVal);
+      // TODO
+      __SetItem(inIndex,inVal);
+      return this;
+   } 
 
    inline Dynamic __unsafe_set(int inIndex, const Dynamic &val)  { return __SetItem(inIndex,val); } 
    inline Dynamic __unsafe_get(int inIndex)  { return __GetItem(inIndex); } 

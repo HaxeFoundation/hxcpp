@@ -3,8 +3,19 @@
 Dynamic Dynamic::NS::operator()(::DYNAMIC_ARG_LIST::)
 {
    CheckFPtr();
-   return mPtr->__Run(Array_obj<Dynamic>::NS::__new(0,::ARG::)::DYNAMIC_ADDS::);
+   return mPtr->__Run(Array_obj<Dynamic>::NS::__new(::ARG::)::DYNAMIC_ADDS::);
 }
+
+namespace cpp
+{
+::NS::Dynamic Variant::NS::operator()(::DYNAMIC_ARG_LIST::)
+{
+   if (isNull()) Dynamic::ThrowBadFunctionError();
+   return valObject->__Run(Array_obj<Dynamic>::NS::__new(::ARG::)::DYNAMIC_ADDS::);
+}
+}
+
+
 ::else::
 
 namespace hx {

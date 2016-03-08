@@ -81,6 +81,7 @@ public:
    inline Struct( const T &inRHS ) : value(inRHS) {  }
    inline Struct( const null &) { value = T(); }
    inline Struct( const Reference<T> &);
+   inline Struct( const Dynamic &inRHS) { fromDynamic(inRHS.mPtr); }
 
    inline Struct<T,HANDLER> &operator=( const T &inRHS ) { value = inRHS; return *this; }
    inline Struct<T,HANDLER> &operator=( const null & ) { value = T(); return *this; }
@@ -89,7 +90,14 @@ public:
    operator Dynamic() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
    operator String() const { return HANDLER::toString(value); }
 
+   #if (HXCPP_API_LEVEL >= 330)
+   inline Struct( const hx::Val &inRHS) { fromDynamic(inRHS.asObject()); }
+   operator hx::Val() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
+   #endif
+
    bool operator==(const Struct<T,HANDLER> &inRHS) const { return value==inRHS.value; }
+   bool operator==(const null &inRHS) const { return false; }
+   bool operator!=(const null &inRHS) const { return true; }
 
    // Haxe uses -> notation
    inline T *operator->() { return &value; }
@@ -108,9 +116,8 @@ public:
       return ptr->__CStr() == HANDLER::getName();
    }
 
-   inline Struct( const Dynamic &inRHS)
+   inline void fromDynamic( hx::Object *ptr)
    {
-      hx::Object *ptr = inRHS.mPtr;
       if (!ptr)
       {
          value = T();
@@ -125,6 +132,7 @@ public:
       }
       value = *data;
    }
+
 
 
    inline operator T& () { return value; }
@@ -191,6 +199,7 @@ public:
    inline T &set_ref(const T &inValue) { return *ptr = inValue;  }
 
    operator Dynamic () const { return CreateDynamicPointer((void *)ptr); }
+   //operator hx::Val () const { return CreateDynamicPointer((void *)ptr); }
    operator T * () { return ptr; }
    T * get_raw() { return ptr; }
 
@@ -286,6 +295,7 @@ public:
 
 
    operator Dynamic () const { return CreateDynamicPointer((void *)call); }
+   //operator hx::Val () const { return CreateDynamicPointer((void *)call); }
    operator T * () { return call; }
    operator void * () { return (void *)call; }
 

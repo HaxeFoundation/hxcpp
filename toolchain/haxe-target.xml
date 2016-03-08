@@ -26,6 +26,7 @@
   <depend name="${HXCPP}/include/hx/Debug.h"/>
   <depend name="${HXCPP}/include/hx/Telemetry.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
+  <depend name="${HXCPP}/include/hx/Anon.h"/>
   <depend name="${HXCPP}/include/hx/Operators.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/GC.h"/>
@@ -38,6 +39,7 @@
   <depend name="${HXCPP}/include/hx/OS.h"/>
   <depend name="${HXCPP}/include/hx/Unordered.h"/>
   <depend name="${HXCPP}/include/cpp/Pointer.h"/>
+  <depend name="${HXCPP}/include/cpp/Variant.h"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
      <depend name="${HXCPP}/toolchain/haxe-target.xml" dateOnly="true" />

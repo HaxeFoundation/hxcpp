@@ -58,7 +58,7 @@ int Object::__Compare(const Object *inRHS) const
 }
 
 
-Dynamic Object::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val Object::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    #if 0
    // Will be true for 'Implements dynamic'
@@ -91,6 +91,12 @@ hx::Class Object__mClass;
 
 bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
+#if (HXCPP_API_LEVEL >= 330)
+double hx::Object::_hx_Numeric(const String &inString, hx::PropertyAccess inCallProp)
+{
+   return __Field(inString, inCallProp);
+}
+#endif
 
 
 #ifdef HXCPP_SCRIPTABLE
@@ -136,7 +142,7 @@ String Object::__ToString() const { return HX_CSTRING("Object"); }
 const char * Object::__CStr() const { return __ToString().__CStr(); }
 
 
-Dynamic Object::__SetField(const String &inField,const Dynamic &inValue, hx::PropertyAccess inCallProp)
+hx::Val Object::__SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp)
 {
    hx::Throw( HX_CSTRING("Invalid field:") + inField );
    return null();

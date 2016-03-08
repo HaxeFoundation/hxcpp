@@ -112,7 +112,7 @@ public:
    inline char * getBase() const { return mBase; }
 
 
-   Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp) { return null(); }
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) { return null(); }
 
    static hx::Class __mClass;
    static hx::Class &__SGetClass() { return __mClass; }
@@ -150,6 +150,9 @@ public:
 
    void __SetSize(int inLen);
    void __SetSizeExact(int inLen=0);
+   
+   Dynamic __unsafe_get(const Dynamic &i);
+   Dynamic __unsafe_set(const Dynamic &i, const Dynamic &val);
 
    void safeSort(Dynamic sorter, bool isString);
 
@@ -165,7 +168,7 @@ public:
 
 
    // Dynamic interface
-   Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
+   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp);
    virtual Dynamic __concat(const Dynamic &a0) = 0;
    virtual Dynamic __copy() = 0;
    virtual Dynamic __insert(const Dynamic &a0,const Dynamic &a1) = 0;
@@ -368,10 +371,13 @@ public:
 
    // Does not check for size valid - use with care
    inline ELEM_ &__unsafe_get(int inIndex) { return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)); }
+
+
    inline ELEM_ & __unsafe_set(int inIndex, const ELEM_ &inValue)
    {
       return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
    }
+
 
    inline int memcmp(Array<ELEM_> inOther)
    {
@@ -431,6 +437,12 @@ public:
    }
 
    Array_obj<ELEM_> *Add(const ELEM_ &inItem) { push(inItem); return this; }
+   Array<ELEM_> init(int inIndex, const ELEM_ &inValue)
+   {
+      * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
+      return this;
+   }
+
 
 
    // Haxe API
@@ -774,7 +786,10 @@ public:
 
    Array( const Dynamic &inRHS ) : super(0) { setDynamic(inRHS); }
    Array( const cpp::ArrayBase &inRHS ) : super(0) { setDynamic(inRHS); }
-
+   inline Array(const ::cpp::Variant &inVariant) : super(0)
+   {
+      setDynamic(inVariant.asObject());
+   }
 
    // operator= exact match...
    Array &operator=( Array<ELEM_> inRHS )
@@ -800,6 +815,16 @@ public:
    Array &operator=( const cpp::ArrayBase &inRHS )
    {
       setDynamic(inRHS);
+      return *this;
+   }
+
+
+   Array &operator=( const cpp::Variant &inRHS )
+   {
+      if (inRHS.type!=cpp::Variant::typeObject)
+         setDynamic( null() );
+      else
+         setDynamic(inRHS.valObject);
       return *this;
    }
 

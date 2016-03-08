@@ -174,10 +174,25 @@ public:
    virtual const char * __CStr() const;
    virtual String toString();
    virtual bool __HasField(const String &inString);
-   virtual Dynamic __Field(const String &inString, hx::PropertyAccess inCallProp);
+   virtual hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp);
+
+   #if (HXCPP_API_LEVEL >= 330)
+   // Non-virtual
+   Dynamic __IField(int inFieldID);
+   double __INumField(int inFieldID);
+
+   virtual double _hx_Numeric(const String &inString, hx::PropertyAccess inCallProp);
+   #else
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
-   virtual Dynamic __SetField(const String &inField,const Dynamic &inValue, hx::PropertyAccess inCallProp);
+
+   // These have been moved to EnumBase
+   virtual DynamicArray __EnumParams();
+   virtual String __Tag() const;
+   virtual int __Index() const;
+   #endif
+   virtual hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp);
+
    virtual void  __SetThis(Dynamic inThis);
    virtual Dynamic __Run(const Array<Dynamic> &inArgs);
    virtual Dynamic *__GetFieldMap();
@@ -185,9 +200,6 @@ public:
    virtual hx::Class __GetClass() const;
 
    virtual int __Compare(const hx::Object *inRHS) const;
-   virtual DynamicArray __EnumParams();
-   virtual String __Tag() const;
-   virtual int __Index() const;
 
    virtual int __length() const { return 0; }
    virtual Dynamic __GetItem(int inIndex) const;
@@ -265,6 +277,18 @@ public:
          CastPtr(inObjectPtr.mPtr,true);
       #else
          CastPtr(inObjectPtr.mPtr,false);
+      #endif
+   }
+
+
+   inline ObjectPtr(const ::cpp::Variant &inVariant)
+   {
+      hx::Object *object = inVariant.asObject();
+      if (!SetPtr(object))
+      #ifdef HXCPP_STRICT_CASTS
+         CastPtr(object,true);
+      #else
+         CastPtr(object,false);
       #endif
    }
 

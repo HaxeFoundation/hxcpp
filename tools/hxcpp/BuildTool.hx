@@ -1374,7 +1374,7 @@ class BuildTool
                    }
                 }
 
-                Log.v("Using default windows compiler : " + (useMsvc ? "MSVC" : "MinGW") );
+                Log.v("Using Windows compiler: " + (useMsvc ? "MSVC" : "MinGW") );
             }
 
             if (useMsvc)

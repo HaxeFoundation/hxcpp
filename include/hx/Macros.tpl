@@ -15,8 +15,8 @@
 
 #define HX_DO_RTTI \
    HX_DO_RTTI_ALL \
-    ::NS::Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
-    ::NS::Dynamic __SetField(const ::String &inString,const  ::NS::Dynamic &inValue, hx::PropertyAccess inCallProp); \
+    ::NS::hx::NS::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
+    ::NS::hx::NS::Val __SetField(const ::String &inString,const  ::NS::hx::NS::Val &inValue, hx::PropertyAccess inCallProp); \
    void __GetFields(Array< ::String> &outFields);
 
 #define HX_DO_INTERFACE_RTTI \
@@ -26,7 +26,7 @@
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
    HX_DO_RTTI_BASE  \
-    ::NS::Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
+    ::NS::hx::NS::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
    static int __FindIndex(::String inName); \
    static int __FindArgCount(::String inName);
 
@@ -230,6 +230,8 @@ static  ::NS::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) 
 #define HX_END_DEFAULT_FUNC \
 }
 
+#define HXARGC(x) int __ArgCount() const { return x; }
+
 #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
    struct name : public SUPER { \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
@@ -261,6 +263,18 @@ static  ::NS::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) 
 ::foreach PARAMS:: ::if (ARG<6):: inline  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::) { CheckFPtr(); return mPtr->__run(::ARG_LIST::); } \
 ::else::  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::); \
 ::end:: ::end::
+
+
+#define HX_DECLARE_VARIANT_FUNCTIONS \
+::foreach PARAMS:: ::if (ARG<6):: inline  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::); \
+::else::  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::); \
+::end:: ::end::
+
+
+#define HX_IMPLEMNET_INLINE_VARIANT_FUNCTIONS \
+::foreach PARAMS:: ::if (ARG<6):: ::NS::Dynamic Variant::NS::operator()(::DYNAMIC_ARG_LIST::) { CheckFPtr(); return valObject->__run(::ARG_LIST::); } \
+::end:: ::end::
+
 
 
 

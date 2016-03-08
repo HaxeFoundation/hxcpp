@@ -56,6 +56,7 @@ public:
    inline operator char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator signed char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
+   inline operator cpp::Variant() const { return cpp::Variant(mPtr); }
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
    inline operator id() const { return mPtr ? (id)mPtr->__GetHandle() : 0; }
@@ -179,6 +180,10 @@ public:
    #define DYNAMIC_ARITH( op ) \
       double operator op (const double &inRHS) const { return (double)(*this) op (double)inRHS; } \
       double operator op (const float &inRHS) const { return (double)(*this) op (double)inRHS; } \
+      Dynamic operator op (const cpp::Variant &inRHS) const \
+        { return mPtr->__GetType()==vtInt && inRHS.isInt() ? \
+              Dynamic((int)(*this) op (int)inRHS) : \
+              Dynamic( (double)(*this) op (double)inRHS); } \
       Dynamic operator op (const Dynamic &inRHS) const \
         { return mPtr->__GetType()==vtInt && inRHS.mPtr->__GetType()==vtInt ? \
               Dynamic((int)(*this) op (int)inRHS) : \

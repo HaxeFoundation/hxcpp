@@ -45,20 +45,66 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES Anon_obj : public hx::Object
    typedef hx::ObjectPtr<hx::Anon_obj> Anon;
    typedef hx::Object super;
 
+   inline void *operator new( size_t inSize, int inExtra )
+   {
+      return hx::Object::operator new(inSize+inExtra, true, 0);
+   }
+
+   struct VariantKey
+   {
+      int    hash;
+      String key;
+      cpp::Variant value;
+   };
+
    Dynamic mFields;
+   int     mFixedFields;
 
 public:
-   Anon_obj();
+   inline void *operator new( size_t inSize )
+   {
+      return hx::Object::operator new(inSize, true, 0);
+   }
+   inline void operator delete(void *, size_t inSize ) { }
+   inline void operator delete(void *, size_t inSize, int inExtra ) { }
 
-   static Anon Create() { return Anon(new hx::Anon_obj); }
-   static Anon Create(const Dynamic &inSrc) { return Anon(new hx::Anon_obj); }
+   inline Anon_obj *setFixed(int index, const String &inName, const ::cpp::Variant &inValue)
+   {
+      VariantKey *fixed = getFixed() + index;
+      fixed->hash = inName.hash();
+      fixed->key = inName;
+      fixed->value = inValue;
+      return this;
+   }
+   inline VariantKey *getFixed()
+   {
+      return (VariantKey *)(this + 1);
+   }
+   inline int findFixed(const ::String &inKey,bool inSkip5 = false);
 
-   static Dynamic __CreateEmpty() { return Anon(new hx::Anon_obj); }
+
+
+
+   Anon_obj(int inFixedFields = 0);
+
+   static Anon Create(int inElements)
+   {
+      return Anon(new (inElements*sizeof(VariantKey) ) hx::Anon_obj(inElements) );
+   }
+
+   static Anon Create() { return Anon(new (0) hx::Anon_obj); }
+   static Anon Create(const Dynamic &inSrc) { return Anon(new (0) hx::Anon_obj); }
+
+   static Dynamic __CreateEmpty() { return Anon(new (0) hx::Anon_obj); }
    static Dynamic __Create(DynamicArray inArgs);
    static void __boot();
-   Dynamic __Field(const String &inString ,hx::PropertyAccess inCallProp);
+
+   void operator delete( void *, int) { }
+
+
+   hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp);
    bool __HasField(const String &inString);
-   Dynamic __SetField(const String &inString,const Dynamic &inValue ,hx::PropertyAccess inCallProp);
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp);
    virtual void __GetFields(Array<String> &outFields);
    Dynamic *__GetFieldMap() { return &mFields; }
 

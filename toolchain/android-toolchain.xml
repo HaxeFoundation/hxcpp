@@ -12,6 +12,7 @@
 <set name="NDKV7" value="1" unless="NDKV8" />
 <unset name="NDKV7" if="NDKV6" />
 
+<set name="NDKV10+" value="1" if="NDKV10" />
 <set name="NDKV9+" value="1" if="NDKV9" />
 
 <set name="NDKV8+" value="1" if="NDKV8" />
@@ -28,10 +29,10 @@
 <set name="PLATFORM" value="android-9" if="android-9"/>
 <set name="PLATFORM " value="android-14" if="android-14"/>
 
-
+<set name="TOOLCHAIN_VERSION" value="4.9" unless="TOOLCHAIN_VERSION" if="NDKV10+" />
 <set name="TOOLCHAIN_VERSION" value="4.8" unless="TOOLCHAIN_VERSION" if="NDKV9+" />
 <set name="TOOLCHAIN_VERSION" value="4.4.3" unless="TOOLCHAIN_VERSION" />
-<set name="HXCPP_CPP11" value="1" if="NDKV9+" unless="HXCPP_NO_CPP11" />
+<set name="HXCPP_CPP11" value="1" if="NDKV9+ || NDKV10+" unless="HXCPP_NO_CPP11" />
 
 
 <!-- Set architecture -->
@@ -51,6 +52,15 @@
    <set name="TOOLCHAIN" value="arm-linux-androideabi-${TOOLCHAIN_VERSION}" />
    <set name="EXEPREFIX" value="arm-linux-androideabi" />
    <set name="PLATFORM" value="android-5" unless="PLATFORM" />
+</section>
+
+<section if="HXCPP_ARM64">
+   <set name="ARCH" value="-64"/>
+   <set name="ABI" value="arm64-v8a" />
+   <set name="PLATFORM_ARCH" value="arch-arm64" />
+   <set name="TOOLCHAIN" value="aarch64-linux-android-${TOOLCHAIN_VERSION}" />
+   <set name="EXEPREFIX" value="aarch64-linux-android" />
+   <set name="PLATFORM" value="android-19" unless="PLATFORM" />
 </section>
 
 <set name="prebuiltBase" value="${ANDROID_NDK_ROOT}/toolchains/${TOOLCHAIN}/prebuilt/${ANDROID_HOST}" />
@@ -103,7 +113,7 @@
        <flag value="-mfpu=vfpv3-d16"  />
        <flag value="-mfloat-abi=softfp" />
     </section>
-    <section unless="HXCPP_ARMV7">
+    <section unless="HXCPP_ARMV7 || HXCPP_ARM64">
        <flag value="-march=armv5te" />
        <flag value="-mtune=xscale" />
        <flag value="-msoft-float" />

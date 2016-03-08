@@ -44,6 +44,8 @@ struct RegisterCaptureBuffer
    void *r13;
    void *r14;
    void *r15;
+
+   void *xmm[16*2];
 };
 
 void CaptureX64(RegisterCaptureBuffer &outBuffer);

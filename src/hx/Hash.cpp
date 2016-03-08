@@ -379,7 +379,14 @@ String __string_hash_to_string(Dynamic &ioHash)
    if (hash)
       return hash->toString();
    return HX_CSTRING("{}");
+}
 
+String __string_hash_to_string_raw(Dynamic &ioHash)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
+   if (hash)
+      return hash->toStringRaw();
+   return null();
 }
 
 

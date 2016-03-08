@@ -2581,14 +2581,14 @@ public:
    }
 
 
-   Dynamic __Field(const String &inName,hx::PropertyAccess inCallProp)
+   hx::Val __Field(const String &inName,hx::PropertyAccess inCallProp)
    {
       if (inName==HX_CSTRING("__meta__"))
          return __meta__;
       return info->getStaticValue(inName,inCallProp);
    }
 
-   Dynamic __SetField(const String &inName,const Dynamic &inValue ,hx::PropertyAccess inCallProp)
+   hx::Val __SetField(const String &inName,const hx::Val &inValue ,hx::PropertyAccess inCallProp)
    {
       return info->setStaticValue(inName,inValue,inCallProp);
    }
@@ -4099,7 +4099,7 @@ struct CallSetField : public CppiaDynamicExpr
       String name = nameExpr->runString(ctx);
       hx::Object *value = valueExpr->runObject(ctx);
       int isProp = isPropExpr->runInt(ctx);
-      return obj->__SetField(name, Dynamic(value), (hx::PropertyAccess)isProp).mPtr;
+      return Dynamic(obj->__SetField(name, Dynamic(value), (hx::PropertyAccess)isProp)).mPtr;
    }
 };
 
@@ -4350,7 +4350,7 @@ struct FieldByName : public CppiaDynamicExpr
       CPPIA_CHECK(obj);
 
       if (crement==coNone && assign==aoNone)
-         return obj->__Field(name,HX_PROP_DYNAMIC).mPtr;
+         return Dynamic(obj->__Field(name,HX_PROP_DYNAMIC)).mPtr;
 
       if (crement!=coNone)
       {
@@ -4365,7 +4365,7 @@ struct FieldByName : public CppiaDynamicExpr
       {
          hx::Object *val = value->runObject(ctx);
          BCR_CHECK;
-         return obj->__SetField(name,val,HX_PROP_DYNAMIC).mPtr;
+         return Dynamic(obj->__SetField(name,val,HX_PROP_DYNAMIC)).mPtr;
       }
 
       Dynamic val0 = obj->__Field(name,HX_PROP_DYNAMIC);
@@ -4525,7 +4525,7 @@ struct GetFieldByName : public CppiaDynamicExpr
          }
          return new (sizeof(hx::Object *)) CppiaClosure(instance, func);
       }
-      return instance->__Field(name,HX_PROP_DYNAMIC).mPtr;
+      return Dynamic(instance->__Field(name,HX_PROP_DYNAMIC)).mPtr;
    }
   
    CppiaExpr   *makeSetter(AssignOp inOp,CppiaExpr *inValue)

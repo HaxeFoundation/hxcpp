@@ -395,28 +395,8 @@ String::String(const bool &inRHS)
 }
 
 
-unsigned int String::hash() const
+unsigned int String::calcHash() const
 {
-   if (__s==0) return 0;
-   if ( (((unsigned int *)__s)[-1] & HX_GC_NO_HASH_MASK) == HX_GC_CONST_ALLOC_BIT)
-   {
-       #ifdef HXCPP_PARANOID
-         unsigned int result = 0;
-         for(int i=0;i<length;i++)
-            result = result*223 + ((unsigned char *)__s)[i];
-
-         if  ( ((unsigned int *)__s)[-2] != result )
-         {
-             printf("Bad string hash for %s\n", __s );
-             printf(" Is %08x\n", result );
-             printf(" Baked %08x\n",  ((unsigned int *)__s)[-2]  );
-             printf(" Mark %08x\n",    ((unsigned int *)__s)[-1]  );
-             throw Dynamic(HX_CSTRING("Bad Hash!"));
-         }
-      #endif
-      return ((unsigned int *)__s)[-2];
-   }
-
    unsigned int result = 0;
    for(int i=0;i<length;i++)
       result = result*223 + ((unsigned char *)__s)[i];
@@ -1033,7 +1013,7 @@ DEFINE_STRING_FUNC0(toLowerCase);
 DEFINE_STRING_FUNC0(toUpperCase);
 DEFINE_STRING_FUNC0(toString);
 
-Dynamic String::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val String::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (HX_FIELD_EQ(inString,"length")) return length;
    if (HX_FIELD_EQ(inString,"charAt")) return charAt_dyn();
@@ -1180,7 +1160,7 @@ public:
       return mValue.compare( const_cast<hx::Object*>(inRHS)->toString() );
    }
 
-   Dynamic __Field(const String &inString, hx::PropertyAccess inCallProp)
+   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp)
    {
       return mValue.__Field(inString, inCallProp);
    }
