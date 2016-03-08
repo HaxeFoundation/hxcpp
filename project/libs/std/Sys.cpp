@@ -111,19 +111,10 @@ static value put_env( value e, value v ) {
 	<doc>Sleep a given number of seconds</doc>
 **/
 
-#if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
-DECLARE_TLS_DATA(void,tlsSleepEvent)
-#endif
-
 static value sys_sleep( value f ) {
 	val_check(f,number);
 	gc_enter_blocking();
-#if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
-   if (!tlsSleepEvent)
-      tlsSleepEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
-   WaitForSingleObjectEx(tlsSleepEvent, (int)(val_number(f)*1000), false);
-
-#elif defined(NEKO_WINDOWS)
+#if defined(NEKO_WINDOWS)
 	Sleep((DWORD)(val_number(f) * 1000));
 #elif defined(EPPC)
 //TODO: Implement sys_sleep for EPPC

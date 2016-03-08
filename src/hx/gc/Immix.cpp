@@ -120,12 +120,6 @@ static int sgAllocsSinceLastSpam = 0;
 #define GCLOG printf
 #endif
 
-
-#if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
-using namespace Windows::Foundation;
-using namespace Windows::System::Threading;
-#endif
-
 #ifdef PROFILE_COLLECT
    #define STAMP(t) double t = __hxcpp_time_stamp();
    static double sLastCollect = __hxcpp_time_stamp();
@@ -2908,24 +2902,7 @@ public:
          int created = pthread_create(&result,0,SThreadLoop,info);
          bool ok = created==0;
       #else
-         #if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
-         bool ok = true;
-         try
-         {
-           auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-              {
-                  SThreadLoop(info);
-              }, Platform::CallbackContext::Any);
-
-            ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-         }
-         catch (...)
-         {
-            WINRT_LOG(".");
-            ok = false;
-         }
-
-         #elif defined(EMSCRIPTEN)
+         #if defined(EMSCRIPTEN)
          // Only one thread
          #elif defined(HX_WINDOWS)
          bool ok = _beginthreadex(0,0,SThreadLoop,info,0,0) != 0;

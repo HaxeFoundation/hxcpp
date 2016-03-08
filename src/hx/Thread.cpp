@@ -3,11 +3,6 @@
 #include <hx/Thread.h>
 #include <time.h>
 
-#if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
-using namespace Windows::Foundation;
-using namespace Windows::System::Threading;
-#endif
-
 DECLARE_TLS_DATA(class hxThreadInfo, tlsCurrentThread);
 
 // g_threadInfoMutex allows atomic access to g_nextThreadNumber
@@ -281,25 +276,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 	hx::GCPrepareMultiThreaded();
 	hx::EnterGCFreeZone();
 
-   #if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
-
-   bool ok = true;
-   try
-   {
-     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-        {
-            // Run the user callback.
-            hxThreadFunc(info);
-        }, Platform::CallbackContext::Any);
-
-      ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-   }
-   catch (...)
-   {
-      ok = false;
-   }
-
-   #elif defined(HX_WINDOWS)
+   #if defined(HX_WINDOWS)
       bool ok = _beginthreadex(0,0,hxThreadFunc,info,0,0) != 0;
    #else
       pthread_t result = 0;

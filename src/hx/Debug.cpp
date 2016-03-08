@@ -19,11 +19,6 @@
 #define DBGLOG printf
 #endif
 
-#if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
-using namespace Windows::Foundation;
-using namespace Windows::System::Threading;
-#endif
-
 #if _MSC_VER
 #ifndef snprintf
 #define snprintf _snprintf
@@ -154,27 +149,11 @@ public:
    
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
-#if !(defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
-#else
-            bool ok = true;
-            try
-            {
-            auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-            {
-               ProfileMainLoop(0);
-            }, Platform::CallbackContext::Any);
-            ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-            }
-            catch (...)
-            {
-               ok = false;
-            }
-#endif
 #else
             pthread_t result;
             pthread_create(&result, 0, ProfileMainLoop, 0);
-   #endif
+#endif
 }
 
         gThreadMutex.Unlock();
@@ -404,30 +383,11 @@ public:
         gThreadRefCount += 1;
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
-#if !(defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
-#else
-       bool ok = true;
-       try
-       {
-         auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-            {
-                ProfileMainLoop(0);
-            }, Platform::CallbackContext::Any);
-
-          ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-       }
-       catch (...)
-       {
-          WINRT_LOG(".");
-          ok = false;
-       }
-
-#endif
 #else
             pthread_t result;
             pthread_create(&result, 0, ProfileMainLoop, 0);
-   #endif
+#endif
 }
 
         gThreadMutex.Unlock();
