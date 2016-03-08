@@ -49,17 +49,20 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
 
       Dynamic __Param(int inID) { return mArgs[inID]; }
 
+      #if (HXCPP_API_LEVEL >= 330)
       inline Dynamic getObject(int inId) { return __Param(inId); }
       inline int getInt(int inId) { return __Param(inId); }
       inline Float getFloat(int inId) { return __Param(inId); }
       inline bool getBool(int inId) { return __Param(inId); }
       inline ::String getString(int inId) { return __Param(inId); }
 
-      inline int GetIndex() { return index; }
-
+      String getTag() const { return tag; }
+      int getIndex() const { return index; }
+      #else
       DynamicArray __EnumParams() { return mArgs; }
       String __Tag() const { return tag; }
       int __Index() const { return index; }
+      #endif
 
       int __GetType() const { return vtEnum; }
 

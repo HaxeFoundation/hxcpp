@@ -185,6 +185,11 @@ public:
    #else
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
+
+   // These have been moved to EnumBase
+   virtual DynamicArray __EnumParams();
+   virtual String __Tag() const;
+   virtual int __Index() const;
    #endif
    virtual hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp);
 
@@ -195,9 +200,6 @@ public:
    virtual hx::Class __GetClass() const;
 
    virtual int __Compare(const hx::Object *inRHS) const;
-   virtual DynamicArray __EnumParams();
-   virtual String __Tag() const;
-   virtual int __Index() const;
 
    virtual int __length() const { return 0; }
    virtual Dynamic __GetItem(int inIndex) const;
