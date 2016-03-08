@@ -19,7 +19,7 @@
 #define DBGLOG printf
 #endif
 
-#ifdef HX_WINRT
+#if defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8)
 using namespace Windows::Foundation;
 using namespace Windows::System::Threading;
 #endif
@@ -154,7 +154,7 @@ public:
    
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
-#ifndef HX_WINRT
+#if !(defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
 #else
 	   bool ok = true;
@@ -323,12 +323,7 @@ struct ProfileEntry
 
         while (gThreadRefCount > 0) { 
 #ifdef HX_WINDOWS
-#ifndef HX_WINRT
             Sleep(millis);
-#else
-            // TODO
-            Sleep(millis);
-#endif
 #else
             struct timespec t;
             struct timespec tmp;
@@ -412,7 +407,7 @@ public:
         gThreadRefCount += 1;
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
-#ifndef HX_WINRT
+#if !(defined(HX_WINRT) && (_WIN32_WINNT == _WIN32_WINNT_WIN8))
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
 #else
 		   bool ok = true;
@@ -649,11 +644,7 @@ private:
 
         while (gThreadRefCount > 0) { 
 #ifdef HX_WINDOWS
-#ifndef HX_WINRT
             Sleep(millis);
-#else
-            Sleep(millis);
-#endif
 #else
             struct timespec t;
             struct timespec tmp;
@@ -2292,17 +2283,9 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created)
 
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
 {
-    if (!hx::CallStack::CanBeCaught(toThrow)) {
-	#ifdef HX_WINRT
-	//todo
-        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " ), true);
-	
-	#else
-        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " +
-                                            toThrow->toString()), true);
-	#endif
-      }
-
+    if (!hx::CallStack::CanBeCaught(toThrow))
+        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: ") +
+                                            toThrow->toString(), true);
     return hx::Throw(toThrow);
 }
 

@@ -61,8 +61,10 @@ static void rnd_set_seed( rnd *r, int s ) {
 
 static rnd *rnd_init( void *data ) {
 	rnd *r = (rnd*)data;
-   #ifdef HX_WINRT
+   #if defined(HX_WINRT) && defined(__cplusplus_winrt)
 	int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
+   #elif defined(NEKO_WINDOWS)
+	int pid = GetCurrentProcessId();
    #elif defined(EPPC)
 	int pid = 1;
    #else

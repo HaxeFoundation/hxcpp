@@ -10,7 +10,7 @@ namespace hx
 #define HXCPP_CAPTURE_x86
 #endif
 
-#if (defined(HX_MACOS) || defined(HX_WINDOWS)) && defined(HXCPP_M64)
+#if (defined(HX_MACOS) || defined(HX_WINDOWS)) && defined(HXCPP_M64) && !defined(HX_WINRT)
 #define HXCPP_CAPTURE_x64
 #endif
 

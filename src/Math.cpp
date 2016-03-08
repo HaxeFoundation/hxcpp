@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include <sys/time.h>
 #else
+#if defined(HX_WINRT) && !defined(__cplusplus_winrt)
+#include <windows.h>
+#endif
 #include <process.h>
 #endif
 
@@ -140,8 +143,10 @@ void Math_obj::__boot()
 	unsigned int t;
 #ifdef HX_WINDOWS
 	t = clock();
-   #ifdef HX_WINRT
-	int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
+   #if defined(HX_WINRT) && defined(__cplusplus_winrt)
+    int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
+   #elif defined(HX_WINRT) 
+    int pid = GetCurrentProcessId();
    #else
 	int pid = _getpid();
    #endif

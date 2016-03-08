@@ -501,8 +501,8 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    String module_name = inLib;
    #endif
 
-   #if defined(HX_WINRT) && defined(HXCPP_DEBUG_LINK)
-   gLoadDebug = true;   
+   #if defined(HX_WINRT) && defined(HXCPP_DEBUG)
+   gLoadDebug = true;
    #elif defined(IPHONE) || defined(APPLETV)
    gLoadDebug = true;
    setenv("DYLD_PRINT_APIS","1",true);
@@ -586,7 +586,6 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
          {
             #ifdef HX_WINRT
             WINRT_LOG(" try %s...\n", testPath.__s);
-
             #elif !defined(ANDROID)
             printf(" try %s...\n", testPath.__s);
             #else

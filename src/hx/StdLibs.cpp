@@ -266,7 +266,7 @@ double  __time_stamp()
 #endif
 }
 
-#if defined(HX_WINDOWS)
+#if defined(HX_WINDOWS) && !defined(HX_WINRT)
 
 /*
 ISWHITE and ParseCommandLine are based on the implementation of the 
