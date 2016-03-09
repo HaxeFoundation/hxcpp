@@ -169,6 +169,8 @@ public:
 
    // Dynamic interface
    hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp);
+
+   #if (HXCPP_API_LEVEL < 330)
    virtual Dynamic __concat(const Dynamic &a0) = 0;
    virtual Dynamic __copy() = 0;
    virtual Dynamic __insert(const Dynamic &a0,const Dynamic &a1) = 0;
@@ -198,6 +200,40 @@ public:
    virtual Dynamic __memcmp(const Dynamic &a0) = 0;
    virtual void __qsort(Dynamic inCompare) = 0;
 
+   #else
+   inline void ____SetSize(int len)  { __SetSize(len); } 
+   inline void ____SetSizeExact(int len)  { __SetSizeExact(len); } 
+   inline Dynamic ____unsafe_set(const Dynamic &i, const Dynamic &val)  { return __SetItem(i,val); } 
+   inline Dynamic ____unsafe_get(const Dynamic &i)  { return __GetItem(i); } 
+
+   virtual hx::ArrayBase *__concat(const cpp::VirtualArray &a0) = 0;
+   virtual hx::ArrayBase *__copy() = 0;
+   virtual void __insert(int inIndex,const Dynamic &a1) = 0;
+   virtual Dynamic __iterator() = 0;
+   virtual ::String __join(::String a0) = 0;
+   virtual Dynamic __pop() = 0;
+   virtual int __push(const Dynamic &a0) = 0;
+   virtual bool __remove(const Dynamic &a0) = 0;
+   virtual bool __removeAt(int inIndex) = 0;
+   virtual int __indexOf(const Dynamic &a0,const Dynamic &a1) = 0;
+   virtual int __lastIndexOf(const Dynamic &a0,const Dynamic &a1) = 0;
+   virtual void __reverse() = 0;
+   virtual Dynamic __shift() = 0;
+   virtual hx::ArrayBase *__slice(const Dynamic &a0,const Dynamic &a1) = 0;
+   virtual hx::ArrayBase *__splice(const Dynamic &a0,const Dynamic &a1) = 0;
+   virtual void __sort(const Dynamic &a0) = 0;
+   virtual ::String __toString() = 0;
+   virtual void  __unshift(const Dynamic &a0) = 0;
+   virtual cpp::VirtualArray_obj *__map(const Dynamic &func) = 0;
+   virtual hx::ArrayBase *__filter(const Dynamic &func) = 0;
+   virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount) = 0;
+   virtual int __memcmp(const cpp::VirtualArray &a0) = 0;
+   inline void __zero(const Dynamic &a0,const Dynamic &a1)  { zero(a0,a1); }
+   virtual void __qsort(Dynamic inCompare) = 0;
+
+   virtual void set(int inIdx, const cpp::Variant &inValue) = 0;
+   virtual void setUnsafe(int inIdx, const cpp::Variant &inValue) = 0;
+   #endif
 
    Dynamic concat_dyn();
    Dynamic copy_dyn();
@@ -291,7 +327,13 @@ namespace cpp
    typedef hx::ObjectPtr<ArrayBase_obj> ArrayBase;
 }
 
+
+#if (HXCPP_API_LEVEL>=330)
 #include "cpp/VirtualArray.h"
+#endif
+
+
+
 
 // --- Array_obj ------------------------------------------------------------------
 //
@@ -329,7 +371,6 @@ template<> inline unsigned char *NewNull<unsigned char>() { unsigned char u=0; r
 
 // sort...
 #include <algorithm>
-
 
 
 template<typename ELEM_>
@@ -548,7 +589,11 @@ public:
    Array<ELEM_> copy( );
    Array<ELEM_> slice(int inPos, Dynamic end = null());
    Array<ELEM_> splice(int inPos, int len);
+   #if HXCPP_API_LEVEL>=330
+   cpp::VirtualArray map(Dynamic inFunc);
+   #else
    Dynamic map(Dynamic inFunc);
+   #endif
    Array<ELEM_> filter(Dynamic inFunc);
 
    void insert(int inPos, ELEM_ inValue)
@@ -641,6 +686,7 @@ public:
 
 
    // Dynamic interface
+   #if (HXCPP_API_LEVEL < 330)
    virtual Dynamic __concat(const Dynamic &a0) { return concat(a0); }
    virtual Dynamic __copy() { return copy(); }
    virtual Dynamic __insert(const Dynamic &a0,const Dynamic &a1) { insert(a0,a1); return null(); }
@@ -664,9 +710,40 @@ public:
    virtual Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3) { blit(a0,a1,a2,a3); return null(); }
    virtual Dynamic __memcmp(const Dynamic &a0) { return memcmp(a0); }
    virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
+   #else (HXCPP_API_LEVEL < 330)
 
+   virtual hx::ArrayBase *__concat(const cpp::VirtualArray &a0) { return concat(a0).mPtr; }
+   virtual hx::ArrayBase *__copy() { return copy().mPtr; }
+   virtual void __insert(int inIndex,const Dynamic &a1) { insert(inIndex,a1);}
+   virtual Dynamic __iterator() { return iterator(); }
+   virtual ::String __join(::String a0) { return join(a0); }
+   virtual Dynamic __pop() { return pop(); }
+   virtual int __push(const Dynamic &a0) { return push(a0);}
+   virtual bool __remove(const Dynamic &a0) { return remove(a0); }
+   virtual bool __removeAt(int inIndex) { return removeAt(inIndex); }
+   virtual int __indexOf(const Dynamic &a0,const Dynamic &a1) { return indexOf(a0, a1); }
+   virtual int __lastIndexOf(const Dynamic &a0,const Dynamic &a1) { return lastIndexOf(a0, a1); }
+   virtual void __reverse() { reverse(); }
+   virtual Dynamic __shift() { return shift(); }
+   virtual hx::ArrayBase *__slice(const Dynamic &a0,const Dynamic &a1) { return slice(a0,a1).mPtr; }
+   virtual hx::ArrayBase *__splice(const Dynamic &a0,const Dynamic &a1) { return splice(a0,a1).mPtr; }
+   virtual void __sort(const Dynamic &a0) { sort(a0); }
+   virtual ::String __toString() { return toString(); }
+   virtual void  __unshift(const Dynamic &a0) { unshift(a0); }
+   virtual cpp::VirtualArray_obj *__map(const Dynamic &func) { return map(func).mPtr; }
+
+   virtual hx::ArrayBase *__filter(const Dynamic &func) { return filter(func).mPtr; }
+   virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount)
+   {
+      blit(inDestElement,inSourceArray,inSourceElement,inElementCount);
+   }
+   virtual int __memcmp(const cpp::VirtualArray &a0) { return memcmp(a0); }
+   virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
+
+   virtual void set(int inIndex, const cpp::Variant &inValue) { Item(inIndex) = inValue; }
+   virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) { *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue; }
+   #endif
 };
-
 
 
 // --- Array ---------------------------------------------------------------
@@ -910,6 +987,23 @@ Array<ELEM_> Array_obj<ELEM_>::__SetSizeExact(int inLen)
    return this;
 }
 
+// Include again, for functions that required Array definition
+#ifdef HX_VARRAY_DEFINED
+#include "cpp/VirtualArray.h"
+#endif
+
+
+#if HXCPP_API_LEVEL >= 330
+template<typename ELEM_>
+cpp::VirtualArray Array_obj<ELEM_>::map(Dynamic inFunc)
+{
+   cpp::VirtualArray result = cpp::VirtualArray_obj::__new(length,0);
+   for(int i=0;i<length;i++)
+      result->__unsafe_set(i,inFunc(__unsafe_get(i)));
+   return result;
+}
+
+#else
 template<typename ELEM_>
 Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
 {
@@ -918,10 +1012,6 @@ Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
       result->__unsafe_set(i,inFunc(__unsafe_get(i)));
    return result;
 }
-
-// Include again, for functions that required Array definition
-#ifdef HX_VARRAY_DEFINED
-#include "cpp/VirtualArray.h"
 #endif
 
 

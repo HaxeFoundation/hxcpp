@@ -5,7 +5,6 @@ namespace cpp
 #ifndef HX_VARRAY_DEFINED
 #define HX_VARRAY_DEFINED
 
-class VirtualArray_obj;
 
 class VirtualArray : public hx::ObjectPtr<VirtualArray_obj>
 {
@@ -291,6 +290,14 @@ public:
    Dynamic __SetItem(int inIndex,Dynamic inValue);
    hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp);
 
+   template<typename T>
+   inline const T &set(int inIdx, const T &inVal)
+   {
+      if (store!=hx::arrayFixed) EnsureStorage(inVal);
+      base->set(inIdx, inVal);
+      return inVal;
+   }
+
 
    template<typename T>
    inline int push(const T &inVal)
@@ -325,12 +332,12 @@ public:
 
    Dynamic shift() { checkBase(); return store==hx::arrayEmpty ? null() : base->__shift(); }
 
-   VirtualArray concat( Dynamic inTail )
+   VirtualArray concat( VirtualArray inTail )
    {
       EnsureArrayStorage(inTail);
       if (inTail->__length()<1)
          return copy();
-      return new VirtualArray_obj( (ArrayBase *)(base->__concat(inTail).mPtr), store==hx::arrayFixed );
+      return new VirtualArray_obj( base->__concat(inTail), store==hx::arrayFixed );
    }
    VirtualArray copy( )
    {
@@ -338,14 +345,14 @@ public:
       if (store==hx::arrayEmpty)
          return new VirtualArray_obj(hx::arrayEmpty);
 
-      return new VirtualArray_obj((ArrayBase *)(base->__copy().mPtr), store==hx::arrayFixed);
+      return new VirtualArray_obj(base->__copy(), store==hx::arrayFixed);
    }
    VirtualArray slice(int inPos, Dynamic end = null())
    {
       checkBase();
       if (store==hx::arrayEmpty)
          return new VirtualArray_obj(hx::arrayEmpty);
-      return new VirtualArray_obj((ArrayBase *)(base->__slice(inPos,end).mPtr), store==hx::arrayFixed);
+      return new VirtualArray_obj(base->__slice(inPos,end), store==hx::arrayFixed);
    }
    VirtualArray splice(int inPos, int len);
    Dynamic map(Dynamic inFunc);
@@ -391,14 +398,14 @@ public:
 
    void zero(Dynamic inFirst, Dynamic inCount) { checkBase(); if (store!=hx::arrayEmpty) base->zero(inFirst,inCount); }
 
-   inline int memcmp(Dynamic inOther)
+   inline int memcmp(VirtualArray inOther)
    {
       checkBase();
       if (store==hx::arrayEmpty)
          return inOther->__length() == 0;
       return base->__memcmp(inOther);
    }
-   inline void blit(int inDestElement,  Dynamic inSourceArray, int inSourceElement, int inElementCount)
+   inline void blit(int inDestElement,  cpp::VirtualArray inSourceArray, int inSourceElement, int inElementCount)
    {
       EnsureArrayStorage(inSourceArray);
       base->__blit(inDestElement, inSourceArray, inSourceElement, inElementCount);

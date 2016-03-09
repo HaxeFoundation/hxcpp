@@ -180,6 +180,7 @@ public:
    template<typename T>
    inline ::String operator+(const hx::ObjectPtr<T> &inRHS) const
       { return *this + (inRHS.mPtr ? const_cast<hx::ObjectPtr<T>&>(inRHS)->toString() : HX_CSTRING("null") ); }
+   ::String operator+(const cpp::Variant &inRHS) const{ return *this + inRHS.asString(); } 
 
    // Strings are known not to be null...
    inline bool eq(const ::String &inRHS) const

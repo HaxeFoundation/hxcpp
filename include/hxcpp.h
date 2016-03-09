@@ -220,8 +220,6 @@ namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
 // --- Forward decalarations --------------------------------------------
 
 class null;
-namespace cpp { class CppInt32__; }
-namespace cpp { struct Variant; }
 namespace hx { class Object; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
@@ -233,6 +231,13 @@ namespace hx {
    class Class_obj;
    typedef hx::ObjectPtr<hx::Class_obj> Class;
 }
+namespace cpp {
+     struct Variant;
+     class VirtualArray_obj;
+     class VirtualArray;
+     class CppInt32__;
+}
+
 
 #if (HXCPP_API_LEVEL < 320) && !defined(__OBJC__)
 typedef hx::Class Class;
