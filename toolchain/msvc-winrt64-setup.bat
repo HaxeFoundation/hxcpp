@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
     @call "%VS140COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat"
         @set "INCLUDE=%WindowsSdkDir%Include;!INCLUDE!"
         @set "PATH=%WindowsSdkDir%bin\x64;!PATH!"
-        @set "LIB=%WindowsSdkDir%Lib\%WindowsSDKLibVersion%um\x86;!LIB!"
+        @set "LIB=%WindowsSdkDir%Lib\%WindowsSDKLibVersion%um\x64;!LIB!"
         @set "LIBPATH=%VS140COMNTOOLS%\..\..\VC\lib\store\references;!LIBPATH!"
     @echo HXCPP_VARS
     @set
