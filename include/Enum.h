@@ -56,6 +56,10 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       inline bool getBool(int inId) { return __Param(inId); }
       inline ::String getString(int inId) { return __Param(inId); }
 
+      // For legacy
+      inline String __Tag() const { return tag; }
+
+
       String getTag() const { return tag; }
       int getIndex() const { return index; }
       #else

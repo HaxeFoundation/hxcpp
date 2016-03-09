@@ -408,7 +408,7 @@ void ArrayBase::safeSort(Dynamic inSorter, bool inIsString)
 #define ARRAY_VISIT_FUNC
 #endif
 
-#define DEFINE_ARRAY_FUNC(func,array_list,dynamic_arg_list,arg_list,ARG_C) \
+#define DEFINE_ARRAY_FUNC(ret,func,array_list,dynamic_arg_list,arg_list,ARG_C) \
 struct ArrayBase_##func : public hx::Object \
 { \
    bool __IsFunction() const { return true; } \
@@ -423,50 +423,65 @@ struct ArrayBase_##func : public hx::Object \
    ARRAY_VISIT_FUNC \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
-      return mThis->__##func(array_list); return Dynamic(); \
+      ret mThis->__##func(array_list); return Dynamic(); \
    } \
    Dynamic __run(dynamic_arg_list) \
    { \
-      return mThis->__##func(arg_list); return Dynamic(); \
+      ret mThis->__##func(arg_list); return Dynamic(); \
    } \
 }; \
 Dynamic ArrayBase::func##_dyn()  { return new ArrayBase_##func(this);  }
 
 
-#define DEFINE_ARRAY_FUNC0(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST0,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0,0)
-#define DEFINE_ARRAY_FUNC1(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST1,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1,1)
-#define DEFINE_ARRAY_FUNC2(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST2,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2,2)
-#define DEFINE_ARRAY_FUNC3(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST3,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3,3)
-#define DEFINE_ARRAY_FUNC4(func) DEFINE_ARRAY_FUNC(func,HX_ARR_LIST4,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4,4)
+#define DEFINE_ARRAY_FUNC0(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST0,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0,0)
+#define DEFINE_ARRAY_FUNC1(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST1,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1,1)
+#define DEFINE_ARRAY_FUNC2(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST2,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2,2)
+#define DEFINE_ARRAY_FUNC3(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST3,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3,3)
+#define DEFINE_ARRAY_FUNC4(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST4,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4,4)
 
 
-DEFINE_ARRAY_FUNC1(concat);
-DEFINE_ARRAY_FUNC2(insert);
-DEFINE_ARRAY_FUNC0(iterator);
-DEFINE_ARRAY_FUNC1(join);
-DEFINE_ARRAY_FUNC0(pop);
-DEFINE_ARRAY_FUNC0(copy);
-DEFINE_ARRAY_FUNC1(push);
-DEFINE_ARRAY_FUNC1(remove);
-DEFINE_ARRAY_FUNC1(removeAt);
-DEFINE_ARRAY_FUNC2(indexOf);
-DEFINE_ARRAY_FUNC2(lastIndexOf);
-DEFINE_ARRAY_FUNC0(reverse);
-DEFINE_ARRAY_FUNC0(shift);
-DEFINE_ARRAY_FUNC2(slice);
-DEFINE_ARRAY_FUNC2(splice);
-DEFINE_ARRAY_FUNC1(sort);
-DEFINE_ARRAY_FUNC0(toString);
-DEFINE_ARRAY_FUNC1(unshift);
-DEFINE_ARRAY_FUNC1(map);
-DEFINE_ARRAY_FUNC1(filter);
-DEFINE_ARRAY_FUNC1(__SetSize);
-DEFINE_ARRAY_FUNC1(__SetSizeExact);
-DEFINE_ARRAY_FUNC1(__unsafe_get);
-DEFINE_ARRAY_FUNC2(__unsafe_set);
-DEFINE_ARRAY_FUNC4(blit);
-DEFINE_ARRAY_FUNC2(zero);
-DEFINE_ARRAY_FUNC1(memcmp);
+#if (HXCPP_API_LEVEL>=330)
+DEFINE_ARRAY_FUNC1(,__SetSize);
+DEFINE_ARRAY_FUNC1(,__SetSizeExact);
+DEFINE_ARRAY_FUNC2(,insert);
+DEFINE_ARRAY_FUNC0(,reverse);
+DEFINE_ARRAY_FUNC1(,sort);
+DEFINE_ARRAY_FUNC1(,unshift);
+DEFINE_ARRAY_FUNC4(,blit);
+DEFINE_ARRAY_FUNC2(,zero);
+#else
+DEFINE_ARRAY_FUNC1(return,__SetSize);
+DEFINE_ARRAY_FUNC1(return,__SetSizeExact);
+DEFINE_ARRAY_FUNC2(return,insert);
+DEFINE_ARRAY_FUNC0(return,reverse);
+DEFINE_ARRAY_FUNC1(return,sort);
+DEFINE_ARRAY_FUNC1(return,unshift);
+DEFINE_ARRAY_FUNC4(return,blit);
+DEFINE_ARRAY_FUNC2(return,zero);
+#endif
+
+DEFINE_ARRAY_FUNC1(return,concat);
+DEFINE_ARRAY_FUNC0(return,iterator);
+DEFINE_ARRAY_FUNC1(return,join);
+DEFINE_ARRAY_FUNC0(return,pop);
+DEFINE_ARRAY_FUNC0(return,copy);
+DEFINE_ARRAY_FUNC1(return,push);
+DEFINE_ARRAY_FUNC1(return,remove);
+DEFINE_ARRAY_FUNC1(return,removeAt);
+DEFINE_ARRAY_FUNC2(return,indexOf);
+DEFINE_ARRAY_FUNC2(return,lastIndexOf);
+DEFINE_ARRAY_FUNC0(return,shift);
+DEFINE_ARRAY_FUNC2(return,slice);
+DEFINE_ARRAY_FUNC2(return,splice);
+DEFINE_ARRAY_FUNC0(return,toString);
+DEFINE_ARRAY_FUNC1(return,map);
+DEFINE_ARRAY_FUNC1(return,filter);
+DEFINE_ARRAY_FUNC1(return,__unsafe_get);
+DEFINE_ARRAY_FUNC2(return,__unsafe_set);
+DEFINE_ARRAY_FUNC1(return,memcmp);
+
+
+
 
 hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
