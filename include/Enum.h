@@ -50,11 +50,14 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       Dynamic __Param(int inID) { return mArgs[inID]; }
 
       #if (HXCPP_API_LEVEL >= 330)
-      inline Dynamic getObject(int inId) { return __Param(inId); }
-      inline int getInt(int inId) { return __Param(inId); }
-      inline Float getFloat(int inId) { return __Param(inId); }
-      inline bool getBool(int inId) { return __Param(inId); }
-      inline ::String getString(int inId) { return __Param(inId); }
+      inline Array<Dynamic> getParameters() { return mArgs; }
+      inline Dynamic getObject(int inId) { return mArgs[inId]; }
+      inline int getInt(int inId) { return mArgs[inId]; }
+      inline Float getFloat(int inId) { return mArgs[inId]; }
+      inline bool getBool(int inId) { return mArgs[inId]; }
+      inline ::String getString(int inId) { return mArgs[inId]; }
+      inline Dynamic getParamI(int inId) { return mArgs[inId]; }
+      inline int getParamCount() { return mArgs.mPtr ? mArgs->length : 0; }
 
       // For legacy
       inline String __Tag() const { return tag; }
