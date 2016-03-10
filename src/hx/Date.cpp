@@ -360,7 +360,7 @@ double __hxcpp_timezone_offset(double inSeconds)
    struct tm localTime;
    __internal_localtime( inSeconds, &localTime);
 
-   #if defined HX_WINDOWS || defined __SNC__ || defined __ORBIS__
+   #if defined(HX_WINDOWS) || defined(__SNC__) || defined(__ORBIS__)
    struct tm gmTime;
    __internal_gmtime(inSeconds, &gmTime );
 
@@ -430,3 +430,4 @@ double __hxcpp_from_utc(int inYear,int inMonth,int inDay,int inHour, int inMin, 
 
    return (mktime(&local_tm) + ((double) inMilliseconds * 0.001));
 }
+

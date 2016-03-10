@@ -253,7 +253,7 @@ double  __time_stamp()
          return (now-t0)*period;
    }
    return (double)clock() / ( (double)CLOCKS_PER_SEC);
-#elif defined __unix__ || defined __APPLE__
+#elif defined(__unix__) || defined(__APPLE__)
    static double t0 = 0;
    struct timeval tv;
    if( gettimeofday(&tv,0) )
@@ -430,7 +430,9 @@ Array<String> __get_args()
 {
    Array<String> result(0,0);
 
-   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
+   #ifdef HX_WINRT
+   // Do nothing
+   #elif defined(HX_WINDOWS)
    LPTSTR str =  GetCommandLine();
    ParseCommandLine(str, result);
    #else

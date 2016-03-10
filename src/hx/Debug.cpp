@@ -601,11 +601,7 @@ private:
 
         while (gThreadRefCount > 0) { 
 #ifdef HX_WINDOWS
-#ifndef HX_WINRT
             Sleep(millis);
-#else
-            Sleep(millis);
-#endif
 #else
             struct timespec t;
             struct timespec tmp;

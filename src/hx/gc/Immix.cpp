@@ -4113,9 +4113,11 @@ int __hxcpp_gc_trace(hx::Class inClass,bool inPrint)
 {
     #if  !defined(HXCPP_DEBUG)
        #ifdef ANDROID
-          __android_log_print(ANDROID_LOG_ERROR, "hxcpp", "GC trace not enabled in release build.");
+       __android_log_print(ANDROID_LOG_ERROR, "hxcpp", "GC trace not enabled in release build.");
+       #elif defined(HX_WINRT)
+       WINRT_LOG("GC trace not enabled in release build.");
        #else
-          printf("WARNING : GC trace not enabled in release build.\n");
+       printf("WARNING : GC trace not enabled in release build.\n");
        #endif
        return 0;
     #else
@@ -4250,3 +4252,4 @@ unsigned int __hxcpp_obj_hash(Dynamic inObj)
 
 
 void DummyFunction(void *inPtr) { }
+

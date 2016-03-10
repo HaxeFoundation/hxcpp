@@ -15,7 +15,7 @@ int __sys_prims() { return 0; }
 #	include <windows.h>
 #	include <direct.h>
 #	include <conio.h>
-#       include <locale.h>
+#   include <locale.h>
 #else
 #	include <errno.h>
 #ifndef EPPC
@@ -47,8 +47,7 @@ int __sys_prims() { return 0; }
 #endif
 
 #ifdef HX_WINRT
-#include <hx/Thread.h>
-#include <hx/Tls.h>
+#include <string>
 #define WINRT_LOG(fmt, ...) {char buf[1024];sprintf(buf,"****LOG: %s(%d): %s \n    [" fmt "]\n",__FILE__,__LINE__,__FUNCTION__, __VA_ARGS__);OutputDebugString(buf);}
 #endif
 
@@ -525,8 +524,8 @@ static value sys_time() {
 	<doc>Return the most accurate CPU time spent since the process started (in seconds)</doc>
 **/
 static value sys_cpu_time() {
-#ifdef HX_WINRT
-   return alloc_float(0);
+#if (defined(HX_WINRT) || defined(EPPC)) && !defined(_XBOX_ONE)
+   return alloc_float ((double)(CLOCKS_PER_SEC * clock()));
 #elif defined(NEKO_WINDOWS)
 	FILETIME unused;
 	FILETIME stime;
@@ -534,8 +533,6 @@ static value sys_cpu_time() {
 	if( !GetProcessTimes(GetCurrentProcess(),&unused,&unused,&stime,&utime) )
 		return alloc_null();
 	return alloc_float( ((double)(utime.dwHighDateTime+stime.dwHighDateTime)) * 65.536 * 6.5536 + (((double)utime.dwLowDateTime + (double)stime.dwLowDateTime) / 10000000) );
-#elif defined(EPPC)
-	return alloc_float ((double)(CLOCKS_PER_SEC * clock()));
 #else
 	struct tms t;
 	times(&t);
@@ -556,7 +553,6 @@ static value sys_read_dir( value p) {
    auto results = folder->GetFilesAsync(Windows::Storage::Search::CommonFileQuery::DefaultQuery)->GetResults();
    for(int i=0;i<results->Size;i++)
       val_array_push(result,alloc_wstring(results->GetAt(i)->Path->Data()));
-
 #elif defined(NEKO_WINDOWS)
 	const wchar_t *path = val_wstring(p);
 	size_t len = wcslen(path);
@@ -566,13 +562,13 @@ static value sys_read_dir( value p) {
 	WIN32_FIND_DATAW d;
 	HANDLE handle;
 	buffer b;
-	#ifdef HX_WINRT
+  #ifdef HX_WINRT
 	std::wstring tempWStr(path);
 	std::string searchPath(tempWStr.begin(), tempWStr.end());
-	#else
+  #else
    wchar_t searchPath[ MAX_PATH + 4 ];
    memcpy(searchPath,path, len*sizeof(wchar_t));
-	#endif
+  #endif
 
 
 	if( len && path[len-1] != '/' && path[len-1] != '\\' )
@@ -583,11 +579,11 @@ static value sys_read_dir( value p) {
    searchPath[len] = '\0';
 
 	gc_enter_blocking();
-	#ifdef HX_WINRT
+  #ifdef HX_WINRT
 	handle = FindFirstFileEx(searchPath.c_str(), FindExInfoStandard, &d, FindExSearchNameMatch, NULL, 0);
-	#else
+  #else
 	handle = FindFirstFileW(searchPath,&d);
-	#endif
+  #endif
 	if( handle == INVALID_HANDLE_VALUE )
 	{
 		gc_exit_blocking();
@@ -638,14 +634,6 @@ static value sys_read_dir( value p) {
 **/
 static value file_full_path( value path ) {
 #if defined(HX_WINRT)
-	#ifdef __cplusplus_winrt
-	Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
-	Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
-	Platform::String^ output = "Installed Location: " + installedLocation->Path;
-	std::wstring tempWStr(output->Begin());
-	std::string tempStr(tempWStr.begin(), tempWStr.end());
-	WINRT_LOG("%s",tempStr.c_str());
-	#endif
 	return path;
 #elif defined(NEKO_WINDOWS)
 	char buf[MAX_PATH+1];
