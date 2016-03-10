@@ -1586,6 +1586,7 @@ private:
 /* static */ MyMutex CallStack::gMutex;
 /* static */ std::map<int, CallStack *> CallStack::gMap;
 /* static */ std::list<CallStack *> CallStack::gList;
+bool printStatus;
 
 #ifdef HXCPP_DEBUGGER
 class Breakpoints
@@ -2283,7 +2284,11 @@ void __hxcpp_dbg_stepThreadLine(int threadNumber, int stepType, int stepCount) {
 }
 
 void __hxcpp_dbg_setPrint(bool in) {
-  hx::CallStack::setPrint(in);
+  hx::printStatus = in;
+}
+
+bool __hxcpp_dbg_getPrint() {
+  return hx::printStatus;
 }
 
 Array<Dynamic> __hxcpp_dbg_getStackVariables(int threadNumber,
