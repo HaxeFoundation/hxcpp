@@ -7,10 +7,9 @@
 #if defined(__unix__) || defined(__APPLE__)
 #include <unistd.h>
 #include <sys/time.h>
-#elif defined(HX_WINDOWS)
-#if defined(HX_WINRT) && !defined(__cplusplus_winrt)
+#elif defined(HX_WINRT) && !defined(__cplusplus_winrt)
 #include <windows.h>
-#endif
+#elif defined(HX_WINDOWS)
 #include <process.h>
 #endif
 
@@ -147,19 +146,19 @@ void Math_obj::__boot()
    unsigned int t = tv.tv_sec * 1000000 + tv.tv_usec;
 #endif
 
-#if defined(HX_WINDOWS) && defined(HX_WINRT)
+#if defined(HX_WINDOWS)
+  #if defined(HX_WINRT)
    #if defined(__cplusplus_winrt)
    int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
    #else
    int pid = GetCurrentProcessId();
    #endif
-#elif defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP || !defined(WINAPI_FAMILY))
+  #else
    int pid = _getpid();
+  #endif
 #elif defined(__unix__) || defined(__APPLE__)
    int pid = getpid();
-#elif \
-   (defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_TV_TITLE)) || \
-   defined(__SNC__)
+#else
    int pid = (int)&t; // As a last resort, rely on ASLR.
 #endif  
 
@@ -176,4 +175,5 @@ double DoubleMod(double inLHS,double inRHS)
 }
 
 }
+
 
