@@ -710,7 +710,7 @@ public:
    virtual Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3) { blit(a0,a1,a2,a3); return null(); }
    virtual Dynamic __memcmp(const Dynamic &a0) { return memcmp(a0); }
    virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
-   #else (HXCPP_API_LEVEL < 330)
+   #else //(HXCPP_API_LEVEL < 330)
 
    virtual hx::ArrayBase *__concat(const cpp::VirtualArray &a0) { return concat(a0).mPtr; }
    virtual hx::ArrayBase *__copy() { return copy().mPtr; }
