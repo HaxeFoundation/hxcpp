@@ -98,6 +98,7 @@
  	<files id="ssl" />
 
 	<lib name="advapi32.lib" if="windows" unless="static_link" />
+	<lib name="crypt32.lib" if="windows" unless="static_link" />
 	<lib name="ws2_32.lib" if="windows" unless="static_link" />
 </target>
 
@@ -106,6 +107,7 @@
     <files id="ssl"/>
 	
 	<lib name="advapi32.lib" if="windows" unless="static_link" />
+	<lib name="crypt32.lib" if="windows" unless="static_link" />
 	<lib name="ws2_32.lib" if="windows" unless="static_link" />
 
     <outdir name="../../../${DESTDIR}/${BINDIR}"/>
