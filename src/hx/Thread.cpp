@@ -276,7 +276,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 	hx::GCPrepareMultiThreaded();
 	hx::EnterGCFreeZone();
 
-   #if defined(HX_WINDOWS)
+   #ifdef HX_WINDOWS
       bool ok = _beginthreadex(0,0,hxThreadFunc,info,0,0) != 0;
    #else
       pthread_t result = 0;
