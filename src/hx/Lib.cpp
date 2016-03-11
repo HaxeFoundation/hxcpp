@@ -25,15 +25,20 @@ bool gLoadDebug = true;
 bool gLoadDebug = false;
 #endif
 
-#ifdef _WIN32
+#if (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK) || defined(APPLETV) ) && \
+	!defined(HXCPP_DLL_IMPORT) && (!defined(HXCPP_DLL_EXPORT) || defined(HXCPP_SCRIPTABLE) )
+
+typedef void *Module;
+Module hxLoadLibrary(const String &) { return 0; }
+void hxFreeLibrary(Module) { }
+
+#elif defined _WIN32
 
 #include <windows.h>
 typedef HMODULE Module;
 
 #ifdef HX_WINRT
-
 Module hxLoadLibrary(String inLib) { return LoadPackagedLibrary(inLib.__WCStr(),0); }
-
 #else // Windows, not WinRT
 Module hxLoadLibrary(String inLib)
 {
@@ -50,12 +55,6 @@ Module hxLoadLibrary(String inLib)
 void *hxFindSymbol(Module inModule, const char *inSymbol) { return (void *)GetProcAddress(inModule,inSymbol); }
 
 void hxFreeLibrary(Module inModule) { FreeLibrary(inModule); }
-
-#elif (defined (IPHONE) || defined(EMSCRIPTEN) || defined(STATIC_LINK) || defined(APPLETV) ) && !defined(HXCPP_DLL_IMPORT) && (!defined(HXCPP_DLL_EXPORT) || defined(HXCPP_SCRIPTABLE) )
-
-typedef void *Module;
-Module hxLoadLibrary(const String &) { return 0; }
-void hxFreeLibrary(Module) { }
 
 #else
 
@@ -753,4 +752,3 @@ int __hxcpp_register_prim(const char *inName,void *inProc)
    proc = inProc;
    return 0;
 }
-
