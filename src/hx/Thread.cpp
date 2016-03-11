@@ -477,12 +477,12 @@ public:
 
 	hx::InternalFinalizer *mFinalizer;
 
-	#ifdef HX_WINDOWS
+	#if defined HX_WINDOWS || defined __SNC__
 	double Now()
 	{
 		return (double)clock()/CLOCKS_PER_SEC;
 	}
-	#else
+	#elif defined __unix__ || defined __APPLE__
 	double Now()
 	{
 		struct timeval tv;

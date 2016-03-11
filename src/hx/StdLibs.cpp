@@ -3,11 +3,9 @@
 
 #ifdef HX_WINDOWS
 #include <windows.h>
-#include <stdio.h>
 #include <io.h>
-#else
+#elif defined __unix__ || defined __APPLE__
 #include <sys/time.h>
-#include <stdio.h>
 #ifndef EMSCRIPTEN
 typedef int64_t __int64;
 #endif
@@ -28,6 +26,7 @@ extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumbe
 #include <string>
 #include <vector>
 #include <map>
+#include <stdio.h>
 #include <time.h>
 
 
@@ -171,7 +170,7 @@ int __hxcpp_irand(int inMax)
 
 void __hxcpp_stdlibs_boot()
 {
-   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
+   #if defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP || !defined(WINAPI_FAMILY))
    HMODULE kernel32 = LoadLibraryA("kernel32");
    if (kernel32)
    {
@@ -233,7 +232,6 @@ void __hxcpp_exit(int inExitCode)
    exit(inExitCode);
 }
 
-static double t0 = 0;
 double  __time_stamp()
 {
 #ifdef HX_WINDOWS
@@ -254,15 +252,17 @@ double  __time_stamp()
       if (period!=0)
          return (now-t0)*period;
    }
-
    return (double)clock() / ( (double)CLOCKS_PER_SEC);
-#else
+#elif defined __unix__ || defined __APPLE__
+   static double t0 = 0;
    struct timeval tv;
    if( gettimeofday(&tv,0) )
       throw Dynamic("Could not get time");
    double t =  ( tv.tv_sec + ((double)tv.tv_usec) / 1000000.0 );
    if (t0==0) t0 = t;
    return t-t0;
+#else
+   return (double)clock() / ( (double)CLOCKS_PER_SEC);
 #endif
 }
 
@@ -448,8 +448,7 @@ Array<String> __get_args()
    #else
    #ifdef ANDROID
    // TODO: Get from java
-   #else // linux
-
+   #elif defined(__linux__)
    char buf[80];
    sprintf(buf, "/proc/%d/cmdline", getpid());
    FILE *cmd = fopen(buf,"rb");

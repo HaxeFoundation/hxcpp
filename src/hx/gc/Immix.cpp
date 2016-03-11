@@ -328,7 +328,8 @@ typedef MyMutex ThreadPoolLock;
 
 static ThreadPoolLock sThreadPoolLock;
 
-#if !defined(HX_WINDOWS) && !defined(EMSCRIPTEN) && !defined(HX_WINRT)
+#if !defined(HX_WINDOWS) && !defined(EMSCRIPTEN) && !defined(HX_WINRT) && \
+	!defined(__SNC__) && !defined(__ORBIS__)
 #define HX_GC_PTHREADS
 typedef pthread_cond_t ThreadPoolSignal;
 inline void WaitThreadLocked(ThreadPoolSignal &ioSignal)
