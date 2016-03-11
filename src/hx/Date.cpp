@@ -6,19 +6,19 @@
    #include <windows.h>
 #else
    #include <stdint.h>
-   #if defined __unix__ || __APPLE__
+   #if defined(__unix__) || defined(__APPLE__)
       #include <unistd.h>
       #include <stdio.h>
-      #if _POSIX_VERSION >= 1
+      #if (_POSIX_VERSION >= 1)
          #define USE_TIME_R
       #endif
-      #if _POSIX_VERSION >= 199309L
+      #if (_POSIX_VERSION >= 199309L)
          #include <sys/time.h>
          #define USE_CLOCK_GETTIME
          #define USE_GETTIMEOFDAY
       #endif
    #endif
-   #if defined __ORBIS__
+   #if defined(__ORBIS__)
       // fill in for a missing localtime_r with localtime_s
       #define localtime_r localtime_s
       #define gmtime_r gmtime_s

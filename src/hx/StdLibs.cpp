@@ -4,7 +4,7 @@
 #ifdef HX_WINDOWS
 #include <windows.h>
 #include <io.h>
-#elif defined __unix__ || defined __APPLE__
+#elif defined(__unix__) || defined(__APPLE__)
 #include <sys/time.h>
 #ifndef EMSCRIPTEN
 typedef int64_t __int64;
@@ -170,7 +170,7 @@ int __hxcpp_irand(int inMax)
 
 void __hxcpp_stdlibs_boot()
 {
-   #if defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP || !defined(WINAPI_FAMILY))
+   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
    HMODULE kernel32 = LoadLibraryA("kernel32");
    if (kernel32)
    {
@@ -701,3 +701,4 @@ void  __hxcpp_memory_memset(Array<unsigned char> &inBuffer ,int pos, int len, in
          memset( inBuffer->Pointer() + pos, value, len);
    }
 }
+

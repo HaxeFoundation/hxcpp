@@ -26,7 +26,7 @@ extern void __hxt_new_string(void* result, int size);
 
 namespace hx
 {
-#if defined(HX_MACOS) || defined(HX_WINDOWS) || defined(HX_LINUX)
+#if defined(HX_MACOS) || defined(HX_WINDOWS) || defined(HX_LINUX) || defined(__ORBIS__)
 int sgMinimumWorkingMemory       = 20*1024*1024;
 int sgMinimumFreeSpace           = 10*1024*1024;
 #else
@@ -44,8 +44,7 @@ int sgTargetFreeSpacePercentage  = 100;
 // Called internally before and GC operations
 void CommonInitAlloc()
 {
-   #if !defined(HX_WINRT) && !defined(__SNC__) && !defined(__ORBIS__) && \
-       !(defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP))
+   #if !defined(HX_WINRT) && !defined(__SNC__) && !defined(__ORBIS__)
    const char *minimumWorking = getenv("HXCPP_MINIMUM_WORKING_MEMORY");
    if (minimumWorking)
    {

@@ -314,7 +314,7 @@ struct BlockDataInfo *gBlockStack = 0;
 typedef hx::QuickVec<hx::Object *> ObjectStack;
 
 
-#if defined(EMSCRIPTEN)
+#ifdef EMSCRIPTEN
 // Dummy lock
 typedef HxAtomicLock ThreadPoolLock;
 #else
@@ -2902,7 +2902,7 @@ public:
          int created = pthread_create(&result,0,SThreadLoop,info);
          bool ok = created==0;
       #else
-         #if defined(EMSCRIPTEN)
+         #ifdef EMSCRIPTEN
          // Only one thread
          #elif defined(HX_WINDOWS)
          bool ok = _beginthreadex(0,0,SThreadLoop,info,0,0) != 0;

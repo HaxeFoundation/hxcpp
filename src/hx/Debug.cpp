@@ -2596,7 +2596,7 @@ static void CriticalErrorHandler(String inErr, bool allowFixup)
 
     DBGLOG("Critical Error: %s\n", inErr.__s);
 
-#if defined(HX_WINDOWS) && (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP || !defined(WINAPI_FAMILY))
+#if defined(HX_WINDOWS) && !defined(HX_WINRT)
     MessageBoxA(0, inErr.__s, "Critial Error - program must terminate",
         MB_ICONEXCLAMATION|MB_OK);
 #endif
