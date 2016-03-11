@@ -730,7 +730,12 @@ void VirtualArray_obj::EnsureArrayStorage(Dynamic inValue)
 
 void VirtualArray_obj::MakeIntArray()
 {
-   if (!base)
+   if (store==arrayEmpty && base )
+   {
+      int len = base->length;
+      base = new Array_obj<int>(len,len);
+   }
+   else if (!base)
       base = new Array_obj<int>(0,0);
    else
    {
@@ -743,7 +748,11 @@ void VirtualArray_obj::MakeIntArray()
 
 void VirtualArray_obj::MakeObjectArray()
 {
-   if (!base)
+   if (store==arrayEmpty && base )
+   {
+      // Actually, ok already.
+   }
+   else if (!base)
       base = new Array_obj<Dynamic>(0,0);
    else
    {
@@ -756,7 +765,12 @@ void VirtualArray_obj::MakeObjectArray()
 
 void VirtualArray_obj::MakeStringArray()
 {
-   if (!base)
+   if (store==arrayEmpty && base )
+   {
+      int len = base->length;
+      base = new Array_obj<String>(len,len);
+   }
+   else if (!base)
       base = new Array_obj<String>(0,0);
    else
    {
@@ -769,7 +783,12 @@ void VirtualArray_obj::MakeStringArray()
 
 void VirtualArray_obj::MakeBoolArray()
 {
-   if (!base)
+   if (store==arrayEmpty && base )
+   {
+      int len = base->length;
+      base = new Array_obj<Bool>(len,len);
+   }
+   else if (!base)
       base = new Array_obj<Bool>(0,0);
    else
    {
@@ -782,7 +801,12 @@ void VirtualArray_obj::MakeBoolArray()
 
 void VirtualArray_obj::MakeFloatArray()
 {
-   if (!base)
+   if (store==arrayEmpty && base )
+   {
+      int len = base->length;
+      base = new Array_obj<Float>(len,len);
+   }
+   else if (!base)
       base = new Array_obj<Float>(0,0);
    else
    {
@@ -792,7 +816,10 @@ void VirtualArray_obj::MakeFloatArray()
    store = arrayFloat;
 }
 
-
+void VirtualArray_obj::CreateEmptyArray(int inLen)
+{
+   base = new Array_obj<Dynamic>(inLen,inLen);
+}
 
 void VirtualArray_obj::EnsureBase()
 {
@@ -805,7 +832,7 @@ void VirtualArray_obj::EnsureBase()
 
 VirtualArray VirtualArray_obj::splice(int inPos, int len)
 {
-   if ( store==hx::arrayEmpty )
+   if ( !base )
       return new VirtualArray_obj();
 
    Dynamic cut = base->__splice(inPos, len);
@@ -826,7 +853,7 @@ Dynamic VirtualArray_obj::map(Dynamic inFunc)
 
 VirtualArray VirtualArray_obj::filter(Dynamic inFunc)
 {
-   if ( store==hx::arrayEmpty )
+   if ( !base )
       return new VirtualArray_obj();
 
    Dynamic filtered = base->__filter(inFunc);

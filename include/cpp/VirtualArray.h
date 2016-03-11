@@ -234,6 +234,7 @@ public:
    template<typename F> F castArray();
 
    void EnsureBase();
+   void CreateEmptyArray(int inLen);
 
    void EnsureArrayStorage(Dynamic inValue);
 
@@ -278,8 +279,21 @@ public:
 
    int GetElementSize() const { checkBase(); return store==hx::arrayEmpty ? 0 : base->GetElementSize(); }
 
-   void __SetSize(int inLen) { EnsureBase(); base->__SetSize(inLen); }
-   void __SetSizeExact(int inLen=0) { EnsureBase(); base->__SetSizeExact(inLen); }
+   void __SetSize(int inLen)
+   {
+      if (!base)
+         CreateEmptyArray(inLen);
+      else
+         base->__SetSize(inLen);
+   }
+
+   void __SetSizeExact(int inLen=0)
+   {
+      if (!base && inLen)
+         CreateEmptyArray(inLen);
+      else if (base)
+         base->__SetSizeExact(inLen);
+   }
 
    void safeSort(Dynamic sorter, bool isString) { checkBase(); if (store!=hx::arrayEmpty) base->safeSort(sorter,isString); }
 
@@ -387,11 +401,11 @@ public:
 
    inline void reverse() { checkBase(); if (store!=hx::arrayEmpty) base->__reverse(); }
 
-   inline void qsort(Dynamic inSorter) { checkBase(); if (store!=hx::arrayEmpty) base->__qsort(inSorter); }
+   inline void qsort(Dynamic inSorter) { checkBase(); if (base) base->__qsort(inSorter); }
 
-   inline void sort(Dynamic inSorter) { checkBase(); if (store!=hx::arrayEmpty) base->__sort(inSorter); }
+   inline void sort(Dynamic inSorter) { checkBase(); if (base) base->__sort(inSorter); }
 
-   Dynamic iterator() { checkBase(); return  store==hx::arrayEmpty ? getEmptyIterator() :  base->__iterator(); }
+   Dynamic iterator() { checkBase(); return  !base ? getEmptyIterator() :  base->__iterator(); }
    static Dynamic getEmptyIterator();
 
    bool IsByteArray() const { checkBase(); return store!=hx::arrayEmpty && base->IsByteArray(); }
@@ -411,7 +425,7 @@ public:
       base->__blit(inDestElement, inSourceArray, inSourceElement, inElementCount);
    }
 
-   String join(String inSeparator) { checkBase(); if (store==hx::arrayEmpty) return HX_CSTRING(""); return base->__join(inSeparator); }
+   String join(String inSeparator) { checkBase(); if (!base) return HX_CSTRING(""); return base->__join(inSeparator); }
 
 
    Dynamic __get(int inIndex) const { checkBase(); if (store==hx::arrayEmpty) return null(); return base->__GetItem(inIndex); }
