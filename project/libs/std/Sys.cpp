@@ -15,7 +15,7 @@ int __sys_prims() { return 0; }
 #	include <windows.h>
 #	include <direct.h>
 #	include <conio.h>
-#   include <locale.h>
+#	include <locale.h>
 #else
 #	include <errno.h>
 #ifndef EPPC
@@ -46,9 +46,8 @@ int __sys_prims() { return 0; }
 #endif
 #endif
 
-#ifdef HX_WINRT
+#if defined(HX_WINRT) && !defined(_XBOX_ONE)
 #include <string>
-#define WINRT_LOG(fmt, ...) {char buf[1024];sprintf(buf,"****LOG: %s(%d): %s \n    [" fmt "]\n",__FILE__,__LINE__,__FUNCTION__, __VA_ARGS__);OutputDebugString(buf);}
 #endif
 
 #ifndef CLK_TCK
@@ -562,7 +561,7 @@ static value sys_read_dir( value p) {
 	WIN32_FIND_DATAW d;
 	HANDLE handle;
 	buffer b;
-  #ifdef HX_WINRT
+  #if defined(HX_WINRT) && !defined(_XBOX_ONE)
 	std::wstring tempWStr(path);
 	std::string searchPath(tempWStr.begin(), tempWStr.end());
   #else
@@ -579,7 +578,7 @@ static value sys_read_dir( value p) {
    searchPath[len] = '\0';
 
 	gc_enter_blocking();
-  #ifdef HX_WINRT
+  #if defined(HX_WINRT) && !defined(_XBOX_ONE)
 	handle = FindFirstFileEx(searchPath.c_str(), FindExInfoStandard, &d, FindExSearchNameMatch, NULL, 0);
   #else
 	handle = FindFirstFileW(searchPath,&d);
