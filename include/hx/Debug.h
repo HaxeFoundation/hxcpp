@@ -504,6 +504,8 @@ void __hxcpp_dbg_continueThreads(int threadNumber, int count);
 void __hxcpp_dbg_stepThread(int threadNumber, int stepType, int stepCount);
 void __hxcpp_dbg_stepThreadLine(int threadNumber, int stepType, int stepCount);
 void __hxcpp_dbg_setPrint(bool in);
+bool __hxcpp_dbg_getPrintReady();
+void __hxcpp_dbg_setPrintReady(bool in);
 bool __hxcpp_dbg_getPrint();
 Array<Dynamic> __hxcpp_dbg_getStackVariables(int threadNumber,
                                              int stackFrameNumber,
@@ -565,6 +567,8 @@ inline void __hxcpp_dbg_continueThreads(int, int) { }
 inline void __hxcpp_dbg_stepThread(int, int, int) { }
 inline void __hxcpp_dbg_stepThreadLine(int, int, int) { }
 void __hxcpp_dbg_setPrint(bool) { }
+void __hxcpp_dbg_setPrintReady(bool) { }
+bool __hxcpp_dbg_getPrintReady() { }
 bool __hxcpp_dbg_getPrint() { }
 inline Array<Dynamic> __hxcpp_dbg_getStackVariables(int, int, bool, Dynamic)
     { return Array_obj< String>::__new(); }

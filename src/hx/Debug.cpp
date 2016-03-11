@@ -1587,6 +1587,7 @@ private:
 /* static */ std::map<int, CallStack *> CallStack::gMap;
 /* static */ std::list<CallStack *> CallStack::gList;
 bool printStatus;
+bool PrintReady;
 
 #ifdef HXCPP_DEBUGGER
 class Breakpoints
@@ -2291,6 +2292,13 @@ bool __hxcpp_dbg_getPrint() {
   return hx::printStatus;
 }
 
+void __hxcpp_dbg_setPrintReady(bool in) {
+  hx::PrintReady = in;
+}
+
+bool __hxcpp_dbg_getPrintReady() {
+  return hx::PrintReady;
+}
 Array<Dynamic> __hxcpp_dbg_getStackVariables(int threadNumber,
                                              int stackFrameNumber,
                                              bool unsafe,
