@@ -523,8 +523,8 @@ static value sys_time() {
 	<doc>Return the most accurate CPU time spent since the process started (in seconds)</doc>
 **/
 static value sys_cpu_time() {
-#if (defined(HX_WINRT) || defined(EPPC)) && !defined(_XBOX_ONE)
-   return alloc_float ((double)(CLOCKS_PER_SEC * clock()));
+#if defined(HX_WINRT) && !defined(_XBOX_ONE)
+    return alloc_float ((double)GetTickCount64()/1000.0);
 #elif defined(NEKO_WINDOWS)
 	FILETIME unused;
 	FILETIME stime;
@@ -532,6 +532,8 @@ static value sys_cpu_time() {
 	if( !GetProcessTimes(GetCurrentProcess(),&unused,&unused,&stime,&utime) )
 		return alloc_null();
 	return alloc_float( ((double)(utime.dwHighDateTime+stime.dwHighDateTime)) * 65.536 * 6.5536 + (((double)utime.dwLowDateTime + (double)stime.dwLowDateTime) / 10000000) );
+#elif defined(EPPC)
+    return alloc_float (clock()/(double)CLOCKS_PER_SEC);
 #else
 	struct tms t;
 	times(&t);
