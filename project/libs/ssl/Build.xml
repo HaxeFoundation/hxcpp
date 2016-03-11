@@ -100,6 +100,9 @@
 	<lib name="advapi32.lib" if="windows" unless="static_link" />
 	<lib name="crypt32.lib" if="windows" unless="static_link" />
 	<lib name="ws2_32.lib" if="windows" unless="static_link" />
+	
+	<flag value="-framework" if="mac"/>
+  	<flag value="Security" if="mac"/>
 </target>
 
 <target id="ssl" output="${HX_TARGET_PREFIX}ssl${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
@@ -109,6 +112,9 @@
 	<lib name="advapi32.lib" if="windows" unless="static_link" />
 	<lib name="crypt32.lib" if="windows" unless="static_link" />
 	<lib name="ws2_32.lib" if="windows" unless="static_link" />
+
+	<flag value="-framework" if="mac"/>
+  	<flag value="Security" if="mac"/>
 
     <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
