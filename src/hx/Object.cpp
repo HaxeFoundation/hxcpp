@@ -94,6 +94,8 @@ double hx::Object::_hx_Numeric(const String &inString, hx::PropertyAccess inCall
 {
    return __Field(inString, inCallProp);
 }
+void *hx::Object::_hx_getInterface(int hash) { return 0; }
+
 #else
 DynamicArray Object::__EnumParams() { return DynamicArray(); }
 String Object::__Tag() const { return HX_CSTRING("<not enum>"); }

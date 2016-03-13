@@ -182,6 +182,7 @@ public:
    double __INumField(int inFieldID);
 
    virtual double _hx_Numeric(const String &inString, hx::PropertyAccess inCallProp);
+   virtual void *_hx_getInterface(int inId);
    #else
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
