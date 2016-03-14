@@ -52,6 +52,7 @@ namespace cpp
       inline double asDouble() const;
       inline hx::Object *asObject() const { return type==typeObject ? valObject : 0; }
       inline String asString() const;
+      inline String getString() const;
 
       inline Variant() : valInt64(0), type(typeObject) { }
       //inline Variant() { copyBuf.b[0] = copyBuf.b[1] = 0; }
@@ -96,6 +97,8 @@ namespace cpp
       inline bool operator==(const null &inRHS) const { return isNull(); }
       inline bool operator!=(const null &inRHS) const { return !isNull(); }
       inline bool operator == (const Dynamic &inRHS) const { return Compare(inRHS)==0; }
+      inline bool operator==(const Variant &inRHS) const;
+      inline bool operator!=(const Variant &inRHS) const { return !operator==(inRHS); }
 
       inline bool operator != (const Dynamic &inRHS) const { return (Compare(inRHS) != 0); }
       inline bool operator != (const String &inRHS)  const;
@@ -252,6 +255,7 @@ namespace cpp
    }
 
 
+   String Variant::getString() const { return String(valStringPtr, valStringLen); }
    String Variant::asString() const
    {
       switch(type)
@@ -280,6 +284,26 @@ namespace cpp
       }
    }
 
+   bool Variant::operator==(const Variant &inRHS) const
+   {
+      if (type!=inRHS.type)
+         return false;
+
+      switch(type)
+      {
+         case typeInt: return valInt==inRHS.valInt;
+         case typeDouble:return valDouble==inRHS.valDouble;
+         case typeBool: return valBool==inRHS.valBool;
+         case typeString: return getString()==inRHS.getString();
+         case typeObject:
+               if (valObject==inRHS.valObject)
+                  return true;
+               if (!valObject)
+                  return false;
+               return valObject->__Compare( inRHS.valObject->__GetRealObject() )==0;
+      }
+      return false;
+   }
    int Variant::Compare(const Dynamic &inRHS) const
    {
       if (inRHS.mPtr==0)
