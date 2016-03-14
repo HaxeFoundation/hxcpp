@@ -522,8 +522,9 @@ static  ::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
    int count =  enum_obj::__FindArgCount(inName); \
    int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
    if (args!=count) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_ARG_COUNT(#enum_obj, inName, count, args)); \
-   if (args==0) {  ::Dynamic result =(new enum_obj())->__Field(inName,HX_PROP_DYNAMIC); if (result!=null()) return result; } \
-   return hx::CreateEnum<enum_obj >(inName,idx,inArgs); \
+   ::Dynamic result =(new enum_obj())->__Field(inName,HX_PROP_DYNAMIC); \
+   if (args==0 || !result.mPtr) return result; \
+   return result->__Run(inArgs); \
 }
 
 
