@@ -61,6 +61,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       #endif
 
       static hx::ObjectPtr<EnumBase_obj> Resolve(String inName);
+      inline static bool __GetStatic(const ::String &inName, Dynamic &outValue, hx::PropertyAccess inCallProp) { return false; }
 
       #if (HXCPP_API_LEVEL >= 330)
       inline cpp::Variant *getFixed() { return (cpp::Variant *)(this + 1); }

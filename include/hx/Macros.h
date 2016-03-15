@@ -514,6 +514,23 @@
 
 
 
+#if (HXCPP_API_LEVEL >= 330)
+
+#define HX_DEFINE_CREATE_ENUM(enum_obj) \
+static  ::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
+{ \
+   int count =  enum_obj::__FindArgCount(inName); \
+   int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
+   if (args!=count) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_ARG_COUNT(#enum_obj, inName, count, args)); \
+   ::Dynamic result; \
+   if (!enum_obj::__GetStatic(inName,result,hx::paccDynamic)) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_CONSTRUCTOR(#enum_obj, inName)); \
+   if (args==0) return result; \
+   return result->__Run(inArgs); \
+}
+
+
+#else
+
 #define HX_DEFINE_CREATE_ENUM(enum_obj) \
 static  ::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 { \
@@ -526,6 +543,8 @@ static  ::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
    if (args==0 || !result.mPtr) return result; \
    return result->__Run(inArgs); \
 }
+
+#endif
 
 
 #define HX_DECLARE_CLASS0(klass) \
