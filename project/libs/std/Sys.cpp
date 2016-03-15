@@ -15,7 +15,7 @@ int __sys_prims() { return 0; }
 #	include <windows.h>
 #	include <direct.h>
 #	include <conio.h>
-#       include <locale.h>
+#	include <locale.h>
 #else
 #	include <errno.h>
 #ifndef EPPC
@@ -46,9 +46,8 @@ int __sys_prims() { return 0; }
 #endif
 #endif
 
-#ifdef HX_WINRT
-#include <hx/Thread.h>
-#include <hx/Tls.h>
+#if defined(HX_WINRT) && !defined(_XBOX_ONE)
+#include <string>
 #endif
 
 #ifndef CLK_TCK
@@ -110,19 +109,10 @@ static value put_env( value e, value v ) {
 	<doc>Sleep a given number of seconds</doc>
 **/
 
-#ifdef HX_WINRT
-DECLARE_TLS_DATA(void,tlsSleepEvent)
-#endif
-
 static value sys_sleep( value f ) {
 	val_check(f,number);
 	gc_enter_blocking();
-#ifdef HX_WINRT
-   if (!tlsSleepEvent)
-      tlsSleepEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
-   WaitForSingleObjectEx(tlsSleepEvent, (int)(val_number(f)*1000), false);
-
-#elif defined(NEKO_WINDOWS)
+#if defined(NEKO_WINDOWS)
 	Sleep((DWORD)(val_number(f) * 1000));
 #elif defined(EPPC)
 //TODO: Implement sys_sleep for EPPC
@@ -533,8 +523,8 @@ static value sys_time() {
 	<doc>Return the most accurate CPU time spent since the process started (in seconds)</doc>
 **/
 static value sys_cpu_time() {
-#ifdef HX_WINRT
-   return alloc_float(0);
+#if defined(HX_WINRT) && !defined(_XBOX_ONE)
+    return alloc_float ((double)GetTickCount64()/1000.0);
 #elif defined(NEKO_WINDOWS)
 	FILETIME unused;
 	FILETIME stime;
@@ -543,7 +533,7 @@ static value sys_cpu_time() {
 		return alloc_null();
 	return alloc_float( ((double)(utime.dwHighDateTime+stime.dwHighDateTime)) * 65.536 * 6.5536 + (((double)utime.dwLowDateTime + (double)stime.dwLowDateTime) / 10000000) );
 #elif defined(EPPC)
-	return alloc_float ((double)(CLOCKS_PER_SEC * clock()));
+    return alloc_float (clock()/(double)CLOCKS_PER_SEC);
 #else
 	struct tms t;
 	times(&t);
@@ -559,12 +549,11 @@ static value sys_read_dir( value p) {
 	val_check(p,string);
 
         value result = alloc_array(0);
-#ifdef HX_WINRT
+#if defined(HX_WINRT) && defined(__cplusplus_winrt)
    auto folder = (Windows::Storage::StorageFolder::GetFolderFromPathAsync( ref new Platform::String(val_wstring(p)) ))->GetResults();
    auto results = folder->GetFilesAsync(Windows::Storage::Search::CommonFileQuery::DefaultQuery)->GetResults();
    for(int i=0;i<results->Size;i++)
       val_array_push(result,alloc_wstring(results->GetAt(i)->Path->Data()));
-
 #elif defined(NEKO_WINDOWS)
 	const wchar_t *path = val_wstring(p);
 	size_t len = wcslen(path);
@@ -574,8 +563,13 @@ static value sys_read_dir( value p) {
 	WIN32_FIND_DATAW d;
 	HANDLE handle;
 	buffer b;
+  #if defined(HX_WINRT) && !defined(_XBOX_ONE)
+	std::wstring tempWStr(path);
+	std::string searchPath(tempWStr.begin(), tempWStr.end());
+  #else
    wchar_t searchPath[ MAX_PATH + 4 ];
    memcpy(searchPath,path, len*sizeof(wchar_t));
+  #endif
 
 
 	if( len && path[len-1] != '/' && path[len-1] != '\\' )
@@ -586,7 +580,11 @@ static value sys_read_dir( value p) {
    searchPath[len] = '\0';
 
 	gc_enter_blocking();
+  #if defined(HX_WINRT) && !defined(_XBOX_ONE)
+	handle = FindFirstFileEx(searchPath.c_str(), FindExInfoStandard, &d, FindExSearchNameMatch, NULL, 0);
+  #else
 	handle = FindFirstFileW(searchPath,&d);
+  #endif
 	if( handle == INVALID_HANDLE_VALUE )
 	{
 		gc_exit_blocking();
@@ -636,11 +634,8 @@ static value sys_read_dir( value p) {
 	<doc>Return an absolute path from a relative one. The file or directory must exists</doc>
 **/
 static value file_full_path( value path ) {
-#ifdef HX_WINRT
-   Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
-   Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
-   Platform::String^ output = "Installed Location: " + installedLocation->Path;
-   return path;
+#if defined(HX_WINRT)
+	return path;
 #elif defined(NEKO_WINDOWS)
 	char buf[MAX_PATH+1];
 	val_check(path,string);
@@ -663,7 +658,7 @@ static value file_full_path( value path ) {
 	<doc>Return the path of the executable</doc>
 **/
 static value sys_exe_path() {
-#ifdef HX_WINRT
+#if defined(HX_WINRT) && defined(__cplusplus_winrt)
    Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
    Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
    return(alloc_wstring(installedLocation->Path->Data()));

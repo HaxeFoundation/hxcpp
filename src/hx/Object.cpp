@@ -10,7 +10,6 @@
 #ifdef _WIN32
 
 #include <windows.h>
-#include <time.h>
 // Stoopid windows ...
 #ifdef RegisterClass
 #undef RegisterClass
@@ -21,7 +20,6 @@
 
 #else
 
-#include <sys/time.h>
 #include <wchar.h>
 #ifndef EMSCRIPTEN
 typedef  int64_t  __int64;
@@ -48,7 +46,7 @@ Dynamic Object::__IField(int inFieldID)
 
 double Object::__INumField(int inFieldID)
 {
-	return __IField(inFieldID);
+   return __IField(inFieldID);
 }
 
 Dynamic *Object::__GetFieldMap() { return 0; }
@@ -113,7 +111,7 @@ class Object__scriptable : public hx::Object {
    typedef hx::Object super;
    typedef hx::Object __superString;
    HX_DEFINE_SCRIPTABLE(HX_ARR_LIST0);
-	HX_DEFINE_SCRIPTABLE_DYNAMIC;
+   HX_DEFINE_SCRIPTABLE_DYNAMIC;
 };
 
 hx::ScriptFunction Object::__script_construct;

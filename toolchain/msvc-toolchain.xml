@@ -7,10 +7,11 @@
 
 <set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
+<set name="ABI" value="-MD" if="winrt static_link" unless="ABI"/>
 <set name="ABI" value="-MT" unless="ABI"/>
 <set name="C_ABI" value="${ABI}" />
 
-<set name="ABI" value="-ZW" if="winrt" />
+<set name="ABI" value="-ZW" if="winrt" unless="ABI"/>
 <set name="CPP_ABI" value="${ABI}" />
 
 <set name="XPOBJ" value="xp" if="HXCPP_WINXP_COMPAT" />
@@ -113,7 +114,7 @@
 <linker id="exe" exe="link.exe" if="winrt">
   <fromfile value="@"/>
   <flag value="-nologo"/>
-  <flag value="-machine:x86"/>
+  <flag value="-machine:${MACHINE}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
   <flag value="-subsystem:windows" />
   <flag value="-MANIFEST:NO" />

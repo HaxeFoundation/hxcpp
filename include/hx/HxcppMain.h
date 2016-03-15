@@ -35,7 +35,7 @@
       hxcpp_main();
    }
 
-#elif defined(HX_WINRT)
+#elif defined(HX_WINRT) && defined(__cplusplus_winrt)
 
    #include <Roapi.h>
    [ Platform::MTAThread ]

@@ -117,7 +117,7 @@ inline L& UShrEq(L &inLHS, R inRHS) { inLHS = hx::UShr(inLHS,inRHS); return inLH
 template<typename L, typename R>
 inline L& ModEq(L &inLHS, R inRHS) { inLHS = DoubleMod(inLHS,inRHS); return inLHS; }
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__SNC__)
 template<typename R>
 inline hx::FieldRef AddEq(hx::FieldRef inLHS, R inRHS) { inLHS = inLHS + inRHS; return inLHS; }
 template<typename R>
@@ -166,7 +166,7 @@ template<typename R>
 inline hx::IndexRef ModEq(hx::IndexRef inLHS, R inRHS) { inLHS = DoubleMod(inLHS,inRHS); return inLHS; }
 
 
-#endif // __GNUC__
+#endif // __GNUC__ || __SNC__
 
 
 template<typename T> inline T TCastObject(hx::Object *inObj) { return hx::BadCast(); }
