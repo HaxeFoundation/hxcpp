@@ -288,14 +288,13 @@ MID = ENDIAN_MARK_ID_BYTE = is measured from the object pointer
 void CriticalGCError(const char *inMessage)
 {
    // Can't perfrom normal handling because it needs the GC system
-   #ifdef HX_WINRT
-      WINRT_LOG("HXCPP Critical Error: %s\n", inMessage);
-   #elif ANDROID
+   #ifdef ANDROID
    __android_log_print(ANDROID_LOG_ERROR, "HXCPP", "Critical Error: %s", inMessage);
+   #elif defined(HX_WINRT)
+      WINRT_LOG("HXCPP Critical Error: %s\n", inMessage);
    #else
    printf("Critical Error: %s\n", inMessage);
    #endif
-
 
    #if __has_builtin(__builtin_trap)
    __builtin_trap();
