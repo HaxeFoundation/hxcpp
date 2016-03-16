@@ -154,7 +154,6 @@ public:
    virtual void __Visit(hx::VisitContext *__inCtx) { }
    #endif
    virtual bool __Is(hx::Object *inClass) const { return true; }
-   virtual hx::Object *__ToInterface(const hx::type_info &inInterface) { return 0; }
    virtual hx::Object *__GetRealObject() { return this; }
 
    // helpers...
@@ -184,6 +183,7 @@ public:
    virtual double _hx_Numeric(const String &inString, hx::PropertyAccess inCallProp);
    virtual void *_hx_getInterface(int inId);
    #else
+   virtual hx::Object *__ToInterface(const hx::type_info &inInterface) { return 0; }
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
 
@@ -252,8 +252,10 @@ protected:
       if (inPtr)
       {
          mPtr = dynamic_cast<OBJ_ *>(inPtr->__GetRealObject());
+         #if (HXCPP_API_LEVEL < 330)
          if (!mPtr)
             mPtr = (Ptr)inPtr->__ToInterface(typeid(Obj));
+         #endif
          if (inThrowOnInvalid && !mPtr)
             ::hx::BadCast();
       }

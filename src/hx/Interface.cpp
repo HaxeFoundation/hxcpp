@@ -1,3 +1,4 @@
+#if (HXCPP_API_LEVEL < 330)
 #include <hxcpp.h>
 
 namespace hx
@@ -96,3 +97,4 @@ int Interface::__Compare(const hx::Object *o) const
 
 
 } // end namespace hx
+#endif // HXCPP_API_LEVEL 330

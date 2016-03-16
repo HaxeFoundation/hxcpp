@@ -120,14 +120,6 @@ void HaxeNativeClass::link()
 // -- HaxeNativeInterface ---
 
 
-HaxeNativeInterface::HaxeNativeInterface(const std::string &inName, ScriptNamedFunction *inFunctions,hx::ScriptableInterfaceFactory inFactory,const hx::type_info *inType)
-{
-   functions = inFunctions;
-   factory = inFactory;
-   name = inName;
-   mType = inType;
-}
-
 ScriptFunction HaxeNativeInterface::findFunction(const std::string &inName)
 {
    if (functions)
@@ -153,6 +145,43 @@ void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFuncti
 }
 
 
+#if (HXCPP_API_LEVEL >= 330)
+
+HaxeNativeInterface::HaxeNativeInterface(const std::string &inName,
+                                         ScriptNamedFunction *inFunctions,
+                                         void *inScriptTable )
+{
+   name = inName;
+   functions = inFunctions;
+   scriptTable = inScriptTable;
+}
+
+void ScriptableRegisterInterface( String inName,
+                                  ScriptNamedFunction *inFunctions,
+                                  void *inScriptTable)
+{
+   DBGLOG("ScriptableInterfaceFactory %s\n",inName.__s);
+   if (!sScriptRegisteredInterface)
+      sScriptRegisteredInterface = new HaxeNativeIntefaceMap();
+
+   HaxeNativeInterface *registered = new HaxeNativeInterface(inName.__s, inFunctions, inScriptTable);
+   (*sScriptRegisteredInterface)[inName.__s] = registered;
+}
+
+#else
+
+
+HaxeNativeInterface::HaxeNativeInterface(const std::string &inName,
+                                         ScriptNamedFunction *inFunctions,
+                                         hx::ScriptableInterfaceFactory inFactory,
+                                         const hx::type_info *inType)
+{
+   functions = inFunctions;
+   factory = inFactory;
+   name = inName;
+   mType = inType;
+}
+
 void ScriptableRegisterInterface( String inName,
                                   ScriptNamedFunction *inFunctions,
                                   const hx::type_info *inType,
@@ -161,9 +190,13 @@ void ScriptableRegisterInterface( String inName,
    DBGLOG("ScriptableInterfaceFactory %s\n",inName.__s);
    if (!sScriptRegisteredInterface)
       sScriptRegisteredInterface = new HaxeNativeIntefaceMap();
+
    HaxeNativeInterface *registered = new HaxeNativeInterface(inName.__s, inFunctions, inFactory,inType);
    (*sScriptRegisteredInterface)[inName.__s] = registered;
 }
+
+#endif
+
 
 
 HaxeNativeInterface *HaxeNativeInterface::findInterface(const std::string &inName)

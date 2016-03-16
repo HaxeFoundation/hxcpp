@@ -1189,7 +1189,11 @@ struct CppiaClassInfo
    int       interfaceSlotSize;
    void      **vtable;
    std::string name;
+   #if (HXCPP_API_LEVEL>=330)
+   std::map<int, void *> interfaceScriptTables;
+   #else
    std::map<std::string, void **> interfaceVTables;
+   #endif
    std::set<String> nativeProperties;
    hx::Class     mClass;
 
@@ -1540,10 +1544,12 @@ struct CppiaClassInfo
       return 0;
    }
 
+   #if (HXCPP_API_LEVEL < 330)
    void **getInterfaceVTable(const std::string &inName)
    {
       return interfaceVTables[inName];
    }
+   #endif
 
    void mark(hx::MarkContext *__inCtx)
    {
@@ -1695,6 +1701,7 @@ struct CppiaClassInfo
        return isNew;
    }
 
+   #if (HXCPP_API_LEVEL<330)
    void **createInterfaceVTable(int inTypeId)
    {
       std::vector<CppiaExpr *> vtable;
@@ -1735,6 +1742,7 @@ struct CppiaClassInfo
       memcpy(result, &vtable[0], sizeof(void *)*vtable.size());
       return result;
    }
+   #endif
 
    hx::Class *getSuperClass()
    {
@@ -1991,19 +1999,29 @@ struct CppiaClassInfo
       for(int i=0;i<implements.size();i++)
       {
          int id = implements[i];
+         #if (HXCPP_API_LEVEL < 330)
          void **vtable = createInterfaceVTable(id);
+         #endif
          while(id > 0)
          {
             TypeData *interface = cppia.types[id];
-            interfaceVTables[ interface->name.__s ] = vtable;
- 
             CppiaClassInfo  *cppiaInterface = interface->cppiaClass;
+            #if (HXCPP_API_LEVEL >= 330)
+            HaxeNativeInterface *native = HaxeNativeInterface::findInterface( interface->name.__s );
+            if (native)
+               interfaceScriptTables[interface->name.hash()] = native->scriptTable;
+            #else
+            interfaceVTables[ interface->name.__s ] = vtable;
             if (!cppiaInterface)
-                break;
+               break;
+            #endif
+
             Functions &intfFuncs = cppiaInterface->memberFunctions;
             for(int f=0;f<intfFuncs.size();f++)
             {
                int slot = cppia.getInterfaceSlot(intfFuncs[f]->name);
+               if (slot<0)
+                  printf("Interface slot '%s' not found\n",intfFuncs[f]->name.c_str());
                if (slot>interfaceSlotSize)
                   interfaceSlotSize = slot;
             }
@@ -2611,6 +2629,15 @@ public:
 
       return info->hasStaticValue(inName);
    }
+
+   #if (HXCPP_API_LEVEL >= 330)
+   void *_hx_getInterface(int inId)
+   {
+      return info->interfaceScriptTables[inId];
+   }
+   #endif
+
+
 };
 
 
@@ -3594,12 +3621,14 @@ struct SetExpr : public CppiaExpr
 
 };
 
+#if (HXCPP_API_LEVEL < 330)
 class CppiaInterface : public hx::Interface
 {
    typedef CppiaInterface __ME;
    typedef hx::Interface super;
    HX_DEFINE_SCRIPTABLE_INTERFACE
 };
+#endif
 
 enum CastOp
 {
@@ -3736,6 +3765,17 @@ struct ToInterface : public CppiaDynamicExpr
 
    const char *getName() { return array ? "ToInterfaceArray" : "ToInterface"; }
 
+   #if (HXCPP_API_LEVEL >= 300)
+   CppiaExpr *link(CppiaModule &inModule)
+   {
+      DBGLOG("Api 330 - no cast required\n");
+      CppiaExpr *linked = value->link(inModule);
+      delete this;
+      return linked;
+   }
+   hx::Object *runObject(CppiaCtx *ctx) { return 0; }
+
+   #else
    CppiaExpr *link(CppiaModule &inModule)
    {
       toType = inModule.types[toTypeId];
@@ -3794,6 +3834,7 @@ struct ToInterface : public CppiaDynamicExpr
       hx::Object *result = obj->__ToInterface(*interfaceInfo->mType);
       return result;
    }
+   #endif
 };
 
 struct NewExpr : public CppiaDynamicExpr

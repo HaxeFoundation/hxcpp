@@ -394,11 +394,21 @@ class HaxeNativeInterface
 {
 public:
    std::string  name;
-   const hx::type_info *mType;
-   ScriptableInterfaceFactory factory;
    ScriptNamedFunction *functions;
 
+   #if (HXCPP_API_LEVEL >= 330)
+   void *scriptTable;
+
+   HaxeNativeInterface(const std::string &inName, ScriptNamedFunction *inFunctions,void *inScriptTable);
+
+   #else
+   const hx::type_info *mType;
+   ScriptableInterfaceFactory factory;
+
    HaxeNativeInterface(const std::string &inName, ScriptNamedFunction *inFunctions,hx::ScriptableInterfaceFactory inFactory,const hx::type_info *inType);
+   #endif
+
+
    ScriptFunction findFunction(const std::string &inName);
 
    static HaxeNativeInterface *findInterface(const std::string &inName);

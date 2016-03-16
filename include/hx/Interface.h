@@ -1,6 +1,7 @@
 #ifndef HX_INTERFACE_H
 #define HX_INTERFACE_H
 
+#if (HXCPP_API_LEVEL < 330)
 namespace hx
 {
 
@@ -34,6 +35,8 @@ public:
 };
 
 }
+
+#endif
 
 #endif
 
