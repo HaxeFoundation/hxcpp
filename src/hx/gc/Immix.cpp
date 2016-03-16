@@ -120,12 +120,6 @@ static int sgAllocsSinceLastSpam = 0;
 #define GCLOG printf
 #endif
 
-
-#ifdef HX_WINRT
-using namespace Windows::Foundation;
-using namespace Windows::System::Threading;
-#endif
-
 #ifdef PROFILE_COLLECT
    #define STAMP(t) double t = __hxcpp_time_stamp();
    static double sLastCollect = __hxcpp_time_stamp();
@@ -294,13 +288,13 @@ MID = ENDIAN_MARK_ID_BYTE = is measured from the object pointer
 void CriticalGCError(const char *inMessage)
 {
    // Can't perfrom normal handling because it needs the GC system
-
    #ifdef ANDROID
    __android_log_print(ANDROID_LOG_ERROR, "HXCPP", "Critical Error: %s", inMessage);
+   #elif defined(HX_WINRT)
+      WINRT_LOG("HXCPP Critical Error: %s\n", inMessage);
    #else
    printf("Critical Error: %s\n", inMessage);
    #endif
-
 
    #if __has_builtin(__builtin_trap)
    __builtin_trap();
@@ -319,7 +313,7 @@ struct BlockDataInfo *gBlockStack = 0;
 typedef hx::QuickVec<hx::Object *> ObjectStack;
 
 
-#if defined(EMSCRIPTEN)
+#ifdef EMSCRIPTEN
 // Dummy lock
 typedef HxAtomicLock ThreadPoolLock;
 #else
@@ -328,7 +322,8 @@ typedef MyMutex ThreadPoolLock;
 
 static ThreadPoolLock sThreadPoolLock;
 
-#if !defined(HX_WINDOWS) && !defined(EMSCRIPTEN) && !defined(HX_WINRT)
+#if !defined(HX_WINDOWS) && !defined(EMSCRIPTEN) && \
+   !defined(__SNC__) && !defined(__ORBIS__)
 #define HX_GC_PTHREADS
 typedef pthread_cond_t ThreadPoolSignal;
 inline void WaitThreadLocked(ThreadPoolSignal &ioSignal)
@@ -2906,24 +2901,7 @@ public:
          int created = pthread_create(&result,0,SThreadLoop,info);
          bool ok = created==0;
       #else
-         #ifdef HX_WINRT
-	      bool ok = true;
-	      try
-	      {
-	        auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-	           {
-	               SThreadLoop(info);
-	           }, Platform::CallbackContext::Any);
-
-	         ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-	      }
-	      catch (...)
-	      {
-	         WINRT_LOG(".");
-	         ok = false;
-	      }
-
-         #elif defined(EMSCRIPTEN)
+         #ifdef EMSCRIPTEN
          // Only one thread
          #elif defined(HX_WINDOWS)
          bool ok = _beginthreadex(0,0,SThreadLoop,info,0,0) != 0;
@@ -4134,18 +4112,20 @@ int __hxcpp_gc_trace(hx::Class inClass,bool inPrint)
 {
     #if  !defined(HXCPP_DEBUG)
        #ifdef ANDROID
-          __android_log_print(ANDROID_LOG_ERROR, "hxcpp", "GC trace not enabled in release build.");
+       __android_log_print(ANDROID_LOG_ERROR, "hxcpp", "GC trace not enabled in release build.");
+       #elif defined(HX_WINRT)
+       WINRT_LOG("GC trace not enabled in release build.");
        #else
-          printf("WARNING : GC trace not enabled in release build.\n");
+       printf("WARNING : GC trace not enabled in release build.\n");
        #endif
-		 return 0;
+       return 0;
     #else
        gCollectTrace = inClass.GetPtr();
        gCollectTraceCount = 0;
        gCollectTraceDoPrint = inPrint;
        hx::InternalCollect(false,false);
        gCollectTrace = 0;
-		 return gCollectTraceCount;
+       return gCollectTraceCount;
     #endif
 }
 

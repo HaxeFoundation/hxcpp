@@ -19,11 +19,6 @@
 #define DBGLOG printf
 #endif
 
-#ifdef HX_WINRT
-using namespace Windows::Foundation;
-using namespace Windows::System::Threading;
-#endif
-
 #if _MSC_VER
 #ifndef snprintf
 #define snprintf _snprintf
@@ -154,30 +149,11 @@ public:
    
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
-#ifndef HX_WINRT
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
-#else
-	   bool ok = true;
-	   try
-	   {
-	     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-	        {
-	            ProfileMainLoop(0);
-	        }, Platform::CallbackContext::Any);
-
-	      ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-	   }
-	   catch (...)
-	   {
-	      ok = false;
-	   }
-
-
-#endif
 #else
             pthread_t result;
             pthread_create(&result, 0, ProfileMainLoop, 0);
-   #endif
+#endif
 }
 
         gThreadMutex.Unlock();
@@ -323,12 +299,7 @@ struct ProfileEntry
 
         while (gThreadRefCount > 0) { 
 #ifdef HX_WINDOWS
-#ifndef HX_WINRT
             Sleep(millis);
-#else
-            // TODO
-            Sleep(millis);
-#endif
 #else
             struct timespec t;
             struct timespec tmp;
@@ -412,30 +383,11 @@ public:
         gThreadRefCount += 1;
         if (gThreadRefCount == 1) {
 #if defined(HX_WINDOWS)
-#ifndef HX_WINRT
             _beginthreadex(0, 0, ProfileMainLoop, 0, 0, 0);
-#else
-		   bool ok = true;
-		   try
-		   {
-		     auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-		        {
-		            ProfileMainLoop(0);
-		        }, Platform::CallbackContext::Any);
-
-		      ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-		   }
-		   catch (...)
-		   {
-		      WINRT_LOG(".");
-		      ok = false;
-		   }
-
-#endif
 #else
             pthread_t result;
             pthread_create(&result, 0, ProfileMainLoop, 0);
-   #endif
+#endif
 }
 
         gThreadMutex.Unlock();
@@ -649,11 +601,7 @@ private:
 
         while (gThreadRefCount > 0) { 
 #ifdef HX_WINDOWS
-#ifndef HX_WINRT
             Sleep(millis);
-#else
-            Sleep(millis);
-#endif
 #else
             struct timespec t;
             struct timespec tmp;
@@ -2292,17 +2240,9 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created)
 
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
 {
-    if (!hx::CallStack::CanBeCaught(toThrow)) {
-	#ifdef HX_WINRT
-	//todo
-        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " ), true);
-	
-	#else
-        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: " +
-                                            toThrow->toString()), true);
-	#endif
-      }
-
+    if (!hx::CallStack::CanBeCaught(toThrow))
+        hx::CriticalErrorHandler(HX_CSTRING("Uncatchable Throw: ") +
+                                            toThrow->toString(), true);
     return hx::Throw(toThrow);
 }
 
