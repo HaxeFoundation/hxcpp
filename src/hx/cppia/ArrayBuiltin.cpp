@@ -677,6 +677,11 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
 };
 
+#if (HXCPP_API_LEVEL>=330)
+  #define BasePtr(x) x
+#else
+  #define BasePtr(x) x.mPtr
+#endif
 
 
 
@@ -868,11 +873,11 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       {
          Dynamic val = args[0]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__concat(val).mPtr;
+         return BasePtr(thisVal->__concat(val));
       }
       if (FUNC==afCopy)
       {
-         return thisVal->__copy().mPtr;
+         return BasePtr(thisVal->__copy());
       }
       if (FUNC==afSplice)
       {
@@ -880,7 +885,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          Dynamic end = args[1]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__splice(pos,end).mPtr;
+         return BasePtr(thisVal->__splice(pos,end));
       }
       if (FUNC==afSlice)
       {
@@ -888,19 +893,19 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          Dynamic end = args[1]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__slice(pos,end).mPtr;
+         return BasePtr(thisVal->__slice(pos,end));
       }
       if (FUNC==afMap)
       {
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__map(a0).mPtr;
+         return BasePtr(thisVal->__map(a0));
       }
       if (FUNC==afFilter)
       {
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__filter(a0).mPtr;
+         return BasePtr(thisVal->__filter(a0));
       }
 
       if (FUNC==afIterator)

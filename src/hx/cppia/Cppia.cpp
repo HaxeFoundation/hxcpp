@@ -1147,8 +1147,15 @@ struct CppiaEnumConstructor
          throw Dynamic(HX_CSTRING("Bad enum arg count"));
       if (args.size()==0)
          return value.mPtr;
+      #if (HXCPP_API_LEVEL >= 330)
+      EnumBase_obj *result = new ((int)args.size()) CppiaEnumBase(classInfo);
+      result->setIdentity(name, index, args.size());
+      for(int i=0;i<args.size();i++)
+         result->init( i, inArgs[i] );
+      #else
       EnumBase_obj *result = new CppiaEnumBase(classInfo);
       result->__Set(name, index, inArgs);
+      #endif
       return result;
    }
 };
@@ -2041,7 +2048,11 @@ struct CppiaClassInfo
          {
             EnumBase base = new CppiaEnumBase(this);
             e.value = base;
+            #if (HXCPP_API_LEVEL>=330)
+            base->setIdentity(cppia.strings[e.nameId],i,0);
+            #else
             base->__Set( cppia.strings[e.nameId],i,null() );
+            #endif
          }
          else
          {
@@ -3348,6 +3359,21 @@ struct CallFunExpr : public CppiaExpr
    {
       compiler.trace("Function called implementation");
 
+      /*
+      CTmp sp = cSp;
+      CTmp frame = cFrame;
+      pushArgs();
+      cFrame = cSp;
+      cTrace("set frame");
+      cCall(callScriptable, ctx, ConstValue(function) );
+      cSp = sp;
+      cFrame = frame;
+      cCheckException(); // if stack.exp (goto handler or return)
+      cConvert(inDest,resultType,function->getType() );
+      */
+
+
+
       AllocTemp pointer(compiler);
       AllocTemp frame(compiler);
 
@@ -4062,7 +4088,11 @@ struct CallGetIndex : public CppiaIntExpr
    {
       hx::Object *obj = thisExpr->runObject(ctx);
       CPPIA_CHECK(obj);
+      #if (HXCPP_API_LEVEL>=330)
+      return static_cast<EnumBase_obj *>(obj)->getIndex();
+      #else
       return obj->__Index();
+      #endif
    }
 };
 
@@ -4131,7 +4161,11 @@ struct CallGetField : public CppiaDynamicExpr
       CPPIA_CHECK(obj);
       String name = nameExpr->runString(ctx);
       int isProp = isPropExpr->runInt(ctx);
+      #if (HXCPP_API_LEVEL>=330)
+      return obj->__Field(name,(hx::PropertyAccess)isProp).asObject();
+      #else
       return obj->__Field(name,(hx::PropertyAccess)isProp).mPtr;
+      #endif
    }
 };
 
@@ -6078,7 +6112,11 @@ struct EnumIExpr : public CppiaDynamicExpr
    {
       hx::Object *obj = object->runObject(ctx);
       BCR_CHECK;
+      #if (HXCPP_API_LEVEL>=330)
+      return static_cast<EnumBase_obj *>(obj)->getParamI(index).mPtr;
+      #else
       return obj->__EnumParams()[index].mPtr;
+      #endif
    }
 
 };
