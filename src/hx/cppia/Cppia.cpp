@@ -80,6 +80,10 @@ void cppiaClassInit(CppiaClassInfo *inClass, CppiaCtx *ctx, int inPhase);
 
 static int sScriptId = 0;
 
+const char **sgNativeNameSlots = 0;
+int sgNativeNameSlotCount = 0;
+
+
 // --- CppiaModule ----
 
 CppiaModule::CppiaModule()
@@ -90,6 +94,10 @@ CppiaModule::CppiaModule()
    creatingFunction = 0;
    scriptId = ++sScriptId;
    strings = Array_obj<String>::__new(0,0);
+   if (sgNativeNameSlotCount>0)
+      for(int i=1;i<sgNativeNameSlotCount;i++)
+         interfaceSlots[sgNativeNameSlots[i]] = i;
+
 }
 
 void CppiaModule::setDebug(CppiaExpr *outExpr, int inFileId, int inLine)
@@ -115,7 +123,11 @@ int CppiaModule::getInterfaceSlot(const std::string &inName)
    InterfaceSlots::iterator it = interfaceSlots.find(inName);
    if (it==interfaceSlots.end())
    {
+      #if (HXCPP_API_LEVEL >= 330)
+      int result = interfaceSlots.size()+1;
+      #else
       int result = interfaceSlots.size()+2;
+      #endif
       interfaceSlots[inName] = result;
       return result;
    }
@@ -129,6 +141,12 @@ int CppiaModule::findInterfaceSlot(const std::string &inName)
    if (it==interfaceSlots.end())
       return -1;
    return it->second;
+}
+
+void ScriptableRegisterNameSlots(const char *inNames[], int inLength)
+{
+   sgNativeNameSlots = inNames;
+   sgNativeNameSlotCount = inLength;
 }
 
 // --- StackLayout ---

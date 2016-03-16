@@ -249,6 +249,8 @@ void ScriptableRegisterClass( String inName, int inBaseSize, ScriptNamedFunction
 
 #if (HXCPP_API_LEVEL >= 330)
 void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions, void *inInterfacePointers);
+void ScriptableRegisterNameSlots(const char *inNames[], int inLength);
+
 #else
 void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions,const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
 #endif
@@ -265,7 +267,7 @@ void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields);
 bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,hx::PropertyAccess inCallProp, Dynamic &outValue);
 
 
-}
+} // End namespace hx
 
 void __scriptable_load_neko(String inName);
 void __scriptable_load_cppia(String inCode);
