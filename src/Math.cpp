@@ -132,10 +132,23 @@ Class Math_obj::__GetClass() const { return __mClass; }
 bool Math_obj::__Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; } \
 */
 
+#if HXCPP_SCRIPTABLE
+static hx::StaticInfo Math_obj_sStaticStorageInfo[] = {
+	{hx::fsFloat,(void *) &Math_obj::PI,HX_HCSTRING("PI","\xf9","\x45","\x00","\x00")},
+	{hx::fsFloat,(void *) &Math_obj::NEGATIVE_INFINITY,HX_HCSTRING("NEGATIVE_INFINITY","\x32","\xf1","\x1e","\x93")},
+	{hx::fsFloat,(void *) &Math_obj::POSITIVE_INFINITY,HX_HCSTRING("POSITIVE_INFINITY","\x6e","\x48","\x1e","\x72")},
+	{hx::fsFloat,(void *) &Math_obj::NaN,HX_HCSTRING("NaN","\x9b","\x84","\x3b","\x00")},
+	{ hx::fsUnknown, 0, null()}
+};
+#endif
 
 void Math_obj::__boot()
 {
    Static(Math_obj::__mClass) = hx::RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
+
+#ifdef HXCPP_SCRIPTABLE
+   Math_obj::__mClass->mStaticStorageInfo = Math_obj_sStaticStorageInfo;
+#endif
 
 	unsigned int t;
 #ifdef HX_WINDOWS

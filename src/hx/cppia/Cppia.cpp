@@ -7336,9 +7336,9 @@ struct OpCompare : public OpCompareBase
       {
          case compFloat:
          {
-            float leftVal = left->runFloat(ctx);
+            Float leftVal = left->runFloat(ctx);
             BCR_CHECK;
-            float rightVal = right->runFloat(ctx);
+            Float rightVal = right->runFloat(ctx);
             return compare.test(leftVal,rightVal);
          }
          case compInt:
