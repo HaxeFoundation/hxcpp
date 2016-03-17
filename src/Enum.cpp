@@ -125,7 +125,8 @@ String EnumBase_obj::toString() {
    Array<String> args = Array_obj<String>::__new(mFixedFields);
    cpp::Variant *v = getFixed();
    for(int i=0;i<mFixedFields;i++)
-      args[i] = v[i];
+      args[i] = v[i].asString();
+
    return tag + HX_CSTRING("(") + args->join(HX_CSTRING(",")) + HX_CSTRING(")");
    #else
    if (mArgs==null() || mArgs->length==0)

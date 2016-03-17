@@ -1166,7 +1166,7 @@ struct CppiaEnumConstructor
       if (args.size()==0)
          return value.mPtr;
       #if (HXCPP_API_LEVEL >= 330)
-      EnumBase_obj *result = new ((int)args.size()) CppiaEnumBase(classInfo);
+      EnumBase_obj *result = new ((int)args.size()*sizeof(cpp::Variant)) CppiaEnumBase(classInfo);
       result->setIdentity(name, index, args.size());
       for(int i=0;i<args.size();i++)
          result->init( i, inArgs[i] );
