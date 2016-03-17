@@ -1632,7 +1632,7 @@ struct CppiaClassInfo
        DBGLOG("Class %s %s\n", name.c_str(), isEnum ? "enum" : isInterface ? "interface" : "class" );
 
        bool isNew = //(resolved == null() || !IsCppiaClass(resolved) ) &&
-                   !HaxeNativeClass::findClass(name);
+                   (!HaxeNativeClass::findClass(name) && !HaxeNativeInterface::findInterface(name) );
 
        if (isNew && isEnum)
        {
@@ -3783,7 +3783,7 @@ struct ToInterface : public CppiaDynamicExpr
 
    const char *getName() { return array ? "ToInterfaceArray" : "ToInterface"; }
 
-   #if (HXCPP_API_LEVEL >= 300)
+   #if (HXCPP_API_LEVEL >= 330)
    CppiaExpr *link(CppiaModule &inModule)
    {
       DBGLOG("Api 330 - no cast required\n");

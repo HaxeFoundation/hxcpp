@@ -55,8 +55,18 @@ struct CppiaStream
    }
    void skipWhitespace()
    {
-      while(data<max && *data<=32)
-         skipChar();
+      while(true)
+      {
+         while(data<max && *data<=32)
+            skipChar();
+         if (data<max && *data=='#')
+         {
+            while(data<max && *data!='\n')
+               skipChar();
+         }
+         else
+            break;
+      }
    }
    int getLineId()
    {
