@@ -65,7 +65,7 @@ namespace cpp
       template<typename SOURCE_>
       Variant(const hx::ObjectPtr<SOURCE_> &inObjectPtr);
 
-      inline Variant(Dynamic &inRHS); // later
+      inline Variant(const Dynamic &inRHS); // later
       inline Variant(hx::Object *inValue) : type(typeObject), valObject(inValue) { }
       inline operator Dynamic() const; // later
       inline operator String() const;
@@ -178,7 +178,7 @@ namespace cpp
 
    Variant::Variant(const ::String &inValue) : type(typeString), valStringPtr(inValue.__s), valStringLen(inValue.length) { }
 
-   Variant::Variant(Dynamic &inRHS) : type(typeObject), valObject(inRHS.mPtr) { }
+   Variant::Variant(const Dynamic &inRHS) : type(typeObject), valObject(inRHS.mPtr) { }
 
    template<typename SOURCE_>
    Variant::Variant(const hx::ObjectPtr<SOURCE_> &inObjectPtr) :
