@@ -2030,9 +2030,9 @@ struct CppiaClassInfo
                interfaceScriptTables[interface->name.hash()] = native->scriptTable;
             #else
             interfaceVTables[ interface->name.__s ] = vtable;
+            #endif
             if (!cppiaInterface)
                break;
-            #endif
 
             Functions &intfFuncs = cppiaInterface->memberFunctions;
             for(int f=0;f<intfFuncs.size();f++)

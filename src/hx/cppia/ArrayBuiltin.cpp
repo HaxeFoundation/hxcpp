@@ -28,6 +28,7 @@ enum ArrayFunc
    af__get,
    af__set,
    af__crement,
+   af__SetSizeExact,
 };
 
 static int sArgCount[] = 
@@ -54,6 +55,7 @@ static int sArgCount[] =
    1, //af__get,
    2, //af__set,
    1, //af__crement,
+   1, //af__SetSizeExact,
 };
 
 struct ArrayBuiltinBase : public CppiaExpr
@@ -185,6 +187,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          case afSort:
          case afInsert:
          case afUnshift:
+         case af__SetSizeExact:
             return etVoid;
 
          case afPush:
@@ -586,8 +589,14 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_VCHECK;
          thisVal->unshift(elem);
       }
-
-
+      if (FUNC==af__SetSizeExact)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_VCHECK;
+         int size = args[0]->runInt(ctx);
+         BCR_VCHECK;
+         thisVal->__SetSizeExact(size);
+      }
    }
 
    CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue)
@@ -774,7 +783,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       if (FUNC==afJoin || FUNC==afToString)
          return Dynamic(runString(ctx)).mPtr;
 
-      if (FUNC==afSort || FUNC==afInsert || FUNC==afUnshift)
+      if (FUNC==afSort || FUNC==afInsert || FUNC==afUnshift || FUNC==af__SetSizeExact)
       {
          runVoid(ctx);
          return 0;
@@ -946,6 +955,16 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          thisVal->__unshift(val);
          return;
       }
+      if (FUNC==af__SetSizeExact)
+      {
+         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         BCR_VCHECK;
+         int size = args[0]->runInt(ctx);
+         BCR_VCHECK;
+         thisVal->__SetSizeExact(size);
+         return;
+      }
+
 
       switch(inlineGetType())
       {
@@ -1057,6 +1076,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          case afSort:
          case afInsert:
          case afUnshift:
+         case af__SetSizeExact:
             return etVoid;
 
          case afPush:
@@ -1153,10 +1173,12 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<afIndexOf,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("lastIndexOf"))
       return TCreateArrayBuiltin<afLastIndexOf,NoCrement>(src, inType, inThisExpr, ioExpressions);
-   if (field==HX_CSTRING("__get"))
+   if (field==HX_CSTRING("__get") || field==HX_CSTRING("__unsafe_get"))
       return TCreateArrayBuiltin<af__get,NoCrement>(src, inType, inThisExpr, ioExpressions);
-   if (field==HX_CSTRING("__set"))
+   if (field==HX_CSTRING("__set") || field==HX_CSTRING("__unsafe_set"))
       return TCreateArrayBuiltin<af__set,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("__SetSizeExact"))
+      return TCreateArrayBuiltin<af__SetSizeExact,NoCrement>(src, inType, inThisExpr, ioExpressions);
 
    return 0;
 }
