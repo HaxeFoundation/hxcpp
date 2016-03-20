@@ -5411,6 +5411,31 @@ struct MemStackFloatReference : public CppiaExpr
 };
 
 
+#if (HXCPP_API_LEVEL>=330)
+struct VirtualArrayLength : public CppiaIntExpr
+{
+   CppiaExpr   *thisExpr;
+  
+   VirtualArrayLength(CppiaExpr *inSrc, CppiaExpr *inThis) : CppiaIntExpr(inSrc)
+   {
+      thisExpr = inThis;
+   }
+
+   const char *getName() { return "length"; }
+   CppiaExpr *link(CppiaModule &inModule)
+   {
+      thisExpr = thisExpr->link(inModule);
+      return this;
+   }
+   int runInt(CppiaCtx *ctx)
+   {
+      cpp::VirtualArray_obj *obj = (cpp::VirtualArray_obj *)thisExpr->runObject(ctx);
+      BCR_CHECK;
+      CPPIA_CHECK(obj);
+      return obj->get_length();
+   }
+};
+#endif
 
 
 struct GetFieldByLinkage : public CppiaExpr
@@ -5497,6 +5522,11 @@ struct GetFieldByLinkage : public CppiaExpr
       if (!replace && type->arrayType!=arrNotArray && field==HX_CSTRING("length"))
       {
          int offset = (int) offsetof( Array_obj<int>, length );
+         #if (HXCPP_API_LEVEL>=330)
+         if (type->arrayType==arrAny)
+            replace = new VirtualArrayLength(this,object);
+         else
+         #endif
          replace = object ?
              (CppiaExpr*)new MemReference<int,locObj>(this,offset,object):
              (CppiaExpr*)new MemReference<int,locThis>(this,offset);
@@ -5504,7 +5534,7 @@ struct GetFieldByLinkage : public CppiaExpr
 
       if (!replace && type->name==HX_CSTRING("String") && field==HX_CSTRING("length"))
       {
-         int offset = (int) offsetof( Array_obj<int>, length );
+         int offset = (int) offsetof( Array_obj<Int>, length );
          replace = object ?
              (CppiaExpr*)new MemReference<int,locObj>(this,offset,object):
              (CppiaExpr*)new MemReference<int,locThis>(this,offset);
