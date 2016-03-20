@@ -81,11 +81,11 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       }
       DynamicArray getParameters();
 
-      inline Dynamic getObject(int inId) { return getFixed()[inId]; }
+      inline Dynamic getObject(int inId) { return getFixed()[inId].asDynamic(); }
       inline int getInt(int inId) { return getFixed()[inId]; }
       inline Float getFloat(int inId) { return getFixed()[inId]; }
       inline bool getBool(int inId) { return getFixed()[inId]; }
-      inline ::String getString(int inId) { return getFixed()[inId]; }
+      inline ::String getString(int inId) { return getFixed()[inId].asString(); }
       inline Dynamic getParamI(int inId) { return getFixed()[inId]; }
       inline int getParamCount() { return mFixedFields; }
 

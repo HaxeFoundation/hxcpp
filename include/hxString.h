@@ -57,6 +57,7 @@ public:
    explicit String(const bool &inRHS);
    inline String(const null &inRHS) : __s(0), length(0) { }
    String(hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
+   inline String(const ::cpp::Variant &inRHS) { *this = inRHS.asString(); }
 
    static void __boot();
 

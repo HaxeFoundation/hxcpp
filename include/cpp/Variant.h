@@ -51,6 +51,7 @@ namespace cpp
       inline bool isString() const;
       inline double asDouble() const;
       inline hx::Object *asObject() const { return type==typeObject ? valObject : 0; }
+      inline hx::Object *asDynamic() const; // later
       inline String asString() const;
       inline String getString() const;
 
@@ -67,8 +68,12 @@ namespace cpp
 
       inline Variant(const Dynamic &inRHS); // later
       inline Variant(hx::Object *inValue) : type(typeObject), valObject(inValue) { }
-      inline operator Dynamic() const; // later
-      inline operator String() const;
+
+      template<typename T,typename H>
+      explicit inline Variant(const cpp::Struct<T,H> &inVal);
+
+      //inline operator Dynamic() const; // later
+      //inline operator String() const;
       inline operator double() const { return asDouble(); }
       inline operator int() const { return asInt(); }
       inline operator bool() const { return asInt(); }
@@ -94,10 +99,11 @@ namespace cpp
 
       //inline Variant &operator=(const Variant &inRhs) { copyBuf = inRhs.copyBuf; return *this; }
 
+      template<typename T>
+      bool operator==(const T &inRHS) const;
       inline bool operator==(const null &inRHS) const { return isNull(); }
       inline bool operator!=(const null &inRHS) const { return !isNull(); }
       inline bool operator == (const Dynamic &inRHS) const { return Compare(inRHS)==0; }
-      inline bool operator==(const Variant &inRHS) const;
       inline bool operator!=(const Variant &inRHS) const { return !operator==(inRHS); }
 
       inline bool operator != (const Dynamic &inRHS) const { return (Compare(inRHS) != 0); }
@@ -165,6 +171,10 @@ namespace cpp
    template<> inline bool isStringType(const Dynamic &inRHS) { return inRHS.mPtr && inRHS->__GetType()==vtString; }
    template<> inline bool isStringType(const cpp::Variant &inRHS) { return inRHS.isString(); }
 
+   template<typename T,typename H>
+   Variant::Variant(const cpp::Struct<T,H> &inVal) :
+           type(typeObject), valObject(Dynamic(inVal).mPtr) { }
+
 
 #define HX_ARITH_VARIANT( op ) \
    inline double operator op (const double &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS;} \
@@ -218,6 +228,23 @@ namespace cpp
       return 0.0;
    }
 
+
+   hx::Object *Variant::asDynamic() const
+   {
+      switch(type)
+      {
+         case typeInt: return Dynamic(valInt).mPtr;
+         case typeDouble: return Dynamic(valDouble).mPtr;
+         case typeBool: return Dynamic(valBool).mPtr;
+         case typeString: return Dynamic(String(valStringPtr, valStringLen)).mPtr;
+         case typeObject: return valObject;
+         default: ;
+      }
+      return 0;
+   }
+
+
+   /*
    Variant::operator Dynamic() const
    {
       switch(type)
@@ -231,6 +258,7 @@ namespace cpp
       }
       return null();
    }
+   */
 
 
    bool Variant::isNumeric() const
@@ -269,7 +297,7 @@ namespace cpp
       }
       return String();
    }
-   Variant::operator String() const { return asString(); }
+   //Variant::operator String() const { return asString(); }
 
 
    void Variant::mark(hx::MarkContext *__inCtx)
@@ -284,23 +312,19 @@ namespace cpp
       }
    }
 
-   bool Variant::operator==(const Variant &inRHS) const
+   template<typename T>
+   bool Variant::operator==(const T &inRHS) const
    {
-      if (type!=inRHS.type)
-         return false;
-
       switch(type)
       {
-         case typeInt: return valInt==inRHS.valInt;
-         case typeDouble:return valDouble==inRHS.valDouble;
-         case typeBool: return valBool==inRHS.valBool;
-         case typeString: return getString()==inRHS.getString();
+         case typeInt: return valInt==(int)inRHS;
+         case typeDouble:return valDouble==(double)inRHS;
+         case typeBool: return valBool==(bool)inRHS;
+         case typeString: return getString()==String(inRHS);
          case typeObject:
-               if (valObject==inRHS.valObject)
-                  return true;
                if (!valObject)
-                  return false;
-               return valObject->__Compare( inRHS.valObject->__GetRealObject() )==0;
+                  return inRHS == null();
+               return valObject->__Compare( Dynamic(inRHS).mPtr )==0;
       }
       return false;
    }

@@ -3714,7 +3714,18 @@ struct CastExpr : public CppiaDynamicExpr
          case arrInt:          return convert<int>(obj);
          case arrFloat:        return convert<Float>(obj);
          case arrString:       return convert<String>(obj);
+         #if (HXCPP_API_LEVEL>=330)
+         case arrAny:
+         {
+            ArrayBase *base = dynamic_cast<ArrayBase *>(obj);
+            printf("dcast -> %p\n", base);
+            if (base)
+               return new cpp::VirtualArray_obj(base);
+            return dynamic_cast<cpp::VirtualArray_obj *>(obj);
+         }
+         #else
          case arrAny:          return convert<Dynamic>(obj);
+         #endif
          case arrObject:       return obj;
          case arrNotArray:     throw "Bad cast";
       }
@@ -4901,7 +4912,9 @@ struct CallMember : public CppiaExpr
          {
             int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
             //printf("   vslot %d\n", vtableSlot);
+            #if (HXCPP_API_LEVEL<330)
             if (vtableSlot!=-1)
+            #endif
             {
                ExprType returnType = type->cppiaClass->findFunctionType(inModule,fieldId);
                replace = new CallMemberVTable( this, thisExpr, vtableSlot, returnType, type->cppiaClass->isInterface, args );
@@ -4933,6 +4946,7 @@ struct CallMember : public CppiaExpr
          replace = createStringBuiltin(this, thisExpr, field, args);
       }
 
+      // TODO getIndex
       if (!replace && field==HX_CSTRING("__Index"))
          replace = new CallGetIndex(this, thisExpr);
       if (!replace && field==HX_CSTRING("__SetField") && args.size()==3)

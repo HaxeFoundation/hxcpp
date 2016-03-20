@@ -686,17 +686,23 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
 };
 
-#if (HXCPP_API_LEVEL>=330)
-  #define BasePtr(x) x
-#else
-  #define BasePtr(x) x.mPtr
-#endif
 
 
 
 template<int FUNC,int OP>
 struct ArrayBuiltinAny : public ArrayBuiltinBase
 {
+
+#if (HXCPP_API_LEVEL>=330)
+  #define BasePtr(x) x
+  typedef ArrayBase ArrayAnyImpl;
+#else
+  #define BasePtr(x) x.mPtr
+  typedef cpp::VirtualArray ArrayAnyImpl;
+#endif
+
+
+
    ArrayBuiltinAny(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions)
       : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
    {
@@ -706,7 +712,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
    {
       if (FUNC==afPush)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_CHECK;
          hx::Object * val = args[0]->runObject(ctx);
          BCR_CHECK;
@@ -714,7 +720,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
       if (FUNC==afRemove)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_CHECK;
          hx::Object * val = args[0]->runObject(ctx);
          BCR_CHECK;
@@ -722,7 +728,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
       if (FUNC==afIndexOf)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_CHECK;
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
@@ -732,7 +738,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
       if (FUNC==afLastIndexOf)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_CHECK;
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
@@ -754,7 +760,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
    {
       if (FUNC==afJoin)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_CHECK;
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
@@ -763,7 +769,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
       if (FUNC==afToString)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_CHECK;
          return thisVal->toString();
       }
@@ -790,7 +796,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
 
 
-      ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+      ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
       BCR_CHECK;
       CPPIA_CHECK(thisVal);
 
@@ -928,7 +934,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
    {
       if (FUNC==afSort)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_VCHECK;
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_VCHECK;
@@ -937,7 +943,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
       if (FUNC==afInsert)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_VCHECK;
          Dynamic pos = args[0]->runObject(ctx);
          BCR_VCHECK;
@@ -948,7 +954,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
       if (FUNC==afUnshift)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_VCHECK;
          Dynamic val = args[0]->runObject(ctx);
          BCR_VCHECK;
@@ -957,7 +963,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
       if (FUNC==af__SetSizeExact)
       {
-         ArrayBase *thisVal = (ArrayBase *)thisExpr->runObject(ctx);
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_VCHECK;
          int size = args[0]->runInt(ctx);
          BCR_VCHECK;

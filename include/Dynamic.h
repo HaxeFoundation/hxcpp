@@ -28,6 +28,7 @@ public:
    Dynamic(const null &inNull) : super(0) { }
    Dynamic(const Dynamic &inRHS) : super(inRHS.mPtr) { }
    explicit Dynamic(const HX_CHAR *inStr);
+   Dynamic(const cpp::Variant &inRHS) : super(inRHS.asDynamic()) { }
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
    Dynamic(const id inObjc);

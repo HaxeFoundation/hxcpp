@@ -472,7 +472,7 @@ public:
 
    String ItemString(int inI)
    {
-      String result(__get(inI));
+      String result = __get(inI);
       if (result==null()) return HX_CSTRING("null");
       return result;
    }
@@ -740,8 +740,8 @@ public:
    virtual int __memcmp(const cpp::VirtualArray &a0) { return memcmp(a0); }
    virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
 
-   virtual void set(int inIndex, const cpp::Variant &inValue) { Item(inIndex) = inValue; }
-   virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) { *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue; }
+   virtual void set(int inIndex, const cpp::Variant &inValue) { Item(inIndex) = ELEM_(inValue); }
+   virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) { *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = ELEM_(inValue); }
    #endif
 };
 

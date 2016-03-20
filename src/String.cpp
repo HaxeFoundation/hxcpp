@@ -405,7 +405,6 @@ unsigned int String::calcHash() const
 }
 
 
-
 String String::__URLEncode() const
 {
    Array<unsigned char> bytes(0,length);
