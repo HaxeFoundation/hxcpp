@@ -695,10 +695,10 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
 #if (HXCPP_API_LEVEL>=330)
   #define BasePtr(x) x
-  typedef ArrayBase ArrayAnyImpl;
+  typedef cpp::VirtualArray ArrayAnyImpl;
 #else
   #define BasePtr(x) x.mPtr
-  typedef cpp::VirtualArray ArrayAnyImpl;
+  typedef ArrayBase ArrayAnyImpl;
 #endif
 
 
