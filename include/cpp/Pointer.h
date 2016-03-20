@@ -88,7 +88,7 @@ public:
    inline Struct<T,HANDLER> &operator=( const Dynamic &inRHS ) { return *this = Struct<T,HANDLER>(inRHS); }
 
    operator Dynamic() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
-   operator String() const { return HANDLER::toString(value); }
+   operator String() const { return HANDLER::toString(&value); }
 
    #if (HXCPP_API_LEVEL >= 330)
    inline Struct( const hx::Val &inRHS) { fromDynamic(inRHS.asObject()); }
