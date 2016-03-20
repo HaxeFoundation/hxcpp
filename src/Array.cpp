@@ -662,7 +662,7 @@ DEFINE_VARRAY_FUNC4(,blit);
 Dynamic VirtualArray_obj::__GetItem(int inIndex) const
 {
    checkBase();
-   if (store==hx::arrayEmpty) return
+   if (store==hx::arrayEmpty || inIndex>=get_length()) return
       null();
    return base->__GetItem(inIndex);
 }

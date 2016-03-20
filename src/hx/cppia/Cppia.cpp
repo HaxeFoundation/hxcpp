@@ -1116,9 +1116,11 @@ void CppiaFunction::compile()
 class CppiaEnumBase : public EnumBase_obj
 {
 public:
+   #if (HXCPP_API_LEVEL<330)
    CppiaClassInfo *classInfo; 
+   #endif
 
-   CppiaEnumBase(CppiaClassInfo *inInfo) : classInfo(inInfo) { }
+   CppiaEnumBase(CppiaClassInfo *inInfo) { classInfo = inInfo; }
 
    ::hx::ObjectPtr<hx::Class_obj > __GetClass() const;
 	::String GetEnumName( ) const;
@@ -4946,7 +4948,8 @@ struct CallMember : public CppiaExpr
          replace = createStringBuiltin(this, thisExpr, field, args);
       }
 
-      // TODO getIndex
+      if (!replace && field==HX_CSTRING("getIndex"))
+         replace = new CallGetIndex(this, thisExpr);
       if (!replace && field==HX_CSTRING("__Index"))
          replace = new CallGetIndex(this, thisExpr);
       if (!replace && field==HX_CSTRING("__SetField") && args.size()==3)
@@ -5765,8 +5768,21 @@ struct ArrayDef : public CppiaDynamicExpr
             }
             return result.mPtr;
             }
-         case arrObject:
          case arrAny:
+            #if (HXCPP_API_LEVEL>=330)
+            {
+            cpp::VirtualArray result = cpp::VirtualArray_obj::__new(n,n);
+            for(int i=0;i<n;i++)
+            {
+               result->init(i,Dynamic(items[i]->runObject(ctx)));
+               BCR_CHECK;
+            }
+            return result.mPtr;
+            }
+            #else
+            // Fallthough...
+            #endif
+         case arrObject:
             { 
             Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
             for(int i=0;i<n;i++)

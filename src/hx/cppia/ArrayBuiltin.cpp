@@ -695,10 +695,12 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
 #if (HXCPP_API_LEVEL>=330)
   #define BasePtr(x) x
-  typedef cpp::VirtualArray ArrayAnyImpl;
+  typedef cpp::VirtualArray_obj ArrayAnyImpl;
+  #define CALL(x) x
 #else
   #define BasePtr(x) x.mPtr
   typedef ArrayBase ArrayAnyImpl;
+  #define CALL(x) __##x
 #endif
 
 
@@ -716,7 +718,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          hx::Object * val = args[0]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__push(val);
+         return thisVal->CALL(push)(val);
       }
       if (FUNC==afRemove)
       {
@@ -724,7 +726,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          hx::Object * val = args[0]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__remove(val);
+         return thisVal->CALL(remove)(val);
       }
       if (FUNC==afIndexOf)
       {
@@ -734,7 +736,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          hx::Object *a1 = args[1]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__indexOf( a0, a1 );
+         return thisVal->CALL(indexOf)( a0, a1 );
       }
       if (FUNC==afLastIndexOf)
       {
@@ -744,7 +746,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          hx::Object *a1 = args[1]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__lastIndexOf( a0, a1 );
+         return thisVal->CALL(lastIndexOf)( a0, a1 );
       }
 
       return Dynamic( runObject(ctx) );
@@ -764,7 +766,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->__join( a0 );
+         return thisVal->CALL(join)( a0 );
       }
 
       if (FUNC==afToString)
@@ -877,22 +879,22 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
       if (FUNC==afPop)
       {
-         return thisVal->__pop().mPtr;
+         return thisVal->CALL(pop)().mPtr;
       }
       if (FUNC==afShift)
       {
-         return thisVal->__shift().mPtr;
+         return thisVal->CALL(shift)().mPtr;
       }
 
       if (FUNC==afConcat)
       {
          Dynamic val = args[0]->runObject(ctx);
          BCR_CHECK;
-         return BasePtr(thisVal->__concat(val));
+         return thisVal->CALL(concat)(val).mPtr;
       }
       if (FUNC==afCopy)
       {
-         return BasePtr(thisVal->__copy());
+         return thisVal->CALL(copy)().mPtr;
       }
       if (FUNC==afSplice)
       {
@@ -900,7 +902,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          Dynamic end = args[1]->runObject(ctx);
          BCR_CHECK;
-         return BasePtr(thisVal->__splice(pos,end));
+         return thisVal->CALL(splice)(pos,end).mPtr;
       }
       if (FUNC==afSlice)
       {
@@ -908,24 +910,24 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          Dynamic end = args[1]->runObject(ctx);
          BCR_CHECK;
-         return BasePtr(thisVal->__slice(pos,end));
+         return thisVal->CALL(slice)(pos,end).mPtr;
       }
       if (FUNC==afMap)
       {
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
-         return BasePtr(thisVal->__map(a0));
+         return thisVal->CALL(map)(a0).mPtr;
       }
       if (FUNC==afFilter)
       {
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
-         return BasePtr(thisVal->__filter(a0));
+         return thisVal->CALL(filter)(a0).mPtr;
       }
 
       if (FUNC==afIterator)
       {
-         return thisVal->__iterator().mPtr;
+         return thisVal->CALL(iterator)().mPtr;
       }
 
       return 0;
@@ -938,7 +940,8 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_VCHECK;
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_VCHECK;
-         thisVal->__sort(a0);
+
+         thisVal->CALL(sort)(a0);
          return;
       }
       if (FUNC==afInsert)
@@ -949,7 +952,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_VCHECK;
          Dynamic val = args[1]->runObject(ctx);
          BCR_VCHECK;
-         thisVal->__insert(pos, val);
+         thisVal->CALL(insert)(pos, val);
          return;
       }
       if (FUNC==afUnshift)
@@ -958,7 +961,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_VCHECK;
          Dynamic val = args[0]->runObject(ctx);
          BCR_VCHECK;
-         thisVal->__unshift(val);
+         thisVal->CALL(unshift)(val);
          return;
       }
       if (FUNC==af__SetSizeExact)

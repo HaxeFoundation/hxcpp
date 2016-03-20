@@ -25,9 +25,12 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
    protected:
       String       tag;
       #if (HXCPP_API_LEVEL >= 330)
-      int     mFixedFields;
+         int     mFixedFields;
+         #ifdef HXCPP_SCRIPTABLE
+         struct CppiaClassInfo *classInfo; 
+         #endif
       #else
-      DynamicArray mArgs;
+         DynamicArray mArgs;
       #endif
    public:
       int          index;
