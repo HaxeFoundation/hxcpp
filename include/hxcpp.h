@@ -225,6 +225,7 @@ namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
 namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
+namespace cpp { template<typename T> class Pointer; }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {

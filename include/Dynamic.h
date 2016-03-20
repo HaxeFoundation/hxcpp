@@ -37,6 +37,8 @@ public:
 
    template<typename T,typename S>
    explicit Dynamic(const cpp::Struct<T,S> &inRHS) { *this = inRHS; }
+   template<typename T>
+   explicit Dynamic(const cpp::Pointer<T> &inRHS) { *this = inRHS; }
 
 
     void Set(bool inVal);
