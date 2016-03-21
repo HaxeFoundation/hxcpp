@@ -302,7 +302,7 @@ public:
 
    virtual bool AllocAtomic() const { return false; }
 
-   inline bool IsByteArray() const { return GetElementSize()==1; }
+   inline bool IsByteArray() const { return getStoreType()==arrayBool; }
 
 
    inline Dynamic __get(int inIndex) const { return __GetItem(inIndex); }

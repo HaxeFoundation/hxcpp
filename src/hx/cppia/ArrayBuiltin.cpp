@@ -718,7 +718,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          hx::Object * val = args[0]->runObject(ctx);
          BCR_CHECK;
-         return thisVal->CALL(push)(val);
+         return thisVal->CALL(push)(Dynamic(val));
       }
       if (FUNC==afRemove)
       {

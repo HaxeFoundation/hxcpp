@@ -95,7 +95,7 @@ CppiaModule::CppiaModule()
    scriptId = ++sScriptId;
    strings = Array_obj<String>::__new(0,0);
    if (sgNativeNameSlotCount>0)
-      for(int i=1;i<sgNativeNameSlotCount;i++)
+      for(int i=2;i<sgNativeNameSlotCount;i++)
          interfaceSlots[sgNativeNameSlots[i]] = i;
 
 }
@@ -3684,6 +3684,13 @@ struct CastExpr : public CppiaDynamicExpr
       Array_obj<T> *alreadyGood = dynamic_cast<Array_obj<T> *>(obj);
       if (alreadyGood)
          return alreadyGood;
+      #if (HXCPP_API_LEVEL>=330)
+      cpp::VirtualArray_obj *varray = dynamic_cast<cpp::VirtualArray_obj *>(obj);
+      if (varray)
+      {
+         return Array<T>( cpp::VirtualArray(varray) ).mPtr;
+      }
+      #endif
       int n = obj->__length();
       Array<T> result = Array_obj<T>::__new(n,n);
       for(int i=0;i<n;i++)
@@ -3720,7 +3727,6 @@ struct CastExpr : public CppiaDynamicExpr
          case arrAny:
          {
             ArrayBase *base = dynamic_cast<ArrayBase *>(obj);
-            printf("dcast -> %p\n", base);
             if (base)
                return new cpp::VirtualArray_obj(base);
             return dynamic_cast<cpp::VirtualArray_obj *>(obj);
@@ -3913,8 +3919,13 @@ struct NewExpr : public CppiaDynamicExpr
                return Array_obj<Float>::__new(size,size).mPtr;
             case arrString:
                return Array_obj<String>::__new(size,size).mPtr;
-            case arrObject:
             case arrAny:
+               #if (HXCPP_API_LEVEL>=330)
+               return cpp::VirtualArray_obj::__new(size,size).mPtr;
+               #else
+               // Fallthrough
+               #endif
+            case arrObject:
                return Array_obj<Dynamic>::__new(size,size).mPtr;
             default:
                return 0;
@@ -4915,9 +4926,7 @@ struct CallMember : public CppiaExpr
          {
             int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
             //printf("   vslot %d\n", vtableSlot);
-            #if (HXCPP_API_LEVEL<330)
             if (vtableSlot!=-1)
-            #endif
             {
                ExprType returnType = type->cppiaClass->findFunctionType(inModule,fieldId);
                replace = new CallMemberVTable( this, thisExpr, vtableSlot, returnType, type->cppiaClass->isInterface, args );
@@ -5522,15 +5531,19 @@ struct GetFieldByLinkage : public CppiaExpr
 
       if (!replace && type->arrayType!=arrNotArray && field==HX_CSTRING("length"))
       {
-         int offset = (int) offsetof( Array_obj<int>, length );
          #if (HXCPP_API_LEVEL>=330)
          if (type->arrayType==arrAny)
+         {
             replace = new VirtualArrayLength(this,object);
+         }
          else
          #endif
+         {
+         int offset = (int) offsetof( Array_obj<int>, length );
          replace = object ?
              (CppiaExpr*)new MemReference<int,locObj>(this,offset,object):
              (CppiaExpr*)new MemReference<int,locThis>(this,offset);
+         }
       }
 
       if (!replace && type->name==HX_CSTRING("String") && field==HX_CSTRING("length"))

@@ -677,7 +677,7 @@ Dynamic VirtualArray_obj::__SetItem(int inIndex,Dynamic inValue)
 
 hx::Val VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
-   if (inString==HX_CSTRING("length")) return (int)size();
+   if (inString==HX_CSTRING("length")) return (int)get_length();
    if (inString==HX_CSTRING("concat")) return concat_dyn();
    if (inString==HX_CSTRING("insert")) return insert_dyn();
    if (inString==HX_CSTRING("copy")) return copy_dyn();
