@@ -3725,10 +3725,11 @@ struct CastExpr : public CppiaDynamicExpr
                return new cpp::VirtualArray_obj(base);
             return dynamic_cast<cpp::VirtualArray_obj *>(obj);
          }
+         case arrObject:       return convert<Dynamic>(obj);
          #else
          case arrAny:          return convert<Dynamic>(obj);
-         #endif
          case arrObject:       return obj;
+         #endif
          case arrNotArray:     throw "Bad cast";
       }
       return 0;
