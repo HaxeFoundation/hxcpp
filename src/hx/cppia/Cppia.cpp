@@ -4958,8 +4958,6 @@ struct CallMember : public CppiaExpr
          replace = createStringBuiltin(this, thisExpr, field, args);
       }
 
-      if (!replace && field==HX_CSTRING("getIndex"))
-         replace = new CallGetIndex(this, thisExpr);
       if (!replace && field==HX_CSTRING("__Index"))
          replace = new CallGetIndex(this, thisExpr);
       if (!replace && field==HX_CSTRING("__SetField") && args.size()==3)
