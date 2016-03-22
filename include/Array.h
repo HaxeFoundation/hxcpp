@@ -472,7 +472,7 @@ public:
 
    String ItemString(int inI)
    {
-      String result = __get(inI);
+      String result(__get(inI));
       if (result==null()) return HX_CSTRING("null");
       return result;
    }

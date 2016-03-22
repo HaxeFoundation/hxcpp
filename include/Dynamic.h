@@ -380,6 +380,7 @@ double operator%(const double &inLHS,const Dynamic &inRHS);
 double operator%(const float &inLHS,const Dynamic &inRHS);
 
 template<typename T,typename H> String::String(const cpp::Struct<T,H> &inRHS) { *this = (String)inRHS; }
+template<typename OBJ> String::String(const hx::ObjectPtr<OBJ> &inRHS) { *this = (String)inRHS; }
 
 
 

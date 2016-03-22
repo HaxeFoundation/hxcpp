@@ -65,6 +65,8 @@ public:
 
    template<typename T,typename S>
    explicit inline String(const cpp::Struct<T,S> &inRHS);
+   template<typename OBJ>
+   explicit inline String(const hx::ObjectPtr<OBJ> &inRHS);
 
 
 
