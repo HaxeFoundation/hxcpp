@@ -8,7 +8,6 @@ import sys.db.Mysql;
 
 #if static_ndll
 import cpp.link.StaticStd;
-import cpp.link.StaticRegexp;
 import cpp.link.StaticZlib;
 import cpp.link.StaticMysql;
 import cpp.link.StaticSqlite;
@@ -126,7 +125,7 @@ class Test
 
       #if cpp
       var unloaded = cpp.Lib.unloadAllLibraries();
-      var expected = #if static_ndll 0 #else 5 #end ;
+      var expected = #if static_ndll 0 #else 4 #end ;
       if (unloaded!=expected)
          throw 'Unloaded $unloaded libraries, but expected to unload $expected.';
       trace('Unloaded $unloaded libraries');
