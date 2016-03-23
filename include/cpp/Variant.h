@@ -62,6 +62,11 @@ namespace cpp
       inline Variant(int inValue) : type(typeInt), valInt(inValue) { }
       inline Variant(double inValue) : type(typeDouble), valDouble(inValue) { }
       inline Variant(const ::String &inValue); // later
+      #if defined(__OBJC__) && defined(HXCPP_OBJC)
+      inline Variant(const id inObjc);
+      inline operator id() const;
+      #endif
+
 
       template<typename SOURCE_>
       Variant(const hx::ObjectPtr<SOURCE_> &inObjectPtr);
@@ -166,6 +171,13 @@ namespace cpp
    {
       return type==typeString || (type==typeObject && valObject && valObject->__GetType()==vtString);
    }
+
+
+   #if defined(__OBJC__) && defined(HXCPP_OBJC)
+   inline Variant::Variant(const id inObjc) { type=typeObject; valObject = Dynamic(inObjc).mPtr; }
+   inline Variant::operator id () const {  return type==typeObject && valObject ? (id)valObject->__GetHandle() : 0;  }
+   #endif
+
 
 
    template<> inline bool isIntType(const Dynamic &inRHS) { return inRHS->__GetType()==vtInt; }
