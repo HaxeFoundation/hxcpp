@@ -436,4 +436,11 @@ inline int __hxcpp_reinterpret_float64_as_le_int32_high(double inValue)
    return asInts[1];
 }
 
+// EReg.hx -> src/hx/libs/RegExp.cpp
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String options);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool    _hx_regexp_match(Dynamic handle, String string, int pos, int len);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_regexp_matched(Dynamic handle, int pos);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_matched_pos(Dynamic handle, Int match);
+
+
 #endif
