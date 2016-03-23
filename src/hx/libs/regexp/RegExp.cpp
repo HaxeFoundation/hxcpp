@@ -23,7 +23,7 @@ struct pcredata : public hx::Object
       nmatchs++;
       matchs = (int*)malloc(sizeof(int) * 3 * nmatchs);
 
-      __hxcpp_set_finalizer(this, finalize);
+      __hxcpp_set_finalizer(this, (void *)finalize);
    }
 
    void destroy()
