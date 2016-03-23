@@ -152,20 +152,23 @@ void Math_obj::__boot()
 
 	unsigned int t;
 #ifdef HX_WINDOWS
+    unsigned int t;
 	t = clock();
    #ifdef HX_WINRT
 	int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
    #else
 	int pid = _getpid();
    #endif
+   srand(t ^ (pid | (pid << 16)));
 #else
-	int pid = getpid();
-	struct timeval tv;
-	gettimeofday(&tv,0);
-	t = tv.tv_sec * 1000000 + tv.tv_usec;
-#endif	
+   long s, seed, pid;
 
-  srand(t ^ (pid | (pid << 16)));
+   pid = getpid();
+   s = time(0);
+
+   seed = std::abs(((s*181)*((pid-83)*359))%104729);
+   srand(seed);
+#endif
   rand();
 }
 
