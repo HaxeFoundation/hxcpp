@@ -539,6 +539,15 @@ String &String::dupConst()
    return *this;
 }
 
+::String String::makeConstString(const char *inStr)
+{
+   String unsafe(inStr, strlen(inStr) );
+   ConstStringSet::iterator sit = sConstStringSet.find(unsafe);
+   if (sit!=sConstStringSet.end())
+      return *sit;
+   return unsafe.dupConst();
+}
+
 
 
 int String::indexOf(const String &inValue, Dynamic inStart) const

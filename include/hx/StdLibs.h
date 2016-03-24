@@ -436,7 +436,7 @@ inline int __hxcpp_reinterpret_float64_as_le_int32_high(double inValue)
    return asInts[1];
 }
 
-// EReg.hx -> src/hx/libs/RegExp.cpp
+// EReg.hx -> src/hx/libs/regexp/RegExp.cpp
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String options);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool    _hx_regexp_match(Dynamic handle, String string, int pos, int len);
 HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_regexp_matched(Dynamic handle, int pos);
@@ -453,5 +453,25 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_inflate_buffer(Dynamic handle, Array<u
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_inflate_end(Dynamic handle);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_zip_set_flush_mode(Dynamic handle, String flushMode);
+
+// sys.db.Mysql.hx -> src/hx/libs/regexp/RegExp.cpp
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_mysql_connect(Dynamic params);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void    _hx_mysql_select_db(Dynamic handle,String db);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_mysql_request(Dynamic handle,String req);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_mysql_close(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_mysql_escape(Dynamic handle,String str);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_mysql_result_get_length(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_mysql_result_get_nfields(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_mysql_result_next(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_mysql_result_get(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_mysql_result_get_int(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float   _hx_mysql_result_get_float(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<String> _hx_mysql_result_get_fields_names(Dynamic handle);
+
+namespace cpp { template<typename T> class Function; }
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_mysql_set_conversion(
+      cpp::Function< Dynamic(Dynamic) > inCharsToBytes,
+      cpp::Function< Dynamic(Float) > inTimeToDate );
 
 #endif

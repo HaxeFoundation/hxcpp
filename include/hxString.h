@@ -102,6 +102,7 @@ public:
 
     ::String &dup();
     ::String &dupConst();
+    static ::String makeConstString(const char *);
 
     ::String toUpperCase() const;
     ::String toLowerCase() const;

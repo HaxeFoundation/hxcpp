@@ -174,6 +174,18 @@ void GCChangeManagedMemory(int inDelta, const char *inWhy=0);
 void EnterGCFreeZone();
 void ExitGCFreeZone();
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES class AutoGCFreeZone
+{
+public:
+	AutoGCFreeZone() : locked(true) { EnterGCFreeZone(); }
+	~AutoGCFreeZone() { if (locked) ExitGCFreeZone(); }
+
+	void close() { if (locked) ExitGCFreeZone(); locked = false; }
+
+	bool locked;
+};
+
+
 // Defined in Class.cpp, these function is called from the Gc to start the marking/visiting
 void MarkClassStatics(hx::MarkContext *__inCtx);
 #ifdef HXCPP_VISIT_ALLOCS
