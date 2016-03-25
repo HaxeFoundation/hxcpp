@@ -443,6 +443,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_regexp_matched(Dynamic handle, int pos
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_matched_pos(Dynamic handle, Int match);
 
 
+// haxe.zip.(Un)Compress.hx -> src/hx/libs/zlib/ZLib.cpp
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_deflate_init(int level);
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_deflate_bound(Dynamic handle,int length);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_deflate_buffer(Dynamic handle, Array<unsigned char> src, int srcPos, Array<unsigned char> dest, int destPos);
@@ -473,5 +474,20 @@ namespace cpp { template<typename T> class Function; }
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_mysql_set_conversion(
       cpp::Function< Dynamic(Dynamic) > inCharsToBytes,
       cpp::Function< Dynamic(Float) > inTimeToDate );
+
+// sys.db.Sqlite.hx -> src/hx/libs/sqlite/RegExp.cpp
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_sqlite_connect(String filename);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_sqlite_request(Dynamic handle,String req);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void    _hx_sqlite_close(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_sqlite_last_insert_id(Dynamic handle);
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_sqlite_result_get_length(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_sqlite_result_get_nfields(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_sqlite_result_next(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_sqlite_result_get(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_sqlite_result_get_int(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float   _hx_sqlite_result_get_float(Dynamic handle,int i);
+
 
 #endif
