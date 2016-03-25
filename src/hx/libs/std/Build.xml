@@ -7,9 +7,9 @@
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <cache value="1"/>
 
-  <file name="Sys.cpp"/>
-  <!--
   <file name="File.cpp"/>
+  <!--
+  <file name="Sys.cpp"/>
   <file name="Xml.cpp"/>
   <file name="Process.cpp"/>
   <file name="Random.cpp"/>
