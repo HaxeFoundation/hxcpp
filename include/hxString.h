@@ -38,7 +38,7 @@ public:
       *this = String([inString UTF8String]);
    }
    #endif
-   #ifdef HX_WINRT
+   #if defined(HX_WINRT) && defined(__cplusplus_winrt)
    inline String(Platform::String^ inString)
    {
       *this = String(inString->Data());

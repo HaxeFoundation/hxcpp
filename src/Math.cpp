@@ -2,13 +2,14 @@
 #include <limits>
 #include <hxMath.h>
 
-
 #include <stdlib.h>
 #include <time.h>
-#ifndef HX_WINDOWS
+#if defined(__unix__) || defined(__APPLE__)
 #include <unistd.h>
 #include <sys/time.h>
-#else
+#elif defined(HX_WINRT) && !defined(__cplusplus_winrt)
+#include <windows.h>
+#elif defined(HX_WINDOWS)
 #include <process.h>
 #endif
 
@@ -150,20 +151,29 @@ void Math_obj::__boot()
    Math_obj::__mClass->mStaticStorageInfo = Math_obj_sStaticStorageInfo;
 #endif
 
-	unsigned int t;
-#ifdef HX_WINDOWS
-	t = clock();
-   #ifdef HX_WINRT
-	int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
+#if defined(HX_WINDOWS) || defined(__SNC__)
+   unsigned int t = clock();
+#elif defined(__unix__) || defined(__APPLE__)
+   struct timeval tv;
+   gettimeofday(&tv,0);
+   unsigned int t = tv.tv_sec * 1000000 + tv.tv_usec;
+#endif
+
+#if defined(HX_WINDOWS)
+  #if defined(HX_WINRT)
+   #if defined(__cplusplus_winrt)
+   int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
    #else
-	int pid = _getpid();
+   int pid = GetCurrentProcessId();
    #endif
+  #else
+   int pid = _getpid();
+  #endif
+#elif defined(__unix__) || defined(__APPLE__)
+   int pid = getpid();
 #else
-	int pid = getpid();
-	struct timeval tv;
-	gettimeofday(&tv,0);
-	t = tv.tv_sec * 1000000 + tv.tv_usec;
-#endif	
+   int pid = (int)&t; // As a last resort, rely on ASLR.
+#endif  
 
   srand(t ^ (pid | (pid << 16)));
   rand();
