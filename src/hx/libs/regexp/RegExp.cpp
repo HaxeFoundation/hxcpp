@@ -43,6 +43,8 @@ struct pcredata : public hx::Object
    {
       ((pcredata *)inPtr)->destroy();
    }
+
+   String toString() { return HX_CSTRING("pcredata"); }
 };
 
 
