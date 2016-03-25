@@ -147,8 +147,8 @@ Dynamic _hx_regexp_matched_pos(Dynamic handle, int m)
    int len = d->matchs[m*2+1] - start;
 
    return hx::Anon_obj::Create(2)
-            ->setFixed(0, HX_CSTRING("pos"), start)
-            ->setFixed(1, HX_CSTRING("len"), len);
+            ->setFixed(0,HX_("len",d5,4b,52,00),len)
+            ->setFixed(1,HX_("pos",94,5d,55,00),start);
 }
 
 

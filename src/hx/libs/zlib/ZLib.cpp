@@ -203,9 +203,9 @@ Dynamic _hx_deflate_buffer(Dynamic handle, Array<unsigned char> src, int srcPos,
       return null();
 
    return hx::Anon_obj::Create(3)
-       ->setFixed(0, HX_CSTRING("done"), result.done)
-       ->setFixed(1, HX_CSTRING("read"), result.read)
-       ->setFixed(2, HX_CSTRING("write"), result.write);
+            ->setFixed(0,HX_("write",df,6c,59,d0),result.write)
+            ->setFixed(1,HX_("done",82,f0,6d,42),result.done)
+            ->setFixed(2,HX_("read",56,4b,a7,4b),result.read);
 }
 
 
@@ -263,9 +263,9 @@ Dynamic _hx_inflate_buffer(Dynamic handle, Array<unsigned char> src, int srcPos,
       return null();
 
    return hx::Anon_obj::Create(3)
-       ->setFixed(0, HX_CSTRING("done"), result.done)
-       ->setFixed(1, HX_CSTRING("read"), result.read)
-       ->setFixed(2, HX_CSTRING("write"), result.write);
+            ->setFixed(0,HX_("write",df,6c,59,d0),result.write)
+            ->setFixed(1,HX_("done",82,f0,6d,42),result.done)
+            ->setFixed(2,HX_("read",56,4b,a7,4b),result.read);
 }
 
 /**
