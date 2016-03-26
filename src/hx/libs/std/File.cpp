@@ -273,7 +273,7 @@ bool _hx_std_file_eof( Dynamic handle )
    file_flush : 'file -> void
    <doc>Flush the file buffer</doc>
 **/
-static void _hx_std_file_flush( Dynamic handle )
+void _hx_std_file_flush( Dynamic handle )
 {
    fio *f = getFio(handle);
    hx::EnterGCFreeZone();

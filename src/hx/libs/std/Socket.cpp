@@ -103,7 +103,7 @@ static void block_error()
    before using any socket or host function.
    </doc>
 **/
-static void _hx_std_socket_init()
+void _hx_std_socket_init()
 {
 #ifdef NEKO_WINDOWS
    if( !init_done ) {
@@ -166,7 +166,7 @@ void _hx_std_socket_close( Dynamic handle )
    socket_send_char : 'socket -> int -> void
    <doc>Send a character over a connected socket. Must be in the range 0..255</doc>
 **/
-static void _hx_std_socket_send_char( Dynamic o, int c )
+void _hx_std_socket_send_char( Dynamic o, int c )
 {
    SOCKET sock = val_sock(o);
    if( c < 0 || c > 255 )
@@ -360,7 +360,7 @@ String _hx_std_host_to_string( int ip )
    host_reverse : 'int32 -> string
    <doc>Reverse the DNS of the given IP address.</doc>
 **/
-static String _hx_std_host_reverse( int host )
+String _hx_std_host_reverse( int host )
 {
    struct hostent *h = 0;
    unsigned int ip = host;

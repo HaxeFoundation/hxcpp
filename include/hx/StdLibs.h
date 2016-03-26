@@ -501,7 +501,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_read_char( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_seek( Dynamic handle, int pos, int kind );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_tell( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_file_eof( Dynamic handle );
-HXCPP_EXTERN_CLASS_ATTRIBUTES static void _hx_std_file_flush( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_flush( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_file_contents( String name );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stdin();
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stdout();
@@ -521,13 +521,13 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_close( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_random_new();
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_random_set_seed( Dynamic handle, int v );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_random_int( Dynamic handle, int max );
-HXCPP_EXTERN_CLASS_ATTRIBUTES double _hx_random_random_float( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES double _hx_std_random_random_float( Dynamic handle );
 
 // Socket
-HXCPP_EXTERN_CLASS_ATTRIBUTES static void _hx_std_socket_init();
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_init();
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_socket_new( bool udp );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_close( Dynamic handle );
-HXCPP_EXTERN_CLASS_ATTRIBUTES static void _hx_std_socket_send_char( Dynamic o, int c );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_send_char( Dynamic o, int c );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_send( Dynamic o, Array<unsigned char> buf, int p, int l );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_recv( Dynamic o, Array<unsigned char> buf, int p, int l );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_recv_char( Dynamic o );
@@ -535,7 +535,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_write( Dynamic o, Array<unsign
 HXCPP_EXTERN_CLASS_ATTRIBUTES Array<unsigned char> _hx_std_socket_read( Dynamic o );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_host_resolve( String host );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_to_string( int ip );
-HXCPP_EXTERN_CLASS_ATTRIBUTES static String _hx_std_host_reverse( int host );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_reverse( int host );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_local();
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_connect( Dynamic o, int host, int port );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_listen( Dynamic o, int n );
@@ -558,7 +558,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_recv_from( Dynamic o, Array<uns
 // Sys
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_get_env( String v );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_put_env( String e, String v );
-HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_sys_sleep( int f );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_sys_sleep( int f );
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_set_time_locale( String l );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_get_cwd();
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_set_cwd( String d );
