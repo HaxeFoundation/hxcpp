@@ -428,7 +428,7 @@ public:
 
    inline void memcpy(int inStart, ELEM_ *inData, int inElements)
    {
-      EnsureSize(inStart+inElements+1);
+      EnsureSize(inStart+inElements);
       int s = GetElementSize();
       ::memcpy(mBase + s*inStart, inData, s*inElements);
    }

@@ -10,13 +10,8 @@
   <file name="File.cpp"/>
   <file name="Sys.cpp"/>
   <file name="Process.cpp"/>
-  <!--
-  <file name="Xml.cpp"/>
   <file name="Random.cpp"/>
   <file name="Socket.cpp" />
-  <file name="String.cpp"/>
-  <file name="Misc.cpp"/>
-  -->
 
 </files>
 

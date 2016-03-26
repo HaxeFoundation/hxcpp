@@ -218,7 +218,7 @@ class Compiler
    public function getObjName(inFile:File)
    {
       var path = new Path(inFile.mName);
-      var dirId = Md5.encode(BuildTool.targetKey + path.dir).substr(0,8) + "_";
+      var dirId = Md5.encode(BuildTool.targetKey + path.dir + inFile.mGroup.mId).substr(0,8) + "_";
 
       return PathManager.combine(mObjDir, dirId + path.file + mExt);
    }
