@@ -1,7 +1,6 @@
 <xml>
 
-<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
-
+<pragma once="true" />
 
 <set name="PCRE_DIR" value="../../../../project/thirdparty/pcre-7.8" />
 

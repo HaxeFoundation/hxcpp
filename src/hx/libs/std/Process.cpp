@@ -1,4 +1,5 @@
-#include <hx/CFFI.h>
+#include <hxcpp.h>
+#include <hx/OS.h>
 
 #if !defined(HX_WINRT) && !defined(EPPC)
 
@@ -19,35 +20,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+namespace
+{
 
-typedef struct {
-#ifdef NEKO_WINDOWS
-   HANDLE oread;
-   HANDLE eread;
-   HANDLE iwrite;
-   PROCESS_INFORMATION pinf;
-#else
-   int oread;
-   int eread;
-   int iwrite;
-   int pid;
-#endif
-} vprocess;
-
-DEFINE_KIND(k_process);
-
-#define val_process(v)   ((vprocess*)val_data(v))
-
-/**
-   <doc>
-   <h1>Process</h1>
-   <p>
-   An API for starting and communication with sub processes.
-   </p>
-   </doc>
-**/
 #ifndef NEKO_WINDOWS
-static int do_close( int fd ) {
+static int do_close( int fd )
+{
    POSIX_LABEL(close_again);
    if( close(fd) != 0 ) {
       HANDLE_EINTR(close_again);
@@ -57,21 +35,85 @@ static int do_close( int fd ) {
 }
 #endif
 
-static void free_process( value vp ) {
-   vprocess *p = val_process(vp);
-#   ifdef NEKO_WINDOWS
-   CloseHandle(p->eread);
-   CloseHandle(p->oread);
-   CloseHandle(p->iwrite);
-   CloseHandle(p->pinf.hProcess);
-   CloseHandle(p->pinf.hThread);
-#   else
-   do_close(p->eread);
-   do_close(p->oread);
-   do_close(p->iwrite);
-#   endif
-        free(p);
+
+struct vprocess : public hx::Object
+{
+   bool ok;
+#ifdef NEKO_WINDOWS
+   HANDLE oread;
+   HANDLE eread;
+   HANDLE iwrite;
+   PROCESS_INFORMATION pinf;
+   #define HANDLE_INIT 0
+#else
+   int oread;
+   int eread;
+   int iwrite;
+   int pid;
+   #define HANDLE_INIT -1
+#endif
+
+   void create()
+   {
+      ok = true;
+      oread = HANDLE_INIT;
+      eread = HANDLE_INIT;
+      iwrite = HANDLE_INIT;
+      __hxcpp_set_finalizer(this, (void *)finalize);
+   }
+
+   void destroy()
+   {
+      if (ok)
+      {
+         #ifdef NEKO_WINDOWS
+            if (eread)
+               CloseHandle(eread);
+            if (oread)
+               CloseHandle(oread);
+            if (iwrite)
+               CloseHandle(iwrite);
+            CloseHandle(pinf.hProcess);
+            CloseHandle(pinf.hThread);
+         #else
+            if (eread!=-1)
+               do_close(eread);
+            if (oread!=-1)
+               do_close(oread);
+            if (iwrite!=-1)
+               do_close(iwrite);
+         #endif
+         ok = false;
+      }
+   }
+
+   static void finalize(void *inPtr)
+   {
+      ((vprocess *)inPtr)->destroy();
+   }
+
+   String toString() { return HX_CSTRING("vprocess"); }
+};
+
+vprocess *getProcess(Dynamic handle)
+{
+   vprocess *p = dynamic_cast<vprocess *>(handle.mPtr);
+   if (!p || !p->ok)
+      hx::Throw(HX_CSTRING("Invalid process"));
+   return p;
 }
+
+
+/**
+   <doc>
+   <h1>Process</h1>
+   <p>
+   An API for starting and communication with sub processes.
+   </p>
+   </doc>
+**/
+
+} // end anon namespace
 
 /**
    process_run : cmd:string -> args:string array -> 'process
@@ -83,54 +125,57 @@ static void free_process( value vp ) {
    null to args.
    </doc>
 **/
-static value process_run( value cmd, value vargs ) {
+Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
+{
    #ifdef APPLETV
-   return alloc_null();
+   return null();
+
    #else
-   int i;
-   vprocess *p;
-   val_check(cmd,string);
-   bool isRaw = val_is_null(vargs);
-#   ifdef NEKO_WINDOWS
+   vprocess *p = 0;
+   bool isRaw = !vargs.mPtr;
+
+   #ifdef NEKO_WINDOWS
    {       
       SECURITY_ATTRIBUTES sattr;      
       STARTUPINFOW sinf;
       HANDLE proc = GetCurrentProcess();
       HANDLE oread,eread,iwrite;
       // creates commandline
-      buffer b = alloc_buffer(NULL);
-      value sargs;
-      if (isRaw) {
-         buffer_append(b,"\"");
+      String b;
+      if (isRaw)
+      {
+         b = HX_CSTRING("\"");
          char* cmdexe = getenv("COMSPEC");
          if (!cmdexe) cmdexe = "cmd.exe";
-         buffer_append(b,cmdexe);
-         buffer_append(b,"\" /C \"");
-         buffer_append(b,val_string(cmd));
-         buffer_append_char(b,'"');
-      } else {
-         val_check(vargs,array);
-         buffer_append(b,"\"");
-         val_buffer(b,cmd);
-         buffer_append(b,"\"");
-         for(i=0;i<val_array_size(vargs);i++) {
-            value v = val_array_i(vargs, i);
-            int j,len;
+         b += String(cmdexe) + HX_CSTRING("\" /C \"") + cmd + HX_CSTRING("\"");
+      }
+      else
+      {
+         b = HX_CSTRING("\"") + cmd + HX_CSTRING("\"");
+
+         for(int i=0;i<vargs->length;i++)
+         {
+            b += HX_CSTRING(" \"");
+
+            String v = vargs[i];
+            int len = v.length;
+
+            std::vector<char> quoted;
+            quoted.reserve(len*2);
+
             unsigned int bs_count = 0;
-            unsigned int k;
-            val_check(v,string);
-            len = val_strlen(v);
-            buffer_append(b," \"");
-            for(j=0;j<len;j++) {
-               char c = val_string(v)[j];
-               switch( c ) {
+            for(int j=0;j<len;j++)
+            {
+               char c = v.__s[j];
+               switch( c )
+               {
                case '"':
                   // Double backslashes.
-                  for (k=0;k<bs_count*2;k++) {
-                     buffer_append(b,"\\");
-                  }
+                  for (int k=0;k<bs_count*2;k++)
+                     quoted.push_back('\\');
                   bs_count = 0;
-                  buffer_append(b, "\\\"");
+                  quoted.push_back('\\');
+                  quoted.push_back('"');
                   break;
                case '\\':
                   // Don't know if we need to double yet.
@@ -138,25 +183,27 @@ static value process_run( value cmd, value vargs ) {
                   break;
                default:
                   // Normal char
-                  for (k=0;k<bs_count;k++) {
-                     buffer_append(b,"\\");
-                  }
+                  for (int k=0;k<bs_count;k++)
+                     quoted.push_back('\\');
                   bs_count = 0;
-                  buffer_append_char(b,c);
+                  quoted.push_back(c);
                   break;
                }
             }
             // Add remaining backslashes, if any.
-            for (k=0;k<bs_count*2;k++) {
-               buffer_append(b,"\\");
-            }
-            buffer_append(b,"\"");
+            for (int k=0;k<bs_count*2;k++)
+               quoted.push_back('\\');
+
+            if (quoted.size())
+               b+= String( &quoted[0], quoted.size() ).dup();
+
+            b += HX_CSTRING("\"");
          }
       }
-      sargs = buffer_to_string(b);
-      wchar_t *name = val_dup_wstring(sargs);
-      gc_enter_blocking();
-      p = (vprocess*)malloc(sizeof(vprocess));
+
+      const wchar_t *name = b.__WCStr();
+
+      hx::EnterGCFreeZone();
       // startup process
       sattr.nLength = sizeof(sattr);
       sattr.bInheritHandle = TRUE;
@@ -168,55 +215,66 @@ static value process_run( value cmd, value vargs ) {
       CreatePipe(&oread,&sinf.hStdOutput,&sattr,0);
       CreatePipe(&eread,&sinf.hStdError,&sattr,0);
       CreatePipe(&sinf.hStdInput,&iwrite,&sattr,0);
-      DuplicateHandle(proc,oread,proc,&p->oread,0,FALSE,DUPLICATE_SAME_ACCESS);
-      DuplicateHandle(proc,eread,proc,&p->eread,0,FALSE,DUPLICATE_SAME_ACCESS);
-      DuplicateHandle(proc,iwrite,proc,&p->iwrite,0,FALSE,DUPLICATE_SAME_ACCESS);
+
+      HANDLE procOread,procEread,procIwrite;
+
+      DuplicateHandle(proc,oread,proc,&procOread,0,FALSE,DUPLICATE_SAME_ACCESS);
+      DuplicateHandle(proc,eread,proc,&procEread,0,FALSE,DUPLICATE_SAME_ACCESS);
+      DuplicateHandle(proc,iwrite,proc,&procIwrite,0,FALSE,DUPLICATE_SAME_ACCESS);
       CloseHandle(oread);
       CloseHandle(eread);
       CloseHandle(iwrite);
       //printf("Cmd %s\n",val_string(cmd));
-      if( !CreateProcessW(NULL,name,NULL,NULL,TRUE,0,NULL,NULL,&sinf,&p->pinf) )
+      if( !CreateProcessW(NULL,(wchar_t *)name,NULL,NULL,TRUE,0,NULL,NULL,&sinf,&p->pinf) )
       {
-         free(p);
-         gc_exit_blocking();
-			val_throw(alloc_null());
-         return alloc_null();
+         hx::ExitGCFreeZone();
+         hx::Throw(HX_CSTRING("Could not start process"));
       }
       // close unused pipes
       CloseHandle(sinf.hStdOutput);
       CloseHandle(sinf.hStdError);
       CloseHandle(sinf.hStdInput);
-      gc_exit_blocking();
+      hx::ExitGCFreeZone();
+
+      p = new vprocess;
+      p->create();
+      p->oread = procOread;
+      p->eread = procEread;
+      p->iwrite = procIwrite;
    }
-#else
+   #else // not windows ...
+   {
+   int input[2], output[2], error[2];
+   if( pipe(input) || pipe(output) || pipe(error) )
+      return null();
+
    char **argv;
-   if (isRaw) {
+   if (isRaw)
+   {
       argv = (char**)malloc(sizeof(char*)*4);
       argv[0] = strdup("/bin/sh");
       argv[1] = strdup("-c");
-      argv[2] = strdup(val_string(cmd));
-      argv[3] = NULL;
-   } else {
-      argv = (char**)malloc(sizeof(char*)*(val_array_size(vargs)+2));
-
-      argv[0] = strdup(val_string(cmd));
-      for(i=0;i<val_array_size(vargs);i++) {
-         value v = val_array_i(vargs,i);
-         val_check(v,string);
-         argv[i+1] = strdup(val_string(v));
-      }
-      argv[i+1] = NULL;
+      argv[2] = strdup(cmd.__s);
+      argv[3] = 0;
    }
-   int input[2], output[2], error[2];
-   if( pipe(input) || pipe(output) || pipe(error) )
-      return alloc_null();
-   p = (vprocess*)malloc(sizeof(vprocess));
-   p->pid = fork();
-   if( p->pid == -1 )
-      return alloc_null();
-   gc_enter_blocking();
+   else
+   {
+      argv = (char**)malloc(sizeof(char*)*(vargs->length+2));
+
+      argv[0] = strdup(cmd.__s);
+      int i = 0;
+      for(i=0;i<vargs->length;i++)
+         argv[i+1] = strdup(vargs[i].__s);
+      argv[i+1] = 0;
+   }
+
+   int pid = fork();
+   if( pid == -1 )
+      return null();
+
    // child
-   if( p->pid == 0 ) {
+   if( pid == 0 )
+   {
       close(input[1]);
       close(output[0]);
       close(error[0]);
@@ -224,41 +282,31 @@ static value process_run( value cmd, value vargs ) {
       dup2(output[1],1);
       dup2(error[1],2);
       execvp(argv[0],argv);
-      fprintf(stderr,"Command not found : %s\n",val_string(cmd));
+      fprintf(stderr,"Command not found : %s\n",cmd.__s);
       exit(1);
    }
+
    // parent
-   for(i=0;i<=(isRaw ? 2 : val_array_size(vargs));i++)
+   for(int i=0;i<=(isRaw ? 2 : vargs->length);i++)
       free(argv[i]);
    free(argv);
+
    do_close(input[0]);
    do_close(output[1]);
    do_close(error[1]);
+
+   p = new vprocess;
+   p->create();
    p->iwrite = input[1];
    p->oread = output[0];
    p->eread = error[0];
-   gc_exit_blocking();
-#   endif
-   {
-      value vp = alloc_abstract(k_process,p);
-      val_gc(vp,free_process);
-      return vp;
    }
    #endif
-}
 
-// CPP streams are byte-based, not char based ...
-#define CHECK_ARGS()   \
-   vprocess *p; \
-   buffer buf; \
-   val_check_kind(vp,k_process); \
-   val_check(str,buffer); \
-   buf = val_to_buffer(str); \
-   val_check(pos,int); \
-   val_check(len,int); \
-   if( val_int(pos) < 0 || val_int(len) < 0 || val_int(pos) + val_int(len) > buffer_size(buf) ) \
-      return alloc_null(); \
-   p = val_process(vp); \
+   return p;
+
+   #endif // not APPLETV
+}
 
 
 /**
@@ -271,31 +319,28 @@ static value process_run( value cmd, value vargs ) {
         For hxcpp, the input buffer is in bytes, not characters
    </doc>
 **/
-static value process_stdout_read( value vp, value str, value pos, value len ) {
-   CHECK_ARGS();
-   gc_enter_blocking();
-#   ifdef NEKO_WINDOWS
-   {
-      DWORD nbytes;
-      if( !ReadFile(p->oread,buffer_data(buf)+val_int(pos),val_int(len),&nbytes,NULL) )
-      {
-         gc_exit_blocking();
-         return alloc_null();
-      }
-      gc_exit_blocking();
-      return alloc_int(nbytes);
-   }
-#   else
-   int nbytes = read(p->oread,buffer_data(buf) + val_int(pos),val_int(len));
+int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int pos, int len )
+{
+   if( pos < 0 || len < 0 || pos + len > buf->length )
+      return 0;
+   vprocess *p = getProcess(handle);
+
+   unsigned char *dest = &buf[0];
+   hx::EnterGCFreeZone();
+   #ifdef NEKO_WINDOWS
+   DWORD nbytes = 0;
+   if( !ReadFile(p->oread,dest+pos,len,&nbytes,0) )
+      nbytes = 0;
+   #else
+   int nbytes = read(p->oread,dest + pos,len);
    if( nbytes <= 0 )
-   {
-      gc_exit_blocking();
-      return alloc_null();
-   }
-   gc_exit_blocking();
-   return alloc_int(nbytes);
-#   endif
+      nbytes = 0;
+   #endif
+
+   hx::ExitGCFreeZone();
+   return nbytes;
 }
+
 
 /**
    process_stderr_read : 'process -> buf:string -> pos:int -> len:int -> int
@@ -305,23 +350,26 @@ static value process_stdout_read( value vp, value str, value pos, value len ) {
    process stderr is closed and no more data is available for reading.
    </doc>
 **/
-static value process_stderr_read( value vp, value str, value pos, value len ) {
-   CHECK_ARGS();
+int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int pos, int len )
+{
+   if( pos < 0 || len < 0 || pos + len > buf->length )
+      return 0;
+   vprocess *p = getProcess(handle);
 
-   gc_enter_blocking();
-#   ifdef NEKO_WINDOWS
-   DWORD nbytes;
-   if( !ReadFile(p->eread,buffer_data(buf)+val_int(pos),val_int(len),&nbytes,NULL) )
-#   else
-   int nbytes = read(p->eread,buffer_data(buf)+val_int(pos),val_int(len));
+   unsigned char *dest = &buf[0];
+   hx::EnterGCFreeZone();
+   #ifdef NEKO_WINDOWS
+   DWORD nbytes = 0;
+   if( !ReadFile(p->eread,dest+pos,len,&nbytes,0) )
+      nbytes = 0;
+   #else
+   int nbytes = read(p->eread,dest + pos,len);
    if( nbytes <= 0 )
-#   endif
-   {
-      gc_exit_blocking();
-      return alloc_null();
-   }
-   gc_exit_blocking();
-   return alloc_int(nbytes);
+      nbytes = 0;
+   #endif
+
+   hx::ExitGCFreeZone();
+   return nbytes;
 }
 
 /**
@@ -332,22 +380,28 @@ static value process_stderr_read( value vp, value str, value pos, value len ) {
    process stdin is closed.
    </doc>
 **/
-static value process_stdin_write( value vp, value str, value pos, value len ) {
-   CHECK_ARGS();
-   gc_enter_blocking();
-#   ifdef NEKO_WINDOWS
-   DWORD nbytes;
-   if( !WriteFile(p->iwrite,buffer_data(buf)+val_int(pos),val_int(len),&nbytes,NULL) )
-#   else
-   int nbytes = write(p->iwrite,buffer_data(buf)+val_int(pos),val_int(len));
+int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int pos, int len )
+{
+   if( pos < 0 || len < 0 || pos + len > buf->length )
+      return 0;
+   vprocess *p = getProcess(handle);
+
+   unsigned char *src = &buf[0];
+
+
+   hx::EnterGCFreeZone();
+   #ifdef NEKO_WINDOWS
+   DWORD nbytes =0;
+   if( !WriteFile(p->iwrite,src+pos,len,&nbytes,0) )
+      nbytes = 0;
+   #else
+   int nbytes = write(p->iwrite,src+pos,len);
    if( nbytes == -1 )
-#   endif
-   {
-      gc_exit_blocking();
-      return alloc_null();
-   }
-   gc_exit_blocking();
-   return alloc_int(nbytes);
+      nbytes = 0;
+   #endif
+
+   hx::ExitGCFreeZone();
+   return nbytes;
 }
 
 /**
@@ -356,19 +410,18 @@ static value process_stdin_write( value vp, value str, value pos, value len ) {
    Close the process standard input.
    </doc>
 **/
-static value process_stdin_close( value vp ) {
-   vprocess *p;
-   val_check_kind(vp,k_process);
-   p = val_process(vp);
-#   ifdef NEKO_WINDOWS
-   if( !CloseHandle(p->iwrite) )
-      return alloc_null();
-#   else
-   if( do_close(p->iwrite) )
-      return alloc_null();
-   p->iwrite = -1;
-#   endif
-   return val_null;
+void _hx_std_process_stdin_close( Dynamic handle )
+{
+   vprocess *p = getProcess(handle);
+
+   #ifdef NEKO_WINDOWS
+   if ( p->iwrite )
+      CloseHandle(p->iwrite);
+   #else
+   if( p->iwrite!=-1 )
+      do_close(p->iwrite);
+   #endif
+   p->iwrite = HANDLE_INIT;
 }
 
 /**
@@ -377,33 +430,35 @@ static value process_stdin_close( value vp ) {
    Wait until the process terminate, then returns its exit code.
    </doc>
 **/
-static value process_exit( value vp ) {
-   vprocess *p;
-   val_check_kind(vp,k_process);
-   p = val_process(vp);
-   gc_enter_blocking();
-#   ifdef NEKO_WINDOWS
+int _hx_std_process_exit( Dynamic handle )
+{
+   vprocess *p = getProcess(handle);
+
+   hx::EnterGCFreeZone();
+   #ifdef NEKO_WINDOWS
    {
       DWORD rval;
       WaitForSingleObject(p->pinf.hProcess,INFINITE);
-      gc_exit_blocking();
+      hx::ExitGCFreeZone();
+
       if( !GetExitCodeProcess(p->pinf.hProcess,&rval) )
-         return alloc_null();
-      return alloc_int(rval);
+         return 0;
+      return rval;
    }
-#   else
+   #else
    int rval;
-   while( waitpid(p->pid,&rval,0) != p->pid ) {
+   while( waitpid(p->pid,&rval,0) != p->pid )
+   {
       if( errno == EINTR )
          continue;
-      gc_exit_blocking();
-      return alloc_null();
+      hx::ExitGCFreeZone();
+      return 0;
    }
-   gc_exit_blocking();
+   hx::ExitGCFreeZone();
    if( !WIFEXITED(rval) )
-      return alloc_null();
-   return alloc_int(WEXITSTATUS(rval));
-#   endif
+      return 0;
+   return WEXITSTATUS(rval);
+   #endif
 }
 
 /**
@@ -412,16 +467,17 @@ static value process_exit( value vp ) {
    Returns the process id.
    </doc>
 **/
-static value process_pid( value vp ) {
-   vprocess *p;
-   val_check_kind(vp,k_process);
-   p = val_process(vp);
-#   ifdef NEKO_WINDOWS
-   return alloc_int(p->pinf.dwProcessId);
-#   else
-   return alloc_int(p->pid);
-#   endif
+int _hx_std_process_pid( Dynamic handle )
+{
+   vprocess *p = getProcess(handle);
+
+   #ifdef NEKO_WINDOWS
+   return p->pinf.dwProcessId;
+   #else
+   return p->pid;
+   #endif
 }
+
 
 /**
    process_close : 'process -> void
@@ -429,35 +485,22 @@ static value process_pid( value vp ) {
    Close the process I/O.
    </doc>
 **/
-static value process_close( value vp ) {   
-   val_check_kind(vp,k_process);
-   free_process(vp);
-   free_abstract(vp);
-   return val_null;
+void _hx_std_process_close( Dynamic handle )
+{
+   vprocess *p = getProcess(handle);
+   p->destroy();
 }
 
 #else  // !HX_WINRT
 
-static value process_run(value , value ) { return alloc_null(); }
-static value process_stdout_read(value, value, value, value) { return alloc_null(); }
-static value process_stderr_read(value ,value ,value ,value ) { return alloc_null(); }
-static value process_stdin_close(value) { return alloc_null(); }
-static value process_stdin_write(value ,value ,value ,value ) { return alloc_null(); }
-static value process_exit( value ) { return alloc_null(); }
-static value process_pid( value ) { return alloc_null(); }
-static value process_close( value  ) {  return alloc_null(); }
+Dynamic _hx_std_process_run( String cmd, Array<String> vargs ) { }
+int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int pos, int len ) { return 0; }
+int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int pos, int len ) { return 0; }
+int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int pos, int len ) { return 0; }
+void _hx_std_process_stdin_close( value vp ) { }
+int _hx_std_process_exit( Dynamic handle ) { return 0; }
+int _hx_std_process_pid( Dynamic handle ) { return 0; }
+void _hx_std_process_close( Dynamic handle ) { }
 
 #endif // HX_WINRT
 
-int __process_prims() { return 0; }
-
-DEFINE_PRIM(process_run,2);
-DEFINE_PRIM(process_stdout_read,4);
-DEFINE_PRIM(process_stderr_read,4);
-DEFINE_PRIM(process_stdin_close,1);
-DEFINE_PRIM(process_stdin_write,4);
-DEFINE_PRIM(process_exit,1);
-DEFINE_PRIM(process_pid,1);
-DEFINE_PRIM(process_close,1);
-
-/* ************************************************************************ */

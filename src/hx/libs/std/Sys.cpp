@@ -1,699 +1,677 @@
-#include <hx/CFFI.h>
+#include <hxcpp.h>
+#include <hx/OS.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
 #ifndef EPPC
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
 
 
-int __sys_prims() { return 0; }
 
 #ifdef NEKO_WINDOWS
-#	include <windows.h>
-#	include <direct.h>
-#	include <conio.h>
-#	include <locale.h>
+   #include <windows.h>
+   #include <direct.h>
+   #include <conio.h>
+   #include <locale.h>
 #else
-#	include <errno.h>
-#ifndef EPPC
-#	include <unistd.h>
-#	include <dirent.h>
-#	include <termios.h>
-#	include <sys/time.h>
-#	include <sys/times.h>
-#endif
-#	include <limits.h>
-#ifndef ANDROID
-#	include <locale.h>
-#if !defined(BLACKBERRY) && !defined(EPPC) && !defined(GCW0)
-#	include <xlocale.h>
-#endif
-#endif
+   #include <errno.h>
+   #ifndef EPPC
+      #include <unistd.h>
+      #include <dirent.h>
+      #include <termios.h>
+      #include <sys/time.h>
+      #include <sys/times.h>
+   #endif
+   #include <limits.h>
+   #ifndef ANDROID
+      #include <locale.h>
+      #if !defined(BLACKBERRY) && !defined(EPPC) && !defined(GCW0)
+         #include <xlocale.h>
+      #endif
+   #endif
 #endif
 
 #ifdef EMSCRIPTEN
-#include <sys/wait.h>
+   #include <sys/wait.h>
 #endif
 
 #ifndef IPHONE
-#ifdef NEKO_MAC
-#	include <sys/syslimits.h>
-#	include <limits.h>
-#	include <mach-o/dyld.h>
-#endif
+   #ifdef NEKO_MAC
+      #include <sys/syslimits.h>
+      #include <limits.h>
+      #include <mach-o/dyld.h>
+   #endif
 #endif
 
 #if defined(HX_WINRT) && !defined(_XBOX_ONE)
-#include <string>
+   #include <string>
 #endif
 
 #ifndef CLK_TCK
-#	define CLK_TCK	100
+   #define CLK_TCK   100
 #endif
 
+
 /**
-	<doc>
-	<h1>System</h1>
-	<p>
-	Interactions with the operating system.
-	</p>
-	</doc>
+   <doc>
+   <h1>System</h1>
+   <p>
+   Interactions with the operating system.
+   </p>
+   </doc>
 **/
 
 /**
-	get_env : string -> string?
-	<doc>Get some environment variable if exists</doc>
+   get_env : string -> string?
+   <doc>Get some environment variable if exists</doc>
 **/
-static value get_env( value v ) {
-	char *s = 0;
-	val_check(v,string);
+
+String _hx_std_get_env( String v )
+{
+   char *s = 0;
    #ifndef HX_WINRT
-	s = getenv(val_string(v));
+   s = getenv(v.__s);
    #endif
-	if( s == NULL )
-		return val_null;
-	return alloc_string(s);
+   return String(s);
 }
 
 /**
-	put_env : var:string -> val:string -> void
-	<doc>Set some environment variable value</doc>
+   put_env : var:string -> val:string -> void
+   <doc>Set some environment variable value</doc>
 **/
-static value put_env( value e, value v ) {
+void _hx_std_put_env( String e, String v )
+{
 #ifdef HX_WINRT
    // Do nothing
-	return alloc_null();
 #elif defined(NEKO_WINDOWS)
-	val_check(e,string);
-	val_check(v,string);
-	buffer b = alloc_buffer(0);
-	val_buffer(b,e);
-	buffer_append_sub(b,"=",1);
-	val_buffer(b,v);
-	if( putenv(buffer_data(b)) != 0 )
-		return alloc_null();
+   String set = e + HX_CSTRING("=") + v;
+   bool ok = putenv(set.__s) == 0;
 #else
-	val_check(e,string);
-	val_check(v,string);
-	if( setenv(val_string(e),val_string(v),1) != 0 )
-		return alloc_null();
+   bool ok = setenv(e.__s,v.__s,1) != 0;
 #endif
-	return alloc_bool(true);
 }
 
 /**
-	sys_sleep : number -> void
-	<doc>Sleep a given number of seconds</doc>
+   sys_sleep : number -> void
+   <doc>Sleep a given number of seconds</doc>
 **/
 
-static value sys_sleep( value f ) {
-	val_check(f,number);
-	gc_enter_blocking();
+void _hx_sys_sleep( int f )
+{
+   hx::EnterGCFreeZone();
 #if defined(NEKO_WINDOWS)
-	Sleep((DWORD)(val_number(f) * 1000));
+   Sleep((DWORD)(f * 1000));
 #elif defined(EPPC)
 //TODO: Implement sys_sleep for EPPC
 #else
-	{
-		struct timespec t;
-		struct timespec tmp;
-		t.tv_sec = (int)val_number(f);
-		t.tv_nsec = (int)((val_number(f) - t.tv_sec) * 1e9);
-		while( nanosleep(&t,&tmp) == -1 ) {
-			if( errno != EINTR ) {
-				gc_exit_blocking();
-				return alloc_null();
+   {
+      struct timespec t;
+      struct timespec tmp;
+      t.tv_sec = (int)(f);
+      t.tv_nsec = (int)(((f) - t.tv_sec) * 1e9);
+      while( nanosleep(&t,&tmp) == -1 )
+      {
+         if( errno != EINTR )
+         {
+            hx::ExitGCFreeZone();
+            return;
          }
-			t = tmp;
-		}
-	}
+         t = tmp;
+      }
+   }
 #endif
-	gc_exit_blocking();
-	return alloc_bool(true);
+   hx::ExitGCFreeZone();
 }
 
 /**
-	set_time_locale : string -> bool
-	<doc>Set the locale for LC_TIME, returns true on success</doc>
+   set_time_locale : string -> bool
+   <doc>Set the locale for LC_TIME, returns true on success</doc>
 **/
-static value set_time_locale( value l ) {
+bool _hx_std_set_time_locale( String l )
+{
 #if defined(ANDROID) || defined(GCW0)
-        return alloc_null();
+    return false;
 #else
 
 #ifdef NEKO_POSIX
-	locale_t lc, old;
-	val_check(l,string);
-	lc = newlocale(LC_TIME_MASK,val_string(l),NULL);
-	if( lc == NULL ) return alloc_bool(false);
-	old = uselocale(lc);
-	if( old == NULL ) {
-		freelocale(lc);
-		return alloc_bool(false);
-	}
-	if( old != LC_GLOBAL_LOCALE )
-		freelocale(old);
-	return alloc_bool(true);
+   locale_t lc, old;
+   lc = newlocale(LC_TIME_MASK,l.__s,NULL);
+   if( !lc )
+      return false;
+   old = uselocale(lc);
+   if( !old )
+   {
+      freelocale(lc);
+      return false;
+   }
+   if( old != LC_GLOBAL_LOCALE )
+      freelocale(old);
+   return true;
 #else
-	val_check(l,string);
-	return alloc_bool(setlocale(LC_TIME,val_string(l)) != NULL);
+   return setlocale(LC_TIME,l.__s);
 #endif
 
 #endif // !Android
 }
 
 /**
-	get_cwd : void -> string
-	<doc>Return current working directory</doc>
+   get_cwd : void -> string
+   <doc>Return current working directory</doc>
 **/
-static value get_cwd() {
+String _hx_std_get_cwd()
+{
    #ifdef HX_WINRT
-   return alloc_string("ms-appdata:///local/");
+   return String(HX_CSTRING("ms-appdata:///local/"));
    #elif defined(EPPC)
-   return alloc_null();
+   return String();
    #else
-	char buf[256];
-	int l;
-	if( getcwd(buf,256) == NULL )
-		return alloc_null();
-	l = (int)strlen(buf);
-	if( buf[l-1] != '/' && buf[l-1] != '\\' ) {
-		buf[l] = '/';
-		buf[l+1] = 0;
-	}
-	return alloc_string(buf);
+   char buf[1025];
+   int l;
+   if( getcwd(buf,1024) == NULL )
+      return String();
+   l = (int)strlen(buf);
+   if( buf[l-1] != '/' && buf[l-1] != '\\' ) {
+      buf[l] = '/';
+      buf[l+1] = 0;
+   }
+   return String(buf);
    #endif
 }
 
 /**
-	set_cwd : string -> void
-	<doc>Set current working directory</doc>
+   set_cwd : string -> void
+   <doc>Set current working directory</doc>
 **/
-static value set_cwd( value d ) {
+void _hx_std_set_cwd( String d )
+{
    #if !defined(HX_WINRT) && !defined(EPPC)
-	val_check(d,string);
-	if( chdir(val_string(d)) )
-		return alloc_null();
+   chdir(d.__s);
    #endif
-	return alloc_bool(true);
 }
 
 
 /**
-	sys_string : void -> string
-	<doc>
-	Return the local system string. The current value are possible :
-	<ul>
-	<li>[Windows]</li>
-	<li>[Linux]</li>
-	<li>[BSD]</li>
-	<li>[Mac]</li>
-	</ul>
-	</doc>
+   sys_string : void -> string
+   <doc>
+   Return the local system string. The current value are possible :
+   <ul>
+   <li>[Windows]</li>
+   <li>[Linux]</li>
+   <li>[BSD]</li>
+   <li>[Mac]</li>
+   </ul>
+   </doc>
 **/
-static value sys_string() {
+String _hx_std_sys_string()
+{
 #if defined(HX_WINRT)
-	return alloc_string("WinRT");
+   return HX_CSTRING("WinRT");
 #elif defined(NEKO_WINDOWS)
-	return alloc_string("Windows");
+   return HX_CSTRING("Windows");
 #elif defined(NEKO_GNUKBSD)
-	return alloc_string("GNU/kFreeBSD");
+   return HX_CSTRING("GNU/kFreeBSD");
 #elif defined(NEKO_LINUX)
-	return alloc_string("Linux");
+   return HX_CSTRING("Linux");
 #elif defined(NEKO_BSD)
-	return alloc_string("BSD");
+   return HX_CSTRING("BSD");
 #elif defined(NEKO_MAC)
-	return alloc_string("Mac");
+   return HX_CSTRING("Mac");
 #elif defined(ANDROID)
-	return alloc_string("Android");
+   return HX_CSTRING("Android");
 #elif defined(BLACKBERRY)
-	return alloc_string("BlackBerry");
+   return HX_CSTRING("BlackBerry");
 #elif defined(EMSCRIPTEN)
-	return alloc_string("Emscripten");
+   return HX_CSTRING("Emscripten");
 #elif defined(EPPC)
-	return alloc_string("EPPC");
+   return HX_CSTRING("EPPC");
 #else
 #error Unknow system string
 #endif
 }
 
 /**
-	sys_is64 : void -> bool
-	<doc>
-	Returns true if we are on a 64-bit system
-	</doc>
+   sys_is64 : void -> bool
+   <doc>
+   Returns true if we are on a 64-bit system
+   </doc>
 **/
-static value sys_is64() {
+bool _hx_std_sys_is64()
+{
 #ifdef NEKO_64BITS
-	return alloc_bool(true);
+   return true;
 #else
-	return alloc_bool(false);
+   return false;
 #endif
 }
 
 /**
-	sys_command : string -> int
-	<doc>Run the shell command and return exit code</doc>
+   sys_command : string -> int
+   <doc>Run the shell command and return exit code</doc>
 **/
-static value sys_command( value cmd ) {
+int _hx_std_sys_command( String cmd )
+{
    #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC) || defined(APPLETV)
-	return alloc_int( -1 );
+   return -1;
    #else
-	val_check(cmd,string);
-	if( val_strlen(cmd) == 0 )
-		return alloc_int(-1);
-	gc_enter_blocking();
-	int result =  system(val_string(cmd));
-	gc_exit_blocking();
+   if( !cmd.__s || !cmd.length )
+      return -1;
+
+   hx::EnterGCFreeZone();
+   int result = system(cmd.__s);
+   hx::ExitGCFreeZone();
+
    #if !defined(NEKO_WINDOWS) && !defined(ANDROID)
    result = WEXITSTATUS(result) | (WTERMSIG(result) << 8);
    #endif
-	return alloc_int( result );
+
+   return result;
    #endif
 }
 
 
 /**
-	sys_exit : int -> void
-	<doc>Exit with the given errorcode. Never returns.</doc>
+   sys_exit : int -> void
+   <doc>Exit with the given errorcode. Never returns.</doc>
 **/
-static value sys_exit( value ecode ) {
-	val_check(ecode,int);
-	exit(val_int(ecode));
-	return alloc_bool(true);
+void _hx_std_sys_exit( int code )
+{
+   exit(code);
 }
 
 /**
-	sys_exists : string -> bool
-	<doc>Returns true if the file or directory exists.</doc>
+   sys_exists : string -> bool
+   <doc>Returns true if the file or directory exists.</doc>
 **/
-static value sys_exists( value path ) {
-	#ifdef EPPC
-	return alloc_bool(true);
-	#else
-	struct stat st;
-	val_check(path,string);
-	gc_enter_blocking();
-	bool result =  stat(val_string(path),&st) == 0;
-	gc_exit_blocking();
-	return alloc_bool(result);
-	#endif
+bool _hx_std_sys_exists( String path )
+{
+   #ifdef EPPC
+   return true;
+   #else
+   struct stat st;
+   hx::EnterGCFreeZone();
+   bool result =  stat(path.__s,&st) == 0;
+   hx::ExitGCFreeZone();
+   return result;
+   #endif
 }
 
 /**
-	file_exists : string -> bool
-	<doc>Deprecated : use sys_exists instead.</doc>
+   file_delete : string -> void
+   <doc>Delete the file. Exception on error.</doc>
 **/
-static value file_exists( value path ) {
-	gc_enter_blocking();
-	bool result =  sys_exists(path);
-	gc_exit_blocking();
-	return alloc_bool(result);
+void _hx_std_file_delete( String path )
+{
+   #ifndef EPPC
+   hx::EnterGCFreeZone();
+   bool err = unlink(path.__s);
+   hx::ExitGCFreeZone();
+
+   if (err)
+      hx::Throw( HX_CSTRING("Could not delete ") + path );
+   #endif
 }
 
 /**
-	file_delete : string -> void
-	<doc>Delete the file. Exception on error.</doc>
+   sys_rename : from:string -> to:string -> void
+   <doc>Rename the file or directory. Exception on error.</doc>
 **/
-static value file_delete( value path ) {
-	#ifdef EPPC
-	return alloc_bool(true);
-	#else
-	val_check(path,string);
-	gc_enter_blocking();
-	if( unlink(val_string(path)) != 0 )
-	{
-		gc_exit_blocking();
-		return alloc_null();
-	}
-	gc_exit_blocking();
-	return alloc_bool(true);
-	#endif
+void _hx_std_sys_rename( String path, String newname )
+{
+   hx::EnterGCFreeZone();
+   bool err = rename(path.__s,newname.__s);
+   hx::ExitGCFreeZone();
+
+   if (err)
+      hx::Throw(HX_CSTRING("Could not rename"));
+}
+
+#define STATF(f) o->Add(HX_CSTRING(#f),(int)(s.st_##f))
+
+/**
+   sys_stat : string -> {
+      gid => int,
+      uid => int,
+      atime => 'int,
+      mtime => 'int,
+      ctime => 'int,
+      dev => int,
+      ino => int,
+      nlink => int,
+      rdev => int,
+      mode => int,
+      size => int
+   }
+   <doc>Run the [stat] command on the given file or directory.</doc>
+**/
+Dynamic _hx_std_sys_stat( String path )
+{
+   #ifdef EPPC
+   return alloc_null();
+   #else
+   hx::EnterGCFreeZone();
+   struct stat s;
+   bool err = stat(path.__s,&s);
+   hx::ExitGCFreeZone();
+   if (err)
+      return null();
+   hx::Anon o = hx::Anon_obj::Create();
+
+   STATF(gid);
+   STATF(uid);
+   STATF(atime);
+   STATF(mtime);
+   STATF(ctime);
+   STATF(dev);
+   STATF(ino);
+   STATF(mode);
+   STATF(nlink);
+   STATF(rdev);
+   STATF(size);
+   STATF(mode);
+
+   return o;
+   #endif
 }
 
 /**
-	sys_rename : from:string -> to:string -> void
-	<doc>Rename the file or directory. Exception on error.</doc>
+   sys_file_type : string -> string
+   <doc>
+   Return the type of the file. The current values are possible :
+   <ul>
+   <li>[file]</li>
+   <li>[dir]</li>
+   <li>[symlink]</li>
+   <li>[sock]</li>
+   <li>[char]</li>
+   <li>[block]</li>
+   <li>[fifo]</li>
+   </ul>
+   </doc>
 **/
-static value sys_rename( value path, value newname ) {
-	val_check(path,string);
-	val_check(newname,string);
-	gc_enter_blocking();
-	if( rename(val_string(path),val_string(newname)) != 0 )
-	{
-		gc_exit_blocking();
-		return alloc_null();
-	}
-	gc_exit_blocking();
-	return alloc_bool(true);
-}
+String _hx_std_sys_file_type( String path )
+{
+   #ifdef EPPC
+   return String();
+   #else
+   struct stat s;
+   hx::EnterGCFreeZone();
+   bool err = stat(path.__s,&s);
+   hx::ExitGCFreeZone();
+   if (err)
+      return String();
 
-#define STATF(f) alloc_field(o,val_id(#f),alloc_int(s.st_##f))
-#define STATF32(f) alloc_field(o,val_id(#f),alloc_int32(s.st_##f))
-
-/**
-	sys_stat : string -> {
-		gid => int,
-		uid => int,
-		atime => 'int32,
-		mtime => 'int32,
-		ctime => 'int32,
-		dev => int,
-		ino => int,
-		nlink => int,
-		rdev => int,
-		mode => int,
-		size => int
-	}
-	<doc>Run the [stat] command on the given file or directory.</doc>
-**/
-static value sys_stat( value path ) {
-	#ifdef EPPC
-	return alloc_null();
-	#else
-	struct stat s;
-	value o;
-	val_check(path,string);
-	gc_enter_blocking();
-	if( stat(val_string(path),&s) != 0 )
-	{
-		gc_exit_blocking();
-		return alloc_null();
-	}
-	gc_exit_blocking();
-	o = alloc_empty_object( );
-	STATF(gid);
-	STATF(uid);
-	STATF32(atime);
-	STATF32(mtime);
-	STATF32(ctime);
-	STATF(dev);
-	STATF(ino);
-	STATF(mode);
-	STATF(nlink);
-	STATF(rdev);
-	STATF(size);
-	STATF(mode);
-	return o;
-	#endif
-}
-
-/**
-	sys_file_type : string -> string
-	<doc>
-	Return the type of the file. The current values are possible :
-	<ul>
-	<li>[file]</li>
-	<li>[dir]</li>
-	<li>[symlink]</li>
-	<li>[sock]</li>
-	<li>[char]</li>
-	<li>[block]</li>
-	<li>[fifo]</li>
-	</ul>
-	</doc>
-**/
-static value sys_file_type( value path ) {
-	#ifdef EPPC
-	return alloc_null();
-	#else
-	struct stat s;
-	val_check(path,string);
-	gc_enter_blocking();
-	if( stat(val_string(path),&s) != 0 )
-	{
-		gc_exit_blocking();
-		return alloc_null();
-	}
-	gc_exit_blocking();
-	if( s.st_mode & S_IFREG )
-		return alloc_string("file");
-	if( s.st_mode & S_IFDIR )
-		return alloc_string("dir");
-	if( s.st_mode & S_IFCHR )
-		return alloc_string("char");
+   if( s.st_mode & S_IFREG )
+      return HX_CSTRING("file");
+   if( s.st_mode & S_IFDIR )
+      return HX_CSTRING("dir");
+   if( s.st_mode & S_IFCHR )
+      return HX_CSTRING("char");
 #ifndef NEKO_WINDOWS
-	if( s.st_mode & S_IFLNK )
-		return alloc_string("symlink");
-	if( s.st_mode & S_IFBLK )
-		return alloc_string("block");
-	if( s.st_mode & S_IFIFO )
-		return alloc_string("fifo");
-	if( s.st_mode & S_IFSOCK )
-		return alloc_string("sock");
+   if( s.st_mode & S_IFLNK )
+      return HX_CSTRING("symlink");
+   if( s.st_mode & S_IFBLK )
+      return HX_CSTRING("block");
+   if( s.st_mode & S_IFIFO )
+      return HX_CSTRING("fifo");
+   if( s.st_mode & S_IFSOCK )
+      return HX_CSTRING("sock");
 #endif
-	return alloc_null();
-	#endif
+   return String();
+   #endif
 }
 
 /**
-	sys_create_dir : string -> mode:int -> void
-	<doc>Create a directory with the specified rights</doc>
+   sys_create_dir : string -> mode:int -> void
+   <doc>Create a directory with the specified rights</doc>
 **/
-static value sys_create_dir( value path, value mode ) {
-	#ifdef EPPC
-	return alloc_bool(true);
-	#else
-	val_check(path,string);
-	val_check(mode,int);
-	gc_enter_blocking();
+bool _hx_std_sys_create_dir( String path, int mode )
+{
+   #ifdef EPPC
+   return true;
+   #else
+
+   hx::EnterGCFreeZone();
 #ifdef NEKO_WINDOWS
-	if( mkdir(val_string(path)) != 0 )
+   bool err = mkdir(path.__s);
 #else
-	if( mkdir(val_string(path),val_int(mode)) != 0 )
+   bool err = mkdir(path.__s,mode);
 #endif
-	{
-		gc_exit_blocking();
-		return alloc_null();
-	}
-	gc_exit_blocking();
-	return alloc_bool(true);
-	#endif
+   hx::ExitGCFreeZone();
+
+   return !err;
+   #endif
 }
 
 /**
-	sys_remove_dir : string -> void
-	<doc>Remove a directory. Exception on error</doc>
+   sys_remove_dir : string -> void
+   <doc>Remove a directory. Exception on error</doc>
 **/
-static value sys_remove_dir( value path ) {
-	#ifdef EPPC
-	return alloc_bool(true);
-	#else
-	val_check(path,string);
-	gc_enter_blocking();
-	bool ok = rmdir(val_string(path)) != 0;
-	gc_exit_blocking();
-	return alloc_bool(ok);
-	#endif
+void _hx_std_sys_remove_dir( String path )
+{
+   #ifdef EPPC
+   return true;
+   #else
+   hx::EnterGCFreeZone();
+   bool ok = rmdir(path.__s) != 0;
+   hx::EnterGCFreeZone();
+   if (!ok)
+      hx::Throw(HX_CSTRING("Could not remove directory"));
+   #endif
 }
 
 /**
-	sys_time : void -> float
-	<doc>Return an accurate local time stamp in seconds since Jan 1 1970</doc>
+   sys_time : void -> float
+   <doc>Return an accurate local time stamp in seconds since Jan 1 1970</doc>
 **/
-static value sys_time() {
+double _hx_std_sys_time()
+{
 #ifdef NEKO_WINDOWS
-#define EPOCH_DIFF	(134774*24*60*60.0)
-	SYSTEMTIME t;
-	FILETIME ft;
+#define EPOCH_DIFF   (134774*24*60*60.0)
+   SYSTEMTIME t;
+   FILETIME ft;
     ULARGE_INTEGER ui;
-	GetSystemTime(&t);
-	if( !SystemTimeToFileTime(&t,&ft) )
-		return alloc_null();
+   GetSystemTime(&t);
+   if( !SystemTimeToFileTime(&t,&ft) )
+      return 0;
     ui.LowPart = ft.dwLowDateTime;
     ui.HighPart = ft.dwHighDateTime;
-	return alloc_float( ((double)ui.QuadPart) / 10000000.0 - EPOCH_DIFF );
+   return ( ((double)ui.QuadPart) / 10000000.0 - EPOCH_DIFF );
 #elif defined(EPPC)
-	time_t tod;
-	time(&tod);
-	return alloc_float ((double)tod);
+   time_t tod;
+   time(&tod);
+   return ((double)tod);
 #else
-	struct timeval tv;
-	if( gettimeofday(&tv,NULL) != 0 )
-		return alloc_null();
-	return alloc_float( tv.tv_sec + ((double)tv.tv_usec) / 1000000.0 );
+   struct timeval tv;
+   if( gettimeofday(&tv,NULL) != 0 )
+      return 0;
+   return ( tv.tv_sec + ((double)tv.tv_usec) / 1000000.0 );
 #endif
 }
 
 /**
-	sys_cpu_time : void -> float
-	<doc>Return the most accurate CPU time spent since the process started (in seconds)</doc>
+   sys_cpu_time : void -> float
+   <doc>Return the most accurate CPU time spent since the process started (in seconds)</doc>
 **/
-static value sys_cpu_time() {
+double _hx_std_sys_cpu_time()
+{
 #if defined(HX_WINRT) && !defined(_XBOX_ONE)
-    return alloc_float ((double)GetTickCount64()/1000.0);
+    return ((double)GetTickCount64()/1000.0);
 #elif defined(NEKO_WINDOWS)
-	FILETIME unused;
-	FILETIME stime;
-	FILETIME utime;
-	if( !GetProcessTimes(GetCurrentProcess(),&unused,&unused,&stime,&utime) )
-		return alloc_null();
-	return alloc_float( ((double)(utime.dwHighDateTime+stime.dwHighDateTime)) * 65.536 * 6.5536 + (((double)utime.dwLowDateTime + (double)stime.dwLowDateTime) / 10000000) );
+   FILETIME unused;
+   FILETIME stime;
+   FILETIME utime;
+   if( !GetProcessTimes(GetCurrentProcess(),&unused,&unused,&stime,&utime) )
+      return 0;
+   return ( ((double)(utime.dwHighDateTime+stime.dwHighDateTime)) * 65.536 * 6.5536 + (((double)utime.dwLowDateTime + (double)stime.dwLowDateTime) / 10000000) );
 #elif defined(EPPC)
-    return alloc_float ((double)clock()/(double)CLOCKS_PER_SEC);
+    return ((double)clock()/(double)CLOCKS_PER_SEC);
 #else
-	struct tms t;
-	times(&t);
-	return alloc_float( ((double)(t.tms_utime + t.tms_stime)) / CLK_TCK );
+   struct tms t;
+   times(&t);
+   return ( ((double)(t.tms_utime + t.tms_stime)) / CLK_TCK );
 #endif
 }
 
 /**
-	sys_read_dir : string -> string list
-	<doc>Return the content of a directory</doc>
+   sys_read_dir : string -> string list
+   <doc>Return the content of a directory</doc>
 **/
-static value sys_read_dir( value p) {
-	val_check(p,string);
+Array<String> _hx_std_sys_read_dir( String p)
+{
+   Array<String> result = Array_obj<String>::__new();
 
-        value result = alloc_array(0);
 #if defined(HX_WINRT) && defined(__cplusplus_winrt)
    auto folder = (Windows::Storage::StorageFolder::GetFolderFromPathAsync( ref new Platform::String(val_wstring(p)) ))->GetResults();
    auto results = folder->GetFilesAsync(Windows::Storage::Search::CommonFileQuery::DefaultQuery)->GetResults();
    for(int i=0;i<results->Size;i++)
-      val_array_push(result,alloc_wstring(results->GetAt(i)->Path->Data()));
-#elif defined(NEKO_WINDOWS)
-	const wchar_t *path = val_wstring(p);
-	size_t len = wcslen(path);
-   if (len>MAX_PATH)
-      return alloc_null();
+      result->push(String(results->GetAt(i)->Path));
 
-	WIN32_FIND_DATAW d;
-	HANDLE handle;
-	buffer b;
+#elif defined(NEKO_WINDOWS)
+   const wchar_t *path = p.__WCStr();
+   size_t len = wcslen(path);
+   if (len>MAX_PATH)
+      return null();
+
+   WIN32_FIND_DATAW d;
+   HANDLE handle;
   #if defined(HX_WINRT) && !defined(_XBOX_ONE)
-	std::wstring tempWStr(path);
-	std::string searchPath(tempWStr.begin(), tempWStr.end());
+   std::wstring tempWStr(path);
+   std::string searchPath(tempWStr.begin(), tempWStr.end());
   #else
    wchar_t searchPath[ MAX_PATH + 4 ];
    memcpy(searchPath,path, len*sizeof(wchar_t));
   #endif
 
 
-	if( len && path[len-1] != '/' && path[len-1] != '\\' )
+   if( len && path[len-1] != '/' && path[len-1] != '\\' )
       searchPath[len++] = '/';
    searchPath[len++] = '*';
    searchPath[len++] = '.';
    searchPath[len++] = '*';
    searchPath[len] = '\0';
 
-	gc_enter_blocking();
+   hx::EnterGCFreeZone();
   #if defined(HX_WINRT) && !defined(_XBOX_ONE)
-	handle = FindFirstFileEx(searchPath.c_str(), FindExInfoStandard, &d, FindExSearchNameMatch, NULL, 0);
+   handle = FindFirstFileEx(searchPath.c_str(), FindExInfoStandard, &d, FindExSearchNameMatch, NULL, 0);
   #else
-	handle = FindFirstFileW(searchPath,&d);
+   handle = FindFirstFileW(searchPath,&d);
   #endif
-	if( handle == INVALID_HANDLE_VALUE )
-	{
-		gc_exit_blocking();
-		return alloc_null();
-	}
-	while( true ) {
-		// skip magic dirs
-		if( d.cFileName[0] != '.' || (d.cFileName[1] != 0 && (d.cFileName[1] != '.' || d.cFileName[2] != 0)) ) {
-		   gc_exit_blocking();
-			val_array_push(result,alloc_wstring(d.cFileName));
-			gc_enter_blocking();
-		}
-		if( !FindNextFileW(handle,&d) )
-			break;
-	}
-	FindClose(handle);
+   if( handle == INVALID_HANDLE_VALUE )
+   {
+      hx::ExitGCFreeZone();
+      return null();
+   }
+   while( true )
+   {
+      // skip magic dirs
+      if( d.cFileName[0] != '.' || (d.cFileName[1] != 0 && (d.cFileName[1] != '.' || d.cFileName[2] != 0)) )
+      {
+         hx::ExitGCFreeZone();
+         result->push(String(d.cFileName));
+         hx::EnterGCFreeZone();
+      }
+      if( !FindNextFileW(handle,&d) )
+         break;
+   }
+   FindClose(handle);
 #elif !defined(EPPC)
-	DIR *d;
-	struct dirent *e;
-   const char *name = val_string(p);
-	gc_enter_blocking();
-	d = opendir(name);
-	if( d == NULL )
-	{
-		gc_exit_blocking();
-      val_throw(alloc_string("Invalid directory"));
-	}
-	while( true ) {
-		e = readdir(d);
-		if( e == NULL )
-			break;
-		// skip magic dirs
-		if( e->d_name[0] == '.' && (e->d_name[1] == 0 || (e->d_name[1] == '.' && e->d_name[2] == 0)) )
-			continue;
-		gc_exit_blocking();
-		val_array_push(result, alloc_string(e->d_name) );
-		gc_enter_blocking();
-	}
-	closedir(d);
+   const char *name = p.__s;
+   hx::EnterGCFreeZone();
+   DIR *d = opendir(name);
+   if( d == NULL )
+   {
+      hx::ExitGCFreeZone();
+      hx::Throw(HX_CSTRING("Invalid directory"));
+   }
+   while( true )
+   {
+      struct dirent *e = readdir(d);
+      if( e == NULL )
+         break;
+      // skip magic dirs
+      if( e->d_name[0] == '.' && (e->d_name[1] == 0 || (e->d_name[1] == '.' && e->d_name[2] == 0)) )
+         continue;
+      hx::ExitGCFreeZone();
+      result->push( String(e->d_name) );
+      hx::ExitGCFreeZone();
+   }
+   closedir(d);
 #endif
-	gc_exit_blocking();
-	return result;
+   hx::ExitGCFreeZone();
+
+   return result;
 }
 
 /**
-	file_full_path : string -> string
-	<doc>Return an absolute path from a relative one. The file or directory must exists</doc>
+   file_full_path : string -> string
+   <doc>Return an absolute path from a relative one. The file or directory must exists</doc>
 **/
-static value file_full_path( value path ) {
+String _hx_std_file_full_path( String path )
+{
 #if defined(HX_WINRT)
-	return path;
+   return path;
 #elif defined(NEKO_WINDOWS)
-	char buf[MAX_PATH+1];
-	val_check(path,string);
-	if( GetFullPathNameA(val_string(path),MAX_PATH+1,buf,NULL) == 0 )
-		return alloc_null();
-	return alloc_string(buf);
+   char buf[MAX_PATH+1];
+   if( GetFullPathNameA(path.__s,MAX_PATH+1,buf,NULL) == 0 )
+      return null();
+   return String(buf);
 #elif defined(EPPC)
-	return path;
+   return path;
 #else
-	char buf[PATH_MAX];
-	val_check(path,string);
-	if( realpath(val_string(path),buf) == NULL )
-		return alloc_null();
-	return alloc_string(buf);
+   char buf[PATH_MAX];
+   if( realpath(path.__s,buf) == NULL )
+      return null();
+   return String(buf);
 #endif
 }
 
 /**
-	sys_exe_path : void -> string
-	<doc>Return the path of the executable</doc>
+   sys_exe_path : void -> string
+   <doc>Return the path of the executable</doc>
 **/
-static value sys_exe_path() {
+String _hx_std_sys_exe_path()
+{
 #if defined(HX_WINRT) && defined(__cplusplus_winrt)
    Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
    Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
-   return(alloc_wstring(installedLocation->Path->Data()));
+   return(String(installedLocation->Path));
 #elif defined(NEKO_WINDOWS)
-	wchar_t path[MAX_PATH];
-	if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
-		return alloc_null();
-	return alloc_wstring(path);
+   wchar_t path[MAX_PATH];
+   if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
+      return null();
+   return String(path);
 #elif defined(NEKO_MAC) && !defined(IPHONE)
-	char path[PATH_MAX+1];
-	uint32_t path_len = PATH_MAX;
-	if( _NSGetExecutablePath(path, &path_len) )
-		return alloc_null();
-	return alloc_string(path);
+   char path[PATH_MAX+1];
+   uint32_t path_len = PATH_MAX;
+   if( _NSGetExecutablePath(path, &path_len) )
+      return null();
+   return String(path);
 #elif defined(EPPC)
-	return alloc_string("");
+   return HX_CSTRING("");
 #else
-	const char *p = getenv("_");
-	if( p != NULL )
-		return alloc_string(p);
-	{
-		char path[PATH_MAX];
-		int length = readlink("/proc/self/exe", path, sizeof(path));
-		if( length < 0 )
-			return alloc_null();
-	    path[length] = '\0';
-		return alloc_string(path);
-	}
+   const char *p = getenv("_");
+   if( p != NULL )
+      return String(p);
+   {
+      char path[PATH_MAX];
+      int length = readlink("/proc/self/exe", path, sizeof(path));
+      if( length < 0 )
+         return null();
+       path[length] = '\0';
+      return String(path);
+   }
 #endif
 }
 
 #if !defined(IPHONE) && !defined(APPLETV)
 #ifdef NEKO_MAC
 #include <crt_externs.h>
-#	define environ (*_NSGetEnviron())
+#   define environ (*_NSGetEnviron())
 #endif
 #endif
 
@@ -702,25 +680,28 @@ extern char **environ;
 #endif
 
 /**
-	sys_env : void -> #list
-	<doc>Return all the (key,value) pairs in the environment as a chained list</doc>
+   sys_env : void -> #list
+   <doc>Return all the (key,value) pairs in the environment as a chained list</doc>
 **/
-static value sys_env() {
-   value result = alloc_array(0);
+Array<String> _hx_std_sys_env()
+{
+   Array<String> result = Array_obj<String>::__new();
    #ifndef HX_WINRT
-	char **e = environ;
-	while( *e ) {
-		char *x = strchr(*e,'=');
-		if( x == NULL ) {
-			e++;
-			continue;
-		}
-                val_array_push(result,alloc_string_len(*e,(int)(x-*e)));
-                val_array_push(result,alloc_string(x+1));
-		e++;
-	}
+   char **e = environ;
+   while( *e )
+   {
+      char *x = strchr(*e,'=');
+      if( x == NULL )
+      {
+         e++;
+         continue;
+      }
+      result->push(String(*e,(int)(x-*e)).dup());
+      result->push(String(x+1));
+      e++;
+   }
    #endif
-	return result;
+   return result;
 }
 
 #ifdef HX_ANDROID
@@ -741,77 +722,51 @@ static value sys_env() {
 #endif
 
 /**
-	sys_getch : bool -> int
-	<doc>Read a character from stdin with or without echo</doc>
+   sys_getch : bool -> int
+   <doc>Read a character from stdin with or without echo</doc>
 **/
-static value sys_getch( value b ) {
+int _hx_std_sys_getch( bool b )
+{
 #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC)
-   return alloc_null();
+   return 0;
 #elif defined(NEKO_WINDOWS)
-	val_check(b,bool);
-	gc_enter_blocking();
-	int result = val_bool(b)?getche():getch();
-	gc_exit_blocking();
-	return alloc_int( result );
+   hx::EnterGCFreeZone();
+   int result = b?getche():getch();
+   hx::ExitGCFreeZone();
+
+   return result;
 #else
-	// took some time to figure out how to do that
-	// without relying on ncurses, which clear the
-	// terminal on initscr()
-	int c;
-	struct termios term, old;
-	val_check(b,bool);
-	gc_enter_blocking();
-	tcgetattr(fileno(stdin), &old);
-	term = old;
-	cfmakeraw(&term);
-	tcsetattr(fileno(stdin), 0, &term);
-	c = getchar();
-	tcsetattr(fileno(stdin), 0, &old);
-	if( val_bool(b) ) fputc(c,stdout);
-	gc_exit_blocking();
-	return alloc_int(c);
-#	endif
+   // took some time to figure out how to do that
+   // without relying on ncurses, which clear the
+   // terminal on initscr()
+   int c;
+   struct termios term, old;
+   hx::EnterGCFreeZone();
+   tcgetattr(fileno(stdin), &old);
+   term = old;
+   cfmakeraw(&term);
+   tcsetattr(fileno(stdin), 0, &term);
+   c = getchar();
+   tcsetattr(fileno(stdin), 0, &old);
+   if( b ) fputc(c,stdout);
+   hx::ExitGCFreeZone();
+   return c;
+#   endif
 }
 
 /**
-	sys_get_pid : void -> int
-	<doc>Returns the current process identifier</doc>
+   sys_get_pid : void -> int
+   <doc>Returns the current process identifier</doc>
 **/
-static value sys_get_pid() {
-#	ifdef NEKO_WINDOWS
-	return alloc_int(GetCurrentProcessId());
+int _hx_std_sys_get_pid()
+{
+#   ifdef NEKO_WINDOWS
+   return (int)(GetCurrentProcessId());
 #elif defined(EPPC)
-	return alloc_int(1);
-#	else
-	return alloc_int(getpid());
-#	endif
+   return (1);
+#   else
+   return (getpid());
+#   endif
 }
 
-DEFINE_PRIM(get_env,1);
-DEFINE_PRIM(put_env,2);
-DEFINE_PRIM(set_time_locale,1);
-DEFINE_PRIM(get_cwd,0);
-DEFINE_PRIM(set_cwd,1);
-DEFINE_PRIM(sys_sleep,1);
-DEFINE_PRIM(sys_command,1);
-DEFINE_PRIM(sys_exit,1);
-DEFINE_PRIM(sys_string,0);
-DEFINE_PRIM(sys_is64,0);
-DEFINE_PRIM(sys_stat,1);
-DEFINE_PRIM(sys_time,0);
-DEFINE_PRIM(sys_cpu_time,0);
-DEFINE_PRIM(sys_env,0);
-DEFINE_PRIM(sys_create_dir,2);
-DEFINE_PRIM(sys_remove_dir,1);
-DEFINE_PRIM(sys_read_dir,1);
-DEFINE_PRIM(file_full_path,1);
-DEFINE_PRIM(file_exists,1);
-DEFINE_PRIM(sys_exists,1);
-DEFINE_PRIM(file_delete,1);
-DEFINE_PRIM(sys_rename,2);
-DEFINE_PRIM(sys_exe_path,0);
-DEFINE_PRIM(sys_file_type,1);
-DEFINE_PRIM(sys_getch,1);
-DEFINE_PRIM(sys_get_pid,0);
 
-/* ************************************************************************ */
