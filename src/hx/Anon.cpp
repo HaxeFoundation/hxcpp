@@ -156,27 +156,27 @@ hx::Val Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
    {
       VariantKey *fixed = getFixed();
       int hash = inName.hash();
-      if (fixed->hash==hash && fixed->key.eq(inName))
+      if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
          return fixed->value;
       if (mFixedFields>1)
       {
          fixed++;
-         if (fixed->hash==hash && fixed->key.eq(inName))
+         if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
            return fixed->value;
          if (mFixedFields>2)
          {
             fixed++;
-            if (fixed->hash==hash && fixed->key.eq(inName))
+            if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
               return fixed->value;
             if (mFixedFields>3)
             {
                fixed++;
-               if (fixed->hash==hash && fixed->key.eq(inName))
+               if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
                  return fixed->value;
                if (mFixedFields>4)
                {
                   fixed++;
-                  if (fixed->hash==hash && fixed->key.eq(inName))
+                  if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
                      return fixed->value;
 
                   int fixed = findFixed(inName,true);
@@ -336,6 +336,28 @@ Anon SourceInfo(String inFile, int inLine, String inClass, String inMethod)
    result->Add(HX_CSTRING("methodName"),inMethod);
    return result;
 }
+
+String StringFromAnonFields(hx::Object *inPtr)
+{
+   Array<String> fields = Array_obj<String>::__new();
+   inPtr->__GetFields(fields);
+
+   int n = fields->length;
+   Array<String> array = Array<String>(0,n*4+4);
+   array->push(HX_CSTRING("{ "));
+   for(int i=0;i<n;i++)
+   {
+      if (array->length>1)
+         array->push(HX_CSTRING(", "));
+
+      array->push(fields[i]);
+      array->push(HX_CSTRING(" => "));
+      array->push( inPtr->__Field( fields[i], hx::paccDynamic) );
+   }
+   array->push(HX_CSTRING(" }"));
+   return array->join(HX_CSTRING(""));
+}
+
 
 
 

@@ -189,7 +189,7 @@ public:
    // Strings are known not to be null...
    inline bool eq(const ::String &inRHS) const
    {
-      return __s==inRHS.__s || (length==inRHS.length && !memcmp(__s,inRHS.__s,length));
+      return length==inRHS.length && !memcmp(__s,inRHS.__s,length);
    }
 
 
