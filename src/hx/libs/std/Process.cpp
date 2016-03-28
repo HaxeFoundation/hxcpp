@@ -194,8 +194,11 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
             for (int k=0;k<bs_count*2;k++)
                quoted.push_back('\\');
 
+            int qLen = quoted.size();
+            quoted.push_back('\0');
+
             if (quoted.size())
-               b+= String( &quoted[0], quoted.size() ).dup();
+               b+= String( &quoted[0], qLen ).dup();
 
             b += HX_CSTRING("\"");
          }
@@ -225,7 +228,9 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
       CloseHandle(eread);
       CloseHandle(iwrite);
       //printf("Cmd %s\n",val_string(cmd));
-      if( !CreateProcessW(NULL,(wchar_t *)name,NULL,NULL,TRUE,0,NULL,NULL,&sinf,&p->pinf) )
+      PROCESS_INFORMATION pinf;
+      memset(&pinf,0,sizeof(pinf));
+      if( !CreateProcessW(NULL,(wchar_t *)name,NULL,NULL,TRUE,0,NULL,NULL,&sinf,&pinf) )
       {
          hx::ExitGCFreeZone();
          hx::Throw(HX_CSTRING("Could not start process"));
@@ -241,6 +246,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
       p->oread = procOread;
       p->eread = procEread;
       p->iwrite = procIwrite;
+      p->pinf = pinf;
    }
    #else // not windows ...
    {

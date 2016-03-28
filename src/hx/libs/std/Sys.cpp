@@ -73,7 +73,7 @@
 
 String _hx_std_get_env( String v )
 {
-   char *s = 0;
+   const char *s = 0;
    #ifndef HX_WINRT
    s = getenv(v.__s);
    #endif

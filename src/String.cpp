@@ -370,7 +370,13 @@ String::String(const char *inPtr,int inLen)
 
 String::String(const HX_CHAR *inStr)
 {
-   __s = GCStringDup(inStr,-1,&length);
+   if (inStr)
+      __s = GCStringDup(inStr,-1,&length);
+   else
+   {
+      __s = 0;
+      length = 0;
+   }
 }
 
 
