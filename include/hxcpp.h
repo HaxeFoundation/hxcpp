@@ -314,8 +314,8 @@ typedef bool PropertyAccess;
 // This needs to "see" other declarations ...
 #include <hx/GcTypeInference.h>
 #include <hx/FieldRef.h>
-#include <hx/Anon.h>
 #include "Array.h"
+#include <hx/Anon.h>
 #include <hx/Class.h>
 #include "Enum.h"
 #include <hx/Interface.h>

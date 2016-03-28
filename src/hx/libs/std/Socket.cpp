@@ -532,7 +532,7 @@ Array<Dynamic> _hx_std_socket_select( Array<Dynamic> rs, Array<Dynamic> ws, Arra
    {
       hx::ExitGCFreeZone();
       HANDLE_EINTR(select_again);
-      hx::Throw( HX_CSTRING("Select error ") + String(errno) );
+      hx::Throw( HX_CSTRING("Select error ") + String((int)errno) );
    }
    hx::ExitGCFreeZone();
 
@@ -575,7 +575,7 @@ void _hx_std_socket_fast_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dyn
    {
       hx::ExitGCFreeZone();
       HANDLE_EINTR(select_again);
-      hx::Throw( HX_CSTRING("Select error ") + String(errno) );
+      hx::Throw( HX_CSTRING("Select error ") + String((int)errno) );
    }
 
    hx::ExitGCFreeZone();
