@@ -96,6 +96,8 @@ static void block_error()
     }
 }
 
+}
+
 /**
    socket_init : void -> void
    <doc>
@@ -113,7 +115,6 @@ void _hx_std_socket_init()
 #endif
 }
 
-}
 
 /**
    socket_new : udp:bool -> 'socket

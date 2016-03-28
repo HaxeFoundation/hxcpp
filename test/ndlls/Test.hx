@@ -12,6 +12,7 @@ import haxe.io.BytesData;
 import cpp.Random;
 import sys.io.File;
 import sys.io.FileSeek;
+import sys.net.Host;
 
 using cpp.NativeArray;
 
@@ -337,6 +338,26 @@ class Test
 
    }
 
+   public static function testHost()
+   {
+      log("Test Host");
+      try
+      {
+      var localhost = Host.localhost();
+      v('localhost :$localhost');
+      var host = new Host(localhost);
+      v('host :$host');
+      // var reverse = host.reverse();
+      // v('reverse :$reverse');
+      return ok();
+      }
+      catch(e:Dynamic)
+      {
+         return error("Unexpected error in testHost: " + e);
+      }
+
+   }
+
 
    public static function testFileSystem()
    {
@@ -414,23 +435,102 @@ class Test
       }
    }
 
+
+   public static function testSys()
+   {
+      log("Test Sys");
+      try
+      {
+         Sys.putEnv("mykey","123");
+         var env = Sys.getEnv("mykey");
+         v("got env:" + env);
+         if (env!="123")
+            return error("Bad environment get");
+         v("little sleep...");
+         var t0 = Sys.time();
+         Sys.sleep(0.1);
+         var t1 = Sys.time();
+         v("Slept for: " + (t1-t0));
+         if (t1<=t0 || (t1-t0)>10)
+            return error("Too sleepy");
+         v("CpuTime: " + Sys.cpuTime());
+         v("Cwd: " + Sys.getCwd());
+         v("Program Path: " + Sys.programPath());
+         var env = Sys.environment();
+         v("Environment mykey: " + env.get("mykey") );
+         if (env.get("mykey")!="123")
+            return error("Could not find mykey in environment");
+         v("Ignore getChar auto test");
+         v("Args: " + Sys.args());
+         v("SystemName: " + Sys.systemName());
+         v("Skipping  Sys.setTimeLocale" + Sys.setTimeLocale);
+         // Sys.command
+
+         return ok();
+      }
+      catch(e:Dynamic)
+      {
+         return error("Unexpected error in testSys: " + e);
+      }
+
+   }
+
+   public static function testCommand()
+   {
+      log("Test Sys");
+      try
+      {
+      var code = Sys.command( Sys.programPath(), ["exit", "13"]);
+      if (code!=13)
+         return error('Process exited with code $code, not 13');
+
+      return ok();
+      }
+      catch(e:Dynamic)
+      {
+         return error("Unexpected error in testCommand: " + e);
+      }
+   }
+
+   public static function runAsProcess()
+   {
+      var args = Sys.args();
+      var job = args.shift();
+      if (job=="exit")
+         Sys.exit( Std.parseInt(args[0]) );
+      else
+         Sys.println('Unknown job : "$job"');
+      Sys.exit(-99);
+   }
+
+
+
    public static function main()
    {
       var exitCode = 0;
-
-      exitCode |= testDate();
-      exitCode |= testCompress();
-      exitCode |= testRegexp();
-      exitCode |= testSqlite();
-      //exitCode |= testMysql();
-      exitCode |= testRandom();
-      exitCode |= testFile();
-      exitCode |= testFileSystem();
-
-      if (exitCode!=0)
-         Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );
+      if (Sys.args().length>0)
+      {
+         runAsProcess();
+      }
       else
-         Sys.println("All tests passed.");
-      Sys.exit(exitCode);
+      {
+         exitCode |= testDate();
+         exitCode |= testCompress();
+         exitCode |= testRegexp();
+         exitCode |= testSqlite();
+         //exitCode |= testMysql();
+         exitCode |= testRandom();
+         exitCode |= testFile();
+         exitCode |= testFileSystem();
+         exitCode |= testHost();
+         exitCode |= testSys();
+         exitCode |= testCommand();
+
+         if (exitCode!=0)
+            Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );
+         else
+            Sys.println("All tests passed.");
+         Sys.exit(exitCode);
+      }
    }
 }

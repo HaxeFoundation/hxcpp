@@ -101,7 +101,7 @@ void _hx_std_put_env( String e, String v )
    <doc>Sleep a given number of seconds</doc>
 **/
 
-void _hx_std_sys_sleep( int f )
+void _hx_std_sys_sleep( double f )
 {
    hx::EnterGCFreeZone();
 #if defined(NEKO_WINDOWS)
