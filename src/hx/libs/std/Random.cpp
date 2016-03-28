@@ -168,7 +168,7 @@ int _hx_std_random_int( Dynamic handle, int max )
    random_float : 'random -> float
    <doc>Return a random float</doc>
 **/
-double _hx_std_random_random_float( Dynamic handle )
+double _hx_std_random_float( Dynamic handle )
 {
    return rnd_float(getRnd(handle));
 }

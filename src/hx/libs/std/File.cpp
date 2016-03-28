@@ -158,7 +158,7 @@ int _hx_std_file_write( Dynamic handle, Array<unsigned char> s, int p, int n )
    Returns the number of chars readed which is > 0 (or 0 if l == 0).
    </doc>
 **/
-int hx_std_file_read( Dynamic handle, Array<unsigned char> buf, int p, int n )
+int _hx_std_file_read( Dynamic handle, Array<unsigned char> buf, int p, int n )
 {
    fio *f = getFio(handle);
 
@@ -286,7 +286,7 @@ void _hx_std_file_flush( Dynamic handle )
    file_contents : f:string -> string
    <doc>Read the content of the file [f] and return it.</doc>
 **/
-String _hx_std_file_contents( String name )
+String _hx_std_file_contents_string( String name )
 {
    std::vector<char> buffer;
 
@@ -313,10 +313,58 @@ String _hx_std_file_contents( String name )
       p += d;
       len -= d;
    }
-   hx::EnterGCFreeZone();
    fclose(file);
+   hx::ExitGCFreeZone();
+
    return String(&buffer[0], buffer.size()).dup();
 }
+
+
+
+/**
+   file_contents : f:string -> string
+   <doc>Read the content of the file [f] and return it.</doc>
+**/
+Array<unsigned char> _hx_std_file_contents_bytes( String name )
+{
+
+   hx::EnterGCFreeZone();
+   FILE *file = fopen(name.__s, "rb");
+   if(!file)
+      file_error("file_contents",name);
+
+   fseek(file,0,SEEK_END);
+   int len = ftell(file);
+   fseek(file,0,SEEK_SET);
+   hx::ExitGCFreeZone();
+
+   Array<unsigned char> buffer = Array_obj<unsigned char>::__new(len,len);
+   hx::EnterGCFreeZone();
+   if (len)
+   {
+      char *dest = (char *)&buffer[0];
+
+      hx::EnterGCFreeZone();
+      int p = 0;
+      while( len > 0 )
+      {
+         POSIX_LABEL(file_contents1);
+         int d = (int)fread(dest + p,1,len,file);
+         if( d <= 0 )
+         {
+            HANDLE_FINTR(file,file_contents1);
+            fclose(file);
+            file_error("file_contents",name);
+         }
+         p += d;
+         len -= d;
+      }
+   }
+   fclose(file);
+   hx::ExitGCFreeZone();
+   return buffer;
+}
+
 
 
 Dynamic _hx_std_file_stdin()

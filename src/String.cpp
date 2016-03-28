@@ -185,6 +185,24 @@ char *TConvertToUTF8(T *inStr, int *ioLen)
  
 }
 
+
+String::String(const wchar_t *inString)
+{
+   length = 0;
+   if (!inString)
+   {
+      __s = 0;
+   }
+   else
+   {
+      int pos = 0;
+      while(inString[pos])
+         length += UTF8Bytes(inString[pos++]);
+      __s = TConvertToUTF8(inString, &length);
+   }
+}
+
+
 String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int inLen)
 {
    int len = inChars->length;
@@ -711,6 +729,10 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
    outString = String(result,l);
    #endif
 }
+
+
+
+
 
 const char * String::__CStr() const
 {

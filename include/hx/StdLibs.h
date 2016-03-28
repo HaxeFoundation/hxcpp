@@ -497,12 +497,14 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_open( String fname, String r 
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_close( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_write( Dynamic handle, Array<unsigned char> s, int p, int n );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_write_char( Dynamic handle, int c );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_read( Dynamic handle, Array<unsigned char> buf, int p, int n );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_read_char( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_seek( Dynamic handle, int pos, int kind );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_tell( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_file_eof( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_flush( Dynamic handle );
-HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_file_contents( String name );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_file_contents_string( String name );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<unsigned char> _hx_std_file_contents_bytes( String name );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stdin();
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stdout();
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stderr();
@@ -521,7 +523,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_close( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_random_new();
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_random_set_seed( Dynamic handle, int v );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_random_int( Dynamic handle, int max );
-HXCPP_EXTERN_CLASS_ATTRIBUTES double _hx_std_random_random_float( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES double _hx_std_random_float( Dynamic handle );
 
 // Socket
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_init();

@@ -27,11 +27,14 @@ public:
    inline String() : length(0), __s(0) { }
    explicit String(const HX_CHAR *inPtr);
    inline String(const HX_CHAR *inPtr,int inLen) : __s(inPtr), length(inLen) { }
+
    #ifdef HX_UTF8_STRINGS
    String(const wchar_t *inPtr,int inLen);
    #else
    String(const char *inPtr,int inLen);
    #endif
+
+   explicit String(const wchar_t *inPtr);
    #ifdef __OBJC__
    inline String(NSString *inString)
    {

@@ -320,7 +320,7 @@ void _hx_std_file_delete( String path )
    sys_rename : from:string -> to:string -> void
    <doc>Rename the file or directory. Exception on error.</doc>
 **/
-void _hx_std_sys_rename( String path, String newname )
+void  _hx_std_sys_rename( String path, String newname )
 {
    hx::EnterGCFreeZone();
    bool err = rename(path.__s,newname.__s);
@@ -457,7 +457,7 @@ void _hx_std_sys_remove_dir( String path )
    return true;
    #else
    hx::EnterGCFreeZone();
-   bool ok = rmdir(path.__s) != 0;
+   bool ok = rmdir(path.__s) == 0;
    hx::EnterGCFreeZone();
    if (!ok)
       hx::Throw(HX_CSTRING("Could not remove directory"));
