@@ -642,24 +642,27 @@ class Test
    {
       log("Client proc...");
       var host = new Host("localhost");
-      var socket:Socket = new Socket();
-      var connected = false;
+      var socket:Socket = null;
       for(attempt in 0...10)
       {
          try
          {
+            log("Client connect...");
+            socket = new Socket();
             socket.connect(host,0xcccc);
-            connected = true;
             break;
          }
          catch(e:Dynamic)
          {
+            socket.close();
+            socket = null;
+            log("Client failed :" + e);
          }
          log("sleep...");
-         Sys.sleep(0.2);
+         Sys.sleep(0.25);
       }
 
-      if (!connected)
+      if (socket==null)
          Sys.exit(-1);
       v("connected client");
 

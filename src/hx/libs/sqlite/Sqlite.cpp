@@ -22,6 +22,7 @@
 
 #include <hxcpp.h>
 #include "sqlite3.h"
+#include <stdlib.h>
 
 
 // Put in anon-namespace to avoid conflicts if static-linked

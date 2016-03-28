@@ -38,7 +38,7 @@ static int do_close( int fd )
 
 struct vprocess : public hx::Object
 {
-   bool ok;
+   bool open;
 #ifdef NEKO_WINDOWS
    HANDLE oread;
    HANDLE eread;
@@ -55,7 +55,7 @@ struct vprocess : public hx::Object
 
    void create()
    {
-      ok = true;
+      open = true;
       oread = HANDLE_INIT;
       eread = HANDLE_INIT;
       iwrite = HANDLE_INIT;
@@ -64,7 +64,7 @@ struct vprocess : public hx::Object
 
    void destroy()
    {
-      if (ok)
+      if (open)
       {
          #ifdef NEKO_WINDOWS
             if (eread)
@@ -83,7 +83,7 @@ struct vprocess : public hx::Object
             if (iwrite!=-1)
                do_close(iwrite);
          #endif
-         ok = false;
+         open = false;
       }
    }
 
@@ -98,7 +98,7 @@ struct vprocess : public hx::Object
 vprocess *getProcess(Dynamic handle)
 {
    vprocess *p = dynamic_cast<vprocess *>(handle.mPtr);
-   if (!p || !p->ok)
+   if (!p)
       hx::Throw(HX_CSTRING("Invalid process"));
    return p;
 }
@@ -306,6 +306,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
    p->iwrite = input[1];
    p->oread = output[0];
    p->eread = error[0];
+   p->pid = pid;
    }
    #endif
 
@@ -452,7 +453,7 @@ int _hx_std_process_exit( Dynamic handle )
       return rval;
    }
    #else
-   int rval;
+   int rval=0;
    while( waitpid(p->pid,&rval,0) != p->pid )
    {
       if( errno == EINTR )
@@ -463,6 +464,7 @@ int _hx_std_process_exit( Dynamic handle )
    hx::ExitGCFreeZone();
    if( !WIFEXITED(rval) )
       return 0;
+
    return WEXITSTATUS(rval);
    #endif
 }
