@@ -174,7 +174,7 @@ void GCChangeManagedMemory(int inDelta, const char *inWhy=0);
 void EnterGCFreeZone();
 void ExitGCFreeZone();
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES class AutoGCFreeZone
+class HXCPP_EXTERN_CLASS_ATTRIBUTES AutoGCFreeZone
 {
 public:
 	AutoGCFreeZone() : locked(true) { EnterGCFreeZone(); }
