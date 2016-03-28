@@ -528,6 +528,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES double _hx_std_random_float( Dynamic handle );
 // Socket
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_init();
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_socket_new( bool udp );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_bind( Dynamic o, int host, int port );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_close( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_send_char( Dynamic o, int c );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_send( Dynamic o, Array<unsigned char> buf, int p, int l );

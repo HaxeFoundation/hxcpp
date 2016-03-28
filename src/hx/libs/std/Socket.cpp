@@ -46,7 +46,7 @@ struct SocketWrapper : public hx::Object
 {
    SOCKET socket;
 
-   int __GetType() { return socketType; }
+   int __GetType() const { return socketType; }
 };
 
 
@@ -498,9 +498,12 @@ static void make_array_result_inplace(Array<Dynamic> a, fd_set *tmp)
     a->__SetSize(destPos);
 }
 
-static void init_timeval( double f, struct timeval *t ) {
+static struct timeval *init_timeval( double f, struct timeval *t ) {
+   if (f<0)
+      return 0;
    t->tv_usec = (f - (int)f ) * 1000000;
    t->tv_sec = (int)f;
+   return t;
 }
 
 /**
@@ -523,10 +526,7 @@ Array<Dynamic> _hx_std_socket_select( Array<Dynamic> rs, Array<Dynamic> ws, Arra
    struct timeval tval;
    struct timeval *tt = 0;
    if( timeout.mPtr )
-   {
-      tt = &tval;
-      init_timeval(timeout,tt);
-   }
+      tt = init_timeval(timeout,&tval);
 
    hx::EnterGCFreeZone();
    if( select((int)(n+1),ra,wa,ea,tt) == SOCKET_ERROR )
@@ -566,17 +566,18 @@ void _hx_std_socket_fast_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dyn
    struct timeval tval;
    struct timeval *tt = 0;
    if( timeout.mPtr )
-   {
-      tt = &tval;
-      init_timeval(timeout,tt);
-   }
+      tt = init_timeval(timeout,&tval);
 
    hx::EnterGCFreeZone();
    if( select((int)(n+1),ra,wa,ea,tt) == SOCKET_ERROR )
    {
       hx::ExitGCFreeZone();
       HANDLE_EINTR(select_again);
+      #ifdef NEKO_WINDOWS
+      hx::Throw( HX_CSTRING("Select error ") + String((int)WSAGetLastError()) );
+      #else
       hx::Throw( HX_CSTRING("Select error ") + String((int)errno) );
+      #endif
    }
 
    hx::ExitGCFreeZone();
@@ -589,7 +590,7 @@ void _hx_std_socket_fast_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dyn
    socket_bind : 'socket -> host : 'int -> port:int -> void
    <doc>Bind the socket for server usage on the given host and port</doc>
 **/
-void hx_std_socket_bind( Dynamic o, int host, int port )
+void _hx_std_socket_bind( Dynamic o, int host, int port )
 {
    SOCKET sock = val_sock(o);
 
@@ -879,7 +880,7 @@ struct polldata : public hx::Object
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(ridx); HX_VISIT_MEMBER(widx); }
    #endif
 
-   int __GetType() { return pollType; }
+   int __GetType() const { return pollType; }
 
    static void finalize(void *inPtr)
    {
@@ -892,7 +893,7 @@ struct polldata : public hx::Object
 polldata *val_poll(Dynamic o)
 {
    if (!o.mPtr || o->__GetType()!=pollType)
-      hx::Throw(HX_CSTRING("Invalid polldata"));
+      hx::Throw(HX_CSTRING("Invalid polldata:") + o);
    return static_cast<polldata *>(o.mPtr);
 }
 
@@ -982,10 +983,10 @@ void _hx_std_socket_poll_events( Dynamic pdata, double timeout )
    memcpy(p->outw,p->fdw,FDSIZE(p->fdw->fd_count));
 
    struct timeval t;
-   init_timeval(timeout,&t);
+   struct timeval *tt = init_timeval(timeout,&t);
 
    hx::EnterGCFreeZone();
-   if( p->fdr->fd_count + p->fdw->fd_count != 0 && select(0,p->outr,p->outw,NULL,&t) == SOCKET_ERROR )
+   if( select(0/* Ignored */, p->fdr->fd_count ? p->outr : 0, p->fdw->fd_count ?p->outw : 0,NULL,tt) == SOCKET_ERROR )
    {
       hx::ExitGCFreeZone();
       return;

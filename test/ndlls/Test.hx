@@ -10,9 +10,14 @@ import haxe.io.Bytes;
 import haxe.io.BytesData;
 
 import cpp.Random;
+import cpp.net.Poll;
 import sys.io.File;
 import sys.io.FileSeek;
 import sys.net.Host;
+import sys.net.Socket;
+import sys.net.UdpSocket;
+import sys.net.UdpSocket;
+import sys.io.Process;
 
 using cpp.NativeArray;
 
@@ -498,11 +503,178 @@ class Test
       var job = args.shift();
       if (job=="exit")
          Sys.exit( Std.parseInt(args[0]) );
+      else if (job=="socket")
+      {
+         socketClient();
+         Sys.exit(0);
+      }
       else
          Sys.println('Unknown job : "$job"');
       Sys.exit(-99);
    }
 
+   public static function testPoll()
+   {
+      log("Test poll");
+      try
+      {
+
+      var poll = new Poll(4);
+      poll.prepare([],[]);
+      var t0 = Sys.time();
+      v("poll...");
+      poll.poll([],0.1);
+      var t = Sys.time()-t0;
+      v('took ${t}s');
+      /*
+      if (t<0.1)
+         return error("Timeout too soon");
+      if (t>10)
+         return error("Timeout too slow");
+      */
+
+      return ok();
+      }
+      catch(e:Dynamic)
+      {
+         return error("Unexpected error in testPoll: " + e);
+      }
+
+   }
+
+
+   public static function testUdpSocket()
+   {
+      log("Test UdpSocket");
+      try
+      {
+
+      var udp = new UdpSocket();
+      udp.close();
+
+      return ok();
+      }
+      catch(e:Dynamic)
+      {
+         return error("Unexpected error in testUdpSocket: " + e);
+      }
+   }
+
+   static var socketClientRunning = true;
+   public static function readOutput(proc:Process)
+   {
+      cpp.vm.Thread.create( function() {
+         while(true)
+         {
+            try
+            {
+               var line = proc.stdout.readLine();
+               v("---> " + line);
+            }
+            catch(e:Dynamic)
+            {
+               break;
+            }
+         }
+         var code = proc.exitCode();
+         v("process exit code :" + code);
+         socketClientRunning = false;
+      });
+   }
+
+   public static function testSocket()
+   {
+      log("Test Socket");
+      try
+      {
+      v("Spawn client..");
+      var proc = new Process( Sys.programPath(), ["socket"] );
+      readOutput(proc);
+      v("connect localhost..");
+      var host = new Host("localhost");
+      var socket = new Socket();
+      socket.bind(host,0xcccc);
+      v("listen...");
+      socket.listen(1);
+      v("accept...");
+      var connected = socket.accept();
+      v("connected!");
+
+      var input = connected.input;
+      var output = connected.output;
+
+      v("send...");
+      connected.setFastSend(true);
+      connected.write("ping");
+      var buffer = Bytes.alloc(8);
+      if (input.readBytes(buffer,0,8)!=8)
+         return error("Could not read from socket");
+      var got = buffer.toString();
+      v('got $got');
+      if (got!="pingpong")
+         return error("Bad socket read");
+
+      v("close connection..");
+      connected.close();
+      v("close original..");
+      socket.close();
+
+      for(wait in 0...10)
+      {
+         if (!socketClientRunning)
+            break;
+         v("wait for client...");
+         Sys.sleep(0.1);
+      }
+      if (socketClientRunning)
+         return error("Socket client did not finish");
+
+      return ok();
+      }
+      catch(e:Dynamic)
+      {
+         return error("Unexpected error in Socket: " + e);
+      }
+
+   }
+
+   public static function socketClient()
+   {
+      log("Client proc...");
+      var host = new Host("localhost");
+      var socket:Socket = new Socket();
+      var connected = false;
+      for(attempt in 0...10)
+      {
+         try
+         {
+            socket.connect(host,0xcccc);
+            connected = true;
+            break;
+         }
+         catch(e:Dynamic)
+         {
+         }
+         log("sleep...");
+         Sys.sleep(0.2);
+      }
+
+      if (!connected)
+         Sys.exit(-1);
+      v("connected client");
+
+      var input = socket.input;
+      var output = socket.output;
+
+      var buffer = Bytes.alloc(4);
+      input.readBytes(buffer,0,4);
+      v("client got " + buffer);
+      output.writeBytes( Bytes.ofString( buffer.toString() + "pong" ), 0, 8); 
+      output.flush();
+
+      v("bye");
+      socket.shutdown(true,true);
+   }
 
 
    public static function main()
@@ -525,6 +697,9 @@ class Test
          exitCode |= testHost();
          exitCode |= testSys();
          exitCode |= testCommand();
+         exitCode |= testPoll();
+         exitCode |= testUdpSocket();
+         exitCode |= testSocket();
 
          if (exitCode!=0)
             Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );
