@@ -22,8 +22,8 @@
 #define MY_PROTO_H
 
 #include "mysql.h"
-#include "../common/socket.h"
-#include "../common/sha1.h"
+#include "socket.h"
+#include "sha1.h"
 
 typedef enum {
 	FL_LONG_PASSWORD = 1,

@@ -2,7 +2,7 @@
 
 <pragma once="true" />
 
-<set name="PCRE_DIR" value="../../../../project/thirdparty/pcre-7.8" />
+<set name="PCRE_DIR" value="${HXCPP}/project/thirdparty/pcre-7.8" />
 
 <files id="hxcpp_regexp" >
   <depend files="hxcpp-depends"/>
@@ -13,7 +13,7 @@
   <compilerflag value="-DSUPPORT_UTF8"/>
   <compilerflag value="-I${PCRE_DIR}"/>
 
-  <file name="RegExp.cpp"/>
+  <file name="${this_dir}/RegExp.cpp"/>
 
   <file name="${PCRE_DIR}/pcre_get.c"/>
   <file name="${PCRE_DIR}/pcre_study.c"/>

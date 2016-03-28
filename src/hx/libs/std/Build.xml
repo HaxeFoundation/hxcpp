@@ -2,7 +2,7 @@
 
 <pragma once="true" />
 
-<files id="hxcpp_std" >
+<files id="hxcpp_std" dir="${this_dir}" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <cache value="1"/>

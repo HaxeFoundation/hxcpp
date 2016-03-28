@@ -1,12 +1,10 @@
 <xml>
 
-<files id="hxcpp_sqlite" >
+<files id="hxcpp_sqlite" dir="${this_dir}" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
-  <depend name="sqlite3.h" />
+  <depend name="${this_dir}/sqlite3.h" />
   <cache value="true" />
-
-  <depend name="${this_dir}/Build.xml" dateOnly="true" />
 
   <file name="sqlite3.c"/>
   <file name="Sqlite.cpp"/>
