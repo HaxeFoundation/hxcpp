@@ -49,8 +49,6 @@ build_script:
     - haxe compile.hxml
     - cd %APPVEYOR_BUILD_FOLDER%\tools\hxcpp
     - haxe compile.hxml
-    - cd %APPVEYOR_BUILD_FOLDER%\project
-    - neko build.n windows-m%HXCPP_ARCH% -verbose
 
 test_script:
     - cd %APPVEYOR_BUILD_FOLDER%\test\ndlls

@@ -38,29 +38,20 @@ class RunTests
    }
 
 
-   public static function ndllDynamic()
+   public static function std32()
    {
-      setDir("ndlls");
+      setDir("std");
 
       command("haxe", ["compile32.hxml"] );
       command("cpp32"+sep+"Test",[]);
    }
 
-   public static function ndllDynamic64()
+   public static function std64()
    {
-      setDir("ndlls");
+      setDir("std");
 
       command("haxe", ["compile64.hxml"] );
       command("cpp64"+sep+"Test",[]);
-   }
-
-
-   public static function ndllStatic()
-   {
-      setDir("ndlls");
-
-      command("haxe", ["compile-static.hxml"]);
-      command("scpp"+sep+"Test",[]);
    }
 
 
@@ -141,9 +132,8 @@ class RunTests
 
       run("cffi", cffi);
       run("haxe", runHaxe);
-      run("ndll-dynamic", ndllDynamic);
-      run("ndll-static", ndllStatic);
-      run("ndll-64", ndllDynamic64);
+      run("std32", std32);
+      run("std64", std64);
 
       Sys.println("");
 
