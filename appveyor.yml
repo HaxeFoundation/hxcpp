@@ -51,7 +51,7 @@ build_script:
     - haxe compile.hxml
 
 test_script:
-    - cd %APPVEYOR_BUILD_FOLDER%\test\ndlls
+    - cd %APPVEYOR_BUILD_FOLDER%\test\std
     - haxe compile%HXCPP_ARCH%.hxml && .\cpp%HXCPP_ARCH%\Test
     - cd %APPVEYOR_BUILD_FOLDER%\test\haxe
     - haxe compile.hxml -debug -D HXCPP_M%HXCPP_ARCH% && .\bin\TestMain-debug
