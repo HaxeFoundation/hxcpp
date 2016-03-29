@@ -654,14 +654,16 @@ String _hx_std_sys_exe_path()
 #elif defined(EPPC)
    return HX_CSTRING("");
 #else
-   const char *p = getenv("_");
-   if( p != NULL )
-      return String(p);
    {
       char path[PATH_MAX];
       int length = readlink("/proc/self/exe", path, sizeof(path));
       if( length < 0 )
+      {
+         const char *p = getenv("_");
+         if (p)
+            return String(p);
          return null();
+      }
        path[length] = '\0';
       return String(path);
    }
