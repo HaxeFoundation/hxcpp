@@ -35,6 +35,13 @@ public:
    template<typename T>
    inline VirtualArray Add(const T &inVal);
 
+
+   inline bool operator==(const Dynamic &value) const { return value==*this; }
+   template<typename SOURCE_> inline bool operator==( const Array<SOURCE_> &inRHS );
+
+   inline bool operator!=(Dynamic value) const { return value!=*this; }
+   template<typename SOURCE_> inline bool operator!=( const Array<SOURCE_> &inRHS ) { return inRHS!=*this; }
+
 };
 
 
@@ -62,6 +69,7 @@ public:
       store = inStore;
    }
 
+   hx::Object *__GetRealObject() { return base?(hx::Object *)base:(hx::Object *)this; }
 
    inline static VirtualArray __new(int inSize=0,int inReserve=0)
    {
@@ -539,6 +547,15 @@ ARRAY VirtualArray_obj::castArray()
       return fixedArray;
    }
 }
+
+template<typename SOURCE_>
+inline bool VirtualArray::operator==( const Array<SOURCE_> &inRHS )
+{
+   if (!mPtr)
+      return inRHS.mPtr;
+   return mPtr->castArray< Array<SOURCE_> >() == inRHS;
+}
+
 
 #endif // HX_VARRAY_DEFINED
 

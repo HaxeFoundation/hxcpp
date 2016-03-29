@@ -913,6 +913,11 @@ public:
    }
 
 
+   inline bool operator==(const cpp::VirtualArray &varray) const { return varray==*this; }
+   inline bool operator!=(const cpp::VirtualArray &varray) const { return varray!=*this; }
+
+
+
 
    inline ELEM_ &operator[](int inIdx) { return CheckGetPtr()->Item(inIdx); }
    inline ELEM_ operator[](int inIdx) const { return CheckGetPtr()->__get(inIdx); }
