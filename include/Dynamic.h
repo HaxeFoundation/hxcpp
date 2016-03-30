@@ -19,10 +19,13 @@ public:
 
    Dynamic() {};
    Dynamic(int inVal);
+   Dynamic(short inVal);
    Dynamic(const cpp::CppInt32__ &inVal);
    Dynamic(bool inVal);
    Dynamic(double inVal);
    Dynamic(float inVal);
+   Dynamic(cpp::Int64 inVal);
+   Dynamic(cpp::UInt64 inVal);
    Dynamic(hx::Object *inObj) : super(inObj) { }
    Dynamic(const String &inString);
    Dynamic(const null &inNull) : super(0) { }
@@ -59,6 +62,8 @@ public:
    inline operator char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator signed char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
+   inline operator cpp::Int64() const { return mPtr && mPtr->__ToInt64(); }
+   inline operator cpp::UInt64() const { return mPtr && mPtr->__ToInt64(); }
    //inline operator cpp::Variant() const { return cpp::Variant(mPtr); }
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
@@ -109,13 +114,6 @@ public:
    bool operator==(const null &inRHS) const { return mPtr==0; }
    bool operator!=(const null &inRHS) const { return mPtr!=0; }
 
-   bool operator != (const Dynamic &inRHS) const { return (Compare(inRHS) != 0); }
-   bool operator != (const String &inRHS)  const { return !mPtr || ((String)(*this) != inRHS); }
-   bool operator != (double inRHS)  const { return !IsNumeric() || ((double)(*this) != inRHS); }
-   bool operator != (float inRHS)  const { return !IsNumeric() || ((double)(*this) != inRHS); }
-   bool operator != (int inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
-   bool operator != (bool inRHS)  const { return !IsBool() || ((double)(*this) != (double)inRHS); }
-
    bool operator == (const Dynamic &inRHS) const
    {
       // Comparing pointers fails in the case on Nan==Nan
@@ -125,11 +123,32 @@ public:
       return mPtr->__Compare(inRHS.mPtr->__GetRealObject())==0;
    }
 
+   bool operator != (const Dynamic &inRHS) const
+   {
+      // Comparing pointers fails in the case on Nan==Nan
+      //if (mPtr==inRHS.mPtr) return true;
+      if (!mPtr && !inRHS.mPtr) return false;
+      if (!mPtr || !inRHS.mPtr) return true;
+      return mPtr->__Compare(inRHS.mPtr->__GetRealObject())!=0;
+   }
+
+
+   bool operator == (const cpp::Variant &inRHS) const { return (*this) == Dynamic(inRHS); }
+   bool operator != (const cpp::Variant &inRHS) const { return (*this) != Dynamic(inRHS); }
+
+
    #define DYNAMIC_COMPARE_OP( op ) \
       bool operator op (const String &inRHS)  const { return mPtr && ((String)(*this) op inRHS); } \
       bool operator op (double inRHS)  const { return IsNumeric() && ((double)(*this) op inRHS); } \
+      bool operator op (cpp::Int64 inRHS)  const { return IsNumeric() && ((cpp::Int64)(*this) op inRHS); } \
+      bool operator op (cpp::UInt64 inRHS)  const { return IsNumeric() && ((cpp::Int64)(*this) op inRHS); } \
       bool operator op (float inRHS)  const { return IsNumeric() && ((double)(*this) op inRHS); } \
       bool operator op (int inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
+      bool operator op (unsigned int inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
+      bool operator op (short inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
+      bool operator op (unsigned short inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
+      bool operator op (signed char inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
+      bool operator op (unsigned char inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
       bool operator op (bool inRHS)  const { return IsBool() && ((double)(*this) op (double)inRHS); } \
 
    #define DYNAMIC_COMPARE_OP_ALL( op ) \
@@ -138,6 +157,7 @@ public:
 
 
    DYNAMIC_COMPARE_OP( == )
+   DYNAMIC_COMPARE_OP( != )
    DYNAMIC_COMPARE_OP_ALL( < )
    DYNAMIC_COMPARE_OP_ALL( <= )
    DYNAMIC_COMPARE_OP_ALL( >= )
@@ -316,6 +336,21 @@ inline bool Dynamic::IsClass<Dynamic>() { return mPtr; }
 
 inline String Dynamic::operator+(const String &s) const { return Cast<String>() + s; }
 
+
+template<typename T>
+inline bool operator != (const T &inLHS,const Dynamic &inRHS)
+{
+   return inRHS!=inLHS;
+}
+
+
+template<typename T>
+inline bool operator == (const T &inLHS,const Dynamic &inRHS)
+{
+   return inRHS==inLHS;
+}
+
+/*
 inline bool operator != (double inLHS,const Dynamic &inRHS) \
    { return !inRHS.GetPtr() || (inLHS != (double)inRHS); } \
 inline bool operator != (float inLHS,const Dynamic &inRHS) \
@@ -332,6 +367,7 @@ inline bool operator == (const String &inLHS,const ::Dynamic &inRHS) \
  { return inRHS.mPtr  && inLHS == inRHS.mPtr->toString(); }
 inline bool operator != (const String &inLHS,const ::Dynamic &inRHS) \
  { return !inRHS.mPtr  || inLHS != inRHS.mPtr->toString(); }
+*/
 
 inline bool operator < (bool inLHS,const Dynamic &inRHS) { return false; }
 inline bool operator <= (bool inLHS,const Dynamic &inRHS) { return false; }

@@ -398,6 +398,15 @@ String::String(const cpp::Int64 &inRHS)
    __s = GCStringDup(buf,-1,&length);
 }
 
+
+String::String(const cpp::UInt64 &inRHS)
+{
+   HX_CHAR buf[100];
+   SPRINTF(buf,100,"%llu", (unsigned long long int)inRHS);
+   buf[99]='\0';
+   __s = GCStringDup(buf,-1,&length);
+}
+
 String::String(const float &inRHS)
 {
    HX_CHAR buf[100];

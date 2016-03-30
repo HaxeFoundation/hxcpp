@@ -90,10 +90,6 @@ hx::Class Object__mClass;
 bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
 #if (HXCPP_API_LEVEL >= 330)
-double hx::Object::_hx_Numeric(const String &inString, hx::PropertyAccess inCallProp)
-{
-   return __Field(inString, inCallProp);
-}
 void *hx::Object::_hx_getInterface(int hash) { return 0; }
 
 #else

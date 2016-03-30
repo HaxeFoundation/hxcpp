@@ -26,10 +26,9 @@ enum hxObjectType
    vtFunction = 6,
    vtEnum,
    vtClass,
+   vtInt64,
    vtAbstractBase = 0x100,
 };
-
-
 
 
 namespace hx
@@ -169,7 +168,8 @@ public:
    virtual String __ToString() const;
 
    virtual int __ToInt() const { return 0; }
-   virtual double __ToDouble() const { return 0.0; }
+   virtual double __ToDouble() const { return __ToInt(); }
+   virtual cpp::Int64 __ToInt64() const { return (cpp::Int64)(__ToDouble()); }
    virtual const char * __CStr() const;
    virtual String toString();
    virtual bool __HasField(const String &inString);
@@ -180,7 +180,6 @@ public:
    Dynamic __IField(int inFieldID);
    double __INumField(int inFieldID);
 
-   virtual double _hx_Numeric(const String &inString, hx::PropertyAccess inCallProp);
    virtual void *_hx_getInterface(int inId);
    #else
    virtual hx::Object *__ToInterface(const hx::type_info &inInterface) { return 0; }
@@ -191,6 +190,8 @@ public:
    virtual DynamicArray __EnumParams();
    virtual String __Tag() const;
    virtual int __Index() const;
+   virtual void __SetSize(int inLen) { }
+
    #endif
    virtual hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp);
 
@@ -206,7 +207,6 @@ public:
    virtual Dynamic __GetItem(int inIndex) const;
    virtual Dynamic __SetItem(int inIndex,Dynamic inValue);
 
-   virtual void __SetSize(int inLen) { }
 
    typedef const Dynamic &D;
    virtual Dynamic __run();

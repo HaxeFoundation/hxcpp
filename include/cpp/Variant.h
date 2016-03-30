@@ -26,6 +26,7 @@ namespace cpp
          typeString,
          typeDouble,
          typeInt,
+         typeInt64,
          typeBool,
       };
 
@@ -48,6 +49,8 @@ namespace cpp
       inline bool isBool() const;
       inline int asInt() const;
       inline bool isInt() const;
+      inline cpp::Int64 asInt64() const;
+      inline bool isInt64() const;
       inline bool isString() const;
       inline double asDouble() const;
       inline hx::Object *asObject() const { return type==typeObject ? valObject : 0; }
@@ -60,6 +63,8 @@ namespace cpp
       inline Variant(const null &) : type(typeObject), valObject(0) { }
       inline Variant(bool inValue) : type(typeBool), valBool(inValue) { }
       inline Variant(int inValue) : type(typeInt), valInt(inValue) { }
+      inline Variant(cpp::Int64 inValue) : type(typeInt64), valInt64(inValue) { }
+      inline Variant(cpp::UInt64 inValue) : type(typeInt64), valInt64(inValue) { }
       inline Variant(double inValue) : type(typeDouble), valDouble(inValue) { }
       inline Variant(const ::String &inValue); // later
       #if defined(__OBJC__) && defined(HXCPP_OBJC)
@@ -91,6 +96,8 @@ namespace cpp
       inline operator unsigned char () const { return asInt(); }
       inline operator char () const { return asInt(); }
       inline operator signed char () const { return asInt(); }
+      inline operator cpp::Int64 () const { return asInt64(); }
+      inline operator cpp::UInt64 () const { return asInt64(); }
       inline bool operator !() const { return !asInt(); }
 
       inline int Compare(const Dynamic &inRHS) const;
@@ -167,6 +174,10 @@ namespace cpp
    {
       return type==typeInt || (type==typeObject && valObject && valObject->__GetType()==vtInt);
    }
+   bool Variant::isInt64() const
+   {
+      return type==typeInt64 || (type==typeObject && valObject && valObject->__GetType()==vtInt64);
+   }
    bool Variant::isString() const
    {
       return type==typeString || (type==typeObject && valObject && valObject->__GetType()==vtString);
@@ -226,8 +237,26 @@ namespace cpp
       switch(type)
       {
          case typeDouble: return valDouble;
+         case typeInt64: return valInt64;
          case typeBool: return valBool;
          case typeObject: return valObject ? valObject->__ToInt() : 0;
+         default: ;
+      }
+      return 0;
+   }
+
+
+   cpp::Int64 Variant::asInt64() const
+   {
+      if (type==typeInt64)
+         return valInt64;
+
+      switch(type)
+      {
+         case typeDouble: return valDouble;
+         case typeInt: return valInt;
+         case typeBool: return valBool;
+         case typeObject: return valObject ? valObject->__ToInt64() : 0;
          default: ;
       }
       return 0;
@@ -239,6 +268,8 @@ namespace cpp
          return valDouble;
       else if (type==typeInt)
          return valInt;
+      else if (type==typeInt64)
+         return valInt64;
       else if (type==typeObject)
          return valObject ? valObject->__ToDouble() : 0.0;
       return 0.0;
@@ -253,6 +284,7 @@ namespace cpp
          case typeDouble: return Dynamic(valDouble).mPtr;
          case typeBool: return Dynamic(valBool).mPtr;
          case typeString: return Dynamic(String(valStringPtr, valStringLen)).mPtr;
+         case typeInt64: return Dynamic(valInt64).mPtr;
          case typeObject: return valObject;
          default: ;
       }
@@ -279,7 +311,7 @@ namespace cpp
 
    bool Variant::isNumeric() const
    {
-      if (type==typeInt || type==typeDouble)
+      if (type==typeInt || type==typeDouble || type==typeInt64)
          return true;
       if (type!=typeObject || valObject==0)
          return false;
@@ -308,6 +340,7 @@ namespace cpp
          case typeDouble: return String(valDouble);
          case typeBool: return String(valBool);
          case typeString: return String(valStringPtr, valStringLen);
+         case typeInt64: return String(valInt64);
          case typeObject: return valObject ? valObject->toString() : String();
          default: ;
       }
@@ -336,6 +369,7 @@ namespace cpp
          case typeInt: return valInt==(int)inRHS;
          case typeDouble:return valDouble==(double)inRHS;
          case typeBool: return valBool==(bool)inRHS;
+         case typeInt64: return valInt64==(cpp::Int64)inRHS;
          case typeString: return getString()==String(inRHS);
          case typeObject:
                if (!valObject)
@@ -355,6 +389,11 @@ namespace cpp
          case typeDouble:
            {
               double diff = valDouble - inRHS->__ToDouble();
+              return diff<0 ? -1 : diff==0 ? 0 : 1;
+           }
+         case typeInt64:
+           {
+              cpp::Int64 diff = valInt64 - inRHS->__ToInt64();
               return diff<0 ? -1 : diff==0 ? 0 : 1;
            }
          case typeBool: return valBool==(bool)inRHS ? 1 : 0;

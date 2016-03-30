@@ -660,11 +660,11 @@ public:
 
    void sort(Dynamic inSorter)
    {
-      if ( hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayObject ||
-          hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayString)
+      if ( (int)hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayObject ||
+          (int)hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayString)
       {
          // Keep references from being hidden inside sorters buffers
-         safeSort(inSorter, hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayString);
+         safeSort(inSorter, (int)hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayString);
       }
       else
       {

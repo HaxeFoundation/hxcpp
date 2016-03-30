@@ -37,6 +37,8 @@ HX_COMPARE_NULL_MOST_OPS(hx::IndexRef)
 // Operators for mixing various types ....
 
 
+inline String operator+(const cpp::UInt64 &i,const String &s) { return String(i) + s; }
+inline String operator+(const cpp::Int64 &i,const String &s) { return String(i) + s; }
 inline String operator+(const Int &i,const String &s) { return String(i) + s; }
 inline String operator+(const double &d,const String &s) { return String(d) + s; }
 inline String operator+(const float &d,const String &s) { return String(d) + s; }
@@ -74,6 +76,8 @@ template<> inline double ToDouble(double inValue) { return inValue; }
 template<> inline double ToDouble(int inValue) { return inValue; }
 template<> inline double ToDouble(bool inValue) { return inValue; }
 template<> inline double ToDouble(float inValue) { return inValue; }
+template<> inline double ToDouble(cpp::UInt64 inValue) { return inValue; }
+template<> inline double ToDouble(cpp::Int64 inValue) { return inValue; }
 template<> inline double ToDouble(null inValue) { return 0; }
 
 
@@ -283,9 +287,9 @@ inline RESULT Dynamic::StaticCast() const
 {
    typedef typename RESULT::Ptr type;
 
-   if ( (hx::DynamicConvertType<type>::Convert<0) ||
-       (hx::DynamicConvertType<type>::Convert > 0 && mPtr && 
-          hx::DynamicConvertType<type>::Convert != ((hx::ArrayBase *)mPtr)->getPodSize()) )
+   if ( ((int)hx::DynamicConvertType<type>::Convert<0) ||
+       ((int)hx::DynamicConvertType<type>::Convert > 0 && mPtr && 
+          (int)hx::DynamicConvertType<type>::Convert != ((hx::ArrayBase *)mPtr)->getPodSize()) )
    {
       // Constructing the result from the Dynamic value will check for a conversion
       //  using something like dynamic_cast

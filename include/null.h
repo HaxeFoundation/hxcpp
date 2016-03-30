@@ -91,6 +91,8 @@ class null
      operator signed char () { return 0; }
      operator short () { return 0; }
      operator unsigned short () { return 0; }
+     operator cpp::UInt64 () { return 0; }
+     operator cpp::Int64 () { return 0; }
      operator hx::Object * () { return 0; }
 
      bool operator == (null inRHS) const { return true; }
@@ -110,6 +112,8 @@ class null
      inline bool operator != (const Dynamic &) const;
      inline bool operator == (const String &) const;
      inline bool operator != (const String &) const;
+     inline bool operator == (const cpp::Variant &v) const { return v.isNull(); }
+     inline bool operator != (const cpp::Variant &v) const{ return !v.isNull(); }
 
      inline null operator - () const { return hx::NullArithmetic("-"); }
      inline null operator ! () const { return hx::NullArithmetic("!"); }
@@ -123,6 +127,8 @@ class null
 	  HX_NULL_COMPARE_OPS(double)
 	  HX_NULL_COMPARE_OPS(float)
 	  HX_NULL_COMPARE_OPS(int)
+	  HX_NULL_COMPARE_OPS(cpp::Int64)
+	  HX_NULL_COMPARE_OPS(cpp::UInt64)
 	  HX_NULL_COMPARE_MOST_OPS(String)
 	  HX_NULL_COMPARE_MOST_OPS(Dynamic)
 	  HX_NULL_COMPARE_MOST_OPS(hx::FieldRef)
@@ -177,6 +183,8 @@ HX_COMPARE_NULL_OPS(bool)
 HX_COMPARE_NULL_OPS(double)
 HX_COMPARE_NULL_OPS(float)
 HX_COMPARE_NULL_OPS(int)
+HX_COMPARE_NULL_OPS(cpp::UInt64)
+HX_COMPARE_NULL_OPS(cpp::Int64)
 
 HX_ARITHMETIC_NULL_OP(+)
 HX_ARITHMETIC_NULL_OP(*)

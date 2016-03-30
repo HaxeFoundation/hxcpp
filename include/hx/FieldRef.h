@@ -49,6 +49,8 @@ public:
    inline operator double() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
    inline operator float() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
    inline operator int() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
+   inline operator cpp::UInt64() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
+   inline operator cpp::Int64() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
 
 
    // post-increment

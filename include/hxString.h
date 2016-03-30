@@ -57,6 +57,7 @@ public:
    String(const double &inRHS);
    String(const float &inRHS);
    String(const cpp::Int64 &inRHS);
+   String(const cpp::UInt64 &inRHS);
    explicit String(const bool &inRHS);
    inline String(const null &inRHS) : __s(0), length(0) { }
    String(hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }

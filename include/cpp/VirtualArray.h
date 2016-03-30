@@ -107,7 +107,25 @@ public:
          case vtInt: EnsureIntStorage(); break;
          case vtFloat: EnsureFloatStorage(); break;
          case vtString: EnsureStringStorage(); break;
-         default: EnsureObjectStoragage();
+         default: EnsureObjectStorage();
+      }
+   }
+
+
+   void EnsureStorage(const cpp::Variant &inValue)
+   {
+      switch(inValue.type)
+      {
+         case Variant::typeObject:
+               if (!inValue.valObject)
+                  EnsureNullStorage();
+               else
+                  EnsureObjectStorage();
+               break;
+         case Variant::typeString: EnsureStringStorage(); break;
+         case Variant::typeDouble: EnsureFloatStorage(); break;
+         case Variant::typeInt: EnsureIntStorage(); break;
+         case Variant::typeBool: EnsureBoolStorage(); break;
       }
    }
 
@@ -118,13 +136,18 @@ public:
    void MakeBoolArray();
    void MakeStringArray();
 
+   void EnsureStorage(const VirtualArray &inValue) { EnsureObjectStorage(); }
    void EnsureStorage(const unsigned char &inValue) { EnsureIntStorage(); }
    void EnsureStorage(const bool &inValue) { EnsureBoolStorage(); }
    void EnsureStorage(const String &inValue) { EnsureStringStorage(); }
    void EnsureStorage(const double &inValue) { EnsureFloatStorage(); }
    void EnsureStorage(const float &inValue) { EnsureFloatStorage(); }
    void EnsureStorage(const int &inValue) { EnsureIntStorage(); }
+   void EnsureStorage(const cpp::Int64 &inValue) { EnsureObjectStorage(); }
+   void EnsureStorage(const cpp::UInt64 &inValue) { EnsureObjectStorage(); }
    void EnsureStorage(const null &inValue) { EnsureNullStorage(); }
+   template<typename T>
+   void EnsureStorage(const T &inValue) { EnsureObjectStorage(); }
 
    inline void EnsureBoolStorage()
    {
@@ -203,7 +226,7 @@ public:
             break;
       }
    }
-   inline void EnsureObjectStoragage()
+   inline void EnsureObjectStorage()
    {
       switch(store)
       {

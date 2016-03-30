@@ -400,8 +400,17 @@ void val_array_set_i(hx::Object * arg1,int arg2,hx::Object *inVal)
 
 void val_array_set_size(hx::Object * arg1,int inLen)
 {
-   if (arg1==0) return;
-   arg1->__SetSize(inLen);
+   hx::ArrayBase *base = dynamic_cast<hx::ArrayBase *>(arg1);
+   if (base)
+   {
+      base->__SetSize(inLen);
+   }
+   else
+   {
+      cpp::VirtualArray_obj *va = dynamic_cast<cpp::VirtualArray_obj *>(arg1);
+      if (va)
+         va->__SetSize(inLen);
+   }
 }
 
 void val_array_push(hx::Object * arg1,hx::Object *inValue)
