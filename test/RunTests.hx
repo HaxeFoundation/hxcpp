@@ -38,6 +38,13 @@ class RunTests
    }
 
 
+   public static function opMatrix()
+   {
+      setDir("opMatrix");
+
+      command("haxe", ["--run","MkOps.hx"] );
+   }
+
    public static function std32()
    {
       setDir("std");
@@ -131,6 +138,7 @@ class RunTests
       baseDir = Sys.getCwd();
 
       run("cffi", cffi);
+      run("opMatrix", opMatrix);
       run("haxe", runHaxe);
       run("std32", std32);
       run("std64", std64);
