@@ -1626,7 +1626,7 @@ class BuildTool
    public function checkToolVersion(inVersion:String)
    {
       var ver = Std.parseInt(inVersion);
-      if (ver>2)
+      if (ver>3)
          Log.error("Your version of hxcpp.n is out-of-date.  Please update.");
    }
 

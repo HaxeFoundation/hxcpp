@@ -54,7 +54,7 @@ Dynamic *Object::__GetFieldMap() { return 0; }
 
 int Object::__Compare(const Object *inRHS) const
 {
-   return (int)(inRHS-this);
+   return (int)(inRHS-const_cast<Object *>(this)->__GetRealObject());
 }
 
 
