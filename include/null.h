@@ -79,8 +79,6 @@ class null
      explicit inline null(int){ } 
      explicit inline null(bool){ } 
 
-     operator char * () { return 0; }
-     operator wchar_t * () { return 0; }
      operator bool () { return false; }
      operator int () { return 0; }
      operator unsigned int () { return 0; }
@@ -93,7 +91,14 @@ class null
      operator unsigned short () { return 0; }
      operator cpp::UInt64 () { return 0; }
      operator cpp::Int64 () { return 0; }
-     operator hx::Object * () { return 0; }
+     template<typename T>
+     inline operator typename hx::Native<T *> () const { return 0; }
+
+
+     // Any pointer!
+     //operator char * () { return 0; }
+     //operator wchar_t * () { return 0; }
+     template<typename T> operator T *() { return 0; }
 
      bool operator == (null inRHS) const { return true; }
      bool operator != (null inRHS) const { return false; }

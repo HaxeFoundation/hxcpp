@@ -43,9 +43,33 @@ namespace hx
 
    class HXCPP_CLASS_ATTRIBUTES NativeInterface
    {
-      virtual hx::Object *__GetRealObject() = 0;
-      void _hx_addRef();
-      void _hx_decRef();
+      public:
+         virtual hx::Object *__GetRealObject() = 0;
+         void _hx_addRef();
+         void _hx_decRef();
+   };
+
+   template<typename T>
+   class Native
+   {
+      public:
+         T ptr;
+
+         Native (T inPtr) : ptr(inPtr) { }
+         Native (const Native<T> &inNative) : ptr(inNative.ptr) { }
+
+         inline Native &operator=(T inPtr) { ptr=inPtr; return *this }
+         inline Native &operator=(const Native<T> &inNative) { ptr=inNative.ptr; return *this }
+         inline T operator->() const { return ptr; }
+
+         inline operator T() const { return ptr; }
+
+         template<typename T>
+         inline bool operator==(const Native<T> &inOther) const
+            { return ptr == inOther.ptr; }
+         template<typename T>
+         inline bool operator!=(const Native<T> &inOther) const
+            { return ptr != inOther.ptr; }
    };
 
    template<typename T>
@@ -53,7 +77,8 @@ namespace hx
    {
    };
 
-   #define HX_NATIVE_IMPLEMENTATION hx::Object *__GetRealObject() { return 0; }
+   #define HX_NATIVE_IMPLEMENTATION hx::Object *__GetRealObject() { return this; }
+   #define HX_EXTERN_NATIVE_IMPLEMENTATION hx::Object *__GetRealObject() { return 0; }
 }
 
 #endif

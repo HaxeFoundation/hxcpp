@@ -32,6 +32,8 @@ public:
    Dynamic(const Dynamic &inRHS) : super(inRHS.mPtr) { }
    explicit Dynamic(const HX_CHAR *inStr);
    Dynamic(const cpp::Variant &inRHS) : super(inRHS.asDynamic()) { }
+   template<typename T>
+   Dynamic(const hx::Native<T *> &inInterface):super(inInterface->__GetRealObject() ) { }
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
    Dynamic(const id inObjc);
@@ -64,6 +66,14 @@ public:
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
    inline operator cpp::Int64() const { return mPtr && mPtr->__ToInt64(); }
    inline operator cpp::UInt64() const { return mPtr && mPtr->__ToInt64(); }
+
+   // Conversion to generic pointer requires you to tag the class with a typedef
+   template<typename T>
+   inline operator typename hx::Native<T *> () const {
+      return hx::Native<T *>(dynamic_cast<T *>(mPtr));
+   }
+
+
    //inline operator cpp::Variant() const { return cpp::Variant(mPtr); }
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC

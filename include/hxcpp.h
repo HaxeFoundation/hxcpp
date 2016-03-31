@@ -225,6 +225,8 @@ class null;
 namespace hx { class Object; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
+namespace hx { class NativeInterface; }
+namespace hx { template<typename T> class Native; }
 namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
 namespace cpp { template<typename T> class Pointer; }
@@ -322,9 +324,9 @@ typedef bool PropertyAccess;
 #include <hx/Telemetry.h>
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
+#include <hx/Native.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>
-#include <hx/Native.h>
 // second time ...
 #include <cpp/Variant.h>
 #include <hx/Debug.h>

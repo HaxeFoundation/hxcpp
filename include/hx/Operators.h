@@ -282,6 +282,8 @@ template<> struct DynamicConvertType< Array_obj<char> * > { enum { Convert = siz
 template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert = DynamicConvertStringPodId }; };
 }
 
+
+
 template<typename RESULT>
 inline RESULT Dynamic::StaticCast() const
 {
