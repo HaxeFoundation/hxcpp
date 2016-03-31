@@ -271,6 +271,8 @@ public:
    inline ObjectPtr(OBJ_ *inObj) : mPtr(inObj) { }
    inline ObjectPtr(const null &inNull) : mPtr(0) { }
    inline ObjectPtr(const ObjectPtr<OBJ_> &inOther) : mPtr( inOther.mPtr ) {  }
+   template<typename T>
+   inline ObjectPtr(const hx::Native<T> &inNative) : mPtr( dynamic_cast<T>(inNative.ptr) ) {  }
 
    template<typename SOURCE_>
    inline ObjectPtr(const ObjectPtr<SOURCE_> &inObjectPtr)
@@ -354,6 +356,9 @@ public:
       if (!mPtr || !inRHS.mPtr) return true;
       return mPtr->__compare(inRHS.mPtr);
    }
+
+   template<typename T>
+   operator hx::Native<T> () { return hx::Native<T>( mPtr ); }
 
    inline bool operator==(const null &inRHS) const { return mPtr==0; }
    inline bool operator!=(const null &inRHS) const { return mPtr!=0; }
