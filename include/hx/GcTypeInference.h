@@ -31,6 +31,15 @@ template<> inline void MarkMember<cpp::Variant>(cpp::Variant &outT,hx::MarkConte
 {
    outT.mark(__inCtx);
 }
+template<typename T> inline void MarkMember(hx::Native<T> &outT,hx::MarkContext *__inCtx)
+{
+   if (outT.ptr)
+   {
+      hx::Object *ptr = outT.ptr->__GetRealObject();
+      HX_MARK_OBJECT(ptr);
+   }
+}
+
 template<> inline void MarkMember<int>(int &outT,hx::MarkContext *__inCtx) {  }
 template<> inline void MarkMember<bool>(bool &outT,hx::MarkContext *__inCtx) {  }
 template<> inline void MarkMember<double>(double &outT,hx::MarkContext *__inCtx) {  }
@@ -95,6 +104,22 @@ template<> inline void VisitMember(cpp::Variant &outT,hx::VisitContext *__inCtx)
 {
    outT.visit(__inCtx);
 }
+template<typename T> inline void VisitMember(hx::Native<T> &outT,hx::VisitContext *__inCtx)
+{
+   if (outT.ptr)
+   {
+      hx::Object *ptr0 = outT.ptr->__GetRealObject();
+      if (ptr0)
+      {
+         hx::Object *ptr1 = ptr0;
+         HX_VISIT_OBJECT(ptr1);
+         size_t delta = ( (char *)ptr1 - (char *)ptr0 );
+         if (delta)
+            outT.ptr = (T)( (char *)outT.ptr + delta );
+      }
+   }
+}
+
 
 template<> inline void VisitMember<int>(int &outT,hx::VisitContext *__inCtx) {  }
 template<> inline void VisitMember<bool>(bool &outT,hx::VisitContext *__inCtx) {  }

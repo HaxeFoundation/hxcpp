@@ -55,6 +55,7 @@ namespace hx
       public:
          T ptr;
 
+         Native () : ptr(0) { }
          Native (T inPtr) : ptr(inPtr) { }
          Native (const Native<T> &inNative) : ptr(inNative.ptr) { }
 

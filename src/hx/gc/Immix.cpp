@@ -41,6 +41,8 @@ namespace hx
 static bool sgAllocInit = 0;
 static bool sgInternalEnable = true;
 static void *sgObject_root = 0;
+// With virtual inheritance, stack pointers can point to the middle of an object
+static bool sgCheckInternalPointers = false;
 int gInAlloc = false;
 
 // This is recalculated from the other parameters
@@ -707,34 +709,15 @@ struct BlockDataInfo
    }
 
 
-   AllocType GetAllocType(int inOffset,bool inReport = false)
+   // When known to be an actual object start...
+   AllocType GetAllocTypeChecked(int inOffset)
    {
-      inReport = false;
-      int r = inOffset >> IMMIX_LINE_BITS;
-      if (r < IMMIX_HEADER_LINES || r >= IMMIX_LINES)
-      {
-         if (inReport)
-            GCLOG("  bad row %d (off=%d)\n", r, inOffset);
-         return allocNone;
-      }
-
-      if ( !( allocStart[r] & (1<<((inOffset>>2) & 31)) ) )
-      {
-         // Not a actual start...
-         return allocNone;
-      }
-
-
-
       char time = mPtr->mRow[0][inOffset+ENDIAN_MARK_ID_BYTE_HEADER];
       if ( ((time+1) & MARK_BYTE_MASK) != (gByteMarkID & MARK_BYTE_MASK)  )
       {
          // Object is either out-of-date, or already marked....
-         if (inReport)
-            GCLOG(time==gByteMarkID ? " M " : " O ");
          return time==gByteMarkID ? allocMarked : allocNone;
       }
-
 
       if (*(unsigned int *)(mPtr->mRow[0] + inOffset) & IMMIX_ALLOC_IS_CONTAINER)
       {
@@ -750,6 +733,96 @@ struct BlockDataInfo
 
       return allocString;
    }
+
+
+   AllocType GetAllocType(int inOffset)
+   {
+      int r = inOffset >> IMMIX_LINE_BITS;
+      if (r < IMMIX_HEADER_LINES || r >= IMMIX_LINES)
+      {
+         return allocNone;
+      }
+
+      if ( !( allocStart[r] & (1<<((inOffset>>2) & 31)) ) )
+      {
+         // Not a actual start...
+         return allocNone;
+      }
+
+      return GetAllocTypeChecked(inOffset);
+   }
+
+
+   AllocType GetEnclosingAllocType(int inOffset,void *&ioPtr)
+   {
+      int r = inOffset >> IMMIX_LINE_BITS;
+      if (r < IMMIX_HEADER_LINES || r >= IMMIX_LINES)
+         return allocNone;
+
+      // Normal, good alloc
+      int rowPos = 1<<((inOffset>>2) & 31);
+      if ( allocStart[r] & rowPos )
+         return GetAllocTypeChecked(inOffset);
+
+      int offset = inOffset;
+      // Go along row, looking got previous start ..
+      while(true)
+      {
+         offset -= 4;
+         rowPos >>= 1;
+         if (!rowPos)
+            break;
+         if ( allocStart[r] & rowPos )
+         {
+            // Found best object ...
+            AllocType result = GetAllocTypeChecked(offset);
+            if (result!=allocNone)
+            {
+               unsigned int header =  *(unsigned int *)((char *)mPtr + offset);
+               // See if it fits...
+               int size = ((header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT);
+               if (size>= inOffset-offset)
+               {
+                  ioPtr = (char *)mPtr + offset + sizeof(int);
+                  return result;
+               }
+            }
+            return allocNone;
+         }
+      }
+
+      // Not found on row, look for previsous row - up to 32 rows (4k) back ...
+      int stop = std::max(r-32,IMMIX_HEADER_LINES);
+      for(int row=r-1; row>=stop; row--)
+      {
+         int s = allocStart[row];
+         if (s)
+         {
+            for(int bit=31; bit>=0; bit--)
+               if (s & (1<<bit) )
+               {
+                  int offset = (row<<IMMIX_LINE_BITS) + (bit<<2);
+                  AllocType result = GetAllocTypeChecked(offset);
+                  if (result!=allocNone)
+                  {
+                     unsigned int header =  *(unsigned int *)((char *)mPtr + offset);
+                     int size = ((header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT);
+                     if (size>= inOffset-offset)
+                     {
+                        ioPtr = (char *)mPtr + offset + sizeof(int);
+                        return result;
+                     }
+                  }
+                  // Found closest, but no good
+                  return allocNone;
+               }
+         }
+      }
+
+      // No start in range ...
+      return allocNone;
+   }
+
 
    void pin() { mPinned = true; }
 
@@ -3486,8 +3559,11 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
          {
             BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
             BlockDataInfo *info = (*gBlockInfo)[block->mId];
+
             int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
-            AllocType t = info->GetAllocType(pos-sizeof(int),false);
+            AllocType t = sgCheckInternalPointers ?
+                  info->GetEnclosingAllocType(pos-sizeof(int),vptr):
+                  info->GetAllocType(pos-sizeof(int));
             if ( t==allocObject )
             {
                //GCLOG(" Mark object %p (%p)\n", vptr,ptr);
