@@ -550,7 +550,7 @@ static value cert_get_notbefore(value cert){
 	val_check_kind(cert, k_cert);
 	crt = val_cert(cert);
 	if( !crt )
-		hx_failure("x509_get_notbefore");
+		hx_failure("cert_get_notbefore");
 	return x509_time_to_array( &crt->valid_from );
 }
 
@@ -559,7 +559,7 @@ static value cert_get_notafter(value cert){
 	val_check_kind(cert, k_cert);
 	crt = val_cert(cert);
 	if( !crt )
-		hx_failure("x509_get_notbefore");
+		hx_failure("cert_get_notbefore");
 	return x509_time_to_array( &crt->valid_to );
 }
 
@@ -574,6 +574,73 @@ static value cert_get_next( value cert ){
 	v = alloc_abstract(k_cert, crt);
 	val_gc(v,free_abstract);
 	return v;
+}
+
+static value cert_add_pem( value cert, value data ){
+	mbedtls_x509_crt *crt;
+	int r, len;
+	unsigned char *buf;
+	bool isnew = 0;
+	val_check(data,string);
+	if( !val_is_null(cert) ){
+		val_check_kind(cert,k_cert);
+		crt = val_cert(cert);
+		if( !crt )
+			hx_failure("cert_add_pem");
+	}else{
+		crt = (mbedtls_x509_crt *)malloc(sizeof(mbedtls_x509_crt));
+		mbedtls_x509_crt_init( crt );
+		isnew = 1;
+	}
+	len = val_strlen(data)+1;
+	buf = (unsigned char *)malloc(len);
+	memcpy(buf, val_string(data), len-1);
+	buf[len-1] = '\0';
+	r = mbedtls_x509_crt_parse(crt, buf, len);
+	free(buf);
+	if( r < 0 ){
+		if( isnew ){
+			mbedtls_x509_crt_free(crt);
+			free(crt);
+		}
+		return ssl_error(r);
+	}
+	if( isnew ){
+		cert = alloc_abstract(k_cert, crt);
+		val_gc(cert,free_cert);
+	}
+	return cert;
+}
+
+static value cert_add_der( value cert, value data ){
+	mbedtls_x509_crt *crt;
+	int r;
+	buffer bdata;
+	bool isnew = 0;
+	val_check(data,buffer);
+	if( !val_is_null(cert) ){
+		val_check_kind(cert,k_cert);
+		crt = val_cert(cert);
+		if( !crt )
+			hx_failure("cert_add_der");
+	}else{
+		crt = (mbedtls_x509_crt *)malloc(sizeof(mbedtls_x509_crt));
+		mbedtls_x509_crt_init( crt );
+		isnew = 1;
+	}
+	bdata = val_to_buffer(data);
+	if( (r = mbedtls_x509_crt_parse_der(crt, (const unsigned char*)buffer_data(bdata), buffer_size(bdata))) < 0 ){
+		if( isnew ){
+			mbedtls_x509_crt_free(crt);
+			free(crt);
+		}
+		return ssl_error(r);
+	}
+	if( isnew ){
+		cert = alloc_abstract(k_cert, crt);
+		val_gc(cert,free_cert);
+	}
+	return cert;
 }
 
 static value key_from_der( value data, value pub ){
@@ -762,6 +829,8 @@ DEFINE_PRIM( cert_get_altnames, 1 );
 DEFINE_PRIM( cert_get_notbefore, 1 );
 DEFINE_PRIM( cert_get_notafter, 1 );
 DEFINE_PRIM( cert_get_next, 1 );
+DEFINE_PRIM( cert_add_pem, 2 );
+DEFINE_PRIM( cert_add_der, 2 );
 
 DEFINE_PRIM( key_from_pem, 3 );
 DEFINE_PRIM( key_from_der, 2 );
