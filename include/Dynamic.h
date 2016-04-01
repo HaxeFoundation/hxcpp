@@ -346,38 +346,22 @@ inline bool Dynamic::IsClass<Dynamic>() { return mPtr; }
 
 inline String Dynamic::operator+(const String &s) const { return Cast<String>() + s; }
 
+#define HX_DYNAMIC_OP_ISEQ(T) \
+inline bool operator == (const T &inLHS,const Dynamic &inRHS) { return inRHS==inLHS; } \
+inline bool operator != (const T &inLHS,const Dynamic &inRHS) { return inRHS!=inLHS; }
 
-template<typename T>
-inline bool operator != (const T &inLHS,const Dynamic &inRHS)
-{
-   return inRHS!=inLHS;
-}
-
-
-template<typename T>
-inline bool operator == (const T &inLHS,const Dynamic &inRHS)
-{
-   return inRHS==inLHS;
-}
-
-/*
-inline bool operator != (double inLHS,const Dynamic &inRHS) \
-   { return !inRHS.GetPtr() || (inLHS != (double)inRHS); } \
-inline bool operator != (float inLHS,const Dynamic &inRHS) \
-   { return !inRHS.GetPtr() || ((double)inLHS != (double)inRHS); } \
-inline bool operator != (int inLHS,const Dynamic &inRHS) \
-   { return !inRHS.GetPtr() || (inLHS != (double)inRHS); } \
-inline bool operator != (bool inLHS,const Dynamic &inRHS) \
-   { return !inRHS.GetPtr() || ((double)inLHS != (double)inRHS); }
-
-
-inline bool operator == (bool inLHS,const Dynamic &inRHS) \
- { return inRHS.mPtr  && inRHS.mPtr->__GetType()==vtBool && (inLHS == (bool)inRHS); }
-inline bool operator == (const String &inLHS,const ::Dynamic &inRHS) \
- { return inRHS.mPtr  && inLHS == inRHS.mPtr->toString(); }
-inline bool operator != (const String &inLHS,const ::Dynamic &inRHS) \
- { return !inRHS.mPtr  || inLHS != inRHS.mPtr->toString(); }
-*/
+HX_DYNAMIC_OP_ISEQ(String)
+HX_DYNAMIC_OP_ISEQ(double)
+HX_DYNAMIC_OP_ISEQ(float)
+HX_DYNAMIC_OP_ISEQ(cpp::Int64)
+HX_DYNAMIC_OP_ISEQ(cpp::UInt64)
+HX_DYNAMIC_OP_ISEQ(int)
+HX_DYNAMIC_OP_ISEQ(unsigned int)
+HX_DYNAMIC_OP_ISEQ(short)
+HX_DYNAMIC_OP_ISEQ(unsigned short)
+HX_DYNAMIC_OP_ISEQ(signed char)
+HX_DYNAMIC_OP_ISEQ(unsigned char)
+HX_DYNAMIC_OP_ISEQ(bool)
 
 inline bool operator < (bool inLHS,const Dynamic &inRHS) { return false; }
 inline bool operator <= (bool inLHS,const Dynamic &inRHS) { return false; }

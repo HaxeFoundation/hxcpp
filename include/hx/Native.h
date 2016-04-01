@@ -58,17 +58,17 @@ namespace hx
          Native (T inPtr) : ptr(inPtr) { }
          Native (const Native<T> &inNative) : ptr(inNative.ptr) { }
 
-         inline Native &operator=(T inPtr) { ptr=inPtr; return *this }
-         inline Native &operator=(const Native<T> &inNative) { ptr=inNative.ptr; return *this }
+         inline Native &operator=(T inPtr) { ptr=inPtr; return *this; }
+         inline Native &operator=(const Native<T> &inNative) { ptr=inNative.ptr; return *this; }
          inline T operator->() const { return ptr; }
 
          inline operator T() const { return ptr; }
 
-         template<typename T>
-         inline bool operator==(const Native<T> &inOther) const
+         template<typename O>
+         inline bool operator==(const Native<O> &inOther) const
             { return ptr == inOther.ptr; }
-         template<typename T>
-         inline bool operator!=(const Native<T> &inOther) const
+         template<typename O>
+         inline bool operator!=(const Native<O> &inOther) const
             { return ptr != inOther.ptr; }
    };
 

@@ -36,6 +36,7 @@
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/StdLibs.h"/>
+  <depend name="${HXCPP}/include/hx/Native.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
   <depend name="${HXCPP}/include/hx/Unordered.h"/>
   <depend name="${HXCPP}/include/cpp/Pointer.h"/>
