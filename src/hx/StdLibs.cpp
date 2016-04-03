@@ -145,6 +145,25 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
    return null();
 }
 
+// -- hx::Native -------
+
+extern "C" void __hxcpp_lib_main();
+namespace hx
+{
+   const char *Init()
+   {
+      try
+      {
+         __hxcpp_lib_main();
+         return 0;
+      }
+      catch(e:Dynamic)
+      {
+         HX_TOP_OF_STACK
+         return e->toString().__s;
+      }
+   }
+}
 
 
 // --- System ---------------------------------------------------------------------

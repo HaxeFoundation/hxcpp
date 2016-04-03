@@ -251,6 +251,12 @@ public:
 };
 
 
+inline HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_string_create(const char *str, int len)
+{
+   return String(str,len).dup();
+}
+
+
 
 
 #endif

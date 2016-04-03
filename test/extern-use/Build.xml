@@ -1,0 +1,14 @@
+<xml>
+<files id="myfiles">
+<compilerflag value="-I${HXCPP}/include"/>
+<compilerflag value="-I../extern-lib/gen-externs/include"/>
+  <file name="Main.cpp" />
+</files>
+
+<target id="default" tool="linker" toolid="exe" output="ExternUse">
+  <files id="myfiles"/>
+
+  <lib name="../extern-lib/gen-externs/liboutput.lib" />
+</target>
+
+</xml>

@@ -73,9 +73,80 @@ namespace hx
             { return ptr != inOther.ptr; }
    };
 
+   HXCPP_CLASS_ATTRIBUTES const char *Init();
+   HXCPP_CLASS_ATTRIBUTES void *PushTopOfStack(void *);
+   HXCPP_CLASS_ATTRIBUTES void *PopTopOfStack();
+   HXCPP_CLASS_ATTRIBUTES void *ChangeNativeRef(void *inPtrPtr, void *inNewVaue, hx::Object *inNew, hx::Object *inOld=0);
+
+   class HXCPP_CLASS_ATTRIBUTES NativeAttach
+   {
+      bool isAttached;
+      public:
+         NativeAttach(bool inAttach=true)
+         {
+            isAttached = false;
+            if (inAttach)
+               attach();
+         }
+         ~NativeAttach()
+         {
+            detach();
+         }
+         void attach()
+         {
+            if (!isAttached)
+            {
+               isAttached = true;
+               hx::PushTopOfStack(this);
+            }
+         }
+         void detach()
+         {
+            if (isAttached)
+            {
+               isAttached = false;
+               hx::PopTopOfStack();
+            }
+         }
+   };
+
    template<typename T>
    class Ref
    {
+   public:
+      T ptr;
+
+      Ref() : ptr(0) { }
+      Ref(const T &inT) : ptr(0) { setPtr(inT); }
+      template<typename O>
+      inline Ref(const Native<O> &inNative) : ptr(0) { setPtr(inNative.ptr); }
+      template<typename O>
+      inline Ref(const Ref<O> &inRef) : ptr(0) { setPtr(inRef.ptr); }
+
+      ~Ref() { setPtr(0); }
+      void setPtr(T inPtr)
+      {
+         hx::Object *old = ptr ? ptr->__GetRealObject() : 0;
+         hx::Object *next = inPtr ? inPtr->__GetRealObject() : 0;
+
+         if (old || next)
+            ChangeNativeRef(&ptr, inPtr, next, old);
+         else
+            ptr = inPtr;
+      }
+
+      inline Ref &operator=(const T &inPtr) { ptr=inPtr; return *this; }
+      template<typename O>
+      inline Ref &operator=(const Native<O> &inNative) { ptr=inNative.ptr; return *this; }
+      template<typename O>
+      inline Ref &operator=(const Ref<O> &inRef) { ptr=inRef.ptr; return *this; }
+
+      template<typename T>
+      inline bool operator==(const Ref<T> &inOther) const
+            { return ptr == inOther.ptr; }
+      template<typename T>
+      inline bool operator!=(const Ref<T> &inOther) const
+            { return ptr != inOther.ptr; }
    };
 
    #define HX_NATIVE_IMPLEMENTATION hx::Object *__GetRealObject() { return this; }
