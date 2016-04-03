@@ -141,11 +141,11 @@ namespace hx
       template<typename O>
       inline Ref &operator=(const Ref<O> &inRef) { ptr=inRef.ptr; return *this; }
 
-      template<typename T>
-      inline bool operator==(const Ref<T> &inOther) const
+      template<typename O>
+      inline bool operator==(const Ref<O> &inOther) const
             { return ptr == inOther.ptr; }
-      template<typename T>
-      inline bool operator!=(const Ref<T> &inOther) const
+      template<typename O>
+      inline bool operator!=(const Ref<O> &inOther) const
             { return ptr != inOther.ptr; }
    };
 
