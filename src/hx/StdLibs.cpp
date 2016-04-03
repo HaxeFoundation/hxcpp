@@ -157,7 +157,7 @@ namespace hx
          __hxcpp_lib_main();
          return 0;
       }
-      catch(e:Dynamic)
+      catch(Dynamic e)
       {
          HX_TOP_OF_STACK
          return e->toString().__s;
