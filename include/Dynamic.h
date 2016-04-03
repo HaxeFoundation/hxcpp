@@ -385,7 +385,7 @@ bool operator==(Platform::Box<T> ^inPtr, nullptr_t)
       { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
    inline bool operator op (float inLHS,const ::Dynamic &inRHS) \
       { return inRHS.IsNumeric() && ((double)inLHS op (double)inRHS); } \
-   inline bool operator op (int inLHS,::Dynamic &inRHS) \
+   inline bool operator op (int inLHS,const ::Dynamic &inRHS) \
       { return inRHS.IsNumeric() && (inLHS op (double)inRHS); }
 
 COMPARE_DYNAMIC_OP( < )
