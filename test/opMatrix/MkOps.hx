@@ -31,8 +31,9 @@ class MkOps
          {
             file.push('check( $e1 != $e2 );');
             file.push('check( $e1 == $e2 );');
+            file.push('check( $e1 > $e2 );');
             file.push('$e1 = $e2;');
-            total += 3;
+            total += 4;
          }
       }
       file.push("}}");

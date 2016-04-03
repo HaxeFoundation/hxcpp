@@ -8,7 +8,9 @@
 <target id="default" tool="linker" toolid="exe" output="ExternUse">
   <files id="myfiles"/>
 
-  <lib name="../extern-lib/gen-externs/liboutput.lib" />
+  <libdir name="../extern-lib/gen-externs" />
+  <lib name="-libpath:../extern-lib/gen-externs" />
+  <lib name="liboutput.lib" />
 </target>
 
 </xml>

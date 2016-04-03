@@ -165,6 +165,29 @@ namespace cpp
        return asDouble() * (double)inRHS;
     }
 
+
+
+   #define HX_VARIANT_COMPARE_OP_ALL( op ) \
+   inline bool operator op (const String &inRHS)  const; \
+   inline bool operator op (double inRHS)  const { return isNumeric() && (asDouble() op inRHS); } \
+   inline bool operator op (cpp::Int64 inRHS)  const { return isNumeric() && (asInt64() op inRHS); } \
+   inline bool operator op (cpp::UInt64 inRHS)  const { return isNumeric() && ((cpp::UInt64)(asInt64()) op inRHS); } \
+   inline bool operator op (float inRHS)  const { return isNumeric() && (asDouble() op inRHS); } \
+   inline bool operator op (int inRHS)  const { return isNumeric() && (asDouble() op (double)inRHS); } \
+   inline bool operator op (unsigned int inRHS)  const { return isNumeric() && (asDouble() op (double)inRHS); } \
+   inline bool operator op (short inRHS)  const { return isNumeric() && (asDouble() op (double)inRHS); } \
+   inline bool operator op (unsigned short inRHS)  const { return isNumeric() && (asDouble() op (double)inRHS); } \
+   inline bool operator op (signed char inRHS)  const { return isNumeric() && (asDouble() op (double)inRHS); } \
+   inline bool operator op (unsigned char inRHS)  const { return isNumeric() && (asDouble() op (double)inRHS); } \
+   inline bool operator op (bool inRHS)  const { return isBool() && (asDouble() op (double)inRHS); }
+
+
+   HX_VARIANT_COMPARE_OP_ALL( < )
+   HX_VARIANT_COMPARE_OP_ALL( <= )
+   HX_VARIANT_COMPARE_OP_ALL( >= )
+   HX_VARIANT_COMPARE_OP_ALL( >  )
+
+
    };
 
 #else // Second time ...
@@ -212,6 +235,15 @@ namespace cpp
    HX_ARITH_VARIANT( + )
    HX_ARITH_VARIANT( / )
    HX_ARITH_VARIANT( * )
+
+   bool Variant::operator < (const String &inRHS)  const { return asString() < inRHS; }
+   bool Variant::operator <= (const String &inRHS)  const { return asString() < inRHS; }
+   bool Variant::operator > (const String &inRHS)  const { return asString() > inRHS; }
+   bool Variant::operator >= (const String &inRHS)  const { return asString() >= inRHS; }
+
+
+
+
 
    Variant::Variant(const ::String &inValue) : type(typeString), valStringPtr(inValue.__s), valStringLen(inValue.length) { }
 
