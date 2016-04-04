@@ -9,7 +9,6 @@
 <import name="libs/regexp/Build.xml" />
 <import name="libs/mysql/Build.xml" />
 <import name="libs/sqlite/Build.xml" />
-<import name="libs/ssl/Build.xml" />
 
 
 
@@ -70,7 +69,6 @@
    <target id="zlib"/>
    <target id="mysql"/>
    <target id="sqlite" unless="winrt"/><!-- TODO -->
-   <target id="ssl"/>
    <section if="static_link">
       <target id="msvccompat" if="windows" unless="mingw||MSVC19" />
       <target id="linuxcompat" if="linux" />

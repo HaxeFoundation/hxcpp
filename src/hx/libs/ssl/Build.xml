@@ -1,26 +1,16 @@
 <xml>
 
-<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+<pragma once="true" />
 
+<set name="MBEDTLS_DIR" value="${HXCPP}/project/thirdparty/mbedtls-2.2.1" />
 
-<set name="MBEDTLS_DIR" value="../../thirdparty/mbedtls-2.2.1" />
-
-<files id="ssl" >
-	<depend name="${HXCPP}/include/hx/Macros.h"/>
-	<depend name="${HXCPP}/include/hx/CFFI.h"/>
-	<cache value="true" />
+<files id="hxcpp_ssl" >
+	<depend files="hxcpp-depends"/>
 	<depend name="${this_dir}/Build.xml" dateOnly="true" />
-	<compilerflag value="-DSTATIC_LINK" unless="static_link||dynamic_link" />
+	<cache value="true" />
 	<compilerflag value="-I${MBEDTLS_DIR}/include"/>
 
-	<file name="SSL.cpp"/>
-</files>
-
-<files id="mbedtls">
-	<cache value="true" />
-	<depend name="${this_dir}/Build.xml" dateOnly="true" />
-
-	<compilerflag value="-I${MBEDTLS_DIR}/include"/>
+	<file name="${this_dir}/SSL.cpp"/>
 
 	<file name="${MBEDTLS_DIR}/library/ssl_srv.c"/>
 	<file name="${MBEDTLS_DIR}/library/sha512.c"/>
@@ -92,7 +82,7 @@
 </files>
 
 <target id="haxe">
- 	<files id="ssl" />
+ 	<files id="hxcpp_ssl" />
 
 	<lib name="advapi32.lib" if="windows" unless="static_link" />
 	<lib name="crypt32.lib" if="windows" unless="static_link" />
@@ -100,20 +90,6 @@
 	
 	<flag value="-framework" if="mac"/>
   	<flag value="Security" if="mac"/>
-</target>
-
-<target id="ssl" output="${HX_TARGET_PREFIX}ssl${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
-    <files id="mbedtls"/>
-    <files id="ssl"/>
-	
-	<lib name="advapi32.lib" if="windows" unless="static_link" />
-	<lib name="crypt32.lib" if="windows" unless="static_link" />
-	<lib name="ws2_32.lib" if="windows" unless="static_link" />
-
-	<flag value="-framework" if="mac"/>
-  	<flag value="Security" if="mac"/>
-
-    <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
 
 </xml>
