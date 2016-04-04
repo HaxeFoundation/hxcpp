@@ -79,6 +79,9 @@ class null
      explicit inline null(int){ } 
      explicit inline null(bool){ } 
 
+     template<typename T>
+     T StaticCast() { return null(); }
+
      operator bool () { return false; }
      operator int () { return 0; }
      operator unsigned int () { return 0; }
