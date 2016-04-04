@@ -276,9 +276,16 @@ class ProcessManager
          oldPath = Sys.getCwd();
          Sys.setCwd(path);
       }
-      
-      var text = inText==null ? "Running process" : inText;
-      Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
+
+      if ( !Log.quiet)
+      {
+         var text = inText==null ? "Running process" : inText;
+         Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
+      }
+      else
+      {
+         Log.info("", inText);
+      }
       
       var output = "";
       var result = 0;
@@ -357,11 +364,20 @@ class ProcessManager
       command = combineCommand(command,args);
 
       Log.lock();
-      if (inText != null)
-         Log.v(inText);
 
-      if (!Log.verbose)
-         Log.info(formatMessage(command, args));
+      if (Log.quiet)
+      {
+         if (inText != null)
+            Log.v(inText);
+      }
+      else
+      {
+         if (inText != null)
+            Log.v(inText);
+
+         if (!Log.verbose)
+            Log.info(formatMessage(command, args));
+      }
       
       
       // Other thread may have already thrown an error

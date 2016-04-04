@@ -1106,6 +1106,12 @@ class BuildTool
          a++;
       }
 
+      if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
+         Log.colorSupported = false;
+      Log.verbose = Log.verbose || defines.exists("HXCPP_VERBOSE");
+      Log.quiet = defines.exists("HXCPP_QUIET") && !Log.verbose;
+      Log.mute = defines.exists("HXCPP_SILENT") && !Log.quiet && !Log.verbose;
+
       if ( optionsTxt!="" && makefile!="")
       {
          var path = PathManager.combine(haxe.io.Path.directory(makefile), optionsTxt);
