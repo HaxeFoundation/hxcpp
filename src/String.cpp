@@ -438,7 +438,7 @@ unsigned int String::calcHash() const
 }
 
 
-static unsigned char safeChars[128];
+static unsigned char safeChars[256];
 static bool safeCharsInit = false;
 
 String String::__URLEncode() const
@@ -446,7 +446,7 @@ String String::__URLEncode() const
    if (!safeCharsInit)
    {
       safeCharsInit = true;
-      for(int i=0;i<128;i++)
+      for(int i=0;i<256;i++)
          safeChars[i] = i>32 && i<127;
       unsigned char dodgy[] = { 36, 38, 43, 44, 47, 58, 59, 61, 63, 64,
          34, 60, 62, 35, 37, 123, 125, 124, 92, 94, 126, 91, 93, 96 };
@@ -461,7 +461,7 @@ String String::__URLEncode() const
    int extra = 0;
    int utf8_chars = bytes->__length();
    for(int i=0;i<utf8_chars;i++)
-      if ( i>=128 || !safeChars[bytes[i]])
+      if (!safeChars[bytes[i]])
          extra++;
    if (extra==0)
       return *this;
@@ -472,7 +472,7 @@ String String::__URLEncode() const
 
    for(int i=0;i<utf8_chars;i++)
    {
-      if ( i>=128 || !safeChars[bytes[i]])
+      if (!safeChars[bytes[i]])
       {
          static char hex[] = "0123456789ABCDEF";
          unsigned char b = bytes[i];
