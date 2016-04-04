@@ -438,37 +438,41 @@ unsigned int String::calcHash() const
 }
 
 
+static unsigned char safeChars[128];
+static bool safeCharsInit = false;
+
 String String::__URLEncode() const
 {
+   if (!safeCharsInit)
+   {
+      safeCharsInit = true;
+      for(int i=0;i<128;i++)
+         safeChars[i] = i>32 && i<127;
+      unsigned char dodgy[] = { 36, 38, 43, 44, 47, 58, 59, 61, 63, 64,
+         34, 60, 62, 35, 37, 123, 125, 124, 92, 94, 126, 91, 93, 96 };
+      for(int i=0;i<sizeof(dodgy);i++)
+         safeChars[ dodgy[i] ] = 0;
+   }
+
    Array<unsigned char> bytes(0,length);
    // utf8-encode
    __hxcpp_bytes_of_string(bytes,*this);
 
    int extra = 0;
-   int spaces = 0;
    int utf8_chars = bytes->__length();
    for(int i=0;i<utf8_chars;i++)
-      if ( !isalnum(bytes[i]) && bytes[i]!=' ' && bytes[i]!='-' && bytes[i]!='_' && bytes[i]!='.')
+      if ( i>=128 || !safeChars[i])
          extra++;
-      else if (bytes[i]==' ')
-         spaces++;
-   if (extra==0 && spaces==0)
+   if (extra==0)
       return *this;
 
-   int l = utf8_chars + extra*2 + spaces*2 /* *0 */;
+   int l = utf8_chars + extra*2;
    HX_CHAR *result = hx::NewString(l);
    HX_CHAR *ptr = result;
 
    for(int i=0;i<utf8_chars;i++)
    {
-      if ( bytes[i]==' ')
-      {
-         //*ptr++ = '+';
-         *ptr++ = '%';
-         *ptr++ = '2';
-         *ptr++ = '0';
-      }
-      else if ( !isalnum(bytes[i]) && bytes[i]!='-' && bytes[i]!='_' && bytes[i]!='.' )
+      if ( i>=128 || !safeChars[i])
       {
          static char hex[] = "0123456789ABCDEF";
          unsigned char b = bytes[i];
