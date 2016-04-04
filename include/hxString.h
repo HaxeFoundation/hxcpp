@@ -53,6 +53,11 @@ public:
    #endif
    inline String(const ::String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
    String(const int &inRHS);
+   String(const unsigned int &inRHS);
+   String(const short &inRHS) { fromInt(inRHS); }
+   String(const unsigned short &inRHS) { fromInt(inRHS); }
+   String(const signed char &inRHS) { fromInt(inRHS); }
+   String(const unsigned char &inRHS) { fromInt(inRHS); }
    String(const cpp::CppInt32__ &inRHS);
    String(const double &inRHS);
    String(const float &inRHS);
@@ -71,6 +76,7 @@ public:
    explicit inline String(const cpp::Struct<T,S> &inRHS);
    template<typename OBJ>
    explicit inline String(const hx::ObjectPtr<OBJ> &inRHS);
+   void fromInt(int inI);
 
 
 

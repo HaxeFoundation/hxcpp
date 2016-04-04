@@ -20,6 +20,10 @@ public:
    Dynamic() {};
    Dynamic(int inVal);
    Dynamic(short inVal);
+   Dynamic(unsigned int inVal);
+   Dynamic(unsigned short inVal);
+   Dynamic(unsigned char inVal);
+   Dynamic(signed char inVal);
    Dynamic(const cpp::CppInt32__ &inVal);
    Dynamic(bool inVal);
    Dynamic(double inVal);
@@ -193,9 +197,18 @@ public:
    // Operator + is different, since it must consider strings too...
     Dynamic operator+(const Dynamic &inRHS) const;
    inline String operator+(const String &s) const;
+
+    Dynamic operator+(const cpp::UInt64 &i) const;
+    Dynamic operator+(const cpp::Int64 &i) const;
     Dynamic operator+(const int &i) const;
+    Dynamic operator+(const unsigned int &i) const;
+    Dynamic operator+(const short &i) const;
+    Dynamic operator+(const unsigned short &i) const;
+    Dynamic operator+(const signed char &i) const;
+    Dynamic operator+(const unsigned char &i) const;
     Dynamic operator+(const double &d) const;
     Dynamic operator+(const float &d) const;
+    Dynamic operator+(const cpp::Variant &d) const;
 
    double operator%(const Dynamic &inRHS) const;
    double operator-() const { return mPtr ? - mPtr->__ToDouble() : 0.0; }
@@ -205,14 +218,13 @@ public:
    double operator--(int) {double val = mPtr->__ToDouble(); *this = val-1; return val; }
 
 
+   double operator / (const cpp::Variant &inRHS) const { return (double)(*this) / (double)inRHS; } \
    double operator / (const Dynamic &inRHS) const { return (double)(*this) / (double)inRHS; } \
    double operator / (const double &inRHS) const { return (double)(*this) / (double)inRHS; } \
    double operator / (const float &inRHS) const { return (double)(*this) / (double)inRHS; } \
    double operator / (const int &inRHS) const { return (double)(*this) / (double)inRHS; }
 
    #define DYNAMIC_ARITH( op ) \
-      double operator op (const double &inRHS) const { return (double)(*this) op (double)inRHS; } \
-      double operator op (const float &inRHS) const { return (double)(*this) op (double)inRHS; } \
       Dynamic operator op (const cpp::Variant &inRHS) const \
         { return mPtr->__GetType()==vtInt && inRHS.isInt() ? \
               Dynamic((int)(*this) op (int)inRHS) : \
@@ -221,10 +233,24 @@ public:
         { return mPtr->__GetType()==vtInt && inRHS.mPtr->__GetType()==vtInt ? \
               Dynamic((int)(*this) op (int)inRHS) : \
               Dynamic( (double)(*this) op (double)inRHS); } \
+      double operator op (const double &inRHS) const { return (double)(*this) op (double)inRHS; } \
+      double operator op (const float &inRHS) const { return (double)(*this) op (double)inRHS; } \
       Dynamic operator op (const int &inRHS) const \
-        { return mPtr->__GetType()==vtInt ? \
-              Dynamic((int)(*this) op inRHS) : \
-              Dynamic((double)(*this) op inRHS); } \
+        { return mPtr->__GetType()==vtInt ?  Dynamic((int)(*this) op inRHS) : Dynamic((double)(*this) op inRHS); } \
+      Dynamic operator op (const unsigned int &inRHS) const \
+        { return mPtr->__GetType()==vtInt ?  Dynamic((int)(*this) op inRHS) : Dynamic((double)(*this) op inRHS); } \
+      Dynamic operator op (const short &inRHS) const \
+        { return mPtr->__GetType()==vtInt ?  Dynamic((int)(*this) op inRHS) : Dynamic((double)(*this) op inRHS); } \
+      Dynamic operator op (const unsigned short &inRHS) const \
+        { return mPtr->__GetType()==vtInt ?  Dynamic((int)(*this) op inRHS) : Dynamic((double)(*this) op inRHS); } \
+      Dynamic operator op (const signed char &inRHS) const \
+        { return mPtr->__GetType()==vtInt ?  Dynamic((int)(*this) op inRHS) : Dynamic((double)(*this) op inRHS); } \
+      Dynamic operator op (const unsigned char &inRHS) const \
+        { return mPtr->__GetType()==vtInt ?  Dynamic((int)(*this) op inRHS) : Dynamic((double)(*this) op inRHS); } \
+      Dynamic operator op (const cpp::Int64 &inRHS) const \
+        { return Dynamic((double)(*this) op inRHS); } \
+      Dynamic operator op (const cpp::UInt64 &inRHS) const \
+        { return Dynamic((double)(*this) op inRHS); } \
 
    DYNAMIC_ARITH( - )
    DYNAMIC_ARITH( * )
@@ -409,9 +435,16 @@ COMPARE_DYNAMIC_OP( >  )
 
 
 #define ARITH_DYNAMIC( op ) \
+   inline double operator op (const cpp::Int64 &inLHS,const Dynamic &inRHS) { return inLHS op (cpp::Int64)inRHS;} \
+   inline double operator op (const cpp::UInt64 &inLHS,const Dynamic &inRHS) { return inLHS op (cpp::UInt64)inRHS;} \
    inline double operator op (const double &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS;} \
    inline double operator op (const float &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS;} \
    inline double operator op (const int &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const unsigned int &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const short &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const unsigned short &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const signed char &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const unsigned char &inLHS,const Dynamic &inRHS) { return inLHS op (double)inRHS; } \
 
 ARITH_DYNAMIC( - )
 ARITH_DYNAMIC( + )

@@ -53,6 +53,7 @@ namespace hx
 #ifdef HX_UTF8_STRINGS
 char HX_DOUBLE_PATTERN[20] = "%.15g";
 #define HX_INT_PATTERN "%d"
+#define HX_UINT_PATTERN "%ud"
 #else
 wchar_t HX_DOUBLE_PATTERN[20] =  L"%.15g";
 #define HX_INT_PATTERN L"%d"
@@ -322,11 +323,24 @@ String::String(const Dynamic &inRHS)
    }
 }
 
+void String::fromInt(int inIdx)
+{
+   HX_CHAR buf[100];
+   SPRINTF(buf,100,HX_INT_PATTERN,inIdx);
+   buf[99]='\0';
+   __s = GCStringDup(buf,-1,&length);
+}
 
 String::String(const int &inRHS)
 {
+   fromInt(inRHS);
+}
+
+
+String::String(const unsigned int &inRHS)
+{
    HX_CHAR buf[100];
-   SPRINTF(buf,100,HX_INT_PATTERN,inRHS);
+   SPRINTF(buf,100,HX_UINT_PATTERN,inRHS);
    buf[99]='\0';
    __s = GCStringDup(buf,-1,&length);
 }

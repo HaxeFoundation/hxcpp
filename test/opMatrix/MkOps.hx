@@ -35,8 +35,17 @@ class MkOps
             file.push('check( $e1 != $e2 );');
             file.push('check( $e1 == $e2 );');
             file.push('check( $e1 > $e2 );');
+            total += 3;
             file.push('$e1 = $e2;');
-            total += 4;
+            if (!skipPlus(e1) && !skipPlus(e2))
+            {
+               file.push('$e1 += $e2;');
+               file.push('$e1 -= $e2;');
+               file.push('$e1 /= $e2;');
+               file.push('$e1 / $e2;');
+               file.push('$e1 *= $e2;');
+               total +=5;
+            }
          }
       }
       file.push("}}");
@@ -79,5 +88,12 @@ class MkOps
       Sys.println("Combos  : " + total);
       Sys.println("Exit code : " + code);
       Sys.exit(code);
+   }
+
+   // + and arrays do not mix...
+   static function skipPlus(e:String)
+   {
+      return e=="ai" || e=="arrarr" || e=="arrdyn" || e=="arrarr[0]" || e=="fi" ||
+         e=="arrdynarray" || e=="dynArray" || e=="eval" || e=="anon.b" || e== "EVal1";
    }
 }

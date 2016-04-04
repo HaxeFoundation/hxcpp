@@ -295,33 +295,49 @@ Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc 
 
 Dynamic sConstDynamicInts[256+1];
 
+static hx::Object *fromInt(int inVal)
+{
+   hx::Object *result = 0;
+   if (inVal>=-1 && inVal<256)
+   {
+      int idx = inVal+1;
+      result = sConstDynamicInts[idx].mPtr;
+      if (!result)
+         result = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+   }
+   else
+      result = (hx::Object *)new IntData(inVal);
+   return result;
+}
 
 Dynamic::Dynamic(bool inVal) : super( inVal ? hx::DynTrue.mPtr : hx::DynFalse.mPtr ) { }
 Dynamic::Dynamic(int inVal)
 {
-   if (inVal>=-1 && inVal<256)
-   {
-      int idx = inVal+1;
-      mPtr = sConstDynamicInts[idx].mPtr;
-      if (!mPtr)
-         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
-   }
-   else
-      mPtr = (hx::Object *)new IntData(inVal);
+   mPtr = fromInt(inVal);
 }
 
 Dynamic::Dynamic(short inVal)
 {
-   if (inVal>=-1 && inVal<256)
-   {
-      int idx = inVal+1;
-      mPtr = sConstDynamicInts[idx].mPtr;
-      if (!mPtr)
-         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
-   }
-   else
-      mPtr = (hx::Object *)new IntData(inVal);
+   mPtr = fromInt(inVal);
 }
+
+Dynamic::Dynamic(unsigned int inVal)
+{
+   mPtr = fromInt(inVal);
+}
+Dynamic::Dynamic(unsigned short inVal)
+{
+   mPtr = fromInt(inVal);
+}
+Dynamic::Dynamic(unsigned char inVal)
+{
+   mPtr = fromInt(inVal);
+}
+Dynamic::Dynamic(signed char inVal)
+{
+   mPtr = fromInt(inVal);
+}
+
 
 
 Dynamic::Dynamic(double inVal)
@@ -398,30 +414,34 @@ Dynamic Dynamic::operator+(const Dynamic &inRHS) const
    return const_cast<hx::Object*>(mPtr)->toString() + const_cast<Dynamic&>(inRHS)->toString();
 }
 
-Dynamic Dynamic::operator+(const int &i) const
-{
-   int t = mPtr ? mPtr->__GetType() : vtNull;
-   if (t==vtString)
-      return Cast<String>() + String(i);
-   return Cast<double>() + i;
+#define DYN_OP_ADD(TYPE) \
+Dynamic Dynamic::operator+(const TYPE &i) const \
+{ \
+   int t = mPtr ? mPtr->__GetType() : vtNull; \
+   if (t==vtString) \
+      return Cast<String>() + String(i); \
+   return Cast<double>() + i; \
 }
 
-Dynamic Dynamic::operator+(const double &d) const
+DYN_OP_ADD(double)
+DYN_OP_ADD(float)
+DYN_OP_ADD(int)
+DYN_OP_ADD(unsigned int)
+DYN_OP_ADD(short)
+DYN_OP_ADD(unsigned short)
+DYN_OP_ADD(signed char)
+DYN_OP_ADD(unsigned char)
+DYN_OP_ADD(cpp::Int64)
+DYN_OP_ADD(cpp::UInt64)
+
+Dynamic Dynamic::operator+(const cpp::Variant &v) const
 {
    int t = mPtr ? mPtr->__GetType() : vtNull;
-   if (t==vtString)
-      return Cast<String>() + String(d);
-   return Cast<double>() + d;
+   if (t==vtString || v.type == cpp::Variant::typeString)
+      return Cast<String>() + v.asString();
+   return Cast<double>() + v.asDouble();
 }
 
-
-Dynamic Dynamic::operator+(const float &f) const
-{
-   int t = mPtr ? mPtr->__GetType() : vtNull;
-   if (t==vtString)
-      return Cast<String>() + String(f);
-   return Cast<double>() + f;
-}
 
 
 double Dynamic::operator%(const Dynamic &inRHS) const
