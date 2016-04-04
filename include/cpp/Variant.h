@@ -115,6 +115,13 @@ namespace cpp
 
       template<typename T>
       bool operator==(const T &inRHS) const;
+      template<typename T>
+      bool operator==(const hx::ObjectPtr<T> &inRHS) const
+      {
+         return Compare(inRHS)==0;
+      }
+
+
       inline bool operator==(const null &inRHS) const { return isNull(); }
       inline bool operator!=(const null &inRHS) const { return !isNull(); }
       inline bool operator == (const Dynamic &inRHS) const { return Compare(inRHS)==0; }
@@ -398,7 +405,7 @@ namespace cpp
    {
       switch(type)
       {
-         case typeInt: return valInt==(int)inRHS;
+         case typeInt: return valInt==(double)inRHS;
          case typeDouble:return valDouble==(double)inRHS;
          case typeBool: return valBool==(bool)inRHS;
          case typeInt64: return valInt64==(cpp::Int64)inRHS;
@@ -410,6 +417,8 @@ namespace cpp
       }
       return false;
    }
+
+
    int Variant::Compare(const Dynamic &inRHS) const
    {
       if (inRHS.mPtr==0)
@@ -417,7 +426,11 @@ namespace cpp
 
       switch(type)
       {
-         case typeInt: return valInt - inRHS->__ToInt();
+         case typeInt:
+           {
+              double diff = valInt - inRHS->__ToDouble();
+              return diff<0 ? -1 : diff==0 ? 0 : 1;
+           }
          case typeDouble:
            {
               double diff = valDouble - inRHS->__ToDouble();
@@ -428,8 +441,14 @@ namespace cpp
               cpp::Int64 diff = valInt64 - inRHS->__ToInt64();
               return diff<0 ? -1 : diff==0 ? 0 : 1;
            }
-         case typeBool: return valBool==(bool)inRHS ? 1 : 0;
-         case typeString: return String(valStringPtr, valStringLen)==(String)inRHS ? 1 : 0;
+         case typeBool:
+            if (!inRHS.mPtr) return 1;
+            return valBool==(bool)inRHS ? 1 : 0;
+         case typeString:
+            if (!inRHS.mPtr) return valStringPtr ? 1 : 0;
+            if (!isStringType(inRHS))
+               return 1;
+            return String(valStringPtr, valStringLen)==(String)inRHS ? 1 : 0;
          case typeObject:
                return valObject->__Compare( inRHS.mPtr->__GetRealObject() );
          default: ;
