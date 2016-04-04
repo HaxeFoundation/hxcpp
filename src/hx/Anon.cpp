@@ -365,6 +365,13 @@ String StringFromAnonFields(hx::Object *inPtr)
 
 bool __hxcpp_anon_remove(Dynamic inObj,String inKey)
 {
+   hx::Anon_obj *anon = dynamic_cast<hx::Anon_obj *>(inObj.mPtr);
+   if (anon)
+   {
+      bool removed = anon->__Remove(inKey);
+      if (removed)
+         return true;
+   }
    Dynamic *map = inObj->__GetFieldMap();
    if (map)
       return __string_hash_remove(*map,inKey);
