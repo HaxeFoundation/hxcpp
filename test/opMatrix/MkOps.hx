@@ -3,13 +3,15 @@ class MkOps
    public static function main()
    {
       var file = [];
+      file.push("enum E { EVal0; EVal1; }");
       file.push("class Ops {");
       file.push("  public static function check(b:Bool) { }");
       file.push("  public static function main() {");
       file.push("  var d:Dynamic = null;");
       file.push("  var ai = [1]; var fi=[1.2];");
       file.push("  var int:Int=0;");
-      file.push("  var anon={a:Int, b:[2]};");
+      file.push("  var anon={a:Int, b:[2], c:EVal0};");
+      file.push("  var anon2:Dynamic={a:1};");
       file.push("  var dynArray:Array<Dynamic> = [1];");
       file.push("  var uint8:cpp.UInt8 = 1;");
       file.push("  var int8:cpp.Int8 = 1;");
@@ -21,8 +23,9 @@ class MkOps
       file.push("  var arrarr = [ [12] ];");
       file.push("  var arrdyn = [ [d] ];");
       file.push("  var arrdynarray = [ [dynArray] ];");
+      file.push("  var eval = EVal0;");
 
-      var exprs = [ "d", "null", "int", "ai", "ai[0]", "fi", "fi[0]", "anon.a", "anon.b", "anon", "dynArray", "dynArray[0]", "3.8", '"Hello"', "uint8", "int8", "uint16", "int16", "uint64", "int64", "string", "arrarr", "arrarr[0]", "arrarr[0][0]", "arrdyn", "arrdynarray" ];
+      var exprs = [ "d", "null", "int", "ai", "ai[0]", "fi", "fi[0]", "anon.a", "anon.b", "anon.c", "anon", "anon2.xyz", "dynArray", "dynArray[0]", "3.8", '"Hello"', "uint8", "int8", "uint16", "int16", "uint64", "int64", "string", "arrarr", "arrarr[0]", "arrarr[0][0]", "arrdyn", "arrdynarray", "EVal1", "eval" ];
 
       var total = 0;
       for(e1 in exprs)
@@ -57,7 +60,7 @@ class MkOps
                if (errMatch.match(line))
                {
                   var errLine = Std.parseInt(errMatch.matched(1));
-                  file[errLine-1] = "// " + errMatch.matched(2) + " " + file[errLine];
+                  file[errLine-1] = "// " + errMatch.matched(2) + " " + file[errLine-1];
                   errors++;
                }
             }

@@ -220,6 +220,11 @@ public:
    inline bool operator>(const ::String &inRHS) const { return compare(inRHS)>0; }
    inline bool operator>=(const ::String &inRHS) const { return compare(inRHS)>=0; }
 
+   inline bool operator<(const Dynamic &inRHS) const { return compare(inRHS)<0; }
+   inline bool operator<=(const Dynamic &inRHS) const { return compare(inRHS)<=0; }
+   inline bool operator>(const Dynamic &inRHS) const { return compare(inRHS)>0; }
+   inline bool operator>=(const Dynamic &inRHS) const { return compare(inRHS)>=0; }
+
    inline int cca(int inPos) const
 	{
 		if ((unsigned)inPos>=length) return 0;

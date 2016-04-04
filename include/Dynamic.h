@@ -385,7 +385,21 @@ bool operator==(Platform::Box<T> ^inPtr, nullptr_t)
       { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
    inline bool operator op (float inLHS,const ::Dynamic &inRHS) \
       { return inRHS.IsNumeric() && ((double)inLHS op (double)inRHS); } \
+   inline bool operator op (cpp::Int64 inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
+   inline bool operator op (cpp::UInt64 inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
    inline bool operator op (int inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
+   inline bool operator op (unsigned int inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
+   inline bool operator op (short inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
+   inline bool operator op (unsigned short inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
+   inline bool operator op (signed char inLHS,const ::Dynamic &inRHS) \
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
+   inline bool operator op (unsigned char inLHS,const ::Dynamic &inRHS) \
       { return inRHS.IsNumeric() && (inLHS op (double)inRHS); }
 
 COMPARE_DYNAMIC_OP( < )

@@ -117,9 +117,10 @@ namespace cpp
       bool operator==(const T &inRHS) const;
       template<typename T>
       bool operator==(const hx::ObjectPtr<T> &inRHS) const
-      {
-         return Compare(inRHS)==0;
-      }
+         { return Compare(inRHS)==0; }
+      template<typename T>
+      bool operator!=(const hx::ObjectPtr<T> &inRHS) const
+         { return Compare(inRHS)!=0; }
 
 
       inline bool operator==(const null &inRHS) const { return isNull(); }
@@ -483,6 +484,19 @@ namespace cpp
       }
    }
    #endif // HXCPP_VISIT_ALLOCS
+
+} // close cpp
+namespace hx {
+   template<typename T>
+   bool ObjectPtr<T>::operator==(const cpp::Variant &inRHS) const {
+       return inRHS.Compare(this)==0;
+   }
+   template<typename T>
+   bool ObjectPtr<T>::operator!=(const cpp::Variant &inRHS) const {
+       return inRHS.Compare(this)!=0;
+   }
+} // close hx
+namespace cpp {
 
 #endif // not twice
 

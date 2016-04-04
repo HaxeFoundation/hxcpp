@@ -348,6 +348,9 @@ public:
       if (!mPtr || !inRHS.mPtr) return false;
       return !mPtr->__compare(inRHS.mPtr);
    }
+   inline bool operator==(const cpp::Variant &inRHS) const;
+   inline bool operator!=(const cpp::Variant &inRHS) const;
+
    template<typename T>
    inline bool operator!=(const T &inTRHS) const
    {
