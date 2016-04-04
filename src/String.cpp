@@ -461,7 +461,7 @@ String String::__URLEncode() const
    int extra = 0;
    int utf8_chars = bytes->__length();
    for(int i=0;i<utf8_chars;i++)
-      if ( i>=128 || !safeChars[i])
+      if ( i>=128 || !safeChars[bytes[i]])
          extra++;
    if (extra==0)
       return *this;
@@ -472,7 +472,7 @@ String String::__URLEncode() const
 
    for(int i=0;i<utf8_chars;i++)
    {
-      if ( i>=128 || !safeChars[i])
+      if ( i>=128 || !safeChars[bytes[i]])
       {
          static char hex[] = "0123456789ABCDEF";
          unsigned char b = bytes[i];
