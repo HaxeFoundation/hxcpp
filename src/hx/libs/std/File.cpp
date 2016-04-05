@@ -33,7 +33,7 @@ struct fio : public hx::Object
       io = inFile;
       closeIo = inClose;
 
-      __hxcpp_set_finalizer(this, (void *)finalize);
+      _hx_set_finalizer(this, finalize);
    }
 
    void destroy(bool inForceClose = false)
@@ -49,9 +49,9 @@ struct fio : public hx::Object
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(name); }
    #endif
 
-   static void finalize(void *inPtr)
+   static void finalize(Dynamic inObj)
    {
-      ((fio *)inPtr)->destroy();
+      ((fio *)(inObj.mPtr))->destroy();
    }
 
    String toString() { return HX_CSTRING("fio:") + name; }

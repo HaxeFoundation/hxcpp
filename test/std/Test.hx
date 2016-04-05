@@ -22,6 +22,13 @@ import sys.io.Process;
 using cpp.NativeArray;
 
 
+@:buildXml('<include name="${HXCPP}/src/hx/libs/ssl/Build.xml"/>')
+extern class SslTest
+{
+   @:extern @:native("_hx_ssl_init")
+   public static function socket_init() : Void { }
+}
+
 class Test
 {
    static var errors = new Array<String>();
@@ -679,6 +686,12 @@ class Test
       socket.shutdown(true,true);
    }
 
+   public static function testSsl() : Int
+   {
+      SslTest.socket_init();
+      return 0;
+   }
+
 
    public static function main()
    {
@@ -703,6 +716,7 @@ class Test
          exitCode |= testPoll();
          exitCode |= testUdpSocket();
          exitCode |= testSocket();
+         exitCode |= testSsl();
 
          if (exitCode!=0)
             Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );

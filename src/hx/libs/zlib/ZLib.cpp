@@ -59,12 +59,12 @@ struct ZStream : public hx::Object
          }
       }
 
-      __hxcpp_set_finalizer(this, (void *)finalize);
+      _hx_set_finalizer(this, finalize);
    }
 
-   static void finalize(void *inPtr)
+   static void finalize(Dynamic obj)
    {
-      ((ZStream *)inPtr)->destroy();
+      ((ZStream *)(obj.mPtr))->destroy();
    }
 
    void destroy()

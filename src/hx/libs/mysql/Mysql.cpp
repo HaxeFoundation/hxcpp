@@ -59,7 +59,7 @@ struct Connection : public hx::Object
    void create(MYSQL *inM)
    {
       m = inM;
-      __hxcpp_set_finalizer(this, (void *)finalize);
+      _hx_set_finalizer(this, finalize);
    }
 
    void destroy()
@@ -71,9 +71,9 @@ struct Connection : public hx::Object
       }
    }
 
-   static void finalize(void *inPtr)
+   static void finalize(Dynamic obj)
    {
-      ((Connection *)inPtr)->destroy();
+      ((Connection *)(obj.mPtr))->destroy();
    }
 };
 
@@ -123,7 +123,7 @@ struct Result : public hx::Object
       fields_convs = 0;
       field_names = 0;
       nfields = 0;
-      __hxcpp_set_finalizer(this, (void *)finalize);
+      _hx_set_finalizer(this, finalize);
    }
 
    void destroy()
@@ -143,9 +143,9 @@ struct Result : public hx::Object
 
    int numRows() { return mysql_num_rows(r); }
 
-   static void finalize(void *inPtr)
+   static void finalize(Dynamic obj)
    {
-      ((Result *)inPtr)->destroy();
+      ((Result *)(obj.mPtr))->destroy();
    }
 
 };

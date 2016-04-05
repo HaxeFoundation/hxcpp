@@ -43,7 +43,7 @@ struct result : public hx::Object
 
    void create(sqlite3 *inDb, sqlite3_stmt *inR, String sql)
    {
-      __hxcpp_set_finalizer(this, (void *)finalize);
+      _hx_set_finalizer(this, finalize);
 
       db = inDb;
       r = inR;
@@ -65,7 +65,7 @@ struct result : public hx::Object
       }
    }
 
-   static void finalize(void *inPtr) { ((result *)inPtr)->destroy(false); }
+   static void finalize(Dynamic obj) { ((result *)(obj.mPtr))->destroy(false); }
    void destroy(bool inThrowError)
    {
       if (bools)
@@ -119,9 +119,9 @@ struct database : public hx::Object
    void create(sqlite3 *inDb)
    {
       db = inDb;
-      __hxcpp_set_finalizer(this, (void *)finalize);
+      _hx_set_finalizer(this, finalize);
    }
-   static void finalize(void *inPtr) { ((database *)inPtr)->destroy(false); }
+   static void finalize(Dynamic obj) { ((database *)(obj.mPtr))->destroy(false); }
    void destroy(bool inThrowError)
    {
       if (db)

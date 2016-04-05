@@ -59,7 +59,7 @@ struct vprocess : public hx::Object
       oread = HANDLE_INIT;
       eread = HANDLE_INIT;
       iwrite = HANDLE_INIT;
-      __hxcpp_set_finalizer(this, (void *)finalize);
+      _hx_set_finalizer(this, finalize);
    }
 
    void destroy()
@@ -87,9 +87,9 @@ struct vprocess : public hx::Object
       }
    }
 
-   static void finalize(void *inPtr)
+   static void finalize(Dynamic obj)
    {
-      ((vprocess *)inPtr)->destroy();
+      ((vprocess *)(obj.mPtr))->destroy();
    }
 
    String toString() { return HX_CSTRING("vprocess"); }

@@ -51,7 +51,7 @@ struct sslctx : public hx::Object
 	{
 		s = (mbedtls_ssl_context *)malloc(sizeof(mbedtls_ssl_context));
 		mbedtls_ssl_init(s);
-		__hxcpp_set_finalizer(this, (void *)finalize);
+		_hx_set_finalizer(this, finalize);
 	}
 
 	void destroy()
@@ -64,9 +64,9 @@ struct sslctx : public hx::Object
 		}
 	}
 
-	static void finalize(void *inPtr)
+	static void finalize(Dynamic obj)
 	{
-		((sslctx *)inPtr)->destroy();
+		((sslctx *)(obj.mPtr))->destroy();
 	}
 
 	String toString() { return HX_CSTRING("sslctx"); }
@@ -80,7 +80,7 @@ struct sslconf : public hx::Object
 	{
 		c = (mbedtls_ssl_config *)malloc(sizeof(mbedtls_ssl_config));
 		mbedtls_ssl_config_init(c);
-		__hxcpp_set_finalizer(this, (void *)finalize);
+		_hx_set_finalizer(this, finalize);
 	}
 
 	void destroy()
@@ -93,9 +93,9 @@ struct sslconf : public hx::Object
 		}
 	}
 
-	static void finalize(void *inPtr)
+	static void finalize(Dynamic obj)
 	{
-		((sslconf *)inPtr)->destroy();
+		((sslconf *)(obj.mPtr))->destroy();
 	}
 
 	String toString() { return HX_CSTRING("sslconfig"); }
@@ -117,7 +117,7 @@ struct sslcert : public hx::Object
 			mbedtls_x509_crt_init(c);
 			head = true;
 		}
-		__hxcpp_set_finalizer(this, (void *)finalize);
+		_hx_set_finalizer(this, finalize);
 	}
 
 	void destroy()
@@ -131,9 +131,9 @@ struct sslcert : public hx::Object
 		c = 0;
 	}
 
-	static void finalize(void *inPtr)
+	static void finalize(Dynamic obj)
 	{
-		((sslcert *)inPtr)->destroy();
+		((sslcert *)(obj.mPtr))->destroy();
 	}
 
 	String toString() { return HX_CSTRING("sslcert"); }
@@ -147,7 +147,7 @@ struct sslpkey : public hx::Object
 	{
 		k = (mbedtls_pk_context *)malloc(sizeof(mbedtls_pk_context));
 		mbedtls_pk_init(k);
-		__hxcpp_set_finalizer(this, (void *)finalize);
+		_hx_set_finalizer(this, finalize);
 	}
 
 	void destroy()
@@ -160,9 +160,9 @@ struct sslpkey : public hx::Object
 		}
 	}
 
-	static void finalize(void *inPtr)
+	static void finalize(Dynamic obj)
 	{
-		((sslpkey *)inPtr)->destroy();
+		((sslpkey *)(obj.mPtr))->destroy();
 	}
 
 	String toString() { return HX_CSTRING("sslpkey"); }

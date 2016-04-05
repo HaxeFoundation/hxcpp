@@ -4246,6 +4246,12 @@ hx::Object *__hxcpp_get_next_zombie()
    return hx::GCGetNextZombie();
 }
 
+
+void _hx_set_finalizer(Dynamic inObj, void (*inFunc)(Dynamic) )
+{
+   GCSetHaxeFinalizer( inObj.mPtr, inFunc );
+}
+
 void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
 {
    GCSetHaxeFinalizer( inObj.mPtr, (hx::HaxeFinalizer) inFunc );

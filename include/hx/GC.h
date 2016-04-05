@@ -45,6 +45,10 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES bool __hxcpp_is_const_string(const ::String &inStr
 
 // Finalizers from haxe code...
 void  __hxcpp_gc_do_not_kill(Dynamic inObj);
+
+// This is the correctly typed version - no change of getting function proto wrong
+void _hx_set_finalizer(Dynamic inObj, void (*inFunc)(Dynamic) );
+
 void  __hxcpp_set_finalizer(Dynamic inObj, void *inFunction);
 hx::Object *__hxcpp_get_next_zombie();
 

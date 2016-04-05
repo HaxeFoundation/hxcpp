@@ -23,7 +23,7 @@ struct pcredata : public hx::Object
       nmatchs++;
       matchs = (int*)malloc(sizeof(int) * 3 * nmatchs);
 
-      __hxcpp_set_finalizer(this, (void *)finalize);
+      _hx_set_finalizer(this, finalize);
    }
 
    void destroy()
@@ -39,9 +39,9 @@ struct pcredata : public hx::Object
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(string); }
    #endif
 
-   static void finalize(void *inPtr)
+   static void finalize(Dynamic obj)
    {
-      ((pcredata *)inPtr)->destroy();
+      ((pcredata *)(obj.mPtr))->destroy();
    }
 
    String toString() { return HX_CSTRING("pcredata"); }

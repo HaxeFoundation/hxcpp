@@ -855,7 +855,7 @@ struct polldata : public hx::Object
          widx[i] = -1;
       }
 
-      __hxcpp_set_finalizer(this, (void *)finalize);
+      _hx_set_finalizer(this, finalize);
    }
 
    void destroy()
@@ -882,9 +882,9 @@ struct polldata : public hx::Object
 
    int __GetType() const { return pollType; }
 
-   static void finalize(void *inPtr)
+   static void finalize(Dynamic obj)
    {
-      ((polldata *)inPtr)->destroy();
+      ((polldata *)(obj.mPtr))->destroy();
    }
 
    String toString() { return HX_CSTRING("polldata"); }
