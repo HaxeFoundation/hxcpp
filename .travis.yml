@@ -5,14 +5,46 @@ os:
   - osx
 
 install:
-  - if [ -z "${TRAVIS_OS_NAME}" ]; then export TRAVIS_OS_NAME=linux; fi; # for our forks that do not have multi-os enabled.
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then travis_retry sudo apt-get update; travis_retry sudo apt-get install ocaml-native-compilers zlib1g-dev libgc-dev gcc-multilib g++-multilib -y; fi
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then travis_retry brew update; travis_retry brew install ocaml camlp4; fi
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then travis_retry git clone https://github.com/HaxeFoundation/neko.git ~/neko && cd ~/neko && make os=${TRAVIS_OS_NAME} && sudo make install && cd $TRAVIS_BUILD_DIR; fi
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then travis_retry brew install neko --HEAD; fi
+  # install dependencies
+  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+      travis_retry sudo apt-get update;
+      travis_retry sudo apt-get install ocaml-native-compilers zlib1g-dev libgc-dev gcc-multilib g++-multilib -y;
+      (
+        mkdir ~/mbedtls &&
+        cd ~/mbedtls &&
+        wget --no-check-certificate https://tls.mbed.org/download/mbedtls-2.2.1-apache.tgz &&
+        tar xzf mbedtls-2.2.1-apache.tgz &&
+        cd mbedtls-2.2.1 &&
+        sed -i "s/\/\/#define MBEDTLS_THREADING_PTHREAD/#define MBEDTLS_THREADING_PTHREAD/; s/\/\/#define MBEDTLS_THREADING_C/#define MBEDTLS_THREADING_C/; s/#define MBEDTLS_SSL_PROTO_SSL3/\/\/#define MBEDTLS_SSL_PROTO_SSL3/" include/mbedtls/config.h &&
+        SHARED=1 make lib &&
+        sudo make install
+      );
+    fi
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+      travis_retry brew tap homebrew/dupes;
+      travis_retry brew update;
+      travis_retry brew install bdw-gc pcre openssl zlib mariadb mbedtls ocaml camlp4;
+      brew link zlib --force;
+    fi
+  # build neko
+  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+      travis_retry git clone https://github.com/HaxeFoundation/neko.git ~/neko;
+      pushd ~/neko;
+      make os=${TRAVIS_OS_NAME};
+      sudo make install;
+      popd;
+    fi
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+      travis_retry brew install neko --HEAD;
+    fi
   - neko -version
-  - git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe && cd ~/haxe && make OCAMLOPT=ocamlopt.opt ADD_REVISION=1 && make tools && sudo make install && cd $TRAVIS_BUILD_DIR
+  # build haxe
+  - git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe
+  - pushd ~/haxe
+  - make OCAMLOPT=ocamlopt.opt ADD_REVISION=1 && sudo make install
+  - popd
   - haxe -version
+  # setup haxelib
   - mkdir ~/haxelib && haxelib setup ~/haxelib
   - haxelib dev hxcpp $TRAVIS_BUILD_DIR
 
