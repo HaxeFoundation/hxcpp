@@ -128,6 +128,7 @@ public:
          case Variant::typeDouble: EnsureFloatStorage(); break;
          case Variant::typeInt: EnsureIntStorage(); break;
          case Variant::typeBool: EnsureBoolStorage(); break;
+         case Variant::typeInt64: EnsureObjectStorage(); break;
       }
    }
 
