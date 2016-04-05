@@ -586,7 +586,43 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_sys_getch( bool b );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_sys_get_pid();
 
 
-
+// SSL
+void _hx_ssl_init();
+Dynamic _hx_ssl_new( Dynamic hconf );
+void _hx_ssl_close( Dynamic hssl );
+void _hx_ssl_handshake( Dynamic handle );
+void _hx_ssl_set_socket( Dynamic hssl, Dynamic hsocket );
+void _hx_ssl_set_hostname( Dynamic hssl, String hostname );
+Dynamic _hx_ssl_get_peer_certificate( Dynamic hssl );
+bool _hx_ssl_get_verify_result( Dynamic hssl );
+void _hx_ssl_send_char( Dynamic hssl, int v );
+int _hx_ssl_send( Dynamic hssl, Array<unsigned char> buf, int p, int l );
+void _hx_ssl_write( Dynamic hssl, Array<unsigned char> buf );
+int _hx_ssl_recv_char( Dynamic hssl );
+int _hx_ssl_recv( Dynamic hssl, Array<unsigned char> buf, int p, int l );
+Array<unsigned char> _hx_ssl_read( Dynamic hssl );
+Dynamic _hx_ssl_conf_new( bool server );
+void _hx_ssl_conf_close( Dynamic hconf );
+void _hx_ssl_conf_set_ca( Dynamic hconf, Dynamic hcert );
+void _hx_ssl_conf_set_verify( Dynamic hconf, int mode );
+void _hx_ssl_conf_set_cert( Dynamic hconf, Dynamic hcert, Dynamic hpkey );
+void _hx_ssl_conf_set_servername_callback( Dynamic hconf, Dynamic obj );
+Dynamic _hx_ssl_cert_load_defaults();
+Dynamic _hx_ssl_cert_load_file( String file );
+Dynamic _hx_ssl_cert_load_path( String path );
+String _hx_ssl_cert_get_subject( Dynamic hcert, String objname );
+String _hx_ssl_cert_get_issuer( Dynamic hcert, String objname );
+Array<String> _hx_ssl_cert_get_altnames( Dynamic hcert );
+Array<Int> _hx_ssl_cert_get_notbefore( Dynamic hcert );
+Array<Int> _hx_ssl_cert_get_notafter( Dynamic hcert );
+Dynamic _hx_ssl_cert_get_next( Dynamic hcert );
+Dynamic _hx_ssl_cert_add_pem( Dynamic hcert, String data );
+Dynamic _hx_ssl_cert_add_der( Dynamic hcert, Array<unsigned char> buf );
+Dynamic _hx_ssl_key_from_der( Array<unsigned char> buf, bool pub );
+Dynamic _hx_ssl_key_from_pem( String data, bool pub, String pass );
+Array<unsigned char> _hx_ssl_dgst_make( Array<unsigned char> buf, String alg );
+Array<unsigned char> _hx_ssl_dgst_sign( Array<unsigned char> buf, Dynamic hpkey, String alg );
+bool _hx_ssl_dgst_verify( Array<unsigned char> buf, Array<unsigned char> sign, Dynamic hpkey, String alg );
 
 
 #endif
