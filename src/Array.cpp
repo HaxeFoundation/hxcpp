@@ -724,8 +724,41 @@ String VirtualArray_obj::toString()
 
 }
 
-void VirtualArray_obj::EnsureArrayStorage(Dynamic inValue)
+void VirtualArray_obj::EnsureArrayStorage(ArrayStore inStore)
 {
+   switch(inStore)
+   {
+      case arrayFixed:
+      case arrayNull:
+         // These should not happen
+         break;
+
+      case arrayEmpty:
+         EnsureBase();
+         break;
+
+      case arrayBool:  EnsureBoolStorage(); break;
+      case arrayInt:  EnsureIntStorage(); break;
+      case arrayFloat:  EnsureFloatStorage(); break;
+      case arrayString:  EnsureStringStorage(); break;
+      case arrayObject:  EnsureObjectStorage(); break;
+   }
+}
+
+void VirtualArray_obj::EnsureArrayStorage(VirtualArray inValue)
+{
+   if (store!=arrayFixed)
+   {
+      if (inValue->store==arrayFixed)
+      {
+         EnsureArrayStorage(inValue->base->getStoreType());
+         store = arrayFixed;
+      }
+      else
+      {
+         EnsureArrayStorage(inValue->store);
+      }
+   }
 }
 
 void VirtualArray_obj::MakeIntArray()

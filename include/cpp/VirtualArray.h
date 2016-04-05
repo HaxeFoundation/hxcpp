@@ -73,8 +73,10 @@ public:
 
    inline static VirtualArray __new(int inSize=0,int inReserve=0)
    {
-      // TODO - size/reserve
-      return new VirtualArray_obj(hx::arrayEmpty);
+      VirtualArray result = new VirtualArray_obj(hx::arrayEmpty);
+      if (inSize>0)
+         result->__SetSizeExact(inSize);
+      return result;
    }
 
 
@@ -267,7 +269,8 @@ public:
    void EnsureBase();
    void CreateEmptyArray(int inLen);
 
-   void EnsureArrayStorage(Dynamic inValue);
+   void EnsureArrayStorage(ArrayStore inValue);
+   void EnsureArrayStorage(VirtualArray inValue);
 
    void __Mark(hx::MarkContext *__inCtx)
    {
@@ -379,6 +382,7 @@ public:
 
    VirtualArray concat( VirtualArray inTail )
    {
+      inTail->checkBase();
       EnsureArrayStorage(inTail);
       if (inTail->__length()<1)
          return copy();
@@ -407,7 +411,6 @@ public:
    inline VirtualArray init(int inIndex, const T &inVal)
    {
       if (store!=hx::arrayFixed) EnsureStorage(inVal);
-      // TODO
       __SetItem(inIndex,inVal);
       return this;
    } 
@@ -452,8 +455,10 @@ public:
    }
    inline void blit(int inDestElement,  cpp::VirtualArray inSourceArray, int inSourceElement, int inElementCount)
    {
+      inSourceArray->checkBase();
       EnsureArrayStorage(inSourceArray);
-      base->__blit(inDestElement, inSourceArray, inSourceElement, inElementCount);
+      if (base)
+         base->__blit(inDestElement, inSourceArray, inSourceElement, inElementCount);
    }
 
    String join(String inSeparator) { checkBase(); if (!base) return HX_CSTRING(""); return base->__join(inSeparator); }
