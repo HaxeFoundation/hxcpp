@@ -219,11 +219,17 @@ void _hx_ssl_handshake( Dynamic hssl ) {
 }
 
 int net_read( void *fd, unsigned char *buf, size_t len ){
-	return recv((SOCKET)(socket_int)fd, (char *)buf, len, 0);
+	hx::EnterGCFreeZone();
+	int r = recv((SOCKET)(socket_int)fd, (char *)buf, len, 0);
+	hx::ExitGCFreeZone();
+	return r;
 }
 
 int net_write( void *fd, const unsigned char *buf, size_t len ){
-	return send((SOCKET)(socket_int)fd, (char *)buf, len, 0);
+	hx::EnterGCFreeZone();
+	int r = send((SOCKET)(socket_int)fd, (char *)buf, len, 0);
+	hx::ExitGCFreeZone();
+	return r;
 }
 
 void _hx_ssl_set_socket( Dynamic hssl, Dynamic hsocket ) {
@@ -442,12 +448,11 @@ Dynamic _hx_ssl_cert_load_defaults(){
 	SecKeychainRef keychain;
 	SecCertificateRef item;
 	CFDataRef dat;
-	value v;
 	sslcert *chain = NULL;
 
 	// Load keychain
 	if( SecKeychainOpen("/System/Library/Keychains/SystemRootCertificates.keychain",&keychain) != errSecSuccess )
-		return val_null;
+		return null();
 
 	// Search for certificates
 	search = CFDictionaryCreateMutable( NULL, 0, NULL, NULL );
