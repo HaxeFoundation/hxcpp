@@ -88,8 +88,8 @@
 	<lib name="crypt32.lib" if="windows" unless="static_link" />
 	<lib name="ws2_32.lib" if="windows" unless="static_link" />
 	
-	<flag value="-framework" if="mac"/>
-  	<flag value="Security" if="mac"/>
+	<flag value="-framework" if="macos"/>
+  	<flag value="Security" if="macos"/>
 </target>
 
 </xml>
