@@ -275,8 +275,7 @@ public:
 
    void __Mark(hx::MarkContext *__inCtx)
    {
-      if (base)
-         hx::MarkObjectAlloc(base, __inCtx );
+      HX_MARK_OBJECT(base);
    }
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
@@ -585,6 +584,11 @@ inline bool VirtualArray::operator==( const Array<SOURCE_> &inRHS )
    return mPtr->castArray< Array<SOURCE_> >() == inRHS;
 }
 
+// For type inference when marking
+} namespace hx {
+template<> inline void MarkMember(cpp::VirtualArray &outT,hx::MarkContext *__inCtx)
+  { HX_MARK_OBJECT(outT.mPtr); }
+} namespace cpp {
 
 #endif // HX_VARRAY_DEFINED
 
