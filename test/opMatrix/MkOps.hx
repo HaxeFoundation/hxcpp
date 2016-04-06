@@ -5,6 +5,7 @@ class MkOps
       var file = [];
       file.push("enum E { EVal0; EVal1; }");
       file.push("class Ops {");
+      file.push("  public static var data: { ?f:Float };");
       file.push("  public static function check(b:Bool) { }");
       file.push("  public static function main() {");
       file.push("  var d:Dynamic = null;");
@@ -25,7 +26,7 @@ class MkOps
       file.push("  var arrdynarray = [ [dynArray] ];");
       file.push("  var eval = EVal0;");
 
-      var exprs = [ "d", "null", "int", "ai", "ai[0]", "fi", "fi[0]", "anon.a", "anon.b", "anon.c", "anon", "anon2.xyz", "dynArray", "dynArray[0]", "3.8", '"Hello"', "uint8", "int8", "uint16", "int16", "uint64", "int64", "string", "arrarr", "arrarr[0]", "arrarr[0][0]", "arrdyn", "arrdynarray", "EVal1", "eval" ];
+      var exprs = [ "d", "null", "int", "ai", "ai[0]", "fi", "fi[0]", "anon.a", "anon.b", "anon.c", "anon", "anon2.xyz", "dynArray", "dynArray[0]", "3.8", '"Hello"', "uint8", "int8", "uint16", "int16", "uint64", "int64", "string", "arrarr", "arrarr[0]", "arrarr[0][0]", "arrdyn", "arrdynarray", "EVal1", "eval", "data.f" ];
 
       var total = 0;
       for(e1 in exprs)
@@ -35,8 +36,8 @@ class MkOps
             file.push('check( $e1 != $e2 );');
             file.push('check( $e1 == $e2 );');
             file.push('check( $e1 > $e2 );');
-            total += 3;
             file.push('$e1 = $e2;');
+            total += 4;
             if (!skipPlus(e1) && !skipPlus(e2))
             {
                file.push('$e1 += $e2;');

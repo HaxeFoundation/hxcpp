@@ -167,6 +167,7 @@ public:
 
    #define DYNAMIC_COMPARE_OP_ALL( op ) \
       bool operator op (const Dynamic &inRHS) const { return mPtr && (Compare(inRHS) op 0); } \
+      bool operator op (const cpp::Variant &inRHS) const { return *this op Dynamic(inRHS); } \
       DYNAMIC_COMPARE_OP(op)
 
 
