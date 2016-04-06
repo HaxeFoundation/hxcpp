@@ -615,9 +615,11 @@ Dynamic _hx_ssl_cert_add_pem( Dynamic hcert, String data ){
 		cert->create( NULL );
 		isnew = 1;
 	}
-	unsigned char *b = (unsigned char *)data.__s;
-	b[data.length] = 0;
-	r = mbedtls_x509_crt_parse( cert->c, (const unsigned char *)data.__s, data.length+1 );
+	unsigned char *b = (unsigned char *)malloc((data.length+1) * sizeof(unsigned char));
+	memcpy(b,data.__s,data.length);
+	b[data.length] = '\0';
+	r = mbedtls_x509_crt_parse( cert->c, b, data.length+1 );
+	free(b);
 	if( r < 0 ){
 		if( isnew )
 			cert->destroy();
@@ -662,15 +664,17 @@ Dynamic _hx_ssl_key_from_pem( String data, bool pub, String pass ){
 	sslpkey *pk = new sslpkey();
 	pk->create();
 	int r;
-	unsigned char *b = (unsigned char *)data.__s;
-	b[data.length] = 0;
+	unsigned char *b = (unsigned char *)malloc((data.length+1) * sizeof(unsigned char));
+	memcpy(b,data.__s,data.length);
+	b[data.length] = '\0';
 	if( pub ){
-		r = mbedtls_pk_parse_public_key( pk->k, (const unsigned char *)data.__s, data.length+1 );
+		r = mbedtls_pk_parse_public_key( pk->k, b, data.length+1 );
 	}else if( pass == null() ){
-		r = mbedtls_pk_parse_key( pk->k, (const unsigned char *)data.__s, data.length+1, NULL, 0 );
+		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, NULL, 0 );
 	}else{
-		r = mbedtls_pk_parse_key( pk->k, (const unsigned char *)data.__s, data.length+1, (const unsigned char *)pass.__s, pass.length );
+		r = mbedtls_pk_parse_key( pk->k, b, data.length+1, (const unsigned char *)pass.__s, pass.length );
 	}
+	free(b);
 	if( r != 0 ){
 		pk->destroy();
 		ssl_error(r);
