@@ -39,6 +39,7 @@
   <depend name="${HXCPP}/include/hx/Native.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
   <depend name="${HXCPP}/include/hx/Unordered.h"/>
+  <depend name="${HXCPP}/include/hx/LessThanEq.h"/>
   <depend name="${HXCPP}/include/cpp/Pointer.h"/>
   <depend name="${HXCPP}/include/cpp/Variant.h"/>
   <depend name="${HXCPP}/include/cpp/VirtualArray.h"/>
