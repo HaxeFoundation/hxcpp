@@ -962,7 +962,7 @@ class BuildTool
 
       if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
          Log.colorSupported = false;
-      Log.verbose = defines.exists("HXCPP_VERBOSE") || defines.exists("TRAVIS_OS_NAME");
+      Log.verbose = defines.exists("HXCPP_VERBOSE");
       exitOnThreadError = defines.exists("HXCPP_EXIT_ON_ERROR");
 
 
