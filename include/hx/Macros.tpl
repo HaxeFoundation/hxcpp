@@ -84,7 +84,7 @@
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateMemberFunction0(this,__##class##func); \
+   return hx::NS::CreateMemberFunction0(#func,this,__##class##func); \
 }
 
 
@@ -95,7 +95,7 @@
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateMemberFunction##N(this,__##class##func); \
+   return hx::NS::CreateMemberFunction##N(#func,this,__##class##func); \
 }
 
 
@@ -106,7 +106,7 @@
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateMemberFunctionVar(this,__##class##func,N); \
+   return hx::NS::CreateMemberFunctionVar(#func,this,__##class##func,N); \
 }
 
 
@@ -145,7 +145,7 @@
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateStaticFunction0(__##class##func); \
+   return hx::NS::CreateStaticFunction0(#func,__##class##func); \
 }
 
 
@@ -156,7 +156,7 @@
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateStaticFunction##N(__##class##func); \
+   return hx::NS::CreateStaticFunction##N(#func,__##class##func); \
 }
 
 
@@ -167,7 +167,7 @@
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateStaticFunctionVar(__##class##func,N); \
+   return hx::NS::CreateStaticFunctionVar(#func,__##class##func,N); \
 }
 
 

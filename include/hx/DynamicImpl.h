@@ -15,10 +15,12 @@ struct CMemberFunction0 : public hx::Object
 { 
    hx::ObjectPtr<Object> mThis; 
    MemberFunction0 mFunction;
+   const char *mName;
 
 
-   CMemberFunction0(hx::Object *inObj, MemberFunction0 inFunction)
+   CMemberFunction0(const char *inName, hx::Object *inObj, MemberFunction0 inFunction)
    {
+      mName = inName;
       mThis = inObj;
       mFunction = inFunction;
    }
@@ -27,12 +29,12 @@ struct CMemberFunction0 : public hx::Object
       const CMemberFunction0 *other = dynamic_cast<const CMemberFunction0 *>(inRHS);
       if (!other)
          return -1;
-      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+      return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 0; } 
-   ::String __ToString() const{ return HX_CSTRING("#function0"); } 
+   ::String __ToString() const{ return String(mName); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
@@ -57,9 +59,11 @@ struct CMemberFunction0 : public hx::Object
 struct CStaticFunction0 : public hx::Object 
 { 
    StaticFunction0 mFunction;
+   const char *mName;
 
-   CStaticFunction0(StaticFunction0 inFunction)
+   CStaticFunction0(const char *inName,StaticFunction0 inFunction)
    {
+      mName = inName;
       mFunction = inFunction;
    }
    int __Compare(const hx::Object *inRHS) const
@@ -67,12 +71,12 @@ struct CStaticFunction0 : public hx::Object
       const CStaticFunction0 *other = dynamic_cast<const CStaticFunction0 *>(inRHS);
       if (!other)
          return -1;
-      return mFunction==other->mFunction ? 0 : -1;
+      return mName==other->mName && mFunction==other->mFunction && mName==other->mName ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 0; } 
-   ::String __ToString() const{ return HX_CSTRING("#sfunction0"); } 
+   ::String __ToString() const{ return String(mName); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
       return mFunction();
@@ -85,12 +89,12 @@ struct CStaticFunction0 : public hx::Object
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction0(hx::Object *inObj, MemberFunction0 inFunc)
-   { return new CMemberFunction0(inObj,inFunc); }
+Dynamic CreateMemberFunction0(const char *inName,hx::Object *inObj, MemberFunction0 inFunc)
+   { return new CMemberFunction0(inName,inObj,inFunc); }
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction0(StaticFunction0 inFunc)
-   { return new CStaticFunction0(inFunc); }
+Dynamic CreateStaticFunction0(const char *inName,StaticFunction0 inFunc)
+   { return new CStaticFunction0(inName,inFunc); }
 
 }
 
@@ -103,10 +107,12 @@ struct CMemberFunction1 : public hx::Object
 { 
    hx::ObjectPtr<Object> mThis; 
    MemberFunction1 mFunction;
+   const char *mName;
 
 
-   CMemberFunction1(hx::Object *inObj, MemberFunction1 inFunction)
+   CMemberFunction1(const char *inName, hx::Object *inObj, MemberFunction1 inFunction)
    {
+      mName = inName;
       mThis = inObj;
       mFunction = inFunction;
    }
@@ -115,12 +121,12 @@ struct CMemberFunction1 : public hx::Object
       const CMemberFunction1 *other = dynamic_cast<const CMemberFunction1 *>(inRHS);
       if (!other)
          return -1;
-      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+      return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 1; } 
-   ::String __ToString() const{ return HX_CSTRING("#function1"); } 
+   ::String __ToString() const{ return String(mName); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
@@ -145,9 +151,11 @@ struct CMemberFunction1 : public hx::Object
 struct CStaticFunction1 : public hx::Object 
 { 
    StaticFunction1 mFunction;
+   const char *mName;
 
-   CStaticFunction1(StaticFunction1 inFunction)
+   CStaticFunction1(const char *inName,StaticFunction1 inFunction)
    {
+      mName = inName;
       mFunction = inFunction;
    }
    int __Compare(const hx::Object *inRHS) const
@@ -155,12 +163,12 @@ struct CStaticFunction1 : public hx::Object
       const CStaticFunction1 *other = dynamic_cast<const CStaticFunction1 *>(inRHS);
       if (!other)
          return -1;
-      return mFunction==other->mFunction ? 0 : -1;
+      return mName==other->mName && mFunction==other->mFunction && mName==other->mName ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 1; } 
-   ::String __ToString() const{ return HX_CSTRING("#sfunction1"); } 
+   ::String __ToString() const{ return String(mName); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
       return mFunction(inArgs[0]);
@@ -173,12 +181,12 @@ struct CStaticFunction1 : public hx::Object
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction1(hx::Object *inObj, MemberFunction1 inFunc)
-   { return new CMemberFunction1(inObj,inFunc); }
+Dynamic CreateMemberFunction1(const char *inName,hx::Object *inObj, MemberFunction1 inFunc)
+   { return new CMemberFunction1(inName,inObj,inFunc); }
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction1(StaticFunction1 inFunc)
-   { return new CStaticFunction1(inFunc); }
+Dynamic CreateStaticFunction1(const char *inName,StaticFunction1 inFunc)
+   { return new CStaticFunction1(inName,inFunc); }
 
 }
 
@@ -191,10 +199,12 @@ struct CMemberFunction2 : public hx::Object
 { 
    hx::ObjectPtr<Object> mThis; 
    MemberFunction2 mFunction;
+   const char *mName;
 
 
-   CMemberFunction2(hx::Object *inObj, MemberFunction2 inFunction)
+   CMemberFunction2(const char *inName, hx::Object *inObj, MemberFunction2 inFunction)
    {
+      mName = inName;
       mThis = inObj;
       mFunction = inFunction;
    }
@@ -203,12 +213,12 @@ struct CMemberFunction2 : public hx::Object
       const CMemberFunction2 *other = dynamic_cast<const CMemberFunction2 *>(inRHS);
       if (!other)
          return -1;
-      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+      return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 2; } 
-   ::String __ToString() const{ return HX_CSTRING("#function2"); } 
+   ::String __ToString() const{ return String(mName); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
@@ -233,9 +243,11 @@ struct CMemberFunction2 : public hx::Object
 struct CStaticFunction2 : public hx::Object 
 { 
    StaticFunction2 mFunction;
+   const char *mName;
 
-   CStaticFunction2(StaticFunction2 inFunction)
+   CStaticFunction2(const char *inName,StaticFunction2 inFunction)
    {
+      mName = inName;
       mFunction = inFunction;
    }
    int __Compare(const hx::Object *inRHS) const
@@ -243,12 +255,12 @@ struct CStaticFunction2 : public hx::Object
       const CStaticFunction2 *other = dynamic_cast<const CStaticFunction2 *>(inRHS);
       if (!other)
          return -1;
-      return mFunction==other->mFunction ? 0 : -1;
+      return mName==other->mName && mFunction==other->mFunction && mName==other->mName ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 2; } 
-   ::String __ToString() const{ return HX_CSTRING("#sfunction2"); } 
+   ::String __ToString() const{ return String(mName); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
       return mFunction(inArgs[0],inArgs[1]);
@@ -261,12 +273,12 @@ struct CStaticFunction2 : public hx::Object
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction2(hx::Object *inObj, MemberFunction2 inFunc)
-   { return new CMemberFunction2(inObj,inFunc); }
+Dynamic CreateMemberFunction2(const char *inName,hx::Object *inObj, MemberFunction2 inFunc)
+   { return new CMemberFunction2(inName,inObj,inFunc); }
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction2(StaticFunction2 inFunc)
-   { return new CStaticFunction2(inFunc); }
+Dynamic CreateStaticFunction2(const char *inName,StaticFunction2 inFunc)
+   { return new CStaticFunction2(inName,inFunc); }
 
 }
 
@@ -279,10 +291,12 @@ struct CMemberFunction3 : public hx::Object
 { 
    hx::ObjectPtr<Object> mThis; 
    MemberFunction3 mFunction;
+   const char *mName;
 
 
-   CMemberFunction3(hx::Object *inObj, MemberFunction3 inFunction)
+   CMemberFunction3(const char *inName, hx::Object *inObj, MemberFunction3 inFunction)
    {
+      mName = inName;
       mThis = inObj;
       mFunction = inFunction;
    }
@@ -291,12 +305,12 @@ struct CMemberFunction3 : public hx::Object
       const CMemberFunction3 *other = dynamic_cast<const CMemberFunction3 *>(inRHS);
       if (!other)
          return -1;
-      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+      return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 3; } 
-   ::String __ToString() const{ return HX_CSTRING("#function3"); } 
+   ::String __ToString() const{ return String(mName); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
@@ -321,9 +335,11 @@ struct CMemberFunction3 : public hx::Object
 struct CStaticFunction3 : public hx::Object 
 { 
    StaticFunction3 mFunction;
+   const char *mName;
 
-   CStaticFunction3(StaticFunction3 inFunction)
+   CStaticFunction3(const char *inName,StaticFunction3 inFunction)
    {
+      mName = inName;
       mFunction = inFunction;
    }
    int __Compare(const hx::Object *inRHS) const
@@ -331,12 +347,12 @@ struct CStaticFunction3 : public hx::Object
       const CStaticFunction3 *other = dynamic_cast<const CStaticFunction3 *>(inRHS);
       if (!other)
          return -1;
-      return mFunction==other->mFunction ? 0 : -1;
+      return mName==other->mName && mFunction==other->mFunction && mName==other->mName ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 3; } 
-   ::String __ToString() const{ return HX_CSTRING("#sfunction3"); } 
+   ::String __ToString() const{ return String(mName); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
       return mFunction(inArgs[0],inArgs[1],inArgs[2]);
@@ -349,12 +365,12 @@ struct CStaticFunction3 : public hx::Object
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction3(hx::Object *inObj, MemberFunction3 inFunc)
-   { return new CMemberFunction3(inObj,inFunc); }
+Dynamic CreateMemberFunction3(const char *inName,hx::Object *inObj, MemberFunction3 inFunc)
+   { return new CMemberFunction3(inName,inObj,inFunc); }
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction3(StaticFunction3 inFunc)
-   { return new CStaticFunction3(inFunc); }
+Dynamic CreateStaticFunction3(const char *inName,StaticFunction3 inFunc)
+   { return new CStaticFunction3(inName,inFunc); }
 
 }
 
@@ -367,10 +383,12 @@ struct CMemberFunction4 : public hx::Object
 { 
    hx::ObjectPtr<Object> mThis; 
    MemberFunction4 mFunction;
+   const char *mName;
 
 
-   CMemberFunction4(hx::Object *inObj, MemberFunction4 inFunction)
+   CMemberFunction4(const char *inName, hx::Object *inObj, MemberFunction4 inFunction)
    {
+      mName = inName;
       mThis = inObj;
       mFunction = inFunction;
    }
@@ -379,12 +397,12 @@ struct CMemberFunction4 : public hx::Object
       const CMemberFunction4 *other = dynamic_cast<const CMemberFunction4 *>(inRHS);
       if (!other)
          return -1;
-      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+      return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 4; } 
-   ::String __ToString() const{ return HX_CSTRING("#function4"); } 
+   ::String __ToString() const{ return String(mName); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
@@ -409,9 +427,11 @@ struct CMemberFunction4 : public hx::Object
 struct CStaticFunction4 : public hx::Object 
 { 
    StaticFunction4 mFunction;
+   const char *mName;
 
-   CStaticFunction4(StaticFunction4 inFunction)
+   CStaticFunction4(const char *inName,StaticFunction4 inFunction)
    {
+      mName = inName;
       mFunction = inFunction;
    }
    int __Compare(const hx::Object *inRHS) const
@@ -419,12 +439,12 @@ struct CStaticFunction4 : public hx::Object
       const CStaticFunction4 *other = dynamic_cast<const CStaticFunction4 *>(inRHS);
       if (!other)
          return -1;
-      return mFunction==other->mFunction ? 0 : -1;
+      return mName==other->mName && mFunction==other->mFunction && mName==other->mName ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 4; } 
-   ::String __ToString() const{ return HX_CSTRING("#sfunction4"); } 
+   ::String __ToString() const{ return String(mName); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
       return mFunction(inArgs[0],inArgs[1],inArgs[2],inArgs[3]);
@@ -437,12 +457,12 @@ struct CStaticFunction4 : public hx::Object
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction4(hx::Object *inObj, MemberFunction4 inFunc)
-   { return new CMemberFunction4(inObj,inFunc); }
+Dynamic CreateMemberFunction4(const char *inName,hx::Object *inObj, MemberFunction4 inFunc)
+   { return new CMemberFunction4(inName,inObj,inFunc); }
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction4(StaticFunction4 inFunc)
-   { return new CStaticFunction4(inFunc); }
+Dynamic CreateStaticFunction4(const char *inName,StaticFunction4 inFunc)
+   { return new CStaticFunction4(inName,inFunc); }
 
 }
 
@@ -455,10 +475,12 @@ struct CMemberFunction5 : public hx::Object
 { 
    hx::ObjectPtr<Object> mThis; 
    MemberFunction5 mFunction;
+   const char *mName;
 
 
-   CMemberFunction5(hx::Object *inObj, MemberFunction5 inFunction)
+   CMemberFunction5(const char *inName, hx::Object *inObj, MemberFunction5 inFunction)
    {
+      mName = inName;
       mThis = inObj;
       mFunction = inFunction;
    }
@@ -467,12 +489,12 @@ struct CMemberFunction5 : public hx::Object
       const CMemberFunction5 *other = dynamic_cast<const CMemberFunction5 *>(inRHS);
       if (!other)
          return -1;
-      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+      return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 5; } 
-   ::String __ToString() const{ return HX_CSTRING("#function5"); } 
+   ::String __ToString() const{ return String(mName); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
@@ -497,9 +519,11 @@ struct CMemberFunction5 : public hx::Object
 struct CStaticFunction5 : public hx::Object 
 { 
    StaticFunction5 mFunction;
+   const char *mName;
 
-   CStaticFunction5(StaticFunction5 inFunction)
+   CStaticFunction5(const char *inName,StaticFunction5 inFunction)
    {
+      mName = inName;
       mFunction = inFunction;
    }
    int __Compare(const hx::Object *inRHS) const
@@ -507,12 +531,12 @@ struct CStaticFunction5 : public hx::Object
       const CStaticFunction5 *other = dynamic_cast<const CStaticFunction5 *>(inRHS);
       if (!other)
          return -1;
-      return mFunction==other->mFunction ? 0 : -1;
+      return mName==other->mName && mFunction==other->mFunction && mName==other->mName ? 0 : -1;
    }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 5; } 
-   ::String __ToString() const{ return HX_CSTRING("#sfunction5"); } 
+   ::String __ToString() const{ return String(mName); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
       return mFunction(inArgs[0],inArgs[1],inArgs[2],inArgs[3],inArgs[4]);
@@ -525,12 +549,12 @@ struct CStaticFunction5 : public hx::Object
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction5(hx::Object *inObj, MemberFunction5 inFunc)
-   { return new CMemberFunction5(inObj,inFunc); }
+Dynamic CreateMemberFunction5(const char *inName,hx::Object *inObj, MemberFunction5 inFunc)
+   { return new CMemberFunction5(inName,inObj,inFunc); }
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction5(StaticFunction5 inFunc)
-   { return new CStaticFunction5(inFunc); }
+Dynamic CreateStaticFunction5(const char *inName,StaticFunction5 inFunc)
+   { return new CStaticFunction5(inName,inFunc); }
 
 }
 
@@ -923,13 +947,15 @@ struct CMemberFunctionVar : public hx::Object
 { 
    hx::ObjectPtr<Object> mThis; 
    MemberFunctionVar mFunction;
+   const char *mName;
    int N;
 
 
-   CMemberFunctionVar(hx::Object *inObj, MemberFunctionVar inFunction,int inN)
+   CMemberFunctionVar(const char *inName,hx::Object *inObj, MemberFunctionVar inFunction,int inN)
    {
       mThis = inObj;
       mFunction = inFunction;
+      mName = inName;
       N = inN;
    }
    int __Compare(const hx::Object *inRHS) const
@@ -937,13 +963,13 @@ struct CMemberFunctionVar : public hx::Object
       const CMemberFunctionVar *other = dynamic_cast<const CMemberFunctionVar *>(inRHS);
       if (!other)
          return -1;
-      return (mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
+      return (mFunction==other->mFunction && mName==other->mName && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 
-   ::String __ToString() const{ return HX_CSTRING("#vfunction"); } 
+   ::String __ToString() const{ return String(mName); } 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
@@ -960,11 +986,13 @@ struct CMemberFunctionVar : public hx::Object
 struct CStaticFunctionVar : public hx::Object 
 { 
    StaticFunctionVar mFunction;
+   const char *mName;
    int N;
 
-   CStaticFunctionVar( StaticFunctionVar inFunction,int inN)
+   CStaticFunctionVar(const char *inName,StaticFunctionVar inFunction,int inN)
    {
       mFunction = inFunction;
+      mName = inName;
       N = inN;
    }
    int __Compare(const hx::Object *inRHS) const
@@ -972,13 +1000,13 @@ struct CStaticFunctionVar : public hx::Object
       const CStaticFunctionVar *other = dynamic_cast<const CStaticFunctionVar *>(inRHS);
       if (!other)
          return -1;
-      return mFunction==other->mFunction ? 0 : -1;
+      return mName==other->mName && mFunction==other->mFunction ? 0 : -1;
    }
 
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 
-   ::String __ToString() const{ return HX_CSTRING("#vsfunction"); } 
+   ::String __ToString() const { return String(mName); } 
    Dynamic __Run(const Array<Dynamic> &inArgs) 
    { 
       return mFunction(inArgs);
@@ -986,11 +1014,11 @@ struct CStaticFunctionVar : public hx::Object
 }; 
 
 
-Dynamic CreateMemberFunctionVar(hx::Object *inObj, MemberFunctionVar inFunc,int inN)
-   { return new CMemberFunctionVar(inObj,inFunc,inN); }
+Dynamic CreateMemberFunctionVar(const char *inName, hx::Object *inObj, MemberFunctionVar inFunc,int inN)
+   { return new CMemberFunctionVar(inName, inObj,inFunc,inN); }
 
-Dynamic CreateStaticFunctionVar(StaticFunctionVar inFunc,int inN)
-   { return new CStaticFunctionVar(inFunc,inN); }
+Dynamic CreateStaticFunctionVar(const char *inName,StaticFunctionVar inFunc,int inN)
+   { return new CStaticFunctionVar(inName, inFunc,inN); }
 
 }
 

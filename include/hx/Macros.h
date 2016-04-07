@@ -170,7 +170,7 @@
 }; \
  ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateMemberFunction0(this,__##class##func); \
+   return hx::CreateMemberFunction0(#func,this,__##class##func); \
 }
 
 
@@ -181,7 +181,7 @@
 }; \
  ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateMemberFunction##N(this,__##class##func); \
+   return hx::CreateMemberFunction##N(#func,this,__##class##func); \
 }
 
 
@@ -192,7 +192,7 @@
 }; \
  ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateMemberFunctionVar(this,__##class##func,N); \
+   return hx::CreateMemberFunctionVar(#func,this,__##class##func,N); \
 }
 
 
@@ -354,7 +354,7 @@
 }; \
  ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateStaticFunction0(__##class##func); \
+   return hx::CreateStaticFunction0(#func,__##class##func); \
 }
 
 
@@ -365,7 +365,7 @@
 }; \
  ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateStaticFunction##N(__##class##func); \
+   return hx::CreateStaticFunction##N(#func,__##class##func); \
 }
 
 
@@ -376,7 +376,7 @@
 }; \
  ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateStaticFunctionVar(__##class##func,N); \
+   return hx::CreateStaticFunctionVar(#func,__##class##func,N); \
 }
 
 

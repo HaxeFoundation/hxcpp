@@ -8,11 +8,11 @@ namespace cpp
 
 #define HX_I32_DEF_FUNC1(Name) \
    static inline Dynamic __##Name(const Dynamic &a) { return Name(a); } \
-   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction1(&CppInt32__::__##Name); }
+   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction1(#Name,&CppInt32__::__##Name); }
 
 #define HX_I32_DEF_FUNC2(Name) \
    static inline Dynamic __##Name(const Dynamic &a, const Dynamic &b) { return Name(a,b); } \
-   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction2(&CppInt32__::__##Name); }
+   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction2(#Name,&CppInt32__::__##Name); }
 
 class CppInt32__
 {

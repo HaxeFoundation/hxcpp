@@ -291,34 +291,34 @@ typedef Dynamic (*StaticFunctionVar)(const Array<Dynamic> &inArgs);
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction0(hx::Object *, MemberFunction0);
+Dynamic CreateMemberFunction0(const char *,hx::Object *, MemberFunction0);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction1(hx::Object *, MemberFunction1);
+Dynamic CreateMemberFunction1(const char *,hx::Object *, MemberFunction1);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction2(hx::Object *, MemberFunction2);
+Dynamic CreateMemberFunction2(const char *,hx::Object *, MemberFunction2);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction3(hx::Object *, MemberFunction3);
+Dynamic CreateMemberFunction3(const char *,hx::Object *, MemberFunction3);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction4(hx::Object *, MemberFunction4);
+Dynamic CreateMemberFunction4(const char *,hx::Object *, MemberFunction4);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction5(hx::Object *, MemberFunction5);
+Dynamic CreateMemberFunction5(const char *,hx::Object *, MemberFunction5);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunctionVar(hx::Object *, MemberFunctionVar,int inN);
+Dynamic CreateMemberFunctionVar(const char *,hx::Object *, MemberFunctionVar,int inN);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction0(StaticFunction0);
+Dynamic CreateStaticFunction0(const char *,StaticFunction0);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction1(StaticFunction1);
+Dynamic CreateStaticFunction1(const char *,StaticFunction1);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction2(StaticFunction2);
+Dynamic CreateStaticFunction2(const char *,StaticFunction2);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction3(StaticFunction3);
+Dynamic CreateStaticFunction3(const char *,StaticFunction3);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction4(StaticFunction4);
+Dynamic CreateStaticFunction4(const char *,StaticFunction4);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunction5(StaticFunction5);
+Dynamic CreateStaticFunction5(const char *,StaticFunction5);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateStaticFunctionVar(StaticFunctionVar,int inN);
+Dynamic CreateStaticFunctionVar(const char *,StaticFunctionVar,int inN);
 
 
 }

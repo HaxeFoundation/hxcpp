@@ -579,7 +579,7 @@ HX_DEFINE_DYNAMIC_FUNC0(IteratorBase,_dynamicNext,return)
 
 Dynamic IteratorBase::next_dyn()
 {
-   return hx::CreateMemberFunction0(this,__IteratorBase_dynamicNext);
+   return hx::CreateMemberFunction0("next",this,__IteratorBase_dynamicNext);
 }
 
 hx::Val IteratorBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
