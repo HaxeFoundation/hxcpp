@@ -257,6 +257,16 @@ namespace cpp
    HX_ARITH_VARIANT( / )
    HX_ARITH_VARIANT( * )
 
+   inline bool Variant::operator==(const String &inString) const
+   {
+      if (isNull()) return inString==null();
+      return type==typeString && asString()==inString;
+   }
+   inline bool Variant::operator!=(const String &inString) const
+   {
+      if (isNull()) return inString!=null();
+      return type!=typeString || asString()!=inString;
+   }
    inline bool Variant::operator < (const String &inRHS)  const { return asString() < inRHS; }
    inline bool Variant::operator <= (const String &inRHS)  const { return asString() < inRHS; }
    inline bool Variant::operator > (const String &inRHS)  const { return asString() > inRHS; }
@@ -297,6 +307,7 @@ namespace cpp
       }
       return 0;
    }
+
 
 
    cpp::Int64 Variant::asInt64() const
