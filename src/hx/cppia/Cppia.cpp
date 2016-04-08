@@ -3184,11 +3184,11 @@ struct IfExpr : public CppiaDynamicExpr
 };
 
 
-struct IsNull : public CppiaBoolExpr
+struct CppiaIsNull : public CppiaBoolExpr
 {
    CppiaExpr *condition;
 
-   IsNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
+   CppiaIsNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
 
    const char *getName() { return "IsNull"; }
 
@@ -3206,11 +3206,11 @@ struct IsNull : public CppiaBoolExpr
 };
 
 
-struct IsNotNull : public CppiaBoolExpr
+struct CppiaIsNotNull : public CppiaBoolExpr
 {
    CppiaExpr *condition;
 
-   IsNotNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
+   CppiaIsNotNull(CppiaStream &stream) { condition = createCppiaExpr(stream); }
 
    const char *getName() { return "IsNotNull"; }
    CppiaExpr *link(CppiaModule &inModule) { condition = condition->link(inModule); return this; }
@@ -7477,9 +7477,9 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
    else if (tok=="IF")
       result = new IfExpr(stream);
    else if (tok=="ISNULL")
-      result = new IsNull(stream);
+      result = new CppiaIsNull(stream);
    else if (tok=="NOTNULL")
-      result = new IsNotNull(stream);
+      result = new CppiaIsNotNull(stream);
    else if (tok=="CALLSTATIC")
       result = new CallStatic(stream);
    else if (tok=="CALLTHIS")
