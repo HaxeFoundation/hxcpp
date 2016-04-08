@@ -250,7 +250,14 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
    else
    {
       // Dynamic compare.
-      // This time, some types are calculated at run time
+      // This time, one or both types are calculated at run time
+
+      // Check null/not null compare
+      bool n1 = traits1::isNull(v1);
+      bool n2 = traits1::isNull(v2);
+      if (n1 || n2)
+         return EQ ? n1==n2 : n1!=n2;
+
       int t1 = traits1::getDynamicCompareType(v1);
       int t2 = traits1::getDynamicCompareType(v2);
 
@@ -298,9 +305,6 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
       else if (t1<=(int)CompareAsDouble || t2<=(int)CompareAsDouble)
       {
          // numeric with a object...
-         if (traits1::isNull(v1) || traits2::isNull(v2))
-            return false;
-
          return LESS ? ( EQ ? traits1::toDouble(v1) <= traits2::toDouble(v2) :
                               traits1::toDouble(v1) <  traits2::toDouble(v2)  ) :
                        ( EQ ? traits1::toDouble(v1) == traits2::toDouble(v2) :
@@ -311,16 +315,12 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
          // Object with Object
          hx::Object *o1 = traits1::toObject(v1);
          hx::Object *o2 = traits1::toObject(v2);
-         if (!o1 || !o2)
-            return EQ ? o1==o2 : o1!=o2;
-         else
-         {
-            int diff = o1->__Compare(o2);
-            return LESS ? ( EQ ? diff <= 0 :
-                                 diff <  0  ) :
-                          ( EQ ? diff == 0 :
-                                 diff != 0  );
-         }
+
+         int diff = o1->__Compare(o2);
+         return LESS ? ( EQ ? diff <= 0 :
+                              diff <  0  ) :
+                       ( EQ ? diff == 0 :
+                              diff != 0  );
       }
    }
 }
