@@ -6,24 +6,26 @@ class CopyFile
    public var from:String;
    public var toolId:String;
    public var allowMissing:Bool;
+   public var overwrite:Bool;
 
-   public function new(inName:String, inFrom:String, inAlowMissing:Bool, ?inToolId:String)
+   public function new(inName:String, inFrom:String, inAlowMissing:Bool, inOverwrite:Bool, ?inToolId:String)
    {
       name = inName;
       from = inFrom;
       toolId = inToolId;
       allowMissing = inAlowMissing;
+      overwrite = inOverwrite;
    }
 
    public function copy(inTo:String)
    {
       var fromFile = from + "/" + name;
       var toFile = inTo + name;
-      copyFile(fromFile, toFile, allowMissing);
+      copyFile(fromFile, toFile, allowMissing, overwrite);
    }
 
 
-   public static function copyFile(fromFile:String, toFile:String, allowMissing = false, addExePermission=false)
+   public static function copyFile(fromFile:String, toFile:String, allowMissing = false, overwrite:Bool = true, addExePermission=false)
    {
       if (!FileSystem.exists(fromFile))
       {
@@ -37,11 +39,18 @@ class CopyFile
       try
       {
          Log.v('Copy "$fromFile" to "$toFile"');
-         sys.io.File.copy( fromFile, toFile );
-         if (addExePermission)
+         if(!overwrite && sys.FileSystem.exists(toFile))
          {
-            Log.v("chmod 755 " + toFile );
-            Sys.command("chmod", ["755", toFile]);
+            Log.v('The "$toFile" file exists. Skip copy');
+         }
+         else
+         {
+            sys.io.File.copy( fromFile, toFile );
+            if (addExePermission)
+            {
+               Log.v("chmod 755 " + toFile );
+               Sys.command("chmod", ["755", toFile]);
+            }
          }
       }
       catch(e:Dynamic)

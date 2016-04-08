@@ -1611,6 +1611,7 @@ class BuildTool
                       new CopyFile(substitute(el.att.name),
                                    substitute(el.att.from),
                                    el.has.allowMissing ?  subBool(el.att.allowMissing) : false,
+                                   el.has.overwrite ? subBool(el.att.overwrite) : true,
                                    el.has.toolId ?  substitute(el.att.toolId) : null ) );
                case "section" : 
                   parseXML(el,"",forceRelative);
