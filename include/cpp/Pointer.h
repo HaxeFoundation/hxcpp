@@ -251,7 +251,7 @@ public:
    inline Reference operator=( const Reference &inRHS ) { return ptr = inRHS.ptr; }
 
 
-   inline T *operator->() { return ptr; }
+   inline T *operator->() const { return ptr; }
    
    inline operator T &() { return *ptr; }
 
