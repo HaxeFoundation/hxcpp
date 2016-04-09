@@ -93,6 +93,8 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES double DoubleMod(double inLHS,double inRHS);
 template<typename TL,typename TR>
 double Mod(TL inLHS,TR inRHS) { return hx::DoubleMod(inLHS,inRHS); }
 
+double DivByZero(double d);
+
 #if !defined(_MSC_VER) || _MSC_VER > 1399
 inline int Mod(int inLHS,int inRHS) { return inLHS % inRHS; }
 #endif

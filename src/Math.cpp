@@ -187,6 +187,12 @@ double DoubleMod(double inLHS,double inRHS)
    return fmod(inLHS,inRHS);
 }
 
+double DivByZero(double d)
+{
+   return Math_obj::NaN;
+}
+
+
 }
 
 
