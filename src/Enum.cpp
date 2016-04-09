@@ -35,12 +35,12 @@ void EnumBase_obj::__boot()
 }
 
 #if (HXCPP_API_LEVEL >= 330)
-DynamicArray EnumBase_obj::getParameters()
+DynamicArray EnumBase_obj::_hx_getParameters()
 {
    if (mFixedFields==0)
       return null();
    Array<Dynamic> result = Array_obj<Dynamic>::__new(mFixedFields);
-   cpp::Variant *fixed = getFixed();
+   cpp::Variant *fixed = _hx_getFixed();
    for(int i=0;i<mFixedFields;i++)
       result[i] = fixed[i];
    return result;
@@ -51,14 +51,14 @@ int EnumBase_obj::__Compare(const hx::Object *inRHS) const
 {
    if (inRHS->__GetType()!=vtEnum) return -1;
    const EnumBase_obj *rhs = static_cast<const EnumBase_obj *>(inRHS);
-   if (tag!=rhs->tag || GetEnumName()!=rhs->GetEnumName()) return -1;
+   if (_hx_tag!=rhs->_hx_tag || GetEnumName()!=rhs->GetEnumName()) return -1;
 
    #if (HXCPP_API_LEVEL >= 330)
    if (mFixedFields!=rhs->mFixedFields) return -1;
    if (!mFixedFields) return 0;
 
-   const cpp::Variant *f0 = getFixed();
-   const cpp::Variant *f1 = rhs->getFixed();
+   const cpp::Variant *f0 = _hx_getFixed();
+   const cpp::Variant *f1 = rhs->_hx_getFixed();
    for(int i=0;i<mFixedFields;i++)
       if ( f0[i] != f1[i])
          return -1;
@@ -82,12 +82,12 @@ int EnumBase_obj::__Compare(const hx::Object *inRHS) const
 
 void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
 {
-   HX_MARK_MEMBER(tag);
+   HX_MARK_MEMBER(_hx_tag);
 
    #if (HXCPP_API_LEVEL >= 330)
    if (mFixedFields>0)
    {
-      cpp::Variant *v = getFixed();
+      cpp::Variant *v = _hx_getFixed();
       for(int i=0;i<mFixedFields;i++)
          HX_MARK_MEMBER(v[i]);
    }
@@ -99,12 +99,12 @@ void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
 #ifdef HXCPP_VISIT_ALLOCS
 void EnumBase_obj::__Visit(hx::VisitContext *__inCtx)
 {
-   HX_VISIT_MEMBER(tag);
+   HX_VISIT_MEMBER(_hx_tag);
 
    #if (HXCPP_API_LEVEL >= 330)
    if (mFixedFields>0)
    {
-      cpp::Variant *v = getFixed();
+      cpp::Variant *v = _hx_getFixed();
       for(int i=0;i<mFixedFields;i++)
          HX_VISIT_MEMBER(v[i]);
    }
@@ -118,20 +118,20 @@ void EnumBase_obj::__Visit(hx::VisitContext *__inCtx)
 String EnumBase_obj::toString() {
    #if (HXCPP_API_LEVEL >= 330)
    if (mFixedFields==0)
-      return tag;
+      return _hx_tag;
    if (mFixedFields==1)
-      return tag + HX_CSTRING("(") + getFixed()->asString() + HX_CSTRING(")");
+      return _hx_tag + HX_CSTRING("(") + _hx_getFixed()->asString() + HX_CSTRING(")");
 
    Array<String> args = Array_obj<String>::__new(mFixedFields);
-   cpp::Variant *v = getFixed();
+   cpp::Variant *v = _hx_getFixed();
    for(int i=0;i<mFixedFields;i++)
       args[i] = v[i].asString();
 
-   return tag + HX_CSTRING("(") + args->join(HX_CSTRING(",")) + HX_CSTRING(")");
+   return _hx_tag + HX_CSTRING("(") + args->join(HX_CSTRING(",")) + HX_CSTRING(")");
    #else
    if (mArgs==null() || mArgs->length==0)
-      return tag;
-   return tag + HX_CSTRING("(") + mArgs->join(HX_CSTRING(",")) + HX_CSTRING(")");
+      return _hx_tag;
+   return _hx_tag + HX_CSTRING("(") + mArgs->join(HX_CSTRING(",")) + HX_CSTRING(")");
    #endif
 }
 

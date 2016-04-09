@@ -40,6 +40,24 @@ struct CompareTraits
 };
 
 
+
+template <> 
+struct CompareTraits<null>
+{
+   enum { type = (int)CompareAsDynamic };
+
+   inline static int toInt(const null &inValue) { return 0; }
+   inline static double toDouble(const null & inValue) { return 0; }
+   inline static cpp::Int64 toInt64(const null & inValue) { return 0; }
+   inline static String toString(const null & inValue) { return String(); }
+   inline static hx::Object *toObject(const null & inValue) { return 0; }
+
+   inline static int getDynamicCompareType(const null &) { return type; }
+   inline static bool isNull(const null &) { return true; }
+};
+
+
+
 template <> 
 struct CompareTraits<signed int>
 {
@@ -167,7 +185,8 @@ struct CompareTraits< cpp::Variant >
          case cpp::Variant::typeInt64: return CompareAsInt64;
          case cpp::Variant::typeDouble: return CompareAsDouble;
          case cpp::Variant::typeString: return CompareAsString;
-         case cpp::Variant::typeObject: return CompareAsDynamic;
+         default:
+              return CompareAsDynamic;
       }
    }
    inline static bool isNull(const cpp::Variant &inValue) { return inValue.isNull(); }

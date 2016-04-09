@@ -54,7 +54,8 @@ Dynamic *Object::__GetFieldMap() { return 0; }
 
 int Object::__Compare(const Object *inRHS) const
 {
-   return (int)(inRHS-const_cast<Object *>(this)->__GetRealObject());
+   hx::Object *real = const_cast<Object *>(this)->__GetRealObject();
+   return real < inRHS ? -1 : real==inRHS ? 0 : 1;
 }
 
 

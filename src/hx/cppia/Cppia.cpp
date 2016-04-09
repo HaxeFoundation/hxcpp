@@ -1169,9 +1169,9 @@ struct CppiaEnumConstructor
          return value.mPtr;
       #if (HXCPP_API_LEVEL >= 330)
       EnumBase_obj *result = new ((int)args.size()*sizeof(cpp::Variant)) CppiaEnumBase(classInfo);
-      result->setIdentity(name, index, args.size());
+      result->_hx_setIdentity(name, index, args.size());
       for(int i=0;i<args.size();i++)
-         result->init( i, inArgs[i] );
+         result->_hx_init( i, inArgs[i] );
       #else
       EnumBase_obj *result = new CppiaEnumBase(classInfo);
       result->__Set(name, index, inArgs);
@@ -2087,7 +2087,7 @@ struct CppiaClassInfo
             EnumBase base = new CppiaEnumBase(this);
             e.value = base;
             #if (HXCPP_API_LEVEL>=330)
-            base->setIdentity(cppia.strings[e.nameId],i,0);
+            base->_hx_setIdentity(cppia.strings[e.nameId],i,0);
             #else
             base->__Set( cppia.strings[e.nameId],i,null() );
             #endif
@@ -2502,7 +2502,7 @@ void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
 
 ::String CppiaEnumBase::__ToString() const
 {
-   return classInfo->mClass->mName + HX_CSTRING(".") + tag;
+   return classInfo->mClass->mName + HX_CSTRING(".") + _hx_tag;
 }
 
 
@@ -4173,7 +4173,7 @@ struct CallGetIndex : public CppiaIntExpr
       hx::Object *obj = thisExpr->runObject(ctx);
       CPPIA_CHECK(obj);
       #if (HXCPP_API_LEVEL>=330)
-      return static_cast<EnumBase_obj *>(obj)->getIndex();
+      return static_cast<EnumBase_obj *>(obj)->_hx_getIndex();
       #else
       return obj->__Index();
       #endif
@@ -6244,7 +6244,7 @@ struct EnumIExpr : public CppiaDynamicExpr
       hx::Object *obj = object->runObject(ctx);
       BCR_CHECK;
       #if (HXCPP_API_LEVEL>=330)
-      return static_cast<EnumBase_obj *>(obj)->getParamI(index).mPtr;
+      return static_cast<EnumBase_obj *>(obj)->_hx_getParamI(index).mPtr;
       #else
       return obj->__EnumParams()[index].mPtr;
       #endif
