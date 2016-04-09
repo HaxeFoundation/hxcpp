@@ -221,6 +221,27 @@ inline bool TCanCast(hx::Object *inPtr)
                   );
 }
 
+
+#if (HXCPP_API_LEVEL >= 330)
+template<int HASH>
+inline bool TIsInterface(hx::Object *inPtr)
+{
+	return inPtr && inPtr->__GetRealObject()->_hx_getInterface(HASH);
+}
+#endif
+
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES void RegisterVTableOffset(int inOffset);
+
+#define HX_REGISTER_VTABLE_OFFSET( CLASS, INTERFACE ) \
+{ \
+   CLASS *dummy = (CLASS *)0; \
+   INTERFACE *intf = dummy; \
+   hx::RegisterVTableOffset( (int)( (size_t)((char *)intf - (char *)dummy)) ); \
+}
+
+
+
 }
 
 

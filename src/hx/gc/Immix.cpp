@@ -42,7 +42,8 @@ static bool sgAllocInit = 0;
 static bool sgInternalEnable = true;
 static void *sgObject_root = 0;
 // With virtual inheritance, stack pointers can point to the middle of an object
-static bool sgCheckInternalPointers = false;
+static int sgCheckInternalOffset = 0;
+static int sgCheckInternalOffsetRows = 0;
 int gInAlloc = false;
 
 // This is recalculated from the other parameters
@@ -769,6 +770,9 @@ struct BlockDataInfo
       while(true)
       {
          offset -= 4;
+         if (offset<-sgCheckInternalOffset)
+            return allocNone;
+
          rowPos >>= 1;
          if (!rowPos)
             break;
@@ -791,8 +795,8 @@ struct BlockDataInfo
          }
       }
 
-      // Not found on row, look for previsous row - up to 32 rows (4k) back ...
-      int stop = std::max(r-32,IMMIX_HEADER_LINES);
+      // Not found on row, look on previsous rows...
+      int stop = std::max(r-sgCheckInternalOffsetRows,IMMIX_HEADER_LINES);
       for(int row=r-1; row>=stop; row--)
       {
          int s = allocStart[row];
@@ -802,12 +806,15 @@ struct BlockDataInfo
                if (s & (1<<bit) )
                {
                   int offset = (row<<IMMIX_LINE_BITS) + (bit<<2);
+                  int delta =  inOffset-offset;
+                  if (delta<-sgCheckInternalOffset)
+                     return allocNone;
                   AllocType result = GetAllocTypeChecked(offset);
                   if (result!=allocNone)
                   {
                      unsigned int header =  *(unsigned int *)((char *)mPtr + offset);
                      int size = ((header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT);
-                     if (size>= inOffset-offset)
+                     if (size>= delta)
                      {
                         ioPtr = (char *)mPtr + offset + sizeof(int);
                         return result;
@@ -3561,7 +3568,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
             BlockDataInfo *info = (*gBlockInfo)[block->mId];
 
             int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
-            AllocType t = sgCheckInternalPointers ?
+            AllocType t = sgCheckInternalOffset ?
                   info->GetEnclosingAllocType(pos-sizeof(int),vptr):
                   info->GetAllocType(pos-sizeof(int));
             if ( t==allocObject )
@@ -4167,6 +4174,16 @@ void UnregisterCurrentThread()
    LocalAllocator *local = (LocalAllocator *)(hx::ImmixAllocator *)tlsImmixAllocator;
    delete local;
 }
+
+void RegisterVTableOffset(int inOffset)
+{
+   if (inOffset>sgCheckInternalOffset)
+   {
+      sgCheckInternalOffset = inOffset;
+      sgCheckInternalOffsetRows = 1 + (inOffset>>IMMIX_LINE_BITS);
+   }
+}
+
 
 
 
