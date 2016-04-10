@@ -267,7 +267,11 @@ inline HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_string_create(const char *str, i
    return String(str,len).dup();
 }
 
-
-
+void HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_utf8_iter(String inString, Dynamic inIter);
+int HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_utf8_char_code_at(String inString, int inIndex);
+int HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_utf8_length(String inString);
+bool HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_utf8_is_valid(String inString);
+int HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_utf8_compare(String inString0, String inString1);
+String HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_utf8_sub(String inString0, int inStart, int inLen);
 
 #endif

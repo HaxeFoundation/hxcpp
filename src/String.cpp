@@ -229,7 +229,7 @@ Array<int> __hxcpp_utf8_string_to_char_array(String &inString)
         result->push(DecodeAdvanceUTF8(src));
 
     if (src!=end)
-       throw Dynamic(HX_CSTRING("Invalid UTF8"));
+       hx::Throw(HX_CSTRING("Invalid UTF8"));
 
    return result;
 }
@@ -252,18 +252,18 @@ String __hxcpp_utf8_string_to_char_bytes(String &inUTF8)
     {
         int c = DecodeAdvanceUTF8(src);
         char_count++;
-	     if( c == 8364 ) // euro symbol
-				c = 164;
-			else if( c == 0xFEFF ) // BOM
-			{
+        if( c == 8364 ) // euro symbol
+            c = 164;
+         else if( c == 0xFEFF ) // BOM
+         {
             char_count--;
          }
-			else if( c > 255 )
-				throw Dynamic(HX_CSTRING("Utf8::decode invalid character"));
+         else if( c > 255 )
+            hx::Throw(HX_CSTRING("Utf8::decode invalid character"));
     }
 
     if (src!=end)
-       throw Dynamic(HX_CSTRING("Invalid UTF8"));
+       hx::Throw(HX_CSTRING("Invalid UTF8"));
 
     HX_CHAR *result = hx::NewString(char_count);
 
@@ -272,15 +272,122 @@ String __hxcpp_utf8_string_to_char_bytes(String &inUTF8)
     while(src<end)
     {
         int c = DecodeAdvanceUTF8(src);
-	     if( c == 8364 ) // euro symbol
-				c = 164;
-		  if( c != 0xFEFF ) // BOM
+        if( c == 8364 ) // euro symbol
+            c = 164;
+        if( c != 0xFEFF ) // BOM
            result[char_count++] = c;
     }
 
    result[char_count] = '\0';
    return String(result,char_count);
 }
+
+
+void _hx_utf8_iter(String inString, Dynamic inIter)
+{
+   const unsigned char *src = (const unsigned char *)inString.__s;
+   const unsigned char *end = src + inString.length;
+
+   while(src<end)
+      inIter(DecodeAdvanceUTF8(src));
+
+   if (src>end)
+      hx::Throw(HX_CSTRING("Invalid UTF8"));
+}
+
+int _hx_utf8_char_code_at(String inString, int inIndex)
+{
+   const unsigned char *src = (const unsigned char *)inString.__s;
+   const unsigned char *end = src + inString.length;
+
+   for(int i=0;i<inIndex;i++)
+   {
+      DecodeAdvanceUTF8(src);
+      if (src==end)
+         return 0;
+      if (src>end)
+         hx::Throw(HX_CSTRING("Invalid UTF8"));
+   }
+   return DecodeAdvanceUTF8(src);
+}
+
+int _hx_utf8_length(String inString)
+{
+   const unsigned char *src = (const unsigned char *)inString.__s;
+   const unsigned char *end = src + inString.length;
+
+   int len = 0;
+   while(src<end)
+   {
+      DecodeAdvanceUTF8(src);
+      len++;
+   }
+   if (src>end)
+      hx::Throw(HX_CSTRING("Invalid UTF8"));
+   return len;
+}
+
+bool _hx_utf8_is_valid(String inString)
+{
+   const unsigned char *src = (const unsigned char *)inString.__s;
+   const unsigned char *end = src + inString.length;
+   while(src<end)
+      DecodeAdvanceUTF8(src);
+
+   return src==end;
+}
+
+int _hx_utf8_compare(String inString0, String inString1)
+{
+   const unsigned char *src0 = (const unsigned char *)inString0.__s;
+   const unsigned char *end0 = src0 + inString0.length;
+   const unsigned char *src1 = (const unsigned char *)inString1.__s;
+   const unsigned char *end1 = src1 + inString1.length;
+
+   while(true)
+   {
+      if (src0>end0 || src1>end1)
+         hx::Throw(HX_CSTRING("Invalid UTF8"));
+      bool isEnd0 = src0==end0;
+      bool isEnd1 = src1==end1;
+      if (isEnd0 || isEnd1)
+         return isEnd0 ? (isEnd1 ? 0 : -1) : 1;
+
+      int c0 = DecodeAdvanceUTF8(src0);
+      int c1 = DecodeAdvanceUTF8(src1);
+
+      if (c0!=c1)
+         return c0<c1 ? -1 : 1;
+   }
+   return 0;
+}
+
+String _hx_utf8_sub(String inString, int inStart, int inLen)
+{
+   const unsigned char *src = (const unsigned char *)inString.__s;
+   const unsigned char *end = src + inString.length;
+
+   for(int i=0;i<inStart;i++)
+   {
+      DecodeAdvanceUTF8(src);
+      if (src==end)
+         return String();
+      if (src>end)
+         hx::Throw(HX_CSTRING("Invalid UTF8"));
+   }
+   const unsigned char *start = src;
+   for(int i=0;i<inLen;i++)
+   {
+      DecodeAdvanceUTF8(src);
+      if (src==end)
+         break;
+      if (src>end)
+         hx::Throw(HX_CSTRING("Invalid UTF8"));
+   }
+   return String((const char *)start, src-start).dup();
+}
+
+
 
 
 
@@ -774,7 +881,7 @@ const char * String::__CStr() const
    #else
    Array<unsigned char> bytes(0,length+1);
    __hxcpp_bytes_of_string(bytes,*this);
-	bytes.Add(0);
+   bytes.Add(0);
    char *result =  bytes->GetBase();
    if (result)
    {
@@ -941,16 +1048,16 @@ String String::substr(int inFirst, Dynamic inLen) const
    int len = inLen == null() ? length : inLen->__ToInt();
    if (inFirst<0) inFirst += length;
    if (inFirst<0) inFirst = 0;
-	if (len<0)
-	{
-		len += length;
-		// This logic matches flash ....
-		if (inFirst + len >=length)
-			len = 0;
-	}
+   if (len<0)
+   {
+      len += length;
+      // This logic matches flash ....
+      if (inFirst + len >=length)
+         len = 0;
+   }
 
    if (len<=0 || inFirst>=length)
-		return HX_CSTRING("");
+      return HX_CSTRING("");
 
    if ((len+inFirst > length) ) len = length - inFirst;
    if (len==0)
@@ -1043,9 +1150,9 @@ struct __String_##func : public hx::Object \
    __String_##func(const String &inThis) : mThis(inThis) { } \
    String toString() const{ return HX_CSTRING(#func); } \
    String __ToString() const{ return HX_CSTRING(#func); } \
-	int __GetType() const { return vtFunction; } \
-	void *__GetHandle() const { return const_cast<HX_CHAR *>(mThis.__s); } \
-	int __ArgCount() const { return ARG_C; } \
+   int __GetType() const { return vtFunction; } \
+   void *__GetHandle() const { return const_cast<HX_CHAR *>(mThis.__s); } \
+   int __ArgCount() const { return ARG_C; } \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
       return mThis.func(array_list); return Dynamic(); \
@@ -1054,9 +1161,9 @@ struct __String_##func : public hx::Object \
    { \
       return mThis.func(arg_list); return Dynamic(); \
    } \
-	void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.__s); } \
-	STRING_VISIT_FUNC \
-	void  __SetThis(Dynamic inThis) { mThis = inThis; } \
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.__s); } \
+   STRING_VISIT_FUNC \
+   void  __SetThis(Dynamic inThis) { mThis = inThis; } \
 }; \
 Dynamic String::func##_dyn()  { return new __String_##func(*this);  }
 
@@ -1152,14 +1259,14 @@ int my_wtol(const wchar_t *inStr,wchar_t ** end, int inBase)
 
 inline int _wtoi(const wchar_t *inStr)
 {
-	wchar_t *end = 0;
-	if (!inStr) return 0;
-	long result = 0;
-	if (inStr[0]=='0' && (inStr[1]=='x' || inStr[1]=='X'))
-		result = wcstol(inStr,&end,16);
-	else
-		result = wcstol(inStr,&end,10);
-	return result;
+   wchar_t *end = 0;
+   if (!inStr) return 0;
+   long result = 0;
+   if (inStr[0]=='0' && (inStr[1]=='x' || inStr[1]=='X'))
+      result = wcstol(inStr,&end,16);
+   else
+      result = wcstol(inStr,&end,10);
+   return result;
 }
 #endif
 
