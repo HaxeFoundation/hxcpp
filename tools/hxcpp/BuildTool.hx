@@ -636,7 +636,11 @@ class BuildTool
                case "ranlib" : l.mRanLib = (substitute(el.att.name));
                case "recreate" : l.mRecreate = (substitute(el.att.value)) != "";
                case "expandAr" : l.mExpandArchives = substitute(el.att.value) != "";
-               case "fromfile" : l.mFromFile = (substitute(el.att.value));
+               case "fromfile" :
+                  if (el.has.value)
+                     l.mFromFile = substitute(el.att.value);
+                  if (el.has.needsQuotes)
+                     l.mFromFileNeedsQuotes = parseBool(substitute(el.att.needsQuotes));
                case "exe" : l.mExe = (substitute(el.att.name));
                case "section" : createLinker(el,l);
             }

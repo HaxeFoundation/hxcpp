@@ -13,6 +13,7 @@ class Linker
    public var mLibDir:String;
    public var mRanLib:String;
    public var mFromFile:String;
+   public var mFromFileNeedsQuotes:Bool;
    public var mLibs:Array<String>;
    public var mExpandArchives:Bool;
    public var mRecreate:Bool;
@@ -29,6 +30,7 @@ class Linker
       mExpandArchives = false;
       // Default to on...
       mFromFile = "@";
+      mFromFileNeedsQuotes = true;
       mLibs = [];
       mRecreate = false;
    }
@@ -209,8 +211,16 @@ class Linker
             PathManager.mkdir(inCompiler.mObjDir);
             var fname = inCompiler.mObjDir + "/all_objs";
             var fout = sys.io.File.write(fname,false);
-            for(obj in objs)
-               fout.writeString('"' + obj + '"\n');
+            if (mFromFileNeedsQuotes)
+            {
+               for(obj in objs)
+                  fout.writeString('"' + obj + '"\n');
+            }
+            else
+            {
+               for(obj in objs)
+                  fout.writeString(obj + '\n');
+            }
             fout.close();
             args.push("@" + fname );
          }
