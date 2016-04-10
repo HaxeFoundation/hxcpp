@@ -368,7 +368,7 @@ Dynamic::Dynamic(cpp::Int64 inVal)
 
 Dynamic::Dynamic(cpp::UInt64 inVal)
 {
-   if ( (int)inVal==inVal && inVal>=0 && inVal<256 )
+   if ( (int)inVal==inVal && inVal<256 )
    {
       int idx = inVal+1;
       mPtr = sConstDynamicInts[idx].mPtr;

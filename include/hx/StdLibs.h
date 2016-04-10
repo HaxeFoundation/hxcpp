@@ -564,7 +564,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_put_env( String e, String v );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_sys_sleep( double f );
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_set_time_locale( String l );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_get_cwd();
-HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_set_cwd( String d );
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_set_cwd( String d );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_sys_string();
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_sys_is64();
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_sys_command( String cmd );

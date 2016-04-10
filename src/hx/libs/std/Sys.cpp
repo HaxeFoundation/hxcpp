@@ -187,10 +187,12 @@ String _hx_std_get_cwd()
    set_cwd : string -> void
    <doc>Set current working directory</doc>
 **/
-void _hx_std_set_cwd( String d )
+bool _hx_std_set_cwd( String d )
 {
    #if !defined(HX_WINRT) && !defined(EPPC)
-   chdir(d.__s);
+   return chdir(d.__s) == 0;
+   #else
+   return false;
    #endif
 }
 
