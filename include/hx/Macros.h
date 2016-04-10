@@ -732,28 +732,33 @@ static  ::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); HX_VISIT_MEMBER(v13); HX_VISIT_MEMBER(v14); HX_VISIT_MEMBER(v15); HX_VISIT_MEMBER(v16); HX_VISIT_MEMBER(v17); HX_VISIT_MEMBER(v18); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12,t13 __13,t14 __14,t15 __15,t16 __16,t17 __17,t18 __18) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12),v13(__13),v14(__14),v15(__15),v16(__16),v17(__17),v18(__18) {}
 
+#if (HXCPP_API_LEVEL>=330)
+  #define HX_LOCAL_RUN _hx_run
+#else
+  #define HX_LOCAL_RUN run
+#endif
 
-#define HX_END_LOCAL_FUNC0(ret) HX_DYNAMIC_CALL0(ret,run) };
+#define HX_END_LOCAL_FUNC0(ret) HX_DYNAMIC_CALL0(ret, HX_LOCAL_RUN ) };
 
-#define HX_END_LOCAL_FUNC1(ret) HX_DYNAMIC_CALL1(ret,run) };
-#define HX_END_LOCAL_FUNC2(ret) HX_DYNAMIC_CALL2(ret,run) };
-#define HX_END_LOCAL_FUNC3(ret) HX_DYNAMIC_CALL3(ret,run) };
-#define HX_END_LOCAL_FUNC4(ret) HX_DYNAMIC_CALL4(ret,run) };
-#define HX_END_LOCAL_FUNC5(ret) HX_DYNAMIC_CALL5(ret,run) };
-#define HX_END_LOCAL_FUNC6(ret) HX_DYNAMIC_CALL6(ret,run) };
-#define HX_END_LOCAL_FUNC7(ret) HX_DYNAMIC_CALL7(ret,run) };
-#define HX_END_LOCAL_FUNC8(ret) HX_DYNAMIC_CALL8(ret,run) };
-#define HX_END_LOCAL_FUNC9(ret) HX_DYNAMIC_CALL9(ret,run) };
-#define HX_END_LOCAL_FUNC10(ret) HX_DYNAMIC_CALL10(ret,run) };
-#define HX_END_LOCAL_FUNC11(ret) HX_DYNAMIC_CALL11(ret,run) };
-#define HX_END_LOCAL_FUNC12(ret) HX_DYNAMIC_CALL12(ret,run) };
-#define HX_END_LOCAL_FUNC13(ret) HX_DYNAMIC_CALL13(ret,run) };
-#define HX_END_LOCAL_FUNC14(ret) HX_DYNAMIC_CALL14(ret,run) };
-#define HX_END_LOCAL_FUNC15(ret) HX_DYNAMIC_CALL15(ret,run) };
-#define HX_END_LOCAL_FUNC16(ret) HX_DYNAMIC_CALL16(ret,run) };
-#define HX_END_LOCAL_FUNC17(ret) HX_DYNAMIC_CALL17(ret,run) };
-#define HX_END_LOCAL_FUNC18(ret) HX_DYNAMIC_CALL18(ret,run) };
-#define HX_END_LOCAL_FUNC19(ret) HX_DYNAMIC_CALL19(ret,run) };
+#define HX_END_LOCAL_FUNC1(ret) HX_DYNAMIC_CALL1(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC2(ret) HX_DYNAMIC_CALL2(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC3(ret) HX_DYNAMIC_CALL3(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC4(ret) HX_DYNAMIC_CALL4(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC5(ret) HX_DYNAMIC_CALL5(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC6(ret) HX_DYNAMIC_CALL6(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC7(ret) HX_DYNAMIC_CALL7(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC8(ret) HX_DYNAMIC_CALL8(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC9(ret) HX_DYNAMIC_CALL9(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC10(ret) HX_DYNAMIC_CALL10(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC11(ret) HX_DYNAMIC_CALL11(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC12(ret) HX_DYNAMIC_CALL12(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC13(ret) HX_DYNAMIC_CALL13(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC14(ret) HX_DYNAMIC_CALL14(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC15(ret) HX_DYNAMIC_CALL15(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC16(ret) HX_DYNAMIC_CALL16(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC17(ret) HX_DYNAMIC_CALL17(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC18(ret) HX_DYNAMIC_CALL18(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC19(ret) HX_DYNAMIC_CALL19(ret, HX_LOCAL_RUN ) };
 
 // For compatibility until next version of haxe is released
 #define HX_BEGIN_LOCAL_FUNC0(name) \
