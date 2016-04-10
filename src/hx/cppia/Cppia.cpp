@@ -7935,7 +7935,7 @@ bool LoadCppia(String inValue)
    CppiaModule   &cppia = *cppiaPtr;
    CppiaStream stream(cppiaPtr,inValue.__s, inValue.length);
 
-   bool ok = true;
+   String error;
    try
    {
       std::string tok = stream.getAsciiToken();
@@ -8021,38 +8021,40 @@ bool LoadCppia(String inValue)
          throw "no resources tag";
 
 
-   } catch(const char *error)
+   }
+   catch(const char *errorString)
    {
-      printf("Error reading file: %s, line %d, char %d\n", error, stream.line, stream.pos);
-      ok = false;
+      error = HX_CSTRING("Error reading file ") + String(errorString) + 
+                HX_CSTRING(", line ") + String(stream.line) + HX_CSTRING(", char ") + 
+                   String(stream.pos);
    }
 
-   if (ok)
+   if (!error.__s)
       try
       {
          DBGLOG("Link...\n");
          cppia.link();
-      } catch(const char *error)
+      }
+      catch(const char *errorString)
       {
-         printf("Error linking : %s\n", error);
-         ok = false;
+         error = String(errorString);
       }
 
    #ifdef CPPIA_JIT
-   if (ok)
+   if (!error.__s)
       try
       {
          DBGLOG("Compile...\n");
          cppia.compile();
-      } catch(const char *error)
+      }
+      catch(const char *errorString)
       {
-         printf("Error compiling : %s\n", error);
-         ok = false;
+         error = String(errorString);
       }
    #endif
 
 
-   if (ok) try
+   if (!error.__s) try
    {
       //__hxcpp_enable(false);
       DBGLOG("--- Run --------------------------------------------\n");
@@ -8065,10 +8067,15 @@ bool LoadCppia(String inValue)
          //printf("Result %s.\n", cppia.main->runString(&ctx).__s);
       }
       return true;
-   } catch(const char *error)
-   {
-      printf("Error running : %s\n", error);
    }
+   catch(const char *errorString)
+   {
+      error = String(errorString);
+   }
+
+   if (error.__s)
+      hx::Throw(error);
+
    return false;
 }
 
