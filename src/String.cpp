@@ -113,7 +113,20 @@ static void UTF8EncodeAdvance(char * &ioPtr,int c)
       }
 }
 
-int DecodeAdvanceUTF8(const unsigned char * &ioPtr)
+static unsigned char *sUtf8LenArray = 0;
+
+static const unsigned char *getUtf8LenArray()
+{
+   if (!sUtf8LenArray)
+   {
+      sUtf8LenArray = (unsigned char *)malloc(256);
+      for(int i=0;i<256;i++)
+         sUtf8LenArray[i] =  i< 0x80 ? 1 : i<0xe0 ? 2 : i<0xf0 ? 3 : 4;
+   }
+   return sUtf8LenArray;
+}
+
+static inline int DecodeAdvanceUTF8(const unsigned char * &ioPtr)
 {
    int c = *ioPtr++;
    if( c < 0x80 )
@@ -133,30 +146,12 @@ int DecodeAdvanceUTF8(const unsigned char * &ioPtr)
    int c2 = *ioPtr++;
    int c3 = *ioPtr++;
    return ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 & 0x7F) << 6) | ((*ioPtr++) & 0x7F);
- }
+}
 
-
-int DecodeBytes(int c)
+int _hx_utf8_decode_advance(char *&ioPtr)
 {
-   if( c < 0x80 )
-   {
-      return 1;
-   }
-   else if( c < 0xE0 )
-   {
-      return 2;
-   }
-   else if( c < 0xF0 )
-   {
-      return  3;
-   }
-
-   return 4;
- }
-
-
-
-
+   return DecodeAdvanceUTF8( (const unsigned char * &) ioPtr );
+}
 
 
 template<typename T>
@@ -299,10 +294,11 @@ int _hx_utf8_char_code_at(String inString, int inIndex)
 {
    const unsigned char *src = (const unsigned char *)inString.__s;
    const unsigned char *end = src + inString.length;
+   const unsigned char *sLen = getUtf8LenArray();
 
    for(int i=0;i<inIndex;i++)
    {
-      DecodeAdvanceUTF8(src);
+      src += sLen[*src];
       if (src==end)
          return 0;
       if (src>end)
@@ -317,9 +313,10 @@ int _hx_utf8_length(String inString)
    const unsigned char *end = src + inString.length;
 
    int len = 0;
+   const unsigned char *sLen = getUtf8LenArray();
    while(src<end)
    {
-      DecodeAdvanceUTF8(src);
+      src += sLen[*src];
       len++;
    }
    if (src>end)
@@ -331,35 +328,11 @@ bool _hx_utf8_is_valid(String inString)
 {
    const unsigned char *src = (const unsigned char *)inString.__s;
    const unsigned char *end = src + inString.length;
+   const unsigned char *sLen = getUtf8LenArray();
    while(src<end)
-      DecodeAdvanceUTF8(src);
+      src += sLen[*src];
 
    return src==end;
-}
-
-int _hx_utf8_compare(String inString0, String inString1)
-{
-   const unsigned char *src0 = (const unsigned char *)inString0.__s;
-   const unsigned char *end0 = src0 + inString0.length;
-   const unsigned char *src1 = (const unsigned char *)inString1.__s;
-   const unsigned char *end1 = src1 + inString1.length;
-
-   while(true)
-   {
-      if (src0>end0 || src1>end1)
-         hx::Throw(HX_CSTRING("Invalid UTF8"));
-      bool isEnd0 = src0==end0;
-      bool isEnd1 = src1==end1;
-      if (isEnd0 || isEnd1)
-         return isEnd0 ? (isEnd1 ? 0 : -1) : 1;
-
-      int c0 = DecodeAdvanceUTF8(src0);
-      int c1 = DecodeAdvanceUTF8(src1);
-
-      if (c0!=c1)
-         return c0<c1 ? -1 : 1;
-   }
-   return 0;
 }
 
 String _hx_utf8_sub(String inString, int inStart, int inLen)
@@ -367,9 +340,11 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
    const unsigned char *src = (const unsigned char *)inString.__s;
    const unsigned char *end = src + inString.length;
 
+   const unsigned char *sLen = getUtf8LenArray();
    for(int i=0;i<inStart;i++)
    {
-      DecodeAdvanceUTF8(src);
+      src += sLen[*src];
+
       if (src==end)
          return String();
       if (src>end)
@@ -378,7 +353,7 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
    const unsigned char *start = src;
    for(int i=0;i<inLen;i++)
    {
-      DecodeAdvanceUTF8(src);
+      src += sLen[*src];
       if (src==end)
          break;
       if (src>end)
