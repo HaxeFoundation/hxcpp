@@ -589,6 +589,11 @@ public:
    Array<ELEM_> copy( );
    Array<ELEM_> slice(int inPos, Dynamic end = null());
    Array<ELEM_> splice(int inPos, int len);
+   inline void removeRange(int inPos, int len)
+   {
+      hx::ArrayBase::Splice(0,inPos,len);
+   }
+
    #if HXCPP_API_LEVEL>=330
    cpp::VirtualArray map(Dynamic inFunc);
    #else
@@ -974,6 +979,7 @@ Array<ELEM_> Array_obj<ELEM_>::splice(int inPos, int len)
    hx::ArrayBase::Splice(result,inPos,len);
    return result;
 }
+
 
 template<typename ELEM_>
 Array<ELEM_> Array_obj<ELEM_>::filter(Dynamic inFunc)

@@ -230,9 +230,12 @@ void ArrayBase::Splice(ArrayBase *outResult,int inPos,int inLen)
    if (inPos+inLen>length)
       inLen = length - inPos;
 
-   outResult->__SetSize(inLen);
    int s = GetElementSize();
-   memcpy(outResult->mBase, mBase+inPos*s, s*inLen);
+   if (outResult)
+   {
+      outResult->__SetSize(inLen);
+      memcpy(outResult->mBase, mBase+inPos*s, s*inLen);
+   }
    memmove(mBase+inPos*s, mBase + (inPos+inLen)*s, (length-(inPos+inLen))*s);
    __SetSize(length-inLen);
 }
