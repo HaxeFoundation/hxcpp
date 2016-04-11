@@ -90,10 +90,7 @@ hx::Class Object__mClass;
 
 bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
-#if (HXCPP_API_LEVEL >= 330)
-void *hx::Object::_hx_getInterface(int hash) { return 0; }
-
-#else
+#if (HXCPP_API_LEVEL < 330)
 DynamicArray Object::__EnumParams() { return DynamicArray(); }
 String Object::__Tag() const { return HX_CSTRING("<not enum>"); }
 int Object::__Index() const { return -1; }

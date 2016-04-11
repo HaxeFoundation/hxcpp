@@ -2650,14 +2650,6 @@ public:
       return info->hasStaticValue(inName);
    }
 
-   #if (HXCPP_API_LEVEL >= 330)
-   void *_hx_getInterface(int inId)
-   {
-      return info->interfaceScriptTables[inId];
-   }
-   #endif
-
-
 };
 
 
@@ -8151,6 +8143,20 @@ bool ScriptableSetField(hx::Object *inObj, const ::String &inName, Dynamic inVal
    void **vtable = inObj->__GetScriptVTable();
    return ((CppiaClassInfo *)vtable[-1])->setField(inObj,inName,inValue,inCallProp,outResult);
 }
+
+#if (HXCPP_API_LEVEL >= 330)
+void *hx::Object::_hx_getInterface(int inId)
+{
+   void **vtable = __GetScriptVTable();
+   if (!vtable)
+      return 0;
+   CppiaClassInfo *info = ((CppiaClassInfo *)vtable[-1]);
+   void *result = info->interfaceScriptTables[inId];
+   return info->interfaceScriptTables[inId];
+}
+#endif
+
+
 
 
 };
