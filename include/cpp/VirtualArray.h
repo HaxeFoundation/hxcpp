@@ -404,7 +404,7 @@ public:
       return new VirtualArray_obj(base->__slice(inPos,end), store==hx::arrayFixed);
    }
    VirtualArray splice(int inPos, int len);
-   Dynamic map(Dynamic inFunc);
+   VirtualArray map(Dynamic inFunc);
    VirtualArray filter(Dynamic inFunc);
 
    template<typename T>
