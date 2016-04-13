@@ -616,7 +616,7 @@ struct CrementPostDec
    static hx::Object *run(hx::Object *&inVal)
    {
       hx::Object *result(inVal);
-      inVal = Dynamic(Dynamic(inVal) + 1).mPtr;
+      inVal = Dynamic(Dynamic(inVal) - 1).mPtr;
       return result;
    }
  
