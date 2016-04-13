@@ -32,6 +32,14 @@ inline hx::Class &ClassOf<null>() { return GetVoidClass(); }
 template<> 
 inline hx::Class &ClassOf<String>() { return GetStringClass(); }
 
+
+template<typename T>
+struct hxBaseType { typedef T type; };
+template<typename T>
+struct hxBaseType< hx::ObjectPtr<T> > { typedef T type; };
+
+template<typename T> inline int ClassSizeOf() { return sizeof( typename hx::hxBaseType<T>::type ); }
+
 } // end namespace hx
 
 

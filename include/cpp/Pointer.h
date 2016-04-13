@@ -153,20 +153,25 @@ template<typename T>
 class Pointer
 {
 public:
+   enum { elementSize = sizeof(T) };
    T *ptr;
 
    inline Pointer( ) : ptr(0) { }
    inline Pointer( const Pointer &inRHS ) : ptr(inRHS.ptr) {  }
    inline Pointer( const Dynamic &inRHS) { ptr = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
    inline Pointer( const null &inRHS ) : ptr(0) { }
-   inline Pointer( const T *inValue ) : ptr( (T*) inValue) { }
+
+   template<typename O>
+   inline Pointer( const O *inValue ) : ptr( (T*) inValue) { }
    //inline Pointer( T *inValue ) : ptr(inValue) { }
    inline Pointer( AutoCast inValue ) : ptr( (T*)inValue.value) { }
 
    template<typename H>
    inline Pointer( const Struct<T,H> &structVal ) : ptr( &structVal.value ) { }
 
-
+   template<typename O>
+   inline void setRaw(const O *inValue ) { ptr =  (T*) inValue; }
+   
    inline Pointer operator=( const Pointer &inRHS ) { return ptr = inRHS.ptr; }
    inline Dynamic operator=( Dynamic &inValue )
    {
@@ -212,6 +217,79 @@ public:
    inline bool geq(Pointer inOther) { return ptr >= inOther.ptr; }
 
 };
+
+
+
+
+
+template<>
+class Pointer<void>
+{
+public:
+   enum { elementSize = 0 };
+
+   void *ptr;
+
+   inline Pointer( ) : ptr(0) { }
+   inline Pointer( const Pointer &inRHS ) : ptr(inRHS.ptr) {  }
+   inline Pointer( const Dynamic &inRHS) { ptr = inRHS==null()?0: (void*)inRHS->__GetHandle(); }
+   inline Pointer( const null &inRHS ) : ptr(0) { }
+
+   template<typename O>
+   inline Pointer( const O *inValue ) : ptr( (void*) inValue) { }
+   //inline Pointer( T *inValue ) : ptr(inValue) { }
+   inline Pointer( AutoCast inValue ) : ptr( (void*)inValue.value) { }
+
+   inline Pointer operator=( const Pointer &inRHS ) { return ptr = inRHS.ptr; }
+   inline Dynamic operator=( Dynamic &inValue )
+   {
+      ptr = inValue==null() ? 0 : (void*) inValue->__GetHandle();
+      return inValue;
+   }
+   inline Dynamic operator=( null &inValue ) { ptr=0; return inValue; }
+   inline AutoCast reinterpret() { return AutoCast(ptr); }
+   inline RawAutoCast rawCast() { return RawAutoCast(ptr); }
+
+   inline bool operator==( const null &inValue ) const { return ptr==0; }
+   inline bool operator!=( const null &inValue ) const { return ptr!=0; }
+
+   // Allow '->' syntax
+   inline Pointer *operator->() { return this; }
+ 	inline Pointer inc() { return ptr; }
+	inline Pointer dec() { return ptr; }
+	inline Pointer add(int inInt) { return ptr; }
+ 	inline Pointer incBy(int inDiff) { return ptr; }
+ 	inline void postIncRef() {  }
+ 	inline void postIncVal() {  }
+
+   inline void at(int inIndex) {  }
+
+   inline void __get(int inIndex) { }
+
+   template<typename O>
+   inline void __set(int inIndex, O inValue) { }
+
+   inline void get_value() {  }
+   inline void get_ref() {  }
+   template<typename O> inline void set_ref(O val) {  }
+
+   operator Dynamic () const { return CreateDynamicPointer(ptr); }
+   //operator hx::Val () const { return CreateDynamicPointer((void *)ptr); }
+   operator void * () { return ptr; }
+   void * get_raw() { return ptr; }
+
+   inline void destroy() { delete ptr; }
+   inline void destroyArray() { delete [] ptr; }
+
+   inline bool lt(Pointer inOther) { return ptr < inOther.ptr; }
+   inline bool gt(Pointer inOther) { return ptr > inOther.ptr; }
+   inline bool leq(Pointer inOther) { return ptr <= inOther.ptr; }
+   inline bool geq(Pointer inOther) { return ptr >= inOther.ptr; }
+
+};
+
+
+
 
 template<typename T>
 inline bool operator == (const null &, Pointer<T> inPtr) { return inPtr.ptr==0; }
