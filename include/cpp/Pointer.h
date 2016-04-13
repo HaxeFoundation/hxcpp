@@ -278,8 +278,8 @@ public:
    operator void * () { return ptr; }
    void * get_raw() { return ptr; }
 
-   inline void destroy() { delete ptr; }
-   inline void destroyArray() { delete [] ptr; }
+   inline void destroy() {  }
+   inline void destroyArray() {  }
 
    inline bool lt(Pointer inOther) { return ptr < inOther.ptr; }
    inline bool gt(Pointer inOther) { return ptr > inOther.ptr; }
