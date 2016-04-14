@@ -918,9 +918,10 @@ public:
    }
 
 
+   #if (HXCPP_API_LEVEL >= 330)
    inline bool operator==(const cpp::VirtualArray &varray) const { return varray==*this; }
    inline bool operator!=(const cpp::VirtualArray &varray) const { return varray!=*this; }
-
+   #endif
 
 
 
