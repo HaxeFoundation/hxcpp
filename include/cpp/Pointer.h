@@ -207,6 +207,7 @@ public:
    //operator hx::Val () const { return CreateDynamicPointer((void *)ptr); }
    operator T * () { return ptr; }
    T * get_raw() { return ptr; }
+   const T * get_constRaw() { return ptr; }
 
    inline void destroy() { delete ptr; }
    inline void destroyArray() { delete [] ptr; }
@@ -277,6 +278,7 @@ public:
    //operator hx::Val () const { return CreateDynamicPointer((void *)ptr); }
    operator void * () { return ptr; }
    void * get_raw() { return ptr; }
+   const void * get_constRaw() { return ptr; }
 
    inline void destroy() {  }
    inline void destroyArray() {  }
