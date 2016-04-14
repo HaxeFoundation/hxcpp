@@ -2518,7 +2518,11 @@ void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
 
 ::String CppiaEnumBase::__ToString() const
 {
+   #if (HXCPP_API_LEVEL>=330)
    return classInfo->mClass->mName + HX_CSTRING(".") + _hx_tag;
+   #else
+   return classInfo->mClass->mName + HX_CSTRING(".") + tag;
+   #endif
 }
 
 
