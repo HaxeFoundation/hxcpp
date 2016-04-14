@@ -1,5 +1,11 @@
 package hxcpp;
 
+#if (hxcpp_api_level>=330)
+
+class StaticRegexp { }
+
+#else
+
 @:cppFileCode( 'extern "C" int regexp_register_prims();')
 @:buildXml("
 <target id='haxe'>
@@ -14,3 +20,4 @@ package hxcpp;
    }
 }
 
+#end
