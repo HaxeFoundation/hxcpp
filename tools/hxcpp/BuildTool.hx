@@ -1,3 +1,4 @@
+import CopyFile.Overwrite;
 import haxe.io.Path;
 import haxe.xml.Fast;
 import haxe.Json;
@@ -438,7 +439,7 @@ class BuildTool
                PathManager.mkdir(fileParts.join("/"));
 
                var chmod = isWindows ? false : target.mToolID=="exe";
-               CopyFile.copyFile(output, inDestination, false, chmod);
+               CopyFile.copyFile(output, inDestination, false, Overwrite.ALWAYS, chmod);
             }
          }
       }
@@ -1615,7 +1616,7 @@ class BuildTool
                       new CopyFile(substitute(el.att.name),
                                    substitute(el.att.from),
                                    el.has.allowMissing ?  subBool(el.att.allowMissing) : false,
-                                   el.has.overwrite ? subBool(el.att.overwrite) : true,
+                                   el.has.overwrite ? substitute(el.att.overwrite) : Overwrite.ALWAYS,
                                    el.has.toolId ?  substitute(el.att.toolId) : null ) );
                case "section" : 
                   parseXML(el,"",forceRelative);
