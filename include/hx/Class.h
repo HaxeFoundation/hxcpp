@@ -32,6 +32,14 @@ inline hx::Class &ClassOf<null>() { return GetVoidClass(); }
 template<> 
 inline hx::Class &ClassOf<String>() { return GetStringClass(); }
 
+
+template<typename T>
+struct hxBaseType { typedef T type; };
+template<typename T>
+struct hxBaseType< hx::ObjectPtr<T> > { typedef T type; };
+
+template<typename T> inline int ClassSizeOf() { return sizeof( typename hx::hxBaseType<T>::type ); }
+
 } // end namespace hx
 
 
@@ -220,6 +228,27 @@ inline bool TCanCast(hx::Object *inPtr)
                   #endif
                   );
 }
+
+
+#if (HXCPP_API_LEVEL >= 330)
+template<int HASH>
+inline bool TIsInterface(hx::Object *inPtr)
+{
+	return inPtr && inPtr->__GetRealObject()->_hx_getInterface(HASH);
+}
+#endif
+
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES void RegisterVTableOffset(int inOffset);
+
+#define HX_REGISTER_VTABLE_OFFSET( CLASS, INTERFACE ) \
+{ \
+   CLASS *dummy = (CLASS *)0; \
+   INTERFACE *intf = dummy; \
+   hx::RegisterVTableOffset( (int)( (size_t)((char *)intf - (char *)dummy)) ); \
+}
+
+
 
 }
 

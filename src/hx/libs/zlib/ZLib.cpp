@@ -21,6 +21,11 @@ namespace {
 
 struct ZipResult
 {
+   inline ZipResult(bool inOk, bool inDone, int inRead, int inWrite)
+      : ok(inOk)
+      , done(inDone)
+      , read(inRead)
+      , write(inWrite) { }
    bool ok;
    bool done;
    int  read;
@@ -83,12 +88,12 @@ struct ZStream : public hx::Object
    ZipResult deflate(Array<unsigned char> src, int srcpos, Array<unsigned char> dest, int dstpos)
    {
       if( srcpos < 0 || dstpos < 0 )
-         return { 0,0,0,0 };
+         return ZipResult( 0,0,0,0 );
 
       int slen = src->length - srcpos;
       int dlen = dest->length - dstpos;
       if( slen < 0 || dlen < 0 )
-         return { 0,0,0,0 };
+         return ZipResult( 0,0,0,0 );
 
       z->next_in = (Bytef*)(&src[srcpos]);
       z->next_out = (Bytef*)(&dest[dstpos]);
@@ -100,7 +105,7 @@ struct ZStream : public hx::Object
 
       z->next_in = 0;
       z->next_out = 0;
-      return { true, err == Z_STREAM_END, (int)(slen - z->avail_in), (int)(dlen - z->avail_out) };
+      return ZipResult( true, err == Z_STREAM_END, (int)(slen - z->avail_in), (int)(dlen - z->avail_out) );
    }
 
    ZipResult inflate(Array<unsigned char> src, int srcpos, Array<unsigned char> dest, int dstpos)
@@ -109,11 +114,11 @@ struct ZStream : public hx::Object
       int dlen = dest->length;
 
       if( srcpos < 0 || dstpos < 0 )
-         return { 0,0,0,0 };
+         return ZipResult( 0,0,0,0 );
       slen -= srcpos;
       dlen -= dstpos;
       if( slen < 0 || dlen < 0 )
-         return { 0,0,0,0};
+         return ZipResult( 0,0,0,0 );
 
       z->next_in = (Bytef*)&src[srcpos];
       z->next_out = (Bytef*)&dest[dstpos];
@@ -124,7 +129,7 @@ struct ZStream : public hx::Object
          onError(err);
       z->next_in = 0;
       z->next_out = 0;
-      return { true, err == Z_STREAM_END, (int)(slen - z->avail_in), (int)(dlen - z->avail_out) };
+      return ZipResult( true, err == Z_STREAM_END, (int)(slen - z->avail_in), (int)(dlen - z->avail_out) );
    }
 
    int getDeflateBound(int inLength)

@@ -266,10 +266,15 @@ static  ::NS::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) 
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \
    name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
 
+#if (HXCPP_API_LEVEL>=330)
+  #define HX_LOCAL_RUN _hx_run
+#else
+  #define HX_LOCAL_RUN run
+#endif
 
-#define HX_END_LOCAL_FUNC0(ret) HX_DYNAMIC_CALL0(ret,run) };
+#define HX_END_LOCAL_FUNC0(ret) HX_DYNAMIC_CALL0(ret, HX_LOCAL_RUN ) };
 ::foreach LOCALS::
-#define HX_END_LOCAL_FUNC::ARG::(ret) HX_DYNAMIC_CALL::ARG::(ret,run) };::end::
+#define HX_END_LOCAL_FUNC::ARG::(ret) HX_DYNAMIC_CALL::ARG::(ret, HX_LOCAL_RUN ) };::end::
 
 // For compatibility until next version of haxe is released
 #define HX_BEGIN_LOCAL_FUNC0(name) \

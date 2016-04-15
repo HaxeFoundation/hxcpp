@@ -338,7 +338,7 @@ int _hx_std_host_resolve( String host )
 #   endif
       if( !h ) {
          hx::ExitGCFreeZone();
-         return 0;
+         return hx::Throw( HX_CSTRING("Unknown host:") + host );
       }
       ip = *((unsigned int*)h->h_addr);
    }

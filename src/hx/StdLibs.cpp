@@ -214,7 +214,10 @@ void __hxcpp_stdlibs_boot()
    }
    #endif
    
-   setbuf(stdin, 0);
+   // I think this does more harm than good.
+   //  It does not cause fread to return immediately - as perhaps desired.
+   //  But it does cause some new-line characters to be lost.
+   //setbuf(stdin, 0);
    setbuf(stdout, 0);
    setbuf(stderr, 0);
 }

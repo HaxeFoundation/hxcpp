@@ -187,6 +187,13 @@ double DoubleMod(double inLHS,double inRHS)
    return fmod(inLHS,inRHS);
 }
 
+double hxZero = 0.0;
+double DivByZero(double d)
+{
+   return d/hxZero;
+}
+
+
 }
 
 

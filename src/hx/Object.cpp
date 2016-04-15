@@ -54,7 +54,8 @@ Dynamic *Object::__GetFieldMap() { return 0; }
 
 int Object::__Compare(const Object *inRHS) const
 {
-   return (int)(inRHS-const_cast<Object *>(this)->__GetRealObject());
+   hx::Object *real = const_cast<Object *>(this)->__GetRealObject();
+   return real < inRHS ? -1 : real==inRHS ? 0 : 1;
 }
 
 
@@ -89,14 +90,20 @@ hx::Class Object__mClass;
 
 bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
-#if (HXCPP_API_LEVEL >= 330)
-void *hx::Object::_hx_getInterface(int hash) { return 0; }
-
-#else
+#if (HXCPP_API_LEVEL < 330)
 DynamicArray Object::__EnumParams() { return DynamicArray(); }
 String Object::__Tag() const { return HX_CSTRING("<not enum>"); }
 int Object::__Index() const { return -1; }
 #endif
+
+#if (HXCPP_API_LEVEL >= 330) && !defined(HXCPP_SCRIPTABLE)
+// Other implementation is in Cppia.cpp
+void *hx::Object::_hx_getInterface(int inId)
+{
+   return 0;
+}
+#endif
+
 
 
 #ifdef HXCPP_SCRIPTABLE

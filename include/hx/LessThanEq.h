@@ -40,6 +40,24 @@ struct CompareTraits
 };
 
 
+
+template <> 
+struct CompareTraits<null>
+{
+   enum { type = (int)CompareAsDynamic };
+
+   inline static int toInt(const null &inValue) { return 0; }
+   inline static double toDouble(const null & inValue) { return 0; }
+   inline static cpp::Int64 toInt64(const null & inValue) { return 0; }
+   inline static String toString(const null & inValue) { return String(); }
+   inline static hx::Object *toObject(const null & inValue) { return 0; }
+
+   inline static int getDynamicCompareType(const null &) { return type; }
+   inline static bool isNull(const null &) { return true; }
+};
+
+
+
 template <> 
 struct CompareTraits<signed int>
 {
@@ -51,8 +69,8 @@ struct CompareTraits<signed int>
    inline static String toString(int inValue) { return String(); }
    inline static hx::Object *toObject(int inValue) { return 0; }
 
-   inline static int getDynamicCompareType(const signed int &) { return type; }
-   inline static bool isNull(const signed int &) { return false; }
+   inline static int getDynamicCompareType(int) { return type; }
+   inline static bool isNull(int) { return false; }
 };
 
 template <> 
@@ -67,8 +85,8 @@ struct CompareTraits<unsigned int>
    inline static String toString(unsigned int inValue) { return String(); }
    inline static hx::Object *toObject(unsigned int inValue) { return 0; }
 
-   inline static int getDynamicCompareType(const unsigned int &) { return type; }
-   inline static bool isNull(const unsigned int &) { return false; }
+   inline static int getDynamicCompareType(int) { return type; }
+   inline static bool isNull(int) { return false; }
 };
 
 template <> struct CompareTraits<signed short> : public CompareTraits<int> { };
@@ -106,8 +124,8 @@ struct CompareTraits<cpp::Int64>
    inline static String toString(cpp::Int64 inValue) { return String(); }
    inline static hx::Object *toObject(cpp::Int64 inValue) { return 0; }
 
-   inline static int getDynamicCompareType(const cpp::Int64 &) { return type; }
-   inline static bool isNull(const cpp::Int64 &) { return false; }
+   inline static int getDynamicCompareType(cpp::Int64) { return type; }
+   inline static bool isNull(cpp::Int64) { return false; }
 };
 
 template <> 
@@ -122,8 +140,8 @@ struct CompareTraits<cpp::UInt64>
    inline static String toString(cpp::UInt64 inValue) { return String(); }
    inline static hx::Object *toObject(cpp::UInt64 inValue) { return 0; }
 
-   inline static int getDynamicCompareType(const cpp::UInt64 &) { return type; }
-   inline static bool isNull(const cpp::UInt64 &) { return false; }
+   inline static int getDynamicCompareType(cpp::UInt64) { return type; }
+   inline static bool isNull(cpp::UInt64) { return false; }
 };
 
 
@@ -167,7 +185,8 @@ struct CompareTraits< cpp::Variant >
          case cpp::Variant::typeInt64: return CompareAsInt64;
          case cpp::Variant::typeDouble: return CompareAsDouble;
          case cpp::Variant::typeString: return CompareAsString;
-         case cpp::Variant::typeObject: return CompareAsDynamic;
+         default:
+              return CompareAsDynamic;
       }
    }
    inline static bool isNull(const cpp::Variant &inValue) { return inValue.isNull(); }
@@ -254,12 +273,12 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
 
       // Check null/not null compare
       bool n1 = traits1::isNull(v1);
-      bool n2 = traits1::isNull(v2);
+      bool n2 = traits2::isNull(v2);
       if (n1 || n2)
          return EQ ? n1==n2 : n1!=n2;
 
       int t1 = traits1::getDynamicCompareType(v1);
-      int t2 = traits1::getDynamicCompareType(v2);
+      int t2 = traits2::getDynamicCompareType(v2);
 
       if (t1==(int)CompareAsInt && t2==(int)CompareAsInt)
       {
@@ -314,7 +333,7 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
       {
          // Object with Object
          hx::Object *o1 = traits1::toObject(v1);
-         hx::Object *o2 = traits1::toObject(v2);
+         hx::Object *o2 = traits2::toObject(v2);
 
          int diff = o1->__Compare(o2);
          return LESS ? ( EQ ? diff <= 0 :

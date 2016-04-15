@@ -1169,9 +1169,9 @@ struct CppiaEnumConstructor
          return value.mPtr;
       #if (HXCPP_API_LEVEL >= 330)
       EnumBase_obj *result = new ((int)args.size()*sizeof(cpp::Variant)) CppiaEnumBase(classInfo);
-      result->setIdentity(name, index, args.size());
+      result->_hx_setIdentity(name, index, args.size());
       for(int i=0;i<args.size();i++)
-         result->init( i, inArgs[i] );
+         result->_hx_init( i, inArgs[i] );
       #else
       EnumBase_obj *result = new CppiaEnumBase(classInfo);
       result->__Set(name, index, inArgs);
@@ -2029,10 +2029,26 @@ struct CppiaClassInfo
             #if (HXCPP_API_LEVEL >= 330)
             HaxeNativeInterface *native = HaxeNativeInterface::findInterface( interface->name.__s );
             if (native)
+            {
                interfaceScriptTables[interface->name.hash()] = native->scriptTable;
+
+               ScriptNamedFunction *functions = native->functions;
+               if (functions != 0)
+               {
+                  for(ScriptNamedFunction *f = functions; f->name; f++)
+                  {
+                     int slot = cppia.getInterfaceSlot(f->name);
+                     if (slot<0)
+                        printf("Interface slot '%s' not found\n",f->name);
+                     if (slot>interfaceSlotSize)
+                        interfaceSlotSize = slot;
+                  }
+               }
+            }
             #else
             interfaceVTables[ interface->name.__s ] = vtable;
             #endif
+
             if (!cppiaInterface)
                break;
 
@@ -2087,7 +2103,7 @@ struct CppiaClassInfo
             EnumBase base = new CppiaEnumBase(this);
             e.value = base;
             #if (HXCPP_API_LEVEL>=330)
-            base->setIdentity(cppia.strings[e.nameId],i,0);
+            base->_hx_setIdentity(cppia.strings[e.nameId],i,0);
             #else
             base->__Set( cppia.strings[e.nameId],i,null() );
             #endif
@@ -2502,7 +2518,11 @@ void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
 
 ::String CppiaEnumBase::__ToString() const
 {
+   #if (HXCPP_API_LEVEL>=330)
+   return classInfo->mClass->mName + HX_CSTRING(".") + _hx_tag;
+   #else
    return classInfo->mClass->mName + HX_CSTRING(".") + tag;
+   #endif
 }
 
 
@@ -2649,14 +2669,6 @@ public:
 
       return info->hasStaticValue(inName);
    }
-
-   #if (HXCPP_API_LEVEL >= 330)
-   void *_hx_getInterface(int inId)
-   {
-      return info->interfaceScriptTables[inId];
-   }
-   #endif
-
 
 };
 
@@ -3937,7 +3949,7 @@ struct NewExpr : public CppiaDynamicExpr
          Array< Dynamic > argList = Array_obj<Dynamic>::__new(n,n);
          for(int a=0;a<n;a++)
             argList[a].mPtr = args[a]->runObject(ctx);
-            
+
           return constructor(argList).mPtr;
       }
       else
@@ -4173,7 +4185,7 @@ struct CallGetIndex : public CppiaIntExpr
       hx::Object *obj = thisExpr->runObject(ctx);
       CPPIA_CHECK(obj);
       #if (HXCPP_API_LEVEL>=330)
-      return static_cast<EnumBase_obj *>(obj)->getIndex();
+      return static_cast<EnumBase_obj *>(obj)->_hx_getIndex();
       #else
       return obj->__Index();
       #endif
@@ -6244,7 +6256,7 @@ struct EnumIExpr : public CppiaDynamicExpr
       hx::Object *obj = object->runObject(ctx);
       BCR_CHECK;
       #if (HXCPP_API_LEVEL>=330)
-      return static_cast<EnumBase_obj *>(obj)->getParamI(index).mPtr;
+      return static_cast<EnumBase_obj *>(obj)->_hx_getParamI(index).mPtr;
       #else
       return obj->__EnumParams()[index].mPtr;
       #endif
@@ -7935,7 +7947,7 @@ bool LoadCppia(String inValue)
    CppiaModule   &cppia = *cppiaPtr;
    CppiaStream stream(cppiaPtr,inValue.__s, inValue.length);
 
-   bool ok = true;
+   String error;
    try
    {
       std::string tok = stream.getAsciiToken();
@@ -8021,38 +8033,40 @@ bool LoadCppia(String inValue)
          throw "no resources tag";
 
 
-   } catch(const char *error)
+   }
+   catch(const char *errorString)
    {
-      printf("Error reading file: %s, line %d, char %d\n", error, stream.line, stream.pos);
-      ok = false;
+      error = HX_CSTRING("Error reading file ") + String(errorString) + 
+                HX_CSTRING(", line ") + String(stream.line) + HX_CSTRING(", char ") + 
+                   String(stream.pos);
    }
 
-   if (ok)
+   if (!error.__s)
       try
       {
          DBGLOG("Link...\n");
          cppia.link();
-      } catch(const char *error)
+      }
+      catch(const char *errorString)
       {
-         printf("Error linking : %s\n", error);
-         ok = false;
+         error = String(errorString);
       }
 
    #ifdef CPPIA_JIT
-   if (ok)
+   if (!error.__s)
       try
       {
          DBGLOG("Compile...\n");
          cppia.compile();
-      } catch(const char *error)
+      }
+      catch(const char *errorString)
       {
-         printf("Error compiling : %s\n", error);
-         ok = false;
+         error = String(errorString);
       }
    #endif
 
 
-   if (ok) try
+   if (!error.__s) try
    {
       //__hxcpp_enable(false);
       DBGLOG("--- Run --------------------------------------------\n");
@@ -8065,10 +8079,15 @@ bool LoadCppia(String inValue)
          //printf("Result %s.\n", cppia.main->runString(&ctx).__s);
       }
       return true;
-   } catch(const char *error)
-   {
-      printf("Error running : %s\n", error);
    }
+   catch(const char *errorString)
+   {
+      error = String(errorString);
+   }
+
+   if (error.__s)
+      hx::Throw(error);
+
    return false;
 }
 
@@ -8144,6 +8163,20 @@ bool ScriptableSetField(hx::Object *inObj, const ::String &inName, Dynamic inVal
    void **vtable = inObj->__GetScriptVTable();
    return ((CppiaClassInfo *)vtable[-1])->setField(inObj,inName,inValue,inCallProp,outResult);
 }
+
+#if (HXCPP_API_LEVEL >= 330)
+void *hx::Object::_hx_getInterface(int inId)
+{
+   void **vtable = __GetScriptVTable();
+   if (!vtable)
+      return 0;
+   CppiaClassInfo *info = ((CppiaClassInfo *)vtable[-1]);
+   void *result = info->interfaceScriptTables[inId];
+   return info->interfaceScriptTables[inId];
+}
+#endif
+
+
 
 
 };

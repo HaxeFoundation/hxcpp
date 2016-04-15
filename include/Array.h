@@ -380,8 +380,8 @@ class Array_obj : public hx::ArrayBase
    typedef hx::ObjectPtr< Array_obj<ELEM_> > ObjPtr;
    typedef typename hx::ReturnNull<ELEM_>::type NullType;
 
-
 public:
+
    Array_obj(int inSize,int inReserve) :
         hx::ArrayBase(inSize,inReserve,sizeof(ELEM_),!hx::ContainsPointers<ELEM_>()) { }
 
@@ -589,6 +589,11 @@ public:
    Array<ELEM_> copy( );
    Array<ELEM_> slice(int inPos, Dynamic end = null());
    Array<ELEM_> splice(int inPos, int len);
+   inline void removeRange(int inPos, int len)
+   {
+      hx::ArrayBase::Splice(0,inPos,len);
+   }
+
    #if HXCPP_API_LEVEL>=330
    cpp::VirtualArray map(Dynamic inFunc);
    #else
@@ -757,6 +762,7 @@ class Array : public hx::ObjectPtr< Array_obj<ELEM_> >
    typedef Array_obj<ELEM_> OBJ_;
 
 public:
+   typedef ELEM_ Elem;
    typedef Array_obj<ELEM_> *Ptr;
    using super::mPtr;
    using super::GetPtr;
@@ -913,9 +919,10 @@ public:
    }
 
 
+   #if (HXCPP_API_LEVEL >= 330)
    inline bool operator==(const cpp::VirtualArray &varray) const { return varray==*this; }
    inline bool operator!=(const cpp::VirtualArray &varray) const { return varray!=*this; }
-
+   #endif
 
 
 
@@ -975,6 +982,7 @@ Array<ELEM_> Array_obj<ELEM_>::splice(int inPos, int len)
    return result;
 }
 
+
 template<typename ELEM_>
 Array<ELEM_> Array_obj<ELEM_>::filter(Dynamic inFunc)
 {
@@ -991,6 +999,34 @@ Array<ELEM_> Array_obj<ELEM_>::__SetSizeExact(int inLen)
    ArrayBase::__SetSizeExact(inLen);
    return this;
 }
+
+// Static externs 
+template<typename ARRAY>
+inline ARRAY _hx_array_set_size_exact(ARRAY &inArray, int inLen)
+{
+   return inArray->__SetSizeExact(inLen);
+}
+
+template<typename ARRAY1,typename ARRAY2>
+int _hx_array_memcmp(ARRAY1 &inArray1, ARRAY2 &inArray2)
+{
+   return inArray1->memcmp(inArray2);
+}
+
+template<typename ARRAY,typename VALUE>
+typename ARRAY::Elem _hx_array_unsafe_set(ARRAY &inArray, int inIndex, VALUE inValue)
+{
+   return inArray->__unsafe_set(inIndex, inValue);
+}
+
+
+template<typename ARRAY>
+typename ARRAY::Elem _hx_array_unsafe_get(ARRAY &inArray, int inIndex)
+{
+   return inArray->__unsafe_get(inIndex);
+}
+
+
 
 // Include again, for functions that required Array definition
 #ifdef HX_VARRAY_DEFINED
