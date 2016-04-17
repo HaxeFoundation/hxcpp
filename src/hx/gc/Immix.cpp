@@ -4232,18 +4232,18 @@ int   __hxcpp_gc_reserved_bytes()
    return sGlobalAlloc->MemReserved();
 }
 
-int __hxcpp_gc_mem_info(int inWhich)
+double __hxcpp_gc_mem_info(int inWhich)
 {
    switch(inWhich)
    {
       case MEM_INFO_USAGE:
-         return (int)sGlobalAlloc->MemUsage();
+         return (double)sGlobalAlloc->MemUsage();
       case MEM_INFO_RESERVED:
-         return (int)sGlobalAlloc->MemReserved();
+         return (double)sGlobalAlloc->MemReserved();
       case MEM_INFO_CURRENT:
-         return (int)sGlobalAlloc->MemCurrent();
+         return (double)sGlobalAlloc->MemCurrent();
       case MEM_INFO_LARGE:
-         return (int)sGlobalAlloc->MemLarge();
+         return (double)sGlobalAlloc->MemLarge();
    }
    return 0;
 }

@@ -448,6 +448,12 @@ class ProcessManager
       }
       catch(e:Dynamic){ }
 
+      if (output.length==1 && ~/^\S+.cpp/.match(output[0]))
+      {
+         // Microsoft prints the name of the cpp file for some reason
+         output = [];
+      }
+
       var errOut:Array<String> = Thread.readMessage(true);
       
       var code = process.exitCode();
