@@ -18,17 +18,17 @@ class Setup
          //throw 'ANDROID_NDK_DIR "$inDir" does not point to a valid directory.';
       }
 
-      var extract_version = ~/^android-ndk-r(\d+)([a-z]?)$/;
+      var extract_version = ~/^(android-ndk-)?r(\d+)([a-z]?)$/;
       var bestMajor = 0;
       var bestMinor = "";
       var result = "";
       for(file in files)
          if (extract_version.match(file))
          {
-            var major = Std.parseInt( extract_version.matched(1) );
+            var major = Std.parseInt( extract_version.matched(2) );
             if (inBaseVersion==0 || major==inBaseVersion)
             {
-               var minor = extract_version.matched(2);
+               var minor = extract_version.matched(3);
                if ( major>bestMajor || (major==bestMajor && minor>bestMinor))
                {
                   bestMajor = major;
@@ -54,10 +54,10 @@ class Setup
 
    static public function getNdkVersion(inDirName:String):Int
    {
-      var extract_version = ~/android-ndk-r(\d+)*/;
+      var extract_version = ~/(android-ndk-)?r(\d+)*/;
       if (extract_version.match(inDirName))
       {
-         return Std.parseInt( extract_version.matched(1) );
+         return Std.parseInt( extract_version.matched(2) );
       }
       //throw 'Could not deduce NDK version from "$inDirName"';
       return 8;
