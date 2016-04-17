@@ -269,11 +269,11 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
       values.resize(vargs->length+1);
 
       values[0] = cmd.__s;
-      for(i=0;i<vargs->length;i++)
+      for(int i=0;i<vargs->length;i++)
          values[i+1] = vargs[i].__s;
    }
 
-   std::vector<char *> argv(values.size()+1);
+   std::vector<const char *> argv(values.size()+1);
    for(int i=0;i<argv.size();i++)
       argv[i] = values[i].c_str();
 
@@ -290,7 +290,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
       dup2(input[0],0);
       dup2(output[1],1);
       dup2(error[1],2);
-      execvp(argv[0],argv);
+      execvp(argv[0],(char* const*)&argv[0]);
       fprintf(stderr,"Command not found : %s\n",cmd.__s);
       exit(1);
    }
