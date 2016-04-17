@@ -249,6 +249,14 @@ template<typename T> struct TCast< ObjectPtr<T> >
    }
 };
 
+template< > struct TCast< cpp::VirtualArray >
+{
+   template<typename VAL> static inline cpp::VirtualArray cast(VAL inVal ) {
+      return  cpp::VirtualArray(inVal);
+   }
+};
+
+
 
 // Cast to struct
 template<typename T,typename H> struct TCast< cpp::Struct<T,H> >
