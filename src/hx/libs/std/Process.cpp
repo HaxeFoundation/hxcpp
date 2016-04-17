@@ -274,7 +274,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
    }
 
    std::vector<const char *> argv(values.size()+1);
-   for(int i=0;i<argv.size();i++)
+   for(int i=0;i<values.size();i++)
       argv[i] = values[i].c_str();
 
    int pid = fork();
