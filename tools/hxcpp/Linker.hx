@@ -18,11 +18,13 @@ class Linker
    public var mExpandArchives:Bool;
    public var mRecreate:Bool;
    public var mLastOutName:String;
+   public var mAddLibPath:String;
 
    public function new(inExe:String)
    {
       mFlags = [];
       mOutFlag = "-o";
+      mAddLibPath = "-L";
       mExe = inExe;
       mNamePrefix = "";
       mLibDir = "";
@@ -226,6 +228,14 @@ class Linker
          }
          else
             args = args.concat(objs);
+
+         for(libpath in inTarget.mLibPaths)
+         {
+            var path = Path.normalize(libpath);
+            if (path.startsWith(here))
+               path = path.substr(hereLen);
+            args.push( mAddLibPath + path );
+         }
 
          args = args.concat(libs);
          

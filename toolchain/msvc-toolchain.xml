@@ -95,6 +95,7 @@
   <flag value="-libpath:lib"/>
   <fromfile value="@"/>
   <outflag value="-out:"/>
+  <libpathflag value="-libpath:"/>
 </linker>
 
 <linker id="exe" exe="link.exe" unless="winrt">
@@ -104,6 +105,7 @@
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
   <flag value="-subsystem:windows${SUBSYSTEM_VER}" if="SUBSYSTEMWINDOWS" />
   <flag value="-subsystem:console${SUBSYSTEM_VER}" if="SUBSYSTEMCONSOLE" />
+  <libpathflag value="-libpath:"/>
   <flag value="-libpath:lib"/>
   <flag value="user32.lib"/>
   <ext value=".exe"/>
@@ -124,6 +126,7 @@
   <flag value="-DYNAMICBASE" />
   <flag value="-NXCOMPAT" />
   <flag value="-libpath:lib"/>
+  <libpathflag value="-libpath:"/>
   <flag value="user32.lib"/>
   <ext value=".exe"/>
   <outflag value="-out:"/>

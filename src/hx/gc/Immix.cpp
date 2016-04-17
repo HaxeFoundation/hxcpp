@@ -1605,6 +1605,9 @@ FILE_SCOPE MyMutex *sGCRootLock = 0;
 typedef hx::UnorderedSet<hx::Object **> RootSet;
 static RootSet sgRootSet;
 
+typedef hx::UnorderedMap<void *,int> OffsetRootSet;
+static OffsetRootSet *sgOffsetRootSet=0;
+
 void GCAddRoot(hx::Object **inRoot)
 {
    AutoLock lock(*sGCRootLock);
@@ -1615,6 +1618,28 @@ void GCRemoveRoot(hx::Object **inRoot)
 {
    AutoLock lock(*sGCRootLock);
    sgRootSet.erase(inRoot);
+}
+
+
+void GcAddOffsetRoot(void *inRoot, int inOffset)
+{
+   AutoLock lock(*sGCRootLock);
+   if (!sgOffsetRootSet)
+      sgOffsetRootSet = new OffsetRootSet();
+   (*sgOffsetRootSet)[inRoot] = inOffset;
+}
+
+void GcSetOffsetRoot(void *inRoot, int inOffset)
+{
+   AutoLock lock(*sGCRootLock);
+   (*sgOffsetRootSet)[inRoot] = inOffset;
+}
+
+void GcRemoveOffsetRoot(void *inRoot)
+{
+   AutoLock lock(*sGCRootLock);
+   OffsetRootSet::iterator r = sgOffsetRootSet->find(inRoot);
+   sgOffsetRootSet->erase(r);
 }
 
 
@@ -2838,6 +2863,24 @@ public:
          if (*obj)
             inCtx->visitObject(obj);
       }
+
+
+      if (hx::sgOffsetRootSet)
+         for(hx::OffsetRootSet::iterator i = hx::sgOffsetRootSet->begin(); i!=hx::sgOffsetRootSet->end(); ++i)
+         {
+            char *ptr = *(char **)(i->first);
+            int offset = i->second;
+            hx::Object *obj = (hx::Object *)(ptr - offset);
+
+            if (obj)
+            {
+               hx::Object *obj0 = obj;
+               inCtx->visitObject(&obj);
+               if (obj!=obj0)
+                  *(char **)(i->first) = (char *)(obj) + offset;
+            }
+         }
+
       for(int i=0;i<hx::sZombieList.size();i++)
          inCtx->visitObject( &hx::sZombieList[i] );
 
@@ -3095,6 +3138,17 @@ public:
          if (obj)
             hx::MarkObjectAlloc(obj , &mMarker );
       }
+
+      if (hx::sgOffsetRootSet)
+         for(hx::OffsetRootSet::iterator i = hx::sgOffsetRootSet->begin(); i!=hx::sgOffsetRootSet->end(); ++i)
+         {
+            char *ptr = *(char **)(i->first);
+            int offset = i->second;
+            hx::Object *obj = (hx::Object *)(ptr - offset);
+
+            if (obj)
+               hx::MarkObjectAlloc(obj , &mMarker );
+         }
 
       // Mark zombies too....
       for(int i=0;i<hx::sZombieList.size();i++)
@@ -3696,6 +3750,35 @@ public:
       }
    }
 
+
+   void PushTopOfStack(void *inTop)
+   {
+      if (mStackLocks==0)
+         mTopOfStack = (int *)inTop;
+
+      mStackLocks++;
+      if (mGCFreeZone)
+          ExitGCFreeZone();
+   }
+
+
+   void PopTopOfStack()
+   {
+      mStackLocks--;
+      if (mStackLocks<=0)
+      {
+         mStackLocks = 0;
+         if (!mGCFreeZone)
+         {
+            EnterGCFreeZone();
+
+            ReturnToPool();
+         }
+      }
+   }
+
+
+
    void SetBottomOfStack(int *inBottom)
    {
       mBottomOfStack = inBottom;
@@ -3902,14 +3985,14 @@ public:
 
 
 
-inline LocalAllocator *GetLocalAlloc()
+inline LocalAllocator *GetLocalAlloc(bool inAllowEmpty=false)
 {
    #ifndef HXCPP_SINGLE_THREADED_APP
    if (hx::gMultiThreadMode)
    {
       #ifdef HXCPP_DEBUG
       LocalAllocator *result = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
-      if (!result)
+      if (!result && !inAllowEmpty)
       {
          hx::BadImmixAlloc();
       }
@@ -4184,6 +4267,25 @@ void RegisterVTableOffset(int inOffset)
    }
 }
 
+void PushTopOfStack(void *inTop)
+{
+   LocalAllocator *tla = GetLocalAlloc();
+   tla->PushTopOfStack(inTop);
+}
+
+void PopTopOfStack()
+{
+   LocalAllocator *tla = GetLocalAlloc();
+   tla->PopTopOfStack();
+}
+
+int GcGetThreadAttachedCount()
+{
+   LocalAllocator *tla = GetLocalAlloc(true);
+   if (!tla)
+      return 0;
+   return tla->mStackLocks;
+}
 
 
 

@@ -74,9 +74,12 @@ namespace hx
    };
 
    HXCPP_CLASS_ATTRIBUTES const char *Init();
-   HXCPP_CLASS_ATTRIBUTES void *PushTopOfStack(void *);
-   HXCPP_CLASS_ATTRIBUTES void *PopTopOfStack();
-   HXCPP_CLASS_ATTRIBUTES void *ChangeNativeRef(void *inPtrPtr, void *inNewVaue, hx::Object *inNew, hx::Object *inOld=0);
+   HXCPP_CLASS_ATTRIBUTES void PushTopOfStack(void *);
+   HXCPP_CLASS_ATTRIBUTES void PopTopOfStack();
+   HXCPP_CLASS_ATTRIBUTES void GcAddOffsetRoot(void *inRoot, int inOffset);
+   HXCPP_CLASS_ATTRIBUTES void GcSetOffsetRoot(void *inRoot, int inOffset);
+   HXCPP_CLASS_ATTRIBUTES void GcRemoveOffsetRoot(void *inRoot);
+   HXCPP_CLASS_ATTRIBUTES int  GcGetThreadAttachedCount();
 
    class HXCPP_CLASS_ATTRIBUTES NativeAttach
    {
@@ -127,19 +130,27 @@ namespace hx
       void setPtr(T inPtr)
       {
          hx::Object *old = ptr ? ptr->__GetRealObject() : 0;
+         int oldOffset = old ? (int)(size_t)((char *)inPtr - (char *)old) : 0;
          hx::Object *next = inPtr ? inPtr->__GetRealObject() : 0;
+         int nextOffset = next ? (int)(size_t)((char *)inPtr - (char *)next) : 0;
 
-         if (old || next)
-            ChangeNativeRef(&ptr, inPtr, next, old);
-         else
-            ptr = inPtr;
+         ptr = inPtr;
+         if (next)
+         {
+            if (!old)
+               GcAddOffsetRoot(&ptr, nextOffset);
+            else if (oldOffset!=nextOffset)
+               GcSetOffsetRoot(&ptr, nextOffset);
+         }
+         else if (old)
+            GcRemoveOffsetRoot(&ptr);
       }
 
-      inline Ref &operator=(const T &inPtr) { ptr=inPtr; return *this; }
+      inline Ref &operator=(const T &inPtr) { setPtr(inPtr); return *this; }
       template<typename O>
-      inline Ref &operator=(const Native<O> &inNative) { ptr=inNative.ptr; return *this; }
+      inline Ref &operator=(const Native<O> &inNative) { setPtr(inNative.ptr); return *this; }
       template<typename O>
-      inline Ref &operator=(const Ref<O> &inRef) { ptr=inRef.ptr; return *this; }
+      inline Ref &operator=(const Ref<O> &inRef) { setPtr(inRef.ptr); return *this; }
 
       template<typename O>
       inline bool operator==(const Ref<O> &inOther) const
@@ -147,6 +158,8 @@ namespace hx
       template<typename O>
       inline bool operator!=(const Ref<O> &inOther) const
             { return ptr != inOther.ptr; }
+
+      T operator->() { return ptr; }
    };
 
    #define HX_NATIVE_IMPLEMENTATION hx::Object *__GetRealObject() { return this; }
