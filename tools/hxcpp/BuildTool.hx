@@ -327,6 +327,12 @@ class BuildTool
             }
          }
 
+
+         if (to_be_compiled.length>0 && !Log.quiet && !Log.verbose)
+         {
+            Log.info(" - Compiling group '" + group.mId + "' with flags " +  group.mCompilerFlags.concat(mCompiler.mFlags).join(" ") );
+         }
+
          if (threads<2)
          {
             for(file in to_be_compiled)

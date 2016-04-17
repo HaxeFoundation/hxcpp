@@ -103,18 +103,17 @@ class ProcessManager
       return message;
    }
 
-   public static function runCommand(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false,?text:String):Int
+   public static function runCommand(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false,?inText:String):Int
    {
       args = dup(args);
       command = combineCommand(command,args);
 
 
-      if (print && !Log.verbose)
+      if (print && !Log.verbose && !Log.quiet)
       {
-         Log.info(formatMessage(command, args));
+         Log.info(inText==null ? "" : inText,formatMessage(command, args));
       }
-      
-      
+
       if (safeExecute)
       {
          try
@@ -124,7 +123,7 @@ class ProcessManager
                Log.error("The specified target path \"" + path + "\" does not exist");
                return 1;
             }
-            return _runCommand(path, command, args, text);
+            return _runCommand(path, command, args, inText);
          }
          catch (e:Dynamic)
          {
@@ -139,7 +138,7 @@ class ProcessManager
       }
       else
       {
-         return _runCommand(path, command, args, text);
+         return _runCommand(path, command, args, inText);
       }
    }
 
@@ -238,8 +237,15 @@ class ProcessManager
          Sys.setCwd(path);
       }
       
-      var text = inText==null ?  "Running command" : inText;
-      Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
+      if (Log.quiet && inText!=null)
+      {
+         Log.info(inText);
+      }
+      else
+      {
+         var text = inText==null ?  "Running command" : inText;
+         Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
+      }
       
       var result = 0;
       
@@ -284,7 +290,7 @@ class ProcessManager
       }
       else
       {
-         Log.info("", inText);
+         Log.info("",inText);
       }
       
       var output = "";
@@ -365,21 +371,6 @@ class ProcessManager
 
       Log.lock();
 
-      if (Log.quiet)
-      {
-         if (inText != null)
-            Log.v(inText);
-      }
-      else
-      {
-         if (inText != null)
-            Log.v(inText);
-
-         if (!Log.verbose)
-            Log.info(formatMessage(command, args));
-      }
-      
-      
       // Other thread may have already thrown an error
       if (BuildTool.threadExitCode!=0)
       {
@@ -387,7 +378,11 @@ class ProcessManager
          return BuildTool.threadExitCode;
       }
 
-      Log.info("", " - \x1b[1mRunning process:\x1b[0m " + formatMessage(command, args));
+      if (inText != null)
+         Log.info(inText,"");
+
+      if (!Log.quiet)
+         Log.v("   " + formatMessage(command, args));
       Log.unlock();
 
       var output = new Array<String>();
@@ -463,21 +458,16 @@ class ProcessManager
          if (BuildTool.threadExitCode == 0)
          {
             Log.lock();
-            var message = "";
-            if (Log.verbose)
-            {
-               message += '${Log.RED}${Log.BOLD}Error in building thread${Log.NORMAL}\n';
-               message += '${Log.ITALIC}' + formatMessage(command,args) + '${Log.NORMAL}\n';
-            }
+            var message = "While running :" + formatMessage(command, args) + "\n";
             if (output.length > 0)
             {
                message += output.join("\n") + "\n";
             }
             if (errOut != null)
             {
-               message += '${Log.RED}${Log.BOLD}Error:${Log.NORMAL} ${Log.BOLD}' + errOut.join("\n") + '${Log.NORMAL}';
+               message += errOut.join("\n") + '${Log.NORMAL}';
             }
-            Log.info (message);
+            Log.error(message,"",null,false);
             Log.unlock();
          }
          
