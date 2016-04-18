@@ -54,7 +54,7 @@ class Setup
 
    static public function getNdkVersion(inDirName:String):Int
    {
-      var extract_version = ~/(android-ndk-)?r(\d+)*/;
+      var extract_version = ~/\/(android-ndk-)?r(\d+)*/;
       if (extract_version.match(inDirName))
       {
          return Std.parseInt( extract_version.matched(2) );
