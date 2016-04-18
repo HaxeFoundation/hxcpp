@@ -195,6 +195,7 @@ public:
  	inline T &postIncVal() { return *ptr++; }
 
    inline T &at(int inIndex) { return ptr[inIndex]; }
+   inline void setAt(int inIndex, const T &test) { ptr[inIndex] = test; }
 
    inline T &__get(int inIndex) { return ptr[inIndex]; }
    inline T &__set(int inIndex, const T &inValue) { T *p = ptr+inIndex; *p = inValue; return *p; }
@@ -424,8 +425,21 @@ public:
       if (inVal==null() || !inVal->__IsArray())
          return AutoCast(0);
       hx::ArrayBase *base = (hx::ArrayBase *)inVal.GetPtr();
+      return AutoCast(base->GetBase() + inIndex*base->GetElementSize());
+   }
+
+   template<typename T>
+	inline static AutoCast ofArray(::Array<T> array)  { return AutoCast(&array[0]); }
+	inline static AutoCast ofArray(Dynamic inVal)
+   {
+      if (inVal==null() || !inVal->__IsArray())
+         return AutoCast(0);
+      hx::ArrayBase *base = (hx::ArrayBase *)inVal.GetPtr();
       return AutoCast(base->GetBase());
    }
+
+
+
    template<typename T>
 	inline static Pointer<T> addressOf(T &value)  { return Pointer<T>(&value); }
 
