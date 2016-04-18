@@ -126,6 +126,7 @@ struct MyMutex
    void Lock() { EnterCriticalSection(&mCritSec); }
    void Unlock() { LeaveCriticalSection(&mCritSec); }
    bool TryLock() { return TryEnterCriticalSection(&mCritSec); }
+   bool IsValid() { return mValid; }
    void Clean()
    {
       if (mValid)
@@ -152,16 +153,17 @@ struct MyMutex
       pthread_mutexattr_t mta;
       pthread_mutexattr_init(&mta);
       pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
-      pthread_mutex_init(&mMutex,&mta);
-      mValid = true;
+      mValid = pthread_mutex_init(&mMutex,&mta) ==0;
    }
    ~MyMutex() { if (mValid) pthread_mutex_destroy(&mMutex); }
    void Lock() { pthread_mutex_lock(&mMutex); }
    void Unlock() { pthread_mutex_unlock(&mMutex); }
    bool TryLock() { return !pthread_mutex_trylock(&mMutex); }
+   bool IsValid() { return mValid; }
    void Clean()
    {
-      pthread_mutex_destroy(&mMutex);
+      if (mValid)
+         pthread_mutex_destroy(&mMutex);
       mValid = 0;
    }
 
