@@ -208,7 +208,7 @@ class Linker
          }
 
          // Place list of obj files in a file called "all_objs"
-         if (mFromFile=="@")
+         if (mFromFile!="")
          {
             PathManager.mkdir(inCompiler.mObjDir);
             var fname = inCompiler.mObjDir + "/all_objs";
@@ -224,7 +224,10 @@ class Linker
                   fout.writeString(obj + '\n');
             }
             fout.close();
-            args.push("@" + fname );
+            var parts = mFromFile.split(" ");
+            var last = parts.pop();
+            args = args.concat(parts);
+            args.push(last + fname );
          }
          else
             args = args.concat(objs);
