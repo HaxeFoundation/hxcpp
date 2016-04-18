@@ -249,13 +249,14 @@ template<typename T> struct TCast< ObjectPtr<T> >
    }
 };
 
+#if (HXCPP_API_LEVEL >= 330)
 template< > struct TCast< cpp::VirtualArray >
 {
    template<typename VAL> static inline cpp::VirtualArray cast(VAL inVal ) {
       return  cpp::VirtualArray(inVal);
    }
 };
-
+#endif
 
 
 // Cast to struct
