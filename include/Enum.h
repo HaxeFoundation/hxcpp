@@ -23,13 +23,14 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
 
 
    protected:
-      String       _hx_tag;
       #if (HXCPP_API_LEVEL >= 330)
+         String  _hx_tag;
          int     mFixedFields;
          #ifdef HXCPP_SCRIPTABLE
          struct CppiaClassInfo *classInfo; 
          #endif
       #else
+         String       tag;
          DynamicArray mArgs;
       #endif
    public:
@@ -101,12 +102,12 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       #else
       Dynamic __Param(int inID) { return mArgs[inID]; }
       DynamicArray __EnumParams() { return mArgs; }
-      String __Tag() const { return _hx_tag; }
+      String __Tag() const { return tag; }
       int __Index() const { return index; }
 
       void __Set( const String &inName,int inIndex,DynamicArray inArgs)
       {
-         _hx_tag = inName;
+         tag = inName;
          index = inIndex;
          mArgs = inArgs;
       }

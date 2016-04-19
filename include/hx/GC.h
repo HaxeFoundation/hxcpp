@@ -33,7 +33,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_collect(bool inMajor=true);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void   __hxcpp_gc_compact();
 HXCPP_EXTERN_CLASS_ATTRIBUTES int   __hxcpp_gc_trace(hx::Class inClass, bool inPrint);
 HXCPP_EXTERN_CLASS_ATTRIBUTES int   __hxcpp_gc_used_bytes();
-HXCPP_EXTERN_CLASS_ATTRIBUTES int   __hxcpp_gc_mem_info(int inWhat);
+HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_gc_mem_info(int inWhat);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_enter_gc_free_zone();
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_exit_gc_free_zone();
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_gc_safe_point();

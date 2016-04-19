@@ -297,6 +297,8 @@ String _hx_std_file_contents_string( String name )
 
    fseek(file,0,SEEK_END);
    int len = ftell(file);
+   if (len<0)
+      file_error("file_ftell",name);
    fseek(file,0,SEEK_SET);
    buffer.resize(len);
    int p = 0;
@@ -335,6 +337,9 @@ Array<unsigned char> _hx_std_file_contents_bytes( String name )
 
    fseek(file,0,SEEK_END);
    int len = ftell(file);
+   if (len<0)
+      file_error("file_ftell",name);
+
    fseek(file,0,SEEK_SET);
    hx::ExitGCFreeZone();
 

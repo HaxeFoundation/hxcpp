@@ -1,37 +1,19 @@
 <xml>
 
 <!-- Android TOOLS -------------------------------------->
+<!--
+  Configure build via variables, otherwise defaults will be used:
+     Set the path to the exact ndk to use with ANDROID_NDK_ROOT,
+        or set where all your ndks are installed with ANDROID_NDK_DIR and hxcpp will guess.
+        Set the version number by setting the variable:
+           NDKV?? - base version of ndk to use, hxcpp will find the letter, like "NDKV10" -> may end up with "10c"
+     TOOLCHAIN_VERSION - the compiler number, like "4.8" or "4.4.3"
+     PLATFORM - the android platform api level, like "android-19"
+              - you can also set the variable "android-19" directly
+-->
 
 <setup name="androidNdk" />
 
-<!-- Set NDKV6/7/8, if not already set -->
-<set name="NDKV8" value="1" />
-<unset name="NDKV8" if="NDKV7" />
-<unset name="NDKV8" if="NDKV6" />
-
-<set name="NDKV7" value="1" unless="NDKV8" />
-<unset name="NDKV7" if="NDKV6" />
-
-<set name="NDKV10+" value="1" if="NDKV10" />
-<set name="NDKV9+" value="1" if="NDKV9" />
-
-<set name="NDKV8+" value="1" if="NDKV8" />
-<set name="NDKV8+" value="1" if="NDKV9+" />
-
-<set name="NDKV7+" value="1" if="NDKV7" />
-<set name="NDKV7+" value="1" if="NDKV8+" />
-
-<!-- Set SDK version, if not already set -->
-<set name="PLATFORM" value="android-3" if="android-3"/>
-<set name="PLATFORM" value="android-4" if="android-4"/>
-<set name="PLATFORM" value="android-5" if="android-5"/>
-<set name="PLATFORM" value="android-8" if="android-8"/>
-<set name="PLATFORM" value="android-9" if="android-9"/>
-<set name="PLATFORM " value="android-14" if="android-14"/>
-
-<set name="TOOLCHAIN_VERSION" value="4.9" unless="TOOLCHAIN_VERSION" if="NDKV10+" />
-<set name="TOOLCHAIN_VERSION" value="4.8" unless="TOOLCHAIN_VERSION" if="NDKV9+" />
-<set name="TOOLCHAIN_VERSION" value="4.4.3" unless="TOOLCHAIN_VERSION" />
 <set name="HXCPP_CPP11" value="1" if="NDKV9+ || NDKV10+" unless="HXCPP_NO_CPP11" />
 
 

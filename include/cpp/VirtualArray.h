@@ -10,6 +10,8 @@ class VirtualArray : public hx::ObjectPtr<VirtualArray_obj>
 {
    typedef hx::ObjectPtr<VirtualArray_obj> super;
 public:
+   typedef Dynamic Elem;
+
    inline VirtualArray() : super(0) { }
    inline VirtualArray(VirtualArray_obj *inObj) : super(inObj) { }
    inline VirtualArray(const null &inNull) : super(0) { }
@@ -55,6 +57,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public hx::Object
    typedef hx::ArrayBase ArrayBase;
 
 public:
+
    typedef hx::Object super;
    ArrayStore  store;
    ArrayBase   *base;
@@ -321,12 +324,13 @@ public:
          base->__SetSize(inLen);
    }
 
-   void __SetSizeExact(int inLen=0)
+   VirtualArray __SetSizeExact(int inLen=0)
    {
       if (!base && inLen)
          CreateEmptyArray(inLen);
       else if (base)
          base->__SetSizeExact(inLen);
+      return this;
    }
 
    void safeSort(Dynamic sorter, bool isString) { checkBase(); if (store!=hx::arrayEmpty) base->safeSort(sorter,isString); }
@@ -404,7 +408,7 @@ public:
       return new VirtualArray_obj(base->__slice(inPos,end), store==hx::arrayFixed);
    }
    VirtualArray splice(int inPos, int len);
-   Dynamic map(Dynamic inFunc);
+   VirtualArray map(Dynamic inFunc);
    VirtualArray filter(Dynamic inFunc);
 
    template<typename T>

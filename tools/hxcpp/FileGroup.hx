@@ -108,7 +108,13 @@ class FileGroup
          {
             // Only effects linking, not compiling
          }
-         else if (name.indexOf("hxcpp")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" )
+         else if (name=="hxcpp_verbose" || name=="hxcpp_silent" || name=="hxcpp_quiet" )
+         {
+            // Does not affect build
+         }
+         else if (name.indexOf("hxcpp")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" ||
+            name.substr(0,8)=="android-" || name.substr(0,4)=="ndkv" || name=="toolchain" || name=="platform" ||
+              name=="toolchain_version" || name=="android_ndk_root" )
             result.push(def);
       }
 
@@ -133,10 +139,11 @@ class FileGroup
 
             if (FileSystem.exists(dest))
             {
-               var dest_content = sys.io.File.getContent(dest);
+               var dest_content = filterOptions(sys.io.File.getContent(dest));
                if (dest_content==contents)
                   skip = true;
             }
+
             if (!skip)
             {
                PathManager.mkdir(inObjDir);

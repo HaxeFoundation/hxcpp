@@ -1,5 +1,11 @@
 package hxcpp;
 
+#if (hxcpp_api_level>=330)
+
+class StaticZlib { }
+
+#else
+
 @:cppFileCode( 'extern "C" int zlib_register_prims();')
 #if HXCPP_LINK_NO_ZLIB
 @:buildXml("
@@ -20,3 +26,4 @@ package hxcpp;
    }
 }
 
+#end

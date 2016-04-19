@@ -2029,10 +2029,26 @@ struct CppiaClassInfo
             #if (HXCPP_API_LEVEL >= 330)
             HaxeNativeInterface *native = HaxeNativeInterface::findInterface( interface->name.__s );
             if (native)
+            {
                interfaceScriptTables[interface->name.hash()] = native->scriptTable;
+
+               ScriptNamedFunction *functions = native->functions;
+               if (functions != 0)
+               {
+                  for(ScriptNamedFunction *f = functions; f->name; f++)
+                  {
+                     int slot = cppia.getInterfaceSlot(f->name);
+                     if (slot<0)
+                        printf("Interface slot '%s' not found\n",f->name);
+                     if (slot>interfaceSlotSize)
+                        interfaceSlotSize = slot;
+                  }
+               }
+            }
             #else
             interfaceVTables[ interface->name.__s ] = vtable;
             #endif
+
             if (!cppiaInterface)
                break;
 
@@ -2502,7 +2518,11 @@ void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
 
 ::String CppiaEnumBase::__ToString() const
 {
+   #if (HXCPP_API_LEVEL>=330)
    return classInfo->mClass->mName + HX_CSTRING(".") + _hx_tag;
+   #else
+   return classInfo->mClass->mName + HX_CSTRING(".") + tag;
+   #endif
 }
 
 
@@ -3929,7 +3949,7 @@ struct NewExpr : public CppiaDynamicExpr
          Array< Dynamic > argList = Array_obj<Dynamic>::__new(n,n);
          for(int a=0;a<n;a++)
             argList[a].mPtr = args[a]->runObject(ctx);
-            
+
           return constructor(argList).mPtr;
       }
       else

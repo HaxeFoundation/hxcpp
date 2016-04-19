@@ -51,9 +51,9 @@ int EnumBase_obj::__Compare(const hx::Object *inRHS) const
 {
    if (inRHS->__GetType()!=vtEnum) return -1;
    const EnumBase_obj *rhs = static_cast<const EnumBase_obj *>(inRHS);
-   if (_hx_tag!=rhs->_hx_tag || GetEnumName()!=rhs->GetEnumName()) return -1;
 
    #if (HXCPP_API_LEVEL >= 330)
+   if (_hx_tag!=rhs->_hx_tag || GetEnumName()!=rhs->GetEnumName()) return -1;
    if (mFixedFields!=rhs->mFixedFields) return -1;
    if (!mFixedFields) return 0;
 
@@ -63,6 +63,7 @@ int EnumBase_obj::__Compare(const hx::Object *inRHS) const
       if ( f0[i] != f1[i])
          return -1;
    #else
+   if (tag!=rhs->tag || GetEnumName()!=rhs->GetEnumName()) return -1;
    if (mArgs==null() && rhs->mArgs==null())
       return 0;
    if (mArgs==null() || rhs->mArgs==null())
@@ -82,9 +83,8 @@ int EnumBase_obj::__Compare(const hx::Object *inRHS) const
 
 void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
 {
-   HX_MARK_MEMBER(_hx_tag);
-
    #if (HXCPP_API_LEVEL >= 330)
+   HX_MARK_MEMBER(_hx_tag);
    if (mFixedFields>0)
    {
       cpp::Variant *v = _hx_getFixed();
@@ -92,6 +92,7 @@ void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
          HX_MARK_MEMBER(v[i]);
    }
    #else
+   HX_MARK_MEMBER(tag);
    HX_MARK_MEMBER(mArgs);
    #endif
 }
@@ -99,9 +100,9 @@ void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
 #ifdef HXCPP_VISIT_ALLOCS
 void EnumBase_obj::__Visit(hx::VisitContext *__inCtx)
 {
-   HX_VISIT_MEMBER(_hx_tag);
 
    #if (HXCPP_API_LEVEL >= 330)
+   HX_VISIT_MEMBER(_hx_tag);
    if (mFixedFields>0)
    {
       cpp::Variant *v = _hx_getFixed();
@@ -109,6 +110,7 @@ void EnumBase_obj::__Visit(hx::VisitContext *__inCtx)
          HX_VISIT_MEMBER(v[i]);
    }
    #else
+   HX_VISIT_MEMBER(tag);
    HX_VISIT_MEMBER(mArgs);
    #endif
 }
@@ -130,8 +132,8 @@ String EnumBase_obj::toString() {
    return _hx_tag + HX_CSTRING("(") + args->join(HX_CSTRING(",")) + HX_CSTRING(")");
    #else
    if (mArgs==null() || mArgs->length==0)
-      return _hx_tag;
-   return _hx_tag + HX_CSTRING("(") + mArgs->join(HX_CSTRING(",")) + HX_CSTRING(")");
+      return tag;
+   return tag + HX_CSTRING("(") + mArgs->join(HX_CSTRING(",")) + HX_CSTRING(")");
    #endif
 }
 

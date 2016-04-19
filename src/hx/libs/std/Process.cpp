@@ -19,6 +19,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
+#include <string>
 
 namespace
 {
@@ -254,25 +256,26 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
    if( pipe(input) || pipe(output) || pipe(error) )
       return null();
 
-   char **argv;
+   std::vector< std::string > values;
    if (isRaw)
    {
-      argv = (char**)malloc(sizeof(char*)*4);
-      argv[0] = strdup("/bin/sh");
-      argv[1] = strdup("-c");
-      argv[2] = strdup(cmd.__s);
-      argv[3] = 0;
+      values.resize(3);
+      values[0] = "/bin/sh";
+      values[1] = "-c";
+      values[2] = cmd.__s;
    }
    else
    {
-      argv = (char**)malloc(sizeof(char*)*(vargs->length+2));
+      values.resize(vargs->length+1);
 
-      argv[0] = strdup(cmd.__s);
-      int i = 0;
-      for(i=0;i<vargs->length;i++)
-         argv[i+1] = strdup(vargs[i].__s);
-      argv[i+1] = 0;
+      values[0] = cmd.__s;
+      for(int i=0;i<vargs->length;i++)
+         values[i+1] = vargs[i].__s;
    }
+
+   std::vector<const char *> argv(values.size()+1);
+   for(int i=0;i<values.size();i++)
+      argv[i] = values[i].c_str();
 
    int pid = fork();
    if( pid == -1 )
@@ -287,16 +290,12 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
       dup2(input[0],0);
       dup2(output[1],1);
       dup2(error[1],2);
-      execvp(argv[0],argv);
+      execvp(argv[0],(char* const*)&argv[0]);
       fprintf(stderr,"Command not found : %s\n",cmd.__s);
       exit(1);
    }
 
    // parent
-   for(int i=0;i<=(isRaw ? 2 : vargs->length);i++)
-      free(argv[i]);
-   free(argv);
-
    do_close(input[0]);
    do_close(output[1]);
    do_close(error[1]);

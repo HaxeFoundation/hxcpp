@@ -878,7 +878,7 @@ VirtualArray VirtualArray_obj::splice(int inPos, int len)
    return result;
 }
 
-Dynamic VirtualArray_obj::map(Dynamic inFunc)
+VirtualArray VirtualArray_obj::map(Dynamic inFunc)
 {
    VirtualArray result = new VirtualArray_obj( );
    int len = get_length();

@@ -96,6 +96,15 @@ String Object::__Tag() const { return HX_CSTRING("<not enum>"); }
 int Object::__Index() const { return -1; }
 #endif
 
+#if (HXCPP_API_LEVEL >= 330) && !defined(HXCPP_SCRIPTABLE)
+// Other implementation is in Cppia.cpp
+void *hx::Object::_hx_getInterface(int inId)
+{
+   return 0;
+}
+#endif
+
+
 
 #ifdef HXCPP_SCRIPTABLE
 

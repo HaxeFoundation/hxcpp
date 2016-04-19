@@ -1,3 +1,4 @@
+import CopyFile.Overwrite;
 import haxe.io.Path;
 import haxe.xml.Fast;
 import haxe.Json;
@@ -326,6 +327,12 @@ class BuildTool
             }
          }
 
+
+         if (to_be_compiled.length>0 && !Log.quiet && !Log.verbose)
+         {
+            Log.info(" - Compiling group '" + group.mId + "' with flags " +  group.mCompilerFlags.concat(mCompiler.mFlags).join(" ") );
+         }
+
          if (threads<2)
          {
             for(file in to_be_compiled)
@@ -438,7 +445,7 @@ class BuildTool
                PathManager.mkdir(fileParts.join("/"));
 
                var chmod = isWindows ? false : target.mToolID=="exe";
-               CopyFile.copyFile(output, inDestination, false, chmod);
+               CopyFile.copyFile(output, inDestination, false, Overwrite.ALWAYS, chmod);
             }
          }
       }
@@ -631,9 +638,17 @@ class BuildTool
                case "ext" : l.mExt = (substitute(el.att.value));
                case "outflag" : l.mOutFlag = (substitute(el.att.value));
                case "libdir" : l.mLibDir = (substitute(el.att.name));
-               case "lib" : l.mLibs.push( substitute(el.att.name) );
+               case "lib" :
+                  if (el.has.hxbase)
+                     l.mLibs.push( substitute(el.att.hxbase) + mDefines.get("LIBEXTRA") + mDefines.get("LIBEXT") );
+                  else if (el.has.base)
+                     l.mLibs.push( substitute(el.att.base) + mDefines.get("LIBEXT") );
+                  else
+                     l.mLibs.push( substitute(el.att.name) );
+
                case "prefix" : l.mNamePrefix = substitute(el.att.value);
                case "ranlib" : l.mRanLib = (substitute(el.att.name));
+               case "libpathflag" : l.mAddLibPath = (substitute(el.att.value));
                case "recreate" : l.mRecreate = (substitute(el.att.value)) != "";
                case "expandAr" : l.mExpandArchives = substitute(el.att.value) != "";
                case "fromfile" :
@@ -723,22 +738,29 @@ class BuildTool
                   target.merge( mTargets.get(name) );
 
                case "lib" :
-                   var lib = substitute(el.att.name);
-                   var found = false;
-                   for(magicLib in mMagicLibs)
-                   {
-                      if (lib.endsWith(magicLib.name))
+                  if (el.has.hxbase)
+                     target.mLibs.push( substitute(el.att.hxbase) + mDefines.get("LIBEXTRA") + mDefines.get("LIBEXT") );
+                  else if (el.has.base)
+                     target.mLibs.push( substitute(el.att.base) + mDefines.get("LIBEXT") );
+                  else
+                  {
+                      var lib = substitute(el.att.name);
+                      var found = false;
+                      for(magicLib in mMagicLibs)
                       {
-                         var replace = lib.substr(0, lib.length-magicLib.name.length) +
-                                           magicLib.replace;
-                         Log.v('Using $replace instead of $lib');
-                         found = true;
-                         include(replace, "", false, true );
-                         break;
+                         if (lib.endsWith(magicLib.name))
+                         {
+                            var replace = lib.substr(0, lib.length-magicLib.name.length) +
+                                              magicLib.replace;
+                            Log.v('Using $replace instead of $lib');
+                            found = true;
+                            include(replace, "", false, true );
+                            break;
+                         }
                       }
-                   }
-                   if (!found)
-                      target.mLibs.push(lib);
+                      if (!found)
+                         target.mLibs.push(lib);
+                  }
 
                case "flag" : target.mFlags.push( substitute(el.att.value) );
                case "depend" : target.mDepends.push( substitute(el.att.name) );
@@ -749,6 +771,7 @@ class BuildTool
                case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
                case "ext" : target.setExt( (substitute(el.att.value)) );
                case "builddir" : target.mBuildDir = substitute(el.att.name);
+               case "libpath" : target.mLibPaths.push( substitute(el.att.name) );
                case "files" :
                   var id = el.att.id;
                   if (!mFileGroups.exists(id))
@@ -1615,6 +1638,7 @@ class BuildTool
                       new CopyFile(substitute(el.att.name),
                                    substitute(el.att.from),
                                    el.has.allowMissing ?  subBool(el.att.allowMissing) : false,
+                                   el.has.overwrite ? substitute(el.att.overwrite) : Overwrite.ALWAYS,
                                    el.has.toolId ?  substitute(el.att.toolId) : null ) );
                case "section" : 
                   parseXML(el,"",forceRelative);
