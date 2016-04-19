@@ -95,8 +95,8 @@ typedef char HX_CHAR;
 
 #ifdef HX_WINRT
 
-#define WINRT_LOG(fmt, ...) {char buf[1024];sprintf(buf,"****LOG: %s(%d): %s \n    [" fmt "]\n",__FILE__,__LINE__,__FUNCTION__, __VA_ARGS__);OutputDebugString(buf);}
-#define WINRT_PRINTF(fmt, ...) {char buf[2048];sprintf(buf,fmt,__VA_ARGS__);OutputDebugString(buf);}
+#define WINRT_LOG(fmt, ...) {char buf[1024];snprintf(buf,1024,"****LOG: %s(%d): %s \n    [" fmt "]\n",__FILE__,__LINE__,__FUNCTION__, __VA_ARGS__);OutputDebugString(buf);}
+#define WINRT_PRINTF(fmt, ...) {char buf[2048];snprintf(buf,2048,fmt,__VA_ARGS__);OutputDebugString(buf);}
 
 #endif
 
