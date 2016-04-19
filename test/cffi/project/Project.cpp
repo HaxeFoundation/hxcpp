@@ -66,7 +66,10 @@ DEFINE_PRIME3(distance3D);
 
 void fields(value object)
 {
-   printf("x : %f\n", val_field_numeric(object, val_id("x")) );
+   if ( val_is_null(object))
+      printf("null fields\n");
+   else
+      printf("x : %f\n", val_field_numeric(object, val_id("x")) );
 }
 DEFINE_PRIME1v(fields);
 

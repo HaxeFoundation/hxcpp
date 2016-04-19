@@ -36,6 +36,7 @@ class TestPrime extends TestBase
       assertClose(50,len*len);
 
       fields( { x:11, name:"Hello" } );
+      fields( null );
 
       assertEquals("Ok", stringVal("HxString"));
 
