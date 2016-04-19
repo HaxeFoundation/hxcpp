@@ -17,7 +17,9 @@ struct HxString
    }
    inline HxString(const char *inS,int inLen=-1) : length(inLen), __s(inS)
    {
-      if (length<0)
+      if (!inS)
+         length = 0;
+      else if (length<0)
          for(length=0; __s[length]; length++) { }
    }
 
@@ -234,7 +236,7 @@ inline value ToValue(float inVal) { return alloc_float(inVal); }
 inline value ToValue(double inVal) { return alloc_float(inVal); }
 inline value ToValue(value inVal) { return inVal; }
 inline value ToValue(bool inVal) { return alloc_bool(inVal); }
-inline value ToValue(HxString inVal) { return alloc_string_len(inVal.c_str(),inVal.size()); }
+inline value ToValue(HxString inVal) { return inVal.__s ? alloc_string_len(inVal.c_str(),inVal.size()) : alloc_null() ; }
 
 struct AutoValue
 {
@@ -246,7 +248,7 @@ struct AutoValue
    inline operator float() { return val_number(mValue); }
    inline operator bool() { return val_bool(mValue); }
    inline operator const char *() { return val_string(mValue); }
-   inline operator HxString() { return HxString(val_string(mValue), val_strlen(mValue)); }
+   inline operator HxString() { return val_is_null(mValue) ? HxString(0,0) : HxString(val_string(mValue), val_strlen(mValue)); }
 };
 
 

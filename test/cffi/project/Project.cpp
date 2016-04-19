@@ -78,6 +78,14 @@ HxString stringVal(HxString inString)
 }
 DEFINE_PRIME1(stringVal);
 
+
+HxString getNullString()
+{
+   return 0;
+}
+DEFINE_PRIME0(getNullString);
+
+
 // Conflict with name - use anon-namespace
 namespace {
 value select(int which, value object0, value object1, value object2, value object3)
