@@ -85,10 +85,6 @@
  <flag value="-DHXCPP_CPP11" if="HXCPP_CPP11"/>
 
  <section unless="HXCPP_X86">
-   <flag value="-D__ARM_ARCH_5__"/>
-   <flag value="-D__ARM_ARCH_5T__"/>
-   <flag value="-D__ARM_ARCH_5E__"/>
-   <flag value="-D__ARM_ARCH_5TE__"/>
 
     <section if="HXCPP_ARMV7">
        <flag value="-march=armv7-a"  />
@@ -96,6 +92,10 @@
        <flag value="-mfloat-abi=softfp" />
     </section>
     <section unless="HXCPP_ARMV7 || HXCPP_ARM64">
+       <flag value="-D__ARM_ARCH_5__"/>
+       <flag value="-D__ARM_ARCH_5T__"/>
+       <flag value="-D__ARM_ARCH_5E__"/>
+       <flag value="-D__ARM_ARCH_5TE__"/>
        <flag value="-march=armv5te" />
        <flag value="-mtune=xscale" />
        <flag value="-msoft-float" />
