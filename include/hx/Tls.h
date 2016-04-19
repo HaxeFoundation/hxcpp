@@ -57,7 +57,10 @@
          DATA **extra = (DATA **)(__readfsdword(kTibExtraTlsOffset));
          return extra[mFastOffset];
          #elif (_MSC_VER >= 1400) & !defined(HXCPP_DEBUG)// 64 bit version...
-         return (DATA *)__readgsqword(mFastOffset);
+         if (mSlot < 64)
+           return (DATA *)__readgsqword(mFastOffset);
+         else
+           return (DATA *)TlsGetValue(mSlot);
          #else
          return (DATA *)TlsGetValue(mSlot);
          #endif
