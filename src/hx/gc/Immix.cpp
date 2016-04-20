@@ -10,6 +10,7 @@
 
 
 static int gByteMarkID = 0x10;
+static bool sgIsCollecting = false;
 
 namespace hx
 {
@@ -159,7 +160,7 @@ namespace hx
 {
 int gPauseForCollect = 0x00000000;
 
-bool gMultiThreadMode = false;
+bool gMultiThreadMode = true;
 
 ImmixAllocator *gMainThreadAlloc = 0;
 
@@ -3221,6 +3222,8 @@ public:
                WaitForSafe(mLocalAllocs[i]);
       }
 
+      sgIsCollecting = true;
+
       StopThreadJobs(true);
       #ifdef DEBUG
       sgAllocsSinceLastSpam = 0;
@@ -3417,6 +3420,7 @@ public:
       __hxt_gc_end();
       #endif
 
+      sgIsCollecting = false;
 
       hx::gPauseForCollect = 0x00000000;
       if (hx::gMultiThreadMode)
@@ -3795,6 +3799,8 @@ public:
 
    void PauseForCollect()
    {
+      if (sgIsCollecting)
+         CriticalGCError("Bad Allocation while collecting - from finalizer?");
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
       CAPTURE_REGS;
