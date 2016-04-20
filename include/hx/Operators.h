@@ -39,11 +39,15 @@ HX_COMPARE_NULL_MOST_OPS(hx::IndexRef)
 
 inline String operator+(const cpp::UInt64 &i,const String &s) { return String(i) + s; }
 inline String operator+(const cpp::Int64 &i,const String &s) { return String(i) + s; }
-inline String operator+(const Int &i,const String &s) { return String(i) + s; }
+inline String operator+(const int &i,const String &s) { return String(i) + s; }
+inline String operator+(const unsigned int &i,const String &s) { return String(i) + s; }
 inline String operator+(const double &d,const String &s) { return String(d) + s; }
 inline String operator+(const float &d,const String &s) { return String(d) + s; }
 inline String operator+(const bool &b,const String &s) { return String(b) + s; }
-inline String operator+(const HX_CHAR *c,const String &s) { return String(c) + s; }
+inline String operator+(const unsigned char c,const String &s) { return String(c) + s; }
+inline String operator+(const signed char c,const String &s) { return String(c) + s; }
+inline String operator+(const unsigned short c,const String &s) { return String(c) + s; }
+inline String operator+(const signed short c,const String &s) { return String(c) + s; }
 inline String operator+(const null &n,const String &s) { return String(n) + s; }
 inline String operator+(const cpp::CppInt32__ &i,const String &s) { return String(i) + s; }
 
