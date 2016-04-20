@@ -160,7 +160,7 @@ namespace hx
 {
 int gPauseForCollect = 0x00000000;
 
-bool gMultiThreadMode = true;
+bool gMultiThreadMode = false;
 
 ImmixAllocator *gMainThreadAlloc = 0;
 
