@@ -54,20 +54,6 @@ class DefaultStructHandler
       }
 };
 
-class Int64Handler
-{
-   public:
-      static inline const char *getName() { return "cpp.Int64"; }
-      static inline String toString( const void *inData ) { return String( *(Int64 *)inData ); }
-      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
-      {
-         if (op==dhoToString)
-            *(String *)outResult = toString(inData);
-         else if (op==dhoGetClassName)
-            *(const char **)outResult = getName();
-      }
-};
-
 
 template<typename T, typename HANDLER = DefaultStructHandler >
 class Struct
@@ -138,11 +124,6 @@ public:
    inline operator T& () { return value; }
 
 };
-
-typedef Struct<Int64,Int64Handler> Int64Struct;
-
-
-
 
 
 
