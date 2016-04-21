@@ -525,7 +525,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stdout();
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stderr();
 
 // Process
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_process_run( String cmd, Array<String> vargs );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShow= 1 /* SHOW_NORMAL */ );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int pos, int len );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int pos, int len );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int pos, int len );
