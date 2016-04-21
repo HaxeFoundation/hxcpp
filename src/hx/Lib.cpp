@@ -12,7 +12,7 @@
 #endif
 
 
-#if !defined(HX_WINRT) && !defined(EPPC)
+#if !defined(HX_WINRT) && !defined(STATIC_LINK)
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
@@ -206,7 +206,7 @@ typedef void (*SetLoaderProcFunc)(void *(*)(const char *));
 typedef void *(*GetNekoEntryFunc)();
 typedef void (*NekoEntryFunc)();
 
-String GetFileContents(String inFile)
+static String GetFileContents(String inFile)
 {
 #ifndef _WIN32
    FILE *file = fopen(inFile.__CStr(),"rb");
@@ -228,15 +228,15 @@ String GetFileContents(String inFile)
    return String(buf,strlen(buf)).dup();
 }
 
-#ifndef HX_WINRT
-String GetEnv(const char *inPath)
+#if !defined(HX_WINRT) && !defined(STATIC_LINK)
+static String GetEnv(const char *inPath)
 {
    const char *env  = getenv(inPath);
    String result(env,env?strlen(env):0);
    return result;
 }
 
-String FindHaxelib(String inLib)
+static String FindHaxelib(String inLib)
 {
    bool loadDebug = getenv("HXCPP_LOAD_DEBUG");
 
@@ -244,13 +244,11 @@ String FindHaxelib(String inLib)
 
    String haxepath;
 
-   #if !defined(HX_WINRT) && !defined(EPPC)
-      struct stat s;
-      if ( (stat(".haxelib",&s)==0 && (s.st_mode & S_IFDIR) ) )
-         haxepath = HX_CSTRING(".haxelib");
-      if (loadDebug)
-          printf( haxepath.length ? "Found local .haxelib\n" : "No local .haxelib\n");
-   #endif
+   struct stat s;
+   if ( (stat(".haxelib",&s)==0 && (s.st_mode & S_IFDIR) ) )
+      haxepath = HX_CSTRING(".haxelib");
+   if (loadDebug)
+      printf( haxepath.length ? "Found local .haxelib\n" : "No local .haxelib\n");
 
    if (haxepath.length==0)
    {
