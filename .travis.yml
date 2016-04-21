@@ -7,36 +7,25 @@ os:
 install:
   # install dependencies
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-      travis_retry sudo apt-get update;
-      travis_retry sudo apt-get install ocaml-native-compilers zlib1g-dev libgc-dev gcc-multilib g++-multilib -y;
-      (
-        mkdir ~/mbedtls &&
-        cd ~/mbedtls &&
-        wget --no-check-certificate https://tls.mbed.org/download/mbedtls-2.2.1-apache.tgz &&
-        tar xzf mbedtls-2.2.1-apache.tgz &&
-        cd mbedtls-2.2.1 &&
-        sed -i "s/\/\/#define MBEDTLS_THREADING_PTHREAD/#define MBEDTLS_THREADING_PTHREAD/; s/\/\/#define MBEDTLS_THREADING_C/#define MBEDTLS_THREADING_C/; s/#define MBEDTLS_SSL_PROTO_SSL3/\/\/#define MBEDTLS_SSL_PROTO_SSL3/" include/mbedtls/config.h &&
-        SHARED=1 make lib &&
-        sudo make install
-      );
+      travis_retry sudo apt-get update -y;
+      travis_retry sudo apt-get install pkg-config libgc-dev libssl-dev libpcre3-dev zlib1g-dev apache2-dev libmysqlclient-dev libsqlite3-dev libgtk2.0-dev ocaml-native-compilers camlp4 gcc-multilib g++-multilib -y;
     fi
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      travis_retry brew tap homebrew/dupes;
       travis_retry brew update;
-      travis_retry brew install bdw-gc pcre openssl zlib mariadb mbedtls ocaml camlp4;
-      brew link zlib --force;
+      travis_retry brew install bdw-gc pcre mariadb mbedtls ocaml camlp4;
     fi
-  # build neko
+  # Install neko
+  - travis_retry git clone https://github.com/HaxeFoundation/neko.git ~/neko;
+  - mkdir -p ~/neko/build;
+  - pushd ~/neko/build;
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-      travis_retry git clone https://github.com/HaxeFoundation/neko.git ~/neko;
-      pushd ~/neko;
-      make os=${TRAVIS_OS_NAME};
-      sudo make install;
-      popd;
+      cmake -DSTATIC_DEPS=MbedTLS ..;
+    elif [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+      cmake ..;
     fi
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      travis_retry brew install neko --HEAD;
-    fi
+  - make -s;
+  - sudo make install;
+  - popd;
   - neko -version
   # build haxe
   - git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe
