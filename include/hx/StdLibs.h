@@ -64,6 +64,21 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_float(const String &inString)
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_set_float_format(String inFormat);
 
+inline int _hx_idiv(int inNum,int inDenom) { return inNum/inDenom; }
+inline int _hx_cast_int(int inX) { return inX; }
+inline int _hx_fast_floor(double inX) {
+   union Cast
+   {
+      double d;
+      long l;
+   };
+   Cast c;
+   c.d = (inX-0.5) + 6755399441055744.0;
+   return c.l;
+}
+
+
+
 // --- CFFI helpers ------------------------------------------------------------------
 
 // Used for accessing object fields by integer ID, rather than string ID.
