@@ -61,7 +61,7 @@ class GenMacro
       var type_args = new Array<String>();
       var construct_args = new Array<String>();
       var construct_vars = new Array<String>();
-      for(arg in 1...100)
+      for(arg in 1...62)
       {
          var vid = arg-1;
          if (vid>=0)
