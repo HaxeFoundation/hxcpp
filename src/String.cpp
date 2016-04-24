@@ -346,7 +346,7 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
       src += sLen[*src];
 
       if (src==end)
-         return String();
+         return HX_CSTRING("");
       if (src>end)
          hx::Throw(HX_CSTRING("Invalid UTF8"));
    }
@@ -646,10 +646,17 @@ String String::__URLDecode() const
 
 String &String::dup()
 {
-   // Take copy incase GCStringDup generates GC event
-   const HX_CHAR *oldString = __s;
-   __s = 0;
-   __s = GCStringDup(oldString,length,&length);
+   if (length==0)
+   {
+      *this = HX_CSTRING("");
+   }
+   else
+   {
+      // Take copy incase GCStringDup generates GC event
+      const HX_CHAR *oldString = __s;
+      __s = 0;
+      __s = GCStringDup(oldString,length,&length);
+   }
    return *this;
 }
 
