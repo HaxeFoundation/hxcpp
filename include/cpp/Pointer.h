@@ -29,6 +29,7 @@ enum DynamicHandlerOp
 {
    dhoGetClassName,
    dhoToString,
+   dhoFromDynamic,
 };
 typedef void (*DynamicHandlerFunc)(DynamicHandlerOp op, const void *inData, void *outResult);
 Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc inFunc);
@@ -37,6 +38,12 @@ template<typename T> class Reference;
 
 
 
+struct StructHandlerDynamicParams
+{
+   StructHandlerDynamicParams(hx::Object *data) : outConverted(false), inData(data) { }
+   bool outConverted;
+   hx::Object *inData;
+};
 
 
 class DefaultStructHandler
@@ -111,12 +118,18 @@ public:
       }
       T *data = (T*)ptr->__GetHandle();
       int len = ptr->__length();
-      if (!data || len<sizeof(T))
+      if (!data || len<sizeof(T) || ptr->__CStr()!=HANDLER::getName() )
       {
-         hx::NullReference("DynamicData", true);
-         return;
+         StructHandlerDynamicParams convert(ptr);
+         HANDLER::handler(dhoFromDynamic, &value, &convert );
+         if (!convert.outConverted)
+         {
+            hx::NullReference("DynamicData", true);
+            return;
+         }
       }
-      value = *data;
+      else
+         value = *data;
    }
 
 

@@ -15,6 +15,16 @@ class Int64Handler
             *(String *)outResult = toString(inData);
          else if (op==dhoGetClassName)
             *(const char **)outResult = getName();
+         else if (op==dhoFromDynamic)
+         {
+            StructHandlerDynamicParams *params = (StructHandlerDynamicParams *)outResult;
+            cpp::Int64 &value = *(cpp::Int64 *)inData;
+            params->outConverted = true;
+            if (!params->inData)
+               value = 0;
+            else
+               value = params->inData->__ToDouble();
+         }
       }
 };
 
