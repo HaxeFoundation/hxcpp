@@ -117,9 +117,9 @@ inline int HxAtomicDec(volatile int *ioWhere)
 #if defined(HX_WINDOWS)
 
 
-struct MyMutex
+struct HxMutex
 {
-   MyMutex()
+   HxMutex()
    {
       mValid = true;
       #ifdef HX_WINRT
@@ -128,7 +128,7 @@ struct MyMutex
       InitializeCriticalSection(&mCritSec);
       #endif
    }
-   ~MyMutex() { if (mValid) DeleteCriticalSection(&mCritSec); }
+   ~HxMutex() { if (mValid) DeleteCriticalSection(&mCritSec); }
    void Lock() { EnterCriticalSection(&mCritSec); }
    void Unlock() { LeaveCriticalSection(&mCritSec); }
    bool TryLock() { return TryEnterCriticalSection(&mCritSec); }
@@ -175,16 +175,16 @@ inline bool HxCreateDetachedThread(DWORD (WINAPI *func)(void *), void *param)
 
 #else
 
-struct MyMutex
+struct HxMutex
 {
-   MyMutex()
+   HxMutex()
    {
       pthread_mutexattr_t mta;
       pthread_mutexattr_init(&mta);
       pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
       mValid = pthread_mutex_init(&mMutex,&mta) ==0;
    }
-   ~MyMutex() { if (mValid) pthread_mutex_destroy(&mMutex); }
+   ~HxMutex() { if (mValid) pthread_mutex_destroy(&mMutex); }
    void Lock() { pthread_mutex_lock(&mMutex); }
    void Unlock() { pthread_mutex_unlock(&mMutex); }
    bool TryLock() { return !pthread_mutex_trylock(&mMutex); }
@@ -234,14 +234,14 @@ struct TAutoLock
    LOCKABLE &mMutex;
 };
 
-typedef TAutoLock<MyMutex> AutoLock;
+typedef TAutoLock<HxMutex> AutoLock;
 
 
 #if defined(HX_WINDOWS)
 
-struct MySemaphore
+struct HxSemaphore
 {
-   MySemaphore()
+   HxSemaphore()
    {
       #ifdef HX_WINRT
       mSemaphore = CreateEventEx(nullptr,nullptr,0,EVENT_ALL_ACCESS);
@@ -249,7 +249,7 @@ struct MySemaphore
       mSemaphore = CreateEvent(0,0,0,0);
       #endif
    }
-   ~MySemaphore() { if (mSemaphore) CloseHandle(mSemaphore); }
+   ~HxSemaphore() { if (mSemaphore) CloseHandle(mSemaphore); }
    void Set() { SetEvent(mSemaphore); }
    void Wait()
    {
@@ -279,15 +279,15 @@ struct MySemaphore
 
 #define HX_THREAD_SEMAPHORE_LOCKABLE
 
-struct MySemaphore
+struct HxSemaphore
 {
-   MySemaphore()
+   HxSemaphore()
    {
       mSet = false;
       mValid = true;
       pthread_cond_init(&mCondition,0);
    }
-   ~MySemaphore()
+   ~HxSemaphore()
    {
       if (mValid)
       {
@@ -295,7 +295,7 @@ struct MySemaphore
       }
    }
    // For autolock
-   inline operator MyMutex &() { return mMutex; }
+   inline operator HxMutex &() { return mMutex; }
    void Set()
    {
       AutoLock lock(mMutex);
@@ -384,7 +384,7 @@ struct MySemaphore
    }
 
 
-   MyMutex         mMutex;
+   HxMutex         mMutex;
    pthread_cond_t  mCondition;
    bool            mSet;
    bool            mValid;

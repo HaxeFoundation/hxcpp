@@ -6,7 +6,7 @@
 DECLARE_TLS_DATA(class hxThreadInfo, tlsCurrentThread);
 
 // g_threadInfoMutex allows atomic access to g_nextThreadNumber
-static MyMutex g_threadInfoMutex;
+static HxMutex g_threadInfoMutex;
 // Thread number 0 is reserved for the main thread
 static int g_nextThreadNumber = 1;
 
@@ -52,7 +52,7 @@ struct Deque : public Array_obj<Dynamic>
 
 
 	#ifndef HX_THREAD_SEMAPHORE_LOCKABLE
-	MyMutex     mMutex;
+	HxMutex     mMutex;
 	void PushBack(Dynamic inValue)
 	{
 		hx::EnterGCFreeZone();
@@ -126,7 +126,7 @@ struct Deque : public Array_obj<Dynamic>
 	#endif
 
 	hx::InternalFinalizer *mFinalizer;
-	MySemaphore mSemaphore;
+	HxSemaphore mSemaphore;
 };
 
 Dynamic __hxcpp_deque_create()
@@ -168,7 +168,7 @@ public:
 	hxThreadInfo(Dynamic inFunction, int inThreadNumber)
         : mFunction(inFunction), mThreadNumber(inThreadNumber), mTLS(0,0)
 	{
-		mSemaphore = new MySemaphore;
+		mSemaphore = new HxSemaphore;
 		mDeque = Deque::Create();
 	}
 	hxThreadInfo()
@@ -219,7 +219,7 @@ public:
 
 
 	Array<Dynamic> mTLS;
-	MySemaphore *mSemaphore;
+	HxSemaphore *mSemaphore;
 	Dynamic mFunction;
     int mThreadNumber;
 	Deque   *mDeque;
@@ -387,7 +387,7 @@ public:
 	}
 
 
-   MyMutex mMutex;
+   HxMutex mMutex;
 };
 
 
@@ -507,8 +507,8 @@ public:
 	}
 
 
-	MySemaphore mNotEmpty;
-   MyMutex     mAvailableLock;
+	HxSemaphore mNotEmpty;
+   HxMutex     mAvailableLock;
 	int         mAvailable;
 };
 

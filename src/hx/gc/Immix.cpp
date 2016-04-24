@@ -140,8 +140,8 @@ static int sgTimeToNextTableUpdate = 1;
 
 
 
-MyMutex  *gThreadStateChangeLock=0;
-MyMutex  *gSpecialObjectLock=0;
+HxMutex  *gThreadStateChangeLock=0;
+HxMutex  *gSpecialObjectLock=0;
 
 class LocalAllocator;
 enum LocalAllocState { lasNew, lasRunning, lasStopped, lasWaiting, lasTerminal };
@@ -317,7 +317,7 @@ typedef hx::QuickVec<hx::Object *> ObjectStack;
 // Dummy lock
 typedef HxAtomicLock ThreadPoolLock;
 #else
-typedef MyMutex ThreadPoolLock;
+typedef HxMutex ThreadPoolLock;
 #endif
 
 static ThreadPoolLock sThreadPoolLock;
@@ -331,7 +331,7 @@ inline void WaitThreadLocked(ThreadPoolSignal &ioSignal)
    pthread_cond_wait(&ioSignal, &sThreadPoolLock.mMutex);
 }
 #else
-typedef MySemaphore ThreadPoolSignal;
+typedef HxSemaphore ThreadPoolSignal;
 #endif
 
 typedef TAutoLock<ThreadPoolLock> ThreadPoolAutoLock;
@@ -1598,7 +1598,7 @@ void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
 
 // --- Roots -------------------------------
 
-FILE_SCOPE MyMutex *sGCRootLock = 0;
+FILE_SCOPE HxMutex *sGCRootLock = 0;
 typedef hx::UnorderedSet<hx::Object **> RootSet;
 static RootSet sgRootSet;
 
@@ -1648,7 +1648,7 @@ void GcRemoveOffsetRoot(void *inRoot)
 class WeakRef;
 typedef hx::QuickVec<WeakRef *> WeakRefs;
 
-FILE_SCOPE MyMutex *sFinalizerLock = 0;
+FILE_SCOPE HxMutex *sFinalizerLock = 0;
 FILE_SCOPE WeakRefs sWeakRefs;
 
 class WeakRef : public hx::Object
@@ -2152,8 +2152,8 @@ public:
    {
       if (!gThreadStateChangeLock)
       {
-         gThreadStateChangeLock = new MyMutex();
-         gSpecialObjectLock = new MyMutex();
+         gThreadStateChangeLock = new HxMutex();
+         gSpecialObjectLock = new HxMutex();
       }
       // Until we add ourselves, the colled will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
@@ -3558,7 +3558,7 @@ public:
    BlockList mFreeBlocks;
    BlockList mZeroList;
    LargeList mLargeList;
-   MyMutex    mLargeListLock;
+   HxMutex    mLargeListLock;
    hx::QuickVec<LocalAllocator *> mLocalAllocs;
    LocalAllocator *mLocalPool[LOCAL_POOL_SIZE];
 };
@@ -3964,8 +3964,8 @@ public:
    bool            mGCFreeZone;
    int             mStackLocks;
    int             mID;
-   MySemaphore     mReadyForCollect;
-   MySemaphore     mCollectDone;
+   HxSemaphore     mReadyForCollect;
+   HxSemaphore     mCollectDone;
 };
 
 
@@ -4058,8 +4058,8 @@ void InitAlloc()
    sgAllocInit = true;
    sGlobalAlloc = new GlobalAllocator();
    sgFinalizers = new FinalizerList();
-   sFinalizerLock = new MyMutex();
-   sGCRootLock = new MyMutex();
+   sFinalizerLock = new HxMutex();
+   sGCRootLock = new HxMutex();
    hx::Object tmp;
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
