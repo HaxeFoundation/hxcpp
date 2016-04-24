@@ -673,7 +673,15 @@ Dynamic VirtualArray_obj::__GetItem(int inIndex) const
 Dynamic VirtualArray_obj::__SetItem(int inIndex,Dynamic inValue)
 {
    checkBase();
-   EnsureStorage(inValue);
+
+   if (store!=hx::arrayFixed)
+   {
+      if (inIndex>(store==hx::arrayEmpty ? 0 : (int)base->length) )
+         EnsureObjectStorage();
+      else
+         EnsureStorage(inValue);
+   }
+
    base->__SetItem(inIndex,inValue);
    return inValue;
 }
