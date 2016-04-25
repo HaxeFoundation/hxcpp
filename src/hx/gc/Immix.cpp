@@ -1236,6 +1236,9 @@ public:
 
     void SetMember(const char *inMember)
     {
+       // Should not happen...
+       if (mPos==0)
+          return;
        if (mPos<StackSize)
           mInfo[mPos-1].mMember = inMember ? inMember : "Unknown";
     }
@@ -1380,6 +1383,8 @@ void MarkerReleaseWorkerLocked( )
 }
 */
 
+
+
 #ifdef HXCPP_DEBUG
 void MarkSetMember(const char *inName,hx::MarkContext *__inCtx)
 {
@@ -1399,6 +1404,31 @@ void MarkPopClass(hx::MarkContext *__inCtx)
       __inCtx->PopClass();
 }
 #endif
+
+
+
+
+struct AutoMarkPush
+{
+   hx::MarkContext *mCtx;
+   AutoMarkPush(hx::MarkContext *ctx, const char *cls, const char *member)
+   {
+      #ifdef HXCPP_DEBUG
+      mCtx = ctx;
+      MarkPushClass(cls,mCtx);
+      MarkSetMember(member,mCtx);
+      #endif
+   }
+   ~AutoMarkPush()
+   {
+      #ifdef HXCPP_DEBUG
+      MarkPopClass(mCtx);
+      #endif
+   }
+};
+
+
+
 
 
 
@@ -3133,6 +3163,9 @@ public:
 
       hx::MarkClassStatics(&mMarker);
 
+      {
+      hx::AutoMarkPush info(&mMarker,"Roots","root");
+
       for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
       {
          hx::Object *&obj = **i;
@@ -3150,17 +3183,25 @@ public:
             if (obj)
                hx::MarkObjectAlloc(obj , &mMarker );
          }
+      } // automark
 
+
+      {
+      hx::AutoMarkPush info(&mMarker,"Zombies","zombie");
       // Mark zombies too....
       for(int i=0;i<hx::sZombieList.size();i++)
          hx::MarkObjectAlloc(hx::sZombieList[i] , &mMarker );
+      } // automark
 
       // Mark local stacks
       for(int i=0;i<mLocalAllocs.size();i++)
          MarkLocalAlloc(mLocalAllocs[i] , &mMarker);
 
       #ifdef HXCPP_SCRIPTABLE
+      {
+      hx::AutoMarkPush info(&mMarker,"Script","stack");
       scriptMarkStack(&mMarker);
+      } // automark
       #endif
 
       if (MAX_MARK_THREADS>1)
