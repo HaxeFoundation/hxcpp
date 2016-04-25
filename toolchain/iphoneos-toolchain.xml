@@ -42,6 +42,9 @@
   <flag value="-miphoneos-version-min=5.0" unless="HXCPP_GCC" />
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
+  <flag value="-DENABLE_BITCODE=YES"/>
+  <flag value="-fembed-bitcode" unless="debug" />
+  <flag value="-fembed-bitcode-marker" if="debug" />
   <flag value="-Wno-parentheses" />
   <flag value="-Wno-null-dereference" unless="HXCPP_GCC"/>
   <flag value="-Wno-unused-value" />
