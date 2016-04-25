@@ -202,8 +202,9 @@ void __hxcpp_boot_std_classes();
 namespace hx
 {
 
+
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-hx::Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
+hx::Class _hx_RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
                     hx::Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0
@@ -216,8 +217,40 @@ hx::Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     #endif
                     );
 
+// For older versions
+inline hx::Class RegisterClass(
+                    const String &inClassName, CanCastFunc inCanCast,
+                    String inStatics[], String inMembers[],
+                    ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
+                    hx::Class *inSuperClass, ConstructEnumFunc inConst=0, MarkFunc inMarkFunc=0
+                    #ifdef HXCPP_VISIT_ALLOCS
+                    , VisitFunc inVisitFunc=0
+                    #endif
+                    #ifdef HXCPP_SCRIPTABLE
+                    ,const hx::StorageInfo *inStorageInfo=0
+                    ,const hx::StaticInfo *inStaticInfo=0
+                    #endif
+                    )
+{
+   return _hx_RegisterClass(inClassName, inCanCast, inStatics, inMembers,
+                    inConstructEmpty, inConstructArgs, inSuperClass, inConst, inMarkFunc
+                    #ifdef HXCPP_VISIT_ALLOCS
+                    , inVisitFunc
+                    #endif
+                    #ifdef HXCPP_SCRIPTABLE
+                    ,inStorageInfo ,inStaticInfo
+                    #endif
+                    );
+}
+
+
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-void RegisterClass(const String &inClassName, hx::Class inClass);
+void _hx_RegisterClass(const String &inClassName, hx::Class inClass);
+
+inline void RegisterClass(const String &inClassName, hx::Class inClass)
+{
+   _hx_RegisterClass(inClassName, inClass);
+}
 
 template<typename T>
 inline bool TCanCast(hx::Object *inPtr)

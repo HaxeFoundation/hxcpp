@@ -29,7 +29,7 @@ hx::Class &EnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }
 
 void EnumBase_obj::__boot()
 {
-   Static(hxEnumBase_obj__mClass) = hx::RegisterClass(HX_CSTRING("__EnumBase") ,TCanCast<EnumBase_obj>,
+   Static(hxEnumBase_obj__mClass) = hx::_hx_RegisterClass(HX_CSTRING("__EnumBase") ,TCanCast<EnumBase_obj>,
                        sNone,sNone,
                        &__CreateEmpty, &__Create, 0 );
 }

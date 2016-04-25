@@ -563,7 +563,7 @@ static bool ArrayCanCast(hx::Object *inInstance)
 
 void ArrayBase::__boot()
 {
-   Static(__mClass) = hx::RegisterClass(HX_CSTRING("Array"),ArrayCanCast,sNone,sArrayFields,
+   Static(__mClass) = hx::_hx_RegisterClass(HX_CSTRING("Array"),ArrayCanCast,sNone,sArrayFields,
                                     ArrayCreateEmpty,ArrayCreateArgs,0,0);
 }
 

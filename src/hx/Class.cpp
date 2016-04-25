@@ -12,7 +12,7 @@ namespace hx
 typedef std::map<String,Class> ClassMap;
 static ClassMap *sClassMap = 0;
 
-Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
+Class _hx_RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     String inStatics[], String inMembers[],
                     ConstructEmptyFunc inConstructEmpty, ConstructArgsFunc inConstructArgs,
                     Class *inSuperClass, ConstructEnumFunc inConstructEnum,
@@ -45,7 +45,7 @@ Class RegisterClass(const String &inClassName, CanCastFunc inCanCast,
    return c;
 }
 
-void RegisterClass(const String &inClassName, Class inClass)
+void _hx_RegisterClass(const String &inClassName, Class inClass)
 {
    if (sClassMap==0)
       sClassMap = new ClassMap;
@@ -152,7 +152,7 @@ Class &Class_obj::__SGetClass() { return Class_obj__mClass; }
 
 void Class_obj::__boot()
 {
-Static(Class_obj__mClass) = hx::RegisterClass(HX_CSTRING("Class"),TCanCast<Class_obj>,sNone,sNone, 0,0 , 0, 0 );
+Static(Class_obj__mClass) = hx::_hx_RegisterClass(HX_CSTRING("Class"),TCanCast<Class_obj>,sNone,sNone, 0,0 , 0, 0 );
 }
 
 
