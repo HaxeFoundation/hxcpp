@@ -282,6 +282,8 @@ public:
    explicit __TArrayImplRef(_OBJ inObj,int inIndex) : mObject(inObj), mIndex(inIndex) { }
 
    template<typename _DATA>
+   inline operator _DATA() { return mObject->__get(mIndex); }
+   template<typename _DATA>
    inline void operator=(_DATA inRHS)
    {
       mObject->__set(mIndex,inRHS);
