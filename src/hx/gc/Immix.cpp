@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 
 #include <hx/GC.h>
+#include <hx/Memory.h>
 #include <hx/Thread.h>
 #include "../Hash.h"
 #include "GcRegCapture.h"
@@ -104,11 +105,6 @@ enum
 // However, a bigger number makes it harder to release blocks due to pinning
 #define IMMIX_BLOCK_GROUP_BITS  5
 
-#ifdef __GNUC__
-// Not sure if this is worth it ....
-//#define USE_POSIX_MEMALIGN
-#endif
-
 
 #ifdef HXCPP_DEBUG
 static hx::Object *gCollectTrace = 0;
@@ -144,8 +140,8 @@ static int sgTimeToNextTableUpdate = 1;
 
 
 
-MyMutex  *gThreadStateChangeLock=0;
-MyMutex  *gSpecialObjectLock=0;
+HxMutex  *gThreadStateChangeLock=0;
+HxMutex  *gSpecialObjectLock=0;
 
 class LocalAllocator;
 enum LocalAllocState { lasNew, lasRunning, lasStopped, lasWaiting, lasTerminal };
@@ -321,7 +317,7 @@ typedef hx::QuickVec<hx::Object *> ObjectStack;
 // Dummy lock
 typedef HxAtomicLock ThreadPoolLock;
 #else
-typedef MyMutex ThreadPoolLock;
+typedef HxMutex ThreadPoolLock;
 #endif
 
 static ThreadPoolLock sThreadPoolLock;
@@ -335,7 +331,7 @@ inline void WaitThreadLocked(ThreadPoolSignal &ioSignal)
    pthread_cond_wait(&ioSignal, &sThreadPoolLock.mMutex);
 }
 #else
-typedef MySemaphore ThreadPoolSignal;
+typedef HxSemaphore ThreadPoolSignal;
 #endif
 
 typedef TAutoLock<ThreadPoolLock> ThreadPoolAutoLock;
@@ -1632,7 +1628,7 @@ void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
 
 // --- Roots -------------------------------
 
-FILE_SCOPE MyMutex *sGCRootLock = 0;
+FILE_SCOPE HxMutex *sGCRootLock = 0;
 typedef hx::UnorderedSet<hx::Object **> RootSet;
 static RootSet sgRootSet;
 
@@ -1682,7 +1678,7 @@ void GcRemoveOffsetRoot(void *inRoot)
 class WeakRef;
 typedef hx::QuickVec<WeakRef *> WeakRefs;
 
-FILE_SCOPE MyMutex *sFinalizerLock = 0;
+FILE_SCOPE HxMutex *sFinalizerLock = 0;
 FILE_SCOPE WeakRefs sWeakRefs;
 
 class WeakRef : public hx::Object
@@ -2019,7 +2015,7 @@ void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHa
 {
    bool addHash = inAddStringHash && inData && inSize>0;
 
-   int *result = (int *)malloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
+   int *result = (int *)HxAlloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
    if (addHash)
    {
       unsigned int hash = 0;
@@ -2186,8 +2182,8 @@ public:
    {
       if (!gThreadStateChangeLock)
       {
-         gThreadStateChangeLock = new MyMutex();
-         gSpecialObjectLock = new MyMutex();
+         gThreadStateChangeLock = new HxMutex();
+         gSpecialObjectLock = new HxMutex();
       }
       // Until we add ourselves, the colled will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
@@ -2254,9 +2250,11 @@ public:
       if (inSize<<1 > mLargeAllocSpace)
          mLargeAllocSpace = inSize<<1;
 
-      unsigned int *result = inClear ? 
-                             (unsigned int *)calloc(1,inSize + sizeof(int)*2) :
-                             (unsigned int *)malloc(inSize + sizeof(int)*2);
+      unsigned int *result = (unsigned int *)HxAlloc(inSize + sizeof(int)*2);
+      if (inClear)
+      {
+         memset(result, 0, inSize + sizeof(int)*2);
+      }
       if (!result)
       {
          #ifdef SHOW_MEM_EVENTS
@@ -2264,7 +2262,7 @@ public:
          #endif
 
          CollectFromThisThread(true);
-         result = (unsigned int *)malloc(inSize + sizeof(int)*2);
+         result = (unsigned int *)HxAlloc(inSize + sizeof(int)*2);
       }
       result[0] = inSize;
       result[1] = hx::gMarkID;
@@ -2387,18 +2385,7 @@ public:
       if (gid<0)
         gid = gAllocGroups.next();
 
-      int size = 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS);
-      #ifdef USE_POSIX_MEMALIGN
-         char *chunk = 0;
-         #ifdef ANDROID
-            chunk = (char *)memalign( IMMIX_BLOCK_SIZE, size );
-         #else
-             posix_memalign( (void **)&chunk, IMMIX_BLOCK_SIZE, size);
-         #endif
-      #else
-      char *chunk = (char *)malloc(size);
-      #endif
-
+      char *chunk = (char *)HxAllocGCBlock( 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS) );
       if (!chunk)
       {
          #ifdef SHOW_MEM_EVENTS
@@ -2741,12 +2728,7 @@ public:
             GCLOG("Release group %d\n", i);
             #endif
 
-            #ifdef USE_POSIX_MEMALIGN
-            // Can just call free?
-            free(g.alloc);
-            #else
-            free(g.alloc);
-            #endif
+            HxFree(g.alloc);
             g.alloc = 0;
          }
       }
@@ -3054,12 +3036,10 @@ public:
          pthread_t result = 0;
          int created = pthread_create(&result,0,SThreadLoop,info);
          bool ok = created==0;
-      #else
-         #ifdef EMSCRIPTEN
+      #elif defined(EMSCRIPTEN)
          // Only one thread
-         #elif defined(HX_WINDOWS)
-         bool ok = _beginthreadex(0,0,SThreadLoop,info,0,0) != 0;
-         #endif
+      #else
+         bool ok = HxCreateDetachedThread(SThreadLoop, info);
       #endif
    }
 
@@ -3312,7 +3292,7 @@ public:
             #ifdef ASYNC_FREE
             freeList.push(mLargeList[idx]);
             #else
-            free(mLargeList[idx]);
+            HxFree(mLargeList[idx]);
             #endif
 
             mLargeList.qerase(idx);
@@ -3322,7 +3302,7 @@ public:
       }
       #ifdef ASYNC_FREE
       for(int i=0;i<freeList.size();i++)
-         free(freeList[i]);
+         HxFree(freeList[i]);
       #endif
 
       int l1 = mLargeList.size();
@@ -3619,7 +3599,7 @@ public:
    BlockList mFreeBlocks;
    BlockList mZeroList;
    LargeList mLargeList;
-   MyMutex    mLargeListLock;
+   HxMutex    mLargeListLock;
    hx::QuickVec<LocalAllocator *> mLocalAllocs;
    LocalAllocator *mLocalPool[LOCAL_POOL_SIZE];
 };
@@ -4025,8 +4005,8 @@ public:
    bool            mGCFreeZone;
    int             mStackLocks;
    int             mID;
-   MySemaphore     mReadyForCollect;
-   MySemaphore     mCollectDone;
+   HxSemaphore     mReadyForCollect;
+   HxSemaphore     mCollectDone;
 };
 
 
@@ -4119,8 +4099,8 @@ void InitAlloc()
    sgAllocInit = true;
    sGlobalAlloc = new GlobalAllocator();
    sgFinalizers = new FinalizerList();
-   sFinalizerLock = new MyMutex();
-   sGCRootLock = new MyMutex();
+   sFinalizerLock = new HxMutex();
+   sGCRootLock = new HxMutex();
    hx::Object tmp;
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
