@@ -13,6 +13,7 @@ class FileGroup
    public var mHLSLs:Array<HLSL>;
    public var mDir:String;
    public var mId:String;
+   public var mConfig:String;
    public var mCacheDepends:Array<String>;
    public var mDependHash:String;
    public var mAsLibrary:Bool;
@@ -31,6 +32,7 @@ class FileGroup
       mHLSLs = [];
       mDir = inDir;
       mId = inId;
+      mConfig = "";
       mAsLibrary = false;
       mSetImportDir = inSetImportDir;
       mUseCache = false;

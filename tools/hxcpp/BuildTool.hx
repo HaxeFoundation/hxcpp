@@ -59,6 +59,7 @@ class BuildTool
    public static var instance:BuildTool;
    public static var helperThread = new Tls<Thread>();
    public static var destination:String;
+   public static var outputs = new Array<String>();
    static var mVarMatch = new EReg("\\${(.*?)}","");
    static var mNoDollarMatch = new EReg("{(.*?)}","");
 
@@ -185,6 +186,15 @@ class BuildTool
       for(target in inTargets)
          buildTarget(target,destination);
 
+      var linkOutputs = mDefines.get("HXCPP_LINK_OUTPUTS");
+      if (linkOutputs!=null)
+         sys.io.File.saveContent(linkOutputs,outputs.join("\n")+"\n");
+      if (Log.verbose)
+      {
+         for(out in outputs)
+            Log.v(" generated " + out);
+      }
+
       if (threadExitCode != 0)
          Sys.exit(threadExitCode);
    }
@@ -202,6 +212,11 @@ class BuildTool
    public function popFile()
    {
       mFileStack.pop();
+   }
+
+   public static function addOutput(inWhat:String, inWhere:String)
+   {
+      outputs.push(inWhat + "=" + inWhere);
    }
 
    public static function getThreadCount() : Int
@@ -327,6 +342,37 @@ class BuildTool
             }
          }
 
+         if (group.mConfig!="")
+         {
+            var lines = ["#ifndef HXCPP_CONFIG_INCLUDED","#define HXCPP_CONFIG_INCLUDED"];
+
+            var flags = group.mCompilerFlags.concat(mCompiler.mFlags);
+            var define = ~/^-D([^=]*)=?(.*)/;
+            for(flag in flags)
+            {
+                if (define.match(flag))
+                {
+                   var name = define.matched(1);
+                   var val = define.matched(2);
+                   lines.push("");
+                   lines.push( '#if !defined($name) && !defined(NO_$name)' );
+                   lines.push( '#define $name $val' );
+                   lines.push( '#endif' );
+                }
+            }
+
+            lines.push("");
+            lines.push("#include <hxcpp.h>");
+            lines.push("");
+            lines.push("#endif");
+            lines.push("");
+
+            var filename = mCompiler.mObjDir + "/" + group.mConfig;
+            sys.io.File.saveContent(filename, lines.join("\n") );
+            addOutput("config",filename);
+         }
+
+
 
          if (to_be_compiled.length>0 && !Log.quiet && !Log.verbose)
          {
@@ -419,35 +465,45 @@ class BuildTool
                //throw "Missing linker :\"" + target.mToolID + "\"";
             }
 
-            var output = mLinkers.get(target.mToolID).link(target,objs, mCompiler);
+            var linker = mLinkers.get(target.mToolID);
+            var output = linker.link(target,objs, mCompiler);
             if (output!="" && mStripper!=null)
                if (target.mToolID=="exe" || target.mToolID=="dll")
                   mStripper.strip(output);
 
-            if (output!="" && inDestination!=null)
-
-         if (inDestination!=null)
-         {
-            inDestination = substitute(inDestination,false);
-            if (inDestination!="")
+            var outFile = linker.mLastOutName;
+            if (outFile!="" && !PathManager.isAbsolute(outFile) && sys.FileSystem.exists(mMakefile))
             {
-               if (!PathManager.isAbsolute(inDestination) && sys.FileSystem.exists(mMakefile))
-               {
-                  var baseFile = PathManager.standardize(mMakefile);
-                  var parts = baseFile.split("/");
-                  parts[ parts.length-1 ] = inDestination;
-                  inDestination = parts.join("/");
-               }
-
-               inDestination = PathManager.clean(inDestination);
-               var fileParts = inDestination.split("/");
-               fileParts.pop();
-               PathManager.mkdir(fileParts.join("/"));
-
-               var chmod = isWindows ? false : target.mToolID=="exe";
-               CopyFile.copyFile(output, inDestination, false, Overwrite.ALWAYS, chmod);
+               var baseFile = PathManager.standardize(mMakefile);
+               var parts = baseFile.split("/");
+               parts[ parts.length-1 ] = outFile;
+               outFile = parts.join("/");
             }
-         }
+            if (outFile!="")
+               addOutput(target.mToolID, outFile);
+
+            if (output!="" && inDestination!=null)
+            {
+               inDestination = substitute(inDestination,false);
+               if (inDestination!="")
+               {
+                  if (!PathManager.isAbsolute(inDestination) && sys.FileSystem.exists(mMakefile))
+                  {
+                     var baseFile = PathManager.standardize(mMakefile);
+                     var parts = baseFile.split("/");
+                     parts[ parts.length-1 ] = inDestination;
+                     inDestination = parts.join("/");
+                  }
+
+                  inDestination = PathManager.clean(inDestination);
+                  var fileParts = inDestination.split("/");
+                  fileParts.pop();
+                  PathManager.mkdir(fileParts.join("/"));
+
+                  var chmod = isWindows ? false : target.mToolID=="exe";
+                  CopyFile.copyFile(output, inDestination, false, Overwrite.ALWAYS, chmod);
+               }
+            }
       }
 
       for(copyFile in mCopyFiles)
@@ -595,6 +651,7 @@ class BuildTool
                   group.addHLSL( substitute(el.att.name), substitute(el.att.profile),
                   substitute(el.att.variable), substitute(el.att.target)  );
                case "options" : group.addOptions( substitute(el.att.name) );
+               case "config" : group.mConfig = substitute(el.att.name);
                case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
                case "compilervalue" : 
                   group.addCompilerFlag( substitute(el.att.name) );

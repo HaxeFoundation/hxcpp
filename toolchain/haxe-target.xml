@@ -58,6 +58,7 @@
 <files id="haxe">
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
+  <config  name="HxcppConfig.h"/>
 
   <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
   <cache value="1" />
