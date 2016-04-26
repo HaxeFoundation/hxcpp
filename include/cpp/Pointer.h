@@ -147,7 +147,8 @@ template<typename T>
 class Pointer
 {
 public:
-   enum { elementSize = sizeof(T) };
+   typedef T elementType;
+
    T *ptr;
 
    inline Pointer( ) : ptr(0) { }
