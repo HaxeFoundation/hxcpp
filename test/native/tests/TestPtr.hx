@@ -3,6 +3,7 @@ package tests;
 import NativeGen;
 import cpp.Stdlib;
 import cpp.Pointer;
+using cpp.NativeArray;
 
 @:unreflective
 @:native("CVec")
@@ -48,4 +49,23 @@ class TestPtr extends haxe.unit.TestCase{
       nullRawP = null;
       assertTrue( nullRawP==null );
 	}
+
+   private function anonOf(d:Dynamic) : Dynamic return {ptr:d};
+
+   public function testDynamic() {
+      var a = [1];
+      var intPtr = a.address(0);
+      var d:Dynamic = intPtr;
+      assertFalse(d==[2].address(0));
+      assertTrue(d==a.address(0));
+      var anon = anonOf(d);
+      assertFalse([2].address(0)==d);
+      assertTrue(a.address(0)==d);
+      assertFalse(intPtr==[2].address(0));
+      assertTrue(intPtr==a.address(0));
+      assertFalse(anon.ptr==[2].address(0));
+      assertTrue(anon.ptr==a.address(0));
+      assertFalse([2].address(0)==anon.ptr);
+      assertTrue(a.address(0)==anon.ptr);
+   }
 }
