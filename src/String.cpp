@@ -831,7 +831,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
 {
    #ifdef HX_UTF8_STRINGS
    if (inCopyPointer)
-      outString = String( (const HX_CHAR *)inBytes->GetBase(), inBytes->length);
+      outString = String( (const HX_CHAR *)inBytes->GetBase(), len);
    else
       outString = String( GCStringDup(inBytes->GetBase()+pos, len, 0), len);
    #else
