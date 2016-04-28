@@ -57,6 +57,20 @@ inline void _hx_add_finalizable( hx::ObjectPtr<T> inObj, bool inPin)
 }
 
 
+template<typename T>
+T _hx_allocate_extended(int inExtra)
+{
+   typedef typename T::Obj Obj;
+   Obj *obj = new (inExtra) Obj();
+   return obj;
+}
+
+/*
+template<typename T>
+inline void _hx_allocate_extended( hx::ObjectPtr<T> inObj, bool inPin)
+*/
+
+
 // Finalizers from haxe code...
 void  __hxcpp_gc_do_not_kill(Dynamic inObj);
 
