@@ -43,6 +43,20 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_minimum_free_space(int inBytes);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_target_free_space_percentage(int inPercentage);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool __hxcpp_is_const_string(const ::String &inString);
 
+typedef void (hx::Object::*_hx_member_finalizer)(void);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_add_member_finalizer(hx::Object *inObject, _hx_member_finalizer, bool inPin);
+
+typedef void (*_hx_alloc_finalizer)(void *inPtr);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_add_alloc_finalizer(void *inAlloc, _hx_alloc_finalizer, bool inPin);
+
+template<typename T>
+inline void _hx_add_finalizable( hx::ObjectPtr<T> inObj, bool inPin)
+{
+  _hx_member_finalizer finalizer = (_hx_member_finalizer)&T::finalize;
+  __hxcpp_add_member_finalizer(inObj.mPtr, finalizer, inPin);
+}
+
+
 // Finalizers from haxe code...
 void  __hxcpp_gc_do_not_kill(Dynamic inObj);
 

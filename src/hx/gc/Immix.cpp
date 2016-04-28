@@ -1800,6 +1800,42 @@ bool IsWeakRefValid(hx::Object *inPtr)
     return isCurrent;
 }
 
+struct Finalizable
+{
+   union
+   {
+      _hx_member_finalizer member;
+      _hx_alloc_finalizer  alloc;
+   };
+   void *base;
+   bool pin;
+   bool isMember;
+
+   Finalizable(hx::Object *inBase, _hx_member_finalizer inMember, bool inPin)
+   {
+      base = inBase;
+      member = inMember;
+      pin = inPin;
+   }
+
+   Finalizable(void *inBase, _hx_alloc_finalizer inAlloc, bool inPin)
+   {
+      base = inBase;
+      alloc = inAlloc;
+      pin = inPin;
+   }
+   void run()
+   {
+      if (isMember)
+         (((hx::Object *)base)->*member)();
+      else
+         alloc( base );
+   }
+};
+typedef hx::QuickVec< Finalizable > FinalizableList;
+FILE_SCOPE FinalizableList sFinalizableList;
+
+
 
 void RunFinalizers()
 {
@@ -1825,6 +1861,20 @@ void RunFinalizers()
          f->mUsed = false;
          idx++;
       }
+   }
+
+   idx = 0;
+   while(idx<sFinalizableList.size())
+   {
+      Finalizable &f = sFinalizableList[idx];
+      unsigned char mark = ((unsigned char *)f.base)[ENDIAN_MARK_ID_BYTE];
+      if ( mark!=gByteMarkID )
+      {
+         f.run();
+         sFinalizableList.qerase(idx);
+      }
+      else
+         idx++;
    }
 
    for(FinalizerMap::iterator i=sFinalizerMap.begin(); i!=sFinalizerMap.end(); )
@@ -2893,6 +2943,8 @@ public:
                   *(char **)(i->first) = (char *)(obj) + offset;
             }
          }
+      for(int i=0;i<hx::sFinalizableList.size();i++)
+         inCtx->visitAlloc( &hx::sFinalizableList[i].base );
 
       for(int i=0;i<hx::sZombieList.size();i++)
          inCtx->visitObject( &hx::sZombieList[i] );
@@ -4402,6 +4454,20 @@ void __hxcpp_set_finalizer(Dynamic inObj, void *inFunc)
 {
    GCSetHaxeFinalizer( inObj.mPtr, (hx::HaxeFinalizer) inFunc );
 }
+
+void __hxcpp_add_member_finalizer(hx::Object *inObject, _hx_member_finalizer f, bool inPin)
+{
+   AutoLock lock(*gSpecialObjectLock);
+   hx::sFinalizableList.push( hx::Finalizable(inObject, f, inPin) );
+}
+
+void __hxcpp_add_alloc_finalizer(void *inAlloc, _hx_alloc_finalizer f, bool inPin)
+{
+   AutoLock lock(*gSpecialObjectLock);
+   hx::sFinalizableList.push( hx::Finalizable(inAlloc, f, inPin) );
+}
+
+
 
 extern "C"
 {
