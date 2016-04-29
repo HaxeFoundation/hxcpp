@@ -43,8 +43,34 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName);
 // System access
 Array<String>  __get_args();
 double         __time_stamp();
-HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_print(Dynamic &inV);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_println(Dynamic &inV);
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_print_string(const String &inV);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_println_string(const String &inV);
+
+template<typename T> inline void __hxcpp_println(T inV)
+{
+   Dynamic d(inV);
+   __hxcpp_println_string(d);
+}
+// Specialization that does not need dynamic boxing
+template<> inline void __hxcpp_println(String inV)
+{
+   __hxcpp_println_string(inV);
+}
+
+template<typename T> inline void __hxcpp_print(T inV)
+{
+   Dynamic d(inV);
+   __hxcpp_print_string(d);
+}
+// Specialization that does not need dynamic boxing
+template<> inline void __hxcpp_print(String inV)
+{
+   __hxcpp_print_string(inV);
+}
+
+
+
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __trace(Dynamic inPtr, Dynamic inData);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_exit(int inExitCode);
 void           __hxcpp_stdlibs_boot();
