@@ -62,11 +62,17 @@ namespace cpp
       //inline Variant() { copyBuf.b[0] = copyBuf.b[1] = 0; }
       inline Variant(const null &) : type(typeObject), valObject(0) { }
       inline Variant(bool inValue) : type(typeBool), valBool(inValue) { }
-      inline Variant(int inValue) : type(typeInt), valInt(inValue) { }
-      inline Variant(cpp::Int64 inValue) : type(typeInt64), valInt64(inValue) { }
-      inline Variant(cpp::UInt64 inValue) : type(typeInt64), valInt64(inValue) { }
       inline Variant(double inValue) : type(typeDouble), valDouble(inValue) { }
       inline Variant(const ::String &inValue); // later
+
+      inline Variant(cpp::Int64 inValue) : type(typeInt64), valInt64(inValue) { }
+      inline Variant(cpp::UInt64 inValue) : type(typeInt64), valInt64(inValue) { }
+      inline Variant(int inValue) : type(typeInt), valInt(inValue) { }
+      inline Variant(cpp::UInt32 inValue) : type(typeInt), valInt(inValue) { }
+      inline Variant(cpp::Int16 inValue) : type(typeInt), valInt(inValue) { }
+      inline Variant(cpp::UInt16 inValue) : type(typeInt), valInt(inValue) { }
+      inline Variant(cpp::Int8 inValue) : type(typeInt), valInt(inValue) { }
+      inline Variant(cpp::UInt8 inValue) : type(typeInt), valInt(inValue) { }
       #if defined(__OBJC__) && defined(HXCPP_OBJC)
       inline Variant(const id inObjc);
       inline operator id() const;
