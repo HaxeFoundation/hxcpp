@@ -352,7 +352,7 @@ String StringFromAnonFields(hx::Object *inPtr)
 
       array->push(fields[i]);
       array->push(HX_CSTRING(" => "));
-      array->push( inPtr->__Field( fields[i], hx::paccDynamic) );
+      array->push( inPtr->__Field( fields[i], HX_PROP_DYNAMIC) );
    }
    array->push(HX_CSTRING(" }"));
    return array->join(HX_CSTRING(""));
