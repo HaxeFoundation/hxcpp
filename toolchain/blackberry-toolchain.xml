@@ -66,7 +66,7 @@
 </linker>
 	
 <linker id="dll" exe="qcc" if="blackberry">
-	<fromfile value="-filelist " />
+	<!-- <fromfile value="-filelist " /> -->
 	<flag value="-V${QCC_TARGET}" />
 	<flag value="-shared"/>
 	<flag value="-g" if="debug"/>
