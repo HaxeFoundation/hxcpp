@@ -439,6 +439,9 @@ public:
 	inline static Pointer<T> addressOf(T &value)  { return Pointer<T>(&value); }
 
    template<typename T>
+	inline static Pointer<void> endOf(hx::ObjectPtr<T> value)  { return (void *)(value.mPtr+1); }
+
+   template<typename T>
 	inline static Pointer<T> fromPointer(T *value)  { return Pointer<T>(value); }
    template<typename T>
 	inline static Pointer<T> fromPointer(const T *value)  { return Pointer<T>(value); }

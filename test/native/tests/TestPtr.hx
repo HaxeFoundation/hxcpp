@@ -1,6 +1,7 @@
 package tests;
 
 import NativeGen;
+import cpp.NativeGc;
 import cpp.Stdlib;
 import cpp.Pointer;
 using cpp.NativeArray;
@@ -38,6 +39,17 @@ class TestPtr extends haxe.unit.TestCase{
 		assertTrue( a.ptr.x == 66 );
       Stdlib.free(a);
 	}
+	
+    public function testExtened() {
+      var test = NativeGc.allocateExtended( TestPtr, Stdlib.sizeof(Int) * 5 );
+		var a : Pointer<Int> = cast Pointer.endOf(test);
+      for(i in 0...5)
+         a.setAt(i,i);
+      for(i in 0...5)
+         assertTrue( a.postIncRef() == i );
+	}
+
+
    public function testNull() {
 		var nullP : Pointer<Vec> = null;
 		var nullRawP = nullP.raw;
