@@ -37,6 +37,9 @@ install:
   - mkdir ~/haxelib && haxelib setup ~/haxelib
   - haxelib dev hxcpp $TRAVIS_BUILD_DIR
 
+env:
+  - HXCPP_COMPILE_CACHE=~/hxcache
+
 script:
   - cd ${TRAVIS_BUILD_DIR}/tools/run
   - haxe compile.hxml

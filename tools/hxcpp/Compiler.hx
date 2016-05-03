@@ -79,7 +79,7 @@ class Compiler
       }
    }
 
-   public function compile(inFile:File,inTid:Int)
+   public function compile(inFile:File,inTid:Int,headerFunc:Void->Void)
    {
       var obj_name = getObjName(inFile);
       var args = new Array<String>();
@@ -129,7 +129,7 @@ class Compiler
             if (FileSystem.exists(cacheName))
             {
                sys.io.File.copy(cacheName, obj_name);
-               Log.info(" use cache for " + obj_name );
+               Log.info(""," use cache for " + obj_name );
                found = true;
             }
             else
@@ -143,6 +143,8 @@ class Compiler
 
       if (!found)
       {
+         if (headerFunc!=null)
+            headerFunc();
          args.push( (new Path( inFile.mDir + inFile.mName)).toString() );
 
          var out = mOutFlag;
