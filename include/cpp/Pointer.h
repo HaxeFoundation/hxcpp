@@ -167,6 +167,7 @@ public:
    template<typename O>
    inline void setRaw(const O *inValue ) { ptr =  (T*) inValue; }
    
+
    inline Pointer operator=( const Pointer &inRHS ) { return ptr = inRHS.ptr; }
    inline Dynamic operator=( Dynamic &inValue )
    {
@@ -174,6 +175,18 @@ public:
       return inValue;
    }
    inline Dynamic operator=( null &inValue ) { ptr=0; return inValue; }
+
+   template<typename O>
+   inline Pointer operator=( const Pointer<O> &inValue ) { ptr = (T*) inValue.ptr; return *this; }
+
+   template<typename O>
+   inline Pointer operator=( const O *inValue ) { ptr = (T*) inValue; return *this; }
+
+   template<typename H>
+   inline Pointer operator=( const Struct<T,H> &structVal ) { ptr = &structVal.value; return *this; }
+
+
+
    inline AutoCast reinterpret() { return AutoCast(ptr); }
    inline RawAutoCast rawCast() { return RawAutoCast(ptr); }
 
