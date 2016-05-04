@@ -1,5 +1,6 @@
 
 
+* Added 'hxcpp run hxcpp cache ...' commands for managing cache
 * Added cpp.Variant class for query of field values to avoid boxing
 * Added more efficient version of finalizer
 * Add non allocating version of __hxcpp_print
