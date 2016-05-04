@@ -14,12 +14,31 @@ extern class Vec {
 	public var z:Float;
 }
 
+
+@:unreflective
+@:structAccess
+@:native("CVec")
+extern class VecStruct {
+	public var x:Float;
+	public var y:Float;
+	public var z:Float;
+
+   @:native("new CVec")
+   public static function create(val:Float) : Pointer<VecStruct>;
+
+   public function set99(ioVec:VecStruct):Void { }
+}
+
 @:headerCode('
-typedef struct CVec{
+struct CVec{
+   CVec(double inX=0) : x(inX), y(inX), z(inX) { }
+
 	double x;
 	double y;
 	double z;
-} CVec;')
+
+  void set99(CVec &ioVex) { ioVex.x=99; }
+};')
 class TestPtr extends haxe.unit.TestCase{
 	
    /*
@@ -63,6 +82,14 @@ class TestPtr extends haxe.unit.TestCase{
 	}
 
    private function anonOf(d:Dynamic) : Dynamic return {ptr:d};
+
+   public function testStructAccess() {
+      var e = VecStruct.create(1);
+      var tmp = e.ptr;
+      var tmp1 = e.ref;
+      tmp.set99(tmp1);
+      assertTrue(e.ptr.x==99);
+   }
 
    public function testDynamic() {
       var a = [1];
