@@ -8,17 +8,17 @@ class Int64Handler
 {
    public:
       static inline const char *getName() { return "cpp.Int64"; }
-      static inline String toString( const void *inData ) { return String( *(Int64 *)inData ); }
-      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
+      static inline String toString( const void *inValue ) { return String( *(Int64 *)inValue ); }
+      static inline void handler(DynamicHandlerOp op, void *ioValue, void *outResult)
       {
          if (op==dhoToString)
-            *(String *)outResult = toString(inData);
+            *(String *)outResult = toString(ioValue);
          else if (op==dhoGetClassName)
             *(const char **)outResult = getName();
          else if (op==dhoFromDynamic)
          {
             StructHandlerDynamicParams *params = (StructHandlerDynamicParams *)outResult;
-            cpp::Int64 &value = *(cpp::Int64 *)inData;
+            cpp::Int64 &value = *(cpp::Int64 *)ioValue;
             params->outConverted = true;
             if (!params->inData)
                value = 0;

@@ -31,7 +31,7 @@ enum DynamicHandlerOp
    dhoToString,
    dhoFromDynamic,
 };
-typedef void (*DynamicHandlerFunc)(DynamicHandlerOp op, const void *inData, void *outResult);
+typedef void (*DynamicHandlerFunc)(DynamicHandlerOp op, void *ioValue, void *outResult);
 Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc inFunc);
 
 template<typename T> class Reference;
@@ -50,16 +50,42 @@ class DefaultStructHandler
 {
    public:
       static inline const char *getName() { return "unknown"; }
-      static inline String toString( const void *inData ) { return HX_CSTRING("Struct"); }
+      static inline String toString( const void *inValue ) { return HX_CSTRING("Struct"); }
 
-      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
+      static inline void handler(DynamicHandlerOp op, void *inValue, void *outResult)
       {
          if (op==dhoToString)
-            *(String *)outResult = toString(inData);
+            *(String *)outResult = toString(inValue);
          else if (op==dhoGetClassName)
             *(const char **)outResult = getName();
       }
 };
+
+
+class EnumHandler
+{
+   public:
+      static inline const char *getName() { return "enum"; }
+      static inline String toString( const void *inValue ) {
+         int val = inValue ? *(int *)inValue : 0;
+         return HX_CSTRING("enum(") + String(val) + HX_CSTRING(")");
+      }
+
+      static inline void handler(DynamicHandlerOp op, void *ioValue, void *outResult)
+      {
+         if (op==dhoToString)
+            *(String *)outResult = toString(ioValue);
+         else if (op==dhoGetClassName)
+            *(const char **)outResult = getName();
+         else if (op==dhoFromDynamic)
+         {
+            StructHandlerDynamicParams *params = (StructHandlerDynamicParams *)outResult;
+            *(int *)ioValue = params->inData ? params->inData->__ToInt() : 99;
+            params->outConverted = true;
+         }
+      }
+};
+
 
 
 template<typename T, typename HANDLER = DefaultStructHandler >
@@ -137,8 +163,6 @@ public:
    inline operator T& () { return value; }
 
 };
-
-
 
 
 
