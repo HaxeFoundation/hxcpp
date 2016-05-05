@@ -199,7 +199,7 @@ class BuildTool
                   Log.error("cache days - expected day count");
                   Sys.exit(1);
                }
-               CompileCache.clear(days,0,true);
+               CompileCache.clear(days,0,true,null);
             case "resize" :
                var mb = inTargets[1]==null ? null : Std.parseInt(inTargets[1]);
                if (mb==null)
@@ -207,11 +207,11 @@ class BuildTool
                   Log.error("cache resize - expected megabyte count");
                   Sys.exit(1);
                }
-               CompileCache.clear(0,mb,true);
+               CompileCache.clear(0,mb,true,inTargets[2]);
 
-            case "clear" : CompileCache.clear(0,0,true);
-            case "list" : CompileCache.list(false);
-            case "details" : CompileCache.list(true);
+            case "clear" : CompileCache.clear(0,0,true,inTargets[1]);
+            case "list" : CompileCache.list(false,inTargets[1]);
+            case "details" : CompileCache.list(true,inTargets[1]);
             default:
               printUsage();
               Sys.exit(1);
@@ -223,7 +223,7 @@ class BuildTool
       {
          var cacheSize = mDefines.exists("HXCPP_CACHE_MB") ? Std.parseInt( mDefines.get("HXCPP_CACHE_MB") ) : 250;
          if (cacheSize!=null && cacheSize>0)
-            CompileCache.clear(0,cacheSize,false);
+            CompileCache.clear(0,cacheSize,false,null);
       }
       
       if (Log.verbose) Log.println ("");
@@ -372,19 +372,20 @@ class BuildTool
 
          var to_be_compiled = new Array<File>();
 
+         var cached = useCache && mCompiler.createCompilerVersion(group);
+
          for(file in group.mFiles)
          {
-            var obj_name = mCompiler.getObjName(file);
+           if (useCache)
+               file.computeDependHash();
+            var obj_name = mCompiler.getCachedObjName(file);
             groupObjs.push(obj_name);
             if (file.isOutOfDate(obj_name))
             {
-               if (useCache)
-                  file.computeDependHash();
                to_be_compiled.push(file);
             }
          }
 
-         var cached = useCache && mCompiler.createCompilerVersion(group);
 
          if (!cached && group.mPrecompiledHeader!="")
          {
@@ -701,6 +702,8 @@ class BuildTool
                case "section" : createFileGroup(el,group,inName,inForceRelative);
                case "cache" :
                   group.mUseCache = parseBool( substitute(el.att.value) );
+                  if (el.has.project)
+                     group.mCacheProject = substitute(el.att.project);
                case "depend" :
                   if (el.has.name)
                   {
@@ -1392,8 +1395,8 @@ class BuildTool
       Log.println('   Run cppia script using default Cppia host');
       Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}file.js${NORMAL}');
       Log.println('    Run emscripten compiled scipt "file.js"');
-      Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}cache [command]${NORMAL}');
-      Log.println('   Perform command on cache. commands:');
+      Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}cache [command] [project]${NORMAL}');
+      Log.println('   Perform command on cache, either on specific project or all. commands:');
       Log.println('    ${BOLD}clear${NORMAL} -- remove all files from cache');
       Log.println('    ${BOLD}days${NORMAL} #days -- remove files older than "days"');
       Log.println('    ${BOLD}resize${NORMAL} #megabytes -- Only keep #megabytes MB');

@@ -19,6 +19,7 @@ class FileGroup
    public var mAsLibrary:Bool;
    public var mSetImportDir:Bool;
    public var mUseCache:Bool;
+   public var mCacheProject:String;
    
    public function new(inDir:String,inId:String,inSetImportDir = false)
    {
@@ -36,12 +37,21 @@ class FileGroup
       mAsLibrary = false;
       mSetImportDir = inSetImportDir;
       mUseCache = false;
+      mCacheProject = "";
    }
 
    public function addCompilerFlag(inFlag:String)
    {
       mCompilerFlags.push(inFlag);
    }
+
+   public function getCacheProject()
+   {
+      if (mCacheProject=="")
+         mCacheProject = mId;
+      return mCacheProject;
+   }
+
 
    public function addDepend(inFile:String, inDateOnly:Bool)
    {

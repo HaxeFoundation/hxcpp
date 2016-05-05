@@ -56,22 +56,22 @@ class CompileCache
       return hasCache;
    }
 
-   public static function getCacheName(hash:String)
+   public static function getCacheName(inProject:String,hash:String,inExt:String)
    {
-      var dir = compileCache + "/" + hash.substr(0,2);
+      var dir = compileCache + "/" + inProject + "/" + hash.substr(0,2);
       try
       {
          if (!FileSystem.exists(dir))
-            FileSystem.createDirectory(dir);
+            PathManager.mkdir(dir);
       } catch(e:Dynamic) { }
-      return dir + "/" + hash.substr(2);
+      return dir + "/" + hash.substr(2) + inExt;
    }
 
-   public static function clear(inDays:Int,inM:Int,inLogInfo:Bool)
+   public static function clear(inDays:Int,inM:Int,inLogInfo:Bool,inProject:String)
    {
       try
       {
-        var dirs = FileSystem.readDirectory(compileCache);
+        var projects = FileSystem.readDirectory(compileCache);
         var deleted = 0;
         var total = 0;
         var t0 = haxe.Timer.stamp();
@@ -80,48 +80,60 @@ class CompileCache
         var fileInfo = [];
         var keepSize = 0;
 
-        for(dir in dirs)
+        for(project in projects)
         {
-           if (dir.length!=2)
-              throw 'bad cache name "$dir" found - aborting';
-           var path = compileCache + "/" + dir;
-           var dirFiles = FileSystem.readDirectory(path);
-           var allDeleted = true;
-           for(file in dirFiles)
+           if (inProject!=null && inProject!=project)
+              continue;
+           var projectHasDirs = false;
+           var projDir = compileCache + "/" + project;
+           var dirs = FileSystem.readDirectory(projDir);
+           for(dir in dirs)
            {
-              total++;
-              var filename = path + "/" + file;
-              var doDelete = true;
-              if (inDays>0)
+              if (dir.length!=2)
+                 throw 'bad cache name "$dir" found - aborting';
+              var path = projDir + "/" + dir;
+              var dirFiles = FileSystem.readDirectory(path);
+              var allDeleted = true;
+              for(file in dirFiles)
               {
-                 var info = FileSystem.stat(filename);
-                 var atime = info.atime;
-                 var time = atime==null ? info.mtime.getTime() :
-                             Math.max(info.atime.getTime(),info.mtime.getTime() );
-                 if (time>=tooOld)
+                 total++;
+                 var filename = path + "/" + file;
+                 var doDelete = true;
+                 if (inDays>0)
+                 {
+                    var info = FileSystem.stat(filename);
+                    var atime = info.atime;
+                    var time = atime==null ? info.mtime.getTime() :
+                                Math.max(info.atime.getTime(),info.mtime.getTime() );
+                    if (time>=tooOld)
+                       doDelete = false;
+                 }
+                 else if (inM>0)
+                 {
+                    var info = FileSystem.stat(filename);
+                    var atime = info.atime;
+                    var time = atime==null ? info.mtime.getTime() :
+                                Math.max(info.atime.getTime(),info.mtime.getTime() );
+                    fileInfo.push( {filename:filename, time:time, size:info.size } );
+                    size += info.size;
                     doDelete = false;
-              }
-              else if (inM>0)
-              {
-                 var info = FileSystem.stat(filename);
-                 var atime = info.atime;
-                 var time = atime==null ? info.mtime.getTime() :
-                             Math.max(info.atime.getTime(),info.mtime.getTime() );
-                 fileInfo.push( {filename:filename, time:time, size:info.size } );
-                 size += info.size;
-                 doDelete = false;
-              }
+                 }
 
-              if (doDelete)
-              {
-                 deleted++;
-                 FileSystem.deleteFile(filename);
+                 if (doDelete)
+                 {
+                    deleted++;
+                    FileSystem.deleteFile(filename);
+                 }
+                 else
+                    allDeleted = false;
               }
+              if (allDeleted)
+                 FileSystem.deleteDirectory(path);
               else
-                 allDeleted = false;
+                 projectHasDirs = true;
            }
-           if (allDeleted)
-              FileSystem.deleteDirectory(path);
+           if (!projectHasDirs)
+              FileSystem.deleteDirectory(projDir);
         }
 
         if (inM*1024*1024<size)
@@ -145,9 +157,10 @@ class CompileCache
         }
 
         var t = haxe.Timer.stamp()-t0;
+        var projString = inProject==null ? "" : ' from project $inProject';
         var message = inM > 0 ?
-             'Cache: removed $deleted/$total files from $compileCache, leaving ' + Std.int(size/(1024*1024)) + 'MB, in $t seconds' :
-             'Cache: removed $deleted/$total files from $compileCache in $t seconds';
+             'Cache: removed $deleted/$total files$projString, leaving ' + Std.int(size/(1024*1024)) + 'MB, in $t seconds' :
+             'Cache: removed $deleted/$total files$projString in $t seconds';
         if (inLogInfo)
            Log.info(message);
         else
@@ -160,39 +173,54 @@ class CompileCache
 
    }
 
-   public static function list(inDetails:Bool)
+   public static function list(inDetails:Bool,inProject:String)
    {
       try
       {
+        Sys.println('Cache Directory: $compileCache');
         var t0 = haxe.Timer.stamp();
         var files = new Array<String>();
-        var dirs = FileSystem.readDirectory(compileCache);
+        var projects = FileSystem.readDirectory(compileCache);
         var size = 0.0;
         var count = 0;
-        for(dir in dirs)
+
+        for(project in projects)
         {
-           var path = compileCache + "/" + dir;
-           var dirFiles = FileSystem.readDirectory(path);
-           for(file in dirFiles)
+           if (inProject!=null && inProject!=project)
+              continue;
+           var projSize = size;
+           var projCount = count;
+           var projDir = compileCache + "/" + project;
+           var dirs = FileSystem.readDirectory(projDir);
+           for(dir in dirs)
            {
-              var filename = path + "/" + file;
-              var info = FileSystem.stat(filename);
-              if (inDetails)
+              var path = projDir + "/" + dir;
+              var dirFiles = FileSystem.readDirectory(path);
+              for(file in dirFiles)
               {
-                 var atime = info.atime;
-                 if (atime==null || atime.getTime()<info.mtime.getTime())
-                    atime = info.mtime;
-                 Sys.println('$filename : ${info.size} bytes, $atime');
+                 var filename = path + "/" + file;
+                 var info = FileSystem.stat(filename);
+                 if (inDetails)
+                 {
+                    var atime = info.atime;
+                    if (atime==null || atime.getTime()<info.mtime.getTime())
+                       atime = info.mtime;
+                    Sys.println('$filename : ${info.size} bytes, $atime');
+                 }
+                 count++;
+                 size += info.size;
               }
-              count++;
-              size += info.size;
+              //files = files.concat(dirFiles);
            }
-           //files = files.concat(dirFiles);
+           projSize = Std.int( (size - projSize)/1024 );
+           projCount = count - projCount;
+           Sys.println('Project $project\t: ${projSize}k in $projCount files');
         }
+
         var k = Std.int(size/1024);
         var t = haxe.Timer.stamp()-t0;
-        Sys.println('Cache Directory: $compileCache');
-        Sys.println('Found: ${k}k in $count files in $t seconds');
+        var projString = inProject==null ? "" : ' in project $inProject';
+        Sys.println('Found: ${k}k in $count files$projString in $t seconds');
       }
       catch(error:Dynamic)
       {

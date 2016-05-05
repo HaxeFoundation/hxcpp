@@ -23,6 +23,8 @@ class File
       mCompilerFlags = [];
    }
    
+   inline public function getCacheProject() return mGroup.getCacheProject();
+
    public function computeDependHash()
    {
       mDependHash = "";
