@@ -10,6 +10,8 @@
    #define HXCPP_API_LEVEL 0
 #endif
 
+#include "hx/HeaderVersion.h"
+
 #ifdef _MSC_VER
    #include <typeinfo.h>
    namespace hx { typedef ::type_info type_info; }
