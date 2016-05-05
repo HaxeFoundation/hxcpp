@@ -19,44 +19,48 @@ class TestPrime extends TestBase
    static var multi10 = Loader.load("multi10","iiiiiiiiiii" );
    static var multi11 = Loader.load("multi11","iiiiiiiiiiii" );
    static var multi12 = Loader.load("multi12","iiiiiiiiiiiii" );
+   static var getNullString = Loader.load("getNullString","s" );
 
    public function testPrime()
    {
       cpp.Prime.nekoInit("prime");
 
       assertTrue(add!=null);
-      assertEquals(7, add.call(2,5));
+      assertEquals(7, add(2,5));
 
       #if cpp
-      printString.call("Hello World"); 
+      printString("Hello World"); 
       #end
 
-      var len = distance3d.call(3,4,5);
+      var len = distance3d(3,4,5);
       assertClose(50,len*len);
 
-      fields.call( { x:11, name:"Hello" } );
+      fields( { x:11, name:"Hello" } );
+      fields( null );
 
-      assertEquals("Ok", stringVal.call("HxString"));
+      assertEquals("Ok", stringVal("HxString"));
 
-      assertEquals( ""+[1], ""+select.call(0, [1], "Hello", {x:1}, add) );
-      var shouldBeNull:String = "" + select.call(0, null, "Hello", {x:1}, add);
+      assertEquals(null, getNullString());
+
+      assertEquals( ""+[1], ""+select(0, [1], "Hello", {x:1}, add) );
+      var shouldBeNull:String = "" + select(0, null, "Hello", {x:1}, add);
       trace( "null ?" +  shouldBeNull + "/" + shouldBeNull.length );
       assertEquals( "null", shouldBeNull );
-      //assertEquals( "null", ""+select.call(0, null, "Hello", {x:1}, add) );
-      assertEquals( ""+"Hello", ""+select.call(1, [1], "Hello", {x:1}, add));
-      assertEquals( ""+{x:1}, ""+select.call(2, [1], "Hello", {x:1}, add) );
-      assertEquals( ""+add, ""+select.call(3, [1], "Hello", {x:1}, add) );
+      //assertEquals( "null", ""+select(0, null, "Hello", {x:1}, add) );
+      assertEquals( ""+"Hello", ""+select(1, [1], "Hello", {x:1}, add));
+      assertEquals( ""+{x:1}, ""+select(2, [1], "Hello", {x:1}, add) );
+      assertEquals( ""+add, ""+select(3, [1], "Hello", {x:1}, add) );
 
-      assertClose( 7.3, floats.call(true,4.2,3.1) );
-      assertClose( 1.1, floats.call(false,4.2,3.1) );
+      assertClose( 7.3, floats(true,4.2,3.1) );
+      assertClose( 1.1, floats(false,4.2,3.1) );
 
-      assertEquals( 5, multi5.call(1,1,1,1,1) );
-      assertEquals( 6, multi6.call(1,1,1,1,1,1) );
-      assertEquals( 7, multi7.call(1,1,1,1,1,1,1) );
-      assertEquals( 8, multi8.call(1,1,1,1,1,1,1,1) );
-      assertEquals( 9, multi9.call(1,1,1,1,1,1,1,1,1)  );
-      assertEquals( 10, multi10.call(1,1,1,1,1,1,1,1,1,1) );
-      assertEquals( 11, multi11.call(1,1,1,1,1,1,1,1,1,1,1) );
-      assertEquals( 12, multi12.call(1,1,1,1,1,1,1,1,1,1,1,1) );
+      assertEquals( 5, multi5(1,1,1,1,1) );
+      assertEquals( 6, multi6(1,1,1,1,1,1) );
+      assertEquals( 7, multi7(1,1,1,1,1,1,1) );
+      assertEquals( 8, multi8(1,1,1,1,1,1,1,1) );
+      assertEquals( 9, multi9(1,1,1,1,1,1,1,1,1)  );
+      assertEquals( 10, multi10(1,1,1,1,1,1,1,1,1,1) );
+      assertEquals( 11, multi11(1,1,1,1,1,1,1,1,1,1,1) );
+      assertEquals( 12, multi12(1,1,1,1,1,1,1,1,1,1,1,1) );
    }
 }

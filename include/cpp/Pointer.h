@@ -29,6 +29,7 @@ enum DynamicHandlerOp
 {
    dhoGetClassName,
    dhoToString,
+   dhoFromDynamic,
 };
 typedef void (*DynamicHandlerFunc)(DynamicHandlerOp op, const void *inData, void *outResult);
 Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc inFunc);
@@ -37,6 +38,12 @@ template<typename T> class Reference;
 
 
 
+struct StructHandlerDynamicParams
+{
+   StructHandlerDynamicParams(hx::Object *data) : outConverted(false), inData(data) { }
+   bool outConverted;
+   hx::Object *inData;
+};
 
 
 class DefaultStructHandler
@@ -45,20 +52,6 @@ class DefaultStructHandler
       static inline const char *getName() { return "unknown"; }
       static inline String toString( const void *inData ) { return HX_CSTRING("Struct"); }
 
-      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
-      {
-         if (op==dhoToString)
-            *(String *)outResult = toString(inData);
-         else if (op==dhoGetClassName)
-            *(const char **)outResult = getName();
-      }
-};
-
-class Int64Handler
-{
-   public:
-      static inline const char *getName() { return "cpp.Int64"; }
-      static inline String toString( const void *inData ) { return String( *(Int64 *)inData ); }
       static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
       {
          if (op==dhoToString)
@@ -125,12 +118,18 @@ public:
       }
       T *data = (T*)ptr->__GetHandle();
       int len = ptr->__length();
-      if (!data || len<sizeof(T))
+      if (!data || len<sizeof(T) || ptr->__CStr()!=HANDLER::getName() )
       {
-         hx::NullReference("DynamicData", true);
-         return;
+         StructHandlerDynamicParams convert(ptr);
+         HANDLER::handler(dhoFromDynamic, &value, &convert );
+         if (!convert.outConverted)
+         {
+            hx::NullReference("DynamicData", true);
+            return;
+         }
       }
-      value = *data;
+      else
+         value = *data;
    }
 
 
@@ -138,11 +137,6 @@ public:
    inline operator T& () { return value; }
 
 };
-
-typedef Struct<Int64,Int64Handler> Int64Struct;
-
-
-
 
 
 
@@ -153,7 +147,8 @@ template<typename T>
 class Pointer
 {
 public:
-   enum { elementSize = sizeof(T) };
+   typedef T elementType;
+
    T *ptr;
 
    inline Pointer( ) : ptr(0) { }

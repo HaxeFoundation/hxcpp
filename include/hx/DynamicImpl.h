@@ -35,7 +35,7 @@ struct CMemberFunction0 : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 0; } 
    ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunction0:this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
@@ -127,7 +127,7 @@ struct CMemberFunction1 : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 1; } 
    ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunction1:this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
@@ -219,7 +219,7 @@ struct CMemberFunction2 : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 2; } 
    ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunction2:this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
@@ -311,7 +311,7 @@ struct CMemberFunction3 : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 3; } 
    ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunction3:this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
@@ -403,7 +403,7 @@ struct CMemberFunction4 : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 4; } 
    ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunction4:this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
@@ -495,7 +495,7 @@ struct CMemberFunction5 : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 5; } 
    ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunction5:this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
@@ -970,7 +970,7 @@ struct CMemberFunctionVar : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 
    ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunctionVar:this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif

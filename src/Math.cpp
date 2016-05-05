@@ -145,7 +145,7 @@ static hx::StaticInfo Math_obj_sStaticStorageInfo[] = {
 
 void Math_obj::__boot()
 {
-   Static(Math_obj::__mClass) = hx::RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
+   Static(Math_obj::__mClass) = hx::_hx_RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
 
 #ifdef HXCPP_SCRIPTABLE
    Math_obj::__mClass->mStaticStorageInfo = Math_obj_sStaticStorageInfo;

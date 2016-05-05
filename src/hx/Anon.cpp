@@ -322,7 +322,7 @@ hx::Class Anon_obj::__mClass;
 
 void Anon_obj::__boot()
 {
-   Static(__mClass) = hx::RegisterClass(HX_CSTRING("__Anon"),TCanCast<Anon_obj>,sNone,sNone,0,0,0,0);
+   Static(__mClass) = hx::_hx_RegisterClass(HX_CSTRING("__Anon"),TCanCast<Anon_obj>,sNone,sNone,0,0,0,0);
 }
 
 

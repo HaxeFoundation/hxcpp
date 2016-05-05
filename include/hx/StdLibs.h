@@ -64,6 +64,21 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_float(const String &inString)
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_set_float_format(String inFormat);
 
+inline int _hx_idiv(int inNum,int inDenom) { return inNum/inDenom; }
+inline int _hx_cast_int(int inX) { return inX; }
+inline int _hx_fast_floor(double inX) {
+   union Cast
+   {
+      double d;
+      long l;
+   };
+   Cast c;
+   c.d = (inX-0.5) + 6755399441055744.0;
+   return c.l;
+}
+
+
+
 // --- CFFI helpers ------------------------------------------------------------------
 
 // Used for accessing object fields by integer ID, rather than string ID.
@@ -510,7 +525,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stdout();
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stderr();
 
 // Process
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_process_run( String cmd, Array<String> vargs );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShow= 1 /* SHOW_NORMAL */ );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int pos, int len );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int pos, int len );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int pos, int len );

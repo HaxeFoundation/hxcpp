@@ -569,21 +569,21 @@ static void sVisitStatics(HX_VISIT_PARAMS) {
 
 void Dynamic::__boot()
 {
-   Static(__VoidClass) = hx::RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0, sMarkStatics
+   Static(__VoidClass) = hx::_hx_RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0, sMarkStatics
       #ifdef HXCPP_VISIT_ALLOCS
       ,sVisitStatics
       #endif
    );
-   Static(__BoolClass) = hx::RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0);
-   Static(__IntClass) = hx::RegisterClass(HX_CSTRING("Int"),IsInt,sNone,sNone,0,0, 0 );
-   Static(__FloatClass) = hx::RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
-   Static(__Int64Class) = hx::RegisterClass(HX_CSTRING("cpp::Int64"),IsInt64,sNone,sNone, 0,0,&__IntClass );
-   Static(__PointerClass) = hx::RegisterClass(HX_CSTRING("cpp::Pointer"),IsPointer,sNone,sNone, 0,0,&__PointerClass );
+   Static(__BoolClass) = hx::_hx_RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0);
+   Static(__IntClass) = hx::_hx_RegisterClass(HX_CSTRING("Int"),IsInt,sNone,sNone,0,0, 0 );
+   Static(__FloatClass) = hx::_hx_RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
+   Static(__Int64Class) = hx::_hx_RegisterClass(HX_CSTRING("cpp::Int64"),IsInt64,sNone,sNone, 0,0,&__IntClass );
+   Static(__PointerClass) = hx::_hx_RegisterClass(HX_CSTRING("cpp::Pointer"),IsPointer,sNone,sNone, 0,0,&__PointerClass );
    DynTrue = Dynamic( new (hx::NewObjConst) hx::BoolData(true) );
    DynFalse = Dynamic( new (hx::NewObjConst) hx::BoolData(false) );
    DynEmptyString = Dynamic(HX_CSTRING("").__ToObject());
 #ifdef HXCPP_OBJC
-   Static(__ObjcClass) = hx::RegisterClass(HX_CSTRING("objc::BoxedType"),IsPointer,sNone,sNone, 0,0,&__ObjcClass );
+   Static(__ObjcClass) = hx::_hx_RegisterClass(HX_CSTRING("objc::BoxedType"),IsPointer,sNone,sNone, 0,0,&__ObjcClass );
 #endif
 }
 

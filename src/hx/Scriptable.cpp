@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <hx/Scriptable.h>
 #include <hx/GC.h>
+#include <hx/Memory.h>
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -538,7 +539,7 @@ public:
 
       DBGLOG("Class %s, base %p\n", (mName + HX_CSTRING("::") + superName).__s, mScriptBase );
 
-      RegisterClass(RemapFlash(mName), (hx::Class_obj *)this);
+      _hx_RegisterClass(RemapFlash(mName), (hx::Class_obj *)this);
 
       mScript = mScriptBase;
       (*sScriptRegistered)[mName.__s] = mScript;
@@ -1338,7 +1339,7 @@ void InitABC()
    String *__scriptableFunctionNames = &allFunctions;
 
 
-   RegisterClass(HX_CSTRING("Object"), new ScriptHandler());
+   _hx_RegisterClass(HX_CSTRING("Object"), new ScriptHandler());
    HX_SCRIPTABLE_REGISTER_CLASS("Object",Object_obj);
    sObject = (*sScriptRegistered)["Object"];
 
@@ -1497,7 +1498,7 @@ void LoadABC(const unsigned char *inBytes, int inLen)
          if (cls==null())
          {
             ABCClass cls = new ABCClass_obj(abc, inst, abc.mClassInfo[i]);
-            RegisterClass(className,cls);
+            _hx_RegisterClass(className,cls);
          }
          else
          {
@@ -1859,7 +1860,7 @@ public:
       if (len==0)
          return String("",0).dup();
 
-      char *buffer = (char *)malloc(len);
+      char *buffer = (char *)HxAlloc(len);
       if (mBytes)
       {
          if (mBytes+len>mBytesEnd)
@@ -1869,11 +1870,11 @@ public:
       }
       else if (fread(buffer,len,1,mFile)!=1)
       {
-         free(buffer);
+         HxFree(buffer);
          Error("Could not read string16");
       }
       Dynamic result = String(buffer,len).dup();
-      free(buffer);
+      HxFree(buffer);
       return result;
    }
 

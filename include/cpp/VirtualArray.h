@@ -345,7 +345,13 @@ public:
    template<typename T>
    inline const T &set(int inIdx, const T &inVal)
    {
-      if (store!=hx::arrayFixed) EnsureStorage(inVal);
+      if (store!=hx::arrayFixed)
+      {
+         if (inIdx>(store==hx::arrayEmpty ? 0 : (int)base->length) )
+            EnsureObjectStorage();
+         else
+            EnsureStorage(inVal);
+      }
       base->set(inIdx, inVal);
       return inVal;
    }
@@ -426,7 +432,14 @@ public:
    template<typename T>
    inline void insert(int inPos, const T &inValue)
    {
-      if (store!=hx::arrayFixed) EnsureStorage(inValue);
+      if (store!=hx::arrayFixed)
+      {
+         if (inPos>(store==hx::arrayEmpty ? 0 : (int)base->length) )
+            EnsureObjectStorage();
+         else
+            EnsureStorage(inValue);
+      }
+
       base->__insert(inPos,inValue);
    }
 

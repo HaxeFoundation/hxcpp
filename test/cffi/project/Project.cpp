@@ -66,7 +66,10 @@ DEFINE_PRIME3(distance3D);
 
 void fields(value object)
 {
-   printf("x : %f\n", val_field_numeric(object, val_id("x")) );
+   if ( val_is_null(object))
+      printf("null fields\n");
+   else
+      printf("x : %f\n", val_field_numeric(object, val_id("x")) );
 }
 DEFINE_PRIME1v(fields);
 
@@ -77,6 +80,14 @@ HxString stringVal(HxString inString)
    return HxString("Ok");
 }
 DEFINE_PRIME1(stringVal);
+
+
+HxString getNullString()
+{
+   return 0;
+}
+DEFINE_PRIME0(getNullString);
+
 
 // Conflict with name - use anon-namespace
 namespace {

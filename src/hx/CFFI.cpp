@@ -1,6 +1,6 @@
 #include <hxcpp.h>
 #include <stdio.h>
-// Get headers etc.
+#include <hx/Memory.h>
 #include <hx/OS.h>
 
 #define IGNORE_CFFI_API_H
@@ -35,7 +35,7 @@ public:
       if (inSize)
       {
          mMarkSize = inSize;
-         mHandle = malloc(inSize);
+         mHandle = HxAlloc(inSize);
          memset(mHandle,0,mMarkSize);
       }
 
@@ -90,7 +90,7 @@ public:
       SetFinalizer(0);
       mType = 0;
       if (mMarkSize && mHandle)
-         free(mHandle);
+         HxFree(mHandle);
       mHandle = 0;
    }
 

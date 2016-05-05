@@ -54,12 +54,17 @@ class Setup
 
    static public function getNdkVersion(inDirName:String):Int
    {
-      var extract_version = ~/(android-ndk-)?r(\d+)*/;
-      if (extract_version.match(inDirName))
+      var dir = inDirName.split("\\").join("/");
+
+      var extract_version = ~/.*\/(android-ndk-)?r(\d+)/;
+      if (extract_version.match(dir))
       {
-         return Std.parseInt( extract_version.matched(2) );
+         var result = Std.parseInt( extract_version.matched(2) );
+         if (result!=null)
+            return result;
       }
-      //throw 'Could not deduce NDK version from "$inDirName"';
+
+      Log.v('Could not deduce NDK version from "$inDirName" - assuming 8');
       return 8;
    }
    

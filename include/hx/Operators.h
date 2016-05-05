@@ -39,11 +39,15 @@ HX_COMPARE_NULL_MOST_OPS(hx::IndexRef)
 
 inline String operator+(const cpp::UInt64 &i,const String &s) { return String(i) + s; }
 inline String operator+(const cpp::Int64 &i,const String &s) { return String(i) + s; }
-inline String operator+(const Int &i,const String &s) { return String(i) + s; }
+inline String operator+(const int &i,const String &s) { return String(i) + s; }
+inline String operator+(const unsigned int &i,const String &s) { return String(i) + s; }
 inline String operator+(const double &d,const String &s) { return String(d) + s; }
 inline String operator+(const float &d,const String &s) { return String(d) + s; }
 inline String operator+(const bool &b,const String &s) { return String(b) + s; }
-inline String operator+(const HX_CHAR *c,const String &s) { return String(c) + s; }
+inline String operator+(const unsigned char c,const String &s) { return String(c) + s; }
+inline String operator+(const signed char c,const String &s) { return String(c) + s; }
+inline String operator+(const unsigned short c,const String &s) { return String(c) + s; }
+inline String operator+(const signed short c,const String &s) { return String(c) + s; }
 inline String operator+(const null &n,const String &s) { return String(n) + s; }
 inline String operator+(const cpp::CppInt32__ &i,const String &s) { return String(i) + s; }
 
@@ -172,7 +176,57 @@ template<typename R>
 inline hx::IndexRef ModEq(hx::IndexRef inLHS, R inRHS) { inLHS = DoubleMod(inLHS,inRHS); return inLHS; }
 
 
+
 #endif // __GNUC__ || __SNC__
+
+template<typename R,typename T>
+inline hx::__TArrayImplRef<T> AddEq(hx::__TArrayImplRef<T> ref, R inRHS)
+   { ref.mObject->__set(ref.mIndex, ref.mObject->__get(ref.mIndex) + inRHS); return ref;}
+
+template<typename R,typename T>
+inline hx::__TArrayImplRef<T> MultEq(hx::__TArrayImplRef<T> ref, R inRHS)
+   { ref.mObject->__set(ref.mIndex, ref.mObject->__get(ref.mIndex) * inRHS); return ref;}
+
+template<typename R,typename T>
+inline hx::__TArrayImplRef<T> DivEq(hx::__TArrayImplRef<T> ref, R inRHS)
+   { ref.mObject->__set(ref.mIndex, ref.mObject->__get(ref.mIndex) / inRHS); return ref;}
+
+template<typename R,typename T>
+inline hx::__TArrayImplRef<T> SubEq(hx::__TArrayImplRef<T> ref, R inRHS)
+   { ref.mObject->__set(ref.mIndex, ref.mObject->__get(ref.mIndex) - inRHS); return ref;}
+
+template<typename T>
+inline hx::__TArrayImplRef<T> AndEq(hx::__TArrayImplRef<T> ref, int inRHS)
+   { ref.mObject->__set(ref.mIndex, (int)ref.mObject->__get(ref.mIndex) & inRHS); return ref;}
+
+template<typename T>
+inline hx::__TArrayImplRef<T> OrEq(hx::__TArrayImplRef<T> ref, int inRHS)
+   { ref.mObject->__set(ref.mIndex, (int)ref.mObject->__get(ref.mIndex) | inRHS); return ref;}
+
+template<typename T>
+inline hx::__TArrayImplRef<T> XorEq(hx::__TArrayImplRef<T> ref, int inRHS)
+   { ref.mObject->__set(ref.mIndex, (int)ref.mObject->__get(ref.mIndex) ^ inRHS); return ref;}
+
+template<typename T>
+inline hx::__TArrayImplRef<T> ShlEq(hx::__TArrayImplRef<T> ref, int inRHS)
+   { ref.mObject->__set(ref.mIndex, (int)ref.mObject->__get(ref.mIndex) << inRHS); return ref;}
+
+template<typename T>
+inline hx::__TArrayImplRef<T> ShrEq(hx::__TArrayImplRef<T> ref, int inRHS)
+   { ref.mObject->__set(ref.mIndex, (int)ref.mObject->__get(ref.mIndex) >> inRHS); return ref;}
+
+template<typename T>
+inline hx::__TArrayImplRef<T> UShrEq(hx::__TArrayImplRef<T> ref, int inRHS)
+   { ref.mObject->__set(ref.mIndex, hx::UShr(ref.mObject->__get(ref.mIndex),inRHS)); return ref;}
+
+template<typename T>
+inline hx::__TArrayImplRef<T> UShrEq(hx::__TArrayImplRef<T> ref, double inRHS)
+   { ref.mObject->__set(ref.mIndex, DoubleMod(ref.mObject->__get(ref.mIndex),inRHS)); return ref;}
+
+
+
+
+
 
 
 template<typename T> inline T TCastObject(hx::Object *inObj) { return hx::BadCast(); }

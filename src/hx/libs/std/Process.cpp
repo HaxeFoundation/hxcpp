@@ -125,9 +125,12 @@ vprocess *getProcess(Dynamic handle)
    If no auto-quoting/escaping is desired, you should append necessary 
    arguments to cmd as if it is inputted to the shell directly, and pass
    null to args.
+
+   inShowParam = only for windows, SHOW_* from "ShowWindow" function
+      default = 1 = SHOW_WINDOW
    </doc>
 **/
-Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
+Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
 {
    #ifdef APPLETV
    return null();
@@ -216,7 +219,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs )
       memset(&sinf,0,sizeof(sinf));
       sinf.cb = sizeof(sinf);
       sinf.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
-      sinf.wShowWindow = SW_NORMAL;
+      sinf.wShowWindow = inShowParam;
       CreatePipe(&oread,&sinf.hStdOutput,&sattr,0);
       CreatePipe(&eread,&sinf.hStdError,&sattr,0);
       CreatePipe(&sinf.hStdInput,&iwrite,&sattr,0);

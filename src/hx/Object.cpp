@@ -130,7 +130,7 @@ static hx::ScriptNamedFunction __scriptableFunctions[] = {
 
 void Object::__boot()
 {
-   Static(Object__mClass) = hx::RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0, 0 );
+   Static(Object__mClass) = hx::_hx_RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0, 0 );
 
    #ifdef HXCPP_SCRIPTABLE
    hx::ScriptableRegisterClass( HX_CSTRING("hx.Object"), (int)sizeof(hx::Object__scriptable), __scriptableFunctions, Object__scriptable::__script_create, Object::__script_construct );
