@@ -5,6 +5,7 @@ class TestMain {
 
 	static function main(){
 		var r = new haxe.unit.TestRunner();
+		r.add(new TestTypes());
 		r.add(new TestKeywords());
 		r.add(new TestSort());
 		r.add(new TestGC());

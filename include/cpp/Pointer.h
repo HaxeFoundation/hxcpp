@@ -31,7 +31,7 @@ enum DynamicHandlerOp
    dhoToString,
    dhoFromDynamic,
 };
-typedef void (*DynamicHandlerFunc)(DynamicHandlerOp op, const void *inData, void *outResult);
+typedef void (*DynamicHandlerFunc)(DynamicHandlerOp op, void *ioValue, void *outResult);
 Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc inFunc);
 
 template<typename T> class Reference;
@@ -50,16 +50,42 @@ class DefaultStructHandler
 {
    public:
       static inline const char *getName() { return "unknown"; }
-      static inline String toString( const void *inData ) { return HX_CSTRING("Struct"); }
+      static inline String toString( const void *inValue ) { return HX_CSTRING("Struct"); }
 
-      static inline void handler(DynamicHandlerOp op, const void *inData, void *outResult)
+      static inline void handler(DynamicHandlerOp op, void *inValue, void *outResult)
       {
          if (op==dhoToString)
-            *(String *)outResult = toString(inData);
+            *(String *)outResult = toString(inValue);
          else if (op==dhoGetClassName)
             *(const char **)outResult = getName();
       }
 };
+
+
+class EnumHandler
+{
+   public:
+      static inline const char *getName() { return "enum"; }
+      static inline String toString( const void *inValue ) {
+         int val = inValue ? *(int *)inValue : 0;
+         return HX_CSTRING("enum(") + String(val) + HX_CSTRING(")");
+      }
+
+      static inline void handler(DynamicHandlerOp op, void *ioValue, void *outResult)
+      {
+         if (op==dhoToString)
+            *(String *)outResult = toString(ioValue);
+         else if (op==dhoGetClassName)
+            *(const char **)outResult = getName();
+         else if (op==dhoFromDynamic)
+         {
+            StructHandlerDynamicParams *params = (StructHandlerDynamicParams *)outResult;
+            *(int *)ioValue = params->inData ? params->inData->__ToInt() : 99;
+            params->outConverted = true;
+         }
+      }
+};
+
 
 
 template<typename T, typename HANDLER = DefaultStructHandler >
@@ -141,8 +167,6 @@ public:
 
 
 
-
-
 template<typename T>
 class Pointer
 {
@@ -167,6 +191,7 @@ public:
    template<typename O>
    inline void setRaw(const O *inValue ) { ptr =  (T*) inValue; }
    
+
    inline Pointer operator=( const Pointer &inRHS ) { return ptr = inRHS.ptr; }
    inline Dynamic operator=( Dynamic &inValue )
    {
@@ -174,6 +199,18 @@ public:
       return inValue;
    }
    inline Dynamic operator=( null &inValue ) { ptr=0; return inValue; }
+
+   template<typename O>
+   inline Pointer operator=( const Pointer<O> &inValue ) { ptr = (T*) inValue.ptr; return *this; }
+
+   template<typename O>
+   inline Pointer operator=( const O *inValue ) { ptr = (T*) inValue; return *this; }
+
+   template<typename H>
+   inline Pointer operator=( const Struct<T,H> &structVal ) { ptr = &structVal.value; return *this; }
+
+
+
    inline AutoCast reinterpret() { return AutoCast(ptr); }
    inline RawAutoCast rawCast() { return RawAutoCast(ptr); }
 
@@ -437,6 +474,9 @@ public:
 
    template<typename T>
 	inline static Pointer<T> addressOf(T &value)  { return Pointer<T>(&value); }
+
+   template<typename T>
+	inline static Pointer<void> endOf(hx::ObjectPtr<T> value)  { return (void *)(value.mPtr+1); }
 
    template<typename T>
 	inline static Pointer<T> fromPointer(T *value)  { return Pointer<T>(value); }

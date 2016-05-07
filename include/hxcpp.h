@@ -10,6 +10,8 @@
    #define HXCPP_API_LEVEL 0
 #endif
 
+#include "hx/HeaderVersion.h"
+
 #ifdef _MSC_VER
    #include <typeinfo.h>
    namespace hx { typedef ::type_info type_info; }
@@ -332,8 +334,10 @@ typedef bool PropertyAccess;
 #include <hx/Debug.h>
 #include <hx/Boot.h>
 #include <hx/Undefine.h>
-#if (HXCPP_API_LEVEL>=300)
+#if (HXCPP_API_LEVEL>=330)
 #include <hx/LessThanEq.h>
+#else
+#include <cpp/Int64.h>
 #endif
 
 #endif

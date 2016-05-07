@@ -9,6 +9,7 @@ class Native
 		r.add(new tests.TestNativeGen());
 		r.add(new tests.TestNonVirtual());
 		r.add(new tests.TestPtr());
+		r.add(new tests.TestNativeEnum());
       var t0 = haxe.Timer.stamp();
 		var success = r.run();
       trace(" Time : " + (haxe.Timer.stamp()-t0)*1000 );

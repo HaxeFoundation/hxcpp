@@ -1,5 +1,41 @@
 
 
+* Added 'hxcpp run hxcpp cache ...' commands for managing cache
+* Added cpp.Variant class for query of field values to avoid boxing
+* Added more efficient version of finalizer
+* Add non allocating version of __hxcpp_print
+* More WinRT fixes
+* Output 'HxcppConfig.h' with defines included for easier external integration
+* Output list of output files if requested
+* Add support functions for StdLib - alloc/free/sizeof
+* Fix crash when marking stack names from GCRoots
+* Add bitcode support for iOS
+* Rename RegisterClass to avoid conflicts with windows
+* Added 'VirtualArray' for arrays of unknown types
+* Split Macros.tpl
+* Added optional ShowParam to process_run
+* Added inline functions for Int64 externs
+* Add error check for allocating from a finalizer
+* Fix null strings on Cffi Prime
+* Use slow path if required for Win64 Tls
+* Expand logic for detecting android toolchain from NDK name
+* Remove the need for hxcpp binaries by compiling source directly into target
+* Adjust the default verbosity level, and add HXCPP_VERBOSE/HXCPP_QUIET/HXCPP_SILENT
+* Added some control options for copyFile directive
+* Fix cppia decrement
+* Add Array.removeRange, which does not require a return value
+* Do not call setbuf(0) on stdin, since it messes with readLine
+* Cppia now throws an error if loading fails
+* Allocate EnumParam data inline to cut down on allocations
+* Allow anonymous object data to be allocated inline to avoid allocations
+* Add SSL library code
+* Add NativeGen framework for interfaces
+* Add macros to allow neater generated code
+* Allow larger memory space with -D HXCPP_GC_BIG_BLOCKS
+* Improve Array.join speed
+
+3.2.205
+------------------------------------------------------------
 * Initial support for HXCPP_OPTIMIZE_FOR_SIZE
 * Support HXCPP_DEBUG_LINK on more targets
 * Support for cross compiling to windows from linux

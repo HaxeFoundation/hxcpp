@@ -20,6 +20,8 @@ class Log
    public static var printMutex:Mutex;
 
    public static inline var RED = "\x1b[31m";
+   public static inline var YELLOW = "\x1b[33m";
+   public static inline var WHITE = "\x1b[37m";
    public static inline var NORMAL = "\x1b[0m";
    public static inline var BOLD = "\x1b[1m";
    public static inline var ITALIC = "\x1b[3m";

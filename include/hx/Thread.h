@@ -7,6 +7,10 @@
 #ifndef HX_THREAD_H
 #define HX_THREAD_H
 
+#ifndef HXCPP_HEADER_VERSION
+#include "hx/HeaderVersion.h"
+#endif
+
 #ifdef HX_WINRT
 
 #include <windows.h>
@@ -152,25 +156,7 @@ struct HxMutex
 
 inline bool HxCreateDetachedThread(DWORD (WINAPI *func)(void *), void *param)
 {
-#if defined HX_WINRT && defined __cplusplus_winrt
-	try
-	{
-		auto workItemHandler = ref new WorkItemHandler([=](IAsyncAction^)
-			{
-				// Run the user callback.
-				func(param);
-			}, Platform::CallbackContext::Any);
-
-		ThreadPool::RunAsync(workItemHandler, WorkItemPriority::Normal, WorkItemOptions::None);
-	}
-	catch (...)
-	{
-		return false;
-	}
-	return true;
-#else
 	return (CreateThread(NULL, 0, func, param, 0, 0) != 0);
-#endif
 }
 
 #else

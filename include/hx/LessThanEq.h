@@ -194,6 +194,43 @@ struct CompareTraits< cpp::Variant >
 
 
 
+template <typename T> 
+struct CompareTraits< cpp::Pointer<T> >
+{
+   enum { type = (int)CompareAsDynamic };
+
+   inline static int toInt(Dynamic inValue) { return inValue; }
+   inline static double toDouble(Dynamic inValue) { return inValue; }
+   inline static cpp::Int64 toInt64(Dynamic inValue) { return inValue; }
+   inline static String toString(Dynamic inValue) { return inValue; }
+   inline static hx::Object *toObject(Dynamic inValue) { return inValue.mPtr; }
+   inline static int getDynamicCompareType(const Dynamic &inValue)
+   {
+      return CompareAsDynamic;
+   }
+   inline static bool isNull(const cpp::Pointer<T> &inValue) { return !inValue.ptr; }
+};
+
+
+template <typename T> 
+struct CompareTraits< T * >
+{
+   enum { type = (int)CompareAsInt64 };
+
+   inline static int toInt(T * inValue) { return 0; }
+   inline static double toDouble(T * inValue) { return 0; }
+   inline static cpp::Int64 toInt64(T * inValue) { return (cpp::Int64)inValue; }
+   inline static String toString(T * inValue) { return String(); }
+   inline static hx::Object *toObject(T * inValue) { return 0; }
+   inline static int getDynamicCompareType(T * inValue)
+   {
+      return CompareAsInt64;
+   }
+   inline static bool isNull(T *inValue) { return !inValue; }
+};
+
+
+
 template<typename T1>
 bool IsNull(const T1 &v1)
 {

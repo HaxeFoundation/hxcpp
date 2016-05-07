@@ -173,6 +173,16 @@ public:
     StackCatchable *catchables;
 };
 
+template<typename T> struct StackVariableWrapper
+{
+   typedef T wrapper;
+};
+
+template<typename T> struct StackVariableWrapper<T *>
+{
+   typedef cpp::Pointer<T> wrapper;
+};
+
 
 class StackVariable
 {
@@ -245,11 +255,13 @@ private:
     template<typename T>
     static Dynamic GetOrSetFunction(bool get, void *ptr, Dynamic *dynamic)
     {
+       typedef typename StackVariableWrapper<T>::wrapper Wrap;
+
         if (get) {
-            return * (T *) ptr;
+            return Wrap(* (T *) ptr);
         }
         else {
-            * (T *) ptr = *dynamic;
+            * (T *) ptr = Wrap(*dynamic);
             return null();
         }
     }

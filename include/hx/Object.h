@@ -141,9 +141,9 @@ public:
       return operator new(inSize, inType==NewObjContainer, inName);
    }
 
-
    void operator delete( void *, bool) { }
    void operator delete( void *, bool, const char * ) { }
+   void operator delete( void *, int ) { }
    void operator delete( void *, hx::NewObjectType) { }
    void operator delete( void *, hx::NewObjectType, const char * ) { }
 

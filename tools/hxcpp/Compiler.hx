@@ -29,6 +29,10 @@ class Compiler
 
    public var mID:String;
 
+   //testing...
+   //public var useCacheInPlace = true;
+   public var useCacheInPlace = false;
+
    public function new(inID,inExe:String,inGCCFileTypes:Bool)
    {
       mFlags = [];
@@ -79,9 +83,8 @@ class Compiler
       }
    }
 
-   public function compile(inFile:File,inTid:Int)
+   function getArgs(inFile:File)
    {
-      var obj_name = getObjName(inFile);
       var args = new Array<String>();
       
       args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
@@ -115,34 +118,39 @@ class Compiler
             args.unshift("-I"+mObjDir + "/" + pchDir);
       }
 
+      return args;
+   }
+
+   public function compile(inFile:File,inTid:Int,headerFunc:Void->Void)
+   {
+      var obj_name = getObjName(inFile);
+      var args = getArgs(inFile);
+
       var found = false;
       var cacheName:String = null;
       if (mCompilerVersion!=null)
       {
-         var sourceName = inFile.mDir + inFile.mName;
-         var contents = sys.io.File.getContent(sourceName);
-         if (contents!="")
+         cacheName = getHashedName(inFile, getArgs(inFile));
+         if (FileSystem.exists(cacheName))
          {
-            var md5 = Md5.encode(contents + args.join(" ") +
-                inFile.mGroup.mDependHash + mCompilerVersion + inFile.mDependHash );
-            cacheName = CompileCache.getCacheName(md5);
-            if (FileSystem.exists(cacheName))
+            if (useCacheInPlace)
             {
-               sys.io.File.copy(cacheName, obj_name);
-               Log.info(" use cache for " + obj_name );
-               found = true;
+               Log.info(""," link cache for " + obj_name );
+               obj_name = cacheName;
             }
             else
             {
-               // Log.info("", " not in cache " + cacheName);
+               Log.info(""," copy cache for " + obj_name );
+               sys.io.File.copy(cacheName, obj_name);
             }
+            found = true;
          }
-         else
-            throw "Unkown source contents " + sourceName;
       }
 
       if (!found)
       {
+         if (headerFunc!=null)
+            headerFunc();
          args.push( (new Path( inFile.mDir + inFile.mName)).toString() );
 
          var out = mOutFlag;
@@ -174,11 +182,16 @@ class Compiler
                //throw "Error : " + result + " - build cancelled";
             }
          }
-         
+
          if (cacheName!=null)
          {
             sys.io.File.copy(obj_name, cacheName);
             Log.info("", " caching " + cacheName);
+            if (useCacheInPlace)
+            {
+               FileSystem.deleteFile(obj_name);
+               obj_name = cacheName;
+            }
          }
       }
 
@@ -215,12 +228,37 @@ class Compiler
       return mCached;
    }
 
-   public function getObjName(inFile:File)
+   function getObjName(inFile:File)
    {
       var path = new Path(inFile.mName);
       var dirId = Md5.encode(BuildTool.targetKey + path.dir + inFile.mGroup.mId).substr(0,8) + "_";
 
       return PathManager.combine(mObjDir, dirId + path.file + mExt);
+   }
+
+   function getHashedName(inFile:File, args:Array<String>)
+   {
+      var sourceName = inFile.mDir + inFile.mName;
+      var contents = sys.io.File.getContent(sourceName);
+      if (contents!="")
+      {
+         var md5 = Md5.encode(contents + args.join(" ") +
+             inFile.mGroup.mDependHash + mCompilerVersion + inFile.mDependHash );
+         return CompileCache.getCacheName(inFile.getCacheProject(),md5,mExt);
+      }
+      else
+         throw "Unkown source contents " + sourceName;
+      return "";
+   }
+
+   public function getCachedObjName(inFile:File)
+   {
+      if (mCompilerVersion!=null && useCacheInPlace)
+      {
+         return getHashedName(inFile, getArgs(inFile));
+      }
+      else
+         return getObjName(inFile);
    }
 
    public function needsPchObj()

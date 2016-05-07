@@ -148,6 +148,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
 
 // -- hx::Native -------
 
+#if HXCPP_API_LEVEL >= 330
 extern "C" void __hxcpp_lib_main();
 namespace hx
 {
@@ -165,6 +166,7 @@ namespace hx
       }
    }
 }
+#endif
 
 
 // --- System ---------------------------------------------------------------------
@@ -507,28 +509,28 @@ Array<String> __get_args()
 }
 
 
-void __hxcpp_print(Dynamic &inV)
+void __hxcpp_print_string(const String &inV)
 {
    #ifdef HX_WINRT
-   WINRT_PRINTF("%s",inV->toString().__s);
+   WINRT_PRINTF("%s",inV.__s);
    #else
    #ifdef HX_UTF8_STRINGS
-   printf("%s",inV->toString().__s);
+   printf("%s",inV.__s);
    #else
-   printf("%S",inV->toString().__s);
+   printf("%S",inV.__s);
    #endif
    #endif
 }
 
-void __hxcpp_println(Dynamic &inV)
+void __hxcpp_println_string(const String &inV)
 {
    #ifdef HX_WINRT
-   WINRT_PRINTF("%s\n",inV->toString().__s);
+   WINRT_PRINTF("%s\n",inV.__s);
    #else
    #ifdef HX_UTF8_STRINGS
-   printf("%s\n",inV->toString().__s);
+   printf("%s\n",inV.__s);
    #else
-   printf("%S\n",inV->toString().__s);
+   printf("%S\n",inV.__s);
    #endif
    #endif
 }
