@@ -717,7 +717,7 @@ class BuildTool
                   group.mUseCache = parseBool( substitute(el.att.value) );
                   if (el.has.project)
                      group.mCacheProject = substitute(el.att.project);
-                  if (el.has.asLibrary)
+                  if (el.has.asLibrary && CompileCache.hasCache)
                      group.mAsLibrary = true;
                case "addTwice" :
                   group.mAddTwice = true;
