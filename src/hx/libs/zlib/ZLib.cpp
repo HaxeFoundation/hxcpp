@@ -1,7 +1,3 @@
-#ifndef STATIC_LINK
-#define IMPLEMENT_API
-#endif
-
 #include <hxcpp.h>
 #include <stdlib.h>
 #include <string.h>

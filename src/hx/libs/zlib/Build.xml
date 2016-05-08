@@ -7,7 +7,7 @@
 <files id="hxcpp_zlib" dir="${this_dir}" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
-  <cache value="true" />
+  <cache value="true" asLibrary="1" />
 
   <compilerflag value="-I${ZLIB_DIR}"/>
 

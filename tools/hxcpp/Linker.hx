@@ -1,5 +1,6 @@
 import haxe.io.Path;
 import sys.FileSystem;
+import haxe.crypto.Md5;
 
 using StringTools;
 
@@ -56,10 +57,13 @@ class Linker
       return false;
    }
 
-   public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler)
+   public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler,?overrideTmpDir:String)
    {
       var ext = inTarget.getExt(mExt);
       var file_name = mNamePrefix + inTarget.mOutput + ext;
+
+      var tmpDir = overrideTmpDir==null ? inCompiler.mObjDir : overrideTmpDir;
+
       
       try
       {
@@ -73,6 +77,7 @@ class Linker
       
       var out_name = Path.normalize(PathManager.combine( inTarget.mBuildDir, inTarget.mOutputDir + file_name));
       mLastOutName = out_name;
+
 
       var lastLib = "";
       var libs = new Array<String>();
@@ -91,6 +96,11 @@ class Linker
 
       var v18Added = false;
       var isOutOfDateLibs = false;
+
+      var md5 = Md5.encode(inObjs.join(";"));
+      var hashFile = out_name + ".hash";
+      if (!FileSystem.exists(hashFile) || sys.io.File.getContent(hashFile)!=md5)
+         isOutOfDateLibs = true;
 
       for(i in 0...libs.length)
       {
@@ -186,7 +196,7 @@ class Linker
                {
                   var libName = Path.withoutDirectory(lib);
                   var libObjs = ProcessManager.readStdout(mExe, ["t", lib ]);
-                  var objDir = inCompiler.mObjDir + "/" + libName + ".unpack";
+                  var objDir = tmpDir + "/" + libName + ".unpack";
                   PathManager.mkdir(objDir);
                   ProcessManager.runCommand (objDir, mExe, ["x", lib], true, true, false, " - Unpack : " + lib);
                   for(obj in libObjs)
@@ -210,8 +220,8 @@ class Linker
          // Place list of obj files in a file called "all_objs"
          if (mFromFile!="")
          {
-            PathManager.mkdir(inCompiler.mObjDir);
-            var fname = inCompiler.mObjDir + "/all_objs";
+            PathManager.mkdir(tmpDir);
+            var fname = tmpDir + "/all_objs";
             var fout = sys.io.File.write(fname,false);
             if (mFromFileNeedsQuotes)
             {
@@ -266,6 +276,8 @@ class Linker
             sys.io.File.copy( mLibDir+"/"+file_name, out_name );
             FileSystem.deleteFile( mLibDir+"/"+file_name );
          }
+
+         sys.io.File.saveContent(hashFile,md5);
          return out_name;
       }
 

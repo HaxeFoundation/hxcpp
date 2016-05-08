@@ -7,7 +7,7 @@
 <files id="hxcpp_regexp" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
-  <cache value="true" />
+  <cache value="true" asLibrary="true" />
 
   <compilerflag value="-DPCRE_STATIC"/>
   <compilerflag value="-DSUPPORT_UTF8"/>

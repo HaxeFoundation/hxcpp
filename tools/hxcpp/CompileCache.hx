@@ -89,7 +89,7 @@ class CompileCache
            var dirs = FileSystem.readDirectory(projDir);
            for(dir in dirs)
            {
-              if (dir.length!=2)
+              if (dir.length!=2 && dir!="lib")
                  throw 'bad cache name "$dir" found - aborting';
               var path = projDir + "/" + dir;
               var dirFiles = FileSystem.readDirectory(path);

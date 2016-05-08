@@ -406,7 +406,7 @@ class BuildTool
          {
             var lines = ["#ifndef HXCPP_CONFIG_INCLUDED","#define HXCPP_CONFIG_INCLUDED"];
 
-            var flags = group.mCompilerFlags.concat(mCompiler.mFlags);
+            var flags = group.mCompilerFlags.concat(mCompiler.getFlags("haxe"));
             var define = ~/^-D([^=]*)=?(.*)/;
             for(flag in flags)
             {
@@ -443,7 +443,7 @@ class BuildTool
                if (first)
                {
                   first = false;
-                  Log.info(" - Compiling group '" + group.mId + "' with flags " +  group.mCompilerFlags.concat(mCompiler.mFlags).join(" ") );
+                  Log.info(" - Compiling group '" + group.mId + "' with flags " +  group.mCompilerFlags.concat(mCompiler.getFlagStrings()).join(" ") );
                }
                groupMutex.release();
             }
@@ -503,9 +503,15 @@ class BuildTool
          if (group.mAsLibrary && mLinkers.exists("static_link"))
          {
             var linker = mLinkers.get("static_link");
-            var md5 = Md5.encode(groupObjs.join(";")).substr(0,8);
-            var tmpName = mCompiler.mObjDir + "/" + md5 + "_" + group.mId;
-            var libTarget = new Target(tmpName, "linker", "static_link" );
+            var targetDir = mCompiler.mObjDir;
+            if (useCache)
+            {
+               targetDir = CompileCache.compileCache + "/" + group.getCacheProject() + "/lib";
+               PathManager.mkdir(targetDir);
+            }
+            var libName = targetDir + "/" + mCompiler.getTargetPrefix() + "_" + group.getCacheProject();
+
+            var libTarget = new Target(libName, "linker", "static_link" );
             linker.link(libTarget,groupObjs, mCompiler );
             target.mLibs.push(linker.mLastOutName);
          }
@@ -642,7 +648,7 @@ class BuildTool
          if (valid(el,""))
             switch(el.name)
             {
-               case "flag" : c.mFlags.push(substitute(el.att.value));
+               case "flag" : c.addFlag(substitute(el.att.value), el.has.tag?substitute(el.att.tag):"");
                case "cflag" : c.mCFlags.push(substitute(el.att.value));
                case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
                case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
@@ -680,13 +686,15 @@ class BuildTool
       return c;
    }
 
-   public function createFileGroup(inXML:Fast,inFiles:FileGroup,inName:String, inForceRelative:Bool):FileGroup
+   public function createFileGroup(inXML:Fast,inFiles:FileGroup,inName:String, inForceRelative:Bool, inTags:String):FileGroup
    {
       var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
       if (inForceRelative)
          dir = PathManager.combine( Path.directory(mCurrentIncludeFile), dir );
 
       var group = inFiles==null ? new FileGroup(dir,inName, inForceRelative) : inFiles;
+      if (inTags!=null)
+         group.mTags = inTags;
 
       for(el in inXML.elements)
       {
@@ -695,15 +703,19 @@ class BuildTool
             {
                case "file" :
                   var file = new File(substitute(el.att.name),group);
+                  if (el.has.tags)
+                     file.setTags( substitute(el.att.tags) );
                   for(f in el.elements)
                      if (valid(f,"") && f.name=="depend")
                         file.mDepends.push( substitute(f.att.name) );
                   group.mFiles.push( file );
-               case "section" : createFileGroup(el,group,inName,inForceRelative);
+               case "section" : createFileGroup(el,group,inName,inForceRelative,null);
                case "cache" :
                   group.mUseCache = parseBool( substitute(el.att.value) );
                   if (el.has.project)
                      group.mCacheProject = substitute(el.att.project);
+                  if (el.has.asLibrary)
+                     group.mAsLibrary = true;
                case "depend" :
                   if (el.has.name)
                   {
@@ -740,7 +752,7 @@ class BuildTool
                         pushFile(full_name, "FileGroup");
                         var make_contents = sys.io.File.getContent(full_name);
                         var xml_slow = Xml.parse(make_contents);
-                        createFileGroup(new Fast(xml_slow.firstElement()), group, inName, false);
+                        createFileGroup(new Fast(xml_slow.firstElement()), group, inName, false,null);
                         popFile();
                      }
                   } 
@@ -1762,10 +1774,11 @@ class BuildTool
                      mLinkers.set(name, createLinker(el,null) );
                case "files" : 
                   var name = substitute(el.att.id);
+                  var tags = el.has.tags ? substitute(el.att.tags) : null;
                   if (mFileGroups.exists(name))
-                     createFileGroup(el, mFileGroups.get(name), name, false);
+                     createFileGroup(el, mFileGroups.get(name), name, false, tags);
                   else
-                     mFileGroups.set(name,createFileGroup(el,null,name, forceRelative));
+                     mFileGroups.set(name,createFileGroup(el,null,name, forceRelative,tags));
                case "include", "import" : 
                   var name = substitute(el.att.name);
                   var section = el.has.section ? substitute(el.att.section) : "";

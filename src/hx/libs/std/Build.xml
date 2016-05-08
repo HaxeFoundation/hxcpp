@@ -5,7 +5,7 @@
 <files id="hxcpp_std" dir="${this_dir}" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
-  <cache value="1"/>
+  <cache value="1" asLibrary="true" />
 
   <file name="File.cpp"/>
   <file name="Sys.cpp"/>

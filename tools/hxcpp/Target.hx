@@ -70,7 +70,7 @@ class Target
 
    public function addFiles(inGroup:FileGroup, inAsLibrary:Bool)
    {
-      inGroup.mAsLibrary=inAsLibrary;
+      inGroup.mAsLibrary = inGroup.mAsLibrary || inAsLibrary;
       mFiles = mFiles.concat(inGroup.mFiles);
       mFileGroups.push(inGroup);
    }

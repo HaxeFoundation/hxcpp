@@ -4,7 +4,7 @@
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <depend name="${this_dir}/sqlite3.h" />
-  <cache value="true" />
+  <cache value="true" asLibrary="true" />
 
   <file name="sqlite3.c"/>
   <file name="Sqlite.cpp"/>

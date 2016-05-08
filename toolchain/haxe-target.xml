@@ -75,7 +75,7 @@
 </files>
 
 
-<files id="__main__">
+<files id="__main__" tags="haxe,main,lib" >
   <depend files="hxcpp-depends"/>
   <depend name="${HXCPP}/include/hx/HxcppMain.h"/>
   <options name="Options.txt"/>
@@ -83,7 +83,7 @@
   <cache value="1" project="haxe" />
 </files>
 
-<files id="__lib__">
+<files id="__lib__" tags="haxe,main,lib" >
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
@@ -108,7 +108,7 @@
   <file name = "src/hx/cppia/HaxeNative.cpp" />
   <file name = "src/hx/cppia/CppiaVars.cpp" />
   <file name = "src/hx/cppia/CppiaCompiler.cpp" if="CPPIA_JIT" />
-  <cache value="1" project="haxe" />
+  <cache value="1" project="hxcpp-cppia" asLibrary="true" />
 </files>
 
 
@@ -117,7 +117,6 @@
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/Hash.h"/>
   <depend name="${HXCPP}/src/hx/gc/GcRegCapture.h"/>
-
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
   <compilerflag value="-DHX_UNDEFINE_H" />
@@ -128,14 +127,14 @@
   <file name = "src/hx/Boot.cpp"/>
   <file name = "src/hx/CFFI.cpp"/>
   <file name = "src/hx/Date.cpp"/>
-  <file name = "src/hx/gc/GcCommon.cpp"/>
-  <file name = "src/hx/gc/Immix.cpp"/>
-  <file name = "src/hx/gc/GcRegCapture.cpp"/>
+  <file name = "src/hx/gc/GcCommon.cpp" tags="haxe,gc" />
+  <file name = "src/hx/gc/Immix.cpp" tags="haxe,gc" />
+  <file name = "src/hx/gc/GcRegCapture.cpp" tags="haxe,gc" />
   <file name = "src/hx/Hash.cpp"/>
   <file name = "src/hx/Interface.cpp"/>
-  <file name = "src/hx/Lib.cpp"/>
+  <file name = "src/hx/Lib.cpp" tags="haxe,lib" />
   <file name = "src/hx/Object.cpp"/>
-  <file name = "src/hx/StdLibs.cpp"/>
+  <file name = "src/hx/StdLibs.cpp" tags="haxe,lib" />
   <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
@@ -146,9 +145,9 @@
   <file name = "src/ObjcData.mm" if="objc"/>
   <file name = "src/Enum.cpp"/>
   <file name = "src/Math.cpp"/>
-  <file name = "src/String.cpp"/>
+  <file name = "src/String.cpp" tags="haxe,hxstring" />
 
-  <cache value="1" />
+  <cache value="1" project="hxcpp_runtime" asLibrary="true" />
 </files>
 
 

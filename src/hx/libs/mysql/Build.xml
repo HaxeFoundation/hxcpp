@@ -5,7 +5,7 @@
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <depend name="${this_dir}/sha1.h" />
   <depend name="${this_dir}/socket.h" />
-  <cache value="true" />
+  <cache value="true" asLibrary="true" />
 
   <file name="Mysql.cpp"/>
   <file name="my_api.cpp"/>

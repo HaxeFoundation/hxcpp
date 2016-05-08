@@ -20,6 +20,7 @@ class FileGroup
    public var mSetImportDir:Bool;
    public var mUseCache:Bool;
    public var mCacheProject:String;
+   public var mTags:String;
    
    public function new(inDir:String,inId:String,inSetImportDir = false)
    {
@@ -38,7 +39,10 @@ class FileGroup
       mSetImportDir = inSetImportDir;
       mUseCache = false;
       mCacheProject = "";
+      mTags = "haxe";
    }
+
+   public function getTags() return mTags;
 
    public function addCompilerFlag(inFlag:String)
    {

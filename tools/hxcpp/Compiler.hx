@@ -2,9 +2,32 @@ import haxe.crypto.Md5;
 import haxe.io.Path;
 import sys.FileSystem;
 
+private class FlagInfo
+{
+   var flag:String;
+   var tag:String;
+   public function new(inFlag:String, inTag:String)
+   {
+      flag = inFlag;
+      tag = inTag;
+   }
+   public function add(args:Array<String>, inFilter:Array<String>)
+   {
+      if (tag=="" || inFilter.indexOf(tag)>=0)
+         args.push(flag);
+   }
+   public function toString():String
+   {
+      if (tag=="")
+         return flag;
+      else
+         return '$flag($tag)';
+   }
+}
+
 class Compiler
 {
-   public var mFlags:Array<String>;
+   private var mFlags:Array<FlagInfo>;
    public var mCFlags:Array<String>;
    public var mMMFlags:Array<String>;
    public var mCPPFlags:Array<String>;
@@ -30,8 +53,8 @@ class Compiler
    public var mID:String;
 
    //testing...
-   //public var useCacheInPlace = true;
-   public var useCacheInPlace = false;
+   public var useCacheInPlace = true;
+   //public var useCacheInPlace = false;
 
    public function new(inID,inExe:String,inGCCFileTypes:Bool)
    {
@@ -55,11 +78,34 @@ class Compiler
       mCached = false;
    }
 
+   public function getFlagStrings()
+   {
+      var result = new Array<String>();
+      for(f in mFlags)
+         result.push( f.toString() );
+      return result;
+   }
+
+   public function addFlag(inFlag:String, inTag:String)
+   {
+      mFlags.push( new FlagInfo(inFlag, inTag) );
+   }
+
+
    public function objToAbsolute()
    {
       if (mRelObjDir==null)
          mRelObjDir = mObjDir;
       mObjDir = Path.normalize( PathManager.combine( Sys.getCwd(), mRelObjDir ) );
+   }
+
+   public function getTargetPrefix()
+   {
+      var dir = mRelObjDir!=null ? mRelObjDir : mObjDir;
+      dir = dir.split("\\").join("/");
+      var prefix = dir.split("/").pop();
+      prefix = prefix.split("-").join("_");
+      return prefix;
    }
 
    function addIdentity(ext:String,ioArgs:Array<String>)
@@ -83,11 +129,21 @@ class Compiler
       }
    }
 
-   function getArgs(inFile:File)
+   public function getFlags(inTags:String)
    {
       var args = new Array<String>();
-      
-      args = args.concat(inFile.mCompilerFlags).concat(inFile.mGroup.mCompilerFlags).concat(mFlags);
+      var tagFilter = inTags.split(",");
+      for(flag in mFlags)
+         flag.add(args,tagFilter);
+      return args;
+   }
+
+   function getArgs(inFile:File)
+   {
+      var args = inFile.mCompilerFlags.concat(inFile.mGroup.mCompilerFlags);
+      var tagFilter = inFile.getTags().split(",");
+      for(flag in mFlags)
+         flag.add(args,tagFilter);
 
       var ext = mExt.toLowerCase();
       var ext = new Path(inFile.mName).ext.toLowerCase();
@@ -105,6 +161,9 @@ class Compiler
          allowPch = true;
          args = args.concat(mCPPFlags);
       }
+
+      if (inFile.getTags()!=inFile.mGroup.getTags())
+         allowPch = false;
 
       if (!mCached && inFile.mGroup.mPrecompiledHeader!="" && allowPch)
       {
@@ -130,17 +189,17 @@ class Compiler
       var cacheName:String = null;
       if (mCompilerVersion!=null)
       {
-         cacheName = getHashedName(inFile, getArgs(inFile));
+         cacheName = getHashedName(inFile, args);
          if (FileSystem.exists(cacheName))
          {
             if (useCacheInPlace)
             {
-               Log.info(""," link cache for " + obj_name );
+               //Log.info(""," link cache for " + obj_name );
                obj_name = cacheName;
             }
             else
             {
-               Log.info(""," copy cache for " + obj_name );
+               //Log.info(""," copy cache for " + obj_name );
                sys.io.File.copy(cacheName, obj_name);
             }
             found = true;
@@ -255,6 +314,7 @@ class Compiler
    {
       if (mCompilerVersion!=null && useCacheInPlace)
       {
+         //trace(inFile.mName + " " + inFile.getTags().split(",") + " " + getFlagStrings() + " " + getArgs(inFile));
          return getHashedName(inFile, getArgs(inFile));
       }
       else
@@ -271,7 +331,11 @@ class Compiler
       var header = inGroup.mPrecompiledHeader;
       var file = inGroup.getPchName();
 
-      var args = inGroup.mCompilerFlags.concat(mFlags).concat( mCPPFlags ).concat( mPCHFlags );
+      var args = inGroup.mCompilerFlags.copy();
+      var tags = inGroup.mTags.split(",");
+      for(flag in mFlags)
+         flag.add(args,tags);
+      args = args.concat( mCPPFlags ).concat( mPCHFlags );
 
       var dir = inObjDir + "/" + inGroup.getPchDir() + "/";
       var pch_name = dir + file + mPCHExt;

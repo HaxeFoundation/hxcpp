@@ -278,11 +278,7 @@ public:
    inline ObjectPtr(const ObjectPtr<SOURCE_> &inObjectPtr)
    {
       if (!SetPtr(inObjectPtr.mPtr))
-      #ifdef HXCPP_STRICT_CASTS
-         CastPtr(inObjectPtr.mPtr,true);
-      #else
          CastPtr(inObjectPtr.mPtr,false);
-      #endif
    }
 
 
@@ -290,11 +286,7 @@ public:
    {
       hx::Object *object = inVariant.asObject();
       if (!SetPtr(object))
-      #ifdef HXCPP_STRICT_CASTS
-         CastPtr(object,true);
-      #else
          CastPtr(object,false);
-      #endif
    }
 
    template<typename SOURCE_>

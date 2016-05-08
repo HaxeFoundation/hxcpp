@@ -9,6 +9,7 @@ class File
    public var mDepends:Array<String>;
    public var mCompilerFlags:Array<String>;
    public var mGroup:FileGroup;
+   public var mTags:String;
    
    public function new(inName:String, inGroup:FileGroup)
    {
@@ -21,9 +22,20 @@ class File
       mGroup = inGroup;
       mDepends = [];
       mCompilerFlags = [];
+      mTags = null;
    }
    
    inline public function getCacheProject() return mGroup.getCacheProject();
+
+   public function getTags()
+   {
+      return mTags==null ? mGroup.mTags : mTags;
+   }
+
+   public function setTags(inTags:String)
+   {
+      return mTags=inTags;
+   }
 
    public function computeDependHash()
    {
