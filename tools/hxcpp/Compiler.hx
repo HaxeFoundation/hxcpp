@@ -103,7 +103,13 @@ class Compiler
    {
       var dir = mRelObjDir!=null ? mRelObjDir : mObjDir;
       dir = dir.split("\\").join("/");
-      var prefix = dir.split("/").pop();
+      var parts = dir.split("/");
+      // Trailing slash?
+      var prefix = parts.pop();
+      if (prefix=="")
+         prefix = parts.pop();
+      if (prefix==null)
+         prefix = "";
       prefix = prefix.split("-").join("_");
       return prefix;
    }

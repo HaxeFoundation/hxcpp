@@ -216,7 +216,7 @@ class PathManager
       
       if (parts.length > 0 && parts[0].indexOf(":") > -1)
       {
-         total = parts.shift() + "/";
+         total = parts.shift();
       }
       
       for (part in parts)
