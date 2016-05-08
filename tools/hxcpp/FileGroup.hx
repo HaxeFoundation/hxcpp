@@ -17,6 +17,7 @@ class FileGroup
    public var mCacheDepends:Array<String>;
    public var mDependHash:String;
    public var mAsLibrary:Bool;
+   public var mAddTwice:Bool;
    public var mSetImportDir:Bool;
    public var mUseCache:Bool;
    public var mCacheProject:String;
@@ -36,6 +37,7 @@ class FileGroup
       mId = inId;
       mConfig = "";
       mAsLibrary = false;
+      mAddTwice = false;
       mSetImportDir = inSetImportDir;
       mUseCache = false;
       mCacheProject = "";

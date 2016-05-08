@@ -147,6 +147,7 @@
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp" tags="haxe,hxstring" />
 
+  <addTwice if="linux" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
 </files>
 

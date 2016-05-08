@@ -81,12 +81,20 @@ class Linker
 
       var lastLib = "";
       var libs = new Array<String>();
+      for(l in inTarget.mAutoLibs)
+         if (l!=lastLib)
+         {
+            libs.push(l);
+            lastLib = l;
+         }
+
       for(l in inTarget.mLibs)
          if (l!=lastLib)
          {
             libs.push(l);
             lastLib = l;
          }
+
       for(l in mLibs)
          if (l!=lastLib)
          {

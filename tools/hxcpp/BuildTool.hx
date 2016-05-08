@@ -513,7 +513,10 @@ class BuildTool
 
             var libTarget = new Target(libName, "linker", "static_link" );
             linker.link(libTarget,groupObjs, mCompiler );
-            target.mLibs.push(linker.mLastOutName);
+            target.mAutoLibs.push(linker.mLastOutName);
+            // Linux the libraries must be added again if the references were not resolved the firs time
+            if (group.mAddTwice)
+               target.mLibs.push(linker.mLastOutName);
          }
          else
          {
@@ -716,6 +719,8 @@ class BuildTool
                      group.mCacheProject = substitute(el.att.project);
                   if (el.has.asLibrary)
                      group.mAsLibrary = true;
+               case "addTwice" :
+                  group.mAddTwice = true;
                case "depend" :
                   if (el.has.name)
                   {

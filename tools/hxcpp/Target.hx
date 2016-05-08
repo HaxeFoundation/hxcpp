@@ -12,6 +12,7 @@ class Target
    public var mFileGroups:Array<FileGroup>;
    public var mDepends:Array<String>;
    public var mSubTargets:Array<String>;
+   public var mAutoLibs:Array<String>;
    public var mLibs:Array<String>;
    public var mLibPaths:Array<String>;
    public var mFlags:Array<String>;
@@ -27,6 +28,7 @@ class Target
       mTool = inTool;
       mFiles = [];
       mDepends = [];
+      mAutoLibs = [];
       mLibs = [];
       mLibPaths = [];
       mFlags = [];
@@ -45,6 +47,7 @@ class Target
       mDepends = mDepends.concat(other.mDepends);
       mSubTargets = mSubTargets.concat(other.mSubTargets);
       mLibPaths = mLibPaths.concat(other.mLibPaths);
+      mAutoLibs = mAutoLibs.concat(other.mAutoLibs);
       mLibs = mLibs.concat(other.mLibs);
       mFlags = mFlags.concat(other.mFlags);
       mErrors = mErrors.concat(other.mErrors);
