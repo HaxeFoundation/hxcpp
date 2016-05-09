@@ -7,11 +7,16 @@
 
 <set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
-<set name="ABI" value="-MD" if="winrt static_link" unless="ABI"/>
-<set name="ABI" value="-MT" unless="ABI"/>
+<set name="HAS_CUSTOM_ABI" if="ABI"/>
+
+<!-- Note: Default winrt static_link uses native libs -->
+<!-- Use ABI=-ZW to target full UWP (e.g. XBOXONE UWP)-->
+<set name="ABI" value="-MD" if="winrt static_link" unless="HAS_CUSTOM_ABI"/>
+
+<set name="ABI" value="-MT" unless="HAS_CUSTOM_ABI"/>
 <set name="C_ABI" value="${ABI}" />
 
-<set name="ABI" value="-ZW" if="winrt" unless="ABI"/>
+<set name="ABI" value="-ZW" if="winrt" unless="HAS_CUSTOM_ABI"/>
 <set name="CPP_ABI" value="${ABI}" />
 
 <set name="XPOBJ" value="xp" if="HXCPP_WINXP_COMPAT" />
