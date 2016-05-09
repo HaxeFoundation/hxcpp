@@ -41,7 +41,7 @@ class FileGroup
       mSetImportDir = inSetImportDir;
       mUseCache = false;
       mCacheProject = "";
-      mTags = "haxe";
+      mTags = "haxe,static";
    }
 
    public function getTags() return mTags;

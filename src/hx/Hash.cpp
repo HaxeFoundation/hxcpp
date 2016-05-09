@@ -1,5 +1,4 @@
 #include <hxcpp.h>
-//#include <hx/CFFI.h>
 #include "Hash.h"
 
 

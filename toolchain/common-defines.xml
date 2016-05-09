@@ -1,7 +1,7 @@
 <xml>
  <flag value="-DHXCPP_DEBUG" if="debug" />
- <flag value="-DSTATIC_LINK" if="static_link" tag="lib" />
- <flag value="-DHXCPP_EXE_LINK" if="exe_link" tag="lib" />
+ <flag value="-DSTATIC_LINK" if="static_link" tag="static" />
+ <flag value="-DHXCPP_EXE_LINK" if="exe_link" tag="static" />
  <flag value="-DHXCPP_M64" if="HXCPP_M64||HXCPP_ARM64"/>
  <flag value="-DHXCPP_VISIT_ALLOCS" tag="haxe" />
  <flag value="-Dhaxe_210" if="haxe_210" tag="haxe" />

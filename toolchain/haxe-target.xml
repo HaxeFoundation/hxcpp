@@ -66,7 +66,7 @@
 </files>
 
 
-<files id="__resources__">
+<files id="__resources__" tags="haxe" >
   <cache value="1" project="haxe" />
 </files>
 
@@ -75,7 +75,7 @@
 </files>
 
 
-<files id="__main__" tags="haxe,main,lib" >
+<files id="__main__" tags="haxe,main,static" >
   <depend files="hxcpp-depends"/>
   <depend name="${HXCPP}/include/hx/HxcppMain.h"/>
   <options name="Options.txt"/>
@@ -83,7 +83,7 @@
   <cache value="1" project="haxe" />
 </files>
 
-<files id="__lib__" tags="haxe,main,lib" >
+<files id="__lib__" tags="haxe,main,static" >
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
@@ -91,7 +91,7 @@
 </files>
 
 
-<files id="cppia" dir="${HXCPP}" >
+<files id="cppia" dir="${HXCPP}" tags="haxe"  >
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
@@ -112,7 +112,7 @@
 </files>
 
 
-<files id="runtime" dir="${HXCPP}">
+<files id="runtime" dir="${HXCPP}" tags="haxe" >
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/Hash.h"/>
@@ -125,16 +125,16 @@
 
   <file name = "src/hx/Anon.cpp"/>
   <file name = "src/hx/Boot.cpp"/>
-  <file name = "src/hx/CFFI.cpp"/>
+  <file name = "src/hx/CFFI.cpp" tags="haxe,static" />
   <file name = "src/hx/Date.cpp"/>
   <file name = "src/hx/gc/GcCommon.cpp" tags="haxe,gc" />
   <file name = "src/hx/gc/Immix.cpp" tags="haxe,gc" />
   <file name = "src/hx/gc/GcRegCapture.cpp" tags="haxe,gc" />
   <file name = "src/hx/Hash.cpp"/>
   <file name = "src/hx/Interface.cpp"/>
-  <file name = "src/hx/Lib.cpp" tags="haxe,lib" />
+  <file name = "src/hx/Lib.cpp" tags="haxe,static" />
   <file name = "src/hx/Object.cpp"/>
-  <file name = "src/hx/StdLibs.cpp" tags="haxe,lib" />
+  <file name = "src/hx/StdLibs.cpp" tags="haxe,static" />
   <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
