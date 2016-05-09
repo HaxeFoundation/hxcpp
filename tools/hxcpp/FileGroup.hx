@@ -46,6 +46,13 @@ class FileGroup
 
    public function getTags() return mTags;
 
+   public function isPrecompiled() return mPrecompiledHeader!="";
+
+   public function dontPrecompile()
+   {
+      mPrecompiledHeader = "";
+   }
+
    public function addCompilerFlag(inFlag:String)
    {
       mCompilerFlags.push(inFlag);

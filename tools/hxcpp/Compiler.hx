@@ -171,7 +171,7 @@ class Compiler
       if (inFile.getTags()!=inFile.mGroup.getTags())
          allowPch = false;
 
-      if (inFile.mGroup.mPrecompiledHeader!="" && allowPch)
+      if (inFile.mGroup.isPrecompiled() && allowPch)
       {
          var pchDir = getPchDir(inFile.mGroup);
          if (mPCHUse!="")
@@ -438,4 +438,12 @@ class Compiler
          mPCHFilename = "";
       }
    }
+
+   public function initPrecompile(inDefault:String)
+   {
+      if (mPCH==null)
+         setPCH(inDefault);
+      return mPCH!=null;
+   }
+
 }

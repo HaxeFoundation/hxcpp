@@ -390,9 +390,16 @@ class BuildTool
          {
             if (cached || to_be_compiled.length>0)
             {
-               var obj = mCompiler.precompile(group);
-               if (obj!=null)
-                  groupObjs.push(obj);
+               if (!mCompiler.initPrecompile(mDefines.get("USE_PRECOMPILED_HEADERS") ))
+               {
+                  group.dontPrecompile();
+               }
+               else
+               {
+                  var obj = mCompiler.precompile(group);
+                  if (obj!=null)
+                     groupObjs.push(obj);
+               }
             }
          }
 
@@ -636,8 +643,6 @@ class BuildTool
             Log.e("Compiler element defined without 'exe' attribute included from:" + mFileStack);
 
          c = new Compiler(substitute(inXML.att.id),substitute(inXML.att.exe),mDefines.exists("USE_GCC_FILETYPES"));
-         if (mDefines.exists("USE_PRECOMPILED_HEADERS"))
-            c.setPCH(mDefines.get("USE_PRECOMPILED_HEADERS"));
       }
 
       for(el in inXML.elements)
