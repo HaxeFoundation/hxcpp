@@ -481,6 +481,8 @@ class BuildTool
                   {
                      if (threadExitCode!=0)
                         setThreadError(-1);
+                     else
+                        Log.warn("Error in compile thread: " + error);
                   }
                   main_thread.sendMessage("Done");
                });

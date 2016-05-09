@@ -79,7 +79,7 @@
 
 <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
 
-<set name="HXCPP_DEBUG_LINK" value="1" if="debug"/>
+<set name="HXCPP_DEBUG_LINK" value="1" if="debug" unless="HXCPP_NO_DEBUG_LINK" />
 
 <set name="HX_LINK_SUFFIX" value="${LIBEXTRA}" />
 <set name="HX_TARGET_SUFFIX" value="${LIBEXTRA}" />

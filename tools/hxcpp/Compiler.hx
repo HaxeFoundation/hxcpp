@@ -193,21 +193,20 @@ class Compiler
 
       var found = false;
       var cacheName:String = null;
-      if (mCompilerVersion!=null)
+      if (mCompilerVersion!=null && inFile.mGroup.isCached())
       {
          cacheName = getHashedName(inFile, args);
+         if (useCacheInPlace)
+         {
+            //Log.info(""," link cache for " + obj_name );
+            obj_name = cacheName;
+         }
+
          if (FileSystem.exists(cacheName))
          {
-            if (useCacheInPlace)
-            {
-               //Log.info(""," link cache for " + obj_name );
-               obj_name = cacheName;
-            }
-            else
-            {
-               //Log.info(""," copy cache for " + obj_name );
+            //Log.info(""," copy cache for " + obj_name );
+            if (!useCacheInPlace)
                sys.io.File.copy(cacheName, obj_name);
-            }
             found = true;
          }
       }
@@ -248,15 +247,10 @@ class Compiler
             }
          }
 
-         if (cacheName!=null)
+         if (cacheName!=null && !useCacheInPlace)
          {
-            sys.io.File.copy(obj_name, cacheName);
             Log.info("", " caching " + cacheName);
-            if (useCacheInPlace)
-            {
-               FileSystem.deleteFile(obj_name);
-               obj_name = cacheName;
-            }
+            sys.io.File.copy(obj_name, cacheName);
          }
       }
 
