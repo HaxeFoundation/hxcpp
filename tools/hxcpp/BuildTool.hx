@@ -368,6 +368,9 @@ class BuildTool
 
          group.checkDependsExist();
 
+         if (!mCompiler.initPrecompile(mDefines.get("USE_PRECOMPILED_HEADERS") ))
+            group.dontPrecompile();
+
          group.preBuild();
 
          var to_be_compiled = new Array<File>();
@@ -390,16 +393,9 @@ class BuildTool
          {
             if (cached || to_be_compiled.length>0)
             {
-               if (!mCompiler.initPrecompile(mDefines.get("USE_PRECOMPILED_HEADERS") ))
-               {
-                  group.dontPrecompile();
-               }
-               else
-               {
-                  var obj = mCompiler.precompile(group);
-                  if (obj!=null)
-                     groupObjs.push(obj);
-               }
+               var obj = mCompiler.precompile(group);
+               if (obj!=null)
+                  groupObjs.push(obj);
             }
          }
 
