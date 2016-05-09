@@ -229,8 +229,8 @@ void __trace(Dynamic inObj, Dynamic inData)
 {
 #ifdef HX_WINRT
    WINRT_PRINTF("%s:%d: %s\n",
-               inData==null() ? "?" : inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC) ->toString().__s,
-               inData==null() ? 0 : inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)->__ToInt(),
+               inData==null() ? "?" : Dynamic((inData)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s,
+               inData==null() ? 0 : Dynamic((inData)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt(),
                inObj.GetPtr() ? inObj->toString().__s : "null" );
 #elif defined(TIZEN)
    AppLogInternal(inData==null() ? "?" : Dynamic(inData->__Field( HX_CSTRING("fileName")), HX_PROP_DYNAMIC)->toString().__s,

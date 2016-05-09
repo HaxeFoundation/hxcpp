@@ -503,11 +503,11 @@ void _hx_std_process_close( Dynamic handle )
 
 #else  // !HX_WINRT
 
-Dynamic _hx_std_process_run( String cmd, Array<String> vargs ) { }
+Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam ){ return null(); }
 int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int pos, int len ) { return 0; }
 int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int pos, int len ) { return 0; }
 int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int pos, int len ) { return 0; }
-void _hx_std_process_stdin_close( value vp ) { }
+void _hx_std_process_stdin_close( Dynamic handle ) { }
 int _hx_std_process_exit( Dynamic handle ) { return 0; }
 int _hx_std_process_pid( Dynamic handle ) { return 0; }
 void _hx_std_process_close( Dynamic handle ) { }
