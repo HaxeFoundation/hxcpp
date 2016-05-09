@@ -61,7 +61,7 @@
   <options name="Options.txt"/>
   <config  name="HxcppConfig.h"/>
 
-  <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
+  <precompiledheader name="hxcpp" dir="${HXCPP}/include" />
   <cache value="1" />
 </files>
 
@@ -121,7 +121,7 @@
 
   <compilerflag value="-DHX_UNDEFINE_H" />
 
-  <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
+  <precompiledheader name="hxcpp" dir="${HXCPP}/include" />
 
   <file name = "src/hx/Anon.cpp"/>
   <file name = "src/hx/Boot.cpp"/>

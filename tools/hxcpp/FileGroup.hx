@@ -176,9 +176,9 @@ class FileGroup
       return changed;
    }
 
-   public function getPchDir()
+   public function getPchDir(inObjDir:String)
    {
-      return "__pch/" + mId ;
+      return inObjDir + "/__pch/" + mId ;
    }
 
    public function getPchName()
@@ -190,6 +190,8 @@ class FileGroup
    {
       return inStamp<mNewest;
    }
+
+   public function isCached() return CompileCache.hasCache && mUseCache;
 
    public function preBuild()
    {

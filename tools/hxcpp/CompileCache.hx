@@ -56,6 +56,31 @@ class CompileCache
       return hasCache;
    }
 
+
+/*
+   public static function getPchCacheName(inProject:String,hash:String,header:String, inExt:String)
+   {
+      var dir = compileCache + "/" + inProject + "/pch" + hash.substr(0,8);
+      try
+      {
+         if (!FileSystem.exists(dir))
+            PathManager.mkdir(dir);
+      } catch(e:Dynamic) { }
+      return dir + "/" + header + inExt;
+   }
+*/
+
+   public static function getPchDir(inProject:String,hash:String)
+   {
+      var dir = compileCache + "/" + inProject + "/pch" + hash.substr(0,8);
+      try
+      {
+         if (!FileSystem.exists(dir))
+            PathManager.mkdir(dir);
+      } catch(e:Dynamic) { }
+      return dir;
+   }
+
    public static function getCacheName(inProject:String,hash:String,inExt:String)
    {
       var dir = compileCache + "/" + inProject + "/" + hash.substr(0,2);
@@ -78,7 +103,6 @@ class CompileCache
         var tooOld = Date.now().getTime() - inDays * 24 * 3600 * 1000.0;
         var size = 0;
         var fileInfo = [];
-        var keepSize = 0;
 
         for(project in projects)
         {
@@ -89,7 +113,7 @@ class CompileCache
            var dirs = FileSystem.readDirectory(projDir);
            for(dir in dirs)
            {
-              if (dir.length!=2 && dir!="lib")
+              if (dir.length!=2 && dir!="lib" && dir.substr(0,3)!="pch" )
                  throw 'bad cache name "$dir" found - aborting';
               var path = projDir + "/" + dir;
               var dirFiles = FileSystem.readDirectory(path);

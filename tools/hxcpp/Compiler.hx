@@ -171,16 +171,16 @@ class Compiler
       if (inFile.getTags()!=inFile.mGroup.getTags())
          allowPch = false;
 
-      if (!mCached && inFile.mGroup.mPrecompiledHeader!="" && allowPch)
+      if (inFile.mGroup.mPrecompiledHeader!="" && allowPch)
       {
-         var pchDir = inFile.mGroup.getPchDir();
+         var pchDir = getPchDir(inFile.mGroup);
          if (mPCHUse!="")
          {
             args.push(mPCHUse + inFile.mGroup.mPrecompiledHeader + ".h");
-            args.push(mPCHFilename + mObjDir + "/" + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
+            args.push(mPCHFilename + pchDir + "/" + inFile.mGroup.getPchName() + mPCHExt);
          }
          else
-            args.unshift("-I"+mObjDir + "/" + pchDir);
+            args.unshift("-I"+pchDir);
       }
 
       return args;
@@ -329,22 +329,62 @@ class Compiler
 
    public function needsPchObj()
    {
-      return !mCached && mPCH!="gcc";
+      return mPCH!="gcc";
    }
 
-   public function precompile(inObjDir:String,inGroup:FileGroup)
+/*
+   public function getPchObjName(group:FileGroup)
    {
-      var header = inGroup.mPrecompiledHeader;
-      var file = inGroup.getPchName();
-
+      var pchDir = getPchDir(group);
+      if (pchDir != "")
+         return pchDir + "/" + group.getPchName() + mExt;
+      throw "Missing precompiled directory name";
+   }
+*/
+   public function getPchCompileFlags(inGroup:FileGroup)
+   {
       var args = inGroup.mCompilerFlags.copy();
       var tags = inGroup.mTags.split(",");
       for(flag in mFlags)
          flag.add(args,tags);
-      args = args.concat( mCPPFlags ).concat( mPCHFlags );
+      return  args.concat( mCPPFlags );
+   }
 
-      var dir = inObjDir + "/" + inGroup.getPchDir() + "/";
-      var pch_name = dir + file + mPCHExt;
+   public function getPchDir(inGroup:FileGroup)
+   {
+      if (!inGroup.isCached())
+         return inGroup.getPchDir(mObjDir);
+
+      var args = getPchCompileFlags(inGroup);
+      var md5 = Md5.encode(args.join(" ") + inGroup.mPrecompiledHeader +
+                    inGroup.mDependHash + mCompilerVersion );
+      return CompileCache.getPchDir(inGroup.getCacheProject(),md5);
+   }
+
+   public function precompile(inGroup:FileGroup)
+   {
+      // header will be like "hxcpp" or "wx/wx"
+      var header = inGroup.mPrecompiledHeader;
+      // file will be like "hxcpp" or "wx"
+      var file = inGroup.getPchName();
+
+      var args = getPchCompileFlags(inGroup);
+
+      // Local output dir
+      var dir = getPchDir(inGroup);
+
+      // Like objs/hxcpp.pch or objs/wx.gch
+      var pch_name = dir + "/" + file + mPCHExt;
+      if (inGroup.isCached())
+      {
+          var pchFile = dir + "/" + header;
+          var obj = dir +  PathManager.combine(dir, file + mExt);
+          if (FileSystem.exists(pchFile) && (obj==null || FileSystem.exists(obj)) )
+             return obj;
+      }
+
+      args = args.concat( mPCHFlags );
+
 
       //Log.info("", "Make pch dir " + dir );
       PathManager.mkdir(dir);
@@ -354,7 +394,7 @@ class Compiler
          args.push( mPCHCreate + header + ".h" );
 
          // Create a temp file for including ...
-         var tmp_cpp = dir + file + ".cpp";
+         var tmp_cpp = dir + "/" + file + ".cpp";
          var outFile = sys.io.File.write(tmp_cpp,false);
          outFile.writeString("#include <" + header + ".h>\n");
          outFile.close();
@@ -366,14 +406,13 @@ class Compiler
       else
       {
          //Log.info("", "Creating PCH directory \"" + dir + header + "\"");
-         PathManager.mkdir(dir + header);
+         PathManager.mkdir(dir + "/" + header);
          args.push( "-o" );
          args.push(pch_name);
          args.push( inGroup.mPrecompiledHeaderDir + "/" + inGroup.mPrecompiledHeader + ".h" );
       }
 
-      //Log.info("Creating " + pch_name + "...");
-      
+      Log.info("Creating " + pch_name + "...", " - Precompile " + pch_name );
       var result = ProcessManager.runCommand("", mExe, args);
       if (result!=0)
       {
@@ -383,6 +422,9 @@ class Compiler
          //throw "Error creating pch: " + result + " - build cancelled";
       }
 
+      if (mPCH!="gcc")
+         return  PathManager.combine(dir, file + mExt);
+      return null;
    }
 
    public function setPCH(inPCH:String)

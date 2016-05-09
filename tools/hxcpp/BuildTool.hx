@@ -221,7 +221,7 @@ class BuildTool
 
       if (cached)
       {
-         var cacheSize = mDefines.exists("HXCPP_CACHE_MB") ? Std.parseInt( mDefines.get("HXCPP_CACHE_MB") ) : 250;
+         var cacheSize = mDefines.exists("HXCPP_CACHE_MB") ? Std.parseInt( mDefines.get("HXCPP_CACHE_MB") ) : 1000;
          if (cacheSize!=null && cacheSize>0)
             CompileCache.clear(0,cacheSize,false,null);
       }
@@ -386,19 +386,13 @@ class BuildTool
             }
          }
 
-
-         if (!cached && group.mPrecompiledHeader!="")
+         if (group.mPrecompiledHeader!="")
          {
-            if (to_be_compiled.length>0)
-               mCompiler.precompile(mCompiler.mObjDir, group);
-
-            if (mCompiler.needsPchObj())
+            if (cached || to_be_compiled.length>0)
             {
-               var pchDir = group.getPchDir();
-               if (pchDir != "")
-               {
-                  groupObjs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.getPchName() + mCompiler.mExt);
-               }
+               var obj = mCompiler.precompile(group);
+               if (obj!=null)
+                  groupObjs.push(obj);
             }
          }
 

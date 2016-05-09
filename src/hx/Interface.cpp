@@ -1,5 +1,5 @@
-#if (HXCPP_API_LEVEL < 330)
 #include <hxcpp.h>
+#if (HXCPP_API_LEVEL < 330)
 
 namespace hx
 {
