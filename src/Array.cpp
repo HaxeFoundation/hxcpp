@@ -35,33 +35,42 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
 }
 
 
+
+void ArrayBase::reserve(int inSize) const
+{
+   if (mAlloc<inSize)
+   {
+      int bytes = inSize * GetElementSize();
+
+      if (mBase)
+      {
+         bool wasUnamanaged = mAlloc<0;
+         if (wasUnamanaged)
+         {
+            char *base=(char *)hx::InternalNew(bytes,false);
+            memcpy(base,mBase,length*GetElementSize());
+            mBase = base;
+         }
+         else
+            mBase = (char *)hx::InternalRealloc(mBase, bytes );
+      }
+      else
+      {
+         mBase = (char *)hx::InternalNew(bytes,false);
+         #ifdef HXCPP_TELEMETRY
+         __hxt_new_array(mBase, bytes);
+         #endif
+      }
+      mAlloc = inSize;
+   }
+}
+
+
 void ArrayBase::Realloc(int inSize) const
 {
    // Try to detect "push" case vs resizing to big array size explicitly by looking at gap
    int newAlloc = inSize<=mAlloc + 64 ? inSize*3/2 + 10 : inSize;
-   //int newAlloc = inSize*3/2 + 10;
-   int bytes = newAlloc * GetElementSize();
-
-   if (mBase)
-   {
-      bool wasUnamanaged = mAlloc<0;
-      if (wasUnamanaged)
-      {
-         char *base=(char *)hx::InternalNew(bytes,false);
-         memcpy(base,mBase,length*GetElementSize());
-         mBase = base;
-      }
-      else
-         mBase = (char *)hx::InternalRealloc(mBase, bytes );
-   }
-   else
-   {
-      mBase = (char *)hx::InternalNew(bytes,false);
-#ifdef HXCPP_TELEMETRY
-      __hxt_new_array(mBase, bytes);
-#endif
-   }
-   mAlloc = newAlloc;
+   reserve(newAlloc);
 }
 
 // Set numeric values to 0, pointers to null, bools to false

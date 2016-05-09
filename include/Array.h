@@ -287,7 +287,7 @@ public:
    void Concat(hx::ArrayBase *outResult,const char *inEnd, int inLen);
 
 
-   void reserve(int inN);
+   void reserve(int inN) const;
 
    // Set numeric values to 0, pointers to null, bools to false
    void zero(Dynamic inFirst, Dynamic inCount);
