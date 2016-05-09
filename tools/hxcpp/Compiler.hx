@@ -377,9 +377,8 @@ class Compiler
       var pch_name = dir + "/" + file + mPCHExt;
       if (inGroup.isCached())
       {
-          var pchFile = dir + "/" + header;
-          var obj = dir +  PathManager.combine(dir, file + mExt);
-          if (FileSystem.exists(pchFile) && (obj==null || FileSystem.exists(obj)) )
+          var obj = PathManager.combine(dir, file + mExt);
+          if (FileSystem.exists(pch_name) && (obj==null || FileSystem.exists(obj)) )
              return obj;
       }
 
@@ -392,6 +391,8 @@ class Compiler
       if (mPCH!="gcc")
       {
          args.push( mPCHCreate + header + ".h" );
+         var symbol = "link" + Md5.encode( PathManager.combine(dir, file + mExt) );
+         args.push( "-Yl" + symbol  );
 
          // Create a temp file for including ...
          var tmp_cpp = dir + "/" + file + ".cpp";
