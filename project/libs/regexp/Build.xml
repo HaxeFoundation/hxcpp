@@ -14,6 +14,7 @@
 
   <compilerflag value="-DPCRE_STATIC"/>
   <compilerflag value="-DSUPPORT_UTF8"/>
+  <compilerflag value="-DSUPPORT_UCP"/>
   <compilerflag value="-I${PCRE_DIR}"/>
 
   <file name="RegExp.cpp"/>
