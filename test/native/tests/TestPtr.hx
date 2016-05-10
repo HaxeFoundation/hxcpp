@@ -107,4 +107,32 @@ class TestPtr extends haxe.unit.TestCase{
       assertFalse([2].address(0)==anon.ptr);
       assertTrue(a.address(0)==anon.ptr);
    }
+
+   static function callMe(x:Int) return 10+x;
+
+   static function notProcAddress(module:String, func:String) return null;
+
+   public function testAutoCast() {
+       var z = [ 1, 2, 3 ];
+       assertTrue( cpp.NativeArray.address(z, 0).ptr == cpp.NativeArray.address(z, 0).ptr );
+       assertTrue( cpp.NativeArray.address(z, 1).ptr != cpp.NativeArray.address(z, 0).ptr );
+       assertTrue( cpp.NativeArray.address(z, 1).gt(cpp.NativeArray.address(z, 0)) );
+       assertTrue( cpp.NativeArray.address(z, 1).geq(cpp.NativeArray.address(z, 0)) );
+       assertTrue( cpp.NativeArray.address(z, 1).geq(cpp.NativeArray.address(z, 1)) );
+       assertTrue( cpp.NativeArray.address(z, 0).leq(cpp.NativeArray.address(z, 0)) );
+       assertTrue( cpp.NativeArray.address(z, 1).leq(cpp.NativeArray.address(z, 2)) );
+       assertTrue( cpp.NativeArray.address(z, 1).leq(cpp.NativeArray.address(z, 2)) );
+       assertTrue( cpp.NativeArray.address(z, 0) == cpp.Pointer.ofArray(z) );
+       assertTrue( cpp.NativeArray.address(z, 1) == cpp.Pointer.arrayElem(z,1) );
+       assertTrue( cpp.NativeArray.address(z, 1) != cpp.Pointer.fromHandle(null) );
+       assertTrue( cpp.Function.fromStaticFunction(callMe)(1)==11 );
+       try
+       {
+          assertTrue( cpp.Function.fromStaticFunction(notProcAddress)!=cpp.Function.getProcAddress("nomodule","nofunc!") );
+       }
+       catch(e:Dynamic)
+       {
+         // Could not load module - expected
+       }
+   }
 }
