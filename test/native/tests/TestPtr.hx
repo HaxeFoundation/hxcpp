@@ -135,4 +135,13 @@ class TestPtr extends haxe.unit.TestCase{
          // Could not load module - expected
        }
    }
+
+   static function functionCaller(fn:cpp.Function<Void->Int,cpp.abi.Abi>) {
+        var a = fn.call();
+    }
+
+   public function testFunctionStructAccess() {
+       assertTrue( functionCaller != null );
+   }
 }
+
