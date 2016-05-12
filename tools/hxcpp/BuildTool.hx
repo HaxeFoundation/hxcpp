@@ -391,12 +391,9 @@ class BuildTool
 
          if (group.mPrecompiledHeader!="")
          {
-            if (cached || to_be_compiled.length>0)
-            {
-               var obj = mCompiler.precompile(group);
-               if (obj!=null)
-                  groupObjs.push(obj);
-            }
+            var obj = mCompiler.precompile(group,cached || to_be_compiled.length==0);
+            if (obj!=null)
+               groupObjs.push(obj);
          }
 
          if (group.mConfig!="")

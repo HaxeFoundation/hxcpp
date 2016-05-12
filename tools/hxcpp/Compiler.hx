@@ -355,7 +355,7 @@ class Compiler
       return CompileCache.getPchDir(inGroup.getCacheProject(),md5);
    }
 
-   public function precompile(inGroup:FileGroup)
+   public function precompile(inGroup:FileGroup, inReuseIfPossible:Bool)
    {
       // header will be like "hxcpp" or "wx/wx"
       var header = inGroup.mPrecompiledHeader;
@@ -369,7 +369,7 @@ class Compiler
 
       // Like objs/hxcpp.pch or objs/wx.gch
       var pch_name = dir + "/" + file + mPCHExt;
-      if (inGroup.isCached())
+      if (inGroup.isCached() || inReuseIfPossible)
       {
           var obj = PathManager.combine(dir, file + mExt);
           if (FileSystem.exists(pch_name) && (obj==null || FileSystem.exists(obj)) )
