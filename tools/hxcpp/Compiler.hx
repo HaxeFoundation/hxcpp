@@ -312,7 +312,7 @@ class Compiler
 
    public function getCachedObjName(inFile:File)
    {
-      if (mCompilerVersion!=null && useCacheInPlace)
+      if (mCompilerVersion!=null && useCacheInPlace && inFile.mGroup.isCached())
       {
          //trace(inFile.mName + " " + inFile.getTags().split(",") + " " + getFlagStrings() + " " + getArgs(inFile));
          return getHashedName(inFile, getArgs(inFile));
