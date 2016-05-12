@@ -68,8 +68,8 @@ public:
    inline operator char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator signed char () const { return mPtr ? mPtr->__ToInt() : 0; }
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
-   inline operator cpp::Int64() const { return mPtr && mPtr->__ToInt64(); }
-   inline operator cpp::UInt64() const { return mPtr && mPtr->__ToInt64(); }
+   inline operator cpp::Int64() const { return mPtr ? mPtr->__ToInt64() : 0; }
+   inline operator cpp::UInt64() const { return mPtr ? mPtr->__ToInt64() : 0; }
 
    // Conversion to generic pointer requires you to tag the class with a typedef
    template<typename T>
