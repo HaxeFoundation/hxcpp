@@ -380,14 +380,7 @@ inline bool operator != (const T &inLHS,const Dynamic &inRHS) { return inRHS!=in
 HX_DYNAMIC_OP_ISEQ(String)
 HX_DYNAMIC_OP_ISEQ(double)
 HX_DYNAMIC_OP_ISEQ(float)
-HX_DYNAMIC_OP_ISEQ(cpp::Int64)
-HX_DYNAMIC_OP_ISEQ(cpp::UInt64)
 HX_DYNAMIC_OP_ISEQ(int)
-HX_DYNAMIC_OP_ISEQ(unsigned int)
-HX_DYNAMIC_OP_ISEQ(short)
-HX_DYNAMIC_OP_ISEQ(unsigned short)
-HX_DYNAMIC_OP_ISEQ(signed char)
-HX_DYNAMIC_OP_ISEQ(unsigned char)
 HX_DYNAMIC_OP_ISEQ(bool)
 
 inline bool operator < (bool inLHS,const Dynamic &inRHS) { return false; }
@@ -412,22 +405,8 @@ bool operator==(Platform::Box<T> ^inPtr, nullptr_t)
       { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
    inline bool operator op (float inLHS,const ::Dynamic &inRHS) \
       { return inRHS.IsNumeric() && ((double)inLHS op (double)inRHS); } \
-   inline bool operator op (cpp::Int64 inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
-   inline bool operator op (cpp::UInt64 inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
    inline bool operator op (int inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
-   inline bool operator op (unsigned int inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
-   inline bool operator op (short inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
-   inline bool operator op (unsigned short inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
-   inline bool operator op (signed char inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } \
-   inline bool operator op (unsigned char inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); }
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } 
 
 COMPARE_DYNAMIC_OP( < )
 COMPARE_DYNAMIC_OP( <= )
