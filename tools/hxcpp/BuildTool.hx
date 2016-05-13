@@ -400,7 +400,7 @@ class BuildTool
          {
             var lines = ["#ifndef HXCPP_CONFIG_INCLUDED","#define HXCPP_CONFIG_INCLUDED"];
 
-            var flags = group.mCompilerFlags.concat(mCompiler.getFlags("haxe"));
+            var flags = group.mCompilerFlags.concat(mCompiler.getCompilerFlags("haxe"));
             var define = ~/^-D([^=]*)=?(.*)/;
             for(flag in flags)
             {
@@ -713,6 +713,8 @@ class BuildTool
                      group.mCacheProject = substitute(el.att.project);
                   if (el.has.asLibrary && CompileCache.hasCache)
                      group.mAsLibrary = true;
+               case "tag" :
+                   group.addTag( substitute(el.att.value) );
                case "addTwice" :
                   group.mAddTwice = true;
                case "depend" :

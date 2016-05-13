@@ -135,7 +135,7 @@ class Compiler
       }
    }
 
-   public function getFlags(inTags:String)
+   public function getCompilerFlags(inTags:String)
    {
       var args = new Array<String>();
       var tagFilter = inTags.split(",");
@@ -148,6 +148,15 @@ class Compiler
    {
       var args = inFile.mCompilerFlags.concat(inFile.mGroup.mCompilerFlags);
       var tagFilter = inFile.getTags().split(",");
+      var optimFlags = (tagFilter.indexOf("debug") >= 0 ? 1 : 0) +
+                       (tagFilter.indexOf("release") >= 0 ? 1 : 0) +
+                       (tagFilter.indexOf("optim-std") >= 0 ? 1 : 0) +
+                       (tagFilter.indexOf("optim-none") >= 0 ? 1 : 0) +
+                       (tagFilter.indexOf("optim-size") >= 0 ? 1 : 0);
+      if (optimFlags==0)
+         tagFilter.push("optim-std");
+      else if (optimFlags>1)
+         Log.error("More than one optimization tag has been set:" + tagFilter);
       for(flag in mFlags)
          flag.add(args,tagFilter);
 

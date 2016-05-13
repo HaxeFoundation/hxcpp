@@ -40,9 +40,7 @@
 
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
-  <flag value="-Od" if="debug"/>
-  <!-- -O2 is back ! -->
-  <flag value="-O2" unless="debug"/>
+
 
   <!-- Newer options -->
   <!-- <flag value = "/analyze-" if="MSVC17+" /> -->
@@ -58,11 +56,24 @@
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-D${HXCPP_XP_DEFINE}" if="HXCPP_XP_DEFINE"/>
   <flag value="-GR"/>
+
+  <!-- standard optimization flags -->
+  <flag value="-Od" if="debug" tag="optim-std" />
+  <flag value="-O2" unless="debug" tag="optim-std" />
   <section if="HXCPP_DEBUG_LINK">
-     <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" />
-     <flag value="-Z7" if="HXCPP_COMPILE_CACHE" />
-     <flag value="-Fd${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" />
+     <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" tag="optim-std" />
+     <flag value="-Z7" if="HXCPP_COMPILE_CACHE" tag="optim-std" />
+     <flag value="-Fd${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" tag="optim-std" />
   </section>
+
+  <!-- non-standard optimization flags -->
+  <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" tag="debug" />
+  <flag value="-Z7" if="HXCPP_COMPILE_CACHE" tag="debug" />
+  <flag value="-Fd${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" tag="debug" />
+  <flag value="-Od" tag="debug" />
+  <flag value="-O2" tag="release" />
+  <flag value="-Os" tag="optim-size" />
+
   <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
   <flag value="-c"/>

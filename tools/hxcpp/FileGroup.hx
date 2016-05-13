@@ -44,7 +44,23 @@ class FileGroup
       mTags = "haxe,static";
    }
 
-   public function getTags() return mTags;
+   public function getTags()
+   {
+      return mTags;
+   }
+
+   public function addTag(inTag:String)
+   {
+      if (inTag!=null && inTag!="")
+      {
+         var have = mTags.split(",");
+         if (have.indexOf(inTag)<0)
+         {
+            have.push(inTag);
+            mTags = have.join(",");
+         }
+      }
+   }
 
    public function isPrecompiled() return mPrecompiledHeader!="";
 
