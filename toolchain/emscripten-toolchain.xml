@@ -50,6 +50,7 @@
   <cppflag value="-Wno-invalid-offsetof" />
   <cppflag value="-Wno-return-type-c-linkage" />
   <flag value="-Wno-parentheses" />
+  <flag value="-Wno-unknown-warning-option" />
   <flag value="-Wno-null-dereference" />
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-format-extra-args" />

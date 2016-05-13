@@ -313,12 +313,7 @@ struct BlockDataInfo *gBlockStack = 0;
 typedef hx::QuickVec<hx::Object *> ObjectStack;
 
 
-#ifdef EMSCRIPTEN
-// Dummy lock
-typedef HxAtomicLock ThreadPoolLock;
-#else
 typedef HxMutex ThreadPoolLock;
-#endif
 
 static ThreadPoolLock sThreadPoolLock;
 
