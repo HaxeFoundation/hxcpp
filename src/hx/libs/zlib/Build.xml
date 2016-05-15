@@ -13,19 +13,20 @@
 
   <file name="ZLib.cpp"/>
 
-  <section unless="HXCPP_LINK_NO_ZLIB" >
-     <file name="${ZLIB_DIR}/adler32.c"/>
-     <file name="${ZLIB_DIR}/crc32.c"/>
-     <file name="${ZLIB_DIR}/infback.c"/>
-     <file name="${ZLIB_DIR}/inflate.c"/>
-     <file name="${ZLIB_DIR}/uncompr.c"/>
-     <file name="${ZLIB_DIR}/compress.c"/>
-     <file name="${ZLIB_DIR}/deflate.c"/>
-     <file name="${ZLIB_DIR}/gzio.c"/>
-     <file name="${ZLIB_DIR}/inffast.c"/>
-     <file name="${ZLIB_DIR}/inftrees.c"/>
-     <file name="${ZLIB_DIR}/trees.c"/>
-     <file name="${ZLIB_DIR}/zutil.c"/>
+  <!-- HXCPP_LINK_NO_ZLIB may be set too late, so use filterout as well. -->
+  <section if="HXCPP_LINK_NO_ZLIB" >
+     <file name="${ZLIB_DIR}/adler32.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/crc32.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/infback.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/inflate.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/uncompr.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/compress.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/deflate.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/gzio.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/inffast.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/inftrees.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/trees.c" filterout="HXCPP_LINK_NO_ZLIB" />
+     <file name="${ZLIB_DIR}/zutil.c" filterout="HXCPP_LINK_NO_ZLIB" />
   </section>
 </files>
 
