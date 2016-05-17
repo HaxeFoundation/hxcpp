@@ -70,13 +70,13 @@
   <section if="HXCPP_DEBUG_LINK">
      <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" tag="optim-std" />
      <flag value="-Z7" if="HXCPP_COMPILE_CACHE" tag="optim-std" />
-     <flag value="-Fd${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" tag="optim-std" />
+     <flag value="-Fd${HXCPP_BUILD_DIR}${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" tag="optim-std" />
   </section>
 
   <!-- non-standard optimization flags -->
   <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" tag="debug" />
   <flag value="-Z7" if="HXCPP_COMPILE_CACHE" tag="debug" />
-  <flag value="-Fd${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" tag="debug" />
+  <flag value="-Fd${HXCPP_BUILD_DIR}${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" tag="debug" />
   <flag value="-Od" tag="debug" />
   <flag value="-O2" tag="release" />
   <flag value="-Os" tag="optim-size" />

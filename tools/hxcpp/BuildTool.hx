@@ -99,7 +99,9 @@ class BuildTool
          mMakefile = inJob;
          if (!PathManager.isAbsolute(mMakefile) && sys.FileSystem.exists(mMakefile))
             mMakefile = sys.FileSystem.fullPath(mMakefile);
+         mDefines.set("HXCPP_BUILD_DIR", Path.addTrailingSlash(Path.directory(mMakefile)) );
       }
+
 
       instance = this;
 

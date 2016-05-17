@@ -210,7 +210,9 @@ class FileGroup
 
    public function getPchDir(inObjDir:String)
    {
-      return inObjDir + "/__pch/" + mId ;
+      var result = inObjDir + "/__pch/" + mId ;
+      PathManager.mkdir(result);
+      return result;
    }
 
    public function getPchName()
