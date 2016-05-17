@@ -242,18 +242,19 @@ class Compiler
 
          args.push(out + obj_name);
 
+         var tagInfo = inFile.mTags==null ? "" : " " + inFile.mTags.split(",");
          if (inTid >= 0)
          {
             if (BuildTool.threadExitCode == 0)
             {
-               var err = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompile :\x1b[0m " + inFile.mName);
+               var err = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompile :\x1b[0m " + inFile.mName + tagInfo);
                if (err!=0)
                   BuildTool.setThreadError(err);
             }
          }
          else
          {
-            var result = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompile:\x1b[0m " + inFile.mName);
+            var result = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompile:\x1b[0m " + inFile.mName + tagInfo);
             if (result!=0)
             {
                if (FileSystem.exists(obj_name))

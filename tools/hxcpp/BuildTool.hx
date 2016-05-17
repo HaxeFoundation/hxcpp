@@ -442,7 +442,7 @@ class BuildTool
                if (first)
                {
                   first = false;
-                  Log.info(" - Compiling group '" + group.mId + "' with flags " +  group.mCompilerFlags.concat(mCompiler.getFlagStrings()).join(" ") );
+                  Log.info(" - Compiling group '" + group.mId + "' with flags " +  group.mCompilerFlags.concat(mCompiler.getFlagStrings()).join(" ") + " tags=" + group.mTags.split(",") );
                }
                groupMutex.release();
             }

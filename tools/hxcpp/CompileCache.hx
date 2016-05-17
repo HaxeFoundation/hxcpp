@@ -145,19 +145,44 @@ class CompileCache
 
                  if (doDelete)
                  {
-                    deleted++;
+                    try
+                    {
                     FileSystem.deleteFile(filename);
+                    deleted++;
+                    }
+                    catch(e:Dynamic)
+                    {
+                       Log.warn('Could not delete $filename');
+                    }
                  }
                  else
                     allDeleted = false;
               }
               if (allDeleted)
-                 FileSystem.deleteDirectory(path);
+              {
+                 try
+                 {
+                    FileSystem.deleteDirectory(path);
+                 }
+                 catch(e:Dynamic)
+                 {
+                    Log.warn('Could not delete direcotry $path');
+                 }
+              }
               else
                  projectHasDirs = true;
            }
            if (!projectHasDirs)
-              FileSystem.deleteDirectory(projDir);
+           {
+              try
+              {
+                 FileSystem.deleteDirectory(projDir);
+              }
+              catch(e:Dynamic)
+              {
+                Log.warn('Could not delete directory $projDir');
+              }
+           }
         }
 
         if (inM*1024*1024<size)
@@ -174,8 +199,15 @@ class CompileCache
               }
               else
               {
-                 deleted++;
-                 FileSystem.deleteFile(info.filename);
+                 try
+                 {
+                    FileSystem.deleteFile(info.filename);
+                    deleted++;
+                 }
+                 catch(e:Dynamic)
+                 {
+                   Log.warn('Could not delete ${info.filename}');
+                 }
               }
            }
         }
