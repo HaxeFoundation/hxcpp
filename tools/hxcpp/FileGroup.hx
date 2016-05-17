@@ -44,6 +44,15 @@ class FileGroup
       mTags = "haxe,static";
    }
 
+   public function filter(defines:Map<String,String>)
+   {
+      var newFiles = new Array<File>();
+      for(file in mFiles)
+         if (file.keep(defines))
+            newFiles.push(file);
+      mFiles = newFiles;
+   }
+
    public function getTags()
    {
       return mTags;

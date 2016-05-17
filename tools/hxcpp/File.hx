@@ -10,6 +10,7 @@ class File
    public var mCompilerFlags:Array<String>;
    public var mGroup:FileGroup;
    public var mTags:String;
+   public var mFilterOut:String;
    
    public function new(inName:String, inGroup:FileGroup)
    {
@@ -26,6 +27,11 @@ class File
    }
    
    inline public function getCacheProject() return mGroup.getCacheProject();
+
+   public function keep(inDefines:Map<String,String>)
+   {
+      return mFilterOut==null || !inDefines.exists(mFilterOut);
+   }
 
    public function getTags()
    {

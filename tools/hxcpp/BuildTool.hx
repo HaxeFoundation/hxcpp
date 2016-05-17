@@ -175,6 +175,9 @@ class BuildTool
          if (mDefines.exists("HXCPP_CONFIG"))
             include(mDefines.get("HXCPP_CONFIG"),"exes",true);
       }
+
+      for(group in mFileGroups)
+         group.filter(mDefines);
       
       if (Log.verbose) Log.println ("");
       
@@ -400,7 +403,7 @@ class BuildTool
          {
             var lines = ["#ifndef HXCPP_CONFIG_INCLUDED","#define HXCPP_CONFIG_INCLUDED"];
 
-            var flags = group.mCompilerFlags.concat(mCompiler.getCompilerFlags("haxe"));
+            var flags = group.mCompilerFlags.concat(mCompiler.getCompilerDefines("haxe"));
             var define = ~/^-D([^=]*)=?(.*)/;
             for(flag in flags)
             {
@@ -702,6 +705,8 @@ class BuildTool
                   var file = new File(substitute(el.att.name),group);
                   if (el.has.tags)
                      file.setTags( substitute(el.att.tags) );
+                  if (el.has.filterout)
+                     file.mFilterOut = substitute(el.att.filterout);
                   for(f in el.elements)
                      if (valid(f,"") && f.name=="depend")
                         file.mDepends.push( substitute(f.att.name) );
