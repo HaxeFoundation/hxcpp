@@ -16,7 +16,7 @@
 
 int __file_prims() { return 0; }
 
-#if defined(ANDROID) || defined(IPHONE)
+#if defined(ANDROID) || defined(IPHONE) || defined(APPLETV)
 typedef char FilenameChar;
 #define val_filename val_string
 #define alloc_filename alloc_string

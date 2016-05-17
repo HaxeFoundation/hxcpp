@@ -40,7 +40,7 @@
    #include <sys/wait.h>
 #endif
 
-#ifndef IPHONE
+#if !defined(IPHONE) && !defined(APPLETV)
    #ifdef NEKO_MAC
       #include <sys/syslimits.h>
       #include <limits.h>
@@ -641,7 +641,7 @@ String _hx_std_sys_exe_path()
    if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
       return null();
    return String(path);
-#elif defined(NEKO_MAC) && !defined(IPHONE)
+#elif defined(NEKO_MAC) && !defined(IPHONE) && !defined(APPLETV)
    char path[PATH_MAX+1];
    uint32_t path_len = PATH_MAX;
    if( _NSGetExecutablePath(path, &path_len) )
