@@ -217,13 +217,7 @@ namespace cpp
    #endif
    typedef float Float32;
    typedef double Float64;
-
-   #ifdef HX_WINDOWS
    typedef volatile int AtomicInt;
-   #else
-   typedef volatile LONG AtomicInt;
-   #endif
-
 };
 // Extended mapping - old way
 namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
