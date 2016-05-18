@@ -19,7 +19,10 @@ import sys.net.UdpSocket;
 import sys.net.UdpSocket;
 import sys.io.Process;
 
+import cpp.vm.Deque;
+import cpp.vm.Thread;
 using cpp.NativeArray;
+using cpp.AtomicInt;
 
 
 @:buildXml('<include name="${HXCPP}/src/hx/libs/ssl/Build.xml"/>')
@@ -692,6 +695,50 @@ class Test
       return 0;
    }
 
+   // Hide from optimizer
+   static function getOne() return 1;
+
+   public static function testThread()
+   {
+      log("Test thread");
+      v("atomics..");
+
+      var a:AtomicInt = getOne();
+      var aPtr = cpp.Pointer.addressOf(a);
+      if (aPtr.exchangeIf(2,3))
+         error("Bad exchageIf " + a);
+      if (!aPtr.exchangeIf(1,3))
+         error("No exchageIf " + a);
+      if (a!=3)
+         error("Bad exchageIf value ");
+      if (aPtr.atomicInc()!=3)
+         error("Bad atomicInc return");
+      if (a!=4)
+         error("Bad atomicInc value " + a);
+      if (aPtr.atomicDec()!=4)
+         error("Bad atomicDec return");
+      if (a!=3)
+         error("Bad atomicDec value " + a);
+
+
+      v("deque...");
+      a = 0;
+
+      var q = new Deque<Int>();
+      q.add(1);
+      q.add(2);
+      q.add(3);
+      Thread.create(function() { q.pop(true); aPtr.atomicInc(); });
+      Thread.create(function() { q.pop(true);  aPtr.atomicInc(); } );
+      Thread.create(function() { q.pop(true);  aPtr.atomicDec(); } );
+
+      if (a!=1)
+         error("Bad deque count");
+
+      return ok();
+   }
+
+
 
    public static function main()
    {
@@ -716,6 +763,7 @@ class Test
          exitCode |= testPoll();
          exitCode |= testUdpSocket();
          exitCode |= testSocket();
+         exitCode |= testThread();
          exitCode |= testSsl();
 
          if (exitCode!=0)
