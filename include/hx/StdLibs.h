@@ -263,7 +263,9 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block);
 Dynamic __hxcpp_tls_get(int inID);
 void    __hxcpp_tls_set(int inID,Dynamic inVal);
 
-
+bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int newVal  );
+int _hx_atomic_inc(::cpp::Pointer<cpp::AtomicInt> inPtr );
+int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr );
 
 Array<String> __hxcpp_get_call_stack(bool inSkipLast);
 Array<String> __hxcpp_get_exception_stack();

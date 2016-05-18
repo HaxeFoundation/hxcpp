@@ -121,7 +121,10 @@ struct Deque : public Array_obj<Dynamic>
 		while(inBlock && !length)
 			mSemaphore.QWait();
 		hx::ExitGCFreeZone();
-		return shift();
+		Dynamic result =  shift();
+		if (length)
+			mSemaphore.QSet();
+		return result;
 	}
 	#endif
 
@@ -544,3 +547,22 @@ int __hxcpp_GetCurrentThreadNumber()
     }
     return threadInfo->GetThreadNumber();
 }
+
+// --- Atomic ---
+
+bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int  newVal )
+{
+   return HxAtomicExchangeIf(test, newVal, inPtr);
+}
+
+int _hx_atomic_inc(::cpp::Pointer<cpp::AtomicInt> inPtr )
+{
+   return HxAtomicInc(inPtr);
+}
+
+int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr )
+{
+   return HxAtomicDec(inPtr);
+}
+
+
