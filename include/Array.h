@@ -388,6 +388,7 @@ public:
 
    // Defined later so we can use "Array"
    static Array<ELEM_> __new(int inSize=0,int inReserve=0);
+   static Array<ELEM_> fromData(const ELEM_ *inData,int inCount);
 
    virtual bool AllocAtomic() const { return !hx::ContainsPointers<ELEM_>(); }
 
@@ -426,7 +427,7 @@ public:
    }
 
 
-   inline void memcpy(int inStart, ELEM_ *inData, int inElements)
+   inline void memcpy(int inStart, const ELEM_ *inData, int inElements)
    {
       EnsureSize(inStart+inElements);
       int s = GetElementSize();
@@ -940,6 +941,16 @@ public:
 template<typename ELEM_>
 Array<ELEM_> Array_obj<ELEM_>::__new(int inSize,int inReserve)
  { return  Array<ELEM_>(new Array_obj(inSize,inReserve)); }
+
+template<typename ELEM_>
+Array<ELEM_> Array_obj<ELEM_>::fromData(const ELEM_ *inData,int inCount)
+{
+   Array<ELEM_> result = new Array_obj(inCount,inCount);
+   if (inCount)
+       result->memcpy(0, inData, inCount);
+   return result;
+}
+
 
 
 template<>
