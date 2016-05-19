@@ -112,6 +112,29 @@ class TestPtr extends haxe.unit.TestCase{
 
    static function notProcAddress(module:String, func:String) return null;
 
+   public function testArrayAccess() {
+       var array = [ 0.0, 1.1, 2.2, 3.3 ];
+       var ptr = cpp.Pointer.arrayElem(array, 0);
+       assertTrue( ptr[1]==1.1 );
+       ptr[1] = 2;
+       assertTrue( ptr[1]==2 );
+       ptr[1]++;
+       assertTrue( ptr[1]==3 );
+       ptr[1]-=2.5;
+       assertTrue( ptr[1]==0.5 );
+
+       var raw = ptr.raw;
+       assertTrue( raw[2]==2.2 );
+       raw[2] = 2;
+       assertTrue( raw[2]==2 );
+       raw[2]++;
+       assertTrue( raw[2]==3 );
+       raw[2]-=2.5;
+       assertTrue( raw[2]==0.5 );
+
+   }
+
+
    public function testAutoCast() {
        var z = [ 1, 2, 3 ];
        assertTrue( cpp.NativeArray.address(z, 0).ptr == cpp.NativeArray.address(z, 0).ptr );
