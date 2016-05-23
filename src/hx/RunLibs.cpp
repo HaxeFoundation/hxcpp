@@ -21,9 +21,11 @@ std::wstring sgResultBuffer;
 
 const HX_CHAR *hxRunLibrary()
 {
+   #if (HXCPP_API_LEVEL<330)
    std_register_prims();
    regexp_register_prims();
    zlib_register_prims();
+   #endif
     
    try { 
       __hxcpp_lib_main();
