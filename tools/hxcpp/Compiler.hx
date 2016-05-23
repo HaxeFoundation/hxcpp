@@ -390,7 +390,8 @@ class Compiler
       var pch_name = dir + "/" + file + mPCHExt;
       if (inGroup.isCached() || inReuseIfPossible)
       {
-          var obj = PathManager.combine(dir, file + mExt);
+          // No obj needed for gcc
+          var obj = mPCH=="gcc" ? null : PathManager.combine(dir, file + mExt);
           if (FileSystem.exists(pch_name) && (obj==null || FileSystem.exists(obj)) )
              return obj;
       }
@@ -419,8 +420,8 @@ class Compiler
       }
       else
       {
-         //Log.info("", "Creating PCH directory \"" + dir + header + "\"");
-         PathManager.mkdir(dir + "/" + header);
+         Log.info("", 'Creating PCH directory "$dir"');
+         PathManager.mkdir(dir);
          args.push( "-o" );
          args.push(pch_name);
          args.push( inGroup.mPrecompiledHeaderDir + "/" + inGroup.mPrecompiledHeader + ".h" );

@@ -166,7 +166,7 @@ class CompileCache
                  }
                  catch(e:Dynamic)
                  {
-                    Log.warn('Could not delete direcotry $path');
+                    Log.warn('Could not delete directory $path');
                  }
               }
               else
