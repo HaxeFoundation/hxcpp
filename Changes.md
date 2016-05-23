@@ -1,5 +1,14 @@
 
 
+* Much better compile cache support
+* Added tags to compiler flags to allow better targeting
+* Added UCP support to regexp
+* Added Array::fromData
+* Added AtomicInt operations
+* Added _hx_imod
+* More improvements for tvos
+* Fix blocking deque issue
+* Improved native testing
 * Added 'hxcpp run hxcpp cache ...' commands for managing cache
 * Added cpp.Variant class for query of field values to avoid boxing
 * Added more efficient version of finalizer
