@@ -230,6 +230,11 @@ class Linker
          {
             PathManager.mkdir(tmpDir);
             var fname = tmpDir + "/all_objs";
+
+            var local = Path.normalize(fname);
+            if (local.startsWith(here))
+               fname = local.substr(hereLen);
+
             var fout = sys.io.File.write(fname,false);
             if (mFromFileNeedsQuotes)
             {
