@@ -335,12 +335,22 @@ static void ParseCommandLine(LPTSTR psrc, Array<String> &out)
     LPTSTR pStart = psrc;
     bool skipQuote = false;
 
+    // Pairs of double-quotes vanish...
+    while(psrc[0]=='\"' && psrc[1]=='\"')
+       psrc += 2;
+
     if (*psrc == '\"')
     {
         // scan from just past the first double-quote through the next
         // double-quote, or up to a null, whichever comes first
-        while ((*(++psrc) != '\"') && (*psrc != '\0'))
-            continue;
+        psrc++;
+        while ((*psrc!= '\"') && (*psrc != '\0'))
+        {
+           psrc++;
+           // Pairs of double-quotes vanish...
+           while(psrc[0]=='\"' && psrc[1]=='\"')
+              psrc += 2;
+        }
 
         skipQuote = true;
     }
