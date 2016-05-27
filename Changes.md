@@ -1,4 +1,9 @@
 
+* Fix Dynamic != for haxe 3.2.1
+* Fix Command line parsing on windows for triple quotes
+
+3.3.45
+------------------------------------------------------------
 * Much better compile cache support
 * Added tags to compiler flags to allow better targeting
 * Added UCP support to regexp
