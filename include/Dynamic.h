@@ -165,6 +165,21 @@ public:
       bool operator op (unsigned char inRHS)  const { return IsNumeric() && ((double)(*this) op (double)inRHS); } \
       bool operator op (bool inRHS)  const { return IsBool() && ((double)(*this) op (double)inRHS); } \
 
+   bool operator != (const String &inRHS)  const { return !mPtr || ((String)(*this) != inRHS); }
+   bool operator != (double inRHS)  const { return !IsNumeric() || ((double)(*this) != inRHS); }
+   bool operator != (cpp::Int64 inRHS)  const { return !IsNumeric() || ((cpp::Int64)(*this) != inRHS); }
+   bool operator != (cpp::UInt64 inRHS)  const { return !IsNumeric() || ((cpp::Int64)(*this) != inRHS); }
+   bool operator != (float inRHS)  const { return !IsNumeric() || ((double)(*this) != inRHS); }
+   bool operator != (int inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
+   bool operator != (unsigned int inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
+   bool operator != (short inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
+   bool operator != (unsigned short inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
+   bool operator != (signed char inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
+   bool operator != (unsigned char inRHS)  const { return !IsNumeric() || ((double)(*this) != (double)inRHS); }
+   bool operator != (bool inRHS)  const { return !IsBool() || ((double)(*this) != (double)inRHS); }
+
+
+
    #define DYNAMIC_COMPARE_OP_ALL( op ) \
       bool operator op (const Dynamic &inRHS) const { return mPtr && (Compare(inRHS) op 0); } \
       bool operator op (const cpp::Variant &inRHS) const { return *this op Dynamic(inRHS); } \
@@ -172,7 +187,6 @@ public:
 
 
    DYNAMIC_COMPARE_OP( == )
-   DYNAMIC_COMPARE_OP( != )
    DYNAMIC_COMPARE_OP_ALL( < )
    DYNAMIC_COMPARE_OP_ALL( <= )
    DYNAMIC_COMPARE_OP_ALL( >= )
