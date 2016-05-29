@@ -2055,6 +2055,11 @@ void InternalEnableGC(bool inEnable)
    sgInternalEnable = inEnable;
 }
 
+bool IsConstAlloc(const void *inData)
+{
+   unsigned int *header = (unsigned int *)inData;
+   return header[-1] & HX_GC_CONST_ALLOC_BIT;
+}
 
 void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash)
 {
@@ -4362,9 +4367,51 @@ int GcGetThreadAttachedCount()
 }
 
 
+#ifdef HXCPP_VISIT_ALLOCS
+class GcFreezer : public hx::VisitContext
+{
+public:
+   void visitObject(hx::Object **ioPtr)
+   {
+      hx::Object *obj = *ioPtr;
+      if (!obj || IsConstAlloc(obj))
+         return;
+
+      unsigned int s = ObjectSize(obj);
+      void *result = InternalCreateConstBuffer(obj,s,false);
+      //printf(" Freeze %d\n", s);
+      *ioPtr = (hx::Object *)result;
+      (*ioPtr)->__Visit(this);
+   }
+
+   void visitAlloc(void **ioPtr)
+   {
+      void *data = *ioPtr;
+      if (!data || IsConstAlloc(data))
+         return;
+      unsigned int s = ObjectSize(data);
+      //printf(" Freeze %d\n", s);
+      void *result = InternalCreateConstBuffer(data,s,false);
+      *ioPtr = result;
+   }
+};
+#endif
+
 
 } // end namespace hx
 
+
+Dynamic _hx_gc_freeze(Dynamic inObject)
+{
+#ifdef HXCPP_VISIT_ALLOCS
+   hx::GcFreezer freezer;
+   hx::Object *base = inObject.mPtr;
+   freezer.visitObject(&base);
+   return base;
+#else
+   return inObject;
+#endif
+}
 
 
 

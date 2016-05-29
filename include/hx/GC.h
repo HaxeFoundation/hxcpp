@@ -42,6 +42,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_minimum_working_memory(int inByt
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_minimum_free_space(int inBytes);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_target_free_space_percentage(int inPercentage);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool __hxcpp_is_const_string(const ::String &inString);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_gc_freeze(Dynamic inObject);
 
 typedef void (hx::Object::*_hx_member_finalizer)(void);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_add_member_finalizer(hx::Object *inObject, _hx_member_finalizer, bool inPin);
