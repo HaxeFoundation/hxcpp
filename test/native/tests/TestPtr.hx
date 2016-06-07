@@ -18,16 +18,26 @@ extern class Vec {
 @:unreflective
 @:structAccess
 @:native("CVec")
-extern class VecStruct {
+extern class VecStructAccess {
 	public var x:Float;
 	public var y:Float;
 	public var z:Float;
 
    @:native("new CVec")
-   public static function create(val:Float) : Pointer<VecStruct>;
+   public static function create(val:Float) : Pointer<VecStructAccess>;
 
-   public function set99(ioVec:VecStruct):Void { }
+   public function set99(ioVec:VecStructAccess):Void { }
 }
+
+
+@:unreflective
+@:native("cpp::Struct<CVec>")
+extern class VecStruct {
+	public var x:Float;
+	public var y:Float;
+	public var z:Float;
+}
+
 
 @:headerCode('
 struct CVec{
@@ -84,7 +94,7 @@ class TestPtr extends haxe.unit.TestCase{
    private function anonOf(d:Dynamic) : Dynamic return {ptr:d};
 
    public function testStructAccess() {
-      var e = VecStruct.create(1);
+      var e = VecStructAccess.create(1);
       var tmp = e.ptr;
       var tmp1 = e.ref;
       tmp.set99(tmp1);
@@ -106,6 +116,28 @@ class TestPtr extends haxe.unit.TestCase{
       assertTrue(anon.ptr==a.address(0));
       assertFalse([2].address(0)==anon.ptr);
       assertTrue(a.address(0)==anon.ptr);
+   }
+
+   function getAnonI(a:Dynamic) : Dynamic
+   {
+      return a.i;
+   }
+
+
+   public function testAnon() {
+      var a = [1];
+      var intPtr = a.address(0);
+      var anon = { i:intPtr };
+      assertTrue( getAnonI(anon)==intPtr );
+
+      var vecPtr = VecStructAccess.create(1);
+      var anon = { i:vecPtr };
+      assertTrue( getAnonI(anon)==vecPtr );
+
+      var vec:VecStruct = null;
+      vec.x = 123;
+      var anon = { i:vec };
+      assertTrue( getAnonI(anon)==vec );
    }
 
    static function callMe(x:Int) return 10+x;

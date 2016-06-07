@@ -237,7 +237,10 @@ public:
    inline T &set_ref(const T &inValue) { return *ptr = inValue;  }
 
    operator Dynamic () const { return CreateDynamicPointer((void *)ptr); }
-   //operator hx::Val () const { return CreateDynamicPointer((void *)ptr); }
+   #if (HXCPP_API_LEVEL >= 330)
+   operator cpp::Variant () const { return CreateDynamicPointer((void *)ptr); }
+   #endif
+
    operator T * () { return ptr; }
    T * get_raw() { return ptr; }
    const T * get_constRaw() { return ptr; }
