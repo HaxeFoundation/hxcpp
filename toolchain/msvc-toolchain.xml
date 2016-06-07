@@ -9,7 +9,7 @@
 
 <section if="winrt">
    <set name="C_ABI" value="-MD" />
-   <set name="ABI" value="-ZW" unless="ABI"/>
+   <set name="ABI" value="-ZW" unless="ABI || static_link"/>
    <!-- Note: Default winrt static_link uses native libs. -->
    <!--       Use -DABI=-ZW for "main", or to force UWP libs (e.g. targeting XBOXONE UWP) -->
    <set name="ABI" value="-MD" if="static_link" unless="ABI"/>
@@ -80,6 +80,7 @@
   <flag value="-Od" tag="debug" />
   <flag value="-O2" tag="release" />
   <flag value="-Os" tag="optim-size" />
+  <flag value="-GL" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
 
   <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
@@ -107,6 +108,7 @@
   <flag value="-machine:${MACHINE}"/>
   <flag value="-dll"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
   <lib name="${dll_import_link}" if="dll_import_link" />
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
@@ -121,6 +123,7 @@
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
   <flag value="-subsystem:windows${SUBSYSTEM_VER}" if="SUBSYSTEMWINDOWS" />
   <flag value="-subsystem:console${SUBSYSTEM_VER}" if="SUBSYSTEMCONSOLE" />
   <libpathflag value="-libpath:"/>
@@ -136,6 +139,7 @@
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
   <flag value="-subsystem:windows" />
   <flag value="-MANIFEST:NO" />
   <flag value="-WINMD" />
@@ -151,6 +155,7 @@
 </linker>
 
 <linker id="static_link" exe="lib.exe" if="windows">
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <ext value="${LIBEXT}"/>
