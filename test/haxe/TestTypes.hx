@@ -12,8 +12,29 @@ class TestTypes extends haxe.unit.TestCase
 
    public function new() super();
 
+   function stringToCcs(string:String) : cpp.ConstCharStar
+   {
+      return string;
+   }
 
-   public function test()
+   function ccsToString(ccs:cpp.ConstCharStar) : String
+   {
+      return ccs;
+   }
+
+   function ccsToStringCast(ccs:cpp.ConstCharStar) : String
+   {
+      return cast ccs;
+   }
+
+   public function testConstCharStar()
+   {
+      var ccs = stringToCcs("hello");
+      assertTrue( ccsToString(ccs)=="hello" );
+      assertTrue( ccsToStringCast(ccs)=="hello" );
+   }
+
+   public function testDynamic()
    {
       var d:Dynamic = this;
       assertTrue(d.i0==1);
