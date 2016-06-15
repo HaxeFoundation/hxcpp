@@ -24,6 +24,13 @@ import cpp.vm.Thread;
 using cpp.NativeArray;
 using cpp.AtomicInt;
 
+// These should be ignored in haxe 3.3...
+import cpp.link.StaticStd;
+import cpp.link.StaticRegexp;
+import cpp.link.StaticZlib;
+import cpp.link.StaticMysql;
+import cpp.link.StaticSqlite;
+
 
 @:buildXml('<include name="${HXCPP}/src/hx/libs/ssl/Build.xml"/>')
 extern class SslTest
