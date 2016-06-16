@@ -284,10 +284,12 @@ static value sys_command( value cmd ) {
 	val_check(cmd,string);
 	if( val_strlen(cmd) == 0 )
 		return alloc_int(-1);
-	gc_enter_blocking();
 	#ifdef NEKO_WINDOWS
-	int result =  _wsystem(val_wstring(cmd));
+	const wchar_t* _cmd = val_wstring(cmd);
+	gc_enter_blocking();
+	int result =  _wsystem(_cmd);
 	#else
+	gc_enter_blocking();
 	int result =  system(val_string(cmd));
 	#endif
 	gc_exit_blocking();
@@ -318,11 +320,13 @@ static value sys_exists( value path ) {
 	return alloc_bool(true);
 	#else
 	val_check(path,string);
-	gc_enter_blocking();
 	#ifdef NEKO_WINDOWS
-	bool result =  GetFileAttributesW(val_wstring(path)) != INVALID_FILE_ATTRIBUTES;
+	const wchar_t* _path = val_wstring(path);
+	gc_enter_blocking();
+	bool result =  GetFileAttributesW(_path) != INVALID_FILE_ATTRIBUTES;
 	#else
 	struct stat st;
+	gc_enter_blocking();
 	bool result =  stat(val_string(path),&st) == 0;
 	#endif
 	gc_exit_blocking();
@@ -350,10 +354,12 @@ static value file_delete( value path ) {
 	return alloc_bool(true);
 	#else
 	val_check(path,string);
-	gc_enter_blocking();
 	#ifdef NEKO_WINDOWS
-	if( DeleteFileW(val_wstring(path)) != 0 )
+	const wchar_t* _path = val_wstring(path);
+	gc_enter_blocking();
+	if( DeleteFileW(_path) != 0 )
 	#else
+	gc_enter_blocking();
 	if( unlink(val_string(path)) != 0 )
 	#endif
 	{
@@ -372,16 +378,24 @@ static value file_delete( value path ) {
 static value sys_rename( value path, value newname ) {
 	val_check(path,string);
 	val_check(newname,string);
-	gc_enter_blocking();
+	
 	#ifdef NEKO_WINDOWS
-	if( MoveFileExW(val_wstring(path),val_wstring(newname),MOVEFILE_COPY_ALLOWED|MOVEFILE_WRITE_THROUGH) != 0 )
-	#else
-	if( rename(val_string(path),val_string(newname)) != 0 )
-	#endif
+	const wchar_t* _path = val_wstring(path);
+	const wchar_t* _newname = val_wstring(newname);
+	gc_enter_blocking();
+	if( MoveFileExW(_path,_newname,MOVEFILE_COPY_ALLOWED|MOVEFILE_WRITE_THROUGH) != 0 )
 	{
 		gc_exit_blocking();
 		return alloc_null();
 	}
+	#else
+	gc_enter_blocking();
+	if( rename(val_string(path),val_string(newname)) != 0 )
+	{
+		gc_exit_blocking();
+		return alloc_null();
+	}
+	#endif
 	gc_exit_blocking();
 	return alloc_bool(true);
 }
@@ -411,17 +425,19 @@ static value sys_stat( value path ) {
 	#else
 	value o;
 	val_check(path,string);
-	gc_enter_blocking();
+	
 	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
+	gc_enter_blocking();
 	WIN32_FILE_ATTRIBUTE_DATA data;
-	if( !GetFileAttributesExW(val_wstring(path),GetFileExInfoStandard,&data) )
+	if( !GetFileAttributesExW(_path,GetFileExInfoStandard,&data) )
 	{
 		gc_exit_blocking();
 		return alloc_null();
 	}
 	gc_exit_blocking();
 	wchar_t fullPath[MAX_PATH+1];
-	GetFullPathNameW(val_wstring(path),MAX_PATH+1,fullPath,NULL);
+	GetFullPathNameW(_path,MAX_PATH+1,fullPath,NULL);
 	int dev = PathGetDriveNumberW(fullPath);
 	#define EPOCH_DIFF	(134774*24*60*60.0)
 	ULARGE_INTEGER ui;
@@ -450,6 +466,7 @@ static value sys_stat( value path ) {
 	alloc_field(o,val_id("rdev"),alloc_int(dev));
 	alloc_field(o,val_id("size"),alloc_int32(data.nFileSizeLow));
 	#else
+	gc_enter_blocking();
 	struct stat s;
 	if( stat(val_string(path),&s) != 0 )
 	{
@@ -495,10 +512,11 @@ static value sys_file_type( value path ) {
 	#else
 	struct stat s;
 	val_check(path,string);
-	gc_enter_blocking();
 	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
+	gc_enter_blocking();
 	WIN32_FILE_ATTRIBUTE_DATA data;
-	if( !GetFileAttributesExW(val_wstring(path),GetFileExInfoStandard,&data) )
+	if( !GetFileAttributesExW(_path,GetFileExInfoStandard,&data) )
 	{
 		gc_exit_blocking();
 		return alloc_null();
@@ -513,6 +531,7 @@ static value sys_file_type( value path ) {
 		return alloc_string("file");
 	}
 	#else
+	gc_enter_blocking();
 	if( stat(val_string(path),&s) != 0 )
 	{
 		gc_exit_blocking();
@@ -550,16 +569,23 @@ static value sys_create_dir( value path, value mode ) {
 	#else
 	val_check(path,string);
 	val_check(mode,int);
+	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
 	gc_enter_blocking();
-#ifdef NEKO_WINDOWS
-	if( _wmkdir(val_wstring(path)) != 0 )
-#else
-	if( mkdir(val_string(path),val_int(mode)) != 0 )
-#endif
+	if( _wmkdir(_path) != 0 )
 	{
 		gc_exit_blocking();
 		return alloc_null();
 	}
+	#else
+	const char* _path = val_string(path);
+	gc_enter_blocking();
+	if( mkdir(val_string(path),val_int(mode)) != 0 )
+	{
+		gc_exit_blocking();
+		return alloc_null();
+	}
+	#endif
 	gc_exit_blocking();
 	return alloc_bool(true);
 	#endif
@@ -574,11 +600,14 @@ static value sys_remove_dir( value path ) {
 	return alloc_bool(true);
 	#else
 	val_check(path,string);
-	gc_enter_blocking();
 	#ifdef NEKO_WINDOWS
-	bool ok = _wrmdir(val_wstring(path)) != 0;
+	const wchar_t* _path = val_wstring(path);
+	gc_enter_blocking();
+	bool ok = _wrmdir(_path) != 0;
 	#else
-	bool ok = rmdir(val_string(path)) != 0;
+	const char* _path = val_string(path);
+	gc_enter_blocking();
+	bool ok = rmdir(_path) != 0;
 	#endif
 	gc_exit_blocking();
 	return alloc_bool(ok);
