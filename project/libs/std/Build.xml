@@ -27,6 +27,7 @@
 <target id="haxe">
   <files id="std"/>
   <lib name="ws2_32.lib" if="windows" unless="static_link" />
+  <lib name="Shlwapi.lib" if="windows" unless="static_link" />
   <lib name="-lsocket" if="blackberry" unless="static_link" />
 </target>
 
@@ -34,6 +35,7 @@
 <target id="std" output="${HX_TARGET_PREFIX}std${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
   <files id="std"/>
   <lib name="ws2_32.lib" if="windows" unless="static_link" />
+  <lib name="Shlwapi.lib" if="windows" unless="static_link" />
   <lib name="-lsocket" if="blackberry" unless="static_link" />
   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
 </target>
