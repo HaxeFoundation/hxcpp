@@ -121,7 +121,8 @@ class TestCffi extends TestBase
       allocatedAbs = null;
 
 
-      createDeepAbstracts(10);
+      createDeepAbstracts(2);
+      clearStack(12);
 
       Gc.run(true);
 
@@ -136,6 +137,13 @@ class TestCffi extends TestBase
         assertEq( getRoot(i), null );
 
       assertEq( getAbstractFreeCount(), 2 );
+   }
+
+   function clearStack(count:Int, ?nothing:Dynamic):Dynamic
+   {
+      if (count==0)
+         return 0;
+      return clearStack(count-1);
    }
 
    // Try to hide references from GC stack marking
