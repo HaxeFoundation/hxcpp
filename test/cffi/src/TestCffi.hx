@@ -26,6 +26,11 @@ class TestCffi extends TestBase
    static var setRoot:Int->Dynamic->Void = Lib.load("prime", "setRoot", 2);
    static var getRoot:Int->Dynamic = Lib.load("prime", "getRoot", 1);
    static var clearRoots:Void->Void = Lib.load("prime", "clearRoots", 0);
+   static var createAbstract:Void->Dynamic = Lib.load("prime", "createAbstract", 0);
+   static var allocAbstract:Void->Dynamic = Lib.load("prime", "allocAbstract", 0);
+   static var getAbstract:Dynamic->Int = Lib.load("prime", "getAbstract", 1);
+   static var freeAbstract:Dynamic->Void = Lib.load("prime", "freeAbstract", 1);
+   static var getAbstractFreeCount:Void->Int = Lib.load("prime", "getAbstractFreeCount", 0);
 
    public function testCffi()
    {
@@ -92,7 +97,35 @@ class TestCffi extends TestBase
       assertEq( byteDataSize(bytes), 13 );
       assertEq( byteDataByte(bytes,1), 't'.code );
 
+      assertEq( getAbstractFreeCount(), 0 );
+
+      var createdAbs = createAbstract();
+      assertTrue( createdAbs!=null );
+      assertEq( getAbstract(createdAbs), 99 );
+      // Explicitly freeing abstract does not call finalizer
+      freeAbstract( createdAbs );
+      assertEq( getAbstractFreeCount(), 0 );
+      assertEq( getAbstract(createdAbs), -1 );
+      assertEq( getAbstractFreeCount(), 0 );
+      createdAbs = null;
       Gc.run(true);
+      assertEq( getAbstractFreeCount(), 0 );
+
+      var allocatedAbs = allocAbstract();
+      assertTrue( allocatedAbs!=null );
+      assertEq( getAbstract(allocatedAbs), 99 );
+      assertEq( getAbstractFreeCount(), 0 );
+      freeAbstract( allocatedAbs );
+      assertEq( getAbstract(allocatedAbs), -1 );
+      assertEq( getAbstractFreeCount(), 0 );
+      allocatedAbs = null;
+
+
+      createDeepAbstracts(10);
+
+      Gc.run(true);
+
+      assertEq( getAbstractFreeCount(), 2 );
 
       for(i in 0...100)
         assertEq( getRoot(i)+"", [i]+"" );
@@ -101,6 +134,20 @@ class TestCffi extends TestBase
 
       for(i in 0...100)
         assertEq( getRoot(i), null );
+
+      assertEq( getAbstractFreeCount(), 2 );
+   }
+
+   // Try to hide references from GC stack marking
+   function createDeepAbstracts(inDepth:Int)
+   {
+      if (inDepth==0)
+      {
+         createAbstract();
+         allocAbstract();
+      }
+      else
+        createDeepAbstracts(inDepth-1);
    }
 }
 

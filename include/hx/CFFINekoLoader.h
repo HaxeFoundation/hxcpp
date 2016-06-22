@@ -90,6 +90,7 @@ void *DynamicNekoLoader(const char *inName);
 
 typedef neko_value (*alloc_object_func)(neko_value);
 typedef neko_value (*alloc_string_func)(const char *);
+typedef neko_value (*alloc_abstract_func)(neko_vkind,void *);
 typedef neko_value (*val_call1_func)(neko_value,neko_value);
 typedef neko_value (*val_field_func)(neko_value,int);
 typedef neko_value *(*alloc_root_func)(int);
@@ -107,10 +108,12 @@ typedef neko_value (*alloc_empty_string_func)(int);
 
 static alloc_object_func dyn_alloc_object = 0;
 static alloc_string_func dyn_alloc_string = 0;
+static alloc_abstract_func dyn_alloc_abstract = 0;
 static val_call1_func dyn_val_call1 = 0;
 static val_field_func dyn_val_field = 0;
 static alloc_root_func dyn_alloc_root = 0;
 static alloc_private_func dyn_alloc_private = 0;
+static alloc_private_func dyn_alloc = 0;
 static copy_string_func dyn_copy_string = 0;
 static val_id_func dyn_val_id = 0;
 static alloc_buffer_func dyn_alloc_buffer = 0;
@@ -395,10 +398,29 @@ neko_value api_alloc_null()
    return gNekoNull;
 }
 
+neko_value api_create_abstract(neko_vkind inKind,int inSize,void *inFinalizer)
+{
+   void *data = dyn_alloc(inSize);
+   neko_value val = dyn_alloc_abstract(inKind, data);
+   dyn_val_gc(val, inFinalizer);
+   return val;
+}
+
+void api_free_abstract(neko_value inAbstract)
+{
+   if (neko_val_is_abstract(inAbstract))
+   {
+      dyn_val_gc(inAbstract,0);
+      neko_val_kind(inAbstract) = 0;
+   }
+}
+
+
 neko_value api_buffer_val(neko_buffer arg1)
 {
    return api_alloc_null();
 }
+
 
 void api_hx_error()
 {
@@ -519,6 +541,9 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(alloc_root)
    IMPLEMENT_HERE(val_gc)
 
+   IMPLEMENT_HERE(create_abstract)
+   IMPLEMENT_HERE(free_abstract)
+
    IGNORE_API(gc_enter_blocking)
    IGNORE_API(gc_exit_blocking)
    IGNORE_API(gc_safe_point)
@@ -594,8 +619,10 @@ ResolveProc InitDynamicNekoLoader()
    if (!init)
    {
       dyn_alloc_private = (alloc_private_func)LoadNekoFunc("neko_alloc_private");
+      dyn_alloc = (alloc_private_func)LoadNekoFunc("neko_alloc");
       dyn_alloc_object = (alloc_object_func)LoadNekoFunc("neko_alloc_object");
       dyn_alloc_string = (alloc_string_func)LoadNekoFunc("neko_alloc_string");
+      dyn_alloc_abstract = (alloc_abstract_func)LoadNekoFunc("neko_alloc_abstract");
       dyn_val_call1 = (val_call1_func)LoadNekoFunc("neko_val_call1");
       dyn_val_field = (val_field_func)LoadNekoFunc("neko_val_field");
       dyn_alloc_root = (alloc_root_func)LoadNekoFunc("neko_alloc_root");

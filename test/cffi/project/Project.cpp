@@ -264,5 +264,80 @@ value byteDataByte(value byteData, value inIndex)
 DEFINE_PRIM(byteDataByte, 2);
 
 
+int myFreeCount = 0;
+
+DEFINE_KIND(myKind);
+
+void destroyMyKind(value inAbstract)
+{
+   //printf("destroyMyKind\n");
+   // In this case, the data belongs to the abstract
+   myFreeCount++;
+}
+
+void freeMyKind(value inAbstract)
+{
+   //printf("freeMyKind\n");
+   void *data = val_to_kind(inAbstract,myKind);
+   // In this case, we own the data, so must delete it
+   delete (int *)data;
+   myFreeCount++;
+}
+
+
+value allocAbstract()
+{
+   if (!myKind)
+      myKind = alloc_kind();
+
+   void *data = new int(99);
+
+   value abs = alloc_abstract(myKind, data);
+   val_gc(abs, freeMyKind);
+   return abs;
+}
+DEFINE_PRIM(allocAbstract, 0);
+
+
+
+value createAbstract()
+{
+   if (!myKind)
+      myKind = alloc_kind();
+
+   value abs = create_abstract(myKind, sizeof(int), destroyMyKind);
+   int *data = (int *)val_get_handle(abs,myKind);
+   *data = 99;
+   return abs;
+}
+DEFINE_PRIM(createAbstract, 0);
+
+
+
+value getAbstract(value inAbstract)
+{
+   void *data = val_to_kind(inAbstract,myKind);
+   if (!data)
+      return alloc_int(-1);
+
+   return alloc_int(*(int *)data);
+}
+DEFINE_PRIM(getAbstract, 1);
+
+
+value getAbstractFreeCount()
+{
+   return alloc_int(myFreeCount);
+}
+DEFINE_PRIM(getAbstractFreeCount, 0);
+
+
+value freeAbstract(value inAbstract)
+{
+   free_abstract(inAbstract);
+   return alloc_null();
+}
+DEFINE_PRIM(freeAbstract, 1);
+
 
 
