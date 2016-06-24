@@ -77,7 +77,7 @@
 <set name="NDLLDIR" value="lib" if="static_link" />
 
 
-<set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
+<!-- <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" /> -->
 
 <set name="HXCPP_DEBUG_LINK" value="1" if="debug" unless="HXCPP_NO_DEBUG_LINK" />
 
