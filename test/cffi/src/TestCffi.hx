@@ -126,7 +126,11 @@ class TestCffi extends TestBase
 
       Gc.run(true);
 
-      assertEq( getAbstractFreeCount(), 2 );
+      var freeCount = getAbstractFreeCount();
+      if (freeCount!=2)
+      {
+        Sys.println('\nWarning: $freeCount != 2');
+      }
 
       for(i in 0...100)
         assertEq( getRoot(i)+"", [i]+"" );
