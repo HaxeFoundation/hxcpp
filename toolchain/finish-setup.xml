@@ -27,7 +27,8 @@
 
 
 <set name="OBJDBG" value="-debug" if="debug" />
-<set name="OBJEXT" value="${M64}${F32}${STAT}${OBJDBG}${NOCONSOLE}${RPI}${APIFP}${PRIME}" />
+<set name="OBJOPT" value="-opt" if="HXCPP_OPTIMIZE_LINK" unless="debug" />
+<set name="OBJEXT" value="${M64}${F32}${STAT}${OBJDBG}${OBJOPT}${NOCONSOLE}${RPI}${APIFP}${PRIME}" />
 
 <set name="STD_MODULE_LINK" value="static_link" if="static_link"/>
 <set name="STD_MODULE_LINK" value="exe" if="HXCPP_JS_PRIME"/>
