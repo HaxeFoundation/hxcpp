@@ -359,6 +359,14 @@ char * val_dup_string(value inVal)
    #endif
 }
 
+
+char *alloc_string_data(const char *inData, int inLength)
+{
+   String val(inData,inLength);
+   val.dup();
+   return (char *)val.__s;
+}
+
 hx::Object *alloc_string_len(const char *inStr,int inLen)
 {
 #ifdef HX_UTF8_STRINGS
