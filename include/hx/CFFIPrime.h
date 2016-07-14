@@ -15,12 +15,19 @@ struct HxString
       length = inRHS.length;
       __s = inRHS.__s;
    }
-   inline HxString(const char *inS,int inLen=-1) : length(inLen), __s(inS)
+   inline HxString(const char *inS,int inLen=-1, bool inAllocGcString=true) : length(inLen), __s(inS)
    {
       if (!inS)
          length = 0;
-      else if (length<0)
-         for(length=0; __s[length]; length++) { }
+      else
+      {
+         if (length<0)
+            for(length=0; __s[length]; length++)
+            {
+            }
+         if (inAllocGcString)
+            __s = alloc_string_data(__s, length);
+      }
    }
 
    inline int size() { return length; }
@@ -248,7 +255,7 @@ struct AutoValue
    inline operator float() { return val_number(mValue); }
    inline operator bool() { return val_bool(mValue); }
    inline operator const char *() { return val_string(mValue); }
-   inline operator HxString() { return val_is_null(mValue) ? HxString(0,0) : HxString(val_string(mValue), val_strlen(mValue)); }
+   inline operator HxString() { return val_is_null(mValue) ? HxString(0,0) : HxString(val_string(mValue), val_strlen(mValue), false); }
 };
 
 

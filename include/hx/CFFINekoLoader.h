@@ -136,6 +136,16 @@ neko_value api_alloc_string(const char *inString)
 }
 
 
+char *api_alloc_string_data(const char *inString,int inLength)
+{
+   CheckInitDynamicNekoLoader();
+   char *result = (char *)dyn_alloc_private(inLength+1);
+   memcpy(result,inString,inLength);
+   result[inLength]='\0';
+   return result;
+}
+
+
 neko_value api_alloc_raw_string(int inLength)
 {
    CheckInitDynamicNekoLoader();
@@ -574,6 +584,7 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(val_string)
    IMPLEMENT_HERE(alloc_string)
    IMPLEMENT_HERE(alloc_raw_string)
+   IMPLEMENT_HERE(alloc_string_data)
    IMPLEMENT_HERE(val_dup_wstring)
    IMPLEMENT_HERE(val_dup_string)
    IMPLEMENT_HERE(alloc_string_len)
