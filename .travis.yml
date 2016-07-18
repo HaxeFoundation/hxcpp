@@ -12,6 +12,7 @@ install:
     fi
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
       travis_retry brew update;
+      travis_retry brew upgrade pkg-config cmake;
       travis_retry brew install bdw-gc pcre mariadb mbedtls ocaml camlp4;
     fi
   # Install neko
