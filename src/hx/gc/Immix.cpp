@@ -20,6 +20,15 @@ namespace hx
 
 // #define HXCPP_SINGLE_THREADED_APP
 
+namespace hx
+{
+#ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
+enum { gAlwaysMove = true };
+#else
+enum { gAlwaysMove = false };
+#endif
+}
+
 #ifdef ANDROID
 #include <android/log.h>
 #endif
@@ -97,6 +106,9 @@ enum
 
 
 #ifndef HXCPP_GC_MOVING
+  #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
+  #define HXCPP_GC_MOVING
+  #endif
 // Enable moving collector...
 //#define HXCPP_GC_MOVING
 #endif
@@ -2168,6 +2180,7 @@ struct MoveBlockJob
             //printf("Caught up!\n");
             return 0;
          }
+         #ifndef HXCPP_GC_DEBUG_ALWAYS_MOVE
          if (blocks[from]->mMoveScore<2)
          {
             //printf("All other blocks good!\n");
@@ -2178,6 +2191,7 @@ struct MoveBlockJob
             }
             return 0;
          }
+         #endif
          if (blocks[from]->mPinned)
          {
             //printf("PINNED DEFRAG %p ... %p\n", blocks[from]->mPtr, blocks[from]->mPtr+1);
@@ -3422,7 +3436,7 @@ public:
          }
 
 
-         if (releaseGroups || stats.fragScore > mAllBlocks.size()*5)
+         if (releaseGroups || stats.fragScore > mAllBlocks.size()*5 || hx::gAlwaysMove)
          {
             bool veryFragged =  stats.fragScore > mAllBlocks.size()*40;
 
