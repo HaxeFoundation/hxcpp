@@ -172,8 +172,7 @@
 
 
 #define HX_DECLARE_DYNAMIC_FUNCTIONS \
-::foreach PARAMS:: ::if (ARG<6):: inline  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::) { CheckFPtr(); return mPtr->__run(::ARG_LIST::); } \
-::else::  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::); \
+::foreach PARAMS:: ::if (ARG<6)::::else::  ::NS::Dynamic operator()(::DYNAMIC_ARG_LIST::); \
 ::end:: ::end::
 
 

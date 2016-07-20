@@ -605,6 +605,14 @@ inline bool VirtualArray::operator==( const Array<SOURCE_> &inRHS )
 } namespace hx {
 template<> inline void MarkMember(cpp::VirtualArray &outT,hx::MarkContext *__inCtx)
   { HX_MARK_OBJECT(outT.mPtr); }
+
+#ifdef HXCPP_VISIT_ALLOCS
+template<> inline void VisitMember(cpp::VirtualArray &outT,hx::VisitContext *__inCtx)
+{
+   HX_VISIT_OBJECT(outT.mPtr);
+}
+#endif
+
 } namespace cpp {
 
 #endif // HX_VARRAY_DEFINED

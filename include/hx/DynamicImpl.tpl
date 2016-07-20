@@ -44,7 +44,7 @@ struct CMemberFunction::ARG:: : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return ::ARG::; } 
    ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunction::ARG::.this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
@@ -145,7 +145,7 @@ struct CMemberFunctionVar : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 
    ::String __ToString() const{ return String(mName); } 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } 
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mThis,"CMemberFunctionVar.this"); } 
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif

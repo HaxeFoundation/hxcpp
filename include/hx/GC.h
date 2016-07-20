@@ -245,6 +245,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkPopClass(hx::MarkContext *__inCtx);
 
 // Used by runtime if it is being paranoid about pointers.  It checks that the pointer is real and alive at last collect.
 void GCCheckPointer(void *);
+void GCOnNewPointer(void *);
 
 
 void SetTopOfStack(void *inTopOfStack,bool inForce=false);

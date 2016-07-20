@@ -111,6 +111,10 @@ public:
                                (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
                                gMarkID;
 
+               #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
+               hx::GCOnNewPointer(buffer);
+               #endif
+
                #ifdef HXCPP_TELEMETRY
                __hxt_gc_new(buffer, inSize, inName);
                #endif
@@ -126,7 +130,6 @@ public:
          void *result = hx::InternalNew(inSize,inContainer);
 
       #endif
-
 
       #ifdef HXCPP_TELEMETRY
          __hxt_gc_new(result, inSize, inName);

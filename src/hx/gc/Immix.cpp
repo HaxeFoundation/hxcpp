@@ -23,7 +23,11 @@ namespace hx
 namespace hx
 {
 #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
+
 enum { gAlwaysMove = true };
+typedef hx::UnorderedSet<void *> PointerMovedSet;
+PointerMovedSet sgPointerMoved;
+
 #else
 enum { gAlwaysMove = false };
 #endif
@@ -986,12 +990,33 @@ void BadImmixAlloc()
 
 void GCCheckPointer(void *inPtr)
 {
+   #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
+   if (hx::sgPointerMoved.find(inPtr)!=hx::sgPointerMoved.end())
+   {
+      GCLOG("Accessing moved pointer %p\n", inPtr);
+      #if __has_builtin(__builtin_trap)
+      __builtin_trap();
+      #else
+      *(int *)0=0;
+      #endif
+  }
+  #endif
+
    unsigned char&mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE];
    if ( !(mark & HX_GC_CONST_ALLOC_MARK_BIT) && mark!=gByteMarkID  )
    {
-      GCLOG("Old object %s\n", ((hx::Object *)inPtr)->toString().__s );
+      GCLOG("Old object access %p\n", inPtr);
       NullReference("Object", false);
    }
+}
+
+
+void GCOnNewPointer(void *inPtr)
+{
+   #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
+   hx::sgPointerMoved.erase(inPtr);
+   sgAllocsSinceLastSpam++;
+   #endif
 }
 
 // --- Marking ------------------------------------
@@ -1445,6 +1470,11 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
    int rows = flags & IMMIX_ALLOC_ROW_COUNT;
    if (rows)
    {
+      #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
+      // This indicates a pointer to a moved object
+      if (rows>250) *(int *)0=0;
+      #endif
+
       char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
       char *rowMark = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS);
       *rowMark = 1;
@@ -1479,6 +1509,11 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
    {
       char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
       char *rowMark = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS);
+      #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
+      // This indicates a pointer to a moved object
+      if (rows>250) *(int *)0=0;
+      #endif
+
       *rowMark = 1;
       if (rows>1)
       {
@@ -1752,7 +1787,10 @@ InternalFinalizer::InternalFinalizer(hx::Object *inObj, finalizer inFinalizer)
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
-void InternalFinalizer::Visit(VisitContext *__inCtx) { HX_VISIT_OBJECT(mObject); }
+void InternalFinalizer::Visit(VisitContext *__inCtx)
+{
+   HX_VISIT_OBJECT(mObject);
+}
 #endif
 
 void InternalFinalizer::Detach()
@@ -2621,6 +2659,7 @@ public:
                   {
                      unsigned int *row = (unsigned int *)from->mPtr->mRow[r];
                      unsigned int &header = row[i];
+
                      if ((header&IMMIX_ALLOC_MARK_ID) == hx::gMarkID)
                      {
                         int size = ((header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT);
@@ -2936,7 +2975,7 @@ public:
 
       for(hx::RootSet::iterator i = hx::sgRootSet.begin(); i!=hx::sgRootSet.end(); ++i)
       {
-         hx::Object **obj = &**i;
+         hx::Object **obj = *i;
          if (*obj)
             inCtx->visitObject(obj);
       }
@@ -2957,6 +2996,11 @@ public:
                   *(char **)(i->first) = (char *)(obj) + offset;
             }
          }
+
+      if (hx::sgFinalizers)
+         for(int i=0;i<hx::sgFinalizers->size();i++)
+            (*hx::sgFinalizers)[i]->Visit(inCtx);
+
       for(int i=0;i<hx::sFinalizableList.size();i++)
          inCtx->visitAlloc( &hx::sFinalizableList[i].base );
 
@@ -3692,13 +3736,13 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
       inTop--;
    }
 
-
    void *prev = 0;
+   void *lastPin = 0;
    for(int *ptr = inBottom ; ptr<inTop; ptr++)
    {
       void *vptr = *(void **)ptr;
       MemType mem;
-      if (vptr && !((size_t)vptr & 0x03) && vptr!=prev &&
+      if (vptr && !((size_t)vptr & 0x03) && vptr!=prev && vptr!=lastPin &&
               (mem = sGlobalAlloc->GetMemType(vptr)) != memUnmanaged )
       {
          if (mem==memLarge)
@@ -3720,16 +3764,19 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
             {
                //GCLOG(" Mark object %p (%p)\n", vptr,ptr);
                HX_MARK_OBJECT( ((hx::Object *)vptr) );
+               lastPin = vptr;
                info->pin();
             }
             else if (t==allocString)
             {
                // GCLOG(" Mark string %p (%p)\n", vptr,ptr);
                HX_MARK_STRING(vptr);
+               lastPin = vptr;
                info->pin();
             }
             else if (t==allocMarked)
             {
+               lastPin = vptr;
                info->pin();
             }
          }
@@ -3992,6 +4039,11 @@ public:
                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
 
             spaceStart = end;
+
+            #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
+            hx::GCOnNewPointer(buffer+sizeof(int));
+            #endif
+
             return buffer + sizeof(int);
          }
          else if (mMoreHoles)

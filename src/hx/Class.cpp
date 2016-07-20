@@ -141,7 +141,8 @@ void Class_obj::__Visit(hx::VisitContext *__inCtx)
    HX_VISIT_MEMBER(mName);
    HX_VISIT_MEMBER(mStatics);
    HX_VISIT_MEMBER(mMembers);
-   //HX_VISIT_OBJECT(*mSuper);
+   if (mSuper)
+      __inCtx->visitAlloc((void **)&mSuper); 
 }
 #endif
 
@@ -160,6 +161,7 @@ void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(__meta__);
    HX_MARK_MEMBER(__rtti__);
+   HX_MARK_MEMBER(Class_obj__mClass);
    if (mMarkFunc)
        mMarkFunc(__inCtx);
 }
@@ -168,6 +170,7 @@ void Class_obj::VisitStatics(hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(__meta__);
    HX_VISIT_MEMBER(__rtti__);
+   HX_VISIT_MEMBER(Class_obj__mClass);
    if (mVisitFunc)
        mVisitFunc(__inCtx);
 }
