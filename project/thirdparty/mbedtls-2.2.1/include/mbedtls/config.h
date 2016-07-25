@@ -1233,7 +1233,7 @@
  *
  * Uncomment this to allow your own alternate threading implementation.
  */
-#ifdef _MSC_VER
+#ifdef HX_WINDOWS
 #define MBEDTLS_THREADING_ALT
 #endif
 
@@ -1246,7 +1246,7 @@
  *
  * Uncomment this to enable pthread mutexes.
  */
-#ifndef _MSC_VER
+#ifndef HX_WINDOWS
 #define MBEDTLS_THREADING_PTHREAD
 #endif
 

@@ -1,6 +1,6 @@
 #include <string.h>
 
-#ifdef _MSC_VER
+#ifdef HX_WINDOWS
 #   include <winsock2.h>
 #   include <wincrypt.h>
 #else
