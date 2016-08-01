@@ -79,6 +79,8 @@ public:
       VirtualArray result = new VirtualArray_obj(hx::arrayEmpty);
       if (inSize>0)
          result->__SetSizeExact(inSize);
+      if (inReserve>0)
+         result->reserve(inReserve);
       return result;
    }
 
@@ -315,6 +317,19 @@ public:
    inline char *GetBase() { return base ? base->GetBase() : 0; }
 
    int GetElementSize() const { checkBase(); return store==hx::arrayEmpty ? 0 : base->GetElementSize(); }
+
+   inline void reserve(int inSize) const
+   {
+      if (base)
+         base->reserve(inSize);
+   }
+
+   inline int capacity()
+   {
+      if (base)
+         return base->capacity();
+      return 0;
+   }
 
    void __SetSize(int inLen)
    {

@@ -289,6 +289,8 @@ public:
 
    void reserve(int inN) const;
 
+   inline int capacity() const { return mAlloc; }
+
    // Set numeric values to 0, pointers to null, bools to false
    void zero(Dynamic inFirst, Dynamic inCount);
 
