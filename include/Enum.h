@@ -149,6 +149,13 @@ hx::ObjectPtr<ENUM> CreateEnum(const String &inName,int inIndex, DynamicArray in
 
 } // end namespace hx
 
+#if (HXCPP_API_LEVEL >= 330)
+inline int _hx_getEnumValueIndex(hx::EnumBase inEnum)
+{
+   return inEnum->_hx_getIndex();
+}
+#endif
+
 inline void __hxcpp_enum_force(hx::EnumBase inEnum,String inForceName, int inIndex)
 {
    #if (HXCPP_API_LEVEL >= 330)
