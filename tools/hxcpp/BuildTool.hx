@@ -1373,7 +1373,7 @@ class BuildTool
          defines.set("appletv", "appletv");
       }
  
-     
+
 
       if (makefile=="" || Log.verbose)
       {
@@ -1472,6 +1472,21 @@ class BuildTool
          defines.set("apple","apple");
          defines.set("BINDIR","AppleTV");
       }
+      else if (defines.exists("watchos"))
+      {
+         defines.set("toolchain","watchos");
+         defines.set("apple","apple");
+         defines.set("applewatch","applewatch");
+         defines.set("BINDIR","watchos");
+      }
+      else if (defines.exists("watchsimulator"))
+      {
+         defines.set("toolchain","watchsimulator");
+         defines.set("applewatch","applewatch");
+         defines.set("apple","apple");
+         defines.set("BINDIR","watchsimulator");
+      }
+ 
       else if (defines.exists("android"))
       {
          defines.set("toolchain","android");
@@ -1698,6 +1713,30 @@ class BuildTool
                defines.set("TVOS_VER",best);
          }
       }
+
+
+      if (defines.exists("applewatch") && !defines.exists("WATCHOS_VER"))
+      {
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/WatchOS.platform/Developer/SDKs/";
+         if (FileSystem.exists(dev_path))
+         {
+            var best="";
+            var files = FileSystem.readDirectory(dev_path);
+            var extract_version = ~/^WatchOS(.*).sdk$/;
+            for(file in files)
+            {
+               if (extract_version.match(file))
+               {
+                  var ver = extract_version.matched(1);
+                  if (Std.parseFloat (ver)>Std.parseFloat (best))
+                     best = ver;
+               }
+            }
+            if (best!="")
+               defines.set("WATCHOS_VER",best);
+         }
+      }
+
       
       if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
       {

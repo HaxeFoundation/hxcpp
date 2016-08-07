@@ -7,6 +7,8 @@
 #ifndef HX_MEMORY_H
 #define HX_MEMORY_H
 
+#include <stdlib.h>
+
 inline void *HxAlloc(size_t size) {
    return malloc(size);
 }
