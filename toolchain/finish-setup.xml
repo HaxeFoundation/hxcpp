@@ -46,6 +46,8 @@
 </section>
 <set name="LIBEXTRA" value=".appletvsim-64" if="appletvsim"/>
 <set name="LIBEXTRA" value=".appletvsim" if="appletvsim" unless="HXCPP_M64"/>
+<set name="LIBEXTRA" value=".watchos" if="watchos" />
+<set name="LIBEXTRA" value=".watchsimulator" if="watchsimulator" />
 <section if="appletvos">
    <set name="LIBEXTRA" value=".appletvos-64" if="HXCPP_ARM64"/>
 </section>

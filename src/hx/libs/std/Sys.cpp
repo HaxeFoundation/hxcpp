@@ -40,7 +40,7 @@
    #include <sys/wait.h>
 #endif
 
-#if !defined(IPHONE) && !defined(APPLETV)
+#if !defined(IPHONE) && !defined(APPLETV) && !defined(HX_APPLEWATCH)
    #ifdef NEKO_MAC
       #include <sys/syslimits.h>
       #include <limits.h>
@@ -257,7 +257,7 @@ bool _hx_std_sys_is64()
 **/
 int _hx_std_sys_command( String cmd )
 {
-   #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC) || defined(APPLETV)
+   #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC) || defined(APPLETV) || defined(HX_APPLEWATCH)
    return -1;
    #else
    if( !cmd.__s || !cmd.length )
@@ -641,7 +641,7 @@ String _hx_std_sys_exe_path()
    if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
       return null();
    return String(path);
-#elif defined(NEKO_MAC) && !defined(IPHONE) && !defined(APPLETV)
+#elif defined(NEKO_MAC) && !defined(IPHONE) && !defined(APPLETV) && !defined(HX_APPLEWATCH)
    char path[PATH_MAX+1];
    uint32_t path_len = PATH_MAX;
    if( _NSGetExecutablePath(path, &path_len) )
@@ -666,7 +666,7 @@ String _hx_std_sys_exe_path()
 #endif
 }
 
-#if !defined(IPHONE) && !defined(APPLETV)
+#if !defined(IPHONE) && !defined(APPLETV) && !defined(HX_APPLEWATCH)
 #ifdef NEKO_MAC
 #include <crt_externs.h>
 #   define environ (*_NSGetEnviron())

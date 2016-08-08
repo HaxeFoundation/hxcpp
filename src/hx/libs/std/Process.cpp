@@ -132,7 +132,7 @@ vprocess *getProcess(Dynamic handle)
 **/
 Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
 {
-   #ifdef APPLETV
+   #if defined(APPLETV) || defined(HX_APPLEWATCH)
    return null();
 
    #else
@@ -314,7 +314,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
 
    return p;
 
-   #endif // not APPLETV
+   #endif // not APPLETV/HX_APPLEWATCH
 }
 
 
