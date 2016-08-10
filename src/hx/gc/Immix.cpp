@@ -4414,6 +4414,17 @@ void RegisterVTableOffset(int inOffset)
 
 void PushTopOfStack(void *inTop)
 {
+   if (!sgAllocInit)
+      InitAlloc();
+   else
+   {
+      if (tlsImmixAllocator==0)
+      {
+         GCPrepareMultiThreaded();
+         RegisterCurrentThread(inTop);
+      }
+   }
+ 
    LocalAllocator *tla = GetLocalAlloc();
    tla->PushTopOfStack(inTop);
 }
