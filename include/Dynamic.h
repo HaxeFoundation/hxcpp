@@ -81,7 +81,11 @@ public:
    //inline operator cpp::Variant() const { return cpp::Variant(mPtr); }
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
+   #ifdef OBJC_ARC
+   inline operator id() const { return mPtr ? (__bridge id)mPtr->__GetHandle() : 0; }
+   #else
    inline operator id() const { return mPtr ? (id)mPtr->__GetHandle() : 0; }
+   #endif
 #endif
 #endif
    inline bool operator !() const { return !mPtr || !mPtr->__ToInt(); }

@@ -40,6 +40,10 @@ public:
    {
       *this = String([inString UTF8String]);
    }
+   inline operator NSString * () const
+   {
+      return [[NSString alloc] initWithUTF8String:__s];
+   }
    #endif
    #if defined(HX_WINRT) && defined(__cplusplus_winrt)
    inline String(Platform::String^ inString)

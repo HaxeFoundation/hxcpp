@@ -16,14 +16,23 @@ public:
 
    ObjcData(const id inValue) : mValue(inValue) 
    {
+      #ifndef OBJC_ARC
       [ inValue retain ];
+      #endif
 		mFinalizer = new hx::InternalFinalizer(this,clean);
    };
 
 	static void clean(hx::Object *inObj)
 	{
 		ObjcData *m = dynamic_cast<ObjcData *>(inObj);
-		if (m) [m->mValue release];
+      if (m)
+      {
+         #ifndef OBJC_ARC
+         [m->mValue :qrelease];
+         #else
+         m->mValue = nil;
+         #endif
+      }
 	}
 
 	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
@@ -37,7 +46,11 @@ public:
 
    // k_cpp_objc
    int __GetType() const { return vtAbstractBase + 4; }
+   #ifdef OBJC_ARC
+   void * __GetHandle() const { return (__bridge void *) mValue; }
+   #else
    void * __GetHandle() const { return (void *) mValue; }
+   #endif
    String toString()
    {
       return String(!mValue ? "null" : [[mValue description] UTF8String]);
@@ -52,14 +65,26 @@ public:
       if (data) 
       {
          return [data->mValue isEqual:mValue] ? 0 : mValue < data->mValue ? -1 : 1;
-      } else {
+      }
+      else
+      {
         void *r = inRHS->__GetHandle();
-        return mValue < r ? -1 : mValue==r ? 0 : 1;
+
+        #ifdef OBJC_ARC
+        void * ptr = (__bridge void *) mValue;
+        #else
+        void * ptr = (void *) mValue;
+        #endif
+ 
+        return ptr < r ? -1 : ptr==r ? 0 : 1;
       }
    }
 
-
+   #ifdef OBJC_ARC
+   id mValue;
+   #else
    const id mValue;
+   #endif
    hx::InternalFinalizer *mFinalizer;
 };
 }
