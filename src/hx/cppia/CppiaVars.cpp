@@ -347,6 +347,7 @@ CppiaStackVar::CppiaStackVar()
    capturePos = 0;
    expressionType = etNull;
    storeType = fsUnknown;
+   type = 0;
 }
 
 CppiaStackVar::CppiaStackVar(CppiaStackVar *inVar,int &ioSize, int &ioCaptureSize)
@@ -356,6 +357,7 @@ CppiaStackVar::CppiaStackVar(CppiaStackVar *inVar,int &ioSize, int &ioCaptureSiz
    sVarIdNameMap[id] = nameId;
    capture = inVar->capture;
    typeId = inVar->typeId;
+   type = inVar->type;
    expressionType = inVar->expressionType;
 
    fromStackPos = inVar->stackPos;
@@ -437,6 +439,7 @@ void CppiaStackVar::link(CppiaModule &inModule)
    inModule.layout->varMap[id] = this;
    stackPos = inModule.layout->size;
    inModule.layout->size += sTypeSize[expressionType];
+   type = inModule.types[typeId];
 }
 
 

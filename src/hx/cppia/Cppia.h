@@ -281,6 +281,7 @@ struct CppiaStackVar
    int      stackPos;
    int      fromStackPos;
    int      capturePos;
+   TypeData *type;
    FieldStorage storeType;
    ExprType expressionType;
 

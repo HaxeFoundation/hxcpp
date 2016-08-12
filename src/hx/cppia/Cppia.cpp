@@ -2697,6 +2697,59 @@ int getScriptId(hx::Class inClass)
 CppiaExpr *convertToFunction(CppiaExpr *inExpr) { return new ScriptCallable(inExpr); }
 
 
+template<typename T>
+static hx::Object *convert(hx::Object *obj)
+{
+   Array_obj<T> *alreadyGood = dynamic_cast<Array_obj<T> *>(obj);
+   if (alreadyGood)
+      return alreadyGood;
+   #if (HXCPP_API_LEVEL>=330)
+   cpp::VirtualArray_obj *varray = dynamic_cast<cpp::VirtualArray_obj *>(obj);
+   if (varray)
+   {
+      return Array<T>( cpp::VirtualArray(varray) ).mPtr;
+   }
+   #endif
+   int n = obj->__length();
+   Array<T> result = Array_obj<T>::__new(n,n);
+   for(int i=0;i<n;i++)
+      result[i] = obj->__GetItem(i);
+   return result.mPtr;
+}
+
+
+static hx::Object *DynamicToArrayType(hx::Object *obj, ArrayType arrayType)
+{
+   switch(arrayType)
+   {
+      case arrBool:         return convert<bool>(obj);
+      case arrUnsignedChar: return convert<unsigned char>(obj);
+      case arrInt:          return convert<int>(obj);
+      case arrFloat:        return convert<Float>(obj);
+      case arrString:       return convert<String>(obj);
+      #if (HXCPP_API_LEVEL>=330)
+      case arrAny:
+      {
+         ArrayBase *base = dynamic_cast<ArrayBase *>(obj);
+         if (base)
+            return new cpp::VirtualArray_obj(base);
+         return dynamic_cast<cpp::VirtualArray_obj *>(obj);
+      }
+      case arrObject:       return convert<Dynamic>(obj);
+      #else
+      case arrAny:          return convert<Dynamic>(obj);
+      case arrObject:       return obj;
+      #endif
+      case arrNotArray:     throw "Bad cast";
+   }
+
+   return 0;
+}
+
+
+
+
+
 
 class CppiaClosure : public hx::Object
 {
@@ -2768,7 +2821,7 @@ public:
       return null();
    }
 
-   void pushArg(CppiaCtx *ctx, int a, Dynamic inValue)
+   void pushArgDynamic(CppiaCtx *ctx, int a, Dynamic inValue)
    {
       // Developer has used dynamic to call a closure with wrong # parameters
       if (a>=function->args.size())
@@ -2789,7 +2842,16 @@ public:
             ctx->pushString(inValue.mPtr ? inValue->toString() : String());
             break;
          default:
-            ctx->pushObject(inValue.mPtr);
+            {
+               hx::Object *value = inValue.mPtr;
+               if (value)
+               {
+                  ArrayType want = function->args[a].type->arrayType;
+                  if (want!=arrNotArray)
+                     value = DynamicToArrayType(value, want);
+               }
+               ctx->pushObject(value);
+            }
       }
    }
 
@@ -2807,7 +2869,7 @@ public:
          throw sInvalidArgCount;
 
       for(int a=0; a<haveArgs; a++)
-         pushArg(ctx,a,inArgs[a]);
+         pushArgDynamic(ctx,a,inArgs[a]);
 
       return doRun(ctx,haveArgs);
    }
@@ -2825,7 +2887,7 @@ public:
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
       ctx->pointer += sizeof(hx::Object *);
-      pushArg(ctx,0,a);
+      pushArgDynamic(ctx,0,a);
       return doRun(ctx,1);
    }
    Dynamic __run(D a,D b)
@@ -2833,8 +2895,8 @@ public:
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
       ctx->pointer += sizeof(hx::Object *);
-      pushArg(ctx,0,a);
-      pushArg(ctx,1,b);
+      pushArgDynamic(ctx,0,a);
+      pushArgDynamic(ctx,1,b);
       return doRun(ctx,2);
    }
    Dynamic __run(D a,D b,D c)
@@ -2842,9 +2904,9 @@ public:
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
       ctx->pointer += sizeof(hx::Object *);
-      pushArg(ctx,0,a);
-      pushArg(ctx,1,b);
-      pushArg(ctx,2,c);
+      pushArgDynamic(ctx,0,a);
+      pushArgDynamic(ctx,1,b);
+      pushArgDynamic(ctx,2,c);
       return doRun(ctx,3);
    }
    Dynamic __run(D a,D b,D c,D d)
@@ -2852,10 +2914,10 @@ public:
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
       ctx->pointer += sizeof(hx::Object *);
-      pushArg(ctx,0,a);
-      pushArg(ctx,1,b);
-      pushArg(ctx,2,c);
-      pushArg(ctx,3,d);
+      pushArgDynamic(ctx,0,a);
+      pushArgDynamic(ctx,1,b);
+      pushArgDynamic(ctx,2,c);
+      pushArgDynamic(ctx,3,d);
       return doRun(ctx,4);
 
    }
@@ -2864,11 +2926,11 @@ public:
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
       ctx->pointer += sizeof(hx::Object *);
-      pushArg(ctx,0,a);
-      pushArg(ctx,1,b);
-      pushArg(ctx,2,c);
-      pushArg(ctx,3,d);
-      pushArg(ctx,4,e);
+      pushArgDynamic(ctx,0,a);
+      pushArgDynamic(ctx,1,b);
+      pushArgDynamic(ctx,2,c);
+      pushArgDynamic(ctx,3,d);
+      pushArgDynamic(ctx,4,e);
       return doRun(ctx,5);
    }
 
@@ -3672,6 +3734,9 @@ enum CastOp
    castBool,
 };
 
+
+
+
 struct CastExpr : public CppiaDynamicExpr
 {
    CppiaExpr *value;
@@ -3689,26 +3754,6 @@ struct CastExpr : public CppiaDynamicExpr
       value = createCppiaExpr(stream);
    }
    ExprType getType() { return op==castInt ? etInt : etObject; }
-
-   template<typename T>
-   hx::Object *convert(hx::Object *obj)
-   {
-      Array_obj<T> *alreadyGood = dynamic_cast<Array_obj<T> *>(obj);
-      if (alreadyGood)
-         return alreadyGood;
-      #if (HXCPP_API_LEVEL>=330)
-      cpp::VirtualArray_obj *varray = dynamic_cast<cpp::VirtualArray_obj *>(obj);
-      if (varray)
-      {
-         return Array<T>( cpp::VirtualArray(varray) ).mPtr;
-      }
-      #endif
-      int n = obj->__length();
-      Array<T> result = Array_obj<T>::__new(n,n);
-      for(int i=0;i<n;i++)
-         result[i] = obj->__GetItem(i);
-      return result.mPtr;
-   }
 
    int runInt(CppiaCtx *ctx)
    {
@@ -3728,29 +3773,7 @@ struct CastExpr : public CppiaDynamicExpr
       if (op==castDynamic)
          return obj->__GetRealObject();
 
-      switch(arrayType)
-      {
-         case arrBool:         return convert<bool>(obj);
-         case arrUnsignedChar: return convert<unsigned char>(obj);
-         case arrInt:          return convert<int>(obj);
-         case arrFloat:        return convert<Float>(obj);
-         case arrString:       return convert<String>(obj);
-         #if (HXCPP_API_LEVEL>=330)
-         case arrAny:
-         {
-            ArrayBase *base = dynamic_cast<ArrayBase *>(obj);
-            if (base)
-               return new cpp::VirtualArray_obj(base);
-            return dynamic_cast<cpp::VirtualArray_obj *>(obj);
-         }
-         case arrObject:       return convert<Dynamic>(obj);
-         #else
-         case arrAny:          return convert<Dynamic>(obj);
-         case arrObject:       return obj;
-         #endif
-         case arrNotArray:     throw "Bad cast";
-      }
-      return 0;
+      return DynamicToArrayType(obj, arrayType);
    }
 
    const char *getName() { return "CastExpr"; }
