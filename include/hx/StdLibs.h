@@ -482,6 +482,31 @@ inline int __hxcpp_reinterpret_float64_as_le_int32_high(double inValue)
    return asInts[1];
 }
 
+#ifdef __OBJC__
+#ifdef HXCPP_OBJC
+
+inline NSData *_hx_bytes_to_nsdata( ::Array<unsigned char> inBytes)
+{
+   if (!inBytes.mPtr)
+     return nil;
+
+   return [NSData dataWithBytes: inBytes->getBase() length:inBytes->length ];
+
+}
+
+inline ::Array<unsigned char> _hx_nsdata_to_bytes(NSData *inData)
+{
+   if (inData==nil)
+      return null();
+
+   return ::Array_obj<unsigned char>::fromData( (const unsigned char *)inData.bytes, inData.length );
+}
+
+#endif
+#endif
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String options);
+
 // EReg.hx -> src/hx/libs/regexp/RegExp.cpp
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String options);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool    _hx_regexp_match(Dynamic handle, String string, int pos, int len);
