@@ -22,6 +22,8 @@
 
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-g" />
+  <flag value="-fmodules"/>
+  <flag value="-fcxx-modules"/>
 
   <flag value="-isysroot"/>
   <flag value="${DEVELOPER_DIR}/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator${WATCHOS_VER}.sdk"/>
@@ -52,6 +54,7 @@
   <flag value="-Wno-bool-conversion" unless="HXCPP_GCC"/>
   <include name="toolchain/common-defines.xml" />
   <flag value="-I${HXCPP}/include"/>
+
   <!-- Added for iOS8 -->
   <flag value="-fexceptions"/>
   <flag value="-fstrict-aliasing"/>
