@@ -13,11 +13,6 @@
 #include <process.h>
 #endif
 
-#ifdef HX_ANDROID
-#define rand() lrand48()
-#define srand(x) srand48(x)
-#endif
-
 // -------- Math ---------------------------------------
 
 using namespace hx;

@@ -138,6 +138,7 @@
   <file name = "src/hx/Debug.cpp"/>
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
+  <file name = "src/hx/AndroidCompat.cpp" if="android"/>
 
   <file name = "src/Array.cpp"/>
   <file name = "src/hx/Class.cpp"/>
