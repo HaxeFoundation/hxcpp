@@ -4,6 +4,9 @@ os:
   - linux
   - osx
 
+sudo: required
+dist: trusty
+
 install:
   # install dependencies
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
