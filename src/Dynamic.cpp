@@ -139,9 +139,9 @@ public:
    Int64Data(cpp::Int64 inValue=0) : mValue(inValue) {};
 
    hx::Class __GetClass() const { return __Int64Class; }
-   bool __Is(hx::Object *inClass) const { return dynamic_cast< DoubleData *>(inClass); }
+   bool __Is(hx::Object *inClass) const { return dynamic_cast< Int64Data *>(inClass); }
 
-   virtual int __GetType() const { return vtFloat; }
+   virtual int __GetType() const { return vtInt64; }
    String toString() { return String(mValue); }
    String __ToString() const { return String(mValue); }
    double __ToDouble() const { return mValue; }
@@ -150,7 +150,7 @@ public:
 
    int __Compare(const hx::Object *inRHS) const
    {
-      double rval = inRHS->__ToDouble();
+      double rval = inRHS->__ToInt64();
       if (rval==mValue)
          return 0;
 
@@ -158,7 +158,7 @@ public:
    }
 
 
-   double mValue;
+    cpp::Int64 mValue;
 };
 
 
@@ -223,13 +223,13 @@ public:
    String __ToString() const
    {
       String result;
-      mHandler(cpp::dhoToString, mValue, &result );
+      mHandler(cpp::dhoToString, mValue, 0, &result );
       return result;
    }
    const char *__CStr() const
    {
       const char *result = "unknown";
-      mHandler(cpp::dhoGetClassName, mValue, &result );
+      mHandler(cpp::dhoGetClassName, mValue, 0, &result );
       return result;
    }
 

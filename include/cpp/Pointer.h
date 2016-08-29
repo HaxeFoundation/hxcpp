@@ -30,8 +30,10 @@ enum DynamicHandlerOp
    dhoGetClassName,
    dhoToString,
    dhoFromDynamic,
+   dhoToDynamic,
+   dhoIs,
 };
-typedef void (*DynamicHandlerFunc)(DynamicHandlerOp op, void *ioValue, void *outResult);
+typedef void (*DynamicHandlerFunc)(DynamicHandlerOp op, void *ioValue, int inSize, void *outResult);
 Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc inFunc);
 
 template<typename T> class Reference;
@@ -40,9 +42,11 @@ template<typename T> class Reference;
 
 struct StructHandlerDynamicParams
 {
-   StructHandlerDynamicParams(hx::Object *data) : outConverted(false), inData(data) { }
-   bool outConverted;
+   StructHandlerDynamicParams(hx::Object *data,const char *inName) :
+       outProcessed(false), inName(inName), inData(data) { }
+   bool outProcessed;
    hx::Object *inData;
+   const char *inName;
 };
 
 
@@ -51,13 +55,37 @@ class DefaultStructHandler
    public:
       static inline const char *getName() { return "unknown"; }
       static inline String toString( const void *inValue ) { return HX_CSTRING("Struct"); }
-
-      static inline void handler(DynamicHandlerOp op, void *inValue, void *outResult)
+      static inline void handler(DynamicHandlerOp op, void *ioValue, int inSize, void *outResult)
       {
          if (op==dhoToString)
-            *(String *)outResult = toString(inValue);
+            *(String *)outResult = toString(ioValue);
          else if (op==dhoGetClassName)
             *(const char **)outResult = getName();
+         else if (op==dhoToDynamic)
+         {
+            // Handle outsize..
+            *(hx::Object **)outResult = 0;
+         }
+         else if (op==dhoFromDynamic)
+         {
+            StructHandlerDynamicParams *params = (StructHandlerDynamicParams *)outResult;
+            hx::Object *ptr= params->inData;
+            void *data = (void *)ptr->__GetHandle();
+            int len = ptr->__length();
+            if (data && len>=inSize && ptr->__CStr()==params->inName)
+            {
+               memcpy(ioValue,data,inSize);
+               params->outProcessed = true;
+            }
+         }
+         else if (op==dhoIs)
+         {
+            StructHandlerDynamicParams *params = (StructHandlerDynamicParams *)outResult;
+            hx::Object *ptr= params->inData;
+            void *data = (void *)ptr->__GetHandle();
+            int len = ptr->__length();
+            params->outProcessed = data && len>=inSize && ptr->__CStr()==params->inName;
+         }
       }
 };
 
@@ -71,7 +99,7 @@ class EnumHandler
          return HX_CSTRING("enum(") + String(val) + HX_CSTRING(")");
       }
 
-      static inline void handler(DynamicHandlerOp op, void *ioValue, void *outResult)
+      static inline void handler(DynamicHandlerOp op, void *ioValue, int inSize, void *outResult)
       {
          if (op==dhoToString)
             *(String *)outResult = toString(ioValue);
@@ -80,9 +108,16 @@ class EnumHandler
          else if (op==dhoFromDynamic)
          {
             StructHandlerDynamicParams *params = (StructHandlerDynamicParams *)outResult;
-            *(int *)ioValue = params->inData ? params->inData->__ToInt() : 99;
-            params->outConverted = true;
+            if (params->inData->__GetType()==vtInt)
+            {
+               *(int *)ioValue =  params->inData->__ToInt();
+               params->outProcessed = true;
+            }
+            else
+               DefaultStructHandler::handler(op,ioValue, inSize, outResult);
          }
+         else
+            DefaultStructHandler::handler(op,ioValue, inSize, outResult);
       }
 };
 
@@ -106,12 +141,19 @@ public:
    inline Struct<T,HANDLER> &operator=( const null & ) { value = T(); return *this; }
    inline Struct<T,HANDLER> &operator=( const Dynamic &inRHS ) { return *this = Struct<T,HANDLER>(inRHS); }
 
-   operator Dynamic() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
+   operator Dynamic() const
+   {
+      hx::Object *result = 0;
+      HANDLER::handler(dhoToDynamic, (void *)&value, sizeof(T), &result );
+      if (result)
+         return result;
+      return CreateDynamicStruct( &value, sizeof(T), HANDLER::handler);
+   }
    operator String() const { return HANDLER::toString(&value); }
 
    #if (HXCPP_API_LEVEL >= 330)
    inline Struct( const hx::Val &inRHS) { fromDynamic(inRHS.asObject()); }
-   operator hx::Val() const { return CreateDynamicStruct(&value,sizeof(T),HANDLER::handler); }
+   operator hx::Val() const { return operator Dynamic(); }
    #endif
 
    bool operator==(const Struct<T,HANDLER> &inRHS) const { return value==inRHS.value; }
@@ -128,12 +170,11 @@ public:
       hx::Object *ptr = inRHS.mPtr;
       if (!ptr)
          return false;
-      if (!ptr->__GetHandle())
-         return false;
-      if (ptr->__length() != sizeof(T))
-         return false;
-      return ptr->__CStr() == HANDLER::getName();
+      StructHandlerDynamicParams convert(ptr, ptr->__CStr());
+      HANDLER::handler(dhoIs, 0, sizeof(T), &convert );
+      return convert.outProcessed;
    }
+
 
    inline void fromDynamic( hx::Object *ptr)
    {
@@ -142,26 +183,16 @@ public:
          value = T();
          return;
       }
-      T *data = (T*)ptr->__GetHandle();
-      int len = ptr->__length();
-      if (!data || len<sizeof(T) || ptr->__CStr()!=HANDLER::getName() )
+      StructHandlerDynamicParams convert(ptr, ptr->__CStr());
+      HANDLER::handler(dhoFromDynamic, &value, sizeof(T), &convert );
+      if (!convert.outProcessed)
       {
-         StructHandlerDynamicParams convert(ptr);
-         HANDLER::handler(dhoFromDynamic, &value, &convert );
-         if (!convert.outConverted)
-         {
-            hx::NullReference("DynamicData", true);
-            return;
-         }
+         hx::NullReference("DynamicData", true);
+         return;
       }
-      else
-         value = *data;
    }
 
-
-
    inline operator T& () { return value; }
-
 };
 
 
