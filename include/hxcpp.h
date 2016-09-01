@@ -325,6 +325,9 @@ typedef bool PropertyAccess;
 #include "Enum.h"
 #include <hx/Interface.h>
 #include <hx/Telemetry.h>
+#if defined(__OBJC__) && defined(HXCPP_OBJC)
+  #include <hx/ObjcHelpers.h>
+#endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
 #include <hx/Native.h>

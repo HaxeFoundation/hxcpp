@@ -31,6 +31,7 @@
   <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-Wno-bool-conversion" if="HXCPP_CLANG"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
+  <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <include name="toolchain/common-defines.xml" />
   <objdir value="obj/darwin${OBJEXT}/" />
   <outflag value="-o"/>

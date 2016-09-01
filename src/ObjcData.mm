@@ -5,6 +5,31 @@
 
 using namespace hx;
 
+
+
+@implementation NSHaxeWrapperClass
+
+- (id)init:( hx::Object * ) inHaxe  {
+   self = [super init];
+   haxeObject = inHaxe;
+   hx::GCAddRoot(&haxeObject);
+   if (self!=nil) {
+   }
+   return self;
+}
+
+- (void)dealloc {
+   GCRemoveRoot(&haxeObject);
+   #ifndef OBJC_ARC
+   [super dealloc];
+   #endif
+}
+@end
+
+
+
+
+
 namespace hx {
 extern hx::Class __ObjcClass;
 
@@ -28,7 +53,7 @@ public:
       if (m)
       {
          #ifndef OBJC_ARC
-         [m->mValue :qrelease];
+         [m->mValue release];
          #else
          m->mValue = nil;
          #endif
