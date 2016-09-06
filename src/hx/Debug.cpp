@@ -2643,6 +2643,8 @@ void __hxcpp_stop_profiler()
     // Operates on the current thread, no mutexes needed
     hx::CallStack::StartCurrentThreadTelemetry(profiler, allocations);
     return __hxcpp_GetCurrentThreadNumber();
+  #else
+    return 0;
   #endif
   }
 
@@ -2659,6 +2661,8 @@ void __hxcpp_stop_profiler()
   {
   #ifdef HXCPP_STACK_TRACE
     return hx::CallStack::DumpThreadTelemetry(thread_num);
+  #else
+    return 0;
   #endif
   }
 
