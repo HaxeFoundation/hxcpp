@@ -7936,39 +7936,87 @@ std::vector<hx::Resource> scriptResources;
 
 
 // Cppia Object - manage
-class CppiaObject : public hx::Object
+class CppiaObject : public hx::CppiaLoadedModule_obj
 {
 public:
-   CppiaModule *data;
+   CppiaModule *cppia;
+   bool        booted;
+
    CppiaObject(CppiaModule *inModule)
    {
-      data = inModule;
+      cppia = inModule;
       GCSetFinalizer( this, onRelease );
    }
    static void onRelease(hx::Object *inObj)
    {
-      delete ((CppiaObject *)inObj)->data;
+      delete ((CppiaObject *)inObj)->cppia;
    }
-   void __Mark(hx::MarkContext *ctx) { data->mark(ctx); }
+   void __Mark(hx::MarkContext *ctx) { cppia->mark(ctx); }
 #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *ctx) { data->visit(ctx); }
+   void __Visit(hx::VisitContext *ctx) { cppia->visit(ctx); }
 #endif
+
+
+   void boot()
+   {
+      if (booted)
+         return;
+
+      try
+      {
+         DBGLOG("--- Boot --------------------------------------------\n");
+         CppiaCtx *ctx = CppiaCtx::getCurrent();
+         cppia->boot(ctx);
+      }
+      catch(const char *errorString)
+      {
+         String error(errorString);
+         hx::Throw(error);
+      }
+   }
+
+
+   void run()
+   {
+      if (!booted)
+         boot();
+      if (cppia->main)
+      {
+         try
+         {
+            //__hxcpp_enable(false);
+            DBGLOG("--- Run --------------------------------------------\n");
+            CppiaCtx *ctx = CppiaCtx::getCurrent();
+            ctx->runVoid(cppia->main);
+         }
+         catch(const char *errorString)
+         {
+            String error(errorString);
+            hx::Throw(error);
+         }
+      }
+   }
 };
 
 
+Array<Dynamic> gAllCppiaModules;
 
 
-
-bool LoadCppia(String inValue)
+CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
 {
+   if (!gAllCppiaModules.mPtr)
+   {
+      gAllCppiaModules = Array_obj<Dynamic>::__new();
+      GCAddRoot( (hx::Object **)&gAllCppiaModules.mPtr );
+   }
+
    CppiaModule   *cppiaPtr = new CppiaModule();
-   hx::Object **ptrPtr = new hx::Object*[1];
-   *ptrPtr = new CppiaObject(cppiaPtr); 
-   GCAddRoot(ptrPtr);
+   CppiaLoadedModule loadedModule = new CppiaObject(cppiaPtr);
+   gAllCppiaModules->push(loadedModule);
 
 
    CppiaModule   &cppia = *cppiaPtr;
-   CppiaStream stream(cppiaPtr,inValue.__s, inValue.length);
+   CppiaStream stream(cppiaPtr,inData, inDataLength);
 
    String error;
    try
@@ -8088,31 +8136,13 @@ bool LoadCppia(String inValue)
       }
    #endif
 
-
-   if (!error.__s) try
-   {
-      //__hxcpp_enable(false);
-      DBGLOG("--- Run --------------------------------------------\n");
-
-      CppiaCtx *ctx = CppiaCtx::getCurrent();
-      cppia.boot(ctx);
-      if (cppia.main)
-      {
-         ctx->runVoid(cppia.main);
-         //printf("Result %s.\n", cppia.main->runString(&ctx).__s);
-      }
-      return true;
-   }
-   catch(const char *errorString)
-   {
-      error = String(errorString);
-   }
-
    if (error.__s)
       hx::Throw(error);
 
-   return false;
+   return loadedModule;
 }
+
+
 
 ::String ScriptableToString(void *inClass)
 {
@@ -8204,10 +8234,16 @@ void *hx::Object::_hx_getInterface(int inId)
 
 };
 
+::hx::CppiaLoadedModule __scriptable_cppia_from_string(String inCode)
+{
+   return hx::LoadCppia((const unsigned char *)inCode.__s, inCode.length);
+}
 
 void __scriptable_load_cppia(String inCode)
 {
-   hx::LoadCppia(inCode);
+   ::hx::CppiaLoadedModule module = hx::LoadCppia((const unsigned char *)inCode.__s, inCode.length);
+   module->boot();
+   module->run();
 }
 
 

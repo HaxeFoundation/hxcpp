@@ -267,10 +267,21 @@ void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields);
 bool ScriptableSetField(hx::Object *, const ::String &, Dynamic inValue,hx::PropertyAccess inCallProp, Dynamic &outValue);
 
 
+class CppiaLoadedModule_obj : public ::hx::Object
+{
+public:
+   virtual void run() = 0;
+   virtual void boot() = 0;
+};
+typedef ::hx::ObjectPtr<CppiaLoadedModule_obj> CppiaLoadedModule;
+
+
+
 } // End namespace hx
 
 void __scriptable_load_neko(String inName);
 void __scriptable_load_cppia(String inCode);
+::hx::CppiaLoadedModule __scriptable_cppia_from_string(String inCode);
 void __scriptable_load_neko_bytes(Array<unsigned char> inBytes);
 void __scriptable_load_abc(Array<unsigned char> inBytes);
 
