@@ -7962,6 +7962,7 @@ public:
       if (booted)
          return;
 
+      booted = true;
       try
       {
          DBGLOG("--- Boot --------------------------------------------\n");
