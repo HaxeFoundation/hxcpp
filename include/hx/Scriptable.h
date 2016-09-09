@@ -272,6 +272,7 @@ class CppiaLoadedModule_obj : public ::hx::Object
 public:
    virtual void run() = 0;
    virtual void boot() = 0;
+   virtual ::hx::Class resolveClass( ::String inName) = 0;
 };
 typedef ::hx::ObjectPtr<CppiaLoadedModule_obj> CppiaLoadedModule;
 

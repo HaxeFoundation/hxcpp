@@ -2039,6 +2039,10 @@ Array< ::String> __hxcpp_dbg_getFiles()
        ret->push(String(*ptr));
     }
 
+    #ifdef HXCPP_SCRIPTABLE
+    __hxcpp_dbg_getScriptableFiles(ret);
+    #endif
+
     return ret;
 }
 
@@ -2050,6 +2054,10 @@ Array< ::String> __hxcpp_dbg_getFilesFullPath()
     {
         ret->push(String(*ptr));
     }
+
+    #ifdef HXCPP_SCRIPTABLE
+    __hxcpp_dbg_getScriptableFilesFullPath(ret);
+    #endif
 
     return ret;
 }
@@ -2065,6 +2073,10 @@ Array< ::String> __hxcpp_dbg_getClasses()
        for (const char **ptr = __all_classes; *ptr; ptr++)
          ret->push(String(*ptr));
     }
+
+    #ifdef HXCPP_SCRIPTABLE
+    __hxcpp_dbg_getScriptableClasses(ret);
+    #endif
 
     return ret;
 }

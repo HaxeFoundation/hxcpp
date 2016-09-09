@@ -3,6 +3,7 @@
 
 #include <hx/Scriptable.h>
 #include <hx/GC.h>
+#include <hx/Unordered.h>
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -194,6 +195,7 @@ public:
    std::vector< TypeData * >       types;
    std::vector< CppiaClassInfo * > classes;
    std::vector< CppiaExpr * >      markable;
+   hx::UnorderedSet<int>           allFileIds;
    typedef std::map< std::string, int > InterfaceSlots;
    InterfaceSlots                  interfaceSlots;
 
@@ -217,6 +219,8 @@ public:
    void visit(hx::VisitContext *ctx);
    int  getInterfaceSlot(const std::string &inName);
    int  findInterfaceSlot(const std::string &inName);
+   CppiaClassInfo *findClass( ::String inName );
+   void registerDebugger();
 
    inline const char *identStr(int inId) { return strings[inId].__s; }
    inline const char *typeStr(int inId) { return types[inId]->name.c_str(); }

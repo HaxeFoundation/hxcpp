@@ -603,6 +603,9 @@ inline Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow) { return hx::Throw(toTh
 
 #endif // HXCPP_DEBUGGER
 
+void __hxcpp_dbg_getScriptableFiles( Array< ::String> ioPaths );
+void __hxcpp_dbg_getScriptableFilesFullPath( Array< ::String> ioPaths );
+void __hxcpp_dbg_getScriptableClasses( Array< ::String> ioClasses );
 
 
 #endif // HX_DEBUG_H

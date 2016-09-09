@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <hx/Scriptable.h>
 #include <hx/GC.h>
+#include <hx/Unordered.h>
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -102,6 +103,10 @@ CppiaModule::CppiaModule()
 
 void CppiaModule::setDebug(CppiaExpr *outExpr, int inFileId, int inLine)
 {
+   #ifdef HXCPP_DEBUGGER
+   if (inFileId)
+      allFileIds.insert(inFileId);
+   #endif
    outExpr->className = creatingClass;
    outExpr->functionName = creatingFunction;
    outExpr->filename = cStrings[inFileId].c_str();
@@ -1179,6 +1184,43 @@ struct CppiaEnumConstructor
       return result;
    }
 };
+
+
+
+
+Array<String > gAllClasses;
+Array<String > gAllFiles;
+
+void addScriptableClass(String inName)
+{
+   #ifdef HXCPP_DEBUGGER
+   if (!gAllClasses.mPtr)
+   {
+      gAllClasses = Array_obj<Dynamic>::__new();
+      GCAddRoot( (hx::Object **)&gAllClasses.mPtr );
+   }
+   if (gAllClasses->indexOf(inName)<0)
+      gAllClasses->push(inName);
+   #endif
+}
+
+
+void addScriptableFile(String inName)
+{
+   #ifdef HXCPP_DEBUGGER
+   if (!gAllFiles.mPtr)
+   {
+      gAllFiles = Array_obj<Dynamic>::__new();
+      GCAddRoot( (hx::Object **)&gAllFiles.mPtr );
+   }
+   if (gAllFiles->indexOf(inName)<0)
+      gAllFiles->push(inName);
+   #endif
+}
+
+
+
+
 
 
 void runFunExpr(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Expressions &inArgs );
@@ -2474,6 +2516,7 @@ struct CppiaClassInfo
    }
 #endif
 };
+
 
 
 bool TypeData::isClassOf(Dynamic inInstance)
@@ -7883,16 +7926,29 @@ void CppiaModule::compile()
 }
 #endif
 
-
-/*
-CppiaClassInfo *CppiaModule::findClass(String inName)
+void CppiaModule::registerDebugger()
 {
+   #ifdef HXCPP_DEBUGGER
    for(int i=0;i<classes.size();i++)
-      if (strings[classes[i]->nameId] == inName)
+   {
+      String name(classes[i]->name.c_str());
+      addScriptableClass(name);
+   }
+
+   for(hx::UnorderedSet<int>::const_iterator i = allFileIds.begin(); i!=allFileIds.end(); ++i)
+      addScriptableFile(strings[*i]);
+
+   #endif
+}
+
+CppiaClassInfo *CppiaModule::findClass( ::String inName)
+{
+   std::string stdName(inName.__s, inName.__s + inName.length);
+   for(int i=0;i<classes.size();i++)
+      if (classes[i]->name == stdName)
          return classes[i];
    return 0;
 }
-*/
 
 
 void CppiaModule::mark(hx::MarkContext *__inCtx)
@@ -7997,11 +8053,20 @@ public:
          }
       }
    }
+
+   ::hx::Class resolveClass( ::String inName)
+   {
+      CppiaClassInfo *info = cppia->findClass(inName);
+      if (info)
+         return info->mClass;
+      return null();
+   }
+
 };
 
 
-Array<Dynamic> gAllCppiaModules;
 
+Array<Dynamic> gAllCppiaModules;
 
 CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
 {
@@ -8140,6 +8205,8 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
    if (error.__s)
       hx::Throw(error);
 
+   cppia.registerDebugger();
+
    return loadedModule;
 }
 
@@ -8233,7 +8300,39 @@ void *hx::Object::_hx_getInterface(int inId)
 
 
 
-};
+} // end namespace hx
+
+
+#ifdef HXCPP_DEBUGGER
+void __hxcpp_dbg_getScriptableFiles( Array< ::String> ioPaths )
+{
+   Array<String> merge = hx::gAllFiles;
+   if (merge.mPtr)
+      for(int i=0;i< merge->length; i++)
+      {
+         if (ioPaths->indexOf( merge[i] ) < 0)
+            ioPaths->push( merge[i] );
+      }
+}
+
+void __hxcpp_dbg_getScriptableFilesFullPath( Array< ::String> ioPaths )
+{
+   __hxcpp_dbg_getScriptableFiles( ioPaths );
+}
+
+void __hxcpp_dbg_getScriptableClasses( Array< ::String> ioClasses )
+{
+   Array<String> merge = hx::gAllClasses;
+   if (merge.mPtr)
+      for(int i=0;i< merge->length; i++)
+      {
+         if (ioClasses->indexOf( merge[i] ) < 0)
+            ioClasses->push( merge[i] );
+      }
+}
+#endif
+
+
 
 ::hx::CppiaLoadedModule __scriptable_cppia_from_string(String inCode)
 {
