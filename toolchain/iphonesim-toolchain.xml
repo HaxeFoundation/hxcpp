@@ -61,9 +61,6 @@
   <!-- Removed for iOS 8 (no need) -->
   <!-- <cppflag value="-frtti"/> -->
 
-  <flag value="-fmodules"/>
-  <flag value="-fcxx-modules"/>
-
   <!-- Added for iOS8 -->
   <flag value="-fexceptions"/>
   <flag value="-fstrict-aliasing"/>

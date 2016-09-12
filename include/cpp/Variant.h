@@ -312,7 +312,7 @@ namespace cpp
       switch(type)
       {
          case typeDouble: return valDouble;
-         case typeInt64: return valInt64;
+         case typeInt64: return (int)valInt64;
          case typeBool: return valBool;
          case typeObject: return valObject ? valObject->__ToInt() : 0;
          default: ;

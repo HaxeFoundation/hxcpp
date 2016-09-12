@@ -22,9 +22,6 @@
 
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-g" />
-  <flag value="-fmodules"/>
-  <flag value="-gmodules"/>
-  <flag value="-fcxx-modules"/>
 
   <flag value="-isysroot"/>
   <flag value="${DEVELOPER_DIR}/Platforms/WatchOS.platform/Developer/SDKs/WatchOS${WATCHOS_VER}.sdk"/>

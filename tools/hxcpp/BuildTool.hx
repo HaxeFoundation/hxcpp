@@ -426,8 +426,15 @@ class BuildTool
             lines.push("#endif");
             lines.push("");
 
-            var filename = mCompiler.mObjDir + "/" + group.mConfig;
-            sys.io.File.saveContent(filename, lines.join("\n") );
+            var filename = mDefines.exists("HXCPP_OUTPUT_CONFIG_NAME") ?
+                           mDefines.get("HXCPP_OUTPUT_CONFIG_NAME") :
+                           PathManager.combine( target.mOutputDir, group.mConfig );
+            if (!PathManager.isAbsolute(filename))
+               filename = PathManager.combine( Sys.getCwd(), filename);
+
+            var content = lines.join("\n");
+            if (!FileSystem.exists(filename) || sys.io.File.getContent(filename)!=content)
+               sys.io.File.saveContent(filename, content);
             addOutput("config",filename);
          }
 
@@ -777,7 +784,10 @@ class BuildTool
 
    public function createLinker(inXML:Fast,inBase:Linker):Linker
    {
-      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(substitute(inXML.att.exe));
+      var exe:String = inXML.has.exe ? substitute(inXML.att.exe) : null;
+      if (inBase!=null && !inXML.has.replace && inBase.mExe==null)
+         inBase.mExe = exe;
+      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(exe);
       for(el in inXML.elements)
       {
          if (valid(el,""))

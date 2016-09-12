@@ -118,7 +118,7 @@ struct CompareTraits<cpp::Int64>
 {
    enum { type = (int)CompareAsInt64 };
 
-   inline static int toInt(cpp::Int64 inValue) { return inValue; }
+   inline static int toInt(cpp::Int64 inValue) { return (int)inValue; }
    inline static double toDouble(cpp::Int64 inValue) { return inValue; }
    inline static cpp::Int64 toInt64(cpp::Int64 inValue) { return inValue; }
    inline static String toString(cpp::Int64 inValue) { return String(); }
@@ -133,7 +133,7 @@ struct CompareTraits<cpp::UInt64>
 {
    enum { type = (int)CompareAsInt64 };
 
-   inline static int toInt(cpp::UInt64 inValue) { return inValue; }
+   inline static int toInt(cpp::UInt64 inValue) { return (int)inValue; }
    inline static double toDouble(cpp::UInt64 inValue) { return inValue; }
    // Return value is unsigned ...
    inline static cpp::UInt64 toInt64(cpp::UInt64 inValue) { return inValue; }

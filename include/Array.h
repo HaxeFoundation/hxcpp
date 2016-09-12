@@ -534,8 +534,6 @@ public:
    { 
       if( idx < 0 ) idx += length; 
       if (idx>=length || idx<0) return false; 
-
-      ELEM_ e = __get(idx); 
       RemoveElement(idx); 
       return true; 
    }
