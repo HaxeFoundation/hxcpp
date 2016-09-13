@@ -432,7 +432,7 @@ public:
 #endif
 
 #define CPPIA_STACK_FRAME(expr) \
- HX_STACK_FRAME(expr->className, expr->functionName, 0, expr->className, expr->filename, expr->line, 0);
+ HX_STACK_FRAME(expr->className, expr->functionName, expr->classFunctionHash, expr->className, expr->filename, expr->line, expr->fileHash);
 
 
 #ifdef HXCPP_CHECK_POINTER

@@ -96,7 +96,6 @@ struct AutoJmpBuf
 };
 
 #define GET_RETURN_VAL(RET,CHECK) \
-   CPPIA_STACK_FRAME(((CppiaExpr *)vtable)); \
    AutoJmpBuf autoJmpBuf(this); \
    if (setjmp(autoJmpBuf.here)) \
    { \
@@ -108,7 +107,6 @@ struct AutoJmpBuf
 #else
 
 #define GET_RETURN_VAL(RET,CHECK) \
-   CPPIA_STACK_FRAME(((CppiaExpr *)vtable)); \
    ((CppiaExpr *)vtable)->runFunction(this); \
    breakContReturn = 0; \
    DEBUG_RETURN_TYPE_CHECK \

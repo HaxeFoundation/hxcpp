@@ -49,6 +49,9 @@ static void read_memory_barrier()
 static const char **__all_files_fullpath = 0;
 static const char **__all_classes = 0;
 
+
+const char *_hx_dbg_find_scriptable_class_name(String className);
+
 namespace hx
 {
 
@@ -1635,7 +1638,14 @@ public:
         ThreadStatus breakStatus = STATUS_INVALID;
         int breakpointNumber = -1;
 
+
         CallStack *stack = CallStack::GetCallerCallStack();
+
+        // The debug thread never breaks
+        if (stack->GetThreadNumber() == g_debugThreadNumber) {
+            return;
+        }
+
         if (sExecutionTrace==exeTraceLines)
            stack->Trace();
 
@@ -1729,12 +1739,6 @@ public:
         if (breakStatus == STATUS_INVALID) {
             return;
         }
-
-        // The debug thread never breaks
-        if (stack->GetThreadNumber() == g_debugThreadNumber) {
-            return;
-        }
-
         // If the thread has been put into no stop mode, it can't stop
         if (!stack->CanStop()) {
             return;
@@ -1947,16 +1951,31 @@ private:
       return -1;
    }
 
-    // Looks up the "interned" version of the name, for faster compares
-    // when evaluating breakpoints
-    static const char *LookupFileName(String fileName)
+   // Looks up the "interned" version of the name, for faster compares
+   // when evaluating breakpoints
+   static const char *LookupFileName(String fileName)
+   {
+      for (const char **ptr = hx::__hxcpp_all_files; *ptr; ptr++)
       {
-        for (const char **ptr = hx::__hxcpp_all_files; *ptr; ptr++) {
-            if (!strcmp(*ptr, fileName)) {
-                return *ptr;
+         if (!strcmp(*ptr, fileName))
+            return *ptr;
       }
-      }
-        return 0;
+
+      #ifdef HXCPP_SCRIPTABLE
+      Array< ::String> ret = Array_obj< ::String>::__new();
+      __hxcpp_dbg_getScriptableFiles(ret);
+      for(int i=0;i<ret->length;i++)
+         if (ret[i]==fileName)
+            return (ret[i]).dupConst().__s;
+
+      ret = Array_obj< ::String>::__new();
+      __hxcpp_dbg_getScriptableFilesFullPath(ret);
+      for(int i=0;i<ret->length;i++)
+         if (ret[i]==fileName)
+            return (ret[i]).dupConst().__s;
+      #endif
+
+      return 0;
    }
 
    static const char *LookupClassName(String className)
@@ -1967,6 +1986,15 @@ private:
             if (!strcmp(*ptr, className.__s))
                return *ptr;
          }
+
+      #ifdef HXCPP_SCRIPTABLE
+      Array< ::String> ret = Array_obj< ::String>::__new();
+      __hxcpp_dbg_getScriptableClasses(ret);
+      for(int i=0;i<ret->length;i++)
+         if (ret[i]==className)
+            return ret[i].dupConst().__s;
+      #endif
+
       return 0;
    }
 
@@ -2102,9 +2130,9 @@ int __hxcpp_dbg_addFileLineBreakpoint(String fileName, int lineNumber)
 
 int __hxcpp_dbg_addClassFunctionBreakpoint(String className,
                                             String functionName)
-   {
-    return hx::Breakpoints::Add(className, functionName);
-   }
+{
+  return hx::Breakpoints::Add(className, functionName);
+}
 
 
 void __hxcpp_dbg_deleteAllBreakpoints()

@@ -458,6 +458,18 @@ struct ScriptCallable : public CppiaDynamicExpr
    void    *compiled;
    #endif
 
+
+   #ifdef HXCPP_DEBUGGER
+   int classFunctionHash;
+   int fileHash;
+   #else
+   enum {
+      classFunctionHash = 0,
+      fileHash = 0,
+   };
+   #endif
+
+
    std::vector<CppiaStackVar *> captureVars;
    int                          captureSize;
 
@@ -483,6 +495,10 @@ struct ScriptCallable : public CppiaDynamicExpr
             initVals[a].fromStream(stream);
       }
       body = createCppiaExpr(stream);
+      #ifdef HXCPP_DEBUGGER
+      classFunctionHash = 0;
+      fileHash = 0;
+      #endif
    }
 
    ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
@@ -524,7 +540,24 @@ struct ScriptCallable : public CppiaDynamicExpr
 
       stackSize = layout.size;
       inModule.layout = oldLayout;
+
+      #ifdef HXCPP_DEBUGGER
+      fileHash = Hash(0,filename);
+      int hash = Hash(0,className);
+      hash = Hash(hash,".");
+      classFunctionHash = Hash(hash,functionName);
+      #endif
+
       return this;
+   }
+
+
+   static int Hash(int value, const char *inString)
+   {
+      if (inString)
+         while(*inString)
+            value = value*223 + *inString++;
+      return value;
    }
 
    ExprType getType() { return returnType; }
@@ -953,6 +986,8 @@ struct ScriptCallable : public CppiaDynamicExpr
    // Run the actual function
    void runFunction(CppiaCtx *ctx)
    {
+      CPPIA_STACK_FRAME(this);
+
       #ifdef CPPIA_JIT
       if (compiled)
       {
@@ -968,6 +1003,7 @@ struct ScriptCallable : public CppiaDynamicExpr
             memset(ctx->pointer, 0 , stackSize );
             ctx->pointer += stackSize;
          }
+         CPPIA_STACK_LINE(this);
          body->runVoid(ctx);
       }
    }
@@ -3104,8 +3140,8 @@ struct BlockCallable : public ScriptCallable
       unsigned char *pointer = ctx->pointer;
       ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
-      addStackVarsSpace(ctx);
       CPPIA_STACK_FRAME(this);
+      addStackVarsSpace(ctx);
       body->runVoid(ctx);
    }
    int runInt(CppiaCtx *ctx)
@@ -3113,8 +3149,8 @@ struct BlockCallable : public ScriptCallable
       unsigned char *pointer = ctx->pointer;
       ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
-      addStackVarsSpace(ctx);
       CPPIA_STACK_FRAME(this);
+      addStackVarsSpace(ctx);
       return body->runInt(ctx);
    }
    Float runFloat(CppiaCtx *ctx)
@@ -3122,8 +3158,8 @@ struct BlockCallable : public ScriptCallable
       unsigned char *pointer = ctx->pointer;
       ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
-      addStackVarsSpace(ctx);
       CPPIA_STACK_FRAME(this);
+      addStackVarsSpace(ctx);
       return body->runFloat(ctx);
    }
    hx::Object *runObject(CppiaCtx *ctx)
@@ -3131,8 +3167,8 @@ struct BlockCallable : public ScriptCallable
       unsigned char *pointer = ctx->pointer;
       ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
-      addStackVarsSpace(ctx);
       CPPIA_STACK_FRAME(this);
+      addStackVarsSpace(ctx);
       return body->runObject(ctx);
    }
 };
@@ -7931,8 +7967,7 @@ void CppiaModule::registerDebugger()
    #ifdef HXCPP_DEBUGGER
    for(int i=0;i<classes.size();i++)
    {
-      String name(classes[i]->name.c_str());
-      addScriptableClass(name);
+      addScriptableClass( String::makeConstString(classes[i]->name.c_str()) );
    }
 
    for(hx::UnorderedSet<int>::const_iterator i = allFileIds.begin(); i!=allFileIds.end(); ++i)
@@ -8130,6 +8165,8 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
       {
          DBGLOG("Main...\n");
          cppia.main = new ScriptCallable(createCppiaExpr(stream));
+         cppia.main->className = "cppia";
+         cppia.main->functionName = "__cppia_main";
       }
       else if (tok!="NOMAIN")
          throw "no main specified";
