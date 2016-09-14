@@ -812,13 +812,18 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       {
          int i = args[0]->runInt(ctx);
          BCR_CHECK;
-         Dynamic val = args[1]->runObject(ctx);
-         BCR_CHECK;
          if (OP==aoSet)
+         {
+            Dynamic val = args[1]->runObject(ctx);
+            BCR_CHECK;
             return thisVal->__SetItem(i, val).mPtr;
+         }
 
          Dynamic orig = thisVal->__GetItem(i);
          CPPIA_CHECK(orig.mPtr);
+
+         Dynamic val = args[1]->runObject(ctx);
+         BCR_CHECK;
          switch(OP)
          {
             case aoSet: break;
