@@ -308,9 +308,9 @@ struct AutoValue
 #define DEFINE_PRIME2v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME3v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME4v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
-#define DEFINE_PRIME5(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME5v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME6v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
-#define DEFINE_PRIME7vv(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME7v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME8v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME9v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME10v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
