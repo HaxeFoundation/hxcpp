@@ -18,6 +18,10 @@ int __hxcpp_GetCurrentThreadNumber();
 #define HXCPP_STACK_VARS
 #endif
 
+#if defined(HXCPP_STACK_VARS) && defined(HXCPP_SCRIPTABLE)
+#define HXCPP_STACK_SCRIPTABLE
+#endif
+
 // Keep track of lines - more accurate stack traces for exceptions, also
 // needed for the debugger
 #if (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && !defined(HXCPP_STACK_LINE)
@@ -63,6 +67,7 @@ void __hxcpp_on_line_changed();
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPaths);
 
+
 namespace hx
 {
 
@@ -96,8 +101,14 @@ enum StepType
 class StackArgument;
 class StackVariable;
 class StackCatchable;
+struct ScriptStackFrame;
 
 void __hxcpp_register_stack_frame(class StackFrame *inFrame);
+
+void __hxcpp_dbg_getScriptableVariables(ScriptStackFrame *scriptStackFrame, ::Array< ::Dynamic> outNames);
+bool __hxcpp_dbg_getScriptableValue(ScriptStackFrame *scriptStackFrame, String inName, ::Dynamic &outValue);
+bool __hxcpp_dbg_setScriptableValue(ScriptStackFrame *scriptStackFrame, String inName, ::Dynamic inValue);
+
 
 class StackFrame
 {
@@ -116,6 +127,9 @@ public:
                #ifdef HXCPP_DEBUG_HASHES
                , int inFileHash
                #endif
+               #ifdef HXCPP_STACK_SCRIPTABLE
+               , ScriptStackFrame *inScriptStackFrame = 0
+               #endif
                )
 
        : className(inClassName), functionName(inFunctionName),
@@ -132,6 +146,9 @@ public:
          #endif
          #ifdef HXCPP_STACK_VARS
          variables(0),
+         #endif
+         #ifdef HXCPP_STACK_SCRIPTABLE
+         scriptStackFrame(inScriptStackFrame),
          #endif
          catchables(0)
     {
@@ -168,6 +185,11 @@ public:
     // the most recently scoped one and should be used.  Only updated if
     // HXCPP_STACK_VARS is defined.
     StackVariable *variables;
+
+    #ifdef HXCPP_STACK_SCRIPTABLE
+    // Information about the current cppia function
+    ScriptStackFrame *scriptStackFrame;
+    #endif
 
     // The list of types that can be currently caught in the stack frame.
     StackCatchable *catchables;

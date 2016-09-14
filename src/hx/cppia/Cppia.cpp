@@ -458,6 +458,10 @@ struct ScriptCallable : public CppiaDynamicExpr
    void    *compiled;
    #endif
 
+   #ifdef HXCPP_STACK_SCRIPTABLE
+   CppiaStackVarMap varMap;
+   #endif
+
 
    #ifdef HXCPP_DEBUGGER
    int classFunctionHash;
@@ -538,6 +542,10 @@ struct ScriptCallable : public CppiaDynamicExpr
       captureVars.swap(layout.captureVars);
       captureSize = layout.captureSize;
 
+      #ifdef HXCPP_STACK_SCRIPTABLE
+      std::swap(varMap,layout.varMap);
+      #endif
+
       stackSize = layout.size;
       inModule.layout = oldLayout;
 
@@ -550,6 +558,62 @@ struct ScriptCallable : public CppiaDynamicExpr
 
       return this;
    }
+
+   #ifdef HXCPP_STACK_SCRIPTABLE
+   void getScriptableVariables(unsigned char *inFrame, Array<Dynamic> outNames)
+   {
+      hx::Object *thizz = *(hx::Object **)inFrame;
+      if (thizz)
+         outNames->push(HX_CSTRING("this"));
+
+      for(CppiaStackVarMap::iterator i=varMap.begin();i!=varMap.end();++i)
+      {
+         CppiaStackVar *var = i->second;
+         outNames->push(var->module->strings[ var->nameId] );
+      }
+   }
+
+
+   bool getScriptableValue(unsigned char *inFrame, String inName, ::Dynamic &outValue)
+   {
+      if (inName.length==4 && !strcmp(inName.__s,"this"))
+      {
+         outValue = *(hx::Object **)inFrame;
+         return true;
+      }
+
+
+      for(CppiaStackVarMap::iterator i=varMap.begin();i!=varMap.end();++i)
+      {
+         CppiaStackVar *var = i->second;
+         if ( var->module->strings[ var->nameId]==inName)
+         {
+            outValue = var->getInFrame(inFrame);
+            return true;
+         }
+      }
+
+      return false;
+   }
+
+
+   bool setScriptableValue(unsigned char *inFrame, String inName, ::Dynamic inValue)
+   {
+      for(CppiaStackVarMap::iterator i=varMap.begin();i!=varMap.end();++i)
+      {
+         CppiaStackVar *var = i->second;
+         if ( var->module->strings[ var->nameId]==inName)
+         {
+            var->setInFrame(inFrame,inValue);
+            return true;
+         }
+      }
+
+      return false;
+   }
+
+
+   #endif
 
 
    static int Hash(int value, const char *inString)
@@ -632,7 +696,7 @@ struct ScriptCallable : public CppiaDynamicExpr
              }
        }
    }
- 
+
 
    void genArgs(CppiaCompiler &compiler, CppiaExpr *inThis, Expressions &inArgs)
    {
@@ -8334,6 +8398,26 @@ void *hx::Object::_hx_getInterface(int inId)
 }
 #endif
 
+#ifdef HXCPP_STACK_SCRIPTABLE
+void __hxcpp_dbg_getScriptableVariables(ScriptStackFrame *inFrame, ::Array<Dynamic> outNames)
+{
+   inFrame->callable->getScriptableVariables(inFrame->frame, outNames);
+}
+
+bool __hxcpp_dbg_getScriptableValue(ScriptStackFrame *inFrame, String inName, ::Dynamic &outValue)
+{
+   return inFrame->callable->getScriptableValue(inFrame->frame, inName, outValue);
+}
+
+
+bool __hxcpp_dbg_setScriptableValue(ScriptStackFrame *inFrame, String inName, ::Dynamic inValue)
+{
+   return inFrame->callable->setScriptableValue(inFrame->frame, inName, inValue);
+}
+
+
+
+#endif
 
 
 
@@ -8367,6 +8451,10 @@ void __hxcpp_dbg_getScriptableClasses( Array< ::String> ioClasses )
             ioClasses->push( merge[i] );
       }
 }
+
+
+
+
 #endif
 
 

@@ -348,6 +348,7 @@ CppiaStackVar::CppiaStackVar()
    expressionType = etNull;
    storeType = fsUnknown;
    type = 0;
+   module = 0;
 }
 
 CppiaStackVar::CppiaStackVar(CppiaStackVar *inVar,int &ioSize, int &ioCaptureSize)
@@ -366,6 +367,7 @@ CppiaStackVar::CppiaStackVar(CppiaStackVar *inVar,int &ioSize, int &ioCaptureSiz
    capturePos = ioCaptureSize;
    ioSize += sTypeSize[expressionType];
    ioCaptureSize += sTypeSize[expressionType];
+   module = inVar->module;
 }
 
 
@@ -377,32 +379,57 @@ void CppiaStackVar::fromStream(CppiaStream &stream)
    typeId = stream.getInt();
 }
 
-void CppiaStackVar::set(CppiaCtx *inCtx,Dynamic inValue)
+void CppiaStackVar::setInFrame(unsigned char *inFrame,Dynamic inValue)
 {
+   unsigned char *ptr = inFrame + stackPos;
    switch(storeType)
    {
       case fsByte:
-         *(unsigned *)(inCtx->frame + stackPos) = (int)inValue;
+         *(unsigned char *)(ptr) = (int)inValue;
          break;
       case fsBool:
-         *(bool *)(inCtx->frame + stackPos) = inValue;
+         *(bool *)(ptr) = inValue;
          break;
       case fsInt:
-         *(int *)(inCtx->frame + stackPos) = inValue;
+         *(int *)(ptr) = inValue;
          break;
       case fsFloat:
-         SetFloatAligned(inCtx->frame + stackPos,inValue);
+         SetFloatAligned(ptr,inValue);
          break;
       case fsString:
-         *(String *)(inCtx->frame + stackPos) = inValue;
+         *(String *)(ptr) = inValue;
          break;
       case fsObject:
-         *(hx::Object **)(inCtx->frame + stackPos) = inValue.mPtr;
+         *(hx::Object **)(ptr) = inValue.mPtr;
          break;
       case fsUnknown:
          break;
    }
 }
+
+void CppiaStackVar::set(CppiaCtx *inCtx,Dynamic inValue)
+{
+   setInFrame( inCtx->frame, inValue );
+}
+
+
+Dynamic CppiaStackVar::getInFrame(const unsigned char *inFrame)
+{
+   const unsigned char *ptr = inFrame + stackPos;
+   switch(storeType)
+   {
+      case fsByte: return *(unsigned char *)ptr;
+      case fsBool: return *(bool *)ptr;
+      case fsInt: return *(int *)ptr;
+      case fsFloat: return *(Float *)ptr;
+      case fsString: return *(String *)ptr;
+      case fsObject: return  *(hx::Object **)ptr;
+      case fsUnknown:
+         break;
+   }
+   return null();
+}
+
 
 void CppiaStackVar::markClosure(char *inBase, hx::MarkContext *__inCtx)
 {
@@ -440,6 +467,7 @@ void CppiaStackVar::link(CppiaModule &inModule)
    stackPos = inModule.layout->size;
    inModule.layout->size += sTypeSize[expressionType];
    type = inModule.types[typeId];
+   module = &inModule;
 }
 
 

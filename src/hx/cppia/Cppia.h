@@ -242,6 +242,18 @@ struct StackLayout
    CppiaStackVar *findVar(int inId);
 };
 
+struct ScriptStackFrame
+{
+   ScriptStackFrame(ScriptCallable *inCallable, unsigned char *inFrame)
+      : callable(inCallable),
+        frame(inFrame)
+   {
+   }
+
+   ScriptCallable *callable;
+   unsigned char  *frame;
+};
+
 
 
 struct ArgInfo
@@ -288,16 +300,21 @@ struct CppiaStackVar
    TypeData *type;
    FieldStorage storeType;
    ExprType expressionType;
+   CppiaModule *module;
 
    CppiaStackVar();
    CppiaStackVar(CppiaStackVar *inVar,int &ioSize, int &ioCaptureSize);
 
    void fromStream(CppiaStream &stream);
    void set(CppiaCtx *inCtx,Dynamic inValue);
+   void setInFrame(unsigned char *inFrame,Dynamic inValue);
+   Dynamic getInFrame(const unsigned char *inFrame);
    void markClosure(char *inBase, hx::MarkContext *__inCtx);
    void visitClosure(char *inBase, hx::VisitContext *__inCtx);
    void link(CppiaModule &inModule);
 };
+
+typedef std::map<int,CppiaStackVar *> CppiaStackVarMap;
 
 
 int getStackVarNameId(int inVarId);
@@ -431,8 +448,14 @@ public:
    #define CPPIA_STACK_LINE(expr)
 #endif
 
-#define CPPIA_STACK_FRAME(expr) \
- HX_STACK_FRAME(expr->className, expr->functionName, expr->classFunctionHash, expr->className, expr->filename, expr->line, expr->fileHash);
+#ifdef HXCPP_STACK_SCRIPTABLE
+   #define CPPIA_STACK_FRAME(expr) \
+      ScriptStackFrame scriptFrame(expr,ctx->frame); \
+      hx::StackFrame stackframe(expr->className, expr->functionName, expr->classFunctionHash, expr->className, expr->filename, expr->line, expr->fileHash, &scriptFrame);
+#else
+   #define CPPIA_STACK_FRAME(expr) \
+      HX_STACK_FRAME(expr->className, expr->functionName, expr->classFunctionHash, expr->className, expr->filename, expr->line, expr->fileHash);
+#endif
 
 
 #ifdef HXCPP_CHECK_POINTER

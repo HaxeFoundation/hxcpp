@@ -906,6 +906,12 @@ public:
                     ret->push(String(variable->mHaxeName));
                     variable = variable->mNext;
                 }
+
+                #ifdef HXCPP_STACK_SCRIPTABLE
+                ScriptStackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber]->scriptStackFrame;
+                if (scriptFrame)
+                   __hxcpp_dbg_getScriptableVariables(scriptFrame, ret);
+                #endif
                 break;
             }
         }
@@ -962,6 +968,18 @@ public:
             sv = sv->mNext;
         }
 
+
+        #ifdef HXCPP_STACK_SCRIPTABLE
+        ScriptStackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber]->scriptStackFrame;
+        if (scriptFrame)
+        {
+           Dynamic result;
+           if (__hxcpp_dbg_getScriptableValue(scriptFrame, name, result))
+              return result;
+        }
+        #endif
+
+
         return markNonexistent;
     }
 
@@ -1016,6 +1034,18 @@ public:
             }
             sv = sv->mNext;
         }
+
+        #ifdef HXCPP_STACK_SCRIPTABLE
+        ScriptStackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber]->scriptStackFrame;
+        if (scriptFrame)
+        {
+           if (__hxcpp_dbg_setScriptableValue(scriptFrame, name, value))
+           {
+              __hxcpp_dbg_getScriptableValue(scriptFrame, name, value);
+              return value;
+           }
+        }
+        #endif
         
         return markNonexistent;
     }
@@ -2762,7 +2792,6 @@ void __hxt_gc_after_mark(int gByteMarkID, int ENDIAN_MARK_ID_BYTE)
 }
 
 #endif // HXCPP_TELEMETRY
-
 
 void __hxcpp_execution_trace(int inLevel)
 {
