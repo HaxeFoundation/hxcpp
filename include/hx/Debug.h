@@ -110,51 +110,96 @@ bool __hxcpp_dbg_getScriptableValue(ScriptStackFrame *scriptStackFrame, String i
 bool __hxcpp_dbg_setScriptableValue(ScriptStackFrame *scriptStackFrame, String inName, ::Dynamic inValue);
 
 
-class StackFrame
+class StackPosition
 {
 public:
+    // These are constant during the lifetime of the stack frame
+    const char *className;
+    const char *functionName;
+    const char *fullName; // this is className.functionName - used for profiler
+    const char *fileName;
+    int firstLineNumber;
+
+    // These are only used if HXCPP_DEBUG_HASHES is defined
+    #ifdef HXCPP_DEBUG_HASHES
+    int fileHash;
+    int classFuncHash;
+    #else
+    enum { fileHash = 0, classFuncHash=0 };
+    #endif
+
+    #ifdef HXCPP_STACK_SCRIPTABLE
+    // Information about the current cppia function
+    ScriptStackFrame *scriptStackFrame;
+    #endif
 
     // The constructor automatically adds the StackFrame to the list of
     // stack frames for the current thread
-    inline StackFrame(const char *inClassName, const char *inFunctionName,
-               #ifdef HXCPP_DEBUG_HASHES
-               int inClassFunctionHash,
-               #endif
-               const char *inFullName, const char *inFileName
-               #ifdef HXCPP_STACK_LINE
-               , int inLineNumber
-               #endif
-               #ifdef HXCPP_DEBUG_HASHES
-               , int inFileHash
-               #endif
-               #ifdef HXCPP_STACK_SCRIPTABLE
-               , ScriptStackFrame *inScriptStackFrame = 0
-               #endif
-               )
+    inline StackPosition(const char *inClassName, const char *inFunctionName,
+                         const char *inFullName, const char *inFileName
+                         #ifdef HXCPP_STACK_LINE
+                         , int inLineNumber
+                         #endif
+                         #ifdef HXCPP_DEBUG_HASHES
+                         ,int inClassFunctionHash, int inFileHash
+                         #endif
+                         #ifdef HXCPP_STACK_SCRIPTABLE
+                         , ScriptStackFrame *inScriptStackFrame = 0
+                         #endif
+                  )
 
-       : className(inClassName), functionName(inFunctionName),
+       : className(inClassName), functionName(inFunctionName)
+         ,fullName(inFullName), fileName(inFileName)
          #ifdef HXCPP_DEBUG_HASHES
-         classFuncHash(inClassFunctionHash),
-         fileHash(inFileHash),
-         #else
-         classFuncHash(0),
-         fileHash(0),
+         ,classFuncHash(inClassFunctionHash)
+         ,fileHash(inFileHash)
          #endif
-         fullName(inFullName), fileName(inFileName),
          #ifdef HXCPP_STACK_LINE
-         firstLineNumber(inLineNumber),
-         #endif
-         #ifdef HXCPP_STACK_VARS
-         variables(0),
+         ,firstLineNumber(inLineNumber)
          #endif
          #ifdef HXCPP_STACK_SCRIPTABLE
-         scriptStackFrame(inScriptStackFrame),
+         ,scriptStackFrame(inScriptStackFrame),
          #endif
-         catchables(0)
     {
-         #ifdef HXCPP_STACK_LINE
-         lineNumber = firstLineNumber;
-         #endif
+    }
+
+};
+
+
+class StackFrame
+{
+public:
+   const StackPosition *position;
+
+   #ifdef HXCPP_STACK_LINE
+      // Current line number, changes during the lifetime of the stack frame.
+      // Only updated if HXCPP_STACK_LINE is defined.
+      int lineNumber;
+
+      #ifdef HXCPP_STACK_VARS
+      // Function arguments and local variables in reverse order of their
+      // declaration.  If a variable name is in here twice, the first version is
+      // the most recently scoped one and should be used.  Only updated if
+      // HXCPP_STACK_VARS is defined.
+      StackVariable *variables;
+
+      // The list of types that can be currently caught in the stack frame.
+      StackCatchable *catchables;
+      #endif
+   #endif
+
+
+    // The constructor automatically adds the StackFrame to the list of
+    // stack frames for the current thread
+    inline StackFrame(const StackPosition *inPosition) : position(inPosition)
+    {
+       #ifdef HXCPP_STACK_LINE
+          lineNumber = inPosition->firstLineNumber;
+          #ifdef HXCPP_STACK_VARS
+          variables = 0;
+          catchables = 0;
+          #endif
+       #endif
        __hxcpp_register_stack_frame(this);
     }
 
@@ -164,35 +209,6 @@ public:
 
     ::String toString();
     ::String toDisplay();
-
-    // These are constant during the lifetime of the stack frame
-    const char *className;
-    const char *functionName;
-    const char *fullName; // this is className.functionName - used for profiler
-    const char *fileName;
-    int firstLineNumber;
-
-    // Current line number, changes during the lifetime of the stack frame.
-    // Only updated if HXCPP_STACK_LINE is defined.
-    int lineNumber;
-
-    // These are only used if HXCPP_DEBUG_HASHES is defined
-    int fileHash;
-    int classFuncHash;
-
-    // Function arguments and local variables in reverse order of their
-    // declaration.  If a variable name is in here twice, the first version is
-    // the most recently scoped one and should be used.  Only updated if
-    // HXCPP_STACK_VARS is defined.
-    StackVariable *variables;
-
-    #ifdef HXCPP_STACK_SCRIPTABLE
-    // Information about the current cppia function
-    ScriptStackFrame *scriptStackFrame;
-    #endif
-
-    // The list of types that can be currently caught in the stack frame.
-    StackCatchable *catchables;
 };
 
 template<typename T> struct StackVariableWrapper
@@ -331,6 +347,7 @@ public:
 };
 
 
+#ifdef HXCPP_STACK_VARS
 class StackCatchable
 {
 public:
@@ -367,6 +384,7 @@ private:
     StackFrame &mFrame;
     bool (*mTestFunction)(Dynamic e);
 };
+#endif
 
 
 extern volatile bool gShouldCallHandleBreakpoints;
@@ -380,23 +398,29 @@ extern volatile bool gShouldCallHandleBreakpoints;
 #ifdef HXCPP_STACK_LINE
 
    #ifdef HXCPP_DEBUG_HASHES
-      #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
+      #define HX_DEFINE_STACK_FRAME(varName, className, functionName, classFunctionHash, fullName,fileName,     \
                           lineNumber, fileHash ) \
-       hx::StackFrame __stackframe(className, functionName, classFunctionHash, fullName,      \
-                                   fileName, lineNumber, fileHash);
+       hx::StackPosition varName(className, functionName, fullName, fileName, lineNumber, \
+                                         classFunctionHash, fileHash);
    #else
-      #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
-                          lineNumber, fileHash ) \
-       hx::StackFrame __stackframe(className, functionName, fullName,      \
-                                   fileName, lineNumber);
+      #define HX_DEFINE_STACK_FRAME(varName, className, functionName, fullName,fileName,     \
+                          lineNumber, classFunctionHash, fileHash );
    #endif
 #else
 
-   #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName,     \
+   #define HX_DEFINE_STACK_FRAME(varName, className, functionName, classFunctionHash, fullName,fileName,     \
                        lineNumber, fileHash ) \
-    hx::StackFrame __stackframe(className, functionName, fullName, fileName);
+    hx::StackPosition varName(className, functionName, fullName, fileName);
 
 #endif
+
+#define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash ) \
+   HX_DEFINE_STACK_FRAME(__stackPosition, className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash ) \
+   hx::StackFrame __stackframe(&__stackPosition);
+
+#define HX_STACKFRAME(pos) \
+   hx::StackFrame __stackframe(pos);
+
 
 // Emitted at the beginning of every instance fuction.  ptr is "this".
 // Only if stack variables are to be tracked
@@ -482,12 +506,24 @@ extern volatile bool gShouldCallHandleBreakpoints;
 #ifndef HX_STACK_FRAME
 #define HX_STACK_FRAME(className, functionName, classFuncHash, fullName, fileName, lineNumber, fileHash )
 #endif
+
 #ifndef HX_STACK_THIS
 #define HX_STACK_THIS(ptr)
 #endif
+
 #ifndef HX_STACK_ARG
 #define HX_STACK_ARG(cpp_var, haxe_name)
 #endif
+
+#ifndef HX_DEFINE_STACK_FRAME
+#define HX_DEFINE_STACK_FRAME(__stackPosition, className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash )
+#endif
+
+#ifndef HX_STACKFRAME
+#define HX_STACKFRAME(pos)
+#endif
+
+
 #ifndef HX_STACK_VAR
 
 #define HX_STACK_VAR(cpp_var, haxe_name)

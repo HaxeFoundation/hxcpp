@@ -674,7 +674,7 @@ public:
     }
 
     static void RemoveCallStack(int threadNumber)
-{ 
+    {
         gMutex.Lock();
 
         CallStack *stack = gMap[threadNumber];
@@ -697,15 +697,17 @@ public:
         if (mProfiler)
             mProfiler->Sample(this);
 
-#ifdef HXCPP_TELEMETRY
+        #ifdef HXCPP_TELEMETRY
         if (mTelemetry) mTelemetry->StackUpdate(this, frame);
-#endif
+        #endif
 
         mUnwindException = false;
         mStackFrames.push_back(frame);
 
+        #ifdef HX_STACK_LINE
         if (sExecutionTrace!=exeTraceOff)
            Trace();
+        #endif
     }
 
     void PopStackFrame()
@@ -713,9 +715,9 @@ public:
         if (mProfiler)
             mProfiler->Sample(this);
 
-#ifdef HXCPP_TELEMETRY
+        #ifdef HXCPP_TELEMETRY
         if (mTelemetry) mTelemetry->StackUpdate(this, 0);
-#endif
+        #endif
 
         if (mUnwindException)
         {
@@ -729,9 +731,9 @@ public:
     {
        StackFrame *frame = mStackFrames[mStackFrames.size()-1];
        #ifdef HXCPP_STACK_LINE
-       DBGLOG("%s::%s : %d\n", frame->className, frame->functionName, frame->lineNumber);
+       DBGLOG("%s::%s : %d\n", frame->position->className, frame->position->functionName, frame->lineNumber);
        #else
-       DBGLOG("%s::%s\n", frame->className, frame->functionName);
+       DBGLOG("%s::%s\n", frame->position->className, frame->position->functionName);
        #endif
     }
 
@@ -885,6 +887,7 @@ public:
     {
         ::Array<Dynamic> ret = Array_obj<Dynamic>::__new();
 
+        #ifdef HXCPP_STACK_VARS
         gMutex.Lock();
 
         std::list<CallStack *>::iterator iter = gList.begin();
@@ -917,6 +920,7 @@ public:
         }
 
         gMutex.Unlock();
+        #endif
 
         return ret;
     }
@@ -926,6 +930,7 @@ public:
                                     Dynamic markNonexistent,
                                     Dynamic markThreadNotStopped)
     {
+       #ifdef HXCPP_STACK_VARS
         if (threadNumber == g_debugThreadNumber) {
             return markNonexistent;
         }
@@ -968,7 +973,6 @@ public:
             sv = sv->mNext;
         }
 
-
         #ifdef HXCPP_STACK_SCRIPTABLE
         ScriptStackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber]->scriptStackFrame;
         if (scriptFrame)
@@ -979,6 +983,7 @@ public:
         }
         #endif
 
+        #endif
 
         return markNonexistent;
     }
@@ -988,6 +993,7 @@ public:
                                     bool unsafe, Dynamic markNonexistent,
                                     Dynamic markThreadNotStopped)
     {
+       #ifdef HXCPP_STACK_VARS
         if (threadNumber == g_debugThreadNumber) {
             return null();
         }
@@ -1047,6 +1053,8 @@ public:
         }
         #endif
         
+       #endif
+
         return markNonexistent;
     }
 
@@ -1134,6 +1142,7 @@ public:
 
     static bool CanBeCaught(Dynamic e)
     {
+        #ifdef HXCPP_STACK_VARS
         CallStack *stack = GetCallerCallStack();
 
         std::vector<StackFrame *>::reverse_iterator iter = 
@@ -1148,6 +1157,7 @@ public:
                 catchable = catchable->mNext;
             }
         }
+        #endif
 
         return false;
     }
@@ -1285,7 +1295,7 @@ public:
 
     const char *GetFullNameAtDepth(int depth) const
     {
-        return mStackFrames[depth]->fullName;
+        return mStackFrames[depth]->position->fullName;
     }
         
 
@@ -1388,6 +1398,7 @@ private:
     void DoBreak(ThreadStatus status, int breakpoint,
                  const String *criticalErrorDescription)
     {
+       #ifdef HXCPP_DEBUGGER
         // Update status
         mStatus = status;
         mBreakpoint = breakpoint;
@@ -1403,8 +1414,8 @@ private:
         StackFrame *frame = mStackFrames[stackFrame];
         g_eventNotificationHandler
             (mThreadNumber, THREAD_STOPPED, stackFrame,
-             String(frame->className), String(frame->functionName),
-             String(frame->fileName), frame->lineNumber);
+             String(frame->position->className), String(frame->position->functionName),
+             String(frame->position->fileName), frame->lineNumber);
 
         // Wait until the debugger thread sets mWaiting to false and signals
         // the semaphore
@@ -1431,6 +1442,7 @@ private:
 
         // Can stop again
         mCanStop = true;
+       #endif
     }
 
     static Dynamic CallStackToThreadInfo(CallStack *stack)
@@ -1450,9 +1462,15 @@ private:
 
    static Dynamic StackFrameToStackFrame(StackFrame *frame)
    {
+      #ifdef HXCPP_STACK_LINE
         Dynamic ret = g_newStackFrameFunction
-            (String(frame->fileName), String(frame->lineNumber),
-             String(frame->className), String(frame->functionName));
+            (String(frame->position->fileName), String(frame->lineNumber),
+             String(frame->position->className), String(frame->position->functionName));
+       #else
+        Dynamic ret = g_newStackFrameFunction
+            (String(frame->position->fileName), String(frame->position->firstLineNumber),
+             String(frame->position->className), String(frame->position->functionName));
+       #endif
         
         // Don't do parameters for now
         // xxx figure them out later
@@ -1747,17 +1765,17 @@ public:
             if (!breakpoints->IsEmpty())
             {
                StackFrame *frame = stack->GetCurrentStackFrame();
-               if (!breakpoints->QuickRejectClassFunc(frame->classFuncHash))
+               if (!breakpoints->QuickRejectClassFunc(frame->position->classFuncHash))
                {
                   // Check for class:function breakpoint if this is the
                   // first line of the stack frame
-                  if (frame->lineNumber == frame->firstLineNumber)
+                  if (frame->lineNumber == frame->position->firstLineNumber)
                       breakpointNumber = breakpoints->FindClassFunctionBreakpoint(frame);
                }
 
                // If still haven't hit a break point, check for file:line
                // breakpoint
-               if (breakpointNumber == -1 && !breakpoints->QuickRejectFileLine(frame->fileHash))
+               if (breakpointNumber == -1 && !breakpoints->QuickRejectFileLine(frame->position->fileHash))
                   breakpointNumber = breakpoints->FindFileLineBreakpoint(frame);
 
                if (breakpointNumber != -1)
@@ -1960,9 +1978,9 @@ private:
       for (int i = 0; i < mBreakpointCount; i++)
       {
          Breakpoint &breakpoint = mBreakpoints[i];
-         if (breakpoint.isFileLine && breakpoint.hash==inFrame->fileHash &&
+         if (breakpoint.isFileLine && breakpoint.hash==inFrame->position->fileHash &&
              (breakpoint.lineNumber == inFrame->lineNumber) &&
-             !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->fileName) )
+             !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->position->fileName) )
             return breakpoint.number;
       }
       return -1;
@@ -1973,9 +1991,9 @@ private:
       for (int i = 0; i < mBreakpointCount; i++)
       {
          Breakpoint &breakpoint = mBreakpoints[i];
-         if (!breakpoint.isFileLine && breakpoint.hash==inFrame->classFuncHash &&
-             !strcmp(breakpoint.fileOrClassName.c_str(), inFrame->className)  &&
-             !strcmp(breakpoint.functionName.c_str(), inFrame->functionName) )
+         if (!breakpoint.isFileLine && breakpoint.hash==inFrame->position->classFuncHash &&
+             !strcmp(breakpoint.fileOrClassName.c_str(), inFrame->position->className)  &&
+             !strcmp(breakpoint.functionName.c_str(), inFrame->position->functionName) )
             return breakpoint.number;
       }
       return -1;
@@ -2332,28 +2350,28 @@ hx::StackFrame::~StackFrame()
 {
    // Not sure if the following is even possible but the old debugger did it so ...
    char buf[1024];
-   if (!fileName || (fileName[0] == '?'))
+   if (!position->fileName || (position->fileName[0] == '?'))
    {
-       snprintf(buf, sizeof(buf), "%s::%s", className, functionName);
+       snprintf(buf, sizeof(buf), "%s::%s", position->className, position->functionName);
    }
    else
    {
       #ifdef HXCPP_STACK_LINE
       // Old-style combined file::class...
-      if (!className || !className[0])
-          snprintf(buf, sizeof(buf), "%s %s line %d", functionName, fileName, lineNumber);
+      if (!position->className || !position->className[0])
+          snprintf(buf, sizeof(buf), "%s %s line %d", position->functionName, position->fileName, lineNumber);
       else
           snprintf(buf, sizeof(buf), "%s::%s %s line %d",
-                className, functionName,
-                fileName, lineNumber);
+                position->className, position->functionName,
+                position->fileName, lineNumber);
       #else
       // Old-style combined file::class...
-      if (!className || !className[0])
-        snprintf(buf, sizeof(buf), "%s %s", functionName, fileName);
+      if (!position->className || !position->className[0])
+        snprintf(buf, sizeof(buf), "%s %s", position->functionName, position->fileName);
       else
         snprintf(buf, sizeof(buf), "%s::%s %s",
-            className, functionName,
-            fileName);
+            position->className, position->functionName,
+            position->fileName);
       #endif
    }
    return ::String(buf);
@@ -2364,28 +2382,28 @@ hx::StackFrame::~StackFrame()
 {
    // Not sure if the following is even possible but the old debugger did it so ...
    char buf[1024];
-   if (!fileName || (fileName[0] == '?'))
+   if (!position->fileName || (position->fileName[0] == '?'))
    {
-       snprintf(buf, sizeof(buf), "%s::%s", className, functionName);
+       snprintf(buf, sizeof(buf), "%s::%s", position->className, position->functionName);
    }
    else
    {
       #ifdef HXCPP_STACK_LINE
       // Old-style combined file::class...
-      if (!className || !className[0])
-          snprintf(buf, sizeof(buf), "%s::%s::%d", functionName, fileName, lineNumber);
+      if (!position->className || !position->className[0])
+          snprintf(buf, sizeof(buf), "%s::%s::%d", position->functionName, position->fileName, lineNumber);
       else
           snprintf(buf, sizeof(buf), "%s::%s::%s::%d",
-                className, functionName,
-                fileName, lineNumber);
+                position->className, position->functionName,
+                position->fileName, lineNumber);
       #else
       // Old-style combined file::class...
-      if (!className || !className[0])
-        snprintf(buf, sizeof(buf), "%s::%s::0", functionName, fileName);
+      if (!position->className || !position->className[0])
+        snprintf(buf, sizeof(buf), "%s::%s::0", position->functionName, position->fileName);
       else
         snprintf(buf, sizeof(buf), "%s::%s::%s::0",
-            className, functionName,
-            fileName);
+            position->className, position->functionName,
+            position->fileName);
       #endif
    }
    return ::String(buf);
@@ -2529,7 +2547,7 @@ void hx::Telemetry::HXTAllocation(CallStack *stack, void* obj, size_t inSize, co
     // ExternalInterface.external_handler()), etc
 #ifndef HXCPP_PROFILE_EXTERNS
     int depth = stack->GetDepth();
-    if (stack->GetCurrentStackFrame()->className==EXTERN_CLASS_NAME) {
+    if (stack->GetCurrentStackFrame()->position->className==EXTERN_CLASS_NAME) {
       alloc_mutex.Unlock();
       return;
     }
