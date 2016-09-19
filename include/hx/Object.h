@@ -73,7 +73,7 @@ enum NewObjectType
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Object
 {
 public:
-   // These allocate the function using the garbage-colleced malloc
+
    inline void *operator new( size_t inSize, bool inContainer=true, const char *inName=0 )
    {
       #ifdef HX_USE_INLINE_IMMIX_OPERATOR_NEW
@@ -84,57 +84,17 @@ public:
             BadImmixAlloc();
          #endif
 
-         #ifndef HXCPP_ALIGN_ALLOC
-            // Inline the fast-path if we can
-            // We know the object can hold a pointer (vtable) and that the size is int-aligned
-
-            int start = alloc->spaceStart;
-            int end = start + sizeof(int) + inSize;
-
-            if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
-            {
-               alloc->spaceStart = end;
-
-               int startRow = start>>IMMIX_LINE_BITS;
-
-               alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
-               //alloc->allocBase[ startRow ] |= (1<<( (start>>2) & 31) );
-
-               unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
-
-               if (inContainer)
-                  *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                               (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                               gMarkIDWithContainer;
-               else
-                  *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                               (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                               gMarkID;
-
-               #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
-               hx::GCOnNewPointer(buffer);
-               #endif
-
-               #ifdef HXCPP_TELEMETRY
-               __hxt_gc_new(buffer, inSize, inName);
-               #endif
-               return buffer;
-            }
-         #endif // HXCPP_ALIGN_ALLOC
-
-         // Fall back to external method
-         void *result = alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
+         return ImmixAllocator::alloc(alloc, inSize, inContainer, inName);
 
       #else // Not HX_USE_INLINE_IMMIX_OPERATOR_NEW ...
 
          void *result = hx::InternalNew(inSize,inContainer);
 
+         #ifdef HXCPP_TELEMETRY
+            __hxt_gc_new(result, inSize, inName);
+         #endif
+         return result;
       #endif
-
-      #ifdef HXCPP_TELEMETRY
-         __hxt_gc_new(result, inSize, inName);
-      #endif
-      return result;
    }
 
    inline void *operator new( size_t inSize, hx::NewObjectType inType,  const char *inName=0 )
