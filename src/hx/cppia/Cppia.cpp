@@ -462,16 +462,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    CppiaStackVarMap varMap;
    #endif
 
-
-   #ifdef HXCPP_DEBUGGER
-   int classFunctionHash;
-   int fileHash;
-   #else
-   enum {
-      classFunctionHash = 0,
-      fileHash = 0,
-   };
-   #endif
+   hx::StackPosition          position;
 
 
    std::vector<CppiaStackVar *> captureVars;
@@ -549,11 +540,16 @@ struct ScriptCallable : public CppiaDynamicExpr
       stackSize = layout.size;
       inModule.layout = oldLayout;
 
-      #ifdef HXCPP_DEBUGGER
-      fileHash = Hash(0,filename);
+      position.className = className;
+      position.functionName = functionName;
+      position.fileName = filename;
+      position.fullName = filename;
+
+      #ifdef HXCPP_DEBUG_HASHES
+      position.fileHash = Hash(0,filename);
       int hash = Hash(0,className);
       hash = Hash(hash,".");
-      classFunctionHash = Hash(hash,functionName);
+      position.classFuncHash = Hash(hash,functionName);
       #endif
 
       return this;

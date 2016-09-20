@@ -128,10 +128,7 @@ public:
     enum { fileHash = 0, classFuncHash=0 };
     #endif
 
-    #ifdef HXCPP_STACK_SCRIPTABLE
-    // Information about the current cppia function
-    ScriptStackFrame *scriptStackFrame;
-    #endif
+    inline StackPosition() { }
 
     // The constructor automatically adds the StackFrame to the list of
     // stack frames for the current thread
@@ -143,9 +140,6 @@ public:
                          #ifdef HXCPP_DEBUG_HASHES
                          ,int inClassFunctionHash, int inFileHash
                          #endif
-                         #ifdef HXCPP_STACK_SCRIPTABLE
-                         , ScriptStackFrame *inScriptStackFrame = 0
-                         #endif
                   )
 
        : className(inClassName), functionName(inFunctionName)
@@ -156,9 +150,6 @@ public:
          #endif
          #ifdef HXCPP_STACK_LINE
          ,firstLineNumber(inLineNumber)
-         #endif
-         #ifdef HXCPP_STACK_SCRIPTABLE
-         ,scriptStackFrame(inScriptStackFrame),
          #endif
     {
     }
@@ -188,10 +179,18 @@ public:
       #endif
    #endif
 
+    #ifdef HXCPP_STACK_SCRIPTABLE
+    // Information about the current cppia function
+    ScriptStackFrame *scriptStackFrame;
+    #endif
 
     // The constructor automatically adds the StackFrame to the list of
     // stack frames for the current thread
-    inline StackFrame(const StackPosition *inPosition) : position(inPosition)
+    inline StackFrame(const StackPosition *inPosition
+               #ifdef HXCPP_STACK_SCRIPTABLE
+               ,ScriptStackFrame *inScriptStackFrame = 0
+               #endif
+           ) : position(inPosition)
     {
        #ifdef HXCPP_STACK_LINE
           lineNumber = inPosition->firstLineNumber;
@@ -199,6 +198,11 @@ public:
           variables = 0;
           catchables = 0;
           #endif
+       #endif
+
+       #ifdef HXCPP_STACK_SCRIPTABLE
+       // Information about the current cppia function
+       scriptStackFrame = inScriptStackFrame;
        #endif
        __hxcpp_register_stack_frame(this);
     }

@@ -451,10 +451,10 @@ public:
 #ifdef HXCPP_STACK_SCRIPTABLE
    #define CPPIA_STACK_FRAME(expr) \
       ScriptStackFrame scriptFrame(expr,ctx->frame); \
-      hx::StackFrame stackframe(expr->className, expr->functionName, expr->classFunctionHash, expr->className, expr->filename, expr->line, expr->fileHash, &scriptFrame);
+      hx::StackFrame stackframe(&expr->position, &scriptFrame);
 #else
    #define CPPIA_STACK_FRAME(expr) \
-      HX_STACK_FRAME(expr->className, expr->functionName, expr->classFunctionHash, expr->className, expr->filename, expr->line, expr->fileHash);
+      HX_STACKFRAME(&expr->position);
 #endif
 
 
