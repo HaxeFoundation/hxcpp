@@ -28,6 +28,148 @@ using namespace hx;
 
 
 
+id _hx_value_to_objc(Dynamic d)
+{
+   if (!d.mPtr)
+      return nil;
+
+   switch(d->__GetType())
+   {
+      case vtNull:
+      case vtUnknown:
+        return nil;
+
+      case vtInt:
+      case vtBool:
+         return [ NSNumber numberWithInt: (int)d ];
+      case vtInt64:
+         return [ NSNumber numberWithLongLong: (cpp::Int64)d ];
+      case vtFloat:
+         return [ NSNumber numberWithDouble: (double)d ];
+      case vtString:
+         return (NSString *)String(d);
+      case vtObject:
+         return _hx_obj_to_nsdictionary(d);
+      case vtArray:
+         {
+            Array_obj<unsigned char> *bytes = dynamic_cast< Array_obj<unsigned char> * >(d.mPtr);
+            if (bytes)
+            {
+               if (!bytes->length)
+                  return [NSData alloc];
+               else
+                  return [NSData dataWithBytes:bytes->GetBase() length:bytes->length];
+            }
+            else
+            {
+               cpp::VirtualArray varray = d;
+               int len = varray->get_length();
+               NSMutableArray *array = [NSMutableArray arrayWithCapacity:len];
+               for(int i=0;i<len;i++)
+                  array[i] = _hx_value_to_objc( varray->__get(i) );
+               return array;
+            }
+         }
+      case vtClass:
+         if (d->__GetClass()->mName==HX_CSTRING("haxe.io.Bytes"))
+         {
+            return _hx_value_to_objc( d->__Field( HX_CSTRING("b"), hx::paccDynamic ) );
+         }
+         // else fallthough...
+        
+      case vtFunction:
+      case vtEnum:
+      case vtAbstractBase:
+         {
+         return (NSString *)d->toString();
+         }
+   }
+   return nil;
+}
+
+
+NSDictionary<NSString *, id> *_hx_obj_to_nsdictionary(Dynamic d)
+{
+   if (d==null())
+      return nil;
+
+   Array<String> fields = Array_obj<String>::__new();
+   d->__GetFields(fields);
+
+   NSMutableArray *objects = [[NSMutableArray alloc] initWithCapacity:fields->length ];
+   NSMutableArray *keys = [[NSMutableArray alloc] initWithCapacity:fields->length ];
+   for(int i=0; i <fields->length; i++)
+   {
+      objects[i] = _hx_value_to_objc( d->__Field(fields[i], hx::paccDynamic ) );
+      keys[i] = (NSString *)fields[i];
+   }
+
+   NSDictionary *result =  [NSDictionary<NSString *,id> dictionaryWithObjects:objects forKeys:keys];
+
+   return result;
+}
+
+Array<unsigned char> _hx_objc_to_bytes(id value)
+{
+     NSData *data = value;
+     return Array_obj<unsigned char>::fromData((const unsigned char *)data.bytes, data.length);
+}
+
+hx::Val _hx_objc_to_value(id value)
+{
+   if (value==nil)
+      return null();
+
+   else if ([value isKindOfClass:[NSNumber class]])
+      return [value floatValue];
+
+   else if ([value isKindOfClass:[NSString class]])
+      return String( (NSString *)value );
+
+  else if ([value isKindOfClass:[NSDictionary class]])
+      return _hx_nsdictionary_to_obj( (NSDictionary *) value);
+
+  else if ([value isKindOfClass:[NSArray class]])
+  {
+      NSArray *array = value;
+      cpp::VirtualArray varray = cpp::VirtualArray_obj::__new();
+      for(id object in array)
+         varray->push( _hx_objc_to_value(object) );
+
+       return varray;
+  }
+  else if ([value isKindOfClass:[NSData class]])
+  {
+     return _hx_objc_to_bytes(value);
+  }
+  else
+     return String( [value stringValue] );
+}
+
+
+
+
+Dynamic _hx_nsdictionary_to_obj(NSDictionary<NSString *, id> *inDictionary)
+{
+   if (!inDictionary)
+      return null();
+   hx::Anon obj = new hx::Anon_obj();
+
+   for (NSString *key in inDictionary)
+   {
+      id value = inDictionary[key];
+      obj->__SetField( String(key), _hx_objc_to_value(value), hx::paccDynamic);
+   }
+   return obj;
+}
+
+
+
+Dynamic _hx_objc_to_dynamic(id inValue)
+{
+   return _hx_objc_to_value(inValue);
+}
+
 
 
 namespace hx {

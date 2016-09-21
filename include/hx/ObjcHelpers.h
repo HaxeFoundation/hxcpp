@@ -13,6 +13,18 @@
 @end
 
 
+NSDictionary<NSString *, id> *_hx_obj_to_nsdictionary(Dynamic d);
+
+id _hx_value_to_objc(Dynamic d);
+
+
+Dynamic _hx_nsdictionary_to_obj(NSDictionary<NSString *, id> *inDictionary);
+
+Dynamic _hx_objc_to_dynamic(id inValue);
+
+Array<unsigned char> _hx_objc_to_bytes(id value);
+
+
 namespace hx
 {
 
