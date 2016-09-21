@@ -648,6 +648,91 @@ private:
 #endif // HXCPP_TELEMETRY
 
 
+
+
+String FormatStack(const char *file, const char *clazz, const char *func, int line, bool display)
+{
+   // Not sure if the following is even possible but the old debugger did it so ...
+   char buf[1024];
+   if (!file || file[0]=='?')
+   {
+       snprintf(buf, sizeof(buf), display ? "%s::%s" : "%s::%s::%d", clazz, func,line);
+   }
+   else
+   {
+      // Old-style combined file::class...
+      if (!clazz || !clazz[0])
+          snprintf(buf, sizeof(buf), display ? (line>0 ? "%s %s line %d" : "%s %s") : "%s::%s::%d",
+                 func, file, line);
+      else
+          snprintf(buf, sizeof(buf), display ? (line>0 ? "%s::%s %s line %d" : "%s::%s %s)") : "%s::%s::%s::%d",
+                clazz, func, file, line);
+   }
+   return ::String(buf);
+}
+
+
+
+
+
+struct ExceptionStackFrame
+{
+   #ifdef HXCPP_STACK_LINE
+   int line;
+   #endif
+
+   #if HXCPP_API_LEVEL > 330
+   hx::StackPoition *position;
+   ExceptionStackFrame(const StackFrame &inFrame)
+   {
+      // It is safe to use the pointer in 331+
+      position = inFrame.position;
+      #ifdef HXCPP_STACK_LINE
+      line = inFrame.line;
+      #endif
+   }
+
+   #else
+   const char *className;
+   const char *functionName;
+   const char *fileName;
+
+   ExceptionStackFrame(const StackFrame &inFrame)
+   {
+      // Must copy the pointer values
+      className =  inFrame.position->className;
+      functionName =  inFrame.position->functionName;
+      fileName =  inFrame.position->fileName;
+      #ifdef HXCPP_STACK_LINE
+      line = inFrame.lineNumber;
+      #endif
+   }
+   #endif
+
+   
+   inline ::String format(bool inForDisplay)
+   {
+      #ifndef HXCPP_STACK_LINE
+      int line=0;
+      #endif
+
+      #if HXCPP_API_LEVEL > 330
+      const char *fileName = position->fileName;
+      const char *className = position->className;
+      const char *functionName = position->functionName;
+      #endif
+
+      return FormatStack(fileName, className, functionName, line, inForDisplay);
+   }
+   ::String toDisplay() { return format(true); }
+   ::String toString() { return format(false); }
+
+};
+
+
+
+
+
 class CallStack
 {
 public:
@@ -1268,7 +1353,7 @@ public:
         int size = stack->mExceptionStack.size();
 
         for (int i = 0; i < size; i++) {
-            result->push(stack->mExceptionStack[i].toString());
+               result->push(stack->mExceptionStack[i].toString());
         }
     }
 
@@ -1487,7 +1572,7 @@ private:
 
     // Updated only when a thrown exception unwinds the stack
     bool mUnwindException;
-    hx::QuickVec<StackFrame> mExceptionStack;
+    hx::QuickVec<hx::ExceptionStackFrame> mExceptionStack;
 
     int mStepLevel;
     HxMutex mWaitMutex;
@@ -2348,65 +2433,20 @@ hx::StackFrame::~StackFrame()
 
 ::String hx::StackFrame::toDisplay()
 {
-   // Not sure if the following is even possible but the old debugger did it so ...
-   char buf[1024];
-   if (!position->fileName || (position->fileName[0] == '?'))
-   {
-       snprintf(buf, sizeof(buf), "%s::%s", position->className, position->functionName);
-   }
-   else
-   {
-      #ifdef HXCPP_STACK_LINE
-      // Old-style combined file::class...
-      if (!position->className || !position->className[0])
-          snprintf(buf, sizeof(buf), "%s %s line %d", position->functionName, position->fileName, lineNumber);
-      else
-          snprintf(buf, sizeof(buf), "%s::%s %s line %d",
-                position->className, position->functionName,
-                position->fileName, lineNumber);
-      #else
-      // Old-style combined file::class...
-      if (!position->className || !position->className[0])
-        snprintf(buf, sizeof(buf), "%s %s", position->functionName, position->fileName);
-      else
-        snprintf(buf, sizeof(buf), "%s::%s %s",
-            position->className, position->functionName,
-            position->fileName);
-      #endif
-   }
-   return ::String(buf);
+   #ifndef HXCPP_STACK_LINE
+   int lineNumber=0;
+   #endif
+   return FormatStack(position->fileName, position->className, position->functionName, lineNumber,true);
 }
 
 
 ::String hx::StackFrame::toString()
 {
-   // Not sure if the following is even possible but the old debugger did it so ...
-   char buf[1024];
-   if (!position->fileName || (position->fileName[0] == '?'))
-   {
-       snprintf(buf, sizeof(buf), "%s::%s", position->className, position->functionName);
-   }
-   else
-   {
-      #ifdef HXCPP_STACK_LINE
-      // Old-style combined file::class...
-      if (!position->className || !position->className[0])
-          snprintf(buf, sizeof(buf), "%s::%s::%d", position->functionName, position->fileName, lineNumber);
-      else
-          snprintf(buf, sizeof(buf), "%s::%s::%s::%d",
-                position->className, position->functionName,
-                position->fileName, lineNumber);
-      #else
-      // Old-style combined file::class...
-      if (!position->className || !position->className[0])
-        snprintf(buf, sizeof(buf), "%s::%s::0", position->functionName, position->fileName);
-      else
-        snprintf(buf, sizeof(buf), "%s::%s::%s::0",
-            position->className, position->functionName,
-            position->fileName);
-      #endif
-   }
-   return ::String(buf);
+   #ifndef HXCPP_STACK_LINE
+   int lineNumber=0;
+   #endif
+
+   return FormatStack(position->fileName, position->className, position->functionName, lineNumber,false);
 }
 
 
