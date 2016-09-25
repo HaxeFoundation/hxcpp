@@ -49,6 +49,7 @@ CppiaCtx *CppiaCtx::getCurrent()
       sAllContexts.push_back(result);
       sCppiaCtxLock->Unlock();
    }
+   result->stackContext = StackContext::getCurrent();
    return result;
 }
 
@@ -223,5 +224,4 @@ hx::Object *runContextConvertObject(CppiaCtx *ctx, ExprType inType, void *inFunc
 
 
 } // end namespace hx
-
 

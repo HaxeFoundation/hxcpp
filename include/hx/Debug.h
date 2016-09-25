@@ -8,224 +8,10 @@
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 int __hxcpp_GetCurrentThreadNumber();
 
-// Set:
-// HXCPP_STACK_VARS if stack variables need to be tracked
-// HXCPP_STACK_LINE if stack line numbers need to be tracked
-// HXCPP_STACK_TRACE if stack frames need to be tracked
-
-// Track stack variables - only really needed for debugger
-#if defined(HXCPP_DEBUGGER) && !defined(HXCPP_STACK_VARS)
-#define HXCPP_STACK_VARS
-#endif
-
-#if defined(HXCPP_STACK_VARS) && defined(HXCPP_SCRIPTABLE)
-#define HXCPP_STACK_SCRIPTABLE
-#endif
-
-// Keep track of lines - more accurate stack traces for exceptions, also
-// needed for the debugger
-#if (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && !defined(HXCPP_STACK_LINE)
-#define HXCPP_STACK_LINE
-#endif
-
-// Do we need to keep a stack trace - for basic exception handelling, also
-// needed for the debugger
-#if (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER) || defined(HXCPP_STACK_VARS) || defined(HXCPP_STACK_LINE)) && !defined(HXCPP_STACK_TRACE)
-#define HXCPP_STACK_TRACE
-#endif
-
-// Do we care about the debug-breakpoint-lookup-hashes
-#if (defined HXCPP_STACK_LINE) && (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && (!defined(HXCPP_DEBUG_HASHES))
-#define HXCPP_DEBUG_HASHES
-#endif
-
-// Called by the main function when an uncaught exception occurs to dump
-// the stack leading to the exception
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void __hx_dump_stack();
-
-// The macro HX_STACK_BEGIN_CATCH, which is emitted at the beginning of every
-// catch block, calls this in debug mode to let the debugging system know that
-// a catch block has been entered
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void __hxcpp_stack_begin_catch();
-
-// Last chance to throw an exception for null-pointer access
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void __hxcpp_set_critical_error_handler(Dynamic inHandler);
-
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void __hxcpp_execution_trace(int inLevel);
-
-// Used by debug breakpoints and execution trace
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void __hxcpp_set_stack_frame_line(int);
-
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void __hxcpp_on_line_changed();
-
-HXCPP_EXTERN_CLASS_ATTRIBUTES
-void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPaths);
-
-
 namespace hx
 {
 
-// These must match the values present in cpp.vm.Debugger
-enum ThreadStatus
-{
-    STATUS_INVALID = 0, // Not present or needed in cpp.vm.Debugger
-    STATUS_RUNNING = 1,
-    STATUS_STOPPED_BREAK_IMMEDIATE = 2,
-    STATUS_STOPPED_BREAKPOINT = 3,
-    STATUS_STOPPED_UNCAUGHT_EXCEPTION = 4,
-    STATUS_STOPPED_CRITICAL_ERROR = 5
-};
-
-enum ThreadEvent
-{
-    THREAD_CREATED = 1,
-    THREAD_TERMINATED = 2,
-    THREAD_STARTED = 3,
-    THREAD_STOPPED = 4
-};
-
-enum StepType
-{
-    STEP_NONE = 0, // Not present or needed in cpp.vm.Debugger
-    STEP_INTO = 1,
-    STEP_OVER = 2,
-    STEP_OUT = 3
-};
-
-class StackArgument;
-class StackVariable;
-class StackCatchable;
-struct ScriptStackFrame;
-
-void __hxcpp_register_stack_frame(class StackFrame *inFrame);
-
-void __hxcpp_dbg_getScriptableVariables(ScriptStackFrame *scriptStackFrame, ::Array< ::Dynamic> outNames);
-bool __hxcpp_dbg_getScriptableValue(ScriptStackFrame *scriptStackFrame, String inName, ::Dynamic &outValue);
-bool __hxcpp_dbg_setScriptableValue(ScriptStackFrame *scriptStackFrame, String inName, ::Dynamic inValue);
-
-
-class StackPosition
-{
-public:
-    // These are constant during the lifetime of the stack frame
-    const char *className;
-    const char *functionName;
-    const char *fullName; // this is className.functionName - used for profiler
-    const char *fileName;
-    int firstLineNumber;
-
-    // These are only used if HXCPP_DEBUG_HASHES is defined
-    #ifdef HXCPP_DEBUG_HASHES
-    int fileHash;
-    int classFuncHash;
-    #else
-    enum { fileHash = 0, classFuncHash=0 };
-    #endif
-
-    inline StackPosition() { }
-
-    // The constructor automatically adds the StackFrame to the list of
-    // stack frames for the current thread
-    inline StackPosition(const char *inClassName, const char *inFunctionName,
-                         const char *inFullName, const char *inFileName
-                         #ifdef HXCPP_STACK_LINE
-                         , int inLineNumber
-                         #endif
-                         #ifdef HXCPP_DEBUG_HASHES
-                         ,int inClassFunctionHash, int inFileHash
-                         #endif
-                  )
-
-       : className(inClassName), functionName(inFunctionName)
-         ,fullName(inFullName), fileName(inFileName)
-         #ifdef HXCPP_DEBUG_HASHES
-         ,classFuncHash(inClassFunctionHash)
-         ,fileHash(inFileHash)
-         #endif
-         #ifdef HXCPP_STACK_LINE
-         ,firstLineNumber(inLineNumber)
-         #endif
-    {
-    }
-
-};
-
-
-class StackFrame
-{
-public:
-   const StackPosition *position;
-
-   #ifdef HXCPP_STACK_LINE
-      // Current line number, changes during the lifetime of the stack frame.
-      // Only updated if HXCPP_STACK_LINE is defined.
-      int lineNumber;
-
-      #ifdef HXCPP_STACK_VARS
-      // Function arguments and local variables in reverse order of their
-      // declaration.  If a variable name is in here twice, the first version is
-      // the most recently scoped one and should be used.  Only updated if
-      // HXCPP_STACK_VARS is defined.
-      StackVariable *variables;
-
-      // The list of types that can be currently caught in the stack frame.
-      StackCatchable *catchables;
-      #endif
-   #endif
-
-    #ifdef HXCPP_STACK_SCRIPTABLE
-    // Information about the current cppia function
-    ScriptStackFrame *scriptStackFrame;
-    #endif
-
-    // The constructor automatically adds the StackFrame to the list of
-    // stack frames for the current thread
-    inline StackFrame(const StackPosition *inPosition
-               #ifdef HXCPP_STACK_SCRIPTABLE
-               ,ScriptStackFrame *inScriptStackFrame = 0
-               #endif
-           ) : position(inPosition)
-    {
-       #ifdef HXCPP_STACK_LINE
-          lineNumber = inPosition->firstLineNumber;
-          #ifdef HXCPP_STACK_VARS
-          variables = 0;
-          catchables = 0;
-          #endif
-       #endif
-
-       #ifdef HXCPP_STACK_SCRIPTABLE
-       // Information about the current cppia function
-       scriptStackFrame = inScriptStackFrame;
-       #endif
-       __hxcpp_register_stack_frame(this);
-    }
-
-    // The destructor automatically removes the StackFrame from the list of
-    // stack frames for the current thread
-    ~StackFrame();
-
-    ::String toString();
-    ::String toDisplay();
-};
-
-template<typename T> struct StackVariableWrapper
-{
-   typedef T wrapper;
-};
-
-template<typename T> struct StackVariableWrapper<T *>
-{
-   typedef cpp::Pointer<T> wrapper;
-};
-
-
+#ifdef HXCPP_DEBUGGER
 class StackVariable
 {
 public:
@@ -351,7 +137,6 @@ public:
 };
 
 
-#ifdef HXCPP_STACK_VARS
 class StackCatchable
 {
 public:
@@ -388,184 +173,59 @@ private:
     StackFrame &mFrame;
     bool (*mTestFunction)(Dynamic e);
 };
-#endif
 
 
-extern volatile bool gShouldCallHandleBreakpoints;
+template<typename T> struct StackVariableWrapper
+{
+   typedef T wrapper;
+};
+
+template<typename T> struct StackVariableWrapper<T *>
+{
+   typedef cpp::Pointer<T> wrapper;
+};
 
 
-// Only if HXCPP_STACK_TRACE is defined do any of the stack trace macros
-// do anything
-#ifdef HXCPP_STACK_TRACE
 
-// Stack frames are always pushed if HXCPP_STACK_TRACE is enabled, hashes only if debugger is
-#ifdef HXCPP_STACK_LINE
-
-   #ifdef HXCPP_DEBUG_HASHES
-      #define HX_DEFINE_STACK_FRAME(varName, className, functionName, classFunctionHash, fullName,fileName,     \
-                          lineNumber, fileHash ) \
-       hx::StackPosition varName(className, functionName, fullName, fileName, lineNumber, \
-                                         classFunctionHash, fileHash);
-   #else
-      #define HX_DEFINE_STACK_FRAME(varName, className, functionName, fullName,fileName,     \
-                          lineNumber, classFunctionHash, fileHash );
-   #endif
-#else
-
-   #define HX_DEFINE_STACK_FRAME(varName, className, functionName, classFunctionHash, fullName,fileName,     \
-                       lineNumber, fileHash ) \
-    hx::StackPosition varName(className, functionName, fullName, fileName);
-
-#endif
-
-#define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash ) \
-   HX_DEFINE_STACK_FRAME(__stackPosition, className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash ) \
-   hx::StackFrame __stackframe(&__stackPosition);
-
-#define HX_STACKFRAME(pos) \
-   hx::StackFrame __stackframe(pos);
-
-
-// Emitted at the beginning of every instance fuction.  ptr is "this".
-// Only if stack variables are to be tracked
-#ifdef HXCPP_STACK_VARS
-#define HX_STACK_THIS(ptr) hx::StackThis __stackthis                    \
-     (__stackframe.variables, ptr);
-#endif // HXCPP_STACK_VARS
-
-// Emitted at the beginning of every function that takes arguments.
-// name is the name of the argument.  XXX NOTE - this macro needs to be
-// expanded to give a pointer to the value of the argument also, otherwise
-// there is no way to get the value ...
-// For the lifetime of this object, the argument will be in the [arguments]
-// list of the stack frame in which the arg was declared
-// Only if stack variables are to be tracked
-#ifdef HXCPP_STACK_VARS
-#define HX_STACK_ARG(cpp_var, haxe_name)                                \
-    hx::StackVariable __stackargument_##cpp_var                         \
-        (__stackframe.variables, true, haxe_name, &cpp_var);
-#endif // HXCPP_STACK_VARS
-
-// Emitted whenever a Haxe value is pushed on the stack.  cpp_var is the local
-// cpp variable, haxe_name is the name that was used in haxe for it
-// Only if stack variables are to be tracked
-#ifdef HXCPP_STACK_VARS
-#define HX_STACK_VAR(cpp_var, haxe_name)                                \
-    hx::StackVariable __stackvariable_##cpp_var                         \
-        (__stackframe.variables, false, haxe_name, &cpp_var);
-
-#define HX_VAR(type,name) type name; HX_STACK_VAR(name, #name)
-#define HX_VARI(type,name) type name; HX_STACK_VAR(name, #name) name
-#define HX_VAR_NAME(type,name,dbgName) type name; HX_STACK_VAR(name, dbgName)
-#define HX_VARI_NAME(type,name,dbgName) type name; HX_STACK_VAR(name, dbgName) name
-
-#endif // HXCPP_STACK_VARS
-
-// Emitted after every Haxe line.  number is the original Haxe line number.
-// Only if stack lines are to be tracked
-#ifdef HXCPP_STACK_LINE
-// If the debugger is enabled, must check for a breakpoint at every line.
-#ifdef HXCPP_DEBUGGER
-#define HX_STACK_LINE(number)                                           \
-    __stackframe.lineNumber = number;                                   \
-    /* This is incorrect - a read memory barrier is needed here. */     \
-    /* For now, just live with the exceedingly rare cases where */      \
-    /* breakpoints are missed */                                        \
-    if (hx::gShouldCallHandleBreakpoints) {                             \
-        __hxcpp_on_line_changed();                               \
-   }
-#else
-#define HX_STACK_LINE(number) __stackframe.lineNumber = number;
-#endif // HXCPP_DEBUGGER
-#endif // HXCPP_STACK_LINE
-
-// Emitted at the beginning of every try block
-// Catchables are only tracked if HXCPP_DEBUGGER is set, to enable
-// entering the debugger if an uncatchable throw occurs
-#ifdef HXCPP_DEBUGGER
-#define HX_STACK_CATCHABLE(T, n)                                        \
-    hx::StackCatchable __stackcatchable_##n                             \
-        (__stackframe, reinterpret_cast<T *>(&__stackframe));
 #endif // HXCPP_DEBUGGER
 
-
-// Emitted at the beginning of every catch block.  Used to build up the
-// catch stack.
-// Catches are always tracked if HXCPP_STACK_TRACE is enabled.
-#define HX_STACK_BEGIN_CATCH __hxcpp_stack_begin_catch();
-
-// If HXCPP_DEBUGGER is enabled, then a throw is checked to see if it
-// can be caught and if not, the debugger is entered.  Otherwise, the
-// throw proceeds as normal.
-#ifdef HXCPP_DEBUGGER
-#define HX_STACK_DO_THROW(e) __hxcpp_dbg_checkedThrow(e)
-#endif
-
-#endif // HXCPP_STACK_TRACE
-
-} // namespace hx
+} // end namespace hx
 
 
-// Define any macros not defined already above
-#ifndef HX_STACK_FRAME
-#define HX_STACK_FRAME(className, functionName, classFuncHash, fullName, fileName, lineNumber, fileHash )
-#endif
 
-#ifndef HX_STACK_THIS
-#define HX_STACK_THIS(ptr)
-#endif
+void __hxcpp_dbg_getScriptableFiles( Array< ::String> ioPaths );
+void __hxcpp_dbg_getScriptableFilesFullPath( Array< ::String> ioPaths );
+void __hxcpp_dbg_getScriptableClasses( Array< ::String> ioClasses );
 
-#ifndef HX_STACK_ARG
-#define HX_STACK_ARG(cpp_var, haxe_name)
-#endif
-
-#ifndef HX_DEFINE_STACK_FRAME
-#define HX_DEFINE_STACK_FRAME(__stackPosition, className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash )
-#endif
-
-#ifndef HX_STACKFRAME
-#define HX_STACKFRAME(pos)
-#endif
-
-
-#ifndef HX_STACK_VAR
-
-#define HX_STACK_VAR(cpp_var, haxe_name)
-#define HX_VAR(type,name) type name
-#define HX_VARI(type,name) type name
-#define HX_VAR_NAME(type,name,dbgName) type name
-#define HX_VARI_NAME(type,name,dbgName) type name
-
-#endif
-#ifndef HX_STACK_LINE
-#define HX_STACK_LINE(number)
-#endif
-#ifndef HX_STACK_CATCHABLE
-#define HX_STACK_CATCHABLE(T, n)
-#endif
-#ifndef HX_STACK_BEGIN_CATCH
-#define HX_STACK_BEGIN_CATCH
-#endif
-#ifndef HX_STACK_DO_THROW
-#define HX_STACK_DO_THROW(e) hx::Throw(e)
-#endif
-
-// For tidier generated code
-#define HXLINE(number) HX_STACK_LINE(number)
-#define HXDLIN(number) HX_STACK_LINE(number)
-
-// To support older versions of the haxe compiler that emit HX_STACK_PUSH
-// instead of HX_STACK_FRAME.  If the old haxe compiler is used with this
-// new debugger implementation, className.functionName breakpoints will
-// not work, and stack reporting will be a little weird.  If you want to
-// use debugging, you really should upgrade to a newer haxe compiler.
-
-#undef HX_STACK_PUSH
-#define HX_STACK_PUSH(fullName, fileName, lineNumber)                  \
-    HX_STACK_FRAME("", fullName, 0, fullName, fileName, lineNumber, 0)
 
 
 #ifdef HXCPP_DEBUGGER
+
+
+namespace hx
+{
+
+// These must match the values present in cpp.vm.Debugger
+
+enum ThreadEvent
+{
+    THREAD_CREATED = 1,
+    THREAD_TERMINATED = 2,
+    THREAD_STARTED = 3,
+    THREAD_STOPPED = 4
+};
+
+enum StepType
+{
+    STEP_NONE = 0, // Not present or needed in cpp.vm.Debugger
+    STEP_INTO = 1,
+    STEP_OVER = 2,
+    STEP_OUT = 3
+};
+
+
+}  // end namespace hx
+
 
 // The following functions are called directly, and only, by the haxe standard
 // library's cpp.vm.Debugger.hx class
@@ -607,6 +267,8 @@ void __hxcpp_dbg_setNewStackFrameFunction(Dynamic function);
 void __hxcpp_dbg_setNewThreadInfoFunction(Dynamic function);
 void __hxcpp_dbg_setAddParameterToStackFrameFunction(Dynamic function);
 void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic function);
+
+bool __hxcpp_dbg_fix_critical_error(String inErr);
 
 // The following functions are called by Thread.cpp to notify of thread
 // created and terminated
@@ -664,10 +326,6 @@ inline void __hxcpp_dbg_threadCreatedOrTerminated(int, bool) { }
 inline Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow) { return hx::Throw(toThrow); }
 
 #endif // HXCPP_DEBUGGER
-
-void __hxcpp_dbg_getScriptableFiles( Array< ::String> ioPaths );
-void __hxcpp_dbg_getScriptableFilesFullPath( Array< ::String> ioPaths );
-void __hxcpp_dbg_getScriptableClasses( Array< ::String> ioClasses );
 
 
 #endif // HX_DEBUG_H

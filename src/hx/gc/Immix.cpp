@@ -44,7 +44,7 @@ enum { gAlwaysMove = false };
 #include <vector>
 #include <stdio.h>
 
-#include "../QuickVec.h"
+#include <hx/QuickVec.h>
 
 // #define HXCPP_GC_BIG_BLOCKS
 
@@ -174,7 +174,7 @@ int gPauseForCollect = 0x00000000;
 
 bool gMultiThreadMode = false;
 
-ImmixAllocator *gMainThreadAlloc = 0;
+StackContext *gMainThreadContext = 0;
 
 unsigned int gImmixStartFlag[128];
 
@@ -184,7 +184,7 @@ int gMarkIDWithContainer = (0x10 << 24) | IMMIX_ALLOC_IS_CONTAINER;
 void ExitGCFreeZoneLocked();
 
 
-DECLARE_FAST_TLS_DATA(ImmixAllocator, tlsImmixAllocator);
+DECLARE_FAST_TLS_DATA(StackContext, tlsStackContext);
 
 #ifdef HXCPP_SCRIPTABLE
 extern void scriptMarkStack(hx::MarkContext *);
@@ -2291,6 +2291,7 @@ public:
       //  on us - ie, we are assumed ot be in a GC free zone.
       AutoLock lock(*gThreadStateChangeLock);
       mLocalAllocs.push(inAlloc);
+      // TODO Attach debugger
    }
 
    bool ReturnToPool(LocalAllocator *inAlloc)
@@ -2330,6 +2331,7 @@ public:
       // You should be in the GC free zone before you call this...
       AutoLock lock(*gThreadStateChangeLock);
       mLocalAllocs.qerase_val(inAlloc);
+      // TODO detach debugger
    }
 
    void *AllocLarge(int inSize, bool inClear)
@@ -3343,7 +3345,7 @@ public:
       LocalAllocator *this_local = 0;
       if (hx::gMultiThreadMode)
       {
-         this_local = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
+         this_local = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsStackContext;
 
          if (!inLocked)
             gThreadStateChangeLock->Lock();
@@ -3794,7 +3796,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 // One per thread ...
 
 static int sLocalAllocatorCount = 0;
-class LocalAllocator : public hx::ImmixAllocator
+class LocalAllocator : public hx::StackContext
 {
 public:
    LocalAllocator(int *inTopOfStack=0)
@@ -3809,13 +3811,16 @@ public:
       #ifdef HX_WINDOWS
       mID = GetCurrentThreadId();
       #endif
+
+      onThreadAttach();
    }
 
    ~LocalAllocator()
    {
       EnterGCFreeZone();
+      onThreadDetach();
       sGlobalAlloc->RemoveLocal(this);
-      hx::tlsImmixAllocator = 0;
+      hx::tlsStackContext = 0;
 
       sLocalAllocatorCount--;
    }
@@ -3832,6 +3837,7 @@ public:
       // It is in the free zone - wait for 'SetTopOfStack' to activate
       mGCFreeZone = true;
       mReadyForCollect.Set();
+      onThreadAttach();
    }
 
    void ReturnToPool()
@@ -3839,9 +3845,10 @@ public:
       #ifdef HX_WINDOWS
       mID = 0;
       #endif
+      onThreadDetach();
       if (!sGlobalAlloc->ReturnToPool(this))
          delete this;
-      hx::tlsImmixAllocator = 0;
+      hx::tlsStackContext = 0;
    }
 
    void Reset()
@@ -4136,19 +4143,19 @@ inline LocalAllocator *GetLocalAlloc(bool inAllowEmpty=false)
    if (hx::gMultiThreadMode)
    {
       #ifdef HXCPP_DEBUG
-      LocalAllocator *result = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
+      LocalAllocator *result = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsStackContext;
       if (!result && !inAllowEmpty)
       {
          hx::BadImmixAlloc();
       }
       return result;
       #else
-      return (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsImmixAllocator;
+      return (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsStackContext;
       #endif
    }
    #endif
 
-   return (LocalAllocator *)hx::gMainThreadAlloc;
+   return (LocalAllocator *)hx::gMainThreadContext;
 }
 
 void WaitForSafe(LocalAllocator *inAlloc)
@@ -4223,8 +4230,8 @@ void InitAlloc()
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
    //GCLOG("__root pointer %p\n", sgObject_root);
-   gMainThreadAlloc =  new LocalAllocator();
-   tlsImmixAllocator = gMainThreadAlloc;
+   gMainThreadContext =  new LocalAllocator();
+   tlsStackContext = gMainThreadContext;
    for(int i=0;i<IMMIX_LINE_LEN;i++)
       gImmixStartFlag[i] = 1<<( i>>2 ) ;
 }
@@ -4245,7 +4252,7 @@ void SetTopOfStack(int *inTop,bool inForce)
          InitAlloc();
       else
       {
-         if (tlsImmixAllocator==0)
+         if (tlsStackContext==0)
          {
             GCPrepareMultiThreaded();
             RegisterCurrentThread(inTop);
@@ -4253,7 +4260,7 @@ void SetTopOfStack(int *inTop,bool inForce)
       }
    }
 
-   LocalAllocator *tla = (LocalAllocator *)(hx::ImmixAllocator *)tlsImmixAllocator;
+   LocalAllocator *tla = (LocalAllocator *)(hx::ImmixAllocator *)tlsStackContext;
 
    if (tla)
       tla->SetTopOfStack(inTop,inForce);
@@ -4394,12 +4401,12 @@ void RegisterCurrentThread(void *inTopOfStack)
    {
       local->AttachThread((int *)inTopOfStack);
    }
-   tlsImmixAllocator = local;
+   tlsStackContext = local;
 }
 
 void UnregisterCurrentThread()
 {
-   LocalAllocator *local = (LocalAllocator *)(hx::ImmixAllocator *)tlsImmixAllocator;
+   LocalAllocator *local = (LocalAllocator *)(hx::ImmixAllocator *)tlsStackContext;
    delete local;
 }
 
@@ -4418,7 +4425,7 @@ void PushTopOfStack(void *inTop)
       InitAlloc();
    else
    {
-      if (tlsImmixAllocator==0)
+      if (tlsStackContext==0)
       {
          GCPrepareMultiThreaded();
          RegisterCurrentThread(inTop);

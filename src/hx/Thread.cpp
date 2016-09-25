@@ -245,7 +245,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 	info[0]->mSemaphore->Set();
 
     // Call the debugger function to annouce that a thread has been created
-    __hxcpp_dbg_threadCreatedOrTerminated(info[0]->GetThreadNumber(), true);
+    //__hxcpp_dbg_threadCreatedOrTerminated(info[0]->GetThreadNumber(), true);
 
 	if ( info[0]->mFunction.GetPtr() )
 	{
@@ -254,7 +254,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 	}
 
     // Call the debugger function to annouce that a thread has terminated
-    __hxcpp_dbg_threadCreatedOrTerminated(info[0]->GetThreadNumber(), false);
+    //__hxcpp_dbg_threadCreatedOrTerminated(info[0]->GetThreadNumber(), false);
 
 	hx::UnregisterCurrentThread();
 

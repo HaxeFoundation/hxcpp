@@ -9,6 +9,7 @@
  <flag value="-DHXCPP_CHECK_POINTER" if="HXCPP_CHECK_POINTER" tag="haxe" />
  <flag value="-DHXCPP_STACK_TRACE" if="HXCPP_STACK_TRACE" tag="haxe" />
  <flag value="-DHXCPP_TELEMETRY" if="HXCPP_TELEMETRY" tag="haxe" />
+ <flag value="-DHXCPP_PROFILER" if="HXCPP_PROFILER" tag="haxe" />
  <flag value="-DHXCPP_PROFILE_EXTERNS" if="HXCPP_PROFILE_EXTERNS" tag="debug" />
  <flag value="-DHXCPP_STACK_LINE" if="HXCPP_STACK_LINE" tag="haxe" />
  <flag value="-DHXCPP_STACK_VARS" if="HXCPP_STACK_VARS" tag="haxe" />

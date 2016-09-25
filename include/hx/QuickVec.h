@@ -1,4 +1,5 @@
 #ifndef HX_QUICKVEC_INCLUDED
+#define HX_QUICKVEC_INCLUDED
 
 #include <stdlib.h>
 
@@ -27,6 +28,8 @@ struct QuickVec
       }
       mSize = inSize;
    }
+   inline void pop_back() { --mSize; }
+   inline T &back() { return mPtr[mSize-1]; }
    inline T pop()
    {
       return mPtr[--mSize];
@@ -69,6 +72,7 @@ struct QuickVec
    }
    inline int size() const { return mSize; }
    inline T &operator[](int inIndex) { return mPtr[inIndex]; }
+   inline const T &operator[](int inIndex) const { return mPtr[inIndex]; }
 
    int mAlloc;
    int mSize;

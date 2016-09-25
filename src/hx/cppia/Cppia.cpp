@@ -490,10 +490,6 @@ struct ScriptCallable : public CppiaDynamicExpr
             initVals[a].fromStream(stream);
       }
       body = createCppiaExpr(stream);
-      #ifdef HXCPP_DEBUGGER
-      classFunctionHash = 0;
-      fileHash = 0;
-      #endif
    }
 
    ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
@@ -545,7 +541,7 @@ struct ScriptCallable : public CppiaDynamicExpr
       position.fileName = filename;
       position.fullName = filename;
 
-      #ifdef HXCPP_DEBUG_HASHES
+      #ifdef HXCPP_DEBUGGER
       position.fileHash = Hash(0,filename);
       int hash = Hash(0,className);
       hash = Hash(hash,".");
@@ -8394,30 +8390,33 @@ void *hx::Object::_hx_getInterface(int inId)
 }
 #endif
 
+
+} // end namespace hx
+
+
+
 #ifdef HXCPP_STACK_SCRIPTABLE
-void __hxcpp_dbg_getScriptableVariables(ScriptStackFrame *inFrame, ::Array<Dynamic> outNames)
+
+void __hxcpp_dbg_getScriptableVariables(hx::ScriptStackFrame *inFrame, ::Array<Dynamic> outNames)
 {
    inFrame->callable->getScriptableVariables(inFrame->frame, outNames);
 }
 
-bool __hxcpp_dbg_getScriptableValue(ScriptStackFrame *inFrame, String inName, ::Dynamic &outValue)
+bool __hxcpp_dbg_getScriptableValue(hx::ScriptStackFrame *inFrame, String inName, ::Dynamic &outValue)
 {
    return inFrame->callable->getScriptableValue(inFrame->frame, inName, outValue);
 }
 
 
-bool __hxcpp_dbg_setScriptableValue(ScriptStackFrame *inFrame, String inName, ::Dynamic inValue)
+bool __hxcpp_dbg_setScriptableValue(hx::ScriptStackFrame *inFrame, String inName, ::Dynamic inValue)
 {
    return inFrame->callable->setScriptableValue(inFrame->frame, inName, inValue);
 }
-
-
 
 #endif
 
 
 
-} // end namespace hx
 
 
 #ifdef HXCPP_DEBUGGER
@@ -8447,9 +8446,6 @@ void __hxcpp_dbg_getScriptableClasses( Array< ::String> ioClasses )
             ioClasses->push( merge[i] );
       }
 }
-
-
-
 
 #endif
 

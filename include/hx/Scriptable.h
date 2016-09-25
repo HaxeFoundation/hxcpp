@@ -64,6 +64,7 @@ struct CppiaCtx
    unsigned char *pointer;
    unsigned char *frame;
    class Object  *exception;
+   hx::StackContext *stackContext;
 
    jmp_buf *returnJumpBuf;
    jmp_buf *loopJumpBuf;

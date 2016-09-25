@@ -442,8 +442,14 @@ public:
 
 
 #ifdef HXCPP_STACK_LINE
-   #define CPPIA_STACK_LINE(expr) \
-          __hxcpp_set_stack_frame_line(expr->line);
+   #ifdef HXCPP_DEBUGGER
+      #define CPPIA_STACK_LINE(expr) \
+          ctx->stackContext->getCurrentStackFrame()->lineNumber = expr->line; \
+          if (hx::gShouldCallHandleBreakpoints) \
+              __hxcpp_on_line_changed(ctx->stackContext);
+   #else
+      #define CPPIA_STACK_LINE(expr) ctx->stackContext->getCurrentStackFrame()->lineNumber = expr->line;
+   #endif
 #else
    #define CPPIA_STACK_LINE(expr)
 #endif

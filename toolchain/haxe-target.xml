@@ -23,7 +23,9 @@
   <depend name="${HXCPP}/include/null.h"/>
   <depend name="${HXCPP}/include/hx/Class.h"/>
   <depend name="${HXCPP}/include/Enum.h"/>
+  <depend name="${HXCPP}/include/hx/StackContext.h"/>
   <depend name="${HXCPP}/include/hx/Debug.h"/>
+  <depend name="${HXCPP}/include/hx/QuickVec.h"/>
   <depend name="${HXCPP}/include/hx/Telemetry.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
   <depend name="${HXCPP}/include/hx/Anon.h"/>
@@ -137,6 +139,9 @@
   <file name = "src/hx/Object.cpp"/>
   <file name = "src/hx/StdLibs.cpp" tags="haxe,static" />
   <file name = "src/hx/Debug.cpp"/>
+  <file name = "src/hx/Debugger.cpp" if="HXCPP_DEBUGGER" />
+  <file name = "src/hx/Telemetry.cpp" if="HXCPP_TELEMETRY" />
+  <file name = "src/hx/Profiler.cpp" if="HXCPP_PROFILER" />
   <file name = "src/hx/Thread.cpp"/>
   <file name = "src/hx/RunLibs.cpp" if="static_link"/>
   <file name = "src/hx/AndroidCompat.cpp" if="android"/>

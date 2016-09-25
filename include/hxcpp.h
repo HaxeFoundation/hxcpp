@@ -229,6 +229,7 @@ namespace hx { class Object; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
 namespace hx { class NativeInterface; }
+namespace hx { class StackContext; }
 namespace hx { template<typename T> class Native; }
 namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
@@ -257,7 +258,7 @@ class String;
 
 // Use an external routine to throw to avoid sjlj overhead on iphone.
 namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic Throw(Dynamic inDynamic); }
-namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES void CriticalError(const String &inError); }
+namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES void CriticalError(const String &inError, bool inAllowFixup=false); }
 namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES void NullReference(const char *type, bool allowFixup); }
 namespace hx { extern String sNone[]; }
 void __hxcpp_check_overflow(int inVal);
@@ -311,6 +312,7 @@ typedef bool PropertyAccess;
 #include <cpp/Variant.h>
 #include <hx/ErrorCodes.h>
 #include <hx/GC.h>
+#include <hx/StackContext.h>
 #include "null.h"
 #include <hx/Object.h>
 #include "hxString.h"

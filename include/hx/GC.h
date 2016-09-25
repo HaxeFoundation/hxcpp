@@ -25,6 +25,10 @@
 
 // Function called by the haxe code...
 
+#ifdef HXCPP_TELEMETRY
+extern void __hxt_gc_new(hx::StackContext *inStack, void* obj, int inSize, const char *inName);
+#endif
+
 
 // Helpers for debugging code
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_reachable(hx::Object *inKeep);
@@ -274,7 +278,7 @@ namespace hx
 
 #define HX_USE_INLINE_IMMIX_OPERATOR_NEW
 
-#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  hx::gMultiThreadMode ? hx::tlsImmixAllocator : hx::gMainThreadAlloc;
+//#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  hx::gMultiThreadMode ? hx::tlsImmixAllocator : hx::gMainThreadAlloc;
 
 
 // Each line ast 128 bytes (2^7)
@@ -301,11 +305,12 @@ extern bool gMultiThreadMode;
 
 
 
-class ImmixAllocator;
+class StackContext;
 
-EXTERN_FAST_TLS_DATA(ImmixAllocator, tlsImmixAllocator);
+EXTERN_FAST_TLS_DATA(StackContext, tlsStackContext);
 
-extern ImmixAllocator *gMainThreadAlloc;
+extern StackContext *gMainThreadContext;
+
 extern unsigned int gImmixStartFlag[128];
 extern int gMarkID;
 extern int gMarkIDWithContainer;
@@ -363,7 +368,7 @@ public:
             #endif
 
             #ifdef HXCPP_TELEMETRY
-            __hxt_gc_new(buffer, inSize, inName);
+            __hxt_gc_new((hx::StackContext *)alloc,buffer, inSize, inName);
             #endif
             return buffer;
          }
@@ -373,7 +378,7 @@ public:
       void *result = alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
 
       #ifdef HXCPP_TELEMETRY
-         __hxt_gc_new(result, inSize, inName);
+         __hxt_gc_new((hx::StackContext *)alloc,result, inSize, inName);
       #endif
       return result;
    }
@@ -401,18 +406,6 @@ inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 
 
 } // end namespace hx
-
-
-
-#ifndef HX_STACK_CTX
-#define HX_STACK_CTX
-#endif
-
-
-
-
-
-
 
 
 
