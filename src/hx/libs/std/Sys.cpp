@@ -594,7 +594,7 @@ Array<String> _hx_std_sys_read_dir( String p )
          continue;
       hx::ExitGCFreeZone();
       result->push( String(e->d_name) );
-      hx::ExitGCFreeZone();
+      hx::EnterGCFreeZone();
    }
    closedir(d);
 #endif
