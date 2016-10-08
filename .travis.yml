@@ -34,7 +34,7 @@ install:
   # build haxe
   - git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe
   - pushd ~/haxe
-  - make OCAMLOPT=ocamlopt.opt ADD_REVISION=1 && sudo make install
+  - make OCAMLOPT=ocamlopt.opt ADD_REVISION=1 && sudo make install INSTALL_DIR=/usr/local
   - popd
   - haxe -version
   # setup haxelib
