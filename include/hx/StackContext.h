@@ -31,12 +31,12 @@
 // HX_GC_STACKFRAME(pos) - tracks position according to define, but is never optimized away
 // HX_JUST_GC_STACKFRAME - never tracks position, never optimized away
 
-
-
 // Setup the _hx_stackframe variable
 #ifdef HXCPP_STACK_TRACE
    // Setup the 'HX_DEFINE_STACK_FRAME' macro.
    // This will be empty, just track functions(release), track functions and lines(debug) or track everything (debugger)
+   #define HX_DECLARE_STACK_FRAME(name) extern ::hx::StackPosition name;
+
    #ifdef HXCPP_STACK_LINE
 
       #ifdef HXCPP_DEBUGGER
@@ -73,6 +73,7 @@
    #define HX_GC_CTX _hx_stackframe.ctx
 #else
    // No need to track frame
+   #define HX_DECLARE_STACK_FRAME(name)
    #define HX_STACK_BEGIN_CATCH
    #define HX_DEFINE_STACK_FRAME(__stackPosition, className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash )
    #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash )

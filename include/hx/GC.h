@@ -391,6 +391,8 @@ public:
    }
 };
 
+typedef ImmixAllocator GcAllocator;
+
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES extern unsigned int gPrevMarkIdMask;
 
