@@ -1068,6 +1068,9 @@ void GCCheckPointer(void *inPtr)
   #endif
 
    unsigned char&mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE];
+   #ifdef HXCPP_GC_NURSERY
+   if (mark)
+   #endif
    if ( !(mark & HX_GC_CONST_ALLOC_MARK_BIT) && mark!=gByteMarkID  )
    {
       GCLOG("Old object access %p\n", inPtr);
