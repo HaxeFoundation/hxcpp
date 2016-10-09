@@ -284,10 +284,11 @@ MID = ENDIAN_MARK_ID_BYTE = is measured from the object pointer
 // Used by strings
 // HX_GC_CONST_ALLOC_BIT  0x80000000
 
-#define IMMIX_ALLOC_MARK_ID     0x3f000000
-#define IMMIX_ALLOC_IS_PINNED   0x00400000
-#define IMMIX_ALLOC_SIZE_MASK   0x003fff00
-#define IMMIX_ALLOC_ROW_COUNT   0x000000ff
+#define IMMIX_ALLOC_MARK_ID          0x3f000000
+//#define IMMIX_ALLOC_IS_CONTAINER   0x00800000
+#define IMMIX_ALLOC_IS_PINNED        0x00400000
+#define IMMIX_ALLOC_SIZE_MASK        0x003fff00
+#define IMMIX_ALLOC_ROW_COUNT        0x000000ff
 
 
 #define IMMIX_OBJECT_HAS_MOVED 0x000000fe
@@ -752,8 +753,51 @@ struct BlockDataInfo
          return allocNone;
       }
 
-      if ( !( allocStart[r] & (1<<((inOffset>>2) & 31)) ) )
+      if ( !( allocStart[r] & hx::gImmixStartFlag[inOffset &127]) )
       {
+         #ifdef HXCPP_GC_NURSERY
+         // Find enclosing hole...
+         for(int h=0;h<mHoles;h++)
+         {
+            int scan = mRanges[h].start;
+            if (inOffset<scan)
+               break;
+            int size = 0;
+            int last = scan + mRanges[h].length;
+            if (inOffset<last)
+            {
+               while(scan<=inOffset)
+               {
+                  unsigned int header = *(unsigned int *)(mPtr->mRow[0]+scan);
+                  if (!(header & 0xff000000))
+                     size = header & 0x0000ffff;
+                  else
+                     size = (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT;
+
+                  if (!size || scan+size > last)
+                     return allocNone;
+
+                  if (inOffset==scan)
+                  {
+                     if (header & IMMIX_ALLOC_IS_CONTAINER)
+                     {
+                        // See if object::new has been called, but not constructed yet ...
+                        void **vtable = (void **)(mPtr->mRow[0] + scan + sizeof(int));
+                        if (vtable[0]==0)
+                        {
+                           // GCLOG("Partially constructed object.");
+                           return allocString;
+                        }
+                        return allocObject;
+                     }
+                     return allocString;
+                  }
+                  scan += size + 4;
+               }
+               break;
+            }
+         }
+         #endif
          // Not a actual start...
          return allocNone;
       }
@@ -761,6 +805,55 @@ struct BlockDataInfo
       return GetAllocTypeChecked(inOffset);
    }
 
+   inline AllocType GetEnclosingNurseryAllocType(int inOffset,void *&ioPtr)
+   {
+      #ifdef HXCPP_GC_NURSERY
+      // Find enclosing hole...
+      for(int h=0;h<mHoles;h++)
+      {
+         int scan = mRanges[h].start;
+         if (inOffset<scan)
+            break;
+         int size = 0;
+         int last = scan + mRanges[h].length;
+         if (inOffset<last)
+         {
+            while(scan<=inOffset)
+            {
+               unsigned int header = *(unsigned int *)(mPtr->mRow[0]+scan);
+               if (!(header & 0xff000000))
+                  size = header & 0x0000ffff;
+               else
+                  size = (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT;
+
+               if (!size || scan+size > last)
+                  return allocNone;
+
+               // inOffset is between scan and scan + size, and not too far from scan
+               if (size+scan>inOffset && inOffset-scan<=sgCheckInternalOffsetRows+sizeof(int))
+               {
+                  ioPtr = (void *)(mPtr->mRow[0] + scan + sizeof(int));
+                  if (header & IMMIX_ALLOC_IS_CONTAINER)
+                  {
+                     // See if object::new has been called, but not constructed yet ...
+                     void **vtable = (void **)ioPtr;
+                     if (vtable[0]==0)
+                     {
+                        // GCLOG("Partially constructed object.");
+                        return allocString;
+                     }
+                     return allocObject;
+                  }
+                  return allocString;
+               }
+               scan += size + 4;
+            }
+            break;
+         }
+      }
+      #endif
+      return allocNone;
+   }
 
    AllocType GetEnclosingAllocType(int inOffset,void *&ioPtr)
    {
@@ -769,7 +862,7 @@ struct BlockDataInfo
          return allocNone;
 
       // Normal, good alloc
-      int rowPos = 1<<((inOffset>>2) & 31);
+      int rowPos = hx::gImmixStartFlag[inOffset &127];
       if ( allocStart[r] & rowPos )
          return GetAllocTypeChecked(inOffset);
 
@@ -778,10 +871,11 @@ struct BlockDataInfo
       while(true)
       {
          offset -= 4;
-         if (offset<-sgCheckInternalOffset)
-            return allocNone;
+         if (offset<inOffset-sgCheckInternalOffset)
+            return GetEnclosingNurseryAllocType(inOffset, ioPtr);
 
          rowPos >>= 1;
+         // Not on this row
          if (!rowPos)
             break;
          if ( allocStart[r] & rowPos )
@@ -816,7 +910,7 @@ struct BlockDataInfo
                   int offset = (row<<IMMIX_LINE_BITS) + (bit<<2);
                   int delta =  inOffset-offset;
                   if (delta<-sgCheckInternalOffset)
-                     return allocNone;
+                     return GetEnclosingNurseryAllocType(inOffset, ioPtr);
                   AllocType result = GetAllocTypeChecked(offset);
                   if (result!=allocNone)
                   {
@@ -829,13 +923,13 @@ struct BlockDataInfo
                      }
                   }
                   // Found closest, but no good
-                  return allocNone;
+                  return GetEnclosingNurseryAllocType(inOffset, ioPtr);
                }
          }
       }
 
       // No start in range ...
-      return allocNone;
+      return GetEnclosingNurseryAllocType(inOffset, ioPtr);
    }
 
 
@@ -923,35 +1017,6 @@ bool SortMoveOrder(BlockDataInfo *inA, BlockDataInfo *inB)
    return inA->mMoveScore > inB->mMoveScore;
 }
 
-
-#define MARK_ROWS_UNCHECKED_BEGIN \
-   ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE] = gByteMarkID; \
-   size_t ptr_i = ((size_t)inPtr)-sizeof(int); \
-   unsigned int flags =  *((unsigned int *)ptr_i); \
- \
-   int rows = flags & IMMIX_ALLOC_ROW_COUNT; \
-   if (rows) \
-   { \
-      char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK); \
-      char *rowMark = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS); \
-      *rowMark = 1;\
-      if (rows>1) \
-      { \
-         rowMark[1] = 1; \
-         if (rows>2) \
-         { \
-            rowMark[2] = 1; \
-            if (rows>3) \
-            { \
-               rowMark[3] = 1; \
-               for(int r=4; r<rows; r++) \
-                  rowMark[r]=1; \
-            } \
-         } \
-      }
-
-#define MARK_ROWS_UNCHECKED_END \
-    }
 
 namespace hx
 {
@@ -1462,17 +1527,38 @@ struct AutoMarkPush
 
 void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
 {
-   // MARK_ROWS_UNCHECKED_BEGIN
-  ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE] = gByteMarkID;
    size_t ptr_i = ((size_t)inPtr)-sizeof(int);
    unsigned int flags =  *((unsigned int *)ptr_i);
+
+   #ifdef HXCPP_GC_NURSERY
+   if (!(flags & 0xff000000))
+   {
+      int size = flags & 0xffff;
+      int start = (int)(ptr_i & IMMIX_BLOCK_OFFSET_MASK);
+      int startRow = start>>IMMIX_LINE_BITS;
+      int blockId = *(BlockIdType *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
+      BlockDataInfo *info = (*gBlockInfo)[blockId];
+
+      int endRow = (start + size + sizeof(int) + IMMIX_LINE_LEN-1)>>IMMIX_LINE_BITS;
+      *(unsigned int *)ptr_i = flags = (flags & IMMIX_ALLOC_IS_CONTAINER) |
+                                       (endRow -startRow) |
+                                       (size<<IMMIX_ALLOC_SIZE_SHIFT) |
+                                       gMarkID;
+
+      unsigned int *pos = info->allocStart + startRow;
+      unsigned int val = *pos;
+      while(!HxAtomicExchangeIf(val,val|gImmixStartFlag[start&127], (volatile int *)pos))
+         val = *pos;
+   }
+   else
+   #endif
+      ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE] = gByteMarkID;
 
    int rows = flags & IMMIX_ALLOC_ROW_COUNT;
    if (rows)
    {
-      #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
-      // This indicates a pointer to a moved object
-      if (rows>250) *(int *)0=0;
+      #if HXCPP_GC_DEBUG_LEVEL>0
+      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) *(int *)0=0;
       #endif
 
       char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
@@ -1499,19 +1585,39 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
 
 void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
 {
-   // MARK_ROWS_UNCHECKED_BEGIN
-   ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE] = gByteMarkID;
    size_t ptr_i = ((size_t)inPtr)-sizeof(int);
    unsigned int flags =  *((unsigned int *)ptr_i);
+   #ifdef HXCPP_GC_NURSERY
+   if (!(flags & 0xff000000))
+   {
+      int size = flags & 0xffff;
+      int start = (int)(ptr_i & IMMIX_BLOCK_OFFSET_MASK);
+      int startRow = start>>IMMIX_LINE_BITS;
+      int blockId = *(BlockIdType *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
+      BlockDataInfo *info = (*gBlockInfo)[blockId];
+
+      int endRow = (start + size + sizeof(int) + IMMIX_LINE_LEN-1)>>IMMIX_LINE_BITS;
+      *(unsigned int *)ptr_i = flags = (flags & IMMIX_ALLOC_IS_CONTAINER) |
+                                       (endRow -startRow) |
+                                       (size<<IMMIX_ALLOC_SIZE_SHIFT) |
+                                       gMarkID;
+
+      unsigned int *pos = info->allocStart + startRow;
+      unsigned int val = *pos;
+      while(!HxAtomicExchangeIf(val,val|gImmixStartFlag[start&127], (volatile int *)pos))
+         val = *pos;
+   }
+   else
+   #endif
+      ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE] = gByteMarkID;
 
    int rows = flags & IMMIX_ALLOC_ROW_COUNT;
    if (rows)
    {
       char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
       char *rowMark = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS);
-      #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
-      // This indicates a pointer to a moved object
-      if (rows>250) *(int *)0=0;
+      #if HXCPP_GC_DEBUG_LEVEL>0
+      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) *(int *)0=0;
       #endif
 
       *rowMark = 1;
@@ -4027,6 +4133,10 @@ public:
       enum { skip4 = 0 };
       #endif
 
+      #if HXCPP_GC_DEBUG_LEVEL>0
+      if (inSize & 3) *(int *)0=0;
+      #endif
+
       while(1)
       {
          int end = spaceStart + allocSize + skip4;
@@ -4036,22 +4146,29 @@ public:
             spaceStart += skip4;
             #endif
 
+            unsigned int *buffer = (unsigned int *)(allocBase + spaceStart);
+
+            #ifdef HXCPP_GC_NURSERY
+            *buffer++ = inSize | inObjectFlags;
+            #else
+
             int startRow = spaceStart>>IMMIX_LINE_BITS;
             allocStartFlags[ startRow ] |= hx::gImmixStartFlag[spaceStart &127];
 
             int endRow = (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS;
 
-            unsigned char *buffer = allocBase + spaceStart;
-            *(unsigned int *)(buffer) = inObjectFlags | hx::gMarkID |
+            *buffer++ = inObjectFlags | hx::gMarkID |
                   (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
+
+            #endif
 
             spaceStart = end;
 
             #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
-            hx::GCOnNewPointer(buffer+sizeof(int));
+            hx::GCOnNewPointer(buffer);
             #endif
 
-            return buffer + sizeof(int);
+            return buffer;
          }
          else if (mMoreHoles)
          {
@@ -4331,6 +4448,20 @@ inline unsigned int ObjectSize(void *inData)
              ((unsigned int *)(inData))[-2];
 }
 
+
+inline unsigned int ObjectSizeSafe(void *inData)
+{
+   unsigned int header = ((unsigned int *)(inData))[-1];
+   #ifdef HXCPP_GC_NURSERY
+   if (!(header & 0xff000000))
+      return header & 0x0000ffff;
+   #endif
+
+   return (header & IMMIX_ALLOC_ROW_COUNT) ?
+            ( (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT) :
+             ((unsigned int *)(inData))[-2];
+}
+
 void GCChangeManagedMemory(int inDelta, const char *inWhy)
 {
    sGlobalAlloc->onMemoryChange(inDelta, inWhy);
@@ -4353,7 +4484,7 @@ void *InternalRealloc(void *inData,int inSize)
    sgAllocsSinceLastSpam++;
    #endif
 
-   unsigned int s = ObjectSize(inData);
+   unsigned int s = ObjectSizeSafe(inData);
 
    void *new_data = 0;
 

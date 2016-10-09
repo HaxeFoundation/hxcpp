@@ -270,7 +270,6 @@ void GCPrepareMultiThreaded();
 } // end namespace hx
 
 
-
 // Inline code tied to the immix implementation
 
 namespace hx
@@ -347,12 +346,19 @@ public:
          {
             alloc->spaceStart = end;
 
+            unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
+
+            #ifdef HXCPP_GC_NURSERY
+            if (inContainer)
+               *buffer++ = inSize | IMMIX_ALLOC_IS_CONTAINER;
+            else
+               *buffer++ = inSize;
+            #else
             int startRow = start>>IMMIX_LINE_BITS;
 
             alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
             //alloc->allocBase[ startRow ] |= (1<<( (start>>2) & 31) );
 
-            unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
 
             if (inContainer)
                *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
@@ -362,6 +368,7 @@ public:
                *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
                             (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
                             hx::gMarkID;
+            #endif
 
             #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
             hx::GCOnNewPointer(buffer);
