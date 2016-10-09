@@ -40,6 +40,7 @@ install:
   # setup haxelib
   - mkdir ~/haxelib && haxelib setup ~/haxelib
   - haxelib dev hxcpp $TRAVIS_BUILD_DIR
+  - haxelib install record-macros
 
 env:
   - HXCPP_COMPILE_CACHE=~/hxcache
