@@ -39,6 +39,7 @@ install:
     - cd %APPVEYOR_BUILD_FOLDER%
     - mkdir "%HAXELIB_ROOT%"
     - haxelib setup "%HAXELIB_ROOT%"
+    - haxelib install record-macros
 
 build_script:
     - haxelib dev hxcpp %APPVEYOR_BUILD_FOLDER%

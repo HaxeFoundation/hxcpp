@@ -45,6 +45,14 @@ class RunTests
       command("haxe", ["--run","MkOps.hx"] );
    }
 
+   public static function native()
+   {
+      setDir("native");
+
+      command("haxe", ["compile.hxml"] );
+      command("bin" + sep + "Native",[]);
+   }
+
    public static function std32()
    {
       setDir("std");
@@ -142,6 +150,7 @@ class RunTests
       run("haxe", runHaxe);
       run("std32", std32);
       run("std64", std64);
+      run("native", native);
 
       Sys.println("");
 
