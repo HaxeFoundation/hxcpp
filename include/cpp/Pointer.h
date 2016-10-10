@@ -210,6 +210,10 @@ public:
    inline Pointer( const Pointer &inRHS ) : ptr(inRHS.ptr) {  }
    inline Pointer( const Dynamic &inRHS) { ptr = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
    inline Pointer( const null &inRHS ) : ptr(0) { }
+   inline Pointer( const cpp::Variant &inVariant ) {
+      hx::Object *obj = inVariant.asObject();
+      ptr = obj  ? (T*)inVariant.valObject->__GetHandle() : 0;
+   }
 
    template<typename O>
    inline Pointer( const O *inValue ) : ptr( (T*) inValue) { }
@@ -377,10 +381,10 @@ public:
    inline Reference( const T &inRHS ) : Pointer<T>(&inRHS) {  }
    inline Reference( T &inRHS ) : Pointer<T>(&inRHS) {  }
 
-   inline Reference( ) : Pointer<T>(0) { }
+   inline Reference( ) : Pointer<T>((T*)0) { }
    inline Reference( const Reference &inRHS ) : Pointer<T>(inRHS.ptr) {  }
    inline Reference( const Dynamic &inRHS) { ptr = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
-   inline Reference( const null &inRHS ) : Pointer<T>(0) { }
+   inline Reference( const null &inRHS ) : Pointer<T>((T*)0) { }
    inline Reference( const T *inValue ) : Pointer<T>( (T*) inValue) { }
    //inline Reference( T *inValue ) : Pointer(inValue) { }
    inline Reference( AutoCast inValue ) : Pointer<T>( (T*)inValue.value) { }

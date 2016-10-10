@@ -166,6 +166,35 @@ class TestPtr extends haxe.unit.TestCase{
 
    }
 
+     private static var output:cpp.Pointer<Array<Int>>;
+     private static function makeValue():{ a:cpp.Pointer<Array<Int>> } return { a: cpp.Pointer.addressOf([9]) };
+
+     @:analyzer(no_fusion)
+     public function testDynamicOutput()
+     {
+       // Declared as structure (just `var val = ...` works too)
+       var val:{ a:cpp.Pointer<Array<Int>> } = makeValue();
+
+       var a:cpp.Pointer<Array<Int>> = val.a;
+       output = a;
+       output = (val.a:Dynamic);
+       output = val.a;
+       output = (val.a:cpp.Pointer<Array<Int>>);
+       val.a = output;
+
+       // Declared as Dynamic
+       var val2:Dynamic = makeValue();
+       a = val2.a;
+       output = a;
+       output = (val2.a:Dynamic);
+       output = val2.a;
+       output = (val2.a:cpp.Pointer<Array<Int>>);
+       val2.a = output;
+       assertTrue( val2.a==output );
+       assertTrue( output==val.a );
+     }
+
+
 
    public function testAutoCast() {
        var z = [ 1, 2, 3 ];
