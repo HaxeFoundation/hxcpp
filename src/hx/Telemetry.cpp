@@ -572,57 +572,57 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
     alloc_mutex.Unlock();
 }
 
+} // end namespace hx
 
 // These globals are called by HXTelemetry.hx
 
-  int __hxcpp_hxt_start_telemetry(bool profiler, bool allocations)
-  {
-  #ifdef HXCPP_STACK_TRACE
-     hx::StackContext *stack = hx::StackContext::getCurrent();
-     delete stack->mTelemetry;
-     stack->mTelemetry = new Telemetry(stack, profiler, allocations);
-     return stack->mThreadId;
-  #else
-    return 0;
-  #endif
-  }
+int __hxcpp_hxt_start_telemetry(bool profiler, bool allocations)
+{
+#ifdef HXCPP_STACK_TRACE
+  hx::StackContext *stack = hx::StackContext::getCurrent();
+  delete stack->mTelemetry;
+  stack->mTelemetry = new hx::Telemetry(stack, profiler, allocations);
+  return stack->mThreadId;
+#else
+ return 0;
+#endif
+}
 
-  void __hxcpp_hxt_stash_telemetry()
-  {
-  #ifdef HXCPP_STACK_TRACE
-    // Operates on the current thread, no mutexes needed
-     hx::StackContext *stack = hx::StackContext::getCurrent();
-     if (stack->mTelemetry)
-        stack->mTelemetry->Stash();
-  #endif
-  }
+void __hxcpp_hxt_stash_telemetry()
+{
+#ifdef HXCPP_STACK_TRACE
+ // Operates on the current thread, no mutexes needed
+  hx::StackContext *stack = hx::StackContext::getCurrent();
+  if (stack->mTelemetry)
+     stack->mTelemetry->Stash();
+#endif
+}
 
-  // Operates on the socket writer thread
-  TelemetryFrame* __hxcpp_hxt_dump_telemetry(int thread_num)
-  {
-  #ifdef HXCPP_STACK_TRACE
-     hx::StackContext *stack = hx::StackContext::getStackForId(thread_num);
-     if (!stack || !stack->mTelemetry)
-        return 0;
-     return stack->mTelemetry->Dump();
-  #else
-    return 0;
-  #endif
-  }
+// Operates on the socket writer thread
+TelemetryFrame* __hxcpp_hxt_dump_telemetry(int thread_num)
+{
+#ifdef HXCPP_STACK_TRACE
+  hx::StackContext *stack = hx::StackContext::getStackForId(thread_num);
+  if (!stack || !stack->mTelemetry)
+     return 0;
+  return stack->mTelemetry->Dump();
+#else
+ return 0;
+#endif
+}
 
-  void __hxcpp_hxt_ignore_allocs(int delta)
-  {
-  #ifdef HXCPP_STACK_TRACE
-      hx::StackContext *stack = hx::StackContext::getCurrent();
-      if (stack->mTelemetry)
-         stack->mTelemetry->IgnoreAllocs(delta);
-  #endif
-  }
+void __hxcpp_hxt_ignore_allocs(int delta)
+{
+#ifdef HXCPP_STACK_TRACE
+   hx::StackContext *stack = hx::StackContext::getCurrent();
+   if (stack->mTelemetry)
+      stack->mTelemetry->IgnoreAllocs(delta);
+#endif
+}
 
 
 // These globals are called by other cpp files
 
-} // end namespace hx
 
 
 
