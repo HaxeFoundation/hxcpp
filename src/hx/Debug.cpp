@@ -116,17 +116,28 @@ String FormatStack(const char *file, const char *clazz, const char *func, int li
    char buf[1024];
    if (!file || file[0]=='?')
    {
-       snprintf(buf, sizeof(buf), display ? "%s::%s" : "%s::%s::%d", clazz, func,line);
+       if (display)
+          snprintf(buf, sizeof(buf), "%s::%s", clazz, func);
+       else
+          snprintf(buf, sizeof(buf), "%s::%s::%d", clazz, func,line);
    }
    else
    {
       // Old-style combined file::class...
       if (!clazz || !clazz[0])
-          snprintf(buf, sizeof(buf), display ? (line>0 ? "%s %s line %d" : "%s %s") : "%s::%s::%d",
-                 func, file, line);
+      {
+          if (line>0 || !display)
+             snprintf(buf, sizeof(buf), display ? "%s %s line %d" : "%s::%s::%d", func, file, line);
+          else
+             snprintf(buf, sizeof(buf), "%s %s", func, file);
+      }
       else
-          snprintf(buf, sizeof(buf), display ? (line>0 ? "%s::%s %s line %d" : "%s::%s %s)") : "%s::%s::%s::%d",
-                clazz, func, file, line);
+      {
+          if (line>0 || !display)
+             snprintf(buf, sizeof(buf), display ? "%s::%s %s line %d" : "%s::%s::%s::%d", clazz, func, file, line);
+          else
+             snprintf(buf, sizeof(buf), "%s::%s %s", clazz, func, file);
+      }
    }
    return ::String(buf);
 }
