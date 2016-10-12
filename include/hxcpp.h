@@ -280,7 +280,7 @@ typedef ::cpp::Variant Val;
 typedef ::Dynamic Val;
 #endif
 
-#define HXCPP_GC_NURSERY
+//#define HXCPP_GC_NURSERY
 
 #if (HXCPP_API_LEVEL >= 313)
 enum PropertyAccessMode
