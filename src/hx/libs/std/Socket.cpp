@@ -465,6 +465,8 @@ static Array<Dynamic> make_array_result( Array<Dynamic> a, fd_set *tmp )
 {
    if (!tmp)
       return null();
+   if (a==0)
+      return null();
 
    int len = a->length;
    Array<Dynamic> r = Array_obj<Dynamic>::__new();
