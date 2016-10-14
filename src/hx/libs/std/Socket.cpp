@@ -463,7 +463,7 @@ static fd_set *make_socket_array( Array<Dynamic> a, fd_set *tmp, SOCKET *n )
 
 static Array<Dynamic> make_array_result( Array<Dynamic> a, fd_set *tmp )
 {
-   if (!tmp)
+   if (!tmp || !a.mPtr)
       return null();
 
    int len = a->length;
@@ -479,6 +479,9 @@ static Array<Dynamic> make_array_result( Array<Dynamic> a, fd_set *tmp )
 
 static void make_array_result_inplace(Array<Dynamic> a, fd_set *tmp)
 {
+    if (!a.mPtr)
+      return;
+
     if (tmp == NULL)
     {
        a->__SetSize(0);
