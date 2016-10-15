@@ -46,6 +46,9 @@
   <flag value="-DHX_WATCHOS"/>
   <flag value="-fobjc-arc"  />
   <flag value="-DOBJC_ARC" />
+  <flag value="-DENABLE_BITCODE=YES"/>
+  <flag value="-fembed-bitcode" />
+  <flag value="-fembed-bitcode-marker" if="debug" />
   <flag value="-Wno-parentheses" />
   <flag value="-Wno-null-dereference" unless="HXCPP_GCC"/>
   <flag value="-Wno-unused-value" />
