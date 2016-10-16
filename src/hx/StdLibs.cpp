@@ -459,7 +459,7 @@ LEADINGWHITE:
 
 
 #ifdef __APPLE__
- #if !defined(IPHONE) && !defined(APPLETV)
+ #if !defined(IPHONE) && !defined(APPLETV) && !defined(HX_APPLEWATCH)
    extern "C" {
    extern int *_NSGetArgc(void);
    extern char ***_NSGetArgv(void);
@@ -478,7 +478,7 @@ Array<String> __get_args()
    #else
    #ifdef __APPLE__
 
-   #if !defined(IPHONE) && !defined(APPLETV)
+   #if !defined(IPHONE) && !defined(APPLETV) && !defined(HX_APPLEWATCH)
    int argc = *_NSGetArgc();
    char **argv = *_NSGetArgv();
    for(int i=1;i<argc;i++)
