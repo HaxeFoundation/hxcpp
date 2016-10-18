@@ -126,7 +126,13 @@ typedef int field;
 
 
 #if !defined(HAVE_NEKO_TYPES)
-typedef struct _value *value;
+#ifdef HXCPP_NATIVE_CFFI_VALUE
+namespace hx { class Object; }
+typedef hx::Object _value;
+#else
+struct _value;
+#endif
+typedef _value *value;
 typedef struct _vkind  *vkind;
 typedef struct _buffer  *buffer;
 #endif
