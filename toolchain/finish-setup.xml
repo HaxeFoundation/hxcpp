@@ -68,6 +68,7 @@
 <set name="haxelink" value="dll" if="android" unless="static_link" />
 <set name="haxelink" value="exe" if="exe_link"/>
 <set name="haxelink" value="dll" if="dll_import"/>
+<set name="haxelink" value="dll" if="dll_link"/>
 
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphoneos"/>
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphonesim"/>

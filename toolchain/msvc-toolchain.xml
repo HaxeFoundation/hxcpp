@@ -115,6 +115,7 @@
   <flag value="-libpath:lib"/>
   <fromfile value="@"/>
   <outflag value="-out:"/>
+  <flag value="user32.lib"/>
   <libpathflag value="-libpath:"/>
 </linker>
 

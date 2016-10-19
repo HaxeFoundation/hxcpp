@@ -143,7 +143,7 @@
   <file name = "src/hx/Telemetry.cpp" if="HXCPP_TELEMETRY" />
   <file name = "src/hx/Profiler.cpp" if="HXCPP_PROFILER" />
   <file name = "src/hx/Thread.cpp"/>
-  <file name = "src/hx/RunLibs.cpp" if="static_link"/>
+  <file name = "src/hx/RunLibs.cpp" if="static_link||dll_link"/>
   <file name = "src/hx/AndroidCompat.cpp" if="android"/>
 
   <file name = "src/Array.cpp"/>
