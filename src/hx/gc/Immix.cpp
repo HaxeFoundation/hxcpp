@@ -3914,6 +3914,7 @@ public:
       mRegisterBufSize = 0;
       mGCFreeZone = false;
       mStackLocks = 0;
+      mGlobalStackLock = 0;
       Reset();
       sGlobalAlloc->AddLocal(this);
       sLocalAllocatorCount++;
@@ -3939,6 +3940,7 @@ public:
       mTopOfStack = mBottomOfStack = inTopOfStack;
       mRegisterBufSize = 0;
       mStackLocks = 0;
+      mGlobalStackLock = false;
       #ifdef HX_WINDOWS
       mID = GetCurrentThreadId();
       #endif
@@ -3970,36 +3972,72 @@ public:
       mMoreHoles = false;
    }
 
-   void SetTopOfStack(int *inTop,bool inForce)
+   // The main of haxe calls SetTopOfStack(top,false)
+   //   via hxcpp_set_top_of_stack or HX_TOP_OF_STACK in HxcppMain.cpp/Macros.h
+   // The means "register current thread indefinitely"
+   // Other places may call this to ensure the the current thread is registered
+   //  indefinitely (until forcefully revoked)
+   //
+   // Normally liraries/mains will then let this dangle.
+   //
+   // However after the main, on android it calls SetTopOfStack(0,true), to unregister the thread,
+   // because it is likely to be the ui thread, and the remaining call will be from
+   // callbacks from the render thread.
+   // 
+   // When threads want to attach temporarily, they will call
+   // gc_set_top_of_stack(top,true)
+   //  -> SetTopOfStack(top,true)
+   //    do stuff...
+   // gc_set_top_of_stack(0,true)
+   //  -> SetTopOfStack(0,true)
+   //
+   //  OR
+   //
+   //  PushTopOfStack(top)
+   //   ...
+   //  PopTopOfStack
+   //
+   //  However, we really want the gc_set_top_of_stack(top,true) to allow recursive locks so:
+   //
+   //  SetTopOfStack(top,false) -> ensure global stack lock exists
+   //  SetTopOfStack(top,true) -> add stack lock
+   //  SetTopOfStack(0,_) -> pop stack lock. If all gone, clear global stack lock
+   //
+   void SetTopOfStack(int *inTop,bool inPush)
    {
       if (inTop)
       {
-         // stop early to allow for ptr[1] ....
-         if (inTop>mTopOfStack || (inForce && mStackLocks==0) )
+         if (!mTopOfStack)
             mTopOfStack = inTop;
+         // EMSCRIPTEN the stack grows upwards
+         #ifndef EMSCRIPTEN
+         // It could be that the main routine was called from deep with in the stack,
+         //  then some callback was called from a higher location on the stack
+         else if (inTop > mTopOfStack)
+            mTopOfStack = inTop;
+         #endif
 
-         if (inForce)
+         if (inPush)
             mStackLocks++;
+         else
+            mGlobalStackLock = true;
 
          if (mGCFreeZone)
             ExitGCFreeZone();
       }
       else
       {
-         if (inForce)
-            mTopOfStack = 0;
-
-         if (!mGCFreeZone)
-            EnterGCFreeZone();
-
-         if (inForce)
-         {
+         if (mStackLocks>0)
             mStackLocks--;
-            if (mStackLocks<=0)
-            {
-               mStackLocks = 0;
-               ReturnToPool();
-            }
+         else
+            mGlobalStackLock = false;
+
+         if (!mStackLocks && !mGlobalStackLock)
+         {
+            if (!mGCFreeZone)
+               EnterGCFreeZone();
+
+            ReturnToPool();
          }
       }
    }
@@ -4007,27 +4045,20 @@ public:
 
    void PushTopOfStack(void *inTop)
    {
-      if (mStackLocks==0)
-         mTopOfStack = (int *)inTop;
-
-      mStackLocks++;
-      if (mGCFreeZone)
-          ExitGCFreeZone();
+      SetTopOfStack((int *)inTop,true);
    }
 
 
    void PopTopOfStack()
    {
       mStackLocks--;
-      if (mStackLocks<=0)
+      if (mStackLocks<=0 && !mGlobalStackLock)
       {
          mStackLocks = 0;
          if (!mGCFreeZone)
-         {
             EnterGCFreeZone();
 
-            ReturnToPool();
-         }
+         ReturnToPool();
       }
    }
 
@@ -4042,7 +4073,18 @@ public:
    {
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
-      SetTopOfStack(mBottomOfStack,false);
+
+      if (!mTopOfStack)
+         mTopOfStack = mBottomOfStack;
+      // EMSCRIPTEN the stack grows upwards
+      #ifndef EMSCRIPTEN
+      if (mBottomOfStack > mTopOfStack)
+         mTopOfStack = mBottomOfStack;
+      #endif
+
+      if (mGCFreeZone)
+         ExitGCFreeZone();
+
       CAPTURE_REGS;
    }
 
@@ -4249,6 +4291,7 @@ public:
 
    bool            mGCFreeZone;
    int             mStackLocks;
+   bool            mGlobalStackLock;
    int             mID;
    HxSemaphore     mReadyForCollect;
    HxSemaphore     mCollectDone;
@@ -4581,7 +4624,7 @@ int GcGetThreadAttachedCount()
    LocalAllocator *tla = GetLocalAlloc(true);
    if (!tla)
       return 0;
-   return tla->mStackLocks;
+   return tla->mStackLocks + (tla->mGlobalStackLock ? 1 : 0);
 }
 
 
