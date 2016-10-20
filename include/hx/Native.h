@@ -9,9 +9,10 @@
 #ifndef HXCPP_H
 #define HXCPP_H
 typedef double Float;
-typedef int Int;
-typedef bool Bool;
 typedef void Void;
+
+//typedef int Int;
+//typedef bool Bool;
 
 #ifndef HXCPP_CLASS_ATTRIBUTES
 #define HXCPP_CLASS_ATTRIBUTES

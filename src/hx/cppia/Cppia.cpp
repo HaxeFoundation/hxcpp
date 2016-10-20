@@ -5716,7 +5716,7 @@ struct GetFieldByLinkage : public CppiaExpr
 
       if (!replace && type->name==HX_CSTRING("String") && field==HX_CSTRING("length"))
       {
-         int offset = (int) offsetof( Array_obj<Int>, length );
+         int offset = (int) offsetof( Array_obj<int>, length );
          replace = object ?
              (CppiaExpr*)new MemReference<int,locObj>(this,offset,object):
              (CppiaExpr*)new MemReference<int,locThis>(this,offset);

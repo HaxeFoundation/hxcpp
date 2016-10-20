@@ -154,7 +154,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set(Dynamic &ioHash,int i
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_get(Dynamic &ioHash,int inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_exists(Dynamic &ioHash,int inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_remove(Dynamic &ioHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Int>    __int_hash_keys(Dynamic &ioHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<int>    __int_hash_keys(Dynamic &ioHash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_values(Dynamic &ioHash);
 // Typed IntHash access...
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_int(Dynamic &ioHash,int inKey,int inValue);
@@ -511,7 +511,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String op
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String options);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool    _hx_regexp_match(Dynamic handle, String string, int pos, int len);
 HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_regexp_matched(Dynamic handle, int pos);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_matched_pos(Dynamic handle, Int match);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_matched_pos(Dynamic handle, int match);
 
 
 // haxe.zip.(Un)Compress.hx -> src/hx/libs/zlib/ZLib.cpp
@@ -614,8 +614,8 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_listen( Dynamic o, int n );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Dynamic> _hx_std_socket_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dynamic> es, Dynamic timeout );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_fast_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dynamic> es, Dynamic timeout );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_socket_accept( Dynamic o );
-HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Int> _hx_std_socket_peer( Dynamic o );
-HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Int> _hx_std_socket_host( Dynamic o );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<int> _hx_std_socket_peer( Dynamic o );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<int> _hx_std_socket_host( Dynamic o );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_set_timeout( Dynamic o, Dynamic t );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_shutdown( Dynamic o, bool r, bool w );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_set_blocking( Dynamic o, bool b );
@@ -682,8 +682,8 @@ Dynamic _hx_ssl_cert_load_path( String path );
 String _hx_ssl_cert_get_subject( Dynamic hcert, String objname );
 String _hx_ssl_cert_get_issuer( Dynamic hcert, String objname );
 Array<String> _hx_ssl_cert_get_altnames( Dynamic hcert );
-Array<Int> _hx_ssl_cert_get_notbefore( Dynamic hcert );
-Array<Int> _hx_ssl_cert_get_notafter( Dynamic hcert );
+Array<int> _hx_ssl_cert_get_notbefore( Dynamic hcert );
+Array<int> _hx_ssl_cert_get_notafter( Dynamic hcert );
 Dynamic _hx_ssl_cert_get_next( Dynamic hcert );
 Dynamic _hx_ssl_cert_add_pem( Dynamic hcert, String data );
 Dynamic _hx_ssl_cert_add_der( Dynamic hcert, Array<unsigned char> buf );

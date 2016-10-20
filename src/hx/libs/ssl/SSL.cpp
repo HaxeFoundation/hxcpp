@@ -569,10 +569,10 @@ Array<String> _hx_ssl_cert_get_altnames( Dynamic hcert ){
 	return result;
 }
 
-static Array<Int> x509_time_to_array( mbedtls_x509_time *t ){
+static Array<int> x509_time_to_array( mbedtls_x509_time *t ){
 	if( !t )
 		hx::Throw( HX_CSTRING("x509_time_to_array") );
-	Array<Int> result(6,6);
+	Array<int> result(6,6);
 	result[0] = t->year;
 	result[1] = t->mon;
 	result[2] = t->day;
@@ -582,14 +582,14 @@ static Array<Int> x509_time_to_array( mbedtls_x509_time *t ){
 	return result;
 }
 
-Array<Int> _hx_ssl_cert_get_notbefore( Dynamic hcert ){
+Array<int> _hx_ssl_cert_get_notbefore( Dynamic hcert ){
 	sslcert *cert = val_cert(hcert);
 	if( !cert->c )
 		hx::Throw( HX_CSTRING("cert_get_notbefore") );
 	return x509_time_to_array( &cert->c->valid_from );
 }
 
-Array<Int> _hx_ssl_cert_get_notafter( Dynamic hcert ){
+Array<int> _hx_ssl_cert_get_notafter( Dynamic hcert ){
 	sslcert *cert = val_cert(hcert);
 	if( !cert->c )
 		hx::Throw( HX_CSTRING("cert_get_notafter") );

@@ -792,7 +792,7 @@ void VirtualArray_obj::MakeIntArray()
       base = new Array_obj<int>(0,0);
    else
    {
-      Array<Int> result = Dynamic(base);
+      Array<int> result = Dynamic(base);
       base = result.mPtr;
    }
    store = arrayInt;
@@ -839,13 +839,13 @@ void VirtualArray_obj::MakeBoolArray()
    if (store==arrayEmpty && base )
    {
       int len = base->length;
-      base = new Array_obj<Bool>(len,len);
+      base = new Array_obj<bool>(len,len);
    }
    else if (!base)
-      base = new Array_obj<Bool>(0,0);
+      base = new Array_obj<bool>(0,0);
    else
    {
-      Array<Bool> result = Dynamic(base);
+      Array<bool> result = Dynamic(base);
       base = result.mPtr;
    }
    store = arrayBool;

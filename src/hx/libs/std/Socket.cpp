@@ -650,7 +650,7 @@ Dynamic _hx_std_socket_accept( Dynamic o )
    socket_peer : 'socket -> #address
    <doc>Return the socket connected peer address composed of an (host,port) array</doc>
 **/
-Array<Int> _hx_std_socket_peer( Dynamic o )
+Array<int> _hx_std_socket_peer( Dynamic o )
 {
    SOCKET sock = val_sock(o);
    struct sockaddr_in addr;
@@ -663,7 +663,7 @@ Array<Int> _hx_std_socket_peer( Dynamic o )
    }
    hx::ExitGCFreeZone();
 
-   Array<Int> ret = Array_obj<Int>::__new(2,2);
+   Array<int> ret = Array_obj<int>::__new(2,2);
    ret[0] = *(int*)&addr.sin_addr;
    ret[1] = ntohs(addr.sin_port);
    return ret;
@@ -673,7 +673,7 @@ Array<Int> _hx_std_socket_peer( Dynamic o )
    socket_host : 'socket -> #address
    <doc>Return the socket local address composed of an (host,port) array</doc>
 **/
-Array<Int> _hx_std_socket_host( Dynamic o )
+Array<int> _hx_std_socket_host( Dynamic o )
 {
    SOCKET sock = val_sock(o);
    struct sockaddr_in addr;
@@ -686,7 +686,7 @@ Array<Int> _hx_std_socket_host( Dynamic o )
    }
    hx::ExitGCFreeZone();
 
-   Array<Int> ret = Array_obj<Int>::__new(2,2);
+   Array<int> ret = Array_obj<int>::__new(2,2);
    ret[0] = *(int*)&addr.sin_addr;
    ret[1] = ntohs(addr.sin_port);
    return ret;
@@ -829,8 +829,8 @@ struct polldata : public hx::Object
    int rcount;
    int wcount;
    #endif
-   Array<Int> ridx;
-   Array<Int> widx;
+   Array<int> ridx;
+   Array<int> widx;
 
    void create(int nsocks)
    {
@@ -850,8 +850,8 @@ struct polldata : public hx::Object
       wcount = 0;
       #endif
 
-      ridx = Array_obj<Int>::__new(max+1,max+1);
-      widx = Array_obj<Int>::__new(max+1,max+1);
+      ridx = Array_obj<int>::__new(max+1,max+1);
+      widx = Array_obj<int>::__new(max+1,max+1);
       for(int i=0;i<=max;i++)
       {
          ridx[i] = -1;

@@ -186,9 +186,10 @@ typedef char HX_CHAR;
 // HXCPP includes...
 
 // Basic mapping from haxe -> c++
-
+#if (HXCPP_API_LEVEL<=330)
 typedef int Int;
 typedef bool Bool;
+#endif
 
 #ifdef HXCPP_FLOAT32
 typedef float Float;

@@ -36,7 +36,7 @@ struct TIntElement
    enum { IgnoreHash = 1 };
    enum { WeakKeys = 0 };
 
-   typedef TIntElement<Int>     IntValue;
+   typedef TIntElement<int>     IntValue;
    typedef TIntElement<Float>   FloatValue;
    typedef TIntElement<Dynamic> DynamicValue;
    typedef TIntElement<String>  StringValue;
@@ -64,7 +64,7 @@ struct TStringElement
    enum { IgnoreHash = 0 };
    enum { WeakKeys = 0 };
 
-   typedef TStringElement<Int>     IntValue;
+   typedef TStringElement<int>     IntValue;
    typedef TStringElement<Float>   FloatValue;
    typedef TStringElement<Dynamic> DynamicValue;
    typedef TStringElement<String>  StringValue;
@@ -96,7 +96,7 @@ struct TDynamicElement
    enum { IgnoreHash = 0 };
    enum { WeakKeys = WEAK };
 
-   typedef TDynamicElement<Int,WEAK>     IntValue;
+   typedef TDynamicElement<int,WEAK>     IntValue;
    typedef TDynamicElement<Float,WEAK>   FloatValue;
    typedef TDynamicElement<Dynamic,WEAK> DynamicValue;
    typedef TDynamicElement<String,WEAK>  StringValue;
@@ -178,7 +178,7 @@ struct HashBase : public Object
 };
 
 extern void RegisterWeakHash(HashBase<Dynamic> *);
-inline void RegisterWeakHash(HashBase<Int> *) { };
+inline void RegisterWeakHash(HashBase<int> *) { };
 inline void RegisterWeakHash(HashBase< ::String> *) { };
 
 

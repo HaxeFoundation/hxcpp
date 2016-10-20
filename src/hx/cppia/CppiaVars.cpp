@@ -232,10 +232,10 @@ Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
                   *(hx::Object **)(base) = inValue.mPtr;
                   break;
                case arrBool:
-                  *(Array<Bool> *)(base) = inValue;
+                  *(Array<bool> *)(base) = inValue;
                   break;
                case arrInt:
-                  *(Array<Int> *)(base) = inValue;
+                  *(Array<int> *)(base) = inValue;
                   break;
                case arrFloat:
                   *(Array<Float> *)(base) = inValue;

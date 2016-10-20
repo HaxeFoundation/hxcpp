@@ -1,7 +1,6 @@
 #ifndef HX_STACK_CONTEXT_H
 #define HX_STACK_CONTEXT_H
 
-#include <hxcpp.h>
 #include "QuickVec.h"
 
 // Set:
@@ -252,6 +251,59 @@ extern ExecutionTrace sExecutionTrace;
 
 
 
+
+
+class StackPosition
+{
+public:
+    // These are constant during the lifetime of the stack frame
+    const char *className;
+    const char *functionName;
+    const char *fullName; // this is className.functionName - used for profiler
+    const char *fileName;
+    int firstLineNumber;
+
+    // These are only used if HXCPP_DEBUGGER is defined
+    #ifdef HXCPP_DEBUGGER
+    int fileHash;
+    int classFuncHash;
+    #else
+    enum { fileHash = 0, classFuncHash=0 };
+    #endif
+
+    inline StackPosition() { }
+
+    // The constructor automatically adds the StackFrame to the list of
+    // stack frames for the current thread
+    inline StackPosition(const char *inClassName, const char *inFunctionName,
+                         const char *inFullName, const char *inFileName
+                         #ifdef HXCPP_STACK_LINE
+                         , int inLineNumber
+                         #endif
+                         #ifdef HXCPP_DEBUGGER
+                         ,int inClassFunctionHash, int inFileHash
+                         #endif
+                  )
+
+       : className(inClassName), functionName(inFunctionName)
+         ,fullName(inFullName), fileName(inFileName)
+         #ifdef HXCPP_DEBUGGER
+         ,classFuncHash(inClassFunctionHash)
+         ,fileHash(inFileHash)
+         #endif
+         #ifdef HXCPP_STACK_LINE
+         ,firstLineNumber(inLineNumber)
+         #endif
+    {
+    }
+
+};
+
+
+
+
+
+
 #ifdef HXCPP_STACK_TRACE
 struct ExceptionStackFrame
 {
@@ -260,7 +312,7 @@ struct ExceptionStackFrame
    #endif
 
    #if HXCPP_API_LEVEL > 330
-   hx::StackPoition *position;
+   const hx::StackPosition *position;
    #else
    const char *className;
    const char *functionName;
@@ -399,54 +451,6 @@ struct StackContext : public hx::ImmixAllocator
    #endif
 };
 
-
-
-
-class StackPosition
-{
-public:
-    // These are constant during the lifetime of the stack frame
-    const char *className;
-    const char *functionName;
-    const char *fullName; // this is className.functionName - used for profiler
-    const char *fileName;
-    int firstLineNumber;
-
-    // These are only used if HXCPP_DEBUGGER is defined
-    #ifdef HXCPP_DEBUGGER
-    int fileHash;
-    int classFuncHash;
-    #else
-    enum { fileHash = 0, classFuncHash=0 };
-    #endif
-
-    inline StackPosition() { }
-
-    // The constructor automatically adds the StackFrame to the list of
-    // stack frames for the current thread
-    inline StackPosition(const char *inClassName, const char *inFunctionName,
-                         const char *inFullName, const char *inFileName
-                         #ifdef HXCPP_STACK_LINE
-                         , int inLineNumber
-                         #endif
-                         #ifdef HXCPP_DEBUGGER
-                         ,int inClassFunctionHash, int inFileHash
-                         #endif
-                  )
-
-       : className(inClassName), functionName(inFunctionName)
-         ,fullName(inFullName), fileName(inFileName)
-         #ifdef HXCPP_DEBUGGER
-         ,classFuncHash(inClassFunctionHash)
-         ,fileHash(inFileHash)
-         #endif
-         #ifdef HXCPP_STACK_LINE
-         ,firstLineNumber(inLineNumber)
-         #endif
-    {
-    }
-
-};
 
 
 class StackFrame

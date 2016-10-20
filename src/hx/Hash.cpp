@@ -165,11 +165,11 @@ bool  __int_hash_remove(Dynamic &ioHash,int inKey)
    return hash->remove(inKey);
 }
 
-Array<Int> __int_hash_keys(Dynamic &ioHash)
+Array<int> __int_hash_keys(Dynamic &ioHash)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
-      return Array_obj<Int>::__new();
+      return Array_obj<int>::__new();
    return hash->keys();
 }
 
