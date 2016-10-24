@@ -147,6 +147,31 @@ public:
    double __ToDouble() const { return mValue; }
    int __ToInt() const { return (int)mValue; }
    cpp::Int64 __ToInt64() const { return mValue; }
+   void __GetFields(Array<String> &outFields)
+   {
+      outFields->push( HX_HCSTRING("hi","\x01","\x5b","\x00","\x00") );
+      outFields->push( HX_HCSTRING("lo","\x83","\x5e","\x00","\x00") );
+   }
+   hx::Val __Field(const String &inName, hx::PropertyAccess inCallProp)
+   {
+      if (HX_FIELD_EQ(inName,"hi") ) { return hx::Val( (int)(mValue>>32)); }
+      if (HX_FIELD_EQ(inName,"lo") ) { return hx::Val( (int)(mValue&0xffffffff)); }
+      return hx::Object::__Field(inName,inCallProp);
+   }
+   hx::Val __SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+   {
+      if (HX_FIELD_EQ(inName,"hi") )
+      {
+         mValue = (int)(mValue & 0xffffffff) | (cpp::Int64(inValue.Cast< int >())<<32);
+         return inValue;
+      }
+      if (HX_FIELD_EQ(inName,"lo") )
+      {
+         mValue = (mValue & (cpp::Int64(0xffffffff)<<32) ) | cpp::Int64( (unsigned int)(inValue.Cast< int >()));
+         return inValue;
+      }
+      return hx::Object::__SetField(inName,inValue,inCallProp);
+   }
 
    int __Compare(const hx::Object *inRHS) const
    {
@@ -156,6 +181,8 @@ public:
 
       return mValue < rval ? -1 :  1;
    }
+
+
 
 
     cpp::Int64 mValue;
@@ -566,6 +593,15 @@ static void sVisitStatics(HX_VISIT_PARAMS) {
 
 #endif
 
+static Dynamic createEmptyInt64()
+{
+   return new Int64Data();
+}
+
+static Dynamic createInt64(hx::DynamicArray inArgs)
+{
+   return new Int64Data();
+}
 
 void Dynamic::__boot()
 {
@@ -578,6 +614,9 @@ void Dynamic::__boot()
    Static(__IntClass) = hx::_hx_RegisterClass(HX_CSTRING("Int"),IsInt,sNone,sNone,0,0, 0 );
    Static(__FloatClass) = hx::_hx_RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
    Static(__Int64Class) = hx::_hx_RegisterClass(HX_CSTRING("cpp::Int64"),IsInt64,sNone,sNone, 0,0,&__IntClass );
+   __Int64Class->mConstructEmpty = &createEmptyInt64;
+   __Int64Class->mConstructArgs = &createInt64;
+
    Static(__PointerClass) = hx::_hx_RegisterClass(HX_CSTRING("cpp::Pointer"),IsPointer,sNone,sNone, 0,0,&__PointerClass );
    DynTrue = Dynamic( new (hx::NewObjConst) hx::BoolData(true) );
    DynFalse = Dynamic( new (hx::NewObjConst) hx::BoolData(false) );

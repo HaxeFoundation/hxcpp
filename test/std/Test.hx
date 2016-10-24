@@ -702,6 +702,18 @@ class Test
       return 0;
    }
 
+   public static function testSerialization() : Int
+   {
+      log("Test serialization");
+      var orig:haxe.Int64 = haxe.Int64.make(0xdeadbeef,0xbeefdead);
+      var recon:haxe.Int64 = haxe.Unserializer.run(haxe.Serializer.run(orig));
+      if (orig!=recon)
+         return error('Bad Int64 serialization $orig != $recon');
+
+      return 0;
+   }
+
+
    // Hide from optimizer
    static function getOne() return 1;
 
@@ -739,7 +751,7 @@ class Test
       Thread.create(function() { q.pop(true);  aPtr.atomicInc(); } );
       Thread.create(function() { q.pop(true);  aPtr.atomicDec(); } );
 
-      if (a!=1)
+      if (a!=0)
          error("Bad deque count");
 
       return ok();
@@ -772,6 +784,7 @@ class Test
          exitCode |= testSocket();
          exitCode |= testThread();
          exitCode |= testSsl();
+         exitCode |= testSerialization();
 
          if (exitCode!=0)
             Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );
