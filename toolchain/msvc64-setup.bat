@@ -25,5 +25,5 @@ setlocal enabledelayedexpansion
 	@echo HXCPP_VARS
 	@set
 ) else (
-	echo Error: 64bit is not autmatically supported for this version of VC. Set HXCPP_MSVC_CUSTOM and manually configure the executable, library and include paths
+	echo Error: 64bit is not automatically supported for this version of VC. Set HXCPP_MSVC_CUSTOM and manually configure the executable, library and include paths
 )
