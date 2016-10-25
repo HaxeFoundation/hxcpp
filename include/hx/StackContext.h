@@ -69,7 +69,7 @@
    // Must record the stack state at the catch
    #define HX_STACK_BEGIN_CATCH __hxcpp_stack_begin_catch();
    #define HX_JUST_GC_STACKFRAME hx::JustGcStackFrame _hx_stackframe;
-   #define HX_GC_CTX _hx_stackframe.ctx
+   #define HX_CTX _hx_stackframe.ctx
 #else
    // No need to track frame
    #define HX_DECLARE_STACK_FRAME(name)
@@ -77,11 +77,12 @@
    #define HX_DEFINE_STACK_FRAME(__stackPosition, className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash )
    #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash )
    #define HX_STACKFRAME(pos)
-   #define HX_JUST_GC_STACKFRAME hx::StackContext *_hx_gc_ctx = hx::gMultiThreadMode ? hx::tlsStackContext : hx::gMainThreadContext;
+   #define HX_JUST_GC_STACKFRAME hx::StackContext *_hx_ctx = hx::gMultiThreadMode ? hx::tlsStackContext : hx::gMainThreadContext;
    #define HX_GC_STACKFRAME(pos) HX_JUST_GC_STACKFRAME
-   #define HX_GC_CTX _hx_gc_ctx
+   #define HX_CTX _hx_ctx
 #endif
 
+#define HX_CTX_GET (hx::gMultiThreadMode ? hx::tlsStackContext : hx::gMainThreadContext)
 
 
 // Setup debugger catchable and variable macros...

@@ -690,6 +690,13 @@ public:
       return (hx::ArrayStore) hx::ArrayTraits<ELEM_>::StoreType;
    }
 
+   inline ELEM_ &setCtx(hx::Ctx *_hx_ctx, int inIdx, ELEM_ inValue)
+   {
+      ELEM_ &elem = Item(inIdx);
+      HX_ARRAY_WB(this,inIdx,inValue);
+      return elem = inValue;
+   }
+
 
    // Dynamic interface
    #if (HXCPP_API_LEVEL < 330)
@@ -748,6 +755,8 @@ public:
 
    virtual void set(int inIndex, const cpp::Variant &inValue) { Item(inIndex) = ELEM_(inValue); }
    virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) { *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = ELEM_(inValue); }
+
+
    #endif
 };
 
@@ -924,7 +933,6 @@ public:
    inline bool operator==(const cpp::VirtualArray &varray) const { return varray==*this; }
    inline bool operator!=(const cpp::VirtualArray &varray) const { return varray!=*this; }
    #endif
-
 
 
    inline ELEM_ &operator[](int inIdx) { return CheckGetPtr()->Item(inIdx); }

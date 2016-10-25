@@ -392,6 +392,10 @@ public:
 };
 
 typedef ImmixAllocator GcAllocator;
+typedef ImmixAllocator Ctx;
+
+#define HX_OBJ_WB(obj,value)
+#define HX_ARRAY_WB(array,index,value)
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES extern unsigned int gPrevMarkIdMask;
