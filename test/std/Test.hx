@@ -42,6 +42,7 @@ extern class SslTest
 class Test
 {
    static var errors = new Array<String>();
+   static var lastErrorCount = 0;
 
    public static function log(t:String)
    {
@@ -55,8 +56,17 @@ class Test
 
    public static function ok()
    {
-      v("ok");
-      return 0;
+      if (lastErrorCount==errors.length)
+      {
+         v("ok");
+         return 0;
+      }
+      else
+      {
+         lastErrorCount=errors.length;
+         v("bad");
+         return 1;
+      }
    }
 
    public static function error(e:String)
@@ -698,8 +708,9 @@ class Test
 
    public static function testSsl() : Int
    {
+      log("Test ssl");
       SslTest.socket_init();
-      return 0;
+      return ok();
    }
 
    public static function testSerialization() : Int
@@ -740,19 +751,31 @@ class Test
          error("Bad atomicDec value " + a);
 
 
-      v("deque...");
-      a = 0;
+      a = getOne();
+      v('deque a=$a');
 
       var q = new Deque<Int>();
       q.add(1);
       q.add(2);
       q.add(3);
-      Thread.create(function() { q.pop(true); aPtr.atomicInc(); });
-      Thread.create(function() { q.pop(true);  aPtr.atomicInc(); } );
-      Thread.create(function() { q.pop(true);  aPtr.atomicDec(); } );
+      var mainThread = Thread.current();
+      // ++
+      Thread.create(function() { q.pop(true); aPtr.atomicInc(); mainThread.sendMessage(null); });
+      // ++
+      Thread.create(function() { q.pop(true);  aPtr.atomicInc(); mainThread.sendMessage(null); } );
+      // --
+      Thread.create(function() { q.pop(true);  aPtr.atomicDec(); mainThread.sendMessage(null); } );
 
-      if (a!=0)
-         error("Bad deque count");
+      v("wait for reply..");
+      for(i in 0...3)
+      {
+         Thread.readMessage(true);
+         v('got $i');
+      }
+
+
+      if (a!=2)
+         error('Bad deque count : $a');
 
       return ok();
    }
