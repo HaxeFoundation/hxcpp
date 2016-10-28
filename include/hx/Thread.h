@@ -80,7 +80,7 @@ inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
 inline int HxAtomicInc(volatile int *ioWhere)
    { return OSAtomicIncrement32Barrier(ioWhere)-1; }
 inline int HxAtomicDec(volatile int *ioWhere)
-   { return OSAtomicDecrement32Barrier(ioWhere)-1; }
+   { return OSAtomicDecrement32Barrier(ioWhere)+1; }
 
 
 #elif defined(HX_LINUX)
