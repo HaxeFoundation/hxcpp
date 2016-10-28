@@ -192,9 +192,10 @@ CppiaStackVar *StackLayout::findVar(int inId)
 // --- CppiaCtx functions ----------------------------------------
 
 #ifdef CPPIA_JIT
-void CppiaExpr::genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
+JitVal CppiaExpr::genCode(CppiaCompiler *compiler, const JitVal &inDest)
 {
-   compiler.trace(getName());
+   compiler->trace(getName());
+   return JitVal();
 }
 
 
@@ -245,13 +246,8 @@ struct CppiaDynamicExpr : public CppiaExpr
    virtual hx::Object *runObject(CppiaCtx *ctx) = 0;
 
    #ifdef CPPIA_JIT
+   /*
    virtual void genObject(CppiaCompiler &compiler, const Addr &inDest)  { }
-
-   void preGen(CppiaCompiler &compiler)
-   {
-      AllocTemp pointerSave(compiler);
-   }
-
    void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
    {
       switch(resultType)
@@ -288,6 +284,7 @@ struct CppiaDynamicExpr : public CppiaExpr
             genObject(compiler, inDest);
       }
    }
+   */
    #endif
 
 
@@ -453,7 +450,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    CppiaExpr *body;
    CppiaModule *data;
    #ifdef CPPIA_JIT
-   CppiaCompiled compiled;
+   CppiaFunc compiled;
    #else
    void    *compiled;
    #endif
@@ -620,6 +617,7 @@ struct ScriptCallable : public CppiaDynamicExpr
 
 
    #ifdef CPPIA_JIT
+   /*
    void preGenArgs(CppiaCompiler &compiler, CppiaExpr *inThis, Expressions &inArgs)
    {
       if (inThis)
@@ -814,6 +812,7 @@ struct ScriptCallable : public CppiaDynamicExpr
          }
       }
    }
+   */
    #endif
 
 
@@ -1141,16 +1140,21 @@ struct ScriptCallable : public CppiaDynamicExpr
    {
       if (!compiled && body)
       {
-         CppiaCompiler compiler;
+         CppiaCompiler *compiler = CppiaCompiler::create();
 
-         body->preGen(compiler);
+         // First pass calculates size...
+         body->genCode(compiler);
 
-         compiler.enter(0, stackSize);
+         compiler->beginGeneration(1);
 
-         body->genCode(compiler, AddrVoid(), etVoid);
+         compiler->trace("Hello!");
 
-         compiler.ret();
-         compiled = compiler.generate();
+         // Second pass does the job
+         body->genCode(compiler);
+
+         compiled = compiler->finishGeneration();
+
+         delete compiler;
       }
    }
    #endif
@@ -3291,25 +3295,21 @@ struct BlockExpr : public CppiaExpr
 
 
    #ifdef CPPIA_JIT
-   void preGen(CppiaCompiler &compiler)
+   JitVal genCode(CppiaCompiler *compiler, const JitVal &inDest)
    {
-      for(int i=0;i<expressions.size();i++)
-          expressions[i]->preGen(compiler);
-   }
+      JitVal result;
 
-   void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
-   {
+      compiler->pushScope();
       int n = expressions.size();
       for(int i=0;i<n;i++)
       {
-         if (i<n-1 || resultType==etVoid)
-            expressions[i]->genCode(compiler, AddrVoid(), etVoid);
+         if (i<n-1)
+            expressions[i]->genCode(compiler);
          else
-         {
-            // TODO - store save register?
-            expressions[i]->genCode(compiler, inDest, resultType);
-         }
+            result = expressions[i]->genCode(compiler, inDest);
       }
+      compiler->popScope();
+      return result;
    }
    #endif
 
@@ -3431,7 +3431,9 @@ struct CppiaIsNotNull : public CppiaBoolExpr
 };
 
 
+
 #ifdef CPPIA_JIT
+/*
 void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType, ExprType srcType)
 {
    CtxMemberVal returnAddr(offsetof(CppiaCtx,frame));
@@ -3534,6 +3536,7 @@ void convertResult(CppiaCompiler &compiler, const Addr &dest, ExprType destType,
          default: ;
       }
 }
+*/
 #endif
 
 
@@ -3595,13 +3598,6 @@ struct CallFunExpr : public CppiaExpr
    }
 
    #ifdef CPPIA_JIT
-   void preGen(CppiaCompiler &compiler)
-   {
-      AllocTemp pointer(compiler);
-      AllocTemp frame(compiler);
-      function->preGenArgs(compiler,thisExpr, args);
-   }
-
    static void SLJIT_CALL callScriptable(CppiaCtx *inCtx, ScriptCallable *inScriptable)
    {
       // compiled?
@@ -3611,24 +3607,38 @@ struct CallFunExpr : public CppiaExpr
       printf(" Done scipt callable\n");
    }
 
+
+   // Function Call
+   JitVal genCode(CppiaCompiler *compiler, const JitVal &)
+   {
+      JitTemp pointer(compiler, sJitCtxPointer);
+
+      //function->genArgs(compiler);
+      JitTemp frame(compiler, sJitCtxFrame);
+
+      // TODO - compiled version
+      compiler->callNative( (void *)callScriptable, sJitCtx, JitVal((void *)function) );
+
+      compiler->move(sJitCtxFrame,frame);
+      compiler->move(sJitCtxPointer,pointer);
+
+      return JitVal();
+   }
+
+
+
+   /*
+   void preGen(CppiaCompiler &compiler)
+   {
+      AllocTemp pointer(compiler);
+      AllocTemp frame(compiler);
+      function->preGenArgs(compiler,thisExpr, args);
+   }
+
+
    void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
    {
       compiler.trace("Function called implementation");
-
-      /*
-      CTmp sp = cSp;
-      CTmp frame = cFrame;
-      pushArgs();
-      cFrame = cSp;
-      cTrace("set frame");
-      cCall(callScriptable, ctx, ConstValue(function) );
-      cSp = sp;
-      cFrame = frame;
-      cCheckException(); // if stack.exp (goto handler or return)
-      cConvert(inDest,resultType,function->getType() );
-      */
-
-
 
       AllocTemp pointer(compiler);
       AllocTemp frame(compiler);
@@ -3673,6 +3683,7 @@ struct CallFunExpr : public CppiaExpr
 
       convertResult(compiler, inDest, resultType, function->getType() );
    }
+   */
    #endif
 
 };
@@ -4949,6 +4960,7 @@ struct Call : public CppiaDynamicExpr
    }
 
    #ifdef CPPIA_JIT
+   /*
    void preGen(CppiaCompiler &compiler)
    {
       AllocTemp frame(compiler);
@@ -4997,6 +5009,7 @@ struct Call : public CppiaDynamicExpr
       if (inDest!=pointer)
          compiler.move( inDest, pointer );
    }
+   */
    #endif
 };
 

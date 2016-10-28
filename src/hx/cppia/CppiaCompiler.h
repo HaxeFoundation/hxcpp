@@ -20,6 +20,167 @@
 namespace hx
 {
 
+enum JitPosition
+{
+   jposDontCare,
+   jposStack,
+   jposLocal,
+   jposThis,
+   jposArray,
+   jposRegister,
+   jposStar,
+   jposPointerVal,
+   jposIntVal,
+   jposFloatVal,
+};
+
+enum JitType
+{
+  jtAny,
+  jtPointer,
+  jtString,
+  jtFloat,
+  jtInt,
+  jtVoid,
+  jtUnknown,
+};
+
+extern int sCtxReg;
+extern int sThisReg;
+
+JitType getJitType(ExprType inType);
+int getJitTypeSize(JitType inType);
+
+struct JitVal
+{
+   JitPosition    position;
+   JitType        type;
+   union
+   {
+     struct
+     {
+        int offset;
+        unsigned short reg0;
+        unsigned short reg1;
+     };
+     void   *pVal;
+     double dVal;
+     int    iVal;
+   };
+
+   JitVal(JitType inType=jtVoid, int inOffset=0, JitPosition inPosition=jposDontCare,int inReg0=0, int inReg1=0)
+   { 
+      position = inPosition;
+      type = inType;
+      offset = inOffset;
+      reg0 = inReg0;
+      reg1 = inReg1;
+   }
+   JitVal(int inValue)
+   {
+      position = jposIntVal;
+      type = jtInt;
+      iVal = inValue;
+   }
+   JitVal(double inValue)
+   {
+      position = jposFloatVal;
+      type = jtFloat;
+      dVal = inValue;
+   }
+   JitVal(void *inValue)
+   {
+      position = jposPointerVal;
+      type = jtPointer;
+      pVal = inValue;
+   }
+
+   JitVal operator +(int inDiff) const { return JitVal(type, offset+inDiff, position, reg0, reg1); }
+};
+
+
+enum Condition
+{
+   condZero,
+   condNotZero,
+   condEqual,
+   condNotEqual,
+};
+
+extern JitVal sJitReturnReg;
+extern JitVal sJitArg0;
+extern JitVal sJitArg1;
+extern JitVal sJitArg2;
+extern JitVal sJitCtx;
+extern JitVal sJitCtxPointer;
+extern JitVal sJitCtxFrame;
+
+typedef int LabelId;
+typedef int JumpId;
+
+typedef void (*CppiaFunc)(CppiaCtx *inCtx);
+
+class CppiaCompiler
+{
+public:
+   static CppiaCompiler *create();
+   virtual ~CppiaCompiler() { }
+
+   static void freeCompiled(CppiaFunc inFunc);
+
+   virtual void beginGeneration(int inArgs=1) = 0;
+   virtual CppiaFunc finishGeneration() = 0;
+
+   virtual void setFunctionDebug() = 0;
+   virtual void setLineDebug() = 0;
+
+   // Scriptable?
+   virtual void addReturn() = 0;
+   virtual void pushScope() = 0;
+   virtual void popScope() = 0;
+   virtual int  allocTemp(JitType inType) = 0;
+   virtual void freeTemp(JitType inType) = 0;
+   virtual LabelId  addLabel() = 0;
+   virtual void     comeFrom(JumpId) = 0;
+   virtual JitVal  addLocal(const char *inName, JitType inType) = 0;
+   virtual JitVal  functionArg(int inIndex) = 0;
+   virtual void  trace(const char *inValue) = 0;
+   virtual void  trace(const char *inLabel, hx::Object *inObj) = 0;
+
+   virtual void set(const JitVal &inDest, const JitVal &inSrc) = 0;
+   virtual JitVal add(const JitVal &v0, const JitVal &v1, JitVal inDest=JitVal() ) = 0;
+   virtual void move(const JitVal &inDest, const JitVal &src) = 0;
+   virtual void compare(Condition condition,const JitVal &v0, const JitVal &v1) = 0;
+   virtual JumpId jump(LabelId inLabel, Condition condition) = 0;
+   virtual JitVal allocArgs(int inCount)=0;
+   virtual JitVal call(CppiaFunc func)=0;
+
+   virtual JitVal callNative(void *func, JitType inReturnType=jtVoid)=0;
+   virtual JitVal callNative(void *func, const JitVal &inArg0, JitType inReturnType=jtVoid)=0;
+   virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, JitType inReturnType=jtVoid)=0;
+   virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2, JitType inReturnType=jtVoid)=0;
+
+
+};
+
+
+struct JitTemp : public JitVal
+{
+   CppiaCompiler *compiler;
+   JitTemp(CppiaCompiler *inCompiler, const JitVal &inSrc)
+      : JitVal(inSrc.type, inCompiler->allocTemp(inSrc.type), jposLocal)
+   {
+      compiler = inCompiler;
+   }
+   ~JitTemp()
+   {
+      compiler->freeTemp(type);
+   }
+};
+
+/*
+
+
 struct Addr
 {
    inline Addr(sljit_si inBase, sljit_sw inMod=0) : base(inBase), mod(inMod) { }
@@ -322,6 +483,8 @@ struct AllocTemp : public Addr
    ~AllocTemp() { compiler.releaseTemp(size); }
    
 };
+
+*/
 
 
 }

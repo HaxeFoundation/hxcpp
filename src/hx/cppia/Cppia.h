@@ -9,6 +9,22 @@
 #include <string>
 #include <map>
 
+
+
+namespace hx
+{
+enum ExprType
+{
+  etVoid,
+  etNull,
+  etObject,
+  etString,
+  etFloat,
+  etInt,
+};
+} // end namespace hx
+
+
 #ifdef CPPIA_JIT
 #include "CppiaCompiler.h"
 #endif
@@ -39,16 +55,6 @@ enum CppiaOp
    #undef CPPIA_OP
 };
 
-
-enum ExprType
-{
-  etVoid,
-  etNull,
-  etObject,
-  etString,
-  etFloat,
-  etInt,
-};
 
 enum ArrayType
 {
@@ -151,8 +157,7 @@ struct CppiaExpr
 
 
    #ifdef CPPIA_JIT
-   virtual void preGen(CppiaCompiler &compiler) { }
-   virtual void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType);
+   virtual JitVal genCode(CppiaCompiler *compiler,const JitVal &inDest=JitVal());
    #endif
 };
 
