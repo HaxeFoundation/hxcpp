@@ -719,9 +719,9 @@ class Test
       var orig:haxe.Int64 = haxe.Int64.make(0xdeadbeef,0xbeefdead);
       var recon:haxe.Int64 = haxe.Unserializer.run(haxe.Serializer.run(orig));
       if (orig!=recon)
-         return error('Bad Int64 serialization $orig != $recon');
+         error('Bad Int64 serialization $orig != $recon');
 
-      return 0;
+      return ok();
    }
 
 
@@ -759,12 +759,27 @@ class Test
       q.add(2);
       q.add(3);
       var mainThread = Thread.current();
-      // ++
-      Thread.create(function() { q.pop(true); aPtr.atomicInc(); mainThread.sendMessage(null); });
-      // ++
-      Thread.create(function() { q.pop(true);  aPtr.atomicInc(); mainThread.sendMessage(null); } );
-      // --
-      Thread.create(function() { q.pop(true);  aPtr.atomicDec(); mainThread.sendMessage(null); } );
+      // +100000
+      Thread.create(function() {
+         q.pop(true);
+         for(i in 0...100000)
+            aPtr.atomicInc();
+         mainThread.sendMessage(null);
+      });
+      // +100000
+      Thread.create(function() {
+         q.pop(true);
+         for(i in 0...100000)
+            aPtr.atomicInc();
+         mainThread.sendMessage(null);
+      } );
+      // -200000
+      Thread.create(function() {
+         q.pop(true);
+         for(i in 0...200000)
+            aPtr.atomicDec();
+         mainThread.sendMessage(null);
+      } );
 
       v("wait for reply..");
       for(i in 0...3)
@@ -773,8 +788,7 @@ class Test
          v('got $i');
       }
 
-
-      if (a!=2)
+      if (a!=1)
          error('Bad deque count : $a');
 
       return ok();
