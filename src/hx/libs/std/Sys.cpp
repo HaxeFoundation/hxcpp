@@ -460,7 +460,7 @@ void _hx_std_sys_remove_dir( String path )
    #else
    hx::EnterGCFreeZone();
    bool ok = rmdir(path.__s) == 0;
-   hx::EnterGCFreeZone();
+   hx::ExitGCFreeZone();
    if (!ok)
       hx::Throw(HX_CSTRING("Could not remove directory"));
    #endif
