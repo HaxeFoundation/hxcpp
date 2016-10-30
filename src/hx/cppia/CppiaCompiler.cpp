@@ -20,7 +20,8 @@ static void SLJIT_CALL my_trace_func(const char *inText)
 
 
 int sCtxReg = SLJIT_S0;
-int sThisReg = SLJIT_S1;
+int sFrameReg = SLJIT_S1;
+int sThisReg = SLJIT_S2;
 
 
 int getJitTypeSize(JitType inType)
@@ -37,15 +38,53 @@ int getJitTypeSize(JitType inType)
    }
 }
 
+
+JitType getJitType(ExprType inType)
+{
+   switch(inType)
+   {
+      case etVoid:
+         return jtAny;
+      case etNull:
+      case etObject:
+         return jtPointer;
+      case etString:
+         return jtString;
+      case etFloat:
+         return jtFloat;
+      case etInt:
+         return jtInt;
+   }
+   return jtPointer;
+}
+
+
+bool isMemoryVal(const JitVal &inVal)
+{
+   switch(inVal.position)
+   {
+      case jposLocal:
+      case jposThis:
+         return true;
+      default:
+         return false;
+   }
+}
+
+
 JitVal sJitReturnReg(jtAny, 0, jposRegister, SLJIT_R0);
 JitVal sJitArg0(jtAny, 0, jposRegister, SLJIT_R0);
 JitVal sJitArg1(jtAny, 0, jposRegister, SLJIT_R1);
 JitVal sJitArg2(jtAny, 0, jposRegister,SLJIT_R2);
 
-JitVal sJitReg0(jtAny, 0, jposRegister, SLJIT_R0);
+JitVal sJitTemp0(jtAny, 0, jposRegister, SLJIT_R0);
+JitVal sJitTemp1(jtAny, 0, jposRegister, SLJIT_R1);
+JitVal sJitTemp2(jtAny, 0, jposRegister, SLJIT_R2);
 
-JitVal sJitCtx(jtPointer, 0, jposRegister, sCtxReg);
+JitVal sJitFrame(jtPointer, 0, jposRegister, sFrameReg);
 JitVal sJitThis(jtPointer, 0, jposRegister, sThisReg);
+JitVal sJitCtx(jtPointer, 0, jposRegister, sCtxReg);
+
 JitVal sJitCtxFrame(jtPointer, offsetof(CppiaCtx,frame), jposStar, sCtxReg);
 JitVal sJitCtxPointer(jtPointer, offsetof(CppiaCtx,pointer), jposStar, sCtxReg);
 
@@ -58,10 +97,15 @@ public:
 
    bool usesCtx;
    bool usesThis;
+   bool usesFrame;
+
    int localSize;
+   int frameSize;
+
    int maxTempCount;
    int maxFtempCount;
    int maxLocalSize;
+
 
    CppiaJitCompiler()
    {
@@ -72,6 +116,7 @@ public:
       compiler = 0;
       usesThis = false;
       usesCtx = false;
+      frameSize = sizeof(void *); // This
    }
 
 
@@ -84,7 +129,22 @@ public:
       }
    }
 
-   void beginGeneration(int inArgs)
+   int getCurrentFrameSize()
+   {
+      return frameSize;
+   }
+   void restoreFrameSize(int inSize)
+   {
+      frameSize = inSize;
+   }
+
+   void addFrame(ExprType inType)
+   {
+      frameSize += getJitTypeSize( getJitType(inType) );
+   }
+
+
+   void beginGeneration(int inArgs /* in Arg sizes */ )
    {
       compiler = sljit_create_compiler();
 
@@ -93,14 +153,25 @@ public:
       int saveds = inArgs;
       if (usesCtx && saveds<1)
          saveds = 1;
-      if (usesThis && saveds<2)
+      if (usesFrame && saveds<2)
          saveds = 2;
+      if (usesThis && saveds<3)
+      {
+         usesFrame = true;
+         saveds = 3;
+      }
+
       int fsaveds = 0;
       int scratches = std::max(maxTempCount,inArgs);
 
       sljit_emit_enter(compiler, options, inArgs, scratches, saveds, maxFtempCount, fsaveds, maxLocalSize);
+      if (usesFrame)
+         move( sJitFrame, sJitCtxFrame );
+
       if (usesThis)
-         move( sJitThis, sJitCtxFrame );
+         move( sJitThis, JitFramePos(0) );
+
+      frameSize = sizeof(void *); // This
    }
 
    CppiaFunc finishGeneration()
@@ -146,14 +217,78 @@ public:
    {
    }
 
-   LabelId  addLabel()
+
+   void emit_ijump(const JitVal &inVal,int inArgs=1)
    {
+      sljit_sw t = getTarget(inVal);
+      if (compiler)
+         sljit_emit_ijump(compiler, SLJIT_CALL0+inArgs, t, getData(inVal));
+   }
+
+   JumpId jump(LabelId inTo)
+   {
+      if (compiler)
+      {
+         JumpId result = sljit_emit_jump(compiler, SLJIT_JUMP);
+         if (inTo)
+            sljit_set_label(result, inTo);
+
+         return result;
+      }
       return 0;
    }
 
-   void     comeFrom(JumpId)
+   void jump(const JitVal &inWhere)
    {
+      sljit_sw t = getTarget(inWhere);
+      if (compiler)
+         sljit_emit_ijump(compiler, SLJIT_JUMP, t, getData(inWhere) );
    }
+
+   // Conditional
+   JumpId compare(JumpCompare condition, const JitVal &v0, LabelId andJump)
+   {
+      sljit_sw t = getTarget(v0);
+      if (compiler)
+      {
+         JumpId result = sljit_emit_cmp(compiler, condition, t, getData(v0), SLJIT_UNUSED, 0 );
+         if (andJump)
+            sljit_set_label(result, andJump);
+         return result;
+      }
+      return 0;
+   }
+
+   JumpId compare(JumpCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
+   {
+      sljit_sw t0 = getTarget(v0);
+      sljit_sw t1 = getTarget(v1);
+      if (compiler)
+      {
+         JumpId result = sljit_emit_cmp(compiler, condition, t0, getData(v0), t1, getData(v1) );
+         if (andJump)
+            sljit_set_label(result, andJump);
+         return result;
+      }
+      return 0;
+   }
+
+   // Link
+   void  comeFrom(JumpId inJump)
+   {
+      if (compiler)
+      {
+         sljit_label *label =  sljit_emit_label(compiler);
+         sljit_set_label(inJump, label);
+      }
+   }
+   LabelId addLabel()
+   {
+      if (compiler)
+         return sljit_emit_label(compiler);
+      return  0;
+   }
+
 
    JitVal  addLocal(const char *inName, JitType inType)
    {
@@ -166,28 +301,18 @@ public:
    }
 
 
+
    void emit_op1(sljit_si op, const JitVal &inArg0, const JitVal &inArg1)
    {
+      sljit_sw t0 = getTarget(inArg0);
+      sljit_sw t1 = getTarget(inArg1);
       if (compiler)
-         sljit_emit_op1(compiler, op, getTarget(inArg0), getData(inArg0), getTarget(inArg1), getData(inArg1) );
+         sljit_emit_op1(compiler, op, t0, getData(inArg0), t1, getData(inArg1) );
    }
 
-   void setError(const std::string &inError)
+   void setError(const char *inError)
    {
-      printf("Error: %s\n", inError.c_str()); 
-   }
-
-   bool isMemoryVal(const JitVal &inVal)
-   {
-      switch(inVal.position)
-      {
-         case jposStack:
-         case jposLocal:
-         case jposThis:
-            return true;
-         default:
-            return false;
-      }
+      printf("Error: %s\n", inError);
    }
 
 
@@ -198,8 +323,9 @@ public:
          case jposRegister:
             return inVal.reg0;
 
-         case jposStack:
          case jposLocal:
+            return SLJIT_MEM1(SLJIT_SP);
+
          case jposArray:
             setError("TODO");
             break;
@@ -207,9 +333,13 @@ public:
          case jposStar:
             return SLJIT_MEM1(inVal.reg0);
 
+         case jposFrame:
+            usesThis = true;
+            return SLJIT_MEM1(SLJIT_S1);
+
          case jposThis:
             usesThis = true;
-            return SLJIT_S1;
+            return SLJIT_MEM1(SLJIT_S2);
 
          case jposPointerVal:
          case jposIntVal:
@@ -240,7 +370,7 @@ public:
             return (sljit_sw)inVal.iVal;
 
          case jposFloatVal:
-            // ?
+            // ? dval pointer?
             return (sljit_sw)inVal.dVal;
 
          default:
@@ -264,6 +394,9 @@ public:
    // May required indirect offsets
    void move(const JitVal &inDest, const JitVal &inSrc)
    {
+      if (inDest==inSrc)
+         return;
+
       switch(getCommonType(inDest,inSrc))
       {
          case jtInt:
@@ -291,6 +424,29 @@ public:
       }
    }
 
+   void setFramePointer()
+   {
+     add( sJitCtxPointer, sFrameReg, JitVal(frameSize) );
+   }
+
+
+   void convertResult(ExprType inFrom, ExprType inTo, const JitVal &inTarget)
+   {
+      JitFramePos src(frameSize, getJitType(inFrom) );
+      if (inFrom==inTo)
+      {
+         move( inTarget, src );
+      }
+      else if (inTarget==src)
+      {
+         // Store pointer...
+      }
+      else
+      {
+      }
+   }
+
+
 
    void  trace(const char *inText)
    {
@@ -309,31 +465,42 @@ public:
    {
    }
 
-   JitVal add(const JitVal &v0, const JitVal &v1, JitVal inDest )
+   void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
    {
-      return JitVal();
+      sljit_si tDest = getTarget(inDest);
+      sljit_si t0 = getTarget(v0);
+      sljit_si t1 = getTarget(v1);
+      if (compiler)
+      {
+         sljit_emit_op2(compiler, SLJIT_IADD, tDest, getData(inDest), t0,  getData(v0),  t1, getData(v1) );
+      }
+
    }
 
-   void compare(Condition condition,const JitVal &v0, const JitVal &v1)
+
+   void allocArgs(int inCount)
    {
+   }
+   JitVal call(CppiaFunc func,JitType inReturnType)
+   {
+      return JitVal(inReturnType,0,jposRegister);
    }
 
-   JumpId jump(LabelId inLabel, Condition condition)
+   JitVal call(const JitVal &func,JitType inReturnType)
    {
-      return 0;
-   }
-   JitVal allocArgs(int inCount)
-   {
-      return JitVal();
+      return JitVal(inReturnType,0,jposRegister);
    }
 
-   JitVal call(CppiaFunc func)
+   JitVal call(const JitVal &func,const JitVal &inArg0, JitType inReturnType)
    {
-      return JitVal();
+      move(sJitArg0,inArg0);
+      emit_ijump(func,1);
+      return JitVal(inReturnType,0,jposRegister);
    }
+
    JitVal callNative(void *func, int inArgCount, JitType inReturnType)
    {
-      return JitVal();
+      return JitVal(inReturnType,0,jposRegister);
    }
 
    virtual JitVal callNative(void *func, JitType inReturnType)
@@ -365,6 +532,7 @@ public:
 
       return JitVal(inReturnType,0,jposRegister);
    }
+
    virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2, JitType inReturnType)
    {
       if (maxTempCount<3)
@@ -373,7 +541,9 @@ public:
       move( sJitArg1, inArg1);
       move( sJitArg2, inArg2);
       if (compiler)
+      {
          sljit_emit_ijump(compiler, SLJIT_CALL3, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+      }
 
       return JitVal(inReturnType,0,jposRegister);
    }

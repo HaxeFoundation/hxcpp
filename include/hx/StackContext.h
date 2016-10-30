@@ -83,6 +83,7 @@
 #endif
 
 #define HX_CTX_GET (hx::gMultiThreadMode ? hx::tlsStackContext : hx::gMainThreadContext)
+#define HX_GC_CTX HX_CTX
 
 
 // Setup debugger catchable and variable macros...

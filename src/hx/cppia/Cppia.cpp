@@ -192,10 +192,9 @@ CppiaStackVar *StackLayout::findVar(int inId)
 // --- CppiaCtx functions ----------------------------------------
 
 #ifdef CPPIA_JIT
-JitVal CppiaExpr::genCode(CppiaCompiler *compiler, const JitVal &inDest)
+void CppiaExpr::genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
 {
    compiler->trace(getName());
-   return JitVal();
 }
 
 
@@ -617,54 +616,25 @@ struct ScriptCallable : public CppiaDynamicExpr
 
 
    #ifdef CPPIA_JIT
-   /*
-   void preGenArgs(CppiaCompiler &compiler, CppiaExpr *inThis, Expressions &inArgs)
+   void genPushDefault(CppiaCompiler *compiler, int inArg, bool pushNullToo)
    {
-      if (inThis)
-        inThis->preGen(compiler);
-
-      for(int a=0;a<argCount && a<inArgs.size();a++)
-      {
-         CppiaStackVar &var = args[a];
-         if (!hasDefault[a] && var.expressionType==etString)
-         {
-            AllocTemp result(compiler);
-            inArgs[a]->preGen(compiler);
-         }
-         else
-         {
-            if (!hasDefault[a] && var.expressionType==etFloat)
-               compiler.registerFTemp();
-            inArgs[a]->preGen(compiler);
-         }
-      }
-   }
-
-
-   void genPushDefault(CppiaCompiler &compiler, int inArg, bool pushNullToo)
-   {
-      CtxMemberVal stack(offsetof(CppiaCtx, pointer));
-      compiler.move(Reg(0),stack);
-      StarAddr pointer(Reg(0));
-
+      int framePos = compiler->getCurrentFrameSize();
+      JitFramePos target(framePos);
       CppiaStackVar &var = args[inArg];
       switch(var.expressionType)
       {
           case etInt:
-             compiler.move32( pointer, ConstValue(initVals[inArg].ival) );
-             compiler.add( stack, Reg(0), ConstValue( sizeof(int) ) );
+             compiler->move( target, JitVal(initVals[inArg].ival) );
              break;
           case etFloat:
-             compiler.move( pointer, ConstRef(&initVals[inArg].dval), SLJIT_DMOV );
-             compiler.add( stack, Reg(0), ConstValue( sizeof(double) ) );
+             // TODO - dpointer, not dval
+             compiler->move( target, JitVal(&initVals[inArg].dval));
              break;
           case etString:
              {
-                // TODO - const string / null
                 const String &str = data->strings[ initVals[inArg].ival ];
-                compiler.move32( pointer, ConstValue(str.length) );
-                compiler.move( pointer.offset(4), ConstValue(str.__s) );
-                compiler.add( stack, Reg(0), ConstValue( sizeof(int) + sizeof(void*) ) );
+                compiler->move(target, JitVal(str.length) );
+                compiler->move(target+sizeof(int), JitVal((void *)str.__s) );
              }
              break;
           default:
@@ -680,15 +650,14 @@ struct ScriptCallable : public CppiaDynamicExpr
                 }
                 if (val.mPtr || pushNullToo)
                 {
-                   compiler.move( pointer, ConstValue(val.mPtr) );
-                   compiler.add( stack, Reg(0), ConstValue( sizeof(void *) ) );
+                   compiler->move( target, JitVal((void *)val.mPtr) );
                 }
              }
        }
    }
 
 
-   void genArgs(CppiaCompiler &compiler, CppiaExpr *inThis, Expressions &inArgs)
+   void genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Expressions &inArgs)
    {
       int inCount = inArgs.size();
       bool badCount = argCount<inCount;
@@ -706,25 +675,18 @@ struct ScriptCallable : public CppiaDynamicExpr
          //return;
       }
 
-      CtxMemberVal stack(offsetof(CppiaCtx, pointer));
 
-
-      StarAddr pointer(Reg(1));
+      int framePos = compiler->getCurrentFrameSize();
       // Push this ...
       if (inThis)
       {
-         inThis->genCode(compiler, Reg(0), etObject);
-         compiler.move(Reg(1),stack);
-         compiler.move(pointer,Reg(0));
+         inThis->genCode(compiler, JitFramePos(framePos), etObject);
       }
       else
       {
-         compiler.move(Reg(1),stack);
-         StarAddr pointer(Reg(1));
-         compiler.move( pointer, ConstValue(0) );
+         compiler->move( JitFramePos(framePos), JitVal( (void *)0 ));
       }
-
-      compiler.add( stack, Reg(1), ConstValue( sizeof(void *) ) );
+      compiler->addFrame(etObject);
 
 
       for(int a=0;a<argCount;a++)
@@ -734,85 +696,78 @@ struct ScriptCallable : public CppiaDynamicExpr
          if (hasDefault[a])
          {
             if (a>=inCount)
+            {
                genPushDefault(compiler,a,true);
+            }
             else
             {
-                // Gen Object onto stack ...
-                inArgs[a]->genCode(compiler, Reg(1), etObject );
-                if (var.expressionType!=etObject)
-                {
-                   // Check for null
-                   sljit_jump *notNull = compiler.ifNotZero( Reg(1) );
+                // Gen Object onto frame ...
+                int framePos = compiler->getCurrentFrameSize();
 
+                if (var.expressionType==etInt)
+                {
+                   inArgs[a]->genCode(compiler, sJitArg0, etObject );
+
+                   // Check for null
+                   JumpId notNull = compiler->notNull(sJitArg0);
+
+                   // Is  null ...
                    genPushDefault(compiler,a,false);
 
-                   sljit_jump *doneArg = compiler.jump(SLJIT_JUMP);
+                   JumpId doneArg = compiler->jump();
 
-                   compiler.jumpHere(notNull);
+                   compiler->comeFrom(notNull);
 
-                   // Reg1 holds object
-                   switch(var.expressionType)
-                   {
-                      case etInt:
-                         compiler.move( Reg(0), CtxReg() );
-                         compiler.call( objectToInt, 2);
-                         break;
-                      case etFloat:
-                         compiler.move( Reg(0), CtxReg() );
-                         compiler.call( objectToDouble, 1);
-                         break;
-                      case etString:
-                         compiler.move( Reg(0), CtxReg() );
-                         compiler.call( objectToString, 1);
-                         break;
-                      default:
+                   // sJitArg0 holds object
+                   compiler->callNative( objectToInt, sJitArg0, jtInt);
+                   compiler->move( JitFramePos(framePos), sJitReturnReg );
 
-                   compiler.jumpHere(doneArg);
-                   }
+                   compiler->comeFrom(doneArg);
                 }
-                else
+                else if (var.expressionType==etObject)
                 {
-                   compiler.move(Reg(1),stack);
-                   StarAddr pointer(Reg(1));
-                   compiler.move(pointer,Reg(2));
+                   inArgs[a]->genCode(compiler, JitFramePos(framePos), etObject );
+                }
+                else if  (var.expressionType==etString)
+                {
+                   inArgs[a]->genCode(compiler, JitFramePos(framePos), etString );
+
+                   JumpId notNull = compiler->compare(cmpP_NOT_ZERO, JitFramePos(framePos + sizeof(int)) );
+
+                   // Is  null ...
+                   genPushDefault(compiler,a,false);
+
+                   compiler->comeFrom(notNull);
+                }
+                else // Float
+                {
+                   inArgs[a]->genCode(compiler, sJitTemp0, etObject );
+
+                   // Check for null
+                   JumpId notNull = compiler->compare(cmpP_NOT_ZERO, sJitTemp0);
+
+                   // Is  zero ...
+                   genPushDefault(compiler,a,false);
+                   JumpId doneArg = compiler->jump();
+
+                   compiler->comeFrom(notNull);
+
+                   compiler->move( JitFramePos(framePos), sJitTemp0 );
+                   compiler->add( sJitTemp0, sFrameReg, framePos );
+                   compiler->callNative( (void *)objectToDouble, sJitTemp0 );
+
+                   compiler->comeFrom(doneArg);
                 }
              }
          }
          else
          {
-            StarAddr pointer(Reg(1));
-            switch(var.expressionType)
-            {
-               case etInt:
-                  inArgs[a]->genCode(compiler, Reg(0), etInt);
-                  compiler.move(Reg(1),stack);
-                  compiler.move(pointer,Reg(0));
-                  compiler.add( stack, Reg(1), ConstValue( sizeof(int) ) );
-                  break;
-               case etFloat:
-                  inArgs[a]->genCode(compiler, FReg(0), etFloat);
-                  compiler.move(Reg(1),stack);
-                  compiler.move(pointer,FReg(0),SLJIT_DMOV);
-                  compiler.add( stack, Reg(1), ConstValue( sizeof(double) ) );
-                  break;
-               case etString:
-                  {
-                  AllocTemp result(compiler);
-                  inArgs[a]->genCode(compiler, result, etString);
-                  compiler.move(Reg(1),stack);
-                  compiler.move32(pointer,result);
-                  compiler.move(pointer.offset(4),result.offset(4));
-                  compiler.add( stack, Reg(1), ConstValue( sizeof(String) ) );
-                  }
-                  break;
-               default:
-                  inArgs[a]->genCode(compiler, Reg(0), etObject);
-                  compiler.add( stack, Reg(1), ConstValue( sizeof(void *) ) );
-            }
+            int framePos = compiler->getCurrentFrameSize();
+            inArgs[a]->genCode(compiler, JitFramePos(framePos), var.type->expressionType);
          }
+         compiler->addFrame(var.expressionType);
       }
    }
-   */
    #endif
 
 
@@ -1146,8 +1101,6 @@ struct ScriptCallable : public CppiaDynamicExpr
          body->genCode(compiler);
 
          compiler->beginGeneration(1);
-
-         compiler->trace("Hello!");
 
          // Second pass does the job
          body->genCode(compiler);
@@ -3295,21 +3248,21 @@ struct BlockExpr : public CppiaExpr
 
 
    #ifdef CPPIA_JIT
-   JitVal genCode(CppiaCompiler *compiler, const JitVal &inDest)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
-      JitVal result;
+      static const char *lines[] = { "l0","l1","l2","l3","l4","l5" };
 
       compiler->pushScope();
       int n = expressions.size();
       for(int i=0;i<n;i++)
       {
+         compiler->trace( lines[i] );
          if (i<n-1)
             expressions[i]->genCode(compiler);
          else
-            result = expressions[i]->genCode(compiler, inDest);
+            expressions[i]->genCode(compiler, inDest);
       }
       compiler->popScope();
-      return result;
    }
    #endif
 
@@ -3590,8 +3543,8 @@ struct CallFunExpr : public CppiaExpr
    {
       unsigned char *pointer = ctx->pointer;
       function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(false),args);
-      if (ctx->breakContReturn) return;
-
+      if (ctx->breakContReturn)
+         return;
 
       AutoStack save(ctx,pointer);
       ctx->runVoid(function);
@@ -3609,32 +3562,37 @@ struct CallFunExpr : public CppiaExpr
 
 
    // Function Call
-   JitVal genCode(CppiaCompiler *compiler, const JitVal &)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
-      JitTemp pointer(compiler, sJitCtxPointer);
+      int framePos = compiler->getCurrentFrameSize();
 
-      //function->genArgs(compiler);
-      JitTemp frame(compiler, sJitCtxFrame);
+      // Push args...
+      function->genArgs(compiler,thisExpr,args);
 
-      // TODO - compiled version
-      compiler->callNative( (void *)callScriptable, sJitCtx, JitVal((void *)function) );
+      // Store new frame in context ...
+      compiler->add( sJitCtxFrame, sJitFrame, JitVal(compiler->getCurrentFrameSize()) );
 
-      compiler->move(sJitCtxFrame,frame);
-      compiler->move(sJitCtxPointer,pointer);
+      // Compiled yet
+      if (function->compiled)
+      {
+         compiler->call( JitVal( (void *)(function->compiled)), sJitCtx, inDest.type );
+      }
+      else
+      {
+         // Compiled later
+         compiler->move( sJitTemp1, JitVal((void *)&function->compiled) );
+         compiler->call( sJitTemp1.star(), sJitCtx, inDest.type );
+      }
 
-      return JitVal();
+      compiler->restoreFrameSize(framePos);
+
+      // result is at 'framePos'
+      compiler->convertResult( returnType, destType, inDest );
    }
 
 
 
    /*
-   void preGen(CppiaCompiler &compiler)
-   {
-      AllocTemp pointer(compiler);
-      AllocTemp frame(compiler);
-      function->preGenArgs(compiler,thisExpr, args);
-   }
-
 
    void genCode(CppiaCompiler &compiler, const Addr &inDest, ExprType resultType)
    {
@@ -3678,7 +3636,7 @@ struct CallFunExpr : public CppiaExpr
       {
          sljit_jump *isZero = compiler.ifZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
          compiler.ret( );
-         compiler.jumpHere(isZero);
+         compiler.comeFrom(isZero);
       }
 
       convertResult(compiler, inDest, resultType, function->getType() );
@@ -3718,6 +3676,53 @@ struct CppiaExprWithValue : public CppiaDynamicExpr
 };
 
 // ---
+
+
+#ifdef CPPIA_JIT
+void SLJIT_CALL callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
+{
+   // ctx.pointer points to end-of-args
+   hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
+   try
+   {
+      switch(inArgs)
+      {
+         case 0:
+            base[0] = inFunction->__run().mPtr;
+            break;
+         case 1:
+            base[0] = inFunction->__run(base[0]).mPtr;
+            break;
+         case 2:
+            base[0] = inFunction->__run(base[0],base[1]).mPtr;
+            break;
+         case 3:
+            base[0] = inFunction->__run(base[0],base[1],base[2]).mPtr;
+            break;
+         case 4:
+            base[0] = inFunction->__run(base[0],base[1],base[2],base[3]).mPtr;
+            break;
+         case 5:
+            base[0] = inFunction->__run(base[0],base[1],base[2],base[3],base[4]).mPtr;
+            break;
+         default:
+            {
+            Array<Dynamic> argArray = Array_obj<Dynamic>::__new(inArgs,inArgs);
+            for(int s=0;s<inArgs;s++)
+               argArray[s] = base[s];
+            base[0] = inFunction->__Run(argArray).mPtr;
+            }
+      }
+   }
+   catch(Dynamic e)
+   {
+      ctx->exception = e.mPtr;
+   }
+   ctx->pointer = (unsigned char *)base;
+}
+#endif
+
+
 
 
 static int idx = 0;
@@ -3828,6 +3833,45 @@ struct CallDynamicFunction : public CppiaExprWithValue
       BCR_CHECK;
       return result ? result->toString() : String();
    }
+
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      int framePos = compiler->getCurrentFrameSize();
+
+      // Push this ...
+      compiler->move( JitFramePos(framePos), JitVal( (void *)0 ));
+      compiler->addFrame(etObject);
+
+      for(int a=0;a<args.size();a++)
+      {
+         args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize()), etObject);
+         compiler->addFrame(etObject);
+      }
+
+      compiler->callNative(callDynamic,sJitCtx, JitVal( (void *)value.mPtr),JitVal( (int)args.size() ) );
+
+      /*
+      if (compiler.exceptionHandler)
+      {
+         sljit_jump *notZero = compiler.ifNotZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
+         compiler.exceptionHandler->push_back(notZero);
+      }
+      else
+      {
+         sljit_jump *isZero = compiler.ifZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
+         compiler.ret( );
+         compiler.comeFrom(isZero);
+      }
+
+      // Result is at pointer
+      if (inDest!=pointer)
+         compiler.move( inDest, pointer );
+      */
+   }
+   #endif
+
 };
 
 struct SetExpr : public CppiaExpr
@@ -4566,48 +4610,6 @@ struct CallGlobal : public CppiaExpr
    }
 };
 
-void callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
-{
-   // ctx.pointer points to end-of-args
-   hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
-   try
-   {
-      switch(inArgs)
-      {
-         case 0:
-            base[0] = inFunction->__run().mPtr;
-            break;
-         case 1:
-            base[0] = inFunction->__run(base[0]).mPtr;
-            break;
-         case 2:
-            base[0] = inFunction->__run(base[0],base[1]).mPtr;
-            break;
-         case 3:
-            base[0] = inFunction->__run(base[0],base[1],base[2]).mPtr;
-            break;
-         case 4:
-            base[0] = inFunction->__run(base[0],base[1],base[2],base[3]).mPtr;
-            break;
-         case 5:
-            base[0] = inFunction->__run(base[0],base[1],base[2],base[3],base[4]).mPtr;
-            break;
-         default:
-            {
-            Array<Dynamic> argArray = Array_obj<Dynamic>::__new(inArgs,inArgs);
-            for(int s=0;s<inArgs;s++)
-               argArray[s] = base[s];
-            base[0] = inFunction->__Run(argArray).mPtr;
-            }
-      }
-   }
-   catch(Dynamic e)
-   {
-      ctx->exception = e.mPtr;
-   }
-   ctx->pointer = (unsigned char *)base;
-}
-
 
 
 struct FieldByName : public CppiaDynamicExpr
@@ -4960,39 +4962,29 @@ struct Call : public CppiaDynamicExpr
    }
 
    #ifdef CPPIA_JIT
-   /*
-   void preGen(CppiaCompiler &compiler)
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
-      AllocTemp frame(compiler);
-      for(int a=0;a<args.size();a++)
-          args[a]->preGen(compiler);
-   }
+      JitTemp functionObject(compiler, jtPointer);
 
-   void genObject(CppiaCompiler &compiler, const Addr &inDest)
-   {
-      func->genCode(compiler, TempReg(), etObject );
+      func->genCode(compiler, functionObject, etObject );
 
-      AllocTemp pointerSave(compiler);
-      CtxMemberVal pointer(offsetof(CppiaCtx,pointer));
-      compiler.move(pointerSave, pointer);
+      int framePos = compiler->getCurrentFrameSize();
 
- 
+      // Push this ...
+      compiler->move( JitFramePos(framePos), JitVal( (void *)0 ));
+      compiler->addFrame(etObject);
 
 
-      // TODO - shortcut for script->script
       for(int a=0;a<args.size();a++)
       {
-         args[a]->genCode(compiler, Reg(0), etObject);
-         compiler.move( Reg(1), pointer );
-         compiler.move( StarAddr(Reg(1)), Reg(0) );
-         compiler.add( pointer, Reg(1), ConstValue( sizeof(void *) ) );
+         args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize()), etObject);
+         compiler->addFrame(etObject);
       }
 
-      compiler.move(Reg(0), CtxReg());
-      compiler.move(Reg(1), TempReg());
-      compiler.move(Reg(2), ConstValue( args.size() ));
-      compiler.call( callDynamic, 3 );
+      compiler->setFramePointer();
+      compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
 
+      /*
       if (compiler.exceptionHandler)
       {
          sljit_jump *notZero = compiler.ifNotZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
@@ -5002,14 +4994,14 @@ struct Call : public CppiaDynamicExpr
       {
          sljit_jump *isZero = compiler.ifZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
          compiler.ret( );
-         compiler.jumpHere(isZero);
+         compiler.comeFrom(isZero);
       }
 
       // Result is at pointer
       if (inDest!=pointer)
          compiler.move( inDest, pointer );
+      */
    }
-   */
    #endif
 };
 
@@ -5806,6 +5798,37 @@ struct StringVal : public CppiaExprWithValue
       HX_VISIT_MEMBER(strVal);
    }
 #endif
+
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      switch(destType)
+      {
+         case etObject:
+           //TODO - GC! 
+           if (!value.mPtr)
+              value = strVal;
+           compiler->move(inDest, JitVal( value.mPtr ) );
+           break;
+
+
+         case etString:
+            if (!isMemoryVal(inDest))
+               compiler->setError("Bad String target");
+            else
+            {
+               compiler->move(inDest,JitVal(strVal.length));
+               compiler->move(inDest+sizeof(int),JitVal((void *)strVal.__s));
+            }
+            break;
+
+         default:
+            compiler->setError("Bad String conversion type");
+      }
+   }
+   #endif
+
 };
 
 

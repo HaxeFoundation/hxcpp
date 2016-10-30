@@ -17,13 +17,17 @@
 #include <vector>
 
 
+extern "C" struct sljit_jump;
+extern "C" struct sljit_label;
+
 namespace hx
 {
 
 enum JitPosition
 {
    jposDontCare,
-   jposStack,
+   jposCtx,
+   jposFrame,
    jposLocal,
    jposThis,
    jposArray,
@@ -46,6 +50,7 @@ enum JitType
 };
 
 extern int sCtxReg;
+extern int sFrameReg;
 extern int sThisReg;
 
 JitType getJitType(ExprType inType);
@@ -96,16 +101,103 @@ struct JitVal
    }
 
    JitVal operator +(int inDiff) const { return JitVal(type, offset+inDiff, position, reg0, reg1); }
+   JitVal star(int inOffset=0, JitType inType=jtPointer) { return JitVal(inType, offset+inOffset, jposStar, reg0, reg1); }
+   bool operator==(const JitVal &inOther) const
+   {
+      return position==inOther.position && type==inOther.type && offset==inOther.offset && reg0==inOther.reg0 && reg1==inOther.reg1; 
+   }
 };
 
-
-enum Condition
+struct JitFramePos : public JitVal
 {
-   condZero,
-   condNotZero,
-   condEqual,
-   condNotEqual,
+   JitFramePos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposFrame) { }
 };
+
+struct JitLocalPos : public JitVal
+{
+   JitLocalPos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposLocal) { }
+};
+
+struct JitThisPos : public JitVal
+{
+   JitThisPos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposThis) { }
+};
+
+
+enum JumpCompare
+{
+   // Pointer compare
+   cmpP_EQUAL =             0,
+   cmpP_ZERO =              0,
+   cmpP_NOT_EQUAL =         1,
+   cmpP_NOT_ZERO =          1,
+
+   cmpP_LESS =              2,
+   cmpP_GREATER_EQUAL =     3,
+   cmpP_GREATER =           4,
+   cmpP_LESS_EQUAL =        5,
+   cmpP_SIG_LESS =          6,
+   cmpP_SIG_GREATER_EQUAL = 7,
+   cmpP_SIG_GREATER =       8,
+   cmpP_SIG_LESS_EQUAL =    9,
+
+   cmpP_OVERFLOW =          10,
+   cmpP_NOT_OVERFLOW =      11,
+
+   cmpP_MUL_OVERFLOW =      12,
+   cmpP_MUL_NOT_OVERFLOW =  13,
+
+
+   // Integer compares
+   cmpI_EQUAL =             0 | 0x100,
+   cmpI_ZERO =              0 | 0x100,
+   cmpI_NOT_EQUAL =         1 | 0x100,
+   cmpI_NOT_ZERO =          1 | 0x100,
+
+   cmpI_LESS =              2 | 0x100,
+   cmpI_GREATER_EQUAL =     3 | 0x100,
+   cmpI_GREATER =           4 | 0x100,
+   cmpI_LESS_EQUAL =        5 | 0x100,
+   cmpI_SIG_LESS =          6 | 0x100,
+   cmpI_SIG_GREATER_EQUAL = 7 | 0x100,
+   cmpI_SIG_GREATER =       8 | 0x100,
+   cmpI_SIG_LESS_EQUAL =    9 | 0x100,
+
+   cmpI_OVERFLOW =          10 | 0x100,
+   cmpI_NOT_OVERFLOW =      11 | 0x100,
+
+   cmpI_MUL_OVERFLOW =      12 | 0x100,
+   cmpI_MUL_NOT_OVERFLOW =  13 | 0x100,
+
+   /* Floating point comparison types - double. */
+   cmpD_EQUAL =             14,
+   cmpD_NOT_EQUAL =         15,
+   cmpD_LESS =              16,
+   cmpD_GREATER_EQUAL =     17,
+   cmpD_GREATER =           18,
+   cmpD_LESS_EQUAL =        19,
+   cmpD_UNORDERED =         20,
+   cmpD_ORDERED =           21,
+
+   /* Floating point comparison types - single. */
+   cmpS_EQUAL =             14 | 0x100,
+   cmpS_NOT_EQUAL =         15 | 0x100,
+   cmpS_LESS =              16 | 0x100,
+   cmpS_GREATER_EQUAL =     17 | 0x100,
+   cmpS_GREATER =           18 | 0x100,
+   cmpS_LESS_EQUAL =        19 | 0x100,
+   cmpS_UNORDERED =         20 | 0x100,
+   cmpS_ORDERED =           21 | 0x100,
+
+};
+
+bool isMemoryVal(const JitVal &inVal);
+
+extern JitVal sJitFrame;
+
+extern JitVal sJitTemp0;
+extern JitVal sJitTemp1;
+extern JitVal sJitTemp2;
 
 extern JitVal sJitReturnReg;
 extern JitVal sJitArg0;
@@ -115,8 +207,8 @@ extern JitVal sJitCtx;
 extern JitVal sJitCtxPointer;
 extern JitVal sJitCtxFrame;
 
-typedef int LabelId;
-typedef int JumpId;
+typedef sljit_label *LabelId;
+typedef sljit_jump  *JumpId;
 
 typedef void (*CppiaFunc)(CppiaCtx *inCtx);
 
@@ -128,32 +220,55 @@ public:
 
    static void freeCompiled(CppiaFunc inFunc);
 
+   virtual void setError(const char *inError) = 0;
+
+   virtual void allocArgs(int inCount)=0;
+   virtual int getCurrentFrameSize() = 0;
+   virtual void restoreFrameSize(int inSize) = 0;
+   virtual void addFrame(ExprType inType) = 0;
+   virtual int  allocTemp(JitType inType) = 0;
+   virtual void freeTemp(JitType inType) = 0;
+   virtual JitVal  addLocal(const char *inName, JitType inType) = 0;
+   virtual JitVal functionArg(int inIndex) = 0;
+
+   virtual void convertResult(ExprType inFrom, ExprType inTo, const JitVal &inTarget) = 0;
+
    virtual void beginGeneration(int inArgs=1) = 0;
    virtual CppiaFunc finishGeneration() = 0;
 
    virtual void setFunctionDebug() = 0;
    virtual void setLineDebug() = 0;
 
+   // Unconditional
+   virtual JumpId jump(LabelId inTo=0) = 0;
+   virtual void   jump(const JitVal &inWhere) = 0;
+   // Conditional
+   virtual JumpId compare(JumpCompare condition, const JitVal &v0, LabelId andJump=0) = 0;
+   virtual JumpId compare(JumpCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
+   // Link
+   virtual void  comeFrom(JumpId inWhere) = 0;
+   virtual LabelId  addLabel() = 0;
+
+   inline  JumpId notNull(const JitVal &v0) { return compare(cmpP_NOT_ZERO, v0); }
+
+   virtual void setFramePointer() = 0;
+
    // Scriptable?
    virtual void addReturn() = 0;
    virtual void pushScope() = 0;
    virtual void popScope() = 0;
-   virtual int  allocTemp(JitType inType) = 0;
-   virtual void freeTemp(JitType inType) = 0;
-   virtual LabelId  addLabel() = 0;
-   virtual void     comeFrom(JumpId) = 0;
-   virtual JitVal  addLocal(const char *inName, JitType inType) = 0;
-   virtual JitVal  functionArg(int inIndex) = 0;
    virtual void  trace(const char *inValue) = 0;
    virtual void  trace(const char *inLabel, hx::Object *inObj) = 0;
 
    virtual void set(const JitVal &inDest, const JitVal &inSrc) = 0;
-   virtual JitVal add(const JitVal &v0, const JitVal &v1, JitVal inDest=JitVal() ) = 0;
+   virtual void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
    virtual void move(const JitVal &inDest, const JitVal &src) = 0;
-   virtual void compare(Condition condition,const JitVal &v0, const JitVal &v1) = 0;
-   virtual JumpId jump(LabelId inLabel, Condition condition) = 0;
-   virtual JitVal allocArgs(int inCount)=0;
-   virtual JitVal call(CppiaFunc func)=0;
+   //virtual void compare(Condition condition,const JitVal &v0, const JitVal &v1) = 0;
+
+
+   virtual JitVal call(CppiaFunc func, JitType inReturnType=jtVoid)=0;
+   virtual JitVal call(const JitVal &inFunc, JitType inReturnType=jtVoid)=0;
+   virtual JitVal call(const JitVal &inFunc, const JitVal &inArg0, JitType inReturnType=jtVoid)=0;
 
    virtual JitVal callNative(void *func, JitType inReturnType=jtVoid)=0;
    virtual JitVal callNative(void *func, const JitVal &inArg0, JitType inReturnType=jtVoid)=0;
@@ -167,11 +282,15 @@ public:
 struct JitTemp : public JitVal
 {
    CppiaCompiler *compiler;
-   JitTemp(CppiaCompiler *inCompiler, const JitVal &inSrc)
-      : JitVal(inSrc.type, inCompiler->allocTemp(inSrc.type), jposLocal)
+   JitType type;
+
+   JitTemp(CppiaCompiler *inCompiler, JitType inType)
+      : JitVal(inType, inCompiler->allocTemp(inType), jposLocal)
    {
       compiler = inCompiler;
+      type = inType;
    }
+
    ~JitTemp()
    {
       compiler->freeTemp(type);

@@ -157,7 +157,7 @@ struct CppiaExpr
 
 
    #ifdef CPPIA_JIT
-   virtual JitVal genCode(CppiaCompiler *compiler,const JitVal &inDest=JitVal());
+   virtual void genCode(CppiaCompiler *compiler,const JitVal &inDest=JitVal(),ExprType type=etNull);
    #endif
 };
 
