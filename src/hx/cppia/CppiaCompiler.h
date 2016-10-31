@@ -128,7 +128,7 @@ struct JitThisPos : public JitVal
 };
 
 
-enum JumpCompare
+enum JitCompare
 {
    // Pointer compare
    cmpP_EQUAL =             0,
@@ -249,8 +249,8 @@ public:
    virtual JumpId jump(LabelId inTo=0) = 0;
    virtual void   jump(const JitVal &inWhere) = 0;
    // Conditional
-   virtual JumpId compare(JumpCompare condition, const JitVal &v0, LabelId andJump=0) = 0;
-   virtual JumpId compare(JumpCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
+   virtual JumpId compare(JitCompare condition, const JitVal &v0, LabelId andJump=0) = 0;
+   virtual JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
    // Link
    virtual void  comeFrom(JumpId inWhere) = 0;
    virtual LabelId  addLabel() = 0;

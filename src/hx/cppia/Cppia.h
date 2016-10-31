@@ -158,6 +158,7 @@ struct CppiaExpr
 
    #ifdef CPPIA_JIT
    virtual void genCode(CppiaCompiler *compiler,const JitVal &inDest=JitVal(),ExprType type=etNull);
+   virtual JumpId genCompare(CppiaCompiler *compiler,LabelId inLabel=0);
    #endif
 };
 

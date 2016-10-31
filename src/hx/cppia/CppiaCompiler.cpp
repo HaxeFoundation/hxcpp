@@ -259,7 +259,7 @@ public:
    }
 
    // Conditional
-   JumpId compare(JumpCompare condition, const JitVal &v0, LabelId andJump)
+   JumpId compare(JitCompare condition, const JitVal &v0, LabelId andJump)
    {
       sljit_sw t = getTarget(v0);
       if (compiler)
@@ -272,7 +272,7 @@ public:
       return 0;
    }
 
-   JumpId compare(JumpCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
+   JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
    {
       sljit_sw t0 = getTarget(v0);
       sljit_sw t1 = getTarget(v1);

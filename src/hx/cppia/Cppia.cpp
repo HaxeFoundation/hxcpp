@@ -197,6 +197,12 @@ void CppiaExpr::genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType d
    compiler->trace(getName());
 }
 
+JumpId CppiaExpr::genCompare(CppiaCompiler *compiler,LabelId inLabel)
+{
+   compiler->trace(getName());
+   return 0;
+}
+
 
 
 int SLJIT_CALL objectToInt(hx::Object *obj) { return obj->__ToInt(); }
@@ -5249,7 +5255,6 @@ struct MemReference : public CppiaExpr
       switch(REFMODE)
       {
          case locObj:
-            printf("locObject!\n");
             //TODO - GC! 
             //if (!value.mPtr)
             //  value = strVal;
@@ -5257,7 +5262,6 @@ struct MemReference : public CppiaExpr
             break;
 
          case locThis:
-            printf("locThis!\n");
             /*
             if (!isMemoryVal(inDest))
                compiler->setError("Bad String target");
@@ -5277,7 +5281,7 @@ struct MemReference : public CppiaExpr
             break;
 
          default:
-            printf("locThis!\n");
+            compiler->convert( JitFramePos(offset),getType(),inDest, destType );
             // locFrame
       }
    }
@@ -5869,6 +5873,7 @@ struct DataVal : public CppiaExprWithValue
    DataVal(T inVal) : data(inVal)
    {
    }
+   const char *getName() { return "DataVal"; }
 
    ExprType getType() { return (ExprType)ExprTypeOf<T>::value; }
 
@@ -5883,6 +5888,34 @@ struct DataVal : public CppiaExprWithValue
          value = Dynamic(data);
       return value.mPtr;
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      switch(destType)
+      {
+         case etInt:
+            compiler->move(inDest, runInt(0));
+            break;
+         case etFloat:
+            // TODO - int conversion
+            compiler->move(sJitTemp0, (void *)&data);
+            compiler->move(inDest, sJitTemp0.star(jtFloat));
+            break;
+         case etString:
+            {
+            String val = runString(0);
+            compiler->move(inDest, val.length);
+            compiler->move(inDest+4, (void *)val.__s);
+            break;
+            }
+         case etObject:
+            compiler->move(inDest, (void *)runObject(0));
+            break;
+         default: ;
+      }
+   }
+   #endif
 };
 
 
@@ -6540,6 +6573,49 @@ struct VarDecl : public CppiaVoidExpr
       init = init ? init->link(inModule) : 0;
       return this;
    }
+
+
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      JitFramePos pos(var.stackPos);
+      if (init)
+      {
+         switch(var.expressionType)
+         {
+            case etInt: case etFloat: case etString: case etObject:
+               init->genCode(compiler, pos, var.expressionType );
+               break;
+            default: ;
+         }
+      }
+      else
+      {
+         switch(var.expressionType)
+         {
+            case etInt:
+               compiler->move(pos, (int)0);
+               break;
+            case etFloat:
+               compiler->move(pos, (int)0);
+               compiler->move(pos+4, (int)0);
+               break;
+            case etString:
+               compiler->move(pos, (int)0);
+               compiler->move(pos+4, (void *)0);
+               break;
+            case etObject:
+               compiler->move(pos, (void *)0);
+               break;
+
+            default: ;
+         }
+      }
+   }
+   #endif
+
+
 };
 
 struct TVars : public CppiaVoidExpr
@@ -6575,6 +6651,14 @@ struct TVars : public CppiaVoidExpr
       for(;v<end && !ctx->breakContReturn;v++)
          (*v)->runVoid(ctx);
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      for(int v=0;v<vars.size();v++)
+         vars[v]->genCode(compiler, JitVal(), etVoid );
+   }
+   #endif
 };
 
 struct ForExpr : public CppiaVoidExpr
@@ -6674,6 +6758,25 @@ struct WhileExpr : public CppiaVoidExpr
       }
       ctx->breakContReturn &= ~bcrLoop;
    }
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+
+      JumpId test = condition->genCompare(compiler);
+      JumpId skipAll = compiler->jump();
+
+      compiler->comeFrom(test);
+
+      LabelId body = compiler->addLabel();
+
+      loop->genCode(compiler, JitVal(), etVoid);
+
+      condition->genCompare(compiler,body);
+
+      compiler->comeFrom(skipAll);
+
+   }
+   #endif
 };
 
 struct SwitchExpr : public CppiaExpr
@@ -7684,12 +7787,41 @@ struct OpCompare : public OpCompareBase
 
       return 0;
    }
+   #ifdef CPPIA_JIT
+
+   JumpId genCompare(CppiaCompiler *compiler,LabelId inLabel)
+   {
+      switch(compareType)
+      {
+         case compInt:
+         {
+            /*
+            if (lhs->getBest(etInt))
+            {
+               return compiler->compare( (JitCompare)COMPARE::compare, lhs->getBest(etInt), sJitTemp0, inLabel );
+            }
+            */
+
+            JitTemp lhs(compiler,jtInt);
+            left->genCode(compiler, lhs, etInt);
+            right->genCode(compiler, sJitTemp0, etInt);
+            return compiler->compare( (JitCompare)COMPARE::compare, lhs, sJitTemp0, inLabel );
+         }
+
+         // TODO:
+         default: ;
+      }
+      return 0;
+   }
+
+   #endif
 };
 
 
-#define DEFINE_COMPARE_OP(name,OP) \
+#define DEFINE_COMPARE_OP(name,OP,COMP) \
 struct name \
 { \
+   enum { compare = COMP }; \
    template<typename T> \
    inline bool test(const T &left, const T&right) \
    { \
@@ -7697,12 +7829,12 @@ struct name \
    } \
 };
 
-DEFINE_COMPARE_OP(CompareLess,<);
-DEFINE_COMPARE_OP(CompareLessEq,<=);
-DEFINE_COMPARE_OP(CompareGreater,>);
-DEFINE_COMPARE_OP(CompareGreaterEq,>=);
-DEFINE_COMPARE_OP(CompareEqual,==);
-DEFINE_COMPARE_OP(CompareNotEqual,!=);
+DEFINE_COMPARE_OP(CompareLess,<,cmpI_SIG_LESS);
+DEFINE_COMPARE_OP(CompareLessEq,<=,cmpI_SIG_LESS_EQUAL);
+DEFINE_COMPARE_OP(CompareGreater,>,cmpI_SIG_GREATER);
+DEFINE_COMPARE_OP(CompareGreaterEq,>=,cmpI_SIG_GREATER_EQUAL);
+DEFINE_COMPARE_OP(CompareEqual,==,cmpI_EQUAL);
+DEFINE_COMPARE_OP(CompareNotEqual,!=,cmpI_NOT_EQUAL);
 
 
 
