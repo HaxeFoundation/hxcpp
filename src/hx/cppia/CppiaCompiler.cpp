@@ -17,6 +17,19 @@ static void SLJIT_CALL my_trace_func(const char *inText)
 {
    printf("trace: %s\n", inText); 
 }
+static void SLJIT_CALL my_trace_ptr_func(const char *inText, void *inPtr)
+{
+   printf("%s = %p\n",inText, inPtr);
+}
+static void SLJIT_CALL my_trace_int_func(const char *inText, int inValue)
+{
+   printf("%s = %d\n",inText, inValue);
+}
+static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
+{
+   printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().__s : "NULL" );
+}
+
 
 
 int sCtxReg = SLJIT_S0;
@@ -160,7 +173,6 @@ public:
          usesFrame = true;
          saveds = 3;
       }
-
       int fsaveds = 0;
       int scratches = std::max(maxTempCount,inArgs);
 
@@ -334,8 +346,8 @@ public:
             return SLJIT_MEM1(inVal.reg0);
 
          case jposFrame:
-            usesThis = true;
-            return SLJIT_MEM1(SLJIT_S1);
+            usesFrame = true;
+            return SLJIT_MEM1(sFrameReg);
 
          case jposThis:
             usesThis = true;
@@ -424,9 +436,9 @@ public:
       }
    }
 
-   void setFramePointer()
+   void setFramePointer(int inArgStart)
    {
-     add( sJitCtxPointer, sFrameReg, JitVal(frameSize) );
+      add( sJitCtxPointer, sJitFrame, inArgStart );
    }
 
 
@@ -447,19 +459,23 @@ public:
    }
 
 
-
+   void  traceObject(const char *inLabel, const JitVal &inObj)
+   {
+      callNative( (void *)my_trace_obj_func, JitVal((void *)inLabel), inObj, jtVoid);
+   }
+   void  tracePointer(const char *inLabel, const JitVal &inPtr)
+   {
+      callNative( (void *)my_trace_ptr_func, JitVal((void *)inLabel), inPtr, jtVoid);
+   }
+   void  traceInt(const char *inLabel, const JitVal &inValue)
+   {
+      callNative( (void *)my_trace_int_func, JitVal((void *)inLabel), inValue, jtVoid);
+   }
    void  trace(const char *inText)
    {
-      if (compiler)
-      {
-         sljit_emit_op1(compiler, SLJIT_MOV_P, SLJIT_R0,  0,  SLJIT_IMM, (sljit_sw)inText );
-         sljit_emit_ijump(compiler, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(my_trace_func));
-      }
+      callNative( (void *)my_trace_func, JitVal( (void *)inText ), jtVoid );
    }
 
-   void  trace(const char *inLabel, hx::Object *inObj)
-   {
-   }
 
    void set(const JitVal &inDest, const JitVal &inSrc)
    {
@@ -472,7 +488,7 @@ public:
       sljit_si t1 = getTarget(v1);
       if (compiler)
       {
-         sljit_emit_op2(compiler, SLJIT_IADD, tDest, getData(inDest), t0,  getData(v0),  t1, getData(v1) );
+         sljit_emit_op2(compiler, SLJIT_ADD, tDest, getData(inDest), t0,  getData(v0),  t1, getData(v1) );
       }
 
    }
@@ -505,6 +521,8 @@ public:
 
    virtual JitVal callNative(void *func, JitType inReturnType)
    {
+      if (maxTempCount<1)
+         maxTempCount =1;
       if (compiler)
       {
          sljit_emit_ijump(compiler, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));

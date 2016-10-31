@@ -49,9 +49,9 @@ enum JitType
   jtUnknown,
 };
 
-extern int sCtxReg;
-extern int sFrameReg;
-extern int sThisReg;
+//extern int sCtxReg;
+//extern int sFrameReg;
+//extern int sThisReg;
 
 JitType getJitType(ExprType inType);
 int getJitTypeSize(JitType inType);
@@ -251,14 +251,16 @@ public:
 
    inline  JumpId notNull(const JitVal &v0) { return compare(cmpP_NOT_ZERO, v0); }
 
-   virtual void setFramePointer() = 0;
+   virtual void setFramePointer(int inArgStart) = 0;
 
    // Scriptable?
    virtual void addReturn() = 0;
    virtual void pushScope() = 0;
    virtual void popScope() = 0;
-   virtual void  trace(const char *inValue) = 0;
-   virtual void  trace(const char *inLabel, hx::Object *inObj) = 0;
+   virtual void trace(const char *inValue) = 0;
+   virtual void traceObject(const char *inLabel, const JitVal &inValue) = 0;
+   virtual void tracePointer(const char *inLabel, const JitVal &inValue) = 0;
+   virtual void traceInt(const char *inLabel, const JitVal &inValue) = 0;
 
    virtual void set(const JitVal &inDest, const JitVal &inSrc) = 0;
    virtual void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
@@ -294,6 +296,24 @@ struct JitTemp : public JitVal
    ~JitTemp()
    {
       compiler->freeTemp(type);
+   }
+};
+
+
+struct AutoFramePos
+{
+   CppiaCompiler *compiler;
+   int framePos;
+
+   AutoFramePos(CppiaCompiler *inCompiler)
+   {
+      compiler = inCompiler;
+      framePos=compiler->getCurrentFrameSize();
+   }
+
+   ~AutoFramePos()
+   {
+      compiler->restoreFrameSize(framePos);
    }
 };
 

@@ -753,7 +753,7 @@ struct ScriptCallable : public CppiaDynamicExpr
                    compiler->comeFrom(notNull);
 
                    compiler->move( JitFramePos(framePos), sJitTemp0 );
-                   compiler->add( sJitTemp0, sFrameReg, framePos );
+                   compiler->add( sJitTemp0, sJitFrame, framePos );
                    compiler->callNative( (void *)objectToDouble, sJitTemp0 );
 
                    compiler->comeFrom(doneArg);
@@ -1101,6 +1101,7 @@ struct ScriptCallable : public CppiaDynamicExpr
          body->genCode(compiler);
 
          compiler->beginGeneration(1);
+
 
          // Second pass does the job
          body->genCode(compiler);
@@ -3838,19 +3839,14 @@ struct CallDynamicFunction : public CppiaExprWithValue
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
-      int framePos = compiler->getCurrentFrameSize();
-
-      // Push this ...
-      compiler->move( JitFramePos(framePos), JitVal( (void *)0 ));
-      compiler->addFrame(etObject);
-
+      AutoFramePos frame(compiler);
       for(int a=0;a<args.size();a++)
       {
          args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize()), etObject);
          compiler->addFrame(etObject);
       }
-
-      compiler->callNative(callDynamic,sJitCtx, JitVal( (void *)value.mPtr),JitVal( (int)args.size() ) );
+      compiler->setFramePointer( compiler->getCurrentFrameSize() );
+      compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size());
 
       /*
       if (compiler.exceptionHandler)
@@ -4974,14 +4970,13 @@ struct Call : public CppiaDynamicExpr
       compiler->move( JitFramePos(framePos), JitVal( (void *)0 ));
       compiler->addFrame(etObject);
 
-
       for(int a=0;a<args.size();a++)
       {
          args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize()), etObject);
          compiler->addFrame(etObject);
       }
 
-      compiler->setFramePointer();
+      compiler->setFramePointer(framePos);
       compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
 
       /*
@@ -5809,7 +5804,7 @@ struct StringVal : public CppiaExprWithValue
            //TODO - GC! 
            if (!value.mPtr)
               value = strVal;
-           compiler->move(inDest, JitVal( value.mPtr ) );
+           compiler->move(inDest, (void *) value.mPtr );
            break;
 
 
