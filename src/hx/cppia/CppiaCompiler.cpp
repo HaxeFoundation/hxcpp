@@ -32,11 +32,6 @@ static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
 
 
 
-int sCtxReg = SLJIT_S0;
-int sFrameReg = SLJIT_S1;
-int sThisReg = SLJIT_S2;
-
-
 int getJitTypeSize(JitType inType)
 {
    switch(inType)
@@ -85,21 +80,22 @@ bool isMemoryVal(const JitVal &inVal)
 }
 
 
-JitVal sJitReturnReg(jtAny, 0, jposRegister, SLJIT_R0);
-JitVal sJitArg0(jtAny, 0, jposRegister, SLJIT_R0);
-JitVal sJitArg1(jtAny, 0, jposRegister, SLJIT_R1);
-JitVal sJitArg2(jtAny, 0, jposRegister,SLJIT_R2);
+JitReg sJitReturnReg(SLJIT_R0);
 
-JitVal sJitTemp0(jtAny, 0, jposRegister, SLJIT_R0);
-JitVal sJitTemp1(jtAny, 0, jposRegister, SLJIT_R1);
-JitVal sJitTemp2(jtAny, 0, jposRegister, SLJIT_R2);
+JitReg sJitArg0(SLJIT_R0);
+JitReg sJitArg1(SLJIT_R1);
+JitReg sJitArg2(SLJIT_R2);
 
-JitVal sJitFrame(jtPointer, 0, jposRegister, sFrameReg);
-JitVal sJitThis(jtPointer, 0, jposRegister, sThisReg);
-JitVal sJitCtx(jtPointer, 0, jposRegister, sCtxReg);
+JitReg sJitTemp0(SLJIT_R0);
+JitReg sJitTemp1(SLJIT_R1);
+JitReg sJitTemp2(SLJIT_R2);
 
-JitVal sJitCtxFrame(jtPointer, offsetof(CppiaCtx,frame), jposStar, sCtxReg);
-JitVal sJitCtxPointer(jtPointer, offsetof(CppiaCtx,pointer), jposStar, sCtxReg);
+JitReg sJitCtx(SLJIT_S0,jtPointer);
+JitReg sJitFrame(SLJIT_S1,jtPointer);
+JitReg sJitThis(SLJIT_S2,jtPointer);
+
+JitVal sJitCtxFrame = sJitCtx.star(jtPointer, offsetof(CppiaCtx,frame));
+JitVal sJitCtxPointer = sJitCtx.star(jtPointer, offsetof(CppiaCtx,pointer));
 
 
 class CppiaJitCompiler : public CppiaCompiler
@@ -114,13 +110,14 @@ public:
 
    int localSize;
    int frameSize;
+   int baseFrameSize;
 
    int maxTempCount;
    int maxFtempCount;
    int maxLocalSize;
 
 
-   CppiaJitCompiler()
+   CppiaJitCompiler(int inFrameSize)
    {
       maxTempCount = 0;
       maxFtempCount = 0;
@@ -129,7 +126,7 @@ public:
       compiler = 0;
       usesThis = false;
       usesCtx = false;
-      frameSize = sizeof(void *); // This
+      frameSize = baseFrameSize = sizeof(void *) + inFrameSize;
    }
 
 
@@ -157,7 +154,7 @@ public:
    }
 
 
-   void beginGeneration(int inArgs /* in Arg sizes */ )
+   void beginGeneration(int inArgs)
    {
       compiler = sljit_create_compiler();
 
@@ -173,17 +170,21 @@ public:
          usesFrame = true;
          saveds = 3;
       }
+      saveds = 3;
       int fsaveds = 0;
       int scratches = std::max(maxTempCount,inArgs);
 
       sljit_emit_enter(compiler, options, inArgs, scratches, saveds, maxFtempCount, fsaveds, maxLocalSize);
+      usesCtx = true;
+
       if (usesFrame)
          move( sJitFrame, sJitCtxFrame );
 
       if (usesThis)
          move( sJitThis, JitFramePos(0) );
 
-      frameSize = sizeof(void *); // This
+      frameSize = baseFrameSize;
+
    }
 
    CppiaFunc finishGeneration()
@@ -347,7 +348,7 @@ public:
 
          case jposFrame:
             usesFrame = true;
-            return SLJIT_MEM1(sFrameReg);
+            return SLJIT_MEM1(SLJIT_S1);
 
          case jposThis:
             usesThis = true;
@@ -442,36 +443,39 @@ public:
    }
 
 
-   void convertResult(ExprType inFrom, ExprType inTo, const JitVal &inTarget)
+   void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
    {
-      JitFramePos src(frameSize, getJitType(inFrom) );
-      if (inFrom==inTo)
+      if (inSrcType==inToType)
       {
-         move( inTarget, src );
-      }
-      else if (inTarget==src)
-      {
-         // Store pointer...
+         move( inTarget, inSrcType );
       }
       else
       {
+         printf("Huh %d %d\n", inSrcType, inToType);
+         *(int *)0=0;
       }
    }
 
+   void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
+   {
+      if (inSrcType!=etVoid)
+         convert( JitFramePos(frameSize, getJitType(inSrcType)), inSrcType, inTarget, inToType);
+   }
 
-   void  traceObject(const char *inLabel, const JitVal &inObj)
+
+   void traceObject(const char *inLabel, const JitVal &inObj)
    {
       callNative( (void *)my_trace_obj_func, JitVal((void *)inLabel), inObj, jtVoid);
    }
-   void  tracePointer(const char *inLabel, const JitVal &inPtr)
+   void tracePointer(const char *inLabel, const JitVal &inPtr)
    {
       callNative( (void *)my_trace_ptr_func, JitVal((void *)inLabel), inPtr, jtVoid);
    }
-   void  traceInt(const char *inLabel, const JitVal &inValue)
+   void traceInt(const char *inLabel, const JitVal &inValue)
    {
       callNative( (void *)my_trace_int_func, JitVal((void *)inLabel), inValue, jtVoid);
    }
-   void  trace(const char *inText)
+   void trace(const char *inText)
    {
       callNative( (void *)my_trace_func, JitVal( (void *)inText ), jtVoid );
    }
@@ -555,6 +559,7 @@ public:
    {
       if (maxTempCount<3)
          maxTempCount =3;
+
       move( sJitArg0, inArg0);
       move( sJitArg1, inArg1);
       move( sJitArg2, inArg2);
@@ -573,9 +578,9 @@ void CppiaCompiler::freeCompiled(CppiaFunc inFunc)
 {
 }
 
-CppiaCompiler *CppiaCompiler::create()
+CppiaCompiler *CppiaCompiler::create(int inFrameSize)
 {
-   return new CppiaJitCompiler();
+   return new CppiaJitCompiler(inFrameSize);
 }
 
 

@@ -49,9 +49,6 @@ enum JitType
   jtUnknown,
 };
 
-//extern int sCtxReg;
-//extern int sFrameReg;
-//extern int sThisReg;
 
 JitType getJitType(ExprType inType);
 int getJitTypeSize(JitType inType);
@@ -101,12 +98,19 @@ struct JitVal
    }
 
    JitVal operator +(int inDiff) const { return JitVal(type, offset+inDiff, position, reg0, reg1); }
-   JitVal star(int inOffset=0, JitType inType=jtPointer) { return JitVal(inType, offset+inOffset, jposStar, reg0, reg1); }
    bool operator==(const JitVal &inOther) const
    {
       return position==inOther.position && type==inOther.type && offset==inOther.offset && reg0==inOther.reg0 && reg1==inOther.reg1; 
    }
 };
+
+struct JitReg : public JitVal
+{
+   JitReg(int inReg, JitType inType=jtAny) : JitVal(inType, 0, jposRegister, inReg, 0) { }
+
+   JitVal star(JitType inType=jtPointer, int inOffset=0) { return JitVal(inType, inOffset, jposStar, reg0, reg1); }
+};
+
 
 struct JitFramePos : public JitVal
 {
@@ -193,17 +197,17 @@ enum JumpCompare
 
 bool isMemoryVal(const JitVal &inVal);
 
-extern JitVal sJitFrame;
+extern JitReg sJitFrame;
 
-extern JitVal sJitTemp0;
-extern JitVal sJitTemp1;
-extern JitVal sJitTemp2;
+extern JitReg sJitTemp0;
+extern JitReg sJitTemp1;
+extern JitReg sJitTemp2;
 
-extern JitVal sJitReturnReg;
-extern JitVal sJitArg0;
-extern JitVal sJitArg1;
-extern JitVal sJitArg2;
-extern JitVal sJitCtx;
+extern JitReg sJitReturnReg;
+extern JitReg sJitArg0;
+extern JitReg sJitArg1;
+extern JitReg sJitArg2;
+extern JitReg sJitCtx;
 extern JitVal sJitCtxPointer;
 extern JitVal sJitCtxFrame;
 
@@ -215,7 +219,7 @@ typedef void (*CppiaFunc)(CppiaCtx *inCtx);
 class CppiaCompiler
 {
 public:
-   static CppiaCompiler *create();
+   static CppiaCompiler *create(int inFrameSize);
    virtual ~CppiaCompiler() { }
 
    static void freeCompiled(CppiaFunc inFunc);
@@ -231,7 +235,9 @@ public:
    virtual JitVal  addLocal(const char *inName, JitType inType) = 0;
    virtual JitVal functionArg(int inIndex) = 0;
 
-   virtual void convertResult(ExprType inFrom, ExprType inTo, const JitVal &inTarget) = 0;
+   
+   virtual void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType) = 0;
+   virtual void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType) = 0;
 
    virtual void beginGeneration(int inArgs=1) = 0;
    virtual CppiaFunc finishGeneration() = 0;

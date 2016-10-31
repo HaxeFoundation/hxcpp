@@ -1095,7 +1095,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    {
       if (!compiled && body)
       {
-         CppiaCompiler *compiler = CppiaCompiler::create();
+         CppiaCompiler *compiler = CppiaCompiler::create(stackSize);
 
          // First pass calculates size...
          body->genCode(compiler);
@@ -3251,13 +3251,10 @@ struct BlockExpr : public CppiaExpr
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
-      static const char *lines[] = { "l0","l1","l2","l3","l4","l5" };
-
       compiler->pushScope();
       int n = expressions.size();
       for(int i=0;i<n;i++)
       {
-         compiler->trace( lines[i] );
          if (i<n-1)
             expressions[i]->genCode(compiler);
          else
@@ -3588,7 +3585,7 @@ struct CallFunExpr : public CppiaExpr
       compiler->restoreFrameSize(framePos);
 
       // result is at 'framePos'
-      compiler->convertResult( returnType, destType, inDest );
+      compiler->convertResult( returnType, inDest, destType );
    }
 
 
@@ -4960,15 +4957,11 @@ struct Call : public CppiaDynamicExpr
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
+      AutoFramePos frame(compiler);
+
       JitTemp functionObject(compiler, jtPointer);
 
       func->genCode(compiler, functionObject, etObject );
-
-      int framePos = compiler->getCurrentFrameSize();
-
-      // Push this ...
-      compiler->move( JitFramePos(framePos), JitVal( (void *)0 ));
-      compiler->addFrame(etObject);
 
       for(int a=0;a<args.size();a++)
       {
@@ -4976,7 +4969,7 @@ struct Call : public CppiaDynamicExpr
          compiler->addFrame(etObject);
       }
 
-      compiler->setFramePointer(framePos);
+      compiler->setFramePointer( compiler->getCurrentFrameSize() );
       compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
 
       /*
@@ -5249,6 +5242,47 @@ struct MemReference : public CppiaExpr
       CHECKVAL;
       return Dynamic( MEMGETVAL ).mPtr;
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      switch(REFMODE)
+      {
+         case locObj:
+            printf("locObject!\n");
+            //TODO - GC! 
+            //if (!value.mPtr)
+            //  value = strVal;
+            //compiler->move(inDest, (void *) value.mPtr );
+            break;
+
+         case locThis:
+            printf("locThis!\n");
+            /*
+            if (!isMemoryVal(inDest))
+               compiler->setError("Bad String target");
+            else
+            {
+               compiler->move(inDest,JitVal(strVal.length));
+               compiler->move(inDest+sizeof(int),JitVal((void *)strVal.__s));
+            }
+            */
+            break;
+
+
+         case locAbsolute:
+            compiler->move( sJitTemp0,  JitVal( (void *)pointer ) );
+            compiler->move( inDest,  sJitTemp0.star() );
+            //compiler->convert( sJitTemp0.star(jtPointer,0), getType(),inDest, destType );
+            break;
+
+         default:
+            printf("locThis!\n");
+            // locFrame
+      }
+   }
+   #endif
+
 
    CppiaExpr  *makeSetter(AssignOp op,CppiaExpr *value);
    CppiaExpr  *makeCrement(CrementOp inOp);
@@ -5890,6 +5924,16 @@ struct PosInfo : public CppiaExprWithValue
       value = hx::SourceInfo(file,line,clazz,method);
       return CppiaExprWithValue::link(inModule);
    }
+
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      // TODO GC
+      compiler->move(inDest, (void *)value.mPtr );
+   }
+   #endif
+
 };
 
 
@@ -6517,6 +6561,7 @@ struct TVars : public CppiaVoidExpr
             throw "Bad var decl";
       }
    }
+   const char *getName() { return "TVars"; }
    CppiaExpr *link(CppiaModule &inModule)
    {
       LinkExpressions(vars,inModule);
