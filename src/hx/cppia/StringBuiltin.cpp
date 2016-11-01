@@ -35,6 +35,7 @@ struct SubStrExpr : public StringExpr
       a0 = inA0;
       a1 = inA1;
    }
+   const char *getName() { return "SubStrExpr"; }
    CppiaExpr *link(CppiaModule &inData)
    {
       a0 = a0->link(inData);
@@ -60,6 +61,7 @@ struct SubStrExpr : public StringExpr
 template<bool UPPER>
 struct ToCaseExpr : public StringExpr
 {
+   const char *getName() { return "ToCaseExpr"; }
    ToCaseExpr(CppiaExpr *inSrc, CppiaExpr *inThis ) : StringExpr(inSrc,inThis) { }
    String runString(CppiaCtx *ctx)
    {
@@ -86,6 +88,7 @@ struct CharAtExpr : public StringExpr
       a0 = a0->link(inData);
       return StringExpr::link(inData);
    }
+   const char *getName() { return "CharAtExpr"; }
    ExprType getType() { return CODE ? (AS_INT ? etInt : etObject) : etString; }
 
    String runString(CppiaCtx *ctx)
@@ -141,6 +144,7 @@ struct SplitExpr : public CppiaExpr
       strVal = inThis;
       a0 = inDelim;
    }
+   const char *getName() { return "SplitExpr"; }
    CppiaExpr *link(CppiaModule &inData)
    {
       strVal = strVal->link(inData);
@@ -175,6 +179,7 @@ struct IndexOfExpr : public CppiaExpr
       sought = inSought;
       start = inStart;
    }
+   const char *getName() { return "IndexOfExpr"; }
    ExprType getType() { return etInt; }
    CppiaExpr *link(CppiaModule &inData)
    {

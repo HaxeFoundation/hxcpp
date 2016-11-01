@@ -222,6 +222,22 @@ void SLJIT_CALL stringToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->ge
 void SLJIT_CALL intToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getInt() ); }
 void SLJIT_CALL doubleToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getFloat() ); }
 
+void SLJIT_CALL dynamicAddStr(hx::Object *inObj1, hx::Object *inObj2, String *outString) {
+   *outString = Dynamic(inObj1) + Dynamic(inObj2);
+}
+void *SLJIT_CALL dynamicAddObj(hx::Object *inObj1, hx::Object *inObj2) {
+   return (Dynamic(inObj1) + Dynamic(inObj2)).mPtr;
+}
+void SLJIT_CALL strAddStrToStrOver(String *ioStr, String *inStr1) {
+   *ioStr = *ioStr + *inStr1;
+}
+void SLJIT_CALL strAddStrToStr(String *inStr0, String *inStr1, String *outStr) {
+   *outStr = *inStr0 + *inStr1;
+}
+void *SLJIT_CALL strAddStrToObj(String *inStr0, String *inStr1) {
+   return Dynamic(*inStr0 + *inStr1).mPtr;
+}
+
 #endif
 
 
@@ -508,6 +524,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    ~ScriptCallable()
    {
       #ifdef CPPIA_JIT
+      printf("BYE!\n");
       if (compiled)
          CppiaCompiler::freeCompiled(compiled);
       #endif
@@ -1107,7 +1124,6 @@ struct ScriptCallable : public CppiaDynamicExpr
          body->genCode(compiler);
 
          compiler->beginGeneration(1);
-
 
          // Second pass does the job
          body->genCode(compiler);
@@ -5282,8 +5298,7 @@ struct MemReference : public CppiaExpr
 
          default:
             // locFrame
-            compiler->move( inDest, JitFramePos(offset).asInt());
-            //compiler->convert( JitFramePos(offset),getType(),inDest, destType );
+            compiler->convert( JitFramePos(offset),getType(),inDest, destType );
       }
    }
    #endif
@@ -5919,8 +5934,8 @@ struct StringVal : public CppiaExprWithValue
                compiler->setError("Bad String target");
             else
             {
-               compiler->move(inDest,JitVal(strVal.length));
-               compiler->move(inDest+sizeof(int),JitVal((void *)strVal.__s));
+               compiler->move(inDest.as(jtInt),JitVal(strVal.length));
+               compiler->move(inDest.as(jtPointer)+sizeof(int),JitVal((void *)strVal.__s));
             }
             break;
 
@@ -5992,6 +6007,7 @@ struct NullVal : public CppiaExpr
 {
    NullVal() { }
    ExprType getType() { return etObject; }
+   const char *getName() { return "NullVal"; }
 
    void        runVoid(CppiaCtx *ctx) {  }
    int runInt(CppiaCtx *ctx) { return 0; }
@@ -7496,6 +7512,7 @@ struct SpecialAdd : public CppiaExpr
       left = inLeft;
       right = inRight;
    }
+   virtual const char *getName() { return "SpecialAdd"; }
    void runVoid(CppiaCtx *ctx)
    {
       left->runVoid(ctx);
@@ -7555,6 +7572,70 @@ struct SpecialAdd : public CppiaExpr
       right->runVoid(ctx);
       return 0;
    }
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (!AS_DYNAMIC)
+      {
+         // String version
+         if (destType==etObject || destType==etString)
+         {
+            JitTemp s0(compiler,jtString);
+            JitTemp s1(compiler,jtString);
+            left->genCode(compiler, s0, etString);
+            right->genCode(compiler, s1, etString);
+            compiler->add( sJitTemp0, s0.getReg().as(jtPointer), s0.offset );
+            compiler->add( sJitTemp1, s1.getReg().as(jtPointer), s1.offset );
+            if (destType==etString)
+            {
+               //compiler->add( sJitTemp2, inDest.getReg().as(jtPointer), inDest.offset );
+               //compiler->callNative(strAddStrToStr, sJitTemp0, sJitTemp1, sJitTemp2);
+               compiler->callNative(strAddStrToStrOver, sJitTemp0, sJitTemp1);
+               compiler->move(inDest,s0);
+            }
+            else // Object
+            {
+               compiler->callNative(strAddStrToObj, sJitTemp0, sJitTemp1);
+               compiler->move( inDest, sJitReturnReg );
+            }
+         }
+         else
+         {
+            left->genCode(compiler, JitVal(), etObject);
+            right->genCode(compiler, JitVal(), etObject);
+         }
+      }
+      else
+      {
+         JitTemp tLeft(compiler,jtPointer);
+         left->genCode(compiler, tLeft, etObject);
+         right->genCode(compiler, sJitTemp1, etObject);
+
+         switch(destType)
+         {
+            case etString:
+               if (inDest.offset==0)
+                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, inDest.getReg());
+               else
+               {
+                  compiler->add(sJitTemp2, inDest.getReg(), inDest.offset);
+                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, sJitTemp2);
+               }
+               break;
+
+            case etObject:
+               compiler->callNative(dynamicAddObj, tLeft, sJitTemp1);
+               compiler->move(inDest, sJitReturnReg.as(jtPointer));
+               break;
+
+
+            // TODO - others
+            default:
+               printf("TODO - dynamic add\n");
+         }
+      }
+   }
+   #endif
 };
 
 struct OpNeg : public CppiaExpr
@@ -7565,6 +7646,7 @@ struct OpNeg : public CppiaExpr
    {
       value = createCppiaExpr(stream);
    }
+   virtual const char *getName() { return "OpNeg"; }
 
    CppiaExpr *link(CppiaModule &inModule)
    {
@@ -7595,6 +7677,8 @@ struct OpAdd : public BinOp
    OpAdd(CppiaStream &stream) : BinOp(stream)
    {
    }
+
+   const char *getName() { return "Add"; }
 
    CppiaExpr *link(CppiaModule &inModule)
    {
@@ -7873,7 +7957,7 @@ struct OpCompare : public OpCompareBase
             JitTemp lhs(compiler,jtInt);
             left->genCode(compiler, lhs, etInt);
             right->genCode(compiler, sJitTemp0, etInt);
-            return compiler->compare( (JitCompare)COMPARE::compare, lhs, sJitTemp0.asInt(), inLabel );
+            return compiler->compare( (JitCompare)COMPARE::compare, lhs, sJitTemp0.as(jtInt), inLabel );
          }
 
          // TODO:

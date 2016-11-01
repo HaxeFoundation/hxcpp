@@ -98,12 +98,16 @@ struct JitVal
    }
 
    JitVal operator +(int inDiff) const { return JitVal(type, offset+inDiff, position, reg0, reg1); }
-   JitVal asInt() const { return JitVal(jtInt, offset, position, reg0, reg1); }
+   JitVal as(JitType type) const { return JitVal(type, offset, position, reg0, reg1); }
+   bool valid() const { return type!=jtVoid; }
 
    bool operator==(const JitVal &inOther) const
    {
       return position==inOther.position && type==inOther.type && offset==inOther.offset && reg0==inOther.reg0 && reg1==inOther.reg1; 
    }
+   bool operator!=(const JitVal &inOther) const { return !(*this == inOther); }
+
+   JitVal getReg() const { return JitVal(jtPointer, 0, jposRegister, reg0, reg1); }
 };
 
 struct JitReg : public JitVal
@@ -114,19 +118,22 @@ struct JitReg : public JitVal
 };
 
 
+extern int sFrameReg;
 struct JitFramePos : public JitVal
 {
-   JitFramePos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposFrame) { }
+   JitFramePos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposFrame, sFrameReg) { }
 };
 
+extern int sLocalReg;
 struct JitLocalPos : public JitVal
 {
-   JitLocalPos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposLocal) { }
+   JitLocalPos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposLocal, sLocalReg) { }
 };
 
+extern int sThisReg;
 struct JitThisPos : public JitVal
 {
-   JitThisPos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposThis) { }
+   JitThisPos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposThis, sThisReg) { }
 };
 
 
@@ -294,7 +301,7 @@ struct JitTemp : public JitVal
    CppiaCompiler *compiler;
 
    JitTemp(CppiaCompiler *inCompiler, JitType inType)
-      : JitVal(inType, inCompiler->allocTemp(inType), jposLocal)
+      : JitVal(inType, inCompiler->allocTemp(inType), jposLocal, sLocalReg)
    {
       compiler = inCompiler;
    }

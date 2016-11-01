@@ -29,7 +29,14 @@ static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
 {
    printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().__s : "NULL" );
 }
-
+static void *SLJIT_CALL intToObj(int inVal)
+{
+   return Dynamic(inVal).mPtr;
+}
+static void SLJIT_CALL intToStr(int inVal, String *outString)
+{
+   *outString = String(inVal);
+}
 
 
 int getJitTypeSize(JitType inType)
@@ -80,6 +87,7 @@ bool isMemoryVal(const JitVal &inVal)
    }
 }
 
+int sLocalReg = SLJIT_SP;
 
 JitReg sJitReturnReg(SLJIT_R0);
 
@@ -91,9 +99,14 @@ JitReg sJitTemp0(SLJIT_R0);
 JitReg sJitTemp1(SLJIT_R1);
 JitReg sJitTemp2(SLJIT_R2);
 
+int sCtxReg = SLJIT_S0;
+int sFrameReg = SLJIT_S1;
+int sThisReg = SLJIT_S2;
+
 JitReg sJitCtx(SLJIT_S0,jtPointer);
 JitReg sJitFrame(SLJIT_S1,jtPointer);
 JitReg sJitThis(SLJIT_S2,jtPointer);
+
 
 JitVal sJitCtxFrame = sJitCtx.star(jtPointer, offsetof(CppiaCtx,frame));
 JitVal sJitCtxPointer = sJitCtx.star(jtPointer, offsetof(CppiaCtx,pointer));
@@ -363,6 +376,7 @@ public:
 
          case jposDontCare:
             setError("No position specification");
+            *(int *)0=0;
             break;
 
          default:
@@ -408,7 +422,7 @@ public:
    // May required indirect offsets
    void move(const JitVal &inDest, const JitVal &inSrc)
    {
-      if (inDest==inSrc)
+      if (inDest==inSrc || !inDest.valid())
          return;
 
       switch(getCommonType(inDest,inSrc))
@@ -425,7 +439,10 @@ public:
 
          case jtString:
             if (!isMemoryVal(inDest) || !isMemoryVal(inSrc))
+            {
                setError("Bad string move");
+               *(int *)0=0;
+            }
             else
             {
                emit_op1(SLJIT_MOV_SI, inDest, inSrc);
@@ -435,6 +452,7 @@ public:
          case jtVoid:
          case jtUnknown:
             setError("Bad move target");
+            *(int *)0=0;
       }
    }
 
@@ -446,14 +464,37 @@ public:
 
    void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
    {
+      if (!inTarget.valid())
+         return;
+
       if (inSrcType==inToType)
       {
-         move( inTarget, inSrcType );
+         move( inTarget, inSrc );
       }
-      else
+      else if (inToType==etObject)
       {
-         printf("Huh %d %d\n", inSrcType, inToType);
-         *(int *)0=0;
+         switch(inSrcType)
+         {
+            case etInt:
+               callNative( (void *)intToObj, inSrc, jtPointer);
+               if (inTarget!=sJitReturnReg)
+                  emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg);
+               break;
+            default:
+               printf("TODO - other to object\n");
+         }
+      }
+      else if (inToType==etString)
+      {
+         switch(inSrcType)
+         {
+            case etInt:
+               add( sJitTemp1, inTarget.getReg(), inTarget.offset );
+               callNative( (void *)intToStr, inSrc.as(jtInt), sJitTemp1.as(jtPointer), jtVoid );
+               break;
+            default:
+               printf("TODO - other to string\n");
+         }
       }
    }
 
@@ -493,7 +534,10 @@ public:
       sljit_si t1 = getTarget(v1);
       if (compiler)
       {
-         sljit_emit_op2(compiler, SLJIT_ADD, tDest, getData(inDest), t0,  getData(v0),  t1, getData(v1) );
+         if (v0.reg0==sLocalReg)
+            sljit_get_local_base(compiler, tDest, getData(inDest), v1.offset );
+         else
+            sljit_emit_op2(compiler, SLJIT_ADD, tDest, getData(inDest), t0,  getData(v0),  t1, getData(v1) );
       }
 
    }
