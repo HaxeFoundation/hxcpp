@@ -7829,12 +7829,21 @@ struct name \
    } \
 };
 
+#ifdef CPPIA_JIT
 DEFINE_COMPARE_OP(CompareLess,<,cmpI_SIG_LESS);
 DEFINE_COMPARE_OP(CompareLessEq,<=,cmpI_SIG_LESS_EQUAL);
 DEFINE_COMPARE_OP(CompareGreater,>,cmpI_SIG_GREATER);
 DEFINE_COMPARE_OP(CompareGreaterEq,>=,cmpI_SIG_GREATER_EQUAL);
 DEFINE_COMPARE_OP(CompareEqual,==,cmpI_EQUAL);
 DEFINE_COMPARE_OP(CompareNotEqual,!=,cmpI_NOT_EQUAL);
+#else
+DEFINE_COMPARE_OP(CompareLess,<,0);
+DEFINE_COMPARE_OP(CompareLessEq,<=,0);
+DEFINE_COMPARE_OP(CompareGreater,>,0);
+DEFINE_COMPARE_OP(CompareGreaterEq,>=,0);
+DEFINE_COMPARE_OP(CompareEqual,==,0);
+DEFINE_COMPARE_OP(CompareNotEqual,!=,0);
+#endif
 
 
 
