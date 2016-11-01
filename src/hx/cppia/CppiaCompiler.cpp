@@ -71,6 +71,7 @@ bool isMemoryVal(const JitVal &inVal)
 {
    switch(inVal.position)
    {
+      case jposFrame:
       case jposLocal:
       case jposThis:
          return true;

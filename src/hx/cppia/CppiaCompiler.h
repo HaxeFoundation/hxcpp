@@ -98,6 +98,8 @@ struct JitVal
    }
 
    JitVal operator +(int inDiff) const { return JitVal(type, offset+inDiff, position, reg0, reg1); }
+   JitVal asInt() const { return JitVal(jtInt, offset, position, reg0, reg1); }
+
    bool operator==(const JitVal &inOther) const
    {
       return position==inOther.position && type==inOther.type && offset==inOther.offset && reg0==inOther.reg0 && reg1==inOther.reg1; 
@@ -290,13 +292,11 @@ public:
 struct JitTemp : public JitVal
 {
    CppiaCompiler *compiler;
-   JitType type;
 
    JitTemp(CppiaCompiler *inCompiler, JitType inType)
       : JitVal(inType, inCompiler->allocTemp(inType), jposLocal)
    {
       compiler = inCompiler;
-      type = inType;
    }
 
    ~JitTemp()

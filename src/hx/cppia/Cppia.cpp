@@ -5281,8 +5281,9 @@ struct MemReference : public CppiaExpr
             break;
 
          default:
-            compiler->convert( JitFramePos(offset),getType(),inDest, destType );
             // locFrame
+            compiler->move( inDest, JitFramePos(offset).asInt());
+            //compiler->convert( JitFramePos(offset),getType(),inDest, destType );
       }
    }
    #endif
@@ -5442,6 +5443,7 @@ struct MemReferenceCrement : public CppiaExpr
    int offset;
    T   *pointer;
    CppiaExpr *object;
+   const char *getName() { return "MemReferenceCrement"; }
 
    MemReferenceCrement(MemReference<T,REFMODE> *inSrc) : CppiaExpr(inSrc)
    {
@@ -5497,6 +5499,70 @@ struct MemReferenceCrement : public CppiaExpr
       return this;
    }
 
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      CrementOp op = (CrementOp)CREMENT::OP;
+      int diff =  op==coPostDec || op==coPreDec ? -1 : 1;
+
+      switch(REFMODE)
+      {
+         case locObj:
+            //TODO - GC! 
+            //if (!value.mPtr)
+            //  value = strVal;
+            //compiler->move(inDest, (void *) value.mPtr );
+            break;
+
+         case locThis:
+            /*
+            if (!isMemoryVal(inDest))
+               compiler->setError("Bad String target");
+            else
+            {
+               compiler->move(inDest,JitVal(strVal.length));
+               compiler->move(inDest+sizeof(int),JitVal((void *)strVal.__s));
+            }
+            */
+            break;
+
+
+         case locAbsolute:
+            compiler->move( sJitTemp0,  JitVal( (void *)pointer ) );
+            compiler->move( inDest,  sJitTemp0.star() );
+            //compiler->convert( sJitTemp0.star(jtPointer,0), getType(),inDest, destType );
+            break;
+
+         default:
+            // locFrame
+            switch(getType())
+            {
+               case etInt:
+                  if ( inDest.type==jtVoid)
+                  {
+                     compiler->add( JitFramePos(offset,jtInt),  JitFramePos(offset,jtInt), diff );
+                  }
+                  else if (op==coPostInc || op==coPostDec)
+                  {
+                     compiler->move( sJitTemp0, JitFramePos(offset,jtInt) );
+                     compiler->add( JitFramePos(offset,jtInt), sJitTemp0, op==coPostDec ? -1 : 1 );
+                     compiler->convert( sJitTemp0, etInt, inDest, destType );
+                  }
+                  else
+                  {
+                     compiler->add( sJitTemp0, JitFramePos(offset,jtInt), diff );
+                     compiler->move( JitFramePos(offset,jtInt), sJitTemp0);
+                     compiler->convert( sJitTemp0, etInt, inDest, destType );
+                  }
+                  break;
+
+               default: ;
+               // TODO
+            }
+      }
+
+   }
+   #endif
 
 };
 
@@ -5532,6 +5598,7 @@ struct MemStackFloatSetter : public CppiaExpr
    MemStackFloatSetter(const CppiaExpr *inSrc, int inOffset, AssignOp inOp, CppiaExpr *inValue)
       : CppiaExpr(inSrc), offset(inOffset), op(inOp), value(inValue){ } 
    ExprType getType() { return etFloat; }
+   const char *getName() { return "MemStackFloatSetter"; }
 
    inline Float doRun(CppiaCtx *ctx)
    {
@@ -5571,6 +5638,7 @@ struct MemStackFloatCrement : public CppiaExpr
    MemStackFloatCrement(const CppiaExpr *inSrc, int inOffset, CrementOp inOp)
       : CppiaExpr(inSrc), offset(inOffset), op(inOp) { } 
    ExprType getType() { return etFloat; }
+   const char *getName() { return "MemStackFloatCrement"; }
 
    inline Float doRun(CppiaCtx *ctx)
    {
@@ -7805,7 +7873,7 @@ struct OpCompare : public OpCompareBase
             JitTemp lhs(compiler,jtInt);
             left->genCode(compiler, lhs, etInt);
             right->genCode(compiler, sJitTemp0, etInt);
-            return compiler->compare( (JitCompare)COMPARE::compare, lhs, sJitTemp0, inLabel );
+            return compiler->compare( (JitCompare)COMPARE::compare, lhs, sJitTemp0.asInt(), inLabel );
          }
 
          // TODO:
