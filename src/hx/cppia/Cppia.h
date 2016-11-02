@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 
 
 
@@ -22,6 +23,8 @@ enum ExprType
   etFloat,
   etInt,
 };
+
+
 } // end namespace hx
 
 
@@ -38,7 +41,7 @@ class CppiaModule;
 //#define DBGLOG printf
 
 struct TypeData;
-struct CppiaClassInfo;
+class CppiaClassInfo;
 struct CppiaExpr;
 struct CppiaStream;
 struct CppiaStackVar;
@@ -103,6 +106,9 @@ enum VarLocation
    locAbsolute,
 };
 
+typedef std::map<int,CppiaStackVar *> CppiaStackVarMap;
+
+extern String sInvalidArgCount;
 
 struct CppiaExpr
 {
@@ -162,6 +168,103 @@ struct CppiaExpr
    #endif
 };
 
+typedef std::vector<CppiaExpr *> Expressions;
+
+
+struct CppiaDynamicExpr : public CppiaExpr
+{
+   inline CppiaDynamicExpr(const CppiaExpr *inSrc=0) : CppiaExpr(inSrc) {}
+   const char *getName();
+   int         runInt(CppiaCtx *ctx);
+   Float       runFloat(CppiaCtx *ctx);
+   ::String    runString(CppiaCtx *ctx);
+   void        runVoid(CppiaCtx *ctx);
+   hx::Object *runObject(CppiaCtx *ctx) = 0;
+};
+
+struct CppiaConst
+{
+   enum Type { cInt, cFloat, cString, cBool, cNull, cThis, cSuper };
+
+   Type type;
+   int  ival;
+   Float  dval;
+
+   CppiaConst();
+
+   void fromStream(CppiaStream &stream);
+};
+
+
+
+struct ScriptCallable : public CppiaDynamicExpr
+{
+   int returnTypeId;
+   ExprType returnType;
+   int argCount;
+   int stackSize;
+   
+   std::vector<CppiaStackVar> args;
+   std::vector<bool>          hasDefault;
+   std::vector<CppiaConst>    initVals;
+   CppiaExpr *body;
+   CppiaModule *data;
+   #ifdef CPPIA_JIT
+   CppiaFunc compiled;
+   #endif
+
+   #ifdef HXCPP_STACK_SCRIPTABLE
+   CppiaStackVarMap varMap;
+   #endif
+
+   hx::StackPosition          position;
+
+   std::vector<CppiaStackVar *> captureVars;
+   int                          captureSize;
+
+
+   ScriptCallable(CppiaStream &stream);
+   ScriptCallable(CppiaExpr *inBody);
+   ~ScriptCallable();
+   CppiaExpr *link(CppiaModule &inModule);
+
+   #ifdef HXCPP_STACK_SCRIPTABLE
+   void getScriptableVariables(unsigned char *inFrame, Array<Dynamic> outNames);
+   bool getScriptableValue(unsigned char *inFrame, String inName, ::Dynamic &outValue);
+   bool setScriptableValue(unsigned char *inFrame, String inName, ::Dynamic inValue);
+   #endif
+
+   static int Hash(int value, const char *inString);
+   ExprType getType() { return returnType; }
+
+
+   #ifdef CPPIA_JIT
+   void compile();
+   void genPushDefault(CppiaCompiler *compiler, int inArg, bool pushNullToo);
+   void genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Expressions &inArgs);
+   #endif
+
+
+   void pushArgs(CppiaCtx *ctx, hx::Object *inThis, Expressions &inArgs);
+   void pushArgsDynamic(CppiaCtx *ctx, hx::Object *inThis, Array<Dynamic> &inArgs);
+
+   // Return the closure
+   hx::Object *runObject(CppiaCtx *ctx);
+
+   const char *getName();
+   String runString(CppiaCtx *ctx);
+   void runVoid(CppiaCtx *ctx);
+
+   // Run the actual function
+   void runFunction(CppiaCtx *ctx);
+   void addStackVarsSpace(CppiaCtx *ctx);
+   bool pushDefault(CppiaCtx *ctx,int arg);
+   void addExtraDefaults(CppiaCtx *ctx,int inHave);
+};
+
+
+
+
 CppiaExpr *createCppiaExpr(CppiaStream &inStream);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, ExprType inType, void *inPtr);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, FieldStorage inType, void *inPtr);
@@ -169,6 +272,7 @@ hx::Object *createClosure(CppiaCtx *ctx, ScriptCallable *inFunction);
 hx::Object *createMemberClosure(hx::Object *, ScriptCallable *inFunction);
 hx::Object *createEnumClosure(struct CppiaEnumConstructor &inContructor);
 
+hx::Object *DynamicToArrayType(hx::Object *obj, ArrayType arrayType);
 
 
 struct TypeData
@@ -320,12 +424,15 @@ struct CppiaStackVar
    void link(CppiaModule &inModule);
 };
 
-typedef std::map<int,CppiaStackVar *> CppiaStackVarMap;
 
 
 int getStackVarNameId(int inVarId);
 
 hx::Object *ObjectToInterface(hx::Object *inObject, TypeData *toType);
+
+void LinkExpressions(Expressions &ioExpressions, CppiaModule &data);
+
+CppiaExpr *createEnumField(CppiaStream &stream,bool inWithArgs);
 
 struct CppiaVar
 {
@@ -442,6 +549,149 @@ public:
    static HaxeNativeInterface *findInterface(const std::string &inName);
 };
 
+typedef std::vector<CppiaFunction *> Functions;
+typedef std::map<std::string, ScriptCallable *> FunctionMap;
+
+class CppiaClass;
+
+void runFunExpr(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Expressions &inArgs );
+hx::Object *runFunExprDynamic(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
+void runFunExprDynamicVoid(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
+
+hx::Class_obj *createCppiaClass(CppiaClassInfo *);
+
+
+class CppiaClassInfo
+{
+public:
+
+   CppiaModule &cppia;
+   std::vector<int> implements;
+   bool      isInterface;
+   bool      isLinked;
+   bool      isEnum;
+   int       typeId;
+   TypeData  *type;
+   int       superId;
+   TypeData *superType;
+   int       classSize;
+   int       extraData;
+   int       dynamicMapOffset;
+   int       interfaceSlotSize;
+   void      **vtable;
+   std::string name;
+   #if (HXCPP_API_LEVEL>=330)
+   std::map<int, void *> interfaceScriptTables;
+   #else
+   std::map<std::string, void **> interfaceVTables;
+   #endif
+   std::set<String> nativeProperties;
+   hx::Class     mClass;
+
+   HaxeNativeClass *haxeBase;
+
+   Functions memberFunctions;
+   FunctionMap memberGetters;
+   FunctionMap memberSetters;
+   std::vector<CppiaVar *> memberVars;
+   std::vector<CppiaVar *> dynamicFunctions;
+
+   Functions staticFunctions;
+   FunctionMap staticGetters;
+   FunctionMap staticSetters;
+   std::vector<CppiaVar *> staticVars;
+   std::vector<CppiaVar *> staticDynamicFunctions;
+
+   std::vector<CppiaEnumConstructor *> enumConstructors;
+
+   CppiaFunction  *newFunc;
+   ScriptCallable *initFunc;
+   CppiaExpr      *enumMeta;
+
+
+public:
+
+   CppiaClassInfo(CppiaModule &inCppia);
+   bool load(CppiaStream &inStream);
+   hx::Class *getSuperClass();
+   inline hx::Class getClass() { return mClass; }
+
+   hx::Object *createInstance(CppiaCtx *ctx,Expressions &inArgs, bool inCallNew = true);
+   hx::Object *createInstance(CppiaCtx *ctx,Array<Dynamic> &inArgs);
+
+   void init(CppiaCtx *ctx, int inPhase);
+   void addMemberFunction(Functions &ioCombined, CppiaFunction *inNewFunc);
+   inline void createDynamicFunctions(hx::Object *inThis)
+   {
+      for(int d=0;d<dynamicFunctions.size();d++)
+         dynamicFunctions[d]->createDynamic(inThis);
+   }
+
+
+   #ifdef CPPIA_JIT
+   void compile();
+   #endif
+
+   void link();
+   void linkTypes();
+
+
+   inline bool isNativeProperty(const String &inString);
+   int __GetType();
+   int getEnumIndex(String inName);
+   bool implementsInterface(CppiaClassInfo *inInterface);
+   ScriptCallable *findFunction(bool inStatic,int inId);
+   ScriptCallable *findInterfaceFunction(const std::string &inName);
+   ScriptCallable *findFunction(bool inStatic, const String &inName);
+   ScriptCallable *findFunction(FunctionMap &inMap,const String &inName);
+   inline ScriptCallable *findMemberGetter(const String &inName)
+      { return findFunction(memberGetters,inName); }
+   inline ScriptCallable *findMemberSetter(const String &inName)
+      { return findFunction(memberSetters,inName); }
+   inline ScriptCallable *findStaticGetter(const String &inName)
+      { return findFunction(staticGetters,inName); }
+   inline ScriptCallable *findStaticSetter(const String &inName)
+      { return findFunction(staticSetters,inName); }
+   CppiaEnumConstructor *findEnum(int inFieldId);
+   ExprType findFunctionType(CppiaModule &inModule, int inName);
+   int findFunctionSlot(int inName);
+   CppiaVar *findVar(bool inStatic,int inId);
+
+
+   Dynamic getStaticValue(const String &inName,hx::PropertyAccess  inCallProp);
+   bool hasStaticValue(const String &inName);
+   Dynamic setStaticValue(const String &inName,const Dynamic &inValue ,hx::PropertyAccess  inCallProp);
+   void GetInstanceFields(hx::Object *inObject, Array<String> &ioFields);
+   Array<String> GetClassFields();
+
+   bool getField(hx::Object *inThis, String inName, hx::PropertyAccess  inCallProp, Dynamic &outValue);
+   bool setField(hx::Object *inThis, String inName, Dynamic inValue, hx::PropertyAccess  inCallProp, Dynamic &outValue);
+
+   void dumpVars(const char *inMessage, std::vector<CppiaVar *> &vars);
+   void dumpFunctions(const char *inMessage, std::vector<CppiaFunction *> &funcs);
+   void dump();
+
+   #if (HXCPP_API_LEVEL < 330)
+   void **getInterfaceVTable(const std::string &inName) { return interfaceVTables[inName]; }
+   void **createInterfaceVTable(int inTypeId)
+   #endif
+
+   void mark(hx::MarkContext *__inCtx);
+   void markInstance(hx::Object *inThis, hx::MarkContext *__inCtx);
+
+   #ifdef HXCPP_VISIT_ALLOCS
+   void visit(hx::VisitContext *__inCtx);
+   void visitInstance(hx::Object *inThis, hx::VisitContext *__inCtx);
+   #endif
+
+   inline Dynamic &getFieldMap(hx::Object *inThis)
+   {
+      return *(Dynamic *)( (char *)inThis + dynamicMapOffset );
+   }
+
+
+
+};
 
 
 
@@ -511,7 +761,6 @@ struct BCRReturn
 
 
 
-typedef std::vector<CppiaExpr *> Expressions;
 
 CppiaExpr *createArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *inThisExpr,
                               String inField, Expressions &ioExpressions );

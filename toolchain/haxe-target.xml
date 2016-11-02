@@ -105,6 +105,9 @@
 
   <file name = "src/hx/cppia/Cppia.cpp" />
   <file name = "src/hx/cppia/CppiaCtx.cpp" />
+  <file name = "src/hx/cppia/CppiaClasses.cpp" />
+  <file name = "src/hx/cppia/CppiaFunction.cpp" />
+  <file name = "src/hx/cppia/CppiaModule.cpp" />
   <file name = "src/hx/cppia/ArrayBuiltin.cpp" />
   <file name = "src/hx/cppia/StringBuiltin.cpp" />
   <file name = "src/hx/cppia/GlobalBuiltin.cpp" />
