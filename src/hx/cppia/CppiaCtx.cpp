@@ -14,8 +14,6 @@ static HxMutex *sCppiaCtxLock = 0;
 
 DECLARE_TLS_DATA(CppiaCtx,tlsCppiaCtx)
 
-CppiaCtx sCppiaCtx;
-
 static std::vector<CppiaCtx *> sAllContexts;
 
 CppiaCtx::CppiaCtx()

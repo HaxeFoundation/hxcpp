@@ -348,6 +348,8 @@ public:
       switch(inVal.position)
       {
          case jposRegister:
+            if (inVal.reg0<3 && inVal.reg0>=maxTempCount)
+               maxTempCount = inVal.reg0+1;
             return inVal.reg0;
 
          case jposLocal:
@@ -358,6 +360,8 @@ public:
             break;
 
          case jposStar:
+            if (inVal.reg0<3 && inVal.reg0>=maxTempCount)
+               maxTempCount = inVal.reg0+1;
             return SLJIT_MEM1(inVal.reg0);
 
          case jposFrame:
@@ -476,7 +480,7 @@ public:
          switch(inSrcType)
          {
             case etInt:
-               callNative( (void *)intToObj, inSrc, jtPointer);
+               callNative( (void *)intToObj, inSrc.as(jtInt), jtPointer);
                if (inTarget!=sJitReturnReg)
                   emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg);
                break;

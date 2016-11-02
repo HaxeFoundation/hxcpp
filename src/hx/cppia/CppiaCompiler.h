@@ -223,7 +223,7 @@ extern JitVal sJitCtxFrame;
 typedef sljit_label *LabelId;
 typedef sljit_jump  *JumpId;
 
-typedef void (*CppiaFunc)(CppiaCtx *inCtx);
+typedef void (SLJIT_CALL *CppiaFunc)(CppiaCtx *inCtx);
 
 class CppiaCompiler
 {
