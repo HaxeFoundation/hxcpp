@@ -29,6 +29,7 @@ static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
 {
    printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().__s : "NULL" );
 }
+
 static void *SLJIT_CALL intToObj(int inVal)
 {
    return Dynamic(inVal).mPtr;
@@ -37,6 +38,15 @@ static void SLJIT_CALL intToStr(int inVal, String *outString)
 {
    *outString = String(inVal);
 }
+static void *SLJIT_CALL strToObj(String *inStr)
+{
+   return Dynamic(*inStr).mPtr;
+}
+static void *SLJIT_CALL floatToObj(double *inDouble)
+{
+   return Dynamic(*inDouble).mPtr;
+}
+
 
 
 int getJitTypeSize(JitType inType)
@@ -81,6 +91,7 @@ bool isMemoryVal(const JitVal &inVal)
       case jposFrame:
       case jposLocal:
       case jposThis:
+      case jposStar:
          return true;
       default:
          return false;
@@ -416,6 +427,15 @@ public:
          return inV2.type;
       if (inV2.type==jtAny)
          return inV1.type;
+      // Copying parts into string ...
+      if (inV1.type==jtString && inV2.type==jtInt)
+         return jtInt;
+      if (inV1.type==jtString && inV2.type==jtPointer)
+         return jtPointer;
+      if (inV1.type==jtInt && inV2.type==jtString)
+         return jtInt;
+      if (inV1.type==jtPointer && inV2.type==jtString)
+         return jtPointer;
 
       if (inV1.type!=inV1.type)
          setError("Type mismatch");
@@ -435,7 +455,14 @@ public:
             emit_op1(SLJIT_MOV_SI, inDest, inSrc);
             break;
          case jtPointer:
-            emit_op1(SLJIT_MOV_P, inDest, inSrc);
+            if (inSrc.reg0==sLocalReg)
+            {
+               sljit_si tDest = getTarget(inDest);
+               if (compiler)
+                  sljit_get_local_base(compiler, tDest, getData(inDest), inSrc.offset );
+            }
+            else
+               emit_op1(SLJIT_MOV_P, inDest, inSrc);
             break;
          case jtFloat:
             emit_op1(SLJIT_DMOV, inDest, inSrc);
@@ -452,6 +479,7 @@ public:
                emit_op1(SLJIT_MOV_SI, inDest, inSrc);
                emit_op1(SLJIT_MOV_P, inDest + 4, inSrc + 4);
             }
+            break;
 
          case jtVoid:
          case jtUnknown:
@@ -484,8 +512,27 @@ public:
                if (inTarget!=sJitReturnReg)
                   emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg);
                break;
+
+            case etFloat:
+               printf("todo - test float\n");
+               callNative( (void *)floatToObj, inSrc.as(jtFloat), jtPointer);
+               if (inTarget!=sJitReturnReg)
+                  emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg);
+               break;
+
+            case etObject:
+               move(inTarget.as(jtPointer), inSrc.as(jtPointer));
+               break;
+
+            case etString:
+               add( sJitArg0, inSrc.getReg().as(jtPointer), inSrc.offset );
+               callNative( (void *)strToObj, sJitArg0, jtPointer);
+               if (inTarget!=sJitReturnReg)
+                  emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg);
+               break;
+
             default:
-               printf("TODO - other to object\n");
+               move(inTarget, (void *)0);
          }
       }
       else if (inToType==etString)
@@ -586,9 +633,27 @@ public:
    {
       if (maxTempCount<1)
          maxTempCount =1;
-      move( sJitArg0, inArg0);
+      int restoreLocal = -1;
+      if (inArg0.type==jtFloat)
+      {
+         if (isMemoryVal(inArg0))
+            add( sJitArg0, inArg0.getReg().as(jtPointer), inArg0.offset);
+         else
+         {
+            restoreLocal = localSize;
+            JitLocalPos temp(allocTemp(jtFloat));
+            move( temp, inArg0 );
+            move(sJitArg0, temp.as(jtFloat));
+         }
+      }
+      else
+         move( sJitArg0, inArg0);
+
       if (compiler)
          sljit_emit_ijump(compiler, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+
+      if (restoreLocal>=0)
+         localSize = restoreLocal;
 
       return JitVal(inReturnType,0,jposRegister);
    }
