@@ -3097,6 +3097,7 @@ template<typename T>
 struct DataVal : public CppiaExprWithValue
 {
    T data;
+   
 
    DataVal(T inVal) : data(inVal)
    {
@@ -3118,6 +3119,9 @@ struct DataVal : public CppiaExprWithValue
    }
 
    #ifdef CPPIA_JIT
+   String stringConversion;
+   double doubleConversion;
+
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
       switch(destType)
@@ -3126,18 +3130,24 @@ struct DataVal : public CppiaExprWithValue
             compiler->move(inDest, runInt(0));
             break;
          case etFloat:
-            // TODO - int conversion
-            compiler->move(sJitTemp0, (void *)&data);
+            doubleConversion = runFloat(0);
+            compiler->move(sJitTemp0, (void *)&doubleConversion);
             compiler->move(inDest, sJitTemp0.star(jtFloat));
             break;
          case etString:
             {
-            String val = runString(0);
-            compiler->move(inDest, val.length);
-            compiler->move(inDest+4, (void *)val.__s);
-            break;
+               if (!stringConversion.__s)
+               {
+                  stringConversion= runString(0);
+                  stringConversion.dupConst();
+               }
+
+               compiler->move(inDest, stringConversion.length);
+               compiler->move(inDest+4, (void *)stringConversion.__s);
+               break;
             }
          case etObject:
+            // should be by address for gc? or pinned?
             compiler->move(inDest, (void *)runObject(0));
             break;
          default: ;
@@ -4885,6 +4895,46 @@ struct OpAdd : public BinOp
       BCR_CHECK;
       return lval + right->runFloat(ctx);
    }
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (destType==etVoid)
+      {
+         left->genCode(compiler,JitVal(),etVoid);
+         right->genCode(compiler,JitVal(),etVoid);
+      }
+      else if (destType==etInt && (left->getType()==etInt && right->getType()==etInt && destType==etObject) )
+      {
+         JitTemp temp(compiler,jtInt);
+         left->genCode(compiler,temp,etInt);
+         right->genCode(compiler,sJitTemp0,etInt);
+         if (destType==etObject)
+         {
+            compiler->add( sJitTemp0.as(jtInt), temp, sJitTemp0.as(jtInt) );
+            compiler->convert(sJitTemp0, etInt, inDest, destType);
+         }
+         else
+         {
+            compiler->add( inDest, temp, sJitTemp0.as(jtInt) );
+         }
+      }
+      else
+      {
+         JitTemp temp(compiler,jtFloat);
+         left->genCode(compiler,temp,etFloat);
+         right->genCode(compiler,sJitTempF0,etFloat);
+         if (destType==etObject)
+         {
+            compiler->add( sJitTempF0, temp, sJitTempF0 );
+            compiler->convert(sJitTempF0, etFloat, inDest, destType);
+         }
+         else
+         {
+            compiler->add( inDest, temp, sJitTempF0 );
+         }
+      }
+   }
+   #endif
 };
 
 

@@ -110,6 +110,13 @@ JitReg sJitTemp0(SLJIT_R0);
 JitReg sJitTemp1(SLJIT_R1);
 JitReg sJitTemp2(SLJIT_R2);
 
+JitReg sJitTempF0(SLJIT_FR0,jtFloat);
+JitReg sJitTempF1(SLJIT_FR1,jtFloat);
+JitReg sJitTempF2(SLJIT_FR2,jtFloat);
+JitReg sJitTempF3(SLJIT_FR3,jtFloat);
+JitReg sJitTempF4(SLJIT_FR4,jtFloat);
+JitReg sJitTempF5(SLJIT_FR5,jtFloat);
+
 int sCtxReg = SLJIT_S0;
 int sFrameReg = SLJIT_S1;
 int sThisReg = SLJIT_S2;
@@ -138,14 +145,14 @@ public:
    int baseFrameSize;
 
    int maxTempCount;
-   int maxFtempCount;
+   int maxFTempCount;
    int maxLocalSize;
 
 
    CppiaJitCompiler(int inFrameSize)
    {
       maxTempCount = 0;
-      maxFtempCount = 0;
+      maxFTempCount = 0;
       maxLocalSize = 0;
       localSize = 0;
       compiler = 0;
@@ -199,7 +206,7 @@ public:
       int fsaveds = 0;
       int scratches = std::max(maxTempCount,inArgs);
 
-      sljit_emit_enter(compiler, options, inArgs, scratches, saveds, maxFtempCount, fsaveds, maxLocalSize);
+      sljit_emit_enter(compiler, options, inArgs, scratches, saveds, maxFTempCount, fsaveds, maxLocalSize);
       usesCtx = true;
 
       if (usesFrame)
@@ -348,9 +355,24 @@ public:
          sljit_emit_op1(compiler, op, t0, getData(inArg0), t1, getData(inArg1) );
    }
 
+
+   void emit_fop1(sljit_si op, const JitVal &inArg0, const JitVal &inArg1)
+   {
+      sljit_sw t0 = getTarget(inArg0);
+      sljit_sw t1 = getTarget(inArg1);
+      if (compiler)
+         sljit_emit_fop1(compiler, op, t0, getData(inArg0), t1, getData(inArg1) );
+   }
+
    void setError(const char *inError)
    {
       printf("Error: %s\n", inError);
+   }
+
+   void crash()
+   {
+      move(sJitTemp0, (void *)0);
+      move(sJitTemp0.star(), (void *)0);
    }
 
 
@@ -359,8 +381,14 @@ public:
       switch(inVal.position)
       {
          case jposRegister:
-            if (inVal.reg0<3 && inVal.reg0>=maxTempCount)
+            if (inVal.type==jtFloat)
+            {
+               if (inVal.reg0>=maxFTempCount)
+                  maxFTempCount = inVal.reg0+1;
+            }
+            else if (inVal.reg0<3 && inVal.reg0>=maxTempCount)
                maxTempCount = inVal.reg0+1;
+
             return inVal.reg0;
 
          case jposLocal:
@@ -455,7 +483,7 @@ public:
             emit_op1(SLJIT_MOV_SI, inDest, inSrc);
             break;
          case jtPointer:
-            if (inSrc.reg0==sLocalReg)
+            if (inSrc.reg0==sLocalReg && inSrc.position==jposRegister)
             {
                sljit_si tDest = getTarget(inDest);
                if (compiler)
@@ -465,7 +493,7 @@ public:
                emit_op1(SLJIT_MOV_P, inDest, inSrc);
             break;
          case jtFloat:
-            emit_op1(SLJIT_DMOV, inDest, inSrc);
+            emit_fop1(SLJIT_DMOV, inDest, inSrc);
             break;
 
          case jtString:
@@ -514,7 +542,6 @@ public:
                break;
 
             case etFloat:
-               printf("todo - test float\n");
                callNative( (void *)floatToObj, inSrc.as(jtFloat), jtPointer);
                if (inTarget!=sJitReturnReg)
                   emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg);
@@ -546,6 +573,22 @@ public:
             default:
                printf("TODO - other to string\n");
          }
+      }
+      else if (inToType==etFloat)
+      {
+         switch(inSrcType)
+         {
+            case etInt:
+               emit_fop1( SLJIT_CONVD_FROMI, inTarget.as(jtFloat), inSrc.as(jtInt) );
+               break;
+            default:
+               printf("TODO - other to float\n");
+         }
+      }
+      else
+      {
+         printf("unknown convert\n");
+         *(int *)0=0;
       }
    }
 
@@ -585,7 +628,9 @@ public:
       sljit_si t1 = getTarget(v1);
       if (compiler)
       {
-         if (v0.reg0==sLocalReg)
+         if (v0.type==jtFloat)
+            sljit_emit_fop2(compiler, SLJIT_DADD, tDest, getData(inDest), t0,  getData(v0),  t1, getData(v1) );
+         else if (v0.reg0==sLocalReg && v0.position==jposRegister)
             sljit_get_local_base(compiler, tDest, getData(inDest), v1.offset );
          else
             sljit_emit_op2(compiler, SLJIT_ADD, tDest, getData(inDest), t0,  getData(v0),  t1, getData(v1) );
@@ -641,9 +686,9 @@ public:
          else
          {
             restoreLocal = localSize;
-            JitLocalPos temp(allocTemp(jtFloat));
+            JitLocalPos temp(allocTemp(jtFloat),jtFloat);
             move( temp, inArg0 );
-            move(sJitArg0, temp.as(jtFloat));
+            add(sJitArg0, temp.getReg().as(jtPointer), temp.offset);
          }
       }
       else
