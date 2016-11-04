@@ -86,7 +86,7 @@ void CppiaExpr::genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType d
    compiler->trace(getName());
 }
 
-JumpId CppiaExpr::genCompare(CppiaCompiler *compiler,LabelId inLabel)
+JumpId CppiaExpr::genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
 {
    compiler->trace(getName());
    return 0;
@@ -4000,19 +4000,15 @@ struct WhileExpr : public CppiaVoidExpr
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
-
-      JumpId test = condition->genCompare(compiler);
-      JumpId skipAll = compiler->jump();
-
-      compiler->comeFrom(test);
+      JumpId start = condition->genCompare(compiler,true);
 
       LabelId body = compiler->addLabel();
 
       loop->genCode(compiler, JitVal(), etVoid);
 
-      condition->genCompare(compiler,body);
+      condition->genCompare(compiler,false,body);
 
-      compiler->comeFrom(skipAll);
+      compiler->comeFrom(start);
 
    }
    #endif
@@ -4433,23 +4429,114 @@ struct BinOp : public CppiaExpr
 };
 
 
-#define ARITH_OP(name,OP) \
-struct name : public BinOp \
-{ \
-   name(CppiaStream &stream) : BinOp(stream) { } \
- \
-   int runInt(CppiaCtx *ctx) \
-   { \
-      int lval = left->runInt(ctx); \
-      BCR_CHECK; \
-      return lval OP right->runInt(ctx); \
-   } \
-   Float runFloat(CppiaCtx *ctx) \
-   { \
-      Float lval = left->runFloat(ctx); \
-      BCR_CHECK; \
-      return lval OP right->runFloat(ctx); \
-   } \
+struct OpMult : public BinOp
+{
+   OpMult(CppiaStream &stream) : BinOp(stream) { }
+
+   int runInt(CppiaCtx *ctx)
+   {
+      int lval = left->runInt(ctx);
+      BCR_CHECK;
+      return lval * right->runInt(ctx);
+   }
+   Float runFloat(CppiaCtx *ctx)
+   {
+      Float lval = left->runFloat(ctx);
+      BCR_CHECK;
+      return lval * right->runFloat(ctx);
+   }
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (inDest==etVoid)
+      {
+         left->genCode(compiler,JitVal(),etVoid);
+         right->genCode(compiler,JitVal(),etVoid);
+      }
+      else if (destType==etInt || (left->getType()==etInt && right->getType()==etInt) )
+      {
+         JitTemp lval(compiler,jtInt);
+         left->genCode(compiler,lval,etInt);
+         right->genCode(compiler,sJitTemp0,etInt);
+         if (destType==etInt)
+            compiler->mult(inDest,lval,sJitTemp0,false);
+         else
+         {
+            compiler->mult(sJitTemp1.as(jtInt),lval,sJitTemp0,true);
+            compiler->convert(sJitTemp1,etInt, inDest, destType);
+         }
+      }
+      else
+      {
+         JitTemp lval(compiler,jtFloat);
+         left->genCode(compiler,lval,etFloat);
+         right->genCode(compiler,sJitTempF0,etFloat);
+         if (destType==etFloat)
+            compiler->mult(inDest,lval,sJitTempF0,true);
+         else
+         {
+            compiler->mult(sJitTempF1,lval,sJitTempF0,true);
+            compiler->convert(sJitTempF1,etFloat, inDest, destType);
+         }
+      }
+   }
+   #endif
+};
+
+
+struct OpSub : public BinOp
+{
+   OpSub(CppiaStream &stream) : BinOp(stream) { }
+
+   int runInt(CppiaCtx *ctx)
+   {
+      int lval = left->runInt(ctx);
+      BCR_CHECK;
+      return lval - right->runInt(ctx);
+   }
+   Float runFloat(CppiaCtx *ctx)
+   {
+      Float lval = left->runFloat(ctx);
+      BCR_CHECK;
+      return lval - right->runFloat(ctx);
+   }
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (destType==etVoid)
+      {
+         left->genCode(compiler,JitVal(),etVoid);
+         right->genCode(compiler,JitVal(),etVoid);
+      }
+      else if (destType==etInt || (left->getType()==etInt && right->getType()==etInt) )
+      {
+         JitTemp lval(compiler,jtInt);
+         left->genCode(compiler,lval,etInt);
+         right->genCode(compiler,sJitTemp0,etInt);
+         if (destType==etInt)
+            compiler->sub(inDest,lval,sJitTemp0,false);
+         else
+         {
+            compiler->sub(sJitTemp1.as(jtInt),lval,sJitTemp0,true);
+            compiler->convert(sJitTemp1,etInt, inDest, destType);
+         }
+      }
+      else
+      {
+         JitTemp lval(compiler,jtFloat);
+         left->genCode(compiler,lval,etFloat);
+         right->genCode(compiler,sJitTempF0,etFloat);
+         if (destType==etFloat)
+            compiler->sub(inDest,lval,sJitTempF0,true);
+         else
+         {
+            compiler->sub(sJitTempF1,lval,sJitTempF0,true);
+            compiler->convert(sJitTempF1,etFloat, inDest, destType);
+         }
+      }
+   }
+   #endif
+
 };
 
 struct OpDiv : public BinOp
@@ -4470,11 +4557,32 @@ struct OpDiv : public BinOp
       BCR_CHECK;
       return lval / right->runFloat(ctx);
    }
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (destType==etVoid)
+      {
+         left->genCode(compiler,JitVal(),etVoid);
+         right->genCode(compiler,JitVal(),etVoid);
+      }
+      else
+      {
+         JitTemp lval(compiler,jtFloat);
+         left->genCode(compiler,lval,etFloat);
+         right->genCode(compiler,sJitTempF0,etFloat);
+         if (destType==etFloat)
+            compiler->div(inDest,lval,sJitTempF0,true);
+         else
+         {
+            compiler->div(sJitTempF0,lval,sJitTempF0,true);
+            compiler->convert(sJitTempF0, etFloat, inDest, destType);
+         }
+      }
+   }
+   #endif
+
 };
 
-
-ARITH_OP(OpMult,*)
-ARITH_OP(OpSub,-)
 
 
 struct ThrowExpr : public CppiaVoidExpr
@@ -4903,7 +5011,7 @@ struct OpAdd : public BinOp
          left->genCode(compiler,JitVal(),etVoid);
          right->genCode(compiler,JitVal(),etVoid);
       }
-      else if (destType==etInt && (left->getType()==etInt && right->getType()==etInt && destType==etObject) )
+      else if (destType==etInt || (left->getType()==etInt && right->getType()==etInt && destType==etObject) )
       {
          JitTemp temp(compiler,jtInt);
          left->genCode(compiler,temp,etInt);
@@ -4920,6 +5028,7 @@ struct OpAdd : public BinOp
       }
       else
       {
+         printf("Add?\n");
          JitTemp temp(compiler,jtFloat);
          left->genCode(compiler,temp,etFloat);
          right->genCode(compiler,sJitTempF0,etFloat);
@@ -5077,7 +5186,7 @@ struct OpCompare : public OpCompareBase
    }
    #ifdef CPPIA_JIT
 
-   JumpId genCompare(CppiaCompiler *compiler,LabelId inLabel)
+   JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
    {
       switch(compareType)
       {
@@ -5093,7 +5202,8 @@ struct OpCompare : public OpCompareBase
             JitTemp lhs(compiler,jtInt);
             left->genCode(compiler, lhs, etInt);
             right->genCode(compiler, sJitTemp0, etInt);
-            return compiler->compare( (JitCompare)COMPARE::compare, lhs, sJitTemp0.as(jtInt), inLabel );
+            return compiler->compare( (JitCompare)(inReverse ? COMPARE::reverse :COMPARE::compare),
+                                       lhs, sJitTemp0.as(jtInt), inLabel );
          }
 
          // TODO:
@@ -5106,10 +5216,10 @@ struct OpCompare : public OpCompareBase
 };
 
 
-#define DEFINE_COMPARE_OP(name,OP,COMP) \
+#define DEFINE_COMPARE_OP(name,OP,COMP,REVERSE) \
 struct name \
 { \
-   enum { compare = COMP }; \
+   enum { compare = COMP, reverse=REVERSE }; \
    template<typename T> \
    inline bool test(const T &left, const T&right) \
    { \
@@ -5118,19 +5228,19 @@ struct name \
 };
 
 #ifdef CPPIA_JIT
-DEFINE_COMPARE_OP(CompareLess,<,cmpI_SIG_LESS);
-DEFINE_COMPARE_OP(CompareLessEq,<=,cmpI_SIG_LESS_EQUAL);
-DEFINE_COMPARE_OP(CompareGreater,>,cmpI_SIG_GREATER);
-DEFINE_COMPARE_OP(CompareGreaterEq,>=,cmpI_SIG_GREATER_EQUAL);
-DEFINE_COMPARE_OP(CompareEqual,==,cmpI_EQUAL);
-DEFINE_COMPARE_OP(CompareNotEqual,!=,cmpI_NOT_EQUAL);
+DEFINE_COMPARE_OP(CompareLess,<,cmpI_SIG_LESS,cmpI_SIG_GREATER_EQUAL);
+DEFINE_COMPARE_OP(CompareLessEq,<=,cmpI_SIG_LESS_EQUAL,cmpI_SIG_GREATER);
+DEFINE_COMPARE_OP(CompareGreater,>,cmpI_SIG_GREATER,cmpI_SIG_LESS_EQUAL);
+DEFINE_COMPARE_OP(CompareGreaterEq,>=,cmpI_SIG_GREATER_EQUAL,cmpI_SIG_LESS);
+DEFINE_COMPARE_OP(CompareEqual,==,cmpI_EQUAL,cmpI_NOT_EQUAL);
+DEFINE_COMPARE_OP(CompareNotEqual,!=,cmpI_NOT_EQUAL,cmpI_EQUAL);
 #else
-DEFINE_COMPARE_OP(CompareLess,<,0);
-DEFINE_COMPARE_OP(CompareLessEq,<=,0);
-DEFINE_COMPARE_OP(CompareGreater,>,0);
-DEFINE_COMPARE_OP(CompareGreaterEq,>=,0);
-DEFINE_COMPARE_OP(CompareEqual,==,0);
-DEFINE_COMPARE_OP(CompareNotEqual,!=,0);
+DEFINE_COMPARE_OP(CompareLess,<,0,0);
+DEFINE_COMPARE_OP(CompareLessEq,<=,0,0);
+DEFINE_COMPARE_OP(CompareGreater,>,0,0);
+DEFINE_COMPARE_OP(CompareGreaterEq,>=,0,0);
+DEFINE_COMPARE_OP(CompareEqual,==,0,0);
+DEFINE_COMPARE_OP(CompareNotEqual,!=,0,0);
 #endif
 
 

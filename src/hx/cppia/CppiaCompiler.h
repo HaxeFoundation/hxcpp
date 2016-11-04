@@ -284,6 +284,9 @@ public:
 
    virtual void set(const JitVal &inDest, const JitVal &inSrc) = 0;
    virtual void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
+   virtual void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
+   virtual void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
+   virtual void div(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
    virtual void move(const JitVal &inDest, const JitVal &src) = 0;
    //virtual void compare(Condition condition,const JitVal &v0, const JitVal &v1) = 0;
 

@@ -47,6 +47,13 @@ static void *SLJIT_CALL floatToObj(double *inDouble)
    return Dynamic(*inDouble).mPtr;
 }
 
+static void SLJIT_CALL floatToStr(double *inDouble, String *outStr)
+{
+   *outStr = String(*inDouble);
+
+}
+
+
 
 
 int getJitTypeSize(JitType inType)
@@ -356,6 +363,15 @@ public:
    }
 
 
+   void emit_op2(sljit_si op, const JitVal &inArg0, const JitVal &inArg1, const JitVal inArg2)
+   {
+      sljit_sw t0 = getTarget(inArg0);
+      sljit_sw t1 = getTarget(inArg1);
+      sljit_sw t2 = getTarget(inArg2);
+      if (compiler)
+         sljit_emit_op2(compiler, op, t0, getData(inArg0), t1, getData(inArg1), t2, getData(inArg2) );
+   }
+
    void emit_fop1(sljit_si op, const JitVal &inArg0, const JitVal &inArg1)
    {
       sljit_sw t0 = getTarget(inArg0);
@@ -363,6 +379,16 @@ public:
       if (compiler)
          sljit_emit_fop1(compiler, op, t0, getData(inArg0), t1, getData(inArg1) );
    }
+
+   void emit_fop2(sljit_si op, const JitVal &inArg0, const JitVal &inArg1, const JitVal inArg2)
+   {
+      sljit_sw t0 = getTarget(inArg0);
+      sljit_sw t1 = getTarget(inArg1);
+      sljit_sw t2 = getTarget(inArg2);
+      if (compiler)
+         sljit_emit_fop2(compiler, op, t0, getData(inArg0), t1, getData(inArg1), t2, getData(inArg2) );
+   }
+
 
    void setError(const char *inError)
    {
@@ -567,8 +593,21 @@ public:
          switch(inSrcType)
          {
             case etInt:
+               if (inSrc==sJitTemp1)
+               {
+                  move(sJitArg0, inSrc);
+                  add( sJitTemp1, inTarget.getReg(), inTarget.offset );
+                  callNative( (void *)intToStr, sJitArg0.as(jtInt), sJitTemp1.as(jtPointer), jtVoid );
+               }
+               else
+               {
+                  add( sJitTemp1, inTarget.getReg(), inTarget.offset );
+                  callNative( (void *)intToStr, inSrc.as(jtInt), sJitTemp1.as(jtPointer), jtVoid );
+               }
+               break;
+            case etFloat:
                add( sJitTemp1, inTarget.getReg(), inTarget.offset );
-               callNative( (void *)intToStr, inSrc.as(jtInt), sJitTemp1.as(jtPointer), jtVoid );
+               callNative( (void *)floatToStr, inSrc, sJitTemp1, jtVoid );
                break;
             default:
                printf("TODO - other to string\n");
@@ -623,20 +662,108 @@ public:
 
    void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
    {
+      if (v0.type==jtFloat)
+         emit_fop2(SLJIT_DADD, inDest, v0, v1);
+      else if (v0.reg0==sLocalReg && v0.position==jposRegister)
+      {
+         sljit_si tDest = getTarget(inDest);
+         sljit_si t0 = getTarget(v0);
+         sljit_si t1 = getTarget(v1);
+         if (compiler)
+            sljit_get_local_base(compiler, tDest, getData(inDest), v1.offset );
+      }
+      else
+         emit_op2(SLJIT_ADD, inDest, v0, v1);
+   }
+
+   void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
+   {
       sljit_si tDest = getTarget(inDest);
       sljit_si t0 = getTarget(v0);
       sljit_si t1 = getTarget(v1);
-      if (compiler)
+      bool isFloat = v0.type==jtFloat;
+
+      if (asFloat != isFloat)
       {
-         if (v0.type==jtFloat)
-            sljit_emit_fop2(compiler, SLJIT_DADD, tDest, getData(inDest), t0,  getData(v0),  t1, getData(v1) );
-         else if (v0.reg0==sLocalReg && v0.position==jposRegister)
-            sljit_get_local_base(compiler, tDest, getData(inDest), v1.offset );
+         if (isFloat)
+         {
+            emit_fop2(SLJIT_DMUL, sJitTempF0, v0, v1 );
+            convert( sJitTempF0, etFloat, inDest, etInt );
+         }
          else
-            sljit_emit_op2(compiler, SLJIT_ADD, tDest, getData(inDest), t0,  getData(v0),  t1, getData(v1) );
+         {
+            emit_op2(SLJIT_MUL, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
+            convert( sJitTemp0, etInt, inDest, etFloat );
+         }
+      }
+      else
+      {
+         if (isFloat)
+            emit_fop2(SLJIT_DMUL, inDest, v0, v1 );
+         else
+            emit_op2(SLJIT_MUL, inDest, v0, v1 );
+      }
+   }
+
+   void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
+   {
+      sljit_si tDest = getTarget(inDest);
+      sljit_si t0 = getTarget(v0);
+      sljit_si t1 = getTarget(v1);
+      bool isFloat = v0.type==jtFloat;
+
+      if (asFloat != isFloat)
+      {
+         if (isFloat)
+         {
+            emit_fop2(SLJIT_DSUB, sJitTempF0, v0, v1 );
+            convert( sJitTempF0, etFloat, inDest, etInt );
+         }
+         else
+         {
+            emit_op2(SLJIT_SUB, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
+            convert( sJitTemp0, etInt, inDest, etFloat );
+         }
+      }
+      else
+      {
+         if (isFloat)
+            emit_fop2(SLJIT_DSUB, inDest, v0, v1 );
+         else
+            emit_op2(SLJIT_SUB, inDest, v0, v1 );
       }
 
    }
+
+   void div(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
+   {
+      sljit_si tDest = getTarget(inDest);
+      sljit_si t0 = getTarget(v0);
+      sljit_si t1 = getTarget(v1);
+      bool isFloat = v0.type==jtFloat;
+
+      if (asFloat != isFloat)
+      {
+         if (isFloat)
+         {
+            emit_fop2(SLJIT_DDIV, sJitTempF0, v0, v1 );
+            convert( sJitTempF0, etFloat, inDest, etInt );
+         }
+         else
+         {
+            //emit_op2(SLJIT_DIV, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
+            //convert( sJitTemp0, etInt, inDest, etFloat );
+         }
+      }
+      else
+      {
+         if (isFloat)
+            emit_fop2(SLJIT_DDIV, inDest, v0, v1 );
+         //else
+            //emit_op2(SLJIT_DIV, inDest, v0, v1 );
+      }
+   }
+
 
 
    void allocArgs(int inCount)
@@ -679,6 +806,7 @@ public:
       if (maxTempCount<1)
          maxTempCount =1;
       int restoreLocal = -1;
+
       if (inArg0.type==jtFloat)
       {
          if (isMemoryVal(inArg0))
@@ -706,10 +834,29 @@ public:
    {
       if (maxTempCount<2)
          maxTempCount =2;
-      move( sJitArg0, inArg0);
+
+      int restoreLocal = -1;
+      if (inArg0.type==jtFloat)
+      {
+         if (isMemoryVal(inArg0))
+            add( sJitArg0, inArg0.getReg().as(jtPointer), inArg0.offset);
+         else
+         {
+            restoreLocal = localSize;
+            JitLocalPos temp(allocTemp(jtFloat),jtFloat);
+            move( temp, inArg0 );
+            add(sJitArg0, temp.getReg().as(jtPointer), temp.offset);
+         }
+      }
+      else
+         move( sJitArg0, inArg0);
+
       move( sJitArg1, inArg1);
       if (compiler)
          sljit_emit_ijump(compiler, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
+
+      if (restoreLocal>=0)
+         localSize = restoreLocal;
 
       return JitVal(inReturnType,0,jposRegister);
    }
