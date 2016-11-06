@@ -263,13 +263,12 @@ public:
    virtual JumpId jump(LabelId inTo=0) = 0;
    virtual void   jump(const JitVal &inWhere) = 0;
    // Conditional
-   virtual JumpId compare(JitCompare condition, const JitVal &v0, LabelId andJump=0) = 0;
    virtual JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
    // Link
    virtual void  comeFrom(JumpId inWhere) = 0;
    virtual LabelId  addLabel() = 0;
 
-   inline  JumpId notNull(const JitVal &v0) { return compare(cmpP_NOT_ZERO, v0); }
+   inline  JumpId notNull(const JitVal &v0) { return compare(cmpP_NOT_ZERO, v0, (void *)0); }
 
    virtual void setFramePointer(int inArgStart) = 0;
 
@@ -295,10 +294,10 @@ public:
    virtual JitVal call(const JitVal &inFunc, JitType inReturnType=jtVoid)=0;
    virtual JitVal call(const JitVal &inFunc, const JitVal &inArg0, JitType inReturnType=jtVoid)=0;
 
-   virtual JitVal callNative(void *func, JitType inReturnType=jtVoid)=0;
-   virtual JitVal callNative(void *func, const JitVal &inArg0, JitType inReturnType=jtVoid)=0;
-   virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, JitType inReturnType=jtVoid)=0;
-   virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2, JitType inReturnType=jtVoid)=0;
+   virtual JitVal callNative(void *func, JitType inReturnType)=0;
+   virtual JitVal callNative(void *func, const JitVal &inArg0, JitType inReturnType)=0;
+   virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, JitType inReturnType)=0;
+   virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2, JitType inReturnType)=0;
 
 
 };

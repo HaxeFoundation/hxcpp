@@ -88,8 +88,10 @@ void CppiaExpr::genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType d
 
 JumpId CppiaExpr::genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
 {
-   compiler->trace(getName());
-   return 0;
+   genCode(compiler,sJitTemp0.as(jtInt), etInt);
+   // inReverse = false -> jump if not 0
+   // inReverse = true  -> jump if zero
+   return compiler->compare(inReverse ? cmpI_EQUAL : cmpI_NOT_EQUAL, sJitTemp0, (int)0, inLabel);
 }
 
 
@@ -476,6 +478,20 @@ struct IfElseExpr : public CppiaExpr
    IF_ELSE_RUN(int,runInt)
    IF_ELSE_RUN(String,runString)
    IF_ELSE_RUN(Float,runFloat)
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      JumpId ifNot = condition->genCompare(compiler,true);
+      doIf->genCode(compiler,inDest,destType);
+      JumpId doneIf = compiler->jump();
+
+      compiler->comeFrom(ifNot);
+      doElse->genCode(compiler,inDest,destType);
+
+      compiler->comeFrom(doneIf);
+   }
+   #endif
 };
 
 
@@ -507,6 +523,15 @@ struct IfExpr : public CppiaDynamicExpr
          doIf->runVoid(ctx);
       }
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      JumpId ifNot = condition->genCompare(compiler,true);
+      doIf->genCode(compiler,inDest,destType);
+      compiler->comeFrom(ifNot);
+   }
+   #endif
 };
 
 
@@ -529,6 +554,36 @@ struct CppiaIsNull : public CppiaBoolExpr
       return condition->runObject(ctx)==0;
    }
 
+   #ifdef CPPIA_JIT
+
+   JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
+   {
+      condition->genCode(compiler, sJitTemp0, etObject);
+      // inReverse = false -> jump if not 0
+      // inReverse = true  -> jump if zero
+      return compiler->compare(inReverse ? cmpP_NOT_EQUAL : cmpP_EQUAL, sJitTemp0.as(jtPointer), (void *)0, inLabel);
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      condition->genCode(compiler, sJitTemp0, etObject);
+      JumpId notNull = compiler->compare(cmpP_EQUAL, sJitTemp0, (void *)0);
+      // is null ...
+      if (destType==etObject)
+         compiler->move(inDest, (void *)Dynamic("true").mPtr);
+      else
+         compiler->move(inDest, (int)1);
+
+      JumpId nullDone = compiler->jump();
+      compiler->comeFrom(notNull);
+      if (destType==etObject)
+         compiler->move(inDest, (void *)Dynamic("false").mPtr);
+      else
+         compiler->move(inDest, (int)0);
+
+      compiler->comeFrom(nullDone);
+   }
+   #endif
 };
 
 
@@ -734,7 +789,7 @@ struct CallFunExpr : public CppiaExpr
       function->genArgs(compiler,thisExpr,args);
 
       // Store new frame in context ...
-      compiler->add( sJitCtxFrame, sJitFrame, JitVal(compiler->getCurrentFrameSize()) );
+      compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
 
       // Compiled yet
       if (function->compiled)
@@ -1009,7 +1064,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
          compiler->addFrame(etObject);
       }
       compiler->setFramePointer( compiler->getCurrentFrameSize() );
-      compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size());
+      compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size(), jtVoid);
 
       /*
       if (compiler.exceptionHandler)
@@ -1867,6 +1922,32 @@ struct FieldByName : public CppiaDynamicExpr
 
 };
 
+
+#ifdef CPPIA_JIT
+static int SLJIT_CALL getFieldInt( hx::Object *instance, String *name )
+{
+   return instance->__Field(*name, HX_PROP_DYNAMIC);
+}
+
+static hx::Object * SLJIT_CALL getFieldObject( hx::Object *instance, String *name )
+{
+   Dynamic ret =  instance->__Field(*name, HX_PROP_DYNAMIC);
+   return ret.mPtr;
+}
+
+static void SLJIT_CALL getFieldFloat( hx::Object *instance, String *name, double *outValue )
+{
+   *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
+}
+
+
+static void SLJIT_CALL getFieldString( hx::Object *instance, String *name, String *outValue )
+{
+   *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
+}
+
+#endif
+
 struct GetFieldByName : public CppiaDynamicExpr
 {
    int         nameId;
@@ -1988,6 +2069,44 @@ struct GetFieldByName : public CppiaDynamicExpr
       }
       return Dynamic(instance->__Field(name,HX_PROP_DYNAMIC)).mPtr;
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      // TODO - interfaces
+      if (object)
+         object->genCode(compiler, sJitTemp0, etObject);
+      else if (isStatic)
+      {
+         compiler->move(sJitTemp0, (void *)&staticClass.mPtr);
+         compiler->move(sJitTemp0, sJitTemp0.star() );
+      }
+      else
+      {
+         // this...
+         compiler->move(sJitTemp0, JitFramePos(0) );
+      }
+
+      switch(destType)
+      {
+         case etInt:
+            compiler->callNative( (void *)getFieldInt, sJitTemp0, (void *)&name, jtInt );
+            compiler->move(inDest, sJitTemp0);
+            break;
+         case etFloat:
+            compiler->callNative( (void *)getFieldFloat, sJitTemp0, inDest, (void *)&name, jtVoid );
+            break;
+         case etString:
+            compiler->callNative( (void *)getFieldString, sJitTemp0, inDest,  (void *)&name, jtVoid );
+            break;
+         case etObject:
+            compiler->callNative( (void *)getFieldObject, sJitTemp0, (void *)&name, jtPointer );
+            compiler->move(inDest.as(jtPointer), sJitTemp0.as(jtPointer));
+            break;
+         default: ;
+      }
+   }
+   #endif
   
    CppiaExpr   *makeSetter(AssignOp inOp,CppiaExpr *inValue)
    {
@@ -2137,7 +2256,7 @@ struct Call : public CppiaDynamicExpr
       }
 
       compiler->setFramePointer( compiler->getCurrentFrameSize() );
-      compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
+      compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ), jtVoid );
 
       /*
       if (compiler.exceptionHandler)
@@ -3169,6 +3288,14 @@ struct NullVal : public CppiaExpr
    Float       runFloat(CppiaCtx *ctx) { return 0.0; }
    ::String    runString(CppiaCtx *ctx) { return null(); }
    hx::Object  *runObject(CppiaCtx *ctx) { return 0; }
+
+   
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      compiler->move(inDest, (void *)0);
+   }
+   #endif
 
 };
 
@@ -4383,6 +4510,22 @@ struct RetVal : public CppiaVoidExpr
       ctx->returnFlag();
       #endif
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (value)
+      {
+         if (returnType==etVoid)
+            value->genCode(compiler, JitVal(), etVoid);
+         else
+         {
+            value->genCode(compiler, JitFramePos(0), returnType);
+         }
+      }
+      compiler->addReturn();
+   }
+   #endif
 };
 
 
@@ -4875,12 +5018,12 @@ struct SpecialAdd : public CppiaExpr
             {
                //compiler->add( sJitTemp2, inDest.getReg().as(jtPointer), inDest.offset );
                //compiler->callNative(strAddStrToStr, sJitTemp0, sJitTemp1, sJitTemp2);
-               compiler->callNative(strAddStrToStrOver, sJitTemp0, sJitTemp1);
+               compiler->callNative(strAddStrToStrOver, sJitTemp0, sJitTemp1, jtVoid);
                compiler->move(inDest,s0);
             }
             else // Object
             {
-               compiler->callNative(strAddStrToObj, sJitTemp0, sJitTemp1);
+               compiler->callNative(strAddStrToObj, sJitTemp0, sJitTemp1, jtVoid);
                compiler->move( inDest, sJitReturnReg );
             }
          }
@@ -4900,16 +5043,16 @@ struct SpecialAdd : public CppiaExpr
          {
             case etString:
                if (inDest.offset==0)
-                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, inDest.getReg());
+                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, inDest.getReg(), jtVoid);
                else
                {
                   compiler->add(sJitTemp2, inDest.getReg(), inDest.offset);
-                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, sJitTemp2);
+                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, sJitTemp2, jtVoid);
                }
                break;
 
             case etObject:
-               compiler->callNative(dynamicAddObj, tLeft, sJitTemp1);
+               compiler->callNative(dynamicAddObj, tLeft, sJitTemp1, jtVoid);
                compiler->move(inDest, sJitReturnReg.as(jtPointer));
                break;
 
@@ -5028,7 +5171,6 @@ struct OpAdd : public BinOp
       }
       else
       {
-         printf("Add?\n");
          JitTemp temp(compiler,jtFloat);
          left->genCode(compiler,temp,etFloat);
          right->genCode(compiler,sJitTempF0,etFloat);

@@ -316,7 +316,7 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
              {
                 inArgs[a]->genCode(compiler, JitFramePos(framePos), etString );
 
-                JumpId notNull = compiler->compare(cmpP_NOT_ZERO, JitFramePos(framePos + sizeof(int)) );
+                JumpId notNull = compiler->compare(cmpP_NOT_EQUAL, JitFramePos(framePos + sizeof(int)), (void *)0 );
 
                 // Is  null ...
                 genPushDefault(compiler,a,false);
@@ -328,7 +328,7 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
                 inArgs[a]->genCode(compiler, sJitTemp0, etObject );
 
                 // Check for null
-                JumpId notNull = compiler->compare(cmpP_NOT_ZERO, sJitTemp0);
+                JumpId notNull = compiler->compare(cmpP_NOT_EQUAL, sJitTemp0, (void *)0);
 
                 // Is  zero ...
                 genPushDefault(compiler,a,false);
@@ -338,7 +338,7 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
 
                 compiler->move( JitFramePos(framePos), sJitTemp0 );
                 compiler->add( sJitTemp0, sJitFrame, framePos );
-                compiler->callNative( (void *)objectToDouble, sJitTemp0 );
+                compiler->callNative( (void *)objectToDouble, sJitTemp0, jtVoid );
 
                 compiler->comeFrom(doneArg);
              }

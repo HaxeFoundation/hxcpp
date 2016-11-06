@@ -298,6 +298,7 @@ public:
    }
 
    // Conditional
+   /*
    JumpId compare(JitCompare condition, const JitVal &v0, LabelId andJump)
    {
       sljit_sw t = getTarget(v0);
@@ -310,6 +311,7 @@ public:
       }
       return 0;
    }
+   */
 
    JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
    {
@@ -412,8 +414,8 @@ public:
                if (inVal.reg0>=maxFTempCount)
                   maxFTempCount = inVal.reg0+1;
             }
-            else if (inVal.reg0<3 && inVal.reg0>=maxTempCount)
-               maxTempCount = inVal.reg0+1;
+            else if (inVal.reg0<=3 && inVal.reg0>=maxTempCount)
+               maxTempCount = inVal.reg0;
 
             return inVal.reg0;
 
@@ -425,8 +427,8 @@ public:
             break;
 
          case jposStar:
-            if (inVal.reg0<3 && inVal.reg0>=maxTempCount)
-               maxTempCount = inVal.reg0+1;
+            if (inVal.reg0<=3 && inVal.reg0>=maxTempCount)
+               maxTempCount = inVal.reg0;
             return SLJIT_MEM1(inVal.reg0);
 
          case jposFrame:
@@ -555,6 +557,8 @@ public:
 
       if (inSrcType==inToType)
       {
+         getTarget(inSrc);
+         getTarget(inTarget);
          move( inTarget, inSrc );
       }
       else if (inToType==etObject)
@@ -607,7 +611,7 @@ public:
                break;
             case etFloat:
                add( sJitTemp1, inTarget.getReg(), inTarget.offset );
-               callNative( (void *)floatToStr, inSrc, sJitTemp1, jtVoid );
+               callNative( (void *)floatToStr, inSrc.as(jtFloat), sJitTemp1, jtVoid );
                break;
             default:
                printf("TODO - other to string\n");
@@ -634,7 +638,9 @@ public:
    void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
    {
       if (inSrcType!=etVoid)
+      {
          convert( JitFramePos(frameSize, getJitType(inSrcType)), inSrcType, inTarget, inToType);
+      }
    }
 
 
@@ -807,7 +813,7 @@ public:
          maxTempCount =1;
       int restoreLocal = -1;
 
-      if (inArg0.type==jtFloat)
+      if (inArg0.type==jtFloat || inArg0==jtString)
       {
          if (isMemoryVal(inArg0))
             add( sJitArg0, inArg0.getReg().as(jtPointer), inArg0.offset);
@@ -836,7 +842,8 @@ public:
          maxTempCount =2;
 
       int restoreLocal = -1;
-      if (inArg0.type==jtFloat)
+
+      if (inArg0.type==jtFloat || inArg0==jtString)
       {
          if (isMemoryVal(inArg0))
             add( sJitArg0, inArg0.getReg().as(jtPointer), inArg0.offset);
@@ -851,7 +858,25 @@ public:
       else
          move( sJitArg0, inArg0);
 
-      move( sJitArg1, inArg1);
+
+
+      if (inArg1.type==jtFloat || inArg0==jtString)
+      {
+         if (isMemoryVal(inArg1))
+            add( sJitArg1, inArg1.getReg().as(jtPointer), inArg1.offset);
+         else
+         {
+            restoreLocal = localSize;
+            JitLocalPos temp(allocTemp(jtFloat),jtFloat);
+            move( temp, inArg1 );
+            add(sJitArg1, temp.getReg().as(jtPointer), temp.offset);
+         }
+      }
+      else
+         move( sJitArg1, inArg1);
+
+
+
       if (compiler)
          sljit_emit_ijump(compiler, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
 
