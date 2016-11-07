@@ -38,6 +38,10 @@ static void SLJIT_CALL intToStr(int inVal, String *outString)
 {
    *outString = String(inVal);
 }
+static void SLJIT_CALL objToStr(hx::Object *inVal, String *outString)
+{
+   *outString = inVal ? inVal->toString() : HX_CSTRING("null");
+}
 static void *SLJIT_CALL strToObj(String *inStr)
 {
    return Dynamic(*inStr).mPtr;
@@ -142,6 +146,8 @@ class CppiaJitCompiler : public CppiaCompiler
 public:
    struct sljit_compiler *compiler;
 
+   QuickVec<JumpId> allBreaks;
+   LabelId continuePos;
 
    bool usesCtx;
    bool usesThis;
@@ -165,6 +171,7 @@ public:
       compiler = 0;
       usesThis = false;
       usesCtx = false;
+      continuePos = 0;
       frameSize = baseFrameSize = sizeof(void *) + inFrameSize;
    }
 
@@ -248,6 +255,30 @@ public:
    void freeTemp(JitType inType)
    {
       localSize -= getJitTypeSize(inType);
+   }
+
+   
+   LabelId setContinuePos(LabelId inNewPos)
+   {
+      LabelId oldPos = continuePos;
+      continuePos = inNewPos;
+      return oldPos;
+   }
+
+   void  addContinue()
+   {
+      jump(continuePos);
+   }
+
+   void addBreak()
+   {
+      allBreaks.push( jump(0) );
+   }
+   void setBreakTarget()
+   {
+      for(int i=0;i<allBreaks.size();i++)
+         comeFrom(allBreaks[i]);
+      allBreaks.setSize(0);
    }
 
 
@@ -613,6 +644,21 @@ public:
                add( sJitTemp1, inTarget.getReg(), inTarget.offset );
                callNative( (void *)floatToStr, inSrc.as(jtFloat), sJitTemp1, jtVoid );
                break;
+            case etObject:
+               if (inSrc==sJitTemp1)
+               {
+                  move(sJitArg0, inSrc);
+                  add( sJitTemp1, inTarget.getReg(), inTarget.offset );
+                  callNative( (void *)objToStr, sJitArg0.as(jtPointer), sJitTemp1.as(jtPointer), jtVoid );
+               }
+               else
+               {
+                  add( sJitTemp1.as(jtPointer), inTarget.getReg(), inTarget.offset );
+                  callNative( (void *)objToStr, inSrc.as(jtPointer), sJitTemp1.as(jtPointer), jtVoid );
+               }
+               break;
+
+
             default:
                printf("TODO - other to string\n");
          }

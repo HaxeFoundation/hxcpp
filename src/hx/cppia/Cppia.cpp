@@ -177,6 +177,29 @@ struct CppiaBoolExpr : public CppiaIntExpr
    const char *getName() { return "CppiaBoolExpr"; }
    hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx) ? true : false).mPtr; }
    String runString(CppiaCtx *ctx) { return runInt(ctx)?HX_CSTRING("true") : HX_CSTRING("false");}
+
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      JumpId notCondition = genCompare(compiler, true, 0);
+
+      // is null ...
+      if (destType==etObject)
+         compiler->move(inDest, (void *)Dynamic(true).mPtr);
+      else
+         compiler->move(inDest, (int)1);
+
+      JumpId notDone = compiler->jump();
+      compiler->comeFrom(notCondition);
+      if (destType==etObject)
+         compiler->move(inDest, (void *)Dynamic(false).mPtr);
+      else
+         compiler->move(inDest, (int)0);
+
+      compiler->comeFrom(notDone);
+   }
+   #endif
 };
 
 
@@ -555,7 +578,6 @@ struct CppiaIsNull : public CppiaBoolExpr
    }
 
    #ifdef CPPIA_JIT
-
    JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
    {
       condition->genCode(compiler, sJitTemp0, etObject);
@@ -563,27 +585,8 @@ struct CppiaIsNull : public CppiaBoolExpr
       // inReverse = true  -> jump if zero
       return compiler->compare(inReverse ? cmpP_NOT_EQUAL : cmpP_EQUAL, sJitTemp0.as(jtPointer), (void *)0, inLabel);
    }
-
-   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
-   {
-      condition->genCode(compiler, sJitTemp0, etObject);
-      JumpId notNull = compiler->compare(cmpP_EQUAL, sJitTemp0, (void *)0);
-      // is null ...
-      if (destType==etObject)
-         compiler->move(inDest, (void *)Dynamic("true").mPtr);
-      else
-         compiler->move(inDest, (int)1);
-
-      JumpId nullDone = compiler->jump();
-      compiler->comeFrom(notNull);
-      if (destType==etObject)
-         compiler->move(inDest, (void *)Dynamic("false").mPtr);
-      else
-         compiler->move(inDest, (int)0);
-
-      compiler->comeFrom(nullDone);
-   }
    #endif
+
 };
 
 
@@ -600,6 +603,18 @@ struct CppiaIsNotNull : public CppiaBoolExpr
    {
       return condition->runObject(ctx)!=0;
    }
+
+
+   #ifdef CPPIA_JIT
+   JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
+   {
+      condition->genCode(compiler, sJitTemp0, etObject);
+      // inReverse = false -> jump if not 0
+      // inReverse = true  -> jump if zero
+      return compiler->compare(inReverse ? cmpP_EQUAL : cmpP_NOT_EQUAL, sJitTemp0.as(jtPointer), (void *)0, inLabel);
+   }
+   #endif
+
 };
 
 
@@ -788,6 +803,8 @@ struct CallFunExpr : public CppiaExpr
       // Push args...
       function->genArgs(compiler,thisExpr,args);
 
+      compiler->restoreFrameSize(framePos);
+
       // Store new frame in context ...
       compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
 
@@ -802,8 +819,6 @@ struct CallFunExpr : public CppiaExpr
          compiler->move( sJitTemp1, JitVal((void *)&function->compiled) );
          compiler->call( sJitTemp1.star(), sJitCtx, inDest.type );
       }
-
-      compiler->restoreFrameSize(framePos);
 
       // result is at 'framePos'
       compiler->convertResult( returnType, inDest, destType );
@@ -1058,13 +1073,18 @@ struct CallDynamicFunction : public CppiaExprWithValue
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
       AutoFramePos frame(compiler);
+
       for(int a=0;a<args.size();a++)
       {
          args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize()), etObject);
          compiler->addFrame(etObject);
       }
-      compiler->setFramePointer( compiler->getCurrentFrameSize() );
+
+      int basePos = compiler->getCurrentFrameSize();
+      compiler->setFramePointer(basePos);
       compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size(), jtVoid);
+      if (destType!=etVoid)
+         compiler->convertResult( etObject, inDest, destType );
 
       /*
       if (compiler.exceptionHandler)
@@ -2244,6 +2264,7 @@ struct Call : public CppiaDynamicExpr
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
       AutoFramePos frame(compiler);
+      int basePos = compiler->getCurrentFrameSize();
 
       JitTemp functionObject(compiler, jtPointer);
 
@@ -2257,6 +2278,8 @@ struct Call : public CppiaDynamicExpr
 
       compiler->setFramePointer( compiler->getCurrentFrameSize() );
       compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ), jtVoid );
+      if (destType!=etVoid)
+         compiler->convertResult( etObject, inDest, destType );
 
       /*
       if (compiler.exceptionHandler)
@@ -4127,6 +4150,8 @@ struct WhileExpr : public CppiaVoidExpr
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
+      LabelId oldCont = compiler->setContinuePos( compiler->addLabel() );
+
       JumpId start = condition->genCompare(compiler,true);
 
       LabelId body = compiler->addLabel();
@@ -4137,6 +4162,9 @@ struct WhileExpr : public CppiaVoidExpr
 
       compiler->comeFrom(start);
 
+      compiler->setBreakTarget();
+
+      compiler->setContinuePos(oldCont);
    }
    #endif
 };
@@ -4444,6 +4472,15 @@ struct FlagBreak : public CppiaVoidExpr
    }
    const char *getName() { return flag==bcrBreak ? "Break" : "Continue"; }
 
+   #ifdef CPPIA_CHECK
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (flag==bcrBreak)
+         compiler->addBreak();
+      else
+         compiler->addContinue();
+   }
+   #endif
 };
 
 
@@ -4763,6 +4800,14 @@ struct OpNot : public CppiaBoolExpr
    {
       return ! value->runInt(ctx);
    }
+
+   #ifdef CPPIA_JIT
+   JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
+   {
+      return value->genCompare(compiler, !inReverse, inLabel);
+   }
+   #endif
+
 };
 
 struct OpAnd : public CppiaBoolExpr
@@ -4786,6 +4831,49 @@ struct OpAnd : public CppiaBoolExpr
       BCR_CHECK;
       return l && right->runInt(ctx);
    }
+
+
+   #ifdef CPPIA_JIT
+   JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
+   {
+      if (inReverse)
+      {
+         // !left || !right
+         if (inLabel)
+         {
+            left->genCompare(compiler, true, inLabel);
+            right->genCompare(compiler, true, inLabel);
+         }
+         else
+         {
+            // !left || !right
+            JumpId someBad = left->genCompare(compiler, true, 0);
+            // Left is false, goto someBad for a jump
+
+            // If right is also not good, skip the unconditional jump
+            JumpId noneBad = right->genCompare(compiler, false, 0);
+
+            compiler->comeFrom(someBad);
+            JumpId result = compiler->jump(inLabel);
+
+            compiler->comeFrom(noneBad);
+            return result;
+         }
+      }
+      else
+      {
+         JumpId leftFalse = left->genCompare(compiler, true, 0);
+
+         JumpId result = right->genCompare(compiler, false, inLabel);
+
+         compiler->comeFrom(leftFalse);
+
+         return result;
+      }
+      return 0;
+   }
+   #endif
+
 };
 
 
@@ -4798,6 +4886,51 @@ struct OpOr : public OpAnd
       BCR_CHECK;
       return l || right->runInt(ctx);
    }
+
+
+   #ifdef CPPIA_JIT
+   JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
+   {
+      if (inReverse)
+      {
+         // !left && !right
+         //  don't jump if left true..
+         JumpId leftTrue = left->genCompare(compiler, false, 0);
+
+         JumpId result = right->genCompare(compiler, true, inLabel);
+
+         compiler->comeFrom(leftTrue);
+
+         return result;
+
+      }
+      else if (inLabel)
+      {
+         left->genCompare(compiler, false, inLabel);
+         right->genCompare(compiler, false, inLabel);
+      }
+      else
+      {
+         // left || right
+         JumpId someGood = left->genCompare(compiler, false, 0);
+         // Left is true, goto someGood for a jump
+
+         // If right is also not good, skip the unconditional jump
+         JumpId noneGood = right->genCompare(compiler, true, 0);
+
+         compiler->comeFrom(someGood);
+         JumpId result = compiler->jump(inLabel);
+
+         compiler->comeFrom(noneGood);
+         return result;
+      }
+      return 0;
+
+   }
+   #endif
+
+
+
 };
 
 

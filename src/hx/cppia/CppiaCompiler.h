@@ -259,6 +259,11 @@ public:
    virtual void setFunctionDebug() = 0;
    virtual void setLineDebug() = 0;
 
+   virtual LabelId setContinuePos(LabelId inNewPos) = 0;
+   virtual void  addContinue() = 0;
+   virtual void  addBreak() = 0;
+   virtual void  setBreakTarget() = 0;
+
    // Unconditional
    virtual JumpId jump(LabelId inTo=0) = 0;
    virtual void   jump(const JitVal &inWhere) = 0;
