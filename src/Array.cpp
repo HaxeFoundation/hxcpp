@@ -441,6 +441,11 @@ struct ArrayBase_##func : public hx::Object \
    { \
       ret mThis->__##func(arg_list); return Dynamic(); \
    } \
+   int __Compare(const hx::Object *inRHS) const \
+   { \
+      if (!dynamic_cast<const ArrayBase_##func *>(inRHS)) return -1; \
+      return (mThis==inRHS->__GetHandle() ? 0 : -1); \
+   } \
 }; \
 Dynamic ArrayBase::func##_dyn()  { return new ArrayBase_##func(this);  }
 
