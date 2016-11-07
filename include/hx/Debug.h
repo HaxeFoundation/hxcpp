@@ -12,6 +12,20 @@ namespace hx
 {
 
 #ifdef HXCPP_DEBUGGER
+
+template<typename T> struct StackVariableWrapper
+{
+   typedef T wrapper;
+};
+
+template<typename T> struct StackVariableWrapper<T *>
+{
+   typedef cpp::Pointer<T> wrapper;
+};
+
+
+
+
 class StackVariable
 {
 public:
@@ -172,17 +186,6 @@ private:
 
     StackFrame &mFrame;
     bool (*mTestFunction)(Dynamic e);
-};
-
-
-template<typename T> struct StackVariableWrapper
-{
-   typedef T wrapper;
-};
-
-template<typename T> struct StackVariableWrapper<T *>
-{
-   typedef cpp::Pointer<T> wrapper;
 };
 
 
