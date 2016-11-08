@@ -1072,6 +1072,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
+      {
       AutoFramePos frame(compiler);
 
       for(int a=0;a<args.size();a++)
@@ -1080,9 +1081,9 @@ struct CallDynamicFunction : public CppiaExprWithValue
          compiler->addFrame(etObject);
       }
 
-      int basePos = compiler->getCurrentFrameSize();
-      compiler->setFramePointer(basePos);
+      compiler->setFramePointer( compiler->getCurrentFrameSize() );
       compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size(), jtVoid);
+      }
       if (destType!=etVoid)
          compiler->convertResult( etObject, inDest, destType );
 
@@ -2263,12 +2264,11 @@ struct Call : public CppiaDynamicExpr
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
-      AutoFramePos frame(compiler);
-      int basePos = compiler->getCurrentFrameSize();
-
       JitTemp functionObject(compiler, jtPointer);
-
       func->genCode(compiler, functionObject, etObject );
+
+      {
+      AutoFramePos frame(compiler);
 
       for(int a=0;a<args.size();a++)
       {
@@ -2278,6 +2278,7 @@ struct Call : public CppiaDynamicExpr
 
       compiler->setFramePointer( compiler->getCurrentFrameSize() );
       compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ), jtVoid );
+      }
       if (destType!=etVoid)
          compiler->convertResult( etObject, inDest, destType );
 
@@ -4472,7 +4473,7 @@ struct FlagBreak : public CppiaVoidExpr
    }
    const char *getName() { return flag==bcrBreak ? "Break" : "Continue"; }
 
-   #ifdef CPPIA_CHECK
+   #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       if (flag==bcrBreak)

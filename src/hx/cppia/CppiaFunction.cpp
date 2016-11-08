@@ -63,7 +63,6 @@ ScriptCallable::ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
 ScriptCallable::~ScriptCallable()
 {
    #ifdef CPPIA_JIT
-   printf("BYE!\n");
    if (compiled)
       CppiaCompiler::freeCompiled(compiled);
    #endif

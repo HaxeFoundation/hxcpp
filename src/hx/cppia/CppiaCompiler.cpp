@@ -599,7 +599,7 @@ public:
             case etInt:
                callNative( (void *)intToObj, inSrc.as(jtInt), jtPointer);
                if (inTarget!=sJitReturnReg)
-                  emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg);
+                  emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg.as(jtPointer));
                break;
 
             case etFloat:
@@ -683,7 +683,7 @@ public:
 
    void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
    {
-      if (inSrcType!=etVoid)
+      if (inSrcType!=etVoid && inSrcType!=etNull && inToType!=etVoid && inToType!=etNull)
       {
          convert( JitFramePos(frameSize, getJitType(inSrcType)), inSrcType, inTarget, inToType);
       }
@@ -880,7 +880,7 @@ public:
       if (restoreLocal>=0)
          localSize = restoreLocal;
 
-      return JitVal(inReturnType,0,jposRegister);
+      return sJitReturnReg.as(inReturnType);
    }
    virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, JitType inReturnType)
    {
