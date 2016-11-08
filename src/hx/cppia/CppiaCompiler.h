@@ -318,6 +318,13 @@ struct JitTemp : public JitVal
       compiler = inCompiler;
    }
 
+
+   JitTemp(CppiaCompiler *inCompiler, ExprType inType)
+      : JitVal(getJitType(inType), inCompiler->allocTemp( getJitType(inType)), jposLocal, sLocalReg)
+   {
+      compiler = inCompiler;
+   }
+
    ~JitTemp()
    {
       compiler->freeTemp(type);

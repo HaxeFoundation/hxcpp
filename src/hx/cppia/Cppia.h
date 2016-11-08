@@ -140,6 +140,7 @@ struct CppiaExpr
    virtual CppiaExpr   *link(CppiaModule &data)   { return this; }
    virtual void mark(hx::MarkContext *ctx) { };
    virtual void visit(hx::VisitContext *ctx) { };
+   virtual bool isBoolInt() { return false; }
 
 
    virtual ExprType    getType() { return etObject; }
@@ -256,6 +257,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    String runString(CppiaCtx *ctx);
    void runVoid(CppiaCtx *ctx);
 
+
    // Run the actual function
    void runFunction(CppiaCtx *ctx);
    void addStackVarsSpace(CppiaCtx *ctx);
@@ -279,7 +281,7 @@ hx::Object *DynamicToArrayType(hx::Object *obj, ArrayType arrayType);
 struct TypeData
 {
    String              name;
-   hx::Class               haxeClass;
+   hx::Class           haxeClass;
    CppiaClassInfo      *cppiaClass;
    ExprType            expressionType;
    HaxeNativeClass     *haxeBase;
@@ -852,6 +854,11 @@ template<> struct ExprTypeOf<unsigned char> { enum { value = etInt }; };
 template<> struct ExprTypeOf<bool> { enum { value = etInt }; };
 template<> struct ExprTypeOf<Float> { enum { value = etFloat }; };
 template<> struct ExprTypeOf<String> { enum { value = etString }; };
+
+
+template<typename T>
+struct ExprTypeIsBool { enum { value = false }; };
+template<> struct ExprTypeIsBool<bool> { enum { value = true }; };
 
 
 struct NoCrement

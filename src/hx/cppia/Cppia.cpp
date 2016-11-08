@@ -177,14 +177,13 @@ struct CppiaBoolExpr : public CppiaIntExpr
    const char *getName() { return "CppiaBoolExpr"; }
    hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx) ? true : false).mPtr; }
    String runString(CppiaCtx *ctx) { return runInt(ctx)?HX_CSTRING("true") : HX_CSTRING("false");}
-
+   bool isBoolInt() { return true; }
 
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       JumpId notCondition = genCompare(compiler, true, 0);
 
-      // is null ...
       if (destType==etObject)
          compiler->move(inDest, (void *)Dynamic(true).mPtr);
       else
@@ -734,6 +733,7 @@ struct CallFunExpr : public CppiaExpr
    CppiaExpr   *thisExpr;
    ScriptCallable     *function;
    ExprType    returnType;
+   bool        isBoolReturn;
 
    CallFunExpr(const CppiaExpr *inSrc, CppiaExpr *inThisExpr, ScriptCallable *inFunction, Expressions &ioArgs )
       : CppiaExpr(inSrc)
@@ -742,6 +742,7 @@ struct CallFunExpr : public CppiaExpr
       function = inFunction;
       thisExpr = inThisExpr;
       returnType = etVoid;
+      isBoolReturn = false;
    }
 
    CppiaExpr *link(CppiaModule &inModule)
@@ -752,11 +753,13 @@ struct CallFunExpr : public CppiaExpr
       if (thisExpr)
          thisExpr = thisExpr->link(inModule);
       returnType = inModule.types[ function->returnTypeId ]->expressionType;
+      isBoolReturn = inModule.types[ function->returnTypeId ]->haxeClass==ClassOf<bool>();
       return this;
    }
 
    const char *getName() { return "CallFunExpr"; }
    ExprType getType() { return returnType; }
+   bool isBoolInt() { return isBoolReturn; }
 
    #define CallFunExprVal(ret,name,funcName) \
    ret name(CppiaCtx *ctx) \
@@ -769,9 +772,30 @@ struct CallFunExpr : public CppiaExpr
    }
    CallFunExprVal(int,runInt, runContextConvertInt);
    CallFunExprVal(Float ,runFloat, runContextConvertFloat);
-   CallFunExprVal(String,runString, runContextConvertString);
-   CallFunExprVal(hx::Object *,runObject,  runContextConvertObject);
+   //CallFunExprVal(hx::Object * ,runObject, runContextConvertObject);
+   //CallFunExprVal(String ,runString, runContextConvertString);
 
+   String runString(CppiaCtx *ctx)
+   {
+      unsigned char *pointer = ctx->pointer;
+      function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(false),args);
+      BCR_CHECK;
+      AutoStack save(ctx,pointer);
+      if (isBoolReturn)
+         return String(ctx->runInt(function) ? true : false );
+      return runContextConvertString(ctx, function->getType(), function);
+   }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      unsigned char *pointer = ctx->pointer;
+      function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(false),args);
+      BCR_CHECK;
+      AutoStack save(ctx,pointer);
+      if (isBoolReturn)
+         return Dynamic(ctx->runInt(function) ? true : false ).mPtr;
+      return runContextConvertObject(ctx, function->getType(), function);
+   }
 
    void runVoid(CppiaCtx *ctx)
    {
@@ -821,7 +845,32 @@ struct CallFunExpr : public CppiaExpr
       }
 
       // result is at 'framePos'
-      compiler->convertResult( returnType, inDest, destType );
+      if (isBoolReturn && (destType==etObject || destType==etString))
+      {
+         JumpId isZero = compiler->compare(cmpI_EQUAL,JitFramePos(compiler->getCurrentFrameSize()).as(jtInt),(int)0);
+         if (destType==etObject)
+            compiler->move(inDest,(void *)Dynamic(true).mPtr);
+         else
+         {
+            compiler->move(inDest,String(true).length);
+            compiler->move(inDest+4,(void *)String(true).__s);
+         }
+         JumpId done = compiler->jump();
+
+         compiler->comeFrom(isZero);
+
+         if (destType==etObject)
+            compiler->move(inDest,(void *)Dynamic(false).mPtr);
+         else
+         {
+            compiler->move(inDest,String(false).length);
+            compiler->move(inDest+4,(void *)String(false).__s);
+         }
+
+         compiler->comeFrom(done);
+      }
+      else
+         compiler->convertResult( returnType, inDest, destType );
    }
 
 
@@ -2508,6 +2557,10 @@ struct MemReference : public CppiaExpr
       offset = 0;
       pointer = inPointer;
    }
+   bool isBoolInt()
+   {
+      return ExprTypeIsBool<T>::value;
+   }
  
    ExprType getType()
    {
@@ -2545,49 +2598,41 @@ struct MemReference : public CppiaExpr
       CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
+      if (isBoolInt())
+         return ValToString( MEMGETVAL ? true : false );
       return ValToString(t);
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
       CHECKVAL;
+      if (isBoolInt())
+         return Dynamic( MEMGETVAL ? true : false ).mPtr;
       return Dynamic( MEMGETVAL ).mPtr;
    }
 
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
-      switch(REFMODE)
-      {
-         case locObj:
-            //TODO - GC! 
-            //if (!value.mPtr)
-            //  value = strVal;
-            //compiler->move(inDest, (void *) value.mPtr );
-            break;
-
-         case locThis:
-            /*
-            if (!isMemoryVal(inDest))
-               compiler->setError("Bad String target");
-            else
-            {
-               compiler->move(inDest,JitVal(strVal.length));
-               compiler->move(inDest+sizeof(int),JitVal((void *)strVal.__s));
-            }
-            */
-            break;
-
-
-         case locAbsolute:
-            compiler->move( sJitTemp0,  JitVal( (void *)pointer ) );
-            compiler->move( inDest,  sJitTemp0.star() );
-            //compiler->convert( sJitTemp0.star(jtPointer,0), getType(),inDest, destType );
-            break;
-
-         default:
-            // locFrame
-            compiler->convert( JitFramePos(offset),getType(),inDest, destType );
-      }
+     if (REFMODE==locAbsolute)
+     {
+        compiler->move( sJitTemp0,  JitVal( (void *)pointer ) );
+        compiler->convert( sJitTemp0.star(jtPointer,0), getType(),inDest, destType );
+     }
+     else if (REFMODE==locObj)
+     {
+        object->genCode( compiler, sJitTemp2, etObject );
+        compiler->convert( sJitTemp2.star(jtPointer,offset) ,getType(),inDest, destType );
+     }
+     else if (REFMODE==locThis)
+     {
+        JitThisPos target(offset);
+        compiler->convert( target,getType(),inDest, destType );
+     }
+     else
+     {
+        JitFramePos target(offset);
+        compiler->convert( target,getType(),inDest, destType );
+     }
    }
    #endif
 
@@ -2639,6 +2684,7 @@ struct MemReferenceSetter : public CppiaExpr
    CppiaExpr *object;
    CppiaExpr *value;
 
+
    MemReferenceSetter(MemReference<T,REFMODE> *inSrc, CppiaExpr *inValue) : CppiaExpr(inSrc)
    {
       offset = inSrc->offset;
@@ -2650,6 +2696,8 @@ struct MemReferenceSetter : public CppiaExpr
    {
       return (ExprType) ExprTypeOf<T>::value;
    }
+
+   const char *getName() { return "MemReferenceSetter"; }
 
    void runVoid(CppiaCtx *ctx)
    {
@@ -2699,6 +2747,55 @@ struct MemReferenceSetter : public CppiaExpr
       return this;
    }
 
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      switch(REFMODE)
+      {
+         case locObj:
+            {
+            JitTemp tmpObject(compiler,jtPointer);
+            object->genCode(compiler, tmpObject, etObject);
+            JitTemp tmpVal(compiler,getType());
+            value->genCode(compiler, tmpVal, getType());
+            compiler->move( sJitTemp2,  tmpObject );
+            compiler->move( sJitTemp2.star() + offset, tmpVal );
+            compiler->convert( sJitTemp2.star() + offset, getType(), inDest, destType );
+            }
+            break;
+
+         case locThis:
+            {
+            JitThisPos target(offset);
+            // TODO - bool/other sizes
+            value->genCode(compiler, target, getType());
+            compiler->convert( target,getType(),inDest, destType );
+            break;
+            }
+
+         case locStack:
+            {
+            JitFramePos target(offset);
+            value->genCode(compiler, target, getType());
+            compiler->convert( target,getType(),inDest, destType );
+            break;
+            }
+
+         case locAbsolute:
+            {
+            JitTemp tmpVal(compiler,getType());
+            value->genCode(compiler, tmpVal, getType());
+            compiler->move( sJitTemp2,  JitVal( (void *)pointer ) );
+            compiler->move( sJitTemp2.star(), tmpVal );
+            compiler->convert( sJitTemp2.star(), getType(), inDest, destType );
+            }
+            break;
+
+         default: printf("unknown REFMODE\n");
+      }
+   }
+
+   #endif
 
 };
 
@@ -2837,7 +2934,7 @@ struct MemReferenceCrement : public CppiaExpr
             break;
 
          default:
-            // locFrame
+            // locStack
             switch(getType())
             {
                case etInt:

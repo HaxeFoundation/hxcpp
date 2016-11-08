@@ -285,6 +285,7 @@ public:
    void setFunctionDebug()
    {
    }
+
    void setLineDebug()
    {
    }
@@ -292,6 +293,8 @@ public:
    // Scriptable?
    void addReturn()
    {
+      if (compiler)
+         sljit_emit_return(compiler, SLJIT_UNUSED, SLJIT_UNUSED, 0);
    }
    void pushScope()
    {
