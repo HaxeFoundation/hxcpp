@@ -313,6 +313,9 @@ public:
    int getPodSize() const { return mPodSize; }
 
    mutable int length;
+
+   static inline int baseOffset() { return (int)offsetof(ArrayBase,mBase); }
+
 protected:
    mutable int mAlloc;
    mutable char  *mBase;
