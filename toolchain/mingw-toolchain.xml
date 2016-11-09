@@ -30,6 +30,7 @@
   <exe name="${HXCPP_MINGW_EXE}" />
   <flag value="-c"/>
   <cppflag value="-frtti"/>
+  <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug||O3"/>
   <flag value="-O3" if="O3"/>

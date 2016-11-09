@@ -18,6 +18,7 @@
 #else
    #include <typeinfo>
    #include <stdint.h>
+   #include <cstddef>
    namespace hx { typedef std::type_info type_info; }
    #ifndef EMSCRIPTEN
       using hx::type_info;
