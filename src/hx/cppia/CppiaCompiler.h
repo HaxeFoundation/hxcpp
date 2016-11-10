@@ -46,6 +46,8 @@ enum JitType
   jtString,
   jtFloat,
   jtInt,
+  jtByte,
+  jtShort,
   jtVoid,
   jtUnknown,
 };
@@ -261,6 +263,7 @@ public:
    
    virtual void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType) = 0;
    virtual void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType) = 0;
+   virtual void returnNull(const JitVal &inTarget, ExprType inToType) = 0;
 
    virtual void beginGeneration(int inArgs=1) = 0;
    virtual CppiaFunc finishGeneration() = 0;
@@ -301,7 +304,6 @@ public:
    virtual void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
    virtual void div(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
    virtual void move(const JitVal &inDest, const JitVal &src) = 0;
-   virtual void moveByte(const JitVal &inDest, const JitVal &src) = 0;
    //virtual void compare(Condition condition,const JitVal &v0, const JitVal &v1) = 0;
 
 

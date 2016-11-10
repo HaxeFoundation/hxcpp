@@ -156,6 +156,7 @@ JitReg sJitThis(SLJIT_S2,jtPointer);
 JitVal sJitCtxFrame = sJitCtx.star(jtPointer, offsetof(CppiaCtx,frame));
 JitVal sJitCtxPointer = sJitCtx.star(jtPointer, offsetof(CppiaCtx,pointer));
 
+static double sZero = 0.0;
 
 class CppiaJitCompiler : public CppiaCompiler
 {
@@ -541,6 +542,9 @@ public:
          return inV2.type;
       if (inV2.type==jtAny)
          return inV1.type;
+      if (inV1.type==jtByte || inV2.type==jtByte)
+         return jtByte;
+
       // Copying parts into string ...
       if (inV1.type==jtString && inV2.type==jtInt)
          return jtInt;
@@ -582,6 +586,10 @@ public:
             emit_fop1(SLJIT_DMOV, inDest, inSrc);
             break;
 
+         case jtByte:
+            emit_op1(SLJIT_IMOV_UB, inDest, inSrc);
+            break;
+
          case jtString:
             if (!isMemoryVal(inDest) || !isMemoryVal(inSrc))
             {
@@ -600,14 +608,6 @@ public:
             setError("Bad move target");
             *(int *)0=0;
       }
-   }
-
-   void moveByte(const JitVal &inDest, const JitVal &inSrc)
-   {
-      if (inDest==inSrc || !inDest.valid())
-         return;
-
-      emit_op1(SLJIT_MOV_UB, inDest, inSrc);
    }
 
 
@@ -724,11 +724,19 @@ public:
                }
                else
                {
-                  makeAddress(sJitTemp1,inTarget);
-                  callNative( (void *)objToFloat, inSrc.as(jtPointer), sJitTemp1.as(jtPointer) );
+                  if (isMemoryVal(inTarget))
+                  {
+                     makeAddress(sJitTemp1,inTarget);
+                     callNative( (void *)objToFloat, inSrc.as(jtPointer), sJitTemp1.as(jtPointer) );
+                  }
+                  else
+                  {
+                     JitTemp temp(this,jtFloat);
+                     makeAddress(sJitTemp1,temp);
+                     callNative( (void *)objToFloat, inSrc.as(jtPointer), sJitTemp1.as(jtPointer) );
+                     move(inTarget,temp);
+                  }
                }
-               break;
-
                break;
 
             default:
@@ -764,6 +772,26 @@ public:
       if (inSrcType!=etVoid && inSrcType!=etNull && inToType!=etVoid && inToType!=etNull)
       {
          convert( JitFramePos(frameSize, getJitType(inSrcType)), inSrcType, inTarget, inToType);
+      }
+   }
+
+   void returnNull(const JitVal &inTarget, ExprType inToType)
+   {
+      switch(inToType)
+      {
+         case etObject:
+            move(inTarget, (void *)0);
+            break;
+         case etString:
+            move(inTarget.as(jtPointer), (int)0);
+            move(inTarget.as(jtInt) + 4, (void *)0);
+            break;
+         case etInt:
+            move(inTarget, (int)0);
+            break;
+         case etFloat:
+            move(inTarget, JitVal((void *)&sZero).as(jtFloat) );
+            break;
       }
    }
 

@@ -4686,7 +4686,7 @@ struct BinOp : public CppiaExpr
 
    ExprType getType() { return type; }
 
-   const char *getName() { return "BinOp"; }
+   const char *getName() =0;
    CppiaExpr *link(CppiaModule &inModule)
    {
       left = left->link(inModule);
@@ -4717,6 +4717,7 @@ struct OpMult : public BinOp
 {
    OpMult(CppiaStream &stream) : BinOp(stream) { }
 
+   const char *getName() { return "OpMult"; }
    int runInt(CppiaCtx *ctx)
    {
       int lval = left->runInt(ctx);
@@ -4771,6 +4772,7 @@ struct OpMult : public BinOp
 struct OpSub : public BinOp
 {
    OpSub(CppiaStream &stream) : BinOp(stream) { }
+   const char *getName() { return "OpSub"; }
 
    int runInt(CppiaCtx *ctx)
    {
@@ -4827,6 +4829,7 @@ struct OpDiv : public BinOp
 {
    OpDiv(CppiaStream &stream) : BinOp(stream) { }
 
+   const char *getName() { return "OpDiv"; }
    ExprType getType() { return etFloat; }
    int runInt(CppiaCtx *ctx)
    {
@@ -5431,7 +5434,7 @@ struct OpMod : public BinOp
    OpMod(CppiaStream &stream) : BinOp(stream)
    {
    }
-
+   const char *getName() { return "OpMod"; }
 
    int runInt(CppiaCtx *ctx)
    {
