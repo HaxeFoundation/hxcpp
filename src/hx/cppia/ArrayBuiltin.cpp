@@ -31,6 +31,33 @@ enum ArrayFunc
    af__SetSizeExact,
 };
 
+static const char *sFuncNames[] =
+{
+   "afConcat",
+   "afCopy",
+   "afInsert",
+   "afIterator",
+   "afJoin",
+   "afPop",
+   "afPush",
+   "afRemove",
+   "afReverse",
+   "afShift",
+   "afSlice",
+   "afSplice",
+   "afSort",
+   "afToString",
+   "afUnshift",
+   "afMap",
+   "afFilter",
+   "afIndexOf",
+   "afLastIndexOf",
+   "af__get",
+   "af__set",
+   "af__crement",
+   "af__SetSizeExact",
+};
+
 static int sArgCount[] = 
 {
    1, //afConcat,
@@ -109,6 +136,7 @@ struct ArraySetter : public ArrayBuiltinBase
       : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
    {
    }
+   const char *getName() { return "ArraySetter"; }
    virtual ExprType getType()
    {
       return (ExprType)ExprTypeOf<ELEM>::value;
@@ -164,6 +192,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
    {
    }
+   const char *getName() { return sFuncNames[FUNC]; }
 
    ExprType getType()
    {
@@ -684,6 +713,84 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       return 0;
    }
 
+   #ifdef CPPIA_JIT
+   static ArrayBase * SLJIT_CALL array_expand(ArrayBase *inArray)
+   {
+      inArray->Realloc( inArray->length + 1 );
+      return inArray;
+   }
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      // TODO - null check
+      switch(FUNC)
+      {
+         case afPush:
+            {
+               thisExpr->genCode(compiler, sJitTemp0, etObject);
+               JumpId enough = compiler->compare( cmpI_LESS, sJitTemp0.star(jtInt, ArrayBase::lengthOffset()),
+                                                             sJitTemp0.star(jtInt, ArrayBase::allocOffset()) );
+
+               // result comes back in sJitTemp0
+               compiler->callNative( (void *)array_expand,  sJitTemp0 );
+               compiler->comeFrom(enough);
+
+               JitTemp arrayThis(compiler,jtPointer);
+               compiler->move(arrayThis, sJitTemp0);
+
+               ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
+               JitTemp tempVal(compiler,getJitType(elemType));
+               args[0]->genCode(compiler, tempVal, elemType);
+
+               // sJitTemp1 = this
+               compiler->move(sJitTemp1, arrayThis);
+               // sJitTemp0 = length
+               compiler->move(sJitTemp0, sJitTemp1.star(jtInt, ArrayBase::lengthOffset()) );
+               // this->length = length+1
+               compiler->add(sJitTemp1.star(jtInt, ArrayBase::lengthOffset()), sJitTemp0, (int)1 );
+
+               // sJitTemp1 = this->base
+               compiler->move(sJitTemp1, sJitTemp1.star(jtPointer, ArrayBase::baseOffset()).as(jtPointer) );
+
+               if (sizeof(ELEM)==1) // uchar, bool
+               {
+                  #ifdef HXCPP_BIG_ENDIAN
+                  int lsbOffset = 3;
+                  #else
+                  int lsbOffset = 0;
+                  #endif
+                  compiler->moveByte( sJitTemp1.atReg(sJitTemp0), tempVal + lsbOffset );
+               }
+               else if (elemType==etString)
+               {
+                  compiler->mult( sJitTemp0, sJitTemp0.as(jtInt), (int)sizeof(String), false );
+                  compiler->add( sJitTemp0, sJitTemp1.as(jtPointer), sJitTemp0);
+                  compiler->move( sJitTemp0, tempVal );
+               }
+               else if (sizeof(ELEM)==2)
+               {
+                  compiler->move( sJitTemp1.atReg(sJitTemp0,1), tempVal );
+               }
+               else if (sizeof(ELEM)==4)
+               {
+                  compiler->move( sJitTemp1.atReg(sJitTemp0,2), tempVal );
+               }
+               else if (sizeof(ELEM)==8)
+               {
+                  compiler->move( sJitTemp1.atReg(sJitTemp0,3), tempVal );
+               }
+               else
+               {
+                  printf("Unknown element size\n");
+               }
+
+               break;
+            }
+
+         default:
+            compiler->traceStrings("ArrayBuiltin::",sFuncNames[FUNC]);
+      }
+   }
+   #endif
 };
 
 
@@ -709,6 +816,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
    {
    }
+   const char *getName() { return sFuncNames[FUNC]; }
 
    int  runInt(CppiaCtx *ctx)
    {

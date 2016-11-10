@@ -302,7 +302,7 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
                 compiler->comeFrom(notNull);
 
                 // sJitArg0 holds object
-                compiler->callNative( objectToInt, sJitArg0, jtInt);
+                compiler->callNative( objectToInt, sJitArg0);
                 compiler->move( JitFramePos(framePos), sJitReturnReg );
 
                 compiler->comeFrom(doneArg);
@@ -337,7 +337,7 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
 
                 compiler->move( JitFramePos(framePos), sJitTemp0 );
                 compiler->add( sJitTemp0, sJitFrame, framePos );
-                compiler->callNative( (void *)objectToDouble, sJitTemp0, jtVoid );
+                compiler->callNative( (void *)objectToDouble, sJitTemp0 );
 
                 compiler->comeFrom(doneArg);
              }

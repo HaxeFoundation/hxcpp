@@ -33,6 +33,7 @@ enum JitPosition
    jposArray,
    jposRegister,
    jposStar,
+   jposStarReg,
    jposPointerVal,
    jposIntVal,
    jposFloatVal,
@@ -108,6 +109,11 @@ struct JitVal
    bool operator!=(const JitVal &inOther) const { return !(*this == inOther); }
 
    JitVal getReg() const { return JitVal(jtPointer, 0, jposRegister, reg0, reg1); }
+
+
+   private:
+      JitVal(const JitType &);
+      JitVal(const ExprType &);
 };
 
 struct JitReg : public JitVal
@@ -115,6 +121,9 @@ struct JitReg : public JitVal
    JitReg(int inReg, JitType inType=jtAny) : JitVal(inType, 0, jposRegister, inReg, 0) { }
 
    JitVal star(JitType inType=jtPointer, int inOffset=0) { return JitVal(inType, inOffset, jposStar, reg0, reg1); }
+   JitVal atReg(JitReg inReg, int inShift=0, JitType inType=jtAny) {
+      return JitVal(inType, inShift, jposStarReg, reg0, inReg.reg0);
+   }
 };
 
 
@@ -279,11 +288,11 @@ public:
 
    // Scriptable?
    virtual void addReturn() = 0;
-   virtual void pushScope() = 0;
-   virtual void popScope() = 0;
+
    virtual void trace(const char *inValue) = 0;
    virtual void traceObject(const char *inLabel, const JitVal &inValue) = 0;
    virtual void tracePointer(const char *inLabel, const JitVal &inValue) = 0;
+   virtual void traceStrings(const char *inS0, const char *inS1) = 0;
    virtual void traceInt(const char *inLabel, const JitVal &inValue) = 0;
 
    virtual void set(const JitVal &inDest, const JitVal &inSrc) = 0;
@@ -292,17 +301,18 @@ public:
    virtual void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
    virtual void div(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
    virtual void move(const JitVal &inDest, const JitVal &src) = 0;
+   virtual void moveByte(const JitVal &inDest, const JitVal &src) = 0;
    //virtual void compare(Condition condition,const JitVal &v0, const JitVal &v1) = 0;
 
 
-   virtual JitVal call(CppiaFunc func, JitType inReturnType=jtVoid)=0;
-   virtual JitVal call(const JitVal &inFunc, JitType inReturnType=jtVoid)=0;
-   virtual JitVal call(const JitVal &inFunc, const JitVal &inArg0, JitType inReturnType=jtVoid)=0;
+   //virtual void call(CppiaFunc func, JitType inReturnType=jtVoid)=0;
+   //virtual void call(const JitVal &inFunc, JitType inReturnType=jtVoid)=0;
+   virtual void call(const JitVal &inFunc, const JitVal &inArg0)=0;
 
-   virtual JitVal callNative(void *func, JitType inReturnType)=0;
-   virtual JitVal callNative(void *func, const JitVal &inArg0, JitType inReturnType)=0;
-   virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, JitType inReturnType)=0;
-   virtual JitVal callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2, JitType inReturnType)=0;
+   virtual void callNative(void *func)=0;
+   virtual void callNative(void *func, const JitVal &inArg0)=0;
+   virtual void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1)=0;
+   virtual void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2)=0;
 
 
 };
