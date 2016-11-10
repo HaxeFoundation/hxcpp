@@ -30,6 +30,11 @@ static void SLJIT_CALL my_trace_int_func(const char *inText, int inValue)
 {
    printf("%s = %d\n",inText, inValue);
 }
+static void SLJIT_CALL my_trace_float_func(const char *inText, double *inValue)
+{
+   printf("%s = %f\n",inText, *inValue);
+}
+
 static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
 {
    printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().__s : "NULL" );
@@ -259,19 +264,30 @@ public:
       return func;
    }
 
-   int  allocTemp(JitType inType)
+
+   int  allocTempSize(int size)
    {
       int result = localSize;
-      int size = getJitTypeSize(inType);
       localSize += size;
       if (localSize>maxLocalSize)
          maxLocalSize = localSize;
       return result;
    }
 
+   void freeTempSize(int inSize)
+   {
+      localSize -= inSize;
+   }
+
+
+   int  allocTemp(JitType inType)
+   {
+      return allocTempSize(getJitTypeSize(inType));
+   }
+
    void freeTemp(JitType inType)
    {
-      localSize -= getJitTypeSize(inType);
+      freeTempSize( getJitTypeSize(inType) );
    }
 
    
@@ -808,6 +824,22 @@ public:
    {
       callNative( (void *)my_trace_int_func, JitVal((void *)inLabel), inValue);
    }
+   void traceFloat(const char *inLabel, const JitVal &inValue)
+   {
+      if (isMemoryVal(inValue))
+      {
+         makeAddress(sJitArg0,inValue);
+         callNative( (void *)my_trace_float_func, sJitArg0);
+      }
+      else
+      {
+         JitTemp tmp(this,etFloat);
+         move(tmp,inValue);
+         makeAddress(sJitArg0,tmp);
+         callNative( (void *)my_trace_float_func, sJitArg0);
+      }
+   }
+
    void trace(const char *inText)
    {
       callNative( (void *)my_trace_func, JitVal( (void *)inText ));
@@ -898,34 +930,19 @@ public:
 
    }
 
-   void div(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
+   void fdiv(const JitVal &inDest, const JitVal &v0, const JitVal &v1)
    {
-      sljit_si tDest = getTarget(inDest);
-      sljit_si t0 = getTarget(v0);
-      sljit_si t1 = getTarget(v1);
-      bool isFloat = v0.type==jtFloat;
-
-      if (asFloat != isFloat)
-      {
-         if (isFloat)
-         {
-            emit_fop2(SLJIT_DDIV, sJitTempF0, v0, v1 );
-            convert( sJitTempF0, etFloat, inDest, etInt );
-         }
-         else
-         {
-            //emit_op2(SLJIT_DIV, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
-            //convert( sJitTemp0, etInt, inDest, etFloat );
-         }
-      }
-      else
-      {
-         if (isFloat)
-            emit_fop2(SLJIT_DDIV, inDest, v0, v1 );
-         //else
-            //emit_op2(SLJIT_DIV, inDest, v0, v1 );
-      }
+      emit_fop2(SLJIT_DDIV, sJitTempF0, v0, v1 );
    }
+
+   void divmod()
+   {
+      if (sJitTemp1.reg0>=maxTempCount)
+         maxTempCount = sJitTemp1.reg0;
+      if (compiler)
+         sljit_emit_op0(compiler,SLJIT_ILSDIV);
+   }
+
 
 
 

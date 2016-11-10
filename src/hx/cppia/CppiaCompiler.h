@@ -255,8 +255,11 @@ public:
    virtual int getCurrentFrameSize() = 0;
    virtual void restoreFrameSize(int inSize) = 0;
    virtual void addFrame(ExprType inType) = 0;
+   virtual void freeTempSize(int inSize) = 0;
+   virtual int  allocTempSize(int size) = 0;
    virtual int  allocTemp(JitType inType) = 0;
    virtual void freeTemp(JitType inType) = 0;
+
    virtual JitVal  addLocal(const char *inName, JitType inType) = 0;
    virtual JitVal functionArg(int inIndex) = 0;
 
@@ -295,6 +298,7 @@ public:
    virtual void trace(const char *inValue) = 0;
    virtual void traceObject(const char *inLabel, const JitVal &inValue) = 0;
    virtual void tracePointer(const char *inLabel, const JitVal &inValue) = 0;
+   virtual void traceFloat(const char *inLabel, const JitVal &inValue) = 0;
    virtual void traceStrings(const char *inS0, const char *inS1) = 0;
    virtual void traceInt(const char *inLabel, const JitVal &inValue) = 0;
 
@@ -302,7 +306,8 @@ public:
    virtual void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
    virtual void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
    virtual void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
-   virtual void div(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
+   virtual void fdiv(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
+   virtual void divmod() = 0;
    virtual void move(const JitVal &inDest, const JitVal &src) = 0;
    //virtual void compare(Condition condition,const JitVal &v0, const JitVal &v1) = 0;
 
@@ -323,11 +328,13 @@ public:
 struct JitTemp : public JitVal
 {
    CppiaCompiler *compiler;
+   int size;
 
    JitTemp(CppiaCompiler *inCompiler, JitType inType)
       : JitVal(inType, inCompiler->allocTemp(inType), jposLocal, sLocalReg)
    {
       compiler = inCompiler;
+      size =  getJitTypeSize( inType );
    }
 
 
@@ -335,11 +342,21 @@ struct JitTemp : public JitVal
       : JitVal(getJitType(inType), inCompiler->allocTemp( getJitType(inType)), jposLocal, sLocalReg)
    {
       compiler = inCompiler;
+      size =  getJitTypeSize( getJitType(inType) );
    }
+
+
+   JitTemp(CppiaCompiler *inCompiler, ExprType inType, int inSize)
+      : JitVal(getJitType(inType), inCompiler->allocTempSize(inSize), jposLocal, sLocalReg)
+   {
+      compiler = inCompiler;
+      size = inSize;
+   }
+
 
    ~JitTemp()
    {
-      compiler->freeTemp(type);
+      compiler->freeTempSize(size);
    }
 };
 

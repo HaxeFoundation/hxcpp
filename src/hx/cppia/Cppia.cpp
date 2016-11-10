@@ -4756,8 +4756,10 @@ struct OpMult : public BinOp
          JitTemp lval(compiler,jtFloat);
          left->genCode(compiler,lval,etFloat);
          right->genCode(compiler,sJitTempF0,etFloat);
-         if (destType==etFloat)
+         if (destType==etFloat && !isMemoryVal(inDest) )
+         {
             compiler->mult(inDest,lval,sJitTempF0,true);
+         }
          else
          {
             compiler->mult(sJitTempF1,lval,sJitTempF0,true);
@@ -4858,10 +4860,10 @@ struct OpDiv : public BinOp
          left->genCode(compiler,lval,etFloat);
          right->genCode(compiler,sJitTempF0,etFloat);
          if (destType==etFloat)
-            compiler->div(inDest,lval,sJitTempF0,true);
+            compiler->fdiv(inDest,lval,sJitTempF0);
          else
          {
-            compiler->div(sJitTempF0,lval,sJitTempF0,true);
+            compiler->fdiv(sJitTempF0,lval,sJitTempF0);
             compiler->convert(sJitTempF0, etFloat, inDest, destType);
          }
       }
@@ -5428,6 +5430,12 @@ struct OpAdd : public BinOp
    #endif
 };
 
+#ifdef CPPIA_JIT
+static void SLJIT_CALL double_mod(double *params)
+{
+   params[0] = hx::DoubleMod(params[0], params[1]);
+}
+#endif
 
 struct OpMod : public BinOp
 {
@@ -5448,6 +5456,30 @@ struct OpMod : public BinOp
       BCR_CHECK;
       return hx::DoubleMod(lval,right->runFloat(ctx));
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (type==etInt)
+      {
+         JitTemp leftVal(compiler,etInt);
+         left->genCode(compiler, leftVal, etInt);
+         right->genCode(compiler, sJitTemp1, etInt);
+         compiler->move(sJitTemp0, leftVal);
+         compiler->divmod();
+         compiler->convert(sJitTemp1,etInt,inDest,destType);
+      }
+      else
+      {
+         JitTemp leftRightVal(compiler,etFloat, sizeof(Float)*2 );
+         left->genCode(compiler, leftRightVal, etFloat);
+         right->genCode(compiler, leftRightVal + sizeof(Float), etFloat);
+         compiler->add(sJitArg0, leftRightVal.getReg(), leftRightVal.offset );
+         compiler->callNative((void *)double_mod, sJitArg0 );
+         compiler->convert(leftRightVal,etFloat,inDest,destType);
+      }
+   }
+   #endif
 };
 
 struct CrementExpr : public CppiaExpr 
