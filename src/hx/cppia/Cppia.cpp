@@ -965,7 +965,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
 
       for(int a=0;a<args.size();a++)
       {
-         args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize()), etObject);
+         args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize(),etObject), etObject);
          compiler->addFrame(etObject);
       }
 
@@ -2103,7 +2103,7 @@ struct GetFieldByName : public CppiaDynamicExpr
       else
       {
          // this...
-         compiler->move(sJitTemp0, JitFramePos(0) );
+         compiler->move(sJitTemp0, JitFramePos(0,etObject) );
       }
 
       switch(destType)
@@ -2270,7 +2270,7 @@ struct Call : public CppiaDynamicExpr
 
       for(int a=0;a<args.size();a++)
       {
-         args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize()), etObject);
+         args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize(),etObject), etObject);
          compiler->addFrame(etObject);
       }
 
@@ -2623,7 +2623,49 @@ CppiaExpr *createStaticAccess(CppiaExpr *inSrc,FieldStorage inType, void *inPtr)
 }
 
 
+#ifdef CPPIA_JIT
+void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType, AssignOp inOp, CppiaExpr *inExpr)
+{
+   switch(inOp)
+   {
+      case aoSet:
+         {
+            inExpr->genCode(compiler, ioValue, exprType);
+         }
+         break;
 
+      case aoMult:
+         if (ioValue.type==etInt)
+         {
+            inExpr->genCode(compiler, sJitTemp0, etInt);
+            compiler->mult(ioValue, sJitTemp0, ioValue,false);
+         }
+         else
+         {
+            inExpr->genCode(compiler, sJitTempF0, etFloat);
+            compiler->mult(ioValue, sJitTempF0, ioValue,true);
+         }
+         break;
+
+      case aoAdd:
+         if (ioValue.type==etInt)
+         {
+            inExpr->genCode(compiler, sJitTemp0, etInt);
+            compiler->add(ioValue, sJitTemp0, ioValue);
+         }
+         else
+         {
+            inExpr->genCode(compiler, sJitTempF0, etFloat);
+            compiler->add(ioValue, sJitTempF0, ioValue);
+         }
+         break;
+
+
+      default:
+         printf("Get setter %d\n", inOp);
+   }
+}
+#endif
 
 template<typename T, int REFMODE, typename Assign> 
 struct MemReferenceSetter : public CppiaExpr
@@ -2632,9 +2674,11 @@ struct MemReferenceSetter : public CppiaExpr
    T         *pointer;
    CppiaExpr *object;
    CppiaExpr *value;
+   AssignOp  op;
 
 
-   MemReferenceSetter(MemReference<T,REFMODE> *inSrc, CppiaExpr *inValue) : CppiaExpr(inSrc)
+   MemReferenceSetter(MemReference<T,REFMODE> *inSrc, CppiaExpr *inValue, AssignOp inOp)
+       : CppiaExpr(inSrc), op(inOp)
    {
       offset = inSrc->offset;
       object = inSrc->object;
@@ -2699,6 +2743,9 @@ struct MemReferenceSetter : public CppiaExpr
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
+      if (sizeof(T)<4)
+          printf("TODO - small memory moves\n");
+
       switch(REFMODE)
       {
          case locObj:
@@ -2706,9 +2753,20 @@ struct MemReferenceSetter : public CppiaExpr
             JitTemp tmpObject(compiler,jtPointer);
             object->genCode(compiler, tmpObject, etObject);
             JitTemp tmpVal(compiler,getType());
-            value->genCode(compiler, tmpVal, getType());
+
+            if (op==aoSet)
+            {
+               value->genCode(compiler, tmpVal, getType());
+            }
+            else
+            {
+               compiler->move( sJitTemp2,  tmpObject );
+               compiler->move( tmpVal, sJitTemp2.star() + offset );
+               genSetter(compiler, tmpVal, getType(), op, value);
+            }
             compiler->move( sJitTemp2,  tmpObject );
             compiler->move( sJitTemp2.star() + offset, tmpVal );
+
             compiler->convert( sJitTemp2.star() + offset, getType(), inDest, destType );
             }
             break;
@@ -2716,11 +2774,8 @@ struct MemReferenceSetter : public CppiaExpr
          case locThis:
             {
             JitThisPos target(offset, getJitType(getType()) );
-            // TODO - bool/other sizes
-            if (sizeof(T)<4)
-               printf("TODO - small memory moves\n");
 
-            value->genCode(compiler, target, getType());
+            genSetter(compiler, target, getType(), op, value);
 
             compiler->convert( target,getType(),inDest, destType );
             break;
@@ -2729,7 +2784,9 @@ struct MemReferenceSetter : public CppiaExpr
          case locStack:
             {
             JitFramePos target(offset,getJitType(getType()));
-            value->genCode(compiler, target, getType());
+
+            genSetter(compiler, target, getType(), op, value);
+
             compiler->convert( target,getType(),inDest, destType );
             break;
             }
@@ -2737,10 +2794,23 @@ struct MemReferenceSetter : public CppiaExpr
          case locAbsolute:
             {
             JitTemp tmpVal(compiler,getType());
-            value->genCode(compiler, tmpVal, getType());
+
+            if (op==aoSet)
+            {
+               value->genCode(compiler, tmpVal, getType());
+            }
+            else
+            {
+               compiler->move( sJitTemp2,  JitVal( (void *)pointer ) );
+               compiler->move( sJitTemp2.star( getType(), offset ), tmpVal );
+               genSetter(compiler, tmpVal, getType(), op, value);
+            }
+
             compiler->move( sJitTemp2,  JitVal( (void *)pointer ) );
-            compiler->move( sJitTemp2.star(), tmpVal );
-            compiler->convert( sJitTemp2.star(), getType(), inDest, destType );
+            compiler->move( sJitTemp2.star(getType()), tmpVal );
+
+            compiler->convert( sJitTemp2.star(getType(), offset), getType(), inDest, destType );
+
             }
             break;
 
@@ -2759,29 +2829,29 @@ CppiaExpr *MemReference<T,REFMODE>::makeSetter(AssignOp op,CppiaExpr *value)
    switch(op)
    {
       case aoSet:
-         return new MemReferenceSetter<T,REFMODE,AssignSet>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignSet>(this,value,op);
       case aoAdd:
-         return new MemReferenceSetter<T,REFMODE,AssignAdd>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignAdd>(this,value,op);
       case aoMult:
-         return new MemReferenceSetter<T,REFMODE,AssignMult>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignMult>(this,value,op);
       case aoDiv:
-         return new MemReferenceSetter<T,REFMODE,AssignDiv>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignDiv>(this,value,op);
       case aoSub:
-         return new MemReferenceSetter<T,REFMODE,AssignSub>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignSub>(this,value,op);
       case aoAnd:
-         return new MemReferenceSetter<T,REFMODE,AssignAnd>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignAnd>(this,value,op);
       case aoOr:
-         return new MemReferenceSetter<T,REFMODE,AssignOr>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignOr>(this,value,op);
       case aoXOr:
-         return new MemReferenceSetter<T,REFMODE,AssignXOr>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignXOr>(this,value,op);
       case aoShl:
-         return new MemReferenceSetter<T,REFMODE,AssignShl>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignShl>(this,value,op);
       case aoShr:
-         return new MemReferenceSetter<T,REFMODE,AssignShr>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignShr>(this,value,op);
       case aoUShr:
-         return new MemReferenceSetter<T,REFMODE,AssignUShr>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignUShr>(this,value,op);
       case aoMod:
-         return new MemReferenceSetter<T,REFMODE,AssignMod>(this,value);
+         return new MemReferenceSetter<T,REFMODE,AssignMod>(this,value,op);
       default: ;
    }
    throw "Bad assign op";
@@ -4076,7 +4146,7 @@ struct VarDecl : public CppiaVoidExpr
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
-      JitFramePos pos(var.stackPos);
+      JitFramePos pos(var.stackPos,var.expressionType);
       if (init)
       {
          switch(var.expressionType)
@@ -4663,7 +4733,7 @@ struct RetVal : public CppiaVoidExpr
             value->genCode(compiler, JitVal(), etVoid);
          else
          {
-            value->genCode(compiler, JitFramePos(0), returnType);
+            value->genCode(compiler, JitFramePos(0,returnType), returnType);
          }
       }
       compiler->addReturn();
@@ -5620,7 +5690,7 @@ struct OpCompare : public OpCompareBase
             JitTemp lhs(compiler,jtFloat);
             left->genCode(compiler, lhs, etFloat);
             right->genCode(compiler, sJitTempF0, etFloat);
-            return compiler->compare( (JitCompare)(inReverse ? COMPARE::freverse :COMPARE::fcompare),
+            return compiler->fcompare( (JitCompare)(inReverse ? COMPARE::freverse :COMPARE::fcompare),
                                        lhs, sJitTempF0, inLabel );
          }
 
@@ -5638,7 +5708,7 @@ struct OpCompare : public OpCompareBase
 struct name \
 { \
    enum { compare = COMP, reverse=REVERSE }; \
-   enum { fcompare = COMP, freverse=REVERSE }; \
+   enum { fcompare = FCOMP, freverse=FREVERSE }; \
    template<typename T> \
    inline bool test(const T &left, const T&right) \
    { \

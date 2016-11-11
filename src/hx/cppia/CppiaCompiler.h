@@ -123,6 +123,7 @@ struct JitReg : public JitVal
    JitReg(int inReg, JitType inType=jtAny) : JitVal(inType, 0, jposRegister, inReg, 0) { }
 
    JitVal star(JitType inType=jtPointer, int inOffset=0) { return JitVal(inType, inOffset, jposStar, reg0, reg1); }
+   JitVal star(ExprType inType, int inOffset=0) { return JitVal(getJitType(inType), inOffset, jposStar, reg0, reg1); }
    JitVal atReg(JitReg inReg, int inShift=0, JitType inType=jtAny) {
       return JitVal(inType, inShift, jposStarReg, reg0, inReg.reg0);
    }
@@ -133,6 +134,7 @@ extern int sFrameReg;
 struct JitFramePos : public JitVal
 {
    JitFramePos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposFrame, sFrameReg) { }
+   JitFramePos(int inOffset, ExprType inType) : JitVal(getJitType(inType), inOffset, jposFrame, sFrameReg) { }
 };
 
 extern int sLocalReg;
@@ -285,6 +287,7 @@ public:
    virtual void   jump(const JitVal &inWhere) = 0;
    // Conditional
    virtual JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
+   virtual JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
    // Link
    virtual void  comeFrom(JumpId inWhere) = 0;
    virtual LabelId  addLabel() = 0;

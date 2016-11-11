@@ -358,22 +358,6 @@ public:
          sljit_emit_ijump(compiler, SLJIT_JUMP, t, getData(inWhere) );
    }
 
-   // Conditional
-   /*
-   JumpId compare(JitCompare condition, const JitVal &v0, LabelId andJump)
-   {
-      sljit_sw t = getTarget(v0);
-      if (compiler)
-      {
-         JumpId result = sljit_emit_cmp(compiler, condition, t, getData(v0), SLJIT_UNUSED, 0 );
-         if (andJump)
-            sljit_set_label(result, andJump);
-         return result;
-      }
-      return 0;
-   }
-   */
-
    JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
    {
       sljit_sw t0 = getTarget(v0);
@@ -387,6 +371,22 @@ public:
       }
       return 0;
    }
+
+
+   JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
+   {
+      sljit_sw t0 = getTarget(v0);
+      sljit_sw t1 = getTarget(v1);
+      if (compiler)
+      {
+         JumpId result = sljit_emit_fcmp(compiler, condition, t0, getData(v0), t1, getData(v1) );
+         if (andJump)
+            sljit_set_label(result, andJump);
+         return result;
+      }
+      return 0;
+   }
+
 
    // Link
    void  comeFrom(JumpId inJump)
@@ -862,7 +862,9 @@ public:
    void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
    {
       if (v0.type==jtFloat)
+      {
          emit_fop2(SLJIT_DADD, inDest, v0, v1);
+      }
       else if (v0.reg0==sLocalReg && v0.position==jposRegister)
       {
          sljit_si tDest = getTarget(inDest);
@@ -898,7 +900,9 @@ public:
       else
       {
          if (isFloat)
+         {
             emit_fop2(SLJIT_DMUL, inDest, v0, v1 );
+         }
          else
             emit_op2(SLJIT_MUL, inDest, v0, v1 );
       }
