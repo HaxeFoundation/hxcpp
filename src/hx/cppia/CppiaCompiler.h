@@ -218,6 +218,7 @@ enum JitCompare
 bool isMemoryVal(const JitVal &inVal);
 
 extern JitReg sJitFrame;
+extern JitReg sJitThis;
 
 extern JitReg sJitTemp0;
 extern JitReg sJitTemp1;

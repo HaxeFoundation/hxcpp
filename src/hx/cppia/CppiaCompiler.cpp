@@ -635,9 +635,13 @@ public:
    void makeAddress(const JitVal &outAddress, const JitVal &inSrc)
    {
       if (inSrc.offset==0)
+      {
          move(outAddress, inSrc.getReg() );
+      }
       else
+      {
          add(outAddress, inSrc.getReg(), inSrc.offset );
+      }
    }
 
 
@@ -728,7 +732,7 @@ public:
          switch(inSrcType)
          {
             case etInt:
-               emit_fop1( SLJIT_CONVI_FROMD, inTarget.as(jtInt), inSrc.as(jtFloat) );
+               emit_fop1( SLJIT_CONVD_FROMI, inTarget.as(jtInt), inSrc.as(jtFloat) );
                break;
 
             case etObject:
@@ -828,15 +832,15 @@ public:
    {
       if (isMemoryVal(inValue))
       {
-         makeAddress(sJitArg0,inValue);
-         callNative( (void *)my_trace_float_func, sJitArg0);
+         makeAddress(sJitArg1,inValue);
+         callNative( (void *)my_trace_float_func, (void *)inLabel, sJitArg1);
       }
       else
       {
          JitTemp tmp(this,etFloat);
          move(tmp,inValue);
-         makeAddress(sJitArg0,tmp);
-         callNative( (void *)my_trace_float_func, sJitArg0);
+         makeAddress(sJitArg1,tmp);
+         callNative( (void *)my_trace_float_func, (void *)inLabel,sJitArg1);
       }
    }
 

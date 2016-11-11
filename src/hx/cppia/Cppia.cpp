@@ -2574,12 +2574,12 @@ struct MemReference : public CppiaExpr
      }
      else if (REFMODE==locThis)
      {
-        JitThisPos target(offset);
+        JitThisPos target(offset, getJitType(getType()) );
         compiler->convert( target,getType(),inDest, destType );
      }
      else
      {
-        JitFramePos target(offset);
+        JitFramePos target(offset, getJitType(getType()));
         compiler->convert( target,getType(),inDest, destType );
      }
    }
@@ -2715,16 +2715,20 @@ struct MemReferenceSetter : public CppiaExpr
 
          case locThis:
             {
-            JitThisPos target(offset);
+            JitThisPos target(offset, getJitType(getType()) );
             // TODO - bool/other sizes
+            if (sizeof(T)<4)
+               printf("TODO - small memory moves\n");
+
             value->genCode(compiler, target, getType());
+
             compiler->convert( target,getType(),inDest, destType );
             break;
             }
 
          case locStack:
             {
-            JitFramePos target(offset);
+            JitFramePos target(offset,getJitType(getType()));
             value->genCode(compiler, target, getType());
             compiler->convert( target,getType(),inDest, destType );
             break;
@@ -4257,7 +4261,6 @@ struct WhileExpr : public CppiaVoidExpr
       LabelId oldCont = compiler->setContinuePos( compiler->addLabel() );
 
       JumpId start = condition->genCompare(compiler,true);
-
       LabelId body = compiler->addLabel();
 
       loop->genCode(compiler, JitVal(), etVoid);
@@ -4265,7 +4268,6 @@ struct WhileExpr : public CppiaVoidExpr
       condition->genCompare(compiler,false,body);
 
       compiler->comeFrom(start);
-
       compiler->setBreakTarget();
 
       compiler->setContinuePos(oldCont);
@@ -5606,13 +5608,6 @@ struct OpCompare : public OpCompareBase
       {
          case compInt:
          {
-            /*
-            if (lhs->getBest(etInt))
-            {
-               return compiler->compare( (JitCompare)COMPARE::compare, lhs->getBest(etInt), sJitTemp0, inLabel );
-            }
-            */
-
             JitTemp lhs(compiler,jtInt);
             left->genCode(compiler, lhs, etInt);
             right->genCode(compiler, sJitTemp0, etInt);
@@ -5620,8 +5615,17 @@ struct OpCompare : public OpCompareBase
                                        lhs, sJitTemp0.as(jtInt), inLabel );
          }
 
-         // TODO:
-         default: ;
+         case compFloat:
+         {
+            JitTemp lhs(compiler,jtFloat);
+            left->genCode(compiler, lhs, etFloat);
+            right->genCode(compiler, sJitTempF0, etFloat);
+            return compiler->compare( (JitCompare)(inReverse ? COMPARE::freverse :COMPARE::fcompare),
+                                       lhs, sJitTempF0, inLabel );
+         }
+
+         default:
+            printf("todo - other compares\n");
       }
       return 0;
    }
@@ -5630,10 +5634,11 @@ struct OpCompare : public OpCompareBase
 };
 
 
-#define DEFINE_COMPARE_OP(name,OP,COMP,REVERSE) \
+#define DEFINE_COMPARE_OP(name,OP,COMP,REVERSE,FCOMP,FREVERSE) \
 struct name \
 { \
    enum { compare = COMP, reverse=REVERSE }; \
+   enum { fcompare = COMP, freverse=REVERSE }; \
    template<typename T> \
    inline bool test(const T &left, const T&right) \
    { \
@@ -5642,19 +5647,19 @@ struct name \
 };
 
 #ifdef CPPIA_JIT
-DEFINE_COMPARE_OP(CompareLess,<,cmpI_SIG_LESS,cmpI_SIG_GREATER_EQUAL);
-DEFINE_COMPARE_OP(CompareLessEq,<=,cmpI_SIG_LESS_EQUAL,cmpI_SIG_GREATER);
-DEFINE_COMPARE_OP(CompareGreater,>,cmpI_SIG_GREATER,cmpI_SIG_LESS_EQUAL);
-DEFINE_COMPARE_OP(CompareGreaterEq,>=,cmpI_SIG_GREATER_EQUAL,cmpI_SIG_LESS);
-DEFINE_COMPARE_OP(CompareEqual,==,cmpI_EQUAL,cmpI_NOT_EQUAL);
-DEFINE_COMPARE_OP(CompareNotEqual,!=,cmpI_NOT_EQUAL,cmpI_EQUAL);
+DEFINE_COMPARE_OP(CompareLess,<,      cmpI_SIG_LESS,         cmpI_SIG_GREATER_EQUAL, cmpD_LESS,cmpD_GREATER_EQUAL);
+DEFINE_COMPARE_OP(CompareLessEq,<=,   cmpI_SIG_LESS_EQUAL,   cmpI_SIG_GREATER,       cmpD_LESS_EQUAL,cmpD_GREATER);
+DEFINE_COMPARE_OP(CompareGreater,>,   cmpI_SIG_GREATER,      cmpI_SIG_LESS_EQUAL,    cmpD_GREATER, cmpD_LESS_EQUAL);
+DEFINE_COMPARE_OP(CompareGreaterEq,>=,cmpI_SIG_GREATER_EQUAL,cmpI_SIG_LESS,          cmpD_GREATER_EQUAL, cmpD_LESS);
+DEFINE_COMPARE_OP(CompareEqual,==,    cmpI_EQUAL,            cmpI_NOT_EQUAL,         cmpD_EQUAL, cmpD_NOT_EQUAL);
+DEFINE_COMPARE_OP(CompareNotEqual,!=, cmpI_NOT_EQUAL,        cmpI_EQUAL,             cmpD_NOT_EQUAL, cmpD_EQUAL);
 #else
-DEFINE_COMPARE_OP(CompareLess,<,0,0);
-DEFINE_COMPARE_OP(CompareLessEq,<=,0,0);
-DEFINE_COMPARE_OP(CompareGreater,>,0,0);
-DEFINE_COMPARE_OP(CompareGreaterEq,>=,0,0);
-DEFINE_COMPARE_OP(CompareEqual,==,0,0);
-DEFINE_COMPARE_OP(CompareNotEqual,!=,0,0);
+DEFINE_COMPARE_OP(CompareLess,<,0,0,0,0);
+DEFINE_COMPARE_OP(CompareLessEq,<=,0,0,0,0);
+DEFINE_COMPARE_OP(CompareGreater,>,0,0,0,0);
+DEFINE_COMPARE_OP(CompareGreaterEq,>=,0,0,0,0);
+DEFINE_COMPARE_OP(CompareEqual,==,0,0,0,0);
+DEFINE_COMPARE_OP(CompareNotEqual,!=,0,0,0,0);
 #endif
 
 
