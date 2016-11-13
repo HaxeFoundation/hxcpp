@@ -159,8 +159,8 @@
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/libgnustl_static.a" if="NDKV8+" unless="dll_import" />
 
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtbegin_so.o"/>
-  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}/libgcc.a" unless="NDKV12"/>
-  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}.x/libgcc.a" if="NDKV12"/>
+  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}/libgcc.a" unless="NDKV12+"/>
+  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}.x/libgcc.a" if="NDKV12+"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libc.so"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libm.so"/>
   <lib name="-llog"/>
@@ -191,8 +191,8 @@
   <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/libgnustl_static.a" if="NDKV8+" unless="dll_import" />
 
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtbegin_static.o"/>
-  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}/libgcc.a" unless="NDKV12"/>
-  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}.x/libgcc.a" if="NDKV12"/>
+  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}/libgcc.a" unless="NDKV12+"/>
+  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}.x/libgcc.a" if="NDKV12+"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libc.so"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libm.so"/>
   <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtend_android.o"/>
