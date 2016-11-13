@@ -64,6 +64,38 @@ class Setup
             return result;
       }
 
+      var src = toPath(inDirName+"/source.properties");
+      if(sys.FileSystem.exists(src))
+      {
+         var fin = sys.io.File.read(src, false);
+         try
+         {
+            while(true)
+            {
+               var str = fin.readLine();
+               var split = str.split ("=");
+               var name = StringTools.trim(split[0]);
+               if( name == "Pkg.Revision" )
+               {
+                  var revision = StringTools.trim(split[1]);
+                  var split2 = revision.split( "." );
+                  var result = Std.parseInt(split2[0]);
+                  if(result!=null && result>=8)
+                  {
+                     Log.v('Deduced NDK version '+result+' from "$inDirName"/source.properties'); 
+                     fin.close();
+                     return result;
+                  }
+               }
+            }
+         }
+         catch(e:haxe.io.Eof)
+         {
+            Log.v('Could not deduce NDK version from "$inDirName"/source.properties');
+         }
+         fin.close();
+      }
+
       Log.v('Could not deduce NDK version from "$inDirName" - assuming 8');
       return 8;
    }
