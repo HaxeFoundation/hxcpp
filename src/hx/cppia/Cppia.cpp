@@ -615,6 +615,64 @@ struct CppiaIsNotNull : public CppiaBoolExpr
 };
 
 
+#ifdef CPPIA_JIT
+void genFunctionCall(ScriptCallable *function, CppiaCompiler *compiler,
+                     const JitVal &inDest, ExprType destType, bool isBoolReturn, ExprType returnType,
+                     CppiaExpr *thisExpr,  Expressions &args, const JitVal &inThisVal )
+{
+      int framePos = compiler->getCurrentFrameSize();
+
+      // Push args...
+      function->genArgs(compiler,thisExpr,args, inThisVal);
+
+      compiler->restoreFrameSize(framePos);
+
+      // Store new frame in context ...
+      compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
+
+      // Compiled yet
+      if (function->compiled)
+      {
+         compiler->call( JitVal( (void *)(function->compiled)), sJitCtx );
+      }
+      else
+      {
+         // Compiled later
+         compiler->move( sJitTemp1, JitVal((void *)&function->compiled) );
+         compiler->call( sJitTemp1.star(), sJitCtx );
+      }
+
+      // result is at 'framePos'
+      if (isBoolReturn && (destType==etObject || destType==etString))
+      {
+         JumpId isZero = compiler->compare(cmpI_EQUAL,JitFramePos(compiler->getCurrentFrameSize()).as(jtInt),(int)0);
+         if (destType==etObject)
+            compiler->move(inDest,(void *)Dynamic(true).mPtr);
+         else
+         {
+            compiler->move(inDest,String(true).length);
+            compiler->move(inDest+4,(void *)String(true).__s);
+         }
+         JumpId done = compiler->jump();
+
+         compiler->comeFrom(isZero);
+
+         if (destType==etObject)
+            compiler->move(inDest,(void *)Dynamic(false).mPtr);
+         else
+         {
+            compiler->move(inDest,String(false).length);
+            compiler->move(inDest+4,(void *)String(false).__s);
+         }
+
+         compiler->comeFrom(done);
+      }
+      else
+         compiler->convertResult( returnType, inDest, destType );
+}
+#endif
+
+
 
 
 struct CallFunExpr : public CppiaExpr
@@ -712,55 +770,7 @@ struct CallFunExpr : public CppiaExpr
    // Function Call
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
-      int framePos = compiler->getCurrentFrameSize();
-
-      // Push args...
-      function->genArgs(compiler,thisExpr,args);
-
-      compiler->restoreFrameSize(framePos);
-
-      // Store new frame in context ...
-      compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
-
-      // Compiled yet
-      if (function->compiled)
-      {
-         compiler->call( JitVal( (void *)(function->compiled)), sJitCtx );
-      }
-      else
-      {
-         // Compiled later
-         compiler->move( sJitTemp1, JitVal((void *)&function->compiled) );
-         compiler->call( sJitTemp1.star(), sJitCtx );
-      }
-
-      // result is at 'framePos'
-      if (isBoolReturn && (destType==etObject || destType==etString))
-      {
-         JumpId isZero = compiler->compare(cmpI_EQUAL,JitFramePos(compiler->getCurrentFrameSize()).as(jtInt),(int)0);
-         if (destType==etObject)
-            compiler->move(inDest,(void *)Dynamic(true).mPtr);
-         else
-         {
-            compiler->move(inDest,String(true).length);
-            compiler->move(inDest+4,(void *)String(true).__s);
-         }
-         JumpId done = compiler->jump();
-
-         compiler->comeFrom(isZero);
-
-         if (destType==etObject)
-            compiler->move(inDest,(void *)Dynamic(false).mPtr);
-         else
-         {
-            compiler->move(inDest,String(false).length);
-            compiler->move(inDest+4,(void *)String(false).__s);
-         }
-
-         compiler->comeFrom(done);
-      }
-      else
-         compiler->convertResult( returnType, inDest, destType );
+      genFunctionCall(function, compiler, inDest, destType, isBoolReturn, returnType,thisExpr, args, JitVal());
    }
 
 
@@ -1250,6 +1260,12 @@ static void *SLJIT_CALL runCreateInstance(CppiaCtx *ctx, CppiaClassInfo *info,  
    void *result = info->createInstance(ctx, args);
    return result;
 }
+
+static void *SLJIT_CALL allocHaxe(CppiaCtx *inCtx, CppiaClassInfo *inInfo )
+{
+   return inInfo->createInstance(inCtx,Expressions(),false);
+}
+
 #endif
 
 
@@ -1356,10 +1372,9 @@ struct NewExpr : public CppiaDynamicExpr
             compiler->callNative(func,(int)0);
          compiler->convert(sJitReturnReg, etObject, inDest, destType);
       }
-      else //if (constructor)
+      else if (constructor)
       {
          int n = args.size();
-         //Array< Dynamic > argList = Array_obj<Dynamic>::__new(n,n);
          JitTemp argList(compiler,jtPointer);
          compiler->callNative(createArrayObject,n);
          compiler->move(argList, sJitReturnReg);
@@ -1372,38 +1387,31 @@ struct NewExpr : public CppiaDynamicExpr
             compiler->move(sJitTemp1.star(jtPointer,a*sizeof(void *)), sJitTemp2.as(jtPointer) );
          }
 
-         if (constructor)
-            compiler->callNative( runConstructor, (void *)constructor, argList );
-         else
-            compiler->callNative( runCreateInstance, sJitCtx, (void *)type->cppiaClass, argList );
+         compiler->callNative( runConstructor, (void *)constructor, argList );
          compiler->convert(sJitReturnReg, etObject, inDest, destType);
       }
-      /*
       else
       {
-         CppiaClassInfo &info = *type->cppiaClass;
+         CppiaClassInfo *info = type->cppiaClass;
+         // return info->createInstance(ctx,args);
+         //int size = info.haxeBase->mDataOffset + info.extraData;
 
-         int size = info.haxeBase->mDataOffset + info.extraData;
+         compiler->callNative(allocHaxe, sJitCtx, (void *)info );
 
-   hx::Object *obj = haxeBase->factory(vtable,extraData);
+         if (info->newFunc)
+         {
+            JitTemp obj(compiler,etObject);
+            compiler->move(obj,sJitReturnReg);
 
-   static hx::Object *__script_create(void **inVTable, int inExtra) { \
-    __ME *result = new (inExtra) __ME(); \
-    result->__scriptVTable = inVTable; \
-   return result; } \
+            genFunctionCall( info->newFunc->funExpr,compiler, JitVal(), etVoid, false, etVoid, 0, args, obj);
 
-
-   createDynamicFunctions(obj);
-
-   if (newFunc && inCallNew)
-      runFunExpr(ctx, newFunc->funExpr, obj, inArgs );
-
-   return obj;
-
-
-         return type->cppiaClass->createInstance(ctx,args);
+            compiler->convert(obj, etObject, inDest, destType);
+         }
+         else
+         {
+            compiler->convert(sJitReturnReg, etObject, inDest, destType);
+         }
       }
-      */
 
    }
    #endif

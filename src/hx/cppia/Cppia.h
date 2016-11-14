@@ -243,7 +243,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    #ifdef CPPIA_JIT
    void compile();
    void genPushDefault(CppiaCompiler *compiler, int inArg, bool pushNullToo);
-   void genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Expressions &inArgs);
+   void genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Expressions &inArgs, const JitVal &inThisVal);
    #endif
 
 

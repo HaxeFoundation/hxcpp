@@ -240,7 +240,7 @@ void ScriptCallable::genPushDefault(CppiaCompiler *compiler, int inArg, bool pus
 
 
 
-void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Expressions &inArgs)
+void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Expressions &inArgs, const JitVal &inThisVal)
 {
    int inCount = inArgs.size();
    bool badCount = argCount<inCount;
@@ -264,6 +264,10 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
    if (inThis)
    {
       inThis->genCode(compiler, JitFramePos(framePos), etObject);
+   }
+   else if (inThisVal.valid())
+   {
+      compiler->move( JitFramePos(framePos), inThisVal );
    }
    else
    {
