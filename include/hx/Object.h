@@ -39,7 +39,27 @@ typedef Array<Dynamic> DynamicArray;
 HXCPP_EXTERN_CLASS_ATTRIBUTES null BadCast();
 
 #ifdef HXCPP_SCRIPTABLE
-typedef void (*StackExecute)(struct CppiaCtx *ctx);
+
+// CPPIA_CALL = fastcall on x86(32), nothing otherwise
+#if (HXCPP_API_LEVEL >= 331)
+   #if (defined(_WIN32) && !defined(_M_X64) && !defined(__x86_64__) && !defined(_ARM_) ) || \
+      defined(HXCPP_X86) || defined(__i386__) || defined(__i386) || \
+        (!defined(_WIN32) && !defined(_ARM_) && !defined(__arm__) && !defined(__x86_64__) )
+
+      #if defined(__GNUC__) && !defined(__APPLE__)
+         #define CPPIA_CALL __attribute__ ((fastcall))
+      #elif defined(_MSC_VER)
+         #define CPPIA_CALL __fastcall
+      #endif
+   #endif
+#endif
+
+#ifndef CPPIA_CALL
+   #define CPPIA_CALL
+#endif
+
+
+typedef void (CPPIA_CALL *StackExecute)(struct CppiaCtx *ctx);
 struct ScriptFunction
 {
    ScriptFunction(StackExecute inExe=0,const char *inSig=0)

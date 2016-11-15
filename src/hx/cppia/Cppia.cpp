@@ -1551,6 +1551,83 @@ struct CallHaxe : public CppiaExpr
       run(ctx,val);
       return val.mPtr;
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      int framePos = compiler->getCurrentFrameSize();
+
+      // Push this ...
+      if (thisExpr)
+         thisExpr->genCode(compiler, JitFramePos(framePos), etObject);
+      else
+         compiler->move(JitFramePos(framePos), sJitThis);
+      compiler->addFrame(etObject);
+
+
+      // Push args...
+      const char *s = function.signature+1;
+      for(int a=0;a<args.size();a++)
+      {
+         CppiaExpr *arg = args[a];
+         ExprType argType = etNull;
+         switch(*s++)
+         {
+            case sigInt: argType = etInt; break;
+            case sigFloat: argType = etFloat; break;
+            case sigString: argType = etString; break;
+            case sigObject: argType = etObject; break;
+            default: ;// huh?
+         }
+
+         if (argType!=etNull)
+         {
+            args[a]->genCode( compiler, JitFramePos( compiler->getCurrentFrameSize() ).as( getJitType(argType)), argType );
+            compiler->addFrame(argType);
+         }
+      }
+
+      compiler->restoreFrameSize(framePos);
+      // Store new frame in context ...
+      compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
+
+      // Compiled yet
+      compiler->call( JitVal( (void *)(function.execute)), sJitCtx );
+
+      // TODO - from signature
+      bool isBoolReturn = false;
+
+      // result is at 'framePos'
+      // TODO - common with CppiaFunction
+      if (isBoolReturn && (destType==etObject || destType==etString))
+      {
+         JumpId isZero = compiler->compare(cmpI_EQUAL,JitFramePos(compiler->getCurrentFrameSize()).as(jtInt),(int)0);
+         if (destType==etObject)
+            compiler->move(inDest,(void *)Dynamic(true).mPtr);
+         else
+         {
+            compiler->move(inDest,String(true).length);
+            compiler->move(inDest+4,(void *)String(true).__s);
+         }
+         JumpId done = compiler->jump();
+
+         compiler->comeFrom(isZero);
+
+         if (destType==etObject)
+            compiler->move(inDest,(void *)Dynamic(false).mPtr);
+         else
+         {
+            compiler->move(inDest,String(false).length);
+            compiler->move(inDest+4,(void *)String(false).__s);
+         }
+
+         compiler->comeFrom(done);
+      }
+      else
+         compiler->convertResult( returnType, inDest, destType );
+   }
+
+   #endif
 };
 
 struct CallStatic : public CppiaExpr

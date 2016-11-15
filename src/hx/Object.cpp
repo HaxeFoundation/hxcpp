@@ -119,7 +119,7 @@ class Object__scriptable : public hx::Object {
 
 hx::ScriptFunction Object::__script_construct;
 
-static void __s_toString(hx::CppiaCtx *ctx) {
+static void CPPIA_CALL __s_toString(hx::CppiaCtx *ctx) {
    ctx->returnString((ctx->getThis())->toString());
 }
 static hx::ScriptNamedFunction __scriptableFunctions[] = {
