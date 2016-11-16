@@ -982,7 +982,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
       compiler->setFramePointer( compiler->getCurrentFrameSize() );
       compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size());
       }
-      if (destType!=etVoid)
+      if (destType!=etVoid && destType!=etNull)
          compiler->convertResult( etObject, inDest, destType );
 
       /*
@@ -2364,6 +2364,7 @@ struct Call : public CppiaDynamicExpr
       }
       if (destType!=etVoid)
          compiler->convertResult( etObject, inDest, destType );
+
 
       /*
       if (compiler.exceptionHandler)
@@ -4817,9 +4818,7 @@ struct RetVal : public CppiaVoidExpr
          if (returnType==etVoid)
             value->genCode(compiler, JitVal(), etVoid);
          else
-         {
             value->genCode(compiler, JitFramePos(0,returnType), returnType);
-         }
       }
       compiler->addReturn();
    }
@@ -5017,7 +5016,9 @@ struct OpDiv : public BinOp
          left->genCode(compiler,lval,etFloat);
          right->genCode(compiler,sJitTempF0,etFloat);
          if (destType==etFloat)
+         {
             compiler->fdiv(inDest,lval,sJitTempF0);
+         }
          else
          {
             compiler->fdiv(sJitTempF0,lval,sJitTempF0);

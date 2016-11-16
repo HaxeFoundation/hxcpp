@@ -191,6 +191,7 @@ public:
       maxLocalSize = 0;
       localSize = 0;
       compiler = 0;
+      usesFrame = false;
       usesThis = false;
       usesCtx = false;
       continuePos = 0;
@@ -479,6 +480,10 @@ public:
             }
             else if (inVal.reg0<=3 && inVal.reg0>=maxTempCount)
                maxTempCount = inVal.reg0;
+            if (inVal.reg0==sFrameReg)
+               usesFrame = true;
+            else if (inVal.reg0==sThisReg)
+               usesThis = true;
 
             return inVal.reg0;
 
@@ -940,7 +945,7 @@ public:
 
    void fdiv(const JitVal &inDest, const JitVal &v0, const JitVal &v1)
    {
-      emit_fop2(SLJIT_DDIV, sJitTempF0, v0, v1 );
+      emit_fop2(SLJIT_DDIV, inDest, v0, v1 );
    }
 
    void divmod()

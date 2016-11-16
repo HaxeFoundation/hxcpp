@@ -350,7 +350,7 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
       else
       {
          int framePos = compiler->getCurrentFrameSize();
-         inArgs[a]->genCode(compiler, JitFramePos(framePos), var.type->expressionType);
+         inArgs[a]->genCode(compiler, JitFramePos(framePos).as( getJitType(var.type->expressionType) ), var.type->expressionType);
       }
       compiler->addFrame(var.expressionType);
    }
