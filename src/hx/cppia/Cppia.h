@@ -592,6 +592,7 @@ public:
    hx::Class     mClass;
 
    HaxeNativeClass *haxeBase;
+   void            *haxeBaseVTable;
 
    Functions memberFunctions;
    FunctionMap memberGetters;
@@ -660,6 +661,7 @@ public:
    int findFunctionSlot(int inName);
    CppiaVar *findVar(bool inStatic,int inId);
 
+   void *getHaxeBaseVTable();
 
    Dynamic getStaticValue(const String &inName,hx::PropertyAccess  inCallProp);
    bool hasStaticValue(const String &inName);

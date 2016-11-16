@@ -228,6 +228,7 @@ CppiaClassInfo::CppiaClassInfo(CppiaModule &inCppia) : cppia(inCppia)
    type = 0;
    mClass.mPtr = 0;
    dynamicMapOffset = 0;
+   haxeBaseVTable = 0;
 }
 
 /*
@@ -259,6 +260,18 @@ hx::Object *CppiaClassInfo::createInstance(CppiaCtx *ctx,Array<Dynamic> &inArgs)
       runFunExprDynamicVoid(ctx, newFunc->funExpr, obj, inArgs );
 
    return obj;
+}
+
+
+void *CppiaClassInfo::getHaxeBaseVTable()
+{
+   if (!haxeBase || haxeBaseVTable)
+      return haxeBaseVTable;
+
+   hx::Object *temp = haxeBase->factory(vtable,extraData);
+   haxeBaseVTable = *(void **)temp;
+
+   return haxeBaseVTable;
 }
 
 

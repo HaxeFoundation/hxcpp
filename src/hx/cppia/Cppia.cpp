@@ -1394,18 +1394,64 @@ struct NewExpr : public CppiaDynamicExpr
       {
          CppiaClassInfo *info = type->cppiaClass;
          // return info->createInstance(ctx,args);
-         //int size = info.haxeBase->mDataOffset + info.extraData;
 
+         #ifdef HXCPP_GC_NURSERY
+         int size = info->haxeBase->mDataOffset + info->extraData;
+         // sJitTemp0 = alloc
+         compiler->move(sJitTemp0, sJitCtx.star(jtPointer, offsetof(CppiaCtx,stackContext) ));
+
+         //if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
+         compiler->move( sJitTemp1, (void *) &hx::gPauseForCollect );
+         compiler->bitOr( sJitTemp2, sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceEnd) ),  sJitTemp1.star(etInt) );
+
+         // sJitTemp1 = end = alloc->spaceStart  + sizeof(int) + inSize;
+         compiler->add(sJitTemp1, sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceStart) ), (int)(size + sizeof(int) ) );
+
+         JumpId inRange = compiler->compare(cmpI_LESS_EQUAL, sJitTemp1, sJitTemp2);
+
+         // Not in range ...
+            compiler->callNative(allocHaxe, sJitCtx, (void *)info );
+
+            JumpId allocCallDone = compiler->jump();
+         // In range
+            compiler->comeFrom(inRange);
+
+            // sJitTemp2 = unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
+            compiler->add(sJitTemp2, sJitTemp0.star(jtPointer, offsetof(hx::StackContext,allocBase)) ,
+                                     sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceStart) ) );
+
+            // alloc->spaceStart = end;
+            compiler->move( sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceStart)), sJitTemp1 );
+
+
+            //compiler->move( sJitTemp2.star(etInt), (int)( size | (info->isContainer ? IMMIX_ALLOC_IS_CONTAINER : 0) ) );
+            compiler->move( sJitTemp2.star(etInt), (int)( size | IMMIX_ALLOC_IS_CONTAINER) );
+
+            compiler->add(sJitReturnReg, sJitTemp2.as(jtPointer), (int)4);
+
+            // Set class vtable
+            compiler->move(sJitReturnReg.star(jtPointer), (void *) info->getHaxeBaseVTable() );
+
+            // Set script vtable
+            compiler->move(sJitReturnReg.star(jtPointer, (int)(info->haxeBase->mDataOffset-sizeof(void *))), (void *) info->vtable );
+
+            // TODO:
+            // createDynamicFunctions(obj);
+
+         // join
+         compiler->comeFrom(allocCallDone);
+
+         #else
          compiler->callNative(allocHaxe, sJitCtx, (void *)info );
+         #endif
 
+         // Result is in sJitReturnReg
          if (info->newFunc)
          {
-            JitTemp obj(compiler,etObject);
-            compiler->move(obj,sJitReturnReg);
+            // Leaves result on frame 'this' slot = return position
+            genFunctionCall( info->newFunc->funExpr,compiler, JitVal(), etVoid, false, etVoid, 0, args, sJitReturnReg);
 
-            genFunctionCall( info->newFunc->funExpr,compiler, JitVal(), etVoid, false, etVoid, 0, args, obj);
-
-            compiler->convert(obj, etObject, inDest, destType);
+            compiler->convertResult(etObject, inDest, destType);
          }
          else
          {

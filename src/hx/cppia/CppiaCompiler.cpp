@@ -879,7 +879,16 @@ public:
             sljit_get_local_base(compiler, tDest, getData(inDest), v1.offset );
       }
       else
-         emit_op2(SLJIT_ADD, inDest, v0, v1);
+      {
+         // SLJIT_ADD ?
+         emit_op2(SLJIT_IADD, inDest, v0, v1);
+      }
+   }
+
+
+   void bitOr(const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
+   {
+     emit_op2(SLJIT_IOR, inDest, v0, v1);
    }
 
    void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
