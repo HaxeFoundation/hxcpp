@@ -1400,14 +1400,13 @@ struct NewExpr : public CppiaDynamicExpr
          // sJitTemp0 = alloc
          compiler->move(sJitTemp0, sJitCtx.star(jtPointer, offsetof(CppiaCtx,stackContext) ));
 
-         //if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
-         compiler->move( sJitTemp1, (void *) &hx::gPauseForCollect );
-         compiler->bitOr( sJitTemp2, sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceEnd) ),  sJitTemp1.star(etInt) );
+         // sJitTemp2 = alloc->spaceStart
+         compiler->move(sJitTemp2, sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceStart) ) );
 
-         // sJitTemp1 = end = alloc->spaceStart  + sizeof(int) + inSize;
-         compiler->add(sJitTemp1, sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceStart) ), (int)(size + sizeof(int) ) );
+         // end = spaceStart + size + sizeof(int)
+         compiler->add(sJitTemp1, sJitTemp2, (int)(size + sizeof(int) ) );
 
-         JumpId inRange = compiler->compare(cmpI_LESS_EQUAL, sJitTemp1, sJitTemp2);
+         JumpId inRange = compiler->compare(cmpI_LESS_EQUAL, sJitTemp1, sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceEnd) ) );
 
          // Not in range ...
             compiler->callNative(allocHaxe, sJitCtx, (void *)info );
@@ -1416,15 +1415,14 @@ struct NewExpr : public CppiaDynamicExpr
          // In range
             compiler->comeFrom(inRange);
 
-            // sJitTemp2 = unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
-            compiler->add(sJitTemp2, sJitTemp0.star(jtPointer, offsetof(hx::StackContext,allocBase)) ,
-                                     sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceStart) ) );
-
             // alloc->spaceStart = end;
             compiler->move( sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceStart)), sJitTemp1 );
 
+            // sJitTemp2 = unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
+            compiler->add(sJitTemp2, sJitTemp0.star(jtPointer, offsetof(hx::StackContext,allocBase)), sJitTemp2 );
 
             //compiler->move( sJitTemp2.star(etInt), (int)( size | (info->isContainer ? IMMIX_ALLOC_IS_CONTAINER : 0) ) );
+            // TODO - IMMIX_ALLOC_IS_CONTAINER from classInfo
             compiler->move( sJitTemp2.star(etInt), (int)( size | IMMIX_ALLOC_IS_CONTAINER) );
 
             compiler->add(sJitReturnReg, sJitTemp2.as(jtPointer), (int)4);

@@ -4144,7 +4144,12 @@ public:
    void WaitForSafe()
    {
       if (!mGCFreeZone)
+      {
+         // Cause allocation routines for fail ...
+         mMoreHoles = false;
+         spaceEnd = 0;
          mReadyForCollect.Wait();
+      }
    }
 
    void ReleaseFromSafe()
@@ -4221,6 +4226,7 @@ public:
             spaceEnd = spaceStart + mCurrentRange[mCurrentHole].length;
             mCurrentHole++;
             mMoreHoles = mCurrentHole<mCurrentHoles;
+
          }
          else
          {
@@ -4243,6 +4249,14 @@ public:
             spaceEnd = spaceStart + mCurrentRange->length;
             mCurrentHole = 1;
             mMoreHoles = mCurrentHole<mCurrentHoles;
+         }
+
+         // Other thread may have started collect, in which case we may just
+         //  overwritted the 'mMoreHoles' and 'spaceEnd' termination attempt
+         if (hx::gPauseForCollect)
+         {
+            spaceEnd = 0;
+            mMoreHoles = 0;
          }
       }
       return 0;

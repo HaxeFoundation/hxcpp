@@ -342,7 +342,7 @@ public:
          int start = alloc->spaceStart;
          int end = start + sizeof(int) + inSize;
 
-         if ( end <= (alloc->spaceEnd WITH_PAUSE_FOR_COLLECT_FLAG ) )
+         if ( end <= alloc->spaceEnd )
          {
             alloc->spaceStart = end;
 
