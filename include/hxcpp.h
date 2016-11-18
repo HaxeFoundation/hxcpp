@@ -304,7 +304,7 @@ typedef bool PropertyAccess;
 
 } // end namespace hx
 
-
+#define HX_COMMA ,
 
 
 // The order of these includes has been chosen to minimize forward declarations.

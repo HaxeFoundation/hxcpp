@@ -2,8 +2,6 @@
 #define HX_OBJC_HELPERS_INCLUDED
 
 
-#define HX_COMMA ,
-
 
 @interface NSHaxeWrapperClass : NSObject {
   @public hx::Object *haxeObject;
