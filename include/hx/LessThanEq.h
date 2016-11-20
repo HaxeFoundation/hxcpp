@@ -295,8 +295,12 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
    else if (traits1::type<=(int)CompareAsDouble || traits2::type<=(int)CompareAsDouble)
    {
       // numeric with a object...
-      if (traits1::isNull(v1) || traits2::isNull(v2))
-         return false;
+
+      // null can only be equal to null...
+      bool n1 = traits1::isNull(v1);
+      bool n2 = traits2::isNull(v2);
+      if (n1 || n2)
+         return EQ ? n1==n2 : n1!=n2;
 
       return LESS ? ( EQ ? traits1::toDouble(v1) <= traits2::toDouble(v2) :
                            traits1::toDouble(v1) <  traits2::toDouble(v2)  ) :
