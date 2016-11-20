@@ -52,6 +52,10 @@
    #include <string>
 #endif
 
+#ifdef HX_ANDROID
+ #include <sys/wait.h>
+#endif
+
 #ifndef CLK_TCK
    #define CLK_TCK   100
 #endif
@@ -267,7 +271,7 @@ int _hx_std_sys_command( String cmd )
    int result = system(cmd.__s);
    hx::ExitGCFreeZone();
 
-   #if !defined(NEKO_WINDOWS) && !defined(ANDROID)
+   #if !defined(NEKO_WINDOWS)
    result = WEXITSTATUS(result) | (WTERMSIG(result) << 8);
    #endif
 

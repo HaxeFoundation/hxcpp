@@ -509,7 +509,7 @@ class Test
 
    public static function testCommand()
    {
-      log("Test Sys");
+      log("Test Command");
       try
       {
       var code = Sys.command( Sys.programPath(), ["exit", "13"]);
@@ -529,7 +529,9 @@ class Test
       var args = Sys.args();
       var job = args.shift();
       if (job=="exit")
+      {
          Sys.exit( Std.parseInt(args[0]) );
+      }
       else if (job=="socket")
       {
          socketClient();
@@ -794,6 +796,25 @@ class Test
       return ok();
    }
 
+   public static function testFloatReads()
+   {
+      log("Test float bytes");
+
+      var bytes =haxe.io.Bytes.alloc(1+4+8);
+      bytes.fill(0,1,46);
+
+      // Test unaligned read/write
+      bytes.setFloat(1,1.25);
+      bytes.setDouble(5,1.25);
+
+      if (bytes.get(0)!=46)
+         error("Bad byte 0");
+
+      if (bytes.getDouble(5)!=bytes.getFloat(1))
+         error("Bad byte read/write");
+
+      return ok();
+   }
 
 
    public static function main()
@@ -822,6 +843,7 @@ class Test
          exitCode |= testThread();
          exitCode |= testSsl();
          exitCode |= testSerialization();
+         exitCode |= testFloatReads();
 
          if (exitCode!=0)
             Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );

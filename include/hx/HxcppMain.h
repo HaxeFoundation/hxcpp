@@ -72,12 +72,19 @@
 
    #if defined(TIZEN)
    extern "C" EXPORT_EXTRA int OspMain (int argc, char* pArgv[])
+   {
    #elif defined(HX_WIN_MAIN)
    int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-   #else
-   int main(int argc,char **argv)
-   #endif
    {
+   #else
+
+   extern int _hxcpp_argc;
+   extern char **_hxcpp_argv;
+   int main(int argc,char **argv)
+   {
+      _hxcpp_argc = argc;
+      _hxcpp_argv = argv;
+   #endif
       HX_TOP_OF_STACK
       hx::Boot();
       try
@@ -97,6 +104,10 @@
       }
       return 0;
    }
+   #if 0
+   }
+   }
+   #endif
 
 #endif
 

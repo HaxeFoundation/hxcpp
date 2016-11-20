@@ -285,12 +285,9 @@ inline void __hxcpp_align_set_float32( unsigned char *base, int addr, float v)
    #ifdef HXCPP_ALIGN_FLOAT
    if (addr & 3)
    {
-      unsigned char *fBuf = (unsigned char *)&v;
-      base += addr;
-      base[0] = fBuf[0];
-      base[1] = fBuf[1];
-      base[2] = fBuf[2];
-      base[3] = fBuf[3];
+      const unsigned int *src = (const unsigned int *)&v;
+      unsigned int *dest = (unsigned int *)(base+addr);
+      *dest = *src;
    }
    else
    #endif
@@ -304,12 +301,9 @@ inline float __hxcpp_align_get_float32( unsigned char *base, int addr)
    if (addr & 3)
    {
       float buf;
-      unsigned char *fBuf = (unsigned char *)&buf;
-      base += addr;
-      fBuf[0] = base[0];
-      fBuf[1] = base[1];
-      fBuf[2] = base[2];
-      fBuf[3] = base[3];
+      unsigned int *dest = (unsigned int *)&buf;
+      const unsigned int *src = (const unsigned int *)(base+addr);
+      *dest = *src;
       return buf;
    }
    #endif
@@ -322,16 +316,10 @@ inline void __hxcpp_align_set_float64( unsigned char *base, int addr, double v)
    #ifdef HXCPP_ALIGN_FLOAT
    if (addr & 3)
    {
-      unsigned char *dBuf = (unsigned char *)&v;
-      base += addr;
-      base[0] = dBuf[0];
-      base[1] = dBuf[1];
-      base[2] = dBuf[2];
-      base[3] = dBuf[3];
-      base[4] = dBuf[4];
-      base[5] = dBuf[5];
-      base[6] = dBuf[6];
-      base[7] = dBuf[7];
+      unsigned int *dest = (unsigned int *)(base + addr);
+      const unsigned int *src = (const unsigned int *)&v;
+      *dest++ = *src++;
+      *dest++ = *src++;
    }
    else
    #endif
@@ -345,16 +333,10 @@ inline double __hxcpp_align_get_float64( unsigned char *base, int addr)
    if (addr & 3)
    {
       double buf;
-      unsigned char *dBuf = (unsigned char *)&buf;
-      base += addr;
-      dBuf[0] = base[0];
-      dBuf[1] = base[1];
-      dBuf[2] = base[2];
-      dBuf[3] = base[3];
-      dBuf[4] = base[4];
-      dBuf[5] = base[5];
-      dBuf[6] = base[6];
-      dBuf[7] = base[7];
+      unsigned int *dest = (unsigned int *)&buf;
+      const unsigned int *src = (const unsigned int *)(base + addr);
+      *dest++ = *src++;
+      *dest++ = *src++;
       return buf;
    }
    #endif

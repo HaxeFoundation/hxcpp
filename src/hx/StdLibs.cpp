@@ -38,6 +38,9 @@ extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumbe
 
 void __hx_stack_set_last_exception();
 
+int _hxcpp_argc = 0;
+char **_hxcpp_argv = 0;
+
 namespace hx
 {
 
@@ -469,6 +472,12 @@ LEADINGWHITE:
 Array<String> __get_args()
 {
    Array<String> result(0,0);
+   if (_hxcpp_argc)
+   {
+      for(int i=1;i<_hxcpp_argc;i++)
+         result->push( String(_hxcpp_argv[i],strlen(_hxcpp_argv[i])).dup() );
+      return result;
+   }
 
    #ifdef HX_WINRT
    // Do nothing
