@@ -59,13 +59,25 @@ ScriptFunction HaxeNativeClass::findFunction(const std::string &inName)
 {
    if (functions)
       for(ScriptNamedFunction *f=functions;f->name;f++)
-         if (inName == f->name)
+         if (inName == f->name && !f->isStatic)
             return *f;
    if (haxeSuper)
       return haxeSuper->findFunction(inName);
 
    return ScriptFunction(0,0);
 }
+
+
+ScriptFunction HaxeNativeClass::findStaticFunction(String inName)
+{
+   if (functions)
+      for(ScriptNamedFunction *f=functions;f->name;f++)
+         if ( !strcmp(inName.__s,f->name) && f->isStatic)
+            return *f;
+
+   return ScriptFunction(0,0);
+}
+
 
 
 HaxeNativeClass *HaxeNativeClass::findClass(const std::string &inName)

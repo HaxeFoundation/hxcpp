@@ -522,6 +522,7 @@ public:
    void addVtableEntries( std::vector<std::string> &outVtable);
    void dump();
    ScriptFunction findFunction(const std::string &inName);
+   ScriptFunction findStaticFunction(String inName);
 
    static HaxeNativeClass *findClass(const std::string &inName);
    static HaxeNativeClass *hxObject();

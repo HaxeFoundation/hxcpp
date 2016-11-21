@@ -1481,13 +1481,15 @@ struct CallHaxe : public CppiaExpr
    CppiaExpr *thisExpr;
    ScriptFunction function;
    ExprType returnType;
+   bool   isStatic;
 
-   CallHaxe(CppiaExpr *inSrc,ScriptFunction inFunction, CppiaExpr *inThis, Expressions &ioArgs )
+   CallHaxe(CppiaExpr *inSrc,ScriptFunction inFunction, CppiaExpr *inThis, Expressions &ioArgs, bool inIsStatic=false )
        : CppiaExpr(inSrc)
    {
       args.swap(ioArgs);
       thisExpr = inThis;
       function = inFunction;
+      isStatic = inIsStatic;
    }
    ExprType getType() { return returnType; }
    CppiaExpr *link(CppiaModule &inModule)
@@ -1531,7 +1533,7 @@ struct CallHaxe : public CppiaExpr
    void run(CppiaCtx *ctx,T &outValue)
    {
       unsigned char *pointer = ctx->pointer;
-      ctx->pushObject(thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(false));
+      ctx->pushObject(isStatic ? 0: thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(false));
 
       const char *s = function.signature+1;
       for(int a=0;a<args.size();a++)
@@ -1604,6 +1606,8 @@ struct CallHaxe : public CppiaExpr
       // Push this ...
       if (thisExpr)
          thisExpr->genCode(compiler, JitFramePos(framePos), etObject);
+      else if (isStatic)
+         compiler->move(JitFramePos(framePos), (void *)0);
       else
          compiler->move(JitFramePos(framePos), sJitThis);
       compiler->addFrame(etObject);
@@ -1710,12 +1714,23 @@ struct CallStatic : public CppiaExpr
 
       if (!replace && type->haxeClass.mPtr)
       {
-         //const StaticInfo *info = type->haxeClass->GetStaticStorage(field);
-         //printf("INFO %s -> %p\n", field.__s,  info);
-         // TODO - create proper glue for static functions
-         Dynamic func = type->haxeClass.mPtr->__Field( field, HX_PROP_NEVER );
-         if (func.mPtr)
-            replace = new CallDynamicFunction(inModule, this, func, args );
+         ScriptFunction func = type->haxeBase->findStaticFunction(field);
+         if (func.signature)
+         {
+            //printf(" found function %s\n", func.signature );
+            replace = new CallHaxe( this, func, 0, args, true );
+         }
+         else
+         {
+            //const StaticInfo *info = type->haxeClass->GetStaticStorage(field);
+            //printf("INFO %s -> %p\n", field.__s,  info);
+            // TODO - create proper glue for static functions
+            Dynamic func = type->haxeClass.mPtr->__Field( field, HX_PROP_NEVER );
+            if (func.mPtr)
+            {
+               replace = new CallDynamicFunction(inModule, this, func, args );
+            }
+         }
       }
 
       // TODO - optimise...
