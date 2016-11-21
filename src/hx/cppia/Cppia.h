@@ -706,11 +706,11 @@ public:
 #ifdef HXCPP_STACK_LINE
    #ifdef HXCPP_DEBUGGER
       #define CPPIA_STACK_LINE(expr) \
-          ctx->stackContext->getCurrentStackFrame()->lineNumber = expr->line; \
+          ctx->getCurrentStackFrame()->lineNumber = expr->line; \
           if (hx::gShouldCallHandleBreakpoints) \
-              __hxcpp_on_line_changed(ctx->stackContext);
+              __hxcpp_on_line_changed(ctx);
    #else
-      #define CPPIA_STACK_LINE(expr) ctx->stackContext->getCurrentStackFrame()->lineNumber = expr->line;
+      #define CPPIA_STACK_LINE(expr) ctx->getCurrentStackFrame()->lineNumber = expr->line;
    #endif
 #else
    #define CPPIA_STACK_LINE(expr)

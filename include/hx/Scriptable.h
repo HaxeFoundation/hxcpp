@@ -1,14 +1,10 @@
 #ifndef INCLUDED_HX_SCRIPTABLE
 #define INCLUDED_HX_SCRIPTABLE
 
-#include <setjmp.h> 
-
 #include <typeinfo>
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #endif
-
-
 
 
 namespace hx
@@ -23,21 +19,12 @@ struct ScriptNamedFunction : public ScriptFunction
    bool isStatic;
 };
 
-enum
-{
-   bcrBreak    = 0x01,
-   bcrContinue = 0x02,
-   bcrReturn   = 0x04,
-
-   bcrLoop     = (bcrBreak | bcrContinue),
-};
 
 inline void SetFloatAligned(void *inPtr, const Float &inValue)
 {
    #ifdef HXCPP_ALIGN_FLOAT
    int *dest = (int *)inPtr;
    const int *src = (const int *)&inValue;
-   dest[0] = src[0];
    dest[1] = src[1];
    #else
    *(Float *)inPtr = inValue;
@@ -60,151 +47,64 @@ inline Float GetFloatAligned(const void *inPtr)
 }
 
 
-struct CppiaCtx
+inline void StackContext::pushFloat(Float f)
 {
-   CppiaCtx();
-   ~CppiaCtx();
+   SetFloatAligned(pointer, f);
+   pointer += sizeof(Float);
+}
+inline void StackContext::pushString(const String &s)
+{
+   *(String *)pointer = s;
+   pointer += sizeof(String);
+}
 
-   unsigned char *stack;
-   unsigned char *pointer;
-   unsigned char *frame;
-   class Object  *exception;
-   hx::StackContext *stackContext;
+inline void StackContext::pushObject(Dynamic d)
+{
+   *(hx::Object **)pointer = d.mPtr;
+   pointer += sizeof(hx::Object *);
+}
 
-   jmp_buf *returnJumpBuf;
-   jmp_buf *loopJumpBuf;
+inline void StackContext::returnFloat(Float f)
+{
+   SetFloatAligned(frame, f);
+}
+inline void StackContext::returnString(const String &s)
+{
+   *(String *)frame = s;
+}
+inline void StackContext::returnObject(Dynamic d)
+{
+   *(hx::Object **)frame = d.mPtr;
+}
 
-   unsigned int breakContReturn;
-
-   template<typename T>
-   void push(T inValue)
-   {
-      *(T *)pointer = inValue;
-      pointer += sizeof(T);
-   }
-
-   int getFrameSize() const { return pointer-frame; }
-   void mark(struct MarkContext *__inCtx);
-
-   static CppiaCtx *getCurrent();
-
-   int runInt(void *vtable);
-   Float runFloat(void *vtable);
-   String runString(void *vtable);
-   void runVoid(void *vtable);
-   Dynamic runObject(void *vtable);
-   hx::Object *runObjectPtr(void *vtable);
-
-   void push(bool &inValue)
-   {
-      *(int *)pointer = inValue;
-      pointer += sizeof(int);
-   }
-   inline void pushBool(bool b)
-   {
-      *(int *)pointer = b;
-      pointer += sizeof(int);
-   }
-   inline void pushInt(int i)
-   {
-      *(int *)pointer = i;
-      pointer += sizeof(int);
-   }
-   inline void pushFloat(Float f)
-   {
-      SetFloatAligned(pointer, f);
-      pointer += sizeof(Float);
-   }
-   inline void pushString(const String &s)
-   {
-      *(String *)pointer = s;
-      pointer += sizeof(String);
-   }
-   inline void pushObject(Dynamic d)
-   {
-      *(hx::Object **)pointer = d.mPtr;
-      pointer += sizeof(hx::Object *);
-   }
-
-   inline void returnBool(bool b)
-   {
-      *(int *)frame = b;
-   }
-   inline void returnInt(int i)
-   {
-      *(int *)frame = i;
-   }
-   inline void returnFloat(Float f)
-   {
-      SetFloatAligned(frame, f);
-   }
-   inline void returnString(const String &s)
-   {
-      *(String *)frame = s;
-   }
-   inline void returnObject(Dynamic d)
-   {
-      *(hx::Object **)frame = d.mPtr;
-   }
-
-   void longJump()
-   {
-      longjmp(*returnJumpBuf,1);
-   }
-
-   inline hx::Object *getThis(bool inCheckPtr=true)
-   {
-      #ifdef HXCPP_CHECK_POINTER
-         if (inCheckPtr)
-         {
-            if (!*(hx::Object **)frame) NullReference("This", false);
-            #ifdef HXCPP_GC_CHECK_POINTER
-            GCCheckPointer(*(hx::Object **)frame);
-            #endif
-         }
-      #endif
-      return *(hx::Object **)frame;
-   }
-
-   inline bool getBool(int inPos=0)
-   {
-      return *(bool *)(frame+inPos);
-   }
-   inline int getInt(int inPos=0)
-   {
-      return *(int *)(frame+inPos);
-   }
-   inline Float getFloat(int inPos=0)
-   {
-      return GetFloatAligned(frame+inPos);
-   }
-   inline String getString(int inPos=0)
-   {
-      return *(String *)(frame+inPos);
-   }
-   inline Dynamic getObject(int inPos=0)
-   {
-      return *(hx::Object **)(frame+inPos);
-   }
-   inline hx::Object *getObjectPtr(int inPos=0)
-   {
-      return *(hx::Object **)(frame+inPos);
-   }
+inline hx::Object *StackContext::getThis(bool inCheckPtr)
+{
+   #ifdef HXCPP_CHECK_POINTER
+      if (inCheckPtr)
+      {
+         if (!*(hx::Object **)frame) NullReference("This", false);
+         #ifdef HXCPP_GC_CHECK_POINTER
+         GCCheckPointer(*(hx::Object **)frame);
+         #endif
+      }
+   #endif
+   return *(hx::Object **)frame;
+}
 
 
-   void breakFlag() { breakContReturn |= bcrBreak; }
-   void continueFlag() { breakContReturn |= bcrContinue; }
-   void returnFlag() { breakContReturn |= bcrReturn; }
+inline Float StackContext::getFloat(int inPos)
+{
+   return GetFloatAligned(frame+inPos);
+}
+inline String StackContext::getString(int inPos)
+{
+   return *(String *)(frame+inPos);
+}
+inline Dynamic StackContext::getObject(int inPos)
+{
+   return *(hx::Object **)(frame+inPos);
+}
 
-   void breakJump()
-   {
-      longjmp(*loopJumpBuf,2);
-   }
-   void continueJump()
-   {
-      longjmp(*loopJumpBuf,3);
-   }
-};
 
 enum SignatureChar
 {

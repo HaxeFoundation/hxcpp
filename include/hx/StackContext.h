@@ -329,6 +329,21 @@ struct ExceptionStackFrame
 #endif
 
 
+#ifdef HXCPP_SCRIPTABLE
+enum
+{
+   bcrBreak    = 0x01,
+   bcrContinue = 0x02,
+   bcrReturn   = 0x04,
+
+   bcrLoop     = (bcrBreak | bcrContinue),
+};
+
+
+
+#endif
+
+
 
 struct StackContext : public hx::ImmixAllocator
 {
@@ -451,7 +466,65 @@ struct StackContext : public hx::ImmixAllocator
    static void getAllStackIds( QuickVec<int> &outIds );
    static StackContext *getStackForId(int id);
    #endif
+
+
+   #ifdef HXCPP_SCRIPTABLE
+   unsigned char *stack;
+   unsigned char *pointer;
+   unsigned char *frame;
+   class Object  *exception;
+
+   unsigned int breakContReturn;
+
+   template<typename T>
+   void push(T inValue)
+   {
+      *(T *)pointer = inValue;
+      pointer += sizeof(T);
+   }
+
+   int getFrameSize() const { return pointer-frame; }
+
+   int runInt(void *vtable);
+   Float runFloat(void *vtable);
+   String runString(void *vtable);
+   void runVoid(void *vtable);
+   Dynamic runObject(void *vtable);
+   hx::Object *runObjectPtr(void *vtable);
+
+   void push(bool &inValue) { *(int *)pointer = inValue; pointer += sizeof(int); }
+   inline void pushBool(bool b) { *(int *)pointer = b; pointer += sizeof(int); }
+   inline void pushInt(int i) { *(int *)pointer = i; pointer += sizeof(int); }
+
+   inline void pushFloat(Float f);
+   inline void pushString(const String &s);
+   inline void pushObject(Dynamic d);
+   inline void returnFloat(Float f);
+   inline void returnString(const String &s);
+   inline void returnObject(Dynamic d);
+   inline hx::Object *getThis(bool inCheckPtr=true);
+
+   inline void returnBool(bool b) { *(int *)frame = b; }
+   inline void returnInt(int i) { *(int *)frame = i; }
+   inline bool getBool(int inPos=0) { return *(bool *)(frame+inPos); }
+   inline int getInt(int inPos=0) { return *(int *)(frame+inPos); }
+
+   inline Float getFloat(int inPos=0);
+   inline String getString(int inPos=0);
+   inline Dynamic getObject(int inPos=0);
+   inline hx::Object *getObjectPtr(int inPos=0) { return *(hx::Object **)(frame+inPos); }
+
+
+   void breakFlag() { breakContReturn |= bcrBreak; }
+   void continueFlag() { breakContReturn |= bcrContinue; }
+   void returnFlag() { breakContReturn |= bcrReturn; }
+
+   #endif
+
 };
+
+
+typedef StackContext CppiaCtx;
 
 
 

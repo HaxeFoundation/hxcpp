@@ -3398,12 +3398,6 @@ public:
       for(int i=0;i<mLocalAllocs.size();i++)
          MarkLocalAlloc(mLocalAllocs[i] , &mMarker);
 
-      #ifdef HXCPP_SCRIPTABLE
-      {
-      hx::AutoMarkPush info(&mMarker,"Script","stack");
-      scriptMarkStack(&mMarker);
-      } // automark
-      #endif
 
       if (MAX_MARK_THREADS>1)
       {
@@ -4280,12 +4274,19 @@ public:
       MarkPushClass("Stack",__inCtx);
       MarkSetMember("Stack",__inCtx);
       hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
+         #ifdef HXCPP_SCRIPTABLE
+         MarkSetMember("ScriptStack",__inCtx);
+         hx::MarkConservative((int *)(stack), (int *)(pointer),__inCtx);
+         #endif
       MarkSetMember("Registers",__inCtx);
       hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
       MarkPopClass(__inCtx);
       #else
       hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
       hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
+         #ifdef HXCPP_SCRIPTABLE
+         hx::MarkConservative((int *)(stack), (int *)(pointer),__inCtx);
+         #endif
       #endif
 
       Reset();

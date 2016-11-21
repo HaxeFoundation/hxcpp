@@ -1397,16 +1397,15 @@ struct NewExpr : public CppiaDynamicExpr
 
          #ifdef HXCPP_GC_NURSERY
          int size = info->haxeBase->mDataOffset + info->extraData;
-         // sJitTemp0 = alloc
-         compiler->move(sJitTemp0, sJitCtx.star(jtPointer, offsetof(CppiaCtx,stackContext) ));
+         // sJitCtx = alloc
+         //
+         // sJitTemp0 = alloc->spaceStart
+         compiler->move(sJitTemp0, sJitCtx.star(etInt, offsetof(hx::StackContext,spaceStart) ) );
 
-         // sJitTemp2 = alloc->spaceStart
-         compiler->move(sJitTemp2, sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceStart) ) );
+         // sJitTemp1 = end = spaceStart + size + sizeof(int)
+         compiler->add(sJitTemp1, sJitTemp0, (int)(size + sizeof(int) ) );
 
-         // end = spaceStart + size + sizeof(int)
-         compiler->add(sJitTemp1, sJitTemp2, (int)(size + sizeof(int) ) );
-
-         JumpId inRange = compiler->compare(cmpI_LESS_EQUAL, sJitTemp1, sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceEnd) ) );
+         JumpId inRange = compiler->compare(cmpI_LESS_EQUAL, sJitTemp1, sJitCtx.star(etInt, offsetof(hx::StackContext,spaceEnd) ) );
 
          // Not in range ...
             compiler->callNative(allocHaxe, sJitCtx, (void *)info );
@@ -1416,10 +1415,10 @@ struct NewExpr : public CppiaDynamicExpr
             compiler->comeFrom(inRange);
 
             // alloc->spaceStart = end;
-            compiler->move( sJitTemp0.star(etInt, offsetof(hx::StackContext,spaceStart)), sJitTemp1 );
+            compiler->move( sJitCtx.star(etInt, offsetof(hx::StackContext,spaceStart)), sJitTemp1 );
 
             // sJitTemp2 = unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
-            compiler->add(sJitTemp2, sJitTemp0.star(jtPointer, offsetof(hx::StackContext,allocBase)), sJitTemp2 );
+            compiler->add(sJitTemp2, sJitCtx.star(jtPointer, offsetof(hx::StackContext,allocBase)), sJitTemp0 );
 
             //compiler->move( sJitTemp2.star(etInt), (int)( size | (info->isContainer ? IMMIX_ALLOC_IS_CONTAINER : 0) ) );
             // TODO - IMMIX_ALLOC_IS_CONTAINER from classInfo

@@ -172,6 +172,15 @@ StackContext::StackContext()
    #ifdef HXCPP_PROFILER
    mProfiler = 0;
    #endif
+
+   #ifdef HXCPP_SCRIPTABLE
+   stack = new unsigned char[128*1024];
+   pointer = &stack[0];
+   push((hx::Object *)0);
+   frame = pointer;
+   exception = 0;
+   breakContReturn = 0;
+   #endif
 }
 
 StackContext::~StackContext()
@@ -189,6 +198,10 @@ StackContext::~StackContext()
    #ifdef HXCPP_PROFILER
    if (mProfiler)
       profDestroy(mProfiler);
+   #endif
+
+   #ifdef HXCPP_SCRIPTABLE
+   delete [] stack;
    #endif
 }
 
