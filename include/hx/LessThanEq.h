@@ -300,7 +300,7 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
       bool n1 = traits1::isNull(v1);
       bool n2 = traits2::isNull(v2);
       if (n1 || n2)
-         return EQ ? n1==n2 : n1!=n2;
+         return EQ ? n1==n2 : !LESS && n1!=n2/* false,false = not equal*/;
 
       return LESS ? ( EQ ? traits1::toDouble(v1) <= traits2::toDouble(v2) :
                            traits1::toDouble(v1) <  traits2::toDouble(v2)  ) :
@@ -316,7 +316,7 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
       bool n1 = traits1::isNull(v1);
       bool n2 = traits2::isNull(v2);
       if (n1 || n2)
-         return EQ ? n1==n2 : n1!=n2;
+         return EQ ? n1==n2 : !LESS && n1!=n2 /* false,false = not equal*/;
 
       int t1 = traits1::getDynamicCompareType(v1);
       int t2 = traits2::getDynamicCompareType(v2);
