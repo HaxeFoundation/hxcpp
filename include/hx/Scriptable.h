@@ -16,9 +16,11 @@ namespace hx
 
 struct ScriptNamedFunction : public ScriptFunction
 {
-   ScriptNamedFunction(const char *inName,StackExecute inExe,const char *inSig)
-      : ScriptFunction(inExe, inSig), name(inName) { }
+   ScriptNamedFunction(const char *inName,StackExecute inExe,const char *inSig, bool inIsStatic=false)
+      : ScriptFunction(inExe, inSig), name(inName), isStatic(inIsStatic) { }
+
    const char *name;
+   bool isStatic;
 };
 
 enum

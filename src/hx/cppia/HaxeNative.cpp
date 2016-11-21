@@ -37,7 +37,8 @@ void HaxeNativeClass::addVtableEntries( std::vector<std::string> &outVtable)
 
    if (functions)
       for(ScriptNamedFunction *func = functions; func->name; func++)
-         outVtable.push_back( func->name );
+         if (!func->isStatic)
+            outVtable.push_back( func->name );
 }
 
 void HaxeNativeClass::dump()
@@ -46,7 +47,7 @@ void HaxeNativeClass::dump()
 
    if (functions)
       for(ScriptNamedFunction *f=functions;f->name;f++)
-         printf("  func %s\n", f->name );
+         printf("  %s func %s\n", f->isStatic ? "static" : "virtual", f->name );
    if (haxeSuper)
    {
       printf("super:\n");
