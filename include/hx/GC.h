@@ -10,8 +10,6 @@
 
 #define HX_GC_CONST_ALLOC_BIT  0x80000000
 #define HX_GC_CONST_ALLOC_MARK_BIT  0x80
-#define HX_GC_NO_STRING_HASH   0x40000000
-#define HX_GC_NO_HASH_MASK     (HX_GC_CONST_ALLOC_BIT | HX_GC_NO_STRING_HASH)
 
 // Must allign allocs to 8 bytes to match floating point requirement?
 #ifdef HXCPP_ALIGN_FLOAT
@@ -168,6 +166,7 @@ void PauseForCollect();
 
 // Used by WeakHash to work out if it needs to dispose its keys
 bool IsWeakRefValid(hx::Object *inPtr);
+bool IsWeakRefValid(const HX_CHAR *inPtr);
 
 // Used by CFFI to scan a block of memory for GC Pointers. May picks up random crap
 //  that points to real, active objects.
@@ -285,10 +284,14 @@ namespace hx
 #define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
 
 // The size info is stored in the header 8 bits to the right
-#define IMMIX_ALLOC_SIZE_SHIFT  8
+#define IMMIX_ALLOC_SIZE_SHIFT  6
 
 // Indicates that __Mark must be called recursively
 #define IMMIX_ALLOC_IS_CONTAINER   0x00800000
+// String has extra data at end
+#define HX_GC_STRING_EXTENDED      0x00200000
+// String has hash data at end
+#define HX_GC_STRING_HASH          0x00100000
 
 
 extern bool gMultiThreadMode;

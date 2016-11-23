@@ -221,6 +221,9 @@ struct ScriptStackFrame;
 class StackVariable;
 class StackCatchable;
 
+template<typename T> struct Hash;
+struct TWeakStringSet;
+typedef Hash<TWeakStringSet> WeakStringSet;
 
 extern const char* EXTERN_CLASS_NAME;
 
@@ -376,6 +379,11 @@ struct StackContext : public hx::ImmixAllocator
       // Telemetry support
       Telemetry *mTelemetry;
    #endif
+
+   #ifdef HXCPP_COMBINE_STRINGS
+   WeakStringSet *stringSet;
+   #endif
+
 
    StackContext();
    ~StackContext();

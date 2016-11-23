@@ -85,6 +85,52 @@ public:
 };
 
 
+struct TWeakStringSet
+{
+   typedef null Value;
+   /*
+   struct Value
+   {
+      inline Value() {}
+      inline Value(bool) {}
+      inline Value(null) {}
+      inline Value(Float) {}
+      inline Value(int) {}
+      inline Value(const Dynamic &) {}
+      inline Value(const cpp::Variant &) {}
+      inline operator Dynamic () const { return Dynamic(); }
+      inline operator cpp::Variant () const { return cpp::Variant(); }
+      inline operator String () const { return String(); }
+      inline operator Float () const { return 0; }
+      inline operator int () const { return 0; }
+   };
+   */
+   typedef String Key;
+
+   enum { IgnoreHash = 0 };
+   enum { WeakKeys = 1 };
+
+   typedef TWeakStringSet  IntValue;
+   typedef TWeakStringSet  FloatValue;
+   typedef TWeakStringSet  DynamicValue;
+   typedef TWeakStringSet  StringValue;
+
+
+public:
+   inline void  setKey(String inKey, unsigned int inHash)
+   {
+      key = inKey;
+      hash = inHash;
+   }
+   inline unsigned int getHash() { return hash; }
+
+   Key                key;
+   unsigned int       hash;
+   Value              value;
+   TWeakStringSet     *next;
+};
+
+
 
 // An Dyanamic element must use the GC code get get a hash
 template<typename VALUE,bool WEAK>
@@ -124,11 +170,13 @@ enum HashStore
    hashFloat,
    hashString,
    hashObject,
+   hashNull,
 };
 template<typename T> struct StoreOf{ enum {store=hashObject}; };
 template<> struct StoreOf<int> { enum {store=hashInt}; };
 template<> struct StoreOf< ::String> { enum {store=hashString}; };
 template<> struct StoreOf<Float> { enum {store=hashFloat}; };
+template<> struct StoreOf<null> { enum {store=hashNull}; };
 
 namespace
 {
@@ -143,13 +191,22 @@ inline void CopyValue(int &outValue, const String &inValue) {  }
 inline void CopyValue(Float &outValue, Float inValue) { outValue = inValue; }
 inline void CopyValue(Float &outValue, const Dynamic &inValue) { outValue = inValue; }
 inline void CopyValue(Float &outValue, const String &inValue) {  }
+inline void CopyValue(null &, const null &) {  }
+template<typename T> inline void CopyValue(T &outValue, const null &) {  }
+template<typename T> inline void CopyValue(null &, const T &) {  }
 }
 
-template<typename KEY>
-struct HashBase : public Object
+
+struct HashRoot : public Object
 {
    HashStore store;
 
+   virtual void updateAfterGc() = 0;
+};
+
+template<typename KEY>
+struct HashBase : public HashRoot
+{
    HashBase(int inStore)
    {
       store = (HashStore)inStore;
@@ -173,21 +230,25 @@ struct HashBase : public Object
    virtual Array<KEY> keys() = 0;
    virtual Dynamic values() = 0;
 
-   virtual void updateAfterGc() = 0;
    virtual ::String toStringRaw() { return toString(); }
 };
 
 extern void RegisterWeakHash(HashBase<Dynamic> *);
+extern void RegisterWeakHash(HashBase< ::String> *);
+
 inline void RegisterWeakHash(HashBase<int> *) { };
-inline void RegisterWeakHash(HashBase< ::String> *) { };
 
 
+template<typename T>
+struct ArrayValueOf{ typedef T Value; };
+template<> struct ArrayValueOf<null> { typedef Dynamic Value; };
 
 template<typename ELEMENT>
 struct Hash : public HashBase< typename ELEMENT::Key >
 {
    typedef typename ELEMENT::Key   Key;
    typedef typename ELEMENT::Value Value;
+   typedef typename ArrayValueOf<Value>::Value ArrayValue;
 
    typedef ELEMENT Element;
    enum { IgnoreHash = Element::IgnoreHash };
@@ -213,6 +274,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    template<typename T>
    bool TIsWeakRefValid(T &) { return true; }
    bool TIsWeakRefValid(Dynamic &key) { return IsWeakRefValid(key.mPtr); }
+   bool TIsWeakRefValid(String &key) { return IsWeakRefValid(key.__s); }
 
 
    void updateAfterGc()
@@ -385,6 +447,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
             return TConvertStore< typename ELEMENT::StringValue >();
          case hashObject:
             return TConvertStore< typename ELEMENT::DynamicValue >();
+         case hashNull:
+             ;
       }
       return 0;
    }
@@ -415,6 +479,24 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    }
 
 
+   template<typename Finder>
+   bool findEquivalentKey(Key &outKey, int inHash, const Finder &inFinder)
+   {
+      if (!bucket) return false;
+      Element *head = bucket[inHash & mask];
+      while(head)
+      {
+         if ( (IgnoreHash || head->getHash()==inHash) && inFinder==head->key)
+         {
+            outKey = head->key;
+            return true;
+         }
+         head = head->next;
+      }
+      return false;
+   }
+
+
    template<typename SET>
    void TSet(Key inKey, const SET &inValue)
    {
@@ -436,6 +518,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    HashBase<Key> * set(Key inKey, const ::String &inValue)  { TSet(inKey, inValue); return this; }
    HashBase<Key> * set(Key inKey, const Float &inValue)  { TSet(inKey, inValue); return this; }
    HashBase<Key> * set(Key inKey, const Dynamic &inValue)  { TSet(inKey, inValue); return this; }
+   HashBase<Key> * set(Key inKey, const null &inValue)  { TSet(inKey, inValue); return this; }
 
 
    template<typename F>
@@ -508,10 +591,10 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    // Values...
    struct ValueBuilder
    {
-      Array<Value> array;
+      Array<ArrayValue> array;
       ValueBuilder(int inReserve = 0)
       {
-         array = Array<Value>(0,inReserve);
+         array = Array<ArrayValue>(0,inReserve);
       }
 
       void operator()(typename Hash::Element *elem)
@@ -617,6 +700,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    }
 #endif
 };
+
 
 } // end namespace hx
 

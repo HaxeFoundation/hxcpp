@@ -181,6 +181,10 @@ StackContext::StackContext()
    exception = 0;
    breakContReturn = 0;
    #endif
+
+   #ifdef HXCPP_COMBINE_STRINGS
+   stringSet = 0;
+   #endif
 }
 
 StackContext::~StackContext()
@@ -253,6 +257,10 @@ void StackContext::onThreadDetach()
    sStackMap.erase(mThreadId);
    sStackMapMutex.Unlock();
    mThreadId = 0;
+   #endif
+
+   #ifdef HXCPP_COMBINE_STRINGS
+   stringSet = 0;
    #endif
 }
 

@@ -142,24 +142,29 @@ public:
    inline unsigned int hash( ) const
    {
       if (!__s) return 0;
-      if ( (((unsigned int *)__s)[-1] & HX_GC_NO_HASH_MASK) == HX_GC_CONST_ALLOC_BIT)
+      if ( ((unsigned int *)__s)[-1] & HX_GC_STRING_HASH)
       {
          #ifdef HXCPP_PARANOID
          unsigned int result = 0;
          for(int i=0;i<length;i++)
             result = result*223 + ((unsigned char *)__s)[i];
 
-         if  ( ((unsigned int *)__s)[-2] != result )
+         unsigned int have = (((unsigned int *)__s)[-1] & HX_GC_CONST_ALLOC_BIT) ?
+                ((unsigned int *)__s)[-2] :  *((unsigned int *)(__s+length+1) );
+
+         if ( have != result )
          {
              printf("Bad string hash for %s\n", __s );
              printf(" Is %08x\n", result );
-             printf(" Baked %08x\n",  ((unsigned int *)__s)[-2]  );
-             printf(" Mark %08x\n",    ((unsigned int *)__s)[-1]  );
-             throw Dynamic(HX_CSTRING("Bad Hash!"));
+             printf(" Baked %08x\n", have );
+             printf(" Mark %08x\n",   ((unsigned int *)__s)[-1]  );
          }
          #endif
-         return ((unsigned int *)__s)[-2];
+         if (((unsigned int *)__s)[-1] & HX_GC_CONST_ALLOC_BIT)
+            return  ((unsigned int *)__s)[-2];
+         return *((unsigned int *)(__s+length+1) );
       }
+
       // Slow path..
       return calcHash();
    }
