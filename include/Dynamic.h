@@ -126,7 +126,11 @@ public:
    {
       if (mPtr==0) return inRHS.mPtr==0 ? 0 : -1;
       if (inRHS.mPtr==0) return -1;
+      #if (HXCPP_API_LEVEL>=331)
+      return mPtr->__Compare(inRHS.mPtr);
+      #else
       return mPtr->__Compare(inRHS.mPtr->__GetRealObject());
+      #endif
    }
 
    bool operator==(const null &inRHS) const { return mPtr==0; }
@@ -138,7 +142,11 @@ public:
       //if (mPtr==inRHS.mPtr) return true;
       if (!mPtr && !inRHS.mPtr) return true;
       if (!mPtr || !inRHS.mPtr) return false;
+      #if (HXCPP_API_LEVEL>=331)
+      return mPtr->__Compare(inRHS.mPtr)==0;
+      #else
       return mPtr->__Compare(inRHS.mPtr->__GetRealObject())==0;
+      #endif
    }
 
    bool operator != (const Dynamic &inRHS) const
@@ -147,7 +155,11 @@ public:
       //if (mPtr==inRHS.mPtr) return true;
       if (!mPtr && !inRHS.mPtr) return false;
       if (!mPtr || !inRHS.mPtr) return true;
+      #if (HXCPP_API_LEVEL>=331)
+      return mPtr->__Compare(inRHS.mPtr)!=0;
+      #else
       return mPtr->__Compare(inRHS.mPtr->__GetRealObject())!=0;
+      #endif
    }
 
 
@@ -201,7 +213,11 @@ public:
    {
       if (mPtr==inRHS.mPtr) return true;
       if (!mPtr || !inRHS.mPtr) return false;
+      #if (HXCPP_API_LEVEL>=331)
+      return mPtr == inRHS.mPtr;
+      #else
       return mPtr->__GetRealObject() == inRHS.mPtr->__GetRealObject();
+      #endif
    }
 
    template<typename T_>
@@ -209,7 +225,11 @@ public:
    {
       if (mPtr==inRHS.mPtr) return false;
       if (!mPtr || !inRHS.mPtr) return true;
+      #if (HXCPP_API_LEVEL>=331)
+      return mPtr != inRHS.mPtr;
+      #else
       return mPtr->__GetRealObject() != inRHS.mPtr->__GetRealObject();
+      #endif
    }
 
 

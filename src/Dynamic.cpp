@@ -50,7 +50,9 @@ public:
    IntData(int inValue=0) : mValue(inValue) {};
 
    hx::Class __GetClass() const { return __IntClass; }
+   #if (HXCPP_API_LEVEL<331)
    bool __Is(hx::Object *inClass) const { return dynamic_cast< IntData *>(inClass); }
+   #endif
 
    virtual int __GetType() const { return vtInt; }
 
@@ -79,7 +81,9 @@ public:
    BoolData(bool inValue=false) : mValue(inValue) {};
 
    hx::Class __GetClass() const { return __BoolClass; }
+   #if (HXCPP_API_LEVEL<331)
    bool __Is(hx::Object *inClass) const { return dynamic_cast< BoolData *>(inClass); }
+   #endif
 
    virtual int __GetType() const { return vtBool; }
 
@@ -108,7 +112,9 @@ public:
    DoubleData(double inValue=0) : mValue(inValue) {};
 
    hx::Class __GetClass() const { return __FloatClass; }
+   #if (HXCPP_API_LEVEL<331)
    bool __Is(hx::Object *inClass) const { return dynamic_cast< DoubleData *>(inClass); }
+   #endif
 
    virtual int __GetType() const { return vtFloat; }
    String toString() { return String(mValue); }
@@ -139,7 +145,9 @@ public:
    Int64Data(cpp::Int64 inValue=0) : mValue(inValue) {};
 
    hx::Class __GetClass() const { return __Int64Class; }
+   #if (HXCPP_API_LEVEL<331)
    bool __Is(hx::Object *inClass) const { return dynamic_cast< Int64Data *>(inClass); }
+   #endif
 
    virtual int __GetType() const { return vtInt64; }
    String toString() { return String(mValue); }
@@ -199,7 +207,9 @@ public:
    PointerData(void *inValue) : mValue(inValue) {};
 
    hx::Class __GetClass() const { return __PointerClass; }
+   #if (HXCPP_API_LEVEL<331)
    bool __Is(hx::Object *inClass) const { return dynamic_cast< PointerData *>(inClass); }
+   #endif
 
    // k_cpp_pointer
    int __GetType() const { return vtAbstractBase + 2; }
@@ -238,7 +248,9 @@ public:
    }
 
    hx::Class __GetClass() const { return __PointerClass; }
+   #if (HXCPP_API_LEVEL<331)
    bool __Is(hx::Object *inClass) const { return dynamic_cast< StructData *>(inClass); }
+   #endif
 
    // k_cpp_struct
    int __GetType() const { return vtAbstractBase + 3; }

@@ -4919,7 +4919,11 @@ void __hxcpp_gc_safe_point()
 
 int __hxcpp_obj_id(Dynamic inObj)
 {
+   #if (HXCPP_API_LEVEL<331)
    hx::Object *obj = inObj->__GetRealObject();
+   #else
+   hx::Object *obj = inObj.mPtr;
+   #endif
    if (!obj) return 0;
    #ifdef HXCPP_USE_OBJECT_MAP
    return sGlobalAlloc->GetObjectID(obj);
@@ -4946,7 +4950,11 @@ unsigned int __hxcpp_obj_hash(Dynamic inObj)
 unsigned int __hxcpp_obj_hash(Dynamic inObj)
 {
    if (!inObj.mPtr) return 0;
+   #if (HXCPP_API_LEVEL<331)
    hx::Object *obj = inObj->__GetRealObject();
+   #else
+   hx::Object *obj = inObj.mPtr;
+   #endif
    #if defined(HXCPP_M64)
    size_t h64 = (size_t)obj;
    return (unsigned int)(h64>>2) ^ (unsigned int)(h64>>32);

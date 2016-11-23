@@ -1,4 +1,4 @@
-#ifndef HX_CLASS_H
+   #ifndef HX_CLASS_H
 #define HX_CLASS_H
 
 
@@ -255,7 +255,12 @@ inline void RegisterClass(const String &inClassName, hx::Class inClass)
 template<typename T>
 inline bool TCanCast(hx::Object *inPtr)
 {
-	return inPtr && ( dynamic_cast<T *>(inPtr->__GetRealObject())
+	return inPtr && (
+                  #if (HXCPP_API_LEVEL < 331)
+                  dynamic_cast<T *>(inPtr->__GetRealObject())
+                  #else
+                  dynamic_cast<T *>(inPtr)
+                  #endif
                   #if (HXCPP_API_LEVEL < 330)
                   || inPtr->__ToInterface(typeid(T))
                   #endif
@@ -267,7 +272,7 @@ inline bool TCanCast(hx::Object *inPtr)
 template<int HASH>
 inline bool TIsInterface(hx::Object *inPtr)
 {
-	return inPtr && inPtr->__GetRealObject()->_hx_getInterface(HASH);
+	return inPtr && inPtr->_hx_getInterface(HASH);
 }
 #endif
 

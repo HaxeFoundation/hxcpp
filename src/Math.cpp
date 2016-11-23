@@ -125,7 +125,6 @@ hx::Class Math_obj::__mClass;
 /*
 Class &Math_obj::__SGetClass() { return __mClass; }
 Class Math_obj::__GetClass() const { return __mClass; }
-bool Math_obj::__Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; } \
 */
 
 #if HXCPP_SCRIPTABLE

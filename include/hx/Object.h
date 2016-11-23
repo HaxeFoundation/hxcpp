@@ -132,11 +132,9 @@ public:
    #ifdef HXCPP_VISIT_ALLOCS
    virtual void __Visit(hx::VisitContext *__inCtx) { }
    #endif
-   virtual bool __Is(hx::Object *inClass) const { return true; }
-   virtual hx::Object *__GetRealObject() { return this; }
 
    // helpers...
-   bool __Is(Dynamic inClass ) const;
+   //bool __Is(Dynamic inClass ) const;
    inline bool __IsArray() const { return __GetType()==vtArray; }
 
    virtual int __GetType() const { return vtClass; }
@@ -162,6 +160,9 @@ public:
 
    virtual void *_hx_getInterface(int inId);
    #else
+   virtual bool __Is(hx::Object *inClass) const { return true; }
+   virtual hx::Object *__GetRealObject() { return this; }
+
    virtual hx::Object *__ToInterface(const hx::type_info &inInterface) { return 0; }
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
@@ -204,8 +205,12 @@ public:
    static hx::ScriptFunction __script_construct;
    #endif
 
+   #if (HXCPP_API_LEVEL>=331)
+   inline bool __compare( hx::Object *inRHS ) { return this!=inRHS; }
+   #else
    inline bool __compare( hx::Object *inRHS )
       { return __GetRealObject()!=inRHS->__GetRealObject(); }
+   #endif
 
    static hx::Class &__SGetClass();
    static void __boot();
@@ -231,10 +236,14 @@ protected:
    {
       if (inPtr)
       {
-         mPtr = dynamic_cast<OBJ_ *>(inPtr->__GetRealObject());
-         #if (HXCPP_API_LEVEL < 330)
-         if (!mPtr)
-            mPtr = (Ptr)inPtr->__ToInterface(typeid(Obj));
+         #if (HXCPP_API_LEVEL>=331)
+            mPtr = dynamic_cast<OBJ_ *>(inPtr);
+         #else
+            mPtr = dynamic_cast<OBJ_ *>(inPtr->__GetRealObject());
+            #if (HXCPP_API_LEVEL < 330)
+            if (!mPtr)
+               mPtr = (Ptr)inPtr->__ToInterface(typeid(Obj));
+            #endif
          #endif
          if (inThrowOnInvalid && !mPtr)
             ::hx::BadCast();

@@ -209,7 +209,9 @@ public:
    #endif
 
    hx::Class __GetClass() const { return __ObjcClass; }
+   #if (HXCPP_API_LEVEL<331)
    bool __Is(hx::Object *inClass) const { return dynamic_cast< ObjcData *>(inClass); }
+   #endif
 
    // k_cpp_objc
    int __GetType() const { return vtAbstractBase + 4; }

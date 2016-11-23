@@ -54,7 +54,11 @@ Dynamic *Object::__GetFieldMap() { return 0; }
 
 int Object::__Compare(const Object *inRHS) const
 {
+   #if (HXCPP_API_LEVEL<331)
    hx::Object *real = const_cast<Object *>(this)->__GetRealObject();
+   #else
+   hx::Object *real = const_cast<Object *>(this);
+   #endif
    return real < inRHS ? -1 : real==inRHS ? 0 : 1;
 }
 
@@ -84,7 +88,9 @@ Dynamic Object::__SetItem(int inIndex,Dynamic) { return null();  }
 
 void Object::__SetThis(Dynamic inThis) { }
 
+#if (HXCPP_API_LEVEL<331)
 bool Object::__Is(Dynamic inClass ) const { return __Is(inClass.GetPtr()); }
+#endif
 
 hx::Class Object__mClass;
 
