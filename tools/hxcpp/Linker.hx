@@ -266,7 +266,7 @@ class Linker
          args = args.concat(libs);
          
          var result = ProcessManager.runCommand("", mExe, args, true, true, false,
-             " - \x1b[1mLink: " + out_name);
+             "\x1b[1mLink: \x1b[0m" + out_name);
          if (result!=0)
          {
             Sys.exit(result);
@@ -276,7 +276,7 @@ class Linker
          if (mRanLib!="")
          {
             args = [out_name];
-            var result = ProcessManager.runCommand("", mRanLib, args, true, true, false, " - \x1b[1mRanlib:" + out_name);
+            var result = ProcessManager.runCommand("", mRanLib, args, true, true, false, "\x1b[1mRanlib:\x1b[0m " + out_name);
             if (result!=0)
             {
                Sys.exit(result);

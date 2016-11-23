@@ -71,7 +71,7 @@ class Log
             printMutex.acquire();
          if (verbose && verboseMessage != "")
          {
-            println(verboseMessage);   
+            println(verboseMessage);
          }
          else if (message != "")
          {

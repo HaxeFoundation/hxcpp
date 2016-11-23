@@ -243,18 +243,39 @@ class Compiler
          args.push(out + obj_name);
 
          var tagInfo = inFile.mTags==null ? "" : " " + inFile.mTags.split(",");
+         
+         var fileName = inFile.mName;
+         var split = fileName.split ("/");
+         if (split.length > 1)
+         {
+            fileName = "  \x1b[33m" + split.slice(0, split.length - 1).join("/") + "/\x1b[33;1m" + split[split.length - 1] + "\x1b[0m";
+         }
+         else
+         {
+            fileName = "  \x1b[33;1m" + fileName + "\x1b[0m";
+         }
+         fileName += " \x1b[3m" + tagInfo + "\x1b[0m";
+         
          if (inTid >= 0)
          {
             if (BuildTool.threadExitCode == 0)
             {
-               var err = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompile:\x1b[0m " + inFile.mName + tagInfo);
+               if (!Log.verbose)
+               {
+                  Log.info(fileName);
+               }
+               var err = ProcessManager.runProcessThreaded(mExe, args, null);
                if (err!=0)
                   BuildTool.setThreadError(err);
             }
          }
          else
          {
-            var result = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompile:\x1b[0m " + inFile.mName + tagInfo);
+            if (!Log.verbose)
+            {
+               Log.info(fileName);
+            }
+            var result = ProcessManager.runProcessThreaded(mExe, args, null);
             if (result!=0)
             {
                if (FileSystem.exists(obj_name))

@@ -382,7 +382,7 @@ class ProcessManager
          Log.info(inText,"");
 
       if (!Log.quiet)
-         Log.v("   " + formatMessage(command, args));
+         Log.v(" - \x1b[1mRunning command:\x1b[0m " + formatMessage(command, args));
       Log.unlock();
 
       var output = new Array<String>();
@@ -464,7 +464,13 @@ class ProcessManager
          if (BuildTool.threadExitCode == 0)
          {
             Log.lock();
-            var message = "While running :" + formatMessage(command, args) + "\n";
+            var message = "";
+            if (Log.verbose)
+            {
+               Log.println("");
+               message += "Error while running command\n";
+               message += formatMessage(command,args) + "\n\n";
+            }
             if (output.length > 0)
             {
                message += output.join("\n") + "\n";

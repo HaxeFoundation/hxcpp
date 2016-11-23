@@ -269,7 +269,7 @@ class BuildTool
 
    public function pushFile(inFilename:String, inWhy:String, inSection:String="")
    {
-      Log.info("", " - \x1b[1mParsing " + inWhy + ":\x1b[0m " + inFilename + (inSection == "" ? "" : " (section \"" + inSection + "\")"));
+      Log.info("", " - \x1b[1mParsing " + inWhy + ":\x1b[0m " + inFilename + (inSection == "" ? "" : " \x1b[3m(section \"" + inSection + "\")\x1b[0m"));
       mFileStack.push(inFilename);
    }
 
@@ -449,7 +449,22 @@ class BuildTool
                if (first)
                {
                   first = false;
-                  Log.info("Compiling group '" + group.mId + "' with flags " +  group.mCompilerFlags.concat(mCompiler.getFlagStrings()).join(" ") + " tags=" + group.mTags.split(",") );
+                  Log.info("\x1b[33;1mCompiling group: " + group.mId + "\x1b[0m");
+                  var message = "\x1b[33;1m" + mCompiler.mExe + "\x1b[0m";
+                  var flags = group.mCompilerFlags.concat(mCompiler.getFlagStrings());
+                  for (compilerFlag in flags)
+                  {
+                     if (StringTools.startsWith(compilerFlag, "-D"))
+                     {
+                        message += " \x1b[1m" + compilerFlag + "\x1b[0m";
+                     }
+                     else
+                     {
+                        message += " \x1b[0m" + compilerFlag + "\x1b[0m";
+                     }
+                  }
+                  message += " \x1b[2mtags=" + group.mTags.split(",") + "\x1b[0m";
+                  Log.info(message);
                }
                groupMutex.release();
             }
