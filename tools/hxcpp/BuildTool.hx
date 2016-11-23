@@ -464,7 +464,7 @@ class BuildTool
                         message += " \x1b[0m" + compilerFlag + "\x1b[0m";
                      }
                   }
-                  message += " \x1b[2mtags=" + group.mTags.split(",") + "\x1b[0m";
+                  message += " \x1b[2m...\x1b[0m \x1b[2mtags=" + group.mTags.split(",") + "\x1b[0m";
                   Log.info(message);
                   Log.unlock();
                }

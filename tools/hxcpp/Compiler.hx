@@ -248,11 +248,11 @@ class Compiler
          var split = fileName.split ("/");
          if (split.length > 1)
          {
-            fileName = "  \x1b[33m" + split.slice(0, split.length - 1).join("/") + "/\x1b[33;1m" + split[split.length - 1] + "\x1b[0m";
+            fileName = "   \x1b[33m" + split.slice(0, split.length - 1).join("/") + "/\x1b[33;1m" + split[split.length - 1] + "\x1b[0m";
          }
          else
          {
-            fileName = "  \x1b[33;1m" + fileName + "\x1b[0m";
+            fileName = "   \x1b[33;1m" + fileName + "\x1b[0m";
          }
          fileName += " \x1b[3m" + tagInfo + "\x1b[0m";
          

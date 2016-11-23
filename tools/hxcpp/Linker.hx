@@ -184,7 +184,7 @@ class Linker
          {
             if (mRecreate && FileSystem.exists(out_name))
             {
-               Log.info(" clean " + out_name );
+               Log.info("\x1b[1mClean: \x1b[0m" + out_name);
                FileSystem.deleteFile(out_name);
             }
             args.push(out + out_name);
