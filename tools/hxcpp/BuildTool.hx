@@ -449,6 +449,7 @@ class BuildTool
                if (first)
                {
                   first = false;
+                  Log.lock();
                   Log.info("\x1b[33;1mCompiling group: " + group.mId + "\x1b[0m");
                   var message = "\x1b[33;1m" + mCompiler.mExe + "\x1b[0m";
                   var flags = group.mCompilerFlags.concat(mCompiler.getFlagStrings());
@@ -465,6 +466,7 @@ class BuildTool
                   }
                   message += " \x1b[2mtags=" + group.mTags.split(",") + "\x1b[0m";
                   Log.info(message);
+                  Log.unlock();
                }
                groupMutex.release();
             }
