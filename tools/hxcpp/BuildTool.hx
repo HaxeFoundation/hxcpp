@@ -450,6 +450,7 @@ class BuildTool
                {
                   first = false;
                   Log.lock();
+                  Log.println("");
                   Log.info("\x1b[33;1mCompiling group: " + group.mId + "\x1b[0m");
                   var message = "\x1b[33;1m" + mCompiler.mExe + "\x1b[0m";
                   var flags = group.mCompilerFlags.concat(mCompiler.getFlagStrings());
@@ -457,7 +458,15 @@ class BuildTool
                   {
                      if (StringTools.startsWith(compilerFlag, "-D"))
                      {
-                        message += " \x1b[1m" + compilerFlag + "\x1b[0m";
+                        var index = compilerFlag.indexOf("(");
+                        if (index > -1)
+                        {
+                           message += " \x1b[1m" + compilerFlag.substr(0, index) + "\x1b[0m\x1b[2m" + compilerFlag.substr(index) + "\x1b[0m";
+                        }
+                        else
+                        {
+                           message += " \x1b[1m" + compilerFlag + "\x1b[0m";
+                        }
                      }
                      else
                      {

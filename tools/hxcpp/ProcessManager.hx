@@ -129,8 +129,12 @@ class ProcessManager
          {
             if (!ignoreErrors)
             {
-               var text = formatMessage(command, args);
-               Log.error("error running " + text , e);
+               //var text = formatMessage(command, args);
+               //Log.error("Error while running command\n" + text , e);
+               if (Log.verbose)
+               {
+                  Log.error ("", e);
+               }
                return 1;
             }
             return 0;
@@ -206,7 +210,11 @@ class ProcessManager
          {
             if (!ignoreErrors)
             {
-               Log.error("error running " + formatMessage(command,args), e);
+               //Log.error("Error while running command\n" + formatMessage(command,args), e);
+               if (Log.verbose)
+               {
+                  Log.error ("", e);
+               }
             }
             return null;
          }
@@ -265,7 +273,7 @@ class ProcessManager
       
       if (result != 0)
       {  
-         throw ("Error running: " + command + " " + args.join (" ") + " [" + path + "]"); 
+         throw ("Error while running command\n" + formatMessage(command, args) + (path != "" ? " [" + path + "]" : "")); 
       }
       
       return result;
@@ -346,7 +354,7 @@ class ProcessManager
                else
                {
                   if (error==null || error=="")
-                     error = "error running " + formatMessage(command, args);
+                     error = "Error while running command\n" + formatMessage(command, args);
                   Log.error(error);
                }
 
