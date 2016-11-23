@@ -247,7 +247,7 @@ class Compiler
          {
             if (BuildTool.threadExitCode == 0)
             {
-               var err = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompile :\x1b[0m " + inFile.mName + tagInfo);
+               var err = ProcessManager.runProcessThreaded(mExe, args, " - \x1b[1mCompile:\x1b[0m " + inFile.mName + tagInfo);
                if (err!=0)
                   BuildTool.setThreadError(err);
             }
