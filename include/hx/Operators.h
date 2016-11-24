@@ -384,7 +384,13 @@ inline void __hxcpp_unsafe_set(hx::ObjectPtr<VALUE> &outForced, const Dynamic &i
       outForced.mPtr = (VALUE *)(inD.mPtr);
    }
    else
+   {
+      #if (HXCPP_API_LEVEL >= 331)
+      outForced.mPtr = (VALUE *)(inD.mPtr);
+      #else
       outForced.mPtr = (VALUE *)(inD.mPtr ? inD.mPtr->__GetRealObject() : 0);
+      #endif
+   }
 }
 
 
