@@ -452,7 +452,7 @@ class BuildTool
                   Log.lock();
                   Log.println("");
                   Log.info("\x1b[33;1mCompiling group: " + group.mId + "\x1b[0m");
-                  var message = "\x1b[33;1m" + mCompiler.mExe + "\x1b[0m";
+                  var message = "\x1b[1m" + mCompiler.mExe + "\x1b[0m";
                   var flags = group.mCompilerFlags.concat(mCompiler.getFlagStrings());
                   for (compilerFlag in flags)
                   {
