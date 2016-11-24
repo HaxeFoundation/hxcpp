@@ -98,6 +98,8 @@ namespace hx
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Class_obj : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = 2 };
+
    Class_obj() : mSuper(0) { };
    Class_obj(const String &inClassName, String inStatics[], String inMembers[],
              hx::ConstructEmptyFunc inConstructEmpty, hx::ConstructArgsFunc inConstructArgs,
@@ -256,13 +258,15 @@ template<typename T>
 inline bool TCanCast(hx::Object *inPtr)
 {
 	return inPtr && (
-                  #if (HXCPP_API_LEVEL < 331)
-                  dynamic_cast<T *>(inPtr->__GetRealObject())
+                  #if (HXCPP_API_LEVEL >= 332)
+                     inPtr->_hx_isInstanceOf(T::_hx_ClassId)
+                  #elif (HXCPP_API_LEVEL==331)
+                     dynamic_cast<T *>(inPtr)
                   #else
-                  dynamic_cast<T *>(inPtr)
-                  #endif
-                  #if (HXCPP_API_LEVEL < 330)
-                  || inPtr->__ToInterface(typeid(T))
+                     dynamic_cast<T *>(inPtr->__GetRealObject())
+                     #if (HXCPP_API_LEVEL < 330)
+                     || inPtr->__ToInterface(typeid(T))
+                     #endif
                   #endif
                   );
 }

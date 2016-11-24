@@ -45,6 +45,8 @@ Dynamic DynEmptyString;
 class IntData : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = 4 };
+
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc, const char *inName="Int")
       { return hx::Object::operator new(inSize,inAlloc,inName); }
    IntData(int inValue=0) : mValue(inValue) {};
@@ -76,6 +78,8 @@ public:
 class BoolData : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = 5 };
+
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Bool")
       { return hx::Object::operator new(inSize,inAlloc,"Bool"); }
    BoolData(bool inValue=false) : mValue(inValue) {};
@@ -107,6 +111,8 @@ public:
 class DoubleData : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = 6 };
+
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Float")
       { return hx::Object::operator new(inSize,inAlloc,inName); }
    DoubleData(double inValue=0) : mValue(inValue) {};
@@ -140,6 +146,8 @@ public:
 class Int64Data : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = 7 };
+
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Int64")
       { return hx::Object::operator new(inSize,inAlloc,inName); }
    Int64Data(cpp::Int64 inValue=0) : mValue(inValue) {};

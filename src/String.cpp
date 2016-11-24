@@ -1326,6 +1326,8 @@ inline int _wtoi(const wchar_t *inStr)
 class StringData : public hx::Object
 {
 public:
+   enum { _hx_ClassId = 3 };
+
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=hx::NewObjContainer)
       { return hx::Object::operator new(inSize,inAlloc); }
 

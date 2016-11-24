@@ -39,6 +39,11 @@ namespace hx
 
 String sNone[] = { String(null()) };
 
+bool Object::_hx_isInstanceOf(int inClassId)
+{
+   return inClassId == hx::Object::_hx_ClassId;
+}
+
 Dynamic Object::__IField(int inFieldID)
 {
    return __Field( __hxcpp_field_from_id(inFieldID), HX_PROP_DYNAMIC );

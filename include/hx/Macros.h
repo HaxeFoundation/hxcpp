@@ -69,6 +69,12 @@ static  ::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
    #define HX_DO_RTTI_BASE
 #endif
 
+#if (HXCPP_API_LEVEL>331)
+   #define HX_IS_INSTANCE_OF bool _hx_isInstanceOf(int inClassId) { return inClassId==1 || inClassId==(int)_hx_ClassId; }
+#else
+   #define HX_IS_INSTANCE_OF
+#endif
+
 
 #define HX_DO_RTTI_ALL \
    HX_DO_RTTI_BASE \

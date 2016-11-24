@@ -90,6 +90,8 @@ enum NewObjectType
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Object
 {
 public:
+   enum { _hx_ClassId = 1 };
+
 
    inline void *operator new( size_t inSize, bool inContainer=true, const char *inName=0 )
    {
@@ -126,6 +128,8 @@ public:
    void operator delete( void *, int ) { }
    void operator delete( void *, hx::NewObjectType) { }
    void operator delete( void *, hx::NewObjectType, const char * ) { }
+
+   virtual bool _hx_isInstanceOf(int inClassId);
 
    //virtual void *__root();
    virtual void __Mark(hx::MarkContext *__inCtx) { }
@@ -236,7 +240,10 @@ protected:
    {
       if (inPtr)
       {
-         #if (HXCPP_API_LEVEL>=331)
+         #if (HXCPP_API_LEVEL>=332)
+            if (inPtr->_hx_isInstanceOf(OBJ_::_hx_ClassId))
+               mPtr = reinterpret_cast<OBJ_ *>(inPtr);
+         #elif (HXCPP_API_LEVEL>=331)
             mPtr = dynamic_cast<OBJ_ *>(inPtr);
          #else
             mPtr = dynamic_cast<OBJ_ *>(inPtr->__GetRealObject());
