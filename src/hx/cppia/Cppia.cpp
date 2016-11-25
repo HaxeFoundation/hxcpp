@@ -1094,7 +1094,11 @@ struct CastExpr : public CppiaDynamicExpr
       if (!obj)
          return 0;
       if (op==castDynamic)
+      #if (HXCPP_API_LEVEL>=331)
+         return obj;
+      #else
          return obj->__GetRealObject();
+      #endif
 
       return DynamicToArrayType(obj, arrayType);
    }
