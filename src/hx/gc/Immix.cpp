@@ -64,6 +64,13 @@ int gInAlloc = false;
 // This is recalculated from the other parameters
 static size_t sWorkingMemorySize          = 10*1024*1024;
 
+#ifdef HXCPP_GC_MOVING
+static size_t sgMaximumFreeSpace  = 200*1024*1024;
+#else
+static size_t sgMaximumFreeSpace  = 1024*1024*1024;
+#endif
+
+
 // #define HXCPP_GC_DEBUG_LEVEL 4
 
 #ifndef HXCPP_GC_DEBUG_LEVEL
@@ -446,22 +453,26 @@ namespace hx { void MarkerReleaseWorkerLocked(); }
 
 struct GroupInfo
 {
-   void clear()
-   {
-      pinned = false;
-      free = 0;
-      used = 0;
-      releaseOrder = 0;
-      isEmpty = true;
-   }
-
+   int  blocks;
    char *alloc;
 
    bool pinned;
    bool isEmpty;
-   int  releaseOrder;
-   int  free;
-   int  used;
+   int  usedBytes;
+   int  usedSpace;
+
+   void clear()
+   {
+      pinned = false;
+      usedBytes = 0;
+      usedSpace = 0;
+      isEmpty = true;
+   }
+   int getMoveScore()
+   {
+      return pinned ?  0 : usedSpace-usedBytes;
+   }
+
 };
  
 hx::QuickVec<GroupInfo> gAllocGroups;
@@ -478,7 +489,7 @@ struct HoleRange
 hx::QuickVec<struct BlockDataInfo *> *gBlockInfo = 0;
 static int gBlockInfoEmptySlots = 0;
 
-#define FRAG_THRESH 8
+#define FRAG_THRESH 14
 
 struct BlockDataInfo
 {
@@ -494,6 +505,7 @@ struct BlockDataInfo
    int          mUsedRows;
    int          mMaxHoleSize;
    int          mMoveScore;
+   int          mUsedBytes;
    bool         mPinned;
    bool         mZeroed;
    volatile int mZeroLock;
@@ -530,6 +542,7 @@ struct BlockDataInfo
    void clear()
    {
       mUsedRows = 0;
+      mUsedBytes = 0;
       mPinned = false;
       ZERO_MEM(allocStart,sizeof(int)*IMMIX_LINES);
       ZERO_MEM(mPtr->mRowMarked+IMMIX_HEADER_LINES, IMMIX_USEFUL_LINES); 
@@ -545,6 +558,7 @@ struct BlockDataInfo
    void makeFull()
    {
       mUsedRows = IMMIX_USEFUL_LINES;
+      mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
       memset(mPtr->mRowMarked+IMMIX_HEADER_LINES, 1,IMMIX_USEFUL_LINES); 
       mRanges[0].start = 0;
       mRanges[0].length = 0;
@@ -592,8 +606,10 @@ struct BlockDataInfo
    void getStats(BlockDataStats &outStats)
    {
       outStats.rowsInUse += mUsedRows;
+      outStats.bytesInUse += mUsedBytes;
       //outStats.bytesInUse += 0;
       outStats.fragScore += mPinned ? (mMoveScore>0?1:0) : mMoveScore;
+
       if (mUsedRows==0)
          outStats.emptyBlocks++;
       if (mMoveScore> FRAG_THRESH )
@@ -719,18 +735,26 @@ struct BlockDataInfo
          }
          mUsedRows = IMMIX_USEFUL_LINES - freeLines;
          mHoles = hole;
-         mMoveScore = (mHoles>3 ? mHoles-3 : 0) + 8 * (mUsedRows<<IMMIX_LINE_BITS) / (usedBytes+IMMIX_LINE_LEN);
       }
+
+      mUsedBytes =  inFull ? usedBytes : (mUsedRows<<IMMIX_LINE_BITS);
+      mMoveScore = calcFragScore();
 
       mZeroLock = 0;
 
       outStats.rowsInUse += mUsedRows;
-      outStats.bytesInUse += usedBytes;
-      outStats.fragScore += mPinned ? (mMoveScore>0?1:0) : mMoveScore;
+      outStats.bytesInUse += mUsedBytes;
+      outStats.fragScore += mMoveScore;
+
       if (mUsedRows==0)
          outStats.emptyBlocks++;
       if (mMoveScore> FRAG_THRESH )
          outStats.fraggedBlocks++;
+   }
+
+   int calcFragScore()
+   {
+      return mPinned ? 0 : (mHoles>3 ? mHoles-3 : 0) + 8 * (mUsedRows<<IMMIX_LINE_BITS) / (mUsedBytes+IMMIX_LINE_LEN);
    }
 
 
@@ -1025,6 +1049,13 @@ bool MostUsedFirst(BlockDataInfo *inA, BlockDataInfo *inB)
 {
    return inA->getUsedRows() > inB->getUsedRows();
 }
+
+
+bool LeastUsedFirst(BlockDataInfo *inA, BlockDataInfo *inB)
+{
+   return inA->getUsedRows() < inB->getUsedRows();
+}
+
 
 
 bool SortMoveOrder(BlockDataInfo *inA, BlockDataInfo *inB)
@@ -2357,6 +2388,7 @@ struct MoveBlockJob
             return 0;
          }
          #ifndef HXCPP_GC_DEBUG_ALWAYS_MOVE
+         // Pinned / full
          if (blocks[from]->mMoveScore<2)
          {
             //printf("All other blocks good!\n");
@@ -2394,6 +2426,36 @@ struct MoveBlockJob
       return result;
    }
 };
+
+
+#ifndef HX_MEMORY_H_OVERRIDE
+
+#if 0
+static hx::QuickVec<void *> sBlockPool;
+static int gcBlockAllocs = 0;
+
+void *HxAllocGCBlock(size_t size)
+{
+   if (sBlockPool.size())
+      return sBlockPool.pop();
+   gcBlockAllocs++;
+   GCLOG("===========================================> New Chunk (%d)\n", gcBlockAllocs);
+   return HxAlloc(size);
+}
+
+void HxFreeGCBlock(void *p)
+{
+   sBlockPool.push(p);
+}
+
+#else
+
+void *HxAllocGCBlock(size_t size) { return HxAlloc(size); }
+void HxFreeGCBlock(void *p) { HxFree(p); }
+
+#endif
+
+#endif // HX_MEMORY_H_OVERRIDE
 
 
 
@@ -2603,6 +2665,20 @@ public:
    {
       enum { newBlockCount = 1<<(IMMIX_BLOCK_GROUP_BITS) };
 
+      #ifdef HXCPP_GC_MOVING
+      if (!inJustBorrowing)
+      {
+         // Do compact next collect sooner
+         if (sgTimeToNextTableUpdate>1)
+         {
+            #ifdef SHOW_FRAGMENTATION
+            GCLOG("  alloc -> enable full collect\n");
+            #endif
+            //sgTimeToNextTableUpdate = 1;
+         }
+      }
+      #endif
+
       #ifndef HXCPP_GC_BIG_BLOCKS
       // Currently, we only have 2 bytes for a block header
       if (mAllBlocks.size()+newBlockCount >= 0xfffe )
@@ -2625,7 +2701,22 @@ public:
             break;
          }
       if (gid<0)
-        gid = gAllocGroups.next();
+      {
+         if (!gAllocGroups.safeReserveExtra(1))
+         {
+            outForceCompact = true;
+            return false;
+         }
+         gid = gAllocGroups.next();
+      }
+
+      int n = 1<<IMMIX_BLOCK_GROUP_BITS;
+
+      if (!mAllBlocks.safeReserveExtra(n) || !mFreeBlocks.safeReserveExtra(n))
+      {
+         outForceCompact = true;
+         return false;
+      }
 
       char *chunk = (char *)HxAllocGCBlock( 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS) );
       if (!chunk)
@@ -2637,13 +2728,11 @@ public:
          return false;
       }
 
-
-      int n = 1<<IMMIX_BLOCK_GROUP_BITS;
-
       char *aligned = (char *)( (((size_t)chunk) + IMMIX_BLOCK_SIZE-1) & IMMIX_BLOCK_BASE_MASK);
       if (aligned!=chunk)
          n--;
       gAllocGroups[gid].alloc = chunk;
+      gAllocGroups[gid].blocks = n;
 
 
       for(int i=0;i<n;i++)
@@ -2668,14 +2757,6 @@ public:
       }
       #endif
 
-      #ifdef HXCPP_GC_MOVING
-      if (!inJustBorrowing)
-      {
-         // Do compact next collect sooner
-         if (sgTimeToNextTableUpdate>2)
-            sgTimeToNextTableUpdate = 2;
-      }
-      #endif
 
       return true;
    }
@@ -2780,7 +2861,7 @@ public:
 
 
 
-   bool MoveBlocks(MoveBlockJob &inJob,BlockDataStats &outStats, bool inDoRelease)
+   bool MoveBlocks(MoveBlockJob &inJob,BlockDataStats &ioStats)
    {
       BlockData *dest = 0;
       BlockDataInfo *destInfo = 0;
@@ -2798,6 +2879,12 @@ public:
          BlockDataInfo *from = inJob.getFrom();
          if (!from)
             break;
+         if (from->calcFragScore()>FRAG_THRESH)
+            ioStats.fraggedBlocks--;
+         ioStats.rowsInUse -= from->mUsedRows;
+         if (!from->isEmpty())
+            ioStats.emptyBlocks ++;
+
          unsigned int *allocStart = from->allocStart;
          #ifdef SHOW_MEM_EVENTS
          //GCLOG("Move from %p (%d x %d)\n", from, from->mUsedRows, from->mHoles );
@@ -2843,6 +2930,7 @@ public:
                               } while(destInfo->mHoles==0);
 
 
+                              ioStats.rowsInUse += IMMIX_USEFUL_LINES - destInfo->mUsedRows;
                               //destInfo->zero();
                               dest = destInfo->mPtr;
                               destStarts = destInfo->allocStart;
@@ -2899,12 +2987,17 @@ public:
             destInfo->makeFull();
             from->clear();
             clearedBlocks++;
+            // Could remove some used rows from stats
          }
          else
          {
             // Partialy cleared, then ran out of to blocks - remove from allocation this round
             if (from)
+            {
+               // Could maybe be a bit smarter here
+               ioStats.rowsInUse += from->mUsedRows;
                from->makeFull();
+            }
          }
       }
 
@@ -2917,35 +3010,6 @@ public:
          AdjustPointers();
       }
 
-      if (inDoRelease)
-      {
-         int releasedBlocks = releaseEmptyGroups();
-         #ifdef SHOW_FRAGMENTATION
-         int releasedGroups = releasedBlocks >> IMMIX_BLOCK_GROUP_BITS;
-         GCLOG(" Released groups : %d\n", releasedGroups );
-         #endif
-      }
-
-
-      // Recalc stats
-      if (moveObjs || inDoRelease)
-      {
-         if (MAX_MARK_THREADS>1)
-         {
-            for(int i=0;i<MAX_MARK_THREADS;i++)
-               sThreadBlockDataStats[i].clear();
-            StartThreadJobs(tpjGetStats, mAllBlocks.size(), true);
-            outStats = sThreadBlockDataStats[0];
-            for(int i=1;i<MAX_MARK_THREADS;i++)
-               outStats.add(sThreadBlockDataStats[i]);
-         }
-         else
-         {
-            outStats.clear();
-            for(int i=0;i<mAllBlocks.size();i++)
-               mAllBlocks[i]->getStats(outStats);
-         }
-      }
 
       return moveObjs;
    }
@@ -2984,9 +3048,10 @@ public:
       VisitAll(&adjust,true);
    }
 
-   int releaseEmptyGroups()
+   int releaseEmptyGroups(BlockDataStats &outStats, size_t releaseSize)
    {
       int released=0;
+      int groups=0;
       for(int i=0; i<mAllBlocks.size(); i++ )
       {
          if (!mAllBlocks[i]->isEmpty())
@@ -2996,14 +3061,23 @@ public:
       for(int i=0;i<gAllocGroups.size();i++)
       {
          GroupInfo &g = gAllocGroups[i];
-         if (g.alloc && g.isEmpty && g.releaseOrder)
+         if (g.alloc && g.isEmpty && !g.pinned)
          {
             #ifdef SHOW_MEM_EVENTS
             GCLOG("Release group %d\n", i);
             #endif
 
-            HxFree(g.alloc);
+            HxFreeGCBlock(g.alloc);
             g.alloc = 0;
+
+            size_t groupBytes = g.blocks << (IMMIX_BLOCK_BITS);
+
+            groups++;
+
+            if (groupBytes > releaseSize)
+               break;
+
+            releaseSize -= groupBytes;
          }
       }
 
@@ -3012,6 +3086,7 @@ public:
       {
          if (!gAllocGroups[mAllBlocks[i]->mGroupId].alloc)
          {
+            outStats.emptyBlocks--;
             released++;
             mAllBlocks[i]->destroy();
             mAllBlocks.erase(i);
@@ -3020,14 +3095,14 @@ public:
            i++;
       }
 
-      #ifdef SHOW_MEM_EVENTS
-      GCLOG("Release blocks %d = %dk\n", released, released<<(IMMIX_BLOCK_BITS-10));
+      #if defined(SHOW_MEM_EVENTS) || defined(SHOW_FRAGMENTATION)
+      GCLOG("Release %d blocks, %d groups,  %s\n", released, groups, formatBytes((size_t)released<<(IMMIX_BLOCK_BITS)).c_str());
       #endif
       return released;
    }
 
 
-   void findBlocksToRelease(int inN)
+   void calcMoveOrder()
    {
       for(int i=0;i<gAllocGroups.size();i++)
          gAllocGroups[i].clear();
@@ -3038,60 +3113,19 @@ public:
          GroupInfo &g = gAllocGroups[block.mGroupId];
          if (block.mPinned)
             g.pinned = true;
-         g.used += block.mUsedRows;
-         g.free += IMMIX_USEFUL_LINES - block.mUsedRows;
+         g.usedBytes += block.mUsedBytes;
+         g.usedSpace += block.mUsedRows<<IMMIX_LINE_BITS;
       }
 
-      // Very big first
-      int releaseOrder = 100000000;
-
-      // Find the inN most empty, non-pinned groups to release
-      while(inN>0)
-      {
-         int bestGroup = -1;
-         int bestUsed = 0;
-
-         for(int i=0;i<gAllocGroups.size();i++)
-         {
-            GroupInfo &g = gAllocGroups[i];
-            if (g.alloc && !g.pinned && !g.releaseOrder)
-            {
-               if (!g.used)
-               {
-                  g.releaseOrder = releaseOrder--;
-                  inN--;
-                  if (inN==0)
-                     break;
-               }
-               else if (bestGroup==-1 || g.used<bestUsed)
-               {
-                  bestGroup = i;
-                  bestUsed = g.used;
-               }
-            }
-         }
-
-         if (bestGroup>=0)
-         {
-            GroupInfo &g = gAllocGroups[bestGroup];
-            g.releaseOrder = releaseOrder--;
-            inN--;
-         }
-         else
-            break;
-      }
-
-
-      // Apply sort order to blocks
       for(int i=0; i<mAllBlocks.size(); i++ )
       {
          BlockDataInfo &block = *mAllBlocks[i];
          GroupInfo &g = gAllocGroups[block.mGroupId];
-         if (g.releaseOrder)
-            block.mMoveScore = g.releaseOrder;
+         // Base on group wasted space (when not pinned)
+         block.mMoveScore = g.getMoveScore();
       }
-
    }
+
    #endif // } defined(HXCPP_VISIT_ALLOCS)
  
    void *GetIDObject(int inIndex)
@@ -3398,6 +3432,24 @@ public:
    }
 
 
+   #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+   std::string formatBytes(size_t bytes)
+   {
+      size_t k = 1<<10;
+      size_t meg = 1<<20;
+
+      char strBuf[100];
+      if (bytes<k)
+         sprintf(strBuf,"%d", (int)bytes);
+      else if (bytes<meg)
+         sprintf(strBuf,"%.2fk", (double)bytes/k);
+      else
+         sprintf(strBuf,"%.2fmb", (double)bytes/meg);
+      return strBuf;
+   }
+   #endif
+
+
    void MarkAll()
    {
       // The most-significant header byte looks like:
@@ -3595,30 +3647,50 @@ public:
       //  back to the same number
       sgTimeToNextTableUpdate--;
       bool full = inMajor || (sgTimeToNextTableUpdate<=0) || inForceCompact;
-      if (full)
-         sgTimeToNextTableUpdate = 15;
 
 
       // Setup memory target ...
       // Count free rows, and prep blocks for sorting
       BlockDataStats stats;
       reclaimBlocks(full,stats);
+      #ifdef HXCPP_GC_MOVING
+      if (!full)
+      {
+         double useRatio = (double)(stats.rowsInUse<<IMMIX_LINE_BITS) / (sWorkingMemorySize);
+         #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+            GCLOG("Row use ratio:%f\n", useRatio);
+         #endif
+         // Could be either expanding, or fragmented...
+         if (useRatio>0.75)
+         {
+            #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+               GCLOG("Do full stats\n", useRatio);
+            #endif
+            full = true;
+            stats.clear();
+            reclaimBlocks(full,stats);
+         }
+      }
+      #endif
+
+      if (full)
+         sgTimeToNextTableUpdate = 15;
 
       mRowsInUse = stats.rowsInUse;
       bool moved = false;
       size_t bytesInUse = stats.bytesInUse;
       #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+      GCLOG("Total memory : %s\n", formatBytes(GetWorkingMemory()).c_str());
+      GCLOG("  reserved bytes : %s\n", formatBytes((size_t)mRowsInUse*IMMIX_LINE_LEN).c_str());
       if (full)
       {
-         GCLOG("Total memory : %g\n", (double)mAllBlocks.size()*IMMIX_USEFUL_LINES*IMMIX_LINE_LEN);
-         GCLOG("Total needed : %g\n", (double)(mRowsInUse*IMMIX_LINE_LEN));
-         GCLOG(" for bytes   : %g\n", (double)bytesInUse);
-         GCLOG("Large size   : %d\n", (int)mLargeAllocated);
-         GCLOG("Empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
-         GCLOG("Fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
-         GCLOG("Fragged score : %f\n", (double)stats.fragScore/mAllBlocks.size() );
-         GCLOG("Filled       : %f\n", (double)bytesInUse/( mRowsInUse*IMMIX_LINE_LEN));
+         GCLOG("  active bytes   : %s\n", formatBytes(bytesInUse).c_str());
+         GCLOG("  active ratio   : %f\n", (double)bytesInUse/( mRowsInUse*IMMIX_LINE_LEN));
+         GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
+         GCLOG("  fragged score  : %f\n", (double)stats.fragScore/mAllBlocks.size() );
       }
+      GCLOG("  large size   : %s\n", formatBytes(mLargeAllocated).c_str());
+      GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
       #endif
 
 
@@ -3630,41 +3702,41 @@ public:
       #if defined(HXCPP_GC_MOVING) && defined(HXCPP_VISIT_ALLOCS)
       if (full)
       {
-         int releaseGroups = 0;
+         bool doRelease = false;
+
          if (inForceCompact)
-            releaseGroups = mAllBlocks.size();
+            doRelease = true;
          else
          {
             size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
             size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, mem/100 * (size_t)hx::sgTargetFreeSpacePercentage );
+            targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
             sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
 
-            size_t allMem = mAllBlocks.size() * (IMMIX_USEFUL_LINES << IMMIX_LINE_BITS);
+            size_t allMem = GetWorkingMemory();
             // 8 Meg too much?
-            if ( allMem > sWorkingMemorySize + 8*1024*1024 )
+            size_t allowExtra = std::max( (size_t)8*1024*1024, sWorkingMemorySize*5/4 );
+
+            if ( allMem > sWorkingMemorySize + allowExtra )
             {
-               releaseGroups = (int)((allMem - sWorkingMemorySize) / (IMMIX_BLOCK_SIZE<<IMMIX_BLOCK_GROUP_BITS));
                #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+               int releaseGroups = (int)((allMem - sWorkingMemorySize) / (IMMIX_BLOCK_SIZE<<IMMIX_BLOCK_GROUP_BITS));
                if (releaseGroups)
-                  GCLOG("Try to release %d groups, reduce %d to %d\n", releaseGroups, (int)allMem, (int)sWorkingMemorySize);
+                  GCLOG("Try to release %d groups\n", releaseGroups );
                #endif
+               doRelease = true;
             }
          }
 
 
-         if (releaseGroups || stats.fragScore > mAllBlocks.size()*5 || hx::gAlwaysMove)
+         if (doRelease || stats.fragScore > mAllBlocks.size()*FRAG_THRESH || hx::gAlwaysMove)
          {
-            bool doRelease = releaseGroups > 0;
+            calcMoveOrder( );
 
-            // Order to get N empty groups first
-            if (releaseGroups)
-               findBlocksToRelease(releaseGroups);
-
-            // Borrow some blocks...
-            int workingSpace = mAllBlocks.size()*3/2;
-            int toBorrow = workingSpace-mAllBlocks.size();
+            // Borrow some blocks to ensuure space to defrag into
+            int workingBlocks = mAllBlocks.size()*3/2 - stats.emptyBlocks;
             int borrowed = 0;
-            while( mAllBlocks.size()<workingSpace )
+            while( mAllBlocks.size()<workingBlocks )
             {
                bool dummy = false;
                if (!AllocMoreBlocks(dummy, true))
@@ -3672,31 +3744,68 @@ public:
                doRelease = true;
                borrowed++;
             }
+            stats.emptyBlocks += borrowed;
             #if defined(SHOW_FRAGMENTATION)
-               GCLOG("Borrowed %d groups for %d blocks\n", borrowed, toBorrow);
+               GCLOG("Borrowed %d groups for %d target blocks\n", borrowed, workingBlocks);
             #endif
 
             MoveBlockJob job(mAllBlocks);
 
-            if (MoveBlocks(job,stats,doRelease))
+            if (MoveBlocks(job,stats) || doRelease)
             {
+
+               if (doRelease)
+               {
+                  size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
+                  size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, bytesInUse/100 *hx::sgTargetFreeSpacePercentage );
+                  targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
+                  size_t targetMem = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory) +
+                                        (2<<(IMMIX_BLOCK_GROUP_BITS+IMMIX_BLOCK_BITS));
+
+                  if (inForceCompact)
+                     targetMem = 0;
+                  size_t have = GetWorkingMemory();
+                  if (targetMem<have)
+                  {
+                     size_t releaseSize = have - targetMem;
+                     #ifdef SHOW_FRAGMENTATION
+                     GCLOG(" Release %s bytes to leave %s\n", formatBytes(releaseSize).c_str(), formatBytes(targetMem).c_str() );
+                     #endif
+
+                     int releasedBlocks = releaseEmptyGroups(stats, releaseSize);
+                     #ifdef SHOW_FRAGMENTATION
+                     int releasedGroups = releasedBlocks >> IMMIX_BLOCK_GROUP_BITS;
+                     GCLOG(" Released %s, %d groups\n", formatBytes((size_t)releasedBlocks<<IMMIX_BLOCK_BITS).c_str(), releasedGroups );
+                     #endif
+                  }
+               }
+
                // Reduce sWorkingMemorySize now we have defragged
                #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-               GCLOG("After defrag---\n");
-               GCLOG(" Total memory : %g\n", (double)mAllBlocks.size()*IMMIX_USEFUL_LINES*IMMIX_LINE_LEN );
-               GCLOG(" Total needed : %g\n", (double)(stats.rowsInUse)*IMMIX_LINE_LEN);
-               GCLOG(" for bytes    : %g\n", (double)bytesInUse);
-               GCLOG(" Empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
-               GCLOG(" Fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
+               GCLOG("After compacting---\n");
+               GCLOG("  total memory : %s\n", formatBytes(GetWorkingMemory()).c_str() );
+               GCLOG("  total needed : %s\n", formatBytes((size_t)stats.rowsInUse*IMMIX_LINE_LEN).c_str() );
+               GCLOG("  for bytes    : %s\n", formatBytes(bytesInUse).c_str() );
+               GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
+               GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
                #endif
             }
          }
       }
       #endif
+
+      STAMP(t5)
+
       size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
       size_t baseMem = full ? bytesInUse : mem;
       size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, baseMem/100 *hx::sgTargetFreeSpacePercentage );
+      targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
       sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
+
+      #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+      GCLOG("Target memory %s, using %s\n",  formatBytes(sWorkingMemorySize).c_str(), formatBytes(mem).c_str() );
+      #endif
+
  
       // Large alloc target
       int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
@@ -3707,7 +3816,13 @@ public:
       mTotalAfterLastCollect = MemUsage();
 
 
-      createFreeList();
+      #ifdef HXCPP_GC_MOVING
+      // Don't add all the blocks for allocating into...
+      createFreeList(sWorkingMemorySize-mem, true);
+      #else
+      createFreeList(sWorkingMemorySize-mem, false);
+      #endif
+
       mAllBlocksCount   = mAllBlocks.size();
       mCurrentRowsInUse = mRowsInUse;
 
@@ -3716,12 +3831,14 @@ public:
       #endif
 
       #ifdef PROFILE_COLLECT
-      STAMP(t5)
-      double period = t5-sLastCollect;
-      sLastCollect=t5;
-      GCLOG("Collect time total=%.2fms =%.1f%% sync=%.2f, mark=%.2f, large(%d-%d)=%.2f, block=%.2f\n",
-              (t5-t0)*1000, (t5-t0)*100.0/period,
-              (t1-t0)*1000, (t2-t1)*1000, l0, l1, (t3-t2)*1000, (t4-t3)*1000 );
+      STAMP(t6)
+      double period = t6-sLastCollect;
+      sLastCollect=t6;
+      GCLOG("Collect time total=%.2fms =%.1f%%\n   sync=%.2f\n   mark=%.2f\n   large(%d-%d)=%.2f\n   stats=%.2f\n   defrag=%.2f\n",
+              (t6-t0)*1000, (t6-t0)*100.0/period,
+              (t1-t0)*1000, (t2-t1)*1000, l0, l1, (t3-t2)*1000, (t4-t3)*1000,
+              (t5-t4)*1000
+              );
       #endif
 
       #ifdef HXCPP_TELEMETRY
@@ -3762,7 +3879,7 @@ public:
    }
 
 
-   void createFreeList()
+   void createFreeList(size_t inBytes, bool inRestrictAdded)
    {
       mFreeBlocks.clear();
       mNextFreeBlock = 0;
@@ -3771,9 +3888,28 @@ public:
       {
          BlockDataInfo *info = mAllBlocks[i];
          if (info->GetFreeRows() > 0)
+         {
             mFreeBlocks.push(info);
+         }
       }
-      std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), MostUsedFirst );
+      if (inRestrictAdded)
+      {
+         std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), LeastUsedFirst );
+         int useThisTime = 0;
+         for(int i=0;i<mFreeBlocks.size();i++)
+         {
+            useThisTime = i+1;
+            int bytes = mFreeBlocks[i]->GetFreeRows()<<IMMIX_LINE_BITS;
+            if (bytes>inBytes)
+               break;
+            inBytes -= bytes;
+         }
+         mFreeBlocks.setSize(useThisTime);
+      }
+      else
+      {
+         std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), MostUsedFirst );
+      }
 
       mZeroList.clear();
       if (MAX_MARK_THREADS>1 && mFreeBlocks.size()>4)
