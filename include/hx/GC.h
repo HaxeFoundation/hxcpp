@@ -12,7 +12,7 @@
 #define HX_GC_CONST_ALLOC_MARK_BIT  0x80
 
 // Must allign allocs to 8 bytes to match floating point requirement?
-#ifdef HXCPP_ALIGN_FLOAT
+#ifdef EMSCRIPTEN
    #define HXCPP_ALIGN_ALLOC
 #endif
 
