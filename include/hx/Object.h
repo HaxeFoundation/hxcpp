@@ -138,7 +138,6 @@ public:
    #endif
 
    // helpers...
-   //bool __Is(Dynamic inClass ) const;
    inline bool __IsArray() const { return __GetType()==vtArray; }
 
    virtual int __GetType() const { return vtClass; }
@@ -166,6 +165,7 @@ public:
    #else
    virtual bool __Is(hx::Object *inClass) const { return true; }
    virtual hx::Object *__GetRealObject() { return this; }
+   bool __Is(Dynamic inClass ) const;
 
    virtual hx::Object *__ToInterface(const hx::type_info &inInterface) { return 0; }
    virtual Dynamic __IField(int inFieldID);
