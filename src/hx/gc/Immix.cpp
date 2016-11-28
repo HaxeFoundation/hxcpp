@@ -2458,6 +2458,30 @@ void HxFreeGCBlock(void *p) { HxFree(p); }
 #endif // HX_MEMORY_H_OVERRIDE
 
 
+//#define VERIFY_STACK_READ
+
+#ifdef VERIFY_STACK_READ
+// Just have something to do...
+int gVerifyVoidCount = 0;
+void VerifyStackRead(int *inBottom, int *inTop)
+{
+   #ifdef EMSCRIPTEN
+   if (inTop<inBottom)
+      std::swap(inBottom,inTop);
+   #endif
+
+   int n = inTop - inBottom;
+   int check = std::min(n,5);
+   for(int c=0;c<check;c++)
+   {
+      if (inBottom[c]==0)
+         gVerifyVoidCount++;
+      if (inTop[-1-c]==0)
+         gVerifyVoidCount++;
+   }
+}
+#endif
+
 
 
 class GlobalAllocator
@@ -4034,6 +4058,10 @@ namespace hx
 
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 {
+   #ifdef VERIFY_STACK_READ
+   VerifyStackRead(inBottom, inTop);
+   #endif
+
    #ifdef SHOW_MEM_EVENTS
    GCLOG("Mark conservative %p...%p (%d)\n", inBottom, inTop, (int)(inTop-inBottom) );
    #endif
@@ -4140,6 +4168,7 @@ public:
    void AttachThread(int *inTopOfStack)
    {
       mTopOfStack = mBottomOfStack = inTopOfStack;
+
       mRegisterBufSize = 0;
       mStackLocks = 0;
       mGlobalStackLock = false;
@@ -4161,6 +4190,7 @@ public:
       onThreadDetach();
       if (!sGlobalAlloc->ReturnToPool(this))
          delete this;
+      mTopOfStack = mBottomOfStack = 0;
       hx::tlsStackContext = 0;
    }
 
@@ -4242,6 +4272,11 @@ public:
             ReturnToPool();
          }
       }
+
+
+      #ifdef VerifyStackRead
+      VerifyStackRead(mBottomOfStack, mTopOfStack)
+      #endif
    }
 
 
@@ -4269,6 +4304,9 @@ public:
    void SetBottomOfStack(int *inBottom)
    {
       mBottomOfStack = inBottom;
+      #ifdef VerifyStackRead
+      VerifyStackRead(mBottomOfStack, mTopOfStack)
+      #endif
    }
 
    virtual void SetupStack()
@@ -4282,6 +4320,10 @@ public:
       #ifndef EMSCRIPTEN
       if (mBottomOfStack > mTopOfStack)
          mTopOfStack = mBottomOfStack;
+      #endif
+
+      #ifdef VerifyStackRead
+      VerifyStackRead(mBottomOfStack, mTopOfStack)
       #endif
 
       if (mGCFreeZone)
@@ -4298,6 +4340,10 @@ public:
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
       CAPTURE_REGS;
+      #ifdef VerifyStackRead
+      VerifyStackRead(mBottomOfStack, mTopOfStack)
+      #endif
+
       mReadyForCollect.Set();
       mCollectDone.Wait();
    }
@@ -4311,6 +4357,10 @@ public:
       {
          CAPTURE_REGS;
       }
+      #ifdef VerifyStackRead
+      VerifyStackRead(mBottomOfStack, mTopOfStack)
+      #endif
+
       mReadyForCollect.Set();
    }
 
@@ -4491,27 +4541,29 @@ public:
       #endif
 
       #ifdef HXCPP_DEBUG
-      MarkPushClass("Stack",__inCtx);
-      MarkSetMember("Stack",__inCtx);
-      hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
+         MarkPushClass("Stack",__inCtx);
+         MarkSetMember("Stack",__inCtx);
+         if (mTopOfStack && mBottomOfStack)
+            hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
          #ifdef HXCPP_SCRIPTABLE
-         MarkSetMember("ScriptStack",__inCtx);
-         hx::MarkConservative((int *)(stack), (int *)(pointer),__inCtx);
+            MarkSetMember("ScriptStack",__inCtx);
+            hx::MarkConservative((int *)(stack), (int *)(pointer),__inCtx);
          #endif
-      MarkSetMember("Registers",__inCtx);
-      hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
-      MarkPopClass(__inCtx);
+         MarkSetMember("Registers",__inCtx);
+         hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
+         MarkPopClass(__inCtx);
       #else
-      hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
-      hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
+         if (mTopOfStack && mBottomOfStack)
+            hx::MarkConservative(mBottomOfStack, mTopOfStack , __inCtx);
+         hx::MarkConservative(CAPTURE_REG_START, CAPTURE_REG_END, __inCtx);
          #ifdef HXCPP_SCRIPTABLE
-         hx::MarkConservative((int *)(stack), (int *)(pointer),__inCtx);
+            hx::MarkConservative((int *)(stack), (int *)(pointer),__inCtx);
          #endif
       #endif
 
       #ifdef HXCPP_COMBINE_STRINGS
-      if (stringSet)
-         MarkMember( *(hx::Object **)&stringSet, __inCtx);
+         if (stringSet)
+            MarkMember( *(hx::Object **)&stringSet, __inCtx);
       #endif
 
       Reset();
