@@ -156,17 +156,18 @@ public:
    virtual bool __HasField(const String &inString);
    virtual hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp);
 
+   #if (HXCPP_API_LEVEL <= 330)
+   virtual bool __Is(hx::Object *inClass) const { return true; }
+   virtual hx::Object *__GetRealObject() { return this; }
+   bool __Is(Dynamic inClass ) const;
+   #endif
+
    #if (HXCPP_API_LEVEL >= 330)
    // Non-virtual
    Dynamic __IField(int inFieldID);
    double __INumField(int inFieldID);
-
    virtual void *_hx_getInterface(int inId);
    #else
-   virtual bool __Is(hx::Object *inClass) const { return true; }
-   virtual hx::Object *__GetRealObject() { return this; }
-   bool __Is(Dynamic inClass ) const;
-
    virtual hx::Object *__ToInterface(const hx::type_info &inInterface) { return 0; }
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
@@ -176,8 +177,8 @@ public:
    virtual String __Tag() const;
    virtual int __Index() const;
    virtual void __SetSize(int inLen) { }
-
    #endif
+
    virtual hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp);
 
    virtual void  __SetThis(Dynamic inThis);
