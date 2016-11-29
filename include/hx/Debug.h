@@ -281,6 +281,8 @@ void __hxcpp_dbg_threadCreatedOrTerminated(int threadNumber, bool created);
 // HXCPP_DEBUGGER is set
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow);
+HXCPP_EXTERN_CLASS_ATTRIBUTES
+Dynamic __hxcpp_dbg_checkedRethrow(Dynamic toThrow);
 
 #else // !HXCPP_DEBUGGER
 
@@ -327,6 +329,7 @@ inline void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic) { }
 inline void __hxcpp_dbg_threadCreatedOrTerminated(int, bool) { }
 
 inline Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow) { return hx::Throw(toThrow); }
+inline Dynamic __hxcpp_dbg_checkedRethrow(Dynamic toThrow) { return hx::Rethrow(toThrow); }
 
 #endif // HXCPP_DEBUGGER
 

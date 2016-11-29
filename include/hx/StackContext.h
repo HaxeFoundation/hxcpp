@@ -115,6 +115,7 @@
    // can be caught and if not, the debugger is entered.  Otherwise, the
    // throw proceeds as normal.
    #define HX_STACK_DO_THROW(e) __hxcpp_dbg_checkedThrow(e)
+   #define HX_STACK_DO_RETHROW(e) __hxcpp_dbg_checkedRethrow(e)
 
 
    #define HX_VAR(type,name) type name; HX_STACK_VAR(name, #name)
@@ -136,6 +137,7 @@
 
    // Just throw - move to hx::Throw function?
    #define HX_STACK_DO_THROW(e) hx::Throw(e)
+   #define HX_STACK_DO_RETHROW(e) hx::Rethrow(e)
 #endif // HXCPP_STACK_VARS
 
 
@@ -450,6 +452,7 @@ struct StackContext : public hx::ImmixAllocator
 
    // Called when a throw occurs
    void setLastException();
+   void pushLastException();
     // Called when a catch block begins to be executed.  hxcpp wants to track
     // the stack back through the catches so that it can be dumped if
     // uncaught.  If inAll is true, the entire stack is captured immediately.

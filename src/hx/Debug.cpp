@@ -343,6 +343,14 @@ void StackContext::setLastException()
 }
 
 
+// Called when a throw occurs
+void StackContext::pushLastException()
+{
+   mIsUnwindingException = true;
+}
+
+
+
 void StackContext::dumpExceptionStack()
 {
    #ifdef ANDROID
@@ -460,6 +468,16 @@ void __hx_stack_set_last_exception()
    ctx->setLastException();
 #endif
 }
+
+
+void __hx_stack_push_last_exception()
+{
+#ifdef HXCPP_STACK_TRACE
+   hx::StackContext *ctx = hx::StackContext::getCurrent();
+   ctx->pushLastException();
+#endif
+}
+
 
 void __hxcpp_stack_begin_catch()
 {

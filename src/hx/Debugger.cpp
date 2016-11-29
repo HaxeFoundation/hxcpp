@@ -1207,7 +1207,7 @@ static bool CanBeCaught(Dynamic e)
 {
    hx::JustGcStackFrame frame;
 
-   QuickVec<StackFrame *> frames = frame.ctx->mStackFrames;
+   QuickVec<StackFrame *> &frames = frame.ctx->mStackFrames;
 
    for(int i=frames.size()-1; i>=0; i--)
    {
@@ -1444,6 +1444,15 @@ Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
         hx::CriticalError(HX_CSTRING("Uncatchable Throw: ") + toThrow->toString(),true);
 
     return hx::Throw(toThrow);
+}
+
+
+Dynamic __hxcpp_dbg_checkedRethrow(Dynamic toThrow)
+{
+    if (!hx::CanBeCaught(toThrow))
+        hx::CriticalError(HX_CSTRING("Uncatchable Throw: ") + toThrow->toString(),true);
+
+    return hx::Rethrow(toThrow);
 }
 
 

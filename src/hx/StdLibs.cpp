@@ -37,6 +37,7 @@ extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumbe
 #endif
 
 void __hx_stack_set_last_exception();
+void __hx_stack_push_last_exception();
 
 int _hxcpp_argc = 0;
 char **_hxcpp_argv = 0;
@@ -52,6 +53,17 @@ Dynamic Throw(Dynamic inDynamic)
    throw inDynamic;
    return null();
 }
+
+
+Dynamic Rethrow(Dynamic inDynamic)
+{
+   #ifdef HXCPP_STACK_TRACE
+   __hx_stack_push_last_exception();
+   #endif
+   throw inDynamic;
+   return null();
+}
+
 
 null NullArithmetic(const HX_CHAR *inErr)
 {
