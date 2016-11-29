@@ -679,7 +679,7 @@ public:
 
    #if (HXCPP_API_LEVEL < 330)
    void **getInterfaceVTable(const std::string &inName) { return interfaceVTables[inName]; }
-   void **createInterfaceVTable(int inTypeId)
+   void **createInterfaceVTable(int inTypeId);
    #endif
 
    void mark(hx::MarkContext *__inCtx);
