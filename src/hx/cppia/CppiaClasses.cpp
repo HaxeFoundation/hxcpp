@@ -533,13 +533,6 @@ CppiaEnumConstructor *CppiaClassInfo::findEnum(int inFieldId)
    return 0;
 }
 
-#if (HXCPP_API_LEVEL < 330)
-void **getInterfaceVTable(const std::string &inName)
-{
-   return interfaceVTables[inName];
-}
-#endif
-
 void CppiaClassInfo::mark(hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(mClass);
