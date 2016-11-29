@@ -1,4 +1,26 @@
 
+* Align float reads from memory for Arm architecture
+* Removed some virtual functions not needed by newer versions of haxe
+* Reworked the logic for compacting fragmented heaps with HXCPP_GC_MOVING
+* Expose StackContext to allow inlining of allocation routine, and combine with Cppia context
+* Fix some compare-with-dynamic issues
+* Added WatchOs support
+* Fixed for android NDK 13
+* Fix Array closure equality
+* Refactor the Cppia code
+* Fix return codes for atomic decrease
+* Fix some GC zone issues in the standard library
+* Set minimum MacOS deployment target to 10.6
+* Do not use typedefs for 'Int' and 'Bool' for newer api levels
+* Added dll_link to create output dll
+* Improved ObjC support
+* Make Cppia order of operations of '+=' et al consistent with other targets
+* Added NO_RECURSE flag to PCRE
+* Fix bsd_signal undefines on android
+* Add create/free abstract
+
+3.3.49
+------------------------------------------------------------
 * Fix Dynamic != for haxe 3.2.1
 * Fix Command line parsing on windows for triple quotes
 
