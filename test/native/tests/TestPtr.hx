@@ -49,6 +49,9 @@ struct CVec{
 
   void set99(CVec &ioVex) { ioVex.x=99; }
 };')
+@:cppFileCode('
+  int callPointer(CVec *) { return 5; }
+')
 class TestPtr extends haxe.unit.TestCase{
 	
    /*
@@ -99,6 +102,16 @@ class TestPtr extends haxe.unit.TestCase{
       var tmp1 = e.ref;
       tmp.set99(tmp1);
       assertTrue(e.ptr.x==99);
+   }
+
+   @:native("callPointer") @:extern
+   private static function callPointer(ptr:cpp.Pointer<Vec>):Int return 0;
+
+   public function testPointerCast() {
+      var map = new Map<Int, cpp.Pointer<Vec> >();
+      map.set(1,null);
+      var result = callPointer( map.get(2) );
+      assertTrue(result==5);
    }
 
    public function testDynamic() {
