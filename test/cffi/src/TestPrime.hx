@@ -7,7 +7,6 @@ class TestPrime extends TestBase
    static var printString = Loader.load("printString", "cv" );
    #end
    static var distance3d = Loader.load("distance3D", "iiid" );
-   static var fields = Loader.load("fields", "ov" );
    static var select = Loader.load("select", "iooooo" );
    static var floats = Loader.load("floats", "bfff" );
    static var stringVal = Loader.load("stringVal", "ss" );
@@ -20,6 +19,9 @@ class TestPrime extends TestBase
    static var multi11 = Loader.load("multi11","iiiiiiiiiiii" );
    static var multi12 = Loader.load("multi12","iiiiiiiiiiiii" );
    static var getNullString = Loader.load("getNullString","s" );
+
+   // Non-static test
+   var fields = Loader.load("fields", "ov" );
 
    public function testPrime()
    {

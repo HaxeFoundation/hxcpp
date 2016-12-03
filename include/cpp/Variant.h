@@ -89,6 +89,8 @@ namespace cpp
       explicit inline Variant(const cpp::Struct<T,H> &inVal);
       template<typename T>
       explicit inline Variant(const cpp::Pointer<T> &inRHS) ;
+      template<typename T>
+      explicit inline Variant(const cpp::Function<T> &inRHS) ;
 
       //inline operator Dynamic() const; // later
       //inline operator String() const;
@@ -258,6 +260,9 @@ namespace cpp
 
    template<typename T>
    Variant::Variant(const cpp::Pointer<T> &inRHS) : type(typeObject), valObject( Dynamic(inRHS).mPtr ) { }
+   template<typename T>
+   Variant::Variant(const cpp::Function<T> &inRHS) : type(typeObject), valObject( Dynamic(inRHS).mPtr ) { }
+
 
 #define HX_ARITH_VARIANT( op ) \
    inline double operator op (const double &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS;} \
