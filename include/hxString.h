@@ -191,8 +191,8 @@ public:
    }
 
 
-   ::String &operator+=(::String inRHS);
-   ::String operator+(::String inRHS) const;
+   ::String &operator+=(const ::String &inRHS);
+   ::String operator+(const ::String &inRHS) const;
    ::String operator+(const int &inRHS) const { return *this + ::String(inRHS); }
    ::String operator+(const bool &inRHS) const { return *this + ::String(inRHS); }
    ::String operator+(const double &inRHS) const { return *this + ::String(inRHS); }

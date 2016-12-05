@@ -4615,6 +4615,41 @@ struct SwitchExpr : public CppiaExpr
       return 0;
    }
 
+   #ifdef CPPIA_JIT
+   /* TODO
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      ExprType switchType = condition->getType();
+      JitTemp test( compiler, switchType );
+      condition->genCode(compiler, test, switchType);
+
+      JumpId nextCase = 0;
+
+      for(int i=0;i<caseCount;i++)
+      {
+         Case &c = cases[i];
+         for(int j=0;j<c.conditions.size();j++)
+         {
+            if (switchType==etString)
+            {
+            }
+            else
+            {
+               c.conditions[i]->genCode(compiler, sJitTemp1, switchType);
+
+               compiler->compare(cmpI_EQUAL,test, sJitTemp1.as(etInt) );
+            T caseVal;
+            runValue(caseVal,ctx,c.conditions[j]);
+            if (value==caseVal)
+               return c.body;
+            }
+         }
+      }
+      return defaultCase;
+   }
+   */
+   #endif
+
 };
 
 

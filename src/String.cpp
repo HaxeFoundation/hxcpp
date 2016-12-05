@@ -1073,7 +1073,7 @@ Array<String> String::split(const String &inDelimiter) const
          #endif
       #endif
       {
-         result.Add( substr(last,pos-last) );
+         result->push( substr(last,pos-last) );
          pos += len;
          last = pos;
       }
@@ -1083,7 +1083,7 @@ Array<String> String::split(const String &inDelimiter) const
       }
    }
 
-   result.Add( substr(last,null()) );
+   result->push( substr(last,null()) );
 
    return result;
 }
@@ -1147,7 +1147,7 @@ String String::substring(int startIndex, Dynamic inEndIndex) const
    return substr( startIndex, endIndex - startIndex );
 }
 
-String String::operator+(String inRHS) const
+String String::operator+(const String &inRHS) const
 {
    if (!__s) return HX_CSTRING("null") + inRHS;
    if (!length)
@@ -1167,7 +1167,7 @@ String String::operator+(String inRHS) const
 }
 
 
-String &String::operator+=(String inRHS)
+String &String::operator+=(const String &inRHS)
 {
    if (length==0)
    {

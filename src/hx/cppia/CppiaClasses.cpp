@@ -73,6 +73,67 @@ struct CppiaEnumConstructor
       #endif
       return result;
    }
+
+   #ifdef CPPIA_JIT
+   static EnumBase_obj * SLJIT_CALL createEnumBase( CppiaEnumConstructor *enumCtor)
+   {
+      EnumBase_obj *result = new ((int)enumCtor->args.size()*sizeof(cpp::Variant)) CppiaEnumBase(enumCtor->classInfo);
+      result->_hx_setIdentity(enumCtor->name, enumCtor->index, enumCtor->args.size());
+      return result;
+   }
+
+   cpp::Variant::Type getVariantType(ExprType inType)
+   {
+      switch(inType)
+      {
+         case etVoid: return cpp::Variant::typeObject;
+         case etNull: return cpp::Variant::typeObject;
+         case etObject: return cpp::Variant::typeObject;
+         case etString: return cpp::Variant::typeString;
+         case etFloat: return cpp::Variant::typeDouble;
+         case etInt: return cpp::Variant::typeInt;
+      }
+      return cpp::Variant::typeObject;
+   }
+
+   void genCode(CppiaCompiler *compiler, Expressions &inArgs, const JitVal &inDest, ExprType destType)
+   {
+      bool ok = args.size() && args.size()==inArgs.size();
+      if (!ok)
+         printf("Bad enum arg count\n");
+
+      #if (HXCPP_API_LEVEL >= 330)
+      compiler->callNative( createEnumBase, (void *)this );
+      JitTemp result(compiler,jtPointer);
+      compiler->move(result, sJitReturnReg);
+
+      int offset = sizeof(EnumBase_obj);
+      for(int i=0;i<args.size();i++)
+      {
+         ExprType type = inArgs[i]->getType();
+         JitTemp val(compiler,getJitType(type));
+         inArgs[i]->genCode(compiler, val, inArgs[i]->getType());
+         compiler->move( sJitReturnReg.as(jtPointer), result );
+         if (type==etString)
+         {
+            compiler->move( sJitReturnReg.star(jtInt,offset + offsetof(cpp::Variant,valStringLen)), val.as(jtInt) );
+            compiler->move( sJitReturnReg.star(jtPointer,offset), val.as(jtPointer) + sizeof(int) );
+         }
+         else
+         {
+            compiler->move( sJitReturnReg.star(type,offset), val );
+         }
+         compiler->move( sJitReturnReg.star(jtInt,offset + offsetof(cpp::Variant,type)), (int)getVariantType(type) );
+
+         offset += sizeof(cpp::Variant);
+      }
+
+      if (destType==etObject)
+         compiler->move(inDest, sJitReturnReg.as(jtPointer));
+      #endif
+   }
+   #endif
+
 };
 
 
@@ -109,6 +170,26 @@ hx::Object *createEnumClosure(CppiaEnumConstructor &inContructor)
 }
 
 
+#ifdef CPPIA_JIT
+void SLJIT_CALL createEnum(hx::Class_obj *inClass, String *inName, int inArgs)
+{
+   StackContext *ctx = StackContext::getCurrent();
+
+   // ctx.pointer points to end-of-args
+   hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
+   Array<Dynamic> args = Array_obj<Dynamic>::__new(inArgs);
+   try
+   {
+      for(int i=0;i<inArgs;i++)
+         args[i] = Dynamic(base[i]);
+      base[0] = inClass->ConstructEnum(*inName, args).mPtr;
+   }
+   catch(Dynamic e)
+   {
+      ctx->exception = e.mPtr;
+   }
+}
+#endif
 
 
 struct EnumField : public CppiaDynamicExpr
@@ -120,7 +201,8 @@ struct EnumField : public CppiaDynamicExpr
 
    // Mark class?
    String               enumName;
-   hx::Class                enumClass;
+   hx::Class            enumClass;
+   Dynamic              enumValue;
 
    EnumField(CppiaStream &stream,bool inWithArgs)
    {
@@ -161,11 +243,22 @@ struct EnumField : public CppiaDynamicExpr
       return this;
    }
 
+   hx::Object *getValue()
+   {
+      if (value)
+         return value->value.mPtr;
+      if (!enumValue.mPtr)
+      {
+         enumValue = enumClass->ConstructEnum(enumName,null());
+      }
+      return enumValue.mPtr;
+   }
+
    hx::Object *runObject(CppiaCtx *ctx)
    {
       int s = args.size();
       if (s==0)
-         return value ? value->value.mPtr : enumClass->ConstructEnum(enumName,null()).mPtr;
+         return getValue();
 
       Array<Dynamic> dynArgs = Array_obj<Dynamic>::__new(s,s);
       for(int a=0;a<s;a++)
@@ -181,14 +274,52 @@ struct EnumField : public CppiaDynamicExpr
    {
       HX_MARK_MEMBER(enumName);
       HX_MARK_MEMBER(enumClass);
+      HX_MARK_MEMBER(enumValue);
    }
 #ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(enumName);
       HX_VISIT_MEMBER(enumClass);
+      HX_VISIT_MEMBER(enumValue);
    }
 #endif
+
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      int s = args.size();
+      if (s==0)
+      {
+          // TODO GC pin
+         if (destType==etObject)
+            compiler->move(inDest, (void *)getValue());
+      }
+      else if (value)
+      {
+         value->genCode(compiler, args, inDest, destType);
+      }
+      else
+      {
+         {
+         AutoFramePos frame(compiler);
+
+         for(int a=0;a<s;a++)
+         {
+            args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize(),etObject), etObject);
+            compiler->addFrame(etObject);
+         }
+
+         compiler->setFramePointer( compiler->getCurrentFrameSize() );
+         compiler->callNative(createEnum,(void *)enumClass.mPtr,(void *)&enumName,(int)args.size() );
+         }
+         if (destType!=etVoid && destType!=etNull)
+            compiler->convertResult( etObject, inDest, destType );
+      }
+   }
+   #endif
+
 };
 
 
