@@ -3663,6 +3663,32 @@ struct ObjectDef : public CppiaDynamicExpr
       }
       return result.mPtr;
    }
+
+   #ifdef CPPIA_JIT
+   static hx::Object * SLJIT_CALL createAnon()
+   {
+      return hx::Anon_obj::Create().mPtr;
+   }
+
+   static void SLJIT_CALL anonAdd(hx::Anon_obj *inAnon, String *inName, hx::Object *inValue)
+   {
+      inAnon->Add(*inName, Dynamic(inValue), false );
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      JitTemp obj(compiler, jtPointer);
+      compiler->callNative( (void *)createAnon );
+      compiler->move(obj, sJitReturnReg.as(jtPointer) );
+      for(int i=0;i<fieldCount;i++)
+      {
+         values[i]->genCode(compiler, sJitArg2.as(jtPointer), etObject);
+         compiler->callNative( (void *)anonAdd, obj, (void *)&data->strings[stringIds[i]],sJitArg2); 
+      }
+      if (destType!=etVoid && destType!=etNull)
+         compiler->convert(obj,etObject,inDest,destType);
+   }
+   #endif
 };
 
 struct ArrayDef : public CppiaDynamicExpr
