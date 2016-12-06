@@ -78,6 +78,26 @@ static void SLJIT_CALL floatToStr(double *inDouble, String *outStr)
 
 }
 
+static hx::Object * SLJIT_CALL variantToObject(cpp::Variant *inVariant)
+{
+   return Dynamic( *inVariant ).mPtr;
+}
+
+
+static int SLJIT_CALL variantToInt(cpp::Variant *inVariant)
+{
+   return *inVariant;
+}
+
+static void SLJIT_CALL variantToFloat(cpp::Variant *inVariant, double *outValue)
+{
+   *outValue = *inVariant;
+}
+
+static void SLJIT_CALL variantToString(cpp::Variant *inVariant, String *outValue)
+{
+   *outValue = *inVariant;
+}
 
 
 
@@ -339,7 +359,7 @@ public:
          sljit_emit_ijump(compiler, SLJIT_CALL0+inArgs, t, getData(inVal));
    }
 
-   JumpId jump(LabelId inTo)
+   JumpId jump(LabelId inTo=0)
    {
       if (compiler)
       {
@@ -791,6 +811,90 @@ public:
          *(int *)0=0;
       }
    }
+
+
+   void genVariantValueTemp0(int inOffset, const JitVal &inDest, ExprType destType)
+   {
+      std::vector<JumpId> jumpDone;
+
+      move(sJitTemp1, sJitTemp0.star(jtInt, inOffset + (int)offsetof(cpp::Variant,type) ) );
+      switch(destType)
+      {
+         case etObject:
+            {
+               JumpId isObject = compare(cmpI_EQUAL, sJitTemp1.as(jtInt), (int)cpp::Variant::typeObject, 0);
+
+               // Not object ...
+               add( sJitArg0, sJitTemp0.as(jtPointer), inOffset );
+               callNative( (void *)variantToObject, sJitArg0 );
+               if (inDest!=sJitReturnReg)
+                  move(inDest, sJitReturnReg.as(jtPointer));
+
+               jumpDone.push_back( jump() );
+
+               comeFrom(isObject);
+               move( inDest, sJitTemp0.star(jtPointer, inOffset + (int)offsetof(cpp::Variant,valObject) ) );
+            }
+            break;
+         case etString:
+            {
+            JumpId isString = compare(cmpI_EQUAL, sJitTemp1.as(jtInt), (int)cpp::Variant::typeString, 0);
+
+            // Not string ...
+            add( sJitArg0, sJitTemp0.as(jtPointer), inOffset );
+            callNative( (void *)variantToString, sJitArg0, inDest.as(jtString) );
+            jumpDone.push_back( jump() );
+
+            comeFrom(isString);
+            move( inDest.as(jtInt), sJitTemp0.star(jtInt, inOffset + (int)offsetof(cpp::Variant,valStringLen) ) );
+            move( inDest.as(jtPointer) + sizeof(int), sJitTemp0.star(jtPointer, inOffset + (int)offsetof(cpp::Variant,valStringPtr) ) );
+            }
+            break;
+
+         case etFloat:
+            {
+            JumpId isFloat = compare(cmpI_EQUAL, sJitTemp1.as(jtInt), (int)cpp::Variant::typeDouble, 0);
+
+            JumpId notInt = compare(cmpI_NOT_EQUAL, sJitTemp1.as(jtInt), (int)cpp::Variant::typeInt, 0);
+            // Is int...
+            convert(  sJitTemp0.star(jtInt, inOffset + (int)offsetof(cpp::Variant,valInt) ), etInt, inDest, destType );
+            jumpDone.push_back( jump() );
+
+            comeFrom(notInt);
+            // Not Int/Float ...
+            add( sJitArg0, sJitTemp0.as(jtPointer), inOffset );
+            callNative( (void *)variantToFloat, sJitArg0, inDest.as(jtFloat) );
+            jumpDone.push_back( jump() );
+
+            comeFrom(isFloat);
+            move( inDest.as(jtFloat), sJitTemp0.star(jtFloat, inOffset + (int)offsetof(cpp::Variant,valDouble) ) );
+            }
+            break;
+
+         case etInt:
+            {
+            JumpId isInt = compare(cmpI_EQUAL, sJitTemp1.as(jtInt), (int)cpp::Variant::typeInt, 0);
+
+            // Not Int ...
+            add( sJitArg0, sJitTemp0.as(jtPointer), inOffset );
+            callNative( (void *)variantToInt, sJitArg0 );
+            if (inDest!=sJitReturnReg)
+                move(inDest, sJitReturnReg.as(jtInt));
+            jumpDone.push_back( jump() );
+
+            comeFrom(isInt);
+            move( inDest.as(jtInt), sJitTemp0.star(jtInt, inOffset + (int)offsetof(cpp::Variant,valInt) ) );
+            }
+            break;
+
+         default: ;
+      }
+
+      for(int j=0;j<jumpDone.size();j++)
+         comeFrom(jumpDone[j]);
+   }
+
+
 
    void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
    {

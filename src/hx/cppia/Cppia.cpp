@@ -4211,6 +4211,9 @@ struct ArrayIExpr : public CppiaExpr
 };
 
 
+
+
+
 struct EnumIExpr : public CppiaDynamicExpr
 {
    CppiaExpr *object;
@@ -4243,6 +4246,14 @@ struct EnumIExpr : public CppiaDynamicExpr
       #endif
    }
 
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      object->genCode(compiler, sJitTemp0, etObject);
+      int offset = sizeof( EnumBase_obj ) + index*sizeof(cpp::Variant);
+      compiler->genVariantValueTemp0(offset, inDest, destType);
+   }
+   #endif
 };
 
 
@@ -4616,38 +4627,53 @@ struct SwitchExpr : public CppiaExpr
    }
 
    #ifdef CPPIA_JIT
-   /* TODO
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       ExprType switchType = condition->getType();
       JitTemp test( compiler, switchType );
+
       condition->genCode(compiler, test, switchType);
 
-      JumpId nextCase = 0;
+      std::vector<JumpId> doneJumps;
 
       for(int i=0;i<caseCount;i++)
       {
+         JumpId nextCase = 0;
          Case &c = cases[i];
+         std::vector<JumpId> onMatch;
          for(int j=0;j<c.conditions.size();j++)
          {
-            if (switchType==etString)
+            bool last = j==c.conditions.size()-1;
+            if (switchType==etInt)
             {
+               c.conditions[j]->genCode(compiler, sJitTemp1, switchType);
+               if (last)
+                  nextCase = compiler->compare(cmpI_NOT_EQUAL,test, sJitTemp1.as(jtInt) );
+               else
+                  onMatch.push_back(compiler->compare(cmpI_EQUAL,test, sJitTemp1.as(jtInt)));
             }
             else
-            {
-               c.conditions[i]->genCode(compiler, sJitTemp1, switchType);
-
-               compiler->compare(cmpI_EQUAL,test, sJitTemp1.as(etInt) );
-            T caseVal;
-            runValue(caseVal,ctx,c.conditions[j]);
-            if (value==caseVal)
-               return c.body;
-            }
+               compiler->trace("Missing switch type");
          }
+
+         for(int m=0;m<onMatch.size();m++)
+            compiler->comeFrom(onMatch[m]);
+
+         c.body->genCode(compiler, inDest, destType);
+
+         if (i+1<caseCount || defaultCase)
+            doneJumps.push_back( compiler->jump() );
+
+         if (nextCase)
+            compiler->comeFrom(nextCase);
       }
-      return defaultCase;
+
+      if (defaultCase)
+         defaultCase->genCode(compiler, inDest, destType);
+
+      for(int j=0;j<doneJumps.size();j++)
+         compiler->comeFrom(doneJumps[j]);
    }
-   */
    #endif
 
 };
