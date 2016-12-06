@@ -152,7 +152,7 @@ struct JitThisPos : public JitVal
 
 enum JitCompare
 {
-   // Pointer compare
+   // Pointer compare / String compare
    cmpP_EQUAL =             0,
    cmpP_ZERO =              0,
    cmpP_NOT_EQUAL =         1,
@@ -286,9 +286,12 @@ public:
    // Unconditional
    virtual JumpId jump(LabelId inTo=0) = 0;
    virtual void   jump(const JitVal &inWhere) = 0;
-   // Conditional
+   // Conditional - int/pointer
    virtual JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
+   // Conditional - Float
    virtual JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
+   // Conditional - String
+   virtual JumpId scompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
    // Link
    virtual void  comeFrom(JumpId inWhere) = 0;
    virtual LabelId  addLabel() = 0;

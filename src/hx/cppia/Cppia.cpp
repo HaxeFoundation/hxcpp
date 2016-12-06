@@ -4652,8 +4652,28 @@ struct SwitchExpr : public CppiaExpr
                else
                   onMatch.push_back(compiler->compare(cmpI_EQUAL,test, sJitTemp1.as(jtInt)));
             }
+            else if (switchType==etFloat)
+            {
+               c.conditions[j]->genCode(compiler, sJitTemp1, switchType);
+               if (last)
+                  nextCase = compiler->fcompare(cmpD_NOT_EQUAL,test, sJitTemp1.as(jtFloat) );
+               else
+                  onMatch.push_back(compiler->fcompare(cmpD_EQUAL,test, sJitTemp1.as(jtFloat)));
+            }
+            else if (switchType==etString)
+            {
+               JitTemp cond(compiler, etString);
+               c.conditions[j]->genCode(compiler, cond, etString);
+               if (last)
+                  nextCase = compiler->scompare(cmpP_NOT_EQUAL,test, cond);
+               else
+                  onMatch.push_back(compiler->scompare(cmpP_EQUAL,test, cond));
+            }
             else
-               compiler->trace("Missing switch type");
+            {
+               printf("Missing switch type\n");
+               *(int *)0=0;
+            }
          }
 
          for(int m=0;m<onMatch.size();m++)

@@ -99,6 +99,15 @@ static void SLJIT_CALL variantToString(cpp::Variant *inVariant, String *outValue
    *outValue = *inVariant;
 }
 
+static int SLJIT_CALL strEqual(const String *inS0, const String *inS1)
+{
+   return *inS0 == *inS1;
+}
+
+static int SLJIT_CALL strNotEqual(const String *inS0, const String *inS1)
+{
+   return *inS0 != *inS1;
+}
 
 
 int getJitTypeSize(JitType inType)
@@ -408,6 +417,23 @@ public:
       return 0;
    }
 
+
+   JumpId scompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
+   {
+      switch(condition)
+      {
+         case cmpP_EQUAL:
+            callNative( (void *)strEqual, v0, v1 );
+            break;
+         case cmpP_NOT_EQUAL:
+            callNative( (void *)strNotEqual, v0, v1 );
+            break;
+         default:
+            printf("Unknown string compare\n");
+            *(int *)0=0;
+      }
+      return compare(cmpI_NOT_EQUAL, sJitReturnReg.as(jtInt), (int)0, andJump);
+   }
 
    // Link
    void  comeFrom(JumpId inJump)
@@ -1140,6 +1166,12 @@ public:
             add( sJitArg0, inArg0.getReg().as(jtPointer), inArg0.offset);
          else
          {
+            if (inArg0.type==jtString)
+            {
+               printf("Passing string value in register error.\n");
+               *(int *)0=0;
+            }
+ 
             restoreLocal = localSize;
             JitLocalPos temp(allocTemp(jtFloat),jtFloat);
             move( temp, inArg0 );
@@ -1151,12 +1183,17 @@ public:
 
 
 
-      if (inArg1.type==jtFloat || inArg0.type==jtString)
+      if (inArg1.type==jtFloat || inArg1.type==jtString)
       {
          if (isMemoryVal(inArg1))
             add( sJitArg1, inArg1.getReg().as(jtPointer), inArg1.offset);
          else
          {
+            if (inArg1.type==jtString)
+            {
+               printf("Passing string value in register error.\n");
+               *(int *)0=0;
+            }
             restoreLocal = localSize;
             JitLocalPos temp(allocTemp(jtFloat),jtFloat);
             move( temp, inArg1 );
