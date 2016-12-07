@@ -139,6 +139,25 @@ public:
     }
 
     template<typename T>
+    StackThis(StackVariable *&inHead, hx::ObjectPtr<T> &inThis)
+        : StackVariable(inHead, &inThis.mPtr)
+    {
+        mGetOrSetFunction = GetObjectPtr<T>;
+    }
+
+    template<typename T>
+    static Dynamic GetObjectPtr(bool get, void *ptr, Dynamic *val)
+    {
+        if (get) {
+            return *(hx::Object **) ptr;
+        }
+        else {
+            return null();
+        }
+    }
+
+
+    template<typename T>
     static Dynamic GetFunction(bool get, void *ptr, Dynamic *val)
     {
         if (get) {

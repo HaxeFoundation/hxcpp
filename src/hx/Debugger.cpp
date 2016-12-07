@@ -934,7 +934,8 @@ private:
 
 Breakpoints *ReleaseBreakpointsLocked(Breakpoints *inBreakpoints)
 {
-   inBreakpoints->RemoveRef();
+   if (inBreakpoints)
+      inBreakpoints->RemoveRef();
    return 0;
 }
 
