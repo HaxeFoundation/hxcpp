@@ -405,6 +405,11 @@ void *CppiaClassInfo::getHaxeBaseVTable()
    return haxeBaseVTable;
 }
 
+int CppiaClassInfo::getScriptVTableOffset()
+{
+   return haxeBase ? (int)(haxeBase->mDataOffset - sizeof(void *)) : sizeof(hx::Object);
+}
+
 
 bool CppiaClassInfo::isNativeProperty(const String &inString)
 {
@@ -442,6 +447,17 @@ ScriptCallable *CppiaClassInfo::findFunction(bool inStatic,int inId)
    {
       if (funcs[i]->nameId == inId)
          return funcs[i]->funExpr;
+   }
+   return 0;
+}
+
+
+CppiaFunction *CppiaClassInfo::findVTableFunction(int inId)
+{
+   for(int i=0;i<memberFunctions.size();i++)
+   {
+      if (memberFunctions[i]->nameId == inId)
+         return memberFunctions[i];
    }
    return 0;
 }

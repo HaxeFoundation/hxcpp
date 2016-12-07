@@ -659,10 +659,12 @@ public:
       { return findFunction(staticSetters,inName); }
    CppiaEnumConstructor *findEnum(int inFieldId);
    ExprType findFunctionType(CppiaModule &inModule, int inName);
+   CppiaFunction *findVTableFunction(int inId);
    int findFunctionSlot(int inName);
    CppiaVar *findVar(bool inStatic,int inId);
 
    void *getHaxeBaseVTable();
+   int getScriptVTableOffset();
 
    Dynamic getStaticValue(const String &inName,hx::PropertyAccess  inCallProp);
    bool hasStaticValue(const String &inName);

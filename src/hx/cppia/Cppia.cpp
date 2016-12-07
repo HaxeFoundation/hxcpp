@@ -615,32 +615,8 @@ struct CppiaIsNotNull : public CppiaBoolExpr
 
 
 #ifdef CPPIA_JIT
-void genFunctionCall(ScriptCallable *function, CppiaCompiler *compiler,
-                     const JitVal &inDest, ExprType destType, bool isBoolReturn, ExprType returnType,
-                     CppiaExpr *thisExpr,  Expressions &args, const JitVal &inThisVal )
+void genFunctionResult(CppiaCompiler *compiler,const JitVal &inDest, ExprType destType, ExprType returnType, bool isBoolReturn)
 {
-      int framePos = compiler->getCurrentFrameSize();
-
-      // Push args...
-      function->genArgs(compiler,thisExpr,args, inThisVal);
-
-      compiler->restoreFrameSize(framePos);
-
-      // Store new frame in context ...
-      compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
-
-      // Compiled yet
-      if (function->compiled)
-      {
-         compiler->call( JitVal( (void *)(function->compiled)), sJitCtx );
-      }
-      else
-      {
-         // Compiled later
-         compiler->move( sJitTemp1, JitVal((void *)&function->compiled) );
-         compiler->call( sJitTemp1.star(), sJitCtx );
-      }
-
       // result is at 'framePos'
       if (isBoolReturn && (destType==etObject || destType==etString))
       {
@@ -668,6 +644,36 @@ void genFunctionCall(ScriptCallable *function, CppiaCompiler *compiler,
       }
       else
          compiler->convertResult( returnType, inDest, destType );
+}
+
+void genFunctionCall(ScriptCallable *function, CppiaCompiler *compiler,
+                     const JitVal &inDest, ExprType destType, bool isBoolReturn, ExprType returnType,
+                     CppiaExpr *thisExpr,  Expressions &args, const JitVal &inThisVal )
+{
+      int framePos = compiler->getCurrentFrameSize();
+
+      // Push args...
+      function->genArgs(compiler,thisExpr,args, inThisVal);
+
+      compiler->restoreFrameSize(framePos);
+
+      // Store new frame in context ...
+      compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
+
+      // Compiled yet
+      if (function->compiled)
+      {
+         compiler->call( JitVal( (void *)(function->compiled)), sJitCtx );
+      }
+      else
+      {
+         // Compiled later
+         compiler->move( sJitTemp1, JitVal((void *)&function->compiled) );
+         compiler->call( sJitTemp1.star(), sJitCtx );
+      }
+
+      genFunctionResult(compiler, inDest, destType, returnType, isBoolReturn);
+
 }
 #endif
 
@@ -803,6 +809,14 @@ struct CppiaExprWithValue : public CppiaDynamicExpr
    }
 
    void runVoid(CppiaCtx *ctx) { runObject(ctx); }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (destType!=etNull && destType!=etVoid)
+         compiler->convert( (void *)value.mPtr, etObject,  inDest, destType);
+   }
+   #endif
 
 };
 
@@ -1647,34 +1661,7 @@ struct CallHaxe : public CppiaExpr
       // TODO - from signature
       bool isBoolReturn = false;
 
-      // result is at 'framePos'
-      // TODO - common with CppiaFunction
-      if (isBoolReturn && (destType==etObject || destType==etString))
-      {
-         JumpId isZero = compiler->compare(cmpI_EQUAL,JitFramePos(compiler->getCurrentFrameSize()).as(jtInt),(int)0);
-         if (destType==etObject)
-            compiler->move(inDest,(void *)Dynamic(true).mPtr);
-         else
-         {
-            compiler->move(inDest,String(true).length);
-            compiler->move(inDest+4,(void *)String(true).__s);
-         }
-         JumpId done = compiler->jump();
-
-         compiler->comeFrom(isZero);
-
-         if (destType==etObject)
-            compiler->move(inDest,(void *)Dynamic(false).mPtr);
-         else
-         {
-            compiler->move(inDest,String(false).length);
-            compiler->move(inDest+4,(void *)String(false).__s);
-         }
-
-         compiler->comeFrom(done);
-      }
-      else
-         compiler->convertResult( returnType, inDest, destType );
+      genFunctionResult(compiler, inDest, destType, returnType, isBoolReturn);
    }
 
    #endif
@@ -1866,17 +1853,25 @@ struct CallMemberVTable : public CppiaExpr
    Expressions args;
    CppiaExpr   *thisExpr;
    int         slot;
+   int         scriptVTableOffset;
+   bool        isInterfaceCall;
+   CppiaFunction *funcProto;
    ExprType    returnType;
-   bool isInterfaceCall;
 
-   CallMemberVTable(CppiaExpr *inSrc, CppiaExpr *inThis, int inVTableSlot, ExprType inReturnType,
+   CallMemberVTable(CppiaExpr *inSrc, CppiaExpr *inThis,
+                    int inVTableSlot,
+                    int inScriptVTableOffset,
+                    CppiaFunction *inFuncProto,
              bool inIsInterfaceCall,Expressions &ioArgs)
-      : CppiaExpr(inSrc), returnType(inReturnType)
+      : CppiaExpr(inSrc)
    {
       args.swap(ioArgs);
       slot = inVTableSlot;
       thisExpr = inThis;
       isInterfaceCall = inIsInterfaceCall;
+      funcProto = inFuncProto;
+      returnType = funcProto->cppia.types[funcProto->returnType]->expressionType;
+      scriptVTableOffset = inScriptVTableOffset;
    }
    const char *getName() { return "CallMemberVTable"; }
    CppiaExpr *link(CppiaModule &inModule)
@@ -1887,11 +1882,12 @@ struct CallMemberVTable : public CppiaExpr
       return this;
    }
    ExprType getType() { return returnType; }
+   // ScriptCallable **vtable = (ScriptCallable **)thisVal->__GetScriptVTable();
 
    #define CALL_VTABLE_SETUP \
       hx::Object *thisVal = thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(); \
       CPPIA_CHECK(thisVal); \
-      ScriptCallable **vtable = (ScriptCallable **)thisVal->__GetScriptVTable(); \
+      ScriptCallable **vtable = *(ScriptCallable ***)((char *)thisVal +scriptVTableOffset); \
       unsigned char *pointer = ctx->pointer; \
       vtable[slot]->pushArgs(ctx, thisVal, args); \
       /* TODO */; \
@@ -1924,7 +1920,52 @@ struct CallMemberVTable : public CppiaExpr
       return runContextConvertObject(ctx, returnType, vtable[slot]); 
    }
 
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      int framePos = compiler->getCurrentFrameSize();
+      if (thisExpr)
+         thisExpr->genCode(compiler, JitFramePos(framePos,jtPointer), etObject);
+      else
+         compiler->move(JitFramePos(framePos,jtPointer), sJitThis);
+      compiler->addFrame(etObject);
 
+      for(int i=0;i<funcProto->args.size(); i++)
+      {
+         ArgInfo &arg = funcProto->args[i];
+         ExprType type = arg.optional ? etObject : funcProto->cppia.types[ arg.typeId ]->expressionType;
+
+         args[i]->genCode( compiler, JitFramePos( compiler->getCurrentFrameSize() ).as( getJitType(type)), type );
+         compiler->addFrame(type);
+      }
+
+      compiler->restoreFrameSize(framePos);
+
+
+      JitReg thisVal = thisExpr ? sJitTemp0 : sJitThis;
+      if (thisExpr)
+         compiler->move( thisVal.as(jtPointer), JitFramePos(framePos,jtPointer) );
+
+      // Store new frame in context ...
+      compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
+
+      //ScriptCallable **vtable = *(ScriptCallable ***)((char *)thisVal +scriptVTableOffset);
+      compiler->move(sJitTemp1.as(jtPointer), thisVal.star(jtPointer, scriptVTableOffset) );
+
+      // vtable[slot]
+      compiler->move(sJitTemp1, sJitTemp1.star(jtPointer, slot*sizeof(void *)) );
+
+      // vtable[slot].compiled
+      compiler->call(sJitTemp1.star(jtPointer, offsetof(ScriptCallable,compiled)),sJitCtx );
+
+
+      bool isBoolReturn = funcProto->cppia.types[funcProto->returnType]->haxeClass==ClassOf<bool>();
+      genFunctionResult(compiler, inDest, destType, returnType, isBoolReturn);
+
+      if (destType!=etNull && destType!=etVoid)
+         compiler->convertResult( returnType, inDest, destType );
+   }
+   #endif
 };
 
 
@@ -2677,8 +2718,9 @@ struct CallMember : public CppiaExpr
             //printf("   vslot %d\n", vtableSlot);
             if (vtableSlot!=-1)
             {
-               ExprType returnType = type->cppiaClass->findFunctionType(inModule,fieldId);
-               replace = new CallMemberVTable( this, thisExpr, vtableSlot, returnType, type->cppiaClass->isInterface, args );
+               CppiaFunction *funcProto = type->cppiaClass->findVTableFunction(fieldId);
+               int scriptPos = type->cppiaClass->getScriptVTableOffset();
+               replace = new CallMemberVTable( this, thisExpr, vtableSlot, scriptPos, funcProto, type->cppiaClass->isInterface, args );
             }
          }
       }
@@ -2708,11 +2750,26 @@ struct CallMember : public CppiaExpr
       }
 
       if (!replace && field==HX_CSTRING("__Index"))
+      {
+         #ifdef CPPIA_JIT
+         throw "Old cppia bytecode not supported by jit";
+         #endif
          replace = new CallGetIndex(this, thisExpr);
+      }
       if (!replace && field==HX_CSTRING("__SetField") && args.size()==3)
+      {
+         #ifdef CPPIA_JIT
+         throw "Old cppia bytecode not supported by jit";
+         #endif
          replace = new CallSetField(this, thisExpr, args[0], args[1], args[2]);
+      }
       if (!replace && field==HX_CSTRING("__Field") && args.size()==2)
+      {
+         #ifdef CPPIA_JIT
+         throw "Old cppia bytecode not supported by jit";
+         #endif
          replace = new CallGetField(this, thisExpr, args[0], args[1]);
+      }
 
 
       if (replace)
