@@ -1217,14 +1217,83 @@ public:
    {
       if (maxTempCount<3)
          maxTempCount =3;
+      int restoreLocal = -1;
 
-      move( sJitArg0, inArg0);
-      move( sJitArg1, inArg1);
-      move( sJitArg2, inArg2);
+      if (inArg0.type==jtFloat || inArg0.type==jtString)
+      {
+         if (isMemoryVal(inArg0))
+            add( sJitArg0, inArg0.getReg().as(jtPointer), inArg0.offset);
+         else
+         {
+            if (inArg0.type==jtString)
+            {
+               printf("Passing string value in register error.\n");
+               *(int *)0=0;
+            }
+ 
+            restoreLocal = localSize;
+            JitLocalPos temp(allocTemp(jtFloat),jtFloat);
+            move( temp, inArg0 );
+            add(sJitArg0, temp.getReg().as(jtPointer), temp.offset);
+         }
+      }
+      else
+         move( sJitArg0, inArg0);
+
+
+
+      if (inArg1.type==jtFloat || inArg1.type==jtString)
+      {
+         if (isMemoryVal(inArg1))
+            add( sJitArg1, inArg1.getReg().as(jtPointer), inArg1.offset);
+         else
+         {
+            if (inArg1.type==jtString)
+            {
+               printf("Passing string value in register error.\n");
+               *(int *)0=0;
+            }
+            restoreLocal = localSize;
+            JitLocalPos temp(allocTemp(jtFloat),jtFloat);
+            move( temp, inArg1 );
+            add(sJitArg1, temp.getReg().as(jtPointer), temp.offset);
+         }
+      }
+      else
+         move( sJitArg1, inArg1);
+
+
+
+      if (inArg2.type==jtFloat || inArg2.type==jtString)
+      {
+         if (isMemoryVal(inArg2))
+            add( sJitArg2, inArg2.getReg().as(jtPointer), inArg2.offset);
+         else
+         {
+            if (inArg2.type==jtString)
+            {
+               printf("Passing string value in register error.\n");
+               *(int *)0=0;
+            }
+            restoreLocal = localSize;
+            JitLocalPos temp(allocTemp(jtFloat),jtFloat);
+            move( temp, inArg2 );
+            add(sJitArg2, temp.getReg().as(jtPointer), temp.offset);
+         }
+      }
+      else
+         move( sJitArg2, inArg2);
+
+
+
+
       if (compiler)
       {
          sljit_emit_ijump(compiler, SLJIT_CALL3, SLJIT_IMM, SLJIT_FUNC_OFFSET(func));
       }
+
+      if (restoreLocal>=0)
+         localSize = restoreLocal;
    }
 
 };

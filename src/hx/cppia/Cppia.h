@@ -176,7 +176,7 @@ typedef std::vector<CppiaExpr *> Expressions;
 struct CppiaDynamicExpr : public CppiaExpr
 {
    inline CppiaDynamicExpr(const CppiaExpr *inSrc=0) : CppiaExpr(inSrc) {}
-   const char *getName();
+   const char *getName() = 0;
    int         runInt(CppiaCtx *ctx);
    Float       runFloat(CppiaCtx *ctx);
    ::String    runString(CppiaCtx *ctx);

@@ -104,7 +104,6 @@ JumpId CppiaExpr::genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLa
 // Delegates to 'runObject'
 
 
-const char *CppiaDynamicExpr::getName() { return "CppiaDynamicExpr"; }
 
 int  CppiaDynamicExpr::runInt(CppiaCtx *ctx)
 {
@@ -1943,6 +1942,8 @@ struct ThisExpr : public CppiaDynamicExpr
    ThisExpr(CppiaStream &stream)
    {
    }
+
+   const char *getName() { return "ThisExpr"; }
    hx::Object *runObject(CppiaCtx *ctx) { return ctx->getThis(); }
 };
 
@@ -1991,6 +1992,63 @@ struct CallGlobal : public CppiaExpr
 };
 
 
+#ifdef CPPIA_JIT
+static int SLJIT_CALL getFieldInt( hx::Object *instance, String *name )
+{
+   return instance->__Field(*name, HX_PROP_DYNAMIC);
+}
+
+static hx::Object * SLJIT_CALL getFieldObject( hx::Object *instance, String *name )
+{
+   Dynamic ret =  instance->__Field(*name, HX_PROP_DYNAMIC);
+   return ret.mPtr;
+}
+
+static void SLJIT_CALL getFieldFloat( hx::Object *instance, String *name, double *outValue )
+{
+   *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
+}
+
+static void SLJIT_CALL getFieldString( hx::Object *instance, String *name, String *outValue )
+{
+   *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
+}
+
+static int SLJIT_CALL setFieldInt( hx::Object *instance, String *name, int inValue )
+{
+   instance->__SetField(*name, inValue, HX_PROP_DYNAMIC);
+   return inValue;
+}
+static void SLJIT_CALL setFieldIntV( hx::Object *instance, String *name, int inValue )
+{
+   instance->__SetField(*name, inValue, HX_PROP_DYNAMIC);
+}
+
+static hx::Object * SLJIT_CALL setFieldObject( hx::Object *instance, String *name, hx::Object *inValue )
+{
+   instance->__SetField(*name, Dynamic(inValue), HX_PROP_DYNAMIC );
+   return inValue;
+}
+
+static void SLJIT_CALL setFieldObjectV( hx::Object *instance, String *name, hx::Object *inValue )
+{
+   instance->__SetField(*name, Dynamic(inValue), HX_PROP_DYNAMIC );
+}
+
+static void SLJIT_CALL setFieldFloat( hx::Object *instance, String *name, const double *inValue )
+{
+   instance->__SetField(*name, *inValue, HX_PROP_DYNAMIC);
+}
+
+static void SLJIT_CALL setFieldString( hx::Object *instance, String *name, const String *inValue )
+{
+   instance->__SetField(*name, *inValue, HX_PROP_DYNAMIC);
+}
+
+
+#endif
+
+
 
 struct FieldByName : public CppiaDynamicExpr
 {
@@ -2014,6 +2072,7 @@ struct FieldByName : public CppiaDynamicExpr
       value = inValue;
    }
 
+   const char *getName() { return "FieldByName"; }
    CppiaExpr *link(CppiaModule &inModule)
    {
       if (value)
@@ -2086,33 +2145,97 @@ struct FieldByName : public CppiaDynamicExpr
    }
 #endif
 
+   #ifdef CPPIA_JIT
+   static int SLJIT_CALL getInt( hx::Object *inSrc, String *inName )
+   {
+      return inSrc->__Field(*inName,HX_PROP_DYNAMIC);
+   }
+   static hx::Object * SLJIT_CALL getObject( hx::Object *inSrc, String *inName )
+   {
+      return Dynamic(inSrc->__Field(*inName,HX_PROP_DYNAMIC)).mPtr;
+   }
+
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      if (crement==coNone && assign==aoNone)
+      {
+         printf("FieldAccess without set\n");
+         return;
+      }
+
+
+      JitTemp objTemp(compiler, jtPointer);
+      JitVal  objSrc;
+
+      if (object)
+      {
+         object->genCode(compiler, objTemp, etObject);
+         objSrc = objTemp;
+      }
+      else if (staticClass.mPtr)
+      {
+         objSrc = JitVal( (void *)staticClass.mPtr );
+      }
+      else
+      {
+         objSrc = sJitThis;
+      }
+
+      if (crement!=coNone)
+      {
+         printf("FieldCrementByName\n");
+         return;
+      }
+
+      if (assign == aoSet)
+      {
+         bool ret = destType==etInt || destType==etString || destType==etObject || destType==etFloat;
+         switch(value->getType())
+         {
+            case etObject:
+               value->genCode(compiler,sJitArg2.as(jtPointer), etObject);
+               compiler->callNative( ret ? (void *)setFieldObject : (void *)setFieldObjectV, objSrc, (void *)&name, sJitArg2.as(jtPointer) );
+               if (ret)
+                  compiler->convertResult(etObject, inDest, destType );
+               break;
+            case etInt:
+               value->genCode(compiler,sJitArg2.as(jtInt), etInt);
+               compiler->callNative( ret ? (void *)setFieldInt : (void *)setFieldIntV, objSrc, (void *)&name, sJitArg2.as(jtInt) );
+               if (ret)
+                  compiler->convertResult(etInt, inDest, destType );
+               break;
+            case etString:
+               {
+               JitTemp temp(compiler, jtString);
+               value->genCode(compiler,temp, etString);
+               compiler->callNative( setFieldString, objSrc, (void *)&name, temp );
+               if (ret)
+                  compiler->convert(temp, etString, inDest, destType );
+               }
+               break;
+            case etFloat:
+               {
+               JitTemp temp(compiler, jtFloat);
+               value->genCode(compiler,temp, etFloat);
+               compiler->callNative( setFieldFloat, objSrc, (void *)&name, temp );
+               if (ret)
+                  compiler->convert(temp, etFloat, inDest, destType );
+               }
+               break;
+            default:
+               printf("Unknown set type %d\n", destType);
+               *(int *)0=0;
+         }
+      }
+      else
+      {
+         printf("FieldByName op not implemented\n");
+      }
+   }
+   #endif
 };
 
-
-#ifdef CPPIA_JIT
-static int SLJIT_CALL getFieldInt( hx::Object *instance, String *name )
-{
-   return instance->__Field(*name, HX_PROP_DYNAMIC);
-}
-
-static hx::Object * SLJIT_CALL getFieldObject( hx::Object *instance, String *name )
-{
-   Dynamic ret =  instance->__Field(*name, HX_PROP_DYNAMIC);
-   return ret.mPtr;
-}
-
-static void SLJIT_CALL getFieldFloat( hx::Object *instance, String *name, double *outValue )
-{
-   *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
-}
-
-
-static void SLJIT_CALL getFieldString( hx::Object *instance, String *name, String *outValue )
-{
-   *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
-}
-
-#endif
 
 struct GetFieldByName : public CppiaDynamicExpr
 {
@@ -2260,10 +2383,17 @@ struct GetFieldByName : public CppiaDynamicExpr
             compiler->move(inDest, sJitTemp0);
             break;
          case etFloat:
-            compiler->callNative( (void *)getFieldFloat, sJitTemp0, inDest, (void *)&name);
+            if (isMemoryVal(inDest))
+               compiler->callNative( (void *)getFieldFloat, sJitTemp0,  (void *)&name, inDest.as(jtFloat) );
+            else
+            {
+               JitTemp floatResult(compiler, jtFloat);
+               compiler->callNative( (void *)getFieldFloat, sJitTemp0, &name, floatResult );
+               compiler->move(inDest.as(jtFloat), floatResult);
+            }
             break;
          case etString:
-            compiler->callNative( (void *)getFieldString, sJitTemp0, inDest,  (void *)&name);
+            compiler->callNative( (void *)getFieldString, sJitTemp0,  (void *)&name, inDest );
             break;
          case etObject:
             compiler->callNative( (void *)getFieldObject, sJitTemp0, (void *)&name);
@@ -3877,6 +4007,7 @@ struct DynamicArrayI : public CppiaDynamicExpr
       assign = aoNone;
       crement = coNone;
    }
+   const char *getName() { return "DynamicArrayI"; }
    CppiaExpr *link(CppiaModule &inModule)
    {
       object = object->link(inModule);
@@ -3972,6 +4103,8 @@ struct ArrayAccessI : public CppiaDynamicExpr
       __get = 0;
       __set = 0;
    }
+
+   const char *getName() { return "ArrayAccessI"; }
    CppiaExpr *link(CppiaModule &inModule)
    {
       if (object)
