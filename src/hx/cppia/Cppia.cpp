@@ -2997,7 +2997,7 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
 
 
       default:
-         printf("Get setter %d\n", inOp);
+         printf("Gen setter %d\n", inOp);
    }
 }
 #endif
@@ -4978,6 +4978,59 @@ struct TryExpr : public CppiaVoidExpr
          HX_STACK_DO_THROW(caught);
       }
    }
+
+   #ifdef CPPIA_JIT
+   static int SLJIT_CALL isExceptionCatch(hx::Object *exception, TypeData *inType)
+   {
+      // TODO - HX_STACK_BEGIN_CATCH
+      return inType->isClassOf(exception);
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      compiler->pushCatching();
+      body->genCode(compiler, inDest, destType);
+      compiler->popCatching();
+
+      if (compiler->hasThrown())
+      {
+         std::vector<JumpId> handledExceptions;
+
+         JumpId noThrow = compiler->jump();
+
+         compiler->catchThrown();
+
+         for(int i=0;i<catches.size();i++)
+         {
+            Catch &c = catches[i];
+            compiler->callNative( (void *)isExceptionCatch, sJitCtx.star(jtPointer,offsetof(hx::StackContext,exception)), c.type );
+            JumpId notThisOne = compiler->compare(cmpI_EQUAL, sJitReturnReg, (int)0);
+
+            // Exception is this type
+            ExprType type = c.var.expressionType;
+            compiler->convert( sJitCtx.star(jtPointer,offsetof(hx::StackContext,exception)), etObject,
+                              JitFramePos(c.var.stackPos,getJitType(type)), type );
+            compiler->move(sJitCtx.star(jtPointer,offsetof(hx::StackContext,exception)),(void *)0);
+
+            c.body->genCode(compiler, inDest, destType);
+
+            handledExceptions.push_back( compiler->jump() );
+            compiler->comeFrom(notThisOne);
+         }
+
+         // Unhandled - go to next handler or return
+         if (compiler->hasCatching())
+            compiler->addThrow();
+         else
+            compiler->addReturn();
+
+         // handled/not thrown
+         for(int i=0;i<handledExceptions.size();i++)
+            compiler->comeFrom( handledExceptions[i] );
+         compiler->comeFrom(noThrow);
+      }
+   }
+   #endif
 };
 
 
@@ -5406,8 +5459,16 @@ struct ThrowExpr : public CppiaVoidExpr
    }
    void runVoid(CppiaCtx *ctx)
    {
+      // HX_STACK_DO_THROW ?
       throw Dynamic( value->runObject(ctx) );
    }
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      value->genCode(compiler, sJitCtx.star(jtPointer, offsetof(hx::StackContext,exception)), etObject);
+      compiler->addThrow();
+   }
+   #endif
 };
 
 struct OpNot : public CppiaBoolExpr

@@ -198,7 +198,9 @@ public:
    struct sljit_compiler *compiler;
 
    QuickVec<JumpId> allBreaks;
+   QuickVec<JumpId> throwTargets;
    LabelId continuePos;
+   int catchCount;
 
    bool usesCtx;
    bool usesThis;
@@ -213,6 +215,7 @@ public:
    int maxLocalSize;
 
 
+
    CppiaJitCompiler(int inFrameSize)
    {
       maxTempCount = 0;
@@ -224,6 +227,7 @@ public:
       usesThis = false;
       usesCtx = false;
       continuePos = 0;
+      catchCount = 0;
       frameSize = baseFrameSize = sizeof(void *) + inFrameSize;
    }
 
@@ -282,7 +286,7 @@ public:
          move( sJitThis, JitFramePos(0) );
 
       frameSize = baseFrameSize;
-
+      throwTargets.setSize(0);
    }
 
    CppiaFunc finishGeneration()
@@ -1313,6 +1317,26 @@ public:
          localSize = restoreLocal;
    }
 
+   bool   hasThrown()
+   {
+      return !throwTargets.empty();
+   }
+
+   void catchThrown()
+   {
+      for(int i=0;i<throwTargets.size();i++)
+         comeFrom(throwTargets[i]);
+      throwTargets.setSize(0);
+   }
+
+   void addThrow()
+   {
+      throwTargets.push( jump() );
+   }
+
+   void  pushCatching() { catchCount++; }
+   void  popCatching()  { catchCount--; }
+   bool  hasCatching()  { return catchCount; }
 };
 
 void CppiaCompiler::freeCompiled(CppiaFunc inFunc)

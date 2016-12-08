@@ -292,6 +292,13 @@ public:
    virtual void  addBreak() = 0;
    virtual void  setBreakTarget() = 0;
 
+   virtual void  pushCatching() = 0;
+   virtual void  popCatching() = 0;
+   virtual bool  hasCatching() = 0;
+   virtual bool  hasThrown() = 0;
+   virtual void  catchThrown() = 0;
+   virtual void  addThrow() = 0;
+
    // Unconditional
    virtual JumpId jump(LabelId inTo=0) = 0;
    virtual void   jump(const JitVal &inWhere) = 0;

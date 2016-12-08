@@ -322,6 +322,12 @@ public:
             DBGLOG("--- Run --------------------------------------------\n");
             CppiaCtx *ctx = CppiaCtx::getCurrent();
             ctx->runVoid(cppia->main);
+            if (ctx->exception)
+            {
+               hx::Object *e = ctx->exception;
+               ctx->exception = 0;
+               hx::Throw( Dynamic(e) );
+            }
          }
          catch(const char *errorString)
          {
