@@ -217,6 +217,16 @@ enum JitCompare
 
 };
 
+enum BitOp
+{
+   bitOpAnd,
+   bitOpOr,
+   bitOpXOr,
+   bitOpUSR,
+   bitOpShiftL,
+   bitOpShiftR,
+};
+
 bool isMemoryVal(const JitVal &inVal);
 
 extern JitReg sJitFrame;
@@ -254,7 +264,6 @@ public:
    virtual void setError(const char *inError) = 0;
    virtual void crash() = 0;
 
-   virtual void allocArgs(int inCount)=0;
    virtual int getCurrentFrameSize() = 0;
    virtual void restoreFrameSize(int inSize) = 0;
    virtual void addFrame(ExprType inType) = 0;
@@ -310,9 +319,10 @@ public:
    virtual void traceStrings(const char *inS0, const char *inS1) = 0;
    virtual void traceInt(const char *inLabel, const JitVal &inValue) = 0;
 
-   virtual void set(const JitVal &inDest, const JitVal &inSrc) = 0;
+   virtual void negate(const JitVal &inDest, const JitVal &inSrc) = 0;
    virtual void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
-   virtual void bitOr(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
+   virtual void bitOp(BitOp inOp, const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
+   virtual void bitNot(const JitVal &inDest, const JitVal &v0 ) = 0;
    virtual void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
    virtual void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
    virtual void fdiv(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;

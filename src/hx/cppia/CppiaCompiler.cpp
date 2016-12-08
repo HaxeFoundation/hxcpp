@@ -988,11 +988,18 @@ public:
       callNative( (void *)my_trace_strings, JitVal( (void *)inS0 ), JitVal( (void *)inS1 ));
    }
 
-
-
-   void set(const JitVal &inDest, const JitVal &inSrc)
+   void negate(const JitVal &inDest, const JitVal &inSrc)
    {
+      if (inSrc.type==jtFloat)
+      {
+         emit_fop1(SLJIT_DNEG, inDest, inSrc);
+      }
+      else
+      {
+         emit_op1(SLJIT_INEG, inDest,  inSrc);
+      }
    }
+
 
    void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
    {
@@ -1016,9 +1023,34 @@ public:
    }
 
 
-   void bitOr(const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
+   void bitNot(const JitVal &inDest, const JitVal &v0)
    {
-     emit_op2(SLJIT_IOR, inDest, v0, v1);
+      emit_op1(SLJIT_INOT, inDest, v0);
+   }
+
+   void bitOp(BitOp inOp, const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
+   {
+      switch(inOp)
+      {
+         case bitOpAnd:
+            emit_op2(SLJIT_IAND, inDest, v0, v1);
+            break;
+         case bitOpOr:
+            emit_op2(SLJIT_IOR, inDest, v0, v1);
+            break;
+         case bitOpXOr:
+            emit_op2(SLJIT_IXOR, inDest, v0, v1);
+            break;
+         case bitOpUSR:
+            emit_op2(SLJIT_LSHR, inDest, v0, v1);
+            break;
+         case bitOpShiftL:
+            emit_op2(SLJIT_ISHL, inDest, v0, v1);
+            break;
+         case bitOpShiftR:
+            emit_op2(SLJIT_ASHR, inDest, v0, v1);
+            break;
+      }
    }
 
    void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
@@ -1095,21 +1127,6 @@ public:
          sljit_emit_op0(compiler,SLJIT_ILSDIV);
    }
 
-
-
-
-   void allocArgs(int inCount)
-   {
-   }
-   /*
-   void call(CppiaFunc func,JitType inReturnType)
-   {
-   }
-
-   void call(const JitVal &func,JitType inReturnType)
-   {
-   }
-   */
 
    void call(const JitVal &func,const JitVal &inArg0)
    {

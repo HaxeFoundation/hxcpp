@@ -5578,89 +5578,152 @@ struct BitNot : public CppiaIntExpr
    {
       return ~left->runInt(ctx);
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      left->genCode(compiler, sJitTemp0, etInt);
+      if (destType==etInt)
+         compiler->bitNot(inDest.as(jtInt), sJitTemp0 );
+      else
+      {
+         compiler->bitNot( sJitTemp0.as(jtInt), sJitTemp0.as(jtInt) );
+         compiler->convert(sJitTemp0, etInt, inDest, destType);
+      }
+   }
+   #endif
 };
 
-struct BitAnd : public CppiaIntExpr
+struct BitOpBase : public CppiaIntExpr
 {
    CppiaExpr *left;
    CppiaExpr *right;
-   BitAnd(CppiaStream &stream)
+   BitOpBase(CppiaStream &stream)
    {
       left = createCppiaExpr(stream);
       right = createCppiaExpr(stream);
    }
-   const char *getName() { return "BitAnd"; }
+   const char *getName() = 0;
    CppiaExpr *link(CppiaModule &inModule)
    {
       left = left->link(inModule);
       right = right->link(inModule);
       return this;
    }
+
+
+   #ifdef CPPIA_JIT
+   virtual BitOp getBitOp() = 0;
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      JitTemp tLeft(compiler, jtInt);
+      left->genCode(compiler, tLeft, etInt);
+      right->genCode(compiler, sJitTemp2, etInt);
+      if (destType==etInt)
+         compiler->bitOp( getBitOp(), inDest, tLeft, sJitTemp2 );
+      else
+      {
+         compiler->bitOp( getBitOp(), sJitTemp2.as(jtInt), tLeft, sJitTemp2 );
+         compiler->convert(sJitTemp2, etInt, inDest, destType);
+      }
+   }
+   #endif
+};
+
+struct BitAnd : public BitOpBase
+{
+   BitAnd(CppiaStream &stream) : BitOpBase(stream) { }
+   const char *getName() { return "BitAnd"; }
    int runInt(CppiaCtx *ctx)
    {
       int l = left->runInt(ctx);
       BCR_CHECK;
       return l & right->runInt(ctx);
    }
+
+   #ifdef CPPIA_JIT
+   BitOp getBitOp() { return bitOpAnd; }
+   #endif
 };
 
-struct BitOr : public BitAnd
+struct BitOr : public BitOpBase
 {
-   BitOr(CppiaStream &stream) : BitAnd(stream) { }
+   BitOr(CppiaStream &stream) : BitOpBase(stream) { }
+   const char *getName() { return "BitOr"; }
    int runInt(CppiaCtx *ctx)
    {
       int l = left->runInt(ctx);
       BCR_CHECK;
       return l | right->runInt(ctx);
    }
+   #ifdef CPPIA_JIT
+   BitOp getBitOp() { return bitOpOr; }
+   #endif
 };
 
 
-struct BitXOr : public BitAnd
+struct BitXOr : public BitOpBase
 {
-   BitXOr(CppiaStream &stream) : BitAnd(stream) { }
+   BitXOr(CppiaStream &stream) : BitOpBase(stream) { }
+   const char *getName() { return "BitXOr"; }
    int runInt(CppiaCtx *ctx)
    {
       int l = left->runInt(ctx);
       BCR_CHECK;
       return l ^ right->runInt(ctx);
    }
+   #ifdef CPPIA_JIT
+   BitOp getBitOp() { return bitOpXOr; }
+   #endif
 };
 
 
-struct BitUSR : public BitAnd
+struct BitUSR : public BitOpBase
 {
-   BitUSR(CppiaStream &stream) : BitAnd(stream) { }
+   BitUSR(CppiaStream &stream) : BitOpBase(stream) { }
+   const char *getName() { return "BitUSR"; }
    int runInt(CppiaCtx *ctx)
    {
       int l = left->runInt(ctx);
       BCR_CHECK;
       return  hx::UShr(l , right->runInt(ctx));
    }
+   #ifdef CPPIA_JIT
+   BitOp getBitOp() { return bitOpUSR; }
+   #endif
 };
 
 
-struct BitShiftR : public BitAnd
+struct BitShiftR : public BitOpBase
 {
-   BitShiftR(CppiaStream &stream) : BitAnd(stream) { }
+   BitShiftR(CppiaStream &stream) : BitOpBase(stream) { }
+   const char *getName() { return "BitShiftR"; }
    int runInt(CppiaCtx *ctx)
    {
       int l = left->runInt(ctx);
       BCR_CHECK;
       return  l >> right->runInt(ctx);
    }
+   #ifdef CPPIA_JIT
+   BitOp getBitOp() { return bitOpShiftR; }
+   #endif
 };
 
 
-struct BitShiftL : public BitAnd
+struct BitShiftL : public BitOpBase
 {
-   BitShiftL(CppiaStream &stream) : BitAnd(stream) { }
+   BitShiftL(CppiaStream &stream) : BitOpBase(stream) { }
+   const char *getName() { return "BitShiftL"; }
    int runInt(CppiaCtx *ctx)
    {
       int l = left->runInt(ctx);
       BCR_CHECK;
       return  l << right->runInt(ctx);
    }
+   #ifdef CPPIA_JIT
+   BitOp getBitOp() { return bitOpShiftL; }
+   #endif
 };
 
 
@@ -5674,6 +5737,13 @@ void SLJIT_CALL dynamicAddStr(hx::Object *inObj1, hx::Object *inObj2, String *ou
 void *SLJIT_CALL dynamicAddObj(hx::Object *inObj1, hx::Object *inObj2) {
    return (Dynamic(inObj1) + Dynamic(inObj2)).mPtr;
 }
+int SLJIT_CALL dynamicAddInt(hx::Object *inObj1, hx::Object *inObj2) {
+   return Dynamic(inObj1) + Dynamic(inObj2);
+}
+void SLJIT_CALL dynamicAddFloat(hx::Object *inObj1, hx::Object *inObj2, double *outResult) {
+   *outResult = (Dynamic(inObj1) + Dynamic(inObj2));
+}
+
 void SLJIT_CALL strAddStrToStrOver(String *ioStr, String *inStr1) {
    *ioStr = *ioStr + *inStr1;
 }
@@ -5815,10 +5885,26 @@ struct SpecialAdd : public CppiaExpr
                compiler->move(inDest, sJitReturnReg.as(jtPointer));
                break;
 
+            case etInt:
+               compiler->callNative(dynamicAddInt, tLeft, sJitTemp1);
+               compiler->move(inDest, sJitReturnReg.as(jtInt));
+               break;
 
-            // TODO - others
+            case etFloat:
+               if (isMemoryVal(inDest))
+                  compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1,inDest.as(jtFloat));
+               else
+               {
+                  JitTemp result(compiler,jtFloat);
+                  compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1, result);
+                  compiler->move(inDest,result);
+               }
+               break;
+
+
             default:
-               printf("TODO - dynamic add\n");
+               // Nothing to do
+               ;
          }
       }
    }
@@ -5857,6 +5943,30 @@ struct OpNeg : public CppiaExpr
    {
       return Dynamic(- value->runFloat(ctx)).mPtr;
    }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      if (destType==etInt)
+      {
+         value->genCode(compiler, sJitTemp0.as(jtInt), etInt);
+         compiler->negate(inDest, sJitTemp0.as(jtInt) );
+      }
+      else
+      {
+         value->genCode(compiler, sJitTempF0, etFloat);
+         if (destType==etFloat)
+         {
+            compiler->negate(inDest.as(jtFloat), sJitTempF0 );
+         }
+         else
+         {
+            compiler->negate(sJitTempF0, sJitTempF0);
+            compiler->convert(sJitTempF0, etFloat, inDest, destType);
+         }
+      }
+   }
+   #endif
 };
 
 struct OpAdd : public BinOp
