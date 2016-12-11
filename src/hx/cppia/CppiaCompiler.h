@@ -298,6 +298,7 @@ public:
    virtual bool  hasThrown() = 0;
    virtual void  catchThrown() = 0;
    virtual void  addThrow() = 0;
+   virtual void  checkException() = 0;
 
    // Unconditional
    virtual JumpId jump(LabelId inTo=0) = 0;

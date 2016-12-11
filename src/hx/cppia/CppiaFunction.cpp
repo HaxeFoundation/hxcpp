@@ -955,7 +955,7 @@ void CppiaFunction::load(CppiaStream &stream,bool inExpectBody)
    args.resize(argCount);
    for(int a=0;a<argCount;a++)
    {
-      ArgInfo arg = args[a];
+      ArgInfo &arg = args[a];
       arg.nameId = stream.getInt();
       arg.optional = stream.getBool();
       arg.typeId = stream.getInt();

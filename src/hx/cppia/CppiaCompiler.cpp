@@ -291,6 +291,9 @@ public:
 
    CppiaFunc finishGeneration()
    {
+      for(int i=0;i<throwTargets.size();i++)
+         comeFrom(throwTargets[i]);
+      throwTargets.setSize(0);
       sljit_emit_return(compiler, SLJIT_UNUSED, SLJIT_UNUSED, 0);
       CppiaFunc func = (CppiaFunc)sljit_generate_code(compiler);
       sljit_free_compiler(compiler);
@@ -1321,6 +1324,11 @@ public:
    {
       return !throwTargets.empty();
    }
+   void checkException()
+   {
+      throwTargets.push( compare( cmpP_NOT_ZERO,sJitCtx.star(jtPointer, offsetof(hx::StackContext,exception)),(void *)0, 0 ) );
+   }
+
 
    void catchThrown()
    {

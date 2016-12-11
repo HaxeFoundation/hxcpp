@@ -94,6 +94,8 @@ JumpId CppiaExpr::genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLa
    return compiler->compare(inReverse ? cmpI_EQUAL : cmpI_NOT_EQUAL, sJitTemp0, (int)0, inLabel);
 }
 
+#define TRY_NATIVE try {
+#define CATCH_NATIVE } catch(Dynamic e) {  CppiaCtx::getCurrent()->exception = e.mPtr; }
 
 #endif
 
@@ -617,6 +619,8 @@ struct CppiaIsNotNull : public CppiaBoolExpr
 #ifdef CPPIA_JIT
 void genFunctionResult(CppiaCompiler *compiler,const JitVal &inDest, ExprType destType, ExprType returnType, bool isBoolReturn)
 {
+      compiler->checkException();
+
       // result is at 'framePos'
       if (isBoolReturn && (destType==etObject || destType==etString))
       {
@@ -995,6 +999,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
       compiler->setFramePointer( compiler->getCurrentFrameSize() );
       compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size());
       }
+      compiler->checkException();
       if (destType!=etVoid && destType!=etNull)
          compiler->convertResult( etObject, inDest, destType );
 
@@ -1265,18 +1270,31 @@ static void *SLJIT_CALL createArrayAny(int n) {
   return (Array_obj<Dynamic>::__new(n,n)).mPtr;
   #endif
 }
+static void SLJIT_CALL varraySetInt(cpp::VirtualArray_obj *varray, int i, int value) { varray->init(i,value); }
+static void SLJIT_CALL varraySetBool(cpp::VirtualArray_obj *varray, int i, int value) { varray->init(i,(bool)value); }
+static void SLJIT_CALL varraySetObject(cpp::VirtualArray_obj *varray, int i, hx::Object *value) { varray->init(i,Dynamic(value)); }
+static void SLJIT_CALL varraySetString(cpp::VirtualArray_obj *varray, int i, String *value) { varray->init(i,*value); }
+static void SLJIT_CALL varraySetFloat(cpp::VirtualArray_obj *varray, int i, double *value) { varray->init(i,*value); }
 
 static void *SLJIT_CALL runConstructor(void *inConstructor,  Array_obj<Dynamic> *inArgs)
 {
+   TRY_NATIVE
    return (((hx::ConstructArgsFunc)inConstructor)(inArgs)).mPtr;
+   CATCH_NATIVE
+   return 0;
 }
 
+/*
 static void *SLJIT_CALL runCreateInstance(CppiaCtx *ctx, CppiaClassInfo *info,  Array_obj<Dynamic> *inArgs)
 {
+   TRY_NATIVE
    Array<Dynamic> args(inArgs);
    void *result = info->createInstance(ctx, args);
    return result;
+   CATCH_NATIVE
+   return 0;
 }
+*/
 
 static void *SLJIT_CALL allocHaxe(CppiaCtx *inCtx, CppiaClassInfo *inInfo )
 {
@@ -1405,6 +1423,7 @@ struct NewExpr : public CppiaDynamicExpr
          }
 
          compiler->callNative( runConstructor, (void *)constructor, argList );
+         compiler->checkException();
          compiler->convert(sJitReturnReg, etObject, inDest, destType);
       }
       else
@@ -2036,54 +2055,78 @@ struct CallGlobal : public CppiaExpr
 #ifdef CPPIA_JIT
 static int SLJIT_CALL getFieldInt( hx::Object *instance, String *name )
 {
+   TRY_NATIVE
    return instance->__Field(*name, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
+   return 0;
 }
 
 static hx::Object * SLJIT_CALL getFieldObject( hx::Object *instance, String *name )
 {
+   TRY_NATIVE
    Dynamic ret =  instance->__Field(*name, HX_PROP_DYNAMIC);
    return ret.mPtr;
+   CATCH_NATIVE
+   return 0;
 }
 
 static void SLJIT_CALL getFieldFloat( hx::Object *instance, String *name, double *outValue )
 {
+   TRY_NATIVE
    *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
 }
 
 static void SLJIT_CALL getFieldString( hx::Object *instance, String *name, String *outValue )
 {
+   TRY_NATIVE
    *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
 }
 
 static int SLJIT_CALL setFieldInt( hx::Object *instance, String *name, int inValue )
 {
+   TRY_NATIVE
    instance->__SetField(*name, inValue, HX_PROP_DYNAMIC);
    return inValue;
+   CATCH_NATIVE
+   return 0;
 }
 static void SLJIT_CALL setFieldIntV( hx::Object *instance, String *name, int inValue )
 {
+   TRY_NATIVE
    instance->__SetField(*name, inValue, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
 }
 
 static hx::Object * SLJIT_CALL setFieldObject( hx::Object *instance, String *name, hx::Object *inValue )
 {
+   TRY_NATIVE
    instance->__SetField(*name, Dynamic(inValue), HX_PROP_DYNAMIC );
    return inValue;
+   CATCH_NATIVE
+   return 0;
 }
 
 static void SLJIT_CALL setFieldObjectV( hx::Object *instance, String *name, hx::Object *inValue )
 {
+   TRY_NATIVE
    instance->__SetField(*name, Dynamic(inValue), HX_PROP_DYNAMIC );
+   CATCH_NATIVE
 }
 
 static void SLJIT_CALL setFieldFloat( hx::Object *instance, String *name, const double *inValue )
 {
+   TRY_NATIVE
    instance->__SetField(*name, *inValue, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
 }
 
 static void SLJIT_CALL setFieldString( hx::Object *instance, String *name, const String *inValue )
 {
+   TRY_NATIVE
    instance->__SetField(*name, *inValue, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
 }
 
 
@@ -2237,12 +2280,14 @@ struct FieldByName : public CppiaDynamicExpr
             case etObject:
                value->genCode(compiler,sJitArg2.as(jtPointer), etObject);
                compiler->callNative( ret ? (void *)setFieldObject : (void *)setFieldObjectV, objSrc, (void *)&name, sJitArg2.as(jtPointer) );
+               compiler->checkException();
                if (ret)
                   compiler->convertResult(etObject, inDest, destType );
                break;
             case etInt:
                value->genCode(compiler,sJitArg2.as(jtInt), etInt);
                compiler->callNative( ret ? (void *)setFieldInt : (void *)setFieldIntV, objSrc, (void *)&name, sJitArg2.as(jtInt) );
+               compiler->checkException();
                if (ret)
                   compiler->convertResult(etInt, inDest, destType );
                break;
@@ -2251,6 +2296,7 @@ struct FieldByName : public CppiaDynamicExpr
                JitTemp temp(compiler, jtString);
                value->genCode(compiler,temp, etString);
                compiler->callNative( setFieldString, objSrc, (void *)&name, temp );
+               compiler->checkException();
                if (ret)
                   compiler->convert(temp, etString, inDest, destType );
                }
@@ -2260,6 +2306,7 @@ struct FieldByName : public CppiaDynamicExpr
                JitTemp temp(compiler, jtFloat);
                value->genCode(compiler,temp, etFloat);
                compiler->callNative( setFieldFloat, objSrc, (void *)&name, temp );
+               compiler->checkException();
                if (ret)
                   compiler->convert(temp, etFloat, inDest, destType );
                }
@@ -2421,23 +2468,30 @@ struct GetFieldByName : public CppiaDynamicExpr
       {
          case etInt:
             compiler->callNative( (void *)getFieldInt, sJitTemp0, (void *)&name);
+            compiler->checkException();
             compiler->move(inDest, sJitTemp0);
             break;
          case etFloat:
             if (isMemoryVal(inDest))
+            {
                compiler->callNative( (void *)getFieldFloat, sJitTemp0,  (void *)&name, inDest.as(jtFloat) );
+               compiler->checkException();
+            }
             else
             {
                JitTemp floatResult(compiler, jtFloat);
                compiler->callNative( (void *)getFieldFloat, sJitTemp0, &name, floatResult );
+               compiler->checkException();
                compiler->move(inDest.as(jtFloat), floatResult);
             }
             break;
          case etString:
             compiler->callNative( (void *)getFieldString, sJitTemp0,  (void *)&name, inDest );
+            compiler->checkException();
             break;
          case etObject:
             compiler->callNative( (void *)getFieldObject, sJitTemp0, (void *)&name);
+            compiler->checkException();
             compiler->move(inDest.as(jtPointer), sJitTemp0.as(jtPointer));
             break;
          default: ;
@@ -2595,6 +2649,7 @@ struct Call : public CppiaDynamicExpr
       compiler->setFramePointer( compiler->getCurrentFrameSize() );
       compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
       }
+      compiler->checkException();
       if (destType!=etVoid)
          compiler->convertResult( etObject, inDest, destType );
 
@@ -4029,16 +4084,74 @@ struct ArrayDef : public CppiaDynamicExpr
       compiler->move( arrayPtr, sJitReturnReg.star() + hx::ArrayBase::baseOffset() );
       for(int i=0;i<n;i++)
       {
-         // TODO - others.
-         if (arrayType==arrInt)
+         switch(arrayType)
          {
-            items[i]->genCode(compiler, sJitTemp0, etInt );
-            compiler->move(sJitTemp1, arrayPtr);
-            compiler->move(sJitTemp1.star()+i*sizeof(int), sJitTemp0);
-         }
-         else
-         {
-            printf("todo other array -init\n");
+            case arrInt:
+               items[i]->genCode(compiler, sJitTemp0, etInt );
+               compiler->move(sJitTemp1, arrayPtr);
+               compiler->move(sJitTemp1.star(jtInt)+i*sizeof(int), sJitTemp0.as(jtInt));
+               break;
+            case arrObject:
+               items[i]->genCode(compiler, sJitTemp0, etObject );
+               compiler->move(sJitTemp1, arrayPtr);
+               compiler->move(sJitTemp1.star(jtPointer)+i*sizeof(void *), sJitTemp0.as(jtPointer));
+               break;
+            case arrBool:
+            case arrUnsignedChar:
+               items[i]->genCode(compiler, sJitTemp0, etInt );
+               compiler->move(sJitTemp1, arrayPtr);
+               compiler->move(sJitTemp1.star(jtByte)+i, sJitTemp0);
+               break;
+            case arrFloat:
+               items[i]->genCode(compiler, sJitTempF0, etFloat );
+               compiler->move(sJitTemp1, arrayPtr);
+               compiler->move(sJitTemp1.star(jtFloat)+i*sizeof(double), sJitTempF0);
+               break;
+            case arrString:
+               {
+               JitTemp val(compiler,etString);
+               items[i]->genCode(compiler, val, etString );
+               compiler->move(sJitTemp1, arrayPtr);
+               compiler->move(sJitTemp1.star(jtInt)+i*sizeof(String), val.as(jtInt));
+               compiler->move(sJitTemp1.star(jtPointer)+i*sizeof(String)+sizeof(int), val.as(jtPointer) + sizeof(int));
+               }
+               break;
+            case arrAny:
+               {
+                  switch(items[i]->getType())
+                  {
+                     case etInt:
+                        items[i]->genCode(compiler, sJitArg2, etInt );
+                        if (items[i]->isBoolInt())
+                           compiler->callNative((void *)varraySetBool,array,i,sJitArg2.as(jtInt));
+                        else
+                           compiler->callNative((void *)varraySetInt,array,i,sJitArg2.as(jtInt));
+                        break;
+                     case etFloat:
+                        {
+                        JitTemp fval(compiler,etFloat);
+                        items[i]->genCode(compiler, fval, etFloat );
+                        compiler->callNative((void *)varraySetFloat,array,i,fval);
+                        }
+                        break;
+                     case etString:
+                        {
+                        JitTemp sval(compiler,etString);
+                        items[i]->genCode(compiler, sval, etString );
+                        compiler->callNative((void *)varraySetString,array,i,sval);
+                        }
+                        break;
+
+                     default:
+                        items[i]->genCode(compiler, sJitArg2, etObject );
+                        compiler->callNative((void *)varraySetObject,array,i,sJitArg2.as(jtInt));
+                        break;
+                  }
+               }
+               break;
+
+            default:
+               printf("todo other array -init\n");
          }
       }
 
@@ -5019,10 +5132,10 @@ struct TryExpr : public CppiaVoidExpr
          }
 
          // Unhandled - go to next handler or return
-         if (compiler->hasCatching())
+         //if (compiler->hasCatching())
             compiler->addThrow();
-         else
-            compiler->addReturn();
+         // Optimization
+         //else compiler->addReturn();
 
          // handled/not thrown
          for(int i=0;i<handledExceptions.size();i++)
@@ -5793,16 +5906,26 @@ struct BitShiftL : public BitOpBase
 #ifdef CPPIA_JIT
 
 void SLJIT_CALL dynamicAddStr(hx::Object *inObj1, hx::Object *inObj2, String *outString) {
+   TRY_NATIVE
    *outString = Dynamic(inObj1) + Dynamic(inObj2);
+   CATCH_NATIVE
 }
 void *SLJIT_CALL dynamicAddObj(hx::Object *inObj1, hx::Object *inObj2) {
+   TRY_NATIVE
    return (Dynamic(inObj1) + Dynamic(inObj2)).mPtr;
+   CATCH_NATIVE
+   return 0;
 }
 int SLJIT_CALL dynamicAddInt(hx::Object *inObj1, hx::Object *inObj2) {
+   TRY_NATIVE
    return Dynamic(inObj1) + Dynamic(inObj2);
+   CATCH_NATIVE
+   return 0;
 }
 void SLJIT_CALL dynamicAddFloat(hx::Object *inObj1, hx::Object *inObj2, double *outResult) {
+   TRY_NATIVE
    *outResult = (Dynamic(inObj1) + Dynamic(inObj2));
+   CATCH_NATIVE
 }
 
 void SLJIT_CALL strAddStrToStrOver(String *ioStr, String *inStr1) {
@@ -5812,7 +5935,10 @@ void SLJIT_CALL strAddStrToStr(String *inStr0, String *inStr1, String *outStr) {
    *outStr = *inStr0 + *inStr1;
 }
 void *SLJIT_CALL strAddStrToObj(String *inStr0, String *inStr1) {
-   return Dynamic(*inStr0 + *inStr1).mPtr;
+   TRY_NATIVE
+      return Dynamic(*inStr0 + *inStr1).mPtr;
+   CATCH_NATIVE
+   return 0;
 }
 
 #endif
@@ -5914,6 +6040,7 @@ struct SpecialAdd : public CppiaExpr
             else // Object
             {
                compiler->callNative(strAddStrToObj, sJitTemp0, sJitTemp1);
+               compiler->checkException();
                compiler->move( inDest, sJitReturnReg );
             }
          }
@@ -5933,31 +6060,41 @@ struct SpecialAdd : public CppiaExpr
          {
             case etString:
                if (inDest.offset==0)
+               {
                   compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, inDest.getReg());
+                  compiler->checkException();
+               }
                else
                {
                   compiler->add(sJitTemp2, inDest.getReg(), inDest.offset);
                   compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, sJitTemp2);
+                  compiler->checkException();
                }
                break;
 
             case etObject:
                compiler->callNative(dynamicAddObj, tLeft, sJitTemp1);
+               compiler->checkException();
                compiler->move(inDest, sJitReturnReg.as(jtPointer));
                break;
 
             case etInt:
                compiler->callNative(dynamicAddInt, tLeft, sJitTemp1);
+               compiler->checkException();
                compiler->move(inDest, sJitReturnReg.as(jtInt));
                break;
 
             case etFloat:
                if (isMemoryVal(inDest))
+               {
                   compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1,inDest.as(jtFloat));
+                  compiler->checkException();
+               }
                else
                {
                   JitTemp result(compiler,jtFloat);
                   compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1, result);
+                  compiler->checkException();
                   compiler->move(inDest,result);
                }
                break;
