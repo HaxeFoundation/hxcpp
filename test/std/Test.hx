@@ -835,6 +835,24 @@ class Test
    }
 
 
+   @:noDebug
+   public static function testNoDebug()
+   {
+      log("Test noDebug");
+      // Just testing to see it it compiles...
+      if (  null == new haxe.io.BytesBuffer() )
+         error("Bad alloc");
+      return ok();
+   }
+
+   @:noDebug
+   public static function testNoDebugNoAlloc()
+   {
+      log("Test noDebug, no alloc");
+      return ok();
+   }
+
+
    public static function main()
    {
       var exitCode = 0;
@@ -863,6 +881,8 @@ class Test
          exitCode |= testSerialization();
          exitCode |= testFloatReads();
          exitCode |= testDynamicMember();
+         exitCode |= testNoDebug();
+         exitCode |= testNoDebugNoAlloc();
 
          if (exitCode!=0)
             Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );
