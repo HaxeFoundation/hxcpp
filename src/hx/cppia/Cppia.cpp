@@ -3014,6 +3014,25 @@ CppiaExpr *createStaticAccess(CppiaExpr *inSrc,FieldStorage inType, void *inPtr)
 
 
 #ifdef CPPIA_JIT
+
+static void SLJIT_CALL stringCat(String *ioValue, String *inValue)
+{
+   *ioValue += *inValue;
+}
+
+static hx::Object * SLJIT_CALL dynamicCatString(hx::Object *inLeft, String *inRight)
+{
+   return Dynamic( Dynamic(inLeft) + *inRight ).mPtr;
+}
+
+
+static hx::Object * SLJIT_CALL dynamicCatDynamic(hx::Object *inLeft, hx::Object *inRight)
+{
+   return ( Dynamic(inLeft) + Dynamic(inRight) ).mPtr;
+}
+
+
+
 void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType, AssignOp inOp, CppiaExpr *inExpr)
 {
    switch(inOp)
@@ -3043,10 +3062,44 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
             inExpr->genCode(compiler, sJitTemp0, etInt);
             compiler->add(ioValue, sJitTemp0, ioValue);
          }
-         else
+         else if (ioValue.type==etFloat)
          {
             inExpr->genCode(compiler, sJitTempF0, etFloat);
             compiler->add(ioValue, sJitTempF0, ioValue);
+         }
+         else if (ioValue.type==etString)
+         {
+            JitTemp sval(compiler,jtString);
+            inExpr->genCode(compiler, sval, etString);
+            compiler->callNative(stringCat, ioValue, sval );
+         }
+         else if (ioValue.type==etObject)
+         {
+            if (inExpr->getType()==etString)
+            {
+               JitTemp sval(compiler,jtInt);
+               inExpr->genCode(compiler, sval, etString);
+               compiler->callNative(dynamicCatString, ioValue, sval );
+            }
+            else
+            {
+               inExpr->genCode(compiler, sJitArg1, etObject);
+               compiler->callNative(dynamicCatDynamic, ioValue, sJitArg1.as(jtPointer) );
+            }
+            compiler->move(ioValue, sJitReturnReg.as(jtPointer) );
+         }
+         break;
+
+      case aoSub:
+         if (ioValue.type==etInt)
+         {
+            inExpr->genCode(compiler, sJitTemp0, etInt);
+            compiler->sub(ioValue, ioValue, sJitTemp0, false);
+         }
+         else
+         {
+            inExpr->genCode(compiler, sJitTempF0, etFloat);
+            compiler->sub(ioValue, ioValue, sJitTempF0, true);
          }
          break;
 
@@ -4998,6 +5051,14 @@ struct SwitchExpr : public CppiaExpr
                else
                   onMatch.push_back(compiler->scompare(cmpP_EQUAL,test, cond));
             }
+            else if (switchType==etObject)
+            {
+               c.conditions[j]->genCode(compiler, sJitTemp1, switchType);
+               if (last)
+                  nextCase = compiler->compare(cmpP_NOT_EQUAL,test, sJitTemp1.as(jtPointer) );
+               else
+                  onMatch.push_back(compiler->compare(cmpP_EQUAL,test, sJitTemp1.as(jtPointer)));
+            }
             else
             {
                printf("Missing switch type\n");
@@ -6425,6 +6486,17 @@ struct OpCompare : public OpCompareBase
    }
    #ifdef CPPIA_JIT
 
+   static int SLJIT_CALL stringCompare(String *s0, String *s1)
+   {
+      return s0->compare(*s1);
+   }
+
+   static int SLJIT_CALL dynamicCompare(hx::Object *o0, hx::Object *o1)
+   {
+      return Dynamic(o0).Compare( Dynamic(o1) );
+   }
+
+
    JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
    {
       switch(compareType)
@@ -6446,6 +6518,28 @@ struct OpCompare : public OpCompareBase
             return compiler->fcompare( (JitCompare)(inReverse ? COMPARE::freverse :COMPARE::fcompare),
                                        lhs, sJitTempF0, inLabel );
          }
+
+         case compString:
+         {
+            JitTemp lhs(compiler,jtString);
+            JitTemp rhs(compiler,jtString);
+            left->genCode(compiler, lhs, etString);
+            right->genCode(compiler, rhs, etString);
+            compiler->callNative( (void *)stringCompare, lhs, rhs );
+            return compiler->compare( (JitCompare)(inReverse ? COMPARE::reverse :COMPARE::compare),
+                                       sJitReturnReg, (int) 0, inLabel );
+         }
+         case compDynamic:
+         {
+            JitTemp lhs(compiler,jtPointer);
+            left->genCode(compiler, lhs, etObject);
+            right->genCode(compiler, sJitArg1, etObject);
+
+            compiler->callNative( (void *)dynamicCompare, lhs, sJitArg1.as(jtPointer) );
+            return compiler->compare( (JitCompare)(inReverse ? COMPARE::reverse :COMPARE::compare),
+                                       sJitReturnReg, (int) 0, inLabel );
+         }
+
 
          default:
             printf("todo - other compares\n");

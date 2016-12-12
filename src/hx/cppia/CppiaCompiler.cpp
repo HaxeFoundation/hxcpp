@@ -817,8 +817,13 @@ public:
                }
                break;
 
+            case etFloat:
+               move(inTarget.as(jtFloat), inSrc.as(jtFloat));
+               break;
+
             default:
-               printf("TODO - other to float\n");
+               printf("TODO - other to float (%d)\n", inSrcType);
+               *(int *)0=0;
          }
       }
       else if (inToType==etInt)
