@@ -618,6 +618,8 @@ public:
          return inV1.type;
       if (inV1.type==jtByte || inV2.type==jtByte)
          return jtByte;
+      if (inV1.type==jtShort || inV2.type==jtShort)
+         return jtShort;
 
       // Copying parts into string ...
       if (inV1.type==jtString && inV2.type==jtInt)
@@ -628,6 +630,9 @@ public:
          return jtInt;
       if (inV1.type==jtPointer && inV2.type==jtString)
          return jtPointer;
+
+      if (inV1.type==jtInt && (inV2.type==jtByte || inV2.type==jtShort))
+         return inV1.type;
 
       if (inV1.type!=inV1.type)
          setError("Type mismatch");
@@ -662,6 +667,10 @@ public:
 
          case jtByte:
             emit_op1(SLJIT_IMOV_UB, inDest, inSrc);
+            break;
+
+         case jtShort:
+            emit_op1(SLJIT_IMOV_UH, inDest, inSrc);
             break;
 
          case jtString:
@@ -947,17 +956,18 @@ public:
       switch(inToType)
       {
          case etObject:
-            move(inTarget, (void *)0);
+            move(inTarget.as(jtPointer), (void *)0);
             break;
          case etString:
             move(inTarget.as(jtPointer), (int)0);
             move(inTarget.as(jtInt) + 4, (void *)0);
             break;
          case etInt:
-            move(inTarget, (int)0);
+            move(inTarget.as(jtInt), (int)0);
             break;
          case etFloat:
-            move(inTarget, JitVal((void *)&sZero).as(jtFloat) );
+            move(sJitTemp0, JitVal((void *)&sZero) );
+            move(inTarget.as(jtFloat), sJitTemp0.star(etFloat) );
             break;
       }
    }

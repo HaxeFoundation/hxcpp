@@ -245,7 +245,8 @@ struct ArraySetter : public ArrayBuiltinBase
       {
          compiler->mult( sJitTemp0, sJitTemp0.as(jtInt), (int)sizeof(String), false );
          compiler->add( sJitTemp0, sJitTemp1.as(jtPointer), sJitTemp0);
-         compiler->move( sJitTemp0, value );
+         compiler->move( sJitTemp0.star(jtInt), value.as(jtInt) );
+         compiler->move( sJitTemp0.star(jtPointer,sizeof(int)), value.as(jtPointer) + sizeof(int) );
       }
       else if (sizeof(ELEM)==2)
       {
@@ -851,7 +852,9 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                {
                   compiler->mult( sJitTemp0, sJitTemp0.as(jtInt), (int)sizeof(String), false );
                   compiler->add( sJitTemp0, sJitTemp1.as(jtPointer), sJitTemp0);
-                  compiler->move( sJitTemp0, tempVal );
+
+                  compiler->move( sJitTemp0.star(jtInt), tempVal.as(jtInt) );
+                  compiler->move( sJitTemp0.star(jtPointer,sizeof(int)), tempVal.as(jtPointer) + sizeof(int) );
                }
                else if (sizeof(ELEM)==2)
                {

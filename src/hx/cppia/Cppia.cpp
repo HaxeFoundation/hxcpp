@@ -2127,8 +2127,110 @@ static void SLJIT_CALL setFieldString( hx::Object *instance, String *name, const
    TRY_NATIVE
    instance->__SetField(*name, *inValue, HX_PROP_DYNAMIC);
    CATCH_NATIVE
+
+}
+static void SLJIT_CALL setFieldVariantV( hx::Object *instance, String *name, cpp::Variant *value )
+{
+   TRY_NATIVE
+   instance->__SetField(*name, *value, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
 }
 
+static cpp::Variant * SLJIT_CALL setFieldVariant( hx::Object *instance, String *name, cpp::Variant *value )
+{
+   TRY_NATIVE
+   instance->__SetField(*name, *value, HX_PROP_DYNAMIC);
+   return value;
+   CATCH_NATIVE
+   return 0;
+}
+
+
+static void SLJIT_CALL getFieldVariant( hx::Object *instance, String *name, cpp::Variant *outValue )
+{
+   TRY_NATIVE
+   *outValue = instance->__Field(*name, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
+}
+
+
+static void SLJIT_CALL addVariantObject( cpp::Variant *ioVar, hx::Object *inValue )
+{
+   TRY_NATIVE
+   *ioVar = *ioVar + Dynamic(inValue);
+   CATCH_NATIVE
+}
+
+
+static void SLJIT_CALL addVariantInt( cpp::Variant *ioVar, int inValue )
+{
+   *ioVar = *ioVar + inValue;
+}
+
+
+static void SLJIT_CALL addVariantString( cpp::Variant *ioVar, String *inValue )
+{
+   TRY_NATIVE
+   *ioVar = *ioVar + *inValue;
+   CATCH_NATIVE
+}
+
+
+static void SLJIT_CALL addVariantFloat( cpp::Variant *ioVar, double *inValue )
+{
+   *ioVar = *ioVar + *inValue;
+}
+
+static void SLJIT_CALL subVariantFloat( cpp::Variant *ioVar, double *inValue )
+{
+   *ioVar = *ioVar - *inValue;
+}
+
+static void SLJIT_CALL divVariantFloat( cpp::Variant *ioVar, double *inValue )
+{
+   *ioVar = *ioVar / *inValue;
+}
+
+static void SLJIT_CALL multVariantFloat( cpp::Variant *ioVar, double *inValue )
+{
+   *ioVar = *ioVar * *inValue;
+}
+
+static void SLJIT_CALL modVariantFloat( cpp::Variant *ioVar, double *inValue )
+{
+   *ioVar = hx::Mod(*ioVar,*inValue);
+}
+
+static void SLJIT_CALL andVariantInt( cpp::Variant *ioVar, int inValue )
+{
+   *ioVar = (int)(*ioVar) & inValue;
+}
+
+
+static void SLJIT_CALL orVariantInt( cpp::Variant *ioVar, int inValue )
+{
+   *ioVar = (int)(*ioVar) | inValue;
+}
+
+static void SLJIT_CALL xorVariantInt( cpp::Variant *ioVar, int inValue )
+{
+   *ioVar = (int)(*ioVar) ^ inValue;
+}
+
+static void SLJIT_CALL shlVariantInt( cpp::Variant *ioVar, int inValue )
+{
+   *ioVar = (int)(*ioVar) << inValue;
+}
+
+static void SLJIT_CALL shrVariantInt( cpp::Variant *ioVar, int inValue )
+{
+   *ioVar = (int)(*ioVar) >> inValue;
+}
+
+static void SLJIT_CALL ushrVariantInt( cpp::Variant *ioVar, int inValue )
+{
+   *ioVar = (unsigned int)(int)(*ioVar) >> inValue;
+}
 
 #endif
 
@@ -2272,9 +2374,9 @@ struct FieldByName : public CppiaDynamicExpr
          return;
       }
 
+      bool ret = destType==etInt || destType==etString || destType==etObject || destType==etFloat;
       if (assign == aoSet)
       {
-         bool ret = destType==etInt || destType==etString || destType==etObject || destType==etFloat;
          switch(value->getType())
          {
             case etObject:
@@ -2318,7 +2420,75 @@ struct FieldByName : public CppiaDynamicExpr
       }
       else
       {
-         printf("FieldByName op not implemented\n");
+         JitTemp gotVal(compiler, etString, sizeof(cpp::Variant));
+         compiler->callNative( (void *)getFieldVariant, objSrc, (void *)&name, gotVal );
+
+         if (assign==aoAdd)
+         {
+            switch(value->getType())
+            {
+               case etObject:
+                  value->genCode(compiler,sJitArg1.as(jtPointer), etObject);
+                  compiler->callNative( (void *)addVariantObject, gotVal, sJitArg1.as(jtPointer) );
+                  break;
+               case etInt:
+                  value->genCode(compiler,sJitArg1.as(jtInt), etInt);
+                  compiler->callNative( (void *)addVariantInt, gotVal, sJitArg1.as(jtPointer) );
+                  break;
+               case etString:
+                  {
+                  JitTemp sval(compiler, etString);
+                  value->genCode(compiler,sval, etString);
+                  compiler->callNative( (void *)addVariantString, gotVal, sval);
+                  }
+                  break;
+               case etFloat:
+                  {
+                  JitTemp fval(compiler, jtFloat);
+                  value->genCode(compiler,fval, etFloat);
+                  compiler->callNative( (void *)addVariantFloat, gotVal, fval);
+                  }
+                  break;
+               default:
+                  printf("Unknown add type %d\n", destType);
+                  *(int *)0=0;
+             }
+         }
+         else if (assign==aoMult || assign==aoDiv || assign==aoMod || assign==aoSub)
+         {
+            JitTemp fval(compiler,jtFloat);
+            value->genCode(compiler, fval, etFloat);
+            switch(assign)
+            {
+               case aoMult: compiler->callNative( (void *)multVariantFloat, gotVal, fval); break;
+               case aoDiv: compiler->callNative( (void *)divVariantFloat, gotVal, fval); break;
+               case aoMod: compiler->callNative( (void *)modVariantFloat, gotVal, fval); break;
+               case aoSub: compiler->callNative( (void *)subVariantFloat, gotVal, fval); break;
+               default: ;
+            }
+         }
+         else
+         {
+            value->genCode(compiler, sJitTemp2, etInt);
+            switch(assign)
+            {
+               case aoAnd: compiler->callNative( (void *)andVariantInt, gotVal, sJitTemp2.as(jtInt)); break;
+               case aoOr: compiler->callNative( (void *)orVariantInt, gotVal, sJitTemp2.as(jtInt)); break;
+               case aoXOr: compiler->callNative( (void *)xorVariantInt, gotVal, sJitTemp2.as(jtInt)); break;
+               case aoShl: compiler->callNative( (void *)shlVariantInt, gotVal, sJitTemp2.as(jtInt)); break;
+               case aoShr: compiler->callNative( (void *)shrVariantInt, gotVal, sJitTemp2.as(jtInt)); break;
+               case aoUShr: compiler->callNative( (void *)ushrVariantInt, gotVal, sJitTemp2.as(jtInt)); break;
+               default: ;
+            }
+         }
+
+         if (ret)
+         {
+            compiler->callNative( (void *)setFieldVariant, objSrc, (void *)&name, gotVal );
+            compiler->genVariantValueTemp0(0, inDest, destType);
+         }
+         else
+            compiler->callNative( (void *)setFieldVariantV, objSrc, (void *)&name, gotVal );
       }
    }
    #endif
@@ -3031,18 +3201,23 @@ static hx::Object * SLJIT_CALL dynamicCatDynamic(hx::Object *inLeft, hx::Object 
    return ( Dynamic(inLeft) + Dynamic(inRight) ).mPtr;
 }
 
+static int SLJIT_CALL modIntFloat(int inI, double *inMod)
+{
+   return hx::Mod(inI, *inMod);
+}
+
+
+static void SLJIT_CALL modFloatFloat(double *ioVal, double *inMod)
+{
+   *ioVal =  hx::Mod(*ioVal, *inMod);
+}
+
 
 
 void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType, AssignOp inOp, CppiaExpr *inExpr)
 {
    switch(inOp)
    {
-      case aoSet:
-         {
-            inExpr->genCode(compiler, ioValue, exprType);
-         }
-         break;
-
       case aoMult:
          if (ioValue.type==etInt)
          {
@@ -3053,6 +3228,23 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
          {
             inExpr->genCode(compiler, sJitTempF0, etFloat);
             compiler->mult(ioValue, sJitTempF0, ioValue,true);
+         }
+         break;
+
+
+      case aoMod:
+         {
+            JitTemp fval(compiler, jtFloat);
+            inExpr->genCode(compiler, fval, etFloat);
+            if (ioValue.type==etInt)
+            {
+               compiler->callNative( (void *)modIntFloat,  ioValue, fval );
+               compiler->move(ioValue, sJitReturnReg.as(jtInt) );
+            }
+            else
+            {
+               compiler->callNative( (void *)modFloatFloat,  ioValue, fval );
+            }
          }
          break;
 
@@ -3104,7 +3296,38 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
          break;
 
 
+      case aoDiv:
+         inExpr->genCode(compiler, sJitTempF0, etFloat);
+         compiler->fdiv(ioValue, ioValue, sJitTempF0);
+         break;
+
+      case aoAnd:
+         inExpr->genCode(compiler, sJitTemp2, etInt);
+         compiler->bitOp(bitOpAnd, ioValue, ioValue, sJitTemp2);
+         break;
+      case aoOr:
+         inExpr->genCode(compiler, sJitTemp2, etInt);
+         compiler->bitOp(bitOpOr, ioValue, ioValue, sJitTemp2);
+         break;
+      case aoXOr:
+         inExpr->genCode(compiler, sJitTemp2, etInt);
+         compiler->bitOp(bitOpXOr, ioValue, ioValue, sJitTemp2);
+         break;
+      case aoShl:
+         inExpr->genCode(compiler, sJitTemp2, etInt);
+         compiler->bitOp(bitOpShiftL, ioValue, ioValue, sJitTemp2);
+         break;
+      case aoShr:
+         inExpr->genCode(compiler, sJitTemp2, etInt);
+         compiler->bitOp(bitOpShiftL, ioValue, ioValue, sJitTemp2);
+         break;
+      case aoUShr:
+         inExpr->genCode(compiler, sJitTemp2, etInt);
+         compiler->bitOp(bitOpUSR, ioValue, ioValue, sJitTemp2);
+         break;
+
       default:
+         inExpr->genCode(compiler, sJitTemp2, etInt);
          printf("Gen setter %d\n", inOp);
    }
 }
@@ -3186,8 +3409,8 @@ struct MemReferenceSetter : public CppiaExpr
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
-      if (sizeof(T)<4)
-          printf("TODO - small memory moves\n");
+      JitType targetType = sizeof(T)==1 ? jtByte : sizeof(T)==2 ? jtShort : getJitType(getType());
+      bool useTemp =  targetType == jtByte || targetType==jtShort;
 
       switch(REFMODE)
       {
@@ -3204,33 +3427,46 @@ struct MemReferenceSetter : public CppiaExpr
             else
             {
                compiler->move( sJitTemp2,  tmpObject );
-               compiler->move( tmpVal, sJitTemp2.star() + offset );
+               compiler->move( tmpVal, sJitTemp2.star(targetType) + offset );
                genSetter(compiler, tmpVal, getType(), op, value);
             }
             compiler->move( sJitTemp2,  tmpObject );
-            compiler->move( sJitTemp2.star() + offset, tmpVal );
 
-            compiler->convert( sJitTemp2.star() + offset, getType(), inDest, destType );
+            compiler->move( sJitTemp2.star(targetType) + offset, tmpVal );
+
+            compiler->convert( tmpVal, getType(), inDest, destType );
             }
             break;
 
          case locThis:
-            {
-            JitThisPos target(offset, getJitType(getType()) );
-
-            genSetter(compiler, target, getType(), op, value);
-
-            compiler->convert( target,getType(),inDest, destType );
-            break;
-            }
-
          case locStack:
             {
-            JitFramePos target(offset,getJitType(getType()));
+            JitVal target = REFMODE==locThis ?  (JitVal)JitThisPos(offset, targetType ) :
+                                                (JitVal)JitFramePos(offset,targetType );
 
-            genSetter(compiler, target, getType(), op, value);
-
-            compiler->convert( target,getType(),inDest, destType );
+            if (op==aoSet)
+            {
+               if (useTemp)
+               {
+                  JitTemp tmp(compiler, getType());
+                  value->genCode(compiler, tmp, getType());
+                  compiler->move(target,tmp);
+                  compiler->convert( tmp,getType(),inDest, destType );
+               }
+               else
+               {
+                  value->genCode(compiler, target, getType());
+                  compiler->convert( target,getType(),inDest, destType );
+               }
+            }
+            else
+            {
+               JitTemp tmp(compiler,getType());
+               compiler->move(tmp,target);
+               genSetter(compiler, tmp, getType(), op, value);
+               compiler->move(target,tmp);
+               compiler->convert( tmp, getType(),inDest, destType );
+            }
             break;
             }
 
@@ -3245,14 +3481,14 @@ struct MemReferenceSetter : public CppiaExpr
             else
             {
                compiler->move( sJitTemp2,  JitVal( (void *)pointer ) );
-               compiler->move( sJitTemp2.star( getType(), offset ), tmpVal );
+               compiler->move( sJitTemp2.star( targetType, offset ), tmpVal );
                genSetter(compiler, tmpVal, getType(), op, value);
             }
 
             compiler->move( sJitTemp2,  JitVal( (void *)pointer ) );
-            compiler->move( sJitTemp2.star(getType()), tmpVal );
+            compiler->move( sJitTemp2.star(targetType), tmpVal );
 
-            compiler->convert( sJitTemp2.star(getType(), offset), getType(), inDest, destType );
+            compiler->convert( tmpVal, getType(), inDest, destType );
 
             }
             break;
@@ -4703,18 +4939,25 @@ struct VarDecl : public CppiaVoidExpr
          switch(var.expressionType)
          {
             case etInt:
-               compiler->move(pos, (int)0);
+               compiler->move(pos.as(jtInt), (int)0);
                break;
             case etFloat:
-               compiler->move(pos, (int)0);
-               compiler->move(pos+4, (int)0);
+               if (sizeof(void *)==8)
+               {
+                  compiler->move(pos.as(jtPointer), (void *)0);
+               }
+               else
+               {
+                  compiler->move(pos.as(jtInt), (int)0);
+                  compiler->move(pos.as(jtInt)+4, (int)0);
+               }
                break;
             case etString:
-               compiler->move(pos, (int)0);
-               compiler->move(pos+4, (void *)0);
+               compiler->move(pos.as(jtInt), (int)0);
+               compiler->move(pos.as(jtPointer)+4, (void *)0);
                break;
             case etObject:
-               compiler->move(pos, (void *)0);
+               compiler->move(pos.as(jtPointer), (void *)0);
                break;
 
             default: ;
