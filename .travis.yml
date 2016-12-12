@@ -10,6 +10,7 @@ dist: trusty
 install:
   # install dependencies
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
+      travis_retry sudo add-apt-repository ppa:haxe/ocaml -y;
       travis_retry sudo apt-get update -y;
       travis_retry sudo apt-get install pkg-config libgc-dev libssl-dev libpcre3-dev zlib1g-dev apache2-dev libmysqlclient-dev libsqlite3-dev libgtk2.0-dev ocaml-native-compilers camlp4 gcc-multilib g++-multilib -y;
     fi
