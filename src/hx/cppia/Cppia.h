@@ -611,7 +611,7 @@ public:
    std::vector<CppiaEnumConstructor *> enumConstructors;
 
    CppiaFunction  *newFunc;
-   ScriptCallable *initFunc;
+   CppiaExpr      *initExpr;
    CppiaExpr      *enumMeta;
 
 

@@ -318,7 +318,7 @@ hx::Object *runFunExprDynamic(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Obje
    unsigned char *pointer = ctx->pointer;
    inFunExpr->pushArgsDynamic(ctx, inThis, inArgs);
    AutoStack save(ctx,pointer);
-   return runContextConvertObject(ctx, inFunExpr->getType(), inFunExpr );
+   return runContextConvertObject(ctx, inFunExpr->getReturnType(), inFunExpr );
 }
 
 

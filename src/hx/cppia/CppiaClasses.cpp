@@ -349,7 +349,7 @@ CppiaClassInfo::CppiaClassInfo(CppiaModule &inCppia) : cppia(inCppia)
    extraData = 0;
    classSize = 0;
    newFunc = 0;
-   initFunc = 0;
+   initExpr = 0;
    enumMeta = 0;
    isInterface = false;
    interfaceSlotSize = 0;
@@ -1197,8 +1197,7 @@ void CppiaClassInfo::linkTypes()
       }
       else if (staticFunctions[i]->name == "__init__")
       {
-         initFunc = staticFunctions[i]->funExpr;
-         printf("Setting init func %p %s\n", initFunc, name.c_str());
+         initExpr = staticFunctions[i]->funExpr;
          staticFunctions.erase( staticFunctions.begin() + i);
       }
       else
@@ -1247,9 +1246,6 @@ void CppiaClassInfo::compile()
    if (newFunc)
       newFunc->compile();
 
-   //if (initFunc)
-   //   initFunc->compile();
-
    // Functions
    for(int i=0;i<memberFunctions.size();i++)
    {
@@ -1270,8 +1266,8 @@ void CppiaClassInfo::link()
    if (newFunc)
       newFunc->link();
 
-   if (initFunc)
-      initFunc->link(cppia);
+   if (initExpr)
+      initExpr = initExpr->link(cppia);
 
    // Functions
    for(int i=0;i<memberFunctions.size();i++)
@@ -1389,8 +1385,8 @@ void CppiaClassInfo::init(CppiaCtx *ctx, int inPhase)
    }
    else if (inPhase==1)
    {
-      if (initFunc)
-         initFunc->runVoid(ctx);
+      if (initExpr)
+         initExpr->runVoid(ctx);
    }
 }
 
