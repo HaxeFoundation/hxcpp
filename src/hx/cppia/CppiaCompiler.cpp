@@ -951,6 +951,15 @@ public:
       }
    }
 
+
+   void convertReturnReg(ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
+   {
+      if (inSrcType!=etVoid && inSrcType!=etNull && inToType!=etVoid && inToType!=etNull)
+      {
+         convert( sJitReturnReg, inSrcType, inTarget, inToType);
+      }
+   }
+
    void returnNull(const JitVal &inTarget, ExprType inToType)
    {
       switch(inToType)

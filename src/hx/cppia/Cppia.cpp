@@ -1225,7 +1225,7 @@ struct CastExpr : public CppiaDynamicExpr
          value->genCode(compiler, sJitArg0, etObject);
          compiler->callNative( (void *)callDynamicToArrayType, sJitArg0.as(jtPointer), (int)arrayType );
          compiler->checkException();
-         compiler->convertResult(etObject, inDest, destType);
+         compiler->convertReturnReg(etObject, inDest, destType);
       }
    }
    #endif
@@ -2054,10 +2054,8 @@ struct CallMemberVTable : public CppiaExpr
 
 
       bool isBoolReturn = funcProto->cppia.types[funcProto->returnType]->haxeClass==ClassOf<bool>();
-      genFunctionResult(compiler, inDest, destType, returnType, isBoolReturn);
 
-      if (destType!=etNull && destType!=etVoid)
-         compiler->convertResult( returnType, inDest, destType );
+      genFunctionResult(compiler, inDest, destType, returnType, isBoolReturn);
    }
    #endif
 };
@@ -2548,14 +2546,14 @@ struct FieldByName : public CppiaDynamicExpr
                compiler->callNative( ret ? (void *)setFieldObject : (void *)setFieldObjectV, objSrc, (void *)&name, sJitArg2.as(jtPointer) );
                compiler->checkException();
                if (ret)
-                  compiler->convertResult(etObject, inDest, destType );
+                  compiler->convertReturnReg(etObject, inDest, destType );
                break;
             case etInt:
                value->genCode(compiler,sJitArg2.as(jtInt), etInt);
                compiler->callNative( ret ? (void *)setFieldInt : (void *)setFieldIntV, objSrc, (void *)&name, sJitArg2.as(jtInt) );
                compiler->checkException();
                if (ret)
-                  compiler->convertResult(etInt, inDest, destType );
+                  compiler->convertReturnReg(etInt, inDest, destType );
                break;
             case etString:
                {
@@ -3984,6 +3982,19 @@ struct VirtualArrayLength : public CppiaIntExpr
       CPPIA_CHECK(obj);
       return obj->get_length();
    }
+
+   #ifdef CPPIA_JIT
+   static int SLJIT_CALL getLen(cpp::VirtualArray_obj *inVArray)
+   {
+      return inVArray->get_length();
+   }
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      thisExpr->genCode(compiler,sJitTemp0,etObject);
+      compiler->callNative((void *)getLen, sJitTemp0.as(jtPointer));
+      compiler->convertReturnReg(etInt, inDest, destType);
+   }
+   #endif
 };
 #endif
 
@@ -5891,13 +5902,13 @@ struct OpMult : public BinOp
       {
          JitTemp lval(compiler,jtInt);
          left->genCode(compiler,lval,etInt);
-         right->genCode(compiler,sJitTemp0,etInt);
+         right->genCode(compiler,sJitTemp0.as(jtInt),etInt);
          if (destType==etInt)
-            compiler->mult(inDest,lval,sJitTemp0,false);
+            compiler->mult(inDest,lval,sJitTemp0.as(jtInt),false);
          else
          {
-            compiler->mult(sJitTemp1.as(jtInt),lval,sJitTemp0,true);
-            compiler->convert(sJitTemp1,etInt, inDest, destType);
+            compiler->mult(sJitTemp1.as(jtInt),lval,sJitTemp0.as(jtInt),false);
+            compiler->convert(sJitTemp1.as(jtInt),etInt, inDest, destType);
          }
       }
       else
@@ -6522,32 +6533,32 @@ struct SpecialAdd : public CppiaExpr
       {
          JitTemp tLeft(compiler,jtPointer);
          left->genCode(compiler, tLeft, etObject);
-         right->genCode(compiler, sJitTemp1, etObject);
+         right->genCode(compiler, sJitTemp1.as(jtPointer), etObject);
 
          switch(destType)
          {
             case etString:
                if (inDest.offset==0)
                {
-                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, inDest.getReg());
+                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1.as(jtPointer), inDest.getReg());
                   compiler->checkException();
                }
                else
                {
                   compiler->add(sJitTemp2, inDest.getReg(), inDest.offset);
-                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1, sJitTemp2);
+                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1.as(jtPointer), sJitTemp2);
                   compiler->checkException();
                }
                break;
 
             case etObject:
-               compiler->callNative(dynamicAddObj, tLeft, sJitTemp1);
+               compiler->callNative(dynamicAddObj, tLeft, sJitTemp1.as(jtPointer));
                compiler->checkException();
                compiler->move(inDest, sJitReturnReg.as(jtPointer));
                break;
 
             case etInt:
-               compiler->callNative(dynamicAddInt, tLeft, sJitTemp1);
+               compiler->callNative(dynamicAddInt, tLeft, sJitTemp1.as(jtPointer));
                compiler->checkException();
                compiler->move(inDest, sJitReturnReg.as(jtInt));
                break;
@@ -6555,13 +6566,13 @@ struct SpecialAdd : public CppiaExpr
             case etFloat:
                if (isMemoryVal(inDest))
                {
-                  compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1,inDest.as(jtFloat));
+                  compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1.as(jtPointer),inDest.as(jtFloat));
                   compiler->checkException();
                }
                else
                {
                   JitTemp result(compiler,jtFloat);
-                  compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1, result);
+                  compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1.as(jtPointer), result);
                   compiler->checkException();
                   compiler->move(inDest,result);
                }

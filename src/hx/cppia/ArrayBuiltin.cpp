@@ -1377,9 +1377,70 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
    }
    ExprType getType() { return inlineGetType(); }
 
+   bool isBoolInt() { return FUNC==afRemove; }
 
+   #ifdef CPPIA_JIT
+   static hx::Object * SLJIT_CALL objGetItem(hx::Object *inObj, int inIndex)
+   {
+      return inObj->__GetItem(inIndex).mPtr;
+   }
+   static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, hx::Object *inValue)
+   {
+      return inObj->remove(inValue);
+   }
+   static hx::Object * SLJIT_CALL arraySplice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
+   {
+      return inObj->splice( Dynamic(a0), Dynamic(a1) ).mPtr;
+   }
+   static hx::Object * SLJIT_CALL arraySlice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
+   {
+      return inObj->slice( Dynamic(a0), Dynamic(a1) ).mPtr;
+   }
 
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      JitTemp thisVal(compiler,etObject);
+      thisExpr->genCode(compiler,thisVal,etObject);
 
+      switch(FUNC)
+      {
+         case af__get:
+            args[0]->genCode(compiler, sJitArg1, etInt);
+            compiler->callNative( (void *)objGetItem, thisVal, sJitArg1.as(jtInt));
+            compiler->convertReturnReg(etObject, inDest, destType);
+            break;
+
+         case afRemove:
+            args[0]->genCode(compiler, sJitArg1, etObject);
+            compiler->callNative( (void *)arrayRemove, thisVal, sJitArg1.as(jtPointer));
+            compiler->convertReturnReg(etInt, inDest, destType);
+            break;
+
+         case afSplice:
+            {
+            JitTemp a0(compiler,etObject);
+            args[0]->genCode(compiler, a0, etObject);
+            args[1]->genCode(compiler, sJitArg2, etObject);
+            compiler->callNative( (void *)arraySplice, thisVal, a0.as(jtPointer), sJitArg2.as(jtPointer));
+            compiler->convertReturnReg(etObject, inDest, destType);
+            }
+            break;
+
+         case afSlice:
+            {
+            JitTemp a0(compiler,etObject);
+            args[0]->genCode(compiler, a0, etObject);
+            args[1]->genCode(compiler, sJitArg2, etObject);
+            compiler->callNative( (void *)arraySlice, thisVal, a0.as(jtPointer), sJitArg2.as(jtPointer));
+            compiler->convertReturnReg(etObject, inDest, destType);
+            }
+            break;
+
+         default:
+            compiler->traceStrings("Unknown ArrayBuiltinAny:", getName() );
+      }
+   }
+   #endif
 };
 
 

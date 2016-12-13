@@ -55,6 +55,27 @@ struct SubStrExpr : public StringExpr
       else
          return val.substring(start,end);
    }
+   #ifdef CPPIA_JIT
+   static void SLJIT_CALL runSubstr(String *ioValue, int start, hx::Object *end)
+   {
+      *ioValue = ioValue->substr(start, Dynamic(end));
+   }
+   static void SLJIT_CALL runSubstring(String *ioValue, int start, hx::Object *end)
+   {
+      *ioValue = ioValue->substring(start, Dynamic(end));
+   }
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp ioValue(compiler,jtString);
+      JitTemp startVal(compiler,jtInt);
+
+      strVal->genCode(compiler, ioValue, etString);
+      a0->genCode(compiler, startVal, etInt);
+      a1->genCode(compiler, sJitArg2, etObject);
+      compiler->callNative( SUBSTR ? (void *)runSubstr : (void *)runSubstring, ioValue, startVal, sJitArg2.as(jtPointer) );
+      compiler->convert(ioValue, etString, inDest, destType);
+   }
+   #endif
 };
 
 
@@ -202,6 +223,30 @@ struct IndexOfExpr : public CppiaExpr
          return val.indexOf(s,first);
    }
    hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
+
+
+   #ifdef CPPIA_JIT
+   static int SLJIT_CALL runIndexOf(String *ioValue, String *sought, hx::Object *first)
+   {
+      return ioValue->indexOf(*sought, Dynamic(first));
+   }
+   static int SLJIT_CALL runLastIndexOf(String *ioValue, String *sought, hx::Object *first)
+   {
+      return ioValue->lastIndexOf(*sought, Dynamic(first));
+   }
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp value(compiler,jtString);
+      JitTemp soughtTemp(compiler,jtString);
+
+      strVal->genCode(compiler, value, etString);
+      sought->genCode(compiler, soughtTemp, etString);
+      start->genCode(compiler, sJitArg2, etObject);
+      compiler->callNative( LAST ? (void *)runLastIndexOf : (void *)runIndexOf, value, soughtTemp, sJitArg2.as(jtPointer) );
+      compiler->convertReturnReg(etInt, inDest, destType);
+   }
+   #endif
+
 };
 
 
