@@ -21,6 +21,8 @@ void SLJIT_CALL argToString(CppiaCtx *ctx) { ctx->pushString( (* (hx::Object **)
 
 
 
+
+
 ScriptCallable::ScriptCallable(CppiaStream &stream)
 {
    body = 0;
@@ -47,6 +49,7 @@ ScriptCallable::ScriptCallable(CppiaStream &stream)
    body = createCppiaExpr(stream);
 }
 
+
 ScriptCallable::ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
 {
    returnTypeId = 0;
@@ -55,6 +58,7 @@ ScriptCallable::ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
    stackSize = 0;
    captureSize = 0;
    body = inBody;
+   data = 0;
    #ifdef CPPIA_JIT
    compiled = 0;
    #endif

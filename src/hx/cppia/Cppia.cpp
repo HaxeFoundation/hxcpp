@@ -393,8 +393,7 @@ struct BlockExpr : public CppiaExpr
       if (data.layout==0)
       {
          CppiaExpr *blockFunc = new BlockCallable(this);
-         blockFunc->link(data);
-         return blockFunc;
+         return blockFunc->link(data);
       }
 
       LinkExpressions(expressions,data);
@@ -448,7 +447,7 @@ struct BlockExpr : public CppiaExpr
          if (i<n-1)
             expressions[i]->genCode(compiler);
          else
-            expressions[i]->genCode(compiler, inDest);
+            expressions[i]->genCode(compiler, inDest, destType);
       }
    }
    #endif
@@ -626,22 +625,22 @@ void genFunctionResult(CppiaCompiler *compiler,const JitVal &inDest, ExprType de
       {
          JumpId isZero = compiler->compare(cmpI_EQUAL,JitFramePos(compiler->getCurrentFrameSize()).as(jtInt),(int)0);
          if (destType==etObject)
-            compiler->move(inDest,(void *)Dynamic(true).mPtr);
+            compiler->move(inDest.as(jtPointer),(void *)Dynamic(true).mPtr);
          else
          {
-            compiler->move(inDest,String(true).length);
-            compiler->move(inDest+4,(void *)String(true).__s);
+            compiler->move(inDest.as(jtInt),String(true).length);
+            compiler->move(inDest.as(jtPointer)+4,(void *)String(true).__s);
          }
          JumpId done = compiler->jump();
 
          compiler->comeFrom(isZero);
 
          if (destType==etObject)
-            compiler->move(inDest,(void *)Dynamic(false).mPtr);
+            compiler->move(inDest.as(jtPointer),(void *)Dynamic(false).mPtr);
          else
          {
-            compiler->move(inDest,String(false).length);
-            compiler->move(inDest+4,(void *)String(false).__s);
+            compiler->move(inDest.as(jtInt),String(false).length);
+            compiler->move(inDest.as(jtPointer)+4,(void *)String(false).__s);
          }
 
          compiler->comeFrom(done);
@@ -725,7 +724,7 @@ struct CallFunExpr : public CppiaExpr
       function->pushArgs(ctx,thisExpr?thisExpr->runObject(ctx):ctx->getThis(false),args); \
       BCR_CHECK; \
       AutoStack save(ctx,pointer); \
-      return funcName(ctx, function->getType(), function); \
+      return funcName(ctx, function->getReturnType(), function); \
    }
    CallFunExprVal(int,runInt, runContextConvertInt);
    CallFunExprVal(Float ,runFloat, runContextConvertFloat);
@@ -740,7 +739,7 @@ struct CallFunExpr : public CppiaExpr
       AutoStack save(ctx,pointer);
       if (isBoolReturn)
          return String(ctx->runInt(function) ? true : false );
-      return runContextConvertString(ctx, function->getType(), function);
+      return runContextConvertString(ctx, function->getReturnType(), function);
    }
 
    hx::Object *runObject(CppiaCtx *ctx)
@@ -751,7 +750,7 @@ struct CallFunExpr : public CppiaExpr
       AutoStack save(ctx,pointer);
       if (isBoolReturn)
          return Dynamic(ctx->runInt(function) ? true : false ).mPtr;
-      return runContextConvertObject(ctx, function->getType(), function);
+      return runContextConvertObject(ctx, function->getReturnType(), function);
    }
 
    void runVoid(CppiaCtx *ctx)
@@ -1076,8 +1075,6 @@ enum CastOp
 };
 
 
-
-
 struct CastExpr : public CppiaDynamicExpr
 {
    CppiaExpr *value;
@@ -1095,6 +1092,7 @@ struct CastExpr : public CppiaDynamicExpr
       value = createCppiaExpr(stream);
    }
    ExprType getType() { return op==castInt ? etInt : etObject; }
+   bool isBoolInt() { return op==castBool; }
 
    int runInt(CppiaCtx *ctx)
    {
@@ -1154,6 +1152,83 @@ struct CastExpr : public CppiaDynamicExpr
          arrayType = arrObject;
       return this;
    }
+
+   #ifdef CPPIA_JIT
+
+   static hx::Object * SLJIT_CALL callDynamicToArrayType(hx::Object *inObj, int inToType )
+   {
+      TRY_NATIVE
+      return DynamicToArrayType(inObj, (ArrayType)inToType);
+      CATCH_NATIVE
+      return 0;
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      if (destType==etNull || destType==etVoid)
+      {
+         value->genCode(compiler);
+         return;
+      }
+
+      if (op==castInt)
+      {
+         if (destType==etInt)
+            value->genCode(compiler, inDest, destType);
+         else
+         {
+            value->genCode(compiler, sJitTemp0, etInt);
+            compiler->convert(sJitTemp0, etInt, inDest, destType);
+         }
+      }
+      else if (op==castBool)
+      {
+         value->genCode(compiler, sJitTemp0, etInt);
+
+         JumpId isZero = compiler->compare(cmpI_EQUAL,sJitTemp0.as(jtInt),(int)0);
+         if (destType==etInt)
+            compiler->move(inDest.as(jtInt),1);
+         else if (destType==etObject)
+            compiler->move(inDest.as(jtPointer),(void *)Dynamic(true).mPtr);
+         else
+         {
+            compiler->move(inDest.as(jtInt),String(true).length);
+            compiler->move(inDest.as(jtPointer)+4,(void *)String(true).__s);
+         }
+         JumpId done = compiler->jump();
+
+         compiler->comeFrom(isZero);
+
+         if (destType==etInt)
+            compiler->move(inDest.as(jtInt),0);
+         else if (destType==etObject)
+            compiler->move(inDest,(void *)Dynamic(false).mPtr);
+         else
+         {
+            compiler->move(inDest.as(jtInt),String(false).length);
+            compiler->move(inDest.as(jtPointer)+4,(void *)String(false).__s);
+         }
+         compiler->comeFrom(done);
+      }
+      else if (op==castDynamic)
+      {
+         if (destType==etObject)
+            value->genCode(compiler, inDest, destType);
+         else
+         {
+            value->genCode(compiler, sJitTemp0, etObject);
+            compiler->convert(sJitTemp0,etObject, inDest, destType);
+         }
+      }
+      else
+      {
+         value->genCode(compiler, sJitArg0, etObject);
+         compiler->callNative( (void *)callDynamicToArrayType, sJitArg0.as(jtPointer), (int)arrayType );
+         compiler->checkException();
+         compiler->convertResult(etObject, inDest, destType);
+      }
+   }
+   #endif
 };
 
 
@@ -2232,6 +2307,68 @@ static void SLJIT_CALL ushrVariantInt( cpp::Variant *ioVar, int inValue )
    *ioVar = (unsigned int)(int)(*ioVar) >> inValue;
 }
 
+
+static void SLJIT_CALL incByNameV( hx::Object *inObj, String *inName )
+{
+   TRY_NATIVE
+   inObj->__SetField( *inName, inObj->__Field(*inName, HX_PROP_DYNAMIC) + 1, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
+}
+
+static void SLJIT_CALL decByNameV( hx::Object *inObj, String *inName )
+{
+   TRY_NATIVE
+   inObj->__SetField( *inName, inObj->__Field(*inName, HX_PROP_DYNAMIC) - 1, HX_PROP_DYNAMIC);
+   CATCH_NATIVE
+}
+
+
+static cpp::Variant * SLJIT_CALL postIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+{
+   TRY_NATIVE
+   *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC) + 1;
+   inObj->__SetField( *inName, *ioBuf, HX_PROP_DYNAMIC);
+   return ioBuf;
+   CATCH_NATIVE
+   return 0;
+}
+
+
+static cpp::Variant * SLJIT_CALL preIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+{
+   TRY_NATIVE
+   *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC);
+   inObj->__SetField( *inName, *ioBuf + 1, HX_PROP_DYNAMIC);
+   return ioBuf;
+   CATCH_NATIVE
+   return 0;
+}
+
+
+static cpp::Variant * SLJIT_CALL postDecByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+{
+   TRY_NATIVE
+   *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC) - 1;
+   inObj->__SetField( *inName, *ioBuf, HX_PROP_DYNAMIC);
+   return ioBuf;
+   CATCH_NATIVE
+   return 0;
+}
+
+
+static cpp::Variant * SLJIT_CALL preDecByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+{
+   TRY_NATIVE
+   *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC);
+   inObj->__SetField( *inName, *ioBuf - 1, HX_PROP_DYNAMIC);
+   return ioBuf;
+   CATCH_NATIVE
+   return 0;
+}
+
+
+
+
 #endif
 
 
@@ -2368,13 +2505,40 @@ struct FieldByName : public CppiaDynamicExpr
          objSrc = sJitThis;
       }
 
+
+      bool ret = destType==etInt || destType==etString || destType==etObject || destType==etFloat;
       if (crement!=coNone)
       {
-         printf("FieldCrementByName\n");
+         if (!ret)
+         {
+            if (crement==coPostInc || crement==coPreInc)
+               compiler->callNative((void *)incByNameV, objSrc, (void *)&name );
+            else
+               compiler->callNative((void *)decByNameV, objSrc, (void *)&name );
+            compiler->checkException();
+         }
+         else
+         {
+            JitTemp gotVal(compiler, etString, sizeof(cpp::Variant));
+            void *func = 0;
+            switch(crement)
+            {
+               case coPostInc: func = (void *)postIncByName; break;
+               case coPreInc: func = (void *)preIncByName; break;
+               case coPostDec: func = (void *)postDecByName; break;
+               case coPreDec: func = (void *)preDecByName; break;
+               default:
+                  printf("Error in crement?\n");
+                  *(int *)0=0;
+            }
+            compiler->callNative(func, objSrc, (void *)&name, gotVal );
+            compiler->checkException();
+            compiler->genVariantValueTemp0(0, inDest, destType);
+         }
+
          return;
       }
 
-      bool ret = destType==etInt || destType==etString || destType==etObject || destType==etFloat;
       if (assign == aoSet)
       {
          switch(value->getType())

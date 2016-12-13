@@ -237,7 +237,8 @@ struct ScriptCallable : public CppiaDynamicExpr
    #endif
 
    static int Hash(int value, const char *inString);
-   ExprType getType() { return returnType; }
+   ExprType getReturnType() { return returnType; }
+   ExprType getType() { return etObject; }
 
 
    #ifdef CPPIA_JIT

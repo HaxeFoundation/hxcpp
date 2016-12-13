@@ -1198,6 +1198,7 @@ void CppiaClassInfo::linkTypes()
       else if (staticFunctions[i]->name == "__init__")
       {
          initFunc = staticFunctions[i]->funExpr;
+         printf("Setting init func %p %s\n", initFunc, name.c_str());
          staticFunctions.erase( staticFunctions.begin() + i);
       }
       else
@@ -1246,8 +1247,8 @@ void CppiaClassInfo::compile()
    if (newFunc)
       newFunc->compile();
 
-   if (initFunc)
-      initFunc->compile();
+   //if (initFunc)
+   //   initFunc->compile();
 
    // Functions
    for(int i=0;i<memberFunctions.size();i++)
@@ -1270,7 +1271,7 @@ void CppiaClassInfo::link()
       newFunc->link();
 
    if (initFunc)
-      initFunc = (ScriptCallable *)initFunc->link(cppia);
+      initFunc->link(cppia);
 
    // Functions
    for(int i=0;i<memberFunctions.size();i++)

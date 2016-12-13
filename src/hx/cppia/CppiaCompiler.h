@@ -83,18 +83,27 @@ struct JitVal
    }
    JitVal(int inValue)
    {
+      offset = 0;
+      reg0 = 0;
+      reg1 = 0;
       position = jposIntVal;
       type = jtInt;
       iVal = inValue;
    }
    JitVal(double inValue)
    {
+      offset = 0;
+      reg0 = 0;
+      reg1 = 0;
       position = jposFloatVal;
       type = jtFloat;
       dVal = inValue;
    }
    JitVal(void *inValue)
    {
+      offset = 0;
+      reg0 = 0;
+      reg1 = 0;
       position = jposPointerVal;
       type = jtPointer;
       pVal = inValue;
