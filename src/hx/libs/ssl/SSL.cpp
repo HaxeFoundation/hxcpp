@@ -737,7 +737,7 @@ bool _hx_ssl_dgst_verify( Array<unsigned char> buf, Array<unsigned char> sign, D
 	return true;
 }
 
-#if _MSC_VER
+#if (_MSC_VER || defined(WIN32))
 
 static void threading_mutex_init_alt( mbedtls_threading_mutex_t *mutex ){
 	if( mutex == NULL )
@@ -776,7 +776,7 @@ void _hx_ssl_init() {
     if (_hx_ssl_inited) return;
     _hx_ssl_inited = true;
 
-#if _MSC_VER
+#if (_MSC_VER || defined(WIN32))
 	mbedtls_threading_set_alt( threading_mutex_init_alt, threading_mutex_free_alt,
                            threading_mutex_lock_alt, threading_mutex_unlock_alt );
 #endif
