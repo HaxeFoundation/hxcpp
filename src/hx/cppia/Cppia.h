@@ -245,6 +245,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    void compile();
    void genPushDefault(CppiaCompiler *compiler, int inArg, bool pushNullToo);
    void genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Expressions &inArgs, const JitVal &inThisVal);
+   void genCode(CppiaCompiler *compiler,const JitVal &inDest=JitVal(),ExprType type=etNull);
    #endif
 
 
@@ -272,7 +273,7 @@ struct ScriptCallable : public CppiaDynamicExpr
 CppiaExpr *createCppiaExpr(CppiaStream &inStream);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, ExprType inType, void *inPtr);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, FieldStorage inType, void *inPtr);
-hx::Object *createClosure(CppiaCtx *ctx, ScriptCallable *inFunction);
+hx::Object * CPPIA_CALL createClosure(CppiaCtx *ctx, ScriptCallable *inFunction);
 hx::Object *createMemberClosure(hx::Object *, ScriptCallable *inFunction);
 hx::Object *createEnumClosure(struct CppiaEnumConstructor &inContructor);
 

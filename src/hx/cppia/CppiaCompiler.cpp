@@ -968,8 +968,10 @@ public:
             move(inTarget.as(jtPointer), (void *)0);
             break;
          case etString:
+            {
             move(inTarget.as(jtInt), (int)0);
             move(inTarget.as(jtPointer) + 4, (void *)0);
+            }
             break;
          case etInt:
             move(inTarget.as(jtInt), (int)0);

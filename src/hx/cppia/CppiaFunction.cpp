@@ -609,6 +609,14 @@ void ScriptCallable::runFunction(CppiaCtx *ctx)
    }
 }
 
+#ifdef CPPIA_JIT
+void ScriptCallable::genCode(CppiaCompiler *compiler,const JitVal &inDest,ExprType destType)
+{
+   compiler->callNative( (void *)createClosure, sJitCtx, (void *)this );
+   compiler->convertReturnReg(etObject, inDest, destType);
+}
+#endif
+
 void ScriptCallable::addStackVarsSpace(CppiaCtx *ctx)
 {
    if (stackSize)
@@ -761,6 +769,25 @@ public:
          memcpy( ctx->frame+var->stackPos, base + var->capturePos, size);
       }
 
+      #ifdef CPPIA_JIT
+      if (function->compiled)
+      {
+         function->compiled(ctx);
+         switch(function->returnType)
+         {
+            case etFloat:
+               return ctx->getFloat();
+            case etInt:
+               return ctx->getInt();
+            case etString:
+               return ctx->getString();
+            case etObject:
+               return ctx->getObject();
+         }
+         return null();
+      }
+
+      #else
       switch(function->returnType)
       {
          case etFloat:
@@ -774,6 +801,8 @@ public:
          default: break;
       }
       ctx->runVoid( function );
+      #endif
+
       return null();
    }
 
@@ -924,7 +953,7 @@ public:
    String toString() { return HX_CSTRING("function"); }
 };
 
-hx::Object *createClosure(CppiaCtx *ctx, ScriptCallable *inFunction)
+hx::Object * CPPIA_CALL createClosure(CppiaCtx *ctx, ScriptCallable *inFunction)
 {
    return new (inFunction->captureSize) CppiaClosure(ctx,inFunction);
 }

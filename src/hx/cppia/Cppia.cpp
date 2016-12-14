@@ -4291,7 +4291,7 @@ struct NullVal : public CppiaExpr
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
-      compiler->move(inDest, (void *)0);
+      compiler->returnNull(inDest, destType);
    }
    #endif
 

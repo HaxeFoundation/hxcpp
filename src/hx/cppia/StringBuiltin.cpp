@@ -150,6 +150,52 @@ struct CharAtExpr : public StringExpr
       else
          return Dynamic(val.charAt(idx)).mPtr;
    }
+
+   #ifdef CPPIA_JIT
+   static hx::Object *SLJIT_CALL runCharCodeAt(String *inValue, int inIndex)
+   {
+      return (inValue->charCodeAt(inIndex)).mPtr;
+   }
+   static void SLJIT_CALL runCharAt(String *ioValue, int inIndex)
+   {
+      *ioValue = ioValue->charAt(inIndex);
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp value(compiler,jtString);
+      strVal->genCode(compiler, value, etString);
+      a0->genCode(compiler, sJitTemp1, etInt);
+
+      if (CODE)
+      {
+         if (AS_INT)
+         {
+            // sJitTemp1 = __s
+            compiler->move( sJitTemp0.as(jtPointer), value.star(jtPointer,sizeof(int)) );
+            if (destType==etInt)
+            {
+               compiler->move(inDest.as(jtInt), sJitTemp0.atReg(sJitTemp1,0,jtByte) );
+            }
+            else
+            {
+               compiler->move(sJitTemp0.as(jtInt), sJitTemp0.atReg(sJitTemp1,0,jtByte) );
+               compiler->convertReturnReg(etInt, inDest, destType);
+            }
+         }
+         else
+         {
+            compiler->callNative( (void *)runCharCodeAt, value, sJitTemp1.as(jtInt));
+            compiler->convertReturnReg( etObject, inDest, destType);
+         }
+      }
+      else
+      {
+         compiler->callNative( (void *)runCharAt, value, sJitTemp1.as(jtInt));
+         compiler->convert(value, etString, inDest, destType);
+      }
+   }
+   #endif
 };
 
 
@@ -182,6 +228,25 @@ struct SplitExpr : public CppiaExpr
       BCR_CHECK;
       return val.split(separator).mPtr;
    }
+
+
+   #ifdef CPPIA_JIT
+   static hx::Object *SLJIT_CALL runSplit(String *inValue, String *sep)
+   {
+      return (inValue->split(*sep)).mPtr;
+   }
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp value(compiler,jtString);
+      JitTemp sep(compiler,jtString);
+
+      strVal->genCode(compiler, value, etString);
+      a0->genCode(compiler, sep, etString);
+      compiler->callNative( (void *)runSplit, value, sep );
+      compiler->convertReturnReg(etObject, inDest, destType);
+   }
+   #endif
+
 };
 
 

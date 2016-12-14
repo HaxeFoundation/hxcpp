@@ -395,6 +395,10 @@ struct JitTemp : public JitVal
    {
       compiler->freeTempSize(size);
    }
+
+   JitVal star(JitType inType=jtPointer, int inOffset=0) { return JitVal(inType, offset+inOffset, jposStar, sLocalReg, 0); }
+   JitVal star(ExprType inType, int inOffset=0) { return JitVal(getJitType(inType), offset+inOffset, jposStar, sLocalReg, 0); }
+
 };
 
 
