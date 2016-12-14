@@ -17,6 +17,10 @@
 #include <vector>
 
 
+#define TRY_NATIVE try {
+#define CATCH_NATIVE } catch(Dynamic e) {  CppiaCtx::getCurrent()->exception = e.mPtr; }
+
+
 extern "C" struct sljit_jump;
 extern "C" struct sljit_label;
 

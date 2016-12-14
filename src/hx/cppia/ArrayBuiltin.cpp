@@ -812,6 +812,21 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       inArray->Realloc( inArray->length + 1 );
       return inArray;
    }
+   static void SLJIT_CALL runSort( Array_obj<ELEM> *inArray, hx::Object *inFunc)
+   {
+      TRY_NATIVE
+      inArray->sort( Dynamic(inFunc) );
+      CATCH_NATIVE
+   }
+   static void SLJIT_CALL runJoin( Array_obj<ELEM> *inArray, String *ioValue)
+   {
+      TRY_NATIVE
+      *ioValue = inArray->join( *ioValue );
+      CATCH_NATIVE
+   }
+
+
+
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       // TODO - null check
@@ -947,6 +962,29 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
                break;
             }
+
+         case afSort:
+            {
+               JitTemp thisVal(compiler, jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+               args[0]->genCode(compiler, sJitTemp1, etObject);
+               compiler->callNative( (void *)runSort, thisVal, sJitTemp1 );
+               compiler->checkException();
+               break;
+            }
+
+         case afJoin:
+            {
+               JitTemp thisVal(compiler, jtPointer);
+               JitTemp value(compiler, jtString);
+               thisExpr->genCode(compiler, thisVal, etObject);
+               args[0]->genCode(compiler, value, etString);
+               compiler->callNative( (void *)runJoin, thisVal, value );
+               compiler->checkException();
+               compiler->convert(value,etString, inDest, destType);
+               break;
+            }
+
 
          default:
             compiler->traceStrings("ArrayBuiltin::",sFuncNames[FUNC]);
@@ -1396,6 +1434,19 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
    {
       return inObj->slice( Dynamic(a0), Dynamic(a1) ).mPtr;
    }
+   static void SLJIT_CALL runSort( ArrayAnyImpl *inArray, hx::Object *inFunc)
+   {
+      TRY_NATIVE
+      inArray->sort( Dynamic(inFunc) );
+      CATCH_NATIVE
+   }
+   static void SLJIT_CALL runJoin( ArrayAnyImpl *inArray, String *ioValue)
+   {
+      TRY_NATIVE
+      *ioValue = inArray->join( *ioValue );
+      CATCH_NATIVE
+   }
+
 
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
@@ -1435,6 +1486,25 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             compiler->convertReturnReg(etObject, inDest, destType);
             }
             break;
+
+         case afSort:
+            {
+            args[0]->genCode(compiler, sJitArg1, etObject);
+            compiler->callNative( (void *)runSort, thisVal, sJitArg1.as(jtPointer));
+            compiler->checkException();
+            }
+            break;
+
+         case afJoin:
+            {
+            JitTemp value(compiler,jtString);
+            args[0]->genCode(compiler, value, etString);
+            compiler->callNative( (void *)runJoin, thisVal, value);
+            compiler->checkException();
+            compiler->convert(value,etString, inDest, destType);
+            }
+            break;
+
 
          default:
             compiler->traceStrings("Unknown ArrayBuiltinAny:", getName() );

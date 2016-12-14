@@ -109,6 +109,10 @@ CppiaExpr *ScriptCallable::link(CppiaModule &inModule)
    position.classFuncHash = Hash(hash,functionName);
    #endif
 
+   #ifdef CPPIA_JIT
+   //printf("Compile?\n");
+   #endif
+
    return this;
 }
 
@@ -582,7 +586,9 @@ hx::Object *ScriptCallable::runObject(CppiaCtx *ctx)
 const char *ScriptCallable::getName() { return "ScriptCallable"; }
 String ScriptCallable::runString(CppiaCtx *ctx) { return HX_CSTRING("#function"); }
 
-void ScriptCallable::runVoid(CppiaCtx *ctx) { }
+void ScriptCallable::runVoid(CppiaCtx *ctx)
+{
+}
 
 // Run the actual function
 void ScriptCallable::runFunction(CppiaCtx *ctx)
@@ -786,8 +792,9 @@ public:
          }
          return null();
       }
+      //todo - compiled?
+      #endif
 
-      #else
       switch(function->returnType)
       {
          case etFloat:
@@ -801,7 +808,6 @@ public:
          default: break;
       }
       ctx->runVoid( function );
-      #endif
 
       return null();
    }

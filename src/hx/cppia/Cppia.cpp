@@ -94,9 +94,6 @@ JumpId CppiaExpr::genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLa
    return compiler->compare(inReverse ? cmpI_EQUAL : cmpI_NOT_EQUAL, sJitTemp0, (int)0, inLabel);
 }
 
-#define TRY_NATIVE try {
-#define CATCH_NATIVE } catch(Dynamic e) {  CppiaCtx::getCurrent()->exception = e.mPtr; }
-
 #endif
 
 
@@ -2114,6 +2111,13 @@ struct ThisExpr : public CppiaDynamicExpr
 
    const char *getName() { return "ThisExpr"; }
    hx::Object *runObject(CppiaCtx *ctx) { return ctx->getThis(); }
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      compiler->convert(sJitThis, etObject, inDest, destType);
+   }
+   #endif
 };
 
 
