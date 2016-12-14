@@ -1068,6 +1068,7 @@ enum CastOp
 {
    castNOP,
    castDynamic,
+   castInstance,
    castDataArray,
    castDynArray,
    castInt,
@@ -1081,17 +1082,20 @@ struct CastExpr : public CppiaDynamicExpr
    CastOp  op;
    int     typeId;
    ArrayType arrayType;
+   TypeData *typeData;
 
    CastExpr(CppiaStream &stream,CastOp inOp)
    {
       op = inOp;
       typeId = 0;
-      if (op==castDataArray)
+      typeData = 0;
+      if (op==castDataArray || op==castInstance)
          typeId = stream.getInt();
 
       value = createCppiaExpr(stream);
    }
    ExprType getType() { return op==castInt ? etInt : etObject; }
+
    bool isBoolInt() { return op==castBool; }
 
    int runInt(CppiaCtx *ctx)
@@ -1107,8 +1111,15 @@ struct CastExpr : public CppiaDynamicExpr
          return Dynamic((bool)value->runInt(ctx)).mPtr;
 
       hx::Object *obj = value->runObject(ctx);
-      if (!obj)
+      if (op==castInstance)
+      {
+         if (!obj || !typeData->isClassOf(obj) )
+            hx::BadCast();
+         return obj;
+      }
+      else if (!obj)
          return 0;
+
       if (op==castDynamic)
       #if (HXCPP_API_LEVEL>=331)
          return obj;
@@ -1129,6 +1140,12 @@ struct CastExpr : public CppiaDynamicExpr
       {
          delete this;
          return value;
+      }
+
+      if (op==castInstance)
+      {
+         typeData = inModule.types[typeId];
+         return this;
       }
 
       if (op==castDynamic || op==castInt || op==castBool )
@@ -1161,6 +1178,18 @@ struct CastExpr : public CppiaDynamicExpr
       return DynamicToArrayType(inObj, (ArrayType)inToType);
       CATCH_NATIVE
       return 0;
+   }
+
+
+   static hx::Object * SLJIT_CALL safeCast(hx::Object *obj, TypeData *typeData )
+   {
+      if (!obj || !typeData->isClassOf(obj) )
+      {
+         CppiaCtx::getCurrent()->exception = HX_INVALID_CAST.mPtr;
+         return 0;
+      }
+ 
+      return obj;
    }
 
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
@@ -1209,6 +1238,13 @@ struct CastExpr : public CppiaDynamicExpr
             compiler->move(inDest.as(jtPointer)+4,(void *)String(false).__s);
          }
          compiler->comeFrom(done);
+      }
+      else if (op==castInstance)
+      {
+         value->genCode(compiler, sJitTemp0.as(jtPointer), etObject);
+         compiler->callNative( (void *)safeCast, sJitTemp0, (void *)typeData );
+         compiler->checkException();
+         compiler->convertReturnReg(etObject, inDest, destType);
       }
       else if (op==castDynamic)
       {
@@ -7095,6 +7131,8 @@ CppiaExpr *createCppiaExpr(CppiaStream &stream)
       result = new ToInterface(stream,true);
    else if (tok=="CAST")
       result = new CastExpr(stream,castDynamic);
+   else if (tok=="TCAST")
+      result = new CastExpr(stream,castInstance);
    else if (tok=="NOCAST")
       result = new CastExpr(stream,castNOP);
    else if (tok=="CASTINT")

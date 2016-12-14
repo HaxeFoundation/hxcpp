@@ -99,6 +99,7 @@
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
   <depend name="${HXCPP}/src/hx/cppia/CppiaStream.h" />
+  <depend name="${HXCPP}/src/hx/cppia/CppiaOps.inc" />
   <depend name="${HXCPP}/src/hx/cppia/CppiaCompiler.h"  if="CPPIA_JIT" />
   <compilerflag value="-DHX_UNDEFINE_H" />
   <compilerflag value="-DCPPIA_JIT" if="CPPIA_JIT" />
