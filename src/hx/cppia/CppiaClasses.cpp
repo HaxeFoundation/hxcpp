@@ -311,7 +311,7 @@ struct EnumField : public CppiaDynamicExpr
             compiler->addFrame(etObject);
          }
 
-         compiler->setFramePointer( compiler->getCurrentFrameSize() );
+         compiler->setContextPointer();
          compiler->callNative(createEnum,(void *)enumClass.mPtr,(void *)&enumName,(int)args.size() );
          }
          if (destType!=etVoid && destType!=etNull)

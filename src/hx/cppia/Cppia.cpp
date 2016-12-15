@@ -826,8 +826,14 @@ struct CppiaExprWithValue : public CppiaDynamicExpr
 #ifdef CPPIA_JIT
 void SLJIT_CALL callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
 {
+   if (!inFunction)
+   {
+      ctx->exception = Dynamic(HX_CSTRING("Null Function")).mPtr;
+      return;
+   }
    // ctx.pointer points to end-of-args
    hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
+   ctx->pointer = (unsigned char *)base;
    try
    {
       switch(inArgs)
@@ -992,7 +998,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
          compiler->addFrame(etObject);
       }
 
-      compiler->setFramePointer( compiler->getCurrentFrameSize() );
+      compiler->setContextPointer();
       compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size());
       }
       compiler->checkException();
@@ -3018,7 +3024,7 @@ struct Call : public CppiaDynamicExpr
          compiler->addFrame(etObject);
       }
 
-      compiler->setFramePointer( compiler->getCurrentFrameSize() );
+      compiler->setContextPointer( );
       compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
       }
       compiler->checkException();

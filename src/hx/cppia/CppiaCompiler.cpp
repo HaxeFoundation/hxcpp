@@ -694,9 +694,9 @@ public:
    }
 
 
-   void setFramePointer(int inArgStart)
+   void setContextPointer()
    {
-      add( sJitCtxPointer, sJitFrame, inArgStart );
+      add( sJitCtxPointer, sJitFrame, frameSize );
    }
 
    void makeAddress(const JitVal &outAddress, const JitVal &inSrc)

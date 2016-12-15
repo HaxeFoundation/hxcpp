@@ -618,6 +618,7 @@ void ScriptCallable::runFunction(CppiaCtx *ctx)
 #ifdef CPPIA_JIT
 void ScriptCallable::genCode(CppiaCompiler *compiler,const JitVal &inDest,ExprType destType)
 {
+   compiler->move(sJitCtxFrame, sJitFrame);
    compiler->callNative( (void *)createClosure, sJitCtx, (void *)this );
    compiler->convertReturnReg(etObject, inDest, destType);
 }
@@ -792,6 +793,7 @@ public:
          }
          return null();
       }
+      //printf("Not compiled %d!\n", function->captureVars.size());
       //todo - compiled?
       #endif
 
