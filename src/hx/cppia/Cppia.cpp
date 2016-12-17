@@ -3477,7 +3477,7 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
          {
             if (inExpr->getType()==etString)
             {
-               JitTemp sval(compiler,jtInt);
+               JitTemp sval(compiler,jtString);
                inExpr->genCode(compiler, sval, etString);
                compiler->callNative(dynamicCatString, ioValue, sval );
             }
@@ -3815,62 +3815,54 @@ struct MemReferenceCrement : public CppiaExpr
       CrementOp op = (CrementOp)CREMENT::OP;
       int diff =  op==coPostDec || op==coPreDec ? -1 : 1;
 
+      JitVal ioPtr;
+
       switch(REFMODE)
       {
          case locObj:
-            //TODO - GC! 
-            //if (!value.mPtr)
-            //  value = strVal;
-            //compiler->move(inDest, (void *) value.mPtr );
+            object->genCode(compiler, sJitTemp0.as(jtPointer), etObject);
+            ioPtr = sJitTemp0.star();
             break;
 
          case locThis:
-            /*
-            if (!isMemoryVal(inDest))
-               compiler->setError("Bad String target");
-            else
-            {
-               compiler->move(inDest,JitVal(strVal.length));
-               compiler->move(inDest+sizeof(int),JitVal((void *)strVal.__s));
-            }
-            */
+            ioPtr = sJitThis.star() + offset;
             break;
-
 
          case locAbsolute:
             compiler->move( sJitTemp0,  JitVal( (void *)pointer ) );
-            compiler->move( inDest,  sJitTemp0.star() );
-            //compiler->convert( sJitTemp0.star(jtPointer,0), getType(),inDest, destType );
+            ioPtr =  sJitTemp0.star();
+            break;
+
+         case locStack:
+            ioPtr = JitFramePos(offset,jtInt);
+            break;
+      }
+
+      switch(getType())
+      {
+         case etInt:
+            if ( inDest.type==jtVoid)
+            {
+               compiler->add( ioPtr,  ioPtr, diff );
+            }
+            else if (op==coPostInc || op==coPostDec)
+            {
+               compiler->move( sJitTemp1, ioPtr );
+               compiler->add( ioPtr, sJitTemp1, diff );
+               compiler->convert( sJitTemp1, etInt, inDest, destType );
+            }
+            else
+            {
+               compiler->add( sJitTemp1, ioPtr, diff );
+               compiler->move( ioPtr, sJitTemp1);
+               compiler->convert( sJitTemp1, etInt, inDest, destType );
+            }
             break;
 
          default:
-            // locStack
-            switch(getType())
-            {
-               case etInt:
-                  if ( inDest.type==jtVoid)
-                  {
-                     compiler->add( JitFramePos(offset,jtInt),  JitFramePos(offset,jtInt), diff );
-                  }
-                  else if (op==coPostInc || op==coPostDec)
-                  {
-                     compiler->move( sJitTemp0, JitFramePos(offset,jtInt) );
-                     compiler->add( JitFramePos(offset,jtInt), sJitTemp0, op==coPostDec ? -1 : 1 );
-                     compiler->convert( sJitTemp0, etInt, inDest, destType );
-                  }
-                  else
-                  {
-                     compiler->add( sJitTemp0, JitFramePos(offset,jtInt), diff );
-                     compiler->move( JitFramePos(offset,jtInt), sJitTemp0);
-                     compiler->convert( sJitTemp0, etInt, inDest, destType );
-                  }
-                  break;
-
-               default: ;
-               // TODO
-            }
+            compiler->trace("todo - MemReferenceCrement , non-int");
+         // TODO
       }
-
    }
    #endif
 
@@ -4753,6 +4745,9 @@ struct DynamicArrayI : public CppiaDynamicExpr
       crement = inOp;
       return this;
    }
+   #ifdef CPPIA_JIT
+   // void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType) { }
+   #endif
 };
 
 

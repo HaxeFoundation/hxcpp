@@ -825,6 +825,25 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       CATCH_NATIVE
    }
 
+   static void SLJIT_CALL runElem( Array_obj<ELEM> *inArray, int inIndex)
+   {
+      CREMENT::run( Array<ELEM>(inArray)[inIndex] );
+   }
+
+   static int SLJIT_CALL runIntCrement( Array_obj<ELEM> *inArray, int inIndex)
+   {
+      return ValToInt( CREMENT::run( Array<ELEM>(inArray)[inIndex] ) );
+   }
+
+   static void SLJIT_CALL runFloatCrement( Array_obj<ELEM> *inArray, int inIndex, double *d)
+   {
+      *d = ValToFloat( CREMENT::run( Array<ELEM>(inArray)[inIndex] ) );
+   }
+
+   static hx::Object * SLJIT_CALL runObjCrement( Array_obj<ELEM> *inArray, int inIndex)
+   {
+      return Dynamic( CREMENT::run( Array<ELEM>(inArray)[inIndex] ) ).mPtr;
+   }
 
 
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
@@ -985,6 +1004,40 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
             }
 
+         case af__crement:
+            {
+               CrementOp op = (CrementOp)CREMENT::OP;
+
+               JitTemp thisVal(compiler,jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+
+               // sJitTemp0 = index
+               args[0]->genCode(compiler, sJitTemp1, etInt);
+
+               if (destType==etVoid || destType==etNull)
+               {
+                  compiler->callNative( (void *)runElem, thisVal, sJitTemp1 );
+               }
+               else if (destType==etInt)
+               {
+                  compiler->callNative( (void *)runIntCrement, thisVal, sJitTemp1 );
+                  compiler->move( inDest.as(jtInt), sJitReturnReg.as(jtInt) );
+               }
+               else if (destType==etFloat)
+               {
+                  JitTemp tempFloat(compiler, jtFloat);
+                  JitVal dVal = isMemoryVal(inDest) ? inDest : tempFloat;
+                  compiler->callNative( (void *)runFloatCrement, thisVal, sJitTemp1 );
+                  if (!isMemoryVal(inDest))
+                     compiler->move(inDest.as(jtFloat), tempFloat);
+               }
+               else
+               {
+                  compiler->callNative( (void *)runObjCrement, thisVal, sJitTemp1 );
+                  compiler->convertReturnReg(etObject, inDest, destType);
+               }
+            }
+            break;
 
          default:
             compiler->traceStrings("ArrayBuiltin::",sFuncNames[FUNC]);

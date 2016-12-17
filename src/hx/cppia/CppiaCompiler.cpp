@@ -3,7 +3,10 @@
 
 #include "Cppia.h"
 
+
 #include "sljit_src/sljitLir.c"
+
+
 
 namespace hx
 {
@@ -681,8 +684,8 @@ public:
             }
             else
             {
-               emit_op1(SLJIT_MOV_SI, inDest, inSrc);
-               emit_op1(SLJIT_MOV_P, inDest + 4, inSrc + 4);
+               emit_op1(SLJIT_MOV_SI, inDest.as(jtInt), inSrc.as(jtInt));
+               emit_op1(SLJIT_MOV_P, inDest.as(jtPointer) + 4, inSrc.as(jtPointer) + 4);
             }
             break;
 
@@ -719,9 +722,10 @@ public:
 
       if (inSrcType==inToType)
       {
-         getTarget(inSrc);
-         getTarget(inTarget);
-         move( inTarget, inSrc );
+         JitType jt = getJitType(inSrcType);
+         getTarget(inSrc.as(jt));
+         getTarget(inTarget.as(jt));
+         move( inTarget.as(jt), inSrc.as(jt) );
       }
       else if (inToType==etObject)
       {

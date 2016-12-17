@@ -289,7 +289,8 @@
 #undef SLJIT_ARGUMENT_CHECKS
 #define SLJIT_ARGUMENT_CHECKS 1
 
-#define CHECK_ARGUMENT(x) SLJIT_ASSERT(x)
+#define ARGSTR(x) #x
+#define CHECK_ARGUMENT(x) do { if (!(x)) printf("Err %s.\n", ARGSTR(x)); SLJIT_ASSERT(x); } while (0)
 #define CHECK_RETURN_TYPE void
 #define CHECK_RETURN_OK return
 #define CHECK(x) x
