@@ -219,9 +219,20 @@ void ScriptCallable::genPushDefault(CppiaCompiler *compiler, int inArg, bool pus
           break;
        case etString:
           {
-             const String &str = data->strings[ initVals[inArg].ival ];
-             compiler->move(target, JitVal(str.length) );
-             compiler->move(target+sizeof(int), JitVal((void *)str.__s) );
+             if (initVals[inArg].type == CppiaConst::cNull)
+             {
+                if (pushNullToo)
+                {
+                   compiler->move(target.as(jtInt), (int)0 );
+                   compiler->move(target.as(jtPointer)+sizeof(int), (void *)0);
+                }
+             }
+             else
+             {
+                const String &str = data->strings[ initVals[inArg].ival ];
+                compiler->move(target.as(jtInt), JitVal(str.length) );
+                compiler->move(target.as(jtPointer)+sizeof(int), JitVal((void *)str.__s) );
+             }
           }
           break;
        default:

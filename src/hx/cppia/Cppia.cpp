@@ -687,8 +687,9 @@ struct CallFunExpr : public CppiaExpr
    ScriptCallable     *function;
    ExprType    returnType;
    bool        isBoolReturn;
+   bool        isThisCall;
 
-   CallFunExpr(const CppiaExpr *inSrc, CppiaExpr *inThisExpr, ScriptCallable *inFunction, Expressions &ioArgs )
+   CallFunExpr(const CppiaExpr *inSrc, CppiaExpr *inThisExpr, ScriptCallable *inFunction, Expressions &ioArgs, bool inThisCall )
       : CppiaExpr(inSrc)
    {
       args.swap(ioArgs);
@@ -696,6 +697,7 @@ struct CallFunExpr : public CppiaExpr
       thisExpr = inThisExpr;
       returnType = etVoid;
       isBoolReturn = false;
+      isThisCall = inThisCall;
    }
 
    CppiaExpr *link(CppiaModule &inModule)
@@ -775,7 +777,8 @@ struct CallFunExpr : public CppiaExpr
    // Function Call
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
-      genFunctionCall(function, compiler, inDest, destType, isBoolReturn, returnType,thisExpr, args, JitVal());
+      genFunctionCall(function, compiler, inDest, destType, isBoolReturn, returnType,thisExpr, args,
+                      isThisCall ? (JitVal)sJitThis : JitVal());
    }
 
 
@@ -1546,50 +1549,52 @@ struct NewExpr : public CppiaDynamicExpr
          // return info->createInstance(ctx,args);
 
          #ifdef HXCPP_GC_NURSERY
-         int size = info->haxeBase->mDataOffset + info->extraData;
-         // sJitCtx = alloc
-         //
-         // sJitTemp0 = alloc->spaceStart
-         compiler->move(sJitTemp0, sJitCtx.star(etInt, offsetof(hx::StackContext,spaceStart) ) );
+         if (info->dynamicFunctions.size()==0)
+         {
+            int size = info->haxeBase->mDataOffset + info->extraData;
+            // sJitCtx = alloc
+            //
+            // sJitTemp0 = alloc->spaceStart
+            compiler->move(sJitTemp0, sJitCtx.star(etInt, offsetof(hx::StackContext,spaceStart) ) );
 
-         // sJitTemp1 = end = spaceStart + size + sizeof(int)
-         compiler->add(sJitTemp1, sJitTemp0, (int)(size + sizeof(int) ) );
+            // sJitTemp1 = end = spaceStart + size + sizeof(int)
+            compiler->add(sJitTemp1, sJitTemp0, (int)(size + sizeof(int) ) );
 
-         JumpId inRange = compiler->compare(cmpI_LESS_EQUAL, sJitTemp1, sJitCtx.star(etInt, offsetof(hx::StackContext,spaceEnd) ) );
+            JumpId inRange = compiler->compare(cmpI_LESS_EQUAL, sJitTemp1, sJitCtx.star(etInt, offsetof(hx::StackContext,spaceEnd) ) );
 
-         // Not in range ...
-            compiler->callNative(allocHaxe, sJitCtx, (void *)info );
+            // Not in range ...
+               compiler->callNative(allocHaxe, sJitCtx, (void *)info );
 
-            JumpId allocCallDone = compiler->jump();
-         // In range
-            compiler->comeFrom(inRange);
+               JumpId allocCallDone = compiler->jump();
+            // In range
+               compiler->comeFrom(inRange);
 
-            // alloc->spaceStart = end;
-            compiler->move( sJitCtx.star(etInt, offsetof(hx::StackContext,spaceStart)), sJitTemp1 );
+               // alloc->spaceStart = end;
+               compiler->move( sJitCtx.star(etInt, offsetof(hx::StackContext,spaceStart)), sJitTemp1 );
 
-            // sJitTemp2 = unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
-            compiler->add(sJitTemp2, sJitCtx.star(jtPointer, offsetof(hx::StackContext,allocBase)), sJitTemp0 );
+               // sJitTemp2 = unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
+               compiler->add(sJitTemp2, sJitCtx.star(jtPointer, offsetof(hx::StackContext,allocBase)), sJitTemp0 );
 
-            //compiler->move( sJitTemp2.star(etInt), (int)( size | (info->isContainer ? IMMIX_ALLOC_IS_CONTAINER : 0) ) );
-            // TODO - IMMIX_ALLOC_IS_CONTAINER from classInfo
-            compiler->move( sJitTemp2.star(etInt), (int)( size | IMMIX_ALLOC_IS_CONTAINER) );
+               //compiler->move( sJitTemp2.star(etInt), (int)( size | (info->isContainer ? IMMIX_ALLOC_IS_CONTAINER : 0) ) );
+               // TODO - IMMIX_ALLOC_IS_CONTAINER from classInfo
+               compiler->move( sJitTemp2.star(etInt), (int)( size | IMMIX_ALLOC_IS_CONTAINER) );
 
-            compiler->add(sJitReturnReg, sJitTemp2.as(jtPointer), (int)4);
+               compiler->add(sJitReturnReg, sJitTemp2.as(jtPointer), (int)4);
 
-            // Set class vtable
-            compiler->move(sJitReturnReg.star(jtPointer), (void *) info->getHaxeBaseVTable() );
+               // Set class vtable
+               compiler->move(sJitReturnReg.star(jtPointer), (void *) info->getHaxeBaseVTable() );
 
-            // Set script vtable
-            compiler->move(sJitReturnReg.star(jtPointer, (int)(info->haxeBase->mDataOffset-sizeof(void *))), (void *) info->vtable );
+               // Set script vtable
+               compiler->move(sJitReturnReg.star(jtPointer, (int)(info->haxeBase->mDataOffset-sizeof(void *))), (void *) info->vtable );
 
-            // TODO:
-            // createDynamicFunctions(obj);
-
-         // join
-         compiler->comeFrom(allocCallDone);
-
+            // join
+            compiler->comeFrom(allocCallDone);
+         }
+         else
          #else
-         compiler->callNative(allocHaxe, sJitCtx, (void *)info );
+         {
+            compiler->callNative(allocHaxe, sJitCtx, (void *)info );
+         }
          #endif
 
          // Result is in sJitReturnReg
@@ -1830,7 +1835,7 @@ struct CallStatic : public CppiaExpr
          }
          else
          {
-            replace = new CallFunExpr( this, 0, func, args );
+            replace = new CallFunExpr( this, 0, func, args, false );
          }
       }
 
@@ -2066,8 +2071,11 @@ struct CallMemberVTable : public CppiaExpr
       for(int i=0;i<funcProto->args.size(); i++)
       {
          ArgInfo &arg = funcProto->args[i];
-         ExprType type = arg.optional ? etObject : funcProto->cppia.types[ arg.typeId ]->expressionType;
+         ExprType baseType = funcProto->cppia.types[ arg.typeId ]->expressionType;
+         bool isString = funcProto->cppia.types[ arg.typeId ]->expressionType;
+         ExprType type = arg.optional && baseType!=etString ? etObject : baseType;
 
+         // TODO - defaults, or do them function side
          args[i]->genCode( compiler, JitFramePos( compiler->getCurrentFrameSize() ).as( getJitType(type)), type );
          compiler->addFrame(type);
       }
@@ -3081,7 +3089,7 @@ struct CallMember : public CppiaExpr
       if (type->cppiaClass)
       {
          //printf("Using cppia super %p %p\n", type->cppiaClass->newFunc, type->cppiaClass->newFunc->funExpr);
-         CppiaExpr *replace = new CallFunExpr( this, 0, (ScriptCallable*)type->cppiaClass->newFunc->funExpr, args );
+         CppiaExpr *replace = new CallFunExpr( this, 0, (ScriptCallable*)type->cppiaClass->newFunc->funExpr, args, true );
          replace->link(inModule);
          delete this;
          return replace;
@@ -3143,7 +3151,7 @@ struct CallMember : public CppiaExpr
             // Bind now ...
             ScriptCallable *func = (ScriptCallable *)type->cppiaClass->findFunction(false, fieldId) ;
             if (func)
-               replace = new CallFunExpr( this, thisExpr, func, args );
+               replace = new CallFunExpr( this, thisExpr, func, args, true );
          }
          else
          {

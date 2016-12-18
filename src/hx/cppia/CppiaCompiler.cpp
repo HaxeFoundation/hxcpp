@@ -751,7 +751,7 @@ public:
                add( sJitArg0, inSrc.getReg().as(jtPointer), inSrc.offset );
                callNative( (void *)strToObj, sJitArg0);
                if (inTarget!=sJitReturnReg)
-                  emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg);
+                  emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg.as(jtPointer));
                break;
 
             default:
