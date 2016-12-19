@@ -20,7 +20,7 @@ namespace hx
 
 
 #define GET_RETURN_VAL(RET,CHECK) \
-   ((CppiaExpr *)vtable)->runFunction(this); \
+   ((ScriptCallable *)vtable)->runFunction(this); \
    breakContReturn = 0; \
    DEBUG_RETURN_TYPE_CHECK \
    RET;

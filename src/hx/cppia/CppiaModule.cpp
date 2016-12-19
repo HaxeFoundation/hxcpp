@@ -243,6 +243,7 @@ void CppiaConst::fromStream(CppiaStream &stream)
       int strIndex = stream.getInt();
       String val = stream.module->strings[strIndex];
       dval = atof(val.__s);
+      ival = dval;
    }
    else if (tok[0]=='s')
    {

@@ -55,7 +55,7 @@ static void SLJIT_CALL objToStr(hx::Object *inVal, String *outString)
 {
    *outString = inVal ? inVal->toString() : HX_CSTRING("null");
 }
-static int SLJIT_CALL objToInt(hx::Object *inVal)
+int SLJIT_CALL objToInt(hx::Object *inVal)
 {
    // TODO - check pointer
    return inVal->__ToInt();

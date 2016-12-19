@@ -157,8 +157,6 @@ struct CppiaExpr
    virtual hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
 
-   virtual void        runFunction(CppiaCtx *ctx)   { NullReference("Function", false); }
-
    virtual CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) { return 0; }
    virtual CppiaExpr   *makeCrement(CrementOp inOp) { return 0; }
 
@@ -205,6 +203,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    ExprType returnType;
    int argCount;
    int stackSize;
+   bool hasDefaults;
    
    std::vector<CppiaStackVar> args;
    std::vector<bool>          hasDefault;
@@ -243,7 +242,7 @@ struct ScriptCallable : public CppiaDynamicExpr
 
    #ifdef CPPIA_JIT
    void compile();
-   void genPushDefault(CppiaCompiler *compiler, int inArg, bool pushNullToo);
+   void genDefaults(CppiaCompiler *compiler);
    void genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Expressions &inArgs, const JitVal &inThisVal);
    void genCode(CppiaCompiler *compiler,const JitVal &inDest=JitVal(),ExprType type=etNull);
    #endif
@@ -262,6 +261,7 @@ struct ScriptCallable : public CppiaDynamicExpr
 
    // Run the actual function
    void runFunction(CppiaCtx *ctx);
+   void runFunctionClosure(CppiaCtx *ctx);
    void addStackVarsSpace(CppiaCtx *ctx);
    bool pushDefault(CppiaCtx *ctx,int arg);
    void addExtraDefaults(CppiaCtx *ctx,int inHave);
@@ -417,6 +417,9 @@ struct CppiaStackVar
    ExprType expressionType;
    CppiaModule *module;
 
+   int      defaultStackPos;
+   ExprType argType;
+
    CppiaStackVar();
    CppiaStackVar(CppiaStackVar *inVar,int &ioSize, int &ioCaptureSize);
 
@@ -426,7 +429,14 @@ struct CppiaStackVar
    Dynamic getInFrame(const unsigned char *inFrame);
    void markClosure(char *inBase, hx::MarkContext *__inCtx);
    void visitClosure(char *inBase, hx::VisitContext *__inCtx);
-   void link(CppiaModule &inModule);
+   void link(CppiaModule &inModule, bool hasDefault=false);
+   void linkDefault();
+   void setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault);
+
+   #ifdef CPPIA_JIT
+   void genDefault(CppiaCompiler *compiler, const CppiaConst &inDefault);
+   #endif
+
 };
 
 
@@ -501,6 +511,7 @@ struct CppiaVar
          default:;
       }
    }
+
 
    void mark(hx::MarkContext *__inCtx);
    void visit(hx::VisitContext *__inCtx);
