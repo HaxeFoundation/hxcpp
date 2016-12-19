@@ -941,6 +941,8 @@ struct CrementPostDec
 
 struct AssignSet
 {
+   enum { op = aoSet };
+
    template<typename T>
    static T run(T& ioVal, CppiaCtx *ctx, CppiaExpr *value )
    {
@@ -949,11 +951,14 @@ struct AssignSet
       BCR_CHECK;
       return ioVal = val;
    }
+   template<typename T, typename V> void apply( T &ioVal, Dynamic val) {  }
 };
 
 
 struct AssignAdd
 {
+   enum { op = aoAdd };
+
    template<typename T>
    static T run(T &ioVal, CppiaCtx *ctx, CppiaExpr *value)
    {
@@ -981,12 +986,14 @@ struct AssignAdd
       ioVal = left + rhs;
       return ioVal.mPtr;
    }
+   template<typename T, typename V> void apply( T &ioVal, const V &val) { ioVal += val; }
 };
 
 
-#define DECL_STRUCT_ASSIGN(NAME,OPEQ,OP) \
+#define DECL_STRUCT_ASSIGN(NAME,OPEQ,OP,ao) \
 struct NAME \
 { \
+   enum op { op = ao }; \
    template<typename T> \
    inline static T &run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
@@ -1014,15 +1021,17 @@ struct NAME \
       ioVal = left OP f; \
       return ioVal; \
    } \
+   template<typename T> void apply( T &ioVal, double val) { ioVal OPEQ val; } \
 };
 
-DECL_STRUCT_ASSIGN(AssignMult,*=,*)
-DECL_STRUCT_ASSIGN(AssignSub,-=,-)
-DECL_STRUCT_ASSIGN(AssignDiv,/=,/)
+DECL_STRUCT_ASSIGN(AssignMult,*=,*,aoMult)
+DECL_STRUCT_ASSIGN(AssignSub,-=,-,aoSub)
+DECL_STRUCT_ASSIGN(AssignDiv,/=,/,aoDiv)
 
-#define DECL_STRUCT_ASSIGN_FUNC(NAME,OP_FUNC,RUN_FUNC,TMP) \
+#define DECL_STRUCT_ASSIGN_FUNC(NAME,OP_FUNC,RUN_FUNC,TMP,ao) \
 struct NAME \
 { \
+   enum op { op = ao }; \
    template<typename T> \
    static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
@@ -1042,16 +1051,18 @@ struct NAME \
       ioVal = Dynamic( OP_FUNC(left,t )).mPtr; \
       return ioVal; \
    } \
+   template<typename T> void apply( T &ioVal, TMP val) { ioVal = OP_FUNC( ioVal , val); } \
 };
 
-DECL_STRUCT_ASSIGN_FUNC(AssignMod,hx::DoubleMod,runFloat,Float)
-DECL_STRUCT_ASSIGN_FUNC(AssignUShr,hx::UShr,runInt,int)
+DECL_STRUCT_ASSIGN_FUNC(AssignMod,hx::DoubleMod,runFloat,Float,aoMod)
+DECL_STRUCT_ASSIGN_FUNC(AssignUShr,hx::UShr,runInt,int,aoUShr)
 
 
 
-#define DECL_STRUCT_ASSIGN_CAST(NAME,CAST,OP,RUN_FUNC) \
+#define DECL_STRUCT_ASSIGN_CAST(NAME,CAST,OP,RUN_FUNC,ao) \
 struct NAME \
 { \
+   enum op { op = ao }; \
    template<typename T> \
    static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
@@ -1071,14 +1082,15 @@ struct NAME \
       ioVal = Dynamic((CAST)left OP t).mPtr; \
       return ioVal; \
    } \
+   template<typename T> void apply( T &ioVal, int bits) { ioVal = (int)ioVal OP bits; } \
 };
 
-DECL_STRUCT_ASSIGN_CAST(AssignAnd,int,&,runInt)
-DECL_STRUCT_ASSIGN_CAST(AssignOr,int,|,runInt)
-DECL_STRUCT_ASSIGN_CAST(AssignXOr,int,^,runInt)
+DECL_STRUCT_ASSIGN_CAST(AssignAnd,int,&,runInt,aoAnd)
+DECL_STRUCT_ASSIGN_CAST(AssignOr,int,|,runInt,aoOr)
+DECL_STRUCT_ASSIGN_CAST(AssignXOr,int,^,runInt,aoXOr)
 
-DECL_STRUCT_ASSIGN_CAST(AssignShl,int,<<,runInt)
-DECL_STRUCT_ASSIGN_CAST(AssignShr,int,>>,runInt)
+DECL_STRUCT_ASSIGN_CAST(AssignShl,int,<<,runInt,aoShl)
+DECL_STRUCT_ASSIGN_CAST(AssignShr,int,>>,runInt,aoShr)
 
 
 int runContextConvertInt(CppiaCtx *ctx, ExprType inType, void *inFunc);
