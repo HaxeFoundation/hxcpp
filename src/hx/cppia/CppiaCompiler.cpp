@@ -715,7 +715,7 @@ public:
    }
 
 
-   void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
+   void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool=false)
    {
       if (!inTarget.valid())
          return;
@@ -732,9 +732,21 @@ public:
          switch(inSrcType)
          {
             case etInt:
-               callNative( (void *)intToObj, inSrc.as(jtInt));
-               if (inTarget!=sJitReturnReg)
-                  emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg.as(jtPointer));
+               if (asBool)
+               {
+                  JumpId isFalse = compare( cmpI_ZERO, inSrc.as(jtInt), 0, 0);
+                  move(inTarget.as(jtPointer), (void *)Dynamic(true).mPtr);
+                  JumpId done = jump();
+                  comeFrom(isFalse);
+                  move(inTarget.as(jtPointer), (void *)Dynamic(false).mPtr);
+                  comeFrom(done);
+               }
+               else
+               {
+                  callNative( (void *)intToObj, inSrc.as(jtInt));
+                  if (inTarget!=sJitReturnReg)
+                     emit_op1(SLJIT_MOV_P, inTarget, sJitReturnReg.as(jtPointer));
+               }
                break;
 
             case etFloat:
@@ -763,16 +775,30 @@ public:
          switch(inSrcType)
          {
             case etInt:
-               if (inSrc==sJitTemp1)
+               if (asBool)
                {
-                  move(sJitArg0, inSrc);
-                  add( sJitTemp1, inTarget.getReg(), inTarget.offset );
-                  callNative( (void *)intToStr, sJitArg0.as(jtInt), sJitTemp1.as(jtPointer));
+                  JumpId isFalse = compare( cmpI_ZERO, inSrc.as(jtInt), 0, 0);
+                  move(inTarget.as(jtInt), 4);
+                  move(inTarget.as(jtPointer)+4, (void *)String(true).__s );
+                  JumpId done = jump();
+                  comeFrom(isFalse);
+                  move(inTarget.as(jtInt), 5);
+                  move(inTarget.as(jtPointer)+4, (void *)String(false).__s );
+                  comeFrom(done);
                }
                else
                {
-                  makeAddress(sJitTemp1,inTarget);
-                  callNative( (void *)intToStr, inSrc.as(jtInt), sJitTemp1.as(jtPointer) );
+                  if (inSrc==sJitTemp1)
+                  {
+                     move(sJitArg0, inSrc);
+                     add( sJitTemp1, inTarget.getReg(), inTarget.offset );
+                     callNative( (void *)intToStr, sJitArg0.as(jtInt), sJitTemp1.as(jtPointer));
+                  }
+                  else
+                  {
+                     makeAddress(sJitTemp1,inTarget);
+                     callNative( (void *)intToStr, inSrc.as(jtInt), sJitTemp1.as(jtPointer) );
+                  }
                }
                break;
             case etFloat:
@@ -956,7 +982,7 @@ public:
    }
 
 
-   void convertReturnReg(ExprType inSrcType, const JitVal &inTarget, ExprType inToType)
+   void convertReturnReg(ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool = false)
    {
       if (inSrcType!=etVoid && inSrcType!=etNull && inToType!=etVoid && inToType!=etNull)
       {

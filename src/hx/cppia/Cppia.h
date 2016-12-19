@@ -951,9 +951,21 @@ struct AssignSet
       BCR_CHECK;
       return ioVal = val;
    }
-   template<typename T, typename V> void apply( T &ioVal, Dynamic val) {  }
+   template<typename T, typename V> static void apply( T &ioVal, V &val) {  }
 };
 
+template<typename T> inline void AssignDouble(T &value, double d) { value = d; }
+inline void AssignDouble(bool &value, double d) { }
+inline void AssignDouble(String &value, double d) { }
+
+template<typename T> inline void AssignInt(T &value, int i) { value = i; }
+inline void AssignInt(bool &value, int i) { }
+inline void AssignInt(String &value, int i) { }
+
+
+template<typename T> inline void AssignString(T &value, const String &s) {  }
+inline void AssignString(String &value, const String &s) { value = s; }
+inline void AssignString(Dynamic &value, const String &s) { value = s; }
 
 struct AssignAdd
 {
@@ -986,7 +998,17 @@ struct AssignAdd
       ioVal = left + rhs;
       return ioVal.mPtr;
    }
-   template<typename T, typename V> void apply( T &ioVal, const V &val) { ioVal += val; }
+   template<typename T> static
+   void apply( T &ioVal, const double &val) { AssignDouble( ioVal, ValToFloat(ioVal) + val ); }
+
+   template<typename T> static
+   void apply( T &ioVal, const int    &val) { AssignInt( ioVal, ValToInt(ioVal) + val ); }
+
+   template<typename T> static
+   void apply( T &ioVal, const String &val) { AssignString( ioVal, ValToString(ioVal) + val ); }
+
+   template<typename T> static
+   void apply( T &ioVal, const Dynamic &val) { ioVal = Dynamic(ioVal) + val; }
 };
 
 
@@ -1021,7 +1043,14 @@ struct NAME \
       ioVal = left OP f; \
       return ioVal; \
    } \
-   template<typename T> void apply( T &ioVal, double val) { ioVal OPEQ val; } \
+   template<typename T> static \
+   void apply( T &ioVal, double val) { AssignDouble(ioVal, ValToFloat(ioVal) OP val); } \
+   template<typename T> static \
+   void apply( T &ioVal, String &val) { } \
+   template<typename T> static \
+   void apply( T &ioVal, int &val) { } \
+   template<typename T> static \
+   void apply( T &ioVal, Dynamic &val) { } \
 };
 
 DECL_STRUCT_ASSIGN(AssignMult,*=,*,aoMult)
@@ -1051,7 +1080,14 @@ struct NAME \
       ioVal = Dynamic( OP_FUNC(left,t )).mPtr; \
       return ioVal; \
    } \
-   template<typename T> void apply( T &ioVal, TMP val) { ioVal = OP_FUNC( ioVal , val); } \
+   template<typename T> static \
+   void apply( T &ioVal, int &i) { AssignInt(ioVal, hx::UShr(ValToInt(ioVal),i)); } \
+   template<typename T> static \
+   void apply( T &ioVal, double &d) { AssignDouble(ioVal, hx::DoubleMod(ValToFloat(ioVal),d)); } \
+   template<typename T> static \
+   void apply( T &ioVal, String &) { } \
+   template<typename T> static \
+   void apply( T &ioVal, Dynamic &) { } \
 };
 
 DECL_STRUCT_ASSIGN_FUNC(AssignMod,hx::DoubleMod,runFloat,Float,aoMod)
@@ -1082,7 +1118,14 @@ struct NAME \
       ioVal = Dynamic((CAST)left OP t).mPtr; \
       return ioVal; \
    } \
-   template<typename T> void apply( T &ioVal, int bits) { ioVal = (int)ioVal OP bits; } \
+   template<typename T> static \
+   void apply( T &ioVal, int &bits) { AssignInt(ioVal, ValToInt(ioVal)  OP bits); } \
+   template<typename T> static \
+   void apply( T &ioVal, double &) { } \
+   template<typename T> static \
+   void apply( T &ioVal, String &) { } \
+   template<typename T> static \
+   void apply( T &ioVal, Dynamic &) { } \
 };
 
 DECL_STRUCT_ASSIGN_CAST(AssignAnd,int,&,runInt,aoAnd)

@@ -289,9 +289,9 @@ public:
    virtual JitVal functionArg(int inIndex) = 0;
 
    
-   virtual void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType) = 0;
+   virtual void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool=false) = 0;
    virtual void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType) = 0;
-   virtual void convertReturnReg(ExprType inSrcType, const JitVal &inTarget, ExprType inToType) = 0;
+   virtual void convertReturnReg(ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool=false) = 0;
    virtual void genVariantValueTemp0(int inOffset, const JitVal &inDest, ExprType destType) = 0;
    virtual void returnNull(const JitVal &inTarget, ExprType inToType) = 0;
 

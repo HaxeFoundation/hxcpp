@@ -119,6 +119,7 @@ static ArrayBase * SLJIT_CALL array_expand_size(ArrayBase *inArray, int inSize)
  
 
 
+
 template<typename ELEM, typename FUNC>
 struct ArraySetter : public ArrayBuiltinBase
 {
@@ -174,24 +175,32 @@ struct ArraySetter : public ArrayBuiltinBase
 
    #ifdef CPPIA_JIT
 
-   static void SLJIT_CALL nativeRunInt(ELEM *base, int index, int inValue)
+   static void * SLJIT_CALL nativeRunInt(ELEM *base, int index, int inValue)
    {
-      //FUNC::apply(base[index], inValue);
+      ELEM *ptr = base + index;
+      FUNC::apply(*ptr, inValue);
+      return ptr;
    }
 
-   static void SLJIT_CALL nativeRunFloat(ELEM *base, int index, double *inValue)
+   static void * SLJIT_CALL nativeRunFloat(ELEM *base, int index, double *inValue)
    {
-      //FUNC::apply(base[index], *inValue);
+      ELEM *ptr = base + index;
+      FUNC::apply(*ptr, *inValue);
+      return ptr;
    }
 
-   static void SLJIT_CALL nativeRunObject(ELEM *base, int index, hx::Object *inValue)
+   static void * SLJIT_CALL nativeRunObject(ELEM *base, int index, hx::Object *inValue)
    {
-      //FUNC::apply(base[index], Dynamic(inValue) );
+      ELEM *ptr = base + index;
+      FUNC::apply(*ptr, Dynamic(inValue) );
+      return ptr;
    }
 
-   static void SLJIT_CALL nativeRunString(ELEM *base, int index, String *inValue)
+   static void * SLJIT_CALL nativeRunString(ELEM *base, int index, String *inValue)
    {
-      //FUNC::apply(base[index], *inValue );
+      ELEM *ptr = base + index;
+      FUNC::apply(*ptr, *inValue );
+      return ptr;
    }
 
 
@@ -231,7 +240,6 @@ struct ArraySetter : public ArrayBuiltinBase
       JitTemp value(compiler,getJitType(rightHandType));
       args[1]->genCode(compiler, value, rightHandType);
 
-
       compiler->move(sJitTemp1,index);
 
       // sJitTemp0 = this
@@ -247,7 +255,7 @@ struct ArraySetter : public ArrayBuiltinBase
       compiler->comeFrom(enough);
 
       // Check length..
-      JumpId lengthOk = compiler->compare( cmpI_LESS_EQUAL, sJitTemp1.as(jtInt),
+      JumpId lengthOk = compiler->compare( cmpI_LESS, sJitTemp1.as(jtInt),
                                          sJitTemp0.star(jtInt, ArrayBase::lengthOffset()) );
 
       compiler->add(sJitTemp0.star(jtInt, ArrayBase::lengthOffset()), sJitTemp1.as(jtInt), (int)1);
@@ -291,6 +299,12 @@ struct ArraySetter : public ArrayBuiltinBase
          {
             printf("Unknown element size\n");
          }
+
+
+         if (destType!=etVoid && destType!=etNull)
+         {
+            compiler->convert( value, rightHandType, inDest, destType );
+         }
       }
       else
       {
@@ -309,6 +323,17 @@ struct ArraySetter : public ArrayBuiltinBase
                compiler->callNative( (void *)nativeRunObject, sJitTemp0, sJitTemp1, value.as(jtPointer) );
                break;
          }
+
+         if (destType!=etVoid && destType!=etNull)
+         {
+            JitType ptrType = getJitType(elemType);
+
+            if (sizeof(ELEM)==1)
+                ptrType = jtByte;
+            else if (sizeof(ELEM)==2)
+                ptrType = jtShort;
+            compiler->convert( sJitReturnReg.star(ptrType), elemType, inDest, destType );
+         }
       }
    }
    #endif
@@ -322,6 +347,15 @@ static ArrayBase * SLJIT_CALL array_expand(ArrayBase *inArray)
 }
 #endif
  
+
+template<typename T>
+struct ExprBaseTypeOf { typedef Dynamic Base ; };
+template<> struct ExprBaseTypeOf<int> { typedef int Base ; };
+template<> struct ExprBaseTypeOf<unsigned char> { typedef int Base ; };
+template<> struct ExprBaseTypeOf<bool> { typedef int Base ; };
+template<> struct ExprBaseTypeOf<Float> { typedef double &Base ; };
+template<> struct ExprBaseTypeOf<String> { typedef String &Base ; };
+
 
 
 template<typename ELEM, int FUNC, typename CREMENT>
@@ -891,6 +925,10 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       return Dynamic( CREMENT::run( Array<ELEM>(inArray)[inIndex] ) ).mPtr;
    }
 
+   static int SLJIT_CALL runRemove( Array_obj<ELEM> *inArray, typename ExprBaseTypeOf<ELEM>::Base inBase)
+   {
+      return inArray->remove(inBase);
+   }
 
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
@@ -1047,6 +1085,21 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                compiler->callNative( (void *)runJoin, thisVal, value );
                compiler->checkException();
                compiler->convert(value,etString, inDest, destType);
+               break;
+            }
+
+
+         case afRemove:
+            {
+               JitTemp thisVal(compiler, jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+
+               ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
+               JitTemp val(compiler,getJitType(elemType));
+
+               compiler->callNative( (void *)runRemove, thisVal, val );
+
+               compiler->convertReturnReg(etInt, inDest, destType, true);
                break;
             }
 

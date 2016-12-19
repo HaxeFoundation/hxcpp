@@ -2375,7 +2375,7 @@ static void SLJIT_CALL decByNameV( hx::Object *inObj, String *inName )
 }
 
 
-static cpp::Variant * SLJIT_CALL postIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+static cpp::Variant * SLJIT_CALL preIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
 {
    TRY_NATIVE
    *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC) + 1;
@@ -2386,7 +2386,7 @@ static cpp::Variant * SLJIT_CALL postIncByName( hx::Object *inObj, String *inNam
 }
 
 
-static cpp::Variant * SLJIT_CALL preIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
+static cpp::Variant * SLJIT_CALL postIncByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
 {
    TRY_NATIVE
    *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC);
@@ -4670,6 +4670,55 @@ struct ArrayDef : public CppiaDynamicExpr
    #endif
 };
 
+
+#ifdef CPPIA_JIT
+   hx::Object * SLJIT_CALL getItem(hx::Object *inObj, int inIndex)
+   {
+      return (inObj->__GetItem(inIndex)).mPtr;
+   }
+
+   void SLJIT_CALL incItem(hx::Object *inObj, int inIndex)
+   {
+      inObj->__SetItem( inIndex, inObj->__GetItem(inIndex) + 1 );
+   }
+
+   void SLJIT_CALL decItem(hx::Object *inObj, int inIndex)
+   {
+      inObj->__SetItem( inIndex, inObj->__GetItem(inIndex) - 1 );
+   }
+
+   hx::Object * SLJIT_CALL preIncItem(hx::Object *inObj, int inIndex)
+   {
+      Dynamic val = inObj->__GetItem(inIndex) +1;
+      inObj->__SetItem( inIndex, val );
+      return val.mPtr;
+   }
+
+   hx::Object * SLJIT_CALL postIncItem(hx::Object *inObj, int inIndex)
+   {
+      Dynamic val = inObj->__GetItem(inIndex);
+      inObj->__SetItem( inIndex, val + 1 );
+      return val.mPtr;
+   }
+
+
+   hx::Object * SLJIT_CALL preDecItem(hx::Object *inObj, int inIndex)
+   {
+      Dynamic val = inObj->__GetItem(inIndex) - 1;
+      inObj->__SetItem( inIndex, val );
+      return val.mPtr;
+   }
+
+   hx::Object * SLJIT_CALL postDecItem(hx::Object *inObj, int inIndex)
+   {
+      Dynamic val = inObj->__GetItem(inIndex);
+      inObj->__SetItem( inIndex, val -  1 );
+      return val.mPtr;
+   }
+#endif
+
+
+
 struct DynamicArrayI : public CppiaDynamicExpr
 {
    CppiaExpr *object;
@@ -4754,7 +4803,46 @@ struct DynamicArrayI : public CppiaDynamicExpr
       return this;
    }
    #ifdef CPPIA_JIT
-   // void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType) { }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
+   {
+      JitTemp obj(compiler,jtPointer);
+      object->genCode(compiler, obj, etObject);
+
+      index->genCode(compiler, sJitTemp1, etInt);
+
+      if (crement==coNone && assign==aoNone)
+      {
+         compiler->callNative( (void *)getItem, obj, sJitTemp1.as(jtInt) );
+         compiler->convertReturnReg(etObject, inDest, destType);
+         return;
+      }
+      if (crement!=coNone)
+      {
+         if (destType==etVoid || destType==etNull)
+         {
+            compiler->callNative( crement==coPostInc || crement==coPostInc ? (void *)incItem : (void *)decItem,
+               obj, sJitTemp1.as(jtInt) );
+         }
+         else
+         {
+            void *func = 0;
+            switch(crement)
+            {
+               case coPostInc: func=(void *)postIncItem; break;
+               case coPreInc: func=(void *)preIncItem; break;
+               case coPostDec: func=(void *)postDecItem; break;
+               case coPreDec: func=(void *)preDecItem; break;
+               default: ;
+            }
+            compiler->callNative( func, obj, sJitTemp1.as(jtInt) );
+            compiler->convertReturnReg(etObject, inDest, destType );
+         }
+         return;
+      }
+      compiler->trace("todo: DynamicArrayI ?=");
+
+   }
    #endif
 };
 
