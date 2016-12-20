@@ -178,16 +178,13 @@ void SLJIT_CALL createEnum(hx::Class_obj *inClass, String *inName, int inArgs)
    // ctx.pointer points to end-of-args
    hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
    Array<Dynamic> args = Array_obj<Dynamic>::__new(inArgs);
-   try
-   {
+
+   TRY_NATIVE
       for(int i=0;i<inArgs;i++)
          args[i] = Dynamic(base[i]);
       base[0] = inClass->ConstructEnum(*inName, args).mPtr;
-   }
-   catch(Dynamic e)
-   {
-      ctx->exception = e.mPtr;
-   }
+  
+   CATCH_NATIVE
 }
 #endif
 

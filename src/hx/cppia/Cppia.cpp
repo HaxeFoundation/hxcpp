@@ -837,8 +837,8 @@ void SLJIT_CALL callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
    // ctx.pointer points to end-of-args
    hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
    ctx->pointer = (unsigned char *)base;
-   try
-   {
+
+   TRY_NATIVE
       switch(inArgs)
       {
          case 0:
@@ -867,11 +867,7 @@ void SLJIT_CALL callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
             base[0] = inFunction->__Run(argArray).mPtr;
             }
       }
-   }
-   catch(Dynamic e)
-   {
-      ctx->exception = e.mPtr;
-   }
+   CATCH_NATIVE
    ctx->pointer = (unsigned char *)base;
 }
 #endif
@@ -3408,7 +3404,10 @@ static void SLJIT_CALL stringCat(String *ioValue, String *inValue)
 
 static hx::Object * SLJIT_CALL dynamicCatString(hx::Object *inLeft, String *inRight)
 {
+   TRY_NATIVE
    return Dynamic( Dynamic(inLeft) + *inRight ).mPtr;
+   CATCH_NATIVE
+   return 0;
 }
 
 
@@ -3435,7 +3434,7 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
    switch(inOp)
    {
       case aoMult:
-         if (ioValue.type==etInt)
+         if (exprType==etInt)
          {
             inExpr->genCode(compiler, sJitTemp0, etInt);
             compiler->mult(ioValue, sJitTemp0, ioValue,false);
@@ -3452,7 +3451,7 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
          {
             JitTemp fval(compiler, jtFloat);
             inExpr->genCode(compiler, fval, etFloat);
-            if (ioValue.type==etInt)
+            if (exprType==etInt)
             {
                compiler->callNative( (void *)modIntFloat,  ioValue, fval );
                compiler->move(ioValue, sJitReturnReg.as(jtInt) );
@@ -3465,29 +3464,30 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
          break;
 
       case aoAdd:
-         if (ioValue.type==etInt)
+         if (exprType==etInt)
          {
             inExpr->genCode(compiler, sJitTemp0, etInt);
             compiler->add(ioValue, sJitTemp0, ioValue);
          }
-         else if (ioValue.type==etFloat)
+         else if (exprType==etFloat)
          {
             inExpr->genCode(compiler, sJitTempF0, etFloat);
             compiler->add(ioValue, sJitTempF0, ioValue);
          }
-         else if (ioValue.type==etString)
+         else if (exprType==etString)
          {
             JitTemp sval(compiler,jtString);
             inExpr->genCode(compiler, sval, etString);
             compiler->callNative(stringCat, ioValue, sval );
          }
-         else if (ioValue.type==etObject)
+         else if (exprType==etObject)
          {
             if (inExpr->getType()==etString)
             {
                JitTemp sval(compiler,jtString);
                inExpr->genCode(compiler, sval, etString);
-               compiler->callNative(dynamicCatString, ioValue, sval );
+               compiler->callNative(dynamicCatString, ioValue.as(jtPointer), sval );
+               compiler->checkException();
             }
             else
             {
@@ -3499,7 +3499,7 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
          break;
 
       case aoSub:
-         if (ioValue.type==etInt)
+         if (exprType==etInt)
          {
             inExpr->genCode(compiler, sJitTemp0, etInt);
             compiler->sub(ioValue, ioValue, sJitTemp0, false);
@@ -6041,7 +6041,7 @@ struct OpMult : public BinOp
          left->genCode(compiler,lval,etInt);
          right->genCode(compiler,sJitTemp0.as(jtInt),etInt);
          if (destType==etInt)
-            compiler->mult(inDest,lval,sJitTemp0.as(jtInt),false);
+            compiler->mult(inDest.as(jtInt),lval,sJitTemp0.as(jtInt),false);
          else
          {
             compiler->mult(sJitTemp1.as(jtInt),lval,sJitTemp0.as(jtInt),false);
@@ -6055,7 +6055,7 @@ struct OpMult : public BinOp
          right->genCode(compiler,sJitTempF0,etFloat);
          if (destType==etFloat && !isMemoryVal(inDest) )
          {
-            compiler->mult(inDest,lval,sJitTempF0,true);
+            compiler->mult(inDest.as(jtFloat),lval,sJitTempF0,true);
          }
          else
          {
@@ -6097,12 +6097,14 @@ struct OpSub : public BinOp
       {
          JitTemp lval(compiler,jtInt);
          left->genCode(compiler,lval,etInt);
-         right->genCode(compiler,sJitTemp0,etInt);
+         right->genCode(compiler,sJitTemp0.as(jtInt),etInt);
          if (destType==etInt)
-            compiler->sub(inDest,lval,sJitTemp0,false);
+         {
+            compiler->sub(inDest.as(jtInt),lval,sJitTemp0,false);
+         }
          else
          {
-            compiler->sub(sJitTemp1.as(jtInt),lval,sJitTemp0,true);
+            compiler->sub(sJitTemp1.as(jtInt),lval,sJitTemp0,false);
             compiler->convert(sJitTemp1,etInt, inDest, destType);
          }
       }
@@ -6112,7 +6114,7 @@ struct OpSub : public BinOp
          left->genCode(compiler,lval,etFloat);
          right->genCode(compiler,sJitTempF0,etFloat);
          if (destType==etFloat)
-            compiler->sub(inDest,lval,sJitTempF0,true);
+            compiler->sub(inDest.as(jtFloat),lval,sJitTempF0,true);
          else
          {
             compiler->sub(sJitTempF1,lval,sJitTempF0,true);

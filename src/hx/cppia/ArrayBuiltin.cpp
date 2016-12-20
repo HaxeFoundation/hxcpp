@@ -930,6 +930,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       return inArray->remove(inBase);
    }
 
+
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       // TODO - null check
@@ -1096,6 +1097,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
                ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
                JitTemp val(compiler,getJitType(elemType));
+               args[0]->genCode(compiler, val, elemType);
 
                compiler->callNative( (void *)runRemove, thisVal, val );
 

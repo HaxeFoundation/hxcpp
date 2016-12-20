@@ -93,6 +93,31 @@ struct ToCaseExpr : public StringExpr
       else
          return val.toLowerCase();
    }
+   #ifdef CPPIA_JIT
+   static void SLJIT_CALL strToCase(String *ioVal)
+   {
+      if (UPPER)
+         *ioVal = ioVal->toUpperCase();
+      else
+         *ioVal = ioVal->toLowerCase();
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      if (destType==etString)
+      {
+         strVal->genCode(compiler, inDest, destType);
+         compiler->callNative( (void *)strToCase,  inDest.as(jtString) );
+      }
+      else
+      {
+         JitTemp tmpVal(compiler,jtString);
+         strVal->genCode(compiler, tmpVal, etString);
+         compiler->callNative( (void *)strToCase,  tmpVal);
+         compiler->convert( tmpVal, etString, inDest, destType );
+      }
+   }
+   #endif
 };
 
 template<bool CODE,bool AS_INT>

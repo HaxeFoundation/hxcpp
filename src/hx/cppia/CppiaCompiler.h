@@ -18,7 +18,7 @@
 
 
 #define TRY_NATIVE try {
-#define CATCH_NATIVE } catch(Dynamic e) {  CppiaCtx::getCurrent()->exception = e.mPtr; }
+#define CATCH_NATIVE } catch(Dynamic e) {  CppiaCtx::getCurrent()->exception = e.mPtr ? e.mPtr : Dynamic(String("",0)).mPtr; }
 
 
 extern "C" struct sljit_jump;
@@ -340,6 +340,7 @@ public:
    virtual void traceFloat(const char *inLabel, const JitVal &inValue) = 0;
    virtual void traceStrings(const char *inS0, const char *inS1) = 0;
    virtual void traceInt(const char *inLabel, const JitVal &inValue) = 0;
+   virtual void traceString(const char *inLabel, const JitVal &inValue) = 0;
 
    virtual void negate(const JitVal &inDest, const JitVal &inSrc) = 0;
    virtual void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;

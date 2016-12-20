@@ -24,6 +24,10 @@ static void SLJIT_CALL my_trace_strings(const char *inText, const char *inValue)
 {
    printf("%s%s\n", inText, inValue); 
 }
+static void SLJIT_CALL my_trace_string(const char *inText, String *inValue)
+{
+   printf("%s%s\n", inText, inValue->__s); 
+}
 
 static void SLJIT_CALL my_trace_ptr_func(const char *inText, void *inPtr)
 {
@@ -734,6 +738,7 @@ public:
             case etInt:
                if (asBool)
                {
+                  trace("int->obj");
                   JumpId isFalse = compare( cmpI_ZERO, inSrc.as(jtInt), 0, 0);
                   move(inTarget.as(jtPointer), (void *)Dynamic(true).mPtr);
                   JumpId done = jump();
@@ -777,6 +782,7 @@ public:
             case etInt:
                if (asBool)
                {
+                  trace("int->string");
                   JumpId isFalse = compare( cmpI_ZERO, inSrc.as(jtInt), 0, 0);
                   move(inTarget.as(jtInt), 4);
                   move(inTarget.as(jtPointer)+4, (void *)String(true).__s );
@@ -986,7 +992,7 @@ public:
    {
       if (inSrcType!=etVoid && inSrcType!=etNull && inToType!=etVoid && inToType!=etNull)
       {
-         convert( sJitReturnReg, inSrcType, inTarget, inToType);
+         convert( sJitReturnReg, inSrcType, inTarget, inToType, asBool);
       }
    }
 
@@ -1049,6 +1055,10 @@ public:
    void traceStrings(const char *inS0,const char *inS1)
    {
       callNative( (void *)my_trace_strings, JitVal( (void *)inS0 ), JitVal( (void *)inS1 ));
+   }
+   void traceString(const char *inLabel, const JitVal &inValue)
+   {
+      callNative( (void *)my_trace_string, JitVal( (void *)inLabel ), inValue );
    }
 
    void negate(const JitVal &inDest, const JitVal &inSrc)
