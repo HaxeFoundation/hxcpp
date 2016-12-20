@@ -3578,7 +3578,20 @@ public:
       //  otherwise, someone else is collecting at the moment - so wait...
       if (!HxAtomicExchangeIf(0, 0xffffffff,(volatile int *)&hx::gPauseForCollect))
       {
-         hx::PauseForCollect();
+         if (inLocked)
+         {
+            gThreadStateChangeLock->Unlock();
+
+            hx::PauseForCollect();
+
+            hx::EnterGCFreeZone();
+            gThreadStateChangeLock->Lock();
+            hx::ExitGCFreeZoneLocked();
+         }
+         else
+         {
+            hx::PauseForCollect();
+         }
          return;
       }
 
