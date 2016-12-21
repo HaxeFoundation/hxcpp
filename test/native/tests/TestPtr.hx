@@ -180,11 +180,12 @@ class TestPtr extends haxe.unit.TestCase{
    }
 
      private static var output:cpp.Pointer<Array<Int>>;
+
+     private static var arrayValue:Array<Int>;
      private static function makeValue():{ a:cpp.Pointer<Array<Int>> }
      {
-       var array = new Array<Int>();
-       array.push(9);
-       return { a: cpp.Pointer.addressOf(array) };
+       arrayValue = [9];
+       return { a: cpp.Pointer.addressOf(arrayValue) };
      }
 
      @:analyzer(no_fusion)
