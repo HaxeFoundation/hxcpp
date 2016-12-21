@@ -62,6 +62,8 @@
  <section if="NDKV8+">
    <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/include" />
    <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/include" />
+   <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}.x/include" />
+   <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}.x/libs/${ABI}/include" />
  </section>
  <section unless="NDKV8+">
     <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/include" />
