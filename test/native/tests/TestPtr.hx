@@ -4,7 +4,10 @@ import NativeGen;
 import cpp.NativeGc;
 import cpp.Stdlib;
 import cpp.Pointer;
+import cpp.RawPointer;
+import cpp.UInt8;
 using cpp.NativeArray;
+using cpp.NativeString;
 
 @:unreflective
 @:native("CVec")
@@ -38,6 +41,29 @@ extern class VecStruct {
 	public var z:Float;
 }
 
+@:native("::SomeStruct")
+extern class Native_SomeStruct {
+    var data:RawPointer<UInt8>;
+    var dataLength:Int;
+
+    inline function getDataBytes():haxe.io.Bytes {
+        var bdata:haxe.io.BytesData = [];
+        cpp.NativeArray.setData(bdata, cast data, dataLength);  // Null Function Pointer
+        return haxe.io.Bytes.ofData(bdata);
+    }
+
+    inline function getUnmanagedDataBytes():haxe.io.Bytes {
+        var bdata:haxe.io.BytesData = [];
+        cpp.NativeArray.setUnmanagedData(bdata, cast data, dataLength);  // Null Function Pointer
+        return haxe.io.Bytes.ofData(bdata);
+    }
+
+}
+@:native("::cpp::Reference<SomeStruct>")
+extern class SomeStructRef extends Native_SomeStruct {}
+@:native("::cpp::Struct<SomeStruct>")
+extern class SomeStruct extends SomeStructRef {}
+
 
 @:headerCode('
 struct CVec{
@@ -48,7 +74,15 @@ struct CVec{
 	double z;
 
   void set99(CVec &ioVex) { ioVex.x=99; }
-};')
+};
+
+  struct SomeStruct {
+     SomeStruct() : data("Hi!"), dataLength(3) { }
+
+     char *data;
+     int dataLength;
+  };
+')
 @:cppFileCode('
   int callPointer(CVec *) { return 5; }
 ')
@@ -245,6 +279,71 @@ class TestPtr extends haxe.unit.TestCase{
 
    public function testFunctionStructAccess() {
        assertTrue( functionCaller != null );
+   }
+
+   public function testSetData() {
+      var ss:SomeStruct = null;
+      ss.dataLength = 4;
+      ss.data = cast "bye!".c_str();
+      var b = ss.getDataBytes();
+      assertTrue( b.getString(0, b.length) == "bye!" );
+
+      var ss:SomeStruct = null;
+      var b = ss.getUnmanagedDataBytes();
+      assertTrue( b.getString(0, b.length) == "Hi!" );
+   }
+
+   public function testZero() {
+      var a = [1,2,3];
+      a.zero();
+      assertTrue(a.length==3);
+      assertTrue(a[0]==0);
+      assertTrue(a[1]==0);
+      assertTrue(a[2]==0);
+   }
+
+   public function testMemcmp() {
+      var a = [1,2,3];
+      var b = [2,2,3];
+      assertTrue( a.memcmp(b) == -1 );
+      assertTrue( b.memcmp(a) == 1 );
+      assertTrue( a.memcmp(a) == 0 );
+   }
+
+   public function testCapacity() {
+      var a = [1,2,3];
+      assertTrue( a.capacity() < 1000 );
+      a.reserve(1000);
+      assertTrue( a.capacity() == 1000 );
+      a[1000] = 1;
+      assertTrue( a.capacity() > 1000 );
+   }
+
+
+   public function testElementSize() {
+      var a = [1];
+      assertTrue( a.getElementSize() == cpp.Stdlib.sizeof(Int)  );
+      var a = ["hello!"];
+      assertTrue( a.getElementSize() == cpp.Stdlib.sizeof(String)  );
+      var a = [7.1];
+      assertTrue( a.getElementSize() == cpp.Stdlib.sizeof(Float)  );
+   }
+
+
+   public function testBlit() {
+      var a = [1,2,3,4];
+      var b = [0,0,0,0];
+      b.blit(0,a,0,a.length);
+      for(i in 0...4)
+        assertTrue(b[i] == a[i]);
+      for(i in 0...4)
+         b.blit(i,a,0,1);
+      for(i in 0...4)
+        assertTrue(b[i] == a[0]);
+      for(i in 0...4)
+         b.blit(i,a,2,1);
+      for(i in 0...4)
+        assertTrue(b[i] == a[2]);
    }
 }
 
