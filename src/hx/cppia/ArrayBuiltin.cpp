@@ -687,7 +687,6 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       }
       if (FUNC==afMap)
       {
-       printf("afMap\n");
          // TODO - maybe make this more efficient
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          BCR_CHECK;
@@ -984,6 +983,25 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       TRY_NATIVE
       *outString = inArray->toString();
       CATCH_NATIVE
+   }
+
+   static hx::Object * SLJIT_CALL runCopy( Array_obj<ELEM> *inArray)
+   {
+      return inArray->copy().mPtr;
+   }
+
+   static hx::Object * SLJIT_CALL runProcess( Array_obj<ELEM> *inArray, hx::Object *inFunction)
+   {
+      TRY_NATIVE
+      if (FUNC==afMap)
+      {
+         Array<ELEM> result = inArray->map(inFunction);
+         return result.mPtr;
+      }
+      else
+         return inArray->filter(inFunction).mPtr;
+      CATCH_NATIVE
+      return 0;
    }
 
 
@@ -1444,6 +1462,28 @@ struct ArrayBuiltin : public ArrayBuiltinBase
             }
             break;
 
+
+         case afCopy:
+            thisExpr->genCode(compiler, sJitArg0, etObject);
+            compiler->callNative( (void *)runCopy, sJitArg0);
+            compiler->convertReturnReg(etObject, inDest, destType );
+            break;
+
+         case afMap:
+         case afFilter:
+            {
+            JitTemp thisVal(compiler,jtPointer);
+            thisExpr->genCode(compiler, thisVal, etObject);
+            args[0]->genCode(compiler, sJitArg1.as(jtPointer), etObject);
+
+            compiler->callNative( (void *)runProcess, thisVal, sJitArg1.as(jtPointer));
+            compiler->checkException();
+            compiler->convertReturnReg(etObject, inDest, destType );
+            }
+            break;
+
+
+
          default:
             compiler->traceStrings("ArrayBuiltin::",sFuncNames[FUNC]);
       }
@@ -1769,7 +1809,6 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
       if (FUNC==afMap)
       {
-       printf("afMap\n");
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
          return thisVal->CALL(map)(a0).mPtr;
