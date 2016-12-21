@@ -345,11 +345,15 @@ static ArrayBase * SLJIT_CALL array_expand(ArrayBase *inArray)
   inArray->Realloc( inArray->length + 1 );
   return inArray;
 }
+static hx::Object *SLJIT_CALL objGetIndex(hx::Object *inArray, int inIndex)
+{
+   return Dynamic(inArray->__GetItem(inIndex)).mPtr;
+}
 #endif
  
 
 template<typename T>
-struct ExprBaseTypeOf { typedef Dynamic Base ; };
+struct ExprBaseTypeOf { typedef hx::Object *Base ; };
 template<> struct ExprBaseTypeOf<int> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<unsigned char> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<bool> { typedef int Base ; };
@@ -683,6 +687,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       }
       if (FUNC==afMap)
       {
+       printf("afMap\n");
          // TODO - maybe make this more efficient
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          BCR_CHECK;
@@ -930,6 +935,59 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       return inArray->remove(inBase);
    }
 
+   static int SLJIT_CALL runIndex( Array_obj<ELEM> *inArray, typename ExprBaseTypeOf<ELEM>::Base inBase, hx::Object *pos)
+   {
+      if (FUNC==afIndexOf)
+         return inArray->indexOf(inBase,pos);
+      else
+         return inArray->lastIndexOf(inBase,pos);
+   }
+
+   static void SLJIT_CALL runInsert( Array_obj<ELEM> *inArray, int pos, typename ExprBaseTypeOf<ELEM>::Base inBase)
+   {
+      inArray->insert(pos, inBase);
+   }
+
+   // TODO - string
+   static hx::Object * SLJIT_CALL runShift( Array_obj<ELEM> *inArray )
+   {
+      return Dynamic(inArray->shift()).mPtr;
+   }
+
+   static hx::Object * SLJIT_CALL runSlice( Array_obj<ELEM> *inArray, int pos, hx::Object *end )
+   {
+      return inArray->slice(pos, end).mPtr;
+   }
+
+   static hx::Object * SLJIT_CALL runSplice( Array_obj<ELEM> *inArray, int pos, int len )
+   {
+      return inArray->splice(pos, len).mPtr;
+   }
+
+   static void SLJIT_CALL runRemoveRange( Array_obj<ELEM> *inArray, int pos, int len )
+   {
+      inArray->removeRange(pos, len);
+   }
+
+   static void SLJIT_CALL runReverse( Array_obj<ELEM> *inArray )
+   {
+      inArray->reverse();
+   }
+
+   static hx::Object *SLJIT_CALL runConcat( Array_obj<ELEM> *inArray, Array_obj<ELEM> *inOther )
+   {
+      return inArray->concat(inOther).mPtr;
+   }
+
+   static void SLJIT_CALL runToString( Array_obj<ELEM> *inArray, String *outString )
+   {
+      TRY_NATIVE
+      *outString = inArray->toString();
+      CATCH_NATIVE
+   }
+
+
+   static bool isBoolElem() { return ExprTypeIsBool<ELEM>::value; }
 
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
@@ -1002,11 +1060,23 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                JitTemp thisVal(compiler,jtPointer);
                thisExpr->genCode(compiler, thisVal, etObject);
 
+               if (destType==etObject)
+               {
+                  args[0]->genCode(compiler, sJitArg1, etInt);
+                  compiler->callNative((void *)objGetIndex, thisVal, sJitArg1.as(jtInt));
+                  compiler->convertReturnReg(etObject, inDest, destType);
+                  return;
+               }
+
                // sJitTemp0 = index
                args[0]->genCode(compiler, sJitTemp0, etInt);
 
+               if (destType==etNull || destType==etVoid)
+                  return;
+
                // sJitTemp1 = this
                compiler->move(sJitTemp1, thisVal);
+
 
                // Check length..
                JumpId lengthOk = compiler->compare( cmpI_LESS, sJitTemp0.as(jtInt),
@@ -1022,6 +1092,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
                // sJitTemp0 = index
                // sJitTemp1 = this
+
                compiler->move(sJitTemp1, sJitTemp1.star(jtPointer, ArrayBase::baseOffset()).as(jtPointer) );
                // sJitTemp1 = this->base
 
@@ -1223,6 +1294,54 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
             }
 
+
+         case afIndexOf:
+         case afLastIndexOf:
+            {
+               JitTemp thisVal(compiler, jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+
+               ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
+               JitTemp val(compiler,getJitType(elemType));
+               args[0]->genCode(compiler, val, elemType);
+
+               args[1]->genCode(compiler, sJitArg2.as(jtPointer), etObject);
+
+               compiler->callNative( (void *)runIndex, thisVal, val, sJitArg2.as(jtPointer) );
+
+               compiler->convertReturnReg(etInt, inDest, destType);
+               break;
+            }
+
+
+
+         case afInsert:
+            {
+               JitTemp thisVal(compiler, jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+
+               JitTemp pos(compiler, jtInt);
+               args[0]->genCode(compiler, pos, etInt);
+
+               ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
+               JitTemp val(compiler,getJitType(elemType));
+               args[1]->genCode(compiler, val, elemType);
+
+               compiler->callNative( (void *)runInsert, thisVal, pos, val );
+               break;
+            }
+
+         case afConcat:
+            {
+               JitTemp thisVal(compiler,jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+               args[0]->genCode(compiler, sJitArg1.as(jtPointer), etObject);
+               compiler->callNative( (void *)runConcat, thisVal, sJitArg1.as(jtPointer));
+               compiler->convertReturnReg(etObject, inDest, destType);
+               break;
+            }
+
+
          case af__crement:
             {
                CrementOp op = (CrementOp)CREMENT::OP;
@@ -1258,6 +1377,73 @@ struct ArrayBuiltin : public ArrayBuiltinBase
             }
             break;
 
+         case afReverse:
+            thisExpr->genCode(compiler, sJitArg0.as(jtPointer), etObject);
+            compiler->callNative( (void *)runReverse, sJitArg0.as(jtPointer) );
+            break;
+
+         case afShift:
+            thisExpr->genCode(compiler, sJitArg0.as(jtPointer), etObject);
+            compiler->callNative( (void *)runShift, sJitArg0.as(jtPointer) );
+            compiler->convertReturnReg(etObject, inDest, destType, isBoolElem() );
+            break;
+
+
+         case afSlice:
+            {
+            JitTemp thisVal(compiler,jtPointer);
+            thisExpr->genCode(compiler, thisVal, etObject);
+
+            JitTemp pos(compiler,jtInt);
+            args[0]->genCode(compiler, pos, etInt);
+
+            args[1]->genCode(compiler, sJitArg2.as(jtPointer), etObject);
+
+            compiler->callNative( (void *)runSlice, thisVal, pos, sJitArg2.as(jtPointer) );
+
+            compiler->convertReturnReg(etObject, inDest, destType);
+            }
+            break;
+
+
+         case afSplice:
+            {
+            JitTemp thisVal(compiler,jtPointer);
+            thisExpr->genCode(compiler, thisVal, etObject);
+
+            JitTemp pos(compiler,jtInt);
+            args[0]->genCode(compiler, pos, etInt);
+
+            args[1]->genCode(compiler, sJitArg2.as(jtInt), etInt);
+
+            if (destType==etNull || destType==etVoid)
+               compiler->callNative( (void *)runRemoveRange, thisVal, pos, sJitArg2.as(jtInt) );
+            else
+            {
+               compiler->callNative( (void *)runSplice, thisVal, pos, sJitArg2.as(jtInt) );
+               compiler->convertReturnReg(etObject, inDest, destType);
+            }
+
+            }
+            break;
+
+
+         case afToString:
+            thisExpr->genCode(compiler, sJitArg0, etObject);
+            if (destType==etString)
+            {
+               compiler->callNative( (void *)runToString, sJitArg0, inDest);
+               compiler->checkException();
+            }
+            else
+            {
+               JitTemp result(compiler, jtString);
+               compiler->callNative( (void *)runToString, sJitArg0, result);
+               compiler->checkException();
+               compiler->convert(result, etString, inDest, destType );
+            }
+            break;
+
          default:
             compiler->traceStrings("ArrayBuiltin::",sFuncNames[FUNC]);
       }
@@ -1265,12 +1451,6 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    #endif
 };
 
-
-
-
-template<int FUNC,int OP>
-struct ArrayBuiltinAny : public ArrayBuiltinBase
-{
 
 #if (HXCPP_API_LEVEL>=330)
   #define BasePtr(x) x
@@ -1281,6 +1461,96 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
   typedef ArrayBase ArrayAnyImpl;
   #define CALL(x) __##x
 #endif
+
+
+#ifdef CPPIA_JIT
+static hx::Object * SLJIT_CALL objGetItem(hx::Object *inObj, int inIndex)
+{
+   return inObj->__GetItem(inIndex).mPtr;
+}
+static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, hx::Object *inValue)
+{
+   return inObj->remove(inValue);
+}
+static hx::Object * SLJIT_CALL arrayConcat(ArrayAnyImpl *inObj, hx::Object *inValue)
+{
+   return inObj->concat(Dynamic(inValue)).mPtr;
+}
+
+static hx::Object * SLJIT_CALL arraySplice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
+{
+   return inObj->splice( Dynamic(a0), Dynamic(a1) ).mPtr;
+}
+static hx::Object * SLJIT_CALL arraySlice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
+{
+   return inObj->slice( Dynamic(a0), Dynamic(a1) ).mPtr;
+}
+static hx::Object * SLJIT_CALL arrayPop(ArrayAnyImpl *inObj)
+{
+   return inObj->pop().mPtr;
+}
+
+static void SLJIT_CALL runSort( ArrayAnyImpl *inArray, hx::Object *inFunc)
+{
+   TRY_NATIVE
+   inArray->sort( Dynamic(inFunc) );
+   CATCH_NATIVE
+}
+static void SLJIT_CALL runJoin( ArrayAnyImpl *inArray, String *ioValue)
+{
+   TRY_NATIVE
+   *ioValue = inArray->join( *ioValue );
+   CATCH_NATIVE
+}
+
+
+
+static int SLJIT_CALL arrayPushInt( ArrayAnyImpl *inArray, int inVal)
+{
+   return inArray->push(inVal);
+}
+static int SLJIT_CALL arrayPushObject( ArrayAnyImpl *inArray, hx::Object *inVal)
+{
+   return inArray->push(Dynamic(inVal));
+}
+static int SLJIT_CALL arrayPushFloat( ArrayAnyImpl *inArray, double *inVal)
+{
+   return inArray->push(*inVal);
+}
+static int SLJIT_CALL arrayPushString( ArrayAnyImpl *inArray, String *inVal)
+{
+   return inArray->push(*inVal);
+}
+
+
+
+static void SLJIT_CALL arrayUnshiftInt( ArrayAnyImpl *inArray, int inVal)
+{
+   inArray->unshift(inVal);
+}
+static void SLJIT_CALL arrayUnshiftObject( ArrayAnyImpl *inArray, hx::Object *inVal)
+{
+   inArray->unshift(Dynamic(inVal));
+}
+static void SLJIT_CALL arrayUnshiftFloat( ArrayAnyImpl *inArray, double *inVal)
+{
+   inArray->unshift(*inVal);
+}
+static void SLJIT_CALL arrayUnshiftString( ArrayAnyImpl *inArray, String *inVal)
+{
+   inArray->unshift(*inVal);
+}
+
+
+
+
+#endif
+
+
+
+template<int FUNC,int OP>
+struct ArrayBuiltinAny : public ArrayBuiltinBase
+{
 
 
 
@@ -1499,6 +1769,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       }
       if (FUNC==afMap)
       {
+       printf("afMap\n");
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
          return thisVal->CALL(map)(a0).mPtr;
@@ -1689,42 +1960,8 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
    bool isBoolInt() { return FUNC==afRemove; }
 
+
    #ifdef CPPIA_JIT
-   static hx::Object * SLJIT_CALL objGetItem(hx::Object *inObj, int inIndex)
-   {
-      return inObj->__GetItem(inIndex).mPtr;
-   }
-   static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, hx::Object *inValue)
-   {
-      return inObj->remove(inValue);
-   }
-   static hx::Object * SLJIT_CALL arraySplice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
-   {
-      return inObj->splice( Dynamic(a0), Dynamic(a1) ).mPtr;
-   }
-   static hx::Object * SLJIT_CALL arraySlice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
-   {
-      return inObj->slice( Dynamic(a0), Dynamic(a1) ).mPtr;
-   }
-   static hx::Object * SLJIT_CALL arrayPop(ArrayAnyImpl *inObj)
-   {
-      return inObj->pop().mPtr;
-   }
-
-   static void SLJIT_CALL runSort( ArrayAnyImpl *inArray, hx::Object *inFunc)
-   {
-      TRY_NATIVE
-      inArray->sort( Dynamic(inFunc) );
-      CATCH_NATIVE
-   }
-   static void SLJIT_CALL runJoin( ArrayAnyImpl *inArray, String *ioValue)
-   {
-      TRY_NATIVE
-      *ioValue = inArray->join( *ioValue );
-      CATCH_NATIVE
-   }
-
-
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       JitTemp thisVal(compiler,etObject);
@@ -1747,7 +1984,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          case afRemove:
             args[0]->genCode(compiler, sJitArg1, etObject);
             compiler->callNative( (void *)arrayRemove, thisVal, sJitArg1.as(jtPointer));
-            compiler->convertReturnReg(etInt, inDest, destType);
+            compiler->convertReturnReg(etInt, inDest, destType,true);
             break;
 
          case afSplice:
@@ -1787,6 +2024,82 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             compiler->convert(value,etString, inDest, destType);
             }
             break;
+
+
+         case afConcat:
+            {
+            args[0]->genCode(compiler, sJitArg1, etObject);
+            compiler->callNative( (void *)arrayConcat, thisVal, sJitArg1.as(jtPointer));
+            compiler->convertReturnReg(etObject, inDest, destType);
+            }
+            break;
+
+
+         case afPush:
+            {
+               switch(args[0]->getType())
+               {
+                  case etInt:
+                     args[0]->genCode(compiler, sJitArg1.as(jtInt), etInt);
+                     compiler->callNative( (void *)arrayPushInt, thisVal, sJitArg1.as(jtInt));
+                     break;
+                  case etFloat:
+                     {
+                     JitTemp value(compiler, jtFloat);
+                     args[0]->genCode(compiler, value, etFloat);
+                     compiler->callNative( (void *)arrayPushFloat, thisVal, value);
+                     }
+                     break;
+                  case etString:
+                     {
+                     JitTemp value(compiler, jtString);
+                     args[0]->genCode(compiler, value, etString);
+                     compiler->callNative( (void *)arrayPushString, thisVal, value);
+                     }
+                     break;
+                  case etObject:
+                     args[0]->genCode(compiler, sJitArg1.as(jtPointer), etObject);
+                     compiler->callNative( (void *)arrayPushObject, thisVal, sJitArg1.as(jtPointer));
+                     break;
+                  default: ; //?
+               }
+               compiler->convertReturnReg(etInt, inDest, destType);
+            }
+            break;
+
+
+         case afUnshift:
+            {
+               switch(args[0]->getType())
+               {
+                  case etInt:
+                     args[0]->genCode(compiler, sJitArg1.as(jtInt), etInt);
+                     compiler->callNative( (void *)arrayUnshiftInt, thisVal, sJitArg1.as(jtInt));
+                     break;
+                  case etFloat:
+                     {
+                     JitTemp value(compiler, jtFloat);
+                     args[0]->genCode(compiler, value, etFloat);
+                     compiler->callNative( (void *)arrayUnshiftFloat, thisVal, value);
+                     }
+                     break;
+                  case etString:
+                     {
+                     JitTemp value(compiler, jtString);
+                     args[0]->genCode(compiler, value, etString);
+                     compiler->callNative( (void *)arrayUnshiftString, thisVal, value);
+                     }
+                     break;
+                  case etObject:
+                     args[0]->genCode(compiler, sJitArg1.as(jtPointer), etObject);
+                     compiler->callNative( (void *)arrayUnshiftObject, thisVal, sJitArg1.as(jtPointer));
+                     break;
+                  default: ; //?
+               }
+            }
+            break;
+
+
 
 
          default:

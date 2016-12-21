@@ -406,6 +406,22 @@ struct JitTemp : public JitVal
 
 };
 
+struct JitSave
+{
+   JitTemp temp;
+   JitVal  value;
+
+   JitSave(CppiaCompiler *compiler, const JitVal &val)
+      : temp(compiler, val.type), value(val)
+   {
+      compiler->move(temp, value);
+   }
+   ~JitSave()
+   {
+      temp.compiler->move(value,temp);
+   }
+};
+
 
 struct AutoFramePos
 {
