@@ -995,6 +995,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
             }
 
+
+
          case af__get:
             {
                JitTemp thisVal(compiler,jtPointer);
@@ -1057,6 +1059,122 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                else if (sizeof(ELEM)==8)
                {
                   compiler->convert( sJitTemp1.atReg(sJitTemp0,3), elemType, inDest, destType );
+               }
+               else
+               {
+                  printf("Unknown element size\n");
+               }
+               compiler->comeFrom(writtenNull);
+
+               break;
+            }
+
+
+         case afPop:
+            {
+               ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
+               JitType jt = getJitType(elemType);
+
+               // sJitTemp1 = this
+               thisExpr->genCode(compiler, sJitTemp1.as(jtPointer), etObject);
+               // sJitTemp0 = length
+               compiler->move( sJitTemp0.as(jtInt), sJitTemp1.star(jtInt, ArrayBase::lengthOffset()) );
+
+                  // Check length > 0 ...
+               JumpId lengthOk = compiler->compare( cmpI_NOT_ZERO, sJitTemp0.as(jtInt), 0, 0);
+
+               // Out of bounds - return null / zero
+               compiler->returnNull(inDest, destType);
+               JumpId writtenNull = compiler->jump();
+
+
+               // sJitTemp1 = this
+               //  index has been checked
+               compiler->comeFrom(lengthOk);
+
+               // sJitTemp0 = length
+               compiler->sub( sJitTemp0.as(jtInt), sJitTemp0.as(jtInt), 1, false );
+               // sJitTemp0 = index
+               // Store reduced length...
+               compiler->move(  sJitTemp1.star(jtInt, ArrayBase::lengthOffset()), sJitTemp0.as(jtInt) );
+
+               // sJitTemp0 = index
+               // sJitTemp1 = this
+
+               compiler->move(sJitTemp1, sJitTemp1.star(jtPointer, ArrayBase::baseOffset()).as(jtPointer) );
+               // sJitTemp1 = this->base
+
+
+               if (sizeof(ELEM)==1 || sizeof(ELEM)==2 || elemType==etInt || elemType==etObject) // int-like
+               {
+                  int shift = sizeof(ELEM)==1 ? 0 : sizeof(ELEM)==2 ? 1 :  sizeof(ELEM)==4 ? 2 : 3;
+                  JitType regType = elemType==etObject ? jtPointer : jtInt;
+                  JitType jt = sizeof(ELEM)==1 ? jtByte : sizeof(ELEM)==2 ? jtShort : regType;
+                  JitVal zero = elemType==etObject ? JitVal((void *)0) : JitVal(0);
+                  if (destType==etNull || destType==etVoid)
+                  {
+                     compiler->move( sJitTemp1.atReg(sJitTemp0,shift).as(jt), zero );
+                  }
+                  else
+                  {
+                     compiler->move( sJitTemp2.as(regType), sJitTemp1.atReg(sJitTemp0,shift).as(jt) );
+                     // zero out value...
+                     compiler->move( sJitTemp1.atReg(sJitTemp0,shift).as(jt), zero );
+                     compiler->convert(sJitTemp2.as(regType), elemType, inDest, destType);
+                  }
+               }
+               else if (elemType==etString)
+               {
+                  compiler->mult( sJitTemp0, sJitTemp0.as(jtInt), (int)sizeof(String), false );
+                  compiler->add( sJitTemp0, sJitTemp1.as(jtPointer), sJitTemp0);
+
+                  if (destType==etNull || destType==etVoid)
+                  {
+                     compiler->move( sJitTemp0.star(jtInt),  0 );
+                     compiler->move( sJitTemp0.star(jtPointer) + 4,  0 );
+                  }
+                  else
+                  {
+                     JitTemp strVal(compiler,jtString);
+                     compiler->convert(  sJitTemp0.star(jtString), etString, strVal, etString );
+                     compiler->move( sJitTemp0.star(jtInt),  0 );
+                     compiler->move( sJitTemp0.star(jtPointer) + 4,  0 );
+                     compiler->convert( strVal, etString, inDest, destType );
+                  }
+               }
+               else if (sizeof(ELEM)==8)
+               {
+                  if (destType==etVoid || destType==etNull)
+                  {
+                     if (sizeof(void*)==8)
+                        compiler->move( sJitTemp1.atReg(sJitTemp0,3).as(jtPointer), (void *)0 );
+                     else
+                     {
+                        compiler->bitOp(bitOpShiftL, sJitTemp0, sJitTemp0, 3);
+                        compiler->move( sJitTemp1.atReg(sJitTemp0).as(jtInt), 0 );
+                        compiler->add(sJitTemp0, sJitTemp0, 4);
+                        compiler->move( sJitTemp1.atReg(sJitTemp0).as(jtInt), 0 );
+                     }
+                  }
+                  else
+                  {
+                     // sJitTempF0 ?
+                     JitType jt = getJitType(elemType);
+                     JitTemp tmp(compiler, elemType);
+                     compiler->move( tmp, sJitTemp1.atReg(sJitTemp0,3).as(jt) );
+
+                     if (sizeof(void*)==8)
+                        compiler->move( sJitTemp1.atReg(sJitTemp0,3).as(jtPointer), 0 );
+                     else
+                     {
+                        compiler->bitOp(bitOpShiftL, sJitTemp0, sJitTemp0, 3);
+                        compiler->move( sJitTemp1.atReg(sJitTemp0).as(jtInt), 0 );
+                        compiler->add(sJitTemp0, sJitTemp0, 4);
+                        compiler->move( sJitTemp1.atReg(sJitTemp0).as(jtInt), 0 );
+                     }
+
+                     compiler->convert(tmp,elemType, inDest, destType);
+                  }
                }
                else
                {
@@ -1588,6 +1706,11 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
    {
       return inObj->slice( Dynamic(a0), Dynamic(a1) ).mPtr;
    }
+   static hx::Object * SLJIT_CALL arrayPop(ArrayAnyImpl *inObj)
+   {
+      return inObj->pop().mPtr;
+   }
+
    static void SLJIT_CALL runSort( ArrayAnyImpl *inArray, hx::Object *inFunc)
    {
       TRY_NATIVE
@@ -1614,6 +1737,12 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             compiler->callNative( (void *)objGetItem, thisVal, sJitArg1.as(jtInt));
             compiler->convertReturnReg(etObject, inDest, destType);
             break;
+
+         case afPop:
+            compiler->callNative( (void *)arrayPop, thisVal);
+            compiler->convertReturnReg(etObject, inDest, destType);
+            break;
+
 
          case afRemove:
             args[0]->genCode(compiler, sJitArg1, etObject);
