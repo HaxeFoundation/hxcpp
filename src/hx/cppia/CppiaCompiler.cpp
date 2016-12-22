@@ -417,16 +417,55 @@ public:
    }
 
 
-   JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump)
+   JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump,bool inReverse)
    {
       sljit_sw t0 = getTarget(v0);
       sljit_sw t1 = getTarget(v1);
+      // TODO - multiple JumpId...
       if (compiler)
       {
-         JumpId result = sljit_emit_fcmp(compiler, condition, t0, getData(v0), t1, getData(v1) );
-         if (andJump)
-            sljit_set_label(result, andJump);
-         return result;
+         bool jumpOnNan = condition==cmpD_NOT_EQUAL;
+         if (inReverse)
+         {
+            jumpOnNan = !jumpOnNan;
+            condition = (JitCompare)( (int)condition ^ 0x01 );
+         }
+         if (jumpOnNan)
+         {
+            JumpId passed = sljit_emit_fcmp(compiler, cmpD_NOT_EQUAL, t0, getData(v0), t1, getData(v1) );
+
+            // test failed, but test nan
+            JumpId notNan = sljit_emit_jump(compiler,SLJIT_D_ORDERED);
+
+            // is nan - fallthough
+            // test passed, ro was nan
+            comeFrom(passed);
+            JumpId good = sljit_emit_jump(compiler,SLJIT_JUMP);
+            if (andJump)
+               sljit_set_label(good, andJump);
+
+            comeFrom(notNan);
+            return good;
+         }
+         else
+         {
+            JumpId userCmpPassed = sljit_emit_fcmp(compiler, condition, t0, getData(v0), t1, getData(v1) );
+            // user test failed - will also fail with nan, so done.
+            JumpId userCmpFailed = sljit_emit_jump(compiler,SLJIT_JUMP);
+
+            // user test passed - unless nan ...
+            comeFrom(userCmpPassed);
+
+            // Result is not-nan when user test passed
+            JumpId notNan = sljit_emit_jump(compiler,SLJIT_D_ORDERED);
+            if (andJump)
+               sljit_set_label(notNan, andJump);
+            // is nan ..
+
+            comeFrom(userCmpFailed);
+
+            return notNan;
+         }
       }
       return 0;
    }
@@ -1106,7 +1145,7 @@ public:
       switch(inOp)
       {
          case bitOpAnd:
-            emit_op2(SLJIT_IAND, inDest, v0, v1);
+            emit_op2(SLJIT_AND, inDest, v0, v1);
             break;
          case bitOpOr:
             emit_op2(SLJIT_IOR, inDest, v0, v1);

@@ -115,6 +115,7 @@ static ArrayBase * SLJIT_CALL array_expand_size(ArrayBase *inArray, int inSize)
    inArray->Realloc(inSize+1);
    return inArray;
 }
+
 #endif
  
 
@@ -245,6 +246,12 @@ struct ArraySetter : public ArrayBuiltinBase
       // sJitTemp0 = this
       compiler->move(sJitTemp0, thisVal);
 
+
+      // Check length..
+      JumpId lengthOk = compiler->compare( cmpI_LESS, sJitTemp1.as(jtInt),
+                                         sJitTemp0.star(jtInt, ArrayBase::lengthOffset()) );
+
+
       JumpId enough = compiler->compare( cmpI_LESS, sJitTemp1.as(jtInt),
                                          sJitTemp0.star(jtInt, ArrayBase::allocOffset()) );
       // Make some room
@@ -254,10 +261,7 @@ struct ArraySetter : public ArrayBuiltinBase
 
       compiler->comeFrom(enough);
 
-      // Check length..
-      JumpId lengthOk = compiler->compare( cmpI_LESS, sJitTemp1.as(jtInt),
-                                         sJitTemp0.star(jtInt, ArrayBase::lengthOffset()) );
-
+      // length = index + 1
       compiler->add(sJitTemp0.star(jtInt, ArrayBase::lengthOffset()), sJitTemp1.as(jtInt), (int)1);
 
 
@@ -365,9 +369,12 @@ template<> struct ExprBaseTypeOf<String> { typedef String &Base ; };
 template<typename ELEM, int FUNC, typename CREMENT>
 struct ArrayBuiltin : public ArrayBuiltinBase
 {
-   ArrayBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions)
+   bool unsafe;
+
+   ArrayBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions, bool inUnsafe)
       : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
    {
+      unsafe = inUnsafe;
    }
    const char *getName() { return sFuncNames[FUNC]; }
 
@@ -871,16 +878,16 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          switch(inOp)
          {
             case coPreInc :
-               replace = new ArrayBuiltin<ELEM,af__crement,CrementPreInc>(this,thisExpr,args);
+               replace = new ArrayBuiltin<ELEM,af__crement,CrementPreInc>(this,thisExpr,args,false);
                break;
             case coPostInc :
-               replace = new ArrayBuiltin<ELEM,af__crement,CrementPostInc>(this,thisExpr,args);
+               replace = new ArrayBuiltin<ELEM,af__crement,CrementPostInc>(this,thisExpr,args,false);
                break;
             case coPreDec :
-               replace = new ArrayBuiltin<ELEM,af__crement,CrementPreDec>(this,thisExpr,args);
+               replace = new ArrayBuiltin<ELEM,af__crement,CrementPreDec>(this,thisExpr,args,false);
                break;
             case coPostDec :
-               replace = new ArrayBuiltin<ELEM,af__crement,CrementPostDec>(this,thisExpr,args);
+               replace = new ArrayBuiltin<ELEM,af__crement,CrementPostDec>(this,thisExpr,args,false);
                break;
             default:
                return 0;
@@ -978,6 +985,11 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       return inArray->concat(inOther).mPtr;
    }
 
+   static void SLJIT_CALL runSetSizeExact( Array_obj<ELEM> *inArray, int size )
+   {
+      inArray->__SetSizeExact(size);
+   }
+
    static void SLJIT_CALL runToString( Array_obj<ELEM> *inArray, String *outString )
    {
       TRY_NATIVE
@@ -1071,6 +1083,81 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
             }
 
+         case af__set:
+            {
+               JitTemp thisVal(compiler, jtPointer);
+               JitTemp index(compiler, jtPointer);
+               ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
+               JitTemp tempVal(compiler, elemType);
+
+               thisExpr->genCode(compiler, thisVal, etObject);
+               args[0]->genCode(compiler, index, etInt);
+               args[1]->genCode(compiler, tempVal, elemType);
+
+               compiler->move(sJitTemp0.as(jtPointer), thisVal);
+               compiler->move(sJitTemp1.as(jtInt), index);
+               if (!unsafe)
+               {
+                  JumpId enoughLength = compiler->compare( cmpI_LESS, sJitTemp1.as(jtInt),
+                                                                 sJitTemp0.star(jtInt, ArrayBase::lengthOffset()) );
+
+                  // Not in length, but maybe enough range
+                  JumpId enoughAlloc = compiler->compare( cmpI_LESS, sJitTemp1.as(jtInt),
+                                                                     sJitTemp0.star(jtInt, ArrayBase::allocOffset()) );
+
+                  // result comes back in sJitTemp0
+                  compiler->callNative( (void *)array_expand_size,  sJitTemp0, sJitTemp1 );
+                  // but need to reload sJitTemp1
+                  compiler->move(sJitTemp1.as(jtInt), index);
+
+                  compiler->comeFrom(enoughAlloc);
+                  // Set length = index+1
+                  compiler->add( sJitTemp0.star(jtInt, ArrayBase::lengthOffset()), sJitTemp1.as(jtInt), 1 );
+
+                  compiler->comeFrom(enoughLength);
+               }
+
+               // sJitTemp0 = array
+               // sJitTemp1 = index
+               //  length, alloc have been checked
+
+
+               // sJitTemp0 = this->base
+               compiler->move(sJitTemp0, sJitTemp0.star(jtPointer, ArrayBase::baseOffset()).as(jtPointer) );
+
+               if (sizeof(ELEM)==1) // uchar, bool
+               {
+                  compiler->move( sJitTemp0.atReg(sJitTemp1).as(jtByte), tempVal );
+               }
+               else if (elemType==etString)
+               {
+                  compiler->mult( sJitTemp1, sJitTemp1.as(jtInt), (int)sizeof(String), false );
+                  compiler->add( sJitTemp0, sJitTemp0.as(jtPointer), sJitTemp1);
+
+                  compiler->move( sJitTemp0.star(jtInt), tempVal.as(jtInt) );
+                  compiler->move( sJitTemp0.star(jtPointer,sizeof(int)), tempVal.as(jtPointer) + sizeof(int) );
+               }
+               else if (sizeof(ELEM)==2)
+               {
+                  compiler->move( sJitTemp0.atReg(sJitTemp1,1), tempVal );
+               }
+               else if (sizeof(ELEM)==4)
+               {
+                  compiler->move( sJitTemp0.atReg(sJitTemp1,2), tempVal );
+               }
+               else if (sizeof(ELEM)==8)
+               {
+                  compiler->move( sJitTemp0.atReg(sJitTemp1,3), tempVal );
+               }
+               else
+               {
+                  printf("Unknown element size\n");
+               }
+
+               break;
+            }
+
+
 
 
          case af__get:
@@ -1096,15 +1183,19 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                compiler->move(sJitTemp1, thisVal);
 
 
-               // Check length..
-               JumpId lengthOk = compiler->compare( cmpI_LESS, sJitTemp0.as(jtInt),
-                                                  sJitTemp1.star(jtInt, ArrayBase::lengthOffset()) );
-               // Out of bounds - return null / zero
-               compiler->returnNull(inDest, destType);
-               JumpId writtenNull = compiler->jump();
+               JumpId writtenNull = 0;
+               if (!unsafe)
+               {
+                  // Check length..
+                  JumpId lengthOk = compiler->compare( cmpI_LESS, sJitTemp0.as(jtInt),
+                                                     sJitTemp1.star(jtInt, ArrayBase::lengthOffset()) );
+                  // Out of bounds - return null / zero
+                  compiler->returnNull(inDest, destType);
+                  writtenNull = compiler->jump();
 
 
-               compiler->comeFrom(lengthOk);
+                  compiler->comeFrom(lengthOk);
+               }
 
                ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
 
@@ -1117,9 +1208,9 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
                if (sizeof(ELEM)==1) // uchar, bool
                {
-                  if (destType!=etInt)
+                  if (destType!=etInt || isMemoryVal(inDest) )
                   {
-                     compiler->move( sJitTemp1, sJitTemp1.atReg(sJitTemp0).as(jtByte) );
+                     compiler->move( sJitTemp1.as(jtInt), sJitTemp1.atReg(sJitTemp0).as(jtByte) );
                      compiler->convert(sJitTemp1, etInt, inDest, destType);
                   }
                   else
@@ -1127,13 +1218,13 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                }
                else if (elemType==etString)
                {
-                  compiler->mult( sJitTemp0, sJitTemp0.as(jtInt), (int)sizeof(String), false );
-                  compiler->add( sJitTemp0, sJitTemp1.as(jtPointer), sJitTemp0);
+                  compiler->mult( sJitTemp0.as(jtInt), sJitTemp0.as(jtInt), (int)sizeof(String), false );
+                  compiler->add( sJitTemp0.as(jtPointer), sJitTemp1.as(jtPointer), sJitTemp0);
                   compiler->convert( sJitTemp0.star(jtString), etString, inDest, destType );
                }
                else if (sizeof(ELEM)==2)
                {
-                  if (destType!=etInt)
+                  if (destType!=etInt || isMemoryVal(inDest))
                   {
                      compiler->move(sJitTemp1.as(jtInt),sJitTemp1.atReg(sJitTemp0,1).as(jtShort));
                      compiler->convert(sJitTemp1,etInt, inDest, destType);
@@ -1359,6 +1450,14 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
             }
 
+         case af__SetSizeExact:
+            {
+               JitTemp thisVal(compiler,jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+               args[0]->genCode(compiler, sJitArg1.as(jtInt), etInt);
+               compiler->callNative( (void *)runSetSizeExact, thisVal, sJitArg1.as(jtInt));
+               break;
+            }
 
          case af__crement:
             {
@@ -1516,6 +1615,11 @@ static hx::Object * SLJIT_CALL arrayConcat(ArrayAnyImpl *inObj, hx::Object *inVa
 {
    return inObj->concat(Dynamic(inValue)).mPtr;
 }
+static void SLJIT_CALL arraySetSizeExact(ArrayAnyImpl *inObj, int inSize)
+{
+   inObj->__SetSizeExact(inSize);
+}
+
 
 static hx::Object * SLJIT_CALL arraySplice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
 {
@@ -1560,6 +1664,31 @@ static int SLJIT_CALL arrayPushFloat( ArrayAnyImpl *inArray, double *inVal)
 static int SLJIT_CALL arrayPushString( ArrayAnyImpl *inArray, String *inVal)
 {
    return inArray->push(*inVal);
+}
+
+
+
+static int SLJIT_CALL arraySetInt( ArrayAnyImpl *inArray, int inIndex, int inVal)
+{
+   *(int *)0=0;
+   inArray->set(inIndex,inVal);
+   return inVal;
+}
+static hx::Object * SLJIT_CALL arraySetObject( ArrayAnyImpl *inArray, int inIndex, hx::Object *inVal)
+{
+   *(int *)0=0;
+   inArray->set(inIndex,Dynamic(inVal));
+   return inVal;
+}
+static void SLJIT_CALL arraySetFloat( ArrayAnyImpl *inArray, int inIndex, double *inVal)
+{
+   *(int *)0=0;
+   inArray->set(inIndex,*inVal);
+}
+static void SLJIT_CALL arraySetString( ArrayAnyImpl *inArray, int inIndex, String *inVal)
+{
+   *(int *)0=0;
+   inArray->set(inIndex,*inVal);
 }
 
 
@@ -2073,6 +2202,55 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             }
             break;
 
+         case af__SetSizeExact:
+            {
+               JitTemp thisVal(compiler,jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+               args[0]->genCode(compiler, sJitArg1.as(jtInt), etInt);
+               compiler->callNative( (void *)arraySetSizeExact, thisVal, sJitArg1.as(jtInt));
+               break;
+            }
+
+
+         case af__set:
+            {
+               JitTemp index(compiler,etInt);
+               args[0]->genCode(compiler, index, etInt);
+
+               switch(args[1]->getType())
+               {
+                  case etInt:
+                     args[1]->genCode(compiler, sJitArg2.as(jtInt), etInt);
+                     compiler->callNative( (void *)arraySetInt, thisVal, index, sJitArg2.as(jtInt));
+                     compiler->convertReturnReg(etInt, inDest, destType);
+                     break;
+                  case etFloat:
+                     {
+                     JitTemp value(compiler, jtFloat);
+                     args[1]->genCode(compiler, value, etFloat);
+                     compiler->callNative( (void *)arraySetFloat, thisVal, index, value);
+                     compiler->convert(value,etFloat, inDest, destType);
+                     }
+                     break;
+                  case etString:
+                     {
+                     JitTemp value(compiler, jtString);
+                     args[1]->genCode(compiler, value, etString);
+                     compiler->callNative( (void *)arraySetString, thisVal, index, value);
+                     compiler->convert(value,etString, inDest, destType);
+                     }
+                     break;
+                  case etObject:
+                     args[1]->genCode(compiler, sJitArg2.as(jtPointer), etObject);
+                     compiler->callNative( (void *)arraySetObject, thisVal, index, sJitArg2.as(jtPointer));
+                     compiler->convertReturnReg(etObject, inDest, destType);
+                     break;
+                  default: ; //?
+               }
+            }
+            break;
+
+
 
          case afPush:
             {
@@ -2152,7 +2330,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
 
 template<int BUILTIN,typename CREMENT>
-CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *thisExpr, Expressions &args)
+CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *thisExpr, Expressions &args, bool inUnsafe = false)
 {
    if (sArgCount[BUILTIN]!=args.size())
       throw "Bad arg count for array builtin";
@@ -2160,17 +2338,17 @@ CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *th
    switch(inType)
    {
       case arrBool:
-         return new ArrayBuiltin<bool,BUILTIN,CREMENT>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<bool,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrUnsignedChar:
-         return new ArrayBuiltin<unsigned char,BUILTIN,CREMENT>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<unsigned char,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrInt:
-         return new ArrayBuiltin<int,BUILTIN,CREMENT>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<int,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrFloat:
-         return new ArrayBuiltin<Float,BUILTIN,CREMENT>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<Float,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrString:
-         return new ArrayBuiltin<String,BUILTIN,CREMENT>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<String,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrObject:
-         return new ArrayBuiltin<Dynamic,BUILTIN,CREMENT>(inSrc, thisExpr, args);
+         return new ArrayBuiltin<Dynamic,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrAny:
          return new ArrayBuiltinAny<BUILTIN,CREMENT::OP>(inSrc, thisExpr, args);
       case arrNotArray:
@@ -2224,9 +2402,9 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
    if (field==HX_CSTRING("lastIndexOf"))
       return TCreateArrayBuiltin<afLastIndexOf,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("__get") || field==HX_CSTRING("__unsafe_get"))
-      return TCreateArrayBuiltin<af__get,NoCrement>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<af__get,NoCrement>(src, inType, inThisExpr, ioExpressions, field==HX_CSTRING("__unsafe_get"));
    if (field==HX_CSTRING("__set") || field==HX_CSTRING("__unsafe_set"))
-      return TCreateArrayBuiltin<af__set,NoCrement>(src, inType, inThisExpr, ioExpressions);
+      return TCreateArrayBuiltin<af__set,NoCrement>(src, inType, inThisExpr, ioExpressions, field==HX_CSTRING("__unsafe_set"));
    if (field==HX_CSTRING("__SetSizeExact"))
       return TCreateArrayBuiltin<af__SetSizeExact,NoCrement>(src, inType, inThisExpr, ioExpressions);
 

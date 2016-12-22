@@ -5592,10 +5592,11 @@ struct SwitchExpr : public CppiaExpr
             else if (switchType==etFloat)
             {
                c.conditions[j]->genCode(compiler, sJitTemp1, switchType);
+               // TODO - Nan ?
                if (last)
-                  nextCase = compiler->fcompare(cmpD_NOT_EQUAL,test, sJitTemp1.as(jtFloat) );
+                  nextCase = compiler->fcompare(cmpD_NOT_EQUAL,test, sJitTemp1.as(jtFloat),0,false );
                else
-                  onMatch.push_back(compiler->fcompare(cmpD_EQUAL,test, sJitTemp1.as(jtFloat)));
+                  onMatch.push_back(compiler->fcompare(cmpD_EQUAL,test, sJitTemp1.as(jtFloat),0,false));
             }
             else if (switchType==etString)
             {
@@ -7072,8 +7073,7 @@ struct OpCompare : public OpCompareBase
             JitTemp lhs(compiler,jtFloat);
             left->genCode(compiler, lhs, etFloat);
             right->genCode(compiler, sJitTempF0, etFloat);
-            return compiler->fcompare( (JitCompare)(inReverse ? COMPARE::freverse :COMPARE::fcompare),
-                                       lhs, sJitTempF0, inLabel );
+            return compiler->fcompare( (JitCompare)COMPARE::fcompare, lhs, sJitTempF0, inLabel, inReverse );
          }
 
          case compString:

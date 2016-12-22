@@ -320,7 +320,7 @@ public:
    // Conditional - int/pointer
    virtual JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
    // Conditional - Float
-   virtual JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
+   virtual JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump, bool inReverse) = 0;
    // Conditional - String
    virtual JumpId scompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
    // Link
