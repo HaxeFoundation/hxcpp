@@ -382,23 +382,49 @@ class BuildTool
 
          var cached = useCache && mCompiler.createCompilerVersion(group);
 
+         var inList = new Array<Bool>();
          for(file in group.mFiles)
          {
            if (useCache)
                file.computeDependHash();
             var obj_name = mCompiler.getCachedObjName(file);
             groupObjs.push(obj_name);
-            if (file.isOutOfDate(obj_name))
-            {
+            var outOfDate =  file.isOutOfDate(obj_name);
+            if (outOfDate)
                to_be_compiled.push(file);
-            }
+            inList.push(outOfDate);
          }
 
+         var pchStamp:Null<Float> = null;
          if (group.mPrecompiledHeader!="")
          {
             var obj = mCompiler.precompile(group,cached || to_be_compiled.length==0);
             if (obj!=null)
+            {
+               pchStamp = FileSystem.stat(obj).mtime.getTime();
                groupObjs.push(obj);
+
+               /*
+               for(i in 0...group.mFiles.length)
+               {
+                  var obj_name = groupObjs[i];
+                  if (!inList[i])
+                  {
+                     if (FileSystem.stat(obj_name).mtime.getTime() < pchStamp)
+                     {
+                        groupObjs.push(obj_name);
+                        trace(' Add $obj_name');
+                     }
+                     else
+                        trace(' Ok $obj_name');
+                  }
+                  else
+                  {
+                        trace(' Listed $obj_name  ' + group.mFiles[i].mName);
+                  }
+               }
+               */
+            }
          }
 
          if (group.mConfig!="")
@@ -484,7 +510,7 @@ class BuildTool
          if (threads<2)
          {
             for(file in to_be_compiled)
-               mCompiler.compile(file,-1,groupHeader);
+               mCompiler.compile(file,-1,groupHeader,pchStamp);
          }
          else
          {
@@ -509,7 +535,7 @@ class BuildTool
                      var file = to_be_compiled.shift();
                      mutex.release();
 
-                     compiler.compile(file,t,groupHeader);
+                     compiler.compile(file,t,groupHeader,pchStamp);
                   }
                   }
                   catch (error:Dynamic)

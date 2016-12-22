@@ -202,7 +202,7 @@ class Compiler
       return args;
    }
 
-   public function compile(inFile:File,inTid:Int,headerFunc:Void->Void)
+   public function compile(inFile:File,inTid:Int,headerFunc:Void->Void,pchTimeStamp:Null<Float>)
    {
       var obj_name = getObjName(inFile);
       var args = getArgs(inFile);
@@ -220,10 +220,19 @@ class Compiler
 
          if (FileSystem.exists(cacheName))
          {
-            //Log.info(""," copy cache for " + obj_name );
-            if (!useCacheInPlace)
-               sys.io.File.copy(cacheName, obj_name);
-            found = true;
+            var newer = true;
+            if (pchTimeStamp!=null)
+            {
+               var time = FileSystem.stat(cacheName).mtime.getTime();
+               newer = time>=pchTimeStamp;
+            }
+            if (newer)
+            {
+               //Log.info(""," copy cache for " + obj_name );
+               if (!useCacheInPlace)
+                  sys.io.File.copy(cacheName, obj_name);
+               found = true;
+            }
          }
       }
 
