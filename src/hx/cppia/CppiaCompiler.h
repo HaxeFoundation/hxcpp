@@ -40,7 +40,7 @@ enum JitPosition
    jposStarReg,
    jposPointerVal,
    jposIntVal,
-   jposFloatVal,
+   //jposFloatVal,
 };
 
 enum JitType
@@ -94,6 +94,7 @@ struct JitVal
       type = jtInt;
       iVal = inValue;
    }
+   /*
    JitVal(double inValue)
    {
       offset = 0;
@@ -103,6 +104,7 @@ struct JitVal
       type = jtFloat;
       dVal = inValue;
    }
+   */
    JitVal(void *inValue)
    {
       offset = 0;

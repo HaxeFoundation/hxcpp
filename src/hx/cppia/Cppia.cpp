@@ -3428,6 +3428,29 @@ static void SLJIT_CALL modFloatFloat(double *ioVal, double *inMod)
 }
 
 
+static hx::Object * SLJIT_CALL modObjectFloat(hx::Object *inVal, double *inMod)
+{
+   return Dynamic(hx::Mod(Dynamic(inVal), *inMod)).mPtr;
+}
+
+
+void genBitOpSet(CppiaCompiler *compiler, BitOp bitOp, const JitVal &ioValue, ExprType exprType, CppiaExpr *inExpr)
+{
+   if (exprType==etInt)
+   {
+      inExpr->genCode(compiler, sJitTemp2, etInt);
+      compiler->bitOp(bitOp, ioValue, ioValue, sJitTemp2);
+   }
+   else
+   {
+      JitTemp ival(compiler, etInt);
+      compiler->convert(ioValue, exprType, ival, etInt);
+      inExpr->genCode(compiler, sJitTemp2, etInt);
+
+      compiler->bitOp(bitOp, sJitTemp0.as(jtInt), ival, sJitTemp2);
+      compiler->convert(sJitTemp0, etInt, ioValue, exprType);
+   }
+}
 
 void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType, AssignOp inOp, CppiaExpr *inExpr)
 {
@@ -3442,7 +3465,13 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
          else
          {
             inExpr->genCode(compiler, sJitTempF0, etFloat);
-            compiler->mult(ioValue, sJitTempF0, ioValue,true);
+            if (exprType==etFloat)
+               compiler->mult(ioValue, sJitTempF0, ioValue,true);
+            else
+            {
+               compiler->mult(sJitTempF0, sJitTempF0, ioValue,true);
+               compiler->convert(sJitTempF0, etFloat, ioValue, exprType );
+            }
          }
          break;
 
@@ -3456,9 +3485,14 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
                compiler->callNative( (void *)modIntFloat,  ioValue, fval );
                compiler->move(ioValue, sJitReturnReg.as(jtInt) );
             }
-            else
+            else if (exprType==etFloat)
             {
                compiler->callNative( (void *)modFloatFloat,  ioValue, fval );
+            }
+            else if (exprType==etObject)
+            {
+               compiler->callNative( (void *)modObjectFloat,  ioValue, fval );
+               compiler->move(ioValue, sJitReturnReg);
             }
          }
          break;
@@ -3504,43 +3538,46 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
             inExpr->genCode(compiler, sJitTemp0, etInt);
             compiler->sub(ioValue, ioValue, sJitTemp0, false);
          }
-         else
+         else if (exprType==etFloat)
          {
             inExpr->genCode(compiler, sJitTempF0, etFloat);
             compiler->sub(ioValue, ioValue, sJitTempF0, true);
+         }
+         else
+         {
+            JitTemp fval(compiler, jtFloat);
+            compiler->convert(ioValue, exprType, fval, etFloat);
+            inExpr->genCode(compiler, sJitTempF0, etFloat);
+            compiler->sub(sJitTempF0, fval, sJitTempF0, true);
+            compiler->convert(sJitTempF0, etFloat, ioValue, exprType);
          }
          break;
 
 
       case aoDiv:
-         inExpr->genCode(compiler, sJitTempF0, etFloat);
-         compiler->fdiv(ioValue, ioValue, sJitTempF0);
+         if (exprType==etFloat)
+         {
+            compiler->fdiv(ioValue, ioValue, sJitTempF0);
+            inExpr->genCode(compiler, sJitTempF0, etFloat);
+         }
+         else
+         {
+            JitTemp fval(compiler, jtFloat);
+            compiler->convert(ioValue, exprType, fval, etFloat);
+
+            inExpr->genCode(compiler, sJitTempF0, etFloat);
+
+            compiler->fdiv(sJitTempF0, fval, sJitTempF0);
+            compiler->convert(sJitTempF0, etFloat, ioValue, exprType );
+         }
          break;
 
-      case aoAnd:
-         inExpr->genCode(compiler, sJitTemp2, etInt);
-         compiler->bitOp(bitOpAnd, ioValue, ioValue, sJitTemp2);
-         break;
-      case aoOr:
-         inExpr->genCode(compiler, sJitTemp2, etInt);
-         compiler->bitOp(bitOpOr, ioValue, ioValue, sJitTemp2);
-         break;
-      case aoXOr:
-         inExpr->genCode(compiler, sJitTemp2, etInt);
-         compiler->bitOp(bitOpXOr, ioValue, ioValue, sJitTemp2);
-         break;
-      case aoShl:
-         inExpr->genCode(compiler, sJitTemp2, etInt);
-         compiler->bitOp(bitOpShiftL, ioValue, ioValue, sJitTemp2);
-         break;
-      case aoShr:
-         inExpr->genCode(compiler, sJitTemp2, etInt);
-         compiler->bitOp(bitOpShiftL, ioValue, ioValue, sJitTemp2);
-         break;
-      case aoUShr:
-         inExpr->genCode(compiler, sJitTemp2, etInt);
-         compiler->bitOp(bitOpUSR, ioValue, ioValue, sJitTemp2);
-         break;
+      case aoAnd: genBitOpSet(compiler, bitOpAnd, ioValue, exprType, inExpr); break;
+      case aoOr: genBitOpSet(compiler, bitOpOr, ioValue, exprType, inExpr); break;
+      case aoXOr: genBitOpSet(compiler, bitOpXOr, ioValue, exprType, inExpr); break;
+      case aoShl: genBitOpSet(compiler, bitOpShiftL, ioValue, exprType, inExpr); break;
+      case aoShr: genBitOpSet(compiler, bitOpShiftR, ioValue, exprType, inExpr); break;
+      case aoUShr: genBitOpSet(compiler, bitOpUSR, ioValue, exprType, inExpr); break;
 
       default:
          inExpr->genCode(compiler, sJitTemp2, etInt);
@@ -3753,7 +3790,43 @@ CppiaExpr *MemReference<T,REFMODE>::makeSetter(AssignOp op,CppiaExpr *value)
    return 0;
 }
 
+#ifdef CPPIA_JIT
+static double sOne = 1.0;
+static double sMinusOne = -1.0;
 
+static void SLJIT_CALL objDec(hx::Object **ioVal)
+{
+   *ioVal = (Dynamic(*ioVal)-1).mPtr;
+}
+static void SLJIT_CALL objInc(hx::Object **ioVal)
+{
+   *ioVal = (Dynamic(*ioVal)+1).mPtr;
+}
+
+static hx::Object * SLJIT_CALL objPostInc(hx::Object **ioVal)
+{
+   hx::Object *result = *ioVal;
+   *ioVal = (Dynamic(*ioVal)+1).mPtr;
+   return result;
+}
+static hx::Object * SLJIT_CALL objPostDec(hx::Object **ioVal)
+{
+   hx::Object *result = *ioVal;
+   *ioVal = (Dynamic(*ioVal)-1).mPtr;
+   return result;
+}
+
+static hx::Object * SLJIT_CALL objPreInc(hx::Object **ioVal)
+{
+   *ioVal = (Dynamic(*ioVal)+1).mPtr;
+   return *ioVal;
+}
+static hx::Object * SLJIT_CALL objPreDec(hx::Object **ioVal)
+{
+   *ioVal = (Dynamic(*ioVal)-1).mPtr;
+   return *ioVal;
+}
+#endif
 
 template<typename T, int REFMODE,typename CREMENT> 
 struct MemReferenceCrement : public CppiaExpr
@@ -3817,6 +3890,7 @@ struct MemReferenceCrement : public CppiaExpr
       return this;
    }
 
+
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
@@ -3849,6 +3923,7 @@ struct MemReferenceCrement : public CppiaExpr
       switch(getType())
       {
          case etInt:
+            ioPtr.type = jtInt;
             if ( inDest.type==jtVoid)
             {
                compiler->add( ioPtr,  ioPtr, diff );
@@ -3864,6 +3939,53 @@ struct MemReferenceCrement : public CppiaExpr
                compiler->add( sJitTemp1, ioPtr, diff );
                compiler->move( ioPtr, sJitTemp1);
                compiler->convert( sJitTemp1, etInt, inDest, destType );
+            }
+            break;
+
+         case etFloat:
+            {
+            ioPtr.type = jtFloat;
+            JitVal fdiff( diff<0 ? &sMinusOne : &sOne );
+            compiler->move(sJitTemp0, fdiff);
+            if ( inDest.type==jtVoid)
+            {
+               compiler->add( ioPtr,  ioPtr, sJitTemp0.star(etFloat) );
+            }
+            else if (op==coPostInc || op==coPostDec)
+            {
+               compiler->move( sJitTempF0, ioPtr );
+               compiler->add( ioPtr, sJitTempF0, sJitTemp0.star(etFloat) );
+               compiler->convert( sJitTempF0, etFloat, inDest, destType );
+            }
+            else
+            {
+               compiler->add( sJitTempF0, ioPtr, sJitTemp0.star(etFloat) );
+               compiler->move( ioPtr, sJitTempF0);
+               compiler->convert( sJitTempF0, etInt, inDest, destType );
+            }
+            }
+            break;
+
+         case etObject:
+            // Convert to address...
+            ioPtr.type = jtString;
+            if ( inDest.type==jtVoid)
+            {
+               compiler->callNative( diff<0 ? (void *)objDec : (void *)objInc, ioPtr );
+            }
+            else
+            {
+               void *func = 0;
+               switch(op)
+               {
+                  case coPostDec: func = (void *)objPostDec; break;
+                  case coPreDec: func = (void *)objPreDec; break;
+                  case coPostInc: func = (void *)objPostInc; break;
+                  case coPreInc: func = (void *)objPreInc; break;
+                  default: ;
+               }
+               compiler->callNative(func, ioPtr);
+               compiler->convertReturnReg( etObject, inDest, destType );
             }
             break;
 

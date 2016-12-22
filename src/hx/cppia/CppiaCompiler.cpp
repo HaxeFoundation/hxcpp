@@ -616,7 +616,7 @@ public:
 
          case jposPointerVal:
          case jposIntVal:
-         case jposFloatVal:
+         //case jposFloatVal:
             return SLJIT_IMM;
 
 
@@ -643,12 +643,11 @@ public:
          case jposIntVal:
             return (sljit_sw)inVal.iVal;
 
-         case jposFloatVal:
+         //case jposFloatVal:
             // ? dval pointer?
-            return (sljit_sw)inVal.dVal;
+            //return (sljit_sw)inVal.dVal;
 
          case jposStarReg:
-            // ? dval pointer?
             return (sljit_sw)inVal.offset;
 
          default:
