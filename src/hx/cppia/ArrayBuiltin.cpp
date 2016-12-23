@@ -985,6 +985,12 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       return inArray->concat(inOther).mPtr;
    }
 
+
+   static hx::Object *SLJIT_CALL runGetIteratator( Array_obj<ELEM> *inArray )
+   {
+      return inArray->iterator().mPtr;
+   }
+
    static void SLJIT_CALL runSetSizeExact( Array_obj<ELEM> *inArray, int size )
    {
       inArray->__SetSizeExact(size);
@@ -1011,7 +1017,10 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          return result.mPtr;
       }
       else
-         return inArray->filter(inFunction).mPtr;
+      {
+         Array<ELEM> result = inArray->filter(inFunction);
+         return result.mPtr;
+      }
       CATCH_NATIVE
       return 0;
    }
@@ -1422,7 +1431,14 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
             }
 
-
+   
+            case afIterator:
+            {
+               thisExpr->genCode(compiler, sJitTemp0, etObject);
+               compiler->callNative( (void *)runGetIteratator, sJitTemp0.as(jtPointer) );
+               compiler->convertReturnReg(etObject, inDest, destType);
+               break;
+            }
 
          case afInsert:
             {

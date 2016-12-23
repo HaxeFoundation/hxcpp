@@ -331,7 +331,7 @@ public:
 
    inline  JumpId notNull(const JitVal &v0) { return compare(cmpP_NOT_ZERO, v0, (void *)0); }
 
-   virtual void setContextPointer() = 0;
+   virtual void setMaxPointer() = 0;
 
    // Scriptable?
    virtual void addReturn() = 0;

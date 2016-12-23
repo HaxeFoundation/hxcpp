@@ -176,7 +176,8 @@ void SLJIT_CALL createEnum(hx::Class_obj *inClass, String *inName, int inArgs)
    StackContext *ctx = StackContext::getCurrent();
 
    // ctx.pointer points to end-of-args
-   hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
+   unsigned char *oldPointer = ctx->pointer;
+   hx::Object **base = ((hx::Object **)(ctx->frame) );
    Array<Dynamic> args = Array_obj<Dynamic>::__new(inArgs);
 
    TRY_NATIVE
@@ -185,6 +186,7 @@ void SLJIT_CALL createEnum(hx::Class_obj *inClass, String *inName, int inArgs)
       base[0] = inClass->ConstructEnum(*inName, args).mPtr;
   
    CATCH_NATIVE
+   ctx->pointer = oldPointer;
 }
 #endif
 
@@ -308,9 +310,12 @@ struct EnumField : public CppiaDynamicExpr
             compiler->addFrame(etObject);
          }
 
-         compiler->setContextPointer();
-         compiler->callNative(createEnum,(void *)enumClass.mPtr,(void *)&enumName,(int)args.size() );
          }
+
+         compiler->add(sJitCtxFrame, sJitFrame, compiler->getCurrentFrameSize());
+
+         compiler->callNative(createEnum,(void *)enumClass.mPtr,(void *)&enumName,(int)args.size() );
+
          if (destType!=etVoid && destType!=etNull)
             compiler->convertResult( etObject, inDest, destType );
       }

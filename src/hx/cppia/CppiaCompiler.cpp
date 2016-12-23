@@ -29,9 +29,11 @@ static void SLJIT_CALL my_trace_string(const char *inText, String *inValue)
    printf("%s%s\n", inText, inValue->__s); 
 }
 
-static void SLJIT_CALL my_trace_ptr_func(const char *inText, void *inPtr)
+static void SLJIT_CALL my_trace_ptr_func(const char *inText, hx::Object **inPtr)
 {
    printf("%s = %p\n",inText, inPtr);
+   //printf("*= %s\n", (*inPtr)->toString().__s);
+   //*(int *)0=0;
 }
 static void SLJIT_CALL my_trace_int_func(const char *inText, int inValue)
 {
@@ -47,7 +49,7 @@ static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
    printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().__s : "NULL" );
 }
 
-static void *SLJIT_CALL intToObj(int inVal)
+static hx::Object *SLJIT_CALL intToObj(int inVal)
 {
    return Dynamic(inVal).mPtr;
 }
@@ -61,13 +63,11 @@ static void SLJIT_CALL objToStr(hx::Object *inVal, String *outString)
 }
 int SLJIT_CALL objToInt(hx::Object *inVal)
 {
-   // TODO - check pointer
-   return inVal->__ToInt();
+   return inVal ? inVal->__ToInt() : 0;
 }
 static void SLJIT_CALL objToFloat(hx::Object *inVal,double *outFloat)
 {
-   // TODO - check pointer
-   *outFloat =  inVal->__ToDouble();
+   *outFloat =  inVal ? inVal->__ToDouble() : 0.0;
 }
 
 static void *SLJIT_CALL strToObj(String *inStr)
@@ -212,9 +212,11 @@ public:
    bool usesCtx;
    bool usesThis;
    bool usesFrame;
+   bool makesNativeCalls;
 
    int localSize;
    int frameSize;
+   int maxFrameSize;
    int baseFrameSize;
 
    int maxTempCount;
@@ -233,9 +235,10 @@ public:
       usesFrame = false;
       usesThis = false;
       usesCtx = false;
+      makesNativeCalls = false;
       continuePos = 0;
       catchCount = 0;
-      frameSize = baseFrameSize = sizeof(void *) + inFrameSize;
+      maxFrameSize = frameSize = baseFrameSize = sizeof(void *) + inFrameSize;
    }
 
 
@@ -260,6 +263,8 @@ public:
    void addFrame(ExprType inType)
    {
       frameSize += getJitTypeSize( getJitType(inType) );
+      if (frameSize>maxFrameSize)
+         maxFrameSize = frameSize;
    }
 
 
@@ -287,7 +292,11 @@ public:
       usesCtx = true;
 
       if (usesFrame)
+      {
          move( sJitFrame, sJitCtxFrame );
+         if (makesNativeCalls)
+             add( sJitCtxPointer, sJitFrame, maxFrameSize );
+      }
 
       if (usesThis)
          move( sJitThis, JitFramePos(0) );
@@ -430,9 +439,10 @@ public:
             jumpOnNan = !jumpOnNan;
             condition = (JitCompare)( (int)condition ^ 0x01 );
          }
+
          if (jumpOnNan)
          {
-            JumpId passed = sljit_emit_fcmp(compiler, cmpD_NOT_EQUAL, t0, getData(v0), t1, getData(v1) );
+            JumpId passed = sljit_emit_fcmp(compiler, condition, t0, getData(v0), t1, getData(v1) );
 
             // test failed, but test nan
             JumpId notNan = sljit_emit_jump(compiler,SLJIT_D_ORDERED);
@@ -739,9 +749,9 @@ public:
    }
 
 
-   void setContextPointer()
+   void setMaxPointer()
    {
-      add( sJitCtxPointer, sJitFrame, frameSize );
+      add( sJitCtxPointer, sJitFrame, maxFrameSize );
    }
 
    void makeAddress(const JitVal &outAddress, const JitVal &inSrc)
@@ -776,7 +786,6 @@ public:
             case etInt:
                if (asBool)
                {
-                  trace("int->obj");
                   JumpId isFalse = compare( cmpI_ZERO, inSrc.as(jtInt), 0, 0);
                   move(inTarget.as(jtPointer), (void *)Dynamic(true).mPtr);
                   JumpId done = jump();
@@ -1247,6 +1256,7 @@ public:
 
    void callNative(void *func)
    {
+      makesNativeCalls = true;
       if (maxTempCount<1)
          maxTempCount =1;
       if (compiler)
@@ -1256,6 +1266,7 @@ public:
    }
    void callNative(void *func, const JitVal &inArg0)
    {
+      makesNativeCalls = true;
       if (maxTempCount<1)
          maxTempCount =1;
       int restoreLocal = -1;
@@ -1283,6 +1294,7 @@ public:
    }
    void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1)
    {
+      makesNativeCalls = true;
       if (maxTempCount<2)
          maxTempCount =2;
 
@@ -1343,6 +1355,7 @@ public:
 
    void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2)
    {
+      makesNativeCalls = true;
       if (maxTempCount<3)
          maxTempCount =3;
       int restoreLocal = -1;

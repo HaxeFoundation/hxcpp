@@ -643,7 +643,9 @@ void genFunctionResult(CppiaCompiler *compiler,const JitVal &inDest, ExprType de
          compiler->comeFrom(done);
       }
       else
+      {
          compiler->convertResult( returnType, inDest, destType );
+      }
 }
 
 void genFunctionCall(ScriptCallable *function, CppiaCompiler *compiler,
@@ -671,6 +673,7 @@ void genFunctionCall(ScriptCallable *function, CppiaCompiler *compiler,
          compiler->move( sJitTemp1, JitVal((void *)&function->compiled) );
          compiler->call( sJitTemp1.star(), sJitCtx );
       }
+      compiler->setMaxPointer();
 
       genFunctionResult(compiler, inDest, destType, returnType, isBoolReturn);
 
@@ -834,9 +837,13 @@ void SLJIT_CALL callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
       ctx->exception = Dynamic(HX_CSTRING("Null Function")).mPtr;
       return;
    }
-   // ctx.pointer points to end-of-args
-   hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
-   ctx->pointer = (unsigned char *)base;
+   // ctx.frame points to 0th arg
+   hx::Object **base = ((hx::Object **)(ctx->frame) );
+   unsigned char *oldPointer = ctx->pointer;
+   ctx->pointer = ctx->frame;
+
+   //hx::Object **base = ((hx::Object **)(ctx->pointer) ) - inArgs;
+   //ctx->pointer = (unsigned char *)base;
 
    TRY_NATIVE
       switch(inArgs)
@@ -868,7 +875,7 @@ void SLJIT_CALL callDynamic(CppiaCtx *ctx, hx::Object *inFunction, int inArgs)
             }
       }
    CATCH_NATIVE
-   ctx->pointer = (unsigned char *)base;
+   ctx->pointer = oldPointer;
 }
 #endif
 
@@ -996,10 +1003,12 @@ struct CallDynamicFunction : public CppiaExprWithValue
          args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize(),etObject), etObject);
          compiler->addFrame(etObject);
       }
-
-      compiler->setContextPointer();
-      compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size());
       }
+
+      compiler->add(sJitCtxFrame, sJitFrame, compiler->getCurrentFrameSize());
+
+      compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size());
+
       compiler->checkException();
       if (destType!=etVoid && destType!=etNull)
          compiler->convertResult( etObject, inDest, destType );
@@ -2071,7 +2080,6 @@ struct CallMemberVTable : public CppiaExpr
          bool isString = funcProto->cppia.types[ arg.typeId ]->expressionType;
          ExprType type = arg.optional && baseType!=etString ? etObject : baseType;
 
-         // TODO - defaults, or do them function side
          args[i]->genCode( compiler, JitFramePos( compiler->getCurrentFrameSize() ).as( getJitType(type)), type );
          compiler->addFrame(type);
       }
@@ -3027,32 +3035,16 @@ struct Call : public CppiaDynamicExpr
          args[a]->genCode(compiler, JitFramePos(compiler->getCurrentFrameSize(),etObject), etObject);
          compiler->addFrame(etObject);
       }
-
-      compiler->setContextPointer( );
-      compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
+      // restore frame size
       }
+
+      compiler->add(sJitCtxFrame, sJitFrame, compiler->getCurrentFrameSize());
+
+      compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
+
       compiler->checkException();
       if (destType!=etVoid)
          compiler->convertResult( etObject, inDest, destType );
-
-
-      /*
-      if (compiler.exceptionHandler)
-      {
-         sljit_jump *notZero = compiler.ifNotZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
-         compiler.exceptionHandler->push_back(notZero);
-      }
-      else
-      {
-         sljit_jump *isZero = compiler.ifZero( CtxMemberVal(offsetof(CppiaCtx,exception)) );
-         compiler.ret( );
-         compiler.comeFrom(isZero);
-      }
-
-      // Result is at pointer
-      if (inDest!=pointer)
-         compiler.move( inDest, pointer );
-      */
    }
    #endif
 };
@@ -3903,7 +3895,7 @@ struct MemReferenceCrement : public CppiaExpr
       {
          case locObj:
             object->genCode(compiler, sJitTemp0.as(jtPointer), etObject);
-            ioPtr = sJitTemp0.star();
+            ioPtr = sJitTemp0.star() + offset;
             break;
 
          case locThis:
@@ -3926,18 +3918,19 @@ struct MemReferenceCrement : public CppiaExpr
             ioPtr.type = jtInt;
             if ( inDest.type==jtVoid)
             {
-               compiler->add( ioPtr,  ioPtr, diff );
+               compiler->move( sJitTemp1.as(jtInt), ioPtr );
+               compiler->add( ioPtr,  sJitTemp1.as(jtInt), diff );
             }
             else if (op==coPostInc || op==coPostDec)
             {
-               compiler->move( sJitTemp1, ioPtr );
-               compiler->add( ioPtr, sJitTemp1, diff );
+               compiler->move( sJitTemp1.as(jtInt), ioPtr );
+               compiler->add( ioPtr, sJitTemp1.as(jtInt), diff );
                compiler->convert( sJitTemp1, etInt, inDest, destType );
             }
             else
             {
-               compiler->add( sJitTemp1, ioPtr, diff );
-               compiler->move( ioPtr, sJitTemp1);
+               compiler->add( sJitTemp1.as(jtInt), ioPtr, diff );
+               compiler->move( ioPtr, sJitTemp1.as(jtInt));
                compiler->convert( sJitTemp1, etInt, inDest, destType );
             }
             break;
@@ -5714,7 +5707,6 @@ struct SwitchExpr : public CppiaExpr
             else if (switchType==etFloat)
             {
                c.conditions[j]->genCode(compiler, sJitTemp1, switchType);
-               // TODO - Nan ?
                if (last)
                   nextCase = compiler->fcompare(cmpD_NOT_EQUAL,test, sJitTemp1.as(jtFloat),0,false );
                else

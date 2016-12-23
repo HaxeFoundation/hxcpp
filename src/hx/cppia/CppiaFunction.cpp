@@ -590,6 +590,7 @@ public:
       function->addStackVarsSpace(ctx);
 
       unsigned char *base = ((unsigned char *)this) + sizeof(CppiaClosure);
+      // this pointer...
       *(hx::Object **)ctx->frame =  *(hx::Object **)base;
 
       for(int i=0;i<function->captureVars.size();i++)
