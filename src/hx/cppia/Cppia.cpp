@@ -3726,7 +3726,7 @@ struct MemReferenceSetter : public CppiaExpr
             else
             {
                compiler->move( sJitTemp2,  JitVal( (void *)pointer ) );
-               compiler->move( sJitTemp2.star( targetType, offset ), tmpVal );
+               compiler->move( tmpVal, sJitTemp2.star( targetType, offset ) );
                genSetter(compiler, tmpVal, getType(), op, value);
             }
 
@@ -6765,14 +6765,13 @@ struct SpecialAdd : public CppiaExpr
             compiler->add( sJitTemp1, s1.getReg().as(jtPointer), s1.offset );
             if (destType==etString)
             {
-               //compiler->add( sJitTemp2, inDest.getReg().as(jtPointer), inDest.offset );
-               //compiler->callNative(strAddStrToStr, sJitTemp0, sJitTemp1, sJitTemp2);
-               compiler->callNative(strAddStrToStrOver, sJitTemp0, sJitTemp1);
-               compiler->move(inDest,s0);
+               compiler->callNative(strAddStrToStrOver, sJitTemp0.as(jtPointer), sJitTemp1.as(jtPointer));
+               compiler->move(inDest.as(jtInt), s0.as(jtInt));
+               compiler->move(inDest.as(jtPointer)+sizeof(int), s0.as(jtPointer)+sizeof(int));
             }
             else // Object
             {
-               compiler->callNative(strAddStrToObj, sJitTemp0, sJitTemp1);
+               compiler->callNative(strAddStrToObj, sJitTemp0.as(jtPointer), sJitTemp1.as(jtPointer));
                compiler->checkException();
                compiler->move( inDest, sJitReturnReg );
             }

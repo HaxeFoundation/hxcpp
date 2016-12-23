@@ -403,6 +403,23 @@ void ScriptCallable::runVoid(CppiaCtx *ctx)
 }
 
 
+#ifdef CPPIA_JIT
+struct AutoFrame
+{
+   StackContext *ctx;
+   unsigned char *frame;
+
+   AutoFrame(StackContext *inCtx) : ctx(inCtx)
+   {
+      frame = ctx->frame;
+   }
+   ~AutoFrame()
+   {
+      ctx->frame = frame;
+   }
+};
+#endif
+
 
 
 // Run the actual function
@@ -413,6 +430,7 @@ void ScriptCallable::runFunction(CppiaCtx *ctx)
    #ifdef CPPIA_JIT
    if (compiled)
    {
+      AutoFrame frame(ctx);
       //printf("Running compiled code...\n");
       compiled(ctx);
       //printf("Done.\n");
@@ -448,6 +466,7 @@ void ScriptCallable::runFunctionClosure(CppiaCtx *ctx)
    #ifdef CPPIA_JIT
    if (compiled)
    {
+      AutoFrame frame(ctx);
       //printf("Running compiled code...\n");
       compiled(ctx);
       //printf("Done.\n");
@@ -603,7 +622,10 @@ public:
       #ifdef CPPIA_JIT
       if (function->compiled)
       {
+         {
+         AutoFrame frame(ctx);
          function->compiled(ctx);
+         }
          switch(function->returnType)
          {
             case etFloat:
