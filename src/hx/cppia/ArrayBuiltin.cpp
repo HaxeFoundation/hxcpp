@@ -1686,24 +1686,20 @@ static int SLJIT_CALL arrayPushString( ArrayAnyImpl *inArray, String *inVal)
 
 static int SLJIT_CALL arraySetInt( ArrayAnyImpl *inArray, int inIndex, int inVal)
 {
-   *(int *)0=0;
    inArray->set(inIndex,inVal);
    return inVal;
 }
 static hx::Object * SLJIT_CALL arraySetObject( ArrayAnyImpl *inArray, int inIndex, hx::Object *inVal)
 {
-   *(int *)0=0;
    inArray->set(inIndex,Dynamic(inVal));
    return inVal;
 }
 static void SLJIT_CALL arraySetFloat( ArrayAnyImpl *inArray, int inIndex, double *inVal)
 {
-   *(int *)0=0;
    inArray->set(inIndex,*inVal);
 }
 static void SLJIT_CALL arraySetString( ArrayAnyImpl *inArray, int inIndex, String *inVal)
 {
-   *(int *)0=0;
    inArray->set(inIndex,*inVal);
 }
 

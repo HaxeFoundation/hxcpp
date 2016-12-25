@@ -626,16 +626,19 @@ public:
          AutoFrame frame(ctx);
          function->compiled(ctx);
          }
-         switch(function->returnType)
+         if (!ctx->exception)
          {
-            case etFloat:
-               return ctx->getFloat();
-            case etInt:
-               return ctx->getInt();
-            case etString:
-               return ctx->getString();
-            case etObject:
-               return ctx->getObject();
+            switch(function->returnType)
+            {
+               case etFloat:
+                  return ctx->getFloat();
+               case etInt:
+                  return ctx->getInt();
+               case etString:
+                  return ctx->getString();
+               case etObject:
+                  return ctx->getObject();
+            }
          }
          return null();
       }

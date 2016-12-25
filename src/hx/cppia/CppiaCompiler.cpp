@@ -59,7 +59,7 @@ static void SLJIT_CALL intToStr(int inVal, String *outString)
 }
 static void SLJIT_CALL objToStr(hx::Object *inVal, String *outString)
 {
-   *outString = inVal ? inVal->toString() : HX_CSTRING("null");
+   *outString = inVal ? inVal->toString() : String();
 }
 int SLJIT_CALL objToInt(hx::Object *inVal)
 {
@@ -205,9 +205,9 @@ public:
    struct sljit_compiler *compiler;
 
    QuickVec<JumpId> allBreaks;
-   QuickVec<JumpId> throwTargets;
+   QuickVec<JumpId> uncaught;
    LabelId continuePos;
-   int catchCount;
+   ThrowList *catching;
 
    bool usesCtx;
    bool usesThis;
@@ -237,7 +237,7 @@ public:
       usesCtx = false;
       makesNativeCalls = false;
       continuePos = 0;
-      catchCount = 0;
+      catching = 0;
       maxFrameSize = frameSize = baseFrameSize = sizeof(void *) + inFrameSize;
    }
 
@@ -302,14 +302,15 @@ public:
          move( sJitThis, JitFramePos(0) );
 
       frameSize = baseFrameSize;
-      throwTargets.setSize(0);
+      uncaught.setSize(0);
+      catching = 0;
    }
 
    CppiaFunc finishGeneration()
    {
-      for(int i=0;i<throwTargets.size();i++)
-         comeFrom(throwTargets[i]);
-      throwTargets.setSize(0);
+      for(int i=0;i<uncaught.size();i++)
+         comeFrom(uncaught[i]);
+      uncaught.setSize(0);
       sljit_emit_return(compiler, SLJIT_UNUSED, SLJIT_UNUSED, 0);
       CppiaFunc func = (CppiaFunc)sljit_generate_code(compiler);
       sljit_free_compiler(compiler);
@@ -698,6 +699,7 @@ public:
    // May required indirect offsets
    void move(const JitVal &inDest, const JitVal &inSrc)
    {
+      // TODO - better equality test
       if (inDest==inSrc || !inDest.valid())
          return;
 
@@ -829,7 +831,6 @@ public:
             case etInt:
                if (asBool)
                {
-                  trace("int->string");
                   JumpId isFalse = compare( cmpI_ZERO, inSrc.as(jtInt), 0, 0);
                   move(inTarget.as(jtInt), 4);
                   move(inTarget.as(jtPointer)+4, (void *)String(true).__s );
@@ -1437,31 +1438,36 @@ public:
          localSize = restoreLocal;
    }
 
-   bool   hasThrown()
-   {
-      return !throwTargets.empty();
-   }
    void checkException()
    {
-      throwTargets.push( compare( cmpP_NOT_ZERO,sJitCtx.star(jtPointer, offsetof(hx::StackContext,exception)),(void *)0, 0 ) );
+      JumpId onException = compare( cmpP_NOT_ZERO,sJitCtx.star(jtPointer, offsetof(hx::StackContext,exception)),(void *)0, 0 );
+      if (catching)
+         catching->push_back( onException );
+      else
+         uncaught.push( onException );
+
    }
 
-
-   void catchThrown()
-   {
-      for(int i=0;i<throwTargets.size();i++)
-         comeFrom(throwTargets[i]);
-      throwTargets.setSize(0);
-   }
 
    void addThrow()
    {
-      throwTargets.push( jump() );
+      if (catching)
+         catching->push_back( jump() );
+      else
+         uncaught.push( jump() );
    }
 
-   void  pushCatching() { catchCount++; }
-   void  popCatching()  { catchCount--; }
-   bool  hasCatching()  { return catchCount; }
+   ThrowList *pushCatching(ThrowList *inList)
+   {
+      ThrowList *oldList = catching;
+      catching = inList;
+      return oldList;
+   }
+   void popCatching(ThrowList *inList)
+   {
+      catching = inList;
+   }
+
 };
 
 void CppiaCompiler::freeCompiled(CppiaFunc inFunc)

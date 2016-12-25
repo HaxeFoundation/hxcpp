@@ -268,6 +268,8 @@ typedef sljit_jump  *JumpId;
 
 typedef void (SLJIT_CALL *CppiaFunc)(CppiaCtx *inCtx);
 
+typedef std::vector<JumpId> ThrowList;
+
 class CppiaCompiler
 {
 public:
@@ -308,11 +310,8 @@ public:
    virtual void  addBreak() = 0;
    virtual void  setBreakTarget() = 0;
 
-   virtual void  pushCatching() = 0;
-   virtual void  popCatching() = 0;
-   virtual bool  hasCatching() = 0;
-   virtual bool  hasThrown() = 0;
-   virtual void  catchThrown() = 0;
+   virtual ThrowList *pushCatching(ThrowList *inCatching) = 0;
+   virtual void  popCatching(ThrowList *) = 0;
    virtual void  addThrow() = 0;
    virtual void  checkException() = 0;
 

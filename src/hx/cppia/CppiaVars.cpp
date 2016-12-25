@@ -587,7 +587,7 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
       {
          case fsByte:
          case fsBool: 
-            compiler->move( destPos.as(jtByte), inDefault.ival);
+            compiler->move( destPos.as(jtByte), JitVal(inDefault.ival).as(jtByte));
             break;
 
          case fsInt:
@@ -618,7 +618,8 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
          case fsByte:
          case fsBool: 
             compiler->callNative( (void *)objToInt, sJitTemp0.as(jtPointer) );
-            compiler->move( destPos.as(jtByte), sJitReturnReg.as(jtInt));
+            //compiler->move( destPos.as(jtByte), sJitReturnReg.as(jtByte));
+            compiler->move( destPos.as(jtInt), sJitReturnReg.as(jtInt));
             break;
 
          case fsInt:
