@@ -5715,6 +5715,12 @@ struct SwitchExpr : public CppiaExpr
    }
 
    #ifdef CPPIA_JIT
+
+   static int SLJIT_CALL sameObject(hx::Object *o0, hx::Object *o1)
+   {
+      return Dynamic(o0) == Dynamic(o1);
+   }
+
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       ExprType switchType = condition->getType();
@@ -5760,10 +5766,12 @@ struct SwitchExpr : public CppiaExpr
             else if (switchType==etObject)
             {
                c.conditions[j]->genCode(compiler, sJitTemp1, switchType);
+               compiler->callNative( (void *)sameObject, test, sJitArg1.as(jtPointer) );
+
                if (last)
-                  nextCase = compiler->compare(cmpP_NOT_EQUAL,test, sJitTemp1.as(jtPointer) );
+                  nextCase = compiler->compare(cmpI_EQUAL, sJitReturnReg.as(jtInt), (int) 0);
                else
-                  onMatch.push_back(compiler->compare(cmpP_EQUAL,test, sJitTemp1.as(jtPointer)));
+                  onMatch.push_back(compiler->compare(cmpI_NOT_EQUAL, sJitReturnReg.as(jtInt), (int) 0) );
             }
             else
             {
