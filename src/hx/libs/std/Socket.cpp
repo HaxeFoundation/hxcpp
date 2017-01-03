@@ -4,8 +4,12 @@
 
 #include <string.h>
 
+
+
 #ifdef NEKO_WINDOWS
 #   include <winsock2.h>
+#   include <In6addr.h>
+#   include <Ws2tcpip.h>
 #   define FDSIZE(n)   (sizeof(u_int) + (n) * sizeof(SOCKET))
 #   define SHUT_WR      SD_SEND
 #   define SHUT_RD      SD_RECEIVE
@@ -346,6 +350,65 @@ int _hx_std_host_resolve( String host )
    return ip;
 }
 
+
+Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool onlyIfNoIpv4 )
+{
+   in6_addr ipv6;
+
+   hx::EnterGCFreeZone();
+   int ok = inet_pton(AF_INET6, host.__s, (void *)&ipv6);
+
+   if (!ok)
+   {
+      addrinfo hints;
+
+      memset(&hints, 0, sizeof(struct addrinfo));
+      hints.ai_family = onlyIfNoIpv4 ? AF_UNSPEC : AF_INET6;  // Allow IPv4 or IPv6
+      hints.ai_socktype = 0;  // any - SOCK_STREAM or SOCK_DGRAM
+      hints.ai_flags = AI_PASSIVE;  // For wildcard IP address 
+      hints.ai_protocol = 0;        // Any protocol
+      hints.ai_canonname = 0;
+      hints.ai_addr = 0;
+      hints.ai_next = 0;
+
+      addrinfo *result = 0;
+      int err =  getaddrinfo( host.__s, 0, &hints, &result);
+      if (err==0)
+      {
+         for(addrinfo * rp = result; rp; rp = rp->ai_next)
+         {
+            if (rp->ai_family==AF_INET)
+            {
+               ok = false;
+               break;
+            }
+            else if (!ok && rp->ai_family==AF_INET6 && rp->ai_addrlen==16)
+            {
+               memcpy(&ipv6, rp->ai_addr, rp->ai_addrlen);
+               ok = true;
+            }
+            else
+            {
+               //printf("Unkown family\n");
+            }
+         }
+         freeaddrinfo(result);
+      }
+      else
+      {
+         //printf("Err %s\n", gai_strerror(err) );
+      }
+   }
+   hx::ExitGCFreeZone();
+
+   if (!ok)
+      return null();
+
+   return Array_obj<unsigned char>::fromData( (unsigned char *)&ipv6, 16 );
+}
+
+
+
 /**
    host_to_string : 'int32 -> string
    <doc>Return a string representation of the IP address.</doc>
@@ -355,6 +418,12 @@ String _hx_std_host_to_string( int ip )
    struct in_addr i;
    *(int*)&i = ip;
    return String( inet_ntoa(i) );
+}
+
+String _hx_std_host_to_string_ipv6( Array<unsigned char> ip )
+{
+   char buf[100];
+   return String( inet_ntop(AF_INET6, &ip[0], buf, 100) );
 }
 
 /**
@@ -379,6 +448,28 @@ String _hx_std_host_reverse( int host )
       return String();
    return String( h->h_name );
 }
+
+String _hx_std_host_reverse_ipv6( Array<unsigned char> host )
+{
+   if (!host.mPtr || host->length!=16)
+      return String();
+
+   struct hostent *h = 0;
+   hx::EnterGCFreeZone();
+   #if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
+   h = gethostbyaddr((char *)&host[0],16,AF_INET6);
+   #else
+   struct hostent htmp;
+   int errcode;
+   char buf[1024];
+   gethostbyaddr_r((char *)&host[0],16,AF_INET6,&htmp,buf,1024,&h,&errcode);
+   #endif
+   hx::ExitGCFreeZone();
+   if( !h )
+      return String();
+   return String( h->h_name );
+}
+
 
 /**
    host_local : void -> string
