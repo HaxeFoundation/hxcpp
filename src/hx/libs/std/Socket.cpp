@@ -124,16 +124,17 @@ void _hx_std_socket_init()
    socket_new : udp:bool -> 'socket
    <doc>Create a new socket, TCP or UDP</doc>
 **/
-Dynamic _hx_std_socket_new( bool udp )
+Dynamic _hx_std_socket_new( bool udp, bool ipv6 )
 {
    if (!socketType)
       socketType = hxcpp_alloc_kind();
 
    SOCKET s;
+   int family = ipv6 ? AF_INET6 : AF_INET;
    if( udp )
-      s = socket(AF_INET,SOCK_DGRAM,0);
+      s = socket(family,SOCK_DGRAM,0);
    else
-      s = socket(AF_INET,SOCK_STREAM,0);
+      s = socket(family,SOCK_STREAM,0);
 
    if( s == INVALID_SOCKET )
       return null();
@@ -351,11 +352,10 @@ int _hx_std_host_resolve( String host )
 }
 
 
-Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool onlyIfNoIpv4 )
+Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
 {
    in6_addr ipv6;
 
-   hx::EnterGCFreeZone();
    int ok = inet_pton(AF_INET6, host.__s, (void *)&ipv6);
 
    if (!ok)
@@ -363,7 +363,7 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool onlyIfNoIpv4 )
       addrinfo hints;
 
       memset(&hints, 0, sizeof(struct addrinfo));
-      hints.ai_family = onlyIfNoIpv4 ? AF_UNSPEC : AF_INET6;  // Allow IPv4 or IPv6
+      hints.ai_family = AF_INET6;  //  IPv6
       hints.ai_socktype = 0;  // any - SOCK_STREAM or SOCK_DGRAM
       hints.ai_flags = AI_PASSIVE;  // For wildcard IP address 
       hints.ai_protocol = 0;        // Any protocol
@@ -372,34 +372,33 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool onlyIfNoIpv4 )
       hints.ai_next = 0;
 
       addrinfo *result = 0;
+      hx::EnterGCFreeZone();
       int err =  getaddrinfo( host.__s, 0, &hints, &result);
+      hx::ExitGCFreeZone();
       if (err==0)
       {
          for(addrinfo * rp = result; rp; rp = rp->ai_next)
          {
-            if (rp->ai_family==AF_INET)
+            if (rp->ai_family==AF_INET6)
             {
-               ok = false;
-               break;
-            }
-            else if (!ok && rp->ai_family==AF_INET6 && rp->ai_addrlen==16)
-            {
-               memcpy(&ipv6, rp->ai_addr, rp->ai_addrlen);
+               sockaddr_in6 *s6 = (sockaddr_in6 *)rp->ai_addr;
+               ipv6 = s6->sin6_addr;
                ok = true;
+               break;
             }
             else
             {
-               //printf("Unkown family\n");
+               freeaddrinfo(result);
+               hx::Throw( HX_CSTRING("Unkown ai_family") );
             }
          }
          freeaddrinfo(result);
       }
       else
       {
-         //printf("Err %s\n", gai_strerror(err) );
+         hx::Throw( host + HX_CSTRING(":") + String(gai_strerror(err)) );
       }
    }
-   hx::ExitGCFreeZone();
 
    if (!ok)
       return null();
@@ -499,6 +498,31 @@ void _hx_std_socket_connect( Dynamic o, int host, int port )
    addr.sin_family = AF_INET;
    addr.sin_port = htons(port);
    *(int*)&addr.sin_addr.s_addr = host;
+
+   hx::EnterGCFreeZone();
+   if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
+   {
+      // This will throw a "Blocking" exception if the "error" was because
+      // it's a non-blocking socket with connection in progress, otherwise
+      // it will do nothing.
+      //
+      // - now it always throws
+      block_error();
+   }
+   hx::ExitGCFreeZone();
+}
+
+
+/**
+   socket_connect - to ipv6 host
+**/
+void _hx_std_socket_connect_ipv6( Dynamic o, Array<unsigned char> host, int port )
+{
+   struct sockaddr_in6 addr;
+   memset(&addr,0,sizeof(addr));
+   addr.sin6_family = AF_INET6;
+   addr.sin6_port = htons(port);
+   memcpy(&addr.sin6_addr,&host[0],16);
 
    hx::EnterGCFreeZone();
    if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
@@ -706,6 +730,36 @@ void _hx_std_socket_bind( Dynamic o, int host, int port )
    }
    hx::ExitGCFreeZone();
 }
+
+
+/**
+   socket_bind - ipv6 version
+   <doc>Bind the socket for server usage on the given host and port</doc>
+**/
+void _hx_std_socket_bind_ipv6( Dynamic o, Array<unsigned char> host, int port )
+{
+   SOCKET sock = val_sock(o);
+
+   int opt = 1;
+
+   struct sockaddr_in6 addr;
+   memset(&addr,0,sizeof(addr));
+   addr.sin6_family = AF_INET6;
+   addr.sin6_port = htons(port);
+   memcpy(&addr.sin6_addr,&host[0], 16);
+   #ifndef NEKO_WINDOWS
+   setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof(opt));
+   #endif
+
+   hx::EnterGCFreeZone();
+   if( bind(sock,(struct sockaddr*)&addr,sizeof(addr)) == SOCKET_ERROR )
+   {
+      hx::ExitGCFreeZone();
+      hx::Throw(HX_CSTRING("Bind failed"));
+   }
+   hx::ExitGCFreeZone();
+}
+
 
 /**
    socket_accept : 'socket -> 'socket

@@ -578,8 +578,9 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES double _hx_std_random_float( Dynamic handle );
 
 // Socket
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_init();
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_socket_new( bool udp );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_socket_new( bool udp, bool ipv6 = false );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_bind( Dynamic o, int host, int port );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_bind_ipv6( Dynamic o, Array<unsigned char> host, int port );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_close( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_send_char( Dynamic o, int c );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_send( Dynamic o, Array<unsigned char> buf, int p, int l );
@@ -588,13 +589,14 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_recv_char( Dynamic o );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_write( Dynamic o, Array<unsigned char> buf );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Array<unsigned char> _hx_std_socket_read( Dynamic o );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_host_resolve( String host );
-HXCPP_EXTERN_CLASS_ATTRIBUTES Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool onlyIfNoIpv4 );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool dummy=true );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_to_string( int ip );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_to_string_ipv6( Array<unsigned char> ip );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_reverse( int host );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_reverse_ipv6( Array<unsigned char> host );
 HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_local();
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_connect( Dynamic o, int host, int port );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_connect_ipv6( Dynamic o, Array<unsigned char> host, int port );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_listen( Dynamic o, int n );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Dynamic> _hx_std_socket_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dynamic> es, Dynamic timeout );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_fast_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dynamic> es, Dynamic timeout );
