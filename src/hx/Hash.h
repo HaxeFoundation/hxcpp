@@ -201,6 +201,8 @@ struct HashRoot : public Object
 {
    HashStore store;
 
+    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdHash };
+
    virtual void updateAfterGc() = 0;
 };
 

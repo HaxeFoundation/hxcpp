@@ -98,7 +98,7 @@ namespace hx
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Class_obj : public hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = 2 };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClass };
 
    Class_obj() : mSuper(0) { };
    Class_obj(const String &inClassName, String inStatics[], String inMembers[],

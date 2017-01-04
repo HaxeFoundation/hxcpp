@@ -62,6 +62,8 @@ template<typename FROM,typename TO>
 class ArrayIterator : public cpp::FastIterator_obj<TO>
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdArrayIterator };
+
    ArrayIterator(Array<FROM> inArray) : mArray(inArray), mIdx(0) { }
 
    // Fast versions ...
@@ -105,6 +107,8 @@ public:
    static void __boot();
 
    typedef hx::Object super;
+
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdArrayBase };
 
    // Used by cpp.ArrayBase
    inline int getElementSize() const { return GetElementSize(); }
@@ -376,6 +380,17 @@ template<> inline unsigned char *NewNull<unsigned char>() { unsigned char u=0; r
 
 }
 
+template<typename T> struct ArrayClassId { enum { id=hx::clsIdArrayObject }; };
+template<> struct ArrayClassId<unsigned char> { enum { id=hx::clsIdArrayByte }; };
+template<> struct ArrayClassId<signed char> { enum { id=hx::clsIdArrayByte }; };
+template<> struct ArrayClassId<unsigned short> { enum { id=hx::clsIdArrayShort }; };
+template<> struct ArrayClassId<signed short> { enum { id=hx::clsIdArrayShort }; };
+template<> struct ArrayClassId<unsigned int> { enum { id=hx::clsIdArrayInt }; };
+template<> struct ArrayClassId<signed int> { enum { id=hx::clsIdArrayInt }; };
+template<> struct ArrayClassId<float> { enum { id=hx::clsIdArrayFloat32 }; };
+template<> struct ArrayClassId<double> { enum { id=hx::clsIdArrayFloat64 }; };
+template<> struct ArrayClassId<String> { enum { id=hx::clsIdArrayString }; };
+
 // sort...
 #include <algorithm>
 
@@ -388,6 +403,8 @@ class Array_obj : public hx::ArrayBase
    typedef typename hx::ReturnNull<ELEM_>::type NullType;
 
 public:
+   enum { _hx_ClassId = ArrayClassId<ELEM_>::id };
+
 
    Array_obj(int inSize,int inReserve) :
         hx::ArrayBase(inSize,inReserve,sizeof(ELEM_),!hx::ContainsPointers<ELEM_>()) { }
@@ -397,8 +414,15 @@ public:
    static Array<ELEM_> __new(int inSize=0,int inReserve=0);
    static Array<ELEM_> fromData(const ELEM_ *inData,int inCount);
 
-   virtual bool AllocAtomic() const { return !hx::ContainsPointers<ELEM_>(); }
 
+#if (HXCPP_API_LEVEL>331)
+   bool _hx_isInstanceOf(int inClassId)
+   {
+      return inClassId==1 || inClassId==(int)hx::clsIdArrayBase || inClassId==(int)_hx_ClassId;
+   }
+#endif
+
+   virtual bool AllocAtomic() const { return !hx::ContainsPointers<ELEM_>(); }
 
    virtual Dynamic __GetItem(int inIndex) const { return __get(inIndex); }
    virtual Dynamic __SetItem(int inIndex,Dynamic inValue)

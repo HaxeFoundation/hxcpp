@@ -26,6 +26,8 @@ struct CMemberFunction::ARG:: : public hx::Object
    MemberFunction::ARG:: mFunction;
    const char *mName;
 
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::NS::clsIdCMember::ARG:: };
+
 
    CMemberFunction::ARG::(const char *inName, hx::Object *inObj, MemberFunction::ARG:: inFunction)
    {
@@ -73,6 +75,9 @@ struct CStaticFunction::ARG:: : public hx::Object
 { 
    StaticFunction::ARG:: mFunction;
    const char *mName;
+
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::NS::clsIdCStatic::ARG:: };
+
 
    CStaticFunction::ARG::(const char *inName,StaticFunction::ARG:: inFunction)
    {
@@ -126,6 +131,9 @@ struct CMemberFunctionVar : public hx::Object
    int N;
 
 
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdCMemberVar };
+
+
    CMemberFunctionVar(const char *inName,hx::Object *inObj, MemberFunctionVar inFunction,int inN)
    {
       mThis = inObj;
@@ -163,6 +171,8 @@ struct CStaticFunctionVar : public hx::Object
    StaticFunctionVar mFunction;
    const char *mName;
    int N;
+
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdCStaticVar };
 
    CStaticFunctionVar(const char *inName,StaticFunctionVar inFunction,int inN)
    {

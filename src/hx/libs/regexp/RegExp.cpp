@@ -10,6 +10,8 @@
 
 struct pcredata : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdPcreData };
+
    pcre *r;
    int nmatchs;
    int *matchs;

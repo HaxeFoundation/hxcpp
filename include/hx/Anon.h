@@ -61,6 +61,8 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES Anon_obj : public hx::Object
    int     mFixedFields;
 
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdDynamic };
+
    inline void *operator new( size_t inSize )
    {
       return hx::Object::operator new(inSize, true, 0);
@@ -143,6 +145,8 @@ template<typename _hx_T0>
 class AnonStruct1_obj : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdDynamic };
+
    String name0; _hx_T0 t0;
 
    inline static hx::Object *Create(const String &inName0, _hx_T0 inT0)
@@ -188,6 +192,8 @@ template<typename _hx_T0, typename _hx_T1>
 class AnonStruct2_obj : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdDynamic };
+
    String name0; _hx_T0 t0;
    String name1; _hx_T1 t1;
 
@@ -242,6 +248,8 @@ template<typename _hx_T0, typename _hx_T1, typename _hx_T2>
 class AnonStruct3_obj : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdDynamic };
+
    String name0; _hx_T0 t0;
    String name1; _hx_T1 t1;
    String name2; _hx_T2 t2;
@@ -302,6 +310,8 @@ template<typename _hx_T0, typename _hx_T1, typename _hx_T2, typename _hx_T3>
 class AnonStruct4_obj : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdDynamic };
+
    String name0; _hx_T0 t0;
    String name1; _hx_T1 t1;
    String name2; _hx_T2 t2;
@@ -373,6 +383,8 @@ template<typename _hx_T0, typename _hx_T1, typename _hx_T2, typename _hx_T3, typ
 class AnonStruct5_obj : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdDynamic };
+
    String name0; _hx_T0 t0;
    String name1; _hx_T1 t1;
    String name2; _hx_T2 t2;

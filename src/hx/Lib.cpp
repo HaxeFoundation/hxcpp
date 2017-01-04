@@ -124,6 +124,8 @@ typedef void *(*FundFunc)();
 class ExternalPrimitive : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdExternalPrimitive };
+
    ExternalPrimitive(void *inProc,int inArgCount,const String &inName) :
        mProc(inProc), mArgCount(inArgCount), mName(inName)
    {

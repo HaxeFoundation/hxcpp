@@ -48,6 +48,8 @@ static int socketType = 0;
 
 struct SocketWrapper : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSocket };
+
    SOCKET socket;
 
    int __GetType() const { return socketType; }
@@ -962,6 +964,8 @@ static int pollType = 0;
 
 struct polldata : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdPollData };
+
    bool ok;
    int max;
    #ifdef NEKO_WINDOWS

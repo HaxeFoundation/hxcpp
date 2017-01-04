@@ -34,6 +34,8 @@ namespace
 
 struct rnd  : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdRandom };
+
    unsigned long seeds[NSEEDS];
    unsigned long cur;
 

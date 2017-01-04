@@ -34,6 +34,8 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
          DynamicArray mArgs;
       #endif
    public:
+      HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdEnum };
+
       int          index;
 
    public:

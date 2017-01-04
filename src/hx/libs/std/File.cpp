@@ -23,6 +23,8 @@ namespace
 
 struct fio : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdFio };
+
    String name;
    FILE   *io;
    bool   closeIo;

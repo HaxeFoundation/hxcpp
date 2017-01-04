@@ -423,6 +423,7 @@ void ArrayBase::safeSort(Dynamic inSorter, bool inIsString)
 #define DEFINE_ARRAY_FUNC(ret,func,array_list,dynamic_arg_list,arg_list,ARG_C) \
 struct ArrayBase_##func : public hx::Object \
 { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    bool __IsFunction() const { return true; } \
    ArrayBase *mThis; \
    ArrayBase_##func(ArrayBase *inThis) : mThis(inThis) { } \
@@ -619,6 +620,7 @@ namespace cpp
 #define DEFINE_VARRAY_FUNC(ret, func,array_list,dynamic_arg_list,arg_list,ARG_C) \
 struct VirtualArray_##func : public hx::Object \
 { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    bool __IsFunction() const { return true; } \
    VirtualArray mThis; \
    VirtualArray_##func(VirtualArray inThis) : mThis(inThis) { } \
@@ -924,6 +926,8 @@ VirtualArray VirtualArray_obj::filter(Dynamic inFunc)
 class EmptyIterator : public IteratorBase
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdArrayIterator }; \
+
    bool hasNext() { return false; }
    Dynamic _dynamicNext() { return null(); }
 };

@@ -32,6 +32,8 @@ namespace {
 
 struct result : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSqlite };
+
    sqlite3 *db;
    sqlite3_stmt *r;
    int ncols;

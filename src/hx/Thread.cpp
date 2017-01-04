@@ -168,6 +168,8 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 class hxThreadInfo : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdThreadInfo };
+
 	hxThreadInfo(Dynamic inFunction, int inThreadNumber)
         : mFunction(inFunction), mThreadNumber(inThreadNumber), mTLS(0,0)
 	{
@@ -361,6 +363,8 @@ public:
 		mFinalizer->mFinalizer = clean;
 	}
 
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdMutex };
+
 	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
 
    #ifdef HXCPP_VISIT_ALLOCS
@@ -437,6 +441,8 @@ public:
 		mFinalizer = new hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = clean;
 	}
+
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdLock };
 
 	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
 

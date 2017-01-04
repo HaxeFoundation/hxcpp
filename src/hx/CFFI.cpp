@@ -18,6 +18,8 @@ namespace hx
 class Abstract_obj : public Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdAbstract };
+
    Abstract_obj(int inType,void *inData)
    {
       mType = inType;

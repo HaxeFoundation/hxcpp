@@ -40,6 +40,8 @@ static int do_close( int fd )
 
 struct vprocess : public hx::Object
 {
+  HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdProcess };
+
    bool open;
 #ifdef NEKO_WINDOWS
    HANDLE oread;

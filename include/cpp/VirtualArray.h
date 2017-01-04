@@ -57,6 +57,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public hx::Object
    typedef hx::ArrayBase ArrayBase;
 
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdVirtualArray };
 
    typedef hx::Object super;
    ArrayStore  store;

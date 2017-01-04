@@ -1197,6 +1197,7 @@ String &String::operator+=(const String &inRHS)
 struct __String_##func : public hx::Object \
 { \
    bool __IsFunction() const { return true; } \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    String mThis; \
    __String_##func(const String &inThis) : mThis(inThis) { } \
    String toString() const{ return HX_CSTRING(#func); } \
@@ -1326,7 +1327,7 @@ inline int _wtoi(const wchar_t *inStr)
 class StringData : public hx::Object
 {
 public:
-   enum { _hx_ClassId = 3 };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdString };
 
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=hx::NewObjContainer)
       { return hx::Object::operator new(inSize,inAlloc); }

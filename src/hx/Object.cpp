@@ -39,10 +39,12 @@ namespace hx
 
 String sNone[] = { String(null()) };
 
+#if (HXCPP_API_LEVEL>=332)
 bool Object::_hx_isInstanceOf(int inClassId)
 {
    return inClassId == hx::Object::_hx_ClassId;
 }
+#endif
 
 Dynamic Object::__IField(int inFieldID)
 {

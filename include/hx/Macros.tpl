@@ -128,6 +128,7 @@
 #define HX_BEGIN_DEFAULT_FUNC(name,t0) \
 	namespace { \
    struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    hx::ObjectPtr<t0> __this; \
    name(hx::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
@@ -141,6 +142,7 @@
 
 #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); } \
    name() {}
@@ -148,6 +150,7 @@
 ::foreach LOCALS::
 #define HX_BEGIN_LOCAL_FUNC_S::ARG::(SUPER,name,::TYPE_ARGS::) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    ::TYPE_DECL::; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); ::MARKS:: } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \

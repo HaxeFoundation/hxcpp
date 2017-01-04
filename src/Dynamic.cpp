@@ -45,7 +45,7 @@ Dynamic DynEmptyString;
 class IntData : public hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = 4 };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdInt };
 
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc, const char *inName="Int")
       { return hx::Object::operator new(inSize,inAlloc,inName); }
@@ -78,7 +78,7 @@ public:
 class BoolData : public hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = 5 };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = clsIdBool };
 
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Bool")
       { return hx::Object::operator new(inSize,inAlloc,"Bool"); }
@@ -111,7 +111,7 @@ public:
 class DoubleData : public hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = 6 };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdFloat };
 
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Float")
       { return hx::Object::operator new(inSize,inAlloc,inName); }
@@ -146,7 +146,7 @@ public:
 class Int64Data : public hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = 7 };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdInt64 };
 
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Int64")
       { return hx::Object::operator new(inSize,inAlloc,inName); }
@@ -214,6 +214,8 @@ public:
 
    PointerData(void *inValue) : mValue(inValue) {};
 
+    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdPointer };
+
    hx::Class __GetClass() const { return __PointerClass; }
    #if (HXCPP_API_LEVEL<331)
    bool __Is(hx::Object *inClass) const { return dynamic_cast< PointerData *>(inClass); }
@@ -254,6 +256,8 @@ public:
       memcpy(mValue, inValue, inLength);
       mHandler = inHandler;
    }
+
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdStruct };
 
    hx::Class __GetClass() const { return __PointerClass; }
    #if (HXCPP_API_LEVEL<331)

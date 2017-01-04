@@ -30,6 +30,8 @@ struct ZipResult
 
 struct ZStream : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdZLib };
+
    z_stream *z;
    bool     isInflate;
    int      flush;

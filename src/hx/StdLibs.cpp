@@ -655,6 +655,8 @@ namespace hx
 
 struct VarArgFunc : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure };
+
    VarArgFunc(Dynamic &inFunc) : mRealFunc(inFunc) { }
 
    int __GetType() const { return vtFunction; }

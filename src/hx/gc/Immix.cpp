@@ -1881,6 +1881,8 @@ FILE_SCOPE WeakRefs sWeakRefs;
 class WeakRef : public hx::Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdWeakRef };
+
    WeakRef(Dynamic inRef)
    {
       mRef = inRef;

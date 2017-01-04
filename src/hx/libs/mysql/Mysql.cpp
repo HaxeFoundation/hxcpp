@@ -53,6 +53,9 @@ namespace
 
 struct Connection : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdMysql };
+
+
    MYSQL *m;
 
 
@@ -111,6 +114,8 @@ typedef enum {
 
 struct Result : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdMysqlResult };
+
    MYSQL_RES *r;
    int nfields;
    CONV *fields_convs;

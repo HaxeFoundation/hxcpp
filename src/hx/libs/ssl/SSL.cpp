@@ -40,11 +40,14 @@ typedef size_t socket_int;
 
 struct SocketWrapper : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSocket };
    SOCKET socket;
 };
 
 struct sslctx : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSsl };
+
 	mbedtls_ssl_context *s;
 
 	void create()
@@ -74,6 +77,8 @@ struct sslctx : public hx::Object
 
 struct sslconf : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSslConf };
+
 	mbedtls_ssl_config *c;
 
 	void create()
@@ -103,6 +108,8 @@ struct sslconf : public hx::Object
 
 struct sslcert : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSslCert };
+
 	mbedtls_x509_crt *c;
 	bool head;
 
@@ -141,6 +148,8 @@ struct sslcert : public hx::Object
 
 struct sslpkey : public hx::Object
 {
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSslKey };
+
 	mbedtls_pk_context *k;
 
 	void create()
