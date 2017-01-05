@@ -32,7 +32,7 @@
 
 // Setup the _hx_stackframe variable
 #ifdef HXCPP_STACK_TRACE
-   // Setup the 'HX_DEFINE_STACK_FRAME' macro.
+   // Setup the 'HX_DEFINE_STACK_FRAME' 'HX_LOCAL_STACK_FRAME' macro.
    // This will be empty, just track functions(release), track functions and lines(debug) or track everything (debugger)
    #define HX_DECLARE_STACK_FRAME(name) extern ::hx::StackPosition name;
 
@@ -52,9 +52,11 @@
 
       #define HX_DEFINE_STACK_FRAME(varName, className, functionName, classFunctionHash, fullName,fileName,     \
                           lineNumber, fileHash ) \
-       hx::StackPosition varName(className, functionName, fullName, fileName);
+      hx::StackPosition varName(className, functionName, fullName, fileName);
 
    #endif
+
+   #define HX_LOCAL_STACK_FRAME(a,b,c,d,e,f,g,h) static HX_DEFINE_STACK_FRAME(a,b,c,d,e,f,g,h)
 
    // Haxe < 330 does not create position pointers, and we must use a local one.
    // This code will hst the 'HX_STACK_FRAME' macro
@@ -75,6 +77,7 @@
    #define HX_DECLARE_STACK_FRAME(name)
    #define HX_STACK_BEGIN_CATCH
    #define HX_DEFINE_STACK_FRAME(__stackPosition, className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash )
+   #define HX_LOCAL_STACK_FRAME(a,b,c,d,e,f,g,h)
    #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash )
    #define HX_STACKFRAME(pos)
    #define HX_JUST_GC_STACKFRAME hx::StackContext *_hx_ctx = hx::gMultiThreadMode ? hx::tlsStackContext : hx::gMainThreadContext;

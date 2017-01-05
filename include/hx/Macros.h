@@ -439,7 +439,7 @@ void __hxcpp_lib_main() \
 #define HX_ARG_LIST26 inArg0,inArg1,inArg2,inArg3,inArg4,inArg5,inArg6,inArg7,inArg8,inArg9,inArg10,inArg11,inArg12,inArg13,inArg14,inArg15,inArg16,inArg17,inArg18,inArg19,inArg20,inArg21,inArg22,inArg23,inArg24,inArg25
 
 #define HX_DEFINE_DYNAMIC_FUNC0(class,func,ret) \
- ::Dynamic __##class##func(hx::Object *inObj) \
+static ::Dynamic __##class##func(hx::Object *inObj) \
 { \
       ret reinterpret_cast<class *>(inObj)->func(); return  ::Dynamic(); \
 }; \
@@ -450,7 +450,7 @@ void __hxcpp_lib_main() \
 
 
 #define HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
- ::Dynamic __##class##func(hx::Object *inObj, dynamic_arg_list) \
+static ::Dynamic __##class##func(hx::Object *inObj, dynamic_arg_list) \
 { \
       ret reinterpret_cast<class *>(inObj)->func(arg_list); return  ::Dynamic(); \
 }; \
@@ -461,7 +461,7 @@ void __hxcpp_lib_main() \
 
 
 #define HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
- ::Dynamic __##class##func(hx::Object *inObj, const Array< ::Dynamic> &inArgs) \
+static ::Dynamic __##class##func(hx::Object *inObj, const Array< ::Dynamic> &inArgs) \
 { \
       ret reinterpret_cast<class *>(inObj)->func(array_list); return  ::Dynamic(); \
 }; \
@@ -623,7 +623,7 @@ void __hxcpp_lib_main() \
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC0(class,func,ret) \
- ::Dynamic __##class##func() \
+static ::Dynamic __##class##func() \
 { \
       ret class::func(); return  ::Dynamic(); \
 }; \
@@ -634,7 +634,7 @@ void __hxcpp_lib_main() \
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
- ::Dynamic __##class##func(dynamic_arg_list) \
+static ::Dynamic __##class##func(dynamic_arg_list) \
 { \
       ret class::func(arg_list); return  ::Dynamic(); \
 }; \
@@ -645,7 +645,7 @@ void __hxcpp_lib_main() \
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
- ::Dynamic __##class##func(const Array< ::Dynamic> &inArgs) \
+static ::Dynamic __##class##func(const Array< ::Dynamic> &inArgs) \
 { \
       ret class::func(array_list); return  ::Dynamic(); \
 }; \
