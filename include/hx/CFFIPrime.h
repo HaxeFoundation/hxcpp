@@ -239,6 +239,7 @@ bool CheckSig12( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7,A8,A9, A10, A11), const char
 
 
 inline value ToValue(int inVal) { return alloc_int(inVal); }
+inline value ToValue(long inVal) { return alloc_int32(inVal); }
 inline value ToValue(float inVal) { return alloc_float(inVal); }
 inline value ToValue(double inVal) { return alloc_float(inVal); }
 inline value ToValue(value inVal) { return inVal; }
@@ -250,6 +251,7 @@ struct AutoValue
    value mValue;
    
    inline operator int()  { return val_int(mValue); }
+   inline operator long() { return (long)val_number(mValue); }
    inline operator value() { return mValue; }
    inline operator double() { return val_number(mValue); }
    inline operator float() { return val_number(mValue); }
