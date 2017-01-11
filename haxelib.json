@@ -7,7 +7,7 @@
   "version": "3.4.0",
   "releasenote": "See Changes.md",
   "contributors": ["gamehaxe"],
-  "binaryversion": 45,
+  "binaryversion": 46,
   "dependencies": {
 
   }

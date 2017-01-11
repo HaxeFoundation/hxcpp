@@ -1,3 +1,13 @@
+* Added more options for code-size optimizations on android (thanks madrazo)
+* Added version of stpcpy on android to allow building with platform > 21, and running on older devices
+* Added some initial support for ipv6
+* Experimental support for Cppia JIT
+* Fixed issue with stale objects that use new pch files in cache
+* Rethrowing exception now preserves stack correctly
+
+
+3.4.2
+------------------------------------------------------------
 
 * Align float reads from memory for Arm architecture
 * Removed some virtual functions not needed by newer versions of haxe
