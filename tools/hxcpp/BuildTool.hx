@@ -1813,7 +1813,9 @@ class BuildTool
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  if (Std.parseFloat(ver) > Std.parseFloat(best))
+                  var split_best = best.split(".");
+                  var split_ver = ver.split(".");
+                  if (Std.parseFloat(split_ver[0]) > Std.parseFloat(split_best[0]) || Std.parseFloat(split_ver[1]) > Std.parseFloat(split_best[1]))
                      best = ver;
                }
             }
