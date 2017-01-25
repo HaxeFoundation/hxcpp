@@ -22,6 +22,15 @@ enum ArrayStore
    arrayObject,
 };
 
+enum ArrayConvertId
+{
+   aciAlwaysConvert = -4,
+   aciVirtualArray = -3,
+   aciStringArray  = -2,
+   aciObjectArray  = -1,
+   aciNotArray     = 0,
+   aciPodBase      = 1,
+};
 
 template<typename T> struct ReturnNull { typedef T type; };
 template<> struct ReturnNull<int> { typedef Dynamic type; };
@@ -90,12 +99,22 @@ public:
 namespace hx
 {
 
+// Also used by cpp::VirtualArray
+class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayCommon : public hx::Object
+{
+   protected:
+      int mArrayConvertId;
+   public:
+      // Plain old data element size - or 0 if not plain-old-data
+      int getArrayConvertId() const { return mArrayConvertId; }
+};
+
 // --- hx::ArrayBase ----------------------------------------------------
 //
 // Base class that treats array contents as a slab of bytes.
 // The derived "Array_obj" adds strong typing to the "[]" operator
 
-class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayBase : public hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayBase : public ArrayCommon
 {
 public:
    ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic);
@@ -314,7 +333,7 @@ public:
    inline Dynamic __get(int inIndex) const { return __GetItem(inIndex); }
 
    // Plain old data element size - or 0 if not plain-old-data
-   int getPodSize() const { return mPodSize; }
+   int getArrayConvertId() const { return mArrayConvertId; }
 
    mutable int length;
 
@@ -325,7 +344,6 @@ public:
 protected:
    mutable int mAlloc;
    mutable char  *mBase;
-   int mPodSize;
 };
 
 } // end namespace hx for ArrayBase

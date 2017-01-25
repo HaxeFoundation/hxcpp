@@ -51,7 +51,7 @@ public:
 
 
 
-class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public hx::ArrayCommon
 {
    typedef hx::ArrayStore ArrayStore;
    typedef hx::ArrayBase ArrayBase;
@@ -65,11 +65,13 @@ public:
 
    VirtualArray_obj(ArrayBase *inBase=0, bool inFixed=false) : base(inBase)
    {
+      mArrayConvertId = hx::aciVirtualArray;
       store = inFixed && inBase ? hx::arrayFixed : base ? base->getStoreType() : hx::arrayEmpty;
    }
 
    VirtualArray_obj(ArrayStore inStore)
    {
+      mArrayConvertId = hx::aciVirtualArray;
       store = inStore;
    }
 

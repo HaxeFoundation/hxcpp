@@ -30,8 +30,8 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
    else
       mBase = 0;
    mAlloc = alloc;
-   mPodSize = inAtomic ? inElementSize :
-               inElementSize==sizeof(String) ? DynamicConvertStringPodId : 0;
+   mArrayConvertId = inAtomic ? inElementSize :
+               inElementSize==sizeof(String) ? aciStringArray : aciObjectArray;
 }
 
 

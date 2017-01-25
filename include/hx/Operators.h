@@ -327,24 +327,17 @@ inline Array<Dynamic> TCastToArray(Dynamic inVal)
    return inVal;
 }
 
-template<typename PTRTYPE>
-struct DynamicConvertType { enum { Convert = 0 }; };
-
-enum { DynamicConvertStringPodId = 0x4000 };
+template<typename PTRTYPE> struct DynamicConvertType { enum { Convert = aciNotArray }; };
 
 // Always convert ...
-template<> struct DynamicConvertType< hx::Interface * > { enum { Convert = -1 }; };
-// Convert if different size
-template<> struct DynamicConvertType< Array_obj<int> *> { enum { Convert = sizeof(int) }; };
-template<> struct DynamicConvertType< Array_obj<bool> * > { enum { Convert = sizeof(bool) }; };
-template<> struct DynamicConvertType< Array_obj<double> *> { enum { Convert = sizeof(double) }; };
-template<> struct DynamicConvertType< Array_obj<float> * > { enum { Convert = sizeof(float) }; };
-template<> struct DynamicConvertType< Array_obj<unsigned char> * > { enum { Convert = sizeof(char) }; };
-template<> struct DynamicConvertType< Array_obj<signed char> * > { enum { Convert = sizeof(char) }; };
-template<> struct DynamicConvertType< Array_obj<char> * > { enum { Convert = sizeof(char) }; };
+template<> struct DynamicConvertType< hx::Interface * > { enum { Convert = aciAlwaysConvert }; };
+template<> struct DynamicConvertType< Array_obj<Dynamic> * > { enum { Convert = aciObjectArray }; };
+template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert = aciStringArray }; };
+template<typename T> struct DynamicConvertType< Array_obj<T> * > { enum { Convert = sizeof(T) }; };
+#if (HXCPP_API_LEVEL >= 330)
+template<> struct DynamicConvertType< cpp::VirtualArray_obj * > { enum { Convert = aciVirtualArray }; };
+#endif
 
-// String uses special key so it does not confuse { ptr, int } with { double } of 8 bytes
-template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert = DynamicConvertStringPodId }; };
 }
 
 
@@ -354,9 +347,8 @@ inline RESULT Dynamic::StaticCast() const
 {
    typedef typename RESULT::Ptr type;
 
-   if ( ((int)hx::DynamicConvertType<type>::Convert<0) ||
-       ((int)hx::DynamicConvertType<type>::Convert > 0 && mPtr && 
-          (int)hx::DynamicConvertType<type>::Convert != ((hx::ArrayBase *)mPtr)->getPodSize()) )
+   const int convertId = (int)hx::DynamicConvertType<type>::Convert;
+   if (convertId!=hx::aciNotArray && mPtr && convertId!=((hx::ArrayCommon *)mPtr)->getArrayConvertId())
    {
       // Constructing the result from the Dynamic value will check for a conversion
       //  using something like dynamic_cast
