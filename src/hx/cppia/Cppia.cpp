@@ -4296,7 +4296,9 @@ struct GetFieldByLinkage : public CppiaExpr
 
       if (!replace && type->name==HX_CSTRING("String") && field==HX_CSTRING("length"))
       {
-         int offset = (int) offsetof( Array_obj<int>, length );
+         // This is the offset into the StringData class...
+         // TODO - convert into non-wrapped string length
+         int offset = (int) offsetof( String, length ) + sizeof(void *);
          replace = object ?
              (CppiaExpr*)new MemReference<int,locObj>(this,offset,object):
              (CppiaExpr*)new MemReference<int,locThis>(this,offset);
