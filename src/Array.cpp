@@ -943,5 +943,13 @@ Dynamic VirtualArray_obj::getEmptyIterator()
 
 } // End namespace cpp
 
+Dynamic _hx_reslove_virtual_array(cpp::VirtualArray inArray)
+{
+   if (!inArray.mPtr)
+      return Dynamic();
+   if (inArray->store==hx::arrayFixed  || inArray->store==hx::arrayObject)
+      return inArray->__GetRealObject();
+   return inArray;
+}
 
 #endif

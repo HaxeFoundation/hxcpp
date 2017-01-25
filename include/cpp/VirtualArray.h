@@ -619,8 +619,15 @@ inline bool VirtualArray::operator==( const Array<SOURCE_> &inRHS )
    return mPtr->castArray< Array<SOURCE_> >() == inRHS;
 }
 
+} // end namespace cpp
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_reslove_virtual_array(cpp::VirtualArray inArray);
+
+
+
+namespace hx
+{
 // For type inference when marking
-} namespace hx {
 template<> inline void MarkMember(cpp::VirtualArray &outT,hx::MarkContext *__inCtx)
   { HX_MARK_OBJECT(outT.mPtr); }
 
@@ -631,9 +638,10 @@ template<> inline void VisitMember(cpp::VirtualArray &outT,hx::VisitContext *__i
 }
 #endif
 
-} namespace cpp {
+} // end namespace hx
 
+namespace cpp
+{
 #endif // HX_VARRAY_DEFINED
-
-
 }
+
