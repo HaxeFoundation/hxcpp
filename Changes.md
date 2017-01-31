@@ -1,3 +1,9 @@
+
+* Fixed 2d-Arrays and unserialize
+
+3.4.43
+------------------------------------------------------------
+
 * Added more options for code-size optimizations on android (thanks madrazo)
 * Added version of stpcpy on android to allow building with platform > 21, and running on older devices
 * Added some initial support for ipv6
