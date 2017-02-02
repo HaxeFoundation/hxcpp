@@ -17,6 +17,8 @@
 <set name="OBJGCC" value="-gcc" if="HXCPP_GCC" />
 <set name="OBJDBG" value="-dbg" if="debug" />
 
+<set name="HXCPP_LTO_THIN" value="1" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
+
 
 <compiler id="iPhoneOS" exe="g++" if="iphoneos">
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" if="HXCPP_GCC" />
@@ -56,6 +58,8 @@
   <flag value="-DIPHONE=IPHONE"/>
   <flag value="-DIPHONEOS=IPHONEOS"/>
   <include name="toolchain/common-defines.xml" />
+  <flag value="-flto" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTO_THIN"/>
+  <flag value="-flto=thin" if="HXCPP_LTO_THIN" unless="debug"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-I${HXCPP}/include"/>
   <!-- Removed for iOS 8 (no need) -->
@@ -74,6 +78,7 @@
 <linker id="dll" exe="g++" >
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" if="HXCPP_GCC" />
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" />
+  <flag value="-Wl,-cache_path_lto,/tmp" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
   <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-dynamiclib"/>
