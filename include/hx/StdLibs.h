@@ -301,9 +301,13 @@ inline float __hxcpp_align_get_float32( unsigned char *base, int addr)
    if (addr & 3)
    {
       float buf;
+      #ifdef IPHONE
+      memcpy((void*)&buf,(base+addr),sizeof(float));
+      #else
       unsigned int *dest = (unsigned int *)&buf;
       const unsigned int *src = (const unsigned int *)(base+addr);
       *dest = *src;
+      #endif
       return buf;
    }
    #endif
