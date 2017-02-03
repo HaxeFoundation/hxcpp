@@ -1,6 +1,5 @@
 #ifndef HX_ARRAY_H
 #define HX_ARRAY_H
-
 #include <cpp/FastIterator.h>
 
 // --- hx::ReturnNull ------------------------------------------------------
@@ -107,6 +106,10 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayCommon : public hx::Object
    public:
       // Plain old data element size - or 0 if not plain-old-data
       int getArrayConvertId() const { return mArrayConvertId; }
+
+      #if (HXCPP_API_LEVEL>330)
+      virtual hx::Object *__GetRealObject() { return this; }
+      #endif
 };
 
 // --- hx::ArrayBase ----------------------------------------------------
@@ -142,6 +145,12 @@ public:
    hx::Class __GetClass() const { return __mClass; }
    String toString();
    String __ToString() const;
+
+
+   #if (HXCPP_API_LEVEL>330)
+   int __Compare(const hx::Object *inRHS) const;
+   #endif
+
 
    void setData(void *inData, int inElements)
    {

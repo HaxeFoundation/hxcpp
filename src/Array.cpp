@@ -131,6 +131,19 @@ void ArrayBase::Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceEl
 }
 
 
+#if (HXCPP_API_LEVEL>330)
+int ArrayBase::__Compare(const hx::Object *inRHS) const
+{
+   if (inRHS==this)
+      return 0;
+   if (inRHS->__GetType()!=vtArray)
+      return -1;
+   ArrayCommon *common = (ArrayCommon *)inRHS;
+   hx::Object *implementation = common->__GetRealObject();
+   return implementation<this ? -1 : implementation!=this;
+}
+#endif
+
 
 String ArrayBase::__ToString() const { return HX_CSTRING("Array"); }
 String ArrayBase::toString()
@@ -677,6 +690,21 @@ DEFINE_VARRAY_FUNC1(,memcmp);
 DEFINE_VARRAY_FUNC1(return,__unsafe_get);
 DEFINE_VARRAY_FUNC2(return,__unsafe_set);
 DEFINE_VARRAY_FUNC4(,blit);
+
+
+
+
+#if (HXCPP_API_LEVEL>330)
+int VirtualArray_obj::__Compare(const hx::Object *inRHS) const
+{
+   if (inRHS->__GetType()!=vtArray)
+      return -1;
+   ArrayCommon *common = (ArrayCommon *)inRHS;
+   hx::Object *a = const_cast<VirtualArray_obj *>(this)->__GetRealObject();
+   hx::Object *b = common->__GetRealObject();
+   return a<b ? -1 : a>b;
+}
+#endif
 
 Dynamic VirtualArray_obj::__GetItem(int inIndex) const
 {
