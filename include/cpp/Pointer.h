@@ -525,6 +525,8 @@ public:
 	inline static Pointer<T> fromRaw(T *value)  { return Pointer<T>(value); }
    template<typename T>
 	inline static Pointer<T> fromRaw(const T *value)  { return Pointer<T>(value); }
+	inline static Pointer<void> fromRaw(const AutoCast &inAutoCast)  { return Pointer<void>(inAutoCast.value); }
+	inline static Pointer<void> fromRaw(const RawAutoCast &inAutoCast)  { return Pointer<void>(inAutoCast.value); }
 
 
    inline static AutoCast fromHandle(Dynamic inValue, String inKind)

@@ -64,6 +64,12 @@ extern class SomeStructRef extends Native_SomeStruct {}
 @:native("::cpp::Struct<SomeStruct>")
 extern class SomeStruct extends SomeStructRef {}
 
+class IntHolder
+{
+   public var ival:Int;
+
+   public function new(inVal:Int = 1) ival = inVal;
+}
 
 @:headerCode('
 struct CVec{
@@ -211,6 +217,15 @@ class TestPtr extends haxe.unit.TestCase{
        raw[2]-=2.5;
        assertTrue( raw[2]==0.5 );
 
+   }
+
+   public function testFromRaw()
+   {
+      var i = new IntHolder(3);
+      var ptr = cpp.Pointer.fromRaw(cpp.Pointer.addressOf(i).rawCast());
+      assertTrue( ptr.ref.ival==i.ival );
+      ptr.ref.ival==23;
+      assertTrue( ptr.ref.ival==i.ival );
    }
 
      private static var output:cpp.Pointer<Array<Int>>;
