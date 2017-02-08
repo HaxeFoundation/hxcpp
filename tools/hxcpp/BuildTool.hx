@@ -1737,7 +1737,7 @@ class BuildTool
          var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/iPhoneOS.platform/Developer/SDKs/";
          if (FileSystem.exists(dev_path))
          {
-            var best="";
+            var best="0.0";
             var files = FileSystem.readDirectory(dev_path);
             var extract_version = ~/^iPhoneOS(.*).sdk$/;
             for(file in files)
@@ -1749,7 +1749,7 @@ class BuildTool
                      best = ver;
                }
             }
-            if (best!="")
+            if (best!="0.0")
                defines.set("IPHONE_VER",best);
          }
       }
@@ -1759,7 +1759,7 @@ class BuildTool
          var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/AppleTVOS.platform/Developer/SDKs/";
          if (FileSystem.exists(dev_path))
          {
-            var best="";
+            var best="0.0";
             var files = FileSystem.readDirectory(dev_path);
             var extract_version = ~/^AppleTVOS(.*).sdk$/;
             for(file in files)
@@ -1771,7 +1771,7 @@ class BuildTool
                      best = ver;
                }
             }
-            if (best!="")
+            if (best!="0.0")
                defines.set("TVOS_VER",best);
          }
       }
@@ -1782,7 +1782,7 @@ class BuildTool
          var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/WatchOS.platform/Developer/SDKs/";
          if (FileSystem.exists(dev_path))
          {
-            var best="";
+            var best="0.0";
             var files = FileSystem.readDirectory(dev_path);
             var extract_version = ~/^WatchOS(.*).sdk$/;
             for(file in files)
@@ -1794,7 +1794,7 @@ class BuildTool
                      best = ver;
                }
             }
-            if (best!="")
+            if (best!="0.0")
                defines.set("WATCHOS_VER",best);
          }
       }
