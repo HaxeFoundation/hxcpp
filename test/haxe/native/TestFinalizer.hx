@@ -34,6 +34,42 @@ class ExternWrapper
     }
 }
 
+
+
+class MyFinalizable extends cpp.Finalizable
+{
+   public static var count = 0;
+
+   public function new()
+   {
+      super();
+   }
+
+   override public function finalize()
+   {
+      count ++;
+   }
+}
+
+class CustomFinalizable
+{
+   public static var count = 0;
+
+   public function new()
+   {
+      cpp.vm.Gc.setFinalizer(this, cpp.Function.fromStaticFunction(__finalizeCallback));
+   }
+
+   function __finalize() : Void count++;
+
+   @:void public static function __finalizeCallback(o : CustomFinalizable) : Void
+   {
+      if(o != null)
+         o.__finalize();
+   }
+} 
+
+
 class TestFinalizer extends haxe.unit.TestCase
 {
    public function testCount()
@@ -45,4 +81,18 @@ class TestFinalizer extends haxe.unit.TestCase
       }
       assertTrue( ExternWrapper.instances < 10 );
    }
+
+   public function testFinalizable()
+   {
+      for(i in 0...100)
+      {
+         new MyFinalizable();
+         new CustomFinalizable();
+      }
+      cpp.vm.Gc.run(true);
+      assertTrue(MyFinalizable.count>0);
+      assertTrue(CustomFinalizable.count>0);
+   }
 }
+
+

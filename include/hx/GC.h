@@ -58,6 +58,13 @@ inline void _hx_add_finalizable( hx::ObjectPtr<T> inObj, bool inPin)
   _hx_member_finalizer finalizer = (_hx_member_finalizer)&T::finalize;
   __hxcpp_add_member_finalizer(inObj.mPtr, finalizer, inPin);
 }
+template<typename T>
+inline void _hx_add_finalizable( T *inObj, bool inPin)
+{
+  _hx_member_finalizer finalizer = (_hx_member_finalizer)&T::finalize;
+  __hxcpp_add_member_finalizer(inObj, finalizer, inPin);
+}
+
 
 
 template<typename T>
