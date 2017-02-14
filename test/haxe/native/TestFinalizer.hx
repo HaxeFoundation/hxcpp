@@ -10,6 +10,8 @@ extern class ExternStruct
    public static function create():cpp.Pointer<ExternStruct>;
 }
 
+
+#if !cppia
 @:headerCode('
    struct ExternStruct {
       ExternStruct() {  }
@@ -35,22 +37,6 @@ class ExternWrapper
 }
 
 
-
-class MyFinalizable extends cpp.Finalizable
-{
-   public static var count = 0;
-
-   public function new()
-   {
-      super();
-   }
-
-   override public function finalize()
-   {
-      count ++;
-   }
-}
-
 class CustomFinalizable
 {
    public static var count = 0;
@@ -70,8 +56,29 @@ class CustomFinalizable
 } 
 
 
+
+#end
+
+
+class MyFinalizable extends cpp.Finalizable
+{
+   public static var count = 0;
+
+   public function new()
+   {
+      super();
+   }
+
+   override public function finalize()
+   {
+      count ++;
+   }
+}
+
+
 class TestFinalizer extends haxe.unit.TestCase
 {
+   #if !cppia
    public function testCount()
    {
       for(i in 0...10)
@@ -82,16 +89,22 @@ class TestFinalizer extends haxe.unit.TestCase
       assertTrue( ExternWrapper.instances < 10 );
    }
 
+   public function testCustomFinalizable()
+   {
+      for(i in 0...100)
+         new CustomFinalizable();
+      cpp.vm.Gc.run(true);
+      assertTrue(CustomFinalizable.count>0);
+   }
+
+   #end
+
    public function testFinalizable()
    {
       for(i in 0...100)
-      {
          new MyFinalizable();
-         new CustomFinalizable();
-      }
       cpp.vm.Gc.run(true);
       assertTrue(MyFinalizable.count>0);
-      assertTrue(CustomFinalizable.count>0);
    }
 }
 

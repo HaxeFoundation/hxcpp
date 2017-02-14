@@ -96,6 +96,7 @@ class TestGC extends haxe.unit.TestCase {
 		assertTrue(gc() == null);
 	}
 
+   #if !cppia
 	public function testConstStrings():Void {
       // Const strings void Gc overhead
       var strings = new Array<String>();
@@ -120,4 +121,5 @@ class TestGC extends haxe.unit.TestCase {
       for(string in strings)
          assertFalse( untyped __global__.__hxcpp_is_const_string(string) );
    }
+   #end
 }
