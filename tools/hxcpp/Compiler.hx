@@ -461,8 +461,21 @@ class Compiler
       var result = ProcessManager.runCommand("", mExe, args);
       if (result!=0)
       {
-         if (FileSystem.exists(pch_name))
-            FileSystem.deleteFile(pch_name);
+         var goes = 10;
+         for(attempt in 0...goes)
+         {
+            try {
+               if (FileSystem.exists(pch_name))
+                  FileSystem.deleteFile(pch_name);
+               break;
+            }
+            catch(error:Dynamic)
+            {
+               Log.warn('Error cleaning PCH file $pch_name: $error');
+               if (attempt<goes-1)
+                  Sys.sleep(0.25);
+            }
+         }
          Log.error("Could not create PCH");
          //throw "Error creating pch: " + result + " - build cancelled";
       }

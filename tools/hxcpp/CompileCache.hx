@@ -114,7 +114,10 @@ class CompileCache
            for(dir in dirs)
            {
               if (dir.length!=2 && dir!="lib" && dir.substr(0,3)!="pch" )
-                 throw 'bad cache name "$dir" found - aborting';
+              {
+                 Log.warn('bad cache name "$dir" found - try manually clearing');
+                 continue;
+              }
               var path = projDir + "/" + dir;
               var dirFiles = FileSystem.readDirectory(path);
               var allDeleted = true;
@@ -224,7 +227,7 @@ class CompileCache
       }
       catch(error:Dynamic)
       {
-         Log.error("Error cleaning cache: " + error);
+         Log.warn("Error cleaning cache: " + error);
       }
 
    }
@@ -280,7 +283,7 @@ class CompileCache
       }
       catch(error:Dynamic)
       {
-         Log.error("Error accessing cache: " + error);
+         Log.warn("Error accessing cache: " + error);
       }
    }
 
