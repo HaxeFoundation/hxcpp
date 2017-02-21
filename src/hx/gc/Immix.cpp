@@ -2026,6 +2026,7 @@ struct Finalizable
       base = inBase;
       member = inMember;
       pin = inPin;
+      isMember = true;
    }
 
    Finalizable(void *inBase, _hx_alloc_finalizer inAlloc, bool inPin)
@@ -2033,6 +2034,7 @@ struct Finalizable
       base = inBase;
       alloc = inAlloc;
       pin = inPin;
+      isMember = false;
    }
    void run()
    {
