@@ -391,7 +391,7 @@ void tlmSampleExit(Telemetry *inTelemetry)
 
 void hx::Telemetry::push_callstack_ids_into(std::vector<int> *list)
 {
-    int size = stack->getDepth()+1;
+    int size = stack->getDepth();
     for (int i = 0; i < size; i++) {
         const char *fullName = stack->getFullNameAtDepth(i);
         list->push_back(GetNameIdx(fullName));
@@ -466,7 +466,7 @@ void hx::Telemetry::StackUpdate(StackFrame *pushed_frame)
     }
     mT0 = clock;
 
-    int size = stack->getDepth()+1;
+    int size = stack->getDepth();
 
     // Collect function names and callstacks (as indexes into the names vector)
     samples->push_back(size);
@@ -482,7 +482,6 @@ void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
     // for every external call, hashes for every SDL event (Lime's
     // ExternalInterface.external_handler()), etc
 #ifndef HXCPP_PROFILE_EXTERNS
-    int depth = stack->getDepth();
     if (stack->getCurrentStackFrame()->position->className==hx::EXTERN_CLASS_NAME) {
       alloc_mutex.Unlock();
       return;
