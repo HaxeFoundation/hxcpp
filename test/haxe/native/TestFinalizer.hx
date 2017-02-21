@@ -52,6 +52,8 @@ class CustomFinalizable
    {
       if(o != null)
          o.__finalize();
+      else
+         Sys.println("Null callback object?");
    }
 } 
 
@@ -86,6 +88,7 @@ class TestFinalizer extends haxe.unit.TestCase
           new ExternWrapper();
           cpp.vm.Gc.run(true);
       }
+      Sys.println("\nExtern instances remaining:" + ExternWrapper.instances);
       assertTrue( ExternWrapper.instances < 10 );
    }
 
@@ -94,6 +97,7 @@ class TestFinalizer extends haxe.unit.TestCase
       for(i in 0...100)
          new CustomFinalizable();
       cpp.vm.Gc.run(true);
+      Sys.println("custom cleared:" + CustomFinalizable.count);
       assertTrue(CustomFinalizable.count>0);
    }
 
@@ -104,6 +108,7 @@ class TestFinalizer extends haxe.unit.TestCase
       for(i in 0...100)
          new MyFinalizable();
       cpp.vm.Gc.run(true);
+      Sys.println("MyFinalizable cleared:" + MyFinalizable.count);
       assertTrue(MyFinalizable.count>0);
    }
 }
