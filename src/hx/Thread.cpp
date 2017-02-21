@@ -239,9 +239,9 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
    info[0] = (hxThreadInfo *)inInfo;
    info[1] = 0;
 
-	hx::SetTopOfStack((int *)&info[1], true);
-
 	tlsCurrentThread = info[0];
+
+	hx::SetTopOfStack((int *)&info[1], true);
 
 	// Release the creation function
 	info[0]->mSemaphore->Set();

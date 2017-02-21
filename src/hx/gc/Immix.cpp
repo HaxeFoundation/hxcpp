@@ -4166,8 +4166,6 @@ public:
       #ifdef HX_WINDOWS
       mID = GetCurrentThreadId();
       #endif
-
-      onThreadAttach();
    }
 
    ~LocalAllocator()
@@ -4194,7 +4192,6 @@ public:
       // It is in the free zone - wait for 'SetTopOfStack' to activate
       mGCFreeZone = true;
       mReadyForCollect.Set();
-      onThreadAttach();
    }
 
    void ReturnToPool()
@@ -4709,7 +4706,10 @@ void InitAlloc()
    sgObject_root = stack[0];
    //GCLOG("__root pointer %p\n", sgObject_root);
    gMainThreadContext =  new LocalAllocator();
+
    tlsStackContext = gMainThreadContext;
+   gMainThreadContext->onThreadAttach();
+
    for(int i=0;i<IMMIX_LINE_LEN;i++)
       gImmixStartFlag[i] = 1<<( i>>2 ) ;
 }
@@ -4893,7 +4893,9 @@ void RegisterCurrentThread(void *inTopOfStack)
    {
       local->AttachThread((int *)inTopOfStack);
    }
+
    tlsStackContext = local;
+   local->onThreadAttach();
 }
 
 void UnregisterCurrentThread()
