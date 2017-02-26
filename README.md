@@ -47,3 +47,14 @@ which may help with native debugging.  Don't forget to rebuild without debugging
 
 
 For experts, you can configure the compilation scripts that will be used for executables and library production in the 'toolchain' folder.
+
+# cppia
+
+You first need to build the cppia host.
+
+```
+cd project
+haxe compile-cppia.hxml
+```
+
+Then you can do `haxelib run hxcpp file.cppia`.
