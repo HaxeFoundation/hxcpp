@@ -1143,7 +1143,8 @@ void CppiaClassInfo::linkTypes()
          HaxeNativeInterface *native = HaxeNativeInterface::findInterface( interface->name.__s );
          if (native)
          {
-            interfaceScriptTables[interface->name.hash()] = native->scriptTable;
+            String hashName = interface->name.split(HX_CSTRING(".")).mPtr->join(HX_CSTRING("::"));
+            interfaceScriptTables[hashName.hash()] = native->scriptTable;
 
             ScriptNamedFunction *functions = native->functions;
             if (functions != 0)

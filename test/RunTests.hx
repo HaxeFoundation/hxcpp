@@ -45,6 +45,16 @@ class RunTests
       command("haxe", ["--run","MkOps.hx"] );
    }
 
+
+   public static function cppia()
+   {
+      setDir("cppia");
+
+      command("haxe", ["compile-host.hxml"] );
+      command("haxe", ["compile-client.hxml"] );
+      command("bin" + sep + "CppiaHost",[ "bin" + sep + "client.cppia" ]);
+   }
+
    public static function native()
    {
       setDir("native");
@@ -145,6 +155,7 @@ class RunTests
             
       baseDir = Sys.getCwd();
 
+      run("cppia", cppia);
       run("cffi", cffi);
       run("opMatrix", opMatrix);
       run("haxe", runHaxe);

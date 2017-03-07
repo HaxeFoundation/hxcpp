@@ -1,0 +1,3 @@
+-main Client
+-D dll_import=host_classes.info
+-cppia bin/client.cppia
