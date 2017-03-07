@@ -21,6 +21,13 @@ class Client
          return;
       }
 
+      var c = new ClientExtends();
+      if (!c.ok())
+      {
+         Common.status = "Bad client extension";
+         return;
+      }
+
       Common.clientImplementation = new ClientOne();
       Common.status = "ok";
    }

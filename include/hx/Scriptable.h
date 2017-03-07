@@ -205,7 +205,7 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
 #endif
 
 #define HX_SCRIPTABLE_REGISTER_CLASS(name,class) \
-   hx::ScriptableRegisterClass( HX_CSTRING(name), (int)sizeof(class##__scriptable), __scriptableFunctions, class##__scriptable::__script_create, class##__scriptable::__script_construct )
+   hx::ScriptableRegisterClass( HX_CSTRING(name), (int)offsetof(class##__scriptable,__scriptVTable) + sizeof(void *), __scriptableFunctions, class##__scriptable::__script_create, class##__scriptable::__script_construct )
 
 
 
@@ -215,8 +215,8 @@ void __scriptable_load_abc(Array<unsigned char> inBytes);
       return hx::InternalNew(inSize + inExtraDataSize,true); \
    } \
    inline void operator delete(void *,int) {} \
-   void **__scriptVTable; \
    public: \
+   void **__scriptVTable; \
    static hx::Object *__script_create(void **inVTable, int inExtra) { \
     __ME *result = new (inExtra) __ME(); \
     result->__scriptVTable = inVTable; \

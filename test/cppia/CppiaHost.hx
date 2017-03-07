@@ -1,5 +1,7 @@
 import cpp.cppia.Host;
 
+import HostBase;
+
 class HostOne implements pack.HostInterface
 {
    public static var called = 0;
