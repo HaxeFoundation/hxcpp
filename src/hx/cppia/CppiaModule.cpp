@@ -97,6 +97,9 @@ void CppiaModule::compile()
 }
 #endif
 
+void addScriptableClass(String inName);
+void addScriptableFile(String inName);
+
 void CppiaModule::registerDebugger()
 {
    #ifdef HXCPP_DEBUGGER
