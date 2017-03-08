@@ -12,18 +12,21 @@
    #define _WIN32_WINNT 0x0501
    #include <winsock2.h>
    #   include <Ws2tcpip.h>
-
-   extern "C" {
-   WINSOCK_API_LINKAGE  INT WSAAPI inet_pton( INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
-   WINSOCK_API_LINKAGE  PCSTR WSAAPI inet_ntop(INT  Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize);
-   }
-
 #else
    // Windows...
    #include <winsock2.h>
    #include <In6addr.h>
    #include <Ws2tcpip.h>
 #endif
+
+
+#define DYNAMIC_INET_FUNCS 1
+typedef WINSOCK_API_LINKAGE  INT (WSAAPI *inet_pton_func)( INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
+typedef WINSOCK_API_LINKAGE  PCSTR (WSAAPI *inet_ntop_func)(INT  Family, PVOID pAddr, PSTR pStringBuf, size_t StringBufSize);
+
+
+
+
 
 #   define FDSIZE(n)   (sizeof(u_int) + (n) * sizeof(SOCKET))
 #   define SHUT_WR      SD_SEND
@@ -370,12 +373,27 @@ int _hx_std_host_resolve( String host )
    return ip;
 }
 
+#ifdef DYNAMIC_INET_FUNCS
+bool dynamic_inet_pton_tried = false;
+inet_pton_func dynamic_inet_pton = 0;
+#endif
 
 Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
 {
    in6_addr ipv6;
 
+   #ifdef DYNAMIC_INET_FUNCS
+   if (!dynamic_inet_pton_tried)
+   {
+      dynamic_inet_pton_tried = true;
+      HMODULE module = LoadLibraryA("WS2_32.dll");
+      if (module)
+         dynamic_inet_pton = (inet_pton_func)GetProcAddress(module,"inet_pton");
+   }
+   int ok = dynamic_inet_pton ? dynamic_inet_pton(AF_INET6, host.__s, (void *)&ipv6) : 0;
+   #else
    int ok = inet_pton(AF_INET6, host.__s, (void *)&ipv6);
+   #endif
 
    if (!ok)
    {
@@ -438,10 +456,31 @@ String _hx_std_host_to_string( int ip )
    return String( inet_ntoa(i) );
 }
 
+
+#ifdef DYNAMIC_INET_FUNCS
+bool dynamic_inet_ntop_tried = false;
+inet_ntop_func dynamic_inet_ntop = 0;
+#endif
+
+
 String _hx_std_host_to_string_ipv6( Array<unsigned char> ip )
 {
    char buf[100];
+   #ifdef DYNAMIC_INET_FUNCS
+   if (!dynamic_inet_ntop_tried)
+   {
+      dynamic_inet_ntop_tried = true;
+      HMODULE module = LoadLibraryA("WS2_32.dll");
+      if (module)
+         dynamic_inet_ntop = (inet_ntop_func)GetProcAddress(module,"inet_ntop");
+      printf(" -> %f\n", dynamic_inet_ntop);
+   }
+   if (!dynamic_inet_ntop)
+      return String();
+   return String( dynamic_inet_ntop(AF_INET6, &ip[0], buf, 100) );
+   #else
    return String( inet_ntop(AF_INET6, &ip[0], buf, 100) );
+   #endif
 }
 
 /**
