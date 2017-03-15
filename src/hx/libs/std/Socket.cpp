@@ -473,7 +473,6 @@ String _hx_std_host_to_string_ipv6( Array<unsigned char> ip )
       HMODULE module = LoadLibraryA("WS2_32.dll");
       if (module)
          dynamic_inet_ntop = (inet_ntop_func)GetProcAddress(module,"inet_ntop");
-      printf(" -> %f\n", dynamic_inet_ntop);
    }
    if (!dynamic_inet_ntop)
       return String();
