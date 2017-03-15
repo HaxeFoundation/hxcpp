@@ -4706,10 +4706,15 @@ void InitAlloc()
    hx::Object tmp;
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
+
    //GCLOG("__root pointer %p\n", sgObject_root);
    gMainThreadContext =  new LocalAllocator();
 
    tlsStackContext = gMainThreadContext;
+
+   // Setup main thread ...
+   __hxcpp_thread_current();
+
    gMainThreadContext->onThreadAttach();
 
    for(int i=0;i<IMMIX_LINE_LEN;i++)

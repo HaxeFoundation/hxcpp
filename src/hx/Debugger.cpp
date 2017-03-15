@@ -14,6 +14,7 @@ static const char **__all_files_fullpath = 0;
 static const char **__all_classes = 0;
 
 
+#define HXCPP_DEBUG_HASHES
 
 
 
@@ -30,7 +31,7 @@ extern const char *__hxcpp_all_files[];
 // that within a function call, the value of gShouldCallHandleBreakpoints is
 // not cached in a register and thus not properly checked within the function
 // call.
-volatile bool gShouldCallHandleBreakpoints;
+volatile bool gShouldCallHandleBreakpoints = false;
 
 // This is the event notification handler, as registered by the debugger
 // thread.
@@ -837,7 +838,10 @@ private:
       for (int i = 0; i < mBreakpointCount; i++)
       {
          Breakpoint &breakpoint = mBreakpoints[i];
-         if (breakpoint.isFileLine && breakpoint.hash==inFrame->position->fileHash &&
+         if (breakpoint.isFileLine &&
+             #ifdef HXCPP_DEBUG_HASHES
+             breakpoint.hash==inFrame->position->fileHash &&
+             #endif
              (breakpoint.lineNumber == inFrame->lineNumber) &&
              !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->position->fileName) )
             return breakpoint.number;
@@ -850,7 +854,10 @@ private:
       for (int i = 0; i < mBreakpointCount; i++)
       {
          Breakpoint &breakpoint = mBreakpoints[i];
-         if (!breakpoint.isFileLine && breakpoint.hash==inFrame->position->classFuncHash &&
+         if (!breakpoint.isFileLine &&
+             #ifdef HXCPP_DEBUG_HASHES
+             breakpoint.hash==inFrame->position->classFuncHash &&
+             #endif
              !strcmp(breakpoint.fileOrClassName.c_str(), inFrame->position->className)  &&
              !strcmp(breakpoint.functionName.c_str(), inFrame->position->functionName) )
             return breakpoint.number;

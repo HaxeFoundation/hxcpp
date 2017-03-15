@@ -149,15 +149,9 @@ String FormatStack(const char *file, const char *clazz, const char *func, int li
 
 StackContext::StackContext()
 {
-   #ifdef HXCPP_STACK_IDS
-   mThreadId = __hxcpp_GetCurrentThreadNumber();
-   #endif
-
    #ifdef HXCPP_STACK_TRACE
    mIsUnwindingException = false;
    #endif
-
-   //threadNumber = __hxcpp_GetCurrentThreadNumber();
 
    #ifdef HXCPP_TELEMETRY
    //mTelemetry = tlmCreate(this);
@@ -166,7 +160,7 @@ StackContext::StackContext()
    #endif
 
    #ifdef HXCPP_DEBUGGER
-   mDebugger = dbgCtxCreate(this);
+   mDebugger = 0;
    #endif
 
    #ifdef HXCPP_PROFILER
@@ -220,6 +214,8 @@ void StackContext::onThreadAttach()
    #endif
 
    #ifdef HXCPP_DEBUGGER
+   if (!mDebugger)
+      mDebugger = dbgCtxCreate(this);
    if (mDebugger)
       dbgCtxAttach(mDebugger,this);
    #endif
