@@ -55,6 +55,7 @@ script:
   - cd ${TRAVIS_BUILD_DIR}/test
   - haxe --run RunTests cffi
   - haxe --run RunTests haxe
+  - haxe --run RunTests telemetry
   - haxe --run RunTests std32
   - haxe --run RunTests std64
   - cd ~/haxe/tests/unit
