@@ -1,4 +1,11 @@
 
+* Fixed cppia native interface implementation
+* Fixed debugger breakpoints
+* More compatibility for inet_pton and inet_ntop
+* Correct the order of thread housekeeping data
+
+3.4.49
+------------------------------------------------------------
 * Fixed 2d-Arrays and unserialize
 
 3.4.43
