@@ -7,6 +7,7 @@ class Native
 		var r = new haxe.unit.TestRunner();
 		r.add(new tests.TestRgb());
 		r.add(new tests.TestRectangle());
+		r.add(new tests.TestGlobalNamespace());
 		r.add(new tests.TestNativeGen());
 		r.add(new tests.TestNonVirtual());
 		r.add(new tests.TestPtr());
