@@ -32,6 +32,17 @@ class TestCffi extends TestBase
    static var freeAbstract:Dynamic->Void = Lib.load("prime", "freeAbstract", 1);
    static var getAbstractFreeCount:Void->Int = Lib.load("prime", "getAbstractFreeCount", 0);
 
+   static var cppObjectAsDynamic:cpp.Callable<Int->cpp.Object>;
+
+
+   inline function getObjectAsString() : String
+   {
+      // Just test to see if this compiles
+      if (cppObjectAsDynamic!=null)
+         return cppObjectAsDynamic(1);
+      return null;
+   }
+
    public function testCffi()
    {
       cpp.Prime.nekoInit("prime");
@@ -62,6 +73,9 @@ class TestCffi extends TestBase
       assertFalse( valIsBuffer(1) );
       assertFalse( valIsBuffer({}) );
       assertFalse( valIsBuffer("String Buf") );
+
+      if (cppObjectAsDynamic!=null)
+         assertTrue( getObjectAsString()==null);
 
 
       for(i in 0...100)

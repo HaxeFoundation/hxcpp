@@ -330,7 +330,11 @@ namespace cpp
 {
 // --- Pointer -------------------------------------------------
 
-Dynamic CreateDynamicPointer(void *inValue) { return new hx::PointerData(inValue); }
+Dynamic CreateDynamicPointer(void *inValue) {
+   if (!inValue)
+      return Dynamic();
+   return new hx::PointerData(inValue);
+}
 
 // --- Struct -------------------------------------------------
 
