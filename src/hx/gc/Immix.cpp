@@ -4172,8 +4172,8 @@ public:
 
    ~LocalAllocator()
    {
-      EnterGCFreeZone();
       onThreadDetach();
+      EnterGCFreeZone();
       sGlobalAlloc->RemoveLocal(this);
       hx::tlsStackContext = 0;
 

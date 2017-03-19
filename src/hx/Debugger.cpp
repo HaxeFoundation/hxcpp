@@ -282,27 +282,35 @@ public:
         // This thread cannot stop while making the callback
         mCanStop = false;
 
+        mWaitMutex.Lock();
+        mWaiting = true;
+        mWaitMutex.Unlock();
+
         // Call the handler to announce the status.
         StackFrame *frame = mStackContext->getCurrentStackFrame();
+        // Record this before g_eventNotificationHandler is run, since it might change in there
+        mStackContext->mDebugger->mStepLevel = mStackContext->getDepth();
         g_eventNotificationHandler
-            (mThreadNumber, THREAD_STOPPED, mStackContext->getDepth()-1,
+            (mThreadNumber, THREAD_STOPPED, mStackContext->mDebugger->mStepLevel,
              String(frame->position->className), String(frame->position->functionName),
              String(frame->position->fileName), frame->lineNumber);
 
-        // Wait until the debugger thread sets mWaiting to false and signals
-        // the semaphore
-        mWaitMutex.Lock();
-        mWaiting = true;
+        if (mWaiting)
+        {
+           // Wait until the debugger thread sets mWaiting to false and signals
+           // the semaphore
+           mWaitMutex.Lock();
 
-        while (mWaiting) {
-            mWaitMutex.Unlock();
-            hx::EnterGCFreeZone();
-            mWaitSemaphore.Wait();
-            hx::ExitGCFreeZone();
-            mWaitMutex.Lock();
+           while (mWaiting) {
+               mWaitMutex.Unlock();
+               hx::EnterGCFreeZone();
+               mWaitSemaphore.Wait();
+               hx::ExitGCFreeZone();
+               mWaitMutex.Lock();
+           }
+
+           mWaitMutex.Unlock();
         }
-
-        mWaitMutex.Unlock();
 
         // Save the breakpoint status in the call stack so that queries for
         // thread info will know the current status of the thread
@@ -310,7 +318,9 @@ public:
         mBreakpoint = -1;
 
         // Announce the new status
-        g_eventNotificationHandler(mThreadNumber, THREAD_STARTED);
+        Dynamic handler = hx::g_eventNotificationHandler;
+        if (handler!=null())
+           handler(mThreadNumber, THREAD_STARTED);
 
         // Can stop again
         mCanStop = true;
@@ -412,8 +422,7 @@ public:
 
         int ret = gNextBreakpointNumber++;
         
-        Breakpoints *newBreakpoints = new Breakpoints
-            (gBreakpoints, ret, className, functionName);
+        Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, ret, className, functionName);
         
         gBreakpoints->RemoveRef();
 
@@ -536,7 +545,7 @@ public:
         while (iter != gList.end()) {
             DebuggerContext *stack = *iter++;
             if (stack->mThreadNumber == threadNumber) {
-                gStepLevel = stack->mStackContext->getDepth() - 1;
+                gStepLevel = stack->mStackContext->mDebugger->mStepLevel;
                 stack->Continue(1);
                 break;
             }

@@ -58,6 +58,8 @@ script:
   - haxe --run RunTests telemetry
   - haxe --run RunTests std32
   - haxe --run RunTests std64
+  - haxe --run RunTests debugger
+  - haxe --run RunTests native
   - cd ~/haxe/tests/unit
   - haxe compile-cpp.hxml -D HXCPP_M32 && ./bin/cpp/TestMain-debug && rm -rf bin/cpp
   - haxe compile-cpp.hxml -D HXCPP_M64 && ./bin/cpp/TestMain-debug

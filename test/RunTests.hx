@@ -52,6 +52,14 @@ class RunTests
    }
 
 
+   public static function debugger()
+   {
+      setDir("debugger");
+
+      command("haxe", ["compile.hxml"] );
+      command("bin" + sep + "App-debug",[]);
+   }
+
    public static function opMatrix()
    {
       setDir("opMatrix");
@@ -177,6 +185,7 @@ class RunTests
       run("std32", std32);
       run("std64", std64);
       run("native", native);
+      run("debugger", debugger);
 
       Sys.println("");
 
