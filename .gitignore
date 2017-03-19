@@ -12,6 +12,7 @@ test/std/mybase.db
 test/opMatrix/Ops.hx
 test/opMatrix/cpp
 test/haxe/cpp
+test/telemetry/cpp
 test/extern-lib/gen-externs
 test/cffi/project/ndll
 hxcpp.n
