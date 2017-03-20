@@ -35,7 +35,7 @@
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
   <include name="toolchain/common-defines.xml" />
-  <objdir value="obj/darwin${OBJEXT}/" />
+  <objdir value="${BUILDDIR}/darwin${OBJEXT}/" />
   <outflag value="-o"/>
   <ext value=".o"/>
   <getversion value="xcrun --sdk macosx${MACOSX_VER} clang++ -v" if="HXCPP_CLANG" />
