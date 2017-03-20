@@ -15,7 +15,7 @@ install:
       travis_retry sudo apt-get install pkg-config libgc-dev libssl-dev libpcre3-dev zlib1g-dev apache2-dev libmysqlclient-dev libsqlite3-dev libgtk2.0-dev ocaml-native-compilers camlp4 gcc-multilib g++-multilib -y;
     fi
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      brew uninstall --force brew-cask # https://github.com/caskroom/homebrew-cask/pull/15381
+      brew uninstall --force brew-cask; # https://github.com/caskroom/homebrew-cask/pull/15381
       travis_retry brew update;
       travis_retry brew install bdw-gc pcre mariadb mbedtls ocaml camlp4;
     fi
