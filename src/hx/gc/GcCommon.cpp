@@ -172,6 +172,11 @@ void  __hxcpp_set_target_free_space_percentage(int inPercentage)
 
 bool __hxcpp_is_const_string(const ::String &inString)
 {
+   #ifdef HXCPP_ALIGN_ALLOC
+   // Unaligned must be native const
+   if ( ((size_t)inString.__s) & 0x3 )
+      return true;
+   #endif
    return ((unsigned int *)inString.__s)[-1] & HX_GC_CONST_ALLOC_BIT;
 }
 

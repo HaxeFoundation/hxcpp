@@ -11,10 +11,6 @@
 #define HX_GC_CONST_ALLOC_BIT  0x80000000
 #define HX_GC_CONST_ALLOC_MARK_BIT  0x80
 
-// Must allign allocs to 8 bytes to match floating point requirement?
-#ifdef EMSCRIPTEN
-   #define HXCPP_ALIGN_ALLOC
-#endif
 
 
 
@@ -300,6 +296,15 @@ namespace hx
 // String has hash data at end
 #define HX_GC_STRING_HASH          0x00100000
 
+#define HX_GC_STRING_HASH_BIT      0x10
+
+#ifdef HXCPP_BIG_ENDIAN
+   #define HX_GC_STRING_HASH_OFFSET -3
+   #define HX_GC_CONST_ALLOC_MARK_OFFSET -4
+#else
+   #define HX_GC_STRING_HASH_OFFSET -2
+   #define HX_GC_CONST_ALLOC_MARK_OFFSET -1
+#endif
 
 extern bool gMultiThreadMode;
 
@@ -416,12 +421,20 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkObjectAllocUnchecked(hx::Object *inPtr ,h
 
 inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
 {
+   #ifdef EMSCRIPTEN
+   // Unaligned must be constants...
+   if ( !( ((size_t)inPtr) & 3) )
+   #endif
    // This will also skip const regions
    if ( !(((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask) )
       MarkAllocUnchecked(inPtr,__inCtx);
 }
 inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 {
+   #ifdef EMSCRIPTEN
+   // Unaligned must be constants...
+   if ( !( ((size_t)inPtr) & 3) )
+   #endif
    // This will also skip const regions
    if ( !(((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask) )
       MarkObjectAllocUnchecked(inPtr,__inCtx);
@@ -496,7 +509,7 @@ inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
   { if (ioPtr) __inCtx->visitObject( (hx::Object **)&ioPtr); }
 
 #define HX_VISIT_STRING(ioPtr) \
-   if (ioPtr && !(((unsigned int *)ioPtr)[-1] & HX_GC_CONST_ALLOC_BIT) ) __inCtx->visitAlloc((void **)&ioPtr);
+   if (ioPtr && !(((unsigned int *)ioPtr)[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT) ) __inCtx->visitAlloc((void **)&ioPtr);
 
 #define HX_VISIT_ARRAY(ioPtr) { if (ioPtr) __inCtx->visitAlloc((void **)&ioPtr); }
 

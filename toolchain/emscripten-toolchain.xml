@@ -28,7 +28,7 @@
         But you may be able to adjust the node stack size ti fix this.
    <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
    -->
-   <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
+   <set name="HXCPP_OPTIM_LEVEL" value="-O1" />
    <set name="HXCPP_OPTIM_LEVEL" value="-g" if="debug" />
 </section>
 
@@ -64,6 +64,18 @@
   <ext value=".o"/>
 </compiler>
 
+
+
+<section unless="HXCPP_LINK_OPTIM_LEVEL" >
+   <!-- O2 generates dodgy 'else' statement - seems ok now
+   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-O2" />
+   -->
+   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-O2" />
+   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-O1" if="HXCPP_DEBUG_LINK" />
+   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-g" if="debug" />
+</section>
+
+
 <linker id="dll" exe="emcc">
   <exe name="${CXX}" if="CXX" />
   <fromfile value="" if="GCC_OLD" />
@@ -73,7 +85,7 @@
   <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
-  <flag value="-O2" unless="HXCPP_DEBUG_LINK"/>
+  <flag value="${HXCPP_LINK_OPTIM_LEVEL}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
   <!-- <flag value="-DBUILD_AS_SHARED_LIBRARY" /> -->
   <!-- <lib name="-ldl"/> -->
@@ -82,14 +94,6 @@
   <outflag value="-o "/>
 </linker>
 
-
-<section unless="HXCPP_LINK_OPTIM_LEVEL" >
-   <!-- O2 generates dodgy 'else' statement - seems ok now
-   <set name="HXCPP_OPTIM_LEVEL" value="-O2" />
-   -->
-   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-O2" />
-   <set name="HXCPP_LINK_OPTIM_LEVEL" value="-g" if="debug" />
-</section>
 
 
 <linker id="exe" exe="emcc">
@@ -107,6 +111,12 @@
      <flag value="ALLOW_MEMORY_GROWTH=1" />
   </section>
 
+
+  <section if="HXCPP_LINK_SAFE_HEAP" >
+     <flag value="-s" />
+     <flag value="SAFE_HEAP=1" />
+  </section>
+
   <section if="HXCPP_LINK_TOTAL_MEMORY" >
      <flag value="-s" />
      <flag value="TOTAL_MEMORY=${HXCPP_LINK_TOTAL_MEMORY}" />
@@ -121,6 +131,12 @@
      <flag value="--emrun" />
      <flag value="-s" />
      <flag value="DEMANGLE_SUPPORT=1" />
+  </section>
+
+  <section if="HXCPP_DEBUG_LINK" >
+     <flag value="-s" />
+     <flag value="DEMANGLE_SUPPORT=1" />
+     <flag value="-debug" />
   </section>
 
   <flag value="--bind" if="HXCPP_JS_PRIME" />

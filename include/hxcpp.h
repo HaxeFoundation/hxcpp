@@ -33,6 +33,7 @@
 #if defined(EMSCRIPTEN) || defined(IPHONE) || defined(APPLETV)
   #include <unistd.h>
   #include <cstdlib>
+  #include <emscripten.h>
 #endif
 
 #ifdef __OBJC__
@@ -58,6 +59,11 @@
    #define HXCPP_ALIGN_FLOAT
 #endif
 
+// Must allign allocs to 8 bytes to match floating point requirement?
+// Ints must br read on 4-byte boundary
+#ifdef EMSCRIPTEN
+   #define HXCPP_ALIGN_ALLOC
+#endif
 
 
 

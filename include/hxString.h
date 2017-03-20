@@ -142,7 +142,7 @@ public:
    inline unsigned int hash( ) const
    {
       if (!__s) return 0;
-      if ( ((unsigned int *)__s)[-1] & HX_GC_STRING_HASH)
+      if ( __s[HX_GC_STRING_HASH_OFFSET] & HX_GC_STRING_HASH_BIT)
       {
          #ifdef HXCPP_PARANOID
          unsigned int result = 0;
@@ -160,9 +160,19 @@ public:
              printf(" Mark %08x\n",   ((unsigned int *)__s)[-1]  );
          }
          #endif
-         if (((unsigned int *)__s)[-1] & HX_GC_CONST_ALLOC_BIT)
+         if (__s[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT)
+         {
+            #ifdef EMSCRIPTEN
+            return  ((emscripten_align1_int*)__s)[-2];
+            #else
             return  ((unsigned int *)__s)[-2];
-         return *((unsigned int *)(__s+length+1) );
+            #endif
+         }
+        #ifdef EMSCRIPTEN
+           return *((emscripten_align1_int *)(__s+length+1) );
+        #else
+           return *((unsigned int *)(__s+length+1) );
+        #endif
       }
 
       // Slow path..

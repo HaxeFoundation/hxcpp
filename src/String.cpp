@@ -1413,8 +1413,8 @@ hx::Object *String::__ToObject() const
       return sConstDynamicStrings[idx].mPtr = new (hx::NewObjConst)StringData(fromCharCode(idx));
    }
 
-   NewObjectType type = ((unsigned int *)__s)[-1] &  HX_GC_CONST_ALLOC_BIT ?
-                           NewObjAlloc : NewObjContainer;
+   bool isConst = __s[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT;
+   NewObjectType type = isConst ?  NewObjAlloc : NewObjContainer;
    return new (type) StringData(*this);
 }
 
