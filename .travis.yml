@@ -17,7 +17,7 @@ install:
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
       brew uninstall --force brew-cask;
       travis_retry brew update;
-      travis_retry brew install bdw-gc pcre mariadb mbedtls ocaml camlp4;
+      travis_retry brew install bdw-gc mariadb mbedtls ocaml camlp4;
     fi
   # Install neko
   - travis_retry git clone https://github.com/HaxeFoundation/neko.git ~/neko;
