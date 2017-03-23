@@ -5,6 +5,7 @@ class Native
 	static function main()
    {
 		var r = new haxe.unit.TestRunner();
+		r.add(new tests.TestStdio());
 		r.add(new tests.TestRgb());
 		r.add(new tests.TestRectangle());
 		r.add(new tests.TestGlobalNamespace());
