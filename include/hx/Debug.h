@@ -17,6 +17,15 @@ template<typename T> struct StackVariableWrapper
 {
    typedef T wrapper;
 };
+template<> struct StackVariableWrapper<size_t>
+{
+   #ifdef HXCPP_M64
+   typedef cpp::Int64 wrapper;
+   #else
+   typedef int wrapper;
+   #endif
+};
+
 
 template<typename T> struct StackVariableWrapper<T *>
 {
