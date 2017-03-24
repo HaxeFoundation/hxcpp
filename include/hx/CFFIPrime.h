@@ -244,7 +244,11 @@ inline value ToValue(float inVal) { return alloc_float(inVal); }
 inline value ToValue(double inVal) { return alloc_float(inVal); }
 inline value ToValue(value inVal) { return inVal; }
 inline value ToValue(bool inVal) { return alloc_bool(inVal); }
+#ifdef HXCPP_JS_PRIME
+inline value ToValue(HxString inVal) { return inVal.c_str() ? alloc_string_len(inVal.c_str(),inVal.size()) : alloc_null() ; }
+#else
 inline value ToValue(HxString inVal) { return inVal.__s ? alloc_string_len(inVal.c_str(),inVal.size()) : alloc_null() ; }
+#endif
 
 struct AutoValue
 {
@@ -289,6 +293,7 @@ struct AutoValue
 
 
 #ifdef HXCPP_JS_PRIME
+
 
 #define DEFINE_PRIME0(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME1(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
