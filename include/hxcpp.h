@@ -33,6 +33,9 @@
 #if defined(EMSCRIPTEN) || defined(IPHONE) || defined(APPLETV)
   #include <unistd.h>
   #include <cstdlib>
+#endif
+
+#if defined(EMSCRIPTEN)
   #include <emscripten.h>
 #endif
 
