@@ -13,25 +13,19 @@ install:
       travis_retry sudo add-apt-repository ppa:haxe/ocaml -y;
       travis_retry sudo apt-get update -y;
       travis_retry sudo apt-get install pkg-config libgc-dev libssl-dev libpcre3-dev zlib1g-dev apache2-dev libmysqlclient-dev libsqlite3-dev libgtk2.0-dev ocaml-native-compilers camlp4 gcc-multilib g++-multilib -y;
+      travis_retry sudo add-apt-repository ppa:haxe/snapshots -y
+      travis_retry sudo apt-get install -y neko
     fi
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
       brew uninstall --force brew-cask;
       travis_retry brew update;
-      travis_retry brew install bdw-gc mariadb mbedtls ocaml camlp4;
+      travis_retry brew install opam;
+      export OPAMYES=1
+      opam init
+      opam install camlp4 ocamlfind
+      eval `opam config env`
+      travis_retry brew install neko --HEAD;
     fi
-  # Install neko
-  - travis_retry git clone https://github.com/HaxeFoundation/neko.git ~/neko;
-  - mkdir -p ~/neko/build;
-  - pushd ~/neko/build;
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-      cmake -DSTATIC_DEPS=MbedTLS ..;
-    elif [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      cmake ..;
-    fi
-  - make -s;
-  - sudo make install;
-  - popd;
-  - neko -version
   # build haxe
   - git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe
   - pushd ~/haxe
