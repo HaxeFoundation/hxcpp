@@ -28,6 +28,7 @@
 
 <set name="OBJDBG" value="-debug" if="debug" />
 <set name="OBJOPT" value="-opt" if="HXCPP_OPTIMIZE_LINK" unless="debug" />
+<set name="OBJOPT" value="-optinc" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL || HXCPP_LTO_THIN" unless="debug" />
 <set name="OBJEXT" value="${M64}${F32}${STAT}${OBJDBG}${OBJOPT}${NOCONSOLE}${RPI}${APIFP}${PRIME}" />
 
 <set name="STD_MODULE_LINK" value="static_link" if="static_link"/>
