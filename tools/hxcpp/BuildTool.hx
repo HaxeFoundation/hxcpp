@@ -478,8 +478,12 @@ class BuildTool
                   Log.lock();
                   Log.println("");
                   Log.info("\x1b[33;1mCompiling group: " + group.mId + "\x1b[0m");
-                  var message = "\x1b[1m" + mCompiler.mExe + "\x1b[0m";
-                  var flags = group.mCompilerFlags.concat(mCompiler.getFlagStrings());
+                  var nvcc = group.mNvcc;
+                  var message = "\x1b[1m" + (nvcc ? getNvcc() : mCompiler.mExe) + "\x1b[0m";
+                  var flags = group.mCompilerFlags;
+                  if (!nvcc)
+                     flags = flags.concat(mCompiler.getFlagStrings());
+
                   for (compilerFlag in flags)
                   {
                      if (StringTools.startsWith(compilerFlag, "-D"))
@@ -534,7 +538,6 @@ class BuildTool
                      }
                      var file = to_be_compiled.shift();
                      mutex.release();
-
                      compiler.compile(file,t,groupHeader,pchStamp);
                   }
                   }
@@ -804,6 +807,22 @@ class BuildTool
                case "options" : group.addOptions( substitute(el.att.name) );
                case "config" : group.mConfig = substitute(el.att.name);
                case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
+               case "nvcc" :
+                  var incName = findIncludeFile("nvcc-setup.xml");
+                  if (incName=="")
+                     incName = findIncludeFile('$HXCPP/toolchain/nvcc-setup.xml');
+                  trace(incName);
+                  if (incName!="" && !mPragmaOnce.get(incName))
+                  {
+                     pushFile(incName, "Nvcc");
+                     var make_contents = sys.io.File.getContent(incName);
+                     var xml = Xml.parse(make_contents);
+                     parseXML(new Fast(xml.firstElement()),"", false);
+                     popFile();
+                  }
+                  else
+                    Log.error("Could not setup nvcc - missing nvcc-setup.xml");
+                  group.mNvcc = true;
                case "compilervalue" : 
                   group.addCompilerFlag( substitute(el.att.name) );
                   group.addCompilerFlag( substitute(el.att.value) );
@@ -1160,6 +1179,10 @@ class BuildTool
       return instance.mDefines.get("toolchain")=="mingw";
    }
 
+   public static function getNvcc()
+   {
+      return instance.mDefines.get("NVCC");
+   }
 
    // Process args and environment.
    static public function main()

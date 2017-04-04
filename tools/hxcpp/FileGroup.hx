@@ -22,6 +22,7 @@ class FileGroup
    public var mUseCache:Bool;
    public var mCacheProject:String;
    public var mTags:String;
+   public var mNvcc:Bool;
    
    public function new(inDir:String,inId:String,inSetImportDir = false)
    {
@@ -41,6 +42,7 @@ class FileGroup
       mSetImportDir = inSetImportDir;
       mUseCache = false;
       mCacheProject = "";
+      mNvcc = false;
       mTags = "haxe,static";
    }
 

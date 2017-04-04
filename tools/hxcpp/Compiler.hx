@@ -13,7 +13,8 @@ private class FlagInfo
    }
    public function add(args:Array<String>, inFilter:Array<String>)
    {
-      if (tag=="" || inFilter.indexOf(tag)>=0)
+      var allowSpace = inFilter.indexOf("nvcc")<0;
+      if ((tag==""&&allowSpace) || inFilter.indexOf(tag)>=0)
          args.push(flag);
    }
    public function toString():String
@@ -29,6 +30,7 @@ class Compiler
 {
    private var mFlags:Array<FlagInfo>;
    public var mCFlags:Array<String>;
+   public var mNvccFlags:Array<String>;
    public var mMMFlags:Array<String>;
    public var mCPPFlags:Array<String>;
    public var mOBJCFlags:Array<String>;
@@ -60,6 +62,7 @@ class Compiler
    {
       mFlags = [];
       mCFlags = [];
+      mNvccFlags = [];
       mCPPFlags = [];
       mOBJCFlags = [];
       mMMFlags = [];
@@ -161,7 +164,9 @@ class Compiler
 
    function getArgs(inFile:File)
    {
-      var args = inFile.mCompilerFlags.concat(inFile.mGroup.mCompilerFlags);
+      var nvcc = inFile.isNvcc();
+      var args = nvcc ? inFile.mGroup.mCompilerFlags.copy() :
+                       inFile.mCompilerFlags.concat(inFile.mGroup.mCompilerFlags);
       var tagFilter = inFile.getTags().split(",");
       addOptimTags(tagFilter);
       for(flag in mFlags)
@@ -172,7 +177,9 @@ class Compiler
       addIdentity(ext,args);
 
       var allowPch = false;
-      if (ext=="c")
+      if (nvcc)
+         args = args.concat(mNvccFlags);
+      else if (ext=="c")
          args = args.concat(mCFlags);
       else if (ext=="m")
          args = args.concat(mOBJCFlags);
@@ -206,6 +213,8 @@ class Compiler
    {
       var obj_name = getObjName(inFile);
       var args = getArgs(inFile);
+      var nvcc = inFile.isNvcc();
+      var exe = nvcc ? BuildTool.getNvcc() : mExe;
 
       var found = false;
       var cacheName:String = null;
@@ -242,7 +251,7 @@ class Compiler
             headerFunc();
          args.push( (new Path( inFile.mDir + inFile.mName)).toString() );
 
-         var out = mOutFlag;
+         var out = nvcc ? "-o " : mOutFlag;
          if (out.substr(-1)==" ")
          {
             args.push(out.substr(0,out.length-1));
@@ -264,6 +273,7 @@ class Compiler
             fileName = " \x1b[2m-\x1b[0m \x1b[33;1m" + fileName + "\x1b[0m";
          }
          fileName += " \x1b[3m" + tagInfo + "\x1b[0m";
+
          
          if (inTid >= 0)
          {
@@ -273,7 +283,7 @@ class Compiler
                {
                   Log.info(fileName);
                }
-               var err = ProcessManager.runProcessThreaded(mExe, args, null);
+               var err = ProcessManager.runProcessThreaded(exe, args, null);
                if (err!=0)
                   BuildTool.setThreadError(err);
             }
@@ -284,7 +294,7 @@ class Compiler
             {
                Log.info(fileName);
             }
-            var result = ProcessManager.runProcessThreaded(mExe, args, null);
+            var result = ProcessManager.runProcessThreaded(exe, args, null);
             if (result!=0)
             {
                if (FileSystem.exists(obj_name))

@@ -28,6 +28,8 @@ class File
    
    inline public function getCacheProject() return mGroup.getCacheProject();
 
+   public function isNvcc() return mGroup.mNvcc;
+
    public function keep(inDefines:Map<String,String>)
    {
       return mFilterOut==null || !inDefines.exists(mFilterOut);
