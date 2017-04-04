@@ -165,7 +165,7 @@ class Compiler
    function getArgs(inFile:File)
    {
       var nvcc = inFile.isNvcc();
-      var args = nvcc ? inFile.mGroup.mCompilerFlags.copy() :
+      var args = nvcc ? inFile.mGroup.mCompilerFlags.concat( BuildTool.getNvccFlags() ) :
                        inFile.mCompilerFlags.concat(inFile.mGroup.mCompilerFlags);
       var tagFilter = inFile.getTags().split(",");
       addOptimTags(tagFilter);

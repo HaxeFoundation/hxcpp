@@ -48,6 +48,7 @@ class BuildTool
    var mMakefile:String;
    var mMagicLibs:Array<{name:String, replace:String}>;
    var mPragmaOnce:Map<String,Bool>;
+   var mNvccFlags:Array<String>;
    var m64:Bool;
    var m32:Bool;
 
@@ -89,6 +90,7 @@ class BuildTool
       mIncludePath = inIncludePath;
       mPragmaOnce = new Map<String,Bool>();
       mMagicLibs = [];
+      mNvccFlags = [];
       mMakefile = "";
 
       if (inJob=="cache")
@@ -750,6 +752,29 @@ class BuildTool
       return c;
    }
 
+   public function loadNvccXml()
+   {
+      var incName = findIncludeFile("nvcc-setup.xml");
+      if (incName=="")
+         incName = findIncludeFile('$HXCPP/toolchain/nvcc-setup.xml');
+      if (incName!="" && !mPragmaOnce.get(incName))
+      {
+         pushFile(incName, "Nvcc");
+         var make_contents = sys.io.File.getContent(incName);
+         var xml = Xml.parse(make_contents);
+         parseXML(new Fast(xml.firstElement()),"", false);
+         popFile();
+      }
+      else
+        Log.error("Could not setup nvcc - missing nvcc-setup.xml");
+   }
+
+   public static function setupNvcc()
+   {
+      instance.loadNvccXml();
+   }
+
+
    public function createFileGroup(inXML:Fast,inFiles:FileGroup,inName:String, inForceRelative:Bool, inTags:String):FileGroup
    {
       var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
@@ -806,23 +831,15 @@ class BuildTool
                   substitute(el.att.variable), substitute(el.att.target)  );
                case "options" : group.addOptions( substitute(el.att.name) );
                case "config" : group.mConfig = substitute(el.att.name);
-               case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
+               case "compilerflag" :
+                  if (el.has.name)
+                     group.addCompilerFlag( substitute(el.att.name) );
+                  group.addCompilerFlag( substitute(el.att.value) );
                case "nvcc" :
-                  var incName = findIncludeFile("nvcc-setup.xml");
-                  if (incName=="")
-                     incName = findIncludeFile('$HXCPP/toolchain/nvcc-setup.xml');
-                  trace(incName);
-                  if (incName!="" && !mPragmaOnce.get(incName))
-                  {
-                     pushFile(incName, "Nvcc");
-                     var make_contents = sys.io.File.getContent(incName);
-                     var xml = Xml.parse(make_contents);
-                     parseXML(new Fast(xml.firstElement()),"", false);
-                     popFile();
-                  }
-                  else
-                    Log.error("Could not setup nvcc - missing nvcc-setup.xml");
+                  setupNvcc();
                   group.mNvcc = true;
+                  if (group.mTags=="haxe,static")
+                     group.mTags=="nvcc";
                case "compilervalue" : 
                   group.addCompilerFlag( substitute(el.att.name) );
                   group.addCompilerFlag( substitute(el.att.value) );
@@ -1183,6 +1200,27 @@ class BuildTool
    {
       return instance.mDefines.get("NVCC");
    }
+
+   public static function getNvccFlags() : Array<String>
+   {
+      return instance.mNvccFlags;
+   }
+
+   public static function copy(from:String, to:String)
+   {
+      Log.v('copy $from $to');
+
+      try {
+         if (FileSystem.isDirectory(to))
+            to += "/" + Path.withoutDirectory(from);
+         var bytes = sys.io.File.getBytes(from);
+         sys.io.File.saveBytes(to,bytes);
+      } catch(e:Dynamic)
+      {
+         Log.error('Could not copy file $from $to');
+      }
+   }
+
 
    // Process args and environment.
    static public function main()
@@ -1928,6 +1966,24 @@ class BuildTool
                      createTarget(el,mTargets.get(name), forceRelative);
                   else
                      mTargets.set( name, createTarget(el,null, forceRelative) );
+
+               case "mkdir" : 
+                  var name = substitute(el.att.name);
+                  try {
+                     PathManager.mkdir(name);
+                  } catch(e:Dynamic)
+                  {
+                     Log.error("Could not create directory " + name );
+                  }
+
+
+               case "copy" : 
+                   var from = substitute(el.att.from);
+                   from = PathManager.combine( Path.directory(mCurrentIncludeFile), from );
+                   var to = substitute(el.att.to);
+                   to = PathManager.combine( Path.directory(mCurrentIncludeFile), to );
+                   copy(from,to);
+
                case "copyFile" : 
                   mCopyFiles.push(
                       new CopyFile(substitute(el.att.name),
@@ -1944,6 +2000,11 @@ class BuildTool
                case "magiclib" : 
                   mMagicLibs.push( {name: substitute(el.att.name),
                                     replace:substitute(el.att.replace) } );
+               case "nvccflag" : 
+                  if (el.has.name)
+                     mNvccFlags.push( substitute(el.att.name) );
+                  mNvccFlags.push( substitute(el.att.value) );
+
                case "pragma" : 
                   if (el.has.once)
                      mPragmaOnce.set(mCurrentIncludeFile, parseBool(substitute(el.att.once)));

@@ -271,6 +271,10 @@ class Setup
       {
          setupEmscripten(ioDefines);
       }
+      else if (inWhat=="nvcc")
+      {
+         BuildTool.setupNvcc();
+      }
       else
       {
          Log.error('Unknown setup feature "$inWhat"');
