@@ -28,6 +28,12 @@ class Client
          return;
       }
 
+      var c2:ClientExtendsInterface.ClientInterface = new ClientExtendsInterface();
+      if (!c2.isOk()) {
+         Common.status = "Bad client interface implementation";
+         return;
+      }
+
       Common.clientImplementation = new ClientOne();
       Common.status = "ok";
    }
