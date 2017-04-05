@@ -37,6 +37,9 @@ value alloc_int32(int inValue) { return value(inValue); }
 value alloc_bool(bool inValue) { return value(inValue); }
 value alloc_float(double inValue) { return value(inValue); }
 
+value val_field(value inObject, int inIndex) { return inObject[sIdKeys[inIndex]]; }
+void alloc_field(value inObject, int inIndex, value inValue) { inObject.set(sIdKeys[inIndex],inValue); }
+
 
 
 /*

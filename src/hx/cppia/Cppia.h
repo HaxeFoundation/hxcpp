@@ -226,7 +226,9 @@ struct ScriptCallable : public CppiaDynamicExpr
 
    ScriptCallable(CppiaStream &stream);
    ScriptCallable(CppiaExpr *inBody);
+   ScriptCallable(CppiaModule &inModule,ScriptNamedFunction *inFunction);
    ~ScriptCallable();
+
    CppiaExpr *link(CppiaModule &inModule);
 
    #ifdef HXCPP_STACK_SCRIPTABLE
@@ -266,7 +268,6 @@ struct ScriptCallable : public CppiaDynamicExpr
    bool pushDefault(CppiaCtx *ctx,int arg);
    void addExtraDefaults(CppiaCtx *ctx,int inHave);
 };
-
 
 
 
@@ -401,6 +402,7 @@ struct CppiaFunction
    void link( );
    void compile();
 };
+
 
 
 struct CppiaStackVar
@@ -599,6 +601,7 @@ public:
    std::string name;
    #if (HXCPP_API_LEVEL>=330)
    std::map<int, void *> interfaceScriptTables;
+   std::vector<ScriptNamedFunction *> nativeInterfaceFunctions;
    #else
    std::map<std::string, void **> interfaceVTables;
    #endif

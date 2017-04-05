@@ -941,7 +941,27 @@ void CppiaClassInfo::linkTypes()
          extraInterfaces = cppia.types[ parent.superId ];
       }
       else
+      {
+         #if (HXCPP_API_LEVEL >= 330)
+         HaxeNativeInterface *native = HaxeNativeInterface::findInterface( extraInterfaces->name.__s );
+         if (native)
+         {
+            String hashName = extraInterfaces->name.split(HX_CSTRING(".")).mPtr->join(HX_CSTRING("::"));
+            interfaceScriptTables[hashName.hash()] = native->scriptTable;
+            ScriptNamedFunction *functions = native->functions;
+            for(ScriptNamedFunction *f = functions; f && f->name; f++)
+            {
+               nativeInterfaceFunctions.push_back(f);
+               int slot = cppia.getInterfaceSlot(f->name);
+               if (slot<0)
+                  printf("Interface slot '%s' not found\n",f->name);
+               if (slot>interfaceSlotSize)
+                  interfaceSlotSize = slot;
+            }
+         }
+         #endif
          break;
+      }
    }
 
 
@@ -1135,6 +1155,7 @@ void CppiaClassInfo::linkTypes()
       #if (HXCPP_API_LEVEL < 330)
       void **vtable = createInterfaceVTable(id);
       #endif
+
       while(id > 0)
       {
          TypeData *interface = cppia.types[id];
@@ -1151,6 +1172,7 @@ void CppiaClassInfo::linkTypes()
             {
                for(ScriptNamedFunction *f = functions; f->name; f++)
                {
+                  nativeInterfaceFunctions.push_back(f);
                   int slot = cppia.getInterfaceSlot(f->name);
                   if (slot<0)
                      printf("Interface slot '%s' not found\n",f->name);
@@ -1188,7 +1210,6 @@ void CppiaClassInfo::linkTypes()
    *vtable++ = this;
 
    DBGLOG("  vtable size %d -> %p\n", vtableSlot, vtable);
-
 
    // Extract special function ...
    for(int i=0;i<staticFunctions.size(); )
@@ -1291,10 +1312,25 @@ void CppiaClassInfo::link()
       if (interfaceSlotSize)
       {
          int interfaceSlot = cppia.findInterfaceSlot( memberFunctions[i]->name );
+         DBGLOG("Set %s : %s to %d @%p\n", name.c_str(), memberFunctions[i]->name.c_str(), interfaceSlot, vtable);
          if (interfaceSlot>0 && interfaceSlot<interfaceSlotSize)
             vtable[ -interfaceSlot ] = memberFunctions[i]->funExpr;
       }
    }
+
+   // Find interface functions that are not implemented in client, but rely on host fallback...
+   #if (HXCPP_API_LEVEL >= 330)
+   if (!isInterface)
+   {
+      std::vector<ScriptNamedFunction *> &nativeInterfaceFuncs = type->cppiaClass->nativeInterfaceFunctions;
+      for(int i=0;i<nativeInterfaceFuncs.size();i++)
+      {
+         int interfaceSlot = cppia.findInterfaceSlot( nativeInterfaceFuncs[i]->name);
+         if (!vtable[-interfaceSlot])
+            vtable[-interfaceSlot] = new ScriptCallable(cppia,nativeInterfaceFuncs[i]);
+      }
+   }
+   #endif
 
    // Vars ...
    if (!isInterface)

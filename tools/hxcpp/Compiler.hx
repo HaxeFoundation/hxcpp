@@ -173,7 +173,13 @@ class Compiler
          flag.add(args,tagFilter);
 
       var ext = mExt.toLowerCase();
-      var ext = new Path(inFile.mName).ext.toLowerCase();
+      var ext = new Path(inFile.mName).ext;
+      if (ext!=null)
+         ext = ext.toLowerCase();
+      else
+         Log.error("Unkown extension for " + inFile.mName);
+
+
       addIdentity(ext,args);
 
       var allowPch = false;

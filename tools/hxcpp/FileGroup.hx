@@ -155,7 +155,7 @@ class FileGroup
       var result = new Array<String>();
       for(def in contents.split("\n"))
       {
-         var name = def.split("=")[0].toLowerCase();
+         var name = def.split("=")[0];//.toLowerCase();
          if (name.indexOf("hxcpp_link")>=0)
          {
             // Only effects linking, not compiling

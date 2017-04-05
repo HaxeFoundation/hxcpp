@@ -50,7 +50,6 @@ void CppiaModule::setDebug(CppiaExpr *outExpr, int inFileId, int inLine)
 }
 
 
-
 // --- CppiaModule -------------------------
 
 CppiaModule::~CppiaModule()

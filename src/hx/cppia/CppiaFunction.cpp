@@ -66,6 +66,79 @@ ScriptCallable::ScriptCallable(CppiaExpr *inBody) : CppiaDynamicExpr(inBody)
    #endif
 }
 
+
+class RelayExpr : public CppiaExpr
+{
+   StackExecute execute;
+   public:
+      RelayExpr( StackExecute inExecute )
+      {
+         execute = inExecute;
+      }
+
+   void runVoid(CppiaCtx *ctx)
+   {
+      execute(ctx);
+   }
+};
+
+ScriptCallable::ScriptCallable(CppiaModule &inModule,ScriptNamedFunction *inFunction)
+{
+   returnTypeId = 0;
+   returnType = etVoid;
+
+   argCount = 0;
+   stackSize = 0;
+   captureSize = 0;
+   hasDefaults = false;
+   //body = inBody;
+   data = 0;
+
+   const char *signature = inFunction->signature;
+   int argCount = strlen(signature)-1;
+   if (argCount<0)
+      throw "ScriptNamedFunction: Invalid arg count";
+
+   args.resize(argCount);
+   hasDefault.resize(argCount);
+   initVals.resize(argCount);
+   for(int i=0;i<args.size();i++)
+   {
+      CppiaStackVar &arg = args[i];
+      arg.nameId = 0;
+      switch(signature[i+1])
+      {
+         case sigInt:
+            arg.argType = etInt;
+            arg.storeType = fsInt;
+            break;
+         case sigFloat:
+            arg.argType = etFloat;
+            arg.storeType = fsFloat;
+            break;
+         case sigString:
+            arg.argType = etString;
+            hasDefault[i] = true;
+            arg.storeType = fsString;
+            break;
+         case sigObject:
+            arg.argType = etObject;
+            hasDefault[i] = true;
+            arg.storeType = fsObject;
+            break;
+         default:
+            throw "Bad haxe signature";
+      }
+   }
+   body = new RelayExpr(inFunction->execute);
+
+   #ifdef CPPIA_JIT
+   // magically already compiled for us
+   compiled = inFunction->execute;
+   #endif
+}
+
+
 ScriptCallable::~ScriptCallable()
 {
    #ifdef CPPIA_JIT
@@ -882,6 +955,4 @@ void CppiaFunction::compile()
 
 
 
-
-
-};
+}

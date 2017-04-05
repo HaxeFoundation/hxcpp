@@ -1415,6 +1415,10 @@ static void *SLJIT_CALL runConstructor(void *inConstructor,  Array_obj<Dynamic> 
    CATCH_NATIVE
    return 0;
 }
+static void * SLJIT_CALL getScriptVTable(hx::Object *inObject)
+{
+   return inObject->__GetScriptVTable();
+}
 
 /*
 static void *SLJIT_CALL runCreateInstance(CppiaCtx *ctx, CppiaClassInfo *info,  Array_obj<Dynamic> *inArgs)
@@ -2046,7 +2050,7 @@ struct CallMemberVTable : public CppiaExpr
    #define CALL_VTABLE_SETUP \
       hx::Object *thisVal = thisExpr ? thisExpr->runObject(ctx) : ctx->getThis(); \
       CPPIA_CHECK(thisVal); \
-      ScriptCallable **vtable = *(ScriptCallable ***)((char *)thisVal +scriptVTableOffset); \
+      ScriptCallable **vtable = (!isInterfaceCall ? (*(ScriptCallable ***)((char *)thisVal +scriptVTableOffset)) : (ScriptCallable **) thisVal->__GetScriptVTable()); \
       unsigned char *pointer = ctx->pointer; \
       vtable[slot]->pushArgs(ctx, thisVal, args); \
       /* TODO */; \
@@ -2093,7 +2097,6 @@ struct CallMemberVTable : public CppiaExpr
       {
          ArgInfo &arg = funcProto->args[i];
          ExprType baseType = funcProto->cppia.types[ arg.typeId ]->expressionType;
-         bool isString = funcProto->cppia.types[ arg.typeId ]->expressionType;
          ExprType type = arg.optional && baseType!=etString ? etObject : baseType;
 
          args[i]->genCode( compiler, JitFramePos( compiler->getCurrentFrameSize() ).as( getJitType(type)), type );
@@ -2110,8 +2113,19 @@ struct CallMemberVTable : public CppiaExpr
       // Store new frame in context ...
       compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
 
-      //ScriptCallable **vtable = *(ScriptCallable ***)((char *)thisVal +scriptVTableOffset);
-      compiler->move(sJitTemp1.as(jtPointer), thisVal.star(jtPointer, scriptVTableOffset) );
+      if (isInterfaceCall)
+      {
+         //sJitTemp1 = ScriptCallable **vtable = thisVal->__GetScriptVTable();
+         compiler->call( getScriptVTable,thisVal );
+         compiler->move( sJitTemp1, sJitReturnReg.as(jtPointer) );
+         if (thisExpr)
+            compiler->move( thisVal.as(jtPointer), JitFramePos(framePos,jtPointer) );
+      }
+      else
+      {
+         //sJitTemp1 = ScriptCallable **vtable = *(ScriptCallable ***)((char *)thisVal +scriptVTableOffset);
+         compiler->move(sJitTemp1.as(jtPointer), thisVal.star(jtPointer, scriptVTableOffset) );
+      }
 
       // vtable[slot]
       compiler->move(sJitTemp1, sJitTemp1.star(jtPointer, slot*sizeof(void *)) );
@@ -3160,6 +3174,7 @@ struct CallMember : public CppiaExpr
          else
          {
             int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
+
             //printf("   vslot %d\n", vtableSlot);
             if (vtableSlot!=-1)
             {
@@ -3168,6 +3183,24 @@ struct CallMember : public CppiaExpr
                replace = new CallMemberVTable( this, thisExpr, vtableSlot, scriptPos, funcProto, type->cppiaClass->isInterface, args );
             }
          }
+
+         // Try interface function implemented in host only...
+         #if (HXCPP_API_LEVEL >= 330)
+         if (!replace)
+         {
+            std::vector<ScriptNamedFunction *> &nativeInterfaceFuncs = type->cppiaClass->nativeInterfaceFunctions;
+            for(int i=0;i<nativeInterfaceFuncs.size();i++)
+            {
+               if (!strcmp(nativeInterfaceFuncs[i]->name,field.__s))
+               {
+                  //printf(" found native interface function %s\n", field.__s );
+                  replace = new CallHaxe( this, *nativeInterfaceFuncs[i], thisExpr, args );
+                  break;
+               }
+            }
+         }
+         #endif
+
       }
       if (!replace && type->haxeBase)
       {
