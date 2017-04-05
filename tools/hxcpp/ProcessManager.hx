@@ -456,7 +456,7 @@ class ProcessManager
       }
       catch(e:Dynamic){ }
 
-      if (output.length==1 && ~/^\S+.(cpp|c)/.match(output[0]))
+      if (output.length==1 && ~/^\S+\.(cpp|c)$/.match(output[0]))
       {
          // Microsoft prints the name of the cpp file for some reason
          output = [];
