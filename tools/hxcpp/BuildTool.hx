@@ -49,6 +49,7 @@ class BuildTool
    var mMagicLibs:Array<{name:String, replace:String}>;
    var mPragmaOnce:Map<String,Bool>;
    var mNvccFlags:Array<String>;
+   var mNvccLinkFlags:Array<String>;
    var m64:Bool;
    var m32:Bool;
 
@@ -91,6 +92,7 @@ class BuildTool
       mPragmaOnce = new Map<String,Bool>();
       mMagicLibs = [];
       mNvccFlags = [];
+      mNvccLinkFlags = [];
       mMakefile = "";
 
       if (inJob=="cache")
@@ -467,7 +469,7 @@ class BuildTool
          }
 
 
-
+         var nvcc = group.mNvcc;
          var first = true;
          var groupHeader = (!Log.quiet && !Log.verbose) ? function()
          {
@@ -480,7 +482,6 @@ class BuildTool
                   Log.lock();
                   Log.println("");
                   Log.info("\x1b[33;1mCompiling group: " + group.mId + "\x1b[0m");
-                  var nvcc = group.mNvcc;
                   var message = "\x1b[1m" + (nvcc ? getNvcc() : mCompiler.mExe) + "\x1b[0m";
                   var flags = group.mCompilerFlags;
                   if (!nvcc)
@@ -583,6 +584,11 @@ class BuildTool
             if (group.mAddTwice)
                target.mLibs.push(linker.mLastOutName);
          }
+         else if (nvcc)
+         {
+            var extraObj = linkNvccFiles(mCompiler.mObjDir, groupObjs, group.mId, mCompiler.mExt);
+            groupObjs.push(extraObj);
+         }
          else
          {
             objs = objs.concat(groupObjs);
@@ -657,6 +663,22 @@ class BuildTool
       if (restoreDir!="")
          Sys.setCwd(restoreDir);
    }
+   
+   function linkNvccFiles(objDir:String, nvObjs:Array<String>, inGroupName:String, objExt:String)
+   {
+      // nvcc -arch=sm_30 -dlink test1.o test2.o -o link.o
+      // Sadly, nvcc has no 'fromFile' options, so we must do it from objDir
+      var objDirLen = objDir.length;
+      var last = objDir.substr(objDirLen-1);
+      if (last!="/" && last!="\\")
+         objDirLen++;
+      var shortObjs = nvObjs.map( function(f) return f.substr(objDirLen) );
+      var outFile = "nvcc_" + inGroupName + mCompiler.mExt;
+      var flags = getNvccLinkFlags().concat(["-dlink"]).concat(shortObjs).concat(["-o",outFile]);
+      ProcessManager.runCommand(objDir ,getNvcc(),  flags );
+      return objDir + "/" + outFile;
+   }
+
 
    public function cleanTarget(inTarget:String,allObj:Bool)
    {
@@ -1199,6 +1221,11 @@ class BuildTool
    public static function getNvcc()
    {
       return instance.mDefines.get("NVCC");
+   }
+
+   public static function getNvccLinkFlags() : Array<String>
+   {
+      return instance.mNvccLinkFlags;
    }
 
    public static function getNvccFlags() : Array<String>
@@ -2004,6 +2031,11 @@ class BuildTool
                   if (el.has.name)
                      mNvccFlags.push( substitute(el.att.name) );
                   mNvccFlags.push( substitute(el.att.value) );
+
+               case "nvcclinkflag" : 
+                  if (el.has.name)
+                     mNvccLinkFlags.push( substitute(el.att.name) );
+                  mNvccLinkFlags.push( substitute(el.att.value) );
 
                case "pragma" : 
                   if (el.has.once)
