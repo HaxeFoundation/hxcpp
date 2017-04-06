@@ -448,6 +448,11 @@ hx::Object * alloc_array(int arg1)
 // Resizing the array may invalidate the pointer
 bool * val_array_bool(hx::Object * arg1)
 {
+   #if (HXCPP_API_LEVEL>330)
+   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   if (!common) return 0;
+   arg1 = common->__GetRealObject();
+   #endif
    Array_obj<bool> *a = dynamic_cast< Array_obj<bool> * >(arg1);
    if (a==0)
       return 0;
@@ -457,6 +462,11 @@ bool * val_array_bool(hx::Object * arg1)
 
 int * val_array_int(hx::Object * arg1)
 {
+   #if (HXCPP_API_LEVEL>330)
+   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   if (!common) return 0;
+   arg1 = common->__GetRealObject();
+   #endif
    Array_obj<int> *a = dynamic_cast< Array_obj<int> * >(arg1);
    if (a==0)
       return 0;
@@ -466,6 +476,11 @@ int * val_array_int(hx::Object * arg1)
 
 double * val_array_double(hx::Object * arg1)
 {
+   #if (HXCPP_API_LEVEL>330)
+   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   if (!common) return 0;
+   arg1 = common->__GetRealObject();
+   #endif
    Array_obj<double> *a = dynamic_cast< Array_obj<double> * >(arg1);
    if (a==0)
       return 0;
@@ -475,6 +490,11 @@ double * val_array_double(hx::Object * arg1)
 
 float * val_array_float(hx::Object * arg1)
 {
+   #if (HXCPP_API_LEVEL>330)
+   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   if (!common) return 0;
+   arg1 = common->__GetRealObject();
+   #endif
    Array_obj<float> *a = dynamic_cast< Array_obj<float> * >(arg1);
    if (a==0)
       return 0;

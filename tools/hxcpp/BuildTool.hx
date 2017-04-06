@@ -586,7 +586,7 @@ class BuildTool
          }
          else if (nvcc)
          {
-            var extraObj = linkNvccFiles(mCompiler.mObjDir, groupObjs, group.mId, mCompiler.mExt);
+            var extraObj = linkNvccFiles(mCompiler.mObjDir, to_be_compiled.length>0, groupObjs, group.mId, mCompiler.mExt);
             groupObjs.push(extraObj);
          }
          else
@@ -664,7 +664,7 @@ class BuildTool
          Sys.setCwd(restoreDir);
    }
    
-   function linkNvccFiles(objDir:String, nvObjs:Array<String>, inGroupName:String, objExt:String)
+   function linkNvccFiles(objDir:String, hasChanged:Bool, nvObjs:Array<String>, inGroupName:String, objExt:String)
    {
       // nvcc -arch=sm_30 -dlink test1.o test2.o -o link.o
       // Sadly, nvcc has no 'fromFile' options, so we must do it from objDir
@@ -672,11 +672,15 @@ class BuildTool
       var last = objDir.substr(objDirLen-1);
       if (last!="/" && last!="\\")
          objDirLen++;
-      var shortObjs = nvObjs.map( function(f) return f.substr(objDirLen) );
       var outFile = "nvcc_" + inGroupName + mCompiler.mExt;
-      var flags = getNvccLinkFlags().concat(["-dlink"]).concat(shortObjs).concat(["-o",outFile]);
-      ProcessManager.runCommand(objDir ,getNvcc(),  flags );
-      return objDir + "/" + outFile;
+      var fullFile = objDir + "/" + outFile;
+      if (hasChanged || !sys.FileSystem.exists(fullFile) )
+      {
+         var shortObjs = nvObjs.map( function(f) return f.substr(objDirLen) );
+         var flags = getNvccLinkFlags().concat(["-dlink"]).concat(shortObjs).concat(["-o",outFile]);
+         ProcessManager.runCommand(objDir ,getNvcc(),  flags );
+      }
+      return fullFile;
    }
 
 
