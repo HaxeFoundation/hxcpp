@@ -2122,7 +2122,7 @@ class BuildTool
          Sys.setCwd(parts.join("\\"));
          try {
             var bat = '$HXCPP/toolchain/dospath.bat'.split("/").join("\\");
-            var process = new Process(bat,[]);
+            var process = new Process("cmd",["/c",bat]);
             output = process.stdout.readAll().toString();
             output = output.split("\r")[0].split("\n")[0];
             err  = process.stderr.readAll().toString();
