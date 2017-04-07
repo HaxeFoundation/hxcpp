@@ -23,6 +23,7 @@ class FileGroup
    public var mCacheProject:String;
    public var mTags:String;
    public var mNvcc:Bool;
+   public var mObjPrefix:String;
    
    public function new(inDir:String,inId:String,inSetImportDir = false)
    {
@@ -44,6 +45,7 @@ class FileGroup
       mCacheProject = "";
       mNvcc = false;
       mTags = "haxe,static";
+      mObjPrefix = "";
    }
 
    public function filter(defines:Map<String,String>)

@@ -50,6 +50,7 @@ class BuildTool
    var mPragmaOnce:Map<String,Bool>;
    var mNvccFlags:Array<String>;
    var mNvccLinkFlags:Array<String>;
+   var mDirtyList:Array<String>;
    var m64:Bool;
    var m32:Bool;
 
@@ -76,7 +77,7 @@ class BuildTool
    public static var threadExitCode = 0;
 
    public function new(inJob:String,inDefines:Hash<String>,inTargets:Array<String>,
-        inIncludePath:Array<String> )
+        inIncludePath:Array<String>, inDirtyList:Array<String> )
    {
       mDefines = inDefines;
       mFileGroups = new FileGroups();
@@ -94,6 +95,7 @@ class BuildTool
       mNvccFlags = [];
       mNvccLinkFlags = [];
       mMakefile = "";
+      mDirtyList = inDirtyList;
 
       if (inJob=="cache")
       {
@@ -387,17 +389,19 @@ class BuildTool
          var cached = useCache && mCompiler.createCompilerVersion(group);
 
          var inList = new Array<Bool>();
+         var groupIsOutOfDate = mDirtyList.indexOf(group.mId)>=0 || mDirtyList.indexOf("all")>=0;
          for(file in group.mFiles)
          {
            if (useCache)
                file.computeDependHash();
             var obj_name = mCompiler.getCachedObjName(file);
             groupObjs.push(obj_name);
-            var outOfDate =  file.isOutOfDate(obj_name);
+            var outOfDate = groupIsOutOfDate || file.isOutOfDate(obj_name);
             if (outOfDate)
                to_be_compiled.push(file);
             inList.push(outOfDate);
          }
+         var someCompiled = to_be_compiled.length > 0;
 
          var pchStamp:Null<Float> = null;
          if (group.mPrecompiledHeader!="")
@@ -486,6 +490,8 @@ class BuildTool
                   var flags = group.mCompilerFlags;
                   if (!nvcc)
                      flags = flags.concat(mCompiler.getFlagStrings());
+                  else
+                     flags = flags.concat( BuildTool.getNvccFlags() );
 
                   for (compilerFlag in flags)
                   {
@@ -586,8 +592,9 @@ class BuildTool
          }
          else if (nvcc)
          {
-            var extraObj = linkNvccFiles(mCompiler.mObjDir, to_be_compiled.length>0, groupObjs, group.mId, mCompiler.mExt);
+            var extraObj = linkNvccFiles(mCompiler.mObjDir, someCompiled, groupObjs, group.mId, mCompiler.mExt);
             groupObjs.push(extraObj);
+            objs = objs.concat(groupObjs);
          }
          else
          {
@@ -677,7 +684,9 @@ class BuildTool
       if (hasChanged || !sys.FileSystem.exists(fullFile) )
       {
          var shortObjs = nvObjs.map( function(f) return f.substr(objDirLen) );
-         var flags = getNvccLinkFlags().concat(["-dlink"]).concat(shortObjs).concat(["-o",outFile]);
+         var flags = getNvccLinkFlags().concat(shortObjs).concat(["-o",outFile]);
+         var dbgFlags = getNvccLinkFlags().concat(["[.", "x"+shortObjs.length,".]"]).concat(["-o",outFile]);
+         Log.v("Linking nvcc in " + objDir + ":" + getNvcc() + dbgFlags.join(" ") );
          ProcessManager.runCommand(objDir ,getNvcc(),  flags );
       }
       return fullFile;
@@ -783,16 +792,17 @@ class BuildTool
       var incName = findIncludeFile("nvcc-setup.xml");
       if (incName=="")
          incName = findIncludeFile('$HXCPP/toolchain/nvcc-setup.xml');
-      if (incName!="" && !mPragmaOnce.get(incName))
+      if (incName=="")
+        Log.error("Could not setup nvcc - missing nvcc-setup.xml");
+      else if (!mPragmaOnce.get(incName))
       {
          pushFile(incName, "Nvcc");
          var make_contents = sys.io.File.getContent(incName);
+         mPragmaOnce.set(incName,true);
          var xml = Xml.parse(make_contents);
          parseXML(new Fast(xml.firstElement()),"", false);
          popFile();
       }
-      else
-        Log.error("Could not setup nvcc - missing nvcc-setup.xml");
    }
 
    public static function setupNvcc()
@@ -866,6 +876,8 @@ class BuildTool
                   group.mNvcc = true;
                   if (group.mTags=="haxe,static")
                      group.mTags=="nvcc";
+               case "objprefix" :
+                  group.mObjPrefix = substitute(el.att.value);
                case "compilervalue" : 
                   group.addCompilerFlag( substitute(el.att.name) );
                   group.addCompilerFlag( substitute(el.att.value) );
@@ -1275,10 +1287,14 @@ class BuildTool
       if (args.length>0)
       {
          var last:String = (new Path(args[args.length-1])).toString();
-         var slash = last.substr(-1);
-         if (slash=="/"|| slash=="\\") 
-            last = last.substr(0,last.length-1);
-         if (FileSystem.exists(last) && FileSystem.isDirectory(last))
+         var isRootDir = last=="/";
+         if (!isRootDir)
+         {
+            var slash = last.substr(-1);
+            if (slash=="/"|| slash=="\\") 
+               last = last.substr(0,last.length-1);
+         }
+         if (isRootDir || (FileSystem.exists(last) && FileSystem.isDirectory(last)))
          {
             // When called from haxelib, the last arg is the original directory, and
             //  the current direcory is the library directory.
@@ -1386,6 +1402,7 @@ class BuildTool
       isRPi = isLinux && Setup.isRaspberryPi();
 
       is64 = getIs64();
+      var dirtyList = new Array<String>();
 
       var a = 0;
       while(a < args.length)
@@ -1421,6 +1438,11 @@ class BuildTool
             optionsTxt = args[a];
             if (optionsTxt==null)
                optionsTxt = "";
+         }
+         else if (arg=="-dirty")
+         {
+            a++;
+            dirtyList.push(args[a]);
          }
          else if (arg=="-v" || arg=="-verbose")
             Log.verbose = true;
@@ -1553,7 +1575,7 @@ class BuildTool
             targets.push("default");
 
 
-         new BuildTool(makefile,defines,targets,include_path);
+         new BuildTool(makefile,defines,targets,include_path,dirtyList);
       }
    }
 
@@ -1565,6 +1587,7 @@ class BuildTool
       Log.println('   Build project from "file.xml".  options:');
       Log.println('    ${BOLD}-D${NORMAL}${ITALIC}value${NORMAL} -- Specify a define to use when processing other commands');
       Log.println('    ${BOLD}-verbose${NORMAL} -- Print additional information (when available)');
+      Log.println('    ${BOLD}-dirty [groudId|all]${NORMAL} -- always rebuild files in given group');
       Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}file.cppia${NORMAL}');
       Log.println('   Run cppia script using default Cppia host');
       Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}file.js${NORMAL}');

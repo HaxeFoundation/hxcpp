@@ -171,7 +171,6 @@ class Compiler
       addOptimTags(tagFilter);
       for(flag in mFlags)
          flag.add(args,tagFilter);
-
       var ext = mExt.toLowerCase();
       var ext = new Path(inFile.mName).ext;
       if (ext!=null)
@@ -355,7 +354,7 @@ class Compiler
       var path = new Path(inFile.mName);
       var dirId = Md5.encode(BuildTool.targetKey + path.dir + inFile.mGroup.mId).substr(0,8) + "_";
 
-      return PathManager.combine(mObjDir, dirId + path.file + mExt);
+      return PathManager.combine(mObjDir, inFile.mGroup.mObjPrefix + dirId + path.file + mExt);
    }
 
    function getHashedName(inFile:File, args:Array<String>)
