@@ -585,6 +585,17 @@ public:
       }
       return false;
    }
+   
+   NullType removeAt( int idx ){
+		if (length==0) return null();
+		if( idx < 0 ) idx += length;
+		if (idx>=length) return null();
+		
+		ELEM_ e = __get(idx);
+		RemoveElement(idx);
+		
+		return e;
+   }
 
    bool removeAt( int idx )
    { 
