@@ -688,6 +688,15 @@ public:
       }
    }
 
+   void addBytes(const Array<ELEM_> &inArray, int pos, int len)
+   {
+       int orig_len = length;
+       this->EnsureSize(orig_len + len);
+       memcpy(&(((ELEM_ *) mBase)[orig_len]),
+              &((inArray.CheckGetPtr()->mBase)[pos]),
+              len * sizeof(ELEM_));
+   }
+
    // Will do random pointer sorting for object pointers
    inline void sortAscending()
    {
