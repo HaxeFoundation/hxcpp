@@ -132,6 +132,8 @@ public:
    const char *__CStr() const;
    const wchar_t *__WCStr() const;
    inline operator const char *() { return __s; }
+   inline operator unsigned char*() { return (unsigned char*)__s; }
+   inline operator char*() { return (char*)__s; }
 
    static  ::String fromCharCode(int inCode);
 
