@@ -566,6 +566,11 @@ void __hxcpp_println_string(const String &inV)
    #endif
 }
 
+void __hxcpp_sys_exit(Dynamic ecode)
+{
+   exit((int) ecode);
+}
+
 
 // --- Casting/Converting ---------------------------------------------------------
 
