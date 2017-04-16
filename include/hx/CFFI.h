@@ -207,6 +207,7 @@ extern FUNC_##name name;
 
 // Check type...
 inline bool val_is_null(value inVal) { return val_type(inVal)==valtNull; }
+inline bool val_is_buffer(value inVal) { return val_to_buffer(inVal)!=0; }
 inline bool val_is_int(value inVal) { return val_type(inVal)==valtInt; }
 inline bool val_is_bool(value inVal) { return val_type(inVal)==valtBool; }
 inline bool val_is_float(value inVal) { return val_type(inVal)==valtFloat; }
