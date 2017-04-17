@@ -2,6 +2,7 @@
 
 class TestPrime extends TestBase
 {
+   static var get = Loader.load("getInt", "i" );
    static var add = Loader.load("addInts", "iii" );
    #if cpp
    static var printString = Loader.load("printString", "cv" );
@@ -26,6 +27,9 @@ class TestPrime extends TestBase
    public function testPrime()
    {
       cpp.Prime.nekoInit("prime");
+
+      assertTrue(get != null);
+      assertEquals(42, get.call());
 
       assertTrue(add!=null);
       assertEquals(7, add(2,5));

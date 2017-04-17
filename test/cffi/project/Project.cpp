@@ -11,6 +11,11 @@
 #include <math.h>
 #include <vector>
 
+int getInt()
+{
+   return 42;
+}
+DEFINE_PRIME0(getInt);
 
 int addInts(int a, int b)
 {
