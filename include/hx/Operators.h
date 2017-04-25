@@ -238,18 +238,18 @@ template<> inline bool TCastObject<bool>(hx::Object *inObj)
 template<> inline int TCastObject<int>(hx::Object *inObj)
 {
    if (!inObj || !(inObj->__GetType()==::vtInt ||
-        (inObj->__GetType()==::vtFloat && inObj->__ToDouble()==inObj->__ToInt()) ) ) return hx::BadCast();
+        ((inObj->__GetType()==::vtFloat || inObj->__GetType()==::vtInt64) && inObj->__ToDouble()==inObj->__ToInt()) ) ) return hx::BadCast();
    return inObj->__ToInt();
 }
 template<> inline double TCastObject<double>(hx::Object *inObj)
 {
-   if (!inObj || (inObj->__GetType()!=::vtFloat && inObj->__GetType()!=::vtInt))
+   if (!inObj || (inObj->__GetType()!=::vtFloat && inObj->__GetType()!=::vtInt64 && inObj->__GetType()!=::vtInt))
       return hx::BadCast();
    return inObj->__ToDouble();
 }
 template<> inline float TCastObject<float>(hx::Object *inObj)
 {
-   if (!inObj || (inObj->__GetType()!=::vtFloat && inObj->__GetType()!=::vtInt))
+   if (!inObj || (inObj->__GetType()!=::vtFloat && inObj->__GetType()!=::vtInt64 && inObj->__GetType()!=::vtInt))
       return hx::BadCast();
    return inObj->__ToDouble();
 }
