@@ -47,7 +47,7 @@
 #define NEKO_EXT "so"
 //#define __USE_GNU 1
 
-#elif defined(HX_MAC)
+#elif defined(HX_MACOS)
 #include <mach-o/dyld.h>
 #define EXT "dylib"
 #define NEKO_EXT "dylib"
