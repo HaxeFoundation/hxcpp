@@ -277,6 +277,7 @@ void __hxcpp_start_profiler(String inDumpFile)
 void __hxcpp_stop_profiler()
 {
    hx::StackContext *stack = hx::StackContext::getCurrent();
+   stack->mProfiler->DumpStats();
    delete stack->mProfiler;
    stack->mProfiler = 0;
 }
