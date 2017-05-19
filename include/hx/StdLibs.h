@@ -285,9 +285,12 @@ inline void __hxcpp_align_set_float32( unsigned char *base, int addr, float v)
    #ifdef HXCPP_ALIGN_FLOAT
    if (addr & 3)
    {
-      const unsigned int *src = (const unsigned int *)&v;
-      unsigned int *dest = (unsigned int *)(base+addr);
-      *dest = *src;
+      const unsigned char *src = (const unsigned char *)&v;
+      unsigned char *dest = base + addr;
+      dest[0] = src[0];
+      dest[1] = src[1];
+      dest[2] = src[2];
+      dest[3] = src[3];
    }
    else
    #endif
@@ -301,9 +304,12 @@ inline float __hxcpp_align_get_float32( unsigned char *base, int addr)
    if (addr & 3)
    {
       float buf;
-      unsigned int *dest = (unsigned int *)&buf;
-      const unsigned int *src = (const unsigned int *)(base+addr);
-      *dest = *src;
+      unsigned char *dest = (unsigned char *)&buf;
+      const unsigned char *src = base + addr;
+      dest[0] = src[0];
+      dest[1] = src[1];
+      dest[2] = src[2];
+      dest[3] = src[3];
       return buf;
    }
    #endif
@@ -316,10 +322,16 @@ inline void __hxcpp_align_set_float64( unsigned char *base, int addr, double v)
    #ifdef HXCPP_ALIGN_FLOAT
    if (addr & 3)
    {
-      unsigned int *dest = (unsigned int *)(base + addr);
-      const unsigned int *src = (const unsigned int *)&v;
-      *dest++ = *src++;
-      *dest++ = *src++;
+      unsigned char *dest = base + addr;
+      const unsigned char *src = (const unsigned char *)&v;
+      dest[0] = src[0];
+      dest[1] = src[1];
+      dest[2] = src[2];
+      dest[3] = src[3];
+      dest[4] = src[4];
+      dest[5] = src[5];
+      dest[6] = src[6];
+      dest[7] = src[7];
    }
    else
    #endif
@@ -333,10 +345,16 @@ inline double __hxcpp_align_get_float64( unsigned char *base, int addr)
    if (addr & 3)
    {
       double buf;
-      unsigned int *dest = (unsigned int *)&buf;
-      const unsigned int *src = (const unsigned int *)(base + addr);
-      *dest++ = *src++;
-      *dest++ = *src++;
+      unsigned char *dest = (unsigned char *)&buf;
+      const unsigned char *src = base + addr;
+      dest[0] = src[0];
+      dest[1] = src[1];
+      dest[2] = src[2];
+      dest[3] = src[3];
+      dest[4] = src[4];
+      dest[5] = src[5];
+      dest[6] = src[6];
+      dest[7] = src[7];
       return buf;
    }
    #endif
