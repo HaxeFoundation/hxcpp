@@ -1,13 +1,12 @@
 #ifndef HX_CFFIPRIME_INCLUDED
 #define HX_CFFIPRIME_INCLUDED
 
-#include "CFFI.h"
-
 
 #ifdef HXCPP_JS_PRIME
 #include <string>
 typedef std::string HxString;
 #else
+#include "CFFI.h"
 struct HxString
 {
    inline HxString(const HxString &inRHS)

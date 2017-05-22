@@ -122,6 +122,31 @@ public:
       BCR_VCHECK;
       FUNC(val0,val1,val2);
    }
+
+   #ifdef CPPIA_JIT
+   static void SLJIT_CALL setFloat(Array_obj<unsigned char> *inBuffer, int inAddr, double *inValue)
+   {
+      if (sizeof(ARG2)==sizeof(float))
+         __hxcpp_memory_set_float(inBuffer,inAddr,*inValue);
+      else
+         __hxcpp_memory_set_double(inBuffer,inAddr,*inValue);
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp obj(compiler,jtPointer);
+      args[0]->genCode(compiler, obj, etObject);
+
+      JitTemp addr(compiler,jtInt);
+      args[1]->genCode(compiler, addr, etInt);
+
+      JitTemp val(compiler,jtFloat);
+      args[2]->genCode(compiler, val, etFloat);
+
+      compiler->callNative( (void *)setFloat, obj, addr, val );
+   }
+  #endif
+
 };
 
 
