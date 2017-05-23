@@ -65,7 +65,7 @@ void CppiaVar::clear()
    boolVal = 0;
    intVal = 0;
    floatVal = 0;
-   stringVal = 0;
+   stringVal = String();
    valPointer = 0;
    storeType = fsUnknown;
    dynamicFunction = 0;
