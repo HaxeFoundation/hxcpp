@@ -11,10 +11,10 @@ dist: trusty
 install:
   # Setup haxe
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-      tools/haxe/build_linux.sh
+      tools/haxe/build_linux.sh;
     fi
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      tools/haxe/build_osx.sh
+      tools/haxe/build_osx.sh;
     fi
 
 env:
