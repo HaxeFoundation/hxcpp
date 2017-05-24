@@ -11,7 +11,8 @@ dist: trusty
 install:
   # Setup haxe
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-      bash tools/haxe/build_linux.sh;
+      bash tools/haxe/build_linux.sh &&
+      travis_retry sudo apt-get install gcc-multilib g++-multilib -y;
     fi
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
       bash tools/haxe/build_osx.sh;
