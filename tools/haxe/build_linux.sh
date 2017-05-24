@@ -13,6 +13,7 @@
   wget https://raw.github.com/ocaml/opam/master/shell/opam_installer.sh -O - | sh -s /usr/local/bin system
   export OPAMYES=1
   opam install sedlex camlzip xml-light extlib rope ptmap
+  eval `opam config env`
 
   # Build haxe
   git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe --depth 1
