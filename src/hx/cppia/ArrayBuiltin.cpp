@@ -29,6 +29,7 @@ enum ArrayFunc
    af__set,
    af__crement,
    af__SetSizeExact,
+   afBlit,
 };
 
 static const char *sFuncNames[] =
@@ -56,6 +57,7 @@ static const char *sFuncNames[] =
    "af__set",
    "af__crement",
    "af__SetSizeExact",
+   "afBlit",
 };
 
 static int sArgCount[] = 
@@ -83,6 +85,7 @@ static int sArgCount[] =
    2, //af__set,
    1, //af__crement,
    1, //af__SetSizeExact,
+   4, //afBlit,
 };
 
 struct ArrayBuiltinBase : public CppiaExpr
@@ -810,7 +813,24 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_VCHECK;
          thisVal->__SetSizeExact(size);
       }
+
+      if (FUNC==afBlit)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM> *)thisExpr->runObject(ctx);
+         BCR_VCHECK;
+         int destElem = args[0]->runInt(ctx);
+         BCR_VCHECK;
+         Dynamic srcArray = args[1]->runObject(ctx);
+         BCR_VCHECK;
+         int srcElem = args[2]->runInt(ctx);
+         BCR_VCHECK;
+         int elemCount = args[3]->runInt(ctx);
+         BCR_VCHECK;
+         thisVal->blit(destElem, srcArray, srcElem, elemCount);
+         return;
+      }
    }
+
 
    CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue)
    {
@@ -1822,7 +1842,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       if (FUNC==afJoin || FUNC==afToString)
          return Dynamic(runString(ctx)).mPtr;
 
-      if (FUNC==afSort || FUNC==afInsert || FUNC==afUnshift || FUNC==af__SetSizeExact)
+      if (FUNC==afSort || FUNC==afInsert || FUNC==afUnshift || FUNC==af__SetSizeExact || FUNC==afBlit)
       {
          runVoid(ctx);
          return 0;
@@ -2009,6 +2029,21 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          thisVal->__SetSizeExact(size);
          return;
       }
+      if (FUNC==afBlit)
+      {
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
+         BCR_VCHECK;
+         int destElem = args[0]->runInt(ctx);
+         BCR_VCHECK;
+         Dynamic srcArray = args[1]->runObject(ctx);
+         BCR_VCHECK;
+         int srcElem = args[2]->runInt(ctx);
+         BCR_VCHECK;
+         int elemCount = args[3]->runInt(ctx);
+         BCR_VCHECK;
+         thisVal->blit(destElem, srcArray, srcElem, elemCount);
+         return;
+      }
 
 
       switch(inlineGetType())
@@ -2122,6 +2157,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          case afInsert:
          case afUnshift:
          case af__SetSizeExact:
+         case afBlit:
             return etVoid;
 
          case afPush:
@@ -2220,6 +2256,15 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
                thisExpr->genCode(compiler, thisVal, etObject);
                args[0]->genCode(compiler, sJitArg1.as(jtInt), etInt);
                compiler->callNative( (void *)arraySetSizeExact, thisVal, sJitArg1.as(jtInt));
+               break;
+            }
+         case afBlit:
+            {
+               JitTemp thisVal(compiler,jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+               //args[0]->genCode(compiler, sJitArg1.as(jtInt), etInt);
+               //compiler->callNative( (void *)arraySetSizeExact, thisVal, sJitArg1.as(jtInt));
+               compiler->trace("TODO: afBlit");
                break;
             }
 
@@ -2419,35 +2464,11 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<af__set,NoCrement>(src, inType, inThisExpr, ioExpressions, field==HX_CSTRING("__unsafe_set"));
    if (field==HX_CSTRING("__SetSizeExact"))
       return TCreateArrayBuiltin<af__SetSizeExact,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("blit"))
+      return TCreateArrayBuiltin<afBlit,NoCrement>(src, inType, inThisExpr, ioExpressions);
 
    return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

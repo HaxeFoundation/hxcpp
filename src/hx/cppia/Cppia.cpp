@@ -1175,6 +1175,10 @@ struct CastExpr : public CppiaDynamicExpr
             throw "Data cast to non-array";
          }
       }
+      else if (op==castDynArray)
+      {
+         arrayType = arrAny;
+      }
       else
          arrayType = arrObject;
       return this;
