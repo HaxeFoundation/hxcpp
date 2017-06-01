@@ -4905,6 +4905,63 @@ struct ArrayDef : public CppiaDynamicExpr
       inObj->__SetItem( inIndex, val -  1 );
       return val.mPtr;
    }
+
+   union DynArg
+   {
+      int        ival;
+      double     dval;
+      hx::Object *obj;
+   };
+   struct DynArgs
+   {
+      DynArg index;
+      DynArg lvalue;
+      DynArg rvalue;
+   };
+
+   #define DynIndexFunc(name, OP) \
+      hx::Object * SLJIT_CALL name(hx::Object *inObj, DynArgs *args) \
+      { \
+         Dynamic result = Dynamic(args->lvalue.obj) OP ; \
+         inObj->__SetItem( args->index.ival, result); \
+         return result.mPtr; \
+      }
+
+   #define DynIndexIntFunc(name, OP) \
+      hx::Object * SLJIT_CALL name(hx::Object *inObj, DynArgs *args) \
+      { \
+         Dynamic result = ((int)Dynamic(args->lvalue.obj)) OP ; \
+         inObj->__SetItem( args->index.ival, result); \
+         return result.mPtr; \
+      }
+
+
+   DynIndexFunc(dynAdd, +Dynamic(args->rvalue.obj) );
+   DynIndexFunc(dynMult, * args->rvalue.dval );
+   DynIndexFunc(dynDiv, / args->rvalue.dval );
+   DynIndexFunc(dynSub, - args->rvalue.dval );
+
+   hx::Object * SLJIT_CALL dynMod(hx::Object *inObj, DynArgs *args)
+   {
+      Dynamic result = hx::Mod( Dynamic(args->lvalue.obj), args->rvalue.dval );
+      inObj->__SetItem( args->index.ival, result);
+      return result.mPtr;
+   }
+
+   DynIndexIntFunc(dynAnd, & args->rvalue.ival );
+   DynIndexIntFunc(dynOr, | args->rvalue.ival );
+   DynIndexIntFunc(dynXOr, ^ args->rvalue.ival );
+   DynIndexIntFunc(dynShl, << args->rvalue.ival );
+   DynIndexIntFunc(dynShr, >> args->rvalue.ival );
+
+   hx::Object * SLJIT_CALL dynUShr(hx::Object *inObj, DynArgs *args)
+   {
+      Dynamic result = hx::UShr( Dynamic(args->lvalue.obj), args->rvalue.ival );
+      inObj->__SetItem( args->index.ival, result);
+      return result.mPtr;
+   }
+
+
 #endif
 
 
@@ -5030,8 +5087,48 @@ struct DynamicArrayI : public CppiaDynamicExpr
          }
          return;
       }
-      compiler->trace("todo: DynamicArrayI ?=");
 
+
+      JitTemp argsBuf(compiler, etInt, 3*8 );
+
+      compiler->move(argsBuf, sJitTemp1);
+
+      compiler->callNative( (void *)getItem, obj, sJitTemp1.as(jtInt) );
+
+      compiler->move( (argsBuf+8).as(jtPointer), sJitReturnReg.as(jtPointer));
+
+      ExprType type = etInt;
+      void *func = 0;
+
+      switch(assign)
+      {
+         case aoAdd: func = dynAdd; type = etObject; break;
+
+         case aoMult: func = dynMult; type = etFloat; break;
+         case aoDiv: func = dynDiv; type = etFloat; break;
+         case aoSub: func = dynSub; type = etFloat; break;
+         case aoMod: func = dynMod; type = etFloat; break;
+
+         case aoAnd: func = dynAnd; break;
+         case aoOr: func = dynOr; break;
+         case aoXOr: func = dynXOr; break;
+         case aoShl: func = dynShl; break;
+         case aoShr: func = dynShr; break;
+         case aoUShr: func = dynUShr; break;
+         default: ;
+      }
+
+      if (type==etFloat)
+         value->genCode(compiler, (argsBuf+16).as(jtFloat), etFloat);
+      else if (type==etInt)
+         value->genCode(compiler, (argsBuf+16).as(jtInt), etInt);
+      else
+         value->genCode(compiler, (argsBuf+16).as(jtPointer), etObject);
+
+      // Use jtFloat to take address
+      compiler->callNative( func, obj, argsBuf.as(jtFloat) );
+
+      compiler->convertReturnReg(etObject, inDest, destType);
    }
    #endif
 };
@@ -6753,9 +6850,10 @@ void SLJIT_CALL strAddStrToStrOver(String *ioStr, String *inStr1) {
 void SLJIT_CALL strAddStrToStr(String *inStr0, String *inStr1, String *outStr) {
    *outStr = *inStr0 + *inStr1;
 }
-void *SLJIT_CALL strAddStrToObj(String *inStr0, String *inStr1) {
+hx::Object *SLJIT_CALL strAddStrToObj(String *inStr0, String *inStr1) {
    TRY_NATIVE
-      return Dynamic(*inStr0 + *inStr1).mPtr;
+   hx::Object *result = Dynamic(*inStr0 + *inStr1).mPtr;
+   return result;
    CATCH_NATIVE
    return 0;
 }
@@ -6859,7 +6957,7 @@ struct SpecialAdd : public CppiaExpr
             {
                compiler->callNative(strAddStrToObj, sJitTemp0.as(jtPointer), sJitTemp1.as(jtPointer));
                compiler->checkException();
-               compiler->move( inDest, sJitReturnReg );
+               compiler->move( inDest, sJitReturnReg.as(jtPointer) );
             }
          }
          else
