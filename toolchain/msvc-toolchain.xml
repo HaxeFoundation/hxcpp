@@ -47,6 +47,8 @@
 
 <set name="MSVC_ARCH" value="SSE2" unless="HXCPP_M64" />
 
+<unset name="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="MSVC19"/>
+
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
 
@@ -82,7 +84,7 @@
   <flag value="-Od" tag="debug" />
   <flag value="-O2" tag="release" />
   <flag value="-Os" tag="optim-size" />
-  <flag value="-GL" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-GL" if="HXCPP_OPTIMIZE_LINK || HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
 
   <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
@@ -110,7 +112,8 @@
   <flag value="-machine:${MACHINE}"/>
   <flag value="-dll"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
-  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
   <lib name="${dll_import_link}" if="dll_import_link" />
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
@@ -126,7 +129,8 @@
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
-  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
   <flag value="-subsystem:windows${SUBSYSTEM_VER}" if="SUBSYSTEMWINDOWS" />
   <flag value="-subsystem:console${SUBSYSTEM_VER}" if="SUBSYSTEMCONSOLE" />
   <libpathflag value="-libpath:"/>
@@ -142,7 +146,8 @@
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
-  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
   <flag value="-subsystem:windows" />
   <flag value="-MANIFEST:NO" />
   <flag value="-WINMD" />
@@ -158,7 +163,8 @@
 </linker>
 
 <linker id="static_link" exe="lib.exe" if="windows">
-  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <ext value="${LIBEXT}"/>
