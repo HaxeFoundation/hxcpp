@@ -1035,6 +1035,15 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       return inArray->copy().mPtr;
    }
 
+   static void SLJIT_CALL runBlit( JitMultiArg *inArgs)
+   {
+       // this, inDestElement, inSourceArray, inSourceElement, inElementCount
+       Array_obj<ELEM> *dest = (Array_obj<ELEM> *)inArgs[0].obj;
+       Array_obj<ELEM> *src = (Array_obj<ELEM> *)inArgs[2].obj;
+       dest->blit( inArgs[1].ival, src, inArgs[3].ival, inArgs[4].ival );
+   }
+
+
    static hx::Object * SLJIT_CALL runProcess( Array_obj<ELEM> *inArray, hx::Object *inFunction)
    {
       TRY_NATIVE
@@ -1085,6 +1094,10 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                // this->length = length+1
                compiler->add(sJitTemp1.star(jtInt, ArrayBase::lengthOffset()), sJitTemp0, (int)1 );
 
+               JitTemp length(compiler, jtInt);
+               if (destType!=etVoid)
+                  compiler->add(length, sJitTemp0, (int)1 );
+
                // sJitTemp1 = this->base
                compiler->move(sJitTemp1, sJitTemp1.star(jtPointer, ArrayBase::baseOffset()).as(jtPointer) );
 
@@ -1116,6 +1129,9 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                {
                   printf("Unknown element size\n");
                }
+
+               if (destType!=etNull)
+                  compiler->convert(length, etInt, inDest, destType );
 
                break;
             }
@@ -1527,6 +1543,21 @@ struct ArrayBuiltin : public ArrayBuiltinBase
             }
 
          // Array<ELEM>
+         case afBlit:
+            {
+               // this, inDestElement, inSourceArray, inSourceElement, inElementCount
+               JitMultiArgs fargs(compiler, 5);
+               thisExpr->genCode(compiler, fargs.arg(0,jtPointer), etObject);
+               args[0]->genCode(compiler, fargs.arg(1,jtInt), etInt);
+               args[1]->genCode(compiler, fargs.arg(2,jtPointer), etObject);
+               args[2]->genCode(compiler, fargs.arg(3,jtInt), etInt);
+               args[3]->genCode(compiler, fargs.arg(4,jtInt), etInt);
+               compiler->callNative( (void *)runBlit, fargs );
+               break;
+            }
+
+
+         // Array<ELEM>
          case af__crement:
             {
                CrementOp op = (CrementOp)CREMENT::OP;
@@ -1724,6 +1755,13 @@ static void SLJIT_CALL runReverse( ArrayAnyImpl *inArray)
    inArray->reverse();
 }
 
+static hx::Object * SLJIT_CALL runCopy( ArrayAnyImpl *inArray)
+{
+   return (inArray->copy()).mPtr;
+}
+
+
+
 static void SLJIT_CALL runJoin( ArrayAnyImpl *inArray, String *ioValue)
 {
    TRY_NATIVE
@@ -1785,11 +1823,20 @@ static void SLJIT_CALL arrayUnshiftFloat( ArrayAnyImpl *inArray, double *inVal)
 {
    inArray->unshift(*inVal);
 }
+
 static void SLJIT_CALL arrayUnshiftString( ArrayAnyImpl *inArray, String *inVal)
 {
    inArray->unshift(*inVal);
 }
 
+
+static void SLJIT_CALL runBlit( JitMultiArg *inArgs)
+{
+    // this, inDestElement, inSourceArray, inSourceElement, inElementCount
+    ArrayAnyImpl *dest = (ArrayAnyImpl *)inArgs[0].obj;
+    ArrayAnyImpl *src = (ArrayAnyImpl *)inArgs[2].obj;
+    dest->blit( inArgs[1].ival, src, inArgs[3].ival, inArgs[4].ival );
+}
 
 
 
@@ -2226,10 +2273,28 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
 
    #ifdef CPPIA_JIT
+
+   static hx::Object * SLJIT_CALL runProcess( ArrayAnyImpl *inArray, hx::Object *inFunction)
+   {
+      TRY_NATIVE
+      if (FUNC==afMap)
+      {
+         return inArray->map(inFunction).mPtr;
+      }
+      else
+      {
+         return inArray->filter(inFunction).mPtr;
+      }
+      CATCH_NATIVE
+      return 0;
+   }
+
+
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       JitTemp thisVal(compiler,etObject);
-      thisExpr->genCode(compiler,thisVal,etObject);
+      if (FUNC!=afBlit)
+         thisExpr->genCode(compiler,thisVal,etObject);
 
       switch(FUNC)
       {
@@ -2288,6 +2353,25 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             compiler->callNative( (void *)runReverse, thisVal);
             break;
 
+         case afCopy:
+            compiler->callNative( (void *)runCopy, thisVal);
+            compiler->convertReturnReg(etObject, inDest, destType );
+            break;
+
+         case afMap:
+         case afFilter:
+            {
+            args[0]->genCode(compiler, sJitArg1.as(jtPointer), etObject);
+
+            compiler->callNative( (void *)runProcess, thisVal, sJitArg1.as(jtPointer));
+            compiler->checkException();
+            compiler->convertReturnReg(etObject, inDest, destType );
+            }
+            break;
+
+
+
+
          case afJoin:
             {
             JitTemp value(compiler,jtString);
@@ -2317,11 +2401,15 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             }
          case afBlit:
             {
-               JitTemp thisVal(compiler,jtPointer);
-               thisExpr->genCode(compiler, thisVal, etObject);
-               //args[0]->genCode(compiler, sJitArg1.as(jtInt), etInt);
-               //compiler->callNative( (void *)arraySetSizeExact, thisVal, sJitArg1.as(jtInt));
-               compiler->trace("TODO: afBlit");
+
+               // this, inDestElement, inSourceArray, inSourceElement, inElementCount
+               JitMultiArgs fargs(compiler, 5);
+               thisExpr->genCode(compiler, fargs.arg(0,jtPointer), etObject);
+               args[0]->genCode(compiler, fargs.arg(1,jtInt), etInt);
+               args[1]->genCode(compiler, fargs.arg(2,jtPointer), etObject);
+               args[2]->genCode(compiler, fargs.arg(3,jtInt), etInt);
+               args[3]->genCode(compiler, fargs.arg(4,jtInt), etInt);
+               compiler->callNative( (void *)runBlit, fargs );
                break;
             }
 

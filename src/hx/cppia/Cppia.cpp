@@ -4906,21 +4906,17 @@ struct ArrayDef : public CppiaDynamicExpr
       return val.mPtr;
    }
 
-   union DynArg
+   struct DynIndexArgs
    {
-      int        ival;
-      double     dval;
-      hx::Object *obj;
-   };
-   struct DynArgs
-   {
-      DynArg index;
-      DynArg lvalue;
-      DynArg rvalue;
+      JitMultiArg index;
+      JitMultiArg lvalue;
+      JitMultiArg rvalue;
    };
 
+
+
    #define DynIndexFunc(name, OP) \
-      hx::Object * SLJIT_CALL name(hx::Object *inObj, DynArgs *args) \
+      hx::Object * SLJIT_CALL name(hx::Object *inObj, DynIndexArgs *args) \
       { \
          Dynamic result = Dynamic(args->lvalue.obj) OP ; \
          inObj->__SetItem( args->index.ival, result); \
@@ -4928,7 +4924,7 @@ struct ArrayDef : public CppiaDynamicExpr
       }
 
    #define DynIndexIntFunc(name, OP) \
-      hx::Object * SLJIT_CALL name(hx::Object *inObj, DynArgs *args) \
+      hx::Object * SLJIT_CALL name(hx::Object *inObj, DynIndexArgs *args) \
       { \
          Dynamic result = ((int)Dynamic(args->lvalue.obj)) OP ; \
          inObj->__SetItem( args->index.ival, result); \
@@ -4941,7 +4937,7 @@ struct ArrayDef : public CppiaDynamicExpr
    DynIndexFunc(dynDiv, / args->rvalue.dval );
    DynIndexFunc(dynSub, - args->rvalue.dval );
 
-   hx::Object * SLJIT_CALL dynMod(hx::Object *inObj, DynArgs *args)
+   hx::Object * SLJIT_CALL dynMod(hx::Object *inObj, DynIndexArgs *args)
    {
       Dynamic result = hx::Mod( Dynamic(args->lvalue.obj), args->rvalue.dval );
       inObj->__SetItem( args->index.ival, result);
@@ -4954,7 +4950,7 @@ struct ArrayDef : public CppiaDynamicExpr
    DynIndexIntFunc(dynShl, << args->rvalue.ival );
    DynIndexIntFunc(dynShr, >> args->rvalue.ival );
 
-   hx::Object * SLJIT_CALL dynUShr(hx::Object *inObj, DynArgs *args)
+   hx::Object * SLJIT_CALL dynUShr(hx::Object *inObj, DynIndexArgs *args)
    {
       Dynamic result = hx::UShr( Dynamic(args->lvalue.obj), args->rvalue.ival );
       inObj->__SetItem( args->index.ival, result);
@@ -5089,13 +5085,13 @@ struct DynamicArrayI : public CppiaDynamicExpr
       }
 
 
-      JitTemp argsBuf(compiler, etInt, 3*8 );
+      JitMultiArgs argsBuf(compiler, 3);
 
-      compiler->move(argsBuf, sJitTemp1);
+      compiler->move(argsBuf.arg(0,etInt), sJitTemp1);
 
       compiler->callNative( (void *)getItem, obj, sJitTemp1.as(jtInt) );
 
-      compiler->move( (argsBuf+8).as(jtPointer), sJitReturnReg.as(jtPointer));
+      compiler->move( argsBuf.arg(1,jtPointer), sJitReturnReg.as(jtPointer));
 
       ExprType type = etInt;
       void *func = 0;
@@ -5119,14 +5115,13 @@ struct DynamicArrayI : public CppiaDynamicExpr
       }
 
       if (type==etFloat)
-         value->genCode(compiler, (argsBuf+16).as(jtFloat), etFloat);
+         value->genCode(compiler, argsBuf.arg(2,jtFloat), etFloat);
       else if (type==etInt)
-         value->genCode(compiler, (argsBuf+16).as(jtInt), etInt);
+         value->genCode(compiler, argsBuf.arg(2,jtInt), etInt);
       else
-         value->genCode(compiler, (argsBuf+16).as(jtPointer), etObject);
+         value->genCode(compiler, argsBuf.arg(2,jtPointer), etObject);
 
-      // Use jtFloat to take address
-      compiler->callNative( func, obj, argsBuf.as(jtFloat) );
+      compiler->callNative( func, obj, argsBuf );
 
       compiler->convertReturnReg(etObject, inDest, destType);
    }
@@ -5301,7 +5296,6 @@ struct ArrayAccessI : public CppiaDynamicExpr
 
          return;
       }
-
 
    #if 0
       if (crement!=coNone)

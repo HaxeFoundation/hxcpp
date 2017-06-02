@@ -60,6 +60,16 @@ enum JitType
 JitType getJitType(ExprType inType);
 int getJitTypeSize(JitType inType);
 
+
+
+// double-aligned
+union JitMultiArg
+{
+   int        ival;
+   double     dval;
+   hx::Object *obj;
+};
+
 struct JitVal
 {
    JitPosition    position;
@@ -404,6 +414,18 @@ struct JitTemp : public JitVal
 
    JitVal star(JitType inType=jtPointer, int inOffset=0) { return JitVal(inType, offset+inOffset, jposStar, sLocalReg, 0); }
    JitVal star(ExprType inType, int inOffset=0) { return JitVal(getJitType(inType), offset+inOffset, jposStar, sLocalReg, 0); }
+
+};
+
+struct JitMultiArgs : public JitTemp
+{
+   // Float, so address is passed to native function
+   JitMultiArgs(CppiaCompiler *inCompiler, int inN) : JitTemp(inCompiler, etFloat, inN*sizeof(JitMultiArg) )
+   {
+   }
+
+   JitVal arg(int inIndex,JitType inType=jtPointer) { return (*this + inIndex*sizeof(JitMultiArg)).as(inType); }
+   JitVal arg(int inIndex,ExprType inType) { return arg(inIndex,getJitType(inType)); }
 
 };
 
