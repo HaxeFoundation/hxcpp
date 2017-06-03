@@ -2012,6 +2012,21 @@ struct CallGetField : public CppiaDynamicExpr
 };
 
 
+#ifdef CPPIA_JIT
+static void SLJIT_CALL fixReturnType( hx::CppiaCtx *inCtx, int actualType)
+{
+   void *returnPos = inCtx->frame;
+
+   Dynamic result;
+   switch(actualType)
+   {
+      case etInt: result = *(int *)returnPos; break;
+      case etFloat: result = *(double *)returnPos; break;
+      case etString: result = *(String *)returnPos; break;
+   }
+   *(hx::Object **)returnPos = result.mPtr;
+}
+#endif
 
 
 
@@ -2056,35 +2071,36 @@ struct CallMemberVTable : public CppiaExpr
       CPPIA_CHECK(thisVal); \
       ScriptCallable **vtable = (!isInterfaceCall ? (*(ScriptCallable ***)((char *)thisVal +scriptVTableOffset)) : (ScriptCallable **) thisVal->__GetScriptVTable()); \
       unsigned char *pointer = ctx->pointer; \
-      vtable[slot]->pushArgs(ctx, thisVal, args); \
+      ScriptCallable *func = vtable[slot]; \
+      func->pushArgs(ctx, thisVal, args); \
       /* TODO */; \
       AutoStack save(ctx,pointer);
 
    void runVoid(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      ctx->runVoid(vtable[slot]);
+      ctx->runVoid(func);
    }
    int runInt(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertInt(ctx, returnType, vtable[slot]); 
+      return runContextConvertInt(ctx, func->getReturnType(), func); 
    }
  
    Float runFloat(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertFloat(ctx, returnType, vtable[slot]); 
+      return runContextConvertFloat(ctx, func->getReturnType(), func); 
    }
    String runString(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertString(ctx, returnType, vtable[slot]); 
+      return runContextConvertString(ctx, func->getReturnType(), func); 
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertObject(ctx, returnType, vtable[slot]); 
+      return runContextConvertObject(ctx, func->getReturnType(), func); 
    }
 
    #ifdef CPPIA_JIT
@@ -2117,6 +2133,12 @@ struct CallMemberVTable : public CppiaExpr
       // Store new frame in context ...
       compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
 
+      TypeData *type = funcProto->cppia.types[funcProto->returnType];
+      bool isBoolReturn = type->haxeClass==ClassOf<bool>();
+
+      // Implementation may return a more general type, with different byte representation
+      bool checkInterfaceReturnType = isInterfaceCall && (returnType==etFloat || type->name==HX_CSTRING("Dynamic"));
+
       if (isInterfaceCall)
       {
          //sJitTemp1 = ScriptCallable **vtable = thisVal->__GetScriptVTable();
@@ -2131,14 +2153,33 @@ struct CallMemberVTable : public CppiaExpr
          compiler->move(sJitTemp1.as(jtPointer), thisVal.star(jtPointer, scriptVTableOffset) );
       }
 
-      // vtable[slot]
+      // sJitTemp1 = table[slot]
       compiler->move(sJitTemp1, sJitTemp1.star(jtPointer, slot*sizeof(void *)) );
 
-      // vtable[slot].compiled
-      compiler->call(sJitTemp1.star(jtPointer, offsetof(ScriptCallable,compiled)),sJitCtx );
+      if (checkInterfaceReturnType)
+      {
+         JitTemp actualReturnType(compiler,jtInt);
+         compiler->move(actualReturnType, sJitTemp1.star(jtInt, offsetof(ScriptCallable,returnType)) );
 
+         // vtable[slot].compiled
+         compiler->call(sJitTemp1.star(jtPointer, offsetof(ScriptCallable,compiled)),sJitCtx );
+         JumpId isEqual = compiler->compare(cmpI_EQUAL, actualReturnType, (int)returnType);
+         // Must be int->Float
+         if (returnType==etFloat)
+         {
+            compiler->move(sJitTemp0.as(jtPointer), sJitCtx.star(jtPointer, offsetof(CppiaCtx,frame)) );
+            compiler->convert( sJitTemp0.star(jtInt), etInt, sJitTemp0.star(jtFloat), etFloat );
+         }
+         else // type -> Dynamic
+            compiler->callNative( (void *)fixReturnType, sJitCtx, actualReturnType );
 
-      bool isBoolReturn = funcProto->cppia.types[funcProto->returnType]->haxeClass==ClassOf<bool>();
+         compiler->comeFrom(isEqual);
+      }
+      else
+      {
+         // vtable[slot].compiled
+         compiler->call(sJitTemp1.star(jtPointer, offsetof(ScriptCallable,compiled)),sJitCtx );
+      }
 
       genFunctionResult(compiler, inDest, destType, returnType, isBoolReturn);
    }
