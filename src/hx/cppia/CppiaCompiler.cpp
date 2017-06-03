@@ -842,7 +842,7 @@ public:
                }
                else
                {
-                  if (inSrc==sJitTemp1)
+                  if (inSrc.uses(SLJIT_R1))
                   {
                      move(sJitArg0, inSrc);
                      add( sJitTemp1, inTarget.getReg(), inTarget.offset );
@@ -860,7 +860,7 @@ public:
                callNative( (void *)floatToStr, inSrc.as(jtFloat), sJitTemp1 );
                break;
             case etObject:
-               if (inSrc==sJitTemp1)
+               if (inSrc.uses(SLJIT_R1))
                {
                   move(sJitArg0, inSrc);
                   add( sJitTemp1, inTarget.getReg(), inTarget.offset );

@@ -125,6 +125,12 @@ struct JitVal
       pVal = inValue;
    }
 
+   bool uses(int reg) const
+   {
+      return ( (position==jposRegister || position==jposStar || position==jposStar || position==jposStarReg) && reg==reg0 ) ||
+             ( position==jposStarReg && reg==reg1 );
+   }
+
    JitVal operator +(int inDiff) const { return JitVal(type, offset+inDiff, position, reg0, reg1); }
    JitVal as(JitType type) const { return JitVal(type, offset, position, reg0, reg1); }
    bool valid() const { return type!=jtVoid; }

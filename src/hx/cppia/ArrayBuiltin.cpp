@@ -1287,11 +1287,32 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                }
                else if (sizeof(ELEM)==4)
                {
-                  compiler->convert( sJitTemp1.atReg(sJitTemp0,2), elemType, inDest, destType );
+                  // todo - float?
+                  if (destType!=elemType || isMemoryVal(inDest))
+                  {
+                     compiler->move(sJitTemp0.as(elemType==etObject ? jtPointer : jtInt), sJitTemp1.atReg(sJitTemp0,2) );
+                     compiler->convert( sJitTemp0, elemType, inDest, destType );
+                  }
+                  else
+                     compiler->move(inDest.as(jtInt), sJitTemp1.atReg(sJitTemp0,2) );
                }
                else if (sizeof(ELEM)==8)
                {
-                  compiler->convert( sJitTemp1.atReg(sJitTemp0,3), elemType, inDest, destType );
+                  if (destType!=etObject || elemType!=etObject || isMemoryVal(inDest))
+                  {
+                     if (elemType==etFloat)
+                     {
+                        compiler->move(sJitTempF0, sJitTemp1.atReg(sJitTemp0,3) );
+                        compiler->convert( sJitTempF0, elemType, inDest, destType );
+                     }
+                     else
+                     {
+                        compiler->move(sJitTemp0.as(jtPointer), sJitTemp1.atReg(sJitTemp0,3) );
+                        compiler->convert( sJitTemp0, etObject, inDest, destType );
+                     }
+                  }
+                  else
+                     compiler->move(inDest.as(jtPointer), sJitTemp1.atReg(sJitTemp0,3) );
                }
                else
                {
