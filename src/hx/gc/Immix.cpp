@@ -57,7 +57,14 @@ static bool sgAllocInit = 0;
 static bool sgInternalEnable = true;
 static void *sgObject_root = 0;
 // With virtual inheritance, stack pointers can point to the middle of an object
+#ifdef _MSC_VER
+// MSVC optimizes by taking the address of an initernal data member
+static int sgCheckInternalOffset = sizeof(void *)+sizeof(int);
+#else
 static int sgCheckInternalOffset = 0;
+#endif
+
+
 static int sgCheckInternalOffsetRows = 0;
 int gInAlloc = false;
 
