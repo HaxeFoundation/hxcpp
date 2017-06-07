@@ -567,16 +567,28 @@ struct CppiaIsNull : public CppiaBoolExpr
 
    int runInt(CppiaCtx *ctx)
    {
-      return condition->runObject(ctx)==0;
+      if (condition->getType()==etString)
+         return condition->runString(ctx)==null();
+      else
+         return condition->runObject(ctx)==0;
    }
 
    #ifdef CPPIA_JIT
    JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
    {
-      condition->genCode(compiler, sJitTemp0, etObject);
-      // inReverse = false -> jump if not 0
-      // inReverse = true  -> jump if zero
-      return compiler->compare(inReverse ? cmpP_NOT_EQUAL : cmpP_EQUAL, sJitTemp0.as(jtPointer), (void *)0, inLabel);
+      if (condition->getType()==etString)
+      {
+         JitTemp val(compiler,jtString);
+         condition->genCode(compiler, val, etString);
+         return compiler->compare(inReverse ? cmpP_NOT_EQUAL : cmpP_EQUAL, val.as(jtPointer) + sizeof(int), (void *)0, inLabel);
+      }
+      else
+      {
+         condition->genCode(compiler, sJitTemp0, etObject);
+         // inReverse = false -> jump if not 0
+         // inReverse = true  -> jump if zero
+         return compiler->compare(inReverse ? cmpP_NOT_EQUAL : cmpP_EQUAL, sJitTemp0.as(jtPointer), (void *)0, inLabel);
+      }
    }
    #endif
 
@@ -594,17 +606,29 @@ struct CppiaIsNotNull : public CppiaBoolExpr
 
    int runInt(CppiaCtx *ctx)
    {
-      return condition->runObject(ctx)!=0;
+      if (condition->getType()==etString)
+         return condition->runString(ctx)!=null();
+      else
+         return condition->runObject(ctx)!=0;
    }
 
 
    #ifdef CPPIA_JIT
    JumpId genCompare(CppiaCompiler *compiler,bool inReverse,LabelId inLabel)
    {
-      condition->genCode(compiler, sJitTemp0, etObject);
+      if (condition->getType()==etString)
+      {
+         JitTemp val(compiler,jtString);
+         condition->genCode(compiler, val, etString);
+         return compiler->compare(inReverse ? cmpP_EQUAL : cmpP_NOT_EQUAL, val.as(jtPointer) + sizeof(int), (void *)0, inLabel);
+      }
+      else
+      {
+         condition->genCode(compiler, sJitTemp0, etObject);
       // inReverse = false -> jump if not 0
       // inReverse = true  -> jump if zero
-      return compiler->compare(inReverse ? cmpP_EQUAL : cmpP_NOT_EQUAL, sJitTemp0.as(jtPointer), (void *)0, inLabel);
+         return compiler->compare(inReverse ? cmpP_EQUAL : cmpP_NOT_EQUAL, sJitTemp0.as(jtPointer), (void *)0, inLabel);
+      }
    }
    #endif
 
