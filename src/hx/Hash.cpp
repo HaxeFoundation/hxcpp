@@ -137,9 +137,9 @@ void __int_hash_set_string(Dynamic &ioHash,int inKey, ::String inValue)
    ioHash.mPtr = hash->set(inKey,inValue);
 }
 
-Dynamic  __int_hash_get(Dynamic &ioHash,int inKey)
+Dynamic  __int_hash_get(Dynamic inHash,int inKey)
 {
-   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   IntHashBase *hash = static_cast<IntHashBase *>(inHash.GetPtr());
    if (!hash)
       return null();
 
@@ -147,6 +147,42 @@ Dynamic  __int_hash_get(Dynamic &ioHash,int inKey)
    hash->query(inKey,result);
    return result;
 }
+
+int  __int_hash_get_int(Dynamic inHash,int inKey)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return 0;
+
+   int result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+
+Float  __int_hash_get_float(Dynamic inHash,int inKey)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return 0;
+
+   Float result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+String  __int_hash_get_string(Dynamic inHash,int inKey)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return String();
+
+   String result;
+   hash->query(inKey,result);
+   return result;
+}
+
+
 
 
 bool  __int_hash_exists(Dynamic &ioHash,int inKey)
@@ -328,9 +364,9 @@ void __string_hash_set_string(Dynamic &ioHash,String inKey, ::String inValue)
    ioHash.mPtr = hash->set(inKey,inValue);
 }
 
-Dynamic  __string_hash_get(Dynamic &ioHash,String inKey)
+Dynamic  __string_hash_get(Dynamic inHash,String inKey)
 {
-   StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
+   StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
    if (!hash)
       return null();
 
@@ -338,6 +374,41 @@ Dynamic  __string_hash_get(Dynamic &ioHash,String inKey)
    hash->query(inKey,result);
    return result;
 }
+
+int  __string_hash_get_int(Dynamic inHash,String inKey)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   int result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+
+Float  __string_hash_get_float(Dynamic inHash,String inKey)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   Float result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+String  __string_hash_get_string(Dynamic inHash,String inKey)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   String result;
+   hash->query(inKey,result);
+   return result;
+}
+
 
 
 bool  __string_hash_exists(Dynamic &ioHash,String inKey)
@@ -557,10 +628,10 @@ void __object_hash_set_string(Dynamic &ioHash,Dynamic inKey, ::String inValue,bo
    ioHash.mPtr = hash->set(inKey,inValue);
 }
 
-Dynamic  __object_hash_get(Dynamic &ioHash,Dynamic inKey)
+Dynamic  __object_hash_get(Dynamic inHash,Dynamic inKey)
 {
    toRealObject(inKey);
-   DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
    if (!hash)
       return null();
 
@@ -568,6 +639,47 @@ Dynamic  __object_hash_get(Dynamic &ioHash,Dynamic inKey)
    hash->query(inKey,result);
    return result;
 }
+
+
+int  __object_hash_get_int(Dynamic inHash,Dynamic inKey)
+{
+   toRealObject(inKey);
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   int result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+
+Float  __object_hash_get_float(Dynamic inHash,Dynamic inKey)
+{
+   toRealObject(inKey);
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   Float result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+
+String  __object_hash_get_string(Dynamic inHash,Dynamic inKey)
+{
+   toRealObject(inKey);
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   String result;
+   hash->query(inKey,result);
+   return result;
+}
+
+
 
 
 bool  __object_hash_exists(Dynamic &ioHash,Dynamic inKey)
