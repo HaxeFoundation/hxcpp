@@ -352,6 +352,27 @@ enum
 #endif
 
 
+struct MarkChunk
+{
+   enum { SIZE = 31 };
+
+   MarkChunk() : count(0) { }
+   hx::Object *stack[SIZE];
+   int    count;
+
+   inline void push(Object *inObj)
+   {
+      stack[count++] = inObj;
+   }
+   inline hx::Object *pop()
+   {
+      if (count)
+         return stack[--count];
+      return 0;
+   }
+};
+
+
 
 struct StackContext : public hx::ImmixAllocator
 {
@@ -387,6 +408,10 @@ struct StackContext : public hx::ImmixAllocator
 
    #ifdef HXCPP_COMBINE_STRINGS
    WeakStringSet *stringSet;
+   #endif
+
+   #ifdef HXCPP_GC_GENERATIONAL
+   struct MarkChunk *mOldReferrers;
    #endif
 
 

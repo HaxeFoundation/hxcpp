@@ -160,7 +160,7 @@ static int sgAllocsSinceLastSpam = 0;
 #endif
 
 #ifdef PROFILE_COLLECT
-   #define STAMP(t) t = __hxcpp_time_stamp();
+   #define STAMP(t) double t = __hxcpp_time_stamp();
    static double sLastCollect = __hxcpp_time_stamp();
 #else
    #define STAMP(t)
@@ -1172,26 +1172,7 @@ struct MarkInfo
    const char *mMember;
 };
 
-struct MarkChunk
-{
-   enum { SIZE = 31 };
 
-   MarkChunk() : count(0) { }
-   Object *stack[SIZE];
-   int    count;
-
-   inline void push(Object *inObj)
-   {
-      stack[count++] = inObj;
-   }
-   inline Object *pop()
-   {
-      if (count)
-         return stack[--count];
-      return 0;
-   }
-
-};
 
 
 struct GlobalChunks
@@ -1244,6 +1225,26 @@ struct GlobalChunks
       {
          chunks.push(inChunk);
          return allocLocked();
+      }
+   }
+
+   void addLocked(MarkChunk *inChunk)
+   {
+      chunks.push(inChunk);
+   }
+
+   void copyPointers( QuickVec<hx::Object *> outPointers)
+   {
+      int size = 0;
+      for(int i=0;i<chunks.size();i++)
+         size += chunks[i]->count;
+      outPointers.setSize(size);
+      int idx = 0;
+      while(chunks.size())
+      {
+         MarkChunk *c = chunks.pop();
+         for(int i=0;i<c->count;i++)
+            outPointers[idx++] = c->stack[i];
       }
    }
 
@@ -1355,9 +1356,9 @@ struct GlobalChunks
       return spare.pop();
    }
 
-   MarkChunk *alloc()
+   MarkChunk *alloc(bool inForceLock = false)
    {
-      if (MAX_MARK_THREADS>1 && sAllThreads)
+      if (inForceLock || (MAX_MARK_THREADS>1 && sAllThreads))
       {
          ThreadPoolAutoLock l(sThreadPoolLock);
          return allocLocked();
@@ -3510,31 +3511,35 @@ public:
    #endif
 
 
-   void MarkAll()
+   void MarkAll(bool inGenerational)
    {
-      // The most-significant header byte looks like:
-      // C nH Odd Even  c c c c
-      //  C = "is const alloc bit" - in this case Odd and Even will be false
-      // nH = non-hashed const string bit
-      // Odd = true if cycle is odd
-      // Even = true if cycle is even
-      // c c c c = 4 bit cycle code
-      //
-      hx::gPrevMarkIdMask = ((~hx::gMarkID) & 0x30000000) | HX_GC_CONST_ALLOC_BIT;
+      if (!inGenerational)
+      {
+         // The most-significant header byte looks like:
+         // C nH Odd Even  c c c c
+         //  C = "is const alloc bit" - in this case Odd and Even will be false
+         // nH = non-hashed const string bit
+         // Odd = true if cycle is odd
+         // Even = true if cycle is even
+         // c c c c = 4 bit cycle code
+         //
+         hx::gPrevMarkIdMask = ((~hx::gMarkID) & 0x30000000) | HX_GC_CONST_ALLOC_BIT;
 
-      // 4 bits of cycle
-      gByteMarkID = (gByteMarkID + 1) & 0x0f;
-      if (gByteMarkID & 0x1)
-         gByteMarkID |= 0x20;
-      else
-         gByteMarkID |= 0x10;
+         // 4 bits of cycle
+         gByteMarkID = (gByteMarkID + 1) & 0x0f;
+         if (gByteMarkID & 0x1)
+            gByteMarkID |= 0x20;
+         else
+            gByteMarkID |= 0x10;
 
-      hx::gMarkID = gByteMarkID << 24;
-      hx::gMarkIDWithContainer = (gByteMarkID << 24) | IMMIX_ALLOC_IS_CONTAINER;
+         hx::gMarkID = gByteMarkID << 24;
+         hx::gMarkIDWithContainer = (gByteMarkID << 24) | IMMIX_ALLOC_IS_CONTAINER;
 
-      gBlockStack = 0;
+         gBlockStack = 0;
 
-      ClearRowMarks();
+         ClearRowMarks();
+      }
+
 
       mMarker.init();
 
@@ -3605,18 +3610,8 @@ public:
    }
 
 
-   bool scavenge()
-   {
-      return false;
-   }
-
-
    void Collect(bool inMajor, bool inForceCompact, bool inLocked=false)
    {
-      #ifdef PROFILE_COLLECT
-      double t0,t1,t2,t3,t4,t5,t6;
-      #endif
-
       // If we set the flag from 0 -> 0xffffffff then we are the collector
       //  otherwise, someone else is collecting at the moment - so wait...
       if (!HxAtomicExchangeIf(0, 0xffffffff,(volatile int *)&hx::gPauseForCollect))
@@ -3679,243 +3674,248 @@ public:
 
 
       #ifdef HXCPP_GC_GENERATIONAL
-      if (scavenge())
+      for(int i=0;i<mLocalAllocs.size();i++)
       {
-         // All good!
+         hx::StackContext *ctx = (hx::StackContext *)mLocalAllocs[i];
+         if( ctx->mOldReferrers->count )
+             hx::sGlobalChunks.addLocked( ctx->mOldReferrers );
+         else
+             hx::sGlobalChunks.freeLocked( ctx->mOldReferrers );
+         ctx->mOldReferrers = 0;
       }
-      else
+
+      MarkAll(true);
+      #else
+      MarkAll(false);
       #endif
+
+      STAMP(t2)
+
+
+      #ifdef HXCPP_TELEMETRY
+      // Detect deallocations - TODO: add STAMP() ?
+      __hxt_gc_after_mark(gByteMarkID, ENDIAN_MARK_ID_BYTE);
+      #endif
+
+      // Sweep large
+      int idx = 0;
+      int l0 = mLargeList.size();
+      // Android apprears to be really slow calling free - consider
+      //  doing this async, or maybe using a freeList
+      #ifdef ASYNC_FREE
+      hx::QuickVec<void *> freeList;
+      #endif
+      while(idx<mLargeList.size())
       {
-         MarkAll();
-
-         STAMP(t2)
-
-
-         #ifdef HXCPP_TELEMETRY
-         // Detect deallocations - TODO: add STAMP() ?
-         __hxt_gc_after_mark(gByteMarkID, ENDIAN_MARK_ID_BYTE);
-         #endif
-
-         // Sweep large
-         int idx = 0;
-         int l0 = mLargeList.size();
-         // Android apprears to be really slow calling free - consider
-         //  doing this async, or maybe using a freeList
-         #ifdef ASYNC_FREE
-         hx::QuickVec<void *> freeList;
-         #endif
-         while(idx<mLargeList.size())
+         unsigned int *blob = mLargeList[idx];
+         if ( (blob[1] & IMMIX_ALLOC_MARK_ID) != hx::gMarkID )
          {
-            unsigned int *blob = mLargeList[idx];
-            if ( (blob[1] & IMMIX_ALLOC_MARK_ID) != hx::gMarkID )
-            {
-               mLargeAllocated -= *blob;
-               #ifdef ASYNC_FREE
-               freeList.push(mLargeList[idx]);
-               #else
-               HxFree(mLargeList[idx]);
-               #endif
-
-               mLargeList.qerase(idx);
-            }
-            else
-               idx++;
-         }
-         #ifdef ASYNC_FREE
-         for(int i=0;i<freeList.size();i++)
-            HxFree(freeList[i]);
-         #endif
-
-         int l1 = mLargeList.size();
-         STAMP(t3)
-
-
-
-         // Sweep blocks
-
-         // Update table entries?  This needs to be done before the gMarkId count clocks
-         //  back to the same number
-         sgTimeToNextTableUpdate--;
-         bool full = inMajor || (sgTimeToNextTableUpdate<=0) || inForceCompact;
-
-
-         // Setup memory target ...
-         // Count free rows, and prep blocks for sorting
-         BlockDataStats stats;
-         reclaimBlocks(full,stats);
-         #ifdef HXCPP_GC_MOVING
-         if (!full)
-         {
-            double useRatio = (double)(stats.rowsInUse<<IMMIX_LINE_BITS) / (sWorkingMemorySize);
-            #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-               GCLOG("Row use ratio:%f\n", useRatio);
+            mLargeAllocated -= *blob;
+            #ifdef ASYNC_FREE
+            freeList.push(mLargeList[idx]);
+            #else
+            HxFree(mLargeList[idx]);
             #endif
-            // Could be either expanding, or fragmented...
-            if (useRatio>0.75)
+
+            mLargeList.qerase(idx);
+         }
+         else
+            idx++;
+      }
+      #ifdef ASYNC_FREE
+      for(int i=0;i<freeList.size();i++)
+         HxFree(freeList[i]);
+      #endif
+
+      int l1 = mLargeList.size();
+      STAMP(t3)
+
+
+
+      // Sweep blocks
+
+      // Update table entries?  This needs to be done before the gMarkId count clocks
+      //  back to the same number
+      sgTimeToNextTableUpdate--;
+      bool full = inMajor || (sgTimeToNextTableUpdate<=0) || inForceCompact;
+
+
+      // Setup memory target ...
+      // Count free rows, and prep blocks for sorting
+      BlockDataStats stats;
+      reclaimBlocks(full,stats);
+      #ifdef HXCPP_GC_MOVING
+      if (!full)
+      {
+         double useRatio = (double)(stats.rowsInUse<<IMMIX_LINE_BITS) / (sWorkingMemorySize);
+         #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+            GCLOG("Row use ratio:%f\n", useRatio);
+         #endif
+         // Could be either expanding, or fragmented...
+         if (useRatio>0.75)
+         {
+            #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+               GCLOG("Do full stats\n", useRatio);
+            #endif
+            full = true;
+            stats.clear();
+            reclaimBlocks(full,stats);
+         }
+      }
+      #endif
+
+      if (full)
+         sgTimeToNextTableUpdate = 15;
+
+      mRowsInUse = stats.rowsInUse;
+      bool moved = false;
+      size_t bytesInUse = stats.bytesInUse;
+      #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+      GCLOG("Total memory : %s\n", formatBytes(GetWorkingMemory()).c_str());
+      GCLOG("  reserved bytes : %s\n", formatBytes((size_t)mRowsInUse*IMMIX_LINE_LEN).c_str());
+      if (full)
+      {
+         GCLOG("  active bytes   : %s\n", formatBytes(bytesInUse).c_str());
+         GCLOG("  active ratio   : %f\n", (double)bytesInUse/( mRowsInUse*IMMIX_LINE_LEN));
+         GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
+         GCLOG("  fragged score  : %f\n", (double)stats.fragScore/mAllBlocks.size() );
+      }
+      GCLOG("  large size   : %s\n", formatBytes(mLargeAllocated).c_str());
+      GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
+      #endif
+
+
+      STAMP(t4)
+
+      bool defragged = false;
+
+      // Compact/Defrag?
+      #if defined(HXCPP_GC_MOVING) && defined(HXCPP_VISIT_ALLOCS)
+      if (full)
+      {
+         bool doRelease = false;
+
+         if (inForceCompact)
+            doRelease = true;
+         else
+         {
+            size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
+            size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, mem/100 * (size_t)hx::sgTargetFreeSpacePercentage );
+            targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
+            sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
+
+            size_t allMem = GetWorkingMemory();
+            // 8 Meg too much?
+            size_t allowExtra = std::max( (size_t)8*1024*1024, sWorkingMemorySize*5/4 );
+
+            if ( allMem > sWorkingMemorySize + allowExtra )
             {
                #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-                  GCLOG("Do full stats\n", useRatio);
+               int releaseGroups = (int)((allMem - sWorkingMemorySize) / (IMMIX_BLOCK_SIZE<<IMMIX_BLOCK_GROUP_BITS));
+               if (releaseGroups)
+                  GCLOG("Try to release %d groups\n", releaseGroups );
                #endif
-               full = true;
-               stats.clear();
-               reclaimBlocks(full,stats);
-            }
-         }
-         #endif
-
-         if (full)
-            sgTimeToNextTableUpdate = 15;
-
-         mRowsInUse = stats.rowsInUse;
-         bool moved = false;
-         size_t bytesInUse = stats.bytesInUse;
-         #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-         GCLOG("Total memory : %s\n", formatBytes(GetWorkingMemory()).c_str());
-         GCLOG("  reserved bytes : %s\n", formatBytes((size_t)mRowsInUse*IMMIX_LINE_LEN).c_str());
-         if (full)
-         {
-            GCLOG("  active bytes   : %s\n", formatBytes(bytesInUse).c_str());
-            GCLOG("  active ratio   : %f\n", (double)bytesInUse/( mRowsInUse*IMMIX_LINE_LEN));
-            GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
-            GCLOG("  fragged score  : %f\n", (double)stats.fragScore/mAllBlocks.size() );
-         }
-         GCLOG("  large size   : %s\n", formatBytes(mLargeAllocated).c_str());
-         GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
-         #endif
-
-
-         STAMP(t4)
-
-         bool defragged = false;
-
-         // Compact/Defrag?
-         #if defined(HXCPP_GC_MOVING) && defined(HXCPP_VISIT_ALLOCS)
-         if (full)
-         {
-            bool doRelease = false;
-
-            if (inForceCompact)
                doRelease = true;
-            else
-            {
-               size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
-               size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, mem/100 * (size_t)hx::sgTargetFreeSpacePercentage );
-               targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
-               sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
-
-               size_t allMem = GetWorkingMemory();
-               // 8 Meg too much?
-               size_t allowExtra = std::max( (size_t)8*1024*1024, sWorkingMemorySize*5/4 );
-
-               if ( allMem > sWorkingMemorySize + allowExtra )
-               {
-                  #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-                  int releaseGroups = (int)((allMem - sWorkingMemorySize) / (IMMIX_BLOCK_SIZE<<IMMIX_BLOCK_GROUP_BITS));
-                  if (releaseGroups)
-                     GCLOG("Try to release %d groups\n", releaseGroups );
-                  #endif
-                  doRelease = true;
-               }
-            }
-
-
-            if (doRelease || stats.fragScore > mAllBlocks.size()*FRAG_THRESH || hx::gAlwaysMove)
-            {
-               calcMoveOrder( );
-
-               // Borrow some blocks to ensuure space to defrag into
-               int workingBlocks = mAllBlocks.size()*3/2 - stats.emptyBlocks;
-               int borrowed = 0;
-               while( mAllBlocks.size()<workingBlocks )
-               {
-                  bool dummy = false;
-                  if (!AllocMoreBlocks(dummy, true))
-                     break;
-                  doRelease = true;
-                  borrowed++;
-               }
-               stats.emptyBlocks += borrowed;
-               #if defined(SHOW_FRAGMENTATION)
-                  GCLOG("Borrowed %d groups for %d target blocks\n", borrowed, workingBlocks);
-               #endif
-
-               MoveBlockJob job(mAllBlocks);
-
-               if (MoveBlocks(job,stats) || doRelease)
-               {
-
-                  if (doRelease)
-                  {
-                     size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
-                     size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, bytesInUse/100 *hx::sgTargetFreeSpacePercentage );
-                     targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
-                     size_t targetMem = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory) +
-                                           (2<<(IMMIX_BLOCK_GROUP_BITS+IMMIX_BLOCK_BITS));
-
-                     if (inForceCompact)
-                        targetMem = 0;
-                     size_t have = GetWorkingMemory();
-                     if (targetMem<have)
-                     {
-                        size_t releaseSize = have - targetMem;
-                        #ifdef SHOW_FRAGMENTATION
-                        GCLOG(" Release %s bytes to leave %s\n", formatBytes(releaseSize).c_str(), formatBytes(targetMem).c_str() );
-                        #endif
-
-                        int releasedBlocks = releaseEmptyGroups(stats, releaseSize);
-                        #ifdef SHOW_FRAGMENTATION
-                        int releasedGroups = releasedBlocks >> IMMIX_BLOCK_GROUP_BITS;
-                        GCLOG(" Released %s, %d groups\n", formatBytes((size_t)releasedBlocks<<IMMIX_BLOCK_BITS).c_str(), releasedGroups );
-                        #endif
-                     }
-                  }
-
-                  // Reduce sWorkingMemorySize now we have defragged
-                  #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-                  GCLOG("After compacting---\n");
-                  GCLOG("  total memory : %s\n", formatBytes(GetWorkingMemory()).c_str() );
-                  GCLOG("  total needed : %s\n", formatBytes((size_t)stats.rowsInUse*IMMIX_LINE_LEN).c_str() );
-                  GCLOG("  for bytes    : %s\n", formatBytes(bytesInUse).c_str() );
-                  GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
-                  GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
-                  #endif
-               }
             }
          }
-         #endif
-
-         STAMP(t5)
-
-         size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
-         size_t baseMem = full ? bytesInUse : mem;
-         size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, baseMem/100 *hx::sgTargetFreeSpacePercentage );
-         targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
-         sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
-
-         #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-         GCLOG("Target memory %s, using %s\n",  formatBytes(sWorkingMemorySize).c_str(), formatBytes(mem).c_str() );
-         #endif
-
-    
-         // Large alloc target
-         int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
-         if (blockSize > mLargeAllocSpace)
-            mLargeAllocSpace = blockSize;
-         mLargeAllocForceRefresh = mLargeAllocated + mLargeAllocSpace;
-
-         mTotalAfterLastCollect = MemUsage();
 
 
-         #ifdef HXCPP_GC_MOVING
-         // Don't add all the blocks for allocating into...
-         createFreeList(sWorkingMemorySize-mem, true);
-         #else
-         createFreeList(sWorkingMemorySize-mem, false);
-         #endif
+         if (doRelease || stats.fragScore > mAllBlocks.size()*FRAG_THRESH || hx::gAlwaysMove)
+         {
+            calcMoveOrder( );
 
-         mAllBlocksCount   = mAllBlocks.size();
-         mCurrentRowsInUse = mRowsInUse;
+            // Borrow some blocks to ensuure space to defrag into
+            int workingBlocks = mAllBlocks.size()*3/2 - stats.emptyBlocks;
+            int borrowed = 0;
+            while( mAllBlocks.size()<workingBlocks )
+            {
+               bool dummy = false;
+               if (!AllocMoreBlocks(dummy, true))
+                  break;
+               doRelease = true;
+               borrowed++;
+            }
+            stats.emptyBlocks += borrowed;
+            #if defined(SHOW_FRAGMENTATION)
+               GCLOG("Borrowed %d groups for %d target blocks\n", borrowed, workingBlocks);
+            #endif
+
+            MoveBlockJob job(mAllBlocks);
+
+            if (MoveBlocks(job,stats) || doRelease)
+            {
+
+               if (doRelease)
+               {
+                  size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
+                  size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, bytesInUse/100 *hx::sgTargetFreeSpacePercentage );
+                  targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
+                  size_t targetMem = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory) +
+                                        (2<<(IMMIX_BLOCK_GROUP_BITS+IMMIX_BLOCK_BITS));
+
+                  if (inForceCompact)
+                     targetMem = 0;
+                  size_t have = GetWorkingMemory();
+                  if (targetMem<have)
+                  {
+                     size_t releaseSize = have - targetMem;
+                     #ifdef SHOW_FRAGMENTATION
+                     GCLOG(" Release %s bytes to leave %s\n", formatBytes(releaseSize).c_str(), formatBytes(targetMem).c_str() );
+                     #endif
+
+                     int releasedBlocks = releaseEmptyGroups(stats, releaseSize);
+                     #ifdef SHOW_FRAGMENTATION
+                     int releasedGroups = releasedBlocks >> IMMIX_BLOCK_GROUP_BITS;
+                     GCLOG(" Released %s, %d groups\n", formatBytes((size_t)releasedBlocks<<IMMIX_BLOCK_BITS).c_str(), releasedGroups );
+                     #endif
+                  }
+               }
+
+               // Reduce sWorkingMemorySize now we have defragged
+               #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+               GCLOG("After compacting---\n");
+               GCLOG("  total memory : %s\n", formatBytes(GetWorkingMemory()).c_str() );
+               GCLOG("  total needed : %s\n", formatBytes((size_t)stats.rowsInUse*IMMIX_LINE_LEN).c_str() );
+               GCLOG("  for bytes    : %s\n", formatBytes(bytesInUse).c_str() );
+               GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
+               GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
+               #endif
+            }
+         }
       }
+      #endif
+
+      STAMP(t5)
+
+      size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
+      size_t baseMem = full ? bytesInUse : mem;
+      size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, baseMem/100 *hx::sgTargetFreeSpacePercentage );
+      targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
+      sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
+
+      #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+      GCLOG("Target memory %s, using %s\n",  formatBytes(sWorkingMemorySize).c_str(), formatBytes(mem).c_str() );
+      #endif
+
+ 
+      // Large alloc target
+      int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
+      if (blockSize > mLargeAllocSpace)
+         mLargeAllocSpace = blockSize;
+      mLargeAllocForceRefresh = mLargeAllocated + mLargeAllocSpace;
+
+      mTotalAfterLastCollect = MemUsage();
+
+
+      #ifdef HXCPP_GC_MOVING
+      // Don't add all the blocks for allocating into...
+      createFreeList(sWorkingMemorySize-mem, true);
+      #else
+      createFreeList(sWorkingMemorySize-mem, false);
+      #endif
+
+      mAllBlocksCount   = mAllBlocks.size();
+      mCurrentRowsInUse = mRowsInUse;
 
       #ifdef SHOW_MEM_EVENTS
       GCLOG("Collect Done\n");
@@ -3930,6 +3930,14 @@ public:
               (t1-t0)*1000, (t2-t1)*1000, l0, l1, (t3-t2)*1000, (t4-t3)*1000,
               (t5-t4)*1000
               );
+      #endif
+
+      #ifdef HXCPP_GC_GENERATIONAL
+      for(int i=0;i<mLocalAllocs.size();i++)
+      {
+         hx::StackContext *ctx = (hx::StackContext *)mLocalAllocs[i];
+         ctx->mOldReferrers = hx::sGlobalChunks.allocLocked();
+      }
       #endif
 
       #ifdef HXCPP_TELEMETRY
@@ -4219,6 +4227,10 @@ public:
       #ifdef HX_WINDOWS
       mID = GetCurrentThreadId();
       #endif
+      #ifdef HX_GC_GENERATIONAL
+      mOldReferrers = sGlobalChunks.alloc(gMultiThreadMode);
+      #endif
+
    }
 
    ~LocalAllocator()
