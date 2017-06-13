@@ -10,13 +10,14 @@
 #include <stdlib.h>
 
 
-static int gByteMarkID = 0x10;
 static bool sgIsCollecting = false;
 
 namespace hx
 {
-   unsigned int gPrevMarkIdMask = 0;
+   int gByteMarkID = 0x10;
 }
+
+using hx::gByteMarkID;
 
 // #define HXCPP_SINGLE_THREADED_APP
 
@@ -171,7 +172,7 @@ static int sgAllocsSinceLastSpam = 0;
 extern void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size);
 extern void __hxt_gc_start();
 extern void __hxt_gc_end();
-extern void __hxt_gc_after_mark(int gByteMarkID, int ENDIAN_MARK_ID_BYTE);
+extern void __hxt_gc_after_mark(int gByteMarkID, int HX_ENDIAN_MARK_ID_BYTE);
 #endif
 
 static int sgTimeToNextTableUpdate = 1;
@@ -206,6 +207,20 @@ unsigned int gImmixStartFlag[128];
 
 int gMarkID = 0x10 << 24;
 int gMarkIDWithContainer = (0x10 << 24) | IMMIX_ALLOC_IS_CONTAINER;
+
+
+
+#ifdef HXCPP_GC_GENERATIONAL
+int gPrevByteMarkID = 0x1f;
+unsigned int gPrevMarkIdMask = ((~0x1f000000) & 0x30000000) | HX_GC_CONST_ALLOC_BIT;
+#else
+int gPrevByteMarkID = 0;
+unsigned int gPrevMarkIdMask = 0;
+#endif
+
+
+
+
 
 void ExitGCFreeZoneLocked();
 
@@ -293,18 +308,13 @@ extern void scriptMarkStack(hx::MarkContext *);
  |MID |    |     |      | obj start here .....
  -----------------------
 
-MID = ENDIAN_MARK_ID_BYTE = is measured from the object pointer
-      ENDIAN_MARK_ID_BYTE_HEADER = is measured from the header pointer (4 bytes before object)
+MID = HX_ENDIAN_MARK_ID_BYTE = is measured from the object pointer
+      HX_ENDIAN_MARK_ID_BYTE_HEADER = is measured from the header pointer (4 bytes before object)
 
 
 */
 
-#ifndef HXCPP_BIG_ENDIAN
-#define ENDIAN_MARK_ID_BYTE        -1
-#else
-#define ENDIAN_MARK_ID_BYTE        -4
-#endif
-#define ENDIAN_MARK_ID_BYTE_HEADER (ENDIAN_MARK_ID_BYTE + 4)
+#define HX_ENDIAN_MARK_ID_BYTE_HEADER (HX_ENDIAN_MARK_ID_BYTE + 4)
 
 
 // Used by strings
@@ -792,7 +802,7 @@ struct BlockDataInfo
    // When known to be an actual object start...
    AllocType GetAllocTypeChecked(int inOffset)
    {
-      char time = mPtr->mRow[0][inOffset+ENDIAN_MARK_ID_BYTE_HEADER];
+      char time = mPtr->mRow[0][inOffset+HX_ENDIAN_MARK_ID_BYTE_HEADER];
       if ( ((time+1) & MARK_BYTE_MASK) != (gByteMarkID & MARK_BYTE_MASK)  )
       {
          // Object is either out-of-date, or already marked....
@@ -1025,7 +1035,7 @@ struct BlockDataInfo
             {
                int pos = i<<2;
                if ( (starts & (1<<i)) &&
-                   (row[pos+ENDIAN_MARK_ID_BYTE_HEADER]&FULL_MARK_BYTE_MASK) == gByteMarkID)
+                   (row[pos+HX_ENDIAN_MARK_ID_BYTE_HEADER]&FULL_MARK_BYTE_MASK) == gByteMarkID)
                   {
                      if ( (*(unsigned int *)(row+pos)) & IMMIX_ALLOC_IS_CONTAINER )
                      {
@@ -1144,7 +1154,7 @@ void GCCheckPointer(void *inPtr)
   }
   #endif
 
-   unsigned char&mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE];
+   unsigned char&mark = ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE];
    #ifdef HXCPP_GC_NURSERY
    if (mark)
    #endif
@@ -1233,7 +1243,7 @@ struct GlobalChunks
       chunks.push(inChunk);
    }
 
-   void copyPointers( QuickVec<hx::Object *> outPointers)
+   void copyPointers( QuickVec<hx::Object *> &outPointers)
    {
       int size = 0;
       for(int i=0;i<chunks.size();i++)
@@ -1633,7 +1643,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
    }
    else
    #endif
-      ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE] = gByteMarkID;
+      ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
 
    int rows = flags & IMMIX_ALLOC_ROW_COUNT;
    if (rows)
@@ -1690,7 +1700,7 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
    }
    else
    #endif
-      ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE] = gByteMarkID;
+      ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
 
    int rows = flags & IMMIX_ALLOC_ROW_COUNT;
    if (rows)
@@ -1995,7 +2005,7 @@ void FindZombies(MarkContext &inContext)
       MakeZombieSet::iterator next = i;
       ++next;
 
-      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
+      unsigned char mark = ((unsigned char *)obj)[HX_ENDIAN_MARK_ID_BYTE];
       if ( mark!=gByteMarkID )
       {
          sZombieList.push(obj);
@@ -2013,7 +2023,7 @@ void FindZombies(MarkContext &inContext)
 
 bool IsWeakRefValid(const HX_CHAR *inPtr)
 {
-   unsigned char mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE];
+   unsigned char mark = ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE];
 
     // Special case of member closure - check if the 'this' pointer is still alive
    return  mark==gByteMarkID;
@@ -2021,7 +2031,7 @@ bool IsWeakRefValid(const HX_CHAR *inPtr)
 
 bool IsWeakRefValid(hx::Object *inPtr)
 {
-   unsigned char mark = ((unsigned char *)inPtr)[ENDIAN_MARK_ID_BYTE];
+   unsigned char mark = ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE];
 
     // Special case of member closure - check if the 'this' pointer is still alive
     bool isCurrent = mark==gByteMarkID;
@@ -2030,7 +2040,7 @@ bool IsWeakRefValid(hx::Object *inPtr)
         hx::Object *thiz = (hx::Object *)inPtr->__GetHandle();
         if (thiz)
         {
-            mark = ((unsigned char *)thiz)[ENDIAN_MARK_ID_BYTE];
+            mark = ((unsigned char *)thiz)[HX_ENDIAN_MARK_ID_BYTE];
             if (mark==gByteMarkID)
             {
                // The object is still alive, so mark the closure and continue
@@ -2111,7 +2121,7 @@ void RunFinalizers()
    while(idx<sFinalizableList.size())
    {
       Finalizable &f = sFinalizableList[idx];
-      unsigned char mark = ((unsigned char *)f.base)[ENDIAN_MARK_ID_BYTE];
+      unsigned char mark = ((unsigned char *)f.base)[HX_ENDIAN_MARK_ID_BYTE];
       if ( mark!=gByteMarkID )
       {
          f.run();
@@ -2127,7 +2137,7 @@ void RunFinalizers()
       FinalizerMap::iterator next = i;
       ++next;
 
-      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
+      unsigned char mark = ((unsigned char *)obj)[HX_ENDIAN_MARK_ID_BYTE];
       if ( mark!=gByteMarkID )
       {
          (*i->second)(obj);
@@ -2144,7 +2154,7 @@ void RunFinalizers()
       HaxeFinalizerMap::iterator next = i;
       ++next;
 
-      unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
+      unsigned char mark = ((unsigned char *)obj)[HX_ENDIAN_MARK_ID_BYTE];
       if ( mark!=gByteMarkID )
       {
          (*i->second)(obj);
@@ -2159,7 +2169,7 @@ void RunFinalizers()
       ObjectIdMap::iterator next = i;
       next++;
 
-      unsigned char mark = ((unsigned char *)i->first)[ENDIAN_MARK_ID_BYTE];
+      unsigned char mark = ((unsigned char *)i->first)[HX_ENDIAN_MARK_ID_BYTE];
       if ( mark!=gByteMarkID )
       {
          sFreeObjectIds.push(i->second);
@@ -2173,7 +2183,7 @@ void RunFinalizers()
    for(int i=0;i<sWeakHashList.size();    )
    {
       HashRoot *ref = sWeakHashList[i];
-      unsigned char mark = ((unsigned char *)ref)[ENDIAN_MARK_ID_BYTE];
+      unsigned char mark = ((unsigned char *)ref)[HX_ENDIAN_MARK_ID_BYTE];
       // Object itself is gone - no need to worry about that again
       if ( mark!=gByteMarkID )
       {
@@ -2192,7 +2202,7 @@ void RunFinalizers()
    for(int i=0;i<sWeakRefs.size();    )
    {
       WeakRef *ref = sWeakRefs[i];
-      unsigned char mark = ((unsigned char *)ref)[ENDIAN_MARK_ID_BYTE];
+      unsigned char mark = ((unsigned char *)ref)[HX_ENDIAN_MARK_ID_BYTE];
       // Object itself is gone ...
       if ( mark!=gByteMarkID )
       {
@@ -2203,7 +2213,7 @@ void RunFinalizers()
       {
          // what about the reference?
          hx::Object *r = ref->mRef.mPtr;
-         unsigned char mark = ((unsigned char *)r)[ENDIAN_MARK_ID_BYTE];
+         unsigned char mark = ((unsigned char *)r)[HX_ENDIAN_MARK_ID_BYTE];
 
          // Special case of member closure - check if the 'this' pointer is still alive
          if ( mark!=gByteMarkID && r->__GetType()==vtFunction)
@@ -2211,7 +2221,7 @@ void RunFinalizers()
             hx::Object *thiz = (hx::Object *)r->__GetHandle();
             if (thiz)
             {
-               mark = ((unsigned char *)thiz)[ENDIAN_MARK_ID_BYTE];
+               mark = ((unsigned char *)thiz)[HX_ENDIAN_MARK_ID_BYTE];
                if (mark==gByteMarkID)
                {
                   // The object is still alive, so mark the closure and continue
@@ -2392,6 +2402,7 @@ public:
 
 
 class GlobalAllocator *sGlobalAlloc = 0;
+
 
 inline bool SortByBlockPtr(BlockDataInfo *inA, BlockDataInfo *inB)
 {
@@ -3515,6 +3526,8 @@ public:
    {
       if (!inGenerational)
       {
+         hx::gPrevByteMarkID = hx::gByteMarkID;
+
          // The most-significant header byte looks like:
          // C nH Odd Even  c c c c
          //  C = "is const alloc bit" - in this case Odd and Even will be false
@@ -3674,6 +3687,12 @@ public:
 
 
       #ifdef HXCPP_GC_GENERATIONAL
+      bool compactSurviors = false;
+
+      hx::QuickVec<hx::Object *> rememberedSet;
+      if (compactSurviors)
+         hx::sGlobalChunks.copyPointers(rememberedSet);
+
       for(int i=0;i<mLocalAllocs.size();i++)
       {
          hx::StackContext *ctx = (hx::StackContext *)mLocalAllocs[i];
@@ -3694,7 +3713,7 @@ public:
 
       #ifdef HXCPP_TELEMETRY
       // Detect deallocations - TODO: add STAMP() ?
-      __hxt_gc_after_mark(gByteMarkID, ENDIAN_MARK_ID_BYTE);
+      __hxt_gc_after_mark(gByteMarkID, HX_ENDIAN_MARK_ID_BYTE);
       #endif
 
       // Sweep large
@@ -3883,6 +3902,11 @@ public:
             }
          }
       }
+      #ifdef HXCPP_GC_GENERATIONAL
+      else if (compactSurviors)
+      {
+      }
+      #endif
       #endif
 
       STAMP(t5)
@@ -3925,6 +3949,7 @@ public:
       STAMP(t6)
       double period = t6-sLastCollect;
       sLastCollect=t6;
+      //GCLOG("Collect time total=%.2fms\n", (t6-t0)*1000);
       GCLOG("Collect time total=%.2fms =%.1f%%\n   sync=%.2f\n   mark=%.2f\n   large(%d-%d)=%.2f\n   stats=%.2f\n   defrag=%.2f\n",
               (t6-t0)*1000, (t6-t0)*100.0/period,
               (t1-t0)*1000, (t2-t1)*1000, l0, l1, (t3-t2)*1000, (t4-t3)*1000,
@@ -4131,6 +4156,26 @@ public:
 namespace hx
 {
 
+MarkChunk *MarkChunk::getNext()
+{
+   if (gMultiThreadMode)
+   {
+      ThreadPoolAutoLock l(sThreadPoolLock);
+      sGlobalChunks.addLocked(this);
+      return sGlobalChunks.allocLocked();
+   }
+   else
+   {
+      sGlobalChunks.addLocked(this);
+      return sGlobalChunks.allocLocked();
+   }
+}
+
+
+
+
+
+
 void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 {
    #ifdef VERIFY_STACK_READ
@@ -4164,7 +4209,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
       {
          if (mem==memLarge)
          {
-            unsigned char &mark = ((unsigned char *)(vptr))[ENDIAN_MARK_ID_BYTE];
+            unsigned char &mark = ((unsigned char *)(vptr))[HX_ENDIAN_MARK_ID_BYTE];
             if (mark!=gByteMarkID)
                mark = gByteMarkID;
          }
@@ -4227,8 +4272,8 @@ public:
       #ifdef HX_WINDOWS
       mID = GetCurrentThreadId();
       #endif
-      #ifdef HX_GC_GENERATIONAL
-      mOldReferrers = sGlobalChunks.alloc(gMultiThreadMode);
+      #ifdef HXCPP_GC_GENERATIONAL
+      mOldReferrers = hx::sGlobalChunks.alloc(hx::gMultiThreadMode);
       #endif
 
    }
@@ -4953,6 +4998,13 @@ void *InternalRealloc(void *inData,int inSize)
    int min_size = s < inSize ? s : inSize;
 
    memcpy(new_data, inData, min_size );
+
+   #ifdef HXCPP_GC_GENERATIONAL
+   if (s>=IMMIX_LARGE_OBJ_SIZE)
+   {
+      // TODO - mark/free inData
+   }
+   #endif
 
    return new_data;
 }

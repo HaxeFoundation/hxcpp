@@ -163,6 +163,9 @@ extern int sgMinimumFreeSpace;
 extern int sgTargetFreeSpacePercentage;
 
 
+extern HXCPP_EXTERN_CLASS_ATTRIBUTES int gByteMarkID;
+extern HXCPP_EXTERN_CLASS_ATTRIBUTES int gPrevByteMarkID;
+
 // Call in response to a gPauseForCollect. Normally, this is done for you in "new"
 void PauseForCollect();
 
@@ -299,11 +302,13 @@ namespace hx
 #define HX_GC_STRING_HASH_BIT      0x10
 
 #ifdef HXCPP_BIG_ENDIAN
-   #define HX_GC_STRING_HASH_OFFSET -3
-   #define HX_GC_CONST_ALLOC_MARK_OFFSET -4
+   #define HX_GC_STRING_HASH_OFFSET        -3
+   #define HX_GC_CONST_ALLOC_MARK_OFFSET   -4
+   #define HX_ENDIAN_MARK_ID_BYTE        -4
 #else
-   #define HX_GC_STRING_HASH_OFFSET -2
-   #define HX_GC_CONST_ALLOC_MARK_OFFSET -1
+   #define HX_GC_STRING_HASH_OFFSET        -2
+   #define HX_GC_CONST_ALLOC_MARK_OFFSET   -1
+   #define HX_ENDIAN_MARK_ID_BYTE       -1
 #endif
 
 extern bool gMultiThreadMode;
@@ -409,8 +414,19 @@ public:
 typedef ImmixAllocator GcAllocator;
 typedef ImmixAllocator Ctx;
 
-#define HX_OBJ_WB(obj,value)
-#define HX_ARRAY_WB(array,index,value)
+#ifdef HXCPP_GC_GENERATIONAL
+  #define HX_OBJ_WB(obj,value) \
+     if ( ((unsigned char *)this)[ HX_ENDIAN_MARK_ID_BYTE  ]==hx::gByteMarkID && \
+         value &&  !((unsigned char *)this)[ HX_ENDIAN_MARK_ID_BYTE  ] )  { \
+        ((unsigned char *)this)[ HX_ENDIAN_MARK_ID_BYTE ]=hx::gPrevByteMarkID; \
+        _hx_ctx->pushReferrer(this); \
+     }
+
+  #define HX_ARRAY_WB(array,index,value) HX_OBJ_WB(obj,value)
+#else
+  #define HX_OBJ_WB(obj,value)
+  #define HX_ARRAY_WB(array,index,value)
+#endif
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES extern unsigned int gPrevMarkIdMask;
@@ -426,7 +442,7 @@ inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
    if ( !( ((size_t)inPtr) & 3) )
    #endif
    // This will also skip const regions
-   if ( !(((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask) )
+   if ( !(((unsigned int *)inPtr)[-1] & gPrevMarkIdMask) )
       MarkAllocUnchecked(inPtr,__inCtx);
 }
 inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
@@ -436,7 +452,7 @@ inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
    if ( !( ((size_t)inPtr) & 3) )
    #endif
    // This will also skip const regions
-   if ( !(((unsigned int *)inPtr)[-1] & hx::gPrevMarkIdMask) )
+   if ( !(((unsigned int *)inPtr)[-1] & gPrevMarkIdMask) )
       MarkObjectAllocUnchecked(inPtr,__inCtx);
 }
 

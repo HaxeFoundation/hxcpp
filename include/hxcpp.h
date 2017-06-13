@@ -276,6 +276,7 @@ namespace hx
 {
 class MarkContext;
 
+
 class VisitContext
 {
 public:

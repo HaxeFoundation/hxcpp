@@ -387,12 +387,18 @@ template<> inline bool TypeContainsPointers(bool *) { return false; }
 template<> inline bool TypeContainsPointers(int *) { return false; }
 template<> inline bool TypeContainsPointers(double *) { return false; }
 template<> inline bool TypeContainsPointers(float *) { return false; }
+template<> inline bool TypeContainsPointers(short *) { return false; }
 template<> inline bool TypeContainsPointers(unsigned char *) { return false; }
 
 template<typename TYPE> inline bool ContainsPointers()
 {
    return TypeContainsPointers( (TYPE *)0 );
 }
+
+inline const void *PointerOf(Dynamic &d) { return d.mPtr; }
+inline const void *PointerOf(String &s) { return s.__s; }
+inline const void *PointerOf(...) { return 0; }
+
 
 
 // For returning "null" when out of bounds ...
@@ -746,10 +752,10 @@ public:
       return (hx::ArrayStore) hx::ArrayTraits<ELEM_>::StoreType;
    }
 
-   inline ELEM_ &setCtx(hx::Ctx *_hx_ctx, int inIdx, ELEM_ inValue)
+   inline ELEM_ &setCtx(hx::StackContext *_hx_ctx, int inIdx, ELEM_ inValue)
    {
       ELEM_ &elem = Item(inIdx);
-      HX_ARRAY_WB(this,inIdx,inValue);
+      HX_ARRAY_WB(this,inIdx, hx::PointerOf(inValue) );
       return elem = inValue;
    }
 
