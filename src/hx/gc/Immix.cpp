@@ -3120,6 +3120,91 @@ public:
       VisitAll(&adjust,true);
    }
 
+
+   #ifdef HXCPP_GC_GENERATIONAL
+   void MoveSurvivors(hx::QuickVec<hx::Object *> remembered)
+   {
+      int sourceScan = 0;
+      int destScan = 0;
+
+      BlockDataInfo *destBlock = 0;
+      int destHole = 0;
+      int destStart = 0;
+      int destRemaining = 0;
+
+
+      int all = mAllBlocks.size();
+      for(int srcBlock=0; srcBlock<all; srcBlock++)
+      {
+         BlockDataInfo &src = *mAllBlocks[srcBlock];
+         if (src.mPinned)
+            continue;
+         unsigned int *srcStart = src.allocStart;
+
+         // Scan nursery for survivors
+         for(int hole = 0; hole<src.mHoles; hole++)
+         {
+            int start = src.mRanges[hole].start;
+            int len = src.mRanges[hole].length;
+            int startRow = start >> IMMIX_LINE_BITS;
+            int rows = len >> IMMIX_LINE_BITS;
+            for(int r = startRow; r<rows;r++)
+            {
+               unsigned int &startFlags = srcStart[r];
+               if (startFlags)
+                  for(int loc=0;loc<32;loc++)
+                     if (startFlags & (1<<loc))
+                     {
+                        unsigned int *row = (unsigned int *)src.mPtr->mRow[r];
+                        unsigned int &header = row[loc];
+
+                        if ((header&IMMIX_ALLOC_MARK_ID) == hx::gMarkID)
+                        {
+                           int size = ((header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT);
+                           int allocSize = size + sizeof(int);
+
+                           // Find dest reqion ...
+                           while(destHole==0 || destRemaining<allocSize)
+                           {
+                              if (destHole==0)
+                              {
+                                 if (destScan>=all)
+                                    goto no_more_moves;
+                                 // TODO - make sure block has no survivors
+                                 destBlock = mAllBlocks[destScan++];
+                                 destHole = -1;
+                                 destRemaining = 0;
+                              }
+                              if (destRemaining<allocSize)
+                              {
+                                 destHole++;
+                                 if (destHole>=destBlock->mHoles)
+                                    destHole = 0;
+                                 else
+                                 {
+                                    destStart = destBlock->mRanges[destHole].start;
+                                    destRemaining = destBlock->mRanges[destHole].length;
+                                 }
+                              }
+                           }
+
+                           // Copy source...
+
+
+
+                        }
+                     }
+
+            }
+         }
+      }
+
+      no_more_moves:
+      ;
+
+   }
+   #endif
+
    int releaseEmptyGroups(BlockDataStats &outStats, size_t releaseSize)
    {
       int released=0;
@@ -3863,7 +3948,6 @@ public:
 
             if (MoveBlocks(job,stats) || doRelease)
             {
-
                if (doRelease)
                {
                   size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
@@ -3905,6 +3989,7 @@ public:
       #ifdef HXCPP_GC_GENERATIONAL
       else if (compactSurviors)
       {
+         MoveSurvivors(rememberedSet);
       }
       #endif
       #endif
