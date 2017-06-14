@@ -529,6 +529,9 @@ struct BlockDataInfo
    int          mUsedBytes;
    bool         mPinned;
    bool         mZeroed;
+   #ifdef HXCPP_GC_GENERATIONAL
+   bool         mHasSurvivor;
+   #endif
    volatile int mZeroLock;
 
 
@@ -591,9 +594,17 @@ struct BlockDataInfo
    }
 
 
-   void clearRowMarks()
+   void clearBlockMarks()
    {
       mPinned = false;
+      #ifdef HXCPP_GC_GENERATIONAL
+      mHasSurvivor = false;
+      #endif
+   }
+
+   void clearRowMarks()
+   {
+      clearBlockMarks();
       ZERO_MEM((char *)mPtr+IMMIX_HEADER_LINES, IMMIX_USEFUL_LINES);
    }
 
@@ -1640,6 +1651,9 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
       unsigned int val = *pos;
       while(!HxAtomicExchangeIf(val,val|gImmixStartFlag[start&127], (volatile int *)pos))
          val = *pos;
+      #ifdef HXCPP_GC_GENERATIONAL
+      info->mHasSurvivor = true;
+      #endif
    }
    else
    #endif
@@ -1697,6 +1711,9 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
       unsigned int val = *pos;
       while(!HxAtomicExchangeIf(val,val|gImmixStartFlag[start&127], (volatile int *)pos))
          val = *pos;
+      #ifdef HXCPP_GC_GENERATIONAL
+      info->mHasSurvivor = true;
+      #endif
    }
    else
    #endif
@@ -3162,16 +3179,18 @@ public:
 
       BlockDataInfo *from = 0;
 
+      int tested = 0;
 
       int all = mAllBlocks.size();
       for(int srcBlock=0; srcBlock<all; srcBlock++)
       {
          from = mAllBlocks[srcBlock];
-         if (from->mPinned)
+         if (from->mPinned || !from->mHasSurvivor)
          {
             from = 0;
             continue;
          }
+         tested++;
          unsigned int *srcStart = from->allocStart;
 
          // Scan nursery for survivors
@@ -3180,11 +3199,12 @@ public:
             int start = from->mRanges[hole].start;
             int len = from->mRanges[hole].length;
             int startRow = start >> IMMIX_LINE_BITS;
-            int rows = len >> IMMIX_LINE_BITS;
-            for(int r = startRow; r<rows;r++)
+            int end = startRow + (len >> IMMIX_LINE_BITS);
+            for(int r = startRow; r<end;r++)
             {
                unsigned int &startFlags = srcStart[r];
                if (startFlags)
+               {
                   for(int loc=0;loc<32;loc++)
                      if (startFlags & (1<<loc))
                      {
@@ -3261,7 +3281,7 @@ public:
                               break;
                         }
                      }
-
+               }
             }
          }
 
@@ -3274,7 +3294,7 @@ public:
             else
             {
                // Partialy cleared, then ran out of to blocks - remove from allocation this round
-               if (from)
+               if (from && moveObjs)
                {
                   // Could maybe be a bit smarter here
                   //ioStats.rowsInUse += from->mUsedRows;
@@ -3284,7 +3304,7 @@ public:
       }
 
       #ifdef SHOW_FRAGMENTATION
-      GCLOG("Compacted nursery %d objects (%d/%d blocks)\n", moveObjs, clearedBlocks, mAllBlocks.size());
+      //GCLOG("Compacted nursery %d objects (%d/%d blocks)\n", moveObjs, clearedBlocks, mAllBlocks.size());
       #endif
 
       if (moveObjs)
@@ -3409,6 +3429,13 @@ public:
    {
       for(int i=0;i<mAllBlocks.size();i++)
          mAllBlocks[i]->clearRowMarks();
+   }
+
+
+   void ClearBlockMarks()
+   {
+      for(int i=0;i<mAllBlocks.size();i++)
+         mAllBlocks[i]->clearBlockMarks();
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
@@ -3734,6 +3761,10 @@ public:
 
          ClearRowMarks();
       }
+      else
+      {
+         ClearBlockMarks();
+      }
 
 
       mMarker.init();
@@ -3803,7 +3834,6 @@ public:
       }
       #endif
    }
-
 
    void Collect(bool inMajor, bool inForceCompact, bool inLocked=false)
    {
@@ -3892,6 +3922,15 @@ public:
 
       STAMP(t2)
 
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (compactSurviors)
+      {
+         MoveSurvivors(&rememberedSet);
+      }
+      #endif
+      STAMP(t2a)
+
+
 
       #ifdef HXCPP_TELEMETRY
       // Detect deallocations - TODO: add STAMP() ?
@@ -3930,8 +3969,6 @@ public:
 
       int l1 = mLargeList.size();
       STAMP(t3)
-
-
 
       // Sweep blocks
 
@@ -4085,12 +4122,6 @@ public:
       }
       #endif
 
-      #ifdef HXCPP_GC_GENERATIONAL
-      if (compactSurviors)
-      {
-         MoveSurvivors(&rememberedSet);
-      }
-      #endif
 
       STAMP(t5)
 
@@ -4132,11 +4163,10 @@ public:
       STAMP(t6)
       double period = t6-sLastCollect;
       sLastCollect=t6;
-      //GCLOG("Collect time total=%.2fms\n", (t6-t0)*1000);
-      GCLOG("Collect time total=%.2fms =%.1f%%\n   sync=%.2f\n   mark=%.2f\n   large(%d-%d)=%.2f\n   stats=%.2f\n   defrag=%.2f\n",
+      GCLOG("Collect time total=%.2fms =%.1f%%\n   sync=%.2f\n   mark=%.2f\n   large(%d-%d)=%.2f\n   stats=%.2f\n   defrag=%.2f + %.2f\n",
               (t6-t0)*1000, (t6-t0)*100.0/period,
-              (t1-t0)*1000, (t2-t1)*1000, l0, l1, (t3-t2)*1000, (t4-t3)*1000,
-              (t5-t4)*1000
+              (t1-t0)*1000, (t2-t1)*1000, l0, l1, (t3-t2a)*1000, (t4-t3)*1000,
+              (t5-t4)*1000, (t2a-t2)*1000
               );
       #endif
 

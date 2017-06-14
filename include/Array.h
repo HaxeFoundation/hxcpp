@@ -543,6 +543,7 @@ public:
    }
 
    Array_obj<ELEM_> *Add(const ELEM_ &inItem) { push(inItem); return this; }
+
    Array<ELEM_> init(int inIndex, const ELEM_ &inValue)
    {
       * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
@@ -550,10 +551,25 @@ public:
    }
 
 
+   #ifdef HXCPP_GC_GENERATIONAL
+   inline int pushCtx(hx::StackContext *_hx_ctx, ELEM_ inVal )
+   {
+      int l = length;
+      EnsureSize((int)l+1);
+      * (ELEM_ *)(mBase + l*sizeof(ELEM_)) = inVal;
+      HX_ARRAY_WB(this,inIdx, hx::PointerOf(inVal) );
+      return length;
+   }
+   #endif
+
 
    // Haxe API
    inline int push( ELEM_ inVal )
    {
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (hx::ContainsPointers<ELEM_>())
+         return pushCtx(HX_CTX_GET,inVal);
+      #endif
       int l = length;
       EnsureSize((int)l+1);
       * (ELEM_ *)(mBase + l*sizeof(ELEM_)) = inVal;
