@@ -3079,14 +3079,14 @@ public:
 
       if (moveObjs)
       {
-         AdjustPointers();
+         AdjustPointers(0);
       }
 
 
       return moveObjs;
    }
 
-   void AdjustPointers()
+   void AdjustPointers(hx::QuickVec<hx::Object *> *inRemembered)
    {
       class AdjustPointer : public hx::VisitContext
       {
@@ -3117,35 +3117,68 @@ public:
 
 
       AdjustPointer adjust(this);
-      VisitAll(&adjust,true);
+      VisitAll(&adjust,true, inRemembered);
    }
 
 
    #ifdef HXCPP_GC_GENERATIONAL
-   void MoveSurvivors(hx::QuickVec<hx::Object *> remembered)
+   BlockDataInfo *getNextBlockWithoutSurvivors(int &ioPosition)
+   {
+      while(ioPosition<mAllBlocks.size())
+      {
+         BlockDataInfo *b = mAllBlocks[ioPosition++];
+         unsigned int *srcStart = b->allocStart;
+         bool clear = true;
+         for(int h=0;h<b->mHoles;h++)
+         {
+            int start = b->mRanges[h].start >> IMMIX_LINE_BITS;
+            int end = start + (b->mRanges[h].length >> IMMIX_LINE_BITS);
+            for(int r=start; r<end; r++)
+               if (srcStart[r])
+               {
+                  clear = false;
+                  break;
+               }
+         }
+         if (clear && b->mHoles>0)
+            return b;
+      }
+      return 0;
+   }
+
+   int MoveSurvivors(hx::QuickVec<hx::Object *> *inRemembered)
    {
       int sourceScan = 0;
       int destScan = 0;
+      int moveObjs = 0;
+      int clearedBlocks = 0;
 
-      BlockDataInfo *destBlock = 0;
+      BlockDataInfo *destInfo = 0;
+      BlockData *dest = 0;
       int destHole = 0;
-      int destStart = 0;
-      int destRemaining = 0;
+      int destPos = 0;
+      int destLen = 0;
+      unsigned int *destStarts = 0;
+
+      BlockDataInfo *from = 0;
 
 
       int all = mAllBlocks.size();
       for(int srcBlock=0; srcBlock<all; srcBlock++)
       {
-         BlockDataInfo &src = *mAllBlocks[srcBlock];
-         if (src.mPinned)
+         from = mAllBlocks[srcBlock];
+         if (from->mPinned)
+         {
+            from = 0;
             continue;
-         unsigned int *srcStart = src.allocStart;
+         }
+         unsigned int *srcStart = from->allocStart;
 
          // Scan nursery for survivors
-         for(int hole = 0; hole<src.mHoles; hole++)
+         for(int hole = 0; hole<from->mHoles; hole++)
          {
-            int start = src.mRanges[hole].start;
-            int len = src.mRanges[hole].length;
+            int start = from->mRanges[hole].start;
+            int len = from->mRanges[hole].length;
             int startRow = start >> IMMIX_LINE_BITS;
             int rows = len >> IMMIX_LINE_BITS;
             for(int r = startRow; r<rows;r++)
@@ -3155,7 +3188,7 @@ public:
                   for(int loc=0;loc<32;loc++)
                      if (startFlags & (1<<loc))
                      {
-                        unsigned int *row = (unsigned int *)src.mPtr->mRow[r];
+                        unsigned int *row = (unsigned int *)from->mPtr->mRow[r];
                         unsigned int &header = row[loc];
 
                         if ((header&IMMIX_ALLOC_MARK_ID) == hx::gMarkID)
@@ -3164,44 +3197,102 @@ public:
                            int allocSize = size + sizeof(int);
 
                            // Find dest reqion ...
-                           while(destHole==0 || destRemaining<allocSize)
+                           while(destHole==0 || destLen<allocSize)
                            {
                               if (destHole==0)
                               {
-                                 if (destScan>=all)
+                                 if (destInfo)
+                                    destInfo->makeFull();
+                                 destInfo = getNextBlockWithoutSurvivors(destScan);
+                                 if (!destInfo)
                                     goto no_more_moves;
-                                 // TODO - make sure block has no survivors
-                                 destBlock = mAllBlocks[destScan++];
+
                                  destHole = -1;
-                                 destRemaining = 0;
+                                 destLen = 0;
                               }
-                              if (destRemaining<allocSize)
+                              if (destLen<allocSize)
                               {
                                  destHole++;
-                                 if (destHole>=destBlock->mHoles)
+                                 if (destHole>=destInfo->mHoles)
                                     destHole = 0;
                                  else
                                  {
-                                    destStart = destBlock->mRanges[destHole].start;
-                                    destRemaining = destBlock->mRanges[destHole].length;
+                                    dest = destInfo->mPtr;
+                                    destPos = destInfo->mRanges[destHole].start;
+                                    destLen = destInfo->mRanges[destHole].length;
+                                    destStarts = destInfo->allocStart;
                                  }
                               }
                            }
 
-                           // Copy source...
+                           // TODO - not copy + paste
 
+                           int startRow = destPos>>IMMIX_LINE_BITS;
 
+                           destStarts[ startRow ] |= hx::gImmixStartFlag[destPos&127];
 
+                           unsigned int *buffer = (unsigned int *)((char *)dest + destPos);
+
+                           unsigned int headerPreserve = header & IMMIX_HEADER_PRESERVE;
+
+                           int end = destPos + allocSize;
+
+                           *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
+                                           (size<<IMMIX_ALLOC_SIZE_SHIFT) |
+                                           headerPreserve |
+                                           hx::gMarkID;
+                           destPos = end;
+                           destLen -= allocSize;
+
+                           unsigned int *src = row + loc + 1;
+
+                           MoveSpecial((hx::Object *)buffer,(hx::Object *)src, size);
+
+                           // Result has moved - store movement in original position...
+                           memcpy(buffer, src, size);
+                           //GCLOG("   move %p -> %p %d (%08x %08x )\n", src, buffer, size, buffer[-1], buffer[1] );
+
+                           *(unsigned int **)src = buffer;
+                           header = IMMIX_OBJECT_HAS_MOVED;
+                           moveObjs++;
+
+                           startFlags &= ~(1<<loc);
+                           if (!startFlags)
+                              break;
                         }
                      }
 
             }
          }
+
+         no_more_moves:
+            if (destInfo)
+            {
+               destInfo->makeFull();
+               clearedBlocks++;
+            }
+            else
+            {
+               // Partialy cleared, then ran out of to blocks - remove from allocation this round
+               if (from)
+               {
+                  // Could maybe be a bit smarter here
+                  //ioStats.rowsInUse += from->mUsedRows;
+                  from->makeFull();
+               }
+            }
       }
 
-      no_more_moves:
-      ;
+      #ifdef SHOW_FRAGMENTATION
+      GCLOG("Compacted nursery %d objects (%d/%d blocks)\n", moveObjs, clearedBlocks, mAllBlocks.size());
+      #endif
 
+      if (moveObjs)
+      {
+         AdjustPointers(inRemembered);
+      }
+
+      return moveObjs;
    }
    #endif
 
@@ -3321,9 +3412,15 @@ public:
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void VisitAll(hx::VisitContext *inCtx,bool inMultithread = false)
+   void VisitAll(hx::VisitContext *inCtx,bool inMultithread = false,hx::QuickVec<hx::Object *> *inRemembered = 0)
    {
-      if (MAX_MARK_THREADS>1 && inMultithread && mAllBlocks.size())
+      if (inRemembered)
+      {
+         int n = inRemembered->size();
+         for(int i=0;i<n;i++)
+            (*inRemembered)[i]->__Visit(inCtx);
+      }
+      else if (MAX_MARK_THREADS>1 && inMultithread && mAllBlocks.size())
       {
          sThreadVisitContext = inCtx;
          StartThreadJobs(tpjVisitBlocks, mAllBlocks.size(), true);
@@ -3986,12 +4083,13 @@ public:
             }
          }
       }
-      #ifdef HXCPP_GC_GENERATIONAL
-      else if (compactSurviors)
-      {
-         MoveSurvivors(rememberedSet);
-      }
       #endif
+
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (compactSurviors)
+      {
+         MoveSurvivors(&rememberedSet);
+      }
       #endif
 
       STAMP(t5)
