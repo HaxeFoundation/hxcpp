@@ -132,6 +132,18 @@ enum
    MEM_INFO_LARGE = 3,
 };
 
+enum GcMode
+{
+   gcmFull,
+   gcmGenerational,
+};
+
+#ifdef HXCPP_GC_GENERATIONAL
+static GcMode sGcMode = gcmGenerational;
+#else
+static GcMode sGcMode = gcmFull;
+#endif
+
 
 #ifndef HXCPP_GC_MOVING
   #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
@@ -2564,6 +2576,7 @@ public:
       mLargeAllocForceRefresh = mLargeAllocSpace;
       // Start at 1 Meg...
       mTotalAfterLastCollect = 1<<20;
+      mLastNonGenerationalSize = mTotalAfterLastCollect;
       mCurrentRowsInUse = 0;
       mAllBlocksCount = 0;
       for(int p=0;p<LOCAL_POOL_SIZE;p++)
@@ -3144,20 +3157,7 @@ public:
       while(ioPosition<mAllBlocks.size())
       {
          BlockDataInfo *b = mAllBlocks[ioPosition++];
-         unsigned int *srcStart = b->allocStart;
-         bool clear = true;
-         for(int h=0;h<b->mHoles;h++)
-         {
-            int start = b->mRanges[h].start >> IMMIX_LINE_BITS;
-            int end = start + (b->mRanges[h].length >> IMMIX_LINE_BITS);
-            for(int r=start; r<end; r++)
-               if (srcStart[r])
-               {
-                  clear = false;
-                  break;
-               }
-         }
-         if (clear && b->mHoles>0)
+         if (b->mHoles>0 && !b->mHasSurvivor)
             return b;
       }
       return 0;
@@ -3897,6 +3897,7 @@ public:
       // Now all threads have mTopOfStack & mBottomOfStack set.
       STAMP(t1)
 
+      bool generational = false; 
 
       #ifdef HXCPP_GC_GENERATIONAL
       bool compactSurviors = false;
@@ -3905,20 +3906,27 @@ public:
       if (compactSurviors)
          hx::sGlobalChunks.copyPointers(rememberedSet);
 
-      for(int i=0;i<mLocalAllocs.size();i++)
+      if (sGcMode==gcmGenerational)
       {
-         hx::StackContext *ctx = (hx::StackContext *)mLocalAllocs[i];
-         if( ctx->mOldReferrers->count )
-             hx::sGlobalChunks.addLocked( ctx->mOldReferrers );
-         else
-             hx::sGlobalChunks.freeLocked( ctx->mOldReferrers );
-         ctx->mOldReferrers = 0;
+         for(int i=0;i<mLocalAllocs.size();i++)
+         {
+            hx::StackContext *ctx = (hx::StackContext *)mLocalAllocs[i];
+            if( ctx->mOldReferrers->count )
+                hx::sGlobalChunks.addLocked( ctx->mOldReferrers );
+            else
+                hx::sGlobalChunks.freeLocked( ctx->mOldReferrers );
+            ctx->mOldReferrers = 0;
+         }
       }
 
-      MarkAll(true);
-      #else
-      MarkAll(false);
+      generational = !inMajor && !inForceCompact && sGcMode == gcmGenerational;
+      if (!generational && sGcMode==gcmGenerational)
+      {
+         GCLOG("TODO - patch markIds");
+      }
       #endif
+
+      MarkAll(generational);
 
       STAMP(t2)
 
@@ -3974,14 +3982,16 @@ public:
 
       // Update table entries?  This needs to be done before the gMarkId count clocks
       //  back to the same number
-      sgTimeToNextTableUpdate--;
-      bool full = inMajor || (sgTimeToNextTableUpdate<=0) || inForceCompact;
+      if (!generational)
+         sgTimeToNextTableUpdate--;
 
+      bool full = inMajor || (sgTimeToNextTableUpdate<=0) || inForceCompact;
 
       // Setup memory target ...
       // Count free rows, and prep blocks for sorting
       BlockDataStats stats;
       reclaimBlocks(full,stats);
+
       #ifdef HXCPP_GC_MOVING
       if (!full)
       {
@@ -4143,6 +4153,21 @@ public:
       mLargeAllocForceRefresh = mLargeAllocated + mLargeAllocSpace;
 
       mTotalAfterLastCollect = MemUsage();
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (!generational)
+      {
+         mLastNonGenerationalSize = mTotalAfterLastCollect;
+         sGcMode = gcmGenerational;
+      }
+      else
+      {
+         if ( (mTotalAfterLastCollect>>4) > (mLastNonGenerationalSize>>4) * 7/4 )
+            sGcMode = gcmFull;
+         else
+            sGcMode = gcmGenerational;
+      }
+      //printf("sGcMode %d %d -> %d\n", mTotalAfterLastCollect, mLastNonGenerationalSize, sGcMode);
+      #endif
 
 
       #ifdef HXCPP_GC_MOVING
@@ -4171,11 +4196,12 @@ public:
       #endif
 
       #ifdef HXCPP_GC_GENERATIONAL
-      for(int i=0;i<mLocalAllocs.size();i++)
-      {
-         hx::StackContext *ctx = (hx::StackContext *)mLocalAllocs[i];
-         ctx->mOldReferrers = hx::sGlobalChunks.allocLocked();
-      }
+      if (sGcMode==gcmGenerational)
+         for(int i=0;i<mLocalAllocs.size();i++)
+         {
+            hx::StackContext *ctx = (hx::StackContext *)mLocalAllocs[i];
+            ctx->mOldReferrers = hx::sGlobalChunks.allocLocked();
+         }
       #endif
 
       #ifdef HXCPP_TELEMETRY
@@ -4349,6 +4375,7 @@ public:
    size_t mLargeAllocated;
    size_t mTotalAfterLastCollect;
    size_t mAllBlocksCount;
+   size_t mLastNonGenerationalSize;
 
    hx::MarkContext mMarker;
 
@@ -4486,7 +4513,10 @@ public:
       mID = GetCurrentThreadId();
       #endif
       #ifdef HXCPP_GC_GENERATIONAL
-      mOldReferrers = hx::sGlobalChunks.alloc(hx::gMultiThreadMode);
+      if (sGcMode==gcmGenerational)
+         mOldReferrers = hx::sGlobalChunks.alloc(hx::gMultiThreadMode);
+      else
+         mOldReferrers = 0;
       #endif
 
    }
