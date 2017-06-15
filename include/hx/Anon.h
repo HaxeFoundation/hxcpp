@@ -17,7 +17,11 @@ bool FieldMapHas(Dynamic *inMap, const ::String &inName);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 bool FieldMapGet(Dynamic *inMap, int inID, ::Dynamic &outValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
+#ifdef HXCPP_GC_GENERATIONAL
+void FieldMapSet(hx::Object *inThis,Dynamic *inMap, const ::String &inName, const ::Dynamic &inValue);
+#else
 void FieldMapSet(Dynamic *inMap, const ::String &inName, const ::Dynamic &inValue);
+#endif
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 void FieldMapAppendFields(Dynamic *inMap,::Array< ::String> &outFields);
 HXCPP_EXTERN_CLASS_ATTRIBUTES

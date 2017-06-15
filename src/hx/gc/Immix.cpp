@@ -5243,9 +5243,9 @@ void *InternalRealloc(void *inData,int inSize)
    memcpy(new_data, inData, min_size );
 
    #ifdef HXCPP_GC_GENERATIONAL
-   if (s>=IMMIX_LARGE_OBJ_SIZE)
+   if (s>=IMMIX_LARGE_OBJ_SIZE && sGcMode==gcmGenerational)
    {
-      // TODO - mark/free inData
+      ((unsigned char *)inData)[HX_ENDIAN_MARK_ID_BYTE_HEADER] = 0;
    }
    #endif
 

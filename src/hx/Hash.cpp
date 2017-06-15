@@ -4,7 +4,6 @@
 
 using namespace hx;
 
-//#define HX_DYNAMIC_HASH_VALUES
 
 // --- IntHash ----------------------------------------------------
 
@@ -17,14 +16,11 @@ typedef hx::Hash< TIntElement<Float> >   IntHashFloat;
 typedef hx::Hash< TIntElement<String> >  IntHashString;
 }
 
-void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
+void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
-      #ifdef HX_DYNAMIC_HASH_VALUES
-      hash = new IntHashObject();
-      #else
       if (value==null())
       {
          hash = new IntHashObject();
@@ -41,7 +37,6 @@ void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
          else // Object or bool
             hash = new IntHashObject();
       }
-      #endif
       ioHash = hash;
    }
    else if (hash->store!=hashObject)
@@ -78,7 +73,7 @@ void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
    ioHash.mPtr = hash->set(inKey,value);
 }
 
-void __int_hash_set_int(Dynamic &ioHash,int inKey,int inValue)
+void __int_hash_set_int(HX_MAP_THIS_ARG,int inKey,int inValue)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
@@ -96,7 +91,7 @@ void __int_hash_set_int(Dynamic &ioHash,int inKey,int inValue)
 }
 
 
-void __int_hash_set_float(Dynamic &ioHash,int inKey,Float inValue)
+void __int_hash_set_float(HX_MAP_THIS_ARG,int inKey,Float inValue)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
@@ -120,7 +115,7 @@ void __int_hash_set_float(Dynamic &ioHash,int inKey,Float inValue)
 
 
 
-void __int_hash_set_string(Dynamic &ioHash,int inKey, ::String inValue)
+void __int_hash_set_string(HX_MAP_THIS_ARG,int inKey, ::String inValue)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
@@ -242,14 +237,11 @@ typedef hx::Hash< TStringElement<String> >  StringHashString;
 }
 
 
-void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool inForceDynamic)
+void __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value, bool inForceDynamic)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
-      #ifdef HX_DYNAMIC_HASH_VALUES
-      hash = new StringHashObject();
-      #else
       if (inForceDynamic || value==null() )
       {
          hash = new StringHashObject();
@@ -268,7 +260,6 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
          else
             hash = new StringHashObject();
       }
-      #endif
       ioHash = hash;
    }
    else if (hash->store!=hashObject)
@@ -305,7 +296,7 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
    ioHash.mPtr = hash->set(inKey,value);
 }
 
-void __string_hash_set_int(Dynamic &ioHash,String inKey,int inValue)
+void __string_hash_set_int(HX_MAP_THIS_ARG,String inKey,int inValue)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
@@ -323,7 +314,7 @@ void __string_hash_set_int(Dynamic &ioHash,String inKey,int inValue)
 }
 
 
-void __string_hash_set_float(Dynamic &ioHash,String inKey,Float inValue)
+void __string_hash_set_float(HX_MAP_THIS_ARG,String inKey,Float inValue)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
@@ -347,7 +338,7 @@ void __string_hash_set_float(Dynamic &ioHash,String inKey,Float inValue)
 
 
 
-void __string_hash_set_string(Dynamic &ioHash,String inKey, ::String inValue)
+void __string_hash_set_string(HX_MAP_THIS_ARG,String inKey, ::String inValue)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
@@ -493,16 +484,12 @@ inline void toRealObject(Dynamic &ioObject)
 }
 
 
-void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool inWeakKeys)
+void __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool inWeakKeys)
 {
    toRealObject(inKey);
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
-      #ifdef HX_DYNAMIC_HASH_VALUES
-      hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
-                          (DynamicHashBase *)new DynamicHashObject();
-      #else
       if (value==null())
       {
          hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
@@ -526,7 +513,6 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
             hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
                                 (DynamicHashBase *)new DynamicHashObject();
       }
-      #endif
       ioHash = hash;
    }
    else if (hash->store!=hashObject)
@@ -563,7 +549,7 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
    ioHash.mPtr = hash->set(inKey,value);
 }
 
-void __object_hash_set_int(Dynamic &ioHash,Dynamic inKey,int inValue,bool inWeakKeys)
+void __object_hash_set_int(HX_MAP_THIS_ARG,Dynamic inKey,int inValue,bool inWeakKeys)
 {
    toRealObject(inKey);
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
@@ -609,7 +595,7 @@ void __object_hash_set_float(Dynamic &ioHash,Dynamic inKey,Float inValue,bool in
 
 
 
-void __object_hash_set_string(Dynamic &ioHash,Dynamic inKey, ::String inValue,bool inWeakKeys)
+void __object_hash_set_string(HX_MAP_THIS_ARG,Dynamic inKey, ::String inValue,bool inWeakKeys)
 {
    toRealObject(inKey);
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
