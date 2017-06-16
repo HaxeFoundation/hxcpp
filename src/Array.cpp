@@ -23,6 +23,7 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
    if (alloc)
    {
       mBase = (char *)hx::InternalNew(alloc * inElementSize,false);
+      HX_OBJ_WB_GET(this,mBase);
 #ifdef HXCPP_TELEMETRY
       __hxt_new_array(mBase, alloc * inElementSize);
 #endif
@@ -61,7 +62,9 @@ void ArrayBase::reserve(int inSize) const
          __hxt_new_array(mBase, bytes);
          #endif
       }
+
       mAlloc = inSize;
+      HX_OBJ_WB_GET(const_cast<ArrayBase *>(this),mBase);
    }
 }
 
@@ -128,6 +131,8 @@ void ArrayBase::Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceEl
       memcpy(dest,src,len);
    else
       memmove(dest,src,len);
+
+   HX_OBJ_WB_PESSIMISTIC_GET(this);
 }
 
 
@@ -206,6 +211,7 @@ void ArrayBase::__SetSizeExact(int inSize)
 #endif
       }
       mAlloc = length = inSize;
+      HX_OBJ_WB_GET(this,mBase);
    }
 }
 
@@ -257,6 +263,8 @@ void ArrayBase::Splice(ArrayBase *outResult,int inPos,int inLen)
    {
       outResult->__SetSize(inLen);
       memcpy(outResult->mBase, mBase+inPos*s, s*inLen);
+      // todo - only needed if we have dirty pointer elements
+      HX_OBJ_WB_PESSIMISTIC_GET(outResult);
    }
    memmove(mBase+inPos*s, mBase + (inPos+inLen)*s, (length-(inPos+inLen))*s);
    __SetSize(length-inLen);
@@ -282,6 +290,8 @@ void ArrayBase::Slice(ArrayBase *outResult,int inPos,int inEnd)
       outResult->__SetSize(n);
       int s = GetElementSize();
       memcpy(outResult->mBase, mBase+inPos*s, n*s);
+      // todo - only needed if we have dirty pointer elements
+      HX_OBJ_WB_PESSIMISTIC_GET(outResult);
    }
 }
 
@@ -303,7 +313,7 @@ void ArrayBase::Concat(ArrayBase *outResult,const char *inSecond,int inLen)
    memcpy(ptr,mBase,n);
    ptr += n;
    memcpy(ptr,inSecond,inLen*GetElementSize());
-
+   HX_OBJ_WB_PESSIMISTIC_GET(this);
 }
 
 
@@ -831,6 +841,7 @@ void VirtualArray_obj::MakeIntArray()
       base = result.mPtr;
    }
    store = arrayInt;
+   HX_OBJ_WB_GET(this,base);
 }
 
 
@@ -841,11 +852,15 @@ void VirtualArray_obj::MakeObjectArray()
       // Actually, ok already.
    }
    else if (!base)
+   {
       base = new Array_obj<Dynamic>(0,0);
+      HX_OBJ_WB_GET(this,base);
+   }
    else
    {
       Array<Dynamic> result = Dynamic(base);
       base = result.mPtr;
+      HX_OBJ_WB_GET(this,base);
    }
    store = arrayObject;
 }
@@ -866,6 +881,7 @@ void VirtualArray_obj::MakeStringArray()
       base = result.mPtr;
    }
    store = arrayString;
+   HX_OBJ_WB_GET(this,base);
 }
 
 
@@ -884,6 +900,7 @@ void VirtualArray_obj::MakeBoolArray()
       base = result.mPtr;
    }
    store = arrayBool;
+   HX_OBJ_WB_GET(this,base);
 }
 
 
@@ -902,11 +919,13 @@ void VirtualArray_obj::MakeFloatArray()
       base = result.mPtr;
    }
    store = arrayFloat;
+   HX_OBJ_WB_GET(this,base);
 }
 
 void VirtualArray_obj::CreateEmptyArray(int inLen)
 {
    base = new Array_obj<Dynamic>(inLen,inLen);
+   HX_OBJ_WB_GET(this,base);
 }
 
 void VirtualArray_obj::EnsureBase()
@@ -915,6 +934,7 @@ void VirtualArray_obj::EnsureBase()
    {
       base = new Array_obj<unsigned char>(0,0);
       store = arrayInt;
+      HX_OBJ_WB_GET(this,base);
    }
 }
 

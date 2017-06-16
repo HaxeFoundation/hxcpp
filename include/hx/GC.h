@@ -415,19 +415,27 @@ typedef ImmixAllocator GcAllocator;
 typedef ImmixAllocator Ctx;
 
 #ifdef HXCPP_GC_GENERATIONAL
-  #define HX_OBJ_WB(obj,value) \
-     if ( ((unsigned char *)this)[ HX_ENDIAN_MARK_ID_BYTE  ]==hx::gByteMarkID && \
-         value &&  !((unsigned char *)this)[ HX_ENDIAN_MARK_ID_BYTE  ] )  { \
-        ((unsigned char *)this)[ HX_ENDIAN_MARK_ID_BYTE ]=hx::gPrevByteMarkID; \
-        _hx_ctx->pushReferrer(this); \
+  #define HX_OBJ_WB_CTX(obj,value,ctx) \
+     if ( ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE  ]==hx::gByteMarkID && \
+         value &&  !((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE  ] )  { \
+        ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE ]=hx::gPrevByteMarkID; \
+        ctx->pushReferrer(obj); \
      }
-
-  #define HX_ARRAY_WB(array,index,value) HX_OBJ_WB(obj,value)
+  #define HX_OBJ_WB_PESSIMISTIC_CTX(obj,ctx) \
+     if ( ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE  ]==hx::gByteMarkID) { \
+        ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE ]=hx::gPrevByteMarkID; \
+        ctx->pushReferrer(obj); \
+     }
 #else
-  #define HX_OBJ_WB(obj,value)
-  #define HX_ARRAY_WB(array,index,value)
+  #define HX_OBJ_WB_CTX(obj,value,ctx)
+  #define HX_OBJ_WB_PESSIMISTIC_CTX(obj,ctx)
 #endif
 
+#define HX_ARRAY_WB(array,index,value) HX_OBJ_WB(array,value)
+#define HX_OBJ_WB(obj,value) HX_OBJ_WB_CTX(obj,value,_hx_ctx)
+#define HX_OBJ_WB_PESSIMISTIC(obj) HX_OBJ_WB_PESSIMISTIC_CTX(obj,_hx_ctx)
+#define HX_OBJ_WB_GET(obj,value) HX_OBJ_WB_CTX(obj,value,HX_CTX_GET)
+#define HX_OBJ_WB_PESSIMISTIC_GET(obj) HX_OBJ_WB_PESSIMISTIC_CTX(obj,HX_CTX_GET)
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES extern unsigned int gPrevMarkIdMask;
 

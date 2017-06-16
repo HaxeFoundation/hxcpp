@@ -157,6 +157,7 @@ public:
       mBase = (char *)inData;
       length = inElements;
       mAlloc = inElements;
+      HX_OBJ_WB_PESSIMISTIC_GET(this);
    }
 
    void setUnmanagedData(void *inData, int inElements)
@@ -193,6 +194,7 @@ public:
       mBase = (char *)inString.__s;
       length = inString.length / GetElementSize();
       mAlloc = length;
+      HX_OBJ_WB_PESSIMISTIC_GET(this);
    }
 
    
@@ -481,6 +483,7 @@ public:
 
    inline ELEM_ & __unsafe_set(int inIndex, const ELEM_ &inValue)
    {
+      if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this, hx::PointerOf(inValue)); }
       return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
    }
 
@@ -496,6 +499,10 @@ public:
       EnsureSize(inStart+inElements);
       int s = GetElementSize();
       ::memcpy(mBase + s*inStart, inData, s*inElements);
+      if (hx::ContainsPointers<ELEM_>())
+      {
+         HX_OBJ_WB_PESSIMISTIC_GET(this);
+      }
    }
 
 
@@ -547,6 +554,7 @@ public:
    Array<ELEM_> init(int inIndex, const ELEM_ &inValue)
    {
       * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
+      if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this, hx::PointerOf(inValue)); }
       return this;
    }
 
@@ -557,7 +565,7 @@ public:
       int l = length;
       EnsureSize((int)l+1);
       * (ELEM_ *)(mBase + l*sizeof(ELEM_)) = inVal;
-      HX_ARRAY_WB(this,inIdx, hx::PointerOf(inVal) );
+      if (hx::ContainsPointers<ELEM_>()) { HX_ARRAY_WB(this,inIdx, hx::PointerOf(inVal) ); }
       return length;
    }
    #endif
@@ -691,6 +699,7 @@ public:
 			inPos = length;
 		hx::ArrayBase::Insert(inPos);
       Item(inPos) = inValue;
+      if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this,hx::PointerOf(inValue)); }
    }
 
    void unshift(ELEM_ inValue)
@@ -832,7 +841,11 @@ public:
    virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
 
    virtual void set(int inIndex, const cpp::Variant &inValue) { Item(inIndex) = ELEM_(inValue); }
-   virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) { *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = ELEM_(inValue); }
+   virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) {
+      ELEM_ &elem = *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = ELEM_(inValue);
+      elem = ELEM_(inValue);
+      if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this,hx::PointerOf(elem)); }
+   }
 
 
    #endif

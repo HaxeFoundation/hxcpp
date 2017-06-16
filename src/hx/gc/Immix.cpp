@@ -108,6 +108,11 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 //#define HX_GC_VERIFY
 //#define SHOW_MEM_EVENTS
 //#define SHOW_FRAGMENTATION
+//
+
+#if defined(HX_GC_VERIFY) && defined(HXCPP_GC_GENERATIONAL)
+static bool sGcVerifyGenerational = false;
+#endif
 
 
 #if HX_HAS_ATOMIC && (HXCPP_GC_DEBUG_LEVEL==0)
@@ -1664,6 +1669,14 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
       while(!HxAtomicExchangeIf(val,val|gImmixStartFlag[start&127], (volatile int *)pos))
          val = *pos;
       #ifdef HXCPP_GC_GENERATIONAL
+         #ifdef HX_GC_VERIFY
+         if (sGcVerifyGenerational)
+         {
+            printf("Nursery object escaped generational collection %p\n", inPtr);
+            *(int *)0=0;
+         }
+         #endif
+
       info->mHasSurvivor = true;
       #endif
    }
@@ -1724,6 +1737,13 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
       while(!HxAtomicExchangeIf(val,val|gImmixStartFlag[start&127], (volatile int *)pos))
          val = *pos;
       #ifdef HXCPP_GC_GENERATIONAL
+         #ifdef HX_GC_VERIFY
+         if (sGcVerifyGenerational)
+         {
+            printf("Nursery object escaped generational collection\n");
+            *(int *)0=0;
+         }
+         #endif
       info->mHasSurvivor = true;
       #endif
    }
@@ -3903,9 +3923,6 @@ public:
       bool compactSurviors = false;
 
       hx::QuickVec<hx::Object *> rememberedSet;
-      if (compactSurviors)
-         hx::sGlobalChunks.copyPointers(rememberedSet);
-
       if (sGcMode==gcmGenerational)
       {
          for(int i=0;i<mLocalAllocs.size();i++)
@@ -3917,6 +3934,9 @@ public:
                 hx::sGlobalChunks.freeLocked( ctx->mOldReferrers );
             ctx->mOldReferrers = 0;
          }
+
+         if (compactSurviors)
+            hx::sGlobalChunks.copyPointers(rememberedSet);
       }
 
       generational = !inMajor && !inForceCompact && sGcMode == gcmGenerational;
@@ -3927,6 +3947,15 @@ public:
       #endif
 
       MarkAll(generational);
+
+      #if defined(HX_GC_VERIFY) && defined(HXCPP_GC_GENERATIONAL)
+      if (generational)
+      {
+         sGcVerifyGenerational = true;
+         MarkAll(false);
+         sGcVerifyGenerational = false;
+      }
+      #endif
 
       STAMP(t2)
 
