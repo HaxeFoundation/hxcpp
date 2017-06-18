@@ -2,6 +2,7 @@
 #define HX_GC_H
 
 #include <hx/Tls.h>
+#include <stdio.h>
 
 // Under the current scheme (as defined by HX_HCSTRING/HX_CSTRING in hxcpp.h)
 //  each constant string data is prepended with a 4-byte header that says the string
@@ -123,20 +124,16 @@ typedef void (*finalizer)(hx::Object *v);
 
 // Used internally by the runtime.
 // The constructor will add this object to the internal list of finalizers.
-// You must call "Mark" on this object within every collection loop to keep it alive,
-//  otherwise the Gc system will call the finalizer and delete this object.
-// This would typically be done in response to a "__Mark" call on another object
+// If the parent object is not marked by the end of the collect, the finalizer will trigger.
 struct InternalFinalizer
 {
    InternalFinalizer(hx::Object *inObj, finalizer inFinalizer=0);
 
-   void Mark() { mUsed=true; }
    #ifdef HXCPP_VISIT_ALLOCS
    void Visit(VisitContext *__inCtx);
    #endif
    void Detach();
 
-   bool      mUsed;
    bool      mValid;
    finalizer mFinalizer;
    hx::Object  *mObject;
@@ -164,7 +161,6 @@ extern int sgTargetFreeSpacePercentage;
 
 
 extern HXCPP_EXTERN_CLASS_ATTRIBUTES int gByteMarkID;
-extern HXCPP_EXTERN_CLASS_ATTRIBUTES int gPrevByteMarkID;
 
 // Call in response to a gPauseForCollect. Normally, this is done for you in "new"
 void PauseForCollect();
@@ -288,6 +284,8 @@ namespace hx
 // Each line ast 128 bytes (2^7)
 #define IMMIX_LINE_BITS    7
 #define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
+
+#define HX_GC_REMEMBERED          0x40
 
 // The size info is stored in the header 8 bits to the right
 #define IMMIX_ALLOC_SIZE_SHIFT  6
@@ -416,14 +414,14 @@ typedef ImmixAllocator Ctx;
 
 #ifdef HXCPP_GC_GENERATIONAL
   #define HX_OBJ_WB_CTX(obj,value,ctx) \
-     if ( ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE  ]==hx::gByteMarkID && \
-         value &&  !((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE  ] )  { \
-        ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE ]=hx::gPrevByteMarkID; \
+     if ( !(((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE  ]&HX_GC_REMEMBERED) && \
+         value &&  !((unsigned char *)(value))[ HX_ENDIAN_MARK_ID_BYTE  ] )  { \
+        ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE ]|=HX_GC_REMEMBERED; \
         ctx->pushReferrer(obj); \
      }
   #define HX_OBJ_WB_PESSIMISTIC_CTX(obj,ctx) \
-     if ( ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE  ]==hx::gByteMarkID) { \
-        ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE ]=hx::gPrevByteMarkID; \
+     if ( (((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE  ]&HX_GC_REMEMBERED) ) { \
+        ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE ]|=HX_GC_REMEMBERED; \
         ctx->pushReferrer(obj); \
      }
 #else

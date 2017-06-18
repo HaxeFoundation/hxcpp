@@ -39,7 +39,6 @@ struct Deque : public Array_obj<Dynamic>
 	void __Mark(hx::MarkContext *__inCtx)
 	{
 		Array_obj<Dynamic>::__Mark(__inCtx);
-		mFinalizer->Mark();
 	}
 
    #ifdef HXCPP_VISIT_ALLOCS
@@ -365,8 +364,6 @@ public:
 
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdMutex };
 
-	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
-
    #ifdef HXCPP_VISIT_ALLOCS
 	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
    #endif
@@ -443,8 +440,6 @@ public:
 	}
 
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdLock };
-
-	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
 
    #ifdef HXCPP_VISIT_ALLOCS
 	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }

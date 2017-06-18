@@ -86,7 +86,7 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 // #define HXCPP_GC_DEBUG_LEVEL 4
 
 #ifndef HXCPP_GC_DEBUG_LEVEL
-#define HXCPP_GC_DEBUG_LEVEL 0
+#define HXCPP_GC_DEBUG_LEVEL 1
 #endif
 
 #if HXCPP_GC_DEBUG_LEVEL>1
@@ -115,7 +115,7 @@ static bool sGcVerifyGenerational = false;
 #endif
 
 
-#if HX_HAS_ATOMIC && (HXCPP_GC_DEBUG_LEVEL==0)
+#if HX_HAS_ATOMIC && (HXCPP_GC_DEBUG_LEVEL==0) && !defined(HX_GC_VERIFY)
   #if defined(HX_MACOS) || defined(HX_WINDOWS) || defined(HX_LINUX)
   enum { MAX_MARK_THREADS = 4 };
   #else
@@ -225,16 +225,8 @@ unsigned int gImmixStartFlag[128];
 int gMarkID = 0x10 << 24;
 int gMarkIDWithContainer = (0x10 << 24) | IMMIX_ALLOC_IS_CONTAINER;
 
-
-
-#ifdef HXCPP_GC_GENERATIONAL
-int gPrevByteMarkID = 0x1f;
-unsigned int gPrevMarkIdMask = ((~0x1f000000) & 0x30000000) | HX_GC_CONST_ALLOC_BIT;
-#else
-int gPrevByteMarkID = 0;
-unsigned int gPrevMarkIdMask = 0;
-#endif
-
+int gPrevByteMarkID = 0x2f;
+unsigned int gPrevMarkIdMask = ((~0x2f000000) & 0x30000000) | HX_GC_CONST_ALLOC_BIT;
 
 
 
@@ -337,6 +329,7 @@ MID = HX_ENDIAN_MARK_ID_BYTE = is measured from the object pointer
 // Used by strings
 // HX_GC_CONST_ALLOC_BIT  0x80000000
 
+//#define HX_GC_REMEMBERED          0x40000000
 #define IMMIX_ALLOC_MARK_ID         0x3f000000
 //#define IMMIX_ALLOC_IS_CONTAINER  0x00800000
 //#define IMMIX_ALLOC_IS_PINNED     not used at object level
@@ -1271,7 +1264,7 @@ struct GlobalChunks
       chunks.push(inChunk);
    }
 
-   void copyPointers( QuickVec<hx::Object *> &outPointers)
+   void copyPointers( QuickVec<hx::Object *> &outPointers,bool andFree=false)
    {
       int size = 0;
       for(int i=0;i<chunks.size();i++)
@@ -1283,6 +1276,11 @@ struct GlobalChunks
          MarkChunk *c = chunks.pop();
          for(int i=0;i<c->count;i++)
             outPointers[idx++] = c->stack[i];
+         if (andFree)
+         {
+            c->count = 0;
+            freeLocked(c);
+         }
       }
    }
 
@@ -1598,6 +1596,7 @@ void MarkerReleaseWorkerLocked( )
 
 
 #ifdef HXCPP_DEBUG
+static bool breakOnce = 1;
 void MarkSetMember(const char *inName,hx::MarkContext *__inCtx)
 {
    if (gCollectTrace)
@@ -1672,7 +1671,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
          #ifdef HX_GC_VERIFY
          if (sGcVerifyGenerational)
          {
-            printf("Nursery object escaped generational collection %p\n", inPtr);
+            printf("Nursery alloc escaped generational collection %p\n", inPtr);
             *(int *)0=0;
          }
          #endif
@@ -1740,7 +1739,7 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
          #ifdef HX_GC_VERIFY
          if (sGcVerifyGenerational)
          {
-            printf("Nursery object escaped generational collection\n");
+            printf("Nursery object escaped generational collection %p\n", inPtr);
             *(int *)0=0;
          }
          #endif
@@ -2025,11 +2024,11 @@ FILE_SCOPE WeakHashList sWeakHashList;
 
 InternalFinalizer::InternalFinalizer(hx::Object *inObj, finalizer inFinalizer)
 {
-   mUsed = false;
    mValid = true;
    mObject = inObj;
    mFinalizer = inFinalizer;
 
+   // Ensure this survives generational collect
    AutoLock lock(*gSpecialObjectLock);
    sgFinalizers->push(this);
 }
@@ -2152,7 +2151,7 @@ void RunFinalizers()
          list.qerase(idx);
          delete f;
       }
-      else if (!f->mUsed)
+      else if (((unsigned char *)(f->mObject))[HX_ENDIAN_MARK_ID_BYTE] != gByteMarkID)
       {
          if (f->mFinalizer)
             f->mFinalizer(f->mObject);
@@ -2161,7 +2160,6 @@ void RunFinalizers()
       }
       else
       {
-         f->mUsed = false;
          idx++;
       }
    }
@@ -3840,7 +3838,8 @@ public:
 
       hx::FindZombies(mMarker);
 
-      hx::RunFinalizers();
+      if (!inGenerational)
+         hx::RunFinalizers();
 
       #ifdef HX_GC_VERIFY
       for(int i=0;i<mAllBlocks.size();i++)
@@ -3934,16 +3933,21 @@ public:
                 hx::sGlobalChunks.freeLocked( ctx->mOldReferrers );
             ctx->mOldReferrers = 0;
          }
-
-         if (compactSurviors)
-            hx::sGlobalChunks.copyPointers(rememberedSet);
       }
 
       generational = !inMajor && !inForceCompact && sGcMode == gcmGenerational;
       if (!generational && sGcMode==gcmGenerational)
       {
-         GCLOG("TODO - patch markIds");
+         #ifdef SHOW_MEM_EVENTS
+         GCLOG("Patch remembered set marks\n");
+         #endif
+         hx::QuickVec<hx::Object *> ids;
+         hx::sGlobalChunks.copyPointers(ids,true);
+         for(int i=0;i<ids.size();i++)
+            ((unsigned char *)ids[i])[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
       }
+      else if (compactSurviors)
+         hx::sGlobalChunks.copyPointers(rememberedSet);
       #endif
 
       MarkAll(generational);
@@ -4009,7 +4013,7 @@ public:
 
       // Sweep blocks
 
-      // Update table entries?  This needs to be done before the gMarkId count clocks
+      // Update table entries?  This needs to be done before the gMarkID count clocks
       //  back to the same number
       if (!generational)
          sgTimeToNextTableUpdate--;
@@ -5274,7 +5278,8 @@ void *InternalRealloc(void *inData,int inSize)
    #ifdef HXCPP_GC_GENERATIONAL
    if (s>=IMMIX_LARGE_OBJ_SIZE && sGcMode==gcmGenerational)
    {
-      ((unsigned char *)inData)[HX_ENDIAN_MARK_ID_BYTE_HEADER] = 0;
+      //Can release asap
+      ((unsigned char *)inData)[HX_ENDIAN_MARK_ID_BYTE] = 0;
    }
    #endif
 

@@ -56,8 +56,6 @@ public:
 
    void __Mark(hx::MarkContext *__inCtx)
    {
-      if (mFinalizer)
-         mFinalizer->Mark();
       if (mMarkSize>=sizeof(void *) && mHandle)
       {
          hx::MarkConservative((int *)mHandle, ((int *)mHandle) + (mMarkSize/sizeof(int)), __inCtx );
