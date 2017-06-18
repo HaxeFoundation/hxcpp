@@ -61,12 +61,13 @@ static void *sgObject_root = 0;
 #ifdef _MSC_VER
 // MSVC optimizes by taking the address of an initernal data member
 static int sgCheckInternalOffset = sizeof(void *)+sizeof(int);
+static int sgCheckInternalOffsetRows = 1;
 #else
 static int sgCheckInternalOffset = 0;
+static int sgCheckInternalOffsetRows = 0;
 #endif
 
 
-static int sgCheckInternalOffsetRows = 0;
 int gInAlloc = false;
 
 // This is recalculated from the other parameters
@@ -906,20 +907,21 @@ struct BlockDataInfo
       return GetAllocTypeChecked(inOffset);
    }
 
-   inline AllocType GetEnclosingNurseryAllocType(int inOffset,void *&ioPtr)
+   inline AllocType GetEnclosingNurseryAllocType(int blockOffset,void *&ioPtr)
    {
       #ifdef HXCPP_GC_NURSERY
       // Find enclosing hole...
       for(int h=0;h<mHoles;h++)
       {
          int scan = mRanges[h].start;
-         if (inOffset<scan)
+         if (blockOffset<scan)
             break;
+
          int size = 0;
          int last = scan + mRanges[h].length;
-         if (inOffset<last)
+         if (blockOffset<last)
          {
-            while(scan<=inOffset)
+            while(scan<=blockOffset)
             {
                unsigned int header = *(unsigned int *)(mPtr->mRow[0]+scan);
                if (!(header & 0xff000000))
@@ -930,8 +932,8 @@ struct BlockDataInfo
                if (!size || scan+size > last)
                   return allocNone;
 
-               // inOffset is between scan and scan + size, and not too far from scan
-               if (size+scan>inOffset && inOffset-scan<=sgCheckInternalOffsetRows+sizeof(int))
+               // blockOffset is between scan and scan + size, and not too far from scan
+               if (size+scan>blockOffset && blockOffset-scan<=sgCheckInternalOffset+sizeof(int))
                {
                   ioPtr = (void *)(mPtr->mRow[0] + scan + sizeof(int));
                   if (header & IMMIX_ALLOC_IS_CONTAINER)
@@ -956,24 +958,24 @@ struct BlockDataInfo
       return allocNone;
    }
 
-   AllocType GetEnclosingAllocType(int inOffset,void *&ioPtr)
+   AllocType GetEnclosingAllocType(int blockOffset,void *&ioPtr)
    {
-      int r = inOffset >> IMMIX_LINE_BITS;
+      int r = blockOffset >> IMMIX_LINE_BITS;
       if (r < IMMIX_HEADER_LINES || r >= IMMIX_LINES)
          return allocNone;
 
       // Normal, good alloc
-      int rowPos = hx::gImmixStartFlag[inOffset &127];
+      int rowPos = hx::gImmixStartFlag[blockOffset &127];
       if ( allocStart[r] & rowPos )
-         return GetAllocTypeChecked(inOffset);
+         return GetAllocTypeChecked(blockOffset);
 
-      int offset = inOffset;
-      // Go along row, looking got previous start ..
+      int offset = blockOffset;
+      // Go along row, looking for previous start ..
       while(true)
       {
          offset -= 4;
-         if (offset<inOffset-sgCheckInternalOffset)
-            return GetEnclosingNurseryAllocType(inOffset, ioPtr);
+         if (offset<blockOffset-sgCheckInternalOffset)
+            return GetEnclosingNurseryAllocType(blockOffset, ioPtr);
 
          rowPos >>= 1;
          // Not on this row
@@ -988,7 +990,7 @@ struct BlockDataInfo
                unsigned int header =  *(unsigned int *)((char *)mPtr + offset);
                // See if it fits...
                int size = ((header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT);
-               if (size>= inOffset-offset)
+               if (size>= blockOffset-offset)
                {
                   ioPtr = (char *)mPtr + offset + sizeof(int);
                   return result;
@@ -1009,9 +1011,9 @@ struct BlockDataInfo
                if (s & (1<<bit) )
                {
                   int offset = (row<<IMMIX_LINE_BITS) + (bit<<2);
-                  int delta =  inOffset-offset;
+                  int delta =  blockOffset-offset;
                   if (delta<-sgCheckInternalOffset)
-                     return GetEnclosingNurseryAllocType(inOffset, ioPtr);
+                     return GetEnclosingNurseryAllocType(blockOffset, ioPtr);
                   AllocType result = GetAllocTypeChecked(offset);
                   if (result!=allocNone)
                   {
@@ -1024,13 +1026,13 @@ struct BlockDataInfo
                      }
                   }
                   // Found closest, but no good
-                  return GetEnclosingNurseryAllocType(inOffset, ioPtr);
+                  return GetEnclosingNurseryAllocType(blockOffset, ioPtr);
                }
          }
       }
 
       // No start in range ...
-      return GetEnclosingNurseryAllocType(inOffset, ioPtr);
+      return GetEnclosingNurseryAllocType(blockOffset, ioPtr);
    }
 
 
