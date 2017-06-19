@@ -3975,6 +3975,7 @@ public:
       if (generational)
       {
          sGcVerifyGenerational = true;
+         sgTimeToNextTableUpdate--;
          MarkAll(false);
          sGcVerifyGenerational = false;
       }

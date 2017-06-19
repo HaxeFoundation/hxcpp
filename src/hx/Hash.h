@@ -220,10 +220,10 @@ struct HashBase : public HashRoot
    virtual bool query(KEY inKey,Float &outValue) = 0;
    virtual bool query(KEY inKey,Dynamic &outValue) = 0;
 
-   virtual HashBase<KEY> * set(KEY inKey, const int &inValue) = 0;
-   virtual HashBase<KEY> * set(KEY inKey, const ::String &inValue) = 0;
-   virtual HashBase<KEY> * set(KEY inKey, const Float &inValue) = 0;
-   virtual HashBase<KEY> * set(KEY inKey, const Dynamic &inValue) = 0;
+   virtual void set(KEY inKey, const int &inValue) = 0;
+   virtual void set(KEY inKey, const ::String &inValue) = 0;
+   virtual void set(KEY inKey, const Float &inValue) = 0;
+   virtual void set(KEY inKey, const Dynamic &inValue) = 0;
 
    virtual HashBase<KEY> *convertStore(HashStore inStore) = 0;
 
@@ -309,6 +309,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       mask = inNewCount-1;
       //printf("expand %d -> %d\n",bucketCount, inNewCount);
       bucket = (Element **)InternalRealloc(bucket,inNewCount*sizeof(ELEMENT *));
+      HX_OBJ_WB_GET(this, bucket);
       //for(int b=bucketCount;b<inNewCount;b++)
       //   bucket[b] = 0;
 
@@ -372,6 +373,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       }
       bucketCount = newSize;
       bucket = (Element **)InternalRealloc(bucket, sizeof(ELEMENT *)*bucketCount );
+      HX_OBJ_WB_GET(this, bucket);
    }
 
    bool remove(Key inKey)
@@ -498,6 +500,10 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       return false;
    }
 
+   static inline bool IsNursery(const void *inPtr)
+   {
+      return inPtr && !(((unsigned char *)inPtr)[ HX_ENDIAN_MARK_ID_BYTE]);
+   }
 
    template<typename SET>
    void TSet(Key inKey, const SET &inValue)
@@ -507,6 +513,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       if (el)
       {
          CopyValue(el->value,inValue);
+         HX_OBJ_WB_GET(this,hx::PointerOf(el->value));
          return;
       }
       el = allocElement();
@@ -514,13 +521,26 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       CopyValue(el->value,inValue);
       el->next = bucket[hash&mask];
       bucket[hash&mask] = el;
+
+      #ifdef HXCPP_GC_GENERATIONAL
+      unsigned char &mark =  ((unsigned char *)(this))[ HX_ENDIAN_MARK_ID_BYTE];
+      if (!(mark&HX_GC_REMEMBERED) && mark)
+      {
+         // Look for nursery objects...
+         if ( IsNursery(el) || IsNursery(hx::PointerOf(el->key)) || IsNursery(hx::PointerOf(el->value)) )
+         {
+            mark|=HX_GC_REMEMBERED;
+            (HX_CTX_GET)->pushReferrer(this);
+         }
+      }
+      #endif
    }
 
-   HashBase<Key> * set(Key inKey, const int &inValue) { TSet(inKey, inValue); return this; }
-   HashBase<Key> * set(Key inKey, const ::String &inValue)  { TSet(inKey, inValue); return this; }
-   HashBase<Key> * set(Key inKey, const Float &inValue)  { TSet(inKey, inValue); return this; }
-   HashBase<Key> * set(Key inKey, const Dynamic &inValue)  { TSet(inKey, inValue); return this; }
-   HashBase<Key> * set(Key inKey, const null &inValue)  { TSet(inKey, inValue); return this; }
+   void set(Key inKey, const int &inValue) { TSet(inKey, inValue); }
+   void set(Key inKey, const ::String &inValue)  { TSet(inKey, inValue); }
+   void set(Key inKey, const Float &inValue)  { TSet(inKey, inValue); }
+   void set(Key inKey, const Dynamic &inValue)  { TSet(inKey, inValue); }
+   void set(Key inKey, const null &inValue)  { TSet(inKey, inValue);  }
 
 
    template<typename F>

@@ -38,6 +38,7 @@ void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
             hash = new IntHashObject();
       }
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store!=hashObject)
    {
@@ -67,10 +68,11 @@ void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
       {
          hash = hash->convertStore(want);
          ioHash = hash;
+         HX_OBJ_WB_GET(owner,hash);
       }
    }
 
-   ioHash.mPtr = hash->set(inKey,value);
+   hash->set(inKey,value);
 }
 
 void __int_hash_set_int(HX_MAP_THIS_ARG,int inKey,int inValue)
@@ -80,14 +82,16 @@ void __int_hash_set_int(HX_MAP_THIS_ARG,int inKey,int inValue)
    {
       hash = new IntHashInt();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
@@ -98,19 +102,22 @@ void __int_hash_set_float(HX_MAP_THIS_ARG,int inKey,Float inValue)
    {
       hash = new IntHashFloat();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt)
    {
       hash = hash->convertStore(hashFloat);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
@@ -122,14 +129,16 @@ void __int_hash_set_string(HX_MAP_THIS_ARG,int inKey, ::String inValue)
    {
       hash = new IntHashString();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt || hash->store==hashFloat)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 Dynamic  __int_hash_get(Dynamic inHash,int inKey)
@@ -261,6 +270,7 @@ void __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value, bool i
             hash = new StringHashObject();
       }
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store!=hashObject)
    {
@@ -290,10 +300,11 @@ void __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value, bool i
       {
          hash = hash->convertStore(want);
          ioHash = hash;
+         HX_OBJ_WB_GET(owner,hash);
       }
    }
 
-   ioHash.mPtr = hash->set(inKey,value);
+   hash->set(inKey,value);
 }
 
 void __string_hash_set_int(HX_MAP_THIS_ARG,String inKey,int inValue)
@@ -303,14 +314,16 @@ void __string_hash_set_int(HX_MAP_THIS_ARG,String inKey,int inValue)
    {
       hash = new StringHashInt();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
@@ -321,19 +334,22 @@ void __string_hash_set_float(HX_MAP_THIS_ARG,String inKey,Float inValue)
    {
       hash = new StringHashFloat();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt)
    {
       hash = hash->convertStore(hashFloat);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
@@ -345,14 +361,16 @@ void __string_hash_set_string(HX_MAP_THIS_ARG,String inKey, ::String inValue)
    {
       hash = new StringHashString();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt || hash->store==hashFloat)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 Dynamic  __string_hash_get(Dynamic inHash,String inKey)
@@ -514,6 +532,7 @@ void __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool i
                                 (DynamicHashBase *)new DynamicHashObject();
       }
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store!=hashObject)
    {
@@ -543,10 +562,11 @@ void __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool i
       {
          hash = hash->convertStore(want);
          ioHash = hash;
+         HX_OBJ_WB_GET(owner,hash);
       }
    }
 
-   ioHash.mPtr = hash->set(inKey,value);
+   hash->set(inKey,value);
 }
 
 void __object_hash_set_int(HX_MAP_THIS_ARG,Dynamic inKey,int inValue,bool inWeakKeys)
@@ -558,18 +578,20 @@ void __object_hash_set_int(HX_MAP_THIS_ARG,Dynamic inKey,int inValue,bool inWeak
       hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashInt() :
                           (DynamicHashBase *)new DynamicHashInt();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
-void __object_hash_set_float(Dynamic &ioHash,Dynamic inKey,Float inValue,bool inWeakKeys)
+void __object_hash_set_float(HX_MAP_THIS_ARG,Dynamic inKey,Float inValue,bool inWeakKeys)
 {
    toRealObject(inKey);
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
@@ -578,19 +600,22 @@ void __object_hash_set_float(Dynamic &ioHash,Dynamic inKey,Float inValue,bool in
       hash = inWeakKeys ?  (DynamicHashBase *)new WeakDynamicHashFloat() :
                            (DynamicHashBase *)new DynamicHashFloat();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt)
    {
       hash = hash->convertStore(hashFloat);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
@@ -604,14 +629,16 @@ void __object_hash_set_string(HX_MAP_THIS_ARG,Dynamic inKey, ::String inValue,bo
       hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashString() :
                           (DynamicHashBase *)new DynamicHashString();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt || hash->store==hashFloat)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 Dynamic  __object_hash_get(Dynamic inHash,Dynamic inKey)
