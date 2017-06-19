@@ -67,7 +67,6 @@ static int sgCheckInternalOffset = 0;
 static int sgCheckInternalOffsetRows = 0;
 #endif
 
-
 int gInAlloc = false;
 
 // This is recalculated from the other parameters
@@ -151,6 +150,7 @@ static GcMode sGcMode = gcmFull;
 #endif
 
 
+
 #ifndef HXCPP_GC_MOVING
   #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
   #define HXCPP_GC_MOVING
@@ -181,6 +181,9 @@ static int sgAllocsSinceLastSpam = 0;
 #ifdef PROFILE_COLLECT
    #define STAMP(t) double t = __hxcpp_time_stamp();
    static double sLastCollect = __hxcpp_time_stamp();
+   static int sObjectMarks =0;
+   static int sAllocMarks =0;
+
 #else
    #define STAMP(t)
 #endif
@@ -1647,6 +1650,10 @@ struct AutoMarkPush
 
 void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
 {
+   #ifdef PROFILE_COLLECT
+   sAllocMarks++;
+   #endif
+
    size_t ptr_i = ((size_t)inPtr)-sizeof(int);
    unsigned int flags =  *((unsigned int *)ptr_i);
 
@@ -1779,6 +1786,10 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
 
       if (flags & IMMIX_ALLOC_IS_CONTAINER)
       {
+         #ifdef PROFILE_COLLECT
+         sObjectMarks++;
+         #endif
+
          #ifdef HXCPP_DEBUG
          if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
          {
@@ -1807,6 +1818,12 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
             inPtr->__Mark(__inCtx);
          else
             __inCtx->pushObj(inPtr);
+         #endif
+      }
+      else
+      {
+         #ifdef PROFILE_COLLECT
+         sAllocMarks++;
          #endif
       }
 
@@ -3916,8 +3933,6 @@ public:
 
 
       // Now all threads have mTopOfStack & mBottomOfStack set.
-      STAMP(t1)
-
       bool generational = false; 
 
       #ifdef HXCPP_GC_GENERATIONAL
@@ -3951,6 +3966,8 @@ public:
       else if (compactSurviors)
          hx::sGlobalChunks.copyPointers(rememberedSet);
       #endif
+
+      STAMP(t1)
 
       MarkAll(generational);
 
@@ -4201,7 +4218,7 @@ public:
          else
             sGcMode = gcmGenerational;
       }
-      //printf("sGcMode %d %d -> %d\n", mTotalAfterLastCollect, mLastNonGenerationalSize, sGcMode);
+      // printf("sGcMode %d %d -> %d\n", mTotalAfterLastCollect, mLastNonGenerationalSize, sGcMode);
       #endif
 
 
@@ -4223,11 +4240,15 @@ public:
       STAMP(t6)
       double period = t6-sLastCollect;
       sLastCollect=t6;
-      GCLOG("Collect time total=%.2fms =%.1f%%\n   sync=%.2f\n   mark=%.2f\n   large(%d-%d)=%.2f\n   stats=%.2f\n   defrag=%.2f + %.2f\n",
-              (t6-t0)*1000, (t6-t0)*100.0/period,
-              (t1-t0)*1000, (t2-t1)*1000, l0, l1, (t3-t2a)*1000, (t4-t3)*1000,
-              (t5-t4)*1000, (t2a-t2)*1000
+      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f (%d+%d)\n  large(%d->%d)=%.2f\n  stats=%.2f\n  defrag=%.2f\n",
+              (t6-t0)*1000, (t6-t0)*100.0/period, // total %
+              (t1-t0)*1000, // sync/setup
+              generational ? "mark gen" : "mark", (t2-t1)*1000, sObjectMarks, sAllocMarks, // mark
+              l0, l1, (t3-t2a)*1000, // large
+              (t4-t3)*1000, // stats
+              (t5-t4)*1000 // defrag
               );
+      sObjectMarks = sAllocMarks = 0;
       #endif
 
       #ifdef HXCPP_GC_GENERATIONAL
