@@ -190,7 +190,7 @@ static int sgAllocsSinceLastSpam = 0;
 extern void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size);
 extern void __hxt_gc_start();
 extern void __hxt_gc_end();
-extern void __hxt_gc_after_mark(int gByteMarkID, int HX_ENDIAN_MARK_ID_BYTE);
+extern void __hxt_gc_after_mark(int gByteMarkID, int markIdByte);
 #endif
 
 static int sgTimeToNextTableUpdate = 1;
