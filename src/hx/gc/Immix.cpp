@@ -104,7 +104,7 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
   #define SHOW_FRAGMENTATION
 #endif
 
-//#define RECYCLE_LARGE
+#define RECYCLE_LARGE
 
 //#define PROFILE_COLLECT
 //#define HX_GC_VERIFY
@@ -4051,6 +4051,11 @@ public:
          HxFree(largeObjectRecycle[i]);
       largeObjectRecycle.setSize(0);
 
+      size_t recycleRemaining = 0;
+      #ifdef RECYCLE_LARGE
+      recycleRemaining = mLargeAllocForceRefresh;
+      #endif
+
       int idx = 0;
       int l0 = mLargeList.size();
       while(idx<mLargeList.size())
@@ -4058,12 +4063,17 @@ public:
          unsigned int *blob = mLargeList[idx];
          if ( (blob[1] & IMMIX_ALLOC_MARK_ID) != hx::gMarkID )
          {
-            mLargeAllocated -= *blob;
-            #ifdef RECYCLE_LARGE
-            largeObjectRecycle.push(blob);
-            #else
-            HxFree(mLargeList[idx]);
-            #endif
+            unsigned int size = *blob;
+            mLargeAllocated -= size;
+            if (size < recycleRemaining)
+            {
+               recycleRemaining -= size;
+               largeObjectRecycle.push(blob);
+            }
+            else
+            {
+               HxFree(blob);
+            }
 
             mLargeList.qerase(idx);
          }
@@ -4882,6 +4892,22 @@ public:
          mCollectDone.Set();
    }
 
+   void ExpandAlloc(int &ioSize)
+   {
+      int size = ioSize + sizeof(int);
+      #ifdef HXCPP_ALIGN_ALLOC
+      // If we start in even-int offset, we need to skip 8 bytes to get alloc on even-int
+      if (allocSize+spaceStart>spaceEnd || !(spaceStart & 7))
+         size += 4;
+      #endif
+      int end = spaceStart + size;
+      if (end <= spaceEnd)
+      {
+         int linePad = IMMIX_LINE_LEN - (end & (IMMIX_LINE_LEN-1));
+         if (linePad<=64)
+            ioSize += linePad;
+      }
+   }
 
 
    void *CallAlloc(int inSize,unsigned int inObjectFlags)
@@ -5275,12 +5301,17 @@ inline unsigned int ObjectSize(void *inData)
 }
 
 
-inline unsigned int ObjectSizeSafe(void *inData)
+unsigned int ObjectSizeSafe(void *inData)
 {
    unsigned int header = ((unsigned int *)(inData))[-1];
    #ifdef HXCPP_GC_NURSERY
    if (!(header & 0xff000000))
-      return header & 0x0000ffff;
+   {
+      // Small object
+      if (header & 0x00ffffff)
+         return header & 0x0000ffff;
+      // Large object
+   }
    #endif
 
    return (header & IMMIX_ALLOC_ROW_COUNT) ?
@@ -5294,7 +5325,7 @@ void GCChangeManagedMemory(int inDelta, const char *inWhy)
 }
 
 
-void *InternalRealloc(void *inData,int inSize)
+void *InternalRealloc(void *inData,int inSize, bool inExpand)
 {
    if (inData==0)
       return hx::InternalNew(inSize,false);
@@ -5330,7 +5361,11 @@ void *InternalRealloc(void *inData,int inSize)
       else
       #endif
 
-      new_data = tla->CallAlloc((inSize+3)&~3,0);
+      inSize = (inSize+3) & ~3;
+      if (inExpand)
+         tla->ExpandAlloc(inSize);
+
+      new_data = tla->CallAlloc(inSize,0);
    }
 
 

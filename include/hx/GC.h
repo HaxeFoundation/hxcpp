@@ -113,7 +113,9 @@ namespace hx
 void *InternalNew(int inSize,bool inIsObject);
 
 // Used internall - realloc array data
-void *InternalRealloc(void *inData,int inSize);
+void *InternalRealloc(void *inData,int inSize,bool inAllowExpansion=false);
+
+unsigned int ObjectSizeSafe(void *inData);
 
 // Const buffers are allocated outside the GC system, and do not require marking
 // String buffers can optionally have a pre-computed hash appended with this method
