@@ -13,7 +13,7 @@ class Log
    public static var mute:Bool= false;
    public static var quiet:Bool = false;
    public static var verbose:Bool = false;
-   
+
    public  static var colorSupported:Null<Bool> = null;
    private static var sentWarnings = new Map<String,Bool>();
 
@@ -31,7 +31,7 @@ class Log
      if (printMutex==null)
         printMutex = new Mutex();
    }
-   
+
    public static function e(message:String):Void
    {
       error(message);
@@ -55,12 +55,12 @@ class Log
       Sys.stderr().write(Bytes.ofString(stripColor(output)));
       if (printMutex!=null)
          printMutex.release();
- 
+
       if ((verbose || !terminate) && e != null)
-         Lib.rethrow(e);   
+         Lib.rethrow(e);
 
       if (terminate)
-         Sys.exit(1);
+         Tools.exit(1);
    }
 
    public static function info(message:String, verboseMessage:String = ""):Void
@@ -75,7 +75,7 @@ class Log
          }
          else if (message != "")
          {
-            println(message); 
+            println(message);
          }
          if (printMutex!=null)
             printMutex.release();
@@ -103,7 +103,7 @@ class Log
    {
       if (printMutex!=null)
         printMutex.acquire();
-      Sys.print(stripColor(message));  
+      Sys.print(stripColor(message));
          if (printMutex!=null)
             printMutex.release();
    }
@@ -131,7 +131,7 @@ class Log
                process.close ();
             }
             catch (e:Dynamic) {};
-            
+
             colorSupported = (result == 0);
          }
          else
@@ -139,7 +139,7 @@ class Log
             colorSupported = (Sys.getEnv("TERM") == "xterm" || Sys.getEnv("ANSICON") != null);
          }
       }
-      
+
       if (colorSupported)
       {
          return output;
@@ -154,7 +154,7 @@ class Log
    public static function warn(message:String, verboseMessage:String = "", allowRepeat:Bool = false):Void
    {
       if (!mute)
-      {  
+      {
          var output = "";
          if (verbose && verboseMessage != "")
          {
@@ -162,14 +162,14 @@ class Log
          }
          else if (message != "")
          {
-            output = "\x1b[33;1mWarning:\x1b[0m \x1b[1m" + message + "\x1b[0m";  
+            output = "\x1b[33;1mWarning:\x1b[0m \x1b[1m" + message + "\x1b[0m";
          }
-         
+
          if (!allowRepeat && sentWarnings.exists (output))
          {
-            return;  
+            return;
          }
-         
+
          sentWarnings.set(output, true);
 
          if (printMutex!=null)

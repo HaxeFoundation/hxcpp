@@ -64,17 +64,17 @@ class Linker
 
       var tmpDir = overrideTmpDir==null ? inCompiler.mObjDir : overrideTmpDir;
 
-      
+
       try
       {
-         PathManager.mkdir(inTarget.mOutputDir);  
+         PathManager.mkdir(inTarget.mOutputDir);
       }
       catch (e:Dynamic)
       {
          Log.error("Unable to create output directory \"" + inTarget.mOutputDir + "\"");
-         //throw "Unable to create output directory " + inTarget.mOutputDir; 
+         //throw "Unable to create output directory " + inTarget.mOutputDir;
       }
-      
+
       var out_name = Path.normalize(PathManager.combine( inTarget.mBuildDir, inTarget.mOutputDir + file_name));
       mLastOutName = out_name;
 
@@ -264,12 +264,12 @@ class Linker
          }
 
          args = args.concat(libs);
-         
+
          var result = ProcessManager.runCommand("", mExe, args, true, true, false,
              "\x1b[1mLink: \x1b[0m" + out_name);
          if (result!=0)
          {
-            Sys.exit(result);
+            Tools.exit(result);
             //throw "Error : " + result + " - build cancelled";
          }
 
@@ -279,7 +279,7 @@ class Linker
             var result = ProcessManager.runCommand("", mRanLib, args, true, true, false, "\x1b[1mRanlib:\x1b[0m " + out_name);
             if (result!=0)
             {
-               Sys.exit(result);
+               Tools.exit(result);
                //throw "Error : " + result + " - build cancelled";
             }
          }
