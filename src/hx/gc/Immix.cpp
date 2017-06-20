@@ -104,6 +104,8 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
   #define SHOW_FRAGMENTATION
 #endif
 
+//#define RECYCLE_LARGE
+
 //#define PROFILE_COLLECT
 //#define HX_GC_VERIFY
 //#define SHOW_MEM_EVENTS
@@ -1660,32 +1662,41 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
    #ifdef HXCPP_GC_NURSERY
    if (!(flags & 0xff000000))
    {
-      int size = flags & 0xffff;
-      int start = (int)(ptr_i & IMMIX_BLOCK_OFFSET_MASK);
-      int startRow = start>>IMMIX_LINE_BITS;
-      int blockId = *(BlockIdType *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
-      BlockDataInfo *info = (*gBlockInfo)[blockId];
+      if (flags)
+      {
+         int size = flags & 0xffff;
+         int start = (int)(ptr_i & IMMIX_BLOCK_OFFSET_MASK);
+         int startRow = start>>IMMIX_LINE_BITS;
+         int blockId = *(BlockIdType *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
+         BlockDataInfo *info = (*gBlockInfo)[blockId];
 
-      int endRow = (start + size + sizeof(int) + IMMIX_LINE_LEN-1)>>IMMIX_LINE_BITS;
-      *(unsigned int *)ptr_i = flags = (flags & IMMIX_HEADER_PRESERVE) |
-                                       (endRow -startRow) |
-                                       (size<<IMMIX_ALLOC_SIZE_SHIFT) |
-                                       gMarkID;
+         int endRow = (start + size + sizeof(int) + IMMIX_LINE_LEN-1)>>IMMIX_LINE_BITS;
+         *(unsigned int *)ptr_i = flags = (flags & IMMIX_HEADER_PRESERVE) |
+                                          (endRow -startRow) |
+                                          (size<<IMMIX_ALLOC_SIZE_SHIFT) |
+                                          gMarkID;
 
-      unsigned int *pos = info->allocStart + startRow;
-      unsigned int val = *pos;
-      while(!HxAtomicExchangeIf(val,val|gImmixStartFlag[start&127], (volatile int *)pos))
-         val = *pos;
-      #ifdef HXCPP_GC_GENERATIONAL
-         #ifdef HX_GC_VERIFY
-         if (sGcVerifyGenerational)
-         {
-            printf("Nursery alloc escaped generational collection %p\n", inPtr);
-            *(int *)0=0;
-         }
+         unsigned int *pos = info->allocStart + startRow;
+         unsigned int val = *pos;
+         while(!HxAtomicExchangeIf(val,val|gImmixStartFlag[start&127], (volatile int *)pos))
+            val = *pos;
+
+         #ifdef HXCPP_GC_GENERATIONAL
+         info->mHasSurvivor = true;
          #endif
+      }
+      else
+      {
+         // Large nursury object
+         ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
+      }
 
-      info->mHasSurvivor = true;
+      #if defined(HXCPP_GC_GENERATIONAL) && defined(HX_GC_VERIFY)
+      if (sGcVerifyGenerational)
+      {
+         printf("Nursery alloc escaped generational collection %p\n", inPtr);
+         *(int *)0=0;
+      }
       #endif
    }
    else
@@ -2693,25 +2704,58 @@ public:
       if (inSize<<1 > mLargeAllocSpace)
          mLargeAllocSpace = inSize<<1;
 
-      unsigned int *result = (unsigned int *)HxAlloc(inSize + sizeof(int)*2);
-      if (inClear)
+
+      unsigned int *result = 0;
+      bool do_lock = hx::gMultiThreadMode;
+      bool isLocked = false;
+
+      for(int i=0;i<largeObjectRecycle.size();i++)
       {
-         memset(result, 0, inSize + sizeof(int)*2);
+         if ( largeObjectRecycle[i][0] == inSize )
+         {
+            if (do_lock && !isLocked)
+            {
+               mLargeListLock.Lock();
+               isLocked = true;
+               if ( largeObjectRecycle[i][0] != inSize )
+                  continue;
+            }
+
+            result = largeObjectRecycle[i];
+            largeObjectRecycle.qerase(i);
+            break;
+         }
       }
+
+      if (!result)
+         result = (unsigned int *)HxAlloc(inSize + sizeof(int)*2);
       if (!result)
       {
          #ifdef SHOW_MEM_EVENTS
          GCLOG("Large alloc failed - forcing collect\n");
          #endif
 
+         if (isLocked)
+         {
+            mLargeListLock.Unlock();
+            isLocked = false;
+         }
+
          CollectFromThisThread(true);
          result = (unsigned int *)HxAlloc(inSize + sizeof(int)*2);
       }
-      result[0] = inSize;
-      result[1] = hx::gMarkID;
 
-      bool do_lock = hx::gMultiThreadMode;
-      if (do_lock)
+      if (inClear)
+         memset(result, 0, inSize + sizeof(int)*2);
+
+      result[0] = inSize;
+      #ifdef HXCPP_GC_NURSERY
+      result[1] = 0;
+      #else
+      result[1] = hx::gMarkID;
+      #endif
+
+      if (do_lock && !isLocked)
          mLargeListLock.Lock();
 
       mLargeList.push(result);
@@ -3999,21 +4043,24 @@ public:
       #endif
 
       // Sweep large
+
+      // Manage recycle size ?
+      //  clear old frames recycle objects
+      int l2 = largeObjectRecycle.size();
+      for(int i=0;i<largeObjectRecycle.size();i++)
+         HxFree(largeObjectRecycle[i]);
+      largeObjectRecycle.setSize(0);
+
       int idx = 0;
       int l0 = mLargeList.size();
-      // Android apprears to be really slow calling free - consider
-      //  doing this async, or maybe using a freeList
-      #ifdef ASYNC_FREE
-      hx::QuickVec<void *> freeList;
-      #endif
       while(idx<mLargeList.size())
       {
          unsigned int *blob = mLargeList[idx];
          if ( (blob[1] & IMMIX_ALLOC_MARK_ID) != hx::gMarkID )
          {
             mLargeAllocated -= *blob;
-            #ifdef ASYNC_FREE
-            freeList.push(mLargeList[idx]);
+            #ifdef RECYCLE_LARGE
+            largeObjectRecycle.push(blob);
             #else
             HxFree(mLargeList[idx]);
             #endif
@@ -4023,10 +4070,6 @@ public:
          else
             idx++;
       }
-      #ifdef ASYNC_FREE
-      for(int i=0;i<freeList.size();i++)
-         HxFree(freeList[i]);
-      #endif
 
       int l1 = mLargeList.size();
       STAMP(t3)
@@ -4241,11 +4284,11 @@ public:
       STAMP(t6)
       double period = t6-sLastCollect;
       sLastCollect=t6;
-      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f (%d+%d)\n  large(%d->%d)=%.2f\n  stats=%.2f\n  defrag=%.2f\n",
+      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f (%d+%d)\n  large(%d->%d, recyc %d)=%.2f\n  stats=%.2f\n  defrag=%.2f\n",
               (t6-t0)*1000, (t6-t0)*100.0/period, // total %
               (t1-t0)*1000, // sync/setup
               generational ? "mark gen" : "mark", (t2-t1)*1000, sObjectMarks, sAllocMarks, // mark
-              l0, l1, (t3-t2a)*1000, // large
+              l0, l1, l2, (t3-t2a)*1000, // large
               (t4-t3)*1000, // stats
               (t5-t4)*1000 // defrag
               );
@@ -4446,6 +4489,7 @@ public:
    HxMutex    mLargeListLock;
    hx::QuickVec<LocalAllocator *> mLocalAllocs;
    LocalAllocator *mLocalPool[LOCAL_POOL_SIZE];
+   hx::QuickVec<unsigned int *> largeObjectRecycle;
 };
 
 
