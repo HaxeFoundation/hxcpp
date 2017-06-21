@@ -182,12 +182,14 @@ static int sgAllocsSinceLastSpam = 0;
 
 #ifdef PROFILE_COLLECT
    #define STAMP(t) double t = __hxcpp_time_stamp();
+   #define MEM_STAMP(t) t = __hxcpp_time_stamp();
    static double sLastCollect = __hxcpp_time_stamp();
    static int sObjectMarks =0;
    static int sAllocMarks =0;
 
 #else
    #define STAMP(t)
+   #define MEM_STAMP(t)
 #endif
 
 // TODO: Telemetry.h ?
@@ -2168,9 +2170,18 @@ typedef hx::QuickVec< Finalizable > FinalizableList;
 FILE_SCOPE FinalizableList sFinalizableList;
 
 
+static double tFinalizers;
+static int finalizerCount;
+static int localCount;
+static int localObjects;
+static int localAllocs;
+static int rootObjects;
+static int rootAllocs;
 
 void RunFinalizers()
 {
+   finalizerCount = 0;
+
    FinalizerList &list = *sgFinalizers;
    int idx = 0;
    while(idx<list.size())
@@ -2184,7 +2195,10 @@ void RunFinalizers()
       else if (((unsigned char *)(f->mObject))[HX_ENDIAN_MARK_ID_BYTE] != gByteMarkID)
       {
          if (f->mFinalizer)
+         {
             f->mFinalizer(f->mObject);
+            finalizerCount++;
+         }
          list.qerase(idx);
          delete f;
       }
@@ -2201,6 +2215,7 @@ void RunFinalizers()
       unsigned char mark = ((unsigned char *)f.base)[HX_ENDIAN_MARK_ID_BYTE];
       if ( mark!=gByteMarkID )
       {
+         finalizerCount++;
          f.run();
          sFinalizableList.qerase(idx);
       }
@@ -2217,6 +2232,7 @@ void RunFinalizers()
       unsigned char mark = ((unsigned char *)obj)[HX_ENDIAN_MARK_ID_BYTE];
       if ( mark!=gByteMarkID )
       {
+         finalizerCount++;
          (*i->second)(obj);
          sFinalizerMap.erase(i);
       }
@@ -2234,12 +2250,15 @@ void RunFinalizers()
       unsigned char mark = ((unsigned char *)obj)[HX_ENDIAN_MARK_ID_BYTE];
       if ( mark!=gByteMarkID )
       {
+         finalizerCount++;
          (*i->second)(obj);
          sHaxeFinalizerMap.erase(i);
       }
 
       i = next;
    }
+
+   MEM_STAMP(hx::tFinalizers);
 
    for(ObjectIdMap::iterator i=sObjectIdMap.begin(); i!=sObjectIdMap.end(); )
    {
@@ -2606,8 +2625,6 @@ void VerifyStackRead(int *inBottom, int *inTop)
    }
 }
 #endif
-
-
 
 class GlobalAllocator
 {
@@ -3812,6 +3829,10 @@ public:
    #endif
 
 
+   double tMarkInit;
+   double tMarkLocal;
+   double tMarkLocalEnd;
+   double tMarked;
    void MarkAll(bool inGenerational)
    {
       if (!inGenerational)
@@ -3847,6 +3868,8 @@ public:
          ClearBlockMarks();
       }
 
+      MEM_STAMP(tMarkInit);
+
 
       mMarker.init();
 
@@ -3874,6 +3897,11 @@ public:
          }
       } // automark
 
+      #ifdef PROFILE_COLLECT
+      hx::rootObjects = sObjectMarks;
+      hx::rootAllocs = sAllocMarks;
+      #endif
+
 
       {
       hx::AutoMarkPush info(&mMarker,"Zombies","zombie");
@@ -3882,10 +3910,19 @@ public:
          hx::MarkObjectAlloc(hx::sZombieList[i] , &mMarker );
       } // automark
 
+      MEM_STAMP(tMarkLocal);
+      hx::localCount = 0;
+
       // Mark local stacks
       for(int i=0;i<mLocalAllocs.size();i++)
          MarkLocalAlloc(mLocalAllocs[i] , &mMarker);
 
+      #ifdef PROFILE_COLLECT
+      hx::localObjects = sObjectMarks;
+      hx::localAllocs = sAllocMarks;
+      #endif
+
+      MEM_STAMP(tMarkLocalEnd);
 
       if (MAX_MARK_THREADS>1)
       {
@@ -3899,10 +3936,11 @@ public:
          mMarker.Process();
       }
 
+      MEM_STAMP(tMarked);
+
       hx::FindZombies(mMarker);
 
-      if (!inGenerational)
-         hx::RunFinalizers();
+      hx::RunFinalizers();
 
       #ifdef HX_GC_VERIFY
       for(int i=0;i<mAllBlocks.size();i++)
@@ -4294,10 +4332,16 @@ public:
       STAMP(t6)
       double period = t6-sLastCollect;
       sLastCollect=t6;
-      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f (%d+%d)\n  large(%d->%d, recyc %d)=%.2f\n  stats=%.2f\n  defrag=%.2f\n",
+      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f(init=%.2f/roots=%.2f %d+%d/loc=%.2f*%d %d+%d/mark=%.2f %d+%d/fin=%.2f*%d/ids=%.2f)\n  large(%d->%d, recyc %d)=%.2f\n  stats=%.2f\n  defrag=%.2f\n",
               (t6-t0)*1000, (t6-t0)*100.0/period, // total %
               (t1-t0)*1000, // sync/setup
-              generational ? "mark gen" : "mark", (t2-t1)*1000, sObjectMarks, sAllocMarks, // mark
+              generational ? "mark gen" : "mark", (t2-t1)*1000,
+                      (tMarkInit-t1)*1000,
+                      (tMarkLocal-tMarkInit)*1000,  hx::rootObjects, hx::rootAllocs,
+                      (tMarkLocalEnd-tMarkLocal)*1000, hx::localCount, hx::localObjects-hx::rootObjects, hx::localAllocs-hx::rootAllocs,
+                      (tMarked-tMarkLocalEnd)*1000, sObjectMarks-hx::localObjects, sAllocMarks-hx::localAllocs,
+                      (hx::tFinalizers-tMarked)*1000, hx::finalizerCount,
+                      (t2-hx::tFinalizers)*1000,
               l0, l1, l2, (t3-t2a)*1000, // large
               (t4-t3)*1000, // stats
               (t5-t4)*1000 // defrag
@@ -4555,47 +4599,53 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    {
       void *vptr = *(void **)ptr;
       MemType mem;
-      if (vptr && !((size_t)vptr & 0x03) && vptr!=prev && vptr!=lastPin &&
-              (mem = sGlobalAlloc->GetMemType(vptr)) != memUnmanaged )
+      if (vptr && !((size_t)vptr & 0x03) && vptr!=prev && vptr!=lastPin)
       {
-         if (mem==memLarge)
+         #ifdef PROFILE_COLLECT
+         hx::localCount++;
+         #endif
+         MemType mem = sGlobalAlloc->GetMemType(vptr);
+         if (mem!=memUnmanaged)
          {
-            unsigned char &mark = ((unsigned char *)(vptr))[HX_ENDIAN_MARK_ID_BYTE];
-            if (mark!=gByteMarkID)
-               mark = gByteMarkID;
-         }
-         else
-         {
-            BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
-            BlockDataInfo *info = (*gBlockInfo)[block->mId];
+            if (mem==memLarge)
+            {
+               unsigned char &mark = ((unsigned char *)(vptr))[HX_ENDIAN_MARK_ID_BYTE];
+               if (mark!=gByteMarkID)
+                  mark = gByteMarkID;
+            }
+            else
+            {
+               BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
+               BlockDataInfo *info = (*gBlockInfo)[block->mId];
 
-            int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
-            AllocType t = sgCheckInternalOffset ?
-                  info->GetEnclosingAllocType(pos-sizeof(int),vptr):
-                  info->GetAllocType(pos-sizeof(int));
-            if ( t==allocObject )
-            {
-               //GCLOG(" Mark object %p (%p)\n", vptr,ptr);
-               HX_MARK_OBJECT( ((hx::Object *)vptr) );
-               lastPin = vptr;
-               info->pin();
-            }
-            else if (t==allocString)
-            {
-               // GCLOG(" Mark string %p (%p)\n", vptr,ptr);
-               HX_MARK_STRING(vptr);
-               lastPin = vptr;
-               info->pin();
-            }
-            else if (t==allocMarked)
-            {
-               lastPin = vptr;
-               info->pin();
+               int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
+               AllocType t = sgCheckInternalOffset ?
+                     info->GetEnclosingAllocType(pos-sizeof(int),vptr):
+                     info->GetAllocType(pos-sizeof(int));
+               if ( t==allocObject )
+               {
+                  //GCLOG(" Mark object %p (%p)\n", vptr,ptr);
+                  HX_MARK_OBJECT( ((hx::Object *)vptr) );
+                  lastPin = vptr;
+                  info->pin();
+               }
+               else if (t==allocString)
+               {
+                  // GCLOG(" Mark string %p (%p)\n", vptr,ptr);
+                  HX_MARK_STRING(vptr);
+                  lastPin = vptr;
+                  info->pin();
+               }
+               else if (t==allocMarked)
+               {
+                  lastPin = vptr;
+                  info->pin();
+               }
             }
          }
+         // GCLOG(" rejected %p %p %d %p %d=%d\n", ptr, vptr, !((size_t)vptr & 0x03), prev,
+         // sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
       }
-      // GCLOG(" rejected %p %p %d %p %d=%d\n", ptr, vptr, !((size_t)vptr & 0x03), prev,
-      //    sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
    }
 }
 
