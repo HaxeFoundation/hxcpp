@@ -8,11 +8,11 @@
 <set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
 <section if="winrt">
-   <set name="ABI" value="-ZW" unless="ABI">
+   <set name="ABI" value="-ZW" unless="ABI" />
    <set name="C_ABI" value="-MD" />
 </section>
 <section unless="winrt">
-   <set name="ABI" value="-MT" unless="ABI"/>
+   <set name="ABI" value="-MT" unless="ABI" />
    <set name="C_ABI" value="${ABI}" />
 </section>
 <set name="CPP_ABI" value="${ABI}" />
