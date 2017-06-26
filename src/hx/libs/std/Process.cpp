@@ -152,7 +152,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
       if (isRaw)
       {
          b = HX_CSTRING("\"");
-         char* cmdexe = getenv("COMSPEC");
+         const char* cmdexe = getenv("COMSPEC");
          if (!cmdexe) cmdexe = "cmd.exe";
          b += String(cmdexe) + HX_CSTRING("\" /C \"") + cmd + HX_CSTRING("\"");
       }

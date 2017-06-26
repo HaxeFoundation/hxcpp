@@ -52,6 +52,9 @@ __ATOMIC_INLINE__ int __atomic_inc(volatile int *ptr) { return __sync_fetch_and_
 // returns 1 if exchange took place
 inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
    { return !__atomic_cmpxchg(inTest, inNewVal, ioWhere); }
+inline bool HxAtomicExchangeIfPtr(void *inTest, void *inNewVal,volatile void * *ioWhere)
+   { return __sync_val_compare_and_swap(ioWhere, inTest, inNewVal)==inTest; }
+
 // Returns old value naturally
 inline int HxAtomicInc(volatile int *ioWhere)
    { return __atomic_inc(ioWhere); }
@@ -88,6 +91,8 @@ inline int HxAtomicDec(volatile int *ioWhere)
 #define HX_HAS_ATOMIC 1
 
 inline bool HxAtomicExchangeIf(int inTest, int inNewVal,volatile int *ioWhere)
+   { return __sync_bool_compare_and_swap(ioWhere, inTest, inNewVal); }
+inline bool HxAtomicExchangeIfPtr(void *inTest, void *inNewVal,volatile void * *ioWhere)
    { return __sync_bool_compare_and_swap(ioWhere, inTest, inNewVal); }
 // Returns old value naturally
 inline int HxAtomicInc(volatile int *ioWhere)
