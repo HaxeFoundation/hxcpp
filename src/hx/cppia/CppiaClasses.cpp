@@ -888,6 +888,12 @@ hx::Class *CppiaClassInfo::getSuperClass()
       throw "Unknown super type!";
    if (superType->cppiaClass)
       return &superType->cppiaClass->mClass;
+   if (!superType->haxeClass.mPtr)
+   {
+      printf("Invalid super class '%s' for '%s'.\n", superType->name.c_str(), name.c_str());
+      throw "Missing super class";
+   }
+
    return &superType->haxeClass;
 }
 
