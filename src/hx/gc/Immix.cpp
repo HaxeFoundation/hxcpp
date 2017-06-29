@@ -85,10 +85,6 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 
 // #define HXCPP_GC_DEBUG_LEVEL 4
 
-#ifndef HXCPP_GC_DEBUG_LEVEL
-#define HXCPP_GC_DEBUG_LEVEL 1
-#endif
-
 #if HXCPP_GC_DEBUG_LEVEL>1
   #define PROFILE_COLLECT
   #if HXCPP_GC_DEBUG_LEVEL>2
@@ -106,11 +102,17 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 
 #define RECYCLE_LARGE
 
+//#define PROFILE_COLLECT_SUMMARY
 //#define PROFILE_COLLECT
+//#define PROFILE_THREAD_USAGE
 //#define HX_GC_VERIFY
 //#define SHOW_MEM_EVENTS
 //#define SHOW_FRAGMENTATION
 //
+
+#ifdef PROFILE_COLLECT
+   #define PROFILE_COLLECT_SUMMARY
+#endif
 
 #if defined(HX_GC_VERIFY) && defined(HXCPP_GC_GENERATIONAL)
 static bool sGcVerifyGenerational = false;
@@ -125,6 +127,16 @@ static bool sGcVerifyGenerational = false;
   #endif
 #else
   enum { MAX_MARK_THREADS = 1 };
+#endif
+
+#ifdef PROFILE_THREAD_USAGE
+static int sThreadMarkCountData[MAX_MARK_THREADS+1];
+static int sThreadArrayMarkCountData[MAX_MARK_THREADS+1];
+static int *sThreadMarkCount = sThreadMarkCountData + 1;
+static int *sThreadArrayMarkCount = sThreadArrayMarkCountData + 1;
+static int sThreadChunkPushCount;
+static int sThreadChunkWakes;
+static int sSpinCount = 0;
 #endif
 
 enum { MARK_BYTE_MASK = 0x0f };
@@ -145,11 +157,8 @@ enum GcMode
    gcmGenerational,
 };
 
-#ifdef HXCPP_GC_GENERATIONAL
-static GcMode sGcMode = gcmGenerational;
-#else
+// Start with full gc - since all objects will be new
 static GcMode sGcMode = gcmFull;
-#endif
 
 
 
@@ -191,6 +200,45 @@ static int sgAllocsSinceLastSpam = 0;
    #define STAMP(t)
    #define MEM_STAMP(t)
 #endif
+
+#ifdef PROFILE_COLLECT_SUMMARY
+struct ProfileCollectSummary
+{
+   double startTime;
+   double totalCollecting;
+   double maxStall;
+   ProfileCollectSummary()
+   {
+      startTime = __hxcpp_time_stamp();
+      totalCollecting = 0;
+      maxStall = 0;
+   }
+   ~ProfileCollectSummary()
+   {
+      double time = __hxcpp_time_stamp() - startTime;
+      GCLOG("Total time     : %.2fms\n", time*1000.0);
+      GCLOG("Collecting time: %.2fms\n", totalCollecting*1000.0);
+      GCLOG("Max Stall time : %.2fms\n", maxStall*1000.0);
+      if (time==0) time = 1;
+      GCLOG(" Fraction      : %.2f%%\n",totalCollecting*100.0/time);
+   }
+   void addTime(double dt)
+   {
+      if (dt>maxStall)
+         maxStall = dt;
+      totalCollecting += dt;
+   }
+};
+static ProfileCollectSummary profileCollectSummary;
+#define PROFILE_COLLECT_SUMMARY_START double collectT0 = __hxcpp_time_stamp();
+#define PROFILE_COLLECT_SUMMARY_END profileCollectSummary.addTime( __hxcpp_time_stamp()-collectT0);
+
+#else
+#define PROFILE_COLLECT_SUMMARY_START 
+#define PROFILE_COLLECT_SUMMARY_END
+#endif
+
+
 
 // TODO: Telemetry.h ?
 #ifdef HXCPP_TELEMETRY
@@ -1212,42 +1260,52 @@ struct MarkInfo
    const char *mMember;
 };
 
-
-
-
 struct GlobalChunks
 {
-   hx::QuickVec< MarkChunk * > chunks;
-   hx::QuickVec< MarkChunk * > spare;
-
-   ::String   *stringArrayJob;
-   hx::Object **objectArrayJob;
-   int         arrayJobLen;
-   int         arrayDistribute;
+   volatile MarkChunk *processList;
+   volatile int       processListPopLock;
+   volatile MarkChunk *freeList;
+   volatile int       freeListPopLock;
 
    GlobalChunks()
    {
-      arrayJobLen = 0;
-      stringArrayJob = 0;
-      objectArrayJob = 0;
-      arrayDistribute = 0;
+      processList = 0;
+      freeList = 0;
+      freeListPopLock = 0;
+      processListPopLock = 0;
    }
 
-   MarkChunk *pushJob(MarkChunk *inChunk)
+   MarkChunk *pushJob(MarkChunk *inChunk,bool inAndAlloc = true)
    {
+      while(true)
+      {
+         MarkChunk *head = (MarkChunk *)processList;
+         inChunk->next = head;
+         if (HxAtomicExchangeIfCastPtr(head, inChunk, &processList))
+            break;
+      }
+
+      #ifdef PROFILE_THREAD_USAGE
+      HxAtomicInc(&sThreadChunkPushCount);
+      #endif
+
       if (MAX_MARK_THREADS>1)
       {
-         ThreadPoolAutoLock l(sThreadPoolLock);
-         chunks.push(inChunk);
-         MarkChunk *result = allocLocked();
-
          if (sAllThreads ^ sRunningThreads)
          {
+            ThreadPoolAutoLock l(sThreadPoolLock);
+
+
             #define CHECK_THREAD_WAKE(tid) \
-            if (MAX_MARK_THREADS >tid && sgThreadCount>tid && (!(sAllThreads & (1<<tid)))) { \
+            if (MAX_MARK_THREADS >tid && sgThreadCount>tid && (!(sRunningThreads & (1<<tid)))) { \
                sRunningThreads |= (1<<tid); \
                SignalThreadPool(sThreadWake[tid],sThreadSleeping[tid]); \
             }
+
+            #ifdef PROFILE_THREAD_USAGE
+            sThreadChunkWakes++;
+            #endif
+
 
             CHECK_THREAD_WAKE(0)
             else CHECK_THREAD_WAKE(1)
@@ -1258,85 +1316,116 @@ struct GlobalChunks
             else CHECK_THREAD_WAKE(6)
             else CHECK_THREAD_WAKE(7)
          }
+      }
 
-         return result;
-      }
-      else
-      {
-         chunks.push(inChunk);
-         return allocLocked();
-      }
+      if (inAndAlloc)
+         return alloc();
+      return 0;
    }
 
    void addLocked(MarkChunk *inChunk)
    {
-      chunks.push(inChunk);
+      inChunk->next = (MarkChunk *)processList;
+      processList = (volatile MarkChunk *)inChunk;
    }
 
    void copyPointers( QuickVec<hx::Object *> &outPointers,bool andFree=false)
    {
       int size = 0;
-      for(int i=0;i<chunks.size();i++)
-         size += chunks[i]->count;
+      for(MarkChunk *c =(MarkChunk *)processList; c; c=c->next )
+         size += c->count;
+
       outPointers.setSize(size);
       int idx = 0;
-      while(chunks.size())
+      if (andFree)
       {
-         MarkChunk *c = chunks.pop();
-         for(int i=0;i<c->count;i++)
-            outPointers[idx++] = c->stack[i];
-         if (andFree)
+         while(processList)
          {
+            MarkChunk *c = (MarkChunk *)processList;
+            processList = c->next;
+
+            for(int i=0;i<c->count;i++)
+               outPointers[idx++] = c->stack[i];
             c->count = 0;
-            freeLocked(c);
+            c->next = (MarkChunk *)freeList;
+            freeList = c;
+         }
+      }
+      else
+      {
+         for(MarkChunk *c = (MarkChunk *)processList; c; c=c->next )
+         {
+            for(int i=0;i<c->count;i++)
+               outPointers[idx++] = c->stack[i];
          }
       }
    }
 
    int takeArrayJob(hx::Object **inPtr, int inLen)
    {
-      if (arrayJobLen)
-         return 0;
+      if (sRunningThreads != sAllThreads)
+      {
+         int n = (inLen/2) & ~15;
 
-      ThreadPoolAutoLock l(sThreadPoolLock);
-      if (sRunningThreads == sAllThreads)
-         return 0;
-
-      int count = 0;
-      for(int i=0;i<sgThreadCount ;i++)
-         if ( !(sRunningThreads & (1<<i)) )
-            count++;
-
-      // Items per thread, rounded up to multiple of 16 ...
-      arrayDistribute = ((inLen/(count + 1)) + 15) & ~15;
-      int itemsForCallingThread = arrayDistribute;
-
-
-      arrayJobLen = inLen - itemsForCallingThread;
-      stringArrayJob = 0;
-      objectArrayJob = inPtr;
-
-      // Wake othter threads...
-      for(int i=0;i<sgThreadCount ;i++)
-         if ( !(sRunningThreads & (1<<i)) )
+         if (n)
          {
-            sRunningThreads |= (1<<i);
-            SignalThreadPool(sThreadWake[i],sThreadSleeping[i]);
+            MarkChunk *chunk = alloc();
+            chunk->count = MarkChunk::OBJ_ARRAY_JOB;
+            chunk->arrayBase = inPtr;
+            chunk->arrayElements = n;
+
+            pushJob(chunk,false);
          }
 
-      // Return how many to skip
-      return arrayJobLen;
+         // Return how many to skip
+         return n;
+      }
+
+      return 0;
    }
 
+   inline void release(MarkChunk *inChunk)
+   {
+      while(true)
+      {
+         MarkChunk *head = (MarkChunk *)freeList;
+         inChunk->next = head;
+         if (HxAtomicExchangeIfCastPtr(head, inChunk, &freeList))
+            return;
+      }
+   }
 
 
    MarkChunk *popJobLocked(MarkChunk *inChunk)
    {
       if (inChunk)
-         spare.push(inChunk);
+         release(inChunk);
 
-      if (chunks.size())
-         return chunks.pop();
+      while( !HxAtomicExchangeIf(0,1,&processListPopLock) )
+      {
+         // Spin
+         #ifdef PROFILE_THREAD_USAGE
+         HxAtomicInc(&sSpinCount);
+         #endif
+      }
+
+      while(true)
+      {
+         MarkChunk *head = (MarkChunk *)processList;
+         if (!head)
+         {
+            processListPopLock = 0;
+            return 0;
+         }
+         MarkChunk *next = head->next;
+         if (HxAtomicExchangeIfCastPtr(head, next, &processList))
+         {
+            processListPopLock = 0;
+
+            head->next = 0;
+            return head;
+         }
+      }
       return 0;
    }
 
@@ -1351,98 +1440,111 @@ struct GlobalChunks
 
    // Optionally returns inChunk to empty pool (while we have the lock),
    //  and returns a new job if there is one
-   MarkChunk *popJob(MarkChunk *inChunk,int inThreadId, hx::Object ***outArrayJob, int *outJobLen)
+   MarkChunk *popJob(MarkChunk *inChunk,int inThreadId)
    {
       if (MAX_MARK_THREADS > 1 && sAllThreads)
       {
-         ThreadPoolAutoLock l(sThreadPoolLock);
-         if (arrayJobLen)
-         {
-            if (inChunk)
-               spare.push(inChunk);
-
-            int items = std::min( arrayDistribute, arrayJobLen );
-            *outJobLen = items;
-            *outArrayJob = objectArrayJob;
-            objectArrayJob += items;
-            arrayJobLen -= items;
-            // Ensure that the array marker has something to recurse into if required
-            return allocLocked();
-         }
-
          MarkChunk *result =  popJobLocked(inChunk);
          if (!result)
+         {
+            ThreadPoolAutoLock l(sThreadPoolLock);
             completeThreadLocked(inThreadId);
+         }
          return result;
       }
+
       return popJobLocked(inChunk);
    }
 
-   inline void freeLocked(MarkChunk *inChunk)
-   {
-      spare.push(inChunk);
-   }
 
    void free(MarkChunk *inChunk)
    {
-      if (MAX_MARK_THREADS>1 && sAllThreads)
-      {
-         ThreadPoolAutoLock l(sThreadPoolLock);
-         freeLocked(inChunk);
-      }
-      else
-         freeLocked(inChunk);
+      release(inChunk);
    }
 
-   inline MarkChunk *allocLocked()
+   inline MarkChunk *alloc()
    {
-      if (spare.size()==0)
-         return new MarkChunk;
-      return spare.pop();
+      while( !HxAtomicExchangeIf(0,1,&freeListPopLock) )
+      {
+         // Spin
+         #ifdef PROFILE_THREAD_USAGE
+         HxAtomicInc(&sSpinCount);
+         #endif
+      }
+
+      while(true)
+      {
+         MarkChunk *head = (MarkChunk *)freeList;
+         if (!head)
+         {
+            freeListPopLock = 0;
+            return new MarkChunk;
+         }
+         MarkChunk *next = head->next;
+         if (HxAtomicExchangeIfCastPtr(head, next, &freeList))
+         {
+            freeListPopLock = 0;
+
+            head->next = 0;
+            return head;
+         }
+      }
    }
 
-   MarkChunk *alloc(bool inForceLock = false)
+
+
+
+   MarkChunk *getInitJob()
    {
-      if (inForceLock || (MAX_MARK_THREADS>1 && sAllThreads))
+      MarkChunk *result = popJobLocked(0);
+      if (result)
       {
-         ThreadPoolAutoLock l(sThreadPoolLock);
-         return allocLocked();
+         if (result->count==MarkChunk::OBJ_ARRAY_JOB)
+         {
+            GCLOG("Popped array job?\n");
+            pushJob(result,false);
+         }
+         else
+            return result;
       }
-      return allocLocked();
+      return alloc();
    }
+
 };
 
 GlobalChunks sGlobalChunks;
 
 class MarkContext
 {
-    int       mPos;
+    #ifdef HXCPP_DEBUG
     MarkInfo  *mInfo;
+    int       mPos;
+    #endif
+
     int       mThreadId;
     MarkChunk *marking;
-    MarkChunk *spare;
 
 public:
     enum { StackSize = 8192 };
 
-    char      *block;
-
     MarkContext(int inThreadId = -1)
     {
+       #ifdef HXCPP_DEBUG
        mInfo = new MarkInfo[StackSize];
-       mThreadId = inThreadId;
        mPos = 0;
+       #endif
+       mThreadId = inThreadId;
        marking = sGlobalChunks.alloc();
-       spare = sGlobalChunks.alloc();
-       block = 0;
     }
     ~MarkContext()
     {
        if (marking) sGlobalChunks.free(marking);
-       if (spare) sGlobalChunks.free(spare);
+       #ifdef HXCPP_DEBUG
        delete [] mInfo;
+       #endif
        // TODO: Free slabs
     }
+    #ifdef HXCPP_DEBUG
     void PushClass(const char *inClass)
     {
        if (mPos<StackSize-1)
@@ -1488,27 +1590,16 @@ public:
           #endif
        }
     }
+    #endif
 
     void pushObj(hx::Object *inObject)
     {
        if (marking->count < MarkChunk::SIZE)
        {
-          //printf("push %d\n", marking->count);
-          marking->push(inObject);
-          // consider pushing spare if any thread is waiting?
-       }
-       else if (spare->count==0)
-       {
-          // Swap ...
-          MarkChunk *tmp = spare;
-          spare = marking;
-          marking = tmp;
-          //printf("swap %d\n", marking->count);
           marking->push(inObject);
        }
        else
        {
-          //printf("push job %d\n", marking->count);
           marking = sGlobalChunks.pushJob(marking);
           marking->push(inObject);
        }
@@ -1516,20 +1607,21 @@ public:
 
     void init()
     {
-       block = 0;
        if (!marking)
-          marking = sGlobalChunks.alloc();
+          marking = sGlobalChunks.getInitJob();
     }
 
-    void releaseJobsLocked()
+    void releaseJobs()
     {
        if (marking && marking->count)
        {
-          sGlobalChunks.chunks.push(marking);
-          marking = 0;
+          sGlobalChunks.pushJob(marking,false);
        }
-       if (spare->count)
-          spare = sGlobalChunks.pushJob(spare);
+       else if (marking)
+       {
+          sGlobalChunks.release(marking);
+       }
+       marking = 0;
     }
 
     void InitChunkLocked()
@@ -1546,20 +1638,21 @@ public:
           {
              if (MAX_MARK_THREADS>1 && sgThreadPoolAbort)
              {
-                ThreadPoolAutoLock l(sThreadPoolLock);
-                releaseJobsLocked();
+                releaseJobs();
                 return;
              }
 
-             hx::Object **objectArray;
-             int        arrayLength = 0;
-
-             marking = sGlobalChunks.popJob(marking,mThreadId, &objectArray, &arrayLength);
-
-             if (arrayLength)
-                MarkObjectArray(objectArray, arrayLength, this);
-             else if (!marking)
+             marking = sGlobalChunks.popJob(marking,mThreadId);
+             if (!marking)
                 break;
+             if (marking->count==MarkChunk::OBJ_ARRAY_JOB)
+             {
+                int n = marking->arrayElements;
+                hx::Object **elems = marking->arrayBase;
+                marking->count = 0;
+                MarkObjectArray(elems, n, this);
+                continue;
+             }
           }
 
           while(marking)
@@ -1567,15 +1660,10 @@ public:
              hx::Object *obj = marking->pop();
              if (obj)
              {
-                block = (char *)(((size_t)obj) & IMMIX_BLOCK_BASE_MASK);
                 obj->__Mark(this);
-             }
-             else if (spare->count)
-             {
-                // Swap ...
-                MarkChunk *tmp = spare;
-                spare = marking;
-                marking = tmp;
+                #ifdef PROFILE_THREAD_USAGE
+                sThreadMarkCount[mThreadId]++;
+                #endif
              }
              else
                 break;
@@ -1703,7 +1791,16 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
    }
    else
    #endif
+   {
+      #if defined(HXCPP_GC_GENERATIONAL) && defined(HX_GC_VERIFY)
+      if (sGcVerifyGenerational && ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] != gPrevByteMarkID)
+      {
+         printf("Alloc missed int generational collection %p\n", inPtr);
+         *(int *)0=0;
+      }
+      #endif
       ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
+   }
 
    int rows = flags & IMMIX_ALLOC_ROW_COUNT;
    if (rows)
@@ -1804,34 +1901,34 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
          #endif
 
          #ifdef HXCPP_DEBUG
-         if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
-         {
-            gCollectTraceCount++;
-            if (gCollectTraceDoPrint)
-                __inCtx->Trace();
-         }
-         #endif
-         
-         #ifdef HXCPP_DEBUG
+            if (gCollectTrace && gCollectTrace==inPtr->__GetClass().GetPtr())
+            {
+               gCollectTraceCount++;
+               if (gCollectTraceDoPrint)
+                   __inCtx->Trace();
+            }
+
             // Recursive mark so stack stays intact..
+            #if (HXCPP_GC_DEBUG_LEVEL>0)
+            inPtr->__Mark(__inCtx);
+            #else
             if (gCollectTrace)
                inPtr->__Mark(__inCtx);
             else
-         #endif
+               __inCtx->pushObj(inPtr);
+            #endif
+         #else // Not debug
 
-         // There is a slight performance gain by calling recursively, but you
-         //   run the risk of stack overflow.  Also, a parallel mark algorithm could be
-         //   done when the marking is stack based.
-         //inPtr->__Mark(__inCtx);
-     
-         #if (HXCPP_GC_DEBUG_LEVEL>0)
-         inPtr->__Mark(__inCtx);
-         #else
-         if ( block==__inCtx->block)
+            // There is a slight performance gain by calling recursively, but you
+            //   run the risk of stack overflow.  Also, a parallel mark algorithm could be
+            //   done when the marking is stack based.
+            //inPtr->__Mark(__inCtx);
+            #if (HXCPP_GC_DEBUG_LEVEL>0)
             inPtr->__Mark(__inCtx);
-         else
+            #else
             __inCtx->pushObj(inPtr);
-         #endif
+            #endif
+        #endif
       }
       else
       {
@@ -1847,14 +1944,22 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
 
 void MarkObjectArray(hx::Object **inPtr, int inLength, hx::MarkContext *__inCtx)
 {
+   hx::Object *tmp;
+   unsigned int mask = gPrevMarkIdMask;
+
+   int extra = inLength & 0x0f;
+   for(int i=0;i<extra;i++)
+      if (inPtr[i]) MarkObjectAlloc(inPtr[i],__inCtx);
+   if (inLength==extra)
+      return;
+
+   inLength -= extra;
+   hx::Object **ptrI = inPtr + extra;
+   hx::Object **end = ptrI + inLength;
+
+
    if (MAX_MARK_THREADS>1 && sAllThreads && inLength>4096)
    {
-      int extra = inLength & 0x0f;
-      for(int i=0;i<extra;i++)
-         if (inPtr[i]) MarkObjectAlloc(inPtr[i],__inCtx);
-
-      hx::Object **ptrI = inPtr + extra;
-      hx::Object **end = ptrI + (inLength& ~0x0f);
       hx::Object **dishOffEnd = end - 4096;
       while(ptrI<end)
       {
@@ -1863,30 +1968,58 @@ void MarkObjectArray(hx::Object **inPtr, int inLength, hx::MarkContext *__inCtx)
          {
             ptrI += sGlobalChunks.takeArrayJob(ptrI, end-ptrI);
          }
+         else
+         {
+            #define MARK_PTR_I \
+            tmp = *ptrI++; \
+            if (tmp) MarkObjectAlloc(tmp,__inCtx);
 
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
-         if (*ptrI) MarkObjectAlloc(*ptrI,__inCtx); ptrI++;
+            MARK_PTR_I;
+            MARK_PTR_I;
+            MARK_PTR_I;
+            MARK_PTR_I;
+
+            MARK_PTR_I;
+            MARK_PTR_I;
+            MARK_PTR_I;
+            MARK_PTR_I;
+
+            MARK_PTR_I;
+            MARK_PTR_I;
+            MARK_PTR_I;
+            MARK_PTR_I;
+
+            MARK_PTR_I;
+            MARK_PTR_I;
+            MARK_PTR_I;
+            MARK_PTR_I;
+         }
       }
    }
    else
    {
-      for(int i=0; i<inLength; i++)
-         if (inPtr[i])
-            MarkObjectAlloc(inPtr[i],__inCtx);
+      while(ptrI<end)
+      {
+         MARK_PTR_I;
+         MARK_PTR_I;
+         MARK_PTR_I;
+         MARK_PTR_I;
+
+         MARK_PTR_I;
+         MARK_PTR_I;
+         MARK_PTR_I;
+         MARK_PTR_I;
+
+         MARK_PTR_I;
+         MARK_PTR_I;
+         MARK_PTR_I;
+         MARK_PTR_I;
+
+         MARK_PTR_I;
+         MARK_PTR_I;
+         MARK_PTR_I;
+         MARK_PTR_I;
+      }
    }
 }
 
@@ -3693,7 +3826,9 @@ public:
 
 
          if (sgThreadPoolJob==tpjMark)
+         {
             context.Process();
+         }
          else
          {
             if (sgThreadPoolJob==tpjReclaimFull || sgThreadPoolJob==tpjReclaim)
@@ -3870,6 +4005,12 @@ public:
 
       MEM_STAMP(tMarkInit);
 
+      #ifdef PROFILE_THREAD_USAGE
+      for(int i=-1;i<MAX_MARK_THREADS;i++)
+         sThreadChunkPushCount = sThreadChunkWakes = sThreadMarkCount[i] = sThreadArrayMarkCount[i] = 0;
+      #endif
+
+
 
       mMarker.init();
 
@@ -3926,10 +4067,10 @@ public:
 
       if (MAX_MARK_THREADS>1)
       {
-         mMarker.releaseJobsLocked();
+         mMarker.releaseJobs();
 
          // Unleash the workers...
-         StartThreadJobs(tpjMark, hx::sGlobalChunks.chunks.size(), true);
+         StartThreadJobs(tpjMark, MAX_MARK_THREADS, true);
       }
       else
       {
@@ -3979,6 +4120,7 @@ public:
       }
 
       STAMP(t0)
+      PROFILE_COLLECT_SUMMARY_START;
 
       // We are the collector - all must wait for us
       LocalAllocator *this_local = 0;
@@ -4029,29 +4171,27 @@ public:
             if( ctx->mOldReferrers->count )
                 hx::sGlobalChunks.addLocked( ctx->mOldReferrers );
             else
-                hx::sGlobalChunks.freeLocked( ctx->mOldReferrers );
+                hx::sGlobalChunks.free( ctx->mOldReferrers );
             ctx->mOldReferrers = 0;
          }
       }
 
       generational = !inMajor && !inForceCompact && sGcMode == gcmGenerational;
-      if (!generational && sGcMode==gcmGenerational)
+      if (sGcMode==gcmGenerational)
       {
+         hx::sGlobalChunks.copyPointers(rememberedSet,!generational);
          #ifdef SHOW_MEM_EVENTS
-         GCLOG("Patch remembered set marks\n");
+         GCLOG("Patch remembered set marks %d\n", rememberedSet.size());
          #endif
-         hx::QuickVec<hx::Object *> ids;
-         hx::sGlobalChunks.copyPointers(ids,true);
-         for(int i=0;i<ids.size();i++)
-            ((unsigned char *)ids[i])[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
+         for(int i=0;i<rememberedSet.size();i++)
+            ((unsigned char *)rememberedSet[i])[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
       }
-      else if (compactSurviors)
-         hx::sGlobalChunks.copyPointers(rememberedSet);
       #endif
 
       STAMP(t1)
 
-      MarkAll(generational);
+      //for(int i=0;i<2000;i++)
+         MarkAll(generational);
 
       #if defined(HX_GC_VERIFY) && defined(HXCPP_GC_GENERATIONAL)
       if (generational)
@@ -4332,7 +4472,7 @@ public:
       STAMP(t6)
       double period = t6-sLastCollect;
       sLastCollect=t6;
-      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f(init=%.2f/roots=%.2f %d+%d/loc=%.2f*%d %d+%d/mark=%.2f %d+%d/fin=%.2f*%d/ids=%.2f)\n  large(%d->%d, recyc %d)=%.2f\n  stats=%.2f\n  defrag=%.2f\n",
+      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f(init=%.2f/roots=%.2f %d+%d/loc=%.2f*%d %d+%d/mark=%.2f %d+%d/fin=%.2f*%d/ids=%.2f)\n  large(%d->%d, recyc %d)=%.2f\n  reclaim=%.2f\n  defrag=%.2f\n",
               (t6-t0)*1000, (t6-t0)*100.0/period, // total %
               (t1-t0)*1000, // sync/setup
               generational ? "mark gen" : "mark", (t2-t1)*1000,
@@ -4343,10 +4483,18 @@ public:
                       (hx::tFinalizers-tMarked)*1000, hx::finalizerCount,
                       (t2-hx::tFinalizers)*1000,
               l0, l1, l2, (t3-t2a)*1000, // large
-              (t4-t3)*1000, // stats
+              (t4-t3)*1000, // reclaim
               (t5-t4)*1000 // defrag
               );
       sObjectMarks = sAllocMarks = 0;
+
+         #ifdef PROFILE_THREAD_USAGE
+         GCLOG("Thread chunks:%d, wakes=%d\n", sThreadChunkPushCount, sThreadChunkWakes);
+         for(int i=-1;i<MAX_MARK_THREADS;i++)
+           GCLOG(" thread %d] %d + %d\n", i, sThreadMarkCount[i], sThreadArrayMarkCount[i]);
+         GCLOG("Locking spins  : %d\n", sSpinCount);
+         sSpinCount = 0;
+         #endif
       #endif
 
       #ifdef HXCPP_GC_GENERATIONAL
@@ -4354,9 +4502,12 @@ public:
          for(int i=0;i<mLocalAllocs.size();i++)
          {
             hx::StackContext *ctx = (hx::StackContext *)mLocalAllocs[i];
-            ctx->mOldReferrers = hx::sGlobalChunks.allocLocked();
+            ctx->mOldReferrers = hx::sGlobalChunks.alloc();
          }
       #endif
+
+
+      PROFILE_COLLECT_SUMMARY_END;
 
       #ifdef HXCPP_TELEMETRY
       __hxt_gc_end();
@@ -4553,6 +4704,9 @@ namespace hx
 
 MarkChunk *MarkChunk::getNext()
 {
+   return sGlobalChunks.alloc();
+
+   /*
    if (gMultiThreadMode)
    {
       ThreadPoolAutoLock l(sThreadPoolLock);
@@ -4564,6 +4718,7 @@ MarkChunk *MarkChunk::getNext()
       sGlobalChunks.addLocked(this);
       return sGlobalChunks.allocLocked();
    }
+   */
 }
 
 
@@ -4675,7 +4830,7 @@ public:
       #endif
       #ifdef HXCPP_GC_GENERATIONAL
       if (sGcMode==gcmGenerational)
-         mOldReferrers = hx::sGlobalChunks.alloc(hx::gMultiThreadMode);
+         mOldReferrers = hx::sGlobalChunks.alloc();
       else
          mOldReferrers = 0;
       #endif

@@ -433,8 +433,8 @@ typedef ImmixAllocator Ctx;
   #define HX_OBJ_WB_PESSIMISTIC_CTX(obj,ctx)
 #endif
 
-#define HX_ARRAY_WB(array,index,value) HX_OBJ_WB(array,value)
 #define HX_OBJ_WB(obj,value) HX_OBJ_WB_CTX(obj,value,_hx_ctx)
+#define HX_ARRAY_WB(array,index,value) HX_OBJ_WB(array,value)
 #define HX_OBJ_WB_PESSIMISTIC(obj) HX_OBJ_WB_PESSIMISTIC_CTX(obj,_hx_ctx)
 #define HX_OBJ_WB_GET(obj,value) HX_OBJ_WB_CTX(obj,value,HX_CTX_GET)
 #define HX_OBJ_WB_PESSIMISTIC_GET(obj) HX_OBJ_WB_PESSIMISTIC_CTX(obj,HX_CTX_GET)

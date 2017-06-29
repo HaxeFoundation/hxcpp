@@ -354,11 +354,23 @@ enum
 
 struct MarkChunk
 {
-   enum { SIZE = 31 };
+   enum { SIZE = 62 };
+   enum { OBJ_ARRAY_JOB = -1 };
 
-   MarkChunk() : count(0) { }
-   hx::Object *stack[SIZE];
-   int    count;
+   inline MarkChunk() : count(0), next(0) { }
+
+   int        count;
+
+   union
+   {
+      hx::Object *stack[SIZE];
+      struct
+      {
+         hx::Object **arrayBase;
+         int        arrayElements;
+      };
+   };
+   MarkChunk  *next;
 
    inline void push(Object *inObj)
    {
