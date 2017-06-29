@@ -3811,14 +3811,6 @@ public:
             while( !(sRunningThreads & (1<<inId) ) )
                WaitThreadLocked(sThreadWake[inId]);
             sThreadSleeping[inId] = false;
-
-            if (sgThreadPoolJob==tpjMark)
-            {
-               // Pthread Api requires that we have the lock - so may as well use it
-               // See if there is a chunk waiting...
-               context.InitChunkLocked();
-               // Otherwise fall though - there might be an array job
-            }
          }
          #else
          sThreadWake[inId].Wait();
