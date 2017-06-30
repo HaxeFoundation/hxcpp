@@ -15,6 +15,12 @@ static bool sgIsCollecting = false;
 namespace hx
 {
    int gByteMarkID = 0x10;
+
+
+int gFastPath = 0;
+int gSlowPath = 0;
+
+
 }
 
 using hx::gByteMarkID;
@@ -47,7 +53,7 @@ enum { gAlwaysMove = false };
 
 #include <hx/QuickVec.h>
 
-// #define HXCPP_GC_BIG_BLOCKS
+ #define HXCPP_GC_BIG_BLOCKS
 
 
 #ifndef __has_builtin
@@ -466,6 +472,7 @@ enum ThreadPoolJob
    tpjMark,
    tpjReclaim,
    tpjReclaimFull,
+   tpjCountRows,
    tpjAsyncZero,
    tpjGetStats,
    tpjVisitBlocks,
@@ -595,6 +602,7 @@ struct BlockDataInfo
    int          mUsedBytes;
    bool         mPinned;
    bool         mZeroed;
+   bool         mReclaimed;
    #ifdef HXCPP_GC_GENERATIONAL
    bool         mHasSurvivor;
    #endif
@@ -623,6 +631,7 @@ struct BlockDataInfo
       }
 
 
+      mZeroLock = 0;
       mGroupId = inGid;
       mPtr     = inData;
       inData->mId = mId;
@@ -642,6 +651,7 @@ struct BlockDataInfo
       mMoveScore = 0;
       mHoles = 1;
       mZeroed = false;
+      mReclaimed = true;
       mZeroLock = 0;
    }
 
@@ -656,6 +666,7 @@ struct BlockDataInfo
       mMoveScore = 0;
       mHoles = 0;
       mZeroed = true;
+      mReclaimed = true;
       mZeroLock = 0;
    }
 
@@ -677,15 +688,28 @@ struct BlockDataInfo
    inline int GetFreeRows() const { return (IMMIX_USEFUL_LINES - mUsedRows); }
    inline int GetFreeData() const { return (IMMIX_USEFUL_LINES - mUsedRows)<<IMMIX_LINE_BITS; }
 
-   void zero()
+
+   void zeroAndUnlock()
    {
       if (!mZeroed)
       {
+         if (!mReclaimed)
+            reclaim<false>(0);
+
          for(int i=0;i<mHoles;i++)
-            ZERO_MEM( (char *)mPtr+mRanges[i].start, mRanges[i].length );
+             ZERO_MEM( (char *)mPtr+mRanges[i].start, mRanges[i].length );
          mZeroed = true;
       }
       mZeroLock = 0;
+   }
+
+   void tryZero()
+   {
+      if (mZeroed)
+         return;
+
+      if (HxAtomicExchangeIf(0,1,&mZeroLock))
+         zeroAndUnlock();
    }
 
    void destroy()
@@ -714,7 +738,77 @@ struct BlockDataInfo
          outStats.fraggedBlocks++;
    }
 
-   void reclaim(bool inFull,BlockDataStats &outStats)
+   void countRows(BlockDataStats &outStats)
+   {
+      unsigned char *rowMarked = mPtr->mRowMarked;
+      unsigned int *rowTotals = ((unsigned int *)rowMarked) + 1;
+
+      // TODO - sse/neon
+      #ifdef HXCPP_GC_BIG_BLOCKS
+      unsigned int total = 0;
+      #else
+      unsigned int total = rowMarked[2] + rowMarked[3];
+      #endif
+
+      total +=
+       rowTotals[0]  + rowTotals[1]  + rowTotals[2]  + rowTotals[3]  + rowTotals[4] +
+       rowTotals[5]  + rowTotals[6]  + rowTotals[7]  + rowTotals[8]  + rowTotals[9] +
+       rowTotals[10] + rowTotals[11] + rowTotals[12] + rowTotals[13] + rowTotals[14] +
+       rowTotals[15] + rowTotals[16] + rowTotals[17] + rowTotals[18] + rowTotals[19] +
+       rowTotals[20] + rowTotals[21] + rowTotals[22] + rowTotals[23] + rowTotals[24] +
+       rowTotals[25] + rowTotals[26] + rowTotals[27] + rowTotals[28] + rowTotals[29] +
+       rowTotals[30] + rowTotals[31] + rowTotals[32] + rowTotals[33] + rowTotals[34] +
+       rowTotals[35] + rowTotals[36] + rowTotals[37] + rowTotals[38] + rowTotals[39] +
+       rowTotals[40] + rowTotals[41] + rowTotals[42] + rowTotals[43] + rowTotals[44] +
+       rowTotals[45] + rowTotals[46] + rowTotals[47] + rowTotals[48] + rowTotals[49] +
+       rowTotals[50] + rowTotals[51] + rowTotals[52] + rowTotals[53] + rowTotals[54] +
+       rowTotals[55] + rowTotals[56] + rowTotals[57] + rowTotals[58] + rowTotals[59] +
+       rowTotals[60] + rowTotals[61] + rowTotals[62];
+
+
+      #ifdef HXCPP_GC_BIG_BLOCKS
+      rowTotals += 63;
+      total +=
+       rowTotals[0]  + rowTotals[1]  + rowTotals[2]  + rowTotals[3]  + rowTotals[4] +
+       rowTotals[5]  + rowTotals[6]  + rowTotals[7]  + rowTotals[8]  + rowTotals[9] +
+       rowTotals[10] + rowTotals[11] + rowTotals[12] + rowTotals[13] + rowTotals[14] +
+       rowTotals[15] + rowTotals[16] + rowTotals[17] + rowTotals[18] + rowTotals[19] +
+       rowTotals[20] + rowTotals[21] + rowTotals[22] + rowTotals[23] + rowTotals[24] +
+       rowTotals[25] + rowTotals[26] + rowTotals[27] + rowTotals[28] + rowTotals[29] +
+       rowTotals[30] + rowTotals[31] + rowTotals[32] + rowTotals[33] + rowTotals[34] +
+       rowTotals[35] + rowTotals[36] + rowTotals[37] + rowTotals[38] + rowTotals[39] +
+       rowTotals[40] + rowTotals[41] + rowTotals[42] + rowTotals[43] + rowTotals[44] +
+       rowTotals[45] + rowTotals[46] + rowTotals[47] + rowTotals[48] + rowTotals[49] +
+       rowTotals[50] + rowTotals[51] + rowTotals[52] + rowTotals[53] + rowTotals[54] +
+       rowTotals[55] + rowTotals[56] + rowTotals[57] + rowTotals[58] + rowTotals[59] +
+       rowTotals[60] + rowTotals[61] + rowTotals[62] + rowTotals[63];
+
+      #endif
+
+      mUsedRows = (total & 0xff) + ((total>>8) & 0xff) + ((total>>16)&0xff) + ((total>>24)&0xff);
+      mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
+
+      mZeroLock = 0;
+      outStats.rowsInUse += mUsedRows;
+      outStats.bytesInUse += mUsedBytes;
+      mHoles = 0;
+
+      if (mUsedRows==IMMIX_LINES)
+      {
+         mZeroed = true;
+         mReclaimed = true;
+      }
+      else
+      {
+         mZeroed = false;
+         mReclaimed = false;
+      }
+
+      mMaxHoleSize = (IMMIX_LINES - mUsedRows) << IMMIX_LINE_BITS;
+   }
+
+   template<bool FULL>
+   void reclaim(BlockDataStats *outStats)
    {
       HoleRange *ranges = mRanges;
       ranges[0].length = 0;
@@ -751,7 +845,6 @@ struct BlockDataInfo
       }
       else
       {
-         bool update_table = inFull;
          int hole = 0;
 
          if (r>IMMIX_HEADER_LINES)
@@ -765,7 +858,7 @@ struct BlockDataInfo
          {
             if (rowMarked[r])
             {
-               if (update_table)
+               if (FULL)
                {
                   unsigned int &starts = allocStart[r];
                   if (starts)
@@ -855,19 +948,21 @@ struct BlockDataInfo
          mHoles = hole;
       }
 
-      mUsedBytes =  inFull ? usedBytes : (mUsedRows<<IMMIX_LINE_BITS);
+      mUsedBytes =  FULL ? usedBytes : (mUsedRows<<IMMIX_LINE_BITS);
       mMoveScore = calcFragScore();
+      mReclaimed = true;
 
-      mZeroLock = 0;
+      if (outStats)
+      {
+         outStats->rowsInUse += mUsedRows;
+         outStats->bytesInUse += mUsedBytes;
+         outStats->fragScore += mMoveScore;
 
-      outStats.rowsInUse += mUsedRows;
-      outStats.bytesInUse += mUsedBytes;
-      outStats.fragScore += mMoveScore;
-
-      if (mUsedRows==0)
-         outStats.emptyBlocks++;
-      if (mMoveScore> FRAG_THRESH )
-         outStats.fraggedBlocks++;
+         if (mUsedRows==0)
+            outStats->emptyBlocks++;
+         if (mMoveScore> FRAG_THRESH )
+            outStats->fraggedBlocks++;
+      }
    }
 
    int calcFragScore()
@@ -3141,7 +3236,7 @@ public:
       if (hx::gMultiThreadMode)
          gThreadStateChangeLock->Unlock();
 
-      result->zero();
+      result->zeroAndUnlock();
 
       return result;
   }
@@ -3745,9 +3840,25 @@ public:
          if (blockId>=mAllBlocks.size())
             break;
 
-         mAllBlocks[blockId]->reclaim( sgThreadPoolJob==tpjReclaimFull, outStats );
+         if ( sgThreadPoolJob==tpjReclaimFull)
+            mAllBlocks[blockId]->reclaim<true>(&outStats);
+         else
+            mAllBlocks[blockId]->reclaim<false>(&outStats);
       }
    }
+
+   void CountAsync(BlockDataStats &outStats)
+   {
+      while(!sgThreadPoolAbort)
+      {
+         int blockId = HxAtomicInc( &mThreadJobId );
+         if (blockId>=mAllBlocks.size())
+            break;
+
+         mAllBlocks[blockId]->countRows(outStats);
+      }
+   }
+
 
    void GetStatsAsync(BlockDataStats &outStats)
    {
@@ -3782,13 +3893,12 @@ public:
    {
       while(!sgThreadPoolAbort)
       {
-         int blockId = HxAtomicInc( &mThreadJobId );
-         if (blockId>=mZeroList.size())
+         int zeroListId = HxAtomicInc( &mThreadJobId );
+         if (zeroListId>=mZeroList.size())
             break;
 
-         BlockDataInfo *info = mAllBlocks[blockId];
-         if (HxAtomicExchangeIf(0,1,&info->mZeroLock))
-            info->zero();
+         BlockDataInfo *info = mZeroList[zeroListId];
+         info->tryZero();
       }
    }
 
@@ -3825,13 +3935,19 @@ public:
          {
             if (sgThreadPoolJob==tpjReclaimFull || sgThreadPoolJob==tpjReclaim)
                ReclaimAsync(sThreadBlockDataStats[inId]);
+
+            if (sgThreadPoolJob==tpjCountRows)
+               CountAsync(sThreadBlockDataStats[inId]);
+
             else if (sgThreadPoolJob==tpjGetStats)
                GetStatsAsync(sThreadBlockDataStats[inId]);
+
             #ifdef HXCPP_VISIT_ALLOCS
             else if (sgThreadPoolJob==tpjVisitBlocks)
                VisitBlockAsync(sThreadVisitContext);
             #endif
-            else
+
+            else if (sgThreadPoolJob==tpjAsyncZero)
                ZeroAsync();
 
             ThreadPoolAutoLock l(sThreadPoolLock);
@@ -4266,7 +4382,16 @@ public:
       // Setup memory target ...
       // Count free rows, and prep blocks for sorting
       BlockDataStats stats;
-      reclaimBlocks(full,stats);
+
+      /*
+       This reduces the stall time, but adds a bit of background cpu usage
+       Might be good - need some better benchmarks
+      if (!full)
+         countRows(stats);
+      else
+      */
+         reclaimBlocks(full,stats);
+
 
       #ifdef HXCPP_GC_MOVING
       if (!full)
@@ -4294,6 +4419,7 @@ public:
       mRowsInUse = stats.rowsInUse;
       bool moved = false;
       size_t bytesInUse = stats.bytesInUse;
+
       #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
       GCLOG("Total memory : %s\n", formatBytes(GetWorkingMemory()).c_str());
       GCLOG("  reserved bytes : %s\n", formatBytes((size_t)mRowsInUse*IMMIX_LINE_LEN).c_str());
@@ -4445,13 +4571,11 @@ public:
       // printf("sGcMode %d %d -> %d\n", mTotalAfterLastCollect, mLastNonGenerationalSize, sGcMode);
       #endif
 
+      createFreeList();
 
-      #ifdef HXCPP_GC_MOVING
-      // Don't add all the blocks for allocating into...
-      createFreeList(sWorkingMemorySize-mem, true);
-      #else
-      createFreeList(sWorkingMemorySize-mem, false);
-      #endif
+      // This saves some running/stall time, but increases the total CPU usage
+      //  Need to study if it worth it
+      backgroundProcessFreeList();
 
       mAllBlocksCount   = mAllBlocks.size();
       mCurrentRowsInUse = mRowsInUse;
@@ -4480,6 +4604,7 @@ public:
               );
       sObjectMarks = sAllocMarks = 0;
 
+
          #ifdef PROFILE_THREAD_USAGE
          GCLOG("Thread chunks:%d, wakes=%d\n", sThreadChunkPushCount, sThreadChunkWakes);
          for(int i=-1;i<MAX_MARK_THREADS;i++)
@@ -4506,6 +4631,8 @@ public:
       #endif
 
       sgIsCollecting = false;
+
+      //*(int *)0=0;
 
       hx::gPauseForCollect = 0x00000000;
       if (hx::gMultiThreadMode)
@@ -4534,12 +4661,38 @@ public:
       {
          outStats.clear();
          for(int i=0;i<mAllBlocks.size();i++)
-            mAllBlocks[i]->reclaim(full,outStats);
+         {
+            if (full)
+               mAllBlocks[i]->reclaim<true>(&outStats);
+            else
+               mAllBlocks[i]->reclaim<false>(&outStats);
+         }
       }
    }
 
 
-   void createFreeList(size_t inBytes, bool inRestrictAdded)
+   void countRows(BlockDataStats &outStats)
+   {
+      if (MAX_MARK_THREADS>1)
+      {
+         for(int i=0;i<MAX_MARK_THREADS;i++)
+            sThreadBlockDataStats[i].clear();
+         StartThreadJobs(tpjCountRows, mAllBlocks.size(), true);
+         outStats = sThreadBlockDataStats[0];
+         for(int i=1;i<MAX_MARK_THREADS;i++)
+            outStats.add(sThreadBlockDataStats[i]);
+      }
+      else
+      {
+         outStats.clear();
+         for(int i=0;i<mAllBlocks.size();i++)
+            mAllBlocks[i]->countRows(outStats);
+      }
+   }
+
+
+   // buils mFreeBlocks and maybe starts the async-zero process on mZeroList
+   void createFreeList()
    {
       mFreeBlocks.clear();
       mNextFreeBlock = 0;
@@ -4548,31 +4701,18 @@ public:
       {
          BlockDataInfo *info = mAllBlocks[i];
          if (info->GetFreeRows() > 0)
-         {
             mFreeBlocks.push(info);
-         }
-      }
-      if (inRestrictAdded)
-      {
-         std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), LeastUsedFirst );
-         int useThisTime = 0;
-         for(int i=0;i<mFreeBlocks.size();i++)
-         {
-            useThisTime = i+1;
-            int bytes = mFreeBlocks[i]->GetFreeRows()<<IMMIX_LINE_BITS;
-            if (bytes>inBytes)
-               break;
-            inBytes -= bytes;
-         }
-         mFreeBlocks.setSize(useThisTime);
-      }
-      else
-      {
-         std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), MostUsedFirst );
       }
 
+      // TODO - is this good or not?
+      std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), MostUsedFirst );
+
       mZeroList.clear();
-      if (MAX_MARK_THREADS>1 && mFreeBlocks.size()>4)
+   }
+
+   void backgroundProcessFreeList()
+   {
+      if ( MAX_MARK_THREADS>1 && mFreeBlocks.size()>4)
       {
          mZeroList.setSize(mFreeBlocks.size());
          memcpy( &mZeroList[0], &mFreeBlocks[0], mFreeBlocks.size()*sizeof(void *));
@@ -4872,8 +5012,13 @@ public:
       allocBase = 0;
       mCurrentHole = 0;
       mCurrentHoles = 0;
+      #ifdef HXCPP_GC_NURSERY
+      spaceFirst = 0;
+      spaceOversize = 0;
+      #else
       spaceEnd = 0;
       spaceStart = 0;
+      #endif
       mMoreHoles = false;
    }
 
@@ -5078,7 +5223,11 @@ public:
       {
          // Cause allocation routines for fail ...
          mMoreHoles = false;
+         #ifdef HXCPP_GC_NURSERY
+         spaceOversize = 0;
+         #else
          spaceEnd = 0;
+         #endif
          mReadyForCollect.Wait();
       }
    }
@@ -5091,6 +5240,12 @@ public:
 
    void ExpandAlloc(int &ioSize)
    {
+      #ifdef HXCPP_GC_NURSERY
+      int spaceStart = spaceFirst - allocBase - 4;
+      int spaceEnd = spaceOversize - allocBase - 4;
+      #endif
+
+
       int size = ioSize + sizeof(int);
       #ifdef HXCPP_ALIGN_ALLOC
       // If we start in even-int offset, we need to skip 8 bytes to get alloc on even-int
@@ -5136,41 +5291,59 @@ public:
 
       while(1)
       {
-         int end = spaceStart + allocSize + skip4;
-         if (end <= spaceEnd)
-         {
-            #ifdef HXCPP_ALIGN_ALLOC
-            spaceStart += skip4;
-            #endif
+         #ifdef HXCPP_GC_NURSERY
+            unsigned char *buffer = spaceFirst;
+            unsigned char *end = buffer + allocSize;
 
-            unsigned int *buffer = (unsigned int *)(allocBase + spaceStart);
+            if ( end <= spaceOversize )
+            {
+               spaceFirst = end;
 
-            #ifdef HXCPP_GC_NURSERY
-            *buffer++ = inSize | inObjectFlags;
-            #else
+               int size = allocSize - 4;
+               ((unsigned int *)buffer)[-1] = size | inObjectFlags;
 
-            int startRow = spaceStart>>IMMIX_LINE_BITS;
-            allocStartFlags[ startRow ] |= hx::gImmixStartFlag[spaceStart &127];
+               #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
+               hx::GCOnNewPointer(buffer);
+               #endif
 
-            int endRow = (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS;
+               return buffer;
+            }
+         #else
+            int end = spaceStart + allocSize + skip4;
+            if (end <= spaceEnd)
+            {
+               #ifdef HXCPP_ALIGN_ALLOC
+               spaceStart += skip4;
+               #endif
 
-            *buffer++ = inObjectFlags | hx::gMarkID |
-                  (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
+               unsigned int *buffer = (unsigned int *)(allocBase + spaceStart);
 
-            #endif
+               int startRow = spaceStart>>IMMIX_LINE_BITS;
+               allocStartFlags[ startRow ] |= hx::gImmixStartFlag[spaceStart &127];
 
-            spaceStart = end;
+               int endRow = (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS;
 
-            #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
-            hx::GCOnNewPointer(buffer);
-            #endif
+               *buffer++ = inObjectFlags | hx::gMarkID |
+                     (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
 
-            return buffer;
-         }
+               spaceStart = end;
+
+               #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
+               hx::GCOnNewPointer(buffer);
+               #endif
+
+               return buffer;
+            }
+         #endif
          else if (mMoreHoles)
          {
+            #ifdef HXCPP_GC_NURSERY
+            spaceFirst = allocBase + mCurrentRange[mCurrentHole].start + sizeof(int);
+            spaceOversize = spaceFirst + mCurrentRange[mCurrentHole].length;
+            #else
             spaceStart = mCurrentRange[mCurrentHole].start;
             spaceEnd = spaceStart + mCurrentRange[mCurrentHole].length;
+            #endif
             mCurrentHole++;
             mMoreHoles = mCurrentHole<mCurrentHoles;
 
@@ -5192,8 +5365,13 @@ public:
             mCurrentRange = info->mRanges;
             allocStartFlags = info->allocStart;
             mCurrentHoles = info->mHoles;
+            #ifdef HXCPP_GC_NURSERY
+            spaceFirst = allocBase + mCurrentRange->start + sizeof(int);
+            spaceOversize = spaceFirst + mCurrentRange->length;
+            #else
             spaceStart = mCurrentRange->start;
             spaceEnd = spaceStart + mCurrentRange->length;
+            #endif
             mCurrentHole = 1;
             mMoreHoles = mCurrentHole<mCurrentHoles;
          }
@@ -5202,8 +5380,12 @@ public:
          //  overwritted the 'mMoreHoles' and 'spaceEnd' termination attempt
          if (hx::gPauseForCollect)
          {
-            spaceEnd = 0;
             mMoreHoles = 0;
+            #ifdef HXCPP_GC_NURSERY
+            spaceOversize = 0;
+            #else
+            spaceEnd = 0;
+            #endif
          }
       }
       return 0;
@@ -5341,6 +5523,13 @@ void CollectFromThisThread(bool inMajor)
 
 namespace hx
 {
+
+void *ImmixAllocator::CallAlloc(int inSize,unsigned int inObjectFlags)
+{
+   return reinterpret_cast<LocalAllocator *>(this)->CallAlloc(inSize, inObjectFlags);
+}
+
+
 
 void PauseForCollect()
 {
