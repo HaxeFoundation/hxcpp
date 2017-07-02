@@ -15,6 +15,7 @@ static bool sgIsCollecting = false;
 namespace hx
 {
    int gByteMarkID = 0x10;
+   int gRememberedByteMarkID = 0x10 | HX_GC_REMEMBERED;
 
 
 int gFastPath = 0;
@@ -24,6 +25,7 @@ int gSlowPath = 0;
 }
 
 using hx::gByteMarkID;
+using hx::gRememberedByteMarkID;
 
 // #define HXCPP_SINGLE_THREADED_APP
 
@@ -53,7 +55,7 @@ enum { gAlwaysMove = false };
 
 #include <hx/QuickVec.h>
 
- #define HXCPP_GC_BIG_BLOCKS
+// #define HXCPP_GC_BIG_BLOCKS
 
 
 #ifndef __has_builtin
@@ -89,7 +91,7 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 #endif
 
 
-// #define HXCPP_GC_DEBUG_LEVEL 4
+// #define HXCPP_GC_DEBUG_LEVEL 1
 
 #if HXCPP_GC_DEBUG_LEVEL>1
   #define PROFILE_COLLECT
@@ -468,18 +470,19 @@ static bool sThreadPoolInit = false;
 
 enum ThreadPoolJob
 {
-   tpjUnknown,
+   tpjNone,
    tpjMark,
    tpjReclaim,
    tpjReclaimFull,
    tpjCountRows,
    tpjAsyncZero,
+   tpjAsyncZeroJit,
    tpjGetStats,
    tpjVisitBlocks,
 };
 
 int sgThreadCount = 0;
-static ThreadPoolJob sgThreadPoolJob = tpjUnknown;
+static ThreadPoolJob sgThreadPoolJob = tpjNone;
 static bool sgThreadPoolAbort = false;
 
 // Pthreads enters the sleep state while holding a mutex, so it no cost to update
@@ -490,7 +493,7 @@ bool             sThreadJobDoneSleeping = false;
 ThreadPoolSignal sThreadJobDone;
 
 
-inline void SignalThreadPool(ThreadPoolSignal &ioSignal, bool sThreadSleeping)
+static inline void SignalThreadPool(ThreadPoolSignal &ioSignal, bool sThreadSleeping)
 {
    #ifdef HX_GC_PTHREADS
    if (sThreadSleeping)
@@ -500,7 +503,11 @@ inline void SignalThreadPool(ThreadPoolSignal &ioSignal, bool sThreadSleeping)
    #endif
 }
 
-
+static void wakeThreadLocked(int inThreadId)
+{
+   sRunningThreads |= (1<<inThreadId);
+   SignalThreadPool(sThreadWake[inThreadId],sThreadSleeping[inThreadId]);
+}
 
 union BlockData
 {
@@ -689,9 +696,10 @@ struct BlockDataInfo
    inline int GetFreeData() const { return (IMMIX_USEFUL_LINES - mUsedRows)<<IMMIX_LINE_BITS; }
 
 
-   void zeroAndUnlock()
+   bool zeroAndUnlock()
    {
-      if (!mZeroed)
+      bool doZero = !mZeroed;
+      if (doZero)
       {
          if (!mReclaimed)
             reclaim<false>(0);
@@ -701,15 +709,18 @@ struct BlockDataInfo
          mZeroed = true;
       }
       mZeroLock = 0;
+      return doZero;
    }
 
-   void tryZero()
+   bool tryZero()
    {
       if (mZeroed)
-         return;
+         return false;
 
       if (HxAtomicExchangeIf(0,1,&mZeroLock))
-         zeroAndUnlock();
+         return zeroAndUnlock();
+
+      return false;
    }
 
    void destroy()
@@ -1393,8 +1404,7 @@ struct GlobalChunks
 
             #define CHECK_THREAD_WAKE(tid) \
             if (MAX_MARK_THREADS >tid && sgThreadCount>tid && (!(sRunningThreads & (1<<tid)))) { \
-               sRunningThreads |= (1<<tid); \
-               SignalThreadPool(sThreadWake[tid],sThreadSleeping[tid]); \
+               wakeThreadLocked(tid); \
             }
 
             #ifdef PROFILE_THREAD_USAGE
@@ -1527,6 +1537,11 @@ struct GlobalChunks
 
    void completeThreadLocked(int inThreadId)
    {
+      if (!(sRunningThreads & (1<<inThreadId)))
+      {
+         printf("Complete non-running thread?\n");
+         *(int *)0=0;
+      }
       sRunningThreads &= ~(1<<inThreadId);
       if (!sRunningThreads)
          SignalThreadPool(sThreadJobDone,sThreadJobDoneSleeping);
@@ -3064,6 +3079,16 @@ public:
                     else
                        mFreeBlocks.erase(i);
 
+                    if (info->mZeroed && sgThreadPoolJob==tpjAsyncZeroJit)
+                    {
+                       // Wake the thread?
+                       if (HxAtomicInc(&mZeroListQueue)==0 || !sRunningThreads)
+                       {
+                          ThreadPoolAutoLock l(sThreadPoolLock);
+                          if (!sRunningThreads & 0x01)
+                             wakeThreadLocked(0);
+                       }
+                    }
                     return info;
                  }
                  else
@@ -3902,6 +3927,80 @@ public:
       }
    }
 
+   bool ZeroAsyncJit()
+   {
+      while(true)
+      {
+         if (sgThreadPoolAbort)
+            return true;
+
+         if (mThreadJobId>=mZeroList.size())
+            return true;
+
+         int q = mZeroListQueue;
+         if (q==0)
+         {
+            // wait for next wake...
+            //printf("zzz\n");
+            return false;
+         }
+
+         if (HxAtomicExchangeIf(q, q-1, &mZeroListQueue))
+         {
+            // Ok, lets process one
+            while(true)
+            {
+               int zeroListId = HxAtomicInc( &mThreadJobId );
+               if (zeroListId>=mZeroList.size())
+                   return true;
+               BlockDataInfo *info = mZeroList[zeroListId];
+               if (info->tryZero())
+               {
+                  // Got one!
+                  break;
+               }
+               // try again
+            }
+         }
+      }
+   }
+
+
+   void finishThreadJob(int inId)
+   {
+      ThreadPoolAutoLock l(sThreadPoolLock);
+      if (sRunningThreads & (1<<inId))
+      {
+         sRunningThreads &= ~(1<<inId);
+         if (!sRunningThreads)
+            SignalThreadPool(sThreadJobDone,sThreadJobDoneSleeping);
+      }
+      else
+      {
+         printf("Finishe non-runnning thread?\n");
+         *(int *)0=0;
+      }
+   }
+
+   void waitForThreadWake(int inId)
+   {
+      #ifdef HX_GC_PTHREADS
+      {
+         ThreadPoolAutoLock l(sThreadPoolLock);
+         int count = 0;
+
+         // May be woken multiple times if sRunningThreads is set to 0 then 1 before we sleep
+         sThreadSleeping[inId] = true;
+         // Spurious wake?
+         while( !(sRunningThreads & (1<<inId) ) )
+            WaitThreadLocked(sThreadWake[inId]);
+         sThreadSleeping[inId] = false;
+      }
+      #else
+      while( !(sRunningThreads & (1<<inId) ) )
+         sThreadWake[inId].Wait();
+      #endif
+   }
 
 
    void ThreadLoop(int inId)
@@ -3910,33 +4009,28 @@ public:
 
       while(true)
       {
-         #ifdef HX_GC_PTHREADS
-         {
-            ThreadPoolAutoLock l(sThreadPoolLock);
-            int count = 0;
- 
-            // May be woken multiple times if sRunningThreads is set to 0 then 1 before we sleep
-            sThreadSleeping[inId] = true;
-            // Spurious wake?
-            while( !(sRunningThreads & (1<<inId) ) )
-               WaitThreadLocked(sThreadWake[inId]);
-            sThreadSleeping[inId] = false;
-         }
-         #else
-         sThreadWake[inId].Wait();
-         #endif
+         waitForThreadWake(inId);
 
+         if (! (sRunningThreads & (1<<inId)) )
+            printf("Bad running threads!\n");
 
          if (sgThreadPoolJob==tpjMark)
          {
             context.Process();
+         }
+         else if (sgThreadPoolJob==tpjAsyncZeroJit)
+         {
+            if (ZeroAsyncJit())
+            {
+               finishThreadJob(inId);
+            }
          }
          else
          {
             if (sgThreadPoolJob==tpjReclaimFull || sgThreadPoolJob==tpjReclaim)
                ReclaimAsync(sThreadBlockDataStats[inId]);
 
-            if (sgThreadPoolJob==tpjCountRows)
+            else if (sgThreadPoolJob==tpjCountRows)
                CountAsync(sThreadBlockDataStats[inId]);
 
             else if (sgThreadPoolJob==tpjGetStats)
@@ -3950,10 +4044,7 @@ public:
             else if (sgThreadPoolJob==tpjAsyncZero)
                ZeroAsync();
 
-            ThreadPoolAutoLock l(sThreadPoolLock);
-            sRunningThreads &= ~(1<<inId);
-            if (!sRunningThreads)
-               SignalThreadPool(sThreadJobDone,sThreadJobDoneSleeping);
+            finishThreadJob(inId);
          }
       }
    }
@@ -3986,10 +4077,26 @@ public:
 
    void StopThreadJobs(bool inKill)
    {
+      bool maybeExtraWake = false;
+
       if (sAllThreads)
       {
          if (inKill)
+         {
             sgThreadPoolAbort = true;
+            if (sgThreadPoolJob==tpjAsyncZeroJit)
+            {
+               ThreadPoolAutoLock l(sThreadPoolLock);
+               // Thread will be waiting, but not finished
+               if (sRunningThreads & 0x1)
+               {
+                  sgThreadPoolJob = tpjNone;
+                  maybeExtraWake = true;
+                  wakeThreadLocked(0);
+               }
+            }
+         }
+
 
          #ifdef HX_GC_PTHREADS
          ThreadPoolAutoLock lock(sThreadPoolLock);
@@ -3998,7 +4105,8 @@ public:
              WaitThreadLocked(sThreadJobDone);
          sThreadJobDoneSleeping = false;
          #else
-         sThreadJobDone.Wait();
+         while(sRunningThreads)
+            sThreadJobDone.Wait();
          #endif
          sgThreadPoolAbort = false;
          sAllThreads = 0;
@@ -4024,6 +4132,7 @@ public:
       ThreadPoolAutoLock lock(sThreadPoolLock);
       #endif
 
+
       sgThreadPoolJob = inJob;
 
       sgThreadCount = inThreadLimit<0 ? MAX_MARK_THREADS : std::min((int)MAX_MARK_THREADS, inThreadLimit) ;
@@ -4046,10 +4155,20 @@ public:
             WaitThreadLocked(sThreadJobDone);
          sThreadJobDoneSleeping = false;
          #else
-         sThreadJobDone.Wait();
+         while(sRunningThreads)
+            sThreadJobDone.Wait();
          #endif
 
          sAllThreads = 0;
+
+
+         if (sRunningThreads)
+         {
+            printf("Bad thread stop %d\n", sRunningThreads);
+            *(int *)0=0;
+         }
+
+
       }
    }
 
@@ -4101,6 +4220,7 @@ public:
 
          hx::gMarkID = gByteMarkID << 24;
          hx::gMarkIDWithContainer = (gByteMarkID << 24) | IMMIX_ALLOC_IS_CONTAINER;
+         gRememberedByteMarkID = gByteMarkID | HX_GC_REMEMBERED;
 
          gBlockStack = 0;
 
@@ -4574,8 +4694,8 @@ public:
       createFreeList();
 
       // This saves some running/stall time, but increases the total CPU usage
-      //  Need to study if it worth it
-      backgroundProcessFreeList();
+      // Delaying it until just before the block is used improces the cache locality
+      backgroundProcessFreeList(false);
 
       mAllBlocksCount   = mAllBlocks.size();
       mCurrentRowsInUse = mRowsInUse;
@@ -4710,16 +4830,33 @@ public:
       mZeroList.clear();
    }
 
-   void backgroundProcessFreeList()
+   void backgroundProcessFreeList(bool inJit)
    {
+      mZeroListQueue = 0;
       if ( MAX_MARK_THREADS>1 && mFreeBlocks.size()>4)
       {
+         if (inJit)
+         {
+            // TODO - work out best size based on cache size?
+            #ifdef HXCPP_GC_BIG_BLOCKS
+            mZeroListQueue = mLocalAllocs.size() + 8;
+            #else
+            mZeroListQueue = mLocalAllocs.size() + 16;
+            #endif
+            if (mZeroListQueue>=mFreeBlocks.size())
+            {
+               inJit = false;
+               mZeroListQueue = 0;
+            }
+         }
+
          mZeroList.setSize(mFreeBlocks.size());
          memcpy( &mZeroList[0], &mFreeBlocks[0], mFreeBlocks.size()*sizeof(void *));
 
          // Only use one thread for parallel zeroing.  Try to get though the work wihout
          //  slowing down the main thread
-         StartThreadJobs(tpjAsyncZero, mZeroList.size(), false, 1);
+         StartThreadJobs(inJit ? tpjAsyncZeroJit : tpjAsyncZero, mZeroList.size(), false, 1);
+
       }
    }
 
@@ -4822,6 +4959,8 @@ public:
    BlockList mAllBlocks;
    BlockList mFreeBlocks;
    BlockList mZeroList;
+   volatile int mZeroListQueue;
+
    LargeList mLargeList;
    HxMutex    mLargeListLock;
    hx::QuickVec<LocalAllocator *> mLocalAllocs;
@@ -4837,23 +4976,7 @@ namespace hx
 MarkChunk *MarkChunk::getNext()
 {
    return sGlobalChunks.alloc();
-
-   /*
-   if (gMultiThreadMode)
-   {
-      ThreadPoolAutoLock l(sThreadPoolLock);
-      sGlobalChunks.addLocked(this);
-      return sGlobalChunks.allocLocked();
-   }
-   else
-   {
-      sGlobalChunks.addLocked(this);
-      return sGlobalChunks.allocLocked();
-   }
-   */
 }
-
-
 
 
 

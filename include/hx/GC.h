@@ -436,17 +436,19 @@ public:
 typedef ImmixAllocator GcAllocator;
 typedef ImmixAllocator Ctx;
 
+         // if (!(mark&HX_GC_REMEMBERED) && mark) {
+
 #ifdef HXCPP_GC_GENERATIONAL
   #define HX_OBJ_WB_CTX(obj,value,ctx) { \
      if ( (value) &&  !((unsigned char *)(value))[ HX_ENDIAN_MARK_ID_BYTE  ] ) { \
         unsigned char &mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]; \
-         if (!(mark&HX_GC_REMEMBERED) && mark) { \
+         if (mark == hx::gByteMarkID)  { \
             mark|=HX_GC_REMEMBERED; \
             ctx->pushReferrer(obj); \
      } } }
   #define HX_OBJ_WB_PESSIMISTIC_CTX(obj,ctx) { \
      unsigned char &mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]; \
-     if ( !(mark &HX_GC_REMEMBERED) && mark ) { \
+     if (mark == hx::gByteMarkID)  { \
         mark|=HX_GC_REMEMBERED; \
         ctx->pushReferrer(obj); \
      } }

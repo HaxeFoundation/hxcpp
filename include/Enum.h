@@ -76,12 +76,20 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
       template<typename T>
       inline EnumBase_obj *_hx_init(int inIndex,const T &inValue)
       {
+         #ifdef HXCPP_GC_GENERATIONAL
+         cpp::Variant &v = _hx_getFixed()[inIndex];
+         v = inValue;
+         if (v.type<=cpp::Variant::typeString)
+             HX_OBJ_WB_GET(this, v.valObject);
+         #else
          _hx_getFixed()[inIndex] = inValue;
+         #endif
          return this;
       }
       inline void _hx_setIdentity(const String &inTag, int inIndex,int inFixedFields)
       {
          _hx_tag = inTag;
+         HX_OBJ_WB_GET(this, _hx_tag.__s);
          index = inIndex;
          mFixedFields = inFixedFields;
       }
