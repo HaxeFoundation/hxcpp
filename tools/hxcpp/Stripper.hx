@@ -14,7 +14,7 @@ class Stripper
       var args = new Array<String>();
       args = args.concat(mFlags);
       args.push(inTarget);
-      
+
       var split = mExe.split(" ");
       var exe = split.shift();
       args = split.concat(args);
@@ -22,7 +22,7 @@ class Stripper
       var result = ProcessManager.runCommand("", exe, args);
       if (result!=0)
       {
-         Sys.exit(result);
+         Tools.exit(result);
          //throw "Error : " + result + " - build cancelled";
       }
    }

@@ -266,7 +266,7 @@ class Compiler
          args.push(out + obj_name);
 
          var tagInfo = inFile.mTags==null ? "" : " " + inFile.mTags.split(",");
-         
+
          var fileName = inFile.mName;
          var split = fileName.split ("/");
          if (split.length > 1)
@@ -279,7 +279,7 @@ class Compiler
          }
          fileName += " \x1b[3m" + tagInfo + "\x1b[0m";
 
-         
+
          if (inTid >= 0)
          {
             if (BuildTool.threadExitCode == 0)
@@ -304,7 +304,7 @@ class Compiler
             {
                if (FileSystem.exists(obj_name))
                   FileSystem.deleteFile(obj_name);
-               Sys.exit (result);
+               Tools.exit (result);
                //throw "Error : " + result + " - build cancelled";
             }
          }
