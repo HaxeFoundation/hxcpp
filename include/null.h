@@ -128,8 +128,11 @@ class null
 
      inline Dynamic &operator()(const AnyArg &a0=0, const AnyArg &a1=0, const AnyArg &a2=0,
             const AnyArg &a4=0, const AnyArg &a5=0, const AnyArg &a6=0,
-            const AnyArg &a7=0, const AnyArg &a8=0, const AnyArg &a9=0 )
-        { hx::NullReference("Function Call", false); return *(Dynamic *)0; }
+            const AnyArg &a7=0, const AnyArg &a8=0, const AnyArg &a9=0 ) {
+                hx::NullReference("Function Call", false);
+                Dynamic* nullDynamic = 0;
+                return *nullDynamic;
+            }
 
 	  HX_NULL_COMPARE_OPS(bool)
 	  HX_NULL_COMPARE_OPS(double)
