@@ -126,10 +126,14 @@ class null
      inline null operator - () const { return hx::NullArithmetic("-"); }
      inline null operator ! () const { return hx::NullArithmetic("!"); }
 
-     inline Dynamic &operator()(const AnyArg &a0=0, const AnyArg &a1=0, const AnyArg &a2=0,
+     template<class T> T operator()(const AnyArg &a0=0, const AnyArg &a1=0, const AnyArg &a2=0,
             const AnyArg &a4=0, const AnyArg &a5=0, const AnyArg &a6=0,
             const AnyArg &a7=0, const AnyArg &a8=0, const AnyArg &a9=0 )
-        { hx::NullReference("Function Call", false); return *(Dynamic *)0; }
+            {
+                hx::NullReference("Function Call", false);
+                T nullDynamic;
+                return nullDynamic;
+            }
 
 	  HX_NULL_COMPARE_OPS(bool)
 	  HX_NULL_COMPARE_OPS(double)
