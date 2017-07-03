@@ -147,6 +147,16 @@ ENUM *CreateEnum(const String &inName,int inIndex, int inFields)
    return result;
 }
 
+template<typename ENUM>
+ENUM *CreateConstEnum(const String &inName,int inIndex)
+{
+   ENUM vtable;
+   ENUM *result = (ENUM *)hx::InternalCreateConstBuffer(&vtable,sizeof(ENUM));
+   result->_hx_setIdentity(inName,inIndex,0);
+   return result;
+}
+
+
 #else
 template<typename ENUM>
 hx::ObjectPtr<ENUM> CreateEnum(const String &inName,int inIndex, DynamicArray inArgs=DynamicArray())
