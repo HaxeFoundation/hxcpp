@@ -314,6 +314,11 @@ extern void scriptMarkStack(hx::MarkContext *);
 #define ZERO_MEM(ptr, n) memset(ptr,0,n)
 #endif
 
+#ifdef HX_WINDOWS
+#define EXIT_ABNORMALLY() *(int *)0=0;
+#else
+#define EXIT_ABNORMALLY() __builtin_trap();
+#endif
 
 // ---  Internal GC - IMMIX Implementation ------------------------------
 
@@ -1553,7 +1558,7 @@ struct GlobalChunks
       if (!(sRunningThreads & (1<<inThreadId)))
       {
          printf("Complete non-running thread?\n");
-         *(int *)0=0;
+         EXIT_ABNORMALLY();
       }
       sRunningThreads &= ~(1<<inThreadId);
       if (!sRunningThreads)
@@ -1919,7 +1924,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
       if (sGcVerifyGenerational && ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] != gPrevByteMarkID)
       {
          printf("Alloc missed int generational collection %p\n", inPtr);
-         *(int *)0=0;
+         EXIT_ABNORMALLY();
       }
       #endif
       ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
@@ -1929,7 +1934,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
    if (rows)
    {
       #if HXCPP_GC_DEBUG_LEVEL>0
-      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) *(int *)0=0;
+      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) EXIT_ABNORMALLY
       #endif
 
       char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
@@ -2000,7 +2005,7 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
       char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
       char *rowMark = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS);
       #if HXCPP_GC_DEBUG_LEVEL>0
-      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) *(int *)0=0;
+      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) EXIT_ABNORMALLY();
       #endif
 
       *rowMark = 1;
@@ -3993,7 +3998,7 @@ public:
       else
       {
          printf("Finishe non-runnning thread?\n");
-         *(int *)0=0;
+         EXIT_ABNORMALLY();
       }
    }
 
@@ -4180,7 +4185,7 @@ public:
          if (sRunningThreads)
          {
             printf("Bad thread stop %d\n", sRunningThreads);
-            *(int *)0=0;
+            EXIT_ABNORMALLY();
          }
 
 
@@ -4332,7 +4337,7 @@ public:
          if (i>0 && mAllBlocks[i-1]->mPtr >= mAllBlocks[i]->mPtr)
          {
             printf("Bad block order\n");
-            *(int *)0=0;
+            EXIT_ABNORMALLY();
          }
          mAllBlocks[i]->verify("After mark");
       }
@@ -4770,7 +4775,7 @@ public:
 
       sgIsCollecting = false;
 
-      //*(int *)0=0;
+      //EXIT_ABNORMALLY();
 
       hx::gPauseForCollect = 0x00000000;
       if (hx::gMultiThreadMode)
@@ -5427,7 +5432,7 @@ public:
       #endif
 
       #if HXCPP_GC_DEBUG_LEVEL>0
-      if (inSize & 3) *(int *)0=0;
+      if (inSize & 3) EXIT_ABNORMALLY();
       #endif
 
       while(1)
