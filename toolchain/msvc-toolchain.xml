@@ -84,7 +84,7 @@
   <flag value="-Od" tag="debug" />
   <flag value="-O2" tag="release" />
   <flag value="-Os" tag="optim-size" />
-  <flag value="-GL" if="HXCPP_OPTIMIZE_LINK || HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
+  <flag value="-GL" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
 
   <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
