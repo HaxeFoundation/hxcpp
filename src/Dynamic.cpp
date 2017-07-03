@@ -253,6 +253,7 @@ public:
    {
       mLength= inLength;
       mValue = InternalNew(inLength,false);
+      HX_OBJ_WB_GET(this, mValue);
       memcpy(mValue, inValue, inLength);
       mHandler = inHandler;
    }

@@ -693,7 +693,9 @@ struct VirtualArray_##func : public hx::Object \
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    bool __IsFunction() const { return true; } \
    VirtualArray mThis; \
-   VirtualArray_##func(VirtualArray inThis) : mThis(inThis) { } \
+   VirtualArray_##func(VirtualArray inThis) : mThis(inThis) { \
+      HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
+   } \
    String toString() const{ return HX_CSTRING(#func) ; } \
    String __ToString() const{ return HX_CSTRING(#func) ; } \
    int __GetType() const { return vtFunction; } \

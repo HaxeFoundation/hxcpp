@@ -5898,6 +5898,13 @@ void *InternalRealloc(void *inData,int inSize, bool inExpand)
    return new_data;
 }
 
+#ifdef HXCPP_GC_GENERATIONAL
+void NewMarkedObject(hx::Object *inPtr)
+{
+   HX_OBJ_WB_PESSIMISTIC_GET(inPtr);
+}
+#endif
+
 void RegisterCurrentThread(void *inTopOfStack)
 {
    // Create a local-alloc

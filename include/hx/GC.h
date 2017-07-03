@@ -452,9 +452,14 @@ typedef ImmixAllocator Ctx;
         mark|=HX_GC_REMEMBERED; \
         ctx->pushReferrer(obj); \
      } }
+  // I'm not sure if this will ever trigger...
+  #define HX_OBJ_WB_NEW_MARKED_OBJECT(obj) { \
+     if (((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]) hx::NewMarkedObject(obj); \
+  }
 #else
   #define HX_OBJ_WB_CTX(obj,value,ctx)
   #define HX_OBJ_WB_PESSIMISTIC_CTX(obj,ctx)
+  #define HX_OBJ_WB_NEW_MARKED_OBJECT(obj)
 #endif
 
 #define HX_OBJ_WB(obj,value) HX_OBJ_WB_CTX(obj,value,_hx_ctx)
@@ -468,6 +473,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES extern unsigned int gPrevMarkIdMask;
 // Called only once it is determined that a new mark is required
 HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkAllocUnchecked(void *inPtr ,hx::MarkContext *__inCtx); 
 HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkObjectAllocUnchecked(hx::Object *inPtr ,hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void NewMarkedObject(hx::Object *inPtr);
 
 inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
 {
