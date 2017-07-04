@@ -1381,6 +1381,19 @@ struct GlobalChunks
       processListPopLock = 0;
    }
 
+   MarkChunk *pushJobNoWake(MarkChunk *inChunk)
+   {
+      while(true)
+      {
+         MarkChunk *head = (MarkChunk *)processList;
+         inChunk->next = head;
+         if (HxAtomicExchangeIfCastPtr(head, inChunk, &processList))
+            break;
+      }
+
+      return alloc();
+   }
+
    MarkChunk *pushJob(MarkChunk *inChunk,bool inAndAlloc = true)
    {
       while(true)
@@ -1862,6 +1875,14 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
    #ifdef HXCPP_GC_NURSERY
    if (!(flags & 0xff000000))
    {
+      #if defined(HXCPP_GC_GENERATIONAL) && defined(HX_GC_VERIFY)
+      if (sGcVerifyGenerational)
+      {
+         printf("Nursery alloc escaped generational collection %p\n", inPtr);
+         *(int *)0=0;
+      }
+      #endif
+
       if (flags)
       {
          int size = flags & 0xffff;
@@ -1890,14 +1911,6 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
          // Large nursury object
          ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
       }
-
-      #if defined(HXCPP_GC_GENERATIONAL) && defined(HX_GC_VERIFY)
-      if (sGcVerifyGenerational)
-      {
-         printf("Nursery alloc escaped generational collection %p\n", inPtr);
-         *(int *)0=0;
-      }
-      #endif
    }
    else
    #endif
@@ -1948,6 +1961,15 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
    #ifdef HXCPP_GC_NURSERY
    if (!(flags & 0xff000000))
    {
+      #if defined(HXCPP_GC_GENERATIONAL) && defined(HX_GC_VERIFY)
+         if (sGcVerifyGenerational)
+         {
+            printf("Nursery object escaped generational collection %p\n", inPtr);
+            *(int *)0=0;
+         }
+      #endif
+
+
       int size = flags & 0xffff;
       int start = (int)(ptr_i & IMMIX_BLOCK_OFFSET_MASK);
       int startRow = start>>IMMIX_LINE_BITS;
@@ -1965,13 +1987,6 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
       while(!HxAtomicExchangeIf(val,val|gImmixStartFlag[start&127], (volatile int *)pos))
          val = *pos;
       #ifdef HXCPP_GC_GENERATIONAL
-         #ifdef HX_GC_VERIFY
-         if (sGcVerifyGenerational)
-         {
-            printf("Nursery object escaped generational collection %p\n", inPtr);
-            *(int *)0=0;
-         }
-         #endif
       info->mHasSurvivor = true;
       #endif
    }
@@ -4390,7 +4405,6 @@ public:
       #ifdef HXCPP_GC_GENERATIONAL
       bool compactSurviors = false;
 
-      hx::QuickVec<hx::Object *> rememberedSet;
       if (sGcMode==gcmGenerational)
       {
          for(int i=0;i<mLocalAllocs.size();i++)
@@ -4404,6 +4418,7 @@ public:
          }
       }
 
+      hx::QuickVec<hx::Object *> rememberedSet;
       generational = !inMajor && !inForceCompact && sGcMode == gcmGenerational;
       if (sGcMode==gcmGenerational)
       {
@@ -4418,8 +4433,7 @@ public:
 
       STAMP(t1)
 
-      //for(int i=0;i<2000;i++)
-         MarkAll(generational);
+      MarkAll(generational);
 
       #if defined(HX_GC_VERIFY) && defined(HXCPP_GC_GENERATIONAL)
       if (generational)
@@ -4684,7 +4698,11 @@ public:
       else
       {
          if ( (mTotalAfterLastCollect>>4) > (mLastNonGenerationalSize>>4) * 7/4 )
+         {
             sGcMode = gcmFull;
+            //Todo - disable WB using this code instead of if (mOldReferrers) ?
+            //gByteMarkID |= 0x30;
+         }
          else
             sGcMode = gcmGenerational;
       }
@@ -4973,9 +4991,9 @@ public:
 namespace hx
 {
 
-MarkChunk *MarkChunk::getNext()
+MarkChunk *MarkChunk::swapForNew()
 {
-   return sGlobalChunks.alloc();
+   return sGlobalChunks.pushJobNoWake(this);
 }
 
 

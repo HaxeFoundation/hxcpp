@@ -382,7 +382,7 @@ struct MarkChunk
          return stack[--count];
       return 0;
    }
-   MarkChunk *getNext();
+   MarkChunk *swapForNew();
 };
 
 
@@ -431,7 +431,7 @@ struct StackContext : public hx::ImmixAllocator
       {
          mOldReferrers->push(inObj);
          if (mOldReferrers->count==MarkChunk::SIZE)
-            mOldReferrers = mOldReferrers->getNext();
+            mOldReferrers = mOldReferrers->swapForNew();
       }
    }
    #endif
