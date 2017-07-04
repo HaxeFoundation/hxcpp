@@ -70,7 +70,7 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
              #endif
              )
 {
-   mName = inClassName;
+   mName = const_cast<String &>(inClassName).dupConst();
    mSuper = inSuperClass;
    mConstructEmpty = inConstructEmpty;
    mConstructArgs = inConstructArgs;
@@ -106,10 +106,13 @@ bool Class_obj::SetNoStaticField(const String &inString, Dynamic &ioValue, hx::P
    if (!inFuncs)
       return null();
 
-   Array<String> result = Array_obj<String>::__new(0,0);
+   int count = 0;
    for(String *s = inFuncs; s->length; s++)
-         result->Add( *s );
-    return result;
+      count++;
+
+   Array<String> result = Array_obj<String>::__newConstWrapper(&inFuncs[0],count);
+
+   return result;
 }
 
 void Class_obj::registerScriptable(bool inOverwrite)
@@ -128,19 +131,10 @@ Class Class_obj::GetSuper()
    return *mSuper;
 }
 
-void Class_obj::__Mark(hx::MarkContext *__inCtx)
-{
-   HX_MARK_MEMBER(mName);
-   HX_MARK_MEMBER(mStatics);
-   HX_MARK_MEMBER(mMembers);
-}
 
 #ifdef HXCPP_VISIT_ALLOCS
 void Class_obj::__Visit(hx::VisitContext *__inCtx)
 {
-   HX_VISIT_MEMBER(mName);
-   HX_VISIT_MEMBER(mStatics);
-   HX_VISIT_MEMBER(mMembers);
    if (mSuper)
       __inCtx->visitAlloc((void **)&mSuper); 
 }

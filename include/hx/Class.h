@@ -116,7 +116,6 @@ public:
 
    String __ToString() const;
 
-   void __Mark(hx::MarkContext *__inCtx);
    void MarkStatics(hx::MarkContext *__inCtx);
 
    #ifdef HXCPP_VISIT_ALLOCS
@@ -156,8 +155,8 @@ public:
 
 
 
-   Array<String>      GetInstanceFields();
-   Array<String>      GetClassFields();
+   virtual Array<String>  GetInstanceFields();
+   virtual Array<String>  GetClassFields();
    hx::Class              GetSuper();
    #ifdef HXCPP_SCRIPTABLE
    const hx::StorageInfo*  GetMemberStorage(String inName);

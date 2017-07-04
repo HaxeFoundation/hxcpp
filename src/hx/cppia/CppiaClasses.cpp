@@ -1398,8 +1398,6 @@ void CppiaClassInfo::link()
    if (enumMeta)
       enumMeta = enumMeta->link(cppia);
 
-
-   mClass->mStatics = GetClassFields();
    //printf("Found haxeBase %s = %p / %d\n", cppia.types[typeId]->name.__s, haxeBase, dataSize );
 }
 
@@ -1642,36 +1640,33 @@ public:
       info = inInfo;
    }
 
-   void linkClass(CppiaModule &inModule,String inName)
+   Array<String> GetClassFields()
    {
-      mName = inName;
-      mSuper = info->getSuperClass();
-      DBGLOG("LINK %p ########################### %s -> %p\n", this, mName.__s, mSuper );
-      mStatics = Array_obj<String>::__new(0,0);
+      return info->GetClassFields();
+   }
 
-
-      Array<String> base;
-      if (mSuper)
-         base = (*mSuper)->mMembers;
-
-      mMembers = base==null() ?Array_obj<String>::__new(0,0) : base->copy();
+   Array<String> GetInstanceFields()
+   {
+      Array<String> members = mSuper ? (*mSuper)->GetInstanceFields() : Array_obj<String>::__new(0,0);
 
       for(int i=0;i<info->memberFunctions.size();i++)
       {
          CppiaFunction *func = info->memberFunctions[i];
          String name = func->getName();
-         if (base==null() || base->Find(name)<0)
-            mMembers->push(name);
+         if (members->Find(name)<0)
+            members->push(name);
       }
+
+      CppiaModule &module = info->cppia;
 
       for(int i=0;i<info->memberVars.size();i++)
       {
          CppiaVar *var = info->memberVars[i];
          if (var->isVirtual)
             continue;
-         String name = inModule.strings[var->nameId];
-         if (base==null() || base->Find(name)<0)
-            mMembers->push( name );
+         String name = module.strings[var->nameId];
+         if (members->Find(name)<0)
+            members->push( name );
       }
 
       for(int i=0;i<info->dynamicFunctions.size();i++)
@@ -1679,10 +1674,20 @@ public:
          CppiaVar *var = info->dynamicFunctions[i];
          if (var->isVirtual)
             continue;
-         String name = inModule.strings[var->nameId];
-         if (base==null() || base->Find(name)<0)
-            mMembers->push(name);
+         String name = module.strings[var->nameId];
+         if (members->Find(name)<0)
+            members->push(name);
       }
+
+      return members;
+   }
+
+   void linkClass(CppiaModule &inModule,String inName)
+   {
+      mName = inName;
+      mSuper = info->getSuperClass();
+      DBGLOG("LINK %p ########################### %s -> %p\n", this, mName.__s, mSuper );
+      //mStatics = Array_obj<String>::__new(0,0);
 
       bool overwrite = false;
       hx::Class old = hx::Class_obj::Resolve(inName);

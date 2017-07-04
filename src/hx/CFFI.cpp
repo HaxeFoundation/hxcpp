@@ -548,7 +548,7 @@ value buffer_to_string(buffer inBuffer)
 {
    ByteArray b = (ByteArray) inBuffer;
    String str(b->GetBase(),b->length);
-        Dynamic d(str);
+   Dynamic d(str);
    return (value)d.GetPtr();
 }
 

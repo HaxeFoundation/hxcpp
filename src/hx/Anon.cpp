@@ -237,13 +237,23 @@ hx::Val Anon_obj::__SetField(const String &inName,const hx::Val &inValue, hx::Pr
    int slot = findFixed(inName);
    if (slot>=0)
    {
+      #ifdef HXCPP_GC_GENERATIONAL
+      VariantKey *fixed = getFixed() + slot;
+      fixed->value=inValue;
+      if (fixed->value.type <= cpp::Variant::typeString)
+         HX_OBJ_WB_GET(this, fixed->value.valObject);
+      #else
       getFixed()[slot].value=inValue;
+      #endif
       return inValue;
    }
 
    // TODO - fixed
    if (!mFields.mPtr)
+   {
       mFields = hx::FieldMapCreate();
+      HX_OBJ_WB_GET(this, mFields);
+   }
 
    __string_hash_set(HX_MAP_THIS_ mFields,inName,inValue,true);
    return inValue;
@@ -253,7 +263,10 @@ Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetTh
 {
    // TODO - fixed
    if (!mFields.mPtr)
+   {
       mFields = hx::FieldMapCreate();
+      HX_OBJ_WB_GET(this, mFields);
+   }
 
    __string_hash_set(HX_MAP_THIS_ mFields,inName,inValue,true);
    if (inSetThisPointer && inValue.GetPtr())

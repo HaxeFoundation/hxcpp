@@ -447,6 +447,7 @@ public:
 
    // Defined later so we can use "Array"
    static Array<ELEM_> __new(int inSize=0,int inReserve=0);
+   static Array<ELEM_> __newConstWrapper(ELEM_ *inData,int inSize);
    static Array<ELEM_> fromData(const ELEM_ *inData,int inCount);
 
 
@@ -1040,6 +1041,17 @@ public:
 template<typename ELEM_>
 Array<ELEM_> Array_obj<ELEM_>::__new(int inSize,int inReserve)
  { return  Array<ELEM_>(new Array_obj(inSize,inReserve)); }
+
+
+template<typename ELEM_>
+Array<ELEM_> Array_obj<ELEM_>::__newConstWrapper(ELEM_ *inData,int inSize)
+{
+   Array_obj<ELEM_> temp(0,0);
+   Array_obj<ELEM_> *result = (Array_obj<ELEM_> *)hx::InternalCreateConstBuffer(&temp,sizeof(temp));
+   result->setUnmanagedData(inData, inSize);
+   return result;
+}
+
 
 template<typename ELEM_>
 Array<ELEM_> Array_obj<ELEM_>::fromData(const ELEM_ *inData,int inCount)
