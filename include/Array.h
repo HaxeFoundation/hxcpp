@@ -555,7 +555,10 @@ public:
    Array<ELEM_> init(int inIndex, const ELEM_ &inValue)
    {
       * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
-      if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this, hx::PointerOf(inValue)); }
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (hx::ContainsPointers<ELEM_>())
+         { HX_OBJ_WB_GET(this, hx::PointerOf(inValue)); }
+      #endif
       return this;
    }
 
@@ -700,7 +703,10 @@ public:
 			inPos = length;
 		hx::ArrayBase::Insert(inPos);
       Item(inPos) = inValue;
-      if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this,hx::PointerOf(inValue)); }
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (hx::ContainsPointers<ELEM_>())
+         { HX_OBJ_WB_GET(this,hx::PointerOf(inValue)); }
+      #endif
    }
 
    void unshift(ELEM_ inValue)

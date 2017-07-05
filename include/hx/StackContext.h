@@ -427,7 +427,7 @@ struct StackContext : public hx::ImmixAllocator
    MarkChunk *mOldReferrers;
    inline void pushReferrer(hx::Object *inObj)
    {
-      if (mOldReferrers)
+      //if (mOldReferrers)
       {
          mOldReferrers->push(inObj);
          if (mOldReferrers->count==MarkChunk::SIZE)

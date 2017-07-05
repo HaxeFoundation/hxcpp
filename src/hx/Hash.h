@@ -513,7 +513,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       if (el)
       {
          CopyValue(el->value,inValue);
-         HX_OBJ_WB_GET(this,hx::PointerOf(el->value));
+         if (hx::ContainsPointers<Value>())
+            HX_OBJ_WB_GET(this,hx::PointerOf(el->value));
          return;
       }
       el = allocElement();
@@ -527,7 +528,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       if (!(mark&HX_GC_REMEMBERED) && mark)
       {
          // Look for nursery objects...
-         if ( IsNursery(el) || IsNursery(hx::PointerOf(el->key)) || IsNursery(hx::PointerOf(el->value)) )
+         if ( IsNursery(el) || IsNursery(hx::PointerOf(el->key)) ||
+             (hx::ContainsPointers<Value>() && IsNursery(hx::PointerOf(el->value)) ) )
          {
             mark|=HX_GC_REMEMBERED;
             (HX_CTX_GET)->pushReferrer(this);

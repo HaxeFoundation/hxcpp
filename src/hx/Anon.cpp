@@ -252,7 +252,7 @@ hx::Val Anon_obj::__SetField(const String &inName,const hx::Val &inValue, hx::Pr
    if (!mFields.mPtr)
    {
       mFields = hx::FieldMapCreate();
-      HX_OBJ_WB_GET(this, mFields);
+      HX_OBJ_WB_GET(this, mFields.mPtr);
    }
 
    __string_hash_set(HX_MAP_THIS_ mFields,inName,inValue,true);
@@ -265,7 +265,7 @@ Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetTh
    if (!mFields.mPtr)
    {
       mFields = hx::FieldMapCreate();
-      HX_OBJ_WB_GET(this, mFields);
+      HX_OBJ_WB_GET(this, mFields.mPtr);
    }
 
    __string_hash_set(HX_MAP_THIS_ mFields,inName,inValue,true);

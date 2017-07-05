@@ -2899,9 +2899,9 @@ public:
       mLargeAllocForceRefresh = mLargeAllocSpace;
       // Start at 1 Meg...
       mTotalAfterLastCollect = 1<<20;
-      mLastNonGenerationalSize = mTotalAfterLastCollect;
       mCurrentRowsInUse = 0;
       mAllBlocksCount = 0;
+      mGenerationalRetainEstimate = 0.5;
       for(int p=0;p<LOCAL_POOL_SIZE;p++)
          mLocalPool[p] = 0;
    }
@@ -3229,6 +3229,16 @@ public:
       return true;
    }
 
+   bool allowMoreBlocks()
+   {
+      #ifdef HXCPP_GC_GENERATIONAL
+      return sGcMode==gcmFull;
+      #else
+      return true;
+      #endif
+   }
+
+
 
    BlockDataInfo *GetFreeBlock(int inRequiredBytes, hx::ImmixAllocator *inAlloc)
    {
@@ -3242,7 +3252,7 @@ public:
 
       bool forceCompact = false;
       BlockDataInfo *result = GetNextFree(inRequiredBytes);
-      if (!result && (!sgInternalEnable || GetWorkingMemory()<sWorkingMemorySize))
+      if (!result && allowMoreBlocks() && (!sgInternalEnable || GetWorkingMemory()<sWorkingMemorySize))
       {
          AllocMoreBlocks(forceCompact,false);
          result = GetNextFree(inRequiredBytes);
@@ -4403,6 +4413,7 @@ public:
       bool generational = false; 
 
       #ifdef HXCPP_GC_GENERATIONAL
+      // TODO - Maybe do full collect if too many dirty
       bool compactSurviors = false;
 
       if (sGcMode==gcmGenerational)
@@ -4447,14 +4458,110 @@ public:
 
       STAMP(t2)
 
+
+      // Sweep blocks
+
+      // Update table entries?  This needs to be done before the gMarkID count clocks
+      //  back to the same number
+      if (!generational)
+         sgTimeToNextTableUpdate--;
+
+      bool full = inMajor || (sgTimeToNextTableUpdate<=0) || inForceCompact;
+
+      // Setup memory target ...
+      // Count free rows, and prep blocks for sorting
+      BlockDataStats stats;
+
+      /*
+       This reduces the stall time, but adds a bit of background cpu usage
+       Might be good to just countRows for non-generational too
+      */
+      if (!full && generational)
+      {
+         countRows(stats);
+
+         double filled = (double)stats.rowsInUse / (double)(mAllBlocks.size()*IMMIX_USEFUL_LINES);
+         if (filled>0.85)
+         {
+            // Failure of generational estimation
+            int retained = stats.rowsInUse - mRowsInUse;
+            int space = mAllBlocks.size()*IMMIX_USEFUL_LINES - mRowsInUse;
+            if (space<retained)
+               space = retained;
+            mGenerationalRetainEstimate = (double)retained/(double)space;
+            #ifdef SHOW_MEM_EVENTS
+            GCLOG("Generational retention too high %f, do normal collect\n", mGenerationalRetainEstimate);
+            #endif
+
+            generational = false;
+            MarkAll(generational);
+
+            sgTimeToNextTableUpdate--;
+            full = sgTimeToNextTableUpdate<=0;
+
+            stats.clear();
+            reclaimBlocks(full,stats);
+         }
+      }
+      else
+      {
+         reclaimBlocks(full,stats);
+      }
+
+
       #ifdef HXCPP_GC_GENERATIONAL
       if (compactSurviors)
       {
          MoveSurvivors(&rememberedSet);
       }
       #endif
-      STAMP(t2a)
 
+
+      #ifdef HXCPP_GC_MOVING
+      if (!full)
+      {
+         double useRatio = (double)(stats.rowsInUse<<IMMIX_LINE_BITS) / (sWorkingMemorySize);
+         #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+            GCLOG("Row use ratio:%f\n", useRatio);
+         #endif
+         // Could be either expanding, or fragmented...
+         if (useRatio>0.75)
+         {
+            #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+               GCLOG("Do full stats\n", useRatio);
+            #endif
+            full = true;
+            stats.clear();
+            reclaimBlocks(full,stats);
+         }
+      }
+      #endif
+
+      if (full)
+         sgTimeToNextTableUpdate = 15;
+
+      size_t oldRowsInUse = mRowsInUse;
+      mRowsInUse = stats.rowsInUse;
+
+      bool moved = false;
+      size_t bytesInUse = stats.bytesInUse;
+
+      #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
+      GCLOG("Total memory : %s\n", formatBytes(GetWorkingMemory()).c_str());
+      GCLOG("  reserved bytes : %s\n", formatBytes((size_t)mRowsInUse*IMMIX_LINE_LEN).c_str());
+      if (full)
+      {
+         GCLOG("  active bytes   : %s\n", formatBytes(bytesInUse).c_str());
+         GCLOG("  active ratio   : %f\n", (double)bytesInUse/( mRowsInUse*IMMIX_LINE_LEN));
+         GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
+         GCLOG("  fragged score  : %f\n", (double)stats.fragScore/mAllBlocks.size() );
+      }
+      GCLOG("  large size   : %s\n", formatBytes(mLargeAllocated).c_str());
+      GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
+      #endif
+
+
+      STAMP(t3)
 
 
       #ifdef HXCPP_TELEMETRY
@@ -4502,71 +4609,6 @@ public:
       }
 
       int l1 = mLargeList.size();
-      STAMP(t3)
-
-      // Sweep blocks
-
-      // Update table entries?  This needs to be done before the gMarkID count clocks
-      //  back to the same number
-      if (!generational)
-         sgTimeToNextTableUpdate--;
-
-      bool full = inMajor || (sgTimeToNextTableUpdate<=0) || inForceCompact;
-
-      // Setup memory target ...
-      // Count free rows, and prep blocks for sorting
-      BlockDataStats stats;
-
-      /*
-       This reduces the stall time, but adds a bit of background cpu usage
-       Might be good - need some better benchmarks
-      if (!full)
-         countRows(stats);
-      else
-      */
-         reclaimBlocks(full,stats);
-
-
-      #ifdef HXCPP_GC_MOVING
-      if (!full)
-      {
-         double useRatio = (double)(stats.rowsInUse<<IMMIX_LINE_BITS) / (sWorkingMemorySize);
-         #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-            GCLOG("Row use ratio:%f\n", useRatio);
-         #endif
-         // Could be either expanding, or fragmented...
-         if (useRatio>0.75)
-         {
-            #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-               GCLOG("Do full stats\n", useRatio);
-            #endif
-            full = true;
-            stats.clear();
-            reclaimBlocks(full,stats);
-         }
-      }
-      #endif
-
-      if (full)
-         sgTimeToNextTableUpdate = 15;
-
-      mRowsInUse = stats.rowsInUse;
-      bool moved = false;
-      size_t bytesInUse = stats.bytesInUse;
-
-      #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-      GCLOG("Total memory : %s\n", formatBytes(GetWorkingMemory()).c_str());
-      GCLOG("  reserved bytes : %s\n", formatBytes((size_t)mRowsInUse*IMMIX_LINE_LEN).c_str());
-      if (full)
-      {
-         GCLOG("  active bytes   : %s\n", formatBytes(bytesInUse).c_str());
-         GCLOG("  active ratio   : %f\n", (double)bytesInUse/( mRowsInUse*IMMIX_LINE_LEN));
-         GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
-         GCLOG("  fragged score  : %f\n", (double)stats.fragScore/mAllBlocks.size() );
-      }
-      GCLOG("  large size   : %s\n", formatBytes(mLargeAllocated).c_str());
-      GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
-      #endif
 
 
       STAMP(t4)
@@ -4675,10 +4717,17 @@ public:
       size_t baseMem = full ? bytesInUse : mem;
       size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, baseMem/100 *hx::sgTargetFreeSpacePercentage );
       targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
-      sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
+      // Only adjust if non-generational
+      if (!generational)
+         sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
 
       #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
       GCLOG("Target memory %s, using %s\n",  formatBytes(sWorkingMemorySize).c_str(), formatBytes(mem).c_str() );
+      #endif
+
+
+      #ifdef HXCPP_GC_GENERATIONAL
+
       #endif
 
  
@@ -4689,24 +4738,41 @@ public:
       mLargeAllocForceRefresh = mLargeAllocated + mLargeAllocSpace;
 
       mTotalAfterLastCollect = MemUsage();
+
       #ifdef HXCPP_GC_GENERATIONAL
-      if (!generational)
+      if (generational)
       {
-         mLastNonGenerationalSize = mTotalAfterLastCollect;
+         // TODO - include large too?
+         int retained = mRowsInUse - oldRowsInUse;
+         int space = mAllBlocks.size()*IMMIX_USEFUL_LINES - oldRowsInUse;
+         if (space<retained)
+            space = retained;
+
+         mGenerationalRetainEstimate = (double)retained/(double)space;
+      }
+      else
+      {
+         // move towards 0.2
+         mGenerationalRetainEstimate += (0.2-mGenerationalRetainEstimate)*0.025;
+      }
+
+      double filled_ratio = (double)mRowsInUse/(double)(mAllBlocksCount*IMMIX_USEFUL_LINES);
+      double after_gen = filled_ratio + (1.0-filled_ratio)*mGenerationalRetainEstimate;
+      if (after_gen<0.75)
+      {
          sGcMode = gcmGenerational;
       }
       else
       {
-         if ( (mTotalAfterLastCollect>>4) > (mLastNonGenerationalSize>>4) * 7/4 )
-         {
-            sGcMode = gcmFull;
-            //Todo - disable WB using this code instead of if (mOldReferrers) ?
-            //gByteMarkID |= 0x30;
-         }
-         else
-            sGcMode = gcmGenerational;
+         sGcMode = gcmFull;
+         gByteMarkID |= 0x30;
       }
-      // printf("sGcMode %d %d -> %d\n", mTotalAfterLastCollect, mLastNonGenerationalSize, sGcMode);
+
+      #ifdef SHOW_MEM_EVENTS
+      GCLOG("filled=%.2f%% + junk = %.2f%% = %.2f%% -> %s\n",
+            filled_ratio*100, mGenerationalRetainEstimate*100, after_gen*100, sGcMode==gcmFull?"Full":"Generational");
+      #endif
+
       #endif
 
       createFreeList();
@@ -4726,7 +4792,7 @@ public:
       STAMP(t6)
       double period = t6-sLastCollect;
       sLastCollect=t6;
-      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f(init=%.2f/roots=%.2f %d+%d/loc=%.2f*%d %d+%d/mark=%.2f %d+%d/fin=%.2f*%d/ids=%.2f)\n  large(%d->%d, recyc %d)=%.2f\n  reclaim=%.2f\n  defrag=%.2f\n",
+      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f(init=%.2f/roots=%.2f %d+%d/loc=%.2f*%d %d+%d/mark=%.2f %d+%d/fin=%.2f*%d/ids=%.2f)\n  reclaim=%.2f\n  large(%d->%d, recyc %d)=%.2f\n  defrag=%.2f\n",
               (t6-t0)*1000, (t6-t0)*100.0/period, // total %
               (t1-t0)*1000, // sync/setup
               generational ? "mark gen" : "mark", (t2-t1)*1000,
@@ -4736,8 +4802,8 @@ public:
                       (tMarked-tMarkLocalEnd)*1000, sObjectMarks-hx::localObjects, sAllocMarks-hx::localAllocs,
                       (hx::tFinalizers-tMarked)*1000, hx::finalizerCount,
                       (t2-hx::tFinalizers)*1000,
-              l0, l1, l2, (t3-t2a)*1000, // large
-              (t4-t3)*1000, // reclaim
+              (t3-t2)*1000, // reclaim
+              l0, l1, l2, (t4-t3)*1000, // large
               (t5-t4)*1000 // defrag
               );
       sObjectMarks = sAllocMarks = 0;
@@ -4967,7 +5033,7 @@ public:
    size_t mLargeAllocated;
    size_t mTotalAfterLastCollect;
    size_t mAllBlocksCount;
-   size_t mLastNonGenerationalSize;
+   double mGenerationalRetainEstimate;
 
    hx::MarkContext mMarker;
 
@@ -4995,7 +5061,6 @@ MarkChunk *MarkChunk::swapForNew()
 {
    return sGlobalChunks.pushJobNoWake(this);
 }
-
 
 
 

@@ -1336,7 +1336,7 @@ public:
 
 
    StringData(String inValue) : mValue(inValue) {
-      HX_OBJ_WB(this,mValue.__s);
+      HX_OBJ_WB_GET(this,mValue.__s);
    };
 
    hx::Class __GetClass() const { return __StringClass; }

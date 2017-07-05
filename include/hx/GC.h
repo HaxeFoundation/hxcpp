@@ -440,12 +440,11 @@ typedef ImmixAllocator Ctx;
 
 #ifdef HXCPP_GC_GENERATIONAL
   #define HX_OBJ_WB_CTX(obj,value,ctx) { \
-     if ( (value) &&  !((unsigned char *)(value))[ HX_ENDIAN_MARK_ID_BYTE  ] ) { \
         unsigned char &mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]; \
-         if (mark == hx::gByteMarkID)  { \
+        if (mark == hx::gByteMarkID && value && !((unsigned char *)(value))[ HX_ENDIAN_MARK_ID_BYTE  ] ) { \
             mark|=HX_GC_REMEMBERED; \
             ctx->pushReferrer(obj); \
-     } } }
+     } }
   #define HX_OBJ_WB_PESSIMISTIC_CTX(obj,ctx) { \
      unsigned char &mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]; \
      if (mark == hx::gByteMarkID)  { \
@@ -454,7 +453,7 @@ typedef ImmixAllocator Ctx;
      } }
   // I'm not sure if this will ever trigger...
   #define HX_OBJ_WB_NEW_MARKED_OBJECT(obj) { \
-     if (((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]) hx::NewMarkedObject(obj); \
+     if (((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]==hx::gByteMarkID) hx::NewMarkedObject(obj); \
   }
 #else
   #define HX_OBJ_WB_CTX(obj,value,ctx)
