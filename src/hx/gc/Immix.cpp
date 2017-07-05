@@ -145,6 +145,9 @@ static int *sThreadArrayMarkCount = sThreadArrayMarkCountData + 1;
 static int sThreadChunkPushCount;
 static int sThreadChunkWakes;
 static int sSpinCount = 0;
+static int sThreadZeroWaits = 0;
+static int sThreadZeroPokes = 0;
+static int sThreadZeroMisses = 0;
 #endif
 
 enum { MARK_BYTE_MASK = 0x0f };
@@ -592,6 +595,10 @@ static int gBlockInfoEmptySlots = 0;
 
 #define FRAG_THRESH 14
 
+#define ZEROED_NOT    0
+#define ZEROED_THREAD 1
+#define ZEROED_AUTO   2
+
 struct BlockDataInfo
 {
    int             mId;
@@ -608,7 +615,7 @@ struct BlockDataInfo
    int          mMoveScore;
    int          mUsedBytes;
    bool         mPinned;
-   bool         mZeroed;
+   unsigned char mZeroed;
    bool         mReclaimed;
    #ifdef HXCPP_GC_GENERATIONAL
    bool         mHasSurvivor;
@@ -657,7 +664,7 @@ struct BlockDataInfo
       mMaxHoleSize = mRanges[0].length;
       mMoveScore = 0;
       mHoles = 1;
-      mZeroed = false;
+      mZeroed = ZEROED_NOT;
       mReclaimed = true;
       mZeroLock = 0;
    }
@@ -672,7 +679,7 @@ struct BlockDataInfo
       mMaxHoleSize = mRanges[0].length;
       mMoveScore = 0;
       mHoles = 0;
-      mZeroed = true;
+      mZeroed = ZEROED_AUTO;
       mReclaimed = true;
       mZeroLock = 0;
    }
@@ -706,7 +713,7 @@ struct BlockDataInfo
 
          for(int i=0;i<mHoles;i++)
              ZERO_MEM( (char *)mPtr+mRanges[i].start, mRanges[i].length );
-         mZeroed = true;
+         mZeroed = ZEROED_THREAD;
       }
       mZeroLock = 0;
       return doZero;
@@ -806,12 +813,12 @@ struct BlockDataInfo
 
       if (mUsedRows==IMMIX_LINES)
       {
-         mZeroed = true;
+         mZeroed = ZEROED_AUTO;
          mReclaimed = true;
       }
       else
       {
-         mZeroed = false;
+         mZeroed = ZEROED_NOT;
          mReclaimed = false;
       }
 
@@ -823,7 +830,7 @@ struct BlockDataInfo
    {
       HoleRange *ranges = mRanges;
       ranges[0].length = 0;
-      mZeroed = false;
+      mZeroed = ZEROED_NOT;
       int usedBytes = 0;
 
       unsigned char *rowMarked = mPtr->mRowMarked;
@@ -2884,6 +2891,17 @@ void VerifyStackRead(int *inBottom, int *inTop)
 }
 #endif
 
+// TODO - work out best size based on cache size?
+#ifdef HXCPP_GC_BIG_BLOCKS
+static int sMinZeroQueueSize = 3;
+static int sMaxZeroQueueSize = 8;
+#else
+static int sMinZeroQueueSize = 4;
+static int sMaxZeroQueueSize = 16;
+#endif
+
+
+
 class GlobalAllocator
 {
    enum { LOCAL_POOL_SIZE = 2 };
@@ -3094,16 +3112,19 @@ public:
                     else
                        mFreeBlocks.erase(i);
 
-                    if (info->mZeroed && sgThreadPoolJob==tpjAsyncZeroJit)
+                    if (sgThreadPoolJob==tpjAsyncZeroJit)
                     {
-                       // Wake the thread?
-                       if (HxAtomicInc(&mZeroListQueue)==0 || !sRunningThreads)
+                       if (info->mZeroed==ZEROED_THREAD)
+                          onZeroedBlockDequeued();
+                       #ifdef PROFILE_THREAD_USAGE
+                       else
                        {
-                          ThreadPoolAutoLock l(sThreadPoolLock);
-                          if (!sRunningThreads & 0x01)
-                             wakeThreadLocked(0);
+                          if (!info->mZeroed)
+                             sThreadZeroMisses++;
                        }
+                       #endif
                     }
+
                     return info;
                  }
                  else
@@ -3954,37 +3975,51 @@ public:
 
    bool ZeroAsyncJit()
    {
-      while(true)
+      while(!sgThreadPoolAbort)
       {
-         if (sgThreadPoolAbort)
-            return true;
-
-         if (mThreadJobId>=mZeroList.size())
-            return true;
-
-         int q = mZeroListQueue;
-         if (q==0)
+         if (mZeroListQueue>=sMaxZeroQueueSize)
          {
-            // wait for next wake...
-            //printf("zzz\n");
-            return false;
+            // Spin
+            //continue;
+            // Full for now, so sleep...
+            return true;
          }
 
-         if (HxAtomicExchangeIf(q, q-1, &mZeroListQueue))
+         // Look at next block...
+         int zeroListId = HxAtomicInc( &mThreadJobId );
+         if (zeroListId>=mZeroList.size())
          {
-            // Ok, lets process one
-            while(true)
+            // Done, so sleep...
+            return true;
+         }
+
+         BlockDataInfo *info = mZeroList[zeroListId];
+         if (info->tryZero())
+         {
+            // We zeroed it, so increase queue count
+            HxAtomicInc(&mZeroListQueue);
+         }
+      }
+
+      return true;
+   }
+
+   // Try to maintain between sMinZeroQueueSize and sMaxZeroQueueSize pre-zeroed blocks
+   void onZeroedBlockDequeued()
+   {
+      // Wake the thread?
+      if (HxAtomicDec(&mZeroListQueue)<sMinZeroQueueSize && !sRunningThreads)
+      {
+         if (mZeroListQueue + mThreadJobId < mZeroList.size())
+         {
+            // Wake zeroing thread
+            ThreadPoolAutoLock l(sThreadPoolLock);
+            if (!sRunningThreads & 0x01)
             {
-               int zeroListId = HxAtomicInc( &mThreadJobId );
-               if (zeroListId>=mZeroList.size())
-                   return true;
-               BlockDataInfo *info = mZeroList[zeroListId];
-               if (info->tryZero())
-               {
-                  // Got one!
-                  break;
-               }
-               // try again
+               #ifdef PROFILE_THREAD_USAGE
+               sThreadZeroPokes++;
+               #endif
+               wakeThreadLocked(0);
             }
          }
       }
@@ -4045,10 +4080,11 @@ public:
          }
          else if (sgThreadPoolJob==tpjAsyncZeroJit)
          {
+            #ifdef PROFILE_THREAD_USAGE
+            sThreadZeroWaits++;
+            #endif
             if (ZeroAsyncJit())
-            {
                finishThreadJob(inId);
-            }
          }
          else
          {
@@ -4400,6 +4436,14 @@ public:
       #ifdef SHOW_MEM_EVENTS
       int here = 0;
       GCLOG("=== Collect === %p\n",&here);
+      #endif
+
+
+      #ifdef PROFILE_THREAD_USAGE
+      GCLOG("Thread zero waits %d/%d/%d, misses=%d\n", sThreadZeroPokes, sThreadZeroWaits, mFreeBlocks.size(), sThreadZeroMisses);
+      sThreadZeroWaits = 0;
+      sThreadZeroPokes = 0;
+      sThreadZeroMisses = 0;
       #endif
 
 
@@ -4778,8 +4822,8 @@ public:
       createFreeList();
 
       // This saves some running/stall time, but increases the total CPU usage
-      // Delaying it until just before the block is used improces the cache locality
-      backgroundProcessFreeList(false);
+      // Delaying it until just before the block is used to improve the cache locality
+      backgroundProcessFreeList(true);
 
       mAllBlocksCount   = mAllBlocks.size();
       mCurrentRowsInUse = mRowsInUse;
@@ -4919,28 +4963,12 @@ public:
       mZeroListQueue = 0;
       if ( MAX_MARK_THREADS>1 && mFreeBlocks.size()>4)
       {
-         if (inJit)
-         {
-            // TODO - work out best size based on cache size?
-            #ifdef HXCPP_GC_BIG_BLOCKS
-            mZeroListQueue = mLocalAllocs.size() + 8;
-            #else
-            mZeroListQueue = mLocalAllocs.size() + 16;
-            #endif
-            if (mZeroListQueue>=mFreeBlocks.size())
-            {
-               inJit = false;
-               mZeroListQueue = 0;
-            }
-         }
-
          mZeroList.setSize(mFreeBlocks.size());
          memcpy( &mZeroList[0], &mFreeBlocks[0], mFreeBlocks.size()*sizeof(void *));
 
          // Only use one thread for parallel zeroing.  Try to get though the work wihout
          //  slowing down the main thread
          StartThreadJobs(inJit ? tpjAsyncZeroJit : tpjAsyncZero, mZeroList.size(), false, 1);
-
       }
    }
 
