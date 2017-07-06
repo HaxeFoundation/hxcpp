@@ -73,6 +73,7 @@ void __hxcpp_set_float_format(String inFormat)
 hx::Class __StringClass;
 
 String  sEmptyString = HX_CSTRING("");
+Dynamic sConstEmptyString;
 String  sConstStrings[256];
 Dynamic sConstDynamicStrings[256];
 typedef std::set<String> ConstStringSet;
@@ -1408,7 +1409,13 @@ hx::Object *String::__ToObject() const
    if (!__s)
       return 0;
 
-   if (length==1)
+   if (length==0)
+   {
+      if (!sConstEmptyString.mPtr)
+         sConstEmptyString.mPtr = new (hx::NewObjConst)StringData(sEmptyString);
+      return sConstEmptyString.mPtr;
+   }
+   else if (length==1)
    {
       int idx = ((unsigned char *)__s)[0];
       if (sConstDynamicStrings[idx].mPtr)

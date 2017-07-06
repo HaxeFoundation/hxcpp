@@ -2893,11 +2893,11 @@ void VerifyStackRead(int *inBottom, int *inTop)
 
 // TODO - work out best size based on cache size?
 #ifdef HXCPP_GC_BIG_BLOCKS
-static int sMinZeroQueueSize = 3;
-static int sMaxZeroQueueSize = 8;
-#else
 static int sMinZeroQueueSize = 4;
 static int sMaxZeroQueueSize = 16;
+#else
+static int sMinZeroQueueSize = 8;
+static int sMaxZeroQueueSize = 32;
 #endif
 
 
@@ -3975,15 +3975,19 @@ public:
 
    bool ZeroAsyncJit()
    {
+      int spinCount = 0;
       while(!sgThreadPoolAbort)
       {
          if (mZeroListQueue>=sMaxZeroQueueSize)
          {
-            // Spin
-            //continue;
+            spinCount++;
+            if (spinCount<10000)
+               // Spin
+               continue;
             // Full for now, so sleep...
             return true;
          }
+         spinCount = 0;
 
          // Look at next block...
          int zeroListId = HxAtomicInc( &mThreadJobId );

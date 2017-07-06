@@ -132,14 +132,6 @@ Class Class_obj::GetSuper()
 }
 
 
-#ifdef HXCPP_VISIT_ALLOCS
-void Class_obj::__Visit(hx::VisitContext *__inCtx)
-{
-   if (mSuper)
-      __inCtx->visitAlloc((void **)&mSuper); 
-}
-#endif
-
 Class Class_obj__mClass;
 
 Class  Class_obj::__GetClass() const { return Class_obj__mClass; }
@@ -154,8 +146,6 @@ Static(Class_obj__mClass) = hx::_hx_RegisterClass(HX_CSTRING("Class"),TCanCast<C
 void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(__meta__);
-   HX_MARK_MEMBER(__rtti__);
-   HX_MARK_MEMBER(Class_obj__mClass);
    if (mMarkFunc)
        mMarkFunc(__inCtx);
 }
@@ -163,8 +153,6 @@ void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
 void Class_obj::VisitStatics(hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(__meta__);
-   HX_VISIT_MEMBER(__rtti__);
-   HX_VISIT_MEMBER(Class_obj__mClass);
    if (mVisitFunc)
        mVisitFunc(__inCtx);
 }
@@ -335,21 +323,20 @@ void MarkClassStatics(hx::MarkContext *__inCtx)
    ClassMap::iterator end = sClassMap->end();
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
    {
-      HX_MARK_MEMBER(i->first);
+      Class c = i->second;
+      if (c->__meta__.mPtr || c->mMarkFunc)
+      {
+         #ifdef HXCPP_DEBUG
+         hx::MarkPushClass(i->first.__s,__inCtx);
+         hx::MarkSetMember("statics",__inCtx);
+         #endif
+      
+         c->MarkStatics(__inCtx);
 
-      // all strings should be constants anyhow - HX_MARK_MEMBER(i->first);
-      HX_MARK_OBJECT(i->second.mPtr);
-
-      #ifdef HXCPP_DEBUG
-      hx::MarkPushClass(i->first.__s,__inCtx);
-      hx::MarkSetMember("statics",__inCtx);
-      #endif
-   
-      i->second->MarkStatics(__inCtx);
-
-      #ifdef HXCPP_DEBUG
-      hx::MarkPopClass(__inCtx);
-      #endif
+         #ifdef HXCPP_DEBUG
+         hx::MarkPopClass(__inCtx);
+         #endif
+      }
    }
    #ifdef HXCPP_DEBUG
    MarkPopClass(__inCtx);
@@ -363,14 +350,7 @@ void VisitClassStatics(hx::VisitContext *__inCtx)
    HX_VISIT_MEMBER(Class_obj__mClass);
    ClassMap::iterator end = sClassMap->end();
    for(ClassMap::iterator i = sClassMap->begin(); i!=end; ++i)
-   {
-      // all strings should be constants anyhow - should not be needed?
-      HX_VISIT_STRING(i->first.__s);
-
-      HX_VISIT_OBJECT(i->second.mPtr);
-
-      i->second->VisitStatics(__inCtx);
-   }
+         i->second->VisitStatics(__inCtx);
 }
 
 #endif
