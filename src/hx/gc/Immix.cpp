@@ -469,6 +469,7 @@ typedef TAutoLock<ThreadPoolLock> ThreadPoolAutoLock;
 // For threaded marking/block reclaiming
 static unsigned int sRunningThreads = 0;
 static unsigned int sAllThreads = 0;
+static bool sLazyThreads = false;
 static bool sThreadPoolInit = false;
 
 enum ThreadPoolJob
@@ -509,6 +510,7 @@ static inline void SignalThreadPool(ThreadPoolSignal &ioSignal, bool sThreadSlee
 static void wakeThreadLocked(int inThreadId)
 {
    sRunningThreads |= (1<<inThreadId);
+   sLazyThreads = sRunningThreads != sAllThreads;
    SignalThreadPool(sThreadWake[inThreadId],sThreadSleeping[inThreadId]);
 }
 
@@ -1415,32 +1417,32 @@ struct GlobalChunks
       HxAtomicInc(&sThreadChunkPushCount);
       #endif
 
-      if (MAX_MARK_THREADS>1)
+      if (MAX_MARK_THREADS>1 && sLazyThreads)
       {
-         if (sAllThreads ^ sRunningThreads)
-         {
-            ThreadPoolAutoLock l(sThreadPoolLock);
+         ThreadPoolAutoLock l(sThreadPoolLock);
 
-
-            #define CHECK_THREAD_WAKE(tid) \
+         #ifdef PROFILE_THREAD_USAGE
+           #define CHECK_THREAD_WAKE(tid) \
             if (MAX_MARK_THREADS >tid && sgThreadCount>tid && (!(sRunningThreads & (1<<tid)))) { \
-               wakeThreadLocked(tid); \
-            }
+            wakeThreadLocked(tid); \
+            sThreadChunkWakes++; \
+           } 
+         #else
+           #define CHECK_THREAD_WAKE(tid)  \
+            if (MAX_MARK_THREADS >tid && sgThreadCount>tid && (!(sRunningThreads & (1<<tid)))) { \
+            wakeThreadLocked(tid); \
+           }
+         #endif
 
-            #ifdef PROFILE_THREAD_USAGE
-            sThreadChunkWakes++;
-            #endif
 
-
-            CHECK_THREAD_WAKE(0)
-            else CHECK_THREAD_WAKE(1)
-            else CHECK_THREAD_WAKE(2)
-            else CHECK_THREAD_WAKE(3)
-            else CHECK_THREAD_WAKE(4)
-            else CHECK_THREAD_WAKE(5)
-            else CHECK_THREAD_WAKE(6)
-            else CHECK_THREAD_WAKE(7)
-         }
+         CHECK_THREAD_WAKE(0)
+         else CHECK_THREAD_WAKE(1)
+         else CHECK_THREAD_WAKE(2)
+         else CHECK_THREAD_WAKE(3)
+         else CHECK_THREAD_WAKE(4)
+         else CHECK_THREAD_WAKE(5)
+         else CHECK_THREAD_WAKE(6)
+         else CHECK_THREAD_WAKE(7)
       }
 
       if (inAndAlloc)
@@ -1488,7 +1490,7 @@ struct GlobalChunks
 
    int takeArrayJob(hx::Object **inPtr, int inLen)
    {
-      if (sRunningThreads != sAllThreads)
+      if (sLazyThreads)
       {
          int n = (inLen/2) & ~15;
 
@@ -1563,6 +1565,8 @@ struct GlobalChunks
          *(int *)0=0;
       }
       sRunningThreads &= ~(1<<inThreadId);
+      sLazyThreads = sRunningThreads != sAllThreads;
+
       if (!sRunningThreads)
          SignalThreadPool(sThreadJobDone,sThreadJobDoneSleeping);
    }
@@ -1570,13 +1574,24 @@ struct GlobalChunks
 
    // Optionally returns inChunk to empty pool (while we have the lock),
    //  and returns a new job if there is one
-   MarkChunk *popJob(MarkChunk *inChunk,int inThreadId)
+   MarkChunk *popJobOrFinish(MarkChunk *inChunk,int inThreadId)
    {
       if (MAX_MARK_THREADS > 1 && sAllThreads)
       {
          MarkChunk *result =  popJobLocked(inChunk);
          if (!result)
          {
+            for(int spinCount = 0; spinCount<10000; spinCount++)
+            {
+               if ( sgThreadPoolAbort || sAllThreads == (1<<inThreadId) )
+                  break;
+               if (processList)
+               {
+                  result =  popJobLocked(0);
+                  if (result)
+                     return result;
+               }
+            }
             ThreadPoolAutoLock l(sThreadPoolLock);
             completeThreadLocked(inThreadId);
          }
@@ -1754,13 +1769,7 @@ public:
        marking = 0;
     }
 
-    void InitChunkLocked()
-    {
-       if (!marking)
-          marking = sGlobalChunks.popJobLocked(marking);
-    }
-
-    void Process()
+    void processMarkStack()
     {
        while(true)
        {
@@ -1772,9 +1781,10 @@ public:
                 return;
              }
 
-             marking = sGlobalChunks.popJob(marking,mThreadId);
+             marking = sGlobalChunks.popJobOrFinish(marking,mThreadId);
              if (!marking)
                 break;
+
              if (marking->count==MarkChunk::OBJ_ARRAY_JOB)
              {
                 int n = marking->arrayElements;
@@ -1791,6 +1801,15 @@ public:
              if (obj)
              {
                 obj->__Mark(this);
+                // Load balance
+                if (MAX_MARK_THREADS>1 && sLazyThreads && marking->count>32)
+                {
+                   MarkChunk *c = sGlobalChunks.alloc();
+                   marking->count -= 16;
+                   c->count = 16;
+                   memcpy( c->stack, marking->stack + marking->count, 16*sizeof(hx::Object *));
+                   sGlobalChunks.pushJob(c,false);
+                }
                 #ifdef PROFILE_THREAD_USAGE
                 sThreadMarkCount[mThreadId]++;
                 #endif
@@ -2359,7 +2378,7 @@ void FindZombies(MarkContext &inContext)
          // Mark now to prevent secondary zombies...
          inContext.init();
          hx::MarkObjectAlloc(obj , &inContext );
-         inContext.Process();
+         inContext.processMarkStack();
       }
 
       i = next;
@@ -4036,6 +4055,8 @@ public:
       if (sRunningThreads & (1<<inId))
       {
          sRunningThreads &= ~(1<<inId);
+         sLazyThreads = sRunningThreads != sAllThreads;
+
          if (!sRunningThreads)
             SignalThreadPool(sThreadJobDone,sThreadJobDoneSleeping);
       }
@@ -4075,12 +4096,14 @@ public:
       {
          waitForThreadWake(inId);
 
+         #ifdef HX_GC_VERIFY
          if (! (sRunningThreads & (1<<inId)) )
             printf("Bad running threads!\n");
+         #endif
 
          if (sgThreadPoolJob==tpjMark)
          {
-            context.Process();
+            context.processMarkStack();
          }
          else if (sgThreadPoolJob==tpjAsyncZeroJit)
          {
@@ -4208,6 +4231,8 @@ public:
 
       sRunningThreads = (1<<start) - 1;
 
+      sLazyThreads = sRunningThreads != sAllThreads;
+
       for(int i=0;i<start;i++)
          SignalThreadPool(sThreadWake[i],sThreadSleeping[i]);
 
@@ -4226,14 +4251,11 @@ public:
 
          sAllThreads = 0;
 
-
          if (sRunningThreads)
          {
             printf("Bad thread stop %d\n", sRunningThreads);
             *(int *)0=0;
          }
-
-
       }
    }
 
@@ -4367,7 +4389,7 @@ public:
       }
       else
       {
-         mMarker.Process();
+         mMarker.processMarkStack();
       }
 
       MEM_STAMP(tMarked);
@@ -4773,12 +4795,6 @@ public:
       GCLOG("Target memory %s, using %s\n",  formatBytes(sWorkingMemorySize).c_str(), formatBytes(mem).c_str() );
       #endif
 
-
-      #ifdef HXCPP_GC_GENERATIONAL
-
-      #endif
-
- 
       // Large alloc target
       int blockSize =  mAllBlocks.size()<<IMMIX_BLOCK_BITS;
       if (blockSize > mLargeAllocSpace)
@@ -4856,14 +4872,14 @@ public:
               );
       sObjectMarks = sAllocMarks = 0;
 
+      #endif
 
-         #ifdef PROFILE_THREAD_USAGE
-         GCLOG("Thread chunks:%d, wakes=%d\n", sThreadChunkPushCount, sThreadChunkWakes);
-         for(int i=-1;i<MAX_MARK_THREADS;i++)
-           GCLOG(" thread %d] %d + %d\n", i, sThreadMarkCount[i], sThreadArrayMarkCount[i]);
-         GCLOG("Locking spins  : %d\n", sSpinCount);
-         sSpinCount = 0;
-         #endif
+      #ifdef PROFILE_THREAD_USAGE
+      GCLOG("Thread chunks:%d, wakes=%d\n", sThreadChunkPushCount, sThreadChunkWakes);
+      for(int i=-1;i<MAX_MARK_THREADS;i++)
+        GCLOG(" thread %d] %d + %d\n", i, sThreadMarkCount[i], sThreadArrayMarkCount[i]);
+      GCLOG("Locking spins  : %d\n", sSpinCount);
+      sSpinCount = 0;
       #endif
 
       #ifdef HXCPP_GC_GENERATIONAL
