@@ -256,10 +256,14 @@ class CompileCache
            var projSize = size;
            var projCount = count;
            var projDir = compileCache + "/" + project;
+           if(!FileSystem.isDirectory(projDir))
+               continue;
            var dirs = FileSystem.readDirectory(projDir);
            for(dir in dirs)
            {
               var path = projDir + "/" + dir;
+              if(!FileSystem.isDirectory(path))
+                  continue;
               var dirFiles = FileSystem.readDirectory(path);
               for(file in dirFiles)
               {
