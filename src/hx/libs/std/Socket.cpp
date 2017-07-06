@@ -1055,7 +1055,9 @@ struct polldata : public hx::Object
       #endif
 
       ridx = Array_obj<int>::__new(max+1,max+1);
+      HX_OBJ_WB_GET(this, ridx.mPtr);
       widx = Array_obj<int>::__new(max+1,max+1);
+      HX_OBJ_WB_GET(this, widx.mPtr);
       for(int i=0;i<=max;i++)
       {
          ridx[i] = -1;

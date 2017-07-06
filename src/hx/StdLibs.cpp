@@ -657,7 +657,9 @@ struct VarArgFunc : public hx::Object
 {
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure };
 
-   VarArgFunc(Dynamic &inFunc) : mRealFunc(inFunc) { }
+   VarArgFunc(Dynamic &inFunc) : mRealFunc(inFunc) {
+     HX_OBJ_WB_NEW_MARKED_OBJECT(this)
+   }
 
    int __GetType() const { return vtFunction; }
    ::String __ToString() const { return mRealFunc->__ToString() ; }

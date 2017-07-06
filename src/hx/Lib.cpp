@@ -126,9 +126,14 @@ class ExternalPrimitive : public hx::Object
 public:
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdExternalPrimitive };
 
+   inline void *operator new( size_t inSize )
+     { return hx::InternalCreateConstBuffer(0,(int)inSize); }
+   void operator delete( void *) { }
+
    ExternalPrimitive(void *inProc,int inArgCount,const String &inName) :
        mProc(inProc), mArgCount(inArgCount), mName(inName)
    {
+     mName.dupConst();
      functionName = ("extern::cffi "+mName).dupConst().__CStr();
    }
 
@@ -187,12 +192,6 @@ public:
       return ((prim_mult)mProc)( (hx::Object **)inArgs->GetBase(), inArgs->length );
    }
 
-   void __Mark(hx::MarkContext *__inCtx) {  HX_MARK_MEMBER(mName); }
-
-   #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) {  HX_VISIT_MEMBER(mName); }
-   #endif
-
    int __Compare(const hx::Object *inRHS) const
    {
       const ExternalPrimitive *other = dynamic_cast<const ExternalPrimitive *>(inRHS);
@@ -207,6 +206,13 @@ public:
    String      mName;
    const char* functionName;
 };
+
+
+namespace
+{
+typedef std::map<String,ExternalPrimitive *> LoadedMap;
+LoadedMap sLoadedMap;
+}
 
 
 typedef void (*SetLoaderProcFunc)(void *(*)(const char *));
@@ -450,6 +456,10 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
           full_name += HX_CSTRING("__MULT");
    }
 
+   String libString = inLib + HX_CSTRING("_") + full_name;
+   ExternalPrimitive *prim = sLoadedMap[libString];
+   if (prim)
+      return Dynamic(prim);
 
    if (sgRegisteredPrims)
    {
@@ -457,13 +467,17 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
       // Try with lib name ...
       if (!registered)
       {
-         String libString = inLib + HX_CSTRING("_") + full_name;
          registered = (*sgRegisteredPrims)[libString.__CStr()];
+         if (registered)
+            full_name = libString;
       }
 
       if (registered)
       {
-         return Dynamic( new ExternalPrimitive(registered,inArgCount,HX_CSTRING("registered@")+full_name) );
+         libString = libString.dupConst();
+         prim = new ExternalPrimitive(registered,inArgCount,libString);
+         sLoadedMap[libString] = prim;
+         return Dynamic(prim);
       }
    }
 
@@ -702,6 +716,7 @@ int __hxcpp_unload_all_libraries()
 }
 
 
+
 Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 {
    String full_name = inPrim;
@@ -716,14 +731,20 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
       default:
           full_name += HX_CSTRING("__MULT");
    }
-   void *proc = __hxcpp_get_proc_address(inLib,full_name,true);
 
+   String primName = inLib+HX_CSTRING("@")+full_name;
+   ExternalPrimitive *saved = sLoadedMap[primName];
+   if (saved)
+      return Dynamic(saved);
+
+   void *proc = __hxcpp_get_proc_address(inLib,full_name,true);
    if (proc)
    {
-      // Split this to avoid a collect after ExternalPrimitive::new, but before its
-      //  inline constructor is run...
-      String primName = inLib+HX_CSTRING("@")+full_name;
-      return Dynamic( new ExternalPrimitive(proc,inArgCount,primName) );
+      primName = primName.dupConst();
+
+      saved = new ExternalPrimitive(proc,inArgCount,primName);
+      sLoadedMap[primName] = saved;
+      return Dynamic(saved);
    }
    return null();
 }

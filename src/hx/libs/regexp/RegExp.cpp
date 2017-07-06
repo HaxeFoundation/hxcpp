@@ -113,6 +113,7 @@ bool _hx_regexp_match(Dynamic handle, String string, int pp, int ll)
    if( pcre_exec(d->r,NULL,string.__s,ll+pp,pp,0,d->matchs,d->nmatchs * 3) >= 0 )
    {
       d->string = string;
+      HX_OBJ_WB_GET(d, d->string.__s);
       return true;
    }
    else

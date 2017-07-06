@@ -36,11 +36,6 @@ struct Deque : public Array_obj<Dynamic>
 		mSemaphore.Clean();
 	}
 
-	void __Mark(hx::MarkContext *__inCtx)
-	{
-		Array_obj<Dynamic>::__Mark(__inCtx);
-	}
-
    #ifdef HXCPP_VISIT_ALLOCS
   	void __Visit(hx::VisitContext *__inCtx)
 	{
@@ -174,11 +169,13 @@ public:
 	{
 		mSemaphore = new HxSemaphore;
 		mDeque = Deque::Create();
+      HX_OBJ_WB_NEW_MARKED_OBJECT(this);
 	}
 	hxThreadInfo()
 	{
 		mSemaphore = 0;
 		mDeque = Deque::Create();
+      HX_OBJ_WB_NEW_MARKED_OBJECT(this);
 	}
     int GetThreadNumber() const
     {
@@ -201,7 +198,9 @@ public:
 	{
 		return mDeque->PopFront(inBlocked);
 	}
-	void SetTLS(int inID,Dynamic inVal) { mTLS[inID] = inVal; }
+	void SetTLS(int inID,Dynamic inVal) {
+      mTLS->__SetItem(inID,inVal);
+   }
 	Dynamic GetTLS(int inID) { return mTLS[inID]; }
 
 	void __Mark(hx::MarkContext *__inCtx)

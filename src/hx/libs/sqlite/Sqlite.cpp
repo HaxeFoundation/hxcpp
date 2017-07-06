@@ -150,8 +150,8 @@ struct database : public hx::Object
          last->destroy(true);
 
       last = inResult;
+      HX_OBJ_WB_GET(this, last.mPtr);
    }
-
 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(last); }
    #ifdef HXCPP_VISIT_ALLOCS

@@ -32,6 +32,7 @@ struct fio : public hx::Object
    void create(FILE *inFile, String inName, bool inClose)
    {
       name = inName;
+      HX_OBJ_WB_GET(this,name.__s);
       io = inFile;
       closeIo = inClose;
 
