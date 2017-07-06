@@ -525,7 +525,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
       #ifdef HXCPP_GC_GENERATIONAL
       unsigned char &mark =  ((unsigned char *)(this))[ HX_ENDIAN_MARK_ID_BYTE];
-      if (!(mark&HX_GC_REMEMBERED) && mark)
+      if (mark == hx::gByteMarkID)
       {
          // Look for nursery objects...
          if ( IsNursery(el) || IsNursery(hx::PointerOf(el->key)) ||

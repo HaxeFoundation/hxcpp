@@ -436,7 +436,6 @@ public:
 typedef ImmixAllocator GcAllocator;
 typedef ImmixAllocator Ctx;
 
-         // if (!(mark&HX_GC_REMEMBERED) && mark) {
 
 #ifdef HXCPP_GC_GENERATIONAL
   #define HX_OBJ_WB_CTX(obj,value,ctx) { \
