@@ -110,15 +110,21 @@ class CompileCache
               continue;
            var projectHasDirs = false;
            var projDir = compileCache + "/" + project;
+           if(!FileSystem.isDirectory(projDir))
+               continue;
            var dirs = FileSystem.readDirectory(projDir);
            for(dir in dirs)
            {
+              var path = projDir + "/" + dir;
+              if(!FileSystem.isDirectory(path)) {
+                  FileSystem.deleteFile(path);
+                  continue;
+              }
               if (dir.length!=2 && dir!="lib" && dir.substr(0,3)!="pch" )
               {
                  Log.warn('bad cache name "$dir" found - try manually clearing');
                  continue;
               }
-              var path = projDir + "/" + dir;
               var dirFiles = FileSystem.readDirectory(path);
               var allDeleted = true;
               for(file in dirFiles)
