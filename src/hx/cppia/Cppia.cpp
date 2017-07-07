@@ -1600,14 +1600,13 @@ struct NewExpr : public CppiaDynamicExpr
          {
             int size = info->haxeBase->mDataOffset + info->extraData;
             // sJitCtx = alloc
-            //
-            // sJitTemp0 = alloc->spaceStart
-            compiler->move(sJitTemp0, sJitCtx.star(etInt, offsetof(hx::StackContext,spaceStart) ) );
+            // sJitReturnReg = alloc->spaceFirst - will be the result if all goes well
+            compiler->move(sJitReturnReg, sJitCtx.star(jtPointer, offsetof(hx::StackContext,spaceFirst) ) );
 
-            // sJitTemp1 = end = spaceStart + size + sizeof(int)
-            compiler->add(sJitTemp1, sJitTemp0, (int)(size + sizeof(int) ) );
+            // sJitTemp1 = end = spaceFirst + size + sizeof(int)
+            compiler->add(sJitTemp1.as(jtPointer), sJitReturnReg.as(jtPointer), (int)(size + sizeof(int) ) );
 
-            JumpId inRange = compiler->compare(cmpI_LESS_EQUAL, sJitTemp1, sJitCtx.star(etInt, offsetof(hx::StackContext,spaceEnd) ) );
+            JumpId inRange = compiler->compare(cmpP_LESS_EQUAL, sJitTemp1, sJitCtx.star(jtPointer, offsetof(hx::StackContext,spaceOversize) ) );
 
             // Not in range ...
                compiler->callNative(allocHaxe, sJitCtx, (void *)info );
@@ -1617,16 +1616,17 @@ struct NewExpr : public CppiaDynamicExpr
                compiler->comeFrom(inRange);
 
                // alloc->spaceStart = end;
-               compiler->move( sJitCtx.star(etInt, offsetof(hx::StackContext,spaceStart)), sJitTemp1 );
+               compiler->move( sJitCtx.star(jtPointer, offsetof(hx::StackContext,spaceFirst)), sJitTemp1.as(jtPointer) );
 
-               // sJitTemp2 = unsigned int *buffer = (unsigned int *)(alloc->allocBase + start);
-               compiler->add(sJitTemp2, sJitCtx.star(jtPointer, offsetof(hx::StackContext,allocBase)), sJitTemp0 );
+               // sJitReturnReg = buffer
 
-               //compiler->move( sJitTemp2.star(etInt), (int)( size | (info->isContainer ? IMMIX_ALLOC_IS_CONTAINER : 0) ) );
                // TODO - IMMIX_ALLOC_IS_CONTAINER from classInfo
-               compiler->move( sJitTemp2.star(etInt), (int)( size | IMMIX_ALLOC_IS_CONTAINER) );
+               // buffer[-1] = size | container
 
-               compiler->add(sJitReturnReg, sJitTemp2.as(jtPointer), (int)4);
+               if (true /*info->containsPointers()*/)
+                  compiler->move( sJitReturnReg.star(etInt,-sizeof(int)), (int)( size | IMMIX_ALLOC_IS_CONTAINER) );
+               else
+                  compiler->move( sJitReturnReg.star(etInt,-sizeof(int)), (int)( size ) );
 
                // Set class vtable
                compiler->move(sJitReturnReg.star(jtPointer), (void *) info->getHaxeBaseVTable() );
@@ -1634,15 +1634,14 @@ struct NewExpr : public CppiaDynamicExpr
                // Set script vtable
                compiler->move(sJitReturnReg.star(jtPointer, (int)(info->haxeBase->mDataOffset-sizeof(void *))), (void *) info->vtable );
 
-            // join
+            // join sJitReturnReg contains return buffer
             compiler->comeFrom(allocCallDone);
          }
          else
-         #else
+         #endif
          {
             compiler->callNative(allocHaxe, sJitCtx, (void *)info );
          }
-         #endif
 
          // Result is in sJitReturnReg
          if (info->newFunc)
