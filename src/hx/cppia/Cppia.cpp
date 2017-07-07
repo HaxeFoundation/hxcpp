@@ -1623,7 +1623,7 @@ struct NewExpr : public CppiaDynamicExpr
                // TODO - IMMIX_ALLOC_IS_CONTAINER from classInfo
                // buffer[-1] = size | container
 
-               if (true /*info->containsPointers()*/)
+               if (info->containsPointers)
                   compiler->move( sJitReturnReg.star(etInt,-sizeof(int)), (int)( size | IMMIX_ALLOC_IS_CONTAINER) );
                else
                   compiler->move( sJitReturnReg.star(etInt,-sizeof(int)), (int)( size ) );

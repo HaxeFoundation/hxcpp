@@ -115,6 +115,11 @@ void CppiaVar::linkVarTypes(CppiaModule &cppia)
    }
 }
 
+bool CppiaVar::hasPointer()
+{
+   return storeType==fsString || storeType==fsObject;
+}
+
 
 Dynamic CppiaVar::getStaticValue()
 {

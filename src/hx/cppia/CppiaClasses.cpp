@@ -349,6 +349,7 @@ CppiaClassInfo::CppiaClassInfo(CppiaModule &inCppia) : cppia(inCppia)
    isLinked = false;
    haxeBase = 0;
    extraData = 0;
+   containsPointers = false;
    classSize = 0;
    newFunc = 0;
    initExpr = 0;
@@ -403,6 +404,8 @@ void *CppiaClassInfo::getHaxeBaseVTable()
 
    hx::Object *temp = haxeBase->factory(vtable,extraData);
    haxeBaseVTable = *(void **)temp;
+   if (!containsPointers && ( ((unsigned int *)temp)[-1] & IMMIX_ALLOC_IS_CONTAINER) )
+      containsPointers = true;
 
    return haxeBaseVTable;
 }
@@ -597,7 +600,11 @@ bool CppiaClassInfo::setField(hx::Object *inThis, String inName, Dynamic inValue
                         inThis->__GetFieldMap();
    if (map)
    {
+      #ifdef HXCPP_GC_GENERATIONAL
+      FieldMapSet(inThis,map, inName, inValue);
+      #else
       FieldMapSet(map, inName, inValue);
+      #endif
       outValue = inValue;
       return true;
    }
@@ -1000,6 +1007,8 @@ void CppiaClassInfo::linkTypes()
    {
       classSize = cppiaSuper->classSize;
 
+      containsPointers = cppiaSuper->containsPointers;
+
       if (cppiaSuper->dynamicMapOffset!=0)
          dynamicMapOffset = cppiaSuper->dynamicMapOffset;
 
@@ -1071,10 +1080,12 @@ void CppiaClassInfo::linkTypes()
          {
             DBGLOG("   link var %s @ %d\n", cppia.identStr(memberVars[i]->nameId), classSize);
             memberVars[i]->linkVarTypes(cppia,classSize);
+            containsPointers = containsPointers || memberVars[i]->hasPointer();
          }
       }
       for(int i=0;i<dynamicFunctions.size();i++)
       {
+         containsPointers = true;
          if (dynamicFunctions[i]->offset)
          {
             DBGLOG("   super dynamic function %s @ %d\n", cppia.identStr(dynamicFunctions[i]->nameId), dynamicFunctions[i]->offset);
@@ -1090,9 +1101,13 @@ void CppiaClassInfo::linkTypes()
       {
          dynamicMapOffset = classSize;
          classSize += sizeof( hx::FieldMap * );
+         containsPointers = true;
       }
 
       extraData = classSize - haxeBase->mDataOffset;
+
+      if (!containsPointers)
+         getHaxeBaseVTable();
    }
 
 

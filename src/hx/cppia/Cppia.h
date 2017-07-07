@@ -494,6 +494,7 @@ struct CppiaVar
    void link(CppiaModule &inModule);
    static Access getAccess(CppiaStream &stream);
    void runInit(CppiaCtx *ctx);
+   bool hasPointer();
 
    inline void mark(hx::Object *inThis,hx::MarkContext *__inCtx)
    {
@@ -595,6 +596,7 @@ public:
    TypeData *superType;
    int       classSize;
    int       extraData;
+   bool      containsPointers;
    int       dynamicMapOffset;
    int       interfaceSlotSize;
    void      **vtable;
