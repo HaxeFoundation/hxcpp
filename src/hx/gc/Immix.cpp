@@ -4906,11 +4906,22 @@ public:
       if (hx::gMultiThreadMode)
       {
          for(int i=0;i<mLocalAllocs.size();i++)
-         if (mLocalAllocs[i]!=this_local)
-            ReleaseFromSafe(mLocalAllocs[i]);
+         {
+            #ifdef HXCPP_SCRIPTABLE
+            ((hx::StackContext *)mLocalAllocs[i])->byteMarkId = hx::gByteMarkID;
+            #endif
+            if (mLocalAllocs[i]!=this_local)
+               ReleaseFromSafe(mLocalAllocs[i]);
+         }
 
          if (!inLocked)
             gThreadStateChangeLock->Unlock();
+      }
+      else
+      {
+        #ifdef HXCPP_SCRIPTABLE
+        hx::gMainThreadContext->byteMarkId = hx::gByteMarkID;
+        #endif
       }
    }
 
@@ -6050,6 +6061,9 @@ void RegisterCurrentThread(void *inTopOfStack)
    }
 
    tlsStackContext = local;
+   #ifdef HXCPP_SCRIPTABLE
+   local->byteMarkId = hx::gByteMarkID;
+   #endif
    local->onThreadAttach();
 }
 

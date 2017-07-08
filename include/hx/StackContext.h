@@ -536,6 +536,7 @@ struct StackContext : public hx::ImmixAllocator
    class Object  *exception;
 
    unsigned int breakContReturn;
+   int  byteMarkId;
 
    template<typename T>
    void push(T inValue)

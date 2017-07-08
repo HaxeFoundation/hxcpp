@@ -2534,7 +2534,7 @@ struct FieldByName : public CppiaDynamicExpr
    CppiaExpr   *value;
    AssignOp    assign;
    CrementOp   crement;
-   hx::Class       staticClass;
+   hx::Class   staticClass;
 
    
    FieldByName(CppiaExpr *inSrc, CppiaExpr *inObject, hx::Class inStaticClass,
@@ -2608,19 +2608,6 @@ struct FieldByName : public CppiaDynamicExpr
       obj->__SetField(name,val1,HX_PROP_DYNAMIC);
       return val1.mPtr;
    }
-
-   void mark(hx::MarkContext *__inCtx)
-   {
-      HX_MARK_MEMBER(name);
-      HX_MARK_MEMBER(staticClass);
-   }
-#ifdef HXCPP_VISIT_ALLOCS
-   void visit(hx::VisitContext *__inCtx)
-   {
-      HX_VISIT_MEMBER(name);
-      HX_VISIT_MEMBER(staticClass);
-   }
-#endif
 
    #ifdef CPPIA_JIT
    static int SLJIT_CALL getInt( hx::Object *inSrc, String *inName )
@@ -2999,18 +2986,6 @@ struct GetFieldByName : public CppiaDynamicExpr
       return new FieldByName(this, object, staticClass, name, aoNone, inOp, 0);
    }
 
-   void mark(hx::MarkContext *__inCtx)
-   {
-      HX_MARK_MEMBER(name);
-      HX_MARK_MEMBER(staticClass);
-   }
-#ifdef HXCPP_VISIT_ALLOCS
-   void visit(hx::VisitContext *__inCtx)
-   {
-      HX_VISIT_MEMBER(name);
-      HX_VISIT_MEMBER(staticClass);
-   }
-#endif
 };
 
 
@@ -3373,6 +3348,15 @@ struct MemReference : public CppiaExpr
                                  (char *)ctx->frame \
          ) + offset )
 
+   #define MEMGETPTR \
+      (T *)( \
+         ( REFMODE==locObj      ?(char *)object->runObject(ctx) : \
+           REFMODE==locAbsolute ?(char *)pointer : \
+           REFMODE==locThis     ?(char *)ctx->getThis() : \
+                                 (char *)ctx->frame \
+         ) + offset )
+
+
    MemReference(const CppiaExpr *inSrc, int inOffset, CppiaExpr *inExpr=0)
       : CppiaExpr(inSrc)
    {
@@ -3695,6 +3679,66 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
 }
 #endif
 
+template<typename T>
+inline static bool isPointerObject(T *) { return false; }
+inline static bool isPointerObject(hx::Object **) { return true; }
+inline static bool isPointerObject(String *) { return true; }
+template<typename T>
+inline static void * getPointerFrom(T *) { return 0; }
+inline static void * getPointerFrom(hx::Object **o) { return *o; }
+inline static void * getPointerFrom(String *s) { return (void *)s->__s; }
+
+#ifdef HXCPP_GC_GENERATIONAL
+  #define MEM_WB_CHECK \
+     if (isPointerObject(t)) {\
+        if (REFMODE==locThis) { \
+           hx::Object *thiz = ctx->getThis(); \
+           HX_OBJ_WB_CTX(thiz,getPointerFrom(t),ctx); \
+        }  \
+        else if (REFMODE==locObj) { \
+           hx::Object *obj = (hx::Object *)( (char *)(t) - offset ); \
+           HX_OBJ_WB_CTX(obj,getPointerFrom(t),ctx); \
+        } \
+     }
+
+#else
+  #define MEM_WB_CHECK
+#endif
+
+#if defined(HXCPP_GC_GENERATIONAL) && defined(CPPIA_JIT)
+static void SLJIT_CALL pushWriteBarrier(hx::StackContext *inCtx, hx::Object *inObj)
+{
+   printf("pushReferrer!\n");
+   unsigned char &mark =  ((unsigned char *)(inObj))[ HX_ENDIAN_MARK_ID_BYTE];
+   mark|=HX_GC_REMEMBERED;
+   inCtx->pushReferrer(inObj);
+}
+
+
+void genWriteBarrier(CppiaCompiler *compiler, JitReg objVal, JitVal valuePtr)
+{
+   // sJitTemp2 = object
+   // unsigned char mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE] != ctx->byteMarkId
+   compiler->move(sJitTemp1, objVal.star(jtByte, HX_ENDIAN_MARK_ID_BYTE) );
+   JumpId newMark = compiler->compare(cmpI_NOT_EQUAL,sJitCtx.star(jtInt, offsetof(hx::StackContext,byteMarkId)), sJitTemp1 );
+
+
+   compiler->move(sJitTemp1, valuePtr );
+
+   // Value != 0
+   JumpId nullValue = compiler->compare(cmpP_ZERO, sJitTemp1.as(jtPointer),0);
+   JumpId notNursery = compiler->compare(cmpP_NOT_ZERO, sJitTemp1.star(jtByte, HX_ENDIAN_MARK_ID_BYTE),0 );
+
+   compiler->callNative( (void *)pushWriteBarrier, sJitCtx, objVal );
+
+   compiler->comeFrom(notNursery);
+   compiler->comeFrom(nullValue);
+   compiler->comeFrom(newMark);
+}
+
+
+#endif
+
 template<typename T, int REFMODE, typename Assign> 
 struct MemReferenceSetter : public CppiaExpr
 {
@@ -3723,37 +3767,46 @@ struct MemReferenceSetter : public CppiaExpr
    void runVoid(CppiaCtx *ctx)
    {
       CHECKVAL;
-      T &t = MEMGETVAL;
+      T *t = MEMGETPTR;
       BCR_VCHECK;
-      Assign::run( t, ctx, value);
+      Assign::run( *t, ctx, value);
+      MEM_WB_CHECK;
    }
    int runInt(CppiaCtx *ctx)
    {
       CHECKVAL;
-      T &t = MEMGETVAL;
+      T *t = MEMGETPTR;
       BCR_CHECK;
-      return ValToInt( Assign::run(t,ctx, value ) );
+      int val = ValToInt( Assign::run(*t,ctx, value ) );
+      MEM_WB_CHECK;
+      return val;
    }
    Float runFloat(CppiaCtx *ctx)
    {
       CHECKVAL;
-      T &t = MEMGETVAL;
+      T *t = MEMGETPTR;
       BCR_CHECK;
-      return ValToFloat( Assign::run(t,ctx, value) );
+      Float val = ValToFloat( Assign::run(*t,ctx, value) );
+      MEM_WB_CHECK;
+      return val;
    }
    ::String runString(CppiaCtx *ctx)
    {
       CHECKVAL;
-      T &t = MEMGETVAL;
+      T *t = MEMGETPTR;
       BCR_CHECK;
-      return ValToString( Assign::run(t,ctx, value) );
+      String val = ValToString( Assign::run(*t,ctx, value) );
+      MEM_WB_CHECK;
+      return val;
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
       CHECKVAL;
-      T &t = MEMGETVAL;
+      T *t = MEMGETPTR;
       BCR_CHECK;
-      return Dynamic( Assign::run(t,ctx,value) ).mPtr;
+      Dynamic result( Assign::run(*t,ctx,value) );
+      MEM_WB_CHECK;
+      return result.mPtr;
    }
 
    void mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER( *pointer ); }
@@ -3796,6 +3849,13 @@ struct MemReferenceSetter : public CppiaExpr
 
             compiler->move( sJitTemp2.star(targetType) + offset, tmpVal );
 
+            #ifdef HXCPP_GC_GENERATIONAL
+            if (isPointerObject((T*)0))
+            {
+               genWriteBarrier(compiler, sJitTemp2, tmpVal.star(jtPointer) + (targetType==jtString ? sizeof(int) : 0) );
+            }
+            #endif
+
             compiler->convert( tmpVal, getType(), inDest, destType );
             }
             break;
@@ -3818,6 +3878,15 @@ struct MemReferenceSetter : public CppiaExpr
                else
                {
                   value->genCode(compiler, target, getType());
+
+
+                  #ifdef HXCPP_GC_GENERATIONAL
+                  if (REFMODE==locThis && isPointerObject((T*)0))
+                  {
+                     genWriteBarrier(compiler, sJitThis, targetType==jtString ? (target+sizeof(int)).as(jtPointer) : target  );
+                  }
+                  #endif
+
                   compiler->convert( target,getType(),inDest, destType );
                }
             }
@@ -4467,13 +4536,11 @@ struct StringVal : public CppiaExprWithValue
    void mark(hx::MarkContext *__inCtx)
    {
       HX_MARK_MEMBER(value);
-      HX_MARK_MEMBER(strVal);
    }
 #ifdef HXCPP_VISIT_ALLOCS
    void visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(value);
-      HX_VISIT_MEMBER(strVal);
    }
 #endif
 
