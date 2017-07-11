@@ -3708,28 +3708,31 @@ inline static void * getPointerFrom(String *s) { return (void *)s->__s; }
 #if defined(HXCPP_GC_GENERATIONAL) && defined(CPPIA_JIT)
 static void SLJIT_CALL pushWriteBarrier(hx::StackContext *inCtx, hx::Object *inObj)
 {
-   printf("pushReferrer!\n");
    unsigned char &mark =  ((unsigned char *)(inObj))[ HX_ENDIAN_MARK_ID_BYTE];
    mark|=HX_GC_REMEMBERED;
    inCtx->pushReferrer(inObj);
 }
 
 
+// objVal - should not be sJitTemp1
 void genWriteBarrier(CppiaCompiler *compiler, JitReg objVal, JitVal valuePtr)
 {
-   // sJitTemp2 = object
+
    // unsigned char mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE] != ctx->byteMarkId
    compiler->move(sJitTemp1, objVal.star(jtByte, HX_ENDIAN_MARK_ID_BYTE) );
-   JumpId newMark = compiler->compare(cmpI_NOT_EQUAL,sJitCtx.star(jtInt, offsetof(hx::StackContext,byteMarkId)), sJitTemp1 );
-
+   JumpId newMark = compiler->compare(cmpI_NOT_EQUAL,sJitTemp1,sJitCtx.star(jtInt, offsetof(hx::StackContext,byteMarkId)));
 
    compiler->move(sJitTemp1, valuePtr );
 
    // Value != 0
    JumpId nullValue = compiler->compare(cmpP_ZERO, sJitTemp1.as(jtPointer),0);
-   JumpId notNursery = compiler->compare(cmpP_NOT_ZERO, sJitTemp1.star(jtByte, HX_ENDIAN_MARK_ID_BYTE),0 );
+   compiler->move(sJitTemp1, sJitTemp1.star(jtByte, HX_ENDIAN_MARK_ID_BYTE) );
+   JumpId notNursery = compiler->compare(cmpI_NOT_ZERO, sJitTemp1, 0);
 
-   compiler->callNative( (void *)pushWriteBarrier, sJitCtx, objVal );
+   // TODO - not use temp?
+   JitTemp tmpObj(compiler, jtPointer);
+   compiler->move(tmpObj, objVal);
+   compiler->callNative( (void *)pushWriteBarrier, sJitCtx, tmpObj );
 
    compiler->comeFrom(notNursery);
    compiler->comeFrom(nullValue);
@@ -3738,6 +3741,7 @@ void genWriteBarrier(CppiaCompiler *compiler, JitReg objVal, JitVal valuePtr)
 
 
 #endif
+
 
 template<typename T, int REFMODE, typename Assign> 
 struct MemReferenceSetter : public CppiaExpr
@@ -3851,9 +3855,7 @@ struct MemReferenceSetter : public CppiaExpr
 
             #ifdef HXCPP_GC_GENERATIONAL
             if (isPointerObject((T*)0))
-            {
-               genWriteBarrier(compiler, sJitTemp2, tmpVal.star(jtPointer) + (targetType==jtString ? sizeof(int) : 0) );
-            }
+               genWriteBarrier(compiler, sJitTemp2, (tmpVal + (targetType==jtString ? sizeof(int) : 0)).as(jtPointer));
             #endif
 
             compiler->convert( tmpVal, getType(), inDest, destType );
@@ -3879,12 +3881,9 @@ struct MemReferenceSetter : public CppiaExpr
                {
                   value->genCode(compiler, target, getType());
 
-
                   #ifdef HXCPP_GC_GENERATIONAL
                   if (REFMODE==locThis && isPointerObject((T*)0))
-                  {
-                     genWriteBarrier(compiler, sJitThis, targetType==jtString ? (target+sizeof(int)).as(jtPointer) : target  );
-                  }
+                     genWriteBarrier(compiler, sJitThis, targetType==jtString ? (target+sizeof(int)).as(jtPointer) : target );
                   #endif
 
                   compiler->convert( target,getType(),inDest, destType );
@@ -4004,6 +4003,55 @@ static hx::Object * SLJIT_CALL objPreDec(hx::Object **ioVal)
    *ioVal = (Dynamic(*ioVal)-1).mPtr;
    return *ioVal;
 }
+
+#ifdef HXCPP_GC_GENERATIONAL
+static void SLJIT_CALL objDecWb(hx::Object *inObj,int inOffset)
+{
+   hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
+   *ioVal = (Dynamic(*ioVal)-1).mPtr;
+   HX_OBJ_WB_GET(inObj, *ioVal);
+}
+static void SLJIT_CALL objIncWb(hx::Object *inObj,int inOffset)
+{
+   hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
+   *ioVal = (Dynamic(*ioVal)+1).mPtr;
+   HX_OBJ_WB_GET(inObj, *ioVal);
+}
+
+static hx::Object * SLJIT_CALL objPostIncWb(hx::Object *inObj,int inOffset)
+{
+   hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
+   hx::Object *result = *ioVal;
+   *ioVal = (Dynamic(result)+1).mPtr;
+   HX_OBJ_WB_GET(inObj, *ioVal);
+   return result;
+}
+static hx::Object * SLJIT_CALL objPostDecWb(hx::Object *inObj,int inOffset)
+{
+   hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
+   hx::Object *result = *ioVal;
+   *ioVal = (Dynamic(result)-1).mPtr;
+   HX_OBJ_WB_GET(inObj, *ioVal);
+   return result;
+}
+
+static hx::Object * SLJIT_CALL objPreIncWb(hx::Object *inObj,int inOffset)
+{
+   hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
+   *ioVal = (Dynamic(*ioVal)+1).mPtr;
+   HX_OBJ_WB_GET(inObj, *ioVal);
+   return *ioVal;
+}
+static hx::Object * SLJIT_CALL objPreDecWb(hx::Object *inObj,int inOffset)
+{
+   hx::Object ** ioVal = (hx::Object **)( (char *)inObj + inOffset );
+   *ioVal = (Dynamic(*ioVal)-1).mPtr;
+   HX_OBJ_WB_GET(inObj, *ioVal);
+   return *ioVal;
+}
+
+#endif
+
 #endif
 
 template<typename T, int REFMODE,typename CREMENT> 
@@ -4166,25 +4214,53 @@ struct MemReferenceCrement : public CppiaExpr
             break;
 
          case etObject:
-            // Convert to address...
-            ioPtr.type = jtString;
-            if ( inDest.type==jtVoid)
+            #ifdef HXCPP_GC_GENERATIONAL
+            if (REFMODE==locObj || REFMODE==locThis)
             {
-               compiler->callNative( diff<0 ? (void *)objDec : (void *)objInc, ioPtr );
+               JitVal obj = REFMODE==locThis ? sJitThis.as(jtPointer) : sJitTemp0.as(jtPointer);
+               if ( inDest.type==jtVoid)
+               {
+                  compiler->callNative( diff<0 ? (void *)objDecWb : (void *)objIncWb, obj, offset );
+               }
+               else
+               {
+                  void *func = 0;
+                  switch(op)
+                  {
+                     case coPostDec: func = (void *)objPostDecWb; break;
+                     case coPreDec: func = (void *)objPreDecWb; break;
+                     case coPostInc: func = (void *)objPostIncWb; break;
+                     case coPreInc: func = (void *)objPreIncWb; break;
+                     default: ;
+                  }
+                  compiler->callNative(func, obj, offset);
+                  compiler->convertReturnReg( etObject, inDest, destType );
+               }
+
             }
             else
+            #endif
             {
-               void *func = 0;
-               switch(op)
+               // Convert to address...
+               ioPtr.type = jtString;
+               if ( inDest.type==jtVoid)
                {
-                  case coPostDec: func = (void *)objPostDec; break;
-                  case coPreDec: func = (void *)objPreDec; break;
-                  case coPostInc: func = (void *)objPostInc; break;
-                  case coPreInc: func = (void *)objPreInc; break;
-                  default: ;
+                  compiler->callNative( diff<0 ? (void *)objDec : (void *)objInc, ioPtr );
                }
-               compiler->callNative(func, ioPtr);
-               compiler->convertReturnReg( etObject, inDest, destType );
+               else
+               {
+                  void *func = 0;
+                  switch(op)
+                  {
+                     case coPostDec: func = (void *)objPostDec; break;
+                     case coPreDec: func = (void *)objPreDec; break;
+                     case coPostInc: func = (void *)objPostInc; break;
+                     case coPreInc: func = (void *)objPreInc; break;
+                     default: ;
+                  }
+                  compiler->callNative(func, ioPtr);
+                  compiler->convertReturnReg( etObject, inDest, destType );
+               }
             }
             break;
 
@@ -4801,7 +4877,7 @@ struct ArrayDef : public CppiaDynamicExpr
             Array<bool> result = Array_obj<bool>::__new(n,n);
             for(int i=0;i<n;i++)
             {
-               result[i] = items[i]->runInt(ctx)!=0;
+               result->__unsafe_set(i,items[i]->runInt(ctx)!=0);
                BCR_CHECK;
             }
             return result.mPtr;
@@ -4811,7 +4887,7 @@ struct ArrayDef : public CppiaDynamicExpr
             Array<unsigned char> result = Array_obj<unsigned char>::__new(n,n);
             for(int i=0;i<n;i++)
             {
-               result[i] = items[i]->runInt(ctx);
+               result->__unsafe_set(i,items[i]->runInt(ctx));
                BCR_CHECK;
             }
             return result.mPtr;
@@ -4821,7 +4897,7 @@ struct ArrayDef : public CppiaDynamicExpr
             Array<int> result = Array_obj<int>::__new(n,n);
             for(int i=0;i<n;i++)
             {
-               result[i] = items[i]->runInt(ctx);
+               result->__unsafe_set(i,items[i]->runInt(ctx));
                BCR_CHECK;
             }
             return result.mPtr;
@@ -4831,7 +4907,7 @@ struct ArrayDef : public CppiaDynamicExpr
             Array<Float> result = Array_obj<Float>::__new(n,n);
             for(int i=0;i<n;i++)
             {
-               result[i] = items[i]->runFloat(ctx);
+               result->__unsafe_set(i,items[i]->runFloat(ctx));
                BCR_CHECK;
             }
             return result.mPtr;
@@ -4841,7 +4917,8 @@ struct ArrayDef : public CppiaDynamicExpr
             Array<String> result = Array_obj<String>::__new(n,n);
             for(int i=0;i<n;i++)
             {
-               result[i] = items[i]->runString(ctx);
+               result->__unsafe_set(i,items[i]->runString(ctx));
+
                BCR_CHECK;
             }
             return result.mPtr;
@@ -4865,7 +4942,7 @@ struct ArrayDef : public CppiaDynamicExpr
             Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
             for(int i=0;i<n;i++)
             {
-               result[i] = items[i]->runObject(ctx);
+               result->__unsafe_set(i,items[i]->runObject(ctx));
                BCR_CHECK;
             }
             return result.mPtr;
@@ -4926,6 +5003,10 @@ struct ArrayDef : public CppiaDynamicExpr
                items[i]->genCode(compiler, sJitTemp0, etObject );
                compiler->move(sJitTemp1, arrayPtr);
                compiler->move(sJitTemp1.star(jtPointer)+i*sizeof(void *), sJitTemp0.as(jtPointer));
+               #ifdef HXCPP_GC_GENERATIONAL
+               compiler->move(sJitTemp2, array);
+               genWriteBarrier(compiler, sJitTemp2, sJitTemp0 );
+               #endif
                break;
             case arrBool:
             case arrUnsignedChar:
@@ -4945,6 +5026,10 @@ struct ArrayDef : public CppiaDynamicExpr
                compiler->move(sJitTemp1, arrayPtr);
                compiler->move(sJitTemp1.star(jtInt)+i*sizeof(String), val.as(jtInt));
                compiler->move(sJitTemp1.star(jtPointer)+i*sizeof(String)+sizeof(int), val.as(jtPointer) + sizeof(int));
+               #ifdef HXCPP_GC_GENERATIONAL
+               compiler->move(sJitTemp0, array);
+               genWriteBarrier(compiler, sJitTemp0, val.as(jtPointer) + sizeof(int));
+               #endif
                }
                break;
             case arrAny:
