@@ -1959,6 +1959,24 @@ struct CallGetIndex : public CppiaIntExpr
       return obj->__Index();
       #endif
    }
+
+
+   #ifdef CPPIA_JIT
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      #if (HXCPP_API_LEVEL<330)
+      throw "Enum getIndex not supported by this version of compiled code";
+      #endif
+      thisExpr->genCode(compiler, sJitTemp0, etObject);
+      if (destType==etInt)
+         compiler->move( inDest, sJitTemp0.star( jtInt, offsetof(hx::EnumBase_obj, index) ) );
+      else
+      {
+         compiler->move( sJitTemp0, sJitTemp0.star( jtInt, offsetof(hx::EnumBase_obj, index) ) );
+         compiler->convert( sJitTemp0, etInt, inDest, destType );
+      }
+   }
+   #endif
 };
 
 
@@ -3272,22 +3290,19 @@ struct CallMember : public CppiaExpr
 
       if (!replace && field==HX_CSTRING("__Index"))
       {
-         #ifdef CPPIA_JIT
-         throw "Old cppia bytecode not supported by jit";
-         #endif
          replace = new CallGetIndex(this, thisExpr);
       }
       if (!replace && field==HX_CSTRING("__SetField") && args.size()==3)
       {
          #ifdef CPPIA_JIT
-         throw "Old cppia bytecode not supported by jit";
+         throw "Old cppia bytecode not supported by jit (__SetField)";
          #endif
          replace = new CallSetField(this, thisExpr, args[0], args[1], args[2]);
       }
       if (!replace && field==HX_CSTRING("__Field") && args.size()==2)
       {
          #ifdef CPPIA_JIT
-         throw "Old cppia bytecode not supported by jit";
+         throw "Old cppia bytecode not supported by jit (__Field)";
          #endif
          replace = new CallGetField(this, thisExpr, args[0], args[1]);
       }
@@ -4075,32 +4090,42 @@ struct MemReferenceCrement : public CppiaExpr
 
    void        runVoid(CppiaCtx *ctx) {
       CHECKVAL;
-       CREMENT::run( MEMGETVAL );
+      T *t = MEMGETPTR;
+      CREMENT::run( *t );
+      MEM_WB_CHECK;
    }
    int runInt(CppiaCtx *ctx) {
       CHECKVAL;
-      T &t = MEMGETVAL;
+      T *t = MEMGETPTR;
       BCR_CHECK;
-      return ValToInt( CREMENT::run(t) );
+      int result = ValToInt( CREMENT::run(*t) );
+      MEM_WB_CHECK;
+      return result;
    }
    Float       runFloat(CppiaCtx *ctx) {
       CHECKVAL;
-      T &t = MEMGETVAL;
+      T *t = MEMGETPTR;
       BCR_CHECK;
-      return ValToFloat( CREMENT::run(t));
+      Float result = ValToFloat( CREMENT::run(*t));
+      MEM_WB_CHECK;
+      return result;
    }
    ::String    runString(CppiaCtx *ctx) {
       CHECKVAL;
-      T &t = MEMGETVAL;
+      T *t = MEMGETPTR;
       BCR_CHECK;
-      return ValToString( CREMENT::run(t) );
+      String result = ValToString( CREMENT::run(*t) );
+      MEM_WB_CHECK;
+      return result;
    }
 
    hx::Object *runObject(CppiaCtx *ctx) {
       CHECKVAL;
-      T &t = MEMGETVAL;
+      T *t = MEMGETPTR;
       BCR_CHECK;
-      return Dynamic( CREMENT::run(t) ).mPtr;
+      Dynamic result( CREMENT::run(*t) );
+      MEM_WB_CHECK;
+      return result.mPtr;
    }
 
 

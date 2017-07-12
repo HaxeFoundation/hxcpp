@@ -68,6 +68,7 @@ union JitMultiArg
    int        ival;
    double     dval;
    hx::Object *obj;
+   String     sval;
 };
 
 struct JitVal
@@ -452,6 +453,7 @@ struct JitSave
 };
 
 
+
 struct AutoFramePos
 {
    CppiaCompiler *compiler;
@@ -468,6 +470,10 @@ struct AutoFramePos
       compiler->restoreFrameSize(framePos);
    }
 };
+
+
+// objVal - should not be sJitTemp1
+void genWriteBarrier(CppiaCompiler *compiler, JitReg objVal, JitVal valuePtr);
 
 
 }
