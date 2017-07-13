@@ -181,10 +181,6 @@ public:
     {
         return mThreadNumber;
     }
-	void Clean()
-	{
-		mDeque->Clean();
-	}
 	void CleanSemaphore()
 	{
 		delete mSemaphore;

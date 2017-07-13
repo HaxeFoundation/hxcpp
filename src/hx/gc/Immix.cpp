@@ -1403,7 +1403,7 @@ struct GlobalChunks
       return alloc();
    }
 
-   MarkChunk *pushJob(MarkChunk *inChunk,bool inAndAlloc = true)
+   MarkChunk *pushJob(MarkChunk *inChunk,bool inAndAlloc)
    {
       while(true)
       {
@@ -1745,7 +1745,7 @@ public:
        }
        else
        {
-          marking = sGlobalChunks.pushJob(marking);
+          marking = sGlobalChunks.pushJob(marking,true);
           marking->push(inObject);
        }
     }
@@ -2956,11 +2956,10 @@ public:
       // TODO Attach debugger
    }
 
-   bool ReturnToPool(LocalAllocator *inAlloc)
+   bool ReturnToPoolLocked(LocalAllocator *inAlloc)
    {
       // Until we add ourselves, the colled will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
-      AutoLock lock(*gThreadStateChangeLock);
       for(int p=0;p<LOCAL_POOL_SIZE;p++)
       {
          if (!mLocalPool[p])
@@ -2988,12 +2987,10 @@ public:
       return 0;
    }
 
-   void RemoveLocal(LocalAllocator *inAlloc)
+   void RemoveLocalLocked(LocalAllocator *inAlloc)
    {
       // You should be in the GC free zone before you call this...
-      AutoLock lock(*gThreadStateChangeLock);
       mLocalAllocs.qerase_val(inAlloc);
-      // TODO detach debugger
    }
 
    void *AllocLarge(int inSize, bool inClear)
@@ -5208,9 +5205,14 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 //
 // One per thread ...
 
-static int sLocalAllocatorCount = 0;
 class LocalAllocator : public hx::StackContext
 {
+   // Must be called locked
+   ~LocalAllocator()
+   {
+   }
+
+
 public:
    LocalAllocator(int *inTopOfStack=0)
    {
@@ -5221,7 +5223,6 @@ public:
       mGlobalStackLock = 0;
       Reset();
       sGlobalAlloc->AddLocal(this);
-      sLocalAllocatorCount++;
       #ifdef HX_WINDOWS
       mID = GetCurrentThreadId();
       #endif
@@ -5234,15 +5235,6 @@ public:
 
    }
 
-   ~LocalAllocator()
-   {
-      onThreadDetach();
-      EnterGCFreeZone();
-      sGlobalAlloc->RemoveLocal(this);
-      hx::tlsStackContext = 0;
-
-      sLocalAllocatorCount--;
-   }
 
    void AttachThread(int *inTopOfStack)
    {
@@ -5255,21 +5247,57 @@ public:
       mID = GetCurrentThreadId();
       #endif
 
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (mOldReferrers)
+      {
+         GCLOG("Uncleaned referrers\n");
+      }
+
+      if (sGcMode==gcmGenerational)
+         mOldReferrers = hx::sGlobalChunks.alloc();
+      else
+         mOldReferrers = 0;
+      #endif
+
+
       // It is in the free zone - wait for 'SetTopOfStack' to activate
       mGCFreeZone = true;
       mReadyForCollect.Set();
    }
 
-   void ReturnToPool()
+   void Release()
    {
+      mStackLocks = 0;
+      if (!mGCFreeZone)
+         EnterGCFreeZone();
+
+      AutoLock lock(*gThreadStateChangeLock);
+
       #ifdef HX_WINDOWS
       mID = 0;
       #endif
-      onThreadDetach();
-      if (!sGlobalAlloc->ReturnToPool(this))
-         delete this;
+
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (mOldReferrers)
+      {
+         if ( mOldReferrers->count )
+            hx::sGlobalChunks.pushJob( mOldReferrers, false );
+         else
+            hx::sGlobalChunks.free( mOldReferrers );
+         mOldReferrers = 0;
+      }
+      #endif
+
       mTopOfStack = mBottomOfStack = 0;
+
+      onThreadDetach();
+
+      sGlobalAlloc->RemoveLocalLocked(this);
+
       hx::tlsStackContext = 0;
+
+      if (!sGlobalAlloc->ReturnToPoolLocked(this))
+         delete this;
    }
 
    void Reset()
@@ -5352,10 +5380,7 @@ public:
 
          if (!mStackLocks && !mGlobalStackLock)
          {
-            if (!mGCFreeZone)
-               EnterGCFreeZone();
-
-            ReturnToPool();
+            Release();
          }
       }
 
@@ -5377,11 +5402,7 @@ public:
       mStackLocks--;
       if (mStackLocks<=0 && !mGlobalStackLock)
       {
-         mStackLocks = 0;
-         if (!mGCFreeZone)
-            EnterGCFreeZone();
-
-         ReturnToPool();
+         Release();
       }
    }
 
@@ -6070,7 +6091,7 @@ void RegisterCurrentThread(void *inTopOfStack)
 void UnregisterCurrentThread()
 {
    LocalAllocator *local = (LocalAllocator *)(hx::ImmixAllocator *)tlsStackContext;
-   delete local;
+   local->Release();
 }
 
 void RegisterVTableOffset(int inOffset)
