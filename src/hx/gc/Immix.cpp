@@ -5268,6 +5268,9 @@ public:
    void Release()
    {
       mStackLocks = 0;
+
+      onThreadDetach();
+
       if (!mGCFreeZone)
          EnterGCFreeZone();
 
@@ -5289,8 +5292,6 @@ public:
       #endif
 
       mTopOfStack = mBottomOfStack = 0;
-
-      onThreadDetach();
 
       sGlobalAlloc->RemoveLocalLocked(this);
 
