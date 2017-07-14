@@ -147,7 +147,8 @@ static int sThreadChunkWakes;
 static int sSpinCount = 0;
 static int sThreadZeroWaits = 0;
 static int sThreadZeroPokes = 0;
-static int sThreadZeroMisses = 0;
+static int sThreadBlockZeroCount = 0;
+static volatile int sThreadZeroMisses = 0;
 #endif
 
 enum { MARK_BYTE_MASK = 0x0f };
@@ -619,6 +620,7 @@ struct BlockDataInfo
    bool         mPinned;
    unsigned char mZeroed;
    bool         mReclaimed;
+   bool         mOwned;
    #ifdef HXCPP_GC_GENERATIONAL
    bool         mHasSurvivor;
    #endif
@@ -648,6 +650,7 @@ struct BlockDataInfo
 
 
       mZeroLock = 0;
+      mOwned = false;
       mGroupId = inGid;
       mPtr     = inData;
       inData->mId = mId;
@@ -669,6 +672,7 @@ struct BlockDataInfo
       mZeroed = ZEROED_NOT;
       mReclaimed = true;
       mZeroLock = 0;
+      mOwned = false;
    }
 
    void makeFull()
@@ -684,6 +688,7 @@ struct BlockDataInfo
       mZeroed = ZEROED_AUTO;
       mReclaimed = true;
       mZeroLock = 0;
+      mOwned = false;
    }
 
 
@@ -809,6 +814,7 @@ struct BlockDataInfo
       mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
 
       mZeroLock = 0;
+      mOwned = false;
       outStats.rowsInUse += mUsedRows;
       outStats.bytesInUse += mUsedBytes;
       mHoles = 0;
@@ -2727,9 +2733,13 @@ void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHa
    }
 
    if (inData)
+   {
       memcpy(result,inData,inSize);
+   }
    else
-      memset(result,0,inSize);
+   {
+      ZERO_MEM(result,inSize);
+   }
 
    return result;
 }
@@ -2941,6 +2951,8 @@ public:
       mGenerationalRetainEstimate = 0.5;
       for(int p=0;p<LOCAL_POOL_SIZE;p++)
          mLocalPool[p] = 0;
+
+      createFreeList();
    }
    void AddLocal(LocalAllocator *inAlloc)
    {
@@ -3055,7 +3067,7 @@ public:
       }
 
       if (inClear)
-         memset(result, 0, inSize + sizeof(int)*2);
+         ZERO_MEM(result, inSize + sizeof(int)*2);
 
       result[0] = inSize;
       #ifdef HXCPP_GC_NURSERY
@@ -3112,7 +3124,7 @@ public:
    BlockDataInfo *GetNextFree(int inRequiredBytes)
    {
       bool failedLock = true;
-      while(failedLock)
+      while(failedLock && mNextFreeBlock<mFreeBlocks.size())
       {
          failedLock = false;
 
@@ -3121,29 +3133,44 @@ public:
              BlockDataInfo *info = mFreeBlocks[i];
              if (info->mMaxHoleSize>=inRequiredBytes)
              {
-                 if (HxAtomicExchangeIf(0,1,&info->mZeroLock))
-                 {
-                    if (i==mNextFreeBlock)
-                       mNextFreeBlock++;
-                    else
-                       mFreeBlocks.erase(i);
+                // Acquire the zero-lock
+                if (HxAtomicExchangeIf(0,1,&info->mZeroLock))
+                {
+                   // Acquire ownership...
+                   if (info->mOwned)
+                   {
+                      // Someone else got it...
+                      info->mZeroLock = 0;
+                   }
+                   else
+                   {
+                      info->mOwned = true;
 
-                    if (sgThreadPoolJob==tpjAsyncZeroJit)
-                    {
-                       if (info->mZeroed==ZEROED_THREAD)
-                          onZeroedBlockDequeued();
-                       #ifdef PROFILE_THREAD_USAGE
-                       else
-                       {
-                          if (!info->mZeroed)
-                             sThreadZeroMisses++;
+                      // Increase the mNextFreeBlock
+                      int idx = mNextFreeBlock;
+                      while(idx<mFreeBlocks.size() && mFreeBlocks[idx]->mOwned)
+                      {
+                         HxAtomicExchangeIf(idx,idx+1,&mNextFreeBlock);
+                         idx++;
+                      }
+
+                      if (sgThreadPoolJob==tpjAsyncZeroJit)
+                      {
+                         if (info->mZeroed==ZEROED_THREAD)
+                            onZeroedBlockDequeued();
+                         #ifdef PROFILE_THREAD_USAGE
+                         else
+                         {
+                            if (!info->mZeroed)
+                               HxAtomicInc(&sThreadZeroMisses);
+                         }
+                         #endif
                        }
-                       #endif
-                    }
 
-                    return info;
+                      return info;
+                   }
                  }
-                 else
+                 else if (!info->mOwned)
                  {
                     // Zeroing thread is currently working on this block
                     // Go to next one or spin around again
@@ -3152,6 +3179,7 @@ public:
              }
          }
       }
+
       return 0;
    }
 
@@ -3217,7 +3245,8 @@ public:
 
       int n = 1<<IMMIX_BLOCK_GROUP_BITS;
 
-      if (!mAllBlocks.safeReserveExtra(n) || !mFreeBlocks.safeReserveExtra(n))
+
+      if (!mAllBlocks.safeReserveExtra(n) || !mFreeBlocks.hasExtraCapacity(n))
       {
          outForceCompact = true;
          return false;
@@ -3279,53 +3308,69 @@ public:
 
    BlockDataInfo *GetFreeBlock(int inRequiredBytes, hx::ImmixAllocator *inAlloc)
    {
-      volatile int dummy = 1;
-      if (hx::gMultiThreadMode)
+      while(true)
       {
-         hx::EnterGCFreeZone();
-         gThreadStateChangeLock->Lock();
-         hx::ExitGCFreeZoneLocked();
+         BlockDataInfo *result = GetNextFree(inRequiredBytes);
+         if (result)
+         {
+            result->zeroAndUnlock();
+            return result;
+         }
+
+         if (hx::gPauseForCollect)
+         {
+            hx::PauseForCollect();
+            continue;
+         }
+
+         if (hx::gMultiThreadMode)
+         {
+            hx::EnterGCFreeZone();
+            gThreadStateChangeLock->Lock();
+            hx::ExitGCFreeZoneLocked();
+
+            result = GetNextFree(inRequiredBytes);
+         }
+
+         bool forceCompact = false;
+         if (!result && allowMoreBlocks() && (!sgInternalEnable || GetWorkingMemory()<sWorkingMemorySize))
+         {
+            AllocMoreBlocks(forceCompact,false);
+            result = GetNextFree(inRequiredBytes);
+         }
+
+         if (!result)
+         {
+            inAlloc->SetupStack();
+            Collect(false,forceCompact,true);
+            result = GetNextFree(inRequiredBytes);
+         }
+
+         if (!result && !forceCompact)
+         {
+            // Try with compact this time...
+            forceCompact = true;
+            inAlloc->SetupStack();
+            Collect(false,forceCompact,true);
+            result = GetNextFree(inRequiredBytes);
+         }
+
+         if (!result)
+         {
+            AllocMoreBlocks(forceCompact,false);
+            result = GetNextFree(inRequiredBytes);
+         }
+
+         // Assume all wil be used
+         mCurrentRowsInUse += result->GetFreeRows();
+
+         if (hx::gMultiThreadMode)
+            gThreadStateChangeLock->Unlock();
+
+         result->zeroAndUnlock();
+
+         return result;
       }
-
-      bool forceCompact = false;
-      BlockDataInfo *result = GetNextFree(inRequiredBytes);
-      if (!result && allowMoreBlocks() && (!sgInternalEnable || GetWorkingMemory()<sWorkingMemorySize))
-      {
-         AllocMoreBlocks(forceCompact,false);
-         result = GetNextFree(inRequiredBytes);
-      }
-
-      if (!result)
-      {
-         inAlloc->SetupStack();
-         Collect(false,forceCompact,true);
-         result = GetNextFree(inRequiredBytes);
-      }
-
-      if (!result && !forceCompact)
-      {
-         // Try with compact this time...
-         forceCompact = true;
-         inAlloc->SetupStack();
-         Collect(false,forceCompact,true);
-         result = GetNextFree(inRequiredBytes);
-      }
-
-      if (!result)
-      {
-         AllocMoreBlocks(forceCompact,false);
-         result = GetNextFree(inRequiredBytes);
-      }
-
-      // Assume all wil be used
-      mCurrentRowsInUse += result->GetFreeRows();
-
-      if (hx::gMultiThreadMode)
-         gThreadStateChangeLock->Unlock();
-
-      result->zeroAndUnlock();
-
-      return result;
   }
 
    #if  defined(HXCPP_VISIT_ALLOCS) // {
@@ -4018,6 +4063,9 @@ public:
          {
             // We zeroed it, so increase queue count
             HxAtomicInc(&mZeroListQueue);
+            #ifdef PROFILE_THREAD_USAGE
+            sThreadBlockZeroCount++;
+            #endif
          }
       }
 
@@ -4410,6 +4458,7 @@ public:
 
    void Collect(bool inMajor, bool inForceCompact, bool inLocked=false)
    {
+      PROFILE_COLLECT_SUMMARY_START;
       // If we set the flag from 0 -> 0xffffffff then we are the collector
       //  otherwise, someone else is collecting at the moment - so wait...
       if (!HxAtomicExchangeIf(0, 0xffffffff,(volatile int *)&hx::gPauseForCollect))
@@ -4432,7 +4481,6 @@ public:
       }
 
       STAMP(t0)
-      PROFILE_COLLECT_SUMMARY_START;
 
       // We are the collector - all must wait for us
       LocalAllocator *this_local = 0;
@@ -4463,10 +4511,11 @@ public:
 
 
       #ifdef PROFILE_THREAD_USAGE
-      GCLOG("Thread zero waits %d/%d/%d, misses=%d\n", sThreadZeroPokes, sThreadZeroWaits, mFreeBlocks.size(), sThreadZeroMisses);
+      GCLOG("Thread zero waits %d/%d/%d, misses=%d, hits=%d\n", sThreadZeroPokes, sThreadZeroWaits, mFreeBlocks.size(), sThreadZeroMisses, sThreadBlockZeroCount);
       sThreadZeroWaits = 0;
       sThreadZeroPokes = 0;
       sThreadZeroMisses = 0;
+      sThreadBlockZeroCount = 0;
       #endif
 
 
@@ -4889,15 +4938,11 @@ public:
       #endif
 
 
-      PROFILE_COLLECT_SUMMARY_END;
-
       #ifdef HXCPP_TELEMETRY
       __hxt_gc_end();
       #endif
 
       sgIsCollecting = false;
-
-      //*(int *)0=0;
 
       hx::gPauseForCollect = 0x00000000;
       if (hx::gMultiThreadMode)
@@ -4920,6 +4965,7 @@ public:
         hx::gMainThreadContext->byteMarkId = hx::gByteMarkID;
         #endif
       }
+      PROFILE_COLLECT_SUMMARY_END;
    }
 
    void reclaimBlocks(bool full, BlockDataStats &outStats)
@@ -4977,8 +5023,14 @@ public:
       {
          BlockDataInfo *info = mAllBlocks[i];
          if (info->GetFreeRows() > 0)
+         {
+            info->mOwned = false;
             mFreeBlocks.push(info);
+         }
       }
+
+      int extra = std::max( mAllBlocks.size(), 8<<IMMIX_BLOCK_GROUP_BITS);
+      mFreeBlocks.safeReserveExtra(extra);
 
       // TODO - is this good or not?
       std::sort(&mFreeBlocks[0], &mFreeBlocks[0] + mFreeBlocks.size(), MostUsedFirst );
@@ -5093,7 +5145,7 @@ public:
 
    hx::MarkContext mMarker;
 
-   int mNextFreeBlock;
+   volatile int mNextFreeBlock;
    volatile int mThreadJobId;
 
    BlockList mAllBlocks;

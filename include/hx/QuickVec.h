@@ -27,7 +27,8 @@ struct QuickVec
          mAlloc = 10 + (mSize*3/2);
          mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
       }
-      mPtr[mSize++]=inT;
+      mPtr[mSize]=inT;
+      mSize++;
    }
    void setSize(int inSize)
    {
@@ -38,6 +39,12 @@ struct QuickVec
       }
       mSize = inSize;
    }
+   // Can push this many without realloc
+   bool hasExtraCapacity(int inN)
+   {
+      return mSize+inN<=mAlloc;
+   }
+
    bool safeReserveExtra(int inN)
    {
       int want = mSize + inN;
