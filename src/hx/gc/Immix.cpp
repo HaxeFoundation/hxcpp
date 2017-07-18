@@ -22,6 +22,8 @@ int gFastPath = 0;
 int gSlowPath = 0;
 
 
+
+
 }
 
 using hx::gByteMarkID;
@@ -61,6 +63,26 @@ enum { gAlwaysMove = false };
 #ifndef __has_builtin
 #define __has_builtin(x) 0
 #endif
+namespace {
+void DebuggerTrap()
+{
+   static bool triggeredOnce = false;
+
+   if (!triggeredOnce)
+   {
+      triggeredOnce = true;
+
+      #if __has_builtin(__builtin_trap)
+      __builtin_trap();
+      #else
+      *(int *)0=0;
+      #endif
+   }
+}
+}
+
+
+
 
 static bool sgAllocInit = 0;
 static bool sgInternalEnable = true;
@@ -432,11 +454,7 @@ void CriticalGCError(const char *inMessage)
    printf("Critical Error: %s\n", inMessage);
    #endif
 
-   #if __has_builtin(__builtin_trap)
-   __builtin_trap();
-   #else
-   (* (volatile int *) 0) = 0;
-   #endif
+   DebuggerTrap();
 }
 
 
@@ -1265,13 +1283,13 @@ struct BlockDataInfo
                   if (rows==0)
                   {
                      printf("BAD ROW0 %s\n", inWhere);
-                     *(int *)0=0;
+                     DebuggerTrap();
                   }
                   for(int r=0;r<rows;r++)
                      if (!mPtr->mRowMarked[r+i])
                      {
                         printf("Unmarked row %dx %d/%d %s, t=%d!\n", i, r, rows, inWhere,sgTimeToNextTableUpdate);
-                        *(int *)0=0;
+                        DebuggerTrap();
                      }
                }
             }
@@ -1330,11 +1348,7 @@ void BadImmixAlloc()
    #endif
    #endif
 
-   #if __has_builtin(__builtin_trap)
-   __builtin_trap();
-   #else
-   *(int *)0=0;
-   #endif
+   DebuggerTrap();
 }
 
 
@@ -1345,13 +1359,9 @@ void GCCheckPointer(void *inPtr)
    if (hx::sgPointerMoved.find(inPtr)!=hx::sgPointerMoved.end())
    {
       GCLOG("Accessing moved pointer %p\n", inPtr);
-      #if __has_builtin(__builtin_trap)
-      __builtin_trap();
-      #else
-      *(int *)0=0;
-      #endif
-  }
-  #endif
+      DebuggerTrap();
+   }
+   #endif
 
    unsigned char&mark = ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE];
    #ifdef HXCPP_GC_NURSERY
@@ -1568,7 +1578,7 @@ struct GlobalChunks
       if (!(sRunningThreads & (1<<inThreadId)))
       {
          printf("Complete non-running thread?\n");
-         *(int *)0=0;
+         DebuggerTrap();
       }
       sRunningThreads &= ~(1<<inThreadId);
       sLazyThreads = sRunningThreads != sAllThreads;
@@ -1911,7 +1921,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
       if (sGcVerifyGenerational)
       {
          printf("Nursery alloc escaped generational collection %p\n", inPtr);
-         *(int *)0=0;
+         DebuggerTrap();
       }
       #endif
 
@@ -1951,7 +1961,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
       if (sGcVerifyGenerational && ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] != gPrevByteMarkID)
       {
          printf("Alloc missed int generational collection %p\n", inPtr);
-         *(int *)0=0;
+         DebuggerTrap();
       }
       #endif
       ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
@@ -1961,7 +1971,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
    if (rows)
    {
       #if HXCPP_GC_DEBUG_LEVEL>0
-      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) *(int *)0=0;
+      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) DebuggerTrap();
       #endif
 
       char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
@@ -1997,7 +2007,7 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
          if (sGcVerifyGenerational)
          {
             printf("Nursery object escaped generational collection %p\n", inPtr);
-            *(int *)0=0;
+            DebuggerTrap();
          }
       #endif
 
@@ -2032,7 +2042,7 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
       char *block = (char *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
       char *rowMark = block + ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS);
       #if HXCPP_GC_DEBUG_LEVEL>0
-      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) *(int *)0=0;
+      if ( ((ptr_i & IMMIX_BLOCK_OFFSET_MASK)>>IMMIX_LINE_BITS) + rows > IMMIX_LINES) DebuggerTrap();
       #endif
 
       *rowMark = 1;
@@ -4108,7 +4118,7 @@ public:
       else
       {
          printf("Finishe non-runnning thread?\n");
-         *(int *)0=0;
+         DebuggerTrap();
       }
    }
 
@@ -4299,7 +4309,7 @@ public:
          if (sRunningThreads)
          {
             printf("Bad thread stop %d\n", sRunningThreads);
-            *(int *)0=0;
+            DebuggerTrap();
          }
       }
    }
@@ -4449,7 +4459,7 @@ public:
          if (i>0 && mAllBlocks[i-1]->mPtr >= mAllBlocks[i]->mPtr)
          {
             printf("Bad block order\n");
-            *(int *)0=0;
+            DebuggerTrap();
          }
          mAllBlocks[i]->verify("After mark");
       }
@@ -5625,7 +5635,7 @@ public:
       #endif
 
       #if HXCPP_GC_DEBUG_LEVEL>0
-      if (inSize & 3) *(int *)0=0;
+      if (inSize & 3) DebuggerTrap();
       #endif
 
       while(1)
