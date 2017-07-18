@@ -916,23 +916,23 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_si sljit_emit_return(struct sljit_compiler *compi
    It contans 16 items, but not all are different. */
 
 static sljit_sw data_transfer_insts[16] = {
-/* s u w */ 0xe5000000 /* str */,
-/* s u b */ 0xe5400000 /* strb */,
-/* s u h */ 0xe10000b0 /* strh */,
-/* s u N */ 0x00000000 /* not allowed */,
-/* s s w */ 0xe5000000 /* str */,
-/* s s b */ 0xe5400000 /* strb */,
-/* s s h */ 0xe10000b0 /* strh */,
-/* s s N */ 0x00000000 /* not allowed */,
+/* s u w */ (sljit_sw)0xe5000000 /* str */,
+/* s u b */ (sljit_sw)0xe5400000 /* strb */,
+/* s u h */ (sljit_sw)0xe10000b0 /* strh */,
+/* s u N */ (sljit_sw)0x00000000 /* not allowed */,
+/* s s w */ (sljit_sw)0xe5000000 /* str */,
+/* s s b */ (sljit_sw)0xe5400000 /* strb */,
+/* s s h */ (sljit_sw)0xe10000b0 /* strh */,
+/* s s N */ (sljit_sw)0x00000000 /* not allowed */,
 
-/* l u w */ 0xe5100000 /* ldr */,
-/* l u b */ 0xe5500000 /* ldrb */,
-/* l u h */ 0xe11000b0 /* ldrh */,
-/* l u N */ 0x00000000 /* not allowed */,
-/* l s w */ 0xe5100000 /* ldr */,
-/* l s b */ 0xe11000d0 /* ldrsb */,
-/* l s h */ 0xe11000f0 /* ldrsh */,
-/* l s N */ 0x00000000 /* not allowed */,
+/* l u w */ (sljit_sw)0xe5100000 /* ldr */,
+/* l u b */ (sljit_sw)0xe5500000 /* ldrb */,
+/* l u h */ (sljit_sw)0xe11000b0 /* ldrh */,
+/* l u N */ (sljit_sw)0x00000000 /* not allowed */,
+/* l s w */ (sljit_sw)0xe5100000 /* ldr */,
+/* l s b */ (sljit_sw)0xe11000d0 /* ldrsb */,
+/* l s h */ (sljit_sw)0xe11000f0 /* ldrsh */,
+/* l s N */ (sljit_sw)0x00000000 /* not allowed */,
 };
 
 #define EMIT_DATA_TRANSFER(type, add, wb, target, base1, base2) \

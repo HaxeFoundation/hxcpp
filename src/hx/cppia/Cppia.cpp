@@ -1032,7 +1032,7 @@ struct CallDynamicFunction : public CppiaExprWithValue
 
       compiler->add(sJitCtxFrame, sJitFrame, compiler->getCurrentFrameSize());
 
-      compiler->callNative(callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size());
+      compiler->callNative((void *)callDynamic,sJitCtx, (void *)value.mPtr,(int)args.size());
 
       compiler->checkException();
       if (destType!=etVoid && destType!=etNull)
@@ -1464,7 +1464,8 @@ static void *SLJIT_CALL runCreateInstance(CppiaCtx *ctx, CppiaClassInfo *info,  
 
 static void *SLJIT_CALL allocHaxe(CppiaCtx *inCtx, CppiaClassInfo *inInfo )
 {
-   return inInfo->createInstance(inCtx,Expressions(),false);
+   Expressions empty;
+   return inInfo->createInstance(inCtx,empty,false);
 }
 
 #endif
@@ -1577,7 +1578,7 @@ struct NewExpr : public CppiaDynamicExpr
       {
          int n = args.size();
          JitTemp argList(compiler,jtPointer);
-         compiler->callNative(createArrayObject,n);
+         compiler->callNative((void *)createArrayObject,n);
          compiler->move(argList, sJitReturnReg);
          for(int a=0;a<n;a++)
          {
@@ -1588,7 +1589,7 @@ struct NewExpr : public CppiaDynamicExpr
             compiler->move(sJitTemp1.star(jtPointer,a*sizeof(void *)), sJitTemp2.as(jtPointer) );
          }
 
-         compiler->callNative( runConstructor, (void *)constructor, argList );
+         compiler->callNative( (void *)runConstructor, (void *)constructor, argList );
          compiler->checkException();
          compiler->convert(sJitReturnReg, etObject, inDest, destType);
       }
@@ -1611,7 +1612,7 @@ struct NewExpr : public CppiaDynamicExpr
             JumpId inRange = compiler->compare(cmpP_LESS_EQUAL, sJitTemp1, sJitCtx.star(jtPointer, offsetof(hx::StackContext,spaceOversize) ) );
 
             // Not in range ...
-               compiler->callNative(allocHaxe, sJitCtx, (void *)info );
+               compiler->callNative((void *)allocHaxe, sJitCtx, (void *)info );
 
                JumpId allocCallDone = compiler->jump();
             // In range
@@ -1642,7 +1643,7 @@ struct NewExpr : public CppiaDynamicExpr
          else
          #endif
          {
-            compiler->callNative(allocHaxe, sJitCtx, (void *)info );
+            compiler->callNative((void *)allocHaxe, sJitCtx, (void *)info );
          }
 
          // Result is in sJitReturnReg
@@ -2185,7 +2186,7 @@ struct CallMemberVTable : public CppiaExpr
       if (isInterfaceCall)
       {
          //sJitTemp1 = ScriptCallable **vtable = thisVal->__GetScriptVTable();
-         compiler->call( getScriptVTable,thisVal );
+         compiler->call( (void *)getScriptVTable,thisVal );
          compiler->move( sJitTemp1, sJitReturnReg.as(jtPointer) );
          if (thisExpr)
             compiler->move( thisVal.as(jtPointer), JitFramePos(framePos,jtPointer) );
@@ -2722,7 +2723,7 @@ struct FieldByName : public CppiaDynamicExpr
                {
                JitTemp temp(compiler, jtString);
                value->genCode(compiler,temp, etString);
-               compiler->callNative( setFieldString, objSrc, (void *)&name, temp );
+               compiler->callNative( (void *)setFieldString, objSrc, (void *)&name, temp );
                compiler->checkException();
                if (ret)
                   compiler->convert(temp, etString, inDest, destType );
@@ -2732,7 +2733,7 @@ struct FieldByName : public CppiaDynamicExpr
                {
                JitTemp temp(compiler, jtFloat);
                value->genCode(compiler,temp, etFloat);
-               compiler->callNative( setFieldFloat, objSrc, (void *)&name, temp );
+               compiler->callNative( (void *)setFieldFloat, objSrc, (void *)&name, temp );
                compiler->checkException();
                if (ret)
                   compiler->convert(temp, etFloat, inDest, destType );
@@ -3133,7 +3134,7 @@ struct Call : public CppiaDynamicExpr
 
       compiler->add(sJitCtxFrame, sJitFrame, compiler->getCurrentFrameSize());
 
-      compiler->callNative(callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
+      compiler->callNative((void *)callDynamic,sJitCtx,functionObject,JitVal( (int)args.size() ) );
 
       compiler->checkException();
       if (destType!=etVoid)
@@ -3622,7 +3623,7 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
          {
             JitTemp sval(compiler,jtString);
             inExpr->genCode(compiler, sval, etString);
-            compiler->callNative(stringCat, ioValue, sval );
+            compiler->callNative((void *)stringCat, ioValue, sval );
          }
          else if (exprType==etObject)
          {
@@ -3630,13 +3631,13 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
             {
                JitTemp sval(compiler,jtString);
                inExpr->genCode(compiler, sval, etString);
-               compiler->callNative(dynamicCatString, ioValue.as(jtPointer), sval );
+               compiler->callNative((void *)dynamicCatString, ioValue.as(jtPointer), sval );
                compiler->checkException();
             }
             else
             {
                inExpr->genCode(compiler, sJitArg1, etObject);
-               compiler->callNative(dynamicCatDynamic, ioValue, sJitArg1.as(jtPointer) );
+               compiler->callNative((void *)dynamicCatDynamic, ioValue, sJitArg1.as(jtPointer) );
             }
             compiler->move(ioValue, sJitReturnReg.as(jtPointer) );
          }
@@ -5341,19 +5342,19 @@ struct DynamicArrayI : public CppiaDynamicExpr
 
       switch(assign)
       {
-         case aoAdd: func = dynAdd; type = etObject; break;
+         case aoAdd: func = (void *)dynAdd; type = etObject; break;
 
-         case aoMult: func = dynMult; type = etFloat; break;
-         case aoDiv: func = dynDiv; type = etFloat; break;
-         case aoSub: func = dynSub; type = etFloat; break;
-         case aoMod: func = dynMod; type = etFloat; break;
+         case aoMult: func = (void *)dynMult; type = etFloat; break;
+         case aoDiv: func = (void *)dynDiv; type = etFloat; break;
+         case aoSub: func = (void *)dynSub; type = etFloat; break;
+         case aoMod: func = (void *)dynMod; type = etFloat; break;
 
-         case aoAnd: func = dynAnd; break;
-         case aoOr: func = dynOr; break;
-         case aoXOr: func = dynXOr; break;
-         case aoShl: func = dynShl; break;
-         case aoShr: func = dynShr; break;
-         case aoUShr: func = dynUShr; break;
+         case aoAnd: func = (void *)dynAnd; break;
+         case aoOr: func = (void *)dynOr; break;
+         case aoXOr: func = (void *)dynXOr; break;
+         case aoShl: func = (void *)dynShl; break;
+         case aoShr: func = (void *)dynShr; break;
+         case aoUShr: func = (void *)dynUShr; break;
          default: ;
       }
 
@@ -7186,13 +7187,13 @@ struct SpecialAdd : public CppiaExpr
             compiler->add( sJitTemp1, s1.getReg().as(jtPointer), s1.offset );
             if (destType==etString)
             {
-               compiler->callNative(strAddStrToStrOver, sJitTemp0.as(jtPointer), sJitTemp1.as(jtPointer));
+               compiler->callNative((void *)strAddStrToStrOver, sJitTemp0.as(jtPointer), sJitTemp1.as(jtPointer));
                compiler->move(inDest.as(jtInt), s0.as(jtInt));
                compiler->move(inDest.as(jtPointer)+sizeof(int), s0.as(jtPointer)+sizeof(int));
             }
             else // Object
             {
-               compiler->callNative(strAddStrToObj, sJitTemp0.as(jtPointer), sJitTemp1.as(jtPointer));
+               compiler->callNative((void *)strAddStrToObj, sJitTemp0.as(jtPointer), sJitTemp1.as(jtPointer));
                compiler->checkException();
                compiler->move( inDest, sJitReturnReg.as(jtPointer) );
             }
@@ -7214,25 +7215,25 @@ struct SpecialAdd : public CppiaExpr
             case etString:
                if (inDest.offset==0)
                {
-                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1.as(jtPointer), inDest.getReg());
+                  compiler->callNative((void *)dynamicAddStr, tLeft, sJitTemp1.as(jtPointer), inDest.getReg());
                   compiler->checkException();
                }
                else
                {
                   compiler->add(sJitTemp2, inDest.getReg(), inDest.offset);
-                  compiler->callNative(dynamicAddStr, tLeft, sJitTemp1.as(jtPointer), sJitTemp2);
+                  compiler->callNative((void *)dynamicAddStr, tLeft, sJitTemp1.as(jtPointer), sJitTemp2);
                   compiler->checkException();
                }
                break;
 
             case etObject:
-               compiler->callNative(dynamicAddObj, tLeft, sJitTemp1.as(jtPointer));
+               compiler->callNative((void *)dynamicAddObj, tLeft, sJitTemp1.as(jtPointer));
                compiler->checkException();
                compiler->move(inDest, sJitReturnReg.as(jtPointer));
                break;
 
             case etInt:
-               compiler->callNative(dynamicAddInt, tLeft, sJitTemp1.as(jtPointer));
+               compiler->callNative((void *)dynamicAddInt, tLeft, sJitTemp1.as(jtPointer));
                compiler->checkException();
                compiler->move(inDest, sJitReturnReg.as(jtInt));
                break;
@@ -7240,13 +7241,13 @@ struct SpecialAdd : public CppiaExpr
             case etFloat:
                if (isMemoryVal(inDest))
                {
-                  compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1.as(jtPointer),inDest.as(jtFloat));
+                  compiler->callNative((void *)dynamicAddFloat, tLeft, sJitTemp1.as(jtPointer),inDest.as(jtFloat));
                   compiler->checkException();
                }
                else
                {
                   JitTemp result(compiler,jtFloat);
-                  compiler->callNative(dynamicAddFloat, tLeft, sJitTemp1.as(jtPointer), result);
+                  compiler->callNative((void *)dynamicAddFloat, tLeft, sJitTemp1.as(jtPointer), result);
                   compiler->checkException();
                   compiler->move(inDest,result);
                }

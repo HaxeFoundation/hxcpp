@@ -1,8 +1,12 @@
 #ifndef HX_CPPIA_COMPILER_H_INCLUDED
 #define HX_CPPIA_COMPILER_H_INCLUDED
 
-#ifdef HX_ARM // TODO v7, 64
+#if HXCPP_ARMV5
   #define SLJIT_CONFIG_ARM_V5 1
+#elif HXCPP_ARMV7
+  #define SLJIT_CONFIG_ARM_V7 1
+#elif HXCPP_ARM64
+  #define SLJIT_CONFIG_ARM_64 1
 #else
    #ifdef HXCPP_M64
       #define SLJIT_CONFIG_X86_64 1

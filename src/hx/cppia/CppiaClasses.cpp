@@ -103,7 +103,7 @@ struct CppiaEnumConstructor
          printf("Bad enum arg count\n");
 
       #if (HXCPP_API_LEVEL >= 330)
-      compiler->callNative( createEnumBase, (void *)this );
+      compiler->callNative( (void *)createEnumBase, (void *)this );
       JitTemp result(compiler,jtPointer);
       compiler->move(result, sJitReturnReg);
 
@@ -314,7 +314,7 @@ struct EnumField : public CppiaDynamicExpr
 
          compiler->add(sJitCtxFrame, sJitFrame, compiler->getCurrentFrameSize());
 
-         compiler->callNative(createEnum,(void *)enumClass.mPtr,(void *)&enumName,(int)args.size() );
+         compiler->callNative((void *)createEnum,(void *)enumClass.mPtr,(void *)&enumName,(int)args.size() );
 
          if (destType!=etVoid && destType!=etNull)
             compiler->convertResult( etObject, inDest, destType );

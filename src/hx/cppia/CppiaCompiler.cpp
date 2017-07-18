@@ -7,7 +7,6 @@
 #include "sljit_src/sljitLir.c"
 
 
-
 namespace hx
 {
 

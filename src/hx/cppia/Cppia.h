@@ -1013,7 +1013,7 @@ struct AssignAdd
    void apply( T &ioVal, const String &val) { AssignString( ioVal, ValToString(ioVal) + val ); }
 
    template<typename T> static
-   void apply( T &ioVal, const Dynamic &val) { ioVal = Dynamic(ioVal) + val; }
+   void apply( T &ioVal, Dynamic &val) { ioVal = Dynamic(ioVal) + val; }
 };
 
 

@@ -223,7 +223,8 @@ struct ArraySetter : public ArrayBuiltinBase
    {
       Array_obj<ELEM> *thisVal = reinterpret_cast<Array_obj<ELEM> *>(args[0].obj);
       ELEM &elem = thisVal->Item( args[1].ival );
-      FUNC::apply(elem, Dynamic(args[2].obj));
+      Dynamic obj(args[2].obj);
+      FUNC::apply(elem, obj);
       #ifdef HXCPP_GC_GENERATIONAL
       if (hx::ContainsPointers<ELEM>())
          HX_OBJ_WB_GET(thisVal,hx::PointerOf(elem));
@@ -248,7 +249,7 @@ struct ArraySetter : public ArrayBuiltinBase
    {
       ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
       ExprType rightHandType;
-      switch(FUNC::op)
+      switch((int)FUNC::op)
       {
          case aoMult:
          case aoDiv:
@@ -269,7 +270,7 @@ struct ArraySetter : public ArrayBuiltinBase
             rightHandType = elemType;
       }
 
-      if (FUNC::op==aoSet)
+      if ((int)FUNC::op==aoSet)
       {
          JitTemp thisVal(compiler,jtPointer);
          thisExpr->genCode(compiler, thisVal, etObject);
