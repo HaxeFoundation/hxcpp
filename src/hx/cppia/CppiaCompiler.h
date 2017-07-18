@@ -61,6 +61,11 @@ JitType getJitType(ExprType inType);
 int getJitTypeSize(JitType inType);
 
 
+struct JitStringMultiArg
+{
+   int length;
+   const HX_CHAR *__s;
+};
 
 // double-aligned
 union JitMultiArg
@@ -68,7 +73,7 @@ union JitMultiArg
    int        ival;
    double     dval;
    hx::Object *obj;
-   String     sval;
+   JitStringMultiArg sval;
 };
 
 struct JitVal

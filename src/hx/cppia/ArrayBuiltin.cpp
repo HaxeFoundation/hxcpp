@@ -235,7 +235,7 @@ struct ArraySetter : public ArrayBuiltinBase
    {
       Array_obj<ELEM> *thisVal = reinterpret_cast<Array_obj<ELEM> *>(args[0].obj);
       ELEM &elem = thisVal->Item( args[1].ival );
-      FUNC::apply(elem, args[2].sval);
+      FUNC::apply(elem, (* ((String *)(&args[2].sval) )) );
       #ifdef HXCPP_GC_GENERATIONAL
       if (hx::ContainsPointers<ELEM>())
          HX_OBJ_WB_GET(thisVal,hx::PointerOf(elem));
