@@ -92,7 +92,7 @@ class CompileCache
       return dir + "/" + hash.substr(2) + inExt;
    }
 
-   public static function clear(inDays:Int,inM:Int,inLogInfo:Bool,inProject:String)
+   public static function clear(inDays:Int,inMB:Int,inLogInfo:Bool,inProject:String)
    {
       try
       {
@@ -101,7 +101,7 @@ class CompileCache
         var total = 0;
         var t0 = haxe.Timer.stamp();
         var tooOld = Date.now().getTime() - inDays * 24 * 3600 * 1000.0;
-        var size = 0;
+        var sizeKB:Float = 0;
         var fileInfo = [];
 
         for(project in projects)
@@ -110,15 +110,21 @@ class CompileCache
               continue;
            var projectHasDirs = false;
            var projDir = compileCache + "/" + project;
+           if(!FileSystem.isDirectory(projDir))
+               continue;
            var dirs = FileSystem.readDirectory(projDir);
            for(dir in dirs)
            {
+              var path = projDir + "/" + dir;
+              if(!FileSystem.isDirectory(path)) {
+                  FileSystem.deleteFile(path);
+                  continue;
+              }
               if (dir.length!=2 && dir!="lib" && dir.substr(0,3)!="pch" )
               {
                  Log.warn('bad cache name "$dir" found - try manually clearing');
                  continue;
               }
-              var path = projDir + "/" + dir;
               var dirFiles = FileSystem.readDirectory(path);
               var allDeleted = true;
               for(file in dirFiles)
@@ -135,14 +141,14 @@ class CompileCache
                     if (time>=tooOld)
                        doDelete = false;
                  }
-                 else if (inM>0)
+                 else if (inMB>0)
                  {
                     var info = FileSystem.stat(filename);
                     var atime = info.atime;
                     var time = atime==null ? info.mtime.getTime() :
                                 Math.max(info.atime.getTime(),info.mtime.getTime() );
                     fileInfo.push( {filename:filename, time:time, size:info.size } );
-                    size += info.size;
+                    sizeKB += info.size/1024;
                     doDelete = false;
                  }
 
@@ -187,18 +193,18 @@ class CompileCache
               }
            }
         }
-
-        if (inM*1024*1024<size)
+          
+        if (inMB*1024<sizeKB)
         {
            // newest first
            fileInfo.sort( function(a,b) return a.time > b.time ? -1 : 1 );
-           var keepBytes = inM*1024*1024;
+           var keepKB:Float = inMB*1024;
            for(info in fileInfo)
            {
-              if (keepBytes>0)
+              if (keepKB>0)
               {
-                 size -= info.size;
-                 keepBytes -= info.size;
+                 sizeKB -= info.size/1024;
+                 keepKB -= info.size/1024;
               }
               else
               {
@@ -217,8 +223,8 @@ class CompileCache
 
         var t = haxe.Timer.stamp()-t0;
         var projString = inProject==null ? "" : ' from project $inProject';
-        var message = inM > 0 ?
-             'Cache: removed $deleted/$total files$projString, leaving ' + Std.int(size/(1024*1024)) + 'MB, in $t seconds' :
+        var message = inMB > 0 ?
+             'Cache: removed $deleted/$total files$projString, leaving ' + Std.int(sizeKB/1024) + 'MB, in $t seconds' :
              'Cache: removed $deleted/$total files$projString in $t seconds';
         if (inLogInfo)
            Log.info(message);
@@ -250,10 +256,14 @@ class CompileCache
            var projSize = size;
            var projCount = count;
            var projDir = compileCache + "/" + project;
+           if(!FileSystem.isDirectory(projDir))
+               continue;
            var dirs = FileSystem.readDirectory(projDir);
            for(dir in dirs)
            {
               var path = projDir + "/" + dir;
+              if(!FileSystem.isDirectory(path))
+                  continue;
               var dirFiles = FileSystem.readDirectory(path);
               for(file in dirFiles)
               {
