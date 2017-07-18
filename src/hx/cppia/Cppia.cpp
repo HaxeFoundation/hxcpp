@@ -27,6 +27,8 @@ namespace hx
 {
 //#define SJLJ_RETURN 1
 
+bool gEnableJit = false;
+
 
 #ifdef DEBUG_RETURN_TYPE
 int gLastRet = etVoid;

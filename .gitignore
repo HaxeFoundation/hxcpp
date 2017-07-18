@@ -15,6 +15,7 @@ test/haxe/cpp
 test/telemetry/cpp
 test/extern-lib/gen-externs
 test/cffi/project/ndll
+test/snippets/messagebox/cpp
 hxcpp.n
 .DS_Store
 

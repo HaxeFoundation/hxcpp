@@ -10,6 +10,10 @@
 namespace hx
 {
 
+extern bool gEnableJit;
+inline void EnableJit(bool inEnable) { gEnableJit = inEnable; }
+
+
 struct ScriptNamedFunction : public ScriptFunction
 {
    ScriptNamedFunction(const char *inName,StackExecute inExe,const char *inSig, bool inIsStatic=false)

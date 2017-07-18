@@ -94,6 +94,8 @@
   <cache value="1" project="haxe" />
 </files>
 
+<set name="CPPIA_JIT" value="1" unless="CPPIA_NO_JIT" />
+
 
 <files id="cppia" dir="${HXCPP}" tags="haxe"  >
   <depend files="hxcpp-depends"/>

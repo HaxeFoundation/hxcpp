@@ -7,7 +7,6 @@
 namespace hx
 {
 
-   
 
 static int sScriptId = 0;
 
@@ -476,18 +475,21 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
          error = String(errorString);
       }
 
-   #ifdef CPPIA_JIT
-   if (!error.__s)
-      try
-      {
-         DBGLOG("Compile...\n");
-         cppia.compile();
-      }
-      catch(const char *errorString)
-      {
-         error = String(errorString);
-      }
-   #endif
+   if (gEnableJit)
+   {
+      #ifdef CPPIA_JIT
+      if (!error.__s)
+         try
+         {
+            DBGLOG("Compile...\n");
+            cppia.compile();
+         }
+         catch(const char *errorString)
+         {
+            error = String(errorString);
+         }
+      #endif
+   }
 
    if (error.__s)
       hx::Throw(error);
