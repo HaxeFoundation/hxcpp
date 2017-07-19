@@ -5,7 +5,6 @@
   # Install haxe dependencies
   brew uninstall --force brew-cask # https://github.com/caskroom/homebrew-cask/pull/15381
   brew tap Homebrew/bundle
-  brew bundle --file=tests/Brewfile
   export OPAMYES=1
   #opam init
   opam list -a
