@@ -7,7 +7,7 @@
   brew tap Homebrew/bundle
   brew install opam
   export OPAMYES=1
-  #opam init
+  opam init
   opam list -a
   opam init --comp 4.04.2
   opam install camlp4 sedlex ocamlfind camlzip xml-light extlib rope ptmap
