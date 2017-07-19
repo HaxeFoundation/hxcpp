@@ -1,8 +1,7 @@
 #!/bin/bash
   set -ev
 
-  port install ocaml
-  port install opam
+  apt-get install ocaml
 
   export OPAMYES=1
   opam init
