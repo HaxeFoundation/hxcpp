@@ -1,15 +1,11 @@
 #!/bin/bash
   set -ev
 
-  brew update --merge
-  # Install haxe dependencies
-  brew uninstall --force brew-cask # https://github.com/caskroom/homebrew-cask/pull/15381
-  brew tap Homebrew/bundle
-  brew install opam
+  port install ocaml
+  port install opam
+
   export OPAMYES=1
   opam init
-  opam list -a
-  opam init --comp 4.04.2
   opam install camlp4 sedlex ocamlfind camlzip xml-light extlib rope ptmap
   eval `opam config env`
 
