@@ -14,12 +14,13 @@ class CompileCache
       if (inDefines.exists("HXCPP_COMPILE_CACHE"))
       {
          compileCache = inDefines.get("HXCPP_COMPILE_CACHE");
+         compileCache = compileCache.split("\\").join("/");
          // Don't get upset by trailing slash
          while(compileCache.length>1)
          {
             var l = compileCache.length;
             var last = compileCache.substr(l-1);
-            if (last=="/" || last=="\\")
+            if (last=="/")
                compileCache = compileCache.substr(0,l-1);
             else
                break;
