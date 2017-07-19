@@ -110,14 +110,10 @@ bool _hx_regexp_match(Dynamic handle, String string, int pos, int len)
 
    pcredata *d = PCRE(handle);
 
-   String subject = string;
-   if (pos>0 || len<string.length)
-      subject = string.substr(pos,len);
-
-   if( pcre_exec(d->r,NULL,subject.__s,subject.length,0,0,d->matchs,d->nmatchs * 3) >= 0 )
+   if( pcre_exec(d->r,NULL,string.__s,pos+len,pos,0,d->matchs,d->nmatchs * 3) >= 0 )
    {
-      d->string = subject;
-      HX_OBJ_WB_GET(d, d->subject.__s);
+      d->string = string;
+      HX_OBJ_WB_GET(d, d->string.__s);
       return true;
    }
    else
