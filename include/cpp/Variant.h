@@ -54,7 +54,8 @@ namespace cpp
       inline bool isString() const;
       inline double asDouble() const;
       inline hx::Object *asObject() const { return type==typeObject ? valObject : 0; }
-      inline hx::Object *asDynamic() const; // later
+      inline hx::Object *asDynamic() const{ return type==typeObject ? valObject : toDynamic(); }
+      inline hx::Object *toDynamic() const; // later
       inline String asString() const;
       inline String getString() const;
 
@@ -357,7 +358,7 @@ namespace cpp
    }
 
 
-   hx::Object *Variant::asDynamic() const
+   inline hx::Object *Variant::toDynamic() const
    {
       switch(type)
       {
