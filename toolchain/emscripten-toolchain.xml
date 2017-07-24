@@ -47,6 +47,7 @@
   <flag value="-DHXCPP_JS_PRIME" if="HXCPP_JS_PRIME" />
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-Wno-overflow" />
   <cppflag value="-Wno-invalid-offsetof" />
   <cppflag value="-Wno-return-type-c-linkage" />
   <flag value="-Wno-parentheses" />
