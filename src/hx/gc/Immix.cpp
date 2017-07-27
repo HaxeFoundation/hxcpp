@@ -672,6 +672,9 @@ struct BlockDataInfo
       mGroupId = inGid;
       mPtr     = inData;
       inData->mId = mId;
+      #ifdef SHOW_MEM_EVENTS
+      GCLOG("  create block %d : %p -> %p\n",  mId, this, mPtr );
+      #endif
       clear();
    }
 
@@ -758,7 +761,7 @@ struct BlockDataInfo
    void destroy()
    {
       #ifdef SHOW_MEM_EVENTS
-      GCLOG("  release block %d\n",  mId );
+      GCLOG("  release block %d : %p\n",  mId, this );
       #endif
       (*gBlockInfo)[mId] = 0;
       gBlockInfoEmptySlots++;
@@ -3215,7 +3218,9 @@ public:
          if (sgTimeToNextTableUpdate>1)
          {
             #ifdef SHOW_FRAGMENTATION
-            GCLOG("  alloc -> enable full collect\n");
+              #ifdef SHOW_MEM_EVENTS
+                GCLOG("  alloc -> enable full collect\n");
+              #endif
             #endif
             //sgTimeToNextTableUpdate = 1;
          }
@@ -3251,6 +3256,7 @@ public:
             return false;
          }
          gid = gAllocGroups.next();
+         gAllocGroups[gid].alloc = 0;
       }
 
       int n = 1<<IMMIX_BLOCK_GROUP_BITS;
@@ -3265,6 +3271,7 @@ public:
       char *chunk = (char *)HxAllocGCBlock( 1<<(IMMIX_BLOCK_GROUP_BITS + IMMIX_BLOCK_BITS) );
       if (!chunk)
       {
+         DebuggerTrap();
          #ifdef SHOW_MEM_EVENTS
          GCLOG("Alloc failed - try collect\n");
          #endif
@@ -3277,7 +3284,7 @@ public:
          n--;
       gAllocGroups[gid].alloc = chunk;
       gAllocGroups[gid].blocks = n;
-
+      gAllocGroups[gid].clear();
 
       for(int i=0;i<n;i++)
       {
@@ -3289,6 +3296,10 @@ public:
       }
       std::stable_sort(&mAllBlocks[0], &mAllBlocks[0] + mAllBlocks.size(), SortByBlockPtr );
       mAllBlocksCount = mAllBlocks.size();
+
+      #ifdef HX_GC_VERIFY
+      VerifyBlockOrder();
+      #endif
 
       #if defined(SHOW_MEM_EVENTS) || defined(SHOW_FRAGMENTATION_BLOCKS)
       if (inJustBorrowing)
@@ -3794,19 +3805,29 @@ public:
              gAllocGroups[mAllBlocks[i]->mGroupId].isEmpty=false;
       }
 
+      #ifdef HX_GC_VERIFY
+      typedef std::pair< void *, void * > ReleasedRange;
+      std::vector<ReleasedRange> releasedRange;
+      std::vector<int> releasedGids;
+      #endif
+
       for(int i=0;i<gAllocGroups.size();i++)
       {
          GroupInfo &g = gAllocGroups[i];
          if (g.alloc && g.isEmpty && !g.pinned)
          {
+            size_t groupBytes = g.blocks << (IMMIX_BLOCK_BITS);
+
             #ifdef SHOW_MEM_EVENTS
-            GCLOG("Release group %d\n", i);
+            GCLOG("Release group %d: %p -> %p\n", i, g.alloc, g.alloc+groupBytes);
+            #endif
+            #ifdef HX_GC_VERIFY
+            releasedRange.push_back( ReleasedRange(g.alloc, g.alloc+groupBytes) );
+            releasedGids.push_back(i);
             #endif
 
             HxFreeGCBlock(g.alloc);
             g.alloc = 0;
-
-            size_t groupBytes = g.blocks << (IMMIX_BLOCK_BITS);
 
             groups++;
 
@@ -3828,8 +3849,35 @@ public:
             mAllBlocks.erase(i);
          }
          else
-           i++;
+         {
+            #ifdef HX_GC_VERIFY
+            for(int g=0;g<releasedGids.size();g++)
+               if (mAllBlocks[i]->mGroupId == releasedGids[g])
+               {
+                  printf("Group %d should be released.\n", mAllBlocks[i]->mGroupId);
+                  DebuggerTrap();
+               }
+            #endif
+            i++;
+         }
       }
+
+      #ifdef HX_GC_VERIFY
+      for(int i=0;i<mAllBlocks.size();i++)
+      {
+         BlockDataInfo *info = mAllBlocks[i];
+         void *ptr = info->mPtr;
+         for(int r=0;r<releasedRange.size();r++)
+         if ( ptr>=releasedRange[r].first && ptr<releasedRange[r].second )
+         {
+            printf("Released block %p(%d:%p) still in list\n", info, info->mId, info->mPtr );
+            DebuggerTrap();
+         }
+      }
+
+      VerifyBlockOrder();
+      #endif
+
 
       #if defined(SHOW_MEM_EVENTS) || defined(SHOW_FRAGMENTATION)
       GCLOG("Release %d blocks, %d groups,  %s\n", released, groups, formatBytes((size_t)released<<(IMMIX_BLOCK_BITS)).c_str());
@@ -4455,16 +4503,25 @@ public:
 
       #ifdef HX_GC_VERIFY
       for(int i=0;i<mAllBlocks.size();i++)
-      {
-         if (i>0 && mAllBlocks[i-1]->mPtr >= mAllBlocks[i]->mPtr)
-         {
-            printf("Bad block order\n");
-            DebuggerTrap();
-         }
          mAllBlocks[i]->verify("After mark");
-      }
       #endif
    }
+
+
+   #ifdef HX_GC_VERIFY
+   void VerifyBlockOrder()
+   {
+      for(int i=1;i<mAllBlocks.size();i++)
+      {
+         if ( mAllBlocks[i-1]->mPtr >= mAllBlocks[i]->mPtr)
+         {
+            printf("Bad block order block[%d]=%p >= block[%d]=%p / %d\n", i-1, mAllBlocks[i-1]->mPtr,
+                    i, mAllBlocks[i]->mPtr, mAllBlocks.size() );
+            DebuggerTrap();
+         }
+      }
+   }
+   #endif
 
    void Collect(bool inMajor, bool inForceCompact, bool inLocked=false)
    {
@@ -4832,6 +4889,12 @@ public:
                GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
                #endif
             }
+
+            std::stable_sort(&mAllBlocks[0], &mAllBlocks[0] + mAllBlocks.size(), SortByBlockPtr );
+
+            #ifdef HX_GC_VERIFY
+            VerifyBlockOrder();
+            #endif
          }
       }
       #endif
@@ -4948,11 +5011,16 @@ public:
       #endif
 
 
+      #ifdef HX_GC_VERIFY
+      VerifyBlockOrder();
+      #endif
+
       #ifdef HXCPP_TELEMETRY
       __hxt_gc_end();
       #endif
 
       sgIsCollecting = false;
+
 
       hx::gPauseForCollect = 0x00000000;
       if (hx::gMultiThreadMode)
@@ -4975,6 +5043,8 @@ public:
         hx::gMainThreadContext->byteMarkId = hx::gByteMarkID;
         #endif
       }
+
+
       PROFILE_COLLECT_SUMMARY_END;
    }
 
