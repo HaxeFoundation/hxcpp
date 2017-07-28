@@ -1,4 +1,17 @@
+-main BuildToolLauncher
+-resource ../../haxelib.json@Signature
 -neko ../../hxcpp.n
+-debug
+
+--next
+
+-neko ../../hxcpp-fallback.n
 -main BuildTool
 -D neko_v1
 -debug
+
+--next
+
+-debug
+-main BuildTool
+-cpp ../../bin/tools
