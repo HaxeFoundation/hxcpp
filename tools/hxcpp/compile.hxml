@@ -7,6 +7,7 @@
 
 -neko ../../hxcpp-fallback.n
 -main BuildTool
+-lib haxe-threadpool
 -D neko_v1
 -debug
 
@@ -14,4 +15,5 @@
 
 -debug
 -main BuildTool
+-lib haxe-threadpool
 -cpp ../../bin/tools

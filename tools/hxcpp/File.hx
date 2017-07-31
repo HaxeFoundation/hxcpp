@@ -60,7 +60,7 @@ class File
 
       var content = sys.io.File.getContent(inName);
       var md5 = haxe.crypto.Md5.encode(content);
-      mFileHashes.set(inName,md5);
+//      mFileHashes.set(inName,md5); //Causes deadlock
       return md5;
    }
 
