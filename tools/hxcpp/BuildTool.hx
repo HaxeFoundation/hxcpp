@@ -1,3 +1,5 @@
+import haxe.CallStack;
+import com.thomasuster.threadpool.ThreadPool;
 import CopyFile.Overwrite;
 import haxe.io.Path;
 import haxe.xml.Fast;
@@ -390,17 +392,31 @@ class BuildTool
 
          var inList = new Array<Bool>();
          var groupIsOutOfDate = mDirtyList.indexOf(group.mId)>=0 || mDirtyList.indexOf("all")>=0;
-         for(file in group.mFiles)
-         {
-           if (useCache)
-               file.computeDependHash();
-            var obj_name = mCompiler.getCachedObjName(file);
-            groupObjs.push(obj_name);
-            var outOfDate = groupIsOutOfDate || file.isOutOfDate(obj_name);
-            if (outOfDate)
-               to_be_compiled.push(file);
-            inList.push(outOfDate);
+         
+         Log.initMultiThreaded();
+         for (i in 0...group.mFiles.length) {
+             groupObjs.push(null);
+             to_be_compiled.push(null);
+             inList.push(false);
          }
+         var pool:ThreadPool = new ThreadPool(threads);
+         pool.distributeLoop(group.mFiles.length,function(tid:Int, index:Int) {
+             var file:File = group.mFiles[index];
+             if (useCache)
+                 file.computeDependHash();
+             var obj_name = mCompiler.getCachedObjName(file);
+             groupObjs[index] = (obj_name);
+             var outOfDate = groupIsOutOfDate || file.isOutOfDate(obj_name);
+             if (outOfDate)
+                 to_be_compiled[index] = (file);
+             inList[index] = (outOfDate);     
+         });
+         pool.blockRunAll();
+         pool.end();
+         to_be_compiled = to_be_compiled.filter(function(v:File):Bool {
+             return v != null;
+         });
+
          var someCompiled = to_be_compiled.length > 0;
 
          var pchStamp:Null<Float> = null;
