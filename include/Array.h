@@ -348,9 +348,9 @@ public:
 
    mutable int length;
 
-   static inline int baseOffset() { return (int)offsetof(ArrayBase,mBase); }
-   static inline int allocOffset() { return (int)offsetof(ArrayBase,mAlloc); }
-   static inline int lengthOffset() { return (int)offsetof(ArrayBase,length); }
+   #pragma static inline int baseOffset() { return (int)offsetof(ArrayBase,mBase); }
+   #pragma static inline int allocOffset() { return (int)offsetof(ArrayBase,mAlloc); }
+   #pragma static inline int lengthOffset() { return (int)offsetof(ArrayBase,length); }
 
 protected:
    mutable int mAlloc;
