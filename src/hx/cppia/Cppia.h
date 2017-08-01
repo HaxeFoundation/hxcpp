@@ -106,6 +106,38 @@ enum VarLocation
    locAbsolute,
 };
 
+enum ArrayFunc
+{
+   afConcat,
+   afCopy,
+   afInsert,
+   afIterator,
+   afJoin,
+   afPop,
+   afPush,
+   afRemove,
+   afReverse,
+   afShift,
+   afSlice,
+   afSplice,
+   afSort,
+   afToString,
+   afUnshift,
+   afMap,
+   afFilter,
+   afIndexOf,
+   afLastIndexOf,
+   af__get,
+   af__set,
+   af__crement,
+   af__SetSizeExact,
+   afBlit,
+};
+
+
+extern const char *gArrayFuncNames[];
+extern int gArrayArgCount[];
+
 typedef std::map<int,CppiaStackVar *> CppiaStackVarMap;
 
 extern String sInvalidArgCount;
@@ -181,6 +213,22 @@ struct CppiaDynamicExpr : public CppiaExpr
    void        runVoid(CppiaCtx *ctx);
    hx::Object *runObject(CppiaCtx *ctx) = 0;
 };
+
+
+struct ArrayBuiltinBase : public CppiaExpr
+{
+   CppiaExpr *thisExpr;
+   Expressions args;
+
+   ArrayBuiltinBase(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions);
+   const char *getName();
+   CppiaExpr *link(CppiaModule &inData);
+};
+
+CppiaExpr *createArrayAnyBuiltin(CppiaExpr *src,
+                              CppiaExpr *inThisExpr, String field,
+                              Expressions &ioExpressions );
+
 
 struct CppiaConst
 {

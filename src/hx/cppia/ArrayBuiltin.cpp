@@ -4,35 +4,7 @@
 namespace hx
 {
 
-enum ArrayFunc
-{
-   afConcat,
-   afCopy,
-   afInsert,
-   afIterator,
-   afJoin,
-   afPop,
-   afPush,
-   afRemove,
-   afReverse,
-   afShift,
-   afSlice,
-   afSplice,
-   afSort,
-   afToString,
-   afUnshift,
-   afMap,
-   afFilter,
-   afIndexOf,
-   afLastIndexOf,
-   af__get,
-   af__set,
-   af__crement,
-   af__SetSizeExact,
-   afBlit,
-};
-
-static const char *sFuncNames[] =
+const char *gArrayFuncNames[] =
 {
    "afConcat",
    "afCopy",
@@ -60,7 +32,7 @@ static const char *sFuncNames[] =
    "afBlit",
 };
 
-static int sArgCount[] = 
+int gArrayArgCount[] = 
 {
    1, //afConcat,
    0, //afCopy,
@@ -88,28 +60,23 @@ static int sArgCount[] =
    4, //afBlit,
 };
 
-struct ArrayBuiltinBase : public CppiaExpr
+// ArrayBuiltinBase
+ArrayBuiltinBase::ArrayBuiltinBase(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions)
+   : CppiaExpr(inSrc)
 {
-   CppiaExpr *thisExpr;
-   Expressions args;
-
-   ArrayBuiltinBase(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions)
-      : CppiaExpr(inSrc)
-   {
-      thisExpr = inThisExpr;
-      args.swap(ioExpressions);
-   }
-   const char *getName() { return "ArrayBuiltinBase"; }
+   thisExpr = inThisExpr;
+   args.swap(ioExpressions);
+}
+const char *ArrayBuiltinBase::getName() { return "ArrayBuiltinBase"; }
 
 
-   CppiaExpr *link(CppiaModule &inData)
-   {
-      thisExpr = thisExpr->link(inData);
-      for(int a=0;a<args.size();a++)
-         args[a] = args[a]->link(inData);
-      return this;
-   }
-};
+CppiaExpr *ArrayBuiltinBase::link(CppiaModule &inData)
+{
+   thisExpr = thisExpr->link(inData);
+   for(int a=0;a<args.size();a++)
+      args[a] = args[a]->link(inData);
+   return this;
+}
 
 
 #ifdef CPPIA_JIT
@@ -438,7 +405,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    {
       unsafe = inUnsafe;
    }
-   const char *getName() { return sFuncNames[FUNC]; }
+   const char *getName() { return gArrayFuncNames[FUNC]; }
 
    ExprType getType()
    {
@@ -1873,7 +1840,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
 
          default:
-            compiler->traceStrings("ArrayBuiltin::",sFuncNames[FUNC]);
+            compiler->traceStrings("ArrayBuiltin::",gArrayFuncNames[FUNC]);
       }
    }
    #endif
@@ -2037,7 +2004,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       : ArrayBuiltinBase(inSrc,inThisExpr,ioExpressions)
    {
    }
-   const char *getName() { return sFuncNames[FUNC]; }
+   const char *getName() { return gArrayFuncNames[FUNC]; }
 
    int  runInt(CppiaCtx *ctx)
    {
@@ -2717,7 +2684,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 template<int BUILTIN,typename CREMENT>
 CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *thisExpr, Expressions &args, bool inUnsafe = false)
 {
-   if (sArgCount[BUILTIN]!=args.size())
+   if (gArrayArgCount[BUILTIN]!=args.size())
       throw "Bad arg count for array builtin";
 
    switch(inType)
@@ -2734,8 +2701,6 @@ CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *th
          return new ArrayBuiltin<String,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrObject:
          return new ArrayBuiltin<Dynamic,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
-      case arrAny:
-         return new ArrayBuiltinAny<BUILTIN,CREMENT::OP>(inSrc, thisExpr, args);
       case arrNotArray:
          break;
    }
@@ -2748,6 +2713,10 @@ CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *th
 CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThisExpr, String field,
                               Expressions &ioExpressions )
 {
+   if (inType==arrAny)
+      return createArrayAnyBuiltin(src, inThisExpr, field, ioExpressions );
+
+
    if (field==HX_CSTRING("concat"))
       return TCreateArrayBuiltin<afConcat,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("copy"))

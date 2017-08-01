@@ -113,6 +113,7 @@
   <file name = "src/hx/cppia/CppiaFunction.cpp" />
   <file name = "src/hx/cppia/CppiaModule.cpp" />
   <file name = "src/hx/cppia/ArrayBuiltin.cpp" />
+  <file name = "src/hx/cppia/ArrayVirtual.cpp" />
   <file name = "src/hx/cppia/StringBuiltin.cpp" />
   <file name = "src/hx/cppia/GlobalBuiltin.cpp" />
   <file name = "src/hx/cppia/HaxeNative.cpp" />
