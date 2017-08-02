@@ -85,15 +85,16 @@ struct QuickVec
    }
    void zero() { memset(mPtr,0,mSize*sizeof(T) ); }
 
-   inline void qerase_val(T inVal)
+   inline bool qerase_val(T inVal)
    {
       for(int i=0;i<mSize;i++)
          if (mPtr[i]==inVal)
          {
             --mSize;
             mPtr[i] = mPtr[mSize];
-            return;
+            return true;
          }
+      return false;
    }
 
    inline bool some_left() { return mSize; }

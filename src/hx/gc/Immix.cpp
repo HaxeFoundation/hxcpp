@@ -3015,7 +3015,10 @@ public:
    void RemoveLocalLocked(LocalAllocator *inAlloc)
    {
       // You should be in the GC free zone before you call this...
-      mLocalAllocs.qerase_val(inAlloc);
+      if (!mLocalAllocs.qerase_val(inAlloc))
+      {
+         CriticalGCError("LocalAllocator removed without being added");
+      }
    }
 
    void *AllocLarge(int inSize, bool inClear)
@@ -5395,6 +5398,7 @@ public:
       // It is in the free zone - wait for 'SetTopOfStack' to activate
       mGCFreeZone = true;
       mReadyForCollect.Set();
+      sGlobalAlloc->AddLocal(this);
    }
 
    void Release()
