@@ -25,10 +25,13 @@ class BuildToolLauncher
     }
 
     static function calcBinName():String {
-        #if windows
-        return 'BuildTool-debug.exe';
-        #else
-        return 'BuildTool-debug';
+        var binName:String = 'BuildTool';
+        #if debug
+        binName+='-debug';
         #end
+        #if windows
+        binName+='.exe';
+        #end
+        return binName;
     }
 }

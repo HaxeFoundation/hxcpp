@@ -1,7 +1,7 @@
 -main BuildToolLauncher
 -resource ../../haxelib.json@Signature
 -neko ../../hxcpp.n
--debug
+#-debug
 
 --next
 
@@ -13,7 +13,7 @@
 
 --next
 
--debug
 -main BuildTool
 -lib haxe-threadpool
 -cpp ../../bin/tools
+#-debug
