@@ -29,9 +29,8 @@ class BuildToolLauncher
         #if debug
         binName+='-debug';
         #end
-        #if windows
-        binName+='.exe';
-        #end
+        if(Sys.systemName() == 'Windows')
+            binName+='.exe';
         return binName;
     }
 }
