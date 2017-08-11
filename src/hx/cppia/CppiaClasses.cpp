@@ -117,7 +117,7 @@ struct CppiaEnumConstructor
          if (type==etString)
          {
             compiler->move( sJitReturnReg.star(jtInt,offset + offsetof(cpp::Variant,valStringLen)), val.as(jtInt) );
-            compiler->move( sJitReturnReg.star(jtPointer,offset), val.as(jtPointer) + sizeof(int) );
+            compiler->move( sJitReturnReg.star(jtPointer,offset), val.as(jtPointer) + offsetof(String,__s) );
          }
          else
          {

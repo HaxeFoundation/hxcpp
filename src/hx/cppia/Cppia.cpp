@@ -582,7 +582,7 @@ struct CppiaIsNull : public CppiaBoolExpr
       {
          JitTemp val(compiler,jtString);
          condition->genCode(compiler, val, etString);
-         return compiler->compare(inReverse ? cmpP_NOT_EQUAL : cmpP_EQUAL, val.as(jtPointer) + sizeof(int), (void *)0, inLabel);
+         return compiler->compare(inReverse ? cmpP_NOT_EQUAL : cmpP_EQUAL, val.as(jtPointer) + offsetof(String,__s), (void *)0, inLabel);
       }
       else
       {
@@ -622,7 +622,7 @@ struct CppiaIsNotNull : public CppiaBoolExpr
       {
          JitTemp val(compiler,jtString);
          condition->genCode(compiler, val, etString);
-         return compiler->compare(inReverse ? cmpP_EQUAL : cmpP_NOT_EQUAL, val.as(jtPointer) + sizeof(int), (void *)0, inLabel);
+         return compiler->compare(inReverse ? cmpP_EQUAL : cmpP_NOT_EQUAL, val.as(jtPointer) + offsetof(String,__s), (void *)0, inLabel);
       }
       else
       {
@@ -651,7 +651,7 @@ void genFunctionResult(CppiaCompiler *compiler,const JitVal &inDest, ExprType de
          else
          {
             compiler->move(inDest.as(jtInt),String(true).length);
-            compiler->move(inDest.as(jtPointer)+4,(void *)String(true).__s);
+            compiler->move(inDest.as(jtPointer)+offsetof(String,__s),(void *)String(true).__s);
          }
          JumpId done = compiler->jump();
 
@@ -662,7 +662,7 @@ void genFunctionResult(CppiaCompiler *compiler,const JitVal &inDest, ExprType de
          else
          {
             compiler->move(inDest.as(jtInt),String(false).length);
-            compiler->move(inDest.as(jtPointer)+4,(void *)String(false).__s);
+            compiler->move(inDest.as(jtPointer)+offsetof(String,__s),(void *)String(false).__s);
          }
 
          compiler->comeFrom(done);
@@ -1262,7 +1262,7 @@ struct CastExpr : public CppiaDynamicExpr
          else
          {
             compiler->move(inDest.as(jtInt),String(true).length);
-            compiler->move(inDest.as(jtPointer)+4,(void *)String(true).__s);
+            compiler->move(inDest.as(jtPointer)+offsetof(String,__s),(void *)String(true).__s);
          }
          JumpId done = compiler->jump();
 
@@ -1275,7 +1275,7 @@ struct CastExpr : public CppiaDynamicExpr
          else
          {
             compiler->move(inDest.as(jtInt),String(false).length);
-            compiler->move(inDest.as(jtPointer)+4,(void *)String(false).__s);
+            compiler->move(inDest.as(jtPointer)+offsetof(String,__s),(void *)String(false).__s);
          }
          compiler->comeFrom(done);
       }
@@ -1585,7 +1585,7 @@ struct NewExpr : public CppiaDynamicExpr
             args[a]->genCode(compiler, sJitTemp2, etObject);
 
             compiler->move(sJitTemp0, argList);
-            compiler->move(sJitTemp1, sJitTemp0.star(jtInt, ArrayBase::baseOffset()));
+            compiler->move(sJitTemp1, sJitTemp0.star(jtPointer, ArrayBase::baseOffset()));
             compiler->move(sJitTemp1.star(jtPointer,a*sizeof(void *)), sJitTemp2.as(jtPointer) );
          }
 
@@ -1847,7 +1847,7 @@ struct CallHaxe : public CppiaExpr
 
       compiler->restoreFrameSize(framePos);
       // Store new frame in context ...
-      compiler->add( sJitCtxFrame, sJitFrame, JitVal(framePos) );
+      compiler->add( sJitCtxFrame, sJitFrame.as(jtPointer), JitVal(framePos) );
 
       compiler->callNative( (void *)tryCallHaxe, JitVal( (void *)(function.execute)), sJitCtx );
 
@@ -3873,7 +3873,7 @@ struct MemReferenceSetter : public CppiaExpr
 
             #ifdef HXCPP_GC_GENERATIONAL
             if (isPointerObject((T*)0))
-               genWriteBarrier(compiler, sJitTemp2, (tmpVal + (targetType==jtString ? sizeof(int) : 0)).as(jtPointer));
+               genWriteBarrier(compiler, sJitTemp2, (tmpVal + (targetType==jtString ? offsetof(String,__s) : 0)).as(jtPointer));
             #endif
 
             compiler->convert( tmpVal, getType(), inDest, destType );
@@ -3901,7 +3901,7 @@ struct MemReferenceSetter : public CppiaExpr
 
                   #ifdef HXCPP_GC_GENERATIONAL
                   if (REFMODE==locThis && isPointerObject((T*)0))
-                     genWriteBarrier(compiler, sJitThis, targetType==jtString ? (target+sizeof(int)).as(jtPointer) : target );
+                     genWriteBarrier(compiler, sJitThis, targetType==jtString ? (target+offsetof(String,__s)).as(jtPointer) : target );
                   #endif
 
                   compiler->convert( target,getType(),inDest, destType );
@@ -4668,7 +4668,7 @@ struct StringVal : public CppiaExprWithValue
             else
             {
                compiler->move(inDest.as(jtInt),JitVal(strVal.length));
-               compiler->move(inDest.as(jtPointer)+sizeof(int),JitVal((void *)strVal.__s));
+               compiler->move(inDest.as(jtPointer)+offsetof(String,__s),JitVal((void *)strVal.__s));
             }
             break;
 
@@ -4731,7 +4731,7 @@ struct DataVal : public CppiaExprWithValue
                }
 
                compiler->move(inDest, stringConversion.length);
-               compiler->move(inDest+4, (void *)stringConversion.__s);
+               compiler->move(inDest+offsetof(String,__s), (void *)stringConversion.__s);
                break;
             }
          case etObject:
@@ -5053,10 +5053,10 @@ struct ArrayDef : public CppiaDynamicExpr
                items[i]->genCode(compiler, val, etString );
                compiler->move(sJitTemp1, arrayPtr);
                compiler->move(sJitTemp1.star(jtInt)+i*sizeof(String), val.as(jtInt));
-               compiler->move(sJitTemp1.star(jtPointer)+i*sizeof(String)+sizeof(int), val.as(jtPointer) + sizeof(int));
+               compiler->move(sJitTemp1.star(jtPointer)+i*sizeof(String)+offsetof(String,__s), val.as(jtPointer) + offsetof(String,__s));
                #ifdef HXCPP_GC_GENERATIONAL
                compiler->move(sJitTemp0, array);
-               genWriteBarrier(compiler, sJitTemp0, val.as(jtPointer) + sizeof(int));
+               genWriteBarrier(compiler, sJitTemp0, val.as(jtPointer) + offsetof(String,__s));
                #endif
                }
                break;
@@ -5088,7 +5088,7 @@ struct ArrayDef : public CppiaDynamicExpr
 
                      default:
                         items[i]->genCode(compiler, sJitArg2, etObject );
-                        compiler->callNative((void *)varraySetObject,array,i,sJitArg2.as(jtInt));
+                        compiler->callNative((void *)varraySetObject,array,i,sJitArg2.as(jtPointer));
                         break;
                   }
                }
@@ -5786,12 +5786,12 @@ struct VarDecl : public CppiaVoidExpr
                else
                {
                   compiler->move(pos.as(jtInt), (int)0);
-                  compiler->move(pos.as(jtInt)+4, (int)0);
+                  compiler->move(pos.as(jtInt)+offsetof(String,__s), (int)0);
                }
                break;
             case etString:
                compiler->move(pos.as(jtInt), (int)0);
-               compiler->move(pos.as(jtPointer)+4, (void *)0);
+               compiler->move(pos.as(jtPointer)+offsetof(String,__s), (void *)0);
                break;
             case etObject:
                compiler->move(pos.as(jtPointer), (void *)0);
@@ -7189,7 +7189,7 @@ struct SpecialAdd : public CppiaExpr
             {
                compiler->callNative((void *)strAddStrToStrOver, sJitTemp0.as(jtPointer), sJitTemp1.as(jtPointer));
                compiler->move(inDest.as(jtInt), s0.as(jtInt));
-               compiler->move(inDest.as(jtPointer)+sizeof(int), s0.as(jtPointer)+sizeof(int));
+               compiler->move(inDest.as(jtPointer)+offsetof(String,__s), s0.as(jtPointer)+offsetof(String,__s));
             }
             else // Object
             {

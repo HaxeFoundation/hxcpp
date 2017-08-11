@@ -97,11 +97,11 @@ struct JitVal
      int    iVal;
    };
 
-   JitVal(JitType inType=jtVoid, int inOffset=0, JitPosition inPosition=jposDontCare,int inReg0=0, int inReg1=0)
+   JitVal(JitType inType=jtVoid, size_t inOffset=0, JitPosition inPosition=jposDontCare,int inReg0=0, int inReg1=0)
    { 
       position = inPosition;
       type = inType;
-      offset = inOffset;
+      offset = (int)inOffset;
       reg0 = inReg0;
       reg1 = inReg1;
    }
@@ -141,7 +141,7 @@ struct JitVal
              ( position==jposStarReg && reg==reg1 );
    }
 
-   JitVal operator +(int inDiff) const { return JitVal(type, offset+inDiff, position, reg0, reg1); }
+   JitVal operator +(size_t inDiff) const { return JitVal(type, offset+inDiff, position, reg0, reg1); }
    JitVal as(JitType type) const { return JitVal(type, offset, position, reg0, reg1); }
    bool valid() const { return type!=jtVoid; }
 
@@ -428,8 +428,8 @@ struct JitTemp : public JitVal
       compiler->freeTempSize(size);
    }
 
-   JitVal star(JitType inType=jtPointer, int inOffset=0) { return JitVal(inType, offset+inOffset, jposStar, sLocalReg, 0); }
-   JitVal star(ExprType inType, int inOffset=0) { return JitVal(getJitType(inType), offset+inOffset, jposStar, sLocalReg, 0); }
+   JitVal star(JitType inType=jtPointer, size_t inOffset=0) { return JitVal(inType, offset+(int)inOffset, jposStar, sLocalReg, 0); }
+   JitVal star(ExprType inType, size_t inOffset=0) { return JitVal(getJitType(inType), offset+(int)inOffset, jposStar, sLocalReg, 0); }
 
 };
 

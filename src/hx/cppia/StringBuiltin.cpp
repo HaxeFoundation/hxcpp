@@ -197,7 +197,7 @@ struct CharAtExpr : public StringExpr
          if (AS_INT)
          {
             // sJitTemp1 = __s
-            compiler->move( sJitTemp0.as(jtPointer), value.star(jtPointer,sizeof(int)) );
+            compiler->move( sJitTemp0.as(jtPointer), value.star(jtPointer,offsetof(String,__s)) );
             if (destType==etInt)
             {
                compiler->move(inDest.as(jtInt), sJitTemp0.atReg(sJitTemp1,0,jtByte) );

@@ -738,7 +738,7 @@ public:
             else
             {
                emit_op1(SLJIT_MOV_SI, inDest.as(jtInt), inSrc.as(jtInt));
-               emit_op1(SLJIT_MOV_P, inDest.as(jtPointer) + 4, inSrc.as(jtPointer) + 4);
+               emit_op1(SLJIT_MOV_P, inDest.as(jtPointer) + offsetof(String,__s), inSrc.as(jtPointer) + offsetof(String,__s));
             }
             break;
 
@@ -832,11 +832,11 @@ public:
                {
                   JumpId isFalse = compare( cmpI_ZERO, inSrc.as(jtInt), 0, 0);
                   move(inTarget.as(jtInt), 4);
-                  move(inTarget.as(jtPointer)+4, (void *)String(true).__s );
+                  move(inTarget.as(jtPointer)+offsetof(String,__s), (void *)String(true).__s );
                   JumpId done = jump();
                   comeFrom(isFalse);
                   move(inTarget.as(jtInt), 5);
-                  move(inTarget.as(jtPointer)+4, (void *)String(false).__s );
+                  move(inTarget.as(jtPointer)+offsetof(String,__s), (void *)String(false).__s );
                   comeFrom(done);
                }
                else
@@ -977,7 +977,7 @@ public:
 
             comeFrom(isString);
             move( inDest.as(jtInt), sJitTemp0.star(jtInt, inOffset + (int)offsetof(cpp::Variant,valStringLen) ) );
-            move( inDest.as(jtPointer) + sizeof(int), sJitTemp0.star(jtPointer, inOffset + (int)offsetof(cpp::Variant,valStringPtr) ) );
+            move( inDest.as(jtPointer) + offsetof(String,__s), sJitTemp0.star(jtPointer, inOffset + (int)offsetof(cpp::Variant,valStringPtr) ) );
             }
             break;
 
@@ -1053,7 +1053,7 @@ public:
          case etString:
             {
             move(inTarget.as(jtInt), (int)0);
-            move(inTarget.as(jtPointer) + 4, (void *)0);
+            move(inTarget.as(jtPointer) + offsetof(String,__s), (void *)0);
             }
             break;
          case etInt:
@@ -1135,9 +1135,12 @@ public:
          if (compiler)
             sljit_get_local_base(compiler, tDest, getData(inDest), v1.offset );
       }
+      else if (v0.type==jtPointer)
+      {
+         emit_op2(SLJIT_ADD, inDest, v0, v1);
+      }
       else
       {
-         // SLJIT_ADD ?
          emit_op2(SLJIT_IADD, inDest, v0, v1);
       }
    }
@@ -1153,7 +1156,7 @@ public:
       switch(inOp)
       {
          case bitOpAnd:
-            emit_op2(SLJIT_AND, inDest, v0, v1);
+            emit_op2(SLJIT_IAND, inDest, v0, v1);
             break;
          case bitOpOr:
             emit_op2(SLJIT_IOR, inDest, v0, v1);
@@ -1162,13 +1165,13 @@ public:
             emit_op2(SLJIT_IXOR, inDest, v0, v1);
             break;
          case bitOpUSR:
-            emit_op2(SLJIT_LSHR, inDest, v0, v1);
+            emit_op2(SLJIT_ILSHR, inDest, v0, v1);
             break;
          case bitOpShiftL:
             emit_op2(SLJIT_ISHL, inDest, v0, v1);
             break;
          case bitOpShiftR:
-            emit_op2(SLJIT_ASHR, inDest, v0, v1);
+            emit_op2(SLJIT_IASHR, inDest, v0, v1);
             break;
       }
    }
@@ -1220,7 +1223,7 @@ public:
          }
          else
          {
-            emit_op2(SLJIT_SUB, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
+            emit_op2(SLJIT_ISUB, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
             convert( sJitTemp0, etInt, inDest, etFloat );
          }
       }
@@ -1229,7 +1232,7 @@ public:
          if (isFloat)
             emit_fop2(SLJIT_DSUB, inDest, v0, v1 );
          else
-            emit_op2(SLJIT_SUB, inDest, v0, v1 );
+            emit_op2(SLJIT_ISUB, inDest, v0.as(jtInt), v1.as(jtInt) );
       }
 
    }
@@ -1326,7 +1329,9 @@ public:
       if (inArg1.type==jtFloat || inArg1.type==jtString)
       {
          if (isMemoryVal(inArg1))
+	 {
             add( sJitArg1, inArg1.getReg().as(jtPointer), inArg1.offset);
+	 }
          else
          {
             if (inArg1.type==jtString)

@@ -342,7 +342,7 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
                break;
             case etString:
                compiler->move( JitFramePos(framePos).as(jtInt), 0 );
-               compiler->move( JitFramePos(framePos).as(jtPointer) + 4, (void *)0 );
+               compiler->move( JitFramePos(framePos).as(jtPointer) + offsetof(String,__s), (void *)0 );
                break;
             default: ;
          }

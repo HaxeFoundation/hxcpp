@@ -297,9 +297,9 @@ struct ArraySetter : public ArrayBuiltinBase
             compiler->mult( sJitTemp1, sJitTemp1.as(jtInt), (int)sizeof(String), false );
             compiler->add( sJitTemp0, sJitTemp0.as(jtPointer), sJitTemp1);
             compiler->move( sJitTemp0.star(jtInt), value.as(jtInt) );
-            compiler->move( sJitTemp0.star(jtPointer,sizeof(int)), value.as(jtPointer) + sizeof(int) );
+            compiler->move( sJitTemp0.star(jtPointer,offsetof(String,__s)), value.as(jtPointer) + offsetof(String,__s) );
             #ifdef HXCPP_GC_GENERATIONAL
-            genWriteBarrier(compiler, sJitTemp2, value.as(jtPointer) + sizeof(int) );
+            genWriteBarrier(compiler, sJitTemp2, value.as(jtPointer) + offsetof(String,__s) );
             #endif
          }
          else if (sizeof(ELEM)==2)
@@ -1211,9 +1211,9 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   compiler->add( sJitTemp0, sJitTemp1.as(jtPointer), sJitTemp0);
 
                   compiler->move( sJitTemp0.star(jtInt), tempVal.as(jtInt) );
-                  compiler->move( sJitTemp0.star(jtPointer,sizeof(int)), tempVal.as(jtPointer) + sizeof(int) );
+                  compiler->move( sJitTemp0.star(jtPointer,offsetof(String,__s)), tempVal.as(jtPointer) + offsetof(String,__s) );
                   #ifdef HXCPP_GC_GENERATIONAL
-                  genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + sizeof(int) );
+                  genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + offsetof(String,__s) );
                   #endif
                }
                else if (sizeof(ELEM)==2)
@@ -1305,10 +1305,10 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   compiler->add( sJitTemp0, sJitTemp0.as(jtPointer), sJitTemp1);
 
                   compiler->move( sJitTemp0.star(jtInt), tempVal.as(jtInt) );
-                  compiler->move( sJitTemp0.star(jtPointer,sizeof(int)), tempVal.as(jtPointer) + sizeof(int) );
+                  compiler->move( sJitTemp0.star(jtPointer,offsetof(String,__s)), tempVal.as(jtPointer) + offsetof(String,__s) );
 
                   #ifdef HXCPP_GC_GENERATIONAL
-                  genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + sizeof(int) );
+                  genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + offsetof(String,__s) );
                   #endif
                }
                else if (sizeof(ELEM)==2)
@@ -1529,14 +1529,14 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   if (destType==etNull || destType==etVoid)
                   {
                      compiler->move( sJitTemp0.star(jtInt),  0 );
-                     compiler->move( sJitTemp0.star(jtPointer) + 4,  0 );
+                     compiler->move( sJitTemp0.star(jtPointer) + offsetof(String,__s),  0 );
                   }
                   else
                   {
                      JitTemp strVal(compiler,jtString);
                      compiler->convert(  sJitTemp0.star(jtString), etString, strVal, etString );
                      compiler->move( sJitTemp0.star(jtInt),  0 );
-                     compiler->move( sJitTemp0.star(jtPointer) + 4,  0 );
+                     compiler->move( sJitTemp0.star(jtPointer) + offsetof(String,__s),  0 );
                      compiler->convert( strVal, etString, inDest, destType );
                   }
                }

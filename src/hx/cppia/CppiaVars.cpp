@@ -574,10 +574,10 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
    {
       if (inDefault.type == CppiaConst::cString)
       {
-         JumpId notNull = compiler->compare(cmpP_NOT_ZERO, JitFramePos(defaultStackPos+4).as(jtPointer),(void *)0);
+         JumpId notNull = compiler->compare(cmpP_NOT_ZERO, JitFramePos(defaultStackPos+offsetof(String,__s)).as(jtPointer),(void *)0);
          String val = module->strings[ inDefault.ival ];
          compiler->move(JitFramePos(defaultStackPos).as(jtInt), (int)val.length);
-         compiler->move(JitFramePos(defaultStackPos+4).as(jtPointer), (void *)val.__s);
+         compiler->move(JitFramePos(defaultStackPos+offsetof(String,__s)).as(jtPointer), (void *)val.__s);
          compiler->comeFrom(notNull);
       }
    }
