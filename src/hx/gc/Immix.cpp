@@ -5672,7 +5672,7 @@ public:
       int size = ioSize + sizeof(int);
       #ifdef HXCPP_ALIGN_ALLOC
       // If we start in even-int offset, we need to skip 8 bytes to get alloc on even-int
-      if (allocSize+spaceStart>spaceEnd || !(spaceStart & 7))
+      if (size+spaceStart>spaceEnd || !(spaceStart & 7))
          size += 4;
       #endif
       int end = spaceStart + size;
