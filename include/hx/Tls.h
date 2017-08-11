@@ -13,6 +13,8 @@
     // Nothing
   #else
 
+   #include <intrin.h>
+
    extern "C"
    {
       __declspec(dllimport)
