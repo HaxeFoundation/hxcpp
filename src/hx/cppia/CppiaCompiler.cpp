@@ -492,8 +492,7 @@ public:
             callNative( (void *)strNotEqual, v0, v1 );
             break;
          default:
-            printf("Unknown string compare\n");
-            *(int *)0=0;
+            setError("Unknown string compare");
       }
       return compare(cmpI_NOT_EQUAL, sJitReturnReg.as(jtInt), (int)0, andJump);
    }
@@ -565,7 +564,7 @@ public:
 
    void setError(const char *inError)
    {
-      printf("Error: %s\n", inError);
+      throw inError;
    }
 
    void crash()
@@ -632,7 +631,6 @@ public:
 
          case jposDontCare:
             setError("No position specification");
-            *(int *)0=0;
             break;
 
          default:
@@ -733,7 +731,6 @@ public:
             if (!isMemoryVal(inDest) || !isMemoryVal(inSrc))
             {
                setError("Bad string move");
-               *(int *)0=0;
             }
             else
             {
@@ -745,7 +742,6 @@ public:
          case jtVoid:
          case jtUnknown:
             setError("Bad move target");
-            *(int *)0=0;
       }
    }
 
@@ -914,8 +910,7 @@ public:
                break;
 
             default:
-               printf("TODO - other to float (%d)\n", inSrcType);
-               *(int *)0=0;
+               setError("Bad float convert");
          }
       }
       else if (inToType==etInt)
@@ -932,13 +927,12 @@ public:
                break;
 
             default:
-               printf("TODO - other to int\n");
+               setError("Bad int convert");
          }
       }
       else
       {
-         printf("unknown convert %d\n", inToType);
-         *(int *)0=0;
+         setError("Convert not implemented");
       }
    }
 
@@ -1311,8 +1305,7 @@ public:
          {
             if (inArg0.type==jtString)
             {
-               printf("Passing string value in register error.\n");
-               *(int *)0=0;
+               setError("Passing string value in register error");
             }
  
             restoreLocal = localSize;
@@ -1336,8 +1329,7 @@ public:
          {
             if (inArg1.type==jtString)
             {
-               printf("Passing string value in register error.\n");
-               *(int *)0=0;
+               setError("Passing string value in register error");
             }
             restoreLocal = localSize;
             JitLocalPos temp(allocTemp(jtFloat),jtFloat);
@@ -1373,8 +1365,7 @@ public:
          {
             if (inArg0.type==jtString)
             {
-               printf("Passing string value in register error.\n");
-               *(int *)0=0;
+               setError("Passing string value in register error");
             }
  
             restoreLocal = localSize;
@@ -1396,8 +1387,7 @@ public:
          {
             if (inArg1.type==jtString)
             {
-               printf("Passing string value in register error.\n");
-               *(int *)0=0;
+               setError("Passing string value in register error");
             }
             restoreLocal = localSize;
             JitLocalPos temp(allocTemp(jtFloat),jtFloat);
@@ -1418,8 +1408,7 @@ public:
          {
             if (inArg2.type==jtString)
             {
-               printf("Passing string value in register error.\n");
-               *(int *)0=0;
+               setError("Passing string value in register error");
             }
             restoreLocal = localSize;
             JitLocalPos temp(allocTemp(jtFloat),jtFloat);

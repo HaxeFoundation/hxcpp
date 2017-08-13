@@ -711,6 +711,7 @@ public:
                   return ctx->getString();
                case etObject:
                   return ctx->getObject();
+               default: ;
             }
          }
          return null();

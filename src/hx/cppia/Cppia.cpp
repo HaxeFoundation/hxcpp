@@ -42,6 +42,15 @@ void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx);
 int getScriptId(hx::Class inClass);
 
 
+void CppiaTrap( )
+{
+    // Good when using gdb, and to collect a core ...
+    #if __has_builtin(__builtin_trap)
+    __builtin_trap();
+    #else
+    (* (int *) 0) = 0;
+    #endif
+}
 
 
 
@@ -2691,7 +2700,7 @@ struct FieldByName : public CppiaDynamicExpr
                case coPreDec: func = (void *)preDecByName; break;
                default:
                   printf("Error in crement?\n");
-                  *(int *)0=0;
+                  CppiaTrap();
             }
             compiler->callNative(func, objSrc, (void *)&name, gotVal );
             compiler->checkException();
@@ -2741,7 +2750,7 @@ struct FieldByName : public CppiaDynamicExpr
                break;
             default:
                printf("Unknown set type %d\n", destType);
-               *(int *)0=0;
+               CppiaTrap();
          }
       }
       else
@@ -2777,7 +2786,7 @@ struct FieldByName : public CppiaDynamicExpr
                   break;
                default:
                   printf("Unknown add type %d\n", destType);
-                  *(int *)0=0;
+                  CppiaTrap();
              }
          }
          else if (assign==aoMult || assign==aoDiv || assign==aoMod || assign==aoSub)
@@ -6150,7 +6159,7 @@ struct SwitchExpr : public CppiaExpr
             else
             {
                printf("Missing switch type\n");
-               *(int *)0=0;
+               CppiaTrap();
             }
          }
 

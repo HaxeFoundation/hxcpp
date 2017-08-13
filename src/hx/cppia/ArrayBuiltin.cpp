@@ -60,6 +60,7 @@ int gArrayArgCount[] =
    4, //afBlit,
 };
 
+
 // ArrayBuiltinBase
 ArrayBuiltinBase::ArrayBuiltinBase(CppiaExpr *inSrc, CppiaExpr *inThisExpr, Expressions &ioExpressions)
    : CppiaExpr(inSrc)
@@ -355,6 +356,8 @@ struct ArraySetter : public ArrayBuiltinBase
             case etObject:
                compiler->callNative( (void *)nativeRunObject, margs );
                break;
+            default:
+               throw "Bad array set type";
          }
 
          if (destType!=etVoid && destType!=etNull)
@@ -2701,7 +2704,7 @@ CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *th
          return new ArrayBuiltin<String,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrObject:
          return new ArrayBuiltin<Dynamic,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
-      case arrNotArray:
+      default:
          break;
    }
    throw "Unknown array type";
