@@ -41,6 +41,9 @@ void cppiaClassMark(CppiaClassInfo *inClass,hx::MarkContext *__inCtx);
 void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx);
 int getScriptId(hx::Class inClass);
 
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
 
 void CppiaTrap( )
 {
