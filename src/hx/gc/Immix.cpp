@@ -132,7 +132,9 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 
 #define RECYCLE_LARGE
 
-//#define PROFILE_COLLECT_SUMMARY
+// HXCPP_GC_DYNAMIC_SIZE
+
+//#define HXCPP_GC_SUMMARY
 //#define PROFILE_COLLECT
 //#define PROFILE_THREAD_USAGE
 //#define HX_GC_VERIFY
@@ -141,7 +143,7 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 //
 
 #ifdef PROFILE_COLLECT
-   #define PROFILE_COLLECT_SUMMARY
+   #define HXCPP_GC_SUMMARY
 #endif
 
 #if defined(HX_GC_VERIFY) && defined(HXCPP_GC_GENERATIONAL)
@@ -235,37 +237,99 @@ static int sgAllocsSinceLastSpam = 0;
    #define MEM_STAMP(t)
 #endif
 
-#ifdef PROFILE_COLLECT_SUMMARY
+#if defined(HXCPP_GC_SUMMARY) || defined(HXCPP_GC_DYNAMIC_SIZE)
 struct ProfileCollectSummary
 {
+   enum { COUNT = 10 };
+   double timeWindow[COUNT];
+   int    windowIdx;
    double startTime;
+   double lastTime;
    double totalCollecting;
    double maxStall;
+   double spaceFactor;
+
    ProfileCollectSummary()
    {
       startTime = __hxcpp_time_stamp();
+      lastTime = startTime;
       totalCollecting = 0;
       maxStall = 0;
+      windowIdx = 0;
+      spaceFactor = 1.0;
+      for(int i=0;i<COUNT;i++)
+         timeWindow[i] = 0.1;
    }
    ~ProfileCollectSummary()
    {
+      #ifdef HXCPP_GC_SUMMARY
       double time = __hxcpp_time_stamp() - startTime;
       GCLOG("Total time     : %.2fms\n", time*1000.0);
       GCLOG("Collecting time: %.2fms\n", totalCollecting*1000.0);
       GCLOG("Max Stall time : %.2fms\n", maxStall*1000.0);
       if (time==0) time = 1;
       GCLOG(" Fraction      : %.2f%%\n",totalCollecting*100.0/time);
+
+      #ifdef HXCPP_GC_DYNAMIC_SIZE
+      GCLOG("Space factor   : %.2fx\n",spaceFactor);
+      #endif
+      #endif
    }
-   void addTime(double dt)
+
+   void addTime(double inCollectStart)
    {
+      double now = __hxcpp_time_stamp();
+      double dt =  now-inCollectStart;
       if (dt>maxStall)
          maxStall = dt;
       totalCollecting += dt;
+      #ifdef HXCPP_GC_DYNAMIC_SIZE
+      double wholeTime = now - lastTime;
+      if (wholeTime)
+      {
+         lastTime = now;
+         double ratio = dt/wholeTime;
+         windowIdx = (windowIdx +1)%COUNT;
+         timeWindow[windowIdx] = ratio;
+         double sum = 0;
+         for(int i=0;i<COUNT;i++)
+            sum += timeWindow[i];
+         ratio = sum/COUNT;
+
+         if (ratio<0.05)
+         {
+            if (spaceFactor>1.0)
+            {
+               spaceFactor -= 0.2;
+               if (spaceFactor<1.0)
+                  spaceFactor = 1.0;
+            }
+         }
+         else if (ratio>0.12)
+         {
+            if (ratio>0.2)
+               spaceFactor += 0.5;
+            else
+               spaceFactor += 0.2;
+
+            if (spaceFactor>5.0)
+               spaceFactor = 5.0;
+         }
+      }
+      #endif
+   }
+
+   double getExtra()
+   {
+      double time = __hxcpp_time_stamp() - startTime;
+      if (time==0)
+         return 0.1;
    }
 };
+
 static ProfileCollectSummary profileCollectSummary;
 #define PROFILE_COLLECT_SUMMARY_START double collectT0 = __hxcpp_time_stamp();
-#define PROFILE_COLLECT_SUMMARY_END profileCollectSummary.addTime( __hxcpp_time_stamp()-collectT0);
+#define PROFILE_COLLECT_SUMMARY_END profileCollectSummary.addTime(collectT0);
 
 #else
 #define PROFILE_COLLECT_SUMMARY_START 
@@ -4907,7 +4971,11 @@ public:
 
       size_t mem = stats.rowsInUse<<IMMIX_LINE_BITS;
       size_t baseMem = full ? bytesInUse : mem;
+      #ifdef HXCPP_GC_DYNAMIC_SIZE
+      size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, (size_t)(baseMem * profileCollectSummary.spaceFactor ) );
+      #else
       size_t targetFree = std::max((size_t)hx::sgMinimumFreeSpace, baseMem/100 *hx::sgTargetFreeSpacePercentage );
+      #endif
       targetFree = std::min(targetFree, (size_t)sgMaximumFreeSpace );
       // Only adjust if non-generational
       if (!generational)

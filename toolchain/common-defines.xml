@@ -17,6 +17,8 @@
  <flag value="-DHXCPP_PARANOID" if="HXCPP_PARANOID" tag="hxstring" />
  <flag value="-DHXCPP_GC_MOVING" if="HXCPP_GC_MOVING" tag="gc" />
  <flag value="-DHXCPP_GC_BIG_BLOCKS" if="HXCPP_GC_BIG_BLOCKS" tag="gc" />
+ <flag value="-DHXCPP_GC_SUMMARY" if="HXCPP_GC_SUMMARY" tag="gc" />
+ <flag value="-DHXCPP_GC_DYNAMIC_SIZE" if="HXCPP_GC_DYNAMIC_SIZE" tag="gc" />
  <flag value="-DHXCPP_GC_CHECK_POINTER" if="HXCPP_GC_CHECK_POINTER" tag="haxe" />
  <flag value="-DHXCPP_GC_DEBUG_ALWAYS_MOVE" if="HXCPP_GC_DEBUG_ALWAYS_MOVE" tag="haxe" />
  <flag value="-DHXCPP_GC_GENERATIONAL" if="HXCPP_GC_GENERATIONAL" tag="haxe" />
