@@ -412,7 +412,6 @@ class BuildTool
              inList[index] = (outOfDate);     
          });
          pool.blockRunAll();
-         pool.end();
          to_be_compiled = to_be_compiled.filter(function(v:File):Bool {
              return v != null;
          });
@@ -543,50 +542,27 @@ class BuildTool
          }
          else
          {
-            var mutex = new Mutex();
-            Log.initMultiThreaded();
-            var main_thread = Thread.current();
             var compiler = mCompiler;
-            for(t in 0...threads)
-            {
-               Thread.create(function()
-               {
-                  try
-                  {
-                  while(threadExitCode==0)
-                  {
-                     mutex.acquire();
-                     if (to_be_compiled.length==0)
-                     {
-                        mutex.release();
-                        break;
-                     }
-                     var file = to_be_compiled.shift();
-                     mutex.release();
-                     compiler.compile(file,t,groupHeader,pchStamp);
-                  }
-                  }
-                  catch (error:Dynamic)
-                  {
-                     if (threadExitCode!=0)
-                        setThreadError(-1);
-                     else
-                        Log.warn("Error in compile thread: " + error);
-                  }
-                  main_thread.sendMessage("Done");
-               });
-            }
+            pool.distributeLoop(to_be_compiled.length, function(tid:Int, index:Int) {
+               try {
+                   var file = to_be_compiled[index];
+                   compiler.compile(file,-1,groupHeader,pchStamp);
+               }
+               catch (error:Dynamic) {
+                  if (threadExitCode!=0)
+                     setThreadError(-1);
+                  else
+                     Log.warn("Error in compile thread: " + error);
+               }
+            });
 
-            // Wait for theads to finish...
-            for(t in 0...threads)
-            {
-               Thread.readMessage(true);
-            }
+            pool.blockRunAll();
 
             // Already printed the error from the thread, just need to exit
             if (threadExitCode!=0)
                Tools.exit(threadExitCode);
          }
+         pool.end();
 
          if (CompileCache.hasCache && group.mAsLibrary && mLinkers.exists("static_link"))
          {
