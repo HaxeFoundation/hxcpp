@@ -108,6 +108,9 @@ class ThreadPool {
         for (i in 0...num) {
             models[i].mutex.release();
         }
+        for (i in 0...num) {
+           models[i].mutex.acquire();
+        }
     }
 
 }
