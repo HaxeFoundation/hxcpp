@@ -143,7 +143,7 @@
   <flag value="-MANIFEST:NO" />
   <flag value="-WINMD" />
   <flag value="-APPCONTAINER" />
-  <flag value="-WINMDFILE:obj/msvc${MSVC_VER}-rt${OBJEXT}/app.winmd" />
+  <flag value="-WINMDFILE:${MSVC_OBJ_DIR}/app.winmd" />
   <flag value="-DYNAMICBASE" />
   <flag value="-NXCOMPAT" />
   <flag value="-libpath:lib"/>

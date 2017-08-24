@@ -27,6 +27,12 @@ class FileGroup
    
    public function new(inDir:String,inId:String,inSetImportDir = false)
    {
+      mId = inId;
+      replace(inDir, inSetImportDir);
+   }
+
+   public function replace(inDir:String,inSetImportDir)
+   {
       mNewest = 0;
       mFiles = [];
       mCompilerFlags = [];
@@ -36,7 +42,6 @@ class FileGroup
       mOptions = [];
       mHLSLs = [];
       mDir = inDir;
-      mId = inId;
       mConfig = "";
       mAsLibrary = false;
       mAddTwice = false;
@@ -46,6 +51,7 @@ class FileGroup
       mNvcc = false;
       mTags = "haxe,static";
       mObjPrefix = "";
+      return this;
    }
 
    public function filter(defines:Map<String,String>)

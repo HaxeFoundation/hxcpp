@@ -572,7 +572,7 @@ class BuildTool
                Tools.exit(threadExitCode);
          }
 
-         if (group.mAsLibrary && mLinkers.exists("static_link"))
+         if (CompileCache.hasCache && group.mAsLibrary && mLinkers.exists("static_link"))
          {
             var linker = mLinkers.get("static_link");
             var targetDir = mCompiler.mObjDir;
@@ -817,7 +817,10 @@ class BuildTool
       if (inForceRelative)
          dir = PathManager.combine( Path.directory(mCurrentIncludeFile), dir );
 
-      var group = inFiles==null ? new FileGroup(dir,inName, inForceRelative) : inFiles;
+      var group = inFiles==null ? new FileGroup(dir,inName, inForceRelative) :
+                                  inXML.has.replace ? inFiles.replace(dir, inForceRelative) :
+                                  inFiles;
+
       if (inTags!=null)
          group.mTags = inTags;
 
@@ -841,7 +844,7 @@ class BuildTool
                   group.mUseCache = parseBool( substitute(el.att.value) );
                   if (el.has.project)
                      group.mCacheProject = substitute(el.att.project);
-                  if (el.has.asLibrary && CompileCache.hasCache)
+                  if (el.has.asLibrary)
                      group.mAsLibrary = true;
                case "tag" :
                    group.addTag( substitute(el.att.value) );
@@ -2013,7 +2016,7 @@ class BuildTool
                case "files" :
                   var name = substitute(el.att.id);
                   var tags = el.has.tags ? substitute(el.att.tags) : null;
-                  if (mFileGroups.exists(name))
+                  if (mFileGroups.exists(name) )
                      createFileGroup(el, mFileGroups.get(name), name, false, tags);
                   else
                      mFileGroups.set(name,createFileGroup(el,null,name, forceRelative,tags));
