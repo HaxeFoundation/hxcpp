@@ -536,6 +536,10 @@ void CppiaStackVar::setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault)
                      d =  module->strings[ inDefault.ival ];
                }
                break;
+            case fsString:
+            case fsUnknown:
+               break; // handled above, or not needed
+ 
          }
       }
    }
@@ -613,6 +617,9 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
                break;
             compiler->move(destPos.as(jtPointer), sJitReturnReg.as(jtPointer));
             break;
+         case fsString: // handled
+         case fsUnknown: // ?
+            break;
       }
 
       JumpId defaultDone = compiler->jump();
@@ -637,6 +644,9 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
          case fsObject:
             // Should be same pos
             //compiler->move(destPos.as(jtPointer), sJitTemp0.as(jtPointer));
+            break;
+         case fsString: // handled
+         case fsUnknown: // ?
             break;
       }
 
