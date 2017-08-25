@@ -3,6 +3,10 @@ setlocal enabledelayedexpansion
 	@call "%HXCPP_MSVC%\vcvars32.bat"
 	@echo HXCPP_VARS
 	@set
+) else if exist "%HXCPP_MSVC%\vsvars32.bat" (
+	@call "%HXCPP_MSVC%\vsvars32.bat"
+	@echo HXCPP_VARS
+	@set
 ) else if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" (
 	for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
 	    set InstallDir=%%i
