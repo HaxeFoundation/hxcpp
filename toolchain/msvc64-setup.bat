@@ -10,12 +10,16 @@ setlocal enabledelayedexpansion
 	)
 ) else if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" (
 	for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
-	    set InstallDir=%%i
+		@set InstallDir=%%i
 	)
 	@echo "!InstallDir!"
-	call "!InstallDir!\Common7\Tools\VsDevCmd.bat" -arch=amd64 -app_platform=Desktop -no_logo
-	@echo HXCPP_VARS
-	@set
+	@if exist "!InstallDir!\Common7\Tools\VsDevCmd.bat" (
+		@call "!InstallDir!\Common7\Tools\VsDevCmd.bat" -arch=amd64 -app_platform=Desktop -no_logo
+		@echo HXCPP_VARS
+		@set
+	) else (
+		echo Warning: Could not find Visual Studio 2017 VsDevCmd
+	)
 ) else if exist "%VS140COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat" (
 	@echo "%VS140COMNTOOLS%"
 	@call "%VS140COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat"
