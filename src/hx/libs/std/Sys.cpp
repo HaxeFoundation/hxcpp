@@ -31,7 +31,7 @@
    #ifndef ANDROID
       #include <locale.h>
       #if !defined(BLACKBERRY) && !defined(EPPC) && !defined(GCW0)
-         #include <xlocale.h>
+         #include <locale.h>
       #endif
    #endif
 #endif
