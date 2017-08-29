@@ -312,9 +312,12 @@ class Setup
          {
             var ndkBundle = defines.get("ANDROID_SDK")+"/ndk-bundle";
             var version = getNdkVersion(ndkBundle);
-            root = ndkBundle;
-            defines.set("NDKV" + Std.int(version), "1" );
-            ndkVersion = Std.int(version);
+            if(version>0 && (ndkVersion==0 || ndkVersion==Std.int(version)) )
+            {
+               root = ndkBundle;
+               defines.set("NDKV" + Std.int(version), "1" );
+               ndkVersion = Std.int(version);
+            }
          }
 
          if(root!=null)
