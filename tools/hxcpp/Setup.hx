@@ -7,50 +7,47 @@ class Setup
 {
    static function findAndroidNdkRoot(defines: Map<String,String>, inBaseVersion:Int):String
    {
+      //Looks in ANDROID_NDK_DIR and ANDROID_SDK/ndk-bundle
       var bestVersion = 0.0;
       var result:String = null;
 
+
       if (defines.exists("ANDROID_NDK_DIR"))
       {
-        var inDir:String = defines.get("ANDROID_NDK_DIR");
+        var ndkDir:String = defines.get("ANDROID_NDK_DIR");
+        ndkDir = ndkDir.split("\\").join("/");
         var files:Array<String> = null;
         var checkFiles:Bool = true;
         try
         {
-             files = FileSystem.readDirectory(inDir);
+             files = FileSystem.readDirectory(ndkDir);
         }
         catch (e:Dynamic)
         {
-             Log.warn('ANDROID_NDK_DIR "$inDir" does not point to a valid directory');
+             Log.warn('ANDROID_NDK_DIR "$ndkDir" does not point to a valid directory');
              checkFiles=false;
         }
         if(checkFiles)
           for (file in files)
           {
+             file = file.split("\\").join("/");
              var version = getNdkVersion(file);
              if (inBaseVersion==0 || Std.int(version)==inBaseVersion)
              {
                 if (version>bestVersion)
                 {
                    bestVersion = version;
-                   result = inDir + "/" + file;
+                   result = ndkDir + "/" + file;
                 }
              }
           }
-
-        if(result==null)
-        {
-            if (inBaseVersion!=0)
-               Log.error('ANDROID_NDK_DIR "$inDir" or ndk-bundle does not contain requested NDK $inBaseVersion');
-            else
-               Log.error('ANDROID_NDK_DIR "$inDir" or ndk-bundle does not contain a matching NDK');      
-        }
       }
 
       if (defines.exists("ANDROID_SDK"))
       {
         Log.v("checks default ndk-bundle in android sdk");
         var ndkBundle = defines.get("ANDROID_SDK")+"/ndk-bundle";
+        ndkBundle = ndkBundle.split("\\").join("/");
         var version = getNdkVersion(ndkBundle);
         if(version>bestVersion && (inBaseVersion==0 || inBaseVersion==Std.int(version)) )
         {
@@ -67,10 +64,8 @@ class Setup
       if(inDirName.indexOf("ndk")<0)
          return 0;
 
-      var dir = inDirName.split("\\").join("/");
-
-      //try to get version from source.properties
-      var src = toPath(dir+"/source.properties");
+      Log.v("Try to get version from source.properties");
+      var src = toPath(inDirName+"/source.properties");
       if(sys.FileSystem.exists(src))
       {
          var fin = sys.io.File.read(src, false);
@@ -102,9 +97,9 @@ class Setup
          fin.close();
       }
 
-      //try to get version from directory name
+      Log.v("Try to get version from directory name");
       var extract_version = ~/^(android-ndk-)?r(\d+)([a-z]?)$/;
-      if (extract_version.match(dir))
+      if (extract_version.match(inDirName))
       {
          var major:Int = Std.parseInt( extract_version.matched(2) );
          var result:Float = 1.0 * major;
@@ -114,7 +109,7 @@ class Setup
          return result;
       }
 
-      Log.v('Could not deduce NDK version from "$inDirName" - assuming 8');
+      Log.warn('Could not deduce NDK version from "$inDirName" - assuming 8');
       return 8;
    }
 
@@ -323,7 +318,11 @@ class Setup
          root = Setup.findAndroidNdkRoot( defines, ndkVersion );
          if (root==null)
          {
-            Log.error("Could not find ANDROID_NDK_ROOT or ANDROID_NDK_DIR variable");
+            var ndkDir = defines.exists("ANDROID_NDK_DIR") ? defines.get("ANDROID_NDK_DIR") : "not set";
+            if (ndkVersion!=0)
+               Log.error('ANDROID_NDK_DIR ["$ndkDir"] or ndk-bundle does not contain requested NDK $ndkVersion');
+            else
+               Log.error('ANDROID_NDK_DIR ["$ndkDir"] or ndk-bundle does not contain a matching NDK');
          }
          else
          {
