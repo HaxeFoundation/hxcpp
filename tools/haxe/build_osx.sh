@@ -9,14 +9,7 @@
   export OPAMYES=1
   opam init
   eval `opam config env`
-  opam install camlp4 sedlex ocamlfind camlzip xml-light extlib rope
-
-  # Install a patched ptmap. See https://github.com/backtracking/ptmap/issues/3
-  opam install obuild qtest
-  git clone https://github.com/andyli/ptmap.git --branch 4.05 ~/ptmap
-  pushd ~/ptmap
-  make && sudo make install
-  popd
+  opam install camlp4 sedlex ocamlfind camlzip xml-light extlib rope ptmap
 
   brew install neko --HEAD;
 
