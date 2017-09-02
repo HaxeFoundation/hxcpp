@@ -4207,7 +4207,7 @@ public:
          {
             // Wake zeroing thread
             ThreadPoolAutoLock l(sThreadPoolLock);
-            if (!sRunningThreads & 0x01)
+            if (!(sRunningThreads & 0x01))
             {
                #ifdef PROFILE_THREAD_USAGE
                sThreadZeroPokes++;
