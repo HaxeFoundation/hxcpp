@@ -7,11 +7,10 @@ class Setup
 {
    static function findAndroidNdkRoot(defines: Map<String,String>, inBaseVersion:Int):String
    {
-      //Looks in ANDROID_NDK_DIR and ANDROID_SDK/ndk-bundle
       var bestVersion = 0.0;
       var result:String = null;
 
-
+      Log.v("Looking in ANDROID_NDK_DIR");
       if (defines.exists("ANDROID_NDK_DIR"))
       {
         var ndkDir:String = defines.get("ANDROID_NDK_DIR");
@@ -27,7 +26,7 @@ class Setup
              Log.warn('ANDROID_NDK_DIR "$ndkDir" does not point to a valid directory');
              checkFiles=false;
         }
-        if(checkFiles)
+        if (checkFiles)
           for (file in files)
           {
              file = file.split("\\").join("/");
@@ -43,15 +42,16 @@ class Setup
           }
       }
 
+      Log.v("Looking in ANDROID_SDK/ndk-bundle");
       if (defines.exists("ANDROID_SDK"))
       {
         Log.v("checks default ndk-bundle in android sdk");
         var ndkBundle = defines.get("ANDROID_SDK")+"/ndk-bundle";
         ndkBundle = ndkBundle.split("\\").join("/");
         var version = getNdkVersion(ndkBundle);
-        if(version>bestVersion && (inBaseVersion==0 || inBaseVersion==Std.int(version)) )
+        if (version>bestVersion && (inBaseVersion==0 || inBaseVersion==Std.int(version)) )
         {
-           Log.info("using default ndk-bundle in android sdk");
+           Log.v("Using default ndk-bundle in android sdk");
            result = ndkBundle;
         }
       }
@@ -61,27 +61,27 @@ class Setup
 
    static public function getNdkVersion(inDirName:String):Float
    {
-      if(inDirName.indexOf("ndk")<0)
+      if (inDirName.indexOf("ndk")<0)
          return 0;
 
       Log.v("Try to get version from source.properties");
       var src = toPath(inDirName+"/source.properties");
-      if(sys.FileSystem.exists(src))
+      if (sys.FileSystem.exists(src))
       {
          var fin = sys.io.File.read(src, false);
          try
          {
-            while(true)
+            while (true)
             {
                var str = fin.readLine();
                var split = str.split ("=");
                var name = StringTools.trim(split[0]);
-               if( name == "Pkg.Revision" )
+               if (name == "Pkg.Revision")
                {
                   var revision = StringTools.trim(split[1]);
                   var split2 = revision.split( "." );
                   var result:Float = 1.0 * Std.parseInt(split2[0]) + 0.001 * Std.parseInt(split2[1]);
-                  if(result!=null && result>=8)
+                  if (result!=null && result>=8)
                   {
                      Log.v('Deduced NDK version '+result+' from "$inDirName"/source.properties');
                      fin.close();
@@ -90,7 +90,7 @@ class Setup
                }
             }
          }
-         catch(e:haxe.io.Eof)
+         catch (e:haxe.io.Eof)
          {
             Log.warn('Could not deduce NDK version from "$inDirName"/source.properties');
          }
@@ -104,8 +104,8 @@ class Setup
          var major:Int = Std.parseInt( extract_version.matched(2) );
          var result:Float = 1.0 * major;
          var minor = extract_version.matched(3);
-         if(minor!=null && minor.length>0)
-            result += 0.001 * minor.toLowerCase().charCodeAt(0)-'a'.charCodeAt(0);
+         if (minor!=null && minor.length>0)
+            result += 0.001 * (minor.toLowerCase().charCodeAt(0)-'a'.code);
          return result;
       }
 
@@ -171,7 +171,7 @@ class Setup
          }
 
          var guesses = ["c:/MinGW"];
-         for(guess in guesses )
+         for (guess in guesses)
          {
             if (FileSystem.exists(guess))
             {
@@ -207,7 +207,7 @@ class Setup
             var content = sys.io.File.getContent(file);
             content = content.split("\r").join("");
             var value = ~/^(\w*)\s*=\s*'(.*)'/;
-            for(line in content.split("\n"))
+            for (line in content.split("\n"))
             {
                if (value.match(line))
                {
@@ -305,13 +305,15 @@ class Setup
       if (Log.verbose) Log.println("");
 
       var ndkVersion = 0;
-      for(i in 6...20)
+      for (i in 6...20)
+      {
          if (defines.exists("NDKV" + i))
          {
             ndkVersion = i;
             Log.info("", "\x1b[33;1mRequested Android NDK r" + i + "\x1b[0m");
             break;
          }
+      }
 
       if (!defines.exists("ANDROID_NDK_ROOT") || ndkVersion!=0)
       {
@@ -367,12 +369,12 @@ class Setup
             if(arm_64) extract_version = ~/^aarch64-linux-android-(\d.*)/;
 
             var bestVer="";
-            for(file in files)
+            for (file in files)
             {
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  if ( ver<bestVer || bestVer=="")
+                  if (ver<bestVer || bestVer=="")
                   {
                      bestVer = ver;
                   }
@@ -414,7 +416,7 @@ class Setup
       var androidPlatform = 5;
       if (!defines.exists("PLATFORM"))
       {
-         for(i in 5...100)
+         for (i in 5...100)
          {
             var test = "android-" + i;
             if (defines.exists(test))
@@ -440,7 +442,7 @@ class Setup
          var best = 0;
          try
          {
-            for(file in FileSystem.readDirectory(base))
+            for (file in FileSystem.readDirectory(base))
             {
                if (file.substr(0,8)=="android-")
                {
@@ -560,7 +562,7 @@ class Setup
                var where = Sys.getEnv(varName);
                if (where==null)
                {
-                  for(env in Sys.environment().keys())
+                  for (env in Sys.environment().keys())
                   {
                      if (env.substr(0,2)=="VS")
                      {
@@ -587,9 +589,9 @@ class Setup
       if (detectMsvc)
       {
         var extra:String = "";
-        if( isWinRT )
+        if (isWinRT)
             extra += "-winrt";
-        if( in64 )
+        if (in64)
             extra += "64";
          var xpCompat = false;
          if (ioDefines.exists("HXCPP_WINXP_COMPAT"))
@@ -638,7 +640,7 @@ class Setup
          vc_setup_proc.close();
          if (!vars_found || error_string!="")
          {
-            for(o in output)
+            for (o in output)
             {
                Log.info(o);
                //BuildTool.println(o);
