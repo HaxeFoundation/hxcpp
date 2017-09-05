@@ -46,7 +46,7 @@ Compilers are run over each of the changed files in each of the filegroups in a 
   <outflag value="-flag" />
   ```
     + value = flag value.  Note that it should contain a space character
-      if the actual name should be a separate arguement, like "-o ", or "-o"/"-out:" if it does not.
+      if the actual name should be a separate argument, like "-o ", or "-o"/"-out:" if it does not.
 
 - *exe* = Override the executable command specified in the compiler attribute.
   ```xml

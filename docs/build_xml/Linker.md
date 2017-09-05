@@ -24,7 +24,7 @@ Generally one linker is run per target to build a static library, dynamic librar
    <outflag value="-o"/>
    ```
      + value = linker flag.  Note that it should contain a space character
-      if the actual name should be a separate arguement, like "-o ", or "-o"/"-out:" if it does not.
+      if the actual name should be a separate argument, like "-o ", or "-o"/"-out:" if it does not.
 
 - *section* - Group items - usually sharing common condition
    ```xml
@@ -79,7 +79,7 @@ Generally one linker is run per target to build a static library, dynamic librar
    <fromfile value="flag" needsQuotes="true" />
    ```
      + value = flag for specifying file. 
-     If the filename should be a separate arguement, then the flag should end with a space.
+     If the filename should be a separate argument, then the flag should end with a space.
      Usually `@` or `-filelist `.  Use empty to disable.
      + needsQuotes = is whether to quote the obj names in the file
 
