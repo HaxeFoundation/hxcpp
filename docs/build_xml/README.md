@@ -41,7 +41,7 @@ Substitution is supported via the dollars-brace syntax, and does simple text sub
 
 
 ### Example
-The following code is saved in example.xml in this directory
+The following code is saved in [example.xml](example.xml) in this directory
 ```xml
  <xml>
    <echo value="Hello ${WHO}" if="WHO" unless="SILENT" />
@@ -55,11 +55,11 @@ and some example uses:
 
 ```
  unsetenv SILENT
- haxelib run hxcpp build.xml
- haxelib run hxcpp build.xml WHO=world default
+ haxelib run hxcpp example.xml
+ haxelib run hxcpp example.xml WHO=world default
  setenv SILENT 1
- haxelib run hxcpp build.xml
- haxelib run hxcpp build.xml WHO=world
+ haxelib run hxcpp example.xml
+ haxelib run hxcpp example.xml WHO=world
 ```
 
 ### Details
