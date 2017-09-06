@@ -73,3 +73,5 @@ The build.xml file contains configuration, targets, compilers, linkers and files
 
 When building from haxe, the "haxe" target is built.  You can see the details in [HaxeTarget](HaxeTarget.md).
 
+You can extend the generated Build.xml from haxe code using [Xml injection](XmlInjection.md).
+
