@@ -9,7 +9,7 @@ Compilers are run over each of the changed files in each of the filegroups in a 
   <flag value="value" tag="tag" />
   ```
     + value = text for flag added to command line
-    + tag = optional filter to restrict flag to files with matching tag
+    + tag = optional filter to restrict flag to files with matching tag. See [Tags.md](Tags.md).
 
 - *cflag/cppflag/objcflag/mmflag* - Add flag when compiling specific file types.
   ```xml

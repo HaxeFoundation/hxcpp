@@ -20,7 +20,7 @@ The files node defines a group of files that all share the same attributes, incl
   <config name="outfile.h" />
   ```
 
-- *tag* - Add a default compiler flags tag too all files in group
+- *tag* - Add a default compiler flags tag too all files in group.  See [Tags.md](Tags.md).
   ```xml
   <tag value="tag" />
   ```
@@ -86,7 +86,7 @@ The files node defines a group of files that all share the same attributes, incl
   </file>
   ```
      + name = name of file - may be absolute or relative to files.dir
-     + tags = optional override of group tags
+     + tags = optional override of group tags.  See [Tags.md](Tags.md).
      + filterout = allows files to be skipped at compile-time if the named define exists.
        This is useful when the define is set sometime after the file list is parsed.
      +  depend name = filename of additional dependency
