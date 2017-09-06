@@ -30,7 +30,7 @@ The files node defines a group of files that all share the same attributes, incl
   <addTwice value="tue" />
   ```
 
-- *cache* - Use compiler cache for files in group.
+- *cache* - Use compiler cache for files in group.  See [compile cache](../CompileCache.md) for more details.
   ```xml
   <cache value="true" project="name" asLibrary="true" />
   ```

@@ -70,3 +70,6 @@ The build.xml file contains configuration, targets, compilers, linkers and files
  - [Compiler](Compiler.md)
  - [Linker](Linker.md)
  - [Stripper](Stripper.md)
+
+When building from haxe, the "haxe" target is built.  You can see the details in [HaxeTarget](HaxeTarget.md).
+
