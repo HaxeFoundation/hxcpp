@@ -6,7 +6,7 @@ class TestMain {
       r.add(new TestKeywords());
       r.add(new TestSort());
       r.add(new gc.TestGC.TestGC());
-//      r.add(new gc.TestGCWithSys.TestGCWithSys());
+      r.add(new gc.TestGCWithSys.TestGCWithSys());
       r.add(new TestIntHash());
       r.add(new TestStringHash());
       r.add(new TestObjectHash());
