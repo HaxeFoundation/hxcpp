@@ -13,9 +13,11 @@ haxelib run hxcpp build.xml key=value .... [target]
 The hxcpp build tool is configured using key-value pairs, or just using keys, known internally as 'defines'.  These can be set in severaly ways:
   - From system environment variables
   - From the command-line, with key=value
-  - From haxe.  Keys defined in haxe with '-D key[=value]' are passed to the build too, where they can influence the build.
+  - From haxe.  Keys defined in haxe with '-D key[=value]' are passed to the build too, where they can influence the build.  Certain defines need to be set on the haxe command line so that they can influence the generated code.
   - From the the .hxcpp_config.xml file in the users home(profile) directory.  This is a good place to set values the apply to the whole machine, like the location of SDKs etc.
   - The defines can be manipulated logically from within the build files themselves.
+
+See [Defines.md](Defines.md) for a list of standard defines.
 
 
 ### Format
