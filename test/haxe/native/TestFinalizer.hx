@@ -80,6 +80,8 @@ class MyFinalizable extends cpp.Finalizable
 
 class TestFinalizer extends haxe.unit.TestCase
 {
+   var extraDebug:Bool;
+
    #if !cppia
    public function testCount()
    {
@@ -88,7 +90,7 @@ class TestFinalizer extends haxe.unit.TestCase
           new ExternWrapper();
           cpp.vm.Gc.run(true);
       }
-      Sys.println("\nExtern instances remaining:" + ExternWrapper.instances);
+      debugPrintln("\nExtern instances remaining:" + ExternWrapper.instances);
       assertTrue( ExternWrapper.instances < 10 );
    }
 
@@ -97,7 +99,7 @@ class TestFinalizer extends haxe.unit.TestCase
       for(i in 0...100)
          new CustomFinalizable();
       cpp.vm.Gc.run(true);
-      Sys.println("custom cleared:" + CustomFinalizable.count);
+      debugPrintln("custom cleared:" + CustomFinalizable.count);
       assertTrue(CustomFinalizable.count>0);
    }
 
@@ -108,8 +110,13 @@ class TestFinalizer extends haxe.unit.TestCase
       for(i in 0...100)
          new MyFinalizable();
       cpp.vm.Gc.run(true);
-      Sys.println("MyFinalizable cleared:" + MyFinalizable.count);
+      debugPrintln("MyFinalizable cleared:" + MyFinalizable.count);
       assertTrue(MyFinalizable.count>0);
+   }
+    
+   private function debugPrintln(s:String):Void {
+      if(extraDebug)
+         Sys.println(s);
    }
 }
 
