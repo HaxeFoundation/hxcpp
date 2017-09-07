@@ -6,6 +6,10 @@ class TestMain {
       r.add(new TestKeywords());
       r.add(new TestSort());
       r.add(new gc.TestGC.TestGC());
+      for (i in 0...array.length) {
+         var o = array[i];
+         
+      }
       r.add(new gc.TestGCWithSys.TestGCWithSys());
       r.add(new TestIntHash());
       r.add(new TestStringHash());
