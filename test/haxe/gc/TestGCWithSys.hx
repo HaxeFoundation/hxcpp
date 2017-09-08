@@ -4,21 +4,39 @@ import haxe.crypto.Md5;
 class TestGCWithSys extends haxe.unit.TestCase {
 
     public function testShouldNotExplode():Void {
-        var main:Thread = Thread.current();
-        var num:Int = 10000;
-        for (i in 0...num) {
-            cpp.vm.Thread.create(function() {
-                Md5.encode(sys.io.File.getContent('gc/testShouldNotExplode.txt'));
-                Md5.encode(sys.io.File.getContent('gc/testShouldNotExplode.txt'));
-                Md5.encode(sys.io.File.getContent('gc/testShouldNotExplode.txt'));
-                Md5.encode(sys.io.File.getContent('gc/testShouldNotExplode.txt'));
-                main.sendMessage(0);
-            });
-        }
-
-        for (i in 0...num) {
-           Thread.readMessage(true);
-        }
+        doThreadedWork(4,1000000);
         assertTrue(true);
     }
+
+   function doThreadedWork(numThreads, numWork):Void {
+      var threads:Array<Thread> = makeThreads(numThreads);
+      
+      for (i in 0...numWork)
+         threads[i % threads.length].sendMessage('doWork');
+
+      for (i in 0...numThreads) {
+         threads[i].sendMessage('exit'); 
+         Thread.readMessage(true);
+      }
+   }
+
+   function makeThreads(numThreads:Int):Array<Thread> {
+      var text:String = sys.io.File.getContent('gc/testShouldNotExplode.txt');
+      var main:Thread = Thread.current();
+      var threads:Array<Thread> = [];
+      for (i in 0...numThreads) {
+         var thread:Thread = cpp.vm.Thread.create(function() {
+            while(true) {
+               var message:Dynamic = Thread.readMessage(true);
+               if(message == 'exit')
+                  break;
+               else
+                  Md5.encode(text);
+            }
+            main.sendMessage('done');
+         });
+         threads.push(thread);
+      }
+      return threads;
+   }
 }
