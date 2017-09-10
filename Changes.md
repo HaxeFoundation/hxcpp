@@ -1,4 +1,15 @@
 
+* Do not ship static libraries
+* Use more lock-free structures in GC processing
+* Added some documentation
+* Added HXCPP_GC_SUMMARY option
+* Added HXCPP_GC_GENERATIONAL option
+* Added HXCPP_GC_DYNAMIC_SIZE option
+* Some MSVC 2017 support
+* Compile Cppia with JIT as an option by default
+
+3.4.64
+------------------------------------------------------------
 * Fixed cppia native interface implementation
 * Fixed debugger breakpoints
 * More compatibility for inet_pton and inet_ntop
