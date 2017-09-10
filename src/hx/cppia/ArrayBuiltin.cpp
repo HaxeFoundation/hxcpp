@@ -791,7 +791,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==afPush || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          return Dynamic(runInt(ctx)).mPtr;
 
-      if (FUNC==afJoin)
+      if (FUNC==afJoin || FUNC==afToString)
          return Dynamic(runString(ctx)).mPtr;
 
 
