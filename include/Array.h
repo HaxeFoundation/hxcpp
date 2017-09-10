@@ -482,7 +482,7 @@ public:
    inline ELEM_ &__unsafe_get(int inIndex) { return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)); }
 
 
-   inline ELEM_ & __unsafe_set(int inIndex, const ELEM_ &inValue)
+   inline ELEM_ & __unsafe_set(int inIndex, ELEM_ inValue)
    {
       if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this, hx::PointerOf(inValue)); }
       return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
@@ -552,7 +552,7 @@ public:
 
    Array_obj<ELEM_> *Add(const ELEM_ &inItem) { push(inItem); return this; }
 
-   Array<ELEM_> init(int inIndex, const ELEM_ &inValue)
+   Array<ELEM_> init(int inIndex, ELEM_ inValue)
    {
       * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
       #ifdef HXCPP_GC_GENERATIONAL
