@@ -17,6 +17,7 @@ test/extern-lib/gen-externs
 test/cffi/project/ndll
 test/snippets/messagebox/cpp
 hxcpp.n
+hxcpp-fallback.n
 .DS_Store
 
 *.swp

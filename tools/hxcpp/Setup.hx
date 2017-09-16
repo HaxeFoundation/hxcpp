@@ -232,7 +232,7 @@ class Setup
          Sys.setCwd(BuildTool.HXCPP);
          var proc = new Process("mspdbsrv.exe",["-start"]);
          Tools.addOnExitHook(function(_) {
-           proc.kill();
+           Sys.command('Taskkill', '/IM mspdbsrv.exe /F'.split(' '));
          });
       }
       catch(e:Dynamic)

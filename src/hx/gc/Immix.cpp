@@ -3110,18 +3110,15 @@ public:
       bool do_lock = hx::gMultiThreadMode;
       bool isLocked = false;
 
+      if (do_lock) {
+         mLargeListLock.Lock();
+         isLocked = true;
+      }
+               
       for(int i=0;i<largeObjectRecycle.size();i++)
       {
          if ( largeObjectRecycle[i][0] == inSize )
          {
-            if (do_lock && !isLocked)
-            {
-               mLargeListLock.Lock();
-               isLocked = true;
-               if ( largeObjectRecycle[i][0] != inSize )
-                  continue;
-            }
-
             result = largeObjectRecycle[i];
             largeObjectRecycle.qerase(i);
             break;
@@ -4823,10 +4820,17 @@ public:
 
       // Manage recycle size ?
       //  clear old frames recycle objects
+      
+      if(hx::gMultiThreadMode)
+         mLargeListLock.Lock();
+      
       int l2 = largeObjectRecycle.size();
       for(int i=0;i<largeObjectRecycle.size();i++)
          HxFree(largeObjectRecycle[i]);
       largeObjectRecycle.setSize(0);
+      
+      if(hx::gMultiThreadMode)
+         mLargeListLock.Unlock();
 
       size_t recycleRemaining = 0;
       #ifdef RECYCLE_LARGE
@@ -4842,7 +4846,7 @@ public:
          {
             unsigned int size = *blob;
             mLargeAllocated -= size;
-            if (size < recycleRemaining)
+            if (size < recycleRemaining) //<=?
             {
                recycleRemaining -= size;
                largeObjectRecycle.push(blob);
