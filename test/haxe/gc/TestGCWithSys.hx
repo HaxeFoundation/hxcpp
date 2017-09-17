@@ -4,8 +4,12 @@ import haxe.crypto.Md5;
 class TestGCWithSys extends haxe.unit.TestCase {
 
     public function testShouldNotExplode():Void {
-        doThreadedWork(4,1000000);
-        assertTrue(true);
+       #if STRESS_TEST
+       doThreadedWork(4,1000000);
+       #else
+       doThreadedWork(4,1000);
+       #end
+       assertTrue(true);
     }
 
    function doThreadedWork(numThreads, numWork):Void {
