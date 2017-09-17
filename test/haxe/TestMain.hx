@@ -16,9 +16,18 @@ class TestMain {
       #if cpp
 		r.add(new native.TestFinalizer());
       #end
-      var t0 = haxe.Timer.stamp();
-		var success = r.run();
-      trace(" Time : " + (haxe.Timer.stamp()-t0)*1000 );
-		Sys.exit(success ? 0 : 1);
+      var times:Int = 1;
+      #if TEST_FLAKINESS
+      times = 100;
+      #end
+      for (i in 0...times) {
+         var t0 = haxe.Timer.stamp();
+         var success = r.run();
+         Sys.println("Time : " + (haxe.Timer.stamp()-t0)*1000 + " ms");
+         if(!success) {
+            Sys.exit(1);
+         }
+      }
+      Sys.exit(0);
 	}
 }
