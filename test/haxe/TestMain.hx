@@ -18,7 +18,7 @@ class TestMain {
       #end
       var times:Int = 1;
       #if TEST_FLAKINESS
-      times = 100;
+      times = 10;
       #end
       for (i in 0...times) {
          var t0 = haxe.Timer.stamp();
@@ -28,6 +28,9 @@ class TestMain {
             Sys.exit(1);
          }
       }
+      #if TEST_FLAKINESS
+      Sys.println('SUCCESS $times/$times');
+      #end
       Sys.exit(0);
 	}
 }
