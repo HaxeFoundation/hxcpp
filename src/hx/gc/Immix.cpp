@@ -3110,18 +3110,17 @@ public:
       bool do_lock = hx::gMultiThreadMode;
       bool isLocked = false;
 
+      if (do_lock)
+      {
+         mLargeListLock.Lock();
+         isLocked = true;
+      }
+
+
       for(int i=0;i<largeObjectRecycle.size();i++)
       {
          if ( largeObjectRecycle[i][0] == inSize )
          {
-            if (do_lock && !isLocked)
-            {
-               mLargeListLock.Lock();
-               isLocked = true;
-               if ( largeObjectRecycle[i][0] != inSize )
-                  continue;
-            }
-
             result = largeObjectRecycle[i];
             largeObjectRecycle.qerase(i);
             break;
