@@ -10,7 +10,7 @@ class TestMain {
 		r.add(new TestKeywords());
 		r.add(new TestSort());
 		r.add(new TestGC());
-      r.add(new TestGCWithSys());
+//      r.add(new TestGCWithSys());
 		r.add(new TestIntHash());
 		r.add(new TestStringHash());
 		r.add(new TestObjectHash());
@@ -19,7 +19,7 @@ class TestMain {
 		r.add(new native.TestFinalizer());
       #end
       var times:Int = 1;
-      #if TEST_FLAKINESS
+      #if FLAKINESS_TEST
       times = 10;
       #end
       for (i in 0...times) {
@@ -30,7 +30,7 @@ class TestMain {
             Sys.exit(1);
          }
       }
-      #if TEST_FLAKINESS
+      #if FLAKINESS_TEST
       Sys.println('SUCCESS $times/$times');
       #end
       Sys.exit(0);
