@@ -1,4 +1,5 @@
 package;
+import gc.TestGCWithSys;
 import gc.TestGC;
 
 class TestMain {
@@ -9,6 +10,7 @@ class TestMain {
 		r.add(new TestKeywords());
 		r.add(new TestSort());
 		r.add(new TestGC());
+      r.add(new TestGCWithSys());
 		r.add(new TestIntHash());
 		r.add(new TestStringHash());
 		r.add(new TestObjectHash());
@@ -16,9 +18,21 @@ class TestMain {
       #if cpp
 		r.add(new native.TestFinalizer());
       #end
-      var t0 = haxe.Timer.stamp();
-		var success = r.run();
-      trace(" Time : " + (haxe.Timer.stamp()-t0)*1000 );
-		Sys.exit(success ? 0 : 1);
+      var times:Int = 1;
+      #if FLAKINESS_TEST
+      times = 10;
+      #end
+      for (i in 0...times) {
+         var t0 = haxe.Timer.stamp();
+         var success = r.run();
+         Sys.println("Time : " + (haxe.Timer.stamp()-t0)*1000 + " ms");
+         if(!success) {
+            Sys.exit(1);
+         }
+      }
+      #if FLAKINESS_TEST
+      Sys.println('SUCCESS $times/$times');
+      #end
+      Sys.exit(0);
 	}
 }

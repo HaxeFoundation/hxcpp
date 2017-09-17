@@ -39,7 +39,7 @@ class ExternWrapper
 
 class CustomFinalizable
 {
-   public static var count = 0;
+   public static var count;
 
    public function new()
    {
@@ -64,7 +64,7 @@ class CustomFinalizable
 
 class MyFinalizable extends cpp.Finalizable
 {
-   public static var count = 0;
+   public static var count;
 
    public function new()
    {
@@ -94,6 +94,7 @@ class TestFinalizer extends haxe.unit.TestCase
 
    public function testCustomFinalizable()
    {
+      CustomFinalizable.count = 0;
       for(i in 0...100)
          new CustomFinalizable();
       cpp.vm.Gc.run(true);
@@ -105,6 +106,7 @@ class TestFinalizer extends haxe.unit.TestCase
 
    public function testFinalizable()
    {
+      MyFinalizable.count = 0;
       for(i in 0...100)
          new MyFinalizable();
       cpp.vm.Gc.run(true);
