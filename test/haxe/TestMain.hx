@@ -10,7 +10,7 @@ class TestMain {
 		r.add(new TestKeywords());
 		r.add(new TestSort());
 		r.add(new TestGC());
-//      r.add(new TestGCWithSys());
+      r.add(new TestGCWithSys());
 		r.add(new TestIntHash());
 		r.add(new TestStringHash());
 		r.add(new TestObjectHash());
