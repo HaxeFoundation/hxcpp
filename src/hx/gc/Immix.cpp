@@ -364,6 +364,7 @@ static void VisitLocalAlloc(LocalAllocator *inAlloc,hx::VisitContext *__inCtx);
 #endif
 static void WaitForSafe(LocalAllocator *inAlloc);
 static void ReleaseFromSafe(LocalAllocator *inAlloc);
+static void ClearPooledAlloc(LocalAllocator *inAlloc);
 static void CollectFromThisThread(bool inMajor);
 
 namespace hx
@@ -3105,10 +3106,10 @@ public:
       if (inSize<<1 > mLargeAllocSpace)
          mLargeAllocSpace = inSize<<1;
 
-
       unsigned int *result = 0;
       bool do_lock = hx::gMultiThreadMode;
       bool isLocked = false;
+
 
       for(int i=0;i<largeObjectRecycle.size();i++)
       {
@@ -3118,12 +3119,14 @@ public:
             {
                mLargeListLock.Lock();
                isLocked = true;
-               if ( largeObjectRecycle[i][0] != inSize )
+               if ( largeObjectRecycle[i][0] != inSize || i>=largeObjectRecycle.size() )
                   continue;
             }
 
             result = largeObjectRecycle[i];
             largeObjectRecycle.qerase(i);
+            // You can use this to test race condition
+            //Sleep(1);
             break;
          }
       }
@@ -5086,6 +5089,13 @@ public:
       VerifyBlockOrder();
       #endif
 
+      for(int i=0;i<LOCAL_POOL_SIZE;i++)
+      {
+         LocalAllocator *l = mLocalPool[i];
+         if (l)
+            ClearPooledAlloc(l);
+      }
+
       #ifdef HXCPP_TELEMETRY
       __hxt_gc_end();
       #endif
@@ -5994,6 +6004,11 @@ void ReleaseFromSafe(LocalAllocator *inAlloc)
 void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx)
 {
    inAlloc->Mark(__inCtx);
+}
+
+void ClearPooledAlloc(LocalAllocator *inAlloc)
+{
+   inAlloc->Reset();
 }
 
 #ifdef HXCPP_VISIT_ALLOCS

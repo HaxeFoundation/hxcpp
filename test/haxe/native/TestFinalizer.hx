@@ -80,6 +80,14 @@ class MyFinalizable extends cpp.Finalizable
 
 class TestFinalizer extends haxe.unit.TestCase
 {
+
+   override public function setup()
+   {
+      MyFinalizable.count = 0;
+      CustomFinalizable.count = 0;
+   }
+
+
    #if !cppia
    public function testCount()
    {
