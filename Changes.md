@@ -1,4 +1,8 @@
 
+* Fix some threading crashes
+
+3.4.185
+------------------------------------------------------------
 * Do not ship static libraries
 * Use more lock-free structures in GC processing
 * Added some documentation
