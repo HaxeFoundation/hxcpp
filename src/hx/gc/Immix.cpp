@@ -6073,6 +6073,9 @@ void ExitGCFreeZoneLocked()
 
 void InitAlloc()
 {
+   for(int i=0;i<IMMIX_LINE_LEN;i++)
+      gImmixStartFlag[i] = 1<<( i>>2 ) ;
+
    hx::CommonInitAlloc();
    sgAllocInit = true;
    sGlobalAlloc = new GlobalAllocator();
@@ -6092,9 +6095,6 @@ void InitAlloc()
    __hxcpp_thread_current();
 
    gMainThreadContext->onThreadAttach();
-
-   for(int i=0;i<IMMIX_LINE_LEN;i++)
-      gImmixStartFlag[i] = 1<<( i>>2 ) ;
 }
 
 
