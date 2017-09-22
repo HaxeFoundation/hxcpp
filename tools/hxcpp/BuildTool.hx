@@ -1,3 +1,5 @@
+import haxe.CallStack;
+import com.thomasuster.threadpool.ThreadPool;
 import CopyFile.Overwrite;
 import haxe.io.Path;
 import haxe.xml.Fast;
@@ -390,17 +392,30 @@ class BuildTool
 
          var inList = new Array<Bool>();
          var groupIsOutOfDate = mDirtyList.indexOf(group.mId)>=0 || mDirtyList.indexOf("all")>=0;
-         for(file in group.mFiles)
-         {
-           if (useCache)
-               file.computeDependHash();
-            var obj_name = mCompiler.getCachedObjName(file);
-            groupObjs.push(obj_name);
-            var outOfDate = groupIsOutOfDate || file.isOutOfDate(obj_name);
-            if (outOfDate)
-               to_be_compiled.push(file);
-            inList.push(outOfDate);
+         
+         Log.initMultiThreaded();
+         for (i in 0...group.mFiles.length) {
+             groupObjs.push(null);
+             to_be_compiled.push(null);
+             inList.push(false);
          }
+         var pool:ThreadPool = new ThreadPool(threads);
+         pool.distributeLoop(group.mFiles.length,function(tid:Int, index:Int) {
+             var file:File = group.mFiles[index];
+             if (useCache)
+                 file.computeDependHash();
+             var obj_name = mCompiler.getCachedObjName(file);
+             groupObjs[index] = (obj_name);
+             var outOfDate = groupIsOutOfDate || file.isOutOfDate(obj_name);
+             if (outOfDate)
+                 to_be_compiled[index] = (file);
+             inList[index] = (outOfDate);     
+         });
+         pool.blockRunAll();
+         to_be_compiled = to_be_compiled.filter(function(v:File):Bool {
+             return v != null;
+         });
+
          var someCompiled = to_be_compiled.length > 0;
 
          var pchStamp:Null<Float> = null;
@@ -527,50 +542,27 @@ class BuildTool
          }
          else
          {
-            var mutex = new Mutex();
-            Log.initMultiThreaded();
-            var main_thread = Thread.current();
             var compiler = mCompiler;
-            for(t in 0...threads)
-            {
-               Thread.create(function()
-               {
-                  try
-                  {
-                  while(threadExitCode==0)
-                  {
-                     mutex.acquire();
-                     if (to_be_compiled.length==0)
-                     {
-                        mutex.release();
-                        break;
-                     }
-                     var file = to_be_compiled.shift();
-                     mutex.release();
-                     compiler.compile(file,t,groupHeader,pchStamp);
-                  }
-                  }
-                  catch (error:Dynamic)
-                  {
-                     if (threadExitCode!=0)
-                        setThreadError(-1);
-                     else
-                        Log.warn("Error in compile thread: " + error);
-                  }
-                  main_thread.sendMessage("Done");
-               });
-            }
+            pool.distributeLoop(to_be_compiled.length, function(tid:Int, index:Int) {
+               try {
+                   var file = to_be_compiled[index];
+                   compiler.compile(file,-1,groupHeader,pchStamp);
+               }
+               catch (error:Dynamic) {
+                  if (threadExitCode!=0)
+                     setThreadError(-1);
+                  else
+                     Log.warn("Error in compile thread: " + error);
+               }
+            });
 
-            // Wait for theads to finish...
-            for(t in 0...threads)
-            {
-               Thread.readMessage(true);
-            }
+            pool.blockRunAll();
 
             // Already printed the error from the thread, just need to exit
             if (threadExitCode!=0)
                Tools.exit(threadExitCode);
          }
+         pool.end();
 
          if (CompileCache.hasCache && group.mAsLibrary && mLinkers.exists("static_link"))
          {

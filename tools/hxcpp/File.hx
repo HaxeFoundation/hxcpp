@@ -2,7 +2,6 @@ import sys.FileSystem;
 
 class File
 {
-   static var mFileHashes = new Map<String,String>();
    public var mName:String;
    public var mDir:String;
    public var mDependHash:String;
@@ -55,12 +54,8 @@ class File
 
    public static function getFileHash(inName:String)
    {
-      if (mFileHashes.exists(inName))
-         return mFileHashes.get(inName);
-
       var content = sys.io.File.getContent(inName);
       var md5 = haxe.crypto.Md5.encode(content);
-      mFileHashes.set(inName,md5);
       return md5;
    }
 

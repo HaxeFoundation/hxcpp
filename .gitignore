@@ -18,6 +18,7 @@ test/cffi/project/ndll
 test/snippets/messagebox/cpp
 test/haxe/gc/big.txt
 hxcpp.n
+hxcpp-fallback.n
 .DS_Store
 
 *.swp
