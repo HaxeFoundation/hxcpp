@@ -2,3 +2,4 @@
 -main TestMain
 -resource TestMain.hx
 -D HXCPP_GC_MOVING
+-cp ../unit

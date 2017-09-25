@@ -3,3 +3,4 @@
 -resource TestMain.hx
 -D HXCPP_TELEMETRY
 -D HXCPP_STACK_TRACE
+-cp ../unit

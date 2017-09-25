@@ -3,3 +3,4 @@
 -D dll_export=host_classes.info
 -dce no
 -cpp bin
+-cp ../unit
