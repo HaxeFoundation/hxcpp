@@ -597,6 +597,16 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       return 0;
    }
 
+   static int SLJIT_CALL runIndexOf( ArrayAnyImpl *inArray, hx::Object *inItem)
+   {
+      return inArray->indexOf(inItem);
+   }
+
+   static int SLJIT_CALL runLastIndexOf( ArrayAnyImpl *inArray, hx::Object *inItem)
+   {
+      return inArray->lastIndexOf(inItem);
+   }
+
 
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
@@ -677,6 +687,16 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             }
             break;
 
+
+
+         case afIndexOf:
+         case afLastIndexOf:
+            {
+            args[0]->genCode(compiler, sJitArg1.as(jtPointer), etObject);
+            compiler->callNative( (void *)(FUNC==afIndexOf ? runIndexOf : runLastIndexOf), thisVal, sJitArg1.as(jtPointer));
+            compiler->convertReturnReg(etInt, inDest, destType );
+            }
+            break;
 
 
 

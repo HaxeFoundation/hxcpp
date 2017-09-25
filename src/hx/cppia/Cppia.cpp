@@ -3155,6 +3155,8 @@ struct Call : public CppiaDynamicExpr
    #endif
 };
 
+
+
 struct CallMember : public CppiaExpr
 {
    int classId;
@@ -3322,6 +3324,27 @@ struct CallMember : public CppiaExpr
          replace = new CallGetField(this, thisExpr, args[0], args[1]);
       }
 
+      if (!replace && type->haxeBase &&
+             (type->name == HX_CSTRING("haxe.ds.IntMap") ||
+              type->name == HX_CSTRING("haxe.ds.StringMap") ||
+              type->name == HX_CSTRING("haxe.ds.ObjectMap") ) )
+      {
+         const char *baseFunc = 0;
+         if (field.__s[0] == 's')
+            baseFunc = "set";
+         else if (field.__s[0] == 'g')
+            baseFunc = "get";
+
+         if (baseFunc)
+         {
+            ScriptFunction func = type->haxeBase->findFunction(baseFunc);
+            if (func.signature)
+            {
+               //printf(" replacing %s.%s, signature %s\n", type->name.__s, field.__s, func.signature);
+               replace = new CallHaxe( this, func, thisExpr, args );
+            }
+         }
+      }
 
       if (replace)
       {
@@ -6693,6 +6716,13 @@ struct OpDiv : public BinOp
       BCR_CHECK;
       return lval / right->runFloat(ctx);
    }
+   CppiaExpr *link(CppiaModule &inModule)
+   {
+      BinOp::link(inModule);
+      type = etFloat;
+      return this;
+   }
+
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
