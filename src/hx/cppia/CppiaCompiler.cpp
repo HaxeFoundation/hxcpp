@@ -1186,7 +1186,7 @@ public:
          }
          else
          {
-            emit_op2(SLJIT_MUL, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
+            emit_op2(SLJIT_IMUL, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
             convert( sJitTemp0, etInt, inDest, etFloat );
          }
       }
@@ -1197,7 +1197,7 @@ public:
             emit_fop2(SLJIT_DMUL, inDest, v0, v1 );
          }
          else
-            emit_op2(SLJIT_MUL, inDest, v0, v1 );
+            emit_op2(SLJIT_IMUL, inDest, v0, v1 );
       }
    }
 

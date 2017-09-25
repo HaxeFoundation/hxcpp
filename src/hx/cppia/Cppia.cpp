@@ -452,8 +452,10 @@ struct BlockExpr : public CppiaExpr
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       int n = expressions.size();
+      //compiler->trace(filename);
       for(int i=0;i<n;i++)
       {
+         //compiler->traceInt("line",expressions[i]->line);
          if (i<n-1)
             expressions[i]->genCode(compiler);
          else
@@ -5170,6 +5172,13 @@ struct ArrayDef : public CppiaDynamicExpr
       return val.mPtr;
    }
 
+   hx::Object * SLJIT_CALL setDynamicI(hx::Object *inObj, int inIndex, hx::Object *inValue)
+   {
+      inObj->__SetItem(  inIndex, inValue );
+      return inValue;
+   }
+
+
 
    hx::Object * SLJIT_CALL preDecItem(hx::Object *inObj, int inIndex)
    {
@@ -5331,16 +5340,16 @@ struct DynamicArrayI : public CppiaDynamicExpr
       JitTemp obj(compiler,jtPointer);
       object->genCode(compiler, obj, etObject);
 
-      index->genCode(compiler, sJitTemp1, etInt);
-
       if (crement==coNone && assign==aoNone)
       {
+         index->genCode(compiler, sJitTemp1, etInt);
          compiler->callNative( (void *)getItem, obj, sJitTemp1.as(jtInt) );
          compiler->convertReturnReg(etObject, inDest, destType);
          return;
       }
       if (crement!=coNone)
       {
+         index->genCode(compiler, sJitTemp1, etInt);
          if (destType==etVoid || destType==etNull)
          {
             compiler->callNative( crement==coPostInc || crement==coPostInc ? (void *)incItem : (void *)decItem,
@@ -5357,14 +5366,30 @@ struct DynamicArrayI : public CppiaDynamicExpr
                case coPreDec: func=(void *)preDecItem; break;
                default: ;
             }
+            if (!func)
+               throw "Bad crement in DynamicArrayI";
+
             compiler->callNative( func, obj, sJitTemp1.as(jtInt) );
             compiler->convertReturnReg(etObject, inDest, destType );
          }
          return;
       }
 
+      if (assign==aoSet)
+      {
+         JitTemp idx(compiler,jtInt);
+         index->genCode(compiler, idx, etInt);
+
+         value->genCode(compiler, sJitTemp2, etObject);
+         compiler->callNative( (void *)setDynamicI, obj, idx, sJitTemp2);
+         compiler->convertReturnReg(etObject, inDest, destType );
+         return;
+      }
+
 
       JitMultiArgs argsBuf(compiler, 3);
+
+      index->genCode(compiler, sJitTemp1, etInt);
 
       compiler->move(argsBuf.arg(0,etInt), sJitTemp1);
 
@@ -5400,6 +5425,8 @@ struct DynamicArrayI : public CppiaDynamicExpr
       else
          value->genCode(compiler, argsBuf.arg(2,jtPointer), etObject);
 
+      if (!func)
+         throw "Bad set in DynamicArrayI";
       compiler->callNative( func, obj, argsBuf );
 
       compiler->convertReturnReg(etObject, inDest, destType);
