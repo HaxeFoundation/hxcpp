@@ -610,6 +610,23 @@ void ScriptCallable::addExtraDefaults(CppiaCtx *ctx,int inHave)
 
 
 #ifdef CPPIA_JIT
+
+static void SLJIT_CALL pushFrame(StackContext *inCtx, StackFrame *inFrame )
+{
+   inCtx->pushFrame(inFrame);
+}
+
+static void SLJIT_CALL popFrame(StackContext *inCtx, StackFrame *inFrame)
+{
+   inCtx->popFrame(inFrame);
+}
+
+static void onReturn( CppiaCompiler *inCompiler )
+{
+   inCompiler->callNative( (void *)popFrame, sJitCtx.as(jtPointer), sJitFrame.as(jtPointer));
+}
+
+
 void ScriptCallable::compile()
 {
    if (!compiled && body)
@@ -618,12 +635,31 @@ void ScriptCallable::compile()
 
       // First pass calculates size...
       genDefaults(compiler);
+
+      #ifdef HXCPP_STACK_TRACE
+      int stackTrace = compiler->allocTempSize( sizeof(StackFrame) );
+      compiler->move(sJitFrame.star(jtPointer) + offsetof(StackFrame,position),  (void *)&position );
+      compiler->callNative( (void *)pushFrame, sJitCtx.as(jtPointer), sJitFrame.as(jtPointer) );
+
+      compiler->setOnReturn( onReturn );
+      #endif
+
       body->genCode(compiler);
 
+      #ifdef HXCPP_STACK_TRACE
+      compiler->freeTempSize(sizeof(StackFrame));
+      #endif
       compiler->beginGeneration(1);
 
       // Second pass does the job
       genDefaults(compiler);
+
+      #ifdef HXCPP_STACK_TRACE
+      compiler->allocTempSize( sizeof(StackFrame) );
+      compiler->move(sJitFrame.star(jtPointer) + offsetof(StackFrame,position),  (void *)&position );
+      compiler->callNative( (void *)pushFrame, sJitCtx.as(jtPointer), sJitFrame.as(jtPointer) );
+      #endif
+
       body->genCode(compiler);
 
       compiled = compiler->finishGeneration();

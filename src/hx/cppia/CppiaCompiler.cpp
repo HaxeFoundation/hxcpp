@@ -198,6 +198,8 @@ JitVal sJitCtxPointer = sJitCtx.star(jtPointer, offsetof(CppiaCtx,pointer));
 
 static double sZero = 0.0;
 
+
+
 class CppiaJitCompiler : public CppiaCompiler
 {
 public:
@@ -207,6 +209,7 @@ public:
    QuickVec<JumpId> uncaught;
    LabelId continuePos;
    ThrowList *catching;
+   OnReturnFunc onReturn;
 
    bool usesCtx;
    bool usesThis;
@@ -237,6 +240,7 @@ public:
       makesNativeCalls = false;
       continuePos = 0;
       catching = 0;
+      onReturn = 0;
       maxFrameSize = frameSize = baseFrameSize = sizeof(void *) + inFrameSize;
    }
 
@@ -310,6 +314,10 @@ public:
       for(int i=0;i<uncaught.size();i++)
          comeFrom(uncaught[i]);
       uncaught.setSize(0);
+
+      if (onReturn)
+         onReturn(this);
+
       sljit_emit_return(compiler, SLJIT_UNUSED, SLJIT_UNUSED, 0);
       CppiaFunc func = (CppiaFunc)sljit_generate_code(compiler);
       sljit_free_compiler(compiler);
@@ -343,7 +351,6 @@ public:
       freeTempSize( getJitTypeSize(inType) );
    }
 
-   
    LabelId setContinuePos(LabelId inNewPos)
    {
       LabelId oldPos = continuePos;
@@ -376,9 +383,17 @@ public:
    {
    }
 
+   void setOnReturn( OnReturnFunc inFunc )
+   {
+      onReturn = inFunc;
+   }
+
    // Scriptable?
    void addReturn()
    {
+      if (onReturn)
+         onReturn(this);
+
       if (compiler)
          sljit_emit_return(compiler, SLJIT_UNUSED, SLJIT_UNUSED, 0);
    }

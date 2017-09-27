@@ -293,8 +293,10 @@ typedef sljit_label *LabelId;
 typedef sljit_jump  *JumpId;
 
 typedef void (SLJIT_CALL *CppiaFunc)(CppiaCtx *inCtx);
+typedef void (*OnReturnFunc)(class CppiaCompiler *inCompiler);
 
 typedef std::vector<JumpId> ThrowList;
+
 
 class CppiaCompiler
 {
@@ -359,6 +361,7 @@ public:
    virtual void setMaxPointer() = 0;
 
    // Scriptable?
+   virtual void setOnReturn( OnReturnFunc inFunc ) = 0;
    virtual void addReturn() = 0;
 
    virtual void trace(const char *inValue) = 0;
