@@ -355,8 +355,9 @@ struct BlockCallable : public ScriptCallable
       unsigned char *pointer = ctx->pointer;
       ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
-      CPPIA_STACK_FRAME(this);
       addStackVarsSpace(ctx);
+      CPPIA_STACK_FRAME(this);
+      CPPIA_STACK_LINE(this);
       body->runVoid(ctx);
    }
    int runInt(CppiaCtx *ctx)
@@ -364,8 +365,9 @@ struct BlockCallable : public ScriptCallable
       unsigned char *pointer = ctx->pointer;
       ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
-      CPPIA_STACK_FRAME(this);
       addStackVarsSpace(ctx);
+      CPPIA_STACK_FRAME(this);
+      CPPIA_STACK_LINE(this);
       return body->runInt(ctx);
    }
    Float runFloat(CppiaCtx *ctx)
@@ -373,8 +375,9 @@ struct BlockCallable : public ScriptCallable
       unsigned char *pointer = ctx->pointer;
       ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
-      CPPIA_STACK_FRAME(this);
       addStackVarsSpace(ctx);
+      CPPIA_STACK_FRAME(this);
+      CPPIA_STACK_LINE(this);
       return body->runFloat(ctx);
    }
    hx::Object *runObject(CppiaCtx *ctx)
@@ -382,8 +385,9 @@ struct BlockCallable : public ScriptCallable
       unsigned char *pointer = ctx->pointer;
       ctx->push( ctx->getThis(false) );
       AutoStack save(ctx,pointer);
-      CPPIA_STACK_FRAME(this);
       addStackVarsSpace(ctx);
+      CPPIA_STACK_FRAME(this);
+      CPPIA_STACK_LINE(this);
       return body->runObject(ctx);
    }
 };
@@ -452,9 +456,12 @@ struct BlockExpr : public CppiaExpr
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       int n = expressions.size();
+      int lineOffset = compiler->getLineOffset();
       //compiler->trace(filename);
       for(int i=0;i<n;i++)
       {
+         if (lineOffset)
+            compiler->move( sJitFrame.star(etInt)+lineOffset, expressions[i]->line );
          //compiler->traceInt("line",expressions[i]->line);
          if (i<n-1)
             expressions[i]->genCode(compiler);
@@ -4224,9 +4231,9 @@ struct MemReferenceCrement : public CppiaExpr
             {
                if (destType==etInt)
                {
-                  compiler->move( sJitTemp0.as(jtInt), ioPtr );
-                  compiler->add( ioPtr, sJitTemp0.as(jtInt), diff );
-                  compiler->move( inDest, sJitTemp0.as(jtInt) );
+                  compiler->move( sJitTemp1.as(jtInt), ioPtr );
+                  compiler->add( ioPtr, sJitTemp1.as(jtInt), diff );
+                  compiler->move( inDest, sJitTemp1.as(jtInt) );
                }
                else
                {
@@ -6012,6 +6019,8 @@ struct WhileExpr : public CppiaVoidExpr
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
       LabelId oldCont = compiler->setContinuePos( compiler->addLabel() );
+      QuickVec<JumpId> oldBreaks;
+      compiler->swapBreakList(oldBreaks);
 
       JumpId start = condition->genCompare(compiler,true);
       LabelId body = compiler->addLabel();
@@ -6024,6 +6033,7 @@ struct WhileExpr : public CppiaVoidExpr
       compiler->setBreakTarget();
 
       compiler->setContinuePos(oldCont);
+      compiler->swapBreakList(oldBreaks);
    }
    #endif
 };

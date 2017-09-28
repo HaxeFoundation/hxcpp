@@ -222,7 +222,7 @@ void dbgCtxDetach(DebuggerContext *);
 void dbgCtxEnable(DebuggerContext *, bool inEnable);
 
 
-struct ScriptStackFrame;
+struct scriptCallable;
 class StackVariable;
 class StackCatchable;
 
@@ -273,6 +273,11 @@ public:
     const char *fileName;
     int firstLineNumber;
 
+    #if defined(HXCPP_STACK_SCRIPTABLE)
+    // Information about the current cppia function
+    struct ScriptCallable *scriptCallable;
+    #endif
+
     // These are only used if HXCPP_DEBUGGER is defined
     #ifdef HXCPP_DEBUGGER
     int fileHash;
@@ -305,6 +310,10 @@ public:
          ,firstLineNumber(inLineNumber)
          #endif
     {
+       #if defined(HXCPP_STACK_SCRIPTABLE)
+       // Information about the current cppia function
+       scriptCallable = 0;
+       #endif
     }
 
 };
@@ -544,6 +553,16 @@ struct StackContext : public hx::ImmixAllocator
       *(T *)pointer = inValue;
       pointer += sizeof(T);
    }
+   unsigned char *stackAlloc(int inSize)
+   {
+      unsigned char *p = pointer;
+      pointer += inSize;
+      return p;
+   }
+   void stackFree(int inSize)
+   {
+      pointer -= inSize;
+   }
 
    int getFrameSize() const { return pointer-frame; }
 
@@ -615,21 +634,10 @@ public:
          #endif
       #endif
 
-       #ifdef HXCPP_STACK_SCRIPTABLE
-       // Information about the current cppia function
-       ScriptStackFrame *scriptStackFrame;
-       #endif
-
        // The constructor automatically adds the StackFrame to the list of
        // stack frames for the current thread
        inline StackFrame(const StackPosition *inPosition
-                  #ifdef HXCPP_STACK_SCRIPTABLE
-                  ,ScriptStackFrame *inScriptStackFrame = 0
-                  #endif
               ) : position(inPosition)
-              #ifdef HXCPP_STACK_SCRIPTABLE
-              ,scriptStackFrame(inScriptStackFrame)
-              #endif
        {
           #ifdef HXCPP_STACK_LINE
              lineNumber = inPosition->firstLineNumber;
@@ -724,9 +732,9 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES
 void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPaths);
 
 
-void __hxcpp_dbg_getScriptableVariables(hx::ScriptStackFrame *scriptStackFrame, ::Array< ::Dynamic> outNames);
-bool __hxcpp_dbg_getScriptableValue(hx::ScriptStackFrame *scriptStackFrame, String inName, ::Dynamic &outValue);
-bool __hxcpp_dbg_setScriptableValue(hx::ScriptStackFrame *scriptStackFrame, String inName, ::Dynamic inValue);
+void __hxcpp_dbg_getScriptableVariables(hx::StackFrame *stackFrame, ::Array< ::Dynamic> outNames);
+bool __hxcpp_dbg_getScriptableValue(hx::StackFrame *stackFrame, String inName, ::Dynamic &outValue);
+bool __hxcpp_dbg_setScriptableValue(hx::StackFrame *StackFrame, String inName, ::Dynamic inValue);
 
 
 

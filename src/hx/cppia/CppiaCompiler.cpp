@@ -210,6 +210,7 @@ public:
    LabelId continuePos;
    ThrowList *catching;
    OnReturnFunc onReturn;
+   int lineOffset;
 
    bool usesCtx;
    bool usesThis;
@@ -241,6 +242,7 @@ public:
       continuePos = 0;
       catching = 0;
       onReturn = 0;
+      lineOffset = 0;
       maxFrameSize = frameSize = baseFrameSize = sizeof(void *) + inFrameSize;
    }
 
@@ -253,6 +255,22 @@ public:
          compiler = 0;
       }
    }
+
+   int  getBaseSize()
+   {
+      return baseFrameSize;
+   }
+
+   void setLineOffset( int inOffset )
+   {
+      lineOffset = inOffset;
+   }
+   int  getLineOffset( )
+   {
+      return lineOffset;
+   }
+
+
 
    int getCurrentFrameSize()
    {
@@ -367,6 +385,12 @@ public:
    {
       allBreaks.push( jump(0) );
    }
+
+   void swapBreakList(QuickVec<JumpId> &ioBreakList)
+   {
+      allBreaks.swap(ioBreakList);
+   }
+   
    void setBreakTarget()
    {
       for(int i=0;i<allBreaks.size();i++)

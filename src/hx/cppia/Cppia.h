@@ -406,19 +406,6 @@ struct StackLayout
    CppiaStackVar *findVar(int inId);
 };
 
-struct ScriptStackFrame
-{
-   ScriptStackFrame(ScriptCallable *inCallable, unsigned char *inFrame)
-      : callable(inCallable),
-        frame(inFrame)
-   {
-   }
-
-   ScriptCallable *callable;
-   unsigned char  *frame;
-};
-
-
 
 struct ArgInfo
 {
@@ -784,13 +771,27 @@ public:
    #define CPPIA_STACK_LINE(expr)
 #endif
 
-#ifdef HXCPP_STACK_SCRIPTABLE
-   #define CPPIA_STACK_FRAME(expr) \
-      ScriptStackFrame scriptFrame(expr,ctx->frame); \
-      hx::StackFrame stackframe(&expr->position, &scriptFrame);
+#ifdef HXCPP_STACK_TRACE
+   struct CppiaStackFrame
+   {
+      hx::StackContext *ctx;
+      hx::StackFrame *frame;
+      CppiaStackFrame(hx::StackContext *inCtx, hx::StackPosition *inPosition)
+      {
+         ctx = inCtx;
+         frame = (hx::StackFrame *)ctx->stackAlloc(sizeof(hx::StackFrame));
+         frame->position = inPosition;
+         inCtx->pushFrame(frame);
+      }
+      ~CppiaStackFrame()
+      {
+         ctx->popFrame(frame);
+      }
+   };
+
+   #define CPPIA_STACK_FRAME(expr) hx::CppiaStackFrame(ctx,&expr->position);
 #else
-   #define CPPIA_STACK_FRAME(expr) \
-      HX_STACKFRAME(&expr->position);
+   #define CPPIA_STACK_FRAME(expr)
 #endif
 
 

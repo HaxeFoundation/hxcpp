@@ -140,6 +140,16 @@
      <flag value="-debug" />
   </section>
 
+  <section if="WASM" >
+     <flag value="-s"/>
+     <flag value="WASM=1" />
+  </section>
+
+  <section if="BINARYEN_METHOD" >
+     <flag name="-s" />
+     <flag value="BINARYEN_METHOD='${BINARYEN_METHOD}'" />
+  </section>
+
   <flag value="--bind" if="HXCPP_JS_PRIME" />
 
   <!-- <lib name="-ldl"/> -->

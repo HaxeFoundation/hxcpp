@@ -612,6 +612,7 @@ class Setup
                       :
                         var value = str.substr(pos+1);
                         ioDefines.set(name,value);
+                        Log.v('  msvs $name=$value');
                         Sys.putEnv(name,value);
                   }
                }

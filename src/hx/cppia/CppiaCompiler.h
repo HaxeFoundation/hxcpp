@@ -335,6 +335,7 @@ public:
 
    virtual LabelId setContinuePos(LabelId inNewPos) = 0;
    virtual void  addContinue() = 0;
+   virtual void  swapBreakList(QuickVec<JumpId> &ioBreakList) = 0;
    virtual void  addBreak() = 0;
    virtual void  setBreakTarget() = 0;
 
@@ -360,7 +361,9 @@ public:
 
    virtual void setMaxPointer() = 0;
 
-   // Scriptable?
+   virtual int  getBaseSize() = 0;
+   virtual void setLineOffset( int inOffset ) = 0;
+   virtual int  getLineOffset( ) = 0;
    virtual void setOnReturn( OnReturnFunc inFunc ) = 0;
    virtual void addReturn() = 0;
 

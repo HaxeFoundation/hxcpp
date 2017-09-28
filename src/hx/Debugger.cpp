@@ -1074,7 +1074,7 @@ static ::Array<Dynamic> GetStackVariables(int threadNumber,
             }
 
             #ifdef HXCPP_STACK_SCRIPTABLE
-            ScriptStackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber]->scriptStackFrame;
+            StackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber];
             if (scriptFrame)
                __hxcpp_dbg_getScriptableVariables(scriptFrame, ret);
             #endif
@@ -1137,7 +1137,7 @@ static Dynamic GetVariableValue(int threadNumber, int stackFrameNumber,
     }
 
     #ifdef HXCPP_STACK_SCRIPTABLE
-    ScriptStackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber]->scriptStackFrame;
+    StackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber];
     if (scriptFrame)
     {
        Dynamic result;
@@ -1204,7 +1204,7 @@ static Dynamic SetVariableValue(int threadNumber, int stackFrameNumber,
     }
 
     #ifdef HXCPP_STACK_SCRIPTABLE
-    ScriptStackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber]->scriptStackFrame;
+    StackFrame *scriptFrame = stack->mStackFrames[stackFrameNumber];
     if (scriptFrame)
     {
        if (__hxcpp_dbg_setScriptableValue(scriptFrame, name, value))

@@ -547,20 +547,28 @@ void addScriptableFile(String inName)
 
 #ifdef HXCPP_STACK_SCRIPTABLE
 
-void __hxcpp_dbg_getScriptableVariables(hx::ScriptStackFrame *inFrame, ::Array<Dynamic> outNames)
+void __hxcpp_dbg_getScriptableVariables(hx::StackFrame *inFrame, ::Array<Dynamic> outNames)
 {
-   inFrame->callable->getScriptableVariables(inFrame->frame, outNames);
+   hx::ScriptCallable *callable = inFrame->position->scriptCallable;
+   if (callable)
+      callable->getScriptableVariables((unsigned char *)inFrame, outNames);
 }
 
-bool __hxcpp_dbg_getScriptableValue(hx::ScriptStackFrame *inFrame, String inName, ::Dynamic &outValue)
+bool __hxcpp_dbg_getScriptableValue(hx::StackFrame *inFrame, String inName, ::Dynamic &outValue)
 {
-   return inFrame->callable->getScriptableValue(inFrame->frame, inName, outValue);
+   hx::ScriptCallable *callable = inFrame->position->scriptCallable;
+   if (callable)
+      return callable->getScriptableValue((unsigned char *)inFrame, inName, outValue);
+   return false;
 }
 
 
-bool __hxcpp_dbg_setScriptableValue(hx::ScriptStackFrame *inFrame, String inName, ::Dynamic inValue)
+bool __hxcpp_dbg_setScriptableValue(hx::StackFrame *inFrame, String inName, ::Dynamic inValue)
 {
-   return inFrame->callable->setScriptableValue(inFrame->frame, inName, inValue);
+   hx::ScriptCallable *callable = inFrame->position->scriptCallable;
+   if (callable)
+      return callable->setScriptableValue((unsigned char *)inFrame, inName, inValue);
+   return false;
 }
 
 #endif

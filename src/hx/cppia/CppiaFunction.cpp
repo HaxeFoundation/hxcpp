@@ -174,6 +174,7 @@ CppiaExpr *ScriptCallable::link(CppiaModule &inModule)
 
    #ifdef HXCPP_STACK_SCRIPTABLE
    std::swap(varMap,layout.varMap);
+   position.scriptCallable = this;
    #endif
 
    stackSize = layout.size;
@@ -199,9 +200,11 @@ CppiaExpr *ScriptCallable::link(CppiaModule &inModule)
 }
 
 #ifdef HXCPP_STACK_SCRIPTABLE
-void ScriptCallable::getScriptableVariables(unsigned char *inFrame, Array<Dynamic> outNames)
+void ScriptCallable::getScriptableVariables(unsigned char *inStack, Array<Dynamic> outNames)
 {
-   hx::Object *thizz = *(hx::Object **)inFrame;
+   unsigned char *frame = inStack - stackSize;
+
+   hx::Object *thizz = *(hx::Object **)frame;
    if (thizz)
       outNames->push(HX_CSTRING("this"));
 
@@ -213,11 +216,12 @@ void ScriptCallable::getScriptableVariables(unsigned char *inFrame, Array<Dynami
 }
 
 
-bool ScriptCallable::getScriptableValue(unsigned char *inFrame, String inName, ::Dynamic &outValue)
+bool ScriptCallable::getScriptableValue(unsigned char *inStack, String inName, ::Dynamic &outValue)
 {
+   unsigned char *frame = inStack - stackSize;
    if (inName.length==4 && !strcmp(inName.__s,"this"))
    {
-      outValue = *(hx::Object **)inFrame;
+      outValue = *(hx::Object **)frame;
       return true;
    }
 
@@ -227,7 +231,7 @@ bool ScriptCallable::getScriptableValue(unsigned char *inFrame, String inName, :
       CppiaStackVar *var = i->second;
       if ( var->module->strings[ var->nameId]==inName)
       {
-         outValue = var->getInFrame(inFrame);
+         outValue = var->getInFrame(frame);
          return true;
       }
    }
@@ -236,14 +240,15 @@ bool ScriptCallable::getScriptableValue(unsigned char *inFrame, String inName, :
 }
 
 
-bool ScriptCallable::setScriptableValue(unsigned char *inFrame, String inName, ::Dynamic inValue)
+bool ScriptCallable::setScriptableValue(unsigned char *inStack, String inName, ::Dynamic inValue)
 {
+   unsigned char *frame = inStack - stackSize;
    for(CppiaStackVarMap::iterator i=varMap.begin();i!=varMap.end();++i)
    {
       CppiaStackVar *var = i->second;
       if ( var->module->strings[ var->nameId]==inName)
       {
-         var->setInFrame(inFrame,inValue);
+         var->setInFrame(frame,inValue);
          return true;
       }
    }
@@ -498,7 +503,6 @@ struct AutoFrame
 // Run the actual function
 void ScriptCallable::runFunction(CppiaCtx *ctx)
 {
-   CPPIA_STACK_FRAME(this);
 
    #ifdef CPPIA_JIT
    if (compiled)
@@ -524,6 +528,7 @@ void ScriptCallable::runFunction(CppiaCtx *ctx)
                args[i].setDefault(ctx, initVals[i]);
       }
 
+      CPPIA_STACK_FRAME(this);
       CPPIA_STACK_LINE(this);
       body->runVoid(ctx);
    }
@@ -534,8 +539,6 @@ void ScriptCallable::runFunction(CppiaCtx *ctx)
 // Run the actual function - like runFunction, but stack may already contain values
 void ScriptCallable::runFunctionClosure(CppiaCtx *ctx)
 {
-   CPPIA_STACK_FRAME(this);
-
    #ifdef CPPIA_JIT
    if (compiled)
    {
@@ -554,6 +557,7 @@ void ScriptCallable::runFunctionClosure(CppiaCtx *ctx)
                args[i].setDefault(ctx, initVals[i]);
       }
 
+      CPPIA_STACK_FRAME(this);
       CPPIA_STACK_LINE(this);
       body->runVoid(ctx);
    }
@@ -611,6 +615,7 @@ void ScriptCallable::addExtraDefaults(CppiaCtx *ctx,int inHave)
 
 #ifdef CPPIA_JIT
 
+#ifdef HXCPP_STACK_TRACE
 static void SLJIT_CALL pushFrame(StackContext *inCtx, StackFrame *inFrame )
 {
    inCtx->pushFrame(inFrame);
@@ -623,41 +628,47 @@ static void SLJIT_CALL popFrame(StackContext *inCtx, StackFrame *inFrame)
 
 static void onReturn( CppiaCompiler *inCompiler )
 {
-   inCompiler->callNative( (void *)popFrame, sJitCtx.as(jtPointer), sJitFrame.as(jtPointer));
+   inCompiler->add(sJitArg1.as(jtPointer), sJitFrame.as(jtPointer), inCompiler->getBaseSize()-sizeof(StackFrame) );
+   inCompiler->callNative( (void *)popFrame, sJitCtx.as(jtPointer), sJitArg1.as(jtPointer));
 }
+#endif
 
 
 void ScriptCallable::compile()
 {
    if (!compiled && body)
    {
-      CppiaCompiler *compiler = CppiaCompiler::create(stackSize);
+      int size = stackSize;
+      #ifdef HXCPP_STACK_TRACE
+      size += sizeof(StackFrame);
+      #endif
+      CppiaCompiler *compiler = CppiaCompiler::create(size);
 
       // First pass calculates size...
       genDefaults(compiler);
 
       #ifdef HXCPP_STACK_TRACE
-      int stackTrace = compiler->allocTempSize( sizeof(StackFrame) );
-      compiler->move(sJitFrame.star(jtPointer) + offsetof(StackFrame,position),  (void *)&position );
-      compiler->callNative( (void *)pushFrame, sJitCtx.as(jtPointer), sJitFrame.as(jtPointer) );
+      compiler->move(sJitFrame.star(jtPointer)+(offsetof(StackFrame,position) + stackSize),  (void *)&position );
+      compiler->add(sJitArg1.as(jtPointer), sJitFrame.as(jtPointer), stackSize );
+      compiler->callNative( (void *)pushFrame, sJitCtx.as(jtPointer), sJitArg1.as(jtPointer) );
 
       compiler->setOnReturn( onReturn );
+         #ifdef HXCPP_STACK_LINE
+         compiler->setLineOffset( stackSize + offsetof(StackFrame,lineNumber) ); 
+         #endif
       #endif
 
       body->genCode(compiler);
 
-      #ifdef HXCPP_STACK_TRACE
-      compiler->freeTempSize(sizeof(StackFrame));
-      #endif
       compiler->beginGeneration(1);
 
       // Second pass does the job
       genDefaults(compiler);
 
       #ifdef HXCPP_STACK_TRACE
-      compiler->allocTempSize( sizeof(StackFrame) );
-      compiler->move(sJitFrame.star(jtPointer) + offsetof(StackFrame,position),  (void *)&position );
-      compiler->callNative( (void *)pushFrame, sJitCtx.as(jtPointer), sJitFrame.as(jtPointer) );
+      compiler->move(sJitFrame.star(jtPointer)+(offsetof(StackFrame,position) + stackSize),  (void *)&position );
+      compiler->add(sJitArg1.as(jtPointer), sJitFrame.as(jtPointer), stackSize );
+      compiler->callNative( (void *)pushFrame, sJitCtx.as(jtPointer), sJitArg1.as(jtPointer) );
       #endif
 
       body->genCode(compiler);

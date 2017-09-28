@@ -2,6 +2,7 @@
 #define HX_QUICKVEC_INCLUDED
 
 #include <stdlib.h>
+#include <algorithm>
 
 namespace hx
 {
@@ -29,6 +30,12 @@ struct QuickVec
       }
       mPtr[mSize]=inT;
       mSize++;
+   }
+   void swap(QuickVec<T> &inOther)
+   {
+      std::swap(mAlloc, inOther.mAlloc);
+      std::swap(mSize, inOther.mSize);
+      std::swap(mPtr, inOther.mPtr);
    }
    void setSize(int inSize)
    {
