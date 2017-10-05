@@ -504,11 +504,12 @@ struct CppiaVar
    ExprType         exprType;
 
    CppiaExpr        *init;
+
    Dynamic          objVal;
-   bool             boolVal;
    int              intVal;
    Float            floatVal;
    String           stringVal;
+
    void             *valPointer;
    
 

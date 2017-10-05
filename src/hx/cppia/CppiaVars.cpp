@@ -62,7 +62,6 @@ void CppiaVar::clear()
    offset = 0;
    type = 0;
    objVal.mPtr = 0;
-   boolVal = 0;
    intVal = 0;
    floatVal = 0;
    stringVal = String();
@@ -102,7 +101,7 @@ void CppiaVar::linkVarTypes(CppiaModule &cppia)
 
       switch(storeType)
       {
-         case fsBool: valPointer = &boolVal;  break;
+         case fsBool:
          case fsByte:
          case fsInt: valPointer = &intVal;  break;
          case fsFloat: valPointer = &floatVal; break;
@@ -126,8 +125,9 @@ Dynamic CppiaVar::getStaticValue()
    switch(storeType)
    {
       case fsByte: return *(unsigned char *)(valPointer);
-      case fsInt: return *(int *)(valPointer);
-      case fsBool: return *(bool *)(valPointer);
+      case fsBool:
+      case fsInt: 
+                   return *(int *)(valPointer);
       case fsFloat: return *(Float *)(valPointer);
       case fsString: return *(String *)(valPointer);
       case fsObject: return *(hx::Object **)(valPointer);
@@ -143,8 +143,8 @@ Dynamic CppiaVar::setStaticValue(Dynamic inValue)
    switch(storeType)
    {
       case fsByte: *(unsigned char *)(valPointer) = inValue; return inValue;
+      case fsBool: 
       case fsInt: *(int *)(valPointer) = inValue; return inValue;
-      case fsBool: *(bool *)(valPointer) = inValue; return inValue;
       case fsFloat: *(Float *)(valPointer) = inValue; return inValue;
       case fsString: *(String *)(valPointer) = inValue; return inValue;
       case fsObject: *(hx::Object **)(valPointer) = inValue.mPtr; return inValue;
@@ -302,7 +302,7 @@ void CppiaVar::runInit(CppiaCtx *ctx)
       else if (init)
          switch(storeType)
          {
-            case fsBool: boolVal = init->runInt(ctx); break;
+            case fsBool:
             case fsByte:
             case fsInt: intVal = init->runInt(ctx); break;
             case fsFloat: floatVal = init->runFloat(ctx); break;
