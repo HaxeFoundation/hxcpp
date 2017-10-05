@@ -789,7 +789,7 @@ public:
       }
    };
 
-   #define CPPIA_STACK_FRAME(expr) hx::CppiaStackFrame(ctx,&expr->position);
+   #define CPPIA_STACK_FRAME(expr) hx::CppiaStackFrame __frame(ctx,&expr->position);
 #else
    #define CPPIA_STACK_FRAME(expr)
 #endif

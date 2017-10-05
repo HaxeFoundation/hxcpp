@@ -210,6 +210,7 @@ public:
    LabelId continuePos;
    ThrowList *catching;
    OnReturnFunc onReturn;
+   int onReturnStackSize;
    int lineOffset;
 
    bool usesCtx;
@@ -242,6 +243,7 @@ public:
       continuePos = 0;
       catching = 0;
       onReturn = 0;
+      onReturnStackSize = 0;
       lineOffset = 0;
       maxFrameSize = frameSize = baseFrameSize = sizeof(void *) + inFrameSize;
    }
@@ -334,7 +336,7 @@ public:
       uncaught.setSize(0);
 
       if (onReturn)
-         onReturn(this);
+         onReturn(this, onReturnStackSize);
 
       sljit_emit_return(compiler, SLJIT_UNUSED, SLJIT_UNUSED, 0);
       CppiaFunc func = (CppiaFunc)sljit_generate_code(compiler);
@@ -407,16 +409,17 @@ public:
    {
    }
 
-   void setOnReturn( OnReturnFunc inFunc )
+   void setOnReturn( OnReturnFunc inFunc, int inStackSize )
    {
       onReturn = inFunc;
+      onReturnStackSize = inStackSize;
    }
 
    // Scriptable?
    void addReturn()
    {
       if (onReturn)
-         onReturn(this);
+         onReturn(this, onReturnStackSize);
 
       if (compiler)
          sljit_emit_return(compiler, SLJIT_UNUSED, SLJIT_UNUSED, 0);

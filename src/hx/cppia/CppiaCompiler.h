@@ -293,7 +293,7 @@ typedef sljit_label *LabelId;
 typedef sljit_jump  *JumpId;
 
 typedef void (SLJIT_CALL *CppiaFunc)(CppiaCtx *inCtx);
-typedef void (*OnReturnFunc)(class CppiaCompiler *inCompiler);
+typedef void (*OnReturnFunc)(class CppiaCompiler *inCompiler, int stackSize);
 
 typedef std::vector<JumpId> ThrowList;
 
@@ -364,7 +364,7 @@ public:
    virtual int  getBaseSize() = 0;
    virtual void setLineOffset( int inOffset ) = 0;
    virtual int  getLineOffset( ) = 0;
-   virtual void setOnReturn( OnReturnFunc inFunc ) = 0;
+   virtual void setOnReturn( OnReturnFunc inFunc, int inStackSize ) = 0;
    virtual void addReturn() = 0;
 
    virtual void trace(const char *inValue) = 0;

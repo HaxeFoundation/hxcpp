@@ -626,9 +626,9 @@ static void SLJIT_CALL popFrame(StackContext *inCtx, StackFrame *inFrame)
    inCtx->popFrame(inFrame);
 }
 
-static void onReturn( CppiaCompiler *inCompiler )
+static void onReturn( CppiaCompiler *inCompiler, int stackSize )
 {
-   inCompiler->add(sJitArg1.as(jtPointer), sJitFrame.as(jtPointer), inCompiler->getBaseSize()-sizeof(StackFrame) );
+   inCompiler->add(sJitArg1.as(jtPointer), sJitFrame.as(jtPointer), stackSize );
    inCompiler->callNative( (void *)popFrame, sJitCtx.as(jtPointer), sJitArg1.as(jtPointer));
 }
 #endif
@@ -652,7 +652,7 @@ void ScriptCallable::compile()
       compiler->add(sJitArg1.as(jtPointer), sJitFrame.as(jtPointer), stackSize );
       compiler->callNative( (void *)pushFrame, sJitCtx.as(jtPointer), sJitArg1.as(jtPointer) );
 
-      compiler->setOnReturn( onReturn );
+      compiler->setOnReturn( onReturn, stackSize );
          #ifdef HXCPP_STACK_LINE
          compiler->setLineOffset( stackSize + offsetof(StackFrame,lineNumber) ); 
          #endif
