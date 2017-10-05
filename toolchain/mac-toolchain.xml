@@ -2,6 +2,8 @@
 <!-- MACOS TOOLS -------------------------------------------------->
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
+
 <include name="toolchain/gcc-toolchain.xml"/>
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.9" if="HXCPP_CPP11" unless="MACOSX_DEPLOYMENT_TARGET"/>
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.7" if="OBJC_ARC" unless="MACOSX_DEPLOYMENT_TARGET" />
@@ -9,14 +11,16 @@
 <path name="${DEVELOPER_DIR}/usr/bin" />
 <set name="HXCPP_LTO_THIN" value="1" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
 
+<set name="STDLIBCPP" value="1" unless="HXCPP_GCC || HXCPP_CPP11" />
+
 
 <compiler id="darwin" exe="g++" if="macos">
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-std=c++11" if="HXCPP_CPP11" unless="HXCPP_GCC"/>
-  <flag value="-stdlib=libc++" if="HXCPP_CPP11" unless="HXCPP_GCC" />
-  <flag value="-stdlib=libstdc++" unless="HXCPP_GCC || HXCPP_CPP11" />
+  <flag value="-stdlib=libc++" unless="STDLIBCPP" />
+  <flag value="-stdlib=libstdc++" if="STDLIBCPP" />
   <cppflag value="-frtti"/>
   <pchflag value="-x" />
   <pchflag value="c++-header" />
@@ -53,8 +57,8 @@
   <fromfile value="" if="GCC_OLD" />
   <flag value="-Wl,-bundle,-bundle_loader,${dll_import_link}" if="dll_import_link" />
   <flag value="-Wl,-cache_path_lto,/tmp" if="HXCPP_LTO_THIN" unless="debug"/>
-  <flag value="-stdlib=libc++" if="HXCPP_CPP11" unless="HXCPP_GCC" />
-  <flag value="-stdlib=libstdc++" unless="HXCPP_GCC || HXCPP_CPP11" />
+  <flag value="-stdlib=libc++" unless="STDLIBCPP" />
+  <flag value="-stdlib=libstdc++" if="STDLIBCPP" />
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
@@ -75,7 +79,7 @@
   <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
   <flag value="-Wl,-cache_path_lto,/tmp" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
   <fromfile value="" if="GCC_OLD" />
-  <flag value="-stdlib=libstdc++" unless="HXCPP_GCC || HXCPP_CPP11" />
+  <flag value="-stdlib=libstdc++" if="STDLIBCPP" />
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>

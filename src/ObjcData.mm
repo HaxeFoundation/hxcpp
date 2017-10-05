@@ -173,6 +173,7 @@ Dynamic _hx_objc_to_dynamic(id inValue)
 
 
 namespace hx {
+
 extern hx::Class __ObjcClass;
 
 class ObjcData : public hx::Object
@@ -186,12 +187,12 @@ public:
       #ifndef OBJC_ARC
       [ inValue retain ];
       #endif
-		mFinalizer = new hx::InternalFinalizer(this,clean);
+      mFinalizer = new hx::InternalFinalizer(this,clean);
    };
 
-	static void clean(hx::Object *inObj)
-	{
-		ObjcData *m = dynamic_cast<ObjcData *>(inObj);
+   static void clean(hx::Object *inObj)
+   {
+      ObjcData *m = dynamic_cast<ObjcData *>(inObj);
       if (m)
       {
          #ifndef OBJC_ARC
@@ -200,15 +201,14 @@ public:
          m->mValue = nil;
          #endif
       }
-	}
-
-	void __Mark(hx::MarkContext *__inCtx) { mFinalizer->Mark(); }
+   }
 
    #ifdef HXCPP_VISIT_ALLOCS
-	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+   void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
    #endif
 
-   hx::Class __GetClass() const { return __ObjcClass; }
+   hx::Class __GetClass() const { return hx::__ObjcClass; }
+
    #if (HXCPP_API_LEVEL<331)
    bool __Is(hx::Object *inClass) const { return dynamic_cast< ObjcData *>(inClass); }
    #endif

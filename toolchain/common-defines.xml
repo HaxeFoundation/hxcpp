@@ -31,4 +31,6 @@
  <flag value='-DHXCPP_API_LEVEL=0' unless="hxcpp_api_level"  tag="haxe"/>
  <flag value='-DHXCPP_OBJC' if="objc"  tag="haxe"/>
  <flag value='-DHXCPP_GC_DEBUG_LEVEL=${HXCPP_GC_DEBUG_LEVEL}' if="HXCPP_GC_DEBUG_LEVEL" tag="gc" />
+ <mmflag value='-Wno-invalid-offsetof' />
+ <mmflag value='-Wno-format-security' />
 </xml>
