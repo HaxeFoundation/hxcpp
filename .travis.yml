@@ -10,11 +10,27 @@ matrix:
   include:
     - os: linux
       dist: trusty
+      env:
+        - ARCH=32
       install:
         - bash tools/haxe/build_linux.sh
         - travis_retry sudo apt-get install gcc-multilib g++-multilib -y;
+    - os: linux
+      dist: trusty
+      env:
+        - ARCH=64
+      install:
+        - bash tools/haxe/build_linux.sh
     - os: osx
       osx_image: xcode8.3
+      env:
+        - ARCH=32
+      install:
+        - bash tools/haxe/build_osx.sh;
+    - os: osx
+      osx_image: xcode8.3
+      env:
+        - ARCH=64
       install:
         - bash tools/haxe/build_osx.sh;
 
@@ -29,11 +45,9 @@ script:
   - haxe --run RunTests cffi
   - haxe --run RunTests haxe
   - haxe --run RunTests telemetry
-  - haxe --run RunTests std32
-  - haxe --run RunTests std64
+  - haxe --run RunTests std${ARCH}
   - haxe --run RunTests debugger
   - haxe --run RunTests native
   - cd ~/haxe/tests/unit
-  - haxe compile-cpp.hxml -D HXCPP_M32 && ./bin/cpp/TestMain-debug && rm -rf bin/cpp
-  - haxe compile-cpp.hxml -D HXCPP_M64 && ./bin/cpp/TestMain-debug
+  - haxe compile-cpp.hxml -D HXCPP_M${ARCH} && ./bin/cpp/TestMain-debug
   - haxe compile-cppia.hxml -debug && haxelib run hxcpp ./bin/unit.cppia
