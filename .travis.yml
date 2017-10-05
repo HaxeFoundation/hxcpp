@@ -1,25 +1,22 @@
 language: cpp
 
-os:
-  - linux
-  - osx
-
 sudo: required
-dist: trusty
-
-
-install:
-  # Setup haxe
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-      bash tools/haxe/build_linux.sh &&
-      travis_retry sudo apt-get install gcc-multilib g++-multilib -y;
-    fi
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      bash tools/haxe/build_osx.sh;
-    fi
 
 env:
-  - HXCPP_COMPILE_CACHE=~/hxcache
+  global:
+    - HXCPP_COMPILE_CACHE=~/hxcache
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      install:
+        - bash tools/haxe/build_linux.sh
+        - travis_retry sudo apt-get install gcc-multilib g++-multilib -y;
+    - os: osx
+      osx_image: xcode8.3
+      install:
+        - bash tools/haxe/build_osx.sh;
 
 script:
   - cd ${TRAVIS_BUILD_DIR}/tools/run
