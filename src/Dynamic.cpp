@@ -404,7 +404,8 @@ Dynamic::Dynamic(double inVal)
       if (!mPtr)
          mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
    }
-   mPtr = (hx::Object *)new DoubleData(inVal);
+   else
+      mPtr = (hx::Object *)new DoubleData(inVal);
 }
 
 
@@ -417,7 +418,8 @@ Dynamic::Dynamic(cpp::Int64 inVal)
       if (!mPtr)
          mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
    }
-   mPtr = (hx::Object *)new Int64Data(inVal);
+   else
+      mPtr = (hx::Object *)new Int64Data(inVal);
 }
 
 
@@ -430,7 +432,8 @@ Dynamic::Dynamic(cpp::UInt64 inVal)
       if (!mPtr)
          mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
    }
-   mPtr = (hx::Object *)new Int64Data(inVal);
+   else
+      mPtr = (hx::Object *)new Int64Data(inVal);
 }
 
 
