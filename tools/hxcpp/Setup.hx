@@ -230,9 +230,9 @@ class Setup
       {
          // Run it in hxcpp directory so it does not lock the build directory after build finishes
          Sys.setCwd(BuildTool.HXCPP);
-         var proc = new Process("mspdbsrv.exe",["-start"]);
+         new Process("mspdbsrv.exe",["-start"]);
          Tools.addOnExitHook(function(_) {
-           proc.kill();
+           Sys.command('taskkill', '/F /IM mspdbsrv.exe /T'.split(' '));
          });
       }
       catch(e:Dynamic)

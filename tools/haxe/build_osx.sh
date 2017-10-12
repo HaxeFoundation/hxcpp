@@ -3,6 +3,7 @@
 
   git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe --depth 1
 
+  brew update
   brew tap Homebrew/bundle
   brew bundle --file=~/haxe/tests/Brewfile
 
