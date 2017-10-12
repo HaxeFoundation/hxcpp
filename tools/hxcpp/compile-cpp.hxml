@@ -1,0 +1,6 @@
+-cpp cpp
+-main BuildTool
+-D HXCPP_STACK_TRACE
+-D HXCPP_STACK_LINE
+-D HXCPP_NEKO_BUILDTOOL=1
+-D destination=../../../bin/{BINDIR}/BuildTool{EXESUFFIX}

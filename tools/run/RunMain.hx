@@ -1,3 +1,4 @@
+import sys.FileSystem;
 
 class RunMain
 {
@@ -90,6 +91,36 @@ class RunMain
    {
       if (!sys.FileSystem.exists("./hxcpp.n"))
          return false;
+
+      if (Sys.args().indexOf("-DHXCPP_NEKO_BUILDTOOL=1")<0)
+      {
+         var os = Sys.systemName();
+         var isWindows = (new EReg("window","i")).match(os);
+         var isMac = (new EReg("mac","i")).match(os);
+         var isLinux = (new EReg("linux","i")).match(os);
+         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
+         if (binDir!=null)
+         {
+            var compiled = 'bin/$binDir/BuildTool';
+            if (isWindows)
+               compiled += ".exe";
+            if (FileSystem.exists(compiled))
+            {
+               var dotN = FileSystem.stat("hxcpp.n").mtime.getTime();
+               var dotExe= FileSystem.stat(compiled).mtime.getTime();
+               if (dotExe<dotN)
+               {
+                  var path = Sys.getCwd() + compiled;
+                  Sys.println('Warning - $path file is out-of-date.  Please delete or rebuild.');
+               }
+               else
+               {
+                  Sys.exit( Sys.command( compiled, Sys.args() ) );
+               }
+            }
+        }
+      }
+
       neko.vm.Loader.local().loadModule("./hxcpp.n");
       return true;
    }

@@ -31,8 +31,6 @@ Defines affecting how the code is compiled.  These can be on the command line wh
 | *HXCPP_GC_DYNAMIC_SIZE* | Monitor GC times and expand memory working space if required |
 | *HXCPP_GC_BIG_BLOCKS*   | Allow working memory greater than 1 Gig |
 | *HXCPP_GC_DEBUG_LEVEL*  | Number 1-4 indicating additional debugging in GC |
-| *HXCPP_VERBOSE*         | Print extra output from build tool. |
-| *HXCPP_NO_COLOR*        | Do not add colour-codes to tool output |
 | *HXCPP_DEBUG_LINK*      | Add symbols to final binary, even in release mode. |
 | *HXCPP_STACK_TRACE*     | Have valid function-level stack traces, even in release mode. |
 | *HXCPP_STACK_LINE*      | Include line information in stack traces, even in release mode. |
@@ -43,6 +41,15 @@ Defines affecting how the code is compiled.  These can be on the command line wh
 | *exe_link*              | Generate executable file (rathen than dynamic library on android) |
 | *static_link*           | Generate static library |
 | *dll_link*              | Generate dynamic library |
+
+Other defines:
+| Define                  | Meaning            |
+|-------------------------|--------------------|
+| *HXCPP_VERBOSE*         | Print extra output from build tool. |
+| *HXCPP_TIMES*           | Show some basic profiling information |
+| *HXCPP_NEKO_BUILDTOOL*  | Force use of hxcpp.n, rather than compiled BuildTool.exe
+| *HXCPP_NO_COLOR*        | Do not add colour-codes to tool output |
+
 
 Defines affecting target architecture.
 

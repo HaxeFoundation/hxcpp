@@ -168,7 +168,7 @@ class FileGroup
          {
             // Only effects linking, not compiling
          }
-         else if (name=="hxcpp_verbose" || name=="hxcpp_silent" || name=="hxcpp_quiet" || name=="hxcpp_times" )
+         else if (name=="hxcpp_verbose" || name=="hxcpp_silent" || name=="hxcpp_quiet" || name=="hxcpp_times" || name=="hxcpp_neko_buildtool" )
          {
             // Does not affect build
          }
