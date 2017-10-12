@@ -168,7 +168,7 @@ class FileGroup
          {
             // Only effects linking, not compiling
          }
-         else if (name=="hxcpp_verbose" || name=="hxcpp_silent" || name=="hxcpp_quiet" )
+         else if (name=="hxcpp_verbose" || name=="hxcpp_silent" || name=="hxcpp_quiet" || name=="hxcpp_times" )
          {
             // Does not affect build
          }
@@ -246,7 +246,7 @@ class FileGroup
       {
          mDependHash = "";
          for(depend in mCacheDepends)
-            mDependHash += File.getFileHash(depend);
+            mDependHash += File.getFileHash(depend,null);
          mDependHash = haxe.crypto.Md5.encode(mDependHash);
       }
    }

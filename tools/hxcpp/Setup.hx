@@ -250,6 +250,7 @@ class Setup
       if (ioDefines.exists("HXCPP_CLEAN_ONLY"))
          return;
 
+      Profile.push("setup " + inWhat);
       if (inWhat=="androidNdk")
       {
          setupAndroidNdk(ioDefines);
@@ -283,6 +284,7 @@ class Setup
          Log.error('Unknown setup feature "$inWhat"');
          //throw 'Unknown setup feature $inWhat';
       }
+      Profile.pop();
    }
 
    static public function setupAndroidNdk(defines:Map<String,String>)

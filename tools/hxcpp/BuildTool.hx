@@ -57,6 +57,7 @@ class BuildTool
    public static var os="";
    public static var sAllowNumProcs = true;
    public static var sCompileThreadCount = 1;
+   public static var sThreadPool:ThreadPool;
    public static var sReportedThreads = -1;
    public static var HXCPP = "";
    public static var is64 = false;
@@ -75,6 +76,8 @@ class BuildTool
 
    public static var exitOnThreadError = false;
    public static var threadExitCode = 0;
+
+
 
    public function new(inJob:String,inDefines:Hash<String>,inTargets:Array<String>,
         inIncludePath:Array<String>, inDirtyList:Array<String> )
@@ -121,6 +124,7 @@ class BuildTool
          mDefines.remove(m32 ? "HXCPP_M64" : "HXCPP_M32");
       }
 
+      Profile.setEntry("parse xml"); 
 
       include("toolchain/setup.xml");
 
@@ -195,6 +199,8 @@ class BuildTool
 
       var cached = CompileCache.init(mDefines);
 
+      Profile.setEntry("setup cache"); 
+
       if (inJob=="cache")
       {
          if (!cached)
@@ -240,12 +246,18 @@ class BuildTool
       if (Log.verbose) Log.println ("");
 
       if (inTargets.remove("clear"))
+      {
+         Profile.setEntry("clear"); 
          for(target in mTargets.keys())
             cleanTarget(target,false);
+       }
 
       if (inTargets.remove("clean"))
+      {
+         Profile.setEntry("clean"); 
          for(target in mTargets.keys())
             cleanTarget(target,true);
+      }
 
       if (destination!=null && inTargets.length!=1)
       {
@@ -253,6 +265,7 @@ class BuildTool
          destination = null;
       }
 
+      Profile.setEntry("build"); 
       for(target in inTargets)
          buildTarget(target,destination);
 
@@ -313,6 +326,9 @@ class BuildTool
             Log.v("\x1b[33;1mUsing compile threads: " + sCompileThreadCount + "\x1b[0m");
          }
       }
+      if (sCompileThreadCount>1)
+         sThreadPool = new ThreadPool(sCompileThreadCount);
+
       return sCompileThreadCount;
    }
 
@@ -343,7 +359,7 @@ class BuildTool
       for(sub in target.mSubTargets)
          buildTarget(sub,null);
 
-      var threads = BuildTool.sCompileThreadCount;
+      var threadPool = BuildTool.sThreadPool;
 
 
       PathManager.resetDirectoryCache();
@@ -390,10 +406,38 @@ class BuildTool
 
          var inList = new Array<Bool>();
          var groupIsOutOfDate = mDirtyList.indexOf(group.mId)>=0 || mDirtyList.indexOf("all")>=0;
+
+         if (useCache)
+         {
+            Profile.push("compute hash");
+            if (useCache && group.mFiles.length>1 && threadPool!=null)
+            {
+               Log.initMultiThreaded();
+               threadPool.setArrayCount( group.mFiles.length );
+               threadPool.runJob( function(tid) {
+                  var localCache = new Map<String,String>();
+
+                  while(threadExitCode==0)
+                  {
+                     var id = sThreadPool.getNextIndex();
+                     if (id<0)
+                        break;
+
+                     group.mFiles[id].computeDependHash(localCache);
+                  }
+               } );
+            }
+            else
+            {
+               for(file in group.mFiles)
+                  file.computeDependHash(null);
+            }
+            Profile.pop();
+         }
+
+
          for(file in group.mFiles)
          {
-           if (useCache)
-               file.computeDependHash();
             var obj_name = mCompiler.getCachedObjName(file);
             groupObjs.push(obj_name);
             var outOfDate = groupIsOutOfDate || file.isOutOfDate(obj_name);
@@ -406,6 +450,8 @@ class BuildTool
          var pchStamp:Null<Float> = null;
          if (group.mPrecompiledHeader!="")
          {
+            Profile.push("pch");
+
             var obj = mCompiler.precompile(group,cached || to_be_compiled.length==0);
             if (obj!=null)
             {
@@ -433,6 +479,7 @@ class BuildTool
                }
                */
             }
+            Profile.pop();
          }
 
          if (group.mConfig!="")
@@ -520,60 +567,35 @@ class BuildTool
             }
          } : null;
 
-         if (threads<2)
+         Profile.push("compile");
+         if (threadPool==null)
          {
             for(file in to_be_compiled)
                mCompiler.compile(file,-1,groupHeader,pchStamp);
          }
          else
          {
-            var mutex = new Mutex();
             Log.initMultiThreaded();
-            var main_thread = Thread.current();
+            var mutex = threadPool.mutex;
             var compiler = mCompiler;
-            for(t in 0...threads)
-            {
-               Thread.create(function()
-               {
-                  try
-                  {
+            threadPool.setArrayCount(to_be_compiled.length);
+            threadPool.runJob( function(threadId:Int) {
                   while(threadExitCode==0)
                   {
-                     mutex.acquire();
-                     if (to_be_compiled.length==0)
-                     {
-                        mutex.release();
+                     var index = threadPool.getNextIndex();
+                     if (index<0)
                         break;
-                     }
-                     var file = to_be_compiled.shift();
-                     mutex.release();
-                     compiler.compile(file,t,groupHeader,pchStamp);
-                  }
-                  }
-                  catch (error:Dynamic)
-                  {
-                     if (threadExitCode!=0)
-                        setThreadError(-1);
-                     else
-                        Log.warn("Error in compile thread: " + error);
-                  }
-                  main_thread.sendMessage("Done");
-               });
-            }
+                     var file = to_be_compiled[index];
 
-            // Wait for theads to finish...
-            for(t in 0...threads)
-            {
-               Thread.readMessage(true);
-            }
-
-            // Already printed the error from the thread, just need to exit
-            if (threadExitCode!=0)
-               Tools.exit(threadExitCode);
+                     compiler.compile(file,threadId,groupHeader,pchStamp);
+                  }
+            });
          }
+         Profile.pop();
 
          if (CompileCache.hasCache && group.mAsLibrary && mLinkers.exists("static_link"))
          {
+            Profile.push("link libs");
             var linker = mLinkers.get("static_link");
             var targetDir = mCompiler.mObjDir;
             if (useCache)
@@ -589,6 +611,7 @@ class BuildTool
             // Linux the libraries must be added again if the references were not resolved the firs time
             if (group.mAddTwice)
                target.mLibs.push(linker.mLastOutName);
+            Profile.pop();
          }
          else if (nvcc)
          {
@@ -608,6 +631,7 @@ class BuildTool
       switch(target.mTool)
       {
          case "linker":
+            Profile.push("linker");
             if (mPrelinkers.exists(target.mToolID))
             {
                var result = mPrelinkers.get(target.mToolID).prelink(target,objs, mCompiler);
@@ -661,11 +685,17 @@ class BuildTool
                   CopyFile.copyFile(output, inDestination, false, Overwrite.ALWAYS, chmod);
                }
             }
+            Profile.pop();
       }
 
-      for(copyFile in mCopyFiles)
-         if (copyFile.toolId==null || copyFile.toolId==target.mToolID)
-            copyFile.copy(target.mOutputDir);
+      if (mCopyFiles.length>0)
+      {
+         Profile.push("copy files");
+         for(copyFile in mCopyFiles)
+            if (copyFile.toolId==null || copyFile.toolId==target.mToolID)
+               copyFile.copy(target.mOutputDir);
+         Profile.pop();
+      }
 
       if (restoreDir!="")
          Sys.setCwd(restoreDir);
@@ -1289,6 +1319,8 @@ class BuildTool
       var makefile:String="";
       var optionsTxt = "Options.txt";
 
+      Profile.start();
+
       include_path.push(".");
 
       var args = Sys.args();
@@ -1473,6 +1505,9 @@ class BuildTool
          a++;
       }
 
+      if (defines.exists("HXCPP_TIMES"))
+         Profile.enable();
+
       if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
          Log.colorSupported = false;
       Log.verbose = Log.verbose || defines.exists("HXCPP_VERBOSE");
@@ -1511,6 +1546,7 @@ class BuildTool
            }
       }
 
+      Profile.setEntry("setup"); 
       Setup.initHXCPPConfig(defines);
 
       if (HXCPP=="" && env.exists("HXCPP"))
@@ -2116,7 +2152,9 @@ class BuildTool
          var make_contents = sys.io.File.getContent(full_name);
          var xml_slow = Xml.parse(make_contents);
 
+         Profile.push( haxe.io.Path.withoutDirectory(inName) );
          parseXML(new Fast(xml_slow.firstElement()),inSection, forceRelative);
+         Profile.pop();
 
          mCurrentIncludeFile = oldInclude;
          popFile();

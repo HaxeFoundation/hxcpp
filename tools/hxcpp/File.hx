@@ -1,5 +1,11 @@
 import sys.FileSystem;
 
+#if cpp
+import cpp.vm.Mutex;
+#else
+import neko.vm.Mutex;
+#end
+
 class File
 {
    static var mFileHashes = new Map<String,String>();
@@ -11,7 +17,8 @@ class File
    public var mGroup:FileGroup;
    public var mTags:String;
    public var mFilterOut:String;
-   
+   static public var mDependMutex = new Mutex();
+
    public function new(inName:String, inGroup:FileGroup)
    {
       mName = inName;
@@ -45,23 +52,49 @@ class File
       return mTags=inTags;
    }
 
-   public function computeDependHash()
+   public function computeDependHash(localCache:Map<String,String>)
    {
       mDependHash = "";
       for(depend in mDepends)
-         mDependHash += getFileHash(depend);
+         mDependHash += getFileHash(depend,localCache);
       mDependHash = haxe.crypto.Md5.encode(mDependHash);
    }
 
-   public static function getFileHash(inName:String)
+   public static function getFileHash(inName:String,localCache:Map<String,String>)
    {
-      if (mFileHashes.exists(inName))
-         return mFileHashes.get(inName);
+      if (localCache==null)
+      {
+         var result = mFileHashes.get(inName);
+         if (result==null)
+         {
+            var content = sys.io.File.getContent(inName);
+            result = haxe.crypto.Md5.encode(content);
+            mFileHashes.set(inName,result);
+         }
+         return result;
+      }
+      else
+      {
+         var result = localCache.get(inName);
+         if (result!=null)
+            return result;
 
-      var content = sys.io.File.getContent(inName);
-      var md5 = haxe.crypto.Md5.encode(content);
-      mFileHashes.set(inName,md5);
-      return md5;
+         mDependMutex.acquire();
+         result = mFileHashes.get(inName);
+         mDependMutex.release();
+
+         if (result==null)
+         {
+            var content = sys.io.File.getContent(inName);
+            result = haxe.crypto.Md5.encode(content);
+            mDependMutex.acquire();
+            mFileHashes.set(inName,result);
+            mDependMutex.release();
+         }
+
+         localCache.set(inName,result);
+         return result;
+     }
    }
 
    public function isOutOfDate(inObj:String)
