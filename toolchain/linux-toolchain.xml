@@ -26,6 +26,8 @@
    </section>
 </section>
 
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
+
 <include name="toolchain/gcc-toolchain.xml"/>
 <set name="noM32" value="1" if="HXCPP_NO_M32" />
 <set name="noM32" value="1" if="HXCPP_M64" />
@@ -36,6 +38,7 @@
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
+  <cppflag value="-std=c++11" if="HXCPP_CPP11" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fpic"/>
@@ -48,7 +51,7 @@
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <include name="toolchain/common-defines.xml" />
   <flag value="-m32" unless="noM32"/>
-  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64" unless="noM64" />
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/linux${OBJEXT}/"/>
@@ -63,7 +66,7 @@
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-m32" unless="noM32"/>
-  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64" unless="noM64" />
   <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
@@ -79,7 +82,7 @@
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
   <flag value="-m32" unless="noM32"/>
-  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64" unless="noM64" />
   <lib name="-ldl"/>
   <ext value=""/>
   <outflag value="-o "/>

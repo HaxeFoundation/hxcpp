@@ -88,7 +88,7 @@ class ThreadPool
          Thread.readMessage(true);
 
       // Already printed the error from the thread, just need to exit
-      if (BuildTool.threadExitCode!=0)
+      if (job!=null && BuildTool.threadExitCode!=0)
          Tools.exit(BuildTool.threadExitCode);
    }
 

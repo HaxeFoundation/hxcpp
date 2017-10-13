@@ -61,6 +61,8 @@ Defines affecting target architecture.
 | *HXCPP_ARM64*           | Compile arm-based devices for 64 bits |
 | *HXCPP_ARMV7*           | Compile arm-based devices for armv7 |
 | *HXCPP_ARMV7S*          | Compile arm-based devices for armv7s |
+| *HXCPP_LINUX_ARMV7*     | Run on a linux ARMv7 device |
+| *HXCPP_LINUX_ARM64*     | Run on a linux ARM64 device |
 | *winrt*                 | Compile for windowsRt/windows UWP |
 | *android*               | Compile for android |
 | *PLATFORM*              | Specify the android platform for NDK compilation |

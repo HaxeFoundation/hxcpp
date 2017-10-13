@@ -326,7 +326,7 @@ class BuildTool
             Log.v("\x1b[33;1mUsing compile threads: " + sCompileThreadCount + "\x1b[0m");
          }
       }
-      if (sCompileThreadCount>1)
+      if (sCompileThreadCount>1 && sThreadPool==null)
          sThreadPool = new ThreadPool(sCompileThreadCount);
 
       return sCompileThreadCount;
@@ -1856,6 +1856,21 @@ class BuildTool
          {
             defines.set("toolchain","linux");
             defines.set("linux","linux");
+
+            if (defines.exists("HXCPP_LINUX_ARMV7"))
+            {
+               defines.set("noM32","1");
+               defines.set("noM64","1");
+               defines.set("HXCPP_ARMV7","1");
+               m64 = false;
+            }
+            else if (defines.exists("HXCPP_LINUX_ARM64"))
+            {
+               defines.set("noM32","1");
+               defines.set("noM64","1");
+               defines.set("HXCPP_ARM64","1");
+               m64 = true;
+            }
             defines.set("BINDIR", m64 ? "Linux64":"Linux");
          }
       }
