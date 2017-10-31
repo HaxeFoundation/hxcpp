@@ -3492,21 +3492,33 @@ struct MemReference : public CppiaExpr
      if (REFMODE==locAbsolute)
      {
         compiler->move( sJitTemp0,  JitVal( (void *)pointer ) );
-        compiler->convert( sJitTemp0.star(jtPointer,0), getType(),inDest, destType, isBoolInt() );
+        if (isBoolInt())
+        {
+           compiler->move( sJitTemp0, sJitTemp0.star(jtByte,0) );
+           compiler->convert( sJitTemp0,getType(),inDest, destType, true );
+        }
+        else
+           compiler->convert( sJitTemp0.star(jtPointer,0), getType(),inDest, destType );
      }
      else if (REFMODE==locObj)
      {
         object->genCode( compiler, sJitTemp2, etObject );
-        compiler->convert( sJitTemp2.star(jtPointer,offset) ,getType(),inDest, destType, isBoolInt() );
+        if (isBoolInt())
+        {
+           compiler->move( sJitTemp2, sJitTemp2.star(jtByte,offset) );
+           compiler->convert( sJitTemp2,getType(),inDest, destType, true );
+        }
+        else
+           compiler->convert( sJitTemp2.star(jtPointer,offset) ,getType(),inDest, destType );
      }
      else if (REFMODE==locThis)
      {
-        JitThisPos target(offset, getJitType(getType()) );
+        JitThisPos target(offset, isBoolInt() ? jtByte : getJitType(getType()) );
         compiler->convert( target,getType(),inDest, destType, isBoolInt() );
      }
      else
      {
-        JitFramePos target(offset, getJitType(getType()));
+        JitFramePos target(offset, isBoolInt() ? jtByte : getJitType(getType()));
         compiler->convert( target,getType(),inDest, destType, isBoolInt() );
      }
    }
