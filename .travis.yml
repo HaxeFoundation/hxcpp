@@ -22,13 +22,13 @@ matrix:
       install:
         - bash tools/haxe/build_linux.sh
     - os: osx
-      osx_image: xcode8.3
+      osx_image: xcode9.1
       env:
         - ARCH=32
       install:
         - bash tools/haxe/build_osx.sh;
     - os: osx
-      osx_image: xcode8.3
+      osx_image: xcode9.1
       env:
         - ARCH=64
       install:
