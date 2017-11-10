@@ -1,5 +1,6 @@
 #include <hxcpp.h>
 #include <vector>
+#include <cpp/Pointer.h>
 
 #ifdef HXCPP_TELEMETRY
 extern void __hxt_new_array(void* obj, int size);
@@ -601,6 +602,9 @@ hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp
    if (inString==HX_CSTRING("blit")) return blit_dyn();
    if (inString==HX_CSTRING("zero")) return zero_dyn();
    if (inString==HX_CSTRING("memcmp")) return memcmp_dyn();
+   if (inString==HX_CSTRING("_hx_storeType")) return (int)getStoreType();
+   if (inString==HX_CSTRING("_hx_elementSize")) return (int)GetElementSize();
+   if (inString==HX_CSTRING("_hx_pointer")) return cpp::CreateDynamicPointer((void *)mBase);
    return null();
 }
 
@@ -819,6 +823,27 @@ hx::Val VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inC
    if (inString==HX_CSTRING("blit")) return blit_dyn();
    if (inString==HX_CSTRING("zero")) return zero_dyn();
    if (inString==HX_CSTRING("memcmp")) return memcmp_dyn();
+
+   if (inString==HX_CSTRING("_hx_storeType"))
+   {
+      if (!base)
+         return -1;
+      return (int)base->getStoreType();
+   }
+   if (inString==HX_CSTRING("_hx_elementSize"))
+   {
+      if (!base)
+         return 0;
+      return (int)base->GetElementSize();
+   }
+   if (inString==HX_CSTRING("_hx_pointer"))
+   {
+      if (!base)
+         return cpp::CreateDynamicPointer((void *)0);
+      else
+         return cpp::CreateDynamicPointer((void *)base->GetBase());
+   }
+
 
    return null();
 

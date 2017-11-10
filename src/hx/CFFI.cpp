@@ -56,6 +56,7 @@ public:
 
    void __Mark(hx::MarkContext *__inCtx)
    {
+      HX_MARK_MEMBER(_hxcpp_toString);
       if (mMarkSize>=sizeof(void *) && mHandle)
       {
          hx::MarkConservative((int *)mHandle, ((int *)mHandle) + (mMarkSize/sizeof(int)), __inCtx );
@@ -65,6 +66,7 @@ public:
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
    {
+      HX_VISIT_MEMBER(_hxcpp_toString);
       if (mFinalizer)
          mFinalizer->Visit(__inCtx);
    }
@@ -94,6 +96,39 @@ public:
       mHandle = 0;
    }
 
+   String toString()
+   {
+      if (_hxcpp_toString.mPtr)
+         return _hxcpp_toString( Dynamic(this) );
+
+      char buffer[10];
+      sprintf(buffer,"0x%p", mHandle);
+
+      return HX_CSTRING("Abstract(") +
+             __hxcpp_get_kind(this) +
+             HX_CSTRING(":") +
+             String(buffer,strlen(buffer)).dup() +
+             HX_CSTRING(")");
+   }
+
+   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp)
+   {
+      if (inString=="_hxcpp_toString") return _hxcpp_toString;
+      return hx::Object::__Field(inString, inCallProp);
+   }
+
+   hx::Val __SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+   {
+      if (inName==HX_CSTRING("_hxcpp_toString"))
+      {
+         _hxcpp_toString = inValue;
+         return inValue;
+      }
+      return hx::Object::__SetField(inName, inValue,inCallProp);
+   }
+
+
+   Dynamic _hxcpp_toString;
    hx::InternalFinalizer *mFinalizer;
    void *mHandle;
    int mType;
