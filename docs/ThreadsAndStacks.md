@@ -6,9 +6,9 @@ Threads And Stacks
 Hxcpp uses conservative stop-the-world GC, where the threads need to co-operate.
  - Threads must not change GC pointers in the collection phase
  - The thread stacks/registers must be scanned for GC pointers
- - Threads must not block without letting the GC system know not to wait for them
-   + call hx::GCEnterBlocking() / gc_enter_blocking() before potentially blocking
-   + call hx::GCExitBlocking() / gc_exit_blocking() before making more GC calls
+ - Threads must not block without letting the GC system know not to wait for them, otherwise GC blocks till end of block 
+   + call hx::GCEnterBlocking() / gc_enter_blocking() / (cpp.vm.Gc.enterGCFreeZone() from Haxe) before potentially blocking system call (fs,network, etc)
+   + call hx::GCExitBlocking() / gc_exit_blocking() / (cpp.vm.Gc.exitGCFreeZone() from Haxe) before making more GC calls
    + Might need to pre-allocate buffers
    + Don't forget the exit blocking on error condition
 
