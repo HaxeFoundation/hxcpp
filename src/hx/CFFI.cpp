@@ -113,7 +113,8 @@ public:
 
    hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp)
    {
-      if (inString=="_hxcpp_toString") return _hxcpp_toString;
+      if (inString==HX_CSTRING("_hxcpp_toString")) return _hxcpp_toString;
+      if (inString==HX_CSTRING("_hxcpp_kind")) return __hxcpp_get_kind(this);
       return hx::Object::__Field(inString, inCallProp);
    }
 
