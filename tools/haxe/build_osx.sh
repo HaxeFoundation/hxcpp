@@ -8,9 +8,11 @@
   brew bundle --file=~/haxe/tests/Brewfile
 
   export OPAMYES=1
-  opam init
+  opam init --compiler=4.05.0
   eval `opam config env`
-  opam install camlp4 sedlex ocamlfind camlzip xml-light extlib rope ptmap
+  opam update
+  opam pin add haxe ~/haxe --no-action
+  opam install haxe --deps-only
 
   brew install neko --HEAD;
 
