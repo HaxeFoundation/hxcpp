@@ -14,8 +14,8 @@ Defines affecting how the code is generated.  These need to be in the command li
 | *file_extension*        | Set the extension (without the dot) of generated files.  eg "-D file_extension=mm" for objc++ code  |
 | *force_native_property* | Make dynamic access of fields call property getters/setters where appropriate |
 | *include_prefix*        | Place all generated include files in a sub-directory, eg "-D include_prefix=hxinc".  Useful for avoiding name clashes |
-| *no_compilation*        | Generate the code, but do not compile it |
-| *no_debug*              | Do not generate debug macros in code |
+| *no-compilation*        | Generate the code, but do not compile it |
+| *no-debug*              | Do not generate debug macros in code |
 | *nocppiaast*            | Use legacy cppia generation instead of new more recent changes |
 | *objc*                  | Generate objective-c++ classes |
 | *scriptable*            | Enable extra runtime information required for scripting |
