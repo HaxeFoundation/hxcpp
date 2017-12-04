@@ -11,7 +11,6 @@
   opam init
   eval `opam config env`
   opam update
-  opam pin add ptmap https://github.com/andyli/ptmap.git#ocaml406 --no-action # https://github.com/backtracking/ptmap/pull/8
   opam pin add haxe ~/haxe --no-action
   opam install haxe --deps-only
 
