@@ -7,14 +7,14 @@
   brew tap Homebrew/bundle
   brew bundle --file=~/haxe/tests/Brewfile
 
+  brew install neko --HEAD;
+
   export OPAMYES=1
   opam init
   eval `opam config env`
   opam update
   opam pin add haxe ~/haxe --no-action
   opam install haxe --deps-only
-
-  brew install neko --HEAD;
 
   # Build haxe
   pushd ~/haxe
