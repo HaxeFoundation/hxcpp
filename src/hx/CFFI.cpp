@@ -101,7 +101,7 @@ public:
       if (_hxcpp_toString.mPtr)
          return _hxcpp_toString( Dynamic(this) );
 
-      char buffer[10];
+      char buffer[40];
       sprintf(buffer,"0x%p", mHandle);
 
       return HX_CSTRING("Abstract(") +
