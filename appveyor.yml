@@ -12,7 +12,8 @@ environment:
 
 install:
     # Install neko and haxe. Just download the chocolatey package instead of building from source in order to save time...
-    - cinst neko -y
+    - ps: Set-Service wuauserv -StartupType Manual
+    - cinst neko --version 2.2.0 -y
     - cinst haxe --prerelease --ignore-dependencies -s 'https://ci.appveyor.com/nuget/haxe' -y
     - RefreshEnv
     - neko -version
