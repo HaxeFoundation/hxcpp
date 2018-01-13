@@ -4,6 +4,7 @@ import sys.FileSystem;
 class FileGroup
 {
    public var mNewest:Float;
+   public var mNewestFile:String;
    public var mCompilerFlags:Array<String>;
    public var mMissingDepends:Array<String>;
    public var mOptions:Array<String>;
@@ -30,6 +31,8 @@ class FileGroup
       mId = inId;
       replace(inDir, inSetImportDir);
    }
+
+   public function toString() return 'FileGroup($mId)';
 
    public function replace(inDir:String,inSetImportDir)
    {
@@ -114,16 +117,25 @@ class FileGroup
       if (stamp>mNewest)
       {
          mNewest = stamp;
+         mNewestFile = inFile;
       }
 
       if (!inDateOnly)
          mCacheDepends.push(inFile);
    }
 
+   public function getNewestFile()
+   {
+      return '$mId($mNewestFile)';
+   }
+
    public function addDependFiles(inGroup:FileGroup)
    {
       if (inGroup.mNewest>mNewest)
+      {
+         mNewestFile = inGroup.getNewestFile();
          mNewest = inGroup.mNewest;
+      }
 
       for(depend in inGroup.mCacheDepends)
          mCacheDepends.push(depend);
@@ -168,7 +180,7 @@ class FileGroup
          {
             // Only effects linking, not compiling
          }
-         else if (name=="hxcpp_verbose" || name=="hxcpp_silent" || name=="hxcpp_quiet" || name=="hxcpp_times" || name=="hxcpp_neko_buildtool" )
+         else if (name=="hxcpp_verbose" || name=="hxcpp_silent" || name=="hxcpp_quiet" || name=="hxcpp_times" || name=="hxcpp_neko_buildtool" || name=="hxcpp_link_no_tool_depends" )
          {
             // Does not affect build
          }
@@ -249,6 +261,11 @@ class FileGroup
             mDependHash += File.getFileHash(depend,null);
          mDependHash = haxe.crypto.Md5.encode(mDependHash);
       }
+   }
+
+   public function getDependString()
+   {
+      return "Group(" + mCacheDepends.join(",") + ")";
    }
 
    public function setPrecompiled(inFile:String, inDir:String)

@@ -341,6 +341,9 @@ class BuildTool
 
    public function buildTarget(inTarget:String, inDestination:String)
    {
+      //var dependDebug = function(s:String) Log.error(s);
+      var dependDebug = null;
+
       // Sys.println("Build : " + inTarget );
       if (!mTargets.exists(inTarget))
       {
@@ -440,9 +443,13 @@ class BuildTool
          {
             var obj_name = mCompiler.getCachedObjName(file);
             groupObjs.push(obj_name);
-            var outOfDate = groupIsOutOfDate || file.isOutOfDate(obj_name);
+            var outOfDate = groupIsOutOfDate || file.isOutOfDate(obj_name, dependDebug);
             if (outOfDate)
+            {
+               if (dependDebug!=null)
+                  dependDebug(mCompiler.getCacheString(file));
                to_be_compiled.push(file);
+            }
             inList.push(outOfDate);
          }
          var someCompiled = to_be_compiled.length > 0;
@@ -865,6 +872,8 @@ class BuildTool
                      file.setTags( substitute(el.att.tags) );
                   if (el.has.filterout)
                      file.mFilterOut = substitute(el.att.filterout);
+                  if (el.has.embedName)
+                     file.mEmbedName = substitute(el.att.embedName);
                   for(f in el.elements)
                      if (valid(f,"") && f.name=="depend")
                         file.mDepends.push( substitute(f.att.name) );
@@ -1193,6 +1202,12 @@ class BuildTool
    {
       return instance.mDefines.get("MSVC_VER");
    }
+
+   static public function keepTemp()
+   {
+      return instance.mDefines.exists("HXCPP_KEEP_TEMP");
+   }
+
 
    // Setting HXCPP_COMPILE_THREADS to 2x number or cores can help with hyperthreading
    public static function getNumberOfProcesses():Int

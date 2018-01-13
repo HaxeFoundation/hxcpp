@@ -80,7 +80,7 @@ The files node defines a group of files that all share the same attributes, incl
 
 - *file* - Add file to group, with optional attributes
   ```xml
-  <file name="filename" tags="tag,tag1" filterout="define">
+  <file name="filename" tags="tag,tag1" filterout="define" embedName="embed" >
      <depend name="filename1" />
      <depend name="filename2" />
   </file>
@@ -90,4 +90,5 @@ The files node defines a group of files that all share the same attributes, incl
      + filterout = allows files to be skipped at compile-time if the named define exists.
        This is useful when the define is set sometime after the file list is parsed.
      +  depend name = filename of additional dependency
+     + embed = causes the file to be embedded as a enxtern c++ 'const char *' string constant of the specified name
 

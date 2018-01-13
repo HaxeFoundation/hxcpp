@@ -49,6 +49,7 @@ Other defines:
 | *HXCPP_TIMES*           | Show some basic profiling information |
 | *HXCPP_NEKO_BUILDTOOL*  | Force use of hxcpp.n, rather than compiled BuildTool.exe
 | *HXCPP_NO_COLOR*        | Do not add colour-codes to tool output |
+| *HXCPP_KEEP_TEMP*       | Does not delete the files created for file 'embedName' option |
 
 
 Defines affecting target architecture.

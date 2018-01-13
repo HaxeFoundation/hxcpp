@@ -50,6 +50,7 @@ class Compiler
 
    public var mGetCompilerVersion:String;
    public var mCompilerVersion:String;
+   public var mCompilerVersionString:String;
    public var mCached:Bool;
 
    public var mID:String;
@@ -214,6 +215,41 @@ class Compiler
       return args;
    }
 
+   public function createEmbedFile(srcName:String, destName:String, embedName:String)
+   {
+      try
+      {
+          var content = sys.io.File.getContent(srcName);
+          content = content.split("\r").join("");
+          content = content.split("\\").join( String.fromCharCode(1) );
+          content = content.split('"').join('\\"');
+          content = content.split(String.fromCharCode(1)).join("\\\\" );
+          var lines = content.split("\n");
+          var output = [ 'const char *$embedName = ' ];
+          for(line in lines)
+              output.push( '"$line\\n"' );
+          output.push(";\n");
+          sys.io.File.saveContent(destName, output.join("\n") );
+      }
+      catch(e:Dynamic)
+      {
+         Log.warn('Error creating $destName from $srcName: $e');
+      }
+   }
+
+   public function cleanTmp(file:String)
+   {
+      if (BuildTool.keepTemp())
+         return;
+
+      try
+      {
+         if (file!=null && FileSystem.exists(file))
+            FileSystem.deleteFile(file);
+      }
+      catch(e:Dynamic) { }
+   }
+
    public function compile(inFile:File,inTid:Int,headerFunc:Void->Void,pchTimeStamp:Null<Float>)
    {
       var obj_name = getObjName(inFile);
@@ -254,7 +290,21 @@ class Compiler
       {
          if (headerFunc!=null)
             headerFunc();
-         args.push( (new Path( inFile.mDir + inFile.mName)).toString() );
+
+         var tmpFile:String = null;
+
+         if (inFile.mEmbedName!=null)
+         {
+            var srcDir =  Path.directory( inFile.mDir + "/" + inFile.mName);
+            tmpFile = new Path( srcDir + "/" + inFile.mEmbedName + ".cpp").toString();
+            Log.v("Creating temp file " + tmpFile);
+            createEmbedFile( inFile.mDir + "/" + inFile.mName, tmpFile, inFile.mEmbedName );
+            args.push( tmpFile );
+         }
+         else
+         {
+            args.push( (new Path( inFile.mDir + inFile.mName)).toString() );
+         }
 
          var out = nvcc ? "-o " : mOutFlag;
          if (out.substr(-1)==" ")
@@ -289,6 +339,7 @@ class Compiler
                   Log.info(fileName);
                }
                var err = ProcessManager.runProcessThreaded(exe, args, null);
+               cleanTmp(tmpFile);
                if (err!=0)
                   BuildTool.setThreadError(err);
             }
@@ -300,6 +351,7 @@ class Compiler
                Log.info(fileName);
             }
             var result = ProcessManager.runProcessThreaded(exe, args, null);
+            cleanTmp(tmpFile);
             if (result!=0)
             {
                if (FileSystem.exists(obj_name))
@@ -342,6 +394,7 @@ class Compiler
 
          Log.info("", "Compiler version: " +  versionString);
 
+         mCompilerVersionString = versionString;
          mCompilerVersion = Md5.encode(versionString);
          mCached = true;
       }
@@ -370,6 +423,12 @@ class Compiler
       else
          throw "Unkown source contents " + sourceName;
       return "";
+   }
+
+   public function getCacheString(inFile:File)
+   {
+      var args = getArgs(inFile);
+      return ("<contents>" + args.join(" ") + " " + inFile.mGroup.getDependString() +  " " + mCompilerVersionString + " " + inFile.getDependString() );
    }
 
    public function getCachedObjName(inFile:File)

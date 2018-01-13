@@ -17,6 +17,7 @@ class File
    public var mGroup:FileGroup;
    public var mTags:String;
    public var mFilterOut:String;
+   public var mEmbedName:String;
    static public var mDependMutex = new Mutex();
 
    public function new(inName:String, inGroup:FileGroup)
@@ -30,6 +31,7 @@ class File
       mGroup = inGroup;
       mDepends = [];
       mCompilerFlags = [];
+      mEmbedName = null;
       mTags = null;
    }
    
@@ -58,6 +60,11 @@ class File
       for(depend in mDepends)
          mDependHash += getFileHash(depend,localCache);
       mDependHash = haxe.crypto.Md5.encode(mDependHash);
+   }
+
+   public function getDependString()
+   {
+      return "FILES(" + mDepends.join(",") + ")";
    }
 
    public static function getFileHash(inName:String,localCache:Map<String,String>)
@@ -97,14 +104,20 @@ class File
      }
    }
 
-   public function isOutOfDate(inObj:String)
+   public function isOutOfDate(inObj:String, ?dependDebug:String->Void)
    {
       if (!FileSystem.exists(inObj))
+      {
          return true;
+      }
 
       var obj_stamp = FileSystem.stat(inObj).mtime.getTime();
       if (mGroup.isOutOfDate(obj_stamp))
+      {
+         if (dependDebug!=null)
+            dependDebug(mName + "  - whole group is out of date " + mGroup.getNewestFile() + " " + obj_stamp + " < " + mGroup.mNewest);
          return true;
+      }
 
       var source_name = mDir+mName;
       if (!FileSystem.exists(source_name))
@@ -114,7 +127,11 @@ class File
       }
       var source_stamp = FileSystem.stat(source_name).mtime.getTime();
       if (obj_stamp < source_stamp)
+      {
+         if (dependDebug!=null)
+            dependDebug(mName + ' - stamped $obj_stamp < $source_stamp');
          return true;
+      }
       for(depend in mDepends)
       {
          if (!FileSystem.exists(depend))
@@ -122,8 +139,13 @@ class File
             Log.error("Could not find dependency \"" + depend + "\" for \"" + mName + "\"");
             //throw "Could not find dependency '" + depend + "' for '" + mName + "'";
          }
-         if (FileSystem.stat(depend).mtime.getTime() > obj_stamp )
+         var dependTime =  FileSystem.stat(depend).mtime.getTime();
+         if (dependTime > obj_stamp )
+         {
+            if (dependDebug!=null)
+               dependDebug(mName + ' - depend $obj_stamp < $dependTime');
             return true;
+         }
       }
       return false;
    }
