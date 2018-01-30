@@ -51,6 +51,7 @@
   <flag value="-Wno-null-dereference" unless="HXCPP_GCC"/>
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-overflow" />
+  <flag value="-Wno-trigraphs"/>
   <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-Wno-bool-conversion" unless="HXCPP_GCC"/>
   <!-- Removed for iOS 8 -->
