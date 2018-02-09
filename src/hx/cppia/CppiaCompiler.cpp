@@ -17,15 +17,15 @@ static void test_func(CppiaCtx *inCtx)
 
 static void SLJIT_CALL my_trace_func(const char *inText)
 {
-   printf("trace: %s\n", inText); 
+   printf("trace: %s\n", inText);
 }
 static void SLJIT_CALL my_trace_strings(const char *inText, const char *inValue)
 {
-   printf("%s%s\n", inText, inValue); 
+   printf("%s%s\n", inText, inValue);
 }
 static void SLJIT_CALL my_trace_string(const char *inText, String *inValue)
 {
-   printf("%s%s\n", inText, inValue->__s); 
+   printf("%s%s\n", inText, inValue->__s);
 }
 
 static void SLJIT_CALL my_trace_ptr_func(const char *inText, hx::Object **inPtr)
@@ -293,7 +293,7 @@ public:
 
    void beginGeneration(int inArgs)
    {
-      compiler = sljit_create_compiler();
+      compiler = sljit_create_compiler(NULL);
 
       int options = 0;
       // S0 is stack
@@ -487,7 +487,7 @@ public:
             JumpId passed = sljit_emit_fcmp(compiler, condition, t0, getData(v0), t1, getData(v1) );
 
             // test failed, but test nan
-            JumpId notNan = sljit_emit_jump(compiler,SLJIT_D_ORDERED);
+            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED_F64);
 
             // is nan - fallthough
             // test passed, ro was nan
@@ -509,7 +509,7 @@ public:
             comeFrom(userCmpPassed);
 
             // Result is not-nan when user test passed
-            JumpId notNan = sljit_emit_jump(compiler,SLJIT_D_ORDERED);
+            JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED_F64);
             if (andJump)
                sljit_set_label(notNan, andJump);
             // is nan ..
@@ -568,7 +568,7 @@ public:
 
 
 
-   void emit_op1(sljit_si op, const JitVal &inArg0, const JitVal &inArg1)
+   void emit_op1(sljit_s32 op, const JitVal &inArg0, const JitVal &inArg1)
    {
       sljit_sw t0 = getTarget(inArg0);
       sljit_sw t1 = getTarget(inArg1);
@@ -577,7 +577,7 @@ public:
    }
 
 
-   void emit_op2(sljit_si op, const JitVal &inArg0, const JitVal &inArg1, const JitVal inArg2)
+   void emit_op2(sljit_s32 op, const JitVal &inArg0, const JitVal &inArg1, const JitVal inArg2)
    {
       sljit_sw t0 = getTarget(inArg0);
       sljit_sw t1 = getTarget(inArg1);
@@ -586,7 +586,7 @@ public:
          sljit_emit_op2(compiler, op, t0, getData(inArg0), t1, getData(inArg1), t2, getData(inArg2) );
    }
 
-   void emit_fop1(sljit_si op, const JitVal &inArg0, const JitVal &inArg1)
+   void emit_fop1(sljit_s32 op, const JitVal &inArg0, const JitVal &inArg1)
    {
       sljit_sw t0 = getTarget(inArg0);
       sljit_sw t1 = getTarget(inArg1);
@@ -594,7 +594,7 @@ public:
          sljit_emit_fop1(compiler, op, t0, getData(inArg0), t1, getData(inArg1) );
    }
 
-   void emit_fop2(sljit_si op, const JitVal &inArg0, const JitVal &inArg1, const JitVal inArg2)
+   void emit_fop2(sljit_s32 op, const JitVal &inArg0, const JitVal &inArg1, const JitVal inArg2)
    {
       sljit_sw t0 = getTarget(inArg0);
       sljit_sw t1 = getTarget(inArg1);
@@ -618,7 +618,7 @@ public:
    }
 
 
-   sljit_si getTarget(const JitVal &inVal)
+   sljit_s32 getTarget(const JitVal &inVal)
    {
       switch(inVal.position)
       {
@@ -745,12 +745,12 @@ public:
       switch(getCommonType(inDest,inSrc))
       {
          case jtInt:
-            emit_op1(SLJIT_MOV_SI, inDest, inSrc);
+            emit_op1(SLJIT_MOV_S32, inDest, inSrc);
             break;
          case jtPointer:
             if (inSrc.reg0==sLocalReg && inSrc.position==jposRegister)
             {
-               sljit_si tDest = getTarget(inDest);
+               sljit_s32 tDest = getTarget(inDest);
                if (compiler)
                   sljit_get_local_base(compiler, tDest, getData(inDest), inSrc.offset );
             }
@@ -758,15 +758,15 @@ public:
                emit_op1(SLJIT_MOV_P, inDest, inSrc);
             break;
          case jtFloat:
-            emit_fop1(SLJIT_DMOV, inDest, inSrc);
+            emit_fop1(SLJIT_MOV_F64, inDest, inSrc);
             break;
 
          case jtByte:
-            emit_op1(SLJIT_IMOV_UB, inDest, inSrc);
+            emit_op1(SLJIT_MOV32_U8, inDest, inSrc);
             break;
 
          case jtShort:
-            emit_op1(SLJIT_IMOV_UH, inDest, inSrc);
+            emit_op1(SLJIT_MOV32_U16, inDest, inSrc);
             break;
 
          case jtString:
@@ -776,7 +776,7 @@ public:
             }
             else
             {
-               emit_op1(SLJIT_MOV_SI, inDest.as(jtInt), inSrc.as(jtInt));
+               emit_op1(SLJIT_MOV_S32, inDest.as(jtInt), inSrc.as(jtInt));
                emit_op1(SLJIT_MOV_P, inDest.as(jtPointer) + offsetof(String,__s), inSrc.as(jtPointer) + offsetof(String,__s));
             }
             break;
@@ -920,7 +920,7 @@ public:
          switch(inSrcType)
          {
             case etInt:
-               emit_fop1( SLJIT_CONVD_FROMI, inTarget.as(jtInt), inSrc.as(jtFloat) );
+               emit_fop1( SLJIT_CONV_F64_FROM_S32, inTarget.as(jtInt), inSrc.as(jtFloat) );
                break;
 
             case etObject:
@@ -960,7 +960,7 @@ public:
          switch(inSrcType)
          {
             case etFloat:
-               emit_fop1( SLJIT_CONVD_FROMI, inTarget.as(jtFloat), inSrc.as(jtInt) );
+               emit_fop1( SLJIT_CONV_F64_FROM_S32, inTarget.as(jtFloat), inSrc.as(jtInt) );
                break;
 
             case etObject:
@@ -1148,11 +1148,11 @@ public:
    {
       if (inSrc.type==jtFloat)
       {
-         emit_fop1(SLJIT_DNEG, inDest, inSrc);
+         emit_fop1(SLJIT_NEG_F64, inDest, inSrc);
       }
       else
       {
-         emit_op1(SLJIT_INEG, inDest,  inSrc);
+         emit_op1(SLJIT_NEG32, inDest,  inSrc);
       }
    }
 
@@ -1161,13 +1161,13 @@ public:
    {
       if (v0.type==jtFloat)
       {
-         emit_fop2(SLJIT_DADD, inDest, v0, v1);
+         emit_fop2(SLJIT_ADD_F64, inDest, v0, v1);
       }
       else if (v0.reg0==sLocalReg && v0.position==jposRegister)
       {
-         sljit_si tDest = getTarget(inDest);
-         sljit_si t0 = getTarget(v0);
-         sljit_si t1 = getTarget(v1);
+         sljit_s32 tDest = getTarget(inDest);
+         sljit_s32 t0 = getTarget(v0);
+         sljit_s32 t1 = getTarget(v1);
          if (compiler)
             sljit_get_local_base(compiler, tDest, getData(inDest), v1.offset );
       }
@@ -1177,14 +1177,14 @@ public:
       }
       else
       {
-         emit_op2(SLJIT_IADD, inDest, v0, v1);
+         emit_op2(SLJIT_ADD32, inDest, v0, v1);
       }
    }
 
 
    void bitNot(const JitVal &inDest, const JitVal &v0)
    {
-      emit_op1(SLJIT_INOT, inDest, v0);
+      emit_op1(SLJIT_NOT32, inDest, v0);
    }
 
    void bitOp(BitOp inOp, const JitVal &inDest, const JitVal &v0, const JitVal &v1 )
@@ -1192,43 +1192,43 @@ public:
       switch(inOp)
       {
          case bitOpAnd:
-            emit_op2(SLJIT_IAND, inDest, v0, v1);
+            emit_op2(SLJIT_AND32, inDest, v0, v1);
             break;
          case bitOpOr:
-            emit_op2(SLJIT_IOR, inDest, v0, v1);
+            emit_op2(SLJIT_OR32, inDest, v0, v1);
             break;
          case bitOpXOr:
-            emit_op2(SLJIT_IXOR, inDest, v0, v1);
+            emit_op2(SLJIT_XOR32, inDest, v0, v1);
             break;
          case bitOpUSR:
-            emit_op2(SLJIT_ILSHR, inDest, v0, v1);
+            emit_op2(SLJIT_LSHR32, inDest, v0, v1);
             break;
          case bitOpShiftL:
-            emit_op2(SLJIT_ISHL, inDest, v0, v1);
+            emit_op2(SLJIT_SHL32, inDest, v0, v1);
             break;
          case bitOpShiftR:
-            emit_op2(SLJIT_IASHR, inDest, v0, v1);
+            emit_op2(SLJIT_ASHR32, inDest, v0, v1);
             break;
       }
    }
 
    void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
    {
-      sljit_si tDest = getTarget(inDest);
-      sljit_si t0 = getTarget(v0);
-      sljit_si t1 = getTarget(v1);
+      sljit_s32 tDest = getTarget(inDest);
+      sljit_s32 t0 = getTarget(v0);
+      sljit_s32 t1 = getTarget(v1);
       bool isFloat = v0.type==jtFloat;
 
       if (asFloat != isFloat)
       {
          if (isFloat)
          {
-            emit_fop2(SLJIT_DMUL, sJitTempF0, v0, v1 );
+            emit_fop2(SLJIT_MUL_F64, sJitTempF0, v0, v1 );
             convert( sJitTempF0, etFloat, inDest, etInt );
          }
          else
          {
-            emit_op2(SLJIT_IMUL, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
+            emit_op2(SLJIT_MUL32, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
             convert( sJitTemp0, etInt, inDest, etFloat );
          }
       }
@@ -1236,46 +1236,46 @@ public:
       {
          if (isFloat)
          {
-            emit_fop2(SLJIT_DMUL, inDest, v0, v1 );
+            emit_fop2(SLJIT_MUL_F64, inDest, v0, v1 );
          }
          else
-            emit_op2(SLJIT_IMUL, inDest, v0, v1 );
+            emit_op2(SLJIT_MUL32, inDest, v0, v1 );
       }
    }
 
    void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat )
    {
-      sljit_si tDest = getTarget(inDest);
-      sljit_si t0 = getTarget(v0);
-      sljit_si t1 = getTarget(v1);
+      sljit_s32 tDest = getTarget(inDest);
+      sljit_s32 t0 = getTarget(v0);
+      sljit_s32 t1 = getTarget(v1);
       bool isFloat = v0.type==jtFloat;
 
       if (asFloat != isFloat)
       {
          if (isFloat)
          {
-            emit_fop2(SLJIT_DSUB, sJitTempF0, v0, v1 );
+            emit_fop2(SLJIT_SUB_F64, sJitTempF0, v0, v1 );
             convert( sJitTempF0, etFloat, inDest, etInt );
          }
          else
          {
-            emit_op2(SLJIT_ISUB, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
+            emit_op2(SLJIT_SUB32, sJitTemp0, v0.as(jtInt), v1.as(jtInt) );
             convert( sJitTemp0, etInt, inDest, etFloat );
          }
       }
       else
       {
          if (isFloat)
-            emit_fop2(SLJIT_DSUB, inDest, v0, v1 );
+            emit_fop2(SLJIT_SUB_F64, inDest, v0, v1 );
          else
-            emit_op2(SLJIT_ISUB, inDest, v0.as(jtInt), v1.as(jtInt) );
+            emit_op2(SLJIT_SUB32, inDest, v0.as(jtInt), v1.as(jtInt) );
       }
 
    }
 
    void fdiv(const JitVal &inDest, const JitVal &v0, const JitVal &v1)
    {
-      emit_fop2(SLJIT_DDIV, inDest, v0, v1 );
+      emit_fop2(SLJIT_DIV_F64, inDest, v0, v1 );
    }
 
    void divmod()
@@ -1283,7 +1283,7 @@ public:
       if (sJitTemp1.reg0>=maxTempCount)
          maxTempCount = sJitTemp1.reg0;
       if (compiler)
-         sljit_emit_op0(compiler,SLJIT_ILSDIV);
+         sljit_emit_op0(compiler,SLJIT_DIVMOD_S32);
    }
 
 
