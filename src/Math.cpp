@@ -4,13 +4,13 @@
 
 #include <stdlib.h>
 #include <time.h>
-#if defined(__unix__) || defined(__APPLE__)
-#include <unistd.h>
-#include <sys/time.h>
-#elif defined(HX_WINRT) && !defined(__cplusplus_winrt)
+#if defined(HX_WINRT) && !defined(__cplusplus_winrt)
 #include <windows.h>
 #elif defined(HX_WINDOWS)
 #include <process.h>
+#else
+#include <unistd.h>
+#include <sys/time.h>
 #endif
 
 // -------- Math ---------------------------------------
@@ -147,7 +147,7 @@ void Math_obj::__boot()
 
 #if defined(HX_WINDOWS) || defined(__SNC__)
    unsigned int t = clock();
-#elif defined(__unix__) || defined(__APPLE__)
+#else
    struct timeval tv;
    gettimeofday(&tv,0);
    unsigned int t = tv.tv_sec * 1000000 + tv.tv_usec;
@@ -163,10 +163,8 @@ void Math_obj::__boot()
   #else
    int pid = _getpid();
   #endif
-#elif defined(__unix__) || defined(__APPLE__)
-   int pid = getpid();
 #else
-   int pid = (int)&t; // As a last resort, rely on ASLR.
+   int pid = getpid();
 #endif  
 
   srand(t ^ (pid | (pid << 16)));

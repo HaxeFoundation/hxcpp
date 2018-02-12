@@ -221,8 +221,10 @@ inline bool HxCreateDetachedThread(void *(*func)(void *), void *param)
 	pthread_attr_t attr;
 	if (pthread_attr_init(&attr) != 0)
 		return false;
+#ifdef PTHREAD_CREATE_DETACHED
 	if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
 		return false;
+#endif
 	if (pthread_create(&t, &attr, func, param) != 0 )
 		return false;
 	if (pthread_attr_destroy(&attr) != 0)
