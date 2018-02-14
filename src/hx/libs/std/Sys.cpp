@@ -298,10 +298,16 @@ bool _hx_std_sys_exists( String path )
    #ifdef EPPC
    return true;
    #else
-   struct stat st;
+   
    hx::EnterGCFreeZone();
-   bool result =  stat(path.__s,&st) == 0;
+#ifdef NEKO_WINDOWS
+   bool result = GetFileAttributesW(path.__WCStr()) != INVALID_FILE_ATTRIBUTES;
+#else
+   struct stat st;
+   bool result = stat(path.__s,&st) == 0;
+#endif
    hx::ExitGCFreeZone();
+   
    return result;
    #endif
 }
@@ -440,15 +446,13 @@ bool _hx_std_sys_create_dir( String path, int mode )
    #ifdef EPPC
    return true;
    #else
-
    hx::EnterGCFreeZone();
 #ifdef NEKO_WINDOWS
-   bool err = mkdir(path.__s);
+   bool err = _wmkdir(path.__WCStr());
 #else
    bool err = mkdir(path.__s,mode);
 #endif
    hx::ExitGCFreeZone();
-
    return !err;
    #endif
 }
