@@ -90,7 +90,11 @@ static void file_error(const char *msg, String inName)
 Dynamic _hx_std_file_open( String fname, String r )
 {
    hx::EnterGCFreeZone();
+   #ifdef NEKO_WINDOWS
+   FILE *file = _wfopen(fname.__WCStr(),r.__WCStr());
+   #else
    FILE *file = fopen(fname.__s,r.__s);
+   #endif
    if (!file)
       file_error("file_open",fname);
    hx::ExitGCFreeZone();
@@ -293,7 +297,12 @@ String _hx_std_file_contents_string( String name )
    std::vector<char> buffer;
 
    hx::EnterGCFreeZone();
+   #ifdef NEKO_WINDOWS
+   FILE *file = _wfopen(name.__WCStr(),L"rb");
+   #else
    FILE *file = fopen(name.__s, "rb");
+   #endif
+   
    if(!file)
       file_error("file_contents",name);
 
@@ -333,7 +342,12 @@ Array<unsigned char> _hx_std_file_contents_bytes( String name )
 {
 
    hx::EnterGCFreeZone();
+   #ifdef NEKO_WINDOWS
+   FILE *file = _wfopen(name.__WCStr(),L"rb");
+   #else
    FILE *file = fopen(name.__s, "rb");
+   #endif
+
    if(!file)
       file_error("file_contents",name);
 
