@@ -231,6 +231,10 @@ void __hxcpp_stdlibs_boot()
          }
       }
    }
+   setlocale(LC_ALL, "");
+   _setmode(_fileno(stdout), 0x00040000); // _O_U8TEXT
+   _setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
+   _setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
    #endif
    
    // I think this does more harm than good.
@@ -254,6 +258,12 @@ void __trace(Dynamic inObj, Dynamic inData)
       "%s\n", inObj.GetPtr() ? inObj->toString().__s : "null" );
 #else
 #ifdef HX_UTF8_STRINGS
+   #ifdef HX_WINDOWS
+   wprintf(L"%ls:%d: %ls\n",
+               inData==null() ? L"?" : Dynamic(inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC))->toString().__WCStr(),
+               inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)),
+               inObj.GetPtr() ? inObj->toString().__WCStr() : L"null" );
+   #else
    #if defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
    __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",
    #elif defined(WEBOS)
@@ -264,6 +274,7 @@ void __trace(Dynamic inObj, Dynamic inData)
                inData==null() ? "?" : Dynamic(inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC))->toString().__s,
                inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)),
                inObj.GetPtr() ? inObj->toString().__s : "null" );
+   #endif
 #else
    printf( "%S:%d: %S\n",
                inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC)->__ToString().__s,
