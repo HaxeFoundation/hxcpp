@@ -473,6 +473,7 @@ public:
    }
 
    inline void reverse() { checkBase(); if (store!=hx::arrayEmpty) base->__reverse(); }
+   inline void resize(int inLen) { checkBase(); if (store!=hx::arrayEmpty) base->__resize(inLen); }
 
    inline void qsort(Dynamic inSorter) { checkBase(); if (base) base->__qsort(inSorter); }
 
@@ -532,6 +533,7 @@ public:
    Dynamic blit_dyn();
    Dynamic zero_dyn();
    Dynamic memcmp_dyn();
+   Dynamic resize_dyn();
 };
 
 

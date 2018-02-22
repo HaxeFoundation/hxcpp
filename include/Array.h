@@ -233,6 +233,7 @@ public:
    inline Dynamic __zero(const Dynamic &a0,const Dynamic &a1)  { zero(a0,a1); return null(); }
    virtual Dynamic __memcmp(const Dynamic &a0) = 0;
    virtual void __qsort(Dynamic inCompare) = 0;
+   virtual Dynamic __resize(const Dynamic &a0) = 0;
 
    #else
    inline void ____SetSize(int len)  { __SetSize(len); } 
@@ -264,6 +265,7 @@ public:
    virtual int __memcmp(const cpp::VirtualArray &a0) = 0;
    inline void __zero(const Dynamic &a0,const Dynamic &a1)  { zero(a0,a1); }
    virtual void __qsort(Dynamic inCompare) = 0;
+   virtual void __resize(int inLen) = 0;
 
    virtual void set(int inIdx, const cpp::Variant &inValue) = 0;
    virtual void setUnsafe(int inIdx, const cpp::Variant &inValue) = 0;
@@ -296,6 +298,7 @@ public:
    Dynamic blit_dyn();
    Dynamic zero_dyn();
    Dynamic memcmp_dyn();
+   Dynamic resize_dyn();
 
    void Realloc(int inLen) const;
 
@@ -726,6 +729,11 @@ public:
       }
    }
 
+   void resize(int inLen)
+   {
+      __SetSize(inLen);
+   }
+
    // Will do random pointer sorting for object pointers
    inline void sortAscending()
    {
@@ -777,7 +785,6 @@ public:
 
    template<typename TO>
    Dynamic iteratorFast() { return new hx::ArrayIterator<ELEM_,TO>(this); }
-
    
    virtual hx::ArrayStore getStoreType() const
    {
@@ -816,6 +823,7 @@ public:
    virtual Dynamic __filter(const Dynamic &func) { return filter(func); }
    virtual Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3) { blit(a0,a1,a2,a3); return null(); }
    virtual Dynamic __memcmp(const Dynamic &a0) { return memcmp(a0); }
+   virtual Dynamic __resize(const Dynamic &a0) { resize(a0); return null(); }
    virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
    #else //(HXCPP_API_LEVEL < 330)
 
@@ -838,6 +846,7 @@ public:
    virtual ::String __toString() { return toString(); }
    virtual void  __unshift(const Dynamic &a0) { unshift(a0); }
    virtual cpp::VirtualArray_obj *__map(const Dynamic &func) { return map(func).mPtr; }
+   virtual void __resize(int inLen) { resize(inLen); }
 
    virtual hx::ArrayBase *__filter(const Dynamic &func) { return filter(func).mPtr; }
    virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount)
