@@ -7515,11 +7515,21 @@ struct OpMod : public BinOp
    }
    const char *getName() { return "OpMod"; }
 
+   // Need this for /0 behaviour
+   ExprType getType() { return etFloat; }
+
+   CppiaExpr *link(CppiaModule &inModule)
+   {
+      BinOp::link(inModule);
+      type = etFloat;
+      return this;
+   }
+
    int runInt(CppiaCtx *ctx)
    {
-      int lval = left->runInt(ctx);
+      double lval = left->runFloat(ctx);
       BCR_CHECK;
-      return lval % right->runInt(ctx);
+      return hx::DoubleMod(lval,right->runFloat(ctx));
    }
    Float runFloat(CppiaCtx *ctx)
    {
@@ -7531,14 +7541,10 @@ struct OpMod : public BinOp
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest, ExprType destType)
    {
-      if (type==etInt)
+      if (destType==etVoid)
       {
-         JitTemp leftVal(compiler,etInt);
-         left->genCode(compiler, leftVal, etInt);
-         right->genCode(compiler, sJitTemp1, etInt);
-         compiler->move(sJitTemp0, leftVal);
-         compiler->divmod();
-         compiler->convert(sJitTemp1,etInt,inDest,destType);
+         left->genCode(compiler,JitVal(),etVoid);
+         right->genCode(compiler,JitVal(),etVoid);
       }
       else
       {
