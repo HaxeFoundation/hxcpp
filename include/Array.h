@@ -413,6 +413,9 @@ template<> inline double *NewNull<double>() { double d=0.0; return (double *)hx:
 template<> inline float *NewNull<float>() { float d=0.0f; return (float *)hx::NewGCPrivate(&d,sizeof(d)); }
 template<> inline unsigned char *NewNull<unsigned char>() { unsigned char u=0; return (unsigned char *)hx::NewGCPrivate(&u,sizeof(u)); }
 
+
+bool DynamicEq(const Dynamic &a, const Dynamic &b);
+
 }
 
 template<typename T> struct ArrayClassId { enum { id=hx::clsIdArrayObject }; };
@@ -428,6 +431,7 @@ template<> struct ArrayClassId<String> { enum { id=hx::clsIdArrayString }; };
 
 // sort...
 #include <algorithm>
+
 
 
 template<typename ELEM_>
@@ -596,11 +600,20 @@ public:
    }
 
 
+   template<typename T>
+   static inline bool elemEq(const T &a, const T &b) { return a==b; }
+
+   template<>
+   static inline bool elemEq<Dynamic>(const Dynamic &a, const Dynamic &b) {
+      return hx::DynamicEq(a,b);
+   }
+
+
    int Find(ELEM_ inValue)
    {
       ELEM_ *e = (ELEM_ *)mBase;
       for(int i=0;i<length;i++)
-         if (e[i]==inValue)
+         if (elemEq(e[i],inValue))
             return i;
       return -1;
    }
@@ -611,7 +624,7 @@ public:
       ELEM_ *e = (ELEM_ *)mBase;
       for(int i=0;i<length;i++)
       {
-         if (e[i]==inValue)
+         if (elemEq(e[i],inValue))
          {
             RemoveElement((int)i);
             return true;
@@ -641,7 +654,7 @@ public:
       }
       while(i<len)
       {
-         if (e[i]==inValue)
+         if (elemEq(e[i],inValue))
             return i;
          i++;
       }
@@ -659,7 +672,7 @@ public:
          i += len;
       while(i>=0)
       {
-         if (e[i]==inValue)
+         if (elemEq(e[i],inValue))
             return i;
          i--;
       }

@@ -658,6 +658,12 @@ void ArrayBase::__boot()
 
 
 
+bool DynamicEq(const Dynamic &a, const Dynamic &b)
+{
+   return hx::IsEq(a,b);
+}
+
+
 
 // -------- ArrayIterator -------------------------------------
 
