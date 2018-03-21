@@ -435,10 +435,10 @@ template<> struct ArrayClassId<String> { enum { id=hx::clsIdArrayString }; };
 namespace hx
 {
 template<typename T>
-static inline bool arrayElemEq(const T &a, const T &b) { return a==b; }
+inline bool arrayElemEq(const T &a, const T &b) { return a==b; }
 
 template<>
-static inline bool arrayElemEq<Dynamic>(const Dynamic &a, const Dynamic &b) {
+inline bool arrayElemEq<Dynamic>(const Dynamic &a, const Dynamic &b) {
    return hx::DynamicEq(a,b);
 }
 }
