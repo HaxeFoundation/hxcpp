@@ -174,6 +174,17 @@ String _hx_std_get_cwd()
    #elif defined(EPPC)
    return String();
    #else
+#ifdef NEKO_WINDOWS
+   wchar_t buf[261];
+   int l;
+   if( GetCurrentDirectoryW(260,buf) == NULL )
+      return String();
+   l = (int)wcslen(buf);
+   if( buf[l-1] != '/' && buf[l-1] != '\\' ) {
+      buf[l] = '/';
+      buf[l+1] = 0;
+   }
+#else
    char buf[1025];
    int l;
    if( getcwd(buf,1024) == NULL )
@@ -183,6 +194,7 @@ String _hx_std_get_cwd()
       buf[l] = '/';
       buf[l+1] = 0;
    }
+#endif
    return String(buf);
    #endif
 }
@@ -194,7 +206,11 @@ String _hx_std_get_cwd()
 bool _hx_std_set_cwd( String d )
 {
    #if !defined(HX_WINRT) && !defined(EPPC)
+#ifdef NEKO_WINDOWS
+   return SetCurrentDirectoryW(d.__WCStr()) == 0;
+#else
    return chdir(d.__s) == 0;
+#endif
    #else
    return false;
    #endif
