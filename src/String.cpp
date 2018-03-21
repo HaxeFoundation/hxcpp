@@ -1287,7 +1287,7 @@ inline double _wtof(const wchar_t *inStr)
    #ifdef ANDROID
    char buf[101];
    int i;
-   for(int i=0;i<100 && inStr[i];i++)
+   for(i=0;i<100 && inStr[i];i++)
       buf[i] = inStr[i];
    buf[i] = '\0';
    return strtod(buf, 0);
@@ -1301,7 +1301,7 @@ int my_wtol(const wchar_t *inStr,wchar_t ** end, int inBase)
 {
    char buf[101];
    int i;
-   for(int i=0;i<100 && inStr[i];i++)
+   for(i=0;i<100 && inStr[i];i++)
       buf[i] = inStr[i];
    buf[i] = '\0';
    char *cend = buf;
