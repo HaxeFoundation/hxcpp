@@ -432,6 +432,16 @@ template<> struct ArrayClassId<String> { enum { id=hx::clsIdArrayString }; };
 // sort...
 #include <algorithm>
 
+namespace hx
+{
+template<typename T>
+static inline bool arrayElemEq(const T &a, const T &b) { return a==b; }
+
+template<>
+static inline bool arrayElemEq<Dynamic>(const Dynamic &a, const Dynamic &b) {
+   return hx::DynamicEq(a,b);
+}
+}
 
 
 template<typename ELEM_>
@@ -600,20 +610,12 @@ public:
    }
 
 
-   template<typename T>
-   static inline bool elemEq(const T &a, const T &b) { return a==b; }
-
-   template<>
-   static inline bool elemEq<Dynamic>(const Dynamic &a, const Dynamic &b) {
-      return hx::DynamicEq(a,b);
-   }
-
 
    int Find(ELEM_ inValue)
    {
       ELEM_ *e = (ELEM_ *)mBase;
       for(int i=0;i<length;i++)
-         if (elemEq(e[i],inValue))
+         if (hx::arrayElemEq(e[i],inValue))
             return i;
       return -1;
    }
@@ -624,7 +626,7 @@ public:
       ELEM_ *e = (ELEM_ *)mBase;
       for(int i=0;i<length;i++)
       {
-         if (elemEq(e[i],inValue))
+         if (hx::arrayElemEq(e[i],inValue))
          {
             RemoveElement((int)i);
             return true;
@@ -654,7 +656,7 @@ public:
       }
       while(i<len)
       {
-         if (elemEq(e[i],inValue))
+         if (hx::arrayElemEq(e[i],inValue))
             return i;
          i++;
       }
@@ -672,7 +674,7 @@ public:
          i += len;
       while(i>=0)
       {
-         if (elemEq(e[i],inValue))
+         if (hx::arrayElemEq(e[i],inValue))
             return i;
          i--;
       }
