@@ -2,7 +2,7 @@
 
 <pragma once="true" />
 
-<set name="PCRE_DIR" value="${HXCPP}/project/thirdparty/pcre-8.41" />
+<set name="PCRE_DIR" value="${HXCPP}/project/thirdparty/pcre-8.42" />
 
 <files id="hxcpp_regexp" >
   <depend files="hxcpp-depends"/>

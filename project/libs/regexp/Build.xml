@@ -2,7 +2,7 @@
 
 <include name="${HXCPP}/build-tool/BuildCommon.xml"/>
 
-<set name="PCRE_DIR" value="../../thirdparty/pcre-8.41" />
+<set name="PCRE_DIR" value="../../thirdparty/pcre-8.42" />
 
 <files id="regexp" >
   <depend name="${HXCPP}/include/hx/Macros.h"/>
