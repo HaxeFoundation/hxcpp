@@ -50,6 +50,8 @@ depending on the PRIV macro. */
 
 #if 0
 #define PCRE_DEBUG
+#else
+#undef PCRE_DEBUG
 #endif
 
 /* PCRE is compiled as an 8 bit library if it is not requested otherwise. */
