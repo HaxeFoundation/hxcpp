@@ -538,6 +538,7 @@ DEFINE_ARRAY_FUNC1(,sort);
 DEFINE_ARRAY_FUNC1(,unshift);
 DEFINE_ARRAY_FUNC4(,blit);
 DEFINE_ARRAY_FUNC2(,zero);
+DEFINE_ARRAY_FUNC1(,resize);
 #else
 DEFINE_ARRAY_FUNC1(return,__SetSize);
 DEFINE_ARRAY_FUNC1(return,__SetSizeExact);
@@ -547,6 +548,7 @@ DEFINE_ARRAY_FUNC1(return,sort);
 DEFINE_ARRAY_FUNC1(return,unshift);
 DEFINE_ARRAY_FUNC4(return,blit);
 DEFINE_ARRAY_FUNC2(return,zero);
+DEFINE_ARRAY_FUNC1(return,resize);
 #endif
 
 DEFINE_ARRAY_FUNC1(return,concat);
@@ -605,6 +607,7 @@ hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp
    if (inString==HX_CSTRING("_hx_storeType")) return (int)getStoreType();
    if (inString==HX_CSTRING("_hx_elementSize")) return (int)GetElementSize();
    if (inString==HX_CSTRING("_hx_pointer")) return cpp::CreateDynamicPointer((void *)mBase);
+   if (inString==HX_CSTRING("resize")) return resize_dyn();
    return null();
 }
 
@@ -631,6 +634,7 @@ static String sArrayFields[] = {
    HX_CSTRING("unshift"),
    HX_CSTRING("filter"),
    HX_CSTRING("map"),
+   HX_CSTRING("resize"),
    String(null())
 };
 
@@ -759,6 +763,7 @@ DEFINE_VARRAY_FUNC1(,memcmp);
 DEFINE_VARRAY_FUNC1(return,__unsafe_get);
 DEFINE_VARRAY_FUNC2(return,__unsafe_set);
 DEFINE_VARRAY_FUNC4(,blit);
+DEFINE_VARRAY_FUNC1(,resize);
 
 
 
@@ -829,6 +834,7 @@ hx::Val VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inC
    if (inString==HX_CSTRING("blit")) return blit_dyn();
    if (inString==HX_CSTRING("zero")) return zero_dyn();
    if (inString==HX_CSTRING("memcmp")) return memcmp_dyn();
+   if (inString==HX_CSTRING("resize")) return resize_dyn();
 
    if (inString==HX_CSTRING("_hx_storeType"))
    {
