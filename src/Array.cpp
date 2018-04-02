@@ -170,7 +170,7 @@ void ArrayBase::Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceEl
 
    int newSize = inDestElement + inElementCount;
    if (newSize>length)
-      __SetSize(newSize);
+      resize(newSize);
 
    const char *src = inSourceArray->mBase + inSourceElement*srcSize;
    char *dest = mBase + inDestElement*srcSize;
@@ -208,21 +208,6 @@ String ArrayBase::toString()
    }
 
    return HX_CSTRING("[") + __join(HX_CSTRING(",")) + HX_CSTRING("]");
-}
-
-void ArrayBase::__SetSize(int inSize)
-{
-   if (inSize<length)
-   {
-      int s = GetElementSize();
-      memset(mBase + inSize*s, 0, (length-inSize)*s);
-      length = inSize;
-   }
-   else if (inSize>length)
-   {
-      EnsureSize(inSize);
-      length = inSize;
-   }
 }
 
  
@@ -280,10 +265,10 @@ Dynamic ArrayBase::__unsafe_set(const Dynamic &i, const Dynamic &val)
 void ArrayBase::Insert(int inPos)
 {
    if (inPos>=length)
-      __SetSize(length+1);
+      resize(length+1);
    else
    {
-      __SetSize(length+1);
+      resize(length+1);
       int s = GetElementSize();
       memmove(mBase + inPos*s + s, mBase+inPos*s, (length-inPos-1)*s );
    }
@@ -309,13 +294,13 @@ void ArrayBase::Splice(ArrayBase *outResult,int inPos,int inLen)
    int s = GetElementSize();
    if (outResult)
    {
-      outResult->__SetSize(inLen);
+      outResult->resize(inLen);
       memcpy(outResult->mBase, mBase+inPos*s, s*inLen);
       // todo - only needed if we have dirty pointer elements
       HX_OBJ_WB_PESSIMISTIC_GET(outResult);
    }
    memmove(mBase+inPos*s, mBase + (inPos+inLen)*s, (length-(inPos+inLen))*s);
-   __SetSize(length-inLen);
+   resize(length-inLen);
 }
 
 void ArrayBase::Slice(ArrayBase *outResult,int inPos,int inEnd)
@@ -332,10 +317,10 @@ void ArrayBase::Slice(ArrayBase *outResult,int inPos,int inEnd)
       inEnd = length;
    int n = inEnd - inPos;
    if (n<=0)
-      outResult->__SetSize(0);
+      outResult->resize(0);
    else
    {
-      outResult->__SetSize(n);
+      outResult->resize(n);
       int s = GetElementSize();
       memcpy(outResult->mBase, mBase+inPos*s, n*s);
       // todo - only needed if we have dirty pointer elements
@@ -349,7 +334,7 @@ void ArrayBase::RemoveElement(int inPos)
    {
       int s = GetElementSize();
       memmove(mBase + inPos*s, mBase+inPos*s + s, (length-inPos-1)*s );
-      __SetSize(length-1);
+      resize(length-1);
    }
 
 }

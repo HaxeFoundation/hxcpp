@@ -181,7 +181,22 @@ public:
 
    virtual int GetElementSize() const = 0;
 
-   void __SetSize(int inLen);
+   inline void resize(int inSize)
+   {
+      if (inSize<length)
+      {
+         int s = GetElementSize();
+         memset(mBase + inSize*s, 0, (length-inSize)*s);
+         length = inSize;
+      }
+      else if (inSize>length)
+      {
+         EnsureSize(inSize);
+         length = inSize;
+      }
+   }
+   inline void __SetSize(int inLen) { resize(inLen); }
+
    void __SetSizeExact(int inLen=0);
    
    Dynamic __unsafe_get(const Dynamic &i);
@@ -225,7 +240,7 @@ public:
    virtual Dynamic __unshift(const Dynamic &a0) = 0;
    virtual Dynamic __map(const Dynamic &func) = 0;
    virtual Dynamic __filter(const Dynamic &func) = 0;
-   inline Dynamic ____SetSize(const Dynamic &len)  { __SetSize(len); return this; } 
+   inline Dynamic ____SetSize(const Dynamic &len)  { resize(len); return this; } 
    inline Dynamic ____SetSizeExact(const Dynamic &len)  { __SetSizeExact(len); return this; } 
    inline Dynamic ____unsafe_set(const Dynamic &i, const Dynamic &val)  { return __SetItem(i,val); } 
    inline Dynamic ____unsafe_get(const Dynamic &i)  { return __GetItem(i); } 
@@ -236,7 +251,7 @@ public:
    virtual Dynamic __resize(const Dynamic &a0) = 0;
 
    #else
-   inline void ____SetSize(int len)  { __SetSize(len); } 
+   inline void ____SetSize(int len)  { resize(len); } 
    inline void ____SetSizeExact(int len)  { __SetSizeExact(len); } 
    inline Dynamic ____unsafe_set(const Dynamic &i, const Dynamic &val)  { return __SetItem(i,val); } 
    inline Dynamic ____unsafe_get(const Dynamic &i)  { return __GetItem(i); } 
@@ -608,7 +623,7 @@ public:
    {
       if (!length) return null();
       ELEM_ result = __get((int)length-1);
-      __SetSize((int)length-1);
+      resize((int)length-1);
       return result;
    }
 
@@ -742,11 +757,6 @@ public:
          e[length-i-1] = e[i];
          e[i] = tmp;
       }
-   }
-
-   void resize(int inLen)
-   {
-      __SetSize(inLen);
    }
 
    // Will do random pointer sorting for object pointers

@@ -338,13 +338,14 @@ public:
       return 0;
    }
 
-   void __SetSize(int inLen)
+   void resize(int inLen)
    {
       if (!base)
          CreateEmptyArray(inLen);
       else
-         base->__SetSize(inLen);
+         base->resize(inLen);
    }
+   void __SetSize(int inLen) { resize(inLen); }
 
    VirtualArray __SetSizeExact(int inLen=0)
    {
@@ -488,7 +489,6 @@ public:
    }
 
    inline void reverse() { checkBase(); if (store!=hx::arrayEmpty) base->__reverse(); }
-   inline void resize(int inLen) { checkBase(); if (store!=hx::arrayEmpty) base->__resize(inLen); }
 
    inline void qsort(Dynamic inSorter) { checkBase(); if (base) base->__qsort(inSorter); }
 

@@ -31,6 +31,7 @@ const char *gArrayFuncNames[] =
    "af__crement",
    "af__SetSizeExact",
    "afBlit",
+   "afResize",
 };
 
 int gArrayArgCount[] = 
@@ -59,6 +60,7 @@ int gArrayArgCount[] =
    1, //af__crement,
    1, //af__SetSizeExact,
    4, //afBlit,
+   1, //afResize,
 };
 
 
@@ -434,6 +436,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          case afInsert:
          case afUnshift:
          case af__SetSizeExact:
+         case afResize:
             return etVoid;
 
          case afPush:
@@ -890,6 +893,16 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          thisVal->__SetSizeExact(size);
       }
 
+      if (FUNC==afResize)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_VCHECK;
+         int size = args[0]->runInt(ctx);
+         BCR_VCHECK;
+         thisVal->resize(size);
+      }
+
+
       if (FUNC==afBlit)
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM> *)thisExpr->runObject(ctx);
@@ -1121,6 +1134,12 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    {
       inArray->__SetSizeExact(size);
    }
+
+   static void SLJIT_CALL runResize( Array_obj<ELEM> *inArray, int size )
+   {
+      inArray->resize(size);
+   }
+
 
    static void SLJIT_CALL runToString( Array_obj<ELEM> *inArray, String *outString )
    {
@@ -1696,6 +1715,15 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
             }
 
+         case afResize:
+            {
+               JitTemp thisVal(compiler,jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+               args[0]->genCode(compiler, sJitArg1.as(jtInt), etInt);
+               compiler->callNative( (void *)runResize, thisVal, sJitArg1.as(jtInt));
+               break;
+            }
+
          // Array<ELEM>
          case afBlit:
             {
@@ -2079,6 +2107,8 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<af__SetSizeExact,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("blit"))
       return TCreateArrayBuiltin<afBlit,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("resize"))
+      return TCreateArrayBuiltin<afResize,NoCrement>(src, inType, inThisExpr, ioExpressions);
 
    return 0;
 }
