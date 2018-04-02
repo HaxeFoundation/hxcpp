@@ -2104,6 +2104,7 @@ struct CallMemberVTable : public CppiaExpr
    bool        isInterfaceCall;
    CppiaFunction *funcProto;
    ExprType    returnType;
+   bool        checkInterfaceReturnType;
 
    CallMemberVTable(CppiaExpr *inSrc, CppiaExpr *inThis,
                     int inVTableSlot,
@@ -2118,6 +2119,8 @@ struct CallMemberVTable : public CppiaExpr
       isInterfaceCall = inIsInterfaceCall;
       funcProto = inFuncProto;
       returnType = funcProto->cppia.types[funcProto->returnType]->expressionType;
+      checkInterfaceReturnType = false;
+
       scriptVTableOffset = inScriptVTableOffset;
    }
    const char *getName() { return "CallMemberVTable"; }
@@ -2126,6 +2129,11 @@ struct CallMemberVTable : public CppiaExpr
       if (thisExpr)
          thisExpr = thisExpr->link(inModule);
       LinkExpressions(args,inModule);
+
+      TypeData *type = inModule.types[funcProto->returnType];
+      // These types may have natively been returned as ints or non-objects
+      checkInterfaceReturnType = isInterfaceCall && (returnType==etFloat || type->name==HX_CSTRING("Dynamic"));
+
       return this;
    }
    ExprType getType() { return returnType; }
@@ -2149,23 +2157,23 @@ struct CallMemberVTable : public CppiaExpr
    int runInt(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertInt(ctx, func->getReturnType(), func); 
+      return runContextConvertInt(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
    }
  
    Float runFloat(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertFloat(ctx, func->getReturnType(), func); 
+      return runContextConvertFloat(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
    }
    String runString(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertString(ctx, func->getReturnType(), func); 
+      return runContextConvertString(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertObject(ctx, func->getReturnType(), func); 
+      return runContextConvertObject(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
    }
 
    #ifdef CPPIA_JIT
@@ -2201,9 +2209,6 @@ struct CallMemberVTable : public CppiaExpr
       TypeData *type = funcProto->cppia.types[funcProto->returnType];
       bool isBoolReturn = type->haxeClass==ClassOf<bool>();
 
-      // Implementation may return a more general type, with different byte representation
-      bool checkInterfaceReturnType = isInterfaceCall && (returnType==etFloat || type->name==HX_CSTRING("Dynamic"));
-
       if (isInterfaceCall)
       {
          //sJitTemp1 = ScriptCallable **vtable = thisVal->__GetScriptVTable();
@@ -2221,6 +2226,7 @@ struct CallMemberVTable : public CppiaExpr
       // sJitTemp1 = table[slot]
       compiler->move(sJitTemp1, sJitTemp1.star(jtPointer, slot*sizeof(void *)) );
 
+      // Implementation may return a more general type, with different byte representation
       if (checkInterfaceReturnType)
       {
          JitTemp actualReturnType(compiler,jtInt);
@@ -3294,6 +3300,9 @@ struct CallMember : public CppiaExpr
          ScriptFunction func = type->haxeBase->findFunction(field.__s);
          if (func.signature)
          {
+            if (callSuperField)
+               printf("Warning - calling super host '%s' from cppia can lead to infinte recursion\n", field.__s);
+
             //printf(" found function %s\n", func.signature );
             replace = new CallHaxe( this, func, thisExpr, args );
          }

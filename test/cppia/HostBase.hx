@@ -11,6 +11,9 @@ class HostBase implements IHostInterface
    }
    public function getVal() return floatVal;
 
+   public function getGeneration() return 0;
+
+
    // IHostInteface 
    public function hostImplOnly(i:Int, s:String, f:Float) : String return i+s+f;
    public function whoStartedYou() return "HostBase";

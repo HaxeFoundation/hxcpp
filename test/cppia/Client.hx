@@ -97,6 +97,13 @@ class Client
          return;
       }
 
+      var c:ClientExtends = new ClientExtends2();
+      if (c.getGeneration()!=2)
+      {
+         Common.status = "Error calling cppia super function";
+         return;
+      }
+
 
       Common.clientImplementation = new ClientOne();
       Common.status = "ok";
