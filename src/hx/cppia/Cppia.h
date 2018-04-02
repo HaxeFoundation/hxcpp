@@ -132,6 +132,7 @@ enum ArrayFunc
    af__crement,
    af__SetSizeExact,
    afBlit,
+   afResize,
 };
 
 
