@@ -867,7 +867,14 @@ class BuildTool
             switch(el.name)
             {
                case "file" :
-                  var file = new File(substitute(el.att.name),group);
+                  var name = substitute(el.att.name);
+                  var file = group.find(name);
+                  if (file==null)
+                  {
+                     file = new File(name,group);
+                     group.addFile( file );
+                  }
+
                   if (el.has.tags)
                      file.setTags( substitute(el.att.tags) );
                   if (el.has.filterout)
@@ -877,7 +884,6 @@ class BuildTool
                   for(f in el.elements)
                      if (valid(f,"") && f.name=="depend")
                         file.mDepends.push( substitute(f.att.name) );
-                  group.mFiles.push( file );
                case "section" : createFileGroup(el,group,inName,inForceRelative,null);
                case "cache" :
                   group.mUseCache = parseBool( substitute(el.att.value) );
