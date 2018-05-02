@@ -307,7 +307,7 @@ namespace cpp
       if (isNull())  Dynamic::ThrowBadFunctionError();
    }
 
-   HX_IMPLEMNET_INLINE_VARIANT_FUNCTIONS
+   HX_IMPLEMENT_INLINE_VARIANT_FUNCTIONS
 
 
    int Variant::asInt() const

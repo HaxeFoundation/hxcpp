@@ -1123,7 +1123,7 @@ static ::Dynamic __##class##func(const Array< ::Dynamic> &inArgs) \
  
 
 
-#define HX_IMPLEMNET_INLINE_VARIANT_FUNCTIONS \
+#define HX_IMPLEMENT_INLINE_VARIANT_FUNCTIONS \
   ::Dynamic Variant::operator()() { CheckFPtr(); return valObject->__run(); } \
    ::Dynamic Variant::operator()(const Dynamic &inArg0) { CheckFPtr(); return valObject->__run(inArg0); } \
    ::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1) { CheckFPtr(); return valObject->__run(inArg0,inArg1); } \

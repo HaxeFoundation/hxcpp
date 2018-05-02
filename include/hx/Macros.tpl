@@ -185,7 +185,7 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
 ::end:: ::end::
 
 
-#define HX_IMPLEMNET_INLINE_VARIANT_FUNCTIONS \
+#define HX_IMPLEMENT_INLINE_VARIANT_FUNCTIONS \
 ::foreach PARAMS:: ::if (ARG<6):: ::NS::Dynamic Variant::NS::operator()(::DYNAMIC_ARG_LIST::) { CheckFPtr(); return valObject->__run(::ARG_LIST::); } \
 ::end:: ::end::
 
