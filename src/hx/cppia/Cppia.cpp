@@ -1876,7 +1876,7 @@ struct CallHaxe : public CppiaExpr
       compiler->add( sJitCtxFrame, sJitFrame.as(jtPointer), JitVal(framePos) );
 
       void *func = (void *) ( isSuper ? function.superExecute : function.execute);
-      compiler->callNative( (void *)tryCallHaxe, JitVal( ), sJitCtx );
+      compiler->callNative( (void *)tryCallHaxe, JitVal(func), sJitCtx );
 
       // TODO - from signature
       bool isBoolReturn = false;
