@@ -1703,17 +1703,19 @@ struct CallHaxe : public CppiaExpr
 {
    Expressions args;
    CppiaExpr *thisExpr;
-   ScriptFunction function;
+   ScriptNamedFunction function;
    ExprType returnType;
    bool   isStatic;
+   bool   isSuper;
 
-   CallHaxe(CppiaExpr *inSrc,ScriptFunction inFunction, CppiaExpr *inThis, Expressions &ioArgs, bool inIsStatic=false )
+   CallHaxe(CppiaExpr *inSrc,ScriptNamedFunction inFunction, CppiaExpr *inThis, Expressions &ioArgs, bool inIsStatic=false, bool inIsSuper = false )
        : CppiaExpr(inSrc)
    {
       args.swap(ioArgs);
       thisExpr = inThis;
       function = inFunction;
       isStatic = inIsStatic;
+      isSuper = inIsSuper;
    }
    ExprType getType() { return returnType; }
    CppiaExpr *link(CppiaModule &inModule)
@@ -1774,7 +1776,10 @@ struct CallHaxe : public CppiaExpr
       }
 
       AutoStack a(ctx,pointer);
-      function.execute(ctx);
+      if (isSuper)
+         function.superExecute(ctx);
+      else
+         function.execute(ctx);
 
       #ifdef DEBUG_RETURN_TYPE
       gLastRet = returnType;
@@ -1870,7 +1875,8 @@ struct CallHaxe : public CppiaExpr
       // Store new frame in context ...
       compiler->add( sJitCtxFrame, sJitFrame.as(jtPointer), JitVal(framePos) );
 
-      compiler->callNative( (void *)tryCallHaxe, JitVal( (void *)(function.execute)), sJitCtx );
+      void *func = (void *) ( isSuper ? function.superExecute : function.execute);
+      compiler->callNative( (void *)tryCallHaxe, JitVal( ), sJitCtx );
 
       // TODO - from signature
       bool isBoolReturn = false;
@@ -1917,7 +1923,7 @@ struct CallStatic : public CppiaExpr
 
       if (!replace && type->haxeClass.mPtr)
       {
-         ScriptFunction func = type->haxeBase->findStaticFunction(field);
+         ScriptNamedFunction func = type->haxeBase->findStaticFunction(field);
          if (func.signature)
          {
             //printf(" found function %s\n", func.signature );
@@ -3297,20 +3303,20 @@ struct CallMember : public CppiaExpr
       }
       if (!replace && type->haxeBase)
       {
-         ScriptFunction func = type->haxeBase->findFunction(field.__s);
+         ScriptNamedFunction func = type->haxeBase->findFunction(field.__s);
          if (func.signature)
          {
-            if (callSuperField)
+            if (callSuperField && !func.superExecute)
                printf("Warning - calling super host '%s' from cppia can lead to infinte recursion\n", field.__s);
 
             //printf(" found function %s\n", func.signature );
-            replace = new CallHaxe( this, func, thisExpr, args );
+            replace = new CallHaxe( this, func, thisExpr, args, false, callSuperField && func.superExecute);
          }
       }
 
       if (!replace && type->interfaceBase)
       {
-         ScriptFunction func = type->interfaceBase->findFunction(field.__s);
+         ScriptNamedFunction func = type->interfaceBase->findFunction(field.__s);
          if (func.signature)
          {
             //printf(" found function %s\n", func.signature );

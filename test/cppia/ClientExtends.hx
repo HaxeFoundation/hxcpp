@@ -11,8 +11,8 @@ class ClientExtends extends HostBase implements IClientInterface implements ICli
    }
 
    // TODO  - error
-   //override public function getGeneration() return super.getGeneration() + 1;
-   override public function getGeneration() return  1;
+   override public function getGeneration() return super.getGeneration() + 1;
+   //override public function getGeneration() return  1;
 
    //override public function whoStartedYou() : String  return super.whoStartedYou();
 
