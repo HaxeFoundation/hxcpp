@@ -188,7 +188,7 @@ void GCRemoveRoot(hx::Object **inRoot);
 
 // This is used internally in hxcpp
 // It calls InternalNew, and takes care of null-terminating the result
-HX_CHAR *NewString(int inLen);
+char *NewString(int inLen);
 
 // The concept of 'private' is from the old conservative Gc method.
 // Now with explicit marking, these functions do the same thing, which is

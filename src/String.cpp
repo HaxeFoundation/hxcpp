@@ -166,23 +166,33 @@ int _hx_utf8_decode_advance(char *&ioPtr)
 }
 
 
-int WCharAdvance(const char16_t *&ioStr)
+int Char16Advance(const char16_t *&ioStr)
 {
    char16_t ch = *ioStr++;
-   if (sizeof(char16_t)==2)
+   if (ch>=0xd800)
    {
-      if (ch>=0xd800)
-      {
-         int peek = *ioStr;
-         if (peek<0xdc00)
-            hx::Throw(HX_CSTRING("Invalid UTF16"));
+      int peek = *ioStr;
+      if (peek<0xdc00)
+         hx::Throw(HX_CSTRING("Invalid UTF16"));
 
-         ioStr++;
-         ch = ((ch-0xd800)  << 10) | (peek-0xdc00);
-      }
+      ioStr++;
+      ch = ((ch-0xd800)  << 10) | (peek-0xdc00);
    }
    return ch;
 }
+
+void Char16AdvanceSet(char16_t *&ioStr,int inChar)
+{
+   if (inChar>=0x10000)
+   {
+      int over = (inChar-0x10000);
+      *ioStr++ = (over>>10) + 0xd800;
+      *ioStr++ = (over&0x3ff) + 0xdc00;
+   }
+   else
+      *ioStr++ = inChar;
+}
+
 
 
 template<typename T>
@@ -221,7 +231,7 @@ char *TConvertToUTF8(const char16_t *inStr, int *ioLen)
    if (ioLen==0 || *ioLen==0)
    {
       const char16_t *s = inStr;
-      while( WCharAdvance(s) ) { }
+      while( Char16Advance(s) ) { }
       len = s - inStr - 1;
    }
    else
@@ -232,13 +242,13 @@ char *TConvertToUTF8(const char16_t *inStr, int *ioLen)
    const char16_t *end = s + len;
    int chars = 0;
    while(s<end)
-      chars += UTF8Bytes( WCharAdvance( s ) );
+      chars += UTF8Bytes( Char16Advance( s ) );
 
    char *buf = (char *)NewGCPrivate(0,chars+1);
    char *ptr = buf;
    s = inStr;
    while(s<end)
-      UTF8EncodeAdvance(ptr,WCharAdvance(s));
+      UTF8EncodeAdvance(ptr,Char16Advance(s));
 
    *ptr = 0;
    if (ioLen)
@@ -941,9 +951,52 @@ void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inStri
    #endif
 }
 
+String hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
+{
+   unsigned int hash = 0;
+   if (addHash)
+      for(int i=0;i<inUtf8Len;i++)
+         hash = hash*223 + ptr[i];
+
+   int char16Count = 0;
+   const unsigned char *u = ptr;
+   const unsigned char *end = ptr + inUtf8Len;
+   while(u<end)
+   {
+      int code = DecodeAdvanceUTF8(u);
+      char16Count+= code>=0x10000 ? 2 : 1;
+   }
+
+   int allocSize = 2*(char16Count+1);
+   if (addHash)
+      allocSize += sizeof(int);
+   char16_t *str = (char16_t *)NewGCPrivate(0,allocSize);
+
+   u = ptr;
+   char16_t *o = str;
+   while(u<end)
+   {
+      int code = DecodeAdvanceUTF8(u);
+      Char16AdvanceSet(o,code);
+   }
+   if (addHash)
+   {
+      #ifdef EMSCRIPTEN
+         *((emscripten_align1_int *)(str+char16Count+1) );
+      #else
+         *((unsigned int *)(str+char16Count+1) );
+      #endif
+         ((unsigned int *)(str))[-1] |= HX_GC_STRING_HASH | HX_GC_STRING_CHAR16_T;
+   }
+   else
+      ((unsigned int *)(str))[-1] |= HX_GC_STRING_CHAR16_T;
+
+   return String(str, char16Count, true);
+}
+
+
 void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int pos,int len,bool inCopyPointer)
 {
-   #ifdef HX_UTF8_STRINGS
    if (inCopyPointer)
       outString = String( (const char *)inBytes->GetBase(), len);
    else if (len==0)
@@ -951,27 +1004,26 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
    else if (len==1)
       outString = String::fromCharCode( inBytes[pos] );
    else
-      outString = String( GCStringDup(inBytes->GetBase()+pos, len, 0), len);
-
-   #else
-   const unsigned char *ptr = (unsigned char *)inBytes->GetBase() + pos;
-   const unsigned char *last = ptr + len;
-   wchar_t *result = hx::NewString(len);
-   wchar_t *out = result;
-
-   // utf8-encode
-   while( ptr < last )
    {
-      *out++ = DecodeAdvanceUTF8(ptr);
+      const unsigned char *p0 = (const unsigned char *)inBytes->GetBase();
+      #ifdef HX_SMART_STRINGS
+      bool hasWChar = false;
+      const unsigned char *p = p0 + pos;
+      for(int i=0;i<len;i++)
+         if (p[i]>=127)
+         {
+            hasWChar = true;
+            break;
+         }
+      if (hasWChar)
+      {
+         outString = hx_utf8_to_utf16(p0,len,true);
+      }
+      else
+      #endif
+      outString = String( GCStringDup((const char *)p0+pos, len, 0), len);
    }
-   int l = out - result;
-   *out++ = '\0';
-
-   outString = String(result,l);
-   #endif
 }
-
-
 
 
 

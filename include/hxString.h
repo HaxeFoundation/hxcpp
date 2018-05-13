@@ -75,7 +75,7 @@ public:
 
    static void __boot();
 
-	hx::Object *__ToObject() const;
+   hx::Object *__ToObject() const;
 
    template<typename T,typename S>
    explicit inline String(const cpp::Struct<T,S> &inRHS);
@@ -134,14 +134,24 @@ public:
    const wchar_t *__WCStr() const;
    inline operator const char *() { return __s; }
 
-   inline bool isUTF16Encoded() const { return __s && ((unsigned int *)__s)[-1] & HX_GC_STRING_CHAR16_T; }
+   inline bool isUTF16Encoded() const {
+      #ifdef HX_SMART_STRINGS
+      return __s && ((unsigned int *)__s)[-1] & HX_GC_STRING_CHAR16_T;
+      #else
+      return false;
+      #endif
+   }
 
    static  ::String fromCharCode(int inCode);
 
    inline bool operator==(const null &inRHS) const { return __s==0; }
    inline bool operator!=(const null &inRHS) const { return __s!=0; }
 
-   inline int getChar( int index ) { return __s[index]; }
+   inline int getChar( int index ) {
+      if (isUTF16Encoded())
+         return __w[index];
+      return __s[index];
+   }
    inline unsigned int hash( ) const
    {
       if (!__s) return 0;
@@ -257,10 +267,12 @@ public:
    inline bool operator>=(const Dynamic &inRHS) const { return compare(inRHS)>=0; }
 
    inline int cca(int inPos) const
-	{
-		if ((unsigned)inPos>=length) return 0;
-		return ((unsigned char *)__s)[inPos];
-	}
+   {
+      if ((unsigned)inPos>=length) return 0;
+      if (isUTF16Encoded())
+         return __w[inPos];
+      return ((unsigned char *)__s)[inPos];
+   }
 
 
    static  Dynamic fromCharCode_dyn();
@@ -276,12 +288,12 @@ public:
    Dynamic toString_dyn();
    Dynamic toUpperCase_dyn();
 
-	// This is used by the string-wrapped-as-dynamic class
+   // This is used by the string-wrapped-as-dynamic class
    hx::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp);
 
-	// The actual implementation.
-	// Note that "__s" is const - if you want to change it, you should create a new string.
-	//  this allows for multiple strings to point to the same data.
+   // The actual implementation.
+   // Note that "__s" is const - if you want to change it, you should create a new string.
+   //  this allows for multiple strings to point to the same data.
    int length;
    union {
       const char *__s;
