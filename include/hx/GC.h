@@ -8,6 +8,7 @@
 //  each constant string data is prepended with a 4-byte header that says the string
 //  is constant (ie, not part of GC) and whether there is(not) a pre-computed hash at
 //  the end of the data.
+// When HX_SMART_STRINGS is active, a bit says whether it is char16_t encoded.
 
 #define HX_GC_CONST_ALLOC_BIT  0x80000000
 #define HX_GC_CONST_ALLOC_MARK_BIT  0x80
@@ -294,8 +295,8 @@ namespace hx
 
 // Indicates that __Mark must be called recursively
 #define IMMIX_ALLOC_IS_CONTAINER   0x00800000
-// String has extra data at end
-#define HX_GC_STRING_EXTENDED      0x00200000
+// String is char16_t type
+#define HX_GC_STRING_CHAR16_T      0x00200000
 // String has hash data at end
 #define HX_GC_STRING_HASH          0x00100000
 

@@ -64,7 +64,7 @@ wchar_t HX_DOUBLE_PATTERN[20] =  L"%.15g";
 void __hxcpp_set_float_format(String inFormat)
 {
   int last = inFormat.length < 19 ? inFormat.length : 19;
-  memcpy(HX_DOUBLE_PATTERN, inFormat.__s, last*sizeof(HX_CHAR) );
+  memcpy(HX_DOUBLE_PATTERN, inFormat.__s, last*sizeof(char) );
   HX_DOUBLE_PATTERN[last] = '\0';
 }
 
@@ -166,14 +166,35 @@ int _hx_utf8_decode_advance(char *&ioPtr)
 }
 
 
+int WCharAdvance(const char16_t *&ioStr)
+{
+   char16_t ch = *ioStr++;
+   if (sizeof(char16_t)==2)
+   {
+      if (ch>=0xd800)
+      {
+         int peek = *ioStr;
+         if (peek<0xdc00)
+            hx::Throw(HX_CSTRING("Invalid UTF16"));
+
+         ioStr++;
+         ch = ((ch-0xd800)  << 10) | (peek-0xdc00);
+      }
+   }
+   return ch;
+}
+
+
 template<typename T>
-char *TConvertToUTF8(T *inStr, int *ioLen)
+char *TConvertToUTF8(const T *inStr, int *ioLen)
 {
    int len = 0;
    int chars = 0;
-   if (ioLen==0)
+   if (ioLen==0 || *ioLen==0)
+   {
       while(inStr[len])
          chars += UTF8Bytes(inStr[len++]);
+   }
    else
    {
       len = *ioLen;
@@ -190,8 +211,42 @@ char *TConvertToUTF8(T *inStr, int *ioLen)
       *ioLen = chars;
 
    return buf;
- 
 }
+
+
+template<>
+char *TConvertToUTF8(const char16_t *inStr, int *ioLen)
+{
+   int len = 0;
+   if (ioLen==0 || *ioLen==0)
+   {
+      const char16_t *s = inStr;
+      while( WCharAdvance(s) ) { }
+      len = s - inStr - 1;
+   }
+   else
+   {
+      len = *ioLen;
+   }
+   const char16_t *s = inStr;
+   const char16_t *end = s + len;
+   int chars = 0;
+   while(s<end)
+      chars += UTF8Bytes( WCharAdvance( s ) );
+
+   char *buf = (char *)NewGCPrivate(0,chars+1);
+   char *ptr = buf;
+   s = inStr;
+   while(s<end)
+      UTF8EncodeAdvance(ptr,WCharAdvance(s));
+
+   *ptr = 0;
+   if (ioLen)
+      *ioLen = chars;
+
+   return buf;
+}
+
 
 
 String::String(const wchar_t *inString)
@@ -203,9 +258,7 @@ String::String(const wchar_t *inString)
    }
    else
    {
-      int pos = 0;
-      while(inString[pos])
-         length += UTF8Bytes(inString[pos++]);
+      length = 0;
       __s = TConvertToUTF8(inString, &length);
    }
 }
@@ -272,7 +325,7 @@ String __hxcpp_utf8_string_to_char_bytes(String &inUTF8)
     if (src!=end)
        hx::Throw(HX_CSTRING("Invalid UTF8"));
 
-    HX_CHAR *result = hx::NewString(char_count);
+    char *result = hx::NewString(char_count);
 
     src = (unsigned char *)inUTF8.__s;
     char_count = 0;
@@ -379,13 +432,13 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
 
 
 
-static const HX_CHAR *GCStringDup(const HX_CHAR *inStr,int inLen, int *outLen=0)
+static const char *GCStringDup(const char *inStr,int inLen, int *outLen=0)
 {
    if (inStr==0 && inLen<=0)
    {
       if (outLen)
          outLen = 0;
-      return (HX_CHAR *)sEmptyString.__s;
+      return (char *)sEmptyString.__s;
    }
 
    int len = inLen;
@@ -425,19 +478,19 @@ static const HX_CHAR *GCStringDup(const HX_CHAR *inStr,int inLen, int *outLen=0)
       struct Finder
       {
          int len;
-         const HX_CHAR *ptr;
-         Finder(int len, const HX_CHAR *inPtr) : len(len), ptr(inPtr) { }
+         const char *ptr;
+         Finder(int len, const char *inPtr) : len(len), ptr(inPtr) { }
          bool operator==(const String &inStr) const
          {
-            return len == inStr.length && !memcmp(ptr, inStr.__s, len*sizeof(HX_CHAR));
+            return len == inStr.length && !memcmp(ptr, inStr.__s, len*sizeof(char));
          }
       };
       String found;
       if (ctx->stringSet->findEquivalentKey(found, hash, Finder(len, inStr)))
          return found.__s;
 
-      HX_CHAR *result = hx::NewString(len + 4);
-      memcpy(result,inStr,sizeof(HX_CHAR)*(len));
+      char *result = hx::NewString(len + 4);
+      memcpy(result,inStr,sizeof(char)*(len));
       result[len] = '\0';
       *((unsigned int *)(result + len + 1)) = hash;
       ((unsigned int *)(result))[-1] |= HX_GC_STRING_HASH;
@@ -449,8 +502,8 @@ static const HX_CHAR *GCStringDup(const HX_CHAR *inStr,int inLen, int *outLen=0)
    }
    #endif
 
-   HX_CHAR *result = hx::NewString(len);
-   memcpy(result,inStr,sizeof(HX_CHAR)*(len));
+   char *result = hx::NewString(len);
+   memcpy(result,inStr,sizeof(char)*(len));
    result[len] = '\0';
 
    return result;
@@ -472,7 +525,7 @@ String::String(const Dynamic &inRHS)
 
 void String::fromInt(int inIdx)
 {
-   HX_CHAR buf[100];
+   char buf[100];
    SPRINTF(buf,100,HX_INT_PATTERN,inIdx);
    buf[99]='\0';
    __s = GCStringDup(buf,-1,&length);
@@ -486,7 +539,7 @@ String::String(const int &inRHS)
 
 String::String(const unsigned int &inRHS)
 {
-   HX_CHAR buf[100];
+   char buf[100];
    SPRINTF(buf,100,HX_UINT_PATTERN,inRHS);
    buf[99]='\0';
    __s = GCStringDup(buf,-1,&length);
@@ -495,13 +548,12 @@ String::String(const unsigned int &inRHS)
 
 String::String(const cpp::CppInt32__ &inRHS)
 {
-   HX_CHAR buf[100];
+   char buf[100];
    SPRINTF(buf,100,HX_INT_PATTERN,inRHS.mValue);
    __s = GCStringDup(buf,-1,&length);
 }
 
-// Construct from utf8 string
-#ifdef HX_UTF8_STRINGS
+// Construct from wchar_t string - copy data
 String::String(const wchar_t *inPtr,int inLen)
 {
    if (!inPtr)
@@ -521,15 +573,8 @@ String::String(const wchar_t *inPtr,int inLen)
       __s = TConvertToUTF8(inPtr,&length);
    }
 }
-#else
-String::String(const char *inPtr,int inLen)
-{
-   length = inLen;
-    __s = hx::ConvertToWChar(inPtr,&length);
-}
-#endif
 
-String::String(const HX_CHAR *inStr)
+String::String(const char *inStr)
 {
    if (inStr)
       __s = GCStringDup(inStr,-1,&length);
@@ -544,7 +589,7 @@ String::String(const HX_CHAR *inStr)
 
 String::String(const double &inRHS)
 {
-   HX_CHAR buf[100];
+   char buf[100];
    SPRINTF(buf,100,HX_DOUBLE_PATTERN,inRHS);
    buf[99]='\0';
    __s = GCStringDup(buf,-1,&length);
@@ -553,7 +598,7 @@ String::String(const double &inRHS)
 
 String::String(const cpp::Int64 &inRHS)
 {
-   HX_CHAR buf[100];
+   char buf[100];
    SPRINTF(buf,100,"%lld", (long long int)inRHS);
    buf[99]='\0';
    __s = GCStringDup(buf,-1,&length);
@@ -562,7 +607,7 @@ String::String(const cpp::Int64 &inRHS)
 
 String::String(const cpp::UInt64 &inRHS)
 {
-   HX_CHAR buf[100];
+   char buf[100];
    SPRINTF(buf,100,"%llu", (unsigned long long int)inRHS);
    buf[99]='\0';
    __s = GCStringDup(buf,-1,&length);
@@ -570,7 +615,7 @@ String::String(const cpp::UInt64 &inRHS)
 
 String::String(const float &inRHS)
 {
-   HX_CHAR buf[100];
+   char buf[100];
    SPRINTF(buf,100,HX_DOUBLE_PATTERN,inRHS);
    buf[99]='\0';
    __s = GCStringDup(buf,-1,&length);
@@ -628,8 +673,8 @@ String String::__URLEncode() const
       return *this;
 
    int l = utf8_chars + extra*2;
-   HX_CHAR *result = hx::NewString(l);
-   HX_CHAR *ptr = result;
+   char *result = hx::NewString(l);
+   char *ptr = result;
 
    for(int i=0;i<utf8_chars;i++)
    {
@@ -649,7 +694,7 @@ String String::__URLEncode() const
 
 String String::toUpperCase() const
 {
-   HX_CHAR *result = hx::NewString(length);
+   char *result = hx::NewString(length);
    for(int i=0;i<length;i++)
       result[i] = toupper( __s[i] );
    return String(result,length);
@@ -657,7 +702,7 @@ String String::toUpperCase() const
 
 String String::toLowerCase() const
 {
-   HX_CHAR *result = hx::NewString(length);
+   char *result = hx::NewString(length);
    for(int i=0;i<length;i++)
       result[i] = tolower( __s[i] );
    return String(result,length);
@@ -682,7 +727,7 @@ String String::__URLDecode() const
     // [length], some memory will be wasted here, but on the assumption that
     // most URLs have only a few '%NN' encodings in them, don't bother
     // counting the number of characters in the resulting string first.
-    HX_CHAR *decoded = NewString(length), *d = decoded;
+    char *decoded = NewString(length), *d = decoded;
 
     for (int i = 0; i < length; i++) {
         int c = __s[i];
@@ -718,7 +763,7 @@ String &String::dup()
    else
    {
       // Take copy incase GCStringDup generates GC event
-      const HX_CHAR *oldString = __s;
+      const char *oldString = __s;
       __s = 0;
       __s = GCStringDup(oldString,length,&length);
    }
@@ -739,7 +784,7 @@ String &String::dupConst()
    }
    else
    {
-      HX_CHAR *ch  = (HX_CHAR *)InternalCreateConstBuffer(__s,length+1,true);
+      char *ch  = (char *)InternalCreateConstBuffer(__s,length+1,true);
       ch[length] = '\0';
       __s = ch;
       sConstStringSet.insert(*this);
@@ -767,7 +812,7 @@ int String::indexOf(const String &inValue, Dynamic inStart) const
    int l = inValue.length;
    if (l==1)
    {
-      HX_CHAR test = *inValue.__s;
+      char test = *inValue.__s;
       while(s<length)
       {
          if (__s[s]==test)
@@ -779,7 +824,7 @@ int String::indexOf(const String &inValue, Dynamic inStart) const
    {
       while(s<=length-l)
       {
-         if (!memcmp(__s + s,inValue.__s,l*sizeof(HX_CHAR)))
+         if (!memcmp(__s + s,inValue.__s,l*sizeof(char)))
             return s;
          s++;
       }
@@ -800,7 +845,7 @@ int String::lastIndexOf(const String &inValue, Dynamic inStart) const
 
    if (l==1)
    {
-      HX_CHAR test = *inValue.__s;
+      char test = *inValue.__s;
       while(s>=0)
       {
          if (__s[s]==test)
@@ -812,7 +857,7 @@ int String::lastIndexOf(const String &inValue, Dynamic inStart) const
    {
       while(s>=0)
       {
-         if (!memcmp(__s + s,inValue.__s,l*sizeof(HX_CHAR)))
+         if (!memcmp(__s + s,inValue.__s,l*sizeof(char)))
             return s;
          --s;
       }
@@ -847,10 +892,10 @@ String String::fromCharCode( int c )
 
    if (!sConstStrings[idx].__s)
    {
-      HX_CHAR buf[2];
+      char buf[2];
       buf[0] = c;
       buf[1] = '\0';
-      sConstStrings[idx].__s = (HX_CHAR *)InternalCreateConstBuffer(buf,2,true);
+      sConstStrings[idx].__s = (char *)InternalCreateConstBuffer(buf,2,true);
       sConstStrings[idx].length = 1;
    }
    return sConstStrings[idx];
@@ -900,7 +945,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
 {
    #ifdef HX_UTF8_STRINGS
    if (inCopyPointer)
-      outString = String( (const HX_CHAR *)inBytes->GetBase(), len);
+      outString = String( (const char *)inBytes->GetBase(), len);
    else if (len==0)
       outString = HX_CSTRING("");
    else if (len==1)
@@ -1160,9 +1205,9 @@ String String::operator+(const String &inRHS) const
    if (!inRHS.__s) return *this + HX_CSTRING("null");
    if (!inRHS.length) return *this;
    int l = length + inRHS.length;
-   HX_CHAR *result = hx::NewString(l);
-   memcpy(result,__s,length*sizeof(HX_CHAR));
-   memcpy(result+length,inRHS.__s,inRHS.length*sizeof(HX_CHAR));
+   char *result = hx::NewString(l);
+   memcpy(result,__s,length*sizeof(char));
+   memcpy(result+length,inRHS.__s,inRHS.length*sizeof(char));
    result[l] = '\0';
    return String(result,l);
 }
@@ -1177,9 +1222,9 @@ String &String::operator+=(const String &inRHS)
    else if (inRHS.length>0)
    {
       int l = length + inRHS.length;
-      HX_CHAR *s = hx::NewString(l);
-      memcpy(s,__s,length*sizeof(HX_CHAR));
-      memcpy(s+length,inRHS.__s,inRHS.length*sizeof(HX_CHAR));
+      char *s = hx::NewString(l);
+      memcpy(s,__s,length*sizeof(char));
+      memcpy(s+length,inRHS.__s,inRHS.length*sizeof(char));
       s[l] = '\0';
       __s = s;
       length = l;
@@ -1206,7 +1251,7 @@ struct __String_##func : public hx::Object \
    String toString() const{ return HX_CSTRING(#func); } \
    String __ToString() const{ return HX_CSTRING(#func); } \
    int __GetType() const { return vtFunction; } \
-   void *__GetHandle() const { return const_cast<HX_CHAR *>(mThis.__s); } \
+   void *__GetHandle() const { return const_cast<char *>(mThis.__s); } \
    int __ArgCount() const { return ARG_C; } \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \

@@ -25,14 +25,15 @@ public:
    void operator delete( void * ) { }
 
    inline String() : length(0), __s(0) { }
-   explicit String(const HX_CHAR *inPtr);
-   inline String(const HX_CHAR *inPtr,int inLen) : __s(inPtr), length(inLen) { }
+   explicit String(const char *inPtr);
+   inline String(const char *inPtr,int inLen) : __s(inPtr), length(inLen) { }
 
-   #ifdef HX_UTF8_STRINGS
-   String(const wchar_t *inPtr,int inLen);
-   #else
-   String(const char *inPtr,int inLen);
+   #ifdef HX_SMART_STRINGS
+   inline String(const char16_t *inPtr,int inLen,bool) : __w(inPtr), length(inLen) { }
    #endif
+
+   // Makes copy if required
+   String(const wchar_t *inPtr,int inLen);
 
    explicit String(const wchar_t *inPtr);
    #ifdef __OBJC__
@@ -128,10 +129,12 @@ public:
     ::String substr(int inPos,Dynamic inLen) const;
     ::String substring(int inStartIndex, Dynamic inEndIndex) const;
 
-   inline const HX_CHAR *c_str() const { return __s; }
+   inline const char *c_str() const { return __s; }
    const char *__CStr() const;
    const wchar_t *__WCStr() const;
    inline operator const char *() { return __s; }
+
+   inline bool isUTF16Encoded() const { return __s && ((unsigned int *)__s)[-1] & HX_GC_STRING_CHAR16_T; }
 
    static  ::String fromCharCode(int inCode);
 
@@ -183,13 +186,15 @@ public:
 
    inline int compare(const ::String &inRHS) const
    {
-      const HX_CHAR *r = inRHS.__s;
+      const char *r = inRHS.__s;
       if (__s == r) return inRHS.length-length;
       if (__s==0) return -1;
       if (r==0) return 1;
-      #ifdef HX_UTF8_STRINGS
+
       return strcmp(__s,r);
-      #elif defined(ANDROID)
+
+      /*
+      #if defined(ANDROID)
       int min_len = length < inRHS.length ? length : inRHS.length;
       for(int i=0;i<min_len;i++)
          if (__s[i]<r[i]) return -1;
@@ -198,6 +203,7 @@ public:
       #else
       return wcscmp(__s,r);
       #endif
+      */
    }
 
 
@@ -208,7 +214,7 @@ public:
    ::String operator+(const double &inRHS) const { return *this + ::String(inRHS); }
    ::String operator+(const float &inRHS) const { return *this + ::String(inRHS); }
    ::String operator+(const null &inRHS) const{ return *this + HX_CSTRING("null"); } 
-   //::String operator+(const HX_CHAR *inRHS) const{ return *this + ::String(inRHS); } 
+   //::String operator+(const char *inRHS) const{ return *this + ::String(inRHS); } 
    ::String operator+(const cpp::CppInt32__ &inRHS) const{ return *this + ::String(inRHS); } 
    template<typename T>
    inline ::String operator+(const hx::ObjectPtr<T> &inRHS) const
@@ -277,7 +283,10 @@ public:
 	// Note that "__s" is const - if you want to change it, you should create a new string.
 	//  this allows for multiple strings to point to the same data.
    int length;
-   const HX_CHAR *__s;
+   union {
+      const char *__s;
+      const char16_t *__w;
+   };
 };
 
 
