@@ -441,14 +441,14 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
 
 
 
-
-static const char *GCStringDup(const char *inStr,int inLen, int *outLen=0)
+template<typename T>
+static const T *GCStringDup(const T *inStr,int inLen, int *outLen=0)
 {
    if (inStr==0 && inLen<=0)
    {
       if (outLen)
          outLen = 0;
-      return (char *)sEmptyString.__s;
+      return (const T *)sEmptyString.__s;
    }
 
    int len = inLen;
@@ -463,7 +463,7 @@ static const char *GCStringDup(const char *inStr,int inLen, int *outLen=0)
       *outLen = len;
 
    if (len==1)
-      return String::fromCharCode(inStr[0]).__s;
+      return (const T *)String::fromCharCode(inStr[0]).__s;
 
    #ifdef HXCPP_COMBINE_STRINGS
    bool ident = len<20 && sIsIdent[inStr[0]] && (inStr[0]<'0' || inStr[0]>'9');
@@ -512,11 +512,18 @@ static const char *GCStringDup(const char *inStr,int inLen, int *outLen=0)
    }
    #endif
 
-   char *result = hx::NewString(len);
-   memcpy(result,inStr,sizeof(char)*(len));
-   result[len] = '\0';
+   if (sizeof(T)==1)
+   {
+      char *result = hx::NewString( len );
+      memcpy(result,inStr,sizeof(char)*(len));
+      return (T*)result;
+   }
 
-   return result;
+   char16_t *result = (char16_t *)hx::InternalNew( (len+1)*2, false );
+   ((unsigned int *)result)[-1] |= HX_GC_STRING_CHAR16_T;
+   memcpy(result,inStr,2*len);
+   result[len] = 0;
+   return (T *)result;
 }
 
 
@@ -884,29 +891,71 @@ Dynamic String::charCodeAt(int inPos) const
    if (inPos<0 || inPos>=length)
       return null();
 
-   #ifdef HX_UTF8_STRINGS
-   // really "byte code at" ...
-   //const unsigned char *p = (const unsigned char *)(__s + inPos);
-   //return DecodeAdvanceUTF8(p);
-   return (int)( ((unsigned char *)__s) [inPos]);
-   #else
-   return (int)(__s[inPos]);
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+      return (int)__w[inPos];
    #endif
+   return (int)(__s[inPos]);
 }
 
 String String::fromCharCode( int c )
 {
    int idx = c<0 ? c+256 : c;
-   if (idx<0 || idx>255)
+   if (idx<0)
+       return null();
+
+   if (idx>255)
+   {
+      #ifdef HX_SMART_STRINGS
+      if (c>127)
+      {
+         char16_t buf[3];
+         int l = 1;
+         if (c>=0x10000)
+         {
+            int over = (c-0x10000);
+            buf[0] = (over>>10) + 0xd800;
+            buf[1] = (over&0x3ff) + 0xdc00;
+            buf[2] = 0;
+            l = 2;
+         }
+         else
+         {
+            buf[0] = c;
+            buf[1] = 0;
+         }
+
+         char16_t *p = (char16_t *)NewGCPrivate(buf,(l+1)*2);
+         ((unsigned int *)p)[-1] |= HX_GC_STRING_CHAR16_T;
+         return String(p,l,true);
+      }
+      #endif
+
       return null();
+   }
 
    if (!sConstStrings[idx].__s)
    {
-      char buf[2];
-      buf[0] = c;
-      buf[1] = '\0';
-      sConstStrings[idx].__s = (char *)InternalCreateConstBuffer(buf,2,true);
-      sConstStrings[idx].length = 1;
+      #ifdef HX_SMART_STRINGS
+      if (c>127)
+      {
+         char16_t buf[2];
+         buf[0] = c;
+         buf[1] = '\0';
+         sConstStrings[idx].length = 1;
+         char16_t *w = (char16_t *)InternalCreateConstBuffer(buf,sizeof(buf),true);
+         ((unsigned int *)w)[-1] |= HX_GC_STRING_CHAR16_T;
+         sConstStrings[idx].__w = w;
+      }
+      else
+      #endif
+      {
+         char buf[2];
+         buf[0] = c;
+         buf[1] = '\0';
+         sConstStrings[idx].__s = (char *)InternalCreateConstBuffer(buf,2,true);
+         sConstStrings[idx].length = 1;
+      }
    }
    return sConstStrings[idx];
 }
@@ -919,36 +968,41 @@ String String::charAt( int at ) const
 
 void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inString)
 {
-   #ifdef HX_UTF8_STRINGS
-   outBytes->__SetSize(inString.length);
-   if (inString.length)
-      memcpy(outBytes->GetBase(), inString.__s,inString.length);
-   #else
-   for(int i=0;i<inString.length;i++)
+   if (!inString.length)
+      return;
+
+   if (!inString.isUTF16Encoded())
    {
-      int c = inString.__s[i];
-      if( c <= 0x7F )
-         outBytes->push(c);
-      else if( c <= 0x7FF )
+      outBytes->__SetSize(inString.length);
+      memcpy(outBytes->GetBase(), inString.__s,inString.length);
+   }
+   else
+   {
+      for(int i=0;i<inString.length;i++)
       {
-         outBytes->push( 0xC0 | (c >> 6) );
-         outBytes->push( 0x80 | (c & 63) );
-      }
-      else if( c <= 0xFFFF )
-      {
-         outBytes->push( 0xE0 | (c >> 12) );
-         outBytes->push( 0x80 | ((c >> 6) & 63) );
-         outBytes->push( 0x80 | (c & 63) );
-      }
-      else
-      {
-         outBytes->push( 0xF0 | (c >> 18) );
-         outBytes->push( 0x80 | ((c >> 12) & 63) );
-         outBytes->push( 0x80 | ((c >> 6) & 63) );
-         outBytes->push( 0x80 | (c & 63) );
+         int c = inString.__w[i];
+         if( c <= 0x7F )
+            outBytes->push(c);
+         else if( c <= 0x7FF )
+         {
+            outBytes->push( 0xC0 | (c >> 6) );
+            outBytes->push( 0x80 | (c & 63) );
+         }
+         else if( c <= 0xFFFF )
+         {
+            outBytes->push( 0xE0 | (c >> 12) );
+            outBytes->push( 0x80 | ((c >> 6) & 63) );
+            outBytes->push( 0x80 | (c & 63) );
+         }
+         else
+         {
+            outBytes->push( 0xF0 | (c >> 18) );
+            outBytes->push( 0x80 | ((c >> 12) & 63) );
+            outBytes->push( 0x80 | ((c >> 6) & 63) );
+            outBytes->push( 0x80 | (c & 63) );
+         }
       }
    }
-   #endif
 }
 
 String hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
@@ -1017,7 +1071,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
          }
       if (hasWChar)
       {
-         outString = hx_utf8_to_utf16(p0,len,true);
+         outString = hx_utf8_to_utf16(p0+pos,len,true);
       }
       else
       #endif
@@ -1217,6 +1271,11 @@ String String::substr(int inFirst, Dynamic inLen) const
       return HX_CSTRING("");
    if (len==1)
       return String::fromCharCode(__s[inFirst]);
+
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+      return String( GCStringDup(__w+inFirst, len, 0), len, true );
+   #endif
 
    return String( GCStringDup(__s+inFirst, len, 0), len );
 }

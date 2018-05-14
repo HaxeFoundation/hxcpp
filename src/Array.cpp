@@ -357,39 +357,99 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
       return HX_CSTRING("");
 
    int len = 0;
+   bool isWChar = false;
    for(int i=0;i<length;i++)
    {
       String strI = inArray->__unsafe_get(i);
-      len += strI.__s ? strI.length : 4;
-   }
-   len += (length-1) * inSeparator.length;
-
-   HX_CHAR *buf = hx::NewString(len);
-
-   int pos = 0;
-   bool separated = inSeparator.length>0;
-   for(int i=0;i<length;i++)
-   {
-      String strI = inArray->__unsafe_get(i);
-      if (!strI.__s)
+      if (strI.__s)
       {
-         memcpy(buf+pos,"null",4);
-         pos+=4;
+         len += strI.length;
+         #ifdef HX_SMART_STRINGS
+         if ( ((unsigned int *)strI.__w)[-1] & HX_GC_STRING_CHAR16_T)
+            isWChar = true;
+         #endif
       }
       else
-      {
-         memcpy(buf+pos,strI.__s,strI.length*sizeof(HX_CHAR));
-         pos += strI.length;
-      }
-      if (separated && (i+1<length) )
-      {
-         memcpy(buf+pos,inSeparator.__s,inSeparator.length*sizeof(HX_CHAR));
-         pos += inSeparator.length;
-      }
+         len += 4;
    }
-   buf[len] = '\0';
 
-   return String(buf,len);
+   len += (length-1) * inSeparator.length;
+   #ifdef HX_SMART_STRINGS
+   bool sepIsWide = inSeparator.isUTF16Encoded();
+   if (isWChar || sepIsWide)
+   {
+      char16_t *buf = (char16_t *)hx::InternalNew( (len+1)*sizeof(char16_t), false );
+      ((unsigned int *)buf)[-1] |= HX_GC_STRING_CHAR16_T;
+      int pos = 0;
+      bool separated = inSeparator.length>0;
+
+      for(int i=0;i<length;i++)
+      {
+         String strI = inArray->__unsafe_get(i);
+         if (!strI.__s)
+         {
+            memcpy(buf+pos,u"null",8);
+            pos+=4;
+         }
+         else if (strI.isUTF16Encoded())
+         {
+            memcpy(buf+pos,strI.__w,strI.length*sizeof(char16_t));
+            pos += strI.length;
+         }
+         else
+         {
+            for(int c=0;c<strI.length;c++)
+               buf[pos++] = strI.__s[c];
+         }
+
+         if (separated && (i+1<length) )
+         {
+            if (sepIsWide)
+            {
+               memcpy(buf+pos,inSeparator.__w,inSeparator.length*sizeof(char16_t));
+               pos += inSeparator.length;
+            }
+            else
+            {
+               for(int c=0;c<inSeparator.length;c++)
+                  buf[pos++] = inSeparator.__s[c];
+            }
+         }
+      }
+      buf[len] = '\0';
+
+      return String(buf,len,true);
+   }
+   else
+   #endif
+   {
+      char *buf = hx::NewString(len);
+
+      int pos = 0;
+      bool separated = inSeparator.length>0;
+      for(int i=0;i<length;i++)
+      {
+         String strI = inArray->__unsafe_get(i);
+         if (!strI.__s)
+         {
+            memcpy(buf+pos,"null",4);
+            pos+=4;
+         }
+         else
+         {
+            memcpy(buf+pos,strI.__s,strI.length*sizeof(char));
+            pos += strI.length;
+         }
+         if (separated && (i+1<length) )
+         {
+            memcpy(buf+pos,inSeparator.__s,inSeparator.length*sizeof(char));
+            pos += inSeparator.length;
+         }
+      }
+      buf[len] = '\0';
+
+      return String(buf,len);
+   }
 }
 
 

@@ -134,7 +134,7 @@ public:
 
    inline bool isUTF16Encoded() const {
       #ifdef HX_SMART_STRINGS
-      return __s && ((unsigned int *)__s)[-1] & HX_GC_STRING_CHAR16_T;
+      return __w && ((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T;
       #else
       return false;
       #endif
@@ -267,8 +267,10 @@ public:
    inline int cca(int inPos) const
    {
       if ((unsigned)inPos>=length) return 0;
+      #ifdef HX_SMART_STRINGS
       if (isUTF16Encoded())
          return __w[inPos];
+      #endif
       return ((unsigned char *)__s)[inPos];
    }
 
