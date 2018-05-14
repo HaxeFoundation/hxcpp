@@ -28,9 +28,7 @@ public:
    explicit String(const char *inPtr);
    inline String(const char *inPtr,int inLen) : __s(inPtr), length(inLen) { }
 
-   #ifdef HX_SMART_STRINGS
    inline String(const char16_t *inPtr,int inLen,bool) : __w(inPtr), length(inLen) { }
-   #endif
 
    // Makes copy if required
    String(const wchar_t *inPtr,int inLen);

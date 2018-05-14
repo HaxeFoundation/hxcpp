@@ -24,6 +24,8 @@
 
 <unset name="USE_PRECOMPILED_HEADERS"/>
 
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
+
 <set name="SUBSYSTEMWINDOWS" value="1" if="no_console" unless="HXCPP_DEBUGGER" />
 
 <compiler id="mingw" exe="gcc">
@@ -38,6 +40,7 @@
   <include name="toolchain/common-defines.xml" />
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
+  <cppflag value="-std=c++11" if="HXCPP_CPP11" />
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>

@@ -224,7 +224,7 @@ typedef void (*NekoEntryFunc)();
 
 static String GetFileContents(String inFile)
 {
-#ifndef _WIN32
+#ifndef _MSC_VER
    FILE *file = fopen(inFile.__CStr(),"rb");
 #else
    FILE *file = _wfopen(inFile.__WCStr(),L"rb");

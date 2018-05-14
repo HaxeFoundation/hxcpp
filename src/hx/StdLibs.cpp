@@ -208,7 +208,7 @@ int __hxcpp_irand(int inMax)
 
 void __hxcpp_stdlibs_boot()
 {
-   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
+   #if defined(_MSC_VER) && !defined(HX_WINRT)
    HMODULE kernel32 = LoadLibraryA("kernel32");
    if (kernel32)
    {
