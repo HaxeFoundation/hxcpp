@@ -20,7 +20,7 @@ typedef int64_t __int64;
 #include <syslog.h>
 #endif
 #ifdef TIZEN
-extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumber, const char* pFormat, ...);
+#include <dlog.h>
 #endif
 #if defined(BLACKBERRY) || defined(GCW0)
 #include <unistd.h>
@@ -172,7 +172,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
             return result;
          }
       }
- 
+
    return null();
 }
 
@@ -250,7 +250,7 @@ void __hxcpp_stdlibs_boot()
    //_setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
    #endif
-   
+
    // I think this does more harm than good.
    //  It does not cause fread to return immediately - as perhaps desired.
    //  But it does cause some new-line characters to be lost.
@@ -261,43 +261,55 @@ void __hxcpp_stdlibs_boot()
 
 void __trace(Dynamic inObj, Dynamic inData)
 {
+   if (inData==null()) {
 #ifdef HX_WINRT
-   WINRT_PRINTF("%s:%d: %s\n",
-               inData==null() ? "?" : Dynamic((inData)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s,
-               inData==null() ? 0 : Dynamic((inData)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt(),
-               inObj.GetPtr() ? inObj->toString().__s : "null" );
+      WINRT_PRINTF("%s\n",
+               inObj.GetPtr() ? inObj->toString().__s : "null");
 #elif defined(TIZEN)
-   AppLogInternal(inData==null() ? "?" : Dynamic(inData->__Field( HX_CSTRING("fileName")), HX_PROP_DYNAMIC)->toString().__s,
-      inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber")), HX_PROP_DYNAMIC),
-      "%s\n", inObj.GetPtr() ? inObj->toString().__s : "null" );
-#else
-#ifdef HX_UTF8_STRINGS
-   /*
-   #ifdef HX_WINDOWS
-   wprintf(L"%ls:%d: %ls\n",
-               inData==null() ? L"?" : Dynamic(inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC))->toString().__WCStr(),
-               inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)),
-               inObj.GetPtr() ? inObj->toString().__WCStr() : L"null" );
-   #else
-   */
+      dlog_dprint(DLOG_INFO, "trace", "%s",
+               inObj.GetPtr() ? inObj->toString().__s : "null");
+#elif defined(HX_UTF8_STRINGS)
    #if defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-   __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",
+      __android_log_print(ANDROID_LOG_INFO, "trace", "%s",
    #elif defined(WEBOS)
-   syslog(LOG_INFO, "%s:%d: %s",
+      syslog(LOG_INFO, "%s",
    #else
-   printf("%s:%d: %s\n",
+      printf("%s\n",
    #endif
-               inData==null() ? "?" : Dynamic(inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC))->toString().__s,
-               inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)),
-               inObj.GetPtr() ? inObj->toString().__s : "null" );
-   //#endif
+               inObj.GetPtr() ? inObj->toString().__s : "null");
 #else
-   printf( "%S:%d: %S\n",
-               inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC)->__ToString().__s,
-               inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)->__ToInt(),
-               inObj.GetPtr() ? inObj->toString().__s : L"null" );
+      printf("%ls\n",
+               inObj.GetPtr() ? inObj->toString().__s : L"null");
 #endif
+   } else {
+#ifdef HX_WINRT
+      WINRT_PRINTF("%s:%d: %s\n",
+               Dynamic(inData->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s,
+               (int)(inData->__Field(HX_CSTRING("lineNumber"), HX_PROP_DYNAMIC)),
+               inObj.GetPtr() ? inObj->toString().__s : "null");
+#elif defined(TIZEN)
+      dlog_dprint(DLOG_INFO, "trace", "%s:%d: %s\n",
+               Dynamic(inData->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s,
+               (int)(inData->__Field(HX_CSTRING("lineNumber"), HX_PROP_DYNAMIC)),
+               inObj.GetPtr() ? inObj->toString().__s : "null");
+#elif defined(HX_UTF8_STRINGS)
+   #if defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+      __android_log_print(ANDROID_LOG_INFO, "trace", "%s:%d: %s",
+   #elif defined(WEBOS)
+      syslog(LOG_INFO, "%s:%d: %s",
+   #else
+      printf("%s:%d: %s\n",
+   #endif
+               Dynamic(inData->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s,
+               (int)(inData->__Field(HX_CSTRING("lineNumber"), HX_PROP_DYNAMIC)),
+               inObj.GetPtr() ? inObj->toString().__s : "null");
+#else
+      printf("%ls:%d: %ls\n",
+               Dynamic(inData->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s,
+               (int)(inData->__Field(HX_CSTRING("lineNumber"), HX_PROP_DYNAMIC)),
+               inObj.GetPtr() ? inObj->toString().__s : L"null");
 #endif
+   }
 }
 
 void __hxcpp_exit(int inExitCode)
@@ -342,7 +354,7 @@ double  __time_stamp()
 #if defined(HX_WINDOWS) && !defined(HX_WINRT)
 
 /*
-ISWHITE and ParseCommandLine are based on the implementation of the 
+ISWHITE and ParseCommandLine are based on the implementation of the
 .NET Core runtime, CoreCLR, which is licensed under the MIT license:
 Copyright (c) Microsoft. All rights reserved.
 See LICENSE file in the CoreCLR project root for full license information.
@@ -367,7 +379,7 @@ static void ParseCommandLine(LPTSTR psrc, Array<String> &out)
        because the program name must be a legal NTFS/HPFS file name.
        Note that the double-quote characters are not copied, nor do they
        contribute to numchars.
-         
+
        This "simplification" is necessary for compatibility reasons even
        though it leads to mishandling of certain cases.  For example,
        "c:\tests\"test.exe will result in an arg0 of c:\tests\ and an
