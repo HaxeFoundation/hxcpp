@@ -259,45 +259,33 @@ void __hxcpp_stdlibs_boot()
    setbuf(stderr, 0);
 }
 
-void __trace(Dynamic inObj, Dynamic inData)
+void __trace(Dynamic inObj, Dynamic info)
 {
+   String text;
+   if (inObj != null())
+      text = inObj->toString();
+   const char *message = text.__s ? text.__s : "null";
+
+   const char *filename = info==null() ? "?" : Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s;
+   int line = info==null() ? 0 : Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
+
 #ifdef HX_WINRT
-   WINRT_PRINTF("%s:%d: %s\n",
-               inData==null() ? "?" : Dynamic((inData)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s,
-               inData==null() ? 0 : Dynamic((inData)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt(),
-               inObj.GetPtr() ? inObj->toString().__s : "null" );
+   WINRT_PRINTF("%s:%d: %s\n", filename, line, message );
 #elif defined(TIZEN)
-   AppLogInternal(inData==null() ? "?" : Dynamic(inData->__Field( HX_CSTRING("fileName")), HX_PROP_DYNAMIC)->toString().__s,
-      inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber")), HX_PROP_DYNAMIC),
-      "%s\n", inObj.GetPtr() ? inObj->toString().__s : "null" );
+   AppLogInternal(filename, line, "%s\n", message );
+#elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+   __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",filename, line, message );
+#elif defined(WEBOS)
+   syslog(LOG_INFO, "%s:%d: %s", filename, line, message );
+#elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+   if (text.isUTF16Encoded())
+      printf("%s:%d: %S\n",filename, line, (wchar_t *)text.__w );
+   else
+      printf("%s:%d: %s\n",filename, line, message);
 #else
-#ifdef HX_UTF8_STRINGS
-   /*
-   #ifdef HX_WINDOWS
-   wprintf(L"%ls:%d: %ls\n",
-               inData==null() ? L"?" : Dynamic(inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC))->toString().__WCStr(),
-               inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)),
-               inObj.GetPtr() ? inObj->toString().__WCStr() : L"null" );
-   #else
-   */
-   #if defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-   __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",
-   #elif defined(WEBOS)
-   syslog(LOG_INFO, "%s:%d: %s",
-   #else
-   printf("%s:%d: %s\n",
-   #endif
-               inData==null() ? "?" : Dynamic(inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC))->toString().__s,
-               inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)),
-               inObj.GetPtr() ? inObj->toString().__s : "null" );
-   //#endif
-#else
-   printf( "%S:%d: %S\n",
-               inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC)->__ToString().__s,
-               inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)->__ToInt(),
-               inObj.GetPtr() ? inObj->toString().__s : L"null" );
+   printf("%s:%d: %s\n",filename, line, message );
 #endif
-#endif
+
 }
 
 void __hxcpp_exit(int inExitCode)

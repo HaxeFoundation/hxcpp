@@ -150,10 +150,10 @@ typedef char HX_CHAR;
 // HX_GC_STRING_CHAR16_T = 0x00200000
 
 // For making generated code easier to read
-#define HX_HASH_JOIN(A, B) A ## B
+#define HX_HASH_JOIN(A, B) A##B
 #define HX_JOIN_PARTS(A, B) HX_HASH_JOIN(A, B)
 #define HX_HASH_OF(A) #A
-#define HX_HASH_OF_W(A) u#A
+#define HX_HASH_OF_W(A) HX_HASH_JOIN(u,#A)
 #define HX_STR_QUOTE(A) HX_HASH_OF(A)
 #define HX_STR_QUOTE_W(A) HX_HASH_OF_W(A)
 #define HX_HEX_QUOTE(hex) HX_STR_QUOTE(HX_JOIN_PARTS(\x,hex))
