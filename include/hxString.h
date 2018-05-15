@@ -156,9 +156,7 @@ public:
       if ( __s[HX_GC_STRING_HASH_OFFSET] & HX_GC_STRING_HASH_BIT)
       {
          #ifdef HXCPP_PARANOID
-         unsigned int result = 0;
-         for(int i=0;i<length;i++)
-            result = result*223 + ((unsigned char *)__s)[i];
+         unsigned int result = calcHash();
 
          unsigned int have = (((unsigned int *)__s)[-1] & HX_GC_CONST_ALLOC_BIT) ?
                 ((unsigned int *)__s)[-2] :  *((unsigned int *)(__s+length+1) );
@@ -192,6 +190,9 @@ public:
 
    unsigned int calcHash() const;
 
+   #ifdef HX_SMART_STRINGS
+   int compare(const ::String &inRHS) const;
+   #else
    inline int compare(const ::String &inRHS) const
    {
       const char *r = inRHS.__s;
@@ -200,19 +201,9 @@ public:
       if (r==0) return 1;
 
       return strcmp(__s,r);
-
-      /*
-      #if defined(ANDROID)
-      int min_len = length < inRHS.length ? length : inRHS.length;
-      for(int i=0;i<min_len;i++)
-         if (__s[i]<r[i]) return -1;
-         else if (__s[i]>r[i]) return 1;
-      return length<inRHS.length ? -1 : length>inRHS.length ? 1 : 0;
-      #else
-      return wcscmp(__s,r);
-      #endif
-      */
+      //return memcmp(__s,r,length);
    }
+   #endif
 
 
    ::String &operator+=(const ::String &inRHS);
@@ -229,30 +220,20 @@ public:
       { return *this + (inRHS.mPtr ? const_cast<hx::ObjectPtr<T>&>(inRHS)->toString() : HX_CSTRING("null") ); }
    ::String operator+(const cpp::Variant &inRHS) const{ return *this + inRHS.asString(); } 
 
-   // Strings are known not to be null...
+
+
    inline bool eq(const ::String &inRHS) const
    {
+      #ifdef HX_SMART_STRINGS
+      return compare(inRHS)==0;
+      #else
+      // Strings are known not to be null...
       return length==inRHS.length && !memcmp(__s,inRHS.__s,length);
+      #endif
    }
 
-
-
-   inline bool operator==(const ::String &inRHS) const
-   {
-      if (__s==inRHS.__s) return true;
-      if (!__s || !inRHS.__s) return false;
-      if (length!=inRHS.length) return false;
-      if (length==0) return true;
-      return memcmp(__s,inRHS.__s,length)==0;
-   }
-   inline bool operator!=(const ::String &inRHS) const
-   {
-      if (__s==inRHS.__s) return false;
-      if (!__s || !inRHS.__s) return true;
-      if (length!=inRHS.length) return true;
-      if (length==0) return false;
-      return memcmp(__s,inRHS.__s,length);
-   }
+   inline bool operator==(const ::String &inRHS) const { return compare(inRHS)==0; }
+   inline bool operator!=(const ::String &inRHS) const { return compare(inRHS)!=0; }
 
    inline bool operator<(const ::String &inRHS) const { return compare(inRHS)<0; }
    inline bool operator<=(const ::String &inRHS) const { return compare(inRHS)<=0; }
@@ -311,6 +292,8 @@ inline int HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_string_compare(String inString0, St
 {
    return inString0.compare(inString1);
 }
+
+String HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash);
 
 int HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_utf8_char_code_at(String inString, int inIndex);
 int HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_utf8_length(String inString);

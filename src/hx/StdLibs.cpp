@@ -119,9 +119,23 @@ String __hxcpp_resource_string(String inName)
       {
          if (reso->mName == inName)
          #if (HXCPP_API_LEVEL > 0)
-             return String((const char *) reso->mData, reso->mDataLength );
+         {
+            #ifdef HX_SMART_STRINGS
+            bool hasBig = false;
+            const unsigned char *p = reso->mData;
+            for(int i=0;i<reso->mDataLength;i++)
+               if (p[i]>127)
+               {
+                  hasBig = true;
+                  break;
+               }
+            if (hasBig)
+               return _hx_utf8_to_utf16(p, reso->mDataLength,false);
+            #endif
+            return String((const char *) reso->mData, reso->mDataLength );
+         }
          #else
-             return String((const char *) reso->mData, reso->mDataLength ).dup();
+            return String((const char *) reso->mData, reso->mDataLength ).dup();
          #endif
       }
 

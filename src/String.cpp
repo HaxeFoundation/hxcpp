@@ -81,7 +81,7 @@ ConstStringSet sConstStringSet;
 
 #ifdef HXCPP_COMBINE_STRINGS
 static bool sIsIdent[256];
-bool InitIdent()
+static bool InitIdent()
 {
    for(int i=0;i<256;i++)
       sIsIdent[i]= (i>='a' && i<='z') || (i>='A' && i<='Z') || (i>='0' && i<='9') || (i=='_');
@@ -168,7 +168,7 @@ int _hx_utf8_decode_advance(char *&ioPtr)
 
 int Char16Advance(const char16_t *&ioStr)
 {
-   char16_t ch = *ioStr++;
+   int ch = *ioStr++;
    if (ch>=0xd800)
    {
       int peek = *ioStr;
@@ -176,7 +176,7 @@ int Char16Advance(const char16_t *&ioStr)
          hx::Throw(HX_CSTRING("Invalid UTF16"));
 
       ioStr++;
-      ch = ((ch-0xd800)  << 10) | (peek-0xdc00);
+      ch = 0x10000 | ((ch-0xd800)  << 10) | (peek-0xdc00);
    }
    return ch;
 }
@@ -192,6 +192,15 @@ void Char16AdvanceSet(char16_t *&ioStr,int inChar)
    else
       *ioStr++ = inChar;
 }
+
+static char16_t *AllocChar16Ptr(int len)
+{
+   char16_t *result = (char16_t *)hx::InternalNew( (len+1)*2, false );
+   ((unsigned int *)result)[-1] |= HX_GC_STRING_CHAR16_T;
+   result[len] = 0;
+   return result;
+}
+
 
 
 
@@ -282,24 +291,52 @@ String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int in
    if (inLen<0) inLen = len;
    if (inFirst+inLen>len)
       inLen = len-inFirst;
-   if (inLen<0)
+   if (inLen<=0)
       return HX_CSTRING("");
+
    int *base = &inChars[0];
+   #ifdef HX_SMART_STRINGS
+   bool hasBig = false;
+   for(int i=0;i<inLen;i++)
+      if (base[i+inFirst]>127)
+      {
+         hasBig = true;
+         break;
+      }
+
+   if (hasBig)
+   {
+      char16_t *ptr = AllocChar16Ptr(inLen);
+      for(int i=0;i<inLen;i++)
+         ptr[i] = base[i+inFirst];
+      return String(ptr, inLen, true);
+   }
+   #endif
    char *result = TConvertToUTF8(base+inFirst,&len);
    return String(result,len);
 }
 
 Array<int> __hxcpp_utf8_string_to_char_array(String &inString)
 {
-    Array<int> result = Array_obj<int>::__new(0,inString.length);
+   #ifdef HX_SMART_STRINGS
+   Array<int> result = Array_obj<int>::__new(inString.length);
+   if (inString.isUTF16Encoded())
+      for(int i=0;i<inString.length;i++)
+         result[i] = inString.__w[i];
+   else
+      for(int i=0;i<inString.length;i++)
+         result[i] = inString.__s[i];
+   #else
+   Array<int> result = Array_obj<int>::__new(0,inString.length);
 
-    const unsigned char *src = (const unsigned char *)inString.__s;
-    const unsigned char *end = src + inString.length;
-    while(src<end)
-        result->push(DecodeAdvanceUTF8(src));
+   const unsigned char *src = (const unsigned char *)inString.__s;
+   const unsigned char *end = src + inString.length;
+   while(src<end)
+       result->push(DecodeAdvanceUTF8(src));
 
-    if (src!=end)
-       hx::Throw(HX_CSTRING("Invalid UTF8"));
+   if (src!=end)
+      hx::Throw(HX_CSTRING("Invalid UTF8"));
+   #endif
 
    return result;
 }
@@ -307,14 +344,21 @@ Array<int> __hxcpp_utf8_string_to_char_array(String &inString)
 
 String __hxcpp_char_bytes_to_utf8_string(String &inBytes)
 {
+   #ifdef HX_SMART_STRINGS
+   return inBytes;
+   #else
    int len = inBytes.length;
    char *result = TConvertToUTF8((unsigned char *)inBytes.__s,&len);
    return String(result,len);
+   #endif
 }
 
 
 String __hxcpp_utf8_string_to_char_bytes(String &inUTF8)
 {
+   #ifdef HX_SMART_STRINGS
+   return inUTF8;
+   #else
     const unsigned char *src = (unsigned char *)inUTF8.__s;
     const unsigned char *end = src + inUTF8.length;
     int char_count = 0;
@@ -350,11 +394,20 @@ String __hxcpp_utf8_string_to_char_bytes(String &inUTF8)
 
    result[char_count] = '\0';
    return String(result,char_count);
+   #endif
 }
 
 
 void _hx_utf8_iter(String inString, Dynamic inIter)
 {
+   #ifdef HX_SMART_STRINGS
+   if (inString.isUTF16Encoded())
+      for(int i=0;i<inString.length;i++)
+         inIter( (int)inString.__w[i] );
+   else
+      for(int i=0;i<inString.length;i++)
+         inIter( (int)inString.__s[i] );
+   #else
    const unsigned char *src = (const unsigned char *)inString.__s;
    const unsigned char *end = src + inString.length;
 
@@ -363,10 +416,19 @@ void _hx_utf8_iter(String inString, Dynamic inIter)
 
    if (src>end)
       hx::Throw(HX_CSTRING("Invalid UTF8"));
+   #endif
 }
 
 int _hx_utf8_char_code_at(String inString, int inIndex)
 {
+   #ifdef HX_SMART_STRINGS
+   if (!inString.__s || inIndex>=inString.length)
+      return 0;
+   if (inString.isUTF16Encoded())
+      return inString.__w[inIndex];
+   else
+      return inString.__s[inIndex];
+   #else
    const unsigned char *src = (const unsigned char *)inString.__s;
    const unsigned char *end = src + inString.length;
    const unsigned char *sLen = getUtf8LenArray();
@@ -380,10 +442,15 @@ int _hx_utf8_char_code_at(String inString, int inIndex)
          hx::Throw(HX_CSTRING("Invalid UTF8"));
    }
    return DecodeAdvanceUTF8(src);
+   #endif
 }
 
 int _hx_utf8_length(String inString)
 {
+   #ifdef HX_SMART_STRINGS
+   return inString.length;
+   #else
+
    const unsigned char *src = (const unsigned char *)inString.__s;
    const unsigned char *end = src + inString.length;
 
@@ -397,10 +464,14 @@ int _hx_utf8_length(String inString)
    if (src>end)
       hx::Throw(HX_CSTRING("Invalid UTF8"));
    return len;
+   #endif
 }
 
 bool _hx_utf8_is_valid(String inString)
 {
+   #ifdef HX_SMART_STRINGS
+   return true;
+   #else
    const unsigned char *src = (const unsigned char *)inString.__s;
    const unsigned char *end = src + inString.length;
    const unsigned char *sLen = getUtf8LenArray();
@@ -408,10 +479,14 @@ bool _hx_utf8_is_valid(String inString)
       src += sLen[*src];
 
    return src==end;
+   #endif
 }
 
 String _hx_utf8_sub(String inString, int inStart, int inLen)
 {
+   #ifdef HX_SMART_STRINGS
+   return inString.substr(inStart,inLen);
+   #else
    const unsigned char *src = (const unsigned char *)inString.__s;
    const unsigned char *end = src + inString.length;
 
@@ -435,8 +510,8 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
          hx::Throw(HX_CSTRING("Invalid UTF8"));
    }
    return String((const char *)start, src-start).dup();
+   #endif
 }
-
 
 
 
@@ -519,12 +594,13 @@ static const T *GCStringDup(const T *inStr,int inLen, int *outLen=0)
       return (T*)result;
    }
 
-   char16_t *result = (char16_t *)hx::InternalNew( (len+1)*2, false );
-   ((unsigned int *)result)[-1] |= HX_GC_STRING_CHAR16_T;
+   char16_t *result = AllocChar16Ptr(len);
    memcpy(result,inStr,2*len);
-   result[len] = 0;
    return (T *)result;
 }
+
+
+
 
 
 
@@ -654,6 +730,40 @@ String::String(const bool &inRHS)
 unsigned int String::calcHash() const
 {
    unsigned int result = 0;
+   #ifdef HX_SMART_STRINGS
+   #define ADD_HASH(X) \
+       result = result*223 + (int)(X)
+   if (isUTF16Encoded())
+   {
+      for(int i=0;i<length;i++)
+      {
+         int c = __w[i];
+         if( c <= 0x7F )
+         {
+            ADD_HASH(c);
+         }
+         else if( c <= 0x7FF )
+         {
+            ADD_HASH(0xC0 | (c >> 6));
+            ADD_HASH(0x80 | (c & 63));
+         }
+         else if( c <= 0xFFFF )
+         {
+            ADD_HASH(0xE0 | (c >> 12));
+            ADD_HASH(0x80 | ((c >> 6) & 63));
+            ADD_HASH(0x80 | (c & 63));
+         }
+         else
+         {
+            ADD_HASH(0xF0 | (c >> 18));
+            ADD_HASH(0x80 | ((c >> 12) & 63));
+            ADD_HASH(0x80 | ((c >> 6) & 63) );
+            ADD_HASH(0x80 | (c & 63) );
+         }
+      }
+   }
+   else
+   #endif
    for(int i=0;i<length;i++)
       result = result*223 + ((unsigned char *)__s)[i];
 
@@ -737,37 +847,71 @@ static int hex(int inChar)
    return 0;
 }
 
+
 String String::__URLDecode() const
 {
-    // Create the decoded string; the decoded form might have fewer than
-    // [length] characters, but it won't have more.  If it has fewer than
-    // [length], some memory will be wasted here, but on the assumption that
-    // most URLs have only a few '%NN' encodings in them, don't bother
-    // counting the number of characters in the resulting string first.
-    char *decoded = NewString(length), *d = decoded;
+   // Create the decoded string; the decoded form might have fewer than
+   // [length] characters, but it won't have more.  If it has fewer than
+   // [length], some memory will be wasted here, but on the assumption that
+   // most URLs have only a few '%NN' encodings in them, don't bother
+   // counting the number of characters in the resulting string first.
+   char *decoded = NewString(length), *d = decoded;
 
-    for (int i = 0; i < length; i++) {
-        int c = __s[i];
-        if (c > 127) {
+   bool hasBig = false;
+
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+   {
+      for (int i = 0; i < length; i++)
+      {
+         int c = __w[i];
+         if (c > 127)
             *d++ = '?';
-        }
-        else if (c == '+') {
+         else if (c == '+')
             *d++ = ' ';
-        }
-        else if ((c == '%') && (i < (length - 2))) {
-            *d++ = ((hex(__s[i + 1]) << 4) | (hex(__s[i + 2])));
+         else if ((c == '%') && (i < (length - 2)))
+         {
+            int ch = ((hex(__w[i + 1]) << 4) | (hex(__w[i + 2])));
+            if (ch>127)
+               hasBig = true;
+            *d++ = ch;
             i += 2;
-        }
-        else {
-            *d++ = c;
-        }
+         }
+         else
+             *d++ = c;
+      }
+   }
+   else
+   #endif
+   {
+      for (int i = 0; i < length; i++)
+      {
+         int c = __s[i];
+         if (c > 127)
+            *d++ = '?';
+         else if (c == '+')
+            *d++ = ' ';
+         else if ((c == '%') && (i < (length - 2)))
+         {
+            int ch = ((hex(__s[i + 1]) << 4) | (hex(__s[i + 2])));
+            #ifdef HX_SMART_STRINGS
+            if (ch>127)
+               hasBig = true;
+            #endif
+            *d++ = ch;
+            i += 2;
+         }
+         else
+             *d++ = c;
+      }
    }
 
-   #ifdef HX_UTF8_STRINGS
-   return String( decoded, (d - decoded) );
-   #else
-   return String( GCStringDup(decoded, (d - decoded), 0), (d - decoded) );
+   #ifdef HX_SMART_STRINGS
+   if (hasBig)
+      return _hx_utf8_to_utf16((const unsigned char *)decoded, d-decoded,false);
    #endif
+
+   return String( decoded, (d - decoded) );
 }
 
 
@@ -971,16 +1115,15 @@ void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inStri
    if (!inString.length)
       return;
 
-   if (!inString.isUTF16Encoded())
+   #ifdef HX_SMART_STRINGS
+   if (inString.isUTF16Encoded())
    {
-      outBytes->__SetSize(inString.length);
-      memcpy(outBytes->GetBase(), inString.__s,inString.length);
-   }
-   else
-   {
-      for(int i=0;i<inString.length;i++)
+      const char16_t *src = inString.__w;
+      const char16_t *end = src + inString.length;
+      while(src<end)
       {
-         int c = inString.__w[i];
+         int c = Char16Advance(src);
+
          if( c <= 0x7F )
             outBytes->push(c);
          else if( c <= 0x7FF )
@@ -1003,9 +1146,15 @@ void __hxcpp_bytes_of_string(Array<unsigned char> &outBytes,const String &inStri
          }
       }
    }
+   else
+   #endif
+   {
+      outBytes->__SetSize(inString.length);
+      memcpy(outBytes->GetBase(), inString.__s,inString.length);
+   }
 }
 
-String hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
+String _hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
 {
    unsigned int hash = 0;
    if (addHash)
@@ -1071,7 +1220,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
          }
       if (hasWChar)
       {
-         outString = hx_utf8_to_utf16(p0+pos,len,true);
+         outString = _hx_utf8_to_utf16(p0+pos,len,true);
       }
       else
       #endif
@@ -1097,6 +1246,44 @@ const char * String::__CStr() const
    return (char *)"";
    #endif
 }
+
+#ifdef HX_SMART_STRINGS
+int String::compare(const ::String &inRHS) const
+{
+   if (!__s)
+      return inRHS.__s ? -1 : 0;
+   if (!inRHS.__s)
+      return 1;
+
+   int cmp = 0;
+   int minLen = length<inRHS.length ? length : inRHS.length;
+
+   if (minLen>0)
+   {
+      bool s0IsWide = ((unsigned int *)__s)[-1] & HX_GC_STRING_CHAR16_T;
+      bool s1IsWide = ((unsigned int *)inRHS.__s)[-1] & HX_GC_STRING_CHAR16_T;
+
+      if (s0IsWide==s1IsWide)
+      {
+         cmp = memcmp(__s,inRHS.__s,s0IsWide ? minLen*2 : minLen);
+      }
+      else
+      {
+         const unsigned char *s = (const unsigned char *)( s0IsWide ? inRHS.__s : __s );
+         const char16_t *w = s0IsWide ? __w : inRHS.__w;
+         for(int i=0;i<minLen;i++)
+            if (s[i]!=w[i])
+            {
+               cmp =  s[i]<w[i] ? -1 : 1;
+               if (s0IsWide)
+                  cmp = - cmp;
+               break;
+            }
+      }
+   }
+   return cmp ? cmp : length - inRHS.length;
+}
+#endif
 
 
 namespace hx
