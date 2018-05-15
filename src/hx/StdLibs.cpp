@@ -20,7 +20,7 @@ typedef int64_t __int64;
 #include <syslog.h>
 #endif
 #ifdef TIZEN
-extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumber, const char* pFormat, ...);
+#include <dlog.h>
 #endif
 #if defined(BLACKBERRY) || defined(GCW0)
 #include <unistd.h>
@@ -266,25 +266,49 @@ void __trace(Dynamic inObj, Dynamic info)
       text = inObj->toString();
    const char *message = text.__s ? text.__s : "null";
 
-   const char *filename = info==null() ? "?" : Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s;
-   int line = info==null() ? 0 : Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
+   if (info==null())
+   {
+   #ifdef HX_WINRT
+      WINRT_PRINTF("%s\n", message );
+   #elif defined(TIZEN)
+      dlog_dprint(DLOG_INFO, "trace","%s\n", message );
+   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+      __android_log_print(ANDROID_LOG_INFO, "trace","%s",message );
+   #elif defined(WEBOS)
+      syslog(LOG_INFO, "%s", message );
+   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+      if (text.isUTF16Encoded())
+         printf("%S\n", (wchar_t *)text.__w );
+      else
+         printf("%s\n", message);
+   #else
+      printf("%s\n", message );
+   #endif
 
-#ifdef HX_WINRT
-   WINRT_PRINTF("%s:%d: %s\n", filename, line, message );
-#elif defined(TIZEN)
-   AppLogInternal(filename, line, "%s\n", message );
-#elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-   __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",filename, line, message );
-#elif defined(WEBOS)
-   syslog(LOG_INFO, "%s:%d: %s", filename, line, message );
-#elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
-   if (text.isUTF16Encoded())
-      printf("%s:%d: %S\n",filename, line, (wchar_t *)text.__w );
+   }
    else
-      printf("%s:%d: %s\n",filename, line, message);
-#else
-   printf("%s:%d: %s\n",filename, line, message );
-#endif
+   {
+
+      const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s;
+      int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
+
+   #ifdef HX_WINRT
+      WINRT_PRINTF("%s:%d: %s\n", filename, line, message );
+   #elif defined(TIZEN)
+      AppLogInternal(filename, line, "%s\n", message );
+   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+      __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",filename, line, message );
+   #elif defined(WEBOS)
+      syslog(LOG_INFO, "%s:%d: %s", filename, line, message );
+   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+      if (text.isUTF16Encoded())
+         printf("%s:%d: %S\n",filename, line, (wchar_t *)text.__w );
+      else
+         printf("%s:%d: %s\n",filename, line, message);
+   #else
+      printf("%s:%d: %s\n",filename, line, message );
+   #endif
+   }
 
 }
 
