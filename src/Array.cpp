@@ -378,8 +378,7 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
    bool sepIsWide = inSeparator.isUTF16Encoded();
    if (isWChar || sepIsWide)
    {
-      char16_t *buf = (char16_t *)hx::InternalNew( (len+1)*sizeof(char16_t), false );
-      ((unsigned int *)buf)[-1] |= HX_GC_STRING_CHAR16_T;
+      char16_t *buf = String::allocChar16Ptr(len);
       int pos = 0;
       bool separated = inSeparator.length>0;
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <set>
+#include <hx/Unordered.h>
 #include "hx/Hash.h"
 
 using namespace hx;
@@ -76,8 +77,11 @@ String  sEmptyString = HX_CSTRING("");
 Dynamic sConstEmptyString;
 String  sConstStrings[256];
 Dynamic sConstDynamicStrings[256];
+
 typedef std::set<String> ConstStringSet;
 ConstStringSet sConstStringSet;
+typedef hx::UnorderedMap<std::string,String> ConstWStringMap;
+ConstWStringMap sConstWStringMap;
 
 #ifdef HXCPP_COMBINE_STRINGS
 static bool sIsIdent[256];
@@ -166,14 +170,19 @@ int _hx_utf8_decode_advance(char *&ioPtr)
 }
 
 
-int Char16Advance(const char16_t *&ioStr)
+inline int Char16Advance(const char16_t *&ioStr,bool throwOnErr=true)
 {
    int ch = *ioStr++;
    if (ch>=0xd800)
    {
       int peek = *ioStr;
       if (peek<0xdc00)
-         hx::Throw(HX_CSTRING("Invalid UTF16"));
+      {
+         if (throwOnErr)
+            hx::Throw(HX_CSTRING("Invalid UTF16"));
+         else
+            return 0x10000 | ((ch-0xd800)  << 10);
+      }
 
       ioStr++;
       ch = 0x10000 | ((ch-0xd800)  << 10) | (peek-0xdc00);
@@ -191,14 +200,6 @@ void Char16AdvanceSet(char16_t *&ioStr,int inChar)
    }
    else
       *ioStr++ = inChar;
-}
-
-static char16_t *AllocChar16Ptr(int len)
-{
-   char16_t *result = (char16_t *)hx::InternalNew( (len+1)*2, false );
-   ((unsigned int *)result)[-1] |= HX_GC_STRING_CHAR16_T;
-   result[len] = 0;
-   return result;
 }
 
 
@@ -282,6 +283,14 @@ String::String(const wchar_t *inString)
    }
 }
 
+char16_t *String::allocChar16Ptr(int len)
+{
+   char16_t *result = (char16_t *)hx::InternalNew( (len+1)*2, false );
+   ((unsigned int *)result)[-1] |= HX_GC_STRING_CHAR16_T;
+   result[len] = 0;
+   return result;
+}
+
 
 String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int inLen)
 {
@@ -306,7 +315,7 @@ String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int in
 
    if (hasBig)
    {
-      char16_t *ptr = AllocChar16Ptr(inLen);
+      char16_t *ptr = String::allocChar16Ptr(inLen);
       for(int i=0;i<inLen;i++)
          ptr[i] = base[i+inFirst];
       return String(ptr, inLen, true);
@@ -594,7 +603,7 @@ static const T *GCStringDup(const T *inStr,int inLen, int *outLen=0)
       return (T*)result;
    }
 
-   char16_t *result = AllocChar16Ptr(len);
+   char16_t *result = String::allocChar16Ptr(len);
    memcpy(result,inStr,2*len);
    return (T *)result;
 }
@@ -963,6 +972,40 @@ String &String::dupConst()
    return unsafe.dupConst();
 }
 
+::String String::makeConstChar16String(const char *inUtf8, int inLen)
+{
+   std::string key(inUtf8,inUtf8+inLen);
+   ConstWStringMap::iterator sit = sConstWStringMap.find(key);
+   if (sit!=sConstWStringMap.end())
+      return sit->second;
+
+   const unsigned char *ptr = (const unsigned char *)inUtf8;
+   const unsigned char *end = ptr + inLen;
+
+   int count = 0;
+   while(ptr<end)
+   {
+      int code = DecodeAdvanceUTF8(ptr);
+      count += code>=0x10000 ? 2 : 1;
+   }
+
+   char16_t *buffer  = (char16_t *)InternalCreateConstBuffer(0,(count+1)*2,true);
+   ((unsigned int *)buffer)[-1] |= HX_GC_STRING_CHAR16_T;
+
+   char16_t *b = buffer;
+   ptr = (const unsigned char *)inUtf8;
+   while(ptr<end)
+   {
+      int code = DecodeAdvanceUTF8(ptr);
+      Char16AdvanceSet(b,code);
+   }
+
+   String result(buffer, count, true);
+   sConstWStringMap[key] = result;
+   return result;
+}
+
+
 
 
 int String::indexOf(const String &inValue, Dynamic inStart) const
@@ -1037,48 +1080,42 @@ Dynamic String::charCodeAt(int inPos) const
 
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
+   {
       return (int)__w[inPos];
+   }
    #endif
    return (int)(__s[inPos]);
 }
 
 String String::fromCharCode( int c )
 {
-   int idx = c<0 ? c+256 : c;
-   if (idx<0)
+   if (c<0) c+= 256;
+   if (c<0)
        return null();
 
-   if (idx>255)
+   if (c>255)
    {
       #ifdef HX_SMART_STRINGS
-      if (c>127)
+      int l = c>0x10000 ? 2 : 1;
+      char16_t *p = String::allocChar16Ptr(l);
+
+      if (c>=0x10000)
       {
-         char16_t buf[3];
-         int l = 1;
-         if (c>=0x10000)
-         {
-            int over = (c-0x10000);
-            buf[0] = (over>>10) + 0xd800;
-            buf[1] = (over&0x3ff) + 0xdc00;
-            buf[2] = 0;
-            l = 2;
-         }
-         else
-         {
-            buf[0] = c;
-            buf[1] = 0;
-         }
-
-         char16_t *p = (char16_t *)NewGCPrivate(buf,(l+1)*2);
-         ((unsigned int *)p)[-1] |= HX_GC_STRING_CHAR16_T;
-         return String(p,l,true);
+         int over = (c-0x10000);
+         p[0] = (over>>10) + 0xd800;
+         p[1] = (over&0x3ff) + 0xdc00;
       }
-      #endif
+      else
+         p[0] = c;
 
+      return String(p,l,true);
+      #else
       return null();
+      #endif
    }
 
-   if (!sConstStrings[idx].__s)
+
+   if (!sConstStrings[c].__s)
    {
       #ifdef HX_SMART_STRINGS
       if (c>127)
@@ -1086,10 +1123,10 @@ String String::fromCharCode( int c )
          char16_t buf[2];
          buf[0] = c;
          buf[1] = '\0';
-         sConstStrings[idx].length = 1;
-         char16_t *w = (char16_t *)InternalCreateConstBuffer(buf,sizeof(buf),true);
+         sConstStrings[c].length = 1;
+         char16_t *w = (char16_t *)InternalCreateConstBuffer(buf,2*2,true);
          ((unsigned int *)w)[-1] |= HX_GC_STRING_CHAR16_T;
-         sConstStrings[idx].__w = w;
+         sConstStrings[c].__w = w;
       }
       else
       #endif
@@ -1097,11 +1134,12 @@ String String::fromCharCode( int c )
          char buf[2];
          buf[0] = c;
          buf[1] = '\0';
-         sConstStrings[idx].__s = (char *)InternalCreateConstBuffer(buf,2,true);
-         sConstStrings[idx].length = 1;
+         sConstStrings[c].__s = (char *)InternalCreateConstBuffer(buf,2,true);
+         sConstStrings[c].length = 1;
       }
    }
-   return sConstStrings[idx];
+
+   return sConstStrings[c];
 }
 
 String String::charAt( int at ) const
@@ -1367,6 +1405,14 @@ bool my_wstrneq(const wchar_t *s1, const wchar_t *s2, int len)
 }
 #endif
 
+static bool isSame(const char16_t *a, const char *b, int count)
+{
+   for(int i=0;i<count;i++)
+      if (a[i]!=b[i])
+         return false;
+   return true;
+}
+
 Array<String> String::split(const String &inDelimiter) const
 {
    int len = inDelimiter.length;
@@ -1378,51 +1424,93 @@ Array<String> String::split(const String &inDelimiter) const
       int chars = length;
       Array<String> result(0,chars);
       int idx = 0;
+      #ifdef HX_SMART_STRINGS
+      if (isUTF16Encoded())
+      {
+         /*
+         const char16_t *p = __w;
+         const char16_t *end = p + length;
+         while(p<end)
+            result[idx++] = String::fromCharCode(Char16Advance(p));
+         */
+         for(int i=0;i<length;i++)
+            result[i] = String::fromCharCode(__w[i]);
+      }
+      else
+      {
+         for(int i=0;i<chars;i++)
+            result[i] = String::fromCharCode( __s[i] );
+      }
+      #else
       for(int i=0;i<chars; )
       {
-         #ifdef HX_UTF8_STRINGS
          const unsigned char *start = (const unsigned char *)(__s + i);
          const unsigned char *ptr = start;
          DecodeAdvanceUTF8(ptr);
          int len =  ptr - start;
          result[idx++] = String( __s+i, len ).dup();
          i+=len;
-         #else
-         wchar_t *ptr = hx::NewString(1);
-         ptr[0] = __s[i];
-         ptr[1] = '\0';
-         result[i] = String(ptr,1);
-         i++;
-         #endif
       }
+      #endif
       return result;
    }
 
 
    Array<String> result(0,1);
-   while(pos+len <=length )
+   #if HX_SMART_STRINGS
+   bool s0 = isUTF16Encoded();
+   bool s1 = isUTF16Encoded();
+   if (s0 || s1)
    {
-      #ifdef HX_UTF8_STRINGS
-         if (!strncmp(__s+pos,inDelimiter.__s,len))
-      #else
-         #ifdef ANDROID
-         if (my_wstrneq(__s+pos,inDelimiter.__s,len))
-         #else
-         if (!wcsncmp(__s+pos,inDelimiter.__s,len))
-         #endif
-      #endif
+      if (s0 && s1)
       {
-         result->push( substr(last,pos-last) );
-         pos += len;
-         last = pos;
+         while(pos+len <=length )
+            if (!memcmp(__w+pos,inDelimiter.__w,len*2))
+            {
+               result->push( substr(last,pos-last) );
+               pos += len;
+               last = pos;
+            }
+            else
+               pos++;
       }
+      else if (s0)
+         while(pos+len <=length )
+            if (isSame(__w+pos,inDelimiter.__s,len))
+            {
+               result->push( substr(last,pos-last) );
+               pos += len;
+               last = pos;
+            }
+            else
+               pos++;
       else
-      {
-         pos++;
-      }
+         while(pos+len <=length )
+            if (isSame(inDelimiter.__w,__s+pos,len))
+            {
+               result->push( substr(last,pos-last) );
+               pos += len;
+               last = pos;
+            }
+            else
+               pos++;
+   }
+   else
+   #endif
+   {
+      while(pos+len <=length )
+         if (!strncmp(__s+pos,inDelimiter.__s,len))
+         {
+            result->push( substr(last,pos-last) );
+            pos += len;
+            last = pos;
+         }
+         else
+            pos++;
    }
 
    result->push( substr(last,null()) );
+
 
    return result;
 }
@@ -1456,13 +1544,19 @@ String String::substr(int inFirst, Dynamic inLen) const
    if ((len+inFirst > length) ) len = length - inFirst;
    if (len==0)
       return HX_CSTRING("");
-   if (len==1)
-      return String::fromCharCode(__s[inFirst]);
+
 
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
+   {
+      if (len==1)
+         return String::fromCharCode(__w[inFirst]);
       return String( GCStringDup(__w+inFirst, len, 0), len, true );
+   }
    #endif
+
+   if (len==1)
+      return String::fromCharCode(__s[inFirst]);
 
    return String( GCStringDup(__s+inFirst, len, 0), len );
 }
@@ -1502,7 +1596,34 @@ String String::operator+(const String &inRHS) const
    }
    if (!inRHS.__s) return *this + HX_CSTRING("null");
    if (!inRHS.length) return *this;
+
    int l = length + inRHS.length;
+
+   #ifdef HX_SMART_STRINGS
+   bool ws0 = isUTF16Encoded();
+   bool ws1 = inRHS.isUTF16Encoded();
+   if (ws0 || ws1)
+   {
+      char16_t *result = String::allocChar16Ptr(l);
+
+      if (ws0)
+         memcpy(result,__w,length*2);
+      else
+         for(int i=0;i<length;i++)
+            result[i] = __s[i];
+
+      char16_t *r2 = result + length;
+      if (ws1)
+         memcpy(r2, inRHS.__w, inRHS.length*2);
+      else
+         for(int i=0;i<inRHS.length;i++)
+            r2[i] = inRHS.__s[i];
+
+      return String(result,l,true);
+   }
+   #endif
+
+
    char *result = hx::NewString(l);
    memcpy(result,__s,length*sizeof(char));
    memcpy(result+length,inRHS.__s,inRHS.length*sizeof(char));
@@ -1694,14 +1815,11 @@ public:
    double __ToDouble() const
    {
       if (!mValue.__s) return 0;
-      #ifdef HX_UTF8_STRINGS
-         #ifdef HX_ANDROID
-         return strtod(mValue.__s,0);
-         #else
-         return atof(mValue.__s);
-         #endif
+
+      #ifdef HX_ANDROID
+      return strtod(mValue.__s,0);
       #else
-      return _wtof(mValue.__s);
+      return atof(mValue.__s);
       #endif
    }
    int __length() const { return mValue.length; }
@@ -1722,11 +1840,7 @@ public:
    int __ToInt() const
    {
       if (!mValue.__s) return 0;
-      #ifdef HX_UTF8_STRINGS
       return atoi(mValue.__s);
-      #else
-      return _wtoi(mValue.__s);
-      #endif
    }
 
    int __Compare(const hx::Object *inRHS) const
@@ -1760,11 +1874,19 @@ hx::Object *String::__ToObject() const
    }
    else if (length==1)
    {
+      #ifdef HX_SMART_STRINGS
+      int idx = isUTF16Encoded() ? __w[0] : ((unsigned char *)__s)[0];
+      #else
       int idx = ((unsigned char *)__s)[0];
-      if (sConstDynamicStrings[idx].mPtr)
-         return  sConstDynamicStrings[idx].mPtr;
+      #endif
 
-      return sConstDynamicStrings[idx].mPtr = new (hx::NewObjConst)StringData(fromCharCode(idx));
+      if (idx<=255)
+      {
+         if (sConstDynamicStrings[idx].mPtr)
+            return  sConstDynamicStrings[idx].mPtr;
+
+         return sConstDynamicStrings[idx].mPtr = new (hx::NewObjConst)StringData(fromCharCode(idx));
+      }
    }
 
    bool isConst = __s[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT;

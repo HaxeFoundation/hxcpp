@@ -44,7 +44,8 @@ void CppiaModule::setDebug(CppiaExpr *outExpr, int inFileId, int inLine)
    #endif
    outExpr->className = creatingClass;
    outExpr->functionName = creatingFunction;
-   outExpr->filename = cStrings[inFileId].c_str();
+   //outExpr->filename = cStrings[inFileId].c_str();
+   outExpr->filename = strings[inFileId].__s;
    outExpr->line = inLine;
 }
 
@@ -378,12 +379,8 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
       stream.setBinary(tok=="CPPIB");
 
       int stringCount = stream.getAsciiInt();
-      cppia.cStrings.resize(stringCount);
       for(int s=0;s<stringCount;s++)
-      {
          cppia.strings[s] = stream.readString();
-         cppia.cStrings[s] = std::string(cppia.strings[s].__s,cppia.strings[s].length);
-      }
 
       int typeCount = stream.getAsciiInt();
       cppia.types.resize(typeCount);

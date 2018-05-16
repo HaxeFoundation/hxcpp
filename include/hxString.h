@@ -54,6 +54,7 @@ public:
       *this = String(inString.Data());
    }
    #endif
+
    inline String(const ::String &inRHS) : __s(inRHS.__s), length(inRHS.length) { }
    String(const int &inRHS);
    String(const unsigned int &inRHS);
@@ -116,6 +117,7 @@ public:
     ::String &dup();
     ::String &dupConst();
     static ::String makeConstString(const char *);
+    static ::String makeConstChar16String(const char *inUtf8, int inLen);
 
     ::String toUpperCase() const;
     ::String toLowerCase() const;
@@ -254,6 +256,8 @@ public:
       #endif
       return ((unsigned char *)__s)[inPos];
    }
+
+   static char16_t *String::allocChar16Ptr(int len);
 
 
    static  Dynamic fromCharCode_dyn();

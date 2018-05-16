@@ -356,7 +356,7 @@ class CppiaModule
 {
 public:
    Array< String >                 strings;
-   std::vector< std::string >      cStrings;
+   //std::vector< std::string >      cStrings;
    std::vector< TypeData * >       types;
    std::vector< CppiaClassInfo * > classes;
    std::vector< CppiaExpr * >      markable;
