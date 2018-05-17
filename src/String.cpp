@@ -975,7 +975,7 @@ String &String::dupConst()
 
 ::String String::makeConstChar16String(const char *inUtf8, int inLen)
 {
-   std::string key(inUtf8,inUtf8+inLen);
+   std::string key(inUtf8,inLen);
    ConstWStringMap::iterator sit = sConstWStringMap.find(key);
    if (sit!=sConstWStringMap.end())
       return sit->second;
