@@ -257,7 +257,7 @@ public:
       return ((unsigned char *)__s)[inPos];
    }
 
-   static char16_t *String::allocChar16Ptr(int len);
+   static char16_t *allocChar16Ptr(int len);
 
 
    static  Dynamic fromCharCode_dyn();
