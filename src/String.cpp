@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <set>
+#include <string>
 #include <hx/Unordered.h>
 #include "hx/Hash.h"
 
