@@ -194,8 +194,10 @@ struct CppiaStream
       int hasBig = false;
       for(int i=0;i<len;i++)
       {
-         if ( ((unsigned char *)data)[i] > 127 )
+         #ifdef HX_SMART_STRINGS
+         if ( *(unsigned char *)data > 127 )
             hasBig = true;
+         #endif
          skipChar();
       }
       if (outStdStdString)

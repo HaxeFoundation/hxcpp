@@ -427,7 +427,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
             tok = stream.getToken();
             if (tok!="RESO")
                throw "no reso tag";
-            
+
             scriptResources[r].mName = cppia.strings[stream.getInt()];
             scriptResources[r].mDataLength = stream.getInt();
          }
@@ -438,9 +438,19 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
          {
             int len = scriptResources[r].mDataLength;
             unsigned char *buffer = (unsigned char *)malloc(len+5);
-            *(int *)buffer = 0xffffffff;
+            *(unsigned int *)buffer = HX_GC_CONST_ALLOC_BIT;
             buffer[len+5-1] = '\0';
             stream.readBytes(buffer+4, len);
+            #ifdef HX_SMART_STRINGS_1
+            unsigned char *p = (unsigned char *)buffer+4;
+            unsigned char *end = p + len;
+            while(!hasBig && p<end)
+               if (*p++>127)
+               {
+                  *(unsigned int *)buffer |= HX_GC_STRING_CHAR16_T;
+                  break;
+               }
+            #endif
             scriptResources[r].mData = buffer + 4;
          }
          scriptResources[count].mDataLength = 0;

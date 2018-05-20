@@ -121,16 +121,10 @@ String __hxcpp_resource_string(String inName)
          #if (HXCPP_API_LEVEL > 0)
          {
             #ifdef HX_SMART_STRINGS
-            bool hasBig = false;
             const unsigned char *p = reso->mData;
             for(int i=0;i<reso->mDataLength;i++)
                if (p[i]>127)
-               {
-                  hasBig = true;
-                  break;
-               }
-            if (hasBig)
-               return _hx_utf8_to_utf16(p, reso->mDataLength,false);
+                  return _hx_utf8_to_utf16(p, reso->mDataLength,false);
             #endif
             return String((const char *) reso->mData, reso->mDataLength );
          }
@@ -143,7 +137,17 @@ String __hxcpp_resource_string(String inName)
    {
       for(Resource *reso  = sgSecondResources; reso->mData; reso++)
          if (reso->mName == inName)
+         {
+            #ifdef HX_SMART_STRINGS
+            const unsigned char *p = reso->mData;
+            for(int i=0;i<reso->mDataLength;i++)
+               if (p[i]>127)
+                  return _hx_utf8_to_utf16(p, reso->mDataLength,false);
+            #endif
             return String((const char *) reso->mData, reso->mDataLength );
+
+            return String((const char *) reso->mData, reso->mDataLength );
+         }
    }
    return null();
 }
