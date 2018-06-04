@@ -1007,6 +1007,38 @@ String &String::dupConst()
 }
 
 
+template<typename T>
+static int TIndexOf(int s, const T *str, int strLen, const T *sought, int soughtLen)
+{
+   if (soughtLen==1)
+   {
+      T test = *sought;
+      while(s<strLen)
+      {
+         if (str[s]==test)
+            return s;
+         ++s;
+      }
+   }
+   else
+   {
+      while(s+soughtLen<=strLen)
+      {
+         if (!memcmp(str + s,sought,soughtLen*sizeof(T)))
+            return s;
+         s++;
+      }
+   }
+   return -1;
+}
+
+static bool StrMatch(const char16_t *src0, const char *src1, int len)
+{
+   for(int i=0;i<len;i++)
+      if (src0[i]!=src1[i])
+         return false;
+   return true;
+}
 
 
 int String::indexOf(const String &inValue, Dynamic inStart) const
@@ -1015,23 +1047,49 @@ int String::indexOf(const String &inValue, Dynamic inStart) const
       return -1;
    int s = inStart==null() ? 0 : inStart->__ToInt();
    int l = inValue.length;
-   if (l==1)
+
+   #ifdef HX_SMART_STRINGS
+   bool s016 =  isUTF16Encoded();
+   bool s116 = inValue.isUTF16Encoded();
+   if (s016 || s116)
    {
-      char test = *inValue.__s;
-      while(s<length)
+      if (s016 && s116)
+         return TIndexOf(s, __w, length, inValue.__w, inValue.length);
+
+      while(s+l<=length)
       {
-         if (__s[s]==test)
+         if (s016 ? StrMatch(__w+s, inValue.__s, l) : StrMatch(inValue.__w, __s+s, l) )
             return s;
-         ++s;
+         s++;
+      }
+      return -1;
+   }
+   #endif
+
+   return TIndexOf(s, __s, length, inValue.__s, inValue.length);
+}
+
+
+template<typename T>
+static int TLastIndexOf(int s, const T *str, int strLen, const T *sought, int soughtLen)
+{
+   if (soughtLen==1)
+   {
+      T test = *sought;
+      while(s>=0)
+      {
+         if (str[s]==test)
+            return s;
+         s--;
       }
    }
    else
    {
-      while(s<=length-l)
+      while(s>=0)
       {
-         if (!memcmp(__s + s,inValue.__s,l*sizeof(char)))
+         if (!memcmp(str + s,sought,soughtLen*sizeof(T)))
             return s;
-         s++;
+         --s;
       }
    }
    return -1;
@@ -1048,26 +1106,24 @@ int String::lastIndexOf(const String &inValue, Dynamic inStart) const
    int s = inStart==null() ? length : inStart->__ToInt();
    if (s+l>length) s = length-l;
 
-   if (l==1)
+   #ifdef HX_SMART_STRINGS
+   bool s016 = isUTF16Encoded();
+   bool s116 = inValue.isUTF16Encoded();
+   if (s016 || s116)
    {
-      char test = *inValue.__s;
-      while(s>=0)
+      if (s016 && s116)
+         return TLastIndexOf(s, __w, length, inValue.__w, inValue.length);
+
+      while(s>0)
       {
-         if (__s[s]==test)
+         if (s016 ? StrMatch(__w+s, inValue.__s, l) : StrMatch(inValue.__w, __s+s, l) )
             return s;
-         --s;
+         s--;
       }
+      return -1;
    }
-   else
-   {
-      while(s>=0)
-      {
-         if (!memcmp(__s + s,inValue.__s,l*sizeof(char)))
-            return s;
-         --s;
-      }
-   }
-   return -1;
+   #endif
+   return TLastIndexOf(s, __s, length, inValue.__s, inValue.length);
 }
 
 
