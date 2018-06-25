@@ -37,6 +37,12 @@ class Client
          Common.status = "Bad class override - got " + c.whoOverridesYou();
          return;
       }
+      if (!c.testPointers())
+      {
+         Common.status = "Could not move native pointers";
+         return;
+      }
+
       var hostInterface:IHostInterface = c;
       if (hostInterface.whoStartedYou()!="HostBase")
       {
