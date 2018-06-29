@@ -153,7 +153,7 @@ neko_value api_alloc_raw_string(int inLength)
 }
 
 
-#define NOT_IMPLEMNETED(func) dyn_fail(api_alloc_string("NOT Implemented:" func),__FILE__,__LINE__)
+#define NEKO_NOT_IMPLEMENTED(func) dyn_fail(api_alloc_string("NOT Implemented:" func),__FILE__,__LINE__)
 
 void * api_empty() { return 0; }
 
@@ -230,7 +230,7 @@ int api_val_strlen(neko_value  arg1)
    }
 	return 0;
 }
-void api_buffer_set_size(neko_buffer inBuffer,int inLen) { NOT_IMPLEMNETED("api_buffer_set_size"); }
+void api_buffer_set_size(neko_buffer inBuffer,int inLen) { NEKO_NOT_IMPLEMENTED("api_buffer_set_size"); }
 
 
 void api_buffer_append_char(neko_buffer inBuffer,int inChar)
@@ -465,7 +465,7 @@ void api_val_array_set_i(neko_value  arg1,int arg2,neko_value inVal)
 
 void api_val_array_set_size(neko_value  arg1,int inLen)
 {
-	NOT_IMPLEMNETED("api_val_array_set_size");
+	NEKO_NOT_IMPLEMENTED("api_val_array_set_size");
 }
 
 void api_val_array_push(neko_value  inArray,neko_value inValue)
@@ -491,7 +491,7 @@ neko_value * api_val_array_value(neko_value  arg1)
 
 neko_value  api_val_call0_traceexcept(neko_value  arg1)
 {
-	NOT_IMPLEMNETED("api_val_call0_traceexcept");
+	NEKO_NOT_IMPLEMENTED("api_val_call0_traceexcept");
 	return gNekoNull;
 }
 
