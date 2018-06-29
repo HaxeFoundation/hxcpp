@@ -1,16 +1,21 @@
 <xml>
 
+<pragma once="true" />
+
+<set name="SQLITE_DIR" value="${HXCPP}/project/thirdparty/sqlite-3.23.1"/>
+
 <files id="hxcpp_sqlite" dir="${this_dir}" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
-  <depend name="${this_dir}/sqlite3.h" />
   <cache value="true" asLibrary="true" />
 
-  <file name="sqlite3.c"/>
+  <compilerflag value="-I${SQLITE_DIR}"/>
+
   <file name="Sqlite.cpp"/>
+
+  <depend name="${SQLITE_DIR}/sqlite3.h" />
+  <file name="${SQLITE_DIR}/sqlite3.c"/>
 </files>
-
-
 
 <target id="haxe">
   <files id="hxcpp_sqlite"/>
@@ -18,4 +23,3 @@
 </target>
 
 </xml>
-
