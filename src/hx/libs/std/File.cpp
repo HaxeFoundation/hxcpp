@@ -412,7 +412,7 @@ Dynamic _hx_std_file_stdout()
 Dynamic _hx_std_file_stderr()
 {
    fio *f = new fio();
-   f->create(stdout, HX_CSTRING("stderr"), false);
+   f->create(stderr, HX_CSTRING("stderr"), false);
    return f;
 }
 
