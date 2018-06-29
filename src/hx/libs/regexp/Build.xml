@@ -2,13 +2,14 @@
 
 <pragma once="true" />
 
-<set name="PCRE_DIR" value="${HXCPP}/project/thirdparty/pcre-7.8" />
+<set name="PCRE_DIR" value="${HXCPP}/project/thirdparty/pcre-8.42" />
 
 <files id="hxcpp_regexp" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <cache value="true" asLibrary="true" />
 
+  <compilerflag value="-DHAVE_CONFIG_H"/>
   <compilerflag value="-DPCRE_STATIC"/>
   <compilerflag value="-DSUPPORT_UTF8"/>
   <compilerflag value="-DSUPPORT_UCP"/>
@@ -17,29 +18,29 @@
 
   <file name="${this_dir}/RegExp.cpp"/>
 
-  <file name="${PCRE_DIR}/pcre_get.c"/>
-  <file name="${PCRE_DIR}/pcre_study.c"/>
+  <file name="${PCRE_DIR}/pcre_byte_order.c"/>
   <file name="${PCRE_DIR}/pcre_chartables.c"/>
-  <file name="${PCRE_DIR}/pcre_globals.c"/>
-  <file name="${PCRE_DIR}/pcre_tables.c"/>
   <file name="${PCRE_DIR}/pcre_compile.c"/>
-  <file name="${PCRE_DIR}/pcre_info.c"/>
-  <file name="${PCRE_DIR}/pcre_try_flipped.c"/>
   <file name="${PCRE_DIR}/pcre_config.c"/>
-  <file name="${PCRE_DIR}/pcre_maketables.c"/>
-  <file name="${PCRE_DIR}/pcre_ucd.c"/>
   <file name="${PCRE_DIR}/pcre_dfa_exec.c"/>
-  <file name="${PCRE_DIR}/pcre_newline.c"/>
-  <file name="${PCRE_DIR}/pcre_valid_utf8.c"/>
   <file name="${PCRE_DIR}/pcre_exec.c"/>
-  <file name="${PCRE_DIR}/pcre_ord2utf8.c"/>
-  <file name="${PCRE_DIR}/pcre_version.c"/>
   <file name="${PCRE_DIR}/pcre_fullinfo.c"/>
+  <file name="${PCRE_DIR}/pcre_get.c"/>
+  <file name="${PCRE_DIR}/pcre_globals.c"/>
+  <file name="${PCRE_DIR}/pcre_jit_compile.c"/>
+  <file name="${PCRE_DIR}/pcre_maketables.c"/>
+  <file name="${PCRE_DIR}/pcre_newline.c"/>
+  <file name="${PCRE_DIR}/pcre_ord2utf8.c"/>
   <file name="${PCRE_DIR}/pcre_refcount.c"/>
+  <file name="${PCRE_DIR}/pcre_string_utils.c"/>
+  <file name="${PCRE_DIR}/pcre_study.c"/>
+  <file name="${PCRE_DIR}/pcre_tables.c"/>
+  <file name="${PCRE_DIR}/pcre_ucd.c"/>
+  <file name="${PCRE_DIR}/pcre_valid_utf8.c"/>
+  <file name="${PCRE_DIR}/pcre_version.c"/>
   <file name="${PCRE_DIR}/pcre_xclass.c"/>
 
 </files>
-
 
 <target id="haxe">
   <files id="hxcpp_regexp" />
