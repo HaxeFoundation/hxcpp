@@ -44,7 +44,8 @@ void CppiaModule::setDebug(CppiaExpr *outExpr, int inFileId, int inLine)
    #endif
    outExpr->className = creatingClass;
    outExpr->functionName = creatingFunction;
-   outExpr->filename = cStrings[inFileId].c_str();
+   //outExpr->filename = cStrings[inFileId].c_str();
+   outExpr->filename = strings[inFileId].__s;
    outExpr->line = inLine;
 }
 
@@ -378,12 +379,8 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
       stream.setBinary(tok=="CPPIB");
 
       int stringCount = stream.getAsciiInt();
-      cppia.cStrings.resize(stringCount);
       for(int s=0;s<stringCount;s++)
-      {
          cppia.strings[s] = stream.readString();
-         cppia.cStrings[s] = std::string(cppia.strings[s].__s,cppia.strings[s].length);
-      }
 
       int typeCount = stream.getAsciiInt();
       cppia.types.resize(typeCount);
@@ -430,7 +427,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
             tok = stream.getToken();
             if (tok!="RESO")
                throw "no reso tag";
-            
+
             scriptResources[r].mName = cppia.strings[stream.getInt()];
             scriptResources[r].mDataLength = stream.getInt();
          }
@@ -441,9 +438,19 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
          {
             int len = scriptResources[r].mDataLength;
             unsigned char *buffer = (unsigned char *)malloc(len+5);
-            *(int *)buffer = 0xffffffff;
+            *(unsigned int *)buffer = HX_GC_CONST_ALLOC_BIT;
             buffer[len+5-1] = '\0';
             stream.readBytes(buffer+4, len);
+            #ifdef HX_SMART_STRINGS_1
+            unsigned char *p = (unsigned char *)buffer+4;
+            unsigned char *end = p + len;
+            while(!hasBig && p<end)
+               if (*p++>127)
+               {
+                  *(unsigned int *)buffer |= HX_GC_STRING_CHAR16_T;
+                  break;
+               }
+            #endif
             scriptResources[r].mData = buffer + 4;
          }
          scriptResources[count].mDataLength = 0;

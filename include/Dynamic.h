@@ -18,8 +18,10 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic : public hx::ObjectPtr<hx::Object>
 public:
 
    Dynamic() {};
+   Dynamic(long inVal);
    Dynamic(int inVal);
    Dynamic(short inVal);
+   Dynamic(unsigned long inVal);
    Dynamic(unsigned int inVal);
    Dynamic(unsigned short inVal);
    Dynamic(unsigned char inVal);

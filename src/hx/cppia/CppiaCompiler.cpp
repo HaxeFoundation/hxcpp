@@ -960,7 +960,7 @@ public:
          switch(inSrcType)
          {
             case etFloat:
-               emit_fop1( SLJIT_CONV_F64_FROM_S32, inTarget.as(jtFloat), inSrc.as(jtInt) );
+               emit_fop1( SLJIT_CONV_S32_FROM_F64, inTarget.as(jtFloat), inSrc.as(jtInt) );
                break;
 
             case etObject:

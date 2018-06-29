@@ -17,7 +17,7 @@ Keeping the path short can help in some border-line cases with some compilers wh
 The cache size defaults to 1 Gig.  For many cases, this is big enough.  However, on large projects, with several architectures and lots of debug information, this default can lead to "cache churn" where some files are evicted from the cache, even though they are likely to be used again.  Increasing the number of mega-bytes allocated to the cache can help here.
 
 ### Using The Cache
-To use the cashe with you own libraries, the files group should have 'cache' entry to tell hxcpp that you have considered dependency issues when designing the group.
+To use the cashe with your own libraries, the files group should have 'cache' entry to tell hxcpp that you have considered dependency issues when designing the group.
 
   ```xml
   <cache value="true" project="name" asLibrary="true" />
@@ -31,7 +31,7 @@ When linking a file group 'asLibrary', the object files are compiled and then th
      + Can make final exe size smaller
      + If the object file only contains a handler that is self-registering via static constructor,
         then the constructor may not get called, leading to bugs.
-   - Can help on some systems where the linker command-line length is a issue.
+   - Can help on some systems where the linker command-line length is an issue.
 
 
 ### Management

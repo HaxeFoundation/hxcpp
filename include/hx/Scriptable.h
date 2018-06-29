@@ -13,14 +13,18 @@ namespace hx
 extern bool gEnableJit;
 inline void EnableJit(bool inEnable) { gEnableJit = inEnable; }
 
+#define HXCPP_CPPIA_SUPER_ARG(x) , (x)
 
 struct ScriptNamedFunction : public ScriptFunction
 {
-   ScriptNamedFunction(const char *inName,StackExecute inExe,const char *inSig, bool inIsStatic=false)
-      : ScriptFunction(inExe, inSig), name(inName), isStatic(inIsStatic) { }
+   ScriptNamedFunction(const ScriptFunction &s) : ScriptFunction(s), name(0), isStatic(false), superExecute(0) { }
+
+   ScriptNamedFunction(const char *inName=0,StackExecute inExe=0,const char *inSig=0, bool inIsStatic=false, StackExecute superExecute=0)
+      : ScriptFunction(inExe, inSig), name(inName), isStatic(inIsStatic), superExecute(superExecute)  { }
 
    const char *name;
    bool isStatic;
+   StackExecute superExecute;
 };
 
 

@@ -338,13 +338,14 @@ public:
       return 0;
    }
 
-   void __SetSize(int inLen)
+   void resize(int inLen)
    {
       if (!base)
          CreateEmptyArray(inLen);
       else
-         base->__SetSize(inLen);
+         base->resize(inLen);
    }
+   void __SetSize(int inLen) { resize(inLen); }
 
    VirtualArray __SetSizeExact(int inLen=0)
    {
@@ -547,6 +548,7 @@ public:
    Dynamic blit_dyn();
    Dynamic zero_dyn();
    Dynamic memcmp_dyn();
+   Dynamic resize_dyn();
 };
 
 

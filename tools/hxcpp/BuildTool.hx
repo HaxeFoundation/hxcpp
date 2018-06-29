@@ -34,6 +34,8 @@ typedef Linkers = Hash<Linker>;
 
 class BuildTool
 {
+   public inline static var SupportedVersion = 400;
+
    var mDefines:Hash<String>;
    var mCurrentIncludeFile:String;
    var mIncludePath:Array<String>;
@@ -867,7 +869,14 @@ class BuildTool
             switch(el.name)
             {
                case "file" :
-                  var file = new File(substitute(el.att.name),group);
+                  var name = substitute(el.att.name);
+                  var file = group.find(name);
+                  if (file==null)
+                  {
+                     file = new File(name,group);
+                     group.addFile( file );
+                  }
+
                   if (el.has.tags)
                      file.setTags( substitute(el.att.tags) );
                   if (el.has.filterout)
@@ -877,7 +886,6 @@ class BuildTool
                   for(f in el.elements)
                      if (valid(f,"") && f.name=="depend")
                         file.mDepends.push( substitute(f.att.name) );
-                  group.mFiles.push( file );
                case "section" : createFileGroup(el,group,inName,inForceRelative,null);
                case "cache" :
                   group.mUseCache = parseBool( substitute(el.att.value) );
@@ -2351,6 +2359,17 @@ class BuildTool
             return false;
          }
       }
+
+      if (inEl.has.unlessApi)
+      {
+         var value = substitute(inEl.att.unlessApi);
+         try {
+            var val = Std.parseInt(value);
+            if (val<=SupportedVersion)
+               return false;
+         } catch(e:Dynamic) { }
+      }
+
 
       if (inEl.has.ifExists)
          if (!FileSystem.exists( substitute(inEl.att.ifExists) )) return false;

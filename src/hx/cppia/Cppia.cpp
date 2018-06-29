@@ -1703,17 +1703,19 @@ struct CallHaxe : public CppiaExpr
 {
    Expressions args;
    CppiaExpr *thisExpr;
-   ScriptFunction function;
+   ScriptNamedFunction function;
    ExprType returnType;
    bool   isStatic;
+   bool   isSuper;
 
-   CallHaxe(CppiaExpr *inSrc,ScriptFunction inFunction, CppiaExpr *inThis, Expressions &ioArgs, bool inIsStatic=false )
+   CallHaxe(CppiaExpr *inSrc,ScriptNamedFunction inFunction, CppiaExpr *inThis, Expressions &ioArgs, bool inIsStatic=false, bool inIsSuper = false )
        : CppiaExpr(inSrc)
    {
       args.swap(ioArgs);
       thisExpr = inThis;
       function = inFunction;
       isStatic = inIsStatic;
+      isSuper = inIsSuper;
    }
    ExprType getType() { return returnType; }
    CppiaExpr *link(CppiaModule &inModule)
@@ -1774,7 +1776,10 @@ struct CallHaxe : public CppiaExpr
       }
 
       AutoStack a(ctx,pointer);
-      function.execute(ctx);
+      if (isSuper)
+         function.superExecute(ctx);
+      else
+         function.execute(ctx);
 
       #ifdef DEBUG_RETURN_TYPE
       gLastRet = returnType;
@@ -1870,7 +1875,8 @@ struct CallHaxe : public CppiaExpr
       // Store new frame in context ...
       compiler->add( sJitCtxFrame, sJitFrame.as(jtPointer), JitVal(framePos) );
 
-      compiler->callNative( (void *)tryCallHaxe, JitVal( (void *)(function.execute)), sJitCtx );
+      void *func = (void *) ( isSuper ? function.superExecute : function.execute);
+      compiler->callNative( (void *)tryCallHaxe, JitVal(func), sJitCtx );
 
       // TODO - from signature
       bool isBoolReturn = false;
@@ -1917,7 +1923,7 @@ struct CallStatic : public CppiaExpr
 
       if (!replace && type->haxeClass.mPtr)
       {
-         ScriptFunction func = type->haxeBase->findStaticFunction(field);
+         ScriptNamedFunction func = type->haxeBase->findStaticFunction(field);
          if (func.signature)
          {
             //printf(" found function %s\n", func.signature );
@@ -2104,6 +2110,7 @@ struct CallMemberVTable : public CppiaExpr
    bool        isInterfaceCall;
    CppiaFunction *funcProto;
    ExprType    returnType;
+   bool        checkInterfaceReturnType;
 
    CallMemberVTable(CppiaExpr *inSrc, CppiaExpr *inThis,
                     int inVTableSlot,
@@ -2118,6 +2125,8 @@ struct CallMemberVTable : public CppiaExpr
       isInterfaceCall = inIsInterfaceCall;
       funcProto = inFuncProto;
       returnType = funcProto->cppia.types[funcProto->returnType]->expressionType;
+      checkInterfaceReturnType = false;
+
       scriptVTableOffset = inScriptVTableOffset;
    }
    const char *getName() { return "CallMemberVTable"; }
@@ -2126,6 +2135,11 @@ struct CallMemberVTable : public CppiaExpr
       if (thisExpr)
          thisExpr = thisExpr->link(inModule);
       LinkExpressions(args,inModule);
+
+      TypeData *type = inModule.types[funcProto->returnType];
+      // These types may have natively been returned as ints or non-objects
+      checkInterfaceReturnType = isInterfaceCall && (returnType==etFloat || type->name==HX_CSTRING("Dynamic"));
+
       return this;
    }
    ExprType getType() { return returnType; }
@@ -2149,23 +2163,23 @@ struct CallMemberVTable : public CppiaExpr
    int runInt(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertInt(ctx, func->getReturnType(), func); 
+      return runContextConvertInt(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
    }
  
    Float runFloat(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertFloat(ctx, func->getReturnType(), func); 
+      return runContextConvertFloat(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
    }
    String runString(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertString(ctx, func->getReturnType(), func); 
+      return runContextConvertString(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
       CALL_VTABLE_SETUP
-      return runContextConvertObject(ctx, func->getReturnType(), func); 
+      return runContextConvertObject(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
    }
 
    #ifdef CPPIA_JIT
@@ -2201,9 +2215,6 @@ struct CallMemberVTable : public CppiaExpr
       TypeData *type = funcProto->cppia.types[funcProto->returnType];
       bool isBoolReturn = type->haxeClass==ClassOf<bool>();
 
-      // Implementation may return a more general type, with different byte representation
-      bool checkInterfaceReturnType = isInterfaceCall && (returnType==etFloat || type->name==HX_CSTRING("Dynamic"));
-
       if (isInterfaceCall)
       {
          //sJitTemp1 = ScriptCallable **vtable = thisVal->__GetScriptVTable();
@@ -2221,6 +2232,7 @@ struct CallMemberVTable : public CppiaExpr
       // sJitTemp1 = table[slot]
       compiler->move(sJitTemp1, sJitTemp1.star(jtPointer, slot*sizeof(void *)) );
 
+      // Implementation may return a more general type, with different byte representation
       if (checkInterfaceReturnType)
       {
          JitTemp actualReturnType(compiler,jtInt);
@@ -2863,12 +2875,13 @@ struct GetFieldByName : public CppiaDynamicExpr
       isInterface = false;
       vtableSlot = -1;
    }
-   GetFieldByName(const CppiaExpr *inSrc, int inNameId, CppiaExpr *inObject)
+   GetFieldByName(const CppiaExpr *inSrc, int inNameId, CppiaExpr *inObject,bool inIsStatic)
       : CppiaDynamicExpr(inSrc)
    {
       classId = 0;
       nameId = inNameId;
       object = inObject;
+      isStatic = inIsStatic;
       isInterface = false;
       name.__s = 0;
       vtableSlot = -1;
@@ -2923,7 +2936,7 @@ struct GetFieldByName : public CppiaDynamicExpr
          }
          name = inModule.strings[nameId];
          const StaticInfo *info = staticClass->GetStaticStorage(name);
-         if (info)
+         if (info && info->type!=hx::fsUnknown)
          {
             CppiaExpr *replace = createStaticAccess(this, info->type, info->address);
             replace->link(inModule);
@@ -2961,6 +2974,7 @@ struct GetFieldByName : public CppiaDynamicExpr
 
          return createMemberClosure(instance, func);
       }
+
       return Dynamic(instance->__Field(name,HX_PROP_DYNAMIC)).mPtr;
    }
 
@@ -3049,7 +3063,7 @@ struct Call : public CppiaDynamicExpr
    {
       std::swap(args, inArgs);
 
-      func = new GetFieldByName(this, inNameId, inObject);
+      func = new GetFieldByName(this, inNameId, inObject, false);
    }
 
 
@@ -3291,17 +3305,20 @@ struct CallMember : public CppiaExpr
       }
       if (!replace && type->haxeBase)
       {
-         ScriptFunction func = type->haxeBase->findFunction(field.__s);
+         ScriptNamedFunction func = type->haxeBase->findFunction(field.__s);
          if (func.signature)
          {
+            if (callSuperField && !func.superExecute)
+               printf("Warning - calling super host '%s' from cppia can lead to infinte recursion\n", field.__s);
+
             //printf(" found function %s\n", func.signature );
-            replace = new CallHaxe( this, func, thisExpr, args );
+            replace = new CallHaxe( this, func, thisExpr, args, false, callSuperField && func.superExecute);
          }
       }
 
       if (!replace && type->interfaceBase)
       {
-         ScriptFunction func = type->interfaceBase->findFunction(field.__s);
+         ScriptNamedFunction func = type->interfaceBase->findFunction(field.__s);
          if (func.signature)
          {
             //printf(" found function %s\n", func.signature );
@@ -4545,6 +4562,7 @@ struct GetFieldByLinkage : public CppiaExpr
    {
       TypeData *type = inModule.types[typeId];
       String field = inModule.strings[fieldId];
+      bool forceNamedAccess = false;
 
       int offset = 0;
       CppiaExpr *replace = 0;
@@ -4603,8 +4621,9 @@ struct GetFieldByLinkage : public CppiaExpr
                   break;
             case fsByte:
             case fsUnknown:
-                printf("TODO - byte/unkown GetFieldByLinkage\n");
-                ;// todo
+                forceNamedAccess = true;
+                break;
+                ;
          }
       }
 
@@ -4646,7 +4665,7 @@ struct GetFieldByLinkage : public CppiaExpr
 
       // It is ok for interfaces to look up members by name - and variables that turn
       //  out to actaully be Dynamic (eg template types)
-      if (!type->isInterface && type->name!=HX_CSTRING("Dynamic") )
+      if (!type->isInterface && type->name!=HX_CSTRING("Dynamic") && !forceNamedAccess)
       {
          printf("   GetFieldByLinkage %s (%p %p %p) '%s' fallback\n", type->name.__s, object, type->haxeClass.mPtr, type->cppiaClass, field.__s);
          if (type->cppiaClass)
@@ -4655,7 +4674,7 @@ struct GetFieldByLinkage : public CppiaExpr
            printf(" - is Native class\n");
       }
 
-      CppiaExpr *result = new GetFieldByName(this, fieldId, object);
+      CppiaExpr *result = new GetFieldByName(this, fieldId, object, false);
       result = result->link(inModule);
       delete this;
       return result;
@@ -6453,6 +6472,7 @@ struct VarRef : public CppiaExpr
          return replace;
       }
 
+      printf("Unknown var ref!\n");
       return this;
    }
 };

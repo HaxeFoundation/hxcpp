@@ -176,7 +176,21 @@ class PathManager
                }
             }
          }
-         
+         if ( result!="" )
+         {
+            var rootPath = result;
+            var depth = 0;
+            while( FileSystem.exists(rootPath) && FileSystem.isDirectory(rootPath) && depth<10 )
+            {
+               if (FileSystem.exists(rootPath + "/haxelib.json"))
+               {
+                   result = rootPath;
+                   break;
+               }
+               depth++;
+               rootPath = haxe.io.Path.directory(rootPath);
+            }
+         }
          haxelibPaths.set(name,result);
       }
       

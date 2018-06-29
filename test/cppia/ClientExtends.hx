@@ -10,7 +10,25 @@ class ClientExtends extends HostBase implements IClientInterface implements ICli
       return getVal()==1.25;
    }
 
-   //override public function whoStartedYou() : String  return super.whoStartedYou();
+   #if (hxcpp_api_level>=400)
+   public function testPointers() : Bool
+   {
+      pointerDest = pointerSrc;
+      return getDestVal()==4;
+   }
+
+   override public function getGeneration()
+   {
+      return super.getGeneration() + 1;
+   }
+   #else
+   override public function getGeneration()
+   {
+      return super.getGeneration() + 1;
+   }
+   #end
+
+   override public function whoStartedYou() : String  return super.whoStartedYou();
 
    // override IHostInteface 
    override public function whoOverridesYou() return "ClientExtends";

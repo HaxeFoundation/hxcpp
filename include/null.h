@@ -228,6 +228,7 @@ HX_ARITHMETIC_NULL_OP(<<)
 
 // Other ops in Operator.h
 
+inline void *_hx_nullptr() { return 0; }
 
 
 #endif

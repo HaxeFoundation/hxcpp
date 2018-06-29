@@ -366,6 +366,12 @@ static hx::Object *fromInt(int inVal)
 }
 
 Dynamic::Dynamic(bool inVal) : super( inVal ? hx::DynTrue.mPtr : hx::DynFalse.mPtr ) { }
+
+Dynamic::Dynamic(long inVal)
+{
+   mPtr = fromInt(inVal);
+}
+
 Dynamic::Dynamic(int inVal)
 {
    mPtr = fromInt(inVal);
@@ -376,18 +382,26 @@ Dynamic::Dynamic(short inVal)
    mPtr = fromInt(inVal);
 }
 
+Dynamic::Dynamic(unsigned long inVal)
+{
+   mPtr = fromInt(inVal);
+}
+
 Dynamic::Dynamic(unsigned int inVal)
 {
    mPtr = fromInt(inVal);
 }
+
 Dynamic::Dynamic(unsigned short inVal)
 {
    mPtr = fromInt(inVal);
 }
+
 Dynamic::Dynamic(unsigned char inVal)
 {
    mPtr = fromInt(inVal);
 }
+
 Dynamic::Dynamic(signed char inVal)
 {
    mPtr = fromInt(inVal);

@@ -88,6 +88,18 @@
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
   <flag value="${HXCPP_LINK_OPTIM_LEVEL}"/>
   <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
+
+
+  <section if="HXCPP_LINK_TOTAL_MEMORY" >
+     <flag value="-s" />
+     <flag value="TOTAL_MEMORY=${HXCPP_LINK_TOTAL_MEMORY}" />
+  </section>
+
+  <section if="HXCPP_LINK_MEM_FILE" >
+    <flag value="--memory-init-file"/>
+    <flag value="${HXCPP_LINK_MEM_FILE}"/>
+  </section>
+
   <!-- <flag value="-DBUILD_AS_SHARED_LIBRARY" /> -->
   <!-- <lib name="-ldl"/> -->
   <!-- <ext value=".js"/> -->

@@ -113,7 +113,7 @@ void GCAddFinalizer(hx::Object *v, finalizer f)
 
 HX_CHAR *NewString(int inLen)
 {
-   HX_CHAR *result =  (HX_CHAR *)hx::InternalNew( (inLen+1)*sizeof(HX_CHAR), false );
+   char *result =  (char *)hx::InternalNew( (inLen+1)*sizeof(char), false );
    result[inLen] = '\0';
 #ifdef HXCPP_TELEMETRY
    __hxt_new_string(result, inLen+1);

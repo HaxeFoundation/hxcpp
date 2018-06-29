@@ -490,6 +490,18 @@ int _hx_std_process_pid( Dynamic handle )
    #endif
 }
 
+void _hx_std_process_kill( Dynamic handle )
+{
+   vprocess *p = getProcess(handle);
+
+   #ifdef NEKO_WINDOWS
+   TerminateProcess(p->pinf.hProcess, -1);
+   #elif defined(APPLETV) && !defined(HX_APPLEWATCH)
+   kill(p->pid, SIGTERM);
+   #endif
+}
+
+
 
 /**
    process_close : 'process -> void
@@ -513,6 +525,7 @@ void _hx_std_process_stdin_close( Dynamic handle ) { }
 int _hx_std_process_exit( Dynamic handle ) { return 0; }
 int _hx_std_process_pid( Dynamic handle ) { return 0; }
 void _hx_std_process_close( Dynamic handle ) { }
+void _hx_std_process_kill( Dynamic handle ) { }
 
 #endif // HX_WINRT
 

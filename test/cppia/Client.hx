@@ -37,6 +37,12 @@ class Client
          Common.status = "Bad class override - got " + c.whoOverridesYou();
          return;
       }
+      if (!c.testPointers())
+      {
+         Common.status = "Could not move native pointers";
+         return;
+      }
+
       var hostInterface:IHostInterface = c;
       if (hostInterface.whoStartedYou()!="HostBase")
       {
@@ -94,6 +100,13 @@ class Client
       if (c.hostImplOnly(0,null,0)!="client" || c.whoStartedYou()!="client" || c.whoOverridesYou()!="client")
       {
          Common.status = "Trouble implementing host interface";
+         return;
+      }
+
+      var c:ClientExtends = new ClientExtends2();
+      if (c.getGeneration()!=2)
+      {
+         Common.status = "Error calling cppia super function";
          return;
       }
 
