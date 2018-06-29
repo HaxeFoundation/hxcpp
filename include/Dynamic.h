@@ -18,10 +18,8 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic : public hx::ObjectPtr<hx::Object>
 public:
 
    Dynamic() {};
-   Dynamic(long inVal);
    Dynamic(int inVal);
    Dynamic(short inVal);
-   Dynamic(unsigned long inVal);
    Dynamic(unsigned int inVal);
    Dynamic(unsigned short inVal);
    Dynamic(unsigned char inVal);
@@ -40,6 +38,10 @@ public:
    Dynamic(const cpp::Variant &inRHS) : super(inRHS.asDynamic()) { }
    template<typename T>
    Dynamic(const hx::Native<T *> &inInterface):super(inInterface->__GetRealObject() ) { }
+   #if !defined(__GNUC__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
+   Dynamic(long inVal);
+   Dynamic(unsigned long inVal);
+   #endif
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
    Dynamic(const id inObjc);
