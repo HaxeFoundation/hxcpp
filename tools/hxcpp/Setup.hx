@@ -61,9 +61,6 @@ class Setup
 
    static public function getNdkVersion(inDirName:String):Float
    {
-      if (inDirName.indexOf("ndk")<0)
-         return 0;
-
       Log.v("Try to get version from source.properties");
       var src = toPath(inDirName+"/source.properties");
       if (sys.FileSystem.exists(src))
@@ -97,9 +94,10 @@ class Setup
          fin.close();
       }
 
-      Log.v("Try to get version from directory name");
-      var extract_version = ~/^(android-ndk-)?r(\d+)([a-z]?)$/;
-      if (extract_version.match(inDirName))
+      var dir = inDirName.split("\\").join("/");
+      Log.v('Try to get version from directory name "$dir"');
+      var extract_version = ~/\/(android-ndk-)?r(\d+)([a-z]?)$/;
+      if (extract_version.match(dir))
       {
          var major:Int = Std.parseInt( extract_version.matched(2) );
          var result:Float = 1.0 * major;
@@ -345,7 +343,7 @@ class Setup
          var version = Setup.getNdkVersion( root );
          if (version > 0)
          {
-            Log.info("", "\x1b[33;1mDetected Android NDK r" + version + "\x1b[0m");
+            Log.info("", "\x1b[33;1mDetected Android NDK " + version + "\x1b[0m");
             defines.set("NDKV" + Std.int(version), "1" );
             ndkVersion = Std.int(version);
          }
