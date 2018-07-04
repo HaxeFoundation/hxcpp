@@ -490,7 +490,7 @@ public:
             JumpId notNan = sljit_emit_jump(compiler,SLJIT_ORDERED_F64);
 
             // is nan - fallthough
-            // test passed, ro was nan
+            // test passed, but was nan
             comeFrom(passed);
             JumpId good = sljit_emit_jump(compiler,SLJIT_JUMP);
             if (andJump)
