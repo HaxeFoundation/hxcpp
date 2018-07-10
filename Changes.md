@@ -1,4 +1,24 @@
 
+* More logic for determining the android NDK version
+* Updated various opensource libraries (thanks robocoder)
+* Updated version of zlib
+* Updated version of sljit
+* Updated version of pcre
+* Updated version of sqlit3
+* Updated version of mbedtls
+* Some work on supporting utf16 strings (hx_smart_strings)
+* Added process_kill
+* Change root when calculating haxelib in build.xml files
+* Fix cppia super calls across cpp boundary
+* Add Array.resize
+* Be consistent with mod in cppia
+* Fix Sys.stderr
+* Add 'embedName' file attribute to allow text to cpp conversion
+* Updates for Msvc
+* Updates for Xcode
+
+3.4.188
+------------------------------------------------------------
 * Fix some threading crashes
 
 3.4.185
