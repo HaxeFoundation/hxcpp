@@ -1,4 +1,8 @@
 
+* Default Cppia to 64 bits on windows
+
+4.0.1
+------------------------------------------------------------
 * More logic for determining the android NDK version
 * Updated various opensource libraries (thanks robocoder)
 * Updated version of zlib

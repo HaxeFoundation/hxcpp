@@ -1400,7 +1400,7 @@ class BuildTool
          var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
          if (binDir==null)
             Log.error("Cppia is not supported on this host.");
-         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
+         var binDir = isWindows ? "Windows64" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
          var exe = '$HXCPP/bin/$binDir/Cppia' + (isWindows ? ".exe" : "");
          if (!isWindows)
          {
@@ -1409,7 +1409,7 @@ class BuildTool
             {
                var stat = FileSystem.stat(exe);
                if (stat==null)
-                  throw "Could not find exe";
+                  throw "Could not find exe:" + exe;
                var mode = stat.mode;
                var exeFlags = (1<<0) | (1<<3) | (1<<6);
                if ( (mode&exeFlags) != exeFlags )

@@ -3,4 +3,5 @@
 -D dll_export=
 -dce no
 -cpp cppia_bin
+-D HXCPP_M64
 -D destination=../../bin/{BINDIR}/Cppia{EXESUFFIX}
