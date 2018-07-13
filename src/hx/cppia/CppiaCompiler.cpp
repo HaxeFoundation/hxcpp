@@ -309,7 +309,12 @@ public:
       }
       saveds = 3;
       int fsaveds = 0;
+      #ifdef HXCPP_M64
+      // Add shadow space for native calls
+      int scratches = std::max(maxTempCount + (makesNativeCalls?4:0) ,inArgs);
+      #else
       int scratches = std::max(maxTempCount,inArgs);
+      #endif
 
       sljit_emit_enter(compiler, options, inArgs, scratches, saveds, maxFTempCount, fsaveds, maxLocalSize);
       usesCtx = true;
