@@ -1,4 +1,8 @@
 
+* Compile Cppia against haxe 4.0 preview 4
+
+4.0.2
+------------------------------------------------------------
 * Default Cppia to 64 bits on windows
 
 4.0.1
