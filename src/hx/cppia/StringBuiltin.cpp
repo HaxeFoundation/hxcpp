@@ -299,6 +299,10 @@ struct IndexOfExpr : public CppiaExpr
       start = start->link(inData);
       return this;
    }
+   Float runFloat(CppiaCtx *ctx)
+   {
+      return runInt(ctx);
+   }
    int runInt(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
