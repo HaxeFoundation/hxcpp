@@ -1201,7 +1201,13 @@ String String::fromCharCode( int c )
 
 String String::charAt( int at ) const
 {
-   if (at<0 || at>=length) return HX_CSTRING("");
+   if (at<0 || at>=length)
+      return HX_CSTRING("");
+
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+      return fromCharCode(__w[at]);
+   #endif
    return fromCharCode(__s[at]);
 }
 
