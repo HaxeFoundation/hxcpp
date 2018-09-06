@@ -883,6 +883,8 @@ class BuildTool
                      file.mFilterOut = substitute(el.att.filterout);
                   if (el.has.embedName)
                      file.mEmbedName = substitute(el.att.embedName);
+                  if (el.has.scramble)
+                     file.mScramble = substitute(el.att.scramble);
                   for(f in el.elements)
                      if (valid(f,"") && f.name=="depend")
                         file.mDepends.push( substitute(f.att.name) );

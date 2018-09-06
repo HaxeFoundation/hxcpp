@@ -380,6 +380,20 @@ inline value alloc_wstring(const wchar_t *inStr)
    return alloc_wstring_len(inStr,(int)(end-inStr));
 }
 
+inline void hxcpp_unscramble(const unsigned char *bytes, int len, const char *key, unsigned char *dest)
+{
+   int keyLen = 0;
+   while(key[keyLen])
+      keyLen++;
+   int state = 0;
+   //state = ((state + key[i]) ^ ch) & 0xff);
+   for(int i=0;i<len;i++)
+   {
+      dest[i] = ( (state + key[i%keyLen]) ^ bytes[i] ) & 0xff;
+      state = bytes[i];
+   }
+}
+
 
 //additional glue for easier neko modules compilation
 #define val_true    alloc_bool(true)
