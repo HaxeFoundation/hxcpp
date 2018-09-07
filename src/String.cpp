@@ -6,6 +6,7 @@
 #include <string>
 #include <hx/Unordered.h>
 #include "hx/Hash.h"
+#include <locale>
 
 using namespace hx;
 
@@ -831,6 +832,16 @@ String String::__URLEncode() const
 
 String String::toUpperCase() const
 {
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+   {
+      char16_t *result = String::allocChar16Ptr(length);
+      for(int i=0;i<length;i++)
+         result[i] = __w[i]<256 ? toupper( __w[i] ) : __w[i];
+      return String(result,length,true);
+   }
+   #endif
+
    char *result = hx::NewString(length);
    for(int i=0;i<length;i++)
       result[i] = toupper( __s[i] );
@@ -839,6 +850,15 @@ String String::toUpperCase() const
 
 String String::toLowerCase() const
 {
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+   {
+      char16_t *result = String::allocChar16Ptr(length);
+      for(int i=0;i<length;i++)
+         result[i] = __w[i] < 256 ? tolower( __w[i] ) : __w[i];
+      return String(result,length,true);
+   }
+   #endif
    char *result = hx::NewString(length);
    for(int i=0;i<length;i++)
       result[i] = tolower( __s[i] );
