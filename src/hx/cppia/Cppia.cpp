@@ -2556,8 +2556,8 @@ static cpp::Variant * SLJIT_CALL postIncByName( hx::Object *inObj, String *inNam
 static cpp::Variant * SLJIT_CALL postDecByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
 {
    TRY_NATIVE
-   *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC) - 1;
-   inObj->__SetField( *inName, *ioBuf, HX_PROP_DYNAMIC);
+   *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC);
+   inObj->__SetField( *inName, *ioBuf - 1, HX_PROP_DYNAMIC);
    return ioBuf;
    CATCH_NATIVE
    return 0;
@@ -2567,8 +2567,8 @@ static cpp::Variant * SLJIT_CALL postDecByName( hx::Object *inObj, String *inNam
 static cpp::Variant * SLJIT_CALL preDecByName( hx::Object *inObj, String *inName, cpp::Variant *ioBuf )
 {
    TRY_NATIVE
-   *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC);
-   inObj->__SetField( *inName, *ioBuf - 1, HX_PROP_DYNAMIC);
+   *ioBuf =  inObj->__Field(*inName, HX_PROP_DYNAMIC) - 1;
+   inObj->__SetField( *inName, *ioBuf, HX_PROP_DYNAMIC);
    return ioBuf;
    CATCH_NATIVE
    return 0;
