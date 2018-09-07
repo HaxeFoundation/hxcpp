@@ -43,6 +43,8 @@ struct CMemberFunction::ARG:: : public hx::Object
       return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
+   void  __SetThis(Dynamic inThis) { mThis = inThis.mPtr; }
+
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return ::ARG::; } 
    ::String __ToString() const{ return String(mName); } 
@@ -149,6 +151,7 @@ struct CMemberFunctionVar : public hx::Object
       return (mFunction==other->mFunction && mName==other->mName && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
+   void  __SetThis(Dynamic inThis) { mThis = inThis.mPtr; }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 

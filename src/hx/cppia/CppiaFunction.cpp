@@ -715,6 +715,11 @@ public:
       return (hx::Object **)base;
    }
 
+   void __SetThis(Dynamic inThis)
+   {
+      *getThis() = inThis.mPtr;
+   }
+
    // Create member closure...
    CppiaClosure(hx::Object *inThis, ScriptCallable *inFunction)
    {
