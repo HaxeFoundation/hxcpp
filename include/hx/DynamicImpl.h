@@ -34,8 +34,6 @@ struct CMemberFunction0 : public hx::Object
       return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
-   void  __SetThis(Dynamic inThis) { mThis = inThis.mPtr; }
-
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 0; } 
    ::String __ToString() const{ return String(mName); } 
@@ -132,8 +130,6 @@ struct CMemberFunction1 : public hx::Object
          return -1;
       return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
-
-   void  __SetThis(Dynamic inThis) { mThis = inThis.mPtr; }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 1; } 
@@ -232,8 +228,6 @@ struct CMemberFunction2 : public hx::Object
       return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
-   void  __SetThis(Dynamic inThis) { mThis = inThis.mPtr; }
-
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 2; } 
    ::String __ToString() const{ return String(mName); } 
@@ -330,8 +324,6 @@ struct CMemberFunction3 : public hx::Object
          return -1;
       return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
-
-   void  __SetThis(Dynamic inThis) { mThis = inThis.mPtr; }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 3; } 
@@ -430,8 +422,6 @@ struct CMemberFunction4 : public hx::Object
       return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
-   void  __SetThis(Dynamic inThis) { mThis = inThis.mPtr; }
-
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 4; } 
    ::String __ToString() const{ return String(mName); } 
@@ -528,8 +518,6 @@ struct CMemberFunction5 : public hx::Object
          return -1;
       return (mName==other->mName && mFunction==other->mFunction && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
-
-   void  __SetThis(Dynamic inThis) { mThis = inThis.mPtr; }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return 5; } 
@@ -1011,7 +999,6 @@ struct CMemberFunctionVar : public hx::Object
       return (mFunction==other->mFunction && mName==other->mName && mThis.GetPtr()==other->mThis.GetPtr())? 0 : -1;
    }
 
-   void  __SetThis(Dynamic inThis) { mThis = inThis.mPtr; }
 
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 
