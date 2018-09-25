@@ -336,8 +336,13 @@ int _hx_ssl_recv( Dynamic hssl, Array<unsigned char> buf, int p, int l ) {
 		HANDLE_EINTR(recv_again);
 		block_error();
 	}
-	if( dlen < 0 )
-		hx::Throw( HX_CSTRING("ssl_recv") );
+	if( dlen < 0 ) {  
+                if( dlen == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) {
+                  mbedtls_ssl_close_notify( ssl->s );
+	  	  return 0;
+                }
+		hx::Throw( HX_CSTRING("ssl_recv") ); 
+	}
 	return dlen;
 }
 
@@ -353,6 +358,10 @@ Array<unsigned char> _hx_ssl_read( Dynamic hssl ) {
 			HANDLE_EINTR(read_again);
 			block_error();
 		}
+                if( len == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY ) {
+                  mbedtls_ssl_close_notify( ssl->s );
+	  	  len = 0;
+                }
 		if( len == 0 )
 			break;
 		result->memcpy(result->length, buf, len);
