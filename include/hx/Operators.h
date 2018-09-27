@@ -100,7 +100,12 @@ double Mod(TL inLHS,TR inRHS) { return hx::DoubleMod(inLHS,inRHS); }
 double DivByZero(double d);
 
 #if !defined(_MSC_VER) || _MSC_VER > 1399
-inline double Mod(int inLHS,int inRHS) { return inRHS ? inLHS % inRHS : hx::DivByZero(inLHS); }
+inline int Mod(int inLHS,int inRHS)
+{
+   if (!inRHS)
+      hx::Throw(HX_CSTRING("Mod by 0 Error."));
+   return inLHS % inRHS;
+}
 #endif
 
 
