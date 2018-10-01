@@ -473,11 +473,19 @@ void CppiaStackVar::link(CppiaModule &inModule, bool hasDefault)
    expressionType = inModule.types[typeId]->expressionType;
    argType = hasDefault ? ( expressionType==etString ? etString : etObject) : expressionType;
    storeType = typeId==0 ? fsObject : fieldStorageFromType(inModule.types[typeId]);
-   inModule.layout->varMap[id] = this;
-   stackPos = inModule.layout->size;
-   defaultStackPos =stackPos;
-   inModule.layout->size += sTypeSize[argType];
+   if (inModule.layout)
+   {
+      inModule.layout->varMap[id] = this;
+      stackPos = inModule.layout->size;
+      inModule.layout->size += sTypeSize[argType];
+   }
+   else
+   {
+      stackPos = -1;
+      storeType = fsUnknown;
+   }
    type = inModule.types[typeId];
+   defaultStackPos =stackPos;
    module = &inModule;
 }
 
