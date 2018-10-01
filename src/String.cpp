@@ -1353,19 +1353,11 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
 
 const char * String::__CStr() const
 {
-   #ifdef HX_UTF8_STRINGS
-   return __s ? __s : (char *)"";
-   #else
-   Array<unsigned char> bytes(0,length+1);
-   __hxcpp_bytes_of_string(bytes,*this);
-   bytes.Add(0);
-   char *result =  bytes->GetBase();
-   if (result)
-   {
-      return  (char *)NewGCPrivate(result,bytes->length);
-   }
-   return (char *)"";
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+      return TConvertToUTF8(__w,0);
    #endif
+   return __s;
 }
 
 #ifdef HX_SMART_STRINGS
@@ -1450,6 +1442,20 @@ wchar_t *ConvertToWChar(const char *inStr, int *ioLen)
 
 
 }
+
+
+
+const char16_t * String::wc_str() const
+{
+   #ifndef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+      return __w;
+   #endif
+
+   String s = _hx_utf8_to_utf16((const unsigned char *)__s, length, false);
+   return s.__w;
+}
+
 
 const wchar_t * String::__WCStr() const
 {

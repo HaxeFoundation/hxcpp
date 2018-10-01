@@ -129,10 +129,11 @@ public:
     ::String substr(int inPos,Dynamic inLen) const;
     ::String substring(int inStartIndex, Dynamic inEndIndex) const;
 
-   inline const char *c_str() const { return __s; }
+   inline const char *c_str() const { return __CStr(); }
+   const char16_t *wc_str() const;
    const char *__CStr() const;
    const wchar_t *__WCStr() const;
-   inline operator const char *() { return __s; }
+   inline operator const char *() { return __CStr(); }
 
    inline bool isUTF16Encoded() const {
       #ifdef HX_SMART_STRINGS
