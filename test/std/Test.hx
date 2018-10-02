@@ -36,7 +36,7 @@ import cpp.link.StaticSqlite;
 extern class SslTest
 {
    @:extern @:native("_hx_ssl_init")
-   public static function socket_init() : Void { }
+   extern public static function socket_init():Void;
 }
 
 class Test

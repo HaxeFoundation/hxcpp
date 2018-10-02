@@ -150,8 +150,10 @@ Dynamic _hx_regexp_new_options(String s, String opt)
       case 'g':
          options |= PCRE_UNGREEDY;
          break;
+      case 'u':
+         break;
       default:
-         return null();
+         hx::Throw( HX_CSTRING("Regexp unknown modifier : ") + String::fromCharCode(o[-1]) );
          break;
       }
    }
