@@ -2500,6 +2500,12 @@ bool IsWeakRefValid(hx::Object *inPtr)
     return isCurrent;
 }
 
+static void someHackyFunc(hx::Object *)
+{
+}
+
+static void (*hackyFunctionCall)(hx::Object *) = someHackyFunc;
+
 struct Finalizable
 {
    union
@@ -2529,7 +2535,13 @@ struct Finalizable
    void run()
    {
       if (isMember)
-         (((hx::Object *)base)->*member)();
+      {
+         hx::Object *object = (hx::Object *)base;
+         // I can't tell if it is msvc over-optimizing this code, to I am not
+         //  quite calling things right, but this seems to fix it...
+         hackyFunctionCall(object);
+         (object->*member)();
+      }
       else
          alloc( base );
    }

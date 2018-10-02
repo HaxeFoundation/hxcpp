@@ -87,23 +87,40 @@ class TestFinalizer extends haxe.unit.TestCase
       CustomFinalizable.count = 0;
    }
 
-
    #if !cppia
+   function createExternWrapper(i:Int)
+   {
+      if (i<=0)
+         new ExternWrapper();
+      else
+        createExternWrapper(i-1);
+   }
+
+
    public function testCount()
    {
       for(i in 0...10)
       {
-          new ExternWrapper();
+          createExternWrapper(2);
           cpp.vm.Gc.run(true);
       }
       Sys.println("\nExtern instances remaining:" + ExternWrapper.instances);
       assertTrue( ExternWrapper.instances < 10 );
    }
 
+   function createCustomFinalizable(i:Int)
+   {
+      if (i<=0)
+         new CustomFinalizable();
+      else
+         createCustomFinalizable(i-1);
+   }
+
+
    public function testCustomFinalizable()
    {
       for(i in 0...100)
-         new CustomFinalizable();
+         createCustomFinalizable(2);
       cpp.vm.Gc.run(true);
       Sys.println("custom cleared:" + CustomFinalizable.count);
       assertTrue(CustomFinalizable.count>0);
@@ -111,10 +128,18 @@ class TestFinalizer extends haxe.unit.TestCase
 
    #end
 
+   function createMyFinalizable(i:Int)
+   {
+      if (i<=0)
+         new MyFinalizable();
+      else
+         createMyFinalizable(i-1);
+   }
+
    public function testFinalizable()
    {
       for(i in 0...100)
-         new MyFinalizable();
+         createMyFinalizable(2);
       cpp.vm.Gc.run(true);
       Sys.println("MyFinalizable cleared:" + MyFinalizable.count);
       assertTrue(MyFinalizable.count>0);

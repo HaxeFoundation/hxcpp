@@ -10,6 +10,7 @@
   <cache value="true" asLibrary="1" />
 
   <compilerflag value="-I${ZLIB_DIR}"/>
+  <compilerflag value="-DSTDC" unless="windows" />
 
   <file name="ZLib.cpp"/>
 

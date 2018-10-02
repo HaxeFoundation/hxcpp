@@ -788,6 +788,7 @@ public:
 
          case jtVoid:
          case jtUnknown:
+         case jtAny:
             setError("Bad move target");
       }
    }
@@ -1103,6 +1104,9 @@ public:
          case etFloat:
             move(sJitTemp0, JitVal((void *)&sZero) );
             move(inTarget.as(jtFloat), sJitTemp0.star(etFloat) );
+            break;
+         case etVoid:
+         case etNull:
             break;
       }
    }

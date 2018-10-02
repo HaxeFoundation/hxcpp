@@ -300,7 +300,7 @@ static double myp_rnd( rand_ctx *r ) {
 }
 
 static void hash_password( unsigned long *result, const char *password, int password_len ) {
-	register unsigned long nr = 1345345333L, add = 7, nr2 = 0x12345671L;
+	unsigned long nr = 1345345333L, add = 7, nr2 = 0x12345671L;
 	unsigned long tmp;
 	const char *password_end = password + password_len;
 	for(; password < password_end; password++) {
