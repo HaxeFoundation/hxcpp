@@ -5,7 +5,7 @@
 
   brew update
   brew tap Homebrew/bundle
-  brew bundle --file=~/haxe/tests/Brewfile
+  brew bundle --file=~/haxe/tests/Brewfile --no-upgrade
 
   brew install neko --HEAD;
 
