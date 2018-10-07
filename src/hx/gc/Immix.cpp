@@ -6119,6 +6119,7 @@ void GCPrepareMultiThreaded()
 
 void SetTopOfStack(int *inTop,bool inForce)
 {
+   bool threadAttached = false;
    if (inTop)
    {
       if (!sgAllocInit)
@@ -6129,6 +6130,7 @@ void SetTopOfStack(int *inTop,bool inForce)
          {
             GCPrepareMultiThreaded();
             RegisterCurrentThread(inTop);
+            threadAttached = true;
          }
       }
    }
@@ -6136,7 +6138,11 @@ void SetTopOfStack(int *inTop,bool inForce)
    LocalAllocator *tla = (LocalAllocator *)(hx::ImmixAllocator *)tlsStackContext;
 
    if (tla)
+   {
       tla->SetTopOfStack(inTop,inForce);
+      if (threadAttached)
+         tla->onThreadAttach();
+   }
 }
 
 
@@ -6317,7 +6323,6 @@ void RegisterCurrentThread(void *inTopOfStack)
    #ifdef HXCPP_SCRIPTABLE
    local->byteMarkId = hx::gByteMarkID;
    #endif
-   local->onThreadAttach();
 }
 
 void UnregisterCurrentThread()
@@ -6337,6 +6342,7 @@ void RegisterVTableOffset(int inOffset)
 
 void PushTopOfStack(void *inTop)
 {
+   bool threadAttached = false;
    if (!sgAllocInit)
       InitAlloc();
    else
@@ -6345,11 +6351,14 @@ void PushTopOfStack(void *inTop)
       {
          GCPrepareMultiThreaded();
          RegisterCurrentThread(inTop);
+         threadAttached = true;
       }
    }
  
    LocalAllocator *tla = GetLocalAlloc();
    tla->PushTopOfStack(inTop);
+   if (threadAttached)
+      tla->onThreadAttach();
 }
 
 void PopTopOfStack()
