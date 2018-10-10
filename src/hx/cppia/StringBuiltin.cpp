@@ -154,7 +154,7 @@ struct CharAtExpr : public StringExpr
       BCR_CHECK;
 
       if (AS_INT)
-         return (int)( ((unsigned char *)val.__s) [idx]);
+         return (int)val.cca(idx);
       else
          return val.charCodeAt(idx);
    }
@@ -168,7 +168,7 @@ struct CharAtExpr : public StringExpr
       if (CODE)
       {
          if (AS_INT)
-            return Dynamic( (int)( ((unsigned char *)val.__s) [idx]) ).mPtr;
+            return Dynamic( val.cca(idx) ).mPtr;
          else
             return val.charCodeAt(idx).mPtr;
       }
@@ -180,6 +180,10 @@ struct CharAtExpr : public StringExpr
    static hx::Object *SLJIT_CALL runCharCodeAt(String *inValue, int inIndex)
    {
       return (inValue->charCodeAt(inIndex)).mPtr;
+   }
+   static int SLJIT_CALL runCca(String *inValue, int inIndex)
+   {
+      return (inValue->cca(inIndex));
    }
    static void SLJIT_CALL runCharAt(String *ioValue, int inIndex)
    {
@@ -196,6 +200,10 @@ struct CharAtExpr : public StringExpr
       {
          if (AS_INT)
          {
+            #ifdef HX_SMART_STRINGS
+            compiler->callNative( (void *)runCca, value, sJitTemp1.as(jtInt));
+            compiler->convertReturnReg( etInt, inDest, destType);
+            #else
             // sJitTemp1 = __s
             compiler->move( sJitTemp0.as(jtPointer), value.star(jtPointer,offsetof(String,__s)) );
             if (destType==etInt)
@@ -207,6 +215,7 @@ struct CharAtExpr : public StringExpr
                compiler->move(sJitTemp0.as(jtInt), sJitTemp0.atReg(sJitTemp1,0,jtByte) );
                compiler->convertReturnReg(etInt, inDest, destType);
             }
+            #endif
          }
          else
          {
