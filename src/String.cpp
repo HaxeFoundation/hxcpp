@@ -1161,7 +1161,7 @@ Dynamic String::charCodeAt(int inPos) const
       return (int)__w[inPos];
    }
    #endif
-   return (int)(__s[inPos]);
+   return (int)(((unsigned char *)__s)[inPos]);
 }
 
 String String::fromCharCode( int c )
