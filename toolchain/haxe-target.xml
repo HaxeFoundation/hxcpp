@@ -162,7 +162,7 @@
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp" tags="haxe,hxstring" />
 
-  <addTwice if="linux" />
+  <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
 </files>
 
