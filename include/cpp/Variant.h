@@ -44,7 +44,8 @@ namespace cpp
 
 
 
-      inline bool isNull() const { return type==typeObject && !valObject; }
+      inline bool isNull() const {
+          return (type==typeObject && !valObject) || (type==typeString && !valStringPtr); }
       inline bool isNumeric() const;
       inline bool isBool() const;
       inline int asInt() const;
