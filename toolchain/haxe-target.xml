@@ -127,6 +127,7 @@
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/Hash.h"/>
+  <depend name="${HXCPP}/src/hx/Unicase.h"/>
   <depend name="${HXCPP}/src/hx/gc/GcRegCapture.h"/>
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
