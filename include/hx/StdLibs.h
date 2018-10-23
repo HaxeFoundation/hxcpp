@@ -43,11 +43,39 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName);
 // System access
 Array<String>  __get_args();
 double         __time_stamp();
-HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_print(Dynamic &inV);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_println(Dynamic &inV);
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_print_string(const String &inV);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_println_string(const String &inV);
+
+template<typename T> inline void __hxcpp_println(T inV)
+{
+   Dynamic d(inV);
+   __hxcpp_println_string(d);
+}
+// Specialization that does not need dynamic boxing
+template<> inline void __hxcpp_println(String inV)
+{
+   __hxcpp_println_string(inV);
+}
+
+template<typename T> inline void __hxcpp_print(T inV)
+{
+   Dynamic d(inV);
+   __hxcpp_print_string(d);
+}
+// Specialization that does not need dynamic boxing
+template<> inline void __hxcpp_print(String inV)
+{
+   __hxcpp_print_string(inV);
+}
+
+
+
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __trace(Dynamic inPtr, Dynamic inData);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_exit(int inExitCode);
 void           __hxcpp_stdlibs_boot();
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES int hxcpp_alloc_kind();
 
 // --- Maths ---------------------------------------------------------
 double __hxcpp_drand();
@@ -61,6 +89,22 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_parse_int(const String &inString);
 HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_float(const String &inString);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_set_float_format(String inFormat);
+
+inline int _hx_idiv(int inNum,int inDenom) { return inNum/inDenom; }
+inline int _hx_imod(int inNum,int inDenom) { return inNum%inDenom; }
+inline int _hx_cast_int(int inX) { return inX; }
+inline int _hx_fast_floor(double inX) {
+   union Cast
+   {
+      double d;
+      long l;
+   };
+   Cast c;
+   c.d = (inX-0.5) + 6755399441055744.0;
+   return c.l;
+}
+
+
 
 // --- CFFI helpers ------------------------------------------------------------------
 
@@ -103,60 +147,76 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_char_bytes_to_utf8_string(String &i
 HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_utf8_string_to_char_bytes(String &inUTF8);
 
 
+#ifdef HXCPP_GC_GENERATIONAL
+   #define HX_MAP_THIS this, h
+   #define HX_MAP_THIS_ this,
+   #define HX_MAP_THIS_ARG hx::Object *owner, Dynamic &ioHash
+#else
+   #define HX_MAP_THIS h
+   #define HX_MAP_THIS_ 
+   #define HX_MAP_THIS_ARG Dynamic &ioHash
+#endif
+
 // --- IntHash ----------------------------------------------------------------------
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES inline hx::Object   *__int_hash_create() { return 0; }
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_get(Dynamic &ioHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_exists(Dynamic &ioHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_remove(Dynamic &ioHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Int>    __int_hash_keys(Dynamic &ioHash);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_values(Dynamic &ioHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_exists(Dynamic &hash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_remove(Dynamic &hash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<int>    __int_hash_keys(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_values(Dynamic &hash);
 // Typed IntHash access...
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_int(Dynamic &ioHash,int inKey,int inValue);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_string(Dynamic &ioHash,int inKey,::String inValue);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_float(Dynamic &ioHash,int inKey,Float inValue);
-HXCPP_EXTERN_CLASS_ATTRIBUTES int           __int_hash_get_int(Dynamic &ioHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_get_string(Dynamic &ioHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __int_hash_get_float(Dynamic &ioHash,int inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_to_string(Dynamic &ioHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_int(HX_MAP_THIS_ARG,int inKey,int inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_string(HX_MAP_THIS_ARG,int inKey,::String inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_float(HX_MAP_THIS_ARG,int inKey,Float inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_to_string(Dynamic &hash);
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_get(Dynamic inHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __int_hash_get_int(Dynamic inHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_get_string(Dynamic inHash,int inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __int_hash_get_float(Dynamic inHash,int inKey);
+inline  bool   __int_hash_get_bool(Dynamic inHash,int inKey) { return __int_hash_get_int(inHash,inKey); }
 
 // --- StringHash ----------------------------------------------------------------------
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value,bool inForceDynamic=false);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_get(Dynamic &ioHash,String inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __string_hash_exists(Dynamic &ioHash,String inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __string_hash_remove(Dynamic &ioHash,String inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Array< ::String> __string_hash_keys(Dynamic &ioHash);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_values(Dynamic &ioHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value,bool inForceDynamic=false);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __string_hash_exists(Dynamic &hash,String inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __string_hash_remove(Dynamic &hash,String inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array< ::String> __string_hash_keys(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_values(Dynamic &hash);
 // Typed StringHash access...
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_int(Dynamic &ioHash,String inKey,int inValue);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_string(Dynamic &ioHash,String inKey,::String inValue);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_float(Dynamic &ioHash,String inKey,Float inValue);
-HXCPP_EXTERN_CLASS_ATTRIBUTES int           __string_hash_get_int(Dynamic &ioHash,String inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_get_string(Dynamic &ioHash,String inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __string_hash_get_float(Dynamic &ioHash,String inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string(Dynamic &ioHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_int(HX_MAP_THIS_ARG,String inKey,int inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_string(HX_MAP_THIS_ARG,String inKey,::String inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_float(HX_MAP_THIS_ARG,String inKey,Float inValue);
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string_raw(Dynamic &hash);
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_get(Dynamic inHash,String inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __string_hash_get_int(Dynamic inHash,String inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_get_string(Dynamic inHash,String inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __string_hash_get_float(Dynamic inHash,String inKey);
+inline  bool __string_hash_get_bool(Dynamic inHash,String inKey) { return __string_hash_get_int(inHash,inKey); }
 
 // --- ObjectHash ----------------------------------------------------------------------
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool inWeakKey=false);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __object_hash_get(Dynamic &ioHash,Dynamic inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __object_hash_exists(Dynamic &ioHash,Dynamic inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __object_hash_remove(Dynamic &ioHash,Dynamic inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Array< ::Dynamic> __object_hash_keys(Dynamic &ioHash);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __object_hash_values(Dynamic &ioHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool inWeakKey=false);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __object_hash_exists(Dynamic &hash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __object_hash_remove(Dynamic &hash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array< ::Dynamic> __object_hash_keys(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __object_hash_values(Dynamic &hash);
 // Typed ObjectHash access...
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_int(Dynamic &ioHash,Dynamic inKey,int inValue,bool inWeakKey=false);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_string(Dynamic &ioHash,Dynamic inKey,::String inValue,bool inWeakKey=false);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_float(Dynamic &ioHash,Dynamic inKey,Float inValue,bool inWeakKey=false);
-HXCPP_EXTERN_CLASS_ATTRIBUTES int           __object_hash_get_int(Dynamic &ioHash,Dynamic inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __object_hash_get_string(Dynamic &ioHash,Dynamic inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __object_hash_get_float(Dynamic &ioHash,Dynamic inKey);
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __object_hash_to_string(Dynamic &ioHash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_int(HX_MAP_THIS_ARG,Dynamic inKey,int inValue,bool inWeakKey=false);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_string(HX_MAP_THIS_ARG,Dynamic inKey,::String inValue,bool inWeakKey=false);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_float(HX_MAP_THIS_ARG,Dynamic inKey,Float inValue,bool inWeakKey=false);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __object_hash_to_string(Dynamic &hash);
 
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __object_hash_get(Dynamic inHash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __object_hash_get_int(Dynamic inHash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __object_hash_get_string(Dynamic inHash,Dynamic inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __object_hash_get_float(Dynamic inHash,Dynamic inKey);
+inline bool  __object_hash_get_bool(Dynamic inHash,Dynamic inKey) { return __object_hash_get_int(inHash,inKey); }
 
 // --- Date --------------------------------------------------------------------------
 
@@ -218,7 +278,9 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block);
 Dynamic __hxcpp_tls_get(int inID);
 void    __hxcpp_tls_set(int inID,Dynamic inVal);
 
-
+bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int newVal  );
+int _hx_atomic_inc(::cpp::Pointer<cpp::AtomicInt> inPtr );
+int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr );
 
 Array<String> __hxcpp_get_call_stack(bool inSkipLast);
 Array<String> __hxcpp_get_exception_stack();
@@ -238,12 +300,12 @@ inline void __hxcpp_align_set_float32( unsigned char *base, int addr, float v)
    #ifdef HXCPP_ALIGN_FLOAT
    if (addr & 3)
    {
-      unsigned char *fBuf = (unsigned char *)&v;
-      base += addr;
-      base[0] = fBuf[0];
-      base[1] = fBuf[1];
-      base[2] = fBuf[2];
-      base[3] = fBuf[3];
+      const unsigned char *src = (const unsigned char *)&v;
+      unsigned char *dest = base + addr;
+      dest[0] = src[0];
+      dest[1] = src[1];
+      dest[2] = src[2];
+      dest[3] = src[3];
    }
    else
    #endif
@@ -257,12 +319,12 @@ inline float __hxcpp_align_get_float32( unsigned char *base, int addr)
    if (addr & 3)
    {
       float buf;
-      unsigned char *fBuf = (unsigned char *)&buf;
-      base += addr;
-      fBuf[0] = base[0];
-      fBuf[1] = base[1];
-      fBuf[2] = base[2];
-      fBuf[3] = base[3];
+      unsigned char *dest = (unsigned char *)&buf;
+      const unsigned char *src = base + addr;
+      dest[0] = src[0];
+      dest[1] = src[1];
+      dest[2] = src[2];
+      dest[3] = src[3];
       return buf;
    }
    #endif
@@ -275,16 +337,16 @@ inline void __hxcpp_align_set_float64( unsigned char *base, int addr, double v)
    #ifdef HXCPP_ALIGN_FLOAT
    if (addr & 3)
    {
-      unsigned char *dBuf = (unsigned char *)&v;
-      base += addr;
-      base[0] = dBuf[0];
-      base[1] = dBuf[1];
-      base[2] = dBuf[2];
-      base[3] = dBuf[3];
-      base[4] = dBuf[4];
-      base[5] = dBuf[5];
-      base[6] = dBuf[6];
-      base[7] = dBuf[7];
+      unsigned char *dest = base + addr;
+      const unsigned char *src = (const unsigned char *)&v;
+      dest[0] = src[0];
+      dest[1] = src[1];
+      dest[2] = src[2];
+      dest[3] = src[3];
+      dest[4] = src[4];
+      dest[5] = src[5];
+      dest[6] = src[6];
+      dest[7] = src[7];
    }
    else
    #endif
@@ -298,16 +360,16 @@ inline double __hxcpp_align_get_float64( unsigned char *base, int addr)
    if (addr & 3)
    {
       double buf;
-      unsigned char *dBuf = (unsigned char *)&buf;
-      base += addr;
-      dBuf[0] = base[0];
-      dBuf[1] = base[1];
-      dBuf[2] = base[2];
-      dBuf[3] = base[3];
-      dBuf[4] = base[4];
-      dBuf[5] = base[5];
-      dBuf[6] = base[6];
-      dBuf[7] = base[7];
+      unsigned char *dest = (unsigned char *)&buf;
+      const unsigned char *src = base + addr;
+      dest[0] = src[0];
+      dest[1] = src[1];
+      dest[2] = src[2];
+      dest[3] = src[3];
+      dest[4] = src[4];
+      dest[5] = src[5];
+      dest[6] = src[6];
+      dest[7] = src[7];
       return buf;
    }
    #endif
@@ -434,5 +496,223 @@ inline int __hxcpp_reinterpret_float64_as_le_int32_high(double inValue)
    #endif
    return asInts[1];
 }
+
+#ifdef __OBJC__
+#ifdef HXCPP_OBJC
+
+inline NSData *_hx_bytes_to_nsdata( ::Array<unsigned char> inBytes)
+{
+   if (!inBytes.mPtr)
+     return nil;
+
+   return [NSData dataWithBytes: inBytes->getBase() length:inBytes->length ];
+
+}
+
+inline ::Array<unsigned char> _hx_nsdata_to_bytes(NSData *inData)
+{
+   if (inData==nil)
+      return null();
+
+   return ::Array_obj<unsigned char>::fromData( (const unsigned char *)inData.bytes, inData.length );
+}
+
+#endif
+#endif
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String options);
+
+// EReg.hx -> src/hx/libs/regexp/RegExp.cpp
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String options);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool    _hx_regexp_match(Dynamic handle, String string, int pos, int len);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_regexp_matched(Dynamic handle, int pos);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_matched_pos(Dynamic handle, int match);
+
+
+// haxe.zip.(Un)Compress.hx -> src/hx/libs/zlib/ZLib.cpp
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_deflate_init(int level);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_deflate_bound(Dynamic handle,int length);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_deflate_buffer(Dynamic handle, Array<unsigned char> src, int srcPos, Array<unsigned char> dest, int destPos);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_deflate_end(Dynamic handle);
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_inflate_init(Dynamic windowBits);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_inflate_buffer(Dynamic handle, Array<unsigned char> src, int srcPos, Array<unsigned char> dest, int destPos);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_inflate_end(Dynamic handle);
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_zip_set_flush_mode(Dynamic handle, String flushMode);
+
+// sys.db.Mysql.hx -> src/hx/libs/regexp/RegExp.cpp
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_mysql_connect(Dynamic params);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void    _hx_mysql_select_db(Dynamic handle,String db);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_mysql_request(Dynamic handle,String req);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_mysql_close(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_mysql_escape(Dynamic handle,String str);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_mysql_result_get_length(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_mysql_result_get_nfields(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_mysql_result_next(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_mysql_result_get(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_mysql_result_get_int(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float   _hx_mysql_result_get_float(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<String> _hx_mysql_result_get_fields_names(Dynamic handle);
+
+namespace cpp { template<typename T> class Function; }
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_mysql_set_conversion(
+      cpp::Function< Dynamic(Dynamic) > inCharsToBytes,
+      cpp::Function< Dynamic(Float) > inTimeToDate );
+
+// sys.db.Sqlite.hx -> src/hx/libs/sqlite/RegExp.cpp
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_sqlite_connect(String filename);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_sqlite_request(Dynamic handle,String req);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void    _hx_sqlite_close(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_sqlite_last_insert_id(Dynamic handle);
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_sqlite_result_get_length(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_sqlite_result_get_nfields(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_sqlite_result_next(Dynamic handle);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_sqlite_result_get(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_sqlite_result_get_int(Dynamic handle,int i);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float   _hx_sqlite_result_get_float(Dynamic handle,int i);
+
+// src/hx/libs/std ..
+// File
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_open( String fname, String r );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_close( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_write( Dynamic handle, Array<unsigned char> s, int p, int n );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_write_char( Dynamic handle, int c );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_read( Dynamic handle, Array<unsigned char> buf, int p, int n );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_read_char( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_seek( Dynamic handle, int pos, int kind );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_file_tell( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_file_eof( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_flush( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_file_contents_string( String name );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<unsigned char> _hx_std_file_contents_bytes( String name );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stdin();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stdout();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_file_stderr();
+
+// Process
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShow= 1 /* SHOW_NORMAL */ );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int pos, int len );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int pos, int len );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int pos, int len );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_stdin_close( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_exit( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_pid( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_kill( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_close( Dynamic handle );
+
+// Random
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_random_new();
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_random_set_seed( Dynamic handle, int v );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_random_int( Dynamic handle, int max );
+HXCPP_EXTERN_CLASS_ATTRIBUTES double _hx_std_random_float( Dynamic handle );
+
+// Socket
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_init();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_socket_new( bool udp, bool ipv6 = false );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_bind( Dynamic o, int host, int port );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_bind_ipv6( Dynamic o, Array<unsigned char> host, int port );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_close( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_send_char( Dynamic o, int c );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_send( Dynamic o, Array<unsigned char> buf, int p, int l );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_recv( Dynamic o, Array<unsigned char> buf, int p, int l );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_recv_char( Dynamic o );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_write( Dynamic o, Array<unsigned char> buf );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<unsigned char> _hx_std_socket_read( Dynamic o );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_host_resolve( String host );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool dummy=true );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_to_string( int ip );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_to_string_ipv6( Array<unsigned char> ip );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_reverse( int host );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_reverse_ipv6( Array<unsigned char> host );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_host_local();
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_connect( Dynamic o, int host, int port );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_connect_ipv6( Dynamic o, Array<unsigned char> host, int port );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_listen( Dynamic o, int n );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Dynamic> _hx_std_socket_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dynamic> es, Dynamic timeout );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_fast_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dynamic> es, Dynamic timeout );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_socket_accept( Dynamic o );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<int> _hx_std_socket_peer( Dynamic o );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<int> _hx_std_socket_host( Dynamic o );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_set_timeout( Dynamic o, Dynamic t );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_shutdown( Dynamic o, bool r, bool w );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_set_blocking( Dynamic o, bool b );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_set_fast_send( Dynamic o, bool b );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_socket_poll_alloc( int nsocks );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Dynamic> _hx_std_socket_poll_prepare( Dynamic pdata, Array<Dynamic> rsocks, Array<Dynamic> wsocks );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_poll_events( Dynamic pdata, double timeout );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Dynamic> _hx_std_socket_poll( Array<Dynamic> socks, Dynamic pdata, double timeout );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_send_to( Dynamic o, Array<unsigned char> buf, int p, int l, Dynamic inAddr );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_socket_recv_from( Dynamic o, Array<unsigned char> buf, int p, int l, Dynamic outAddr);
+
+// Sys
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_get_env( String v );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_put_env( String e, String v );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_sys_sleep( double f );
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_set_time_locale( String l );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_get_cwd();
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_set_cwd( String d );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_sys_string();
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_sys_is64();
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_sys_command( String cmd );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_sys_exit( int code );
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_sys_exists( String path );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_file_delete( String path );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_sys_rename( String path, String newname );
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_sys_stat( String path );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_sys_file_type( String path );
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool _hx_std_sys_create_dir( String path, int mode );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_sys_remove_dir( String path );
+HXCPP_EXTERN_CLASS_ATTRIBUTES double _hx_std_sys_time();
+HXCPP_EXTERN_CLASS_ATTRIBUTES double _hx_std_sys_cpu_time();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<String> _hx_std_sys_read_dir( String p);
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_file_full_path( String path );
+HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_std_sys_exe_path();
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<String> _hx_std_sys_env();
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_sys_getch( bool b );
+HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_sys_get_pid();
+
+
+// SSL
+void _hx_ssl_init();
+Dynamic _hx_ssl_new( Dynamic hconf );
+void _hx_ssl_close( Dynamic hssl );
+void _hx_ssl_handshake( Dynamic handle );
+void _hx_ssl_set_socket( Dynamic hssl, Dynamic hsocket );
+void _hx_ssl_set_hostname( Dynamic hssl, String hostname );
+Dynamic _hx_ssl_get_peer_certificate( Dynamic hssl );
+bool _hx_ssl_get_verify_result( Dynamic hssl );
+void _hx_ssl_send_char( Dynamic hssl, int v );
+int _hx_ssl_send( Dynamic hssl, Array<unsigned char> buf, int p, int l );
+void _hx_ssl_write( Dynamic hssl, Array<unsigned char> buf );
+int _hx_ssl_recv_char( Dynamic hssl );
+int _hx_ssl_recv( Dynamic hssl, Array<unsigned char> buf, int p, int l );
+Array<unsigned char> _hx_ssl_read( Dynamic hssl );
+Dynamic _hx_ssl_conf_new( bool server );
+void _hx_ssl_conf_close( Dynamic hconf );
+void _hx_ssl_conf_set_ca( Dynamic hconf, Dynamic hcert );
+void _hx_ssl_conf_set_verify( Dynamic hconf, int mode );
+void _hx_ssl_conf_set_cert( Dynamic hconf, Dynamic hcert, Dynamic hpkey );
+void _hx_ssl_conf_set_servername_callback( Dynamic hconf, Dynamic obj );
+Dynamic _hx_ssl_cert_load_defaults();
+Dynamic _hx_ssl_cert_load_file( String file );
+Dynamic _hx_ssl_cert_load_path( String path );
+String _hx_ssl_cert_get_subject( Dynamic hcert, String objname );
+String _hx_ssl_cert_get_issuer( Dynamic hcert, String objname );
+Array<String> _hx_ssl_cert_get_altnames( Dynamic hcert );
+Array<int> _hx_ssl_cert_get_notbefore( Dynamic hcert );
+Array<int> _hx_ssl_cert_get_notafter( Dynamic hcert );
+Dynamic _hx_ssl_cert_get_next( Dynamic hcert );
+Dynamic _hx_ssl_cert_add_pem( Dynamic hcert, String data );
+Dynamic _hx_ssl_cert_add_der( Dynamic hcert, Array<unsigned char> buf );
+Dynamic _hx_ssl_key_from_der( Array<unsigned char> buf, bool pub );
+Dynamic _hx_ssl_key_from_pem( String data, bool pub, String pass );
+Array<unsigned char> _hx_ssl_dgst_make( Array<unsigned char> buf, String alg );
+Array<unsigned char> _hx_ssl_dgst_sign( Array<unsigned char> buf, Dynamic hpkey, String alg );
+bool _hx_ssl_dgst_verify( Array<unsigned char> buf, Array<unsigned char> sign, Dynamic hpkey, String alg );
+
 
 #endif

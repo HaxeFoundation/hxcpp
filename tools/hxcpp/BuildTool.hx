@@ -1,3 +1,4 @@
+import CopyFile.Overwrite;
 import haxe.io.Path;
 import haxe.xml.Fast;
 import haxe.Json;
@@ -12,6 +13,13 @@ import cpp.vm.Thread;
 import cpp.vm.Mutex;
 import cpp.vm.Tls;
 #end
+import haxe.crypto.Md5;
+
+import Log.NORMAL;
+import Log.BOLD;
+import Log.ITALIC;
+import Log.YELLOW;
+import Log.WHITE;
 
 using StringTools;
 
@@ -23,8 +31,11 @@ typedef Targets = Hash<Target>;
 typedef Prelinkers = Hash<Prelinker>;
 typedef Linkers = Hash<Linker>;
 
+
 class BuildTool
 {
+   public inline static var SupportedVersion = 400;
+
    var mDefines:Hash<String>;
    var mCurrentIncludeFile:String;
    var mIncludePath:Array<String>;
@@ -37,12 +48,18 @@ class BuildTool
    var mTargets:Targets;
    var mFileStack:Array<String>;
    var mMakefile:String;
+   var mMagicLibs:Array<{name:String, replace:String}>;
+   var mPragmaOnce:Map<String,Bool>;
+   var mNvccFlags:Array<String>;
+   var mNvccLinkFlags:Array<String>;
+   var mDirtyList:Array<String>;
    var m64:Bool;
    var m32:Bool;
 
    public static var os="";
    public static var sAllowNumProcs = true;
    public static var sCompileThreadCount = 1;
+   public static var sThreadPool:ThreadPool;
    public static var sReportedThreads = -1;
    public static var HXCPP = "";
    public static var is64 = false;
@@ -50,25 +67,26 @@ class BuildTool
    public static var isLinux = false;
    public static var isRPi = false;
    public static var isMac = false;
-   public static var useCache = false;
-   public static var compileCache:String;
    public static var targetKey:String;
    public static var instance:BuildTool;
    public static var helperThread = new Tls<Thread>();
    public static var destination:String;
+   public static var outputs = new Array<String>();
+   public static var groupMutex = new Mutex();
    static var mVarMatch = new EReg("\\${(.*?)}","");
    static var mNoDollarMatch = new EReg("{(.*?)}","");
 
    public static var exitOnThreadError = false;
    public static var threadExitCode = 0;
 
-   public function new(inMakefile:String,inDefines:Hash<String>,inTargets:Array<String>,
-        inIncludePath:Array<String> )
+
+
+   public function new(inJob:String,inDefines:Hash<String>,inTargets:Array<String>,
+        inIncludePath:Array<String>, inDirtyList:Array<String> )
    {
       mDefines = inDefines;
       mFileGroups = new FileGroups();
       mCompiler = null;
-      compileCache = "";
       mStripper = null;
       mTargets = new Targets();
       mPrelinkers = new Prelinkers();
@@ -77,10 +95,24 @@ class BuildTool
       mFileStack = [];
       mCopyFiles = [];
       mIncludePath = inIncludePath;
-      mMakefile = inMakefile;
+      mPragmaOnce = new Map<String,Bool>();
+      mMagicLibs = [];
+      mNvccFlags = [];
+      mNvccLinkFlags = [];
+      mMakefile = "";
+      mDirtyList = inDirtyList;
 
-      if (!PathManager.isAbsolute(mMakefile) && sys.FileSystem.exists(mMakefile))
-          mMakefile = sys.FileSystem.fullPath(mMakefile);
+      if (inJob=="cache")
+      {
+      }
+      else
+      {
+         mMakefile = inJob;
+         if (!PathManager.isAbsolute(mMakefile) && sys.FileSystem.exists(mMakefile))
+            mMakefile = sys.FileSystem.fullPath(mMakefile);
+         mDefines.set("HXCPP_BUILD_DIR", Path.addTrailingSlash(Path.directory(mMakefile)) );
+      }
+
 
       instance = this;
 
@@ -94,16 +126,17 @@ class BuildTool
          mDefines.remove(m32 ? "HXCPP_M64" : "HXCPP_M32");
       }
 
+      Profile.setEntry("parse xml"); 
 
       include("toolchain/setup.xml");
 
 
 
       if (mDefines.exists("toolchain"))
-      {   
+      {
          if (!mDefines.exists("BINDIR"))
-         {   
-            mDefines.set("BINDIR", Path.withoutDirectory(Path.withoutExtension(mDefines.get("toolchain"))));  
+         {
+            mDefines.set("BINDIR", Path.withoutDirectory(Path.withoutExtension(mDefines.get("toolchain"))));
          }
       }
       else
@@ -122,84 +155,111 @@ class BuildTool
       setupAppleDirectories(mDefines);
 
       if (isMsvc())
+      {
          mDefines.set("isMsvc","1");
-
-      include("toolchain/finish-setup.xml");
-
-
-      pushFile(inMakefile,"makefile");
-      var make_contents = "";
-      try {
-         make_contents = sys.io.File.getContent(inMakefile);
-      } catch (e:Dynamic) {
-         Log.error("Could not open build file \"" + inMakefile + "\"");
-         //println("Could not open build file '" + inMakefile + "'");
-         //Sys.exit(1);
+         if (Std.parseInt(mDefines.get("MSVC_VER"))>=18)
+            mDefines.set("MSVC18+","1");
       }
 
+      include("toolchain/finish-setup.xml", false);
 
-      var xml_slow = Xml.parse(make_contents);
-      var xml = new Fast(xml_slow.firstElement());
 
-      parseXML(xml,"");
-      popFile();
-      
-      include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml");
-      
-      if (mDefines.exists("HXCPP_CONFIG"))
-         include(mDefines.get("HXCPP_CONFIG"),"exes",true);
-      
+      if (mMakefile!="")
+      {
+         pushFile(mMakefile,"makefile");
+         var make_contents = "";
+         try {
+            make_contents = sys.io.File.getContent(mMakefile);
+         } catch (e:Dynamic) {
+            Log.error("Could not open build file \"" + mMakefile + "\"");
+            //println("Could not open build file '" + mMakefile + "'");
+            //Sys.exit(1);
+         }
+
+
+         var xml_slow = Xml.parse(make_contents);
+         var xml = new Fast(xml_slow.firstElement());
+
+         parseXML(xml,"",false);
+         popFile();
+
+         include("toolchain/" + mDefines.get("toolchain") + "-toolchain.xml", false);
+
+
+         if (mDefines.exists("HXCPP_CONFIG"))
+            include(mDefines.get("HXCPP_CONFIG"),"exes",true);
+      }
+
+      for(group in mFileGroups)
+         group.filter(mDefines);
+
       if (Log.verbose) Log.println ("");
-      
+
       // MSVC needs this before the toolchain file, Emscripten wants to set HXCPP_COMPILE_THREADS
       // If not already calculated in "setup"
       getThreadCount();
-      
-      if (mDefines.exists("HXCPP_COMPILE_CACHE"))
-      {
-         compileCache = mDefines.get("HXCPP_COMPILE_CACHE");
-         // Don't get upset by trailing slash
-         while(compileCache.length>1)
-         {
-            var l = compileCache.length;
-            var last = compileCache.substr(l-1);
-            if (last=="/" || last=="\\")
-               compileCache = compileCache.substr(0,l-1);
-            else
-               break;
-         }
 
-         if (FileSystem.exists(compileCache) && FileSystem.isDirectory(compileCache))
+      var cached = CompileCache.init(mDefines);
+
+      Profile.setEntry("setup cache"); 
+
+      if (inJob=="cache")
+      {
+         if (!cached)
          {
-            useCache = true;
+            Log.error("HXCPP_COMPILE_CACHE is not set");
          }
-         else
+         switch(inTargets[0])
          {
-            Log.error("Could not find compiler cache \"" + compileCache + "\"");
-            //throw "Could not find compiler cache: " + compileCache;
+            case "days" :
+               var days = inTargets[1]==null ? null : Std.parseInt(inTargets[1]);
+               if (days==null)
+               {
+                  Log.error("cache days - expected day count");
+                  Tools.exit(1);
+               }
+               CompileCache.clear(days,0,true,null);
+            case "resize" :
+               var mb = inTargets[1]==null ? null : Std.parseInt(inTargets[1]);
+               if (mb==null)
+               {
+                  Log.error("cache resize - expected megabyte count");
+                  Tools.exit(1);
+               }
+               CompileCache.clear(0,mb,true,inTargets[2]);
+
+            case "clear" : CompileCache.clear(0,0,true,inTargets[1]);
+            case "list" : CompileCache.list(false,inTargets[1]);
+            case "details" : CompileCache.list(true,inTargets[1]);
+            default:
+              printUsage();
+              Tools.exit(1);
          }
+         return;
       }
 
-      if (useCache && (!mDefines.exists("haxe_ver") && !mDefines.exists("HXCPP_DEPENDS_OK")))
+      if (cached)
       {
-         Log.info("", "Ignoring compiler cache because of possible missing dependencies");
-         useCache = false;
+         var cacheSize = mDefines.exists("HXCPP_CACHE_MB") ? Std.parseInt( mDefines.get("HXCPP_CACHE_MB") ) : 1000;
+         if (cacheSize!=null && cacheSize>0)
+            CompileCache.clear(0,cacheSize,false,null);
       }
 
-      if (useCache)
-      {
-         Log.info("", "\x1b[33;1mUsing compiler cache: " + compileCache + "\x1b[0m");
-      }
-      
       if (Log.verbose) Log.println ("");
 
       if (inTargets.remove("clear"))
+      {
+         Profile.setEntry("clear"); 
          for(target in mTargets.keys())
             cleanTarget(target,false);
+       }
 
       if (inTargets.remove("clean"))
+      {
+         Profile.setEntry("clean"); 
          for(target in mTargets.keys())
             cleanTarget(target,true);
+      }
 
       if (destination!=null && inTargets.length!=1)
       {
@@ -207,11 +267,21 @@ class BuildTool
          destination = null;
       }
 
+      Profile.setEntry("build"); 
       for(target in inTargets)
          buildTarget(target,destination);
 
+      var linkOutputs = mDefines.get("HXCPP_LINK_OUTPUTS");
+      if (linkOutputs!=null)
+         sys.io.File.saveContent(linkOutputs,outputs.join("\n")+"\n");
+      if (Log.verbose)
+      {
+         for(out in outputs)
+            Log.v(" generated " + out);
+      }
+
       if (threadExitCode != 0)
-         Sys.exit(threadExitCode);
+         Tools.exit(threadExitCode);
    }
 
    public static function isDefault64()
@@ -220,13 +290,18 @@ class BuildTool
 
    public function pushFile(inFilename:String, inWhy:String, inSection:String="")
    {
-      Log.info("", " - \x1b[1mParsing " + inWhy + ":\x1b[0m " + inFilename + (inSection == "" ? "" : " (section \"" + inSection + "\")"));
+      Log.info("", " - \x1b[1mParsing " + inWhy + ":\x1b[0m " + inFilename + (inSection == "" ? "" : " \x1b[3m(section \"" + inSection + "\")\x1b[0m"));
       mFileStack.push(inFilename);
    }
 
    public function popFile()
    {
       mFileStack.pop();
+   }
+
+   public static function addOutput(inWhat:String, inWhere:String)
+   {
+      outputs.push(inWhat + "=" + inWhere);
    }
 
    public static function getThreadCount() : Int
@@ -238,7 +313,7 @@ class BuildTool
       {
          var thread_var = defs.exists("HXCPP_COMPILE_THREADS") ?
             defs.get("HXCPP_COMPILE_THREADS") : Sys.getEnv("HXCPP_COMPILE_THREADS");
-         
+
          if (thread_var == null)
          {
             sCompileThreadCount = getNumberOfProcesses();
@@ -253,6 +328,9 @@ class BuildTool
             Log.v("\x1b[33;1mUsing compile threads: " + sCompileThreadCount + "\x1b[0m");
          }
       }
+      if (sCompileThreadCount>1 && sThreadPool==null)
+         sThreadPool = new ThreadPool(sCompileThreadCount);
+
       return sCompileThreadCount;
    }
 
@@ -260,11 +338,14 @@ class BuildTool
    {
       threadExitCode = inCode;
       if (exitOnThreadError)
-         Sys.exit(inCode);
+         Tools.exit(inCode);
    }
 
    public function buildTarget(inTarget:String, inDestination:String)
    {
+      //var dependDebug = function(s:String) Log.error(s);
+      var dependDebug = null;
+
       // Sys.println("Build : " + inTarget );
       if (!mTargets.exists(inTarget))
       {
@@ -282,8 +363,9 @@ class BuildTool
 
       for(sub in target.mSubTargets)
          buildTarget(sub,null);
- 
-      var threads = BuildTool.sCompileThreadCount;
+
+      var threadPool = BuildTool.sThreadPool;
+
 
       PathManager.resetDirectoryCache();
       var restoreDir = "";
@@ -295,105 +377,270 @@ class BuildTool
       }
 
       targetKey = inTarget + target.getKey();
- 
+
       var objs = new Array<String>();
+
+      mCompiler.objToAbsolute();
 
       if (target.mFileGroups.length > 0)
          PathManager.mkdir(mCompiler.mObjDir);
+
+      var baseDir = Sys.getCwd();
       for(group in target.mFileGroups)
       {
+         var useCache = CompileCache.hasCache && group.mUseCache;
+         if (CompileCache.hasCache && !useCache)
+            Log.info("", "Ignoring compiler cache for " + group.mId + " because of possible missing dependencies");
+
+         var groupObjs = new Array<String>();
+
+         if (group.mDir!="." && group.mSetImportDir)
+            Sys.setCwd( PathManager.combine(baseDir, group.mDir ) );
          group.checkOptions(mCompiler.mObjDir);
 
          group.checkDependsExist();
+
+         if (!mCompiler.initPrecompile(mDefines.get("USE_PRECOMPILED_HEADERS") ))
+            group.dontPrecompile();
 
          group.preBuild();
 
          var to_be_compiled = new Array<File>();
 
-         for(file in group.mFiles)
-         {
-            var obj_name = mCompiler.getObjName(file);
-            objs.push(obj_name);
-            if (file.isOutOfDate(obj_name))
-            {
-               if (useCache)
-                  file.computeDependHash();
-               to_be_compiled.push(file);
-            }
-         }
-
          var cached = useCache && mCompiler.createCompilerVersion(group);
 
-         if (!cached && group.mPrecompiledHeader!="")
-         {
-            if (to_be_compiled.length>0)
-               mCompiler.precompile(mCompiler.mObjDir, group);
+         var inList = new Array<Bool>();
+         var groupIsOutOfDate = mDirtyList.indexOf(group.mId)>=0 || mDirtyList.indexOf("all")>=0;
 
-            if (mCompiler.needsPchObj())
+         if (useCache)
+         {
+            Profile.push("compute hash");
+            if (useCache && group.mFiles.length>1 && threadPool!=null)
             {
-               var pchDir = group.getPchDir();
-               if (pchDir != "")
+               Log.initMultiThreaded();
+               threadPool.setArrayCount( group.mFiles.length );
+               threadPool.runJob( function(tid) {
+                  var localCache = new Map<String,String>();
+
+                  while(threadExitCode==0)
+                  {
+                     var id = sThreadPool.getNextIndex();
+                     if (id<0)
+                        break;
+
+                     group.mFiles[id].computeDependHash(localCache);
+                  }
+               } );
+            }
+            else
             {
-                  objs.push(mCompiler.mObjDir + "/" + pchDir + "/" + group.getPchName() + mCompiler.mExt);
+               for(file in group.mFiles)
+                  file.computeDependHash(null);
             }
-            }
+            Profile.pop();
          }
 
-         if (threads<2)
+
+         for(file in group.mFiles)
+         {
+            var obj_name = mCompiler.getCachedObjName(file);
+            groupObjs.push(obj_name);
+            var outOfDate = groupIsOutOfDate || file.isOutOfDate(obj_name, dependDebug);
+            if (outOfDate)
+            {
+               if (dependDebug!=null)
+                  dependDebug(mCompiler.getCacheString(file));
+               to_be_compiled.push(file);
+            }
+            inList.push(outOfDate);
+         }
+         var someCompiled = to_be_compiled.length > 0;
+
+         var pchStamp:Null<Float> = null;
+         if (group.mPrecompiledHeader!="")
+         {
+            Profile.push("pch");
+
+            var obj = mCompiler.precompile(group,cached || to_be_compiled.length==0);
+            if (obj!=null)
+            {
+               pchStamp = FileSystem.stat(obj).mtime.getTime();
+               groupObjs.push(obj);
+
+               /*
+               for(i in 0...group.mFiles.length)
+               {
+                  var obj_name = groupObjs[i];
+                  if (!inList[i])
+                  {
+                     if (FileSystem.stat(obj_name).mtime.getTime() < pchStamp)
+                     {
+                        groupObjs.push(obj_name);
+                        trace(' Add $obj_name');
+                     }
+                     else
+                        trace(' Ok $obj_name');
+                  }
+                  else
+                  {
+                        trace(' Listed $obj_name  ' + group.mFiles[i].mName);
+                  }
+               }
+               */
+            }
+            Profile.pop();
+         }
+
+         if (group.mConfig!="")
+         {
+            var lines = ["#ifndef HXCPP_CONFIG_INCLUDED","#define HXCPP_CONFIG_INCLUDED"];
+
+            var flags = group.mCompilerFlags.concat(mCompiler.getCompilerDefines("haxe"));
+            var define = ~/^-D([^=]*)=?(.*)/;
+            for(flag in flags)
+            {
+                if (define.match(flag))
+                {
+                   var name = define.matched(1);
+                   var val = define.matched(2);
+                   lines.push("");
+                   lines.push( '#if !defined($name) && !defined(NO_$name)' );
+                   lines.push( '#define $name $val' );
+                   lines.push( '#endif' );
+                }
+            }
+
+            lines.push("");
+            lines.push("#include <hxcpp.h>");
+            lines.push("");
+            lines.push("#endif");
+            lines.push("");
+
+            var filename = mDefines.exists("HXCPP_OUTPUT_CONFIG_NAME") ?
+                           mDefines.get("HXCPP_OUTPUT_CONFIG_NAME") :
+                           PathManager.combine( target.mOutputDir, group.mConfig );
+            if (!PathManager.isAbsolute(filename))
+               filename = PathManager.combine( Sys.getCwd(), filename);
+
+            var content = lines.join("\n");
+            if (!FileSystem.exists(filename) || sys.io.File.getContent(filename)!=content)
+               sys.io.File.saveContent(filename, content);
+            addOutput("config",filename);
+         }
+
+
+         var nvcc = group.mNvcc;
+         var first = true;
+         var groupHeader = (!Log.quiet && !Log.verbose) ? function()
+         {
+            if (first)
+            {
+               groupMutex.acquire();
+               if (first)
+               {
+                  first = false;
+                  Log.lock();
+                  Log.println("");
+                  Log.info("\x1b[33;1mCompiling group: " + group.mId + "\x1b[0m");
+                  var message = "\x1b[1m" + (nvcc ? getNvcc() : mCompiler.mExe) + "\x1b[0m";
+                  var flags = group.mCompilerFlags;
+                  if (!nvcc)
+                     flags = flags.concat(mCompiler.getFlagStrings());
+                  else
+                     flags = flags.concat( BuildTool.getNvccFlags() );
+
+                  for (compilerFlag in flags)
+                  {
+                     if (StringTools.startsWith(compilerFlag, "-D"))
+                     {
+                        var index = compilerFlag.indexOf("(");
+                        if (index > -1)
+                        {
+                           message += " \x1b[1m" + compilerFlag.substr(0, index) + "\x1b[0m\x1b[2m" + compilerFlag.substr(index) + "\x1b[0m";
+                        }
+                        else
+                        {
+                           message += " \x1b[1m" + compilerFlag + "\x1b[0m";
+                        }
+                     }
+                     else
+                     {
+                        message += " \x1b[0m" + compilerFlag + "\x1b[0m";
+                     }
+                  }
+                  message += " \x1b[2m...\x1b[0m \x1b[2mtags=" + group.mTags.split(",") + "\x1b[0m";
+                  Log.info(message);
+                  Log.unlock();
+               }
+               groupMutex.release();
+            }
+         } : null;
+
+         Profile.push("compile");
+         if (threadPool==null)
          {
             for(file in to_be_compiled)
-               mCompiler.compile(file,-1);
+               mCompiler.compile(file,-1,groupHeader,pchStamp);
          }
          else
          {
-            var mutex = new Mutex();
             Log.initMultiThreaded();
-            var main_thread = Thread.current();
+            var mutex = threadPool.mutex;
             var compiler = mCompiler;
-            for(t in 0...threads)
-            {
-               Thread.create(function()
-               {
-                  try
-                  {
+            threadPool.setArrayCount(to_be_compiled.length);
+            threadPool.runJob( function(threadId:Int) {
                   while(threadExitCode==0)
                   {
-                     mutex.acquire();
-                     if (to_be_compiled.length==0)
-                     {
-                        mutex.release();
+                     var index = threadPool.getNextIndex();
+                     if (index<0)
                         break;
-                     }
-                     var file = to_be_compiled.shift();
-                     mutex.release();
+                     var file = to_be_compiled[index];
 
-                     compiler.compile(file,t);
+                     compiler.compile(file,threadId,groupHeader,pchStamp);
                   }
-                  }
-                  catch (error:Dynamic)
-                  {
-                     if (threadExitCode!=0)
-                        setThreadError(-1);
-                  }
-                  main_thread.sendMessage("Done");
-               });
-            }
-
-            // Wait for theads to finish...
-            for(t in 0...threads)
-            {
-               Thread.readMessage(true);
-            }
-
-            // Already printed the error from the thread, just need to exit
-            if (threadExitCode!=0)
-               Sys.exit(threadExitCode);
+            });
          }
+         Profile.pop();
+
+         if (CompileCache.hasCache && group.mAsLibrary && mLinkers.exists("static_link"))
+         {
+            Profile.push("link libs");
+            var linker = mLinkers.get("static_link");
+            var targetDir = mCompiler.mObjDir;
+            if (useCache)
+            {
+               targetDir = CompileCache.compileCache + "/" + group.getCacheProject() + "/lib";
+               PathManager.mkdir(targetDir);
+            }
+            var libName = targetDir + "/" + mCompiler.getTargetPrefix() + "_" + group.getCacheProject();
+
+            var libTarget = new Target(libName, "linker", "static_link" );
+            linker.link(libTarget,groupObjs, mCompiler );
+            target.mAutoLibs.push(linker.mLastOutName);
+            // Linux the libraries must be added again if the references were not resolved the firs time
+            if (group.mAddTwice)
+               target.mLibs.push(linker.mLastOutName);
+            Profile.pop();
+         }
+         else if (nvcc)
+         {
+            var extraObj = linkNvccFiles(mCompiler.mObjDir, someCompiled, groupObjs, group.mId, mCompiler.mExt);
+            groupObjs.push(extraObj);
+            objs = objs.concat(groupObjs);
+         }
+         else
+         {
+            objs = objs.concat(groupObjs);
+         }
+
+         if (group.mDir!="." && group.mSetImportDir)
+            Sys.setCwd( baseDir );
       }
 
       switch(target.mTool)
       {
          case "linker":
+            Profile.push("linker");
             if (mPrelinkers.exists(target.mToolID))
             {
                var result = mPrelinkers.get(target.mToolID).prelink(target,objs, mCompiler);
@@ -408,44 +655,82 @@ class BuildTool
                //throw "Missing linker :\"" + target.mToolID + "\"";
             }
 
-            var output = mLinkers.get(target.mToolID).link(target,objs, mCompiler);
+            var linker = mLinkers.get(target.mToolID);
+            var output = linker.link(target,objs, mCompiler);
             if (output!="" && mStripper!=null)
                if (target.mToolID=="exe" || target.mToolID=="dll")
                   mStripper.strip(output);
 
-            if (output!="" && inDestination!=null)
-
-         if (inDestination!=null)
-         {
-            inDestination = substitute(inDestination,false);
-            if (inDestination!="")
+            var outFile = linker.mLastOutName;
+            if (outFile!="" && !PathManager.isAbsolute(outFile) && sys.FileSystem.exists(mMakefile))
             {
-               if (!PathManager.isAbsolute(inDestination) && sys.FileSystem.exists(mMakefile))
-               {
-                  var baseFile = PathManager.standardize(mMakefile);
-                  var parts = baseFile.split("/");
-                  parts[ parts.length-1 ] = inDestination;
-                  inDestination = parts.join("/");
-               }
-
-               inDestination = PathManager.clean(inDestination);
-               var fileParts = inDestination.split("/");
-               fileParts.pop();
-               PathManager.mkdir(fileParts.join("/"));
-
-               var chmod = isWindows ? false : target.mToolID=="exe";
-               CopyFile.copyFile(output, inDestination, false, chmod);
+               var baseFile = PathManager.standardize(mMakefile);
+               var parts = baseFile.split("/");
+               parts[ parts.length-1 ] = outFile;
+               outFile = parts.join("/");
             }
-         }
+            if (outFile!="")
+               addOutput(target.mToolID, outFile);
+
+            if (output!="" && inDestination!=null)
+            {
+               inDestination = substitute(inDestination,false);
+               if (inDestination!="")
+               {
+                  if (!PathManager.isAbsolute(inDestination) && sys.FileSystem.exists(mMakefile))
+                  {
+                     var baseFile = PathManager.standardize(mMakefile);
+                     var parts = baseFile.split("/");
+                     parts[ parts.length-1 ] = inDestination;
+                     inDestination = parts.join("/");
+                  }
+
+                  inDestination = PathManager.clean(inDestination);
+                  var fileParts = inDestination.split("/");
+                  fileParts.pop();
+                  PathManager.mkdir(fileParts.join("/"));
+
+                  var chmod = isWindows ? false : target.mToolID=="exe";
+                  CopyFile.copyFile(output, inDestination, false, Overwrite.ALWAYS, chmod);
+               }
+            }
+            Profile.pop();
       }
 
-      for(copyFile in mCopyFiles)
-         if (copyFile.toolId==null || copyFile.toolId==target.mToolID)
-            copyFile.copy(target.mOutputDir);
+      if (mCopyFiles.length>0)
+      {
+         Profile.push("copy files");
+         for(copyFile in mCopyFiles)
+            if (copyFile.toolId==null || copyFile.toolId==target.mToolID)
+               copyFile.copy(target.mOutputDir);
+         Profile.pop();
+      }
 
       if (restoreDir!="")
          Sys.setCwd(restoreDir);
    }
+
+   function linkNvccFiles(objDir:String, hasChanged:Bool, nvObjs:Array<String>, inGroupName:String, objExt:String)
+   {
+      // nvcc -arch=sm_30 -dlink test1.o test2.o -o link.o
+      // Sadly, nvcc has no 'fromFile' options, so we must do it from objDir
+      var objDirLen = objDir.length;
+      var last = objDir.substr(objDirLen-1);
+      if (last!="/" && last!="\\")
+         objDirLen++;
+      var outFile = "nvcc_" + inGroupName + mCompiler.mExt;
+      var fullFile = objDir + "/" + outFile;
+      if (hasChanged || !sys.FileSystem.exists(fullFile) )
+      {
+         var shortObjs = nvObjs.map( function(f) return f.substr(objDirLen) );
+         var flags = getNvccLinkFlags().concat(shortObjs).concat(["-o",outFile]);
+         var dbgFlags = getNvccLinkFlags().concat(["[.", "x"+shortObjs.length,".]"]).concat(["-o",outFile]);
+         Log.v("Linking nvcc in " + objDir + ":" + getNvcc() + dbgFlags.join(" ") );
+         ProcessManager.runCommand(objDir ,getNvcc(),  flags );
+      }
+      return fullFile;
+   }
+
 
    public function cleanTarget(inTarget:String,allObj:Bool)
    {
@@ -496,8 +781,6 @@ class BuildTool
             Log.e("Compiler element defined without 'exe' attribute included from:" + mFileStack);
 
          c = new Compiler(substitute(inXML.att.id),substitute(inXML.att.exe),mDefines.exists("USE_GCC_FILETYPES"));
-         if (mDefines.exists("USE_PRECOMPILED_HEADERS"))
-            c.setPCH(mDefines.get("USE_PRECOMPILED_HEADERS"));
       }
 
       for(el in inXML.elements)
@@ -505,7 +788,7 @@ class BuildTool
          if (valid(el,""))
             switch(el.name)
             {
-               case "flag" : c.mFlags.push(substitute(el.att.value));
+               case "flag" : c.addFlag(substitute(el.att.value), el.has.tag?substitute(el.att.tag):"");
                case "cflag" : c.mCFlags.push(substitute(el.att.value));
                case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
                case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
@@ -543,30 +826,90 @@ class BuildTool
       return c;
    }
 
-   public function createFileGroup(inXML:Fast,inFiles:FileGroup,inName:String):FileGroup
+   public function loadNvccXml()
+   {
+      var incName = findIncludeFile("nvcc-setup.xml");
+      if (incName=="")
+         incName = findIncludeFile('$HXCPP/toolchain/nvcc-setup.xml');
+      if (incName=="")
+        Log.error("Could not setup nvcc - missing nvcc-setup.xml");
+      else if (!mPragmaOnce.get(incName))
+      {
+         pushFile(incName, "Nvcc");
+         var make_contents = sys.io.File.getContent(incName);
+         mPragmaOnce.set(incName,true);
+         var xml = Xml.parse(make_contents);
+         parseXML(new Fast(xml.firstElement()),"", false);
+         popFile();
+      }
+   }
+
+   public static function setupNvcc()
+   {
+      instance.loadNvccXml();
+   }
+
+
+   public function createFileGroup(inXML:Fast,inFiles:FileGroup,inName:String, inForceRelative:Bool, inTags:String):FileGroup
    {
       var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
-      var group = inFiles==null ? new FileGroup(dir,inName) : inFiles;
+      if (inForceRelative)
+         dir = PathManager.combine( Path.directory(mCurrentIncludeFile), dir );
+
+      var group = inFiles==null ? new FileGroup(dir,inName, inForceRelative) :
+                                  inXML.has.replace ? inFiles.replace(dir, inForceRelative) :
+                                  inFiles;
+
+      if (inTags!=null)
+         group.mTags = inTags;
+
       for(el in inXML.elements)
       {
          if (valid(el,""))
             switch(el.name)
             {
                case "file" :
-                  var file = new File(substitute(el.att.name),group);
+                  var name = substitute(el.att.name);
+                  var file = group.find(name);
+                  if (file==null)
+                  {
+                     file = new File(name,group);
+                     group.addFile( file );
+                  }
+
+                  if (el.has.tags)
+                     file.setTags( substitute(el.att.tags) );
+                  if (el.has.filterout)
+                     file.mFilterOut = substitute(el.att.filterout);
+                  if (el.has.embedName)
+                     file.mEmbedName = substitute(el.att.embedName);
+                  if (el.has.scramble)
+                     file.mScramble = substitute(el.att.scramble);
                   for(f in el.elements)
                      if (valid(f,"") && f.name=="depend")
                         file.mDepends.push( substitute(f.att.name) );
-                  group.mFiles.push( file );
-               case "section" : createFileGroup(el,group,inName);
+               case "section" : createFileGroup(el,group,inName,inForceRelative,null);
+               case "cache" :
+                  group.mUseCache = parseBool( substitute(el.att.value) );
+                  if (el.has.project)
+                     group.mCacheProject = substitute(el.att.project);
+                  if (el.has.asLibrary)
+                     group.mAsLibrary = true;
+               case "tag" :
+                   group.addTag( substitute(el.att.value) );
+               case "addTwice" :
+                  group.mAddTwice = true;
                case "depend" :
                   if (el.has.name)
-                     group.addDepend( substitute(el.att.name) );
+                  {
+                     var dateOnly = el.has.dateOnly && parseBool( substitute(el.att.dateOnly) );
+                     group.addDepend( substitute(el.att.name), dateOnly );
+                  }
                   else if (el.has.files)
                   {
                      var name = substitute(el.att.files);
                      if (!mFileGroups.exists(name))
-                         Log.error( "Could not find filegroup for depend node:" + name ); 
+                         Log.error( "Could not find filegroup for depend node:" + name );
                      group.addDependFiles(mFileGroups.get(name));
                   }
                   else
@@ -575,23 +918,37 @@ class BuildTool
                   group.addHLSL( substitute(el.att.name), substitute(el.att.profile),
                   substitute(el.att.variable), substitute(el.att.target)  );
                case "options" : group.addOptions( substitute(el.att.name) );
-               case "compilerflag" : group.addCompilerFlag( substitute(el.att.value) );
-               case "compilervalue" : 
+               case "config" : group.mConfig = substitute(el.att.name);
+               case "compilerflag" :
+                  if (el.has.name)
+                     group.addCompilerFlag( substitute(el.att.name) );
+                  group.addCompilerFlag( substitute(el.att.value) );
+               case "nvcc" :
+                  setupNvcc();
+                  group.mNvcc = true;
+                  if (group.mTags=="haxe,static")
+                     group.mTags=="nvcc";
+               case "objprefix" :
+                  group.mObjPrefix = substitute(el.att.value);
+               case "compilervalue" :
                   group.addCompilerFlag( substitute(el.att.name) );
                   group.addCompilerFlag( substitute(el.att.value) );
-               case "precompiledheader" : 
+               case "precompiledheader" :
                   group.setPrecompiled( substitute(el.att.name), substitute(el.att.dir) );
-               case "include" : 
+               case "include" :
                   var subbed_name = substitute(el.att.name);
                   var full_name = findIncludeFile(subbed_name);
                   if (full_name!="")
                   {
-                     pushFile(full_name, "FileGroup");
-                     var make_contents = sys.io.File.getContent(full_name);
-                     var xml_slow = Xml.parse(make_contents);
-                     createFileGroup(new Fast(xml_slow.firstElement()), group, inName);
-                     popFile();
-                  } 
+                     if (!mPragmaOnce.get(full_name))
+                     {
+                        pushFile(full_name, "FileGroup");
+                        var make_contents = sys.io.File.getContent(full_name);
+                        var xml_slow = Xml.parse(make_contents);
+                        createFileGroup(new Fast(xml_slow.firstElement()), group, inName, false,null);
+                        popFile();
+                     }
+                  }
                   else
                   {
                      Log.error("Could not find include file \"" + subbed_name + "\"");
@@ -605,7 +962,10 @@ class BuildTool
 
    public function createLinker(inXML:Fast,inBase:Linker):Linker
    {
-      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(substitute(inXML.att.exe));
+      var exe:String = inXML.has.exe ? substitute(inXML.att.exe) : null;
+      if (inBase!=null && !inXML.has.replace && inBase.mExe==null)
+         inBase.mExe = exe;
+      var l = (inBase!=null && !inXML.has.replace) ? inBase : new Linker(exe);
       for(el in inXML.elements)
       {
          if (valid(el,""))
@@ -615,12 +975,24 @@ class BuildTool
                case "ext" : l.mExt = (substitute(el.att.value));
                case "outflag" : l.mOutFlag = (substitute(el.att.value));
                case "libdir" : l.mLibDir = (substitute(el.att.name));
-               case "lib" : l.mLibs.push( substitute(el.att.name) );
+               case "lib" :
+                  if (el.has.hxbase)
+                     l.mLibs.push( substitute(el.att.hxbase) + mDefines.get("LIBEXTRA") + mDefines.get("LIBEXT") );
+                  else if (el.has.base)
+                     l.mLibs.push( substitute(el.att.base) + mDefines.get("LIBEXT") );
+                  else
+                     l.mLibs.push( substitute(el.att.name) );
+
                case "prefix" : l.mNamePrefix = substitute(el.att.value);
                case "ranlib" : l.mRanLib = (substitute(el.att.name));
+               case "libpathflag" : l.mAddLibPath = (substitute(el.att.value));
                case "recreate" : l.mRecreate = (substitute(el.att.value)) != "";
                case "expandAr" : l.mExpandArchives = substitute(el.att.value) != "";
-               case "fromfile" : l.mFromFile = (substitute(el.att.value));
+               case "fromfile" :
+                  if (el.has.value)
+                     l.mFromFile = substitute(el.att.value);
+                  if (el.has.needsQuotes)
+                     l.mFromFileNeedsQuotes = parseBool(substitute(el.att.needsQuotes));
                case "exe" : l.mExe = (substitute(el.att.name));
                case "section" : createLinker(el,l);
             }
@@ -667,15 +1039,27 @@ class BuildTool
       return s;
    }
 
-   public function createTarget(inXML:Fast,?inTarget:Target) : Target
+   public function createTarget(inXML:Fast,?inTarget:Target, inForceRelative) : Target
    {
       var target:Target = inTarget;
+      var output = inXML.has.output ? substitute(inXML.att.output) : "";
+      var tool = inXML.has.tool ? substitute(inXML.att.tool) : "";
+      var toolid = inXML.has.toolid ? substitute(inXML.att.toolid) : "";
+
       if (target==null)
       {
-         var output = inXML.has.output ? substitute(inXML.att.output) : "";
-         var tool = inXML.has.tool ? substitute(inXML.att.tool) : "";
-         var toolid = inXML.has.toolid ? substitute(inXML.att.toolid) : "";
          target = new Target(output,tool,toolid);
+         if (inForceRelative)
+            target.mBuildDir = Path.directory(mCurrentIncludeFile);
+      }
+      else
+      {
+         if (output!="")
+            target.mOutput = output;
+         if (tool!="")
+            target.mTool = tool;
+         if (toolid!="")
+            target.mToolID = toolid;
       }
 
       for(el in inXML.elements)
@@ -684,7 +1068,37 @@ class BuildTool
             switch(el.name)
             {
                case "target" : target.mSubTargets.push( substitute(el.att.id) );
-               case "lib" : target.mLibs.push( substitute(el.att.name) );
+               case "merge" :
+                  var name = substitute(el.att.id);
+                  if (!mTargets.exists(name))
+                     Log.error("Could not find target " + name + " to merge.");
+                  target.merge( mTargets.get(name) );
+
+               case "lib" :
+                  if (el.has.hxbase)
+                     target.mLibs.push( substitute(el.att.hxbase) + mDefines.get("LIBEXTRA") + mDefines.get("LIBEXT") );
+                  else if (el.has.base)
+                     target.mLibs.push( substitute(el.att.base) + mDefines.get("LIBEXT") );
+                  else
+                  {
+                      var lib = substitute(el.att.name);
+                      var found = false;
+                      for(magicLib in mMagicLibs)
+                      {
+                         if (lib.endsWith(magicLib.name))
+                         {
+                            var replace = lib.substr(0, lib.length-magicLib.name.length) +
+                                              magicLib.replace;
+                            Log.v('Using $replace instead of $lib');
+                            found = true;
+                            include(replace, "", false, true );
+                            break;
+                         }
+                      }
+                      if (!found)
+                         target.mLibs.push(lib);
+                  }
+
                case "flag" : target.mFlags.push( substitute(el.att.value) );
                case "depend" : target.mDepends.push( substitute(el.att.name) );
                case "vflag" :
@@ -694,13 +1108,14 @@ class BuildTool
                case "outdir" : target.mOutputDir = substitute(el.att.name)+"/";
                case "ext" : target.setExt( (substitute(el.att.value)) );
                case "builddir" : target.mBuildDir = substitute(el.att.name);
+               case "libpath" : target.mLibPaths.push( substitute(el.att.name) );
                case "files" :
                   var id = el.att.id;
                   if (!mFileGroups.exists(id))
-                     target.addError( "Could not find filegroup " + id ); 
+                     target.addError( "Could not find filegroup " + id );
                   else
-                     target.addFiles( mFileGroups.get(id) );
-               case "section" : createTarget(el,target);
+                     target.addFiles( mFileGroups.get(id), el.has.asLibrary );
+               case "section" : createTarget(el,target,false);
             }
       }
 
@@ -709,10 +1124,17 @@ class BuildTool
 
    public function defined(inString:String):Bool
    {
+      if (inString=="this_dir")
+         return true;
       return mDefines.exists(inString);
    }
 
-   function findIncludeFile(inBase:String):String
+   public function parseBool(inValue:String):Bool
+   {
+      return inValue=="1" || inValue=="t" || inValue=="true";
+   }
+
+   function findLocalIncludeFile(inBase:String):String
    {
       if (inBase == null || inBase=="") return "";
       var c0 = inBase.substr(0,1);
@@ -733,7 +1155,9 @@ class BuildTool
             {
                var name = PathManager.combine(p, inBase);
                if (FileSystem.exists(name))
+               {
                   return name;
+               }
             }
             return "";
          }
@@ -742,7 +1166,15 @@ class BuildTool
          return inBase;
       return "";
    }
-   
+
+   function findIncludeFile(inBase:String):String
+   {
+      var result = findLocalIncludeFile(inBase);
+      if (result!="" && !Path.isAbsolute(result))
+         result =  Path.normalize( PathManager.combine( mCurrentIncludeFile=="" ? Sys.getCwd() : Path.directory(mCurrentIncludeFile), result ) );
+      return result;
+   }
+
    private static function getIs64():Bool
    {
       if (isWindows)
@@ -764,7 +1196,7 @@ class BuildTool
          var error = process.stderr.readAll().toString();
          process.exitCode();
          process.close();
-         
+
          if (output.indexOf("64") > -1)
          {
             return true;
@@ -781,20 +1213,26 @@ class BuildTool
       return instance.mDefines.get("MSVC_VER");
    }
 
+   static public function keepTemp()
+   {
+      return instance.mDefines.exists("HXCPP_KEEP_TEMP");
+   }
+
+
    // Setting HXCPP_COMPILE_THREADS to 2x number or cores can help with hyperthreading
    public static function getNumberOfProcesses():Int
    {
       var cache = Log.verbose;
       Log.verbose = false;
-      
+
       var result = null;
       if (isWindows)
       {
          var env = Sys.getEnv("NUMBER_OF_PROCESSORS");
          if (env != null)
-         {      
-            result = env;   
-         }   
+         {
+            result = env;
+         }
       }
       else if (isLinux)
       {
@@ -803,10 +1241,10 @@ class BuildTool
          {
             var cpuinfo = ProcessManager.runProcess("", "cat", [ "/proc/cpuinfo" ], true, false, true, true);
             if (cpuinfo != null)
-            {      
+            {
                var split = cpuinfo.split("processor");
-               result = Std.string(split.length - 1);   
-            }   
+               result = Std.string(split.length - 1);
+            }
          }
       }
       else if (isMac)
@@ -815,22 +1253,22 @@ class BuildTool
          var output = ProcessManager.runProcess("", "/usr/sbin/system_profiler", [ "-detailLevel", "full", "SPHardwareDataType" ], true, false, true, true);
          if (cores.match(output))
          {
-            result = cores.matched(1); 
+            result = cores.matched(1);
          }
       }
-      
+
       Log.verbose = cache;
-      
+
       if (result == null || Std.parseInt(result) < 1)
-      {   
+      {
          return 1;
       }
       else
-      {   
+      {
          return Std.parseInt(result);
       }
    }
-   
+
    private static function getVersion():String
    {
       try
@@ -854,15 +1292,59 @@ class BuildTool
       return instance.mDefines.get("toolchain")=="mingw";
    }
 
+   public static function getNvcc()
+   {
+      return instance.mDefines.get("NVCC");
+   }
+
+   public static function getNvccLinkFlags() : Array<String>
+   {
+      return instance.mNvccLinkFlags;
+   }
+
+   public static function getNvccFlags() : Array<String>
+   {
+      return instance.mNvccFlags;
+   }
+
+   public static function copy(from:String, to:String)
+   {
+      Log.v('copy $from $to');
+
+      try {
+         if (FileSystem.isDirectory(to))
+            to += "/" + Path.withoutDirectory(from);
+         var bytes = sys.io.File.getBytes(from);
+         sys.io.File.saveBytes(to,bytes);
+      } catch(e:Dynamic)
+      {
+         Log.error('Could not copy file $from $to');
+      }
+   }
+
+
+   static public function main()
+   {
+     try {
+       runMain();
+     }
+     catch(e:Dynamic) {
+       Log.error('Uncaught exception on main thread: $e\n${haxe.CallStack.toString(haxe.CallStack.exceptionStack())}');
+       Tools.exit(1);
+     }
+     Tools.exit(0);
+   }
 
    // Process args and environment.
-   static public function main()
+   static function runMain()
    {
       var targets = new Array<String>();
       var defines = new Hash<String>();
       var include_path = new Array<String>();
       var makefile:String="";
       var optionsTxt = "Options.txt";
+
+      Profile.start();
 
       include_path.push(".");
 
@@ -877,10 +1359,14 @@ class BuildTool
       if (args.length>0)
       {
          var last:String = (new Path(args[args.length-1])).toString();
-         var slash = last.substr(-1);
-         if (slash=="/"|| slash=="\\") 
-            last = last.substr(0,last.length-1);
-         if (FileSystem.exists(last) && FileSystem.isDirectory(last))
+         var isRootDir = last=="/";
+         if (!isRootDir)
+         {
+            var slash = last.substr(-1);
+            if (slash=="/"|| slash=="\\")
+               last = last.substr(0,last.length-1);
+         }
+         if (isRootDir || (FileSystem.exists(last) && FileSystem.isDirectory(last)))
          {
             // When called from haxelib, the last arg is the original directory, and
             //  the current direcory is the library directory.
@@ -916,7 +1402,7 @@ class BuildTool
          var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
          if (binDir==null)
             Log.error("Cppia is not supported on this host.");
-         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
+         var binDir = isWindows ? "Windows64" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
          var exe = '$HXCPP/bin/$binDir/Cppia' + (isWindows ? ".exe" : "");
          if (!isWindows)
          {
@@ -925,7 +1411,7 @@ class BuildTool
             {
                var stat = FileSystem.stat(exe);
                if (stat==null)
-                  throw "Could not find exe";
+                  throw "Could not find exe:" + exe;
                var mode = stat.mode;
                var exeFlags = (1<<0) | (1<<3) | (1<<6);
                if ( (mode&exeFlags) != exeFlags )
@@ -941,10 +1427,14 @@ class BuildTool
             }
          }
 
+         #if (haxe_ver < 3.3)
+         // avoid issue of path with spaces
+         // https://github.com/HaxeFoundation/haxe/issues/3603
          if (isWindows)
             exe = '"$exe"';
+         #end
 
-         Sys.exit( Sys.command( exe, args ) );
+         Tools.exit( Sys.command( exe, args ) );
       }
       else if (args.length>0 && args[0].endsWith(".js"))
       {
@@ -956,7 +1446,7 @@ class BuildTool
             node = "node";
 
          Log.v(  node + " " + args.join(" ") );
-         Sys.exit( Sys.command( node, args ) );
+         Tools.exit( Sys.command( node, args ) );
       }
       else if (args.length==1 && args[0]=="defines")
       {
@@ -984,29 +1474,30 @@ class BuildTool
       isRPi = isLinux && Setup.isRaspberryPi();
 
       is64 = getIs64();
+      var dirtyList = new Array<String>();
 
       var a = 0;
       while(a < args.length)
       {
          var arg = args[a];
-         if (arg.substr(0,2)=="-D" || (~/^[a-zA-Z0-9_]*=/).match(arg) )
+         if (arg.substr(0,2)=="-D" || (~/^[a-zA-Z0-9_][a-zA-Z0-9_-]*=/).match(arg) )
          {
-            var val = arg.substr(0,2)=="-D" ? arg.substr(2) : arg;
-            var equals = val.indexOf("=");
+            var define = arg.substr(0,2)=="-D" ? arg.substr(2) : arg;
+            var equals = define.indexOf("=");
             if (equals>0)
             {
-               var name = val.substr(0,equals);
-               var value = val.substr(equals+1);
-               if (name=="destination")
+               var value = define.substr(equals+1);
+               define = define.substr(0,equals);
+               if (define=="destination")
                {
                   destination = value;
                }
                else
-                  defines.set(name,value);
+                  defines.set(define,value);
             }
             else
-               defines.set(val,"");
-            if (val=="verbose")
+               defines.set(define,"");
+            if (define=="verbose")
                Log.verbose = true;
          }
          else if (arg=="-debug")
@@ -1019,6 +1510,11 @@ class BuildTool
             optionsTxt = args[a];
             if (optionsTxt==null)
                optionsTxt = "";
+         }
+         else if (arg=="-dirty")
+         {
+            a++;
+            dirtyList.push(args[a]);
          }
          else if (arg=="-v" || arg=="-verbose")
             Log.verbose = true;
@@ -1034,13 +1530,22 @@ class BuildTool
          a++;
       }
 
+      if (defines.exists("HXCPP_TIMES"))
+         Profile.enable();
+
+      if (defines.exists("HXCPP_NO_COLOUR") || defines.exists("HXCPP_NO_COLOR"))
+         Log.colorSupported = false;
+      Log.verbose = Log.verbose || defines.exists("HXCPP_VERBOSE");
+      Log.quiet = defines.exists("HXCPP_QUIET") && !Log.verbose;
+      Log.mute = defines.exists("HXCPP_SILENT") && !Log.quiet && !Log.verbose;
+
       if ( optionsTxt!="" && makefile!="")
       {
          var path = PathManager.combine(haxe.io.Path.directory(makefile), optionsTxt);
          if (FileSystem.exists(path))
             try
             {
-               var contents = sys.io.File.getContent(path); 
+               var contents = sys.io.File.getContent(path);
                if (contents.substr(0,1)!=" ") // Is it New-style?
                   for(def in contents.split("\r").join("").split("\n"))
                   {
@@ -1066,6 +1571,7 @@ class BuildTool
            }
       }
 
+      Profile.setEntry("setup"); 
       Setup.initHXCPPConfig(defines);
 
       if (HXCPP=="" && env.exists("HXCPP"))
@@ -1084,9 +1590,9 @@ class BuildTool
          HXCPP = PathManager.standardize(defines.get("HXCPP"));
          defines.set("HXCPP",HXCPP);
       }
-      
+
       //Log.info("", "HXCPP : " + HXCPP);
-      
+
       include_path.push(".");
       if (env.exists("HOME"))
         include_path.push(env.get("HOME"));
@@ -1094,10 +1600,12 @@ class BuildTool
         include_path.push(env.get("USERPROFILE"));
       include_path.push(HXCPP);
 
+
+
       //trace(include_path);
 
       //var msvc = false;
-      
+
       // Create alias...
       if (defines.exists("ios"))
       {
@@ -1108,32 +1616,34 @@ class BuildTool
          defines.set("iphone", "iphone");
       }
 
- 
-     
+      if (defines.exists("tvos"))
+      {
+         if (defines.exists("simulator"))
+            defines.set("appletvsim", "appletvsim");
+         else if (!defines.exists ("appletvsim"))
+            defines.set("appletvos", "appletvos");
+         defines.set("appletv", "appletv");
+      }
+
+
 
       if (makefile=="" || Log.verbose)
       {
          printBanner();
       }
-      
+
       if (makefile=="")
       {
-         Log.println(" \x1b[33;1mUsage:\x1b[0m\x1b[1m haxelib run hxcpp\x1b[0m Build.xml \x1b[3;37m[options]\x1b[0m");
-         Log.println("");
-         Log.println(" \x1b[33;1mOptions:\x1b[0m ");
-         Log.println("");
-         Log.println("  \x1b[1m-D\x1b[0;3mvalue\x1b[0m -- Specify a define to use when processing other commands");
-         Log.println("  \x1b[1m-verbose\x1b[0m -- Print additional information (when available)");
-         Log.println("");
+         printUsage();
       }
       else
       {
-         Log.v("\x1b[33;1mUsing makefile: " + makefile + "\x1b[0m");
-         Log.v("\x1b[33;1mReading HXCPP config: " + defines.get("HXCPP_CONFIG") + "\x1b[0m");
+         Log.v('${BOLD}${YELLOW}Using makefile: $makefile${NORMAL}');
+         Log.v('${BOLD}${YELLOW}Reading HXCPP config: ' + defines.get("HXCPP_CONFIG") + NORMAL);
          if (defines.exists("toolchain"))
-            Log.v("\x1b[33;1mUsing target toolchain: " + defines.get("toolchain") + "\x1b[0m");
+            Log.v('${BOLD}{$YELLOW}Using target toolchain: ' + defines.get("toolchain") + NORMAL);
          else
-            Log.v("\x1b[33;1mNo specified toolchain\x1b[0m");
+            Log.v('${BOLD}${YELLOW}No specified toolchain${NORMAL}');
          if (Log.verbose) Log.println("");
 
 
@@ -1141,13 +1651,37 @@ class BuildTool
             targets.push("default");
 
 
-         new BuildTool(makefile,defines,targets,include_path);
+         new BuildTool(makefile,defines,targets,include_path,dirtyList);
       }
    }
 
+
+   static function printUsage()
+   {
+      Log.println('${YELLOW}Usage:${NORMAL}');
+      Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} file.xml ${ITALIC}${WHITE}[options]${NORMAL}');
+      Log.println('   Build project from "file.xml".  options:');
+      Log.println('    ${BOLD}-D${NORMAL}${ITALIC}value${NORMAL} -- Specify a define to use when processing other commands');
+      Log.println('    ${BOLD}-verbose${NORMAL} -- Print additional information (when available)');
+      Log.println('    ${BOLD}-dirty [groudId|all]${NORMAL} -- always rebuild files in given group');
+      Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}file.cppia${NORMAL}');
+      Log.println('   Run cppia script using default Cppia host');
+      Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}file.js${NORMAL}');
+      Log.println('    Run emscripten compiled scipt "file.js"');
+      Log.println(' ${BOLD}haxelib run hxcpp${NORMAL} ${ITALIC}${WHITE}cache [command] [project]${NORMAL}');
+      Log.println('   Perform command on cache, either on specific project or all. commands:');
+      Log.println('    ${BOLD}clear${NORMAL} -- remove all files from cache');
+      Log.println('    ${BOLD}days${NORMAL} #days -- remove files older than "days"');
+      Log.println('    ${BOLD}resize${NORMAL} #megabytes -- Only keep #megabytes MB');
+      Log.println('    ${BOLD}list${NORMAL} -- list cache usage');
+      Log.println('    ${BOLD}details${NORMAL} -- list cache usage, per file');
+      Log.println('');
+   }
+
+
    static function printBanner()
    {
-      Log.println("\x1b[33;1m __                          ");             
+      Log.println("\x1b[33;1m __                          ");
       Log.println("/\\ \\                                      ");
       Log.println("\\ \\ \\___    __  _   ___   _____   _____   ");
       Log.println(" \\ \\  _ `\\ /\\ \\/'\\ /'___\\/\\ '__`\\/\\ '__`\\ ");
@@ -1177,6 +1711,35 @@ class BuildTool
          defines.set("apple","apple");
          defines.set("BINDIR","iPhone");
       }
+      else if (defines.exists("appletvos"))
+      {
+         defines.set("toolchain","appletvos");
+         defines.set("appletv","appletv");
+         defines.set("apple","apple");
+         defines.set("BINDIR","AppleTV");
+      }
+      else if (defines.exists("appletvsim"))
+      {
+         defines.set("toolchain","appletvsim");
+         defines.set("appletv","appletv");
+         defines.set("apple","apple");
+         defines.set("BINDIR","AppleTV");
+      }
+      else if (defines.exists("watchos"))
+      {
+         defines.set("toolchain","watchos");
+         defines.set("apple","apple");
+         defines.set("applewatch","applewatch");
+         defines.set("BINDIR","watchos");
+      }
+      else if (defines.exists("watchsimulator"))
+      {
+         defines.set("toolchain","watchsimulator");
+         defines.set("applewatch","applewatch");
+         defines.set("apple","apple");
+         defines.set("BINDIR","watchsimulator");
+      }
+
       else if (defines.exists("android"))
       {
          defines.set("toolchain","android");
@@ -1263,7 +1826,7 @@ class BuildTool
             defines.set("BINDIR",m64 ? "Windows64":"Windows");
 
             // Choose between MSVC and MINGW
-            var useMsvc = false;
+            var useMsvc = true;
 
             if (defines.exists("mingw") || defines.exists("HXCPP_MINGW") || defines.exists("minimingw"))
                useMsvc = false;
@@ -1280,14 +1843,14 @@ class BuildTool
                    }
                 }
 
-                Log.v("Using default windows compiler : " + (useMsvc ? "MSVC" : "MinGW") );
+                Log.v("Using Windows compiler: " + (useMsvc ? "MSVC" : "MinGW") );
             }
 
             if (useMsvc)
             {
                defines.set("toolchain","msvc");
                if ( defines.exists("winrt") )
-                  defines.set("BINDIR",m64 ? "WinRTx64":"WinRTx86");
+                  defines.set("BINDIR",m64 ? "WinRT64":"WinRT");
             }
             else
             {
@@ -1307,9 +1870,34 @@ class BuildTool
       else if ( (new EReg("linux","i")).match(os) )
       {
          set64(defines,m64);
-         defines.set("toolchain","linux");
-         defines.set("linux","linux");
-         defines.set("BINDIR", m64 ? "Linux64":"Linux");
+         // Cross-compile?
+         if(defines.exists("windows"))
+         {
+            defines.set("toolchain","mingw");
+            defines.set("xcompile","1");
+            defines.set("BINDIR", m64 ? "Windows64":"Windows");
+         }
+         else
+         {
+            defines.set("toolchain","linux");
+            defines.set("linux","linux");
+
+            if (defines.exists("HXCPP_LINUX_ARMV7"))
+            {
+               defines.set("noM32","1");
+               defines.set("noM64","1");
+               defines.set("HXCPP_ARMV7","1");
+               m64 = false;
+            }
+            else if (defines.exists("HXCPP_LINUX_ARM64"))
+            {
+               defines.set("noM32","1");
+               defines.set("noM64","1");
+               defines.set("HXCPP_ARM64","1");
+               m64 = true;
+            }
+            defines.set("BINDIR", m64 ? "Linux64":"Linux");
+         }
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
@@ -1355,7 +1943,7 @@ class BuildTool
          var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/iPhoneOS.platform/Developer/SDKs/";
          if (FileSystem.exists(dev_path))
          {
-            var best="";
+            var best="0.0";
             var files = FileSystem.readDirectory(dev_path);
             var extract_version = ~/^iPhoneOS(.*).sdk$/;
             for(file in files)
@@ -1367,19 +1955,19 @@ class BuildTool
                      best = ver;
                }
             }
-            if (best!="")
+            if (best!="0.0")
                defines.set("IPHONE_VER",best);
          }
       }
-      
-      if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
+
+      if (defines.exists("appletv") && !defines.exists("TVOS_VER"))
       {
-         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/";
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/AppleTVOS.platform/Developer/SDKs/";
          if (FileSystem.exists(dev_path))
          {
-            var best="";
+            var best="0.0";
             var files = FileSystem.readDirectory(dev_path);
-            var extract_version = ~/^MacOSX(.*).sdk$/;
+            var extract_version = ~/^AppleTVOS(.*).sdk$/;
             for(file in files)
             {
                if (extract_version.match(file))
@@ -1389,18 +1977,68 @@ class BuildTool
                      best = ver;
                }
             }
-            if (best!="")
-               defines.set("MACOSX_VER",best);
+            if (best!="0.0")
+               defines.set("TVOS_VER",best);
          }
       }
-      
+
+
+      if (defines.exists("applewatch") && !defines.exists("WATCHOS_VER"))
+      {
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/WatchOS.platform/Developer/SDKs/";
+         if (FileSystem.exists(dev_path))
+         {
+            var best="0.0";
+            var files = FileSystem.readDirectory(dev_path);
+            var extract_version = ~/^WatchOS(.*).sdk$/;
+            for(file in files)
+            {
+               if (extract_version.match(file))
+               {
+                  var ver = extract_version.matched(1);
+                  if (Std.parseFloat (ver)>Std.parseFloat (best))
+                     best = ver;
+               }
+            }
+            if (best!="0.0")
+               defines.set("WATCHOS_VER",best);
+         }
+      }
+
+
+      if (defines.exists("macos") && !defines.exists("MACOSX_VER"))
+      {
+         var dev_path = defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/";
+         if (FileSystem.exists(dev_path))
+         {
+            var best="0.0";
+            var files = FileSystem.readDirectory(dev_path);
+            var extract_version = ~/^MacOSX(.*).sdk$/;
+            for(file in files)
+            {
+               if (extract_version.match(file))
+               {
+                  var ver = extract_version.matched(1);
+                  var split_best = best.split(".");
+                  var split_ver = ver.split(".");
+                  if (Std.parseFloat(split_ver[0]) > Std.parseFloat(split_best[0]) || Std.parseFloat(split_ver[1]) > Std.parseFloat(split_best[1]))
+                     best = ver;
+               }
+            }
+            if (best!="0.0")
+               defines.set("MACOSX_VER",best);
+            else
+               Log.v("Could not find MACOSX_VER!");
+         }
+      }
+
       if (!FileSystem.exists(defines.get("DEVELOPER_DIR") + "/Platforms/MacOSX.platform/Developer/SDKs/"))
       {
          defines.set("LEGACY_MACOSX_SDK","1");
       }
    }
 
-   function parseXML(inXML:Fast,inSection:String)
+   function parseXML(inXML:Fast,inSection:String, forceRelative:Bool)
    {
       for(el in inXML.elements)
       {
@@ -1408,60 +2046,61 @@ class BuildTool
          {
             switch(el.name)
             {
-               case "set" : 
+               case "set" :
                   var name = substitute(el.att.name);
                   var value = substitute(el.att.value);
                   mDefines.set(name,value);
-               case "unset" : 
+               case "unset" :
                   var name = substitute(el.att.name);
                   mDefines.remove(name);
-               case "setup" : 
+               case "setup" :
                   var name = substitute(el.att.name);
                   Setup.setup(name,mDefines);
-               case "echo" : 
+               case "echo" :
                   Log.info(substitute(el.att.value));
-               case "setenv" : 
+               case "setenv" :
                   var name = substitute(el.att.name);
                   var value = substitute(el.att.value);
                   mDefines.set(name,value);
                   Sys.putEnv(name,value);
-               case "error" : 
+               case "error" :
                   var error = substitute(el.att.value);
                   Log.error(error);
-               case "path" : 
+               case "path" :
                   var path = substitute(el.att.name);
                   Log.info("", " - \x1b[1mAdding path:\x1b[0m " + path);
                   var sep = mDefines.exists("windows_host") ? ";" : ":";
                   var add = path + sep + Sys.getEnv("PATH");
                   Sys.putEnv("PATH", add);
                   //trace(Sys.getEnv("PATH"));
-               case "compiler" : 
+               case "compiler" :
                   mCompiler = createCompiler(el,mCompiler);
-               case "stripper" : 
+               case "stripper" :
                   mStripper = createStripper(el,mStripper);
-               case "prelinker" : 
+               case "prelinker" :
                   var name = substitute(el.att.id);
                   if (mPrelinkers.exists(name))
                      createPrelinker(el,mPrelinkers.get(name));
                   else
                      mPrelinkers.set(name, createPrelinker(el,null) );
-               case "linker" : 
+               case "linker" :
                   var name = substitute(el.att.id);
                   if (mLinkers.exists(name))
                      createLinker(el,mLinkers.get(name));
                   else
                      mLinkers.set(name, createLinker(el,null) );
-               case "files" : 
+               case "files" :
                   var name = substitute(el.att.id);
-                  if (mFileGroups.exists(name))
-                     createFileGroup(el, mFileGroups.get(name), name);
+                  var tags = el.has.tags ? substitute(el.att.tags) : null;
+                  if (mFileGroups.exists(name) )
+                     createFileGroup(el, mFileGroups.get(name), name, false, tags);
                   else
-                     mFileGroups.set(name,createFileGroup(el,null,name));
-               case "include" : 
+                     mFileGroups.set(name,createFileGroup(el,null,name, forceRelative,tags));
+               case "include", "import" :
                   var name = substitute(el.att.name);
                   var section = el.has.section ? substitute(el.att.section) : "";
-                  include(name, section, el.has.noerror);
-               case "target" : 
+                  include(name, section, el.has.noerror, el.name=="import" );
+               case "target" :
                   var name = substitute(el.att.id);
                   var overwrite = name=="default";
                   if (el.has.overwrite)
@@ -1469,20 +2108,56 @@ class BuildTool
                   if (el.has.append)
                      overwrite = false;
                   if (mTargets.exists(name) && !overwrite)
-                     createTarget(el,mTargets.get(name));
+                     createTarget(el,mTargets.get(name), forceRelative);
                   else
-                     mTargets.set( name, createTarget(el,null) );
-               case "copyFile" : 
+                     mTargets.set( name, createTarget(el,null, forceRelative) );
+
+               case "mkdir" :
+                  var name = substitute(el.att.name);
+                  try {
+                     PathManager.mkdir(name);
+                  } catch(e:Dynamic)
+                  {
+                     Log.error("Could not create directory " + name );
+                  }
+
+
+               case "copy" :
+                   var from = substitute(el.att.from);
+                   from = PathManager.combine( Path.directory(mCurrentIncludeFile), from );
+                   var to = substitute(el.att.to);
+                   to = PathManager.combine( Path.directory(mCurrentIncludeFile), to );
+                   copy(from,to);
+
+               case "copyFile" :
                   mCopyFiles.push(
                       new CopyFile(substitute(el.att.name),
                                    substitute(el.att.from),
                                    el.has.allowMissing ?  subBool(el.att.allowMissing) : false,
+                                   el.has.overwrite ? substitute(el.att.overwrite) : Overwrite.ALWAYS,
                                    el.has.toolId ?  substitute(el.att.toolId) : null ) );
-               case "section" : 
-                  parseXML(el,"");
+               case "section" :
+                  parseXML(el,"",forceRelative);
 
-               case "pleaseUpdateHxcppTool" : 
+               case "pleaseUpdateHxcppTool" :
                   checkToolVersion( substitute(el.att.version) );
+
+               case "magiclib" :
+                  mMagicLibs.push( {name: substitute(el.att.name),
+                                    replace:substitute(el.att.replace) } );
+               case "nvccflag" :
+                  if (el.has.name)
+                     mNvccFlags.push( substitute(el.att.name) );
+                  mNvccFlags.push( substitute(el.att.value) );
+
+               case "nvcclinkflag" :
+                  if (el.has.name)
+                     mNvccLinkFlags.push( substitute(el.att.name) );
+                  mNvccLinkFlags.push( substitute(el.att.value) );
+
+               case "pragma" :
+                  if (el.has.once)
+                     mPragmaOnce.set(mCurrentIncludeFile, parseBool(substitute(el.att.once)));
             }
          }
       }
@@ -1491,16 +2166,24 @@ class BuildTool
    public function checkToolVersion(inVersion:String)
    {
       var ver = Std.parseInt(inVersion);
-      if (ver<1)
+      if (ver>3)
          Log.error("Your version of hxcpp.n is out-of-date.  Please update.");
    }
 
+   public function resolvePath(inPath:String)
+   {
+      return PathManager.combine( mCurrentIncludeFile=="" ? Sys.getCwd() : Path.directory(mCurrentIncludeFile),
+           inPath);
+   }
 
-   public function include(inName:String, inSection:String="", inAllowMissing:Bool = false)
+   public function include(inName:String, inSection:String="", inAllowMissing:Bool = false, forceRelative=false)
    {
       var full_name = findIncludeFile(inName);
       if (full_name!="")
       {
+         if (mPragmaOnce.get(full_name))
+            return;
+
          pushFile(full_name, "include", inSection);
          // TODO - use mFileStack?
          var oldInclude = mCurrentIncludeFile;
@@ -1509,7 +2192,9 @@ class BuildTool
          var make_contents = sys.io.File.getContent(full_name);
          var xml_slow = Xml.parse(make_contents);
 
-         parseXML(new Fast(xml_slow.firstElement()),inSection);
+         Profile.push( haxe.io.Path.withoutDirectory(inName) );
+         parseXML(new Fast(xml_slow.firstElement()),inSection, forceRelative);
+         Profile.pop();
 
          mCurrentIncludeFile = oldInclude;
          popFile();
@@ -1553,7 +2238,7 @@ class BuildTool
          Sys.setCwd(parts.join("\\"));
          try {
             var bat = '$HXCPP/toolchain/dospath.bat'.split("/").join("\\");
-            var process = new Process(bat,[]);
+            var process = new Process("cmd",["/c",bat]);
             output = process.stdout.readAll().toString();
             output = output.split("\r")[0].split("\n")[0];
             err  = process.stderr.readAll().toString();
@@ -1599,6 +2284,10 @@ class BuildTool
                sub = haxe.io.Path.directory(sub);
             }
          }
+         else if (sub=="this_dir")
+         {
+            sub = Path.normalize(mCurrentIncludeFile=="" ? Sys.getCwd() :  Path.directory(mCurrentIncludeFile));
+         }
          else
             sub = mDefines.get(sub);
 
@@ -1618,7 +2307,7 @@ class BuildTool
    public function valid(inEl:Fast,inSection:String):Bool
    {
       if (inEl.x.get("if") != null)
-      {   
+      {
          var value = inEl.x.get("if");
          var optionalDefines = value.split("||");
          var matchOptional = false;
@@ -1630,12 +2319,12 @@ class BuildTool
             {
                var check = StringTools.trim(required);
                if (check != "" && !defined(check))
-               {   
+               {
                   matchRequired = false;
                }
             }
             if (matchRequired)
-            {   
+            {
                matchOptional = true;
             }
          }
@@ -1644,7 +2333,7 @@ class BuildTool
             return false;
          }
       }
-      
+
       if (inEl.has.unless)
       {
          var value = substitute(inEl.att.unless);
@@ -1672,10 +2361,21 @@ class BuildTool
             return false;
          }
       }
-      
+
+      if (inEl.has.unlessApi)
+      {
+         var value = substitute(inEl.att.unlessApi);
+         try {
+            var val = Std.parseInt(value);
+            if (val<=SupportedVersion)
+               return false;
+         } catch(e:Dynamic) { }
+      }
+
+
       if (inEl.has.ifExists)
          if (!FileSystem.exists( substitute(inEl.att.ifExists) )) return false;
-      
+
       if (inSection!="")
       {
          if (inEl.name!="section")
@@ -1685,7 +2385,7 @@ class BuildTool
          if (inEl.att.id!=inSection)
             return false;
       }
-      
+
       return true;
    }
 }

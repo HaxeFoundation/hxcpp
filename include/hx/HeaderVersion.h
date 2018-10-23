@@ -1,0 +1,3 @@
+#ifndef HXCPP_HEADER_VERSION
+#define HXCPP_HEADER_VERSION 330
+#endif

@@ -2,6 +2,8 @@
 <xml>
 <include name="toolchain/gcc-toolchain.xml"/>
 
+<set name="SUBSYSTEMWINDOWS" value="1" if="no_console" unless="HXCPP_DEBUGGER" />
+
 <compiler id="cygwin" exe="env g++" if="cygwin">
   <flag value="-c"/>
   <cppflag value="-frtti"/>
@@ -35,6 +37,7 @@
   <flag value="-debug" if="debug"/>
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-mwindows" if="SUBSYSTEMWINDOWS" />
   <lib name="-ldl"/>
   <ext value=".exe"/>
   <outflag value="-o "/>

@@ -25,6 +25,13 @@ class TestWeakHash extends haxe.unit.TestCase
       }
       return map;
    }
+   function createMapDeep(inDepth:Int, inCount:Int)
+   {
+      if (inDepth<1)
+         return createMap(inCount);
+
+      return createMapDeep(inDepth-1, inCount);
+   }
 
    function checkMap(map:WeakMap<WeakObjectData,Int>, expect:Int)
    {
@@ -43,12 +50,24 @@ class TestWeakHash extends haxe.unit.TestCase
       // There may be one or two values lurking on the stack, which is conservatively marked
       if (oddFound>2)
          trace("Too many odd values retained " + oddFound);
+      if (!(valid>=expect && valid<expect+2))
+         trace("WeakHash invalid range "+ expect + "..." + valid + "..." + (expect+2) );
       assertTrue(valid>=expect && valid<expect+2);
    }
-
-   function clearRetained()
+   function deepCheckMap(inDepth:Int, map:WeakMap<WeakObjectData,Int>, expect:Int)
    {
-      retained = [];
+      if (inDepth<1)
+         checkMap(map,expect);
+      else
+         deepCheckMap(inDepth-1, map, expect);
+   }
+
+   function deepClearRetained(inRecurse:Int)
+   {
+      if (inRecurse>0)
+         deepClearRetained(inRecurse-1);
+      else
+         retained = [];
    }
 
    public function test()
@@ -56,10 +75,10 @@ class TestWeakHash extends haxe.unit.TestCase
       var err = "";
       try
       {
-         var map = createMap(1000);
+         var map = createMapDeep(20,1000);
          cpp.vm.Gc.run(true);
-         checkMap(map,500);
-         clearRetained();
+         deepCheckMap(10,map,500);
+         deepClearRetained(10);
          cpp.vm.Gc.run(true);
          checkMap(map,0);
       }

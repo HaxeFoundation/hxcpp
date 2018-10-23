@@ -18,13 +18,15 @@
    </section>
    <section if="rpi">
       <path name="c:/SysGCC/Raspberry/bin/" unless="HXCPP_XCOMPILE_RPI_PATH" />
-      <path name="${HXCPP_XCOMPILE_RPI_PATH" if="HXCPP_XCOMPILE_RPI_PATH" />
+      <path name="${HXCPP_XCOMPILE_RPI_PATH}" if="HXCPP_XCOMPILE_RPI_PATH" />
       <set name="CXX" value="arm-linux-gnueabihf-g++" />
       <set name="HXCPP_STRIP" value="arm-linux-gnueabihf-strip" />
       <set name="HXCPP_AR" value="arm-linux-gnueabihf-ar" />
       <set name="HXCPP_RANLIB" value="arm-linux-gnueabihf-ranlib" />
    </section>
 </section>
+
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
 
 <include name="toolchain/gcc-toolchain.xml"/>
 <set name="noM32" value="1" if="HXCPP_NO_M32" />
@@ -36,10 +38,12 @@
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
+  <cppflag value="-std=c++11" if="HXCPP_CPP11" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
+  <flag value="-Wno-overflow" />
   <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-DHX_LINUX"/>
   <flag value="-DRASPBERRYPI=RASPBERRYPI" if="rpi"/>
@@ -47,7 +51,7 @@
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <include name="toolchain/common-defines.xml" />
   <flag value="-m32" unless="noM32"/>
-  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64" unless="noM64" />
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/linux${OBJEXT}/"/>
@@ -62,7 +66,7 @@
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-m32" unless="noM32"/>
-  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64" unless="noM64" />
   <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
@@ -77,8 +81,8 @@
   <fromfile value="" if="GCC_OLD" />
   <flag value="-debug" if="debug"/>
   <flag value="-rdynamic"/>
-  <flag value="-m32" unless="HXCPP_M64"/>
-  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-m32" unless="noM32"/>
+  <flag value="-m64" if="HXCPP_M64" unless="noM64" />
   <lib name="-ldl"/>
   <ext value=""/>
   <outflag value="-o "/>

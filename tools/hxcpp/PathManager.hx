@@ -11,7 +11,7 @@ class PathManager
       {   
          return secondPath;  
       }
-      else if (secondPath != null && secondPath != "")
+      else if (secondPath != null && secondPath != "" && secondPath!=".")
       {
          if (BuildTool.isWindows)
          {
@@ -176,7 +176,21 @@ class PathManager
                }
             }
          }
-         
+         if ( result!="" )
+         {
+            var rootPath = result;
+            var depth = 0;
+            while( FileSystem.exists(rootPath) && FileSystem.isDirectory(rootPath) && depth<10 )
+            {
+               if (FileSystem.exists(rootPath + "/haxelib.json"))
+               {
+                   result = rootPath;
+                   break;
+               }
+               depth++;
+               rootPath = haxe.io.Path.directory(rootPath);
+            }
+         }
          haxelibPaths.set(name,result);
       }
       
@@ -213,13 +227,10 @@ class PathManager
       }
       
       var parts = directory.split("/");
-      var oldPath = "";
       
       if (parts.length > 0 && parts[0].indexOf(":") > -1)
       {
-         oldPath = Sys.getCwd();
-         Sys.setCwd(parts[0] + "\\");
-         parts.shift();
+         total = parts.shift();
       }
       
       for (part in parts)
@@ -245,10 +256,6 @@ class PathManager
          }
       }
       
-      if (oldPath != "")
-      {
-         Sys.setCwd(oldPath);
-      }
    }
 
    public static function removeDirectory(directory:String):Void

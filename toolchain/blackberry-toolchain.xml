@@ -44,12 +44,12 @@
 	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
 	<outflag value="-o"/>
-	<objdir value="./obj/blackberry${OBJEXT}${ARCH}"/>
+	<objdir value="./obj/bb${OBJEXT}${ARCH}"/>
 </compiler>
 
 
 <linker id="exe" exe="qcc" if="blackberry">
-	<fromfile value="-filelist " />
+	<!-- <fromfile value="-filelist " /> -->
 	<flag value="-V${QCC_TARGET}" />
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
@@ -66,7 +66,7 @@
 </linker>
 	
 <linker id="dll" exe="qcc" if="blackberry">
-	<fromfile value="-filelist " />
+	<!-- <fromfile value="-filelist " /> -->
 	<flag value="-V${QCC_TARGET}" />
 	<flag value="-shared"/>
 	<flag value="-g" if="debug"/>

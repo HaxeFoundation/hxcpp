@@ -2,19 +2,15 @@
 #include <limits>
 #include <hxMath.h>
 
-
 #include <stdlib.h>
 #include <time.h>
-#ifndef HX_WINDOWS
+#if defined(HX_WINRT) && !defined(__cplusplus_winrt)
+#include <windows.h>
+#elif defined(HX_WINDOWS)
+#include <process.h>
+#else
 #include <unistd.h>
 #include <sys/time.h>
-#else
-#include <process.h>
-#endif
-
-#ifdef HX_ANDROID
-#define rand() lrand48()
-#define srand(x) srand48(x)
 #endif
 
 // -------- Math ---------------------------------------
@@ -65,7 +61,7 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,exp,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isNaN,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
 
-Dynamic Math_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val Math_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("floor")) return floor_dyn();
    if (inString==HX_CSTRING("ffloor")) return ffloor_dyn();
@@ -120,7 +116,7 @@ static String sMathFields[] = {
    String(null()) };
 
 
-Dynamic Math_obj::__SetField(const String &inString,const Dynamic &inValue, hx::PropertyAccess inCallProp) { return null(); }
+hx::Val Math_obj::__SetField(const String &inString,const hx::Val &inValue, hx::PropertyAccess inCallProp) { return null(); }
 
 Dynamic Math_obj::__CreateEmpty() { return new Math_obj; }
 
@@ -129,28 +125,47 @@ hx::Class Math_obj::__mClass;
 /*
 Class &Math_obj::__SGetClass() { return __mClass; }
 Class Math_obj::__GetClass() const { return __mClass; }
-bool Math_obj::__Is(hxObject *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; } \
 */
 
+#if HXCPP_SCRIPTABLE
+static hx::StaticInfo Math_obj_sStaticStorageInfo[] = {
+	{hx::fsFloat,(void *) &Math_obj::PI,HX_HCSTRING("PI","\xf9","\x45","\x00","\x00")},
+	{hx::fsFloat,(void *) &Math_obj::NEGATIVE_INFINITY,HX_HCSTRING("NEGATIVE_INFINITY","\x32","\xf1","\x1e","\x93")},
+	{hx::fsFloat,(void *) &Math_obj::POSITIVE_INFINITY,HX_HCSTRING("POSITIVE_INFINITY","\x6e","\x48","\x1e","\x72")},
+	{hx::fsFloat,(void *) &Math_obj::NaN,HX_HCSTRING("NaN","\x9b","\x84","\x3b","\x00")},
+	{ hx::fsUnknown, 0, null()}
+};
+#endif
 
 void Math_obj::__boot()
 {
-   Static(Math_obj::__mClass) = hx::RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
+   Static(Math_obj::__mClass) = hx::_hx_RegisterClass(HX_CSTRING("Math"),TCanCast<Math_obj>,sMathFields,sNone, &__CreateEmpty,0 , 0 );
 
-	unsigned int t;
-#ifdef HX_WINDOWS
-	t = clock();
-   #ifdef HX_WINRT
-	int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
-   #else
-	int pid = _getpid();
-   #endif
+#ifdef HXCPP_SCRIPTABLE
+   Math_obj::__mClass->mStaticStorageInfo = Math_obj_sStaticStorageInfo;
+#endif
+
+#if defined(HX_WINDOWS) || defined(__SNC__)
+   unsigned int t = clock();
 #else
-	int pid = getpid();
-	struct timeval tv;
-	gettimeofday(&tv,0);
-	t = tv.tv_sec * 1000000 + tv.tv_usec;
-#endif	
+   struct timeval tv;
+   gettimeofday(&tv,0);
+   unsigned int t = tv.tv_sec * 1000000 + tv.tv_usec;
+#endif
+
+#if defined(HX_WINDOWS)
+  #if defined(HX_WINRT)
+   #if defined(__cplusplus_winrt)
+   int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
+   #else
+   int pid = GetCurrentProcessId();
+   #endif
+  #else
+   int pid = _getpid();
+  #endif
+#else
+   int pid = getpid();
+#endif  
 
   srand(t ^ (pid | (pid << 16)));
   rand();
@@ -163,6 +178,13 @@ double DoubleMod(double inLHS,double inRHS)
 {
    return fmod(inLHS,inRHS);
 }
+
+double hxZero = 0.0;
+double DivByZero(double d)
+{
+   return d/hxZero;
+}
+
 
 }
 

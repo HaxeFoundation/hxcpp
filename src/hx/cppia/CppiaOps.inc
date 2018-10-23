@@ -113,5 +113,6 @@
   CPPIA_OP( IaBinOpAssignUShr , ">>>=", 218)
   CPPIA_OP( IaBinOpAssignShl , "<<=", 219)
   CPPIA_OP( IaBinOpAssignMod , "%=", 220)
+  CPPIA_OP( IaTCast , "TCAST", 221)
 
 

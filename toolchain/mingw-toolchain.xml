@@ -2,6 +2,20 @@
 
 <!-- MINGW TOOLS -------------------------------------->
 
+<section if="linux_host">
+  <section if="HXCPP_M64">
+    <set name="HXCPP_MINGW_EXE" value="x86_64-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
+    <set name="MINGW_ROOT" value="/usr/x86_64-w64-mingw32" unless="MINGW_ROOT" />
+  </section>
+  <section unless="HXCPP_M64">
+    <set name="HXCPP_MINGW_EXE" value="i686-w64-mingw32-g++" unless="HXCPP_MINGW_EXE" />
+    <set name="MINGW_ROOT" value="/usr/i686-w64-mingw32" unless="MINGW_ROOT" />
+  </section>
+</section>
+
+<set name="HXCPP_MINGW_EXE" value="g++.exe" unless="HXCPP_MINGW_EXE"/>
+
+
 <setup name="mingw" />
 
 <path name="${MINGW_ROOT}/bin"/>
@@ -10,16 +24,23 @@
 
 <unset name="USE_PRECOMPILED_HEADERS"/>
 
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
+
+<set name="SUBSYSTEMWINDOWS" value="1" if="no_console" unless="HXCPP_DEBUGGER" />
+
 <compiler id="mingw" exe="gcc">
-  <exe name="g++.exe"/>
+  <exe name="${HXCPP_MINGW_EXE}" />
   <flag value="-c"/>
   <cppflag value="-frtti"/>
+  <flag value="-Wno-overflow" />
+  <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug||O3"/>
   <flag value="-O3" if="O3"/>
   <include name="toolchain/common-defines.xml" />
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
+  <cppflag value="-std=c++11" if="HXCPP_CPP11" />
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
@@ -29,7 +50,7 @@
 </compiler>
 
 <linker id="dll" exe="g++">
-  <exe name="g++.exe"/>
+  <exe name="${HXCPP_MINGW_EXE}" />
   <flag value="-shared"/>
   <flag value="-debug" if="debug"/>
   <flag value="--enable-auto-import"/>
@@ -43,13 +64,16 @@
 </linker>
 
 <linker id="exe" exe="g++">
-  <exe name="g++.exe"/>
+  <exe name="${HXCPP_MINGW_EXE}" />
   <flag value="-debug" if="debug"/>
   <flag value="-Wl,--enable-auto-import"/>
+  <flag value="-mwindows" if="SUBSYSTEMWINDOWS" />
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-static" if="no_shared_libs"/>
-  <flag value="-static-libgcc" if="no_shared_libs"/>
-  <flag value="-static-libstdc++" if="no_shared_libs"/>
+  <flag value="-static-libgcc" if="no_shared_libs" unless="linux_host"/>
+  <flag value="-static-libstdc++" if="no_shared_libs" unless="linux_host"/>
+  <flag value="-static-libgcc" if="linux_host"/>
+  <flag value="-static-libstdc++" if="linux_host"/>
   <flag value="-L${MINGW_ROOT}/lib/libs" />
   <ext value=".exe"/>
   <outflag value="-o "/>
@@ -57,6 +81,8 @@
 
 <copyFile toolId="exe" name="libgcc_s_dw2-1.dll" from="${MINGW_ROOT}/bin" allowMissing="true" unless="no_shared_libs"/>
 <copyFile toolId="exe" name="libstdc++-6.dll" from="${MINGW_ROOT}/bin" allowMissing="true" unless="no_shared_libs"/>
+<copyFile toolId="exe" name="libwinpthread-1.dll" from="${MINGW_ROOT}/sys-root/mingw/bin" allowMissing="true" unless="no_shared_libs"/>
+<copyFile toolId="exe" name="libwinpthread-1.dll" from="${MINGW_ROOT}/lib" allowMissing="true" unless="no_shared_libs"/>
 
 <linker id="static_link" exe="ar" >
   <ext value="${LIBEXT}"/>

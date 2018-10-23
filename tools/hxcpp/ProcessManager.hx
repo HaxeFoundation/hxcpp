@@ -103,18 +103,17 @@ class ProcessManager
       return message;
    }
 
-   public static function runCommand(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false,?text:String):Int
+   public static function runCommand(path:String, command:String, args:Array<String>, print:Bool = true, safeExecute:Bool = true, ignoreErrors:Bool = false,?inText:String):Int
    {
       args = dup(args);
       command = combineCommand(command,args);
 
 
-      if (print && !Log.verbose)
+      if (print && !Log.verbose && !Log.quiet)
       {
-         Log.info(formatMessage(command, args));
+         Log.info(inText==null ? "" : inText,formatMessage(command, args));
       }
-      
-      
+
       if (safeExecute)
       {
          try
@@ -124,14 +123,18 @@ class ProcessManager
                Log.error("The specified target path \"" + path + "\" does not exist");
                return 1;
             }
-            return _runCommand(path, command, args, text);
+            return _runCommand(path, command, args, inText);
          }
          catch (e:Dynamic)
          {
             if (!ignoreErrors)
             {
-               var text = formatMessage(command, args);
-               Log.error("error running " + text , e);
+               //var text = formatMessage(command, args);
+               //Log.error("Error while running command\n" + text , e);
+               if (Log.verbose)
+               {
+                  Log.error ("", e);
+               }
                return 1;
             }
             return 0;
@@ -139,7 +142,7 @@ class ProcessManager
       }
       else
       {
-         return _runCommand(path, command, args, text);
+         return _runCommand(path, command, args, inText);
       }
    }
 
@@ -207,7 +210,11 @@ class ProcessManager
          {
             if (!ignoreErrors)
             {
-               Log.error("error running " + formatMessage(command,args), e);
+               //Log.error("Error while running command\n" + formatMessage(command,args), e);
+               if (Log.verbose)
+               {
+                  Log.error ("", e);
+               }
             }
             return null;
          }
@@ -238,8 +245,15 @@ class ProcessManager
          Sys.setCwd(path);
       }
       
-      var text = inText==null ?  "Running command" : inText;
-      Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
+      if (Log.quiet && inText!=null)
+      {
+         Log.info(inText);
+      }
+      else
+      {
+         var text = inText==null ?  "Running command" : inText;
+         Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
+      }
       
       var result = 0;
       
@@ -259,7 +273,7 @@ class ProcessManager
       
       if (result != 0)
       {  
-         throw ("Error running: " + command + " " + args.join (" ") + " [" + path + "]"); 
+         throw ("Error while running command\n" + formatMessage(command, args) + (path != "" ? " [" + path + "]" : "")); 
       }
       
       return result;
@@ -276,9 +290,16 @@ class ProcessManager
          oldPath = Sys.getCwd();
          Sys.setCwd(path);
       }
-      
-      var text = inText==null ? "Running process" : inText;
-      Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
+
+      if ( !Log.quiet)
+      {
+         var text = inText==null ? "Running process" : inText;
+         Log.info("", " - \x1b[1m" + text + ":\x1b[0m " + formatMessage(command, args));
+      }
+      else
+      {
+         Log.info("",inText);
+      }
       
       var output = "";
       var result = 0;
@@ -333,7 +354,7 @@ class ProcessManager
                else
                {
                   if (error==null || error=="")
-                     error = "error running " + formatMessage(command, args);
+                     error = "Error while running command\n" + formatMessage(command, args);
                   Log.error(error);
                }
 
@@ -351,15 +372,13 @@ class ProcessManager
    }
 
    // This function will return 0 on success, or non-zero error code
-   public static function runProcessThreaded(command:String, args:Array<String>, inText:String):Int
+   public static function runProcessThreaded(command:String, args:Array<String>, inText:String = null):Int
    {
       args = dup(args);
       command = combineCommand(command,args);
 
-      if (!Log.verbose)
-         Log.info(formatMessage(command, args));
-      
       Log.lock();
+
       // Other thread may have already thrown an error
       if (BuildTool.threadExitCode!=0)
       {
@@ -367,8 +386,11 @@ class ProcessManager
          return BuildTool.threadExitCode;
       }
 
-      var text = inText==null ? "Running process" : inText;
-      Log.info("", " - \x1b[1m" + text + " :\x1b[0m " + formatMessage(command, args));
+      if (inText != null)
+         Log.info(inText,"");
+
+      if (!Log.quiet)
+         Log.v(" - \x1b[1mRunning command:\x1b[0m " + formatMessage(command, args));
       Log.unlock();
 
       var output = new Array<String>();
@@ -434,6 +456,12 @@ class ProcessManager
       }
       catch(e:Dynamic){ }
 
+      if (output.length==1 && ~/^\S+\.(cpp|c|cc)$/.match(output[0]))
+      {
+         // Microsoft prints the name of the cpp file for some reason
+         output = [];
+      }
+
       var errOut:Array<String> = Thread.readMessage(true);
       
       var code = process.exitCode();
@@ -447,8 +475,9 @@ class ProcessManager
             var message = "";
             if (Log.verbose)
             {
-               message += '${Log.RED}${Log.BOLD}Error in building thread${Log.NORMAL}\n';
-               message += '${Log.ITALIC}' + formatMessage(command,args) + '${Log.NORMAL}\n';
+               Log.println("");
+               message += "Error while running command\n";
+               message += formatMessage(command,args) + "\n\n";
             }
             if (output.length > 0)
             {
@@ -456,9 +485,9 @@ class ProcessManager
             }
             if (errOut != null)
             {
-               message += '${Log.RED}${Log.BOLD}Error:${Log.NORMAL} ${Log.BOLD}' + errOut.join("\n") + '${Log.NORMAL}';
+               message += errOut.join("\n") + '${Log.NORMAL}';
             }
-            Log.info (message);
+            Log.error(message,"",null,false);
             Log.unlock();
          }
          

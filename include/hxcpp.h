@@ -10,12 +10,15 @@
    #define HXCPP_API_LEVEL 0
 #endif
 
+#include "hx/HeaderVersion.h"
+
 #ifdef _MSC_VER
    #include <typeinfo.h>
    namespace hx { typedef ::type_info type_info; }
 #else
    #include <typeinfo>
    #include <stdint.h>
+   #include <cstddef>
    namespace hx { typedef std::type_info type_info; }
    #ifndef EMSCRIPTEN
       using hx::type_info;
@@ -27,9 +30,13 @@
    #endif
 #endif
 
-#if defined(EMSCRIPTEN) || defined(IPHONE)
+#if defined(EMSCRIPTEN) || defined(IPHONE) || defined(APPLETV)
   #include <unistd.h>
   #include <cstdlib>
+#endif
+
+#if defined(EMSCRIPTEN)
+  #include <emscripten.h>
 #endif
 
 #ifdef __OBJC__
@@ -51,10 +58,15 @@
   #include <stddef.h>
 #endif
 
-#ifdef EMSCRIPTEN
-#define HXCPP_ALIGN_FLOAT
+#if defined(EMSCRIPTEN)  || defined(_ARM_) || defined(__arm__)
+   #define HXCPP_ALIGN_FLOAT
 #endif
 
+// Must allign allocs to 8 bytes to match floating point requirement?
+// Ints must br read on 4-byte boundary
+#ifdef EMSCRIPTEN
+   #define HXCPP_ALIGN_ALLOC
+#endif
 
 
 
@@ -72,8 +84,10 @@
 #ifdef _MSC_VER
   #if defined(HXCPP_DLL_IMPORT)
      #define HXCPP_EXTERN_CLASS_ATTRIBUTES __declspec(dllimport)
-  #else
+  #elif defined (HXCPP_DLL_EXPORT)
      #define HXCPP_EXTERN_CLASS_ATTRIBUTES __declspec(dllexport)
+  #else
+     #define HXCPP_EXTERN_CLASS_ATTRIBUTES
   #endif
 #else
   #if defined(HXCPP_DLL_EXPORT)
@@ -86,21 +100,17 @@
 typedef char HX_CHAR;
 
 
-#define HX_STRINGI(s,len) ::String( (const HX_CHAR *)(("\xff\xff\xff\xff" s)) + 4 ,len)
-
-#define HX_STRI(s) HX_STRINGI(s,sizeof(s)/sizeof(HX_CHAR)-1)
-
-#define HX_CSTRING(x) HX_STRI(x)
-
-#define HX_CSTRING2(wide,len,utf8) HX_STRI(utf8)
-
-#define HX_FIELD_EQ(name,field) !::memcmp(name.__s, field, sizeof(field)/sizeof(char))
-
 
 #if (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && !defined HXCPP_CHECK_POINTER
 #define HXCPP_CHECK_POINTER
 #endif
 
+#ifdef HX_WINRT
+
+#define WINRT_LOG(fmt, ...) {char buf[1024];sprintf_s(buf,1024,"****LOG: %s(%d): %s \n    [" fmt "]\n",__FILE__,__LINE__,__FUNCTION__, __VA_ARGS__);OutputDebugString(buf);}
+#define WINRT_PRINTF(fmt, ...) {char buf[2048];sprintf_s(buf,2048,fmt,__VA_ARGS__);OutputDebugString(buf);}
+
+#endif
 
 
 #ifdef BIG_ENDIAN
@@ -131,12 +141,49 @@ typedef char HX_CHAR;
   #endif
 #endif
 
+// HX_HCSTRING is for constant strings with built-in hashes
+//     HX_GC_CONST_ALLOC_BIT | HX_GC_STRING_HASH
+// HX_CSTRING is for constant strings without built-in hashes
+//     HX_GC_CONST_ALLOC_BIT
+// HX_GC_CONST_ALLOC_BIT = 0x80000000
+// HX_GC_STRING_HASH     = 0x00100000
+// HX_GC_STRING_CHAR16_T = 0x00200000
+
+// For making generated code easier to read
+#define HX_HASH_JOIN(A, B) A##B
+#define HX_JOIN_PARTS(A, B) HX_HASH_JOIN(A, B)
+#define HX_HASH_OF(A) #A
+#define HX_HASH_OF_W(A) HX_HASH_JOIN(u,#A)
+#define HX_STR_QUOTE(A) HX_HASH_OF(A)
+#define HX_STR_QUOTE_W(A) HX_HASH_OF_W(A)
+#define HX_HEX_QUOTE(hex) HX_STR_QUOTE(HX_JOIN_PARTS(\x,hex))
+#define HX_HEX_QUOTE_W(hex) HX_STR_QUOTE_W(HX_JOIN_PARTS(\x,hex))
 
 #ifdef HXCPP_BIG_ENDIAN
-#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((h3 h2 h1 h0 "\x80\x00\x00\x00" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
+
+#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( const_cast<char *>((h3 h2 h1 h0 "\x80\x10\x00\x00" s)) + 8 , sizeof(s)/sizeof(char)-1)
+#define HX_(s,h0,h1,h2,h3) ::String( const_cast<char *>(( HX_HEX_QUOTE(h3) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h0) "\x80\x10\x00\x00" s )) + 8 , sizeof(s)/sizeof(char)-1)
+#define HX_STRINGI(s,len) ::String( const_cast<char *>(("\x80\x00\x00\x00" s)) + 4 ,len)
+#define HX_W(s,h0,h1) ::String( const_cast<char16_t *>(( HX_HEX_QUOTE_W(h1) HX_HEX_QUOTE_W(h0) u"\x8030\x0000" s )) + 4, sizeof(s)/2-1, true)
+
 #else
-#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( (const HX_CHAR *)((h0 h1 h2 h3 "\x00\x00\x00\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
+
+#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( const_cast<char *>((h0 h1 h2 h3 "\x00\x00\x10\x80" s )) + 8 , sizeof(s)/sizeof(char)-1)
+#define HX_(s,h0,h1,h2,h3) ::String( const_cast<char *>(( HX_HEX_QUOTE(h0) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h3) "\x00\x00\x10\x80" s )) + 8 , sizeof(s)/sizeof(char)-1)
+#define HX_STRINGI(s,len) ::String( const_cast<char *>(("\x00\x00\x0\x80" s)) + 4 ,len)
+
+#define HX_W(s,h0,h1) ::String( const_cast<char16_t *>(( HX_HEX_QUOTE_W(h0) HX_HEX_QUOTE_W(h1) u"\x0000\x8030" s )) + 4, sizeof(s)/2-1, true)
+
 #endif
+
+
+#define HX_STRI(s) HX_STRINGI(s,sizeof(s)/sizeof(char)-1)
+#define HX_CSTRING(x) HX_STRI(x)
+#define HX_CSTRING2(wide,len,utf8) HX_STRI(utf8)
+#define HX_FIELD_EQ(name,field) !::memcmp(name.__s, field, sizeof(field)/sizeof(char))
+// No null check is performed....
+#define HX_QSTR_EQ(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length))
+
 
 
 #pragma warning(disable:4251)
@@ -150,9 +197,10 @@ typedef char HX_CHAR;
 // HXCPP includes...
 
 // Basic mapping from haxe -> c++
-
+#if (HXCPP_API_LEVEL<=330)
 typedef int Int;
 typedef bool Bool;
+#endif
 
 #ifdef HXCPP_FLOAT32
 typedef float Float;
@@ -181,24 +229,37 @@ namespace cpp
    #endif
    typedef float Float32;
    typedef double Float64;
+   typedef volatile int AtomicInt;
 };
 // Extended mapping - old way
 namespace haxe { namespace io { typedef unsigned char Unsigned_char__; } }
 
 // --- Forward decalarations --------------------------------------------
 
-namespace cpp { class CppInt32__; }
+class null;
 namespace hx { class Object; }
 namespace hx { class FieldRef; }
 namespace hx { class IndexRef; }
+namespace hx { class NativeInterface; }
+namespace hx { class StackContext; }
+namespace hx { template<typename T> class Native; }
 namespace hx { template<typename O> class ObjectPtr; }
 namespace cpp { template<typename S,typename H> class Struct; }
+namespace cpp { template<typename T> class Pointer; }
+namespace cpp { template<typename T> class Function; }
 template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {
    class Class_obj;
    typedef hx::ObjectPtr<hx::Class_obj> Class;
 }
+namespace cpp {
+     struct Variant;
+     class VirtualArray_obj;
+     class VirtualArray;
+     class CppInt32__;
+}
+
 
 #if (HXCPP_API_LEVEL < 320) && !defined(__OBJC__)
 typedef hx::Class Class;
@@ -210,7 +271,8 @@ class String;
 
 // Use an external routine to throw to avoid sjlj overhead on iphone.
 namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic Throw(Dynamic inDynamic); }
-namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES void CriticalError(const String &inError); }
+namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic Rethrow(Dynamic inDynamic); }
+namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES void CriticalError(const String &inError, bool inAllowFixup=false); }
 namespace hx { HXCPP_EXTERN_CLASS_ATTRIBUTES void NullReference(const char *type, bool allowFixup); }
 namespace hx { extern String sNone[]; }
 void __hxcpp_check_overflow(int inVal);
@@ -219,6 +281,7 @@ namespace hx
 {
 class MarkContext;
 
+
 class VisitContext
 {
 public:
@@ -226,7 +289,18 @@ public:
    virtual void visitAlloc(void **ioPtr)=0;
 };
 
+#if (HXCPP_API_LEVEL >= 330)
+typedef ::cpp::Variant Val;
+#else
+typedef ::Dynamic Val;
+#endif
 
+#ifdef HXCPP_GC_GENERATIONAL
+  #define HXCPP_GC_NURSERY
+#endif
+
+
+//#define HXCPP_COMBINE_STRINGS
 
 #if (HXCPP_API_LEVEL >= 313)
 enum PropertyAccessMode
@@ -248,35 +322,50 @@ typedef bool PropertyAccess;
 
 } // end namespace hx
 
-
+#define HX_COMMA ,
 
 
 // The order of these includes has been chosen to minimize forward declarations.
 // You should not include the individual files, just this one.
+
+// First time ...
 #include <hx/Macros.h>
+#include <cpp/Variant.h>
 #include <hx/ErrorCodes.h>
 #include <hx/GC.h>
+#include <hx/StackContext.h>
 #include "null.h"
 #include <hx/Object.h>
 #include "hxString.h"
 #include "Dynamic.h"
 #include <cpp/CppInt32__.h>
 // This needs to "see" other declarations ...
-#include <hx/GCTemplates.h>
+#include <hx/GcTypeInference.h>
 #include <hx/FieldRef.h>
-#include <hx/Anon.h>
 #include "Array.h"
+#include <hx/Anon.h>
 #include <hx/Class.h>
 #include "Enum.h"
 #include <hx/Interface.h>
 #include <hx/Telemetry.h>
+#if defined(__OBJC__) && defined(HXCPP_OBJC)
+  #include <hx/ObjcHelpers.h>
+#endif
 #include <hx/StdLibs.h>
 #include <cpp/Pointer.h>
+#include <hx/Native.h>
 #include <hx/Operators.h>
 #include <hx/Functions.h>
+// second time ...
+#include <cpp/Variant.h>
 #include <hx/Debug.h>
 #include <hx/Boot.h>
 #include <hx/Undefine.h>
+#if (HXCPP_API_LEVEL>=330)
+#include <hx/LessThanEq.h>
+#else
+#include <cpp/Int64.h>
+#endif
 
 #endif
 

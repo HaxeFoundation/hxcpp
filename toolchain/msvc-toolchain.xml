@@ -7,10 +7,14 @@
 
 <set name="USE_PRECOMPILED_HEADERS" value="msvc" unless="NO_PRECOMPILED_HEADERS" />
 
-<set name="ABI" value="-MT" unless="ABI"/>
-<set name="C_ABI" value="${ABI}" />
-
-<set name="ABI" value="-ZW" if="winrt" />
+<section if="winrt">
+   <set name="ABI" value="-ZW" unless="ABI" />
+   <set name="C_ABI" value="-MD" />
+</section>
+<section unless="winrt">
+   <set name="ABI" value="-MT" unless="ABI" />
+   <set name="C_ABI" value="${ABI}" />
+</section>
 <set name="CPP_ABI" value="${ABI}" />
 
 <set name="XPOBJ" value="xp" if="HXCPP_WINXP_COMPAT" />
@@ -34,11 +38,17 @@
 <set name="MACHINE" value="x86" />
 <set name="MACHINE" value="x64" if="HXCPP_M64" />
 
+<!-- Seem vc does not know how to start its own pdbserver in 64 bit mode -->
+<setup name="pdbserver" if="HXCPP_DEBUG_LINK HXCPP_HACK_PDBSRV HXCPP_FORCE_PDB_SERVER" />
+
+<set name="MSVC_ARCH" value="SSE2" unless="HXCPP_M64" />
+
+<set name="HXCPP_LTCG_INCREMENTAL" value="1" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
+<unset name="HXCPP_FAST_LINK" if="HXCPP_FAST_LINK" unless="MSVC19"/>
+
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
-  <flag value="-Od" if="debug"/>
-  <!-- -O2 is back ! -->
-  <flag value="-O2" unless="debug"/>
+
 
   <!-- Newer options -->
   <!-- <flag value = "/analyze-" if="MSVC17+" /> -->
@@ -46,6 +56,7 @@
   <flag value = "/fp:precise" if="MSVC17+" />
   <flag value = "-DWINAPI_FAMILY=WINAPI_FAMILY_APP" if="winrt" />
   <flag value = "-DHX_WINRT" if="winrt" />
+  <flag value = "-errorReport:prompt" if="winrt" />
 
   <cflag value="${C_ABI}" />
   <cppflag value="${CPP_ABI}" />
@@ -53,23 +64,40 @@
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-D${HXCPP_XP_DEFINE}" if="HXCPP_XP_DEFINE"/>
   <flag value="-GR"/>
+
+  <!-- standard optimization flags -->
+  <flag value="-Od" if="debug" tag="optim-std" />
+  <flag value="-O2" unless="debug" tag="optim-std" />
   <section if="HXCPP_DEBUG_LINK">
-     <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" />
-     <flag value="-Z7" if="HXCPP_COMPILE_CACHE" />
-     <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
-     <flag value="-Fd${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" />
+     <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" tag="optim-std" />
+     <flag value="-Z7" if="HXCPP_COMPILE_CACHE" tag="optim-std" />
+     <flag value="-Fd${HXCPP_BUILD_DIR}${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" tag="optim-std" />
   </section>
+
+  <!-- non-standard optimization flags -->
+  <flag value="-Zi" unless="HXCPP_COMPILE_CACHE" tag="debug" />
+  <flag value="-Z7" if="HXCPP_COMPILE_CACHE" tag="debug" />
+  <flag value="-Fd${HXCPP_BUILD_DIR}${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" tag="debug" />
+  <flag value="-Od" tag="debug" />
+  <flag value="-O2" tag="release" />
+  <flag value="-bigobj" if="debug"  />
+  <flag value="-Zc:inline" if="HXCPP_FAST_LINK" unless="debug || HXCPP_OPTIMIZE_LINK || HXCPP_LTCG_INCREMENTAL" /><!-- not available with -Od and -GL -->
+  <flag value="-Os" tag="optim-size" />
+  <flag value="-GL" if="HXCPP_OPTIMIZE_LINK || HXCPP_LTCG_INCREMENTAL" unless="debug"/>
+
+  <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
   <flag value="-c"/>
-  <flag value="-EHs"/>
+  <flag value="-EHs" unless="winrt"/>
+  <flag value="-EHsc" if="winrt"/>
   <flag value="-GS-"/>
-  <flag value="-arch:SSE" unless="HXCPP_M64" />
+  <flag value="-arch:${MSVC_ARCH}" if="MSVC_ARCH" />
   <flag value="-I${HXCPP}/include"/>
   <include name="toolchain/common-defines.xml" />
   <flag value="-D_CRT_SECURE_NO_DEPRECATE"/>
   <flag value="-D_ALLOW_MSC_VER_MISMATCH"/>
   <flag value="-D_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH"/>
-  <flag value="-DHX_WIN_MAIN" if="SUBSYSTEMWINDOWS" />
+  <flag value="-DHX_WIN_MAIN" if="SUBSYSTEMWINDOWS" tag="main" />
   <flag value="-wd4996"/>
   <outflag value="-Fo"/>
   <ext value=".obj"/>
@@ -82,22 +110,31 @@
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-dll"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <lib name="${dll_import_link}" if="dll_import_link" />
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
   <flag value="-libpath:lib"/>
   <fromfile value="@"/>
   <outflag value="-out:"/>
+  <flag value="user32.lib"/>
+  <libpathflag value="-libpath:"/>
 </linker>
 
 <linker id="exe" exe="link.exe" unless="winrt">
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <flag value="-subsystem:windows${SUBSYSTEM_VER}" if="SUBSYSTEMWINDOWS" />
   <flag value="-subsystem:console${SUBSYSTEM_VER}" if="SUBSYSTEMCONSOLE" />
+  <libpathflag value="-libpath:"/>
   <flag value="-libpath:lib"/>
   <flag value="user32.lib"/>
   <ext value=".exe"/>
@@ -108,24 +145,31 @@
 <linker id="exe" exe="link.exe" if="winrt">
   <fromfile value="@"/>
   <flag value="-nologo"/>
-  <flag value="-machine:x86"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
+  <flag value="-machine:${MACHINE}"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <flag value="-subsystem:windows" />
   <flag value="-MANIFEST:NO" />
   <flag value="-WINMD" />
   <flag value="-APPCONTAINER" />
-  <flag value="-WINMDFILE:obj/msvc${MSVC_VER}-rt${OBJEXT}/app.winmd" />
+  <flag value="-WINMDFILE:${MSVC_OBJ_DIR}/app.winmd" />
   <flag value="-DYNAMICBASE" />
   <flag value="-NXCOMPAT" />
   <flag value="-libpath:lib"/>
+  <libpathflag value="-libpath:"/>
   <flag value="user32.lib"/>
   <ext value=".exe"/>
   <outflag value="-out:"/>
 </linker>
 
 <linker id="static_link" exe="lib.exe" if="windows">
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <fromfile value="@"/>
   <flag value="-nologo"/>
+  <flag value="-IGNORE:4264" if="winrt" />
   <ext value="${LIBEXT}"/>
   <outflag value="-out:"/>
 </linker>

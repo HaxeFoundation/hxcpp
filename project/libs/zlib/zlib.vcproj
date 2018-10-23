@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\include;&quot;..\..\thirdparty\zlib-1.2.3&quot;"
+				AdditionalIncludeDirectories="..\..\..\include;&quot;..\..\thirdparty\zlib-1.2.11&quot;"
 				PreprocessorDefinitions="NEKO_SOURCES;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -117,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\..\include;&quot;..\..\thirdparty\zlib-1.2.3&quot;"
+				AdditionalIncludeDirectories="..\..\..\include;&quot;..\..\thirdparty\zlib-1.2.11&quot;"
 				PreprocessorDefinitions="NEKO_SOURCES;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -184,51 +184,63 @@
 				Name="libz"
 				>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\adler32.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\adler32.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\compress.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\compress.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\crc32.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\crc32.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\deflate.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\deflate.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\gzio.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\gzclose.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\infback.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\gzlib.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\inffast.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\gzread.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\inflate.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\gzwrite.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\inftrees.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\infback.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\trees.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\inffast.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\uncompr.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\inflate.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\thirdparty\zlib-1.2.3\zutil.c"
+					RelativePath="..\..\thirdparty\zlib-1.2.11\inftrees.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\zlib-1.2.11\trees.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\zlib-1.2.11\uncompr.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\zlib-1.2.11\zutil.c"
 					>
 				</File>
 			</Filter>

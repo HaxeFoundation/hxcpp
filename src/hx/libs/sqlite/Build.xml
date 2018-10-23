@@ -1,0 +1,25 @@
+<xml>
+
+<pragma once="true" />
+
+<set name="SQLITE_DIR" value="${HXCPP}/project/thirdparty/sqlite-3.23.1"/>
+
+<files id="hxcpp_sqlite" dir="${this_dir}" >
+  <depend files="hxcpp-depends"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <cache value="true" asLibrary="true" />
+
+  <compilerflag value="-I${SQLITE_DIR}"/>
+
+  <file name="Sqlite.cpp"/>
+
+  <depend name="${SQLITE_DIR}/sqlite3.h" />
+  <file name="${SQLITE_DIR}/sqlite3.c"/>
+</files>
+
+<target id="haxe">
+  <files id="hxcpp_sqlite"/>
+  <lib name="-lpthread" if="linux" unless="static_link" />
+</target>
+
+</xml>

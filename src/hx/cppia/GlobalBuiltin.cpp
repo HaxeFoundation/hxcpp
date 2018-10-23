@@ -122,6 +122,73 @@ public:
       BCR_VCHECK;
       FUNC(val0,val1,val2);
    }
+
+   #ifdef CPPIA_JIT
+   static void SLJIT_CALL setFloat(Array_obj<unsigned char> *inBuffer, int inAddr, double *inValue)
+   {
+      if (sizeof(ARG2)==sizeof(float))
+         __hxcpp_memory_set_float(inBuffer,inAddr,*inValue);
+      else
+         __hxcpp_memory_set_double(inBuffer,inAddr,*inValue);
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp obj(compiler,jtPointer);
+      args[0]->genCode(compiler, obj, etObject);
+
+      JitTemp addr(compiler,jtInt);
+      args[1]->genCode(compiler, addr, etInt);
+
+      JitTemp val(compiler,jtFloat);
+      args[2]->genCode(compiler, val, etFloat);
+
+      compiler->callNative( (void *)setFloat, obj, addr, val );
+   }
+  #endif
+
+};
+
+
+template<typename RET, RET (*FUNC)()>
+class FloatBuiltin0 : public CppiaExpr
+{
+public:
+   Expressions args;
+
+   FloatBuiltin0(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
+
+   const char *getName() { return "FloatBuiltin0"; }
+   ExprType getType() { return etFloat; }
+
+   int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
+   void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
+   String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
+   Float runFloat(CppiaCtx *ctx)
+   {
+      return  FUNC();
+   }
+   #ifdef CPPIA_JIT
+   static void SLJIT_CALL run(double *outResult)
+   {
+      *outResult = FUNC();
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      if (destType==etFloat && isMemoryVal(inDest) )
+      {
+         compiler->callNative( (void *)run, inDest.as(jtFloat));
+      }
+      else
+      {
+         JitTemp temp(compiler,jtFloat);
+         compiler->callNative( (void *)run, temp);
+         compiler->convert(temp, etFloat, inDest, destType);
+      }
+   }
+  #endif
 };
 
 template<typename ARG0, typename RET, RET (*FUNC)(ARG0)>
@@ -258,8 +325,14 @@ CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioE
          return new VoidBuiltin2<int,double,__hxcpp_memory_set_double>(src,ioExpressions);
       return new VoidBuiltin3<Array<unsigned char>,int,double,__hxcpp_memory_set_double>(src,ioExpressions);
    }
+   if (function==HX_CSTRING("__time_stamp") )
+   {
+      if (ioExpressions.size()==0)
+         return new FloatBuiltin0<double,__time_stamp>(src,ioExpressions);
+   }
 
-   printf("Unknown function : %s\n", function.__s );
+
+   printf("Unknown function : %s(%d)\n", function.__s, (int)ioExpressions.size() );
    throw "Unknown global";
    return 0;
 }

@@ -2,6 +2,8 @@ class RunTests
 {
    static var baseDir:String;
    static var errors = new Array<String>();
+   static var cppAst:Array<String> = [];
+   static var sysArgs = new Array<String>();
    static var binDir = "";
    static var ext = "";
    static var m64 = true;
@@ -13,7 +15,7 @@ class RunTests
    {
       setDir("cffi/project");
 
-      command("haxelib", ["run", "hxcpp", "build.xml", "-debug", '-D$m64Def'] );
+      command("haxelib", ["run", "hxcpp", "build.xml", "-debug", '-D$m64Def']);
 
       setDir("cffi");
       command("haxe", ["compile.hxml", "-debug"] );
@@ -31,34 +33,72 @@ class RunTests
    public static function runHaxe()
    {
       setDir("haxe");
-      command("haxe", ["compile.hxml", "-debug", "-D", m64Def] );
+      command("haxe", ["compile.hxml", "-debug", "-D", m64Def].concat(cppAst) );
       command("bin" + sep + "TestMain-debug",[]);
    }
 
-
-   public static function ndllDynamic()
+   public static function runTelemetry()
    {
-      setDir("ndlls");
+      setDir("telemetry");
+
+      // Telemetry should work in debug and non-debug modes
+      // TODO: do we need m64Def?
+      command("haxe", ["compile.hxml", "-debug"].concat(cppAst) );
+      command("bin" + sep + "TestMain-debug",[]);
+
+      command("haxe", ["compile.hxml"].concat(cppAst) );
+      command("bin" + sep + "TestMain",[]);
+
+   }
+
+
+   public static function debugger()
+   {
+      setDir("debugger");
+
+      command("haxe", ["compile.hxml"] );
+      command("bin" + sep + "App-debug",[]);
+   }
+
+   public static function opMatrix()
+   {
+      setDir("opMatrix");
+
+      command("haxe", ["--run","MkOps.hx"] );
+   }
+
+
+   public static function cppia()
+   {
+      setDir("cppia");
+
+      command("haxe", ["compile-host.hxml"] );
+      command("haxe", ["compile-client.hxml"] );
+      command("bin" + sep + "CppiaHost",[ "bin" + sep + "client.cppia" ]);
+   }
+
+   public static function native()
+   {
+      setDir("native");
+
+      command("haxe", ["compile.hxml"] );
+      command("bin" + sep + "Native",[]);
+   }
+
+   public static function std32()
+   {
+      setDir("std");
 
       command("haxe", ["compile32.hxml"] );
       command("cpp32"+sep+"Test",[]);
    }
 
-   public static function ndllDynamic64()
+   public static function std64()
    {
-      setDir("ndlls");
+      setDir("std");
 
       command("haxe", ["compile64.hxml"] );
       command("cpp64"+sep+"Test",[]);
-   }
-
-
-   public static function ndllStatic()
-   {
-      setDir("ndlls");
-
-      command("haxe", ["compile-static.hxml"]);
-      command("scpp"+sep+"Test",[]);
    }
 
 
@@ -78,7 +118,7 @@ class RunTests
 
    public static function run(name:String, func:Void->Void)
    {
-      var args = Sys.args();
+      var args = sysArgs;
       if (args.length>0 && args.indexOf(name)<0)
       {
          Sys.println("Skip test " + name);
@@ -129,15 +169,23 @@ class RunTests
             throw 'Unknown system "$systemName"';
       }
 
+      sysArgs = Sys.args();
+      if (sysArgs.remove("-cppast"))
+         cppAst = ["-D", "cppast"];
+
       m64Def = m64 ? "HXCPP_M64" : "HXCPP_M32";
             
       baseDir = Sys.getCwd();
 
+      run("cppia", cppia);
       run("cffi", cffi);
+      run("opMatrix", opMatrix);
       run("haxe", runHaxe);
-      run("ndll-dynamic", ndllDynamic);
-      run("ndll-static", ndllStatic);
-      run("ndll-64", ndllDynamic64);
+      run("telemetry", runTelemetry);
+      run("std32", std32);
+      run("std64", std64);
+      run("native", native);
+      run("debugger", debugger);
 
       Sys.println("");
 

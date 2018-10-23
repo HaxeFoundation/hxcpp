@@ -35,7 +35,7 @@
       hxcpp_main();
    }
 
-#elif defined(HX_WINRT)
+#elif defined(HX_WINRT) && defined(__cplusplus_winrt)
 
    #include <Roapi.h>
    [ Platform::MTAThread ]
@@ -59,19 +59,32 @@
 
 #else
 
-   #if defined(HX_WIN_MAIN) && !defined(HAVE_WINDOWS_H)
+   #if defined(HX_WIN_MAIN) && !defined(_WINDOWS_)
+   #ifndef HINSTANCE
+   #define HINSTANCE void*
+   #endif
+   #ifndef LPSTR
+   #define LPSTR char*
+   #endif
    extern "C" int __stdcall MessageBoxA(void *,const char *,const char *,int);
    #endif
 
 
    #if defined(TIZEN)
    extern "C" EXPORT_EXTRA int OspMain (int argc, char* pArgv[])
-   #elif defined(HX_WIN_MAIN)
-   int __stdcall WinMain( void * hInstance, void * hPrevInstance, const char *lpCmdLine, int nCmdShow)
-   #else
-   int main(int argc,char **argv)
-   #endif
    {
+   #elif defined(HX_WIN_MAIN)
+   int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+   {
+   #else
+
+   extern int _hxcpp_argc;
+   extern char **_hxcpp_argv;
+   int main(int argc,char **argv)
+   {
+      _hxcpp_argc = argc;
+      _hxcpp_argv = argv;
+   #endif
       HX_TOP_OF_STACK
       hx::Boot();
       try
@@ -91,6 +104,10 @@
       }
       return 0;
    }
+   #if 0
+   }
+   }
+   #endif
 
 #endif
 

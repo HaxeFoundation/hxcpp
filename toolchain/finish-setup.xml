@@ -14,6 +14,8 @@
 
 <set name="static_link" value="1" if="iphoneos" unless="dll_import||exe_link" />
 <set name="static_link" value="1" if="iphonesim" unless="dll_import||exe_link" />
+<set name="static_link" value="1" if="appletvos" unless="dll_import||exe_link" />
+<set name="static_link" value="1" if="appletvsim" unless="dll_import||exe_link" />
 
 <set name="LIBPREFIX" value="lib" if="static_link" unless="STATICLIBPREFIX" />
 <set name="LIBPREFIX" value="${STATICLIBPREFIX}" if="static_link" unless="LIBPREFIX" />
@@ -24,10 +26,16 @@
 <set name="PRIME" value="-p" if="HXCPP_JS_PRIME" />
 
 
-<set name="OBJEXT" value="${M64}${F32}${STAT}${DBG}${NOCONSOLE}${RPI}${APIFP}${PRIME}" />
+<set name="OBJDBG" value="-debug" if="debug" />
+<set name="OBJOPT" value="-fast" if="HXCPP_FAST_LINK" />
+<set name="HXCPP_OPTIMIZE_LINK_INCREMENTAL" value="1" if="HXCPP_FAST_LINK HXCPP_OPTIMIZE_LINK" unless="debug" />
+<set name="OBJOPT" value="-opt" if="HXCPP_OPTIMIZE_LINK" unless="debug" />
+<set name="OBJOPT" value="-optinc" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug" />
+<set name="OBJEXT" value="${M64}${F32}${STAT}${OBJDBG}${OBJOPT}${NOCONSOLE}${RPI}${APIFP}${PRIME}" />
 
 <set name="STD_MODULE_LINK" value="static_link" if="static_link"/>
 <set name="STD_MODULE_LINK" value="exe" if="HXCPP_JS_PRIME"/>
+
 
 
 <set name="LIBEXTRA" value=".iphonesim-64" if="iphonesim"/>
@@ -39,10 +47,18 @@
 	<set name="HXCPP_ARMV6" value="1" unless="LIBEXTRA"/>
 	<set name="LIBEXTRA" value=".iphoneos" if = "HXCPP_ARMV6"/>
 </section>
+<set name="LIBEXTRA" value=".appletvsim-64" if="appletvsim"/>
+<set name="LIBEXTRA" value=".appletvsim" if="appletvsim" unless="HXCPP_M64"/>
+<set name="LIBEXTRA" value=".watchos" if="watchos" />
+<set name="LIBEXTRA" value=".watchsimulator" if="watchsimulator" />
+<section if="appletvos">
+   <set name="LIBEXTRA" value=".appletvos-64" if="HXCPP_ARM64"/>
+</section>
 <set name="LIBEXTRA" value="-x86" if="blackberry"/>
 <set name="LIBEXTRA" value="" if="blackberry" unless="simulator" />
 <set name="LIBEXTRA" value="-x86" if="HXCPP_X86" />
-<set name="LIBEXTRA" value="-v7" if="HXCPP_ARMV7" unless="LIBEXTRA" />
+<set name="LIBEXTRA" value="-v7" if="HXCPP_ARMV7" unless="LIBEXTRA||linux" />
+<set name="LIBEXTRA" value="-64" if="HXCPP_ARM64" unless="LIBEXTRA||linux" />
 <set name="LIBEXTRA" value="-x86" if="tizen"/>
 <set name="LIBEXTRA" value="" if="tizen" unless="simulator" />
 <set name="LIBEXT" value=".a" />
@@ -55,9 +71,12 @@
 <set name="haxelink" value="dll" if="android" unless="static_link" />
 <set name="haxelink" value="exe" if="exe_link"/>
 <set name="haxelink" value="dll" if="dll_import"/>
+<set name="haxelink" value="dll" if="dll_link"/>
 
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphoneos"/>
 <set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="iphonesim"/>
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="appletvos"/>
+<set name="HXCPP_IOS_STDCPP" value="1" unless="HXCPP_CPP11" if="appletvsim"/>
 
 <set name="DESTDIR" value="bin" />
 <set name="DESTDIR" value="lib" if="static_link" unless="HXCPP_IOS_STDCPP"/>
@@ -65,18 +84,36 @@
 <set name="NDLLDIR" value="lib" if="static_link" />
 
 
-<set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" />
+<!-- <set name="IPHONE_VER" value="4.2" unless="IPHONE_VER" /> -->
 
-<set name="HXCPP_DEBUG_LINK" value="1" if="debug"/>
+<set name="HXCPP_DEBUG_LINK" value="1" if="debug" unless="HXCPP_NO_DEBUG_LINK" />
+
+<set name="HX_LINK_SUFFIX" value="${LIBEXTRA}" />
+<set name="HX_TARGET_SUFFIX" value="${LIBEXTRA}" />
+<set name="HX_TARGET_PREFIX" value="${LIBPREFIX}" />
 
 <section if="isMsvc">
    <section unless="HXCPP_M64">
+      <set name="HXCPP_NO_WINXP_COMPAT" value="1" if="HX_WINRT || winrt" />
       <set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
    </section>
    <setup name="msvc"/>
 
    <section if="static_link" >
       <set name="MSVC_LIB_VERSION" value="-${MSVC_VER}" />
+   </section>
+
+   <set name="LIBEXTRA" value="-19" if="MSVC19" />
+   <set name="HX_LINK_SUFFIX" value="-19" if="MSVC19" />
+   <set name="HX_TARGET_SUFFIX" value="-19" if="MSVC19 static_link" />
+
+   <section if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug || MSVC19">
+      <echo value="Warning: INCREMENTAL requies Visual Studio 2015+"/>
+      <!-- without INCREMENTAL -->
+      <unset name="HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
+      <set name="HXCPP_OPTIMIZE_LINK" value="1"/> 
+      <set name="OBJOPT" value="-opt" if="HXCPP_OPTIMIZE_LINK || HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug" />
+      <set name="OBJEXT" value="${M64}${F32}${STAT}${OBJDBG}${OBJOPT}${NOCONSOLE}${RPI}${APIFP}${PRIME}" />
    </section>
 </section>
 </xml>

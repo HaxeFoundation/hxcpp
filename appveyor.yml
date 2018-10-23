@@ -6,41 +6,22 @@ environment:
     global:
         HAXE_ROOT: C:\projects\haxe
         HAXELIB_ROOT: C:\projects\haxelib
-        CYG_ARCH: x86
-        CYG_ROOT: C:\cygwin
-        CYG_SETUP: C:\cygwin\setup-x86.exe
-        WODI: wodi32
-        ADD_REVISION: 1
-        OCAMLOPT: ocamlopt.opt
-        MINGW_ARCH: i686
     matrix:
         - HXCPP_ARCH: "32"
         - HXCPP_ARCH: "64"
 
 install:
-    # Install ocaml using wodi
-    - appveyor DownloadFile "http://cygwin.com/setup-%CYG_ARCH%.exe" -FileName "%CYG_ROOT%\setup.exe"
-    - '%CYG_ROOT%\setup.exe -g -q -R "%CYG_ROOT%" -P dos2unix -P diffutils -P cpio -P make -P patch -P mingw64-%MINGW_ARCH%-gcc-core -P mingw64-%MINGW_ARCH%-gcc-g++ > log.txt || type log.txt'
-    - '%CYG_ROOT%\bin\bash -lc "cygcheck -dc cygwin" > log.txt || type log.txt'
-    # The archive is a dropbox hosted version of https://github.com/fdopen/godi-repo/issues/7#issuecomment-98480339
-    - '%CYG_ROOT%\bin\bash -lc "wget -q https://dl.dropboxusercontent.com/u/2661116/wodi/%WODI%.tar.xz -O /tmp/%WODI%.tar.xz" > log.txt || type log.txt'
-    - '%CYG_ROOT%\bin\bash -lc "cd /tmp && rm -rf %WODI% && tar -xf %WODI%.tar.xz && bash %WODI%/install.sh" > log.txt || type log.txt'
-    - '%CYG_ROOT%\bin\bash -lc "godi_add godi-zip" > log.txt || type log.txt'
-    - 'set PATH=%PATH%;%CYG_ROOT%\opt\%WODI%\bin'
-    # Install neko. Just download the chocolatey package instead of building from source in order to save time...
-    - cinst neko -y
+    # Install neko and haxe. Just download the chocolatey package instead of building from source in order to save time...
+    - ps: Set-Service wuauserv -StartupType Manual
+    - cinst neko --version 2.2.0 -y
+    - cinst haxe --prerelease --ignore-dependencies -s 'https://ci.appveyor.com/nuget/haxe' -y
     - RefreshEnv
     - neko -version
-    # Install haxe
-    - git clone --recursive --depth 1 -q https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
-    - 'cd %HAXE_ROOT%'
-    - 'set PATH=%PATH%;%HAXE_ROOT%'
-    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win"'
-    - '%CYG_ROOT%\bin\bash -lc "cd \"$OLDPWD\" && make -s -f Makefile.win tools"'
     - haxe -version
-    - cd %APPVEYOR_BUILD_FOLDER%
+    # Setup haxelib
     - mkdir "%HAXELIB_ROOT%"
     - haxelib setup "%HAXELIB_ROOT%"
+    - haxelib install record-macros
 
 build_script:
     - haxelib dev hxcpp %APPVEYOR_BUILD_FOLDER%
@@ -48,14 +29,13 @@ build_script:
     - haxe compile.hxml
     - cd %APPVEYOR_BUILD_FOLDER%\tools\hxcpp
     - haxe compile.hxml
-    - cd %APPVEYOR_BUILD_FOLDER%\project
-    - neko build.n windows-m%HXCPP_ARCH% -verbose
 
 test_script:
-    - cd %APPVEYOR_BUILD_FOLDER%\test\ndlls
+    - cd %APPVEYOR_BUILD_FOLDER%\test\std
     - haxe compile%HXCPP_ARCH%.hxml && .\cpp%HXCPP_ARCH%\Test
     - cd %APPVEYOR_BUILD_FOLDER%\test\haxe
     - haxe compile.hxml -debug -D HXCPP_M%HXCPP_ARCH% && .\bin\TestMain-debug
     # tests from haxe repo
+    - git clone --recursive --depth 1 -q https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
     - cd %HAXE_ROOT%\tests\unit
-    - haxe compile-cpp.hxml -D HXCPP_M%HXCPP_ARCH% && .\bin\cpp\Test-debug
+    - haxe compile-cpp.hxml -D HXCPP_M%HXCPP_ARCH% && .\bin\cpp\TestMain-debug

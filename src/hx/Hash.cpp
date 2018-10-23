@@ -1,11 +1,9 @@
 #include <hxcpp.h>
-//#include <hx/CFFI.h>
 #include "Hash.h"
 
 
 using namespace hx;
 
-//#define HX_DYNAMIC_HASH_VALUES
 
 // --- IntHash ----------------------------------------------------
 
@@ -18,21 +16,18 @@ typedef hx::Hash< TIntElement<Float> >   IntHashFloat;
 typedef hx::Hash< TIntElement<String> >  IntHashString;
 }
 
-void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
+void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
-      #ifdef HX_DYNAMIC_HASH_VALUES
-      hash = new IntHashObject();
-      #else
       if (value==null())
       {
          hash = new IntHashObject();
       }
       else
       {
-         ObjectType type = (ObjectType)value->__GetType();
+         hxObjectType type = (hxObjectType)value->__GetType();
          if (type==vtInt)
             hash = new IntHashInt();
          else if (type==vtFloat)
@@ -42,15 +37,15 @@ void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
          else // Object or bool
             hash = new IntHashObject();
       }
-      #endif
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store!=hashObject)
    {
       HashStore want = hashObject;
       if (value!=null())
       {
-         ObjectType type = (ObjectType)value->__GetType();
+         hxObjectType type = (hxObjectType)value->__GetType();
          if ( type==vtInt)
          {
             if (hash->store==hashFloat)
@@ -73,74 +68,82 @@ void __int_hash_set(Dynamic &ioHash,int inKey,const Dynamic &value)
       {
          hash = hash->convertStore(want);
          ioHash = hash;
+         HX_OBJ_WB_GET(owner,hash);
       }
    }
 
-   ioHash.mPtr = hash->set(inKey,value);
+   hash->set(inKey,value);
 }
 
-void __int_hash_set_int(Dynamic &ioHash,int inKey,int inValue)
+void __int_hash_set_int(HX_MAP_THIS_ARG,int inKey,int inValue)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
       hash = new IntHashInt();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
-void __int_hash_set_float(Dynamic &ioHash,int inKey,Float inValue)
+void __int_hash_set_float(HX_MAP_THIS_ARG,int inKey,Float inValue)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
       hash = new IntHashFloat();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt)
    {
       hash = hash->convertStore(hashFloat);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
 
-void __int_hash_set_string(Dynamic &ioHash,int inKey, ::String inValue)
+void __int_hash_set_string(HX_MAP_THIS_ARG,int inKey, ::String inValue)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
       hash = new IntHashString();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt || hash->store==hashFloat)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
-Dynamic  __int_hash_get(Dynamic &ioHash,int inKey)
+Dynamic  __int_hash_get(Dynamic inHash,int inKey)
 {
-   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
+   IntHashBase *hash = static_cast<IntHashBase *>(inHash.GetPtr());
    if (!hash)
       return null();
 
@@ -148,6 +151,42 @@ Dynamic  __int_hash_get(Dynamic &ioHash,int inKey)
    hash->query(inKey,result);
    return result;
 }
+
+int  __int_hash_get_int(Dynamic inHash,int inKey)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return 0;
+
+   int result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+
+Float  __int_hash_get_float(Dynamic inHash,int inKey)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return 0;
+
+   Float result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+String  __int_hash_get_string(Dynamic inHash,int inKey)
+{
+   IntHashBase *hash = static_cast<IntHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return String();
+
+   String result;
+   hash->query(inKey,result);
+   return result;
+}
+
+
 
 
 bool  __int_hash_exists(Dynamic &ioHash,int inKey)
@@ -166,11 +205,11 @@ bool  __int_hash_remove(Dynamic &ioHash,int inKey)
    return hash->remove(inKey);
 }
 
-Array<Int> __int_hash_keys(Dynamic &ioHash)
+Array<int> __int_hash_keys(Dynamic &ioHash)
 {
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (!hash)
-      return Array_obj<Int>::__new();
+      return Array_obj<int>::__new();
    return hash->keys();
 }
 
@@ -207,21 +246,18 @@ typedef hx::Hash< TStringElement<String> >  StringHashString;
 }
 
 
-void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool inForceDynamic)
+void __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value, bool inForceDynamic)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
-      #ifdef HX_DYNAMIC_HASH_VALUES
-      hash = new StringHashObject();
-      #else
       if (inForceDynamic || value==null() )
       {
          hash = new StringHashObject();
       }
       else
       {
-         ObjectType type = (ObjectType)value->__GetType();
+         hxObjectType type = (hxObjectType)value->__GetType();
          if (type==vtInt)
          {
             hash = new StringHashInt();
@@ -233,15 +269,15 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
          else
             hash = new StringHashObject();
       }
-      #endif
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store!=hashObject)
    {
       HashStore want = hashObject;
       if (value!=null())
       {
-         ObjectType type = (ObjectType)value->__GetType();
+         hxObjectType type = (hxObjectType)value->__GetType();
          if (type==vtInt)
          {
             if (hash->store==hashFloat)
@@ -264,74 +300,82 @@ void __string_hash_set(Dynamic &ioHash,String inKey,const Dynamic &value, bool i
       {
          hash = hash->convertStore(want);
          ioHash = hash;
+         HX_OBJ_WB_GET(owner,hash);
       }
    }
 
-   ioHash.mPtr = hash->set(inKey,value);
+   hash->set(inKey,value);
 }
 
-void __string_hash_set_int(Dynamic &ioHash,String inKey,int inValue)
+void __string_hash_set_int(HX_MAP_THIS_ARG,String inKey,int inValue)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
       hash = new StringHashInt();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
-void __string_hash_set_float(Dynamic &ioHash,String inKey,Float inValue)
+void __string_hash_set_float(HX_MAP_THIS_ARG,String inKey,Float inValue)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
       hash = new StringHashFloat();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt)
    {
       hash = hash->convertStore(hashFloat);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
 
-void __string_hash_set_string(Dynamic &ioHash,String inKey, ::String inValue)
+void __string_hash_set_string(HX_MAP_THIS_ARG,String inKey, ::String inValue)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
       hash = new StringHashString();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt || hash->store==hashFloat)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
-Dynamic  __string_hash_get(Dynamic &ioHash,String inKey)
+Dynamic  __string_hash_get(Dynamic inHash,String inKey)
 {
-   StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
+   StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
    if (!hash)
       return null();
 
@@ -339,6 +383,41 @@ Dynamic  __string_hash_get(Dynamic &ioHash,String inKey)
    hash->query(inKey,result);
    return result;
 }
+
+int  __string_hash_get_int(Dynamic inHash,String inKey)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   int result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+
+Float  __string_hash_get_float(Dynamic inHash,String inKey)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   Float result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+String  __string_hash_get_string(Dynamic inHash,String inKey)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   String result;
+   hash->query(inKey,result);
+   return result;
+}
+
 
 
 bool  __string_hash_exists(Dynamic &ioHash,String inKey)
@@ -379,7 +458,14 @@ String __string_hash_to_string(Dynamic &ioHash)
    if (hash)
       return hash->toString();
    return HX_CSTRING("{}");
+}
 
+String __string_hash_to_string_raw(Dynamic &ioHash)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
+   if (hash)
+      return hash->toStringRaw();
+   return null();
 }
 
 
@@ -403,25 +489,25 @@ typedef hx::Hash< TDynamicElement<int,true> >    WeakDynamicHashInt;
 typedef hx::Hash< TDynamicElement<Float,true> >   WeakDynamicHashFloat;
 typedef hx::Hash< TDynamicElement<String,true> >  WeakDynamicHashString;
 
+#if (HXCPP_API_LEVEL<331)
 inline void toRealObject(Dynamic &ioObject)
 {
    if (ioObject!=null())
       ioObject = ioObject->__GetRealObject();
 }
+#else
+   #define toRealObject(x)
+#endif
 
 }
 
 
-void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool inWeakKeys)
+void __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool inWeakKeys)
 {
    toRealObject(inKey);
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
    if (!hash)
    {
-      #ifdef HX_DYNAMIC_HASH_VALUES
-      hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
-                          (DynamicHashBase *)new DynamicHashObject();
-      #else
       if (value==null())
       {
          hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
@@ -429,7 +515,7 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
       }
       else
       {
-         ObjectType type = (ObjectType)value->__GetType();
+         hxObjectType type = (hxObjectType)value->__GetType();
          if (type==vtInt)
          {
             hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashInt() :
@@ -445,15 +531,15 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
             hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
                                 (DynamicHashBase *)new DynamicHashObject();
       }
-      #endif
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store!=hashObject)
    {
       HashStore want = hashObject;
       if (value!=null())
       {
-         ObjectType type = (ObjectType)value->__GetType();
+         hxObjectType type = (hxObjectType)value->__GetType();
          if (type==vtInt)
          {
             if (hash->store==hashFloat)
@@ -476,13 +562,14 @@ void __object_hash_set(Dynamic &ioHash,Dynamic inKey,const Dynamic &value,bool i
       {
          hash = hash->convertStore(want);
          ioHash = hash;
+         HX_OBJ_WB_GET(owner,hash);
       }
    }
 
-   ioHash.mPtr = hash->set(inKey,value);
+   hash->set(inKey,value);
 }
 
-void __object_hash_set_int(Dynamic &ioHash,Dynamic inKey,int inValue,bool inWeakKeys)
+void __object_hash_set_int(HX_MAP_THIS_ARG,Dynamic inKey,int inValue,bool inWeakKeys)
 {
    toRealObject(inKey);
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
@@ -491,18 +578,20 @@ void __object_hash_set_int(Dynamic &ioHash,Dynamic inKey,int inValue,bool inWeak
       hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashInt() :
                           (DynamicHashBase *)new DynamicHashInt();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
-void __object_hash_set_float(Dynamic &ioHash,Dynamic inKey,Float inValue,bool inWeakKeys)
+void __object_hash_set_float(HX_MAP_THIS_ARG,Dynamic inKey,Float inValue,bool inWeakKeys)
 {
    toRealObject(inKey);
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
@@ -511,24 +600,27 @@ void __object_hash_set_float(Dynamic &ioHash,Dynamic inKey,Float inValue,bool in
       hash = inWeakKeys ?  (DynamicHashBase *)new WeakDynamicHashFloat() :
                            (DynamicHashBase *)new DynamicHashFloat();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashString)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt)
    {
       hash = hash->convertStore(hashFloat);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
 
 
-void __object_hash_set_string(Dynamic &ioHash,Dynamic inKey, ::String inValue,bool inWeakKeys)
+void __object_hash_set_string(HX_MAP_THIS_ARG,Dynamic inKey, ::String inValue,bool inWeakKeys)
 {
    toRealObject(inKey);
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
@@ -537,20 +629,22 @@ void __object_hash_set_string(Dynamic &ioHash,Dynamic inKey, ::String inValue,bo
       hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashString() :
                           (DynamicHashBase *)new DynamicHashString();
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
    else if (hash->store==hashInt || hash->store==hashFloat)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
    }
 
-   ioHash.mPtr = hash->set(inKey,inValue);
+   hash->set(inKey,inValue);
 }
 
-Dynamic  __object_hash_get(Dynamic &ioHash,Dynamic inKey)
+Dynamic  __object_hash_get(Dynamic inHash,Dynamic inKey)
 {
    toRealObject(inKey);
-   DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
    if (!hash)
       return null();
 
@@ -558,6 +652,47 @@ Dynamic  __object_hash_get(Dynamic &ioHash,Dynamic inKey)
    hash->query(inKey,result);
    return result;
 }
+
+
+int  __object_hash_get_int(Dynamic inHash,Dynamic inKey)
+{
+   toRealObject(inKey);
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   int result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+
+Float  __object_hash_get_float(Dynamic inHash,Dynamic inKey)
+{
+   toRealObject(inKey);
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   Float result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
+
+String  __object_hash_get_string(Dynamic inHash,Dynamic inKey)
+{
+   toRealObject(inKey);
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   String result;
+   hash->query(inKey,result);
+   return result;
+}
+
+
 
 
 bool  __object_hash_exists(Dynamic &ioHash,Dynamic inKey)

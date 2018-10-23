@@ -1,6 +1,6 @@
-   #include <hxcpp.h>
+#include <hxcpp.h>
 #include <stdio.h>
-// Get headers etc.
+#include <hx/Memory.h>
 #include <hx/OS.h>
 
 #define IGNORE_CFFI_API_H
@@ -18,6 +18,8 @@ namespace hx
 class Abstract_obj : public Object
 {
 public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdAbstract };
+
    Abstract_obj(int inType,void *inData)
    {
       mType = inType;
@@ -35,7 +37,7 @@ public:
       if (inSize)
       {
          mMarkSize = inSize;
-         mHandle = malloc(inSize);
+         mHandle = HxAlloc(inSize);
          memset(mHandle,0,mMarkSize);
       }
 
@@ -54,8 +56,7 @@ public:
 
    void __Mark(hx::MarkContext *__inCtx)
    {
-      if (mFinalizer)
-         mFinalizer->Mark();
+      HX_MARK_MEMBER(_hxcpp_toString);
       if (mMarkSize>=sizeof(void *) && mHandle)
       {
          hx::MarkConservative((int *)mHandle, ((int *)mHandle) + (mMarkSize/sizeof(int)), __inCtx );
@@ -65,6 +66,7 @@ public:
    #ifdef HXCPP_VISIT_ALLOCS
    void __Visit(hx::VisitContext *__inCtx)
    {
+      HX_VISIT_MEMBER(_hxcpp_toString);
       if (mFinalizer)
          mFinalizer->Visit(__inCtx);
    }
@@ -90,10 +92,44 @@ public:
       SetFinalizer(0);
       mType = 0;
       if (mMarkSize && mHandle)
-         free(mHandle);
+         HxFree(mHandle);
       mHandle = 0;
    }
 
+   String toString()
+   {
+      if (_hxcpp_toString.mPtr)
+         return _hxcpp_toString( Dynamic(this) );
+
+      char buffer[40];
+      sprintf(buffer,"0x%p", mHandle);
+
+      return HX_CSTRING("Abstract(") +
+             __hxcpp_get_kind(this) +
+             HX_CSTRING(":") +
+             String(buffer,strlen(buffer)).dup() +
+             HX_CSTRING(")");
+   }
+
+   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp)
+   {
+      if (inString==HX_CSTRING("_hxcpp_toString")) return _hxcpp_toString;
+      if (inString==HX_CSTRING("_hxcpp_kind")) return __hxcpp_get_kind(this);
+      return hx::Object::__Field(inString, inCallProp);
+   }
+
+   hx::Val __SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+   {
+      if (inName==HX_CSTRING("_hxcpp_toString"))
+      {
+         _hxcpp_toString = inValue;
+         return inValue;
+      }
+      return hx::Object::__SetField(inName, inValue,inCallProp);
+   }
+
+
+   Dynamic _hxcpp_toString;
    hx::InternalFinalizer *mFinalizer;
    void *mHandle;
    int mType;
@@ -359,6 +395,14 @@ char * val_dup_string(value inVal)
    #endif
 }
 
+
+char *alloc_string_data(const char *inData, int inLength)
+{
+   String val(inData,inLength);
+   val.dup();
+   return (char *)val.__s;
+}
+
 hx::Object *alloc_string_len(const char *inStr,int inLen)
 {
 #ifdef HX_UTF8_STRINGS
@@ -400,8 +444,22 @@ void val_array_set_i(hx::Object * arg1,int arg2,hx::Object *inVal)
 
 void val_array_set_size(hx::Object * arg1,int inLen)
 {
+   #if (HXCPP_API_LEVEL<330)
    if (arg1==0) return;
    arg1->__SetSize(inLen);
+   #else
+   hx::ArrayBase *base = dynamic_cast<hx::ArrayBase *>(arg1);
+   if (base)
+   {
+      base->__SetSize(inLen);
+   }
+   else
+   {
+      cpp::VirtualArray_obj *va = dynamic_cast<cpp::VirtualArray_obj *>(arg1);
+      if (va)
+         va->__SetSize(inLen);
+   }
+   #endif
 }
 
 void val_array_push(hx::Object * arg1,hx::Object *inValue)
@@ -424,6 +482,11 @@ hx::Object * alloc_array(int arg1)
 // Resizing the array may invalidate the pointer
 bool * val_array_bool(hx::Object * arg1)
 {
+   #if (HXCPP_API_LEVEL>330)
+   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   if (!common) return 0;
+   arg1 = common->__GetRealObject();
+   #endif
    Array_obj<bool> *a = dynamic_cast< Array_obj<bool> * >(arg1);
    if (a==0)
       return 0;
@@ -433,6 +496,11 @@ bool * val_array_bool(hx::Object * arg1)
 
 int * val_array_int(hx::Object * arg1)
 {
+   #if (HXCPP_API_LEVEL>330)
+   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   if (!common) return 0;
+   arg1 = common->__GetRealObject();
+   #endif
    Array_obj<int> *a = dynamic_cast< Array_obj<int> * >(arg1);
    if (a==0)
       return 0;
@@ -442,6 +510,11 @@ int * val_array_int(hx::Object * arg1)
 
 double * val_array_double(hx::Object * arg1)
 {
+   #if (HXCPP_API_LEVEL>330)
+   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   if (!common) return 0;
+   arg1 = common->__GetRealObject();
+   #endif
    Array_obj<double> *a = dynamic_cast< Array_obj<double> * >(arg1);
    if (a==0)
       return 0;
@@ -451,6 +524,11 @@ double * val_array_double(hx::Object * arg1)
 
 float * val_array_float(hx::Object * arg1)
 {
+   #if (HXCPP_API_LEVEL>330)
+   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   if (!common) return 0;
+   arg1 = common->__GetRealObject();
+   #endif
    Array_obj<float> *a = dynamic_cast< Array_obj<float> * >(arg1);
    if (a==0)
       return 0;
@@ -506,7 +584,7 @@ value buffer_to_string(buffer inBuffer)
 {
    ByteArray b = (ByteArray) inBuffer;
    String str(b->GetBase(),b->length);
-        Dynamic d(str);
+   Dynamic d(str);
    return (value)d.GetPtr();
 }
 
@@ -717,7 +795,7 @@ void val_iter_field_vals(hx::Object *inObj, __hx_field_iter inFunc ,void *inCook
 
       for(int i=0;i<fields->length;i++)
       {
-         inFunc((value)inObj->__Field(fields[i], HX_PROP_NEVER ).mPtr, __hxcpp_field_to_id(fields[i].__CStr()), inCookie);
+         inFunc((value)Dynamic(inObj->__Field(fields[i], HX_PROP_NEVER )).mPtr, __hxcpp_field_to_id(fields[i].__CStr()), inCookie);
       }
    }
 }
@@ -812,57 +890,17 @@ void gc_change_managed_memory(int inDelta, const char *inWhy)
 }
 
 
-
-class Root *sgRootHead = 0;
-
-class Root
-{
-public:
-   Root()
-   {
-      mNext = 0;
-      mPrev = 0;
-      mValue = 0;
-      hx::GCAddRoot(&mValue);
-   }
-   ~Root()
-   {
-      hx::GCRemoveRoot(&mValue);
-   }
-
-   Root *mNext;
-   Root *mPrev;
-   hx::Object *mValue;
-};
-
-
-
 value *alloc_root()
 {
-   if (!sgRootHead)
-      sgRootHead = new Root;
-
-   Root *root = new Root;
-   root->mNext = sgRootHead->mNext;
-   if (root->mNext)
-      root->mNext->mPrev = root;
-
-   sgRootHead->mNext = root;
-   root->mPrev = sgRootHead;
-
-   return (value *)&root->mValue;
+   hx::Object ** result = new hx::Object *();
+   hx::GCAddRoot(result);
+   return (value *)result;
 }
 
 void free_root(value *inValue)
 {
-   int diff =(char *)(&sgRootHead->mValue) - (char *)sgRootHead;
-   Root *root = (Root *)( (char *)inValue - diff );
-
-   if (root->mPrev)
-      root->mPrev->mNext = root->mNext;
-   if (root->mNext)
-      root->mNext->mPrev = root->mPrev;
-
+   hx::Object **root = (hx::Object **) inValue;
+   hx::GCRemoveRoot(root);
    delete root;
 }
 
@@ -886,7 +924,8 @@ void gc_exit_blocking()
 
 void gc_safe_point()
 {
-   __SAFE_POINT;
+   if (hx::gPauseForCollect)
+      hx::PauseForCollect();
 }
 
 gcroot create_root(value) { return 0; }

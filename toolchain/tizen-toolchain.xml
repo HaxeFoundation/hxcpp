@@ -19,8 +19,16 @@
 	<set name="EXEPREFIX" value="arm-linux-gnueabi" />
 </section>
 
-<set name="TIZEN_PLATFORM" value="${TIZEN_SDK}/platforms/tizen2.2/rootstraps/tizen-${PLATFORM_TYPE}-2.2.native" />
-<path name="${TIZEN_SDK}/tools/${EXEPREFIX}-gcc-4.5/bin" />
+
+<section if="TIZEN_22" >
+   <set name="TIZEN_PLATFORM" value="${TIZEN_SDK}/platforms/tizen2.2/rootstraps/tizen-${PLATFORM_TYPE}-2.2.native" />
+   <path name="${TIZEN_SDK}/tools/${EXEPREFIX}-gcc-4.5/bin" />
+</section>
+
+<section unless="TIZEN_22" >
+   <set name="TIZEN_PLATFORM" value="${TIZEN_SDK}/platforms/mobile-2.3/rootstraps/mobile-2.3-${PLATFORM_TYPE}.core" />
+   <path name="${TIZEN_SDK}/tools/${EXEPREFIX}-gcc-4.8/bin" />
+</section>
  
 <include name="toolchain/gcc-toolchain.xml"/>
 

@@ -1,8 +1,12 @@
 #ifndef HX_CPPIA_COMPILER_H_INCLUDED
 #define HX_CPPIA_COMPILER_H_INCLUDED
 
-#ifdef HX_ARM // TODO v7, 64
+#if HXCPP_ARMV5
   #define SLJIT_CONFIG_ARM_V5 1
+#elif HXCPP_ARMV7
+  #define SLJIT_CONFIG_ARM_V7 1
+#elif HXCPP_ARM64
+  #define SLJIT_CONFIG_ARM_64 1
 #else
    #ifdef HXCPP_M64
       #define SLJIT_CONFIG_X86_64 1
@@ -17,311 +21,474 @@
 #include <vector>
 
 
+#define TRY_NATIVE try {
+#define CATCH_NATIVE } catch(Dynamic e) {  CppiaCtx::getCurrent()->exception = e.mPtr ? e.mPtr : Dynamic(String("",0)).mPtr; }
+
+
+extern "C" struct sljit_jump;
+extern "C" struct sljit_label;
+
 namespace hx
 {
 
-struct Addr
+enum JitPosition
 {
-   inline Addr(sljit_si inBase, sljit_sw inMod=0) : base(inBase), mod(inMod) { }
-   Addr offset(int inDelta) const { return Addr(base,mod+inDelta); }
-   bool operator==(const Addr &a) const { return a.base==base && a.mod==mod; }
-   bool operator!=(const Addr &a) const { return a.base!=base || a.mod!=mod; }
-   sljit_si base;
-   sljit_sw mod;
+   jposDontCare,
+   jposCtx,
+   jposFrame,
+   jposLocal,
+   jposThis,
+   jposArray,
+   jposRegister,
+   jposStar,
+   jposStarReg,
+   jposPointerVal,
+   jposIntVal,
+   //jposFloatVal,
 };
 
-struct AddrVoid : public Addr
+enum JitType
 {
-   AddrVoid() : Addr(SLJIT_UNUSED,0) { }
-};
-
-struct Reg : public Addr
-{
-   inline Reg(int inReg) : Addr(SLJIT_R0+inReg) { }
-   int getReg() const { return base; }
-};
-
-
-struct FReg : public Reg
-{
-   inline FReg(int inReg) : Reg(SLJIT_FR0+inReg) { }
-};
-
-
-
-struct SReg : public Reg
-{
-   inline SReg(int inReg) : Reg(SLJIT_S(inReg)-SLJIT_R0) { }
-};
-
-struct SRegMem : public Addr
-{
-   inline SRegMem(int inReg,int inOffset=0) : Addr(SLJIT_FS(inReg),inOffset) { }
+  jtAny,
+  jtPointer,
+  jtString,
+  jtFloat,
+  jtInt,
+  jtByte,
+  jtShort,
+  jtVoid,
+  jtUnknown,
 };
 
 
+JitType getJitType(ExprType inType);
+int getJitTypeSize(JitType inType);
 
 
-struct CtxReg : public SReg
+struct JitStringMultiArg
 {
-   inline CtxReg() : SReg(0) { }
+   int length;
+   const HX_CHAR *__s;
+};
+
+// double-aligned
+union JitMultiArg
+{
+   int        ival;
+   double     dval;
+   hx::Object *obj;
+   JitStringMultiArg sval;
+};
+
+struct JitVal
+{
+   JitPosition    position;
+   JitType        type;
+   union
+   {
+     struct
+     {
+        int offset;
+        unsigned short reg0;
+        unsigned short reg1;
+     };
+     void   *pVal;
+     double dVal;
+     int    iVal;
+   };
+
+   JitVal(JitType inType=jtVoid, size_t inOffset=0, JitPosition inPosition=jposDontCare,int inReg0=0, int inReg1=0)
+   { 
+      position = inPosition;
+      type = inType;
+      offset = (int)inOffset;
+      reg0 = inReg0;
+      reg1 = inReg1;
+   }
+   JitVal(int inValue)
+   {
+      offset = 0;
+      reg0 = 0;
+      reg1 = 0;
+      position = jposIntVal;
+      type = jtInt;
+      iVal = inValue;
+   }
+   /*
+   JitVal(double inValue)
+   {
+      offset = 0;
+      reg0 = 0;
+      reg1 = 0;
+      position = jposFloatVal;
+      type = jtFloat;
+      dVal = inValue;
+   }
+   */
+   JitVal(void *inValue)
+   {
+      offset = 0;
+      reg0 = 0;
+      reg1 = 0;
+      position = jposPointerVal;
+      type = jtPointer;
+      pVal = inValue;
+   }
+
+   bool uses(int reg) const
+   {
+      return ( (position==jposRegister || position==jposStar || position==jposStar || position==jposStarReg) && reg==reg0 ) ||
+             ( position==jposStarReg && reg==reg1 );
+   }
+
+   JitVal operator +(size_t inDiff) const { return JitVal(type, offset+inDiff, position, reg0, reg1); }
+   JitVal as(JitType type) const { return JitVal(type, offset, position, reg0, reg1); }
+   bool valid() const { return type!=jtVoid; }
+
+   bool operator==(const JitVal &inOther) const
+   {
+      return position==inOther.position && type==inOther.type && offset==inOther.offset && reg0==inOther.reg0 && reg1==inOther.reg1; 
+   }
+   bool operator!=(const JitVal &inOther) const { return !(*this == inOther); }
+
+   JitVal getReg() const { return JitVal(jtPointer, 0, jposRegister, reg0, reg1); }
+
+
+   private:
+      JitVal(const JitType &);
+      JitVal(const ExprType &);
+};
+
+struct JitReg : public JitVal
+{
+   JitReg(int inReg, JitType inType=jtAny) : JitVal(inType, 0, jposRegister, inReg, 0) { }
+
+   JitVal star(JitType inType=jtPointer, int inOffset=0) { return JitVal(inType, inOffset, jposStar, reg0, reg1); }
+   JitVal star(ExprType inType, int inOffset=0) { return JitVal(getJitType(inType), inOffset, jposStar, reg0, reg1); }
+   JitVal atReg(JitReg inReg, int inShift=0, JitType inType=jtAny) {
+      return JitVal(inType, inShift, jposStarReg, reg0, inReg.reg0);
+   }
 };
 
 
-struct ThisReg : public SReg
+extern int sFrameReg;
+struct JitFramePos : public JitVal
 {
-   inline ThisReg() : SReg(1) { }
+   JitFramePos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposFrame, sFrameReg) { }
+   JitFramePos(int inOffset, ExprType inType) : JitVal(getJitType(inType), inOffset, jposFrame, sFrameReg) { }
+};
+
+extern int sLocalReg;
+struct JitLocalPos : public JitVal
+{
+   JitLocalPos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposLocal, sLocalReg) { }
+};
+
+extern int sThisReg;
+struct JitThisPos : public JitVal
+{
+   JitThisPos(int inOffset, JitType inType=jtPointer) : JitVal(inType, inOffset, jposThis, sThisReg) { }
 };
 
 
-struct TempReg : public SReg
+enum JitCompare
 {
-   inline TempReg() : SReg(2) { }
+   // Pointer compare / String compare
+   cmpP_EQUAL =             0,
+   cmpP_ZERO =              0,
+   cmpP_NOT_EQUAL =         1,
+   cmpP_NOT_ZERO =          1,
+
+   cmpP_LESS =              2,
+   cmpP_GREATER_EQUAL =     3,
+   cmpP_GREATER =           4,
+   cmpP_LESS_EQUAL =        5,
+   cmpP_SIG_LESS =          6,
+   cmpP_SIG_GREATER_EQUAL = 7,
+   cmpP_SIG_GREATER =       8,
+   cmpP_SIG_LESS_EQUAL =    9,
+
+   cmpP_OVERFLOW =          10,
+   cmpP_NOT_OVERFLOW =      11,
+
+   cmpP_MUL_OVERFLOW =      12,
+   cmpP_MUL_NOT_OVERFLOW =  13,
+
+
+   // Integer compares
+   cmpI_EQUAL =             0 | 0x100,
+   cmpI_ZERO =              0 | 0x100,
+   cmpI_NOT_EQUAL =         1 | 0x100,
+   cmpI_NOT_ZERO =          1 | 0x100,
+
+   cmpI_LESS =              2 | 0x100,
+   cmpI_GREATER_EQUAL =     3 | 0x100,
+   cmpI_GREATER =           4 | 0x100,
+   cmpI_LESS_EQUAL =        5 | 0x100,
+   cmpI_SIG_LESS =          6 | 0x100,
+   cmpI_SIG_GREATER_EQUAL = 7 | 0x100,
+   cmpI_SIG_GREATER =       8 | 0x100,
+   cmpI_SIG_LESS_EQUAL =    9 | 0x100,
+
+   cmpI_OVERFLOW =          10 | 0x100,
+   cmpI_NOT_OVERFLOW =      11 | 0x100,
+
+   cmpI_MUL_OVERFLOW =      12 | 0x100,
+   cmpI_MUL_NOT_OVERFLOW =  13 | 0x100,
+
+   /* Floating point comparison types - double. */
+   cmpD_EQUAL =             16,
+   cmpD_NOT_EQUAL =         17,
+   cmpD_LESS =              18,
+   cmpD_GREATER_EQUAL =     19,
+   cmpD_GREATER =           20,
+   cmpD_LESS_EQUAL =        21,
+   cmpD_UNORDERED =         22,
+   cmpD_ORDERED =           23,
+
+   /* Floating point comparison types - single. */
+   cmpS_EQUAL =             16 | 0x100,
+   cmpS_NOT_EQUAL =         17 | 0x100,
+   cmpS_LESS =              18 | 0x100,
+   cmpS_GREATER_EQUAL =     19 | 0x100,
+   cmpS_GREATER =           20 | 0x100,
+   cmpS_LESS_EQUAL =        21 | 0x100,
+   cmpS_UNORDERED =         22 | 0x100,
+   cmpS_ORDERED =           23 | 0x100,
+
 };
 
-
-
-
-struct ArrayAddr : public Addr
+enum BitOp
 {
-   inline ArrayAddr(const Reg &inRegBase, const Reg &inRegOffset, int inShift=0) :
-       Addr(SLJIT_MEM2(inRegBase.getReg(),inRegOffset.getReg()), inShift) { }
+   bitOpAnd,
+   bitOpOr,
+   bitOpXOr,
+   bitOpUSR,
+   bitOpShiftL,
+   bitOpShiftR,
 };
 
-struct StarAddr : public Addr
-{
-   inline StarAddr(const Reg &inRegBase, int inOffset=0) :
-       Addr(SLJIT_MEM1(inRegBase.getReg()), inOffset) { }
-};
+bool isMemoryVal(const JitVal &inVal);
 
-struct CtxMemberVal : public StarAddr
-{
-   inline CtxMemberVal(int inOffset) : StarAddr(CtxReg(), inOffset) { }
-};
+extern JitReg sJitFrame;
+extern JitReg sJitThis;
 
+extern JitReg sJitTemp0;
+extern JitReg sJitTemp1;
+extern JitReg sJitTemp2;
 
-struct AddrStack : public Addr
-{
-   inline AddrStack(int inOffset) : Addr(SLJIT_MEM1(SLJIT_SP), inOffset) { }
-};
+extern JitReg sJitTempF0;
+extern JitReg sJitTempF1;
+extern JitReg sJitTempF2;
 
+extern JitReg sJitReturnReg;
+extern JitReg sJitArg0;
+extern JitReg sJitArg1;
+extern JitReg sJitArg2;
+extern JitReg sJitCtx;
+extern JitVal sJitCtxPointer;
+extern JitVal sJitCtxFrame;
 
+typedef sljit_label *LabelId;
+typedef sljit_jump  *JumpId;
 
-struct ConstValue : public Addr
-{
-   inline ConstValue(int inValue) : Addr(SLJIT_IMM, inValue) { }
-   inline ConstValue(const void *inValue) : Addr(SLJIT_IMM, (sljit_sw)inValue) { }
-};
+typedef void (SLJIT_CALL *CppiaFunc)(CppiaCtx *inCtx);
+typedef void (*OnReturnFunc)(class CppiaCompiler *inCompiler, int stackSize);
 
+typedef std::vector<JumpId> ThrowList;
 
-struct ConstRef : public Addr
-{
-   inline ConstRef(const void *inAddr) : Addr(SLJIT_MEM0(), (sljit_sw)inAddr) { }
-};
-
-
-
-
-typedef void (*CppiaCompiled)(struct CppiaCtx *inCtx);
-
-
-typedef std::vector< sljit_jump * > ComeFrom;
 
 class CppiaCompiler
 {
-   sljit_compiler* compiler;
-   int             maxTempSize;
-   int             tempSize;
-   bool            useThis;
-   bool            useFTemp;
-
 public:
-   ComeFrom        *exceptionHandler;
+   static CppiaCompiler *create(int inFrameSize);
+   virtual ~CppiaCompiler() { }
 
-    inline CppiaCompiler()
-    {
-       compiler = sljit_create_compiler();
-       tempSize = maxTempSize = 0;
-       useThis = false;
-       useFTemp = false;
-       exceptionHandler = 0;
-    }
-    ~CppiaCompiler()
-    {
-       sljit_free_compiler(compiler);
-    }
- 
-    void registerThis() { useThis = true; }
-    void registerFTemp() { useFTemp = true; }
+   static void freeCompiled(CppiaFunc inFunc);
 
-    int addTemp(int inSize)
-    {
-       int result = tempSize;
-       tempSize += inSize;
-       if (tempSize>maxTempSize)
-          maxTempSize = tempSize;
-       return result;
-    }
+   virtual void setError(const char *inError) = 0;
+   virtual void crash() = 0;
 
-    void releaseTemp(int inSize)
-    {
-       tempSize -= inSize;
-    }
-       
-    //Addr getCtx() { return AddrStack(ctxOffset); }
- 
+   virtual int getCurrentFrameSize() = 0;
+   virtual void restoreFrameSize(int inSize) = 0;
+   virtual void addFrame(ExprType inType) = 0;
+   virtual void freeTempSize(int inSize) = 0;
+   virtual int  allocTempSize(int size) = 0;
+   virtual int  allocTemp(JitType inType) = 0;
+   virtual void freeTemp(JitType inType) = 0;
 
-    static void SLJIT_CALL doTrace(const char *inVal)
-    {
-       printf("trace %s\n",inVal);
-    }
+   virtual JitVal  addLocal(const char *inName, JitType inType) = 0;
+   virtual JitVal functionArg(int inIndex) = 0;
 
-    void trace(const char *inText)
-    {
-	    sljit_emit_op1(compiler, SLJIT_MOV, SLJIT_R0,  0,  SLJIT_IMM, (sljit_sw)inText );
-       sljit_emit_ijump(compiler, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(doTrace));
-    }
-
-    void enter(int options,int inStackSize)
-    {
-       int args = 1;
-       int saved = 3;
-       int localSize = inStackSize + maxTempSize;
-       int fscratches = useFTemp ? 1 : 0;
-       int fsaved = 0;
-       int scratches = 3;
-       sljit_emit_enter(compiler, options, args, scratches, saved, fscratches, fsaved, localSize);
-       // S0 = Arg0 = Ctx 
-       // S1 = this
-       // S2 = temp
-       if (useThis)
-       {
-          move( Reg(0), CtxMemberVal( offsetof(CppiaCtx, frame) ) );
-          move( SReg(1), StarAddr(Reg(0)) );
-       }
-       if (inStackSize>0 && inStackSize<=20)
-       {
-          for(int i=0;i<inStackSize;i+=4)
-             move32( AddrStack(i), ConstValue(0) );
-       }
-       else if (inStackSize>0)
-       {
-          trace("memset");
-          sljit_get_local_base(compiler, SLJIT_R0, 0, 0);
-          move32( Reg(1), ConstValue(0) );
-          move32( Reg(2), ConstValue(inStackSize) );
-          call(memset,3);
-       }
-    }
-
-    void ret()
-    {
-	    sljit_emit_return(compiler, SLJIT_UNUSED, 0, 0);
-    }
- 
-    template<typename T>
-    void call(T inFunc, int inArgs)
-    {
-       sljit_emit_ijump(compiler, SLJIT_CALL0+inArgs, SLJIT_IMM, SLJIT_FUNC_OFFSET(inFunc));
-    }
-
-    sljit_jump *jump(sljit_si type, sljit_uw target = 0)
-    {
-       sljit_jump *result = sljit_emit_jump(compiler, type);
-       if (target)
-          sljit_set_target(result,target);
-       return result;
-    }
-
-    sljit_jump *ifZero(const Addr &value)
-    {
-       return sljit_emit_cmp(compiler, SLJIT_EQUAL, value.base, value.mod, SLJIT_IMM, 0 );
-    }
-
-    sljit_jump *ifNotZero(const Addr &value)
-    {
-       return sljit_emit_cmp(compiler, SLJIT_NOT_EQUAL, value.base, value.mod, SLJIT_IMM, 0 );
-    }
-
-
-
-
-    void jumpHere(sljit_jump *inJump) 
-    {
-       sljit_label *label =  sljit_emit_label(compiler);
-       sljit_set_label(inJump, label);
-    }
-
-
-
-    inline void emit(sljit_si op, const Addr &out, const Addr &inA, const Addr &inB)
-    {
-       sljit_emit_op2(compiler, op,
-            out.base, out.mod,
-            inA.base, inA.mod,
-            inB.base, inB.mod );
-    }
-
-
-    inline void emitf(sljit_si op, const Addr &out, const Addr &inA)
-    {
-       sljit_emit_fop1(compiler, op,
-            out.base, out.mod,
-            inA.base, inA.mod );
-    }
-
-
-
-    inline void emit(sljit_si op, const Addr &out, const Addr &inA)
-    {
-       sljit_emit_op1(compiler, op,
-            out.base, out.mod,
-            inA.base, inA.mod );
-    }
-
-    inline void move32(const Addr &out, const Addr &inA)
-    {
-       emit(SLJIT_IMOV, out, inA);
-    }
-
-
-    inline void move(const Addr &out, const Addr &inA,int inMode = SLJIT_MOV)
-    {
-       emit(inMode, out, inA);
-    }
-
-
-    inline void add(const Addr &out, const Addr &inA, const Addr &inB)
-    {
-       emit(SLJIT_ADD, out, inA, inB);
-    }
-
-    CppiaCompiled generate()
-    {
-       return (CppiaCompiled)sljit_generate_code(compiler);
-
-    }
-
-    inline static void freeCompiled(CppiaCompiled inCompiled)
-    {
-       sljit_free_code( (void*) inCompiled );
-    }
-
-};
-
-struct AllocTemp : public Addr
-{
-   int size;
-   CppiaCompiler &compiler;
-
-   AllocTemp(CppiaCompiler &inCompiler, int inSize=sizeof(void *)) :
-        Addr( SLJIT_MEM1(SLJIT_SP) ), compiler(inCompiler), size(inSize)
-   {
-      mod = compiler.addTemp(size);
-   }
-   ~AllocTemp() { compiler.releaseTemp(size); }
    
+   virtual void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool=false) = 0;
+   virtual void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType) = 0;
+   virtual void convertReturnReg(ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool=false) = 0;
+   virtual void genVariantValueTemp0(int inOffset, const JitVal &inDest, ExprType destType) = 0;
+   virtual void returnNull(const JitVal &inTarget, ExprType inToType) = 0;
+
+   virtual void beginGeneration(int inArgs=1) = 0;
+   virtual CppiaFunc finishGeneration() = 0;
+
+   virtual void setFunctionDebug() = 0;
+   virtual void setLineDebug() = 0;
+
+   virtual LabelId setContinuePos(LabelId inNewPos) = 0;
+   virtual void  addContinue() = 0;
+   virtual void  swapBreakList(QuickVec<JumpId> &ioBreakList) = 0;
+   virtual void  addBreak() = 0;
+   virtual void  setBreakTarget() = 0;
+
+   virtual ThrowList *pushCatching(ThrowList *inCatching) = 0;
+   virtual void  popCatching(ThrowList *) = 0;
+   virtual void  addThrow() = 0;
+   virtual void  checkException() = 0;
+
+   // Unconditional
+   virtual JumpId jump(LabelId inTo=0) = 0;
+   virtual void   jump(const JitVal &inWhere) = 0;
+   // Conditional - int/pointer
+   virtual JumpId compare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
+   // Conditional - Float
+   virtual JumpId fcompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump, bool inReverse) = 0;
+   // Conditional - String
+   virtual JumpId scompare(JitCompare condition, const JitVal &v0, const JitVal &v1, LabelId andJump=0) = 0;
+   // Link
+   virtual void  comeFrom(JumpId inWhere) = 0;
+   virtual LabelId  addLabel() = 0;
+
+   inline  JumpId notNull(const JitVal &v0) { return compare(cmpP_NOT_ZERO, v0, (void *)0); }
+
+   virtual void setMaxPointer() = 0;
+
+   virtual int  getBaseSize() = 0;
+   virtual void setLineOffset( int inOffset ) = 0;
+   virtual int  getLineOffset( ) = 0;
+   virtual void setOnReturn( OnReturnFunc inFunc, int inStackSize ) = 0;
+   virtual void addReturn() = 0;
+
+   virtual void trace(const char *inValue) = 0;
+   virtual void traceObject(const char *inLabel, const JitVal &inValue) = 0;
+   virtual void tracePointer(const char *inLabel, const JitVal &inValue) = 0;
+   virtual void traceFloat(const char *inLabel, const JitVal &inValue) = 0;
+   virtual void traceStrings(const char *inS0, const char *inS1) = 0;
+   virtual void traceInt(const char *inLabel, const JitVal &inValue) = 0;
+   virtual void traceString(const char *inLabel, const JitVal &inValue) = 0;
+
+   virtual void negate(const JitVal &inDest, const JitVal &inSrc) = 0;
+   virtual void add(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
+   virtual void bitOp(BitOp inOp, const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
+   virtual void bitNot(const JitVal &inDest, const JitVal &v0 ) = 0;
+   virtual void mult(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
+   virtual void sub(const JitVal &inDest, const JitVal &v0, const JitVal &v1, bool asFloat ) = 0;
+   virtual void fdiv(const JitVal &inDest, const JitVal &v0, const JitVal &v1 ) = 0;
+   virtual void divmod() = 0;
+   virtual void move(const JitVal &inDest, const JitVal &src) = 0;
+   //virtual void compare(Condition condition,const JitVal &v0, const JitVal &v1) = 0;
+
+
+   //virtual void call(CppiaFunc func, JitType inReturnType=jtVoid)=0;
+   //virtual void call(const JitVal &inFunc, JitType inReturnType=jtVoid)=0;
+   virtual void call(const JitVal &inFunc, const JitVal &inArg0)=0;
+
+   virtual void callNative(void *func)=0;
+   virtual void callNative(void *func, const JitVal &inArg0)=0;
+   virtual void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1)=0;
+   virtual void callNative(void *func, const JitVal &inArg0, const JitVal &inArg1, const JitVal &inArg2)=0;
+
+
 };
+
+
+struct JitTemp : public JitVal
+{
+   CppiaCompiler *compiler;
+   int size;
+
+   JitTemp(CppiaCompiler *inCompiler, JitType inType)
+      : JitVal(inType, inCompiler->allocTemp(inType), jposLocal, sLocalReg)
+   {
+      compiler = inCompiler;
+      size =  getJitTypeSize( inType );
+   }
+
+
+   JitTemp(CppiaCompiler *inCompiler, ExprType inType)
+      : JitVal(getJitType(inType), inCompiler->allocTemp( getJitType(inType)), jposLocal, sLocalReg)
+   {
+      compiler = inCompiler;
+      size =  getJitTypeSize( getJitType(inType) );
+   }
+
+
+   JitTemp(CppiaCompiler *inCompiler, ExprType inType, int inSize)
+      : JitVal(getJitType(inType), inCompiler->allocTempSize(inSize), jposLocal, sLocalReg)
+   {
+      compiler = inCompiler;
+      size = inSize;
+   }
+
+
+   ~JitTemp()
+   {
+      compiler->freeTempSize(size);
+   }
+
+   JitVal star(JitType inType=jtPointer, size_t inOffset=0) { return JitVal(inType, offset+(int)inOffset, jposStar, sLocalReg, 0); }
+   JitVal star(ExprType inType, size_t inOffset=0) { return JitVal(getJitType(inType), offset+(int)inOffset, jposStar, sLocalReg, 0); }
+
+};
+
+struct JitMultiArgs : public JitTemp
+{
+   // Float, so address is passed to native function
+   JitMultiArgs(CppiaCompiler *inCompiler, int inN) : JitTemp(inCompiler, etFloat, inN*sizeof(JitMultiArg) )
+   {
+   }
+
+   JitVal arg(int inIndex,JitType inType=jtPointer) { return (*this + inIndex*sizeof(JitMultiArg)).as(inType); }
+   JitVal arg(int inIndex,ExprType inType) { return arg(inIndex,getJitType(inType)); }
+
+};
+
+struct JitSave
+{
+   JitTemp temp;
+   JitVal  value;
+
+   JitSave(CppiaCompiler *compiler, const JitVal &val)
+      : temp(compiler, val.type), value(val)
+   {
+      compiler->move(temp, value);
+   }
+   ~JitSave()
+   {
+      temp.compiler->move(value,temp);
+   }
+};
+
+
+
+struct AutoFramePos
+{
+   CppiaCompiler *compiler;
+   int framePos;
+
+   AutoFramePos(CppiaCompiler *inCompiler)
+   {
+      compiler = inCompiler;
+      framePos=compiler->getCurrentFrameSize();
+   }
+
+   ~AutoFramePos()
+   {
+      compiler->restoreFrameSize(framePos);
+   }
+};
+
+
+// objVal - should not be sJitTemp1
+void genWriteBarrier(CppiaCompiler *compiler, JitReg objVal, JitVal valuePtr);
 
 
 }

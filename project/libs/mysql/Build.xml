@@ -1,0 +1,36 @@
+<xml>
+
+<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+
+
+
+<files id="mysql" >
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
+
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <compilerflag value="-DSTATIC_LINK" unless="static_link||dynamic_link" />
+
+
+  <file name="mysql.cpp"/>
+  <file name="my_proto/my_api.cpp"/>
+  <file name="my_proto/my_proto.cpp"/>
+  <file name="../common/socket.cpp"/>
+  <file name="../common/sha1.cpp"/>
+</files>
+
+<target id="haxe">
+  <files id="mysql"/>
+  <lib name="ws2_32.lib" if="windows" unless="static_link" />
+</target>
+
+<target id="mysql" output="${HX_TARGET_PREFIX}mysql5${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <files id="mysql"/>
+  <lib name="ws2_32.lib" if="windows" unless="static_link" />
+   <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+</target>
+
+
+
+
+</xml>

@@ -1,7 +1,9 @@
 <xml>
 
 <!-- make sure hxcpp.n is up to date -->
-<pleaseUpdateHxcppTool version="1" />
+<pleaseUpdateHxcppTool version="3" />
+
+<pragma once="true" />
 
 
 <!-- Use value from Build.xml file unless one is specified from the haxe defines -->
@@ -21,23 +23,37 @@
   <depend name="${HXCPP}/include/null.h"/>
   <depend name="${HXCPP}/include/hx/Class.h"/>
   <depend name="${HXCPP}/include/Enum.h"/>
+  <depend name="${HXCPP}/include/hx/StackContext.h"/>
   <depend name="${HXCPP}/include/hx/Debug.h"/>
+  <depend name="${HXCPP}/include/hx/QuickVec.h"/>
   <depend name="${HXCPP}/include/hx/Telemetry.h"/>
+  <depend name="${HXCPP}/include/hx/Thread.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
+  <depend name="${HXCPP}/include/hx/Anon.h"/>
   <depend name="${HXCPP}/include/hx/Operators.h"/>
   <depend name="${HXCPP}/include/hx/Macros.h"/>
   <depend name="${HXCPP}/include/hx/GC.h"/>
+  <depend name="${HXCPP}/include/hx/Tls.h"/>
+  <depend name="${HXCPP}/include/hx/GcTypeInference.h"/>
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
   <depend name="${HXCPP}/include/hx/StdLibs.h"/>
+  <depend name="${HXCPP}/include/hx/Native.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
+  <depend name="${HXCPP}/include/hx/ObjcHelpers.h"/>
+  <depend name="${HXCPP}/include/hx/HeaderVersion.h"/>
+  <depend name="${HXCPP}/include/hx/Unordered.h"/>
+  <depend name="${HXCPP}/include/hx/LessThanEq.h"/>
   <depend name="${HXCPP}/include/cpp/Pointer.h"/>
+  <depend name="${HXCPP}/include/cpp/Int64.h"/>
+  <depend name="${HXCPP}/include/cpp/Variant.h"/>
+  <depend name="${HXCPP}/include/cpp/VirtualArray.h"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
-     <depend name="${HXCPP}/toolchain/haxe-target.xml"/>
-     <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml"/>
-     <depend name="${HXCPP}/hxcpp.n" ifExists="${HXCPP}/hxcpp.n" />
+     <depend name="${HXCPP}/toolchain/haxe-target.xml" dateOnly="true" />
+     <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml" dateOnly="true" />
+     <depend name="${HXCPP}/hxcpp.n" ifExists="${HXCPP}/hxcpp.n"  dateOnly="true" />
   </section>
 </files>
  
@@ -47,77 +63,97 @@
 <files id="haxe">
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
+  <config  name="HxcppConfig${LIBEXTRA}.h"/>
 
-  <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
+  <precompiledheader name="hxcpp" dir="${HXCPP}/include" />
+  <cache value="1" />
 </files>
 
 
-<files id="__resources__">
+<files id="__resources__" tags="haxe" >
+  <cache value="1" project="haxe" />
 </files>
 
 <files id="__externs__">
+  <cache value="1" project="haxe" />
 </files>
 
 
-<files id="__main__">
+<files id="__main__" tags="haxe,main,static" >
   <depend files="hxcpp-depends"/>
   <depend name="${HXCPP}/include/hx/HxcppMain.h"/>
   <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
+  <cache value="1" project="haxe" />
 </files>
 
-<files id="__lib__">
+<files id="__lib__" tags="haxe,main,static" >
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <compilerflag value="-DHX_DECLARE_MAIN"/>
+  <cache value="1" project="haxe" />
 </files>
 
+<set name="CPPIA_JIT" value="1" unless="CPPIA_NO_JIT" />
 
-<files id="cppia" dir="${HXCPP}" >
+
+<files id="cppia" dir="${HXCPP}" tags="haxe"  >
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/cppia/Cppia.h" />
   <depend name="${HXCPP}/src/hx/cppia/CppiaStream.h" />
+  <depend name="${HXCPP}/src/hx/cppia/CppiaOps.inc" />
   <depend name="${HXCPP}/src/hx/cppia/CppiaCompiler.h"  if="CPPIA_JIT" />
   <compilerflag value="-DHX_UNDEFINE_H" />
   <compilerflag value="-DCPPIA_JIT" if="CPPIA_JIT" />
 
   <file name = "src/hx/cppia/Cppia.cpp" />
   <file name = "src/hx/cppia/CppiaCtx.cpp" />
+  <file name = "src/hx/cppia/CppiaClasses.cpp" />
+  <file name = "src/hx/cppia/CppiaFunction.cpp" />
+  <file name = "src/hx/cppia/CppiaModule.cpp" />
   <file name = "src/hx/cppia/ArrayBuiltin.cpp" />
+  <file name = "src/hx/cppia/ArrayVirtual.cpp" />
   <file name = "src/hx/cppia/StringBuiltin.cpp" />
   <file name = "src/hx/cppia/GlobalBuiltin.cpp" />
   <file name = "src/hx/cppia/HaxeNative.cpp" />
   <file name = "src/hx/cppia/CppiaVars.cpp" />
   <file name = "src/hx/cppia/CppiaCompiler.cpp" if="CPPIA_JIT" />
+  <cache value="1" project="hxcpp-cppia" asLibrary="true" />
 </files>
 
 
-<files id="runtime" dir="${HXCPP}">
+<files id="runtime" dir="${HXCPP}" tags="haxe" >
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/Hash.h"/>
-
+  <depend name="${HXCPP}/src/hx/Unicase.h"/>
+  <depend name="${HXCPP}/src/hx/gc/GcRegCapture.h"/>
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
   <compilerflag value="-DHX_UNDEFINE_H" />
 
-  <precompiledheader name="hxcpp" dir="${HXCPP}/include" if="USE_PRECOMPILED_HEADERS"/>
+  <precompiledheader name="hxcpp" dir="${HXCPP}/include" />
 
   <file name = "src/hx/Anon.cpp"/>
   <file name = "src/hx/Boot.cpp"/>
-  <file name = "src/hx/CFFI.cpp"/>
+  <file name = "src/hx/CFFI.cpp" tags="haxe,static" />
   <file name = "src/hx/Date.cpp"/>
-  <file name = "src/hx/GC.cpp"/>
-  <file name = "src/hx/GCInternal.cpp"/>
+  <file name = "src/hx/gc/GcCommon.cpp" tags="haxe,gc" />
+  <file name = "src/hx/gc/Immix.cpp" tags="haxe,gc" />
+  <file name = "src/hx/gc/GcRegCapture.cpp" tags="haxe,gc" />
   <file name = "src/hx/Hash.cpp"/>
   <file name = "src/hx/Interface.cpp"/>
-  <file name = "src/hx/Lib.cpp"/>
+  <file name = "src/hx/Lib.cpp" tags="haxe,static" />
   <file name = "src/hx/Object.cpp"/>
-  <file name = "src/hx/StdLibs.cpp"/>
+  <file name = "src/hx/StdLibs.cpp" tags="haxe,static" />
   <file name = "src/hx/Debug.cpp"/>
+  <file name = "src/hx/Debugger.cpp" if="HXCPP_DEBUGGER" />
+  <file name = "src/hx/Telemetry.cpp" if="HXCPP_TELEMETRY" />
+  <file name = "src/hx/Profiler.cpp" if="HXCPP_PROFILER" />
   <file name = "src/hx/Thread.cpp"/>
-  <file name = "src/hx/RunLibs.cpp" if="static_link"/>
+  <file name = "src/hx/RunLibs.cpp" if="static_link||dll_link"/>
+  <file name = "src/hx/AndroidCompat.cpp" if="android"/>
 
   <file name = "src/Array.cpp"/>
   <file name = "src/hx/Class.cpp"/>
@@ -125,8 +161,10 @@
   <file name = "src/ObjcData.mm" if="objc"/>
   <file name = "src/Enum.cpp"/>
   <file name = "src/Math.cpp"/>
-  <file name = "src/String.cpp"/>
+  <file name = "src/String.cpp" tags="haxe,hxstring" />
 
+  <addTwice if="linux||android" />
+  <cache value="1" project="hxcpp_runtime" asLibrary="true" />
 </files>
 
 
@@ -141,11 +179,29 @@
 
 <set name="EXESUFFIX" value=".exe" if="windows" />
 
-<target id="haxe" tool="linker" toolid="${haxelink}" output="${LIBPREFIX}${HAXE_OUTPUT}${DBG}">
+<set name="HAXE_OUTPUT_PART" value="${HAXE_OUTPUT}" unless="HAXE_OUTPUT_PART" />
+
+<set name="HAXE_OUTPUT_FILE" value="${LIBPREFIX}${HAXE_OUTPUT_PART}${DBG}" unless="HAXE_OUTPUT_FILE" />
+
+<set name="magiclibs" value="1" unless="nomagiclibs" />
+
+<section if="magiclibs" >
+   <magiclib name="lib/${BINDIR}/libstd${LIBEXTRA}${LIBEXT}" replace="project/libs/std/Build.xml" />
+   <magiclib name="lib/${BINDIR}/libzlib${LIBEXTRA}${LIBEXT}" replace="project/libs/zlib/Build.xml" />
+   <magiclib name="lib/${BINDIR}/libregexp${LIBEXTRA}${LIBEXT}" replace="project/libs/regexp/Build.xml" />
+   <magiclib name="lib/${BINDIR}/libmysql5${LIBEXTRA}${LIBEXT}" replace="project/libs/mysql/Build.xml" />
+   <magiclib name="lib/${BINDIR}/libsqlite${LIBEXTRA}${LIBEXT}" replace="project/libs/sqlite/Build.xml" />
+</section>
+
+<target id="haxe" tool="linker" toolid="${haxelink}" output="${HAXE_OUTPUT_FILE}">
   <files id="haxe"/>
   <options name="Options.txt"/>
   <ext value="${LIBEXTRA}.a" if="iphoneos" unless="dll_import" />
   <ext value="${LIBEXTRA}.a" if="iphonesim" unless="dll_import" />
+  <ext value="${LIBEXTRA}.a" if="appletvos" unless="dll_import" />
+  <ext value="${LIBEXTRA}.a" if="appletvsim" unless="dll_import" />
+  <ext value="${LIBEXTRA}.a" if="watchos" unless="dll_import" />
+  <ext value="${LIBEXTRA}.a" if="watchsimulator" unless="dll_import" />
 
   <section if="android">
      <ext value="${LIBEXTRA}.so" />

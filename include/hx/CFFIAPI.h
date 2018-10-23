@@ -43,6 +43,7 @@ DEFFUNC_1(const wchar_t *,val_wstring,value)
 DEFFUNC_1(const char *,val_string,value)
 DEFFUNC_1(wchar_t *,val_dup_wstring,value)
 DEFFUNC_1(char *,val_dup_string,value)
+DEFFUNC_2(char *,alloc_string_data,const char *,int)
 DEFFUNC_2(value,alloc_string_len,const char *,int)
 DEFFUNC_2(value,alloc_wstring_len,const wchar_t *,int)
 

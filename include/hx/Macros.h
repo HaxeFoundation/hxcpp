@@ -6,12 +6,85 @@
 
 // DO NOT EDIT
 // This file is generated from the .tpl file
-#ifndef HX_MACROS_H
-#define HX_MACROS_H
+#ifndef MACROS_FIXED_H
+#define MACROS_FIXED_H
+
+// ---- Forward Declare ---------------
 
 
-#define HX_DO_RTTI_BASE \
-   bool __Is(hx::Object *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; } \
+#define HX_DECLARE_CLASS0(klass) \
+	class klass##_obj; \
+	typedef hx::ObjectPtr<klass##_obj> klass;
+#define HX_DECLARE_CLASS1(ns1,klass) namespace ns1 { HX_DECLARE_CLASS0(klass) }
+#define HX_DECLARE_CLASS2(ns2,ns1,klass) namespace ns2 { HX_DECLARE_CLASS1(ns1,klass) }
+#define HX_DECLARE_CLASS3(ns3,ns2,ns1,klass) namespace ns3 { HX_DECLARE_CLASS2(ns2,ns1,klass) }
+#define HX_DECLARE_CLASS4(ns4,ns3,ns2,ns1,klass) namespace ns4 { HX_DECLARE_CLASS3(ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS5(ns5,ns4,ns3,ns2,ns1,klass) namespace ns5 { HX_DECLARE_CLASS4(ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS6(ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns6 { HX_DECLARE_CLASS5(ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS7(ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns7 { HX_DECLARE_CLASS6(ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS8(ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns8 { HX_DECLARE_CLASS7(ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS9(ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns9 { HX_DECLARE_CLASS8(ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS10(ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns10 { HX_DECLARE_CLASS9(ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS11(ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns11 { HX_DECLARE_CLASS10(ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS12(ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns12 { HX_DECLARE_CLASS11(ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS13(ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns13 { HX_DECLARE_CLASS12(ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS14(ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns14 { HX_DECLARE_CLASS13(ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS15(ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns15 { HX_DECLARE_CLASS14(ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS16(ns16,ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns16 { HX_DECLARE_CLASS15(ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS17(ns17,ns16,ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns17 { HX_DECLARE_CLASS16(ns16,ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS18(ns18,ns17,ns16,ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns18 { HX_DECLARE_CLASS17(ns17,ns16,ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS19(ns19,ns18,ns17,ns16,ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns19 { HX_DECLARE_CLASS18(ns18,ns17,ns16,ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+#define HX_DECLARE_CLASS20(ns20,ns19,ns18,ns17,ns16,ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns20 { HX_DECLARE_CLASS19(ns19,ns18,ns17,ns16,ns15,ns14,ns13,ns12,ns11,ns10,ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
+
+// ---- Enum ----------------------
+
+#if (HXCPP_API_LEVEL >= 330)
+
+#define HX_DEFINE_CREATE_ENUM(enum_obj) \
+static  ::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
+{ \
+   int count =  enum_obj::__FindArgCount(inName); \
+   int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
+   if (args!=count) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_ARG_COUNT(#enum_obj, inName, count, args)); \
+   ::Dynamic result; \
+   if (!enum_obj::__GetStatic(inName,result,hx::paccDynamic)) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_CONSTRUCTOR(#enum_obj, inName)); \
+   if (args==0) return result; \
+   return result->__Run(inArgs); \
+}
+
+
+#else
+
+#define HX_DEFINE_CREATE_ENUM(enum_obj) \
+static  ::Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
+{ \
+   int idx =  enum_obj::__FindIndex(inName); \
+   if (idx<0) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_CONSTRUCTOR(#enum_obj, inName)); \
+   int count =  enum_obj::__FindArgCount(inName); \
+   int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
+   if (args!=count) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_ARG_COUNT(#enum_obj, inName, count, args)); \
+   ::Dynamic result =(new enum_obj())->__Field(inName,HX_PROP_DYNAMIC); \
+   if (args==0 || !result.mPtr) return result; \
+   return result->__Run(inArgs); \
+}
+
+#endif
+
+
+// ---- Fields ----------------------
+
+#if (HXCPP_API_LEVEL<331)
+   #define HX_DO_RTTI_BASE \
+      bool __Is(hx::Object *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; }
+#else
+   #define HX_DO_RTTI_BASE
+#endif
+
+#if (HXCPP_API_LEVEL>331)
+   #define HX_IS_INSTANCE_OF bool _hx_isInstanceOf(int inClassId) { return inClassId==1 || inClassId==(int)_hx_ClassId; }
+#else
+   #define HX_IS_INSTANCE_OF
+#endif
 
 
 #define HX_DO_RTTI_ALL \
@@ -23,8 +96,8 @@
 
 #define HX_DO_RTTI \
    HX_DO_RTTI_ALL \
-   Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
-   Dynamic __SetField(const ::String &inString,const Dynamic &inValue, hx::PropertyAccess inCallProp); \
+    ::hx::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
+    ::hx::Val __SetField(const ::String &inString,const  ::hx::Val &inValue, hx::PropertyAccess inCallProp); \
    void __GetFields(Array< ::String> &outFields);
 
 #define HX_DO_INTERFACE_RTTI \
@@ -34,7 +107,7 @@
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
    HX_DO_RTTI_BASE  \
-   Dynamic __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
+    ::hx::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp); \
    static int __FindIndex(::String inName); \
    static int __FindArgCount(::String inName);
 
@@ -45,8 +118,8 @@
    static hx::ObjectPtr<hx::Class_obj> &__SGetClass() { return __mClass; }
 
 
-#define HX_DECLARE_IMPLEMENT_DYNAMIC  Dynamic __mDynamicFields; \
-    Dynamic *__GetFieldMap() { return &__mDynamicFields; } \
+#define HX_DECLARE_IMPLEMENT_DYNAMIC   ::Dynamic __mDynamicFields; \
+     ::Dynamic *__GetFieldMap() { return &__mDynamicFields; } \
     bool __HasField(const String &inString) \
       { return hx::FieldMapHas(&__mDynamicFields,inString) || super::__HasField(inString); } 
 
@@ -67,14 +140,231 @@
 #endif
 
 #define HX_CHECK_DYNAMIC_GET_FIELD(inName) \
-   { Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inName,d)) return d; }
+   {  ::Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inName,d)) return d; }
 
 #define HX_CHECK_DYNAMIC_GET_INT_FIELD(inID) \
-   { Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inID,d)) return d; }
+   {  ::Dynamic d;  if (hx::FieldMapGet(&__mDynamicFields,inID,d)) return d; }
 
+#ifdef HXCPP_GC_GENERATIONAL
+#define HX_DYNAMIC_SET_FIELD(inName,inValue) hx::FieldMapSet(this,&__mDynamicFields,inName,inValue) 
+#else
 #define HX_DYNAMIC_SET_FIELD(inName,inValue) hx::FieldMapSet(&__mDynamicFields,inName,inValue) 
+#endif
 
 #define HX_APPEND_DYNAMIC_FIELDS(outFields) hx::FieldMapAppendFields(&__mDynamicFields,outFields)
+
+
+
+
+
+
+// ---- Main ---------------
+
+
+namespace hx {
+HXCPP_EXTERN_CLASS_ATTRIBUTES void SetTopOfStack(int *inTopOfStack,bool);
+}
+#define HX_TOP_OF_STACK \
+		int t0 = 99; \
+		hx::SetTopOfStack(&t0,false);
+
+
+#ifdef __GNUC__
+ #define EXPORT_EXTRA __attribute__ ((visibility("default")))
+#else
+ #define EXPORT_EXTRA __declspec(dllexport)
+#endif
+
+#ifdef HX_DECLARE_MAIN
+
+#ifdef HXCPP_DLL_IMPORT
+
+#define HX_BEGIN_MAIN \
+   extern "C" { \
+   EXPORT_EXTRA void __main__() { \
+	__boot_all();
+
+#define HX_END_MAIN \
+} \
+}
+
+
+#elif defined(HX_ANDROID)
+  #ifdef HXCPP_EXE_LINK
+   #define HX_BEGIN_MAIN \
+   \
+   int main(int argc,char **argv){ \
+      HX_TOP_OF_STACK \
+      hx::Boot(); \
+      try{ \
+         __boot_all();
+
+   #define HX_END_MAIN \
+      } \
+      catch ( ::Dynamic e){ \
+         __hx_dump_stack(); \
+         printf("Error : %s\n",e->toString().__CStr()); \
+         return -1; \
+      } \
+      return 0; \
+   }
+
+  #else
+   // Java Main....
+   #include <jni.h>
+   #include <hx/Thread.h>
+   #include <android/log.h>
+
+   #define HX_BEGIN_MAIN \
+   extern "C" EXPORT_EXTRA void hxcpp_main() { \
+      HX_TOP_OF_STACK \
+           try { \
+      hx::Boot(); \
+      __boot_all();
+
+
+   #define HX_END_MAIN \
+           } catch ( ::Dynamic e) { \
+        __hx_dump_stack(); \
+             __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e->toString().__CStr()); \
+           }\
+      hx::SetTopOfStack((int *)0,true); \
+   } \
+   \
+   extern "C" EXPORT_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * env) \
+   { hxcpp_main(); }
+  #endif
+
+#elif defined(HX_WINRT)
+
+#include <Roapi.h>
+
+#define HX_BEGIN_MAIN \
+[ Platform::MTAThread ] \
+int main(Platform::Array<Platform::String^>^) \
+{ \
+   HX_TOP_OF_STACK \
+   RoInitialize(RO_INIT_MULTITHREADED); \
+   hx::Boot(); \
+   try{ \
+      __boot_all();
+
+#define HX_END_MAIN \
+   } \
+   catch ( ::Dynamic e){ \
+      __hx_dump_stack(); \
+      return -1; \
+   } \
+   return 0; \
+}
+
+#elif defined(HX_WIN_MAIN)
+
+
+#ifdef HAVE_WINDOWS_H
+
+#define HX_BEGIN_MAIN \
+int __stdcall WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) \
+{ \
+	HX_TOP_OF_STACK \
+	hx::Boot(); \
+	try{ \
+		__boot_all();
+
+#else
+
+#define HX_BEGIN_MAIN \
+extern "C" int __stdcall MessageBoxA(void *,const char *,const char *,int); \
+\
+int __stdcall WinMain( void * hInstance, void * hPrevInstance, const char *lpCmdLine, int nCmdShow) \
+{ \
+	HX_TOP_OF_STACK \
+	hx::Boot(); \
+	try{ \
+		__boot_all();
+
+#endif
+
+#define HX_END_MAIN \
+	} \
+	catch ( ::Dynamic e){ \
+		__hx_dump_stack(); \
+		MessageBoxA(0,  e->toString().__CStr(), "Error", 0); \
+      return -1; \
+	} \
+	return 0; \
+}
+
+
+#elif defined(TIZEN)
+
+
+#define HX_BEGIN_MAIN \
+\
+extern "C" EXPORT_EXTRA int OspMain (int argc, char* pArgv[]){ \
+        HX_TOP_OF_STACK \
+        hx::Boot(); \
+        try{ \
+                __boot_all();
+
+#define HX_END_MAIN \
+        } \
+        catch ( ::Dynamic e){ \
+                __hx_dump_stack(); \
+                printf("Error : %s\n",e->toString().__CStr()); \
+                return -1; \
+        } \
+        return 0; \
+}
+
+
+#else
+// Console Main ...
+
+#define HX_BEGIN_MAIN \
+\
+int main(int argc,char **argv){ \
+	HX_TOP_OF_STACK \
+	hx::Boot(); \
+	try{ \
+		__boot_all();
+
+#define HX_END_MAIN \
+	} \
+	catch ( ::Dynamic e){ \
+		__hx_dump_stack(); \
+		printf("Error : %s\n",e->toString().__CStr()); \
+      return -1; \
+	} \
+	return 0; \
+}
+
+#endif
+
+#endif // HX_DECLARE_MAIN
+
+// Run as library
+#define HX_BEGIN_LIB_MAIN \
+extern "C" {\
+\
+void __hxcpp_lib_main() \
+{ \
+	HX_TOP_OF_STACK \
+	hx::Boot(); \
+	__boot_all();
+
+#define HX_END_LIB_MAIN \
+} }
+
+
+
+#endif
+
+
+#ifndef HX_MACROS_H
+#define HX_MACROS_H
+
+// --- Functions and their parameters ----
 
 
 #define HX_ARR_LIST0 
@@ -164,35 +454,35 @@
 #define HX_ARG_LIST26 inArg0,inArg1,inArg2,inArg3,inArg4,inArg5,inArg6,inArg7,inArg8,inArg9,inArg10,inArg11,inArg12,inArg13,inArg14,inArg15,inArg16,inArg17,inArg18,inArg19,inArg20,inArg21,inArg22,inArg23,inArg24,inArg25
 
 #define HX_DEFINE_DYNAMIC_FUNC0(class,func,ret) \
-Dynamic __##class##func(hx::Object *inObj) \
+static ::Dynamic __##class##func(hx::Object *inObj) \
 { \
-      ret reinterpret_cast<class *>(inObj)->func(); return Dynamic(); \
+      ret reinterpret_cast<class *>(inObj)->func(); return  ::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateMemberFunction0(this,__##class##func); \
+   return hx::CreateMemberFunction0(#func,this,__##class##func); \
 }
 
 
 #define HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-Dynamic __##class##func(hx::Object *inObj, dynamic_arg_list) \
+static ::Dynamic __##class##func(hx::Object *inObj, dynamic_arg_list) \
 { \
-      ret reinterpret_cast<class *>(inObj)->func(arg_list); return Dynamic(); \
+      ret reinterpret_cast<class *>(inObj)->func(arg_list); return  ::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateMemberFunction##N(this,__##class##func); \
+   return hx::CreateMemberFunction##N(#func,this,__##class##func); \
 }
 
 
 #define HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-Dynamic __##class##func(hx::Object *inObj, const Array<Dynamic> &inArgs) \
+static ::Dynamic __##class##func(hx::Object *inObj, const Array< ::Dynamic> &inArgs) \
 { \
-      ret reinterpret_cast<class *>(inObj)->func(array_list); return Dynamic(); \
+      ret reinterpret_cast<class *>(inObj)->func(array_list); return  ::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateMemberFunctionVar(this,__##class##func,N); \
+   return hx::CreateMemberFunctionVar(#func,this,__##class##func,N); \
 }
 
 
@@ -207,10 +497,10 @@ Dynamic class::func##_dyn() \
 
 
 #define HX_DECLARE_DYNAMIC_FUNC(func,dynamic_arg_list) \
-   Dynamic func##_dyn(dynamic_arg_list);
+    ::Dynamic func##_dyn(dynamic_arg_list);
 
 #define STATIC_HX_DECLARE_DYNAMIC_FUNC(func,dynamic_arg_list) \
-   static Dynamic func##_dyn(dynamic_arg_list);
+   static  ::Dynamic func##_dyn(dynamic_arg_list);
 
 
 
@@ -348,35 +638,35 @@ Dynamic class::func##_dyn() \
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC0(class,func,ret) \
-Dynamic __##class##func() \
+static ::Dynamic __##class##func() \
 { \
-      ret class::func(); return Dynamic(); \
+      ret class::func(); return  ::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateStaticFunction0(__##class##func); \
+   return hx::CreateStaticFunction0(#func,__##class##func); \
 }
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-Dynamic __##class##func(dynamic_arg_list) \
+static ::Dynamic __##class##func(dynamic_arg_list) \
 { \
-      ret class::func(arg_list); return Dynamic(); \
+      ret class::func(arg_list); return  ::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateStaticFunction##N(__##class##func); \
+   return hx::CreateStaticFunction##N(#func,__##class##func); \
 }
 
 
 #define STATIC_HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-Dynamic __##class##func(const Array<Dynamic> &inArgs) \
+static ::Dynamic __##class##func(const Array< ::Dynamic> &inArgs) \
 { \
-      ret class::func(array_list); return Dynamic(); \
+      ret class::func(array_list); return  ::Dynamic(); \
 }; \
-Dynamic class::func##_dyn() \
+ ::Dynamic class::func##_dyn() \
 {\
-   return hx::CreateStaticFunctionVar(__##class##func,N); \
+   return hx::CreateStaticFunctionVar(#func,__##class##func,N); \
 }
 
 
@@ -514,38 +804,10 @@ Dynamic class::func##_dyn() \
 
 
 
-#define HX_DEFINE_CREATE_ENUM(enum_obj) \
-static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
-{ \
-   int idx =  enum_obj::__FindIndex(inName); \
-   if (idx<0) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_CONSTRUCTOR(#enum_obj, inName)); \
-   int count =  enum_obj::__FindArgCount(inName); \
-   int args = inArgs.GetPtr() ? inArgs.__length() : 0; \
-   if (args!=count) __hxcpp_dbg_checkedThrow(HX_INVALID_ENUM_ARG_COUNT(#enum_obj, inName, count, args)); \
-   if (args==0) { Dynamic result =(new enum_obj())->__Field(inName,HX_PROP_DYNAMIC); if (result!=null()) return result; } \
-   return hx::CreateEnum<enum_obj >(inName,idx,inArgs); \
-}
-
-
-#define HX_DECLARE_CLASS0(klass) \
-	class klass##_obj; \
-	typedef hx::ObjectPtr<klass##_obj> klass;
-#define HX_DECLARE_CLASS1(ns1,klass) namespace ns1 { HX_DECLARE_CLASS0(klass) }
-#define HX_DECLARE_CLASS2(ns2,ns1,klass) namespace ns2 { HX_DECLARE_CLASS1(ns1,klass) }
-#define HX_DECLARE_CLASS3(ns3,ns2,ns1,klass) namespace ns3 { HX_DECLARE_CLASS2(ns2,ns1,klass) }
-#define HX_DECLARE_CLASS4(ns4,ns3,ns2,ns1,klass) namespace ns4 { HX_DECLARE_CLASS3(ns3,ns2,ns1,klass) }
-#define HX_DECLARE_CLASS5(ns5,ns4,ns3,ns2,ns1,klass) namespace ns5 { HX_DECLARE_CLASS4(ns4,ns3,ns2,ns1,klass) }
-#define HX_DECLARE_CLASS6(ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns6 { HX_DECLARE_CLASS5(ns5,ns4,ns3,ns2,ns1,klass) }
-#define HX_DECLARE_CLASS7(ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns7 { HX_DECLARE_CLASS6(ns6,ns5,ns4,ns3,ns2,ns1,klass) }
-#define HX_DECLARE_CLASS8(ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns8 { HX_DECLARE_CLASS7(ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
-#define HX_DECLARE_CLASS9(ns9,ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) namespace ns9 { HX_DECLARE_CLASS8(ns8,ns7,ns6,ns5,ns4,ns3,ns2,ns1,klass) }
-
-
-
 
 #define HX_DYNAMIC_CALL(ret,func,array_args,dyn_arg_list,arg_list) \
-   Dynamic __Run(const Array<Dynamic> &inArgs) { ret func( array_args ); return null();} \
-   Dynamic __run(dyn_arg_list) { ret func( arg_list ); return null();}
+    ::Dynamic __Run(const Array< ::Dynamic> &inArgs) { ret func( array_args ); return null();} \
+    ::Dynamic __run(dyn_arg_list) { ret func( arg_list ); return null();}
 
 
 #define HX_DYNAMIC_CALL0(ret,func) HX_DYNAMIC_CALL(ret,func,HX_ARR_LIST0,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0)
@@ -579,6 +841,7 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 #define HX_BEGIN_DEFAULT_FUNC(name,t0) \
 	namespace { \
    struct name : public hx::Object { int __GetType() const { return vtFunction; } \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    hx::ObjectPtr<t0> __this; \
    name(hx::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
@@ -588,8 +851,11 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 #define HX_END_DEFAULT_FUNC \
 }
 
+#define HXARGC(x) int __ArgCount() const { return x; }
+
 #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); } \
    name() {}
@@ -597,141 +863,165 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 
 #define HX_BEGIN_LOCAL_FUNC_S1(SUPER,name,t0,v0) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); } \
    name(t0 __0) : v0(__0) {}
 #define HX_BEGIN_LOCAL_FUNC_S2(SUPER,name,t0,v0,t1,v1) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); } \
    name(t0 __0,t1 __1) : v0(__0),v1(__1) {}
 #define HX_BEGIN_LOCAL_FUNC_S3(SUPER,name,t0,v0,t1,v1,t2,v2) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); } \
    name(t0 __0,t1 __1,t2 __2) : v0(__0),v1(__1),v2(__2) {}
 #define HX_BEGIN_LOCAL_FUNC_S4(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3) : v0(__0),v1(__1),v2(__2),v3(__3) {}
 #define HX_BEGIN_LOCAL_FUNC_S5(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4) {}
 #define HX_BEGIN_LOCAL_FUNC_S6(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5) {}
 #define HX_BEGIN_LOCAL_FUNC_S7(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6) {}
 #define HX_BEGIN_LOCAL_FUNC_S8(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7) {}
 #define HX_BEGIN_LOCAL_FUNC_S9(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8) {}
 #define HX_BEGIN_LOCAL_FUNC_S10(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9) {}
 #define HX_BEGIN_LOCAL_FUNC_S11(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10) {}
 #define HX_BEGIN_LOCAL_FUNC_S12(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11) {}
 #define HX_BEGIN_LOCAL_FUNC_S13(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11;t12 v12; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12) {}
 #define HX_BEGIN_LOCAL_FUNC_S14(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11;t12 v12;t13 v13; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); HX_MARK_MEMBER(v13); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); HX_VISIT_MEMBER(v13); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12,t13 __13) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12),v13(__13) {}
 #define HX_BEGIN_LOCAL_FUNC_S15(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13,t14,v14) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11;t12 v12;t13 v13;t14 v14; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); HX_MARK_MEMBER(v13); HX_MARK_MEMBER(v14); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); HX_VISIT_MEMBER(v13); HX_VISIT_MEMBER(v14); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12,t13 __13,t14 __14) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12),v13(__13),v14(__14) {}
 #define HX_BEGIN_LOCAL_FUNC_S16(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13,t14,v14,t15,v15) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11;t12 v12;t13 v13;t14 v14;t15 v15; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); HX_MARK_MEMBER(v13); HX_MARK_MEMBER(v14); HX_MARK_MEMBER(v15); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); HX_VISIT_MEMBER(v13); HX_VISIT_MEMBER(v14); HX_VISIT_MEMBER(v15); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12,t13 __13,t14 __14,t15 __15) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12),v13(__13),v14(__14),v15(__15) {}
 #define HX_BEGIN_LOCAL_FUNC_S17(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13,t14,v14,t15,v15,t16,v16) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11;t12 v12;t13 v13;t14 v14;t15 v15;t16 v16; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); HX_MARK_MEMBER(v13); HX_MARK_MEMBER(v14); HX_MARK_MEMBER(v15); HX_MARK_MEMBER(v16); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); HX_VISIT_MEMBER(v13); HX_VISIT_MEMBER(v14); HX_VISIT_MEMBER(v15); HX_VISIT_MEMBER(v16); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12,t13 __13,t14 __14,t15 __15,t16 __16) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12),v13(__13),v14(__14),v15(__15),v16(__16) {}
 #define HX_BEGIN_LOCAL_FUNC_S18(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13,t14,v14,t15,v15,t16,v16,t17,v17) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11;t12 v12;t13 v13;t14 v14;t15 v15;t16 v16;t17 v17; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); HX_MARK_MEMBER(v13); HX_MARK_MEMBER(v14); HX_MARK_MEMBER(v15); HX_MARK_MEMBER(v16); HX_MARK_MEMBER(v17); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); HX_VISIT_MEMBER(v13); HX_VISIT_MEMBER(v14); HX_VISIT_MEMBER(v15); HX_VISIT_MEMBER(v16); HX_VISIT_MEMBER(v17); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12,t13 __13,t14 __14,t15 __15,t16 __16,t17 __17) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12),v13(__13),v14(__14),v15(__15),v16(__16),v17(__17) {}
 #define HX_BEGIN_LOCAL_FUNC_S19(SUPER,name,t0,v0,t1,v1,t2,v2,t3,v3,t4,v4,t5,v5,t6,v6,t7,v7,t8,v8,t9,v9,t10,v10,t11,v11,t12,v12,t13,v13,t14,v14,t15,v15,t16,v16,t17,v17,t18,v18) \
    struct name : public SUPER { \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
    t0 v0;t1 v1;t2 v2;t3 v3;t4 v4;t5 v5;t6 v6;t7 v7;t8 v8;t9 v9;t10 v10;t11 v11;t12 v12;t13 v13;t14 v14;t15 v15;t16 v16;t17 v17;t18 v18; \
    void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); HX_MARK_MEMBER(v0); HX_MARK_MEMBER(v1); HX_MARK_MEMBER(v2); HX_MARK_MEMBER(v3); HX_MARK_MEMBER(v4); HX_MARK_MEMBER(v5); HX_MARK_MEMBER(v6); HX_MARK_MEMBER(v7); HX_MARK_MEMBER(v8); HX_MARK_MEMBER(v9); HX_MARK_MEMBER(v10); HX_MARK_MEMBER(v11); HX_MARK_MEMBER(v12); HX_MARK_MEMBER(v13); HX_MARK_MEMBER(v14); HX_MARK_MEMBER(v15); HX_MARK_MEMBER(v16); HX_MARK_MEMBER(v17); HX_MARK_MEMBER(v18); } \
    void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); HX_VISIT_MEMBER(v0); HX_VISIT_MEMBER(v1); HX_VISIT_MEMBER(v2); HX_VISIT_MEMBER(v3); HX_VISIT_MEMBER(v4); HX_VISIT_MEMBER(v5); HX_VISIT_MEMBER(v6); HX_VISIT_MEMBER(v7); HX_VISIT_MEMBER(v8); HX_VISIT_MEMBER(v9); HX_VISIT_MEMBER(v10); HX_VISIT_MEMBER(v11); HX_VISIT_MEMBER(v12); HX_VISIT_MEMBER(v13); HX_VISIT_MEMBER(v14); HX_VISIT_MEMBER(v15); HX_VISIT_MEMBER(v16); HX_VISIT_MEMBER(v17); HX_VISIT_MEMBER(v18); } \
    name(t0 __0,t1 __1,t2 __2,t3 __3,t4 __4,t5 __5,t6 __6,t7 __7,t8 __8,t9 __9,t10 __10,t11 __11,t12 __12,t13 __13,t14 __14,t15 __15,t16 __16,t17 __17,t18 __18) : v0(__0),v1(__1),v2(__2),v3(__3),v4(__4),v5(__5),v6(__6),v7(__7),v8(__8),v9(__9),v10(__10),v11(__11),v12(__12),v13(__13),v14(__14),v15(__15),v16(__16),v17(__17),v18(__18) {}
 
+#if (HXCPP_API_LEVEL>=330)
+  #define HX_LOCAL_RUN _hx_run
+#else
+  #define HX_LOCAL_RUN run
+#endif
 
-#define HX_END_LOCAL_FUNC0(ret) HX_DYNAMIC_CALL0(ret,run) };
+#define HX_END_LOCAL_FUNC0(ret) HX_DYNAMIC_CALL0(ret, HX_LOCAL_RUN ) };
 
-#define HX_END_LOCAL_FUNC1(ret) HX_DYNAMIC_CALL1(ret,run) };
-#define HX_END_LOCAL_FUNC2(ret) HX_DYNAMIC_CALL2(ret,run) };
-#define HX_END_LOCAL_FUNC3(ret) HX_DYNAMIC_CALL3(ret,run) };
-#define HX_END_LOCAL_FUNC4(ret) HX_DYNAMIC_CALL4(ret,run) };
-#define HX_END_LOCAL_FUNC5(ret) HX_DYNAMIC_CALL5(ret,run) };
-#define HX_END_LOCAL_FUNC6(ret) HX_DYNAMIC_CALL6(ret,run) };
-#define HX_END_LOCAL_FUNC7(ret) HX_DYNAMIC_CALL7(ret,run) };
-#define HX_END_LOCAL_FUNC8(ret) HX_DYNAMIC_CALL8(ret,run) };
-#define HX_END_LOCAL_FUNC9(ret) HX_DYNAMIC_CALL9(ret,run) };
-#define HX_END_LOCAL_FUNC10(ret) HX_DYNAMIC_CALL10(ret,run) };
-#define HX_END_LOCAL_FUNC11(ret) HX_DYNAMIC_CALL11(ret,run) };
-#define HX_END_LOCAL_FUNC12(ret) HX_DYNAMIC_CALL12(ret,run) };
-#define HX_END_LOCAL_FUNC13(ret) HX_DYNAMIC_CALL13(ret,run) };
-#define HX_END_LOCAL_FUNC14(ret) HX_DYNAMIC_CALL14(ret,run) };
-#define HX_END_LOCAL_FUNC15(ret) HX_DYNAMIC_CALL15(ret,run) };
-#define HX_END_LOCAL_FUNC16(ret) HX_DYNAMIC_CALL16(ret,run) };
-#define HX_END_LOCAL_FUNC17(ret) HX_DYNAMIC_CALL17(ret,run) };
-#define HX_END_LOCAL_FUNC18(ret) HX_DYNAMIC_CALL18(ret,run) };
-#define HX_END_LOCAL_FUNC19(ret) HX_DYNAMIC_CALL19(ret,run) };
+#define HX_END_LOCAL_FUNC1(ret) HX_DYNAMIC_CALL1(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC2(ret) HX_DYNAMIC_CALL2(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC3(ret) HX_DYNAMIC_CALL3(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC4(ret) HX_DYNAMIC_CALL4(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC5(ret) HX_DYNAMIC_CALL5(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC6(ret) HX_DYNAMIC_CALL6(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC7(ret) HX_DYNAMIC_CALL7(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC8(ret) HX_DYNAMIC_CALL8(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC9(ret) HX_DYNAMIC_CALL9(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC10(ret) HX_DYNAMIC_CALL10(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC11(ret) HX_DYNAMIC_CALL11(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC12(ret) HX_DYNAMIC_CALL12(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC13(ret) HX_DYNAMIC_CALL13(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC14(ret) HX_DYNAMIC_CALL14(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC15(ret) HX_DYNAMIC_CALL15(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC16(ret) HX_DYNAMIC_CALL16(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC17(ret) HX_DYNAMIC_CALL17(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC18(ret) HX_DYNAMIC_CALL18(ret, HX_LOCAL_RUN ) };
+#define HX_END_LOCAL_FUNC19(ret) HX_DYNAMIC_CALL19(ret, HX_LOCAL_RUN ) };
 
 // For compatibility until next version of haxe is released
 #define HX_BEGIN_LOCAL_FUNC0(name) \
@@ -778,231 +1068,70 @@ static Dynamic Create##enum_obj(::String inName,hx::DynamicArray inArgs) \
 
 
 #define HX_DECLARE_DYNAMIC_FUNCTIONS \
-  inline Dynamic operator()() { CheckFPtr(); return mPtr->__run(); } \
-   inline Dynamic operator()(const Dynamic &inArg0) { CheckFPtr(); return mPtr->__run(inArg0); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1) { CheckFPtr(); return mPtr->__run(inArg0,inArg1); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3); } \
-   inline Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4) { CheckFPtr(); return mPtr->__run(inArg0,inArg1,inArg2,inArg3,inArg4); } \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24); \
-   Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24,const Dynamic &inArg25); \
+               ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24,const Dynamic &inArg25); \
  
 
 
-
-namespace hx {
-HXCPP_EXTERN_CLASS_ATTRIBUTES void SetTopOfStack(int *inTopOfStack,bool);
-}
-#define HX_TOP_OF_STACK \
-		int t0 = 99; \
-		hx::SetTopOfStack(&t0,false);
-
-
-#ifdef __GNUC__
- #define EXPORT_EXTRA __attribute__ ((visibility("default")))
-#else
- #define EXPORT_EXTRA __declspec(dllexport)
-#endif
-
-#ifdef HX_DECLARE_MAIN
-
-#ifdef HXCPP_DLL_IMPORT
-
-#define HX_BEGIN_MAIN \
-   extern "C" { \
-   EXPORT_EXTRA void __main__() { \
-	__boot_all();
-
-#define HX_END_MAIN \
-} \
-}
-
-
-#elif defined(HX_ANDROID)
-  #ifdef HXCPP_EXE_LINK
-   #define HX_BEGIN_MAIN \
-   \
-   int main(int argc,char **argv){ \
-      HX_TOP_OF_STACK \
-      hx::Boot(); \
-      try{ \
-         __boot_all();
-
-   #define HX_END_MAIN \
-      } \
-      catch (Dynamic e){ \
-         __hx_dump_stack(); \
-         printf("Error : %s\n",e->toString().__CStr()); \
-         return -1; \
-      } \
-      return 0; \
-   }
-
-  #else
-   // Java Main....
-   #include <jni.h>
-   #include <hx/Thread.h>
-   #include <android/log.h>
-
-   #define HX_BEGIN_MAIN \
-   extern "C" EXPORT_EXTRA void hxcpp_main() { \
-      HX_TOP_OF_STACK \
-           try { \
-      hx::Boot(); \
-      __boot_all();
+#define HX_DECLARE_VARIANT_FUNCTIONS \
+  inline  ::Dynamic operator()(); \
+   inline  ::Dynamic operator()(const Dynamic &inArg0); \
+   inline  ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1); \
+   inline  ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2); \
+   inline  ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3); \
+   inline  ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24); \
+    ::Dynamic operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4,const Dynamic &inArg5,const Dynamic &inArg6,const Dynamic &inArg7,const Dynamic &inArg8,const Dynamic &inArg9,const Dynamic &inArg10,const Dynamic &inArg11,const Dynamic &inArg12,const Dynamic &inArg13,const Dynamic &inArg14,const Dynamic &inArg15,const Dynamic &inArg16,const Dynamic &inArg17,const Dynamic &inArg18,const Dynamic &inArg19,const Dynamic &inArg20,const Dynamic &inArg21,const Dynamic &inArg22,const Dynamic &inArg23,const Dynamic &inArg24,const Dynamic &inArg25); \
+ 
 
 
-   #define HX_END_MAIN \
-           } catch (Dynamic e) { \
-        __hx_dump_stack(); \
-             __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e->toString().__CStr()); \
-           }\
-      hx::SetTopOfStack((int *)0,true); \
-   } \
-   \
-   extern "C" EXPORT_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * env) \
-   { hxcpp_main(); }
-  #endif
+#define HX_IMPLEMENT_INLINE_VARIANT_FUNCTIONS \
+  ::Dynamic Variant::operator()() { CheckFPtr(); return valObject->__run(); } \
+   ::Dynamic Variant::operator()(const Dynamic &inArg0) { CheckFPtr(); return valObject->__run(inArg0); } \
+   ::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1) { CheckFPtr(); return valObject->__run(inArg0,inArg1); } \
+   ::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2) { CheckFPtr(); return valObject->__run(inArg0,inArg1,inArg2); } \
+   ::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3) { CheckFPtr(); return valObject->__run(inArg0,inArg1,inArg2,inArg3); } \
+   ::Dynamic Variant::operator()(const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4) { CheckFPtr(); return valObject->__run(inArg0,inArg1,inArg2,inArg3,inArg4); } \
+                                           
 
-#elif defined(HX_WINRT)
-
-#include <Roapi.h>
-
-#define HX_BEGIN_MAIN \
-[ Platform::MTAThread ] \
-int main(Platform::Array<Platform::String^>^) \
-{ \
-   HX_TOP_OF_STACK \
-   RoInitialize(RO_INIT_MULTITHREADED); \
-   hx::Boot(); \
-   try{ \
-      __boot_all();
-
-#define HX_END_MAIN \
-   } \
-   catch (Dynamic e){ \
-      __hx_dump_stack(); \
-      return -1; \
-   } \
-   return 0; \
-}
-
-#elif defined(HX_WIN_MAIN)
-
-
-#ifdef HAVE_WINDOWS_H
-
-#define HX_BEGIN_MAIN \
-int __stdcall WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) \
-{ \
-	HX_TOP_OF_STACK \
-	hx::Boot(); \
-	try{ \
-		__boot_all();
-
-#else
-
-#define HX_BEGIN_MAIN \
-extern "C" int __stdcall MessageBoxA(void *,const char *,const char *,int); \
-\
-int __stdcall WinMain( void * hInstance, void * hPrevInstance, const char *lpCmdLine, int nCmdShow) \
-{ \
-	HX_TOP_OF_STACK \
-	hx::Boot(); \
-	try{ \
-		__boot_all();
-
-#endif
-
-#define HX_END_MAIN \
-	} \
-	catch (Dynamic e){ \
-		__hx_dump_stack(); \
-		MessageBoxA(0,  e->toString().__CStr(), "Error", 0); \
-      return -1; \
-	} \
-	return 0; \
-}
-
-
-#elif defined(TIZEN)
-
-
-#define HX_BEGIN_MAIN \
-\
-extern "C" EXPORT_EXTRA int OspMain (int argc, char* pArgv[]){ \
-        HX_TOP_OF_STACK \
-        hx::Boot(); \
-        try{ \
-                __boot_all();
-
-#define HX_END_MAIN \
-        } \
-        catch (Dynamic e){ \
-                __hx_dump_stack(); \
-                printf("Error : %s\n",e->toString().__CStr()); \
-                return -1; \
-        } \
-        return 0; \
-}
-
-
-#else
-// Console Main ...
-
-#define HX_BEGIN_MAIN \
-\
-int main(int argc,char **argv){ \
-	HX_TOP_OF_STACK \
-	hx::Boot(); \
-	try{ \
-		__boot_all();
-
-#define HX_END_MAIN \
-	} \
-	catch (Dynamic e){ \
-		__hx_dump_stack(); \
-		printf("Error : %s\n",e->toString().__CStr()); \
-      return -1; \
-	} \
-	return 0; \
-}
-
-#endif
-
-#endif // HX_DECLARE_MAIN
-
-// Run as library
-#define HX_BEGIN_LIB_MAIN \
-extern "C" {\
-\
-void __hxcpp_lib_main() \
-{ \
-	HX_TOP_OF_STACK \
-	hx::Boot(); \
-	__boot_all();
-
-#define HX_END_LIB_MAIN \
-} }
 
 #endif
 

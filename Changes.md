@@ -1,4 +1,203 @@
 
+* Compile Cppia against haxe 4.0 preview 4
+
+4.0.2
+------------------------------------------------------------
+* Default Cppia to 64 bits on windows
+
+4.0.1
+------------------------------------------------------------
+* More logic for determining the android NDK version
+* Updated various opensource libraries (thanks robocoder)
+* Updated version of zlib
+* Updated version of sljit
+* Updated version of pcre
+* Updated version of sqlit3
+* Updated version of mbedtls
+* Some work on supporting utf16 strings (hx_smart_strings)
+* Added process_kill
+* Change root when calculating haxelib in build.xml files
+* Fix cppia super calls across cpp boundary
+* Add Array.resize
+* Be consistent with mod in cppia
+* Fix Sys.stderr
+* Add 'embedName' file attribute to allow text to cpp conversion
+* Updates for Msvc
+* Updates for Xcode
+
+3.4.188
+------------------------------------------------------------
+* Fix some threading crashes
+
+3.4.185
+------------------------------------------------------------
+* Do not ship static libraries
+* Use more lock-free structures in GC processing
+* Added some documentation
+* Added HXCPP_GC_SUMMARY option
+* Added HXCPP_GC_GENERATIONAL option
+* Added HXCPP_GC_DYNAMIC_SIZE option
+* Some MSVC 2017 support
+* Compile Cppia with JIT as an option by default
+
+3.4.64
+------------------------------------------------------------
+* Fixed cppia native interface implementation
+* Fixed debugger breakpoints
+* More compatibility for inet_pton and inet_ntop
+* Correct the order of thread housekeeping data
+
+3.4.49
+------------------------------------------------------------
+* Fixed 2d-Arrays and unserialize
+
+3.4.43
+------------------------------------------------------------
+
+* Added more options for code-size optimizations on android (thanks madrazo)
+* Added version of stpcpy on android to allow building with platform > 21, and running on older devices
+* Added some initial support for ipv6
+* Experimental support for Cppia JIT
+* Fixed issue with stale objects that use new pch files in cache
+* Rethrowing exception now preserves stack correctly
+
+
+3.4.2
+------------------------------------------------------------
+
+* Align float reads from memory for Arm architecture
+* Removed some virtual functions not needed by newer versions of haxe
+* Reworked the logic for compacting fragmented heaps with HXCPP_GC_MOVING
+* Expose StackContext to allow inlining of allocation routine, and combine with Cppia context
+* Fix some compare-with-dynamic issues
+* Added WatchOs support
+* Fixed for android NDK 13
+* Fix Array closure equality
+* Refactor the Cppia code
+* Fix return codes for atomic decrease
+* Fix some GC zone issues in the standard library
+* Set minimum MacOS deployment target to 10.6
+* Do not use typedefs for 'Int' and 'Bool' for newer api levels
+* Added dll_link to create output dll
+* Improved ObjC support
+* Make Cppia order of operations of '+=' et al consistent with other targets
+* Added NO_RECURSE flag to PCRE
+* Fix bsd_signal undefines on android
+* Add create/free abstract
+
+3.3.49
+------------------------------------------------------------
+* Fix Dynamic != for haxe 3.2.1
+* Fix Command line parsing on windows for triple quotes
+
+3.3.45
+------------------------------------------------------------
+* Much better compile cache support
+* Added tags to compiler flags to allow better targeting
+* Added UCP support to regexp
+* Added Array::fromData
+* Added AtomicInt operations
+* Added _hx_imod
+* More improvements for tvos
+* Fix blocking deque issue
+* Improved native testing
+* Added 'hxcpp run hxcpp cache ...' commands for managing cache
+* Added cpp.Variant class for query of field values to avoid boxing
+* Added more efficient version of finalizer
+* Add non allocating version of __hxcpp_print
+* More WinRT fixes
+* Output 'HxcppConfig.h' with defines included for easier external integration
+* Output list of output files if requested
+* Add support functions for StdLib - alloc/free/sizeof
+* Fix crash when marking stack names from GCRoots
+* Add bitcode support for iOS
+* Rename RegisterClass to avoid conflicts with windows
+* Added 'VirtualArray' for arrays of unknown types
+* Split Macros.tpl
+* Added optional ShowParam to process_run
+* Added inline functions for Int64 externs
+* Add error check for allocating from a finalizer
+* Fix null strings on Cffi Prime
+* Use slow path if required for Win64 Tls
+* Expand logic for detecting android toolchain from NDK name
+* Remove the need for hxcpp binaries by compiling source directly into target
+* Adjust the default verbosity level, and add HXCPP_VERBOSE/HXCPP_QUIET/HXCPP_SILENT
+* Added some control options for copyFile directive
+* Fix cppia decrement
+* Add Array.removeRange, which does not require a return value
+* Do not call setbuf(0) on stdin, since it messes with readLine
+* Cppia now throws an error if loading fails
+* Allocate EnumParam data inline to cut down on allocations
+* Allow anonymous object data to be allocated inline to avoid allocations
+* Add SSL library code
+* Add NativeGen framework for interfaces
+* Add macros to allow neater generated code
+* Allow larger memory space with -D HXCPP_GC_BIG_BLOCKS
+* Improve Array.join speed
+
+3.2.205
+------------------------------------------------------------
+* Initial support for HXCPP_OPTIMIZE_FOR_SIZE
+* Support HXCPP_DEBUG_LINK on more targets
+* Support for cross compiling to windows from linux
+* Added array removeAt
+* Some telemety fixes (thanks Jeff)
+* Check contents when comparing Dynamics with same pointer (Math.Nan!=Math.Nan)
+* Numerous WinRT fixes (thanks madrazo)
+* Fixed bug causing GC to crash marking constant strings (eg, resources)
+* Updated default SDK for Tizen (thanks Joshua)
+* Fixed command line args on linux (thanks Andy)
+
+3.2.193
+------------------------------------------------------------
+* Some improvements for tvos
+* Start on some GC defragging code
+* Fix android thread access to GC structures
+* Add socket socket_recv_from and socket_send_to
+* Fixed memory leak in GC collection code
+* Allow cross-compile to windows via MINGW
+* Fix overflow error that meant GC would work with a too-small buffer in some cases
+
+3.2.180
+------------------------------------------------------------
+* Initial support for tvos
+* Change name of ObjectType to hxObjectType to avoid clashes with iOS
+* Try to keep windows.h out of haxe-generated code
+* Fix null access bug in array-of-array
+* Create separate library for msvc 19
+
+------------------------------------------------------------
+* Try to get the pdb server working better for MSVS 2015
+* So not export symbols on windows unless HXCPP_DLL_EXPORT is set (-D dll_export) - makes exe smaller
+* Avoid dynamic-cast if possible when converting 2D arrays
+* Some RPi fixes
+* Some CFFI Prime fixes (thanks Joshua)
+* Fix build tool for next version of neko
+* Improve msvc cl.exe version checking for non-English environments
+* Add more control over how much Gc memory is used
+* Add faster(inline) thread local storage for Gc on windows.
+* Add some Gc load balancing when marking large arrays with multiple threads
+* Change the Gc memory layout to be a bit larger, but simpler.  This allows most of the allocation to be simplified and inlined.
+* Explicitly scan registers for Gc references because the stack scanning was missing them sometimes
+* Some additions to Undefine.h for windows
+* When static linking using MSVC 2015, compile the libraries directly into the exe to avoid compatibility issues
+* Move standard libraries into their own build.xml files
+* Make it easier to change the generated output filename
+* Allow targets from one build.xml file to be merged into another
+* Some more work on HXCPP_COMPILE_CACHE
+* Allow automatic grouping of obj files into librarys to avoid linking all the symbols in all obj files
+* Add implicit conversion to referenced type from cpp.Reference
+* Allow build.xml files to be imported relative to importing file
+* Allow '-' in command-line defines
+* Fix warnings from Hash class
+* Fix setsockopt for Mac
+* Support to MSVC2015
+* Fix for Blackberry 10.3
+* Fix debug break by linenumber
+* Better objc integration (thanks Caue)
+* Increase number of variables captured in closures to 20
+* Initial support for telemetry (thanks Jeff)
+* Align allocations for better emscripten support
 
 ------------------------------------------------------------
 * Fix gc_lock error in remove_dir

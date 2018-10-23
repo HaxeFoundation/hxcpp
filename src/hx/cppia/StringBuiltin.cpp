@@ -35,6 +35,7 @@ struct SubStrExpr : public StringExpr
       a0 = inA0;
       a1 = inA1;
    }
+   const char *getName() { return "SubStrExpr"; }
    CppiaExpr *link(CppiaModule &inData)
    {
       a0 = a0->link(inData);
@@ -54,12 +55,34 @@ struct SubStrExpr : public StringExpr
       else
          return val.substring(start,end);
    }
+   #ifdef CPPIA_JIT
+   static void SLJIT_CALL runSubstr(String *ioValue, int start, hx::Object *end)
+   {
+      *ioValue = ioValue->substr(start, Dynamic(end));
+   }
+   static void SLJIT_CALL runSubstring(String *ioValue, int start, hx::Object *end)
+   {
+      *ioValue = ioValue->substring(start, Dynamic(end));
+   }
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp ioValue(compiler,jtString);
+      JitTemp startVal(compiler,jtInt);
+
+      strVal->genCode(compiler, ioValue, etString);
+      a0->genCode(compiler, startVal, etInt);
+      a1->genCode(compiler, sJitArg2, etObject);
+      compiler->callNative( SUBSTR ? (void *)runSubstr : (void *)runSubstring, ioValue, startVal, sJitArg2.as(jtPointer) );
+      compiler->convert(ioValue, etString, inDest, destType);
+   }
+   #endif
 };
 
 
 template<bool UPPER>
 struct ToCaseExpr : public StringExpr
 {
+   const char *getName() { return "ToCaseExpr"; }
    ToCaseExpr(CppiaExpr *inSrc, CppiaExpr *inThis ) : StringExpr(inSrc,inThis) { }
    String runString(CppiaCtx *ctx)
    {
@@ -70,9 +93,34 @@ struct ToCaseExpr : public StringExpr
       else
          return val.toLowerCase();
    }
+   #ifdef CPPIA_JIT
+   static void SLJIT_CALL strToCase(String *ioVal)
+   {
+      if (UPPER)
+         *ioVal = ioVal->toUpperCase();
+      else
+         *ioVal = ioVal->toLowerCase();
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      if (destType==etString)
+      {
+         strVal->genCode(compiler, inDest, destType);
+         compiler->callNative( (void *)strToCase,  inDest.as(jtString) );
+      }
+      else
+      {
+         JitTemp tmpVal(compiler,jtString);
+         strVal->genCode(compiler, tmpVal, etString);
+         compiler->callNative( (void *)strToCase,  tmpVal);
+         compiler->convert( tmpVal, etString, inDest, destType );
+      }
+   }
+   #endif
 };
 
-template<bool CODE>
+template<bool CODE,bool AS_INT>
 struct CharAtExpr : public StringExpr
 {
    CppiaExpr *a0;
@@ -86,7 +134,8 @@ struct CharAtExpr : public StringExpr
       a0 = a0->link(inData);
       return StringExpr::link(inData);
    }
-   ExprType getType() { return CODE ? etObject : etString; }
+   const char *getName() { return "CharAtExpr"; }
+   ExprType getType() { return CODE ? (AS_INT ? etInt : etObject) : etString; }
 
    String runString(CppiaCtx *ctx)
    {
@@ -103,7 +152,11 @@ struct CharAtExpr : public StringExpr
       BCR_CHECK;
       int idx = a0->runInt(ctx);
       BCR_CHECK;
-      return val.charCodeAt(idx);
+
+      if (AS_INT)
+         return (int)val.cca(idx);
+      else
+         return val.charCodeAt(idx);
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
@@ -113,10 +166,70 @@ struct CharAtExpr : public StringExpr
       BCR_CHECK;
 
       if (CODE)
-         return val.charCodeAt(idx).mPtr;
+      {
+         if (AS_INT)
+            return Dynamic( val.cca(idx) ).mPtr;
+         else
+            return val.charCodeAt(idx).mPtr;
+      }
       else
          return Dynamic(val.charAt(idx)).mPtr;
    }
+
+   #ifdef CPPIA_JIT
+   static hx::Object *SLJIT_CALL runCharCodeAt(String *inValue, int inIndex)
+   {
+      return (inValue->charCodeAt(inIndex)).mPtr;
+   }
+   static int SLJIT_CALL runCca(String *inValue, int inIndex)
+   {
+      return (inValue->cca(inIndex));
+   }
+   static void SLJIT_CALL runCharAt(String *ioValue, int inIndex)
+   {
+      *ioValue = ioValue->charAt(inIndex);
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp value(compiler,jtString);
+      strVal->genCode(compiler, value, etString);
+      a0->genCode(compiler, sJitTemp1, etInt);
+
+      if (CODE)
+      {
+         if (AS_INT)
+         {
+            #ifdef HX_SMART_STRINGS
+            compiler->callNative( (void *)runCca, value, sJitTemp1.as(jtInt));
+            compiler->convertReturnReg( etInt, inDest, destType);
+            #else
+            // sJitTemp1 = __s
+            compiler->move( sJitTemp0.as(jtPointer), value.star(jtPointer,offsetof(String,__s)) );
+            if (destType==etInt)
+            {
+               compiler->move(inDest.as(jtInt), sJitTemp0.atReg(sJitTemp1,0,jtByte) );
+            }
+            else
+            {
+               compiler->move(sJitTemp0.as(jtInt), sJitTemp0.atReg(sJitTemp1,0,jtByte) );
+               compiler->convertReturnReg(etInt, inDest, destType);
+            }
+            #endif
+         }
+         else
+         {
+            compiler->callNative( (void *)runCharCodeAt, value, sJitTemp1.as(jtInt));
+            compiler->convertReturnReg( etObject, inDest, destType);
+         }
+      }
+      else
+      {
+         compiler->callNative( (void *)runCharAt, value, sJitTemp1.as(jtInt));
+         compiler->convert(value, etString, inDest, destType);
+      }
+   }
+   #endif
 };
 
 
@@ -132,6 +245,7 @@ struct SplitExpr : public CppiaExpr
       strVal = inThis;
       a0 = inDelim;
    }
+   const char *getName() { return "SplitExpr"; }
    CppiaExpr *link(CppiaModule &inData)
    {
       strVal = strVal->link(inData);
@@ -148,6 +262,25 @@ struct SplitExpr : public CppiaExpr
       BCR_CHECK;
       return val.split(separator).mPtr;
    }
+
+
+   #ifdef CPPIA_JIT
+   static hx::Object *SLJIT_CALL runSplit(String *inValue, String *sep)
+   {
+      return (inValue->split(*sep)).mPtr;
+   }
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp value(compiler,jtString);
+      JitTemp sep(compiler,jtString);
+
+      strVal->genCode(compiler, value, etString);
+      a0->genCode(compiler, sep, etString);
+      compiler->callNative( (void *)runSplit, value, sep );
+      compiler->convertReturnReg(etObject, inDest, destType);
+   }
+   #endif
+
 };
 
 
@@ -166,6 +299,7 @@ struct IndexOfExpr : public CppiaExpr
       sought = inSought;
       start = inStart;
    }
+   const char *getName() { return "IndexOfExpr"; }
    ExprType getType() { return etInt; }
    CppiaExpr *link(CppiaModule &inData)
    {
@@ -173,6 +307,10 @@ struct IndexOfExpr : public CppiaExpr
       sought = sought->link(inData);
       start = start->link(inData);
       return this;
+   }
+   Float runFloat(CppiaCtx *ctx)
+   {
+      return runInt(ctx);
    }
    int runInt(CppiaCtx *ctx)
    {
@@ -188,6 +326,30 @@ struct IndexOfExpr : public CppiaExpr
          return val.indexOf(s,first);
    }
    hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
+
+
+   #ifdef CPPIA_JIT
+   static int SLJIT_CALL runIndexOf(String *ioValue, String *sought, hx::Object *first)
+   {
+      return ioValue->indexOf(*sought, Dynamic(first));
+   }
+   static int SLJIT_CALL runLastIndexOf(String *ioValue, String *sought, hx::Object *first)
+   {
+      return ioValue->lastIndexOf(*sought, Dynamic(first));
+   }
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp value(compiler,jtString);
+      JitTemp soughtTemp(compiler,jtString);
+
+      strVal->genCode(compiler, value, etString);
+      sought->genCode(compiler, soughtTemp, etString);
+      start->genCode(compiler, sJitArg2, etObject);
+      compiler->callNative( LAST ? (void *)runLastIndexOf : (void *)runIndexOf, value, soughtTemp, sJitArg2.as(jtPointer) );
+      compiler->convertReturnReg(etInt, inDest, destType);
+   }
+   #endif
+
 };
 
 
@@ -216,17 +378,17 @@ CppiaExpr *createStringBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, String f
    else if (field==HX_CSTRING("charAt"))
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
-      return new CharAtExpr<false>(inSrc,inThisExpr,ioExpressions[0]);
+      return new CharAtExpr<false,false>(inSrc,inThisExpr,ioExpressions[0]);
    }
    else if (field==HX_CSTRING("cca"))
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
-      return new CharAtExpr<true>(inSrc,inThisExpr,ioExpressions[0]);
+      return new CharAtExpr<true,true>(inSrc,inThisExpr,ioExpressions[0]);
    }
    else if (field==HX_CSTRING("charCodeAt"))
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
-      return new CharAtExpr<true>(inSrc,inThisExpr,ioExpressions[0]);
+      return new CharAtExpr<true,false>(inSrc,inThisExpr,ioExpressions[0]);
    }
    else if (field==HX_CSTRING("split"))
    {

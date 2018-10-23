@@ -46,18 +46,19 @@
 #define EXT "dso"
 #define NEKO_EXT "so"
 //#define __USE_GNU 1
-#else
-#if defined(ANDROID) || defined(BLACKBERRY)
-#define EXT "so"
-#elif defined(EMSCRIPTEN)
-#define EXT "ll"
-//#elif defined(NEKO_GCC)
-//todo - NEKO_EXT ?
-#else
+
+#elif defined(HX_MACOS)
 #include <mach-o/dyld.h>
 #define EXT "dylib"
 #define NEKO_EXT "dylib"
+
+#else
+#if defined(EMSCRIPTEN)
+#define EXT "ll"
+#else
+#define EXT "so"
 #endif
+
 #endif
 
 #include <dlfcn.h>

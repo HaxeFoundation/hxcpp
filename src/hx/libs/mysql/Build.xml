@@ -1,0 +1,24 @@
+<xml>
+
+<files id="hxcpp_mysql" dir="${this_dir}" >
+  <depend files="hxcpp-depends"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <depend name="${this_dir}/sha1.h" />
+  <depend name="${this_dir}/socket.h" />
+  <cache value="true" asLibrary="true" />
+
+  <file name="Mysql.cpp"/>
+  <file name="my_api.cpp"/>
+  <file name="my_proto.cpp"/>
+  <file name="socket.cpp"/>
+  <file name="sha1.cpp"/>
+
+</files>
+
+<target id="haxe">
+  <files id="hxcpp_mysql"/>
+  <lib name="ws2_32.lib" if="windows" unless="static_link" />
+</target>
+
+
+</xml>

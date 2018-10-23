@@ -1,5 +1,8 @@
 import haxe.io.Path;
 import sys.FileSystem;
+import haxe.crypto.Md5;
+
+using StringTools;
 
 class Linker
 {
@@ -11,14 +14,18 @@ class Linker
    public var mLibDir:String;
    public var mRanLib:String;
    public var mFromFile:String;
+   public var mFromFileNeedsQuotes:Bool;
    public var mLibs:Array<String>;
    public var mExpandArchives:Bool;
    public var mRecreate:Bool;
+   public var mLastOutName:String;
+   public var mAddLibPath:String;
 
    public function new(inExe:String)
    {
       mFlags = [];
       mOutFlag = "-o";
+      mAddLibPath = "-L";
       mExe = inExe;
       mNamePrefix = "";
       mLibDir = "";
@@ -26,6 +33,7 @@ class Linker
       mExpandArchives = false;
       // Default to on...
       mFromFile = "@";
+      mFromFileNeedsQuotes = true;
       mLibs = [];
       mRecreate = false;
    }
@@ -49,26 +57,58 @@ class Linker
       return false;
    }
 
-   public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler)
+   public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler,?overrideTmpDir:String)
    {
       var ext = inTarget.getExt(mExt);
       var file_name = mNamePrefix + inTarget.mOutput + ext;
-      
+
+      var tmpDir = overrideTmpDir==null ? inCompiler.mObjDir : overrideTmpDir;
+
+
       try
       {
-         PathManager.mkdir(inTarget.mOutputDir);  
+         PathManager.mkdir(inTarget.mOutputDir);
       }
       catch (e:Dynamic)
       {
          Log.error("Unable to create output directory \"" + inTarget.mOutputDir + "\"");
-         //throw "Unable to create output directory " + inTarget.mOutputDir; 
+         //throw "Unable to create output directory " + inTarget.mOutputDir;
       }
-      
-      var out_name = inTarget.mOutputDir + file_name;
 
-      var libs = inTarget.mLibs.concat(mLibs);
+      var out_name = Path.normalize(PathManager.combine( inTarget.mBuildDir, inTarget.mOutputDir + file_name));
+      mLastOutName = out_name;
+
+
+      var lastLib = "";
+      var libs = new Array<String>();
+      for(l in inTarget.mAutoLibs)
+         if (l!=lastLib)
+         {
+            libs.push(l);
+            lastLib = l;
+         }
+
+      for(l in inTarget.mLibs)
+         if (l!=lastLib)
+         {
+            libs.push(l);
+            lastLib = l;
+         }
+
+      for(l in mLibs)
+         if (l!=lastLib)
+         {
+            libs.push(l);
+            lastLib = l;
+         }
+
       var v18Added = false;
       var isOutOfDateLibs = false;
+
+      var md5 = Md5.encode(inObjs.join(";"));
+      var hashFile = out_name + ".hash";
+      if (!FileSystem.exists(hashFile) || sys.io.File.getContent(hashFile)!=md5)
+         isOutOfDateLibs = true;
 
       for(i in 0...libs.length)
       {
@@ -144,7 +184,7 @@ class Linker
          {
             if (mRecreate && FileSystem.exists(out_name))
             {
-               Log.info(" clean " + out_name );
+               Log.info("\x1b[1mClean: \x1b[0m" + out_name);
                FileSystem.deleteFile(out_name);
             }
             args.push(out + out_name);
@@ -164,9 +204,9 @@ class Linker
                {
                   var libName = Path.withoutDirectory(lib);
                   var libObjs = ProcessManager.readStdout(mExe, ["t", lib ]);
-                  var objDir = inCompiler.mObjDir + "/" + libName;
+                  var objDir = tmpDir + "/" + libName + ".unpack";
                   PathManager.mkdir(objDir);
-                  ProcessManager.runCommand (objDir, mExe, ["x", lib]);
+                  ProcessManager.runCommand (objDir, mExe, ["x", lib], true, true, false, " - Unpack : " + lib);
                   for(obj in libObjs)
                      objs.push( objDir+"/"+obj );
                }
@@ -176,36 +216,70 @@ class Linker
             libs = libArgs;
          }
 
-         // Place list of obj files in a file called "all_objs"
-         if (mFromFile=="@")
+         var here = Path.normalize(Sys.getCwd()) + "/";
+         var hereLen = here.length;
+         for(oid in 0...objs.length)
          {
-            PathManager.mkdir(inCompiler.mObjDir);
-            var fname = inCompiler.mObjDir + "/all_objs";
+            var obj = Path.normalize( objs[oid] );
+            if (obj.startsWith(here))
+               objs[oid] = obj.substr(hereLen);
+         }
+
+         // Place list of obj files in a file called "all_objs"
+         if (mFromFile!="")
+         {
+            PathManager.mkdir(tmpDir);
+            var fname = tmpDir + "/all_objs";
+
+            var local = Path.normalize(fname);
+            if (local.startsWith(here))
+               fname = local.substr(hereLen);
+
             var fout = sys.io.File.write(fname,false);
-            for(obj in objs)
-               fout.writeString(obj + "\n");
+            if (mFromFileNeedsQuotes)
+            {
+               for(obj in objs)
+                  fout.writeString('"' + obj + '"\n');
+            }
+            else
+            {
+               for(obj in objs)
+                  fout.writeString(obj + '\n');
+            }
             fout.close();
-            args.push("@" + fname );
+            var parts = mFromFile.split(" ");
+            var last = parts.pop();
+            args = args.concat(parts);
+            args.push(last + fname );
          }
          else
             args = args.concat(objs);
 
+         for(libpath in inTarget.mLibPaths)
+         {
+            var path = Path.normalize(libpath);
+            if (path.startsWith(here))
+               path = path.substr(hereLen);
+            args.push( mAddLibPath + path );
+         }
+
          args = args.concat(libs);
-         
-         var result = ProcessManager.runCommand("", mExe, args);
+
+         var result = ProcessManager.runCommand("", mExe, args, true, true, false,
+             "\x1b[1mLink: \x1b[0m" + out_name);
          if (result!=0)
          {
-            Sys.exit(result);
+            Tools.exit(result);
             //throw "Error : " + result + " - build cancelled";
          }
 
          if (mRanLib!="")
          {
             args = [out_name];
-            var result = ProcessManager.runCommand("", mRanLib, args);
+            var result = ProcessManager.runCommand("", mRanLib, args, true, true, false, "\x1b[1mRanlib:\x1b[0m " + out_name);
             if (result!=0)
             {
-               Sys.exit(result);
+               Tools.exit(result);
                //throw "Error : " + result + " - build cancelled";
             }
          }
@@ -215,6 +289,8 @@ class Linker
             sys.io.File.copy( mLibDir+"/"+file_name, out_name );
             FileSystem.deleteFile( mLibDir+"/"+file_name );
          }
+
+         sys.io.File.saveContent(hashFile,md5);
          return out_name;
       }
 

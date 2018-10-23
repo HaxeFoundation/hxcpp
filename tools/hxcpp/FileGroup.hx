@@ -4,6 +4,7 @@ import sys.FileSystem;
 class FileGroup
 {
    public var mNewest:Float;
+   public var mNewestFile:String;
    public var mCompilerFlags:Array<String>;
    public var mMissingDepends:Array<String>;
    public var mOptions:Array<String>;
@@ -13,21 +14,94 @@ class FileGroup
    public var mHLSLs:Array<HLSL>;
    public var mDir:String;
    public var mId:String;
-   public var mDepends:Array<String>;
+   public var mConfig:String;
+   public var mCacheDepends:Array<String>;
    public var mDependHash:String;
+   public var mAsLibrary:Bool;
+   public var mAddTwice:Bool;
+   public var mSetImportDir:Bool;
+   public var mUseCache:Bool;
+   public var mCacheProject:String;
+   public var mTags:String;
+   public var mNvcc:Bool;
+   public var mObjPrefix:String;
    
-   public function new(inDir:String,inId:String)
+   public function new(inDir:String,inId:String,inSetImportDir = false)
+   {
+      mId = inId;
+      replace(inDir, inSetImportDir);
+   }
+
+   public function toString() return 'FileGroup($mId)';
+
+   public function replace(inDir:String,inSetImportDir)
    {
       mNewest = 0;
       mFiles = [];
       mCompilerFlags = [];
       mPrecompiledHeader = "";
-      mDepends = [];
+      mCacheDepends = [];
       mMissingDepends = [];
       mOptions = [];
       mHLSLs = [];
       mDir = inDir;
-      mId = inId;
+      mConfig = "";
+      mAsLibrary = false;
+      mAddTwice = false;
+      mSetImportDir = inSetImportDir;
+      mUseCache = false;
+      mCacheProject = "";
+      mNvcc = false;
+      mTags = "haxe,static";
+      mObjPrefix = "";
+      return this;
+   }
+
+   public function find(name:String)
+   {
+      for(file in mFiles)
+         if (file.mName==name)
+            return file;
+      return null;
+   }
+
+   public function addFile(file:File)
+   {
+      mFiles.push(file);
+   }
+
+   public function filter(defines:Map<String,String>)
+   {
+      var newFiles = new Array<File>();
+      for(file in mFiles)
+         if (file.keep(defines))
+            newFiles.push(file);
+      mFiles = newFiles;
+   }
+
+   public function getTags()
+   {
+      return mTags;
+   }
+
+   public function addTag(inTag:String)
+   {
+      if (inTag!=null && inTag!="")
+      {
+         var have = mTags.split(",");
+         if (have.indexOf(inTag)<0)
+         {
+            have.push(inTag);
+            mTags = have.join(",");
+         }
+      }
+   }
+
+   public function isPrecompiled() return mPrecompiledHeader!="";
+
+   public function dontPrecompile()
+   {
+      mPrecompiledHeader = "";
    }
 
    public function addCompilerFlag(inFlag:String)
@@ -35,8 +109,18 @@ class FileGroup
       mCompilerFlags.push(inFlag);
    }
 
-   public function addDepend(inFile:String)
+   public function getCacheProject()
    {
+      if (mCacheProject=="")
+         mCacheProject = mId;
+      return mCacheProject;
+   }
+
+
+   public function addDepend(inFile:String, inDateOnly:Bool)
+   {
+      if (mSetImportDir && !Path.isAbsolute(inFile) )
+         inFile = PathManager.combine(mDir, inFile);
       if (!FileSystem.exists(inFile))
       {
          mMissingDepends.push(inFile);
@@ -44,21 +128,39 @@ class FileGroup
       }
       var stamp =  FileSystem.stat(inFile).mtime.getTime();
       if (stamp>mNewest)
+      {
          mNewest = stamp;
+         mNewestFile = inFile;
+      }
 
-      mDepends.push(inFile);
+      if (!inDateOnly)
+         mCacheDepends.push(inFile);
+   }
+
+   public function getNewestFile()
+   {
+      return '$mId($mNewestFile)';
    }
 
    public function addDependFiles(inGroup:FileGroup)
    {
-      for(depend in inGroup.mDepends)
-         addDepend(depend);
+      if (inGroup.mNewest>mNewest)
+      {
+         mNewestFile = inGroup.getNewestFile();
+         mNewest = inGroup.mNewest;
+      }
+
+      for(depend in inGroup.mCacheDepends)
+         mCacheDepends.push(depend);
+
+      for(missing in inGroup.mMissingDepends)
+         mMissingDepends.push(missing);
    }
 
 
    public function addHLSL(inFile:String,inProfile:String,inVariable:String,inTarget:String)
    {
-      addDepend(inFile);
+      addDepend(inFile, true );
 
       mHLSLs.push( new HLSL(inFile,inProfile,inVariable,inTarget) );
    }
@@ -72,7 +174,7 @@ class FileGroup
    {
       if (mMissingDepends.length>0)
       {
-         Log.error("Could not find dependencies: [ " + mMissingDepends.join (", ") + " ]");
+         Log.error("Could not find dependencies for " + mId + " : [ " + mMissingDepends.join (", ") + " ]");
          //throw "Could not find dependencies: " + mMissingDepends.join(",");
       }
    }
@@ -86,12 +188,18 @@ class FileGroup
       var result = new Array<String>();
       for(def in contents.split("\n"))
       {
-         var name = def.split("=")[0].toLowerCase();
+         var name = def.split("=")[0];//.toLowerCase();
          if (name.indexOf("hxcpp_link")>=0)
          {
             // Only effects linking, not compiling
          }
-         else if (name.indexOf("hxcpp")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" )
+         else if (name=="hxcpp_verbose" || name=="hxcpp_silent" || name=="hxcpp_quiet" || name=="hxcpp_times" || name=="hxcpp_neko_buildtool" || name=="hxcpp_link_no_tool_depends" )
+         {
+            // Does not affect build
+         }
+         else if (name.indexOf("hxcpp")>=0 || name=="scriptable" || name.indexOf("dll")>=0 || name=="no_console" ||
+            name.substr(0,8)=="android-" || name.substr(0,4)=="ndkv" || name=="toolchain" || name=="platform" ||
+              name=="toolchain_version" || name=="android_ndk_root" )
             result.push(def);
       }
 
@@ -116,10 +224,11 @@ class FileGroup
 
             if (FileSystem.exists(dest))
             {
-               var dest_content = sys.io.File.getContent(dest);
+               var dest_content = filterOptions(sys.io.File.getContent(dest));
                if (dest_content==contents)
                   skip = true;
             }
+
             if (!skip)
             {
                PathManager.mkdir(inObjDir);
@@ -128,15 +237,17 @@ class FileGroup
                stream.close();
                changed = true;
             }
-            addDepend(dest);
+            addDepend(dest,true);
          }
       }
       return changed;
    }
 
-   public function getPchDir()
+   public function getPchDir(inObjDir:String)
    {
-      return "__pch/" + mId ;
+      var result = inObjDir + "/__pch/" + mId ;
+      PathManager.mkdir(result);
+      return result;
    }
 
    public function getPchName()
@@ -149,18 +260,25 @@ class FileGroup
       return inStamp<mNewest;
    }
 
+   public function isCached() return CompileCache.hasCache && mUseCache;
+
    public function preBuild()
    {
       for(hlsl in mHLSLs)
          hlsl.build();
 
-      if (BuildTool.useCache)
+      if (CompileCache.hasCache && mUseCache)
       {
          mDependHash = "";
-         for(depend in mDepends)
-            mDependHash += File.getFileHash(depend);
+         for(depend in mCacheDepends)
+            mDependHash += File.getFileHash(depend,null);
          mDependHash = haxe.crypto.Md5.encode(mDependHash);
       }
+   }
+
+   public function getDependString()
+   {
+      return "Group(" + mCacheDepends.join(",") + ")";
    }
 
    public function setPrecompiled(inFile:String, inDir:String)

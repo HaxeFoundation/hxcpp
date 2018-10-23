@@ -5,58 +5,112 @@ import BuildTool;
 
 class Setup
 {
-   static function findAndroidNdkRoot(inDir:String)
+   static function findAndroidNdkRoot(defines: Map<String,String>, inBaseVersion:Int):String
    {
-      var files:Array<String> = null;
-      try
+      var bestVersion = 0.0;
+      var result:String = null;
+
+      Log.v("Looking in ANDROID_NDK_DIR");
+      if (defines.exists("ANDROID_NDK_DIR"))
       {
-         files = FileSystem.readDirectory(inDir);
-      }
-      catch (e:Dynamic)
-      {
-         Log.error('ANDROID_NDK_DIR "$inDir" does not point to a valid directory');
-         //throw 'ANDROID_NDK_DIR "$inDir" does not point to a valid directory.';
+        var ndkDir:String = defines.get("ANDROID_NDK_DIR");
+        ndkDir = ndkDir.split("\\").join("/");
+        var files:Array<String> = null;
+        var checkFiles:Bool = true;
+        try
+        {
+             files = FileSystem.readDirectory(ndkDir);
+        }
+        catch (e:Dynamic)
+        {
+             Log.warn('ANDROID_NDK_DIR "$ndkDir" does not point to a valid directory');
+             checkFiles=false;
+        }
+        if (checkFiles)
+          for (file in files)
+          {
+             file = file.split("\\").join("/");
+             var version = getNdkVersion(file);
+             if (inBaseVersion==0 || Std.int(version)==inBaseVersion)
+             {
+                if (version>bestVersion)
+                {
+                   bestVersion = version;
+                   result = ndkDir + "/" + file;
+                }
+             }
+          }
       }
 
-      var extract_version = ~/^android-ndk-r(\d+)([a-z]?)$/;
-      var bestMajor = 0;
-      var bestMinor = "";
-      var result = "";
-      for(file in files)
-         if (extract_version.match(file))
-         {
-            var major = Std.parseInt( extract_version.matched(1) );
-            var minor = extract_version.matched(2);
-            if ( major>bestMajor || (major==bestMajor && minor>bestMinor))
-            {
-               bestMajor = major;
-               bestMinor = minor;
-               result = inDir + "/" + file;
-            }
-         }
-      
-      Log.info("", "Found NDK " + result);
-
-      if (result=="")
+      Log.v("Looking in ANDROID_SDK/ndk-bundle");
+      if (defines.exists("ANDROID_SDK"))
       {
-         Log.error('ANDROID_NDK_DIR "$inDir" does not contain matching NDK downloads'); 
-         //throw 'ANDROID_NDK_DIR "$inDir" does not contain matching ndk downloads.'; 
+        Log.v("checks default ndk-bundle in android sdk");
+        var ndkBundle = defines.get("ANDROID_SDK")+"/ndk-bundle";
+        ndkBundle = ndkBundle.split("\\").join("/");
+        var version = getNdkVersion(ndkBundle);
+        if (version>bestVersion && (inBaseVersion==0 || inBaseVersion==Std.int(version)) )
+        {
+           Log.v("Using default ndk-bundle in android sdk");
+           result = ndkBundle;
+        }
       }
 
       return result;
    }
 
-   static public function getNdkVersion(inDirName:String):Int
+   static public function getNdkVersion(inDirName:String):Float
    {
-      var extract_version = ~/android-ndk-r(\d+)*/;
-      if (extract_version.match(inDirName))
+      Log.v("Try to get version from source.properties");
+      var src = toPath(inDirName+"/source.properties");
+      if (sys.FileSystem.exists(src))
       {
-         return Std.parseInt( extract_version.matched(1) );
+         var fin = sys.io.File.read(src, false);
+         try
+         {
+            while (true)
+            {
+               var str = fin.readLine();
+               var split = str.split ("=");
+               var name = StringTools.trim(split[0]);
+               if (name == "Pkg.Revision")
+               {
+                  var revision = StringTools.trim(split[1]);
+                  var split2 = revision.split( "." );
+                  var result:Float = 1.0 * Std.parseInt(split2[0]) + 0.001 * Std.parseInt(split2[1]);
+                  if (result!=null && result>=8)
+                  {
+                     Log.v('Deduced NDK version '+result+' from "$inDirName"/source.properties');
+                     fin.close();
+                     return result;
+                  }
+               }
+            }
+         }
+         catch (e:haxe.io.Eof)
+         {
+            Log.warn('Could not deduce NDK version from "$inDirName"/source.properties');
+         }
+         fin.close();
       }
-      //throw 'Could not deduce NDK version from "$inDirName"';
+
+      var dir = inDirName.split("\\").join("/");
+      Log.v('Try to get version from directory name "$dir"');
+      var extract_version = ~/\/(android-ndk-)?r(\d+)([a-z]?)$/;
+      if (extract_version.match(dir))
+      {
+         var major:Int = Std.parseInt( extract_version.matched(2) );
+         var result:Float = 1.0 * major;
+         var minor = extract_version.matched(3);
+         if (minor!=null && minor.length>0)
+            result += 0.001 * (minor.toLowerCase().charCodeAt(0)-'a'.code);
+         return result;
+      }
+
+      Log.warn('Could not deduce NDK version from "$inDirName" - assuming 8');
       return 8;
    }
-   
+
    public static function initHXCPPConfig(ioDefines:Hash<String>)
    {
       var env = Sys.environment();
@@ -75,7 +129,7 @@ class Setup
          //Sys.println("Warning: No 'HOME' variable set - .hxcpp_config.xml might be missing.");
          return;
       }
- 
+
       ioDefines.set("HXCPP_HOME", home);
 
       var  config = toPath(home+"/.hxcpp_config.xml");
@@ -105,7 +159,7 @@ class Setup
       // Setup MINGW_ROOT or fail
       if (!ioDefines.exists("MINGW_ROOT"))
       {
-       
+
          var haxelib = PathManager.getHaxelib("minimingw","",false);
          if (haxelib!=null && haxelib!="")
          {
@@ -115,7 +169,7 @@ class Setup
          }
 
          var guesses = ["c:/MinGW"];
-         for(guess in guesses )
+         for (guess in guesses)
          {
             if (FileSystem.exists(guess))
             {
@@ -125,7 +179,16 @@ class Setup
             }
          }
 
-         Log.error('Could not guess MINGW_ROOT (tried $guesses) - please set explicitly');
+         if (ioDefines.exists("mingw"))
+         {
+            //when mingw is explicitly indicated but not properly configured, this log will be shown
+            Log.error('Could not guess MINGW_ROOT (tried $guesses) - please set explicitly');
+         }
+         else
+         {
+            //when both mingw and MSVC is not properly configured, this log will be shown
+            Log.error('Could not setup any C++ compiler, please install or reinstall a valid C++ compiler');
+         }
       }
    }
 
@@ -142,7 +205,7 @@ class Setup
             var content = sys.io.File.getContent(file);
             content = content.split("\r").join("");
             var value = ~/^(\w*)\s*=\s*'(.*)'/;
-            for(line in content.split("\n"))
+            for (line in content.split("\n"))
             {
                if (value.match(line))
                {
@@ -171,14 +234,34 @@ class Setup
       return str.split(" ")[1]=="raspberrypi";
    }
 
+   static public function startPdbServer()
+   {
+      var oldPath = Sys.getCwd();
+      try
+      {
+         // Run it in hxcpp directory so it does not lock the build directory after build finishes
+         Sys.setCwd(BuildTool.HXCPP);
+         var proc = new Process("mspdbsrv.exe",["-start"]);
+         Tools.addOnExitHook(function(_) {
+           proc.kill();
+         });
+      }
+      catch(e:Dynamic)
+      {
+         Log.v("Could not start mspdbsrv:" + e);
+      }
+      Sys.setCwd(oldPath);
+   }
 
 
 
-   public static function setup(inWhat:String,ioDefines: Map<String,String>)
+
+   public static function setup(inWhat:String,ioDefines:Map<String,String>)
    {
       if (ioDefines.exists("HXCPP_CLEAN_ONLY"))
          return;
 
+      Profile.push("setup " + inWhat);
       if (inWhat=="androidNdk")
       {
          setupAndroidNdk(ioDefines);
@@ -189,7 +272,11 @@ class Setup
       }
       else if (inWhat=="msvc")
       {
-         setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"));
+         setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"), ioDefines.exists("winrt"));
+      }
+      else if (inWhat=="pdbserver")
+      {
+         startPdbServer();
       }
       else if (inWhat=="mingw")
       {
@@ -199,33 +286,50 @@ class Setup
       {
          setupEmscripten(ioDefines);
       }
+      else if (inWhat=="nvcc")
+      {
+         BuildTool.setupNvcc();
+      }
       else
       {
          Log.error('Unknown setup feature "$inWhat"');
          //throw 'Unknown setup feature $inWhat';
       }
+      Profile.pop();
    }
 
    static public function setupAndroidNdk(defines:Map<String,String>)
    {
       var root:String = null;
-      
+
       if (Log.verbose) Log.println("");
 
-      if (!defines.exists("ANDROID_NDK_ROOT"))
+      var ndkVersion = 0;
+      for (i in 6...20)
       {
-         if (defines.exists("ANDROID_NDK_DIR"))
+         if (defines.exists("NDKV" + i))
          {
-            root = Setup.findAndroidNdkRoot( defines.get("ANDROID_NDK_DIR") );
-            Log.info("", "\x1b[33;1mDetected Android NDK root: " + root + "\x1b[0m");
+            ndkVersion = i;
+            Log.info("", "\x1b[33;1mRequested Android NDK r" + i + "\x1b[0m");
+            break;
+         }
+      }
 
-            Sys.putEnv("ANDROID_NDK_ROOT", root);
-            defines.set("ANDROID_NDK_ROOT", root);
+      if (!defines.exists("ANDROID_NDK_ROOT") || ndkVersion!=0)
+      {
+         root = Setup.findAndroidNdkRoot( defines, ndkVersion );
+         if (root==null)
+         {
+            var ndkDir = defines.exists("ANDROID_NDK_DIR") ? defines.get("ANDROID_NDK_DIR") : "not set";
+            if (ndkVersion!=0)
+               Log.error('ANDROID_NDK_DIR ["$ndkDir"] or ndk-bundle does not contain requested NDK $ndkVersion');
+            else
+               Log.error('ANDROID_NDK_DIR ["$ndkDir"] or ndk-bundle does not contain a matching NDK');
          }
          else
          {
-            Log.error("Could not find ANDROID_NDK_ROOT or ANDROID_NDK_DIR variable");
-            //throw "ANDROID_NDK_ROOT or ANDROID_NDK_DIR should be set";
+            Sys.putEnv("ANDROID_NDK_ROOT", root);
+            defines.set("ANDROID_NDK_ROOT", root);
          }
       }
       else
@@ -233,21 +337,25 @@ class Setup
          root = defines.get("ANDROID_NDK_ROOT");
          Log.info("", "\x1b[33;1mUsing Android NDK root: " + root + "\x1b[0m");
       }
-      
-      var found = false;
-      for(i in 6...20)
-         if (defines.exists("NDKV" + i))
-         {
-            found = true;
-            Log.info("", "\x1b[33;1mUsing Android NDK r" + i + "\x1b[0m");
-            break;
-         }
-      if (!found)
+
+      if (ndkVersion==0)
       {
-         var version = Setup.getNdkVersion( defines.get("ANDROID_NDK_ROOT") );
-         Log.info("", "\x1b[33;1mDetected Android NDK r" + version + "\x1b[0m");
-         defines.set("NDKV" + version, "1" );
+         var version = Setup.getNdkVersion( root );
+         if (version > 0)
+         {
+            Log.info("", "\x1b[33;1mDetected Android NDK " + version + "\x1b[0m");
+            defines.set("NDKV" + Std.int(version), "1" );
+            ndkVersion = Std.int(version);
+         }
+         else
+            Log.error("Invalid ndk version");
       }
+      for (i in 5...ndkVersion+1)
+         defines.set("NDKV" + i + "+", "1");
+
+      var arm_type = 'arm-linux-androideabi';
+      var arm_64 = defines.exists('HXCPP_ARM64');
+      if(arm_64) arm_type = 'aarch64-linux-android';
 
       // Find toolchain
       if (!defines.exists("TOOLCHAIN_VERSION"))
@@ -258,13 +366,15 @@ class Setup
 
             // Prefer clang?
             var extract_version = ~/^arm-linux-androideabi-(\d.*)/;
+            if(arm_64) extract_version = ~/^aarch64-linux-android-(\d.*)/;
+
             var bestVer="";
-            for(file in files)
+            for (file in files)
             {
                if (extract_version.match(file))
                {
                   var ver = extract_version.matched(1);
-                  if ( ver<bestVer || bestVer=="")
+                  if (ver<bestVer || bestVer=="")
                   {
                      bestVer = ver;
                   }
@@ -273,7 +383,7 @@ class Setup
             if (bestVer!="")
             {
                defines.set("TOOLCHAIN_VERSION",bestVer);
-               Log.info("", "\x1b[33;1mDetected Android toolchain: arm-linux-androideabi-" + bestVer + "\x1b[0m");
+               Log.info("", "\x1b[33;1mDetected Android toolchain: "+arm_type+"-" + bestVer + "\x1b[0m");
             }
          }
          catch(e:Dynamic) { }
@@ -282,10 +392,10 @@ class Setup
       // See what ANDROID_HOST to use ...
       try
       {
-         var prebuilt =  root+"/toolchains/arm-linux-androideabi-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
+         var prebuilt =  root+"/toolchains/"+arm_type+"-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
          var files = FileSystem.readDirectory(prebuilt);
          for (file in files)
-         {  
+         {
             if (!FileSystem.isDirectory (prebuilt + "/" + file))
             {
                files.remove (file);
@@ -304,6 +414,19 @@ class Setup
       catch(e:Dynamic) { }
 
       var androidPlatform = 5;
+      if (!defines.exists("PLATFORM"))
+      {
+         for (i in 5...100)
+         {
+            var test = "android-" + i;
+            if (defines.exists(test))
+            {
+               defines.set("PLATFORM",test);
+               break;
+            }
+         }
+      }
+
       if (defines.exists("PLATFORM"))
       {
          var platform = defines.get("PLATFORM");
@@ -315,11 +438,11 @@ class Setup
       }
       else
       {
-         var base = defines.get("ANDROID_NDK_ROOT") + "/platforms";
+         var base = root + "/platforms";
          var best = 0;
          try
          {
-            for(file in FileSystem.readDirectory(base))
+            for (file in FileSystem.readDirectory(base))
             {
                if (file.substr(0,8)=="android-")
                {
@@ -350,7 +473,7 @@ class Setup
       {
           Log.error("Could not find BLACKBERRY_NDK_ROOT variable");
       }
-      
+
       var fileName = ioDefines.get ("BLACKBERRY_NDK_ROOT");
       if (BuildTool.isWindows)
       {
@@ -360,7 +483,7 @@ class Setup
       {
          fileName += "/bbndk-env.sh";
       }
-      
+
       if (FileSystem.exists (fileName))
       {
          var fin = sys.io.File.read(fileName, false);
@@ -410,7 +533,7 @@ class Setup
                }
             }
          }
-         catch( ex:Eof ) 
+         catch( ex:Eof )
          {}
          fin.close();
       }
@@ -420,7 +543,7 @@ class Setup
       }
    }
 
-   public static function setupMSVC(ioDefines:Hash<String>, in64:Bool)
+   public static function setupMSVC(ioDefines:Hash<String>, in64:Bool, isWinRT:Bool)
    {
       var detectMsvc = !ioDefines.exists("NO_AUTO_MSVC") &&
                        !ioDefines.exists("HXCPP_MSVC_CUSTOM");
@@ -439,7 +562,7 @@ class Setup
                var where = Sys.getEnv(varName);
                if (where==null)
                {
-                  for(env in Sys.environment().keys())
+                  for (env in Sys.environment().keys())
                   {
                      if (env.substr(0,2)=="VS")
                      {
@@ -465,7 +588,11 @@ class Setup
 
       if (detectMsvc)
       {
-         var extra = in64 ? "64" : "";
+        var extra:String = "";
+        if (isWinRT)
+            extra += "-winrt";
+        if (in64)
+            extra += "64";
          var xpCompat = false;
          if (ioDefines.exists("HXCPP_WINXP_COMPAT"))
          {
@@ -498,10 +625,12 @@ class Setup
                   {
                      case "path", "vcinstalldir", "windowssdkdir","framework35version",
                         "frameworkdir", "frameworkdir32", "frameworkversion",
-                        "frameworkversion32", "devenvdir", "include", "lib", "libpath", "hxcpp_xp_define"
+                        "frameworkversion32", "devenvdir", "include", "lib", "libpath", "hxcpp_xp_define",
+                        "hxcpp_hack_pdbsrv"
                       :
                         var value = str.substr(pos+1);
                         ioDefines.set(name,value);
+                        Log.v('  msvs $name=$value');
                         Sys.putEnv(name,value);
                   }
                }
@@ -512,7 +641,7 @@ class Setup
          vc_setup_proc.close();
          if (!vars_found || error_string!="")
          {
-            for(o in output)
+            for (o in output)
             {
                Log.info(o);
                //BuildTool.println(o);
@@ -527,7 +656,7 @@ class Setup
                Log.info("Missing HXCPP_VARS");
                //BuildTool.println("Missing HXCPP_VARS");
             }
-            
+
             Log.error("Could not automatically setup MSVC");
             //throw("Could not automatically setup MSVC");
          }
@@ -540,16 +669,18 @@ class Setup
          proc.close();
          if (str>"")
          {
-            var reg = ~/Version\s+(\d+)/i;
+            var reg = ~/(\d{2})\.\d+/i;
             if (reg.match(str))
             {
                var cl_version = Std.parseInt(reg.matched(1));
-               Log.info("", "Using msvc cl version " + cl_version);
+               Log.info("", "Using MSVC version: " + cl_version);
                ioDefines.set("MSVC_VER", cl_version+"");
                if (cl_version>=17)
                   ioDefines.set("MSVC17+","1");
                if (cl_version>=18)
                   ioDefines.set("MSVC18+","1");
+               if (cl_version==19)
+                  ioDefines.set("MSVC19","1");
                BuildTool.sAllowNumProcs = cl_version >= 14;
                var threads = BuildTool.getThreadCount();
                if (threads>1 && cl_version>=18)

@@ -1,0 +1,31 @@
+<xml>
+
+<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+
+<set name="SQLITE_DIR" value="${this_dir}/../../thirdparty/sqlite-3.23.1"/>
+
+<files id="sqlite" >
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <compilerflag value="-DSTATIC_LINK" unless="static_link||dynamic_link" />
+
+  <compilerflag value="-I${SQLITE_DIR}"/>
+
+  <file name="${SQLITE_DIR}/sqlite3.c"/>
+
+  <file name="sqlite.cpp"/>
+</files>
+
+<target id="haxe">
+  <files id="sqlite"/>
+  <lib name="-lpthread" if="linux" unless="static_link" />
+</target>
+
+<target id="sqlite" output="${HX_TARGET_PREFIX}sqlite${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <files id="sqlite"/>
+  <lib name="-lpthread" if="linux" unless="static_link" />
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+</target>
+
+</xml>

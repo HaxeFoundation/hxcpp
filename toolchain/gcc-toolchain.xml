@@ -19,12 +19,11 @@
      <exe name="libtool"  />
      <exe name="${HXCPP_LIBTOOL}" if="HXCPP_LIBTOOL" />
      <outflag value="-o "  />
-     <fromfile value="-filelist " />
+     <fromfile value="-filelist " needsQuotes="false" />
   </section>
   <!-- <outflag value="-o " if="emscripten" /> -->
-  <recreate value="1" if="iphone" />
-  <recreate value="1" if="emscripten" />
-  <recreate value="1" if="android" />
+  <recreate value="1" unless="HXCPP_LIBTOOL" />
+
   <expandAr value="1" if="android" />
   <expandAr value="1" if="emscripten" />
   <expandAr value="1" if="linux" />

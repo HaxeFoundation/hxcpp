@@ -41,17 +41,17 @@ class Prelinker
    public function prelink(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler)
    {
       var file_name = "prelink.o";
-      
+
       try
       {
-         PathManager.mkdir(inTarget.mOutputDir);  
+         PathManager.mkdir(inTarget.mOutputDir);
       }
       catch (e:Dynamic)
       {
          Log.error("Unable to create output directory \"" + inTarget.mOutputDir + "\"");
-         //throw "Unable to create output directory " + inTarget.mOutputDir; 
+         //throw "Unable to create output directory " + inTarget.mOutputDir;
       }
-      
+
       var out_name = inCompiler.mObjDir + "/" + file_name;
 
       if (isOutOfDate(out_name,inObjs) || isOutOfDate(out_name,inTarget.mDepends))
@@ -63,7 +63,7 @@ class Prelinker
             args.push(out.substr(0,out.length-1));
             out = "";
          }
-         
+
          args.push(out + out_name);
          //args = args.concat(mFlags).concat(inTarget.mFlags);
          args = args.concat(mFlags);
@@ -106,11 +106,11 @@ class Prelinker
             args = args.concat(objs);
 
          //args = args.concat(libs);
-         
+
          var result = ProcessManager.runCommand("", mExe, args);
          if (result!=0)
          {
-            Sys.exit(result);
+            Tools.exit(result);
             //throw "Error : " + result + " - build cancelled";
          }
 

@@ -1,0 +1,43 @@
+<xml>
+
+<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+
+<files id="std" >
+  <depend name="${HXCPP}/include/hx/Macros.h"/>
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <compilerflag value="-DSTATIC_LINK" unless="static_link||dynamic_link" />
+
+  <cache value="1"/>
+
+  <file name="Sys.cpp"/>
+  <file name="Xml.cpp"/>
+  <file name="Process.cpp"/>
+  <file name="Random.cpp"/>
+  <file name="Socket.cpp" />
+  <file name="String.cpp"/>
+  <file name="File.cpp"/>
+  <file name="Init.cpp"/>
+  <file name="Misc.cpp"/>
+  <file name="Interface.cpp" if="dynamic_link" />
+
+</files>
+
+
+<target id="haxe">
+  <files id="std"/>
+  <lib name="ws2_32.lib" if="windows" unless="static_link" />
+  <lib name="Shlwapi.lib" if="windows" unless="static_link" />
+  <lib name="-lsocket" if="blackberry" unless="static_link" />
+</target>
+
+
+<target id="std" output="${HX_TARGET_PREFIX}std${LIB_DBG}${HX_TARGET_SUFFIX}" tool="linker" toolid="${STD_MODULE_LINK}">
+  <files id="std"/>
+  <lib name="ws2_32.lib" if="windows" unless="static_link" />
+  <lib name="Shlwapi.lib" if="windows" unless="static_link" />
+  <lib name="-lsocket" if="blackberry" unless="static_link" />
+  <outdir name="../../../${DESTDIR}/${BINDIR}"/>
+</target>
+
+</xml>

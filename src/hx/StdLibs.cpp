@@ -1,13 +1,13 @@
 #include <hxcpp.h>
 #include <hxMath.h>
+#include <hx/Memory.h>
+#include <hx/Thread.h>
 
 #ifdef HX_WINDOWS
 #include <windows.h>
-#include <stdio.h>
 #include <io.h>
-#else
+#elif defined(__unix__) || defined(__APPLE__)
 #include <sys/time.h>
-#include <stdio.h>
 #ifndef EMSCRIPTEN
 typedef int64_t __int64;
 #endif
@@ -20,7 +20,7 @@ typedef int64_t __int64;
 #include <syslog.h>
 #endif
 #ifdef TIZEN
-extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumber, const char* pFormat, ...);
+#include <dlog.h>
 #endif
 #if defined(BLACKBERRY) || defined(GCW0)
 #include <unistd.h>
@@ -28,6 +28,7 @@ extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumbe
 #include <string>
 #include <vector>
 #include <map>
+#include <stdio.h>
 #include <time.h>
 
 
@@ -37,6 +38,10 @@ extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumbe
 #endif
 
 void __hx_stack_set_last_exception();
+void __hx_stack_push_last_exception();
+
+int _hxcpp_argc = 0;
+char **_hxcpp_argv = 0;
 
 namespace hx
 {
@@ -49,6 +54,17 @@ Dynamic Throw(Dynamic inDynamic)
    throw inDynamic;
    return null();
 }
+
+
+Dynamic Rethrow(Dynamic inDynamic)
+{
+   #ifdef HXCPP_STACK_TRACE
+   __hx_stack_push_last_exception();
+   #endif
+   throw inDynamic;
+   return null();
+}
+
 
 null NullArithmetic(const HX_CHAR *inErr)
 {
@@ -103,9 +119,17 @@ String __hxcpp_resource_string(String inName)
       {
          if (reso->mName == inName)
          #if (HXCPP_API_LEVEL > 0)
-             return String((const char *) reso->mData, reso->mDataLength );
+         {
+            #ifdef HX_SMART_STRINGS
+            const unsigned char *p = reso->mData;
+            for(int i=0;i<reso->mDataLength;i++)
+               if (p[i]>127)
+                  return _hx_utf8_to_utf16(p, reso->mDataLength,false);
+            #endif
+            return String((const char *) reso->mData, reso->mDataLength );
+         }
          #else
-             return String((const char *) reso->mData, reso->mDataLength ).dup();
+            return String((const char *) reso->mData, reso->mDataLength ).dup();
          #endif
       }
 
@@ -113,7 +137,17 @@ String __hxcpp_resource_string(String inName)
    {
       for(Resource *reso  = sgSecondResources; reso->mData; reso++)
          if (reso->mName == inName)
+         {
+            #ifdef HX_SMART_STRINGS
+            const unsigned char *p = reso->mData;
+            for(int i=0;i<reso->mDataLength;i++)
+               if (p[i]>127)
+                  return _hx_utf8_to_utf16(p, reso->mDataLength,false);
+            #endif
             return String((const char *) reso->mData, reso->mDataLength );
+
+            return String((const char *) reso->mData, reso->mDataLength );
+         }
    }
    return null();
 }
@@ -146,6 +180,27 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
    return null();
 }
 
+// -- hx::Native -------
+
+#if HXCPP_API_LEVEL >= 330
+extern "C" void __hxcpp_lib_main();
+namespace hx
+{
+   const char *Init()
+   {
+      try
+      {
+         __hxcpp_lib_main();
+         return 0;
+      }
+      catch(Dynamic e)
+      {
+         HX_TOP_OF_STACK
+         return e->toString().__s;
+      }
+   }
+}
+#endif
 
 
 // --- System ---------------------------------------------------------------------
@@ -171,7 +226,7 @@ int __hxcpp_irand(int inMax)
 
 void __hxcpp_stdlibs_boot()
 {
-   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
+   #if defined(_MSC_VER) && !defined(HX_WINRT)
    HMODULE kernel32 = LoadLibraryA("kernel32");
    if (kernel32)
    {
@@ -194,38 +249,71 @@ void __hxcpp_stdlibs_boot()
          }
       }
    }
+   //setlocale(LC_ALL, "");
+   //_setmode(_fileno(stdout), 0x00040000); // _O_U8TEXT
+   //_setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
+   //_setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
    #endif
    
-   setbuf(stdin, 0);
+   // I think this does more harm than good.
+   //  It does not cause fread to return immediately - as perhaps desired.
+   //  But it does cause some new-line characters to be lost.
+   //setbuf(stdin, 0);
    setbuf(stdout, 0);
    setbuf(stderr, 0);
 }
 
-void __trace(Dynamic inObj, Dynamic inData)
+void __trace(Dynamic inObj, Dynamic info)
 {
-#ifdef TIZEN
-   AppLogInternal(inData==null() ? "?" : inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC) ->toString().__s,
-      inData==null() ? 0 : inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)->__ToInt(),
-      "%s\n", inObj.GetPtr() ? inObj->toString().__s : "null" );
-#else
-#ifdef HX_UTF8_STRINGS
-   #if defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-   __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",
+   String text;
+   if (inObj != null())
+      text = inObj->toString();
+   const char *message = text.__s ? text.__s : "null";
+
+   if (info==null())
+   {
+   #ifdef HX_WINRT
+      WINRT_PRINTF("%s\n", message );
+   #elif defined(TIZEN)
+      dlog_dprint(DLOG_INFO, "trace","%s\n", message );
+   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+      __android_log_print(ANDROID_LOG_INFO, "trace","%s",message );
    #elif defined(WEBOS)
-   syslog(LOG_INFO, "%s:%d: %s",
+      syslog(LOG_INFO, "%s", message );
+   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+      if (text.isUTF16Encoded())
+         printf("%S\n", (wchar_t *)text.__w );
+      else
+         printf("%s\n", message);
    #else
-   printf("%s:%d: %s\n",
+      printf("%s\n", message );
    #endif
-               inData==null() ? "?" : inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC) ->toString().__s,
-               inData==null() ? 0 : inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)->__ToInt(),
-               inObj.GetPtr() ? inObj->toString().__s : "null" );
-#else
-   printf( "%S:%d: %S\n",
-               inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC)->__ToString().__s,
-               inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)->__ToInt(),
-               inObj.GetPtr() ? inObj->toString().__s : L"null" );
-#endif
-#endif
+
+   }
+   else
+   {
+
+      const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s;
+      int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
+
+   #ifdef HX_WINRT
+      WINRT_PRINTF("%s:%d: %s\n", filename, line, message );
+   #elif defined(TIZEN)
+      AppLogInternal(filename, line, "%s\n", message );
+   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+      __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",filename, line, message );
+   #elif defined(WEBOS)
+      syslog(LOG_INFO, "%s:%d: %s", filename, line, message );
+   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+      if (text.isUTF16Encoded())
+         printf("%s:%d: %S\n",filename, line, (wchar_t *)text.__w );
+      else
+         printf("%s:%d: %s\n",filename, line, message);
+   #else
+      printf("%s:%d: %s\n",filename, line, message );
+   #endif
+   }
+
 }
 
 void __hxcpp_exit(int inExitCode)
@@ -233,7 +321,6 @@ void __hxcpp_exit(int inExitCode)
    exit(inExitCode);
 }
 
-static double t0 = 0;
 double  __time_stamp()
 {
 #ifdef HX_WINDOWS
@@ -254,21 +341,184 @@ double  __time_stamp()
       if (period!=0)
          return (now-t0)*period;
    }
-
    return (double)clock() / ( (double)CLOCKS_PER_SEC);
-#else
+#elif defined(__unix__) || defined(__APPLE__)
+   static double t0 = 0;
    struct timeval tv;
    if( gettimeofday(&tv,0) )
       throw Dynamic("Could not get time");
    double t =  ( tv.tv_sec + ((double)tv.tv_usec) / 1000000.0 );
    if (t0==0) t0 = t;
    return t-t0;
+#else
+   return (double)clock() / ( (double)CLOCKS_PER_SEC);
 #endif
 }
 
+#if defined(HX_WINDOWS) && !defined(HX_WINRT)
+
+/*
+ISWHITE and ParseCommandLine are based on the implementation of the 
+.NET Core runtime, CoreCLR, which is licensed under the MIT license:
+Copyright (c) Microsoft. All rights reserved.
+See LICENSE file in the CoreCLR project root for full license information.
+
+The original source code of ParseCommandLine can be found in
+https://github.com/dotnet/coreclr/blob/master/src/vm/util.cpp
+*/
+
+#define ISWHITE(x) ((x)==(' ') || (x)==('\t') || (x)==('\n') || (x)==('\r') )
+
+static void ParseCommandLine(LPTSTR psrc, Array<String> &out)
+{
+    unsigned int argcount = 1;       // discovery of arg0 is unconditional, below
+
+    bool    fInQuotes;
+    int     iSlash;
+
+    /* A quoted program name is handled here. The handling is much
+       simpler than for other arguments. Basically, whatever lies
+       between the leading double-quote and next one, or a terminal null
+       character is simply accepted. Fancier handling is not required
+       because the program name must be a legal NTFS/HPFS file name.
+       Note that the double-quote characters are not copied, nor do they
+       contribute to numchars.
+         
+       This "simplification" is necessary for compatibility reasons even
+       though it leads to mishandling of certain cases.  For example,
+       "c:\tests\"test.exe will result in an arg0 of c:\tests\ and an
+       arg1 of test.exe.  In any rational world this is incorrect, but
+       we need to preserve compatibility.
+    */
+
+    LPTSTR pStart = psrc;
+    bool skipQuote = false;
+
+    // Pairs of double-quotes vanish...
+    while(psrc[0]=='\"' && psrc[1]=='\"')
+       psrc += 2;
+
+    if (*psrc == '\"')
+    {
+        // scan from just past the first double-quote through the next
+        // double-quote, or up to a null, whichever comes first
+        psrc++;
+        while ((*psrc!= '\"') && (*psrc != '\0'))
+        {
+           psrc++;
+           // Pairs of double-quotes vanish...
+           while(psrc[0]=='\"' && psrc[1]=='\"')
+              psrc += 2;
+        }
+
+        skipQuote = true;
+    }
+    else
+    {
+        /* Not a quoted program name */
+
+        while (!ISWHITE(*psrc) && *psrc != '\0')
+            psrc++;
+    }
+
+    // We have now identified arg0 as pStart (or pStart+1 if we have a leading
+    // quote) through psrc-1 inclusive
+    if (skipQuote)
+        pStart++;
+    String arg0("");
+    while (pStart < psrc)
+    {
+        arg0 += String::fromCharCode(*pStart);
+        pStart++;
+    }
+    // out.Add(arg0); // the command isn't part of Sys.args()
+
+    // if we stopped on a double-quote when arg0 is quoted, skip over it
+    if (skipQuote && *psrc == '\"')
+        psrc++;
+
+    while ( *psrc != '\0')
+    {
+LEADINGWHITE:
+
+        // The outofarg state.
+        while (ISWHITE(*psrc))
+            psrc++;
+
+        if (*psrc == '\0')
+            break;
+        else
+        if (*psrc == '#')
+        {
+            while (*psrc != '\0' && *psrc != '\n')
+                psrc++;     // skip to end of line
+
+            goto LEADINGWHITE;
+        }
+
+        argcount++;
+        fInQuotes = FALSE;
+
+        String arg("");
+
+        while ((!ISWHITE(*psrc) || fInQuotes) && *psrc != '\0')
+        {
+            switch (*psrc)
+            {
+            case '\\':
+                iSlash = 0;
+                while (*psrc == '\\')
+                {
+                    iSlash++;
+                    psrc++;
+                }
+
+                if (*psrc == '\"')
+                {
+                    for ( ; iSlash >= 2; iSlash -= 2)
+                    {
+                        arg += String("\\");
+                    }
+
+                    if (iSlash & 1)
+                    {
+                        arg += String::fromCharCode(*psrc);
+                        psrc++;
+                    }
+                    else
+                    {
+                        fInQuotes = !fInQuotes;
+                        psrc++;
+                    }
+                }
+                else
+                    for ( ; iSlash > 0; iSlash--)
+                    {
+                        arg += String("\\");
+                    }
+
+                break;
+
+            case '\"':
+                fInQuotes = !fInQuotes;
+                psrc++;
+                break;
+
+            default:
+                arg += String::fromCharCode(*psrc);
+                psrc++;
+            }
+        }
+
+        out.Add(arg);
+        arg = String("");
+    }
+}
+#endif
+
 
 #ifdef __APPLE__
- #ifndef IPHONE
+ #if !defined(IPHONE) && !defined(APPLETV) && !defined(HX_APPLEWATCH)
    extern "C" {
    extern int *_NSGetArgc(void);
    extern char ***_NSGetArgv(void);
@@ -278,39 +528,22 @@ double  __time_stamp()
 Array<String> __get_args()
 {
    Array<String> result(0,0);
+   if (_hxcpp_argc)
+   {
+      for(int i=1;i<_hxcpp_argc;i++)
+         result->push( String(_hxcpp_argv[i],strlen(_hxcpp_argv[i])).dup() );
+      return result;
+   }
 
    #ifdef HX_WINRT
    // Do nothing
    #elif defined(HX_WINDOWS)
    LPTSTR str =  GetCommandLine();
-   bool skip_first = true;
-   while(*str != '\0')
-   {
-      bool in_quote = false;
-      LPTSTR end = str;
-      String arg;
-      while(*end!=0)
-      {
-         if (*end=='\0') break;
-         if (!in_quote && *end==' ') break;
-         if (*end=='"')
-            in_quote = !in_quote;
-         else
-            arg += String::fromCharCode(*end);
-         ++end;
-      }
-
-      if (!skip_first)
-         result.Add( arg );
-         skip_first = false;
-
-      while(*end==' ') end++;
-      str = end;
-   }
+   ParseCommandLine(str, result);
    #else
    #ifdef __APPLE__
 
-   #ifndef IPHONE
+   #if !defined(IPHONE) && !defined(APPLETV) && !defined(HX_APPLEWATCH)
    int argc = *_NSGetArgc();
    char **argv = *_NSGetArgv();
    for(int i=1;i<argc;i++)
@@ -320,24 +553,23 @@ Array<String> __get_args()
    #else
    #ifdef ANDROID
    // TODO: Get from java
-   #else // linux
-
+   #elif defined(__linux__)
    char buf[80];
    sprintf(buf, "/proc/%d/cmdline", getpid());
    FILE *cmd = fopen(buf,"rb");
    bool real_arg = 0;
    if (cmd)
    {
-      String arg;
+      String arg("");
       buf[0] = '\0';
       while (fread(buf, 1, 1, cmd))
       {
-         if ((unsigned char)buf[0]<32) // line terminator
+         if ((unsigned char)buf[0] == 0) // line terminator
          {
             if (real_arg)
                result->push(arg);
             real_arg = true;
-            arg = String();
+            arg = String("");
          }
          else
             arg += String::fromCharCode(buf[0]);
@@ -352,21 +584,29 @@ Array<String> __get_args()
 }
 
 
-void __hxcpp_print(Dynamic &inV)
+void __hxcpp_print_string(const String &inV)
 {
-   #ifdef HX_UTF8_STRINGS
-   printf("%s",inV->toString().__s);
+   #ifdef HX_WINRT
+   WINRT_PRINTF("%s",inV.__s);
    #else
-   printf("%S",inV->toString().__s);
+   #ifdef HX_UTF8_STRINGS
+   printf("%s",inV.__s);
+   #else
+   printf("%S",inV.__s);
+   #endif
    #endif
 }
 
-void __hxcpp_println(Dynamic &inV)
+void __hxcpp_println_string(const String &inV)
 {
-   #ifdef HX_UTF8_STRINGS
-   printf("%s\n",inV->toString().__s);
+   #ifdef HX_WINRT
+   WINRT_PRINTF("%s\n",inV.__s);
    #else
-   printf("%S\n",inV->toString().__s);
+   #ifdef HX_UTF8_STRINGS
+   printf("%s\n",inV.__s);
+   #else
+   printf("%S\n",inV.__s);
+   #endif
    #endif
 }
 
@@ -459,7 +699,11 @@ namespace hx
 
 struct VarArgFunc : public hx::Object
 {
-   VarArgFunc(Dynamic &inFunc) : mRealFunc(inFunc) { }
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure };
+
+   VarArgFunc(Dynamic &inFunc) : mRealFunc(inFunc) {
+     HX_OBJ_WB_NEW_MARKED_OBJECT(this)
+   }
 
    int __GetType() const { return vtFunction; }
    ::String __ToString() const { return mRealFunc->__ToString() ; }
@@ -493,6 +737,7 @@ Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc)
 
 
 
+static HxMutex sgFieldMapMutex;
 
 typedef std::map<std::string,int> StringToField;
 
@@ -516,10 +761,12 @@ const String &__hxcpp_field_from_id( int f )
 
 int  __hxcpp_field_to_id( const char *inFieldName )
 {
+   AutoLock lock(sgFieldMapMutex);
+
    if (!sgFieldToStringAlloc)
    {
       sgFieldToStringAlloc = 100;
-      sgFieldToString = (String *)malloc(sgFieldToStringAlloc * sizeof(String));
+      sgFieldToString = (String *)HxAlloc(sgFieldToStringAlloc * sizeof(String));
 
       sgStringToField = new StringToField;
    }
@@ -538,8 +785,14 @@ int  __hxcpp_field_to_id( const char *inFieldName )
 
    if (sgFieldToStringAlloc<=sgFieldToStringSize+1)
    {
+      int oldAlloc = sgFieldToStringAlloc;
+      String *oldData = sgFieldToString;
       sgFieldToStringAlloc *= 2;
-      sgFieldToString = (String *)realloc(sgFieldToString, sgFieldToStringAlloc*sizeof(String));
+      String *newData = (String *)malloc(sgFieldToStringAlloc*sizeof(String));
+      if (oldAlloc)
+         memcpy(newData, oldData, oldAlloc*sizeof(String));
+      // Let oldData dangle to keep it thread safe, rather than require mutex on id read.
+      sgFieldToString = newData;
    }
    sgFieldToString[sgFieldToStringSize++] = str;
    return result;

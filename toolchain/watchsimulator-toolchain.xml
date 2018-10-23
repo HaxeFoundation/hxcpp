@@ -1,0 +1,69 @@
+<xml>
+
+<echo value="Using WatchSimulator SDK ${WATCHOS_VER}" if="VERBOSE"/>
+
+<set name="HXCPP_USE_LIBTOOL" value="1" />
+<set name="HXCPP_LIBTOOL" value="xcrun --toolchain WatchSimulator libtool" />
+<include name="toolchain/gcc-toolchain.xml"/>
+<!--<path name="${DEVELOPER_DIR}/Platforms/WatchSimulator.platform/Developer/usr/bin" />-->
+
+<set name="HXCPP_CPP11" value="1" />
+<set name="OBJDBG" value="-dbg" if="debug" />
+
+<compiler id="WatchSimulator" exe="clang" >
+  <exe name="xcrun --toolchain WatchSimulator clang++" />
+  <flag value="-c"/>
+  <flag value="-arch"/>
+  <flag value="i386"/>
+
+
+  <pchflag value="-x" />
+  <pchflag value="c++-header" />
+
+  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <flag value="-g" />
+
+  <flag value="-isysroot"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator${WATCHOS_VER}.sdk"/>
+
+  <flag value="-fapplication-extension" />
+
+  <flag value="-O2" unless="debug"/>
+  <flag value="-fmessage-length=0"/>
+  <flag value="-pipe"/>
+  <flag value="-Wno-trigraphs"/>
+  <flag value="-fno-stack-protector"/>
+  <flag value="-Wno-overflow" />
+  <cppflag value="-Wno-invalid-offsetof" />
+  <flag value="-fpascal-strings"/>
+  <flag value="-fasm-blocks"/>
+  <flag value="-Wreturn-type"/>
+
+  <mmflag value="-fobjc-abi-version=2"/>
+  <mmflag value="-fobjc-legacy-dispatch"/>
+
+  <flag value="-mwatchos-simulator-version-min=2.2"/>
+  <flag value="-DHX_APPLEWATCH"/>
+  <flag value="-DHX_WATCHSIM"/>
+  <flag value="-fobjc-arc"  />
+  <flag value="-DOBJC_ARC" />
+  <flag value="-Wno-parentheses" />
+  <flag value="-Wno-null-dereference" unless="HXCPP_GCC"/>
+  <flag value="-Wno-unused-value" />
+  <flag value="-Wno-bool-conversion" unless="HXCPP_GCC"/>
+  <include name="toolchain/common-defines.xml" />
+  <flag value="-I${HXCPP}/include"/>
+
+  <!-- Added for iOS8 -->
+  <flag value="-fexceptions"/>
+  <flag value="-fstrict-aliasing"/>
+  <!-- End of Added for iOS8 -->
+
+  <outflag value="-o"/>
+  <ext value=".o"/>
+  <objdir value="obj/watchsim${OBJDBG}/" />
+</compiler>
+
+
+
+</xml>

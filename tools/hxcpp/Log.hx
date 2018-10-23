@@ -10,15 +10,18 @@ import cpp.vm.Mutex;
 
 class Log
 {
-   public static var mute:Bool;
+   public static var mute:Bool= false;
+   public static var quiet:Bool = false;
    public static var verbose:Bool = false;
-   
+
    public  static var colorSupported:Null<Bool> = null;
    private static var sentWarnings = new Map<String,Bool>();
 
    public static var printMutex:Mutex;
 
    public static inline var RED = "\x1b[31m";
+   public static inline var YELLOW = "\x1b[33m";
+   public static inline var WHITE = "\x1b[37m";
    public static inline var NORMAL = "\x1b[0m";
    public static inline var BOLD = "\x1b[1m";
    public static inline var ITALIC = "\x1b[3m";
@@ -28,39 +31,36 @@ class Log
      if (printMutex==null)
         printMutex = new Mutex();
    }
-   
+
    public static function e(message:String):Void
    {
       error(message);
    }
    public static function error(message:String, verboseMessage:String = "", e:Dynamic = null, terminate:Bool = true):Void
    {
-      if (!mute)
+      var output;
+      if (verbose && verboseMessage != "")
       {
-         var output;
-         if (verbose && verboseMessage != "")
-         {
-            output = "\x1b[31;1mError:\x1b[0m\x1b[1m " + verboseMessage + "\x1b[0m\n";
-         }
-         else
-         {
-            if (message=="")
-               output = "\x1b[31;1mError\x1b[0m\n";
-            else
-               output = "\x1b[31;1mError:\x1b[0m \x1b[1m" + message + "\x1b[0m\n";
-         }
-         if (printMutex!=null)
-            printMutex.acquire();
-         Sys.stderr().write(Bytes.ofString(stripColor(output)));
-         if (printMutex!=null)
-            printMutex.release();
+         output = "\x1b[31;1mError:\x1b[0m\x1b[1m " + verboseMessage + "\x1b[0m\n";
       }
- 
+      else
+      {
+         if (message=="")
+            output = "\x1b[31;1mError\x1b[0m\n";
+         else
+            output = "\x1b[31;1mError:\x1b[0m \x1b[1m" + message + "\x1b[0m\n";
+      }
+      if (printMutex!=null)
+         printMutex.acquire();
+      Sys.stderr().write(Bytes.ofString(stripColor(output)));
+      if (printMutex!=null)
+         printMutex.release();
+
       if ((verbose || !terminate) && e != null)
-         Lib.rethrow(e);   
+         Lib.rethrow(e);
 
       if (terminate)
-         Sys.exit(1);
+         Tools.exit(1);
    }
 
    public static function info(message:String, verboseMessage:String = ""):Void
@@ -71,11 +71,11 @@ class Log
             printMutex.acquire();
          if (verbose && verboseMessage != "")
          {
-            println(verboseMessage);   
+            println(verboseMessage);
          }
          else if (message != "")
          {
-            println(message); 
+            println(message);
          }
          if (printMutex!=null)
             printMutex.release();
@@ -103,7 +103,7 @@ class Log
    {
       if (printMutex!=null)
         printMutex.acquire();
-      Sys.print(stripColor(message));  
+      Sys.print(stripColor(message));
          if (printMutex!=null)
             printMutex.release();
    }
@@ -131,7 +131,7 @@ class Log
                process.close ();
             }
             catch (e:Dynamic) {};
-            
+
             colorSupported = (result == 0);
          }
          else
@@ -139,7 +139,7 @@ class Log
             colorSupported = (Sys.getEnv("TERM") == "xterm" || Sys.getEnv("ANSICON") != null);
          }
       }
-      
+
       if (colorSupported)
       {
          return output;
@@ -154,7 +154,7 @@ class Log
    public static function warn(message:String, verboseMessage:String = "", allowRepeat:Bool = false):Void
    {
       if (!mute)
-      {  
+      {
          var output = "";
          if (verbose && verboseMessage != "")
          {
@@ -162,14 +162,14 @@ class Log
          }
          else if (message != "")
          {
-            output = "\x1b[33;1mWarning:\x1b[0m \x1b[1m" + message + "\x1b[0m";  
+            output = "\x1b[33;1mWarning:\x1b[0m \x1b[1m" + message + "\x1b[0m";
          }
-         
+
          if (!allowRepeat && sentWarnings.exists (output))
          {
-            return;  
+            return;
          }
-         
+
          sentWarnings.set(output, true);
 
          if (printMutex!=null)

@@ -8,11 +8,11 @@ namespace cpp
 
 #define HX_I32_DEF_FUNC1(Name) \
    static inline Dynamic __##Name(const Dynamic &a) { return Name(a); } \
-   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction1(&CppInt32__::__##Name); }
+   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction1(#Name,&CppInt32__::__##Name); }
 
 #define HX_I32_DEF_FUNC2(Name) \
    static inline Dynamic __##Name(const Dynamic &a, const Dynamic &b) { return Name(a,b); } \
-   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction2(&CppInt32__::__##Name); }
+   static inline Dynamic Name##_dyn() { return  hx::CreateStaticFunction2(#Name,&CppInt32__::__##Name); }
 
 class CppInt32__
 {
@@ -42,8 +42,8 @@ public:
    static inline CppInt32__ neg(CppInt32__ a) { return CppInt32__( -a.mValue ); }
    static inline CppInt32__ complement(CppInt32__ a) { return CppInt32__( ~a.mValue ); }
    static inline int compare(CppInt32__ a,CppInt32__ b) { return ( a.mValue - b.mValue ); }
-   static inline Bool isNeg(CppInt32__ a) { return a.mValue < 0; }
-   static inline Bool isZero(CppInt32__ a) { return a.mValue == 0; }
+   static inline bool isNeg(CppInt32__ a) { return a.mValue < 0; }
+   static inline bool isZero(CppInt32__ a) { return a.mValue == 0; }
    static inline int ucompare(CppInt32__ a,CppInt32__ b) { unsigned int am = a.mValue, bm = b.mValue; return (am == bm) ? 0 : ((am > bm) ? 1 : -1); }
 
 
