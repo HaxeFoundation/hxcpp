@@ -13,26 +13,26 @@ matrix:
       env:
         - ARCH=32
       install:
-        - bash tools/haxe/build_linux.sh
+        - bash tools/haxe/build_linux.sh https://github.com/HaxeFoundation/haxe.git development
         - travis_retry sudo apt-get install gcc-multilib g++-multilib -y;
     - os: linux
       dist: trusty
       env:
         - ARCH=64
       install:
-        - bash tools/haxe/build_linux.sh
+        - bash tools/haxe/build_linux.sh https://github.com/HaxeFoundation/haxe.git development;
     - os: osx
       osx_image: xcode9.4
       env:
         - ARCH=32
       install:
-        - bash tools/haxe/build_osx.sh;
+        - bash tools/haxe/build_osx.sh https://github.com/HaxeFoundation/haxe.git development;
     - os: osx
       osx_image: xcode9.4
       env:
         - ARCH=64
       install:
-        - bash tools/haxe/build_osx.sh;
+        - bash tools/haxe/build_osx.sh https://github.com/HaxeFoundation/haxe.git development;
 
 script:
   - cd ${TRAVIS_BUILD_DIR}/tools/run
