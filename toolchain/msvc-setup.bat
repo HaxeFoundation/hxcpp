@@ -1,4 +1,7 @@
 setlocal enabledelayedexpansion
+@if not exist "%ProgramFiles(x86)%" (
+	@set "ProgramFiles(x86)=%ProgramFiles%"
+)
 @if exist "%HXCPP_MSVC%\vcvars32.bat" (
 	@call "%HXCPP_MSVC%\vcvars32.bat"
 	@echo HXCPP_VARS
