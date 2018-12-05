@@ -37,8 +37,6 @@ void EnumBase_obj::__boot()
 #if (HXCPP_API_LEVEL >= 330)
 DynamicArray EnumBase_obj::_hx_getParameters()
 {
-   if (mFixedFields==0)
-      return null();
    Array<Dynamic> result = Array_obj<Dynamic>::__new(mFixedFields);
    cpp::Variant *fixed = _hx_getFixed();
    for(int i=0;i<mFixedFields;i++)
