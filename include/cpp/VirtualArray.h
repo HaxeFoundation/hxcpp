@@ -562,7 +562,7 @@ public:
 // Build dynamic array from foreign array
 template<typename SOURCE_>
 VirtualArray::VirtualArray( const Array<SOURCE_> &inRHS )
-   : super( hx::IsNull(inRHS) ? 0 : new VirtualArray_obj( inRHS.mPtr, true) )
+   : super( !inRHS.mPtr ? 0 : new VirtualArray_obj( inRHS.mPtr, true) )
 {
 }
 
