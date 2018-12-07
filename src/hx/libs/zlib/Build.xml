@@ -11,6 +11,7 @@
 
   <compilerflag value="-I${ZLIB_DIR}"/>
   <compilerflag value="-DSTDC" unless="windows" />
+  <compilerflag value="-DHAVE_UNISTD_H" unless="windows" />
 
   <file name="ZLib.cpp"/>
 
