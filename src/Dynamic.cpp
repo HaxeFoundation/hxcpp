@@ -557,6 +557,13 @@ null BadCast()
    hx::Throw(HX_INVALID_CAST);
    return null();
 }
+
+void InvalidInterface()
+{
+   hx::Throw(HX_INVALID_INTERFACE);
+}
+
+
 }
 
 
