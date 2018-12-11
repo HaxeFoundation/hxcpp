@@ -59,9 +59,18 @@ namespace hx
          Native () : ptr(0) { }
          Native (T inPtr) : ptr(inPtr) { }
          Native (const Native<T> &inNative) : ptr(inNative.ptr) { }
+         #ifdef CPP_VARIANT_ONCE_H
+         Native (const cpp::Variant &inVariant) {
+            hx::Object *obj = inVariant.asObject();
+            ptr = obj  ? (T)inVariant.valObject->__GetHandle() : 0;
+         }
+         #endif
 
          inline Native &operator=(T inPtr) { ptr=inPtr; return *this; }
          inline Native &operator=(const Native<T> &inNative) { ptr=inNative.ptr; return *this; }
+         #ifdef HX_NULL_H
+         inline Native &operator=(const ::null &) { ptr=0; return *this; }
+         #endif
          inline T operator->() const { return ptr; }
 
          inline operator T() const { return ptr; }
@@ -72,6 +81,7 @@ namespace hx
          template<typename O>
          inline bool operator!=(const Native<O> &inOther) const
             { return ptr != inOther.ptr; }
+
    };
 
    HXCPP_CLASS_ATTRIBUTES const char *Init();
