@@ -37,7 +37,7 @@ public:
    explicit Dynamic(const HX_CHAR *inStr);
    Dynamic(const cpp::Variant &inRHS) : super(inRHS.asDynamic()) { }
    template<typename T>
-   Dynamic(const hx::Native<T *> &inInterface):super(inInterface->__GetRealObject() ) { }
+   Dynamic(const hx::Native<T *> &inInterface):super(inInterface.ptr ? inInterface->__GetRealObject() : (hx::Object *)0 ) { }
    #if !defined(__GNUC__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
    Dynamic(long inVal);
    Dynamic(unsigned long inVal);

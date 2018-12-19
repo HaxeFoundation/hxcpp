@@ -741,6 +741,13 @@ String::String(const bool &inRHS)
    }
 }
 
+void String::fromPointer(const void *p)
+{
+   char buf[128];
+   SPRINTF(buf,128,"Native(%p)",p);
+   __s = GCStringDup(buf,-1,&length);
+}
+
 
 unsigned int String::calcHash() const
 {

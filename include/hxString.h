@@ -71,6 +71,8 @@ public:
    inline String(const null &inRHS) : __s(0), length(0) { }
    String(hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
    inline String(const ::cpp::Variant &inRHS) { *this = inRHS.asString(); }
+   template<typename T>
+   inline String( const hx::Native<T> &n ) { fromPointer(n.ptr); }
 
    static void __boot();
 
@@ -81,6 +83,7 @@ public:
    template<typename OBJ>
    explicit inline String(const hx::ObjectPtr<OBJ> &inRHS);
    void fromInt(int inI);
+   void fromPointer(const void *p);
 
 
 
