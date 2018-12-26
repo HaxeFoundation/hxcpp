@@ -40,5 +40,7 @@
 #undef CopyFile
 #undef COLOR_HIGHLIGHT
 #undef __valid
+#undef EFAULT
+#undef EINVAL
 
 #endif
