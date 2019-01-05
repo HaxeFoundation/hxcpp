@@ -1004,7 +1004,14 @@ void _hx_std_socket_set_fast_send( Dynamic o, bool b )
    hx::ExitGCFreeZone();
 }
 
-
+void _hx_std_socket_set_broadcast( Dynamic o, bool b )
+{
+   SOCKET sock = val_sock(o);
+   int broadcast = (b);
+   hx::EnterGCFreeZone();
+   setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char*)&broadcast,sizeof(broadcast));
+   hx::ExitGCFreeZone();
+}
 
 
 /**
