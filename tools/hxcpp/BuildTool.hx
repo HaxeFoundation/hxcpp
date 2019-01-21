@@ -1,6 +1,10 @@
 import CopyFile.Overwrite;
 import haxe.io.Path;
+#if haxe4
+import haxe.xml.Access as Fast;
+#else
 import haxe.xml.Fast;
+#end
 import haxe.Json;
 import sys.io.Process;
 import sys.FileSystem;
