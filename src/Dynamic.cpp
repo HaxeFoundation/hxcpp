@@ -44,7 +44,15 @@ Dynamic DynFalse;
 class IntData : public hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdInt };
+   enum { _hx_ClassId = hx::clsIdInt };
+
+   #if (HXCPP_API_LEVEL>331)
+   bool _hx_isInstanceOf(int inClassId)
+   {
+      return inClassId==1 || inClassId==(int)_hx_ClassId || inClassId==(int)hx::clsIdFloat;
+   }
+   #endif
+
 
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc, const char *inName="Int")
       { return hx::Object::operator new(inSize,inAlloc,inName); }

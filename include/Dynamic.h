@@ -407,7 +407,8 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetStringClass();
 template<>
 inline bool Dynamic::IsClass<int>() { return mPtr && mPtr->__GetClass()==hx::GetIntClass(); }
 template<>
-inline bool Dynamic::IsClass<double>() { return mPtr && mPtr->__GetClass()==hx::GetFloatClass(); }
+inline bool Dynamic::IsClass<double>() { return mPtr && 
+   ( mPtr->__GetClass()==hx::GetIntClass() || mPtr->__GetClass()==hx::GetFloatClass()) ; }
 template<>
 inline bool Dynamic::IsClass<float>() { return mPtr && mPtr->__GetClass()==hx::GetFloatClass(); }
 template<>
