@@ -250,7 +250,7 @@ bool TypeData::isClassOf(Dynamic inInstance)
    if (cppiaClass)
       return cppiaClass->getClass()->VCanCast(inInstance.mPtr);
    else if (haxeClass.mPtr)
-      return __instanceof(inInstance,haxeClass);
+      return __instanceof(inInstance,haxeClass) || isDynamic;
 
    return false;
 }
@@ -1130,6 +1130,7 @@ enum CastOp
    castDynArray,
    castInt,
    castBool,
+   castFloat,
 };
 
 
@@ -1151,7 +1152,7 @@ struct CastExpr : public CppiaDynamicExpr
 
       value = createCppiaExpr(stream);
    }
-   ExprType getType() { return op==castInt ? etInt : etObject; }
+   ExprType getType() { return op==castInt ? etInt :  op==castFloat ? etFloat : etObject; }
 
    bool isBoolInt() { return op==castBool; }
 
@@ -1164,6 +1165,8 @@ struct CastExpr : public CppiaDynamicExpr
    {
       if (op==castInt)
          return Dynamic(value->runInt(ctx)).mPtr;
+      else if (op==castFloat)
+         return Dynamic(value->runFloat(ctx)).mPtr;
       else if (op==castBool)
          return Dynamic((bool)value->runInt(ctx)).mPtr;
 
@@ -1202,10 +1205,13 @@ struct CastExpr : public CppiaDynamicExpr
       if (op==castInstance)
       {
          typeData = inModule.types[typeId];
-         return this;
+         if (typeData->isFloat)
+            op=castFloat;
+         else
+            return this;
       }
 
-      if (op==castDynamic || op==castInt || op==castBool )
+      if (op==castDynamic || op==castInt || op==castBool || op==castFloat )
       {
          return this;
          //CppiaExpr *replace = value;
@@ -1269,6 +1275,16 @@ struct CastExpr : public CppiaDynamicExpr
          {
             value->genCode(compiler, sJitTemp0, etInt);
             compiler->convert(sJitTemp0, etInt, inDest, destType);
+         }
+      }
+      else if (op==castFloat)
+      {
+         if (destType==etFloat)
+            value->genCode(compiler, inDest, destType);
+         else
+         {
+            value->genCode(compiler, sJitTempF0, etFloat);
+            compiler->convert(sJitTempF0, etFloat, inDest, destType);
          }
       }
       else if (op==castBool)
@@ -2138,7 +2154,7 @@ struct CallMemberVTable : public CppiaExpr
 
       TypeData *type = inModule.types[funcProto->returnType];
       // These types may have natively been returned as ints or non-objects
-      checkInterfaceReturnType = isInterfaceCall && (returnType==etFloat || type->name==HX_CSTRING("Dynamic"));
+      checkInterfaceReturnType = isInterfaceCall && (returnType==etFloat || type->isDynamic);
 
       return this;
    }
@@ -3379,7 +3395,7 @@ struct CallMember : public CppiaExpr
          return replace;
       }
 
-      if (type->name != HX_CSTRING("Dynamic"))
+      if (!type->isDynamic)
       {
          printf("   CallMember %s (%p %p) '%s' fallback\n", type->name.__s, type->haxeClass.mPtr, type->cppiaClass, field.__s);
       }
@@ -4665,7 +4681,7 @@ struct GetFieldByLinkage : public CppiaExpr
 
       // It is ok for interfaces to look up members by name - and variables that turn
       //  out to actaully be Dynamic (eg template types)
-      if (!type->isInterface && type->name!=HX_CSTRING("Dynamic") && !forceNamedAccess)
+      if (!type->isInterface && !type->isDynamic && !forceNamedAccess)
       {
          printf("   GetFieldByLinkage %s (%p %p %p) '%s' fallback\n", type->name.__s, object, type->haxeClass.mPtr, type->cppiaClass, field.__s);
          if (type->cppiaClass)
@@ -6333,6 +6349,7 @@ struct TryExpr : public CppiaVoidExpr
          for(int i=0;i<catchCount;i++)
          {
             Catch &c = catches[i];
+            printf("  %d... %s = %s\n",i, c.type->name.c_str(), caught==null() ? "nnn" : caught->toString().c_str() );
             if ( c.type->isClassOf(caught) )
             {
                HX_STACK_BEGIN_CATCH
@@ -8014,6 +8031,8 @@ TypeData::TypeData(String inModule)
    arrayType = arrNotArray;
    interfaceBase = 0;
    isInterface = false;
+   isDynamic = name == HX_CSTRING("Dynamic");
+   isFloat = name == HX_CSTRING("Float");
 }
 void TypeData::mark(hx::MarkContext *__inCtx)
 {

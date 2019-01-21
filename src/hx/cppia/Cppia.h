@@ -340,6 +340,8 @@ struct TypeData
    HaxeNativeInterface *interfaceBase;
    bool                linked;
    bool                isInterface;
+   bool                isDynamic;
+   bool                isFloat;
    ArrayType           arrayType;
 
    TypeData(String inData);
