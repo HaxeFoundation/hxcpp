@@ -616,10 +616,10 @@ void __hxcpp_println_string(const String &inV)
 
 bool __instanceof(const Dynamic &inValue, const Dynamic &inType)
 {
-   if (inType==hx::Object::__SGetClass())
-      return true;
    if (inValue==null())
       return false;
+   if (inType==hx::Object::__SGetClass())
+      return true;
    hx::Class c = inType;
    if (c==null())
       return false;
