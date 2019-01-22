@@ -1,0 +1,97 @@
+<xml>
+
+<echo value="Using tvOS SDK ${TVOS_VER}" if="VERBOSE"/>
+
+<set name="ARCH" value ="-64" if="HXCPP_M64" />
+
+<set name="HXCPP_USE_LIBTOOL" value="1" />
+<set name="HXCPP_LIBTOOL" value="xcrun --sdk appletvsimulator${TVOS_VER} libtool" />
+<include name="toolchain/gcc-toolchain.xml"/>
+<!--<path name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />-->
+
+<set name="FORCE_LIBGCC" value="1" if="HXCPP_IOS_STDCPP" unless="HXCPP_GCC" />
+<set name="OBJGCC" value="-c11" if="HXCPP_CPP11" />
+<set name="OBJGCC" value="-gcc" if="HXCPP_GCC" />
+<set name="OBJDBG" value="-dbg" if="debug" />
+
+<compiler id="AppleTVSim" exe="g++" if="appletvsim">
+  <exe name="xcrun --sdk appletvsimulator${TVOS_VER} g++" if="HXCPP_GCC" />
+  <exe name="xcrun --sdk appletvsimulator${TVOS_VER} clang++" />
+  <flag value="-c"/>
+  <!-- Removed for iOS 8 -->
+  <!-- <cppflag value="-fvisibility-inlines-hidden"/> -->
+  <pchflag value="-x" />
+  <pchflag value="c++-header" />
+  <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <flag value="-g" if="HXCPP_DEBUG_LINK"/>
+  <flag value="-O2" unless="debug"/>
+  <flag value="-fmessage-length=0"/>
+  <flag value="-pipe"/>
+  <flag value="-Wno-trigraphs"/>
+  <flag value="-fno-stack-protector"/>
+  <flag value="-Wno-overflow" />
+  <cppflag value="-Wno-invalid-offsetof" />
+  <flag value="-fpascal-strings"/>
+  <flag value="-fasm-blocks"/>
+  <flag value="-Wreturn-type"/>
+  <!-- Simulator has been upgraded to ABI version 2.  Old code may not like the following 2 lines  -->
+  <mmflag value="-fobjc-abi-version=2"/>
+  <mmflag value="-fobjc-legacy-dispatch"/>
+  <flag value="-Wno-unused-variable"/>
+  <flag value="-arch"/>
+  <flag value="x86_64" />
+  <flag value="-isysroot"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/AppleTVSimulator.platform/Developer/SDKs/AppleTVSimulator${TVOS_VER}.sdk"/>
+  <!-- Removed for iOS 8 -->
+  <!-- <flag value="-fvisibility=hidden"/> -->
+  <!-- <flag value="-miphoneos-version-min=${IPHONE_VER}"/> -->
+  <flag value="-mappletvos-version-min=9.0"/>
+  <flag value="-DAPPLETV=APPLETV"/>
+  <flag value="-DAPPLETVSIM=APPLETVSIM"/>
+  <flag value="-DENABLE_BITCODE=YES"/>
+  <flag value="-fembed-bitcode"/>
+  <flag value="-fobjc-arc" if="OBJC_ARC" />
+  <flag value="-DOBJC_ARC" if="OBJC_ARC" />
+  <flag value="-Wno-parentheses" />
+  <flag value="-Wno-null-dereference" unless="HXCPP_GCC"/>
+  <flag value="-Wno-unused-value" />
+  <flag value="-Wno-bool-conversion" unless="HXCPP_GCC"/>
+  <include name="toolchain/common-defines.xml" />
+  <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-I${HXCPP}/include"/>
+  <!-- Removed for iOS 8 (no need) -->
+  <!-- <cppflag value="-frtti"/> -->
+
+  <!-- Added for iOS8 -->
+  <flag value="-fexceptions"/>
+  <flag value="-fstrict-aliasing"/>
+  <!-- End of Added for iOS8 -->
+
+  <outflag value="-o"/>
+  <ext value=".o"/>
+  <objdir value="obj/appletvsim${OBJGCC}${OBJDBG}/" />
+</compiler>
+
+<linker id="dll" exe="g++" >
+  <exe name="xcrun --sdk appletvsimulator${TVOS_VER} g++" if="HXCPP_GCC" />
+  <exe name="xcrun --sdk appletvsimulator${TVOS_VER} clang++" />
+  <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <flag value="-dynamiclib"/>
+  <flag value="-arch"/>
+  <flag value="i386" unless="HXCPP_M64"/>
+  <flag value="x86_64" if="HXCPP_M64"/>
+  <flag value="-isysroot"/>
+  <flag value="${DEVELOPER_DIR}/Platforms/AppleTVSimulator.platform/Developer/SDKs/AppleTVSimulator${TVOS_VER}.sdk"/>
+  <flag value="-Wl,-undefined,dynamic_lookup"/>
+  <flag value="-fpic"/>
+  <flag value="-fPIC"/>
+  <flag value="-fvisibility=hidden"/>
+  <ext value=".sim.dylib"/>
+  <outflag value="-o "/>
+</linker>
+
+
+
+</xml>

@@ -1,0 +1,41 @@
+version: "{build}"
+
+clone_folder: C:\projects\hxcpp
+
+environment:
+    global:
+        HAXE_ROOT: C:\projects\haxe
+        HAXELIB_ROOT: C:\projects\haxelib
+    matrix:
+        - HXCPP_ARCH: "32"
+        - HXCPP_ARCH: "64"
+
+install:
+    # Install neko and haxe. Just download the chocolatey package instead of building from source in order to save time...
+    - ps: Set-Service wuauserv -StartupType Manual
+    - cinst neko --version 2.2.0 -y
+    - cinst haxe --prerelease --ignore-dependencies -s 'https://ci.appveyor.com/nuget/haxe' -y
+    - RefreshEnv
+    - neko -version
+    - haxe -version
+    # Setup haxelib
+    - mkdir "%HAXELIB_ROOT%"
+    - haxelib setup "%HAXELIB_ROOT%"
+    - haxelib install record-macros
+
+build_script:
+    - haxelib dev hxcpp %APPVEYOR_BUILD_FOLDER%
+    - cd %APPVEYOR_BUILD_FOLDER%\tools\run
+    - haxe compile.hxml
+    - cd %APPVEYOR_BUILD_FOLDER%\tools\hxcpp
+    - haxe compile.hxml
+
+test_script:
+    - cd %APPVEYOR_BUILD_FOLDER%\test\std
+    - haxe compile%HXCPP_ARCH%.hxml && .\cpp%HXCPP_ARCH%\Test
+    - cd %APPVEYOR_BUILD_FOLDER%\test\haxe
+    - haxe compile.hxml -debug -D HXCPP_M%HXCPP_ARCH% && .\bin\TestMain-debug
+    # tests from haxe repo
+    - git clone --recursive --depth 1 -q https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
+    - cd %HAXE_ROOT%\tests\unit
+    - haxe compile-cpp.hxml -D HXCPP_M%HXCPP_ARCH% && .\bin\cpp\TestMain-debug

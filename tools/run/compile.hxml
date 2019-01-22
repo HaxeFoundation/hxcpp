@@ -1,4 +1,4 @@
 -neko ../../run.n
--main BuildTool
+-main RunMain
 -D neko_v1
 -debug

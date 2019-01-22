@@ -1,0 +1,8 @@
+-main Test
+-cpp arm32
+-D android
+-D exe_link
+-cp ../unit
+-cmd adb push arm32/Test /storage/ext_sd
+-cmd adb push Test.hx /storage/ext_sd
+-cmd adb shell "cd /storage/ext_sd && ./Test"

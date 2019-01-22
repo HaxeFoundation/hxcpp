@@ -43,6 +43,7 @@ DEFFUNC_1(const wchar_t *,val_wstring,value)
 DEFFUNC_1(const char *,val_string,value)
 DEFFUNC_1(wchar_t *,val_dup_wstring,value)
 DEFFUNC_1(char *,val_dup_string,value)
+DEFFUNC_2(char *,alloc_string_data,const char *,int)
 DEFFUNC_2(value,alloc_string_len,const char *,int)
 DEFFUNC_2(value,alloc_wstring_len,const wchar_t *,int)
 
@@ -63,25 +64,56 @@ DEFFUNC_1(double *,val_array_double,value)
 DEFFUNC_1(float *,val_array_float,value)
 DEFFUNC_1(value *,val_array_value,value)
 
-// Byte arrays
-// The byte array may be a string or a Array<bytes> depending on implementation
-DEFFUNC_1(buffer,val_to_buffer,value)
+// String Buffer
+// A 'buffer' is a tool for joining strings together.
+// The C++ implementation is haxe.io.BytesData
+// The neko implementation is something else again, and can't be passes as a value, only copied to a string
+
+// Create a buffer from string of an empty buffer of a given length
 DEFFUNC_1(buffer,alloc_buffer,const char *)
 DEFFUNC_1(buffer,alloc_buffer_len,int)
-DEFFUNC_1(value,buffer_val,buffer)
-DEFFUNC_1(value,buffer_to_string,buffer)
-DEFFUNC_2(void,buffer_append,buffer,const char *)
-DEFFUNC_1(int,buffer_size,buffer)
-DEFFUNC_2(void,buffer_set_size,buffer,int)
-DEFFUNC_3(void,buffer_append_sub,buffer,const char *,int)
-DEFFUNC_2(void,buffer_append_char,buffer,int)
-DEFFUNC_1(char *,buffer_data,buffer)
-// Append value to buffer
+
+// Append a string representation of a value to the buffer
 DEFFUNC_2(void,val_buffer,buffer,value)
 
-//DEFFUNC_2(unsigned char,buffer_i,buffer,int)
-//DEFFUNC_2(void,buffer_push,buffer,unsigned char)
-//DEFFUNC_2(void,buffer_resize,buffer,int)
+// Append a c-string to a buffer
+DEFFUNC_2(void,buffer_append,buffer,const char *)
+
+// Append given number of bytes of a c-string to the buffer
+DEFFUNC_3(void,buffer_append_sub,buffer,const char *,int)
+
+// Append given character to string
+DEFFUNC_2(void,buffer_append_char,buffer,int)
+
+// Convert buffer back into string value
+DEFFUNC_1(value,buffer_to_string,buffer)
+
+
+
+// These routines are for direct access to the c++ BytesData structure
+// Use getByteData and resizeByteData for more generic access to haxe.io.Bytes
+
+// This will never return true on a neko host.
+DEFFUNC_1(bool,val_is_buffer,value)
+
+// These functions are only valid if val_is_buffer returns true
+// Currently, cffiByteBuffer is the same struct as buffer, but the usage is quite different
+DEFFUNC_1(cffiByteBuffer,val_to_buffer,value)
+
+// Number of byes in the array
+DEFFUNC_1(int,buffer_size,cffiByteBuffer)
+
+// Pointer to the byte data - will become invalid if the array is resized
+DEFFUNC_1(char *,buffer_data,cffiByteBuffer)
+
+// Convert c++ ByteBuffer back to 'value' - no copy involved
+DEFFUNC_1(value,buffer_val,cffiByteBuffer)
+
+// Resize the array - will invalidate the data
+DEFFUNC_2(void,buffer_set_size,cffiByteBuffer,int)
+
+// This is used by resizeByteData for manipulating bytes directly on neko
+DEFFUNC_1(value,alloc_raw_string,int)
 
 // Call Function 
 DEFFUNC_1(value,val_call0,value)
@@ -107,6 +139,7 @@ DEFFUNC_2(double,val_field_numeric,value,int)
 
 DEFFUNC_1(value,val_field_name,field)
 DEFFUNC_3(void,val_iter_fields,value,__hx_field_iter,void *)
+DEFFUNC_3(void,val_iter_field_vals,value,__hx_field_iter,void *)
 
 // Abstract types
 DEFFUNC_0(vkind,alloc_kind)
@@ -118,6 +151,7 @@ DEFFUNC_2(void, val_gc,value,hxFinalizer)
 DEFFUNC_2(void, val_gc_ptr,void *,hxPtrFinalizer)
 DEFFUNC_0(value *, alloc_root)
 DEFFUNC_1(void, free_root,value *)
+DEFFUNC_2(void, gc_change_managed_memory,int,const char *)
 
 // Only available on cpp target...
 DEFFUNC_1(void, val_gc_add_root,value *)

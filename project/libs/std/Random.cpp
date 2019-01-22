@@ -1,19 +1,3 @@
-/* ************************************************************************ */
-/*																			*/
-/*  Neko Standard Library													*/
-/*  Copyright (c)2005 Motion-Twin											*/
-/*																			*/
-/* This library is free software; you can redistribute it and/or			*/
-/* modify it under the terms of the GNU Lesser General Public				*/
-/* License as published by the Free Software Foundation; either				*/
-/* version 2.1 of the License, or (at your option) any later version.		*/
-/*																			*/
-/* This library is distributed in the hope that it will be useful,			*/
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of			*/
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU		*/
-/* Lesser General Public License or the LICENSE file for more details.		*/
-/*																			*/
-/* ************************************************************************ */
 #include <hx/CFFI.h>
 #include <time.h>
 #include <string.h>
@@ -77,17 +61,21 @@ static void rnd_set_seed( rnd *r, int s ) {
 
 static rnd *rnd_init( void *data ) {
 	rnd *r = (rnd*)data;
-   #ifdef HX_WINRT
+#if defined(NEKO_WINDOWS)
+  #if defined(HX_WINRT) && defined(__cplusplus_winrt)
 	int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
-   #elif defined(EPPC)
+  #else
+	int pid = GetCurrentProcessId();
+  #endif
+#elif defined(EPPC)
 	int pid = 1;
-   #else
+#else
 	int pid = getpid();
-   #endif
+#endif
 
 	unsigned int t;
 #ifdef HX_WINRT
-	t = clock();
+	t = (unsigned int)GetTickCount64();
 #elif defined(NEKO_WINDOWS)
 	t = GetTickCount();
 #elif defined(EPPC)

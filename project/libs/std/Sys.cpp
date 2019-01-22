@@ -1,19 +1,3 @@
-/* ************************************************************************ */
-/*																			*/
-/*  From the Neko Standard Library													*/
-/*  Copyright (c)2005 Motion-Twin											*/
-/*																			*/
-/* This library is free software; you can redistribute it and/or			*/
-/* modify it under the terms of the GNU Lesser General Public				*/
-/* License as published by the Free Software Foundation; either				*/
-/* version 2.1 of the License, or (at your option) any later version.		*/
-/*																			*/
-/* This library is distributed in the hope that it will be useful,			*/
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of			*/
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU		*/
-/* Lesser General Public License or the LICENSE file for more details.		*/
-/*																			*/
-/* ************************************************************************ */
 #include <hx/CFFI.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -31,7 +15,8 @@ int __sys_prims() { return 0; }
 #	include <windows.h>
 #	include <direct.h>
 #	include <conio.h>
-#       include <locale.h>
+#	include <locale.h>
+#	include "Shlwapi.h"
 #else
 #	include <errno.h>
 #ifndef EPPC
@@ -44,7 +29,7 @@ int __sys_prims() { return 0; }
 #	include <limits.h>
 #ifndef ANDROID
 #	include <locale.h>
-#if !defined(BLACKBERRY) && !defined(EPPC) && !defined(GCW0)
+#if !defined(BLACKBERRY) && !defined(EPPC) && !defined(GCW0) && !defined(__GLIBC__)
 #	include <xlocale.h>
 #endif
 #endif
@@ -54,7 +39,7 @@ int __sys_prims() { return 0; }
 #include <sys/wait.h>
 #endif
 
-#ifndef IPHONE
+#if !defined(IPHONE) && !defined(APPLETV)
 #ifdef NEKO_MAC
 #	include <sys/syslimits.h>
 #	include <limits.h>
@@ -62,8 +47,8 @@ int __sys_prims() { return 0; }
 #endif
 #endif
 
-#ifdef HX_WINRT
-#include <hx/Thread.h>
+#if defined(HX_WINRT) && !defined(_XBOX_ONE)
+#include <string>
 #endif
 
 #ifndef CLK_TCK
@@ -125,19 +110,10 @@ static value put_env( value e, value v ) {
 	<doc>Sleep a given number of seconds</doc>
 **/
 
-#ifdef HX_WINRT
-DECLARE_TLS_DATA(void,tlsSleepEvent)
-#endif
-
 static value sys_sleep( value f ) {
 	val_check(f,number);
 	gc_enter_blocking();
-#ifdef HX_WINRT
-   if (!tlsSleepEvent)
-      tlsSleepEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
-   WaitForSingleObjectEx(tlsSleepEvent, (int)(val_number(f)*1000), false);
-
-#elif defined(NEKO_WINDOWS)
+#if defined(NEKO_WINDOWS)
 	Sleep((DWORD)(val_number(f) * 1000));
 #elif defined(EPPC)
 //TODO: Implement sys_sleep for EPPC
@@ -200,6 +176,18 @@ static value get_cwd() {
    #elif defined(EPPC)
    return alloc_null();
    #else
+	#ifdef NEKO_WINDOWS
+	wchar_t buf[256];
+	int l;
+	if( GetCurrentDirectoryW(256,buf) == NULL )
+		return alloc_null();
+	l = (int)wcslen(buf);
+	if( buf[l-1] != '/' && buf[l-1] != '\\' ) {
+		buf[l] = '/';
+		buf[l+1] = 0;
+	}
+	return alloc_wstring(buf);
+	#else
 	char buf[256];
 	int l;
 	if( getcwd(buf,256) == NULL )
@@ -210,6 +198,7 @@ static value get_cwd() {
 		buf[l+1] = 0;
 	}
 	return alloc_string(buf);
+	#endif
    #endif
 }
 
@@ -220,8 +209,13 @@ static value get_cwd() {
 static value set_cwd( value d ) {
    #if !defined(HX_WINRT) && !defined(EPPC)
 	val_check(d,string);
+	#ifdef NEKO_WINDOWS
+	if( SetCurrentDirectoryW(val_wstring(d)) )
+		return alloc_null();
+	#else
 	if( chdir(val_string(d)) )
 		return alloc_null();
+	#endif
    #endif
 	return alloc_bool(true);
 }
@@ -284,14 +278,20 @@ static value sys_is64() {
 	<doc>Run the shell command and return exit code</doc>
 **/
 static value sys_command( value cmd ) {
-   #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC)
+   #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC) || defined(IPHONE) || defined(APPLETV) || defined(HX_APPLEWATCH)
 	return alloc_int( -1 );
    #else
 	val_check(cmd,string);
 	if( val_strlen(cmd) == 0 )
 		return alloc_int(-1);
+	#ifdef NEKO_WINDOWS
+	const wchar_t* _cmd = val_wstring(cmd);
+	gc_enter_blocking();
+	int result =  _wsystem(_cmd);
+	#else
 	gc_enter_blocking();
 	int result =  system(val_string(cmd));
+	#endif
 	gc_exit_blocking();
    #if !defined(NEKO_WINDOWS) && !defined(ANDROID)
    result = WEXITSTATUS(result) | (WTERMSIG(result) << 8);
@@ -319,10 +319,16 @@ static value sys_exists( value path ) {
 	#ifdef EPPC
 	return alloc_bool(true);
 	#else
-	struct stat st;
 	val_check(path,string);
+	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
+	gc_enter_blocking();
+	bool result =  GetFileAttributesW(_path) != INVALID_FILE_ATTRIBUTES;
+	#else
+	struct stat st;
 	gc_enter_blocking();
 	bool result =  stat(val_string(path),&st) == 0;
+	#endif
 	gc_exit_blocking();
 	return alloc_bool(result);
 	#endif
@@ -348,8 +354,14 @@ static value file_delete( value path ) {
 	return alloc_bool(true);
 	#else
 	val_check(path,string);
+	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
+	gc_enter_blocking();
+	if( DeleteFileW(_path) != 0 )
+	#else
 	gc_enter_blocking();
 	if( unlink(val_string(path)) != 0 )
+	#endif
 	{
 		gc_exit_blocking();
 		return alloc_null();
@@ -366,12 +378,24 @@ static value file_delete( value path ) {
 static value sys_rename( value path, value newname ) {
 	val_check(path,string);
 	val_check(newname,string);
+	
+	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
+	const wchar_t* _newname = val_wstring(newname);
+	gc_enter_blocking();
+	if( MoveFileExW(_path,_newname,MOVEFILE_COPY_ALLOWED|MOVEFILE_WRITE_THROUGH) != 0 )
+	{
+		gc_exit_blocking();
+		return alloc_null();
+	}
+	#else
 	gc_enter_blocking();
 	if( rename(val_string(path),val_string(newname)) != 0 )
 	{
 		gc_exit_blocking();
 		return alloc_null();
 	}
+	#endif
 	gc_exit_blocking();
 	return alloc_bool(true);
 }
@@ -399,10 +423,51 @@ static value sys_stat( value path ) {
 	#ifdef EPPC
 	return alloc_null();
 	#else
-	struct stat s;
 	value o;
 	val_check(path,string);
+	
+	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
 	gc_enter_blocking();
+	WIN32_FILE_ATTRIBUTE_DATA data;
+	if( !GetFileAttributesExW(_path,GetFileExInfoStandard,&data) )
+	{
+		gc_exit_blocking();
+		return alloc_null();
+	}
+	gc_exit_blocking();
+	wchar_t fullPath[MAX_PATH+1];
+	GetFullPathNameW(_path,MAX_PATH+1,fullPath,NULL);
+	int dev = PathGetDriveNumberW(fullPath);
+	#define EPOCH_DIFF	(134774*24*60*60.0)
+	ULARGE_INTEGER ui;
+	o = alloc_empty_object( );
+	alloc_field(o,val_id("gid"),alloc_int(0));
+	alloc_field(o,val_id("uid"),alloc_int(0));
+	ui.LowPart = data.ftLastAccessTime.dwLowDateTime;
+	ui.HighPart = data.ftLastAccessTime.dwHighDateTime;
+	alloc_field(o,val_id("atime"),alloc_int32(((double)ui.QuadPart) / 10000000.0 - EPOCH_DIFF));
+	ui.LowPart = data.ftLastWriteTime.dwLowDateTime;
+	ui.HighPart = data.ftLastWriteTime.dwHighDateTime;
+	alloc_field(o,val_id("mtime"),alloc_int32(((double)ui.QuadPart) / 10000000.0 - EPOCH_DIFF));
+	ui.LowPart = data.ftCreationTime.dwLowDateTime;
+	ui.HighPart = data.ftCreationTime.dwHighDateTime;
+	alloc_field(o,val_id("ctime"),alloc_int32(((double)ui.QuadPart) / 10000000.0 - EPOCH_DIFF));
+	alloc_field(o,val_id("dev"),alloc_int(dev));
+	alloc_field(o,val_id("ino"),alloc_int(0));
+	int mode = 0;
+	if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) mode |= _S_IFDIR;
+	if ((data.dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) == 0) mode |= _S_IFREG;
+	mode |= _S_IREAD;
+	if ((data.dwFileAttributes & FILE_ATTRIBUTE_READONLY) == 0) mode |= _S_IWRITE;
+	if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) mode |= _S_IEXEC;
+	alloc_field(o,val_id("mode"),alloc_int(mode));
+	alloc_field(o,val_id("nlink"),alloc_int(1));
+	alloc_field(o,val_id("rdev"),alloc_int(dev));
+	alloc_field(o,val_id("size"),alloc_int32(data.nFileSizeLow));
+	#else
+	gc_enter_blocking();
+	struct stat s;
 	if( stat(val_string(path),&s) != 0 )
 	{
 		gc_exit_blocking();
@@ -421,7 +486,7 @@ static value sys_stat( value path ) {
 	STATF(nlink);
 	STATF(rdev);
 	STATF(size);
-	STATF(mode);
+	#endif
 	return o;
 	#endif
 }
@@ -447,6 +512,25 @@ static value sys_file_type( value path ) {
 	#else
 	struct stat s;
 	val_check(path,string);
+	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
+	gc_enter_blocking();
+	WIN32_FILE_ATTRIBUTE_DATA data;
+	if( !GetFileAttributesExW(_path,GetFileExInfoStandard,&data) )
+	{
+		gc_exit_blocking();
+		return alloc_null();
+	}
+	gc_exit_blocking();
+	if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+	{
+		return alloc_string("dir");
+	}
+	else
+	{
+		return alloc_string("file");
+	}
+	#else
 	gc_enter_blocking();
 	if( stat(val_string(path),&s) != 0 )
 	{
@@ -470,6 +554,7 @@ static value sys_file_type( value path ) {
 	if( s.st_mode & S_IFSOCK )
 		return alloc_string("sock");
 #endif
+	#endif
 	return alloc_null();
 	#endif
 }
@@ -484,16 +569,23 @@ static value sys_create_dir( value path, value mode ) {
 	#else
 	val_check(path,string);
 	val_check(mode,int);
+	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
 	gc_enter_blocking();
-#ifdef NEKO_WINDOWS
-	if( mkdir(val_string(path)) != 0 )
-#else
-	if( mkdir(val_string(path),val_int(mode)) != 0 )
-#endif
+	if( _wmkdir(_path) != 0 )
 	{
 		gc_exit_blocking();
 		return alloc_null();
 	}
+	#else
+	const char* _path = val_string(path);
+	gc_enter_blocking();
+	if( mkdir(val_string(path),val_int(mode)) != 0 )
+	{
+		gc_exit_blocking();
+		return alloc_null();
+	}
+	#endif
 	gc_exit_blocking();
 	return alloc_bool(true);
 	#endif
@@ -508,13 +600,17 @@ static value sys_remove_dir( value path ) {
 	return alloc_bool(true);
 	#else
 	val_check(path,string);
+	#ifdef NEKO_WINDOWS
+	const wchar_t* _path = val_wstring(path);
 	gc_enter_blocking();
-	if( rmdir(val_string(path)) != 0 )
-	{
-		gc_exit_blocking();
-		return alloc_null();
-	}
-	return alloc_bool(true);
+	bool ok = _wrmdir(_path) != 0;
+	#else
+	const char* _path = val_string(path);
+	gc_enter_blocking();
+	bool ok = rmdir(_path) != 0;
+	#endif
+	gc_exit_blocking();
+	return alloc_bool(ok);
 	#endif
 }
 
@@ -551,8 +647,8 @@ static value sys_time() {
 	<doc>Return the most accurate CPU time spent since the process started (in seconds)</doc>
 **/
 static value sys_cpu_time() {
-#ifdef HX_WINRT
-   return alloc_float(0);
+#if defined(HX_WINRT) && !defined(_XBOX_ONE)
+    return alloc_float ((double)GetTickCount64()/1000.0);
 #elif defined(NEKO_WINDOWS)
 	FILETIME unused;
 	FILETIME stime;
@@ -561,7 +657,7 @@ static value sys_cpu_time() {
 		return alloc_null();
 	return alloc_float( ((double)(utime.dwHighDateTime+stime.dwHighDateTime)) * 65.536 * 6.5536 + (((double)utime.dwLowDateTime + (double)stime.dwLowDateTime) / 10000000) );
 #elif defined(EPPC)
-	return alloc_float ((double)(CLOCKS_PER_SEC * clock()));
+    return alloc_float ((double)clock()/(double)CLOCKS_PER_SEC);
 #else
 	struct tms t;
 	times(&t);
@@ -577,12 +673,11 @@ static value sys_read_dir( value p) {
 	val_check(p,string);
 
         value result = alloc_array(0);
-#ifdef HX_WINRT
+#if defined(HX_WINRT) && defined(__cplusplus_winrt)
    auto folder = (Windows::Storage::StorageFolder::GetFolderFromPathAsync( ref new Platform::String(val_wstring(p)) ))->GetResults();
    auto results = folder->GetFilesAsync(Windows::Storage::Search::CommonFileQuery::DefaultQuery)->GetResults();
    for(int i=0;i<results->Size;i++)
       val_array_push(result,alloc_wstring(results->GetAt(i)->Path->Data()));
-
 #elif defined(NEKO_WINDOWS)
 	const wchar_t *path = val_wstring(p);
 	size_t len = wcslen(path);
@@ -592,8 +687,13 @@ static value sys_read_dir( value p) {
 	WIN32_FIND_DATAW d;
 	HANDLE handle;
 	buffer b;
+  #if defined(HX_WINRT) && !defined(_XBOX_ONE)
+	std::wstring tempWStr(path);
+	std::string searchPath(tempWStr.begin(), tempWStr.end());
+  #else
    wchar_t searchPath[ MAX_PATH + 4 ];
    memcpy(searchPath,path, len*sizeof(wchar_t));
+  #endif
 
 
 	if( len && path[len-1] != '/' && path[len-1] != '\\' )
@@ -604,7 +704,11 @@ static value sys_read_dir( value p) {
    searchPath[len] = '\0';
 
 	gc_enter_blocking();
+  #if defined(HX_WINRT) && !defined(_XBOX_ONE)
+	handle = FindFirstFileEx(searchPath.c_str(), FindExInfoStandard, &d, FindExSearchNameMatch, NULL, 0);
+  #else
 	handle = FindFirstFileW(searchPath,&d);
+  #endif
 	if( handle == INVALID_HANDLE_VALUE )
 	{
 		gc_exit_blocking();
@@ -654,17 +758,14 @@ static value sys_read_dir( value p) {
 	<doc>Return an absolute path from a relative one. The file or directory must exists</doc>
 **/
 static value file_full_path( value path ) {
-#ifdef HX_WINRT
-   Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
-   Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
-   Platform::String^ output = "Installed Location: " + installedLocation->Path;
-   return path;
+#if defined(HX_WINRT)
+	return path;
 #elif defined(NEKO_WINDOWS)
-	char buf[MAX_PATH+1];
+	wchar_t buf[MAX_PATH+1];
 	val_check(path,string);
-	if( GetFullPathNameA(val_string(path),MAX_PATH+1,buf,NULL) == 0 )
+	if( GetFullPathNameW(val_wstring(path),MAX_PATH+1,buf,NULL) == 0 )
 		return alloc_null();
-	return alloc_string(buf);
+	return alloc_wstring(buf);
 #elif defined(EPPC)
 	return path;
 #else
@@ -681,16 +782,16 @@ static value file_full_path( value path ) {
 	<doc>Return the path of the executable</doc>
 **/
 static value sys_exe_path() {
-#ifdef HX_WINRT
+#if defined(HX_WINRT) && defined(__cplusplus_winrt)
    Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
    Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
    return(alloc_wstring(installedLocation->Path->Data()));
 #elif defined(NEKO_WINDOWS)
-	wchar_t path[MAX_PATH];
-	if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
+	wchar_t path[MAX_PATH+1];
+	if( GetModuleFileNameW(NULL,path,MAX_PATH+1) == 0 )
 		return alloc_null();
 	return alloc_wstring(path);
-#elif defined(NEKO_MAC) && !defined(IPHONE)
+#elif defined(NEKO_MAC) && !defined(IPHONE) && !defined(APPLETV)
 	char path[PATH_MAX+1];
 	uint32_t path_len = PATH_MAX;
 	if( _NSGetExecutablePath(path, &path_len) )
@@ -713,7 +814,7 @@ static value sys_exe_path() {
 #endif
 }
 
-#ifndef IPHONE
+#if !defined(IPHONE) && !defined(APPLETV)
 #ifdef NEKO_MAC
 #include <crt_externs.h>
 #	define environ (*_NSGetEnviron())
@@ -745,6 +846,23 @@ static value sys_env() {
    #endif
 	return result;
 }
+
+#ifdef HX_ANDROID
+   #define tcsetattr(fd,opt,s) ioctl(fd,opt,s)
+   #define tcgetattr(fd,s) ioctl(fd,TCGETS,s)
+
+   static __inline__ void inline_cfmakeraw(struct termios *s)
+   {
+       s->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
+       s->c_oflag &= ~OPOST;
+       s->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+       s->c_cflag &= ~(CSIZE|PARENB);
+       s->c_cflag |= CS8;
+   }
+
+   #define cfmakeraw inline_cfmakeraw
+
+#endif
 
 /**
 	sys_getch : bool -> int

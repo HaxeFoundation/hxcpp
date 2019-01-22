@@ -1,11 +1,24 @@
 #ifndef HX_CFFI_H
 #define HX_CFFI_H
 
+
+#ifdef HXCPP_JS_PRIME
+#include <emscripten/bind.h>
+using namespace emscripten;
+
+typedef struct emscripten::val value;
+typedef struct _vkind  *vkind;
+typedef struct _buffer  *buffer;
+#define HAVE_NEKO_TYPES 1
+#endif
+
 #include "OS.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-
+#include <string.h>
+#if defined(BLACKBERRY)
+using namespace std;
+#endif
 // --- Register functions (primitives) ----
 
 #ifdef STATIC_LINK
@@ -31,6 +44,15 @@ int __reg_##func = hx_register_prim(lib "_" #func "__MULT",(void *)(&func)); \
 
 #define DEFINE_LIB_PRIM(lib,func,nargs) \
 int __reg_##func = hx_register_prim(lib "_" #func "__" #nargs,(void *)(&func)); \
+
+
+#elif defined(HXCPP_JS_PRIME)
+
+//#define DEFINE_PRIM_MULT(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+//TODO
+#define DEFINE_PRIM_MULT(func)
+
+#define DEFINE_PRIM(func,nargs) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 
 
 #else
@@ -83,7 +105,7 @@ int __reg_##func = hx_register_prim(lib "_" #func "__" #nargs,(void *)(&func)); 
 #define DEFFUNC_5(ret,name,t1,t2,t3,t4,t5) DEFFUNC(name,ret, (t1 a1, t2 a2, t3 a3, t4 a4,t5 a5), (a1,a2,a3,a4,a5))
  
 
-enum ValueType
+enum hxValueType
 {
    valtUnknown = -1,
    valtInt = 0xff,
@@ -112,11 +134,19 @@ typedef int field;
 #endif
 
 
-#ifndef HAVE_NEKO_TYPES
-typedef struct _value *value;
+#if !defined(HAVE_NEKO_TYPES)
+#ifdef HXCPP_NATIVE_CFFI_VALUE
+namespace hx { class Object; }
+typedef hx::Object _value;
+#else
+struct _value;
+#endif
+typedef _value *value;
 typedef struct _vkind  *vkind;
 typedef struct _buffer  *buffer;
 #endif
+
+typedef buffer cffiByteBuffer;
 
 typedef struct _gcroot  *gcroot;
 
@@ -132,7 +162,7 @@ typedef void (__hx_field_iter)(value v,field f,void *);
 
 #ifndef IMPLEMENT_API
  
-#ifdef STATIC_LINK
+#if defined(STATIC_LINK) || defined(HXCPP_JS_PRIME)
 
 #define DEFFUNC(name,ret,def_args,call_args) \
 extern "C" ret name def_args;
@@ -177,7 +207,6 @@ extern FUNC_##name name;
 
 // Check type...
 inline bool val_is_null(value inVal) { return val_type(inVal)==valtNull; }
-inline bool val_is_buffer(value inVal) { return val_to_buffer(inVal)!=0; }
 inline bool val_is_int(value inVal) { return val_type(inVal)==valtInt; }
 inline bool val_is_bool(value inVal) { return val_type(inVal)==valtBool; }
 inline bool val_is_float(value inVal) { return val_type(inVal)==valtFloat; }
@@ -247,6 +276,75 @@ private:
    void operator=(const AutoGCRoot &);
 };
 
+struct CffiBytes
+{
+   CffiBytes( unsigned char *inData=0, int inLength=0) : data(inData), length(inLength) {}
+
+   unsigned char *data;
+   int length;
+};
+
+inline CffiBytes getByteData(value inValue)
+{
+   if (val_is_object(inValue))
+   {
+      static field bField = 0;
+      static field lengthField = 0;
+      if (bField==0)
+      {
+         bField = val_id("b");
+         lengthField = val_id("length");
+      }
+      value b = val_field(inValue, bField);
+      value len = val_field(inValue, lengthField);
+      if (val_is_string(b) && val_is_int(len))
+         return CffiBytes( (unsigned char *)val_string(b), val_int(len) );
+      if (val_is_buffer(b) && val_is_int(len))
+         return CffiBytes( (unsigned char *)buffer_data(val_to_buffer(b)), val_int(len) );
+   }
+   return CffiBytes();
+}
+
+inline bool resizeByteData(value inValue, int inNewLen)
+{
+   if (!val_is_object(inValue))
+      return false;
+
+   static field bField = 0;
+   static field lengthField = 0;
+   if (bField==0)
+   {
+      bField = val_id("b");
+      lengthField = val_id("length");
+   }
+   value len = val_field(inValue, lengthField);
+   if (!val_is_int(len))
+      return false;
+   int oldLen = val_int(len);
+   value b = val_field(inValue, bField);
+   if (val_is_string(b))
+   {
+      if (inNewLen>oldLen)
+      {
+         value newString = alloc_raw_string(inNewLen);
+         memcpy( (char *)val_string(newString), val_string(b), inNewLen);
+         alloc_field(inValue, bField, newString );
+      }
+      alloc_field(inValue, lengthField, alloc_int(inNewLen) );
+   }
+   else if (val_is_buffer(b))
+   {
+      cffiByteBuffer buf = val_to_buffer(b);
+      buffer_set_size(buf,inNewLen);
+      alloc_field(inValue, lengthField, alloc_int(inNewLen) );
+   }
+   else
+      return false;
+
+   return true;
+}
+
+
 #define val_null alloc_null()
 
 #define bfailure(x) val_throw(buffer_to_string(x))
@@ -280,6 +378,20 @@ inline value alloc_wstring(const wchar_t *inStr)
    const wchar_t *end = inStr;
    while(*end) end++;
    return alloc_wstring_len(inStr,(int)(end-inStr));
+}
+
+inline void hxcpp_unscramble(const unsigned char *bytes, int len, const char *key, unsigned char *dest)
+{
+   int keyLen = 0;
+   while(key[keyLen])
+      keyLen++;
+   int state = 0;
+   //state = ((state + key[i]) ^ ch) & 0xff);
+   for(int i=0;i<len;i++)
+   {
+      dest[i] = ( (state + key[i%keyLen]) ^ bytes[i] ) & 0xff;
+      state = bytes[i];
+   }
 }
 
 

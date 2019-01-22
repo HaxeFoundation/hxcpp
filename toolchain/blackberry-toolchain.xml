@@ -7,12 +7,14 @@
 	<set name="ARCH" value="-x86" />
 	<set name="PLATFORM_ARCH" value="x86" />
 	<set name="EXEPREFIX" value="ntox86" />
+	<set name="QCC_TARGET" value="gcc_ntox86" />
 </section>
 
 <section unless="HXCPP_X86">
 	<set name="ARCH" value="-v7" />
 	<set name="PLATFORM_ARCH" value="armle-v7" />
 	<set name="EXEPREFIX" value="ntoarmv7" />
+	<set name="QCC_TARGET" value="gcc_ntoarmv7le" />
 </section>
 
 <setup name="blackberry" />
@@ -23,7 +25,8 @@
 
 <!-- BLACKBERRY TOOLS -------------------------------------------------->
 	
-<compiler id="blackberry" exe="${EXEPREFIX}-g++" if="blackberry">
+<compiler id="blackberry" exe="qcc" if="blackberry">
+	<flag value="-V${QCC_TARGET}" />
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
@@ -32,6 +35,8 @@
 	<flag value="-DBLACKBERRY=BLACKBERRY"/>
 	<flag value="-fvisibility=hidden"/>
 	<flag value="-fdollars-in-identifiers"/>
+	<!--<flag value="-fpermissive"/>-->
+	<cppflag value="-lang-c++"/>
 	<include name="toolchain/common-defines.xml" />
 	<flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
 	<flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
@@ -39,28 +44,37 @@
 	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
 	<outflag value="-o"/>
-	<objdir value="./obj/blackberry${OBJEXT}${ARCH}"/>
+	<objdir value="./obj/bb${OBJEXT}${ARCH}"/>
 </compiler>
 
 
-<linker id="exe" exe="${EXEPREFIX}-g++" if="blackberry">
+<linker id="exe" exe="qcc" if="blackberry">
+	<!-- <fromfile value="-filelist " /> -->
+	<flag value="-V${QCC_TARGET}" />
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
+	<flag value="-lang-c++"/>
+	<flag value="-Wl,-z,relro,-z,now"/>
 	<!-- <flag value="-rdynamic"/> -->
 	<flag value="-L${QNX_TARGET}/${PLATFORM_ARCH}/lib"/>
 	<ext value=""/>
 	<outflag value="-o"/>
+	<lib name="-lm"/>
 	<!-- <lib name="-lpthread"/> -->
 	<!-- <lib name="-ldl"/> -->
 </linker>
 	
-<linker id="dll" exe="${EXEPREFIX}-g++" if="blackberry">
+<linker id="dll" exe="qcc" if="blackberry">
+	<!-- <fromfile value="-filelist " /> -->
+	<flag value="-V${QCC_TARGET}" />
 	<flag value="-shared"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
 	<flag value="-L${QNX_TARGET}/${PLATFORM_ARCH}/lib"/>
+	<flag value="-lang-c++"/>
+	<flag value="-Wl,-z,relro,-z,now"/>
 	<cppflag value="-frtti"/>
 	<!-- <lib name="-lpthread"/> -->
 	<flag value="-fpic"/>

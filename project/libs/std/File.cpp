@@ -1,19 +1,3 @@
-/* ************************************************************************ */
-/*																			*/
-/*  Neko Standard Library													*/
-/*  Copyright (c)2005 Motion-Twin											*/
-/*																			*/
-/* This library is free software; you can redistribute it and/or			*/
-/* modify it under the terms of the GNU Lesser General Public				*/
-/* License as published by the Free Software Foundation; either				*/
-/* version 2.1 of the License, or (at your option) any later version.		*/
-/*																			*/
-/* This library is distributed in the hope that it will be useful,			*/
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of			*/
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU		*/
-/* Lesser General Public License or the LICENSE file for more details.		*/
-/*																			*/
-/* ************************************************************************ */
 #include <hx/CFFI.h>
 #include <stdio.h>
 #include <string.h>
@@ -32,7 +16,7 @@
 
 int __file_prims() { return 0; }
 
-#if defined(ANDROID) || defined(IPHONE)
+#if defined(ANDROID) || defined(IPHONE) || defined(APPLETV)
 typedef char FilenameChar;
 #define val_filename val_string
 #define alloc_filename alloc_string
@@ -139,10 +123,17 @@ static value file_open( value name, value r ) {
 	val_check(name,string);
 	val_check(r,string);
 	fio *f = new fio(val_filename(name));
-        const char *fname = val_string(name);
-        const char *mode = val_string(r);
+	#ifdef NEKO_WINDOWS
+	const wchar_t *fname = val_wstring(name);
+	const wchar_t *mode = val_wstring(r);
+	gc_enter_blocking();
+	f->io = _wfopen(fname,mode);
+	#else
+	const char *fname = val_string(name);
+	const char *mode = val_string(r);
 	gc_enter_blocking();
 	f->io = fopen(fname,mode);
+	#endif
 	if( f->io == NULL )
         {
 		file_error("file_open",f,true);
@@ -361,14 +352,20 @@ static value file_flush( value o ) {
 	<doc>Read the content of the file [f] and return it.</doc>
 **/
 static value file_contents( value name ) {
-	buffer s;
+	buffer s=0;
 	int len;
 	int p;
 	val_check(name,string);
 	fio f(val_filename(name));
-        const char *fname = val_string(name);
+	#ifdef NEKO_WINDOWS
+	const wchar_t *fname = val_wstring(name);
+	gc_enter_blocking();
+	f.io = _wfopen(fname,L"rb");
+	#else
+	const char *fname = val_string(name);
 	gc_enter_blocking();
 	f.io = fopen(fname,"rb");
+	#endif
 	if( f.io == NULL )
 		file_error("file_contents",&f);
 	fseek(f.io,0,SEEK_END);

@@ -72,7 +72,7 @@ void api_hx_fail(const char * arg1,const char * arg2,int arg3)
 {
 	_neko_failure( haxe_alloc_string(arg1), arg2, arg3 );
 }
-#define NOT_IMPLEMNETED(func) api_hx_fail("NOT Implemented:" func,__FILE__,__LINE__)
+#define NEKO_NOT_IMPLEMENTED(func) api_hx_fail("NOT Implemented:" func,__FILE__,__LINE__)
 
 
 // Determine value type
@@ -291,12 +291,12 @@ void api_val_array_set_i(value  arg1,int arg2,value inVal)
 
 void api_val_array_set_size(value  arg1,int inLen)
 {
-	NOT_IMPLEMNETED("api_val_array_set_size");
+	NEKO_NOT_IMPLEMENTED("api_val_array_set_size");
 }
 
 void api_val_array_push(value  arg1,value inValue)
 {
-	NOT_IMPLEMNETED("api_val_array_push");
+	NEKO_NOT_IMPLEMENTED("api_val_array_push");
 }
 
 
@@ -389,9 +389,13 @@ int api_buffer_size(buffer inBuffer)
 
 void api_buffer_set_size(buffer inBuffer,int inLen)
 {
-	NOT_IMPLEMNETED("api_buffer_set_size");
+	NEKO_NOT_IMPLEMENTED("api_buffer_set_size");
 }
 
+bool api_val_is_buffer(value inVal)
+{
+   return false;
+}
 
 void api_buffer_append_sub(buffer inBuffer,const char *inStr,int inLen)
 {
@@ -431,7 +435,7 @@ value  api_val_call0(value  arg1)
 
 value  api_val_call0_traceexcept(value  arg1)
 {
-	NOT_IMPLEMNETED("api_val_call0_traceexcept");
+	NEKO_NOT_IMPLEMENTED("api_val_call0_traceexcept");
 	return val_null;
 }
 
@@ -552,6 +556,11 @@ void * api_hx_alloc(int arg1)
 void * api_alloc_private(int arg1)
 {
 	return alloc_private(arg1);
+}
+
+void api_gc_change_managed_memory(int,const char *)
+{
+   // Nothing to do here
 }
 
 

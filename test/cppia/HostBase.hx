@@ -1,0 +1,45 @@
+#if (hxcpp_api_level>=400)
+import cpp.Native;
+#end
+
+class HostBase implements IHostInterface
+{
+   static var hostInit = 10;
+
+   var floatVal:Float;
+   var pointerSrc:cpp.Star<Int>;
+   var pointerDest:cpp.Star<Int>;
+
+   public function new()
+   {
+      floatVal = 1.25;
+      #if (hxcpp_api_level>=400)
+      pointerSrc = Native.malloc( Native.sizeof(Int) );
+      Native.set(pointerSrc,4);
+      pointerDest = null;
+      #end
+   }
+
+   public function getDestVal() : Int
+   {
+      #if (hxcpp_api_level>=400)
+      if (pointerDest==null)
+         return -1;
+      return Native.get(pointerDest);
+      #else
+      return 4;
+      #end
+   }
+
+
+
+   public function getVal() return floatVal;
+
+   public function getGeneration() return 0;
+
+
+   // IHostInteface 
+   public function hostImplOnly(i:Int, s:String, f:Float) : String return i+s+f;
+   public function whoStartedYou() return "HostBase";
+   public function whoOverridesYou() return "No one";
+}

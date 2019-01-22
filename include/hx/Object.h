@@ -7,10 +7,10 @@
 
 
 
-
 // --- Constants -------------------------------------------------------
 
-enum ObjectType
+// These values are returned from the "__GetType" function
+enum hxObjectType
 {
    vtUnknown = -1,
    vtInt = 0xff,
@@ -23,10 +23,9 @@ enum ObjectType
    vtFunction = 6,
    vtEnum,
    vtClass,
+   vtInt64,
    vtAbstractBase = 0x100,
 };
-
-
 
 
 namespace hx
@@ -40,7 +39,27 @@ typedef Array<Dynamic> DynamicArray;
 HXCPP_EXTERN_CLASS_ATTRIBUTES null BadCast();
 
 #ifdef HXCPP_SCRIPTABLE
-typedef void (*StackExecute)(struct CppiaCtx *ctx);
+
+// CPPIA_CALL = fastcall on x86(32), nothing otherwise
+#if (HXCPP_API_LEVEL >= 331)
+   #if (defined(_WIN32) && !defined(_M_X64) && !defined(__x86_64__) && !defined(_ARM_) ) || \
+      defined(HXCPP_X86) || defined(__i386__) || defined(__i386) || \
+        (!defined(_WIN32) && !defined(_ARM_) && !defined(__arm__) && !defined(__x86_64__) )
+
+      #if defined(__GNUC__) && !defined(__APPLE__) && !defined(EMSCRIPTEN)
+         #define CPPIA_CALL __attribute__ ((fastcall))
+      #elif defined(_MSC_VER)
+         #define CPPIA_CALL __fastcall
+      #endif
+   #endif
+#endif
+
+#ifndef CPPIA_CALL
+   #define CPPIA_CALL
+#endif
+
+
+typedef void (CPPIA_CALL *StackExecute)(struct StackContext *ctx);
 struct ScriptFunction
 {
    ScriptFunction(StackExecute inExe=0,const char *inSig=0)
@@ -59,6 +78,70 @@ enum NewObjectType
    NewObjConst,
 };
 
+enum
+{
+   clsIdDynamic = 1,
+   clsIdClass,
+   clsIdInt,
+   clsIdInt64,
+   clsIdFloat,
+   clsIdBool,
+   clsIdString,
+   clsIdMath,
+   clsIdEnum,
+   clsIdClosure,
+   clsIdVirtualArray,
+   clsIdArrayIterator,
+   clsIdArrayBase,
+   clsIdArrayByte,
+   clsIdArrayShort,
+   clsIdArrayInt,
+   clsIdArrayBool,
+   clsIdArrayFloat32,
+   clsIdArrayFloat64,
+   clsIdArrayString,
+   clsIdArrayObject,
+   clsIdAbstract,
+   clsIdHash,
+   clsIdWeakRef,
+   clsIdExternalPrimitive,
+   clsIdPointer,
+   clsIdStruct,
+   clsIdCMember0,
+   clsIdCMember1,
+   clsIdCMember2,
+   clsIdCMember3,
+   clsIdCMember4,
+   clsIdCMember5,
+   clsIdCMemberVar,
+   clsIdCStatic0,
+   clsIdCStatic1,
+   clsIdCStatic2,
+   clsIdCStatic3,
+   clsIdCStatic4,
+   clsIdCStatic5,
+   clsIdCStaticVar,
+   clsIdMutex,
+   clsIdLock,
+   clsIdDeque,
+   clsIdThreadInfo,
+   clsIdPcreData,
+   clsIdFio,
+   clsIdProcess,
+   clsIdSocket,
+   clsIdRandom,
+   clsIdPollData,
+   clsIdSqlite,
+   clsIdMysql,
+   clsIdMysqlResult,
+   clsIdSsl,
+   clsIdSslCert,
+   clsIdSslConf,
+   clsIdSslKey,
+   clsIdZLib,
+
+};
+
 
 // --- hx::Object ------------------------------------------------------------
 //
@@ -71,26 +154,56 @@ enum NewObjectType
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Object
 {
 public:
-   // These allocate the function using the garbage-colleced malloc
-   void *operator new( size_t inSize, hx::NewObjectType );
-   inline void *operator new( size_t inSize, bool inContainer=true )
+   enum { _hx_ClassId = hx::clsIdDynamic };
+
+
+   inline void *operator new( size_t inSize, bool inContainer=true, const char *inName=0 )
    {
-      return operator new(inSize, inContainer ? hx::NewObjContainer : hx::NewObjAlloc);
+      #ifdef HX_USE_INLINE_IMMIX_OPERATOR_NEW
+         ImmixAllocator *alloc =  hx::gMultiThreadMode ? tlsStackContext : gMainThreadContext;
+
+         #ifdef HXCPP_DEBUG
+         if (!alloc)
+            BadImmixAlloc();
+         #endif
+
+         return ImmixAllocator::alloc(alloc, inSize, inContainer, inName);
+
+      #else // Not HX_USE_INLINE_IMMIX_OPERATOR_NEW ...
+
+         void *result = hx::InternalNew(inSize,inContainer);
+
+         #ifdef HXCPP_TELEMETRY
+            __hxt_gc_new(result, inSize, inName);
+         #endif
+         return result;
+      #endif
    }
-   void operator delete( void *, bool ) { }
-   void operator delete( void *, hx::NewObjectType ) { }
+
+   inline void *operator new( size_t inSize, hx::NewObjectType inType,  const char *inName=0 )
+   {
+      if (inType==NewObjConst)
+         return InternalCreateConstBuffer(0,(int)inSize);
+      return operator new(inSize, inType==NewObjContainer, inName);
+   }
+
+   void operator delete( void *, bool) { }
+   void operator delete( void *, bool, const char * ) { }
+   void operator delete( void *, int ) { }
+   void operator delete( void *, hx::NewObjectType) { }
+   void operator delete( void *, hx::NewObjectType, const char * ) { }
+
+   #if (HXCPP_API_LEVEL>=332)
+   virtual bool _hx_isInstanceOf(int inClassId);
+   #endif
 
    //virtual void *__root();
    virtual void __Mark(hx::MarkContext *__inCtx) { }
    #ifdef HXCPP_VISIT_ALLOCS
    virtual void __Visit(hx::VisitContext *__inCtx) { }
    #endif
-   virtual bool __Is(hx::Object *inClass) const { return true; }
-   virtual hx::Object *__ToInterface(const hx::type_info &inInterface) { return 0; }
-   virtual hx::Object *__GetRealObject() { return this; }
 
    // helpers...
-   bool __Is(Dynamic inClass ) const;
    inline bool __IsArray() const { return __GetType()==vtArray; }
 
    virtual int __GetType() const { return vtClass; }
@@ -102,29 +215,50 @@ public:
    virtual String __ToString() const;
 
    virtual int __ToInt() const { return 0; }
-   virtual double __ToDouble() const { return 0.0; }
+   virtual double __ToDouble() const { return __ToInt(); }
+   virtual cpp::Int64 __ToInt64() const { return (cpp::Int64)(__ToDouble()); }
    virtual const char * __CStr() const;
    virtual String toString();
    virtual bool __HasField(const String &inString);
-   virtual Dynamic __Field(const String &inString, bool inCallProp);
+   virtual hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp);
+
+   #if (HXCPP_API_LEVEL <= 330)
+   virtual bool __Is(hx::Object *inClass) const { return true; }
+   virtual hx::Object *__GetRealObject() { return this; }
+   bool __Is(Dynamic inClass ) const;
+   #endif
+
+   #if (HXCPP_API_LEVEL >= 330)
+   // Non-virtual
+   Dynamic __IField(int inFieldID);
+   double __INumField(int inFieldID);
+   virtual void *_hx_getInterface(int inId);
+   #else
+   virtual hx::Object *__ToInterface(const hx::type_info &inInterface) { return 0; }
    virtual Dynamic __IField(int inFieldID);
    virtual double __INumField(int inFieldID);
-   virtual Dynamic __SetField(const String &inField,const Dynamic &inValue, bool inCallProp);
+
+   // These have been moved to EnumBase
+   virtual DynamicArray __EnumParams();
+   virtual String __Tag() const;
+   virtual int __Index() const;
+   virtual void __SetSize(int inLen) { }
+   #endif
+
+   virtual hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp);
+
    virtual void  __SetThis(Dynamic inThis);
    virtual Dynamic __Run(const Array<Dynamic> &inArgs);
    virtual Dynamic *__GetFieldMap();
    virtual void __GetFields(Array<String> &outFields);
-   virtual Class __GetClass() const;
+   virtual hx::Class __GetClass() const;
 
    virtual int __Compare(const hx::Object *inRHS) const;
-   virtual DynamicArray __EnumParams();
-   virtual String __Tag() const;
-   virtual int __Index() const;
 
    virtual int __length() const { return 0; }
    virtual Dynamic __GetItem(int inIndex) const;
    virtual Dynamic __SetItem(int inIndex,Dynamic inValue);
-   virtual void __SetSize(int inLen) { }
+
 
    typedef const Dynamic &D;
    virtual Dynamic __run();
@@ -142,10 +276,14 @@ public:
    static hx::ScriptFunction __script_construct;
    #endif
 
+   #if (HXCPP_API_LEVEL>=331)
+   inline bool __compare( hx::Object *inRHS ) { return this!=inRHS; }
+   #else
    inline bool __compare( hx::Object *inRHS )
       { return __GetRealObject()!=inRHS->__GetRealObject(); }
+   #endif
 
-   static Class &__SGetClass();
+   static hx::Class &__SGetClass();
    static void __boot();
 };
 
@@ -157,6 +295,7 @@ public:
 template<typename OBJ_>
 class ObjectPtr
 {
+protected:
    inline bool SetPtr(OBJ_ *inPtr)
    {
       mPtr = inPtr;
@@ -168,9 +307,17 @@ class ObjectPtr
    {
       if (inPtr)
       {
-         mPtr = dynamic_cast<OBJ_ *>(inPtr->__GetRealObject());
-         if (!mPtr)
-            mPtr = (Ptr)inPtr->__ToInterface(typeid(Obj));
+         #if (HXCPP_API_LEVEL>=332)
+            mPtr = inPtr->_hx_isInstanceOf(OBJ_::_hx_ClassId) ? reinterpret_cast<OBJ_ *>(inPtr) : 0;
+         #elif (HXCPP_API_LEVEL>=331)
+            mPtr = dynamic_cast<OBJ_ *>(inPtr);
+         #else
+            mPtr = dynamic_cast<OBJ_ *>(inPtr->__GetRealObject());
+            #if (HXCPP_API_LEVEL < 330)
+            if (!mPtr)
+               mPtr = (Ptr)inPtr->__ToInterface(typeid(Obj));
+            #endif
+         #endif
          if (inThrowOnInvalid && !mPtr)
             ::hx::BadCast();
       }
@@ -186,12 +333,22 @@ public:
    inline ObjectPtr(OBJ_ *inObj) : mPtr(inObj) { }
    inline ObjectPtr(const null &inNull) : mPtr(0) { }
    inline ObjectPtr(const ObjectPtr<OBJ_> &inOther) : mPtr( inOther.mPtr ) {  }
+   template<typename T>
+   inline ObjectPtr(const hx::Native<T> &inNative) : mPtr( dynamic_cast<T>(inNative.ptr) ) {  }
 
    template<typename SOURCE_>
    inline ObjectPtr(const ObjectPtr<SOURCE_> &inObjectPtr)
    {
       if (!SetPtr(inObjectPtr.mPtr))
-         CastPtr(inObjectPtr.mPtr,true);
+         CastPtr(inObjectPtr.mPtr,false);
+   }
+
+
+   inline ObjectPtr(const ::cpp::Variant &inVariant)
+   {
+      hx::Object *object = inVariant.asObject();
+      if (!SetPtr(object))
+         CastPtr(object,false);
    }
 
    template<typename SOURCE_>
@@ -245,6 +402,9 @@ public:
       if (!mPtr || !inRHS.mPtr) return false;
       return !mPtr->__compare(inRHS.mPtr);
    }
+   inline bool operator==(const cpp::Variant &inRHS) const;
+   inline bool operator!=(const cpp::Variant &inRHS) const;
+
    template<typename T>
    inline bool operator!=(const T &inTRHS) const
    {
@@ -253,6 +413,9 @@ public:
       if (!mPtr || !inRHS.mPtr) return true;
       return mPtr->__compare(inRHS.mPtr);
    }
+
+   template<typename T>
+   operator hx::Native<T> () { return hx::Native<T>( mPtr ); }
 
    inline bool operator==(const null &inRHS) const { return mPtr==0; }
    inline bool operator!=(const null &inRHS) const { return mPtr!=0; }
@@ -264,7 +427,7 @@ public:
    // This is defined in the "FieldRef" class...
    inline class hx::FieldRef FieldRef(const String &inString);
    inline class hx::IndexRef IndexRef(int inString);
-   inline static Class &__SGetClass() { return OBJ_::__SGetClass(); }
+   inline static hx::Class &__SGetClass() { return OBJ_::__SGetClass(); }
 
    OBJ_ *mPtr;
 };

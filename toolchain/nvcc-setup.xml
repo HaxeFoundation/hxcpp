@@ -1,0 +1,12 @@
+<xml>
+  <pragma once="true" />
+
+  <set name="CUDA_SDK" value="c:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v8.0/" unless="CUDA_SDK" if="windows_host" />
+  <error value="Please specify 'CUDA_SDK' to use nvcc" unless="CUDA_SDK" />
+  <path name="${CUDA_SDK}/bin" />
+  <set name="NVCC" value="nvcc" />
+
+  <nvccflag value="-c" />
+  <nvcclinkflag value="-dlink" />
+
+</xml>

@@ -1,6 +1,12 @@
 package hxcpp;
 
-@:cppFileCode( 'extern "C" void sqlite_register_prims();')
+#if (hxcpp_api_level>=330)
+
+class StaticSqlite { }
+
+#else
+
+@:cppFileCode( 'extern "C" int sqlite_register_prims();')
 @:buildXml("
 <target id='haxe'>
   <lib name='${HXCPP}/lib/${BINDIR}/libsqlite${LIBEXTRA}${LIBEXT}'/>
@@ -15,3 +21,4 @@ package hxcpp;
    }
 }
 
+#end

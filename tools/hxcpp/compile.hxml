@@ -1,0 +1,4 @@
+-neko ../../hxcpp.n
+-main BuildTool
+-D neko_v1
+-debug

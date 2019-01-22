@@ -1,20 +1,3 @@
-/* ************************************************************************ */
-/*																			*/
-/*  Neko Standard Library													*/
-/*  Copyright (c)2005 Motion-Twin											*/
-/*																			*/
-/* This library is free software; you can redistribute it and/or			*/
-/* modify it under the terms of the GNU Lesser General Public				*/
-/* License as published by the Free Software Foundation; either				*/
-/* version 2.1 of the License, or (at your option) any later version.		*/
-/*																			*/
-/* This library is distributed in the hope that it will be useful,			*/
-/* but WITHOUT ANY WARRANTY; without even the implied warranty of			*/
-/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU		*/
-/* Lesser General Public License or the LICENSE file for more details.		*/
-/*																			*/
-/* ************************************************************************ */
-
 #if !defined(HX_WINRT) && !defined(EPPC)
 
 #include <string.h>
@@ -27,6 +10,7 @@
 #	define SHUT_RDWR	SD_BOTH
 	static bool init_done = false;
 	static WSADATA init_data;
+typedef int SocketLen;
 #else
 #	include <sys/types.h>
 #	include <sys/socket.h>
@@ -44,6 +28,7 @@
 #	define closesocket close
 #	define SOCKET_ERROR (-1)
 #	define INVALID_SOCKET (-1)
+typedef socklen_t SocketLen;
 #endif
 
 #if defined(NEKO_WINDOWS) || defined(NEKO_MAC)
@@ -75,6 +60,8 @@ typedef size_t socket_int;
 #define val_poll(o)		((polldata*)val_data(o))
 
 extern field id___s;
+static field f_host;
+static field f_port;
 
 
 SOCKET val_sock(value inValue)
@@ -87,7 +74,7 @@ SOCKET val_sock(value inValue)
       if (val_is_kind(inValue,k_socket) )
          return ((SOCKET)(socket_int)val_data(inValue));
    }
-   val_throw(alloc_string("Invalid soket handle"));
+   val_throw(alloc_string("Invalid socket handle"));
    return 0;
 }
 
@@ -110,6 +97,9 @@ static value block_error() {
 	if( errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS || errno == EALREADY )
 #endif
 		val_throw(alloc_string("Blocking"));
+    else {
+        val_throw(alloc_string("EOF"));
+    }
 	return alloc_null();
 }
 
@@ -127,6 +117,8 @@ static value socket_init() {
 		init_done = true;
 	}
 #endif
+   f_host = val_id("host");
+	f_port = val_id("port");
 	return alloc_bool(true);
 }
 
@@ -145,7 +137,8 @@ static value socket_new( value udp ) {
 	if( s == INVALID_SOCKET )
 		return alloc_null();
 #	ifdef NEKO_MAC
-	setsockopt(s,SOL_SOCKET,SO_NOSIGPIPE,NULL,0);
+	int set = 1;
+	setsockopt(s,SOL_SOCKET,SO_NOSIGPIPE,(void *)&set, sizeof(int));
 #	endif
 #	ifdef NEKO_POSIX
 	// we don't want sockets to be inherited in case of exec
@@ -339,7 +332,7 @@ static value host_resolve( value host ) {
 	ip = inet_addr(hostName);
 	if( ip == INADDR_NONE ) {
 		struct hostent *h;
-#	if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(BLACKBERRY)
+#	if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
 		h = gethostbyname(hostName);
 #	else
 		struct hostent hbase;
@@ -378,7 +371,7 @@ static value host_reverse( value host ) {
 	val_check(host,int);
 	ip = val_int(host);
    gc_enter_blocking();
-#	if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY)
+#	if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
 	h = gethostbyaddr((char *)&ip,4,AF_INET);
 #	else
 	struct hostent htmp;
@@ -423,7 +416,12 @@ static value socket_connect( value o, value host, value port ) {
 	gc_enter_blocking();
 	if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
 	{
-		gc_exit_blocking();
+		// This will throw a "Blocking" exception if the "error" was because
+		// it's a non-blocking socket with connection in progress, otherwise
+		// it will do nothing.
+		(void) block_error();
+		// If the previous line did not throw an exception, then it was a real
+		// connect failure.
 		val_throw(alloc_string("std@socket_connect"));
 	}
 	gc_exit_blocking();
@@ -488,6 +486,28 @@ static value make_array_result( value a, fd_set *tmp ) {
 	return r;
 }
 
+static void make_array_result_inplace(value a, fd_set *tmp)
+{
+    if (tmp == NULL) {
+        val_array_set_size(a, 0);
+        return;
+    }
+    int len = val_array_size(a);
+    value *results = (value *) malloc(sizeof(value) * len);
+    int result_len = 0;
+    for (int i = 0; i < len; i++) {
+        value s = val_array_i(a, i);
+        if (FD_ISSET(val_sock(s), tmp)) {
+            results[result_len++] = s;
+        }
+    }
+    val_array_set_size(a, result_len);
+    for (int i = 0; i < result_len; i++) {
+        val_array_set_i(a, i, results[i]);
+    }
+    free(results);
+}
+
 static void init_timeval( double f, struct timeval *t ) {
 	t->tv_usec = (f - (int)f ) * 1000000;
 	t->tv_sec = (int)f;
@@ -534,6 +554,49 @@ static value socket_select( value rs, value ws, value es, value timeout ) {
 	val_array_set_i(r,1,make_array_result(ws,wa));
 	val_array_set_i(r,2,make_array_result(es,ea));
 	return r;
+}
+
+/**
+	socket_select : read : 'socket array -> write : 'socket array -> others : 'socket array -> timeout:number?
+	<doc>Perform the [select] operation. Timeout is in seconds or [null] if infinite</doc>
+**/
+static value socket_fast_select( value rs, value ws, value es, value timeout )
+{
+    struct timeval tval;
+    struct timeval *tt;
+    SOCKET n = 0;
+    fd_set rx, wx, ex;
+    fd_set *ra, *wa, *ea;
+    value r;
+    POSIX_LABEL(select_again);
+    ra = make_socket_array(rs,&rx,&n);
+    wa = make_socket_array(ws,&wx,&n);
+    ea = make_socket_array(es,&ex,&n);
+    if( ra == &INVALID || wa == &INVALID || ea == &INVALID )
+    {
+            val_throw( alloc_string("No valid sockets") );
+            return alloc_null();
+    }
+    if( val_is_null(timeout) )
+            tt = NULL;
+    else {
+            val_check(timeout,number);
+            tt = &tval;
+            init_timeval(val_number(timeout),tt);
+    }
+    gc_enter_blocking();
+    if( select((int)(n+1),ra,wa,ea,tt) == SOCKET_ERROR ) {
+            HANDLE_EINTR(select_again);
+            gc_exit_blocking();
+            char buf[100];
+            sprintf(buf,"Select error %d", errno );
+            val_throw( alloc_string(buf) );
+    }
+    gc_exit_blocking();
+    make_array_result_inplace(rs, ra);
+    make_array_result_inplace(ws, wa);
+    make_array_result_inplace(es, ea);
+    return alloc_null();
 }
 
 /**
@@ -745,6 +808,17 @@ value socket_set_fast_send( value o, value b )
    return alloc_null();
 }
 
+value socket_set_broadcast( value o, value b )
+{
+   SOCKET sock = val_sock(o);
+   val_check(b,bool);
+   int broadcast = val_bool(b);
+   gc_enter_blocking();
+   setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char*)&broadcast,sizeof(broadcast));
+   gc_exit_blocking();
+   return alloc_null();
+}
+
 /**
 	socket_poll_alloc : int -> 'poll
 	<doc>Allocate memory to perform polling on a given number of sockets</doc>
@@ -943,6 +1017,96 @@ static value socket_poll( value socks, value pdata, value timeout ) {
 	return a;
 }
 
+
+
+/**
+	socket_send_to : 'socket -> buf:string -> pos:int -> length:int -> addr:{host:'int32,port:int} -> int
+	<doc>
+	Send data from an unconnected UDP socket to the given address.
+	</doc>
+**/
+static value socket_send_to( value o, value dataBuf, value pos, value len, value vaddr ) {
+	int p,l;
+	value host, port;
+	struct sockaddr_in addr;
+	val_check_kind(o,k_socket);
+   buffer buf = val_to_buffer(dataBuf);
+	const char *cdata = buffer_data(buf);
+	int dlen = buffer_size(buf);
+	val_check(pos,int);
+	val_check(len,int);
+	val_check(vaddr,object);
+	host = val_field(vaddr, f_host);
+	port = val_field(vaddr, f_port);
+	val_check(host,int);
+	val_check(port,int);
+	p = val_int(pos);
+	l = val_int(len);
+	memset(&addr,0,sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(val_int(port));
+	*(int*)&addr.sin_addr.s_addr = val_int(host);
+	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
+		neko_error();
+
+   SOCKET sock = val_sock(o);
+	gc_enter_blocking();
+	POSIX_LABEL(send_again);
+	dlen = sendto(sock, cdata + p , l, MSG_NOSIGNAL, (struct sockaddr*)&addr, sizeof(addr));
+	if( dlen == SOCKET_ERROR ) {
+		HANDLE_EINTR(send_again);
+		return block_error();
+	}
+	gc_exit_blocking();
+	return alloc_int(dlen);
+}
+
+/**
+	socket_recv_from : 'socket -> buf:string -> pos:int -> length:int -> addr:{host:'int32,port:int} -> int
+	<doc>
+	Read data from an unconnected UDP socket, store the address from which we received data in addr.
+	</doc>
+**/
+#define NRETRYS	20
+static value socket_recv_from( value o, value dataBuf, value pos, value len, value addr ) {
+	int p,l,ret;
+	int retry = 0;
+	struct sockaddr_in saddr;
+	SockLen slen = sizeof(saddr);
+	val_check_kind(o,k_socket);
+	val_check(dataBuf,buffer);
+	buffer buf = val_to_buffer(dataBuf);
+   char *data = buffer_data(buf);
+   int dlen = buffer_size(buf);
+	val_check(pos,int);
+	val_check(len,int);
+	val_check(addr,object);
+	p = val_int(pos);
+	l = val_int(len);
+
+	if( p < 0 || l < 0 || p > dlen || p + l > dlen )
+		neko_error();
+   SOCKET sock = val_sock(o);
+   gc_enter_blocking();
+	POSIX_LABEL(recv_from_again);
+	if( retry++ > NRETRYS ) {
+      ret = recv(sock,data+p,l,MSG_NOSIGNAL);
+	} else
+		ret = recvfrom(sock, data + p , l, MSG_NOSIGNAL, (struct sockaddr*)&saddr, &slen);
+	if( ret == SOCKET_ERROR ) {
+		HANDLE_EINTR(recv_from_again);
+		return block_error();
+	}
+   gc_exit_blocking();
+	alloc_field(addr,f_host,alloc_int32(*(int*)&saddr.sin_addr));
+	alloc_field(addr,f_port,alloc_int(ntohs(saddr.sin_port)));
+	return alloc_int(ret);
+}
+
+
+
+
+
 DEFINE_PRIM(socket_init,0);
 DEFINE_PRIM(socket_new,1);
 DEFINE_PRIM(socket_send,4);
@@ -955,6 +1119,7 @@ DEFINE_PRIM(socket_close,1);
 DEFINE_PRIM(socket_connect,3);
 DEFINE_PRIM(socket_listen,2);
 DEFINE_PRIM(socket_select,4);
+DEFINE_PRIM(socket_fast_select,4);
 DEFINE_PRIM(socket_bind,3);
 DEFINE_PRIM(socket_accept,1);
 DEFINE_PRIM(socket_peer,1);
@@ -963,11 +1128,16 @@ DEFINE_PRIM(socket_set_timeout,2);
 DEFINE_PRIM(socket_shutdown,3);
 DEFINE_PRIM(socket_set_blocking,2);
 DEFINE_PRIM(socket_set_fast_send,2);
+DEFINE_PRIM(socket_set_broadcast,2);
+
+DEFINE_PRIM(socket_send_to,5);
+DEFINE_PRIM(socket_recv_from,5);
 
 DEFINE_PRIM(socket_poll_alloc,1);
 DEFINE_PRIM(socket_poll,3);
 DEFINE_PRIM(socket_poll_prepare,3);
 DEFINE_PRIM(socket_poll_events,2);
+
 
 DEFINE_PRIM(host_local,0);
 DEFINE_PRIM(host_resolve,1);

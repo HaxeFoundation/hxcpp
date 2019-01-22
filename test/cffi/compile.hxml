@@ -1,0 +1,4 @@
+-cp src
+-main TestMain
+-cpp bin/cpp
+-cp ../unit

@@ -1,6 +1,12 @@
 package hxcpp;
 
-@:cppFileCode( 'extern "C" void regexp_register_prims();')
+#if (hxcpp_api_level>=330)
+
+class StaticRegexp { }
+
+#else
+
+@:cppFileCode( 'extern "C" int regexp_register_prims();')
 @:buildXml("
 <target id='haxe'>
   <lib name='${HXCPP}/lib/${BINDIR}/libregexp${LIBEXTRA}${LIBEXT}'/>
@@ -14,3 +20,4 @@ package hxcpp;
    }
 }
 
+#end

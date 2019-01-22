@@ -49,6 +49,7 @@
 	<outflag value="-o"/>
 	<lib name="-lpthread"/>
 	<lib name="-ldl"/>
+	<lib name="-lrt"/>
 </linker>
 	
 <linker id="dll" exe="arm-none-linux-gnueabi-g++" if="webos">

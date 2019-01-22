@@ -1,0 +1,90 @@
+<xml>
+
+<pragma once="true" />
+
+<set name="PCRE_DIR" value="${HXCPP}/project/thirdparty/pcre-8.42" />
+
+<files id="hxcpp_regexp" >
+  <depend files="hxcpp-depends"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <cache value="true" asLibrary="true" />
+
+  <compilerflag value="-DHAVE_CONFIG_H"/>
+  <compilerflag value="-DPCRE_STATIC"/>
+  <compilerflag value="-DSUPPORT_UTF8"/>
+  <compilerflag value="-DSUPPORT_UCP"/>
+  <compilerflag value="-DNO_RECURSE"/>
+  <compilerflag value="-I${PCRE_DIR}"/>
+
+  <file name="${this_dir}/RegExp.cpp"/>
+
+  <file name="${PCRE_DIR}/pcre_byte_order.c"/>
+  <file name="${PCRE_DIR}/pcre_chartables.c"/>
+  <file name="${PCRE_DIR}/pcre_compile.c"/>
+  <file name="${PCRE_DIR}/pcre_config.c"/>
+  <file name="${PCRE_DIR}/pcre_dfa_exec.c"/>
+  <file name="${PCRE_DIR}/pcre_exec.c"/>
+  <file name="${PCRE_DIR}/pcre_fullinfo.c"/>
+  <file name="${PCRE_DIR}/pcre_get.c"/>
+  <file name="${PCRE_DIR}/pcre_globals.c"/>
+  <file name="${PCRE_DIR}/pcre_jit_compile.c"/>
+  <file name="${PCRE_DIR}/pcre_maketables.c"/>
+  <file name="${PCRE_DIR}/pcre_newline.c"/>
+  <file name="${PCRE_DIR}/pcre_ord2utf8.c"/>
+  <file name="${PCRE_DIR}/pcre_refcount.c"/>
+  <file name="${PCRE_DIR}/pcre_string_utils.c"/>
+  <file name="${PCRE_DIR}/pcre_study.c"/>
+  <file name="${PCRE_DIR}/pcre_tables.c"/>
+  <file name="${PCRE_DIR}/pcre_ucd.c"/>
+  <file name="${PCRE_DIR}/pcre_valid_utf8.c"/>
+  <file name="${PCRE_DIR}/pcre_version.c"/>
+  <file name="${PCRE_DIR}/pcre_xclass.c"/>
+
+</files>
+
+
+
+<files id="hxcpp_regexp16" >
+  <depend files="hxcpp-depends"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <cache value="true" asLibrary="true" />
+
+  <compilerflag value="-DHAVE_CONFIG_H"/>
+  <compilerflag value="-DPCRE_STATIC"/>
+  <compilerflag value="-DSUPPORT_UTF16"/>
+  <compilerflag value="-DSUPPORT_UCP"/>
+  <compilerflag value="-DNO_RECURSE" if="windows"/>
+  <compilerflag value="-I${PCRE_DIR}"/>
+
+  <file name="${PCRE_DIR}/pcre16_byte_order.c"/>
+  <file name="${PCRE_DIR}/pcre16_chartables.c"/>
+  <file name="${PCRE_DIR}/pcre16_compile.c"/>
+  <file name="${PCRE_DIR}/pcre16_config.c"/>
+  <file name="${PCRE_DIR}/pcre16_dfa_exec.c"/>
+  <file name="${PCRE_DIR}/pcre16_exec.c"/>
+  <file name="${PCRE_DIR}/pcre16_fullinfo.c"/>
+  <file name="${PCRE_DIR}/pcre16_get.c"/>
+  <file name="${PCRE_DIR}/pcre16_globals.c"/>
+  <file name="${PCRE_DIR}/pcre16_jit_compile.c"/>
+  <file name="${PCRE_DIR}/pcre16_maketables.c"/>
+  <file name="${PCRE_DIR}/pcre16_newline.c"/>
+  <file name="${PCRE_DIR}/pcre16_refcount.c"/>
+  <file name="${PCRE_DIR}/pcre16_string_utils.c"/>
+  <file name="${PCRE_DIR}/pcre16_study.c"/>
+  <file name="${PCRE_DIR}/pcre16_tables.c"/>
+  <file name="${PCRE_DIR}/pcre16_ucd.c"/>
+  <file name="${PCRE_DIR}/pcre16_valid_utf16.c"/>
+  <file name="${PCRE_DIR}/pcre16_ord2utf16.c"/>
+  <file name="${PCRE_DIR}/pcre16_version.c"/>
+  <file name="${PCRE_DIR}/pcre16_xclass.c"/>
+
+</files>
+
+
+
+<target id="haxe">
+  <files id="hxcpp_regexp" />
+  <files id="hxcpp_regexp16" if="hxcpp_smart_strings" />
+</target>
+
+</xml>

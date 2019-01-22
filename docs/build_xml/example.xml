@@ -1,0 +1,6 @@
+ <xml>
+   <echo value="Hello ${WHO}" if="WHO" unless="SILENT" />
+   <echo value="You are in ${haxelib:hxcpp}" unless="WHO||SILENT"/>
+   <error value="Silent and who both specified" if="WHO SILENT"/>
+   <target id="default" />
+ </xml>

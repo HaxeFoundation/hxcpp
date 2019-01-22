@@ -4,8 +4,10 @@
         You should peobably include thie following line -->
 
    <include name="${HXCPP_CONFIG}" section="vars" noerror="1"/>
-   
-   <set name="HXCPP_COMPILE_THREADS" value="1" if="emscripten" />
+ 
+   <section if="EMCC_CORES">
+      <set name="HXCPP_COMPILE_THREADS" value="1" if="emscripten"  />  
+   </section>
 
 </xml>
 

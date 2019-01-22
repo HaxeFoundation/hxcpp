@@ -1,0 +1,26 @@
+<xml>
+
+<pragma once="true" />
+
+<files id="hxcpp_std" dir="${this_dir}" >
+  <depend files="hxcpp-depends"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <cache value="1" asLibrary="true" />
+
+  <file name="File.cpp"/>
+  <file name="Sys.cpp"/>
+  <file name="Process.cpp"/>
+  <file name="Random.cpp"/>
+  <file name="Socket.cpp" />
+
+</files>
+
+
+<target id="haxe">
+  <files id="hxcpp_std"/>
+  <lib name="ws2_32.lib" if="windows" unless="static_link" />
+  <lib name="-lsocket" if="blackberry" unless="static_link" />
+</target>
+
+
+</xml>

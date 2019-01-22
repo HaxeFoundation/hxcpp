@@ -1,8 +1,8 @@
 /*
  This is an example mainline that can be used to link a static version.
  First you need to build the static version of the standard libs, with:
- cd $HXCPP/runtime
- haxelib run hxcpp BuildLibs.xml -Dstatic_link
+ cd $HXCPP/project
+ neko build.n clean static-windows
 
  Then the static verion of your application with (note: extra space before 'static_link'):
 
@@ -14,7 +14,8 @@
  
   Note also, that if you compile with the -debug flag, your library will have a different name.
 
-  Linking from the command line for windows (user32.lib only required for debug version):
+  Linking from the command line for windows (developer command prompt for vs; user32.lib only required for debug version;
+   ws2_32.lib might be necessary if there are error messages):
 
   cl ExampleMain.cpp cpp/YourMain.lib $HXCPP/bin/Windows/std.lib $HXCPP/bin/Windows/zlib.lib  $HXCPP/bin/Windows/regexp.lib user32.lib
 

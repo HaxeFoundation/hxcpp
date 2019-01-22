@@ -1,0 +1,4 @@
+-main MessageBox
+-cpp cpp
+-D no_console
+-cmd start cpp/MessageBox.exe

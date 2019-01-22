@@ -5,8 +5,9 @@
 <set name="ARCH" value ="-64" if="HXCPP_M64" />
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
+<set name="HXCPP_LIBTOOL" value="xcrun --sdk iphonesimulator${IPHONE_VER} libtool" />
 <include name="toolchain/gcc-toolchain.xml"/>
-<path name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />
+<!--<path name="${DEVELOPER_DIR}/Platforms/iPhoneSimulator.platform/Developer/usr/bin" />-->
 
 <set name="FORCE_LIBGCC" value="1" if="HXCPP_IOS_STDCPP" unless="HXCPP_GCC" />
 <set name="OBJGCC" value="-c11" if="HXCPP_CPP11" />
@@ -23,12 +24,14 @@
   <pchflag value="c++-header" />
   <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
-  <flag value="-g" if="debug"/>
+  <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fmessage-length=0"/>
   <flag value="-pipe"/>
   <flag value="-Wno-trigraphs"/>
   <flag value="-fno-stack-protector"/>
+  <flag value="-Wno-overflow" />
+  <cppflag value="-Wno-invalid-offsetof" />
   <flag value="-fpascal-strings"/>
   <flag value="-fasm-blocks"/>
   <flag value="-Wreturn-type"/>
