@@ -237,18 +237,21 @@ inline hx::__TArrayImplRef<T> UShrEq(hx::__TArrayImplRef<T> ref, double inRHS)
 template<typename T> inline T TCastObject(hx::Object *inObj) { return hx::BadCast(); }
 template<> inline bool TCastObject<bool>(hx::Object *inObj)
 {
-   if (!inObj || inObj->__GetType()!=::vtBool) return hx::BadCast();
+   if (!inObj) return false;
+   if (inObj->__GetType()!=::vtBool) return hx::BadCast();
    return inObj?inObj->__ToInt():0;
 }
 template<> inline int TCastObject<int>(hx::Object *inObj)
 {
-   if (!inObj || !(inObj->__GetType()==::vtInt ||
+   if (!inObj) return 0;
+   if (!(inObj->__GetType()==::vtInt ||
         ((inObj->__GetType()==::vtFloat || inObj->__GetType()==::vtInt64) && inObj->__ToDouble()==inObj->__ToInt()) ) ) return hx::BadCast();
    return inObj->__ToInt();
 }
 template<> inline double TCastObject<double>(hx::Object *inObj)
 {
-   if (!inObj || (inObj->__GetType()!=::vtFloat && inObj->__GetType()!=::vtInt64 && inObj->__GetType()!=::vtInt))
+   if (!inObj) return 0.0;
+   if ((inObj->__GetType()!=::vtFloat && inObj->__GetType()!=::vtInt64 && inObj->__GetType()!=::vtInt))
       return hx::BadCast();
    return inObj->__ToDouble();
 }
@@ -261,7 +264,8 @@ template<> inline float TCastObject<float>(hx::Object *inObj)
 
 template<> inline String TCastObject<String>(hx::Object *inObj)
 {
-   if (!inObj || (inObj->__GetType()!=::vtString))
+   if (!inObj) return String();
+   if (inObj->__GetType()!=::vtString)
       return hx::BadCast();
    return inObj->__ToString();
 }
@@ -273,7 +277,8 @@ template<typename T> struct TCast
 {
    template<typename VAL> static inline T cast(VAL inVal ) {
       T result =  TCastObject<T>(Dynamic(inVal).GetPtr());
-      if (result==null()) hx::BadCast();
+      //null string from null is ok...
+      //if (result==null()) hx::BadCast();
       return result;
    }
 

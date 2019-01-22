@@ -1131,6 +1131,7 @@ enum CastOp
    castInt,
    castBool,
    castFloat,
+   castString,
 };
 
 
@@ -1152,14 +1153,42 @@ struct CastExpr : public CppiaDynamicExpr
 
       value = createCppiaExpr(stream);
    }
-   ExprType getType() { return op==castInt ? etInt :  op==castFloat ? etFloat : etObject; }
+   ExprType getType() { return op==castInt || op==castBool ? etInt :
+                               op==castFloat ? etFloat :
+                               op==castString ? etString :
+                                                etObject; }
 
    bool isBoolInt() { return op==castBool; }
 
    int runInt(CppiaCtx *ctx)
    {
+      if (op==castBool)
+         return (bool)value->runInt(ctx);
       return value->runInt(ctx);
    }
+
+   double runFloat(CppiaCtx *ctx)
+   {
+      return value->runFloat(ctx);
+   }
+
+   String runString(CppiaCtx *ctx)
+   {
+      switch(op)
+      {
+         case castInt:
+            return String( value->runInt(ctx) );
+         case castFloat:
+            return String( value->runFloat(ctx) );
+         case castBool:
+            return String( (bool)value->runInt(ctx) );
+         default:
+            break;
+      }
+      hx::Object *o = runObject(ctx);
+      return o ? o->toString() : String();
+   }
+
 
    hx::Object *runObject(CppiaCtx *ctx)
    {
@@ -1169,11 +1198,13 @@ struct CastExpr : public CppiaDynamicExpr
          return Dynamic(value->runFloat(ctx)).mPtr;
       else if (op==castBool)
          return Dynamic((bool)value->runInt(ctx)).mPtr;
+      else if (op==castString)
+         return Dynamic(value->runString(ctx)).mPtr;
 
       hx::Object *obj = value->runObject(ctx);
       if (op==castInstance)
       {
-         if (!obj || !typeData->isClassOf(obj) )
+         if ( !obj || !typeData->isClassOf(obj) )
             hx::BadCast();
          return obj;
       }
@@ -1207,11 +1238,17 @@ struct CastExpr : public CppiaDynamicExpr
          typeData = inModule.types[typeId];
          if (typeData->isFloat)
             op=castFloat;
+         else if (typeData->name==HX_CSTRING("Int"))
+            op=castInt;
+         else if (typeData->name==HX_CSTRING("Bool"))
+            op=castBool;
+         else if (typeData->name==HX_CSTRING("String"))
+            op=castString;
          else
             return this;
       }
 
-      if (op==castDynamic || op==castInt || op==castBool || op==castFloat )
+      if (op==castDynamic || op==castInt || op==castBool || op==castFloat || op==castString )
       {
          return this;
          //CppiaExpr *replace = value;
@@ -1285,6 +1322,17 @@ struct CastExpr : public CppiaDynamicExpr
          {
             value->genCode(compiler, sJitTempF0, etFloat);
             compiler->convert(sJitTempF0, etFloat, inDest, destType);
+         }
+      }
+      else if (op==castString)
+      {
+         if (destType==etString)
+            value->genCode(compiler, inDest, destType);
+         else
+         {
+            JitTemp temp(compiler,jtString);
+            value->genCode(compiler, temp, etString);
+            compiler->convert(temp, etString, inDest, destType );
          }
       }
       else if (op==castBool)
@@ -6349,7 +6397,6 @@ struct TryExpr : public CppiaVoidExpr
          for(int i=0;i<catchCount;i++)
          {
             Catch &c = catches[i];
-            printf("  %d... %s = %s\n",i, c.type->name.c_str(), caught==null() ? "nnn" : caught->toString().c_str() );
             if ( c.type->isClassOf(caught) )
             {
                HX_STACK_BEGIN_CATCH
@@ -7468,7 +7515,8 @@ struct OpAdd : public BinOp
          delete this;
          return result;
       }
-      else if ( !isNumeric(left->getType()) || !isNumeric(right->getType()) )
+      else if ( !isNumeric(left->getType()) || left->isBoolInt() ||
+                !isNumeric(right->getType()) || right->isBoolInt() )
       {
          CppiaExpr *result = new SpecialAdd<true>(this,left,right);
          delete this;
