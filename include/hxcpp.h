@@ -180,9 +180,16 @@ typedef char HX_CHAR;
 #define HX_STRI(s) HX_STRINGI(s,sizeof(s)/sizeof(char)-1)
 #define HX_CSTRING(x) HX_STRI(x)
 #define HX_CSTRING2(wide,len,utf8) HX_STRI(utf8)
-#define HX_FIELD_EQ(name,field) !::memcmp(name.__s, field, sizeof(field)/sizeof(char))
-// No null check is performed....
-#define HX_QSTR_EQ(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length))
+
+#ifdef HX_SMART_STRINGS
+  #define HX_FIELD_EQ(name,field) (name.isAsciiEncoded() && !::memcmp(name.__s, field, sizeof(field)/sizeof(char)))
+  // No null check is performed....
+  #define HX_QSTR_EQ(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length) && field.isAsciiEncodedQ())
+#else
+  #define HX_FIELD_EQ(name,field) !::memcmp(name.__s, field, sizeof(field)/sizeof(char))
+  // No null check is performed....
+  #define HX_QSTR_EQ(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length))
+#endif
 
 
 

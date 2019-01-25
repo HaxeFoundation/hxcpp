@@ -532,28 +532,42 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
 
 
 template<typename T>
-static const T *GCStringDup(const T *inStr,int inLen, int *outLen=0)
+static const char *GCStringDup(const T *inStr,int inLen, int *outLen=0)
 {
    if (inStr==0 && inLen<=0)
    {
       if (outLen)
          outLen = 0;
-      return (const T *)sEmptyString.__s;
+      return sEmptyString.__s;
    }
 
    int len = inLen;
+   bool allAscii = true;
    if (len==-1)
    {
       len=0;
       while(inStr[len])
+      {
+         if (sizeof(T)>1 && allAscii)
+            allAscii = inStr[len] <= 127;
          len++;
+      }
+   }
+   else if (sizeof(T)>1)
+   {
+      for(int i=0;i<inLen;i++)
+         if (inStr[i]>127)
+         {
+            allAscii = false;
+            break;
+         }
    }
 
    if (outLen)
       *outLen = len;
 
    if (len==1)
-      return (const T *)String::fromCharCode(inStr[0]).__s;
+      return String::fromCharCode(inStr[0]).__s;
 
    #ifdef HXCPP_COMBINE_STRINGS
    bool ident = len<20 && sIsIdent[inStr[0]] && (inStr[0]<'0' || inStr[0]>'9');
@@ -602,16 +616,21 @@ static const T *GCStringDup(const T *inStr,int inLen, int *outLen=0)
    }
    #endif
 
-   if (sizeof(T)==1)
+   if (sizeof(T)==1 || allAscii)
    {
       char *result = hx::NewString( len );
-      memcpy(result,inStr,sizeof(char)*(len));
-      return (T*)result;
+      if (sizeof(T)==1)
+         memcpy(result,inStr,sizeof(char)*(len));
+      else
+         for(int i=0;i<len;i++)
+            result[i] = inStr[i];
+      return result;
    }
+
 
    char16_t *result = String::allocChar16Ptr(len);
    memcpy(result,inStr,2*len);
-   return (T *)result;
+   return (const char *)result;
 }
 
 
@@ -1345,7 +1364,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
       bool hasWChar = false;
       const unsigned char *p = p0 + pos;
       for(int i=0;i<len;i++)
-         if (p[i]>=127)
+         if (p[i]>127)
          {
             hasWChar = true;
             break;
@@ -1651,7 +1670,7 @@ String String::substr(int inFirst, Dynamic inLen) const
    {
       if (len==1)
          return String::fromCharCode(__w[inFirst]);
-      return String( GCStringDup(__w+inFirst, len, 0), len, true );
+      return String( GCStringDup(__w+inFirst, len, 0), len );
    }
    #endif
 
@@ -1741,11 +1760,38 @@ String &String::operator+=(const String &inRHS)
    else if (inRHS.length>0)
    {
       int l = length + inRHS.length;
+      #ifdef HX_SMART_STRINGS
+      bool ws0 = isUTF16Encoded();
+      bool ws1 = inRHS.isUTF16Encoded();
+      if (ws0 || ws1)
+      {
+         char16_t *result = String::allocChar16Ptr(l);
+
+         if (ws0)
+            memcpy(result,__w,length*2);
+         else
+            for(int i=0;i<length;i++)
+               result[i] = __s[i];
+
+         char16_t *r2 = result + length;
+         if (ws1)
+            memcpy(r2, inRHS.__w, inRHS.length*2);
+         else
+            for(int i=0;i<inRHS.length;i++)
+               r2[i] = inRHS.__s[i];
+
+         __w = result;
+      }
+      else
+      #else
+      {
       char *s = hx::NewString(l);
       memcpy(s,__s,length*sizeof(char));
       memcpy(s+length,inRHS.__s,inRHS.length*sizeof(char));
-      s[l] = '\0';
       __s = s;
+      }
+      #endif
+
       length = l;
    }
    return *this;

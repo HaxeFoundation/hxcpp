@@ -146,6 +146,24 @@ public:
       #endif
    }
 
+   inline bool isAsciiEncoded() const {
+      #ifdef HX_SMART_STRINGS
+      return __w && !(((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T);
+      #else
+      return true;
+      #endif
+   }
+
+   inline bool isAsciiEncodedQ() const {
+      #ifdef HX_SMART_STRINGS
+      return !(((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T);
+      #else
+      return true;
+      #endif
+   }
+
+
+
    static  ::String fromCharCode(int inCode);
 
    inline bool operator==(const null &inRHS) const { return __s==0; }
