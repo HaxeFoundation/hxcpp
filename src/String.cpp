@@ -1783,14 +1783,13 @@ String &String::operator+=(const String &inRHS)
          __w = result;
       }
       else
-      #else
+      #endif
       {
       char *s = hx::NewString(l);
       memcpy(s,__s,length*sizeof(char));
       memcpy(s+length,inRHS.__s,inRHS.length*sizeof(char));
       __s = s;
       }
-      #endif
 
       length = l;
    }
