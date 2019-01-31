@@ -117,6 +117,7 @@ inline Dynamic StackContext::getObject(int inPos)
 enum SignatureChar
 {
    sigVoid = 'v',
+   sigBool = 'b',
    sigInt = 'i',
    sigFloat = 'f',
    sigString = 's',

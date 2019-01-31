@@ -1790,7 +1790,7 @@ struct CallHaxe : public CppiaExpr
       {
          switch(function.signature[i])
          {
-            case sigInt: case sigFloat: case sigString: case sigObject:
+            case sigInt: case sigBool: case sigFloat: case sigString: case sigObject:
                break; // Ok
             case sigVoid: 
                if (i==0) // return void ok
@@ -1802,7 +1802,9 @@ struct CallHaxe : public CppiaExpr
       }
       switch(function.signature[0])
       {
-         case sigInt: returnType = etInt; break;
+         case sigBool:
+         case sigInt:
+            returnType = etInt; break;
          case sigFloat: returnType = etFloat; break;
          case sigString: returnType = etString; break;
          case sigObject: returnType = etObject; break;
@@ -1816,6 +1818,9 @@ struct CallHaxe : public CppiaExpr
 
       return this;
    }
+
+
+   bool isBoolInt() { return function.signature[0]==sigBool; }
 
    const char *getName() { return "CallHaxe"; }
 
@@ -1831,7 +1836,9 @@ struct CallHaxe : public CppiaExpr
          CppiaExpr *arg = args[a];
          switch(*s++)
          {
-            case sigInt: ctx->pushInt( arg->runInt(ctx) ); break;
+            case sigInt:
+            case sigBool:
+               ctx->pushInt( arg->runInt(ctx) ); break;
             case sigFloat: ctx->pushFloat( arg->runFloat(ctx) ); break;
             case sigString: ctx->pushString( arg->runString(ctx) ); break;
             case sigObject: ctx->pushObject( arg->runObject(ctx) ); break;
@@ -1886,9 +1893,18 @@ struct CallHaxe : public CppiaExpr
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      Dynamic val;
-      run(ctx,val);
-      return val.mPtr;
+      if (isBoolInt())
+      {
+         int val;
+         run(ctx,val);
+         return Dynamic( val!=0 ).mPtr;
+      }
+      else
+      {
+        Dynamic val;
+        run(ctx,val);
+        return val.mPtr;
+      }
    }
 
    #ifdef CPPIA_JIT
@@ -1921,7 +1937,9 @@ struct CallHaxe : public CppiaExpr
          ExprType argType = etNull;
          switch(*s++)
          {
-            case sigInt: argType = etInt; break;
+            case sigBool:
+            case sigInt:
+               argType = etInt; break;
             case sigFloat: argType = etFloat; break;
             case sigString: argType = etString; break;
             case sigObject: argType = etObject; break;
@@ -1942,10 +1960,7 @@ struct CallHaxe : public CppiaExpr
       void *func = (void *) ( isSuper ? function.superExecute : function.execute);
       compiler->callNative( (void *)tryCallHaxe, JitVal(func), sJitCtx );
 
-      // TODO - from signature
-      bool isBoolReturn = false;
-
-      genFunctionResult(compiler, inDest, destType, returnType, isBoolReturn);
+      genFunctionResult(compiler, inDest, destType, returnType, isBoolInt());
    }
 
    #endif
@@ -2175,6 +2190,7 @@ struct CallMemberVTable : public CppiaExpr
    CppiaFunction *funcProto;
    ExprType    returnType;
    bool        checkInterfaceReturnType;
+   bool        boolResult;
 
    CallMemberVTable(CppiaExpr *inSrc, CppiaExpr *inThis,
                     int inVTableSlot,
@@ -2204,6 +2220,7 @@ struct CallMemberVTable : public CppiaExpr
       // These types may have natively been returned as ints or non-objects
       checkInterfaceReturnType = isInterfaceCall && (returnType==etFloat || type->isDynamic);
 
+      boolResult = type->haxeClass==ClassOf<bool>();
       return this;
    }
    ExprType getType() { return returnType; }
@@ -2245,6 +2262,8 @@ struct CallMemberVTable : public CppiaExpr
       CALL_VTABLE_SETUP
       return runContextConvertObject(ctx, checkInterfaceReturnType ? func->getReturnType() : returnType, func); 
    }
+
+   bool isBoolInt() { return boolResult; }
 
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
@@ -5601,7 +5620,9 @@ struct ArrayAccessI : public CppiaDynamicExpr
 
       switch(__get.signature[0])
       {
-         case sigInt: accessType = etInt; break;
+         case sigBool:
+         case sigInt:
+              accessType = etInt; break;
          case sigFloat: accessType = etFloat; break;
          case sigString: accessType = etString; break;
          case sigObject: accessType = etObject; break;
