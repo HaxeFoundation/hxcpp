@@ -2,7 +2,7 @@
 
 <pragma once="true" />
 
-<set name="MBEDTLS_DIR" value="${HXCPP}/project/thirdparty/mbedtls-2.9.0" />
+<set name="MBEDTLS_DIR" value="${HXCPP}/project/thirdparty/mbedtls-2.16.0" />
 
 <files id="hxcpp_ssl" >
 	<depend files="hxcpp-depends"/>
@@ -84,6 +84,11 @@
 	<file name="${MBEDTLS_DIR}/library/ssl_srv.c"/>
 	<file name="${MBEDTLS_DIR}/library/ssl_ticket.c"/>
 	<file name="${MBEDTLS_DIR}/library/ssl_tls.c"/>
+
+	<file name="${MBEDTLS_DIR}/library/platform_util.c"/>
+	<file name="${MBEDTLS_DIR}/library/poly1305.c"/>
+	<file name="${MBEDTLS_DIR}/library/chacha20.c"/>
+	<file name="${MBEDTLS_DIR}/library/chachapoly.c"/>
 </files>
 
 <target id="haxe">
