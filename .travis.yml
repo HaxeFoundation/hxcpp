@@ -35,6 +35,7 @@ matrix:
         - bash tools/haxe/build_osx.sh;
 
 script:
+  - haxelib install utest
   - cd ${TRAVIS_BUILD_DIR}/tools/run
   - haxe compile.hxml
   - cd ${TRAVIS_BUILD_DIR}/tools/hxcpp
