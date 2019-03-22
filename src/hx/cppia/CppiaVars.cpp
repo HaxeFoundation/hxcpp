@@ -392,10 +392,10 @@ void CppiaStackVar::setInFrame(unsigned char *inFrame,Dynamic inValue)
    switch(storeType)
    {
       case fsByte:
-         *(unsigned char *)(ptr) = (int)inValue;
+         *(int *)(ptr) = (unsigned char)inValue;
          break;
       case fsBool:
-         *(bool *)(ptr) = inValue;
+         *(int *)(ptr) = (bool)inValue;
          break;
       case fsInt:
          *(int *)(ptr) = inValue;
@@ -425,8 +425,8 @@ Dynamic CppiaStackVar::getInFrame(const unsigned char *inFrame)
    const unsigned char *ptr = inFrame + stackPos;
    switch(storeType)
    {
-      case fsByte: return *(unsigned char *)ptr;
-      case fsBool: return *(bool *)ptr;
+      case fsByte: return (unsigned char) *(int *)ptr;
+      case fsBool: return (bool) *(int *)ptr;
       case fsInt: return *(int *)ptr;
       case fsFloat: return *(Float *)ptr;
       case fsString: return *(String *)ptr;
@@ -521,8 +521,8 @@ void CppiaStackVar::setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault)
          unsigned char *ptr = inCxt->frame + stackPos;
          switch(storeType)
          {
-            case fsByte: *(unsigned char *)ptr = inDefault.ival; break;
-            case fsBool: *(bool *)ptr = inDefault.ival; break;
+            case fsByte: *(int *)ptr = (unsigned char)inDefault.ival; break;
+            case fsBool: *(int *)ptr = (bool)inDefault.ival; break;
             case fsInt: *(int *)ptr =
                  inDefault.type==CppiaConst::cInt ? inDefault.ival :
                                                     inDefault.dval;
@@ -601,8 +601,11 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
       switch(storeType)
       {
          case fsByte:
+            compiler->move( destPos.as(jtByte), JitVal((int)(unsigned char)inDefault.ival));
+            break;
+
          case fsBool: 
-            compiler->move( destPos.as(jtByte), JitVal(inDefault.ival).as(jtByte));
+            compiler->move( destPos.as(jtByte), JitVal((int)(bool)inDefault.ival));
             break;
 
          case fsInt:
@@ -635,10 +638,11 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
       {
          case fsByte:
          case fsBool: 
-            compiler->callNative( (void *)objToInt, sJitTemp0.as(jtPointer) );
-            compiler->move( destPos.as(jtByte), sJitReturnReg.as(jtByte));
+            //Fallthough...
+            //compiler->callNative( (void *)objToInt, sJitTemp0.as(jtPointer) );
+            //compiler->move( destPos.as(jtByte), sJitReturnReg.as(jtByte));
             //compiler->move( destPos.as(jtInt), sJitReturnReg.as(jtInt));
-            break;
+            //break;
 
          case fsInt:
             compiler->callNative( (void *)objToInt, sJitTemp0.as(jtPointer) );
