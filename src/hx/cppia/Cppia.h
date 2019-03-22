@@ -509,8 +509,12 @@ struct CppiaVar
    CppiaExpr        *init;
 
    Dynamic          objVal;
-   int              intVal;
-   Float            floatVal;
+   union {
+      int              boolVal;
+      int              byteVal;
+      int              intVal;
+      Float            floatVal;
+   };
    String           stringVal;
 
    void             *valPointer;

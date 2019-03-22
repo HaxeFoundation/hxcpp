@@ -5,6 +5,10 @@ import cpp.Native;
 class HostBase implements IHostInterface
 {
    static var hostInit = 10;
+   public static var hostBool0 = true;
+   public static var hostBool1 = false;
+   public static var hostBool2 = true;
+   public static var hostBool3 = false;
 
    var floatVal:Float;
    var pointerSrc:cpp.Star<Int>;

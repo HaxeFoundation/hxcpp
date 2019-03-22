@@ -3650,7 +3650,7 @@ CppiaExpr *createStaticAccess(CppiaExpr *inSrc,FieldStorage inType, void *inPtr)
 {
    switch(inType)
    {
-      case fsBool :
+      case fsBool : return new MemReference<bool,locAbsolute>(inSrc, (bool *)inPtr );
       case fsInt : return new MemReference<int,locAbsolute>(inSrc, (int *)inPtr );
 
       case fsByte : return new MemReference<unsigned char,locAbsolute>(inSrc, (unsigned char *)inPtr );
