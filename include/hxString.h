@@ -279,6 +279,9 @@ public:
       return ((unsigned char *)__s)[inPos];
    }
 
+   inline Dynamic iterator();
+   inline Dynamic keyValueIterator();
+
    static char16_t *allocChar16Ptr(int len);
 
 
@@ -307,6 +310,9 @@ public:
       const char16_t *__w;
    };
 };
+
+
+
 
 
 inline HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_string_create(const char *str, int len)
