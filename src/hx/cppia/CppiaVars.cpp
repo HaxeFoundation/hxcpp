@@ -123,7 +123,7 @@ Dynamic CppiaVar::getStaticValue()
 {
    switch(storeType)
    {
-      case fsByte: return (unsigned char)(int *)(valPointer);
+      case fsByte: return *(unsigned char *)(valPointer);
       case fsBool: return *(bool *)(valPointer);
       case fsInt: return *(int *)(valPointer);
       case fsFloat: return *(Float *)(valPointer);
