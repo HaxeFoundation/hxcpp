@@ -93,6 +93,9 @@ template <> struct CompareTraits<signed short> : public CompareTraits<int> { };
 template <> struct CompareTraits<unsigned short> : public CompareTraits<int> { };
 template <> struct CompareTraits<signed char> : public CompareTraits<int> { };
 template <> struct CompareTraits<unsigned char> : public CompareTraits<int> { };
+template <> struct CompareTraits<char> : public CompareTraits<int> { };
+template <> struct CompareTraits<wchar_t> : public CompareTraits<int> { };
+template <> struct CompareTraits<char16_t> : public CompareTraits<int> { };
 
 
 template <> 
