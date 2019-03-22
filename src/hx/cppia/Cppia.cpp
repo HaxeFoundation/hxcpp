@@ -6139,7 +6139,15 @@ struct WhileExpr : public CppiaVoidExpr
       QuickVec<JumpId> oldBreaks;
       compiler->swapBreakList(oldBreaks);
 
+      JumpId skipCondition;
+      if (!isWhileDo)
+         skipCondition = compiler->jump();
+
       JumpId start = condition->genCompare(compiler,true);
+
+      if (!isWhileDo)
+         compiler->comeFrom(skipCondition);
+
       LabelId body = compiler->addLabel();
 
       loop->genCode(compiler, JitVal(), etVoid);
