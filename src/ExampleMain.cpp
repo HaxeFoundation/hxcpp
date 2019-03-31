@@ -17,11 +17,11 @@
   Linking from the command line for windows (developer command prompt for vs; user32.lib only required for debug version;
    ws2_32.lib might be necessary if there are error messages):
 
-  cl ExampleMain.cpp cpp/YourMain.lib $HXCPP/bin/Windows/std.lib $HXCPP/bin/Windows/zlib.lib  $HXCPP/bin/Windows/regexp.lib user32.lib
+  cl ExampleMain.cpp cpp/YourMain.lib $HXCPP/lib/Windows/std.lib $HXCPP/lib/Windows/zlib.lib  $HXCPP/lib/Windows/regexp.lib user32.lib
 
   From other OSs, the compile+link command will be different.  Here is one for mac:
 
-   g++ ExampleMain.cpp cpp/Test-debug.a $HXCPP/bin/Mac/regexp.a $HXCPP/bin/Mac/std.a $HXCPP/bin/Mac/zlib.a
+   g++ ExampleMain.cpp cpp/YourMain.a $HXCPP/lib/Mac64/libregexp.a $HXCPP/lib/Mac64/libstd.a $HXCPP/lib/Mac64/libzlib.a
 
   If you wish to add other static libraries besides these 3 (eg, nme) you will
    need to compile these with the "-Dstatic_link" flag too, and call their "register_prims"
