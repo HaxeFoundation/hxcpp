@@ -37,7 +37,11 @@ public:
    explicit Dynamic(const HX_CHAR *inStr);
    Dynamic(const cpp::Variant &inRHS) : super(inRHS.asDynamic()) { }
    template<typename T>
-   Dynamic(const hx::Native<T *> &inInterface):super(inInterface->__GetRealObject() ) { }
+   Dynamic(const hx::Native<T *> &inInterface):super(inInterface.ptr ? inInterface->__GetRealObject() : (hx::Object *)0 ) { }
+   #if !defined(__GNUC__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
+   Dynamic(long inVal);
+   Dynamic(unsigned long inVal);
+   #endif
 #ifdef __OBJC__
 #ifdef HXCPP_OBJC
    Dynamic(const id inObjc);
@@ -403,7 +407,8 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetStringClass();
 template<>
 inline bool Dynamic::IsClass<int>() { return mPtr && mPtr->__GetClass()==hx::GetIntClass(); }
 template<>
-inline bool Dynamic::IsClass<double>() { return mPtr && mPtr->__GetClass()==hx::GetFloatClass(); }
+inline bool Dynamic::IsClass<double>() { return mPtr && 
+   ( mPtr->__GetClass()==hx::GetIntClass() || mPtr->__GetClass()==hx::GetFloatClass()) ; }
 template<>
 inline bool Dynamic::IsClass<float>() { return mPtr && mPtr->__GetClass()==hx::GetFloatClass(); }
 template<>

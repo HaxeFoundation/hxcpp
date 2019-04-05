@@ -44,7 +44,15 @@ Dynamic DynFalse;
 class IntData : public hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdInt };
+   enum { _hx_ClassId = hx::clsIdInt };
+
+   #if (HXCPP_API_LEVEL>331)
+   bool _hx_isInstanceOf(int inClassId)
+   {
+      return inClassId==1 || inClassId==(int)_hx_ClassId || inClassId==(int)hx::clsIdFloat;
+   }
+   #endif
+
 
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc, const char *inName="Int")
       { return hx::Object::operator new(inSize,inAlloc,inName); }
@@ -366,6 +374,8 @@ static hx::Object *fromInt(int inVal)
 }
 
 Dynamic::Dynamic(bool inVal) : super( inVal ? hx::DynTrue.mPtr : hx::DynFalse.mPtr ) { }
+
+
 Dynamic::Dynamic(int inVal)
 {
    mPtr = fromInt(inVal);
@@ -376,18 +386,32 @@ Dynamic::Dynamic(short inVal)
    mPtr = fromInt(inVal);
 }
 
+#if !defined(__GNUC__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
+Dynamic::Dynamic(unsigned long inVal)
+{
+   mPtr = fromInt(inVal);
+}
+Dynamic::Dynamic(long inVal)
+{
+   mPtr = fromInt(inVal);
+}
+#endif
+
 Dynamic::Dynamic(unsigned int inVal)
 {
    mPtr = fromInt(inVal);
 }
+
 Dynamic::Dynamic(unsigned short inVal)
 {
    mPtr = fromInt(inVal);
 }
+
 Dynamic::Dynamic(unsigned char inVal)
 {
    mPtr = fromInt(inVal);
 }
+
 Dynamic::Dynamic(signed char inVal)
 {
    mPtr = fromInt(inVal);
@@ -541,6 +565,13 @@ null BadCast()
    hx::Throw(HX_INVALID_CAST);
    return null();
 }
+
+void InvalidInterface()
+{
+   hx::Throw(HX_INVALID_INTERFACE);
+}
+
+
 }
 
 

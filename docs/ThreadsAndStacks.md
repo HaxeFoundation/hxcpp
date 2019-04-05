@@ -6,7 +6,7 @@ Threads And Stacks
 Hxcpp uses conservative stop-the-world GC, where the threads need to co-operate.
  - Threads must not change GC pointers in the collection phase
  - The thread stacks/registers must be scanned for GC pointers
- - Threads must not block without letting the GC system know not to wait for them, otherwise GC blocks till end of block 
+ - Threads must not block without letting the GC system know not to wait for them, otherwise GC blocks until end of block 
    + call hx::GCEnterBlocking() / gc_enter_blocking() / (cpp.vm.Gc.enterGCFreeZone() from Haxe) before potentially blocking system call (fs,network, etc)
    + call hx::GCExitBlocking() / gc_exit_blocking() / (cpp.vm.Gc.exitGCFreeZone() from Haxe) before making more GC calls
    + Might need to pre-allocate buffers
@@ -24,11 +24,11 @@ When you create a thread from haxe, it starts attached.  Before a non-haxe creat
   - Must release context when done, if no more calls are going to be made
   - Make sure local variables are covered in stack
     - compiler may reorder, so be careful
-  - Read documentaion because some things, eg audio callbacks, happen on other threads
-  - You can use other tecniques, eg
+  - Read documentation because some things, eg audio callbacks, happen on other threads
+  - You can use other techniques, eg
      - create a haxe thread, which blocks waiting for signal
      - foreign thread generates request and signals haxe thread
-     - haxe thread performs job and genreates data then signals foreign thread
+     - haxe thread performs job and generates data then signals foreign thread
      - foreign picks up data and carries on
 
 
@@ -146,7 +146,7 @@ Solutions:
 ### Debugging.
   - in debug mode, hxcpp will check for calls from unattached threads
   - hxcpp can log conservative ranges.  With a native debugger you can check the address of
-     you local variables and ensure they are included.
+     your local variables and ensure they are included.
   - hxcpp will scan native objects on the stack, but will not follow non-haxe pointers to other objects, so additional GC roots may be required.
 
 

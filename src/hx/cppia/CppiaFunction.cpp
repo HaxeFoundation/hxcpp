@@ -108,6 +108,7 @@ ScriptCallable::ScriptCallable(CppiaModule &inModule,ScriptNamedFunction *inFunc
       arg.nameId = 0;
       switch(signature[i+1])
       {
+         case sigBool:
          case sigInt:
             arg.argType = etInt;
             arg.storeType = fsInt;

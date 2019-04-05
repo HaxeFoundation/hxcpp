@@ -45,6 +45,7 @@
   <depend name="${HXCPP}/include/hx/HeaderVersion.h"/>
   <depend name="${HXCPP}/include/hx/Unordered.h"/>
   <depend name="${HXCPP}/include/hx/LessThanEq.h"/>
+  <depend name="${HXCPP}/include/hx/Interface.h"/>
   <depend name="${HXCPP}/include/cpp/Pointer.h"/>
   <depend name="${HXCPP}/include/cpp/Int64.h"/>
   <depend name="${HXCPP}/include/cpp/Variant.h"/>
@@ -127,6 +128,7 @@
   <depend files="hxcpp-depends"/>
   <options name="Options.txt"/>
   <depend name="${HXCPP}/src/hx/Hash.h"/>
+  <depend name="${HXCPP}/src/hx/Unicase.h"/>
   <depend name="${HXCPP}/src/hx/gc/GcRegCapture.h"/>
   <compilerflag value="-D_CRT_SECURE_NO_DEPRECATE"/>
 
@@ -162,7 +164,7 @@
   <file name = "src/Math.cpp"/>
   <file name = "src/String.cpp" tags="haxe,hxstring" />
 
-  <addTwice if="linux" />
+  <addTwice if="linux||android" />
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
 </files>
 

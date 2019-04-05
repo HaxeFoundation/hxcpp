@@ -20,7 +20,7 @@ typedef int64_t __int64;
 #include <syslog.h>
 #endif
 #ifdef TIZEN
-extern "C" EXPORT_EXTRA void AppLogInternal(const char* pFunction, int lineNumber, const char* pFormat, ...);
+#include <dlog.h>
 #endif
 #if defined(BLACKBERRY) || defined(GCW0)
 #include <unistd.h>
@@ -119,9 +119,17 @@ String __hxcpp_resource_string(String inName)
       {
          if (reso->mName == inName)
          #if (HXCPP_API_LEVEL > 0)
-             return String((const char *) reso->mData, reso->mDataLength );
+         {
+            #ifdef HX_SMART_STRINGS
+            const unsigned char *p = reso->mData;
+            for(int i=0;i<reso->mDataLength;i++)
+               if (p[i]>127)
+                  return _hx_utf8_to_utf16(p, reso->mDataLength,false);
+            #endif
+            return String((const char *) reso->mData, reso->mDataLength );
+         }
          #else
-             return String((const char *) reso->mData, reso->mDataLength ).dup();
+            return String((const char *) reso->mData, reso->mDataLength ).dup();
          #endif
       }
 
@@ -129,7 +137,17 @@ String __hxcpp_resource_string(String inName)
    {
       for(Resource *reso  = sgSecondResources; reso->mData; reso++)
          if (reso->mName == inName)
+         {
+            #ifdef HX_SMART_STRINGS
+            const unsigned char *p = reso->mData;
+            for(int i=0;i<reso->mDataLength;i++)
+               if (p[i]>127)
+                  return _hx_utf8_to_utf16(p, reso->mDataLength,false);
+            #endif
             return String((const char *) reso->mData, reso->mDataLength );
+
+            return String((const char *) reso->mData, reso->mDataLength );
+         }
    }
    return null();
 }
@@ -208,7 +226,7 @@ int __hxcpp_irand(int inMax)
 
 void __hxcpp_stdlibs_boot()
 {
-   #if defined(HX_WINDOWS) && !defined(HX_WINRT)
+   #if defined(_MSC_VER) && !defined(HX_WINRT)
    HMODULE kernel32 = LoadLibraryA("kernel32");
    if (kernel32)
    {
@@ -231,10 +249,10 @@ void __hxcpp_stdlibs_boot()
          }
       }
    }
-   setlocale(LC_ALL, "");
-   _setmode(_fileno(stdout), 0x00040000); // _O_U8TEXT
-   _setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
-   _setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
+   //setlocale(LC_ALL, "");
+   //_setmode(_fileno(stdout), 0x00040000); // _O_U8TEXT
+   //_setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
+   //_setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
    #endif
    
    // I think this does more harm than good.
@@ -245,43 +263,57 @@ void __hxcpp_stdlibs_boot()
    setbuf(stderr, 0);
 }
 
-void __trace(Dynamic inObj, Dynamic inData)
+void __trace(Dynamic inObj, Dynamic info)
 {
-#ifdef HX_WINRT
-   WINRT_PRINTF("%s:%d: %s\n",
-               inData==null() ? "?" : Dynamic((inData)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s,
-               inData==null() ? 0 : Dynamic((inData)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt(),
-               inObj.GetPtr() ? inObj->toString().__s : "null" );
-#elif defined(TIZEN)
-   AppLogInternal(inData==null() ? "?" : Dynamic(inData->__Field( HX_CSTRING("fileName")), HX_PROP_DYNAMIC)->toString().__s,
-      inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber")), HX_PROP_DYNAMIC),
-      "%s\n", inObj.GetPtr() ? inObj->toString().__s : "null" );
-#else
-#ifdef HX_UTF8_STRINGS
-   #ifdef HX_WINDOWS
-   wprintf(L"%ls:%d: %ls\n",
-               inData==null() ? L"?" : Dynamic(inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC))->toString().__WCStr(),
-               inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)),
-               inObj.GetPtr() ? inObj->toString().__WCStr() : L"null" );
-   #else
-   #if defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-   __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",
+   String text;
+   if (inObj != null())
+      text = inObj->toString();
+   const char *message = text.__s ? text.__s : "null";
+
+   if (info==null())
+   {
+   #ifdef HX_WINRT
+      WINRT_PRINTF("%s\n", message );
+   #elif defined(TIZEN)
+      dlog_dprint(DLOG_INFO, "trace","%s\n", message );
+   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+      __android_log_print(ANDROID_LOG_INFO, "trace","%s",message );
    #elif defined(WEBOS)
-   syslog(LOG_INFO, "%s:%d: %s",
+      syslog(LOG_INFO, "%s", message );
+   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+      if (text.isUTF16Encoded())
+         printf("%S\n", (wchar_t *)text.__w );
+      else
+         printf("%s\n", message);
    #else
-   printf("%s:%d: %s\n",
+      printf("%s\n", message );
    #endif
-               inData==null() ? "?" : Dynamic(inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC))->toString().__s,
-               inData==null() ? 0 : (int)(inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)),
-               inObj.GetPtr() ? inObj->toString().__s : "null" );
+
+   }
+   else
+   {
+
+      const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s;
+      int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
+
+   #ifdef HX_WINRT
+      WINRT_PRINTF("%s:%d: %s\n", filename, line, message );
+   #elif defined(TIZEN)
+      AppLogInternal(filename, line, "%s\n", message );
+   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+      __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",filename, line, message );
+   #elif defined(WEBOS)
+      syslog(LOG_INFO, "%s:%d: %s", filename, line, message );
+   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+      if (text.isUTF16Encoded())
+         printf("%s:%d: %S\n",filename, line, (wchar_t *)text.__w );
+      else
+         printf("%s:%d: %s\n",filename, line, message);
+   #else
+      printf("%s:%d: %s\n",filename, line, message );
    #endif
-#else
-   printf( "%S:%d: %S\n",
-               inData->__Field( HX_CSTRING("fileName") , HX_PROP_DYNAMIC)->__ToString().__s,
-               inData->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC)->__ToInt(),
-               inObj.GetPtr() ? inObj->toString().__s : L"null" );
-#endif
-#endif
+   }
+
 }
 
 void __hxcpp_exit(int inExitCode)
@@ -584,10 +616,10 @@ void __hxcpp_println_string(const String &inV)
 
 bool __instanceof(const Dynamic &inValue, const Dynamic &inType)
 {
-   if (inType==hx::Object::__SGetClass())
-      return true;
    if (inValue==null())
       return false;
+   if (inType==hx::Object::__SGetClass())
+      return true;
    hx::Class c = inType;
    if (c==null())
       return false;

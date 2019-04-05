@@ -2500,6 +2500,12 @@ bool IsWeakRefValid(hx::Object *inPtr)
     return isCurrent;
 }
 
+static void someHackyFunc(hx::Object *)
+{
+}
+
+static void (*hackyFunctionCall)(hx::Object *) = someHackyFunc;
+
 struct Finalizable
 {
    union
@@ -2529,7 +2535,13 @@ struct Finalizable
    void run()
    {
       if (isMember)
-         (((hx::Object *)base)->*member)();
+      {
+         hx::Object *object = (hx::Object *)base;
+         // I can't tell if it is msvc over-optimizing this code, to I am not
+         //  quite calling things right, but this seems to fix it...
+         hackyFunctionCall(object);
+         (object->*member)();
+      }
       else
          alloc( base );
    }
@@ -6107,6 +6119,7 @@ void GCPrepareMultiThreaded()
 
 void SetTopOfStack(int *inTop,bool inForce)
 {
+   bool threadAttached = false;
    if (inTop)
    {
       if (!sgAllocInit)
@@ -6117,6 +6130,7 @@ void SetTopOfStack(int *inTop,bool inForce)
          {
             GCPrepareMultiThreaded();
             RegisterCurrentThread(inTop);
+            threadAttached = true;
          }
       }
    }
@@ -6124,7 +6138,11 @@ void SetTopOfStack(int *inTop,bool inForce)
    LocalAllocator *tla = (LocalAllocator *)(hx::ImmixAllocator *)tlsStackContext;
 
    if (tla)
+   {
       tla->SetTopOfStack(inTop,inForce);
+      if (threadAttached)
+         tla->onThreadAttach();
+   }
 }
 
 
@@ -6305,7 +6323,6 @@ void RegisterCurrentThread(void *inTopOfStack)
    #ifdef HXCPP_SCRIPTABLE
    local->byteMarkId = hx::gByteMarkID;
    #endif
-   local->onThreadAttach();
 }
 
 void UnregisterCurrentThread()
@@ -6325,6 +6342,7 @@ void RegisterVTableOffset(int inOffset)
 
 void PushTopOfStack(void *inTop)
 {
+   bool threadAttached = false;
    if (!sgAllocInit)
       InitAlloc();
    else
@@ -6333,11 +6351,14 @@ void PushTopOfStack(void *inTop)
       {
          GCPrepareMultiThreaded();
          RegisterCurrentThread(inTop);
+         threadAttached = true;
       }
    }
  
    LocalAllocator *tla = GetLocalAlloc();
    tla->PushTopOfStack(inTop);
+   if (threadAttached)
+      tla->onThreadAttach();
 }
 
 void PopTopOfStack()

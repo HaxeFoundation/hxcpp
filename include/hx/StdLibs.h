@@ -601,6 +601,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stdin_write( Dynamic handle, A
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_stdin_close( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_exit( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_pid( Dynamic handle );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_kill( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_close( Dynamic handle );
 
 // Random
@@ -640,6 +641,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_set_timeout( Dynamic o, Dynami
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_shutdown( Dynamic o, bool r, bool w );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_set_blocking( Dynamic o, bool b );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_set_fast_send( Dynamic o, bool b );
+HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_set_broadcast( Dynamic o, bool b );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_socket_poll_alloc( int nsocks );
 HXCPP_EXTERN_CLASS_ATTRIBUTES Array<Dynamic> _hx_std_socket_poll_prepare( Dynamic pdata, Array<Dynamic> rsocks, Array<Dynamic> wsocks );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_socket_poll_events( Dynamic pdata, double timeout );

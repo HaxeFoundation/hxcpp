@@ -181,7 +181,22 @@ public:
 
    virtual int GetElementSize() const = 0;
 
-   void __SetSize(int inLen);
+   inline void resize(int inSize)
+   {
+      if (inSize<length)
+      {
+         int s = GetElementSize();
+         memset(mBase + inSize*s, 0, (length-inSize)*s);
+         length = inSize;
+      }
+      else if (inSize>length)
+      {
+         EnsureSize(inSize);
+         length = inSize;
+      }
+   }
+   inline void __SetSize(int inLen) { resize(inLen); }
+
    void __SetSizeExact(int inLen=0);
    
    Dynamic __unsafe_get(const Dynamic &i);
@@ -225,7 +240,7 @@ public:
    virtual Dynamic __unshift(const Dynamic &a0) = 0;
    virtual Dynamic __map(const Dynamic &func) = 0;
    virtual Dynamic __filter(const Dynamic &func) = 0;
-   inline Dynamic ____SetSize(const Dynamic &len)  { __SetSize(len); return this; } 
+   inline Dynamic ____SetSize(const Dynamic &len)  { resize(len); return this; } 
    inline Dynamic ____SetSizeExact(const Dynamic &len)  { __SetSizeExact(len); return this; } 
    inline Dynamic ____unsafe_set(const Dynamic &i, const Dynamic &val)  { return __SetItem(i,val); } 
    inline Dynamic ____unsafe_get(const Dynamic &i)  { return __GetItem(i); } 
@@ -233,9 +248,10 @@ public:
    inline Dynamic __zero(const Dynamic &a0,const Dynamic &a1)  { zero(a0,a1); return null(); }
    virtual Dynamic __memcmp(const Dynamic &a0) = 0;
    virtual void __qsort(Dynamic inCompare) = 0;
+   virtual Dynamic __resize(const Dynamic &a0) = 0;
 
    #else
-   inline void ____SetSize(int len)  { __SetSize(len); } 
+   inline void ____SetSize(int len)  { resize(len); } 
    inline void ____SetSizeExact(int len)  { __SetSizeExact(len); } 
    inline Dynamic ____unsafe_set(const Dynamic &i, const Dynamic &val)  { return __SetItem(i,val); } 
    inline Dynamic ____unsafe_get(const Dynamic &i)  { return __GetItem(i); } 
@@ -264,6 +280,7 @@ public:
    virtual int __memcmp(const cpp::VirtualArray &a0) = 0;
    inline void __zero(const Dynamic &a0,const Dynamic &a1)  { zero(a0,a1); }
    virtual void __qsort(Dynamic inCompare) = 0;
+   virtual void __resize(int inLen) = 0;
 
    virtual void set(int inIdx, const cpp::Variant &inValue) = 0;
    virtual void setUnsafe(int inIdx, const cpp::Variant &inValue) = 0;
@@ -296,6 +313,7 @@ public:
    Dynamic blit_dyn();
    Dynamic zero_dyn();
    Dynamic memcmp_dyn();
+   Dynamic resize_dyn();
 
    void Realloc(int inLen) const;
 
@@ -413,6 +431,9 @@ template<> inline double *NewNull<double>() { double d=0.0; return (double *)hx:
 template<> inline float *NewNull<float>() { float d=0.0f; return (float *)hx::NewGCPrivate(&d,sizeof(d)); }
 template<> inline unsigned char *NewNull<unsigned char>() { unsigned char u=0; return (unsigned char *)hx::NewGCPrivate(&u,sizeof(u)); }
 
+
+bool DynamicEq(const Dynamic &a, const Dynamic &b);
+
 }
 
 template<typename T> struct ArrayClassId { enum { id=hx::clsIdArrayObject }; };
@@ -428,6 +449,17 @@ template<> struct ArrayClassId<String> { enum { id=hx::clsIdArrayString }; };
 
 // sort...
 #include <algorithm>
+
+namespace hx
+{
+template<typename T>
+inline bool arrayElemEq(const T &a, const T &b) { return a==b; }
+
+template<>
+inline bool arrayElemEq<Dynamic>(const Dynamic &a, const Dynamic &b) {
+   return hx::DynamicEq(a,b);
+}
+}
 
 
 template<typename ELEM_>
@@ -591,16 +623,17 @@ public:
    {
       if (!length) return null();
       ELEM_ result = __get((int)length-1);
-      __SetSize((int)length-1);
+      resize((int)length-1);
       return result;
    }
+
 
 
    int Find(ELEM_ inValue)
    {
       ELEM_ *e = (ELEM_ *)mBase;
       for(int i=0;i<length;i++)
-         if (e[i]==inValue)
+         if (hx::arrayElemEq(e[i],inValue))
             return i;
       return -1;
    }
@@ -611,7 +644,7 @@ public:
       ELEM_ *e = (ELEM_ *)mBase;
       for(int i=0;i<length;i++)
       {
-         if (e[i]==inValue)
+         if (hx::arrayElemEq(e[i],inValue))
          {
             RemoveElement((int)i);
             return true;
@@ -641,7 +674,7 @@ public:
       }
       while(i<len)
       {
-         if (e[i]==inValue)
+         if (hx::arrayElemEq(e[i],inValue))
             return i;
          i++;
       }
@@ -659,7 +692,7 @@ public:
          i += len;
       while(i>=0)
       {
-         if (e[i]==inValue)
+         if (hx::arrayElemEq(e[i],inValue))
             return i;
          i--;
       }
@@ -777,7 +810,6 @@ public:
 
    template<typename TO>
    Dynamic iteratorFast() { return new hx::ArrayIterator<ELEM_,TO>(this); }
-
    
    virtual hx::ArrayStore getStoreType() const
    {
@@ -816,6 +848,7 @@ public:
    virtual Dynamic __filter(const Dynamic &func) { return filter(func); }
    virtual Dynamic __blit(const Dynamic &a0,const Dynamic &a1,const Dynamic &a2,const Dynamic &a3) { blit(a0,a1,a2,a3); return null(); }
    virtual Dynamic __memcmp(const Dynamic &a0) { return memcmp(a0); }
+   virtual Dynamic __resize(const Dynamic &a0) { resize(a0); return null(); }
    virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
    #else //(HXCPP_API_LEVEL < 330)
 
@@ -838,6 +871,7 @@ public:
    virtual ::String __toString() { return toString(); }
    virtual void  __unshift(const Dynamic &a0) { unshift(a0); }
    virtual cpp::VirtualArray_obj *__map(const Dynamic &func) { return map(func).mPtr; }
+   virtual void __resize(int inLen) { resize(inLen); }
 
    virtual hx::ArrayBase *__filter(const Dynamic &func) { return filter(func).mPtr; }
    virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount)

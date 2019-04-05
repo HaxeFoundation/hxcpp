@@ -57,6 +57,19 @@ class FileGroup
       return this;
    }
 
+   public function find(name:String)
+   {
+      for(file in mFiles)
+         if (file.mName==name)
+            return file;
+      return null;
+   }
+
+   public function addFile(file:File)
+   {
+      mFiles.push(file);
+   }
+
    public function filter(defines:Map<String,String>)
    {
       var newFiles = new Array<File>();

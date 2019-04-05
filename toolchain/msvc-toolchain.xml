@@ -43,6 +43,9 @@
 
 <set name="MSVC_ARCH" value="SSE2" unless="HXCPP_M64" />
 
+<set name="HXCPP_LTCG_INCREMENTAL" value="1" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
+<unset name="HXCPP_FAST_LINK" if="HXCPP_FAST_LINK" unless="MSVC19"/>
+
 <compiler id="MSVC" exe="cl.exe" if="windows">
   <flag value="-nologo"/>
 
@@ -77,8 +80,10 @@
   <flag value="-Fd${HXCPP_BUILD_DIR}${MSVC_OBJ_DIR}/vc.pdb" unless="HXCPP_COMPILE_CACHE" tag="debug" />
   <flag value="-Od" tag="debug" />
   <flag value="-O2" tag="release" />
+  <flag value="-bigobj" if="debug"  />
+  <flag value="-Zc:inline" if="HXCPP_FAST_LINK" unless="debug || HXCPP_OPTIMIZE_LINK || HXCPP_LTCG_INCREMENTAL" /><!-- not available with -Od and -GL -->
   <flag value="-Os" tag="optim-size" />
-  <flag value="-GL" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-GL" if="HXCPP_OPTIMIZE_LINK || HXCPP_LTCG_INCREMENTAL" unless="debug"/>
 
   <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
@@ -105,8 +110,10 @@
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-dll"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
-  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <lib name="${dll_import_link}" if="dll_import_link" />
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
@@ -121,8 +128,10 @@
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
-  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <flag value="-subsystem:windows${SUBSYSTEM_VER}" if="SUBSYSTEMWINDOWS" />
   <flag value="-subsystem:console${SUBSYSTEM_VER}" if="SUBSYSTEMCONSOLE" />
   <libpathflag value="-libpath:"/>
@@ -137,8 +146,10 @@
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
-  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <flag value="-subsystem:windows" />
   <flag value="-MANIFEST:NO" />
   <flag value="-WINMD" />
@@ -154,7 +165,8 @@
 </linker>
 
 <linker id="static_link" exe="lib.exe" if="windows">
-  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
+  <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-IGNORE:4264" if="winrt" />

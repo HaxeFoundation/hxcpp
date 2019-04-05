@@ -7,10 +7,14 @@ class HaxeImpl implements HaxeObject
 {
    var parentName:String;
    var name:String;
+   var haxeObject:HaxeObject;
 
    public function new(?inParent:HaxeImpl)
    {
+      haxeObject = null;
       parentName = inParent==null ? "" : inParent.name;
+      if (haxeObject==null)
+         haxeObject = this;
    }
 
    public function getName( ):cpp.StdString
@@ -18,6 +22,7 @@ class HaxeImpl implements HaxeObject
       return cpp.StdString.ofString(name);
    }
 
+   @:unreflective
    public function setName( inName:cpp.StdStringRef ) : Void
    {
       name = inName.toString();

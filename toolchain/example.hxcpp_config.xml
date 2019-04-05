@@ -28,8 +28,10 @@
 
      <!-- ANDROID_NDK_ROOT is required for building android binaries. See:
             http://developer.android.com/sdk/ndk/index.html 
-            Alternatively, you can set the directory and let hxcpp choose the best one
-             with ANDROID_NDK_DIR
+            Alternatively, you can set the directory and let hxcpp choose the best one with ANDROID_NDK_DIR 
+
+            if ANDROID_NDK_DIR is not set, or a valid NDK version is not found there, 
+             it tries to use the default SDK Manager installation (ndk-bundle directory) 
 
      <set name="ANDROID_NDK_ROOT" value="${SDK_ROOT}/android-ndk-r6" unless="ANDROID_NDK_ROOT" />
        -->
@@ -40,7 +42,7 @@
             http://ant.apache.org/bindownload.cgi -->
      <set name="ANT_HOME" value="${SDK_ROOT}/ant" unless="ANT_HOME" />
 
-     <!-- The ANDROID_SDK is required for building androis packages. See
+     <!-- The ANDROID_SDK is required for building android packages. See
             http://developer.android.com/sdk/index.html -->
      <set name="ANDROID_SDK" value="${SDK_ROOT}/android-sdk" unless="ANDROID_SDK" />
 

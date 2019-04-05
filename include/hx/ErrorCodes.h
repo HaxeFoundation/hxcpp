@@ -3,6 +3,7 @@
 
 // --- Exteral constants, used inline
 #define HX_INVALID_CAST          Dynamic(HX_CSTRING("Invalid Cast"))
+#define HX_INVALID_INTERFACE     Dynamic(HX_CSTRING("Object does not implement interface"))
 #define HX_INDEX_OUT_OF_BOUNDS   Dynamic(HX_CSTRING("Index Out of Bounds"))
 #define HX_INVALID_CONSTRUCTOR   Dynamic(HX_CSTRING("Invalid constructor"))
 #define HX_INVALID_ENUM_CONSTRUCTOR(_enum_name, _constructor_name)      \

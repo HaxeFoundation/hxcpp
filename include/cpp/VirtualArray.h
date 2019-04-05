@@ -338,13 +338,14 @@ public:
       return 0;
    }
 
-   void __SetSize(int inLen)
+   void resize(int inLen)
    {
       if (!base)
          CreateEmptyArray(inLen);
       else
-         base->__SetSize(inLen);
+         base->resize(inLen);
    }
+   void __SetSize(int inLen) { resize(inLen); }
 
    VirtualArray __SetSizeExact(int inLen=0)
    {
@@ -397,17 +398,32 @@ public:
 
    inline Dynamic pop() { checkBase(); return store==hx::arrayEmpty ? null() : base->__pop(); }
 
-   inline bool remove(Dynamic inValue) { checkBase(); return (store!=hx::arrayEmpty) && base->__remove(inValue); }
+   inline bool remove(Dynamic inValue)
+   {
+      checkBase();
+      if (store==hx::arrayEmpty)
+         return false;
+      EnsureStorage(inValue);
+      return base->__remove(inValue);
+   }
+
    inline bool removeAt(int inIndex) { checkBase(); return (store!=hx::arrayEmpty) && base->__removeAt(inIndex); }
 
    int indexOf(Dynamic inValue, Dynamic fromIndex = null())
    {
-      checkBase(); return store==hx::arrayEmpty ? -1 : (int)base->__indexOf(inValue,fromIndex);
+      checkBase();
+      if (store==hx::arrayEmpty)
+         return -1;
+      EnsureStorage(inValue);
+      return (int)base->__indexOf(inValue,fromIndex);
    }
    int lastIndexOf(Dynamic inValue, Dynamic fromIndex = null())
    {
       checkBase();
-      return store==hx::arrayEmpty ? -1 : (int)base->__lastIndexOf(inValue,fromIndex);
+      if (store==hx::arrayEmpty)
+         return -1;
+      EnsureStorage(inValue);
+      return (int)base->__lastIndexOf(inValue,fromIndex);
    }
 
    Dynamic shift() { checkBase(); return store==hx::arrayEmpty ? null() : base->__shift(); }
@@ -532,6 +548,7 @@ public:
    Dynamic blit_dyn();
    Dynamic zero_dyn();
    Dynamic memcmp_dyn();
+   Dynamic resize_dyn();
 };
 
 

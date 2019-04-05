@@ -145,39 +145,51 @@ typedef char HX_CHAR;
 //     HX_GC_CONST_ALLOC_BIT | HX_GC_STRING_HASH
 // HX_CSTRING is for constant strings without built-in hashes
 //     HX_GC_CONST_ALLOC_BIT
-
-// HX_GC_STRING_HASH  = 00 00 01 00
+// HX_GC_CONST_ALLOC_BIT = 0x80000000
+// HX_GC_STRING_HASH     = 0x00100000
+// HX_GC_STRING_CHAR16_T = 0x00200000
 
 // For making generated code easier to read
-#define HX_HASH_JOIN(A, B) A ## B
+#define HX_HASH_JOIN(A, B) A##B
 #define HX_JOIN_PARTS(A, B) HX_HASH_JOIN(A, B)
 #define HX_HASH_OF(A) #A
+#define HX_HASH_OF_W(A) HX_HASH_JOIN(u,#A)
 #define HX_STR_QUOTE(A) HX_HASH_OF(A)
+#define HX_STR_QUOTE_W(A) HX_HASH_OF_W(A)
 #define HX_HEX_QUOTE(hex) HX_STR_QUOTE(HX_JOIN_PARTS(\x,hex))
-
-
+#define HX_HEX_QUOTE_W(hex) HX_STR_QUOTE_W(HX_JOIN_PARTS(\x,hex))
 
 #ifdef HXCPP_BIG_ENDIAN
 
-#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( const_cast<char *>((h3 h2 h1 h0 "\x80\x10\x00\x00" s)) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
-#define HX_(s,h0,h1,h2,h3) ::String( const_cast<char *>(( HX_HEX_QUOTE(h3) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h0) "\x80\x10\x00\x00" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
+#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( const_cast<char *>((h3 h2 h1 h0 "\x80\x10\x00\x00" s)) + 8 , sizeof(s)/sizeof(char)-1)
+#define HX_(s,h0,h1,h2,h3) ::String( const_cast<char *>(( HX_HEX_QUOTE(h3) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h0) "\x80\x10\x00\x00" s )) + 8 , sizeof(s)/sizeof(char)-1)
 #define HX_STRINGI(s,len) ::String( const_cast<char *>(("\x80\x00\x00\x00" s)) + 4 ,len)
+#define HX_W(s,h0,h1) ::String( const_cast<char16_t *>(( HX_HEX_QUOTE_W(h1) HX_HEX_QUOTE_W(h0) u"\x8030\x0000" s )) + 4, sizeof(s)/2-1, true)
 
 #else
 
-#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( const_cast<char *>((h0 h1 h2 h3 "\x00\x00\x10\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
-#define HX_(s,h0,h1,h2,h3) ::String( const_cast<char *>(( HX_HEX_QUOTE(h0) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h3) "\x00\x00\x10\x80" s )) + 8 , sizeof(s)/sizeof(HX_CHAR)-1)
+#define HX_HCSTRING(s,h0,h1,h2,h3) ::String( const_cast<char *>((h0 h1 h2 h3 "\x00\x00\x10\x80" s )) + 8 , sizeof(s)/sizeof(char)-1)
+#define HX_(s,h0,h1,h2,h3) ::String( const_cast<char *>(( HX_HEX_QUOTE(h0) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h3) "\x00\x00\x10\x80" s )) + 8 , sizeof(s)/sizeof(char)-1)
 #define HX_STRINGI(s,len) ::String( const_cast<char *>(("\x00\x00\x0\x80" s)) + 4 ,len)
+
+#define HX_W(s,h0,h1) ::String( const_cast<char16_t *>(( HX_HEX_QUOTE_W(h0) HX_HEX_QUOTE_W(h1) u"\x0000\x8030" s )) + 4, sizeof(s)/2-1, true)
 
 #endif
 
 
-#define HX_STRI(s) HX_STRINGI(s,sizeof(s)/sizeof(HX_CHAR)-1)
+#define HX_STRI(s) HX_STRINGI(s,sizeof(s)/sizeof(char)-1)
 #define HX_CSTRING(x) HX_STRI(x)
 #define HX_CSTRING2(wide,len,utf8) HX_STRI(utf8)
-#define HX_FIELD_EQ(name,field) !::memcmp(name.__s, field, sizeof(field)/sizeof(char))
-// No null check is performed....
-#define HX_QSTR_EQ(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length))
+
+#ifdef HX_SMART_STRINGS
+  #define HX_FIELD_EQ(name,field) (name.isAsciiEncoded() && !::memcmp(name.__s, field, sizeof(field)/sizeof(char)))
+  // No null check is performed....
+  #define HX_QSTR_EQ(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length) && field.isAsciiEncodedQ())
+#else
+  #define HX_FIELD_EQ(name,field) !::memcmp(name.__s, field, sizeof(field)/sizeof(char))
+  // No null check is performed....
+  #define HX_QSTR_EQ(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length))
+#endif
 
 
 

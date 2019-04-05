@@ -208,12 +208,22 @@ static value process_run( value cmd, value vargs ) {
       argv[i+1] = NULL;
    }
    int input[2], output[2], error[2];
-   if( pipe(input) || pipe(output) || pipe(error) )
+   if( pipe(input) || pipe(output) || pipe(error) ) {
+      for(i=0;i<=(isRaw ? 2 : val_array_size(vargs));i++)
+         free(argv[i]);
+      free(argv);
+      free(p);
       return alloc_null();
+   }
    p = (vprocess*)malloc(sizeof(vprocess));
    p->pid = fork();
-   if( p->pid == -1 )
+   if( p->pid == -1 ) {
+      for(i=0;i<=(isRaw ? 2 : val_array_size(vargs));i++)
+         free(argv[i]);
+      free(argv);
+      free(p);
       return alloc_null();
+   }
    gc_enter_blocking();
    // child
    if( p->pid == 0 ) {

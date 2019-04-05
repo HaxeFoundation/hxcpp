@@ -20,7 +20,7 @@ static HaxeNativeIntefaceMap *sScriptRegisteredInterface = 0;
 
 // -- HaxeNativeClass ---
 
-HaxeNativeClass::HaxeNativeClass(const std::string &inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, ScriptFunction inConstruct)
+HaxeNativeClass::HaxeNativeClass(const std::string &inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, ScriptNamedFunction inConstruct)
 {
    name = inName;
    mDataOffset = inDataOffset;
@@ -55,7 +55,7 @@ void HaxeNativeClass::dump()
    }
 }
 
-ScriptFunction HaxeNativeClass::findFunction(const std::string &inName)
+ScriptNamedFunction HaxeNativeClass::findFunction(const std::string &inName)
 {
    if (functions)
       for(ScriptNamedFunction *f=functions;f->name;f++)
@@ -64,18 +64,18 @@ ScriptFunction HaxeNativeClass::findFunction(const std::string &inName)
    if (haxeSuper)
       return haxeSuper->findFunction(inName);
 
-   return ScriptFunction(0,0);
+   return ScriptNamedFunction(0,0,0,0,0);
 }
 
 
-ScriptFunction HaxeNativeClass::findStaticFunction(String inName)
+ScriptNamedFunction HaxeNativeClass::findStaticFunction(String inName)
 {
    if (functions)
       for(ScriptNamedFunction *f=functions;f->name;f++)
          if ( !strcmp(inName.__s,f->name) && f->isStatic)
             return *f;
 
-   return ScriptFunction(0,0);
+   return ScriptNamedFunction(0,0,0,0,0);
 }
 
 

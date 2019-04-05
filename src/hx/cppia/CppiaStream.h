@@ -186,13 +186,26 @@ struct CppiaStream
       return getBool();
    }
 
-   String readString()
+   String readString(std::string *outStdStdString=0)
    {
       int len = getAsciiInt();
       skipChar();
       const char *data0 = data;
+      int hasBig = false;
       for(int i=0;i<len;i++)
+      {
+         #ifdef HX_SMART_STRINGS
+         if ( *(unsigned char *)data > 127 )
+            hasBig = true;
+         #endif
          skipChar();
+      }
+      if (outStdStdString)
+         *outStdStdString = std::string(data0, data);
+      #ifdef HX_SMART_STRINGS
+      if (hasBig)
+         return String::makeConstChar16String(data0,data-data0);
+      #endif
       return String(data0,data-data0).dupConst();
    }
 

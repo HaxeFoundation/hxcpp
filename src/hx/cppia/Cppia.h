@@ -132,6 +132,7 @@ enum ArrayFunc
    af__crement,
    af__SetSizeExact,
    afBlit,
+   afResize,
 };
 
 
@@ -339,6 +340,8 @@ struct TypeData
    HaxeNativeInterface *interfaceBase;
    bool                linked;
    bool                isInterface;
+   bool                isDynamic;
+   bool                isFloat;
    ArrayType           arrayType;
 
    TypeData(String inData);
@@ -355,7 +358,7 @@ class CppiaModule
 {
 public:
    Array< String >                 strings;
-   std::vector< std::string >      cStrings;
+   //std::vector< std::string >      cStrings;
    std::vector< TypeData * >       types;
    std::vector< CppiaClassInfo * > classes;
    std::vector< CppiaExpr * >      markable;
@@ -506,8 +509,12 @@ struct CppiaVar
    CppiaExpr        *init;
 
    Dynamic          objVal;
-   int              intVal;
-   Float            floatVal;
+   union {
+      int              boolVal;
+      int              byteVal;
+      int              intVal;
+      Float            floatVal;
+   };
    String           stringVal;
 
    void             *valPointer;
@@ -564,17 +571,17 @@ class HaxeNativeClass
 public:
    std::string  name;
    hx::ScriptableClassFactory factory;
-   hx::ScriptFunction  construct;
+   hx::ScriptNamedFunction  construct;
    ScriptNamedFunction *functions;
    HaxeNativeClass *haxeSuper;
    int mDataOffset;
 
-   HaxeNativeClass(const std::string &inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, ScriptFunction inConstruct);
+   HaxeNativeClass(const std::string &inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, ScriptNamedFunction inConstruct);
 
    void addVtableEntries( std::vector<std::string> &outVtable);
    void dump();
-   ScriptFunction findFunction(const std::string &inName);
-   ScriptFunction findStaticFunction(String inName);
+   ScriptNamedFunction findFunction(const std::string &inName);
+   ScriptNamedFunction findStaticFunction(String inName);
 
    static HaxeNativeClass *findClass(const std::string &inName);
    static HaxeNativeClass *hxObject();

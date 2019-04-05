@@ -43,6 +43,7 @@ Defines affecting how the code is compiled.  These can be on the command line wh
 | *dll_link*              | Generate dynamic library |
 
 Other defines:
+
 | Define                  | Meaning            |
 |-------------------------|--------------------|
 | *HXCPP_VERBOSE*         | Print extra output from build tool. |

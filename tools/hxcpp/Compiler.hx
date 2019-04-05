@@ -215,20 +215,52 @@ class Compiler
       return args;
    }
 
-   public function createEmbedFile(srcName:String, destName:String, embedName:String)
+   public function createEmbedFile(srcName:String, destName:String, embedName:String, scramble:String)
    {
       try
       {
           var content = sys.io.File.getContent(srcName);
-          content = content.split("\r").join("");
-          content = content.split("\\").join( String.fromCharCode(1) );
-          content = content.split('"').join('\\"');
-          content = content.split(String.fromCharCode(1)).join("\\\\" );
-          var lines = content.split("\n");
-          var output = [ 'const char *$embedName = ' ];
-          for(line in lines)
-              output.push( '"$line\\n"' );
-          output.push(";\n");
+          var output = new Array<String>();
+
+          if (scramble==null)
+          {
+             output.push( 'const char *$embedName = ' );
+             content = content.split("\r").join("");
+             content = content.split("\\").join( String.fromCharCode(1) );
+             content = content.split('"').join('\\"');
+             content = content.split(String.fromCharCode(1)).join("\\\\" );
+             var lines = content.split("\n");
+             for(line in lines)
+                 output.push( '"$line\\n"' );
+             output.push(";\n");
+          }
+          else
+          {
+             var bytes = haxe.io.Bytes.ofString(content);
+             var byteLen = bytes.length;
+             var key = haxe.io.Bytes.ofString(scramble);
+             var keyLen = key.length;
+             var state = 0;
+             var line = "";
+
+             output.push( 'int ${embedName}_len = $byteLen;' );
+             output.push( 'static const unsigned char data[] = {' );
+             for(i in 0...byteLen)
+             {
+                var ch = bytes.get(i);
+                state = (((state + key.get(i%keyLen)) ^ ch) & 0xff);
+                line += state + ",";
+                if ( (i%10)==9 )
+                {
+                   output.push(line);
+                   line = "";
+                }
+             }
+             if (line!="")
+                output.push(line);
+             output.push( '};' );
+             output.push( 'const unsigned char * $embedName = data;' );
+          }
           sys.io.File.saveContent(destName, output.join("\n") );
       }
       catch(e:Dynamic)
@@ -298,7 +330,7 @@ class Compiler
             var srcDir =  Path.directory( inFile.mDir + "/" + inFile.mName);
             tmpFile = new Path( srcDir + "/" + inFile.mEmbedName + ".cpp").toString();
             Log.v("Creating temp file " + tmpFile);
-            createEmbedFile( inFile.mDir + "/" + inFile.mName, tmpFile, inFile.mEmbedName );
+            createEmbedFile( inFile.mDir + "/" + inFile.mName, tmpFile, inFile.mEmbedName, inFile.mScramble );
             args.push( tmpFile );
          }
          else

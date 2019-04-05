@@ -447,7 +447,7 @@ public:
 	{
 		return (double)clock()/CLOCKS_PER_SEC;
 	}
-	#elif defined(__unix__) || defined(__APPLE__)
+	#else
 	double Now()
 	{
 		struct timeval tv;

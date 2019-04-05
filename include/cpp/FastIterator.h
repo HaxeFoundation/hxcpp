@@ -70,6 +70,39 @@ FastIterator_obj<T> *CreateFastIterator(Dynamic inValue)
    return new DynamicIterator<T>(inValue);
 }
 
+template<typename T>
+class HXCPP_EXTERN_CLASS_ATTRIBUTES StringIterator : public cpp::FastIterator_obj<T>
+{
+public:
+   String value;
+   int    pos;
+
+   StringIterator(const String &inValue) : value(inValue), pos(0) { }
+
+   bool hasNext() { return pos<value.length; }
+   void __Mark(hx::MarkContext *__inCtx)
+   {
+      cpp::FastIterator_obj<T>::__Mark(__inCtx);
+      HX_MARK_MEMBER_NAME(value,"value");
+   }
+
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx)
+   {
+      cpp::FastIterator_obj<T>::__Visit(__inCtx);
+      HX_VISIT_MEMBER_NAME(value,"value");
+   }
+   #endif
+};
+
 }
+
+
+
+
+
+
+
+
 
 #endif

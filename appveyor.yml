@@ -22,6 +22,10 @@ install:
     - mkdir "%HAXELIB_ROOT%"
     - haxelib setup "%HAXELIB_ROOT%"
     - haxelib install record-macros
+    # tests from haxe repo
+    - git clone --recursive --depth 1 -q https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
+    - cd %HAXE_ROOT%\tests\unit
+    - haxelib install compile-cpp.hxml --always
 
 build_script:
     - haxelib dev hxcpp %APPVEYOR_BUILD_FOLDER%
@@ -36,6 +40,5 @@ test_script:
     - cd %APPVEYOR_BUILD_FOLDER%\test\haxe
     - haxe compile.hxml -debug -D HXCPP_M%HXCPP_ARCH% && .\bin\TestMain-debug
     # tests from haxe repo
-    - git clone --recursive --depth 1 -q https://github.com/HaxeFoundation/haxe.git %HAXE_ROOT%
     - cd %HAXE_ROOT%\tests\unit
     - haxe compile-cpp.hxml -D HXCPP_M%HXCPP_ARCH% && .\bin\cpp\TestMain-debug

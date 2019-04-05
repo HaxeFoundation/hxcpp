@@ -170,7 +170,7 @@ void ArrayBase::Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceEl
 
    int newSize = inDestElement + inElementCount;
    if (newSize>length)
-      __SetSize(newSize);
+      resize(newSize);
 
    const char *src = inSourceArray->mBase + inSourceElement*srcSize;
    char *dest = mBase + inDestElement*srcSize;
@@ -208,21 +208,6 @@ String ArrayBase::toString()
    }
 
    return HX_CSTRING("[") + __join(HX_CSTRING(",")) + HX_CSTRING("]");
-}
-
-void ArrayBase::__SetSize(int inSize)
-{
-   if (inSize<length)
-   {
-      int s = GetElementSize();
-      memset(mBase + inSize*s, 0, (length-inSize)*s);
-      length = inSize;
-   }
-   else if (inSize>length)
-   {
-      EnsureSize(inSize);
-      length = inSize;
-   }
 }
 
  
@@ -280,10 +265,10 @@ Dynamic ArrayBase::__unsafe_set(const Dynamic &i, const Dynamic &val)
 void ArrayBase::Insert(int inPos)
 {
    if (inPos>=length)
-      __SetSize(length+1);
+      resize(length+1);
    else
    {
-      __SetSize(length+1);
+      resize(length+1);
       int s = GetElementSize();
       memmove(mBase + inPos*s + s, mBase+inPos*s, (length-inPos-1)*s );
    }
@@ -309,13 +294,13 @@ void ArrayBase::Splice(ArrayBase *outResult,int inPos,int inLen)
    int s = GetElementSize();
    if (outResult)
    {
-      outResult->__SetSize(inLen);
+      outResult->resize(inLen);
       memcpy(outResult->mBase, mBase+inPos*s, s*inLen);
       // todo - only needed if we have dirty pointer elements
       HX_OBJ_WB_PESSIMISTIC_GET(outResult);
    }
    memmove(mBase+inPos*s, mBase + (inPos+inLen)*s, (length-(inPos+inLen))*s);
-   __SetSize(length-inLen);
+   resize(length-inLen);
 }
 
 void ArrayBase::Slice(ArrayBase *outResult,int inPos,int inEnd)
@@ -332,10 +317,10 @@ void ArrayBase::Slice(ArrayBase *outResult,int inPos,int inEnd)
       inEnd = length;
    int n = inEnd - inPos;
    if (n<=0)
-      outResult->__SetSize(0);
+      outResult->resize(0);
    else
    {
-      outResult->__SetSize(n);
+      outResult->resize(n);
       int s = GetElementSize();
       memcpy(outResult->mBase, mBase+inPos*s, n*s);
       // todo - only needed if we have dirty pointer elements
@@ -349,7 +334,7 @@ void ArrayBase::RemoveElement(int inPos)
    {
       int s = GetElementSize();
       memmove(mBase + inPos*s, mBase+inPos*s + s, (length-inPos-1)*s );
-      __SetSize(length-1);
+      resize(length-1);
    }
 
 }
@@ -372,39 +357,98 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
       return HX_CSTRING("");
 
    int len = 0;
+   bool isWChar = false;
    for(int i=0;i<length;i++)
    {
       String strI = inArray->__unsafe_get(i);
-      len += strI.__s ? strI.length : 4;
-   }
-   len += (length-1) * inSeparator.length;
-
-   HX_CHAR *buf = hx::NewString(len);
-
-   int pos = 0;
-   bool separated = inSeparator.length>0;
-   for(int i=0;i<length;i++)
-   {
-      String strI = inArray->__unsafe_get(i);
-      if (!strI.__s)
+      if (strI.__s)
       {
-         memcpy(buf+pos,"null",4);
-         pos+=4;
+         len += strI.length;
+         #ifdef HX_SMART_STRINGS
+         if ( ((unsigned int *)strI.__w)[-1] & HX_GC_STRING_CHAR16_T)
+            isWChar = true;
+         #endif
       }
       else
-      {
-         memcpy(buf+pos,strI.__s,strI.length*sizeof(HX_CHAR));
-         pos += strI.length;
-      }
-      if (separated && (i+1<length) )
-      {
-         memcpy(buf+pos,inSeparator.__s,inSeparator.length*sizeof(HX_CHAR));
-         pos += inSeparator.length;
-      }
+         len += 4;
    }
-   buf[len] = '\0';
 
-   return String(buf,len);
+   len += (length-1) * inSeparator.length;
+   #ifdef HX_SMART_STRINGS
+   bool sepIsWide = inSeparator.isUTF16Encoded();
+   if (isWChar || sepIsWide)
+   {
+      char16_t *buf = String::allocChar16Ptr(len);
+      int pos = 0;
+      bool separated = inSeparator.length>0;
+
+      for(int i=0;i<length;i++)
+      {
+         String strI = inArray->__unsafe_get(i);
+         if (!strI.__s)
+         {
+            memcpy(buf+pos,u"null",8);
+            pos+=4;
+         }
+         else if (strI.isUTF16Encoded())
+         {
+            memcpy(buf+pos,strI.__w,strI.length*sizeof(char16_t));
+            pos += strI.length;
+         }
+         else
+         {
+            for(int c=0;c<strI.length;c++)
+               buf[pos++] = strI.__s[c];
+         }
+
+         if (separated && (i+1<length) )
+         {
+            if (sepIsWide)
+            {
+               memcpy(buf+pos,inSeparator.__w,inSeparator.length*sizeof(char16_t));
+               pos += inSeparator.length;
+            }
+            else
+            {
+               for(int c=0;c<inSeparator.length;c++)
+                  buf[pos++] = inSeparator.__s[c];
+            }
+         }
+      }
+      buf[len] = '\0';
+
+      return String(buf,len,true);
+   }
+   else
+   #endif
+   {
+      char *buf = hx::NewString(len);
+
+      int pos = 0;
+      bool separated = inSeparator.length>0;
+      for(int i=0;i<length;i++)
+      {
+         String strI = inArray->__unsafe_get(i);
+         if (!strI.__s)
+         {
+            memcpy(buf+pos,"null",4);
+            pos+=4;
+         }
+         else
+         {
+            memcpy(buf+pos,strI.__s,strI.length*sizeof(char));
+            pos += strI.length;
+         }
+         if (separated && (i+1<length) )
+         {
+            memcpy(buf+pos,inSeparator.__s,inSeparator.length*sizeof(char));
+            pos += inSeparator.length;
+         }
+      }
+      buf[len] = '\0';
+
+      return String(buf,len);
+   }
 }
 
 
@@ -538,6 +582,7 @@ DEFINE_ARRAY_FUNC1(,sort);
 DEFINE_ARRAY_FUNC1(,unshift);
 DEFINE_ARRAY_FUNC4(,blit);
 DEFINE_ARRAY_FUNC2(,zero);
+DEFINE_ARRAY_FUNC1(,resize);
 #else
 DEFINE_ARRAY_FUNC1(return,__SetSize);
 DEFINE_ARRAY_FUNC1(return,__SetSizeExact);
@@ -547,6 +592,7 @@ DEFINE_ARRAY_FUNC1(return,sort);
 DEFINE_ARRAY_FUNC1(return,unshift);
 DEFINE_ARRAY_FUNC4(return,blit);
 DEFINE_ARRAY_FUNC2(return,zero);
+DEFINE_ARRAY_FUNC1(return,resize);
 #endif
 
 DEFINE_ARRAY_FUNC1(return,concat);
@@ -605,6 +651,7 @@ hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp
    if (inString==HX_CSTRING("_hx_storeType")) return (int)getStoreType();
    if (inString==HX_CSTRING("_hx_elementSize")) return (int)GetElementSize();
    if (inString==HX_CSTRING("_hx_pointer")) return cpp::CreateDynamicPointer((void *)mBase);
+   if (inString==HX_CSTRING("resize")) return resize_dyn();
    return null();
 }
 
@@ -631,6 +678,7 @@ static String sArrayFields[] = {
    HX_CSTRING("unshift"),
    HX_CSTRING("filter"),
    HX_CSTRING("map"),
+   HX_CSTRING("resize"),
    String(null())
 };
 
@@ -656,6 +704,12 @@ void ArrayBase::__boot()
                                     ArrayCreateEmpty,ArrayCreateArgs,0,0);
 }
 
+
+
+bool DynamicEq(const Dynamic &a, const Dynamic &b)
+{
+   return hx::IsEq(a,b);
+}
 
 
 
@@ -753,6 +807,7 @@ DEFINE_VARRAY_FUNC1(,memcmp);
 DEFINE_VARRAY_FUNC1(return,__unsafe_get);
 DEFINE_VARRAY_FUNC2(return,__unsafe_set);
 DEFINE_VARRAY_FUNC4(,blit);
+DEFINE_VARRAY_FUNC1(,resize);
 
 
 
@@ -823,6 +878,7 @@ hx::Val VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inC
    if (inString==HX_CSTRING("blit")) return blit_dyn();
    if (inString==HX_CSTRING("zero")) return zero_dyn();
    if (inString==HX_CSTRING("memcmp")) return memcmp_dyn();
+   if (inString==HX_CSTRING("resize")) return resize_dyn();
 
    if (inString==HX_CSTRING("_hx_storeType"))
    {

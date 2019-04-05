@@ -44,7 +44,8 @@ namespace cpp
 
 
 
-      inline bool isNull() const { return type==typeObject && !valObject; }
+      inline bool isNull() const {
+          return (type==typeObject && !valObject) || (type==typeString && !valStringPtr); }
       inline bool isNumeric() const;
       inline bool isBool() const;
       inline int asInt() const;
@@ -92,6 +93,8 @@ namespace cpp
       explicit inline Variant(const cpp::Pointer<T> &inRHS) ;
       template<typename T>
       explicit inline Variant(const cpp::Function<T> &inRHS) ;
+      template<typename T>
+      explicit inline Variant(const hx::Native<T> &inRHS) ;
 
       //inline operator Dynamic() const; // later
       //inline operator String() const;
@@ -263,12 +266,21 @@ namespace cpp
    Variant::Variant(const cpp::Pointer<T> &inRHS) : type(typeObject), valObject( Dynamic(inRHS).mPtr ) { }
    template<typename T>
    Variant::Variant(const cpp::Function<T> &inRHS) : type(typeObject), valObject( Dynamic(inRHS).mPtr ) { }
+   template<typename T>
+   Variant::Variant(const hx::Native<T> &inRHS) : type(typeObject), valObject( CreateDynamicPointer(inRHS.ptr).mPtr ) { }
 
 
 #define HX_ARITH_VARIANT( op ) \
    inline double operator op (const double &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS;} \
    inline double operator op (const float &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS;} \
    inline double operator op (const int &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const unsigned int &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const signed char &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const unsigned char &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const signed short &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const unsigned short &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const cpp::Int64 &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS; } \
+   inline double operator op (const cpp::UInt64 &inLHS,const cpp::Variant &inRHS) { return inLHS op (double)inRHS; } \
 
    HX_ARITH_VARIANT( - )
    HX_ARITH_VARIANT( + )
@@ -307,7 +319,7 @@ namespace cpp
       if (isNull())  Dynamic::ThrowBadFunctionError();
    }
 
-   HX_IMPLEMNET_INLINE_VARIANT_FUNCTIONS
+   HX_IMPLEMENT_INLINE_VARIANT_FUNCTIONS
 
 
    int Variant::asInt() const
@@ -644,11 +656,17 @@ namespace hx {
    bool ObjectPtr<T>::operator!=(const cpp::Variant &inRHS) const {
        return inRHS.Compare(mPtr)!=0;
    }
+
 } // close hx
 namespace cpp {
 
 #endif // not twice
 
+
+
 } // end namespace cpp
+
+
+
 
 #endif // CPP_VARIANT_TWICE_H

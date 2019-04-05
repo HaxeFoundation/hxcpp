@@ -90,10 +90,13 @@ static void file_error(const char *msg, String inName)
 **/
 Dynamic _hx_std_file_open( String fname, String r )
 {
-   hx::EnterGCFreeZone();
 #ifdef NEKO_WINDOWS
-   FILE *file = _wfopen(fname.__WCStr(),r.__WCStr());
+   const wchar_t * wfname = fname.__WCStr();
+   const wchar_t * wr = r.__WCStr();
+   hx::EnterGCFreeZone();
+   FILE *file = _wfopen(wfname,wr);
 #else
+   hx::EnterGCFreeZone();
    FILE *file = fopen(fname.__s,r.__s);
 #endif
    if (!file)
@@ -297,10 +300,12 @@ String _hx_std_file_contents_string( String name )
 {
    std::vector<char> buffer;
 
-   hx::EnterGCFreeZone();
 #ifdef NEKO_WINDOWS
-   FILE *file = _wfopen(name.__WCStr(), L"rb");
+   const wchar_t * wname = name.__WCStr();
+   hx::EnterGCFreeZone();
+   FILE *file = _wfopen(wname, L"rb");
 #else
+   hx::EnterGCFreeZone();
    FILE *file = fopen(name.__s, "rb");
 #endif
    if(!file)
@@ -341,10 +346,12 @@ String _hx_std_file_contents_string( String name )
 Array<unsigned char> _hx_std_file_contents_bytes( String name )
 {
 
-   hx::EnterGCFreeZone();
 #ifdef NEKO_WINDOWS
-   FILE *file = _wfopen(name.__WCStr(), L"rb");
+   const wchar_t * wname = name.__WCStr();
+   hx::EnterGCFreeZone();
+   FILE *file = _wfopen(wname, L"rb");
 #else
+   hx::EnterGCFreeZone();
    FILE *file = fopen(name.__s, "rb");
 #endif
    if(!file)
@@ -405,7 +412,7 @@ Dynamic _hx_std_file_stdout()
 Dynamic _hx_std_file_stderr()
 {
    fio *f = new fio();
-   f->create(stdout, HX_CSTRING("stderr"), false);
+   f->create(stderr, HX_CSTRING("stderr"), false);
    return f;
 }
 

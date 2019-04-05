@@ -1,4 +1,38 @@
 
+
+* Throw exceptions according to the spec when casting
+* Introduce hxcpp_smart_strings for unicode text
+
+4.0.4
+------------------------------------------------------------
+* Compile Cppia against haxe 4.0 preview 4
+
+4.0.2
+------------------------------------------------------------
+* Default Cppia to 64 bits on windows
+
+4.0.1
+------------------------------------------------------------
+* More logic for determining the android NDK version
+* Updated various opensource libraries (thanks robocoder)
+* Updated version of zlib
+* Updated version of sljit
+* Updated version of pcre
+* Updated version of sqlit3
+* Updated version of mbedtls
+* Some work on supporting utf16 strings (hx_smart_strings)
+* Added process_kill
+* Change root when calculating haxelib in build.xml files
+* Fix cppia super calls across cpp boundary
+* Add Array.resize
+* Be consistent with mod in cppia
+* Fix Sys.stderr
+* Add 'embedName' file attribute to allow text to cpp conversion
+* Updates for Msvc
+* Updates for Xcode
+
+3.4.188
+------------------------------------------------------------
 * Fix some threading crashes
 
 3.4.185

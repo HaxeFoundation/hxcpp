@@ -7,6 +7,11 @@ class ClientOne implements pack.HostInterface
 
 class Client
 {
+   public static var clientBool0 = true;
+   public static var clientBool1 = false;
+   public static var clientBool2 = true;
+   public static var clientBool3 = false;
+
    public static function main()
    {
       Common.status = "running";
@@ -37,6 +42,12 @@ class Client
          Common.status = "Bad class override - got " + c.whoOverridesYou();
          return;
       }
+      if (!c.testPointers())
+      {
+         Common.status = "Could not move native pointers";
+         return;
+      }
+
       var hostInterface:IHostInterface = c;
       if (hostInterface.whoStartedYou()!="HostBase")
       {
@@ -97,6 +108,20 @@ class Client
          return;
       }
 
+      var c:ClientExtends = new ClientExtends2();
+      if (c.getGeneration()!=2)
+      {
+         Common.status = "Error calling cppia super function";
+         return;
+      }
+
+      var hostBools = HostBase.hostBool0 + "/" + HostBase.hostBool1+ "/" + HostBase.hostBool2+ "/" + HostBase.hostBool3;
+      var clientBools = clientBool0 + "/" + clientBool1+ "/" + clientBool2+ "/" + clientBool3;
+      if (hostBools!=clientBools)
+      {
+         Common.status = "Error in bool representation:" + hostBools + "!=" + clientBools;
+         return;
+      }
 
       Common.clientImplementation = new ClientOne();
       Common.status = "ok";

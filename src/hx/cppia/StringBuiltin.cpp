@@ -79,6 +79,45 @@ struct SubStrExpr : public StringExpr
 };
 
 
+
+template<bool KEYS>
+struct StringIteratorExpr : public StringExpr
+{
+   StringIteratorExpr(CppiaExpr *inSrc, CppiaExpr *inThis) : StringExpr(inSrc,inThis)
+   {
+   }
+   const char *getName() { return "StringIteratorExpr"; }
+
+   ExprType getType() { return etObject; }
+
+   String runString(CppiaCtx *ctx) { return Dynamic(runObject(ctx)); }
+   int runInt(CppiaCtx *ctx) { return 0; }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      String val = strVal->runString(ctx);
+      BCR_CHECK;
+      return ( KEYS ? val.keyValueIterator() : val.iterator() ).mPtr;
+   }
+
+   #ifdef CPPIA_JIT
+   static hx::Object *SLJIT_CALL run(String *inValue)
+   {
+      return ( KEYS ? inValue->keyValueIterator() : inValue->iterator() ).mPtr;
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp value(compiler,jtString);
+      strVal->genCode(compiler, value, etString);
+      compiler->callNative( (void *)run, value);
+      compiler->convertReturnReg(etObject, inDest, destType);
+   }
+   #endif
+};
+
+
+
+
 template<bool UPPER>
 struct ToCaseExpr : public StringExpr
 {
@@ -154,7 +193,7 @@ struct CharAtExpr : public StringExpr
       BCR_CHECK;
 
       if (AS_INT)
-         return (int)( ((unsigned char *)val.__s) [idx]);
+         return (int)val.cca(idx);
       else
          return val.charCodeAt(idx);
    }
@@ -168,7 +207,7 @@ struct CharAtExpr : public StringExpr
       if (CODE)
       {
          if (AS_INT)
-            return Dynamic( (int)( ((unsigned char *)val.__s) [idx]) ).mPtr;
+            return Dynamic( val.cca(idx) ).mPtr;
          else
             return val.charCodeAt(idx).mPtr;
       }
@@ -180,6 +219,10 @@ struct CharAtExpr : public StringExpr
    static hx::Object *SLJIT_CALL runCharCodeAt(String *inValue, int inIndex)
    {
       return (inValue->charCodeAt(inIndex)).mPtr;
+   }
+   static int SLJIT_CALL runCca(String *inValue, int inIndex)
+   {
+      return (inValue->cca(inIndex));
    }
    static void SLJIT_CALL runCharAt(String *ioValue, int inIndex)
    {
@@ -196,6 +239,10 @@ struct CharAtExpr : public StringExpr
       {
          if (AS_INT)
          {
+            #ifdef HX_SMART_STRINGS
+            compiler->callNative( (void *)runCca, value, sJitTemp1.as(jtInt));
+            compiler->convertReturnReg( etInt, inDest, destType);
+            #else
             // sJitTemp1 = __s
             compiler->move( sJitTemp0.as(jtPointer), value.star(jtPointer,offsetof(String,__s)) );
             if (destType==etInt)
@@ -207,6 +254,7 @@ struct CharAtExpr : public StringExpr
                compiler->move(sJitTemp0.as(jtInt), sJitTemp0.atReg(sJitTemp1,0,jtByte) );
                compiler->convertReturnReg(etInt, inDest, destType);
             }
+            #endif
          }
          else
          {
@@ -299,6 +347,10 @@ struct IndexOfExpr : public CppiaExpr
       start = start->link(inData);
       return this;
    }
+   Float runFloat(CppiaCtx *ctx)
+   {
+      return runInt(ctx);
+   }
    int runInt(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
@@ -371,6 +423,16 @@ CppiaExpr *createStringBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, String f
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
       return new CharAtExpr<true,true>(inSrc,inThisExpr,ioExpressions[0]);
+   }
+   else if (field==HX_CSTRING("iterator"))
+   {
+      if (ioExpressions.size()!=0) throw "Bad arg count";
+      return new StringIteratorExpr<false>(inSrc,inThisExpr);
+   }
+   else if (field==HX_CSTRING("keyValueIterator"))
+   {
+      if (ioExpressions.size()!=0) throw "Bad arg count";
+      return new StringIteratorExpr<true>(inSrc,inThisExpr);
    }
    else if (field==HX_CSTRING("charCodeAt"))
    {

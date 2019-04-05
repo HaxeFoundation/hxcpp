@@ -283,10 +283,12 @@ int _hx_std_sys_command( String cmd )
    if( !cmd.__s || !cmd.length )
       return -1;
 
-   hx::EnterGCFreeZone();
 #ifdef NEKO_WINDOWS
-   int result = _wsystem(cmd.__WCStr());
+   const wchar_t * wcmd = cmd.__WCStr();
+   hx::EnterGCFreeZone();
+   int result = _wsystem(wcmd);
 #else
+   hx::EnterGCFreeZone();
    int result = system(cmd.__s);
 #endif
    hx::ExitGCFreeZone();
@@ -319,11 +321,13 @@ bool _hx_std_sys_exists( String path )
    return true;
    #else
    
-   hx::EnterGCFreeZone();
 #ifdef NEKO_WINDOWS
-   bool result = GetFileAttributesW(path.__WCStr()) != INVALID_FILE_ATTRIBUTES;
+   const wchar_t * wpath = path.__WCStr();
+   hx::EnterGCFreeZone();
+   bool result = GetFileAttributesW(wpath) != INVALID_FILE_ATTRIBUTES;
 #else
    struct stat st;
+   hx::EnterGCFreeZone();
    bool result = stat(path.__s,&st) == 0;
 #endif
    hx::ExitGCFreeZone();
@@ -466,10 +470,12 @@ bool _hx_std_sys_create_dir( String path, int mode )
    #ifdef EPPC
    return true;
    #else
-   hx::EnterGCFreeZone();
 #ifdef NEKO_WINDOWS
-   bool err = _wmkdir(path.__WCStr());
+   const wchar_t * wpath = path.__WCStr();
+   hx::EnterGCFreeZone();
+   bool err = _wmkdir(wpath);
 #else
+   hx::EnterGCFreeZone();
    bool err = mkdir(path.__s,mode);
 #endif
    hx::ExitGCFreeZone();

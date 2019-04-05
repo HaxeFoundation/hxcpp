@@ -63,7 +63,6 @@ void CppiaVar::clear()
    type = 0;
    objVal.mPtr = 0;
    intVal = 0;
-   floatVal = 0;
    stringVal = String();
    valPointer = 0;
    storeType = fsUnknown;
@@ -101,8 +100,8 @@ void CppiaVar::linkVarTypes(CppiaModule &cppia)
 
       switch(storeType)
       {
-         case fsBool:
-         case fsByte:
+         case fsBool: valPointer = &boolVal;  break;
+         case fsByte: valPointer = &byteVal;  break;
          case fsInt: valPointer = &intVal;  break;
          case fsFloat: valPointer = &floatVal; break;
          case fsString: valPointer = &stringVal; break;
@@ -125,9 +124,8 @@ Dynamic CppiaVar::getStaticValue()
    switch(storeType)
    {
       case fsByte: return *(unsigned char *)(valPointer);
-      case fsBool:
-      case fsInt: 
-                   return *(int *)(valPointer);
+      case fsBool: return *(bool *)(valPointer);
+      case fsInt: return *(int *)(valPointer);
       case fsFloat: return *(Float *)(valPointer);
       case fsString: return *(String *)(valPointer);
       case fsObject: return *(hx::Object **)(valPointer);
@@ -143,7 +141,7 @@ Dynamic CppiaVar::setStaticValue(Dynamic inValue)
    switch(storeType)
    {
       case fsByte: *(unsigned char *)(valPointer) = inValue; return inValue;
-      case fsBool: 
+      case fsBool: *(bool *)(valPointer) = inValue; return inValue;
       case fsInt: *(int *)(valPointer) = inValue; return inValue;
       case fsFloat: *(Float *)(valPointer) = inValue; return inValue;
       case fsString: *(String *)(valPointer) = inValue; return inValue;
@@ -302,8 +300,8 @@ void CppiaVar::runInit(CppiaCtx *ctx)
       else if (init)
          switch(storeType)
          {
-            case fsBool:
-            case fsByte:
+            case fsBool: boolVal = init->runInt(ctx); break;
+            case fsByte: byteVal = init->runInt(ctx); break;
             case fsInt: intVal = init->runInt(ctx); break;
             case fsFloat: floatVal = init->runFloat(ctx); break;
             case fsString: stringVal = init->runString(ctx); break;
@@ -394,10 +392,10 @@ void CppiaStackVar::setInFrame(unsigned char *inFrame,Dynamic inValue)
    switch(storeType)
    {
       case fsByte:
-         *(unsigned char *)(ptr) = (int)inValue;
+         *(int *)(ptr) = (unsigned char)inValue;
          break;
       case fsBool:
-         *(bool *)(ptr) = inValue;
+         *(int *)(ptr) = (bool)inValue;
          break;
       case fsInt:
          *(int *)(ptr) = inValue;
@@ -427,8 +425,8 @@ Dynamic CppiaStackVar::getInFrame(const unsigned char *inFrame)
    const unsigned char *ptr = inFrame + stackPos;
    switch(storeType)
    {
-      case fsByte: return *(unsigned char *)ptr;
-      case fsBool: return *(bool *)ptr;
+      case fsByte: return (unsigned char) *(int *)ptr;
+      case fsBool: return (bool) *(int *)ptr;
       case fsInt: return *(int *)ptr;
       case fsFloat: return *(Float *)ptr;
       case fsString: return *(String *)ptr;
@@ -473,11 +471,19 @@ void CppiaStackVar::link(CppiaModule &inModule, bool hasDefault)
    expressionType = inModule.types[typeId]->expressionType;
    argType = hasDefault ? ( expressionType==etString ? etString : etObject) : expressionType;
    storeType = typeId==0 ? fsObject : fieldStorageFromType(inModule.types[typeId]);
-   inModule.layout->varMap[id] = this;
-   stackPos = inModule.layout->size;
-   defaultStackPos =stackPos;
-   inModule.layout->size += sTypeSize[argType];
+   if (inModule.layout)
+   {
+      inModule.layout->varMap[id] = this;
+      stackPos = inModule.layout->size;
+      inModule.layout->size += sTypeSize[argType];
+   }
+   else
+   {
+      stackPos = -1;
+      storeType = fsUnknown;
+   }
    type = inModule.types[typeId];
+   defaultStackPos =stackPos;
    module = &inModule;
 }
 
@@ -515,8 +521,8 @@ void CppiaStackVar::setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault)
          unsigned char *ptr = inCxt->frame + stackPos;
          switch(storeType)
          {
-            case fsByte: *(unsigned char *)ptr = inDefault.ival; break;
-            case fsBool: *(bool *)ptr = inDefault.ival; break;
+            case fsByte: *(int *)ptr = (unsigned char)inDefault.ival; break;
+            case fsBool: *(int *)ptr = (bool)inDefault.ival; break;
             case fsInt: *(int *)ptr =
                  inDefault.type==CppiaConst::cInt ? inDefault.ival :
                                                     inDefault.dval;
@@ -595,8 +601,11 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
       switch(storeType)
       {
          case fsByte:
+            compiler->move( destPos.as(jtByte), JitVal((int)(unsigned char)inDefault.ival));
+            break;
+
          case fsBool: 
-            compiler->move( destPos.as(jtByte), JitVal(inDefault.ival).as(jtByte));
+            compiler->move( destPos.as(jtByte), JitVal((int)(bool)inDefault.ival));
             break;
 
          case fsInt:
@@ -629,10 +638,11 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
       {
          case fsByte:
          case fsBool: 
-            compiler->callNative( (void *)objToInt, sJitTemp0.as(jtPointer) );
+            //Fallthough...
+            //compiler->callNative( (void *)objToInt, sJitTemp0.as(jtPointer) );
             //compiler->move( destPos.as(jtByte), sJitReturnReg.as(jtByte));
-            compiler->move( destPos.as(jtInt), sJitReturnReg.as(jtInt));
-            break;
+            //compiler->move( destPos.as(jtInt), sJitReturnReg.as(jtInt));
+            //break;
 
          case fsInt:
             compiler->callNative( (void *)objToInt, sJitTemp0.as(jtPointer) );
