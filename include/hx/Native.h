@@ -6,6 +6,8 @@
 
 */
 
+#include <stdio.h>
+
 #ifndef HXCPP_H
 #define HXCPP_H
 typedef double Float;
