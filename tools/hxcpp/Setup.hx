@@ -96,7 +96,7 @@ class Setup
 
       var dir = inDirName.split("\\").join("/");
       Log.v('Try to get version from directory name "$dir"');
-      var extract_version = ~/\/(android-ndk-)?r(\d+)([a-z]?)$/;
+      var extract_version = ~/\/?(android-ndk-)?r(\d+)([a-z]?)$/;
       if (extract_version.match(dir))
       {
          var major:Int = Std.parseInt( extract_version.matched(2) );
