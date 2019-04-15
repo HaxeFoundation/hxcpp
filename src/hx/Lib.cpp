@@ -100,11 +100,7 @@ void hxFreeLibrary(Module inModule) { dlclose(inModule); }
 
 #endif
 
-#ifdef HX_UTF8_STRINGS
 typedef std::map<std::string,Module> LoadedModule;
-#else
-typedef std::map<std::wstring,Module> LoadedModule;
-#endif
 
 static LoadedModule sgLoadedModule;
 typedef std::vector<Module> ModuleList;

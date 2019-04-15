@@ -671,17 +671,10 @@ Dynamic __hxcpp_parse_int(const String &inString)
    bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
    HX_CHAR *end = 0;
 
-   #ifdef HX_UTF8_STRINGS
    if (hex)
       result = (long)strtoul(str+2,&end,16);
    else
       result = strtol(str,&end,10);
-   #else
-   if (hex)
-      result = (long)wcstoul(str+2,&end,16);
-   else
-      result = wcstol(str,&end,10);
-   #endif
    if (str==end)
       return null();
    return (int)result;
@@ -691,11 +684,7 @@ double __hxcpp_parse_float(const String &inString)
 {
    const HX_CHAR *str = inString.__s;
    HX_CHAR *end = (HX_CHAR *)str;
-   #ifdef HX_UTF8_STRINGS
    double result = str ? strtod(str,&end) : 0;
-   #else
-   double result =  str ? wcstod(str,&end) : 0;
-   #endif
 
    if (end==str)
       return Math_obj::NaN;
