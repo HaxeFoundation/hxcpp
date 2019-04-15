@@ -30,6 +30,7 @@ typedef int64_t __int64;
 #include <map>
 #include <stdio.h>
 #include <time.h>
+#include <clocale>
 
 
 #ifdef HX_ANDROID
@@ -249,18 +250,37 @@ void __hxcpp_stdlibs_boot()
          }
       }
    }
-   //setlocale(LC_ALL, "");
    //_setmode(_fileno(stdout), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
    #endif
-   
+
+   // This is necessary for UTF-8 output to work correctly.
+   setlocale(LC_ALL, "");
+
    // I think this does more harm than good.
    //  It does not cause fread to return immediately - as perhaps desired.
    //  But it does cause some new-line characters to be lost.
    //setbuf(stdin, 0);
    setbuf(stdout, 0);
    setbuf(stderr, 0);
+}
+
+wchar_t *__hxcpp_utf16_to_wchar(const char16_t *str, int u16length)
+{
+#if __SIZEOF_WCHAR_T__ == 2
+   // 16-bit wchar_t (e.g. Windows), no need to convert.
+   return str;
+#else
+   // 32-bit wchar_t (e.g. Linux, OS X), convert into a temporary buffer.
+   wchar_t *converted = (wchar_t *)malloc(sizeof(wchar_t) * (u16length + 1));
+   for (int i = 0; i < u16length; i++)
+   {
+      converted[i] = str[i];
+   }
+   converted[u16length] = 0;
+   return converted;
+#endif
 }
 
 void __trace(Dynamic inObj, Dynamic info)
@@ -280,13 +300,17 @@ void __trace(Dynamic inObj, Dynamic info)
       __android_log_print(ANDROID_LOG_INFO, "trace","%s",message );
    #elif defined(WEBOS)
       syslog(LOG_INFO, "%s", message );
-   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+   #elif defined(HX_SMART_STRINGS)
       if (text.isUTF16Encoded())
-         printf("%S\n", (wchar_t *)text.__w );
+      {
+         wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
+         printf("%S\n", converted);
+         if (converted != test.__w) free(converted);
+      }
       else
          printf("%s\n", message);
    #else
-      printf("%s\n", message );
+      printf("%s\n", message);
    #endif
 
    }
@@ -304,13 +328,17 @@ void __trace(Dynamic inObj, Dynamic info)
       __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",filename, line, message );
    #elif defined(WEBOS)
       syslog(LOG_INFO, "%s:%d: %s", filename, line, message );
-   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+   #elif defined(HX_SMART_STRINGS)
       if (text.isUTF16Encoded())
-         printf("%s:%d: %S\n",filename, line, (wchar_t *)text.__w );
+      {
+         wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
+         printf("%s:%d: %S\n",filename, line, converted);
+         if (converted != test.__w) free(converted);
+      }
       else
          printf("%s:%d: %s\n",filename, line, message);
    #else
-      printf("%s:%d: %s\n",filename, line, message );
+      printf("%s:%d: %s\n",filename, line, message);
    #endif
    }
 
