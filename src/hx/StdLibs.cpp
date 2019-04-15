@@ -270,7 +270,7 @@ wchar_t *__hxcpp_utf16_to_wchar(const char16_t *str, int u16length)
 {
 #if __SIZEOF_WCHAR_T__ == 2
    // 16-bit wchar_t (e.g. Windows), no need to convert.
-   return str;
+   return (wchar_t *)str;
 #else
    // 32-bit wchar_t (e.g. Linux, OS X), convert into a temporary buffer.
    wchar_t *converted = (wchar_t *)malloc(sizeof(wchar_t) * (u16length + 1));
@@ -305,7 +305,7 @@ void __trace(Dynamic inObj, Dynamic info)
       {
          wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
          printf("%S\n", converted);
-         if (converted != test.__w) free(converted);
+         if (converted != (wchar_t *)text.__w) free(converted);
       }
       else
          printf("%s\n", message);
@@ -333,7 +333,7 @@ void __trace(Dynamic inObj, Dynamic info)
       {
          wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
          printf("%s:%d: %S\n",filename, line, converted);
-         if (converted != test.__w) free(converted);
+         if (converted != (wchar_t *)text.__w) free(converted);
       }
       else
          printf("%s:%d: %s\n",filename, line, message);
