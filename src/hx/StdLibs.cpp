@@ -38,6 +38,18 @@ typedef int64_t __int64;
 #define srand(x) srand48(x)
 #endif
 
+#ifdef HX_WINRT
+#define PRINTF WINRT_PRINTF
+#elif defined(TIZEN)
+#define PRINTF(fmt, ...) dlog_dprint(DLOG_INFO, "trace", fmt, __VA_ARGS__);
+#elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+#define PRINTF(fmt, ...) __android_log_print(ANDROID_LOG_INFO, "trace", fmt, __VA_ARGS__);
+#elif defined(WEBOS)
+#define PRINTF(fmt, ...) syslog(LOG_INFO, "trace", fmt, __VA_ARGS__);
+#else
+#define PRINTF printf
+#endif
+
 void __hx_stack_set_last_exception();
 void __hx_stack_push_last_exception();
 
@@ -292,27 +304,16 @@ void __trace(Dynamic inObj, Dynamic info)
 
    if (info==null())
    {
-   #ifdef HX_WINRT
-      WINRT_PRINTF("%s\n", message );
-   #elif defined(TIZEN)
-      dlog_dprint(DLOG_INFO, "trace","%s\n", message );
-   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-      __android_log_print(ANDROID_LOG_INFO, "trace","%s",message );
-   #elif defined(WEBOS)
-      syslog(LOG_INFO, "%s", message );
-   #elif defined(HX_SMART_STRINGS)
+   #if defined(HX_SMART_STRINGS)
       if (text.isUTF16Encoded())
       {
          wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
-         printf("%S\n", converted);
+         PRINTF("%S\n", converted);
          if (converted != (wchar_t *)text.__w) free(converted);
       }
       else
-         printf("%s\n", message);
-   #else
-      printf("%s\n", message);
    #endif
-
+      PRINTF("%s\n", message);
    }
    else
    {
@@ -320,26 +321,16 @@ void __trace(Dynamic inObj, Dynamic info)
       const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s;
       int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
 
-   #ifdef HX_WINRT
-      WINRT_PRINTF("%s:%d: %s\n", filename, line, message );
-   #elif defined(TIZEN)
-      AppLogInternal(filename, line, "%s\n", message );
-   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-      __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",filename, line, message );
-   #elif defined(WEBOS)
-      syslog(LOG_INFO, "%s:%d: %s", filename, line, message );
-   #elif defined(HX_SMART_STRINGS)
+   #if defined(HX_SMART_STRINGS)
       if (text.isUTF16Encoded())
       {
          wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
-         printf("%s:%d: %S\n",filename, line, converted);
+         PRINTF("%s:%d: %S\n", filename, line, converted);
          if (converted != (wchar_t *)text.__w) free(converted);
       }
       else
-         printf("%s:%d: %s\n",filename, line, message);
-   #else
-      printf("%s:%d: %s\n",filename, line, message);
    #endif
+      PRINTF("%s:%d: %s\n", filename, line, message);
    }
 
 }
@@ -614,38 +605,30 @@ Array<String> __get_args()
 
 void __hxcpp_print_string(const String &inV)
 {
-   #ifdef HX_WINRT
-      WINRT_PRINTF("%s", inV.__s);
-   #elif defined(HX_SMART_STRINGS)
-      if (inV.isUTF16Encoded())
-      {
-         wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
-         printf("%S", converted);
-         if (converted != (wchar_t *)inV.__w) free(converted);
-      }
-      else
-         printf("%s", inV.__s);
-   #else
-      printf("%s", inV.__s);
-   #endif
+#if defined(HX_SMART_STRINGS)
+   if (inV.isUTF16Encoded())
+   {
+      wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
+      PRINTF("%S", converted);
+      if (converted != (wchar_t *)inV.__w) free(converted);
+   }
+   else
+#endif
+   PRINTF("%s", inV.__s);
 }
 
 void __hxcpp_println_string(const String &inV)
 {
-   #ifdef HX_WINRT
-      WINRT_PRINTF("%s\n", inV.__s);
-   #elif defined(HX_SMART_STRINGS)
-      if (inV.isUTF16Encoded())
-      {
-         wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
-         printf("%S\n", converted);
-         if (converted != (wchar_t *)inV.__w) free(converted);
-      }
-      else
-         printf("%s\n", inV.__s);
-   #else
-      printf("%s\n", inV.__s);
-   #endif
+#if defined(HX_SMART_STRINGS)
+   if (inV.isUTF16Encoded())
+   {
+      wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
+      PRINTF("%S\n", converted);
+      if (converted != (wchar_t *)inV.__w) free(converted);
+   }
+   else
+#endif
+   PRINTF("%s\n", inV.__s);
 }
 
 
