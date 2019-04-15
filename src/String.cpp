@@ -1556,7 +1556,7 @@ Array<String> String::split(const String &inDelimiter) const
    Array<String> result(0,1);
    #if HX_SMART_STRINGS
    bool s0 = isUTF16Encoded();
-   bool s1 = isUTF16Encoded();
+   bool s1 = inDelimiter.isUTF16Encoded();
    if (s0 || s1)
    {
       if (s0 && s1)
