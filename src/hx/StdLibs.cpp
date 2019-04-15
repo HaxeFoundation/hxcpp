@@ -615,26 +615,36 @@ Array<String> __get_args()
 void __hxcpp_print_string(const String &inV)
 {
    #ifdef HX_WINRT
-   WINRT_PRINTF("%s",inV.__s);
+      WINRT_PRINTF("%s", inV.__s);
+   #elif defined(HX_SMART_STRINGS)
+      if (inV.isUTF16Encoded())
+      {
+         wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
+         printf("%S", converted);
+         if (converted != (wchar_t *)inV.__w) free(converted);
+      }
+      else
+         printf("%s", inV.__s);
    #else
-   #ifdef HX_UTF8_STRINGS
-   printf("%s",inV.__s);
-   #else
-   printf("%S",inV.__s);
-   #endif
+      printf("%s", inV.__s);
    #endif
 }
 
 void __hxcpp_println_string(const String &inV)
 {
    #ifdef HX_WINRT
-   WINRT_PRINTF("%s\n",inV.__s);
+      WINRT_PRINTF("%s\n", inV.__s);
+   #elif defined(HX_SMART_STRINGS)
+      if (inV.isUTF16Encoded())
+      {
+         wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
+         printf("%S\n", converted);
+         if (converted != (wchar_t *)inV.__w) free(converted);
+      }
+      else
+         printf("%s\n", inV.__s);
    #else
-   #ifdef HX_UTF8_STRINGS
-   printf("%s\n",inV.__s);
-   #else
-   printf("%S\n",inV.__s);
-   #endif
+      printf("%s\n", inV.__s);
    #endif
 }
 
