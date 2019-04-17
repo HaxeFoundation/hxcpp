@@ -26,29 +26,17 @@ using namespace std;
 // vc 7...
 #if _MSC_VER < 1400 
 
-#ifdef HX_UTF8_STRINGS
 #define SPRINTF _snprintf
-#else
-#define SPRINTF _snwprintf
-#endif
 
 #else // vc8+
 
-#ifdef HX_UTF8_STRINGS
 #define SPRINTF _snprintf_s
-#else
-#define SPRINTF _snwprintf_s
-#endif
 
 #endif
 
 #else // not windows ..
 
-#ifdef HX_UTF8_STRINGS
 #define SPRINTF snprintf
-#else
-#define SPRINTF swmprintf
-#endif
 
 #endif
 
@@ -58,14 +46,9 @@ using namespace std;
 
 namespace hx
 {
-#ifdef HX_UTF8_STRINGS
 char HX_DOUBLE_PATTERN[20] = "%.15g";
 #define HX_INT_PATTERN "%d"
 #define HX_UINT_PATTERN "%ud"
-#else
-wchar_t HX_DOUBLE_PATTERN[20] =  L"%.15g";
-#define HX_INT_PATTERN L"%d"
-#endif
 }
 
 void __hxcpp_set_float_format(String inFormat)
@@ -1489,10 +1472,6 @@ const char16_t * String::wc_str() const
 
 const wchar_t * String::__WCStr() const
 {
-   #ifndef HX_UTF8_STRINGS
-   return __s ? __s : L"";
-   #else
-   
    const unsigned char *ptr = (const unsigned char *)__s;
    const unsigned char *end = ptr + length;
    int idx = 0;
@@ -1509,7 +1488,6 @@ const wchar_t * String::__WCStr() const
       result[idx++] = DecodeAdvanceUTF8(ptr);
    result[idx] = 0;
    return result;
-   #endif
 }
 
 
@@ -1578,7 +1556,7 @@ Array<String> String::split(const String &inDelimiter) const
    Array<String> result(0,1);
    #if HX_SMART_STRINGS
    bool s0 = isUTF16Encoded();
-   bool s1 = isUTF16Encoded();
+   bool s1 = inDelimiter.isUTF16Encoded();
    if (s0 || s1)
    {
       if (s0 && s1)

@@ -363,11 +363,7 @@ const char * val_string(hx::Object * arg1)
 
 hx::Object * alloc_string(const char * arg1)
 {
-#ifdef HX_UTF8_STRINGS
    return Dynamic( String(arg1,strlen(arg1)).dup() ).GetPtr();
-#else
-   return Dynamic( String(arg1,strlen(arg1)) ).GetPtr();
-#endif
 }
 
 
@@ -375,11 +371,7 @@ wchar_t * val_dup_wstring(value inVal)
 {
    hx::Object *obj = (hx::Object *)inVal;
    String  s = obj->toString();
-#ifdef HX_UTF8_STRINGS
    return (wchar_t *)s.__WCStr();
-#else
-   return (char *)s.dup().__s;
-#endif
 }
 
 char * val_dup_string(value inVal)
@@ -387,12 +379,7 @@ char * val_dup_string(value inVal)
    hx::Object *obj = (hx::Object *)inVal;
    if (!obj) return 0;
 
-   #ifdef HX_UTF8_STRINGS
    return (char *)obj->toString().dup().__CStr();
-   #else
-   // Known to create a copy
-   return (wchar_t *)obj->toString().__CStr();
-   #endif
 }
 
 
@@ -405,21 +392,13 @@ char *alloc_string_data(const char *inData, int inLength)
 
 hx::Object *alloc_string_len(const char *inStr,int inLen)
 {
-#ifdef HX_UTF8_STRINGS
    return Dynamic( String(inStr,inLen).dup() ).GetPtr();
-#else
-   return Dynamic( String(inStr,inLen) ).GetPtr();
-#endif
 }
 
 hx::Object *alloc_wstring_len(const wchar_t *inStr,int inLen)
 {
    String str(inStr,inLen);
-   #ifdef HX_UTF8_STRINGS
    return Dynamic(str).GetPtr();
-   #else
-   return Dynamic(str.dup()).GetPtr();
-   #endif
 }
 
 // Array access - generic

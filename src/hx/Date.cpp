@@ -374,13 +374,8 @@ String __internal_to_string(struct tm time)
 {
    // YYYY-MM-DD hh:mm:ss
 
-#ifndef HX_UTF8_STRINGS
-   wchar_t buf[100];
-   wcsftime(buf,100,L"%Y-%m-%d %H:%M:%S", &time);
-#else
    char buf[100];
    strftime(buf,100, "%Y-%m-%d %H:%M:%S", &time);
-#endif
    return String(buf).dup();
 }
 

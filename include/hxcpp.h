@@ -48,8 +48,6 @@
 
 #include <string.h>
 
-#define HX_UTF8_STRINGS
-
 #include <wchar.h>
 
 #ifdef HX_LINUX

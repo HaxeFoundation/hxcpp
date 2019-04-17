@@ -30,11 +30,24 @@ typedef int64_t __int64;
 #include <map>
 #include <stdio.h>
 #include <time.h>
+#include <clocale>
 
 
 #ifdef HX_ANDROID
 #define rand() lrand48()
 #define srand(x) srand48(x)
+#endif
+
+#ifdef HX_WINRT
+#define PRINTF WINRT_PRINTF
+#elif defined(TIZEN)
+#define PRINTF(fmt, ...) dlog_dprint(DLOG_INFO, "trace", fmt, __VA_ARGS__);
+#elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+#define PRINTF(fmt, ...) __android_log_print(ANDROID_LOG_INFO, "trace", fmt, __VA_ARGS__);
+#elif defined(WEBOS)
+#define PRINTF(fmt, ...) syslog(LOG_INFO, "trace", fmt, __VA_ARGS__);
+#else
+#define PRINTF printf
 #endif
 
 void __hx_stack_set_last_exception();
@@ -249,18 +262,37 @@ void __hxcpp_stdlibs_boot()
          }
       }
    }
-   //setlocale(LC_ALL, "");
    //_setmode(_fileno(stdout), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
    #endif
-   
+
+   // This is necessary for UTF-8 output to work correctly.
+   setlocale(LC_ALL, "");
+
    // I think this does more harm than good.
    //  It does not cause fread to return immediately - as perhaps desired.
    //  But it does cause some new-line characters to be lost.
    //setbuf(stdin, 0);
    setbuf(stdout, 0);
    setbuf(stderr, 0);
+}
+
+wchar_t *__hxcpp_utf16_to_wchar(const char16_t *str, int u16length)
+{
+#if __SIZEOF_WCHAR_T__ == 2
+   // 16-bit wchar_t (e.g. Windows), no need to convert.
+   return (wchar_t *)str;
+#else
+   // 32-bit wchar_t (e.g. Linux, OS X), convert into a temporary buffer.
+   wchar_t *converted = (wchar_t *)malloc(sizeof(wchar_t) * (u16length + 1));
+   for (int i = 0; i < u16length; i++)
+   {
+      converted[i] = str[i];
+   }
+   converted[u16length] = 0;
+   return converted;
+#endif
 }
 
 void __trace(Dynamic inObj, Dynamic info)
@@ -272,23 +304,16 @@ void __trace(Dynamic inObj, Dynamic info)
 
    if (info==null())
    {
-   #ifdef HX_WINRT
-      WINRT_PRINTF("%s\n", message );
-   #elif defined(TIZEN)
-      dlog_dprint(DLOG_INFO, "trace","%s\n", message );
-   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-      __android_log_print(ANDROID_LOG_INFO, "trace","%s",message );
-   #elif defined(WEBOS)
-      syslog(LOG_INFO, "%s", message );
-   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+   #if defined(HX_SMART_STRINGS)
       if (text.isUTF16Encoded())
-         printf("%S\n", (wchar_t *)text.__w );
+      {
+         wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
+         PRINTF("%S\n", converted);
+         if (converted != (wchar_t *)text.__w) free(converted);
+      }
       else
-         printf("%s\n", message);
-   #else
-      printf("%s\n", message );
    #endif
-
+      PRINTF("%s\n", message);
    }
    else
    {
@@ -296,22 +321,16 @@ void __trace(Dynamic inObj, Dynamic info)
       const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s;
       int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
 
-   #ifdef HX_WINRT
-      WINRT_PRINTF("%s:%d: %s\n", filename, line, message );
-   #elif defined(TIZEN)
-      AppLogInternal(filename, line, "%s\n", message );
-   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-      __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",filename, line, message );
-   #elif defined(WEBOS)
-      syslog(LOG_INFO, "%s:%d: %s", filename, line, message );
-   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
+   #if defined(HX_SMART_STRINGS)
       if (text.isUTF16Encoded())
-         printf("%s:%d: %S\n",filename, line, (wchar_t *)text.__w );
+      {
+         wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
+         PRINTF("%s:%d: %S\n", filename, line, converted);
+         if (converted != (wchar_t *)text.__w) free(converted);
+      }
       else
-         printf("%s:%d: %s\n",filename, line, message);
-   #else
-      printf("%s:%d: %s\n",filename, line, message );
    #endif
+      PRINTF("%s:%d: %s\n", filename, line, message);
    }
 
 }
@@ -586,28 +605,30 @@ Array<String> __get_args()
 
 void __hxcpp_print_string(const String &inV)
 {
-   #ifdef HX_WINRT
-   WINRT_PRINTF("%s",inV.__s);
-   #else
-   #ifdef HX_UTF8_STRINGS
-   printf("%s",inV.__s);
-   #else
-   printf("%S",inV.__s);
-   #endif
-   #endif
+#if defined(HX_SMART_STRINGS)
+   if (inV.isUTF16Encoded())
+   {
+      wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
+      PRINTF("%S", converted);
+      if (converted != (wchar_t *)inV.__w) free(converted);
+   }
+   else
+#endif
+   PRINTF("%s", inV.__s);
 }
 
 void __hxcpp_println_string(const String &inV)
 {
-   #ifdef HX_WINRT
-   WINRT_PRINTF("%s\n",inV.__s);
-   #else
-   #ifdef HX_UTF8_STRINGS
-   printf("%s\n",inV.__s);
-   #else
-   printf("%S\n",inV.__s);
-   #endif
-   #endif
+#if defined(HX_SMART_STRINGS)
+   if (inV.isUTF16Encoded())
+   {
+      wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
+      PRINTF("%S\n", converted);
+      if (converted != (wchar_t *)inV.__w) free(converted);
+   }
+   else
+#endif
+   PRINTF("%s\n", inV.__s);
 }
 
 
@@ -650,17 +671,10 @@ Dynamic __hxcpp_parse_int(const String &inString)
    bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
    HX_CHAR *end = 0;
 
-   #ifdef HX_UTF8_STRINGS
    if (hex)
       result = (long)strtoul(str+2,&end,16);
    else
       result = strtol(str,&end,10);
-   #else
-   if (hex)
-      result = (long)wcstoul(str+2,&end,16);
-   else
-      result = wcstol(str,&end,10);
-   #endif
    if (str==end)
       return null();
    return (int)result;
@@ -670,11 +684,7 @@ double __hxcpp_parse_float(const String &inString)
 {
    const HX_CHAR *str = inString.__s;
    HX_CHAR *end = (HX_CHAR *)str;
-   #ifdef HX_UTF8_STRINGS
    double result = str ? strtod(str,&end) : 0;
-   #else
-   double result =  str ? wcstod(str,&end) : 0;
-   #endif
 
    if (end==str)
       return Math_obj::NaN;
