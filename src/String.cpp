@@ -153,6 +153,29 @@ static inline int DecodeAdvanceUTF8(const unsigned char * &ioPtr)
    return ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 & 0x7F) << 6) | ((*ioPtr++) & 0x7F);
 }
 
+static inline int DecodeAdvanceUTF8(const unsigned char * &ioPtr,const unsigned char *end)
+{
+   int c = *ioPtr++;
+   if( c < 0x80 )
+   {
+      return c;
+   }
+   else if( c < 0xE0 )
+   {
+      return ((c & 0x3F) << 6) | (ioPtr < end ? (*ioPtr++) & 0x7F : 0);
+   }
+   else if( c < 0xF0 )
+   {
+      int c2 = ioPtr<end ? *ioPtr++ : 0;
+      return  ((c & 0x1F) << 12) | ((c2 & 0x7F) << 6) | ( ioPtr<end ? (*ioPtr++) & 0x7F : 0 );
+   }
+
+   int c2 = ioPtr<end ? *ioPtr++ : 0;
+   int c3 = ioPtr<end ? *ioPtr++ : 0;
+   return ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 & 0x7F) << 6) | ( ioPtr<end ? (*ioPtr++) & 0x7F : 0);
+}
+
+
 int _hx_utf8_decode_advance(char *&ioPtr)
 {
    return DecodeAdvanceUTF8( (const unsigned char * &) ioPtr );
@@ -362,7 +385,7 @@ String __hxcpp_utf8_string_to_char_bytes(String &inUTF8)
     int char_count = 0;
     while(src<end)
     {
-        int c = DecodeAdvanceUTF8(src);
+        int c = DecodeAdvanceUTF8(src,end);
         char_count++;
         if( c == 8364 ) // euro symbol
             c = 164;
@@ -410,7 +433,7 @@ void _hx_utf8_iter(String inString, Dynamic inIter)
    const unsigned char *end = src + inString.length;
 
    while(src<end)
-      inIter(DecodeAdvanceUTF8(src));
+      inIter(DecodeAdvanceUTF8(src,end+1));
 
    if (src>end)
       hx::Throw(HX_CSTRING("Invalid UTF8"));
@@ -439,7 +462,7 @@ int _hx_utf8_char_code_at(String inString, int inIndex)
       if (src>end)
          hx::Throw(HX_CSTRING("Invalid UTF8"));
    }
-   return DecodeAdvanceUTF8(src);
+   return DecodeAdvanceUTF8(src,end);
    #endif
 }
 
@@ -1019,7 +1042,7 @@ String &String::dupConst()
    int count = 0;
    while(ptr<end)
    {
-      int code = DecodeAdvanceUTF8(ptr);
+      int code = DecodeAdvanceUTF8(ptr,end);
       count += code>=0x10000 ? 2 : 1;
    }
 
@@ -1030,7 +1053,7 @@ String &String::dupConst()
    ptr = (const unsigned char *)inUtf8;
    while(ptr<end)
    {
-      int code = DecodeAdvanceUTF8(ptr);
+      int code = DecodeAdvanceUTF8(ptr,end);
       Char16AdvanceSet(b,code);
    }
 
@@ -1300,7 +1323,7 @@ String _hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
    const unsigned char *end = ptr + inUtf8Len;
    while(u<end)
    {
-      int code = DecodeAdvanceUTF8(u);
+      int code = DecodeAdvanceUTF8(u,end);
       char16Count+= code>=0x10000 ? 2 : 1;
    }
 
@@ -1313,7 +1336,7 @@ String _hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
    char16_t *o = str;
    while(u<end)
    {
-      int code = DecodeAdvanceUTF8(u);
+      int code = DecodeAdvanceUTF8(u,end);
       Char16AdvanceSet(o,code);
    }
    if (addHash)
@@ -1338,8 +1361,6 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
       outString = String( (const char *)inBytes->GetBase(), len);
    else if (len==0)
       outString = HX_CSTRING("");
-   else if (len==1)
-      outString = String::fromCharCode( inBytes[pos] );
    else
    {
       const unsigned char *p0 = (const unsigned char *)inBytes->GetBase();
@@ -1477,7 +1498,7 @@ const wchar_t * String::__WCStr() const
    int idx = 0;
    while(ptr<end)
    {
-      DecodeAdvanceUTF8(ptr);
+      DecodeAdvanceUTF8(ptr,end);
       idx++;
    }
 
@@ -1485,7 +1506,7 @@ const wchar_t * String::__WCStr() const
    ptr = (const unsigned char *)__s;
    idx = 0;
    while(ptr<end)
-      result[idx++] = DecodeAdvanceUTF8(ptr);
+      result[idx++] = DecodeAdvanceUTF8(ptr,end);
    result[idx] = 0;
    return result;
 }
