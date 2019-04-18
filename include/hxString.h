@@ -142,7 +142,7 @@ public:
 
    inline const char *&raw_ref() { return __s; }
    inline const char *raw_ptr() const { return __s; }
-   inline const char *utf8_str(hx::chars *inBuffer = 0,bool throwInvalid=true) const;
+   const char *utf8_str(hx::chars *inBuffer = 0,bool throwInvalid=true) const;
    inline const char *c_str() const { return utf8_str(); }
    inline const char *out_str(hx::charsOut *inBuffer = 0) const { return utf8_str(inBuffer,false); }
    const wchar_t *wchar_str(hx::wchars *inBuffer = 0) const;

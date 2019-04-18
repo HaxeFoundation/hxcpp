@@ -404,7 +404,7 @@ void  _hx_std_sys_rename( String path, String newname )
    #else
    hx::chars buf0;
    hx::chars buf1;
-   bool err = rename(path.utf8_str(buf0),newname.utf8_str(buf1));
+   bool err = rename(path.utf8_str(&buf0),newname.utf8_str(&buf1));
    #endif
 
    hx::ExitGCFreeZone();
