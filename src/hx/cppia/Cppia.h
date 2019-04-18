@@ -389,7 +389,7 @@ public:
    CppiaClassInfo *findClass( ::String inName );
    void registerDebugger();
 
-   inline const char *identStr(int inId) { return strings[inId].__s; }
+   inline const char *identStr(int inId) { return strings[inId].raw_ptr(); }
    inline const char *typeStr(int inId) { return types[inId]->name.c_str(); }
 };
 

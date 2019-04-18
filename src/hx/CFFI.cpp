@@ -383,11 +383,12 @@ char * val_dup_string(value inVal)
 }
 
 
+// Unsafe
 char *alloc_string_data(const char *inData, int inLength)
 {
    String val(inData,inLength);
    val.dup();
-   return (char *)val.__s;
+   return (char *)val.raw_ptr();
 }
 
 hx::Object *alloc_string_len(const char *inStr,int inLen)

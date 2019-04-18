@@ -32,6 +32,7 @@ namespace cpp
 
       union
       {
+         // Although this is typed as 'char', it might be char16_t in the case of smart strings
          const char *valStringPtr;
          hx::Object *valObject;
          double valDouble;
@@ -306,7 +307,8 @@ namespace cpp
 
 
 
-   Variant::Variant(const ::String &inValue) : type(typeString), valStringPtr(inValue.__s), valStringLen(inValue.length) { }
+   Variant::Variant(const ::String &inValue) :
+      type(typeString), valStringPtr(inValue.raw_ptr()), valStringLen(inValue.length) { }
 
    Variant::Variant(const Dynamic &inRHS) : type(typeObject), valObject(inRHS.mPtr) { }
 

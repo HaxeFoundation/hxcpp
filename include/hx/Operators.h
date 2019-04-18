@@ -16,8 +16,8 @@ inline bool null::operator != (const hx::IndexRef &O) const { return O.HasPointe
 inline bool null::operator == (const Dynamic &O) const { return !O.mPtr; }
 inline bool null::operator != (const Dynamic &O) const { return O.mPtr; }
 
-inline bool null::operator == (const String &O) const { return !O.__s; }
-inline bool null::operator != (const String &O) const { return O.__s; }
+inline bool null::operator == (const String &O) const { return !O.raw_ptr(); }
+inline bool null::operator != (const String &O) const { return O.raw_ptr(); }
 
 namespace hx {
 template<typename T> Null<T>::operator Dynamic() { if (isNull) return Dynamic(); return value; }

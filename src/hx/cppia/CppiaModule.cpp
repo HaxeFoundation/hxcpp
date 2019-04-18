@@ -45,7 +45,7 @@ void CppiaModule::setDebug(CppiaExpr *outExpr, int inFileId, int inLine)
    outExpr->className = creatingClass;
    outExpr->functionName = creatingFunction;
    //outExpr->filename = cStrings[inFileId].c_str();
-   outExpr->filename = strings[inFileId].__s;
+   outExpr->filename = strings[inFileId].utf8_str();
    outExpr->line = inLine;
 }
 
@@ -115,7 +115,8 @@ void CppiaModule::registerDebugger()
 
 CppiaClassInfo *CppiaModule::findClass( ::String inName)
 {
-   std::string stdName(inName.__s, inName.__s + inName.length);
+
+   std::string stdName(inName.utf8_str());
    for(int i=0;i<classes.size();i++)
       if (classes[i]->name == stdName)
          return classes[i];
@@ -244,7 +245,7 @@ void CppiaConst::fromStream(CppiaStream &stream)
       type = cFloat;
       int strIndex = stream.getInt();
       String val = stream.module->strings[strIndex];
-      dval = atof(val.__s);
+      dval = atof(val.out_str());
       ival = dval;
    }
    else if (tok[0]=='s')
@@ -471,7 +472,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
                    String(stream.pos);
    }
 
-   if (!error.__s)
+   if (!error.raw_ptr())
       try
       {
          DBGLOG("Link...\n");
@@ -485,7 +486,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
    if (gEnableJit)
    {
       #ifdef CPPIA_JIT
-      if (!error.__s)
+      if (!error.raw_ptr())
          try
          {
             DBGLOG("Compile...\n");
@@ -498,7 +499,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
       #endif
    }
 
-   if (error.__s)
+   if (error.raw_ptr())
       hx::Throw(error);
 
    cppia.registerDebugger();
@@ -618,12 +619,40 @@ void __hxcpp_dbg_getScriptableClasses( Array< ::String> ioClasses )
 
 ::hx::CppiaLoadedModule __scriptable_cppia_from_string(String inCode)
 {
-   return hx::LoadCppia((const unsigned char *)inCode.__s, inCode.length);
+   const unsigned char *code = (const unsigned char *)inCode.raw_ptr();
+   int length = inCode.length;
+   #ifdef HX_SMART_STRINGS
+   if (inCode.isUTF16Encoded())
+   {
+      code = (const unsigned char *)inCode.utf8_str();
+      length = strlen( (const char *)code );
+   }
+   #endif
+
+   return hx::LoadCppia(code,length);
 }
+
+
+::hx::CppiaLoadedModule __scriptable_cppia_from_data(Array<unsigned char> inCode)
+{
+   return hx::LoadCppia( (unsigned char *)inCode->GetBase() ,inCode->length);
+}
+
 
 void __scriptable_load_cppia(String inCode)
 {
-   ::hx::CppiaLoadedModule module = hx::LoadCppia((const unsigned char *)inCode.__s, inCode.length);
+   const unsigned char *code = (const unsigned char *)inCode.raw_ptr();
+   int length = inCode.length;
+   #ifdef HX_SMART_STRINGS
+   if (inCode.isUTF16Encoded())
+   {
+      code = (const unsigned char *)inCode.utf8_str();
+      length = strlen( (const char *)code );
+   }
+   #endif
+
+   ::hx::CppiaLoadedModule module = hx::LoadCppia(code,length);
+
    module->boot();
    module->run();
 }

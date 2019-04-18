@@ -889,13 +889,13 @@ private:
       __hxcpp_dbg_getScriptableFiles(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==fileName)
-            return (ret[i]).dupConst().__s;
+            return (ret[i]).dupConst().utf8_str()();
 
       ret = Array_obj< ::String>::__new();
       __hxcpp_dbg_getScriptableFilesFullPath(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==fileName)
-            return (ret[i]).dupConst().__s;
+            return (ret[i]).dupConst().utf8_str()();
       #endif
 
       return 0;
@@ -906,7 +906,7 @@ private:
       if (__all_classes)
          for (const char **ptr = __all_classes; *ptr; ptr++)
          {
-            if (!strcmp(*ptr, className.__s))
+            if (!strcmp(*ptr, className.raw_ptr()))
                return *ptr;
          }
 
@@ -915,7 +915,7 @@ private:
       __hxcpp_dbg_getScriptableClasses(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==className)
-            return ret[i].dupConst().__s;
+            return ret[i].dupConst().raw_ptr();
       #endif
 
       return 0;

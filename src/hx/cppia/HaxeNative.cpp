@@ -72,7 +72,7 @@ ScriptNamedFunction HaxeNativeClass::findStaticFunction(String inName)
 {
    if (functions)
       for(ScriptNamedFunction *f=functions;f->name;f++)
-         if ( !strcmp(inName.__s,f->name) && f->isStatic)
+         if ( !strcmp(inName.utf8_str(),f->name) && f->isStatic)
             return *f;
 
    return ScriptNamedFunction(0,0,0,0,0);
@@ -110,10 +110,10 @@ void HaxeNativeClass::link()
          hx::Class superClass = cls->GetSuper();
          if (superClass.mPtr)
          {
-            HaxeNativeClass *superRef = (*sScriptRegistered)[superClass.mPtr->mName.__s];
+            HaxeNativeClass *superRef = (*sScriptRegistered)[superClass.mPtr->mName.utf8_str()];
             if (superRef)
             {
-               DBGLOG("registered %s\n",superClass.mPtr->mName.__s);
+               DBGLOG("registered %s\n",superClass.mPtr->mName.utf8_str());
                i->second->haxeSuper = superRef;
             }
          }
@@ -149,12 +149,12 @@ ScriptFunction HaxeNativeInterface::findFunction(const std::string &inName)
 
 void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, hx::ScriptFunction inConstruct)
 {
-   DBGLOG("ScriptableRegisterClass %s\n", inName.__s);
+   DBGLOG("ScriptableRegisterClass %s\n", inName.out_str());
    if (!sScriptRegistered)
       sScriptRegistered = new ScriptRegisteredMap();
-   HaxeNativeClass *registered = new HaxeNativeClass(inName.__s,inDataOffset, inFunctions,inFactory, inConstruct);
-   (*sScriptRegistered)[inName.__s] = registered;
-   //printf("Registering %s -> %p\n",inName.__s,(*sScriptRegistered)[inName.__s]);
+   HaxeNativeClass *registered = new HaxeNativeClass(inName.utf8_str(),inDataOffset, inFunctions,inFactory, inConstruct);
+   (*sScriptRegistered)[inName.utf8_str()] = registered;
+   //printf("Registering %s -> %p\n",inName.out_str(),(*sScriptRegistered)[inName.utf8_str()]);
 }
 
 
@@ -173,12 +173,12 @@ void ScriptableRegisterInterface( String inName,
                                   ScriptNamedFunction *inFunctions,
                                   void *inScriptTable)
 {
-   DBGLOG("ScriptableInterfaceFactory %s\n",inName.__s);
+   DBGLOG("ScriptableInterfaceFactory %s\n",inName.out_str());
    if (!sScriptRegisteredInterface)
       sScriptRegisteredInterface = new HaxeNativeIntefaceMap();
 
-   HaxeNativeInterface *registered = new HaxeNativeInterface(inName.__s, inFunctions, inScriptTable);
-   (*sScriptRegisteredInterface)[inName.__s] = registered;
+   HaxeNativeInterface *registered = new HaxeNativeInterface(inName.utf8_str(), inFunctions, inScriptTable);
+   (*sScriptRegisteredInterface)[inName.utf8_str()] = registered;
 }
 
 #else
@@ -200,12 +200,12 @@ void ScriptableRegisterInterface( String inName,
                                   const hx::type_info *inType,
                                   hx::ScriptableInterfaceFactory inFactory )
 {
-   DBGLOG("ScriptableInterfaceFactory %s\n",inName.__s);
+   DBGLOG("ScriptableInterfaceFactory %s\n",inName.out_str());
    if (!sScriptRegisteredInterface)
       sScriptRegisteredInterface = new HaxeNativeIntefaceMap();
 
-   HaxeNativeInterface *registered = new HaxeNativeInterface(inName.__s, inFunctions, inFactory,inType);
-   (*sScriptRegisteredInterface)[inName.__s] = registered;
+   HaxeNativeInterface *registered = new HaxeNativeInterface(inName.utf8_str(), inFunctions, inFactory,inType);
+   (*sScriptRegisteredInterface)[inName.utf8_str()] = registered;
 }
 
 #endif

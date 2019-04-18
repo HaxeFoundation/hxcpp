@@ -2301,7 +2301,7 @@ void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
    {
       for(int i=0;i<inLength;i++)
       {
-         const char *str = inPtr[i].__s;
+         const char *str = inPtr[i].raw_ptr();
          HX_MARK_STRING(str);
       }
    }

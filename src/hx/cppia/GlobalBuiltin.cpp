@@ -332,7 +332,7 @@ CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioE
    }
 
 
-   printf("Unknown function : %s(%d)\n", function.__s, (int)ioExpressions.size() );
+   printf("Unknown function : %s(%d)\n", function.out_str(), (int)ioExpressions.size() );
    throw "Unknown global";
    return 0;
 }

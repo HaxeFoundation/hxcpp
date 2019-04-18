@@ -77,11 +77,17 @@
 
 String _hx_std_get_env( String v )
 {
-   const char *s = 0;
-   #ifndef HX_WINRT
-   s = getenv(v.__s);
+   #ifdef HX_WINRT
+      return String();
+   #else
+      #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
+         hx::wchars wbuf;
+         return String( _wgetenv( v.wchar_str(&wbuf) ) );
+      #else
+         hx::chars buf;
+         return String( getenv(v.utf8_str(&buf)) );
+      #endif
    #endif
-   return String(s);
 }
 
 /**
@@ -94,9 +100,15 @@ void _hx_std_put_env( String e, String v )
    // Do nothing
 #elif defined(NEKO_WINDOWS)
    String set = e + HX_CSTRING("=") + v;
-   bool ok = putenv(set.__s) == 0;
+
+   #ifdef HX_SMART_STRINGS
+   if (set.isUTF16Encoded())
+      _wputenv( set.wchar_str() );
+   else
+   #endif
+      putenv(set.utf8_str());
 #else
-   bool ok = setenv(e.__s,v.__s,1) != 0;
+   setenv(e.utf8_str(),v.utf8_str(),1);
 #endif
 }
 
@@ -144,7 +156,7 @@ bool _hx_std_set_time_locale( String l )
 
 #ifdef NEKO_POSIX
    locale_t lc, old;
-   lc = newlocale(LC_TIME_MASK,l.__s,NULL);
+   lc = newlocale(LC_TIME_MASK,l.utf8_str(),NULL);
    if( !lc )
       return false;
    old = uselocale(lc);
@@ -157,7 +169,11 @@ bool _hx_std_set_time_locale( String l )
       freelocale(old);
    return true;
 #else
-   return setlocale(LC_TIME,l.__s);
+   #ifdef HX_SMART_STRINGS
+   if (l.isUTF16Encoded())
+      return _wsetlocale(LC_TIME,l.wchar_str());
+   #endif
+   return setlocale(LC_TIME,l.utf8_str());
 #endif
 
 #endif // !Android
@@ -280,16 +296,26 @@ int _hx_std_sys_command( String cmd )
    #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC) || defined(IPHONE) || defined(APPLETV) || defined(HX_APPLEWATCH)
    return -1;
    #else
-   if( !cmd.__s || !cmd.length )
+   if( !cmd.raw_ptr() || !cmd.length )
       return -1;
 
 #ifdef NEKO_WINDOWS
-   const wchar_t * wcmd = cmd.__WCStr();
+   int result = 0;
    hx::EnterGCFreeZone();
-   int result = _wsystem(wcmd);
+
+   #ifdef HX_SMART_STRINGS
+   if (!cmd.isUTF16Encoded())
+      result = system(cmd.raw_ptr());
+   else
+   #endif
+   {
+      hx::wchars wbuf;
+      result = _wsystem(cmd.wchar_str(&wbuf));
+   }
 #else
+   hx::chars buf;
    hx::EnterGCFreeZone();
-   int result = system(cmd.__s);
+   int result = system(cmd.utf8_str(&buf));
 #endif
    hx::ExitGCFreeZone();
 
@@ -344,7 +370,18 @@ void _hx_std_file_delete( String path )
 {
    #ifndef EPPC
    hx::EnterGCFreeZone();
-   bool err = unlink(path.__s);
+
+   bool err = false;
+   #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
+   if (path.isUTF16Encoded())
+      err = _wunlink(path.wchar_str());
+   else
+   #endif
+   {
+      hx::chars buf;
+      err = unlink(path.utf8_str(&buf));
+   }
+
    hx::ExitGCFreeZone();
 
    if (err)
@@ -359,7 +396,17 @@ void _hx_std_file_delete( String path )
 void  _hx_std_sys_rename( String path, String newname )
 {
    hx::EnterGCFreeZone();
-   bool err = rename(path.__s,newname.__s);
+
+   #ifdef NEKO_WINDOWS
+   hx::wchars buf0;
+   hx::wchars buf1;
+   bool err = _wrename(path.wchar_str(&buf0),newname.wchar_str(&buf1));
+   #else
+   hx::chars buf0;
+   hx::chars buf1;
+   bool err = rename(path.utf8_str(buf0),newname.utf8_str(buf1));
+   #endif
+
    hx::ExitGCFreeZone();
 
    if (err)
@@ -390,8 +437,27 @@ Dynamic _hx_std_sys_stat( String path )
    return alloc_null();
    #else
    hx::EnterGCFreeZone();
-   struct stat s;
-   bool err = stat(path.__s,&s);
+   bool err = false;
+   #if defined(NEKO_WINDOWS)
+      struct _stat s;
+      #if defined(HX_SMART_STRINGS)
+      if (path.isUTF16Encoded())
+      {
+         hx::wchars buf;
+         err = _wstat(path.wchar_str(&buf),&s);
+      }
+      else
+      #endif
+      {
+         hx::chars buf;
+         err = _stat(path.utf8_str(&buf),&s);
+      }
+   #else
+      struct stat s;
+      hx::chars buf;
+      err = stat(path.utf8_str(&buf),&s);
+   #endif
+
    hx::ExitGCFreeZone();
    if (err)
       return null();
@@ -434,9 +500,27 @@ String _hx_std_sys_file_type( String path )
    #ifdef EPPC
    return String();
    #else
-   struct stat s;
    hx::EnterGCFreeZone();
-   bool err = stat(path.__s,&s);
+   bool err = false;
+   #if defined(NEKO_WINDOWS)
+      struct _stat s;
+      #if defined(HX_SMART_STRINGS)
+      if (path.isUTF16Encoded())
+      {
+         hx::wchars buf;
+         err = _wstat(path.wchar_str(&buf),&s);
+      }
+      else
+      #endif
+      {
+         hx::chars buf;
+         err = _stat(path.utf8_str(&buf),&s);
+      }
+   #else
+      struct stat s;
+      hx::chars buf;
+      err = stat(path.utf8_str(&buf),&s);
+   #endif
    hx::ExitGCFreeZone();
    if (err)
       return String();
@@ -493,7 +577,22 @@ void _hx_std_sys_remove_dir( String path )
    return true;
    #else
    hx::EnterGCFreeZone();
-   bool ok = rmdir(path.__s) == 0;
+
+   bool ok = false;
+
+   #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
+   if (path.isUTF16Encoded())
+   {
+      ok = _wrmdir(path.wchar_str()) == 0;
+   }
+   else
+   #endif
+   {
+      hx::chars buf;
+      ok = rmdir(path.utf8_str(&buf)) == 0;
+   }
+
+
    hx::ExitGCFreeZone();
    if (!ok)
       hx::Throw(HX_CSTRING("Could not remove directory"));
@@ -646,15 +745,17 @@ String _hx_std_file_full_path( String path )
 #if defined(HX_WINRT)
    return path;
 #elif defined(NEKO_WINDOWS)
-   char buf[MAX_PATH+1];
-   if( GetFullPathNameA(path.__s,MAX_PATH+1,buf,NULL) == 0 )
+   wchar_t buf[MAX_PATH+1];
+   hx::wchars wbuf;
+   if( GetFullPathNameW(path.wchar_str(&wbuf),MAX_PATH+1,buf,NULL) == 0 )
       return null();
    return String(buf);
 #elif defined(EPPC)
    return path;
 #else
    char buf[PATH_MAX];
-   if( realpath(path.__s,buf) == NULL )
+   hx::chars ubuf;
+   if( realpath(path.utf8_str(&ubuf),buf) == NULL )
       return null();
    return String(buf);
 #endif

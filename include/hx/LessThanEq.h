@@ -160,7 +160,7 @@ struct CompareTraits< String >
    inline static hx::Object *toObject(const String &inValue) { return Dynamic(inValue).mPtr; }
 
    inline static int getDynamicCompareType(const String &) { return type; }
-   inline static bool isNull(const String &inValue) { return !inValue.__s; }
+   inline static bool isNull(const String &inValue) { return !inValue.raw_ptr(); }
 };
 
 

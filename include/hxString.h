@@ -9,6 +9,13 @@
 #import <Foundation/Foundation.h>
 #endif
 
+namespace hx {
+typedef hx::QuickVec<wchar_t> wchars;
+typedef hx::QuickVec<char> chars;
+typedef hx::QuickVec<char> charsOut;
+typedef hx::QuickVec<char16_t> chars16;
+}
+
 // --- String --------------------------------------------------------
 //
 // Basic String type for hxcpp.
@@ -18,6 +25,8 @@
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES String
 {
+   friend class StringOffset;
+
 public:
   // These allocate the function using the garbage-colleced malloc
    void *operator new( size_t inSize );
@@ -30,10 +39,9 @@ public:
 
    inline String(const char16_t *inPtr,int inLen,bool) : __w(inPtr), length(inLen) { }
 
-   // Makes copy if required
-   String(const wchar_t *inPtr,int inLen);
+   // Makes copy
+   String(const wchar_t *inPtr,int inLen=-1);
 
-   explicit String(const wchar_t *inPtr);
    #ifdef __OBJC__
    inline String(NSString *inString)
    {
@@ -132,12 +140,21 @@ public:
     ::String substr(int inPos,Dynamic inLen) const;
     ::String substring(int inStartIndex, Dynamic inEndIndex) const;
 
-   inline const char *c_str() const { return __CStr(); }
-   const char16_t *wc_str() const;
-   const char *__CStr() const;
-   const wchar_t *__WCStr() const;
-   inline operator const char *() { return __CStr(); }
+   inline const char *&raw_ref() { return __s; }
+   inline const char *raw_ptr() const { return __s; }
+   inline const char *utf8_str(hx::chars *inBuffer = 0,bool throwInvalid=true) const;
+   inline const char *c_str() const { return utf8_str(); }
+   inline const char *out_str(hx::charsOut *inBuffer = 0) const { return utf8_str(inBuffer,false); }
+   const wchar_t *wchar_str(hx::wchars *inBuffer = 0) const;
+   const char16_t *wc_str(hx::chars16 *inBuffer = 0) const;
 
+   const char *__CStr() const { return utf8_str(); };
+   const wchar_t *__WCStr() const { return wchar_str(0); }
+   inline operator const char *() { return utf8_str(); }
+
+   #ifdef HX_SMART_STRINGS
+   inline const char16_t *raw_wptr() const { return __w; }
+   #endif
    inline bool isUTF16Encoded() const {
       #ifdef HX_SMART_STRINGS
       return __w && ((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T;
@@ -305,10 +322,23 @@ public:
    // Note that "__s" is const - if you want to change it, you should create a new string.
    //  this allows for multiple strings to point to the same data.
    int length;
+
+   #ifdef HX_SMART_STRINGS
+   // TODO private:
+     // Use c_str, wc_str, raw_str instead
+   #endif
+
    union {
       const char *__s;
       const char16_t *__w;
    };
+
+};
+
+class StringOffset
+{
+   public:
+      enum { Ptr = offsetof(String,__s) };
 };
 
 

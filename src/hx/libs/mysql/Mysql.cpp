@@ -467,7 +467,7 @@ void _hx_mysql_select_db(Dynamic handle,String db)
 {
    Connection *connection = getConnection(handle);
 
-   if( mysql_select_db(connection->m,db.__s) != 0 )
+   if( mysql_select_db(connection->m,db.utf8_str()) != 0 )
       error(connection->m,"Failed to select database :");
 }
 
@@ -479,7 +479,7 @@ Dynamic _hx_mysql_request(Dynamic handle,String req)
 {
    Connection *connection = getConnection(handle);
 
-   if( mysql_real_query(connection->m,req.__s,req.length) != 0 )
+   if( mysql_real_query(connection->m,req.utf8_str(),req.length) != 0 )
       error(connection->m,req);
 
    MYSQL_RES *res = mysql_store_result(connection->m);
@@ -513,7 +513,7 @@ String  _hx_mysql_escape(Dynamic handle,String str)
    int len = str.length * 2 + 1;
    AutoBuf sout(len);
 
-   int finalLen = mysql_real_escape_string(connection->m,sout.buffer,str.__s,str.length);
+   int finalLen = mysql_real_escape_string(connection->m,sout.buffer,str.utf8_str(),str.length);
    if( finalLen < 0 )
       hx::Throw( HX_CSTRING("Unsupported charset : ") + String(mysql_character_set_name(connection->m)) );
 
@@ -537,7 +537,7 @@ Dynamic _hx_mysql_connect(Dynamic params)
    String socket = params->__Field(HX_CSTRING("socket"), hx::paccDynamic );
 
    MYSQL *cnx = mysql_init(NULL);
-   if( mysql_real_connect(cnx,host.__s,user.__s,pass.__s,NULL,port,socket.__s,0) == NULL )
+   if( mysql_real_connect(cnx,host.utf8_str(),user.utf8_str(),pass.utf8_str(),NULL,port,socket.utf8_str(),0) == NULL )
    {
       String error = HX_CSTRING("Failed to connect to mysql server : ") + String(mysql_error(cnx));
       mysql_close(cnx);

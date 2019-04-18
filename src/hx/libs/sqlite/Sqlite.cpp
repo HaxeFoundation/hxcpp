@@ -196,7 +196,7 @@ Dynamic _hx_sqlite_connect(String filename)
 {
    int err;
    sqlite3 *sqlDb = 0;
-   if( (err = sqlite3_open(filename.__s,&sqlDb)) != SQLITE_OK )
+   if( (err = sqlite3_open(filename.utf8_str(),&sqlDb)) != SQLITE_OK )
       sqlite_error(sqlDb);
 
    database *db = new database();
@@ -236,7 +236,7 @@ Dynamic _hx_sqlite_request(Dynamic handle,String sql)
 
    sqlite3_stmt *statement = 0;
    const char *tl = 0;
-   if( sqlite3_prepare(db->db,sql.__s,sql.length,&statement,&tl) != SQLITE_OK )
+   if( sqlite3_prepare(db->db,sql.utf8_str(),sql.length,&statement,&tl) != SQLITE_OK )
    {
       hx::Throw( HX_CSTRING("Sqlite error in ") + sql + HX_CSTRING(" : ") +
                   String(sqlite3_errmsg(db->db) ) );

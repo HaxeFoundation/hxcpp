@@ -504,7 +504,7 @@ void CppiaStackVar::setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault)
       if (inDefault.type == CppiaConst::cString)
       {
          String *s = (String *)(inCxt->frame + defaultStackPos);
-         if (!s->__s)
+         if (!s->raw_ptr())
             *s = module->strings[ inDefault.ival ];
       }
    }
@@ -584,10 +584,10 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
    {
       if (inDefault.type == CppiaConst::cString)
       {
-         JumpId notNull = compiler->compare(cmpP_NOT_ZERO, JitFramePos(defaultStackPos+offsetof(String,__s)).as(jtPointer),(void *)0);
+         JumpId notNull = compiler->compare(cmpP_NOT_ZERO, JitFramePos(defaultStackPos+StringOffset::Ptr).as(jtPointer),(void *)0);
          String val = module->strings[ inDefault.ival ];
          compiler->move(JitFramePos(defaultStackPos).as(jtInt), (int)val.length);
-         compiler->move(JitFramePos(defaultStackPos+offsetof(String,__s)).as(jtPointer), (void *)val.__s);
+         compiler->move(JitFramePos(defaultStackPos+StringOffset::Ptr).as(jtPointer), (void *)val.raw_ptr());
          compiler->comeFrom(notNull);
       }
    }

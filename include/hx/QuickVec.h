@@ -37,7 +37,7 @@ struct QuickVec
       std::swap(mSize, inOther.mSize);
       std::swap(mPtr, inOther.mPtr);
    }
-   void setSize(int inSize)
+   T *setSize(int inSize)
    {
       if (inSize>mAlloc)
       {
@@ -45,6 +45,7 @@ struct QuickVec
          mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
       }
       mSize = inSize;
+      return mPtr;
    }
    // Can push this many without realloc
    bool hasExtraCapacity(int inN)

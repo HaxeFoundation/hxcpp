@@ -276,7 +276,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    template<typename T>
    bool TIsWeakRefValid(T &) { return true; }
    bool TIsWeakRefValid(Dynamic &key) { return IsWeakRefValid(key.mPtr); }
-   bool TIsWeakRefValid(String &key) { return IsWeakRefValid(key.__s); }
+   bool TIsWeakRefValid(String &key) { return IsWeakRefValid(key.raw_ptr()); }
 
 
    void updateAfterGc()

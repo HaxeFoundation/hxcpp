@@ -206,7 +206,7 @@ public:
 
    inline void __unsafeStringReference(String inString)
    {
-      mBase = (char *)inString.__s;
+      mBase = (char *)inString.raw_ptr();
       length = inString.length / GetElementSize();
       mAlloc = length;
       HX_OBJ_WB_PESSIMISTIC_GET(this);
@@ -416,7 +416,7 @@ template<typename TYPE> inline bool ContainsPointers()
 }
 
 inline const void *PointerOf(Dynamic &d) { return d.mPtr; }
-inline const void *PointerOf(String &s) { return s.__s; }
+inline const void *PointerOf(String &s) { return s.raw_ptr(); }
 inline const void *PointerOf(...) { return 0; }
 
 

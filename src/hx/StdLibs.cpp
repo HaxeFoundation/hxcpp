@@ -26,7 +26,6 @@ typedef int64_t __int64;
 #include <unistd.h>
 #endif
 #include <string>
-#include <vector>
 #include <map>
 #include <stdio.h>
 #include <time.h>
@@ -209,7 +208,7 @@ namespace hx
       catch(Dynamic e)
       {
          HX_TOP_OF_STACK
-         return e->toString().__s;
+         return e->toString().utf8_str();
       }
    }
 }
@@ -278,59 +277,26 @@ void __hxcpp_stdlibs_boot()
    setbuf(stderr, 0);
 }
 
-wchar_t *__hxcpp_utf16_to_wchar(const char16_t *str, int u16length)
-{
-#if __SIZEOF_WCHAR_T__ == 2
-   // 16-bit wchar_t (e.g. Windows), no need to convert.
-   return (wchar_t *)str;
-#else
-   // 32-bit wchar_t (e.g. Linux, OS X), convert into a temporary buffer.
-   wchar_t *converted = (wchar_t *)malloc(sizeof(wchar_t) * (u16length + 1));
-   for (int i = 0; i < u16length; i++)
-   {
-      converted[i] = str[i];
-   }
-   converted[u16length] = 0;
-   return converted;
-#endif
-}
-
 void __trace(Dynamic inObj, Dynamic info)
 {
    String text;
    if (inObj != null())
       text = inObj->toString();
-   const char *message = text.__s ? text.__s : "null";
 
+
+   hx::charsOut convertBuf;
    if (info==null())
    {
-   #if defined(HX_SMART_STRINGS)
-      if (text.isUTF16Encoded())
-      {
-         wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
-         PRINTF("%S\n", converted);
-         if (converted != (wchar_t *)text.__w) free(converted);
-      }
-      else
-   #endif
-      PRINTF("%s\n", message);
+      PRINTF("?? %s\n", text.raw_ptr() ? text.out_str(&convertBuf) : "null");
    }
    else
    {
-
-      const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s;
+      const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().utf8_str(0,false);
       int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
 
-   #if defined(HX_SMART_STRINGS)
-      if (text.isUTF16Encoded())
-      {
-         wchar_t *converted = __hxcpp_utf16_to_wchar(text.__w, text.length);
-         PRINTF("%s:%d: %S\n", filename, line, converted);
-         if (converted != (wchar_t *)text.__w) free(converted);
-      }
-      else
-   #endif
-      PRINTF("%s:%d: %s\n", filename, line, message);
+      hx::charsOut convertBuf;
+      //PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
+      PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
    }
 
 }
@@ -605,30 +571,14 @@ Array<String> __get_args()
 
 void __hxcpp_print_string(const String &inV)
 {
-#if defined(HX_SMART_STRINGS)
-   if (inV.isUTF16Encoded())
-   {
-      wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
-      PRINTF("%S", converted);
-      if (converted != (wchar_t *)inV.__w) free(converted);
-   }
-   else
-#endif
-   PRINTF("%s", inV.__s);
+   hx::charsOut convertBuf;
+   PRINTF("%s", inV.out_str(&convertBuf) );
 }
 
 void __hxcpp_println_string(const String &inV)
 {
-#if defined(HX_SMART_STRINGS)
-   if (inV.isUTF16Encoded())
-   {
-      wchar_t *converted = __hxcpp_utf16_to_wchar(inV.__w, inV.length);
-      PRINTF("%S\n", converted);
-      if (converted != (wchar_t *)inV.__w) free(converted);
-   }
-   else
-#endif
-   PRINTF("%s\n", inV.__s);
+   hx::charsOut convertBuf;
+   PRINTF("%s\n", inV.out_str(&convertBuf));
 }
 
 
@@ -664,10 +614,11 @@ int __int__(double x)
 
 Dynamic __hxcpp_parse_int(const String &inString)
 {
-   if (!inString.__s)
+   if (!inString.raw_ptr())
       return null();
    long result;
-   const HX_CHAR *str = inString.__s;
+   hx::chars buf;
+   const char *str = inString.utf8_str(&buf);
    bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
    HX_CHAR *end = 0;
 
@@ -682,8 +633,12 @@ Dynamic __hxcpp_parse_int(const String &inString)
 
 double __hxcpp_parse_float(const String &inString)
 {
-   const HX_CHAR *str = inString.__s;
-   HX_CHAR *end = (HX_CHAR *)str;
+   if (!inString.raw_ptr())
+      return Math_obj::NaN;
+
+   hx::chars buf;
+   const char *str = inString.utf8_str(&buf);
+   char *end = (char *)str;
    double result = str ? strtod(str,&end) : 0;
 
    if (end==str)
@@ -791,7 +746,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    String str(inFieldName,strlen(inFieldName));
 
    // Make into "const" string that will not get collected...
-   str = String((HX_CHAR *)hx::InternalCreateConstBuffer(str.__s,(str.length+1) * sizeof(HX_CHAR),true), str.length );
+   str = String((HX_CHAR *)hx::InternalCreateConstBuffer(str.raw_ptr(),(str.length+1) * sizeof(HX_CHAR),true), str.length );
 
    if (sgFieldToStringAlloc<=sgFieldToStringSize+1)
    {
