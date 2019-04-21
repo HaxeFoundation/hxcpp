@@ -367,11 +367,8 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
       }
       else if (t1<=(int)CompareAsDouble || t2<=(int)CompareAsDouble)
       {
-         // numeric with a object...
-         return LESS ? ( EQ ? traits1::toDouble(v1) <= traits2::toDouble(v2) :
-                              traits1::toDouble(v1) <  traits2::toDouble(v2)  ) :
-                       ( EQ ? traits1::toDouble(v1) == traits2::toDouble(v2) :
-                              traits1::toDouble(v1) != traits2::toDouble(v2)  );
+         // numeric with a object only works for not-equal
+         return !LESS && !EQ;
       }
       else
       {
