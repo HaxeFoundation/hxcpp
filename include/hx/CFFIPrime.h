@@ -1,10 +1,14 @@
 #ifndef HX_CFFIPRIME_INCLUDED
 #define HX_CFFIPRIME_INCLUDED
 
+#include <hx/StringAlloc.h>
+
 
 #ifdef HXCPP_JS_PRIME
 #include <string>
 typedef std::string HxString;
+
+
 #else
 #include "CFFI.h"
 struct HxString
@@ -43,6 +47,30 @@ struct HxString
 
 namespace cffi
 {
+
+   enum Encoding
+   {
+      Ascii,
+      Utf8,
+      Char16
+   };
+
+#ifdef HXCPP_JS_PRIME
+inline Encoding getEncoding(const HxString &) { return Utf8; }
+#else
+Encoding getEncoding(const HxString &);
+#endif
+
+const char     *getAscii(const HxString &, int *outLen=0);
+const char     *getUtf8(const HxString &, int *outLen=0, hx::IStringAlloc *inBuffer=0);
+const char16_t *getChar16(const HxString &, int *outLen=0, hx::IStringAlloc *inBuffer=0);
+const wchar_t  *getWChar(const HxString &, int *outLen=0, hx::IStringAlloc *inBuffer=0);
+
+HxString allocString(const char *inPtr, int inLength=-1);
+HxString allocString(const wchar_t *inPtr, int inLength=-1);
+HxString allocString(const char16_t *inPtr, int inLength=-1);
+
+
 
 inline value alloc_pointer(void *inPtr) { return alloc_abstract((vkind)(0x100 + 2),inPtr); }
 

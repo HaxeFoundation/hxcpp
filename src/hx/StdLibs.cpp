@@ -284,7 +284,7 @@ void __trace(Dynamic inObj, Dynamic info)
       text = inObj->toString();
 
 
-   hx::charsOut convertBuf;
+   hx::strbuf convertBuf;
    if (info==null())
    {
       PRINTF("?? %s\n", text.raw_ptr() ? text.out_str(&convertBuf) : "null");
@@ -294,7 +294,7 @@ void __trace(Dynamic inObj, Dynamic info)
       const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().utf8_str(0,false);
       int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
 
-      hx::charsOut convertBuf;
+      hx::strbuf convertBuf;
       //PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
       PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
    }
@@ -571,13 +571,13 @@ Array<String> __get_args()
 
 void __hxcpp_print_string(const String &inV)
 {
-   hx::charsOut convertBuf;
+   hx::strbuf convertBuf;
    PRINTF("%s", inV.out_str(&convertBuf) );
 }
 
 void __hxcpp_println_string(const String &inV)
 {
-   hx::charsOut convertBuf;
+   hx::strbuf convertBuf;
    PRINTF("%s\n", inV.out_str(&convertBuf));
 }
 
@@ -617,7 +617,7 @@ Dynamic __hxcpp_parse_int(const String &inString)
    if (!inString.raw_ptr())
       return null();
    long result;
-   hx::chars buf;
+   hx::strbuf buf;
    const char *str = inString.utf8_str(&buf);
    bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
    HX_CHAR *end = 0;
@@ -636,7 +636,7 @@ double __hxcpp_parse_float(const String &inString)
    if (!inString.raw_ptr())
       return Math_obj::NaN;
 
-   hx::chars buf;
+   hx::strbuf buf;
    const char *str = inString.utf8_str(&buf);
    char *end = (char *)str;
    double result = str ? strtod(str,&end) : 0;

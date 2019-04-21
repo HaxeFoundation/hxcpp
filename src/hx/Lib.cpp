@@ -254,8 +254,8 @@ static String FindHaxelib(String inLib)
    // printf("FindHaxelib %S\n", inLib.__s);
 
    String haxepath;
-   hx::charsOut convertBuf;
-   hx::charsOut convertBuf1;
+   hx::strbuf convertBuf;
+   hx::strbuf convertBuf1;
 
    struct stat s;
    if ( (stat(".haxelib",&s)==0 && (s.st_mode & S_IFDIR) ) )
@@ -542,7 +542,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
       #endif
    }
 
-   hx::charsOut convertBuf;
+   hx::strbuf convertBuf;
 
 
    Module module = sgLoadedModule[module_name.utf8_str()];

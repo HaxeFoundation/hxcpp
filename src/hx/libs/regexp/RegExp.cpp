@@ -71,7 +71,7 @@ struct pcredata : public hx::Object
          {
             const char *error = 0;
             int err_offset = 0;
-            hx::chars16 buf;
+            hx::strbuf buf;
             rUtf16 = pcre16_compile((PCRE_SPTR16)expr.wc_str(&buf),flags|PCRE_UTF16,&error,&err_offset,NULL);
             if (!rUtf16)
             {
@@ -135,7 +135,7 @@ struct pcredata : public hx::Object
 
 Dynamic _hx_regexp_new_options(String s, String opt)
 {
-   hx::chars buf;
+   hx::strbuf buf;
    const char *o = opt.utf8_str(&buf);
    int options = PCRE_UCP;
    while( *o )

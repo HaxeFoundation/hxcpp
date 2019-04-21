@@ -217,7 +217,7 @@ void Char16AdvanceSet(char16_t *&ioStr,int inChar)
 
 
 template<typename T>
-char *TConvertToUTF8(const T *inStr, int *ioLen, hx::chars *inBuffer,bool)
+char *TConvertToUTF8(const T *inStr, int *ioLen, hx::IStringAlloc *inBuffer,bool)
 {
    int len = 0;
    int chars = 0;
@@ -233,7 +233,8 @@ char *TConvertToUTF8(const T *inStr, int *ioLen, hx::chars *inBuffer,bool)
          chars += UTF8Bytes(inStr[i]);
    }
 
-   char *buf = inBuffer ? inBuffer->setSize(chars+1) : (char *)NewGCPrivate(0,chars+1);
+   char *buf = inBuffer ? (char *)inBuffer->allocBytes(chars+1) :
+                          (char *)NewGCPrivate(0,chars+1);
    char *ptr = buf;
    for(int i=0;i<len;i++)
        UTF8EncodeAdvance(ptr,inStr[i]);
@@ -246,7 +247,7 @@ char *TConvertToUTF8(const T *inStr, int *ioLen, hx::chars *inBuffer,bool)
 
 
 template<>
-char *TConvertToUTF8(const char16_t *inStr, int *ioLen, hx::chars *inBuffer,bool throwInvalid)
+char *TConvertToUTF8(const char16_t *inStr, int *ioLen, hx::IStringAlloc *inBuffer,bool throwInvalid)
 {
    int len = 0;
    if (ioLen==0 || *ioLen==0)
@@ -265,7 +266,8 @@ char *TConvertToUTF8(const char16_t *inStr, int *ioLen, hx::chars *inBuffer,bool
    while(s<end)
       chars += UTF8Bytes( Char16Advance( s,throwInvalid ) );
 
-   char *buf = inBuffer ? inBuffer->setSize(chars+1) : (char *)NewGCPrivate(0,chars+1);
+   char *buf = inBuffer ? (char *)inBuffer->allocBytes(chars+1) :
+                          (char *)NewGCPrivate(0,chars+1);
    char *ptr = buf;
    s = inStr;
    while(s<end)
@@ -1430,7 +1432,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
 
 
 
-const char * String::utf8_str(hx::chars *inBuffer,bool throwInvalid) const
+const char * String::utf8_str(hx::IStringAlloc *inBuffer,bool throwInvalid) const
 {
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
@@ -1524,7 +1526,7 @@ wchar_t *ConvertToWChar(const char *inStr, int *ioLen)
 
 
 
-const char16_t * String::wc_str(hx::chars16 *inBuffer) const
+const char16_t * String::wc_str(hx::IStringAlloc *inBuffer) const
 {
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
@@ -1541,7 +1543,8 @@ const char16_t * String::wc_str(hx::chars16 *inBuffer) const
       char16Count+= code>=0x10000 ? 2 : 1;
    }
 
-   char16_t *str = inBuffer ? inBuffer->setSize(char16Count+1) : (char16_t *)NewGCPrivate(0,2*(char16Count+1));
+   char16_t *str = inBuffer ? (char16_t *)inBuffer->allocBytes(2*(char16Count+1)) :
+                              (char16_t *)NewGCPrivate(0,2*(char16Count+1));
 
    u = ptr;
    char16_t *o = str;
@@ -1556,7 +1559,7 @@ const char16_t * String::wc_str(hx::chars16 *inBuffer) const
 }
 
 
-const wchar_t * String::wchar_str(hx::wchars *inBuffer) const
+const wchar_t * String::wchar_str(hx::IStringAlloc *inBuffer) const
 {
    if (!__s)
       return 0;
@@ -1573,7 +1576,7 @@ const wchar_t * String::wchar_str(hx::wchars *inBuffer) const
    wchar_t *result = 0;
    if (inBuffer)
    {
-      result = inBuffer->setSize(length+1);
+      result = (wchar_t *)inBuffer->allocBytes(sizeof(wchar_t)*(length+1) );
    }
    else
    {
@@ -1601,7 +1604,7 @@ const wchar_t * String::wchar_str(hx::wchars *inBuffer) const
    wchar_t *result = 0;
    if (inBuffer)
    {
-      result = inBuffer->setSize(idx+1);
+      result = (wchar_t *)inBuffer->allocBytes(sizeof(wchar_t)*(idx+1) );
    }
    else
    {

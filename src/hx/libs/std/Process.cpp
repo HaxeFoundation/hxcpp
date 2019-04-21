@@ -287,7 +287,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
    if( pipe(input) || pipe(output) || pipe(error) )
       return null();
 
-   hx::chars buf;
+   hx::strbuf buf;
    std::vector< std::string > values;
    if (isRaw)
    {

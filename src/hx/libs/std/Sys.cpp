@@ -81,10 +81,10 @@ String _hx_std_get_env( String v )
       return String();
    #else
       #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
-         hx::wchars wbuf;
+         hx::strbuf wbuf;
          return String( _wgetenv( v.wchar_str(&wbuf) ) );
       #else
-         hx::chars buf;
+         hx::strbuf buf;
          return String( getenv(v.utf8_str(&buf)) );
       #endif
    #endif
@@ -309,11 +309,11 @@ int _hx_std_sys_command( String cmd )
    else
    #endif
    {
-      hx::wchars wbuf;
+      hx::strbuf wbuf;
       result = _wsystem(cmd.wchar_str(&wbuf));
    }
 #else
-   hx::chars buf;
+   hx::strbuf buf;
    hx::EnterGCFreeZone();
    int result = system(cmd.utf8_str(&buf));
 #endif
@@ -378,7 +378,7 @@ void _hx_std_file_delete( String path )
    else
    #endif
    {
-      hx::chars buf;
+      hx::strbuf buf;
       err = unlink(path.utf8_str(&buf));
    }
 
@@ -397,13 +397,11 @@ void  _hx_std_sys_rename( String path, String newname )
 {
    hx::EnterGCFreeZone();
 
+   hx::strbuf buf0;
+   hx::strbuf buf1;
    #ifdef NEKO_WINDOWS
-   hx::wchars buf0;
-   hx::wchars buf1;
    bool err = _wrename(path.wchar_str(&buf0),newname.wchar_str(&buf1));
    #else
-   hx::chars buf0;
-   hx::chars buf1;
    bool err = rename(path.utf8_str(&buf0),newname.utf8_str(&buf1));
    #endif
 
@@ -443,18 +441,18 @@ Dynamic _hx_std_sys_stat( String path )
       #if defined(HX_SMART_STRINGS)
       if (path.isUTF16Encoded())
       {
-         hx::wchars buf;
+         hx::strbuf buf;
          err = _wstat(path.wchar_str(&buf),&s);
       }
       else
       #endif
       {
-         hx::chars buf;
+         hx::strbuf buf;
          err = _stat(path.utf8_str(&buf),&s);
       }
    #else
       struct stat s;
-      hx::chars buf;
+      hx::strbuf buf;
       err = stat(path.utf8_str(&buf),&s);
    #endif
 
@@ -507,18 +505,18 @@ String _hx_std_sys_file_type( String path )
       #if defined(HX_SMART_STRINGS)
       if (path.isUTF16Encoded())
       {
-         hx::wchars buf;
+         hx::strbuf buf;
          err = _wstat(path.wchar_str(&buf),&s);
       }
       else
       #endif
       {
-         hx::chars buf;
+         hx::strbuf buf;
          err = _stat(path.utf8_str(&buf),&s);
       }
    #else
       struct stat s;
-      hx::chars buf;
+      hx::strbuf buf;
       err = stat(path.utf8_str(&buf),&s);
    #endif
    hx::ExitGCFreeZone();
@@ -588,7 +586,7 @@ void _hx_std_sys_remove_dir( String path )
    else
    #endif
    {
-      hx::chars buf;
+      hx::strbuf buf;
       ok = rmdir(path.utf8_str(&buf)) == 0;
    }
 
@@ -746,7 +744,7 @@ String _hx_std_file_full_path( String path )
    return path;
 #elif defined(NEKO_WINDOWS)
    wchar_t buf[MAX_PATH+1];
-   hx::wchars wbuf;
+   hx::strbuf wbuf;
    if( GetFullPathNameW(path.wchar_str(&wbuf),MAX_PATH+1,buf,NULL) == 0 )
       return null();
    return String(buf);
@@ -754,7 +752,7 @@ String _hx_std_file_full_path( String path )
    return path;
 #else
    char buf[PATH_MAX];
-   hx::chars ubuf;
+   hx::strbuf ubuf;
    if( realpath(path.utf8_str(&ubuf),buf) == NULL )
       return null();
    return String(buf);

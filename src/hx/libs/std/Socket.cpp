@@ -351,12 +351,12 @@ int _hx_std_host_resolve( String host )
    unsigned int ip;
 
    hx::EnterGCFreeZone();
-   hx::chars buf;
+   hx::strbuf buf;
    ip = inet_addr(host.utf8_str(&buf));
    if( ip == INADDR_NONE )
    {
       struct hostent *h = 0;
-      hx::chars hostBuf;
+      hx::strbuf hostBuf;
 
 #   if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
       h = gethostbyname(host.utf8_str(&hostBuf));
@@ -385,7 +385,7 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
 {
    in6_addr ipv6;
 
-   hx::chars hostBuf;
+   hx::strbuf hostBuf;
    const char *hostStr = host.utf8_str(&hostBuf);
    #ifdef DYNAMIC_INET_FUNCS
    if (!dynamic_inet_pton_tried)

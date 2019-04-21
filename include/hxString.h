@@ -5,16 +5,12 @@
 #error "Please include hxcpp.h, not hx/Object.h"
 #endif
 
+#include <hx/StringAlloc.h>
+
 #ifdef __OBJC__
 #import <Foundation/Foundation.h>
 #endif
 
-namespace hx {
-typedef hx::QuickVec<wchar_t> wchars;
-typedef hx::QuickVec<char> chars;
-typedef hx::QuickVec<char> charsOut;
-typedef hx::QuickVec<char16_t> chars16;
-}
 
 // --- String --------------------------------------------------------
 //
@@ -142,11 +138,11 @@ public:
 
    inline const char *&raw_ref() { return __s; }
    inline const char *raw_ptr() const { return __s; }
-   const char *utf8_str(hx::chars *inBuffer = 0,bool throwInvalid=true) const;
+   const char *utf8_str(hx::IStringAlloc *inBuffer = 0,bool throwInvalid=true) const;
    inline const char *c_str() const { return utf8_str(); }
-   inline const char *out_str(hx::charsOut *inBuffer = 0) const { return utf8_str(inBuffer,false); }
-   const wchar_t *wchar_str(hx::wchars *inBuffer = 0) const;
-   const char16_t *wc_str(hx::chars16 *inBuffer = 0) const;
+   inline const char *out_str(hx::IStringAlloc *inBuffer = 0) const { return utf8_str(inBuffer,false); }
+   const wchar_t *wchar_str(hx::IStringAlloc *inBuffer = 0) const;
+   const char16_t *wc_str(hx::IStringAlloc *inBuffer = 0) const;
 
    const char *__CStr() const { return utf8_str(); };
    const wchar_t *__WCStr() const { return wchar_str(0); }

@@ -92,14 +92,12 @@ Dynamic _hx_std_file_open( String fname, String r )
 {
    FILE *file = 0;
 
+   hx::strbuf buf0;
+   hx::strbuf buf1;
 #ifdef NEKO_WINDOWS
-   hx::wchars buf0;
-   hx::wchars buf1;
    hx::EnterGCFreeZone();
    file = _wfopen(fname.wchar_str(&buf0),r.wchar_str(&buf1));
 #else
-   hx::chars buf0;
-   hx::chars buf1;
    hx::EnterGCFreeZone();
    file = fopen(fname.utf8_str(&buf0),r.utf8_str(&buf1));
 #endif
@@ -304,12 +302,11 @@ String _hx_std_file_contents_string( String name )
 {
    std::vector<char> buffer;
 
+   hx::strbuf buf;
 #ifdef NEKO_WINDOWS
-   hx::wchars buf;
    hx::EnterGCFreeZone();
    FILE *file = _wfopen(name.wchar_str(&buf), L"rb");
 #else
-   hx::chars buf;
    hx::EnterGCFreeZone();
    FILE *file = fopen(name.utf8_str(&buf), "rb");
 #endif
@@ -350,13 +347,11 @@ String _hx_std_file_contents_string( String name )
 **/
 Array<unsigned char> _hx_std_file_contents_bytes( String name )
 {
-
+   hx::strbuf buf;
 #ifdef NEKO_WINDOWS
-   hx::wchars buf;
    hx::EnterGCFreeZone();
    FILE *file = _wfopen(name.wchar_str(&buf), L"rb");
 #else
-   hx::chars buf;
    hx::EnterGCFreeZone();
    FILE *file = fopen(name.utf8_str(&buf), "rb");
 #endif
