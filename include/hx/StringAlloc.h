@@ -1,7 +1,6 @@
 #ifndef HX_STRING_ALLOC
 #define HX_STRING_ALLOC
 
-#include <uchar.h>
 #include <stdlib.h>
 #include <stdint.h>
 
