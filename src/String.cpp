@@ -185,10 +185,15 @@ int _hx_utf8_decode_advance(char *&ioPtr)
 inline int Char16Advance(const char16_t *&ioStr,bool throwOnErr=true)
 {
    int ch = *ioStr++;
-   if (ch>=0xd800)
+   if (ch>=0xd800 && ch<0xe000) // UTF-16 surrogate
    {
+      if (ch>0xdbff) // invalid high surrogate
+      {
+         if (throwOnErr)
+            hx::Throw(HX_CSTRING("Invalid UTF16"));
+      }
       int peek = *ioStr;
-      if (peek<0xdc00)
+      if (peek<0xdc00||peek>0xdfff) // invalid low surrogate
       {
          if (throwOnErr)
             hx::Throw(HX_CSTRING("Invalid UTF16"));
