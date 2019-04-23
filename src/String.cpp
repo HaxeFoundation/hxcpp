@@ -290,6 +290,111 @@ char16_t *String::allocChar16Ptr(int len)
 
 
 template<typename T>
+static const char *GCStringDup(const T *inStr,int inLen, int *outLen=0)
+{
+   if (inStr==0 && inLen<=0)
+   {
+      if (outLen)
+         outLen = 0;
+      return sEmptyString.raw_ptr();
+   }
+
+   int len = inLen;
+   bool allAscii = true;
+   if (len==-1)
+   {
+      len=0;
+      while(inStr[len])
+      {
+         if (sizeof(T)>1 && allAscii)
+            allAscii = inStr[len] <= 127;
+         len++;
+      }
+   }
+   else if (sizeof(T)>1)
+   {
+      for(int i=0;i<inLen;i++)
+         if (inStr[i]>127)
+         {
+            allAscii = false;
+            break;
+         }
+   }
+
+   if (outLen)
+      *outLen = len;
+
+   if (len==1)
+      return String::fromCharCode(inStr[0]).raw_ptr();
+
+   #ifdef HXCPP_COMBINE_STRINGS
+   bool ident = len<20 && sIsIdent[inStr[0]] && (inStr[0]<'0' || inStr[0]>'9');
+   if (ident && len>3)
+      for(int p=1; p<len;p++)
+         if (!sIsIdent[ inStr[p] ])
+         {
+            ident = false;
+            break;
+         }
+
+   if (ident)
+   {
+      hx::StackContext *ctx = hx::StackContext::getCurrent();
+      if (!ctx->stringSet)
+         ctx->stringSet = new WeakStringSet();
+
+      unsigned int hash = 0;
+      for(int i=0;i<len;i++)
+         hash = hash*223 + ((unsigned char *)inStr)[i];
+
+      struct Finder
+      {
+         int len;
+         const char *ptr;
+         Finder(int len, const char *inPtr) : len(len), ptr(inPtr) { }
+         bool operator==(const String &inStr) const
+         {
+            return len == inStr.length && !memcmp(ptr, inStr.__s, len*sizeof(char));
+         }
+      };
+      String found;
+      if (ctx->stringSet->findEquivalentKey(found, hash, Finder(len, inStr)))
+         return found.__s;
+
+      char *result = hx::NewString(len + 4);
+      memcpy(result,inStr,sizeof(char)*(len));
+      result[len] = '\0';
+      *((unsigned int *)(result + len + 1)) = hash;
+      ((unsigned int *)(result))[-1] |= HX_GC_STRING_HASH;
+
+      String asString(result, len);
+      ctx->stringSet->TSet( asString, true );
+
+      return result;
+   }
+   #endif
+
+   if (sizeof(T)==1 || allAscii)
+   {
+      char *result = hx::NewString( len );
+      if (sizeof(T)==1)
+         memcpy(result,inStr,sizeof(char)*(len));
+      else
+         for(int i=0;i<len;i++)
+            result[i] = inStr[i];
+      return result;
+   }
+
+
+   char16_t *result = String::allocChar16Ptr(len);
+   memcpy(result,inStr,2*len);
+   return (const char *)result;
+}
+
+
+
+
+template<typename T>
 inline String TCopyString(const T *inString,int inLength)
 {
    if (!inString)
@@ -605,109 +710,6 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
 }
 
 
-
-
-template<typename T>
-static const char *GCStringDup(const T *inStr,int inLen, int *outLen=0)
-{
-   if (inStr==0 && inLen<=0)
-   {
-      if (outLen)
-         outLen = 0;
-      return sEmptyString.raw_ptr();
-   }
-
-   int len = inLen;
-   bool allAscii = true;
-   if (len==-1)
-   {
-      len=0;
-      while(inStr[len])
-      {
-         if (sizeof(T)>1 && allAscii)
-            allAscii = inStr[len] <= 127;
-         len++;
-      }
-   }
-   else if (sizeof(T)>1)
-   {
-      for(int i=0;i<inLen;i++)
-         if (inStr[i]>127)
-         {
-            allAscii = false;
-            break;
-         }
-   }
-
-   if (outLen)
-      *outLen = len;
-
-   if (len==1)
-      return String::fromCharCode(inStr[0]).raw_ptr();
-
-   #ifdef HXCPP_COMBINE_STRINGS
-   bool ident = len<20 && sIsIdent[inStr[0]] && (inStr[0]<'0' || inStr[0]>'9');
-   if (ident && len>3)
-      for(int p=1; p<len;p++)
-         if (!sIsIdent[ inStr[p] ])
-         {
-            ident = false;
-            break;
-         }
-
-   if (ident)
-   {
-      hx::StackContext *ctx = hx::StackContext::getCurrent();
-      if (!ctx->stringSet)
-         ctx->stringSet = new WeakStringSet();
-
-      unsigned int hash = 0;
-      for(int i=0;i<len;i++)
-         hash = hash*223 + ((unsigned char *)inStr)[i];
-
-      struct Finder
-      {
-         int len;
-         const char *ptr;
-         Finder(int len, const char *inPtr) : len(len), ptr(inPtr) { }
-         bool operator==(const String &inStr) const
-         {
-            return len == inStr.length && !memcmp(ptr, inStr.__s, len*sizeof(char));
-         }
-      };
-      String found;
-      if (ctx->stringSet->findEquivalentKey(found, hash, Finder(len, inStr)))
-         return found.__s;
-
-      char *result = hx::NewString(len + 4);
-      memcpy(result,inStr,sizeof(char)*(len));
-      result[len] = '\0';
-      *((unsigned int *)(result + len + 1)) = hash;
-      ((unsigned int *)(result))[-1] |= HX_GC_STRING_HASH;
-
-      String asString(result, len);
-      ctx->stringSet->TSet( asString, true );
-
-      return result;
-   }
-   #endif
-
-   if (sizeof(T)==1 || allAscii)
-   {
-      char *result = hx::NewString( len );
-      if (sizeof(T)==1)
-         memcpy(result,inStr,sizeof(char)*(len));
-      else
-         for(int i=0;i<len;i++)
-            result[i] = inStr[i];
-      return result;
-   }
-
-
-   char16_t *result = String::allocChar16Ptr(len);
-   memcpy(result,inStr,2*len);
-   return (const char *)result;
-}
 
 
 
