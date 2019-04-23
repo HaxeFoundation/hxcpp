@@ -8,7 +8,7 @@ import sys.FileSystem;
 import sys.thread.Thread;
 import sys.thread.Mutex;
 import sys.thread.Tls;
-#elseif 
+#elseif neko
 import neko.vm.Thread;
 import neko.vm.Mutex;
 import neko.vm.Tls;
