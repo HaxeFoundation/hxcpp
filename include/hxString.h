@@ -31,12 +31,17 @@ public:
 
    inline String() : length(0), __s(0) { }
    explicit String(const char *inPtr);
-   inline String(const char *inPtr,int inLen) : __s(inPtr), length(inLen) { }
 
-   inline String(const char16_t *inPtr,int inLen,bool) : __w(inPtr), length(inLen) { }
+   // Uses pointer
+   inline String(const char *inPtr,int inLen) : __s(inPtr), length(inLen) { }
+   #ifdef HX_SMART_STRINGS
+   inline String(const char16_t *inPtr,int inLen) : __w(inPtr), length(inLen) { }
+   #endif
 
    // Makes copy
-   String(const wchar_t *inPtr,int inLen=-1);
+   static String String::create(const wchar_t *inPtr,int inLen=-1);
+   static String String::create(const char16_t *inPtr,int inLen=-1);
+   static String String::create(const char *inPtr,int inLen=-1);
 
    #ifdef __OBJC__
    inline String(NSString *inString)
@@ -45,7 +50,8 @@ public:
    }
    inline operator NSString * () const
    {
-      return [[NSString alloc] initWithUTF8String:__s];
+      hx::strbuf buf;
+      return [[NSString alloc] initWithUTF8String:utf8_str(&buf) ];
    }
    #endif
    #if defined(HX_WINRT) && defined(__cplusplus_winrt)
@@ -343,7 +349,7 @@ class StringOffset
 
 inline HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_string_create(const char *str, int len)
 {
-   return String(str,len).dup();
+   return String::create(str,len);
 }
 
 inline int HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_string_compare(String inString0, String inString1)

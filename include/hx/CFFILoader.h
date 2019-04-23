@@ -122,6 +122,55 @@ extern "C" ret name def_args;
       return false;
    }
 
+   // Neko, old cpp and js_prime are all utf8 based - and go through here
+   #ifdef HXCPP_PRIME
+   struct DynAlloc : public hx::IStringAlloc
+   {
+      #define WANT_DYNALLOC_ALLOC_BYTES
+      void *allocBytes(size_t n);
+   };
+
+
+   HxString default_string_wchar(const wchar_t *src,int len)
+   {
+      hx::strbuf buf;
+      const char *str = cffi::to_utf8(src,len,&buf);
+      return HxString(str,len);
+   }
+   HxString default_string_utf8(const char *str,int len)
+   {
+      return HxString(str,len);
+   }
+   HxString default_string_utf16(const char16_t *src,int len)
+   {
+      hx::strbuf buf;
+      const char *str = cffi::to_utf8(src,len,&buf);
+      return HxString(str,len);
+   }
+
+   const char *default_to_utf8(const HxString &str,hx::IStringAlloc *alloc)
+   {
+      return str.c_str();
+   }
+   const wchar_t *default_to_wchar(const HxString &str,hx::IStringAlloc *alloc)
+   {
+      DynAlloc d;
+      if (!alloc)
+         alloc = &d;
+      return cffi::from_utf8<wchar_t>(str.c_str(),str.size(),alloc);
+   }
+   const char16_t *default_to_utf16(const HxString &str,hx::IStringAlloc *alloc)
+   {
+      DynAlloc d;
+      if (!alloc)
+         alloc = &d;
+      return cffi::from_utf8<char16_t>(str.c_str(),str.size(),alloc);
+   }
+   #endif
+
+
+   hx::StringEncoding default_get_encoding(void *inPtr) { return hx::StringUtf8; }
+
    void * default_alloc_empty_string(int) { return 0; }
 
    // Do nothing on earlier versions of hxcpp that do not know what to do
@@ -138,6 +187,23 @@ extern "C" ret name def_args;
          return (void *)default_alloc_empty_string;
       if (!strcmp(inName,"gc_change_managed_memory"))
          return (void *)default_gc_change_managed_memory;
+      if (!strcmp(inName,"hxs_encoding"))
+         return (void *)default_get_encoding;
+      #ifdef HXCPP_PRIME
+      if (!strcmp(inName,"alloc_hxs_wchar"))
+         return (void *)default_string_wchar;
+      if (!strcmp(inName,"alloc_hxs_utf16"))
+         return (void *)default_string_utf16;
+      if (!strcmp(inName,"alloc_hxs_utf8"))
+         return (void *)default_string_utf8;
+      if (!strcmp(inName,"hxs_utf8"))
+         return (void *)default_to_utf8;
+      if (!strcmp(inName,"hxs_utf16"))
+         return (void *)default_to_utf16;
+      if (!strcmp(inName,"hxs_wchar"))
+         return (void *)default_to_wchar;
+      #endif
+
       return 0;
    }
 

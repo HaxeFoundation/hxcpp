@@ -19,12 +19,14 @@ class RunTests
 
       setDir("cffi");
       command("haxe", ["compile.hxml", "-debug"] );
+      command("haxe", ["compile-utf8.hxml", "-debug"] );
       command("haxe", ["compile-neko.hxml", "-debug"] );
 
       copy('project/ndll/$binDir/prime$ext', 'bin/neko/prime.ndll');
 
       setDir("cffi");
       command("bin" + sep + "cpp" + sep + "TestMain-debug",[]);
+      command("bin" + sep + "cpp-utf8" + sep + "TestMain-debug",[]);
 
       setDir("cffi/bin/neko");
       command("neko", ["TestMain.n"]);

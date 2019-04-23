@@ -122,6 +122,16 @@ enum hxValueType
    valtAbstractBase = 0x100,
 };
 
+namespace hx
+{
+enum StringEncoding
+{
+   StringAscii,
+   StringUtf8,
+   StringUtf16
+};
+}
+
 // val_fun_nargs may return a special value
 enum { faNotFunction = -2, faVarArgs=-1, faArgs0=0 /* ... */ };
 
@@ -181,6 +191,13 @@ extern FUNC_##name name;
 
 #include "CFFIAPI.h"
 
+
+#ifdef WANT_DYNALLOC_ALLOC_BYTES
+void *DynAlloc::allocBytes(size_t n)
+{
+   return hx_alloc((int)n);
+}
+#endif
 
 
 

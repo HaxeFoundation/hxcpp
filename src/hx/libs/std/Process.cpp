@@ -120,19 +120,6 @@ vprocess *getProcess(Dynamic handle)
 } // end anon namespace
 
 
-inline String mkstring( wchar_t *data, int len )
-{
-   return String( data, len );
-}
-inline String mkstring( char16_t *data, int len )
-{
-   return String( data, len, true ).dup();
-}
-inline String mkstring( char *data, int len )
-{
-   return String( data, len ).dup();
-}
-
 
 template<typename T>
 static String TQuoted(const T *ptr, int len)
@@ -173,7 +160,7 @@ static String TQuoted(const T *ptr, int len)
    int qlen = (int)quoted.size();
    quoted.push_back('\0');
 
-   return mkstring( &quoted[0], qlen );
+   return String::create( &quoted[0], qlen );
 }
 
 static String quoteString(String v)

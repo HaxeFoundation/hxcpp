@@ -19,6 +19,7 @@ class TestPrime extends TestBase
    static var multi11 = Loader.load("multi11","iiiiiiiiiiii" );
    static var multi12 = Loader.load("multi12","iiiiiiiiiiiii" );
    static var getNullString = Loader.load("getNullString","s" );
+   static var addStrings = Loader.load("addStrings", 'sss');
 
    // Non-static test
    var fields = Loader.load("fields", "ov" );
@@ -64,5 +65,14 @@ class TestPrime extends TestBase
       assertEquals( 10, multi10(1,1,1,1,1,1,1,1,1,1) );
       assertEquals( 11, multi11(1,1,1,1,1,1,1,1,1,1,1) );
       assertEquals( 12, multi12(1,1,1,1,1,1,1,1,1,1,1,1) );
+
+      var s0 = "hello";
+      var s1 = "こんにちは";
+      assertTrue( addStrings(s0,s0) == s0+s0 );
+      var s01 = addStrings(s0,s1);
+      assertTrue( s01 == s0+s1 );
+      var s11 = addStrings(s1,s1);
+      assertTrue( s11 == s1+s1 );
+
    }
 }

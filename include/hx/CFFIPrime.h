@@ -4,13 +4,145 @@
 #include <hx/StringAlloc.h>
 
 
+#define HXCPP_PRIME
+
+
+namespace cffi
+{
+template<typename T>
+inline const char *to_utf8(const T *inStr,int &ioLen,hx::IStringAlloc *inAlloc)
+{
+  int len = 0;
+  int n = ioLen;
+  if (n==0)
+     while(inStr[n])
+        n++;
+  for(int i=0;i<n;i++)
+  {
+      int c = inStr[i];
+      if ( sizeof(T)==2 && c>=0xd800)
+      {
+         i++;
+         int peek = i<n ? inStr[i] : 0xdc00;
+         if (peek<0xdc00)
+            peek = 0xdc00;
+         c = 0x10000 | ((c-0xd800)  << 10) | (peek-0xdc00);
+      }
+
+      if( c <= 0x7F ) len++;
+      else if( c <= 0x7FF ) len+=2;
+      else if( c <= 0xFFFF ) len+=3;
+      else len+= 4;
+   }
+
+   char *result = (char *)inAlloc->allocBytes(len+1);
+   unsigned char *data =  (unsigned char *)result;
+   for(int i=0;i<n;i++)
+   {
+      int c = inStr[i];
+      if ( sizeof(T)==2 && c>=0xd800)
+      {
+         int peek = i+1<n ? 0xdc00 : inStr[i+1];
+         if (peek<0xdc00)
+            peek = 0xdc00;
+         c = 0x10000 | ((c-0xd800)  << 10) | (peek-0xdc00);
+         i++;
+      }
+
+      if( c <= 0x7F )
+         *data++ = c;
+      else if( c <= 0x7FF )
+      {
+         *data++ = 0xC0 | (c >> 6);
+         *data++ = 0x80 | (c & 63);
+      }
+      else if( c <= 0xFFFF )
+      {
+         *data++ = 0xE0 | (c >> 12);
+         *data++ = 0x80 | ((c >> 6) & 63);
+         *data++ = 0x80 | (c & 63);
+      }
+      else
+      {
+         *data++ = 0xF0 | (c >> 18);
+         *data++ = 0x80 | ((c >> 12) & 63);
+         *data++ = 0x80 | ((c >> 6) & 63);
+         *data++ = 0x80 | (c & 63);
+      }
+   }
+   result[len] = 0;
+   ioLen = len;
+   return result;
+}
+
+static inline int decode_advance_utf8(const unsigned char * &ioPtr,const unsigned char *end)
+{
+   int c = *ioPtr++;
+   if( c < 0x80 )
+   {
+      return c;
+   }
+   else if( c < 0xE0 )
+   {
+      return ((c & 0x3F) << 6) | (ioPtr < end ? (*ioPtr++) & 0x7F : 0);
+   }
+   else if( c < 0xF0 )
+   {
+      int c2 = ioPtr<end ? *ioPtr++ : 0;
+      return  ((c & 0x1F) << 12) | ((c2 & 0x7F) << 6) | ( ioPtr<end ? (*ioPtr++) & 0x7F : 0 );
+   }
+
+   int c2 = ioPtr<end ? *ioPtr++ : 0;
+   int c3 = ioPtr<end ? *ioPtr++ : 0;
+   return ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 & 0x7F) << 6) | ( ioPtr<end ? (*ioPtr++) & 0x7F : 0);
+}
+
+template<typename T>
+inline const T *from_utf8(const char *inStr,int len,hx::IStringAlloc *inAlloc)
+{
+   int n = len;
+   if (n<0)
+      while(inStr[n])
+         n++;
+
+   const unsigned char *str = (const unsigned char *)inStr;
+   const unsigned char *end = str + n;
+   int count = 0;
+   while(str<end)
+   {
+      int ch = decode_advance_utf8(str,end);
+      count++;
+      if (sizeof(T)==2 &&  ch>=0x10000)
+         count++;
+   }
+   T *result = (T*)inAlloc->allocBytes( sizeof(T)*(count+1) );
+   T *dest = result;
+   str = (const unsigned char *)inStr;
+   while(str<end)
+   {
+      int ch = decode_advance_utf8(str,end);
+      if (sizeof(T)==2 && ch>=0x10000)
+      {
+         int over = (ch-0x10000);
+         *dest++ = (over>>10) + 0xd800;
+         *dest++ = (over&0x3ff) + 0xdc00;
+      }
+      else
+         *dest++ = ch;
+   }
+   *dest++ = 0;
+
+   return result;
+}
+
+}
+
 #ifdef HXCPP_JS_PRIME
 #include <string>
 typedef std::string HxString;
 
-
 #else
-#include "CFFI.h"
+
 struct HxString
 {
    inline HxString(const HxString &inRHS)
@@ -18,59 +150,40 @@ struct HxString
       length = inRHS.length;
       __s = inRHS.__s;
    }
-   inline HxString(const char *inS,int inLen=-1, bool inAllocGcString=true) : length(inLen), __s(inS)
-   {
-      if (!inS)
-         length = 0;
-      else
-      {
-         if (length<0)
-            for(length=0; __s[length]; length++)
-            {
-            }
-         if (inAllocGcString)
-            __s = alloc_string_data(__s, length);
-      }
-   }
-
-   inline int size() { return length; }
-   inline const char *c_str() { return __s; }
-
    inline HxString() : length(0), __s(0) { }
+   inline HxString(const char *inS,int inLen=-1, bool inAllocGcString=true);
+   inline int size() const { return length; }
+   inline const char *c_str() const { return __s; }
+
 
    int length;
    const char *__s;
-
 };
+
+#include "CFFI.h"
 #endif
+
+#ifndef HXCPP_JS_PRIME
+HxString::HxString(const char *inS,int inLen, bool inAllocGcString) : length(inLen), __s(inS)
+{
+   if (!inS)
+      length = 0;
+   else
+   {
+      if (length<0)
+         for(length=0; __s[length]; length++)
+         {
+         }
+      if (inAllocGcString)
+         __s = alloc_string_data(__s, length);
+   }
+}
+#endif
+
 
 
 namespace cffi
 {
-
-   enum Encoding
-   {
-      Ascii,
-      Utf8,
-      Char16
-   };
-
-#ifdef HXCPP_JS_PRIME
-inline Encoding getEncoding(const HxString &) { return Utf8; }
-#else
-Encoding getEncoding(const HxString &);
-#endif
-
-const char     *getAscii(const HxString &, int *outLen=0);
-const char     *getUtf8(const HxString &, int *outLen=0, hx::IStringAlloc *inBuffer=0);
-const char16_t *getChar16(const HxString &, int *outLen=0, hx::IStringAlloc *inBuffer=0);
-const wchar_t  *getWChar(const HxString &, int *outLen=0, hx::IStringAlloc *inBuffer=0);
-
-HxString allocString(const char *inPtr, int inLength=-1);
-HxString allocString(const wchar_t *inPtr, int inLength=-1);
-HxString allocString(const char16_t *inPtr, int inLength=-1);
-
-
 
 inline value alloc_pointer(void *inPtr) { return alloc_abstract((vkind)(0x100 + 2),inPtr); }
 

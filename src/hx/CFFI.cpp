@@ -107,7 +107,7 @@ public:
       return HX_CSTRING("Abstract(") +
              __hxcpp_get_kind(this) +
              HX_CSTRING(":") +
-             String(buffer,strlen(buffer)).dup() +
+             String::create(buffer,strlen(buffer)) +
              HX_CSTRING(")");
    }
 
@@ -178,7 +178,7 @@ String __hxcpp_get_kind(Dynamic inObject)
    ReverseKindMap::const_iterator it = sgReverseKindMap.find(type);
    if (it==sgReverseKindMap.end())
       return null();
-   return String(it->second.c_str(), it->second.size()).dup();
+   return String::create(it->second.c_str(), it->second.size());
 }
 
 
@@ -363,7 +363,19 @@ const char * val_string(hx::Object * arg1)
 
 hx::Object * alloc_string(const char * arg1)
 {
-   return Dynamic( String(arg1,strlen(arg1)).dup() ).GetPtr();
+   return Dynamic( String::create(arg1) ).GetPtr();
+}
+
+hx::StringEncoding hxs_encoding(const String &str)
+{
+   #ifdef HX_SMART_STRINGS
+   if (str.isUTF16Encoded())
+      return hx::StringUtf16;
+   else
+      return hx::StringAscii;
+   #else
+   return hx::StringUtf8;
+   #endif
 }
 
 
@@ -371,7 +383,7 @@ wchar_t * val_dup_wstring(value inVal)
 {
    hx::Object *obj = (hx::Object *)inVal;
    String  s = obj->toString();
-   return (wchar_t *)s.__WCStr();
+   return (wchar_t *)s.wchar_str();
 }
 
 char * val_dup_string(value inVal)
@@ -393,12 +405,12 @@ char *alloc_string_data(const char *inData, int inLength)
 
 hx::Object *alloc_string_len(const char *inStr,int inLen)
 {
-   return Dynamic( String(inStr,inLen).dup() ).GetPtr();
+   return Dynamic( String::create(inStr,inLen) ).GetPtr();
 }
 
 hx::Object *alloc_wstring_len(const wchar_t *inStr,int inLen)
 {
-   String str(inStr,inLen);
+   String str = String::create(inStr,inLen);
    return Dynamic(str).GetPtr();
 }
 
@@ -912,10 +924,45 @@ gcroot create_root(value) { return 0; }
 value query_root(gcroot) { return 0; }
 void destroy_root(gcroot) { }
 
+#ifdef _MSC_VER
+#pragma warning( disable : 4190 )
+#endif
+
+
+String alloc_hxs_wchar(const wchar_t *ptr,int size)
+{
+   return String::create(ptr,size);
+}
+
+String alloc_hxs_utf16(const char16_t *ptr,int size)
+{
+   return String::create(ptr,size);
+}
+
+String alloc_hxs_utf8(const char *ptr,int size)
+{
+   return String::create(ptr,size);
+}
+
+const char * hxs_utf8(const String &string,hx::IStringAlloc *alloc)
+{
+   return string.utf8_str(alloc);
+}
+
+const wchar_t * hxs_wchar(const String &string,hx::IStringAlloc *alloc)
+{
+   return string.wchar_str(alloc);
+}
+
+const char16_t * hxs_utf16(const String &string,hx::IStringAlloc *alloc)
+{
+   return string.wc_str(alloc);
+}
 
 
 EXPORT void * hx_cffi(const char *inName)
 {
+   #define HXCPP_PRIME
    #define DEFFUNC(name,r,b,c) if ( !strcmp(inName,#name) ) return (void *)name;
 
    #include <hx/CFFIAPI.h>

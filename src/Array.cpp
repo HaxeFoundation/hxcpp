@@ -423,7 +423,7 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
       }
       buf[len] = '\0';
 
-      String result(buf,len,true);
+      String result(buf,len);
       return result;
    }
    #endif
