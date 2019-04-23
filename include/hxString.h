@@ -39,9 +39,9 @@ public:
    #endif
 
    // Makes copy
-   static String String::create(const wchar_t *inPtr,int inLen=-1);
-   static String String::create(const char16_t *inPtr,int inLen=-1);
-   static String String::create(const char *inPtr,int inLen=-1);
+   static String create(const wchar_t *inPtr,int inLen=-1);
+   static String create(const char16_t *inPtr,int inLen=-1);
+   static String create(const char *inPtr,int inLen=-1);
 
    #ifdef __OBJC__
    inline String(NSString *inString)

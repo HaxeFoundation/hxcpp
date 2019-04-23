@@ -3,7 +3,12 @@ import haxe.io.Path;
 import haxe.Json;
 import sys.io.Process;
 import sys.FileSystem;
-#if neko
+
+#if haxe4
+import sys.thread.Thread;
+import sys.thread.Mutex;
+import sys.thread.Tls;
+#elseif 
 import neko.vm.Thread;
 import neko.vm.Mutex;
 import neko.vm.Tls;
@@ -12,6 +17,7 @@ import cpp.vm.Thread;
 import cpp.vm.Mutex;
 import cpp.vm.Tls;
 #end
+
 import haxe.crypto.Md5;
 
 import Log.NORMAL;

@@ -3,7 +3,9 @@ import haxe.io.Eof;
 import haxe.io.Path;
 import sys.io.Process;
 import sys.FileSystem;
-#if neko
+#if haxe4
+import sys.thread.Thread;
+#elseif neko
 import neko.vm.Thread;
 #else
 import cpp.vm.Thread;

@@ -11,6 +11,7 @@
 #include <hx/CFFIPrime.h>
 #include <math.h>
 #include <vector>
+#include <string>
 
 
 int addInts(int a, int b)

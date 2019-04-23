@@ -1,9 +1,17 @@
-#if neko
-import neko.vm.Thread;
-import neko.vm.Mutex;
+#if haxe4
+  import sys.thread.Thread;
+  import sys.thread.Mutex;
 #else
-import cpp.vm.Thread;
-import cpp.vm.Mutex;
+  #if neko
+  import neko.vm.Thread;
+  import neko.vm.Mutex;
+  #else
+  import cpp.vm.Thread;
+  import cpp.vm.Mutex;
+  #end
+#end
+
+#if cpp
 import cpp.AtomicInt;
 #end
 
