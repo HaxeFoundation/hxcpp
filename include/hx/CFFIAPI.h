@@ -59,9 +59,9 @@ DEFFUNC_2(HxString,alloc_hxs_utf8,const char *,int)
 DEFFUNC_2(const char *,hxs_utf8,const HxString &,hx::IStringAlloc *)
 DEFFUNC_2(const wchar_t *,hxs_wchar,const HxString &,hx::IStringAlloc *)
 DEFFUNC_2(const char16_t *,hxs_utf16,const HxString &,hx::IStringAlloc *)
-#endif
 
 DEFFUNC_1(hx::StringEncoding,hxs_encoding,const HxString &)
+#endif
 
 
 // Array access - generic

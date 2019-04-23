@@ -143,6 +143,10 @@ typedef std::string HxString;
 
 #else
 
+#ifdef _MSC_VER
+#pragma warning( disable : 4190 )
+#endif
+
 struct HxString
 {
    inline HxString(const HxString &inRHS)

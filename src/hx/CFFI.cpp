@@ -9,6 +9,10 @@
 #include <map>
 #include <string>
 
+#ifdef _MSC_VER
+#pragma warning( disable : 4190 )
+#endif
+
 
 // Class for boxing external handles
 
@@ -923,10 +927,6 @@ void gc_safe_point()
 gcroot create_root(value) { return 0; }
 value query_root(gcroot) { return 0; }
 void destroy_root(gcroot) { }
-
-#ifdef _MSC_VER
-#pragma warning( disable : 4190 )
-#endif
 
 
 String alloc_hxs_wchar(const wchar_t *ptr,int size)

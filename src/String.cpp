@@ -715,6 +715,9 @@ String String::create(const wchar_t *inString,int inLength) { return TCopyString
 String String::create(const char16_t *inString,int inLength) { return TCopyString(inString,inLength); }
 String String::create(const char *inString,int inLength)
 {
+   if (!inString)
+      return String();
+
    #ifdef HX_SMART_STRINGS
    if (inLength<0)
       for(inLength=0; inString[inLength]; inLength++) { }

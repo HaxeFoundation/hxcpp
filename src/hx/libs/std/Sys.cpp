@@ -82,10 +82,10 @@ String _hx_std_get_env( String v )
    #else
       #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
          hx::strbuf wbuf;
-         return String( _wgetenv( v.wchar_str(&wbuf) ) );
+         return String::create( _wgetenv( v.wchar_str(&wbuf) ) );
       #else
          hx::strbuf buf;
-         return String( getenv(v.utf8_str(&buf)) );
+         return String::create( getenv(v.utf8_str(&buf)) );
       #endif
    #endif
 }
