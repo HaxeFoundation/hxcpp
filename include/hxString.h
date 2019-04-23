@@ -39,9 +39,9 @@ public:
    #endif
 
    // Makes copy
-   static String String::create(const wchar_t *inPtr,int inLen=-1);
-   static String String::create(const char16_t *inPtr,int inLen=-1);
-   static String String::create(const char *inPtr,int inLen=-1);
+   static String create(const wchar_t *inPtr,int inLen=-1);
+   static String create(const char16_t *inPtr,int inLen=-1);
+   static String create(const char *inPtr,int inLen=-1);
 
    #ifdef __OBJC__
    inline String(NSString *inString)
@@ -167,7 +167,7 @@ public:
 
    inline bool isAsciiEncoded() const {
       #ifdef HX_SMART_STRINGS
-      return __w && !(((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T);
+      return !__w || !(((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T);
       #else
       return true;
       #endif

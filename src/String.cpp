@@ -1062,6 +1062,15 @@ String &String::dup()
    }
    else
    {
+      #ifdef HX_SMART_STRINGS
+      if (isUTF16Encoded())
+      {
+         const char16_t *oldString = __w;
+         __w = 0;
+         __w = (char16_t *)GCStringDup(oldString,length,&length);
+         return *this;
+      }
+      #endif
       // Take copy incase GCStringDup generates GC event
       const char *oldString = __s;
       __s = 0;

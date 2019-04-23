@@ -516,7 +516,7 @@ Array<String> __get_args()
    if (_hxcpp_argc)
    {
       for(int i=1;i<_hxcpp_argc;i++)
-         result->push( String(_hxcpp_argv[i],strlen(_hxcpp_argv[i])).dup() );
+         result->push( String::create(_hxcpp_argv[i],strlen(_hxcpp_argv[i])).dup() );
       return result;
    }
 
@@ -532,7 +532,7 @@ Array<String> __get_args()
    int argc = *_NSGetArgc();
    char **argv = *_NSGetArgv();
    for(int i=1;i<argc;i++)
-      result->push( String(argv[i],strlen(argv[i])).dup() );
+      result->push( String::create(argv[i],strlen(argv[i])).dup() );
    #endif
 
    #else
