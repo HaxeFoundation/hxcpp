@@ -71,7 +71,7 @@ static String *sCharToString[1024] = { 0 };
 
 
 typedef Hash<TNonGcStringSet> StringSet;
-static StringSet sPermanentStringSet;
+static StringSet *sPermanentStringSet = 0;
 static volatile int sPermanentStringSetMutex = 0;
 
 #ifdef HXCPP_COMBINE_STRINGS
@@ -1063,7 +1063,7 @@ const ::String &::String::makePermanent() const
       {
          while(! HxAtomicExchangeIf(0,1,&sPermanentStringSetMutex) )
             __hxcpp_gc_safe_point();
-         TNonGcStringSet *element = sPermanentStringSet.find(myHash ,  *this);
+         TNonGcStringSet *element = sPermanentStringSet->find(myHash ,  *this);
          sPermanentStringSetMutex = 0;
          if (element)
          {
@@ -1089,7 +1089,7 @@ const ::String &::String::makePermanent() const
 
       while(! HxAtomicExchangeIf(0,1,&sPermanentStringSetMutex) )
          __hxcpp_gc_safe_point();
-      sPermanentStringSet.set(*this,null());
+      sPermanentStringSet->set(*this,null());
       sPermanentStringSetMutex = 0;
    }
 
@@ -2164,6 +2164,9 @@ void String::__boot()
    #ifdef HXCPP_COMBINE_STRINGS
    InitIdent();
    #endif
+
+   sPermanentStringSet = new StringSet();
+   GCAddRoot((hx::Object **)&sPermanentStringSet);
 
    for(int i=0;i<256;i++)
       safeChars[i] = i>32 && i<127;

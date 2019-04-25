@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
-#include <map>
-#include <set>
 
 #include "Cppia.h"
 #include "CppiaStream.h"
