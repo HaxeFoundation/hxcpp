@@ -78,9 +78,9 @@ Dynamic Rethrow(Dynamic inDynamic)
 }
 
 
-null NullArithmetic(const HX_CHAR *inErr)
+null NullArithmetic(const char *inErr)
 {
-	Throw( String(inErr).dup() );
+	Throw( String::create(inErr) );
 	return null();
 }
 
@@ -136,12 +136,12 @@ String __hxcpp_resource_string(String inName)
             const unsigned char *p = reso->mData;
             for(int i=0;i<reso->mDataLength;i++)
                if (p[i]>127)
-                  return _hx_utf8_to_utf16(p, reso->mDataLength,false);
+                  return String::create((const char *)p, reso->mDataLength);
             #endif
             return String((const char *) reso->mData, reso->mDataLength );
          }
          #else
-            return String((const char *) reso->mData, reso->mDataLength ).dup();
+            return String::create((const char *) reso->mData, reso->mDataLength );
          #endif
       }
 
@@ -516,7 +516,7 @@ Array<String> __get_args()
    if (_hxcpp_argc)
    {
       for(int i=1;i<_hxcpp_argc;i++)
-         result->push( String(_hxcpp_argv[i],strlen(_hxcpp_argv[i])).dup() );
+         result->push( String::create(_hxcpp_argv[i],strlen(_hxcpp_argv[i])) );
       return result;
    }
 
@@ -532,7 +532,7 @@ Array<String> __get_args()
    int argc = *_NSGetArgc();
    char **argv = *_NSGetArgv();
    for(int i=1;i<argc;i++)
-      result->push( String(argv[i],strlen(argv[i])).dup() );
+      result->push( String::create(argv[i],strlen(argv[i])) );
    #endif
 
    #else
@@ -545,19 +545,20 @@ Array<String> __get_args()
    bool real_arg = 0;
    if (cmd)
    {
-      String arg("");
+      hx::QuickVec<char> arg;
+
       buf[0] = '\0';
       while (fread(buf, 1, 1, cmd))
       {
          if ((unsigned char)buf[0] == 0) // line terminator
          {
             if (real_arg)
-               result->push(arg);
+               result->push( String::create(arg.mPtr, arg.mSize) );
             real_arg = true;
-            arg = String("");
+            arg.clear();
          }
          else
-            arg += String::fromCharCode(buf[0]);
+            arg.push(buf[0]);
       }
       fclose(cmd);
    }
@@ -620,7 +621,7 @@ Dynamic __hxcpp_parse_int(const String &inString)
    hx::strbuf buf;
    const char *str = inString.utf8_str(&buf);
    bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
-   HX_CHAR *end = 0;
+   char *end = 0;
 
    if (hex)
       result = (long)strtoul(str+2,&end,16);
@@ -746,7 +747,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    String str(inFieldName,strlen(inFieldName));
 
    // Make into "const" string that will not get collected...
-   str = String((HX_CHAR *)hx::InternalCreateConstBuffer(str.raw_ptr(),(str.length+1) * sizeof(HX_CHAR),true), str.length );
+   str = String((char *)hx::InternalCreateConstBuffer(str.raw_ptr(),(str.length+1) * sizeof(char),true), str.length );
 
    if (sgFieldToStringAlloc<=sgFieldToStringSize+1)
    {

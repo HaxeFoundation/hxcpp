@@ -386,7 +386,20 @@ hx::StringEncoding hxs_encoding(const String &str)
 wchar_t * val_dup_wstring(value inVal)
 {
    hx::Object *obj = (hx::Object *)inVal;
+   if (!obj)
+      return 0;
    String  s = obj->toString();
+   if (!s.raw_ptr())
+      return 0;
+   #ifdef HX_SMART_STRINGS
+   if ( sizeof(wchar_t)==2 && s.isUTF16Encoded())
+   {
+      wchar_t *result = (wchar_t *)hx::NewGCBytes(0,(s.length+1)*2);
+      memcpy(result, s.wchar_str(), s.length*2 );
+      result[s.length]=0;
+      return result;
+   }
+   #endif
    return (wchar_t *)s.wchar_str();
 }
 
@@ -394,17 +407,30 @@ char * val_dup_string(value inVal)
 {
    hx::Object *obj = (hx::Object *)inVal;
    if (!obj) return 0;
+   String  s = obj->toString();
+   if (!s.raw_ptr())
+      return 0;
+   #ifdef HX_SMART_STRINGS
+   if (s.isUTF16Encoded())
+      return (char *)s.utf8_str();
+   #endif
 
-   return (char *)obj->toString().dup().__CStr();
+   char *result = (char *)hx::NewGCBytes(0,s.length+1);
+   memcpy(result, s.raw_ptr(), s.length);
+   result[s.length] = 0;
+   return result;
 }
 
 
-// Unsafe
 char *alloc_string_data(const char *inData, int inLength)
 {
-   String val(inData,inLength);
-   val.dup();
-   return (char *)val.raw_ptr();
+   char *result = (char *)hx::NewGCBytes(0,inLength+1);
+   if (inData)
+   {
+      memcpy(result, inData, inLength);
+      result[inLength] = 0;
+   }
+   return result;
 }
 
 hx::Object *alloc_string_len(const char *inStr,int inLen)

@@ -19,8 +19,14 @@ import sys.net.UdpSocket;
 import sys.net.UdpSocket;
 import sys.io.Process;
 
+#if haxe4
+import sys.thread.Deque;
+import sys.thread.Thread;
+#else
 import cpp.vm.Deque;
 import cpp.vm.Thread;
+#end
+
 using cpp.NativeArray;
 using cpp.AtomicInt;
 
@@ -599,7 +605,7 @@ class Test
    static var socketClientRunning = true;
    public static function readOutput(proc:Process)
    {
-      cpp.vm.Thread.create( function() {
+      Thread.create( function() {
          while(true)
          {
             try

@@ -376,7 +376,7 @@ String __internal_to_string(struct tm time)
 
    char buf[100];
    strftime(buf,100, "%Y-%m-%d %H:%M:%S", &time);
-   return String(buf).dup();
+   return String::create(buf);
 }
 
 /*

@@ -127,10 +127,9 @@ public:
    void operator delete( void *) { }
 
    ExternalPrimitive(void *inProc,int inArgCount,const String &inName) :
-       mProc(inProc), mArgCount(inArgCount), mName(inName)
+       mProc(inProc), mArgCount(inArgCount), mName(inName.makePermanent())
    {
-     mName.dupConst();
-     functionName = ("extern::cffi "+mName).dupConst().__CStr();
+     functionName = ("extern::cffi "+mName).makePermanent().raw_ptr();
    }
 
    virtual int __GetType() const { return vtFunction; }
@@ -237,7 +236,7 @@ static String GetFileContents(String inFile)
    if (bytes<1)
       return null();
    buf[bytes]='\0';
-   return String(buf,strlen(buf)).dup();
+   return String::create(buf);
 }
 
 static String GetEnv(const char *inPath)
@@ -428,9 +427,9 @@ void __hxcpp_push_dll_path(String inPath)
    int lastCode = (last>0) ? inPath.cca(last) : -1;
 
    if ( lastCode!='\\' && lastCode!='/')
-      sgLibPath.push_back( (inPath + HX_CSTRING("/")).dupConst() );
+      sgLibPath.push_back( (inPath + HX_CSTRING("/")).makePermanent() );
    else
-      sgLibPath.push_back( inPath.dupConst() );
+      sgLibPath.push_back( inPath.makePermanent() );
 }
 
 
@@ -470,7 +469,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
 
       if (registered)
       {
-         libString = libString.dupConst();
+         libString = libString.makePermanent();
          prim = new ExternalPrimitive(registered,inArgCount,libString);
          sLoadedMap[libString] = prim;
          return Dynamic(prim);
@@ -738,7 +737,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
    void *proc = __hxcpp_get_proc_address(inLib,full_name,true);
    if (proc)
    {
-      primName = primName.dupConst();
+      primName = primName.makePermanent();
 
       saved = new ExternalPrimitive(proc,inArgCount,primName);
       sLoadedMap[primName] = saved;

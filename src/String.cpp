@@ -6,6 +6,7 @@
 #include <string>
 #include <hx/Unordered.h>
 #include "hx/Hash.h"
+#include <hx/Thread.h>
 #include <locale>
 
 using namespace hx;
@@ -62,15 +63,16 @@ void __hxcpp_set_float_format(String inFormat)
 
 hx::Class __StringClass;
 
-String  sEmptyString = HX_CSTRING("");
-Dynamic sConstEmptyString;
-String  sConstStrings[256];
-Dynamic sConstDynamicStrings[256];
+String  String::emptyString = HX_("",00,00,00,00);
+static Dynamic sConstEmptyString;
+static String  sConstStrings[256];
+static Dynamic sConstDynamicStrings[256];
+static String *sCharToString[1024] = { 0 };
 
-typedef std::set<String> ConstStringSet;
-ConstStringSet sConstStringSet;
-typedef hx::UnorderedMap<std::string,String> ConstWStringMap;
-ConstWStringMap sConstWStringMap;
+
+typedef Hash<TNonGcStringSet> StringSet;
+static StringSet sPermanentStringSet;
+static volatile int sPermanentStringSetMutex = 0;
 
 #ifdef HXCPP_COMBINE_STRINGS
 static bool sIsIdent[256];
@@ -296,7 +298,7 @@ static const char *GCStringDup(const T *inStr,int inLen, int *outLen=0)
    {
       if (outLen)
          outLen = 0;
-      return sEmptyString.raw_ptr();
+      return String::emptyString.raw_ptr();
    }
 
    int len = inLen;
@@ -482,7 +484,7 @@ String __hxcpp_char_array_to_utf8_string(Array<int> &inChars,int inFirst, int in
    if (inFirst+inLen>len)
       inLen = len-inFirst;
    if (inLen<=0)
-      return HX_CSTRING("");
+      return String::emptyString;
 
    int *base = &inChars[0];
    #ifdef HX_SMART_STRINGS
@@ -692,7 +694,7 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
       src += sLen[*src];
 
       if (src==end)
-         return HX_CSTRING("");
+         return String::emptyString;
       if (src>end)
          hx::Throw(HX_CSTRING("Invalid UTF8"));
    }
@@ -782,18 +784,6 @@ String::String(const cpp::CppInt32__ &inRHS)
    char buf[100];
    SPRINTF(buf,100,HX_INT_PATTERN,inRHS.mValue);
    __s = GCStringDup(buf,-1,&length);
-}
-
-
-String::String(const char *inStr)
-{
-   if (inStr)
-      __s = GCStringDup(inStr,-1,&length);
-   else
-   {
-      __s = 0;
-      length = 0;
-   }
 }
 
 
@@ -895,23 +885,18 @@ unsigned int String::calcHash() const
    return result;
 }
 
+// InternalCreateConstBuffer is not uft16 aware whenit come to hashes
+static void fixHashPerm16(const String &str)
+{
+   unsigned int hash = str.calcHash();
+   *(unsigned int *)(&(str.raw_ptr()[-8])) = hash;
+}
+
 
 static unsigned char safeChars[256];
-static bool safeCharsInit = false;
 
 String String::__URLEncode() const
 {
-   if (!safeCharsInit)
-   {
-      safeCharsInit = true;
-      for(int i=0;i<256;i++)
-         safeChars[i] = i>32 && i<127;
-      unsigned char dodgy[] = { 36, 38, 43, 44, 47, 58, 59, 61, 63, 64,
-         34, 60, 62, 35, 37, 123, 125, 124, 92, 94, 126, 91, 93, 96 };
-      for(int i=0;i<sizeof(dodgy);i++)
-         safeChars[ dodgy[i] ] = 0;
-   }
-
    Array<unsigned char> bytes(0,length);
    // utf8-encode
    __hxcpp_bytes_of_string(bytes,*this);
@@ -1058,89 +1043,84 @@ String String::__URLDecode() const
    return String( decoded, (d - decoded) );
 }
 
-
-String &String::dup()
+const ::String &::String::makePermanent() const
 {
-   if (length==0)
+   if (!__s || (__s[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT) )
    {
-      *this = HX_CSTRING("");
+      // Already permanent
    }
-   else
+   else if (!length)
    {
-      // Take copy incase GCStringDup generates GC event
-      const char *oldString = __s;
-      __s = 0;
-      __s = GCStringDup(oldString,length,&length);
-   }
-   return *this;
-}
-
-
-String &String::dupConst()
-{
-   ConstStringSet::iterator sit = sConstStringSet.find(*this);
-   if (sit!=sConstStringSet.end())
-   {
-      __s = sit->__s;
+      const_cast<String *>(this)->__s = emptyString.__s;
    }
    else if (length==1)
    {
-      __s = String::fromCharCode(__s[0]);
+      const_cast<String *>(this)->__s = String::fromCharCode(cca(0)).__s;
    }
    else
    {
-      char *ch  = (char *)InternalCreateConstBuffer(__s,length+1,true);
-      ch[length] = '\0';
-      __s = ch;
-      sConstStringSet.insert(*this);
+      unsigned int myHash = hash();
+      {
+         while(! HxAtomicExchangeIf(0,1,&sPermanentStringSetMutex) )
+            __hxcpp_gc_safe_point();
+         TNonGcStringSet *element = sPermanentStringSet.find(myHash ,  *this);
+         sPermanentStringSetMutex = 0;
+         if (element)
+         {
+            const_cast<String *>(this)->__s = element->key.__s;
+            return *this;
+         }
+      }
+
+      #ifdef HX_SMART_STRINGS
+      if (isUTF16Encoded())
+      {
+         char16_t *w = (char16_t *)InternalCreateConstBuffer(__s,(length+1)*2,true);
+         ((unsigned int *)w)[-1] |= HX_GC_STRING_CHAR16_T;
+         const_cast<String *>(this)->__w = w;
+         fixHashPerm16(*this);
+      }
+      else
+      #endif
+      {
+         char *s  = (char *)InternalCreateConstBuffer(__s,length+1,true);
+         const_cast<String *>(this)->__s = s;
+      }
+
+      while(! HxAtomicExchangeIf(0,1,&sPermanentStringSetMutex) )
+         __hxcpp_gc_safe_point();
+      sPermanentStringSet.set(*this,null());
+      sPermanentStringSetMutex = 0;
    }
 
    return *this;
 }
 
-::String String::makeConstString(const char *inStr)
+
+String String::createPermanent(const char *inUtf8, int length)
 {
-   String unsafe(inStr, strlen(inStr) );
-   ConstStringSet::iterator sit = sConstStringSet.find(unsafe);
-   if (sit!=sConstStringSet.end())
-      return *sit;
-   return unsafe.dupConst();
+   if (!inUtf8)
+      return String();
+
+   if (length<0)
+      length = strlen(inUtf8);
+
+   if (!length)
+   {
+      return emptyString;
+   }
+   else if (length==1)
+   {
+      return String::fromCharCode( *(unsigned char *)inUtf8  );
+   }
+   else
+   {
+      String temp = create(inUtf8,length);
+      return temp.makePermanent();
+   }
 }
 
-#ifdef HX_SMART_STRINGS
-::String String::makeConstChar16String(const char *inUtf8, int inLen)
-{
-   std::string key(inUtf8,inLen);
-   ConstWStringMap::iterator sit = sConstWStringMap.find(key);
-   if (sit!=sConstWStringMap.end())
-      return sit->second;
 
-   const unsigned char *ptr = (const unsigned char *)inUtf8;
-   const unsigned char *end = ptr + inLen;
-
-   int count = 0;
-   while(ptr<end)
-   {
-      int code = DecodeAdvanceUTF8(ptr,end);
-      count += code>=0x10000 ? 2 : 1;
-   }
-
-   char16_t *buffer  = (char16_t *)InternalCreateConstBuffer(0,(count+1)*2,true);
-   ((unsigned int *)buffer)[-1] |= HX_GC_STRING_CHAR16_T;
-
-   char16_t *b = buffer;
-   ptr = (const unsigned char *)inUtf8;
-   while(ptr<end)
-   {
-      int code = DecodeAdvanceUTF8(ptr,end);
-      Char16AdvanceSet(b,code);
-   }
-
-   String result(buffer, count);
-   sConstWStringMap[key] = result;
-   return result;
-}
-#endif
 
 
 template<typename T>
@@ -1282,63 +1262,60 @@ Dynamic String::charCodeAt(int inPos) const
 
 String String::fromCharCode( int c )
 {
-   if (c<0) c+= 256;
-   if (c<0)
-       return null();
-
-   if (c>255)
+   if (c<=255)
    {
-      #ifdef HX_SMART_STRINGS
-      int l = c>=0x10000 ? 2 : 1;
-      char16_t *p = String::allocChar16Ptr(l);
-
-      if (c>=0x10000)
-      {
-         int over = (c-0x10000);
-         p[0] = (over>>10) + 0xd800;
-         p[1] = (over&0x3ff) + 0xdc00;
-      }
-      else
-         p[0] = c;
-
-      return String(p,l);
-      #else
-      return null();
-      #endif
+      return sConstStrings[c];
    }
-
-
-   if (!sConstStrings[c].__s)
+   else
    {
-      #ifdef HX_SMART_STRINGS
-      if (c>127)
+      int group = c>>10;
+      if (group>=1024)
+         hx::Throw(HX_CSTRING("Invalid char code"));
+      if (!sCharToString[group])
       {
-         char16_t buf[2];
-         buf[0] = c;
-         buf[1] = '\0';
-         sConstStrings[c].length = 1;
-         char16_t *w = (char16_t *)InternalCreateConstBuffer(buf,2*2,true);
-         ((unsigned int *)w)[-1] |= HX_GC_STRING_CHAR16_T;
-         sConstStrings[c].__w = w;
+         String *ptr = (String *)malloc( sizeof(String)*1024 );
+         memset(ptr, 0, sizeof(String)*1024 );
+         sCharToString[group] = ptr;
       }
-      else
-      #endif
+      String *ptr = sCharToString[group];
+      int cid = c & ((1<<10)-1);
+      if (!ptr[cid].__s)
       {
-         char buf[2];
-         buf[0] = c;
-         buf[1] = '\0';
-         sConstStrings[c].__s = (char *)InternalCreateConstBuffer(buf,2,true);
-         sConstStrings[c].length = 1;
-      }
-   }
+         #ifdef HX_SMART_STRINGS
+         int l = c>=0x10000 ? 2 : 1;
+         char16_t *p = (char16_t *)InternalCreateConstBuffer(0,(l+1)*2,true);
+         ((unsigned int *)p)[-1] |= HX_GC_STRING_CHAR16_T;
+         if (c>=0x10000)
+         {
+            int over = (c-0x10000);
+            p[0] = (over>>10) + 0xd800;
+            p[1] = (over&0x3ff) + 0xdc00;
+         }
+         else
+            p[0] = c;
 
-   return sConstStrings[c];
+         ptr[cid].length = l;
+         ptr[cid].__w = p;
+         fixHashPerm16(ptr[cid]);
+         #else
+         char buf[5];
+         int  utf8Len = UTF8Bytes(c);
+         char *p = buf;
+         UTF8EncodeAdvance(p,c);
+         buf[utf8Len] = '\0';
+         const char *s = (char *)InternalCreateConstBuffer(buf,utf8Len+1,true);
+         ptr[cid].length = utf8Len;
+         ptr[cid].__s = s;
+         #endif
+      }
+      return ptr[cid];
+   }
 }
 
 String String::charAt( int at ) const
 {
    if (at<0 || at>=length)
-      return HX_CSTRING("");
+      return emptyString;
 
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
@@ -1442,7 +1419,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
    if (inCopyPointer)
       outString = String( (const char *)inBytes->GetBase(), len);
    else if (len==0)
-      outString = HX_CSTRING("");
+      outString = String::emptyString;
    else
    {
       const unsigned char *p0 = (const unsigned char *)inBytes->GetBase();
@@ -1777,7 +1754,7 @@ Array<String> String::split(const String &inDelimiter) const
    return result;
 }
 
-Dynamic CreateEmptyString() { return HX_CSTRING(""); }
+Dynamic CreateEmptyString() { return sConstEmptyString; }
 
 Dynamic CreateString(DynamicArray inArgs)
 {
@@ -1801,11 +1778,11 @@ String String::substr(int inFirst, Dynamic inLen) const
    }
 
    if (len<=0 || inFirst>=length)
-      return HX_CSTRING("");
+      return String::emptyString;
 
    if ((len+inFirst > length) ) len = length - inFirst;
    if (len==0)
-      return HX_CSTRING("");
+      return String::emptyString;
 
 
    #ifdef HX_SMART_STRINGS
@@ -2156,8 +2133,6 @@ hx::Object *String::__ToObject() const
 
    if (length==0)
    {
-      if (!sConstEmptyString.mPtr)
-         sConstEmptyString.mPtr = new (hx::NewObjConst)StringData(sEmptyString);
       return sConstEmptyString.mPtr;
    }
    else if (length==1)
@@ -2189,6 +2164,42 @@ void String::__boot()
    #ifdef HXCPP_COMBINE_STRINGS
    InitIdent();
    #endif
+
+   for(int i=0;i<256;i++)
+      safeChars[i] = i>32 && i<127;
+   unsigned char dodgy[] = { 36, 38, 43, 44, 47, 58, 59, 61, 63, 64,
+      34, 60, 62, 35, 37, 123, 125, 124, 92, 94, 126, 91, 93, 96 };
+   for(int i=0;i<sizeof(dodgy);i++)
+      safeChars[ dodgy[i] ] = 0;
+
+   for(int c=0;c<256;c++)
+   {
+      #ifdef HX_SMART_STRINGS
+      if (c>127)
+      {
+         char16_t buf[20];
+         buf[0] = c;
+         buf[1] = '\0';
+         sConstStrings[c].length = 1;
+         char16_t *w = (char16_t *)InternalCreateConstBuffer(buf,2*2,true);
+         ((unsigned int *)w)[-1] |= HX_GC_STRING_CHAR16_T;
+         sConstStrings[c].__w = w;
+         fixHashPerm16(sConstStrings[c]);
+      }
+      else
+      #endif
+      {
+         char buf[20];
+         int  utf8Len = UTF8Bytes(c);
+         char *p = buf;
+         UTF8EncodeAdvance(p,c);
+         buf[utf8Len] = '\0';
+         sConstStrings[c].__s = (char *)InternalCreateConstBuffer(buf,utf8Len+1,true);
+         sConstStrings[c].length = utf8Len;
+      }
+   }
+
+   sConstEmptyString.mPtr = new (hx::NewObjConst)StringData(emptyString);
 
    Static(__StringClass) = hx::_hx_RegisterClass(HX_CSTRING("String"),TCanCast<StringData>,sStringStatics, sStringFields,
            &CreateEmptyString, &CreateString, 0, 0, 0

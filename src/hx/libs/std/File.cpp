@@ -336,7 +336,7 @@ String _hx_std_file_contents_string( String name )
    fclose(file);
    hx::ExitGCFreeZone();
 
-   return String(&buffer[0], buffer.size()).dup();
+   return String::create(&buffer[0], buffer.size());
 }
 
 

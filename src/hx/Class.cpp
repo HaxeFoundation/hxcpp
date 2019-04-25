@@ -70,7 +70,7 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
              #endif
              )
 {
-   mName = const_cast<String &>(inClassName).dupConst();
+   mName = inClassName.makePermanent();
    mSuper = inSuperClass;
    mConstructEmpty = inConstructEmpty;
    mConstructArgs = inConstructArgs;

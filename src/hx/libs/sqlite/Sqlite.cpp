@@ -57,7 +57,7 @@ struct result : public hx::Object
       done = 0;
       for(int i=0;i<ncols;i++)
       {
-         names[i] = String::makeConstString(sqlite3_column_name(r,i));
+         names[i] = String::createPermanent(sqlite3_column_name(r,i),-1);
          for(int j=0;j<i;j++)
             if( names[j] == names[i] )
                hx::Throw(HX_CSTRING("Error, same field is two times in the request ") + sql);
@@ -323,7 +323,7 @@ Dynamic _hx_sqlite_result_next(Dynamic handle)
             case SQLITE_BLOB:
                {
                   int size = sqlite3_column_bytes(r->r,i);
-                  f = String((const char *)sqlite3_column_blob(r->r,i),size).dup();
+                  f = String::create((const char *)sqlite3_column_blob(r->r,i),size);
                   break;
                }
             default:

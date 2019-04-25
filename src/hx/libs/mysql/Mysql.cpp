@@ -432,9 +432,9 @@ static Result *alloc_result( Connection *c, MYSQL_RES *r )
    {
       String name;
       if( strchr(fields[i].name,'(') )
-         name = String::makeConstString("???"); // looks like an inner request : prevent hashing + cashing it
+         name = String::createPermanent("???",3); // looks like an inner request : prevent hashing + cashing it
       else
-         name = String::makeConstString(fields[i].name);
+         name.makePermanent();
 
       res->field_names[i] = name;
       res->fields_convs[i] = convert_type(fields[i].type,fields[i].flags,fields[i].length);
@@ -517,7 +517,7 @@ String  _hx_mysql_escape(Dynamic handle,String str)
    if( finalLen < 0 )
       hx::Throw( HX_CSTRING("Unsupported charset : ") + String(mysql_character_set_name(connection->m)) );
 
-   return String(sout.buffer,finalLen).dup();
+   return String::create(sout.buffer,finalLen);
 }
 
 // ---------------------------------------------------------------

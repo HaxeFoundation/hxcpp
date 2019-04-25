@@ -186,7 +186,7 @@ bool _hx_std_set_time_locale( String l )
 String _hx_std_get_cwd()
 {
    #ifdef HX_WINRT
-   return String(HX_CSTRING("ms-appdata:///local/"));
+   return HX_CSTRING("ms-appdata:///local/");
    #elif defined(EPPC)
    return String();
    #else
@@ -211,7 +211,7 @@ String _hx_std_get_cwd()
       buf[l+1] = 0;
    }
 #endif
-   return String(buf);
+   return String::create(buf);
    #endif
 }
 
@@ -699,7 +699,7 @@ Array<String> _hx_std_sys_read_dir( String p )
       if( d.cFileName[0] != '.' || (d.cFileName[1] != 0 && (d.cFileName[1] != '.' || d.cFileName[2] != 0)) )
       {
          hx::ExitGCFreeZone();
-         result->push(String(d.cFileName));
+         result->push(String::create(d.cFileName));
          hx::EnterGCFreeZone();
       }
       if( !FindNextFileW(handle,&d) )
@@ -724,7 +724,7 @@ Array<String> _hx_std_sys_read_dir( String p )
       if( e->d_name[0] == '.' && (e->d_name[1] == 0 || (e->d_name[1] == '.' && e->d_name[2] == 0)) )
          continue;
       hx::ExitGCFreeZone();
-      result->push( String(e->d_name) );
+      result->push( String::create(e->d_name) );
       hx::EnterGCFreeZone();
    }
    closedir(d);
@@ -747,7 +747,7 @@ String _hx_std_file_full_path( String path )
    hx::strbuf wbuf;
    if( GetFullPathNameW(path.wchar_str(&wbuf),MAX_PATH+1,buf,NULL) == 0 )
       return null();
-   return String(buf);
+   return String::create(buf);
 #elif defined(EPPC)
    return path;
 #else
@@ -755,7 +755,7 @@ String _hx_std_file_full_path( String path )
    hx::strbuf ubuf;
    if( realpath(path.utf8_str(&ubuf),buf) == NULL )
       return null();
-   return String(buf);
+   return String::create(buf);
 #endif
 }
 
@@ -768,18 +768,18 @@ String _hx_std_sys_exe_path()
 #if defined(HX_WINRT) && defined(__cplusplus_winrt)
    Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
    Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
-   return(String(installedLocation->Path));
+   return(String::create(installedLocation->Path));
 #elif defined(NEKO_WINDOWS)
    wchar_t path[MAX_PATH];
    if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
       return null();
-   return String(path);
+   return String::create(path);
 #elif defined(NEKO_MAC) && !defined(IPHONE) && !defined(APPLETV) && !defined(HX_APPLEWATCH)
    char path[PATH_MAX+1];
    uint32_t path_len = PATH_MAX;
    if( _NSGetExecutablePath(path, &path_len) )
       return null();
-   return String(path);
+   return String::create(path);
 #elif defined(EPPC)
    return HX_CSTRING("");
 #else
@@ -790,11 +790,11 @@ String _hx_std_sys_exe_path()
       {
          const char *p = getenv("_");
          if (p)
-            return String(p);
+            return String::create(p);
          return null();
       }
        path[length] = '\0';
-      return String(path);
+      return String::create(path);
    }
 #endif
 }
@@ -827,8 +827,8 @@ Array<String> _hx_std_sys_env()
          e++;
          continue;
       }
-      result->push(String(*e,(int)(x-*e)).dup());
-      result->push(String(x+1));
+      result->push(String::create(*e,(int)(x-*e)));
+      result->push(String::create(x+1));
       e++;
    }
    #endif

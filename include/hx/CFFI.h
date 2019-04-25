@@ -1,6 +1,7 @@
 #ifndef HX_CFFI_H
 #define HX_CFFI_H
 
+#define HX_CFFI_API_VERSION 400
 
 #ifdef HXCPP_JS_PRIME
 #include <emscripten/bind.h>

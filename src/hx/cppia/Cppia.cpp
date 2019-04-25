@@ -4884,10 +4884,7 @@ struct DataVal : public CppiaExprWithValue
          case etString:
             {
                if (!stringConversion.raw_ptr())
-               {
-                  stringConversion= runString(0);
-                  stringConversion.dupConst();
-               }
+                  stringConversion = runString(0).makePermanent();
 
                compiler->move(inDest, stringConversion.length);
                compiler->move(inDest+StringOffset::Ptr, (void *)stringConversion.raw_ptr());

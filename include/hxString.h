@@ -30,7 +30,6 @@ public:
    void operator delete( void * ) { }
 
    inline String() : length(0), __s(0) { }
-   explicit String(const char *inPtr);
 
    // Uses pointer
    inline String(const char *inPtr,int inLen) : __s(inPtr), length(inLen) { }
@@ -39,9 +38,18 @@ public:
    #endif
 
    // Makes copy
+   inline String(const wchar_t *inPtr) { *this = create(inPtr); }
+   inline String(const char16_t *inPtr) { *this = create(inPtr); }
+   inline String(const char *inPtr) { *this = create(inPtr); }
+
    static String create(const wchar_t *inPtr,int inLen=-1);
    static String create(const char16_t *inPtr,int inLen=-1);
    static String create(const char *inPtr,int inLen=-1);
+
+   // Uses non-gc memory and wont ever be collected
+   static ::String createPermanent(const char *inUtf8, int inLen);
+   const ::String &makePermanent() const;
+
 
    #ifdef __OBJC__
    inline String(NSString *inString)
@@ -84,6 +92,7 @@ public:
    template<typename T>
    inline String( const hx::Native<T> &n ) { fromPointer(n.ptr); }
 
+   static String emptyString;
    static void __boot();
 
    hx::Object *__ToObject() const;
@@ -127,10 +136,6 @@ public:
     ::String __URLEncode() const;
     ::String __URLDecode() const;
 
-    ::String &dup();
-    ::String &dupConst();
-    static ::String makeConstString(const char *);
-    static ::String makeConstChar16String(const char *inUtf8, int inLen);
 
     ::String toUpperCase() const;
     ::String toLowerCase() const;
@@ -167,7 +172,7 @@ public:
 
    inline bool isAsciiEncoded() const {
       #ifdef HX_SMART_STRINGS
-      return __w && !(((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T);
+      return !__w || !(((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T);
       #else
       return true;
       #endif
@@ -305,6 +310,7 @@ public:
 
 
    static  Dynamic fromCharCode_dyn();
+
 
    Dynamic charAt_dyn();
    Dynamic charCodeAt_dyn();

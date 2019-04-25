@@ -274,10 +274,7 @@ public:
         mStatus = status;
         mBreakpoint = breakpoint;
         if (criticalErrorDescription)
-        {
-           mCriticalError = *criticalErrorDescription;
-           mCriticalError.dupConst();
-        }
+           mCriticalError = criticalErrorDescription->makePermanent();
 
         // This thread cannot stop while making the callback
         mCanStop = false;
@@ -889,13 +886,13 @@ private:
       __hxcpp_dbg_getScriptableFiles(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==fileName)
-            return (ret[i]).dupConst().utf8_str()();
+            return (ret[i]).makePermanent().utf8_str()();
 
       ret = Array_obj< ::String>::__new();
       __hxcpp_dbg_getScriptableFilesFullPath(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==fileName)
-            return (ret[i]).dupConst().utf8_str()();
+            return (ret[i]).makePermanent().utf8_str()();
       #endif
 
       return 0;
@@ -915,7 +912,7 @@ private:
       __hxcpp_dbg_getScriptableClasses(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==className)
-            return ret[i].dupConst().raw_ptr();
+            return ret[i].makePermanent().raw_ptr();
       #endif
 
       return 0;
