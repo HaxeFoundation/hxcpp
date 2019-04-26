@@ -889,7 +889,7 @@ unsigned int String::calcHash() const
 static void fixHashPerm16(const String &str)
 {
    unsigned int hash = str.calcHash();
-   *(unsigned int *)(&(str.raw_ptr()[-8])) = hash;
+   ((unsigned int *)str.raw_ptr())[-2] = hash;
 }
 
 
