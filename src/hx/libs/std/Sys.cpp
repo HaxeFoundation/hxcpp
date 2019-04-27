@@ -193,7 +193,7 @@ String _hx_std_get_cwd()
 #ifdef NEKO_WINDOWS
    wchar_t buf[261];
    int l;
-   if( GetCurrentDirectoryW(260,buf) == NULL )
+   if( !GetCurrentDirectoryW(260,buf) )
       return String();
    l = (int)wcslen(buf);
    if( buf[l-1] != '/' && buf[l-1] != '\\' ) {
