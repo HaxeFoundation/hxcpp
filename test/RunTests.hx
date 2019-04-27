@@ -181,7 +181,7 @@ class RunTests
 
       run("cppia", cppia);
       run("cffi", cffi);
-      run("opMatrix", opMatrix);
+      //run("opMatrix", opMatrix);
       run("haxe", runHaxe);
       run("telemetry", runTelemetry);
       run("std32", std32);
