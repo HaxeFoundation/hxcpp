@@ -1093,6 +1093,14 @@ String String::__URLDecode() const
    return String( decoded, (d - decoded) );
 }
 
+::String &::String::dup()
+{
+   const char *s = __s;
+   __s = 0;
+   *this = create(s,length);
+   return *this;
+}
+
 const ::String &::String::makePermanent() const
 {
    if (!__s || (__s[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT) )

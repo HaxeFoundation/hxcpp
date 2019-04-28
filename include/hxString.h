@@ -50,6 +50,9 @@ public:
    static ::String createPermanent(const char *inUtf8, int inLen);
    const ::String &makePermanent() const;
 
+   // Legacy
+   ::String &dup();
+
 
    #ifdef __OBJC__
    inline String(NSString *inString)
