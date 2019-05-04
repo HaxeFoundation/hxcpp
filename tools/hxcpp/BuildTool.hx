@@ -369,7 +369,7 @@ class BuildTool
          //throw "No compiler defined";
       }
 
-      var target = mTargets.get(inTarget);
+      var target:Target = mTargets.get(inTarget);
       target.checkError();
 
       for(sub in target.mSubTargets)
@@ -426,10 +426,11 @@ class BuildTool
          if (useCache)
          {
             Profile.push("compute hash");
-            if (useCache && group.mFiles.length>1 && threadPool!=null)
+            if (useCache && group.hasFiles() && threadPool!=null)
             {
                Log.initMultiThreaded();
-               threadPool.setArrayCount( group.mFiles.length );
+               var names:Array<String> = Lambda.array(Lambda.map(group.mFiles, function(file:File) {return file.mName; }));
+               threadPool.setArrayCount( names.length );
                threadPool.runJob( function(tid) {
                   var localCache = new Map<String,String>();
 
@@ -439,7 +440,7 @@ class BuildTool
                      if (id<0)
                         break;
 
-                     group.mFiles[id].computeDependHash(localCache);
+                     group.mFiles.get(names[id]).computeDependHash(localCache);
                   }
                } );
             }
@@ -867,7 +868,7 @@ class BuildTool
       if (inForceRelative)
          dir = PathManager.combine( Path.directory(mCurrentIncludeFile), dir );
 
-      var group = inFiles==null ? new FileGroup(dir,inName, inForceRelative) :
+      var group:FileGroup = inFiles==null ? new FileGroup(dir,inName, inForceRelative) :
                                   inXML.has.replace ? inFiles.replace(dir, inForceRelative) :
                                   inFiles;
 
@@ -881,7 +882,7 @@ class BuildTool
             {
                case "file" :
                   var name = substitute(el.att.name);
-                  var file = group.find(name);
+                  var file:File = group.find(name);
                   if (file==null)
                   {
                      file = new File(name,group);
