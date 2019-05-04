@@ -190,7 +190,7 @@ class BuildTool
 
          var xml_slow = Xml.parse(make_contents);
          var xml = new XmlAccess(xml_slow.firstElement());
-
+          
          parseXML(xml,"",false);
          popFile();
 
@@ -369,7 +369,7 @@ class BuildTool
          //throw "No compiler defined";
       }
 
-      var target = mTargets.get(inTarget);
+      var target:Target = mTargets.get(inTarget);
       target.checkError();
 
       for(sub in target.mSubTargets)
@@ -426,20 +426,21 @@ class BuildTool
          if (useCache)
          {
             Profile.push("compute hash");
-            if (useCache && group.mFiles.length>1 && threadPool!=null)
+            if (useCache && group.hasFiles() && threadPool!=null)
             {
                Log.initMultiThreaded();
-               threadPool.setArrayCount( group.mFiles.length );
+               threadPool.setArrayCount( group.calculateFileCount() );
                threadPool.runJob( function(tid) {
                   var localCache = new Map<String,String>();
 
                   while(threadExitCode==0)
                   {
+                     var names:Array<String> = Lambda.array(Lambda.map(group.mFiles, function(file:File) {return file.mName; }));
                      var id = sThreadPool.getNextIndex();
                      if (id<0)
                         break;
 
-                     group.mFiles[id].computeDependHash(localCache);
+                     group.mFiles.get(names[id]).computeDependHash(localCache);
                   }
                } );
             }
@@ -867,13 +868,13 @@ class BuildTool
       if (inForceRelative)
          dir = PathManager.combine( Path.directory(mCurrentIncludeFile), dir );
 
-      var group = inFiles==null ? new FileGroup(dir,inName, inForceRelative) :
+      var group:FileGroup = inFiles==null ? new FileGroup(dir,inName, inForceRelative) :
                                   inXML.has.replace ? inFiles.replace(dir, inForceRelative) :
                                   inFiles;
 
       if (inTags!=null)
          group.mTags = inTags;
-
+      
       for(el in inXML.elements)
       {
          if (valid(el,""))
@@ -881,7 +882,7 @@ class BuildTool
             {
                case "file" :
                   var name = substitute(el.att.name);
-                  var file = group.find(name);
+                  var file:File = group.find(name);
                   if (file==null)
                   {
                      file = new File(name,group);
@@ -2048,7 +2049,7 @@ class BuildTool
          defines.set("LEGACY_MACOSX_SDK","1");
       }
    }
-
+   
    function parseXML(inXML:XmlAccess,inSection:String, forceRelative:Bool)
    {
       for(el in inXML.elements)
@@ -2173,7 +2174,7 @@ class BuildTool
          }
       }
    }
-
+   
    public function checkToolVersion(inVersion:String)
    {
       var ver = Std.parseInt(inVersion);
