@@ -768,7 +768,7 @@ String _hx_std_sys_exe_path()
 #if defined(HX_WINRT) && defined(__cplusplus_winrt)
    Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
    Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
-   return(String::create(installedLocation->Path));
+   return(String::create(installedLocation->Path->Data()));
 #elif defined(NEKO_WINDOWS)
    wchar_t path[MAX_PATH];
    if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
