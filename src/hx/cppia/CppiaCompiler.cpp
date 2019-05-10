@@ -124,6 +124,7 @@ int getJitTypeSize(JitType inType)
       case jtPointer : return sizeof(void *);
       case jtString : return sizeof(String);
       case jtFloat : return sizeof(double);
+      case jtFloat32 : return sizeof(float);
       case jtInt : return sizeof(int);
       default:
         return 0;
@@ -628,7 +629,7 @@ public:
       switch(inVal.position)
       {
          case jposRegister:
-            if (inVal.type==jtFloat)
+            if (inVal.type==jtFloat || inVal.type==jtFloat32)
             {
                if (inVal.reg0>=maxFTempCount)
                   maxFTempCount = inVal.reg0+1;
@@ -764,6 +765,10 @@ public:
             break;
          case jtFloat:
             emit_fop1(SLJIT_MOV_F64, inDest, inSrc);
+            break;
+
+         case jtFloat32:
+            emit_fop1(SLJIT_MOV_F32, inDest, inSrc);
             break;
 
          case jtByte:
@@ -902,6 +907,7 @@ public:
                makeAddress(sJitTemp1,inTarget);
                callNative( (void *)floatToStr, inSrc.as(jtFloat), sJitTemp1 );
                break;
+
             case etObject:
                if (inSrc.uses(SLJIT_R1))
                {

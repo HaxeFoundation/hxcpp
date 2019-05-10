@@ -53,6 +53,7 @@ enum JitType
   jtPointer,
   jtString,
   jtFloat,
+  jtFloat32,
   jtInt,
   jtByte,
   jtShort,

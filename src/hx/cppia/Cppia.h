@@ -65,6 +65,7 @@ enum ArrayType
    arrBool,
    arrInt,
    arrFloat,
+   arrFloat32,
    arrUnsignedChar,
    arrString,
    arrObject,

@@ -287,6 +287,7 @@ hx::Object *DynamicToArrayType(hx::Object *obj, ArrayType arrayType)
       case arrUnsignedChar: return convert<unsigned char>(obj);
       case arrInt:          return convert<int>(obj);
       case arrFloat:        return convert<Float>(obj);
+      case arrFloat32:      return convert<float>(obj);
       case arrString:       return convert<String>(obj);
       #if (HXCPP_API_LEVEL>=330)
       case arrAny:
@@ -1506,6 +1507,7 @@ static void *SLJIT_CALL createArrayBool(int n) { return (Array_obj<bool>::__new(
 static void *SLJIT_CALL createArrayUChar(int n) { return (Array_obj<unsigned char>::__new(n,n)).mPtr; }
 static void *SLJIT_CALL createArrayInt(int n) { return (Array_obj<int>::__new(n,n)).mPtr; }
 static void *SLJIT_CALL createArrayFloat(int n) { return (Array_obj<Float>::__new(n,n)).mPtr; }
+static void *SLJIT_CALL createArrayFloat32(int n) { return (Array_obj<float>::__new(n,n)).mPtr; }
 static void *SLJIT_CALL createArrayString(int n) { return (Array_obj<String>::__new(n,n)).mPtr; }
 static void *SLJIT_CALL createArrayObject(int n) { return (Array_obj<Dynamic>::__new(n,n)).mPtr; }
 static void *SLJIT_CALL createArrayAny(int n) {
@@ -1596,6 +1598,8 @@ struct NewExpr : public CppiaDynamicExpr
                return Array_obj<int>::__new(size,size).mPtr;
             case arrFloat:
                return Array_obj<Float>::__new(size,size).mPtr;
+            case arrFloat32:
+               return Array_obj<float>::__new(size,size).mPtr;
             case arrString:
                return Array_obj<String>::__new(size,size).mPtr;
             case arrAny:
@@ -1640,6 +1644,7 @@ struct NewExpr : public CppiaDynamicExpr
             case arrUnsignedChar: func = (void *)createArrayUChar; break;
             case arrInt:func = (void *)createArrayInt; break;
             case arrFloat:func = (void *)createArrayFloat; break;
+            case arrFloat32:func = (void *)createArrayFloat32; break;
             case arrString:func = (void *)createArrayString; break;
             case arrAny:func = (void *)createArrayAny; break;
             case arrObject:func = (void *)createArrayObject; break;
@@ -5094,6 +5099,16 @@ struct ArrayDef : public CppiaDynamicExpr
             }
             return result.mPtr;
             }
+         case arrFloat32:
+            { 
+            Array<float> result = Array_obj<float>::__new(n,n);
+            for(int i=0;i<n;i++)
+            {
+               result->__unsafe_set(i,items[i]->runFloat(ctx));
+               BCR_CHECK;
+            }
+            return result.mPtr;
+            }
          case arrString:
             { 
             Array<String> result = Array_obj<String>::__new(n,n);
@@ -5154,6 +5169,9 @@ struct ArrayDef : public CppiaDynamicExpr
          case arrFloat:
             compiler->callNative( (void *)createArrayFloat, n);
             break;
+         case arrFloat32:
+            compiler->callNative( (void *)createArrayFloat32, n);
+            break;
          case arrString:
             compiler->callNative( (void *)createArrayString, n);
             break;
@@ -5201,6 +5219,12 @@ struct ArrayDef : public CppiaDynamicExpr
                compiler->move(sJitTemp1, arrayPtr);
                compiler->move(sJitTemp1.star(jtFloat)+i*sizeof(double), sJitTempF0);
                break;
+            case arrFloat32:
+               items[i]->genCode(compiler, sJitTempF0, etFloat );
+               compiler->move(sJitTemp1, arrayPtr);
+               compiler->move(sJitTemp1.star(jtFloat32)+i*sizeof(float), sJitTempF0);
+               break;
+
             case arrString:
                {
                JitTemp val(compiler,etString);
@@ -8185,6 +8209,8 @@ void TypeData::link(CppiaModule &inModule)
                arrayType = arrBool;
             else if (t==HX_CSTRING("Float"))
                arrayType = arrFloat;
+            else if (t==HX_CSTRING("float"))
+               arrayType = arrFloat32;
             else if (t==HX_CSTRING("String"))
                arrayType = arrString;
             else if (t==HX_CSTRING("unsigned char"))
@@ -8195,7 +8221,7 @@ void TypeData::link(CppiaModule &inModule)
                arrayType = arrObject;
             else
             {
-               throw "Unknown array type";
+               throw (HX_CSTRING("Unknown array type:") + t).utf8_str();
             }
          }
 

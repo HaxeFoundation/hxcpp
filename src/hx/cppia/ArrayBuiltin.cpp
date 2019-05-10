@@ -397,6 +397,7 @@ template<> struct ExprBaseTypeOf<int> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<unsigned char> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<bool> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<Float> { typedef double &Base ; };
+template<> struct ExprBaseTypeOf<float> { typedef double &Base ; };
 template<> struct ExprBaseTypeOf<String> { typedef String &Base ; };
 
 
@@ -2042,6 +2043,8 @@ CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *th
          return new ArrayBuiltin<int,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrFloat:
          return new ArrayBuiltin<Float,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
+      case arrFloat32:
+         return new ArrayBuiltin<float,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrString:
          return new ArrayBuiltin<String,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrObject:
