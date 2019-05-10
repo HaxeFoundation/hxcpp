@@ -67,7 +67,7 @@ public:
 
 
 
-template<typename ARG1, void (*FUNC)(ARG1)>
+template<typename ARG0, void (*FUNC)(ARG0)>
 class VoidBuiltin1 : public CppiaExpr
 {
 public:
