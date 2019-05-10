@@ -87,7 +87,7 @@ public:
       ARG0 val0;
       runValue(val0, ctx, args[0]);
       BCR_VCHECK;
-      FUNC(val0,val1);
+      FUNC(val0);
    }
 };
 
