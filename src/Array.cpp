@@ -470,14 +470,14 @@ String ArrayBase::joinArray(ArrayBase *inBase, String inSeparator)
 
    Array<String> stringArray = Array_obj<String>::__new(length, length);
    _hx_toString_depth++;
-   for(int i=0;i<length;i++)
-      try {
+   try {
+      for(int i=0;i<length;i++)
          stringArray->__unsafe_set(i, inBase->ItemString(i));
-      } catch(...) {
-         _hx_toString_depth--;
-         throw;
-      }
-   _hx_toString_depth--;
+      _hx_toString_depth--;
+   } catch(...) {
+      _hx_toString_depth--;
+      throw;
+   }
 
    return stringArray->join(inSeparator);
 }
