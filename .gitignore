@@ -24,3 +24,4 @@ hxcpp.n
 *.exe
 *.pdb
 *.ilk
+.vscode
