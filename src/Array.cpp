@@ -461,20 +461,22 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
 int _hx_toString_depth = 0;
 String ArrayBase::joinArray(ArrayBase *inBase, String inSeparator)
 {
-   if(_hx_toString_depth >=5 ) {
+   if (_hx_toString_depth >= 5)
       return HX_CSTRING("...");
-   }
    int length = inBase->length;
    if (length==0)
       return HX_CSTRING("");
 
    Array<String> stringArray = Array_obj<String>::__new(length, length);
    _hx_toString_depth++;
-   try {
+   try
+   {
       for(int i=0;i<length;i++)
          stringArray->__unsafe_set(i, inBase->ItemString(i));
       _hx_toString_depth--;
-   } catch(...) {
+   }
+   catch (...)
+   {
       _hx_toString_depth--;
       throw;
    }
