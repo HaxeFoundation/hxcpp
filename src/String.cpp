@@ -1540,7 +1540,6 @@ int String::compare(const ::String &inRHS) const
          }
          else
          {
-            cmp = length - inRHS.length;
             for(int i=0;i<minLen;i++)
             {
                if (__w[i]!=inRHS.__w[i])
