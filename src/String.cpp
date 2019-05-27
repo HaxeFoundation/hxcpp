@@ -25,7 +25,7 @@ using namespace std;
 #endif
 
 // vc 7...
-#if _MSC_VER < 1400 
+#if _MSC_VER < 1400
 
 #define SPRINTF _snprintf
 
@@ -777,7 +777,7 @@ String String::create(const char *inString,int inLength)
       if (c[i]>127)
          return _hx_utf8_to_utf16(c, inLength,false);
    }
-   
+
    #endif
 
    int len = 0;
@@ -1529,12 +1529,26 @@ int String::compare(const ::String &inRHS) const
 
    if (minLen>0)
    {
-      bool s0IsWide = ((unsigned int *)__s)[-1] & HX_GC_STRING_CHAR16_T;
-      bool s1IsWide = ((unsigned int *)inRHS.__s)[-1] & HX_GC_STRING_CHAR16_T;
+      bool s0IsWide = isUTF16Encoded();
+      bool s1IsWide = inRHS.isUTF16Encoded();
 
       if (s0IsWide==s1IsWide)
       {
-         cmp = memcmp(__s,inRHS.__s,s0IsWide ? minLen*2 : minLen);
+         if (!s0IsWide)
+         {
+            cmp = memcmp(__s,inRHS.__s,minLen);
+         }
+         else
+         {
+            for(int i=0;i<minLen;i++)
+            {
+               if (__w[i]!=inRHS.__w[i])
+               {
+                  cmp = __w[i] - inRHS.__w[i];
+                  break;
+               }
+            }
+         }
       }
       else
       {
@@ -1871,13 +1885,13 @@ String String::substring(int startIndex, Dynamic inEndIndex) const
    } else if ( endIndex > length ) {
       endIndex = length;
    }
-   
+
    if ( startIndex < 0 ) {
       startIndex = 0;
    } else if ( startIndex > length ) {
       startIndex = length;
    }
-   
+
    if ( startIndex > endIndex ) {
       int tmp = startIndex;
       startIndex = endIndex;
