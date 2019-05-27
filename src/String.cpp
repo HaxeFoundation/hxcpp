@@ -1529,8 +1529,8 @@ int String::compare(const ::String &inRHS) const
 
    if (minLen>0)
    {
-      bool s0IsWide = ((unsigned int *)__s)[-1] & HX_GC_STRING_CHAR16_T;
-      bool s1IsWide = ((unsigned int *)inRHS.__s)[-1] & HX_GC_STRING_CHAR16_T;
+      bool s0IsWide = isUTF16Encoded();
+      bool s1IsWide = inRHS.isUTF16Encoded();
 
       if (s0IsWide==s1IsWide)
       {
