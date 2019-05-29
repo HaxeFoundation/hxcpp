@@ -79,6 +79,45 @@ struct SubStrExpr : public StringExpr
 };
 
 
+
+template<bool KEYS>
+struct StringIteratorExpr : public StringExpr
+{
+   StringIteratorExpr(CppiaExpr *inSrc, CppiaExpr *inThis) : StringExpr(inSrc,inThis)
+   {
+   }
+   const char *getName() { return "StringIteratorExpr"; }
+
+   ExprType getType() { return etObject; }
+
+   String runString(CppiaCtx *ctx) { return Dynamic(runObject(ctx)); }
+   int runInt(CppiaCtx *ctx) { return 0; }
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      String val = strVal->runString(ctx);
+      BCR_CHECK;
+      return ( KEYS ? val.keyValueIterator() : val.iterator() ).mPtr;
+   }
+
+   #ifdef CPPIA_JIT
+   static hx::Object *SLJIT_CALL run(String *inValue)
+   {
+      return ( KEYS ? inValue->keyValueIterator() : inValue->iterator() ).mPtr;
+   }
+
+   void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
+   {
+      JitTemp value(compiler,jtString);
+      strVal->genCode(compiler, value, etString);
+      compiler->callNative( (void *)run, value);
+      compiler->convertReturnReg(etObject, inDest, destType);
+   }
+   #endif
+};
+
+
+
+
 template<bool UPPER>
 struct ToCaseExpr : public StringExpr
 {
@@ -384,6 +423,16 @@ CppiaExpr *createStringBuiltin(CppiaExpr *inSrc, CppiaExpr *inThisExpr, String f
    {
       if (ioExpressions.size()!=1) throw "Bad arg count";
       return new CharAtExpr<true,true>(inSrc,inThisExpr,ioExpressions[0]);
+   }
+   else if (field==HX_CSTRING("iterator"))
+   {
+      if (ioExpressions.size()!=0) throw "Bad arg count";
+      return new StringIteratorExpr<false>(inSrc,inThisExpr);
+   }
+   else if (field==HX_CSTRING("keyValueIterator"))
+   {
+      if (ioExpressions.size()!=0) throw "Bad arg count";
+      return new StringIteratorExpr<true>(inSrc,inThisExpr);
    }
    else if (field==HX_CSTRING("charCodeAt"))
    {

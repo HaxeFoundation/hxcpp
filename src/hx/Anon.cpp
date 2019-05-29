@@ -97,7 +97,7 @@ void Anon_obj::__Visit(hx::VisitContext *__inCtx)
 
 inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
 {
-   if (!mFixedFields)
+   if (!mFixedFields || !inKey.isAsciiEncoded() )
       return -1;
    VariantKey *fixed = getFixed();
    int sought = inKey.hash();
@@ -107,8 +107,8 @@ inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
       if (mFixedFields<5)
       {
          for(int i=0;i<mFixedFields;i++)
-            if (fixed[i].hash==sought && (fixed[i].key.__s == inKey.__s ||
-                   (fixed[i].key.length == inKey.length && !memcmp(fixed[i].key.__s,inKey.__s, inKey.length))))
+            if (fixed[i].hash==sought && (fixed[i].key.raw_ptr() == inKey.raw_ptr() ||
+                   (fixed[i].key.length == inKey.length && !memcmp(fixed[i].key.raw_ptr(),inKey.raw_ptr(), inKey.length))))
                return i;
          return -1;
       }
@@ -145,8 +145,8 @@ inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
    while(fixed[min].hash==sought)
    {
       if (fixed[min].key==inKey)
-         if (fixed[min].hash==sought && (fixed[min].key.__s == inKey.__s ||
-                (fixed[min].key.length == inKey.length && !memcmp(fixed[min].key.__s,inKey.__s, inKey.length))))
+         if (fixed[min].hash==sought && (fixed[min].key.raw_ptr() == inKey.raw_ptr() ||
+                (fixed[min].key.length == inKey.length && !memcmp(fixed[min].key.raw_ptr(),inKey.raw_ptr(), inKey.length))))
          return min;
 
       min++;
@@ -299,7 +299,7 @@ String Anon_obj::toString()
       if (mFields.mPtr)
       {
          String val = __string_hash_to_string_raw(mFields);
-         if (val.__s)
+         if (val.raw_ptr())
             array->push(val);
       }
 

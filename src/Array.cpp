@@ -361,11 +361,11 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
    for(int i=0;i<length;i++)
    {
       String strI = inArray->__unsafe_get(i);
-      if (strI.__s)
+      if (strI.raw_ptr())
       {
          len += strI.length;
          #ifdef HX_SMART_STRINGS
-         if ( ((unsigned int *)strI.__w)[-1] & HX_GC_STRING_CHAR16_T)
+         if (strI.isUTF16Encoded())
             isWChar = true;
          #endif
       }
@@ -385,41 +385,47 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
       for(int i=0;i<length;i++)
       {
          String strI = inArray->__unsafe_get(i);
-         if (!strI.__s)
+         if (!strI.raw_ptr())
          {
             memcpy(buf+pos,u"null",8);
             pos+=4;
          }
+         else if(strI.length==0)
+         {
+            // ignore
+         }
          else if (strI.isUTF16Encoded())
          {
-            memcpy(buf+pos,strI.__w,strI.length*sizeof(char16_t));
+            memcpy(buf+pos,strI.raw_wptr(),strI.length*sizeof(char16_t));
             pos += strI.length;
          }
          else
          {
+            const char *ptr = strI.raw_ptr();
             for(int c=0;c<strI.length;c++)
-               buf[pos++] = strI.__s[c];
+               buf[pos++] = ptr[c];
          }
 
          if (separated && (i+1<length) )
          {
             if (sepIsWide)
             {
-               memcpy(buf+pos,inSeparator.__w,inSeparator.length*sizeof(char16_t));
+               memcpy(buf+pos,inSeparator.raw_ptr(),inSeparator.length*sizeof(char16_t));
                pos += inSeparator.length;
             }
             else
             {
+               const char *ptr = inSeparator.raw_ptr();
                for(int c=0;c<inSeparator.length;c++)
-                  buf[pos++] = inSeparator.__s[c];
+                  buf[pos++] = ptr[c];
             }
          }
       }
       buf[len] = '\0';
 
-      return String(buf,len,true);
+      String result(buf,len);
+      return result;
    }
-   else
    #endif
    {
       char *buf = hx::NewString(len);
@@ -429,19 +435,19 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
       for(int i=0;i<length;i++)
       {
          String strI = inArray->__unsafe_get(i);
-         if (!strI.__s)
+         if (!strI.raw_ptr())
          {
             memcpy(buf+pos,"null",4);
             pos+=4;
          }
          else
          {
-            memcpy(buf+pos,strI.__s,strI.length*sizeof(char));
+            memcpy(buf+pos,strI.raw_ptr(),strI.length*sizeof(char));
             pos += strI.length;
          }
          if (separated && (i+1<length) )
          {
-            memcpy(buf+pos,inSeparator.__s,inSeparator.length*sizeof(char));
+            memcpy(buf+pos,inSeparator.raw_ptr(),inSeparator.length*sizeof(char));
             pos += inSeparator.length;
          }
       }

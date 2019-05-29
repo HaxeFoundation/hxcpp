@@ -70,7 +70,7 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
              #endif
              )
 {
-   mName = const_cast<String &>(inClassName).dupConst();
+   mName = inClassName.makePermanent();
    mSuper = inSuperClass;
    mConstructEmpty = inConstructEmpty;
    mConstructArgs = inConstructArgs;
@@ -209,14 +209,14 @@ Array<String> Class_obj::GetInstanceFields()
 Array<String> Class_obj::GetClassFields()
 {
    Array<String> result = mStatics.mPtr ? mStatics->copy() : new Array_obj<String>(0,0);
-   if (__rtti__.__s)
+   if (__rtti__.raw_ptr())
       result->push( HX_CSTRING("__rtti") );
    return result;
 }
 
 bool Class_obj::__HasField(const String &inString)
 {
-   if (__rtti__.__s && inString==HX_CSTRING("__rtti"))
+   if (__rtti__.raw_ptr() && inString==HX_CSTRING("__rtti"))
       return true;
 
    if (mStatics.mPtr)
@@ -327,7 +327,7 @@ void MarkClassStatics(hx::MarkContext *__inCtx)
       if (c->__meta__.mPtr || c->mMarkFunc)
       {
          #ifdef HXCPP_DEBUG
-         hx::MarkPushClass(i->first.__s,__inCtx);
+         hx::MarkPushClass(i->first.raw_ptr(),__inCtx);
          hx::MarkSetMember("statics",__inCtx);
          #endif
       

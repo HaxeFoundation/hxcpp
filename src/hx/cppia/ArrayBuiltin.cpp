@@ -301,9 +301,9 @@ struct ArraySetter : public ArrayBuiltinBase
             compiler->mult( sJitTemp1, sJitTemp1.as(jtInt), (int)sizeof(String), false );
             compiler->add( sJitTemp0, sJitTemp0.as(jtPointer), sJitTemp1);
             compiler->move( sJitTemp0.star(jtInt), value.as(jtInt) );
-            compiler->move( sJitTemp0.star(jtPointer,offsetof(String,__s)), value.as(jtPointer) + offsetof(String,__s) );
+            compiler->move( sJitTemp0.star(jtPointer,StringOffset::Ptr), value.as(jtPointer) + StringOffset::Ptr );
             #ifdef HXCPP_GC_GENERATIONAL
-            genWriteBarrier(compiler, sJitTemp2, value.as(jtPointer) + offsetof(String,__s) );
+            genWriteBarrier(compiler, sJitTemp2, value.as(jtPointer) + StringOffset::Ptr );
             #endif
          }
          else if (sizeof(ELEM)==2)
@@ -397,6 +397,7 @@ template<> struct ExprBaseTypeOf<int> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<unsigned char> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<bool> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<Float> { typedef double &Base ; };
+template<> struct ExprBaseTypeOf<float> { typedef double &Base ; };
 template<> struct ExprBaseTypeOf<String> { typedef String &Base ; };
 
 
@@ -1234,9 +1235,9 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   compiler->add( sJitTemp0, sJitTemp1.as(jtPointer), sJitTemp0);
 
                   compiler->move( sJitTemp0.star(jtInt), tempVal.as(jtInt) );
-                  compiler->move( sJitTemp0.star(jtPointer,offsetof(String,__s)), tempVal.as(jtPointer) + offsetof(String,__s) );
+                  compiler->move( sJitTemp0.star(jtPointer,StringOffset::Ptr), tempVal.as(jtPointer) + StringOffset::Ptr );
                   #ifdef HXCPP_GC_GENERATIONAL
-                  genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + offsetof(String,__s) );
+                  genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + StringOffset::Ptr );
                   #endif
                }
                else if (sizeof(ELEM)==2)
@@ -1328,10 +1329,10 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   compiler->add( sJitTemp0, sJitTemp0.as(jtPointer), sJitTemp1);
 
                   compiler->move( sJitTemp0.star(jtInt), tempVal.as(jtInt) );
-                  compiler->move( sJitTemp0.star(jtPointer,offsetof(String,__s)), tempVal.as(jtPointer) + offsetof(String,__s) );
+                  compiler->move( sJitTemp0.star(jtPointer, StringOffset::Ptr), tempVal.as(jtPointer) + StringOffset::Ptr );
 
                   #ifdef HXCPP_GC_GENERATIONAL
-                  genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + offsetof(String,__s) );
+                  genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + StringOffset::Ptr );
                   #endif
                }
                else if (sizeof(ELEM)==2)
@@ -1416,7 +1417,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   if (destType!=etInt || isMemoryVal(inDest) )
                   {
                      compiler->move( sJitTemp1.as(jtInt), sJitTemp1.atReg(sJitTemp0).as(jtByte) );
-                     compiler->convert(sJitTemp1, etInt, inDest, destType);
+                     compiler->convert(sJitTemp1.as(jtInt), etInt, inDest, destType);
                   }
                   else
                      compiler->move( inDest.as(jtInt),  sJitTemp1.atReg(sJitTemp0).as(jtByte) );
@@ -1552,14 +1553,14 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   if (destType==etNull || destType==etVoid)
                   {
                      compiler->move( sJitTemp0.star(jtInt),  0 );
-                     compiler->move( sJitTemp0.star(jtPointer) + offsetof(String,__s),  0 );
+                     compiler->move( sJitTemp0.star(jtPointer) + StringOffset::Ptr,  0 );
                   }
                   else
                   {
                      JitTemp strVal(compiler,jtString);
                      compiler->convert(  sJitTemp0.star(jtString), etString, strVal, etString );
                      compiler->move( sJitTemp0.star(jtInt),  0 );
-                     compiler->move( sJitTemp0.star(jtPointer) + offsetof(String,__s),  0 );
+                     compiler->move( sJitTemp0.star(jtPointer) + StringOffset::Ptr,  0 );
                      compiler->convert( strVal, etString, inDest, destType );
                   }
                }
@@ -2042,6 +2043,8 @@ CppiaExpr *TCreateArrayBuiltin(CppiaExpr *inSrc, ArrayType inType, CppiaExpr *th
          return new ArrayBuiltin<int,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrFloat:
          return new ArrayBuiltin<Float,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
+      case arrFloat32:
+         return new ArrayBuiltin<float,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrString:
          return new ArrayBuiltin<String,BUILTIN,CREMENT>(inSrc, thisExpr, args, inUnsafe);
       case arrObject:

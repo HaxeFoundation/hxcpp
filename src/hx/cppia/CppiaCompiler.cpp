@@ -25,13 +25,13 @@ static void SLJIT_CALL my_trace_strings(const char *inText, const char *inValue)
 }
 static void SLJIT_CALL my_trace_string(const char *inText, String *inValue)
 {
-   printf("%s%s\n", inText, inValue->__s);
+   printf("%s%s\n", inText, inValue->out_str());
 }
 
 static void SLJIT_CALL my_trace_ptr_func(const char *inText, hx::Object **inPtr)
 {
    printf("%s = %p\n",inText, inPtr);
-   //printf("*= %s\n", (*inPtr)->toString().__s);
+   //printf("*= %s\n", (*inPtr)->toString().out_str());
    //*(int *)0=0;
 }
 static void SLJIT_CALL my_trace_int_func(const char *inText, int inValue)
@@ -45,7 +45,7 @@ static void SLJIT_CALL my_trace_float_func(const char *inText, double *inValue)
 
 static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
 {
-   printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().__s : "NULL" );
+   printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().out_str() : "NULL" );
 }
 
 static hx::Object *SLJIT_CALL intToObj(int inVal)
@@ -124,6 +124,7 @@ int getJitTypeSize(JitType inType)
       case jtPointer : return sizeof(void *);
       case jtString : return sizeof(String);
       case jtFloat : return sizeof(double);
+      case jtFloat32 : return sizeof(float);
       case jtInt : return sizeof(int);
       default:
         return 0;
@@ -628,7 +629,7 @@ public:
       switch(inVal.position)
       {
          case jposRegister:
-            if (inVal.type==jtFloat)
+            if (inVal.type==jtFloat || inVal.type==jtFloat32)
             {
                if (inVal.reg0>=maxFTempCount)
                   maxFTempCount = inVal.reg0+1;
@@ -766,6 +767,10 @@ public:
             emit_fop1(SLJIT_MOV_F64, inDest, inSrc);
             break;
 
+         case jtFloat32:
+            emit_fop1(SLJIT_MOV_F32, inDest, inSrc);
+            break;
+
          case jtByte:
             emit_op1(SLJIT_MOV32_U8, inDest, inSrc);
             break;
@@ -782,7 +787,7 @@ public:
             else
             {
                emit_op1(SLJIT_MOV_S32, inDest.as(jtInt), inSrc.as(jtInt));
-               emit_op1(SLJIT_MOV_P, inDest.as(jtPointer) + offsetof(String,__s), inSrc.as(jtPointer) + offsetof(String,__s));
+               emit_op1(SLJIT_MOV_P, inDest.as(jtPointer) + StringOffset::Ptr, inSrc.as(jtPointer) + StringOffset::Ptr);
             }
             break;
 
@@ -876,11 +881,11 @@ public:
                {
                   JumpId isFalse = compare( cmpI_ZERO, inSrc.as(jtInt), 0, 0);
                   move(inTarget.as(jtInt), 4);
-                  move(inTarget.as(jtPointer)+offsetof(String,__s), (void *)String(true).__s );
+                  move(inTarget.as(jtPointer)+StringOffset::Ptr, (void *)String(true).out_str() );
                   JumpId done = jump();
                   comeFrom(isFalse);
                   move(inTarget.as(jtInt), 5);
-                  move(inTarget.as(jtPointer)+offsetof(String,__s), (void *)String(false).__s );
+                  move(inTarget.as(jtPointer)+StringOffset::Ptr, (void *)String(false).out_str() );
                   comeFrom(done);
                }
                else
@@ -902,6 +907,7 @@ public:
                makeAddress(sJitTemp1,inTarget);
                callNative( (void *)floatToStr, inSrc.as(jtFloat), sJitTemp1 );
                break;
+
             case etObject:
                if (inSrc.uses(SLJIT_R1))
                {
@@ -1019,7 +1025,7 @@ public:
 
             comeFrom(isString);
             move( inDest.as(jtInt), sJitTemp0.star(jtInt, inOffset + (int)offsetof(cpp::Variant,valStringLen) ) );
-            move( inDest.as(jtPointer) + offsetof(String,__s), sJitTemp0.star(jtPointer, inOffset + (int)offsetof(cpp::Variant,valStringPtr) ) );
+            move( inDest.as(jtPointer) + StringOffset::Ptr, sJitTemp0.star(jtPointer, inOffset + (int)offsetof(cpp::Variant,valStringPtr) ) );
             }
             break;
 
@@ -1095,7 +1101,7 @@ public:
          case etString:
             {
             move(inTarget.as(jtInt), (int)0);
-            move(inTarget.as(jtPointer) + offsetof(String,__s), (void *)0);
+            move(inTarget.as(jtPointer) + StringOffset::Ptr, (void *)0);
             }
             break;
          case etInt:

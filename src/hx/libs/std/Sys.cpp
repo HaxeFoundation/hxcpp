@@ -77,11 +77,17 @@
 
 String _hx_std_get_env( String v )
 {
-   const char *s = 0;
-   #ifndef HX_WINRT
-   s = getenv(v.__s);
+   #ifdef HX_WINRT
+      return String();
+   #else
+      #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
+         hx::strbuf wbuf;
+         return String::create( _wgetenv( v.wchar_str(&wbuf) ) );
+      #else
+         hx::strbuf buf;
+         return String::create( getenv(v.utf8_str(&buf)) );
+      #endif
    #endif
-   return String(s);
 }
 
 /**
@@ -94,9 +100,15 @@ void _hx_std_put_env( String e, String v )
    // Do nothing
 #elif defined(NEKO_WINDOWS)
    String set = e + HX_CSTRING("=") + v;
-   bool ok = putenv(set.__s) == 0;
+
+   #ifdef HX_SMART_STRINGS
+   if (set.isUTF16Encoded())
+      _wputenv( set.wchar_str() );
+   else
+   #endif
+      putenv(set.utf8_str());
 #else
-   bool ok = setenv(e.__s,v.__s,1) != 0;
+   setenv(e.utf8_str(),v.utf8_str(),1);
 #endif
 }
 
@@ -144,7 +156,7 @@ bool _hx_std_set_time_locale( String l )
 
 #ifdef NEKO_POSIX
    locale_t lc, old;
-   lc = newlocale(LC_TIME_MASK,l.__s,NULL);
+   lc = newlocale(LC_TIME_MASK,l.utf8_str(),NULL);
    if( !lc )
       return false;
    old = uselocale(lc);
@@ -157,7 +169,11 @@ bool _hx_std_set_time_locale( String l )
       freelocale(old);
    return true;
 #else
-   return setlocale(LC_TIME,l.__s);
+   #ifdef HX_SMART_STRINGS
+   if (l.isUTF16Encoded())
+      return _wsetlocale(LC_TIME,l.wchar_str());
+   #endif
+   return setlocale(LC_TIME,l.utf8_str());
 #endif
 
 #endif // !Android
@@ -170,14 +186,14 @@ bool _hx_std_set_time_locale( String l )
 String _hx_std_get_cwd()
 {
    #ifdef HX_WINRT
-   return String(HX_CSTRING("ms-appdata:///local/"));
+   return HX_CSTRING("ms-appdata:///local/");
    #elif defined(EPPC)
    return String();
    #else
 #ifdef NEKO_WINDOWS
    wchar_t buf[261];
    int l;
-   if( GetCurrentDirectoryW(260,buf) == NULL )
+   if( !GetCurrentDirectoryW(260,buf) )
       return String();
    l = (int)wcslen(buf);
    if( buf[l-1] != '/' && buf[l-1] != '\\' ) {
@@ -195,7 +211,7 @@ String _hx_std_get_cwd()
       buf[l+1] = 0;
    }
 #endif
-   return String(buf);
+   return String::create(buf);
    #endif
 }
 
@@ -280,16 +296,26 @@ int _hx_std_sys_command( String cmd )
    #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC) || defined(IPHONE) || defined(APPLETV) || defined(HX_APPLEWATCH)
    return -1;
    #else
-   if( !cmd.__s || !cmd.length )
+   if( !cmd.raw_ptr() || !cmd.length )
       return -1;
 
 #ifdef NEKO_WINDOWS
-   const wchar_t * wcmd = cmd.__WCStr();
+   int result = 0;
    hx::EnterGCFreeZone();
-   int result = _wsystem(wcmd);
+
+   #ifdef HX_SMART_STRINGS
+   if (!cmd.isUTF16Encoded())
+      result = system(cmd.raw_ptr());
+   else
+   #endif
+   {
+      hx::strbuf wbuf;
+      result = _wsystem(cmd.wchar_str(&wbuf));
+   }
 #else
+   hx::strbuf buf;
    hx::EnterGCFreeZone();
-   int result = system(cmd.__s);
+   int result = system(cmd.utf8_str(&buf));
 #endif
    hx::ExitGCFreeZone();
 
@@ -344,7 +370,18 @@ void _hx_std_file_delete( String path )
 {
    #ifndef EPPC
    hx::EnterGCFreeZone();
-   bool err = unlink(path.__s);
+
+   bool err = false;
+   #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
+   if (path.isUTF16Encoded())
+      err = _wunlink(path.wchar_str());
+   else
+   #endif
+   {
+      hx::strbuf buf;
+      err = unlink(path.utf8_str(&buf));
+   }
+
    hx::ExitGCFreeZone();
 
    if (err)
@@ -359,7 +396,15 @@ void _hx_std_file_delete( String path )
 void  _hx_std_sys_rename( String path, String newname )
 {
    hx::EnterGCFreeZone();
-   bool err = rename(path.__s,newname.__s);
+
+   hx::strbuf buf0;
+   hx::strbuf buf1;
+   #ifdef NEKO_WINDOWS
+   bool err = _wrename(path.wchar_str(&buf0),newname.wchar_str(&buf1));
+   #else
+   bool err = rename(path.utf8_str(&buf0),newname.utf8_str(&buf1));
+   #endif
+
    hx::ExitGCFreeZone();
 
    if (err)
@@ -390,8 +435,27 @@ Dynamic _hx_std_sys_stat( String path )
    return alloc_null();
    #else
    hx::EnterGCFreeZone();
-   struct stat s;
-   bool err = stat(path.__s,&s);
+   bool err = false;
+   #if defined(NEKO_WINDOWS)
+      struct _stat s;
+      #if defined(HX_SMART_STRINGS)
+      if (path.isUTF16Encoded())
+      {
+         hx::strbuf buf;
+         err = _wstat(path.wchar_str(&buf),&s);
+      }
+      else
+      #endif
+      {
+         hx::strbuf buf;
+         err = _stat(path.utf8_str(&buf),&s);
+      }
+   #else
+      struct stat s;
+      hx::strbuf buf;
+      err = stat(path.utf8_str(&buf),&s);
+   #endif
+
    hx::ExitGCFreeZone();
    if (err)
       return null();
@@ -434,9 +498,27 @@ String _hx_std_sys_file_type( String path )
    #ifdef EPPC
    return String();
    #else
-   struct stat s;
    hx::EnterGCFreeZone();
-   bool err = stat(path.__s,&s);
+   bool err = false;
+   #if defined(NEKO_WINDOWS)
+      struct _stat s;
+      #if defined(HX_SMART_STRINGS)
+      if (path.isUTF16Encoded())
+      {
+         hx::strbuf buf;
+         err = _wstat(path.wchar_str(&buf),&s);
+      }
+      else
+      #endif
+      {
+         hx::strbuf buf;
+         err = _stat(path.utf8_str(&buf),&s);
+      }
+   #else
+      struct stat s;
+      hx::strbuf buf;
+      err = stat(path.utf8_str(&buf),&s);
+   #endif
    hx::ExitGCFreeZone();
    if (err)
       return String();
@@ -493,7 +575,22 @@ void _hx_std_sys_remove_dir( String path )
    return true;
    #else
    hx::EnterGCFreeZone();
-   bool ok = rmdir(path.__s) == 0;
+
+   bool ok = false;
+
+   #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
+   if (path.isUTF16Encoded())
+   {
+      ok = _wrmdir(path.wchar_str()) == 0;
+   }
+   else
+   #endif
+   {
+      hx::strbuf buf;
+      ok = rmdir(path.utf8_str(&buf)) == 0;
+   }
+
+
    hx::ExitGCFreeZone();
    if (!ok)
       hx::Throw(HX_CSTRING("Could not remove directory"));
@@ -602,7 +699,7 @@ Array<String> _hx_std_sys_read_dir( String p )
       if( d.cFileName[0] != '.' || (d.cFileName[1] != 0 && (d.cFileName[1] != '.' || d.cFileName[2] != 0)) )
       {
          hx::ExitGCFreeZone();
-         result->push(String(d.cFileName));
+         result->push(String::create(d.cFileName));
          hx::EnterGCFreeZone();
       }
       if( !FindNextFileW(handle,&d) )
@@ -627,7 +724,7 @@ Array<String> _hx_std_sys_read_dir( String p )
       if( e->d_name[0] == '.' && (e->d_name[1] == 0 || (e->d_name[1] == '.' && e->d_name[2] == 0)) )
          continue;
       hx::ExitGCFreeZone();
-      result->push( String(e->d_name) );
+      result->push( String::create(e->d_name) );
       hx::EnterGCFreeZone();
    }
    closedir(d);
@@ -646,17 +743,19 @@ String _hx_std_file_full_path( String path )
 #if defined(HX_WINRT)
    return path;
 #elif defined(NEKO_WINDOWS)
-   char buf[MAX_PATH+1];
-   if( GetFullPathNameA(path.__s,MAX_PATH+1,buf,NULL) == 0 )
+   wchar_t buf[MAX_PATH+1];
+   hx::strbuf wbuf;
+   if( GetFullPathNameW(path.wchar_str(&wbuf),MAX_PATH+1,buf,NULL) == 0 )
       return null();
-   return String(buf);
+   return String::create(buf);
 #elif defined(EPPC)
    return path;
 #else
    char buf[PATH_MAX];
-   if( realpath(path.__s,buf) == NULL )
+   hx::strbuf ubuf;
+   if( realpath(path.utf8_str(&ubuf),buf) == NULL )
       return null();
-   return String(buf);
+   return String::create(buf);
 #endif
 }
 
@@ -669,18 +768,18 @@ String _hx_std_sys_exe_path()
 #if defined(HX_WINRT) && defined(__cplusplus_winrt)
    Windows::ApplicationModel::Package^ package = Windows::ApplicationModel::Package::Current;
    Windows::Storage::StorageFolder^ installedLocation = package->InstalledLocation;
-   return(String(installedLocation->Path));
+   return(String::create(installedLocation->Path->Data()));
 #elif defined(NEKO_WINDOWS)
    wchar_t path[MAX_PATH];
    if( GetModuleFileNameW(NULL,path,MAX_PATH) == 0 )
       return null();
-   return String(path);
+   return String::create(path);
 #elif defined(NEKO_MAC) && !defined(IPHONE) && !defined(APPLETV) && !defined(HX_APPLEWATCH)
    char path[PATH_MAX+1];
    uint32_t path_len = PATH_MAX;
    if( _NSGetExecutablePath(path, &path_len) )
       return null();
-   return String(path);
+   return String::create(path);
 #elif defined(EPPC)
    return HX_CSTRING("");
 #else
@@ -691,11 +790,11 @@ String _hx_std_sys_exe_path()
       {
          const char *p = getenv("_");
          if (p)
-            return String(p);
+            return String::create(p);
          return null();
       }
        path[length] = '\0';
-      return String(path);
+      return String::create(path);
    }
 #endif
 }
@@ -728,8 +827,8 @@ Array<String> _hx_std_sys_env()
          e++;
          continue;
       }
-      result->push(String(*e,(int)(x-*e)).dup());
-      result->push(String(x+1));
+      result->push(String::create(*e,(int)(x-*e)));
+      result->push(String::create(x+1));
       e++;
    }
    #endif

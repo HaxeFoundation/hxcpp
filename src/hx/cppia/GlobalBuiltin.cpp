@@ -66,6 +66,33 @@ public:
 };
 
 
+
+template<typename ARG0, void (*FUNC)(ARG0)>
+class VoidBuiltin1 : public CppiaExpr
+{
+public:
+   Expressions args;
+
+   VoidBuiltin1(CppiaExpr *inSrc, Expressions &inArgs) : CppiaExpr(inSrc), args(inArgs) { }
+
+   const char *getName() { return "VoidBuiltin1"; }
+   ExprType getType() { return etVoid; }
+
+   int runInt(CppiaCtx *ctx) { runVoid(ctx); return 0; }
+   Float runFloat(CppiaCtx *ctx) { runVoid(ctx); return 0;}
+   hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
+   String runString(CppiaCtx *ctx) { runVoid(ctx); return String(); }
+   void runVoid(CppiaCtx *ctx)
+   {
+      ARG0 val0;
+      runValue(val0, ctx, args[0]);
+      BCR_VCHECK;
+      FUNC(val0);
+   }
+};
+
+
+
 template<typename ARG0, typename ARG1, void (*FUNC)(ARG0,ARG1)>
 class VoidBuiltin2 : public CppiaExpr
 {
@@ -291,6 +318,27 @@ public:
 
 
 
+template<typename ARG0, typename RET, RET (*FUNC)(ARG0)>
+class ObjectBuiltin1 : public CppiaDynamicExpr
+{
+public:
+   Expressions args;
+
+   ObjectBuiltin1(CppiaExpr *inSrc, Expressions &inArgs) : CppiaDynamicExpr(inSrc), args(inArgs) { }
+
+   const char *getName() { return "ObjectBuiltin1"; }
+   ExprType getType() { return etObject; }
+
+   hx::Object *runObject(CppiaCtx *ctx)
+   {
+      ARG0 val0;
+      runValue(val0, ctx, args[0]);
+      BCR_CHECK;
+      return  FUNC(val0).mPtr;
+   }
+};
+
+
 
 CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioExpressions )
 {
@@ -330,10 +378,20 @@ CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioE
       if (ioExpressions.size()==0)
          return new FloatBuiltin0<double,__time_stamp>(src,ioExpressions);
    }
+   if (function==HX_CSTRING("__hxcpp_thread_create") )
+   {
+      if (ioExpressions.size()==1)
+         return new ObjectBuiltin1<Dynamic,Dynamic,__hxcpp_thread_create>(src,ioExpressions);
+   }
+   if (function==HX_CSTRING("__hxcpp_thread_send") )
+   {
+      if (ioExpressions.size()==2)
+         return new VoidBuiltin2<Dynamic,Dynamic,__hxcpp_thread_send>(src,ioExpressions);
+   }
 
 
-   printf("Unknown function : %s(%d)\n", function.__s, (int)ioExpressions.size() );
-   throw "Unknown global";
+   printf("Unknown function : %s(%d)\n", function.out_str(), (int)ioExpressions.size() );
+   throw (HX_CSTRING("Unknown global:") + function).utf8_str();
    return 0;
 }
 

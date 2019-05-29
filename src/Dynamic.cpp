@@ -44,7 +44,15 @@ Dynamic DynFalse;
 class IntData : public hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdInt };
+   enum { _hx_ClassId = hx::clsIdInt };
+
+   #if (HXCPP_API_LEVEL>331)
+   bool _hx_isInstanceOf(int inClassId)
+   {
+      return inClassId==1 || inClassId==(int)_hx_ClassId || inClassId==(int)hx::clsIdFloat;
+   }
+   #endif
+
 
    inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc, const char *inName="Int")
       { return hx::Object::operator new(inSize,inAlloc,inName); }
@@ -465,7 +473,7 @@ Dynamic::Dynamic(const cpp::CppInt32__ &inVal) :
   super(  Dynamic(inVal.mValue).mPtr ) { }
 
 Dynamic::Dynamic(const String &inVal) :
-  super( inVal.__s ? inVal.__ToObject() : 0 ) { }
+  super( inVal.raw_ptr() ? inVal.__ToObject() : 0 ) { }
 
 Dynamic::Dynamic(const HX_CHAR *inVal) :
   super( inVal ? String(inVal).__ToObject() : 0 ) { }
@@ -557,6 +565,13 @@ null BadCast()
    hx::Throw(HX_INVALID_CAST);
    return null();
 }
+
+void InvalidInterface()
+{
+   hx::Throw(HX_INVALID_INTERFACE);
+}
+
+
 }
 
 

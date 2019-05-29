@@ -25,7 +25,7 @@
       catch (Dynamic e)
       {
          __hx_dump_stack();
-         __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e->toString().__CStr());
+         __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e==null() ? "null" : e->toString().__CStr());
       }
       hx::SetTopOfStack((int *)0,true);
    }
@@ -96,9 +96,9 @@
       {
          __hx_dump_stack();
          #ifdef HX_WIN_MAIN
-         MessageBoxA(0,  e->toString().__CStr(), "Error", 0);
+         MessageBoxA(0,  e==null() ? "null" : e->toString().__CStr(), "Error", 0);
          #else
-         printf("Error : %s\n",e->toString().__CStr());
+         printf("Error : %s\n",e==null() ? "null" : e->toString().__CStr());
          #endif
          return -1;
       }

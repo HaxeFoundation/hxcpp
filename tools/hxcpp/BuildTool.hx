@@ -1,10 +1,14 @@
 import CopyFile.Overwrite;
 import haxe.io.Path;
-import haxe.xml.Fast;
 import haxe.Json;
 import sys.io.Process;
 import sys.FileSystem;
-#if neko
+
+#if haxe4
+import sys.thread.Thread;
+import sys.thread.Mutex;
+import sys.thread.Tls;
+#elseif neko
 import neko.vm.Thread;
 import neko.vm.Mutex;
 import neko.vm.Tls;
@@ -13,6 +17,7 @@ import cpp.vm.Thread;
 import cpp.vm.Mutex;
 import cpp.vm.Tls;
 #end
+
 import haxe.crypto.Md5;
 
 import Log.NORMAL;
@@ -22,6 +27,12 @@ import Log.YELLOW;
 import Log.WHITE;
 
 using StringTools;
+
+#if (haxe_ver>=4)
+typedef XmlAccess = haxe.xml.Access;
+#else
+typedef XmlAccess = haxe.xml.Fast;
+#end
 
 #if haxe3
 typedef Hash<T> = haxe.ds.StringMap<T>;
@@ -178,7 +189,7 @@ class BuildTool
 
 
          var xml_slow = Xml.parse(make_contents);
-         var xml = new Fast(xml_slow.firstElement());
+         var xml = new XmlAccess(xml_slow.firstElement());
 
          parseXML(xml,"",false);
          popFile();
@@ -770,7 +781,7 @@ class BuildTool
          Sys.setCwd(restoreDir);
    }
 
-   public function createCompiler(inXML:Fast,inBase:Compiler) : Compiler
+   public function createCompiler(inXML:XmlAccess,inBase:Compiler) : Compiler
    {
       var c = inBase;
       if (inBase==null || inXML.has.replace)
@@ -809,7 +820,7 @@ class BuildTool
                      pushFile(full_name,"compiler");
                      var make_contents = sys.io.File.getContent(full_name);
                      var xml_slow = Xml.parse(make_contents);
-                     createCompiler(new Fast(xml_slow.firstElement()),c);
+                     createCompiler(new XmlAccess(xml_slow.firstElement()),c);
                      popFile();
                   }
                   else if (!el.has.noerror)
@@ -839,7 +850,7 @@ class BuildTool
          var make_contents = sys.io.File.getContent(incName);
          mPragmaOnce.set(incName,true);
          var xml = Xml.parse(make_contents);
-         parseXML(new Fast(xml.firstElement()),"", false);
+         parseXML(new XmlAccess(xml.firstElement()),"", false);
          popFile();
       }
    }
@@ -850,7 +861,7 @@ class BuildTool
    }
 
 
-   public function createFileGroup(inXML:Fast,inFiles:FileGroup,inName:String, inForceRelative:Bool, inTags:String):FileGroup
+   public function createFileGroup(inXML:XmlAccess,inFiles:FileGroup,inName:String, inForceRelative:Bool, inTags:String):FileGroup
    {
       var dir = inXML.has.dir ? substitute(inXML.att.dir) : ".";
       if (inForceRelative)
@@ -945,7 +956,7 @@ class BuildTool
                         pushFile(full_name, "FileGroup");
                         var make_contents = sys.io.File.getContent(full_name);
                         var xml_slow = Xml.parse(make_contents);
-                        createFileGroup(new Fast(xml_slow.firstElement()), group, inName, false,null);
+                        createFileGroup(new XmlAccess(xml_slow.firstElement()), group, inName, false,null);
                         popFile();
                      }
                   }
@@ -960,7 +971,7 @@ class BuildTool
       return group;
    }
 
-   public function createLinker(inXML:Fast,inBase:Linker):Linker
+   public function createLinker(inXML:XmlAccess,inBase:Linker):Linker
    {
       var exe:String = inXML.has.exe ? substitute(inXML.att.exe) : null;
       if (inBase!=null && !inXML.has.replace && inBase.mExe==null)
@@ -1001,7 +1012,7 @@ class BuildTool
       return l;
    }
 
-   public function createPrelinker(inXML:Fast,inBase:Prelinker):Prelinker
+   public function createPrelinker(inXML:XmlAccess,inBase:Prelinker):Prelinker
    {
       var l = (inBase!=null && !inXML.has.replace) ? inBase : new Prelinker(substitute(inXML.att.exe));
       for(el in inXML.elements)
@@ -1022,7 +1033,7 @@ class BuildTool
       return l;
    }
 
-   public function createStripper(inXML:Fast,inBase:Stripper):Stripper
+   public function createStripper(inXML:XmlAccess,inBase:Stripper):Stripper
    {
       var s = (inBase!=null && !inXML.has.replace) ? inBase :
                  new Stripper(substitute(inXML.att.exe));
@@ -1039,7 +1050,7 @@ class BuildTool
       return s;
    }
 
-   public function createTarget(inXML:Fast,?inTarget:Target, inForceRelative) : Target
+   public function createTarget(inXML:XmlAccess,?inTarget:Target, inForceRelative) : Target
    {
       var target:Target = inTarget;
       var output = inXML.has.output ? substitute(inXML.att.output) : "";
@@ -2038,7 +2049,7 @@ class BuildTool
       }
    }
 
-   function parseXML(inXML:Fast,inSection:String, forceRelative:Bool)
+   function parseXML(inXML:XmlAccess,inSection:String, forceRelative:Bool)
    {
       for(el in inXML.elements)
       {
@@ -2193,7 +2204,7 @@ class BuildTool
          var xml_slow = Xml.parse(make_contents);
 
          Profile.push( haxe.io.Path.withoutDirectory(inName) );
-         parseXML(new Fast(xml_slow.firstElement()),inSection, forceRelative);
+         parseXML(new XmlAccess(xml_slow.firstElement()),inSection, forceRelative);
          Profile.pop();
 
          mCurrentIncludeFile = oldInclude;
@@ -2304,7 +2315,7 @@ class BuildTool
       return result=="t" || result=="true" || result=="1";
    }
 
-   public function valid(inEl:Fast,inSection:String):Bool
+   public function valid(inEl:XmlAccess,inSection:String):Bool
    {
       if (inEl.x.get("if") != null)
       {

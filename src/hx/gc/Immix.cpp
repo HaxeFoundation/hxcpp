@@ -2301,7 +2301,7 @@ void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
    {
       for(int i=0;i<inLength;i++)
       {
-         const char *str = inPtr[i].__s;
+         const char *str = inPtr[i].raw_ptr();
          HX_MARK_STRING(str);
       }
    }
@@ -2804,14 +2804,15 @@ bool IsConstAlloc(const void *inData)
 
 void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash)
 {
-   bool addHash = inAddStringHash && inData && inSize>0;
+   bool addHash = inAddStringHash && inSize>0;
 
    int *result = (int *)HxAlloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
    if (addHash)
    {
       unsigned int hash = 0;
-      for(int i=0;i<inSize-1;i++)
-         hash = hash*223 + ((unsigned char *)inData)[i];
+      if (inData)
+         for(int i=0;i<inSize-1;i++)
+            hash = hash*223 + ((unsigned char *)inData)[i];
 
       //*((unsigned int *)((char *)result + inSize + sizeof(int))) = hash;
       *result++ = hash;
@@ -4383,6 +4384,8 @@ public:
          #endif
          sgThreadPoolAbort = false;
          sAllThreads = 0;
+         sgThreadPoolJob = tpjNone;
+         sLazyThreads = 0;
       }
    }
 
@@ -4435,6 +4438,8 @@ public:
          #endif
 
          sAllThreads = 0;
+         sgThreadPoolJob = tpjNone;
+         sLazyThreads = 0;
 
          if (sRunningThreads)
          {

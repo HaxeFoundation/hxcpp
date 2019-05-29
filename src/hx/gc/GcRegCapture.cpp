@@ -31,7 +31,7 @@ void CaptureX86(RegisterCaptureBuffer &outBuffer)
 
 } // end namespace hx
 
-#elif defined(HXCPP_CAPTURE_x64) // {
+#elif defined(HXCPP_CAPTURE_x64) // } {
 
 #if !defined(__GNUC__)
 #include <windows.h>

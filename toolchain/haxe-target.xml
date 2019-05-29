@@ -14,6 +14,14 @@
 
 <!-- Library files & targets -------------------------------------->
 
+<files id="cffi-depends">
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
+  <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
+  <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
+  <depend name="${HXCPP}/include/hx/StringAlloc.h"/>
+</files>
+
+
 <files id="hxcpp-depends">
   <depend name="${HXCPP}/include/hxcpp.h"/>
   <depend name="${HXCPP}/include/Array.h"/>
@@ -38,6 +46,7 @@
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
+  <depend name="${HXCPP}/include/hx/StringAlloc.h"/>
   <depend name="${HXCPP}/include/hx/StdLibs.h"/>
   <depend name="${HXCPP}/include/hx/Native.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
@@ -45,6 +54,7 @@
   <depend name="${HXCPP}/include/hx/HeaderVersion.h"/>
   <depend name="${HXCPP}/include/hx/Unordered.h"/>
   <depend name="${HXCPP}/include/hx/LessThanEq.h"/>
+  <depend name="${HXCPP}/include/hx/Interface.h"/>
   <depend name="${HXCPP}/include/cpp/Pointer.h"/>
   <depend name="${HXCPP}/include/cpp/Int64.h"/>
   <depend name="${HXCPP}/include/cpp/Variant.h"/>

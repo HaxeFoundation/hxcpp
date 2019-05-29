@@ -1,6 +1,8 @@
 import sys.FileSystem;
 
-#if cpp
+#if haxe4
+import sys.thread.Mutex;
+#elseif cpp
 import cpp.vm.Mutex;
 #else
 import neko.vm.Mutex;

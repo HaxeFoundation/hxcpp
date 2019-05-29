@@ -32,7 +32,7 @@ struct fio : public hx::Object
    void create(FILE *inFile, String inName, bool inClose)
    {
       name = inName;
-      HX_OBJ_WB_GET(this,name.__s);
+      HX_OBJ_WB_GET(this,name.raw_ref());
       io = inFile;
       closeIo = inClose;
 
@@ -90,14 +90,16 @@ static void file_error(const char *msg, String inName)
 **/
 Dynamic _hx_std_file_open( String fname, String r )
 {
+   FILE *file = 0;
+
+   hx::strbuf buf0;
+   hx::strbuf buf1;
 #ifdef NEKO_WINDOWS
-   const wchar_t * wfname = fname.__WCStr();
-   const wchar_t * wr = r.__WCStr();
    hx::EnterGCFreeZone();
-   FILE *file = _wfopen(wfname,wr);
+   file = _wfopen(fname.wchar_str(&buf0),r.wchar_str(&buf1));
 #else
    hx::EnterGCFreeZone();
-   FILE *file = fopen(fname.__s,r.__s);
+   file = fopen(fname.utf8_str(&buf0),r.utf8_str(&buf1));
 #endif
    if (!file)
       file_error("file_open",fname);
@@ -300,13 +302,13 @@ String _hx_std_file_contents_string( String name )
 {
    std::vector<char> buffer;
 
+   hx::strbuf buf;
 #ifdef NEKO_WINDOWS
-   const wchar_t * wname = name.__WCStr();
    hx::EnterGCFreeZone();
-   FILE *file = _wfopen(wname, L"rb");
+   FILE *file = _wfopen(name.wchar_str(&buf), L"rb");
 #else
    hx::EnterGCFreeZone();
-   FILE *file = fopen(name.__s, "rb");
+   FILE *file = fopen(name.utf8_str(&buf), "rb");
 #endif
    if(!file)
       file_error("file_contents",name);
@@ -334,7 +336,7 @@ String _hx_std_file_contents_string( String name )
    fclose(file);
    hx::ExitGCFreeZone();
 
-   return String(&buffer[0], buffer.size()).dup();
+   return String::create(&buffer[0], buffer.size());
 }
 
 
@@ -345,14 +347,13 @@ String _hx_std_file_contents_string( String name )
 **/
 Array<unsigned char> _hx_std_file_contents_bytes( String name )
 {
-
+   hx::strbuf buf;
 #ifdef NEKO_WINDOWS
-   const wchar_t * wname = name.__WCStr();
    hx::EnterGCFreeZone();
-   FILE *file = _wfopen(wname, L"rb");
+   FILE *file = _wfopen(name.wchar_str(&buf), L"rb");
 #else
    hx::EnterGCFreeZone();
-   FILE *file = fopen(name.__s, "rb");
+   FILE *file = fopen(name.utf8_str(&buf), "rb");
 #endif
    if(!file)
       file_error("file_contents",name);
