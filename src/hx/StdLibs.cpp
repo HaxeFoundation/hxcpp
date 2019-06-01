@@ -188,7 +188,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
             return result;
          }
       }
- 
+
    return null();
 }
 
@@ -268,6 +268,7 @@ void __hxcpp_stdlibs_boot()
 
    // This is necessary for UTF-8 output to work correctly.
    setlocale(LC_ALL, "");
+   setlocale(LC_NUMERIC, "C");
 
    // I think this does more harm than good.
    //  It does not cause fread to return immediately - as perhaps desired.
@@ -343,7 +344,7 @@ double  __time_stamp()
 #if defined(HX_WINDOWS) && !defined(HX_WINRT)
 
 /*
-ISWHITE and ParseCommandLine are based on the implementation of the 
+ISWHITE and ParseCommandLine are based on the implementation of the
 .NET Core runtime, CoreCLR, which is licensed under the MIT license:
 Copyright (c) Microsoft. All rights reserved.
 See LICENSE file in the CoreCLR project root for full license information.
@@ -368,7 +369,7 @@ static void ParseCommandLine(LPTSTR psrc, Array<String> &out)
        because the program name must be a legal NTFS/HPFS file name.
        Note that the double-quote characters are not copied, nor do they
        contribute to numchars.
-         
+
        This "simplification" is necessary for compatibility reasons even
        though it leads to mishandling of certain cases.  For example,
        "c:\tests\"test.exe will result in an arg0 of c:\tests\ and an

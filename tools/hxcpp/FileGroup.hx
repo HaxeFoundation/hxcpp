@@ -10,7 +10,7 @@ class FileGroup
    public var mOptions:Array<String>;
    public var mPrecompiledHeader:String;
    public var mPrecompiledHeaderDir:String;
-   public var mFiles:Array<File>;
+   public var mFiles:Map<String, File>;
    public var mHLSLs:Array<HLSL>;
    public var mDir:String;
    public var mId:String;
@@ -37,7 +37,7 @@ class FileGroup
    public function replace(inDir:String,inSetImportDir)
    {
       mNewest = 0;
-      mFiles = [];
+      mFiles = new Map<String, File>();
       mCompilerFlags = [];
       mPrecompiledHeader = "";
       mCacheDepends = [];
@@ -59,23 +59,24 @@ class FileGroup
 
    public function find(name:String)
    {
-      for(file in mFiles)
-         if (file.mName==name)
-            return file;
-      return null;
+      return mFiles.get(name);
    }
 
    public function addFile(file:File)
    {
-      mFiles.push(file);
+      mFiles.set(file.mName, file);
+   }
+
+   public function hasFiles():Bool {
+      return Lambda.exists(mFiles, function(file:File) { return true; } );
    }
 
    public function filter(defines:Map<String,String>)
    {
-      var newFiles = new Array<File>();
+      var newFiles = new Map<String, File>();
       for(file in mFiles)
          if (file.keep(defines))
-            newFiles.push(file);
+            newFiles.set(file.mName, file);
       mFiles = newFiles;
    }
 

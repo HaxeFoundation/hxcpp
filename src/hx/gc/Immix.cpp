@@ -4384,6 +4384,8 @@ public:
          #endif
          sgThreadPoolAbort = false;
          sAllThreads = 0;
+         sgThreadPoolJob = tpjNone;
+         sLazyThreads = 0;
       }
    }
 
@@ -4436,6 +4438,8 @@ public:
          #endif
 
          sAllThreads = 0;
+         sgThreadPoolJob = tpjNone;
+         sLazyThreads = 0;
 
          if (sRunningThreads)
          {
