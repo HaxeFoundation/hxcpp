@@ -210,7 +210,7 @@ String ArrayBase::toString()
    return HX_CSTRING("[") + __join(HX_CSTRING(",")) + HX_CSTRING("]");
 }
 
- 
+
 void ArrayBase::__SetSizeExact(int inSize)
 {
    if (inSize!=length || inSize!=mAlloc)
@@ -248,7 +248,7 @@ void ArrayBase::__SetSizeExact(int inSize)
    }
 }
 
- 
+
 Dynamic ArrayBase::__unsafe_get(const Dynamic &i)
 {
    return __GetItem(i);
@@ -258,7 +258,7 @@ Dynamic ArrayBase::__unsafe_get(const Dynamic &i)
 Dynamic ArrayBase::__unsafe_set(const Dynamic &i, const Dynamic &val)
 {
    return __SetItem(i,val);
-} 
+}
 
 
 
@@ -458,16 +458,28 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
 }
 
 
-
+int _hx_toString_depth = 0;
 String ArrayBase::joinArray(ArrayBase *inBase, String inSeparator)
 {
+   if (_hx_toString_depth >= 5)
+      return HX_CSTRING("...");
    int length = inBase->length;
    if (length==0)
       return HX_CSTRING("");
 
    Array<String> stringArray = Array_obj<String>::__new(length, length);
-   for(int i=0;i<length;i++)
-      stringArray->__unsafe_set(i, inBase->ItemString(i));
+   _hx_toString_depth++;
+   try
+   {
+      for(int i=0;i<length;i++)
+         stringArray->__unsafe_set(i, inBase->ItemString(i));
+      _hx_toString_depth--;
+   }
+   catch (...)
+   {
+      _hx_toString_depth--;
+      throw;
+   }
 
    return stringArray->join(inSeparator);
 }
