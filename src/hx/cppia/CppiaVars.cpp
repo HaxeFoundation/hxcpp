@@ -243,6 +243,9 @@ Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
                case arrFloat:
                   *(Array<Float> *)(base) = inValue;
                   break;
+               case arrFloat32:
+                  *(Array<float> *)(base) = inValue;
+                  break;
                case arrUnsignedChar:
                   *(Array<unsigned char> *)(base) = inValue;
                   break;
