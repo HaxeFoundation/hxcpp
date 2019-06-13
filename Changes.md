@@ -1,6 +1,6 @@
 
 
-* General Utf16 stirng improvements
+* General Utf16 string improvements
 * Limit the amount of recursion in toString function
 * Add float32 support to cppia
 * Fix Gc race condition
