@@ -774,7 +774,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_CHECK;
          hx::Object *func = args[0]->runObject(ctx);
          BCR_CHECK;
-         Array<ELEM> result = thisVal->map(func);
+         Dynamic result = thisVal->map(func);
          return result.mPtr;
       }
       if (FUNC==afFilter)
@@ -1168,7 +1168,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       TRY_NATIVE
       if (FUNC==afMap)
       {
-         Array<ELEM> result = inArray->map(inFunction);
+         Dynamic result = inArray->map(inFunction);
          return result.mPtr;
       }
       else
