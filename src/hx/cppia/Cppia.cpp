@@ -7883,24 +7883,24 @@ struct name \
    template<typename T> \
    inline bool test(const T &left, const T&right) \
    { \
-      return left OP right; \
+      return OP(left,right); \
    } \
 };
 
 #ifdef CPPIA_JIT
-DEFINE_COMPARE_OP(CompareLess,<,      cmpI_SIG_LESS,         cmpI_SIG_GREATER_EQUAL, cmpD_LESS,cmpD_GREATER_EQUAL);
-DEFINE_COMPARE_OP(CompareLessEq,<=,   cmpI_SIG_LESS_EQUAL,   cmpI_SIG_GREATER,       cmpD_LESS_EQUAL,cmpD_GREATER);
-DEFINE_COMPARE_OP(CompareGreater,>,   cmpI_SIG_GREATER,      cmpI_SIG_LESS_EQUAL,    cmpD_GREATER, cmpD_LESS_EQUAL);
-DEFINE_COMPARE_OP(CompareGreaterEq,>=,cmpI_SIG_GREATER_EQUAL,cmpI_SIG_LESS,          cmpD_GREATER_EQUAL, cmpD_LESS);
-DEFINE_COMPARE_OP(CompareEqual,==,    cmpI_EQUAL,            cmpI_NOT_EQUAL,         cmpD_EQUAL, cmpD_NOT_EQUAL);
-DEFINE_COMPARE_OP(CompareNotEqual,!=, cmpI_NOT_EQUAL,        cmpI_EQUAL,             cmpD_NOT_EQUAL, cmpD_EQUAL);
+DEFINE_COMPARE_OP(CompareLess, hx::IsLess,      cmpI_SIG_LESS,         cmpI_SIG_GREATER_EQUAL, cmpD_LESS,cmpD_GREATER_EQUAL);
+DEFINE_COMPARE_OP(CompareLessEq, hx::IsLessEq,   cmpI_SIG_LESS_EQUAL,   cmpI_SIG_GREATER,       cmpD_LESS_EQUAL,cmpD_GREATER);
+DEFINE_COMPARE_OP(CompareGreater, hx::IsGreater,   cmpI_SIG_GREATER,      cmpI_SIG_LESS_EQUAL,    cmpD_GREATER, cmpD_LESS_EQUAL);
+DEFINE_COMPARE_OP(CompareGreaterEq, hx::IsGreaterEq ,cmpI_SIG_GREATER_EQUAL,cmpI_SIG_LESS,          cmpD_GREATER_EQUAL, cmpD_LESS);
+DEFINE_COMPARE_OP(CompareEqual, hx::IsEq,    cmpI_EQUAL,            cmpI_NOT_EQUAL,         cmpD_EQUAL, cmpD_NOT_EQUAL);
+DEFINE_COMPARE_OP(CompareNotEqual, hx::IsNotEq, cmpI_NOT_EQUAL,        cmpI_EQUAL,             cmpD_NOT_EQUAL, cmpD_EQUAL);
 #else
-DEFINE_COMPARE_OP(CompareLess,<,0,0,0,0);
-DEFINE_COMPARE_OP(CompareLessEq,<=,0,0,0,0);
-DEFINE_COMPARE_OP(CompareGreater,>,0,0,0,0);
-DEFINE_COMPARE_OP(CompareGreaterEq,>=,0,0,0,0);
-DEFINE_COMPARE_OP(CompareEqual,==,0,0,0,0);
-DEFINE_COMPARE_OP(CompareNotEqual,!=,0,0,0,0);
+DEFINE_COMPARE_OP(CompareLess, hx::IsLess ,0,0,0,0);
+DEFINE_COMPARE_OP(CompareLessEq, hx::IsLessEq,0,0,0,0);
+DEFINE_COMPARE_OP(CompareGreater, hx::IsGreater ,0,0,0,0);
+DEFINE_COMPARE_OP(CompareGreaterEq, hx::IsGreaterEq,0,0,0,0);
+DEFINE_COMPARE_OP(CompareEqual,hx::IsEq,0,0,0,0);
+DEFINE_COMPARE_OP(CompareNotEqual,hx::IsNotEq,0,0,0,0);
 #endif
 
 
