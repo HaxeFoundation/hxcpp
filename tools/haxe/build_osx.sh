@@ -1,7 +1,9 @@
 #!/bin/bash
   set -ev
 
-  git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe --depth 1
+  HAXE_REPO=${1-:"https://github.com/HaxeFoundation/haxe.git"}
+  HAXE_VERSION=${2-:"HEAD"}
+  git clone --branch ${HAXE_VERSION} --recursive ${HAXE_REPO} ~/haxe --depth 1
 
   brew update
   brew tap Homebrew/bundle
