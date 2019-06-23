@@ -9,14 +9,14 @@ env:
 matrix:
   include:
     - os: linux
-      dist: trusty
+      dist: xenial
       env:
         - ARCH=32
       install:
         - bash tools/haxe/build_linux.sh
         - travis_retry sudo apt-get install gcc-multilib g++-multilib -y;
     - os: linux
-      dist: trusty
+      dist: xenial
       env:
         - ARCH=64
       install:
