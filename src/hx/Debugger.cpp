@@ -58,7 +58,7 @@ static Dynamic g_addStackFrameToThreadInfoFunction;
 
 
 // This is the thread number of the debugger thread, extracted from
-// information about the thread that called 
+// information about the thread that called
 // __hxcpp_dbg_setEventNotificationHandler
 static unsigned int g_debugThreadNumber = -1;
 
@@ -380,9 +380,9 @@ public:
         gMutex.Lock();
 
         int ret = gNextBreakpointNumber++;
-        
+
         Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, ret, fileName, lineNumber);
-        
+
         gBreakpoints->RemoveRef();
 
         // Write memory barrier ensures that newBreakpoints values are updated
@@ -414,13 +414,13 @@ public:
         if (!className) {
             return -1;
         }
-        
+
         gMutex.Lock();
 
         int ret = gNextBreakpointNumber++;
-        
+
         Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, ret, className, functionName);
-        
+
         gBreakpoints->RemoveRef();
 
         // Write memory barrier ensures that newBreakpoints values are updated
@@ -441,7 +441,7 @@ public:
     static void DeleteAll()
     {
         gMutex.Lock();
-        
+
         Breakpoints *newBreakpoints = new Breakpoints();
 
         gBreakpoints->RemoveRef();
@@ -462,7 +462,7 @@ public:
     static void Delete(int number)
     {
         gMutex.Lock();
-        
+
         if (gBreakpoints->HasBreakpoint(number)) {
             // Replace mBreakpoints with a copy and remove the breakpoint
             // from it
@@ -535,7 +535,7 @@ public:
         gStepThread = threadNumber;
         gStepType = stepType;
         gStepCount = stepCount;
-        
+
         gMutex.Lock();
 
         std::list<DebuggerContext *>::iterator iter = gList.begin();
@@ -886,13 +886,13 @@ private:
       __hxcpp_dbg_getScriptableFiles(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==fileName)
-            return (ret[i]).makePermanent().utf8_str()();
+            return (ret[i]).makePermanent().utf8_str();
 
       ret = Array_obj< ::String>::__new();
       __hxcpp_dbg_getScriptableFilesFullPath(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==fileName)
-            return (ret[i]).makePermanent().utf8_str()();
+            return (ret[i]).makePermanent().utf8_str();
       #endif
 
       return 0;
@@ -1023,7 +1023,7 @@ static ::Array<Dynamic> GetThreadInfos()
         DebuggerContext *stack = *stack_iter++;
         threadNumbers.push_back(stack->mThreadNumber);
     }
-    
+
     gMutex.Unlock();
 
     ::Array<Dynamic> ret = Array_obj<Dynamic>::__new();
@@ -1063,7 +1063,7 @@ static ::Array<Dynamic> GetStackVariables(int threadNumber,
             if (stack->mStackFrames.size() <= stackFrameNumber) {
                 break;
             }
-            StackVariable *variable = 
+            StackVariable *variable =
                 stack->mStackFrames[stackFrameNumber]->variables;
             while (variable) {
                 ret->push(String(variable->mHaxeName));
@@ -1121,7 +1121,7 @@ static Dynamic GetVariableValue(int threadNumber, int stackFrameNumber,
     if ((stackFrameNumber < 0) || (stackFrameNumber >= size)) {
         return markNonexistent;
     }
-    
+
     const char *nameToFind = name.c_str();
 
     StackVariable *sv = stack->mStackFrames[stackFrameNumber]->variables;
@@ -1211,7 +1211,7 @@ static Dynamic SetVariableValue(int threadNumber, int stackFrameNumber,
        }
     }
     #endif
-    
+
 
     return markNonexistent;
 }
@@ -1259,7 +1259,7 @@ void __hxcpp_dbg_setEventNotificationHandler(Dynamic handler)
     hx::g_eventNotificationHandler = handler;
     GCAddRoot(&(hx::g_eventNotificationHandler.mPtr));
       }
- 
+
 
 void __hxcpp_dbg_enableCurrentThreadDebugging(bool enable)
 {
@@ -1272,7 +1272,7 @@ int __hxcpp_dbg_getCurrentThreadNumber()
 {
     return __hxcpp_GetCurrentThreadNumber();
 }
- 
+
 
 Array< ::String> __hxcpp_dbg_getFiles()
 {
@@ -1398,7 +1398,7 @@ Dynamic __hxcpp_dbg_getStackVariableValue(int threadNumber,
                                           bool unsafe, Dynamic markNonexistent,
                                           Dynamic markThreadNotStopped)
 {
-    return hx::GetVariableValue(threadNumber, stackFrameNumber, 
+    return hx::GetVariableValue(threadNumber, stackFrameNumber,
                                            name, unsafe, markNonexistent,
                                            markThreadNotStopped);
 }
@@ -1513,6 +1513,6 @@ void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPat
    __all_classes = inAllClasses;
    __all_files_fullpath = inFullPaths;
 }
-   
+
 
 

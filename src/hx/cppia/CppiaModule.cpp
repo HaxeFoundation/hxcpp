@@ -63,7 +63,7 @@ void CppiaModule::link()
 {
    DBGLOG("Resolve registered - super\n");
    HaxeNativeClass::link();
-   
+
    DBGLOG("Resolve typeIds\n");
    for(int t=0;t<types.size();t++)
       types[t]->link(*this);
@@ -104,7 +104,7 @@ void CppiaModule::registerDebugger()
    #ifdef HXCPP_DEBUGGER
    for(int i=0;i<classes.size();i++)
    {
-      addScriptableClass( String::makeConstString(classes[i]->name.c_str()) );
+      addScriptableClass( String::createPermanent(classes[i]->name.c_str(), classes[i]->name.length()) );
    }
 
    for(hx::UnorderedSet<int>::const_iterator i = allFileIds.begin(); i!=allFileIds.end(); ++i)
@@ -457,7 +457,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
          scriptResources[count].mDataLength = 0;
          scriptResources[count].mData = 0;
          scriptResources[count].mName = String();
-         
+
          RegisterResources(&scriptResources[0]);
       }
       else
@@ -467,8 +467,8 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
    }
    catch(const char *errorString)
    {
-      error = HX_CSTRING("Error reading file ") + String(errorString) + 
-                HX_CSTRING(", line ") + String(stream.line) + HX_CSTRING(", char ") + 
+      error = HX_CSTRING("Error reading file ") + String(errorString) +
+                HX_CSTRING(", line ") + String(stream.line) + HX_CSTRING(", char ") +
                    String(stream.pos);
    }
 
