@@ -379,7 +379,7 @@ String __hxcpp_get_bin_dir()
 #elif defined(RASPBERRYPI)
     HX_CSTRING("RPi");
 #elif defined(EMSCRIPTEN)
-	HX_CSTRING("Emscripten");
+    HX_CSTRING("Emscripten");
 #elif defined(TIZEN)
     HX_CSTRING("Tizen");
 #elif defined(IPHONESIM)
@@ -526,7 +526,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
       sgLibPathIsInit = true;
       #ifndef HX_WINRT 
       sgLibPath.push_back( HX_CSTRING("./") );
-	  #endif
+      #endif
       #ifdef HX_MACOS
       sgLibPath.push_back( HX_CSTRING("@executable_path/") );
       #endif
@@ -576,7 +576,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    String haxelibPath;
 
 #ifdef HX_WINRT
-   for (int e = 0; module == 0 && e<1; e++) //only accept DLL
+   for(int e=0; module==0 && e<1; e++) //only accept DLL
 #else
    for(int e=0; module==0 && e<3; e++)
 #endif
@@ -585,15 +585,11 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
 
       for(int path=0;path<sgLibPath.size();path++)
       {
-#if defined(HX_WINRT)
-         if (gLoadDebug)
-		 {
-            WINRT_LOG(" module_name: [%s]  extension: [%s]\n", module_name.out_str(&convertBuf), extension.out_str(&convertBuf1n));
-		 }
-		 String testPath = module_name + extension;
-#else
+         #ifdef HX_WINRT
+         String testPath = module_name + extension;
+         #else
          String testPath =  sgLibPath[path] +  module_name + extension;
-#endif
+         #endif
          if (gLoadDebug)
          {
             #ifdef HX_WINRT
