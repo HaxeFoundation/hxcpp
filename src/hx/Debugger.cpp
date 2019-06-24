@@ -886,13 +886,13 @@ private:
       __hxcpp_dbg_getScriptableFiles(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==fileName)
-            return (ret[i]).makePermanent().utf8_str()();
+            return (ret[i]).makePermanent().utf8_str();
 
       ret = Array_obj< ::String>::__new();
       __hxcpp_dbg_getScriptableFilesFullPath(ret);
       for(int i=0;i<ret->length;i++)
          if (ret[i]==fileName)
-            return (ret[i]).makePermanent().utf8_str()();
+            return (ret[i]).makePermanent().utf8_str();
       #endif
 
       return 0;
