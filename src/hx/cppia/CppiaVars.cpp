@@ -252,8 +252,14 @@ Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
                case arrString:
                   *(Array<String> *)(base) = inValue;
                   break;
-               case arrObject:
                case arrAny:
+                  #if (HXCPP_API_LEVEL>=330)
+                  (*(cpp::VirtualArray *)base).setDynamic(inValue);
+                  break;
+                  #else
+                  // Fallthrough
+                  #endif
+               case arrObject:
                   *(Array<Dynamic> *)(base) = inValue;
                   break;
             }
