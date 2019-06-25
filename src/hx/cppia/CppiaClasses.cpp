@@ -11,7 +11,7 @@ class CppiaEnumBase : public EnumBase_obj
 {
 public:
    #if (HXCPP_API_LEVEL<330)
-   CppiaClassInfo *classInfo; 
+   CppiaClassInfo *classInfo;
    #endif
 
    CppiaEnumBase(CppiaClassInfo *inInfo) { classInfo = inInfo; }
@@ -32,7 +32,7 @@ struct CppiaEnumConstructor
       int nameId;
       int typeId;
    };
- 
+
    std::vector<Arg> args;
    CppiaClassInfo   *classInfo;
    int              nameId;
@@ -53,7 +53,7 @@ struct CppiaEnumConstructor
          int typeId = inStream.getInt();
          args.push_back( Arg(nameId,typeId) );
       }
-         
+
    }
    hx::Object *create( Array<Dynamic> inArgs )
    {
@@ -184,7 +184,7 @@ void SLJIT_CALL createEnum(hx::Class_obj *inClass, String *inName, int inArgs)
       for(int i=0;i<inArgs;i++)
          args[i] = Dynamic(base[i]);
       base[0] = inClass->ConstructEnum(*inName, args).mPtr;
-  
+
    CATCH_NATIVE
    ctx->pointer = oldPointer;
 }
@@ -467,6 +467,16 @@ CppiaFunction *CppiaClassInfo::findVTableFunction(int inId)
    return 0;
 }
 
+CppiaFunction *CppiaClassInfo::findVTableFunction(const String& inName)
+{
+   for(int i=0;i<memberFunctions.size();i++)
+   {
+      if (cppia.strings[memberFunctions[i]->nameId] == inName)
+         return memberFunctions[i];
+   }
+   return 0;
+}
+
 ScriptCallable *CppiaClassInfo::findInterfaceFunction(const std::string &inName)
 {
    Functions &funcs = memberFunctions;
@@ -624,6 +634,14 @@ int CppiaClassInfo::findFunctionSlot(int inName)
    return -1;
 }
 
+int CppiaClassInfo::findFunctionSlot(const String& inName)
+{
+   for(int i=0;i<memberFunctions.size();i++)
+      if (cppia.strings[memberFunctions[i]->nameId]==inName)
+         return memberFunctions[i]->vtableSlot;
+   return -1;
+}
+
 ExprType CppiaClassInfo::findFunctionType(CppiaModule &inModule, int inName)
 {
    for(int i=0;i<memberFunctions.size();i++)
@@ -651,6 +669,28 @@ CppiaVar *CppiaClassInfo::findVar(bool inStatic,int inId)
 
    if (superType && superType->cppiaClass)
       return superType->cppiaClass->findVar(inStatic,inId);
+
+   return 0;
+}
+
+CppiaVar *CppiaClassInfo::findVar(bool inStatic,const String& inName)
+{
+   std::vector<CppiaVar *> &vars = inStatic ? staticVars : memberVars;
+   for(int i=0;i<vars.size();i++)
+   {
+      if (cppia.strings[vars[i]->nameId] == inName)
+         return vars[i];
+   }
+
+   std::vector<CppiaVar *> &dvars = inStatic ? staticDynamicFunctions : dynamicFunctions;
+   for(int i=0;i<dvars.size();i++)
+   {
+      if (cppia.strings[dvars[i]->nameId] == inName)
+         return dvars[i];
+   }
+
+   if (superType && superType->cppiaClass)
+      return superType->cppiaClass->findVar(inStatic,inName);
 
    return 0;
 }
@@ -857,7 +897,7 @@ void **CppiaClassInfo::createInterfaceVTable(int inTypeId)
             if (strcmp(f->name,"toString"))
                vtable.push_back( findInterfaceFunction(f->name) );
       }
-         
+
    }
 
    CppiaClassInfo *cls = cppia.types[inTypeId]->cppiaClass;
@@ -1112,7 +1152,7 @@ void CppiaClassInfo::linkTypes()
 
 
    DBGLOG("  script member vars size = %d\n", extraData);
- 
+
    for(int i=0;i<staticVars.size();i++)
    {
       DBGLOG("   link static var %s\n", cppia.identStr(staticVars[i]->nameId));
@@ -1421,7 +1461,7 @@ void CppiaClassInfo::init(CppiaCtx *ctx, int inPhase)
    unsigned char *pointer = ctx->pointer;
    ctx->push( (hx::Object *) 0 ); // this
    AutoStack save(ctx,pointer);
- 
+
    if (inPhase==0)
    {
       for(int i=0;i<staticVars.size();i++)
@@ -1720,7 +1760,7 @@ public:
 
       Expressions none;
       return info->createInstance(CppiaCtx::getCurrent(),none,false);
-   } 
+   }
 
    Dynamic ConstructArgs(hx::DynamicArray inArgs)
    {
@@ -1866,6 +1906,17 @@ int getScriptId(hx::Class inClass)
    if (!cls)
       return 0;
    return cls->info->cppia.scriptId;
+}
+
+CppiaClassInfo *getCppiaClassInfo(hx::Class inClass)
+{
+   hx::Class_obj *ptr = inClass.mPtr;
+   if (!ptr)
+      return 0;
+   CppiaClass *cls = dynamic_cast<CppiaClass *>(ptr);
+   if (!cls)
+      return 0;
+   return cls->info;
 }
 
 

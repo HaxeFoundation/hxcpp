@@ -392,6 +392,21 @@ public:
 
    inline const char *identStr(int inId) { return strings[inId].raw_ptr(); }
    inline const char *typeStr(int inId) { return types[inId]->name.c_str(); }
+
+   inline TypeData *getTypeFromModule(int inTypeId, CppiaModule *inModule)
+   {
+      if (inModule == this || inModule == 0)
+      {
+         return this->types[inTypeId];
+      } else {
+         String name = inModule->types[inTypeId]->name;
+         for(int i=0;i<types.size();i++)
+            if (types[i]->name == name)
+               return types[i];
+         // type wasn't defined in this module - return the latter then
+         return inModule->types[inTypeId];
+      }
+   }
 };
 
 
@@ -710,6 +725,11 @@ public:
    ScriptCallable *findFunction(bool inStatic,int inId);
    ScriptCallable *findInterfaceFunction(const std::string &inName);
    ScriptCallable *findFunction(bool inStatic, const String &inName);
+   inline ScriptCallable *findFunction(bool inStatic, int inId, CppiaModule &inModule)
+   {
+      return (&inModule == &this->cppia) ? findFunction(inStatic,inId) : findFunction(inStatic,inModule.strings[inId]);
+   }
+
    ScriptCallable *findFunction(FunctionMap &inMap,const String &inName);
    inline ScriptCallable *findMemberGetter(const String &inName)
       { return findFunction(memberGetters,inName); }
@@ -722,8 +742,23 @@ public:
    CppiaEnumConstructor *findEnum(int inFieldId);
    ExprType findFunctionType(CppiaModule &inModule, int inName);
    CppiaFunction *findVTableFunction(int inId);
+   CppiaFunction *findVTableFunction(const String& inName);
+   inline CppiaFunction *findVTableFunction(int inId, CppiaModule& inModule)
+   {
+      return (&inModule == &this->cppia) ? findVTableFunction(inId) : findVTableFunction(inModule.strings[inId]);
+   }
    int findFunctionSlot(int inName);
+   int findFunctionSlot(const String& inName);
+   inline int findFunctionSlot(int inName, CppiaModule &inModule)
+   {
+      return (&inModule == &this->cppia) ? findFunctionSlot(inName) : findFunctionSlot(inModule.strings[inName]);
+   }
    CppiaVar *findVar(bool inStatic,int inId);
+   CppiaVar *findVar(bool inStatic,const String& inId);
+   inline CppiaVar *findVar(bool inStatic,int inId, CppiaModule &inModule)
+   {
+      return (&inModule == &this->cppia) ? findVar(inStatic, inId) : findVar(inStatic, inModule.strings[inId]);
+   }
 
    void *getHaxeBaseVTable();
    int getScriptVTableOffset();
