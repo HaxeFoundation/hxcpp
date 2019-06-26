@@ -264,14 +264,14 @@ struct ProfileCollectSummary
    {
       #ifdef HXCPP_GC_SUMMARY
       double time = __hxcpp_time_stamp() - startTime;
-      GCLOG("Total time     : %.2fms\n", time*1000.0);
-      GCLOG("Collecting time: %.2fms\n", totalCollecting*1000.0);
-      GCLOG("Max Stall time : %.2fms\n", maxStall*1000.0);
+      GCLOG("Total time     : %.2fms" HX_LF, time*1000.0);
+      GCLOG("Collecting time: %.2fms" HX_LF, totalCollecting*1000.0);
+      GCLOG("Max Stall time : %.2fms" HX_LF, maxStall*1000.0);
       if (time==0) time = 1;
-      GCLOG(" Fraction      : %.2f%%\n",totalCollecting*100.0/time);
+      GCLOG(" Fraction      : %.2f%%" HX_LF,totalCollecting*100.0/time);
 
       #ifdef HXCPP_GC_DYNAMIC_SIZE
-      GCLOG("Space factor   : %.2fx\n",spaceFactor);
+      GCLOG("Space factor   : %.2fx" HX_LF,spaceFactor);
       #endif
       #endif
    }
@@ -514,9 +514,9 @@ void CriticalGCError(const char *inMessage)
    #ifdef ANDROID
    __android_log_print(ANDROID_LOG_ERROR, "HXCPP", "Critical Error: %s", inMessage);
    #elif defined(HX_WINRT)
-      WINRT_LOG("HXCPP Critical Error: %s\n", inMessage);
+      WINRT_LOG("HXCPP Critical Error: %s" HX_LF, inMessage);
    #else
-   printf("Critical Error: %s\n", inMessage);
+   printf("Critical Error: %s" HX_LF, inMessage);
    #endif
 
    DebuggerTrap();
@@ -738,7 +738,7 @@ struct BlockDataInfo
       mPtr     = inData;
       inData->mId = mId;
       #ifdef SHOW_MEM_EVENTS
-      GCLOG("  create block %d : %p -> %p\n",  mId, this, mPtr );
+      GCLOG("  create block %d : %p -> %p" HX_LF,  mId, this, mPtr );
       #endif
       clear();
    }
@@ -826,7 +826,7 @@ struct BlockDataInfo
    void destroy()
    {
       #ifdef SHOW_MEM_EVENTS
-      GCLOG("  release block %d : %p\n",  mId, this );
+      GCLOG("  release block %d : %p" HX_LF,  mId, this );
       #endif
       (*gBlockInfo)[mId] = 0;
       gBlockInfoEmptySlots++;
@@ -1350,13 +1350,13 @@ struct BlockDataInfo
                   int rows = header & IMMIX_ALLOC_ROW_COUNT;
                   if (rows==0)
                   {
-                     printf("BAD ROW0 %s\n", inWhere);
+                     printf("BAD ROW0 %s" HX_LF, inWhere);
                      DebuggerTrap();
                   }
                   for(int r=0;r<rows;r++)
                      if (!mPtr->mRowMarked[r+i])
                      {
-                        printf("Unmarked row %dx %d/%d %s, t=%d!\n", i, r, rows, inWhere,sgTimeToNextTableUpdate);
+                        printf("Unmarked row %dx %d/%d %s, t=%d!" HX_LF, i, r, rows, inWhere,sgTimeToNextTableUpdate);
                         DebuggerTrap();
                      }
                }
@@ -1426,7 +1426,7 @@ void GCCheckPointer(void *inPtr)
    #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
    if (hx::sgPointerMoved.find(inPtr)!=hx::sgPointerMoved.end())
    {
-      GCLOG("Accessing moved pointer %p\n", inPtr);
+      GCLOG("Accessing moved pointer %p" HX_LF, inPtr);
       DebuggerTrap();
    }
    #endif
@@ -1437,7 +1437,7 @@ void GCCheckPointer(void *inPtr)
    #endif
    if ( !(mark & HX_GC_CONST_ALLOC_MARK_BIT) && mark!=gByteMarkID  )
    {
-      GCLOG("Old object access %p\n", inPtr);
+      GCLOG("Old object access %p" HX_LF, inPtr);
       NullReference("Object", false);
    }
 }
@@ -1645,7 +1645,7 @@ struct GlobalChunks
    {
       if (!(sRunningThreads & (1<<inThreadId)))
       {
-         printf("Complete non-running thread?\n");
+         printf("Complete non-running thread?" HX_LF);
          DebuggerTrap();
       }
       sRunningThreads &= ~(1<<inThreadId);
@@ -1730,7 +1730,7 @@ struct GlobalChunks
       {
          if (result->count==MarkChunk::OBJ_ARRAY_JOB)
          {
-            GCLOG("Popped array job?\n");
+            GCLOG("Popped array job?" HX_LF);
             pushJob(result,false);
          }
          else
@@ -1800,14 +1800,14 @@ public:
        #ifdef ANDROID
        __android_log_print(ANDROID_LOG_ERROR, "trace", "Class referenced from");
        #else
-       printf("Class referenced from:\n");
+       printf("Class referenced from:" HX_LF);
        #endif
 
        for(int i=0;i<n;i++)
           #ifdef ANDROID
           __android_log_print(ANDROID_LOG_INFO, "trace", "%s.%s",  mInfo[i].mClass, mInfo[i].mMember );
           #else
-          printf("%s.%s\n",  mInfo[i].mClass, mInfo[i].mMember );
+          printf("%s.%s" HX_LF,  mInfo[i].mClass, mInfo[i].mMember );
           #endif
 
        if (mPos>=StackSize)
@@ -1815,7 +1815,7 @@ public:
           #ifdef ANDROID
           __android_log_print(ANDROID_LOG_INFO, "trace", "... + deeper");
           #else
-          printf("... + deeper\n");
+          printf("... + deeper" HX_LF);
           #endif
        }
     }
@@ -1909,12 +1909,12 @@ public:
 /*
 void MarkerReleaseWorkerLocked( )
 {
-   //printf("Release...\n");
+   //printf("Release..." HX_LF);
    for(int i=0;i<sAllThreads;i++)
    {
       if ( ! (sRunningThreads & (1<<i) ) )
       {
-         //printf("Wake %d\n",i);
+         //printf("Wake %d" HX_LF,i);
          sRunningThreads |= (1<<i);
          sThreadWake[i]->Set();
          return;
@@ -1988,7 +1988,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
       #if defined(HXCPP_GC_GENERATIONAL) && defined(HX_GC_VERIFY)
       if (sGcVerifyGenerational)
       {
-         printf("Nursery alloc escaped generational collection %p\n", inPtr);
+         printf("Nursery alloc escaped generational collection %p" HX_LF, inPtr);
          DebuggerTrap();
       }
       #endif
@@ -2028,7 +2028,7 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
       #if defined(HXCPP_GC_GENERATIONAL) && defined(HX_GC_VERIFY)
       if (sGcVerifyGenerational && ((unsigned char *)inPtr)[HX_ENDIAN_MARK_ID_BYTE] != gPrevByteMarkID)
       {
-         printf("Alloc missed int generational collection %p\n", inPtr);
+         printf("Alloc missed int generational collection %p" HX_LF, inPtr);
          DebuggerTrap();
       }
       #endif
@@ -2074,7 +2074,7 @@ void MarkObjectAllocUnchecked(hx::Object *inPtr,hx::MarkContext *__inCtx)
       #if defined(HXCPP_GC_GENERATIONAL) && defined(HX_GC_VERIFY)
          if (sGcVerifyGenerational)
          {
-            printf("Nursery object escaped generational collection %p\n", inPtr);
+            printf("Nursery object escaped generational collection %p" HX_LF, inPtr);
             DebuggerTrap();
          }
       #endif
@@ -2792,7 +2792,7 @@ void RegisterWeakHash(HashBase<Dynamic> *inHash)
 
 void InternalEnableGC(bool inEnable)
 {
-   //printf("Enable %d\n", sgInternalEnable);
+   //printf("Enable %d" HX_LF, sgInternalEnable);
    sgInternalEnable = inEnable;
 }
 
@@ -2912,17 +2912,17 @@ struct MoveBlockJob
       {
          if (from>=to)
          {
-            //printf("Caught up!\n");
+            //printf("Caught up!" HX_LF);
             return 0;
          }
          #ifndef HXCPP_GC_DEBUG_ALWAYS_MOVE
          // Pinned / full
          if (blocks[from]->mMoveScore<2)
          {
-            //printf("All other blocks good!\n");
+            //printf("All other blocks good!" HX_LF);
             while(from<to)
             {
-               //printf("Ignore DEFRAG %p ... %p\n", blocks[from]->mPtr, blocks[from]->mPtr+1);
+               //printf("Ignore DEFRAG %p ... %p" HX_LF, blocks[from]->mPtr, blocks[from]->mPtr+1);
                from++;
             }
             return 0;
@@ -2930,27 +2930,27 @@ struct MoveBlockJob
          #endif
          if (blocks[from]->mPinned)
          {
-            //printf("PINNED DEFRAG %p ... %p\n", blocks[from]->mPtr, blocks[from]->mPtr+1);
+            //printf("PINNED DEFRAG %p ... %p" HX_LF, blocks[from]->mPtr, blocks[from]->mPtr+1);
             from++;
          }
          else // Found one...
             break;
       }
-      //printf("From block %d (id=%d)\n", from, blocks[from]->mId);
+      //printf("From block %d (id=%d)" HX_LF, from, blocks[from]->mId);
       BlockDataInfo *result = blocks[from++];
-      ////printf("FROM DEFRAG %p ... %p\n", result->mPtr, result->mPtr + 1 );
+      ////printf("FROM DEFRAG %p ... %p" HX_LF, result->mPtr, result->mPtr + 1 );
       return result;
    }
    BlockDataInfo *getTo()
    {
       if (from>=to)
       {
-         //printf("No more room!\n");
+         //printf("No more room!" HX_LF);
          return 0;
       }
-      //printf("To block %d (id=%d)\n", to, blocks[to]->mId);
+      //printf("To block %d (id=%d)" HX_LF, to, blocks[to]->mId);
       BlockDataInfo *result = blocks[to--];
-      //printf("TO DEFRAG %p ... %p\n", result->mPtr, result->mPtr + 1 );
+      //printf("TO DEFRAG %p ... %p" HX_LF, result->mPtr, result->mPtr + 1 );
       return result;
    }
 };
@@ -2967,7 +2967,7 @@ void *HxAllocGCBlock(size_t size)
    if (sBlockPool.size())
       return sBlockPool.pop();
    gcBlockAllocs++;
-   GCLOG("===========================================> New Chunk (%d)\n", gcBlockAllocs);
+   GCLOG("===========================================> New Chunk (%d)" HX_LF, gcBlockAllocs);
    return HxAlloc(size);
 }
 
@@ -3149,7 +3149,7 @@ public:
       if (!result)
       {
          #ifdef SHOW_MEM_EVENTS
-         GCLOG("Large alloc failed - forcing collect\n");
+         GCLOG("Large alloc failed - forcing collect" HX_LF);
          #endif
 
          if (isLocked)
@@ -3302,7 +3302,7 @@ public:
          {
             #ifdef SHOW_FRAGMENTATION
               #ifdef SHOW_MEM_EVENTS
-                GCLOG("  alloc -> enable full collect\n");
+                GCLOG("  alloc -> enable full collect" HX_LF);
               #endif
             #endif
             //sgTimeToNextTableUpdate = 1;
@@ -3356,7 +3356,7 @@ public:
       {
          DebuggerTrap();
          #ifdef SHOW_MEM_EVENTS
-         GCLOG("Alloc failed - try collect\n");
+         GCLOG("Alloc failed - try collect" HX_LF);
          #endif
          outForceCompact = true;
          return false;
@@ -3387,11 +3387,11 @@ public:
       #if defined(SHOW_MEM_EVENTS) || defined(SHOW_FRAGMENTATION_BLOCKS)
       if (inJustBorrowing)
       {
-         GCLOG("Borrow Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+         GCLOG("Borrow Blocks %d = %d k" HX_LF, mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
       }
       else
       {
-         GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
+         GCLOG("Blocks %d = %d k" HX_LF, mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
       }
       #endif
 
@@ -3517,7 +3517,7 @@ public:
        // Maybe do something faster with weakmaps
 
 #ifdef HXCPP_TELEMETRY
-       //printf(" -- moving %018x to %018x, size %d\n", inFrom, inTo, size);
+       //printf(" -- moving %018x to %018x, size %d" HX_LF, inFrom, inTo, size);
        __hxt_gc_realloc(inFrom, inTo, size);
 #endif
 
@@ -3551,7 +3551,7 @@ public:
 
          unsigned int *allocStart = from->allocStart;
          #ifdef SHOW_MEM_EVENTS
-         //GCLOG("Move from %p (%d x %d)\n", from, from->mUsedRows, from->mHoles );
+         //GCLOG("Move from %p (%d x %d)" HX_LF, from, from->mUsedRows, from->mHoles );
          #endif
 
          const unsigned char *rowMarked = from->mPtr->mRowMarked;
@@ -3629,7 +3629,7 @@ public:
 
                         // Result has moved - store movement in original position...
                         memcpy(buffer, src, size);
-                        //GCLOG("   move %p -> %p %d (%08x %08x )\n", src, buffer, size, buffer[-1], buffer[1] );
+                        //GCLOG("   move %p -> %p %d (%08x %08x )" HX_LF, src, buffer, size, buffer[-1], buffer[1] );
 
                         *(unsigned int **)src = buffer;
                         header = IMMIX_OBJECT_HAS_MOVED;
@@ -3666,7 +3666,7 @@ public:
       }
 
       #ifdef SHOW_FRAGMENTATION
-      GCLOG("Moved %d objects (%d/%d blocks)\n", moveObjs, clearedBlocks, mAllBlocks.size());
+      GCLOG("Moved %d objects (%d/%d blocks)" HX_LF, moveObjs, clearedBlocks, mAllBlocks.size());
       #endif
 
       if (moveObjs)
@@ -3690,9 +3690,9 @@ public:
          {
             if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
             {
-               //GCLOG("  patch object to  %p -> %p\n", *ioPtr,  (*(hx::Object ***)ioPtr)[0]);
+               //GCLOG("  patch object to  %p -> %p" HX_LF, *ioPtr,  (*(hx::Object ***)ioPtr)[0]);
                *ioPtr = (*(hx::Object ***)ioPtr)[0];
-               //GCLOG("    %08x %08x ...\n", ((int *)(*ioPtr))[0], ((int *)(*ioPtr))[1] ); 
+               //GCLOG("    %08x %08x ..." HX_LF, ((int *)(*ioPtr))[0], ((int *)(*ioPtr))[1] ); 
             }
          }
 
@@ -3700,9 +3700,9 @@ public:
          {
             if ( ((*(unsigned int **)ioPtr)[-1]) == IMMIX_OBJECT_HAS_MOVED )
             {
-               //GCLOG("  patch reference to  %p -> %p\n", *ioPtr,  (*(void ***)ioPtr)[0]);
+               //GCLOG("  patch reference to  %p -> %p" HX_LF, *ioPtr,  (*(void ***)ioPtr)[0]);
                *ioPtr = (*(void ***)ioPtr)[0];
-               //GCLOG("    %08x %08x ...\n", ((int *)(*ioPtr))[0], ((int *)(*ioPtr))[1] ); 
+               //GCLOG("    %08x %08x ..." HX_LF, ((int *)(*ioPtr))[0], ((int *)(*ioPtr))[1] ); 
             }
          }
       };
@@ -3832,7 +3832,7 @@ public:
 
                            // Result has moved - store movement in original position...
                            memcpy(buffer, src, size);
-                           //GCLOG("   move %p -> %p %d (%08x %08x )\n", src, buffer, size, buffer[-1], buffer[1] );
+                           //GCLOG("   move %p -> %p %d (%08x %08x )" HX_LF, src, buffer, size, buffer[-1], buffer[1] );
 
                            *(unsigned int **)src = buffer;
                            header = IMMIX_OBJECT_HAS_MOVED;
@@ -3866,7 +3866,7 @@ public:
       }
 
       #ifdef SHOW_FRAGMENTATION
-      //GCLOG("Compacted nursery %d objects (%d/%d blocks)\n", moveObjs, clearedBlocks, mAllBlocks.size());
+      //GCLOG("Compacted nursery %d objects (%d/%d blocks)" HX_LF, moveObjs, clearedBlocks, mAllBlocks.size());
       #endif
 
       if (moveObjs)
@@ -3902,7 +3902,7 @@ public:
             size_t groupBytes = g.blocks << (IMMIX_BLOCK_BITS);
 
             #ifdef SHOW_MEM_EVENTS
-            GCLOG("Release group %d: %p -> %p\n", i, g.alloc, g.alloc+groupBytes);
+            GCLOG("Release group %d: %p -> %p" HX_LF, i, g.alloc, g.alloc+groupBytes);
             #endif
             #ifdef HX_GC_VERIFY
             releasedRange.push_back( ReleasedRange(g.alloc, g.alloc+groupBytes) );
@@ -3937,7 +3937,7 @@ public:
             for(int g=0;g<releasedGids.size();g++)
                if (mAllBlocks[i]->mGroupId == releasedGids[g])
                {
-                  printf("Group %d should be released.\n", mAllBlocks[i]->mGroupId);
+                  printf("Group %d should be released." HX_LF, mAllBlocks[i]->mGroupId);
                   DebuggerTrap();
                }
             #endif
@@ -3953,7 +3953,7 @@ public:
          for(int r=0;r<releasedRange.size();r++)
          if ( ptr>=releasedRange[r].first && ptr<releasedRange[r].second )
          {
-            printf("Released block %p(%d:%p) still in list\n", info, info->mId, info->mPtr );
+            printf("Released block %p(%d:%p) still in list" HX_LF, info, info->mId, info->mPtr );
             DebuggerTrap();
          }
       }
@@ -3963,7 +3963,7 @@ public:
 
 
       #if defined(SHOW_MEM_EVENTS) || defined(SHOW_FRAGMENTATION)
-      GCLOG("Release %d blocks, %d groups,  %s\n", released, groups, formatBytes((size_t)released<<(IMMIX_BLOCK_BITS)).c_str());
+      GCLOG("Release %d blocks, %d groups,  %s" HX_LF, released, groups, formatBytes((size_t)released<<(IMMIX_BLOCK_BITS)).c_str());
       #endif
       return released;
    }
@@ -4248,7 +4248,7 @@ public:
       }
       else
       {
-         printf("Finishe non-runnning thread?\n");
+         printf("Finishe non-runnning thread?" HX_LF);
          DebuggerTrap();
       }
    }
@@ -4284,7 +4284,7 @@ public:
 
          #ifdef HX_GC_VERIFY
          if (! (sRunningThreads & (1<<inId)) )
-            printf("Bad running threads!\n");
+            printf("Bad running threads!" HX_LF);
          #endif
 
          if (sgThreadPoolJob==tpjMark)
@@ -4443,7 +4443,7 @@ public:
 
          if (sRunningThreads)
          {
-            printf("Bad thread stop %d\n", sRunningThreads);
+            printf("Bad thread stop %d" HX_LF, sRunningThreads);
             DebuggerTrap();
          }
       }
@@ -4602,7 +4602,7 @@ public:
       {
          if ( mAllBlocks[i-1]->mPtr >= mAllBlocks[i]->mPtr)
          {
-            printf("Bad block order block[%d]=%p >= block[%d]=%p / %d\n", i-1, mAllBlocks[i-1]->mPtr,
+            printf("Bad block order block[%d]=%p >= block[%d]=%p / %d" HX_LF, i-1, mAllBlocks[i-1]->mPtr,
                     i, mAllBlocks[i]->mPtr, mAllBlocks.size() );
             DebuggerTrap();
          }
@@ -4660,12 +4660,12 @@ public:
       HX_STACK_FRAME("GC", "collect", 0, "GC::collect", __FILE__, __LINE__,0)
       #ifdef SHOW_MEM_EVENTS
       int here = 0;
-      GCLOG("=== Collect === %p\n",&here);
+      GCLOG("=== Collect === %p" HX_LF,&here);
       #endif
 
 
       #ifdef PROFILE_THREAD_USAGE
-      GCLOG("Thread zero waits %d/%d/%d, misses=%d, hits=%d\n", sThreadZeroPokes, sThreadZeroWaits, mFreeBlocks.size(), sThreadZeroMisses, sThreadBlockZeroCount);
+      GCLOG("Thread zero waits %d/%d/%d, misses=%d, hits=%d" HX_LF, sThreadZeroPokes, sThreadZeroWaits, mFreeBlocks.size(), sThreadZeroMisses, sThreadBlockZeroCount);
       sThreadZeroWaits = 0;
       sThreadZeroPokes = 0;
       sThreadZeroMisses = 0;
@@ -4705,7 +4705,7 @@ public:
       {
          hx::sGlobalChunks.copyPointers(rememberedSet,!generational);
          #ifdef SHOW_MEM_EVENTS
-         GCLOG("Patch remembered set marks %d\n", rememberedSet.size());
+         GCLOG("Patch remembered set marks %d" HX_LF, rememberedSet.size());
          #endif
          for(int i=0;i<rememberedSet.size();i++)
             ((unsigned char *)rememberedSet[i])[HX_ENDIAN_MARK_ID_BYTE] = gByteMarkID;
@@ -4760,7 +4760,7 @@ public:
                space = retained;
             mGenerationalRetainEstimate = (double)retained/(double)space;
             #ifdef SHOW_MEM_EVENTS
-            GCLOG("Generational retention too high %f, do normal collect\n", mGenerationalRetainEstimate);
+            GCLOG("Generational retention too high %f, do normal collect" HX_LF, mGenerationalRetainEstimate);
             #endif
 
             generational = false;
@@ -4792,13 +4792,13 @@ public:
       {
          double useRatio = (double)(stats.rowsInUse<<IMMIX_LINE_BITS) / (sWorkingMemorySize);
          #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-            GCLOG("Row use ratio:%f\n", useRatio);
+            GCLOG("Row use ratio:%f" HX_LF, useRatio);
          #endif
          // Could be either expanding, or fragmented...
          if (useRatio>0.75)
          {
             #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-               GCLOG("Do full stats\n", useRatio);
+               GCLOG("Do full stats" HX_LF, useRatio);
             #endif
             full = true;
             stats.clear();
@@ -4817,17 +4817,17 @@ public:
       size_t bytesInUse = stats.bytesInUse;
 
       #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-      GCLOG("Total memory : %s\n", formatBytes(GetWorkingMemory()).c_str());
-      GCLOG("  reserved bytes : %s\n", formatBytes((size_t)mRowsInUse*IMMIX_LINE_LEN).c_str());
+      GCLOG("Total memory : %s" HX_LF, formatBytes(GetWorkingMemory()).c_str());
+      GCLOG("  reserved bytes : %s" HX_LF, formatBytes((size_t)mRowsInUse*IMMIX_LINE_LEN).c_str());
       if (full)
       {
-         GCLOG("  active bytes   : %s\n", formatBytes(bytesInUse).c_str());
-         GCLOG("  active ratio   : %f\n", (double)bytesInUse/( mRowsInUse*IMMIX_LINE_LEN));
-         GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
-         GCLOG("  fragged score  : %f\n", (double)stats.fragScore/mAllBlocks.size() );
+         GCLOG("  active bytes   : %s" HX_LF, formatBytes(bytesInUse).c_str());
+         GCLOG("  active ratio   : %f" HX_LF, (double)bytesInUse/( mRowsInUse*IMMIX_LINE_LEN));
+         GCLOG("  fragged blocks : %d (%.1f%%)" HX_LF, stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
+         GCLOG("  fragged score  : %f" HX_LF, (double)stats.fragScore/mAllBlocks.size() );
       }
-      GCLOG("  large size   : %s\n", formatBytes(mLargeAllocated).c_str());
-      GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
+      GCLOG("  large size   : %s" HX_LF, formatBytes(mLargeAllocated).c_str());
+      GCLOG("  empty blocks : %d (%.1f%%)" HX_LF, stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
       #endif
 
 
@@ -4909,7 +4909,7 @@ public:
                #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
                int releaseGroups = (int)((allMem - sWorkingMemorySize) / (IMMIX_BLOCK_SIZE<<IMMIX_BLOCK_GROUP_BITS));
                if (releaseGroups)
-                  GCLOG("Try to release %d groups\n", releaseGroups );
+                  GCLOG("Try to release %d groups" HX_LF, releaseGroups );
                #endif
                doRelease = true;
             }
@@ -4933,7 +4933,7 @@ public:
             }
             stats.emptyBlocks += borrowed;
             #if defined(SHOW_FRAGMENTATION)
-               GCLOG("Borrowed %d groups for %d target blocks\n", borrowed, workingBlocks);
+               GCLOG("Borrowed %d groups for %d target blocks" HX_LF, borrowed, workingBlocks);
             #endif
 
             MoveBlockJob job(mAllBlocks);
@@ -4955,25 +4955,25 @@ public:
                   {
                      size_t releaseSize = have - targetMem;
                      #ifdef SHOW_FRAGMENTATION
-                     GCLOG(" Release %s bytes to leave %s\n", formatBytes(releaseSize).c_str(), formatBytes(targetMem).c_str() );
+                     GCLOG(" Release %s bytes to leave %s" HX_LF, formatBytes(releaseSize).c_str(), formatBytes(targetMem).c_str() );
                      #endif
 
                      int releasedBlocks = releaseEmptyGroups(stats, releaseSize);
                      #ifdef SHOW_FRAGMENTATION
                      int releasedGroups = releasedBlocks >> IMMIX_BLOCK_GROUP_BITS;
-                     GCLOG(" Released %s, %d groups\n", formatBytes((size_t)releasedBlocks<<IMMIX_BLOCK_BITS).c_str(), releasedGroups );
+                     GCLOG(" Released %s, %d groups" HX_LF, formatBytes((size_t)releasedBlocks<<IMMIX_BLOCK_BITS).c_str(), releasedGroups );
                      #endif
                   }
                }
 
                // Reduce sWorkingMemorySize now we have defragged
                #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-               GCLOG("After compacting---\n");
-               GCLOG("  total memory : %s\n", formatBytes(GetWorkingMemory()).c_str() );
-               GCLOG("  total needed : %s\n", formatBytes((size_t)stats.rowsInUse*IMMIX_LINE_LEN).c_str() );
-               GCLOG("  for bytes    : %s\n", formatBytes(bytesInUse).c_str() );
-               GCLOG("  empty blocks : %d (%.1f%%)\n", stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
-               GCLOG("  fragged blocks : %d (%.1f%%)\n", stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
+               GCLOG("After compacting---" HX_LF);
+               GCLOG("  total memory : %s" HX_LF, formatBytes(GetWorkingMemory()).c_str() );
+               GCLOG("  total needed : %s" HX_LF, formatBytes((size_t)stats.rowsInUse*IMMIX_LINE_LEN).c_str() );
+               GCLOG("  for bytes    : %s" HX_LF, formatBytes(bytesInUse).c_str() );
+               GCLOG("  empty blocks : %d (%.1f%%)" HX_LF, stats.emptyBlocks, stats.emptyBlocks*100.0/mAllBlocks.size());
+               GCLOG("  fragged blocks : %d (%.1f%%)" HX_LF, stats.fraggedBlocks, stats.fraggedBlocks*100.0/mAllBlocks.size() );
                #endif
             }
 
@@ -5002,7 +5002,7 @@ public:
          sWorkingMemorySize = std::max( mem + targetFree, (size_t)hx::sgMinimumWorkingMemory);
 
       #if defined(SHOW_FRAGMENTATION) || defined(SHOW_MEM_EVENTS)
-      GCLOG("Target memory %s, using %s\n",  formatBytes(sWorkingMemorySize).c_str(), formatBytes(mem).c_str() );
+      GCLOG("Target memory %s, using %s" HX_LF,  formatBytes(sWorkingMemorySize).c_str(), formatBytes(mem).c_str() );
       #endif
 
       // Large alloc target
@@ -5043,7 +5043,7 @@ public:
       }
 
       #ifdef SHOW_MEM_EVENTS
-      GCLOG("filled=%.2f%% + junk = %.2f%% = %.2f%% -> %s\n",
+      GCLOG("filled=%.2f%% + junk = %.2f%% = %.2f%% -> %s" HX_LF,
             filled_ratio*100, mGenerationalRetainEstimate*100, after_gen*100, sGcMode==gcmFull?"Full":"Generational");
       #endif
 
@@ -5059,14 +5059,14 @@ public:
       mCurrentRowsInUse = mRowsInUse;
 
       #ifdef SHOW_MEM_EVENTS
-      GCLOG("Collect Done\n");
+      GCLOG("Collect Done" HX_LF);
       #endif
 
       #ifdef PROFILE_COLLECT
       STAMP(t6)
       double period = t6-sLastCollect;
       sLastCollect=t6;
-      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f(init=%.2f/roots=%.2f %d+%d/loc=%.2f*%d %d+%d/mark=%.2f %d+%d/fin=%.2f*%d/ids=%.2f)\n  reclaim=%.2f\n  large(%d->%d, recyc %d)=%.2f\n  defrag=%.2f\n",
+      GCLOG("Collect time total=%.2fms =%.1f%%\n  setup=%.2f\n  %s=%.2f(init=%.2f/roots=%.2f %d+%d/loc=%.2f*%d %d+%d/mark=%.2f %d+%d/fin=%.2f*%d/ids=%.2f)\n  reclaim=%.2f\n  large(%d->%d, recyc %d)=%.2f\n  defrag=%.2f" HX_LF,
               (t6-t0)*1000, (t6-t0)*100.0/period, // total %
               (t1-t0)*1000, // sync/setup
               generational ? "mark gen" : "mark", (t2-t1)*1000,
@@ -5085,10 +5085,10 @@ public:
       #endif
 
       #ifdef PROFILE_THREAD_USAGE
-      GCLOG("Thread chunks:%d, wakes=%d\n", sThreadChunkPushCount, sThreadChunkWakes);
+      GCLOG("Thread chunks:%d, wakes=%d" HX_LF, sThreadChunkPushCount, sThreadChunkWakes);
       for(int i=-1;i<MAX_MARK_THREADS;i++)
-        GCLOG(" thread %d] %d + %d\n", i, sThreadMarkCount[i], sThreadArrayMarkCount[i]);
-      GCLOG("Locking spins  : %d\n", sSpinCount);
+        GCLOG(" thread %d] %d + %d" HX_LF, i, sThreadMarkCount[i], sThreadArrayMarkCount[i]);
+      GCLOG("Locking spins  : %d" HX_LF, sSpinCount);
       sSpinCount = 0;
       #endif
 
@@ -5357,7 +5357,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    #endif
 
    #ifdef SHOW_MEM_EVENTS
-   GCLOG("Mark conservative %p...%p (%d)\n", inBottom, inTop, (int)(inTop-inBottom) );
+   GCLOG("Mark conservative %p...%p (%d)" HX_LF, inBottom, inTop, (int)(inTop-inBottom) );
    #endif
 
    #ifdef HXCPP_STACK_UP
@@ -5403,14 +5403,14 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                      info->GetAllocType(pos-sizeof(int));
                if ( t==allocObject )
                {
-                  //GCLOG(" Mark object %p (%p)\n", vptr,ptr);
+                  //GCLOG(" Mark object %p (%p)" HX_LF, vptr,ptr);
                   HX_MARK_OBJECT( ((hx::Object *)vptr) );
                   lastPin = vptr;
                   info->pin();
                }
                else if (t==allocString)
                {
-                  // GCLOG(" Mark string %p (%p)\n", vptr,ptr);
+                  // GCLOG(" Mark string %p (%p)" HX_LF, vptr,ptr);
                   HX_MARK_STRING(vptr);
                   lastPin = vptr;
                   info->pin();
@@ -5422,7 +5422,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
                }
             }
          }
-         // GCLOG(" rejected %p %p %d %p %d=%d\n", ptr, vptr, !((size_t)vptr & 0x03), prev,
+         // GCLOG(" rejected %p %p %d %p %d=%d" HX_LF, ptr, vptr, !((size_t)vptr & 0x03), prev,
          // sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
       }
    }
@@ -5480,7 +5480,7 @@ public:
       #ifdef HXCPP_GC_GENERATIONAL
       if (mOldReferrers)
       {
-         GCLOG("Uncleaned referrers\n");
+         GCLOG("Uncleaned referrers" HX_LF);
       }
 
       if (sGcMode==gcmGenerational)
@@ -5932,7 +5932,7 @@ public:
 
       #ifdef SHOW_MEM_EVENTS
       //int here = 0;
-      //GCLOG("=========== Mark Stack ==================== %p ... %p (%p)\n",mBottomOfStack,mTopOfStack,&here);
+      //GCLOG("=========== Mark Stack ==================== %p ... %p (%p)" HX_LF,mBottomOfStack,mTopOfStack,&here);
       #endif
 
       #ifdef HXCPP_DEBUG
@@ -6103,7 +6103,7 @@ void InitAlloc()
    void **stack = *(void ***)(&tmp);
    sgObject_root = stack[0];
 
-   //GCLOG("__root pointer %p\n", sgObject_root);
+   //GCLOG("__root pointer %p" HX_LF, sgObject_root);
    gMainThreadContext =  new LocalAllocator();
 
    tlsStackContext = gMainThreadContext;
@@ -6160,7 +6160,7 @@ void *InternalNew(int inSize,bool inIsObject)
    #ifdef HXCPP_DEBUG
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
    {
-      //GCLOG("InternalNew spam\n");
+      //GCLOG("InternalNew spam" HX_LF);
       CollectFromThisThread(false);
    }
    sgAllocsSinceLastSpam++;
@@ -6250,7 +6250,7 @@ void *InternalRealloc(void *inData,int inSize, bool inExpand)
    #ifdef HXCPP_DEBUG
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
    {
-      //GCLOG("InternalNew spam\n");
+      //GCLOG("InternalNew spam" HX_LF);
       CollectFromThisThread(false);
    }
    sgAllocsSinceLastSpam++;
@@ -6285,7 +6285,7 @@ void *InternalRealloc(void *inData,int inSize, bool inExpand)
 
 
 #ifdef HXCPP_TELEMETRY
-   //printf(" -- reallocating %018x to %018x, size from %d to %d\n", inData, new_data, s, inSize);
+   //printf(" -- reallocating %018x to %018x, size from %d to %d" HX_LF, inData, new_data, s, inSize);
    __hxt_gc_realloc(inData, new_data, inSize);
 #endif
 
@@ -6393,7 +6393,7 @@ public:
 
       unsigned int s = ObjectSize(obj);
       void *result = InternalCreateConstBuffer(obj,s,false);
-      //printf(" Freeze %d\n", s);
+      //printf(" Freeze %d" HX_LF, s);
       *ioPtr = (hx::Object *)result;
       (*ioPtr)->__Visit(this);
    }
@@ -6404,7 +6404,7 @@ public:
       if (!data || IsConstAlloc(data))
          return;
       unsigned int s = ObjectSize(data);
-      //printf(" Freeze %d\n", s);
+      //printf(" Freeze %d" HX_LF, s);
       void *result = InternalCreateConstBuffer(data,s,false);
       *ioPtr = result;
    }
@@ -6434,7 +6434,7 @@ void __hxcpp_spam_collects(int inEveryNCalls)
    #ifdef HXCPP_DEBUG
    sgSpamCollects = inEveryNCalls;
    #else
-   GCLOG("Spam collects only available on debug versions\n");
+   GCLOG("Spam collects only available on debug versions" HX_LF);
    #endif
 }
 
@@ -6446,7 +6446,7 @@ int __hxcpp_gc_trace(hx::Class inClass,bool inPrint)
        #elif defined(HX_WINRT)
        WINRT_LOG("GC trace not enabled in release build.");
        #else
-       printf("WARNING : GC trace not enabled in release build.\n");
+       printf("WARNING : GC trace not enabled in release build." HX_LF);
        #endif
        return 0;
     #else

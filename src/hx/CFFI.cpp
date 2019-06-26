@@ -695,7 +695,7 @@ hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
    catch(Dynamic e)
    {
       String s = e;
-      fprintf(stderr,"Fatal Error : %s\n",s.__CStr());
+      fprintf(stderr,"Fatal Error : %s" HX_LF,s.__CStr());
       exit(1);
    }
    return 0;

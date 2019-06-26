@@ -13,7 +13,7 @@ namespace hx
 
 #ifdef DEBUG_RETURN_TYPE
    #define DEBUG_RETURN_TYPE_CHECK \
-       if (gLastRet!=CHECK && CHECK!=etVoid) { printf("BAD RETURN TYPE, got %d, expected %d!\n",gLastRet,CHECK); CPPIA_CHECK(0); }
+       if (gLastRet!=CHECK && CHECK!=etVoid) { printf("BAD RETURN TYPE, got %d, expected %d!" HX_LF,gLastRet,CHECK); CPPIA_CHECK(0); }
 #else
    #define DEBUG_RETURN_TYPE_CHECK
 #endif
@@ -37,7 +37,7 @@ int StackContext::runInt(void *vtable)
 {
    if (breakContReturn) return 0;
    GET_RETURN_VAL(return getInt(), etInt );
-   //printf("No Int return?\n");
+   //printf("No Int return?" HX_LF);
    // Should not really get here...
    return 0;
 }
@@ -46,7 +46,7 @@ Float StackContext::runFloat(void *vtable)
    if (breakContReturn) return 0;
    GET_RETURN_VAL(return getFloat(),etFloat );
    // Should not really get here...
-   //printf("No Float return?\n");
+   //printf("No Float return?" HX_LF);
    return 0;
 }
 String StackContext::runString(void *vtable)
@@ -54,21 +54,21 @@ String StackContext::runString(void *vtable)
    if (breakContReturn) return String();
    GET_RETURN_VAL(return getString(),etString );
    // Should not really get here...
-   //printf("No String return?\n");
+   //printf("No String return?" HX_LF);
    return null();
 }
 Dynamic StackContext::runObject(void *vtable)
 {
    if (breakContReturn) return null();
    GET_RETURN_VAL(return getObject(),etObject );
-   //printf("No Object return?\n");
+   //printf("No Object return?" HX_LF);
    return null();
 }
 hx::Object *StackContext::runObjectPtr(void *vtable)
 {
    if (breakContReturn) return 0;
    GET_RETURN_VAL(return getObjectPtr(),etObject );
-   //printf("No Object return?\n");
+   //printf("No Object return?" HX_LF);
    return 0;
 }
 

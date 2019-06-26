@@ -119,7 +119,7 @@ struct CppiaStream
       if (!binary)
          return getAsciiToken();
       int id = getInt();
-      //printf("Token %s\n", tokenMap[id].c_str());
+      //printf("Token %s" HX_LF, tokenMap[id].c_str());
       return tokenMap[id];
    }
 

@@ -317,7 +317,7 @@ Dynamic __hxcpp_dbg_checkedRethrow(Dynamic toThrow);
 // If no debugger, provide empty implementations of the debugging functions
 
 inline void __hxcpp_dbg_setEventNotificationHandler(Dynamic)
-    { hx::Throw("Debugging is not enabled for this program; try\n"
+    { hx::Throw("Debugging is not enabled for this program; try" HX_LF
                 "rebuilding it with the -D HXCPP_DEBUGGER option"); }
 inline void __hxcpp_dbg_enableCurrentThreadDebugging(bool) { }
 inline int __hxcpp_dbg_getCurrentThreadNumber() { return -1; }

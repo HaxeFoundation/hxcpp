@@ -194,7 +194,7 @@ CppiaExpr *ScriptCallable::link(CppiaModule &inModule)
    #endif
 
    #ifdef CPPIA_JIT
-   //printf("Compile?\n");
+   //printf("Compile?" HX_LF);
    #endif
 
    return this;
@@ -303,8 +303,8 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
 
    if (badCount)
    {
-      printf("Arg count mismatch %d!=%d ?\n", argCount, (int)inArgs.size());
-      printf(" %s at %s:%d %s\n", getName(), filename, line, functionName);
+      printf("Arg count mismatch %d!=%d ?" HX_LF, argCount, (int)inArgs.size());
+      printf(" %s at %s:%d %s" HX_LF, getName(), filename, line, functionName);
       CPPIA_CHECK(0);
       throw Dynamic(HX_CSTRING("Arg count error"));
       //return;
@@ -390,8 +390,8 @@ void ScriptCallable::pushArgs(CppiaCtx *ctx, hx::Object *inThis, Expressions &in
 
    if (badCount)
    {
-      printf("Arg count mismatch %d!=%d ?\n", argCount, (int)inArgs.size());
-      printf(" %s at %s:%d %s\n", getName(), filename, line, functionName);
+      printf("Arg count mismatch %d!=%d ?" HX_LF, argCount, (int)inArgs.size());
+      printf(" %s at %s:%d %s" HX_LF, getName(), filename, line, functionName);
       CPPIA_CHECK(0);
       throw Dynamic(HX_CSTRING("Arg count error"));
       //return;
@@ -509,9 +509,9 @@ void ScriptCallable::runFunction(CppiaCtx *ctx)
    if (compiled)
    {
       AutoFrame frame(ctx);
-      //printf("Running compiled code...\n");
+      //printf("Running compiled code..." HX_LF);
       compiled(ctx);
-      //printf("Done.\n");
+      //printf("Done." HX_LF);
    }
    else
    #endif
@@ -544,9 +544,9 @@ void ScriptCallable::runFunctionClosure(CppiaCtx *ctx)
    if (compiled)
    {
       AutoFrame frame(ctx);
-      //printf("Running compiled code...\n");
+      //printf("Running compiled code..." HX_LF);
       compiled(ctx);
-      //printf("Done.\n");
+      //printf("Done." HX_LF);
    }
    else
    #endif
@@ -764,7 +764,7 @@ public:
          }
          return null();
       }
-      //printf("Not compiled %d!\n", function->captureVars.size());
+      //printf("Not compiled %d!" HX_LF, function->captureVars.size());
       //todo - compiled?
       #endif
 
@@ -969,7 +969,7 @@ void CppiaFunction::load(CppiaStream &stream,bool inExpectBody)
    stream.module->creatingFunction = name.c_str();
    returnType = stream.getInt();
    argCount = stream.getInt();
-   DBGLOG("  Function %s(%d) : %s %s%s\n", name.c_str(), argCount, cppia.typeStr(returnType), isStatic?"static":"instance", isDynamic ? " DYNAMIC": "");
+   DBGLOG("  Function %s(%d) : %s %s%s" HX_LF, name.c_str(), argCount, cppia.typeStr(returnType), isStatic?"static":"instance", isDynamic ? " DYNAMIC": "");
    args.resize(argCount);
    for(int a=0;a<argCount;a++)
    {
@@ -977,7 +977,7 @@ void CppiaFunction::load(CppiaStream &stream,bool inExpectBody)
       arg.nameId = stream.getInt();
       arg.optional = stream.getBool();
       arg.typeId = stream.getInt();
-      DBGLOG("    arg %c%s:%s\n", arg.optional?'?':' ', cppia.identStr(arg.nameId), cppia.typeStr(arg.typeId) );
+      DBGLOG("    arg %c%s:%s" HX_LF, arg.optional?'?':' ', cppia.identStr(arg.nameId), cppia.typeStr(arg.typeId) );
    }
    if (inExpectBody)
       funExpr = (ScriptCallable *)createCppiaExpr(stream);

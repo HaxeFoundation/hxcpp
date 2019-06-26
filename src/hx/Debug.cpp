@@ -83,7 +83,7 @@ static void CriticalErrorHandler(String inErr, bool allowFixup)
    ctx->dumpExceptionStack();
 #endif
 
-    DBGLOG("Critical Error: %s\n", inErr.utf8_str());
+    DBGLOG("Critical Error: %s" HX_LF, inErr.utf8_str());
 
 #if defined(HX_WINDOWS) && !defined(HX_WINRT)
     MessageBoxA(0, inErr.utf8_str(), "Critial Error - program must terminate",
@@ -286,9 +286,9 @@ void StackContext::tracePosition( )
 {
    StackFrame *frame = mStackFrames[mStackFrames.size()-1];
    #ifdef HXCPP_STACK_LINE
-   DBGLOG("%s::%s : %d\n", frame->position->className, frame->position->functionName, frame->lineNumber);
+   DBGLOG("%s::%s : %d" HX_LF, frame->position->className, frame->position->functionName, frame->lineNumber);
    #else
-   DBGLOG("%s::%s\n", frame->position->className, frame->position->functionName);
+   DBGLOG("%s::%s" HX_LF, frame->position->className, frame->position->functionName);
    #endif
 }
 
@@ -360,7 +360,7 @@ void StackContext::dumpExceptionStack()
    int size = mExceptionStack.size();
    for(int i = size - 1; i >= 0; i--)
    {
-      EXCEPTION_PRINT("Called from %s\n", mExceptionStack[i].toDisplay().utf8_str());
+      EXCEPTION_PRINT("Called from %s" HX_LF, mExceptionStack[i].toDisplay().utf8_str());
    }
 }
 
@@ -521,7 +521,7 @@ void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPat
 #ifndef HXCPP_PROFILER
 void __hxcpp_start_profiler(::String inDumpFile)
 {
-   DBGLOG("Warning - profiler has no effect without HXCPP_PROFILER\n");
+   DBGLOG("Warning - profiler has no effect without HXCPP_PROFILER" HX_LF);
 }
 void __hxcpp_stop_profiler() { }
 #endif

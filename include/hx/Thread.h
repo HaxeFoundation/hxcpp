@@ -372,11 +372,11 @@ struct HxSemaphore
             // Error - something's gone wrong...
             /*
             if (result==EINVAL) 
-               printf("ERROR: Condition EINVAL\n");
+               printf("ERROR: Condition EINVAL" HX_LF);
             else if (result==EPERM)
-               printf("ERROR: Condition EPERM\n");
+               printf("ERROR: Condition EPERM" HX_LF);
             else
-               printf("ERROR: Condition unknown error\n");
+               printf("ERROR: Condition unknown error" HX_LF);
             */
             break;
          }

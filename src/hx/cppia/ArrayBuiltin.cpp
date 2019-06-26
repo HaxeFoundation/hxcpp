@@ -328,7 +328,7 @@ struct ArraySetter : public ArrayBuiltinBase
          }
          else
          {
-            printf("Unknown element size\n");
+            printf("Unknown element size" HX_LF);
          }
 
 
@@ -969,7 +969,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
       
             default: ;
-               printf("make setter %d\n", op);
+               printf("make setter %d" HX_LF, op);
                throw "setter not implemented";
          }
 
@@ -1262,7 +1262,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                }
                else
                {
-                  printf("Unknown element size\n");
+                  printf("Unknown element size" HX_LF);
                }
 
                if (destType!=etNull)
@@ -1357,7 +1357,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                }
                else
                {
-                  printf("Unknown element size\n");
+                  printf("Unknown element size" HX_LF);
                }
 
 
@@ -1469,7 +1469,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                }
                else
                {
-                  printf("Unknown element size\n");
+                  printf("Unknown element size" HX_LF);
                }
                compiler->comeFrom(writtenNull);
 
@@ -1600,7 +1600,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                }
                else
                {
-                  printf("Unknown element size\n");
+                  printf("Unknown element size" HX_LF);
                }
                compiler->comeFrom(writtenNull);
 

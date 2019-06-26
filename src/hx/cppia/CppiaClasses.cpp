@@ -100,7 +100,7 @@ struct CppiaEnumConstructor
    {
       bool ok = args.size() && args.size()==inArgs.size();
       if (!ok)
-         printf("Bad enum arg count\n");
+         printf("Bad enum arg count" HX_LF);
 
       #if (HXCPP_API_LEVEL >= 330)
       compiler->callNative( (void *)createEnumBase, (void *)this );
@@ -231,7 +231,7 @@ struct EnumField : public CppiaDynamicExpr
          enumClass = hx::Class_obj::Resolve(type->name);
          if (!enumClass.mPtr)
          {
-            printf("Could not find enum %s\n", type->name.out_str() );
+            printf("Could not find enum %s" HX_LF, type->name.out_str() );
             throw "Bad enum";
          }
          enumName = inModule.strings[fieldId];
@@ -552,7 +552,7 @@ bool CppiaClassInfo::getField(hx::Object *inThis, String inName, hx::PropertyAcc
          return true;
    }
 
-   //printf("Get field not found (%s) %s\n", inThis->toString().out_str(),inName.out_str());
+   //printf("Get field not found (%s) %s" HX_LF, inThis->toString().out_str(),inName.out_str());
    return false;
 }
 
@@ -563,7 +563,7 @@ bool CppiaClassInfo::setField(hx::Object *inThis, String inName, Dynamic inValue
 
    if (inCallProp)
    {
-      //printf("Set field %s %s = %s\n", inThis->toString().out_str(), inName.out_str(), inValue->toString().out_str());
+      //printf("Set field %s %s = %s" HX_LF, inThis->toString().out_str(), inName.out_str(), inValue->toString().out_str());
       ScriptCallable *setter = findMemberSetter(inName);
       if (setter)
       {
@@ -610,7 +610,7 @@ bool CppiaClassInfo::setField(hx::Object *inThis, String inName, Dynamic inValue
    }
 
    // Fall though to haxe base
-   //printf("Set field not found (%s) %s map=%p o=%d\n", inThis->toString().out_str(),inName.out_str(), map, dynamicMapOffset);
+   //printf("Set field not found (%s) %s map=%p o=%d" HX_LF, inThis->toString().out_str(),inName.out_str(), map, dynamicMapOffset);
 
    return false;
 }
@@ -657,22 +657,22 @@ CppiaVar *CppiaClassInfo::findVar(bool inStatic,int inId)
 
 void CppiaClassInfo::dumpVars(const char *inMessage, std::vector<CppiaVar *> &vars)
 {
-   printf(" %s:\n", inMessage);
+   printf(" %s:" HX_LF, inMessage);
    for(int i=0;i<vars.size();i++)
-      printf("   %d] %s (%d)\n", i, cppia.strings[ vars[i]->nameId ].out_str(), vars[i]->nameId );
+      printf("   %d] %s (%d)" HX_LF, i, cppia.strings[ vars[i]->nameId ].out_str(), vars[i]->nameId );
 }
 
 void CppiaClassInfo::dumpFunctions(const char *inMessage, std::vector<CppiaFunction *> &funcs)
 {
-   printf(" %s:\n", inMessage);
+   printf(" %s:" HX_LF, inMessage);
    for(int i=0;i<funcs.size();i++)
-      printf("   %d] %s (%d)\n", i, cppia.strings[ funcs[i]->nameId ].out_str(), funcs[i]->nameId);
+      printf("   %d] %s (%d)" HX_LF, i, cppia.strings[ funcs[i]->nameId ].out_str(), funcs[i]->nameId);
 }
 
 
 void CppiaClassInfo::dump()
 {
-   printf("Class %s\n", name.c_str());
+   printf("Class %s" HX_LF, name.c_str());
    dumpFunctions("Member functions",memberFunctions);
    dumpFunctions("Static functions",staticFunctions);
    dumpVars("Member vars",memberVars);
@@ -733,7 +733,7 @@ bool CppiaClassInfo::load(CppiaStream &inStream)
       isEnum = true;
    else
    {
-      DBGLOG("Invalid class field op %d\n", op);
+      DBGLOG("Invalid class field op %d" HX_LF, op);
       throw "Bad class type";
    }
 
@@ -749,7 +749,7 @@ bool CppiaClassInfo::load(CppiaStream &inStream)
        implements[i] = inStream.getInt();
 
     name = cppia.typeStr(typeId);
-    DBGLOG("Class %s %s\n", name.c_str(), isEnum ? "enum" : isInterface ? "interface" : "class" );
+    DBGLOG("Class %s %s" HX_LF, name.c_str(), isEnum ? "enum" : isInterface ? "interface" : "class" );
 
     bool isNew = //(resolved == null() || !IsCppiaClass(resolved) ) &&
                 (!HaxeNativeClass::findClass(name) && !HaxeNativeInterface::findInterface(name) );
@@ -759,7 +759,7 @@ bool CppiaClassInfo::load(CppiaStream &inStream)
        hx::Class cls =  hx::Class_obj::Resolve(String(name.c_str()));
        if (cls.mPtr && getScriptId(cls)==0)
        {
-          DBGLOG("Found existing enum %s - ignore\n", name.c_str());
+          DBGLOG("Found existing enum %s - ignore" HX_LF, name.c_str());
           isNew = false;
        }
     }
@@ -770,7 +770,7 @@ bool CppiaClassInfo::load(CppiaStream &inStream)
     }
     else
     {
-       DBGLOG("Already has registered %s - ignore\n",name.c_str());
+       DBGLOG("Already has registered %s - ignore" HX_LF,name.c_str());
     }
 
     inStream.module->creatingClass = name.c_str();
@@ -886,7 +886,7 @@ void **CppiaClassInfo::createInterfaceVTable(int inTypeId)
 
 hx::Class *CppiaClassInfo::getSuperClass()
 {
-   DBGLOG("getSuperClass %s %d\n", name.c_str(), superId);
+   DBGLOG("getSuperClass %s %d" HX_LF, name.c_str(), superId);
    if (!superId)
       return 0;
 
@@ -897,7 +897,7 @@ hx::Class *CppiaClassInfo::getSuperClass()
       return &superType->cppiaClass->mClass;
    if (!superType->haxeClass.mPtr)
    {
-      printf("Invalid super class '%s' for '%s'.\n", superType->name.c_str(), name.c_str());
+      printf("Invalid super class '%s' for '%s'." HX_LF, superType->name.c_str(), name.c_str());
       throw "Missing super class";
    }
 
@@ -967,7 +967,7 @@ void CppiaClassInfo::linkTypes()
                nativeInterfaceFunctions.push_back(f);
                int slot = cppia.getInterfaceSlot(f->name);
                if (slot<0)
-                  printf("Interface slot '%s' not found\n",f->name);
+                  printf("Interface slot '%s' not found" HX_LF,f->name);
                if (slot>interfaceSlotSize)
                   interfaceSlotSize = slot;
             }
@@ -981,15 +981,15 @@ void CppiaClassInfo::linkTypes()
    DBGLOG(" Linking class '%s' ", type->name.out_str());
    if (!superType)
    {
-      DBGLOG("script base\n");
+      DBGLOG("script base" HX_LF);
    }
    else if (cppiaSuper)
    {
-      DBGLOG("extends script '%s'\n", superType->name.out_str());
+      DBGLOG("extends script '%s'" HX_LF, superType->name.out_str());
    }
    else
    {
-      DBGLOG("extends haxe '%s'\n", superType->name.out_str());
+      DBGLOG("extends haxe '%s'" HX_LF, superType->name.out_str());
    }
 
    // Link class before we combine the function list...
@@ -1017,7 +1017,7 @@ void CppiaClassInfo::linkTypes()
       {
          for(int j=0;j<combinedVars.size();j++)
             if (combinedVars[j]->nameId==memberVars[i]->nameId)
-               printf("Warning duplicate member var %s\n", cppia.strings[memberVars[i]->nameId].out_str());
+               printf("Warning duplicate member var %s" HX_LF, cppia.strings[memberVars[i]->nameId].out_str());
          combinedVars.push_back(memberVars[i]);
       }
       memberVars.swap(combinedVars);
@@ -1069,16 +1069,16 @@ void CppiaClassInfo::linkTypes()
    if (haxeBase)
    {
       // Calculate table offsets...
-      DBGLOG("  base haxe size %s = %d\n", haxeBase->name.c_str(), classSize);
+      DBGLOG("  base haxe size %s = %d" HX_LF, haxeBase->name.c_str(), classSize);
       for(int i=0;i<memberVars.size();i++)
       {
          if (memberVars[i]->offset)
          {
-            DBGLOG("   super var %s @ %d\n", cppia.identStr(memberVars[i]->nameId), memberVars[i]->offset);
+            DBGLOG("   super var %s @ %d" HX_LF, cppia.identStr(memberVars[i]->nameId), memberVars[i]->offset);
          }
          else
          {
-            DBGLOG("   link var %s @ %d\n", cppia.identStr(memberVars[i]->nameId), classSize);
+            DBGLOG("   link var %s @ %d" HX_LF, cppia.identStr(memberVars[i]->nameId), classSize);
             memberVars[i]->linkVarTypes(cppia,classSize);
             containsPointers = containsPointers || memberVars[i]->hasPointer();
          }
@@ -1088,11 +1088,11 @@ void CppiaClassInfo::linkTypes()
          containsPointers = true;
          if (dynamicFunctions[i]->offset)
          {
-            DBGLOG("   super dynamic function %s @ %d\n", cppia.identStr(dynamicFunctions[i]->nameId), dynamicFunctions[i]->offset);
+            DBGLOG("   super dynamic function %s @ %d" HX_LF, cppia.identStr(dynamicFunctions[i]->nameId), dynamicFunctions[i]->offset);
          }
          else
          {
-            DBGLOG("   link dynamic function %s @ %d\n", cppia.identStr(dynamicFunctions[i]->nameId), classSize);
+            DBGLOG("   link dynamic function %s @ %d" HX_LF, cppia.identStr(dynamicFunctions[i]->nameId), classSize);
             dynamicFunctions[i]->linkVarTypes(cppia,classSize);
          }
       }
@@ -1111,28 +1111,28 @@ void CppiaClassInfo::linkTypes()
    }
 
 
-   DBGLOG("  script member vars size = %d\n", extraData);
+   DBGLOG("  script member vars size = %d" HX_LF, extraData);
  
    for(int i=0;i<staticVars.size();i++)
    {
-      DBGLOG("   link static var %s\n", cppia.identStr(staticVars[i]->nameId));
+      DBGLOG("   link static var %s" HX_LF, cppia.identStr(staticVars[i]->nameId));
       staticVars[i]->linkVarTypes(cppia);
    }
 
    for(int i=0;i<staticDynamicFunctions.size();i++)
    {
-      DBGLOG("   link dynamic static var %s\n", cppia.identStr(staticDynamicFunctions[i]->nameId));
+      DBGLOG("   link dynamic static var %s" HX_LF, cppia.identStr(staticDynamicFunctions[i]->nameId));
       staticDynamicFunctions[i]->linkVarTypes(cppia);
    }
 
 
    // Combine vtable positions...
-   DBGLOG("  format haxe callable vtable (%d)....\n", (int)memberFunctions.size());
+   DBGLOG("  format haxe callable vtable (%d)...." HX_LF, (int)memberFunctions.size());
    std::vector<std::string> table;
    if (haxeBase)
       haxeBase->addVtableEntries(table);
    for(int i=0;i<table.size();i++)
-      DBGLOG("   base table[%d] = %s\n", i, table[i].c_str() );
+      DBGLOG("   base table[%d] = %s" HX_LF, i, table[i].c_str() );
 
 
    int vtableSlot = table.size();
@@ -1155,16 +1155,16 @@ void CppiaClassInfo::linkTypes()
             if (idx>interfaceSlotSize)
                interfaceSlotSize = idx;
             idx = -idx;
-            DBGLOG("Using interface vtable[%d] = %s\n", idx, memberFunctions[i]->name.c_str() );
+            DBGLOG("Using interface vtable[%d] = %s" HX_LF, idx, memberFunctions[i]->name.c_str() );
          }
          else
          {
             idx = vtableSlot++;
-            DBGLOG("   cppia slot [%d] = %s\n", idx, memberFunctions[i]->name.c_str() );
+            DBGLOG("   cppia slot [%d] = %s" HX_LF, idx, memberFunctions[i]->name.c_str() );
          }
       }
       else
-         DBGLOG("   override slot [%d] = %s\n", idx, memberFunctions[i]->name.c_str() );
+         DBGLOG("   override slot [%d] = %s" HX_LF, idx, memberFunctions[i]->name.c_str() );
       memberFunctions[i]->setVTableSlot(idx);
    }
 
@@ -1196,7 +1196,7 @@ void CppiaClassInfo::linkTypes()
                   nativeInterfaceFunctions.push_back(f);
                   int slot = cppia.getInterfaceSlot(f->name);
                   if (slot<0)
-                     printf("Interface slot '%s' not found\n",f->name);
+                     printf("Interface slot '%s' not found" HX_LF,f->name);
                   if (slot>interfaceSlotSize)
                      interfaceSlotSize = slot;
                }
@@ -1214,7 +1214,7 @@ void CppiaClassInfo::linkTypes()
          {
             int slot = cppia.getInterfaceSlot(intfFuncs[f]->name);
             if (slot<0)
-               printf("Interface slot '%s' not found\n",intfFuncs[f]->name.c_str());
+               printf("Interface slot '%s' not found" HX_LF,intfFuncs[f]->name.c_str());
             if (slot>interfaceSlotSize)
                interfaceSlotSize = slot;
          }
@@ -1230,7 +1230,7 @@ void CppiaClassInfo::linkTypes()
    vtable += interfaceSlotSize;
    *vtable++ = this;
 
-   DBGLOG("  vtable size %d -> %p\n", vtableSlot, vtable);
+   DBGLOG("  vtable size %d -> %p" HX_LF, vtableSlot, vtable);
 
    // Extract special function ...
    for(int i=0;i<staticFunctions.size(); )
@@ -1277,7 +1277,7 @@ void CppiaClassInfo::linkTypes()
       newFunc = cppiaSuper->newFunc;
    }
 
-   DBGLOG("  this constructor %p\n", newFunc);
+   DBGLOG("  this constructor %p" HX_LF, newFunc);
 }
 
 #ifdef CPPIA_JIT
@@ -1285,7 +1285,7 @@ void CppiaClassInfo::compile()
 {
    for(int i=0;i<staticFunctions.size();i++)
    {
-      DBGLOG(" Compile %s::%s\n", name.c_str(), staticFunctions[i]->name.c_str() );
+      DBGLOG(" Compile %s::%s" HX_LF, name.c_str(), staticFunctions[i]->name.c_str() );
       staticFunctions[i]->compile();
    }
    if (newFunc)
@@ -1294,7 +1294,7 @@ void CppiaClassInfo::compile()
    // Functions
    for(int i=0;i<memberFunctions.size();i++)
    {
-      DBGLOG(" Compile member %s::%s\n", name.c_str(), memberFunctions[i]->name.c_str() );
+      DBGLOG(" Compile member %s::%s" HX_LF, name.c_str(), memberFunctions[i]->name.c_str() );
       memberFunctions[i]->compile();
    }
 }
@@ -1305,7 +1305,7 @@ void CppiaClassInfo::link()
    int newPos = -1;
    for(int i=0;i<staticFunctions.size();i++)
    {
-      DBGLOG(" Link %s::%s\n", name.c_str(), staticFunctions[i]->name.c_str() );
+      DBGLOG(" Link %s::%s" HX_LF, name.c_str(), staticFunctions[i]->name.c_str() );
       staticFunctions[i]->link();
    }
    if (newFunc)
@@ -1317,7 +1317,7 @@ void CppiaClassInfo::link()
    // Functions
    for(int i=0;i<memberFunctions.size();i++)
    {
-      DBGLOG(" Link member %s::%s\n", name.c_str(), memberFunctions[i]->name.c_str() );
+      DBGLOG(" Link member %s::%s" HX_LF, name.c_str(), memberFunctions[i]->name.c_str() );
       memberFunctions[i]->link();
    }
 
@@ -1333,7 +1333,7 @@ void CppiaClassInfo::link()
       if (interfaceSlotSize)
       {
          int interfaceSlot = cppia.findInterfaceSlot( memberFunctions[i]->name );
-         DBGLOG("Set %s : %s to %d @%p\n", name.c_str(), memberFunctions[i]->name.c_str(), interfaceSlot, vtable);
+         DBGLOG("Set %s : %s to %d @%p" HX_LF, name.c_str(), memberFunctions[i]->name.c_str(), interfaceSlot, vtable);
          if (interfaceSlot>0 && interfaceSlot<interfaceSlotSize)
             vtable[ -interfaceSlot ] = memberFunctions[i]->funExpr;
       }
@@ -1368,7 +1368,7 @@ void CppiaClassInfo::link()
                dump();
                throw Dynamic(HX_CSTRING("Could not find getter for ") + var.name);
             }
-            DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.out_str());
+            DBGLOG("  found getter for %s.%s" HX_LF, name.c_str(), var.name.out_str());
             memberGetters[var.name.utf8_str()] = getter;
          }
          if (var.writeAccess == CppiaVar::accCall || var.writeAccess==CppiaVar::accCallNative)
@@ -1376,7 +1376,7 @@ void CppiaClassInfo::link()
             ScriptCallable *setter = findFunction(false,HX_CSTRING("set_") + var.name);
             if (!setter)
                throw Dynamic(HX_CSTRING("Could not find setter for ") + var.name);
-            DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.out_str());
+            DBGLOG("  found setter for %s.%s" HX_LF, name.c_str(), var.name.out_str());
             memberSetters[var.name.utf8_str()] = setter;
          }
 
@@ -1394,7 +1394,7 @@ void CppiaClassInfo::link()
          ScriptCallable *getter = findFunction(true,HX_CSTRING("get_") + var.name);
          if (!getter)
             throw Dynamic(HX_CSTRING("Could not find getter for ") + var.name);
-         DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.out_str());
+         DBGLOG("  found getter for %s.%s" HX_LF, name.c_str(), var.name.out_str());
          staticGetters[var.name.utf8_str()] = getter;
       }
       if (var.writeAccess == CppiaVar::accCall || var.writeAccess == CppiaVar::accCallNative)
@@ -1402,7 +1402,7 @@ void CppiaClassInfo::link()
          ScriptCallable *setter = findFunction(true,HX_CSTRING("set_") + var.name);
          if (!setter)
             throw Dynamic(HX_CSTRING("Could not find setter for ") + var.name);
-         DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.out_str());
+         DBGLOG("  found setter for %s.%s" HX_LF, name.c_str(), var.name.out_str());
          staticSetters[var.name.utf8_str()] = setter;
       }
 
@@ -1413,7 +1413,7 @@ void CppiaClassInfo::link()
    if (enumMeta)
       enumMeta = enumMeta->link(cppia);
 
-   //printf("Found haxeBase %s = %p / %d\n", cppia.types[typeId]->name.out_str(), haxeBase, dataSize );
+   //printf("Found haxeBase %s = %p / %d" HX_LF, cppia.types[typeId]->name.out_str(), haxeBase, dataSize );
 }
 
 void CppiaClassInfo::init(CppiaCtx *ctx, int inPhase)
@@ -1485,7 +1485,7 @@ Dynamic CppiaClassInfo::getStaticValue(const String &inName,hx::PropertyAccess  
          return var.getStaticValue();
    }
 
-   printf("Get static field not found (%s) %s\n", name.c_str(),inName.out_str());
+   printf("Get static field not found (%s) %s" HX_LF, name.c_str(),inName.out_str());
    return null();
 }
 
@@ -1550,7 +1550,7 @@ Dynamic CppiaClassInfo::setStaticValue(const String &inName,const Dynamic &inVal
       }
    }
 
-   printf("Set static field not found (%s) %s\n", name.c_str(), inName.out_str());
+   printf("Set static field not found (%s) %s" HX_LF, name.c_str(), inName.out_str());
    return null();
 
 }
@@ -1701,7 +1701,7 @@ public:
    {
       mName = inName;
       mSuper = info->getSuperClass();
-      DBGLOG("LINK %p ########################### %s -> %p\n", this, mName.out_str(), mSuper );
+      DBGLOG("LINK %p ########################### %s -> %p" HX_LF, this, mName.out_str(), mSuper );
       //mStatics = Array_obj<String>::__new(0,0);
 
       bool overwrite = false;

@@ -61,14 +61,14 @@ CppiaModule::~CppiaModule()
 
 void CppiaModule::link()
 {
-   DBGLOG("Resolve registered - super\n");
+   DBGLOG("Resolve registered - super" HX_LF);
    HaxeNativeClass::link();
    
-   DBGLOG("Resolve typeIds\n");
+   DBGLOG("Resolve typeIds" HX_LF);
    for(int t=0;t<types.size();t++)
       types[t]->link(*this);
 
-   DBGLOG("Resolve inherited atributes\n");
+   DBGLOG("Resolve inherited atributes" HX_LF);
    for(int i=0;i<classes.size();i++)
    {
       classes[i]->linkTypes();
@@ -127,7 +127,7 @@ CppiaClassInfo *CppiaModule::findClass( ::String inName)
 
 void CppiaModule::mark(hx::MarkContext *__inCtx)
 {
-   DBGLOG(" --- MARK --- \n");
+   DBGLOG(" --- MARK --- " HX_LF);
    HX_MARK_MEMBER(strings);
    for(int i=0;i<types.size();i++)
    {
@@ -205,8 +205,8 @@ int CppiaModule::findInterfaceSlot(const std::string &inName)
 void CppiaModule::where(CppiaExpr *e)
 {
    if (linkingClass && layout)
-      printf(" in %s::%p\n", linkingClass->name.c_str(), layout);
-   printf("   %s at %s:%d %s\n", e->getName(), e->filename, e->line, e->functionName);
+      printf(" in %s::%p" HX_LF, linkingClass->name.c_str(), layout);
+   printf("   %s at %s:%d %s" HX_LF, e->getName(), e->filename, e->line, e->functionName);
 }
 
 
@@ -303,7 +303,7 @@ public:
       booted = true;
       try
       {
-         DBGLOG("--- Boot --------------------------------------------\n");
+         DBGLOG("--- Boot --------------------------------------------" HX_LF);
          CppiaCtx *ctx = CppiaCtx::getCurrent();
          cppia->boot(ctx);
       }
@@ -324,7 +324,7 @@ public:
          try
          {
             //__hxcpp_enable(false);
-            DBGLOG("--- Run --------------------------------------------\n");
+            DBGLOG("--- Run --------------------------------------------" HX_LF);
             CppiaCtx *ctx = CppiaCtx::getCurrent();
             ctx->runVoid(cppia->main);
             if (ctx->exception)
@@ -386,12 +386,12 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
 
       int typeCount = stream.getAsciiInt();
       cppia.types.resize(typeCount);
-      DBGLOG("Type count : %d\n", typeCount);
+      DBGLOG("Type count : %d" HX_LF, typeCount);
       for(int t=0;t<typeCount;t++)
          cppia.types[t] = new TypeData(stream.readString());
 
       int classCount = stream.getAsciiInt();
-      DBGLOG("Class count : %d\n", classCount);
+      DBGLOG("Class count : %d" HX_LF, classCount);
 
       if (stream.binary)
       {
@@ -411,7 +411,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
       tok = stream.getToken();
       if (tok=="MAIN")
       {
-         DBGLOG("Main...\n");
+         DBGLOG("Main..." HX_LF);
          cppia.main = new ScriptCallable(createCppiaExpr(stream));
          cppia.main->className = "cppia";
          cppia.main->functionName = "__cppia_main";
@@ -476,7 +476,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
    if (!error.raw_ptr())
       try
       {
-         DBGLOG("Link...\n");
+         DBGLOG("Link..." HX_LF);
          cppia.link();
       }
       catch(const char *errorString)
@@ -490,7 +490,7 @@ CppiaLoadedModule LoadCppia(const unsigned char *inData, int inDataLength)
       if (!error.raw_ptr())
          try
          {
-            DBGLOG("Compile...\n");
+            DBGLOG("Compile..." HX_LF);
             cppia.compile();
          }
          catch(const char *errorString)

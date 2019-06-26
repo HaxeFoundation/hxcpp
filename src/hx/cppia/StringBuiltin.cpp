@@ -186,7 +186,7 @@ struct CharAtExpr : public StringExpr
    }
    int runInt(CppiaCtx *ctx)
    {
-      //printf("Char code at %d INT\n", CODE);
+      //printf("Char code at %d INT" HX_LF, CODE);
       String val = strVal->runString(ctx);
       BCR_CHECK;
       int idx = a0->runInt(ctx);

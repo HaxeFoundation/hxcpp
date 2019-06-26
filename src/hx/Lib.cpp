@@ -52,7 +52,7 @@ Module hxLoadLibrary(String inLib)
    if (gLoadDebug)
    {
       if (result)
-         printf("Loaded module : %S.\n", inLib.__WCStr());
+         printf("Loaded module : %S." HX_LF, inLib.__WCStr());
    }
    return result;
 }
@@ -82,14 +82,14 @@ Module hxLoadLibrary(String inLib)
    {
 #ifdef HX_WINRT
       if (result)
-         WINRT_LOG("Loaded : %s.\n", inLib.__CStr());
+         WINRT_LOG("Loaded : %s." HX_LF, inLib.__CStr());
       else
-         WINRT_LOG("Error loading library: (%s) %s\n", inLib.__CStr(), dlerror());
+         WINRT_LOG("Error loading library: (%s) %s" HX_LF, inLib.__CStr(), dlerror());
 #else
       if (result)
-         printf("Loaded : %s.\n", inLib.__CStr());
+         printf("Loaded : %s." HX_LF, inLib.__CStr());
       else
-         printf("Error loading library: (%s) %s\n", inLib.__CStr(), dlerror());
+         printf("Error loading library: (%s) %s" HX_LF, inLib.__CStr(), dlerror());
 #endif
    }
    return result;
@@ -226,7 +226,7 @@ static String GetFileContents(String inFile)
 #endif
    if (!file)
    {
-      // printf("Could not open %S\n", inFile.__s);
+      // printf("Could not open %S" HX_LF, inFile.__s);
       return null();
    }
 
@@ -250,7 +250,7 @@ static String FindHaxelib(String inLib)
 {
    bool loadDebug = getenv("HXCPP_LOAD_DEBUG");
 
-   // printf("FindHaxelib %S\n", inLib.__s);
+   // printf("FindHaxelib %S" HX_LF, inLib.__s);
 
    String haxepath;
    hx::strbuf convertBuf;
@@ -260,13 +260,13 @@ static String FindHaxelib(String inLib)
    if ( (stat(".haxelib",&s)==0 && (s.st_mode & S_IFDIR) ) )
       haxepath = HX_CSTRING(".haxelib");
    if (loadDebug)
-      printf( haxepath.length ? "Found local .haxelib\n" : "No local .haxelib\n");
+      printf( haxepath.length ? "Found local .haxelib" HX_LF : "No local .haxelib" HX_LF);
 
    if (haxepath.length==0)
    {
       haxepath = GetEnv("HAXELIB_PATH");
       if (loadDebug)
-         printf("HAXELIB_PATH env:%s\n", haxepath.out_str(&convertBuf));
+         printf("HAXELIB_PATH env:%s" HX_LF, haxepath.out_str(&convertBuf));
    }
 
    if (haxepath.length==0)
@@ -278,14 +278,14 @@ static String FindHaxelib(String inLib)
        #endif
        haxepath = GetFileContents(home);
        if (loadDebug)
-          printf("HAXEPATH home:%s\n", haxepath.out_str(&convertBuf));
+          printf("HAXEPATH home:%s" HX_LF, haxepath.out_str(&convertBuf));
    }
 
    if (haxepath.length==0)
    {
       haxepath = GetEnv("HAXEPATH");
       if (loadDebug)
-         printf("HAXEPATH env:%s\n", haxepath.out_str(&convertBuf));
+         printf("HAXEPATH env:%s" HX_LF, haxepath.out_str(&convertBuf));
       if (haxepath.length>0)
       {
          haxepath += HX_CSTRING("/lib");
@@ -293,12 +293,12 @@ static String FindHaxelib(String inLib)
    }
 
    if (loadDebug)
-      printf("HAXEPATH dir:%s\n", haxepath.out_str(&convertBuf));
+      printf("HAXEPATH dir:%s" HX_LF, haxepath.out_str(&convertBuf));
 
    if (haxepath.length==0)
    {
        haxepath = GetFileContents(HX_CSTRING("/etc/.haxepath"));
-       if (loadDebug) printf("HAXEPATH etc:%s\n", haxepath.out_str(&convertBuf));
+       if (loadDebug) printf("HAXEPATH etc:%s" HX_LF, haxepath.out_str(&convertBuf));
    }
 
    if (haxepath.length==0)
@@ -308,7 +308,7 @@ static String FindHaxelib(String inLib)
       #else
       haxepath = HX_CSTRING("/usr/lib/haxe/lib");
       #endif
-       if (loadDebug) printf("HAXEPATH default:%s\n", haxepath.out_str(&convertBuf));
+       if (loadDebug) printf("HAXEPATH default:%s" HX_LF, haxepath.out_str(&convertBuf));
    }
 
    String dir = haxepath + HX_CSTRING("/") + inLib + HX_CSTRING("/");
@@ -316,7 +316,7 @@ static String FindHaxelib(String inLib)
 
    String dev = dir + HX_CSTRING(".dev");
    String path = GetFileContents(dev);
-   if (loadDebug) printf("Read dev location from file :%s, got %s\n", dev.out_str(&convertBuf), path.out_str(&convertBuf1));
+   if (loadDebug) printf("Read dev location from file :%s, got %s" HX_LF, dev.out_str(&convertBuf), path.out_str(&convertBuf1));
    if (path.length==0)
    {
       path = GetFileContents(dir + HX_CSTRING(".current"));
@@ -476,7 +476,7 @@ Dynamic __loadprim(String inLib, String inPrim,int inArgCount)
       }
    }
 
-   printf("Primitive not found : %s\n", full_name.__CStr() );
+   printf("Primitive not found : %s" HX_LF, full_name.__CStr() );
    return null();
 }
 
@@ -486,7 +486,7 @@ void *__hxcpp_get_proc_address(String inLib, String inPrim,bool ,bool inQuietFai
       return (*sgRegisteredPrims)[inPrim.__CStr()];
 
    if (!inQuietFail)
-      printf("Primitive not found : %s\n", inPrim.__CStr() );
+      printf("Primitive not found : %s" HX_LF, inPrim.__CStr() );
    return 0;
 }
 
@@ -565,11 +565,11 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
    if (!module && gLoadDebug)
    {
       #ifdef HX_WINRT
-      WINRT_LOG("Searching for %s...\n", inLib.out_str(&convertBuf));
+      WINRT_LOG("Searching for %s..." HX_LF, inLib.out_str(&convertBuf));
       #elif defined(ANDROID)
        __android_log_print(ANDROID_LOG_INFO, "loader", "Searching for %s...", module_name.out_str(&convertBuf));
       #else
-      printf("Searching for %s...\n", inLib.out_str(&convertBuf));
+      printf("Searching for %s..." HX_LF, inLib.out_str(&convertBuf));
       #endif
    }
 
@@ -593,9 +593,9 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
          if (gLoadDebug)
          {
             #ifdef HX_WINRT
-            WINRT_LOG(" try %s...\n", testPath.out_str(&convertBuf));
+            WINRT_LOG(" try %s..." HX_LF, testPath.out_str(&convertBuf));
             #elif !defined(ANDROID)
-            printf(" try %s...\n", testPath.out_str(&convertBuf));
+            printf(" try %s..." HX_LF, testPath.out_str(&convertBuf));
             #else
             __android_log_print(ANDROID_LOG_INFO, "loader", "Try %s", testPath.out_str(&convertBuf));
             #endif
@@ -606,9 +606,9 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
             if (gLoadDebug)
             {
                #ifdef HX_WINRT
-               WINRT_LOG("Found %s\n", testPath.out_str(&convertBuf));
+               WINRT_LOG("Found %s" HX_LF, testPath.out_str(&convertBuf));
                #elif !defined(ANDROID)
-               printf("Found %s\n", testPath.out_str(&convertBuf));
+               printf("Found %s" HX_LF, testPath.out_str(&convertBuf));
                #else
                __android_log_print(ANDROID_LOG_INFO, "loader", "Found %s", testPath.out_str(&convertBuf));
                #endif
@@ -627,11 +627,11 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
          {
             String testPath  = haxelibPath + HX_CSTRING("/ndll/") + bin + HX_CSTRING("/") + inLib + extension;
             if (gLoadDebug)
-               printf(" try %s...\n", testPath.out_str(&convertBuf));
+               printf(" try %s..." HX_LF, testPath.out_str(&convertBuf));
             module = hxLoadLibrary(testPath);
             if (module && gLoadDebug)
             {
-               printf("Found %s\n", testPath.out_str(&convertBuf));
+               printf("Found %s" HX_LF, testPath.out_str(&convertBuf));
             }
          }
       }
@@ -673,7 +673,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
        __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not find primitive %s in %p",
         full_name.__CStr(), module);
       #else
-      fprintf(stderr,"Could not find primitive %s.\n", full_name.__CStr());
+      fprintf(stderr,"Could not find primitive %s." HX_LF, full_name.__CStr());
       #endif
       return 0;
    }
@@ -688,7 +688,7 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
       __android_log_print(ANDROID_LOG_ERROR, "loader", "Could not identify primitive %s in %s",
         full_name.__CStr(), inLib.__CStr() );
       #else
-      fprintf(stderr,"Could not identify primitive %s in %s\n", full_name.__CStr(),inLib.__CStr());
+      fprintf(stderr,"Could not identify primitive %s in %s" HX_LF, full_name.__CStr(),inLib.__CStr());
       #endif
    }
 
@@ -762,7 +762,7 @@ int __hxcpp_register_prim(const char *inName,void *inProc)
    void * &proc = (*sgRegisteredPrims)[inName];
    if (proc)
    {
-      printf("Warning : duplicate symbol %s\n", inName);
+      printf("Warning : duplicate symbol %s" HX_LF, inName);
    }
    proc = inProc;
    return 0;

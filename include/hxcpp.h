@@ -98,6 +98,12 @@
 typedef char HX_CHAR;
 
 
+#ifdef HX_WINDOWS
+  #define HX_LF "\r\n"
+#else
+  #define HX_LF "\n"
+#endif
+
 
 #if (defined(HXCPP_DEBUG) || defined(HXCPP_DEBUGGER)) && !defined HXCPP_CHECK_POINTER
 #define HXCPP_CHECK_POINTER
@@ -105,7 +111,7 @@ typedef char HX_CHAR;
 
 #ifdef HX_WINRT
 
-#define WINRT_LOG(fmt, ...) {char buf[1024];sprintf_s(buf,1024,"****LOG: %s(%d): %s \n    [" fmt "]\n",__FILE__,__LINE__,__FUNCTION__, __VA_ARGS__);OutputDebugString(buf);}
+#define WINRT_LOG(fmt, ...) {char buf[1024];sprintf_s(buf,1024,"****LOG: %s(%d): %s " HX_LF "    [" fmt "]" HX_LF,__FILE__,__LINE__,__FUNCTION__, __VA_ARGS__);OutputDebugString(buf);}
 #define WINRT_PRINTF(fmt, ...) {char buf[2048];sprintf_s(buf,2048,fmt,__VA_ARGS__);OutputDebugString(buf);}
 
 #endif

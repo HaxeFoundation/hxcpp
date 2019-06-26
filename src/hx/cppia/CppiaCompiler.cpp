@@ -12,40 +12,40 @@ namespace hx
 
 static void test_func(CppiaCtx *inCtx)
 {
-   printf("Test!\n");
+   printf("Test!" HX_LF);
 }
 
 static void SLJIT_CALL my_trace_func(const char *inText)
 {
-   printf("trace: %s\n", inText);
+   printf("trace: %s" HX_LF, inText);
 }
 static void SLJIT_CALL my_trace_strings(const char *inText, const char *inValue)
 {
-   printf("%s%s\n", inText, inValue);
+   printf("%s%s" HX_LF, inText, inValue);
 }
 static void SLJIT_CALL my_trace_string(const char *inText, String *inValue)
 {
-   printf("%s%s\n", inText, inValue->out_str());
+   printf("%s%s" HX_LF, inText, inValue->out_str());
 }
 
 static void SLJIT_CALL my_trace_ptr_func(const char *inText, hx::Object **inPtr)
 {
-   printf("%s = %p\n",inText, inPtr);
-   //printf("*= %s\n", (*inPtr)->toString().out_str());
+   printf("%s = %p" HX_LF,inText, inPtr);
+   //printf("*= %s" HX_LF, (*inPtr)->toString().out_str());
    //*(int *)0=0;
 }
 static void SLJIT_CALL my_trace_int_func(const char *inText, int inValue)
 {
-   printf("%s = %d\n",inText, inValue);
+   printf("%s = %d" HX_LF,inText, inValue);
 }
 static void SLJIT_CALL my_trace_float_func(const char *inText, double *inValue)
 {
-   printf("%s = %f\n",inText, *inValue);
+   printf("%s = %f" HX_LF,inText, *inValue);
 }
 
 static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
 {
-   printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().out_str() : "NULL" );
+   printf("%s = %s" HX_LF,inText, inPtr ? inPtr->__ToString().out_str() : "NULL" );
 }
 
 static hx::Object *SLJIT_CALL intToObj(int inVal)
@@ -924,7 +924,7 @@ public:
 
 
             default:
-               printf("TODO - other to string\n");
+               printf("TODO - other to string" HX_LF);
          }
       }
       else if (inToType==etFloat)

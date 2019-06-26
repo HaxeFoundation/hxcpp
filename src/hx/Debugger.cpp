@@ -747,7 +747,7 @@ private:
         int hash = Hash(0,className);
         hash = Hash(hash,".");
         hash = Hash(hash,functionName.c_str());
-        //printf("%s.%s -> %08x\n", className, functionName.c_str(), hash );
+        //printf("%s.%s -> %08x" HX_LF, className, functionName.c_str(), hash );
         mBreakpoints[toCopy->mBreakpointCount].hash = hash;
         calcCombinedHash();
 #else
@@ -791,7 +791,7 @@ private:
 
       mNotInAnyFileLine = ~allFileLine;
       mNotInAnyClassFunc = ~allClassFunc;
-      //printf("Combined mask -> %08x %08x\n", mNotInAnyFileLine, mNotInAnyClassFunc);
+      //printf("Combined mask -> %08x %08x" HX_LF, mNotInAnyFileLine, mNotInAnyClassFunc);
    }
 #endif
 

@@ -513,7 +513,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
                break;
       
             default: ;
-               printf("make setter %d\n", op);
+               printf("make setter %d" HX_LF, op);
                throw "setter not implemented";
          }
 

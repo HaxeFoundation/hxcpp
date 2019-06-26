@@ -274,6 +274,7 @@ void __hxcpp_stdlibs_boot()
    // This prevents print from converting LF into CRLF on Windows.
    #ifdef HX_WINDOWS
    setmode(_fileno(stdout), _O_BINARY);
+   setmode(_fileno(stderr), _O_BINARY);
    #endif
 
    // I think this does more harm than good.
@@ -294,11 +295,7 @@ void __trace(Dynamic inObj, Dynamic info)
    hx::strbuf convertBuf;
    if (info==null())
    {
-      #ifdef HX_WINDOWS
-      PRINTF("?? %s\r\n", text.raw_ptr() ? text.out_str(&convertBuf) : "null");
-      #else
-      PRINTF("?? %s\n", text.raw_ptr() ? text.out_str(&convertBuf) : "null");
-      #endif
+      PRINTF("?? %s" HX_LF, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
    }
    else
    {
@@ -306,11 +303,7 @@ void __trace(Dynamic inObj, Dynamic info)
       int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
 
       hx::strbuf convertBuf;
-      #ifdef HX_WINDOWS
-      PRINTF("%s:%d: %s\r\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
-      #else
-      PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
-      #endif
+      PRINTF("%s:%d: %s" HX_LF, filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
    }
 
 }
@@ -593,11 +586,7 @@ void __hxcpp_print_string(const String &inV)
 void __hxcpp_println_string(const String &inV)
 {
    hx::strbuf convertBuf;
-   #ifdef HX_WINDOWS
-   PRINTF("%s\r\n", inV.out_str(&convertBuf));
-   #else
-   PRINTF("%s\n", inV.out_str(&convertBuf));
-   #endif
+   PRINTF("%s" HX_LF, inV.out_str(&convertBuf));
 }
 
 

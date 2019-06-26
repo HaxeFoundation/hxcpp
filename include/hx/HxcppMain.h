@@ -98,7 +98,7 @@
          #ifdef HX_WIN_MAIN
          MessageBoxA(0,  e==null() ? "null" : e->toString().__CStr(), "Error", 0);
          #else
-         printf("Error : %s\n",e==null() ? "null" : e->toString().__CStr());
+         printf("Error : %s" HX_LF,e==null() ? "null" : e->toString().__CStr());
          #endif
          return -1;
       }

@@ -216,10 +216,10 @@ public:
 
          if ( have != result )
          {
-             printf("Bad string hash for %s\n", __s );
-             printf(" Is %08x\n", result );
-             printf(" Baked %08x\n", have );
-             printf(" Mark %08x\n",   ((unsigned int *)__s)[-1]  );
+             printf("Bad string hash for %s" HX_LF, __s );
+             printf(" Is %08x" HX_LF, result );
+             printf(" Baked %08x" HX_LF, have );
+             printf(" Mark %08x" HX_LF,   ((unsigned int *)__s)[-1]  );
          }
          #endif
          if (__s[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT)

@@ -132,7 +132,7 @@ public:
         for (i=namesStashed; i<size; i++) {
           stash->names->push_back(names.at(i));
         }
-        //printf("Stash pushed %d names, %d\n", (size-namesStashed), stash->names->size());
+        //printf("Stash pushed %d names, %d" HX_LF, (size-namesStashed), stash->names->size());
         namesStashed = names.size();
       }
 
@@ -173,7 +173,7 @@ public:
       front = &stashed.front();
       gStashMutex.Unlock();
 
-      //printf(" -- dumped stash, allocs=%d, alloc[max]=%d\n", front->allocations->size(), front->allocations->size()>0 ? front->allocations->at(front->allocations->size()-1) : 0);
+      //printf(" -- dumped stash, allocs=%d, alloc[max]=%d" HX_LF, front->allocations->size(), front->allocations->size()>0 ? front->allocations->at(front->allocations->size()-1) : 0);
 
       return front;
     }
@@ -213,9 +213,9 @@ public:
                  vtt==vtFunction ||
                  vtt==vtEnum ||
                  vtt==vtAbstractBase) {
-          //printf("About to resolve...\n");
+          //printf("About to resolve..." HX_LF);
           type = _last_obj->__GetClass()->mName; //__CStr();
-          //printf("Updating last allocation %016lx type to %s\n", _last_obj, type);
+          //printf("Updating last allocation %016lx type to %s" HX_LF, _last_obj, type);
         }
       }
       alloc_mutex.Unlock();
@@ -240,13 +240,13 @@ public:
         if (telemetry) {
           telemetry->reclaim(obj_id);
           alloc_map.erase(exist);
-          //printf("Tracking collection %016lx, id=%016lx\n", obj, obj_id);
+          //printf("Tracking collection %016lx, id=%016lx" HX_LF, obj, obj_id);
         } else {
-          printf("HXT ERR: we shouldn't get: Telemetry lookup failed!\n");
+          printf("HXT ERR: we shouldn't get: Telemetry lookup failed!" HX_LF);
         }
       } else {
         // Ignore, assume object was already reclaimed
-        //printf("HXT ERR: we shouldn't get: Reclaim a non-tracked object %016lx, id=%016lx -- was there an object ID collision?\n", obj, obj_id);
+        //printf("HXT ERR: we shouldn't get: Reclaim a non-tracked object %016lx, id=%016lx -- was there an object ID collision?" HX_LF, obj, obj_id);
       }
     }
 
@@ -420,7 +420,7 @@ int hx::Telemetry::ComputeCallStackId() {
     int i=0;
     while (i<size) {
         int name_id = callstack.at(i++);
-        //printf("Finding child with id=%d, asime now %#010x\n", name_id, asime);
+        //printf("Finding child with id=%d, asime now %#010x" HX_LF, name_id, asime);
         std::map<int, AllocStackIdMapEntry*>::iterator lb = asime->children.lower_bound(name_id);
          
         if (lb != asime->children.end() && !(asime->children.key_comp()(name_id, lb->first)))
@@ -441,11 +441,11 @@ int hx::Telemetry::ComputeCallStackId() {
         allocStacks.push_back(size);
         int i = size-1;
         while (i>=0) allocStacks.push_back(callstack.at(i--));
-        //printf("new callstackid %d\n", allocStackIdNext);
+        //printf("new callstackid %d" HX_LF, allocStackIdNext);
         allocStackIdNext++;
     } else {
         stackId = asime->terminationStackId;
-        //printf("existing callstackid %d\n", stackId);
+        //printf("existing callstackid %d" HX_LF, stackId);
     }
 
     return stackId;
@@ -496,7 +496,7 @@ void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
 #ifdef HXCPP_TELEMETRY_DEBUG
     std::map<void*, hx::Telemetry*>::iterator exist = alloc_map.find(obj);
     if (exist != alloc_map.end()) {
-      printf("HXT ERR: Object id collision! at on %016lx, id=%016lx\n", obj, obj_id);
+      printf("HXT ERR: Object id collision! at on %016lx, id=%016lx" HX_LF, obj, obj_id);
       throw "uh oh";
       alloc_mutex.Unlock();
       return;
@@ -522,7 +522,7 @@ void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
 
     //__hxcpp_set_hxt_finalizer(obj, (void*)Telemetry::HXTReclaim);
 
-    //printf("Tracking alloc %s at %016lx, id=%016lx, s=%d for telemetry %016lx, ts=%f\n", type, obj, obj_id, inSize, this, __hxcpp_time_stamp());
+    //printf("Tracking alloc %s at %016lx, id=%016lx, s=%d for telemetry %016lx, ts=%f" HX_LF, type, obj, obj_id, inSize, this, __hxcpp_time_stamp());
 
     alloc_mutex.Unlock();
 }
@@ -544,13 +544,13 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
       t->allocation_data->push_back(new_obj_id);
       t->allocation_data->push_back(new_size);
 
-      //printf("Object at %016lx moving to %016lx, new_size = %d bytes\n", old_obj, new_obj, new_size);
+      //printf("Object at %016lx moving to %016lx, new_size = %d bytes" HX_LF, old_obj, new_obj, new_size);
 
       // HXT debug: Check for id collision
 #ifdef HXCPP_TELEMETRY_DEBUG
       std::map<void*, hx::Telemetry*>::iterator exist_new = alloc_map.find(new_obj);
       if (exist_new != alloc_map.end()) {
-        printf("HXT ERR: Object id collision (reloc)! at on %016lx, id=%016lx\n", (unsigned long)new_obj, (unsigned long)new_obj_id);
+        printf("HXT ERR: Object id collision (reloc)! at on %016lx, id=%016lx" HX_LF, (unsigned long)new_obj, (unsigned long)new_obj_id);
         throw "uh oh";
       }
 #endif
@@ -558,7 +558,7 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
       //__hxcpp_set_hxt_finalizer(old_obj, (void*)0); // remove old finalizer -- should GCInternal.InternalRealloc do this?
       HXTReclaimInternal(old_obj); // count old as reclaimed
     } else {
-      //printf("Not tracking re-alloc of untracked %016lx, id=%016lx\n", old_obj, old_obj_id);
+      //printf("Not tracking re-alloc of untracked %016lx, id=%016lx" HX_LF, old_obj, old_obj_id);
       alloc_mutex.Unlock();
       return;
     }
@@ -566,7 +566,7 @@ void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
     alloc_map[new_obj] = this;
     //__hxcpp_set_hxt_finalizer(new_obj, (void*)HXTReclaim);
 
-    //printf("Tracking re-alloc from %016lx, id=%016lx to %016lx, id=%016lx at %f\n", old_obj, old_obj_id, new_obj, new_obj_id, __hxcpp_time_stamp());
+    //printf("Tracking re-alloc from %016lx, id=%016lx to %016lx, id=%016lx at %f" HX_LF, old_obj, old_obj_id, new_obj, new_obj_id, __hxcpp_time_stamp());
 
     alloc_mutex.Unlock();
 }

@@ -325,7 +325,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       bool is_new = bucket==0;
 #endif
       mask = inNewCount-1;
-      //printf("expand %d -> %d\n",bucketCount, inNewCount);
+      //printf("expand %d -> %d" HX_LF,bucketCount, inNewCount);
       bucket = (Element **)InternalRealloc(bucket,inNewCount*sizeof(ELEMENT *));
       HX_OBJ_WB_GET(this, bucket);
       //for(int b=bucketCount;b<inNewCount;b++)
@@ -368,7 +368,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    void compact()
    {
       int newSize = bucketCount>>1;
-      // printf("compact -> %d\n", newSize);
+      // printf("compact -> %d" HX_LF, newSize);
       mask = newSize-1;
       for(int b=newSize; b<bucketCount; b++)
       {
@@ -725,7 +725,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
    void __Visit(hx::VisitContext *__inCtx)
    {
-      //printf(" visit hash %p\n", this);
+      //printf(" visit hash %p" HX_LF, this);
       HX_VISIT_ARRAY(bucket);
       for(int b=0;b<bucketCount;b++)
       {

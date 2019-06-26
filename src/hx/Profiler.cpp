@@ -158,7 +158,7 @@ public:
 
         for (int i = 0; i < size; i++) {
             ResultsEntry &re = results[i];
-            PROFILE_PRINT("%s %.2f%%/%.2f%%\n", re.fullName, re.total * scale,
+            PROFILE_PRINT("%s %.2f%%/%.2f%%" HX_LF, re.fullName, re.total * scale,
                           re.self * scale);
             if (re.children.size() == 1) {
                 continue;
@@ -167,7 +167,7 @@ public:
             int childrenSize = re.children.size();
             for (int j = 0; j < childrenSize; j++) {
                 ChildEntry &ce = re.children[j];
-                PROFILE_PRINT("   %s %.1f%%\n", ce.fullName,
+                PROFILE_PRINT("   %s %.1f%%" HX_LF, ce.fullName,
                               (100.0 * ce.self) / re.childrenPlusSelf);
             }
         }

@@ -167,7 +167,7 @@ CppiaExpr *CppiaVar::createAccess(CppiaExpr *inSrc)
 
 void CppiaVar::linkVarTypes(CppiaModule &cppia, int &ioOffset)
 {
-   DBGLOG("linkVarTypes %p\n",dynamicFunction);
+   DBGLOG("linkVarTypes %p" HX_LF,dynamicFunction);
    if (dynamicFunction)
    {
       //dynamicFunction->linkTypes(cppia);

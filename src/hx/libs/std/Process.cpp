@@ -247,7 +247,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
       CloseHandle(oread);
       CloseHandle(eread);
       CloseHandle(iwrite);
-      //printf("Cmd %s\n",val_string(cmd));
+      //printf("Cmd %s" HX_LF,val_string(cmd));
       PROCESS_INFORMATION pinf;
       memset(&pinf,0,sizeof(pinf));
       if( !CreateProcessW(NULL,(wchar_t *)name,NULL,NULL,TRUE,0,NULL,NULL,&sinf,&pinf) )
@@ -310,7 +310,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
       dup2(output[1],1);
       dup2(error[1],2);
       execvp(argv[0],(char* const*)&argv[0]);
-      fprintf(stderr,"Command not found : %S\n",cmd.wchar_str());
+      fprintf(stderr,"Command not found : %S" HX_LF,cmd.wchar_str());
       exit(1);
    }
 

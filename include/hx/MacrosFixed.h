@@ -195,7 +195,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void SetTopOfStack(int *inTopOfStack,bool);
       } \
       catch ( ::Dynamic e){ \
          __hx_dump_stack(); \
-         printf("Error : %s\n",e->toString().__CStr()); \
+         printf("Error : %s" HX_LF,e->toString().__CStr()); \
          return -1; \
       } \
       return 0; \
@@ -303,7 +303,7 @@ extern "C" EXPORT_EXTRA int OspMain (int argc, char* pArgv[]){ \
         } \
         catch ( ::Dynamic e){ \
                 __hx_dump_stack(); \
-                printf("Error : %s\n",e->toString().__CStr()); \
+                printf("Error : %s" HX_LF,e->toString().__CStr()); \
                 return -1; \
         } \
         return 0; \
@@ -325,7 +325,7 @@ int main(int argc,char **argv){ \
 	} \
 	catch ( ::Dynamic e){ \
 		__hx_dump_stack(); \
-		printf("Error : %s\n",e->toString().__CStr()); \
+		printf("Error : %s" HX_LF,e->toString().__CStr()); \
       return -1; \
 	} \
 	return 0; \
