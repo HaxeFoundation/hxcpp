@@ -10,6 +10,17 @@ class ClientExtends extends HostBase implements IClientInterface implements ICli
       return getVal()==1.25;
    }
 
+   public function testOne()
+   {
+      return getOne()==1;
+   }
+
+   public function testOneExtended()
+   {
+      return getOne()==111;
+   }
+
+
    #if (hxcpp_api_level>=400)
    public function testPointers() : Bool
    {
@@ -39,4 +50,13 @@ class ClientExtends extends HostBase implements IClientInterface implements ICli
    // IClientHostInterface
    public function whoAreYou() return "ClientExtends";
 
+   public function getOne() return 1;
+
+   public function getTwo() return 2;
+
+   public function getThree() return 3;
+
+   override public function update() return "ClientExtends update";
 }
+
+

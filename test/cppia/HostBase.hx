@@ -35,12 +35,17 @@ class HostBase implements IHostInterface
       #end
    }
 
+   public function testUpdateOverride() : Bool
+   {
+      return update()=="ClientExtends2 update";
+   }
 
 
    public function getVal() return floatVal;
 
    public function getGeneration() return 0;
 
+   public function update() return "HostBase update";
 
    // IHostInteface 
    public function hostImplOnly(i:Int, s:String, f:Float) : String return i+s+f;
