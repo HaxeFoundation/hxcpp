@@ -6,6 +6,7 @@
 #ifdef HX_WINDOWS
 #include <windows.h>
 #include <io.h>
+#include <fcntl.h>
 #elif defined(__unix__) || defined(__APPLE__)
 #include <sys/time.h>
 #ifndef EMSCRIPTEN
@@ -270,6 +271,11 @@ void __hxcpp_stdlibs_boot()
    setlocale(LC_ALL, "");
    setlocale(LC_NUMERIC, "C");
 
+   // This prevents print from converting LF into CRLF on Windows.
+   #ifdef HX_WINDOWS
+   setmode(_fileno(stdout), _O_BINARY);
+   #endif
+
    // I think this does more harm than good.
    //  It does not cause fread to return immediately - as perhaps desired.
    //  But it does cause some new-line characters to be lost.
@@ -288,7 +294,11 @@ void __trace(Dynamic inObj, Dynamic info)
    hx::strbuf convertBuf;
    if (info==null())
    {
+      #ifdef HX_WINDOWS
+      PRINTF("?? %s\r\n", text.raw_ptr() ? text.out_str(&convertBuf) : "null");
+      #else
       PRINTF("?? %s\n", text.raw_ptr() ? text.out_str(&convertBuf) : "null");
+      #endif
    }
    else
    {
@@ -296,8 +306,11 @@ void __trace(Dynamic inObj, Dynamic info)
       int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
 
       hx::strbuf convertBuf;
-      //PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
+      #ifdef HX_WINDOWS
+      PRINTF("%s:%d: %s\r\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
+      #else
       PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
+      #endif
    }
 
 }
@@ -580,7 +593,11 @@ void __hxcpp_print_string(const String &inV)
 void __hxcpp_println_string(const String &inV)
 {
    hx::strbuf convertBuf;
+   #ifdef HX_WINDOWS
+   PRINTF("%s\r\n", inV.out_str(&convertBuf));
+   #else
    PRINTF("%s\n", inV.out_str(&convertBuf));
+   #endif
 }
 
 
