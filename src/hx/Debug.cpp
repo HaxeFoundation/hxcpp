@@ -107,6 +107,32 @@ void CriticalError(const String &inErr, bool inAllowFixup)
 }
 
 
+#ifdef HXCPP_SEH_THROW
+class hxSehException : public hx::Object
+{
+public:
+   int code;
+
+   inline void *operator new( size_t inSize )
+   {
+      return hx::InternalCreateConstBuffer(0,(int)inSize);
+   }
+   void operator delete( void *) { }
+
+   hxSehException(int inCode) : code(inCode) { }
+
+   String __ToString() const { return  HX_CSTRING("hxSehException"); }
+
+   int __GetType() const { return vtObject; }
+};
+
+static hx::Object *sException = new hxSehException(1);
+
+void __cdecl hxSehFunction(unsigned int, struct _EXCEPTION_POINTERS* )
+{
+   hx::Throw(sException);
+}
+#endif
 
 
 
@@ -229,10 +255,18 @@ void StackContext::onThreadAttach()
    if (mProfiler)
       profAttach(mProfiler,this);
    #endif
+
+   #ifdef HXCPP_SEH_THROW
+   mOldSehFunc = _set_se_translator( hxSehFunction );
+   #endif
 }
 
 void StackContext::onThreadDetach()
 {
+   #ifdef HXCPP_THROW_SEH
+   _set_se_translator( mOldSehFunc );
+   #endif
+
    #ifdef HXCPP_DEBUGGER
    if (mDebugger)
       dbgCtxDetach(mDebugger);
