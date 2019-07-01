@@ -104,7 +104,8 @@ void CppiaModule::registerDebugger()
    #ifdef HXCPP_DEBUGGER
    for(int i=0;i<classes.size();i++)
    {
-      addScriptableClass( String::makeConstString(classes[i]->name.c_str()) );
+      String scriptable(classes[i]->name.c_str());
+      addScriptableClass( scriptable.makePermanent().utf8_str() );
    }
 
    for(hx::UnorderedSet<int>::const_iterator i = allFileIds.begin(); i!=allFileIds.end(); ++i)

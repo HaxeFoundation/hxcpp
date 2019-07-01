@@ -93,6 +93,8 @@ public:
    String(hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
    inline String(const ::cpp::Variant &inRHS) { *this = inRHS.asString(); }
    template<typename T>
+   inline String( const ::cpp::Pointer<T> &inRHS) { fromPointer(inRHS.ptr); }
+   template<typename T>
    inline String( const hx::Native<T> &n ) { fromPointer(n.ptr); }
 
    static String emptyString;

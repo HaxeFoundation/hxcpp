@@ -517,7 +517,9 @@ public:
    inline ELEM_ & __unsafe_set(int inIndex, ELEM_ inValue)
    {
       if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this, hx::PointerOf(inValue)); }
-      return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
+      ELEM_ &elem = *(ELEM_*)(mBase + inIndex*sizeof(ELEM_));
+      elem = inValue;
+      return elem;
    }
 
 
@@ -883,7 +885,7 @@ public:
 
    virtual void set(int inIndex, const cpp::Variant &inValue) { Item(inIndex) = ELEM_(inValue); }
    virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) {
-      ELEM_ &elem = *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = ELEM_(inValue);
+      ELEM_ &elem = *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_));
       elem = ELEM_(inValue);
       if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this,hx::PointerOf(elem)); }
    }

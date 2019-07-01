@@ -445,6 +445,9 @@ struct StackContext : public hx::ImmixAllocator
    }
    #endif
 
+   #ifdef HXCPP_SEH_THROW
+   _se_translator_function mOldSehFunc;
+   #endif
 
    StackContext();
    ~StackContext();

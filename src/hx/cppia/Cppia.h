@@ -254,7 +254,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    int argCount;
    int stackSize;
    bool hasDefaults;
-   
+
    std::vector<CppiaStackVar> args;
    std::vector<bool>          hasDefault;
    std::vector<CppiaConst>    initVals;
@@ -519,7 +519,7 @@ struct CppiaVar
    String           stringVal;
 
    void             *valPointer;
-   
+
 
    CppiaVar(bool inIsStatic);
    CppiaVar(CppiaFunction *inDynamicFunction);
@@ -790,6 +790,10 @@ public:
          ctx = inCtx;
          frame = (hx::StackFrame *)ctx->stackAlloc(sizeof(hx::StackFrame));
          frame->position = inPosition;
+         #ifdef HXCPP_DEBUGGER
+         frame->variables = 0;
+         frame->catchables = 0;
+         #endif
          inCtx->pushFrame(frame);
       }
       ~CppiaStackFrame()
@@ -997,7 +1001,7 @@ struct CrementPostDec
       inVal = Dynamic(Dynamic(inVal) - 1).mPtr;
       return result;
    }
- 
+
 };
 
 

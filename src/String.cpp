@@ -446,6 +446,9 @@ inline String TCopyString(const T *inString,int inLength)
       return String();
 
    #ifndef HX_SMART_STRINGS
+      if (inLength<0)
+         for(inLength=0; !inString[inLength]; inString++) { }
+
       if (sizeof(T)==1)
       {
          int len = 0;

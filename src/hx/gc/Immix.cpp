@@ -1435,7 +1435,7 @@ void GCCheckPointer(void *inPtr)
    #ifdef HXCPP_GC_NURSERY
    if (mark)
    #endif
-   if ( !(mark & HX_GC_CONST_ALLOC_MARK_BIT) && mark!=gByteMarkID  )
+   if ( !(mark & HX_GC_CONST_ALLOC_MARK_BIT) && (mark&FULL_MARK_BYTE_MASK)!=gByteMarkID  )
    {
       GCLOG("Old object access %p\n", inPtr);
       NullReference("Object", false);
