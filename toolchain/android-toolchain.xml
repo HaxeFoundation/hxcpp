@@ -119,7 +119,7 @@
   <flag value="-finline-limit=10000"/>
   <flag value="-DANDROID=ANDROID"/>
   <flag value="-DHX_ANDROID"/>
-  <flag value="${ANDROID_PLATFORM_DEFINE}"/>
+  <flag value="-D${ANDROID_PLATFORM_DEFINE}"/>
   <!-- todo <flag value="-Werror"/> -->
   <flag value="-Wa,--noexecstack"/>
   <flag value="-O2" unless="debug || HXCPP_OPTIMIZE_FOR_SIZE || HXCPP_OPTIMIZE_FOR_FAST"/>

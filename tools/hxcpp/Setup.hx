@@ -467,9 +467,10 @@ class Setup
 
          Log.info("", "\x1b[33;1mUsing newest Android NDK platform: " + best + "\x1b[0m");
          defines.set("PLATFORM", "android-" + best);
+         defines.set("PLATFORM_NUMBER", "" + best);
          androidPlatform = best;
       }
-      defines.set("ANDROID_PLATFORM_DEFINE", "-DHXCPP_ANDROID_PLATFORM=" + androidPlatform);
+      defines.set("ANDROID_PLATFORM_DEFINE", "HXCPP_ANDROID_PLATFORM=" + androidPlatform);
       if (Log.verbose) Log.println("");
    }
 

@@ -57,6 +57,7 @@
 <set name="LIBEXTRA" value="-x86" if="blackberry"/>
 <set name="LIBEXTRA" value="" if="blackberry" unless="simulator" />
 <set name="LIBEXTRA" value="-x86" if="HXCPP_X86" />
+<set name="LIBEXTRA" value="-x86_64" if="HXCPP_X86_64" />
 <set name="LIBEXTRA" value="-v7" if="HXCPP_ARMV7" unless="LIBEXTRA||linux" />
 <set name="LIBEXTRA" value="-64" if="HXCPP_ARM64" unless="LIBEXTRA||linux" />
 <set name="LIBEXTRA" value="-x86" if="tizen"/>

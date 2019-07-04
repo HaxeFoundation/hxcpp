@@ -1754,7 +1754,10 @@ class BuildTool
 
       else if (defines.exists("android"))
       {
-         defines.set("toolchain","android");
+         if(defines.exists('HXCPP_NDK20'))
+            defines.set("toolchain","android-HXCPP_NDK20");
+         else
+            defines.set("toolchain","android");
          defines.set("android","android");
          defines.set("BINDIR","Android");
 
