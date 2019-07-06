@@ -1,28 +1,33 @@
 <xml>
-
-<setup name="androidNdk" />
     
 <!-- Set architecture -->
 <section if="HXCPP_X86">
   <set name="ARCH" value="-x86" />
+  <set name="PLATFORM_NUMBER" value="16" />
   <set name="EXEPREFIX" value="i686-linux-android" />
 </section>
 
 <section if="HXCPP_X86_64">
   <set name="ARCH" value="-x86_64" />
+  <set name="PLATFORM_NUMBER" value="21" />
   <set name="EXEPREFIX" value="x86_64-linux-android" />
 </section>
 
 <section if="HXCPP_ARMV7">
   <set name="ARCH" value="-v7" />
+  <set name="PLATFORM_NUMBER" value="16" />
   <set name="EXEPREFIX" value="arm-linux-androideabi" />
 </section>
 
 <section if="HXCPP_ARM64">
   <set name="ARCH" value="-64"/>
+  <set name="PLATFORM_NUMBER" value="21" />
   <set name="EXEPREFIX" value="aarch64-linux-android" />
 </section>
 
+<set name="PLATFORM" value="android-${PLATFORM_NUMBER}" />
+<set name="ANDROID_PLATFORM_DEFINE" value="HXCPP_ANDROID_PLATFORM=${PLATFORM_NUMBER}" />
+     
 <path name="${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${ANDROID_HOST}/bin" />
 
 <set name="HXCPP_AR" value="arm-linux-androideabi-ar" />
@@ -58,7 +63,9 @@
   <flag value="-fpic"/>
   
   <!-- Warning Supression -->
-  <flag value="-Winvalid-offsetof"/>
+  <flag value="-Wno-invalid-offsetof" />
+  <flag value="-Wno-return-type-c-linkage" />
+  <flag value="-Wno-parentheses" />
   
 </compiler>
 

@@ -419,6 +419,21 @@ class Setup
       }
       catch(e:Dynamic) { }
 
+      if(defines.exists('NDKV20+')) {
+         Log.info([
+            "x86 Platform: 16",
+            "arm Platform: 16",
+            "x86_64 Platform: 21",
+            "arm_64 Platform: 21",
+            "Frameworks should set the minSdkVersion for each APK to these values."
+         ].join('\n'));
+      }
+      else {
+         globallySetThePlatform(root, defines);  
+      }
+   }
+   
+   private static function globallySetThePlatform(root:String, defines:Map<String,String>) {
       var androidPlatform = 5;
       if (!defines.exists("PLATFORM"))
       {
@@ -432,7 +447,7 @@ class Setup
             }
          }
       }
-
+      
       if (defines.exists("PLATFORM"))
       {
          var platform = defines.get("PLATFORM");
@@ -467,7 +482,6 @@ class Setup
 
          Log.info("", "\x1b[33;1mUsing newest Android NDK platform: " + best + "\x1b[0m");
          defines.set("PLATFORM", "android-" + best);
-         defines.set("PLATFORM_NUMBER", "" + best);
          androidPlatform = best;
       }
       defines.set("ANDROID_PLATFORM_DEFINE", "HXCPP_ANDROID_PLATFORM=" + androidPlatform);
