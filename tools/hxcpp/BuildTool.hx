@@ -1754,12 +1754,7 @@ class BuildTool
 
       else if (defines.exists("android"))
       {
-         if(defines.exists('NDKV20+')) {
-            defines.set("toolchain","android-toolchain-NDKV20+.xml");
-         }
-         else {
-            defines.set("toolchain","android");
-         }
+         defines.set("toolchain","android");
          defines.set("android","android");
          defines.set("BINDIR","Android");
 
