@@ -78,7 +78,7 @@ extern "C" {
 EXPORT void hx_set_loader(ResolveProc inProc)
 {
    #ifdef ANDROID
-   __android_log_print(ANDROID_LOG_INFO, "haxe plugin", "Got Load Proc %08x", inProc );
+   __android_log_print(ANDROID_LOG_INFO, "haxe plugin", "Got Load Proc %p", inProc );
    #endif
    sResolveProc = inProc;
 }
