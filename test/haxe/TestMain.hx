@@ -20,6 +20,8 @@ class TestMain {
       r.add(new TestStringHash());
       r.add(new TestObjectHash());
       r.add(new TestWeakHash());
+      r.add(new TestString());
+      
       #if cpp
       r.add(new native.TestFinalizer());
       #end
