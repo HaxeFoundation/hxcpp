@@ -317,6 +317,13 @@ String _hx_std_file_contents_string( String name )
    int len = ftell(file);
    if (len<0)
       file_error("file_ftell",name);
+   if (len==0)
+   {
+      fclose(file);
+      hx::ExitGCFreeZone();
+      return String::emptyString;
+   }
+
    fseek(file,0,SEEK_SET);
    buffer.resize(len);
    int p = 0;
