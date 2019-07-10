@@ -248,7 +248,7 @@ inline bool val_is_object(value inVal)
 class AutoGCBlocking
 {
 public:
-	AutoGCBlocking() : mLocked(true) { gc_enter_blocking(); }
+	AutoGCBlocking() : mLocked( gc_try_blocking() ) {  }
 	~AutoGCBlocking() { if (mLocked) gc_exit_blocking(); }
 	void Close() { if (mLocked) gc_exit_blocking(); mLocked = false; }
 

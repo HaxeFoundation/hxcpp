@@ -214,6 +214,8 @@ void GCChangeManagedMemory(int inDelta, const char *inWhy=0);
 //  wait for them to "check in" before collecting.  The standard runtime makes these calls around OS calls, such as "Sleep"
 void EnterGCFreeZone();
 void ExitGCFreeZone();
+// retuns true if ExitGCFreeZone should be called
+bool TryGCFreeZone();
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES AutoGCFreeZone
 {
