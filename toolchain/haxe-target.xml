@@ -177,6 +177,11 @@
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
 </files>
 
+<files id="rc" >
+  <cache value='false'/>
+  <file name='${resourceFile}' if="resourceFile" />
+</files>
+
 
 <target id="default">
    <target id="haxe"/>
@@ -225,6 +230,7 @@
   <files id="__externs__" />
   <files id="runtime" unless="dll_import" />
   <files id="cppia" if="scriptable" />
+  <files id="rc" unless="static_link" />
   <lib name="-lpthread" if="linux" unless="static_link" />
   <lib name="-ldl" if="linux" unless="static_link" />
 </target>
