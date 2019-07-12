@@ -105,6 +105,10 @@
   <ext value=".obj"/>
   <objdir value="${MSVC_OBJ_DIR}" />
 
+  <rcexe name="rc.exe" />
+  <rcext value=".res" />
+  <rcflag value="-nologo" />
+
   <getversion value="cl.exe"/>
 </compiler>
 
@@ -142,6 +146,15 @@
   <ext value=".exe"/>
   <outflag value="-out:"/>
 </linker>
+
+
+<manifest exe="mt.exe" >
+  <flag value="-nologo"/>
+  <flag value="-manifest"/>
+  <outPre value="-outputresource:" />
+  <outPost value=";1" />
+</manifest>
+
 
 
 <linker id="exe" exe="link.exe" if="winrt">

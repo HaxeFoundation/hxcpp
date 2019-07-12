@@ -188,6 +188,20 @@ struct CompareTraits< cpp::Variant >
          case cpp::Variant::typeInt64: return CompareAsInt64;
          case cpp::Variant::typeDouble: return CompareAsDouble;
          case cpp::Variant::typeString: return CompareAsString;
+
+         case cpp::Variant::typeObject:
+            {
+               if (!inValue.valObject)
+                  return CompareAsDynamic;
+               switch(inValue.valObject->__GetType())
+               {
+                  case vtInt: case vtBool: return CompareAsInt;
+                  case vtInt64: return CompareAsInt64;
+                  case vtFloat: return CompareAsDouble;
+                  case vtString: return CompareAsString;
+                  default: return CompareAsDynamic;
+               }
+            }
          default:
               return CompareAsDynamic;
       }

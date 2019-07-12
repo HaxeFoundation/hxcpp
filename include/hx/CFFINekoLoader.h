@@ -527,6 +527,7 @@ void api_gc_change_managed_memory(int,const char *)
    // Nothing to do here
 }
 
+bool api_gc_try_blocking() { return false; }
 
 #define IMPLEMENT_HERE(x) if (!strcmp(inName,#x)) return (void *)api_##x;
 #define IGNORE_API(x) if (!strcmp(inName,#x)) return (void *)api_empty;
@@ -550,6 +551,7 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(alloc_empty_object)
    IMPLEMENT_HERE(alloc_root)
    IMPLEMENT_HERE(val_gc)
+   IMPLEMENT_HERE(gc_try_blocking)
 
    IMPLEMENT_HERE(create_abstract)
    IMPLEMENT_HERE(free_abstract)

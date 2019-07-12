@@ -5706,12 +5706,18 @@ public:
       mReadyForCollect.Set();
    }
 
+   bool TryGCFreeZone()
+   {
+      if (mGCFreeZone)
+         return false;
+      EnterGCFreeZone();
+      return true;
+   }
+
    void ExitGCFreeZone()
    {
-      #ifdef HXCPP_DEBUG
       if (!mGCFreeZone)
          CriticalGCError("GCFree Zone mismatch");
-      #endif
 
       if (hx::gMultiThreadMode)
       {
@@ -6068,6 +6074,17 @@ void EnterGCFreeZone()
       LocalAllocator *tla = GetLocalAlloc();
       tla->EnterGCFreeZone();
    }
+}
+
+
+bool TryGCFreeZone()
+{
+   if (hx::gMultiThreadMode)
+   {
+      LocalAllocator *tla = GetLocalAlloc();
+      return tla->TryGCFreeZone();
+   }
+   return false;
 }
 
 void ExitGCFreeZone()
@@ -6538,6 +6555,13 @@ void __hxcpp_enter_gc_free_zone()
 {
    hx::EnterGCFreeZone();
 }
+
+
+bool __hxcpp_try_gc_free_zone()
+{
+   return hx::TryGCFreeZone();
+}
+
 
 
 void __hxcpp_exit_gc_free_zone()

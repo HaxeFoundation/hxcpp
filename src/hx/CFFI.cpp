@@ -944,6 +944,12 @@ void gc_exit_blocking()
    hx::ExitGCFreeZone();
 }
 
+
+bool gc_try_blocking()
+{
+   return hx::TryGCFreeZone();
+}
+
 void gc_safe_point()
 {
    if (hx::gPauseForCollect)

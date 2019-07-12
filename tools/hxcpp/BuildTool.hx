@@ -52,6 +52,7 @@ class BuildTool
    var mIncludePath:Array<String>;
    var mCompiler:Compiler;
    var mStripper:Stripper;
+   var mManifester:Manifester;
    var mPrelinkers:Prelinkers;
    var mLinkers:Linkers;
    var mCopyFiles:Array<CopyFile>;
@@ -89,6 +90,7 @@ class BuildTool
 
    public static var exitOnThreadError = false;
    public static var threadExitCode = 0;
+   public static var startDir:String;
 
 
 
@@ -400,8 +402,8 @@ class BuildTool
       for(group in target.mFileGroups)
       {
          var useCache = CompileCache.hasCache && group.mUseCache;
-         if (CompileCache.hasCache && !useCache)
-            Log.info("", "Ignoring compiler cache for " + group.mId + " because of possible missing dependencies");
+         if (!useCache && group.mUseCache)
+            Log.v("Ignoring compiler because of possible missing dependencies");
 
          var groupObjs = new Array<String>();
 
@@ -627,7 +629,7 @@ class BuildTool
             var libName = targetDir + "/" + mCompiler.getTargetPrefix() + "_" + group.getCacheProject();
 
             var libTarget = new Target(libName, "linker", "static_link" );
-            linker.link(libTarget,groupObjs, mCompiler );
+            linker.link(libTarget,groupObjs, mCompiler, [] );
             target.mAutoLibs.push(linker.mLastOutName);
             // Linux the libraries must be added again if the references were not resolved the firs time
             if (group.mAddTwice)
@@ -666,12 +668,35 @@ class BuildTool
                Log.error ("Could not find linker for \"" + target.mToolID + "\"");
                //throw "Missing linker :\"" + target.mToolID + "\"";
             }
+            var extraDeps = [];
+            var manifest = mDefines.get("manifestFile");
+            if (manifest!=null)
+               extraDeps.push(manifest);
 
             var linker = mLinkers.get(target.mToolID);
-            var output = linker.link(target,objs, mCompiler);
-            if (output!="" && mStripper!=null)
-               if (target.mToolID=="exe" || target.mToolID=="dll")
-                  mStripper.strip(output);
+            var output = linker.link(target,objs, mCompiler, extraDeps);
+            if (output!="")
+            {
+               if (mStripper!=null)
+                  if (target.mToolID=="exe" || target.mToolID=="dll")
+                     mStripper.strip(output);
+
+               if (manifest!=null && (target.mToolID=="exe" || target.mToolID=="dll") )
+               {
+                  if (mManifester==null)
+                  {
+                     Log.v('Could not find manifest tool for "$manifest" - ignoring');
+                  }
+                  else
+                  {
+                     //if (!PathManager.isAbsolute(manifest))
+                        //manifest = PathManager.combine(startDir,manifest);
+                     Log.v('Adding manifest "$manifest"');
+                     mManifester.add(output, manifest,target.mToolID=="exe");
+                  }
+               }
+            }
+
 
             var outFile = linker.mLastOutName;
             if (outFile!="" && !PathManager.isAbsolute(outFile) && sys.FileSystem.exists(mMakefile))
@@ -804,11 +829,14 @@ class BuildTool
                case "cflag" : c.mCFlags.push(substitute(el.att.value));
                case "cppflag" : c.mCPPFlags.push(substitute(el.att.value));
                case "objcflag" : c.mOBJCFlags.push(substitute(el.att.value));
+               case "rcflag" : c.mRcFlags.push( substitute((el.att.value)) );
                case "mmflag" : c.mMMFlags.push(substitute(el.att.value));
                case "pchflag" : c.mPCHFlags.push(substitute(el.att.value));
                case "objdir" : c.mObjDir = substitute((el.att.value));
                case "outflag" : c.mOutFlag = substitute((el.att.value));
                case "exe" : c.mExe = substitute((el.att.name));
+               case "rcexe" : c.mRcExe = substitute((el.att.name));
+               case "rcext" : c.mRcExt = substitute((el.att.value));
                case "ext" : c.mExt = substitute((el.att.value));
                case "pch" : c.setPCH( substitute((el.att.value)) );
                case "getversion" : c.mGetCompilerVersion = substitute((el.att.value));
@@ -1033,6 +1061,26 @@ class BuildTool
 
       return l;
    }
+
+   public function createManifester(inXML:XmlAccess,inBase:Manifester):Manifester
+   {
+      var s = (inBase!=null && !inXML.has.replace) ? inBase :
+                 new Manifester(substitute(inXML.att.exe));
+      for(el in inXML.elements)
+      {
+         if (valid(el,""))
+            switch(el.name)
+            {
+                case "flag" : s.mFlags.push(substitute(el.att.value));
+                case "outPre" : s.mOutPre = substitute(el.att.value);
+                case "outPost" : s.mOutPost = substitute(el.att.value);
+                case "exe" : s.mExe = substitute((el.att.name));
+            }
+      }
+
+      return s;
+   }
+
 
    public function createStripper(inXML:XmlAccess,inBase:Stripper):Stripper
    {
@@ -1397,6 +1445,8 @@ class BuildTool
 
 
       os = Sys.systemName();
+
+      startDir = Sys.getCwd();
 
       isWindows = (new EReg("window","i")).match(os);
       if (isWindows)
@@ -2087,8 +2137,11 @@ class BuildTool
                   //trace(Sys.getEnv("PATH"));
                case "compiler" :
                   mCompiler = createCompiler(el,mCompiler);
+
                case "stripper" :
                   mStripper = createStripper(el,mStripper);
+               case "manifest" :
+                  mManifester = createManifester(el,mManifester);
                case "prelinker" :
                   var name = substitute(el.att.id);
                   if (mPrelinkers.exists(name))

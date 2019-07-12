@@ -1,0 +1,42 @@
+variables:
+  - group: variables-haxe
+  - name: AZURE_PIPELINES_REPO_URL
+    value: $(Build.Repository.Uri)
+  - name: AZURE_PIPELINES_BRANCH
+    value: $(Build.SourceBranchName)
+  - name: HXCPP_COMPILE_CACHE
+    value: $(Agent.TempDirectory)/hxcache
+
+stages:
+  - stage: StageTest
+    jobs:
+      - template: tools/azure-pipelines/build.yml
+        parameters:
+          name: Linux64
+          vmImage: ubuntu-16.04
+          platform: linux64
+          arch: 64
+      - template: tools/azure-pipelines/build.yml
+        parameters:
+          name: Linux32
+          vmImage: ubuntu-16.04
+          platform: linux64
+          arch: 32
+      - template: tools/azure-pipelines/build.yml
+        parameters:
+          name: Mac
+          vmImage: macOS-10.13
+          platform: mac
+          arch: 64
+      - template: tools/azure-pipelines/build.yml
+        parameters:
+          name: Windows64
+          vmImage: windows-2019
+          platform: windows
+          arch: 64
+      - template: tools/azure-pipelines/build.yml
+        parameters:
+          name: Windows32
+          vmImage: windows-2019
+          platform: windows
+          arch: 32

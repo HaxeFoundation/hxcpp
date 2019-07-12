@@ -1,4 +1,5 @@
 import sys.FileSystem;
+using StringTools;
 
 #if haxe4
 import sys.thread.Mutex;
@@ -42,6 +43,8 @@ class File
    inline public function getCacheProject() return mGroup.getCacheProject();
 
    public function isNvcc() return mGroup.mNvcc;
+
+   public function isResource() return mName.endsWith(".rc");
 
    public function keep(inDefines:Map<String,String>)
    {
