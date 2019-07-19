@@ -30,8 +30,8 @@
   <!-- <cppflag value="-fvisibility-inlines-hidden"/> -->
   <pchflag value="-x" />
   <pchflag value="c++-header" />
-  <cppflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
-  <cppflag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>
