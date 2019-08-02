@@ -1,0 +1,213 @@
+<xml>
+
+<!-- Android TOOLS -------------------------------------->
+<!--
+  Configure build via variables, otherwise defaults will be used:
+     Set the path to the exact ndk to use with ANDROID_NDK_ROOT,
+        or set where all your ndks are installed with ANDROID_NDK_DIR and hxcpp will guess.
+        Set the version number by setting the variable:
+           NDKV?? - base version of ndk to use, hxcpp will find the letter, like "NDKV10" -> may end up with "10c"
+     TOOLCHAIN_VERSION - the compiler number, like "4.8" or "4.4.3"
+     PLATFORM - the android platform api level, like "android-19"
+              - you can also set the variable "android-19" directly
+-->
+
+<set name="HXCPP_CPP11" value="1" if="NDKV9+ || NDKV10+" unless="HXCPP_NO_CPP11" />
+
+
+<!-- Set architecture -->
+<section if="HXCPP_X86">
+  <set name="ARCH" value="-x86" />
+  <set name="ABI" value="x86"  />
+  <set name="PLATFORM_ARCH" value="arch-x86" />
+  <set name="TOOLCHAIN" value="x86-${TOOLCHAIN_VERSION}" />
+  <set name="EXEPREFIX" value="i686-linux-android" />
+  <set name="PLATFORM" value="android-14" unless="PLATFORM" />
+</section>
+
+<section unless="HXCPP_X86">
+  <set name="ARCH" value="-v7" if="HXCPP_ARMV7" />
+  <set name="ABI" value="armeabi" />
+  <set name="PLATFORM_ARCH" value="arch-arm" />
+  <set name="TOOLCHAIN" value="arm-linux-androideabi-${TOOLCHAIN_VERSION}" />
+  <set name="EXEPREFIX" value="arm-linux-androideabi" />
+  <set name="PLATFORM" value="android-5" unless="PLATFORM" />
+</section>
+
+<section if="HXCPP_ARM64">
+  <set name="ARCH" value="-64"/>
+  <set name="ABI" value="arm64-v8a" />
+  <set name="PLATFORM_ARCH" value="arch-arm64" />
+  <set name="TOOLCHAIN" value="aarch64-linux-android-${TOOLCHAIN_VERSION}" />
+  <set name="EXEPREFIX" value="aarch64-linux-android" />
+  <set name="PLATFORM" value="android-19" unless="PLATFORM" />
+</section>
+
+<set name="prebuiltBase" value="${ANDROID_NDK_ROOT}/toolchains/${TOOLCHAIN}/prebuilt/${ANDROID_HOST}" />
+
+<path name="${prebuiltBase}/bin" />
+
+<set name="HXCPP_AR" value="${EXEPREFIX}-ar" />
+
+<include name="toolchain/gcc-toolchain.xml"/>
+
+<compiler id="android-gcc" exe="g++">
+
+  <exe name="${EXEPREFIX}-g++" />
+
+  <!-- These must appear in this order! -->
+  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}"/>
+  <section if="NDKV8+">
+    <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/include" />
+    <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/include" />
+  </section>
+  <section unless="NDKV8+">
+    <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/include" />
+    <flag value="-I${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/include" />
+  </section>
+
+  <include name="toolchain/common-defines.xml" />
+  <flag value="-flto" if="HXCPP_OPTIMIZE_LINK" unless="debug"/>
+  <flag value="-I${HXCPP}/include"/>
+  <flag value="-Iinclude"/>
+  <flag value="-fpic"/>
+  <flag value="-fvisibility=hidden"/>
+  <flag value="-ffunction-sections"/>
+  <flag value="-funwind-tables"/>
+  <flag value="-fstack-protector"/>
+  <flag value="-fno-short-enums"/>
+  <flag value="-Wno-overflow" />
+  <cppflag value="-Wno-invalid-offsetof" />
+  <cppflag value="-frtti"/>
+  <flag value="-D_LINUX_STDDEF_H "/> <!-- Avoid compiler including 2 version of file -->
+  <flag value="-Wno-psabi" />
+  <cppflag value="-std=c++11" if="HXCPP_CPP11"/>
+  <flag value="-DHXCPP_CPP11" if="HXCPP_CPP11"/>
+
+  <section unless="HXCPP_X86">
+
+    <section if="HXCPP_ARM64">
+       <flag value="-DHXCPP_ARM64"  />
+    </section>
+    <section if="HXCPP_ARMV7">
+       <flag value="-DHXCPP_ARMV7"  />
+       <flag value="-march=armv7-a"  />
+       <flag value="-mfpu=vfpv3-d16"  />
+       <flag value="-mfloat-abi=softfp" />
+    </section>
+    <section unless="HXCPP_ARMV7 || HXCPP_ARM64">
+       <flag value="-DHXCPP_ARMV5" />
+       <flag value="-D__ARM_ARCH_5__"/>
+       <flag value="-D__ARM_ARCH_5T__"/>
+       <flag value="-D__ARM_ARCH_5E__"/>
+       <flag value="-D__ARM_ARCH_5TE__"/>
+       <flag value="-march=armv5te" />
+       <flag value="-mtune=xscale" />
+       <flag value="-msoft-float" />
+    </section>
+  </section>
+  <section if="HXCPP_X86">
+    <flag value="-DANDROID_X86"/>
+  </section>
+
+
+  <flag value="-fomit-frame-pointer"/>
+  <flag value="-fexceptions"/>
+  <flag value="-fno-strict-aliasing"/>
+  <flag value="-finline-limit=10000"/>
+  <flag value="-DANDROID=ANDROID"/>
+  <flag value="-DHX_ANDROID"/>
+  <flag value="-D${ANDROID_PLATFORM_DEFINE}"/>
+  <!-- todo <flag value="-Werror"/> -->
+  <flag value="-Wa,--noexecstack"/>
+  <flag value="-O2" unless="debug || HXCPP_OPTIMIZE_FOR_SIZE || HXCPP_OPTIMIZE_FOR_FAST"/>
+  <section if="HXCPP_OPTIMIZE_FOR_SIZE" unless="debug || HXCPP_OPTIMIZE_FOR_FAST">
+	  <!-- see https://software.intel.com/en-us/blogs/2013/01/17/x86-gcc-code-size-optimizations -->
+    <flag value="-Os" />
+    <flag value="-fno-asynchronous-unwind-tables" />
+  </section>
+  <section if="HXCPP_OPTIMIZE_FOR_FAST" unless="debug">
+    <flag value="-Ofast" />
+  </section>
+  <flag value="-O0" if="debug"/>
+  <flag value="-g" if="HXCPP_DEBUG_LINK"/>
+  <flag value="-DNDEBUG"/>
+  <flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
+  <flag value="-c"/>
+  <outflag value="-o"/>
+  <ext value=".obj"/>
+  <objdir value="obj/android${OBJEXT}${ARCH}" />
+</compiler>
+
+
+<linker id="dll" exe="g++" >
+
+  <exe name="${EXEPREFIX}-g++" />
+
+  <ext value=".so"/>
+  <outflag value="-o"/>
+  <prefix value="lib"/>
+
+  <flag value="-frtti"/>
+  <flag value="-nostdlib"/>
+  <flag value="-std=c++11" if="HXCPP_CPP11"/>
+  <flag value="-Wl,-shared,-Bsymbolic"/>
+  <section if="HXCPP_OPTIMIZE_FOR_SIZE || HXCPP_GC_SECTIONS" unless="debug">
+    <flag value="-Wl,--gc-sections" />
+  </section>
+  <section if="HXCPP_STRIP_ALL" unless="debug || HXCPP_DEBUG_LINK">
+    <flag value="-Wl,--strip-all" unless="HXCPP_DEBUG_LINK"/>
+  </section>
+  <flag value="-Wl,--no-undefined" unless="dll_import" />
+  <flag value="-Wl,--unresolved-symbols=ignore-in-object-files" if="dll_import" />
+  <flag value="-Wl,-z,noexecstack"/>
+  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}"/>
+  <flag value="-L${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib"/>
+
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/libstdc++.a" if="NDKV6" unless="dll_import" />
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/libgnustl_static.a" if="NDKV7" unless="dll_import" />
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/libgnustl_static.a" if="NDKV8+" unless="dll_import" />
+
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtbegin_so.o"/>
+  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}/libgcc.a" unless="NDKV12+"/>
+  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}.x/libgcc.a" if="NDKV12+"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libc.so"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libm.so"/>
+  <lib name="-llog"/>
+  <lib name="-ldl"/>
+</linker>
+
+
+
+<linker id="exe" exe="g++" >
+
+  <exe name="${EXEPREFIX}-g++" />
+
+  <ext value=""/>
+  <outflag value="-o"/>
+  <prefix value=""/>
+
+  <flag value="-frtti"/>
+  <flag value="-nostdlib"/>
+  <flag value="-std=c++11" if="HXCPP_CPP11"/>
+  <flag value="-Wl,--no-undefined" unless="dll_import" />
+  <flag value="-Wl,--unresolved-symbols=ignore-in-object-files" if="dll_import" />
+  <flag value="-Wl,-z,noexecstack"/>
+  <flag value="--sysroot=${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}"/>
+  <flag value="-L${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib"/>
+
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/libstdc++.a" if="NDKV6" unless="dll_import" />
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/libs/${ABI}/libgnustl_static.a" if="NDKV7" unless="dll_import" />
+  <lib name="${ANDROID_NDK_ROOT}/sources/cxx-stl/gnu-libstdc++/${TOOLCHAIN_VERSION}/libs/${ABI}/libgnustl_static.a" if="NDKV8+" unless="dll_import" />
+
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtbegin_static.o"/>
+  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}/libgcc.a" unless="NDKV12+"/>
+  <lib name="${prebuiltBase}/lib/gcc/${EXEPREFIX}/${TOOLCHAIN_VERSION}.x/libgcc.a" if="NDKV12+"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libc.so"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/libm.so"/>
+  <lib name="${ANDROID_NDK_ROOT}/platforms/${PLATFORM}/${PLATFORM_ARCH}/usr/lib/crtend_android.o"/>
+  <lib name="-llog"/>
+  <lib name="-ldl"/>
+</linker>
+
+</xml>

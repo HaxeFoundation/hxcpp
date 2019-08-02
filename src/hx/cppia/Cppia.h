@@ -65,6 +65,7 @@ enum ArrayType
    arrBool,
    arrInt,
    arrFloat,
+   arrFloat32,
    arrUnsignedChar,
    arrString,
    arrObject,
@@ -253,7 +254,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    int argCount;
    int stackSize;
    bool hasDefaults;
-   
+
    std::vector<CppiaStackVar> args;
    std::vector<bool>          hasDefault;
    std::vector<CppiaConst>    initVals;
@@ -389,7 +390,7 @@ public:
    CppiaClassInfo *findClass( ::String inName );
    void registerDebugger();
 
-   inline const char *identStr(int inId) { return strings[inId].__s; }
+   inline const char *identStr(int inId) { return strings[inId].raw_ptr(); }
    inline const char *typeStr(int inId) { return types[inId]->name.c_str(); }
 };
 
@@ -509,12 +510,16 @@ struct CppiaVar
    CppiaExpr        *init;
 
    Dynamic          objVal;
-   int              intVal;
-   Float            floatVal;
+   union {
+      int              boolVal;
+      int              byteVal;
+      int              intVal;
+      Float            floatVal;
+   };
    String           stringVal;
 
    void             *valPointer;
-   
+
 
    CppiaVar(bool inIsStatic);
    CppiaVar(CppiaFunction *inDynamicFunction);
@@ -785,6 +790,10 @@ public:
          ctx = inCtx;
          frame = (hx::StackFrame *)ctx->stackAlloc(sizeof(hx::StackFrame));
          frame->position = inPosition;
+         #ifdef HXCPP_DEBUGGER
+         frame->variables = 0;
+         frame->catchables = 0;
+         #endif
          inCtx->pushFrame(frame);
       }
       ~CppiaStackFrame()
@@ -992,7 +1001,7 @@ struct CrementPostDec
       inVal = Dynamic(Dynamic(inVal) - 1).mPtr;
       return result;
    }
- 
+
 };
 
 

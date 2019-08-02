@@ -26,15 +26,27 @@ typedef int64_t __int64;
 #include <unistd.h>
 #endif
 #include <string>
-#include <vector>
 #include <map>
 #include <stdio.h>
 #include <time.h>
+#include <clocale>
 
 
 #ifdef HX_ANDROID
 #define rand() lrand48()
 #define srand(x) srand48(x)
+#endif
+
+#ifdef HX_WINRT
+#define PRINTF WINRT_PRINTF
+#elif defined(TIZEN)
+#define PRINTF(fmt, ...) dlog_dprint(DLOG_INFO, "trace", fmt, __VA_ARGS__);
+#elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
+#define PRINTF(fmt, ...) __android_log_print(ANDROID_LOG_INFO, "trace", fmt, __VA_ARGS__);
+#elif defined(WEBOS)
+#define PRINTF(fmt, ...) syslog(LOG_INFO, "trace", fmt, __VA_ARGS__);
+#else
+#define PRINTF printf
 #endif
 
 void __hx_stack_set_last_exception();
@@ -66,9 +78,9 @@ Dynamic Rethrow(Dynamic inDynamic)
 }
 
 
-null NullArithmetic(const HX_CHAR *inErr)
+null NullArithmetic(const char *inErr)
 {
-	Throw( String(inErr).dup() );
+	Throw( String::create(inErr) );
 	return null();
 }
 
@@ -124,12 +136,12 @@ String __hxcpp_resource_string(String inName)
             const unsigned char *p = reso->mData;
             for(int i=0;i<reso->mDataLength;i++)
                if (p[i]>127)
-                  return _hx_utf8_to_utf16(p, reso->mDataLength,false);
+                  return String::create((const char *)p, reso->mDataLength);
             #endif
             return String((const char *) reso->mData, reso->mDataLength );
          }
          #else
-            return String((const char *) reso->mData, reso->mDataLength ).dup();
+            return String::create((const char *) reso->mData, reso->mDataLength );
          #endif
       }
 
@@ -176,7 +188,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
             return result;
          }
       }
- 
+
    return null();
 }
 
@@ -196,7 +208,7 @@ namespace hx
       catch(Dynamic e)
       {
          HX_TOP_OF_STACK
-         return e->toString().__s;
+         return e->toString().utf8_str();
       }
    }
 }
@@ -249,12 +261,15 @@ void __hxcpp_stdlibs_boot()
          }
       }
    }
-   //setlocale(LC_ALL, "");
    //_setmode(_fileno(stdout), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stderr), 0x00040000); // _O_U8TEXT
    //_setmode(_fileno(stdin), 0x00040000); // _O_U8TEXT
    #endif
-   
+
+   // This is necessary for UTF-8 output to work correctly.
+   setlocale(LC_ALL, "");
+   setlocale(LC_NUMERIC, "C");
+
    // I think this does more harm than good.
    //  It does not cause fread to return immediately - as perhaps desired.
    //  But it does cause some new-line characters to be lost.
@@ -268,50 +283,21 @@ void __trace(Dynamic inObj, Dynamic info)
    String text;
    if (inObj != null())
       text = inObj->toString();
-   const char *message = text.__s ? text.__s : "null";
 
+
+   hx::strbuf convertBuf;
    if (info==null())
    {
-   #ifdef HX_WINRT
-      WINRT_PRINTF("%s\n", message );
-   #elif defined(TIZEN)
-      dlog_dprint(DLOG_INFO, "trace","%s\n", message );
-   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-      __android_log_print(ANDROID_LOG_INFO, "trace","%s",message );
-   #elif defined(WEBOS)
-      syslog(LOG_INFO, "%s", message );
-   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
-      if (text.isUTF16Encoded())
-         printf("%S\n", (wchar_t *)text.__w );
-      else
-         printf("%s\n", message);
-   #else
-      printf("%s\n", message );
-   #endif
-
+      PRINTF("?? %s\n", text.raw_ptr() ? text.out_str(&convertBuf) : "null");
    }
    else
    {
-
-      const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().__s;
+      const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().utf8_str(0,false);
       int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
 
-   #ifdef HX_WINRT
-      WINRT_PRINTF("%s:%d: %s\n", filename, line, message );
-   #elif defined(TIZEN)
-      AppLogInternal(filename, line, "%s\n", message );
-   #elif defined(HX_ANDROID) && !defined(HXCPP_EXE_LINK)
-      __android_log_print(ANDROID_LOG_INFO, "trace","%s:%d: %s",filename, line, message );
-   #elif defined(WEBOS)
-      syslog(LOG_INFO, "%s:%d: %s", filename, line, message );
-   #elif defined(HX_WINDOWS) && defined(HX_SMART_STRINGS)
-      if (text.isUTF16Encoded())
-         printf("%s:%d: %S\n",filename, line, (wchar_t *)text.__w );
-      else
-         printf("%s:%d: %s\n",filename, line, message);
-   #else
-      printf("%s:%d: %s\n",filename, line, message );
-   #endif
+      hx::strbuf convertBuf;
+      //PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
+      PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
    }
 
 }
@@ -358,7 +344,7 @@ double  __time_stamp()
 #if defined(HX_WINDOWS) && !defined(HX_WINRT)
 
 /*
-ISWHITE and ParseCommandLine are based on the implementation of the 
+ISWHITE and ParseCommandLine are based on the implementation of the
 .NET Core runtime, CoreCLR, which is licensed under the MIT license:
 Copyright (c) Microsoft. All rights reserved.
 See LICENSE file in the CoreCLR project root for full license information.
@@ -383,7 +369,7 @@ static void ParseCommandLine(LPTSTR psrc, Array<String> &out)
        because the program name must be a legal NTFS/HPFS file name.
        Note that the double-quote characters are not copied, nor do they
        contribute to numchars.
-         
+
        This "simplification" is necessary for compatibility reasons even
        though it leads to mishandling of certain cases.  For example,
        "c:\tests\"test.exe will result in an arg0 of c:\tests\ and an
@@ -531,7 +517,7 @@ Array<String> __get_args()
    if (_hxcpp_argc)
    {
       for(int i=1;i<_hxcpp_argc;i++)
-         result->push( String(_hxcpp_argv[i],strlen(_hxcpp_argv[i])).dup() );
+         result->push( String::create(_hxcpp_argv[i],strlen(_hxcpp_argv[i])) );
       return result;
    }
 
@@ -547,7 +533,7 @@ Array<String> __get_args()
    int argc = *_NSGetArgc();
    char **argv = *_NSGetArgv();
    for(int i=1;i<argc;i++)
-      result->push( String(argv[i],strlen(argv[i])).dup() );
+      result->push( String::create(argv[i],strlen(argv[i])) );
    #endif
 
    #else
@@ -560,19 +546,20 @@ Array<String> __get_args()
    bool real_arg = 0;
    if (cmd)
    {
-      String arg("");
+      hx::QuickVec<char> arg;
+
       buf[0] = '\0';
       while (fread(buf, 1, 1, cmd))
       {
          if ((unsigned char)buf[0] == 0) // line terminator
          {
             if (real_arg)
-               result->push(arg);
+               result->push( String::create(arg.mPtr, arg.mSize) );
             real_arg = true;
-            arg = String("");
+            arg.clear();
          }
          else
-            arg += String::fromCharCode(buf[0]);
+            arg.push(buf[0]);
       }
       fclose(cmd);
    }
@@ -586,28 +573,14 @@ Array<String> __get_args()
 
 void __hxcpp_print_string(const String &inV)
 {
-   #ifdef HX_WINRT
-   WINRT_PRINTF("%s",inV.__s);
-   #else
-   #ifdef HX_UTF8_STRINGS
-   printf("%s",inV.__s);
-   #else
-   printf("%S",inV.__s);
-   #endif
-   #endif
+   hx::strbuf convertBuf;
+   PRINTF("%s", inV.out_str(&convertBuf) );
 }
 
 void __hxcpp_println_string(const String &inV)
 {
-   #ifdef HX_WINRT
-   WINRT_PRINTF("%s\n",inV.__s);
-   #else
-   #ifdef HX_UTF8_STRINGS
-   printf("%s\n",inV.__s);
-   #else
-   printf("%S\n",inV.__s);
-   #endif
-   #endif
+   hx::strbuf convertBuf;
+   PRINTF("%s\n", inV.out_str(&convertBuf));
 }
 
 
@@ -643,24 +616,18 @@ int __int__(double x)
 
 Dynamic __hxcpp_parse_int(const String &inString)
 {
-   if (!inString.__s)
+   if (!inString.raw_ptr())
       return null();
    long result;
-   const HX_CHAR *str = inString.__s;
+   hx::strbuf buf;
+   const char *str = inString.utf8_str(&buf);
    bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
-   HX_CHAR *end = 0;
+   char *end = 0;
 
-   #ifdef HX_UTF8_STRINGS
    if (hex)
       result = (long)strtoul(str+2,&end,16);
    else
       result = strtol(str,&end,10);
-   #else
-   if (hex)
-      result = (long)wcstoul(str+2,&end,16);
-   else
-      result = wcstol(str,&end,10);
-   #endif
    if (str==end)
       return null();
    return (int)result;
@@ -668,13 +635,13 @@ Dynamic __hxcpp_parse_int(const String &inString)
 
 double __hxcpp_parse_float(const String &inString)
 {
-   const HX_CHAR *str = inString.__s;
-   HX_CHAR *end = (HX_CHAR *)str;
-   #ifdef HX_UTF8_STRINGS
+   if (!inString.raw_ptr())
+      return Math_obj::NaN;
+
+   hx::strbuf buf;
+   const char *str = inString.utf8_str(&buf);
+   char *end = (char *)str;
    double result = str ? strtod(str,&end) : 0;
-   #else
-   double result =  str ? wcstod(str,&end) : 0;
-   #endif
 
    if (end==str)
       return Math_obj::NaN;
@@ -781,7 +748,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    String str(inFieldName,strlen(inFieldName));
 
    // Make into "const" string that will not get collected...
-   str = String((HX_CHAR *)hx::InternalCreateConstBuffer(str.__s,(str.length+1) * sizeof(HX_CHAR),true), str.length );
+   str = String((char *)hx::InternalCreateConstBuffer(str.raw_ptr(),(str.length+1) * sizeof(char),true), str.length );
 
    if (sgFieldToStringAlloc<=sgFieldToStringSize+1)
    {

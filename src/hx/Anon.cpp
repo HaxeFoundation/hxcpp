@@ -97,7 +97,7 @@ void Anon_obj::__Visit(hx::VisitContext *__inCtx)
 
 inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
 {
-   if (!mFixedFields)
+   if (!mFixedFields || !inKey.isAsciiEncoded() )
       return -1;
    VariantKey *fixed = getFixed();
    int sought = inKey.hash();
@@ -107,8 +107,8 @@ inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
       if (mFixedFields<5)
       {
          for(int i=0;i<mFixedFields;i++)
-            if (fixed[i].hash==sought && (fixed[i].key.__s == inKey.__s ||
-                   (fixed[i].key.length == inKey.length && !memcmp(fixed[i].key.__s,inKey.__s, inKey.length))))
+            if (fixed[i].hash==sought && (fixed[i].key.raw_ptr() == inKey.raw_ptr() ||
+                   (fixed[i].key.length == inKey.length && !memcmp(fixed[i].key.raw_ptr(),inKey.raw_ptr(), inKey.length))))
                return i;
          return -1;
       }
@@ -145,8 +145,8 @@ inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
    while(fixed[min].hash==sought)
    {
       if (fixed[min].key==inKey)
-         if (fixed[min].hash==sought && (fixed[min].key.__s == inKey.__s ||
-                (fixed[min].key.length == inKey.length && !memcmp(fixed[min].key.__s,inKey.__s, inKey.length))))
+         if (fixed[min].hash==sought && (fixed[min].key.raw_ptr() == inKey.raw_ptr() ||
+                (fixed[min].key.length == inKey.length && !memcmp(fixed[min].key.raw_ptr(),inKey.raw_ptr(), inKey.length))))
          return min;
 
       min++;
@@ -274,50 +274,74 @@ Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetTh
    return this;
 }
 
+static int _hx_toString_depth = 0;
 String Anon_obj::toString()
 {
    if (!mFields.mPtr && !mFixedFields)
       return HX_CSTRING("{ }");
 
-   int fixedToString = findFixed(HX_CSTRING("toString"));
-   if (fixedToString>=0)
+   if (_hx_toString_depth >= 5)
+      return HX_CSTRING("...");
+
+   _hx_toString_depth++;
+
+   try
    {
-      Dynamic func = getFixed()[fixedToString].value;
-      if (func!=null())
-         return func();
-   }
-
-   Dynamic func;
-   if (FieldMapGet(&mFields, HX_CSTRING("toString"), func))
-       return func();
-
-   if (mFixedFields)
-   {
-      Array<String> array = Array<String>(0,mFixedFields*4+4);
-      array->push(HX_CSTRING("{ "));
-
-      if (mFields.mPtr)
+      int fixedToString = findFixed(HX_CSTRING("toString"));
+      if (fixedToString>=0)
       {
-         String val = __string_hash_to_string_raw(mFields);
-         if (val.__s)
-            array->push(val);
+         Dynamic func = getFixed()[fixedToString].value;
+         if (func!=null())
+         {
+            String res = func();
+            _hx_toString_depth--;
+            return res;
+         }
       }
 
-      VariantKey *fixed = getFixed();
-      for(int i=0;i<mFixedFields;i++)
+      Dynamic func;
+      if (FieldMapGet(&mFields, HX_CSTRING("toString"), func))
       {
-         if (array->length>1)
-           array->push(HX_CSTRING(", "));
-
-         array->push(fixed[i].key);
-         array->push(HX_CSTRING(" => "));
-         array->push(fixed[i].value);
+         String res = func();
+         _hx_toString_depth--;
+         return res;
       }
-      array->push(HX_CSTRING(" }"));
-      return array->join(HX_CSTRING(""));
-   }
 
-   return __string_hash_to_string(mFields);
+      if (mFixedFields)
+      {
+         Array<String> array = Array<String>(0,mFixedFields*4+4);
+         array->push(HX_CSTRING("{ "));
+
+         if (mFields.mPtr)
+         {
+            String val = __string_hash_to_string_raw(mFields);
+            if (val.raw_ptr())
+               array->push(val);
+         }
+
+         VariantKey *fixed = getFixed();
+         for(int i=0;i<mFixedFields;i++)
+         {
+            if (array->length>1)
+              array->push(HX_CSTRING(", "));
+
+            array->push(fixed[i].key);
+            array->push(HX_CSTRING(" => "));
+            array->push(fixed[i].value);
+         }
+         array->push(HX_CSTRING(" }"));
+         _hx_toString_depth--;
+         return array->join(HX_CSTRING(""));
+      }
+
+      String ret = __string_hash_to_string(mFields);
+      _hx_toString_depth--;
+      return ret;
+   } catch (...)
+   {
+      _hx_toString_depth--;
+      throw;
+   }
 }
 
 void Anon_obj::__GetFields(Array<String> &outFields)

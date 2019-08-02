@@ -206,7 +206,7 @@ public:
 
    inline void __unsafeStringReference(String inString)
    {
-      mBase = (char *)inString.__s;
+      mBase = (char *)inString.raw_ptr();
       length = inString.length / GetElementSize();
       mAlloc = length;
       HX_OBJ_WB_PESSIMISTIC_GET(this);
@@ -416,7 +416,7 @@ template<typename TYPE> inline bool ContainsPointers()
 }
 
 inline const void *PointerOf(Dynamic &d) { return d.mPtr; }
-inline const void *PointerOf(String &s) { return s.__s; }
+inline const void *PointerOf(String &s) { return s.raw_ptr(); }
 inline const void *PointerOf(...) { return 0; }
 
 
@@ -517,7 +517,9 @@ public:
    inline ELEM_ & __unsafe_set(int inIndex, ELEM_ inValue)
    {
       if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this, hx::PointerOf(inValue)); }
-      return * (ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = inValue;
+      ELEM_ &elem = *(ELEM_*)(mBase + inIndex*sizeof(ELEM_));
+      elem = inValue;
+      return elem;
    }
 
 
@@ -883,7 +885,7 @@ public:
 
    virtual void set(int inIndex, const cpp::Variant &inValue) { Item(inIndex) = ELEM_(inValue); }
    virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) {
-      ELEM_ &elem = *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_)) = ELEM_(inValue);
+      ELEM_ &elem = *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_));
       elem = ELEM_(inValue);
       if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this,hx::PointerOf(elem)); }
    }

@@ -117,7 +117,7 @@ struct CppiaEnumConstructor
          if (type==etString)
          {
             compiler->move( sJitReturnReg.star(jtInt,offset + offsetof(cpp::Variant,valStringLen)), val.as(jtInt) );
-            compiler->move( sJitReturnReg.star(jtPointer,offset), val.as(jtPointer) + offsetof(String,__s) );
+            compiler->move( sJitReturnReg.star(jtPointer,offset), val.as(jtPointer) + StringOffset::Ptr);
          }
          else
          {
@@ -231,7 +231,7 @@ struct EnumField : public CppiaDynamicExpr
          enumClass = hx::Class_obj::Resolve(type->name);
          if (!enumClass.mPtr)
          {
-            printf("Could not find enum %s\n", type->name.__s );
+            printf("Could not find enum %s\n", type->name.out_str() );
             throw "Bad enum";
          }
          enumName = inModule.strings[fieldId];
@@ -472,7 +472,7 @@ ScriptCallable *CppiaClassInfo::findInterfaceFunction(const std::string &inName)
    Functions &funcs = memberFunctions;
    for(int i=0;i<funcs.size();i++)
    {
-      if ( cppia.strings[funcs[i]->nameId].__s == inName)
+      if ( cppia.strings[funcs[i]->nameId].utf8_str() == inName)
          return funcs[i]->funExpr;
    }
    return 0;
@@ -491,7 +491,7 @@ ScriptCallable *CppiaClassInfo::findFunction(bool inStatic, const String &inName
 
 inline ScriptCallable *CppiaClassInfo::findFunction(FunctionMap &inMap,const String &inName)
 {
-   FunctionMap::iterator it = inMap.find(inName.__s);
+   FunctionMap::iterator it = inMap.find(inName.utf8_str());
    if (it!=inMap.end())
       return it->second;
    return 0;
@@ -552,7 +552,7 @@ bool CppiaClassInfo::getField(hx::Object *inThis, String inName, hx::PropertyAcc
          return true;
    }
 
-   //printf("Get field not found (%s) %s\n", inThis->toString().__s,inName.__s);
+   //printf("Get field not found (%s) %s\n", inThis->toString().out_str(),inName.out_str());
    return false;
 }
 
@@ -563,7 +563,7 @@ bool CppiaClassInfo::setField(hx::Object *inThis, String inName, Dynamic inValue
 
    if (inCallProp)
    {
-      //printf("Set field %s %s = %s\n", inThis->toString().__s, inName.__s, inValue->toString().__s);
+      //printf("Set field %s %s = %s\n", inThis->toString().out_str(), inName.out_str(), inValue->toString().out_str());
       ScriptCallable *setter = findMemberSetter(inName);
       if (setter)
       {
@@ -610,7 +610,7 @@ bool CppiaClassInfo::setField(hx::Object *inThis, String inName, Dynamic inValue
    }
 
    // Fall though to haxe base
-   //printf("Set field not found (%s) %s map=%p o=%d\n", inThis->toString().__s,inName.__s, map, dynamicMapOffset);
+   //printf("Set field not found (%s) %s map=%p o=%d\n", inThis->toString().out_str(),inName.out_str(), map, dynamicMapOffset);
 
    return false;
 }
@@ -659,14 +659,14 @@ void CppiaClassInfo::dumpVars(const char *inMessage, std::vector<CppiaVar *> &va
 {
    printf(" %s:\n", inMessage);
    for(int i=0;i<vars.size();i++)
-      printf("   %d] %s (%d)\n", i, cppia.strings[ vars[i]->nameId ].__s, vars[i]->nameId );
+      printf("   %d] %s (%d)\n", i, cppia.strings[ vars[i]->nameId ].out_str(), vars[i]->nameId );
 }
 
 void CppiaClassInfo::dumpFunctions(const char *inMessage, std::vector<CppiaFunction *> &funcs)
 {
    printf(" %s:\n", inMessage);
    for(int i=0;i<funcs.size();i++)
-      printf("   %d] %s (%d)\n", i, cppia.strings[ funcs[i]->nameId ].__s, funcs[i]->nameId);
+      printf("   %d] %s (%d)\n", i, cppia.strings[ funcs[i]->nameId ].out_str(), funcs[i]->nameId);
 }
 
 
@@ -956,7 +956,7 @@ void CppiaClassInfo::linkTypes()
       else
       {
          #if (HXCPP_API_LEVEL >= 330)
-         HaxeNativeInterface *native = HaxeNativeInterface::findInterface( extraInterfaces->name.__s );
+         HaxeNativeInterface *native = HaxeNativeInterface::findInterface( extraInterfaces->name.utf8_str() );
          if (native)
          {
             String hashName = extraInterfaces->name.split(HX_CSTRING(".")).mPtr->join(HX_CSTRING("::"));
@@ -978,18 +978,18 @@ void CppiaClassInfo::linkTypes()
    }
 
 
-   DBGLOG(" Linking class '%s' ", type->name.__s);
+   DBGLOG(" Linking class '%s' ", type->name.out_str());
    if (!superType)
    {
       DBGLOG("script base\n");
    }
    else if (cppiaSuper)
    {
-      DBGLOG("extends script '%s'\n", superType->name.__s);
+      DBGLOG("extends script '%s'\n", superType->name.out_str());
    }
    else
    {
-      DBGLOG("extends haxe '%s'\n", superType->name.__s);
+      DBGLOG("extends haxe '%s'\n", superType->name.out_str());
    }
 
    // Link class before we combine the function list...
@@ -1017,7 +1017,7 @@ void CppiaClassInfo::linkTypes()
       {
          for(int j=0;j<combinedVars.size();j++)
             if (combinedVars[j]->nameId==memberVars[i]->nameId)
-               printf("Warning duplicate member var %s\n", cppia.strings[memberVars[i]->nameId].__s);
+               printf("Warning duplicate member var %s\n", cppia.strings[memberVars[i]->nameId].out_str());
          combinedVars.push_back(memberVars[i]);
       }
       memberVars.swap(combinedVars);
@@ -1182,7 +1182,7 @@ void CppiaClassInfo::linkTypes()
          TypeData *interface = cppia.types[id];
          CppiaClassInfo  *cppiaInterface = interface->cppiaClass;
          #if (HXCPP_API_LEVEL >= 330)
-         HaxeNativeInterface *native = HaxeNativeInterface::findInterface( interface->name.__s );
+         HaxeNativeInterface *native = HaxeNativeInterface::findInterface( interface->name.utf8_str() );
          if (native)
          {
             String hashName = interface->name.split(HX_CSTRING(".")).mPtr->join(HX_CSTRING("::"));
@@ -1203,7 +1203,7 @@ void CppiaClassInfo::linkTypes()
             }
          }
          #else
-         interfaceVTables[ interface->name.__s ] = vtable;
+         interfaceVTables[ interface->name.utf8_str() ] = vtable;
          #endif
 
          if (!cppiaInterface)
@@ -1368,16 +1368,16 @@ void CppiaClassInfo::link()
                dump();
                throw Dynamic(HX_CSTRING("Could not find getter for ") + var.name);
             }
-            DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.__s);
-            memberGetters[var.name.__s] = getter;
+            DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.out_str());
+            memberGetters[var.name.utf8_str()] = getter;
          }
          if (var.writeAccess == CppiaVar::accCall || var.writeAccess==CppiaVar::accCallNative)
          {
             ScriptCallable *setter = findFunction(false,HX_CSTRING("set_") + var.name);
             if (!setter)
                throw Dynamic(HX_CSTRING("Could not find setter for ") + var.name);
-            DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.__s);
-            memberSetters[var.name.__s] = setter;
+            DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.out_str());
+            memberSetters[var.name.utf8_str()] = setter;
          }
 
          if (var.readAccess == CppiaVar::accCallNative || var.writeAccess == CppiaVar::accCallNative)
@@ -1394,16 +1394,16 @@ void CppiaClassInfo::link()
          ScriptCallable *getter = findFunction(true,HX_CSTRING("get_") + var.name);
          if (!getter)
             throw Dynamic(HX_CSTRING("Could not find getter for ") + var.name);
-         DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.__s);
-         staticGetters[var.name.__s] = getter;
+         DBGLOG("  found getter for %s.%s\n", name.c_str(), var.name.out_str());
+         staticGetters[var.name.utf8_str()] = getter;
       }
       if (var.writeAccess == CppiaVar::accCall || var.writeAccess == CppiaVar::accCallNative)
       {
          ScriptCallable *setter = findFunction(true,HX_CSTRING("set_") + var.name);
          if (!setter)
             throw Dynamic(HX_CSTRING("Could not find setter for ") + var.name);
-         DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.__s);
-         staticSetters[var.name.__s] = setter;
+         DBGLOG("  found setter for %s.%s\n", name.c_str(), var.name.out_str());
+         staticSetters[var.name.utf8_str()] = setter;
       }
 
       if (var.readAccess == CppiaVar::accCallNative || var.writeAccess == CppiaVar::accCallNative)
@@ -1413,7 +1413,7 @@ void CppiaClassInfo::link()
    if (enumMeta)
       enumMeta = enumMeta->link(cppia);
 
-   //printf("Found haxeBase %s = %p / %d\n", cppia.types[typeId]->name.__s, haxeBase, dataSize );
+   //printf("Found haxeBase %s = %p / %d\n", cppia.types[typeId]->name.out_str(), haxeBase, dataSize );
 }
 
 void CppiaClassInfo::init(CppiaCtx *ctx, int inPhase)
@@ -1485,7 +1485,7 @@ Dynamic CppiaClassInfo::getStaticValue(const String &inName,hx::PropertyAccess  
          return var.getStaticValue();
    }
 
-   printf("Get static field not found (%s) %s\n", name.c_str(),inName.__s);
+   printf("Get static field not found (%s) %s\n", name.c_str(),inName.out_str());
    return null();
 }
 
@@ -1550,7 +1550,7 @@ Dynamic CppiaClassInfo::setStaticValue(const String &inName,const Dynamic &inVal
       }
    }
 
-   printf("Set static field not found (%s) %s\n", name.c_str(), inName.__s);
+   printf("Set static field not found (%s) %s\n", name.c_str(), inName.out_str());
    return null();
 
 }
@@ -1701,7 +1701,7 @@ public:
    {
       mName = inName;
       mSuper = info->getSuperClass();
-      DBGLOG("LINK %p ########################### %s -> %p\n", this, mName.__s, mSuper );
+      DBGLOG("LINK %p ########################### %s -> %p\n", this, mName.out_str(), mSuper );
       //mStatics = Array_obj<String>::__new(0,0);
 
       bool overwrite = false;

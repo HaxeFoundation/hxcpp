@@ -24,6 +24,7 @@ class HostOne implements pack.HostInterface
 
 class CppiaHost
 {
+
    public static function main()
    {
       Common.hostImplementation = new HostOne();
@@ -58,6 +59,15 @@ class CppiaHost
             Sys.println("Bad client String implementation - failed");
             Sys.exit(-1);
          }
+
+         var hostBase:HostBase = Type.createInstance(Type.resolveClass("ClientExtends2"),[]);
+
+         if (!hostBase.testUpdateOverride())
+         {
+            Sys.println("Bad update override");
+            Sys.exit(-1);
+         }
       }
    }
 }
+

@@ -16,8 +16,8 @@ inline bool null::operator != (const hx::IndexRef &O) const { return O.HasPointe
 inline bool null::operator == (const Dynamic &O) const { return !O.mPtr; }
 inline bool null::operator != (const Dynamic &O) const { return O.mPtr; }
 
-inline bool null::operator == (const String &O) const { return !O.__s; }
-inline bool null::operator != (const String &O) const { return O.__s; }
+inline bool null::operator == (const String &O) const { return !O.raw_ptr(); }
+inline bool null::operator != (const String &O) const { return O.raw_ptr(); }
 
 namespace hx {
 template<typename T> Null<T>::operator Dynamic() { if (isNull) return Dynamic(); return value; }
@@ -394,6 +394,44 @@ inline void __hxcpp_unsafe_set(hx::ObjectPtr<VALUE> &outForced, const Dynamic &i
       #endif
    }
 }
+
+namespace hx
+{
+class HXCPP_EXTERN_CLASS_ATTRIBUTES StringValueIterator : public cpp::StringIterator<int>
+{
+public:
+   StringValueIterator(const String &inValue) : StringIterator(inValue) { }
+
+   int next() { return value.cca(pos++); }
+};
+
+class HXCPP_EXTERN_CLASS_ATTRIBUTES StringKeyValueIterator : public cpp::StringIterator<Dynamic>
+{
+public:
+   StringKeyValueIterator(const String &inValue) : StringIterator(inValue) { }
+
+   Dynamic next() {
+      int p = pos;
+      return
+        hx::AnonStruct2_obj< int,int >::Create(HX_("key",9f,89,51,00),p,
+                                               HX_("value",71,7f,b8,31), value.cca(pos++) );
+   }
+};
+}
+
+
+Dynamic String::iterator()
+{
+   return new hx::StringValueIterator(*this);
+}
+
+
+Dynamic String::keyValueIterator()
+{
+   return new hx::StringKeyValueIterator(*this);
+}
+
+
 
 
 

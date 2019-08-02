@@ -31,6 +31,7 @@ class TestCffi extends TestBase
    static var getAbstract:Dynamic->Int = Lib.load("prime", "getAbstract", 1);
    static var freeAbstract:Dynamic->Void = Lib.load("prime", "freeAbstract", 1);
    static var getAbstractFreeCount:Void->Int = Lib.load("prime", "getAbstractFreeCount", 0);
+  
 
    static var cppObjectAsDynamic:cpp.Callable<Int->cpp.Object>;
 

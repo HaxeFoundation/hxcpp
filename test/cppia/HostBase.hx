@@ -5,6 +5,10 @@ import cpp.Native;
 class HostBase implements IHostInterface
 {
    static var hostInit = 10;
+   public static var hostBool0 = true;
+   public static var hostBool1 = false;
+   public static var hostBool2 = true;
+   public static var hostBool3 = false;
 
    var floatVal:Float;
    var pointerSrc:cpp.Star<Int>;
@@ -31,12 +35,17 @@ class HostBase implements IHostInterface
       #end
    }
 
+   public function testUpdateOverride() : Bool
+   {
+      return update()=="ClientExtends2 update";
+   }
 
 
    public function getVal() return floatVal;
 
    public function getGeneration() return 0;
 
+   public function update() return "HostBase update";
 
    // IHostInteface 
    public function hostImplOnly(i:Int, s:String, f:Float) : String return i+s+f;

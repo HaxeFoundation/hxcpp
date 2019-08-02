@@ -2,8 +2,12 @@ package gc;
 import haxe.io.Bytes;
 import haxe.crypto.Md5;
 import cpp.vm.Gc;
-import cpp.vm.Thread;
 import sys.io.File;
+#if haxe4
+import sys.thread.Thread;
+#else
+import cpp.vm.Thread;
+#end
 
 class TestGCThreaded extends haxe.unit.TestCase {
 
@@ -48,7 +52,7 @@ class TestGCThreaded extends haxe.unit.TestCase {
       var threads:Array<Thread> = [];
       for (i in 0...numThreads)
       {
-         threads.push( cpp.vm.Thread.create(function() {
+         threads.push( Thread.create(function() {
             while(true) {
                var message:Dynamic = Thread.readMessage(true);
                if(message == 'exit')

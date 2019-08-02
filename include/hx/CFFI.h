@@ -1,6 +1,7 @@
 #ifndef HX_CFFI_H
 #define HX_CFFI_H
 
+#define HX_CFFI_API_VERSION 400
 
 #ifdef HXCPP_JS_PRIME
 #include <emscripten/bind.h>
@@ -122,6 +123,16 @@ enum hxValueType
    valtAbstractBase = 0x100,
 };
 
+namespace hx
+{
+enum StringEncoding
+{
+   StringAscii,
+   StringUtf8,
+   StringUtf16
+};
+}
+
 // val_fun_nargs may return a special value
 enum { faNotFunction = -2, faVarArgs=-1, faArgs0=0 /* ... */ };
 
@@ -182,6 +193,13 @@ extern FUNC_##name name;
 #include "CFFIAPI.h"
 
 
+#ifdef WANT_DYNALLOC_ALLOC_BYTES
+void *DynAlloc::allocBytes(size_t n)
+{
+   return hx_alloc((int)n);
+}
+#endif
+
 
 
 #define DEFINE_KIND(name) extern "C" { vkind name = 0; }
@@ -230,7 +248,7 @@ inline bool val_is_object(value inVal)
 class AutoGCBlocking
 {
 public:
-	AutoGCBlocking() : mLocked(true) { gc_enter_blocking(); }
+	AutoGCBlocking() : mLocked( gc_try_blocking() ) {  }
 	~AutoGCBlocking() { if (mLocked) gc_exit_blocking(); }
 	void Close() { if (mLocked) gc_exit_blocking(); mLocked = false; }
 

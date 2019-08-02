@@ -1,11 +1,18 @@
 import haxe.io.Bytes;
 import sys.io.Process;
-#if neko
-import neko.Lib;
+
+#if haxe4
+import sys.thread.Mutex;
+#elseif neko
 import neko.vm.Mutex;
 #else
-import cpp.Lib;
 import cpp.vm.Mutex;
+#end
+
+#if neko
+import neko.Lib;
+#else
+import cpp.Lib;
 #end
 
 class Log

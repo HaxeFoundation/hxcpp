@@ -62,6 +62,7 @@
   <cppflag value="${CPP_ABI}" />
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
+  <flag value="-DHXCPP_SEH_THROW" if="HXCPP_SEH_THROW" unless="winrt" />
   <flag value="-D${HXCPP_XP_DEFINE}" if="HXCPP_XP_DEFINE"/>
   <flag value="-GR"/>
 
@@ -88,7 +89,8 @@
   <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
   <flag value="-c"/>
-  <flag value="-EHs" unless="winrt"/>
+  <flag value="-EHa" if="HXCPP_SEH_THROW" unless="winrt"/>
+  <flag value="-EHs" unless="HXCPP_SEH_THROW || winrt"/>
   <flag value="-EHsc" if="winrt"/>
   <flag value="-GS-"/>
   <flag value="-arch:${MSVC_ARCH}" if="MSVC_ARCH" />
@@ -102,6 +104,10 @@
   <outflag value="-Fo"/>
   <ext value=".obj"/>
   <objdir value="${MSVC_OBJ_DIR}" />
+
+  <rcexe name="rc.exe" />
+  <rcext value=".res" />
+  <rcflag value="-nologo" />
 
   <getversion value="cl.exe"/>
 </compiler>
@@ -140,6 +146,15 @@
   <ext value=".exe"/>
   <outflag value="-out:"/>
 </linker>
+
+
+<manifest exe="mt.exe" >
+  <flag value="-nologo"/>
+  <flag value="-manifest"/>
+  <outPre value="-outputresource:" />
+  <outPost value=";1" />
+</manifest>
+
 
 
 <linker id="exe" exe="link.exe" if="winrt">

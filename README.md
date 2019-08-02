@@ -1,7 +1,6 @@
 # hxcpp
 
-[![TravisCI Build Status](https://travis-ci.org/HaxeFoundation/hxcpp.svg?branch=master)](https://travis-ci.org/HaxeFoundation/hxcpp)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/HaxeFoundation/hxcpp?branch=master&svg=true)](https://ci.appveyor.com/project/HaxeFoundation/hxcpp)
+[![Build Status](https://dev.azure.com/HaxeFoundation/GitHubPublic/_apis/build/status/HaxeFoundation.hxcpp?branchName=master)](https://dev.azure.com/HaxeFoundation/GitHubPublic/_build/latest?definitionId=3&branchName=master)
 
 hxcpp is the runtime support for the c++ backend of the [haxe](http://haxe.org/) compiler. This contains the headers, libraries and support code required to generate a fully compiled executable from haxe code.
 

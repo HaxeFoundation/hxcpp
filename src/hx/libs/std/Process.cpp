@@ -119,6 +119,61 @@ vprocess *getProcess(Dynamic handle)
 
 } // end anon namespace
 
+
+
+template<typename T>
+static String TQuoted(const T *ptr, int len)
+{
+   std::vector<T> quoted;
+   quoted.reserve(len*2);
+
+   unsigned int bs_count = 0;
+   for(int j=0;j<len;j++)
+   {
+      T c = ptr[j];
+      switch( c )
+      {
+      case '"':
+         // Double backslashes.
+         for (int k=0;k<bs_count*2;k++)
+            quoted.push_back('\\');
+         bs_count = 0;
+         quoted.push_back('\\');
+         quoted.push_back('"');
+         break;
+      case '\\':
+         // Don't know if we need to double yet.
+         bs_count++;
+         break;
+      default:
+         // Normal char
+         for (int k=0;k<bs_count;k++)
+            quoted.push_back('\\');
+         bs_count = 0;
+         quoted.push_back(c);
+         break;
+      }
+   }
+   // Add remaining backslashes, if any.
+   for (int k=0;k<bs_count*2;k++)
+      quoted.push_back('\\');
+   int qlen = (int)quoted.size();
+   quoted.push_back('\0');
+
+   return String::create( &quoted[0], qlen );
+}
+
+static String quoteString(String v)
+{
+   #ifdef HX_SMART_STRINGS
+   if (v.isUTF16Encoded())
+      return TQuoted(v.raw_wptr(),v.length);
+   #endif
+   return TQuoted(v.raw_ptr(),v.length);
+}
+
+
+
 /**
    process_run : cmd:string -> args:string array -> 'process
    <doc>
@@ -163,50 +218,8 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
          for(int i=0;i<vargs->length;i++)
          {
             b += HX_CSTRING(" \"");
-
-            String v = vargs[i];
-            int len = v.length;
-
-            std::vector<char> quoted;
-            quoted.reserve(len*2);
-
-            unsigned int bs_count = 0;
-            for(int j=0;j<len;j++)
-            {
-               char c = v.__s[j];
-               switch( c )
-               {
-               case '"':
-                  // Double backslashes.
-                  for (int k=0;k<bs_count*2;k++)
-                     quoted.push_back('\\');
-                  bs_count = 0;
-                  quoted.push_back('\\');
-                  quoted.push_back('"');
-                  break;
-               case '\\':
-                  // Don't know if we need to double yet.
-                  bs_count++;
-                  break;
-               default:
-                  // Normal char
-                  for (int k=0;k<bs_count;k++)
-                     quoted.push_back('\\');
-                  bs_count = 0;
-                  quoted.push_back(c);
-                  break;
-               }
-            }
-            // Add remaining backslashes, if any.
-            for (int k=0;k<bs_count*2;k++)
-               quoted.push_back('\\');
-
-            int qLen = quoted.size();
-            quoted.push_back('\0');
-
-            if (quoted.size())
-               b+= String( &quoted[0], qLen ).dup();
-
+            if (vargs[i].length)
+               b += quoteString(vargs[i]);
             b += HX_CSTRING("\"");
          }
       }
@@ -261,21 +274,22 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
    if( pipe(input) || pipe(output) || pipe(error) )
       return null();
 
+   hx::strbuf buf;
    std::vector< std::string > values;
    if (isRaw)
    {
       values.resize(3);
       values[0] = "/bin/sh";
       values[1] = "-c";
-      values[2] = cmd.__s;
+      values[2] = cmd.utf8_str(&buf);
    }
    else
    {
       values.resize(vargs->length+1);
 
-      values[0] = cmd.__s;
+      values[0] = cmd.utf8_str(&buf);
       for(int i=0;i<vargs->length;i++)
-         values[i+1] = vargs[i].__s;
+         values[i+1] = vargs[i].utf8_str(&buf);
    }
 
    std::vector<const char *> argv(values.size()+1);
@@ -296,7 +310,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
       dup2(output[1],1);
       dup2(error[1],2);
       execvp(argv[0],(char* const*)&argv[0]);
-      fprintf(stderr,"Command not found : %s\n",cmd.__s);
+      fprintf(stderr,"Command not found : %S\n",cmd.wchar_str());
       exit(1);
    }
 

@@ -160,10 +160,15 @@ class Builder
                   validArchs.set("x86_64", ["-Diphonesim", "-DHXCPP_M64"].concat(staticFlags) );
 
                case "android":
+
+                  if( archs.length == 0 )
+                     throw("You must specify the archs you want for android");
+               
                   validArchs.set("armv5", ["-Dandroid"].concat(staticFlags) );
                   validArchs.set("armv7", ["-Dandroid", "-DHXCPP_ARMV7"].concat(staticFlags) );
                   validArchs.set("arm64", ["-Dandroid", "-DHXCPP_ARM64"].concat(staticFlags) );
                   validArchs.set("x86", ["-Dandroid", "-DHXCPP_X86"].concat(staticFlags) );
+                  validArchs.set("x86_64", ["-Dandroid", "-DHXCPP_X86_64"].concat(staticFlags) );
                
                case "blackberry":
                   validArchs.set("armv7", ["-Dblackberry"].concat(staticFlags) );

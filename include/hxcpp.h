@@ -48,8 +48,6 @@
 
 #include <string.h>
 
-#define HX_UTF8_STRINGS
-
 #include <wchar.h>
 
 #ifdef HX_LINUX
@@ -164,7 +162,7 @@ typedef char HX_CHAR;
 #define HX_HCSTRING(s,h0,h1,h2,h3) ::String( const_cast<char *>((h3 h2 h1 h0 "\x80\x10\x00\x00" s)) + 8 , sizeof(s)/sizeof(char)-1)
 #define HX_(s,h0,h1,h2,h3) ::String( const_cast<char *>(( HX_HEX_QUOTE(h3) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h0) "\x80\x10\x00\x00" s )) + 8 , sizeof(s)/sizeof(char)-1)
 #define HX_STRINGI(s,len) ::String( const_cast<char *>(("\x80\x00\x00\x00" s)) + 4 ,len)
-#define HX_W(s,h0,h1) ::String( const_cast<char16_t *>(( HX_HEX_QUOTE_W(h1) HX_HEX_QUOTE_W(h0) u"\x8030\x0000" s )) + 4, sizeof(s)/2-1, true)
+#define HX_W(s,h0,h1) ::String( const_cast<char16_t *>(( HX_HEX_QUOTE_W(h1) HX_HEX_QUOTE_W(h0) u"\x8030\x0000" s )) + 4, sizeof(s)/2-1)
 
 #else
 
@@ -172,7 +170,7 @@ typedef char HX_CHAR;
 #define HX_(s,h0,h1,h2,h3) ::String( const_cast<char *>(( HX_HEX_QUOTE(h0) HX_HEX_QUOTE(h1) HX_HEX_QUOTE(h2) HX_HEX_QUOTE(h3) "\x00\x00\x10\x80" s )) + 8 , sizeof(s)/sizeof(char)-1)
 #define HX_STRINGI(s,len) ::String( const_cast<char *>(("\x00\x00\x0\x80" s)) + 4 ,len)
 
-#define HX_W(s,h0,h1) ::String( const_cast<char16_t *>(( HX_HEX_QUOTE_W(h0) HX_HEX_QUOTE_W(h1) u"\x0000\x8030" s )) + 4, sizeof(s)/2-1, true)
+#define HX_W(s,h0,h1) ::String( const_cast<char16_t *>(( HX_HEX_QUOTE_W(h0) HX_HEX_QUOTE_W(h1) u"\x0000\x8030" s )) + 4, sizeof(s)/2-1)
 
 #endif
 
@@ -182,9 +180,9 @@ typedef char HX_CHAR;
 #define HX_CSTRING2(wide,len,utf8) HX_STRI(utf8)
 
 #ifdef HX_SMART_STRINGS
-  #define HX_FIELD_EQ(name,field) (name.isAsciiEncoded() && !::memcmp(name.__s, field, sizeof(field)/sizeof(char)))
+  #define HX_FIELD_EQ(name,field) (name.isAsciiEncoded() && !::memcmp(name.raw_ptr(), field, sizeof(field)/sizeof(char)))
   // No null check is performed....
-  #define HX_QSTR_EQ(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length) && field.isAsciiEncodedQ())
+  #define HX_QSTR_EQ(name,field) (name.length==field.length && field.isAsciiEncodedQ() && !::memcmp(name.raw_ptr(), field.raw_ptr() , field.length) )
 #else
   #define HX_FIELD_EQ(name,field) !::memcmp(name.__s, field, sizeof(field)/sizeof(char))
   // No null check is performed....

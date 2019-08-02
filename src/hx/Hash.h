@@ -35,6 +35,7 @@ struct TIntElement
 
    enum { IgnoreHash = 1 };
    enum { WeakKeys = 0 };
+   enum { ManageKeys = 0 };
 
    typedef TIntElement<int>     IntValue;
    typedef TIntElement<Float>   FloatValue;
@@ -63,6 +64,7 @@ struct TStringElement
 
    enum { IgnoreHash = 0 };
    enum { WeakKeys = 0 };
+   enum { ManageKeys = 1 };
 
    typedef TStringElement<int>     IntValue;
    typedef TStringElement<Float>   FloatValue;
@@ -88,27 +90,11 @@ public:
 struct TWeakStringSet
 {
    typedef null Value;
-   /*
-   struct Value
-   {
-      inline Value() {}
-      inline Value(bool) {}
-      inline Value(null) {}
-      inline Value(Float) {}
-      inline Value(int) {}
-      inline Value(const Dynamic &) {}
-      inline Value(const cpp::Variant &) {}
-      inline operator Dynamic () const { return Dynamic(); }
-      inline operator cpp::Variant () const { return cpp::Variant(); }
-      inline operator String () const { return String(); }
-      inline operator Float () const { return 0; }
-      inline operator int () const { return 0; }
-   };
-   */
    typedef String Key;
 
    enum { IgnoreHash = 0 };
    enum { WeakKeys = 1 };
+   enum { ManageKeys = 1 };
 
    typedef TWeakStringSet  IntValue;
    typedef TWeakStringSet  FloatValue;
@@ -131,8 +117,39 @@ public:
 };
 
 
+struct TNonGcStringSet
+{
+   typedef null Value;
+   typedef String Key;
 
-// An Dyanamic element must use the GC code get get a hash
+   enum { IgnoreHash = 0 };
+   enum { WeakKeys = 1 };
+   enum { ManageKeys = 0 };
+
+   typedef TNonGcStringSet  IntValue;
+   typedef TNonGcStringSet  FloatValue;
+   typedef TNonGcStringSet  DynamicValue;
+   typedef TNonGcStringSet  StringValue;
+
+
+public:
+   inline void  setKey(String inKey, unsigned int inHash)
+   {
+      key = inKey;
+      hash = inHash;
+   }
+   inline unsigned int getHash() { return hash; }
+
+   Key                key;
+   unsigned int       hash;
+   Value              value;
+   TNonGcStringSet    *next;
+};
+
+
+
+
+// An Dyanamic element must use the GC code to get a hash
 template<typename VALUE,bool WEAK>
 struct TDynamicElement
 {
@@ -141,6 +158,7 @@ struct TDynamicElement
 
    enum { IgnoreHash = 0 };
    enum { WeakKeys = WEAK };
+   enum { ManageKeys = 1 };
 
    typedef TDynamicElement<int,WEAK>     IntValue;
    typedef TDynamicElement<Float,WEAK>   FloatValue;
@@ -268,7 +286,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       size = 0;
       mask = 0;
       bucketCount = 0;
-      if (ELEMENT::WeakKeys)
+      if (ELEMENT::WeakKeys && Element::ManageKeys)
          RegisterWeakHash(this);
    }
    inline int getSize() { return size; }
@@ -276,12 +294,12 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    template<typename T>
    bool TIsWeakRefValid(T &) { return true; }
    bool TIsWeakRefValid(Dynamic &key) { return IsWeakRefValid(key.mPtr); }
-   bool TIsWeakRefValid(String &key) { return IsWeakRefValid(key.__s); }
+   bool TIsWeakRefValid(String &key) { return IsWeakRefValid(key.raw_ptr()); }
 
 
    void updateAfterGc()
    {
-      if (Element::WeakKeys)
+      if (Element::WeakKeys && Element::ManageKeys)
       {
          for(int b=0;b<bucketCount;b++)
          {

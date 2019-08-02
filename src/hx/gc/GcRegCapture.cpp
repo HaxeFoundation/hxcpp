@@ -1,7 +1,10 @@
 #include "GcRegCapture.h"
 
+#ifdef HXCPP_CAPTURE_SETJMP // {
 
-#ifdef HXCPP_CAPTURE_x86 // {
+// Nothing
+
+#elif defined(HXCPP_CAPTURE_x86) // }  {
 
 #pragma optimize( "", off )
 
@@ -31,7 +34,7 @@ void CaptureX86(RegisterCaptureBuffer &outBuffer)
 
 } // end namespace hx
 
-#elif defined(HXCPP_CAPTURE_x64) // {
+#elif defined(HXCPP_CAPTURE_x64) // } {
 
 #if !defined(__GNUC__)
 #include <windows.h>

@@ -1,6 +1,9 @@
 import sys.FileSystem;
+using StringTools;
 
-#if cpp
+#if haxe4
+import sys.thread.Mutex;
+#elseif cpp
 import cpp.vm.Mutex;
 #else
 import neko.vm.Mutex;
@@ -40,6 +43,8 @@ class File
    inline public function getCacheProject() return mGroup.getCacheProject();
 
    public function isNvcc() return mGroup.mNvcc;
+
+   public function isResource() return mName.endsWith(".rc");
 
    public function keep(inDefines:Map<String,String>)
    {

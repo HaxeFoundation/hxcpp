@@ -351,17 +351,20 @@ int _hx_std_host_resolve( String host )
    unsigned int ip;
 
    hx::EnterGCFreeZone();
-   ip = inet_addr(host.__s);
+   hx::strbuf buf;
+   ip = inet_addr(host.utf8_str(&buf));
    if( ip == INADDR_NONE )
    {
       struct hostent *h = 0;
+      hx::strbuf hostBuf;
+
 #   if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
-      h = gethostbyname(host.__s);
+      h = gethostbyname(host.utf8_str(&hostBuf));
 #   else
       struct hostent hbase;
       char buf[1024];
       int errcode;
-      gethostbyname_r(host.__s,&hbase,buf,1024,&h,&errcode);
+      gethostbyname_r(host.utf8_str(&hostBuf),&hbase,buf,1024,&h,&errcode);
 #   endif
       if( !h ) {
          hx::ExitGCFreeZone();
@@ -382,6 +385,8 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
 {
    in6_addr ipv6;
 
+   hx::strbuf hostBuf;
+   const char *hostStr = host.utf8_str(&hostBuf);
    #ifdef DYNAMIC_INET_FUNCS
    if (!dynamic_inet_pton_tried)
    {
@@ -390,9 +395,9 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
       if (module)
          dynamic_inet_pton = (inet_pton_func)GetProcAddress(module,"inet_pton");
    }
-   int ok = dynamic_inet_pton ? dynamic_inet_pton(AF_INET6, host.__s, (void *)&ipv6) : 0;
+   int ok = dynamic_inet_pton ? dynamic_inet_pton(AF_INET6, hostStr, (void *)&ipv6) : 0;
    #else
-   int ok = inet_pton(AF_INET6, host.__s, (void *)&ipv6);
+   int ok = inet_pton(AF_INET6, hostStr, (void *)&ipv6);
    #endif
 
    if (!ok)
@@ -410,7 +415,7 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
 
       addrinfo *result = 0;
       hx::EnterGCFreeZone();
-      int err =  getaddrinfo( host.__s, 0, &hints, &result);
+      int err =  getaddrinfo( hostStr, 0, &hints, &result);
       hx::ExitGCFreeZone();
       if (err==0)
       {

@@ -7,6 +7,11 @@ class ClientOne implements pack.HostInterface
 
 class Client
 {
+   public static var clientBool0 = true;
+   public static var clientBool1 = false;
+   public static var clientBool2 = true;
+   public static var clientBool3 = false;
+
    public static function main()
    {
       Common.status = "running";
@@ -60,6 +65,13 @@ class Client
          return;
       }
 
+      if (!c.testOne())
+      {
+         Common.status = "Bad ClientExtends getOne";
+         return;
+      }
+
+
 
       var clientInterface:IClientInterface = c;
       if (clientInterface.whoStartedYou()!="HostBase")
@@ -110,6 +122,34 @@ class Client
          return;
       }
 
+      var c = new ClientExtends2();
+      if (c.testOne())
+      {
+         Common.status = "ClientExtends2 getOne should fail";
+         return;
+      }
+
+      if (!c.testOneExtended())
+      {
+         Common.status = "ClientExtends2 testOneExtended failed";
+         return;
+      }
+
+      if (!c.testFour())
+      {
+         Common.status = "ClientExtends2 testFour error";
+         return;
+      }
+
+
+
+      var hostBools = HostBase.hostBool0 + "/" + HostBase.hostBool1+ "/" + HostBase.hostBool2+ "/" + HostBase.hostBool3;
+      var clientBools = clientBool0 + "/" + clientBool1+ "/" + clientBool2+ "/" + clientBool3;
+      if (hostBools!=clientBools)
+      {
+         Common.status = "Error in bool representation:" + hostBools + "!=" + clientBools;
+         return;
+      }
 
       Common.clientImplementation = new ClientOne();
       Common.status = "ok";

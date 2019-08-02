@@ -198,6 +198,7 @@ typedef ::hx::ObjectPtr<CppiaLoadedModule_obj> CppiaLoadedModule;
 void __scriptable_load_neko(String inName);
 void __scriptable_load_cppia(String inCode);
 ::hx::CppiaLoadedModule __scriptable_cppia_from_string(String inCode);
+::hx::CppiaLoadedModule __scriptable_cppia_from_data(Array<unsigned char> inBytes);
 void __scriptable_load_neko_bytes(Array<unsigned char> inBytes);
 void __scriptable_load_abc(Array<unsigned char> inBytes);
 

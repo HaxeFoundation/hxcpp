@@ -5,9 +5,12 @@
 #error "Please include hxcpp.h, not hx/Object.h"
 #endif
 
+#include <hx/StringAlloc.h>
+
 #ifdef __OBJC__
 #import <Foundation/Foundation.h>
 #endif
+
 
 // --- String --------------------------------------------------------
 //
@@ -18,6 +21,8 @@
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES String
 {
+   friend class StringOffset;
+
 public:
   // These allocate the function using the garbage-colleced malloc
    void *operator new( size_t inSize );
@@ -25,15 +30,30 @@ public:
    void operator delete( void * ) { }
 
    inline String() : length(0), __s(0) { }
-   explicit String(const char *inPtr);
+
+   // Uses pointer
    inline String(const char *inPtr,int inLen) : __s(inPtr), length(inLen) { }
+   #ifdef HX_SMART_STRINGS
+   inline String(const char16_t *inPtr,int inLen) : __w(inPtr), length(inLen) { }
+   #endif
 
-   inline String(const char16_t *inPtr,int inLen,bool) : __w(inPtr), length(inLen) { }
+   // Makes copy
+   inline String(const wchar_t *inPtr) { *this = create(inPtr); }
+   inline String(const char16_t *inPtr) { *this = create(inPtr); }
+   inline String(const char *inPtr) { *this = create(inPtr); }
 
-   // Makes copy if required
-   String(const wchar_t *inPtr,int inLen);
+   static String create(const wchar_t *inPtr,int inLen=-1);
+   static String create(const char16_t *inPtr,int inLen=-1);
+   static String create(const char *inPtr,int inLen=-1);
 
-   explicit String(const wchar_t *inPtr);
+   // Uses non-gc memory and wont ever be collected
+   static ::String createPermanent(const char *inUtf8, int inLen);
+   const ::String &makePermanent() const;
+
+   // Legacy
+   ::String &dup();
+
+
    #ifdef __OBJC__
    inline String(NSString *inString)
    {
@@ -41,7 +61,8 @@ public:
    }
    inline operator NSString * () const
    {
-      return [[NSString alloc] initWithUTF8String:__s];
+      hx::strbuf buf;
+      return [[NSString alloc] initWithUTF8String:utf8_str(&buf) ];
    }
    #endif
    #if defined(HX_WINRT) && defined(__cplusplus_winrt)
@@ -72,8 +93,11 @@ public:
    String(hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
    inline String(const ::cpp::Variant &inRHS) { *this = inRHS.asString(); }
    template<typename T>
+   inline String( const ::cpp::Pointer<T> &inRHS) { fromPointer(inRHS.ptr); }
+   template<typename T>
    inline String( const hx::Native<T> &n ) { fromPointer(n.ptr); }
 
+   static String emptyString;
    static void __boot();
 
    hx::Object *__ToObject() const;
@@ -117,10 +141,6 @@ public:
     ::String __URLEncode() const;
     ::String __URLDecode() const;
 
-    ::String &dup();
-    ::String &dupConst();
-    static ::String makeConstString(const char *);
-    static ::String makeConstChar16String(const char *inUtf8, int inLen);
 
     ::String toUpperCase() const;
     ::String toLowerCase() const;
@@ -132,12 +152,21 @@ public:
     ::String substr(int inPos,Dynamic inLen) const;
     ::String substring(int inStartIndex, Dynamic inEndIndex) const;
 
-   inline const char *c_str() const { return __CStr(); }
-   const char16_t *wc_str() const;
-   const char *__CStr() const;
-   const wchar_t *__WCStr() const;
-   inline operator const char *() { return __CStr(); }
+   inline const char *&raw_ref() { return __s; }
+   inline const char *raw_ptr() const { return __s; }
+   const char *utf8_str(hx::IStringAlloc *inBuffer = 0,bool throwInvalid=true) const;
+   inline const char *c_str() const { return utf8_str(); }
+   inline const char *out_str(hx::IStringAlloc *inBuffer = 0) const { return utf8_str(inBuffer,false); }
+   const wchar_t *wchar_str(hx::IStringAlloc *inBuffer = 0) const;
+   const char16_t *wc_str(hx::IStringAlloc *inBuffer = 0) const;
 
+   const char *__CStr() const { return utf8_str(); };
+   const wchar_t *__WCStr() const { return wchar_str(0); }
+   inline operator const char *() { return utf8_str(); }
+
+   #ifdef HX_SMART_STRINGS
+   inline const char16_t *raw_wptr() const { return __w; }
+   #endif
    inline bool isUTF16Encoded() const {
       #ifdef HX_SMART_STRINGS
       return __w && ((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T;
@@ -148,7 +177,7 @@ public:
 
    inline bool isAsciiEncoded() const {
       #ifdef HX_SMART_STRINGS
-      return __w && !(((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T);
+      return !__w || !(((unsigned int *)__w)[-1] & HX_GC_STRING_CHAR16_T);
       #else
       return true;
       #endif
@@ -279,10 +308,14 @@ public:
       return ((unsigned char *)__s)[inPos];
    }
 
+   inline Dynamic iterator();
+   inline Dynamic keyValueIterator();
+
    static char16_t *allocChar16Ptr(int len);
 
 
    static  Dynamic fromCharCode_dyn();
+
 
    Dynamic charAt_dyn();
    Dynamic charCodeAt_dyn();
@@ -302,16 +335,32 @@ public:
    // Note that "__s" is const - if you want to change it, you should create a new string.
    //  this allows for multiple strings to point to the same data.
    int length;
+
+   #ifdef HX_SMART_STRINGS
+   // TODO private:
+     // Use c_str, wc_str, raw_str instead
+   #endif
+
    union {
       const char *__s;
       const char16_t *__w;
    };
+
 };
+
+class StringOffset
+{
+   public:
+      enum { Ptr = offsetof(String,__s) };
+};
+
+
+
 
 
 inline HXCPP_EXTERN_CLASS_ATTRIBUTES String _hx_string_create(const char *str, int len)
 {
-   return String(str,len).dup();
+   return String::create(str,len);
 }
 
 inline int HXCPP_EXTERN_CLASS_ATTRIBUTES _hx_string_compare(String inString0, String inString1)

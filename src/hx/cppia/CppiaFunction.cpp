@@ -220,7 +220,7 @@ void ScriptCallable::getScriptableVariables(unsigned char *inStack, Array<Dynami
 bool ScriptCallable::getScriptableValue(unsigned char *inStack, String inName, ::Dynamic &outValue)
 {
    unsigned char *frame = inStack - stackSize;
-   if (inName.length==4 && !strcmp(inName.__s,"this"))
+   if (inName == HX_CSTRING("this"))
    {
       outValue = *(hx::Object **)frame;
       return true;
@@ -348,7 +348,7 @@ void ScriptCallable::genArgs(CppiaCompiler *compiler, CppiaExpr *inThis, Express
                break;
             case etString:
                compiler->move( JitFramePos(framePos).as(jtInt), 0 );
-               compiler->move( JitFramePos(framePos).as(jtPointer) + offsetof(String,__s), (void *)0 );
+               compiler->move( JitFramePos(framePos).as(jtPointer) + StringOffset::Ptr, (void *)0 );
                break;
             default: ;
          }
@@ -965,7 +965,7 @@ CppiaFunction::CppiaFunction(CppiaModule *inCppia,bool inIsStatic,bool inIsDynam
 void CppiaFunction::load(CppiaStream &stream,bool inExpectBody)
 {
    nameId = stream.getInt();
-   name = cppia.strings[ nameId ].__s;
+   name = cppia.strings[ nameId ].utf8_str();
    stream.module->creatingFunction = name.c_str();
    returnType = stream.getInt();
    argCount = stream.getInt();

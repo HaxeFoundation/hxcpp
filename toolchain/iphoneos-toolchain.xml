@@ -3,6 +3,8 @@
 
 <echo value="Using iOS SDK ${IPHONE_VER}" if="VERBOSE"/>
 
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
+
 <set name="ARCH" value ="-v7" if="HXCPP_ARMV7" />
 <set name="ARCH" value ="-v7s" if="HXCPP_ARMV7S" />
 <set name="ARCH" value ="-64" if="HXCPP_ARM64" />
@@ -28,8 +30,8 @@
   <!-- <cppflag value="-fvisibility-inlines-hidden"/> -->
   <pchflag value="-x" />
   <pchflag value="c++-header" />
-  <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
-  <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <cppflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <cppflag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>

@@ -3,21 +3,21 @@
 
   git clone --recursive https://github.com/HaxeFoundation/haxe.git ~/haxe --depth 1
 
-  sudo add-apt-repository ppa:haxe/ocaml -y
+  sudo add-apt-repository ppa:avsm/ppa -y
   sudo add-apt-repository ppa:haxe/snapshots -y
   sudo apt-get update
   sudo apt-get install -y \
       neko \
-      ocaml \
-      ocaml-native-compilers \
-      ocaml-findlib \
-      aspcud \
+      ocaml-nox \
+      camlp4-extra \
+      opam \
+      libpcre3-dev \
+      zlib1g-dev \
       awscli
 
-  wget https://raw.github.com/ocaml/opam/master/shell/opam_installer.sh -O - | sh -s /usr/local/bin system
   export OPAMYES=1
+  opam init
   eval `opam config env`
-  opam update
   opam pin add haxe ~/haxe --no-action
   opam install haxe --deps-only
 

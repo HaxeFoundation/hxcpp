@@ -473,7 +473,7 @@ Dynamic::Dynamic(const cpp::CppInt32__ &inVal) :
   super(  Dynamic(inVal.mValue).mPtr ) { }
 
 Dynamic::Dynamic(const String &inVal) :
-  super( inVal.__s ? inVal.__ToObject() : 0 ) { }
+  super( inVal.raw_ptr() ? inVal.__ToObject() : 0 ) { }
 
 Dynamic::Dynamic(const HX_CHAR *inVal) :
   super( inVal ? String(inVal).__ToObject() : 0 ) { }

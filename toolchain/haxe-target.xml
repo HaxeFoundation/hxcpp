@@ -14,6 +14,14 @@
 
 <!-- Library files & targets -------------------------------------->
 
+<files id="cffi-depends">
+  <depend name="${HXCPP}/include/hx/CFFI.h"/>
+  <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
+  <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
+  <depend name="${HXCPP}/include/hx/StringAlloc.h"/>
+</files>
+
+
 <files id="hxcpp-depends">
   <depend name="${HXCPP}/include/hxcpp.h"/>
   <depend name="${HXCPP}/include/Array.h"/>
@@ -38,6 +46,7 @@
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
   <depend name="${HXCPP}/include/hx/CFFIAPI.h"/>
   <depend name="${HXCPP}/include/hx/CFFILoader.h"/>
+  <depend name="${HXCPP}/include/hx/StringAlloc.h"/>
   <depend name="${HXCPP}/include/hx/StdLibs.h"/>
   <depend name="${HXCPP}/include/hx/Native.h"/>
   <depend name="${HXCPP}/include/hx/OS.h"/>
@@ -168,6 +177,11 @@
   <cache value="1" project="hxcpp_runtime" asLibrary="true" />
 </files>
 
+<files id="rc" >
+  <cache value='false'/>
+  <file name='${resourceFile}' if="resourceFile" />
+</files>
+
 
 <target id="default">
    <target id="haxe"/>
@@ -216,6 +230,7 @@
   <files id="__externs__" />
   <files id="runtime" unless="dll_import" />
   <files id="cppia" if="scriptable" />
+  <files id="rc" unless="static_link" />
   <lib name="-lpthread" if="linux" unless="static_link" />
   <lib name="-ldl" if="linux" unless="static_link" />
 </target>

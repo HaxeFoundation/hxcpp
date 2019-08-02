@@ -2,6 +2,7 @@
 #define IMPLEMENT_API
 #endif
 
+
 #if defined(HX_WINDOWS) || defined(HX_MACOS) || defined(HX_LINUX)
 // Include neko glue....
 #define NEKO_COMPATIBLE
@@ -10,6 +11,7 @@
 #include <hx/CFFIPrime.h>
 #include <math.h>
 #include <vector>
+#include <string>
 
 
 int addInts(int a, int b)
@@ -164,6 +166,23 @@ int multi12(int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7, int 
    return i0 + i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11;
 }
 DEFINE_PRIME12(multi12);
+
+
+HxString addStrings(HxString s0, HxString s1)
+{
+   if (hxs_encoding(s0)!=hx::StringUtf16 && hxs_encoding(s1)!=hx::StringUtf16)
+   {
+      std::string w0 = hxs_utf8(s0,0);
+      std::string w1 = hxs_utf8(s1,0);
+      std::string result = w0+w1;
+      return alloc_hxs_utf8( result.c_str(), result.size() );
+   }
+   std::wstring w0 = hxs_wchar(s0,0);
+   std::wstring w1 = hxs_wchar(s1,0);
+   std::wstring result = w0+w1;
+   return alloc_hxs_wchar( result.c_str(), result.size() );
+}
+DEFINE_PRIME2(addStrings);
 
 
 // Old-style CFFI
@@ -338,6 +357,8 @@ value freeAbstract(value inAbstract)
    return alloc_null();
 }
 DEFINE_PRIM(freeAbstract, 1);
+
+
 
 
 

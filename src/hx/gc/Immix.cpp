@@ -1435,7 +1435,7 @@ void GCCheckPointer(void *inPtr)
    #ifdef HXCPP_GC_NURSERY
    if (mark)
    #endif
-   if ( !(mark & HX_GC_CONST_ALLOC_MARK_BIT) && mark!=gByteMarkID  )
+   if ( !(mark & HX_GC_CONST_ALLOC_MARK_BIT) && (mark&FULL_MARK_BYTE_MASK)!=gByteMarkID  )
    {
       GCLOG("Old object access %p\n", inPtr);
       NullReference("Object", false);
@@ -2301,7 +2301,7 @@ void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx)
    {
       for(int i=0;i<inLength;i++)
       {
-         const char *str = inPtr[i].__s;
+         const char *str = inPtr[i].raw_ptr();
          HX_MARK_STRING(str);
       }
    }
@@ -2804,14 +2804,15 @@ bool IsConstAlloc(const void *inData)
 
 void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash)
 {
-   bool addHash = inAddStringHash && inData && inSize>0;
+   bool addHash = inAddStringHash && inSize>0;
 
    int *result = (int *)HxAlloc(inSize + sizeof(int) + (addHash ? sizeof(int):0) );
    if (addHash)
    {
       unsigned int hash = 0;
-      for(int i=0;i<inSize-1;i++)
-         hash = hash*223 + ((unsigned char *)inData)[i];
+      if (inData)
+         for(int i=0;i<inSize-1;i++)
+            hash = hash*223 + ((unsigned char *)inData)[i];
 
       //*((unsigned int *)((char *)result + inSize + sizeof(int))) = hash;
       *result++ = hash;
@@ -4383,6 +4384,8 @@ public:
          #endif
          sgThreadPoolAbort = false;
          sAllThreads = 0;
+         sgThreadPoolJob = tpjNone;
+         sLazyThreads = 0;
       }
    }
 
@@ -4435,6 +4438,8 @@ public:
          #endif
 
          sAllThreads = 0;
+         sgThreadPoolJob = tpjNone;
+         sLazyThreads = 0;
 
          if (sRunningThreads)
          {
@@ -5701,12 +5706,18 @@ public:
       mReadyForCollect.Set();
    }
 
+   bool TryGCFreeZone()
+   {
+      if (mGCFreeZone)
+         return false;
+      EnterGCFreeZone();
+      return true;
+   }
+
    void ExitGCFreeZone()
    {
-      #ifdef HXCPP_DEBUG
       if (!mGCFreeZone)
          CriticalGCError("GCFree Zone mismatch");
-      #endif
 
       if (hx::gMultiThreadMode)
       {
@@ -6063,6 +6074,17 @@ void EnterGCFreeZone()
       LocalAllocator *tla = GetLocalAlloc();
       tla->EnterGCFreeZone();
    }
+}
+
+
+bool TryGCFreeZone()
+{
+   if (hx::gMultiThreadMode)
+   {
+      LocalAllocator *tla = GetLocalAlloc();
+      return tla->TryGCFreeZone();
+   }
+   return false;
 }
 
 void ExitGCFreeZone()
@@ -6533,6 +6555,13 @@ void __hxcpp_enter_gc_free_zone()
 {
    hx::EnterGCFreeZone();
 }
+
+
+bool __hxcpp_try_gc_free_zone()
+{
+   return hx::TryGCFreeZone();
+}
+
 
 
 void __hxcpp_exit_gc_free_zone()

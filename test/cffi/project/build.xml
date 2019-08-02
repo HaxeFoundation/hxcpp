@@ -1,7 +1,8 @@
 <xml>
-   <include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+   <include name="${HXCPP}/toolchain/haxe-target.xml"/>
 
    <files id="prime">
+      <depend files="hxcpp-depends"/>
       <file name="Project.cpp" />
    </files>
 

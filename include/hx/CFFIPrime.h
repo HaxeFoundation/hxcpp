@@ -1,12 +1,152 @@
 #ifndef HX_CFFIPRIME_INCLUDED
 #define HX_CFFIPRIME_INCLUDED
 
+#include <hx/StringAlloc.h>
+
+
+#define HXCPP_PRIME
+
+
+namespace cffi
+{
+template<typename T>
+inline const char *to_utf8(const T *inStr,int &ioLen,hx::IStringAlloc *inAlloc)
+{
+  int len = 0;
+  int n = ioLen;
+  if (n==0)
+     while(inStr[n])
+        n++;
+  for(int i=0;i<n;i++)
+  {
+      int c = inStr[i];
+      if ( sizeof(T)==2 && c>=0xd800)
+      {
+         i++;
+         int peek = i<n ? inStr[i] : 0xdc00;
+         if (peek<0xdc00)
+            peek = 0xdc00;
+         c = 0x10000 | ((c-0xd800)  << 10) | (peek-0xdc00);
+      }
+
+      if( c <= 0x7F ) len++;
+      else if( c <= 0x7FF ) len+=2;
+      else if( c <= 0xFFFF ) len+=3;
+      else len+= 4;
+   }
+
+   char *result = (char *)inAlloc->allocBytes(len+1);
+   unsigned char *data =  (unsigned char *)result;
+   for(int i=0;i<n;i++)
+   {
+      int c = inStr[i];
+      if ( sizeof(T)==2 && c>=0xd800)
+      {
+         int peek = i+1<n ? 0xdc00 : inStr[i+1];
+         if (peek<0xdc00)
+            peek = 0xdc00;
+         c = 0x10000 | ((c-0xd800)  << 10) | (peek-0xdc00);
+         i++;
+      }
+
+      if( c <= 0x7F )
+         *data++ = c;
+      else if( c <= 0x7FF )
+      {
+         *data++ = 0xC0 | (c >> 6);
+         *data++ = 0x80 | (c & 63);
+      }
+      else if( c <= 0xFFFF )
+      {
+         *data++ = 0xE0 | (c >> 12);
+         *data++ = 0x80 | ((c >> 6) & 63);
+         *data++ = 0x80 | (c & 63);
+      }
+      else
+      {
+         *data++ = 0xF0 | (c >> 18);
+         *data++ = 0x80 | ((c >> 12) & 63);
+         *data++ = 0x80 | ((c >> 6) & 63);
+         *data++ = 0x80 | (c & 63);
+      }
+   }
+   result[len] = 0;
+   ioLen = len;
+   return result;
+}
+
+static inline int decode_advance_utf8(const unsigned char * &ioPtr,const unsigned char *end)
+{
+   int c = *ioPtr++;
+   if( c < 0x80 )
+   {
+      return c;
+   }
+   else if( c < 0xE0 )
+   {
+      return ((c & 0x3F) << 6) | (ioPtr < end ? (*ioPtr++) & 0x7F : 0);
+   }
+   else if( c < 0xF0 )
+   {
+      int c2 = ioPtr<end ? *ioPtr++ : 0;
+      return  ((c & 0x1F) << 12) | ((c2 & 0x7F) << 6) | ( ioPtr<end ? (*ioPtr++) & 0x7F : 0 );
+   }
+
+   int c2 = ioPtr<end ? *ioPtr++ : 0;
+   int c3 = ioPtr<end ? *ioPtr++ : 0;
+   return ((c & 0x0F) << 18) | ((c2 & 0x7F) << 12) | ((c3 & 0x7F) << 6) | ( ioPtr<end ? (*ioPtr++) & 0x7F : 0);
+}
+
+template<typename T>
+inline const T *from_utf8(const char *inStr,int len,hx::IStringAlloc *inAlloc)
+{
+   int n = len;
+   if (n<0)
+      while(inStr[n])
+         n++;
+
+   const unsigned char *str = (const unsigned char *)inStr;
+   const unsigned char *end = str + n;
+   int count = 0;
+   while(str<end)
+   {
+      int ch = decode_advance_utf8(str,end);
+      count++;
+      if (sizeof(T)==2 &&  ch>=0x10000)
+         count++;
+   }
+   T *result = (T*)inAlloc->allocBytes( sizeof(T)*(count+1) );
+   T *dest = result;
+   str = (const unsigned char *)inStr;
+   while(str<end)
+   {
+      int ch = decode_advance_utf8(str,end);
+      if (sizeof(T)==2 && ch>=0x10000)
+      {
+         int over = (ch-0x10000);
+         *dest++ = (over>>10) + 0xd800;
+         *dest++ = (over&0x3ff) + 0xdc00;
+      }
+      else
+         *dest++ = ch;
+   }
+   *dest++ = 0;
+
+   return result;
+}
+
+}
 
 #ifdef HXCPP_JS_PRIME
 #include <string>
 typedef std::string HxString;
+
 #else
-#include "CFFI.h"
+
+#ifdef _MSC_VER
+#pragma warning( disable : 4190 )
+#endif
+
 struct HxString
 {
    inline HxString(const HxString &inRHS)
@@ -14,31 +154,36 @@ struct HxString
       length = inRHS.length;
       __s = inRHS.__s;
    }
-   inline HxString(const char *inS,int inLen=-1, bool inAllocGcString=true) : length(inLen), __s(inS)
-   {
-      if (!inS)
-         length = 0;
-      else
-      {
-         if (length<0)
-            for(length=0; __s[length]; length++)
-            {
-            }
-         if (inAllocGcString)
-            __s = alloc_string_data(__s, length);
-      }
-   }
-
-   inline int size() { return length; }
-   inline const char *c_str() { return __s; }
-
    inline HxString() : length(0), __s(0) { }
+   inline HxString(const char *inS,int inLen=-1, bool inAllocGcString=true);
+   inline int size() const { return length; }
+   inline const char *c_str() const { return __s; }
+
 
    int length;
    const char *__s;
-
 };
+
+#include "CFFI.h"
 #endif
+
+#ifndef HXCPP_JS_PRIME
+HxString::HxString(const char *inS,int inLen, bool inAllocGcString) : length(inLen), __s(inS)
+{
+   if (!inS)
+      length = 0;
+   else
+   {
+      if (length<0)
+         for(length=0; __s[length]; length++)
+         {
+         }
+      if (inAllocGcString)
+         __s = alloc_string_data(__s, length);
+   }
+}
+#endif
+
 
 
 namespace cffi
@@ -234,6 +379,47 @@ bool CheckSig12( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7,A8,A9, A10, A11), const char
           0 == inSig[13];
 }
 
+template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9, typename A10, typename A11, typename A12>
+bool CheckSig13( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12), const char *inSig)
+{
+   return SigType<A0>::Char==inSig[0] &&
+          SigType<A1>::Char==inSig[1] &&
+          SigType<A2>::Char==inSig[2] &&
+          SigType<A3>::Char==inSig[3] &&
+          SigType<A4>::Char==inSig[4] &&
+          SigType<A5>::Char==inSig[5] &&
+          SigType<A6>::Char==inSig[6] &&
+          SigType<A7>::Char==inSig[7] &&
+          SigType<A8>::Char==inSig[8] &&
+          SigType<A9>::Char==inSig[9] &&
+          SigType<A10>::Char==inSig[10] &&
+          SigType<A11>::Char==inSig[11] &&
+          SigType<A12>::Char==inSig[12] &&
+          SigType<RET>::Char==inSig[13] &&
+          0 == inSig[14];
+}
+
+template<typename RET, typename A0, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8, typename A9, typename A10, typename A11, typename A12, typename A13>
+bool CheckSig14( RET (func)(A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13), const char *inSig)
+{
+   return SigType<A0>::Char==inSig[0] &&
+          SigType<A1>::Char==inSig[1] &&
+          SigType<A2>::Char==inSig[2] &&
+          SigType<A3>::Char==inSig[3] &&
+          SigType<A4>::Char==inSig[4] &&
+          SigType<A5>::Char==inSig[5] &&
+          SigType<A6>::Char==inSig[6] &&
+          SigType<A7>::Char==inSig[7] &&
+          SigType<A8>::Char==inSig[8] &&
+          SigType<A9>::Char==inSig[9] &&
+          SigType<A10>::Char==inSig[10] &&
+          SigType<A11>::Char==inSig[11] &&
+          SigType<A12>::Char==inSig[12] &&
+          SigType<A13>::Char==inSig[13] &&
+          SigType<RET>::Char==inSig[14] &&
+          0 == inSig[15];
+}
+
 
 
 
@@ -288,6 +474,8 @@ struct AutoValue
 #define PRIME_ARG_LIST10 PRIME_ARG_LIST9 ,arg[9]
 #define PRIME_ARG_LIST11 PRIME_ARG_LIST10 ,arg[10]
 #define PRIME_ARG_LIST12 PRIME_ARG_LIST11 ,arg[11]
+#define PRIME_ARG_LIST13 PRIME_ARG_LIST12 ,arg[12]
+#define PRIME_ARG_LIST14 PRIME_ARG_LIST13 ,arg[13]
 
 
 
@@ -307,6 +495,8 @@ struct AutoValue
 #define DEFINE_PRIME10(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME11(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME12(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME13(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME14(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 
 
 #define DEFINE_PRIME0v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
@@ -322,6 +512,8 @@ struct AutoValue
 #define DEFINE_PRIME10v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME11v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 #define DEFINE_PRIME12v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME13v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
+#define DEFINE_PRIME14v(func) EMSCRIPTEN_BINDINGS(func) { function(#func, &func); }
 
 
 #elif defined(STATIC_LINK)
@@ -572,6 +764,45 @@ struct AutoValue
 }
 
 
+
+#define DEFINE_PRIME13(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig13(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST13) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
+  int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
+}
+
+#define DEFINE_PRIME13v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig13(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST13); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
+  int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
+}
+
+
+#define DEFINE_PRIME14(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig14(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST14) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
+  int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
+}
+
+#define DEFINE_PRIME14v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig14(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST14); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+  int __reg_##func##__prime = hx_register_prim(#func "__prime",(void *)(&func##__prime)); \
+  int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func##__wrap)); \
+}
+
+
 #else
 
 
@@ -764,6 +995,37 @@ struct AutoValue
   EXPORT void *func##__prime(const char *inSig) { \
      if (!cffi::CheckSig12(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
   value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST12); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+
+
+#define DEFINE_PRIME13(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig13(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST13) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME13v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig13(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST13); return alloc_null(); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+
+#define DEFINE_PRIME14(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig14(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg,int) { return cffi::ToValue( func(PRIME_ARG_LIST14) ); } \
+  EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
+}
+
+#define DEFINE_PRIME14v(func) extern "C" { \
+  EXPORT void *func##__prime(const char *inSig) { \
+     if (!cffi::CheckSig14(func,inSig)) return 0; return cffi::alloc_pointer((void*)&func); } \
+  value func##__wrap(cffi::AutoValue  *arg, int) { func(PRIME_ARG_LIST14); return alloc_null(); } \
   EXPORT void *func##__MULT() { return (void*)(&func##__wrap); } \
 }
 #endif
