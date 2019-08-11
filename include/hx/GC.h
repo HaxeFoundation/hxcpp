@@ -314,8 +314,6 @@ namespace hx
    #define HX_ENDIAN_MARK_ID_BYTE       -1
 #endif
 
-extern bool gMultiThreadMode;
-
 
 
 // The gPauseForCollect bits will turn spaceEnd negative, and so force the slow path
