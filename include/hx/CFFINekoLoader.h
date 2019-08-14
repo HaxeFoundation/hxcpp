@@ -93,6 +93,8 @@ typedef neko_value (*alloc_string_func)(const char *);
 typedef neko_value (*alloc_abstract_func)(neko_vkind,void *);
 typedef neko_value (*val_call1_func)(neko_value,neko_value);
 typedef neko_value (*val_field_func)(neko_value,int);
+typedef neko_value (*alloc_float_func)(double);
+typedef void (*alloc_field_func)(neko_value,int,neko_value);
 typedef neko_value *(*alloc_root_func)(int);
 typedef char *(*alloc_private_func)(int);
 typedef neko_value (*copy_string_func)(const char *,int);
@@ -111,6 +113,8 @@ static alloc_string_func dyn_alloc_string = 0;
 static alloc_abstract_func dyn_alloc_abstract = 0;
 static val_call1_func dyn_val_call1 = 0;
 static val_field_func dyn_val_field = 0;
+static alloc_field_func dyn_alloc_field = 0;
+static alloc_float_func dyn_alloc_float = 0;
 static alloc_root_func dyn_alloc_root = 0;
 static alloc_private_func dyn_alloc_private = 0;
 static alloc_private_func dyn_alloc = 0;
@@ -194,6 +198,10 @@ const char * api_val_string(neko_value  arg1)
    return 0;
 }
 
+void api_alloc_field_numeric(neko_value  arg1,int arg2, double arg3)
+{
+   dyn_alloc_field(arg1, arg2, dyn_alloc_float(arg3) );
+}
 
 double  api_val_field_numeric(neko_value  arg1,int arg2)
 {
@@ -608,6 +616,7 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(val_array_set_size)
    IMPLEMENT_HERE(val_array_push)
    IMPLEMENT_HERE(alloc_array)
+   IMPLEMENT_HERE(alloc_field_numeric)
    IMPLEMENT_HERE(val_array_value)
 
    IMPLEMENT_HERE(val_fun_nargs)
@@ -638,6 +647,8 @@ ResolveProc InitDynamicNekoLoader()
       dyn_alloc_abstract = (alloc_abstract_func)LoadNekoFunc("neko_alloc_abstract");
       dyn_val_call1 = (val_call1_func)LoadNekoFunc("neko_val_call1");
       dyn_val_field = (val_field_func)LoadNekoFunc("neko_val_field");
+      dyn_alloc_field = (alloc_field_func)LoadNekoFunc("neko_alloc_field");
+      dyn_alloc_float = (alloc_float_func)LoadNekoFunc("neko_alloc_float");
       dyn_alloc_root = (alloc_root_func)LoadNekoFunc("neko_alloc_root");
       dyn_copy_string = (copy_string_func)LoadNekoFunc("neko_copy_string");
       dyn_val_id = (val_id_func)LoadNekoFunc("neko_val_id");
