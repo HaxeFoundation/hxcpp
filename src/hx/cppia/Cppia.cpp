@@ -4033,7 +4033,7 @@ struct MemReferenceSetter : public CppiaExpr
 
             #ifdef HXCPP_GC_GENERATIONAL
             if (isPointerObject((T*)0))
-               genWriteBarrier(compiler, sJitTemp2, (tmpVal + (targetType==jtString ? StringOffset::Ptr) : 0)).as(jtPointer));
+               genWriteBarrier(compiler, sJitTemp2, (tmpVal + ((targetType==jtString ? StringOffset::Ptr : 0))).as(jtPointer) );
             #endif
 
             compiler->convert( tmpVal, getType(), inDest, destType );

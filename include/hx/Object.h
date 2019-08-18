@@ -160,7 +160,7 @@ public:
    inline void *operator new( size_t inSize, bool inContainer=true, const char *inName=0 )
    {
       #ifdef HX_USE_INLINE_IMMIX_OPERATOR_NEW
-         ImmixAllocator *alloc =  hx::gMultiThreadMode ? tlsStackContext : gMainThreadContext;
+         ImmixAllocator *alloc =  HX_CTX_GET;
 
          #ifdef HXCPP_DEBUG
          if (!alloc)
