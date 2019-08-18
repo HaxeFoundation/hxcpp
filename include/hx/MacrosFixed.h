@@ -88,8 +88,8 @@ static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
 
 #define HX_DO_RTTI \
    HX_DO_RTTI_ALL \
-    ::::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp); \
-    ::::hx::Val __SetField(const ::String &inString,const  ::::hx::Val &inValue, ::hx::PropertyAccess inCallProp); \
+    ::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp); \
+    ::hx::Val __SetField(const ::String &inString,const  ::hx::Val &inValue, ::hx::PropertyAccess inCallProp); \
    void __GetFields(Array< ::String> &outFields);
 
 #define HX_DO_INTERFACE_RTTI \
@@ -99,7 +99,7 @@ static  ::Dynamic Create##enum_obj(::String inName,::hx::DynamicArray inArgs) \
 
 #define HX_DO_ENUM_RTTI_INTERNAL \
    HX_DO_RTTI_BASE  \
-    ::::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp); \
+    ::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp); \
    static int __FindIndex(::String inName); \
    static int __FindArgCount(::String inName);
 
