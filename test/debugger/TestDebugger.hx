@@ -29,7 +29,7 @@ class TestDebugger
    {
       Debugger.enableCurrentThreadDebugging(false);
       var mainThread = Thread.current();
-      cpp.vm.Thread.create( function() {
+      Thread.create( function() {
          startDebugger();
          mainThread.sendMessage("setup");
       });
