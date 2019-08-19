@@ -1,5 +1,6 @@
 -main App
 -cpp bin
 -D HXCPP_DEBUGGER
+-D hxcpp_debugger
 -debug
 -cp ../unit
