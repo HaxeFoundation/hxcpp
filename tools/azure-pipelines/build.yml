@@ -135,7 +135,7 @@ jobs:
       - script: haxelib install compile-cpp.hxml --always
         workingDirectory: haxe/tests/unit
         displayName: haxe unit test - Install haxelibs
-      - script: haxe compile-cpp.hxml -D HXCPP_M${{parameters.arch}}
+      - script: haxe compile-cpp.hxml -D HXCPP_M${{parameters.arch}} -D no_http
         workingDirectory: haxe/tests/unit
         displayName: haxe unit test - Compile
       - script: bin$(sep)cpp$(sep)TestMain-debug

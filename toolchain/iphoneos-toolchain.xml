@@ -30,8 +30,14 @@
   <!-- <cppflag value="-fvisibility-inlines-hidden"/> -->
   <pchflag value="-x" />
   <pchflag value="c++-header" />
+
   <cppflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
   <cppflag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <cppflag value="-std=c++11" if="HXCPP_CPP11" />
+  <mmflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <mmflag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <mmflag value="-std=c++11" if="HXCPP_CPP11" />
+
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-arch"/>
@@ -55,6 +61,8 @@
   <flag value="-Wno-overflow" />
   <flag value="-Wno-trigraphs"/>
   <cppflag value="-Wno-invalid-offsetof" />
+  <cppflag value="-Wno-return-type-c-linkage" />
+  <mmflag value="-Wno-return-type-c-linkage" />
   <flag value="-Wno-bool-conversion" unless="HXCPP_GCC"/>
   <!-- Removed for iOS 8 -->
   <!-- <flag value="-fvisibility=hidden"/> -->
