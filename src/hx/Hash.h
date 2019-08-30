@@ -566,8 +566,10 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
    void clear()
    {
-      rebucket(0);
+      bucket = 0;
+      size = 0;
       mask = 0;
+      bucketCount = 0;
    }
 
 
