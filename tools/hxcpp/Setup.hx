@@ -78,7 +78,7 @@ class Setup
                   var revision = StringTools.trim(split[1]);
                   var split2 = revision.split( "." );
                   var result:Float = 1.0 * Std.parseInt(split2[0]) + 0.001 * Std.parseInt(split2[1]);
-                  if (result!=null && result>=8)
+                  if (result>=8)
                   {
                      Log.v('Deduced NDK version '+result+' from "$inDirName"/source.properties');
                      fin.close();
@@ -429,10 +429,10 @@ class Setup
          ].join('\n'));
       }
       else {
-         globallySetThePlatform(root, defines);  
+         globallySetThePlatform(root, defines);
       }
    }
-   
+
    private static function globallySetThePlatform(root:String, defines:Map<String,String>) {
       var androidPlatform = 5;
       if (!defines.exists("PLATFORM"))
@@ -447,7 +447,7 @@ class Setup
             }
          }
       }
-      
+
       if (defines.exists("PLATFORM"))
       {
          var platform = defines.get("PLATFORM");

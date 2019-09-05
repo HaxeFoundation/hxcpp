@@ -1,4 +1,9 @@
 
+* Add map.clear
+* Better c++11 iOS support
+
+4.0.19
+------------------------------------------------------------
 
 * General Utf16 string improvements
 * Limit the amount of recursion in toString function
