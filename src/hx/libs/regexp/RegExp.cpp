@@ -79,7 +79,7 @@ struct pcredata : public hx::Object
             }
          }
 
-         int n =  pcre16_exec(rUtf16,NULL,(const unsigned short *)string.raw_wptr(),pos+len,pos,0,matchs,nmatchs * 3);
+         int n =  pcre16_exec(rUtf16,NULL,(const unsigned short *)string.raw_wptr(),pos+len,pos,PCRE_NO_UTF16_CHECK,matchs,nmatchs * 3);
          return n>=0;
       }
 
@@ -91,7 +91,7 @@ struct pcredata : public hx::Object
       }
 
       #endif
-      return pcre_exec(rUtf8,NULL,string.utf8_str(),pos+len,pos,0,matchs,nmatchs * 3) >= 0;
+      return pcre_exec(rUtf8,NULL,string.utf8_str(),pos+len,pos,PCRE_NO_UTF8_CHECK,matchs,nmatchs * 3) >= 0;
    }
 
    void destroy()

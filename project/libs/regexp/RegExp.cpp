@@ -32,7 +32,7 @@ static field id_len;
 	</doc>
 **/
 
-static void free_regexp( value p ) {	
+static void free_regexp( value p ) {
 	pcredata *pdata = PCRE(p);
 	if (pdata->matchs)
 	   free(pdata->matchs);
@@ -106,7 +106,7 @@ static value regexp_new_options( value s, value opt ) {
 		pdata->matchs = (int*)malloc(sizeof(int) * 3 * pdata->nmatchs);
 		val_gc(v,free_regexp);
 		return v;
-	}	
+	}
 }
 
 /**
@@ -134,7 +134,7 @@ static value regexp_match( value o, value s, value p, value len ) {
 	if( pp < 0 || ll < 0 || pp > val_strlen(s) || pp + ll > val_strlen(s) )
 		return alloc_null();
 	d = PCRE(o);
-	if( pcre_exec(d->r,NULL,val_string(s),ll+pp,pp,0,d->matchs,d->nmatchs * 3) >= 0 ) {
+	if( pcre_exec(d->r,NULL,val_string(s),ll+pp,pp,PCRE_NO_UTF8_CHECK,d->matchs,d->nmatchs * 3) >= 0 ) {
 		d->str = s;
 		return alloc_bool(true);
 	} else {
@@ -143,10 +143,10 @@ static value regexp_match( value o, value s, value p, value len ) {
 	}
 }
 
-static value do_replace( value o, value s, value s2, bool all ) {	
-	val_check_kind(o,k_regexp);	
+static value do_replace( value o, value s, value s2, bool all ) {
+	val_check_kind(o,k_regexp);
 	val_check(s,string);
-	val_check(s2,string);	
+	val_check(s2,string);
 	{
 		pcredata *d = PCRE(o);
 		buffer b = alloc_buffer(NULL);
@@ -155,7 +155,7 @@ static value do_replace( value o, value s, value s2, bool all ) {
 		const char *str = val_string(s);
 		const char *str2 = val_string(s2);
 		int len2 = val_strlen(s2);
-		while( pcre_exec(d->r,NULL,str,len,pos,0,d->matchs,d->nmatchs * 3) >= 0 ) {
+		while( pcre_exec(d->r,NULL,str,len,pos,PCRE_NO_UTF8_CHECK,d->matchs,d->nmatchs * 3) >= 0 ) {
 			buffer_append_sub(b,str+pos,d->matchs[0] - pos);
 			buffer_append_sub(b,str2,len2);
 			pos = d->matchs[1];
@@ -172,7 +172,7 @@ static value do_replace( value o, value s, value s2, bool all ) {
 	regexp_replace : 'regexp -> from:string -> by:string -> string
 	<doc>Perform a replacement using a regexp</doc>
 **/
-static value regexp_replace( value o, value s, value s2 ) {	
+static value regexp_replace( value o, value s, value s2 ) {
 	return do_replace(o,s,s2,false);
 }
 
@@ -199,7 +199,7 @@ static value regexp_replace_fun( value o, value s, value f ) {
 		int len = val_strlen(s);
 		const char *str = val_string(s);
 		d->str = s;
-		while( pcre_exec(d->r,NULL,str,len,pos,0,d->matchs,d->nmatchs * 3) >= 0 ) {
+		while( pcre_exec(d->r,NULL,str,len,pos,PCRE_NO_UTF8_CHECK,d->matchs,d->nmatchs * 3) >= 0 ) {
 			buffer_append_sub(b,str+pos,d->matchs[0] - pos);
 			val_buffer(b,val_call1(f,o));
 			pos = d->matchs[1];
@@ -212,13 +212,13 @@ static value regexp_replace_fun( value o, value s, value f ) {
 
 /**
 	regexp_matched : 'regexp -> n:int -> string?
-	<doc>Return the [n]th matched block by the regexp. If [n] is 0 then return 
+	<doc>Return the [n]th matched block by the regexp. If [n] is 0 then return
 	the whole matched substring. If the [n]th matched block was optional and not matched, returns null</doc>
 **/
 static value regexp_matched( value o, value n ) {
 	pcredata *d;
 	int m;
-	val_check_kind(o,k_regexp);	
+	val_check_kind(o,k_regexp);
 	d = PCRE(o);
 	val_check(n,int);
 	m = val_int(n);
@@ -242,7 +242,7 @@ static value regexp_matched( value o, value n ) {
 static value regexp_matched_pos( value o, value n ) {
 	pcredata *d;
 	int m;
-	val_check_kind(o,k_regexp);	
+	val_check_kind(o,k_regexp);
 	d = PCRE(o);
 	val_check(n,int);
 	m = val_int(n);
@@ -261,7 +261,7 @@ static value regexp_matched_pos( value o, value n ) {
 extern "C" {
 void regexp_main() {
 	id_pos = val_id("pos");
-	id_len = val_id("len");	
+	id_len = val_id("len");
    k_regexp = alloc_kind();
 }
 
