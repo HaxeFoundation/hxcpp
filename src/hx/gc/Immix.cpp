@@ -1456,7 +1456,6 @@ void GCCheckPointer(void *inPtr)
    if ( !(mark & HX_GC_CONST_ALLOC_MARK_BIT) && (mark&FULL_MARK_BYTE_MASK)!=gByteMarkID  )
    {
       GCLOG("Old object access %p\n", inPtr);
-      Sleep(10000);
       NullReference("Object", false);
    }
 }
