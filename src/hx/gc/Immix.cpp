@@ -103,7 +103,7 @@ int gInAlloc = false;
 static size_t sWorkingMemorySize          = 10*1024*1024;
 
 #ifdef HXCPP_GC_MOVING
-static size_t sgMaximumFreeSpace  = 200*1024*1024;
+static size_t sgMaximumFreeSpace  = 20*1024*1024;
 #else
 static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 #endif
@@ -216,6 +216,9 @@ static hx::Object *gCollectTrace = 0;
 static bool gCollectTraceDoPrint = false;
 static int gCollectTraceCount = 0;
 static int sgSpamCollects = 0;
+#endif
+
+#if defined(HXCPP_DEBUG) || defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
 static int sgAllocsSinceLastSpam = 0;
 #endif
 
@@ -2008,9 +2011,10 @@ void MarkAllocUnchecked(void *inPtr,hx::MarkContext *__inCtx)
       }
       #endif
 
-      if (flags)
+      int size = flags & 0xffff;
+      // Size will be 0 for large allocs -> no need to mark block
+      if (size)
       {
-         int size = flags & 0xffff;
          int start = (int)(ptr_i & IMMIX_BLOCK_OFFSET_MASK);
          int startRow = start>>IMMIX_LINE_BITS;
          int blockId = *(BlockIdType *)(ptr_i & IMMIX_BLOCK_BASE_MASK);
@@ -5062,7 +5066,7 @@ public:
       else
       {
          // move towards 0.2
-         mGenerationalRetainEstimate += (0.2-mGenerationalRetainEstimate)*0.025;
+         mGenerationalRetainEstimate += (0.2-mGenerationalRetainEstimate)*0.25;
       }
 
       double filled_ratio = (double)mRowsInUse/(double)(mAllBlocksCount*IMMIX_USEFUL_LINES);
@@ -5075,11 +5079,12 @@ public:
       else
       {
          sGcMode = gcmFull;
-         gByteMarkID |= 0x30;
+         // What was I thinking here?  This breaks #851
+         //gByteMarkID |= 0x30;
       }
 
       #ifdef SHOW_MEM_EVENTS
-      GCLOG("filled=%.2f%% + junk = %.2f%% = %.2f%% -> %s\n",
+      GCLOG("filled=%.2f%% + estimate = %.2f%% = %.2f%% -> %s\n",
             filled_ratio*100, mGenerationalRetainEstimate*100, after_gen*100, sGcMode==gcmFull?"Full":"Generational");
       #endif
 

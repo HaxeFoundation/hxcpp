@@ -441,7 +441,8 @@ struct StackContext : public hx::ImmixAllocator
    MarkChunk *mOldReferrers;
    inline void pushReferrer(hx::Object *inObj)
    {
-      //if (mOldReferrers)
+      // If collector is running on non-generational mode, mOldReferrers will be null
+      if (mOldReferrers)
       {
          mOldReferrers->push(inObj);
          if (mOldReferrers->count==MarkChunk::SIZE)
