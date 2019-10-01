@@ -17,7 +17,7 @@
       #include <typeinfo>
    #else
       #include <typeinfo.h>
-   #end
+   #endif
    namespace hx { typedef ::type_info type_info; }
 #else
    #include <typeinfo>
