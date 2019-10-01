@@ -13,7 +13,11 @@
 #include "hx/HeaderVersion.h"
 
 #ifdef _MSC_VER
-   #include <typeinfo.h>
+   #if _MSC_VER >= 1423
+      #include <typeinfo>
+   #else
+      #include <typeinfo.h>
+   #endif
    namespace hx { typedef ::type_info type_info; }
 #else
    #include <typeinfo>
