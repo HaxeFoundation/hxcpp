@@ -888,7 +888,13 @@ public:
    virtual int __memcmp(const cpp::VirtualArray &a0) { return memcmp(a0); }
    virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
 
-   virtual void set(int inIndex, const cpp::Variant &inValue) { Item(inIndex) = ELEM_(inValue); }
+   virtual void set(int inIndex, const cpp::Variant &inValue) {
+      ELEM_ &elem = Item(inIndex);
+      elem = ELEM_(inValue);
+      if (hx::ContainsPointers<ELEM_>()) {
+         HX_OBJ_WB_GET(this, hx::PointerOf(elem));
+      }
+   }
    virtual void setUnsafe(int inIndex, const cpp::Variant &inValue) {
       ELEM_ &elem = *(ELEM_ *)(mBase + inIndex*sizeof(ELEM_));
       elem = ELEM_(inValue);
