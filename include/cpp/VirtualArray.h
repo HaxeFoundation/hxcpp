@@ -67,6 +67,10 @@ public:
    {
       mArrayConvertId = hx::aciVirtualArray;
       store = inFixed && inBase ? hx::arrayFixed : base ? base->getStoreType() : hx::arrayEmpty;
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (base)
+         HX_OBJ_WB_GET(this,base);
+      #endif
    }
 
    VirtualArray_obj(ArrayStore inStore)

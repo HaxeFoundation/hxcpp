@@ -494,7 +494,12 @@ public:
 
    virtual Dynamic __GetItem(int inIndex) const { return __get(inIndex); }
    virtual Dynamic __SetItem(int inIndex,Dynamic inValue)
-           { Item(inIndex) = inValue; return inValue; }
+   {
+      ELEM_ &elem = Item(inIndex);
+      elem = inValue;
+      if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this,hx::PointerOf(elem)); }
+      return inValue;
+   }
 
    inline ELEM_ *Pointer() { return (ELEM_ *)mBase; }
 
@@ -516,9 +521,9 @@ public:
 
    inline ELEM_ & __unsafe_set(int inIndex, ELEM_ inValue)
    {
-      if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this, hx::PointerOf(inValue)); }
       ELEM_ &elem = *(ELEM_*)(mBase + inIndex*sizeof(ELEM_));
       elem = inValue;
+      if (hx::ContainsPointers<ELEM_>()) { HX_OBJ_WB_GET(this, hx::PointerOf(elem)); }
       return elem;
    }
 
