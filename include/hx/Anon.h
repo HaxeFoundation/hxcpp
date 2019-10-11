@@ -80,6 +80,12 @@ public:
       fixed->hash = inName.hash();
       fixed->key = inName;
       fixed->value = inValue;
+      if (inValue.type == ::cpp::Variant::typeObject) {
+        HX_OBJ_WB_GET(this, hx::PointerOf(inValue.valObject));
+      }
+      else if (inValue.type == ::cpp::Variant::typeString) {
+        HX_OBJ_WB_GET(this, hx::PointerOf(inValue.valStringPtr));
+      }
       return this;
    }
    inline VariantKey *getFixed()
@@ -166,7 +172,13 @@ public:
    }
    hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp)
    {
-      if (HX_QSTR_EQ(inField,name0)) { t0 = inValue.Cast< _hx_T0 >(); return inValue; }
+      if (HX_QSTR_EQ(inField,name0)) {
+        t0 = inValue.Cast< _hx_T0 >();
+        if (hx::ContainsPointers<_hx_T0>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t0));
+        }
+        return inValue;
+      }
       hx::Throw(HX_CSTRING("Missing field ") + inField);
       return inValue;
    }
@@ -217,8 +229,20 @@ public:
    }
    hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp)
    {
-      if (HX_QSTR_EQ(inField,name0)) { t0 = inValue.Cast< _hx_T0 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name1)) { t1 = inValue.Cast< _hx_T1 >(); return inValue; }
+      if (HX_QSTR_EQ(inField,name0)) {
+        t0 = inValue.Cast< _hx_T0 >();
+        if (hx::ContainsPointers<_hx_T0>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t0));
+        }
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name1)) {
+        t1 = inValue.Cast< _hx_T1 >();
+        if (hx::ContainsPointers<_hx_T1>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t1));
+        }
+        return inValue;
+      }
       hx::Throw(HX_CSTRING("Missing field ") + inField);
       return inValue;
    }
@@ -277,9 +301,27 @@ public:
    }
    hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp)
    {
-      if (HX_QSTR_EQ(inField,name0)) { t0 = inValue.Cast< _hx_T0 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name1)) { t1 = inValue.Cast< _hx_T1 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name2)) { t2 = inValue.Cast< _hx_T2 >(); return inValue; }
+      if (HX_QSTR_EQ(inField,name0)) {
+        t0 = inValue.Cast< _hx_T0 >();
+        if (hx::ContainsPointers<_hx_T0>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t0));
+        }
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name1)) {
+        t1 = inValue.Cast< _hx_T1 >();
+        if (hx::ContainsPointers<_hx_T1>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t1));
+        }
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name2)) {
+        t2 = inValue.Cast< _hx_T2 >();
+        if (hx::ContainsPointers<_hx_T2>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t2));
+        }
+        return inValue;
+      }
       hx::Throw(HX_CSTRING("Missing field ") + inField);
       return inValue;
    }
@@ -344,10 +386,34 @@ public:
    }
    hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp)
    {
-      if (HX_QSTR_EQ(inField,name0)) { t0 = inValue.Cast< _hx_T0 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name1)) { t1 = inValue.Cast< _hx_T1 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name2)) { t2 = inValue.Cast< _hx_T2 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name3)) { t3 = inValue.Cast< _hx_T3 >(); return inValue; }
+      if (HX_QSTR_EQ(inField,name0)) {
+        t0 = inValue.Cast< _hx_T0 >();
+        if (hx::ContainsPointers<_hx_T0>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t0));
+        }
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name1)) {
+        t1 = inValue.Cast< _hx_T1 >();
+        if (hx::ContainsPointers<_hx_T1>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t1));
+        }  
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name2)) {
+        t2 = inValue.Cast< _hx_T2 >();
+        if (hx::ContainsPointers<_hx_T2>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t2));
+        }
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name3)) {
+        t3 = inValue.Cast< _hx_T3 >();
+        if (hx::ContainsPointers<_hx_T3>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t3));
+        }
+        return inValue;
+      }
       hx::Throw(HX_CSTRING("Missing field ") + inField);
       return inValue;
    }
@@ -421,11 +487,41 @@ public:
    }
    hx::Val __SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp)
    {
-      if (HX_QSTR_EQ(inField,name0)) { t0 = inValue.Cast< _hx_T0 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name1)) { t1 = inValue.Cast< _hx_T1 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name2)) { t2 = inValue.Cast< _hx_T2 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name3)) { t3 = inValue.Cast< _hx_T3 >(); return inValue; }
-      if (HX_QSTR_EQ(inField,name4)) { t4 = inValue.Cast< _hx_T4 >(); return inValue; }
+      if (HX_QSTR_EQ(inField,name0)) {
+        t0 = inValue.Cast< _hx_T0 >();
+        if (hx::ContainsPointers<_hx_T0>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t0));
+        }
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name1)) {
+        t1 = inValue.Cast< _hx_T1 >();
+        if (hx::ContainsPointers<_hx_T1>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t1));
+        }
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name2)) {
+        t2 = inValue.Cast< _hx_T2 >();
+        if (hx::ContainsPointers<_hx_T2>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t2));
+        }
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name3)) {
+        t3 = inValue.Cast< _hx_T3 >();
+        if (hx::ContainsPointers<_hx_T3>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t3));
+        }
+        return inValue;
+      }
+      if (HX_QSTR_EQ(inField,name4)) {
+        t4 = inValue.Cast< _hx_T4 >();
+        if (hx::ContainsPointers<_hx_T4>()) {
+          HX_OBJ_WB_GET(this, hx::PointerOf(t4));
+        }
+        return inValue;
+      }
       hx::Throw(HX_CSTRING("Missing field ") + inField);
       return inValue;
    }
