@@ -163,6 +163,10 @@ public:
    {
       AnonStruct1_obj *result = new AnonStruct1_obj;
       result->name0 = inName0; result->t0 = inT0;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName0));
+      if (hx::ContainsPointers<_hx_T0>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT0));
+      }
       return result;
    }
    hx::Val __Field(const String &inField, hx::PropertyAccess)
@@ -218,7 +222,15 @@ public:
    {
       AnonStruct2_obj *result = new AnonStruct2_obj;
       result->name0 = inName0; result->t0 = inT0;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName0));
+      if (hx::ContainsPointers<_hx_T0>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT0));
+      }
       result->name1 = inName1; result->t1 = inT1;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName1));
+      if (hx::ContainsPointers<_hx_T1>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT1));
+      }
       return result;
    }
    hx::Val __Field(const String &inField, hx::PropertyAccess)
@@ -288,8 +300,20 @@ public:
    {
       AnonStruct3_obj *result = new AnonStruct3_obj;
       result->name0 = inName0; result->t0 = inT0;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName0));
+      if (hx::ContainsPointers<_hx_T0>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT0));
+      }
       result->name1 = inName1; result->t1 = inT1;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName1));
+      if (hx::ContainsPointers<_hx_T1>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT1));
+      }
       result->name2 = inName2; result->t2 = inT2;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName2));
+      if (hx::ContainsPointers<_hx_T2>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT2));
+      }
       return result;
    }
    hx::Val __Field(const String &inField, hx::PropertyAccess)
@@ -371,9 +395,25 @@ public:
    {
       AnonStruct4_obj *result = new AnonStruct4_obj;
       result->name0 = inName0; result->t0 = inT0;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName0));
+      if (hx::ContainsPointers<_hx_T0>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT0));
+      }
       result->name1 = inName1; result->t1 = inT1;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName1));
+      if (hx::ContainsPointers<_hx_T1>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT1));
+      }
       result->name2 = inName2; result->t2 = inT2;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName2));
+      if (hx::ContainsPointers<_hx_T2>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT2));
+      }
       result->name3 = inName3; result->t3 = inT3;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName3));
+      if (hx::ContainsPointers<_hx_T3>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT3));
+      }
       return result;
    }
    hx::Val __Field(const String &inField, hx::PropertyAccess)
@@ -470,10 +510,30 @@ public:
    {
       AnonStruct5_obj *result = new AnonStruct5_obj;
       result->name0 = inName0; result->t0 = inT0;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName0));
+      if (hx::ContainsPointers<_hx_T0>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT0));
+      }
       result->name1 = inName1; result->t1 = inT1;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName1));
+      if (hx::ContainsPointers<_hx_T1>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT1));
+      }
       result->name2 = inName2; result->t2 = inT2;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName2));
+      if (hx::ContainsPointers<_hx_T2>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT2));
+      }
       result->name3 = inName3; result->t3 = inT3;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName3));
+      if (hx::ContainsPointers<_hx_T3>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT3));
+      }
       result->name4 = inName4; result->t4 = inT4;
+      HX_OBJ_WB_GET(result, hx::PointerOf(inName4));
+      if (hx::ContainsPointers<_hx_T4>()) {
+        HX_OBJ_WB_GET(result, hx::PointerOf(inT4));
+      }
       return result;
    }
    hx::Val __Field(const String &inField, hx::PropertyAccess)
