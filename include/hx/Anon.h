@@ -81,10 +81,10 @@ public:
       fixed->key = inName;
       fixed->value = inValue;
       if (inValue.type == ::cpp::Variant::typeObject) {
-        HX_OBJ_WB_GET(this, hx::PointerOf(inValue.valObject));
+        HX_OBJ_WB_GET(this, inValue.valObject);
       }
       else if (inValue.type == ::cpp::Variant::typeString) {
-        HX_OBJ_WB_GET(this, hx::PointerOf(inValue.valStringPtr));
+        HX_OBJ_WB_GET(this, inValue.valStringPtr);
       }
       return this;
    }
