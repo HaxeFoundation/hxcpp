@@ -83,6 +83,9 @@ public:
       if (inValue.type == ::cpp::Variant::typeObject) {
         HX_OBJ_WB_GET(this, inValue.valObject);
       }
+      else if (inValue.type == ::cpp::Variant::typeString) {
+        HX_OBJ_WB_GET(this, inValue.valStringPtr);
+      }
       return this;
    }
    inline VariantKey *getFixed()
