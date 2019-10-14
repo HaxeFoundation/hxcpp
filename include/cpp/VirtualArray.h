@@ -613,6 +613,10 @@ void VirtualArray_obj::fixType()
    {
       base = new Array_obj<F>(0,0);
    }
+   #ifdef HXCPP_GC_GENERATIONAL
+   if (base)
+      HX_OBJ_WB_GET(this,base);
+   #endif
 }
 
 template<typename ARRAY >
@@ -626,12 +630,20 @@ ARRAY VirtualArray_obj::castArray()
    {
       ARRAY fixedArray = Dynamic(base);
       base = fixedArray.mPtr;
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (base)
+         HX_OBJ_WB_GET(this,base);
+      #endif
       return fixedArray;
    }
    else
    {
       ARRAY fixedArray(0,0);
       base = fixedArray.mPtr;
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (base)
+         HX_OBJ_WB_GET(this,base);
+      #endif
       return fixedArray;
    }
 }
