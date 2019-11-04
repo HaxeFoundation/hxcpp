@@ -25,8 +25,11 @@ jobs:
         - script: |
             set -ex
             sudo apt-get update -qqy
-            sudo apt-get install -qqy gcc-multilib g++-multilib
+            sudo apt-get install -qqy gcc-multilib g++-multilib mariadb-server
           displayName: Install dependencies
+        - script: |
+            sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
+          displayName: Configure MariaDB
       - template: install-neko-snapshot.yaml
         parameters:
           platform: ${{ parameters.platform }}
