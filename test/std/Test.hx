@@ -120,6 +120,11 @@ class Test
               PRIMARY KEY(id)
           )");
       }
+      var dels = cnx.request("DELETE FROM User");
+      if (dels.nfields != 0)
+         return error("Bad DELETE'd result");
+      v("deleted " + dels.length + " existing rows");
+
       cnx.request("INSERT INTO User (name,age,money) VALUES ('John',32,100.45)");
       cnx.request("INSERT INTO User (name,age,money) VALUES ('Bob',14,4.50)");
 
@@ -227,9 +232,7 @@ class Test
    public static function testSqlite()
    {
       log("Test sqlite");
-      var dbFile = "mybase.db";
-      if (FileSystem.exists(dbFile))
-         FileSystem.deleteFile(dbFile);
+      var dbFile = "hxcpp.db";
       var cnx = Sqlite.open(dbFile);
       if (testDb(cnx)!=0)
          return error("db error");

@@ -196,6 +196,9 @@ int  _hx_mysql_result_get_length(Dynamic handle)
 **/
 int  _hx_mysql_result_get_nfields(Dynamic handle)
 {
+   if( handle->__GetType() == vtInt )
+     return 0;
+
    return getResult(handle)->nfields;
 }
 

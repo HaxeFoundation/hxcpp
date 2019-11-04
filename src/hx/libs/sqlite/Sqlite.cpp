@@ -281,7 +281,7 @@ int  _hx_sqlite_result_get_length(Dynamic handle)
 **/
 int     _hx_sqlite_result_get_nfields(Dynamic handle)
 {
-   return getResult(handle,true)->ncols;
+   return getResult(handle,false)->ncols;
 }
 
 /**
