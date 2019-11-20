@@ -104,33 +104,47 @@ class Test
       v("connected :" + cnx);
       if (cnx.dbName() == "SQLite") {
         cnx.request("
-          CREATE TABLE IF NOT EXISTS User (
+          CREATE TABLE IF NOT EXISTS UserPwd (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT,
               age INTEGER,
-              money DOUBLE
+              money DOUBLE,
+              password BLOB
           )");
       } else {
         cnx.request("
-          CREATE TABLE IF NOT EXISTS User (
+          CREATE TABLE IF NOT EXISTS UserPwd (
               id INTEGER NOT NULL AUTO_INCREMENT,
               name TEXT,
               age INTEGER,
               money DOUBLE,
+              password BLOB,
               PRIMARY KEY(id)
           )");
       }
-      cnx.request("INSERT INTO User (name,age,money) VALUES ('John',32,100.45)");
-      cnx.request("INSERT INTO User (name,age,money) VALUES ('Bob',14,4.50)");
+      var dels = cnx.request("DELETE FROM UserPwd");
+      if (dels.nfields != 0)
+         return error("Bad DELETE'd result");
+      v("deleted " + dels.length + " existing rows");
 
-      var rset = cnx.request("SELECT * FROM User");
+      cnx.request("INSERT INTO UserPwd (name,age,money,password) VALUES ('John',32,100.45,X'c0ffee')");
+      cnx.request("INSERT INTO UserPwd (name,age,money,password) VALUES ('Bob',14,4.50,X'deadbeef01020304')");
+
+      var rset = cnx.request("SELECT * FROM UserPwd");
 
       var length = rset.length;
       v("found "+length+" users");
       if (length!=2)
          return error("Bad user count");
       for( row in rset )
-         v("  user "+row.name+" is "+row.age+" years old ");
+      {
+         var pass:Dynamic = row.password;
+         var password = Std.is(pass, haxe.io.BytesData) ? haxe.io.Bytes.ofData(pass) : pass;
+         var md5 = haxe.crypto.Md5.make(password).toHex().substr(0,8);
+         v("  user "+row.name+" is "+row.age+" years old,  password:" + md5);
+         if (md5!="5f80e231" && md5!="8ed0b363")
+             return error("Bad binary blob store");
+      }
       return 0;
    }
 
@@ -227,9 +241,7 @@ class Test
    public static function testSqlite()
    {
       log("Test sqlite");
-      var dbFile = "mybase.db";
-      if (FileSystem.exists(dbFile))
-         FileSystem.deleteFile(dbFile);
+      var dbFile = "hxcpp.db";
       var cnx = Sqlite.open(dbFile);
       if (testDb(cnx)!=0)
          return error("db error");

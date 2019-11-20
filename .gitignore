@@ -9,6 +9,7 @@ test/std/arm64
 test/std/cpp32
 test/std/cpp64
 test/std/mybase.db
+test/std/hxcpp.db
 test/opMatrix/Ops.hx
 test/opMatrix/cpp
 test/haxe/cpp
