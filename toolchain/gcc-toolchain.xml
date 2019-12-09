@@ -46,6 +46,7 @@
   <exe name="${EXEPREFIX}-strip" if="EXEPREFIX" />
   <exe name="${HXCPP_STRIP}" if="HXCPP_STRIP" />
   <exe name="mipsel-linux-strip" if="gcw0" />
+  <exe name="mipsel-gcw0-linux-uclibc-strip" if="gcw0 windows_host" />
   <flag value="-u" if="macos"/>
   <flag value="-r" if="macos"/>
   <flag value="-x" if="macos"/>

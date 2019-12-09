@@ -8,9 +8,10 @@
 <include name="gcc-toolchain.xml"/>
 
 
-<!-- GCW-Zero TOOLS -------------------------------------------------->
+<!-- GCW-Zero TOOLS -->
 	
 <compiler id="gcw0" exe="mipsel-linux-g++" if="gcw0">
+	<exe name="mipsel-gcw0-linux-uclibc-g++" if="windows_host" />
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
@@ -25,6 +26,8 @@
 	<flag value="-fpic"/>
 	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
+	<cppflag value="-std=c++11" />
+   <cppflag value="-Wno-invalid-offsetof" />
 	<!-- <flag value="-fPIE" /> -->
 	<flag value="--sysroot=${GCW0_PLATFORM}" />
 	<outflag value="-o"/>
@@ -32,6 +35,7 @@
 </compiler>
 
 <linker id="exe" exe="mipsel-linux-g++" if="gcw0">
+	<exe name="mipsel-gcw0-linux-uclibc-g++" if="windows_host" />
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
 	<flag value="-s" unless="debug"/>
@@ -48,6 +52,7 @@
 </linker>
 	
 <linker id="dll" exe="mipsel-linux-g++" if="gcw0">
+	<exe name="mipsel-gcw0-linux-uclibc-g++" if="windows_host" />
 	<flag value="-shared"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
