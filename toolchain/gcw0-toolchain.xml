@@ -28,6 +28,7 @@
 	<cppflag value="-frtti"/>
 	<cppflag value="-std=c++11" />
    <cppflag value="-Wno-invalid-offsetof" />
+   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
 	<!-- <flag value="-fPIE" /> -->
 	<flag value="--sysroot=${GCW0_PLATFORM}" />
 	<outflag value="-o"/>
@@ -36,9 +37,9 @@
 
 <linker id="exe" exe="mipsel-linux-g++" if="gcw0">
 	<exe name="mipsel-gcw0-linux-uclibc-g++" if="windows_host" />
-	<flag value="-g" if="debug"/>
-	<flag value="-O2" unless="debug"/>
-	<flag value="-s" unless="debug"/>
+	<flag value="-g" if="debug||HXCPP_DEBUG_LINK"/>
+	<flag value="-O2" unless="debug||HXCPP_DEBUG_LINK"/>
+	<flag value="-s" unless="debug||HXCPP_DEBUG_LINK"/>
 	<flag value="-pie" />
 	<lib name="-lpthread" />
 	<flag value="-march=mips32r2" />
