@@ -288,7 +288,14 @@ void __trace(Dynamic inObj, Dynamic info)
    hx::strbuf convertBuf;
    if (info==null())
    {
+#if defined(HX_SMART_STRINGS) && defined(HX_WINDOWS)
+      if (text.isUTF16Encoded())
+         PRINTF("?? %ls\n",text.raw_ptr() ? (wchar_t*)text.__w : L"null");
+      else
+         PRINTF("?? %s\n", text.raw_ptr() ? text.__s : "null");
+#else
       PRINTF("?? %s\n", text.raw_ptr() ? text.out_str(&convertBuf) : "null");
+#endif
    }
    else
    {
@@ -296,8 +303,15 @@ void __trace(Dynamic inObj, Dynamic info)
       int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
 
       hx::strbuf convertBuf;
+#if defined(HX_SMART_STRINGS) && defined(HX_WINDOWS)
+      if (text.isUTF16Encoded())
+         PRINTF("%s:%d: %ls\n", filename, line, text.raw_ptr() ? (wchar_t*)text.__w : L"null");
+      else
+         PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.__s : "null");
+#else
       //PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
       PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
+#endif
    }
 
 }
@@ -573,14 +587,28 @@ Array<String> __get_args()
 
 void __hxcpp_print_string(const String &inV)
 {
+#if defined(HX_SMART_STRINGS) && defined(HX_WINDOWS)
+   if (inV.isUTF16Encoded())
+      PRINTF("%ls", (wchar_t*)inV.__w);
+   else
+      PRINTF("%s", inV.__s);
+#else
    hx::strbuf convertBuf;
    PRINTF("%s", inV.out_str(&convertBuf) );
+#endif
 }
 
 void __hxcpp_println_string(const String &inV)
 {
+#if defined(HX_SMART_STRINGS) && defined(HX_WINDOWS)
+   if (inV.isUTF16Encoded())
+      PRINTF("%ls\n", (wchar_t*)inV.__w);
+   else
+      PRINTF("%s\n", inV.__s);
+#else
    hx::strbuf convertBuf;
    PRINTF("%s\n", inV.out_str(&convertBuf));
+#endif
 }
 
 
