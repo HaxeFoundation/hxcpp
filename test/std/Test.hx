@@ -880,6 +880,48 @@ class Test
       return ok();
    }
 
+   public static function testIntParsing()
+   {
+      var int1 = '0x1';
+      var int2 = ' 0x1';
+      var int3 = '\t0x1';
+      var int4 = '   0x';
+      var int5 = '  5';
+      var int6 = ' \t\n5';
+      
+      var val1 = Std.parseInt(int1);
+      if (val1 != 1)
+      {
+         error('parsed hex value was not 1, $val1');
+      }
+      var val2 = Std.parseInt(int2);
+      if (val2 != 1)
+      {
+         error('parsed hex value was not 1, $val2');
+      }
+      var val3 = Std.parseInt(int3);
+      if (val3 != 1)
+      {
+         error('parsed hex value was not 1, $val3');
+      }
+      var val4 = Std.parseInt(int4);
+      if (val4 != 0)
+      {
+         error('parsed hex value was not 0, $val4');
+      }
+      var val5 = Std.parseInt(int5);
+      if (val5 != 5)
+      {
+         error('parsed int value was not 5, $val5');
+      }
+      var val6 = Std.parseInt(int6);
+      if (val6 != 5)
+      {
+         error('parsed int value was not 5, $val6');
+      }
+
+      return ok();
+   }
 
    public static function main()
    {
@@ -911,6 +953,7 @@ class Test
          exitCode |= testDynamicMember();
          exitCode |= testNoDebug();
          exitCode |= testNoDebugNoAlloc();
+         exitCode |= testIntParsing();
 
          if (exitCode!=0)
             Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );

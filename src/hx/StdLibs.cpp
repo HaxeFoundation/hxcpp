@@ -621,11 +621,31 @@ Dynamic __hxcpp_parse_int(const String &inString)
    long result;
    hx::strbuf buf;
    const char *str = inString.utf8_str(&buf);
-   bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
+
+   // On the first non space char check to see if we've got a hex string
+   bool hex = false;
+   int len = strlen(str);
+   int offset = 0;
+   for (offset; offset < len; offset++)
+   {
+      if (!isspace(str[offset]))
+      {
+         if (len - offset >= 1)
+         {
+            if (str[offset] == '0' && (str[offset + 1] == 'x' || str[offset + 1] == 'X'))
+            {
+               hex = true;
+            }
+         }
+
+         break;
+      }
+   }
+
    char *end = 0;
 
    if (hex)
-      result = (long)strtoul(str+2,&end,16);
+      result = (long)strtoul(str+offset,&end,16);
    else
       result = strtol(str,&end,10);
    if (str==end)
