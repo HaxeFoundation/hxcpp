@@ -101,9 +101,7 @@ class TestCffi extends TestBase
       var base = "Hello ";
       var bytes = haxe.io.Bytes.ofString(base).getData();
 
-      #if neko
-      assertFalse( valIsBuffer(bytes) );
-      #else
+      #if !neko
       assertTrue( valIsBuffer(bytes) );
       // Can't acess neko buffer from haxe code
       bytes = appendString(bytes,"World");
@@ -118,7 +116,9 @@ class TestCffi extends TestBase
 
       assertEq(subBuffer("hello",4),"Cold as hell");
 
+      #if !neko
       assertEq(charString(99,97,116),"A cat");
+      #end
 
       var bytes = haxe.io.Bytes.ofString("String Buffer");
       assertEq( byteDataSize(bytes), 13 );
