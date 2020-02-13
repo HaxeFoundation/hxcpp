@@ -216,7 +216,7 @@ void _hx_ssl_close( Dynamic hssl ) {
 	ssl->destroy();
 }
 
-void _hx_ssl_debug_set (Int i) {
+void _hx_ssl_debug_set (int i) {
 	mbedtls_debug_set_threshold(i);
 }
 
