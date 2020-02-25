@@ -402,6 +402,15 @@ public:
 
    inline Dynamic pop() { checkBase(); return store==hx::arrayEmpty ? null() : base->__pop(); }
 
+   inline bool contains(Dynamic inValue)
+   {
+      checkBase();
+      if (store==hx::arrayEmpty)
+         return false;
+      EnsureStorage(inValue);
+      return base->__contains(inValue);
+   }
+
    inline bool remove(Dynamic inValue)
    {
       checkBase();
@@ -532,6 +541,7 @@ public:
    Dynamic join_dyn();
    Dynamic pop_dyn();
    Dynamic push_dyn();
+   Dynamic contains_dyn();
    Dynamic remove_dyn();
    Dynamic removeAt_dyn();
    Dynamic indexOf_dyn();

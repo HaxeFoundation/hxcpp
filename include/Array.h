@@ -263,6 +263,7 @@ public:
    virtual ::String __join(::String a0) = 0;
    virtual Dynamic __pop() = 0;
    virtual int __push(const Dynamic &a0) = 0;
+   virtual bool __contains(const Dynamic &a0) = 0;
    virtual bool __remove(const Dynamic &a0) = 0;
    virtual bool __removeAt(int inIndex) = 0;
    virtual int __indexOf(const Dynamic &a0,const Dynamic &a1) = 0;
@@ -293,6 +294,7 @@ public:
    Dynamic join_dyn();
    Dynamic pop_dyn();
    Dynamic push_dyn();
+   Dynamic contains_dyn();
    Dynamic remove_dyn();
    Dynamic removeAt_dyn();
    Dynamic indexOf_dyn();
@@ -645,6 +647,16 @@ public:
       return -1;
    }
 
+   bool contains(ELEM_ inValue)
+   {
+      ELEM_ *e = (ELEM_ *)mBase;
+      for(int i=0;i<length;i++)
+      {
+         if (hx::arrayElemEq(e[i],inValue))
+            return true;
+      }
+      return false;
+   }
 
    bool remove(ELEM_ inValue)
    {
@@ -866,6 +878,7 @@ public:
    virtual ::String __join(::String a0) { return join(a0); }
    virtual Dynamic __pop() { return pop(); }
    virtual int __push(const Dynamic &a0) { return push(a0);}
+   virtual bool __contains(const Dynamic &a0) { return contains(a0); }
    virtual bool __remove(const Dynamic &a0) { return remove(a0); }
    virtual bool __removeAt(int inIndex) { return removeAt(inIndex); }
    virtual int __indexOf(const Dynamic &a0,const Dynamic &a1) { return indexOf(a0, a1); }
