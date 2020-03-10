@@ -11,6 +11,7 @@ const char *gArrayFuncNames[] =
    "afCopy",
    "afInsert",
    "afIterator",
+   "afKeyValueIterator",
    "afJoin",
    "afPop",
    "afPush",
@@ -41,6 +42,7 @@ int gArrayArgCount[] =
    0, //afCopy,
    2, //afInsert,
    0, //afIterator,
+   0, //afKeyValueIterator,
    1, //afJoin,
    0, //afPop,
    1, //afPush,
@@ -804,6 +806,12 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_CHECK;
          return thisVal->iterator().mPtr;
       }
+      if (FUNC==afKeyValueIterator)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->keyValueIterator().mPtr;
+      }
 
       if (FUNC==afPush || FUNC==afContains || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          return Dynamic(runInt(ctx)).mPtr;
@@ -1146,6 +1154,11 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    static hx::Object *SLJIT_CALL runGetIteratator( Array_obj<ELEM> *inArray )
    {
       return inArray->iterator().mPtr;
+   }
+
+   static hx::Object *SLJIT_CALL runGetKeyValueIteratator( Array_obj<ELEM> *inArray )
+   {
+      return inArray->keyValueIterator().mPtr;
    }
 
    static void SLJIT_CALL runSetSizeExact( Array_obj<ELEM> *inArray, int size )
@@ -1702,10 +1715,17 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
    
          // Array<ELEM>
-            case afIterator:
+         case afIterator:
             {
                thisExpr->genCode(compiler, sJitTemp0, etObject);
                compiler->callNative( (void *)runGetIteratator, sJitTemp0.as(jtPointer) );
+               compiler->convertReturnReg(etObject, inDest, destType);
+               break;
+            }
+         case afKeyValueIterator:
+            {
+               thisExpr->genCode(compiler, sJitTemp0, etObject);
+               compiler->callNative( (void *)runGetKeyValueIteratator, sJitTemp0.as(jtPointer) );
                compiler->convertReturnReg(etObject, inDest, destType);
                break;
             }
@@ -2108,6 +2128,8 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<afInsert,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("iterator"))
       return TCreateArrayBuiltin<afIterator,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("keyValueIterator"))
+      return TCreateArrayBuiltin<afKeyValueIterator,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("join"))
       return TCreateArrayBuiltin<afJoin,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("pop"))

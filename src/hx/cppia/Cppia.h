@@ -113,6 +113,7 @@ enum ArrayFunc
    afCopy,
    afInsert,
    afIterator,
+   afKeyValueIterator,
    afJoin,
    afPop,
    afPush,

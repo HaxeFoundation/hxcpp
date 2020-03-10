@@ -404,6 +404,10 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       {
          return thisVal->CALL(iterator)().mPtr;
       }
+      if (FUNC==afKeyValueIterator)
+      {
+         return thisVal->CALL(keyValueIterator)().mPtr;
+      }
 
       return 0;
    }
@@ -914,6 +918,8 @@ CppiaExpr *createArrayAnyBuiltin(CppiaExpr *src, CppiaExpr *inThisExpr, String f
       return TCreateArrayAnyBuiltin<afInsert>(src, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("iterator"))
       return TCreateArrayAnyBuiltin<afIterator>(src, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("keyValueIterator"))
+      return TCreateArrayAnyBuiltin<afKeyValueIterator>(src, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("join"))
       return TCreateArrayAnyBuiltin<afJoin>(src, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("pop"))

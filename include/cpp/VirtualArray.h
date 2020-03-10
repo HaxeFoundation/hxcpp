@@ -510,6 +510,8 @@ public:
    Dynamic iterator() { checkBase(); return  !base ? getEmptyIterator() :  base->__iterator(); }
    static Dynamic getEmptyIterator();
 
+   Dynamic keyValueIterator() { checkBase(); return  !base ? getEmptyIterator() :  base->__keyValueIterator(); }
+
    bool IsByteArray() const { checkBase(); return store!=hx::arrayEmpty && base->IsByteArray(); }
 
    void zero(Dynamic inFirst, Dynamic inCount) { checkBase(); if (store!=hx::arrayEmpty) base->zero(inFirst,inCount); }
@@ -538,6 +540,7 @@ public:
    Dynamic copy_dyn();
    Dynamic insert_dyn();
    Dynamic iterator_dyn();
+   Dynamic keyValueIterator_dyn();
    Dynamic join_dyn();
    Dynamic pop_dyn();
    Dynamic push_dyn();
