@@ -116,6 +116,7 @@ enum ArrayFunc
    afJoin,
    afPop,
    afPush,
+   afContains,
    afRemove,
    afReverse,
    afShift,

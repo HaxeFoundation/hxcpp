@@ -21,6 +21,10 @@ static hx::Object * SLJIT_CALL objGetItem(hx::Object *inObj, int inIndex)
 {
    return inObj->__GetItem(inIndex).mPtr;
 }
+static int SLJIT_CALL arrayContains(ArrayAnyImpl *inObj, hx::Object *inValue)
+{
+   return inObj->contains(inValue);
+}
 static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, hx::Object *inValue)
 {
    return inObj->remove(inValue);
@@ -178,6 +182,14 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          return thisVal->CALL(push)(Dynamic(val));
       }
+      if (FUNC==afContains)
+      {
+         ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
+         BCR_CHECK;
+         hx::Object * val = args[0]->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->CALL(contains)(val);
+      }
       if (FUNC==afRemove)
       {
          ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
@@ -240,7 +252,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      if (FUNC==afPush || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
+      if (FUNC==afPush || FUNC==afContains || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          return Dynamic(runInt(ctx)).mPtr;
 
       if (FUNC==afRemove)
@@ -568,6 +580,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             return etVoid;
 
          case afPush:
+         case afContains:
          case afRemove:
          case afIndexOf:
          case afLastIndexOf:
@@ -581,7 +594,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
    }
    ExprType getType() { return inlineGetType(); }
 
-   bool isBoolInt() { return FUNC==afRemove; }
+   bool isBoolInt() { return FUNC==afRemove || FUNC==afContains; }
 
 
    #ifdef CPPIA_JIT
@@ -634,6 +647,12 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          case afShift:
             compiler->callNative( (void *)arrayShift, thisVal);
             compiler->convertReturnReg(etObject, inDest, destType);
+            break;
+
+         case afContains:
+            args[0]->genCode(compiler, sJitArg1, etObject);
+            compiler->callNative( (void *)arrayContains, thisVal, sJitArg1.as(jtPointer));
+            compiler->convertReturnReg(etInt, inDest, destType,true);
             break;
 
          case afRemove:
@@ -901,6 +920,8 @@ CppiaExpr *createArrayAnyBuiltin(CppiaExpr *src, CppiaExpr *inThisExpr, String f
       return TCreateArrayAnyBuiltin<afPop>(src, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("push"))
       return TCreateArrayAnyBuiltin<afPush>(src, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("contains"))
+      return TCreateArrayAnyBuiltin<afContains>(src, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("remove"))
       return TCreateArrayAnyBuiltin<afRemove>(src, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("reverse"))

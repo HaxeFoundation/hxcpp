@@ -1225,6 +1225,10 @@ int String::indexOf(const String &inValue, Dynamic inStart) const
    int s = inStart==null() ? 0 : inStart->__ToInt();
    int l = inValue.length;
 
+   if (l==0) {
+      return s > length ? length : s;
+   }
+
    #ifdef HX_SMART_STRINGS
    bool s016 =  isUTF16Encoded();
    bool s116 = inValue.isUTF16Encoded();

@@ -684,6 +684,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_sys_get_pid();
 void _hx_ssl_init();
 Dynamic _hx_ssl_new( Dynamic hconf );
 void _hx_ssl_close( Dynamic hssl );
+void _hx_ssl_debug_set (int i);
 void _hx_ssl_handshake( Dynamic handle );
 void _hx_ssl_set_socket( Dynamic hssl, Dynamic hsocket );
 void _hx_ssl_set_hostname( Dynamic hssl, String hostname );
