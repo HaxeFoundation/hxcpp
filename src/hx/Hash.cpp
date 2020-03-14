@@ -55,8 +55,8 @@ void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
          }
          else if (type==vtFloat)
          {
-            if (hash->store==hashInt || hash->store==hashFloat) 
-               want =hashFloat;
+            if (hash->store==hashInt || hash->store==hashFloat)
+               want = hashFloat;
          }
          else if (type==vtString)
          {
@@ -227,7 +227,7 @@ String __int_hash_to_string(Dynamic &ioHash)
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (hash)
       return hash->toString();
-   return HX_CSTRING("{}");
+   return HX_CSTRING("[]");
 
 }
 
@@ -294,8 +294,8 @@ void __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value, bool i
          }
          else if (type==vtFloat)
          {
-            if (hash->store==hashInt || hash->store==hashFloat) 
-               want =hashFloat;
+            if (hash->store==hashInt || hash->store==hashFloat)
+               want = hashFloat;
          }
          else if (type==vtString)
          {
@@ -464,7 +464,7 @@ String __string_hash_to_string(Dynamic &ioHash)
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (hash)
       return hash->toString();
-   return HX_CSTRING("{}");
+   return HX_CSTRING("[]");
 }
 
 String __string_hash_to_string_raw(Dynamic &ioHash)
@@ -562,8 +562,8 @@ void __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool i
          }
          else if (type==vtFloat)
          {
-            if (hash->store==hashInt || hash->store==hashFloat) 
-               want =hashFloat;
+            if (hash->store==hashInt || hash->store==hashFloat)
+               want = hashFloat;
          }
          else if (type==vtString)
          {
@@ -747,7 +747,7 @@ String __object_hash_to_string(Dynamic &ioHash)
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
    if (hash)
       return hash->toString();
-   return HX_CSTRING("{}");
+   return HX_CSTRING("[]");
 
 }
 
