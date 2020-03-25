@@ -22,8 +22,6 @@ int gFastPath = 0;
 int gSlowPath = 0;
 
 
-
-
 }
 
 using hx::gByteMarkID;
@@ -1177,6 +1175,9 @@ struct BlockDataInfo
 
                if (inOffset>=scan && inOffset<end)
                {
+                  if (inOffset>scan+sgCheckInternalOffset)
+                     return allocNone;
+
                   *outPtr = mPtr->mRow[0] + scan + sizeof(int);
 
                   if (header & IMMIX_ALLOC_IS_CONTAINER)
