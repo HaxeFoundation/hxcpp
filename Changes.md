@@ -10,6 +10,7 @@
 4.0.19
 ------------------------------------------------------------
 
+* Add Array.keyValueIterator
 * General Utf16 string improvements
 * Limit the amount of recursion in toString function
 * Add float32 support to cppia
