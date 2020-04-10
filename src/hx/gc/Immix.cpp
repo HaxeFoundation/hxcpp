@@ -88,7 +88,7 @@ static void *sgObject_root = 0;
 // With virtual inheritance, stack pointers can point to the middle of an object
 #ifdef _MSC_VER
 // MSVC optimizes by taking the address of an initernal data member
-static int sgCheckInternalOffset = sizeof(void *)+sizeof(int);
+static int sgCheckInternalOffset = sizeof(void *)*2;
 static int sgCheckInternalOffsetRows = 1;
 #else
 static int sgCheckInternalOffset = 0;
