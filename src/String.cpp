@@ -889,13 +889,61 @@ void String::fromPointer(const void *p)
    __s = GCStringDup(buf,-1,&length);
 }
 
+#ifdef HX_SMART_STRINGS
+#define ADD_HASH(X) \
+    result = result*223 + (int)(X)
+#endif
+
+unsigned int String::calcSubHash(int start, int inLen) const
+{
+   unsigned int result = 0;
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+   {
+      const char16_t *w = __w + start;
+      for(int i=0;i<inLen;i++)
+      {
+         int c = w[i];
+         if( c <= 0x7F )
+         {
+            ADD_HASH(c);
+         }
+         else if( c <= 0x7FF )
+         {
+            ADD_HASH(0xC0 | (c >> 6));
+            ADD_HASH(0x80 | (c & 63));
+         }
+         else if( c <= 0xFFFF )
+         {
+            ADD_HASH(0xE0 | (c >> 12));
+            ADD_HASH(0x80 | ((c >> 6) & 63));
+            ADD_HASH(0x80 | (c & 63));
+         }
+         else
+         {
+            ADD_HASH(0xF0 | (c >> 18));
+            ADD_HASH(0x80 | ((c >> 12) & 63));
+            ADD_HASH(0x80 | ((c >> 6) & 63) );
+            ADD_HASH(0x80 | (c & 63) );
+         }
+      }
+   }
+   else
+   #endif
+   {
+      const unsigned char *s = (const unsigned char *)__s + start;
+      for(int i=0;i<inLen;i++)
+         result = result*223 + s[i];
+   }
+
+   return result;
+
+}
 
 unsigned int String::calcHash() const
 {
    unsigned int result = 0;
    #ifdef HX_SMART_STRINGS
-   #define ADD_HASH(X) \
-       result = result*223 + (int)(X)
    if (isUTF16Encoded())
    {
       for(int i=0;i<length;i++)
@@ -932,6 +980,8 @@ unsigned int String::calcHash() const
 
    return result;
 }
+
+
 
 // InternalCreateConstBuffer is not uft16 aware whenit come to hashes
 static void fixHashPerm16(const String &str)

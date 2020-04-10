@@ -242,6 +242,7 @@ public:
    }
 
    unsigned int calcHash() const;
+   unsigned int calcSubHash(int start, int length) const;
 
    #ifdef HX_SMART_STRINGS
    int compare(const ::String &inRHS) const;
