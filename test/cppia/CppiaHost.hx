@@ -29,6 +29,12 @@ class CppiaHost
    {
       Common.hostImplementation = new HostOne();
 
+      if (new HostExtends().getYou().extendOnly != 1)
+      {
+         Sys.println("extend-overide type failed");
+         Sys.exit(-1);
+      }
+
       Host.main();
       Sys.println("TestStatus: " + Common.status );
       if (Common.status!="ok")
