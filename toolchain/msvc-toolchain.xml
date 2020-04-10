@@ -116,10 +116,13 @@
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-dll"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug:full" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
   <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-OPT:REF,ICF" if="HXCPP_PDB_FILE"/>
+  <flag value="-pdb:${HXCPP_PDB_FILE}" if="HXCPP_PDB_FILE" />
   <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
   <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
+  <flag value="-map:${HXCPP_MAP_FILE}" if="HXCPP_MAP_FILE" />
   <lib name="${dll_import_link}" if="dll_import_link" />
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
@@ -134,8 +137,12 @@
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK||HXCPP_PDB_FILE" unless="HXCPP_FAST_LINK"/>
   <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-OPT:REF,ICF" if="HXCPP_PDB_FILE"/>
+  <flag value="-map:${HXCPP_MAP_FILE}" if="HXCPP_MAP_FILE" />
+  <flag value="-pdb:${HXCPP_PDB_FILE}" if="HXCPP_PDB_FILE" />
+  <flag value="-INCREMENTAL:NO" if="HXCPP_PDB_FILE" />
   <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
   <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <flag value="-subsystem:windows${SUBSYSTEM_VER}" if="SUBSYSTEMWINDOWS" />
