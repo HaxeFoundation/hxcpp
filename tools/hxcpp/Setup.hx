@@ -89,7 +89,7 @@ class Setup
          }
          catch (e:haxe.io.Eof)
          {
-            Log.warn('Could not deduce NDK version from "$inDirName"/source.properties');
+            Log.v('Could not deduce NDK version from "$inDirName"/source.properties');
          }
          fin.close();
       }
@@ -107,7 +107,7 @@ class Setup
          return result;
       }
 
-      Log.warn('Could not deduce NDK version from "$inDirName" - assuming 8');
+      Log.v('Could not deduce NDK version from "$inDirName" - assuming 8');
       return 8;
    }
 
@@ -420,7 +420,7 @@ class Setup
       catch(e:Dynamic) { }
 
       if(defines.exists('NDKV20+')) {
-         Log.info([
+         Log.v([
             "x86 Platform: 16",
             "arm Platform: 16",
             "x86_64 Platform: 21",
