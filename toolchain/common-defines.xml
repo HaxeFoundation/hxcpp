@@ -31,6 +31,7 @@
  <flag value="-DHXCPP_SCRIPTABLE" if="scriptable" tag="haxe" />
  <flag value="-DHXCPP_SINGLE_THREADED_APP" if="HXCPP_SINGLE_THREADED_APP" tag="haxe" />
  <flag value='-DHX_SMART_STRINGS' if="hxcpp_smart_strings" tag="haxe" />
+ <flag value='-DHXCPP_CATCH_SEGV' if="HXCPP_CATCH_SEGV" tag="haxe" />
  <flag value='-DHXCPP_API_LEVEL=${removeQuotes:hxcpp_api_level}' if="hxcpp_api_level" tag="haxe" />
  <flag value='-DHXCPP_API_LEVEL=0' unless="hxcpp_api_level"  tag="haxe"/>
  <flag value='-DHXCPP_OBJC' if="objc"  tag="haxe"/>

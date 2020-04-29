@@ -6276,6 +6276,7 @@ void GCPrepareMultiThreaded()
 }
 
 
+
 void SetTopOfStack(int *inTop,bool inForce)
 {
    bool threadAttached = false;
@@ -6303,7 +6304,6 @@ void SetTopOfStack(int *inTop,bool inForce)
          tla->onThreadAttach();
    }
 }
-
 
 
 void *InternalNew(int inSize,bool inIsObject)

@@ -451,8 +451,12 @@ struct StackContext : public hx::ImmixAllocator
    }
    #endif
 
-   #ifdef HXCPP_SEH_THROW
-   _se_translator_function mOldSehFunc;
+   #ifdef HXCPP_CATCH_SEGV
+      #ifdef _MSC_VER
+      _se_translator_function mOldSignalFunc;
+      #else
+      void (*mOldSignalFunc)(int);
+      #endif
    #endif
 
    StackContext();

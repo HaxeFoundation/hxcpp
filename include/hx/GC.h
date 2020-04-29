@@ -258,8 +258,6 @@ void GCCheckPointer(void *);
 void GCOnNewPointer(void *);
 
 
-void SetTopOfStack(void *inTopOfStack,bool inForce=false);
-
 // Called internally before and GC operations
 void CommonInitAlloc();
 
