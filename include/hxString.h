@@ -155,6 +155,7 @@ public:
    inline const char *&raw_ref() { return __s; }
    inline const char *raw_ptr() const { return __s; }
    const char *utf8_str(hx::IStringAlloc *inBuffer = 0,bool throwInvalid=true) const;
+   const char *ascii_substr(hx::IStringAlloc *inBuffer,int start, int length) const;
    inline const char *c_str() const { return utf8_str(); }
    inline const char *out_str(hx::IStringAlloc *inBuffer = 0) const { return utf8_str(inBuffer,false); }
    const wchar_t *wchar_str(hx::IStringAlloc *inBuffer = 0) const;
