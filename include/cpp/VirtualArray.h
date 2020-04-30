@@ -67,6 +67,10 @@ public:
    {
       mArrayConvertId = hx::aciVirtualArray;
       store = inFixed && inBase ? hx::arrayFixed : base ? base->getStoreType() : hx::arrayEmpty;
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (base)
+         HX_OBJ_WB_GET(this,base);
+      #endif
    }
 
    VirtualArray_obj(ArrayStore inStore)
@@ -398,6 +402,15 @@ public:
 
    inline Dynamic pop() { checkBase(); return store==hx::arrayEmpty ? null() : base->__pop(); }
 
+   inline bool contains(Dynamic inValue)
+   {
+      checkBase();
+      if (store==hx::arrayEmpty)
+         return false;
+      EnsureStorage(inValue);
+      return base->__contains(inValue);
+   }
+
    inline bool remove(Dynamic inValue)
    {
       checkBase();
@@ -497,6 +510,8 @@ public:
    Dynamic iterator() { checkBase(); return  !base ? getEmptyIterator() :  base->__iterator(); }
    static Dynamic getEmptyIterator();
 
+   Dynamic keyValueIterator() { checkBase(); return  !base ? getEmptyIterator() :  base->__keyValueIterator(); }
+
    bool IsByteArray() const { checkBase(); return store!=hx::arrayEmpty && base->IsByteArray(); }
 
    void zero(Dynamic inFirst, Dynamic inCount) { checkBase(); if (store!=hx::arrayEmpty) base->zero(inFirst,inCount); }
@@ -525,9 +540,11 @@ public:
    Dynamic copy_dyn();
    Dynamic insert_dyn();
    Dynamic iterator_dyn();
+   Dynamic keyValueIterator_dyn();
    Dynamic join_dyn();
    Dynamic pop_dyn();
    Dynamic push_dyn();
+   Dynamic contains_dyn();
    Dynamic remove_dyn();
    Dynamic removeAt_dyn();
    Dynamic indexOf_dyn();
@@ -609,6 +626,10 @@ void VirtualArray_obj::fixType()
    {
       base = new Array_obj<F>(0,0);
    }
+   #ifdef HXCPP_GC_GENERATIONAL
+   if (base)
+      HX_OBJ_WB_GET(this,base);
+   #endif
 }
 
 template<typename ARRAY >
@@ -622,12 +643,20 @@ ARRAY VirtualArray_obj::castArray()
    {
       ARRAY fixedArray = Dynamic(base);
       base = fixedArray.mPtr;
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (base)
+         HX_OBJ_WB_GET(this,base);
+      #endif
       return fixedArray;
    }
    else
    {
       ARRAY fixedArray(0,0);
       base = fixedArray.mPtr;
+      #ifdef HXCPP_GC_GENERATIONAL
+      if (base)
+         HX_OBJ_WB_GET(this,base);
+      #endif
       return fixedArray;
    }
 }

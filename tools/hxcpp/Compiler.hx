@@ -316,10 +316,14 @@ class Compiler
          if (FileSystem.exists(cacheName))
          {
             var newer = true;
-            if (pchTimeStamp!=null)
+            if (pchTimeStamp!=null || inFile.mGroup.mRespectTimestamp)
             {
                var time = FileSystem.stat(cacheName).mtime.getTime();
-               newer = time>=pchTimeStamp;
+
+               if (pchTimeStamp!=null)
+                  newer = time>=pchTimeStamp;
+               if (inFile.mGroup.mRespectTimestamp)
+                  newer = newer && time>= FileSystem.stat(inFile.mDir + "/" + inFile.mName).mtime.getTime();
             }
             if (newer)
             {

@@ -87,6 +87,8 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int   __int__(double x);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool  __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_parse_int(const String &inString);
 HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_float(const String &inString);
+HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_substr_float(const String &inString, int start, int len);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int __hxcpp_parse_substr_int(const String &inString, int start=0, int len=-1);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_set_float_format(String inFormat);
 
@@ -170,6 +172,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_int(HX_MAP_THIS_ARG,i
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_string(HX_MAP_THIS_ARG,int inKey,::String inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_float(HX_MAP_THIS_ARG,int inKey,Float inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_to_string(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_clear(Dynamic &hash);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_get(Dynamic inHash,int inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES int           __int_hash_get_int(Dynamic inHash,int inKey);
@@ -188,9 +191,11 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_values(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_int(HX_MAP_THIS_ARG,String inKey,int inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_string(HX_MAP_THIS_ARG,String inKey,::String inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_float(HX_MAP_THIS_ARG,String inKey,Float inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_map_substr(HX_MAP_THIS_ARG,String inKey,int inStart, int inLength);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string_raw(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_clear(Dynamic &hash);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_get(Dynamic inHash,String inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES int           __string_hash_get_int(Dynamic inHash,String inKey);
@@ -210,6 +215,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_int(HX_MAP_THIS_AR
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_string(HX_MAP_THIS_ARG,Dynamic inKey,::String inValue,bool inWeakKey=false);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_float(HX_MAP_THIS_ARG,Dynamic inKey,Float inValue,bool inWeakKey=false);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __object_hash_to_string(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_clear(Dynamic &hash);
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __object_hash_get(Dynamic inHash,Dynamic inKey);
@@ -681,6 +687,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_sys_get_pid();
 void _hx_ssl_init();
 Dynamic _hx_ssl_new( Dynamic hconf );
 void _hx_ssl_close( Dynamic hssl );
+void _hx_ssl_debug_set (int i);
 void _hx_ssl_handshake( Dynamic handle );
 void _hx_ssl_set_socket( Dynamic hssl, Dynamic hsocket );
 void _hx_ssl_set_hostname( Dynamic hssl, String hostname );

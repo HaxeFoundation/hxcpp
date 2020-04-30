@@ -615,10 +615,12 @@ DEFINE_ARRAY_FUNC1(return,resize);
 
 DEFINE_ARRAY_FUNC1(return,concat);
 DEFINE_ARRAY_FUNC0(return,iterator);
+DEFINE_ARRAY_FUNC0(return,keyValueIterator);
 DEFINE_ARRAY_FUNC1(return,join);
 DEFINE_ARRAY_FUNC0(return,pop);
 DEFINE_ARRAY_FUNC0(return,copy);
 DEFINE_ARRAY_FUNC1(return,push);
+DEFINE_ARRAY_FUNC1(return,contains);
 DEFINE_ARRAY_FUNC1(return,remove);
 DEFINE_ARRAY_FUNC1(return,removeAt);
 DEFINE_ARRAY_FUNC2(return,indexOf);
@@ -643,9 +645,11 @@ hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp
    if (inString==HX_CSTRING("insert")) return insert_dyn();
    if (inString==HX_CSTRING("copy")) return copy_dyn();
    if (inString==HX_CSTRING("iterator")) return iterator_dyn();
+   if (inString==HX_CSTRING("keyValueIterator")) return keyValueIterator_dyn();
    if (inString==HX_CSTRING("join")) return join_dyn();
    if (inString==HX_CSTRING("pop")) return pop_dyn();
    if (inString==HX_CSTRING("push")) return push_dyn();
+   if (inString==HX_CSTRING("contains")) return contains_dyn();
    if (inString==HX_CSTRING("remove")) return remove_dyn();
    if (inString==HX_CSTRING("removeAt")) return removeAt_dyn();
    if (inString==HX_CSTRING("indexOf")) return indexOf_dyn();
@@ -679,10 +683,12 @@ static String sArrayFields[] = {
    HX_CSTRING("concat"),
    HX_CSTRING("insert"),
    HX_CSTRING("iterator"),
+   HX_CSTRING("keyValueIterator"),
    HX_CSTRING("join"),
    HX_CSTRING("copy"),
    HX_CSTRING("pop"),
    HX_CSTRING("push"),
+   HX_CSTRING("contains"),
    HX_CSTRING("remove"),
    HX_CSTRING("removeAt"),
    HX_CSTRING("indexOf"),
@@ -801,10 +807,12 @@ Dynamic VirtualArray_obj::func##_dyn()  { return new VirtualArray_##func(this); 
 DEFINE_VARRAY_FUNC1(return,concat);
 DEFINE_VARRAY_FUNC2(,insert);
 DEFINE_VARRAY_FUNC0(return,iterator);
+DEFINE_VARRAY_FUNC0(return,keyValueIterator);
 DEFINE_VARRAY_FUNC1(return,join);
 DEFINE_VARRAY_FUNC0(return,pop);
 DEFINE_VARRAY_FUNC0(return,copy);
 DEFINE_VARRAY_FUNC1(return,push);
+DEFINE_VARRAY_FUNC1(return,contains);
 DEFINE_VARRAY_FUNC1(return,remove);
 DEFINE_VARRAY_FUNC1(return,removeAt);
 DEFINE_VARRAY_FUNC2(return,indexOf);
@@ -873,9 +881,11 @@ hx::Val VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inC
    if (inString==HX_CSTRING("insert")) return insert_dyn();
    if (inString==HX_CSTRING("copy")) return copy_dyn();
    if (inString==HX_CSTRING("iterator")) return iterator_dyn();
+   if (inString==HX_CSTRING("keyValueIterator")) return keyValueIterator_dyn();
    if (inString==HX_CSTRING("join")) return join_dyn();
    if (inString==HX_CSTRING("pop")) return pop_dyn();
    if (inString==HX_CSTRING("push")) return push_dyn();
+   if (inString==HX_CSTRING("contains")) return contains_dyn();
    if (inString==HX_CSTRING("remove")) return remove_dyn();
    if (inString==HX_CSTRING("removeAt")) return removeAt_dyn();
    if (inString==HX_CSTRING("indexOf")) return indexOf_dyn();

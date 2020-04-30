@@ -22,7 +22,7 @@
      <!-- If you put all your SDKs in one directory, then you can just set this
           single variable.  If you put them in exactly this place, then you should not
           need to setup anything ! -->
-     <set name="SDK_ROOT" value="c:\SDKs\" unless="SDK_ROOT" if="windows" />
+     <set name="SDK_ROOT" value="c:\SDKs\" unless="SDK_ROOT" if="windows_host" />
      <set name="SDK_ROOT" value="${HOME}/SDKs/" unless="SDK_ROOT" />
 
 

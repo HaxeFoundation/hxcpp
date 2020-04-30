@@ -26,6 +26,10 @@
   <pchflag value="c++-header" />
   <cppflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
   <cppflag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <cppflag value="-std=c++11" if="HXCPP_CPP11" />
+  <mmflag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
+  <mmflag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <mmflag value="-std=c++11" if="HXCPP_CPP11" />
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fmessage-length=0"/>
@@ -34,6 +38,8 @@
   <flag value="-fno-stack-protector"/>
   <flag value="-Wno-overflow" />
   <cppflag value="-Wno-invalid-offsetof" />
+  <cppflag value="-Wno-return-type-c-linkage" />
+  <mmflag value="-Wno-return-type-c-linkage" />
   <flag value="-fpascal-strings"/>
   <flag value="-fasm-blocks"/>
   <flag value="-Wreturn-type"/>

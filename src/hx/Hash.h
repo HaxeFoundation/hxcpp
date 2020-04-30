@@ -243,6 +243,8 @@ struct HashBase : public HashRoot
    virtual void set(KEY inKey, const Float &inValue) = 0;
    virtual void set(KEY inKey, const Dynamic &inValue) = 0;
 
+   virtual void clear() = 0;
+
    virtual HashBase<KEY> *convertStore(HashStore inStore) = 0;
 
    virtual bool remove(KEY inKey) = 0;
@@ -561,6 +563,14 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    void set(Key inKey, const Float &inValue)  { TSet(inKey, inValue); }
    void set(Key inKey, const Dynamic &inValue)  { TSet(inKey, inValue); }
    void set(Key inKey, const null &inValue)  { TSet(inKey, inValue);  }
+
+   void clear()
+   {
+      bucket = 0;
+      size = 0;
+      mask = 0;
+      bucketCount = 0;
+   }
 
 
    template<typename F>

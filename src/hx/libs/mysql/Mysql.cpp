@@ -196,6 +196,9 @@ int  _hx_mysql_result_get_length(Dynamic handle)
 **/
 int  _hx_mysql_result_get_nfields(Dynamic handle)
 {
+   if( handle->__GetType() == vtInt )
+     return 0;
+
    return getResult(handle)->nfields;
 }
 
@@ -434,7 +437,7 @@ static Result *alloc_result( Connection *c, MYSQL_RES *r )
       if( strchr(fields[i].name,'(') )
          name = String::createPermanent("???",3); // looks like an inner request : prevent hashing + cashing it
       else
-         name.makePermanent();
+         name = String::createPermanent(fields[i].name, -1);
 
       res->field_names[i] = name;
       res->fields_convs[i] = convert_type(fields[i].type,fields[i].flags,fields[i].length);

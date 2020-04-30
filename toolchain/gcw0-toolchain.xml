@@ -1,6 +1,9 @@
 <xml>
 
 <set name="GCW0_SDK" value="/opt/gcw0-toolchain" unless="GCW0_SDK" if="linux_host" />
+<set name="GCW0_SDK" value="${SDK_ROOT}/gcw0-toolchain" unless="GCW0_SDK" if="windows_host SDK_ROOT" />
+<error value="Please set GCW0_SDK" unless="GCW0_SDK" />
+<echo value="Using sdk ${GCW0_SDK}" if="HXCPP_VERBOSE" />
 <set name="GCW0_PLATFORM" value="${GCW0_SDK}/usr/mipsel-gcw0-linux-uclibc/sysroot" />
 
 <path name="${GCW0_SDK}/usr/bin/" />
@@ -8,9 +11,10 @@
 <include name="gcc-toolchain.xml"/>
 
 
-<!-- GCW-Zero TOOLS -------------------------------------------------->
+<!-- GCW-Zero TOOLS -->
 	
 <compiler id="gcw0" exe="mipsel-linux-g++" if="gcw0">
+	<exe name="mipsel-gcw0-linux-uclibc-g++.exe" if="windows_host" />
 	<flag value="-c"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>
@@ -25,6 +29,9 @@
 	<flag value="-fpic"/>
 	<flag value="-fPIC"/>
 	<cppflag value="-frtti"/>
+	<cppflag value="-std=c++11" />
+   <cppflag value="-Wno-invalid-offsetof" />
+   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
 	<!-- <flag value="-fPIE" /> -->
 	<flag value="--sysroot=${GCW0_PLATFORM}" />
 	<outflag value="-o"/>
@@ -32,9 +39,10 @@
 </compiler>
 
 <linker id="exe" exe="mipsel-linux-g++" if="gcw0">
-	<flag value="-g" if="debug"/>
-	<flag value="-O2" unless="debug"/>
-	<flag value="-s" unless="debug"/>
+	<exe name="mipsel-gcw0-linux-uclibc-g++" if="windows_host" />
+	<flag value="-g" if="debug||HXCPP_DEBUG_LINK"/>
+	<flag value="-O2" unless="debug||HXCPP_DEBUG_LINK"/>
+	<flag value="-s" unless="debug||HXCPP_DEBUG_LINK"/>
 	<flag value="-pie" />
 	<lib name="-lpthread" />
 	<flag value="-march=mips32r2" />
@@ -48,6 +56,7 @@
 </linker>
 	
 <linker id="dll" exe="mipsel-linux-g++" if="gcw0">
+	<exe name="mipsel-gcw0-linux-uclibc-g++" if="windows_host" />
 	<flag value="-shared"/>
 	<flag value="-g" if="debug"/>
 	<flag value="-O2" unless="debug"/>

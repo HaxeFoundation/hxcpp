@@ -21,6 +21,7 @@ class FileGroup
    public var mAddTwice:Bool;
    public var mSetImportDir:Bool;
    public var mUseCache:Bool;
+   public var mRespectTimestamp:Bool;
    public var mCacheProject:String;
    public var mTags:String;
    public var mNvcc:Bool;
@@ -50,6 +51,7 @@ class FileGroup
       mAddTwice = false;
       mSetImportDir = inSetImportDir;
       mUseCache = false;
+      mRespectTimestamp = false;
       mCacheProject = "";
       mNvcc = false;
       mTags = "haxe,static";

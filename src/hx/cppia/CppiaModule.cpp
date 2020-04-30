@@ -205,8 +205,8 @@ int CppiaModule::findInterfaceSlot(const std::string &inName)
 void CppiaModule::where(CppiaExpr *e)
 {
    if (linkingClass && layout)
-      printf(" in %s::%p\n", linkingClass->name.c_str(), layout);
-   printf("   %s at %s:%d %s\n", e->getName(), e->filename, e->line, e->functionName);
+      CPPIALOG(" in %s::%p\n", linkingClass->name.c_str(), layout);
+   CPPIALOG("   %s at %s:%d %s\n", e->getName(), e->filename, e->line, e->functionName);
 }
 
 

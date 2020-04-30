@@ -31,6 +31,7 @@ class TestCffi extends TestBase
    static var getAbstract:Dynamic->Int = Lib.load("prime", "getAbstract", 1);
    static var freeAbstract:Dynamic->Void = Lib.load("prime", "freeAbstract", 1);
    static var getAbstractFreeCount:Void->Int = Lib.load("prime", "getAbstractFreeCount", 0);
+   static var createAnon:Void->Dynamic = Lib.load("prime", "createAnon", 0);
   
 
    static var cppObjectAsDynamic:cpp.Callable<Int->cpp.Object>;
@@ -69,6 +70,8 @@ class TestCffi extends TestBase
       assertTrue( getRoot!=null );
       assertTrue( setRoot!=null );
 
+      assertTrue( createAnon!=null );
+
 
       assertFalse( valIsBuffer(null) );
       assertFalse( valIsBuffer(1) );
@@ -78,6 +81,15 @@ class TestCffi extends TestBase
       if (cppObjectAsDynamic!=null)
          assertTrue( getObjectAsString()==null);
 
+      var anon = createAnon();
+      for(f in Reflect.fields(anon))
+      {
+         #if cpp
+         var value:Dynamic = Reflect.field(anon, f);
+         //trace(f + " " + Type.typeof(value) );
+         assertTrue( Std.string(Type.typeof(value)) == f );
+         #end
+      }
 
       for(i in 0...100)
         setRoot(i,[i]);
@@ -89,9 +101,7 @@ class TestCffi extends TestBase
       var base = "Hello ";
       var bytes = haxe.io.Bytes.ofString(base).getData();
 
-      #if neko
-      assertFalse( valIsBuffer(bytes) );
-      #else
+      #if !neko
       assertTrue( valIsBuffer(bytes) );
       // Can't acess neko buffer from haxe code
       bytes = appendString(bytes,"World");
@@ -106,7 +116,9 @@ class TestCffi extends TestBase
 
       assertEq(subBuffer("hello",4),"Cold as hell");
 
+      #if !neko
       assertEq(charString(99,97,116),"A cat");
+      #end
 
       var bytes = haxe.io.Bytes.ofString("String Buffer");
       assertEq( byteDataSize(bytes), 13 );

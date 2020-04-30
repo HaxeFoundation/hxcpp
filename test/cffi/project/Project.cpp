@@ -359,6 +359,23 @@ value freeAbstract(value inAbstract)
 DEFINE_PRIM(freeAbstract, 1);
 
 
+value createAnon()
+{
+   value v = alloc_empty_object();
+   alloc_field(v,val_id("TInt"),alloc_int(7));
+   alloc_field(v,val_id("TFloat"),alloc_float(7.2));
+   alloc_field(v,val_id("TBool"),alloc_bool(true));
+
+   buffer buf = alloc_buffer_len(4);
+   int data = 0xdeadbeef;
+   memcpy(buffer_data(buf),&data,sizeof(int));
+   alloc_field(v,val_id("TClass(Array)"),buffer_val(buf));
+  return v;
+}
+
+DEFINE_PRIME0(createAnon);
+
+
 
 
 

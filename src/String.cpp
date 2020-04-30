@@ -889,13 +889,61 @@ void String::fromPointer(const void *p)
    __s = GCStringDup(buf,-1,&length);
 }
 
+#ifdef HX_SMART_STRINGS
+#define ADD_HASH(X) \
+    result = result*223 + (int)(X)
+#endif
+
+unsigned int String::calcSubHash(int start, int inLen) const
+{
+   unsigned int result = 0;
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+   {
+      const char16_t *w = __w + start;
+      for(int i=0;i<inLen;i++)
+      {
+         int c = w[i];
+         if( c <= 0x7F )
+         {
+            ADD_HASH(c);
+         }
+         else if( c <= 0x7FF )
+         {
+            ADD_HASH(0xC0 | (c >> 6));
+            ADD_HASH(0x80 | (c & 63));
+         }
+         else if( c <= 0xFFFF )
+         {
+            ADD_HASH(0xE0 | (c >> 12));
+            ADD_HASH(0x80 | ((c >> 6) & 63));
+            ADD_HASH(0x80 | (c & 63));
+         }
+         else
+         {
+            ADD_HASH(0xF0 | (c >> 18));
+            ADD_HASH(0x80 | ((c >> 12) & 63));
+            ADD_HASH(0x80 | ((c >> 6) & 63) );
+            ADD_HASH(0x80 | (c & 63) );
+         }
+      }
+   }
+   else
+   #endif
+   {
+      const unsigned char *s = (const unsigned char *)__s + start;
+      for(int i=0;i<inLen;i++)
+         result = result*223 + s[i];
+   }
+
+   return result;
+
+}
 
 unsigned int String::calcHash() const
 {
    unsigned int result = 0;
    #ifdef HX_SMART_STRINGS
-   #define ADD_HASH(X) \
-       result = result*223 + (int)(X)
    if (isUTF16Encoded())
    {
       for(int i=0;i<length;i++)
@@ -932,6 +980,8 @@ unsigned int String::calcHash() const
 
    return result;
 }
+
+
 
 // InternalCreateConstBuffer is not uft16 aware whenit come to hashes
 static void fixHashPerm16(const String &str)
@@ -1225,6 +1275,10 @@ int String::indexOf(const String &inValue, Dynamic inStart) const
    int s = inStart==null() ? 0 : inStart->__ToInt();
    int l = inValue.length;
 
+   if (l==0) {
+      return s > length ? length : s;
+   }
+
    #ifdef HX_SMART_STRINGS
    bool s016 =  isUTF16Encoded();
    bool s116 = inValue.isUTF16Encoded();
@@ -1466,11 +1520,11 @@ String _hx_utf8_to_utf16(const unsigned char *ptr, int inUtf8Len, bool addHash)
    if (addHash)
    {
       #ifdef EMSCRIPTEN
-         *((emscripten_align1_int *)(str+char16Count+1) );
+         *((emscripten_align1_int *)(str+char16Count+1) ) = hash;
       #else
-         *((unsigned int *)(str+char16Count+1) );
+         *((unsigned int *)(str+char16Count+1) ) = hash;
       #endif
-         ((unsigned int *)(str))[-1] |= HX_GC_STRING_HASH | HX_GC_STRING_CHAR16_T;
+      ((unsigned int *)(str))[-1] |= HX_GC_STRING_HASH | HX_GC_STRING_CHAR16_T;
    }
    else
       ((unsigned int *)(str))[-1] |= HX_GC_STRING_CHAR16_T;
@@ -1517,6 +1571,37 @@ const char * String::utf8_str(hx::IStringAlloc *inBuffer,bool throwInvalid) cons
       return TConvertToUTF8(__w,0,inBuffer,throwInvalid);
    #endif
    return __s;
+}
+
+const char *String::ascii_substr(hx::IStringAlloc *inBuffer,int start, int length) const
+{
+   #ifdef HX_SMART_STRINGS
+   if (isUTF16Encoded())
+   {
+      const char16_t *p0 = __w + start;
+      const char16_t *p = p0;
+      const char16_t *limit = p+length;
+      while(p<limit)
+      {
+         if (*p<=0 || *p>=127)
+            break;
+         p++;
+      }
+      int validLen = (int)(p-p0);
+      char *result = (char *)inBuffer->allocBytes(validLen+1);
+      for(int i=0;i<validLen;i++)
+         result[i] = p0[i];
+      result[validLen] = 0;
+      return result;
+   }
+   #endif
+   if (__s[start+length]=='\0')
+      return __s+start;
+   char *result = (char *)inBuffer->allocBytes(length+1);
+   memcpy(result,__s+start,length);
+   result[length] = '\0';
+
+   return result;
 }
 
 #ifdef HX_SMART_STRINGS

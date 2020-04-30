@@ -281,7 +281,7 @@ int  _hx_sqlite_result_get_length(Dynamic handle)
 **/
 int     _hx_sqlite_result_get_nfields(Dynamic handle)
 {
-   return getResult(handle,true)->ncols;
+   return getResult(handle,false)->ncols;
 }
 
 /**
@@ -323,7 +323,7 @@ Dynamic _hx_sqlite_result_next(Dynamic handle)
             case SQLITE_BLOB:
                {
                   int size = sqlite3_column_bytes(r->r,i);
-                  f = String::create((const char *)sqlite3_column_blob(r->r,i),size);
+                  f = Array_obj<unsigned char>::fromData((const unsigned char *)sqlite3_column_blob(r->r,i),size);
                   break;
                }
             default:
