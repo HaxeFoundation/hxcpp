@@ -137,7 +137,7 @@ void __cdecl hxSignalFunction(unsigned int, struct _EXCEPTION_POINTERS* )
    hx::Throw(sException);
 }
 #else
-void __cdecl hxSignalFunction(int)
+void hxSignalFunction(int)
 {
    hx::Throw(sException);
 }
