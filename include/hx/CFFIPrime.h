@@ -10,7 +10,7 @@
 namespace cffi
 {
 template<typename T>
-inline const char *to_utf8(const T *inStr,int &ioLen,::hx::IStringAlloc *inAlloc)
+inline const char *to_utf8(const T *inStr,int &ioLen,hx::IStringAlloc *inAlloc)
 {
   int len = 0;
   int n = ioLen;
@@ -98,7 +98,7 @@ static inline int decode_advance_utf8(const unsigned char * &ioPtr,const unsigne
 }
 
 template<typename T>
-inline const T *from_utf8(const char *inStr,int len,::hx::IStringAlloc *inAlloc)
+inline const T *from_utf8(const char *inStr,int len,hx::IStringAlloc *inAlloc)
 {
    int n = len;
    if (n<0)
@@ -459,7 +459,7 @@ inline value ToValue(HxString inVal) { return inVal.__s ? alloc_string_len(inVal
 struct AutoValue
 {
    value mValue;
-
+   
    inline operator int()  { return val_int(mValue); }
    inline operator long() { return (long)val_number(mValue); }
    inline operator value() { return mValue; }

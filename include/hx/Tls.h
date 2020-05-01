@@ -84,13 +84,13 @@
 
 
    #define DECLARE_TLS_DATA(TYPE,NAME) \
-      ::hx::TLSData<TYPE> NAME;
+      hx::TLSData<TYPE> NAME;
    #define DECLARE_FAST_TLS_DATA(TYPE,NAME) \
-      ::hx::TLSData<TYPE,true> NAME;
+      hx::TLSData<TYPE,true> NAME;
    #define EXTERN_TLS_DATA(TYPE,NAME) \
-      extern ::hx::TLSData<TYPE> NAME;
+      extern hx::TLSData<TYPE> NAME;
    #define EXTERN_FAST_TLS_DATA(TYPE,NAME) \
-      extern ::hx::TLSData<TYPE,true> NAME;
+      extern hx::TLSData<TYPE,true> NAME;
 
 
   #endif
@@ -147,13 +147,13 @@ struct TLSData
 #else
 
 #define DECLARE_TLS_DATA(TYPE,NAME) \
-   ::hx::TLSData<TYPE> NAME;
+   hx::TLSData<TYPE> NAME;
 #define DECLARE_FAST_TLS_DATA(TYPE,NAME) \
-   ::hx::TLSData<TYPE,true> NAME;
+   hx::TLSData<TYPE,true> NAME;
 #define EXTERN_TLS_DATA(TYPE,NAME) \
-   extern ::hx::TLSData<TYPE> NAME;
+   extern hx::TLSData<TYPE> NAME;
 #define EXTERN_FAST_TLS_DATA(TYPE,NAME) \
-   extern ::hx::TLSData<TYPE,true> NAME;
+   extern hx::TLSData<TYPE,true> NAME;
 
 #endif
 

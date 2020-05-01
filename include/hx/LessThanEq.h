@@ -13,7 +13,7 @@ enum {
 };
 
 
-template <typename T>
+template <typename T> 
 struct CompareTraits
 {
    enum { type = (int)CompareAsDynamic };
@@ -22,7 +22,7 @@ struct CompareTraits
    inline static double toDouble(Dynamic inValue) { return inValue; }
    inline static cpp::Int64 toInt64(Dynamic inValue) { return inValue; }
    inline static String toString(Dynamic inValue) { return inValue; }
-   inline static ::hx::Object *toObject(Dynamic inValue) { return inValue.mPtr; }
+   inline static hx::Object *toObject(Dynamic inValue) { return inValue.mPtr; }
    inline static int getDynamicCompareType(const Dynamic &inValue)
    {
       if (!inValue.mPtr)
@@ -41,7 +41,7 @@ struct CompareTraits
 
 
 
-template <>
+template <> 
 struct CompareTraits<null>
 {
    enum { type = (int)CompareAsDynamic };
@@ -50,7 +50,7 @@ struct CompareTraits<null>
    inline static double toDouble(const null & inValue) { return 0; }
    inline static cpp::Int64 toInt64(const null & inValue) { return 0; }
    inline static String toString(const null & inValue) { return String(); }
-   inline static ::hx::Object *toObject(const null & inValue) { return 0; }
+   inline static hx::Object *toObject(const null & inValue) { return 0; }
 
    inline static int getDynamicCompareType(const null &) { return type; }
    inline static bool isNull(const null &) { return true; }
@@ -58,7 +58,7 @@ struct CompareTraits<null>
 
 
 
-template <>
+template <> 
 struct CompareTraits<signed int>
 {
    enum { type = (int)CompareAsInt };
@@ -67,13 +67,13 @@ struct CompareTraits<signed int>
    inline static double toDouble(int inValue) { return inValue; }
    inline static cpp::Int64 toInt64(int inValue) { return inValue; }
    inline static String toString(int inValue) { return String(); }
-   inline static ::hx::Object *toObject(int inValue) { return 0; }
+   inline static hx::Object *toObject(int inValue) { return 0; }
 
    inline static int getDynamicCompareType(int) { return type; }
    inline static bool isNull(int) { return false; }
 };
 
-template <>
+template <> 
 struct CompareTraits<unsigned int>
 {
    enum { type = (int)CompareAsInt };
@@ -83,7 +83,7 @@ struct CompareTraits<unsigned int>
    inline static double toDouble(unsigned int inValue) { return inValue; }
    inline static cpp::Int64 toInt64(unsigned int inValue) { return inValue; }
    inline static String toString(unsigned int inValue) { return String(); }
-   inline static ::hx::Object *toObject(unsigned int inValue) { return 0; }
+   inline static hx::Object *toObject(unsigned int inValue) { return 0; }
 
    inline static int getDynamicCompareType(int) { return type; }
    inline static bool isNull(int) { return false; }
@@ -98,7 +98,7 @@ template <> struct CompareTraits<wchar_t> : public CompareTraits<int> { };
 template <> struct CompareTraits<char16_t> : public CompareTraits<int> { };
 
 
-template <>
+template <> 
 struct CompareTraits<double>
 {
    enum { type = (int)CompareAsDouble };
@@ -107,7 +107,7 @@ struct CompareTraits<double>
    inline static double toDouble(double inValue) { return inValue; }
    inline static cpp::Int64 toInt64(double inValue) { return inValue; }
    inline static String toString(double inValue) { return String(); }
-   inline static ::hx::Object *toObject(double inValue) { return 0; }
+   inline static hx::Object *toObject(double inValue) { return 0; }
 
    inline static int getDynamicCompareType(const double &) { return type; }
    inline static bool isNull(const double &) { return false; }
@@ -116,7 +116,7 @@ template <> struct CompareTraits<float> : public CompareTraits<double> { };
 
 
 
-template <>
+template <> 
 struct CompareTraits<cpp::Int64>
 {
    enum { type = (int)CompareAsInt64 };
@@ -125,13 +125,13 @@ struct CompareTraits<cpp::Int64>
    inline static double toDouble(cpp::Int64 inValue) { return inValue; }
    inline static cpp::Int64 toInt64(cpp::Int64 inValue) { return inValue; }
    inline static String toString(cpp::Int64 inValue) { return String(); }
-   inline static ::hx::Object *toObject(cpp::Int64 inValue) { return 0; }
+   inline static hx::Object *toObject(cpp::Int64 inValue) { return 0; }
 
    inline static int getDynamicCompareType(cpp::Int64) { return type; }
    inline static bool isNull(cpp::Int64) { return false; }
 };
 
-template <>
+template <> 
 struct CompareTraits<cpp::UInt64>
 {
    enum { type = (int)CompareAsInt64 };
@@ -141,14 +141,14 @@ struct CompareTraits<cpp::UInt64>
    // Return value is unsigned ...
    inline static cpp::UInt64 toInt64(cpp::UInt64 inValue) { return inValue; }
    inline static String toString(cpp::UInt64 inValue) { return String(); }
-   inline static ::hx::Object *toObject(cpp::UInt64 inValue) { return 0; }
+   inline static hx::Object *toObject(cpp::UInt64 inValue) { return 0; }
 
    inline static int getDynamicCompareType(cpp::UInt64) { return type; }
    inline static bool isNull(cpp::UInt64) { return false; }
 };
 
 
-template <>
+template <> 
 struct CompareTraits< String >
 {
    enum { type = (int)CompareAsString };
@@ -157,14 +157,14 @@ struct CompareTraits< String >
    inline static double toDouble(const String &) { return 0; }
    inline static cpp::Int64 toInt64(const String &) { return 0; }
    inline static String toString(const String &inValue ) { return inValue; }
-   inline static ::hx::Object *toObject(const String &inValue) { return Dynamic(inValue).mPtr; }
+   inline static hx::Object *toObject(const String &inValue) { return Dynamic(inValue).mPtr; }
 
    inline static int getDynamicCompareType(const String &) { return type; }
    inline static bool isNull(const String &inValue) { return !inValue.raw_ptr(); }
 };
 
 
-template <>
+template <> 
 struct CompareTraits< cpp::Variant >
 {
    enum { type = (int)CompareAsDynamic };
@@ -174,7 +174,7 @@ struct CompareTraits< cpp::Variant >
    inline static double toDouble(const cpp::Variant &inValue) { return inValue; }
    inline static cpp::Int64 toInt64(const cpp::Variant &inValue) { return inValue; }
    inline static String toString(const cpp::Variant &inValue ) { return inValue; }
-   inline static ::hx::Object *toObject(const cpp::Variant &inValue) {
+   inline static hx::Object *toObject(const cpp::Variant &inValue) {
       if (inValue.type==cpp::Variant::typeObject)
          return inValue.valObject;
       return 0;
@@ -211,7 +211,7 @@ struct CompareTraits< cpp::Variant >
 
 
 
-template <typename T>
+template <typename T> 
 struct CompareTraits< cpp::Pointer<T> >
 {
    enum { type = (int)CompareAsDynamic };
@@ -220,7 +220,7 @@ struct CompareTraits< cpp::Pointer<T> >
    inline static double toDouble(Dynamic inValue) { return inValue; }
    inline static cpp::Int64 toInt64(Dynamic inValue) { return inValue; }
    inline static String toString(Dynamic inValue) { return inValue; }
-   inline static ::hx::Object *toObject(Dynamic inValue) { return inValue.mPtr; }
+   inline static hx::Object *toObject(Dynamic inValue) { return inValue.mPtr; }
    inline static int getDynamicCompareType(const Dynamic &inValue)
    {
       return CompareAsDynamic;
@@ -229,7 +229,7 @@ struct CompareTraits< cpp::Pointer<T> >
 };
 
 
-template <typename T>
+template <typename T> 
 struct CompareTraits< T * >
 {
    enum { type = (int)CompareAsInt64 };
@@ -238,7 +238,7 @@ struct CompareTraits< T * >
    inline static double toDouble(T * inValue) { return 0; }
    inline static cpp::Int64 toInt64(T * inValue) { return (cpp::Int64)inValue; }
    inline static String toString(T * inValue) { return String(); }
-   inline static ::hx::Object *toObject(T * inValue) { return 0; }
+   inline static hx::Object *toObject(T * inValue) { return 0; }
    inline static int getDynamicCompareType(T * inValue)
    {
       return CompareAsInt64;
@@ -387,8 +387,8 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
       else
       {
          // Object with Object
-         ::hx::Object *o1 = traits1::toObject(v1);
-         ::hx::Object *o2 = traits2::toObject(v2);
+         hx::Object *o1 = traits1::toObject(v1);
+         hx::Object *o2 = traits2::toObject(v2);
 
          int diff = o1->__Compare(o2);
          return LESS ? ( EQ ? diff <= 0 :

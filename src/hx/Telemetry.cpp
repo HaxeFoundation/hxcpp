@@ -63,7 +63,7 @@ public:
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
-
+   
         gThreadRefCount += 1;
         if (gThreadRefCount == 1) {
             HxCreateDetachedThread(ProfileMainLoop, 0);
@@ -201,7 +201,7 @@ public:
 
       int obj_id = __hxt_ptr_id(_last_obj);
       alloc_mutex.Lock();
-      std::map<void*, ::hx::Telemetry*>::iterator exist = alloc_map.find(_last_obj);
+      std::map<void*, hx::Telemetry*>::iterator exist = alloc_map.find(_last_obj);
       if (exist != alloc_map.end() && _last_obj!=(NULL)) {
         type = "_unknown";
         int vtt = _last_obj->__GetType();
@@ -234,7 +234,7 @@ public:
     static void HXTReclaimInternal(void* obj)
     {
       int obj_id = __hxt_ptr_id(obj);
-      std::map<void*, ::hx::Telemetry*>::iterator exist = alloc_map.find(obj);
+      std::map<void*, hx::Telemetry*>::iterator exist = alloc_map.find(obj);
       if (exist != alloc_map.end()) {
         Telemetry* telemetry = exist->second;
         if (telemetry) {
@@ -256,7 +256,7 @@ public:
 
       Telemetry* telemetry = 0;
       alloc_mutex.Lock();
-      std::map<void*, ::hx::Telemetry*>::iterator iter = alloc_map.begin();
+      std::map<void*, hx::Telemetry*>::iterator iter = alloc_map.begin();
       while (iter != alloc_map.end()) {
         void* obj = iter->first;
         unsigned char mark = ((unsigned char *)obj)[ENDIAN_MARK_ID_BYTE];
@@ -291,7 +291,7 @@ private:
     {
         int millis = 1;
 
-        while (gThreadRefCount > 0) {
+        while (gThreadRefCount > 0) { 
 #ifdef HX_WINDOWS
             Sleep(millis);
 #else
@@ -333,7 +333,7 @@ private:
 
     int ignoreAllocs;
 
-    ::hx::Object* _last_obj;
+    hx::Object* _last_obj;
     int _last_loc;
 
     std::vector<int> *allocation_data;
@@ -389,7 +389,7 @@ void tlmSampleExit(Telemetry *inTelemetry)
 
 
 
-void ::hx::Telemetry::push_callstack_ids_into(std::vector<int> *list)
+void hx::Telemetry::push_callstack_ids_into(std::vector<int> *list)
 {
     int size = stack->getDepth();
     for (int i = 0; i < size; i++) {
@@ -398,7 +398,7 @@ void ::hx::Telemetry::push_callstack_ids_into(std::vector<int> *list)
     }
 }
 
-int ::hx::Telemetry::GetNameIdx(const char *fullName) {
+int hx::Telemetry::GetNameIdx(const char *fullName) {
   int idx = nameMap[fullName];
   if (idx==0) {
     idx = names.size();
@@ -408,7 +408,7 @@ int ::hx::Telemetry::GetNameIdx(const char *fullName) {
   return idx;
 }
 
-int ::hx::Telemetry::ComputeCallStackId() {
+int hx::Telemetry::ComputeCallStackId() {
     std::vector<int> callstack;
     int stackId;
 
@@ -422,7 +422,7 @@ int ::hx::Telemetry::ComputeCallStackId() {
         int name_id = callstack.at(i++);
         //printf("Finding child with id=%d, asime now %#010x\n", name_id, asime);
         std::map<int, AllocStackIdMapEntry*>::iterator lb = asime->children.lower_bound(name_id);
-
+         
         if (lb != asime->children.end() && !(asime->children.key_comp()(name_id, lb->first)))
         {   // key already exists
             asime = lb->second;
@@ -451,7 +451,7 @@ int ::hx::Telemetry::ComputeCallStackId() {
     return stackId;
 }
 
-void ::hx::Telemetry::StackUpdate(StackFrame *pushed_frame)
+void hx::Telemetry::StackUpdate(StackFrame *pushed_frame)
 {
     if (mT0 == gProfileClock || !profiler_enabled) {
         return;
@@ -474,7 +474,7 @@ void ::hx::Telemetry::StackUpdate(StackFrame *pushed_frame)
     samples->push_back(delta);
 }
 
-void ::hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
+void hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
 {
     if (ignoreAllocs>0 || !allocations_enabled) return;
 
@@ -482,7 +482,7 @@ void ::hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
     // for every external call, hashes for every SDL event (Lime's
     // ExternalInterface.external_handler()), etc
 #ifndef HXCPP_PROFILE_EXTERNS
-    if (stack->getCurrentStackFrame()->position->className==::hx::EXTERN_CLASS_NAME) {
+    if (stack->getCurrentStackFrame()->position->className==hx::EXTERN_CLASS_NAME) {
       alloc_mutex.Unlock();
       return;
     }
@@ -494,7 +494,7 @@ void ::hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
 
     // HXT debug: Check for id collision
 #ifdef HXCPP_TELEMETRY_DEBUG
-    std::map<void*, ::hx::Telemetry*>::iterator exist = alloc_map.find(obj);
+    std::map<void*, hx::Telemetry*>::iterator exist = alloc_map.find(obj);
     if (exist != alloc_map.end()) {
       printf("HXT ERR: Object id collision! at on %016lx, id=%016lx\n", obj, obj_id);
       throw "uh oh";
@@ -507,7 +507,7 @@ void ::hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
 
     if (_last_obj!=0) lookup_last_object_type();
     if (type==0) {
-      _last_obj = (::hx::Object*)obj;
+      _last_obj = (hx::Object*)obj;
       _last_loc = allocation_data->size();
       type = "_unresolved";
     }
@@ -527,7 +527,7 @@ void ::hx::Telemetry::HXTAllocation(void* obj, size_t inSize, const char* type)
     alloc_mutex.Unlock();
 }
 
-void ::hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
+void hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
 {
     if (!allocations_enabled) return;
     int old_obj_id = __hxt_ptr_id(old_obj);
@@ -536,7 +536,7 @@ void ::hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
     alloc_mutex.Lock();
 
     // Only track reallocations of objects currently known to be allocated
-    std::map<void*, ::hx::Telemetry*>::iterator exist = alloc_map.find(old_obj);
+    std::map<void*, hx::Telemetry*>::iterator exist = alloc_map.find(old_obj);
     if (exist != alloc_map.end()) {
       Telemetry* t = exist->second;
       t->allocation_data->push_back(2); // realloc flag (necessary?)
@@ -548,7 +548,7 @@ void ::hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
 
       // HXT debug: Check for id collision
 #ifdef HXCPP_TELEMETRY_DEBUG
-      std::map<void*, ::hx::Telemetry*>::iterator exist_new = alloc_map.find(new_obj);
+      std::map<void*, hx::Telemetry*>::iterator exist_new = alloc_map.find(new_obj);
       if (exist_new != alloc_map.end()) {
         printf("HXT ERR: Object id collision (reloc)! at on %016lx, id=%016lx\n", (unsigned long)new_obj, (unsigned long)new_obj_id);
         throw "uh oh";
@@ -578,9 +578,9 @@ void ::hx::Telemetry::HXTRealloc(void* old_obj, void* new_obj, int new_size)
 int __hxcpp_hxt_start_telemetry(bool profiler, bool allocations)
 {
 #ifdef HXCPP_STACK_TRACE
-  ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+  hx::StackContext *stack = hx::StackContext::getCurrent();
   delete stack->mTelemetry;
-  stack->mTelemetry = new ::hx::Telemetry(stack, profiler, allocations);
+  stack->mTelemetry = new hx::Telemetry(stack, profiler, allocations);
   return stack->mThreadId;
 #else
  return 0;
@@ -591,7 +591,7 @@ void __hxcpp_hxt_stash_telemetry()
 {
 #ifdef HXCPP_STACK_TRACE
  // Operates on the current thread, no mutexes needed
-  ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+  hx::StackContext *stack = hx::StackContext::getCurrent();
   if (stack->mTelemetry)
      stack->mTelemetry->Stash();
 #endif
@@ -601,7 +601,7 @@ void __hxcpp_hxt_stash_telemetry()
 TelemetryFrame* __hxcpp_hxt_dump_telemetry(int thread_num)
 {
 #ifdef HXCPP_STACK_TRACE
-  ::hx::StackContext *stack = ::hx::StackContext::getStackForId(thread_num);
+  hx::StackContext *stack = hx::StackContext::getStackForId(thread_num);
   if (!stack || !stack->mTelemetry)
      return 0;
   return stack->mTelemetry->Dump();
@@ -613,7 +613,7 @@ TelemetryFrame* __hxcpp_hxt_dump_telemetry(int thread_num)
 void __hxcpp_hxt_ignore_allocs(int delta)
 {
 #ifdef HXCPP_STACK_TRACE
-   ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+   hx::StackContext *stack = hx::StackContext::getCurrent();
    if (stack->mTelemetry)
       stack->mTelemetry->IgnoreAllocs(delta);
 #endif
@@ -628,7 +628,7 @@ void __hxcpp_hxt_ignore_allocs(int delta)
 void __hxt_new_string(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE
-   ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+   hx::StackContext *stack = hx::StackContext::getCurrent();
    if (stack->mTelemetry)
       stack->mTelemetry->HXTAllocation(obj, inSize, (const char *)"String");
   #endif
@@ -636,7 +636,7 @@ void __hxt_new_string(void* obj, int inSize)
 void __hxt_new_array(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE
-   ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+   hx::StackContext *stack = hx::StackContext::getCurrent();
    if (stack->mTelemetry)
       stack->mTelemetry->HXTAllocation(obj, inSize, (const char *)"Array");
   #endif
@@ -644,12 +644,12 @@ void __hxt_new_array(void* obj, int inSize)
 void __hxt_new_hash(void* obj, int inSize)
 {
   #ifdef HXCPP_STACK_TRACE
-   ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+   hx::StackContext *stack = hx::StackContext::getCurrent();
    if (stack->mTelemetry)
       stack->mTelemetry->HXTAllocation(obj, inSize, (const char *)"Hash");
   #endif
 }
-void __hxt_gc_new(::hx::StackContext *stack, void* obj, int inSize, const char* name)
+void __hxt_gc_new(hx::StackContext *stack, void* obj, int inSize, const char* name)
 {
   #ifdef HXCPP_STACK_TRACE
    if (stack->mTelemetry)
@@ -659,27 +659,27 @@ void __hxt_gc_new(::hx::StackContext *stack, void* obj, int inSize, const char* 
 void __hxt_gc_realloc(void* old_obj, void* new_obj, int new_size)
 {
   #ifdef HXCPP_STACK_TRACE
-   ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+   hx::StackContext *stack = hx::StackContext::getCurrent();
    if (stack->mTelemetry)
       stack->mTelemetry->HXTRealloc(old_obj, new_obj, new_size);
   #endif
 }
 void __hxt_gc_start()
 {
-   ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+   hx::StackContext *stack = hx::StackContext::getCurrent();
    if (stack->mTelemetry)
       stack->mTelemetry->GCStart();
 }
 void __hxt_gc_end()
 {
-   ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+   hx::StackContext *stack = hx::StackContext::getCurrent();
    if (stack->mTelemetry)
       stack->mTelemetry->GCEnd();
 }
 
 void __hxt_gc_after_mark(int gByteMarkID, int ENDIAN_MARK_ID_BYTE)
 {
-  ::hx::Telemetry::HXTAfterMark(gByteMarkID, ENDIAN_MARK_ID_BYTE);
+  hx::Telemetry::HXTAfterMark(gByteMarkID, ENDIAN_MARK_ID_BYTE);
 }
 
 

@@ -3,7 +3,7 @@
 
 // --- Dynamic ---------------------------------------------------------------
 //
-// The Dynamic class views all classes through the ::hx::Object interface, and
+// The Dynamic class views all classes through the hx::Object interface, and
 //  provides generic access to its pointer.
 // It uses dynamic_cast to provide strongly-typed access to the real class.
 
@@ -11,9 +11,9 @@ namespace hx { class Interface; }
 
 
 
-class HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic : public ::hx::ObjectPtr<::hx::Object>
+class HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic : public hx::ObjectPtr<hx::Object>
 {
-   typedef  ::hx::ObjectPtr<::hx::Object> super;
+   typedef  hx::ObjectPtr<hx::Object> super;
 
 public:
 
@@ -30,14 +30,14 @@ public:
    Dynamic(float inVal);
    Dynamic(cpp::Int64 inVal);
    Dynamic(cpp::UInt64 inVal);
-   Dynamic(::hx::Object *inObj) : super(inObj) { }
+   Dynamic(hx::Object *inObj) : super(inObj) { }
    Dynamic(const String &inString);
    Dynamic(const null &inNull) : super(0) { }
    Dynamic(const Dynamic &inRHS) : super(inRHS.mPtr) { }
    explicit Dynamic(const HX_CHAR *inStr);
    Dynamic(const cpp::Variant &inRHS) : super(inRHS.asDynamic()) { }
    template<typename T>
-   Dynamic(const ::hx::Native<T *> &inInterface):super(inInterface.ptr ? inInterface->__GetRealObject() : (::hx::Object *)0 ) { }
+   Dynamic(const hx::Native<T *> &inInterface):super(inInterface.ptr ? inInterface->__GetRealObject() : (hx::Object *)0 ) { }
    #if !defined(__GNUC__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
    Dynamic(long inVal);
    Dynamic(unsigned long inVal);
@@ -77,8 +77,8 @@ public:
 
    // Conversion to generic pointer requires you to tag the class with a typedef
    template<typename T>
-   inline operator typename ::hx::Native<T *> () const {
-      return ::hx::Native<T *>(dynamic_cast<T *>(mPtr));
+   inline operator typename hx::Native<T *> () const {
+      return hx::Native<T *>(dynamic_cast<T *>(mPtr));
    }
 
 
@@ -94,12 +94,12 @@ public:
 #endif
    inline bool operator !() const { return !mPtr || !mPtr->__ToInt(); }
 
-   ::hx::IndexRef operator[](int inIndex);
+   hx::IndexRef operator[](int inIndex);
    inline Dynamic __get(int inIndex) const { return mPtr->__GetItem(inIndex); }
 
    template<typename SOURCE_>
-   Dynamic(const ::hx::ObjectPtr<SOURCE_> &inObjectPtr) :
-          ::hx::ObjectPtr<::hx::Object>(inObjectPtr.mPtr) { }
+   Dynamic(const hx::ObjectPtr<SOURCE_> &inObjectPtr) :
+          hx::ObjectPtr<hx::Object>(inObjectPtr.mPtr) { }
 
    Dynamic Default(const Dynamic &inDef) { return mPtr ? *this : inDef; }
 
@@ -213,7 +213,7 @@ public:
    DYNAMIC_COMPARE_OP_ALL( >  )
 
    template<typename T_>
-   bool operator==(const ::hx::ObjectPtr<T_> &inRHS) const
+   bool operator==(const hx::ObjectPtr<T_> &inRHS) const
    {
       if (mPtr==inRHS.mPtr) return true;
       if (!mPtr || !inRHS.mPtr) return false;
@@ -225,7 +225,7 @@ public:
    }
 
    template<typename T_>
-   bool operator!=(const ::hx::ObjectPtr<T_> &inRHS) const
+   bool operator!=(const hx::ObjectPtr<T_> &inRHS) const
    {
       if (mPtr==inRHS.mPtr) return false;
       if (!mPtr || !inRHS.mPtr) return true;
@@ -319,15 +319,15 @@ public:
 namespace hx
 {
 
-inline ::hx::Object *DynamicPtr(Dynamic inVal) { return inVal.mPtr; }
+inline hx::Object *DynamicPtr(Dynamic inVal) { return inVal.mPtr; }
 
-typedef Dynamic (*MemberFunction0)(::hx::Object *inObj);
-typedef Dynamic (*MemberFunction1)(::hx::Object *inObj,const Dynamic &inArg0);
-typedef Dynamic (*MemberFunction2)(::hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1);
-typedef Dynamic (*MemberFunction3)(::hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2);
-typedef Dynamic (*MemberFunction4)(::hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3);
-typedef Dynamic (*MemberFunction5)(::hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4);
-typedef Dynamic (*MemberFunctionVar)(::hx::Object *inObj,const Array<Dynamic> &inArgs);
+typedef Dynamic (*MemberFunction0)(hx::Object *inObj);
+typedef Dynamic (*MemberFunction1)(hx::Object *inObj,const Dynamic &inArg0);
+typedef Dynamic (*MemberFunction2)(hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1);
+typedef Dynamic (*MemberFunction3)(hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2);
+typedef Dynamic (*MemberFunction4)(hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3);
+typedef Dynamic (*MemberFunction5)(hx::Object *inObj,const Dynamic &inArg0,const Dynamic &inArg1,const Dynamic &inArg2,const Dynamic &inArg3,const Dynamic &inArg4);
+typedef Dynamic (*MemberFunctionVar)(hx::Object *inObj,const Array<Dynamic> &inArgs);
 
 typedef Dynamic (*StaticFunction0)();
 typedef Dynamic (*StaticFunction1)(const Dynamic &inArg0);
@@ -339,19 +339,19 @@ typedef Dynamic (*StaticFunctionVar)(const Array<Dynamic> &inArgs);
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction0(const char *,::hx::Object *, MemberFunction0);
+Dynamic CreateMemberFunction0(const char *,hx::Object *, MemberFunction0);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction1(const char *,::hx::Object *, MemberFunction1);
+Dynamic CreateMemberFunction1(const char *,hx::Object *, MemberFunction1);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction2(const char *,::hx::Object *, MemberFunction2);
+Dynamic CreateMemberFunction2(const char *,hx::Object *, MemberFunction2);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction3(const char *,::hx::Object *, MemberFunction3);
+Dynamic CreateMemberFunction3(const char *,hx::Object *, MemberFunction3);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction4(const char *,::hx::Object *, MemberFunction4);
+Dynamic CreateMemberFunction4(const char *,hx::Object *, MemberFunction4);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunction5(const char *,::hx::Object *, MemberFunction5);
+Dynamic CreateMemberFunction5(const char *,hx::Object *, MemberFunction5);
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-Dynamic CreateMemberFunctionVar(const char *,::hx::Object *, MemberFunctionVar,int inN);
+Dynamic CreateMemberFunctionVar(const char *,hx::Object *, MemberFunctionVar,int inN);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
 Dynamic CreateStaticFunction0(const char *,StaticFunction0);
@@ -397,26 +397,26 @@ inline String Dynamic::Cast<String>() const { return mPtr ? mPtr->toString() : S
 
 namespace hx
 {
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::hx::Class &GetIntClass();
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::hx::Class &GetFloatClass();
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::hx::Class &GetBoolClass();
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::hx::Class &GetVoidClass();
-HXCPP_EXTERN_CLASS_ATTRIBUTES ::hx::Class &GetStringClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetIntClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetFloatClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetBoolClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetVoidClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetStringClass();
 }
 
 template<>
-inline bool Dynamic::IsClass<int>() { return mPtr && mPtr->__GetClass()==::hx::GetIntClass(); }
+inline bool Dynamic::IsClass<int>() { return mPtr && mPtr->__GetClass()==hx::GetIntClass(); }
 template<>
-inline bool Dynamic::IsClass<double>() { return mPtr &&
-   ( mPtr->__GetClass()==::hx::GetIntClass() || mPtr->__GetClass()==::hx::GetFloatClass()) ; }
+inline bool Dynamic::IsClass<double>() { return mPtr && 
+   ( mPtr->__GetClass()==hx::GetIntClass() || mPtr->__GetClass()==hx::GetFloatClass()) ; }
 template<>
-inline bool Dynamic::IsClass<float>() { return mPtr && mPtr->__GetClass()==::hx::GetFloatClass(); }
+inline bool Dynamic::IsClass<float>() { return mPtr && mPtr->__GetClass()==hx::GetFloatClass(); }
 template<>
-inline bool Dynamic::IsClass<bool>() { return mPtr && mPtr->__GetClass()==::hx::GetBoolClass(); }
+inline bool Dynamic::IsClass<bool>() { return mPtr && mPtr->__GetClass()==hx::GetBoolClass(); }
 template<>
 inline bool Dynamic::IsClass<null>() { return !mPtr; }
 template<>
-inline bool Dynamic::IsClass<String>() { return mPtr && mPtr->__GetClass()==::hx::GetStringClass(); }
+inline bool Dynamic::IsClass<String>() { return mPtr && mPtr->__GetClass()==hx::GetStringClass(); }
 template<>
 inline bool Dynamic::IsClass<Dynamic>() { return true; }
 
@@ -455,7 +455,7 @@ bool operator==(Platform::Box<T> ^inPtr, nullptr_t)
    inline bool operator op (float inLHS,const ::Dynamic &inRHS) \
       { return inRHS.IsNumeric() && ((double)inLHS op (double)inRHS); } \
    inline bool operator op (int inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); }
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } 
 
 COMPARE_DYNAMIC_OP( < )
 COMPARE_DYNAMIC_OP( <= )
@@ -485,7 +485,7 @@ double operator%(const double &inLHS,const Dynamic &inRHS);
 double operator%(const float &inLHS,const Dynamic &inRHS);
 
 template<typename T,typename H> String::String(const cpp::Struct<T,H> &inRHS) { *this = (String)inRHS; }
-template<typename OBJ> String::String(const ::hx::ObjectPtr<OBJ> &inRHS) { *this = Dynamic(inRHS); }
+template<typename OBJ> String::String(const hx::ObjectPtr<OBJ> &inRHS) { *this = Dynamic(inRHS); }
 
 
 

@@ -9,9 +9,9 @@
 #define PCRE(o)      ((pcredata*)o.mPtr)
 
 
-struct pcredata : public ::hx::Object
+struct pcredata : public hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdPcreData };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdPcreData };
 
    pcre   *rUtf8;
    #ifdef HX_SMART_STRINGS
@@ -71,7 +71,7 @@ struct pcredata : public ::hx::Object
          {
             const char *error = 0;
             int err_offset = 0;
-            ::hx::strbuf buf;
+            hx::strbuf buf;
             rUtf16 = pcre16_compile((PCRE_SPTR16)expr.wc_str(&buf),flags|PCRE_UTF16,&error,&err_offset,NULL);
             if (!rUtf16)
             {
@@ -106,9 +106,9 @@ struct pcredata : public ::hx::Object
          free(matchs);
    }
 
-   void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(string); HX_MARK_MEMBER(expr); }
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(string); HX_MARK_MEMBER(expr); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(string); HX_VISIT_MEMBER(expr); }
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(string); HX_VISIT_MEMBER(expr); }
    #endif
 
    static void finalize(Dynamic obj)
@@ -135,7 +135,7 @@ struct pcredata : public ::hx::Object
 
 Dynamic _hx_regexp_new_options(String s, String opt)
 {
-   ::hx::strbuf buf;
+   hx::strbuf buf;
    const char *o = opt.utf8_str(&buf);
    int options = PCRE_UCP;
    while( *o )
@@ -157,7 +157,7 @@ Dynamic _hx_regexp_new_options(String s, String opt)
       case 'u':
          break;
       default:
-         ::hx::Throw( HX_CSTRING("Regexp unknown modifier : ") + String::fromCharCode(o[-1]) );
+         hx::Throw( HX_CSTRING("Regexp unknown modifier : ") + String::fromCharCode(o[-1]) );
          break;
       }
    }
@@ -169,7 +169,7 @@ Dynamic _hx_regexp_new_options(String s, String opt)
       int err_offset = 0;
       pcre16 *p =  pcre16_compile((PCRE_SPTR16)s.raw_wptr(),options|PCRE_UTF16,&error,&err_offset,NULL);
       if( !p )
-         ::hx::Throw( HX_CSTRING("Regexp compilation error : ")+String(error)+HX_CSTRING(" in ")+s);
+         hx::Throw( HX_CSTRING("Regexp compilation error : ")+String(error)+HX_CSTRING(" in ")+s);
 
       pcredata *pdata = new pcredata;
       pdata->create16(p,s,options);
@@ -183,7 +183,7 @@ Dynamic _hx_regexp_new_options(String s, String opt)
 
       pcre *p =  pcre_compile(s.utf8_str(),options|PCRE_UTF8,&error,&err_offset,NULL);
       if( !p )
-         ::hx::Throw( HX_CSTRING("Regexp compilation error : ")+String(error)+HX_CSTRING(" in ")+s);
+         hx::Throw( HX_CSTRING("Regexp compilation error : ")+String(error)+HX_CSTRING(" in ")+s);
 
       pcredata *pdata = new pcredata;
       pdata->create8(p,s,options);
@@ -216,7 +216,7 @@ String  _hx_regexp_matched(Dynamic handle, int m)
    pcredata *d = PCRE(handle);
 
    if( m < 0 || m >= d->nmatchs || !d->string.raw_ptr() )
-      ::hx::Throw( HX_CSTRING("regexp_matched - no valid match"));
+      hx::Throw( HX_CSTRING("regexp_matched - no valid match"));
 
    int start = d->matchs[m*2];
    int len = d->matchs[m*2+1] - start;
@@ -239,7 +239,7 @@ Dynamic _hx_regexp_matched_pos(Dynamic handle, int m)
    int start = d->matchs[m*2];
    int len = d->matchs[m*2+1] - start;
 
-   return ::hx::Anon_obj::Create(2)
+   return hx::Anon_obj::Create(2)
             ->setFixed(0,HX_("len",d5,4b,52,00),len)
             ->setFixed(1,HX_("pos",94,5d,55,00),start);
 }

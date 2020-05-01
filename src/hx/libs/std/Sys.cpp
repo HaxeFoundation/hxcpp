@@ -81,10 +81,10 @@ String _hx_std_get_env( String v )
       return String();
    #else
       #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
-         ::hx::strbuf wbuf;
+         hx::strbuf wbuf;
          return String::create( _wgetenv( v.wchar_str(&wbuf) ) );
       #else
-         ::hx::strbuf buf;
+         hx::strbuf buf;
          return String::create( getenv(v.utf8_str(&buf)) );
       #endif
    #endif
@@ -119,7 +119,7 @@ void _hx_std_put_env( String e, String v )
 
 void _hx_std_sys_sleep( double f )
 {
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
 #if defined(NEKO_WINDOWS)
    Sleep((DWORD)(f * 1000));
 #elif defined(EPPC)
@@ -134,14 +134,14 @@ void _hx_std_sys_sleep( double f )
       {
          if( errno != EINTR )
          {
-            ::hx::ExitGCFreeZone();
+            hx::ExitGCFreeZone();
             return;
          }
          t = tmp;
       }
    }
 #endif
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
 }
 
 /**
@@ -301,7 +301,7 @@ int _hx_std_sys_command( String cmd )
 
 #ifdef NEKO_WINDOWS
    int result = 0;
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
 
    #ifdef HX_SMART_STRINGS
    if (!cmd.isUTF16Encoded())
@@ -309,15 +309,15 @@ int _hx_std_sys_command( String cmd )
    else
    #endif
    {
-      ::hx::strbuf wbuf;
+      hx::strbuf wbuf;
       result = _wsystem(cmd.wchar_str(&wbuf));
    }
 #else
-   ::hx::strbuf buf;
-   ::hx::EnterGCFreeZone();
+   hx::strbuf buf;
+   hx::EnterGCFreeZone();
    int result = system(cmd.utf8_str(&buf));
 #endif
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
 
    #if !defined(NEKO_WINDOWS)
    result = WEXITSTATUS(result) | (WTERMSIG(result) << 8);
@@ -346,18 +346,18 @@ bool _hx_std_sys_exists( String path )
    #ifdef EPPC
    return true;
    #else
-
+   
 #ifdef NEKO_WINDOWS
    const wchar_t * wpath = path.__WCStr();
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
    bool result = GetFileAttributesW(wpath) != INVALID_FILE_ATTRIBUTES;
 #else
    struct stat st;
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
    bool result = stat(path.__s,&st) == 0;
 #endif
-   ::hx::ExitGCFreeZone();
-
+   hx::ExitGCFreeZone();
+   
    return result;
    #endif
 }
@@ -369,7 +369,7 @@ bool _hx_std_sys_exists( String path )
 void _hx_std_file_delete( String path )
 {
    #ifndef EPPC
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
 
    bool err = false;
    #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
@@ -378,14 +378,14 @@ void _hx_std_file_delete( String path )
    else
    #endif
    {
-      ::hx::strbuf buf;
+      hx::strbuf buf;
       err = unlink(path.utf8_str(&buf));
    }
 
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
 
    if (err)
-      ::hx::Throw( HX_CSTRING("Could not delete ") + path );
+      hx::Throw( HX_CSTRING("Could not delete ") + path );
    #endif
 }
 
@@ -395,20 +395,20 @@ void _hx_std_file_delete( String path )
 **/
 void  _hx_std_sys_rename( String path, String newname )
 {
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
 
-   ::hx::strbuf buf0;
-   ::hx::strbuf buf1;
+   hx::strbuf buf0;
+   hx::strbuf buf1;
    #ifdef NEKO_WINDOWS
    bool err = _wrename(path.wchar_str(&buf0),newname.wchar_str(&buf1));
    #else
    bool err = rename(path.utf8_str(&buf0),newname.utf8_str(&buf1));
    #endif
 
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
 
    if (err)
-      ::hx::Throw(HX_CSTRING("Could not rename"));
+      hx::Throw(HX_CSTRING("Could not rename"));
 }
 
 #define STATF(f) o->Add(HX_CSTRING(#f),(int)(s.st_##f))
@@ -434,32 +434,32 @@ Dynamic _hx_std_sys_stat( String path )
    #ifdef EPPC
    return alloc_null();
    #else
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
    bool err = false;
    #if defined(NEKO_WINDOWS)
       struct _stat s;
       #if defined(HX_SMART_STRINGS)
       if (path.isUTF16Encoded())
       {
-         ::hx::strbuf buf;
+         hx::strbuf buf;
          err = _wstat(path.wchar_str(&buf),&s);
       }
       else
       #endif
       {
-         ::hx::strbuf buf;
+         hx::strbuf buf;
          err = _stat(path.utf8_str(&buf),&s);
       }
    #else
       struct stat s;
-      ::hx::strbuf buf;
+      hx::strbuf buf;
       err = stat(path.utf8_str(&buf),&s);
    #endif
 
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
    if (err)
       return null();
-   ::hx::Anon o = ::hx::Anon_obj::Create();
+   hx::Anon o = hx::Anon_obj::Create();
 
    STATF(gid);
    STATF(uid);
@@ -500,28 +500,28 @@ String _hx_std_sys_file_type( String path )
    #ifdef EPPC
    return String();
    #else
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
    bool err = false;
    #if defined(NEKO_WINDOWS)
       struct _stat s;
       #if defined(HX_SMART_STRINGS)
       if (path.isUTF16Encoded())
       {
-         ::hx::strbuf buf;
+         hx::strbuf buf;
          err = _wstat(path.wchar_str(&buf),&s);
       }
       else
       #endif
       {
-         ::hx::strbuf buf;
+         hx::strbuf buf;
          err = _stat(path.utf8_str(&buf),&s);
       }
    #else
       struct stat s;
-      ::hx::strbuf buf;
+      hx::strbuf buf;
       err = stat(path.utf8_str(&buf),&s);
    #endif
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
    if (err)
       return String();
 
@@ -556,13 +556,13 @@ bool _hx_std_sys_create_dir( String path, int mode )
    #else
 #ifdef NEKO_WINDOWS
    const wchar_t * wpath = path.__WCStr();
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
    bool err = _wmkdir(wpath);
 #else
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
    bool err = mkdir(path.__s,mode);
 #endif
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
    return !err;
    #endif
 }
@@ -576,7 +576,7 @@ void _hx_std_sys_remove_dir( String path )
    #ifdef EPPC
    return true;
    #else
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
 
    bool ok = false;
 
@@ -588,14 +588,14 @@ void _hx_std_sys_remove_dir( String path )
    else
    #endif
    {
-      ::hx::strbuf buf;
+      hx::strbuf buf;
       ok = rmdir(path.utf8_str(&buf)) == 0;
    }
 
 
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
    if (!ok)
-      ::hx::Throw(HX_CSTRING("Could not remove directory"));
+      hx::Throw(HX_CSTRING("Could not remove directory"));
    #endif
 }
 
@@ -684,7 +684,7 @@ Array<String> _hx_std_sys_read_dir( String p )
    searchPath[len++] = '*';
    searchPath[len] = '\0';
 
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
   #if defined(HX_WINRT) && !defined(_XBOX_ONE)
    handle = FindFirstFileEx(searchPath.c_str(), FindExInfoStandard, &d, FindExSearchNameMatch, NULL, 0);
   #else
@@ -692,7 +692,7 @@ Array<String> _hx_std_sys_read_dir( String p )
   #endif
    if( handle == INVALID_HANDLE_VALUE )
    {
-      ::hx::ExitGCFreeZone();
+      hx::ExitGCFreeZone();
       return null();
    }
    while( true )
@@ -700,9 +700,9 @@ Array<String> _hx_std_sys_read_dir( String p )
       // skip magic dirs
       if( d.cFileName[0] != '.' || (d.cFileName[1] != 0 && (d.cFileName[1] != '.' || d.cFileName[2] != 0)) )
       {
-         ::hx::ExitGCFreeZone();
+         hx::ExitGCFreeZone();
          result->push(String::create(d.cFileName));
-         ::hx::EnterGCFreeZone();
+         hx::EnterGCFreeZone();
       }
       if( !FindNextFileW(handle,&d) )
          break;
@@ -710,12 +710,12 @@ Array<String> _hx_std_sys_read_dir( String p )
    FindClose(handle);
 #elif !defined(EPPC)
    const char *name = p.__s;
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
    DIR *d = opendir(name);
    if( d == NULL )
    {
-      ::hx::ExitGCFreeZone();
-      ::hx::Throw(HX_CSTRING("Invalid directory"));
+      hx::ExitGCFreeZone();
+      hx::Throw(HX_CSTRING("Invalid directory"));
    }
    while( true )
    {
@@ -725,13 +725,13 @@ Array<String> _hx_std_sys_read_dir( String p )
       // skip magic dirs
       if( e->d_name[0] == '.' && (e->d_name[1] == 0 || (e->d_name[1] == '.' && e->d_name[2] == 0)) )
          continue;
-      ::hx::ExitGCFreeZone();
+      hx::ExitGCFreeZone();
       result->push( String::create(e->d_name) );
-      ::hx::EnterGCFreeZone();
+      hx::EnterGCFreeZone();
    }
    closedir(d);
 #endif
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
 
    return result;
 }
@@ -746,7 +746,7 @@ String _hx_std_file_full_path( String path )
    return path;
 #elif defined(NEKO_WINDOWS)
    wchar_t buf[MAX_PATH+1];
-   ::hx::strbuf wbuf;
+   hx::strbuf wbuf;
    if( GetFullPathNameW(path.wchar_str(&wbuf),MAX_PATH+1,buf,NULL) == 0 )
       return null();
    return String::create(buf);
@@ -754,7 +754,7 @@ String _hx_std_file_full_path( String path )
    return path;
 #else
    char buf[PATH_MAX];
-   ::hx::strbuf ubuf;
+   hx::strbuf ubuf;
    if( realpath(path.utf8_str(&ubuf),buf) == NULL )
       return null();
    return String::create(buf);
@@ -863,9 +863,9 @@ int _hx_std_sys_getch( bool b )
 #if defined(HX_WINRT) || defined(EMSCRIPTEN) || defined(EPPC)
    return 0;
 #elif defined(NEKO_WINDOWS)
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
    int result = b?getche():getch();
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
 
    return result;
 #else
@@ -874,7 +874,7 @@ int _hx_std_sys_getch( bool b )
    // terminal on initscr()
    int c;
    struct termios term, old;
-   ::hx::EnterGCFreeZone();
+   hx::EnterGCFreeZone();
    tcgetattr(fileno(stdin), &old);
    term = old;
    cfmakeraw(&term);
@@ -882,7 +882,7 @@ int _hx_std_sys_getch( bool b )
    c = getchar();
    tcsetattr(fileno(stdin), 0, &old);
    if( b ) fputc(c,stdout);
-   ::hx::ExitGCFreeZone();
+   hx::ExitGCFreeZone();
    return c;
 #   endif
 }

@@ -5,8 +5,8 @@
 #define HX_BEGIN_LOCAL_FUNC_S::ARG::(SUPER,name,::TYPE_ARGS::) \
    struct name : public SUPER { \
    ::TYPE_DECL::; \
-   void __Mark(::hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); ::MARKS:: } \
-   void __Visit(::hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \
+   void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); ::MARKS:: } \
+   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \
    name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
 
 #if (HXCPP_API_LEVEL>=330)
@@ -21,7 +21,7 @@
 // For compatibility until next version of haxe is released
 ::foreach LOCALS::
 #define HX_BEGIN_LOCAL_FUNC::ARG::(name,::TYPE_ARGS::) \
-      HX_BEGIN_LOCAL_FUNC_S::ARG::(::hx::LocalFunc,name,::TYPE_ARGS::)::end::
+      HX_BEGIN_LOCAL_FUNC_S::ARG::(hx::LocalFunc,name,::TYPE_ARGS::)::end::
 
 
 #endif

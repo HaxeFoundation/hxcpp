@@ -9,11 +9,11 @@ using namespace hx;
 
 namespace
 {
-typedef ::hx::HashBase<int>                IntHashBase;
-typedef ::hx::Hash< TIntElement<Dynamic> > IntHashObject;
-typedef ::hx::Hash< TIntElement<int> >     IntHashInt;
-typedef ::hx::Hash< TIntElement<Float> >   IntHashFloat;
-typedef ::hx::Hash< TIntElement<String> >  IntHashString;
+typedef hx::HashBase<int>                IntHashBase;
+typedef hx::Hash< TIntElement<Dynamic> > IntHashObject;
+typedef hx::Hash< TIntElement<int> >     IntHashInt;
+typedef hx::Hash< TIntElement<Float> >   IntHashFloat;
+typedef hx::Hash< TIntElement<String> >  IntHashString;
 }
 
 void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
@@ -55,7 +55,7 @@ void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
          }
          else if (type==vtFloat)
          {
-            if (hash->store==hashInt || hash->store==hashFloat)
+            if (hash->store==hashInt || hash->store==hashFloat) 
                want =hashFloat;
          }
          else if (type==vtString)
@@ -245,11 +245,11 @@ void __int_hash_clear(Dynamic &ioHash)
 
 namespace
 {
-typedef ::hx::HashBase<String>                StringHashBase;
-typedef ::hx::Hash< TStringElement<Dynamic> > StringHashObject;
-typedef ::hx::Hash< TStringElement<int> >     StringHashInt;
-typedef ::hx::Hash< TStringElement<Float> >   StringHashFloat;
-typedef ::hx::Hash< TStringElement<String> >  StringHashString;
+typedef hx::HashBase<String>                StringHashBase;
+typedef hx::Hash< TStringElement<Dynamic> > StringHashObject;
+typedef hx::Hash< TStringElement<int> >     StringHashInt;
+typedef hx::Hash< TStringElement<Float> >   StringHashFloat;
+typedef hx::Hash< TStringElement<String> >  StringHashString;
 }
 
 
@@ -294,7 +294,7 @@ void __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value, bool i
          }
          else if (type==vtFloat)
          {
-            if (hash->store==hashInt || hash->store==hashFloat)
+            if (hash->store==hashInt || hash->store==hashFloat) 
                want =hashFloat;
          }
          else if (type==vtString)
@@ -555,17 +555,17 @@ void __string_hash_clear(Dynamic &ioHash)
 
 namespace
 {
-typedef ::hx::HashBase<Dynamic>                DynamicHashBase;
+typedef hx::HashBase<Dynamic>                DynamicHashBase;
 
-typedef ::hx::Hash< TDynamicElement<Dynamic,false> > DynamicHashObject;
-typedef ::hx::Hash< TDynamicElement<int,false> >    DynamicHashInt;
-typedef ::hx::Hash< TDynamicElement<Float,false> >   DynamicHashFloat;
-typedef ::hx::Hash< TDynamicElement<String,false> >  DynamicHashString;
+typedef hx::Hash< TDynamicElement<Dynamic,false> > DynamicHashObject;
+typedef hx::Hash< TDynamicElement<int,false> >    DynamicHashInt;
+typedef hx::Hash< TDynamicElement<Float,false> >   DynamicHashFloat;
+typedef hx::Hash< TDynamicElement<String,false> >  DynamicHashString;
 
-typedef ::hx::Hash< TDynamicElement<Dynamic,true> > WeakDynamicHashObject;
-typedef ::hx::Hash< TDynamicElement<int,true> >    WeakDynamicHashInt;
-typedef ::hx::Hash< TDynamicElement<Float,true> >   WeakDynamicHashFloat;
-typedef ::hx::Hash< TDynamicElement<String,true> >  WeakDynamicHashString;
+typedef hx::Hash< TDynamicElement<Dynamic,true> > WeakDynamicHashObject;
+typedef hx::Hash< TDynamicElement<int,true> >    WeakDynamicHashInt;
+typedef hx::Hash< TDynamicElement<Float,true> >   WeakDynamicHashFloat;
+typedef hx::Hash< TDynamicElement<String,true> >  WeakDynamicHashString;
 
 #if (HXCPP_API_LEVEL<331)
 inline void toRealObject(Dynamic &ioObject)
@@ -627,7 +627,7 @@ void __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool i
          }
          else if (type==vtFloat)
          {
-            if (hash->store==hashInt || hash->store==hashFloat)
+            if (hash->store==hashInt || hash->store==hashFloat) 
                want =hashFloat;
          }
          else if (type==vtString)

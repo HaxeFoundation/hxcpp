@@ -170,7 +170,7 @@ DEFINE_PRIME12(multi12);
 
 HxString addStrings(HxString s0, HxString s1)
 {
-   if (hxs_encoding(s0)!=::hx::StringUtf16 && hxs_encoding(s1)!=::hx::StringUtf16)
+   if (hxs_encoding(s0)!=hx::StringUtf16 && hxs_encoding(s1)!=hx::StringUtf16)
    {
       std::string w0 = hxs_utf8(s0,0);
       std::string w1 = hxs_utf8(s1,0);

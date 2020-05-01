@@ -43,7 +43,7 @@
 **/
 
 
-#define HXTHROW(x) ::hx::Throw(HX_CSTRING(x))
+#define HXTHROW(x) hx::Throw(HX_CSTRING(x))
 
 
 
@@ -51,9 +51,9 @@
 namespace
 {
 
-struct Connection : public ::hx::Object
+struct Connection : public hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdMysql };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdMysql };
 
 
    MYSQL *m;
@@ -84,14 +84,14 @@ Connection *getConnection(Dynamic o)
 {
    Connection *connection = dynamic_cast<Connection *>(o.mPtr);
    if (!connection || !connection->m)
-      ::hx::Throw( HX_CSTRING("Invalid Connection") );
+      hx::Throw( HX_CSTRING("Invalid Connection") );
    return connection;
 }
 
 
 static void error( MYSQL *m, const char *msg )
 {
-   ::hx::Throw( String(msg) + HX_CSTRING(" ") + String(mysql_error(m)) );
+   hx::Throw( String(msg) + HX_CSTRING(" ") + String(mysql_error(m)) );
 }
 
 // ---------------------------------------------------------------
@@ -112,9 +112,9 @@ typedef enum {
    CONV_BOOL
 } CONV;
 
-struct Result : public ::hx::Object
+struct Result : public hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdMysqlResult };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdMysqlResult };
 
    MYSQL_RES *r;
    int nfields;
@@ -240,7 +240,7 @@ Dynamic _hx_mysql_result_next(Dynamic handle)
       return null();
 
    int count = r->nfields;
-   ::hx::Anon cur = ::hx::Anon_obj::Create(0);
+   hx::Anon cur = hx::Anon_obj::Create(0);
 
    r->current = row;
    unsigned long *lengths = 0;
@@ -303,7 +303,7 @@ Dynamic _hx_mysql_result_next(Dynamic handle)
             default:
                break;
          }
-         cur->__SetField(r->field_names[i],v, ::hx::paccDynamic );
+         cur->__SetField(r->field_names[i],v, hx::paccDynamic );
       }
    }
    return cur;
@@ -429,7 +429,7 @@ static Result *alloc_result( Connection *c, MYSQL_RES *r )
    res->current = 0;
    res->nfields = num_fields;
    res->field_names = (String *)malloc(sizeof(String)*num_fields);
-   res->fields_convs = (CONV*)malloc(sizeof(CONV)*num_fields);
+   res->fields_convs = (CONV*)malloc(sizeof(CONV)*num_fields);   
 
    for(i=0;i<num_fields;i++)
    {
@@ -518,7 +518,7 @@ String  _hx_mysql_escape(Dynamic handle,String str)
 
    int finalLen = mysql_real_escape_string(connection->m,sout.buffer,str.utf8_str(),str.length);
    if( finalLen < 0 )
-      ::hx::Throw( HX_CSTRING("Unsupported charset : ") + String(mysql_character_set_name(connection->m)) );
+      hx::Throw( HX_CSTRING("Unsupported charset : ") + String(mysql_character_set_name(connection->m)) );
 
    return String::create(sout.buffer,finalLen);
 }
@@ -533,18 +533,18 @@ String  _hx_mysql_escape(Dynamic handle,String str)
 **/
 Dynamic _hx_mysql_connect(Dynamic params)
 {
-   String host = params->__Field(HX_CSTRING("host"), ::hx::paccDynamic );
-   int    port = params->__Field(HX_CSTRING("port"), ::hx::paccDynamic);
-   String user = params->__Field(HX_CSTRING("user"), ::hx::paccDynamic);
-   String pass = params->__Field(HX_CSTRING("pass"), ::hx::paccDynamic);
-   String socket = params->__Field(HX_CSTRING("socket"), ::hx::paccDynamic );
+   String host = params->__Field(HX_CSTRING("host"), hx::paccDynamic );
+   int    port = params->__Field(HX_CSTRING("port"), hx::paccDynamic);
+   String user = params->__Field(HX_CSTRING("user"), hx::paccDynamic);
+   String pass = params->__Field(HX_CSTRING("pass"), hx::paccDynamic);
+   String socket = params->__Field(HX_CSTRING("socket"), hx::paccDynamic );
 
    MYSQL *cnx = mysql_init(NULL);
    if( mysql_real_connect(cnx,host.utf8_str(),user.utf8_str(),pass.utf8_str(),NULL,port,socket.utf8_str(),0) == NULL )
    {
       String error = HX_CSTRING("Failed to connect to mysql server : ") + String(mysql_error(cnx));
       mysql_close(cnx);
-      ::hx::Throw(error);
+      hx::Throw(error);
    }
 
    Connection *connection = new Connection();

@@ -63,7 +63,7 @@ public:
         gThreadMutex.Unlock();
     }
 
-   void sample(::hx::StackContext *stack)
+   void sample(hx::StackContext *stack)
    {
        if (mT0 == gProfileClock) {
            return;
@@ -120,7 +120,7 @@ public:
         results.reserve(mProfileStats.size());
 
         int total = 0;
-        std::map<const char *, ProfileEntry>::iterator iter =
+        std::map<const char *, ProfileEntry>::iterator iter = 
             mProfileStats.begin();
         while (iter != mProfileStats.end()) {
             ProfileEntry &pe = iter->second;
@@ -209,7 +209,7 @@ private:
             return ((total > inRHS.total) ||
                     ((total == inRHS.total) && (self < inRHS.self)));
         }
-
+        
         const char *fullName;
         int self;
         std::vector<ChildEntry> children;
@@ -221,7 +221,7 @@ private:
     {
         int millis = 1;
 
-        while (gThreadRefCount > 0) {
+        while (gThreadRefCount > 0) { 
             HxSleep(millis);
 
             int count = gProfileClock + 1;
@@ -268,15 +268,15 @@ void profSample(Profiler *prof, StackContext *ctx)
 
 void __hxcpp_start_profiler(String inDumpFile)
 {
-   ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+   hx::StackContext *stack = hx::StackContext::getCurrent();
    delete stack->mProfiler;
-   stack->mProfiler = new ::hx::Profiler(inDumpFile);
+   stack->mProfiler = new hx::Profiler(inDumpFile);
 }
 
 
 void __hxcpp_stop_profiler()
 {
-   ::hx::StackContext *stack = ::hx::StackContext::getCurrent();
+   hx::StackContext *stack = hx::StackContext::getCurrent();
    stack->mProfiler->DumpStats();
    delete stack->mProfiler;
    stack->mProfiler = 0;

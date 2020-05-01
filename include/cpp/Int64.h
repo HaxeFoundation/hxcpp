@@ -28,12 +28,12 @@ class Int64Handler
          else if (op==dhoToDynamic)
          {
             Dynamic value =  *(cpp::Int64 *)ioValue;
-            *(::hx::Object **)outResult = value.mPtr;
+            *(hx::Object **)outResult = value.mPtr;
          }
          else if (op==dhoIs)
          {
             StructHandlerDynamicParams *params = (StructHandlerDynamicParams *)outResult;
-            ::hx::Object *obj = params->inData;
+            hx::Object *obj = params->inData;
             int type = obj->__GetType();
             params->outProcessed = type==vtInt || type==vtInt64;
          }

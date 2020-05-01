@@ -18,7 +18,7 @@ struct StringExpr : public CppiaExpr
       strVal = strVal->link(inData);
       return this;
    }
-   ::hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx)
    {
       return Dynamic(runString(ctx)).mPtr;
    }
@@ -56,11 +56,11 @@ struct SubStrExpr : public StringExpr
          return val.substring(start,end);
    }
    #ifdef CPPIA_JIT
-   static void SLJIT_CALL runSubstr(String *ioValue, int start, ::hx::Object *end)
+   static void SLJIT_CALL runSubstr(String *ioValue, int start, hx::Object *end)
    {
       *ioValue = ioValue->substr(start, Dynamic(end));
    }
-   static void SLJIT_CALL runSubstring(String *ioValue, int start, ::hx::Object *end)
+   static void SLJIT_CALL runSubstring(String *ioValue, int start, hx::Object *end)
    {
       *ioValue = ioValue->substring(start, Dynamic(end));
    }
@@ -92,7 +92,7 @@ struct StringIteratorExpr : public StringExpr
 
    String runString(CppiaCtx *ctx) { return Dynamic(runObject(ctx)); }
    int runInt(CppiaCtx *ctx) { return 0; }
-   ::hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -100,7 +100,7 @@ struct StringIteratorExpr : public StringExpr
    }
 
    #ifdef CPPIA_JIT
-   static ::hx::Object *SLJIT_CALL run(String *inValue)
+   static hx::Object *SLJIT_CALL run(String *inValue)
    {
       return ( KEYS ? inValue->keyValueIterator() : inValue->iterator() ).mPtr;
    }
@@ -197,7 +197,7 @@ struct CharAtExpr : public StringExpr
       else
          return val.charCodeAt(idx);
    }
-   ::hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -216,7 +216,7 @@ struct CharAtExpr : public StringExpr
    }
 
    #ifdef CPPIA_JIT
-   static ::hx::Object *SLJIT_CALL runCharCodeAt(String *inValue, int inIndex)
+   static hx::Object *SLJIT_CALL runCharCodeAt(String *inValue, int inIndex)
    {
       return (inValue->charCodeAt(inIndex)).mPtr;
    }
@@ -293,7 +293,7 @@ struct SplitExpr : public CppiaExpr
    }
    ExprType getType() { return etObject; }
 
-   ::hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx)
    {
       String val = strVal->runString(ctx);
       BCR_CHECK;
@@ -304,7 +304,7 @@ struct SplitExpr : public CppiaExpr
 
 
    #ifdef CPPIA_JIT
-   static ::hx::Object *SLJIT_CALL runSplit(String *inValue, String *sep)
+   static hx::Object *SLJIT_CALL runSplit(String *inValue, String *sep)
    {
       return (inValue->split(*sep)).mPtr;
    }
@@ -357,22 +357,22 @@ struct IndexOfExpr : public CppiaExpr
       BCR_CHECK;
       String s = sought->runString(ctx);
       BCR_CHECK;
-      ::hx::Object *first = start->runObject(ctx);
+      hx::Object *first = start->runObject(ctx);
       BCR_CHECK;
       if (LAST)
          return val.lastIndexOf(s,first);
       else
          return val.indexOf(s,first);
    }
-   ::hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
 
 
    #ifdef CPPIA_JIT
-   static int SLJIT_CALL runIndexOf(String *ioValue, String *sought, ::hx::Object *first)
+   static int SLJIT_CALL runIndexOf(String *ioValue, String *sought, hx::Object *first)
    {
       return ioValue->indexOf(*sought, Dynamic(first));
    }
-   static int SLJIT_CALL runLastIndexOf(String *ioValue, String *sought, ::hx::Object *first)
+   static int SLJIT_CALL runLastIndexOf(String *ioValue, String *sought, hx::Object *first)
    {
       return ioValue->lastIndexOf(*sought, Dynamic(first));
    }

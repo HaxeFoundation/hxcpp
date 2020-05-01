@@ -33,11 +33,11 @@ int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)); \
 
 #define DEFINE_PRIM_MULT_NATIVE(func,ext) \
 int __reg_##func = hx_register_prim(#func "__MULT",(void *)(&func)) + \
-                   hx_register_prim(#func "__"  #ext,(void *)(&func##_##ext)) ;
+                   hx_register_prim(#func "__"  #ext,(void *)(&func##_##ext)) ; 
 
 #define DEFINE_PRIM_NATIVE(func,nargs,ext) \
 int __reg_##func = hx_register_prim(#func "__" #nargs,(void *)(&func)) + \
-                   hx_register_prim(#func "__" #ext,(void *)(&func##_##ext)) ;
+                   hx_register_prim(#func "__" #ext,(void *)(&func##_##ext)) ; 
 
 
 #define DEFINE_LIB_PRIM_MULT(lib,func) \
@@ -97,14 +97,14 @@ int __reg_##func = hx_register_prim(lib "_" #func "__" #nargs,(void *)(&func)); 
 
 
 
-
+ 
 #define DEFFUNC_0(ret,name) DEFFUNC(name,ret, (), ())
 #define DEFFUNC_1(ret,name,t1) DEFFUNC(name,ret, (t1 a1), (a1))
 #define DEFFUNC_2(ret,name,t1,t2) DEFFUNC(name,ret, (t1 a1, t2 a2), (a1,a2))
 #define DEFFUNC_3(ret,name,t1,t2,t3) DEFFUNC(name,ret, (t1 a1, t2 a2, t3 a3), (a1,a2,a3))
 #define DEFFUNC_4(ret,name,t1,t2,t3,t4) DEFFUNC(name,ret, (t1 a1, t2 a2, t3 a3, t4 a4), (a1,a2,a3,a4))
 #define DEFFUNC_5(ret,name,t1,t2,t3,t4,t5) DEFFUNC(name,ret, (t1 a1, t2 a2, t3 a3, t4 a4,t5 a5), (a1,a2,a3,a4,a5))
-
+ 
 
 enum hxValueType
 {
@@ -148,7 +148,7 @@ typedef int field;
 #if !defined(HAVE_NEKO_TYPES)
 #ifdef HXCPP_NATIVE_CFFI_VALUE
 namespace hx { class Object; }
-typedef ::hx::Object _value;
+typedef hx::Object _value;
 #else
 struct _value;
 #endif
@@ -172,7 +172,7 @@ typedef void (__hx_field_iter)(value v,field f,void *);
 
 
 #ifndef IMPLEMENT_API
-
+ 
 #if defined(STATIC_LINK) || defined(HXCPP_JS_PRIME)
 
 #define DEFFUNC(name,ret,def_args,call_args) \
@@ -188,7 +188,7 @@ extern FUNC_##name name;
 #endif
 
 #endif
-
+ 
 
 #include "CFFIAPI.h"
 
@@ -277,7 +277,7 @@ public:
    }
    value get()const { return mPtr ? *mPtr : query_root(mRoot); }
    void set(value inValue)
-	{
+	{ 
 		if (mPtr)
 			*mPtr = inValue;
 		else
@@ -286,7 +286,7 @@ public:
 			mRoot = create_root(inValue);
 		}
 	}
-
+   
 private:
    value *mPtr;
    gcroot mRoot;

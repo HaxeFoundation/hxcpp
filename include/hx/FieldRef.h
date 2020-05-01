@@ -28,22 +28,22 @@ template<typename T> inline ret operator op (const T& inA) \
    { return this->operator Dynamic() op inA; }
 
 #define HX_FIELD_REF_IMPL_MEM_OP(op,ret) \
-inline ret ::hx::FieldRef::operator op (const IndexRef &inA) \
+inline ret hx::FieldRef::operator op (const IndexRef &inA) \
     { return this->operator Dynamic() op inA.operator Dynamic(); } \
 
 class FieldRef
 {
 public:
-   explicit FieldRef(::hx::Object *inObj,const String &inName) : mObject(inObj), mName(inName)
+   explicit FieldRef(hx::Object *inObj,const String &inName) : mObject(inObj), mName(inName)
    {
    }
 
-   ::hx::Val operator=(const ::hx::Val &inRHS)
+   hx::Val operator=(const hx::Val &inRHS)
    {
       return mObject->__SetField(mName,inRHS, HX_PROP_DYNAMIC );
    }
    #if HXCPP_API_LEVEL >= 330
-   inline operator ::hx::Val() const { return mObject ? mObject->__Field(mName, HX_PROP_DYNAMIC) : null(); }
+   inline operator hx::Val() const { return mObject ? mObject->__Field(mName, HX_PROP_DYNAMIC) : null(); }
    #endif
    inline operator Dynamic() const { return mObject ? Dynamic(mObject->__Field(mName, HX_PROP_DYNAMIC)) : null(); }
    inline operator double() const { return mObject->__Field(mName, HX_PROP_DYNAMIC); }
@@ -108,14 +108,14 @@ public:
 
 
    String  mName;
-   ::hx::Object *mObject;
+   hx::Object *mObject;
 };
 
 // We can define this one now...
 template<typename T>
 inline FieldRef ObjectPtr<T>::FieldRef(const String &inString)
 {
-   return ::hx::FieldRef(mPtr,inString);
+   return hx::FieldRef(mPtr,inString);
 }
 
 #define HX_FIELD_REF_OP(op,ret) \
@@ -154,7 +154,7 @@ template<typename T> inline ret operator op (const T& inA) \
 class IndexRef
 {
 public:
-   explicit IndexRef(::hx::Object *inObj,int inIndex) : mObject(inObj), mIndex(inIndex)
+   explicit IndexRef(hx::Object *inObj,int inIndex) : mObject(inObj), mIndex(inIndex)
    {
    }
 
@@ -217,14 +217,14 @@ public:
 	bool HasPointer() const { return mObject; }
 
    int mIndex;
-   ::hx::Object *mObject;
+   hx::Object *mObject;
 };
 
 // We can define this one now...
 template<typename T>
 inline IndexRef ObjectPtr<T>::IndexRef(int inIndex)
 {
-   return ::hx::IndexRef(mPtr,inIndex);
+   return hx::IndexRef(mPtr,inIndex);
 }
 
 #define HX_INDEX_REF_OP(op,ret) \

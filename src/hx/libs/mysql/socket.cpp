@@ -69,7 +69,7 @@ void psock_init() {
 }
 
 PSOCK psock_create() {
-   ::hx::AutoGCFreeZone block;
+   hx::AutoGCFreeZone block;
 	PSOCK s = socket(AF_INET,SOCK_STREAM,0);
 #	if defined(NEKO_MAC) || defined(NEKO_BSD)
 	if( s != INVALID_SOCKET )
@@ -86,7 +86,7 @@ PSOCK psock_create() {
 }
 
 void psock_close( PSOCK s ) {
-   ::hx::AutoGCFreeZone block;
+   hx::AutoGCFreeZone block;
 	POSIX_LABEL(close_again);
 	if( closesocket(s) ) {
 		HANDLE_EINTR(close_again);
@@ -94,7 +94,7 @@ void psock_close( PSOCK s ) {
 }
 
 int psock_send( PSOCK s, const char *buf, int size ) {
-   ::hx::AutoGCFreeZone block;
+   hx::AutoGCFreeZone block;
    return psock_send_no_gc(s,buf,size);
 }
 
@@ -110,7 +110,7 @@ int psock_send_no_gc( PSOCK s, const char *buf, int size ) {
 }
 
 int psock_recv( PSOCK s, char *buf, int size ) {
-   ::hx::AutoGCFreeZone block;
+   hx::AutoGCFreeZone block;
    return psock_recv_no_gc(s,buf,size);
 }
 
@@ -126,7 +126,7 @@ int psock_recv_no_gc( PSOCK s, char *buf, int size ) {
 }
 
 PHOST phost_resolve( const char *host ) {
-   ::hx::AutoGCFreeZone block;
+   hx::AutoGCFreeZone block;
 	PHOST ip = inet_addr(host);
 	if( ip == INADDR_NONE ) {
 		struct hostent *h;
@@ -146,7 +146,7 @@ PHOST phost_resolve( const char *host ) {
 }
 
 SERR psock_connect( PSOCK s, PHOST host, int port ) {
-   ::hx::AutoGCFreeZone block;
+   hx::AutoGCFreeZone block;
 	struct sockaddr_in addr;
 	memset(&addr,0,sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -203,7 +203,7 @@ SERR psock_set_fastsend( PSOCK s, int fast ) {
 }
 
 void psock_wait( PSOCK s ) {
-   ::hx::AutoGCFreeZone block;
+   hx::AutoGCFreeZone block;
 #	ifdef NEKO_WINDOWS
 	fd_set set;
 	FD_ZERO(&set);

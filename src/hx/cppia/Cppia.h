@@ -181,8 +181,8 @@ struct CppiaExpr
 
    virtual const char *getName() { return "CppiaExpr"; }
    virtual CppiaExpr   *link(CppiaModule &data)   { return this; }
-   virtual void mark(::hx::MarkContext *ctx) { };
-   virtual void visit(::hx::VisitContext *ctx) { };
+   virtual void mark(hx::MarkContext *ctx) { };
+   virtual void visit(hx::VisitContext *ctx) { };
    virtual bool isBoolInt() { return false; }
 
 
@@ -192,12 +192,12 @@ struct CppiaExpr
    virtual Float       runFloat(CppiaCtx *ctx) { return 0.0; }
    virtual ::String    runString(CppiaCtx *ctx)
    {
-      ::hx::Object *result = runObject(ctx);
+      hx::Object *result = runObject(ctx);
       if (!result)
          return null();
       return result->toString();
    }
-   virtual ::hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
+   virtual hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    virtual void        runVoid(CppiaCtx *ctx)   { runObject(ctx); }
 
    virtual CppiaExpr   *makeSetter(AssignOp op,CppiaExpr *inValue) { return 0; }
@@ -222,7 +222,7 @@ struct CppiaDynamicExpr : public CppiaExpr
    Float       runFloat(CppiaCtx *ctx);
    ::String    runString(CppiaCtx *ctx);
    void        runVoid(CppiaCtx *ctx);
-   ::hx::Object *runObject(CppiaCtx *ctx) = 0;
+   hx::Object *runObject(CppiaCtx *ctx) = 0;
 };
 
 
@@ -277,7 +277,7 @@ struct ScriptCallable : public CppiaDynamicExpr
    CppiaStackVarMap varMap;
    #endif
 
-   ::hx::StackPosition          position;
+   hx::StackPosition          position;
 
    std::vector<CppiaStackVar *> captureVars;
    int                          captureSize;
@@ -309,11 +309,11 @@ struct ScriptCallable : public CppiaDynamicExpr
    #endif
 
 
-   void pushArgs(CppiaCtx *ctx, ::hx::Object *inThis, Expressions &inArgs);
-   void pushArgsDynamic(CppiaCtx *ctx, ::hx::Object *inThis, Array<Dynamic> &inArgs);
+   void pushArgs(CppiaCtx *ctx, hx::Object *inThis, Expressions &inArgs);
+   void pushArgsDynamic(CppiaCtx *ctx, hx::Object *inThis, Array<Dynamic> &inArgs);
 
    // Return the closure
-   ::hx::Object *runObject(CppiaCtx *ctx);
+   hx::Object *runObject(CppiaCtx *ctx);
 
    const char *getName();
    String runString(CppiaCtx *ctx);
@@ -334,16 +334,16 @@ CppiaExpr *createCppiaExpr(CppiaStream &inStream);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, ExprType inType, void *inPtr);
 CppiaExpr *createStaticAccess(CppiaExpr *inSrc, FieldStorage inType, void *inPtr);
 hx::Object * CPPIA_CALL createClosure(CppiaCtx *ctx, ScriptCallable *inFunction);
-hx::Object *createMemberClosure(::hx::Object *, ScriptCallable *inFunction);
+hx::Object *createMemberClosure(hx::Object *, ScriptCallable *inFunction);
 hx::Object *createEnumClosure(struct CppiaEnumConstructor &inContructor);
 
-hx::Object *DynamicToArrayType(::hx::Object *obj, ArrayType arrayType);
+hx::Object *DynamicToArrayType(hx::Object *obj, ArrayType arrayType);
 
 
 struct TypeData
 {
    String              name;
-   ::hx::Class           haxeClass;
+   hx::Class           haxeClass;
    CppiaClassInfo      *cppiaClass;
    ExprType            expressionType;
    HaxeNativeClass     *haxeBase;
@@ -357,8 +357,8 @@ struct TypeData
    TypeData(String inData);
 
    bool isClassOf(Dynamic inInstance);
-   void mark(::hx::MarkContext *__inCtx);
-   void visit(::hx::VisitContext *__inCtx);
+   void mark(hx::MarkContext *__inCtx);
+   void visit(hx::VisitContext *__inCtx);
    void link(CppiaModule &inData);
 };
 
@@ -372,7 +372,7 @@ public:
    std::vector< TypeData * >       types;
    std::vector< CppiaClassInfo * > classes;
    std::vector< CppiaExpr * >      markable;
-   ::hx::UnorderedSet<int>           allFileIds;
+   hx::UnorderedSet<int>           allFileIds;
    typedef std::map< std::string, int > InterfaceSlots;
    InterfaceSlots                  interfaceSlots;
 
@@ -392,8 +392,8 @@ public:
    void setDebug(CppiaExpr *outExpr, int inFileId, int inLine);
    void boot(CppiaCtx *ctx);
    void where(CppiaExpr *e);
-   void mark(::hx::MarkContext *ctx);
-   void visit(::hx::VisitContext *ctx);
+   void mark(hx::MarkContext *ctx);
+   void visit(hx::VisitContext *ctx);
    int  getInterfaceSlot(const std::string &inName);
    int  findInterfaceSlot(const std::string &inName);
    CppiaClassInfo *findClass( ::String inName );
@@ -477,8 +477,8 @@ struct CppiaStackVar
    void set(CppiaCtx *inCtx,Dynamic inValue);
    void setInFrame(unsigned char *inFrame,Dynamic inValue);
    Dynamic getInFrame(const unsigned char *inFrame);
-   void markClosure(char *inBase, ::hx::MarkContext *__inCtx);
-   void visitClosure(char *inBase, ::hx::VisitContext *__inCtx);
+   void markClosure(char *inBase, hx::MarkContext *__inCtx);
+   void visitClosure(char *inBase, hx::VisitContext *__inCtx);
    void link(CppiaModule &inModule, bool hasDefault=false);
    void linkDefault();
    void setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault);
@@ -493,7 +493,7 @@ struct CppiaStackVar
 
 int getStackVarNameId(int inVarId);
 
-hx::Object *ObjectToInterface(::hx::Object *inObject, TypeData *toType);
+hx::Object *ObjectToInterface(hx::Object *inObject, TypeData *toType);
 
 void LinkExpressions(Expressions &ioExpressions, CppiaModule &data);
 
@@ -541,15 +541,15 @@ struct CppiaVar
    Dynamic setStaticValue(Dynamic inValue);
    CppiaExpr *createAccess(CppiaExpr *inSrc);
    void linkVarTypes(CppiaModule &cppia, int &ioOffset);
-   void createDynamic(::hx::Object *inBase);
-   Dynamic getValue(::hx::Object *inThis);
-   Dynamic setValue(::hx::Object *inThis, Dynamic inValue);
+   void createDynamic(hx::Object *inBase);
+   Dynamic getValue(hx::Object *inThis);
+   Dynamic setValue(hx::Object *inThis, Dynamic inValue);
    void link(CppiaModule &inModule);
    static Access getAccess(CppiaStream &stream);
    void runInit(CppiaCtx *ctx);
    bool hasPointer();
 
-   inline void mark(::hx::Object *inThis,::hx::MarkContext *__inCtx)
+   inline void mark(hx::Object *inThis,hx::MarkContext *__inCtx)
    {
       switch(storeType)
       {
@@ -558,7 +558,7 @@ struct CppiaVar
          default:;
       }
    }
-   inline void visit(::hx::Object *inThis,::hx::VisitContext *__inCtx)
+   inline void visit(hx::Object *inThis,hx::VisitContext *__inCtx)
    {
       switch(storeType)
       {
@@ -569,8 +569,8 @@ struct CppiaVar
    }
 
 
-   void mark(::hx::MarkContext *__inCtx);
-   void visit(::hx::VisitContext *__inCtx);
+   void mark(hx::MarkContext *__inCtx);
+   void visit(hx::VisitContext *__inCtx);
 };
 
 
@@ -580,13 +580,13 @@ class HaxeNativeClass
 {
 public:
    std::string  name;
-   ::hx::ScriptableClassFactory factory;
-   ::hx::ScriptNamedFunction  construct;
+   hx::ScriptableClassFactory factory;
+   hx::ScriptNamedFunction  construct;
    ScriptNamedFunction *functions;
    HaxeNativeClass *haxeSuper;
    int mDataOffset;
 
-   HaxeNativeClass(const std::string &inName, int inDataOffset, ScriptNamedFunction *inFunctions, ::hx::ScriptableClassFactory inFactory, ScriptNamedFunction inConstruct);
+   HaxeNativeClass(const std::string &inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, ScriptNamedFunction inConstruct);
 
    void addVtableEntries( std::vector<std::string> &outVtable);
    void dump();
@@ -610,10 +610,10 @@ public:
    HaxeNativeInterface(const std::string &inName, ScriptNamedFunction *inFunctions,void *inScriptTable);
 
    #else
-   const ::hx::type_info *mType;
+   const hx::type_info *mType;
    ScriptableInterfaceFactory factory;
 
-   HaxeNativeInterface(const std::string &inName, ScriptNamedFunction *inFunctions,::hx::ScriptableInterfaceFactory inFactory,const ::hx::type_info *inType);
+   HaxeNativeInterface(const std::string &inName, ScriptNamedFunction *inFunctions,hx::ScriptableInterfaceFactory inFactory,const hx::type_info *inType);
    #endif
 
 
@@ -627,9 +627,9 @@ typedef std::map<std::string, ScriptCallable *> FunctionMap;
 
 class CppiaClass;
 
-void runFunExpr(CppiaCtx *ctx, ScriptCallable *inFunExpr, ::hx::Object *inThis, Expressions &inArgs );
-hx::Object *runFunExprDynamic(CppiaCtx *ctx, ScriptCallable *inFunExpr, ::hx::Object *inThis, Array<Dynamic> &inArgs );
-void runFunExprDynamicVoid(CppiaCtx *ctx, ScriptCallable *inFunExpr, ::hx::Object *inThis, Array<Dynamic> &inArgs );
+void runFunExpr(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Expressions &inArgs );
+hx::Object *runFunExprDynamic(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
+void runFunExprDynamicVoid(CppiaCtx *ctx, ScriptCallable *inFunExpr, hx::Object *inThis, Array<Dynamic> &inArgs );
 
 hx::Class_obj *createCppiaClass(CppiaClassInfo *);
 
@@ -661,7 +661,7 @@ public:
    std::map<std::string, void **> interfaceVTables;
    #endif
    std::set<String> nativeProperties;
-   ::hx::Class     mClass;
+   hx::Class     mClass;
 
    HaxeNativeClass *haxeBase;
    void            *haxeBaseVTable;
@@ -689,15 +689,15 @@ public:
 
    CppiaClassInfo(CppiaModule &inCppia);
    bool load(CppiaStream &inStream);
-   ::hx::Class *getSuperClass();
-   inline ::hx::Class getClass() { return mClass; }
+   hx::Class *getSuperClass();
+   inline hx::Class getClass() { return mClass; }
 
-   ::hx::Object *createInstance(CppiaCtx *ctx,Expressions &inArgs, bool inCallNew = true);
-   ::hx::Object *createInstance(CppiaCtx *ctx,Array<Dynamic> &inArgs);
+   hx::Object *createInstance(CppiaCtx *ctx,Expressions &inArgs, bool inCallNew = true);
+   hx::Object *createInstance(CppiaCtx *ctx,Array<Dynamic> &inArgs);
 
    void init(CppiaCtx *ctx, int inPhase);
    void addMemberFunction(Functions &ioCombined, CppiaFunction *inNewFunc);
-   inline void createDynamicFunctions(::hx::Object *inThis)
+   inline void createDynamicFunctions(hx::Object *inThis)
    {
       for(int d=0;d<dynamicFunctions.size();d++)
          dynamicFunctions[d]->createDynamic(inThis);
@@ -737,14 +737,14 @@ public:
    void *getHaxeBaseVTable();
    int getScriptVTableOffset();
 
-   Dynamic getStaticValue(const String &inName,::hx::PropertyAccess  inCallProp);
+   Dynamic getStaticValue(const String &inName,hx::PropertyAccess  inCallProp);
    bool hasStaticValue(const String &inName);
-   Dynamic setStaticValue(const String &inName,const Dynamic &inValue ,::hx::PropertyAccess  inCallProp);
-   void GetInstanceFields(::hx::Object *inObject, Array<String> &ioFields);
+   Dynamic setStaticValue(const String &inName,const Dynamic &inValue ,hx::PropertyAccess  inCallProp);
+   void GetInstanceFields(hx::Object *inObject, Array<String> &ioFields);
    Array<String> GetClassFields();
 
-   bool getField(::hx::Object *inThis, String inName, ::hx::PropertyAccess  inCallProp, Dynamic &outValue);
-   bool setField(::hx::Object *inThis, String inName, Dynamic inValue, ::hx::PropertyAccess  inCallProp, Dynamic &outValue);
+   bool getField(hx::Object *inThis, String inName, hx::PropertyAccess  inCallProp, Dynamic &outValue);
+   bool setField(hx::Object *inThis, String inName, Dynamic inValue, hx::PropertyAccess  inCallProp, Dynamic &outValue);
 
    void dumpVars(const char *inMessage, std::vector<CppiaVar *> &vars);
    void dumpFunctions(const char *inMessage, std::vector<CppiaFunction *> &funcs);
@@ -755,15 +755,15 @@ public:
    void **createInterfaceVTable(int inTypeId);
    #endif
 
-   void mark(::hx::MarkContext *__inCtx);
-   void markInstance(::hx::Object *inThis, ::hx::MarkContext *__inCtx);
+   void mark(hx::MarkContext *__inCtx);
+   void markInstance(hx::Object *inThis, hx::MarkContext *__inCtx);
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void visit(::hx::VisitContext *__inCtx);
-   void visitInstance(::hx::Object *inThis, ::hx::VisitContext *__inCtx);
+   void visit(hx::VisitContext *__inCtx);
+   void visitInstance(hx::Object *inThis, hx::VisitContext *__inCtx);
    #endif
 
-   inline Dynamic &getFieldMap(::hx::Object *inThis)
+   inline Dynamic &getFieldMap(hx::Object *inThis)
    {
       return *(Dynamic *)( (char *)inThis + dynamicMapOffset );
    }
@@ -780,7 +780,7 @@ public:
    #ifdef HXCPP_DEBUGGER
       #define CPPIA_STACK_LINE(expr) \
           ctx->getCurrentStackFrame()->lineNumber = expr->line; \
-          if (::hx::gShouldCallHandleBreakpoints) \
+          if (hx::gShouldCallHandleBreakpoints) \
               __hxcpp_on_line_changed(ctx);
    #else
       #define CPPIA_STACK_LINE(expr) ctx->getCurrentStackFrame()->lineNumber = expr->line;
@@ -792,12 +792,12 @@ public:
 #ifdef HXCPP_STACK_TRACE
    struct CppiaStackFrame
    {
-      ::hx::StackContext *ctx;
-      ::hx::StackFrame *frame;
-      CppiaStackFrame(::hx::StackContext *inCtx, ::hx::StackPosition *inPosition)
+      hx::StackContext *ctx;
+      hx::StackFrame *frame;
+      CppiaStackFrame(hx::StackContext *inCtx, hx::StackPosition *inPosition)
       {
          ctx = inCtx;
-         frame = (::hx::StackFrame *)ctx->stackAlloc(sizeof(::hx::StackFrame));
+         frame = (hx::StackFrame *)ctx->stackAlloc(sizeof(hx::StackFrame));
          frame->position = inPosition;
          #ifdef HXCPP_DEBUGGER
          frame->variables = 0;
@@ -811,7 +811,7 @@ public:
       }
    };
 
-   #define CPPIA_STACK_FRAME(expr) ::hx::CppiaStackFrame __frame(ctx,&expr->position);
+   #define CPPIA_STACK_FRAME(expr) hx::CppiaStackFrame __frame(ctx,&expr->position);
 #else
    #define CPPIA_STACK_FRAME(expr)
 #endif
@@ -838,7 +838,7 @@ public:
 struct BCRReturn
 {
    inline BCRReturn() {}
-   inline operator ::hx::Object *() const {  return 0; }
+   inline operator hx::Object *() const {  return 0; }
    inline operator bool() const {  return false; }
    inline operator int() const {  return 0; }
    inline operator unsigned char() const {  return 0; }
@@ -905,7 +905,7 @@ template<> inline String &runValue(String& outValue, CppiaCtx *ctx, CppiaExpr *e
    return outValue = expr->runString(ctx);
 }
 
-template<> inline ::hx::Object * &runValue(::hx::Object *& outValue, CppiaCtx *ctx, CppiaExpr *expr)
+template<> inline hx::Object * &runValue(hx::Object *& outValue, CppiaCtx *ctx, CppiaExpr *expr)
 {
    return outValue = expr->runObject(ctx);
 }
@@ -922,7 +922,7 @@ inline static int ValToInt( bool v ) { return v; }
 inline static int ValToInt( int v ) { return v; }
 inline static int ValToInt( const Float &v ) { return v; }
 inline static int ValToInt( const String &v ) { return 0; }
-inline static int ValToInt( ::hx::Object *v ) { return v ? v->__ToInt() : 0; }
+inline static int ValToInt( hx::Object *v ) { return v ? v->__ToInt() : 0; }
 inline static int ValToInt( const Dynamic &v ) { return v.mPtr ? v->__ToInt() : 0; }
 
 inline static Float ValToFloat( const bool &v ) { return v; }
@@ -930,7 +930,7 @@ inline static Float ValToFloat( const int &v ) { return v; }
 inline static Float ValToFloat( const unsigned char &v ) { return v; }
 inline static Float ValToFloat( const Float &v ) { return v; }
 inline static Float ValToFloat( const String &v ) { return 0; }
-inline static Float ValToFloat( ::hx::Object *v ) { return v ? v->__ToDouble() : 0; }
+inline static Float ValToFloat( hx::Object *v ) { return v ? v->__ToDouble() : 0; }
 inline static Float ValToFloat( const Dynamic &v ) { return v.mPtr ? v->__ToDouble() : 0.0; }
 
 inline static String ValToString( const bool &v ) { return v; }
@@ -938,7 +938,7 @@ inline static String ValToString( const int &v ) { return String(v); }
 inline static String ValToString( const unsigned char &v ) { return String(v); }
 inline static String ValToString( const Float &v ) { return String(v); }
 inline static String ValToString( const String &v ) { return v; }
-inline static String ValToString( ::hx::Object *v ) { return v ? ((::hx::Object *)v)->toString() : String(); }
+inline static String ValToString( hx::Object *v ) { return v ? ((hx::Object *)v)->toString() : String(); }
 inline static String ValToString( const Dynamic &v ) { return v.mPtr ? v.mPtr->toString() : String(); }
 
 template<typename T>
@@ -964,22 +964,22 @@ struct NoCrement
 
 struct CrementPreInc
 {
-   enum { OP = ::hx::coPreInc };
+   enum { OP = hx::coPreInc };
    template<typename T>
    static T run(T&inVal) { return ++inVal; }
-   static ::hx::Object *run(::hx::Object *&inVal) { return inVal = Dynamic(Dynamic(inVal) + 1).mPtr; }
+   static hx::Object *run(hx::Object *&inVal) { return inVal = Dynamic(Dynamic(inVal) + 1).mPtr; }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
 };
 
 struct CrementPostInc
 {
-   enum { OP = ::hx::coPostInc };
+   enum { OP = hx::coPostInc };
    template<typename T>
    static T run(T& inVal) { return inVal++; }
-   static ::hx::Object *run(::hx::Object *&inVal)
+   static hx::Object *run(hx::Object *&inVal)
    {
-      ::hx::Object *result(inVal);
+      hx::Object *result(inVal);
       inVal = Dynamic(Dynamic(inVal) + 1).mPtr;
       return result;
    }
@@ -989,24 +989,24 @@ struct CrementPostInc
 
 struct CrementPreDec
 {
-   enum { OP = ::hx::coPreDec };
+   enum { OP = hx::coPreDec };
    template<typename T>
    static T run(T&inVal) { return --inVal; }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
-   static ::hx::Object *run(::hx::Object *&inVal) { return inVal = Dynamic(Dynamic(inVal) - 1).mPtr; }
+   static hx::Object *run(hx::Object *&inVal) { return inVal = Dynamic(Dynamic(inVal) - 1).mPtr; }
 };
 
 struct CrementPostDec
 {
-   enum { OP = ::hx::coPostDec };
+   enum { OP = hx::coPostDec };
    template<typename T>
    static T run(T& inVal) { return inVal--; }
    static bool run(bool &inVal) { return inVal; }
    static String run(String &inVal) { return inVal; }
-   static ::hx::Object *run(::hx::Object *&inVal)
+   static hx::Object *run(hx::Object *&inVal)
    {
-      ::hx::Object *result(inVal);
+      hx::Object *result(inVal);
       inVal = Dynamic(Dynamic(inVal) - 1).mPtr;
       return result;
    }
@@ -1057,8 +1057,8 @@ struct AssignAdd
       ioVal = left + rhs;
       return ioVal;
    }
-   static bool run(bool &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
-   static ::hx::Object *run(::hx::Object * &ioVal, CppiaCtx *ctx, CppiaExpr *value)
+   static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static hx::Object *run(hx::Object * &ioVal, CppiaCtx *ctx, CppiaExpr *value)
    {
       Dynamic left = ioVal;
       Dynamic rhs(value->runObject(ctx));
@@ -1066,7 +1066,7 @@ struct AssignAdd
       ioVal = ( left + rhs).mPtr;
       return ioVal;
    }
-   static ::hx::Object *run(Dynamic &ioVal, CppiaCtx *ctx, CppiaExpr *value)
+   static hx::Object *run(Dynamic &ioVal, CppiaCtx *ctx, CppiaExpr *value)
    {
       Dynamic left = ioVal;
       Dynamic rhs(value->runObject(ctx));
@@ -1093,7 +1093,7 @@ struct NAME \
 { \
    enum op { op = ao }; \
    template<typename T> \
-   inline static T &run(T &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) \
+   inline static T &run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
       T left = ioVal; \
       Float f = value->runFloat(ctx); \
@@ -1101,9 +1101,9 @@ struct NAME \
       ioVal  = left OP f; \
       return ioVal; \
    } \
-   static bool run(bool &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
-   static String run(String &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
-   static ::hx::Object *run(::hx::Object * &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) \
+   static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
       Dynamic left = ioVal; \
       Float f =  value->runFloat(ctx); \
@@ -1111,7 +1111,7 @@ struct NAME \
       ioVal = Dynamic(left OP f).mPtr; \
       return ioVal; \
    } \
-   static Dynamic &run(Dynamic &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) \
+   static Dynamic &run(Dynamic &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
       Dynamic left = ioVal; \
       Float f = value->runFloat(ctx); \
@@ -1138,7 +1138,7 @@ struct NAME \
 { \
    enum op { op = ao }; \
    template<typename T> \
-   static T run(T &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) \
+   static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
       T left = ioVal; \
       TMP t = value->RUN_FUNC(ctx); \
@@ -1146,9 +1146,9 @@ struct NAME \
       ioVal = OP_FUNC(left, t); \
       return ioVal; \
    } \
-   static bool run(bool &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
-   static String run(String &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
-   static ::hx::Object *run(::hx::Object * &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) \
+   static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
       Dynamic left = ioVal; \
       TMP t = value->RUN_FUNC(ctx); \
@@ -1157,17 +1157,17 @@ struct NAME \
       return ioVal; \
    } \
    template<typename T> static \
-   void apply( T &ioVal, int &i) { AssignInt(ioVal, ::hx::UShr(ValToInt(ioVal),i)); } \
+   void apply( T &ioVal, int &i) { AssignInt(ioVal, hx::UShr(ValToInt(ioVal),i)); } \
    template<typename T> static \
-   void apply( T &ioVal, double &d) { AssignDouble(ioVal, ::hx::DoubleMod(ValToFloat(ioVal),d)); } \
+   void apply( T &ioVal, double &d) { AssignDouble(ioVal, hx::DoubleMod(ValToFloat(ioVal),d)); } \
    template<typename T> static \
    void apply( T &ioVal, String &) { } \
    template<typename T> static \
    void apply( T &ioVal, Dynamic &) { } \
 };
 
-DECL_STRUCT_ASSIGN_FUNC(AssignMod,::hx::DoubleMod,runFloat,Float,aoMod)
-DECL_STRUCT_ASSIGN_FUNC(AssignUShr,::hx::UShr,runInt,int,aoUShr)
+DECL_STRUCT_ASSIGN_FUNC(AssignMod,hx::DoubleMod,runFloat,Float,aoMod)
+DECL_STRUCT_ASSIGN_FUNC(AssignUShr,hx::UShr,runInt,int,aoUShr)
 
 
 
@@ -1176,7 +1176,7 @@ struct NAME \
 { \
    enum op { op = ao }; \
    template<typename T> \
-   static T run(T &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) \
+   static T run(T &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
       T left = ioVal; \
       CAST t = value->RUN_FUNC(ctx); \
@@ -1184,9 +1184,9 @@ struct NAME \
       ioVal = (CAST)left OP t; \
       return ioVal; \
    } \
-   static bool run(bool &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
-   static String run(String &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
-   static ::hx::Object *run(::hx::Object * &ioVal, ::hx::CppiaCtx *ctx, ::hx::CppiaExpr *value) \
+   static bool run(bool &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static String run(String &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) { value->runVoid(ctx); return ioVal; } \
+   static hx::Object *run(hx::Object * &ioVal, hx::CppiaCtx *ctx, hx::CppiaExpr *value) \
    { \
       Dynamic left = ioVal; \
       CAST t = value->RUN_FUNC(ctx); \

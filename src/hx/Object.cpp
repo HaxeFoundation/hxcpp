@@ -42,7 +42,7 @@ String sNone[] = { String(null()) };
 #if (HXCPP_API_LEVEL>=332)
 bool Object::_hx_isInstanceOf(int inClassId)
 {
-   return inClassId == ::hx::Object::_hx_ClassId;
+   return inClassId == hx::Object::_hx_ClassId;
 }
 #endif
 
@@ -62,15 +62,15 @@ Dynamic *Object::__GetFieldMap() { return 0; }
 int Object::__Compare(const Object *inRHS) const
 {
    #if (HXCPP_API_LEVEL<331)
-   ::hx::Object *real = const_cast<Object *>(this)->__GetRealObject();
+   hx::Object *real = const_cast<Object *>(this)->__GetRealObject();
    #else
-   ::hx::Object *real = const_cast<Object *>(this);
+   hx::Object *real = const_cast<Object *>(this);
    #endif
    return real < inRHS ? -1 : real==inRHS ? 0 : 1;
 }
 
 
-hx::Val Object::__Field(const String &inString, ::hx::PropertyAccess inCallProp)
+hx::Val Object::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
    #if 0
    // Will be true for 'Implements dynamic'
@@ -111,7 +111,7 @@ int Object::__Index() const { return -1; }
 
 #if (HXCPP_API_LEVEL >= 330) && !defined(HXCPP_SCRIPTABLE)
 // Other implementation is in Cppia.cpp
-void *::hx::Object::_hx_getInterface(int inId)
+void *hx::Object::_hx_getInterface(int inId)
 {
    return 0;
 }
@@ -121,32 +121,32 @@ void *::hx::Object::_hx_getInterface(int inId)
 
 #ifdef HXCPP_SCRIPTABLE
 
-class Object__scriptable : public ::hx::Object {
+class Object__scriptable : public hx::Object {
    typedef Object__scriptable __ME;
    void __construct() { }
-   typedef ::hx::Object super;
-   typedef ::hx::Object __superString;
+   typedef hx::Object super;
+   typedef hx::Object __superString;
    HX_DEFINE_SCRIPTABLE(HX_ARR_LIST0);
    HX_DEFINE_SCRIPTABLE_DYNAMIC;
 };
 
 hx::ScriptFunction Object::__script_construct;
 
-static void CPPIA_CALL __s_toString(::hx::CppiaCtx *ctx) {
+static void CPPIA_CALL __s_toString(hx::CppiaCtx *ctx) {
    ctx->returnString((ctx->getThis())->toString());
 }
-static ::hx::ScriptNamedFunction __scriptableFunctions[] = {
-  ::hx::ScriptNamedFunction("toString",__s_toString,"s"),
-  ::hx::ScriptNamedFunction(0,0,0) };
+static hx::ScriptNamedFunction __scriptableFunctions[] = {
+  hx::ScriptNamedFunction("toString",__s_toString,"s"),
+  hx::ScriptNamedFunction(0,0,0) };
 
 #endif
 
 void Object::__boot()
 {
-   Static(Object__mClass) = ::hx::_hx_RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0, 0 );
+   Static(Object__mClass) = hx::_hx_RegisterClass(HX_CSTRING("Dynamic"),AlwaysCast,sNone,sNone,0,0, 0, 0 );
 
    #ifdef HXCPP_SCRIPTABLE
-   ::hx::ScriptableRegisterClass( HX_CSTRING("hx.Object"), (int)sizeof(::hx::Object__scriptable), __scriptableFunctions, Object__scriptable::__script_create, Object::__script_construct );
+   hx::ScriptableRegisterClass( HX_CSTRING("hx.Object"), (int)sizeof(hx::Object__scriptable), __scriptableFunctions, Object__scriptable::__script_create, Object::__script_construct );
    #endif
 }
 
@@ -155,16 +155,16 @@ hx::Class &Object::__SGetClass() { return Object__mClass; }
 
 hx::Class Object::__GetClass() const { return Object__mClass; }
 
-hx::FieldRef Object::__FieldRef(const String &inString) { return ::hx::FieldRef(this,inString); }
+hx::FieldRef Object::__FieldRef(const String &inString) { return hx::FieldRef(this,inString); }
 
 String Object::__ToString() const { return HX_CSTRING("Object"); }
 
 const char * Object::__CStr() const { return __ToString().__CStr(); }
 
 
-hx::Val Object::__SetField(const String &inField,const ::hx::Val &inValue, ::hx::PropertyAccess inCallProp)
+hx::Val Object::__SetField(const String &inField,const hx::Val &inValue, hx::PropertyAccess inCallProp)
 {
-   ::hx::Throw( HX_CSTRING("Invalid field:") + inField );
+   hx::Throw( HX_CSTRING("Invalid field:") + inField );
    return null();
 }
 

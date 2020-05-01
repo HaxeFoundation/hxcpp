@@ -32,9 +32,9 @@
 namespace
 {
 
-struct rnd  : public ::hx::Object
+struct rnd  : public hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdRandom };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdRandom };
 
    unsigned long seeds[NSEEDS];
    unsigned long cur;
@@ -42,7 +42,7 @@ struct rnd  : public ::hx::Object
    String toString() { return HX_CSTRING("rand"); }
 };
 
-static unsigned long mag01[2]={
+static unsigned long mag01[2]={ 
    0x0, 0x8ebfd028 // magic, don't change
 };
 
@@ -69,7 +69,7 @@ rnd *getRnd(Dynamic handle)
 {
    rnd *r = dynamic_cast<rnd *>(handle.mPtr);
    if (!r)
-      ::hx::Throw(HX_CSTRING("Invalid random handle"));
+      hx::Throw(HX_CSTRING("Invalid random handle"));
    return r;
 }
 
@@ -104,7 +104,7 @@ Dynamic _hx_std_random_new()
    struct timeval tv;
    gettimeofday(&tv,NULL);
    t = tv.tv_sec * 1000000 + tv.tv_usec;
-#endif
+#endif   
 
 
    rnd_set_seed(r,t ^ (pid | (pid << 16)));
@@ -118,9 +118,9 @@ static unsigned int rnd_int( rnd *r )
     if( pos >= NSEEDS ) {
       int kk;
       for(kk=0;kk<NSEEDS-MAX;kk++)
-         r->seeds[kk] = r->seeds[kk+MAX] ^ (r->seeds[kk] >> 1) ^ mag01[r->seeds[kk] % 2];
+         r->seeds[kk] = r->seeds[kk+MAX] ^ (r->seeds[kk] >> 1) ^ mag01[r->seeds[kk] % 2];      
       for(;kk<NSEEDS;kk++)
-         r->seeds[kk] = r->seeds[kk+(MAX-NSEEDS)] ^ (r->seeds[kk] >> 1) ^ mag01[r->seeds[kk] % 2];
+         r->seeds[kk] = r->seeds[kk+(MAX-NSEEDS)] ^ (r->seeds[kk] >> 1) ^ mag01[r->seeds[kk] % 2];      
       r->cur = 1;
       pos = 0;
    }
@@ -133,7 +133,7 @@ static unsigned int rnd_int( rnd *r )
 
 static double rnd_float( rnd *r )
 {
-   double big = 4294967296.0;
+   double big = 4294967296.0;   
    return ((rnd_int(r) / big + rnd_int(r)) / big + rnd_int(r)) / big;
 }
 

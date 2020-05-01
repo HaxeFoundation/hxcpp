@@ -34,7 +34,7 @@ namespace cpp
       {
          // Although this is typed as 'char', it might be char16_t in the case of smart strings
          const char *valStringPtr;
-         ::hx::Object *valObject;
+         hx::Object *valObject;
          double valDouble;
          cpp::Int64 valInt64;
          int valInt;
@@ -55,9 +55,9 @@ namespace cpp
       inline bool isInt64() const;
       inline bool isString() const;
       inline double asDouble() const;
-      inline ::hx::Object *asObject() const { return type==typeObject ? valObject : 0; }
-      inline ::hx::Object *asDynamic() const{ return type==typeObject ? valObject : toDynamic(); }
-      inline ::hx::Object *toDynamic() const; // later
+      inline hx::Object *asObject() const { return type==typeObject ? valObject : 0; }
+      inline hx::Object *asDynamic() const{ return type==typeObject ? valObject : toDynamic(); }
+      inline hx::Object *toDynamic() const; // later
       inline String asString() const;
       inline String getString() const;
 
@@ -83,10 +83,10 @@ namespace cpp
 
 
       template<typename SOURCE_>
-      Variant(const ::hx::ObjectPtr<SOURCE_> &inObjectPtr);
+      Variant(const hx::ObjectPtr<SOURCE_> &inObjectPtr);
 
       inline Variant(const Dynamic &inRHS); // later
-      inline Variant(::hx::Object *inValue) : type(typeObject), valObject(inValue) { }
+      inline Variant(hx::Object *inValue) : type(typeObject), valObject(inValue) { }
 
       template<typename T,typename H>
       explicit inline Variant(const cpp::Struct<T,H> &inVal);
@@ -95,7 +95,7 @@ namespace cpp
       template<typename T>
       explicit inline Variant(const cpp::Function<T> &inRHS) ;
       template<typename T>
-      explicit inline Variant(const ::hx::Native<T> &inRHS) ;
+      explicit inline Variant(const hx::Native<T> &inRHS) ;
 
       //inline operator Dynamic() const; // later
       //inline operator String() const;
@@ -113,16 +113,16 @@ namespace cpp
       inline operator cpp::UInt64 () const { return asInt64(); }
       inline bool operator !() const { return !asInt(); }
 
-      inline int Compare(::hx::Object *inRHS) const;
+      inline int Compare(hx::Object *inRHS) const;
       inline int Compare(const Dynamic &inRHS) const;
       inline int Compare(const cpp::Variant &inRHS) const;
 
       inline double set(const double &inValue) { type=typeDouble; return valDouble=inValue; }
       inline double set(const float &inValue) { type=typeDouble; return valDouble=inValue; }
 
-      inline void mark(::hx::MarkContext *__inCtx); // later
+      inline void mark(hx::MarkContext *__inCtx); // later
       #ifdef HXCPP_VISIT_ALLOCS
-      inline void visit(::hx::VisitContext *__inCtx); // later
+      inline void visit(hx::VisitContext *__inCtx); // later
       #endif
 
 
@@ -132,12 +132,12 @@ namespace cpp
       bool operator==(const T &inRHS) const;
 
       template<typename T>
-      bool operator==(const ::hx::ObjectPtr<T> &inRHS) const
+      bool operator==(const hx::ObjectPtr<T> &inRHS) const
          { return Compare(inRHS.mPtr)==0; }
 
 
       template<typename T>
-      bool operator!=(const ::hx::ObjectPtr<T> &inRHS) const
+      bool operator!=(const hx::ObjectPtr<T> &inRHS) const
          { return Compare(inRHS.mPtr)!=0; }
 
 
@@ -268,7 +268,7 @@ namespace cpp
    template<typename T>
    Variant::Variant(const cpp::Function<T> &inRHS) : type(typeObject), valObject( Dynamic(inRHS).mPtr ) { }
    template<typename T>
-   Variant::Variant(const ::hx::Native<T> &inRHS) : type(typeObject), valObject( CreateDynamicPointer(inRHS.ptr).mPtr ) { }
+   Variant::Variant(const hx::Native<T> &inRHS) : type(typeObject), valObject( CreateDynamicPointer(inRHS.ptr).mPtr ) { }
 
 
 #define HX_ARITH_VARIANT( op ) \
@@ -313,7 +313,7 @@ namespace cpp
    Variant::Variant(const Dynamic &inRHS) : type(typeObject), valObject(inRHS.mPtr) { }
 
    template<typename SOURCE_>
-   Variant::Variant(const ::hx::ObjectPtr<SOURCE_> &inObjectPtr) :
+   Variant::Variant(const hx::ObjectPtr<SOURCE_> &inObjectPtr) :
        type(typeObject), valObject(inObjectPtr.mPtr) { }
 
    inline void Variant::CheckFPtr()
@@ -372,7 +372,7 @@ namespace cpp
    }
 
 
-   inline ::hx::Object *Variant::toDynamic() const
+   inline hx::Object *Variant::toDynamic() const
    {
       switch(type)
       {
@@ -445,7 +445,7 @@ namespace cpp
    //Variant::operator String() const { return asString(); }
 
 
-   void Variant::mark(::hx::MarkContext *__inCtx)
+   void Variant::mark(hx::MarkContext *__inCtx)
    {
       if (type==typeString)
       {
@@ -476,7 +476,7 @@ namespace cpp
    }
 
 
-   int Variant::Compare(::hx::Object *inPtr) const
+   int Variant::Compare(hx::Object *inPtr) const
    {
       if (!inPtr)
          return isNull() ? 0 : 1;
@@ -569,7 +569,7 @@ namespace cpp
 
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void Variant::visit(::hx::VisitContext *__inCtx)
+   void Variant::visit(hx::VisitContext *__inCtx)
    {
       if (type==typeString)
       {

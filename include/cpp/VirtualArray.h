@@ -6,9 +6,9 @@ namespace cpp
 #define HX_VARRAY_DEFINED
 
 
-class VirtualArray : public ::hx::ObjectPtr<VirtualArray_obj>
+class VirtualArray : public hx::ObjectPtr<VirtualArray_obj>
 {
-   typedef ::hx::ObjectPtr<VirtualArray_obj> super;
+   typedef hx::ObjectPtr<VirtualArray_obj> super;
 public:
    typedef Dynamic Elem;
 
@@ -51,22 +51,22 @@ public:
 
 
 
-class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public ::hx::ArrayCommon
+class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public hx::ArrayCommon
 {
-   typedef ::hx::ArrayStore ArrayStore;
-   typedef ::hx::ArrayBase ArrayBase;
+   typedef hx::ArrayStore ArrayStore;
+   typedef hx::ArrayBase ArrayBase;
 
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdVirtualArray };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdVirtualArray };
 
-   typedef ::hx::Object super;
+   typedef hx::Object super;
    ArrayStore  store;
    ArrayBase   *base;
 
    VirtualArray_obj(ArrayBase *inBase=0, bool inFixed=false) : base(inBase)
    {
-      mArrayConvertId = ::hx::aciVirtualArray;
-      store = inFixed && inBase ? ::hx::arrayFixed : base ? base->getStoreType() : ::hx::arrayEmpty;
+      mArrayConvertId = hx::aciVirtualArray;
+      store = inFixed && inBase ? hx::arrayFixed : base ? base->getStoreType() : hx::arrayEmpty;
       #ifdef HXCPP_GC_GENERATIONAL
       if (base)
          HX_OBJ_WB_GET(this,base);
@@ -75,15 +75,15 @@ public:
 
    VirtualArray_obj(ArrayStore inStore)
    {
-      mArrayConvertId = ::hx::aciVirtualArray;
+      mArrayConvertId = hx::aciVirtualArray;
       store = inStore;
    }
 
-   ::hx::Object *__GetRealObject() { return base?(::hx::Object *)base:(::hx::Object *)this; }
+   hx::Object *__GetRealObject() { return base?(hx::Object *)base:(hx::Object *)this; }
 
    inline static VirtualArray __new(int inSize=0,int inReserve=0)
    {
-      VirtualArray result = new VirtualArray_obj(::hx::arrayEmpty);
+      VirtualArray result = new VirtualArray_obj(hx::arrayEmpty);
       if (inSize>0)
          result->__SetSizeExact(inSize);
       if (inReserve>0)
@@ -92,7 +92,7 @@ public:
    }
 
    #if (HXCPP_API_LEVEL>330)
-   int __Compare(const ::hx::Object *inRHS) const;
+   int __Compare(const hx::Object *inRHS) const;
    #endif
 
 
@@ -104,11 +104,11 @@ public:
    inline void checkBase() const
    {
       #ifdef HXCPP_CHECK_POINTER
-      if (store==::hx::arrayNull)
+      if (store==hx::arrayNull)
       {
-         ::hx::NullReference("Array", true);
+         hx::NullReference("Array", true);
          // The handler might have fixed up the null value
-         if (store==::hx::arrayNull) ::hx::NullReference("Array", false);
+         if (store==hx::arrayNull) hx::NullReference("Array", false);
       }
       #endif
    }
@@ -172,17 +172,17 @@ public:
    {
       switch(store)
       {
-         case ::hx::arrayNull:
-         case ::hx::arrayObject:
-         case ::hx::arrayFixed:
-         case ::hx::arrayBool:
+         case hx::arrayNull:
+         case hx::arrayObject:
+         case hx::arrayFixed:
+         case hx::arrayBool:
             return;
-         case ::hx::arrayEmpty:
+         case hx::arrayEmpty:
             MakeBoolArray();
             break;
-         case ::hx::arrayInt:
-         case ::hx::arrayFloat:
-         case ::hx::arrayString:
+         case hx::arrayInt:
+         case hx::arrayFloat:
+         case hx::arrayString:
             MakeObjectArray();
             break;
       }
@@ -191,17 +191,17 @@ public:
    {
       switch(store)
       {
-         case ::hx::arrayNull:
-         case ::hx::arrayObject:
-         case ::hx::arrayFixed:
-         case ::hx::arrayString:
+         case hx::arrayNull:
+         case hx::arrayObject:
+         case hx::arrayFixed:
+         case hx::arrayString:
             return;
-         case ::hx::arrayEmpty:
+         case hx::arrayEmpty:
             MakeStringArray();
             break;
-         case ::hx::arrayInt:
-         case ::hx::arrayFloat:
-         case ::hx::arrayBool:
+         case hx::arrayInt:
+         case hx::arrayFloat:
+         case hx::arrayBool:
             MakeObjectArray();
             break;
       }
@@ -210,17 +210,17 @@ public:
    {
       switch(store)
       {
-         case ::hx::arrayNull:
-         case ::hx::arrayFloat:
-         case ::hx::arrayObject:
-         case ::hx::arrayFixed:
+         case hx::arrayNull:
+         case hx::arrayFloat:
+         case hx::arrayObject:
+         case hx::arrayFixed:
             return;
-         case ::hx::arrayInt:
-         case ::hx::arrayEmpty:
+         case hx::arrayInt:
+         case hx::arrayEmpty:
             MakeFloatArray();
             break;
-         case ::hx::arrayBool:
-         case ::hx::arrayString:
+         case hx::arrayBool:
+         case hx::arrayString:
             MakeObjectArray();
             break;
       }
@@ -230,17 +230,17 @@ public:
    {
       switch(store)
       {
-         case ::hx::arrayNull:
-         case ::hx::arrayInt:
-         case ::hx::arrayFloat:
-         case ::hx::arrayObject:
-         case ::hx::arrayFixed:
+         case hx::arrayNull:
+         case hx::arrayInt:
+         case hx::arrayFloat:
+         case hx::arrayObject:
+         case hx::arrayFixed:
             return;
-         case ::hx::arrayEmpty:
+         case hx::arrayEmpty:
             MakeIntArray();
             break;
-         case ::hx::arrayBool:
-         case ::hx::arrayString:
+         case hx::arrayBool:
+         case hx::arrayString:
             MakeObjectArray();
             break;
       }
@@ -249,15 +249,15 @@ public:
    {
       switch(store)
       {
-         case ::hx::arrayNull:
-         case ::hx::arrayObject:
-         case ::hx::arrayFixed:
+         case hx::arrayNull:
+         case hx::arrayObject:
+         case hx::arrayFixed:
             return;
-         case ::hx::arrayEmpty:
-         case ::hx::arrayInt:
-         case ::hx::arrayFloat:
-         case ::hx::arrayBool:
-         case ::hx::arrayString:
+         case hx::arrayEmpty:
+         case hx::arrayInt:
+         case hx::arrayFloat:
+         case hx::arrayBool:
+         case hx::arrayString:
             MakeObjectArray();
             break;
       }
@@ -266,15 +266,15 @@ public:
    {
       switch(store)
       {
-         case ::hx::arrayNull:
-         case ::hx::arrayObject:
-         case ::hx::arrayFixed:
-         case ::hx::arrayString:
+         case hx::arrayNull:
+         case hx::arrayObject:
+         case hx::arrayFixed:
+         case hx::arrayString:
             return;
-         case ::hx::arrayEmpty:
-         case ::hx::arrayInt:
-         case ::hx::arrayFloat:
-         case ::hx::arrayBool:
+         case hx::arrayEmpty:
+         case hx::arrayInt:
+         case hx::arrayFloat:
+         case hx::arrayBool:
             MakeObjectArray();
             break;
       }
@@ -289,15 +289,15 @@ public:
    void EnsureArrayStorage(ArrayStore inValue);
    void EnsureArrayStorage(VirtualArray inValue);
 
-   void __Mark(::hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx)
    {
       HX_MARK_OBJECT(base);
    }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(::hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx)
    {
       if (base)
-        __inCtx->visitObject( (::hx::Object **)&base);
+        __inCtx->visitObject( (hx::Object **)&base);
    }
    #endif
 
@@ -306,10 +306,10 @@ public:
    inline int getElementSize() const { return base ? base->GetElementSize() : 0; }
    inline int getByteCount() const { return base ? base->getByteCount() : 0; }
    inline char * getBase() const { return base ? base->GetBase() : 0; }
-   ::hx::Val __SetField(const String &inString,const ::hx::Val &inValue ,::hx::PropertyAccess inCallProp) { return null(); }
+   hx::Val __SetField(const String &inString,const hx::Val &inValue ,hx::PropertyAccess inCallProp) { return null(); }
 
-   static ::hx::Class &__SGetClass() { return ::hx::ArrayBase::__mClass; }
-   ::hx::Class __GetClass() const;
+   static hx::Class &__SGetClass() { return hx::ArrayBase::__mClass; }
+   hx::Class __GetClass() const;
    String toString();
    String __ToString() const { return const_cast<VirtualArray_obj *>(this)->toString(); }
 
@@ -318,16 +318,16 @@ public:
 
    int __GetType() const { return vtArray; }
 
-   inline size_t size() const { checkBase(); return store==::hx::arrayEmpty ? 0 : base->length; }
-   inline int __length() const { checkBase(); return store==::hx::arrayEmpty ? 0 : (int)base->length; }
+   inline size_t size() const { checkBase(); return store==hx::arrayEmpty ? 0 : base->length; }
+   inline int __length() const { checkBase(); return store==hx::arrayEmpty ? 0 : (int)base->length; }
 
-   String ItemString(int inI) { checkBase(); return store==::hx::arrayEmpty ? null() : base->ItemString(inI); }
+   String ItemString(int inI) { checkBase(); return store==hx::arrayEmpty ? null() : base->ItemString(inI); }
 
-   const char * __CStr() const { return store==::hx::arrayEmpty ? "[]" : store==::hx::arrayNull ? "null" : base->__CStr(); }
+   const char * __CStr() const { return store==hx::arrayEmpty ? "[]" : store==hx::arrayNull ? "null" : base->__CStr(); }
    inline const char *GetBase() const { return base ? base->GetBase() : 0; }
    inline char *GetBase() { return base ? base->GetBase() : 0; }
 
-   int GetElementSize() const { checkBase(); return store==::hx::arrayEmpty ? 0 : base->GetElementSize(); }
+   int GetElementSize() const { checkBase(); return store==hx::arrayEmpty ? 0 : base->GetElementSize(); }
 
    inline void reserve(int inSize) const
    {
@@ -360,21 +360,21 @@ public:
       return this;
    }
 
-   void safeSort(Dynamic sorter, bool isString) { checkBase(); if (store!=::hx::arrayEmpty) base->safeSort(sorter,isString); }
+   void safeSort(Dynamic sorter, bool isString) { checkBase(); if (store!=hx::arrayEmpty) base->safeSort(sorter,isString); }
 
    inline void __unsafeStringReference(String inString) { if (base) base->__unsafeStringReference(inString); }
 
 
    Dynamic __GetItem(int inIndex) const;
    Dynamic __SetItem(int inIndex,Dynamic inValue);
-   ::hx::Val __Field(const String &inString, ::hx::PropertyAccess inCallProp);
+   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp);
 
    template<typename T>
    inline const T &set(int inIdx, const T &inVal)
    {
-      if (store!=::hx::arrayFixed)
+      if (store!=hx::arrayFixed)
       {
-         if (inIdx>(store==::hx::arrayEmpty ? 0 : (int)base->length) )
+         if (inIdx>(store==hx::arrayEmpty ? 0 : (int)base->length) )
             EnsureObjectStorage();
          else
             EnsureStorage(inVal);
@@ -387,7 +387,7 @@ public:
    template<typename T>
    inline int push(const T &inVal)
    {
-      if (store!=::hx::arrayFixed) EnsureStorage(inVal);
+      if (store!=hx::arrayFixed) EnsureStorage(inVal);
       return base->__push(Dynamic(inVal));
    }
 
@@ -395,17 +395,17 @@ public:
    template<typename T>
    inline VirtualArray_obj *Add(const T &inVal)
    {
-      if (store!=::hx::arrayFixed) EnsureStorage(inVal);
+      if (store!=hx::arrayFixed) EnsureStorage(inVal);
       base->__push(Dynamic(inVal));
       return this;
    }
 
-   inline Dynamic pop() { checkBase(); return store==::hx::arrayEmpty ? null() : base->__pop(); }
+   inline Dynamic pop() { checkBase(); return store==hx::arrayEmpty ? null() : base->__pop(); }
 
    inline bool contains(Dynamic inValue)
    {
       checkBase();
-      if (store==::hx::arrayEmpty)
+      if (store==hx::arrayEmpty)
          return false;
       EnsureStorage(inValue);
       return base->__contains(inValue);
@@ -414,18 +414,18 @@ public:
    inline bool remove(Dynamic inValue)
    {
       checkBase();
-      if (store==::hx::arrayEmpty)
+      if (store==hx::arrayEmpty)
          return false;
       EnsureStorage(inValue);
       return base->__remove(inValue);
    }
 
-   inline bool removeAt(int inIndex) { checkBase(); return (store!=::hx::arrayEmpty) && base->__removeAt(inIndex); }
+   inline bool removeAt(int inIndex) { checkBase(); return (store!=hx::arrayEmpty) && base->__removeAt(inIndex); }
 
    int indexOf(Dynamic inValue, Dynamic fromIndex = null())
    {
       checkBase();
-      if (store==::hx::arrayEmpty)
+      if (store==hx::arrayEmpty)
          return -1;
       EnsureStorage(inValue);
       return (int)base->__indexOf(inValue,fromIndex);
@@ -433,13 +433,13 @@ public:
    int lastIndexOf(Dynamic inValue, Dynamic fromIndex = null())
    {
       checkBase();
-      if (store==::hx::arrayEmpty)
+      if (store==hx::arrayEmpty)
          return -1;
       EnsureStorage(inValue);
       return (int)base->__lastIndexOf(inValue,fromIndex);
    }
 
-   Dynamic shift() { checkBase(); return store==::hx::arrayEmpty ? null() : base->__shift(); }
+   Dynamic shift() { checkBase(); return store==hx::arrayEmpty ? null() : base->__shift(); }
 
    VirtualArray concat( VirtualArray inTail )
    {
@@ -447,22 +447,22 @@ public:
       EnsureArrayStorage(inTail);
       if (inTail->__length()<1)
          return copy();
-      return new VirtualArray_obj( base->__concat(inTail), store==::hx::arrayFixed );
+      return new VirtualArray_obj( base->__concat(inTail), store==hx::arrayFixed );
    }
    VirtualArray copy( )
    {
       checkBase();
-      if (store==::hx::arrayEmpty)
-         return new VirtualArray_obj(::hx::arrayEmpty);
+      if (store==hx::arrayEmpty)
+         return new VirtualArray_obj(hx::arrayEmpty);
 
-      return new VirtualArray_obj(base->__copy(), store==::hx::arrayFixed);
+      return new VirtualArray_obj(base->__copy(), store==hx::arrayFixed);
    }
    VirtualArray slice(int inPos, Dynamic end = null())
    {
       checkBase();
-      if (store==::hx::arrayEmpty)
-         return new VirtualArray_obj(::hx::arrayEmpty);
-      return new VirtualArray_obj(base->__slice(inPos,end), store==::hx::arrayFixed);
+      if (store==hx::arrayEmpty)
+         return new VirtualArray_obj(hx::arrayEmpty);
+      return new VirtualArray_obj(base->__slice(inPos,end), store==hx::arrayFixed);
    }
    VirtualArray splice(int inPos, int len);
    VirtualArray map(Dynamic inFunc);
@@ -471,21 +471,21 @@ public:
    template<typename T>
    inline VirtualArray init(int inIndex, const T &inVal)
    {
-      if (store!=::hx::arrayFixed) EnsureStorage(inVal);
+      if (store!=hx::arrayFixed) EnsureStorage(inVal);
       __SetItem(inIndex,inVal);
       return this;
-   }
+   } 
 
-   inline Dynamic __unsafe_set(int inIndex, const Dynamic &val)  { return __SetItem(inIndex,val); }
-   inline Dynamic __unsafe_get(int inIndex)  { return __GetItem(inIndex); }
+   inline Dynamic __unsafe_set(int inIndex, const Dynamic &val)  { return __SetItem(inIndex,val); } 
+   inline Dynamic __unsafe_get(int inIndex)  { return __GetItem(inIndex); } 
 
 
    template<typename T>
    inline void insert(int inPos, const T &inValue)
    {
-      if (store!=::hx::arrayFixed)
+      if (store!=hx::arrayFixed)
       {
-         if (inPos>(store==::hx::arrayEmpty ? 0 : (int)base->length) )
+         if (inPos>(store==hx::arrayEmpty ? 0 : (int)base->length) )
             EnsureObjectStorage();
          else
             EnsureStorage(inValue);
@@ -497,11 +497,11 @@ public:
    template<typename T>
    inline void unshift(const T& inValue)
    {
-      if (store!=::hx::arrayFixed) EnsureStorage(inValue);
+      if (store!=hx::arrayFixed) EnsureStorage(inValue);
       base->__unshift(inValue);
    }
 
-   inline void reverse() { checkBase(); if (store!=::hx::arrayEmpty) base->__reverse(); }
+   inline void reverse() { checkBase(); if (store!=hx::arrayEmpty) base->__reverse(); }
 
    inline void qsort(Dynamic inSorter) { checkBase(); if (base) base->__qsort(inSorter); }
 
@@ -512,14 +512,14 @@ public:
 
    Dynamic keyValueIterator() { checkBase(); return  !base ? getEmptyIterator() :  base->__keyValueIterator(); }
 
-   bool IsByteArray() const { checkBase(); return store!=::hx::arrayEmpty && base->IsByteArray(); }
+   bool IsByteArray() const { checkBase(); return store!=hx::arrayEmpty && base->IsByteArray(); }
 
-   void zero(Dynamic inFirst, Dynamic inCount) { checkBase(); if (store!=::hx::arrayEmpty) base->zero(inFirst,inCount); }
+   void zero(Dynamic inFirst, Dynamic inCount) { checkBase(); if (store!=hx::arrayEmpty) base->zero(inFirst,inCount); }
 
    inline int memcmp(VirtualArray inOther)
    {
       checkBase();
-      if (store==::hx::arrayEmpty)
+      if (store==hx::arrayEmpty)
          return inOther->__length() == 0;
       return base->__memcmp(inOther);
    }
@@ -534,7 +534,7 @@ public:
    String join(String inSeparator) { checkBase(); if (!base) return HX_CSTRING(""); return base->__join(inSeparator); }
 
 
-   Dynamic __get(int inIndex) const { checkBase(); if (store==::hx::arrayEmpty) return null(); return base->__GetItem(inIndex); }
+   Dynamic __get(int inIndex) const { checkBase(); if (store==hx::arrayEmpty) return null(); return base->__GetItem(inIndex); }
 
    Dynamic concat_dyn();
    Dynamic copy_dyn();
@@ -569,7 +569,7 @@ public:
 };
 
 
-//typedef ::hx::ObjectPtr< VirtualArray_obj > VirtualArray;
+//typedef hx::ObjectPtr< VirtualArray_obj > VirtualArray;
 
 
 
@@ -594,7 +594,7 @@ inline VirtualArray VirtualArray::Add(const T &inVal)
 
 inline void VirtualArray::setDynamic( const Dynamic &inRHS )
 {
-   ::hx::Object *ptr = inRHS.GetPtr();
+   hx::Object *ptr = inRHS.GetPtr(); 
    if (ptr)
    {
       if (ptr->__GetClass().mPtr == super::__SGetClass().mPtr )
@@ -613,10 +613,10 @@ inline void VirtualArray::setDynamic( const Dynamic &inRHS )
 template<typename F>
 void VirtualArray_obj::fixType()
 {
-   if (store==::hx::arrayFixed)
+   if (store==hx::arrayFixed)
       return;
 
-   store = ::hx::arrayFixed;
+   store = hx::arrayFixed;
    if (base && base->length>0)
    {
       Array<F> fixedArray = Dynamic(base);
@@ -635,10 +635,10 @@ void VirtualArray_obj::fixType()
 template<typename ARRAY >
 ARRAY VirtualArray_obj::castArray()
 {
-   if (store==::hx::arrayFixed)
+   if (store==hx::arrayFixed)
       return Dynamic(base);
 
-   store = ::hx::arrayFixed;
+   store = hx::arrayFixed;
    if (base && base->length>0)
    {
       ARRAY fixedArray = Dynamic(base);
@@ -678,11 +678,11 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_reslove_virtual_array(cpp::VirtualArra
 namespace hx
 {
 // For type inference when marking
-template<> inline void MarkMember(cpp::VirtualArray &outT,::hx::MarkContext *__inCtx)
+template<> inline void MarkMember(cpp::VirtualArray &outT,hx::MarkContext *__inCtx)
   { HX_MARK_OBJECT(outT.mPtr); }
 
 #ifdef HXCPP_VISIT_ALLOCS
-template<> inline void VisitMember(cpp::VirtualArray &outT,::hx::VisitContext *__inCtx)
+template<> inline void VisitMember(cpp::VirtualArray &outT,hx::VisitContext *__inCtx)
 {
    HX_VISIT_OBJECT(outT.mPtr);
 }

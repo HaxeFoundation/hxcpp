@@ -25,7 +25,7 @@
    #include <cstddef>
    namespace hx { typedef std::type_info type_info; }
    #ifndef EMSCRIPTEN
-      using ::hx::type_info;
+      using hx::type_info;
       #ifdef __MINGW32__
          #include <stdint.h>
       #else
@@ -260,7 +260,7 @@ template<typename ELEM_> class Array_obj;
 template<typename ELEM_> class Array;
 namespace hx {
    class Class_obj;
-   typedef ::hx::ObjectPtr<::hx::Class_obj> Class;
+   typedef hx::ObjectPtr<hx::Class_obj> Class;
 }
 namespace cpp {
      struct Variant;
@@ -271,8 +271,8 @@ namespace cpp {
 
 
 #if (HXCPP_API_LEVEL < 320) && !defined(__OBJC__)
-typedef ::hx::Class Class;
-typedef ::hx::Class_obj Class_obj;
+typedef hx::Class Class;
+typedef hx::Class_obj Class_obj;
 #endif
 
 class Dynamic;
@@ -294,7 +294,7 @@ class MarkContext;
 class VisitContext
 {
 public:
-   virtual void visitObject(::hx::Object **ioPtr)=0;
+   virtual void visitObject(hx::Object **ioPtr)=0;
    virtual void visitAlloc(void **ioPtr)=0;
 };
 
@@ -319,9 +319,9 @@ enum PropertyAccessMode
    paccAlways  = 2,
 };
 typedef PropertyAccessMode PropertyAccess;
-#define HX_PROP_NEVER  ::hx::paccNever
-#define HX_PROP_DYNAMIC ::hx::paccDynamic
-#define HX_PROP_ALWAYS ::hx::paccAlways
+#define HX_PROP_NEVER  hx::paccNever
+#define HX_PROP_DYNAMIC hx::paccDynamic
+#define HX_PROP_ALWAYS hx::paccAlways
 #else
 typedef bool PropertyAccess;
 #define HX_PROP_NEVER  false

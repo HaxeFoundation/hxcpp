@@ -4,13 +4,13 @@
 namespace hx
 {
 
-void Interface::__Mark(::hx::MarkContext *__inCtx)
+void Interface::__Mark(hx::MarkContext *__inCtx)
 {
 	Object *obj = __GetRealObject();
 	HX_MARK_OBJECT(obj);
 }
 
-hx::Object *Interface::__ToInterface(const ::hx::type_info &i)
+hx::Object *Interface::__ToInterface(const hx::type_info &i)
 {
 	return __GetRealObject()->__ToInterface(i);
 }
@@ -59,7 +59,7 @@ bool Interface::__HasField(const ::String &s)
 	return __GetRealObject()->__HasField(s);
 }
 
-hx::Val Interface::__Field(const ::String &s, ::hx::PropertyAccess inCallProp)
+hx::Val Interface::__Field(const ::String &s, hx::PropertyAccess inCallProp)
 {
 	return __GetRealObject()->__Field(s,inCallProp);
 }
@@ -69,7 +69,7 @@ Dynamic Interface::__IField(int i)
 	return __GetRealObject()->__IField( i);
 }
 
-hx::Val Interface::__SetField(const ::String &s,const ::hx::Val &d, ::hx::PropertyAccess inCallProp)
+hx::Val Interface::__SetField(const ::String &s,const hx::Val &d, hx::PropertyAccess inCallProp)
 {
 	return __GetRealObject()->__SetField(s,d,inCallProp);
 }
@@ -89,7 +89,7 @@ hx::Class Interface::__GetClass() const
 	return const_cast<Interface *>(this)->__GetRealObject()->__GetClass();
 }
 
-int Interface::__Compare(const ::hx::Object *o) const
+int Interface::__Compare(const hx::Object *o) const
 {
 	return const_cast<Interface *>(this)->__GetRealObject()->__Compare(o);
 }

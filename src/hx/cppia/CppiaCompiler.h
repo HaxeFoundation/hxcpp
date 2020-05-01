@@ -77,7 +77,7 @@ union JitMultiArg
 {
    int        ival;
    double     dval;
-   ::hx::Object *obj;
+   hx::Object *obj;
    JitStringMultiArg sval;
 };
 
@@ -99,7 +99,7 @@ struct JitVal
    };
 
    JitVal(JitType inType=jtVoid, size_t inOffset=0, JitPosition inPosition=jposDontCare,int inReg0=0, int inReg1=0)
-   {
+   { 
       position = inPosition;
       type = inType;
       offset = (int)inOffset;
@@ -148,7 +148,7 @@ struct JitVal
 
    bool operator==(const JitVal &inOther) const
    {
-      return position==inOther.position && type==inOther.type && offset==inOther.offset && reg0==inOther.reg0 && reg1==inOther.reg1;
+      return position==inOther.position && type==inOther.type && offset==inOther.offset && reg0==inOther.reg0 && reg1==inOther.reg1; 
    }
    bool operator!=(const JitVal &inOther) const { return !(*this == inOther); }
 
@@ -321,7 +321,7 @@ public:
    virtual JitVal  addLocal(const char *inName, JitType inType) = 0;
    virtual JitVal functionArg(int inIndex) = 0;
 
-
+   
    virtual void convert(const JitVal &inSrc, ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool=false) = 0;
    virtual void convertResult(ExprType inSrcType, const JitVal &inTarget, ExprType inToType) = 0;
    virtual void convertReturnReg(ExprType inSrcType, const JitVal &inTarget, ExprType inToType, bool asBool=false) = 0;

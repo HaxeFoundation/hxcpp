@@ -17,7 +17,7 @@ struct Resource
 Resource *GetResources();
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES
-void RegisterResources(::hx::Resource *inResources);
+void RegisterResources(hx::Resource *inResources);
 
 
 struct AnyCast
@@ -121,9 +121,9 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __loadprim(String inLib, String inPrim,int
 HXCPP_EXTERN_CLASS_ATTRIBUTES void *__hxcpp_get_proc_address(String inLib, String inPrim,bool inNdll, bool inQuietFail=false);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_run_dll(String inLib, String inPrim);
 // Can assign to function pointer without error
-inline ::hx::AnyCast __hxcpp_cast_get_proc_address(String inLib, String inPrim,bool inQuietFail=false)
+inline hx::AnyCast __hxcpp_cast_get_proc_address(String inLib, String inPrim,bool inQuietFail=false)
 {
-   return ::hx::AnyCast(__hxcpp_get_proc_address(inLib,inPrim,false,inQuietFail));
+   return hx::AnyCast(__hxcpp_get_proc_address(inLib,inPrim,false,inQuietFail));
 }
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES int __hxcpp_unload_all_libraries();
@@ -152,16 +152,16 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_utf8_string_to_char_bytes(String &i
 #ifdef HXCPP_GC_GENERATIONAL
    #define HX_MAP_THIS this, h
    #define HX_MAP_THIS_ this,
-   #define HX_MAP_THIS_ARG ::hx::Object *owner, Dynamic &ioHash
+   #define HX_MAP_THIS_ARG hx::Object *owner, Dynamic &ioHash
 #else
    #define HX_MAP_THIS h
-   #define HX_MAP_THIS_
+   #define HX_MAP_THIS_ 
    #define HX_MAP_THIS_ARG Dynamic &ioHash
 #endif
 
 // --- IntHash ----------------------------------------------------------------------
 
-HXCPP_EXTERN_CLASS_ATTRIBUTES inline ::hx::Object   *__int_hash_create() { return 0; }
+HXCPP_EXTERN_CLASS_ATTRIBUTES inline hx::Object   *__int_hash_create() { return 0; }
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_exists(Dynamic &hash,int inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool          __int_hash_remove(Dynamic &hash,int inKey);
@@ -252,7 +252,7 @@ String __hxcpp_to_utc_string(double inSeconds); /* same as __hxcpp_to_string but
 
 int    __hxcpp_is_dst(double inSeconds); /* is input time (Epoch UTC timestamp, in seconds)'s local time in DST ? 1 for true, 0 for false */
 double __hxcpp_timezone_offset(double inSeconds); /* input time (Epoch UTC timestamp, in seconds)'s local time zone offset from UTC, in seconds */
-double __hxcpp_from_utc(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds, int inMilliSeconds); /* returns Epoch timestamp (in seconds); assumes that input date parts are considered to be in UTC date/time representation */
+double __hxcpp_from_utc(int inYear,int inMonth,int inDay,int inHour, int inMin, int inSeconds, int inMilliSeconds); /* returns Epoch timestamp (in seconds); assumes that input date parts are considered to be in UTC date/time representation */ 
 
 
 
@@ -264,7 +264,7 @@ Dynamic __hxcpp_thread_create(Dynamic inFunc);
 Dynamic __hxcpp_thread_current();
 void    __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage);
 Dynamic __hxcpp_thread_read_message(bool inBlocked);
-bool __hxcpp_is_current_thread(::hx::Object *inThread);
+bool __hxcpp_is_current_thread(hx::Object *inThread);
 
 Dynamic __hxcpp_mutex_create();
 void    __hxcpp_mutex_acquire(Dynamic);

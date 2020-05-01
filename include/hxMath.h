@@ -8,12 +8,12 @@
 #include <math.h>
 #include <stdlib.h>
 
-class HXCPP_EXTERN_CLASS_ATTRIBUTES Math_obj : public ::hx::Object
+class HXCPP_EXTERN_CLASS_ATTRIBUTES Math_obj : public hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdMath };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdMath };
 
-   typedef ::hx::Object super;
+   typedef hx::Object super;
    typedef Math_obj OBJ_;
    HX_DO_RTTI;
    void __construct();
@@ -78,7 +78,7 @@ public:
    static double POSITIVE_INFINITY;
 };
 
-typedef ::hx::ObjectPtr<Math_obj> Math;
+typedef hx::ObjectPtr<Math_obj> Math;
 
 
 #endif

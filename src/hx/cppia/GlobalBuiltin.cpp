@@ -24,7 +24,7 @@ public:
 
    void runVoid(CppiaCtx *ctx) { runInt(ctx); }
    Float runFloat(CppiaCtx *ctx) { return runInt(ctx); }
-   ::hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
    String runString(CppiaCtx *ctx) { return String(runInt(ctx)); }
 
    int runInt(CppiaCtx *ctx)
@@ -50,7 +50,7 @@ public:
 
    void runVoid(CppiaCtx *ctx) { runInt(ctx); }
    Float runFloat(CppiaCtx *ctx) { return runInt(ctx); }
-   ::hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runInt(ctx)).mPtr; }
    String runString(CppiaCtx *ctx) { return String(runInt(ctx)); }
 
    int runInt(CppiaCtx *ctx)
@@ -80,7 +80,7 @@ public:
 
    int runInt(CppiaCtx *ctx) { runVoid(ctx); return 0; }
    Float runFloat(CppiaCtx *ctx) { runVoid(ctx); return 0;}
-   ::hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
+   hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
    String runString(CppiaCtx *ctx) { runVoid(ctx); return String(); }
    void runVoid(CppiaCtx *ctx)
    {
@@ -106,7 +106,7 @@ public:
 
    int runInt(CppiaCtx *ctx) { runVoid(ctx); return 0; }
    Float runFloat(CppiaCtx *ctx) { runVoid(ctx); return 0;}
-   ::hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
+   hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
    String runString(CppiaCtx *ctx) { runVoid(ctx); return String(); }
    void runVoid(CppiaCtx *ctx)
    {
@@ -134,7 +134,7 @@ public:
 
    int runInt(CppiaCtx *ctx) { runVoid(ctx); return 0; }
    Float runFloat(CppiaCtx *ctx) { runVoid(ctx); return 0;}
-   ::hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
+   hx::Object *runObject(CppiaCtx *ctx) { runVoid(ctx); return 0; }
    String runString(CppiaCtx *ctx) { runVoid(ctx); return String(); }
    void runVoid(CppiaCtx *ctx)
    {
@@ -190,7 +190,7 @@ public:
 
    int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
    void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
-   ::hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
    Float runFloat(CppiaCtx *ctx)
    {
@@ -231,7 +231,7 @@ public:
 
    int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
    void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
-   ::hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
    Float runFloat(CppiaCtx *ctx)
    {
@@ -257,7 +257,7 @@ public:
 
    int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
    void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
-   ::hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
    Float runFloat(CppiaCtx *ctx)
    {
@@ -285,7 +285,7 @@ public:
 
    int runInt(CppiaCtx *ctx) { return runFloat(ctx); }
    void runVoid(CppiaCtx *ctx) { runFloat(ctx); }
-   ::hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
+   hx::Object *runObject(CppiaCtx *ctx) { return Dynamic(runFloat(ctx)).mPtr; }
    String runString(CppiaCtx *ctx) { return String(runFloat(ctx)); }
    Float runFloat(CppiaCtx *ctx)
    {
@@ -329,7 +329,7 @@ public:
    const char *getName() { return "ObjectBuiltin1"; }
    ExprType getType() { return etObject; }
 
-   ::hx::Object *runObject(CppiaCtx *ctx)
+   hx::Object *runObject(CppiaCtx *ctx)
    {
       ARG0 val0;
       runValue(val0, ctx, args[0]);

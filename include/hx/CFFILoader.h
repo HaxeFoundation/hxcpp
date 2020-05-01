@@ -124,7 +124,7 @@ extern "C" ret name def_args;
 
    // Neko, old cpp and js_prime are all utf8 based - and go through here
    #ifdef HXCPP_PRIME
-   struct DynAlloc : public ::hx::IStringAlloc
+   struct DynAlloc : public hx::IStringAlloc
    {
       #define WANT_DYNALLOC_ALLOC_BYTES
       void *allocBytes(size_t n);
@@ -133,7 +133,7 @@ extern "C" ret name def_args;
 
    HxString default_string_wchar(const wchar_t *src,int len)
    {
-      ::hx::strbuf buf;
+      hx::strbuf buf;
       const char *str = cffi::to_utf8(src,len,&buf);
       return HxString(str,len);
    }
@@ -143,23 +143,23 @@ extern "C" ret name def_args;
    }
    HxString default_string_utf16(const char16_t *src,int len)
    {
-      ::hx::strbuf buf;
+      hx::strbuf buf;
       const char *str = cffi::to_utf8(src,len,&buf);
       return HxString(str,len);
    }
 
-   const char *default_to_utf8(const HxString &str,::hx::IStringAlloc *alloc)
+   const char *default_to_utf8(const HxString &str,hx::IStringAlloc *alloc)
    {
       return str.c_str();
    }
-   const wchar_t *default_to_wchar(const HxString &str,::hx::IStringAlloc *alloc)
+   const wchar_t *default_to_wchar(const HxString &str,hx::IStringAlloc *alloc)
    {
       DynAlloc d;
       if (!alloc)
          alloc = &d;
       return cffi::from_utf8<wchar_t>(str.c_str(),str.size(),alloc);
    }
-   const char16_t *default_to_utf16(const HxString &str,::hx::IStringAlloc *alloc)
+   const char16_t *default_to_utf16(const HxString &str,hx::IStringAlloc *alloc)
    {
       DynAlloc d;
       if (!alloc)
@@ -169,7 +169,7 @@ extern "C" ret name def_args;
    #endif
 
 
-   ::hx::StringEncoding default_get_encoding(void *inPtr) { return ::hx::StringUtf8; }
+   hx::StringEncoding default_get_encoding(void *inPtr) { return hx::StringUtf8; }
 
    void * default_alloc_empty_string(int) { return 0; }
 
@@ -298,7 +298,7 @@ extern "C" ret name def_args;
       return name call_args; \
    }\
    FUNC_##name name = IMPL_##name;
-
+    
    #ifdef NEKO_COMPATIBLE
    DEFINE_PRIM(neko_init,5)
    #endif
@@ -319,7 +319,7 @@ extern "C" ret name def_args;
       return name call_args; \
    }\
    FUNC_##name name = IMPL_##name;
-
+    
 
    #endif // android }
 

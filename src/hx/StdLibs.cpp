@@ -192,7 +192,7 @@ Array<unsigned char> __hxcpp_resource_bytes(String inName)
    return null();
 }
 
-// -- ::hx::Native -------
+// -- hx::Native -------
 
 #if HXCPP_API_LEVEL >= 330
 extern "C" void __hxcpp_lib_main();
@@ -285,7 +285,7 @@ void __trace(Dynamic inObj, Dynamic info)
       text = inObj->toString();
 
 
-   ::hx::strbuf convertBuf;
+   hx::strbuf convertBuf;
    if (info==null())
    {
       PRINTF("?? %s\n", text.raw_ptr() ? text.out_str(&convertBuf) : "null");
@@ -295,7 +295,7 @@ void __trace(Dynamic inObj, Dynamic info)
       const char *filename = Dynamic((info)->__Field(HX_CSTRING("fileName"), HX_PROP_DYNAMIC))->toString().utf8_str(0,false);
       int line = Dynamic((info)->__Field( HX_CSTRING("lineNumber") , HX_PROP_DYNAMIC))->__ToInt();
 
-      ::hx::strbuf convertBuf;
+      hx::strbuf convertBuf;
       //PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
       PRINTF("%s:%d: %s\n", filename, line, text.raw_ptr() ? text.out_str(&convertBuf) : "null");
    }
@@ -546,7 +546,7 @@ Array<String> __get_args()
    bool real_arg = 0;
    if (cmd)
    {
-      ::hx::QuickVec<char> arg;
+      hx::QuickVec<char> arg;
 
       buf[0] = '\0';
       while (fread(buf, 1, 1, cmd))
@@ -573,13 +573,13 @@ Array<String> __get_args()
 
 void __hxcpp_print_string(const String &inV)
 {
-   ::hx::strbuf convertBuf;
+   hx::strbuf convertBuf;
    PRINTF("%s", inV.out_str(&convertBuf) );
 }
 
 void __hxcpp_println_string(const String &inV)
 {
-   ::hx::strbuf convertBuf;
+   hx::strbuf convertBuf;
    PRINTF("%s\n", inV.out_str(&convertBuf));
 }
 
@@ -591,9 +591,9 @@ bool __instanceof(const Dynamic &inValue, const Dynamic &inType)
 {
    if (inValue==null())
       return false;
-   if (inType==::hx::Object::__SGetClass())
+   if (inType==hx::Object::__SGetClass())
       return true;
-   ::hx::Class c = inType;
+   hx::Class c = inType;
    if (c==null())
       return false;
    return c->CanCast(inValue.GetPtr());
@@ -619,7 +619,7 @@ Dynamic __hxcpp_parse_int(const String &inString)
    if (!inString.raw_ptr())
       return null();
    long result;
-   ::hx::strbuf buf;
+   hx::strbuf buf;
    const char *str = inString.utf8_str(&buf);
    bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
    char *end = 0;
@@ -641,7 +641,7 @@ int __hxcpp_parse_substr_int(const String &inString,int inStart, int inLen)
    if (inLen<0)
       inLen = inString.length - inStart;
    long result;
-   ::hx::strbuf buf;
+   hx::strbuf buf;
    const char *str = inString.ascii_substr(&buf,inStart,inLen);
    bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
    char *end = 0;
@@ -663,7 +663,7 @@ double __hxcpp_parse_substr_float(const String &inString,int start, int length)
    if (start>=inString.length || length<1 || (start+length)>inString.length )
       return Math_obj::NaN;
 
-   ::hx::strbuf buf;
+   hx::strbuf buf;
    const char *str = inString.ascii_substr(&buf,start,length);
    char *end = (char *)str;
    double result = str ? strtod(str,&end) : 0;
@@ -680,7 +680,7 @@ double __hxcpp_parse_float(const String &inString)
    if (!inString.raw_ptr())
       return Math_obj::NaN;
 
-   ::hx::strbuf buf;
+   hx::strbuf buf;
    const char *str = inString.utf8_str(&buf);
    char *end = (char *)str;
    double result = str ? strtod(str,&end) : 0;
@@ -694,8 +694,8 @@ double __hxcpp_parse_float(const String &inString)
 
 bool __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2)
 {
-   ::hx::Object *p1 = inF1.GetPtr();
-   ::hx::Object *p2 = inF2.GetPtr();
+   hx::Object *p1 = inF1.GetPtr();
+   hx::Object *p2 = inF2.GetPtr();
    if (p1==0 || p2==0)
       return false;
    if ( (p1->__GetHandle() != p2->__GetHandle()))
@@ -706,9 +706,9 @@ bool __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2)
 namespace hx
 {
 
-struct VarArgFunc : public ::hx::Object
+struct VarArgFunc : public hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdClosure };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure };
 
    VarArgFunc(Dynamic &inFunc) : mRealFunc(inFunc) {
      HX_OBJ_WB_NEW_MARKED_OBJECT(this)
@@ -717,10 +717,10 @@ struct VarArgFunc : public ::hx::Object
    int __GetType() const { return vtFunction; }
    ::String __ToString() const { return mRealFunc->__ToString() ; }
 
-   void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mRealFunc); }
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mRealFunc); }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mRealFunc); }
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mRealFunc); }
    #endif
 
    void *__GetHandle() const { return mRealFunc.GetPtr(); }
@@ -736,7 +736,7 @@ struct VarArgFunc : public ::hx::Object
 
 Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc)
 {
-   return Dynamic(new ::hx::VarArgFunc(inArrayFunc));
+   return Dynamic(new hx::VarArgFunc(inArrayFunc));
 }
 
 // --- CFFI helpers ------------------------------------------------------------------
@@ -790,7 +790,7 @@ int  __hxcpp_field_to_id( const char *inFieldName )
    String str(inFieldName,strlen(inFieldName));
 
    // Make into "const" string that will not get collected...
-   str = String((char *)::hx::InternalCreateConstBuffer(str.raw_ptr(),(str.length+1) * sizeof(char),true), str.length );
+   str = String((char *)hx::InternalCreateConstBuffer(str.raw_ptr(),(str.length+1) * sizeof(char),true), str.length );
 
    if (sgFieldToStringAlloc<=sgFieldToStringSize+1)
    {

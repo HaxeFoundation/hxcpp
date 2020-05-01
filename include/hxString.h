@@ -16,7 +16,7 @@
 //
 // Basic String type for hxcpp.
 // It's based on garbage collection of the wchar_t (or char ) *ptr.
-// Note: this does not inherit from "::hx::Object", so in some ways it acts more
+// Note: this does not inherit from "hx::Object", so in some ways it acts more
 // like a standard "int" type than a mode generic class.
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES String
@@ -61,7 +61,7 @@ public:
    }
    inline operator NSString * () const
    {
-      ::hx::strbuf buf;
+      hx::strbuf buf;
       return [[NSString alloc] initWithUTF8String:utf8_str(&buf) ];
    }
    #endif
@@ -90,22 +90,22 @@ public:
    String(const cpp::UInt64 &inRHS);
    explicit String(const bool &inRHS);
    inline String(const null &inRHS) : __s(0), length(0) { }
-   String(::hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
+   String(hx::Null< ::String > inRHS) : __s(inRHS.value.__s), length(inRHS.value.length) { }
    inline String(const ::cpp::Variant &inRHS) { *this = inRHS.asString(); }
    template<typename T>
    inline String( const ::cpp::Pointer<T> &inRHS) { fromPointer(inRHS.ptr); }
    template<typename T>
-   inline String( const ::hx::Native<T> &n ) { fromPointer(n.ptr); }
+   inline String( const hx::Native<T> &n ) { fromPointer(n.ptr); }
 
    static String emptyString;
    static void __boot();
 
-   ::hx::Object *__ToObject() const;
+   hx::Object *__ToObject() const;
 
    template<typename T,typename S>
    explicit inline String(const cpp::Struct<T,S> &inRHS);
    template<typename OBJ>
-   explicit inline String(const ::hx::ObjectPtr<OBJ> &inRHS);
+   explicit inline String(const hx::ObjectPtr<OBJ> &inRHS);
    void fromInt(int inI);
    void fromPointer(const void *p);
 
@@ -117,11 +117,11 @@ public:
     Could perhaps make it explicit
 
    template<typename T>
-   inline String(const ::hx::ObjectPtr<T> &inRHS)
+   inline String(const hx::ObjectPtr<T> &inRHS)
    {
       if (inRHS.mPtr)
       {
-         ::String s = static_cast<::hx::Object *>(inRHS.mPtr)->toString();
+         ::String s = static_cast<hx::Object *>(inRHS.mPtr)->toString();
          __s = s.__s;
          length = s.length;
       }
@@ -154,12 +154,12 @@ public:
 
    inline const char *&raw_ref() { return __s; }
    inline const char *raw_ptr() const { return __s; }
-   const char *utf8_str(::hx::IStringAlloc *inBuffer = 0,bool throwInvalid=true) const;
-   const char *ascii_substr(::hx::IStringAlloc *inBuffer,int start, int length) const;
+   const char *utf8_str(hx::IStringAlloc *inBuffer = 0,bool throwInvalid=true) const;
+   const char *ascii_substr(hx::IStringAlloc *inBuffer,int start, int length) const;
    inline const char *c_str() const { return utf8_str(); }
-   inline const char *out_str(::hx::IStringAlloc *inBuffer = 0) const { return utf8_str(inBuffer,false); }
-   const wchar_t *wchar_str(::hx::IStringAlloc *inBuffer = 0) const;
-   const char16_t *wc_str(::hx::IStringAlloc *inBuffer = 0) const;
+   inline const char *out_str(hx::IStringAlloc *inBuffer = 0) const { return utf8_str(inBuffer,false); }
+   const wchar_t *wchar_str(hx::IStringAlloc *inBuffer = 0) const;
+   const char16_t *wc_str(hx::IStringAlloc *inBuffer = 0) const;
 
    const char *__CStr() const { return utf8_str(); };
    const wchar_t *__WCStr() const { return wchar_str(0); }
@@ -267,13 +267,13 @@ public:
    ::String operator+(const bool &inRHS) const { return *this + ::String(inRHS); }
    ::String operator+(const double &inRHS) const { return *this + ::String(inRHS); }
    ::String operator+(const float &inRHS) const { return *this + ::String(inRHS); }
-   ::String operator+(const null &inRHS) const{ return *this + HX_CSTRING("null"); }
-   //::String operator+(const char *inRHS) const{ return *this + ::String(inRHS); }
-   ::String operator+(const cpp::CppInt32__ &inRHS) const{ return *this + ::String(inRHS); }
+   ::String operator+(const null &inRHS) const{ return *this + HX_CSTRING("null"); } 
+   //::String operator+(const char *inRHS) const{ return *this + ::String(inRHS); } 
+   ::String operator+(const cpp::CppInt32__ &inRHS) const{ return *this + ::String(inRHS); } 
    template<typename T>
-   inline ::String operator+(const ::hx::ObjectPtr<T> &inRHS) const
-      { return *this + (inRHS.mPtr ? const_cast<::hx::ObjectPtr<T>&>(inRHS)->toString() : HX_CSTRING("null") ); }
-   ::String operator+(const cpp::Variant &inRHS) const{ return *this + inRHS.asString(); }
+   inline ::String operator+(const hx::ObjectPtr<T> &inRHS) const
+      { return *this + (inRHS.mPtr ? const_cast<hx::ObjectPtr<T>&>(inRHS)->toString() : HX_CSTRING("null") ); }
+   ::String operator+(const cpp::Variant &inRHS) const{ return *this + inRHS.asString(); } 
 
 
 
@@ -331,7 +331,7 @@ public:
    Dynamic toUpperCase_dyn();
 
    // This is used by the string-wrapped-as-dynamic class
-   ::hx::Val __Field(const ::String &inString, ::hx::PropertyAccess inCallProp);
+   hx::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp);
 
    // The actual implementation.
    // Note that "__s" is const - if you want to change it, you should create a new string.

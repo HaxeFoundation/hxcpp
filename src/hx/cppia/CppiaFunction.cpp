@@ -6,7 +6,7 @@ namespace hx
 {
 
 
-static int sTypeSize[] = { 0, 0, sizeof(::hx::Object *), sizeof(String), sizeof(Float), sizeof(int) };
+static int sTypeSize[] = { 0, 0, sizeof(hx::Object *), sizeof(String), sizeof(Float), sizeof(int) };
 
 // --- ScriptCallable ----------------------------------------------------
 
@@ -14,9 +14,9 @@ String sInvalidArgCount = HX_CSTRING("Invalid arguement count");
 
 
 #ifdef CPPIA_JIT
-void SLJIT_CALL argToInt(CppiaCtx *ctx) { ctx->pushInt( (* (::hx::Object **)(ctx->pointer))->__ToInt() ); }
-void SLJIT_CALL argToDouble(CppiaCtx *ctx) { ctx->pushFloat( (* (::hx::Object **)(ctx->pointer))->__ToDouble() ); }
-void SLJIT_CALL argToString(CppiaCtx *ctx) { ctx->pushString( (* (::hx::Object **)(ctx->pointer))->__ToString() ); }
+void SLJIT_CALL argToInt(CppiaCtx *ctx) { ctx->pushInt( (* (hx::Object **)(ctx->pointer))->__ToInt() ); }
+void SLJIT_CALL argToDouble(CppiaCtx *ctx) { ctx->pushFloat( (* (hx::Object **)(ctx->pointer))->__ToDouble() ); }
+void SLJIT_CALL argToString(CppiaCtx *ctx) { ctx->pushString( (* (hx::Object **)(ctx->pointer))->__ToString() ); }
 #endif
 
 
@@ -205,7 +205,7 @@ void ScriptCallable::getScriptableVariables(unsigned char *inStack, Array<Dynami
 {
    unsigned char *frame = inStack - stackSize;
 
-   ::hx::Object *thizz = *(::hx::Object **)frame;
+   hx::Object *thizz = *(hx::Object **)frame;
    if (thizz)
       outNames->push(HX_CSTRING("this"));
 
@@ -222,7 +222,7 @@ bool ScriptCallable::getScriptableValue(unsigned char *inStack, String inName, :
    unsigned char *frame = inStack - stackSize;
    if (inName == HX_CSTRING("this"))
    {
-      outValue = *(::hx::Object **)frame;
+      outValue = *(hx::Object **)frame;
       return true;
    }
 
@@ -273,17 +273,17 @@ int ScriptCallable::Hash(int value, const char *inString)
 #ifdef CPPIA_JIT
 
 
-int SLJIT_CALL objectToInt(::hx::Object *obj) { return obj->__ToInt(); }
+int SLJIT_CALL objectToInt(hx::Object *obj) { return obj->__ToInt(); }
 void SLJIT_CALL frameToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
 //void objectToInt(CppiaCtx *inCtx) { inCtx->returnInt( inCtx->getObject() ); }
 void SLJIT_CALL objectToDouble(CppiaCtx *inCtx) { inCtx->returnFloat( inCtx->getObject() ); }
 void SLJIT_CALL objectToDoublePointer(CppiaCtx *inCtx)
 {
-   *(double *)inCtx->pointer = (*(::hx::Object **)inCtx->pointer)->__ToDouble();
+   *(double *)inCtx->pointer = (*(hx::Object **)inCtx->pointer)->__ToDouble();
 }
 void SLJIT_CALL objectToStringPointer(CppiaCtx *inCtx)
 {
-   *(String *)inCtx->pointer = (*(::hx::Object **)inCtx->pointer)->toString();
+   *(String *)inCtx->pointer = (*(hx::Object **)inCtx->pointer)->toString();
 }
 void SLJIT_CALL objectToString(CppiaCtx *inCtx) { inCtx->returnString( inCtx->getObject() ); }
 void SLJIT_CALL stringToObject(CppiaCtx *inCtx) { inCtx->returnObject( inCtx->getString() ); }
@@ -378,7 +378,7 @@ void ScriptCallable::genDefaults(CppiaCompiler *compiler)
 #endif
 
 
-void ScriptCallable::pushArgs(CppiaCtx *ctx, ::hx::Object *inThis, Expressions &inArgs)
+void ScriptCallable::pushArgs(CppiaCtx *ctx, hx::Object *inThis, Expressions &inArgs)
 {
    BCR_VCHECK;
    int inCount = inArgs.size();
@@ -430,7 +430,7 @@ void ScriptCallable::pushArgs(CppiaCtx *ctx, ::hx::Object *inThis, Expressions &
 
 
 
-void ScriptCallable::pushArgsDynamic(CppiaCtx *ctx, ::hx::Object *inThis, Array<Dynamic> &inArgs)
+void ScriptCallable::pushArgsDynamic(CppiaCtx *ctx, hx::Object *inThis, Array<Dynamic> &inArgs)
 {
    BCR_VCHECK;
 
@@ -655,7 +655,7 @@ void ScriptCallable::compile()
 
       compiler->setOnReturn( onReturn, stackSize );
          #ifdef HXCPP_STACK_LINE
-         compiler->setLineOffset( stackSize + offsetof(StackFrame,lineNumber) );
+         compiler->setLineOffset( stackSize + offsetof(StackFrame,lineNumber) ); 
          #endif
       #endif
 
@@ -685,11 +685,11 @@ void ScriptCallable::compile()
 
 
 
-class CppiaClosure : public ::hx::Object
+class CppiaClosure : public hx::Object
 {
 public:
    inline void *operator new( size_t inSize, int inExtraDataSize )
-     { return ::hx::InternalNew(inSize + inExtraDataSize,true); }
+     { return hx::InternalNew(inSize + inExtraDataSize,true); }
    inline void operator delete(void *,int) {}
 
    ScriptCallable *function;
@@ -700,7 +700,7 @@ public:
 
       unsigned char *base = ((unsigned char *)this) + sizeof(CppiaClosure);
 
-      *(::hx::Object **)base = ctx->getThis(false);
+      *(hx::Object **)base = ctx->getThis(false);
 
       for(int i=0;i<function->captureVars.size();i++)
       {
@@ -710,14 +710,14 @@ public:
       }
    }
 
-   ::hx::Object **getThis() const
+   hx::Object **getThis() const
    {
       unsigned char *base = ((unsigned char *)this) + sizeof(CppiaClosure);
-      return (::hx::Object **)base;
+      return (hx::Object **)base;
    }
 
    // Create member closure...
-   CppiaClosure(::hx::Object *inThis, ScriptCallable *inFunction)
+   CppiaClosure(hx::Object *inThis, ScriptCallable *inFunction)
    {
       function = inFunction;
       *getThis() = inThis;
@@ -731,7 +731,7 @@ public:
 
       unsigned char *base = ((unsigned char *)this) + sizeof(CppiaClosure);
       // this pointer...
-      *(::hx::Object **)ctx->frame =  *(::hx::Object **)base;
+      *(hx::Object **)ctx->frame =  *(hx::Object **)base;
 
       for(int i=0;i<function->captureVars.size();i++)
       {
@@ -813,7 +813,7 @@ public:
             break;
          default:
             {
-               ::hx::Object *value = inValue.mPtr;
+               hx::Object *value = inValue.mPtr;
                if (value)
                {
                   ArrayType want = function->args[a].type->arrayType;
@@ -832,7 +832,7 @@ public:
       CppiaCtx *ctx = CppiaCtx::getCurrent();
 
       AutoStack a(ctx);
-      ctx->pointer += sizeof(::hx::Object *);
+      ctx->pointer += sizeof(hx::Object *);
 
       int haveArgs = !inArgs.mPtr ? 0 : inArgs->length;
       if (haveArgs>function->argCount)
@@ -848,7 +848,7 @@ public:
    {
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack a(ctx);
-      ctx->pointer += sizeof(::hx::Object *);
+      ctx->pointer += sizeof(hx::Object *);
       return doRun(ctx,0);
    }
 
@@ -856,7 +856,7 @@ public:
    {
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
-      ctx->pointer += sizeof(::hx::Object *);
+      ctx->pointer += sizeof(hx::Object *);
       pushArgDynamic(ctx,0,a);
       return doRun(ctx,1);
    }
@@ -864,7 +864,7 @@ public:
    {
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
-      ctx->pointer += sizeof(::hx::Object *);
+      ctx->pointer += sizeof(hx::Object *);
       pushArgDynamic(ctx,0,a);
       pushArgDynamic(ctx,1,b);
       return doRun(ctx,2);
@@ -873,7 +873,7 @@ public:
    {
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
-      ctx->pointer += sizeof(::hx::Object *);
+      ctx->pointer += sizeof(hx::Object *);
       pushArgDynamic(ctx,0,a);
       pushArgDynamic(ctx,1,b);
       pushArgDynamic(ctx,2,c);
@@ -883,7 +883,7 @@ public:
    {
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
-      ctx->pointer += sizeof(::hx::Object *);
+      ctx->pointer += sizeof(hx::Object *);
       pushArgDynamic(ctx,0,a);
       pushArgDynamic(ctx,1,b);
       pushArgDynamic(ctx,2,c);
@@ -895,7 +895,7 @@ public:
    {
       CppiaCtx *ctx = CppiaCtx::getCurrent();
       AutoStack aut(ctx);
-      ctx->pointer += sizeof(::hx::Object *);
+      ctx->pointer += sizeof(hx::Object *);
       pushArgDynamic(ctx,0,a);
       pushArgDynamic(ctx,1,b);
       pushArgDynamic(ctx,2,c);
@@ -904,7 +904,7 @@ public:
       return doRun(ctx,5);
    }
 
-   void __Mark(::hx::MarkContext *__inCtx)
+   void __Mark(hx::MarkContext *__inCtx)
    {
       HX_MARK_MEMBER(*getThis());
       char *base = ((char *)this) + sizeof(CppiaClosure);
@@ -912,7 +912,7 @@ public:
          function->captureVars[i]->markClosure(base,__inCtx);
    }
 #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(::hx::VisitContext *__inCtx)
+   void __Visit(hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(*getThis());
       char *base = ((char *)this) + sizeof(CppiaClosure);
@@ -922,7 +922,7 @@ public:
 #endif
    virtual void *__GetHandle() const { return *getThis(); }
 
-   int __Compare(const ::hx::Object *inRHS) const
+   int __Compare(const hx::Object *inRHS) const
    {
       const CppiaClosure *other = dynamic_cast<const CppiaClosure *>(inRHS);
       if (!other)
@@ -943,9 +943,9 @@ hx::Object * CPPIA_CALL createClosure(CppiaCtx *ctx, ScriptCallable *inFunction)
    return new (inFunction->captureSize) CppiaClosure(ctx,inFunction);
 }
 
-hx::Object *createMemberClosure(::hx::Object *inThis, ScriptCallable *inFunction)
+hx::Object *createMemberClosure(hx::Object *inThis, ScriptCallable *inFunction)
 {
-   return new (sizeof(::hx::Object *)) CppiaClosure(inThis,inFunction);
+   return new (sizeof(hx::Object *)) CppiaClosure(inThis,inFunction);
 }
 
 

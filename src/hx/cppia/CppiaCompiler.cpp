@@ -28,7 +28,7 @@ static void SLJIT_CALL my_trace_string(const char *inText, String *inValue)
    printf("%s%s\n", inText, inValue->out_str());
 }
 
-static void SLJIT_CALL my_trace_ptr_func(const char *inText, ::hx::Object **inPtr)
+static void SLJIT_CALL my_trace_ptr_func(const char *inText, hx::Object **inPtr)
 {
    printf("%s = %p\n",inText, inPtr);
    //printf("*= %s\n", (*inPtr)->toString().out_str());
@@ -43,12 +43,12 @@ static void SLJIT_CALL my_trace_float_func(const char *inText, double *inValue)
    printf("%s = %f\n",inText, *inValue);
 }
 
-static void SLJIT_CALL my_trace_obj_func(const char *inText, ::hx::Object *inPtr)
+static void SLJIT_CALL my_trace_obj_func(const char *inText, hx::Object *inPtr)
 {
    printf("%s = %s\n",inText, inPtr ? inPtr->__ToString().out_str() : "NULL" );
 }
 
-static ::hx::Object *SLJIT_CALL intToObj(int inVal)
+static hx::Object *SLJIT_CALL intToObj(int inVal)
 {
    return Dynamic(inVal).mPtr;
 }
@@ -56,15 +56,15 @@ static void SLJIT_CALL intToStr(int inVal, String *outString)
 {
    *outString = String(inVal);
 }
-static void SLJIT_CALL objToStr(::hx::Object *inVal, String *outString)
+static void SLJIT_CALL objToStr(hx::Object *inVal, String *outString)
 {
    *outString = inVal ? inVal->toString() : String();
 }
-int SLJIT_CALL objToInt(::hx::Object *inVal)
+int SLJIT_CALL objToInt(hx::Object *inVal)
 {
    return inVal ? inVal->__ToInt() : 0;
 }
-static void SLJIT_CALL objToFloat(::hx::Object *inVal,double *outFloat)
+static void SLJIT_CALL objToFloat(hx::Object *inVal,double *outFloat)
 {
    *outFloat =  inVal ? inVal->__ToDouble() : 0.0;
 }
@@ -84,7 +84,7 @@ static void SLJIT_CALL floatToStr(double *inDouble, String *outStr)
 
 }
 
-static ::hx::Object * SLJIT_CALL variantToObject(cpp::Variant *inVariant)
+static hx::Object * SLJIT_CALL variantToObject(cpp::Variant *inVariant)
 {
    return Dynamic( *inVariant ).mPtr;
 }
@@ -398,7 +398,7 @@ public:
    {
       allBreaks.swap(ioBreakList);
    }
-
+   
    void setBreakTarget()
    {
       for(int i=0;i<allBreaks.size();i++)
@@ -1364,7 +1364,7 @@ public:
             {
                setError("Passing string value in register error");
             }
-
+ 
             restoreLocal = localSize;
             JitLocalPos temp(allocTemp(jtFloat),jtFloat);
             move( temp, inArg0 );
@@ -1424,7 +1424,7 @@ public:
             {
                setError("Passing string value in register error");
             }
-
+ 
             restoreLocal = localSize;
             JitLocalPos temp(allocTemp(jtFloat),jtFloat);
             move( temp, inArg0 );
@@ -1490,7 +1490,7 @@ public:
 
    void checkException()
    {
-      JumpId onException = compare( cmpP_NOT_ZERO,sJitCtx.star(jtPointer, offsetof(::hx::StackContext,exception)),(void *)0, 0 );
+      JumpId onException = compare( cmpP_NOT_ZERO,sJitCtx.star(jtPointer, offsetof(hx::StackContext,exception)),(void *)0, 0 );
       if (catching)
          catching->push_back( onException );
       else
