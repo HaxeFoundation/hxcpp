@@ -30,9 +30,9 @@ namespace {
 
 
 
-struct result : public hx::Object
+struct result : public ::hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSqlite };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdSqlite };
 
    sqlite3 *db;
    sqlite3_stmt *r;
@@ -60,7 +60,7 @@ struct result : public hx::Object
          names[i] = String::createPermanent(sqlite3_column_name(r,i),-1);
          for(int j=0;j<i;j++)
             if( names[j] == names[i] )
-               hx::Throw(HX_CSTRING("Error, same field is two times in the request ") + sql);
+               ::hx::Throw(HX_CSTRING("Error, same field is two times in the request ") + sql);
 
          const char *dtype = sqlite3_column_decltype(r,i);
          bools[i] = dtype?(strcmp(dtype,"BOOL") == 0):0;
@@ -92,7 +92,7 @@ struct result : public hx::Object
          r = 0;
 
          if( err && inThrowError)
-            hx::Throw(HX_CSTRING("Could not finalize request"));
+            ::hx::Throw(HX_CSTRING("Could not finalize request"));
       }
    }
 
@@ -113,10 +113,10 @@ struct result : public hx::Object
    </doc>
 **/
 
-struct database : public hx::Object
+struct database : public ::hx::Object
 {
    sqlite3 *db;
-   hx::ObjectPtr<result> last;
+   ::hx::ObjectPtr<result> last;
 
    void create(sqlite3 *inDb)
    {
@@ -137,7 +137,7 @@ struct database : public hx::Object
          if( sqlite3_close(db) != SQLITE_OK )
          {
             if (inThrowError)
-               hx::Throw(HX_CSTRING("Sqlite: could not close"));
+               ::hx::Throw(HX_CSTRING("Sqlite: could not close"));
          }
          db = 0;
       }
@@ -153,23 +153,23 @@ struct database : public hx::Object
       HX_OBJ_WB_GET(this, last.mPtr);
    }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(last); }
+   void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(last); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(last); }
+   void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(last); }
    #endif
 
    String toString() { return HX_CSTRING("Sqlite Databse"); }
 };
 
 static void sqlite_error( sqlite3 *db ) {
-   hx::Throw( HX_CSTRING("Sqlite error : ") + String(sqlite3_errmsg(db)) );
+   ::hx::Throw( HX_CSTRING("Sqlite error : ") + String(sqlite3_errmsg(db)) );
 }
 
 database *getDatabase(Dynamic handle)
 {
    database *db = dynamic_cast<database *>(handle.mPtr);
    if (!db || !db->db)
-      hx::Throw( HX_CSTRING("Invalid sqlite database") );
+      ::hx::Throw( HX_CSTRING("Invalid sqlite database") );
    return db;
 }
 
@@ -178,7 +178,7 @@ result *getResult(Dynamic handle, bool inRequireStatement)
 {
    result *r = dynamic_cast<result *>(handle.mPtr);
    if (!r || (inRequireStatement && !r->r))
-      hx::Throw( HX_CSTRING("Invalid sqlite result") );
+      ::hx::Throw( HX_CSTRING("Invalid sqlite result") );
    return r;
 }
 
@@ -238,13 +238,13 @@ Dynamic _hx_sqlite_request(Dynamic handle,String sql)
    const char *tl = 0;
    if( sqlite3_prepare(db->db,sql.utf8_str(),sql.length,&statement,&tl) != SQLITE_OK )
    {
-      hx::Throw( HX_CSTRING("Sqlite error in ") + sql + HX_CSTRING(" : ") +
+      ::hx::Throw( HX_CSTRING("Sqlite error in ") + sql + HX_CSTRING(" : ") +
                   String(sqlite3_errmsg(db->db) ) );
    }
    if( *tl )
    {
       sqlite3_finalize(statement);
-      hx::Throw(HX_CSTRING("Cannot execute several SQL requests at the same time"));
+      ::hx::Throw(HX_CSTRING("Cannot execute several SQL requests at the same time"));
    }
 
    int i,j;
@@ -271,7 +271,7 @@ int  _hx_sqlite_result_get_length(Dynamic handle)
 {
    result *r = getResult(handle,false);
    if( r->ncols != 0 )
-      hx::Throw(HX_CSTRING("Getting change count from non-change request")); // ???
+      ::hx::Throw(HX_CSTRING("Getting change count from non-change request")); // ???
    return r->count;
 }
 
@@ -299,7 +299,7 @@ Dynamic _hx_sqlite_result_next(Dynamic handle)
    {
       case SQLITE_ROW:
       {
-         hx::Anon v = hx::Anon_obj::Create();
+         ::hx::Anon v = ::hx::Anon_obj::Create();
          r->first = 0;
          for(int i=0;i<r->ncols;i++)
          {
@@ -328,11 +328,11 @@ Dynamic _hx_sqlite_result_next(Dynamic handle)
                }
             default:
                {
-                  hx::Throw( HX_CSTRING("Unknown Sqlite type #") +
+                  ::hx::Throw( HX_CSTRING("Unknown Sqlite type #") +
                                String((int)sqlite3_column_type(r->r,i)));
                }
             }
-            v->__SetField(r->names[i],f,hx::paccDynamic);
+            v->__SetField(r->names[i],f,::hx::paccDynamic);
          }
          return v;
       }
@@ -340,11 +340,11 @@ Dynamic _hx_sqlite_result_next(Dynamic handle)
          r->destroy(true);
          return null();
       case SQLITE_BUSY:
-         hx::Throw(HX_CSTRING("Database is busy"));
+         ::hx::Throw(HX_CSTRING("Database is busy"));
       case SQLITE_ERROR:
          sqlite_error(r->db);
       default:
-         hx::Throw(HX_CSTRING("Unkown sqlite result"));
+         ::hx::Throw(HX_CSTRING("Unkown sqlite result"));
    }
 
    return null();
@@ -355,13 +355,13 @@ static sqlite3_stmt *prepStatement(Dynamic handle,int n)
 {
    result *r = getResult(handle,true);
    if( n < 0 || n >= r->ncols )
-      hx::Throw( HX_CSTRING("Sqlite: Invalid index") );
+      ::hx::Throw( HX_CSTRING("Sqlite: Invalid index") );
 
    if( r->first )
       _hx_sqlite_result_next(handle);
 
    if( r->done )
-      hx::Throw( HX_CSTRING("Sqlite: no more results") );
+      ::hx::Throw( HX_CSTRING("Sqlite: no more results") );
 
    return r->r;
 }

@@ -4,9 +4,9 @@
 
 
 @interface NSHaxeWrapperClass : NSObject {
-  @public hx::Object *haxeObject;
+  @public ::hx::Object *haxeObject;
 }
-- (id)init:(hx::Object *) inHaxe;
+- (id)init:(::hx::Object *) inHaxe;
 - (void)dealloc;
 @end
 

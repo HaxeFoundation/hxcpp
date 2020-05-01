@@ -38,9 +38,9 @@ static int do_close( int fd )
 #endif
 
 
-struct vprocess : public hx::Object
+struct vprocess : public ::hx::Object
 {
-  HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdProcess };
+  HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdProcess };
 
    bool open;
 #ifdef NEKO_WINDOWS
@@ -103,7 +103,7 @@ vprocess *getProcess(Dynamic handle)
 {
    vprocess *p = dynamic_cast<vprocess *>(handle.mPtr);
    if (!p)
-      hx::Throw(HX_CSTRING("Invalid process"));
+      ::hx::Throw(HX_CSTRING("Invalid process"));
    return p;
 }
 
@@ -179,7 +179,7 @@ static String quoteString(String v)
    <doc>
    Start a process using a command.
    When args is not null, cmd and args will be auto-quoted/escaped.
-   If no auto-quoting/escaping is desired, you should append necessary 
+   If no auto-quoting/escaping is desired, you should append necessary
    arguments to cmd as if it is inputted to the shell directly, and pass
    null to args.
 
@@ -197,8 +197,8 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
    bool isRaw = !vargs.mPtr;
 
    #ifdef NEKO_WINDOWS
-   {       
-      SECURITY_ATTRIBUTES sattr;      
+   {
+      SECURITY_ATTRIBUTES sattr;
       STARTUPINFOW sinf;
       HANDLE proc = GetCurrentProcess();
       HANDLE oread,eread,iwrite;
@@ -226,7 +226,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
 
       const wchar_t *name = b.__WCStr();
 
-      hx::EnterGCFreeZone();
+      ::hx::EnterGCFreeZone();
       // startup process
       sattr.nLength = sizeof(sattr);
       sattr.bInheritHandle = TRUE;
@@ -252,14 +252,14 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
       memset(&pinf,0,sizeof(pinf));
       if( !CreateProcessW(NULL,(wchar_t *)name,NULL,NULL,TRUE,0,NULL,NULL,&sinf,&pinf) )
       {
-         hx::ExitGCFreeZone();
-         hx::Throw(HX_CSTRING("Could not start process"));
+         ::hx::ExitGCFreeZone();
+         ::hx::Throw(HX_CSTRING("Could not start process"));
       }
       // close unused pipes
       CloseHandle(sinf.hStdOutput);
       CloseHandle(sinf.hStdError);
       CloseHandle(sinf.hStdInput);
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
 
       p = new vprocess;
       p->create();
@@ -274,7 +274,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
    if( pipe(input) || pipe(output) || pipe(error) )
       return null();
 
-   hx::strbuf buf;
+   ::hx::strbuf buf;
    std::vector< std::string > values;
    if (isRaw)
    {
@@ -351,7 +351,7 @@ int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int p
    vprocess *p = getProcess(handle);
 
    unsigned char *dest = &buf[0];
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    #ifdef NEKO_WINDOWS
    DWORD nbytes = 0;
    if( !ReadFile(p->oread,dest+pos,len,&nbytes,0) )
@@ -362,7 +362,7 @@ int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int p
       nbytes = 0;
    #endif
 
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return nbytes;
 }
 
@@ -382,7 +382,7 @@ int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int p
    vprocess *p = getProcess(handle);
 
    unsigned char *dest = &buf[0];
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    #ifdef NEKO_WINDOWS
    DWORD nbytes = 0;
    if( !ReadFile(p->eread,dest+pos,len,&nbytes,0) )
@@ -393,7 +393,7 @@ int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int p
       nbytes = 0;
    #endif
 
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return nbytes;
 }
 
@@ -414,7 +414,7 @@ int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int p
    unsigned char *src = &buf[0];
 
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    #ifdef NEKO_WINDOWS
    DWORD nbytes =0;
    if( !WriteFile(p->iwrite,src+pos,len,&nbytes,0) )
@@ -425,7 +425,7 @@ int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int p
       nbytes = 0;
    #endif
 
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return nbytes;
 }
 
@@ -459,12 +459,12 @@ int _hx_std_process_exit( Dynamic handle )
 {
    vprocess *p = getProcess(handle);
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    #ifdef NEKO_WINDOWS
    {
       DWORD rval;
       WaitForSingleObject(p->pinf.hProcess,INFINITE);
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
 
       if( !GetExitCodeProcess(p->pinf.hProcess,&rval) )
          return 0;
@@ -476,10 +476,10 @@ int _hx_std_process_exit( Dynamic handle )
    {
       if( errno == EINTR )
          continue;
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return 0;
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    if( !WIFEXITED(rval) )
       return 0;
 

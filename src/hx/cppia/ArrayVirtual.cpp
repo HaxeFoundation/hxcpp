@@ -17,19 +17,19 @@ namespace hx
 
 
 #ifdef CPPIA_JIT
-static hx::Object * SLJIT_CALL objGetItem(hx::Object *inObj, int inIndex)
+static ::hx::Object * SLJIT_CALL objGetItem(::hx::Object *inObj, int inIndex)
 {
    return inObj->__GetItem(inIndex).mPtr;
 }
-static int SLJIT_CALL arrayContains(ArrayAnyImpl *inObj, hx::Object *inValue)
+static int SLJIT_CALL arrayContains(ArrayAnyImpl *inObj, ::hx::Object *inValue)
 {
    return inObj->contains(inValue);
 }
-static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, hx::Object *inValue)
+static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, ::hx::Object *inValue)
 {
    return inObj->remove(inValue);
 }
-static hx::Object * SLJIT_CALL arrayConcat(ArrayAnyImpl *inObj, hx::Object *inValue)
+static ::hx::Object * SLJIT_CALL arrayConcat(ArrayAnyImpl *inObj, ::hx::Object *inValue)
 {
    return inObj->concat(Dynamic(inValue)).mPtr;
 }
@@ -43,24 +43,24 @@ static void SLJIT_CALL arrayResize(ArrayAnyImpl *inObj, int inSize)
 }
 
 
-static hx::Object * SLJIT_CALL arraySplice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
+static ::hx::Object * SLJIT_CALL arraySplice(ArrayAnyImpl *inObj, ::hx::Object *a0, ::hx::Object *a1)
 {
    return inObj->splice( Dynamic(a0), Dynamic(a1) ).mPtr;
 }
-static hx::Object * SLJIT_CALL arraySlice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
+static ::hx::Object * SLJIT_CALL arraySlice(ArrayAnyImpl *inObj, ::hx::Object *a0, ::hx::Object *a1)
 {
    return inObj->slice( Dynamic(a0), Dynamic(a1) ).mPtr;
 }
-static hx::Object * SLJIT_CALL arrayPop(ArrayAnyImpl *inObj)
+static ::hx::Object * SLJIT_CALL arrayPop(ArrayAnyImpl *inObj)
 {
    return inObj->pop().mPtr;
 }
-static hx::Object * SLJIT_CALL arrayShift(ArrayAnyImpl *inObj)
+static ::hx::Object * SLJIT_CALL arrayShift(ArrayAnyImpl *inObj)
 {
    return inObj->shift().mPtr;
 }
 
-static void SLJIT_CALL runSort( ArrayAnyImpl *inArray, hx::Object *inFunc)
+static void SLJIT_CALL runSort( ArrayAnyImpl *inArray, ::hx::Object *inFunc)
 {
    TRY_NATIVE
    inArray->sort( Dynamic(inFunc) );
@@ -71,7 +71,7 @@ static void SLJIT_CALL runReverse( ArrayAnyImpl *inArray)
    inArray->reverse();
 }
 
-static hx::Object * SLJIT_CALL runCopy( ArrayAnyImpl *inArray)
+static ::hx::Object * SLJIT_CALL runCopy( ArrayAnyImpl *inArray)
 {
    return (inArray->copy()).mPtr;
 }
@@ -91,7 +91,7 @@ static int SLJIT_CALL arrayPushInt( ArrayAnyImpl *inArray, int inVal)
 {
    return inArray->push(inVal);
 }
-static int SLJIT_CALL arrayPushObject( ArrayAnyImpl *inArray, hx::Object *inVal)
+static int SLJIT_CALL arrayPushObject( ArrayAnyImpl *inArray, ::hx::Object *inVal)
 {
    return inArray->push(Dynamic(inVal));
 }
@@ -111,7 +111,7 @@ static int SLJIT_CALL arraySetInt( ArrayAnyImpl *inArray, int inIndex, int inVal
    inArray->set(inIndex,inVal);
    return inVal;
 }
-static hx::Object * SLJIT_CALL arraySetObject( ArrayAnyImpl *inArray, int inIndex, hx::Object *inVal)
+static ::hx::Object * SLJIT_CALL arraySetObject( ArrayAnyImpl *inArray, int inIndex, ::hx::Object *inVal)
 {
    inArray->set(inIndex,Dynamic(inVal));
    return inVal;
@@ -131,7 +131,7 @@ static void SLJIT_CALL arrayUnshiftInt( ArrayAnyImpl *inArray, int inVal)
 {
    inArray->unshift(inVal);
 }
-static void SLJIT_CALL arrayUnshiftObject( ArrayAnyImpl *inArray, hx::Object *inVal)
+static void SLJIT_CALL arrayUnshiftObject( ArrayAnyImpl *inArray, ::hx::Object *inVal)
 {
    inArray->unshift(Dynamic(inVal));
 }
@@ -178,7 +178,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       {
          ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_CHECK;
-         hx::Object * val = args[0]->runObject(ctx);
+         ::hx::Object * val = args[0]->runObject(ctx);
          BCR_CHECK;
          return thisVal->CALL(push)(Dynamic(val));
       }
@@ -186,7 +186,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       {
          ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_CHECK;
-         hx::Object * val = args[0]->runObject(ctx);
+         ::hx::Object * val = args[0]->runObject(ctx);
          BCR_CHECK;
          return thisVal->CALL(contains)(val);
       }
@@ -194,7 +194,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       {
          ArrayAnyImpl *thisVal = (ArrayAnyImpl *)thisExpr->runObject(ctx);
          BCR_CHECK;
-         hx::Object * val = args[0]->runObject(ctx);
+         ::hx::Object * val = args[0]->runObject(ctx);
          BCR_CHECK;
          return thisVal->CALL(remove)(val);
       }
@@ -204,7 +204,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
-         hx::Object *a1 = args[1]->runObject(ctx);
+         ::hx::Object *a1 = args[1]->runObject(ctx);
          BCR_CHECK;
          return thisVal->CALL(indexOf)( a0, a1 );
       }
@@ -214,7 +214,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          BCR_CHECK;
          Dynamic a0 = args[0]->runObject(ctx);
          BCR_CHECK;
-         hx::Object *a1 = args[1]->runObject(ctx);
+         ::hx::Object *a1 = args[1]->runObject(ctx);
          BCR_CHECK;
          return thisVal->CALL(lastIndexOf)( a0, a1 );
       }
@@ -246,11 +246,11 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
          return thisVal->toString();
       }
 
-      hx::Object *obj = runObject(ctx);
+      ::hx::Object *obj = runObject(ctx);
       return obj ? obj->toString() : ::String();
    }
 
-   hx::Object *runObject(CppiaCtx *ctx)
+   ::hx::Object *runObject(CppiaCtx *ctx)
    {
       if (FUNC==afPush || FUNC==afContains || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          return Dynamic(runInt(ctx)).mPtr;
@@ -326,7 +326,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
                val = orig->__ToInt() >> val->__ToInt();
                break;
             case aoUShr:
-               val = hx::UShr(orig,val);
+               val = ::hx::UShr(orig,val);
                break;
             case aoMod:
                val = orig % val;
@@ -527,7 +527,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
             case aoMod:
                replace = new ArrayBuiltinAny<af__set,aoMod>(this,thisExpr,args);
                break;
-      
+
             default: ;
                printf("make setter %d\n", op);
                throw "setter not implemented";
@@ -603,7 +603,7 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
 
    #ifdef CPPIA_JIT
 
-   static hx::Object * SLJIT_CALL runProcess( ArrayAnyImpl *inArray, hx::Object *inFunction)
+   static ::hx::Object * SLJIT_CALL runProcess( ArrayAnyImpl *inArray, ::hx::Object *inFunction)
    {
       TRY_NATIVE
       if (FUNC==afMap)
@@ -618,12 +618,12 @@ struct ArrayBuiltinAny : public ArrayBuiltinBase
       return 0;
    }
 
-   static int SLJIT_CALL runIndexOf( ArrayAnyImpl *inArray, hx::Object *inItem)
+   static int SLJIT_CALL runIndexOf( ArrayAnyImpl *inArray, ::hx::Object *inItem)
    {
       return inArray->indexOf(inItem);
    }
 
-   static int SLJIT_CALL runLastIndexOf( ArrayAnyImpl *inArray, hx::Object *inItem)
+   static int SLJIT_CALL runLastIndexOf( ArrayAnyImpl *inArray, ::hx::Object *inItem)
    {
       return inArray->lastIndexOf(inItem);
    }

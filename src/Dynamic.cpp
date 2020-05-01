@@ -7,12 +7,12 @@ using namespace hx;
 
 
 
-extern hx::Class __StringClass;
+extern ::hx::Class __StringClass;
 namespace hx
 {
 
-extern hx::Class hxEnumBase_obj__mClass;
-extern hx::Class Object__mClass;
+extern ::hx::Class hxEnumBase_obj__mClass;
+extern ::hx::Class Object__mClass;
 
 
 hx::Class __BoolClass;
@@ -41,26 +41,26 @@ hx::Class &GetVoidClass() { return __VoidClass; }
 Dynamic DynTrue;
 Dynamic DynFalse;
 
-class IntData : public hx::Object
+class IntData : public ::hx::Object
 {
 public:
-   enum { _hx_ClassId = hx::clsIdInt };
+   enum { _hx_ClassId = ::hx::clsIdInt };
 
    #if (HXCPP_API_LEVEL>331)
    bool _hx_isInstanceOf(int inClassId)
    {
-      return inClassId==1 || inClassId==(int)_hx_ClassId || inClassId==(int)hx::clsIdFloat;
+      return inClassId==1 || inClassId==(int)_hx_ClassId || inClassId==(int)::hx::clsIdFloat;
    }
    #endif
 
 
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc, const char *inName="Int")
-      { return hx::Object::operator new(inSize,inAlloc,inName); }
+   inline void *operator new( size_t inSize, ::hx::NewObjectType inAlloc=NewObjAlloc, const char *inName="Int")
+      { return ::hx::Object::operator new(inSize,inAlloc,inName); }
    IntData(int inValue=0) : mValue(inValue) {};
 
-   hx::Class __GetClass() const { return __IntClass; }
+   ::hx::Class __GetClass() const { return __IntClass; }
    #if (HXCPP_API_LEVEL<331)
-   bool __Is(hx::Object *inClass) const { return dynamic_cast< IntData *>(inClass); }
+   bool __Is(::hx::Object *inClass) const { return dynamic_cast< IntData *>(inClass); }
    #endif
 
    virtual int __GetType() const { return vtInt; }
@@ -71,7 +71,7 @@ public:
    int __ToInt() const { return mValue; }
    cpp::Int64 __ToInt64() const { return mValue; }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const ::hx::Object *inRHS) const
    {
       double diff = mValue - inRHS->__ToDouble();
       return diff < 0 ? -1 : diff==0 ? 0 : 1;
@@ -82,18 +82,18 @@ public:
 };
 
 
-class BoolData : public hx::Object
+class BoolData : public ::hx::Object
 {
 public:
    HX_IS_INSTANCE_OF enum { _hx_ClassId = clsIdBool };
 
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Bool")
-      { return hx::Object::operator new(inSize,inAlloc,"Bool"); }
+   inline void *operator new( size_t inSize, ::hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Bool")
+      { return ::hx::Object::operator new(inSize,inAlloc,"Bool"); }
    BoolData(bool inValue=false) : mValue(inValue) {};
 
-   hx::Class __GetClass() const { return __BoolClass; }
+   ::hx::Class __GetClass() const { return __BoolClass; }
    #if (HXCPP_API_LEVEL<331)
-   bool __Is(hx::Object *inClass) const { return dynamic_cast< BoolData *>(inClass); }
+   bool __Is(::hx::Object *inClass) const { return dynamic_cast< BoolData *>(inClass); }
    #endif
 
    virtual int __GetType() const { return vtBool; }
@@ -103,7 +103,7 @@ public:
    double __ToDouble() const { return mValue; }
    int __ToInt() const { return mValue; }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const ::hx::Object *inRHS) const
    {
       double diff = (double)mValue - inRHS->__ToDouble();
       return diff < 0 ? -1 : diff==0 ? 0 : 1;
@@ -115,18 +115,18 @@ public:
 
 
 
-class DoubleData : public hx::Object
+class DoubleData : public ::hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdFloat };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdFloat };
 
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Float")
-      { return hx::Object::operator new(inSize,inAlloc,inName); }
+   inline void *operator new( size_t inSize, ::hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Float")
+      { return ::hx::Object::operator new(inSize,inAlloc,inName); }
    DoubleData(double inValue=0) : mValue(inValue) {};
 
-   hx::Class __GetClass() const { return __FloatClass; }
+   ::hx::Class __GetClass() const { return __FloatClass; }
    #if (HXCPP_API_LEVEL<331)
-   bool __Is(hx::Object *inClass) const { return dynamic_cast< DoubleData *>(inClass); }
+   bool __Is(::hx::Object *inClass) const { return dynamic_cast< DoubleData *>(inClass); }
    #endif
 
    virtual int __GetType() const { return vtFloat; }
@@ -136,7 +136,7 @@ public:
    int __ToInt() const { return (int)mValue; }
    cpp::Int64 __ToInt64() const { return mValue; }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const ::hx::Object *inRHS) const
    {
       double rval = inRHS->__ToDouble();
       if (rval==mValue)
@@ -150,18 +150,18 @@ public:
 };
 
 
-class Int64Data : public hx::Object
+class Int64Data : public ::hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdInt64 };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdInt64 };
 
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Int64")
-      { return hx::Object::operator new(inSize,inAlloc,inName); }
+   inline void *operator new( size_t inSize, ::hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="Int64")
+      { return ::hx::Object::operator new(inSize,inAlloc,inName); }
    Int64Data(cpp::Int64 inValue=0) : mValue(inValue) {};
 
-   hx::Class __GetClass() const { return __Int64Class; }
+   ::hx::Class __GetClass() const { return __Int64Class; }
    #if (HXCPP_API_LEVEL<331)
-   bool __Is(hx::Object *inClass) const { return dynamic_cast< Int64Data *>(inClass); }
+   bool __Is(::hx::Object *inClass) const { return dynamic_cast< Int64Data *>(inClass); }
    #endif
 
    virtual int __GetType() const { return vtInt64; }
@@ -175,13 +175,13 @@ public:
       outFields->push( HX_HCSTRING("hi","\x01","\x5b","\x00","\x00") );
       outFields->push( HX_HCSTRING("lo","\x83","\x5e","\x00","\x00") );
    }
-   hx::Val __Field(const String &inName, hx::PropertyAccess inCallProp)
+   ::hx::Val __Field(const String &inName, ::hx::PropertyAccess inCallProp)
    {
-      if (HX_FIELD_EQ(inName,"hi") ) { return hx::Val( (int)(mValue>>32)); }
-      if (HX_FIELD_EQ(inName,"lo") ) { return hx::Val( (int)(mValue&0xffffffff)); }
-      return hx::Object::__Field(inName,inCallProp);
+      if (HX_FIELD_EQ(inName,"hi") ) { return ::hx::Val( (int)(mValue>>32)); }
+      if (HX_FIELD_EQ(inName,"lo") ) { return ::hx::Val( (int)(mValue&0xffffffff)); }
+      return ::hx::Object::__Field(inName,inCallProp);
    }
-   hx::Val __SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+   ::hx::Val __SetField(const String &inName,const ::hx::Val &inValue, ::hx::PropertyAccess inCallProp)
    {
       if (HX_FIELD_EQ(inName,"hi") )
       {
@@ -193,10 +193,10 @@ public:
          mValue = (mValue & (cpp::Int64(0xffffffff)<<32) ) | cpp::Int64( (unsigned int)(inValue.Cast< int >()));
          return inValue;
       }
-      return hx::Object::__SetField(inName,inValue,inCallProp);
+      return ::hx::Object::__SetField(inName,inValue,inCallProp);
    }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const ::hx::Object *inRHS) const
    {
       double rval = inRHS->__ToInt64();
       if (rval==mValue)
@@ -213,19 +213,19 @@ public:
 
 
 
-class PointerData : public hx::Object
+class PointerData : public ::hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="cpp.Pointer")
-      { return hx::Object::operator new(inSize,inAlloc,inName); }
+   inline void *operator new( size_t inSize, ::hx::NewObjectType inAlloc=NewObjAlloc,const char *inName="cpp.Pointer")
+      { return ::hx::Object::operator new(inSize,inAlloc,inName); }
 
    PointerData(void *inValue) : mValue(inValue) {};
 
-    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdPointer };
+    HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdPointer };
 
-   hx::Class __GetClass() const { return __PointerClass; }
+   ::hx::Class __GetClass() const { return __PointerClass; }
    #if (HXCPP_API_LEVEL<331)
-   bool __Is(hx::Object *inClass) const { return dynamic_cast< PointerData *>(inClass); }
+   bool __Is(::hx::Object *inClass) const { return dynamic_cast< PointerData *>(inClass); }
    #endif
 
    // k_cpp_pointer
@@ -239,7 +239,7 @@ public:
    }
    String __ToString() const { return String(mValue); }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const ::hx::Object *inRHS) const
    {
       void *r = inRHS==0 ? 0 : inRHS->__GetHandle();
       return mValue < r ? -1 : mValue==r ? 0 : 1;
@@ -250,11 +250,11 @@ public:
 };
 
 
-class StructData : public hx::Object
+class StructData : public ::hx::Object
 {
 public:
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=NewObjContainer,const char *inName="cpp.Struct")
-      { return hx::Object::operator new(inSize,inAlloc,inName); }
+   inline void *operator new( size_t inSize, ::hx::NewObjectType inAlloc=NewObjContainer,const char *inName="cpp.Struct")
+      { return ::hx::Object::operator new(inSize,inAlloc,inName); }
 
    StructData(const void *inValue,int inLength, cpp::DynamicHandlerFunc inHandler)
    {
@@ -265,11 +265,11 @@ public:
       mHandler = inHandler;
    }
 
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdStruct };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdStruct };
 
-   hx::Class __GetClass() const { return __PointerClass; }
+   ::hx::Class __GetClass() const { return __PointerClass; }
    #if (HXCPP_API_LEVEL<331)
-   bool __Is(hx::Object *inClass) const { return dynamic_cast< StructData *>(inClass); }
+   bool __Is(::hx::Object *inClass) const { return dynamic_cast< StructData *>(inClass); }
    #endif
 
    // k_cpp_struct
@@ -292,7 +292,7 @@ public:
       return result;
    }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const ::hx::Object *inRHS) const
    {
       if (!inRHS)
          return 1;
@@ -302,7 +302,7 @@ public:
          diff = __GetType() - inRHS->__GetType();
       if (diff==0)
          diff = memcmp( mValue, inRHS->__GetHandle(), mLength );
-       
+
       if (diff<0) return -1;
       if (diff>0) return 1;
       return 0;
@@ -310,13 +310,13 @@ public:
 
    int __length() const { return mLength; }
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(::hx::MarkContext *__inCtx)
    {
       HX_MARK_ARRAY(mValue);
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(::hx::VisitContext *__inCtx)
    {
       HX_VISIT_ARRAY(mValue);
    }
@@ -341,7 +341,7 @@ namespace cpp
 Dynamic CreateDynamicPointer(void *inValue) {
    if (!inValue)
       return Dynamic();
-   return new hx::PointerData(inValue);
+   return new ::hx::PointerData(inValue);
 }
 
 // --- Struct -------------------------------------------------
@@ -349,7 +349,7 @@ Dynamic CreateDynamicPointer(void *inValue) {
 Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc inFunc)
 
 {
-   return new hx::StructData(inValue,inSize,inFunc); }
+   return new ::hx::StructData(inValue,inSize,inFunc); }
 }
 
 
@@ -358,22 +358,22 @@ Dynamic CreateDynamicStruct(const void *inValue, int inSize, DynamicHandlerFunc 
 
 Dynamic sConstDynamicInts[256+1];
 
-static hx::Object *fromInt(int inVal)
+static ::hx::Object *fromInt(int inVal)
 {
-   hx::Object *result = 0;
+   ::hx::Object *result = 0;
    if (inVal>=-1 && inVal<256)
    {
       int idx = inVal+1;
       result = sConstDynamicInts[idx].mPtr;
       if (!result)
-         result = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+         result = sConstDynamicInts[idx].mPtr = new (::hx::NewObjConst)IntData(inVal);
    }
    else
-      result = (hx::Object *)new IntData(inVal);
+      result = (::hx::Object *)new IntData(inVal);
    return result;
 }
 
-Dynamic::Dynamic(bool inVal) : super( inVal ? hx::DynTrue.mPtr : hx::DynFalse.mPtr ) { }
+Dynamic::Dynamic(bool inVal) : super( inVal ? ::hx::DynTrue.mPtr : ::hx::DynFalse.mPtr ) { }
 
 
 Dynamic::Dynamic(int inVal)
@@ -426,10 +426,10 @@ Dynamic::Dynamic(double inVal)
       int idx = inVal+1;
       mPtr = sConstDynamicInts[idx].mPtr;
       if (!mPtr)
-         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+         mPtr = sConstDynamicInts[idx].mPtr = new (::hx::NewObjConst)IntData(inVal);
    }
    else
-      mPtr = (hx::Object *)new DoubleData(inVal);
+      mPtr = (::hx::Object *)new DoubleData(inVal);
 }
 
 
@@ -440,10 +440,10 @@ Dynamic::Dynamic(cpp::Int64 inVal)
       int idx = inVal+1;
       mPtr = sConstDynamicInts[idx].mPtr;
       if (!mPtr)
-         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+         mPtr = sConstDynamicInts[idx].mPtr = new (::hx::NewObjConst)IntData(inVal);
    }
    else
-      mPtr = (hx::Object *)new Int64Data(inVal);
+      mPtr = (::hx::Object *)new Int64Data(inVal);
 }
 
 
@@ -454,10 +454,10 @@ Dynamic::Dynamic(cpp::UInt64 inVal)
       int idx = inVal+1;
       mPtr = sConstDynamicInts[idx].mPtr;
       if (!mPtr)
-         mPtr = sConstDynamicInts[idx].mPtr = new (hx::NewObjConst)IntData(inVal);
+         mPtr = sConstDynamicInts[idx].mPtr = new (::hx::NewObjConst)IntData(inVal);
    }
    else
-      mPtr = (hx::Object *)new Int64Data(inVal);
+      mPtr = (::hx::Object *)new Int64Data(inVal);
 }
 
 
@@ -493,7 +493,7 @@ Dynamic Dynamic::operator+(const Dynamic &inRHS) const
    if (!inRHS.mPtr)
       return *this + String();
 
-   return const_cast<hx::Object*>(mPtr)->toString() + const_cast<Dynamic&>(inRHS)->toString();
+   return const_cast<::hx::Object*>(mPtr)->toString() + const_cast<Dynamic&>(inRHS)->toString();
 }
 
 #define DYN_OP_ADD(TYPE) \
@@ -540,7 +540,7 @@ double Dynamic::operator%(const Dynamic &inRHS) const
 
 hx::IndexRef Dynamic::operator[](int inIndex)
 {
-   return hx::IndexRef(mPtr,inIndex);
+   return ::hx::IndexRef(mPtr,inIndex);
 }
 
 
@@ -549,7 +549,7 @@ void Dynamic::ThrowBadFunctionError()
    #ifdef HXCPP_DEBUGGER
    NullReference("Function", true);
    #endif
-   hx::Throw( HX_NULL_FUNCTION_POINTER );
+   ::hx::Throw( HX_NULL_FUNCTION_POINTER );
 }
 
 #include <hx/DynamicImpl.h>
@@ -562,35 +562,35 @@ CppInt32__::CppInt32__(const Dynamic &inD) : mValue(inD->__ToInt()) { }
 namespace hx {
 null BadCast()
 {
-   hx::Throw(HX_INVALID_CAST);
+   ::hx::Throw(HX_INVALID_CAST);
    return null();
 }
 
 void InvalidInterface()
 {
-   hx::Throw(HX_INVALID_INTERFACE);
+   ::hx::Throw(HX_INVALID_INTERFACE);
 }
 
 
 }
 
 
-static bool NoCast(hx::Object *) { return false; }
-static bool IsFloat(hx::Object *inPtr)
+static bool NoCast(::hx::Object *) { return false; }
+static bool IsFloat(::hx::Object *inPtr)
 {
    return inPtr && (TCanCast<IntData>(inPtr) || TCanCast<DoubleData>(inPtr) || TCanCast<Int64Data>(inPtr) );
 }
-static bool IsInt64(hx::Object *inPtr)
+static bool IsInt64(::hx::Object *inPtr)
 {
    return inPtr && (TCanCast<Int64Data>(inPtr) || TCanCast<IntData>(inPtr));
 }
 
-static bool IsPointer(hx::Object *inPtr)
+static bool IsPointer(::hx::Object *inPtr)
 {
    return inPtr && inPtr->__GetType() >= vtAbstractBase;
 }
 
-static bool IsInt(hx::Object *inPtr)
+static bool IsInt(::hx::Object *inPtr)
 {
    if (!inPtr)
       return false;
@@ -616,30 +616,30 @@ static Dynamic createEmptyInt64()
    return new Int64Data();
 }
 
-static Dynamic createInt64(hx::DynamicArray inArgs)
+static Dynamic createInt64(::hx::DynamicArray inArgs)
 {
    return new Int64Data();
 }
 
 void Dynamic::__boot()
 {
-   Static(__VoidClass) = hx::_hx_RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0, 0
+   Static(__VoidClass) = ::hx::_hx_RegisterClass(HX_CSTRING("Void"),NoCast,sNone,sNone,0,0,0, 0, 0
       #ifdef HXCPP_VISIT_ALLOCS
       ,0
       #endif
    );
-   Static(__BoolClass) = hx::_hx_RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0);
-   Static(__IntClass) = hx::_hx_RegisterClass(HX_CSTRING("Int"),IsInt,sNone,sNone,0,0, 0 );
-   Static(__FloatClass) = hx::_hx_RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
-   Static(__Int64Class) = hx::_hx_RegisterClass(HX_CSTRING("cpp::Int64"),IsInt64,sNone,sNone, 0,0,&__IntClass );
+   Static(__BoolClass) = ::hx::_hx_RegisterClass(HX_CSTRING("Bool"),TCanCast<BoolData>,sNone,sNone, 0,0, 0);
+   Static(__IntClass) = ::hx::_hx_RegisterClass(HX_CSTRING("Int"),IsInt,sNone,sNone,0,0, 0 );
+   Static(__FloatClass) = ::hx::_hx_RegisterClass(HX_CSTRING("Float"),IsFloat,sNone,sNone, 0,0,&__IntClass );
+   Static(__Int64Class) = ::hx::_hx_RegisterClass(HX_CSTRING("cpp::Int64"),IsInt64,sNone,sNone, 0,0,&__IntClass );
    __Int64Class->mConstructEmpty = &createEmptyInt64;
    __Int64Class->mConstructArgs = &createInt64;
 
-   Static(__PointerClass) = hx::_hx_RegisterClass(HX_CSTRING("cpp::Pointer"),IsPointer,sNone,sNone, 0,0,&__PointerClass );
-   DynTrue = Dynamic( new (hx::NewObjConst) hx::BoolData(true) );
-   DynFalse = Dynamic( new (hx::NewObjConst) hx::BoolData(false) );
+   Static(__PointerClass) = ::hx::_hx_RegisterClass(HX_CSTRING("cpp::Pointer"),IsPointer,sNone,sNone, 0,0,&__PointerClass );
+   DynTrue = Dynamic( new (::hx::NewObjConst) ::hx::BoolData(true) );
+   DynFalse = Dynamic( new (::hx::NewObjConst) ::hx::BoolData(false) );
 #ifdef HXCPP_OBJC
-   Static(__ObjcClass) = hx::_hx_RegisterClass(HX_CSTRING("objc::BoxedType"),IsPointer,sNone,sNone, 0,0,&__ObjcClass );
+   Static(__ObjcClass) = ::hx::_hx_RegisterClass(HX_CSTRING("objc::BoxedType"),IsPointer,sNone,sNone, 0,0,&__ObjcClass );
 #endif
 }
 

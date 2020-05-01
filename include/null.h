@@ -53,13 +53,13 @@ namespace hx { null NullArithmetic(const char *inText); }
 
 #define HX_NULL_ARITHMETIC_OP(op) \
 template<typename T> inline null operator op (T t) const \
-   { return hx::NullArithmetic(#op); } \
+   { return ::hx::NullArithmetic(#op); } \
 inline null operator op (const null &) const \
-   { return hx::NullArithmetic(#op); }
+   { return ::hx::NullArithmetic(#op); }
 
 #define HX_ARITHMETIC_NULL_OP(op) \
 template<typename T> inline null operator op (const T &, const null &) \
-   { return hx::NullArithmetic(#op); }
+   { return ::hx::NullArithmetic(#op); }
 
 
 class null
@@ -70,14 +70,14 @@ class null
       inline AnyArg(const T&) { }
    };
    public:
-     inline null(){ } 
+     inline null(){ }
 
-     template<typename T> explicit inline null(const hx::ObjectPtr<T> &){ } 
-     template<typename T> explicit inline null(const String &){ } 
-     explicit inline null(double){ } 
-     explicit inline null(float){ } 
-     explicit inline null(int){ } 
-     explicit inline null(bool){ } 
+     template<typename T> explicit inline null(const ::hx::ObjectPtr<T> &){ }
+     template<typename T> explicit inline null(const String &){ }
+     explicit inline null(double){ }
+     explicit inline null(float){ }
+     explicit inline null(int){ }
+     explicit inline null(bool){ }
 
      template<typename T>
      T StaticCast() { return null(); }
@@ -95,7 +95,7 @@ class null
      operator cpp::UInt64 () { return 0; }
      operator cpp::Int64 () { return 0; }
      template<typename T>
-     inline operator typename hx::Native<T *> () const { return 0; }
+     inline operator typename ::hx::Native<T *> () const { return 0; }
 
 
      // Any pointer!
@@ -108,14 +108,14 @@ class null
      bool operator == (null inRHS) { return true; }
      bool operator != (null inRHS) { return false; }
 
-     template<typename T> inline bool operator == (const hx::ObjectPtr<T> &) const;
-     template<typename T> inline bool operator != (const hx::ObjectPtr<T> &) const;
+     template<typename T> inline bool operator == (const ::hx::ObjectPtr<T> &) const;
+     template<typename T> inline bool operator != (const ::hx::ObjectPtr<T> &) const;
      template<typename T> inline bool operator == (const Array<T> &) const;
      template<typename T> inline bool operator != (const Array<T> &) const;
-     inline bool operator == (const hx::FieldRef &) const;
-     inline bool operator != (const hx::FieldRef &) const;
-     inline bool operator == (const hx::IndexRef &) const;
-     inline bool operator != (const hx::IndexRef &) const;
+     inline bool operator == (const ::hx::FieldRef &) const;
+     inline bool operator != (const ::hx::FieldRef &) const;
+     inline bool operator == (const ::hx::IndexRef &) const;
+     inline bool operator != (const ::hx::IndexRef &) const;
      inline bool operator == (const Dynamic &) const;
      inline bool operator != (const Dynamic &) const;
      inline bool operator == (const String &) const;
@@ -123,14 +123,14 @@ class null
      inline bool operator == (const cpp::Variant &v) const { return v.isNull(); }
      inline bool operator != (const cpp::Variant &v) const{ return !v.isNull(); }
 
-     inline null operator - () const { return hx::NullArithmetic("-"); }
-     inline null operator ! () const { return hx::NullArithmetic("!"); }
+     inline null operator - () const { return ::hx::NullArithmetic("-"); }
+     inline null operator ! () const { return ::hx::NullArithmetic("!"); }
 
      template<class T> T operator()(const AnyArg &a0=0, const AnyArg &a1=0, const AnyArg &a2=0,
             const AnyArg &a4=0, const AnyArg &a5=0, const AnyArg &a6=0,
             const AnyArg &a7=0, const AnyArg &a8=0, const AnyArg &a9=0 )
             {
-                hx::NullReference("Function Call", false);
+                ::hx::NullReference("Function Call", false);
                 T nullDynamic;
                 return nullDynamic;
             }
@@ -148,8 +148,8 @@ class null
 	  HX_NULL_COMPARE_OPS(cpp::UInt64)
 	  HX_NULL_COMPARE_MOST_OPS(String)
 	  HX_NULL_COMPARE_MOST_OPS(Dynamic)
-	  HX_NULL_COMPARE_MOST_OPS(hx::FieldRef)
-	  HX_NULL_COMPARE_MOST_OPS(hx::IndexRef)
+	  HX_NULL_COMPARE_MOST_OPS(::hx::FieldRef)
+	  HX_NULL_COMPARE_MOST_OPS(::hx::IndexRef)
 
 	  HX_NULL_COMPARE_OP(<,null,false)
 	  HX_NULL_COMPARE_OP(<=,null,true)

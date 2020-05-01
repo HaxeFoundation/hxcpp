@@ -58,7 +58,7 @@ static Dynamic g_addStackFrameToThreadInfoFunction;
 
 
 // This is the thread number of the debugger thread, extracted from
-// information about the thread that called 
+// information about the thread that called
 // __hxcpp_dbg_setEventNotificationHandler
 static unsigned int g_debugThreadNumber = -1;
 
@@ -141,9 +141,9 @@ public:
       // it, when the worst that can happen is an extra call to the handler
       // function milliseconds after it's set to NULL ...
 
-      Dynamic handler = hx::g_eventNotificationHandler;
+      Dynamic handler = ::hx::g_eventNotificationHandler;
       if (handler != null())
-         handler(mThreadNumber, hx::THREAD_CREATED);
+         handler(mThreadNumber, ::hx::THREAD_CREATED);
    }
 
    void detach()
@@ -156,9 +156,9 @@ public:
       gMutex.Unlock();
       reset();
 
-      Dynamic handler = hx::g_eventNotificationHandler;
+      Dynamic handler = ::hx::g_eventNotificationHandler;
       if (handler != null())
-         handler(mThreadNumber, hx::THREAD_TERMINATED);
+         handler(mThreadNumber, ::hx::THREAD_TERMINATED);
    }
 
    void enable(bool inEnable)
@@ -300,9 +300,9 @@ public:
 
            while (mWaiting) {
                mWaitMutex.Unlock();
-               hx::EnterGCFreeZone();
+               ::hx::EnterGCFreeZone();
                mWaitSemaphore.Wait();
-               hx::ExitGCFreeZone();
+               ::hx::ExitGCFreeZone();
                mWaitMutex.Lock();
            }
 
@@ -315,7 +315,7 @@ public:
         mBreakpoint = -1;
 
         // Announce the new status
-        Dynamic handler = hx::g_eventNotificationHandler;
+        Dynamic handler = ::hx::g_eventNotificationHandler;
         if (handler!=null())
            handler(mThreadNumber, THREAD_STARTED);
 
@@ -380,9 +380,9 @@ public:
         gMutex.Lock();
 
         int ret = gNextBreakpointNumber++;
-        
+
         Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, ret, fileName, lineNumber);
-        
+
         gBreakpoints->RemoveRef();
 
         // Write memory barrier ensures that newBreakpoints values are updated
@@ -414,13 +414,13 @@ public:
         if (!className) {
             return -1;
         }
-        
+
         gMutex.Lock();
 
         int ret = gNextBreakpointNumber++;
-        
+
         Breakpoints *newBreakpoints = new Breakpoints(gBreakpoints, ret, className, functionName);
-        
+
         gBreakpoints->RemoveRef();
 
         // Write memory barrier ensures that newBreakpoints values are updated
@@ -441,7 +441,7 @@ public:
     static void DeleteAll()
     {
         gMutex.Lock();
-        
+
         Breakpoints *newBreakpoints = new Breakpoints();
 
         gBreakpoints->RemoveRef();
@@ -462,7 +462,7 @@ public:
     static void Delete(int number)
     {
         gMutex.Lock();
-        
+
         if (gBreakpoints->HasBreakpoint(number)) {
             // Replace mBreakpoints with a copy and remove the breakpoint
             // from it
@@ -535,7 +535,7 @@ public:
         gStepThread = threadNumber;
         gStepType = stepType;
         gStepCount = stepCount;
-        
+
         gMutex.Lock();
 
         std::list<DebuggerContext *>::iterator iter = gList.begin();
@@ -553,7 +553,7 @@ public:
 
     // Note that HandleBreakpoints is called immediately after a read memory
     // barrier by the HX_STACK_LINE macro
-    static void HandleBreakpoints(hx::StackContext *stack)
+    static void HandleBreakpoints(::hx::StackContext *stack)
     {
         // This will be set to a valid status if a stop is needed
         DebugStatus breakStatus = DBG_STATUS_INVALID;
@@ -679,7 +679,7 @@ public:
 
       static bool shoudBreakOnLine()
       {
-         return gBreakpoints->IsEmpty() || gStepType != hx::STEP_NONE;
+         return gBreakpoints->IsEmpty() || gStepType != ::hx::STEP_NONE;
       }
 
 private:
@@ -875,7 +875,7 @@ private:
    // when evaluating breakpoints
    static const char *LookupFileName(String fileName)
    {
-      for (const char **ptr = hx::__hxcpp_all_files; *ptr; ptr++)
+      for (const char **ptr = ::hx::__hxcpp_all_files; *ptr; ptr++)
       {
          if (!strcmp(*ptr, fileName))
             return *ptr;
@@ -1023,7 +1023,7 @@ static ::Array<Dynamic> GetThreadInfos()
         DebuggerContext *stack = *stack_iter++;
         threadNumbers.push_back(stack->mThreadNumber);
     }
-    
+
     gMutex.Unlock();
 
     ::Array<Dynamic> ret = Array_obj<Dynamic>::__new();
@@ -1063,7 +1063,7 @@ static ::Array<Dynamic> GetStackVariables(int threadNumber,
             if (stack->mStackFrames.size() <= stackFrameNumber) {
                 break;
             }
-            StackVariable *variable = 
+            StackVariable *variable =
                 stack->mStackFrames[stackFrameNumber]->variables;
             while (variable) {
                 ret->push(String(variable->mHaxeName));
@@ -1121,7 +1121,7 @@ static Dynamic GetVariableValue(int threadNumber, int stackFrameNumber,
     if ((stackFrameNumber < 0) || (stackFrameNumber >= size)) {
         return markNonexistent;
     }
-    
+
     const char *nameToFind = name.c_str();
 
     StackVariable *sv = stack->mStackFrames[stackFrameNumber]->variables;
@@ -1211,7 +1211,7 @@ static Dynamic SetVariableValue(int threadNumber, int stackFrameNumber,
        }
     }
     #endif
-    
+
 
     return markNonexistent;
 }
@@ -1219,7 +1219,7 @@ static Dynamic SetVariableValue(int threadNumber, int stackFrameNumber,
 
 static bool CanBeCaught(Dynamic e)
 {
-   hx::JustGcStackFrame frame;
+   ::hx::JustGcStackFrame frame;
 
    QuickVec<StackFrame *> &frames = frame.ctx->mStackFrames;
 
@@ -1252,18 +1252,18 @@ static bool CanBeCaught(Dynamic e)
 
 void __hxcpp_dbg_setEventNotificationHandler(Dynamic handler)
       {
-    if (hx::g_eventNotificationHandler != null()) {
-        GCRemoveRoot(&(hx::g_eventNotificationHandler.mPtr));
+    if (::hx::g_eventNotificationHandler != null()) {
+        GCRemoveRoot(&(::hx::g_eventNotificationHandler.mPtr));
          }
-    hx::g_debugThreadNumber = __hxcpp_GetCurrentThreadNumber();
-    hx::g_eventNotificationHandler = handler;
-    GCAddRoot(&(hx::g_eventNotificationHandler.mPtr));
+    ::hx::g_debugThreadNumber = __hxcpp_GetCurrentThreadNumber();
+    ::hx::g_eventNotificationHandler = handler;
+    GCAddRoot(&(::hx::g_eventNotificationHandler.mPtr));
       }
- 
+
 
 void __hxcpp_dbg_enableCurrentThreadDebugging(bool enable)
 {
-   hx::JustGcStackFrame frame;
+   ::hx::JustGcStackFrame frame;
    frame.ctx->mDebugger->enable(enable);
 }
 
@@ -1272,13 +1272,13 @@ int __hxcpp_dbg_getCurrentThreadNumber()
 {
     return __hxcpp_GetCurrentThreadNumber();
 }
- 
+
 
 Array< ::String> __hxcpp_dbg_getFiles()
 {
     Array< ::String> ret = Array_obj< ::String>::__new();
 
-    for (const char **ptr = hx::__hxcpp_all_files; *ptr; ptr++)
+    for (const char **ptr = ::hx::__hxcpp_all_files; *ptr; ptr++)
     {
        ret->push(String(*ptr));
     }
@@ -1328,56 +1328,56 @@ Array< ::String> __hxcpp_dbg_getClasses()
 
 Array<Dynamic> __hxcpp_dbg_getThreadInfos()
 {
-    return hx::GetThreadInfos();
+    return ::hx::GetThreadInfos();
 }
 
 
 Dynamic __hxcpp_dbg_getThreadInfo(int threadNumber, bool unsafe)
 {
-    return hx::GetThreadInfo(threadNumber, unsafe);
+    return ::hx::GetThreadInfo(threadNumber, unsafe);
 }
 
 
 int __hxcpp_dbg_addFileLineBreakpoint(String fileName, int lineNumber)
 {
-   return hx::Breakpoints::Add(fileName, lineNumber);
+   return ::hx::Breakpoints::Add(fileName, lineNumber);
 }
 
 
 int __hxcpp_dbg_addClassFunctionBreakpoint(String className,
                                             String functionName)
 {
-  return hx::Breakpoints::Add(className, functionName);
+  return ::hx::Breakpoints::Add(className, functionName);
 }
 
 
 void __hxcpp_dbg_deleteAllBreakpoints()
 {
-    hx::Breakpoints::DeleteAll();
+    ::hx::Breakpoints::DeleteAll();
 }
 
 
 void __hxcpp_dbg_deleteBreakpoint(int number)
 {
-    hx::Breakpoints::Delete(number);
+    ::hx::Breakpoints::Delete(number);
 }
 
 
 void __hxcpp_dbg_breakNow(bool wait)
 {
-    hx::Breakpoints::BreakNow(wait);
+    ::hx::Breakpoints::BreakNow(wait);
 }
 
 
 void __hxcpp_dbg_continueThreads(int specialThreadNumber, int count)
 {
-    hx::Breakpoints::ContinueThreads(specialThreadNumber, count);
+    ::hx::Breakpoints::ContinueThreads(specialThreadNumber, count);
 }
 
 
 void __hxcpp_dbg_stepThread(int threadNumber, int stepType, int stepCount)
 {
-    hx::Breakpoints::StepThread(threadNumber, (hx::StepType) stepType,
+    ::hx::Breakpoints::StepThread(threadNumber, (::hx::StepType) stepType,
                                 stepCount);
 }
 
@@ -1387,7 +1387,7 @@ Array<Dynamic> __hxcpp_dbg_getStackVariables(int threadNumber,
                                              bool unsafe,
                                              Dynamic markThreadNotStopped)
 {
-    return hx::GetStackVariables(threadNumber, stackFrameNumber,
+    return ::hx::GetStackVariables(threadNumber, stackFrameNumber,
                                             unsafe, markThreadNotStopped);
 }
 
@@ -1398,7 +1398,7 @@ Dynamic __hxcpp_dbg_getStackVariableValue(int threadNumber,
                                           bool unsafe, Dynamic markNonexistent,
                                           Dynamic markThreadNotStopped)
 {
-    return hx::GetVariableValue(threadNumber, stackFrameNumber, 
+    return ::hx::GetVariableValue(threadNumber, stackFrameNumber,
                                            name, unsafe, markNonexistent,
                                            markThreadNotStopped);
 }
@@ -1410,7 +1410,7 @@ Dynamic __hxcpp_dbg_setStackVariableValue(int threadNumber,
                                           bool unsafe, Dynamic markNonexistent,
                                           Dynamic markThreadNotStopped)
 {
-    return hx::SetVariableValue(threadNumber, stackFrameNumber,
+    return ::hx::SetVariableValue(threadNumber, stackFrameNumber,
                                            name, value, unsafe,
                                            markNonexistent,
                                            markThreadNotStopped);
@@ -1419,81 +1419,81 @@ Dynamic __hxcpp_dbg_setStackVariableValue(int threadNumber,
 
 void __hxcpp_dbg_setNewParameterFunction(Dynamic function)
 {
-    hx::g_newParameterFunction = function;
-    GCAddRoot(&(hx::g_newParameterFunction.mPtr));
+    ::hx::g_newParameterFunction = function;
+    GCAddRoot(&(::hx::g_newParameterFunction.mPtr));
 }
 
 
 void __hxcpp_dbg_setNewStackFrameFunction(Dynamic function)
 {
-    hx::g_newStackFrameFunction = function;
-    GCAddRoot(&(hx::g_newStackFrameFunction.mPtr));
+    ::hx::g_newStackFrameFunction = function;
+    GCAddRoot(&(::hx::g_newStackFrameFunction.mPtr));
 }
 
 
 void __hxcpp_dbg_setNewThreadInfoFunction(Dynamic function)
 {
-    hx::g_newThreadInfoFunction = function;
-    GCAddRoot(&(hx::g_newThreadInfoFunction.mPtr));
+    ::hx::g_newThreadInfoFunction = function;
+    GCAddRoot(&(::hx::g_newThreadInfoFunction.mPtr));
 }
 
 
 void __hxcpp_dbg_setAddParameterToStackFrameFunction(Dynamic function)
 {
-    hx::g_addParameterToStackFrameFunction = function;
-    GCAddRoot(&(hx::g_addParameterToStackFrameFunction.mPtr));
+    ::hx::g_addParameterToStackFrameFunction = function;
+    GCAddRoot(&(::hx::g_addParameterToStackFrameFunction.mPtr));
 }
 
 
 void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic function)
 {
-    hx::g_addStackFrameToThreadInfoFunction = function;
-    GCAddRoot(&(hx::g_addStackFrameToThreadInfoFunction.mPtr));
+    ::hx::g_addStackFrameToThreadInfoFunction = function;
+    GCAddRoot(&(::hx::g_addStackFrameToThreadInfoFunction.mPtr));
 }
 
 
 Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow)
 {
-    if (!hx::CanBeCaught(toThrow))
-        hx::CriticalError(HX_CSTRING("Uncatchable Throw: ") + toThrow->toString(),true);
+    if (!::hx::CanBeCaught(toThrow))
+        ::hx::CriticalError(HX_CSTRING("Uncatchable Throw: ") + toThrow->toString(),true);
 
-    return hx::Throw(toThrow);
+    return ::hx::Throw(toThrow);
 }
 
 
 Dynamic __hxcpp_dbg_checkedRethrow(Dynamic toThrow)
 {
-    if (!hx::CanBeCaught(toThrow))
-        hx::CriticalError(HX_CSTRING("Uncatchable Throw: ") + toThrow->toString(),true);
+    if (!::hx::CanBeCaught(toThrow))
+        ::hx::CriticalError(HX_CSTRING("Uncatchable Throw: ") + toThrow->toString(),true);
 
-    return hx::Rethrow(toThrow);
+    return ::hx::Rethrow(toThrow);
 }
 
 
 
-void __hxcpp_on_line_changed(hx::StackContext *stack)
+void __hxcpp_on_line_changed(::hx::StackContext *stack)
 {
-   hx::Breakpoints::HandleBreakpoints(stack);
-   if (hx::sExecutionTrace==hx::exeTraceLines)
+   ::hx::Breakpoints::HandleBreakpoints(stack);
+   if (::hx::sExecutionTrace==::hx::exeTraceLines)
       stack->tracePosition();
 }
 
 
 bool __hxcpp_dbg_fix_critical_error(String inErr)
 {
-   if (hx::g_eventNotificationHandler != null())
+   if (::hx::g_eventNotificationHandler != null())
    {
-      hx::JustGcStackFrame frame;
-      hx::DebuggerContext *stack = frame.ctx->mDebugger;
+      ::hx::JustGcStackFrame frame;
+      ::hx::DebuggerContext *stack = frame.ctx->mDebugger;
 
       //if the thread with the critical error is the debugger one,
       //we don't break as it would block debugging since the debugger thread
       //is the only one which can wake up application threads.
-      if (stack->mThreadNumber == hx::g_debugThreadNumber) {
-        hx::Throw(HX_CSTRING("Critical Error in the debugger thread"));
+      if (stack->mThreadNumber == ::hx::g_debugThreadNumber) {
+        ::hx::Throw(HX_CSTRING("Critical Error in the debugger thread"));
       }
 
-      stack->DoBreak(hx::DBG_STATUS_STOPPED_CRITICAL_ERROR, -1, &inErr);
+      stack->DoBreak(::hx::DBG_STATUS_STOPPED_CRITICAL_ERROR, -1, &inErr);
       return true;
    }
    return false;
@@ -1502,9 +1502,9 @@ bool __hxcpp_dbg_fix_critical_error(String inErr)
 
 void __hxcpp_execution_trace(int inLevel)
 {
-    hx::sExecutionTrace = (hx::ExecutionTrace)inLevel;
-    hx::gShouldCallHandleBreakpoints =
-          hx::Breakpoints::shoudBreakOnLine() || (hx::sExecutionTrace==hx::exeTraceLines);
+    ::hx::sExecutionTrace = (::hx::ExecutionTrace)inLevel;
+    ::hx::gShouldCallHandleBreakpoints =
+          ::hx::Breakpoints::shoudBreakOnLine() || (::hx::sExecutionTrace==::hx::exeTraceLines);
 }
 
 
@@ -1513,6 +1513,6 @@ void __hxcpp_set_debugger_info(const char **inAllClasses, const char **inFullPat
    __all_classes = inAllClasses;
    __all_files_fullpath = inFullPaths;
 }
-   
+
 
 

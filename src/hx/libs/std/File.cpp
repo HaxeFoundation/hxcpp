@@ -21,9 +21,9 @@
 namespace
 {
 
-struct fio : public hx::Object
+struct fio : public ::hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdFio };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdFio };
 
    String name;
    FILE   *io;
@@ -47,9 +47,9 @@ struct fio : public hx::Object
       name = String();
    }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(name); }
+   void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(name); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(name); }
+   void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(name); }
    #endif
 
    static void finalize(Dynamic inObj)
@@ -65,18 +65,18 @@ fio *getFio(Dynamic handle, bool inRequireFile=true)
 {
    fio *result = dynamic_cast<fio *>(handle.mPtr);
    if (!result || (!result->io && inRequireFile))
-      hx::Throw( HX_CSTRING("Bad file handle") );
+      ::hx::Throw( HX_CSTRING("Bad file handle") );
    return result;
 }
 
 
 static void file_error(const char *msg, String inName)
 {
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    Array<String> err = Array_obj<String>::__new(2,2);
    err[0] = String(msg);
    err[1] = inName;
-   hx::Throw(err);
+   ::hx::Throw(err);
 }
 
 }
@@ -84,7 +84,7 @@ static void file_error(const char *msg, String inName)
 /**
    file_open : f:string -> r:string -> 'file
    <doc>
-   Call the C function [fopen] with the file path and access rights. 
+   Call the C function [fopen] with the file path and access rights.
    Return the opened file or throw an exception if the file couldn't be open.
    </doc>
 **/
@@ -92,18 +92,18 @@ Dynamic _hx_std_file_open( String fname, String r )
 {
    FILE *file = 0;
 
-   hx::strbuf buf0;
-   hx::strbuf buf1;
+   ::hx::strbuf buf0;
+   ::hx::strbuf buf1;
 #ifdef NEKO_WINDOWS
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    file = _wfopen(fname.wchar_str(&buf0),r.wchar_str(&buf1));
 #else
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    file = fopen(fname.utf8_str(&buf0),r.utf8_str(&buf1));
 #endif
    if (!file)
       file_error("file_open",fname);
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 
    fio *f = new fio;
    f->create(file,fname,true);
@@ -112,7 +112,7 @@ Dynamic _hx_std_file_open( String fname, String r )
 
 /**
    file_close : 'file -> void
-   <doc>Close an file. Any other operations on this file will fail</doc> 
+   <doc>Close an file. Any other operations on this file will fail</doc>
 **/
 void _hx_std_file_close( Dynamic handle )
 {
@@ -133,7 +133,7 @@ String hx_std_file_name( Dynamic handle )
 /**
    file_write : 'file -> s:string -> p:int -> l:int -> int
    <doc>
-   Write up to [l] chars of string [s] starting at position [p]. 
+   Write up to [l] chars of string [s] starting at position [p].
    Returns the number of chars written which is >= 0.
    </doc>
 **/
@@ -146,7 +146,7 @@ int _hx_std_file_write( Dynamic handle, Array<unsigned char> s, int p, int n )
    if( p < 0 || len < 0 || p > buflen || p + len > buflen )
       return 0;
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    while( len > 0 )
    {
       POSIX_LABEL(file_write_again);
@@ -159,7 +159,7 @@ int _hx_std_file_write( Dynamic handle, Array<unsigned char> s, int p, int n )
       p += d;
       len -= d;
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return n;
 }
 
@@ -179,7 +179,7 @@ int _hx_std_file_read( Dynamic handle, Array<unsigned char> buf, int p, int n )
    if( p < 0 || len < 0 || p > buf_len || p + len > buf_len )
       return 0;
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    // Attempt to increase the chances of pinning on the stack...
    unsigned char *bufPtr = &buf[0];
    while( len > 0 )
@@ -192,13 +192,13 @@ int _hx_std_file_read( Dynamic handle, Array<unsigned char> buf, int p, int n )
          HANDLE_FINTR(f->io,file_read_again);
          if( size == 0 )
             file_error("file_read",f->name);
-         hx::ExitGCFreeZone();
+         ::hx::ExitGCFreeZone();
          return size;
       }
       p += d;
       len -= d;
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return n;
 }
 
@@ -213,14 +213,14 @@ void _hx_std_file_write_char( Dynamic handle, int c )
       return;
    char cc = (char)c;
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    POSIX_LABEL(write_char_again);
    if( fwrite(&cc,1,1,f->io) != 1 )
    {
       HANDLE_FINTR(f->io,write_char_again);
       file_error("file_write_char",f->name);
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 /**
@@ -232,14 +232,14 @@ int _hx_std_file_read_char( Dynamic handle )
    fio *f = getFio(handle);
 
    unsigned char cc = 0;
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    POSIX_LABEL(read_char_again);
    if( fread(&cc,1,1,f->io) != 1 )
    {
       HANDLE_FINTR(f->io,read_char_again);
       file_error("file_read_char",f->name);
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return cc;
 }
 
@@ -250,10 +250,10 @@ int _hx_std_file_read_char( Dynamic handle )
 void _hx_std_file_seek( Dynamic handle, int pos, int kind )
 {
    fio *f = getFio(handle);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( fseek(f->io,pos,kind) != 0 )
       file_error("file_seek",f->name);
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 /**
@@ -263,11 +263,11 @@ void _hx_std_file_seek( Dynamic handle, int pos, int kind )
 int _hx_std_file_tell( Dynamic handle )
 {
    fio *f = getFio(handle);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    int p = ftell(f->io);
    if( p == -1 )
       file_error("file_tell",f->name);
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return p;
 }
 
@@ -288,10 +288,10 @@ bool _hx_std_file_eof( Dynamic handle )
 void _hx_std_file_flush( Dynamic handle )
 {
    fio *f = getFio(handle);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( fflush( f->io ) != 0 )
       file_error("file_flush",f->name);
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 /**
@@ -302,12 +302,12 @@ String _hx_std_file_contents_string( String name )
 {
    std::vector<char> buffer;
 
-   hx::strbuf buf;
+   ::hx::strbuf buf;
 #ifdef NEKO_WINDOWS
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    FILE *file = _wfopen(name.wchar_str(&buf), L"rb");
 #else
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    FILE *file = fopen(name.utf8_str(&buf), "rb");
 #endif
    if(!file)
@@ -320,7 +320,7 @@ String _hx_std_file_contents_string( String name )
    if (len==0)
    {
       fclose(file);
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return String::emptyString;
    }
 
@@ -341,7 +341,7 @@ String _hx_std_file_contents_string( String name )
       len -= d;
    }
    fclose(file);
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 
    return String::create(&buffer[0], buffer.size());
 }
@@ -354,12 +354,12 @@ String _hx_std_file_contents_string( String name )
 **/
 Array<unsigned char> _hx_std_file_contents_bytes( String name )
 {
-   hx::strbuf buf;
+   ::hx::strbuf buf;
 #ifdef NEKO_WINDOWS
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    FILE *file = _wfopen(name.wchar_str(&buf), L"rb");
 #else
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    FILE *file = fopen(name.utf8_str(&buf), "rb");
 #endif
    if(!file)
@@ -371,15 +371,15 @@ Array<unsigned char> _hx_std_file_contents_bytes( String name )
       file_error("file_ftell",name);
 
    fseek(file,0,SEEK_SET);
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 
    Array<unsigned char> buffer = Array_obj<unsigned char>::__new(len,len);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if (len)
    {
       char *dest = (char *)&buffer[0];
 
-      hx::EnterGCFreeZone();
+      ::hx::EnterGCFreeZone();
       int p = 0;
       while( len > 0 )
       {
@@ -396,7 +396,7 @@ Array<unsigned char> _hx_std_file_contents_bytes( String name )
       }
    }
    fclose(file);
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return buffer;
 }
 

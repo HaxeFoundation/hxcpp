@@ -23,7 +23,7 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
    int alloc = inSize < inReserve ? inReserve : inSize;
    if (alloc)
    {
-      mBase = (char *)hx::InternalNew(alloc * inElementSize,false);
+      mBase = (char *)::hx::InternalNew(alloc * inElementSize,false);
       HX_OBJ_WB_GET(this,mBase);
 #ifdef HXCPP_TELEMETRY
       __hxt_new_array(mBase, alloc * inElementSize);
@@ -49,16 +49,16 @@ void ArrayBase::reserve(int inSize) const
          bool wasUnamanaged = mAlloc<0;
          if (wasUnamanaged)
          {
-            char *base=(char *)hx::InternalNew(bytes,false);
+            char *base=(char *)::hx::InternalNew(bytes,false);
             memcpy(base,mBase,length*GetElementSize());
             mBase = base;
          }
          else
-            mBase = (char *)hx::InternalRealloc(mBase, bytes );
+            mBase = (char *)::hx::InternalRealloc(mBase, bytes );
       }
       else
       {
-         mBase = (char *)hx::InternalNew(bytes,false);
+         mBase = (char *)::hx::InternalNew(bytes,false);
          #ifdef HXCPP_TELEMETRY
          __hxt_new_array(mBase, bytes);
          #endif
@@ -100,20 +100,20 @@ void ArrayBase::Realloc(int inSize) const
          bool wasUnamanaged = mAlloc<0;
          if (wasUnamanaged)
          {
-            char *base=(char *)hx::InternalNew(bytes,false);
+            char *base=(char *)::hx::InternalNew(bytes,false);
             memcpy(base,mBase,length*GetElementSize());
             mBase = base;
          }
          else
          {
-            mBase = (char *)hx::InternalRealloc(mBase, bytes, true);
+            mBase = (char *)::hx::InternalRealloc(mBase, bytes, true);
             int o = bytes;
-            bytes = hx::ObjectSizeSafe(mBase);
+            bytes = ::hx::ObjectSizeSafe(mBase);
          }
       }
       else
       {
-         mBase = (char *)hx::InternalNew(bytes,false);
+         mBase = (char *)::hx::InternalNew(bytes,false);
          #ifdef HXCPP_TELEMETRY
          __hxt_new_array(mBase, bytes);
          #endif
@@ -164,9 +164,9 @@ void ArrayBase::Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceEl
    int srcSize = inSourceArray->GetElementSize();
    int srcElems = inSourceArray->length;
    if (inDestElement<0 || inSourceElement<0 || inSourceElement+inElementCount>srcElems)
-      hx::Throw( HX_CSTRING("blit out of bounds") );
+      ::hx::Throw( HX_CSTRING("blit out of bounds") );
    if (srcSize!=GetElementSize())
-      hx::Throw( HX_CSTRING("blit array mismatch") );
+      ::hx::Throw( HX_CSTRING("blit array mismatch") );
 
    int newSize = inDestElement + inElementCount;
    if (newSize>length)
@@ -185,14 +185,14 @@ void ArrayBase::Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceEl
 
 
 #if (HXCPP_API_LEVEL>330)
-int ArrayBase::__Compare(const hx::Object *inRHS) const
+int ArrayBase::__Compare(const ::hx::Object *inRHS) const
 {
    if (inRHS==this)
       return 0;
    if (inRHS->__GetType()!=vtArray)
       return -1;
    ArrayCommon *common = (ArrayCommon *)inRHS;
-   hx::Object *implementation = common->__GetRealObject();
+   ::hx::Object *implementation = common->__GetRealObject();
    return implementation<this ? -1 : implementation!=this;
 }
 #endif
@@ -222,23 +222,23 @@ void ArrayBase::__SetSizeExact(int inSize)
 
          if (wasUnamanaged)
          {
-            char *base=(char *)(AllocAtomic() ? hx::NewGCPrivate(0,bytes) : hx::NewGCBytes(0,bytes));
+            char *base=(char *)(AllocAtomic() ? ::hx::NewGCPrivate(0,bytes) : ::hx::NewGCBytes(0,bytes));
             memcpy(base,mBase,std::min(length,inSize)*GetElementSize());
             mBase = base;
          }
          else
-            mBase = (char *)hx::InternalRealloc(mBase, bytes );
+            mBase = (char *)::hx::InternalRealloc(mBase, bytes );
       }
       else if (AllocAtomic())
       {
-         mBase = (char *)hx::NewGCPrivate(0,bytes);
+         mBase = (char *)::hx::NewGCPrivate(0,bytes);
 #ifdef HXCPP_TELEMETRY
          __hxt_new_array(mBase, bytes);
 #endif
       }
       else
       {
-         mBase = (char *)hx::NewGCBytes(0,bytes);
+         mBase = (char *)::hx::NewGCBytes(0,bytes);
 #ifdef HXCPP_TELEMETRY
          __hxt_new_array(mBase, bytes);
 #endif
@@ -428,7 +428,7 @@ String ArrayBase::joinArray(Array_obj<String> *inArray, String inSeparator)
    }
    #endif
    {
-      char *buf = hx::NewString(len);
+      char *buf = ::hx::NewString(len);
 
       int pos = 0;
       bool separated = inSeparator.length>0;
@@ -548,15 +548,15 @@ void ArrayBase::safeSort(Dynamic inSorter, bool inIsString)
 
 #ifdef HXCPP_VISIT_ALLOCS
 #define ARRAY_VISIT_FUNC \
-    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
+    void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
 #else
 #define ARRAY_VISIT_FUNC
 #endif
 
 #define DEFINE_ARRAY_FUNC(ret,func,array_list,dynamic_arg_list,arg_list,ARG_C) \
-struct ArrayBase_##func : public hx::Object \
+struct ArrayBase_##func : public ::hx::Object \
 { \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdClosure }; \
    bool __IsFunction() const { return true; } \
    ArrayBase *mThis; \
    ArrayBase_##func(ArrayBase *inThis) : mThis(inThis) { } \
@@ -565,7 +565,7 @@ struct ArrayBase_##func : public hx::Object \
    int __GetType() const { return vtFunction; } \
    void *__GetHandle() const { return mThis; } \
    int __ArgCount() const { return ARG_C; } \
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+   void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
    ARRAY_VISIT_FUNC \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
@@ -575,7 +575,7 @@ struct ArrayBase_##func : public hx::Object \
    { \
       ret mThis->__##func(arg_list); return Dynamic(); \
    } \
-   int __Compare(const hx::Object *inRHS) const \
+   int __Compare(const ::hx::Object *inRHS) const \
    { \
       if (!dynamic_cast<const ArrayBase_##func *>(inRHS)) return -1; \
       return (mThis==inRHS->__GetHandle() ? 0 : -1); \
@@ -638,7 +638,7 @@ DEFINE_ARRAY_FUNC1(return,memcmp);
 
 
 
-hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val ArrayBase::__Field(const String &inString, ::hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("length")) return (int)size();
    if (inString==HX_CSTRING("concat")) return concat_dyn();
@@ -717,14 +717,14 @@ Dynamic ArrayCreateArgs(DynamicArray inArgs)
    return inArgs->__copy();
 }
 
-static bool ArrayCanCast(hx::Object *inInstance)
+static bool ArrayCanCast(::hx::Object *inInstance)
 {
    return inInstance->__GetClass().mPtr == ArrayBase::__mClass.mPtr;
 }
 
 void ArrayBase::__boot()
 {
-   Static(__mClass) = hx::_hx_RegisterClass(HX_CSTRING("Array"),ArrayCanCast,sNone,sArrayFields,
+   Static(__mClass) = ::hx::_hx_RegisterClass(HX_CSTRING("Array"),ArrayCanCast,sNone,sArrayFields,
                                     ArrayCreateEmpty,ArrayCreateArgs,0,0);
 }
 
@@ -732,7 +732,7 @@ void ArrayBase::__boot()
 
 bool DynamicEq(const Dynamic &a, const Dynamic &b)
 {
-   return hx::IsEq(a,b);
+   return ::hx::IsEq(a,b);
 }
 
 
@@ -749,10 +749,10 @@ HX_DEFINE_DYNAMIC_FUNC0(IteratorBase,_dynamicNext,return)
 
 Dynamic IteratorBase::next_dyn()
 {
-   return hx::CreateMemberFunction0("next",this,__IteratorBase_dynamicNext);
+   return ::hx::CreateMemberFunction0("next",this,__IteratorBase_dynamicNext);
 }
 
-hx::Val IteratorBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val IteratorBase::__Field(const String &inString, ::hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("hasNext")) return hasNext_dyn();
    if (inString==HX_CSTRING("next")) return _dynamicNext_dyn();
@@ -770,9 +770,9 @@ namespace cpp
 
 
 #define DEFINE_VARRAY_FUNC(ret, func,array_list,dynamic_arg_list,arg_list,ARG_C) \
-struct VirtualArray_##func : public hx::Object \
+struct VirtualArray_##func : public ::hx::Object \
 { \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdClosure }; \
    bool __IsFunction() const { return true; } \
    VirtualArray mThis; \
    VirtualArray_##func(VirtualArray inThis) : mThis(inThis) { \
@@ -783,7 +783,7 @@ struct VirtualArray_##func : public hx::Object \
    int __GetType() const { return vtFunction; } \
    void *__GetHandle() const { return mThis.mPtr; } \
    int __ArgCount() const { return ARG_C; } \
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+   void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
    ARRAY_VISIT_FUNC \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
@@ -839,13 +839,13 @@ DEFINE_VARRAY_FUNC1(,resize);
 
 
 #if (HXCPP_API_LEVEL>330)
-int VirtualArray_obj::__Compare(const hx::Object *inRHS) const
+int VirtualArray_obj::__Compare(const ::hx::Object *inRHS) const
 {
    if (inRHS->__GetType()!=vtArray)
       return -1;
    ArrayCommon *common = (ArrayCommon *)inRHS;
-   hx::Object *a = const_cast<VirtualArray_obj *>(this)->__GetRealObject();
-   hx::Object *b = common->__GetRealObject();
+   ::hx::Object *a = const_cast<VirtualArray_obj *>(this)->__GetRealObject();
+   ::hx::Object *b = common->__GetRealObject();
    return a<b ? -1 : a>b;
 }
 #endif
@@ -853,7 +853,7 @@ int VirtualArray_obj::__Compare(const hx::Object *inRHS) const
 Dynamic VirtualArray_obj::__GetItem(int inIndex) const
 {
    checkBase();
-   if (store==hx::arrayEmpty || inIndex<0 || inIndex>=get_length()) return
+   if (store==::hx::arrayEmpty || inIndex<0 || inIndex>=get_length()) return
       null();
    return base->__GetItem(inIndex);
 }
@@ -862,9 +862,9 @@ Dynamic VirtualArray_obj::__SetItem(int inIndex,Dynamic inValue)
 {
    checkBase();
 
-   if (store!=hx::arrayFixed)
+   if (store!=::hx::arrayFixed)
    {
-      if (inIndex>(store==hx::arrayEmpty ? 0 : (int)base->length) )
+      if (inIndex>(store==::hx::arrayEmpty ? 0 : (int)base->length) )
          EnsureObjectStorage();
       else
          EnsureStorage(inValue);
@@ -874,7 +874,7 @@ Dynamic VirtualArray_obj::__SetItem(int inIndex,Dynamic inValue)
    return inValue;
 }
 
-hx::Val VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val VirtualArray_obj::__Field(const String &inString, ::hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("length")) return (int)get_length();
    if (inString==HX_CSTRING("concat")) return concat_dyn();
@@ -1132,7 +1132,7 @@ VirtualArray VirtualArray_obj::filter(Dynamic inFunc)
 class EmptyIterator : public IteratorBase
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdArrayIterator }; \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdArrayIterator }; \
 
    bool hasNext() { return false; }
    Dynamic _dynamicNext() { return null(); }
@@ -1153,7 +1153,7 @@ Dynamic _hx_reslove_virtual_array(cpp::VirtualArray inArray)
 {
    if (!inArray.mPtr)
       return Dynamic();
-   if (inArray->store==hx::arrayFixed  || inArray->store==hx::arrayObject)
+   if (inArray->store==::hx::arrayFixed  || inArray->store==::hx::arrayObject)
       return inArray->__GetRealObject();
    return inArray;
 }

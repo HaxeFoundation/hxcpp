@@ -10,5 +10,5 @@ const char *__hxcpp_all_files_fullpath[] = {
 const char *__hxcpp_all_classes[] = {
  0 };
 } // namespace hx
-void __files__boot() { __hxcpp_set_debugger_info(hx::__hxcpp_all_classes, hx::__hxcpp_all_files_fullpath); }
+void __files__boot() { __hxcpp_set_debugger_info(::hx::__hxcpp_all_classes, ::hx::__hxcpp_all_files_fullpath); }
 

@@ -20,10 +20,10 @@ struct Deque : public Array_obj<Dynamic>
 	static Deque *Create()
 	{
 		Deque *result = new Deque();
-		result->mFinalizer = new hx::InternalFinalizer(result,clean);
+		result->mFinalizer = new ::hx::InternalFinalizer(result,clean);
 		return result;
 	}
-	static void clean(hx::Object *inObj)
+	static void clean(::hx::Object *inObj)
 	{
 		Deque *d = dynamic_cast<Deque *>(inObj);
 		if (d) d->Clean();
@@ -37,7 +37,7 @@ struct Deque : public Array_obj<Dynamic>
 	}
 
    #ifdef HXCPP_VISIT_ALLOCS
-  	void __Visit(hx::VisitContext *__inCtx)
+  	void __Visit(::hx::VisitContext *__inCtx)
 	{
 		Array_obj<Dynamic>::__Visit(__inCtx);
 		mFinalizer->Visit(__inCtx);
@@ -49,31 +49,31 @@ struct Deque : public Array_obj<Dynamic>
 	HxMutex     mMutex;
 	void PushBack(Dynamic inValue)
 	{
-		hx::EnterGCFreeZone();
+		::hx::EnterGCFreeZone();
 		AutoLock lock(mMutex);
-		hx::ExitGCFreeZone();
+		::hx::ExitGCFreeZone();
 
 		push(inValue);
 		mSemaphore.Set();
 	}
 	void PushFront(Dynamic inValue)
 	{
-		hx::EnterGCFreeZone();
+		::hx::EnterGCFreeZone();
 		AutoLock lock(mMutex);
-		hx::ExitGCFreeZone();
+		::hx::ExitGCFreeZone();
 
 		unshift(inValue);
 		mSemaphore.Set();
 	}
 
-	
+
 	Dynamic PopFront(bool inBlock)
 	{
-		hx::EnterGCFreeZone();
+		::hx::EnterGCFreeZone();
 		AutoLock lock(mMutex);
 		if (!inBlock)
 		{
-			hx::ExitGCFreeZone();
+			::hx::ExitGCFreeZone();
 			return shift();
 		}
 		// Ok - wait for something on stack...
@@ -84,7 +84,7 @@ struct Deque : public Array_obj<Dynamic>
 			mSemaphore.Wait();
 			lock.Lock();
 		}
-		hx::ExitGCFreeZone();
+		::hx::ExitGCFreeZone();
 		if (length==1)
 			mSemaphore.Reset();
 		return shift();
@@ -92,29 +92,29 @@ struct Deque : public Array_obj<Dynamic>
 	#else
 	void PushBack(Dynamic inValue)
 	{
-		hx::EnterGCFreeZone();
+		::hx::EnterGCFreeZone();
 		AutoLock lock(mSemaphore);
-		hx::ExitGCFreeZone();
+		::hx::ExitGCFreeZone();
 		push(inValue);
 		mSemaphore.QSet();
 	}
 	void PushFront(Dynamic inValue)
 	{
-		hx::EnterGCFreeZone();
+		::hx::EnterGCFreeZone();
 		AutoLock lock(mSemaphore);
-		hx::ExitGCFreeZone();
+		::hx::ExitGCFreeZone();
 		unshift(inValue);
 		mSemaphore.QSet();
 	}
 
-	
+
 	Dynamic PopFront(bool inBlock)
 	{
-		hx::EnterGCFreeZone();
+		::hx::EnterGCFreeZone();
 		AutoLock lock(mSemaphore);
 		while(inBlock && !length)
 			mSemaphore.QWait();
-		hx::ExitGCFreeZone();
+		::hx::ExitGCFreeZone();
 		Dynamic result =  shift();
 		if (length)
 			mSemaphore.QSet();
@@ -122,7 +122,7 @@ struct Deque : public Array_obj<Dynamic>
 	}
 	#endif
 
-	hx::InternalFinalizer *mFinalizer;
+	::hx::InternalFinalizer *mFinalizer;
 	HxSemaphore mSemaphore;
 };
 
@@ -159,10 +159,10 @@ Dynamic __hxcpp_deque_pop(Dynamic q,bool block)
 
 // --- Thread ----------------------------------------------------------
 
-class hxThreadInfo : public hx::Object
+class hxThreadInfo : public ::hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdThreadInfo };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdThreadInfo };
 
 	hxThreadInfo(Dynamic inFunction, int inThreadNumber)
         : mFunction(inFunction), mThreadNumber(inThreadNumber), mTLS(0,0)
@@ -199,7 +199,7 @@ public:
    }
 	Dynamic GetTLS(int inID) { return mTLS[inID]; }
 
-	void __Mark(hx::MarkContext *__inCtx)
+	void __Mark(::hx::MarkContext *__inCtx)
 	{
 		HX_MARK_MEMBER(mFunction);
 		HX_MARK_MEMBER(mTLS);
@@ -207,7 +207,7 @@ public:
 			HX_MARK_OBJECT(mDeque);
 	}
    #ifdef HXCPP_VISIT_ALLOCS
-  	void __Visit(hx::VisitContext *__inCtx)
+  	void __Visit(::hx::VisitContext *__inCtx)
 	{
 		HX_VISIT_MEMBER(mFunction);
 		HX_VISIT_MEMBER(mTLS);
@@ -235,7 +235,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 
 	tlsCurrentThread = info[0];
 
-	hx::SetTopOfStack((int *)&info[1], true);
+	::hx::SetTopOfStack((int *)&info[1], true);
 
 	// Release the creation function
 	info[0]->mSemaphore->Set();
@@ -252,7 +252,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
     // Call the debugger function to annouce that a thread has terminated
     //__hxcpp_dbg_threadCreatedOrTerminated(info[0]->GetThreadNumber(), false);
 
-	hx::UnregisterCurrentThread();
+	::hx::UnregisterCurrentThread();
 
 	tlsCurrentThread = 0;
 
@@ -264,7 +264,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 Dynamic __hxcpp_thread_create(Dynamic inStart)
 {
     #ifdef EMSCRIPTEN
-    return hx::Throw( HX_CSTRING("Threads are not supported on Emscripten") );
+    return ::hx::Throw( HX_CSTRING("Threads are not supported on Emscripten") );
     #else
     g_threadInfoMutex.Lock();
     int threadNumber = g_nextThreadNumber++;
@@ -272,8 +272,8 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
 
 	hxThreadInfo *info = new hxThreadInfo(inStart, threadNumber);
 
-	hx::GCPrepareMultiThreaded();
-	hx::EnterGCFreeZone();
+	::hx::GCPrepareMultiThreaded();
+	::hx::EnterGCFreeZone();
 
     bool ok = HxCreateDetachedThread(hxThreadFunc, info);
     if (ok)
@@ -281,7 +281,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
        info->mSemaphore->Wait();
     }
 
-    hx::ExitGCFreeZone();
+    ::hx::ExitGCFreeZone();
     info->CleanSemaphore();
 
     if (!ok)
@@ -290,7 +290,7 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
     #endif
 }
 
-static hx::Object *sMainThreadInfo = 0;
+static ::hx::Object *sMainThreadInfo = 0;
 
 static hxThreadInfo *GetCurrentInfo(bool createNew = true)
 {
@@ -300,7 +300,7 @@ static hxThreadInfo *GetCurrentInfo(bool createNew = true)
 		// Hmm, must be the "main" thead...
 		info = new hxThreadInfo(null(), 0);
 		sMainThreadInfo = info;
-		hx::GCAddRoot(&sMainThreadInfo);
+		::hx::GCAddRoot(&sMainThreadInfo);
 		tlsCurrentThread = info;
 	}
 	return info;
@@ -325,7 +325,7 @@ Dynamic __hxcpp_thread_read_message(bool inBlocked)
 	return info->ReadMessage(inBlocked);
 }
 
-bool __hxcpp_is_current_thread(hx::Object *inThread)
+bool __hxcpp_is_current_thread(::hx::Object *inThread)
 {
    hxThreadInfo *info = tlsCurrentThread;
    return info==inThread;
@@ -347,25 +347,25 @@ void __hxcpp_tls_set(int inID,Dynamic inVal)
 
 // --- Mutex ------------------------------------------------------------
 
-class hxMutex : public hx::Object
+class hxMutex : public ::hx::Object
 {
 public:
 
 	hxMutex()
 	{
-		mFinalizer = new hx::InternalFinalizer(this);
+		mFinalizer = new ::hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = clean;
 	}
 
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdMutex };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdMutex };
 
    #ifdef HXCPP_VISIT_ALLOCS
-	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+	void __Visit(::hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
    #endif
 
-	hx::InternalFinalizer *mFinalizer;
+	::hx::InternalFinalizer *mFinalizer;
 
-	static void clean(hx::Object *inObj)
+	static void clean(::hx::Object *inObj)
 	{
 		hxMutex *m = dynamic_cast<hxMutex *>(inObj);
 		if (m) m->mMutex.Clean();
@@ -376,9 +376,9 @@ public:
 	}
 	void Acquire()
 	{
-		hx::EnterGCFreeZone();
+		::hx::EnterGCFreeZone();
 		mMutex.Lock();
-		hx::ExitGCFreeZone();
+		::hx::ExitGCFreeZone();
 	}
 	void Release()
 	{
@@ -424,23 +424,23 @@ void __hxcpp_mutex_release(Dynamic inMutex)
 
 // --- Lock ------------------------------------------------------------
 
-class hxLock : public hx::Object
+class hxLock : public ::hx::Object
 {
 public:
 
 	hxLock()
 	{
-		mFinalizer = new hx::InternalFinalizer(this);
+		mFinalizer = new ::hx::InternalFinalizer(this);
 		mFinalizer->mFinalizer = clean;
 	}
 
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdLock };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdLock };
 
    #ifdef HXCPP_VISIT_ALLOCS
-	void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+	void __Visit(::hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
    #endif
 
-	hx::InternalFinalizer *mFinalizer;
+	::hx::InternalFinalizer *mFinalizer;
 
 	#if defined(HX_WINDOWS) || defined(__SNC__)
 	double Now()
@@ -456,7 +456,7 @@ public:
 	}
 	#endif
 
-	static void clean(hx::Object *inObj)
+	static void clean(::hx::Object *inObj)
 	{
 		hxLock *l = dynamic_cast<hxLock *>(inObj);
 		if (l)
@@ -490,12 +490,12 @@ public:
 					return false;
 			}
 
-			hx::EnterGCFreeZone();
+			::hx::EnterGCFreeZone();
 			if (inTimeout<0)
 				mNotEmpty.Wait( );
 			else
 				mNotEmpty.WaitSeconds(wait);
-			hx::ExitGCFreeZone();
+			::hx::ExitGCFreeZone();
 		}
 	}
 	void Release()

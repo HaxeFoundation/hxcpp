@@ -22,16 +22,16 @@
 // Function called by the haxe code...
 
 #ifdef HXCPP_TELEMETRY
-extern void __hxt_gc_new(hx::StackContext *inStack, void* obj, int inSize, const char *inName);
+extern void __hxt_gc_new(::hx::StackContext *inStack, void* obj, int inSize, const char *inName);
 #endif
 
 
 // Helpers for debugging code
-HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_reachable(hx::Object *inKeep);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_reachable(::hx::Object *inKeep);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_enable(bool inEnable);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_collect(bool inMajor=true);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void   __hxcpp_gc_compact();
-HXCPP_EXTERN_CLASS_ATTRIBUTES int   __hxcpp_gc_trace(hx::Class inClass, bool inPrint);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int   __hxcpp_gc_trace(::hx::Class inClass, bool inPrint);
 HXCPP_EXTERN_CLASS_ATTRIBUTES int   __hxcpp_gc_used_bytes();
 HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_gc_mem_info(int inWhat);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_enter_gc_free_zone();
@@ -44,14 +44,14 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void  __hxcpp_set_target_free_space_percentage(int
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool __hxcpp_is_const_string(const ::String &inString);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_gc_freeze(Dynamic inObject);
 
-typedef void (hx::Object::*_hx_member_finalizer)(void);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_add_member_finalizer(hx::Object *inObject, _hx_member_finalizer, bool inPin);
+typedef void (::hx::Object::*_hx_member_finalizer)(void);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_add_member_finalizer(::hx::Object *inObject, _hx_member_finalizer, bool inPin);
 
 typedef void (*_hx_alloc_finalizer)(void *inPtr);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_add_alloc_finalizer(void *inAlloc, _hx_alloc_finalizer, bool inPin);
 
 template<typename T>
-inline void _hx_add_finalizable( hx::ObjectPtr<T> inObj, bool inPin)
+inline void _hx_add_finalizable( ::hx::ObjectPtr<T> inObj, bool inPin)
 {
   _hx_member_finalizer finalizer = (_hx_member_finalizer)&T::finalize;
   __hxcpp_add_member_finalizer(inObj.mPtr, finalizer, inPin);
@@ -75,7 +75,7 @@ T _hx_allocate_extended(int inExtra)
 
 /*
 template<typename T>
-inline void _hx_allocate_extended( hx::ObjectPtr<T> inObj, bool inPin)
+inline void _hx_allocate_extended( ::hx::ObjectPtr<T> inObj, bool inPin)
 */
 
 
@@ -123,14 +123,14 @@ unsigned int ObjectSizeSafe(void *inData);
 void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHash=false);
 
 // Called after collection by an unspecified thread
-typedef void (*finalizer)(hx::Object *v);
+typedef void (*finalizer)(::hx::Object *v);
 
 // Used internally by the runtime.
 // The constructor will add this object to the internal list of finalizers.
 // If the parent object is not marked by the end of the collect, the finalizer will trigger.
 struct InternalFinalizer
 {
-   InternalFinalizer(hx::Object *inObj, finalizer inFinalizer=0);
+   InternalFinalizer(::hx::Object *inObj, finalizer inFinalizer=0);
 
    #ifdef HXCPP_VISIT_ALLOCS
    void Visit(VisitContext *__inCtx);
@@ -139,12 +139,12 @@ struct InternalFinalizer
 
    bool      mValid;
    finalizer mFinalizer;
-   hx::Object  *mObject;
+   ::hx::Object  *mObject;
 };
 
 // Attach a finalizer to any object allocation.  This can be called from haxe code, but be aware that
 // you can't make any GC calls from the finalizer.
-void  GCSetFinalizer( hx::Object *, hx::finalizer f );
+void  GCSetFinalizer( ::hx::Object *, ::hx::finalizer f );
 
 // If another thread wants to do a collect, it will signal this variable.
 // This automatically gets checked when you call "new", but if you are in long-running
@@ -170,20 +170,20 @@ void PauseForCollect();
 
 
 // Used by WeakHash to work out if it needs to dispose its keys
-bool IsWeakRefValid(hx::Object *inPtr);
+bool IsWeakRefValid(::hx::Object *inPtr);
 bool IsWeakRefValid(const HX_CHAR *inPtr);
 
 // Used by CFFI to scan a block of memory for GC Pointers. May picks up random crap
 //  that points to real, active objects.
-void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
+void MarkConservative(int *inBottom, int *inTop,::hx::MarkContext *__inCtx);
 
 
 // Create/Remove a root.
 // All statics are explicitly registered - this saves adding the whole data segment
 //  to the collection list.
 // It takes a pointer-pointer so it can move the contents, and the caller can change the contents
-void GCAddRoot(hx::Object **inRoot);
-void GCRemoveRoot(hx::Object **inRoot);
+void GCAddRoot(::hx::Object **inRoot);
+void GCRemoveRoot(::hx::Object **inRoot);
 
 
 // This is used internally in hxcpp
@@ -230,26 +230,26 @@ public:
 
 
 // Defined in Class.cpp, these function is called from the Gc to start the marking/visiting
-void MarkClassStatics(hx::MarkContext *__inCtx);
+void MarkClassStatics(::hx::MarkContext *__inCtx);
 #ifdef HXCPP_VISIT_ALLOCS
-void VisitClassStatics(hx::VisitContext *__inCtx);
+void VisitClassStatics(::hx::VisitContext *__inCtx);
 #endif
 
 
 // Called by haxe/application code to mark allocations.
 //  "Object" allocs will recursively call __Mark
-inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx);
-inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx);
+inline void MarkAlloc(void *inPtr ,::hx::MarkContext *__inCtx);
+inline void MarkObjectAlloc(::hx::Object *inPtr ,::hx::MarkContext *__inCtx);
 
 // Implemented differently for efficiency
-void MarkObjectArray(hx::Object **inPtr, int inLength, hx::MarkContext *__inCtx);
-void MarkStringArray(String *inPtr, int inLength, hx::MarkContext *__inCtx);
+void MarkObjectArray(::hx::Object **inPtr, int inLength, ::hx::MarkContext *__inCtx);
+void MarkStringArray(String *inPtr, int inLength, ::hx::MarkContext *__inCtx);
 
 // Provide extra debug info to the marking routines
 #ifdef HXCPP_DEBUG
-HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkSetMember(const char *inName ,hx::MarkContext *__inCtx);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkPushClass(const char *inName ,hx::MarkContext *__inCtx);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkPopClass(hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkSetMember(const char *inName ,::hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkPushClass(const char *inName ,::hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkPopClass(::hx::MarkContext *__inCtx);
 #endif
 
 
@@ -281,7 +281,7 @@ namespace hx
 
 #define HX_USE_INLINE_IMMIX_OPERATOR_NEW
 
-//#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  hx::gMultiThreadMode ? hx::tlsImmixAllocator : hx::gMainThreadAlloc;
+//#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  ::hx::gMultiThreadMode ? ::hx::tlsImmixAllocator : ::hx::gMainThreadAlloc;
 
 
 // Each line ast 128 bytes (2^7)
@@ -316,7 +316,7 @@ namespace hx
 
 // The gPauseForCollect bits will turn spaceEnd negative, and so force the slow path
 #ifndef HXCPP_SINGLE_THREADED_APP
-   #define WITH_PAUSE_FOR_COLLECT_FLAG | hx::gPauseForCollect
+   #define WITH_PAUSE_FOR_COLLECT_FLAG | ::hx::gPauseForCollect
 #else
    #define WITH_PAUSE_FOR_COLLECT_FLAG
 #endif
@@ -378,7 +378,7 @@ public:
          }
 
          #ifdef HXCPP_TELEMETRY
-         __hxt_gc_new((hx::StackContext *)alloc,buffer, inSize, inName);
+         __hxt_gc_new((::hx::StackContext *)alloc,buffer, inSize, inName);
          #endif
 
          return buffer;
@@ -403,18 +403,18 @@ public:
                if (inContainer)
                   *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
                                (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                               hx::gMarkIDWithContainer;
+                               ::hx::gMarkIDWithContainer;
                else
                   *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
                                (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                               hx::gMarkID;
+                               ::hx::gMarkID;
 
                #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
-               hx::GCOnNewPointer(buffer);
+               ::hx::GCOnNewPointer(buffer);
                #endif
 
                #ifdef HXCPP_TELEMETRY
-               __hxt_gc_new((hx::StackContext *)alloc,buffer, inSize, inName);
+               __hxt_gc_new((::hx::StackContext *)alloc,buffer, inSize, inName);
                #endif
                return buffer;
             }
@@ -424,7 +424,7 @@ public:
          void *result = alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
 
          #ifdef HXCPP_TELEMETRY
-            __hxt_gc_new((hx::StackContext *)alloc,result, inSize, inName);
+            __hxt_gc_new((::hx::StackContext *)alloc,result, inSize, inName);
          #endif
 
          return result;
@@ -439,19 +439,19 @@ typedef ImmixAllocator Ctx;
 #ifdef HXCPP_GC_GENERATIONAL
   #define HX_OBJ_WB_CTX(obj,value,ctx) { \
         unsigned char &mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]; \
-        if (mark == hx::gByteMarkID && value && !((unsigned char *)(value))[ HX_ENDIAN_MARK_ID_BYTE  ] ) { \
+        if (mark == ::hx::gByteMarkID && value && !((unsigned char *)(value))[ HX_ENDIAN_MARK_ID_BYTE  ] ) { \
             mark|=HX_GC_REMEMBERED; \
             ctx->pushReferrer(obj); \
      } }
   #define HX_OBJ_WB_PESSIMISTIC_CTX(obj,ctx) { \
      unsigned char &mark =  ((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]; \
-     if (mark == hx::gByteMarkID)  { \
+     if (mark == ::hx::gByteMarkID)  { \
         mark|=HX_GC_REMEMBERED; \
         ctx->pushReferrer(obj); \
      } }
   // I'm not sure if this will ever trigger...
   #define HX_OBJ_WB_NEW_MARKED_OBJECT(obj) { \
-     if (((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]==hx::gByteMarkID) hx::NewMarkedObject(obj); \
+     if (((unsigned char *)(obj))[ HX_ENDIAN_MARK_ID_BYTE]==::hx::gByteMarkID) ::hx::NewMarkedObject(obj); \
   }
 #else
   #define HX_OBJ_WB_CTX(obj,value,ctx)
@@ -468,11 +468,11 @@ typedef ImmixAllocator Ctx;
 HXCPP_EXTERN_CLASS_ATTRIBUTES extern unsigned int gPrevMarkIdMask;
 
 // Called only once it is determined that a new mark is required
-HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkAllocUnchecked(void *inPtr ,hx::MarkContext *__inCtx); 
-HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkObjectAllocUnchecked(hx::Object *inPtr ,hx::MarkContext *__inCtx);
-HXCPP_EXTERN_CLASS_ATTRIBUTES void NewMarkedObject(hx::Object *inPtr);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkAllocUnchecked(void *inPtr ,::hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkObjectAllocUnchecked(::hx::Object *inPtr ,::hx::MarkContext *__inCtx);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void NewMarkedObject(::hx::Object *inPtr);
 
-inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
+inline void MarkAlloc(void *inPtr ,::hx::MarkContext *__inCtx)
 {
    #ifdef EMSCRIPTEN
    // Unaligned must be constants...
@@ -482,7 +482,7 @@ inline void MarkAlloc(void *inPtr ,hx::MarkContext *__inCtx)
    if ( !(((unsigned int *)inPtr)[-1] & gPrevMarkIdMask) )
       MarkAllocUnchecked(inPtr,__inCtx);
 }
-inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
+inline void MarkObjectAlloc(::hx::Object *inPtr ,::hx::MarkContext *__inCtx)
 {
    #ifdef EMSCRIPTEN
    // Unaligned must be constants...
@@ -505,12 +505,12 @@ inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 
 #define HX_MARK_ARG __inCtx
 //#define HX_MARK_ADD_ARG ,__inCtx
-#define HX_MARK_PARAMS hx::MarkContext *__inCtx
-//#define HX_MARK_ADD_PARAMS ,hx::MarkContext *__inCtx
+#define HX_MARK_PARAMS ::hx::MarkContext *__inCtx
+//#define HX_MARK_ADD_PARAMS ,::hx::MarkContext *__inCtx
 
 #ifdef HXCPP_VISIT_ALLOCS
 #define HX_VISIT_ARG __inCtx
-#define HX_VISIT_PARAMS hx::VisitContext *__inCtx
+#define HX_VISIT_PARAMS ::hx::VisitContext *__inCtx
 #else
 #define HX_VISIT_ARG
 #define HX_VISIT_PARAMS
@@ -526,40 +526,40 @@ inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 
 #ifdef HXCPP_DEBUG
 
-#define HX_MARK_MEMBER_NAME(x,name) { hx::MarkSetMember(name, __inCtx); hx::MarkMember(x, __inCtx ); }
-#define HX_MARK_BEGIN_CLASS(x) hx::MarkPushClass(#x, __inCtx );
-#define HX_MARK_END_CLASS() hx::MarkPopClass(__inCtx );
-#define HX_MARK_MEMBER(x) { hx::MarkSetMember(0, __inCtx); hx::MarkMember(x, __inCtx ); }
-#define HX_MARK_MEMBER_ARRAY(x,len) { hx::MarkSetMember(0, __inCtx); hx::MarkMemberArray(x, len, __inCtx ); }
+#define HX_MARK_MEMBER_NAME(x,name) { ::hx::MarkSetMember(name, __inCtx); ::hx::MarkMember(x, __inCtx ); }
+#define HX_MARK_BEGIN_CLASS(x) ::hx::MarkPushClass(#x, __inCtx );
+#define HX_MARK_END_CLASS() ::hx::MarkPopClass(__inCtx );
+#define HX_MARK_MEMBER(x) { ::hx::MarkSetMember(0, __inCtx); ::hx::MarkMember(x, __inCtx ); }
+#define HX_MARK_MEMBER_ARRAY(x,len) { ::hx::MarkSetMember(0, __inCtx); ::hx::MarkMemberArray(x, len, __inCtx ); }
 
 #else
 
-#define HX_MARK_MEMBER_NAME(x,name) hx::MarkMember(x, __inCtx )
+#define HX_MARK_MEMBER_NAME(x,name) ::hx::MarkMember(x, __inCtx )
 #define HX_MARK_BEGIN_CLASS(x)
 #define HX_MARK_END_CLASS()
-#define HX_MARK_MEMBER(x) hx::MarkMember(x, __inCtx )
-#define HX_MARK_MEMBER_ARRAY(x,len) hx::MarkMemberArray(x, len, __inCtx )
+#define HX_MARK_MEMBER(x) ::hx::MarkMember(x, __inCtx )
+#define HX_MARK_MEMBER_ARRAY(x,len) ::hx::MarkMemberArray(x, len, __inCtx )
 
 #endif
 
-#define HX_MARK_OBJECT(ioPtr) if (ioPtr) hx::MarkObjectAlloc(ioPtr, __inCtx );
+#define HX_MARK_OBJECT(ioPtr) if (ioPtr) ::hx::MarkObjectAlloc(ioPtr, __inCtx );
 
 
 
 
 #define HX_MARK_STRING(ioPtr) \
-   if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx );
+   if (ioPtr) ::hx::MarkAlloc((void *)ioPtr, __inCtx );
 
-#define HX_MARK_ARRAY(ioPtr) { if (ioPtr) hx::MarkAlloc((void *)ioPtr, __inCtx ); }
-
-
+#define HX_MARK_ARRAY(ioPtr) { if (ioPtr) ::hx::MarkAlloc((void *)ioPtr, __inCtx ); }
 
 
-#define HX_VISIT_MEMBER_NAME(x,name) hx::VisitMember(x, __inCtx )
-#define HX_VISIT_MEMBER(x) hx::VisitMember(x, __inCtx )
+
+
+#define HX_VISIT_MEMBER_NAME(x,name) ::hx::VisitMember(x, __inCtx )
+#define HX_VISIT_MEMBER(x) ::hx::VisitMember(x, __inCtx )
 
 #define HX_VISIT_OBJECT(ioPtr) \
-  { if (ioPtr && !(((unsigned char *)ioPtr)[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT) ) __inCtx->visitObject( (hx::Object **)&ioPtr); }
+  { if (ioPtr && !(((unsigned char *)ioPtr)[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT) ) __inCtx->visitObject( (::hx::Object **)&ioPtr); }
 
 #define HX_VISIT_STRING(ioPtr) \
    if (ioPtr && !(((unsigned char *)ioPtr)[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT) ) __inCtx->visitAlloc((void **)&ioPtr);

@@ -19,7 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #define MAX_PACKET_LENGTH 0xFFFFFF
 
 int myp_recv( MYSQL *m, void *buf, int size ) {
-   hx::AutoGCFreeZone blocking;
+   ::hx::AutoGCFreeZone blocking;
    return myp_recv_no_gc(m,buf,size);
 }
 
@@ -35,7 +35,7 @@ int myp_recv_no_gc( MYSQL *m, void *buf, int size ) {
 
 
 int myp_send( MYSQL *m, void *buf, int size ) {
-   hx::AutoGCFreeZone blocking;
+   ::hx::AutoGCFreeZone blocking;
    return myp_send_no_gc(m,buf,size);
 }
 
@@ -127,7 +127,7 @@ char *myp_read_bin_str( MYSQL_PACKET *p ) {
 }
 
 int myp_read_packet( MYSQL *m, MYSQL_PACKET *p ) {
-   hx::AutoGCFreeZone blocking;
+   ::hx::AutoGCFreeZone blocking;
 	unsigned int psize;
 	p->pos = 0;
 	p->error = 0;
@@ -155,7 +155,7 @@ int myp_read_packet( MYSQL *m, MYSQL_PACKET *p ) {
 }
 
 int myp_send_packet( MYSQL *m, MYSQL_PACKET *p, int *packet_counter ) {
-   hx::AutoGCFreeZone blocking;
+   ::hx::AutoGCFreeZone blocking;
 	unsigned int header;
 	char *buf = p->buf;
 	int size = p->size;

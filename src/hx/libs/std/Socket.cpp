@@ -66,9 +66,9 @@ namespace
 
 static int socketType = 0;
 
-struct SocketWrapper : public hx::Object
+struct SocketWrapper : public ::hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSocket };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdSocket };
 
    SOCKET socket;
 
@@ -83,7 +83,7 @@ SOCKET val_sock(Dynamic inValue)
       int type = inValue->__GetType();
       if (type==vtClass)
       {
-         inValue = inValue->__Field( HX_CSTRING("__s"), hx::paccNever );
+         inValue = inValue->__Field( HX_CSTRING("__s"), ::hx::paccNever );
          if (inValue.mPtr==0)
             return 0;
          type = inValue->__GetType();
@@ -93,7 +93,7 @@ SOCKET val_sock(Dynamic inValue)
          return static_cast<SocketWrapper *>(inValue.mPtr)->socket;
    }
 
-   hx::Throw(HX_CSTRING("Invalid socket handle"));
+   ::hx::Throw(HX_CSTRING("Invalid socket handle"));
    return 0;
 }
 
@@ -109,16 +109,16 @@ SOCKET val_sock(Dynamic inValue)
 
 static void block_error()
 {
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 #ifdef NEKO_WINDOWS
    int err = WSAGetLastError();
    if( err == WSAEWOULDBLOCK || err == WSAEALREADY )
 #else
    if( errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS || errno == EALREADY )
 #endif
-      hx::Throw(HX_CSTRING("Blocking"));
+      ::hx::Throw(HX_CSTRING("Blocking"));
     else {
-       hx::Throw(HX_CSTRING("EOF"));
+       ::hx::Throw(HX_CSTRING("EOF"));
     }
 }
 
@@ -202,14 +202,14 @@ void _hx_std_socket_send_char( Dynamic o, int c )
 
    unsigned char cc = (unsigned char)c;
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    POSIX_LABEL(send_char_again);
    if( send(sock,(const char *)&cc,1,MSG_NOSIGNAL) == SOCKET_ERROR )
    {
       HANDLE_EINTR(send_char_again);
       block_error();
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 /**
@@ -225,11 +225,11 @@ int _hx_std_socket_send( Dynamic o, Array<unsigned char> buf, int p, int l )
       return 0;
 
    const char *base = (const char *)&buf[0];
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    dlen = send(sock, base + p , l, MSG_NOSIGNAL);
    if( dlen == SOCKET_ERROR )
       block_error();
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return dlen;
 }
 
@@ -246,7 +246,7 @@ int _hx_std_socket_recv( Dynamic o, Array<unsigned char> buf, int p, int l )
       return 0;
 
    char *base = (char *)&buf[0];
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    POSIX_LABEL(recv_again);
    dlen = recv(sock, base + p, l, MSG_NOSIGNAL);
    if( dlen == SOCKET_ERROR )
@@ -254,7 +254,7 @@ int _hx_std_socket_recv( Dynamic o, Array<unsigned char> buf, int p, int l )
       HANDLE_EINTR(recv_again);
       block_error();
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return dlen;
 }
 
@@ -266,7 +266,7 @@ int _hx_std_socket_recv_char( Dynamic o )
 {
    SOCKET sock = val_sock(o);
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    POSIX_LABEL(recv_char_again);
    unsigned char cc = 0;
    int ret = recv(sock,(char *)&cc,1,MSG_NOSIGNAL);
@@ -275,9 +275,9 @@ int _hx_std_socket_recv_char( Dynamic o )
       HANDLE_EINTR(recv_char_again);
       block_error();
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    if( ret == 0 )
-      hx::Throw(HX_CSTRING("Connection closed"));
+      ::hx::Throw(HX_CSTRING("Connection closed"));
    return cc;
 }
 
@@ -293,7 +293,7 @@ void _hx_std_socket_write( Dynamic o, Array<unsigned char> buf )
    const char *cdata = (const char *)&buf[0];
    int pos = 0;
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    while( datalen > 0 )
    {
       POSIX_LABEL(write_again);
@@ -305,7 +305,7 @@ void _hx_std_socket_write( Dynamic o, Array<unsigned char> buf )
       pos += slen;
       datalen -= slen;
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 
@@ -321,7 +321,7 @@ Array<unsigned char> _hx_std_socket_read( Dynamic o )
    Array<unsigned char> result = Array_obj<unsigned char>::__new();
    char buf[256];
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    while( true )
    {
       POSIX_LABEL(read_again);
@@ -333,12 +333,12 @@ Array<unsigned char> _hx_std_socket_read( Dynamic o )
       if( len == 0 )
          break;
 
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       result->memcpy(result->length, (unsigned char *)buf, len );
-      hx::EnterGCFreeZone();
+      ::hx::EnterGCFreeZone();
    }
 
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return result;
 }
 
@@ -350,13 +350,13 @@ int _hx_std_host_resolve( String host )
 {
    unsigned int ip;
 
-   hx::EnterGCFreeZone();
-   hx::strbuf buf;
+   ::hx::EnterGCFreeZone();
+   ::hx::strbuf buf;
    ip = inet_addr(host.utf8_str(&buf));
    if( ip == INADDR_NONE )
    {
       struct hostent *h = 0;
-      hx::strbuf hostBuf;
+      ::hx::strbuf hostBuf;
 
 #   if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
       h = gethostbyname(host.utf8_str(&hostBuf));
@@ -367,12 +367,12 @@ int _hx_std_host_resolve( String host )
       gethostbyname_r(host.utf8_str(&hostBuf),&hbase,buf,1024,&h,&errcode);
 #   endif
       if( !h ) {
-         hx::ExitGCFreeZone();
-         return hx::Throw( HX_CSTRING("Unknown host:") + host );
+         ::hx::ExitGCFreeZone();
+         return ::hx::Throw( HX_CSTRING("Unknown host:") + host );
       }
       ip = *((unsigned int*)h->h_addr);
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return ip;
 }
 
@@ -385,7 +385,7 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
 {
    in6_addr ipv6;
 
-   hx::strbuf hostBuf;
+   ::hx::strbuf hostBuf;
    const char *hostStr = host.utf8_str(&hostBuf);
    #ifdef DYNAMIC_INET_FUNCS
    if (!dynamic_inet_pton_tried)
@@ -407,16 +407,16 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
       memset(&hints, 0, sizeof(struct addrinfo));
       hints.ai_family = AF_INET6;  //  IPv6
       hints.ai_socktype = 0;  // any - SOCK_STREAM or SOCK_DGRAM
-      hints.ai_flags = AI_PASSIVE;  // For wildcard IP address 
+      hints.ai_flags = AI_PASSIVE;  // For wildcard IP address
       hints.ai_protocol = 0;        // Any protocol
       hints.ai_canonname = 0;
       hints.ai_addr = 0;
       hints.ai_next = 0;
 
       addrinfo *result = 0;
-      hx::EnterGCFreeZone();
+      ::hx::EnterGCFreeZone();
       int err =  getaddrinfo( hostStr, 0, &hints, &result);
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       if (err==0)
       {
          for(addrinfo * rp = result; rp; rp = rp->ai_next)
@@ -431,14 +431,14 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
             else
             {
                freeaddrinfo(result);
-               hx::Throw( HX_CSTRING("Unkown ai_family") );
+               ::hx::Throw( HX_CSTRING("Unkown ai_family") );
             }
          }
          freeaddrinfo(result);
       }
       else
       {
-         hx::Throw( host + HX_CSTRING(":") + String(gai_strerror(err)) );
+         ::hx::Throw( host + HX_CSTRING(":") + String(gai_strerror(err)) );
       }
    }
 
@@ -495,7 +495,7 @@ String _hx_std_host_reverse( int host )
 {
    struct hostent *h = 0;
    unsigned int ip = host;
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    #if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
    h = gethostbyaddr((char *)&ip,4,AF_INET);
    #else
@@ -504,7 +504,7 @@ String _hx_std_host_reverse( int host )
    char buf[1024];
    gethostbyaddr_r((char *)&ip,4,AF_INET,&htmp,buf,1024,&h,&errcode);
    #endif
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    if( !h )
       return String();
    return String( h->h_name );
@@ -516,7 +516,7 @@ String _hx_std_host_reverse_ipv6( Array<unsigned char> host )
       return String();
 
    struct hostent *h = 0;
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    #if defined(NEKO_WINDOWS) || defined(NEKO_MAC) || defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
    h = gethostbyaddr((char *)&host[0],16,AF_INET6);
    #else
@@ -525,7 +525,7 @@ String _hx_std_host_reverse_ipv6( Array<unsigned char> host )
    char buf[1024];
    gethostbyaddr_r((char *)&host[0],16,AF_INET6,&htmp,buf,1024,&h,&errcode);
    #endif
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    if( !h )
       return String();
    return String( h->h_name );
@@ -539,13 +539,13 @@ String _hx_std_host_reverse_ipv6( Array<unsigned char> host )
 String _hx_std_host_local()
 {
    char buf[256];
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( gethostname(buf,256) == SOCKET_ERROR )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return String();
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return String(buf);
 }
 
@@ -561,7 +561,7 @@ void _hx_std_socket_connect( Dynamic o, int host, int port )
    addr.sin_port = htons(port);
    *(int*)&addr.sin_addr.s_addr = host;
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
    {
       // This will throw a "Blocking" exception if the "error" was because
@@ -571,7 +571,7 @@ void _hx_std_socket_connect( Dynamic o, int host, int port )
       // - now it always throws
       block_error();
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 
@@ -586,7 +586,7 @@ void _hx_std_socket_connect_ipv6( Dynamic o, Array<unsigned char> host, int port
    addr.sin6_port = htons(port);
    memcpy(&addr.sin6_addr,&host[0],16);
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
    {
       // This will throw a "Blocking" exception if the "error" was because
@@ -596,7 +596,7 @@ void _hx_std_socket_connect_ipv6( Dynamic o, Array<unsigned char> host, int port
       // - now it always throws
       block_error();
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 /**
@@ -606,13 +606,13 @@ void _hx_std_socket_connect_ipv6( Dynamic o, Array<unsigned char> host, int port
 void _hx_std_socket_listen( Dynamic o, int n )
 {
    SOCKET sock = val_sock(o);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( listen(sock,n) == SOCKET_ERROR )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return;
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 static fd_set INVALID;
@@ -625,7 +625,7 @@ static fd_set *make_socket_array( Array<Dynamic> a, fd_set *tmp, SOCKET *n )
 
    int len = a->length;
    if( len > FD_SETSIZE )
-      hx::Throw(HX_CSTRING("Too many sockets in select"));
+      ::hx::Throw(HX_CSTRING("Too many sockets in select"));
 
    for(int i=0;i<len;i++)
    {
@@ -701,21 +701,21 @@ Array<Dynamic> _hx_std_socket_select( Array<Dynamic> rs, Array<Dynamic> ws, Arra
    wa = make_socket_array(ws,&wx,&n);
    ea = make_socket_array(es,&ex,&n);
    if( ra == &INVALID || wa == &INVALID || ea == &INVALID )
-      hx::Throw( HX_CSTRING("No valid sockets") );
+      ::hx::Throw( HX_CSTRING("No valid sockets") );
 
    struct timeval tval;
    struct timeval *tt = 0;
    if( timeout.mPtr )
       tt = init_timeval(timeout,&tval);
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( select((int)(n+1),ra,wa,ea,tt) == SOCKET_ERROR )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       HANDLE_EINTR(select_again);
-      hx::Throw( HX_CSTRING("Select error ") + String((int)errno) );
+      ::hx::Throw( HX_CSTRING("Select error ") + String((int)errno) );
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 
    Array<Dynamic> r = Array_obj<Dynamic>::__new(3,3);
    r[0] = make_array_result(rs,ra);
@@ -740,7 +740,7 @@ void _hx_std_socket_fast_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dyn
    ea = make_socket_array(es,&ex,&n);
 
    if( ra == &INVALID || wa == &INVALID || ea == &INVALID )
-      hx::Throw( HX_CSTRING("No valid sockets") );
+      ::hx::Throw( HX_CSTRING("No valid sockets") );
 
 
    struct timeval tval;
@@ -748,19 +748,19 @@ void _hx_std_socket_fast_select( Array<Dynamic> rs, Array<Dynamic> ws, Array<Dyn
    if( timeout.mPtr )
       tt = init_timeval(timeout,&tval);
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( select((int)(n+1),ra,wa,ea,tt) == SOCKET_ERROR )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       HANDLE_EINTR(select_again);
       #ifdef NEKO_WINDOWS
-      hx::Throw( HX_CSTRING("Select error ") + String((int)WSAGetLastError()) );
+      ::hx::Throw( HX_CSTRING("Select error ") + String((int)WSAGetLastError()) );
       #else
-      hx::Throw( HX_CSTRING("Select error ") + String((int)errno) );
+      ::hx::Throw( HX_CSTRING("Select error ") + String((int)errno) );
       #endif
    }
 
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    make_array_result_inplace(rs, ra);
    make_array_result_inplace(ws, wa);
    make_array_result_inplace(es, ea);
@@ -784,13 +784,13 @@ void _hx_std_socket_bind( Dynamic o, int host, int port )
    setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof(opt));
    #endif
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( bind(sock,(struct sockaddr*)&addr,sizeof(addr)) == SOCKET_ERROR )
    {
-      hx::ExitGCFreeZone();
-      hx::Throw(HX_CSTRING("Bind failed"));
+      ::hx::ExitGCFreeZone();
+      ::hx::Throw(HX_CSTRING("Bind failed"));
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 
@@ -813,13 +813,13 @@ void _hx_std_socket_bind_ipv6( Dynamic o, Array<unsigned char> host, int port )
    setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof(opt));
    #endif
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( bind(sock,(struct sockaddr*)&addr,sizeof(addr)) == SOCKET_ERROR )
    {
-      hx::ExitGCFreeZone();
-      hx::Throw(HX_CSTRING("Bind failed"));
+      ::hx::ExitGCFreeZone();
+      ::hx::Throw(HX_CSTRING("Bind failed"));
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 
@@ -842,11 +842,11 @@ Dynamic _hx_std_socket_accept( Dynamic o )
    struct sockaddr_in addr;
    SockLen addrlen = sizeof(addr);
    SOCKET s;
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    s = accept(sock,(struct sockaddr*)&addr,&addrlen);
    if( s == INVALID_SOCKET )
       block_error();
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 
    SocketWrapper *wrap = new SocketWrapper();
    wrap->socket = s;
@@ -862,13 +862,13 @@ Array<int> _hx_std_socket_peer( Dynamic o )
    SOCKET sock = val_sock(o);
    struct sockaddr_in addr;
    SockLen addrlen = sizeof(addr);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( getpeername(sock,(struct sockaddr*)&addr,&addrlen) == SOCKET_ERROR )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return null();
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 
    Array<int> ret = Array_obj<int>::__new(2,2);
    ret[0] = *(int*)&addr.sin_addr;
@@ -885,13 +885,13 @@ Array<int> _hx_std_socket_host( Dynamic o )
    SOCKET sock = val_sock(o);
    struct sockaddr_in addr;
    SockLen addrlen = sizeof(addr);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( getsockname(sock,(struct sockaddr*)&addr,&addrlen) == SOCKET_ERROR )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return null();
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 
    Array<int> ret = Array_obj<int>::__new(2,2);
    ret[0] = *(int*)&addr.sin_addr;
@@ -924,18 +924,18 @@ void _hx_std_socket_set_timeout( Dynamic o, Dynamic t )
    }
 #endif
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( setsockopt(sock,SOL_SOCKET,SO_SNDTIMEO,(char*)&time,sizeof(time)) != 0 )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return;
    }
    if( setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,(char*)&time,sizeof(time)) != 0 )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return;
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 /**
@@ -948,13 +948,13 @@ void _hx_std_socket_shutdown( Dynamic o, bool r, bool w )
    if( !r && !w )
       return;
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( shutdown(sock,(r)?((w)?SHUT_RDWR:SHUT_RD):SHUT_WR) )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return;
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 /**
@@ -966,13 +966,13 @@ void _hx_std_socket_shutdown( Dynamic o, bool r, bool w )
 void _hx_std_socket_set_blocking( Dynamic o, bool b )
 {
    SOCKET sock = val_sock(o);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
 #ifdef NEKO_WINDOWS
    {
       unsigned long arg = b?0:1;
       if( ioctlsocket(sock,FIONBIO,&arg) != 0 )
       {
-         hx::ExitGCFreeZone();
+         ::hx::ExitGCFreeZone();
          return;
       }
    }
@@ -981,7 +981,7 @@ void _hx_std_socket_set_blocking( Dynamic o, bool b )
       int rights = fcntl(sock,F_GETFL);
       if( rights == -1 )
       {
-         hx::ExitGCFreeZone();
+         ::hx::ExitGCFreeZone();
          return;
       }
       if( b )
@@ -990,12 +990,12 @@ void _hx_std_socket_set_blocking( Dynamic o, bool b )
          rights |= O_NONBLOCK;
       if( fcntl(sock,F_SETFL,rights) == -1 )
       {
-         hx::ExitGCFreeZone();
+         ::hx::ExitGCFreeZone();
          return;
       }
    }
 #endif
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return;
 }
 
@@ -1004,18 +1004,18 @@ void _hx_std_socket_set_fast_send( Dynamic o, bool b )
 {
    SOCKET sock = val_sock(o);
    int fast = (b);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    setsockopt(sock,IPPROTO_TCP,TCP_NODELAY,(char*)&fast,sizeof(fast));
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 void _hx_std_socket_set_broadcast( Dynamic o, bool b )
 {
    SOCKET sock = val_sock(o);
    int broadcast = (b);
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char*)&broadcast,sizeof(broadcast));
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 
@@ -1029,9 +1029,9 @@ namespace
 
 static int pollType = 0;
 
-struct polldata : public hx::Object
+struct polldata : public ::hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdPollData };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdPollData };
 
    bool ok;
    int max;
@@ -1096,9 +1096,9 @@ struct polldata : public hx::Object
       }
    }
 
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(ridx); HX_MARK_MEMBER(widx); }
+   void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_MEMBER(ridx); HX_MARK_MEMBER(widx); }
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(ridx); HX_VISIT_MEMBER(widx); }
+   void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(ridx); HX_VISIT_MEMBER(widx); }
    #endif
 
    int __GetType() const { return pollType; }
@@ -1114,7 +1114,7 @@ struct polldata : public hx::Object
 polldata *val_poll(Dynamic o)
 {
    if (!o.mPtr || o->__GetType()!=pollType)
-      hx::Throw(HX_CSTRING("Invalid polldata:") + o);
+      ::hx::Throw(HX_CSTRING("Invalid polldata:") + o);
    return static_cast<polldata *>(o.mPtr);
 }
 
@@ -1149,7 +1149,7 @@ Array<Dynamic> _hx_std_socket_poll_prepare( Dynamic pdata, Array<Dynamic> rsocks
    int len = rsocks.mPtr ? rsocks->length : 0;
    int wlen = wsocks.mPtr ? wsocks->length : 0;
    if( len + wlen > p->max )
-      hx::Throw(HX_CSTRING("Too many sockets in poll"));
+      ::hx::Throw(HX_CSTRING("Too many sockets in poll"));
 
    #ifdef NEKO_WINDOWS
    for(int i=0;i<len;i++)
@@ -1206,13 +1206,13 @@ void _hx_std_socket_poll_events( Dynamic pdata, double timeout )
    struct timeval t;
    struct timeval *tt = init_timeval(timeout,&t);
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    if( select(0/* Ignored */, p->fdr->fd_count ? p->outr : 0, p->fdw->fd_count ?p->outw : 0,NULL,tt) == SOCKET_ERROR )
    {
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return;
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 
    int k = 0;
    for(int i=0;i<p->fdr->fd_count;i++)
@@ -1229,15 +1229,15 @@ void _hx_std_socket_poll_events( Dynamic pdata, double timeout )
    #else
 
    int tot = p->rcount + p->wcount;
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    POSIX_LABEL(poll_events_again);
    if( poll(p->fds,tot,(int)(timeout * 1000)) < 0 )
    {
       HANDLE_EINTR(poll_events_again);
-      hx::ExitGCFreeZone();
+      ::hx::ExitGCFreeZone();
       return;
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 
    int k = 0;
    int i = 0;
@@ -1294,11 +1294,11 @@ int _hx_std_socket_send_to( Dynamic o, Array<unsigned char> buf, int p, int l, D
    const char *cdata = (const char *)&buf[0];
    int dlen = buf->length;
    if( p < 0 || l < 0 || p > dlen || p + l > dlen )
-      hx::Throw(HX_CSTRING("Invalid data position"));
+      ::hx::Throw(HX_CSTRING("Invalid data position"));
 
 
-   int host = inAddr->__Field(HX_CSTRING("host"), hx::paccDynamic);
-   int port = inAddr->__Field(HX_CSTRING("port"), hx::paccDynamic);
+   int host = inAddr->__Field(HX_CSTRING("host"), ::hx::paccDynamic);
+   int port = inAddr->__Field(HX_CSTRING("port"), ::hx::paccDynamic);
    struct sockaddr_in addr;
    memset(&addr,0,sizeof(addr));
    addr.sin_family = AF_INET;
@@ -1306,14 +1306,14 @@ int _hx_std_socket_send_to( Dynamic o, Array<unsigned char> buf, int p, int l, D
    *(int*)&addr.sin_addr.s_addr = host;
 
 
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    POSIX_LABEL(send_again);
    dlen = sendto(sock, cdata + p , l, MSG_NOSIGNAL, (struct sockaddr*)&addr, sizeof(addr));
    if( dlen == SOCKET_ERROR ) {
       HANDLE_EINTR(send_again);
       block_error();
    }
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
    return dlen;
 }
 
@@ -1332,13 +1332,13 @@ int _hx_std_socket_recv_from( Dynamic o, Array<unsigned char> buf, int p, int l,
    char *data = (char *)&buf[0];
    int dlen = buf->length;
    if( p < 0 || l < 0 || p > dlen || p + l > dlen )
-      hx::Throw(HX_CSTRING("Invalid data position"));
+      ::hx::Throw(HX_CSTRING("Invalid data position"));
 
    struct sockaddr_in saddr;
    SockLen slen = sizeof(saddr);
 
    int ret = 0;
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
    POSIX_LABEL(recv_from_again);
    if( retry++ > NRETRYS ) {
       ret = recv(sock,data+p,l,MSG_NOSIGNAL);
@@ -1349,9 +1349,9 @@ int _hx_std_socket_recv_from( Dynamic o, Array<unsigned char> buf, int p, int l,
       block_error();
    }
 
-   hx::ExitGCFreeZone();
-   outAddr->__SetField(HX_CSTRING("host"),*(int*)&saddr.sin_addr, hx::paccDynamic);
-   outAddr->__SetField(HX_CSTRING("port"),ntohs(saddr.sin_port), hx::paccDynamic);
+   ::hx::ExitGCFreeZone();
+   outAddr->__SetField(HX_CSTRING("host"),*(int*)&saddr.sin_addr, ::hx::paccDynamic);
+   outAddr->__SetField(HX_CSTRING("port"),ntohs(saddr.sin_port), ::hx::paccDynamic);
 
    return ret;
 }

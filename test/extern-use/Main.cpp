@@ -7,7 +7,7 @@
 
 struct MyStruct
 {
-   hx::Ref<api::HaxeObject *> haxeRef;
+   ::hx::Ref<api::HaxeObject *> haxeRef;
 };
 
 extern void __hxcpp_collect(bool inMajor);
@@ -17,7 +17,7 @@ int main(int argc, char **argv)
    MyStruct *myStruct = new MyStruct();
 
 
-   const char *err = hx::Init();
+   const char *err = ::hx::Init();
    if (err)
    {
       printf("Could not initialize library: %s\n", err);
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
    }
    else
    {
-      hx::NativeAttach autoAttach;
+      ::hx::NativeAttach autoAttach;
 
       api::HaxeObject *obj = api::HaxeApi::createBase();
       obj->setName("child");
@@ -37,12 +37,12 @@ int main(int argc, char **argv)
    }
 
    {
-      hx::NativeAttach autoAttach;
+      ::hx::NativeAttach autoAttach;
       __hxcpp_collect(true);
    }
 
    {
-      hx::NativeAttach autoAttach;
+      ::hx::NativeAttach autoAttach;
       if (myStruct->haxeRef->getName()!="Name")
       {
          printf("Could not get value back (%s)\n", myStruct->haxeRef->getName().c_str() );
@@ -51,17 +51,17 @@ int main(int argc, char **argv)
    }
 
    {
-      hx::NativeAttach autoAttach0;
-      hx::NativeAttach autoAttach1;
-      hx::NativeAttach autoAttach2;
-      hx::NativeAttach autoAttach3;
-      if (hx::GcGetThreadAttachedCount()!=4)
+      ::hx::NativeAttach autoAttach0;
+      ::hx::NativeAttach autoAttach1;
+      ::hx::NativeAttach autoAttach2;
+      ::hx::NativeAttach autoAttach3;
+      if (::hx::GcGetThreadAttachedCount()!=4)
       {
          printf("Bad attach count\n");
          return -1;
       }
    }
-   if (hx::GcGetThreadAttachedCount()!=0)
+   if (::hx::GcGetThreadAttachedCount()!=0)
    {
       printf("Bad clear attach count\n");
       return -1;

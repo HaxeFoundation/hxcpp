@@ -39,7 +39,7 @@ bool FieldMapHas(FieldMap *inMap, const String &inName)
 
 
 #ifdef HXCPP_GC_GENERATIONAL
-void FieldMapSet(hx::Object *inThis,FieldMap *inMap, const String &inName, const Dynamic &inValue)
+void FieldMapSet(::hx::Object *inThis,FieldMap *inMap, const String &inName, const Dynamic &inValue)
 {
    __string_hash_set(inThis,*inMap, inName, inValue,true);
 }
@@ -68,10 +68,10 @@ void FieldMapAppendFields(FieldMap *inMap,Array<String> &outFields)
 Anon_obj::Anon_obj(int inElements)
 {
    mFixedFields = inElements;
-   //mFields = hx::FieldMapCreate();
+   //mFields = ::hx::FieldMapCreate();
 }
 
-void Anon_obj::__Mark(hx::MarkContext *__inCtx)
+void Anon_obj::__Mark(::hx::MarkContext *__inCtx)
 {
    if (mFixedFields)
    {
@@ -83,7 +83,7 @@ void Anon_obj::__Mark(hx::MarkContext *__inCtx)
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
-void Anon_obj::__Visit(hx::VisitContext *__inCtx)
+void Anon_obj::__Visit(::hx::VisitContext *__inCtx)
 {
    if (mFixedFields)
    {
@@ -157,7 +157,7 @@ inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
    return -1;
 }
 
-hx::Val Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
+hx::Val Anon_obj::__Field(const String &inName, ::hx::PropertyAccess inCallProp)
 {
    if (mFixedFields>0)
    {
@@ -197,7 +197,7 @@ hx::Val Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
 
 
    if (!mFields.mPtr)
-      return hx::Val();
+      return ::hx::Val();
 
    return __string_hash_get(mFields,inName);
 }
@@ -232,7 +232,7 @@ bool Anon_obj::__Remove(String inKey)
 }
 
 
-hx::Val Anon_obj::__SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+hx::Val Anon_obj::__SetField(const String &inName,const ::hx::Val &inValue, ::hx::PropertyAccess inCallProp)
 {
    int slot = findFixed(inName);
    if (slot>=0)
@@ -251,7 +251,7 @@ hx::Val Anon_obj::__SetField(const String &inName,const hx::Val &inValue, hx::Pr
    // TODO - fixed
    if (!mFields.mPtr)
    {
-      mFields = hx::FieldMapCreate();
+      mFields = ::hx::FieldMapCreate();
       HX_OBJ_WB_GET(this, mFields.mPtr);
    }
 
@@ -264,7 +264,7 @@ Anon_obj *Anon_obj::Add(const String &inName,const Dynamic &inValue,bool inSetTh
    // TODO - fixed
    if (!mFields.mPtr)
    {
-      mFields = hx::FieldMapCreate();
+      mFields = ::hx::FieldMapCreate();
       HX_OBJ_WB_GET(this, mFields.mPtr);
    }
 
@@ -366,7 +366,7 @@ hx::Class Anon_obj::__mClass;
 
 void Anon_obj::__boot()
 {
-   Static(__mClass) = hx::_hx_RegisterClass(HX_CSTRING("__Anon"),TCanCast<Anon_obj>,sNone,sNone,0,0,0,0);
+   Static(__mClass) = ::hx::_hx_RegisterClass(HX_CSTRING("__Anon"),TCanCast<Anon_obj>,sNone,sNone,0,0,0,0);
 }
 
 
@@ -381,7 +381,7 @@ Anon SourceInfo(String inFile, int inLine, String inClass, String inMethod)
    return result;
 }
 
-String StringFromAnonFields(hx::Object *inPtr)
+String StringFromAnonFields(::hx::Object *inPtr)
 {
    Array<String> fields = Array_obj<String>::__new();
    inPtr->__GetFields(fields);
@@ -409,7 +409,7 @@ String StringFromAnonFields(hx::Object *inPtr)
 
 bool __hxcpp_anon_remove(Dynamic inObj,String inKey)
 {
-   hx::Anon_obj *anon = dynamic_cast<hx::Anon_obj *>(inObj.mPtr);
+   ::hx::Anon_obj *anon = dynamic_cast<::hx::Anon_obj *>(inObj.mPtr);
    if (anon)
    {
       bool removed = anon->__Remove(inKey);

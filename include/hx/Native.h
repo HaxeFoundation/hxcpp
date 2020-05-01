@@ -45,7 +45,7 @@ namespace hx
    class HXCPP_CLASS_ATTRIBUTES NativeInterface
    {
       public:
-         virtual hx::Object *__GetRealObject() = 0;
+         virtual ::hx::Object *__GetRealObject() = 0;
          void _hx_addRef();
          void _hx_decRef();
    };
@@ -61,7 +61,7 @@ namespace hx
          Native (const Native<T> &inNative) : ptr(inNative.ptr) { }
          #ifdef CPP_VARIANT_ONCE_H
          Native (const cpp::Variant &inVariant) {
-            hx::Object *obj = inVariant.asObject();
+            ::hx::Object *obj = inVariant.asObject();
             ptr = obj  ? (T)inVariant.valObject->__GetHandle() : 0;
          }
          #endif
@@ -111,7 +111,7 @@ namespace hx
             if (!isAttached)
             {
                isAttached = true;
-               hx::PushTopOfStack(this);
+               ::hx::PushTopOfStack(this);
             }
          }
          void detach()
@@ -119,7 +119,7 @@ namespace hx
             if (isAttached)
             {
                isAttached = false;
-               hx::PopTopOfStack();
+               ::hx::PopTopOfStack();
             }
          }
    };
@@ -140,9 +140,9 @@ namespace hx
       ~Ref() { setPtr(0); }
       void setPtr(T inPtr)
       {
-         hx::Object *old = ptr ? ptr->__GetRealObject() : 0;
+         ::hx::Object *old = ptr ? ptr->__GetRealObject() : 0;
          int oldOffset = old ? (int)(size_t)((char *)inPtr - (char *)old) : 0;
-         hx::Object *next = inPtr ? inPtr->__GetRealObject() : 0;
+         ::hx::Object *next = inPtr ? inPtr->__GetRealObject() : 0;
          int nextOffset = next ? (int)(size_t)((char *)inPtr - (char *)next) : 0;
 
          ptr = inPtr;
@@ -173,8 +173,8 @@ namespace hx
       T operator->() { return ptr; }
    };
 
-   #define HX_NATIVE_IMPLEMENTATION hx::Object *__GetRealObject() { return this; }
-   #define HX_EXTERN_NATIVE_IMPLEMENTATION hx::Object *__GetRealObject() { return 0; }
+   #define HX_NATIVE_IMPLEMENTATION ::hx::Object *__GetRealObject() { return this; }
+   #define HX_EXTERN_NATIVE_IMPLEMENTATION ::hx::Object *__GetRealObject() { return 0; }
 }
 
 #endif

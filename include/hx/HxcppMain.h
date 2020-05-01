@@ -18,7 +18,7 @@
       HX_TOP_OF_STACK
       try
       {
-         hx::Boot();
+         ::hx::Boot();
          __boot_all();
          __hxcpp_main();
       }
@@ -27,7 +27,7 @@
          __hx_dump_stack();
          __android_log_print(ANDROID_LOG_ERROR, "Exception", "%s", e==null() ? "null" : e->toString().__CStr());
       }
-      hx::SetTopOfStack((int *)0,true);
+      ::hx::SetTopOfStack((int *)0,true);
    }
 
    extern "C" EXPORT_EXTRA JNIEXPORT void JNICALL Java_org_haxe_HXCPP_main(JNIEnv * env)
@@ -43,7 +43,7 @@
    {
       HX_TOP_OF_STACK
       RoInitialize(RO_INIT_MULTITHREADED);
-      hx::Boot();
+      ::hx::Boot();
       try
       {
          __boot_all();
@@ -86,7 +86,7 @@
       _hxcpp_argv = argv;
    #endif
       HX_TOP_OF_STACK
-      hx::Boot();
+      ::hx::Boot();
       try
       {
          __boot_all();

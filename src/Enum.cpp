@@ -6,8 +6,8 @@
 namespace hx
 {
 
-Dynamic EnumBase_obj::__Create(DynamicArray inArgs) { return new hx::EnumBase_obj; }
-Dynamic EnumBase_obj::__CreateEmpty() { return new hx::EnumBase_obj; }
+Dynamic EnumBase_obj::__Create(DynamicArray inArgs) { return new ::hx::EnumBase_obj; }
+Dynamic EnumBase_obj::__CreateEmpty() { return new ::hx::EnumBase_obj; }
 
 
 int EnumBase_obj::__FindIndex(String inName)
@@ -20,7 +20,7 @@ int EnumBase_obj::__FindArgCount(String inName)
    if (inName==HX_CSTRING("__")) return 0;
    return -1;
 }
-hx::Val EnumBase_obj::__Field(const String &inString, hx::PropertyAccess inCallProp) { return null(); }
+hx::Val EnumBase_obj::__Field(const String &inString, ::hx::PropertyAccess inCallProp) { return null(); }
 
 hx::Class hxEnumBase_obj__mClass;
 hx::Class &EnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }
@@ -29,7 +29,7 @@ hx::Class &EnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }
 
 void EnumBase_obj::__boot()
 {
-   Static(hxEnumBase_obj__mClass) = hx::_hx_RegisterClass(HX_CSTRING("__EnumBase") ,TCanCast<EnumBase_obj>,
+   Static(hxEnumBase_obj__mClass) = ::hx::_hx_RegisterClass(HX_CSTRING("__EnumBase") ,TCanCast<EnumBase_obj>,
                        sNone,sNone,
                        &__CreateEmpty, &__Create, 0 );
 }
@@ -47,7 +47,7 @@ DynamicArray EnumBase_obj::_hx_getParameters()
 }
 #endif
 
-int EnumBase_obj::__Compare(const hx::Object *inRHS) const
+int EnumBase_obj::__Compare(const ::hx::Object *inRHS) const
 {
    if (inRHS->__GetType()!=vtEnum) return -1;
    const EnumBase_obj *rhs = static_cast<const EnumBase_obj *>(inRHS);
@@ -81,7 +81,7 @@ int EnumBase_obj::__Compare(const hx::Object *inRHS) const
 }
 
 
-void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
+void EnumBase_obj::__Mark(::hx::MarkContext *__inCtx)
 {
    #if (HXCPP_API_LEVEL >= 330)
    HX_MARK_MEMBER(_hx_tag);
@@ -98,7 +98,7 @@ void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
-void EnumBase_obj::__Visit(hx::VisitContext *__inCtx)
+void EnumBase_obj::__Visit(::hx::VisitContext *__inCtx)
 {
 
    #if (HXCPP_API_LEVEL >= 330)

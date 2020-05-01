@@ -5,7 +5,7 @@
 namespace hx
 {
 
-static int sTypeSize[] = { 0, 0, sizeof(hx::Object *), sizeof(String), sizeof(Float), sizeof(int) };
+static int sTypeSize[] = { 0, 0, sizeof(::hx::Object *), sizeof(String), sizeof(Float), sizeof(int) };
 
 inline void AlignOffset(ExprType type, int &ioOffset)
 {
@@ -128,7 +128,7 @@ Dynamic CppiaVar::getStaticValue()
       case fsInt: return *(int *)(valPointer);
       case fsFloat: return *(Float *)(valPointer);
       case fsString: return *(String *)(valPointer);
-      case fsObject: return *(hx::Object **)(valPointer);
+      case fsObject: return *(::hx::Object **)(valPointer);
       case fsUnknown:
          break;
    }
@@ -145,7 +145,7 @@ Dynamic CppiaVar::setStaticValue(Dynamic inValue)
       case fsInt: *(int *)(valPointer) = inValue; return inValue;
       case fsFloat: *(Float *)(valPointer) = inValue; return inValue;
       case fsString: *(String *)(valPointer) = inValue; return inValue;
-      case fsObject: *(hx::Object **)(valPointer) = inValue.mPtr; return inValue;
+      case fsObject: *(::hx::Object **)(valPointer) = inValue.mPtr; return inValue;
       case fsUnknown:
          break;
    }
@@ -179,13 +179,13 @@ void CppiaVar::linkVarTypes(CppiaModule &cppia, int &ioOffset)
       exprType = typeId==0 ? etObject : type->expressionType;
       AlignOffset(exprType, ioOffset);
       offset = ioOffset;
-      
+
       switch(exprType)
       {
          case etInt: ioOffset += sizeof(int); storeType=fsInt; break;
          case etFloat: ioOffset += sizeof(Float);storeType=fsFloat;  break;
          case etString: ioOffset += sizeof(String);storeType=fsString;  break;
-         case etObject: ioOffset += sizeof(hx::Object *);storeType=fsObject;  break;
+         case etObject: ioOffset += sizeof(::hx::Object *);storeType=fsObject;  break;
          case etVoid:
          case etNull:
             break;
@@ -193,16 +193,16 @@ void CppiaVar::linkVarTypes(CppiaModule &cppia, int &ioOffset)
    }
 }
 
-void CppiaVar::createDynamic(hx::Object *inBase)
+void CppiaVar::createDynamic(::hx::Object *inBase)
 {
-   *(hx::Object **)((char *)inBase+offset) = createMemberClosure(inBase,(ScriptCallable*)dynamicFunction->funExpr);
+   *(::hx::Object **)((char *)inBase+offset) = createMemberClosure(inBase,(ScriptCallable*)dynamicFunction->funExpr);
 }
 
 
-Dynamic CppiaVar::getValue(hx::Object *inThis)
+Dynamic CppiaVar::getValue(::hx::Object *inThis)
 {
    char *base = ((char *)inThis) + offset;
- 
+
    switch(storeType)
    {
       case fsByte: return *(unsigned char *)(base);
@@ -210,17 +210,17 @@ Dynamic CppiaVar::getValue(hx::Object *inThis)
       case fsBool: return *(bool *)(base);
       case fsFloat: return *(Float *)(base);
       case fsString: return *(String *)(base);
-      case fsObject: return *(hx::Object **)(base);
+      case fsObject: return *(::hx::Object **)(base);
       case fsUnknown:
          break;
    }
    return null();
 }
 
-Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
+Dynamic CppiaVar::setValue(::hx::Object *inThis, Dynamic inValue)
 {
    char *base = ((char *)inThis) + offset;
- 
+
    switch(storeType)
    {
       case fsByte: *(unsigned char *)(base) = inValue; return inValue;
@@ -232,7 +232,7 @@ Dynamic CppiaVar::setValue(hx::Object *inThis, Dynamic inValue)
             switch(type->arrayType)
             {
                case arrNotArray:
-                  *(hx::Object **)(base) = inValue.mPtr;
+                  *(::hx::Object **)(base) = inValue.mPtr;
                   break;
                case arrBool:
                   *(Array<bool> *)(base) = inValue;
@@ -320,13 +320,13 @@ void CppiaVar::runInit(CppiaCtx *ctx)
    }
 }
 
-void CppiaVar::mark(hx::MarkContext *__inCtx)
+void CppiaVar::mark(::hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(stringVal);
    HX_MARK_MEMBER(objVal);
    HX_MARK_MEMBER(name);
 }
-void CppiaVar::visit(hx::VisitContext *__inCtx)
+void CppiaVar::visit(::hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(stringVal);
    HX_VISIT_MEMBER(objVal);
@@ -416,7 +416,7 @@ void CppiaStackVar::setInFrame(unsigned char *inFrame,Dynamic inValue)
          *(String *)(ptr) = inValue;
          break;
       case fsObject:
-         *(hx::Object **)(ptr) = inValue.mPtr;
+         *(::hx::Object **)(ptr) = inValue.mPtr;
          break;
       case fsUnknown:
          break;
@@ -439,7 +439,7 @@ Dynamic CppiaStackVar::getInFrame(const unsigned char *inFrame)
       case fsInt: return *(int *)ptr;
       case fsFloat: return *(Float *)ptr;
       case fsString: return *(String *)ptr;
-      case fsObject: return  *(hx::Object **)ptr;
+      case fsObject: return  *(::hx::Object **)ptr;
       case fsUnknown:
          break;
    }
@@ -447,7 +447,7 @@ Dynamic CppiaStackVar::getInFrame(const unsigned char *inFrame)
 }
 
 
-void CppiaStackVar::markClosure(char *inBase, hx::MarkContext *__inCtx)
+void CppiaStackVar::markClosure(char *inBase, ::hx::MarkContext *__inCtx)
 {
    switch(storeType)
    {
@@ -455,13 +455,13 @@ void CppiaStackVar::markClosure(char *inBase, hx::MarkContext *__inCtx)
          HX_MARK_MEMBER(*(String *)(inBase + capturePos));
          break;
       case fsObject:
-         HX_MARK_MEMBER(*(hx::Object **)(inBase + capturePos));
+         HX_MARK_MEMBER(*(::hx::Object **)(inBase + capturePos));
          break;
       default: ;
    }
 }
 
-void CppiaStackVar::visitClosure(char *inBase, hx::VisitContext *__inCtx)
+void CppiaStackVar::visitClosure(char *inBase, ::hx::VisitContext *__inCtx)
 {
    switch(storeType)
    {
@@ -469,7 +469,7 @@ void CppiaStackVar::visitClosure(char *inBase, hx::VisitContext *__inCtx)
          HX_VISIT_MEMBER(*(String *)(inBase + capturePos));
          break;
       case fsObject:
-         HX_VISIT_MEMBER(*(hx::Object **)(inBase + capturePos));
+         HX_VISIT_MEMBER(*(::hx::Object **)(inBase + capturePos));
          break;
       default: ;
    }
@@ -499,7 +499,7 @@ void CppiaStackVar::link(CppiaModule &inModule, bool hasDefault)
 
 void CppiaStackVar::linkDefault()
 {
-   if (expressionType==etFloat && sizeof(double)>sizeof(hx::Object *) )
+   if (expressionType==etFloat && sizeof(double)>sizeof(::hx::Object *) )
    {
       stackPos = module->layout->size;
       module->layout->size += sTypeSize[expressionType];
@@ -519,7 +519,7 @@ void CppiaStackVar::setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault)
    }
    else
    {
-      hx::Object *src = *(hx::Object **)(inCxt->frame + defaultStackPos);
+      ::hx::Object *src = *(::hx::Object **)(inCxt->frame + defaultStackPos);
 
       if (src)
       {
@@ -554,7 +554,7 @@ void CppiaStackVar::setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault)
             case fsString:
             case fsUnknown:
                break; // handled above, or not needed
- 
+
          }
       }
    }
@@ -563,23 +563,23 @@ void CppiaStackVar::setDefault(CppiaCtx *inCxt, const CppiaConst &inDefault)
 
 #ifdef CPPIA_JIT
 
-static int SLJIT_CALL objToInt(hx::Object *inVal)
+static int SLJIT_CALL objToInt(::hx::Object *inVal)
 {
    return inVal->__ToInt();
 }
-static void SLJIT_CALL objToFloat(hx::Object *inVal,double *outFloat)
+static void SLJIT_CALL objToFloat(::hx::Object *inVal,double *outFloat)
 {
    *outFloat =  inVal->__ToDouble();
 }
-static hx::Object *SLJIT_CALL intToObject(int inVal)
+static ::hx::Object *SLJIT_CALL intToObject(int inVal)
 {
    return Dynamic(inVal).mPtr;
 }
-static hx::Object *SLJIT_CALL floatToObject(double * inVal)
+static ::hx::Object *SLJIT_CALL floatToObject(double * inVal)
 {
    return Dynamic(*inVal).mPtr;
 }
-static hx::Object *SLJIT_CALL stringToObject(String * inVal)
+static ::hx::Object *SLJIT_CALL stringToObject(String * inVal)
 {
    return Dynamic(*inVal).mPtr;
 }
@@ -613,7 +613,7 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
             compiler->move( destPos.as(jtByte), JitVal((int)(unsigned char)inDefault.ival));
             break;
 
-         case fsBool: 
+         case fsBool:
             compiler->move( destPos.as(jtByte), JitVal((int)(bool)inDefault.ival));
             break;
 
@@ -646,7 +646,7 @@ void CppiaStackVar::genDefault(CppiaCompiler *compiler, const CppiaConst &inDefa
       switch(storeType)
       {
          case fsByte:
-         case fsBool: 
+         case fsBool:
             //Fallthough...
             //compiler->callNative( (void *)objToInt, sJitTemp0.as(jtPointer) );
             //compiler->move( destPos.as(jtByte), sJitReturnReg.as(jtByte));

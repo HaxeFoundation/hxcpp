@@ -36,7 +36,7 @@ const char *gArrayFuncNames[] =
    "afResize",
 };
 
-int gArrayArgCount[] = 
+int gArrayArgCount[] =
 {
    1, //afConcat,
    0, //afCopy,
@@ -95,7 +95,7 @@ static ArrayBase * SLJIT_CALL array_expand_size(ArrayBase *inArray, int inSize)
 }
 
 #endif
- 
+
 
 
 
@@ -120,8 +120,8 @@ struct ArraySetter : public ArrayBuiltinBase
       ELEM &elem = thisVal->Item(i);
       FUNC::run(elem, ctx, args[1]);
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_CTX(thisVal,hx::PointerOf(elem),ctx);
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_CTX(thisVal,::hx::PointerOf(elem),ctx);
       #endif
       return ValToInt(elem);
    }
@@ -134,8 +134,8 @@ struct ArraySetter : public ArrayBuiltinBase
       ELEM &elem = thisVal->Item(i);
       FUNC::run(elem, ctx, args[1]);
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_CTX(thisVal,hx::PointerOf(elem),ctx);
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_CTX(thisVal,::hx::PointerOf(elem),ctx);
       #endif
       return ValToFloat(elem);
    }
@@ -148,12 +148,12 @@ struct ArraySetter : public ArrayBuiltinBase
       ELEM &elem = thisVal->Item(i);
       FUNC::run(elem, ctx, args[1]);
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_CTX(thisVal,hx::PointerOf(elem),ctx);
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_CTX(thisVal,::hx::PointerOf(elem),ctx);
       #endif
       return ValToString(elem);
    }
-   hx::Object *runObject(CppiaCtx *ctx)
+   ::hx::Object *runObject(CppiaCtx *ctx)
    {
       Array_obj<ELEM> *thisVal = reinterpret_cast<Array_obj<ELEM>*>(thisExpr->runObject(ctx));
       BCR_CHECK;
@@ -162,8 +162,8 @@ struct ArraySetter : public ArrayBuiltinBase
       ELEM &elem = thisVal->Item(i);
       FUNC::run(elem, ctx, args[1]);
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_CTX(thisVal,hx::PointerOf(elem),ctx);
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_CTX(thisVal,::hx::PointerOf(elem),ctx);
       #endif
       return Dynamic(elem).mPtr;
    }
@@ -176,8 +176,8 @@ struct ArraySetter : public ArrayBuiltinBase
       ELEM &elem = thisVal->Item( args[1].ival );
       FUNC::apply(elem, args[2].ival);
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_GET(thisVal,hx::PointerOf(elem));
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_GET(thisVal,::hx::PointerOf(elem));
       #endif
       return &elem;
    }
@@ -188,8 +188,8 @@ struct ArraySetter : public ArrayBuiltinBase
       ELEM &elem = thisVal->Item( args[1].ival );
       FUNC::apply(elem, args[2].dval);
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_GET(thisVal,hx::PointerOf(elem));
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_GET(thisVal,::hx::PointerOf(elem));
       #endif
       return &elem;
    }
@@ -201,8 +201,8 @@ struct ArraySetter : public ArrayBuiltinBase
       Dynamic obj(args[2].obj);
       FUNC::apply(elem, obj);
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_GET(thisVal,hx::PointerOf(elem));
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_GET(thisVal,::hx::PointerOf(elem));
       #endif
       return &elem;
    }
@@ -213,8 +213,8 @@ struct ArraySetter : public ArrayBuiltinBase
       ELEM &elem = thisVal->Item( args[1].ival );
       FUNC::apply(elem, (* ((String *)(&args[2].sval) )) );
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_GET(thisVal,hx::PointerOf(elem));
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_GET(thisVal,::hx::PointerOf(elem));
       #endif
       return &elem;
    }
@@ -290,7 +290,7 @@ struct ArraySetter : public ArrayBuiltinBase
 
 
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
+         if (::hx::ContainsPointers<ELEM>())
             compiler->move(sJitTemp2,sJitTemp0.as(jtPointer));
          #endif
          // sJitTemp0 = this->base
@@ -318,7 +318,7 @@ struct ArraySetter : public ArrayBuiltinBase
          {
             compiler->move( sJitTemp0.atReg(sJitTemp1,2), value );
             #ifdef HXCPP_GC_GENERATIONAL
-            if (hx::ContainsPointers<ELEM>())
+            if (::hx::ContainsPointers<ELEM>())
                genWriteBarrier(compiler, sJitTemp2, value );
             #endif
          }
@@ -326,7 +326,7 @@ struct ArraySetter : public ArrayBuiltinBase
          {
             compiler->move( sJitTemp0.atReg(sJitTemp1,3), value );
             #ifdef HXCPP_GC_GENERATIONAL
-            if (hx::ContainsPointers<ELEM>())
+            if (::hx::ContainsPointers<ELEM>())
                genWriteBarrier(compiler, sJitTemp2, value );
             #endif
          }
@@ -388,15 +388,15 @@ static ArrayBase * SLJIT_CALL array_expand(ArrayBase *inArray)
   inArray->Realloc( inArray->length + 1 );
   return inArray;
 }
-static hx::Object *SLJIT_CALL objGetIndex(hx::Object *inArray, int inIndex)
+static ::hx::Object *SLJIT_CALL objGetIndex(::hx::Object *inArray, int inIndex)
 {
    return Dynamic(inArray->__GetItem(inIndex)).mPtr;
 }
 #endif
- 
+
 
 template<typename T>
-struct ExprBaseTypeOf { typedef hx::Object *Base ; };
+struct ExprBaseTypeOf { typedef ::hx::Object *Base ; };
 template<> struct ExprBaseTypeOf<int> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<unsigned char> { typedef int Base ; };
 template<> struct ExprBaseTypeOf<bool> { typedef int Base ; };
@@ -508,7 +508,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM elem;
          runValue(elem,ctx,args[0]);
          BCR_CHECK;
-         hx::Object *start = args[1]->runObject(ctx);
+         ::hx::Object *start = args[1]->runObject(ctx);
          BCR_CHECK;
          return thisVal->indexOf(elem,start);
       }
@@ -519,7 +519,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM elem;
          runValue(elem,ctx,args[0]);
          BCR_CHECK;
-         hx::Object *start = args[1]->runObject(ctx);
+         ::hx::Object *start = args[1]->runObject(ctx);
          BCR_CHECK;
          return thisVal->lastIndexOf(elem, start);
       }
@@ -542,8 +542,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_CHECK;
          thisVal->Item(i) = elem;
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-            HX_OBJ_WB_GET(thisVal, hx::PointerOf(elem));
+         if (::hx::ContainsPointers<ELEM>())
+            HX_OBJ_WB_GET(thisVal, ::hx::PointerOf(elem));
          #endif
          return ValToInt(elem);
       }
@@ -556,8 +556,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM &elem = thisVal->Item(idx);
          int result = ValToInt(CREMENT::run(elem));
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-           HX_OBJ_WB_CTX(thisVal,hx::PointerOf(elem),ctx);
+         if (::hx::ContainsPointers<ELEM>())
+           HX_OBJ_WB_CTX(thisVal,::hx::PointerOf(elem),ctx);
          #endif
          return result;
       }
@@ -595,8 +595,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_CHECK;
          thisVal->Item(i) = elem;
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-            HX_OBJ_WB_GET(thisVal, hx::PointerOf(elem));
+         if (::hx::ContainsPointers<ELEM>())
+            HX_OBJ_WB_GET(thisVal, ::hx::PointerOf(elem));
          #endif
          return ValToFloat(elem);
       }
@@ -607,8 +607,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
          Float result = ValToFloat(CREMENT::run(elem));
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-           HX_OBJ_WB_CTX(thisVal,hx::PointerOf(elem),ctx);
+         if (::hx::ContainsPointers<ELEM>())
+           HX_OBJ_WB_CTX(thisVal,::hx::PointerOf(elem),ctx);
          #endif
          return result;
       }
@@ -650,8 +650,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM elem;
          runValue(elem,ctx,args[1]);
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-            HX_OBJ_WB_GET(thisVal, hx::PointerOf(elem));
+         if (::hx::ContainsPointers<ELEM>())
+            HX_OBJ_WB_GET(thisVal, ::hx::PointerOf(elem));
          #endif
          BCR_CHECK;
          return ValToString( thisVal->Item(i) = elem);
@@ -665,8 +665,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM &elem = thisVal->Item(idx);
          String result = ValToString(CREMENT::run(elem));
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-           HX_OBJ_WB_CTX(thisVal,hx::PointerOf(elem),ctx);
+         if (::hx::ContainsPointers<ELEM>())
+           HX_OBJ_WB_CTX(thisVal,::hx::PointerOf(elem),ctx);
          #endif
          return result;
       }
@@ -693,7 +693,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
       return runObject(ctx)->toString();
    }
-   hx::Object *runObject(CppiaCtx *ctx)
+   ::hx::Object *runObject(CppiaCtx *ctx)
    {
       if (FUNC==af__get)
       {
@@ -712,8 +712,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM elem;
          thisVal->Item(i) = runValue(elem,ctx,args[1]);
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-            HX_OBJ_WB_GET(thisVal, hx::PointerOf(elem));
+         if (::hx::ContainsPointers<ELEM>())
+            HX_OBJ_WB_GET(thisVal, ::hx::PointerOf(elem));
          #endif
          return Dynamic(elem).mPtr;
       }
@@ -726,8 +726,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM &elem = thisVal->Item(idx);
          Dynamic result(CREMENT::run(elem));
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-           HX_OBJ_WB_CTX(thisVal,hx::PointerOf(elem),ctx);
+         if (::hx::ContainsPointers<ELEM>())
+           HX_OBJ_WB_CTX(thisVal,::hx::PointerOf(elem),ctx);
          #endif
          return result.mPtr;
 
@@ -777,7 +777,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_CHECK;
          int pos = args[0]->runInt(ctx);
          BCR_CHECK;
-         hx::Object *end = args[1]->runObject(ctx);
+         ::hx::Object *end = args[1]->runObject(ctx);
          BCR_CHECK;
          return thisVal->slice(pos,end).mPtr;
       }
@@ -786,7 +786,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          // TODO - maybe make this more efficient
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          BCR_CHECK;
-         hx::Object *func = args[0]->runObject(ctx);
+         ::hx::Object *func = args[0]->runObject(ctx);
          BCR_CHECK;
          Dynamic result = thisVal->map(func);
          return result.mPtr;
@@ -795,7 +795,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          BCR_CHECK;
-         hx::Object *func = args[0]->runObject(ctx);
+         ::hx::Object *func = args[0]->runObject(ctx);
          BCR_CHECK;
          return thisVal->filter(func).mPtr;
       }
@@ -845,8 +845,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM elem;
          thisVal->Item(i) = runValue(elem,ctx,args[1]);
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-            HX_OBJ_WB_CTX(thisVal, hx::PointerOf(elem), ctx);
+         if (::hx::ContainsPointers<ELEM>())
+            HX_OBJ_WB_CTX(thisVal, ::hx::PointerOf(elem), ctx);
          #endif
 
       }
@@ -859,8 +859,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          ELEM &elem = thisVal->Item(idx);
          CREMENT::run(elem);
          #ifdef HXCPP_GC_GENERATIONAL
-         if (hx::ContainsPointers<ELEM>())
-           HX_OBJ_WB_CTX(thisVal,hx::PointerOf(elem),ctx);
+         if (::hx::ContainsPointers<ELEM>())
+           HX_OBJ_WB_CTX(thisVal,::hx::PointerOf(elem),ctx);
          #endif
       }
 
@@ -881,7 +881,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          BCR_VCHECK;
-         hx::Object * func = args[0]->runObject(ctx);
+         ::hx::Object * func = args[0]->runObject(ctx);
          BCR_VCHECK;
          thisVal->sort(func);
       }
@@ -987,7 +987,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
             case aoMod:
                replace = new ArraySetter<ELEM,AssignMod>(this,thisExpr,args);
                break;
-      
+
             default: ;
                printf("make setter %d\n", op);
                throw "setter not implemented";
@@ -1033,7 +1033,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       inArray->Realloc( inArray->length + 1 );
       return inArray;
    }
-   static void SLJIT_CALL runSort( Array_obj<ELEM> *inArray, hx::Object *inFunc)
+   static void SLJIT_CALL runSort( Array_obj<ELEM> *inArray, ::hx::Object *inFunc)
    {
       TRY_NATIVE
       inArray->sort( Dynamic(inFunc) );
@@ -1051,8 +1051,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       ELEM &t = Array<ELEM>(inArray)[inIndex];
       CREMENT::run(t);
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_GET(inArray,hx::PointerOf(t));
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_GET(inArray,::hx::PointerOf(t));
       #endif
    }
 
@@ -1061,8 +1061,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       ELEM &t = Array<ELEM>(inArray)[inIndex];
       int result =  ValToInt( CREMENT::run(t) );
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_GET(inArray,hx::PointerOf(t));
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_GET(inArray,::hx::PointerOf(t));
       #endif
       return result;
    }
@@ -1072,19 +1072,19 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       ELEM &t = Array<ELEM>(inArray)[inIndex];
       *d = ValToFloat( CREMENT::run(t) );
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_GET(inArray,hx::PointerOf(t));
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_GET(inArray,::hx::PointerOf(t));
       #endif
 
    }
 
-   static hx::Object * SLJIT_CALL runObjCrement( Array_obj<ELEM> *inArray, int inIndex)
+   static ::hx::Object * SLJIT_CALL runObjCrement( Array_obj<ELEM> *inArray, int inIndex)
    {
       ELEM &t = Array<ELEM>(inArray)[inIndex];
       Dynamic result( CREMENT::run(t) );
       #ifdef HXCPP_GC_GENERATIONAL
-      if (hx::ContainsPointers<ELEM>())
-         HX_OBJ_WB_GET(inArray,hx::PointerOf(t));
+      if (::hx::ContainsPointers<ELEM>())
+         HX_OBJ_WB_GET(inArray,::hx::PointerOf(t));
       #endif
       return result.mPtr;
    }
@@ -1106,7 +1106,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    }
 
 
-   static int SLJIT_CALL runIndex( Array_obj<ELEM> *inArray, typename ExprBaseTypeOf<ELEM>::Base inBase, hx::Object *pos)
+   static int SLJIT_CALL runIndex( Array_obj<ELEM> *inArray, typename ExprBaseTypeOf<ELEM>::Base inBase, ::hx::Object *pos)
    {
       if (FUNC==afIndexOf)
          return inArray->indexOf(inBase,pos);
@@ -1120,17 +1120,17 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    }
 
    // TODO - string
-   static hx::Object * SLJIT_CALL runShift( Array_obj<ELEM> *inArray )
+   static ::hx::Object * SLJIT_CALL runShift( Array_obj<ELEM> *inArray )
    {
       return Dynamic(inArray->shift()).mPtr;
    }
 
-   static hx::Object * SLJIT_CALL runSlice( Array_obj<ELEM> *inArray, int pos, hx::Object *end )
+   static ::hx::Object * SLJIT_CALL runSlice( Array_obj<ELEM> *inArray, int pos, ::hx::Object *end )
    {
       return inArray->slice(pos, end).mPtr;
    }
 
-   static hx::Object * SLJIT_CALL runSplice( Array_obj<ELEM> *inArray, int pos, int len )
+   static ::hx::Object * SLJIT_CALL runSplice( Array_obj<ELEM> *inArray, int pos, int len )
    {
       return inArray->splice(pos, len).mPtr;
    }
@@ -1145,18 +1145,18 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       inArray->reverse();
    }
 
-   static hx::Object *SLJIT_CALL runConcat( Array_obj<ELEM> *inArray, Array_obj<ELEM> *inOther )
+   static ::hx::Object *SLJIT_CALL runConcat( Array_obj<ELEM> *inArray, Array_obj<ELEM> *inOther )
    {
       return inArray->concat(inOther).mPtr;
    }
 
 
-   static hx::Object *SLJIT_CALL runGetIteratator( Array_obj<ELEM> *inArray )
+   static ::hx::Object *SLJIT_CALL runGetIteratator( Array_obj<ELEM> *inArray )
    {
       return inArray->iterator().mPtr;
    }
 
-   static hx::Object *SLJIT_CALL runGetKeyValueIteratator( Array_obj<ELEM> *inArray )
+   static ::hx::Object *SLJIT_CALL runGetKeyValueIteratator( Array_obj<ELEM> *inArray )
    {
       return inArray->keyValueIterator().mPtr;
    }
@@ -1179,7 +1179,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       CATCH_NATIVE
    }
 
-   static hx::Object * SLJIT_CALL runCopy( Array_obj<ELEM> *inArray)
+   static ::hx::Object * SLJIT_CALL runCopy( Array_obj<ELEM> *inArray)
    {
       return inArray->copy().mPtr;
    }
@@ -1193,7 +1193,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    }
 
 
-   static hx::Object * SLJIT_CALL runProcess( Array_obj<ELEM> *inArray, hx::Object *inFunction)
+   static ::hx::Object * SLJIT_CALL runProcess( Array_obj<ELEM> *inArray, ::hx::Object *inFunction)
    {
       TRY_NATIVE
       if (FUNC==afMap)
@@ -1248,7 +1248,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   compiler->add(length, sJitTemp0, (int)1 );
 
                #ifdef HXCPP_GC_GENERATIONAL
-               if (hx::ContainsPointers<ELEM>())
+               if (::hx::ContainsPointers<ELEM>())
                   compiler->move(sJitTemp2, sJitTemp1.as(jtPointer));
                #endif
 
@@ -1278,7 +1278,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                {
                   compiler->move( sJitTemp1.atReg(sJitTemp0,2), tempVal );
                   #ifdef HXCPP_GC_GENERATIONAL
-                  if (hx::ContainsPointers<ELEM>())
+                  if (::hx::ContainsPointers<ELEM>())
                      genWriteBarrier(compiler, sJitTemp2, tempVal );
                   #endif
                }
@@ -1286,7 +1286,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                {
                   compiler->move( sJitTemp1.atReg(sJitTemp0,3), tempVal );
                   #ifdef HXCPP_GC_GENERATIONAL
-                  if (hx::ContainsPointers<ELEM>())
+                  if (::hx::ContainsPointers<ELEM>())
                      genWriteBarrier(compiler, sJitTemp2, tempVal );
                   #endif
                }
@@ -1342,7 +1342,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
 
                #ifdef HXCPP_GC_GENERATIONAL
-               if (hx::ContainsPointers<ELEM>())
+               if (::hx::ContainsPointers<ELEM>())
                    compiler->move(sJitTemp2,sJitTemp0.as(jtPointer));
                #endif
 
@@ -1373,7 +1373,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                {
                   compiler->move( sJitTemp0.atReg(sJitTemp1,2), tempVal );
                   #ifdef HXCPP_GC_GENERATIONAL
-                  if (hx::ContainsPointers<ELEM>())
+                  if (::hx::ContainsPointers<ELEM>())
                      genWriteBarrier(compiler, sJitTemp2, tempVal );
                   #endif
                }
@@ -1381,7 +1381,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                {
                   compiler->move( sJitTemp0.atReg(sJitTemp1,3), tempVal );
                   #ifdef HXCPP_GC_GENERATIONAL
-                  if (hx::ContainsPointers<ELEM>())
+                  if (::hx::ContainsPointers<ELEM>())
                      genWriteBarrier(compiler, sJitTemp2, tempVal );
                   #endif
                }
@@ -1713,7 +1713,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
             }
 
-   
+
          // Array<ELEM>
          case afIterator:
             {
@@ -1944,19 +1944,19 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
 
 #ifdef CPPIA_JIT
-static hx::Object * SLJIT_CALL objGetItem(hx::Object *inObj, int inIndex)
+static ::hx::Object * SLJIT_CALL objGetItem(::hx::Object *inObj, int inIndex)
 {
    return inObj->__GetItem(inIndex).mPtr;
 }
-static int SLJIT_CALL arrayContains(ArrayAnyImpl *inObj, hx::Object *inValue)
+static int SLJIT_CALL arrayContains(ArrayAnyImpl *inObj, ::hx::Object *inValue)
 {
    return inObj->contains(inValue);
 }
-static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, hx::Object *inValue)
+static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, ::hx::Object *inValue)
 {
    return inObj->remove(inValue);
 }
-static hx::Object * SLJIT_CALL arrayConcat(ArrayAnyImpl *inObj, hx::Object *inValue)
+static ::hx::Object * SLJIT_CALL arrayConcat(ArrayAnyImpl *inObj, ::hx::Object *inValue)
 {
    return inObj->concat(Dynamic(inValue)).mPtr;
 }
@@ -1966,24 +1966,24 @@ static void SLJIT_CALL arraySetSizeExact(ArrayAnyImpl *inObj, int inSize)
 }
 
 
-static hx::Object * SLJIT_CALL arraySplice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
+static ::hx::Object * SLJIT_CALL arraySplice(ArrayAnyImpl *inObj, ::hx::Object *a0, ::hx::Object *a1)
 {
    return inObj->splice( Dynamic(a0), Dynamic(a1) ).mPtr;
 }
-static hx::Object * SLJIT_CALL arraySlice(ArrayAnyImpl *inObj, hx::Object *a0, hx::Object *a1)
+static ::hx::Object * SLJIT_CALL arraySlice(ArrayAnyImpl *inObj, ::hx::Object *a0, ::hx::Object *a1)
 {
    return inObj->slice( Dynamic(a0), Dynamic(a1) ).mPtr;
 }
-static hx::Object * SLJIT_CALL arrayPop(ArrayAnyImpl *inObj)
+static ::hx::Object * SLJIT_CALL arrayPop(ArrayAnyImpl *inObj)
 {
    return inObj->pop().mPtr;
 }
-static hx::Object * SLJIT_CALL arrayShift(ArrayAnyImpl *inObj)
+static ::hx::Object * SLJIT_CALL arrayShift(ArrayAnyImpl *inObj)
 {
    return inObj->shift().mPtr;
 }
 
-static void SLJIT_CALL runSort( ArrayAnyImpl *inArray, hx::Object *inFunc)
+static void SLJIT_CALL runSort( ArrayAnyImpl *inArray, ::hx::Object *inFunc)
 {
    TRY_NATIVE
    inArray->sort( Dynamic(inFunc) );
@@ -1994,7 +1994,7 @@ static void SLJIT_CALL runReverse( ArrayAnyImpl *inArray)
    inArray->reverse();
 }
 
-static hx::Object * SLJIT_CALL runCopy( ArrayAnyImpl *inArray)
+static ::hx::Object * SLJIT_CALL runCopy( ArrayAnyImpl *inArray)
 {
    return (inArray->copy()).mPtr;
 }
@@ -2014,7 +2014,7 @@ static int SLJIT_CALL arrayPushInt( ArrayAnyImpl *inArray, int inVal)
 {
    return inArray->push(inVal);
 }
-static int SLJIT_CALL arrayPushObject( ArrayAnyImpl *inArray, hx::Object *inVal)
+static int SLJIT_CALL arrayPushObject( ArrayAnyImpl *inArray, ::hx::Object *inVal)
 {
    return inArray->push(Dynamic(inVal));
 }
@@ -2034,7 +2034,7 @@ static int SLJIT_CALL arraySetInt( ArrayAnyImpl *inArray, int inIndex, int inVal
    inArray->set(inIndex,inVal);
    return inVal;
 }
-static hx::Object * SLJIT_CALL arraySetObject( ArrayAnyImpl *inArray, int inIndex, hx::Object *inVal)
+static ::hx::Object * SLJIT_CALL arraySetObject( ArrayAnyImpl *inArray, int inIndex, ::hx::Object *inVal)
 {
    inArray->set(inIndex,Dynamic(inVal));
    return inVal;
@@ -2054,7 +2054,7 @@ static void SLJIT_CALL arrayUnshiftInt( ArrayAnyImpl *inArray, int inVal)
 {
    inArray->unshift(inVal);
 }
-static void SLJIT_CALL arrayUnshiftObject( ArrayAnyImpl *inArray, hx::Object *inVal)
+static void SLJIT_CALL arrayUnshiftObject( ArrayAnyImpl *inArray, ::hx::Object *inVal)
 {
    inArray->unshift(Dynamic(inVal));
 }

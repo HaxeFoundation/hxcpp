@@ -219,7 +219,7 @@ struct HashRoot : public Object
 {
    HashStore store;
 
-    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdHash };
+    HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdHash };
 
    virtual void updateAfterGc() = 0;
 };
@@ -533,8 +533,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       if (el)
       {
          CopyValue(el->value,inValue);
-         if (hx::ContainsPointers<Value>())
-            HX_OBJ_WB_GET(this,hx::PointerOf(el->value));
+         if (::hx::ContainsPointers<Value>())
+            HX_OBJ_WB_GET(this,::hx::PointerOf(el->value));
          return;
       }
       el = allocElement();
@@ -545,11 +545,11 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
       #ifdef HXCPP_GC_GENERATIONAL
       unsigned char &mark =  ((unsigned char *)(this))[ HX_ENDIAN_MARK_ID_BYTE];
-      if (mark == hx::gByteMarkID)
+      if (mark == ::hx::gByteMarkID)
       {
          // Look for nursery objects...
-         if ( IsNursery(el) || IsNursery(hx::PointerOf(el->key)) ||
-             (hx::ContainsPointers<Value>() && IsNursery(hx::PointerOf(el->value)) ) )
+         if ( IsNursery(el) || IsNursery(::hx::PointerOf(el->key)) ||
+             (::hx::ContainsPointers<Value>() && IsNursery(::hx::PointerOf(el->value)) ) )
          {
             mark|=HX_GC_REMEMBERED;
             (HX_CTX_GET)->pushReferrer(this);
@@ -710,8 +710,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    // Mark ...
    struct HashMarker
    {
-      hx::MarkContext *__inCtx;
-      HashMarker(hx::MarkContext *ctx) : __inCtx(ctx) { }
+      ::hx::MarkContext *__inCtx;
+      HashMarker(::hx::MarkContext *ctx) : __inCtx(ctx) { }
       void operator()(typename Hash::Element *inElem)
       {
          HX_MARK_ARRAY(inElem);
@@ -723,7 +723,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       }
    };
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(::hx::MarkContext *__inCtx)
    {
       HX_MARK_ARRAY(bucket);
 
@@ -733,7 +733,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
 #ifdef HXCPP_VISIT_ALLOCS
 
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(::hx::VisitContext *__inCtx)
    {
       //printf(" visit hash %p\n", this);
       HX_VISIT_ARRAY(bucket);

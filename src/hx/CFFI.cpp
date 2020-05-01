@@ -22,7 +22,7 @@ namespace hx
 class Abstract_obj : public Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdAbstract };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdAbstract };
 
    Abstract_obj(int inType,void *inData)
    {
@@ -50,25 +50,25 @@ public:
 
 
    virtual int __GetType() const { return mType; }
-   virtual hx::ObjectPtr<hx::Class_obj> __GetClass() const { return 0; }
-   virtual bool __IsClass(hx::Class inClass ) const { return false; }
+   virtual ::hx::ObjectPtr<::hx::Class_obj> __GetClass() const { return 0; }
+   virtual bool __IsClass(::hx::Class inClass ) const { return false; }
 
    virtual void *__GetHandle() const
    {
       return mHandle;
    }
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(::hx::MarkContext *__inCtx)
    {
       HX_MARK_MEMBER(_hxcpp_toString);
       if (mMarkSize>=sizeof(void *) && mHandle)
       {
-         hx::MarkConservative((int *)mHandle, ((int *)mHandle) + (mMarkSize/sizeof(int)), __inCtx );
+         ::hx::MarkConservative((int *)mHandle, ((int *)mHandle) + (mMarkSize/sizeof(int)), __inCtx );
       }
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(::hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(_hxcpp_toString);
       if (mFinalizer)
@@ -87,7 +87,7 @@ public:
       else
       {
          if (!mFinalizer)
-            mFinalizer = new hx::InternalFinalizer(this);
+            mFinalizer = new ::hx::InternalFinalizer(this);
          mFinalizer->mFinalizer = inFinalizer;
       }
    }
@@ -115,26 +115,26 @@ public:
              HX_CSTRING(")");
    }
 
-   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp)
+   ::hx::Val __Field(const String &inString, ::hx::PropertyAccess inCallProp)
    {
       if (inString==HX_CSTRING("_hxcpp_toString")) return _hxcpp_toString;
       if (inString==HX_CSTRING("_hxcpp_kind")) return __hxcpp_get_kind(this);
-      return hx::Object::__Field(inString, inCallProp);
+      return ::hx::Object::__Field(inString, inCallProp);
    }
 
-   hx::Val __SetField(const String &inName,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+   ::hx::Val __SetField(const String &inName,const ::hx::Val &inValue, ::hx::PropertyAccess inCallProp)
    {
       if (inName==HX_CSTRING("_hxcpp_toString"))
       {
          _hxcpp_toString = inValue;
          return inValue;
       }
-      return hx::Object::__SetField(inName, inValue,inCallProp);
+      return ::hx::Object::__SetField(inName, inValue,inCallProp);
    }
 
 
    Dynamic _hxcpp_toString;
-   hx::InternalFinalizer *mFinalizer;
+   ::hx::InternalFinalizer *mFinalizer;
    void *mHandle;
    int mType;
    int mMarkSize;
@@ -203,31 +203,31 @@ extern "C" {
 
 void hx_error() THROWS
 {
-   hx::Throw( HX_CSTRING("ERROR") );
+   ::hx::Throw( HX_CSTRING("ERROR") );
 }
 
 
-void val_throw(hx::Object * arg1) THROWS
+void val_throw(::hx::Object * arg1) THROWS
 {
    if (arg1==0)
-      hx::Throw( null() );
-   hx::Throw( arg1 );
+      ::hx::Throw( null() );
+   ::hx::Throw( arg1 );
 }
 
 
 void hx_fail(const char * inMessage,const char * inFile,int inLine)
 {
    if (inFile!=0 && inLine!=0)
-      hx::Throw( HX_CSTRING("Failure ") + String(inMessage) + HX_CSTRING(" @ ") +
+      ::hx::Throw( HX_CSTRING("Failure ") + String(inMessage) + HX_CSTRING(" @ ") +
                     String(inFile) + HX_CSTRING(":") + Dynamic(inLine) );
    else
-      hx::Throw( HX_CSTRING("Failure ") + String(inMessage) );
+      ::hx::Throw( HX_CSTRING("Failure ") + String(inMessage) );
 }
 
 
 
-// Determine hx::Object * type
-int val_type(hx::Object * arg1)
+// Determine ::hx::Object * type
+int val_type(::hx::Object * arg1)
 {
    if (arg1==0)
       return valtNull;
@@ -235,18 +235,18 @@ int val_type(hx::Object * arg1)
 }
 
 \
-vkind val_kind(hx::Object * arg1) THROWS
+vkind val_kind(::hx::Object * arg1) THROWS
 {
    if (arg1==0)
-      hx::Throw( HX_CSTRING("Value has no 'kind'") );
+      ::hx::Throw( HX_CSTRING("Value has no 'kind'") );
    int type = arg1->__GetType();
    if (type<valtAbstractBase)
-      hx::Throw( HX_CSTRING("Value has no 'kind'") );
+      ::hx::Throw( HX_CSTRING("Value has no 'kind'") );
    return (vkind)(intptr_t)(type);
 }
 
 
-void * val_to_kind(hx::Object * arg1,vkind arg2)
+void * val_to_kind(::hx::Object * arg1,vkind arg2)
 {
    if (arg1==0)
       return 0;
@@ -257,7 +257,7 @@ void * val_to_kind(hx::Object * arg1,vkind arg2)
 
 
 // don't check the 'kind' ...
-void * val_data(hx::Object * arg1)
+void * val_data(::hx::Object * arg1)
 {
    if (arg1==0)
       return 0;
@@ -265,7 +265,7 @@ void * val_data(hx::Object * arg1)
 }
 
 
-int val_fun_nargs(hx::Object * arg1)
+int val_fun_nargs(::hx::Object * arg1)
 {
    if (arg1==0)
       return faNotFunction;
@@ -275,29 +275,29 @@ int val_fun_nargs(hx::Object * arg1)
 
 
 
-// Extract hx::Object * type
-bool val_bool(hx::Object * arg1)
+// Extract ::hx::Object * type
+bool val_bool(::hx::Object * arg1)
 {
    if (arg1==0) return false;
    return arg1->__ToInt()!=0;
 }
 
 
-int val_int(hx::Object * arg1)
+int val_int(::hx::Object * arg1)
 {
    if (arg1==0) return 0;
    return arg1->__ToInt();
 }
 
 
-double val_float(hx::Object * arg1)
+double val_float(::hx::Object * arg1)
 {
    if (arg1==0) return 0.0;
    return arg1->__ToDouble();
 }
 
 
-double val_number(hx::Object * arg1)
+double val_number(::hx::Object * arg1)
 {
    if (arg1==0) return 0.0;
    return arg1->__ToDouble();
@@ -305,34 +305,34 @@ double val_number(hx::Object * arg1)
 
 
 
-// Create hx::Object * type
+// Create ::hx::Object * type
 
 hx::Object * alloc_null() { return 0; }
 hx::Object * alloc_bool(bool arg1) { return Dynamic(arg1).GetPtr(); }
 hx::Object * alloc_int(int arg1) { return Dynamic(arg1).GetPtr(); }
 hx::Object * alloc_float(double arg1) { return Dynamic(arg1).GetPtr(); }
-hx::Object * alloc_empty_object() { return new hx::Anon_obj(); }
+hx::Object * alloc_empty_object() { return new ::hx::Anon_obj(); }
 
 
 hx::Object * alloc_abstract(vkind arg1,void * arg2)
 {
    int type = (int)(intptr_t)arg1;
-   return new hx::Abstract_obj(type,arg2);
+   return new ::hx::Abstract_obj(type,arg2);
 }
 
-hx::Object *create_abstract(vkind inKind,int inMemSize, hx::finalizer inFree )
+hx::Object *create_abstract(vkind inKind,int inMemSize, ::hx::finalizer inFree )
 {
    int type = (int)(intptr_t)inKind;
 
-   return new hx::Abstract_obj(type,inMemSize,inFree);
+   return new ::hx::Abstract_obj(type,inMemSize,inFree);
 }
 
 
-void free_abstract(hx::Object *obj)
+void free_abstract(::hx::Object *obj)
 {
    if (obj)
    {
-      hx::Abstract_obj *abstract = dynamic_cast<hx::Abstract_obj *>(obj);
+      ::hx::Abstract_obj *abstract = dynamic_cast<::hx::Abstract_obj *>(obj);
       if (abstract)
          abstract->Clear();
    }
@@ -344,21 +344,21 @@ hx::Object * alloc_int32(int arg1) { return Dynamic(arg1).GetPtr(); }
 
 
 // String access
-int val_strlen(hx::Object * arg1)
+int val_strlen(::hx::Object * arg1)
 {
    if (arg1==0) return 0;
    return arg1->toString().length;
 }
 
 
-const wchar_t * val_wstring(hx::Object * arg1)
+const wchar_t * val_wstring(::hx::Object * arg1)
 {
    if (arg1==0) return L"";
    return arg1->toString().__WCStr();
 }
 
 
-const char * val_string(hx::Object * arg1)
+const char * val_string(::hx::Object * arg1)
 {
    if (arg1==0) return "";
    return arg1->__CStr();
@@ -374,18 +374,18 @@ hx::StringEncoding hxs_encoding(const String &str)
 {
    #ifdef HX_SMART_STRINGS
    if (str.isUTF16Encoded())
-      return hx::StringUtf16;
+      return ::hx::StringUtf16;
    else
-      return hx::StringAscii;
+      return ::hx::StringAscii;
    #else
-   return hx::StringUtf8;
+   return ::hx::StringUtf8;
    #endif
 }
 
 
 wchar_t * val_dup_wstring(value inVal)
 {
-   hx::Object *obj = (hx::Object *)inVal;
+   ::hx::Object *obj = (::hx::Object *)inVal;
    if (!obj)
       return 0;
    String  s = obj->toString();
@@ -394,7 +394,7 @@ wchar_t * val_dup_wstring(value inVal)
    #ifdef HX_SMART_STRINGS
    if ( sizeof(wchar_t)==2 && s.isUTF16Encoded())
    {
-      wchar_t *result = (wchar_t *)hx::NewGCBytes(0,(s.length+1)*2);
+      wchar_t *result = (wchar_t *)::hx::NewGCBytes(0,(s.length+1)*2);
       memcpy(result, s.wchar_str(), s.length*2 );
       result[s.length]=0;
       return result;
@@ -405,7 +405,7 @@ wchar_t * val_dup_wstring(value inVal)
 
 char * val_dup_string(value inVal)
 {
-   hx::Object *obj = (hx::Object *)inVal;
+   ::hx::Object *obj = (::hx::Object *)inVal;
    if (!obj) return 0;
    String  s = obj->toString();
    if (!s.raw_ptr())
@@ -415,7 +415,7 @@ char * val_dup_string(value inVal)
       return (char *)s.utf8_str();
    #endif
 
-   char *result = (char *)hx::NewGCBytes(0,s.length+1);
+   char *result = (char *)::hx::NewGCBytes(0,s.length+1);
    memcpy(result, s.raw_ptr(), s.length);
    result[s.length] = 0;
    return result;
@@ -424,7 +424,7 @@ char * val_dup_string(value inVal)
 
 char *alloc_string_data(const char *inData, int inLength)
 {
-   char *result = (char *)hx::NewGCBytes(0,inLength+1);
+   char *result = (char *)::hx::NewGCBytes(0,inLength+1);
    if (inData)
    {
       memcpy(result, inData, inLength);
@@ -445,32 +445,32 @@ hx::Object *alloc_wstring_len(const wchar_t *inStr,int inLen)
 }
 
 // Array access - generic
-int val_array_size(hx::Object * arg1)
+int val_array_size(::hx::Object * arg1)
 {
    if (arg1==0) return 0;
    return arg1->__length();
 }
 
 
-hx::Object * val_array_i(hx::Object * arg1,int arg2)
+hx::Object * val_array_i(::hx::Object * arg1,int arg2)
 {
    if (arg1==0) return 0;
    return arg1->__GetItem(arg2).GetPtr();
 }
 
-void val_array_set_i(hx::Object * arg1,int arg2,hx::Object *inVal)
+void val_array_set_i(::hx::Object * arg1,int arg2,::hx::Object *inVal)
 {
    if (arg1==0) return;
    arg1->__SetItem(arg2, Dynamic(inVal) );
 }
 
-void val_array_set_size(hx::Object * arg1,int inLen)
+void val_array_set_size(::hx::Object * arg1,int inLen)
 {
    #if (HXCPP_API_LEVEL<330)
    if (arg1==0) return;
    arg1->__SetSize(inLen);
    #else
-   hx::ArrayBase *base = dynamic_cast<hx::ArrayBase *>(arg1);
+   ::hx::ArrayBase *base = dynamic_cast<::hx::ArrayBase *>(arg1);
    if (base)
    {
       base->__SetSize(inLen);
@@ -484,9 +484,9 @@ void val_array_set_size(hx::Object * arg1,int inLen)
    #endif
 }
 
-void val_array_push(hx::Object * arg1,hx::Object *inValue)
+void val_array_push(::hx::Object * arg1,::hx::Object *inValue)
 {
-   hx::ArrayBase *base = dynamic_cast<hx::ArrayBase *>(arg1);
+   ::hx::ArrayBase *base = dynamic_cast<::hx::ArrayBase *>(arg1);
    if (base==0) return;
    base->__push(inValue);
 }
@@ -502,10 +502,10 @@ hx::Object * alloc_array(int arg1)
 
 // Array access - fast if possible - may return null
 // Resizing the array may invalidate the pointer
-bool * val_array_bool(hx::Object * arg1)
+bool * val_array_bool(::hx::Object * arg1)
 {
    #if (HXCPP_API_LEVEL>330)
-   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   ::hx::ArrayCommon *common = dynamic_cast< ::hx::ArrayCommon * >(arg1);
    if (!common) return 0;
    arg1 = common->__GetRealObject();
    #endif
@@ -516,10 +516,10 @@ bool * val_array_bool(hx::Object * arg1)
 }
 
 
-int * val_array_int(hx::Object * arg1)
+int * val_array_int(::hx::Object * arg1)
 {
    #if (HXCPP_API_LEVEL>330)
-   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   ::hx::ArrayCommon *common = dynamic_cast< ::hx::ArrayCommon * >(arg1);
    if (!common) return 0;
    arg1 = common->__GetRealObject();
    #endif
@@ -530,10 +530,10 @@ int * val_array_int(hx::Object * arg1)
 }
 
 
-double * val_array_double(hx::Object * arg1)
+double * val_array_double(::hx::Object * arg1)
 {
    #if (HXCPP_API_LEVEL>330)
-   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   ::hx::ArrayCommon *common = dynamic_cast< ::hx::ArrayCommon * >(arg1);
    if (!common) return 0;
    arg1 = common->__GetRealObject();
    #endif
@@ -544,10 +544,10 @@ double * val_array_double(hx::Object * arg1)
 }
 
 
-float * val_array_float(hx::Object * arg1)
+float * val_array_float(::hx::Object * arg1)
 {
    #if (HXCPP_API_LEVEL>330)
-   hx::ArrayCommon *common = dynamic_cast< hx::ArrayCommon * >(arg1);
+   ::hx::ArrayCommon *common = dynamic_cast< ::hx::ArrayCommon * >(arg1);
    if (!common) return 0;
    arg1 = common->__GetRealObject();
    #endif
@@ -557,7 +557,7 @@ float * val_array_float(hx::Object * arg1)
    return (float *)a->GetBase();
 }
 
-value * val_array_value(hx::Object * arg1)
+value * val_array_value(::hx::Object * arg1)
 {
    return 0;
 }
@@ -569,13 +569,13 @@ typedef Array_obj<unsigned char> *ByteArray;
 
 // Byte arrays
 // The byte array may be a string or a Array<bytes> depending on implementation
-buffer val_to_buffer(hx::Object * arg1)
+buffer val_to_buffer(::hx::Object * arg1)
 {
    ByteArray b = dynamic_cast< ByteArray >(arg1);
    return (buffer)b;
 }
 
-bool val_is_buffer(value inVal) { return val_to_buffer((hx::Object *)inVal)!=0; }
+bool val_is_buffer(value inVal) { return val_to_buffer((::hx::Object *)inVal)!=0; }
 
 
 
@@ -662,7 +662,7 @@ char * buffer_data(buffer inBuffer)
 // Append value to buffer
 void val_buffer(buffer inBuffer,value inValue)
 {
-   hx::Object *obj = (hx::Object *)inValue;
+   ::hx::Object *obj = (::hx::Object *)inValue;
    if (obj)
    {
        buffer_append(inBuffer, obj->toString().__CStr());
@@ -678,14 +678,14 @@ void val_buffer(buffer inBuffer,value inValue)
 
 
 
-// Call Function 
-hx::Object * val_call0(hx::Object * arg1) THROWS
+// Call Function
+hx::Object * val_call0(::hx::Object * arg1) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
    return arg1->__run().GetPtr();
 }
 
-hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
+hx::Object * val_call0_traceexcept(::hx::Object * arg1) THROWS
 {
    try
    {
@@ -702,28 +702,28 @@ hx::Object * val_call0_traceexcept(hx::Object * arg1) THROWS
 }
 
 
-hx::Object * val_call1(hx::Object * arg1,hx::Object * arg2) THROWS
+hx::Object * val_call1(::hx::Object * arg1,::hx::Object * arg2) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
    return arg1->__run(arg2).GetPtr();
 }
 
 
-hx::Object * val_call2(hx::Object * arg1,hx::Object * arg2,hx::Object * arg3) THROWS
+hx::Object * val_call2(::hx::Object * arg1,::hx::Object * arg2,::hx::Object * arg3) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
    return arg1->__run(arg2,arg3).GetPtr();
 }
 
 
-hx::Object * val_call3(hx::Object * arg1,hx::Object * arg2,hx::Object * arg3,hx::Object * arg4) THROWS
+hx::Object * val_call3(::hx::Object * arg1,::hx::Object * arg2,::hx::Object * arg3,::hx::Object * arg4) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
    return arg1->__run(arg2,arg3,arg4).GetPtr();
 }
 
 
-hx::Object * val_callN(hx::Object * arg1,hx::Object ** arg2, int nCount) THROWS
+hx::Object * val_callN(::hx::Object * arg1,::hx::Object ** arg2, int nCount) THROWS
 {
    if (!arg1) Dynamic::ThrowBadFunctionError();
    Array<Dynamic> args = Array_obj<Dynamic>::__new(0, nCount);
@@ -734,37 +734,37 @@ hx::Object * val_callN(hx::Object * arg1,hx::Object ** arg2, int nCount) THROWS
 
 
 // Call object field
-hx::Object * val_ocall0(hx::Object * arg1,int arg2) THROWS
+hx::Object * val_ocall0(::hx::Object * arg1,int arg2) THROWS
 {
-   if (!arg1) hx::Throw(HX_INVALID_OBJECT);
+   if (!arg1) ::hx::Throw(HX_INVALID_OBJECT);
    return arg1->__IField(arg2)->__run().GetPtr();
 }
 
 
-hx::Object * val_ocall1(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
+hx::Object * val_ocall1(::hx::Object * arg1,int arg2,::hx::Object * arg3) THROWS
 {
-   if (!arg1) hx::Throw(HX_INVALID_OBJECT);
+   if (!arg1) ::hx::Throw(HX_INVALID_OBJECT);
    return arg1->__IField(arg2)->__run(arg3).GetPtr();
 }
 
 
-hx::Object * val_ocall2(hx::Object * arg1,int arg2,hx::Object * arg3,hx::Object * arg4) THROWS
+hx::Object * val_ocall2(::hx::Object * arg1,int arg2,::hx::Object * arg3,::hx::Object * arg4) THROWS
 {
-   if (!arg1) hx::Throw(HX_INVALID_OBJECT);
+   if (!arg1) ::hx::Throw(HX_INVALID_OBJECT);
    return arg1->__IField(arg2)->__run(arg3,arg4).GetPtr();
 }
 
 
-hx::Object * val_ocall3(hx::Object * arg1,int arg2,hx::Object * arg3,hx::Object * arg4,hx::Object * arg5) THROWS
+hx::Object * val_ocall3(::hx::Object * arg1,int arg2,::hx::Object * arg3,::hx::Object * arg4,::hx::Object * arg5) THROWS
 {
-   if (!arg1) hx::Throw(HX_INVALID_OBJECT);
+   if (!arg1) ::hx::Throw(HX_INVALID_OBJECT);
    return arg1->__IField(arg2)->__run(arg3,arg4,arg5).GetPtr();
 }
 
 
-hx::Object * val_ocallN(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
+hx::Object * val_ocallN(::hx::Object * arg1,int arg2,::hx::Object * arg3) THROWS
 {
-   if (!arg1) hx::Throw(HX_INVALID_OBJECT);
+   if (!arg1) ::hx::Throw(HX_INVALID_OBJECT);
    return arg1->__IField(arg2)->__run(Dynamic(arg3)).GetPtr();
 }
 
@@ -777,39 +777,39 @@ int val_id(const char * arg1)
 }
 
 
-void alloc_field(hx::Object * arg1,int arg2,hx::Object * arg3) THROWS
+void alloc_field(::hx::Object * arg1,int arg2,::hx::Object * arg3) THROWS
 {
-   //hx::InternalCollect();
-   if (!arg1) hx::Throw(HX_INVALID_OBJECT);
+   //::hx::InternalCollect();
+   if (!arg1) ::hx::Throw(HX_INVALID_OBJECT);
    arg1->__SetField(__hxcpp_field_from_id(arg2),arg3, HX_PROP_DYNAMIC );
 }
-void hxcpp_alloc_field(hx::Object * arg1,int arg2,hx::Object * arg3)
+void hxcpp_alloc_field(::hx::Object * arg1,int arg2,::hx::Object * arg3)
 {
    return alloc_field(arg1,arg2,arg3);
 }
 
-void alloc_field_numeric(hx::Object * arg1,int arg2,double arg3) THROWS
+void alloc_field_numeric(::hx::Object * arg1,int arg2,double arg3) THROWS
 {
-   //hx::InternalCollect();
-   if (!arg1) hx::Throw(HX_INVALID_OBJECT);
+   //::hx::InternalCollect();
+   if (!arg1) ::hx::Throw(HX_INVALID_OBJECT);
    arg1->__SetField(__hxcpp_field_from_id(arg2),arg3, HX_PROP_DYNAMIC );
 }
-void hxcpp_alloc_field_numeric(hx::Object * arg1,int arg2,double arg3)
+void hxcpp_alloc_field_numeric(::hx::Object * arg1,int arg2,double arg3)
 {
    return alloc_field_numeric(arg1,arg2,arg3);
 }
 
 
 
-hx::Object * val_field(hx::Object * arg1,int arg2) THROWS
+hx::Object * val_field(::hx::Object * arg1,int arg2) THROWS
 {
-   if (!arg1) hx::Throw(HX_INVALID_OBJECT);
+   if (!arg1) ::hx::Throw(HX_INVALID_OBJECT);
    return arg1->__IField(arg2).GetPtr();
 }
 
-double val_field_numeric(hx::Object * arg1,int arg2) THROWS
+double val_field_numeric(::hx::Object * arg1,int arg2) THROWS
 {
-   if (!arg1) hx::Throw(HX_INVALID_OBJECT);
+   if (!arg1) ::hx::Throw(HX_INVALID_OBJECT);
    return arg1->__INumField(arg2);
 }
 
@@ -819,7 +819,7 @@ value val_field_name(field inField)
 }
 
 
-void val_iter_field_vals(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
+void val_iter_field_vals(::hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
 {
    if (inObj)
    {
@@ -835,7 +835,7 @@ void val_iter_field_vals(hx::Object *inObj, __hx_field_iter inFunc ,void *inCook
 }
 
 
-void val_iter_fields(hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
+void val_iter_fields(::hx::Object *inObj, __hx_field_iter inFunc ,void *inCookie)
 {
    if (inObj)
    {
@@ -870,13 +870,13 @@ void kind_share(vkind *inKind,const char *inName)
 // Garbage Collection
 void * hx_alloc(int arg1)
 {
-   return hx::NewGCBytes(0,arg1);
+   return ::hx::NewGCBytes(0,arg1);
 }
 
 
 void * alloc_private(int arg1)
 {
-   return hx::NewGCPrivate(0,arg1);
+   return ::hx::NewGCPrivate(0,arg1);
 }
 
 hx::Object * alloc_raw_string(int length)
@@ -884,13 +884,13 @@ hx::Object * alloc_raw_string(int length)
    return Dynamic( String( (HX_CHAR *) alloc_private(length+1), length) ).GetPtr();
 }
 
-void  val_gc(hx::Object * arg1,hx::finalizer arg2) THROWS
+void  val_gc(::hx::Object * arg1,::hx::finalizer arg2) THROWS
 {
-   hx::Abstract_obj *abstract = dynamic_cast<hx::Abstract_obj *>(arg1);
+   ::hx::Abstract_obj *abstract = dynamic_cast<::hx::Abstract_obj *>(arg1);
    if (!abstract)
    {
-      hx::GCSetFinalizer(arg1,arg2);
-      //hx::Throw(HX_CSTRING("Finalizer not on abstract object"));
+      ::hx::GCSetFinalizer(arg1,arg2);
+      //::hx::Throw(HX_CSTRING("Finalizer not on abstract object"));
    }
    else
       abstract->SetFinalizer(arg2);
@@ -898,43 +898,43 @@ void  val_gc(hx::Object * arg1,hx::finalizer arg2) THROWS
 
 void  val_gc_ptr(void * arg1,hxPtrFinalizer arg2) THROWS
 {
-   hx::Throw(HX_CSTRING("Finalizer not supported here"));
+   ::hx::Throw(HX_CSTRING("Finalizer not supported here"));
 }
 
-void  val_gc_add_root(hx::Object **inRoot)
+void  val_gc_add_root(::hx::Object **inRoot)
 {
-   hx::GCAddRoot(inRoot);
+   ::hx::GCAddRoot(inRoot);
 }
 
 
-void  val_gc_remove_root(hx::Object **inRoot)
+void  val_gc_remove_root(::hx::Object **inRoot)
 {
-   hx::GCRemoveRoot(inRoot);
+   ::hx::GCRemoveRoot(inRoot);
 }
 
 void  gc_set_top_of_stack(int *inTopOfStack,bool inForce)
 {
-   hx::SetTopOfStack(inTopOfStack,inForce);
+   ::hx::SetTopOfStack(inTopOfStack,inForce);
 }
 
 
 void gc_change_managed_memory(int inDelta, const char *inWhy)
 {
-   hx::GCChangeManagedMemory(inDelta, inWhy);
+   ::hx::GCChangeManagedMemory(inDelta, inWhy);
 }
 
 
 value *alloc_root()
 {
-   hx::Object ** result = new hx::Object *();
-   hx::GCAddRoot(result);
+   ::hx::Object ** result = new ::hx::Object *();
+   ::hx::GCAddRoot(result);
    return (value *)result;
 }
 
 void free_root(value *inValue)
 {
-   hx::Object **root = (hx::Object **) inValue;
-   hx::GCRemoveRoot(root);
+   ::hx::Object **root = (::hx::Object **) inValue;
+   ::hx::GCRemoveRoot(root);
    delete root;
 }
 
@@ -948,24 +948,24 @@ int hx_register_prim( const char * arg1, void* arg2)
 
 void gc_enter_blocking()
 {
-   hx::EnterGCFreeZone();
+   ::hx::EnterGCFreeZone();
 }
 
 void gc_exit_blocking()
 {
-   hx::ExitGCFreeZone();
+   ::hx::ExitGCFreeZone();
 }
 
 
 bool gc_try_blocking()
 {
-   return hx::TryGCFreeZone();
+   return ::hx::TryGCFreeZone();
 }
 
 void gc_safe_point()
 {
-   if (hx::gPauseForCollect)
-      hx::PauseForCollect();
+   if (::hx::gPauseForCollect)
+      ::hx::PauseForCollect();
 }
 
 gcroot create_root(value) { return 0; }
@@ -988,17 +988,17 @@ String alloc_hxs_utf8(const char *ptr,int size)
    return String::create(ptr,size);
 }
 
-const char * hxs_utf8(const String &string,hx::IStringAlloc *alloc)
+const char * hxs_utf8(const String &string,::hx::IStringAlloc *alloc)
 {
    return string.utf8_str(alloc);
 }
 
-const wchar_t * hxs_wchar(const String &string,hx::IStringAlloc *alloc)
+const wchar_t * hxs_wchar(const String &string,::hx::IStringAlloc *alloc)
 {
    return string.wchar_str(alloc);
 }
 
-const char16_t * hxs_utf16(const String &string,hx::IStringAlloc *alloc)
+const char16_t * hxs_utf16(const String &string,::hx::IStringAlloc *alloc)
 {
    return string.wc_str(alloc);
 }

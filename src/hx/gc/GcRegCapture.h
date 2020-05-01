@@ -45,7 +45,7 @@ struct RegisterCaptureBuffer
 void CaptureX86(RegisterCaptureBuffer &outBuffer);
 
 #define CAPTURE_REGS \
-   hx::CaptureX86(mRegisterBuf);
+   ::hx::CaptureX86(mRegisterBuf);
 
 #define CAPTURE_REG_START (int *)(&mRegisterBuf)
 #define CAPTURE_REG_END (int *)(&mRegisterBuf+1)
@@ -69,12 +69,12 @@ struct RegisterCaptureBuffer
 void CaptureX64(RegisterCaptureBuffer &outBuffer);
 
 #define CAPTURE_REGS \
-   hx::CaptureX64(mRegisterBuf);
+   ::hx::CaptureX64(mRegisterBuf);
 
 #define CAPTURE_REG_START (int *)(&mRegisterBuf)
 #define CAPTURE_REG_END (int *)(&mRegisterBuf+1)
 
-#else 
+#else
 
 
 class RegisterCapture
@@ -87,7 +87,7 @@ public:
 typedef int *RegisterCaptureBuffer[20];
 
 #define CAPTURE_REGS \
-   hx::RegisterCapture::Instance()->Capture(mTopOfStack, \
+   ::hx::RegisterCapture::Instance()->Capture(mTopOfStack, \
                 mRegisterBuf,mRegisterBufSize,20,mBottomOfStack); \
 
 #define CAPTURE_REG_START (int *)mRegisterBuf

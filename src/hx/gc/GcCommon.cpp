@@ -78,22 +78,22 @@ void CommonInitAlloc()
 
 void *String::operator new( size_t inSize )
 {
-   return hx::InternalNew(inSize,false);
+   return ::hx::InternalNew(inSize,false);
 }
 
 
 void __hxcpp_collect(bool inMajor)
 {
-   hx::InternalCollect(inMajor,inMajor);
+   ::hx::InternalCollect(inMajor,inMajor);
 }
 
 
 void __hxcpp_gc_compact()
 {
-   int mem = hx::InternalCollect(true,true);
+   int mem = ::hx::InternalCollect(true,true);
    while(true)
    {
-      int compact = hx::InternalCollect(true,true);
+      int compact = ::hx::InternalCollect(true,true);
       if (compact>=mem-16384)
          break;
       mem = compact;
@@ -103,7 +103,7 @@ void __hxcpp_gc_compact()
 namespace hx
 {
 
-void GCAddFinalizer(hx::Object *v, finalizer f)
+void GCAddFinalizer(::hx::Object *v, finalizer f)
 {
    if (v)
    {
@@ -113,7 +113,7 @@ void GCAddFinalizer(hx::Object *v, finalizer f)
 
 HX_CHAR *NewString(int inLen)
 {
-   char *result =  (char *)hx::InternalNew( (inLen+1)*sizeof(char), false );
+   char *result =  (char *)::hx::InternalNew( (inLen+1)*sizeof(char), false );
    result[inLen] = '\0';
 #ifdef HXCPP_TELEMETRY
    __hxt_new_string(result, inLen+1);
@@ -124,7 +124,7 @@ HX_CHAR *NewString(int inLen)
 
 void *NewGCBytes(void *inData,int inSize)
 {
-   void *result =  hx::InternalNew(inSize,false);
+   void *result =  ::hx::InternalNew(inSize,false);
    if (inData)
    {
       memcpy(result,inData,inSize);
@@ -152,22 +152,22 @@ void *NewGCPrivate(void *inData,int inSize)
 
 void __hxcpp_enable(bool inEnable)
 {
-   hx::InternalEnableGC(inEnable);
+   ::hx::InternalEnableGC(inEnable);
 }
 
 void  __hxcpp_set_minimum_working_memory(int inBytes)
 {
-   hx::sgMinimumWorkingMemory = inBytes;
+   ::hx::sgMinimumWorkingMemory = inBytes;
 }
 
 void  __hxcpp_set_minimum_free_space(int inBytes)
 {
-   hx::sgMinimumFreeSpace = inBytes;
+   ::hx::sgMinimumFreeSpace = inBytes;
 }
 
 void  __hxcpp_set_target_free_space_percentage(int inPercentage)
 {
-   hx::sgTargetFreeSpacePercentage = inPercentage;
+   ::hx::sgTargetFreeSpacePercentage = inPercentage;
 }
 
 bool __hxcpp_is_const_string(const ::String &inString)

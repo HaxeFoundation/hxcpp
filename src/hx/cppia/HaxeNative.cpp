@@ -20,7 +20,7 @@ static HaxeNativeIntefaceMap *sScriptRegisteredInterface = 0;
 
 // -- HaxeNativeClass ---
 
-HaxeNativeClass::HaxeNativeClass(const std::string &inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, ScriptNamedFunction inConstruct)
+HaxeNativeClass::HaxeNativeClass(const std::string &inName, int inDataOffset, ScriptNamedFunction *inFunctions, ::hx::ScriptableClassFactory inFactory, ScriptNamedFunction inConstruct)
 {
    name = inName;
    mDataOffset = inDataOffset;
@@ -104,10 +104,10 @@ void HaxeNativeClass::link()
          DBGLOG(" super =0\n");
          continue;
       }
-      hx::Class cls = hx::Class_obj::Resolve( String(i->first.c_str() ) );
+      ::hx::Class cls = ::hx::Class_obj::Resolve( String(i->first.c_str() ) );
       if (cls.mPtr)
       {
-         hx::Class superClass = cls->GetSuper();
+         ::hx::Class superClass = cls->GetSuper();
          if (superClass.mPtr)
          {
             HaxeNativeClass *superRef = (*sScriptRegistered)[superClass.mPtr->mName.utf8_str()];
@@ -147,7 +147,7 @@ ScriptFunction HaxeNativeInterface::findFunction(const std::string &inName)
 
 
 
-void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFunction *inFunctions, hx::ScriptableClassFactory inFactory, hx::ScriptFunction inConstruct)
+void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFunction *inFunctions, ::hx::ScriptableClassFactory inFactory, ::hx::ScriptFunction inConstruct)
 {
    DBGLOG("ScriptableRegisterClass %s\n", inName.out_str());
    if (!sScriptRegistered)
@@ -186,8 +186,8 @@ void ScriptableRegisterInterface( String inName,
 
 HaxeNativeInterface::HaxeNativeInterface(const std::string &inName,
                                          ScriptNamedFunction *inFunctions,
-                                         hx::ScriptableInterfaceFactory inFactory,
-                                         const hx::type_info *inType)
+                                         ::hx::ScriptableInterfaceFactory inFactory,
+                                         const ::hx::type_info *inType)
 {
    functions = inFunctions;
    factory = inFactory;
@@ -197,8 +197,8 @@ HaxeNativeInterface::HaxeNativeInterface(const std::string &inName,
 
 void ScriptableRegisterInterface( String inName,
                                   ScriptNamedFunction *inFunctions,
-                                  const hx::type_info *inType,
-                                  hx::ScriptableInterfaceFactory inFactory )
+                                  const ::hx::type_info *inType,
+                                  ::hx::ScriptableInterfaceFactory inFactory )
 {
    DBGLOG("ScriptableInterfaceFactory %s\n",inName.out_str());
    if (!sScriptRegisteredInterface)

@@ -28,9 +28,9 @@ struct ZipResult
    int  write;
 };
 
-struct ZStream : public hx::Object
+struct ZStream : public ::hx::Object
 {
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdZLib };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdZLib };
 
    z_stream *z;
    bool     isInflate;
@@ -157,7 +157,7 @@ struct ZStream : public hx::Object
          message += String(z->msg) + HX_CSTRING("(") + String(inCode) + HX_CSTRING(")");
       else
         message += String(inCode);
-      hx::Throw(message);
+      ::hx::Throw(message);
    }
 
 
@@ -167,7 +167,7 @@ ZStream *GetDeflateStream(Dynamic inHandle)
 {
    ZStream *z = dynamic_cast<ZStream *>(inHandle.mPtr);
    if (!z || !z->z || z->isInflate)
-      hx::Throw( HX_CSTRING("ZLib: Not a valid deflate stream"));
+      ::hx::Throw( HX_CSTRING("ZLib: Not a valid deflate stream"));
    return z;
 }
 
@@ -176,7 +176,7 @@ ZStream *GetInflateStream(Dynamic inHandle)
 {
    ZStream *z = dynamic_cast<ZStream *>(inHandle.mPtr);
    if (!z || !z->z || !z->isInflate)
-      hx::Throw( HX_CSTRING("ZLib: Not a valid inflate stream"));
+      ::hx::Throw( HX_CSTRING("ZLib: Not a valid inflate stream"));
    return z;
 }
 
@@ -205,7 +205,7 @@ Dynamic _hx_deflate_buffer(Dynamic handle, Array<unsigned char> src, int srcPos,
    if (!result.ok)
       return null();
 
-   return hx::Anon_obj::Create(3)
+   return ::hx::Anon_obj::Create(3)
             ->setFixed(0,HX_("write",df,6c,59,d0),result.write)
             ->setFixed(1,HX_("done",82,f0,6d,42),result.done)
             ->setFixed(2,HX_("read",56,4b,a7,4b),result.read);
@@ -235,7 +235,7 @@ void _hx_zip_set_flush_mode(Dynamic handle, String flushMode)
 {
    ZStream *zstream = dynamic_cast<ZStream *>(handle.mPtr);
    if (!zstream || !zstream->z)
-      hx::Throw( HX_CSTRING("ZLib flush: not a valid stream") );
+      ::hx::Throw( HX_CSTRING("ZLib flush: not a valid stream") );
 
    zstream->setFlushMode(flushMode);
 }
@@ -265,7 +265,7 @@ Dynamic _hx_inflate_buffer(Dynamic handle, Array<unsigned char> src, int srcPos,
    if (!result.ok)
       return null();
 
-   return hx::Anon_obj::Create(3)
+   return ::hx::Anon_obj::Create(3)
             ->setFixed(0,HX_("write",df,6c,59,d0),result.write)
             ->setFixed(1,HX_("done",82,f0,6d,42),result.done)
             ->setFixed(2,HX_("read",56,4b,a7,4b),result.read);

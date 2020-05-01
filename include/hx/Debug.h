@@ -55,7 +55,7 @@ public:
     }
 
     StackVariable(StackVariable *&inHead, bool inIsArg,
-                  const char *inHaxeName, hx::Object **inCppVar)
+                  const char *inHaxeName, ::hx::Object **inCppVar)
         : mHaxeName(inHaxeName), mIsArg(inIsArg), mHead(inHead),
           mCppVar((void *) inCppVar)
     {
@@ -120,10 +120,10 @@ private:
     static Dynamic GetOrSetFunctionHxObject(bool get, void *ptr, Dynamic *dynamic)
     {
         if (get) {
-            return * (hx::Object **) ptr;
+            return * (::hx::Object **) ptr;
         }
         else {
-            * (hx::Object **)ptr = dynamic->mPtr;
+            * (::hx::Object **)ptr = dynamic->mPtr;
             return null();
         }
     }
@@ -148,7 +148,7 @@ public:
     }
 
     template<typename T>
-    StackThis(StackVariable *&inHead, hx::ObjectPtr<T> &inThis)
+    StackThis(StackVariable *&inHead, ::hx::ObjectPtr<T> &inThis)
         : StackVariable(inHead, &inThis.mPtr)
     {
         mGetOrSetFunction = GetObjectPtr<T>;
@@ -158,7 +158,7 @@ public:
     static Dynamic GetObjectPtr(bool get, void *ptr, Dynamic *val)
     {
         if (get) {
-            return *(hx::Object **) ptr;
+            return *(::hx::Object **) ptr;
         }
         else {
             return null();
@@ -317,7 +317,7 @@ Dynamic __hxcpp_dbg_checkedRethrow(Dynamic toThrow);
 // If no debugger, provide empty implementations of the debugging functions
 
 inline void __hxcpp_dbg_setEventNotificationHandler(Dynamic)
-    { hx::Throw("Debugging is not enabled for this program; try\n"
+    { ::hx::Throw("Debugging is not enabled for this program; try\n"
                 "rebuilding it with the -D HXCPP_DEBUGGER option"); }
 inline void __hxcpp_dbg_enableCurrentThreadDebugging(bool) { }
 inline int __hxcpp_dbg_getCurrentThreadNumber() { return -1; }
@@ -356,8 +356,8 @@ inline void __hxcpp_dbg_setAddStackFrameToThreadInfoFunction(Dynamic) { }
 // created and terminated
 inline void __hxcpp_dbg_threadCreatedOrTerminated(int, bool) { }
 
-inline Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow) { return hx::Throw(toThrow); }
-inline Dynamic __hxcpp_dbg_checkedRethrow(Dynamic toThrow) { return hx::Rethrow(toThrow); }
+inline Dynamic __hxcpp_dbg_checkedThrow(Dynamic toThrow) { return ::hx::Throw(toThrow); }
+inline Dynamic __hxcpp_dbg_checkedRethrow(Dynamic toThrow) { return ::hx::Rethrow(toThrow); }
 
 #endif // HXCPP_DEBUGGER
 

@@ -81,7 +81,7 @@ static void CriticalErrorHandler(String inErr, bool allowFixup)
       sCriticalErrorHandler(inErr);
 
 #ifdef HXCPP_STACK_TRACE
-   hx::StackContext *ctx = hx::StackContext::getCurrent();
+   ::hx::StackContext *ctx = ::hx::StackContext::getCurrent();
    ctx->beginCatch(true);
    ctx->dumpExceptionStack();
 #endif
@@ -111,14 +111,14 @@ void CriticalError(const String &inErr, bool inAllowFixup)
 
 
 #ifdef HXCPP_CATCH_SEGV
-class hxSehException : public hx::Object
+class hxSehException : public ::hx::Object
 {
 public:
    int code;
 
    inline void *operator new( size_t inSize )
    {
-      return hx::InternalCreateConstBuffer(0,(int)inSize);
+      return ::hx::InternalCreateConstBuffer(0,(int)inSize);
    }
    void operator delete( void *) { }
 
@@ -129,17 +129,17 @@ public:
    int __GetType() const { return vtObject; }
 };
 
-static hx::Object *sException = new hxSehException(1);
+static ::hx::Object *sException = new hxSehException(1);
 
 #ifdef _MSC_VER
 void __cdecl hxSignalFunction(unsigned int, struct _EXCEPTION_POINTERS* )
 {
-   hx::Throw(sException);
+   ::hx::Throw(sException);
 }
 #else
 void hxSignalFunction(int)
 {
-   hx::Throw(sException);
+   ::hx::Throw(sException);
 }
 #endif
 
@@ -206,7 +206,7 @@ StackContext::StackContext()
    #ifdef HXCPP_SCRIPTABLE
    stack = new unsigned char[128*1024];
    pointer = &stack[0];
-   push((hx::Object *)0);
+   push((::hx::Object *)0);
    frame = pointer;
    exception = 0;
    breakContReturn = 0;
@@ -502,7 +502,7 @@ void __hxcpp_execution_trace(int inLevel) { }
 void __hx_dump_stack()
 {
 #ifdef HXCPP_STACK_TRACE
-   hx::StackContext *ctx = hx::StackContext::getCurrent();
+   ::hx::StackContext *ctx = ::hx::StackContext::getCurrent();
    ctx->beginCatch(false);
    ctx->dumpExceptionStack();
 #endif
@@ -512,7 +512,7 @@ void __hx_dump_stack()
 void __hx_stack_set_last_exception()
 {
 #ifdef HXCPP_STACK_TRACE
-   hx::StackContext *ctx = hx::StackContext::getCurrent();
+   ::hx::StackContext *ctx = ::hx::StackContext::getCurrent();
    ctx->setLastException();
 #endif
 }
@@ -521,7 +521,7 @@ void __hx_stack_set_last_exception()
 void __hx_stack_push_last_exception()
 {
 #ifdef HXCPP_STACK_TRACE
-   hx::StackContext *ctx = hx::StackContext::getCurrent();
+   ::hx::StackContext *ctx = ::hx::StackContext::getCurrent();
    ctx->pushLastException();
 #endif
 }
@@ -530,7 +530,7 @@ void __hx_stack_push_last_exception()
 void __hxcpp_stack_begin_catch()
 {
 #ifdef HXCPP_STACK_TRACE
-   hx::StackContext *ctx = hx::StackContext::getCurrent();
+   ::hx::StackContext *ctx = ::hx::StackContext::getCurrent();
    ctx->beginCatch(false);
 #endif
 }
@@ -541,7 +541,7 @@ Array<String> __hxcpp_get_call_stack(bool inSkipLast)
     Array<String> result = Array_obj<String>::__new();
 
 #ifdef HXCPP_STACK_TRACE
-   hx::StackContext *ctx = hx::StackContext::getCurrent();
+   ::hx::StackContext *ctx = ::hx::StackContext::getCurrent();
    ctx->getCurrentCallStackAsStrings(result,inSkipLast);
 #endif
    return result;
@@ -553,7 +553,7 @@ Array<String> __hxcpp_get_exception_stack()
     Array<String> result = Array_obj<String>::__new();
 
 #ifdef HXCPP_STACK_TRACE
-   hx::StackContext *ctx = hx::StackContext::getCurrent();
+   ::hx::StackContext *ctx = ::hx::StackContext::getCurrent();
    ctx->getCurrentExceptionStackAsStrings(result);
 #endif
 
@@ -562,7 +562,7 @@ Array<String> __hxcpp_get_exception_stack()
 
 void __hxcpp_set_critical_error_handler(Dynamic inHandler)
 {
-   hx::setStaticHandler(hx::sCriticalErrorHandler,inHandler);
+   ::hx::setStaticHandler(::hx::sCriticalErrorHandler,inHandler);
 }
 
 #ifndef HXCPP_DEBUGGER

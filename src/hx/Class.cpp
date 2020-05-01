@@ -21,8 +21,8 @@ Class _hx_RegisterClass(const String &inClassName, CanCastFunc inCanCast,
                     ,VisitFunc inVisitFunc
                     #endif
                     #ifdef HXCPP_SCRIPTABLE
-                    ,const hx::StorageInfo *inStorageInfo
-                    ,const hx::StaticInfo *inStaticInfo
+                    ,const ::hx::StorageInfo *inStorageInfo
+                    ,const ::hx::StaticInfo *inStaticInfo
                     #endif
                     )
 {
@@ -65,8 +65,8 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
              ,VisitFunc inVisitFunc
              #endif
              #ifdef HXCPP_SCRIPTABLE
-             ,const hx::StorageInfo *inStorageInfo
-             ,const hx::StaticInfo *inStaticInfo
+             ,const ::hx::StorageInfo *inStorageInfo
+             ,const ::hx::StaticInfo *inStaticInfo
              #endif
              )
 {
@@ -90,11 +90,11 @@ Class_obj::Class_obj(const String &inClassName,String inStatics[], String inMemb
    mCanCast = inCanCast;
 }
 
-bool Class_obj::GetNoStaticField(const String &inString, Dynamic &outValue, hx::PropertyAccess inCallProp)
+bool Class_obj::GetNoStaticField(const String &inString, Dynamic &outValue, ::hx::PropertyAccess inCallProp)
 {
    return false;
 }
-bool Class_obj::SetNoStaticField(const String &inString, Dynamic &ioValue, hx::PropertyAccess inCallProp)
+bool Class_obj::SetNoStaticField(const String &inString, Dynamic &ioValue, ::hx::PropertyAccess inCallProp)
 {
    return false;
 }
@@ -126,7 +126,7 @@ Class Class_obj::GetSuper()
 {
    if (!mSuper)
       return null();
-	if (mSuper==&hx::Object::__SGetClass())
+	if (mSuper==&::hx::Object::__SGetClass())
 		return null();
    return *mSuper;
 }
@@ -139,18 +139,18 @@ Class &Class_obj::__SGetClass() { return Class_obj__mClass; }
 
 void Class_obj::__boot()
 {
-Static(Class_obj__mClass) = hx::_hx_RegisterClass(HX_CSTRING("Class"),TCanCast<Class_obj>,sNone,sNone, 0,0 , 0, 0 );
+Static(Class_obj__mClass) = ::hx::_hx_RegisterClass(HX_CSTRING("Class"),TCanCast<Class_obj>,sNone,sNone, 0,0 , 0, 0 );
 }
 
 
-void Class_obj::MarkStatics(hx::MarkContext *__inCtx)
+void Class_obj::MarkStatics(::hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(__meta__);
    if (mMarkFunc)
        mMarkFunc(__inCtx);
 }
 #ifdef HXCPP_VISIT_ALLOCS
-void Class_obj::VisitStatics(hx::VisitContext *__inCtx)
+void Class_obj::VisitStatics(::hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(__meta__);
    if (mVisitFunc)
@@ -226,7 +226,7 @@ bool Class_obj::__HasField(const String &inString)
    return false;
 }
 
-hx::Val Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val Class_obj::__Field(const String &inString, ::hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("__meta__"))
       return __meta__;
@@ -240,7 +240,7 @@ hx::Val Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp
       Dynamic result;
       if (mGetStaticField(inString,result,inCallProp))
          return result;
- 
+
       // Throw ?
       return null();
    }
@@ -252,7 +252,7 @@ hx::Val Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp
    return instance->__Field(inString, inCallProp);
 }
 
-hx::Val Class_obj::__SetField(const String &inString,const hx::Val &inValue, hx::PropertyAccess inCallProp)
+hx::Val Class_obj::__SetField(const String &inString,const ::hx::Val &inValue, ::hx::PropertyAccess inCallProp)
 {
 
    if (mSetStaticField)
@@ -260,7 +260,7 @@ hx::Val Class_obj::__SetField(const String &inString,const hx::Val &inValue, hx:
       Dynamic result = inValue;
       if (mSetStaticField(inString,result,inCallProp))
          return result;
- 
+
       // Throw ?
       return inValue;
    }
@@ -281,7 +281,7 @@ bool Class_obj::__IsEnum()
 }
 
 #ifdef HXCPP_SCRIPTABLE
-const hx::StorageInfo* Class_obj::GetMemberStorage(String inName)
+const ::hx::StorageInfo* Class_obj::GetMemberStorage(String inName)
 {
    if (mMemberStorageInfo)
    {
@@ -297,7 +297,7 @@ const hx::StorageInfo* Class_obj::GetMemberStorage(String inName)
 }
 
 
-const hx::StaticInfo* Class_obj::GetStaticStorage(String inName)
+const ::hx::StaticInfo* Class_obj::GetStaticStorage(String inName)
 {
    if (mStaticStorageInfo)
    {
@@ -315,7 +315,7 @@ const hx::StaticInfo* Class_obj::GetStaticStorage(String inName)
 
 
 
-void MarkClassStatics(hx::MarkContext *__inCtx)
+void MarkClassStatics(::hx::MarkContext *__inCtx)
 {
    #ifdef HXCPP_DEBUG
    MarkPushClass("MarkClassStatics",__inCtx);
@@ -327,14 +327,14 @@ void MarkClassStatics(hx::MarkContext *__inCtx)
       if (c->__meta__.mPtr || c->mMarkFunc)
       {
          #ifdef HXCPP_DEBUG
-         hx::MarkPushClass(i->first.raw_ptr(),__inCtx);
-         hx::MarkSetMember("statics",__inCtx);
+         ::hx::MarkPushClass(i->first.raw_ptr(),__inCtx);
+         ::hx::MarkSetMember("statics",__inCtx);
          #endif
-      
+
          c->MarkStatics(__inCtx);
 
          #ifdef HXCPP_DEBUG
-         hx::MarkPopClass(__inCtx);
+         ::hx::MarkPopClass(__inCtx);
          #endif
       }
    }
@@ -345,7 +345,7 @@ void MarkClassStatics(hx::MarkContext *__inCtx)
 
 #ifdef HXCPP_VISIT_ALLOCS
 
-void VisitClassStatics(hx::VisitContext *__inCtx)
+void VisitClassStatics(::hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(Class_obj__mClass);
    ClassMap::iterator end = sClassMap->end();
@@ -361,9 +361,9 @@ void VisitClassStatics(hx::VisitContext *__inCtx)
 Array<String> __hxcpp_get_class_list()
 {
    Array<String> result = Array_obj<String>::__new();
-   if (hx::sClassMap)
+   if (::hx::sClassMap)
    {
-      for(hx::ClassMap::iterator i=hx::sClassMap->begin(); i!=hx::sClassMap->end(); ++i)
+      for(::hx::ClassMap::iterator i=::hx::sClassMap->begin(); i!=::hx::sClassMap->end(); ++i)
       {
          if (i->second.mPtr)
             result->push( i->first );

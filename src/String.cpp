@@ -215,7 +215,7 @@ inline int Char16Advance(const char16_t *&ioStr,bool throwOnErr=true)
       if (IsUtf16LowSurrogate(ch))
       {
          if (throwOnErr)
-            hx::Throw(HX_CSTRING("Invalid UTF16"));
+            ::hx::Throw(HX_CSTRING("Invalid UTF16"));
          return 0xFFFD;
       }
 
@@ -223,7 +223,7 @@ inline int Char16Advance(const char16_t *&ioStr,bool throwOnErr=true)
       if (IsUtf16HighSurrogate(peek))
       {
          if (throwOnErr)
-            hx::Throw(HX_CSTRING("Invalid UTF16"));
+            ::hx::Throw(HX_CSTRING("Invalid UTF16"));
          return 0xFFFD;
       }
 
@@ -258,7 +258,7 @@ void Char16AdvanceSet(char16_t *&ioStr,int inChar)
 
 
 template<typename T>
-char *TConvertToUTF8(const T *inStr, int *ioLen, hx::IStringAlloc *inBuffer,bool)
+char *TConvertToUTF8(const T *inStr, int *ioLen, ::hx::IStringAlloc *inBuffer,bool)
 {
    int len = 0;
    int chars = 0;
@@ -288,7 +288,7 @@ char *TConvertToUTF8(const T *inStr, int *ioLen, hx::IStringAlloc *inBuffer,bool
 
 
 template<>
-char *TConvertToUTF8(const char16_t *inStr, int *ioLen, hx::IStringAlloc *inBuffer,bool throwInvalid)
+char *TConvertToUTF8(const char16_t *inStr, int *ioLen, ::hx::IStringAlloc *inBuffer,bool throwInvalid)
 {
    int len = 0;
    if (ioLen==0 || *ioLen==0)
@@ -323,7 +323,7 @@ char *TConvertToUTF8(const char16_t *inStr, int *ioLen, hx::IStringAlloc *inBuff
 
 char16_t *String::allocChar16Ptr(int len)
 {
-   char16_t *result = (char16_t *)hx::InternalNew( (len+1)*2, false );
+   char16_t *result = (char16_t *)::hx::InternalNew( (len+1)*2, false );
    ((unsigned int *)result)[-1] |= HX_GC_STRING_CHAR16_T;
    result[len] = 0;
    return result;
@@ -380,7 +380,7 @@ static const char *GCStringDup(const T *inStr,int inLen, int *outLen=0)
 
    if (ident)
    {
-      hx::StackContext *ctx = hx::StackContext::getCurrent();
+      ::hx::StackContext *ctx = ::hx::StackContext::getCurrent();
       if (!ctx->stringSet)
          ctx->stringSet = new WeakStringSet();
 
@@ -402,7 +402,7 @@ static const char *GCStringDup(const T *inStr,int inLen, int *outLen=0)
       if (ctx->stringSet->findEquivalentKey(found, hash, Finder(len, inStr)))
          return found.__s;
 
-      char *result = hx::NewString(len + 4);
+      char *result = ::hx::NewString(len + 4);
       memcpy(result,inStr,sizeof(char)*(len));
       result[len] = '\0';
       *((unsigned int *)(result + len + 1)) = hash;
@@ -417,7 +417,7 @@ static const char *GCStringDup(const T *inStr,int inLen, int *outLen=0)
 
    if (sizeof(T)==1 || allAscii)
    {
-      char *result = hx::NewString( len );
+      char *result = ::hx::NewString( len );
       if (sizeof(T)==1)
          memcpy(result,inStr,sizeof(char)*(len));
       else
@@ -512,7 +512,7 @@ inline String TCopyString(const T *inString,int inLength)
       }
       else
       {
-         char *s = hx::NewString(c16len);
+         char *s = ::hx::NewString(c16len);
          for(int i=0;i<c16len;i++)
             s[i] = (char)inString[i];
          return String(s,c16len);
@@ -579,7 +579,7 @@ Array<int> __hxcpp_utf8_string_to_char_array(String &inString)
        result->push(DecodeAdvanceUTF8(src));
 
    if (src!=end)
-      hx::Throw(HX_CSTRING("Invalid UTF8"));
+      ::hx::Throw(HX_CSTRING("Invalid UTF8"));
    #endif
 
    return result;
@@ -619,13 +619,13 @@ String __hxcpp_utf8_string_to_char_bytes(String &inUTF8)
            char_count--;
         }
         else if( c > 255 )
-            hx::Throw(HX_CSTRING("Utf8::decode invalid character"));
+            ::hx::Throw(HX_CSTRING("Utf8::decode invalid character"));
     }
 
     if (src!=end)
-       hx::Throw(HX_CSTRING("Invalid UTF8"));
+       ::hx::Throw(HX_CSTRING("Invalid UTF8"));
 
-    char *result = hx::NewString(char_count);
+    char *result = ::hx::NewString(char_count);
 
     src = (unsigned char *)inUTF8.__s;
     char_count = 0;
@@ -661,7 +661,7 @@ void _hx_utf8_iter(String inString, Dynamic inIter)
       inIter(DecodeAdvanceUTF8(src,end+1));
 
    if (src>end)
-      hx::Throw(HX_CSTRING("Invalid UTF8"));
+      ::hx::Throw(HX_CSTRING("Invalid UTF8"));
    #endif
 }
 
@@ -685,7 +685,7 @@ int _hx_utf8_char_code_at(String inString, int inIndex)
       if (src==end)
          return 0;
       if (src>end)
-         hx::Throw(HX_CSTRING("Invalid UTF8"));
+         ::hx::Throw(HX_CSTRING("Invalid UTF8"));
    }
    return DecodeAdvanceUTF8(src,end);
    #endif
@@ -708,7 +708,7 @@ int _hx_utf8_length(String inString)
       len++;
    }
    if (src>end)
-      hx::Throw(HX_CSTRING("Invalid UTF8"));
+      ::hx::Throw(HX_CSTRING("Invalid UTF8"));
    return len;
    #endif
 }
@@ -744,7 +744,7 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
       if (src==end)
          return String::emptyString;
       if (src>end)
-         hx::Throw(HX_CSTRING("Invalid UTF8"));
+         ::hx::Throw(HX_CSTRING("Invalid UTF8"));
    }
    const unsigned char *start = src;
    for(int i=0;i<inLen;i++)
@@ -753,7 +753,7 @@ String _hx_utf8_sub(String inString, int inStart, int inLen)
       if (src==end)
          break;
       if (src>end)
-         hx::Throw(HX_CSTRING("Invalid UTF8"));
+         ::hx::Throw(HX_CSTRING("Invalid UTF8"));
    }
    return String::create((const char *)start, src-start);
    #endif
@@ -1008,7 +1008,7 @@ String String::__URLEncode() const
       return *this;
 
    int l = utf8_chars + extra*2;
-   char *result = hx::NewString(l);
+   char *result = ::hx::NewString(l);
    char *ptr = result;
 
    for(int i=0;i<utf8_chars;i++)
@@ -1042,7 +1042,7 @@ String String::toUpperCase() const
    }
    #endif
 
-   char *result = hx::NewString(length);
+   char *result = ::hx::NewString(length);
    for(int i=0;i<length;i++)
       result[i] = toupper( __s[i] );
    return String(result,length);
@@ -1061,7 +1061,7 @@ String String::toLowerCase() const
       return String(result,length);
    }
    #endif
-   char *result = hx::NewString(length);
+   char *result = ::hx::NewString(length);
    for(int i=0;i<length;i++)
       result[i] = tolower( __s[i] );
    return String(result,length);
@@ -1390,7 +1390,7 @@ String String::fromCharCode( int c )
 
       int group = c>>10;
       if (group>=1088)
-         hx::Throw(HX_CSTRING("Invalid char code"));
+         ::hx::Throw(HX_CSTRING("Invalid char code"));
       if (!sCharToString[group])
       {
          String *ptr = (String *)malloc( sizeof(String)*1024 );
@@ -1564,7 +1564,7 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
 
 
 
-const char * String::utf8_str(hx::IStringAlloc *inBuffer,bool throwInvalid) const
+const char * String::utf8_str(::hx::IStringAlloc *inBuffer,bool throwInvalid) const
 {
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
@@ -1573,7 +1573,7 @@ const char * String::utf8_str(hx::IStringAlloc *inBuffer,bool throwInvalid) cons
    return __s;
 }
 
-const char *String::ascii_substr(hx::IStringAlloc *inBuffer,int start, int length) const
+const char *String::ascii_substr(::hx::IStringAlloc *inBuffer,int start, int length) const
 {
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
@@ -1703,7 +1703,7 @@ wchar_t *ConvertToWChar(const char *inStr, int *ioLen)
 
 
 
-const char16_t * String::wc_str(hx::IStringAlloc *inBuffer) const
+const char16_t * String::wc_str(::hx::IStringAlloc *inBuffer) const
 {
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
@@ -1736,7 +1736,7 @@ const char16_t * String::wc_str(hx::IStringAlloc *inBuffer) const
 }
 
 
-const wchar_t * String::wchar_str(hx::IStringAlloc *inBuffer) const
+const wchar_t * String::wchar_str(::hx::IStringAlloc *inBuffer) const
 {
    if (!__s)
       return 0;
@@ -2028,7 +2028,7 @@ String String::operator+(const String &inRHS) const
    #endif
 
 
-   char *result = hx::NewString(l);
+   char *result = ::hx::NewString(l);
    memcpy(result,__s,length*sizeof(char));
    memcpy(result+length,inRHS.__s,inRHS.length*sizeof(char));
    result[l] = '\0';
@@ -2070,7 +2070,7 @@ String &String::operator+=(const String &inRHS)
       else
       #endif
       {
-      char *s = hx::NewString(l);
+      char *s = ::hx::NewString(l);
       memcpy(s,__s,length*sizeof(char));
       memcpy(s+length,inRHS.__s,inRHS.length*sizeof(char));
       __s = s;
@@ -2083,16 +2083,16 @@ String &String::operator+=(const String &inRHS)
 
 #ifdef HXCPP_VISIT_ALLOCS
 #define STRING_VISIT_FUNC \
-    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_STRING(mThis.raw_ref()); }
+    void __Visit(::hx::VisitContext *__inCtx) { HX_VISIT_STRING(mThis.raw_ref()); }
 #else
 #define STRING_VISIT_FUNC
 #endif
 
 #define DEFINE_STRING_FUNC(func,array_list,dynamic_arg_list,arg_list,ARG_C) \
-struct __String_##func : public hx::Object \
+struct __String_##func : public ::hx::Object \
 { \
    bool __IsFunction() const { return true; } \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdClosure }; \
    String mThis; \
    __String_##func(const String &inThis) : mThis(inThis) { \
       HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
@@ -2110,7 +2110,7 @@ struct __String_##func : public hx::Object \
    { \
       return mThis.func(arg_list); return Dynamic(); \
    } \
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.raw_ptr()); } \
+   void __Mark(::hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.raw_ptr()); } \
    STRING_VISIT_FUNC \
    void  __SetThis(Dynamic inThis) { mThis = inThis; } \
 }; \
@@ -2132,7 +2132,7 @@ DEFINE_STRING_FUNC0(toLowerCase);
 DEFINE_STRING_FUNC0(toUpperCase);
 DEFINE_STRING_FUNC0(toString);
 
-hx::Val String::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val String::__Field(const String &inString, ::hx::PropertyAccess inCallProp)
 {
    if (HX_FIELD_EQ(inString,"length")) return length;
    if (HX_FIELD_EQ(inString,"charAt")) return charAt_dyn();
@@ -2221,22 +2221,22 @@ inline int _wtoi(const wchar_t *inStr)
 
 
 
-class StringData : public hx::Object
+class StringData : public ::hx::Object
 {
 public:
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdString };
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdString };
 
-   inline void *operator new( size_t inSize, hx::NewObjectType inAlloc=hx::NewObjContainer)
-      { return hx::Object::operator new(inSize,inAlloc); }
+   inline void *operator new( size_t inSize, ::hx::NewObjectType inAlloc=::hx::NewObjContainer)
+      { return ::hx::Object::operator new(inSize,inAlloc); }
 
 
    StringData(String inValue) : mValue(inValue) {
       HX_OBJ_WB_GET(this,mValue.raw_ref());
    };
 
-   hx::Class __GetClass() const { return __StringClass; }
+   ::hx::Class __GetClass() const { return __StringClass; }
    #if (HXCPP_API_LEVEL<331)
-   bool __Is(hx::Object *inClass) const { return dynamic_cast< StringData *>(inClass); }
+   bool __Is(::hx::Object *inClass) const { return dynamic_cast< StringData *>(inClass); }
    #endif
 
    virtual int __GetType() const { return vtString; }
@@ -2254,13 +2254,13 @@ public:
    }
    int __length() const { return mValue.length; }
 
-   void __Mark(hx::MarkContext *__inCtx)
+   void __Mark(::hx::MarkContext *__inCtx)
    {
       HX_MARK_MEMBER(mValue);
    }
 
    #ifdef HXCPP_VISIT_ALLOCS
-   void __Visit(hx::VisitContext *__inCtx)
+   void __Visit(::hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(mValue);
    }
@@ -2273,12 +2273,12 @@ public:
       return atoi(mValue.utf8_str());
    }
 
-   int __Compare(const hx::Object *inRHS) const
+   int __Compare(const ::hx::Object *inRHS) const
    {
-      return mValue.compare( const_cast<hx::Object*>(inRHS)->toString() );
+      return mValue.compare( const_cast<::hx::Object*>(inRHS)->toString() );
    }
 
-   hx::Val __Field(const String &inString, hx::PropertyAccess inCallProp)
+   ::hx::Val __Field(const String &inString, ::hx::PropertyAccess inCallProp)
    {
       return mValue.__Field(inString, inCallProp);
    }
@@ -2313,7 +2313,7 @@ hx::Object *String::__ToObject() const
          if (sConstDynamicStrings[idx].mPtr)
             return  sConstDynamicStrings[idx].mPtr;
 
-         return sConstDynamicStrings[idx].mPtr = new (hx::NewObjConst)StringData(fromCharCode(idx));
+         return sConstDynamicStrings[idx].mPtr = new (::hx::NewObjConst)StringData(fromCharCode(idx));
       }
    }
 
@@ -2331,7 +2331,7 @@ void String::__boot()
    #endif
 
    sPermanentStringSet = new StringSet();
-   GCAddRoot((hx::Object **)&sPermanentStringSet);
+   GCAddRoot((::hx::Object **)&sPermanentStringSet);
 
    for(int i=0;i<256;i++)
       safeChars[i] = i>32 && i<127;
@@ -2367,9 +2367,9 @@ void String::__boot()
       }
    }
 
-   sConstEmptyString.mPtr = new (hx::NewObjConst)StringData(emptyString);
+   sConstEmptyString.mPtr = new (::hx::NewObjConst)StringData(emptyString);
 
-   Static(__StringClass) = hx::_hx_RegisterClass(HX_CSTRING("String"),TCanCast<StringData>,sStringStatics, sStringFields,
+   Static(__StringClass) = ::hx::_hx_RegisterClass(HX_CSTRING("String"),TCanCast<StringData>,sStringStatics, sStringFields,
            &CreateEmptyString, &CreateString, 0, 0, 0
     );
 }

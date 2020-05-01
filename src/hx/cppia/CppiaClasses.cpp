@@ -11,12 +11,12 @@ class CppiaEnumBase : public EnumBase_obj
 {
 public:
    #if (HXCPP_API_LEVEL<330)
-   CppiaClassInfo *classInfo; 
+   CppiaClassInfo *classInfo;
    #endif
 
    CppiaEnumBase(CppiaClassInfo *inInfo) { classInfo = inInfo; }
 
-   ::hx::ObjectPtr<hx::Class_obj > __GetClass() const;
+   ::hx::ObjectPtr<::hx::Class_obj > __GetClass() const;
 	::String GetEnumName( ) const;
 	::String __ToString() const;
 };
@@ -32,7 +32,7 @@ struct CppiaEnumConstructor
       int nameId;
       int typeId;
    };
- 
+
    std::vector<Arg> args;
    CppiaClassInfo   *classInfo;
    int              nameId;
@@ -53,9 +53,9 @@ struct CppiaEnumConstructor
          int typeId = inStream.getInt();
          args.push_back( Arg(nameId,typeId) );
       }
-         
+
    }
-   hx::Object *create( Array<Dynamic> inArgs )
+   ::hx::Object *create( Array<Dynamic> inArgs )
    {
       bool ok = inArgs.mPtr ? (inArgs->length==args.size()) : args.size()==0;
       if (!ok)
@@ -142,7 +142,7 @@ struct CppiaEnumConstructor
 
 
 
-class EnumConstructorClosure : public hx::Object
+class EnumConstructorClosure : public ::hx::Object
 {
 public:
    CppiaEnumConstructor &constructor;
@@ -171,20 +171,20 @@ hx::Object *createEnumClosure(CppiaEnumConstructor &inContructor)
 
 
 #ifdef CPPIA_JIT
-void SLJIT_CALL createEnum(hx::Class_obj *inClass, String *inName, int inArgs)
+void SLJIT_CALL createEnum(::hx::Class_obj *inClass, String *inName, int inArgs)
 {
    StackContext *ctx = StackContext::getCurrent();
 
    // ctx.pointer points to end-of-args
    unsigned char *oldPointer = ctx->pointer;
-   hx::Object **base = ((hx::Object **)(ctx->frame) );
+   ::hx::Object **base = ((::hx::Object **)(ctx->frame) );
    Array<Dynamic> args = Array_obj<Dynamic>::__new(inArgs);
 
    TRY_NATIVE
       for(int i=0;i<inArgs;i++)
          args[i] = Dynamic(base[i]);
       base[0] = inClass->ConstructEnum(*inName, args).mPtr;
-  
+
    CATCH_NATIVE
    ctx->pointer = oldPointer;
 }
@@ -200,7 +200,7 @@ struct EnumField : public CppiaDynamicExpr
 
    // Mark class?
    String               enumName;
-   hx::Class            enumClass;
+   ::hx::Class            enumClass;
    Dynamic              enumValue;
 
    EnumField(CppiaStream &stream,bool inWithArgs)
@@ -228,7 +228,7 @@ struct EnumField : public CppiaDynamicExpr
       }
       else
       {
-         enumClass = hx::Class_obj::Resolve(type->name);
+         enumClass = ::hx::Class_obj::Resolve(type->name);
          if (!enumClass.mPtr)
          {
             printf("Could not find enum %s\n", type->name.out_str() );
@@ -242,7 +242,7 @@ struct EnumField : public CppiaDynamicExpr
       return this;
    }
 
-   hx::Object *getValue()
+   ::hx::Object *getValue()
    {
       if (value)
          return value->value.mPtr;
@@ -253,7 +253,7 @@ struct EnumField : public CppiaDynamicExpr
       return enumValue.mPtr;
    }
 
-   hx::Object *runObject(CppiaCtx *ctx)
+   ::hx::Object *runObject(CppiaCtx *ctx)
    {
       int s = args.size();
       if (s==0)
@@ -269,14 +269,14 @@ struct EnumField : public CppiaDynamicExpr
       return value ? value->create(dynArgs) : enumClass->ConstructEnum(enumName,dynArgs).mPtr;
    }
 
-   void mark(hx::MarkContext *__inCtx)
+   void mark(::hx::MarkContext *__inCtx)
    {
       HX_MARK_MEMBER(enumName);
       HX_MARK_MEMBER(enumClass);
       HX_MARK_MEMBER(enumValue);
    }
 #ifdef HXCPP_VISIT_ALLOCS
-   void visit(hx::VisitContext *__inCtx)
+   void visit(::hx::VisitContext *__inCtx)
    {
       HX_VISIT_MEMBER(enumName);
       HX_VISIT_MEMBER(enumClass);
@@ -334,9 +334,9 @@ CppiaExpr *createEnumField(CppiaStream &stream,bool inWithArgs)
 
 
 
-int getScriptId(hx::Class inClass);
+int getScriptId(::hx::Class inClass);
 
-void  linkCppiaClass(hx::Class_obj *inClass, CppiaModule &cppia, String inName);
+void  linkCppiaClass(::hx::Class_obj *inClass, CppiaModule &cppia, String inName);
 
 
 // Class Info...
@@ -374,7 +374,7 @@ class CppiaClass *getCppiaClass()
 
 hx::Object *CppiaClassInfo::createInstance(CppiaCtx *ctx,Expressions &inArgs, bool inCallNew)
 {
-   hx::Object *obj = haxeBase->factory(vtable,extraData);
+   ::hx::Object *obj = haxeBase->factory(vtable,extraData);
 
    createDynamicFunctions(obj);
 
@@ -386,7 +386,7 @@ hx::Object *CppiaClassInfo::createInstance(CppiaCtx *ctx,Expressions &inArgs, bo
 
 hx::Object *CppiaClassInfo::createInstance(CppiaCtx *ctx,Array<Dynamic> &inArgs)
 {
-   hx::Object *obj = haxeBase->factory(vtable,extraData);
+   ::hx::Object *obj = haxeBase->factory(vtable,extraData);
 
    createDynamicFunctions(obj);
 
@@ -402,7 +402,7 @@ void *CppiaClassInfo::getHaxeBaseVTable()
    if (!haxeBase || haxeBaseVTable)
       return haxeBaseVTable;
 
-   hx::Object *temp = haxeBase->factory(vtable,extraData);
+   ::hx::Object *temp = haxeBase->factory(vtable,extraData);
    haxeBaseVTable = *(void **)temp;
    if (!containsPointers && ( ((unsigned int *)temp)[-1] & IMMIX_ALLOC_IS_CONTAINER) )
       containsPointers = true;
@@ -412,7 +412,7 @@ void *CppiaClassInfo::getHaxeBaseVTable()
 
 int CppiaClassInfo::getScriptVTableOffset()
 {
-   return haxeBase ? (int)(haxeBase->mDataOffset - sizeof(void *)) : sizeof(hx::Object);
+   return haxeBase ? (int)(haxeBase->mDataOffset - sizeof(void *)) : sizeof(::hx::Object);
 }
 
 
@@ -498,7 +498,7 @@ inline ScriptCallable *CppiaClassInfo::findFunction(FunctionMap &inMap,const Str
 
 }
 
-bool CppiaClassInfo::getField(hx::Object *inThis, String inName, hx::PropertyAccess  inCallProp, Dynamic &outValue)
+bool CppiaClassInfo::getField(::hx::Object *inThis, String inName, ::hx::PropertyAccess  inCallProp, Dynamic &outValue)
 {
    if (inCallProp==paccDynamic)
       inCallProp = isNativeProperty(inName) ? paccAlways : paccNever;
@@ -544,11 +544,11 @@ bool CppiaClassInfo::getField(hx::Object *inThis, String inName, hx::PropertyAcc
       }
    }
 
-   hx::FieldMap *map = dynamicMapOffset ? (hx::FieldMap *)( (char *)inThis + dynamicMapOffset ) :
+   ::hx::FieldMap *map = dynamicMapOffset ? (::hx::FieldMap *)( (char *)inThis + dynamicMapOffset ) :
                         inThis->__GetFieldMap();
    if (map)
    {
-      if (hx::FieldMapGet(map,inName,outValue))
+      if (::hx::FieldMapGet(map,inName,outValue))
          return true;
    }
 
@@ -556,7 +556,7 @@ bool CppiaClassInfo::getField(hx::Object *inThis, String inName, hx::PropertyAcc
    return false;
 }
 
-bool CppiaClassInfo::setField(hx::Object *inThis, String inName, Dynamic inValue, hx::PropertyAccess  inCallProp, Dynamic &outValue)
+bool CppiaClassInfo::setField(::hx::Object *inThis, String inName, Dynamic inValue, ::hx::PropertyAccess  inCallProp, Dynamic &outValue)
 {
    if (inCallProp==paccDynamic)
       inCallProp = isNativeProperty(inName) ? paccAlways : paccNever;
@@ -596,7 +596,7 @@ bool CppiaClassInfo::setField(hx::Object *inThis, String inName, Dynamic inValue
       }
    }
 
-   hx::FieldMap *map = dynamicMapOffset ? (hx::FieldMap *)( (char *)inThis + dynamicMapOffset ) :
+   ::hx::FieldMap *map = dynamicMapOffset ? (::hx::FieldMap *)( (char *)inThis + dynamicMapOffset ) :
                         inThis->__GetFieldMap();
    if (map)
    {
@@ -689,7 +689,7 @@ CppiaEnumConstructor *CppiaClassInfo::findEnum(int inFieldId)
    return 0;
 }
 
-void CppiaClassInfo::mark(hx::MarkContext *__inCtx)
+void CppiaClassInfo::mark(::hx::MarkContext *__inCtx)
 {
    HX_MARK_MEMBER(mClass);
    for(int i=0;i<enumConstructors.size();i++)
@@ -703,7 +703,7 @@ void CppiaClassInfo::mark(hx::MarkContext *__inCtx)
       staticDynamicFunctions[i]->mark(__inCtx);
 }
 #ifdef HXCPP_VISIT_ALLOCS
-void CppiaClassInfo::visit(hx::VisitContext *__inCtx)
+void CppiaClassInfo::visit(::hx::VisitContext *__inCtx)
 {
    HX_VISIT_MEMBER(mClass);
    for(int i=0;i<enumConstructors.size();i++)
@@ -756,7 +756,7 @@ bool CppiaClassInfo::load(CppiaStream &inStream)
 
     if (isNew && isEnum)
     {
-       hx::Class cls =  hx::Class_obj::Resolve(String(name.c_str()));
+       ::hx::Class cls =  ::hx::Class_obj::Resolve(String(name.c_str()));
        if (cls.mPtr && getScriptId(cls)==0)
        {
           DBGLOG("Found existing enum %s - ignore\n", name.c_str());
@@ -857,7 +857,7 @@ void **CppiaClassInfo::createInterfaceVTable(int inTypeId)
             if (strcmp(f->name,"toString"))
                vtable.push_back( findInterfaceFunction(f->name) );
       }
-         
+
    }
 
    CppiaClassInfo *cls = cppia.types[inTypeId]->cppiaClass;
@@ -1100,7 +1100,7 @@ void CppiaClassInfo::linkTypes()
       if (dynamicMapOffset==-1)
       {
          dynamicMapOffset = classSize;
-         classSize += sizeof( hx::FieldMap * );
+         classSize += sizeof( ::hx::FieldMap * );
          containsPointers = true;
       }
 
@@ -1112,7 +1112,7 @@ void CppiaClassInfo::linkTypes()
 
 
    DBGLOG("  script member vars size = %d\n", extraData);
- 
+
    for(int i=0;i<staticVars.size();i++)
    {
       DBGLOG("   link static var %s\n", cppia.identStr(staticVars[i]->nameId));
@@ -1419,9 +1419,9 @@ void CppiaClassInfo::link()
 void CppiaClassInfo::init(CppiaCtx *ctx, int inPhase)
 {
    unsigned char *pointer = ctx->pointer;
-   ctx->push( (hx::Object *) 0 ); // this
+   ctx->push( (::hx::Object *) 0 ); // this
    AutoStack save(ctx,pointer);
- 
+
    if (inPhase==0)
    {
       for(int i=0;i<staticVars.size();i++)
@@ -1449,7 +1449,7 @@ void CppiaClassInfo::init(CppiaCtx *ctx, int inPhase)
 }
 
 
-Dynamic CppiaClassInfo::getStaticValue(const String &inName,hx::PropertyAccess  inCallProp)
+Dynamic CppiaClassInfo::getStaticValue(const String &inName,::hx::PropertyAccess  inCallProp)
 {
    if (inCallProp==paccDynamic)
       inCallProp = isNativeProperty(inName) ? paccAlways : paccNever;
@@ -1515,7 +1515,7 @@ bool CppiaClassInfo::hasStaticValue(const String &inName)
 }
 
 
-Dynamic CppiaClassInfo::setStaticValue(const String &inName,const Dynamic &inValue ,hx::PropertyAccess  inCallProp)
+Dynamic CppiaClassInfo::setStaticValue(const String &inName,const Dynamic &inValue ,::hx::PropertyAccess  inCallProp)
 {
    if (inCallProp==paccDynamic)
       inCallProp = isNativeProperty(inName) ? paccAlways : paccNever;
@@ -1555,7 +1555,7 @@ Dynamic CppiaClassInfo::setStaticValue(const String &inName,const Dynamic &inVal
 
 }
 
-void CppiaClassInfo::GetInstanceFields(hx::Object *inObject, Array<String> &ioFields)
+void CppiaClassInfo::GetInstanceFields(::hx::Object *inObject, Array<String> &ioFields)
 {
    for(int i=0;i<memberVars.size();i++)
    {
@@ -1565,7 +1565,7 @@ void CppiaClassInfo::GetInstanceFields(hx::Object *inObject, Array<String> &ioFi
 
    if (inObject)
    {
-      hx::FieldMap *map = inObject->__GetFieldMap();
+      ::hx::FieldMap *map = inObject->__GetFieldMap();
       if (map)
          FieldMapAppendFields(map, ioFields);
    }
@@ -1610,7 +1610,7 @@ Array<String> CppiaClassInfo::GetClassFields()
 }
 
 
-void CppiaClassInfo::markInstance(hx::Object *inThis, hx::MarkContext *__inCtx)
+void CppiaClassInfo::markInstance(::hx::Object *inThis, ::hx::MarkContext *__inCtx)
 {
    if (dynamicMapOffset)
       HX_MARK_MEMBER(getFieldMap(inThis));
@@ -1623,7 +1623,7 @@ void CppiaClassInfo::markInstance(hx::Object *inThis, hx::MarkContext *__inCtx)
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
-void CppiaClassInfo::visitInstance(hx::Object *inThis, hx::VisitContext *__inCtx)
+void CppiaClassInfo::visitInstance(::hx::Object *inThis, ::hx::VisitContext *__inCtx)
 {
    if (dynamicMapOffset)
       HX_VISIT_MEMBER(getFieldMap(inThis));
@@ -1645,7 +1645,7 @@ void CppiaClassInfo::visitInstance(hx::Object *inThis, hx::VisitContext *__inCtx
 
 
 
-class CppiaClass : public hx::Class_obj
+class CppiaClass : public ::hx::Class_obj
 {
 public:
    CppiaClassInfo *info;
@@ -1705,7 +1705,7 @@ public:
       //mStatics = Array_obj<String>::__new(0,0);
 
       bool overwrite = false;
-      hx::Class old = hx::Class_obj::Resolve(inName);
+      ::hx::Class old = ::hx::Class_obj::Resolve(inName);
       // Overwrite cppia classes
       if (old.mPtr && dynamic_cast<CppiaClass *>( old.mPtr ) )
          overwrite = true;
@@ -1720,16 +1720,16 @@ public:
 
       Expressions none;
       return info->createInstance(CppiaCtx::getCurrent(),none,false);
-   } 
+   }
 
-   Dynamic ConstructArgs(hx::DynamicArray inArgs)
+   Dynamic ConstructArgs(::hx::DynamicArray inArgs)
    {
       return info->createInstance(CppiaCtx::getCurrent(),inArgs);
    }
 
    bool __IsEnum() { return info->isEnum; }
 
-   Dynamic ConstructEnum(String inName,hx::DynamicArray inArgs)
+   Dynamic ConstructEnum(String inName,::hx::DynamicArray inArgs)
    {
       if (!info->isEnum)
          return Dynamic();
@@ -1738,12 +1738,12 @@ public:
 	   return info->enumConstructors[index]->create(inArgs);
    }
 
-   bool VCanCast(hx::Object *inPtr)
+   bool VCanCast(::hx::Object *inPtr)
    {
       if (!inPtr)
          return false;
 
-      hx::Class c = inPtr->__GetClass();
+      ::hx::Class c = inPtr->__GetClass();
       if (!c.mPtr)
          return false;
 
@@ -1757,7 +1757,7 @@ public:
       }
 
 
-      hx::Class_obj *classPtr = c.mPtr;
+      ::hx::Class_obj *classPtr = c.mPtr;
       while(classPtr)
       {
          if (classPtr==this)
@@ -1771,14 +1771,14 @@ public:
    }
 
 
-   hx::Val __Field(const String &inName,hx::PropertyAccess inCallProp)
+   ::hx::Val __Field(const String &inName,::hx::PropertyAccess inCallProp)
    {
       if (inName==HX_CSTRING("__meta__"))
          return __meta__;
       return info->getStaticValue(inName,inCallProp);
    }
 
-   hx::Val __SetField(const String &inName,const hx::Val &inValue ,hx::PropertyAccess inCallProp)
+   ::hx::Val __SetField(const String &inName,const ::hx::Val &inValue ,::hx::PropertyAccess inCallProp)
    {
       return info->setStaticValue(inName,inValue,inCallProp);
    }
@@ -1805,7 +1805,7 @@ hx::Class_obj *createCppiaClass(CppiaClassInfo *inInfo) { return new CppiaClass(
 
 
 // --- Enum Base ---
-::hx::ObjectPtr<hx::Class_obj > CppiaEnumBase::__GetClass() const
+::hx::ObjectPtr<::hx::Class_obj > CppiaEnumBase::__GetClass() const
 {
    return classInfo->getClass();
 }
@@ -1838,12 +1838,12 @@ void cppiaClassInit(CppiaClassInfo *inClass, CppiaCtx *ctx, int inPhase)
 }
 
 
-void cppiaClassMark(CppiaClassInfo *inClass,hx::MarkContext *__inCtx)
+void cppiaClassMark(CppiaClassInfo *inClass,::hx::MarkContext *__inCtx)
 {
    inClass->mark(__inCtx);
 }
 #ifdef HXCPP_VISIT_ALLOCS
-void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
+void cppiaClassVisit(CppiaClassInfo *inClass,::hx::VisitContext *__inCtx)
 {
    inClass->visit(__inCtx);
 }
@@ -1851,15 +1851,15 @@ void cppiaClassVisit(CppiaClassInfo *inClass,hx::VisitContext *__inCtx)
 
 
 
-void  linkCppiaClass(hx::Class_obj *inClass, CppiaModule &cppia, String inName)
+void  linkCppiaClass(::hx::Class_obj *inClass, CppiaModule &cppia, String inName)
 {
    ((CppiaClass *)inClass)->linkClass(cppia,inName);
 }
 
 
-int getScriptId(hx::Class inClass)
+int getScriptId(::hx::Class inClass)
 {
-   hx::Class_obj *ptr = inClass.mPtr;
+   ::hx::Class_obj *ptr = inClass.mPtr;
    if (!ptr)
       return 0;
    CppiaClass *cls = dynamic_cast<CppiaClass *>(ptr);
@@ -1893,25 +1893,25 @@ hx::Class ScriptableGetClass(void *inClass)
 
 
 // Called by haxe generated code ...
-void ScriptableMark(void *inClass, hx::Object *inThis, hx::MarkContext *__inCtx)
+void ScriptableMark(void *inClass, ::hx::Object *inThis, ::hx::MarkContext *__inCtx)
 {
    ((CppiaClassInfo *)inClass)->markInstance(inThis, __inCtx);
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
-void ScriptableVisit(void *inClass, hx::Object *inThis, hx::VisitContext *__inCtx)
+void ScriptableVisit(void *inClass, ::hx::Object *inThis, ::hx::VisitContext *__inCtx)
 {
    ((CppiaClassInfo *)inClass)->visitInstance(inThis, __inCtx);
 }
 #endif
 
-bool ScriptableField(hx::Object *inObj, const ::String &inName,hx::PropertyAccess  inCallProp,Dynamic &outResult)
+bool ScriptableField(::hx::Object *inObj, const ::String &inName,::hx::PropertyAccess  inCallProp,Dynamic &outResult)
 {
    void **vtable = inObj->__GetScriptVTable();
    return ((CppiaClassInfo *)vtable[-1])->getField(inObj,inName,inCallProp,outResult);
 }
 
-bool ScriptableField(hx::Object *inObj, int inName,hx::PropertyAccess  inCallProp,Float &outResult)
+bool ScriptableField(::hx::Object *inObj, int inName,::hx::PropertyAccess  inCallProp,Float &outResult)
 {
    void **vtable = inObj->__GetScriptVTable();
    Dynamic result;
@@ -1927,26 +1927,26 @@ bool ScriptableField(hx::Object *inObj, int inName,hx::PropertyAccess  inCallPro
    return false;
 }
 
-bool ScriptableField(hx::Object *inObj, int inName,hx::PropertyAccess  inCallProp,Dynamic &outResult)
+bool ScriptableField(::hx::Object *inObj, int inName,::hx::PropertyAccess  inCallProp,Dynamic &outResult)
 {
    void **vtable = inObj->__GetScriptVTable();
    return ((CppiaClassInfo *)vtable[-1])->getField(inObj,__hxcpp_field_from_id(inName),inCallProp,outResult);
 }
 
-void ScriptableGetFields(hx::Object *inObject, Array< ::String> &outFields)
+void ScriptableGetFields(::hx::Object *inObject, Array< ::String> &outFields)
 {
    void **vtable = inObject->__GetScriptVTable();
    return ((CppiaClassInfo *)vtable[-1])->GetInstanceFields(inObject,outFields);
 }
 
-bool ScriptableSetField(hx::Object *inObj, const ::String &inName, Dynamic inValue,hx::PropertyAccess  inCallProp, Dynamic &outResult)
+bool ScriptableSetField(::hx::Object *inObj, const ::String &inName, Dynamic inValue,::hx::PropertyAccess  inCallProp, Dynamic &outResult)
 {
    void **vtable = inObj->__GetScriptVTable();
    return ((CppiaClassInfo *)vtable[-1])->setField(inObj,inName,inValue,inCallProp,outResult);
 }
 
 #if (HXCPP_API_LEVEL >= 330)
-void *hx::Object::_hx_getInterface(int inId)
+void *::hx::Object::_hx_getInterface(int inId)
 {
    void **vtable = __GetScriptVTable();
    if (!vtable)

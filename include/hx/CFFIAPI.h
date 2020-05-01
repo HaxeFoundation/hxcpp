@@ -53,11 +53,11 @@ DEFFUNC_2(HxString,alloc_hxs_wchar,const wchar_t *,int)
 DEFFUNC_2(HxString,alloc_hxs_utf16,const char16_t *,int)
 DEFFUNC_2(HxString,alloc_hxs_utf8,const char *,int)
 
-DEFFUNC_2(const char *,hxs_utf8,const HxString &,hx::IStringAlloc *)
-DEFFUNC_2(const wchar_t *,hxs_wchar,const HxString &,hx::IStringAlloc *)
-DEFFUNC_2(const char16_t *,hxs_utf16,const HxString &,hx::IStringAlloc *)
+DEFFUNC_2(const char *,hxs_utf8,const HxString &,::hx::IStringAlloc *)
+DEFFUNC_2(const wchar_t *,hxs_wchar,const HxString &,::hx::IStringAlloc *)
+DEFFUNC_2(const char16_t *,hxs_utf16,const HxString &,::hx::IStringAlloc *)
 
-DEFFUNC_1(hx::StringEncoding,hxs_encoding,const HxString &)
+DEFFUNC_1(::hx::StringEncoding,hxs_encoding,const HxString &)
 #endif
 
 
@@ -129,7 +129,7 @@ DEFFUNC_2(void,buffer_set_size,cffiByteBuffer,int)
 // This is used by resizeByteData for manipulating bytes directly on neko
 DEFFUNC_1(value,alloc_raw_string,int)
 
-// Call Function 
+// Call Function
 DEFFUNC_1(value,val_call0,value)
 DEFFUNC_2(value,val_call1,value,value)
 DEFFUNC_3(value,val_call2,value,value,value)
