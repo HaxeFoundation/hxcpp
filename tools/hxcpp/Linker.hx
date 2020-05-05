@@ -57,6 +57,17 @@ class Linker
       return false;
    }
 
+   public function getSimpleFilename(inTarget:Target)
+   {
+      var ext = inTarget.getExt(mExt);
+      // Remove arch from ext ...
+      var idx = ext.indexOf('.');
+      if (idx>0)
+         ext = ext.substr(idx);
+
+      return mNamePrefix + inTarget.mOutput + ext;
+   }
+
    public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler,extraDeps:Array<String> )
    {
       var ext = inTarget.getExt(mExt);

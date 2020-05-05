@@ -38,6 +38,7 @@
 <set name="nostrip" value="1" if="dll_import"/>
 <set name="nostrip" value="1" if="dll_export"/>
 <set name="nostrip" value="1" if="HXCPP_DEBUG_LINK"/>
+<unset name="nostrip" if="HXCPP_DEBUG_LINK_AND_STRIP"/>
 
 
 <stripper id="strip" exe="strip" unless="nostrip">
