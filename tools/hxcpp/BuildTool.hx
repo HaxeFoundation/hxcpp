@@ -1540,7 +1540,7 @@ class BuildTool
             exe = '"$exe"';
          #end
 
-         Tools.exit( Sys.command( exe, args ) );
+         Tools.exit( Sys.command( exe, args.slice(1) ) );
       }
       else if (args.length>0 && args[0].endsWith(".js"))
       {
