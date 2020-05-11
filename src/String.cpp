@@ -1575,20 +1575,19 @@ const char * String::utf8_str(hx::IStringAlloc *inBuffer,bool throwInvalid) cons
 
 const char * String::utf8_str_len(hx::IStringAlloc *inBuffer,int *byteLength,bool throwInvalid) const
 {
-#ifdef HX_SMART_STRINGS
+   #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
    {
       return TConvertToUTF8(__w, byteLength, inBuffer, throwInvalid);
    }
-   else
+   #endif
    {
-      *byteLength = length;
+      if (byteLength != 0)
+      {
+         *byteLength = length;
+      }
       return __s;
    }
-#else
-   *byteLength = length;
-   return __s;
-#endif
 }
 
 const char *String::ascii_substr(hx::IStringAlloc *inBuffer,int start, int length) const
