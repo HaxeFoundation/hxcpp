@@ -234,7 +234,7 @@ Dynamic _hx_sqlite_request(Dynamic handle,String sql)
    database *db = getDatabase(handle);
 
    int byteLength = 0;
-   const char * sqlStr = sql.utf8_str_len(0, &byteLength);
+   const char * sqlStr = sql.utf8_str(0, true, &byteLength);
    sqlite3_stmt *statement = 0;
    const char *tl = 0;
    if( sqlite3_prepare(db->db,sqlStr,byteLength,&statement,&tl) != SQLITE_OK )
