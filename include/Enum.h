@@ -133,6 +133,8 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
 typedef hx::ObjectPtr<EnumBase_obj> EnumBase;
 
 
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool __hxcpp_enum_eq( ::hx::EnumBase a,  ::hx::EnumBase b);
+
 // --- CreateEnum -------------------------------------------------------------
 //
 // Template function to return a strongly-typed version fo the Enum.
