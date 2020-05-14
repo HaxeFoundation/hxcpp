@@ -34,6 +34,7 @@
   <depend name="${HXCPP}/include/hx/StackContext.h"/>
   <depend name="${HXCPP}/include/hx/Debug.h"/>
   <depend name="${HXCPP}/include/hx/QuickVec.h"/>
+  <depend name="${HXCPP}/include/hx/StringAlloc.h"/>
   <depend name="${HXCPP}/include/hx/Telemetry.h"/>
   <depend name="${HXCPP}/include/hx/Thread.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>

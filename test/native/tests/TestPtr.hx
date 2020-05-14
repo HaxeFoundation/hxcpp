@@ -12,9 +12,9 @@ using cpp.NativeString;
 @:unreflective
 @:native("CVec")
 extern class Vec {
-	public var x:Float;
-	public var y:Float;
-	public var z:Float;
+   public var x:Float;
+   public var y:Float;
+   public var z:Float;
 }
 
 
@@ -22,28 +22,28 @@ extern class Vec {
 @:structAccess
 @:native("CVec")
 extern class VecStructAccess {
-	public var x:Float;
-	public var y:Float;
-	public var z:Float;
+   public var x:Float;
+   public var y:Float;
+   public var z:Float;
 
    @:native("new CVec")
    public static function create(val:Float) : Pointer<VecStructAccess>;
 
-   public function set99(ioVec:VecStructAccess):Void { }
+   public function set99(ioVec:VecStructAccess):Void;
 }
 
 
 @:unreflective
 @:native("cpp::Struct<CVec>")
 extern class VecStruct {
-	public var x:Float;
-	public var y:Float;
-	public var z:Float;
+   public var x:Float;
+   public var y:Float;
+   public var z:Float;
 }
 
 @:native("::SomeStruct")
 extern class Native_SomeStruct {
-    var data:RawPointer<UInt8>;
+    var data:RawPointer<cpp.UInt8>;
     var dataLength:Int;
 
     inline function getDataBytes():haxe.io.Bytes {
@@ -75,17 +75,17 @@ class IntHolder
 struct CVec{
    CVec(double inX=0) : x(inX), y(inX), z(inX) { }
 
-	double x;
-	double y;
-	double z;
+   double x;
+   double y;
+   double z;
 
   void set99(CVec &ioVex) { ioVex.x=99; }
 };
 
   struct SomeStruct {
-     SomeStruct() : data("Hi!"), dataLength(3) { }
+     SomeStruct() : data((unsigned char *)"Hi!"), dataLength(3) { }
 
-     char *data;
+     unsigned char *data;
      int dataLength;
   };
 ')
@@ -93,38 +93,52 @@ struct CVec{
   int callPointer(CVec *) { return 5; }
 ')
 class TestPtr extends haxe.unit.TestCase{
-	
+   
    /*
     Alternate version
-	@:generic
-	public static inline function malloc<T>(size:Int) : cpp.Pointer<T>{
-		var p : cpp.RawPointer<cpp.Void> = untyped __cpp__("malloc({0})",size);
-		return cast cpp.Pointer.fromRaw( cast p );
-	}
+   @:generic
+   public static inline function malloc<T>(size:Int) : cpp.Pointer<T>{
+      var p : cpp.RawPointer<cpp.Void> = untyped __cpp__("malloc({0})",size);
+      return cast cpp.Pointer.fromRaw( cast p );
+   }
    */
-	
+   
     public function testMalloc() {
-		var a : Pointer<Vec> = Stdlib.malloc( Stdlib.sizeof(Vec) );
+      var a : Pointer<Vec> = Stdlib.malloc( Stdlib.sizeof(Vec) );
       assertTrue( a!=null );
       assertTrue( a.raw!=null );
-		a.ptr.x = 66;
-		assertTrue( a.ptr.x == 66 );
+      a.ptr.x = 66;
+      assertTrue( a.ptr.x == 66 );
       Stdlib.free(a);
-	}
-	
+   }
+   
     public function testExtened() {
       var test = NativeGc.allocateExtended( TestPtr, Stdlib.sizeof(Int) * 5 );
-		var a : Pointer<Int> = cast Pointer.endOf(test);
+      var a : Pointer<Int> = cast Pointer.endOf(test);
       for(i in 0...5)
          a.setAt(i,i);
       for(i in 0...5)
          assertTrue( a.postIncRef() == i );
-	}
+   }
+
+   function test9194() {
+      // will fail during C++ compile
+      var buffer: cpp.RawPointer<cpp.Void> = null;
+      var floatBuffer: cpp.RawPointer<cpp.Float32> = cast buffer;
+      // generates incorrect: float* floatBuffer = buffer
+      // the lack of native casting means the compiler throws an error here
+
+      var buffer: cpp.Star<cpp.Void> = null;
+      var floatBuffer: cpp.Star<cpp.Float32> = cast buffer;
+      // generates correct: float* floatBuffer = ( (float*) buffer ) 
+
+      assertTrue(floatBuffer==null);
+   }
 
 
    public function testNull() {
-		var nullP : Pointer<Vec> = null;
-		var nullRawP = nullP.raw;
+      var nullP : Pointer<Vec> = null;
+      var nullRawP = nullP.raw;
       assertTrue( nullP==null );
       assertTrue( null==nullP );
       assertFalse( nullP!=null );
@@ -132,7 +146,7 @@ class TestPtr extends haxe.unit.TestCase{
       assertFalse( nullRawP!=null );
       nullRawP = null;
       assertTrue( nullRawP==null );
-	}
+   }
 
    private function anonOf(d:Dynamic) : Dynamic return {ptr:d};
 
@@ -145,7 +159,7 @@ class TestPtr extends haxe.unit.TestCase{
    }
 
    @:native("callPointer") @:extern
-   private static function callPointer(ptr:cpp.Pointer<Vec>):Int return 0;
+   private static function callPointer(ptr:cpp.Pointer<Vec>):Int;
 
    public function testPointerCast() {
       var map = new Map<Int, cpp.Pointer<Vec> >();

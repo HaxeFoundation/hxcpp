@@ -678,11 +678,25 @@ class BuildTool
 
             var linker = mLinkers.get(target.mToolID);
             var output = linker.link(target,objs, mCompiler, extraDeps);
+
             if (output!="")
             {
                if (mStripper!=null)
+               {
                   if (target.mToolID=="exe" || target.mToolID=="dll")
+                  {
+                     if ( mDefines.exists("HXCPP_DEBUG_LINK_AND_STRIP") )
+                     {
+                        var unstripped = mCompiler.mObjDir + "/" + linker.getSimpleFilename(target);
+                        Log.v("Save unstripped to " + unstripped);
+
+                        var chmod = isWindows ? false : target.mToolID=="exe";
+                        CopyFile.copyFile(output, unstripped, false, Overwrite.ALWAYS, chmod);
+                     }
+
                      mStripper.strip(output);
+                  }
+               }
 
                if (manifest!=null && (target.mToolID=="exe" || target.mToolID=="dll") )
                {

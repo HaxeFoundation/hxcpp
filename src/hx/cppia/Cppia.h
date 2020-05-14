@@ -10,6 +10,13 @@
 #include <map>
 #include <set>
 
+#ifdef HX_ANDROID
+  #include <android/log.h>
+  #define CPPIALOG(...) __android_log_print(ANDROID_LOG_WARN, "cppia", __VA_ARGS__)
+#else
+  #define CPPIALOG printf
+#endif
+
 
 
 namespace hx
@@ -113,6 +120,7 @@ enum ArrayFunc
    afCopy,
    afInsert,
    afIterator,
+   afKeyValueIterator,
    afJoin,
    afPop,
    afPush,

@@ -87,6 +87,8 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int   __int__(double x);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool  __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_parse_int(const String &inString);
 HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_float(const String &inString);
+HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_substr_float(const String &inString, int start, int len);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int __hxcpp_parse_substr_int(const String &inString, int start=0, int len=-1);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_set_float_format(String inFormat);
 
@@ -189,6 +191,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_values(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_int(HX_MAP_THIS_ARG,String inKey,int inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_string(HX_MAP_THIS_ARG,String inKey,::String inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_float(HX_MAP_THIS_ARG,String inKey,Float inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_map_substr(HX_MAP_THIS_ARG,String inKey,int inStart, int inLength);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string_raw(Dynamic &hash);

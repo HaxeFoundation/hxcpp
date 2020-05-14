@@ -155,6 +155,7 @@ public:
    inline const char *&raw_ref() { return __s; }
    inline const char *raw_ptr() const { return __s; }
    const char *utf8_str(hx::IStringAlloc *inBuffer = 0,bool throwInvalid=true) const;
+   const char *ascii_substr(hx::IStringAlloc *inBuffer,int start, int length) const;
    inline const char *c_str() const { return utf8_str(); }
    inline const char *out_str(hx::IStringAlloc *inBuffer = 0) const { return utf8_str(inBuffer,false); }
    const wchar_t *wchar_str(hx::IStringAlloc *inBuffer = 0) const;
@@ -242,6 +243,7 @@ public:
    }
 
    unsigned int calcHash() const;
+   unsigned int calcSubHash(int start, int length) const;
 
    #ifdef HX_SMART_STRINGS
    int compare(const ::String &inRHS) const;
@@ -275,18 +277,32 @@ public:
 
 
 
+   #ifdef HX_SMART_STRINGS
+   bool eq(const ::String &inRHS) const;
+   #else
    inline bool eq(const ::String &inRHS) const
    {
-      #ifdef HX_SMART_STRINGS
-      return compare(inRHS)==0;
-      #else
       // Strings are known not to be null...
       return length==inRHS.length && !memcmp(__s,inRHS.__s,length);
-      #endif
    }
+   #endif
 
-   inline bool operator==(const ::String &inRHS) const { return compare(inRHS)==0; }
-   inline bool operator!=(const ::String &inRHS) const { return compare(inRHS)!=0; }
+   inline bool operator==(const ::String &inRHS) const
+   {
+      if (!inRHS.__s)
+         return !__s;
+      if (!__s)
+         return false;
+      return eq(inRHS);
+   }
+   inline bool operator!=(const ::String &inRHS) const
+   {
+      if (!inRHS.__s)
+         return __s;
+      if (!__s)
+         return true;
+      return !eq(inRHS);
+   }
 
    inline bool operator<(const ::String &inRHS) const { return compare(inRHS)<0; }
    inline bool operator<=(const ::String &inRHS) const { return compare(inRHS)<=0; }

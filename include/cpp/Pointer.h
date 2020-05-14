@@ -552,5 +552,11 @@ public:
 
 } // end namespace cpp
 
+namespace hx
+{
+template <typename T>
+T *StarOf(T &x) { return &x; }
+}
+
 
 #endif

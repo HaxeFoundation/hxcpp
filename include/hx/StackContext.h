@@ -4,9 +4,9 @@
 #include "QuickVec.h"
 
 #ifdef HXCPP_SINGLE_THREADED_APP
-  #define HX_CTX_GET hx::gMainThreadContext
+  #define HX_CTX_GET ::hx::gMainThreadContext
 #else
-  #define HX_CTX_GET ((hx::StackContext *)hx::tlsStackContext)
+  #define HX_CTX_GET ((::hx::StackContext *)::hx::tlsStackContext)
 #endif
 
 // Set:
@@ -47,18 +47,18 @@
       #ifdef HXCPP_DEBUGGER
          #define HX_DEFINE_STACK_FRAME(varName, className, functionName, classFunctionHash, fullName,fileName,     \
                              lineNumber, fileHash ) \
-          hx::StackPosition varName(className, functionName, fullName, fileName, lineNumber, \
+          ::hx::StackPosition varName(className, functionName, fullName, fileName, lineNumber, \
                                             classFunctionHash, fileHash);
       #else
          #define HX_DEFINE_STACK_FRAME(varName, className, functionName, classFunctionHash, fullName,fileName,     \
                           lineNumber, fileHash ) \
-          hx::StackPosition varName(className, functionName, fullName, fileName, lineNumber);
+          ::hx::StackPosition varName(className, functionName, fullName, fileName, lineNumber);
       #endif
    #else
 
       #define HX_DEFINE_STACK_FRAME(varName, className, functionName, classFunctionHash, fullName,fileName,     \
                           lineNumber, fileHash ) \
-      hx::StackPosition varName(className, functionName, fullName, fileName);
+      ::hx::StackPosition varName(className, functionName, fullName, fileName);
 
    #endif
 
@@ -68,15 +68,15 @@
    // This code will hst the 'HX_STACK_FRAME' macro
    #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash ) \
       HX_DEFINE_STACK_FRAME(__stackPosition, className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash ) \
-      hx::StackFrame _hx_stackframe(&__stackPosition);
+      ::hx::StackFrame _hx_stackframe(&__stackPosition);
 
    // Newer code will use the HX_STACKFRAME macro
-   #define HX_STACKFRAME(pos) hx::StackFrame _hx_stackframe(pos);
-   #define HX_GC_STACKFRAME(pos) hx::StackFrame _hx_stackframe(pos);
+   #define HX_STACKFRAME(pos) ::hx::StackFrame _hx_stackframe(pos);
+   #define HX_GC_STACKFRAME(pos) ::hx::StackFrame _hx_stackframe(pos);
 
    // Must record the stack state at the catch
    #define HX_STACK_BEGIN_CATCH __hxcpp_stack_begin_catch();
-   #define HX_JUST_GC_STACKFRAME hx::JustGcStackFrame _hx_stackframe;
+   #define HX_JUST_GC_STACKFRAME ::hx::JustGcStackFrame _hx_stackframe;
    #define HX_CTX _hx_stackframe.ctx
 #else
    // No need to track frame
@@ -86,7 +86,7 @@
    #define HX_LOCAL_STACK_FRAME(a,b,c,d,e,f,g,h)
    #define HX_STACK_FRAME(className, functionName, classFunctionHash, fullName,fileName, lineNumber, fileHash )
    #define HX_STACKFRAME(pos)
-   #define HX_JUST_GC_STACKFRAME hx::StackContext *_hx_ctx = HX_CTX_GET;
+   #define HX_JUST_GC_STACKFRAME ::hx::StackContext *_hx_ctx = HX_CTX_GET;
    #define HX_GC_STACKFRAME(pos) HX_JUST_GC_STACKFRAME
    #define HX_CTX _hx_ctx
 #endif
@@ -99,7 +99,7 @@
 
    // Emitted at the beginning of every instance fuction.  ptr is "this".
    // Only if stack variables are to be tracked
-   #define HX_STACK_THIS(ptr) hx::StackThis __stackthis(_hx_stackframe.variables, ptr);
+   #define HX_STACK_THIS(ptr) ::hx::StackThis __stackthis(_hx_stackframe.variables, ptr);
 
    // Emitted at the beginning of every function that takes arguments.
    // name is the name of the argument.
@@ -107,13 +107,13 @@
    // list of the stack frame in which the arg was declared
    // Only if stack variables are to be tracked
    #define HX_STACK_ARG(cpp_var, haxe_name) \
-       hx::StackVariable __stackargument_##cpp_var(_hx_stackframe.variables, true, haxe_name, &cpp_var);
+       ::hx::StackVariable __stackargument_##cpp_var(_hx_stackframe.variables, true, haxe_name, &cpp_var);
 
    // Emitted whenever a Haxe value is pushed on the stack.  cpp_var is the local
    // cpp variable, haxe_name is the name that was used in haxe for it
    // Only if stack variables are to be tracked
    #define HX_STACK_VAR(cpp_var, haxe_name)                                \
-       hx::StackVariable __stackvariable_##cpp_var(_hx_stackframe.variables, false, haxe_name, &cpp_var);
+       ::hx::StackVariable __stackvariable_##cpp_var(_hx_stackframe.variables, false, haxe_name, &cpp_var);
 
    #define HX_STACK_CATCHABLE(T, n)                                        \
        hx::StackCatchable __stackcatchable_##n                             \
@@ -144,8 +144,8 @@
    #define HX_VARI_NAME(type,name,dbgName) type name
 
    // Just throw - move to hx::Throw function?
-   #define HX_STACK_DO_THROW(e) hx::Throw(e)
-   #define HX_STACK_DO_RETHROW(e) hx::Rethrow(e)
+   #define HX_STACK_DO_THROW(e) ::hx::Throw(e)
+   #define HX_STACK_DO_RETHROW(e) ::hx::Rethrow(e)
 #endif // HXCPP_STACK_VARS
 
 
@@ -161,7 +161,7 @@
           /* This is incorrect - a read memory barrier is needed here. */     \
           /* For now, just live with the exceedingly rare cases where */      \
           /* breakpoints are missed */                                        \
-          if (hx::gShouldCallHandleBreakpoints) {                             \
+          if (::hx::gShouldCallHandleBreakpoints) {                             \
               __hxcpp_on_line_changed(_hx_stackframe.ctx);                    \
          }
       #define HX_STACK_LINE_QUICK(number) _hx_stackframe.lineNumber = number;
@@ -451,8 +451,12 @@ struct StackContext : public hx::ImmixAllocator
    }
    #endif
 
-   #ifdef HXCPP_SEH_THROW
-   _se_translator_function mOldSehFunc;
+   #ifdef HXCPP_CATCH_SEGV
+      #ifdef _MSC_VER
+      _se_translator_function mOldSignalFunc;
+      #else
+      void (*mOldSignalFunc)(int);
+      #endif
    #endif
 
    StackContext();
