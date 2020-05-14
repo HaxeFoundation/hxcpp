@@ -277,18 +277,32 @@ public:
 
 
 
+   #ifdef HX_SMART_STRINGS
+   bool eq(const ::String &inRHS) const;
+   #else
    inline bool eq(const ::String &inRHS) const
    {
-      #ifdef HX_SMART_STRINGS
-      return compare(inRHS)==0;
-      #else
       // Strings are known not to be null...
       return length==inRHS.length && !memcmp(__s,inRHS.__s,length);
-      #endif
    }
+   #endif
 
-   inline bool operator==(const ::String &inRHS) const { return compare(inRHS)==0; }
-   inline bool operator!=(const ::String &inRHS) const { return compare(inRHS)!=0; }
+   inline bool operator==(const ::String &inRHS) const
+   {
+      if (!inRHS.__s)
+         return !__s;
+      if (!__s)
+         return false;
+      return eq(inRHS);
+   }
+   inline bool operator!=(const ::String &inRHS) const
+   {
+      if (!inRHS.__s)
+         return __s;
+      if (!__s)
+         return true;
+      return !eq(inRHS);
+   }
 
    inline bool operator<(const ::String &inRHS) const { return compare(inRHS)<0; }
    inline bool operator<=(const ::String &inRHS) const { return compare(inRHS)<=0; }

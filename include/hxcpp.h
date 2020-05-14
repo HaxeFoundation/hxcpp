@@ -185,12 +185,15 @@ typedef char HX_CHAR;
 
 #ifdef HX_SMART_STRINGS
   #define HX_FIELD_EQ(name,field) (name.isAsciiEncoded() && !::memcmp(name.raw_ptr(), field, sizeof(field)/sizeof(char)))
-  // No null check is performed....
+  // No null check is performedd...
   #define HX_QSTR_EQ(name,field) (name.length==field.length && field.isAsciiEncodedQ() && !::memcmp(name.raw_ptr(), field.raw_ptr() , field.length) )
+  // field is known to be isAsciiEncodedQ
+  #define HX_QSTR_EQ_AE(name,field) (name.length==field.length && !::memcmp(name.raw_ptr(), field.raw_ptr() , field.length) )
 #else
   #define HX_FIELD_EQ(name,field) !::memcmp(name.__s, field, sizeof(field)/sizeof(char))
   // No null check is performed....
   #define HX_QSTR_EQ(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length))
+  #define HX_QSTR_EQ_AE(name,field) (name.length==field.length && !::memcmp(name.__s, field.__s, field.length))
 #endif
 
 

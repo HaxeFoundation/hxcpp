@@ -1605,6 +1605,19 @@ const char *String::ascii_substr(hx::IStringAlloc *inBuffer,int start, int lengt
 }
 
 #ifdef HX_SMART_STRINGS
+
+bool String::eq(const ::String &inRHS) const
+{
+   if (length != inRHS.length)
+      return false;
+
+   bool s0IsWide = isUTF16Encoded();
+   if (s0IsWide != inRHS.isUTF16Encoded() )
+      return false;
+   return !memcmp(__s, inRHS.__s, s0IsWide ? 2 * length : length );
+}
+
+
 int String::compare(const ::String &inRHS) const
 {
    if (!__s)
