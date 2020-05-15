@@ -236,7 +236,7 @@ public:
       if (inField.__s==name1.__s) return t1;
 
       #ifdef HX_SMART_STRINGS
-      if (inField.isAsciiEncodedQ())
+      if (!inField.isAsciiEncodedQ())
          return null();
       #endif
 
@@ -339,7 +339,7 @@ public:
       if (inField.__s==name1.__s) return t1;
       if (inField.__s==name2.__s) return t2;
       #ifdef HX_SMART_STRINGS
-      if (inField.isAsciiEncodedQ())
+      if (!inField.isAsciiEncodedQ())
          return null();
       #endif
       if (HX_QSTR_EQ_AE(inField,name0)) return t0;
@@ -466,7 +466,7 @@ public:
       if (inField.__s==name2.__s) return t2;
       if (inField.__s==name3.__s) return t3;
       #ifdef HX_SMART_STRINGS
-      if (inField.isAsciiEncodedQ())
+      if (!inField.isAsciiEncodedQ())
          return null();
       #endif
       if (HX_QSTR_EQ_AE(inField,name0)) return t0;
@@ -621,7 +621,7 @@ public:
       if (inField.__s==name3.__s) return t3;
       if (inField.__s==name4.__s) return t4;
       #ifdef HX_SMART_STRINGS
-      if (inField.isAsciiEncodedQ())
+      if (!inField.isAsciiEncodedQ())
          return null();
       #endif
       if (HX_QSTR_EQ_AE(inField,name0)) return t0;
