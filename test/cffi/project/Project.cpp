@@ -373,7 +373,7 @@ value createAnon()
   return v;
 }
 
-DEFINE_PRIME0(createAnon);
+DEFINE_PRIM(createAnon,0);
 
 
 
