@@ -194,6 +194,10 @@ public:
 	{
 		return mDeque->PopFront(inBlocked);
 	}
+	String toString()
+	{
+		return String(GetThreadNumber());
+	}
 	void SetTLS(int inID,Dynamic inVal) {
       mTLS->__SetItem(inID,inVal);
    }
