@@ -1345,7 +1345,7 @@ int String::lastIndexOf(const String &inValue, Dynamic inStart) const
       if (s016 && s116)
          return TLastIndexOf(s, __w, length, inValue.__w, inValue.length);
 
-      while(s>0)
+      while(s>=0)
       {
          if (s016 ? StrMatch(__w+s, inValue.__s, l) : StrMatch(inValue.__w, __s+s, l) )
             return s;
