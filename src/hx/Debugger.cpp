@@ -877,7 +877,7 @@ private:
    {
       for (const char **ptr = hx::__hxcpp_all_files; *ptr; ptr++)
       {
-         if (!strcmp(*ptr, fileName))
+         if (fileName.length>0  && !strcmp(*ptr, fileName))
             return *ptr;
       }
 
