@@ -1,7 +1,8 @@
 #ifndef HX_CFFI_H
 #define HX_CFFI_H
 
-#define HX_CFFI_API_VERSION 400
+// 410 - adds gc_try_unblocking
+#define HX_CFFI_API_VERSION 410
 
 #ifdef HXCPP_JS_PRIME
 #include <emscripten/bind.h>
@@ -249,11 +250,22 @@ class AutoGCBlocking
 {
 public:
 	AutoGCBlocking() : mLocked( gc_try_blocking() ) {  }
-	~AutoGCBlocking() { if (mLocked) gc_exit_blocking(); }
+	~AutoGCBlocking() { Close(); }
 	void Close() { if (mLocked) gc_exit_blocking(); mLocked = false; }
 
 	bool mLocked;
 };
+
+class AutoGCUnblocking
+{
+public:
+	AutoGCUnblocking() : mUnlocked( gc_try_unblocking() ) {  }
+	~AutoGCUnblocking() { Close(); }
+	void Close() { if (mUnlocked) gc_enter_blocking(); mUnlocked = false; }
+
+	bool mUnlocked;
+};
+
 
 class AutoGCRoot
 {

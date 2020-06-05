@@ -5876,6 +5876,18 @@ public:
       return true;
    }
 
+   bool TryExitGCFreeZone()
+   {
+      #ifndef HXCPP_SINGLE_THREADED_APP
+      if (!mGCFreeZone)
+         return false;
+      ExitGCFreeZone();
+      return true;
+      #endif
+      return false;
+   }
+
+
    void ExitGCFreeZone()
    {
       #ifndef HXCPP_SINGLE_THREADED_APP
@@ -6253,6 +6265,20 @@ bool TryGCFreeZone()
       return false;
    #endif
 }
+
+bool TryExitGCFreeZone()
+{
+   #ifndef HXCPP_SINGLE_THREADED_APP
+      LocalAllocator *tla = GetLocalAlloc(true);
+      if (!tla)
+         return 0;
+      bool left = tla->TryExitGCFreeZone();
+      return left;
+   #else
+      return false;
+   #endif
+}
+
 
 void ExitGCFreeZone()
 {
