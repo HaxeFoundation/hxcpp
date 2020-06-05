@@ -237,6 +237,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
    info[0] = (hxThreadInfo *)inInfo;
    info[1] = 0;
 
+	hxThreadInfo *oldinfo = tlsCurrentThread;
 	tlsCurrentThread = info[0];
 
 	hx::SetTopOfStack((int *)&info[1], true);
@@ -258,7 +259,8 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 
 	hx::UnregisterCurrentThread();
 
-	tlsCurrentThread = 0;
+	//tlsCurrentThread = 0;
+	tlsCurrentThread = oldinfo;
 
 	THREAD_FUNC_RET
 }
@@ -302,10 +304,13 @@ static hxThreadInfo *GetCurrentInfo(bool createNew = true)
 	if (!info && createNew)
 	{
 		// Hmm, must be the "main" thead...
-		info = new hxThreadInfo(null(), 0);
-		sMainThreadInfo = info;
-		hx::GCAddRoot(&sMainThreadInfo);
-		tlsCurrentThread = info;
+		if(!sMainThreadInfo) {
+		  info = new hxThreadInfo(null(), 0);
+		  sMainThreadInfo = info;
+		  hx::GCAddRoot(&sMainThreadInfo);
+		  tlsCurrentThread = info;
+                }else
+		  info = (hxThreadInfo *)sMainThreadInfo; 			
 	}
 	return info;
 }
