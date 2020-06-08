@@ -237,7 +237,6 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
    info[0] = (hxThreadInfo *)inInfo;
    info[1] = 0;
 
-	hxThreadInfo *oldinfo = tlsCurrentThread;
 	tlsCurrentThread = info[0];
 
 	hx::SetTopOfStack((int *)&info[1], true);
@@ -259,8 +258,7 @@ THREAD_FUNC_TYPE hxThreadFunc( void *inInfo )
 
 	hx::UnregisterCurrentThread();
 
-	//tlsCurrentThread = 0;
-	tlsCurrentThread = oldinfo;
+	tlsCurrentThread = 0;
 
 	THREAD_FUNC_RET
 }
