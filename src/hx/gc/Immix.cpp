@@ -125,7 +125,7 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
   #endif
 #endif
 
-// #define SHOW_FRAGMENTATION_BLOCKS
+//#define SHOW_FRAGMENTATION_BLOCKS
 #if defined SHOW_FRAGMENTATION_BLOCKS
   #define SHOW_FRAGMENTATION
 #endif
@@ -518,7 +518,6 @@ MID = HX_ENDIAN_MARK_ID_BYTE = is measured from the object pointer
 //#define HX_GX_STRING_EXTENDED     0x00200000
 //#define HX_GC_STRING_HASH         0x00100000
 // size will shift-right IMMIX_ALLOC_SIZE_SHIFT (6).  Low two bits are 0
-#define IMMIX_ALLOC_SIZE_MASK       0x000fff00
 #define IMMIX_ALLOC_ROW_COUNT       0x000000ff
 
 #define IMMIX_HEADER_PRESERVE       0x00f00000
@@ -3454,9 +3453,10 @@ public:
       {
          GCLOG("Blocks %d = %d k\n", mAllBlocks.size(), (mAllBlocks.size() << IMMIX_BLOCK_BITS)>>10);
       }
+      
+      
+      
       #endif
-
-
       return true;
    }
 
@@ -3697,7 +3697,7 @@ public:
                         int end = destPos + allocSize;
 
                         *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                                        (size<<IMMIX_ALLOC_SIZE_SHIFT) |
+                                        ((size<<IMMIX_ALLOC_SIZE_SHIFT)&IMMIX_ALLOC_SIZE_MASK) |
                                         headerPreserve |
                                         hx::gMarkID;
                         destPos = end;
@@ -3900,7 +3900,7 @@ public:
                            int end = destPos + allocSize;
 
                            *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                                           (size<<IMMIX_ALLOC_SIZE_SHIFT) |
+                                           ((size<<IMMIX_ALLOC_SIZE_SHIFT)&IMMIX_ALLOC_SIZE_MASK) |
                                            headerPreserve |
                                            hx::gMarkID;
                            destPos = end;
@@ -6007,8 +6007,8 @@ public:
    {
    	  // a non-object with 0 bytes length ? it would make the alloc memory type
    	  // check mask in mistake
-      if (inSize == 0 && !(inObjectFlags & IMMIX_ALLOC_IS_CONTAINER))
-      	 return 0;
+   	  
+   	  if (inSize == 0) inObjectFlags |= IMMIX_ALLOC_IS_EMPTY;
 
       #ifndef HXCPP_SINGLE_THREADED_APP
       #if HXCPP_DEBUG
@@ -6019,7 +6019,7 @@ public:
          PauseForCollect();
       #endif
 
-      #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
+      #if defined(HXCPP_GC_MOVING) && defined(HXCPP_M64)
       // Make sure we can fit a relocation pointer
       int allocSize = sizeof(int) + std::max(8,inSize);
       #else
@@ -6060,32 +6060,35 @@ public:
 	            *mFraggedRows += (spaceOversize - spaceFirst)>>IMMIX_LINE_BITS;
 	           }
          #else
-            int end = spaceStart + allocSize + skip4;
-            if (end <= spaceEnd)
+            if (spaceEnd)
             {
-               #ifdef HXCPP_ALIGN_ALLOC
-               spaceStart += skip4;
-               #endif
-
-               unsigned int *buffer = (unsigned int *)(allocBase + spaceStart);
-
-               int startRow = spaceStart>>IMMIX_LINE_BITS;
-               allocStartFlags[ startRow ] |= hx::gImmixStartFlag[spaceStart & IMMIX_START_MASK];
-
-               int endRow = (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS;
-
-               *buffer++ = inObjectFlags | hx::gMarkID |
-                     (inSize<<IMMIX_ALLOC_SIZE_SHIFT) | (endRow-startRow);
-
-               spaceStart = end;
-
-               #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
-               hx::GCOnNewPointer(buffer);
-               #endif
-
-               return buffer;
-            }
-            *mFraggedRows += (spaceEnd - spaceStart)>>IMMIX_LINE_BITS;
+	            int end = spaceStart + allocSize + skip4;
+	            if (end <= spaceEnd)
+	            {
+	               #ifdef HXCPP_ALIGN_ALLOC
+	               spaceStart += skip4;
+	               #endif
+	
+	               unsigned int *buffer = (unsigned int *)(allocBase + spaceStart);
+	
+	               int startRow = spaceStart>>IMMIX_LINE_BITS;
+	               allocStartFlags[ startRow ] |= hx::gImmixStartFlag[spaceStart & IMMIX_START_MASK];
+	
+	               int endRow = (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS;
+	
+	               *buffer++ = inObjectFlags | hx::gMarkID |
+	                     ((inSize<<IMMIX_ALLOC_SIZE_SHIFT)&IMMIX_ALLOC_SIZE_MASK) | (endRow-startRow);
+	
+	               spaceStart = end;
+	
+	               #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
+	               hx::GCOnNewPointer(buffer);
+	               #endif
+	
+	               return buffer;
+	            }
+	            *mFraggedRows += (spaceEnd - spaceStart)>>IMMIX_LINE_BITS;
+	           }
          #endif
 
 
@@ -6205,8 +6208,7 @@ public:
    int            mCurrentHole;
    int            mCurrentHoles;
    HoleRange     *mCurrentRange;
-   int           *mFraggedRows;
-
+   int					 *mFraggedRows;
      bool           mMoreHoles;
 
    int *mTopOfStack;
@@ -6414,8 +6416,6 @@ void *InternalNew(int inSize,bool inIsObject)
    //HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", __LINE__, 0)
    
    HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", inSize, 0)
-	 if (inSize == 0 && inIsObject == false)
-	  	return 0;
 	
    #ifdef HXCPP_DEBUG
    if (inIsObject && (inSize >> IMMIX_LINE_BITS) > 0xFF)
@@ -6476,7 +6476,6 @@ int InternalCollect(bool inMajor,bool inCompact)
 
 inline unsigned int ObjectSize(void *inData)
 {
-	 if (!inData) return 0;
    unsigned int header = ((unsigned int *)(inData))[-1];
 
    return (header & IMMIX_ALLOC_ROW_COUNT) ?
@@ -6487,7 +6486,6 @@ inline unsigned int ObjectSize(void *inData)
 
 unsigned int ObjectSizeSafe(void *inData)
 {
-	 if (!inData) return 0;
    unsigned int header = ((unsigned int *)(inData))[-1];
    #ifdef HXCPP_GC_NURSERY
    if (!(header & 0xff000000))
@@ -6559,45 +6557,42 @@ void *InternalRealloc(void *inData,int inSize, bool inExpand)
    sgAllocsSinceLastSpam++;
    #endif
    
-   void *new_data = 0;
-   if (inSize > 0)
-   {
-	   unsigned int s = ObjectSizeSafe(inData);
+   
+	 unsigned int s = ObjectSizeSafe(inData);
+	 void *new_data = 0;
 	
-	
-	   if (inSize>=IMMIX_LARGE_OBJ_SIZE)
-	   {
+	 if (inSize>=IMMIX_LARGE_OBJ_SIZE)
+	 {
 	      new_data = sGlobalAlloc->AllocLarge(inSize, false);
 	      if (inSize>s)
 	         ZERO_MEM((char *)new_data + s,inSize-s);
-	   }
-	   else
-	   {
-	      LocalAllocator *tla = GetLocalAlloc();
+	 }
+	 else
+	 {
+	    LocalAllocator *tla = GetLocalAlloc();
 	
-	      #if defined(HXCPP_GC_MOVING) && defined(HXCPP_M64)
-	      if (inSize<8)
-	          new_data =  tla->CallAlloc(8,0);
-	      else
-	      #endif
+	    #if defined(HXCPP_GC_MOVING) && defined(HXCPP_M64)
+	    if (inSize<8)
+	        new_data =  tla->CallAlloc(8,0);
+	    else
+	    #endif
 	
-	      inSize = (inSize+3) & ~3;
-	      if (inExpand)
-	         tla->ExpandAlloc(inSize);
+	    inSize = (inSize+3) & ~3;
+	    if (inExpand)
+	       tla->ExpandAlloc(inSize);
 	
-	      new_data = tla->CallAlloc(inSize,0);
-	   }
+	    new_data = tla->CallAlloc(inSize,0);
+	  }
 	
 	
-	#ifdef HXCPP_TELEMETRY
-	   //printf(" -- reallocating %018x to %018x, size from %d to %d\n", inData, new_data, s, inSize);
-	   __hxt_gc_realloc(inData, new_data, inSize);
-	#endif
+		#ifdef HXCPP_TELEMETRY
+		   //printf(" -- reallocating %018x to %018x, size from %d to %d\n", inData, new_data, s, inSize);
+		   __hxt_gc_realloc(inData, new_data, inSize);
+		#endif
 	
-	   int min_size = s < inSize ? s : inSize;
-	
-	   memcpy(new_data, inData, min_size );
-   }
+	  int min_size = s < inSize ? s : inSize;
+	  memcpy(new_data, inData, min_size );
+   
    
    #ifdef HXCPP_GC_GENERATIONAL
    if (ObjectMemType(inData) && sGcMode==gcmGenerational)

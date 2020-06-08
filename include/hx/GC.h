@@ -12,14 +12,19 @@
 
 // Bigger than this, and they go in the large object pool
 
+// hx::PointerOf di array
 #ifndef HXCPP_GC_GENERATIONAL
-#define HXCPP_GC_GENERATIONAL
+//#define HXCPP_GC_GENERATIONAL
+#endif
+#ifndef HXCPP_GC_NURSERY
+#define HXCPP_GC_NURSERY
 #endif
 
 #define IMMIX_LARGE_OBJ_SIZE 128
  
 #define HX_GC_CONST_ALLOC_BIT  0x80000000
 #define HX_GC_CONST_ALLOC_MARK_BIT  0x80
+#define IMMIX_ALLOC_SIZE_MASK       0x000fff00
 
 
 // Tell compiler the extra functions are supported
@@ -294,6 +299,7 @@ namespace hx
 
 // Indicates that __Mark must be called recursively
 #define IMMIX_ALLOC_IS_CONTAINER   0x00800000
+#define IMMIX_ALLOC_IS_EMPTY       0x00400000
 // String is char16_t type
 #define HX_GC_STRING_CHAR16_T      0x00200000
 // String has hash data at end
@@ -360,23 +366,23 @@ public:
 
    	  if (!inContainer) {
    	  	
-   	  	// a non-object with 0 bytes length ? it would make the alloc memory type
-   	  	// check mask in mistake
-   	  	if (inSize == 0)
-   	  		 return 0;
-   	  		
    	  	inSize = (inSize+3)&~3;
    	  }
    	  else
    	  {
-	      #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
+	      #if defined(HXCPP_GC_MOVING) && defined(HXCPP_M64)
 	      // Make sure we can fit a relocation pointer
 	      inSize += 4;
 	      #endif
    	  }
-   	  	
-   	 // if (inContainer == false && inSize > IMMIX_LARGE_OBJ_SIZE)
-   	  	
+   	  
+   	  unsigned int flags = inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0;
+   	  
+   	  // a non-object with 0 bytes length ? it would make the alloc memory type
+   	  // check mask in mistake
+   	  if (inSize == 0)
+   	  	 flags |= IMMIX_ALLOC_IS_EMPTY;
+ 
    	    	 
       #ifdef HXCPP_GC_NURSERY
       
@@ -387,16 +393,12 @@ public:
          if ( end > alloc->spaceOversize )
          {
             // Fall back to external method
-            buffer = (unsigned char *)alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
+            buffer = (unsigned char *)alloc->CallAlloc(inSize, flags);
          }
          else
          { 
             alloc->spaceFirst = end;
-
-            if (inContainer)
-               ((unsigned int *)buffer)[-1] = inSize | IMMIX_ALLOC_IS_CONTAINER;
-            else
-               ((unsigned int *)buffer)[-1] = inSize;
+            ((unsigned int *)buffer)[-1] = inSize | flags;
          }
 
          #ifdef HXCPP_TELEMETRY
@@ -422,14 +424,11 @@ public:
 
                alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
 
-               if (inContainer)
-                  *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                               (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                               hx::gMarkIDWithContainer;
-               else
-                  *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
-                               (inSize<<IMMIX_ALLOC_SIZE_SHIFT) |
-                               hx::gMarkID;
+   
+               *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
+                            ((inSize<<IMMIX_ALLOC_SIZE_SHIFT)&IMMIX_ALLOC_SIZE_MASK) |
+                            flags |
+                            hx::gMarkID;
 
                #if defined(HXCPP_GC_CHECK_POINTER) && defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
                hx::GCOnNewPointer(buffer);
