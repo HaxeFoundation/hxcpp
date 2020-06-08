@@ -302,13 +302,14 @@ static hxThreadInfo *GetCurrentInfo(bool createNew = true)
 	if (!info && createNew)
 	{
 		// Hmm, must be the "main" thead...
-		if(!sMainThreadInfo) {
-		  info = new hxThreadInfo(null(), 0);
-		  sMainThreadInfo = info;
-		  hx::GCAddRoot(&sMainThreadInfo);
-		  tlsCurrentThread = info;
-                }else
-		  info = (hxThreadInfo *)sMainThreadInfo; 			
+		if (!sMainThreadInfo) {
+			info = new hxThreadInfo(null(), 0);
+			sMainThreadInfo = info;
+			hx::GCAddRoot(&sMainThreadInfo);
+			tlsCurrentThread = info;
+		} else {
+			info = (hxThreadInfo *)sMainThreadInfo; 			
+		}
 	}
 	return info;
 }
@@ -567,5 +568,4 @@ int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr )
 {
    return HxAtomicDec(inPtr);
 }
-
 
