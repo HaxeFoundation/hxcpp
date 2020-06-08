@@ -461,7 +461,7 @@ extern void scriptMarkStack(hx::MarkContext *);
 #define IMMIX_LINE_COUNT_BITS   (IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)
 #define IMMIX_LINES             (1<<IMMIX_LINE_COUNT_BITS)
 
-#define IMMIX_BLOCKID_SIZE			sizeof(BlockIdType)
+#define IMMIX_BLOCKID_SIZE      sizeof(BlockIdType)
 #define IMMIX_HEADER_LINES      (IMMIX_LINES>>IMMIX_LINE_BITS)
 #define IMMIX_USEFUL_LINES      (IMMIX_LINES - IMMIX_HEADER_LINES)
 
