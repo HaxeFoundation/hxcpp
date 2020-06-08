@@ -284,7 +284,6 @@ void GCPrepareMultiThreaded();
 
 
 // Inline code tied to the immix implementation
- 
 namespace hx
 {
 
@@ -594,4 +593,3 @@ inline void MarkObjectAlloc(hx::Object *inPtr ,hx::MarkContext *__inCtx)
 
 
 #endif
-

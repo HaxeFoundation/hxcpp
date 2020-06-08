@@ -454,14 +454,14 @@ extern void scriptMarkStack(hx::MarkContext *);
    typedef unsigned short BlockIdType;
 #endif
 
-#define IMMIX_START_MASK				(IMMIX_LINE_LEN-1)
+#define IMMIX_START_MASK        (IMMIX_LINE_LEN-1)
 #define IMMIX_BLOCK_SIZE        (1<<IMMIX_BLOCK_BITS)
 #define IMMIX_BLOCK_OFFSET_MASK (IMMIX_BLOCK_SIZE-1)
 #define IMMIX_BLOCK_BASE_MASK   (~(size_t)(IMMIX_BLOCK_OFFSET_MASK))
 #define IMMIX_LINE_COUNT_BITS   (IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)
 #define IMMIX_LINES             (1<<IMMIX_LINE_COUNT_BITS)
 
-#define IMMIX_BLOCKID_SIZE			sizeof(BlockIdType)
+#define IMMIX_BLOCKID_SIZE      sizeof(BlockIdType)
 #define IMMIX_HEADER_LINES      (IMMIX_LINES>>IMMIX_LINE_BITS)
 #define IMMIX_USEFUL_LINES      (IMMIX_LINES - IMMIX_HEADER_LINES)
 
@@ -6917,4 +6917,3 @@ unsigned int __hxcpp_obj_hash(Dynamic inObj)
 
 
 void DummyFunction(void *inPtr) { }
-
