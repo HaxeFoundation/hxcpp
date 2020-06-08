@@ -10,10 +10,16 @@
 //  the end of the data.
 // When HX_SMART_STRINGS is active, a bit says whether it is char16_t encoded.
 
+// Bigger than this, and they go in the large object pool
+
+#ifndef HXCPP_GC_GENERATIONAL
+#define HXCPP_GC_GENERATIONAL
+#endif
+
+#define IMMIX_LARGE_OBJ_SIZE 128
+ 
 #define HX_GC_CONST_ALLOC_BIT  0x80000000
 #define HX_GC_CONST_ALLOC_MARK_BIT  0x80
-
-
 
 
 // Tell compiler the extra functions are supported
@@ -99,8 +105,6 @@ hx::Object *__hxcpp_weak_ref_get(Dynamic inRef);
 unsigned int __hxcpp_obj_hash(Dynamic inObj);
 int __hxcpp_obj_id(Dynamic inObj);
 hx::Object *__hxcpp_id_obj(int);
-
-
 
 
 
@@ -216,8 +220,6 @@ void EnterGCFreeZone();
 void ExitGCFreeZone();
 // retuns true if ExitGCFreeZone should be called
 bool TryGCFreeZone();
-// retuns true if ExitGCFreeZone was called
-bool TryExitGCFreeZone();
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES AutoGCFreeZone
 {
@@ -277,23 +279,18 @@ void GCPrepareMultiThreaded();
 
 
 // Inline code tied to the immix implementation
-
+ 
 namespace hx
 {
 
 #define HX_USE_INLINE_IMMIX_OPERATOR_NEW
-
 //#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  hx::gMultiThreadMode ? hx::tlsImmixAllocator : hx::gMainThreadAlloc;
 
-
-// Each line ast 128 bytes (2^7)
-#define IMMIX_LINE_BITS    7
+#define IMMIX_LINE_BITS    6
 #define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
+#define IMMIX_ALLOC_SIZE_SHIFT 8
 
 #define HX_GC_REMEMBERED          0x40
-
-// The size info is stored in the header 8 bits to the right
-#define IMMIX_ALLOC_SIZE_SHIFT  6
 
 // Indicates that __Mark must be called recursively
 #define IMMIX_ALLOC_IS_CONTAINER   0x00800000
@@ -331,11 +328,10 @@ EXTERN_FAST_TLS_DATA(StackContext, tlsStackContext);
 
 extern StackContext *gMainThreadContext;
 
-extern unsigned int gImmixStartFlag[128];
+extern unsigned int gImmixStartFlag[IMMIX_LINE_LEN];
 extern int gMarkID;
 extern int gMarkIDWithContainer;
 extern void BadImmixAlloc();
-
 
 class ImmixAllocator
 {
@@ -351,6 +347,8 @@ public:
    int            spaceStart;
    int            spaceEnd;
    #endif
+   
+   
    unsigned int   *allocStartFlags;
    unsigned char  *allocBase;
 
@@ -359,7 +357,29 @@ public:
    // These allocate the function using the garbage-colleced malloc
    inline static void *alloc(ImmixAllocator *alloc, size_t inSize, bool inContainer, const char *inName )
    {
+
+   	  if (!inContainer) {
+   	  	
+   	  	// a non-object with 0 bytes length ? it would make the alloc memory type
+   	  	// check mask in mistake
+   	  	if (inSize == 0)
+   	  		 return 0;
+   	  		
+   	  	inSize = (inSize+3)&~3;
+   	  }
+   	  else
+   	  {
+	      #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
+	      // Make sure we can fit a relocation pointer
+	      inSize += 4;
+	      #endif
+   	  }
+   	  	
+   	 // if (inContainer == false && inSize > IMMIX_LARGE_OBJ_SIZE)
+   	  	
+   	    	 
       #ifdef HXCPP_GC_NURSERY
+      
 
          unsigned char *buffer = alloc->spaceFirst;
          unsigned char *end = buffer + (inSize + 4);
@@ -370,7 +390,7 @@ public:
             buffer = (unsigned char *)alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
          }
          else
-         {
+         { 
             alloc->spaceFirst = end;
 
             if (inContainer)

@@ -166,11 +166,11 @@ public:
          if (!alloc)
             BadImmixAlloc();
          #endif
-
+         
          return ImmixAllocator::alloc(alloc, inSize, inContainer, inName);
 
       #else // Not HX_USE_INLINE_IMMIX_OPERATOR_NEW ...
-
+            
          void *result = hx::InternalNew(inSize,inContainer);
 
          #ifdef HXCPP_TELEMETRY

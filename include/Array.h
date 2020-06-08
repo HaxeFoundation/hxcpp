@@ -450,6 +450,8 @@ template<typename TYPE> inline bool ContainsPointers()
 
 inline const void *PointerOf(Dynamic &d) { return d.mPtr; }
 inline const void *PointerOf(String &s) { return s.raw_ptr(); }
+template<typename T>
+inline const void *PointerOf(::Array<T> &a) { return a.mPtr; }
 inline const void *PointerOf(...) { return 0; }
 
 
