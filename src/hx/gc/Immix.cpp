@@ -5498,7 +5498,7 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    // Previous mark Ids are therfore from more than 1 collection ago
    bool allowPrevious = !__inCtx->isGenerational;
    #else
-   const bool allowPrevious = false;
+   const bool allowPrevious = true;
    #endif
 
 
