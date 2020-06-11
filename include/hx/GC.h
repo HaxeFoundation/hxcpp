@@ -10,9 +10,89 @@
 //  the end of the data.
 // When HX_SMART_STRINGS is active, a bit says whether it is char16_t encoded.
 
+
+// BENCHMARK: To-be tested
+// #define IMMIX_USE_QUICKSEARCH_FOR_BLOCKS
+
+// #define IMMIX_STRESS_TEST_CONSERVATIVE
+
+// Allocate this 2^many blocks at a time - this will increase memory usage % when rounding to block size must be done.
+// However, a bigger number makes it harder to release blocks due to pinning
+#define IMMIX_BLOCK_GROUP_BITS  5
+
+#ifdef HXCPP_GC_BIG_BLOCKS
+   #define IMMIX_BLOCK_BITS      16
+   typedef unsigned int BlockIdType;
+#else
+   #define IMMIX_BLOCK_BITS      15
+   typedef unsigned short BlockIdType;
+#endif
+
+#ifdef  HXCPP_GC_SHORT_ROWS
+// Each line ast 64 bytes (2^6)
+#define IMMIX_LINE_BITS    6
+// This is necessary to allow IMMIX_LINE_BITS < 7
+#define IMMIX_LOOP_COUNT_ROWS  
+#else
+// Each line ast 128 bytes (2^7)
+#define IMMIX_LINE_BITS    7
+#endif
+
+// The size info is stored in the header 8 bits to the right
+#define IMMIX_ALLOC_SIZE_SHIFT  6
+
+#define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
+
+ 
+
+#define IMMIX_BLOCK_SIZE        (1<<IMMIX_BLOCK_BITS)
+#define IMMIX_BLOCK_OFFSET_MASK (IMMIX_BLOCK_SIZE-1)
+#define IMMIX_BLOCK_BASE_MASK   (~(size_t)(IMMIX_BLOCK_OFFSET_MASK))
+#define IMMIX_LINE_COUNT_BITS   (IMMIX_BLOCK_BITS-IMMIX_LINE_BITS)
+#define IMMIX_LINES             (1<<IMMIX_LINE_COUNT_BITS)
+
+#define IMMIX_START_MASK				(IMMIX_LINE_LEN-1)
+#define IMMIX_START_BITS_COUNT  (IMMIX_LINE_LEN>>2)
+
+#define IMMIX_BLOCKID_SIZE			sizeof(BlockIdType)
+#define IMMIX_HEADER_LINES      (IMMIX_LINES>>IMMIX_LINE_BITS)
+#define IMMIX_USEFUL_LINES      (IMMIX_LINES - IMMIX_HEADER_LINES)
+
+#define IMMIX_MAX_ALLOC_GROUPS_SIZE  (1<<IMMIX_BLOCK_GROUP_BITS)
+
+
+
+// Every second line used
+#define MAX_HOLES (IMMIX_USEFUL_LINES>>1) + 1
+
+
+// Bigger than this, and they go in the large object pool
+#define IMMIX_LARGE_OBJ_SIZE 1024
+
+
+/* header flags and other */
 #define HX_GC_CONST_ALLOC_BIT  0x80000000
 #define HX_GC_CONST_ALLOC_MARK_BIT  0x80
+#define HX_ENDIAN_MARK_ID_BYTE_HEADER (HX_ENDIAN_MARK_ID_BYTE + 4)
 
+
+// Used by strings
+// HX_GC_CONST_ALLOC_BIT  0x80000000
+
+//#define HX_GC_REMEMBERED          0x40000000
+#define IMMIX_ALLOC_MARK_ID         0x3f000000
+//#define IMMIX_ALLOC_IS_CONTAINER  0x00800000
+//#define IMMIX_ALLOC_IS_PINNED     not used at object level
+//#define HX_GX_STRING_EXTENDED     0x00200000
+//#define HX_GC_STRING_HASH         0x00100000
+// size will shift-right IMMIX_ALLOC_SIZE_SHIFT (6).  Low two bits are 0
+#define IMMIX_ALLOC_SIZE_MASK       0x000fff00
+#define IMMIX_ALLOC_ROW_COUNT       0x000000ff
+
+#define IMMIX_HEADER_PRESERVE       0x00f00000
+
+
+#define IMMIX_OBJECT_HAS_MOVED 0x000000fe
 
 
 
@@ -279,19 +359,10 @@ void GCPrepareMultiThreaded();
 namespace hx
 {
 
-#define HX_USE_INLINE_IMMIX_OPERATOR_NEW
 
 //#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  hx::gMultiThreadMode ? hx::tlsImmixAllocator : hx::gMainThreadAlloc;
-
-
-// Each line ast 128 bytes (2^7)
-#define IMMIX_LINE_BITS    7
-#define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
-
 #define HX_GC_REMEMBERED          0x40
 
-// The size info is stored in the header 8 bits to the right
-#define IMMIX_ALLOC_SIZE_SHIFT  6
 
 // Indicates that __Mark must be called recursively
 #define IMMIX_ALLOC_IS_CONTAINER   0x00800000
@@ -329,7 +400,7 @@ EXTERN_FAST_TLS_DATA(StackContext, tlsStackContext);
 
 extern StackContext *gMainThreadContext;
 
-extern unsigned int gImmixStartFlag[128];
+extern unsigned int gImmixStartFlag[IMMIX_LINE_LEN];
 extern int gMarkID;
 extern int gMarkIDWithContainer;
 extern void BadImmixAlloc();
@@ -359,19 +430,27 @@ public:
    {
 
 		  #ifdef HXCPP_DEBUG
-		  if ((inSize >> IMMIX_LINE_BITS) > 0xFF)
+		  if (inSize < 4 || (inSize >> IMMIX_LINE_BITS) > 0xFF)
 		  {
 		      printf("Trying to alloc a container with size %d more than the allowed of %d\n", inSize, IMMIX_LINE_LEN * 0xff);
 		      __hxcpp_DebuggerTrap();
 		  }
 		  #endif
-		  
+		  		  
       #ifdef HXCPP_GC_NURSERY
 
-         unsigned char *buffer = alloc->spaceFirst;
-         unsigned char *end = buffer + (inSize + 4);
 
-         if ( end > alloc->spaceOversize )
+		     #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
+		     // Make sure we can fit a relocation pointer
+		     int allocSize = sizeof(int) + std::max(8, inSize);
+		     #else
+		     int allocSize = sizeof(int) + inSize;
+		     #endif
+		      
+         unsigned char *buffer = alloc->spaceFirst;
+         unsigned char *end = buffer + allocSize;
+
+         if ( end > alloc->spaceOversize)
          {
             // Fall back to external method
             buffer = (unsigned char *)alloc->CallAlloc(inSize, inContainer ? IMMIX_ALLOC_IS_CONTAINER : 0);
@@ -381,9 +460,9 @@ public:
             alloc->spaceFirst = end;
 
             if (inContainer)
-               ((unsigned int *)buffer)[-1] = inSize | IMMIX_ALLOC_IS_CONTAINER;
+               ((unsigned int *)buffer)[-1] = (allocSize - 4) | IMMIX_ALLOC_IS_CONTAINER;
             else
-               ((unsigned int *)buffer)[-1] = inSize;
+               ((unsigned int *)buffer)[-1] = (allocSize - 4);
          }
 
          #ifdef HXCPP_TELEMETRY
@@ -407,7 +486,7 @@ public:
 
                int startRow = start>>IMMIX_LINE_BITS;
 
-               alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&127];
+               alloc->allocStartFlags[ startRow ] |= gImmixStartFlag[start&IMMIX_START_MASK];
 
                if (inContainer)
                   *buffer++ =  (( (end+(IMMIX_LINE_LEN-1))>>IMMIX_LINE_BITS) -startRow) |
