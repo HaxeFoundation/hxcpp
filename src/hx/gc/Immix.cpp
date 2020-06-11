@@ -61,6 +61,7 @@ enum { gAlwaysMove = false };
 #ifndef __has_builtin
 #define __has_builtin(x) 0
 #endif
+
 namespace {
 void DebuggerTrap()
 {
@@ -79,8 +80,11 @@ void DebuggerTrap()
 }
 }
 
-
-
+namespace hx {
+void __hxcpp_DebuggerTrap() {
+	DebuggerTrap();
+}
+}
 
 static bool sgAllocInit = 0;
 static bool sgInternalEnable = true;
@@ -6011,6 +6015,14 @@ public:
          PauseForCollect();
       #endif
 
+		  #ifdef HXCPP_DEBUG
+		  if ((inSize >> IMMIX_LINE_BITS) > 0xFF)
+		  {
+		      printf("Trying to alloc a container with size %d more than the allowed of %d\n", inSize, IMMIX_LINE_LEN * 0xff);
+		      DebuggerTrap();
+		  }
+		  #endif
+
       #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
       // Make sure we can fit a relocation pointer
       int allocSize = sizeof(int) + std::max(8,inSize);
@@ -6404,6 +6416,10 @@ void *InternalNew(int inSize,bool inIsObject)
    //HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", __LINE__, 0)
    HX_STACK_FRAME("GC", "new", 0, "GC::new", "src/hx/GCInternal.cpp", inSize, 0)
 
+   // Avoid pushing an invalid row into the nursery
+   if (inSize == 0)
+   	 return 0;
+
    #ifdef HXCPP_DEBUG
    if (sgSpamCollects && sgAllocsSinceLastSpam>=sgSpamCollects)
    {
@@ -6462,6 +6478,36 @@ inline unsigned int ObjectSize(void *inData)
              ((unsigned int *)(inData))[-2];
 }
 
+// ObjectSizeSafe cannot be inlined because of extern
+inline unsigned int ObjectSizeSafeInl(void *inData)
+{
+   unsigned int header = ((unsigned int *)(inData))[-1];
+   #ifdef HXCPP_GC_NURSERY
+   if (!(header & 0xff000000))
+   {
+      // Small object
+      if (header & 0x00ffffff)
+         return header & 0x0000ffff;
+      // Large object
+   }
+   #endif
+
+   return (header & IMMIX_ALLOC_ROW_COUNT) ?
+            ( (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT) :
+             ((unsigned int *)(inData))[-2];
+}
+inline unsigned int ObjectMemType(void *inData)
+{
+   unsigned int header = ((unsigned int *)(inData))[-1];
+   
+   
+   #ifdef HXCPP_GC_NURSERY
+   if (!(header & 0xff000000) && (header & 0x00ffffff))
+   	 return memBlock;
+   #endif
+
+   return (header & IMMIX_ALLOC_ROW_COUNT) ? memBlock : memLarge;
+}
 
 unsigned int ObjectSizeSafe(void *inData)
 {
@@ -6503,45 +6549,50 @@ void *InternalRealloc(void *inData,int inSize, bool inExpand)
    sgAllocsSinceLastSpam++;
    #endif
 
-   unsigned int s = ObjectSizeSafe(inData);
 
    void *new_data = 0;
-
-   if (inSize>=IMMIX_LARGE_OBJ_SIZE)
+   
+   // fixes Array __SetSizeExact when used to clear the array
+   // trying to alloc 0 bytes leading invalid rows into the memblock/nursery
+   if (inSize > 0)
    {
-      new_data = sGlobalAlloc->AllocLarge(inSize, false);
-      if (inSize>s)
-         ZERO_MEM((char *)new_data + s,inSize-s);
+	   unsigned int s = ObjectSizeSafeInl(inData);
+	   if (inSize>=IMMIX_LARGE_OBJ_SIZE)
+	   {
+	      new_data = sGlobalAlloc->AllocLarge(inSize, false);
+	      if (inSize>s)
+	         ZERO_MEM((char *)new_data + s,inSize-s);
+	   }
+	   else
+	   {
+	      LocalAllocator *tla = GetLocalAlloc();
+	
+	      #if defined(HXCPP_GC_MOVING) && defined(HXCPP_M64)
+	      if (inSize<8)
+	          new_data =  tla->CallAlloc(8,0);
+	      else
+	      #endif
+	
+	      inSize = (inSize+3) & ~3;
+	      if (inExpand)
+	         tla->ExpandAlloc(inSize);
+	
+	      new_data = tla->CallAlloc(inSize,0);
+	   }
+	
+	
+	#ifdef HXCPP_TELEMETRY
+	   //printf(" -- reallocating %018x to %018x, size from %d to %d\n", inData, new_data, s, inSize);
+	   __hxt_gc_realloc(inData, new_data, inSize);
+	#endif
+	
+	   int min_size = s < inSize ? s : inSize;
+	
+	   memcpy(new_data, inData, min_size );
    }
-   else
-   {
-      LocalAllocator *tla = GetLocalAlloc();
-
-      #if defined(HXCPP_GC_MOVING) && defined(HXCPP_M64)
-      if (inSize<8)
-          new_data =  tla->CallAlloc(8,0);
-      else
-      #endif
-
-      inSize = (inSize+3) & ~3;
-      if (inExpand)
-         tla->ExpandAlloc(inSize);
-
-      new_data = tla->CallAlloc(inSize,0);
-   }
-
-
-#ifdef HXCPP_TELEMETRY
-   //printf(" -- reallocating %018x to %018x, size from %d to %d\n", inData, new_data, s, inSize);
-   __hxt_gc_realloc(inData, new_data, inSize);
-#endif
-
-   int min_size = s < inSize ? s : inSize;
-
-   memcpy(new_data, inData, min_size );
-
+   
    #ifdef HXCPP_GC_GENERATIONAL
-   if (s>=IMMIX_LARGE_OBJ_SIZE && sGcMode==gcmGenerational)
+   if (ObjectMemType(inData) == memLarge && sGcMode==gcmGenerational)
    {
       //Can release asap
       ((unsigned char *)inData)[HX_ENDIAN_MARK_ID_BYTE] = 0;

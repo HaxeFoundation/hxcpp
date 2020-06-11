@@ -168,7 +168,6 @@ extern HXCPP_EXTERN_CLASS_ATTRIBUTES int gByteMarkID;
 // Call in response to a gPauseForCollect. Normally, this is done for you in "new"
 void PauseForCollect();
 
-
 // Used by WeakHash to work out if it needs to dispose its keys
 bool IsWeakRefValid(hx::Object *inPtr);
 bool IsWeakRefValid(const HX_CHAR *inPtr);
@@ -276,7 +275,6 @@ void GCPrepareMultiThreaded();
 } // end namespace hx
 
 
-// Inline code tied to the immix implementation
 
 namespace hx
 {
@@ -335,7 +333,7 @@ extern unsigned int gImmixStartFlag[128];
 extern int gMarkID;
 extern int gMarkIDWithContainer;
 extern void BadImmixAlloc();
-
+extern void __hxcpp_DebuggerTrap();
 
 class ImmixAllocator
 {
@@ -359,6 +357,15 @@ public:
    // These allocate the function using the garbage-colleced malloc
    inline static void *alloc(ImmixAllocator *alloc, size_t inSize, bool inContainer, const char *inName )
    {
+
+		  #ifdef HXCPP_DEBUG
+		  if ((inSize >> IMMIX_LINE_BITS) > 0xFF)
+		  {
+		      printf("Trying to alloc a container with size %d more than the allowed of %d\n", inSize, IMMIX_LINE_LEN * 0xff);
+		      __hxcpp_DebuggerTrap();
+		  }
+		  #endif
+		  
       #ifdef HXCPP_GC_NURSERY
 
          unsigned char *buffer = alloc->spaceFirst;
