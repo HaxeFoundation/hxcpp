@@ -1235,24 +1235,27 @@ struct BlockDataInfo
       for(int dx=0;dx<=sgCheckInternalOffset;dx+=4)
       {
          int blockOffset = inOffset - dx;
-         int r = blockOffset >> IMMIX_LINE_BITS;
-         if (r >= IMMIX_HEADER_LINES && r < IMMIX_LINES)
+         if (blockOffset >= 0)
          {
-            // Normal, good alloc
-            int rowPos = hx::gImmixStartFlag[blockOffset &127];
-            if ( allocStart[r] & rowPos )
-            {
-               // Found last valid object - is it big enough?
-               unsigned int header =  *(unsigned int *)((char *)mPtr + blockOffset);
-               int size = (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT;
-               // Valid object not big enough...
-               if (blockOffset + size +sizeof(int) <= inOffset )
-                  break;
-
-               *outPtr = (void *)(mPtr->mRow[0] + blockOffset + sizeof(int));
-               return GetAllocTypeChecked(blockOffset,inAllowPrevious);
-            }
-         }
+	         int r = blockOffset >> IMMIX_LINE_BITS;
+	         if (r >= IMMIX_HEADER_LINES && r < IMMIX_LINES)
+	         {
+	            // Normal, good alloc
+	            int rowPos = hx::gImmixStartFlag[blockOffset &127];
+	            if ( allocStart[r] & rowPos )
+	            {
+	               // Found last valid object - is it big enough?
+	               unsigned int header =  *(unsigned int *)((char *)mPtr + blockOffset);
+	               int size = (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT;
+	               // Valid object not big enough...
+	               if (blockOffset + size +sizeof(int) <= inOffset )
+	                  break;
+	
+	               *outPtr = (void *)(mPtr->mRow[0] + blockOffset + sizeof(int));
+	               return GetAllocTypeChecked(blockOffset,inAllowPrevious);
+	            }
+	         }
+	       }
       }
 
       #ifdef HXCPP_GC_NURSERY
