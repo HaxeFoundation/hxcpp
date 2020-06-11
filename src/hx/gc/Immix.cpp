@@ -5736,6 +5736,13 @@ public:
 
    void Reset()
    {   	  
+
+      if (mNeedsMark)
+      {
+      	*mNeedsMark = true;
+         mNeedsMark = 0;
+      }
+      
    	  mNeedsMark = 0;   	  
       allocBase = 0;
       mCurrentHole = 0;
