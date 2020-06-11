@@ -117,7 +117,6 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 
 
 // #define HXCPP_GC_DEBUG_LEVEL 1
-
 #if HXCPP_GC_DEBUG_LEVEL>1
   #define PROFILE_COLLECT
   #if HXCPP_GC_DEBUG_LEVEL>2
@@ -733,11 +732,12 @@ struct BlockDataInfo
    bool         mPinned;
    unsigned char mZeroed;
    bool         mReclaimed;
-   bool         mOwned;
+   volatile int mOwned;
    #ifdef HXCPP_GC_GENERATIONAL
    bool         mHasSurvivor;
    #endif
    volatile int mZeroLock;
+   bool         mNeedsMark;
 
 
    BlockDataInfo(int inGid, BlockData *inData)
@@ -761,9 +761,9 @@ struct BlockDataInfo
          gBlockInfo->push( this );
       }
 
-
+      mNeedsMark = false;
       mZeroLock = 0;
-      mOwned = false;
+      mOwned = 0;
       mGroupId = inGid;
       mPtr     = inData;
       inData->mId = mId;
@@ -778,6 +778,7 @@ struct BlockDataInfo
       mUsedRows = 0;
       mUsedBytes = 0;
       mFraggedRows = 0;
+      mNeedsMark = false;
       mPinned = false;
       ZERO_MEM(allocStart,sizeof(int)*IMMIX_LINES);
       ZERO_MEM(mPtr->mRowMarked+IMMIX_HEADER_LINES, IMMIX_USEFUL_LINES); 
@@ -789,11 +790,12 @@ struct BlockDataInfo
       mZeroed = ZEROED_NOT;
       mReclaimed = true;
       mZeroLock = 0;
-      mOwned = false;
+      mOwned = 0;
    }
 
    void makeFull()
    {
+      mNeedsMark = false;
       mUsedRows = IMMIX_USEFUL_LINES;
       mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
       mFraggedRows = 0;
@@ -806,7 +808,7 @@ struct BlockDataInfo
       mZeroed = ZEROED_AUTO;
       mReclaimed = true;
       mZeroLock = 0;
-      mOwned = false;
+      mOwned = 0;
    }
 
 
@@ -884,76 +886,93 @@ struct BlockDataInfo
 
    void countRows(BlockDataStats &outStats)
    {
-      unsigned char *rowMarked = mPtr->mRowMarked;
-      unsigned int *rowTotals = ((unsigned int *)rowMarked) + 1;
+   	  if (mOwned)
+   	  {
+   	  	
+   	  	
+	      // block is owned by a thread
+	      // consider it fulL
+        outStats.rowsInUse += IMMIX_USEFUL_LINES;
+        outStats.bytesInUse += IMMIX_USEFUL_LINES << IMMIX_LINE_BITS;
+        outStats.fraggedRows += mFraggedRows;
+   	  	
+   	  	
+   	  } else {
+   	  	
+	      unsigned char *rowMarked = mPtr->mRowMarked;
+	      unsigned int *rowTotals = ((unsigned int *)rowMarked) + 1;
+	
+	      // TODO - sse/neon
+	      #ifdef HXCPP_GC_BIG_BLOCKS
+	      unsigned int total = 0;
+	      #else
+	      unsigned int total = rowMarked[2] + rowMarked[3];
+	      #endif
+	
+	      total +=
+	       rowTotals[0]  + rowTotals[1]  + rowTotals[2]  + rowTotals[3]  + rowTotals[4] +
+	       rowTotals[5]  + rowTotals[6]  + rowTotals[7]  + rowTotals[8]  + rowTotals[9] +
+	       rowTotals[10] + rowTotals[11] + rowTotals[12] + rowTotals[13] + rowTotals[14] +
+	       rowTotals[15] + rowTotals[16] + rowTotals[17] + rowTotals[18] + rowTotals[19] +
+	       rowTotals[20] + rowTotals[21] + rowTotals[22] + rowTotals[23] + rowTotals[24] +
+	       rowTotals[25] + rowTotals[26] + rowTotals[27] + rowTotals[28] + rowTotals[29] +
+	       rowTotals[30] + rowTotals[31] + rowTotals[32] + rowTotals[33] + rowTotals[34] +
+	       rowTotals[35] + rowTotals[36] + rowTotals[37] + rowTotals[38] + rowTotals[39] +
+	       rowTotals[40] + rowTotals[41] + rowTotals[42] + rowTotals[43] + rowTotals[44] +
+	       rowTotals[45] + rowTotals[46] + rowTotals[47] + rowTotals[48] + rowTotals[49] +
+	       rowTotals[50] + rowTotals[51] + rowTotals[52] + rowTotals[53] + rowTotals[54] +
+	       rowTotals[55] + rowTotals[56] + rowTotals[57] + rowTotals[58] + rowTotals[59] +
+	       rowTotals[60] + rowTotals[61] + rowTotals[62];
+	
+	
+	      #ifdef HXCPP_GC_BIG_BLOCKS
+	      rowTotals += 63;
+	      total +=
+	       rowTotals[0]  + rowTotals[1]  + rowTotals[2]  + rowTotals[3]  + rowTotals[4] +
+	       rowTotals[5]  + rowTotals[6]  + rowTotals[7]  + rowTotals[8]  + rowTotals[9] +
+	       rowTotals[10] + rowTotals[11] + rowTotals[12] + rowTotals[13] + rowTotals[14] +
+	       rowTotals[15] + rowTotals[16] + rowTotals[17] + rowTotals[18] + rowTotals[19] +
+	       rowTotals[20] + rowTotals[21] + rowTotals[22] + rowTotals[23] + rowTotals[24] +
+	       rowTotals[25] + rowTotals[26] + rowTotals[27] + rowTotals[28] + rowTotals[29] +
+	       rowTotals[30] + rowTotals[31] + rowTotals[32] + rowTotals[33] + rowTotals[34] +
+	       rowTotals[35] + rowTotals[36] + rowTotals[37] + rowTotals[38] + rowTotals[39] +
+	       rowTotals[40] + rowTotals[41] + rowTotals[42] + rowTotals[43] + rowTotals[44] +
+	       rowTotals[45] + rowTotals[46] + rowTotals[47] + rowTotals[48] + rowTotals[49] +
+	       rowTotals[50] + rowTotals[51] + rowTotals[52] + rowTotals[53] + rowTotals[54] +
+	       rowTotals[55] + rowTotals[56] + rowTotals[57] + rowTotals[58] + rowTotals[59] +
+	       rowTotals[60] + rowTotals[61] + rowTotals[62] + rowTotals[63];
+	
+	      #endif
+	
+	      mUsedRows = (total & 0xff) + ((total>>8) & 0xff) + ((total>>16)&0xff) + ((total>>24)&0xff);
+	      mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
+        mFraggedRows = 0;
+        mHoles = 0;     
+        
+	      if (mUsedRows==IMMIX_USEFUL_LINES)
+	      {
+	         mZeroed = ZEROED_AUTO;
+	         mReclaimed = true;
+	      }
+	      else
+	      {
+	         mZeroed = ZEROED_NOT;
+	         mReclaimed = false;
+	      }
+	
+	      int left = (IMMIX_USEFUL_LINES - mUsedRows) << IMMIX_LINE_BITS;
+	      if (left<mMaxHoleSize)
+	         mMaxHoleSize = left;       
+	         
+	    
+        outStats.rowsInUse += mUsedRows;
+        outStats.bytesInUse += mUsedBytes;
+        outStats.fraggedRows += mFraggedRows;
 
-      // TODO - sse/neon
-      #ifdef HXCPP_GC_BIG_BLOCKS
-      unsigned int total = 0;
-      #else
-      unsigned int total = rowMarked[2] + rowMarked[3];
-      #endif
 
-      total +=
-       rowTotals[0]  + rowTotals[1]  + rowTotals[2]  + rowTotals[3]  + rowTotals[4] +
-       rowTotals[5]  + rowTotals[6]  + rowTotals[7]  + rowTotals[8]  + rowTotals[9] +
-       rowTotals[10] + rowTotals[11] + rowTotals[12] + rowTotals[13] + rowTotals[14] +
-       rowTotals[15] + rowTotals[16] + rowTotals[17] + rowTotals[18] + rowTotals[19] +
-       rowTotals[20] + rowTotals[21] + rowTotals[22] + rowTotals[23] + rowTotals[24] +
-       rowTotals[25] + rowTotals[26] + rowTotals[27] + rowTotals[28] + rowTotals[29] +
-       rowTotals[30] + rowTotals[31] + rowTotals[32] + rowTotals[33] + rowTotals[34] +
-       rowTotals[35] + rowTotals[36] + rowTotals[37] + rowTotals[38] + rowTotals[39] +
-       rowTotals[40] + rowTotals[41] + rowTotals[42] + rowTotals[43] + rowTotals[44] +
-       rowTotals[45] + rowTotals[46] + rowTotals[47] + rowTotals[48] + rowTotals[49] +
-       rowTotals[50] + rowTotals[51] + rowTotals[52] + rowTotals[53] + rowTotals[54] +
-       rowTotals[55] + rowTotals[56] + rowTotals[57] + rowTotals[58] + rowTotals[59] +
-       rowTotals[60] + rowTotals[61] + rowTotals[62];
+	    }
 
 
-      #ifdef HXCPP_GC_BIG_BLOCKS
-      rowTotals += 63;
-      total +=
-       rowTotals[0]  + rowTotals[1]  + rowTotals[2]  + rowTotals[3]  + rowTotals[4] +
-       rowTotals[5]  + rowTotals[6]  + rowTotals[7]  + rowTotals[8]  + rowTotals[9] +
-       rowTotals[10] + rowTotals[11] + rowTotals[12] + rowTotals[13] + rowTotals[14] +
-       rowTotals[15] + rowTotals[16] + rowTotals[17] + rowTotals[18] + rowTotals[19] +
-       rowTotals[20] + rowTotals[21] + rowTotals[22] + rowTotals[23] + rowTotals[24] +
-       rowTotals[25] + rowTotals[26] + rowTotals[27] + rowTotals[28] + rowTotals[29] +
-       rowTotals[30] + rowTotals[31] + rowTotals[32] + rowTotals[33] + rowTotals[34] +
-       rowTotals[35] + rowTotals[36] + rowTotals[37] + rowTotals[38] + rowTotals[39] +
-       rowTotals[40] + rowTotals[41] + rowTotals[42] + rowTotals[43] + rowTotals[44] +
-       rowTotals[45] + rowTotals[46] + rowTotals[47] + rowTotals[48] + rowTotals[49] +
-       rowTotals[50] + rowTotals[51] + rowTotals[52] + rowTotals[53] + rowTotals[54] +
-       rowTotals[55] + rowTotals[56] + rowTotals[57] + rowTotals[58] + rowTotals[59] +
-       rowTotals[60] + rowTotals[61] + rowTotals[62] + rowTotals[63];
-
-      #endif
-
-      mUsedRows = (total & 0xff) + ((total>>8) & 0xff) + ((total>>16)&0xff) + ((total>>24)&0xff);
-      mUsedBytes = mUsedRows<<IMMIX_LINE_BITS;
-
-      mZeroLock = 0;
-      mOwned = false;
-      outStats.rowsInUse += mUsedRows;
-      outStats.bytesInUse += mUsedBytes;
-      outStats.fraggedRows += mFraggedRows;
-      mFraggedRows = 0;
-      mHoles = 0;
-
-      if (mUsedRows==IMMIX_LINES)
-      {
-         mZeroed = ZEROED_AUTO;
-         mReclaimed = true;
-      }
-      else
-      {
-         mZeroed = ZEROED_NOT;
-         mReclaimed = false;
-      }
-
-      int left = (IMMIX_LINES - mUsedRows) << IMMIX_LINE_BITS;
-      if (left<mMaxHoleSize)
-         mMaxHoleSize = left;
    }
 
    template<bool FULL>
@@ -1149,7 +1168,7 @@ struct BlockDataInfo
       }
 
       return allocString;
-   }
+   } 
 
    #ifdef HXCPP_GC_NURSERY
    AllocType GetEnclosingNurseryType(int inOffset, void **outPtr)
@@ -3119,10 +3138,7 @@ public:
    }
 
    void *AllocLarge(int inSize, bool inClear)
-   {
-      if (hx::gPauseForCollect)
-         __hxcpp_gc_safe_point();
-
+   {   	
       //Should we force a collect ? - the 'large' data are not considered when allocating objects
       // from the blocks, and can 'pile up' between smalll object allocations
       if ((inSize+mLargeAllocated > mLargeAllocForceRefresh) && sgInternalEnable)
@@ -3204,6 +3220,14 @@ public:
       #else
       result[1] = hx::gMarkID;
       #endif
+ 
+      // this is mandatory, if we add something to the LargeList while a collection is in progress
+      // GC could catch this entry (markId == 0) and free it
+      #if !defined(HXCPP_SINGLE_THREADED_APP)&& defined(HXCPP_GC_NURSERY)
+      hx::EnterGCFreeZone();
+      gThreadStateChangeLock->Lock();
+      hx::ExitGCFreeZoneLocked();
+      #endif
 
       if (do_lock && !isLocked)
          mLargeListLock.Lock();
@@ -3214,14 +3238,15 @@ public:
       if (do_lock)
          mLargeListLock.Unlock();
 
+      #if !defined(HXCPP_SINGLE_THREADED_APP) && defined(HXCPP_GC_NURSERY)
+      gThreadStateChangeLock->Unlock();
+      #endif
+      
       return result+2;
    }
 
    void onMemoryChange(int inDelta, const char *inWhy)
    {
-      if (hx::gPauseForCollect)
-         __hxcpp_gc_safe_point();
-
       if (inDelta>0)
       {
          //Should we force a collect ? - the 'large' data are not considered when allocating objects
@@ -3276,15 +3301,13 @@ public:
                 if (HxAtomicExchangeIf(0,1,&info->mZeroLock))
                 {
                    // Acquire ownership...
-                   if (info->mOwned)
+                   if (!HxAtomicExchangeIf(0,1,&info->mOwned))
                    {
                       // Someone else got it...
                       info->mZeroLock = 0;
                    }
                    else
                    {
-                      info->mOwned = true;
-
                       // Increase the mNextFreeBlockOfSize
                       int idx = nextFreeBlock;
                       while(idx<mFreeBlocks.size() && mFreeBlocks[idx]->mOwned)
@@ -3305,7 +3328,7 @@ public:
                          }
                          #endif
                        }
-
+                      
                       return info;
                    }
                  }
@@ -3460,27 +3483,15 @@ public:
    {
       while(true)
       {
-         BlockDataInfo *result = GetNextFree(inRequiredBytes);
-         if (result)
-         {
-            result->zeroAndUnlock();
-            return result;
-         }
-
-         if (hx::gPauseForCollect)
-         {
-            hx::PauseForCollect();
-            continue;
-         }
-
+         BlockDataInfo *result = 0;
          #ifndef HXCPP_SINGLE_THREADED_APP
          hx::EnterGCFreeZone();
          gThreadStateChangeLock->Lock();
          hx::ExitGCFreeZoneLocked();
-
-         result = GetNextFree(inRequiredBytes);
          #endif
 
+         result = GetNextFree(inRequiredBytes);
+         
          bool forceCompact = false;
          if (!result && allowMoreBlocks() && (!sgInternalEnable || GetWorkingMemory()<sWorkingMemorySize))
          {
@@ -3529,9 +3540,7 @@ public:
          gThreadStateChangeLock->Unlock();
          #endif
 
-
          result->zeroAndUnlock();
-
          return result;
       }
   }
@@ -4178,10 +4187,14 @@ public:
          if (blockId>=mAllBlocks.size())
             break;
 
-         if ( sgThreadPoolJob==tpjReclaimFull)
+         
+         if (mAllBlocks[blockId]->mOwned)
+            mAllBlocks[blockId]->countRows(outStats);
+         else if ( sgThreadPoolJob==tpjReclaimFull)
             mAllBlocks[blockId]->reclaim<true>(&outStats);
          else
             mAllBlocks[blockId]->reclaim<false>(&outStats);
+         
       }
    }
 
@@ -4538,7 +4551,7 @@ public:
    double tMarkLocalEnd;
    double tMarked;
    void MarkAll(bool inGenerational)
-   {
+   { 
       if (!inGenerational)
       {
          hx::gPrevByteMarkID = hx::gByteMarkID;
@@ -4587,11 +4600,9 @@ public:
       #endif
 
 
-
       mMarker.init();
 
       hx::MarkClassStatics(&mMarker);
-
       {
       hx::AutoMarkPush info(&mMarker,"Roots","root");
 
@@ -4696,45 +4707,22 @@ public:
    void Collect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false)
    {
       PROFILE_COLLECT_SUMMARY_START;
-
+            
       #ifndef HXCPP_SINGLE_THREADED_APP
-      // If we set the flag from 0 -> 0xffffffff then we are the collector
-      //  otherwise, someone else is collecting at the moment - so wait...
-      if (!HxAtomicExchangeIf(0, 0xffffffff,(volatile int *)&hx::gPauseForCollect))
-      {
-         if (inLocked)
-         {
-            gThreadStateChangeLock->Unlock();
-
-            hx::PauseForCollect();
-
-            hx::EnterGCFreeZone();
-            gThreadStateChangeLock->Lock();
-            hx::ExitGCFreeZoneLocked();
-         }
-         else
-         {
-            hx::PauseForCollect();
-         }
-         return;
-      }
-      #endif
-
-      STAMP(t0)
-
-      // We are the collector - all must wait for us
-      LocalAllocator *this_local = 0;
-      #ifndef HXCPP_SINGLE_THREADED_APP
-      this_local = (LocalAllocator *)(hx::ImmixAllocator *)hx::tlsStackContext;
-
+      
+      // we are the collector, all must wait for us
       if (!inLocked)
          gThreadStateChangeLock->Lock();
-
-      for(int i=0;i<mLocalAllocs.size();i++)
-         if (mLocalAllocs[i]!=this_local)
-            WaitForSafe(mLocalAllocs[i]);
+      
+      // the HxAtomicExchangeIf is no longer necessary probably
+      // the thread is locked so we can safeily make the exchange
+            
+      while (!HxAtomicExchangeIf(0, 0xffffffff,(volatile int *)&hx::gPauseForCollect))	 
+      	 continue;
+                    
       #endif
 
+      STAMP(t0);
       sgIsCollecting = true;
 
       StopThreadJobs(true);
@@ -4821,6 +4809,19 @@ public:
          #endif
       }
       #endif
+      
+      int nrl = 0;
+      for ( int i = 0; i < mAllBlocks.size(); i++)
+      {
+      	 // block has been marked, so it can be reclaimed
+      	 if (mAllBlocks[i]->mNeedsMark)
+      	 {
+      	 	  mAllBlocks[i]->mNeedsMark = false;
+      	 	  mAllBlocks[i]->mOwned = 0;      	
+      	 }	      	 
+      }
+            
+      
 
       STAMP(t2)
 
@@ -5238,8 +5239,6 @@ public:
             #ifdef HXCPP_SCRIPTABLE
             ((hx::StackContext *)mLocalAllocs[i])->byteMarkId = hx::gByteMarkID;
             #endif
-            if (mLocalAllocs[i]!=this_local)
-               ReleaseFromSafe(mLocalAllocs[i]);
          }
 
          if (!inLocked)
@@ -5269,8 +5268,10 @@ public:
       {
          outStats.clear();
          for(int i=0;i<mAllBlocks.size();i++)
-         {
-            if (full)
+         { 
+         	  if (mAllBlocks[i]->mOwned)
+               mAllBlocks[i]->countRows(outStats);
+            else if (full)
                mAllBlocks[i]->reclaim<true>(&outStats);
             else
                mAllBlocks[i]->reclaim<false>(&outStats);
@@ -5307,11 +5308,9 @@ public:
       for(int i=0;i<mAllBlocks.size();i++)
       {
          BlockDataInfo *info = mAllBlocks[i];
-         if (info->GetFreeRows() > 0 && info->mMaxHoleSize>256)
-         {
-            info->mOwned = false;
+         if (info->GetFreeRows() > 0 && info->mMaxHoleSize>256 && !info->mOwned)
             mFreeBlocks.push(info);
-         }
+         
       }
 
       int extra = std::max( mAllBlocks.size(), 8<<IMMIX_BLOCK_GROUP_BITS);
@@ -5658,8 +5657,9 @@ public:
 
    void AttachThread(int *inTopOfStack)
    {
+   	  Reset();
       mTopOfStack = mBottomOfStack = inTopOfStack;
-
+      
       mRegisterBufSize = 0;
       mStackLocks = 0;
       mGlobalStackLock = false;
@@ -5679,7 +5679,6 @@ public:
          mOldReferrers = 0;
       #endif
 
-
       // It is in the free zone - wait for 'SetTopOfStack' to activate
       #ifndef HXCPP_SINGLE_THREADED_APP
       mGCFreeZone = true;
@@ -5690,6 +5689,7 @@ public:
 
    void Release()
    {
+   	
       mStackLocks = 0;
 
       onThreadDetach();
@@ -5700,7 +5700,15 @@ public:
       #endif
 
       AutoLock lock(*gThreadStateChangeLock);
-
+      
+     
+      // release the current block
+      if (mNeedsMark)
+      {
+      	*mNeedsMark = true;
+         mNeedsMark = 0;
+      }
+       
       #ifdef HX_WINDOWS
       mID = 0;
       #endif
@@ -5717,7 +5725,7 @@ public:
       #endif
 
       mTopOfStack = mBottomOfStack = 0;
-
+       
       sGlobalAlloc->RemoveLocalLocked(this);
 
       hx::tlsStackContext = 0;
@@ -5727,7 +5735,8 @@ public:
    }
 
    void Reset()
-   {
+   {   	  
+   	  mNeedsMark = 0;   	  
       allocBase = 0;
       mCurrentHole = 0;
       mCurrentHoles = 0;
@@ -5961,12 +5970,6 @@ public:
       if (!mGCFreeZone)
       {
          // Cause allocation routines for fail ...
-         mMoreHoles = false;
-         #ifdef HXCPP_GC_NURSERY
-         spaceOversize = 0;
-         #else
-         spaceEnd = 0;
-         #endif
          mReadyForCollect.Wait();
       }
       #endif
@@ -6006,15 +6009,6 @@ public:
 
    void *CallAlloc(int inSize,unsigned int inObjectFlags)
    {
-      #ifndef HXCPP_SINGLE_THREADED_APP
-      #if HXCPP_DEBUG
-      if (mGCFreeZone)
-         CriticalGCError("Allocating from a GC-free thread");
-      #endif
-      if (hx::gPauseForCollect)
-         PauseForCollect();
-      #endif
-
 		  #ifdef HXCPP_DEBUG
 		  if ((inSize >> IMMIX_LINE_BITS) > 0xFF)
 		  {
@@ -6114,13 +6108,18 @@ public:
             //volatile int dummy = 1;
             //mBottomOfStack = (int *)&dummy;
             //CAPTURE_REGS;
-
+            
+            // release the current block
+			      if (mNeedsMark)
+			      	*mNeedsMark = true;
+			      	
             BlockDataInfo *info = sGlobalAlloc->GetFreeBlock(allocSize,this);
 
             allocBase = (unsigned char *)info->mPtr;
             mCurrentRange = info->mRanges;
             allocStartFlags = info->allocStart;
             mCurrentHoles = info->mHoles;
+            mNeedsMark    = &info->mNeedsMark;
             mFraggedRows = &info->mFraggedRows;
             #ifdef HXCPP_GC_NURSERY
             spaceFirst = allocBase + mCurrentRange->start + sizeof(int);
@@ -6131,18 +6130,6 @@ public:
             #endif
             mCurrentHole = 1;
             mMoreHoles = mCurrentHole<mCurrentHoles;
-         }
-
-         // Other thread may have started collect, in which case we may just
-         //  overwritted the 'mMoreHoles' and 'spaceEnd' termination attempt
-         if (hx::gPauseForCollect)
-         {
-            mMoreHoles = 0;
-            #ifdef HXCPP_GC_NURSERY
-            spaceOversize = 0;
-            #else
-            spaceEnd = 0;
-            #endif
          }
       }
       return 0;
@@ -6200,7 +6187,7 @@ public:
             MarkMember( *(hx::Object **)&stringSet, __inCtx);
       #endif
 
-      Reset();
+     // Reset();
 
    }
 
@@ -6223,6 +6210,8 @@ public:
    HxSemaphore     mCollectDone;
    #endif
 
+   bool            *mNeedsMark;
+   
    int             mStackLocks;
    bool            mGlobalStackLock;
    int             mID;
