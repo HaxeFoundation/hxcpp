@@ -5635,6 +5635,7 @@ public:
    {
       mTopOfStack = mBottomOfStack = inTopOfStack;
       mRegisterBufSize = 0;
+   	  mNeedsMark = 0;  
       #ifndef HXCPP_SINGLE_THREADED_APP
       mGCFreeZone = false;
       #endif
@@ -5738,11 +5739,8 @@ public:
    {   	  
 
       if (mNeedsMark)
-      {
       	*mNeedsMark = true;
-         mNeedsMark = 0;
-      }
-      
+ 
    	  mNeedsMark = 0;   	  
       allocBase = 0;
       mCurrentHole = 0;
