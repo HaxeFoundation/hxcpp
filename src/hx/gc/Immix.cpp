@@ -5638,15 +5638,6 @@ public:
 
    void AttachThread(int *inTopOfStack)
    {
-   	
-
-      if (mNeedsMark)
-      {
-         printf("attach thread\n");
-
-      	*mNeedsMark = true;
-      
-      }
    	  Reset();
       mTopOfStack = mBottomOfStack = inTopOfStack;
       
