@@ -962,6 +962,12 @@ bool gc_try_blocking()
    return hx::TryGCFreeZone();
 }
 
+bool gc_try_unblocking()
+{
+   return hx::TryExitGCFreeZone();
+}
+
+
 void gc_safe_point()
 {
    if (hx::gPauseForCollect)

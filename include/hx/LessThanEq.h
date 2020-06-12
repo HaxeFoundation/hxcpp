@@ -247,6 +247,13 @@ struct CompareTraits< T * >
 };
 
 
+template<typename T1>
+hx::Object *GetExistingObject(const T1 &v1)
+{
+   typedef CompareTraits<T1> traits1;
+   return traits1::toObject(v1);
+}
+
 
 template<typename T1>
 bool IsNull(const T1 &v1)
@@ -418,6 +425,46 @@ bool IsGreater(const T1 &v1, const T2 &v2) { return TestLessEq<true,false,T2,T1>
 
 template<typename T1, typename T2>
 bool IsGreaterEq(const T1 &v1, const T2 &v2) { return TestLessEq<true,true,T2,T1>(v2,v1); }
+
+
+
+template<typename T1, typename T2>
+bool IsPointerEq(const T1 &v1, const T2 &v2)
+{
+   return GetExistingObject(v1) == GetExistingObject(v2);
+}
+
+template<typename T1, typename T2>
+bool IsPointerNotEq(const T1 &v1, const T2 &v2)
+{
+   return GetExistingObject(v1) != GetExistingObject(v2);
+}
+
+
+template<typename T1, typename T2>
+bool IsInstanceEq(const T1 &v1, const T2 &v2)
+{
+   hx::Object *p1 = GetExistingObject(v1);
+   hx::Object *p2 = GetExistingObject(v2);
+   if (p1==p2)
+      return true;
+   if (!p1 || !p2)
+      return false;
+   return !p1->__Compare(p2);
+}
+
+template<typename T1, typename T2>
+bool IsInstanceNotEq(const T1 &v1, const T2 &v2)
+{
+   hx::Object *p1 = GetExistingObject(v1);
+   hx::Object *p2 = GetExistingObject(v2);
+   if (p1==p2)
+      return false;
+   if (!p1 || !p2)
+      return true;
+   return p1->__Compare(p2);
+}
+
 
 
 }
