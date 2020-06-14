@@ -875,9 +875,11 @@ private:
    // when evaluating breakpoints
    static const char *LookupFileName(String fileName)
    {
+      if (fileName.length == 0) return 0;
+       
       for (const char **ptr = hx::__hxcpp_all_files; *ptr; ptr++)
       {
-         if (fileName.length>0  && !strcmp(*ptr, fileName))
+         if (!strcmp(*ptr, fileName))
             return *ptr;
       }
 
