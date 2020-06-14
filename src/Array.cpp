@@ -42,7 +42,8 @@ void ArrayBase::reserve(int inSize) const
 {
    if (mAlloc<inSize)
    {
-      int bytes = inSize * GetElementSize();
+      int elemSize = GetElementSize();
+      int bytes = inSize * elemSize;
 
       if (mBase)
       {
@@ -50,11 +51,11 @@ void ArrayBase::reserve(int inSize) const
          if (wasUnamanaged)
          {
             char *base=(char *)hx::InternalNew(bytes,false);
-            memcpy(base,mBase,length*GetElementSize());
+            memcpy(base,mBase,length*elemSize);
             mBase = base;
          }
          else
-            mBase = (char *)hx::InternalRealloc(mBase, bytes );
+            mBase = (char *)hx::InternalRealloc(length*elemSize,mBase, bytes );
       }
       else
       {
@@ -101,12 +102,12 @@ void ArrayBase::Realloc(int inSize) const
          if (wasUnamanaged)
          {
             char *base=(char *)hx::InternalNew(bytes,false);
-            memcpy(base,mBase,length*GetElementSize());
+            memcpy(base,mBase,length*elemSize);
             mBase = base;
          }
          else
          {
-            mBase = (char *)hx::InternalRealloc(mBase, bytes, true);
+            mBase = (char *)hx::InternalRealloc(length*elemSize,mBase, bytes, true);
             int o = bytes;
             bytes = hx::ObjectSizeSafe(mBase);
          }
@@ -213,9 +214,16 @@ String ArrayBase::toString()
 
 void ArrayBase::__SetSizeExact(int inSize)
 {
-   if (inSize!=length || inSize!=mAlloc)
+   if (inSize==0)
    {
-      int bytes = inSize * GetElementSize();
+      InternalReleaseMem(mBase);
+      mBase = 0;
+      mAlloc = length = 0;
+   }
+   else if (inSize!=length || inSize!=mAlloc)
+   {
+      int elemSize = GetElementSize();
+      int bytes = inSize * elemSize;
       if (mBase)
       {
          bool wasUnamanaged = mAlloc<0;
@@ -223,11 +231,11 @@ void ArrayBase::__SetSizeExact(int inSize)
          if (wasUnamanaged)
          {
             char *base=(char *)(AllocAtomic() ? hx::NewGCPrivate(0,bytes) : hx::NewGCBytes(0,bytes));
-            memcpy(base,mBase,std::min(length,inSize)*GetElementSize());
+            memcpy(base,mBase,std::min(length,inSize)*elemSize);
             mBase = base;
          }
          else
-            mBase = (char *)hx::InternalRealloc(mBase, bytes );
+            mBase = (char *)hx::InternalRealloc(length*elemSize,mBase, bytes );
       }
       else if (AllocAtomic())
       {
@@ -732,6 +740,7 @@ void ArrayBase::__boot()
 
 bool DynamicEq(const Dynamic &a, const Dynamic &b)
 {
+   // ? return hx::IsInstanceEq(a,b);
    return hx::IsEq(a,b);
 }
 

@@ -2815,13 +2815,16 @@ void *InternalCreateConstBuffer(const void *inData,int inSize,bool inAddStringHa
    {
       memcpy(result,inData,inSize);
    }
-   else
+   else if (inSize)
    {
       ZERO_MEM(result,inSize);
    }
 
    return result;
 }
+
+// Used when the allocation size is zero for a non-null pointer
+void *emptyAlloc = InternalCreateConstBuffer(0,0,false);
 
 
 } // namespace hx
@@ -3113,6 +3116,31 @@ public:
       if (!mLocalAllocs.qerase_val(inAlloc))
       {
          CriticalGCError("LocalAllocator removed without being added");
+      }
+   }
+
+   void FreeLarge(void *inLarge)
+   {
+      ((unsigned char *)inLarge)[HX_ENDIAN_MARK_ID_BYTE] = 0;
+      // AllocLarge will not lock this list unless it decides there is a suitable
+      //  value, so we can't doa realloc without potentially crashing it.
+      if (largeObjectRecycle.hasExtraCapacity(1))
+      {
+         unsigned int *blob = ((unsigned int *)inLarge) - 2;
+         unsigned int size = *blob;
+         mLargeListLock.Lock();
+         mLargeAllocated -= size;
+         // Could somehow keep it in the list, but mark as recycled?
+         mLargeList.qerase_val(blob);
+         // We could maybe free anyhow?
+         if (!largeObjectRecycle.hasExtraCapacity(1))
+         {
+            mLargeListLock.Unlock();
+            HxFree(blob);
+            return;
+         }
+         largeObjectRecycle.push(blob);
+         mLargeListLock.Unlock();
       }
    }
 
@@ -6027,6 +6055,9 @@ public:
          PauseForCollect();
       #endif
 
+      if (inSize==0)
+         return hx::emptyAlloc;
+
       #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
       // Make sure we can fit a relocation pointer
       int allocSize = sizeof(int) + std::max(8,inSize);
@@ -6485,6 +6516,9 @@ inline unsigned int ObjectSize(void *inData)
 unsigned int ObjectSizeSafe(void *inData)
 {
    unsigned int header = ((unsigned int *)(inData))[-1];
+   if (header & HX_GC_CONST_ALLOC_BIT)
+      return 0;
+
    #ifdef HXCPP_GC_NURSERY
    if (!(header & 0xff000000))
    {
@@ -6494,6 +6528,7 @@ unsigned int ObjectSizeSafe(void *inData)
       // Large object
    }
    #endif
+
 
    return (header & IMMIX_ALLOC_ROW_COUNT) ?
             ( (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT) :
@@ -6505,11 +6540,29 @@ void GCChangeManagedMemory(int inDelta, const char *inWhy)
    sGlobalAlloc->onMemoryChange(inDelta, inWhy);
 }
 
-
-void *InternalRealloc(void *inData,int inSize, bool inExpand)
+void InternalReleaseMem(void *inMem)
 {
-   if (inData==0)
+   if (inMem)
+   {
+      unsigned int s = ObjectSizeSafe(inMem);
+      if (s>=IMMIX_LARGE_OBJ_SIZE)
+      {
+         //Can release asap
+         sGlobalAlloc->FreeLarge(inMem);
+      }
+   }
+}
+
+
+
+void *InternalRealloc(int inFromSize, void *inData,int inSize, bool inExpand)
+{
+   if (inData==0 || inFromSize==0)
+   {
+      if (inData)
+         InternalReleaseMem(inData);
       return hx::InternalNew(inSize,false);
+   }
 
    HX_STACK_FRAME("GC", "realloc", 0, "GC::relloc", __FILE__ , __LINE__, 0)
 
@@ -6522,15 +6575,16 @@ void *InternalRealloc(void *inData,int inSize, bool inExpand)
    sgAllocsSinceLastSpam++;
    #endif
 
-   unsigned int s = ObjectSizeSafe(inData);
-
    void *new_data = 0;
-
-   if (inSize>=IMMIX_LARGE_OBJ_SIZE)
+   if (inSize==0)
+   {
+      new_data = hx::emptyAlloc;
+   }
+   else if (inSize>=IMMIX_LARGE_OBJ_SIZE)
    {
       new_data = sGlobalAlloc->AllocLarge(inSize, false);
-      if (inSize>s)
-         ZERO_MEM((char *)new_data + s,inSize-s);
+      if (inSize>inFromSize)
+         ZERO_MEM((char *)new_data + inFromSize,inSize-inFromSize);
    }
    else
    {
@@ -6541,12 +6595,13 @@ void *InternalRealloc(void *inData,int inSize, bool inExpand)
           new_data =  tla->CallAlloc(8,0);
       else
       #endif
+      {
+         inSize = (inSize+3) & ~3;
+         if (inExpand)
+            tla->ExpandAlloc(inSize);
 
-      inSize = (inSize+3) & ~3;
-      if (inExpand)
-         tla->ExpandAlloc(inSize);
-
-      new_data = tla->CallAlloc(inSize,0);
+         new_data = tla->CallAlloc(inSize,0);
+      }
    }
 
 
@@ -6555,17 +6610,12 @@ void *InternalRealloc(void *inData,int inSize, bool inExpand)
    __hxt_gc_realloc(inData, new_data, inSize);
 #endif
 
-   int min_size = s < inSize ? s : inSize;
+   int min_size = inFromSize < inSize ? inFromSize : inSize;
 
-   memcpy(new_data, inData, min_size );
+   if (min_size)
+      memcpy(new_data, inData, min_size );
 
-   #ifdef HXCPP_GC_GENERATIONAL
-   if (s>=IMMIX_LARGE_OBJ_SIZE && sGcMode==gcmGenerational)
-   {
-      //Can release asap
-      ((unsigned char *)inData)[HX_ENDIAN_MARK_ID_BYTE] = 0;
-   }
-   #endif
+   InternalReleaseMem(inData);
 
    return new_data;
 }
