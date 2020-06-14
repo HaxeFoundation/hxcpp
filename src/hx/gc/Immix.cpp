@@ -796,7 +796,7 @@ struct BlockDataInfo
       memset(mPtr->mRowMarked+IMMIX_HEADER_LINES, 1,IMMIX_USEFUL_LINES); 
       mRanges[0].start = 0;
       mRanges[0].length = 0;
-      mMaxHoleSize = mRanges[0].length;
+      mMaxHoleSize = 0;
       mMoveScore = 0;
       mHoles = 0;
       mZeroed = ZEROED_AUTO;
@@ -936,8 +936,10 @@ struct BlockDataInfo
       mFraggedRows = 0;
       mHoles = 0;
 
-      if (mUsedRows==IMMIX_LINES)
+      if (mUsedRows==IMMIX_USEFUL_LINES)
       {
+         // All rows used - write the block off
+         mMoveScore = 0;
          mZeroed = ZEROED_AUTO;
          mReclaimed = true;
       }
@@ -947,7 +949,7 @@ struct BlockDataInfo
          mReclaimed = false;
       }
 
-      int left = (IMMIX_LINES - mUsedRows) << IMMIX_LINE_BITS;
+      int left = (IMMIX_USEFUL_LINES - mUsedRows) << IMMIX_LINE_BITS;
       if (left<mMaxHoleSize)
          mMaxHoleSize = left;
    }
@@ -3450,6 +3452,10 @@ public:
       #endif
    }
 
+   void repoolReclaimedBlock(BlockDataInfo *block)
+   {
+      // The mMaxHoleSize has changed - possibly return to one of the pools
+   }
 
 
    BlockDataInfo *GetFreeBlock(int inRequiredBytes, hx::ImmixAllocator *inAlloc)
@@ -3460,7 +3466,13 @@ public:
          if (result)
          {
             result->zeroAndUnlock();
-            return result;
+
+            // After zero/reclaim, it might be that the hole size is smaller than we thought.
+            if (result->mMaxHoleSize>=inRequiredBytes)
+               return result;
+
+            repoolReclaimedBlock(result);
+            continue;
          }
 
          if (hx::gPauseForCollect)
@@ -3528,7 +3540,11 @@ public:
 
          result->zeroAndUnlock();
 
-         return result;
+         // After zero/reclaim, it might be that the hole size is smaller than we thought.
+         if (result->mMaxHoleSize>=inRequiredBytes)
+            return result;
+
+         repoolReclaimedBlock(result);
       }
   }
 
@@ -6048,7 +6064,10 @@ public:
 
                return buffer;
             }
-            *mFraggedRows += (spaceOversize - spaceFirst)>>IMMIX_LINE_BITS;
+            // spaceOversize might have been set to zero for quick-termination of alloc.
+            unsigned char *s = spaceOversize;
+            if (s>spaceFirst)
+               *mFraggedRows += (s - spaceFirst)>>IMMIX_LINE_BITS;
          #else
             int end = spaceStart + allocSize + skip4;
             if (end <= spaceEnd)
