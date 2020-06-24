@@ -1,7 +1,9 @@
 #ifndef HX_GC_HELPERS_INCLUDED
 #define HX_GC_HELPERS_INCLUDED
 
-//#define HXCPP_CAPTURE_SETJMP
+#if defined(HX_WINDOWS) && defined(HXCPP_ARM64)
+#define HXCPP_CAPTURE_SETJMP
+#endif
 
 #ifdef HXCPP_CAPTURE_SETJMP
    #include <setjmp.h>

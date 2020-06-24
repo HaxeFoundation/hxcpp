@@ -128,6 +128,8 @@ class Builder
                   validArchs.set("m32", ["-D"+target, "-DHXCPP_M32"].concat(staticFlags) );
                   if (wantWindows64())
                      validArchs.set("m64", ["-D"+target, "-DHXCPP_M64"].concat(staticFlags) );
+                  if (wantWindowsArm64())
+                     validArchs.set("arm64", ["-D"+target, "-DHXCPP_ARM64"].concat(staticFlags) );
 
                case "msvc":
                   if (isStatic)
@@ -224,6 +226,7 @@ class Builder
    public function allowStatic() { return true; }
    public function wantLegacyIosBuild() { return false; }
    public function wantWindows64() { return false; }
+   public function wantWindowsArm64() { return false; }
 
    public function runBuild(target:String, isStatic:Bool, arch:String, buildFlags:Array<String>)
    {

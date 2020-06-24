@@ -248,9 +248,11 @@ void __hxcpp_stdlibs_boot()
       GetConsoleWindowFunc getConsole = (GetConsoleWindowFunc)GetProcAddress(kernel32,"GetConsoleWindow");
       if (attach && getConsole)
       {
-         attach( /*ATTACH_PARENT_PROCESS*/ (DWORD)-1 );
-
-         if (getConsole())
+         if (!attach( /*ATTACH_PARENT_PROCESS*/ (DWORD)-1 ))
+         {
+            //printf("Could not attach to parent console : %d\n",GetLastError());
+         }
+         else if (getConsole())
          {
             if (_fileno(stdout) < 0 || _get_osfhandle(fileno(stdout)) < 0)
                freopen("CONOUT$", "w", stdout);

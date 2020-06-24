@@ -65,6 +65,7 @@ class BuildTool
    var mNvccFlags:Array<String>;
    var mNvccLinkFlags:Array<String>;
    var mDirtyList:Array<String>;
+   var arm64:Bool;
    var m64:Bool;
    var m32:Bool;
 
@@ -76,6 +77,7 @@ class BuildTool
    public static var HXCPP = "";
    public static var is64 = false;
    public static var isWindows = false;
+   public static var isWindowsArm = false;
    public static var isLinux = false;
    public static var isRPi = false;
    public static var isMac = false;
@@ -131,10 +133,11 @@ class BuildTool
 
       m64 = mDefines.exists("HXCPP_M64");
       m32 = mDefines.exists("HXCPP_M32");
-      if (m64==m32)
+      arm64 = mDefines.exists("HXCPP_ARM64");
+      if (m64==m32 && !arm64)
       {
-         // Default to the current OS version
-         m64 = !isWindows && getIs64();
+         // Default to the current OS version.  windowsArm runs m32 code too
+         m64 = !isWindowsArm && !isWindows && getIs64();
          m32 = !m64;
          mDefines.remove(m32 ? "HXCPP_M64" : "HXCPP_M32");
       }
@@ -1494,7 +1497,12 @@ class BuildTool
 
       isWindows = (new EReg("window","i")).match(os);
       if (isWindows)
-         defines.set("windows_host", "1");
+      {
+         var proc = Sys.getEnv("PROCESSOR_IDENTIFIER");
+         isWindowsArm = proc!=null && (new EReg("\\barm","i")).match(proc);
+         if (isWindowsArm)
+            defines.set("windows_arm_host", "1");
+      }
       isMac = (new EReg("mac","i")).match(os);
       if (isMac)
          defines.set("mac_host", "1");
@@ -1508,7 +1516,8 @@ class BuildTool
          var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
          if (binDir==null)
             Log.error("Cppia is not supported on this host.");
-         var binDir = isWindows ? "Windows64" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
+         var binDir = isWindows ? (isWindowsArm ? "WindowsArm64" : "Windows64" ) :
+                       isMac ? "Mac64" : isLinux ? "Linux64" : null;
          var exe = '$HXCPP/bin/$binDir/Cppia' + (isWindows ? ".exe" : "");
          if (!isWindows)
          {
@@ -1929,7 +1938,7 @@ class BuildTool
          {
             set64(defines,m64);
             defines.set("windows","windows");
-            defines.set("BINDIR",m64 ? "Windows64":"Windows");
+            defines.set("BINDIR",arm64 ? "WindowsArm64" : m64 ? "Windows64":"Windows");
 
             // Choose between MSVC and MINGW
             var useMsvc = true;
@@ -1981,7 +1990,7 @@ class BuildTool
          {
             defines.set("toolchain","mingw");
             defines.set("xcompile","1");
-            defines.set("BINDIR", m64 ? "Windows64":"Windows");
+            defines.set("BINDIR", arm64 ? "WindowsArm64" : m64 ? "Windows64":"Windows");
          }
          else
          {
