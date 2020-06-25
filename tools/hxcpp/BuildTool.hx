@@ -1936,7 +1936,7 @@ class BuildTool
          }
          else
          {
-            set64(defines,m64);
+            set64(defines,m64,arm64);
             defines.set("windows","windows");
             defines.set("BINDIR",arm64 ? "WindowsArm64" : m64 ? "Windows64":"Windows");
 
@@ -2326,17 +2326,25 @@ class BuildTool
 
 
 
-   static function set64(outDefines:Hash<String>, in64:Bool)
+   static function set64(outDefines:Hash<String>, in64:Bool,isArm64=false)
    {
-      if (in64)
+      if (isArm64)
+      {
+         outDefines.set("HXCPP_ARM64","1");
+         outDefines.set("HXCPP_M64","1");
+         outDefines.remove("HXCPP_32");
+      }
+      else if (in64)
       {
          outDefines.set("HXCPP_M64","1");
          outDefines.remove("HXCPP_32");
+         outDefines.remove("HXCPP_ARM64");
       }
       else
       {
          outDefines.set("HXCPP_M32","1");
          outDefines.remove("HXCPP_M64");
+         outDefines.remove("HXCPP_ARM64");
       }
    }
 
