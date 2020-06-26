@@ -690,7 +690,8 @@ class BuildTool
                   {
                      if ( mDefines.exists("HXCPP_DEBUG_LINK_AND_STRIP") )
                      {
-                        var unstripped = mCompiler.mObjDir + "/" + linker.getSimpleFilename(target);
+                        var unstripped = linker.getUnstrippedFilename(mCompiler.mObjDir,target);
+                        //var unstripped = mCompiler.mObjDir + "/" + linker.getSimpleFilename(target);
                         Log.v("Save unstripped to " + unstripped);
 
                         var chmod = isWindows ? false : target.mToolID=="exe";
@@ -1216,6 +1217,8 @@ class BuildTool
                case "ext" : target.setExt( (substitute(el.att.value)) );
                case "builddir" : target.mBuildDir = substitute(el.att.name);
                case "libpath" : target.mLibPaths.push( substitute(el.att.name) );
+               case "fullouput" : target.mFullOutputName = substitute(el.att.name);
+               case "fullunstripped" : target.mFullUnstrippedName = substitute(el.att.name);
                case "files" :
                   var id = el.att.id;
                   if (!mFileGroups.exists(id))

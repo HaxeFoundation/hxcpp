@@ -225,6 +225,9 @@
      <ext value="${LIBEXTRA}" if="exe_link" />
   </section>
 
+  <fullouput name="${HAXE_FULL_OUTPUT_NAME}" if="HAXE_FULL_OUTPUT_NAME" />
+  <fullunstripped name="${HAXE_FULL_UNSTRIPPED_NAME}" if="HAXE_FULL_UNSTRIPPED_NAME" />
+
   <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>
   <files id="__resources__" />
