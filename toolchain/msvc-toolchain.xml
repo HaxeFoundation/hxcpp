@@ -37,6 +37,7 @@
 
 <set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}${OBJEXT}${OBJCACHE}${XPOBJ}" unless="winrt" />
 <set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}" if="winrt" />
+<set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}-arm${OBJEXT}${OBJCACHE}${XPOBJ}" if="HXCPP_ARM64" />
 
 <set name="MACHINE" value="x86" />
 <set name="MACHINE" value="x64" if="HXCPP_M64" />
