@@ -448,10 +448,6 @@ template<typename TYPE> inline bool ContainsPointers()
    return TypeContainsPointers( (TYPE *)0 );
 }
 
-inline const void *PointerOf(Dynamic &d) { return d.mPtr; }
-inline const void *PointerOf(String &s) { return s.raw_ptr(); }
-inline const void *PointerOf(...) { return 0; }
-
 
 
 // For returning "null" when out of bounds ...

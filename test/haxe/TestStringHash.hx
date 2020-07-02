@@ -34,7 +34,11 @@ class TestStringHash extends haxe.unit.TestCase
                values[idxInt] = j;
             }
          }
+         var arr = [0,1,2];
          var keys = h.keys();
+         // Empty allocations can mess with the GC nursery
+         cpp.NativeArray.setSize(arr,0);
+         cpp.NativeArray.setSize(arr,3);
          var keyed = new Array<Bool>();
          for(i in 0...values.length)
             keyed[i] = false;

@@ -216,7 +216,7 @@ class PathManager
       return false;
    }
 
-   public static function mkdir(directory:String):Void
+   public static function mkdir(directory:String, skipFilePart=false):Void
    {
       directory = StringTools.replace(directory, "\\", "/");
       var total = "";
@@ -227,6 +227,8 @@ class PathManager
       }
       
       var parts = directory.split("/");
+      if (skipFilePart && parts.length>0)
+         parts.pop();
       
       if (parts.length > 0 && parts[0].indexOf(":") > -1)
       {

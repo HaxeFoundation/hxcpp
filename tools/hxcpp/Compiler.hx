@@ -397,7 +397,11 @@ class Compiler
                var err = ProcessManager.runProcessThreaded(exe, args, null);
                cleanTmp(tmpFile);
                if (err!=0)
+               {
+                  if (FileSystem.exists(obj_name))
+                     FileSystem.deleteFile(obj_name);
                   BuildTool.setThreadError(err);
+               }
             }
          }
          else

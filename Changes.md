@@ -1,5 +1,13 @@
 
+* Added Arm64 suport on windows
+* Fixed crash with zero-sized alloc and generational GC
+* Fixed crash with generational GC when old objects come back to life
+* Fixed compile error with @:fixed Anons and arrays (socket select)
+* Fixed lastIndexOf
+* Optimized some equality functions
 
+4.1.1
+------------------------------------------------------------
 * Added functions for haxe 4.1 Api.
 * Added HXCPP_DEBUG_LINK_AND_STRIP to preserve symbolic information when creating android release binaries.
 * Added optional HXCPP_SIGNAL_THROW to convert memory errors to haxe exceptions without needing additional code

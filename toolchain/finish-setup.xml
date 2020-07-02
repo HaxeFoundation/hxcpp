@@ -59,7 +59,7 @@
 <set name="LIBEXTRA" value="-x86" if="HXCPP_X86" />
 <set name="LIBEXTRA" value="-x86_64" if="HXCPP_X86_64" />
 <set name="LIBEXTRA" value="-v7" if="HXCPP_ARMV7" unless="LIBEXTRA||linux" />
-<set name="LIBEXTRA" value="-64" if="HXCPP_ARM64" unless="LIBEXTRA||linux" />
+<set name="LIBEXTRA" value="-64" if="HXCPP_ARM64" unless="LIBEXTRA||linux||isMsvc" />
 <set name="LIBEXTRA" value="-x86" if="tizen"/>
 <set name="LIBEXTRA" value="" if="tizen" unless="simulator" />
 <set name="LIBEXT" value=".a" />
@@ -106,6 +106,8 @@
    </section>
 
    <set name="LIBEXTRA" value="-19" if="MSVC19" />
+   <set name="LIBEXTRA" value="-arm64" if="HXCPP_ARM64" />
+   <set name="HXCPP_M64" value="1" if="HXCPP_ARM64" />
    <set name="HX_LINK_SUFFIX" value="-19" if="MSVC19" />
    <set name="HX_TARGET_SUFFIX" value="-19" if="MSVC19 static_link" />
 

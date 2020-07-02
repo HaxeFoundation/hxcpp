@@ -114,7 +114,9 @@ namespace hx
 void *InternalNew(int inSize,bool inIsObject);
 
 // Used internall - realloc array data
-void *InternalRealloc(void *inData,int inSize,bool inAllowExpansion=false);
+void *InternalRealloc(int inFromSize, void *inData,int inSize,bool inAllowExpansion=false);
+
+void InternalReleaseMem(void *inMem);
 
 unsigned int ObjectSizeSafe(void *inData);
 

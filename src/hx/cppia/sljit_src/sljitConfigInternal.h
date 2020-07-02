@@ -322,6 +322,11 @@
 	sparc_cache_flush((from), (to))
 #define SLJIT_CACHE_FLUSH_OWN_IMPL 1
 
+#elif (defined SLJIT_CONFIG_ARM_64 && defined _MSC_VER )
+
+#define SLJIT_CACHE_FLUSH(from, to) \
+	FlushInstructionCache(GetCurrentProcess(),(char*)from, ((char*)to) - ((char *)from) );
+
 #else
 
 /* Calls __ARM_NR_cacheflush on ARM-Linux. */

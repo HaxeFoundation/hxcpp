@@ -278,7 +278,7 @@ class Setup
       }
       else if (inWhat=="msvc")
       {
-         setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"), ioDefines.exists("winrt"));
+         setupMSVC(ioDefines, ioDefines.exists("HXCPP_M64"), ioDefines.exists("HXCPP_ARM64"), ioDefines.exists("winrt"));
       }
       else if (inWhat=="pdbserver")
       {
@@ -564,7 +564,7 @@ class Setup
       }
    }
 
-   public static function setupMSVC(ioDefines:Hash<String>, in64:Bool, isWinRT:Bool)
+   public static function setupMSVC(ioDefines:Hash<String>, in64:Bool, inArm64, isWinRT:Bool)
    {
       var detectMsvc = !ioDefines.exists("NO_AUTO_MSVC") &&
                        !ioDefines.exists("HXCPP_MSVC_CUSTOM");
@@ -612,7 +612,9 @@ class Setup
         var extra:String = "";
         if (isWinRT)
             extra += "-winrt";
-        if (in64)
+        if (inArm64)
+            extra += "-arm64";
+        else if (in64)
             extra += "64";
          var xpCompat = false;
          if (ioDefines.exists("HXCPP_WINXP_COMPAT"))
@@ -620,6 +622,7 @@ class Setup
             Sys.putEnv("HXCPP_WINXP_COMPAT","1");
             xpCompat = true;
          }
+         Sys.putEnv("msvc_host_arch", ioDefines.exists("windows_arm_host") ? "x86" : "x64" );
 
          var vc_setup_proc = new Process("cmd.exe", ["/C", BuildTool.HXCPP + "\\toolchain\\msvc" + extra + "-setup.bat" ]);
          var vars_found = false;
@@ -659,6 +662,7 @@ class Setup
          } catch (e:Dynamic) {
          };
 
+         vc_setup_proc.exitCode();
          vc_setup_proc.close();
          if (!vars_found || error_string!="")
          {
