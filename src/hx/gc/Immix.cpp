@@ -396,6 +396,20 @@ extern void scriptMarkStack(hx::MarkContext *);
 #endif
 }
 
+// PROLETARIAT BEGIN - Renato Vogelaar - This is a workaround so we can disable GC on the async load thread in UE4
+//This function is called inside UXGameInstance so the hxcpp´s GC runs only in the main thread
+DECLARE_FAST_TLS_DATA(int, tlsGCEnabled);
+bool gcFilterThreads;
+extern "C"
+{
+   void hxcpp_enable_gc_thread_filtering()
+   {
+      tlsGCEnabled = (int *)1;
+      gcFilterThreads = true;
+   }
+}
+//PROLETARIAT END
+
 //#define DEBUG_ALLOC_PTR ((char *)0xb68354)
 
 
@@ -4607,6 +4621,13 @@ public:
 
    void Collect(bool inMajor, bool inForceCompact, bool inLocked=false)
    {
+      // PROLETARIAT BEGIN - Renato Vogelaar - This is a workaround so we can disable GC on the async load thread in UE4
+      //if the local thread variable 'tlsGCEnabled' is not 1 and filtering is enabled, don´t collect
+      if(gcFilterThreads && !((int *)tlsGCEnabled))
+      {
+         return;
+      }
+      //PROLETARIAT END
       PROFILE_COLLECT_SUMMARY_START;
       // If we set the flag from 0 -> 0xffffffff then we are the collector
       //  otherwise, someone else is collecting at the moment - so wait...
