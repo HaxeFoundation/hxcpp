@@ -445,6 +445,17 @@ void api_free_abstract(neko_value inAbstract)
 
 neko_value api_buffer_val(neko_buffer arg1)
 {
+        if (neko_val_is_string(arg1))
+            return (neko_value)arg1;
+
+        if (neko_val_is_object(arg1))
+        {
+            neko_value s = dyn_val_field((neko_value)arg1,__s_id);
+            if (neko_val_is_string(s))
+                return (neko_value)(s);
+        }
+
+
    return api_alloc_null();
 }
 
