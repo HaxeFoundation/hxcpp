@@ -1815,6 +1815,9 @@ class BuildTool
 
    function setDefaultToolchain(defines:Hash<String>)
    {
+      if ( (new EReg("window","i")).match(os) )
+         defines.set("windows_host","1");
+
       if (defines.exists("iphoneos"))
       {
          defines.set("toolchain","iphoneos");

@@ -9,9 +9,9 @@
 <set name="HXCPP_AR" value="emar" />
 
 <section if="windows_host">
-   <set name="HXCPP_RANLIB" value='python "${EMSCRIPTEN_SDK}/emranlib"' />
-   <set name="HXCPP_AR" value='python "${EMSCRIPTEN_SDK}/emar"' />
-   <set name="CXX" value='python "${EMSCRIPTEN_SDK}/emcc"' />
+   <set name="HXCPP_RANLIB" value='python "${EMSCRIPTEN_SDK}/emranlib.py"' />
+   <set name="HXCPP_AR" value='python "${EMSCRIPTEN_SDK}/emar.py"' />
+   <set name="CXX" value='python "${EMSCRIPTEN_SDK}/emcc.py"' />
 </section>
 
 <set name="nostrip" value="1" if="emscripten"/>
@@ -20,7 +20,7 @@
 
 
 
-<!-- EMCC TOOLS -------------------------------------->
+<!-- EMCC TOOLS -->
 
 
 <section unless="HXCPP_OPTIM_LEVEL" >
