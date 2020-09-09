@@ -856,15 +856,20 @@ class BuildTool
    public function createCompiler(inXML:XmlAccess,inBase:Compiler) : Compiler
    {
       var c = inBase;
+      var id = inXML.has.id ? substitute(inXML.att.id) : null;
+      var exe = inXML.has.exe ? substitute(inXML.att.exe) : null;
       if (inBase==null || inXML.has.replace)
       {
-         if (!inXML.has.id)
-            Log.e("Compiler element defined without 'id' attribute included from:" + mFileStack);
-         if (!inXML.has.exe)
-            Log.e("Compiler element defined without 'exe' attribute included from:" + mFileStack);
-
-         c = new Compiler(substitute(inXML.att.id),substitute(inXML.att.exe),mDefines.exists("USE_GCC_FILETYPES"));
+         c = new Compiler(id,exe);
       }
+      else
+      {
+         if (id!=null)
+            c.mID = id;
+         if (exe!=null)
+            c.mExe = exe;
+      }
+      c.mAddGCCIdentity = mDefines.exists("USE_GCC_FILETYPES");
 
       for(el in inXML.elements)
       {
@@ -963,6 +968,11 @@ class BuildTool
                      group.addFile( file );
                   }
 
+                  if (el.has.tag)
+                  {
+                     var extra = substitute(el.att.tag);
+                     file.setTags(group.mTags==null || group.mTags=="" ? extra : group.mTags+","+extra);
+                  }
                   if (el.has.tags)
                      file.setTags( substitute(el.att.tags) );
                   if (el.has.filterout)
