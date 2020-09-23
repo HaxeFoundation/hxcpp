@@ -1,6 +1,6 @@
 Files
 ------
-The files node defines a group of files that all share the same attributes, including relative directory, default compiler flags and dependencies.  The node can be used to define a set of header files on which other files can depend, or a set of source files to be compiled and included in a terget.
+The files node defines a group of files that all share the same attributes, including relative directory, default compiler flags and dependencies.  The node can be used to define a set of header files on which other files can depend, or a set of source files to be compiled and included in a target.
 
 - *depend* - Declare that all files in the group depend on another file or another file group.
   ```xml
@@ -20,7 +20,7 @@ The files node defines a group of files that all share the same attributes, incl
   <config name="outfile.h" />
   ```
 
-- *tag* - Add a default compiler flags tag too all files in group.  See [Tags.md](Tags.md).
+- *tag* - Add a default compiler flags tag to all files in group.  See [Tags.md](Tags.md).
   ```xml
   <tag value="tag" />
   ```
@@ -89,6 +89,6 @@ The files node defines a group of files that all share the same attributes, incl
      + tags = optional override of group tags.  See [Tags.md](Tags.md).
      + filterout = allows files to be skipped at compile-time if the named define exists.
        This is useful when the define is set sometime after the file list is parsed.
-     +  depend name = filename of additional dependency
-     + embed = causes the file to be embedded as a enxtern c++ 'const char *' string constant of the specified name
+     + depend name = filename of additional dependency
+     + embed = causes the file to be embedded as an extern c++ 'const char *' string constant of the specified name
 

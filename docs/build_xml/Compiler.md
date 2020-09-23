@@ -39,7 +39,7 @@ Compilers are run over each of the changed files in each of the filegroups in a 
   ```xml
   <objdir value="obj/somewhere" />
   ```
-    + value = usually built progtamatically, like `obj/msvc${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}`
+    + value = usually built programmatically, like `obj/msvc${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}`
 
 - *output* - Flag used to specifying compiler output name.
   ```xml

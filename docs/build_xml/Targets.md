@@ -14,7 +14,7 @@ Targets can contain the following nodes:
    <target id="subTargetName" />
    ```
 
-- *merge* - Combine fields from another target.  This is usful if you want a target to function as static library or dll when compiled in its own, but also allow it to be used as a list of object files if another target wants to link in the object files directly.
+- *merge* - Combine fields from another target.  This is useful if you want a target to function as static library or dll when compiled in its own, but also allow it to be used as a list of object files if another target wants to link in the object files directly.
    ```xml
    <merge id="otherTargetName" />
    ```
@@ -35,7 +35,7 @@ Targets can contain the following nodes:
    ```
      + name = the complete name is specified
      + base = the name without compiler-specific extension (.a/.lib) is specified
-     + hxbase = the name without extension and achitecture (-v7/.iphoinesim) is specified
+     + hxbase = the name without extension and architecture (-v7/.iphoinesim) is specified
 
 - *flag* - Add a single link flag.
    ```xml
