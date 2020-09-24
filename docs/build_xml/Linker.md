@@ -19,7 +19,7 @@ Generally one linker is run per target to build a static library, dynamic librar
    ```
      + value = extension, including "."
 
-- *outflag* - Flag for specifying lnker output name.
+- *outflag* - Flag for specifying linker output name.
    ```xml
    <outflag value="-o"/>
    ```
@@ -43,7 +43,7 @@ Generally one linker is run per target to build a static library, dynamic librar
    ```
      + name = the complete name is specified
      + base = the name without compiler-specific extension (.a/.lib) is specified
-     + hxbase = the name without extension and achitecture (-v7/.iphoinesim) is specified
+     + hxbase = the name without extension and architecture (-v7/.iphoinesim) is specified
 
 - *prefix* - Prefix for generated files.
    ```xml

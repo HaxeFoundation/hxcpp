@@ -4,7 +4,7 @@ The Haxe Target
 When compiling from haxe, via hxcpp, a "Build.xml" file is generated in the output directory.  The file lists the generated files and dependencies and ultimately includes the "toolchain/haxe-target.xml" file, which describes how to combine these files.
 
 ### Include Order
-There are a few compilcations when setting the order in which things are configured, since a particular build might want to:
+There are a few complications when setting the order in which things are configured, since a particular build might want to:
   - set the compiler
   - override some compiler settings
   - make decisions based on the compiler or settings
@@ -81,7 +81,7 @@ These variables are used by haxe-target - you can use them too.  Haxe then build
   </target>
 ```
 
-Here you can see the vaious file groups, which are enabled or not depending on the compiler mode, and some standard libraries that are needed for Linux.
+Here you can see the various file groups, which are enabled or not depending on the compiler mode, and some standard libraries that are needed for Linux.
 
 ### Experimenting With Hxcpp Generated Code/Build.xml
 If you are using external cpp code, or using meta-data to inject xml into the build process, and you are getting a compile or link error, then it can be useful to run the hxcpp build tool without re-running haxe.  This lets you hand-edit the build file or generated c++ code until you get things to work.  Once you have solved the issues using this technique, then you can move the changes back into the injected/external code.
