@@ -100,6 +100,7 @@ enum
    clsIdArrayFloat32,
    clsIdArrayFloat64,
    clsIdArrayString,
+   clsIdArrayInt64,
    clsIdArrayObject,
    clsIdAbstract,
    clsIdHash,
