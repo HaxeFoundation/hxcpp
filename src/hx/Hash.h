@@ -221,7 +221,7 @@ inline void CopyValue(Float &outValue, const Dynamic &inValue) { outValue = inVa
 inline void CopyValue(Float &outValue, const String &inValue) {  }
 inline void CopyValue(cpp::Int64 &outValue, cpp::Int64 inValue) { outValue = inValue; }
 inline void CopyValue(cpp::Int64 &outValue, int inValue) { outValue = inValue; }
-inline void CopyValue(cpp::Int64 &outValue, Float inValue) { outValue = inValue; }
+inline void CopyValue(cpp::Int64 &outValue, Float inValue) { }
 inline void CopyValue(cpp::Int64 &outValue, const Dynamic &inValue) { outValue = inValue; }
 inline void CopyValue(cpp::Int64 &outValue, const String &inValue) {  }
 inline void CopyValue(null &, const null &) {  }
