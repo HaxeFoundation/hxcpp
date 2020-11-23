@@ -66,6 +66,7 @@
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-c"/>
   <flag value="-fpic"/>
+  <flag value="-O2" unless="debug"/>
   
   <!-- Warning Supression -->
   <flag value="-Wno-invalid-offsetof" />
