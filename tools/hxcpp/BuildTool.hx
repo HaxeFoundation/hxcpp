@@ -154,6 +154,8 @@ class BuildTool
          {
             mDefines.set("BINDIR", Path.withoutDirectory(Path.withoutExtension(mDefines.get("toolchain"))));
          }
+         if ( (new EReg("window","i")).match(os) )
+            mDefines.set("windows_host","1");
       }
       else
          setDefaultToolchain(mDefines);
