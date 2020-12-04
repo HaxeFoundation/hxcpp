@@ -40,6 +40,9 @@
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-overflow" />
   <cppflag value="-Wno-invalid-offsetof" />
+  <cppflag value="-Wno-return-type-c-linkage" />
+  <mmflag value="-Wno-return-type-c-linkage" />
+
   <flag value="-Wno-bool-conversion" if="HXCPP_CLANG"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
