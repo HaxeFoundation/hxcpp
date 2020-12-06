@@ -2300,9 +2300,12 @@ public:
    String mValue;
 };
 
+
+
+
 hx::Class &GetStringClass() { return __StringClass; }
 
-}
+} // end namespace hx
 
 hx::Object *String::__ToObject() const
 {
@@ -2333,6 +2336,11 @@ hx::Object *String::__ToObject() const
    bool isConst = __s[HX_GC_CONST_ALLOC_MARK_OFFSET] & HX_GC_CONST_ALLOC_MARK_BIT;
    NewObjectType type = isConst ?  NewObjAlloc : NewObjContainer;
    return new (type) StringData(*this);
+}
+
+hx::Object * String::makePermanentObject() const
+{
+   return new (hx::NewObjConst)StringData(makePermanent());
 }
 
 

@@ -49,6 +49,7 @@ public:
    // Uses non-gc memory and wont ever be collected
    static ::String createPermanent(const char *inUtf8, int inLen);
    const ::String &makePermanent() const;
+   hx::Object *makePermanentObject() const;
 
    // Legacy
    ::String &dup();
