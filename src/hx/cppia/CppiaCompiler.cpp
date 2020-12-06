@@ -735,8 +735,9 @@ public:
       if (inV1.type==jtInt && (inV2.type==jtByte || inV2.type==jtShort))
          return inV1.type;
 
-      if (inV1.type!=inV2.type)
-         setError("Type mismatch");
+      // TODO
+      //if (inV1.type!=inV2.type)
+      //   setError("Type mismatch");
       return inV1.type;
    }
 
