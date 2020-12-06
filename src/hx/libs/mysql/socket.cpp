@@ -44,7 +44,7 @@
 #	define SOCKET_ERROR (-1)
 #endif
 
-#if defined(NEKO_WINDOWS) || defined(NEKO_MAC)
+#if (defined(NEKO_WINDOWS) || defined(NEKO_MAC)) && !defined(MSG_NOSIGNAL)
 #	define MSG_NOSIGNAL 0
 #endif
 

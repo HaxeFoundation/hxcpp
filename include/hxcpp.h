@@ -143,6 +143,7 @@ typedef char HX_CHAR;
   #endif
 #endif
 
+
 // HX_HCSTRING is for constant strings with built-in hashes
 //     HX_GC_CONST_ALLOC_BIT | HX_GC_STRING_HASH
 // HX_CSTRING is for constant strings without built-in hashes
