@@ -1564,12 +1564,16 @@ void __hxcpp_string_of_bytes(Array<unsigned char> &inBytes,String &outString,int
 
 
 
-const char * String::utf8_str(hx::IStringAlloc *inBuffer,bool throwInvalid) const
+const char * String::utf8_str(hx::IStringAlloc *inBuffer,bool throwInvalid, int *byteLength) const
 {
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded())
-      return TConvertToUTF8(__w,0,inBuffer,throwInvalid);
+      return TConvertToUTF8(__w,byteLength,inBuffer,throwInvalid);
    #endif
+   if (byteLength != 0)
+   {
+      *byteLength = length;
+   }
    return __s;
 }
 

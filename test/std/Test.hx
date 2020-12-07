@@ -111,6 +111,7 @@ class Test
               money DOUBLE,
               password BLOB
           )");
+         cnx.request("SELECT '豪鬼' test");
       } else {
         cnx.request("
           CREATE TABLE IF NOT EXISTS UserPwd (
