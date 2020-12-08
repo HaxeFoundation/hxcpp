@@ -29,6 +29,7 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <stdio.h>
+#define HXCPP_PTHREADS
 #endif
 
 #ifdef RegisterClass
