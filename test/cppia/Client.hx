@@ -15,6 +15,14 @@ class Client
    public static function main()
    {
       Common.status = "running";
+
+      // See if it compiles
+      if (sys.thread.Thread.current()==null)
+      {
+         Common.status = "Cppia Thread.current not working.";
+         return;
+      }
+
       if (Common.hostImplementation.getOne()!=1)
       {
          Common.status = "Bad call to getOne";
