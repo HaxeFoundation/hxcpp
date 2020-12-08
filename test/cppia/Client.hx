@@ -153,5 +153,7 @@ class Client
 
       Common.clientImplementation = new ClientOne();
       Common.status = "ok";
+
+      Common.callback = () -> Common.callbackSet = 2;
    }
 }
