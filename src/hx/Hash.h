@@ -674,7 +674,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          raw = inRaw;
          array = Array<String>(0,inReserve*4+1);
          if (!raw)
-            array->push(HX_CSTRING("{ "));
+            array->push(HX_CSTRING("["));
       }
       void operator()(typename Hash::Element *elem)
       {
@@ -687,7 +687,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       ::String toString()
       {
          if (!raw)
-            array->push(HX_CSTRING(" }"));
+            array->push(HX_CSTRING("]"));
          return array->length==0 ? String() : array->join(HX_CSTRING(""));
       }
    };
