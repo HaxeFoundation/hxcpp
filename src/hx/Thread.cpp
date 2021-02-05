@@ -16,7 +16,7 @@ static int g_nextThreadNumber = 1;
 // HXCPP_THREAD_INFO_LOCAL - use thread_local storage
 // HXCPP_THREAD_INFO_SINGLETON - use one structure for all threads. Not ideal.
 
-#if __cplusplus > 199711L
+#if __cplusplus > 199711L && !defined(__BORLANDC__)
    #define HXCPP_THREAD_INFO_LOCAL
 #elif defined (HXCPP_PTHREADS)
    #define HXCPP_THREAD_INFO_PTHREAD

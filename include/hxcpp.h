@@ -12,13 +12,17 @@
 
 #include "hx/HeaderVersion.h"
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__BORLANDC__)
    #if _MSC_VER >= 1423
       #include <typeinfo>
    #else
       #include <typeinfo.h>
    #endif
+   #if defined(__BORLANDC__)
+   namespace hx { typedef std::type_info type_info; }
+   #else
    namespace hx { typedef ::type_info type_info; }
+   #endif
 #else
    #include <typeinfo>
    #include <stdint.h>
