@@ -408,7 +408,7 @@ class BuildTool
       {
          var useCache = CompileCache.hasCache && group.mUseCache;
          if (!useCache && group.mUseCache)
-            Log.v("Ignoring compiler because of possible missing dependencies");
+            Log.v("Ignoring compiler cache because HXCPP_COMPILE_CACHE is not valid.");
 
          var groupObjs = new Array<String>();
 

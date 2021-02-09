@@ -711,6 +711,7 @@ class Setup
          proc.close();
          if (str>"")
          {
+            Log.v("MSVC output:" + str);
             var reg = ~/(\d{2})\.\d+/i;
             if (reg.match(str))
             {
