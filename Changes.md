@@ -1,4 +1,11 @@
 
+
+* Update MIN_IOS_VERSION
+* Bug fixes
+* Upgrade to 4.2 API
+
+4.1.15
+------------------------------------------------------------
 * Added Arm64 suport on windows
 * Fixed crash with zero-sized alloc and generational GC
 * Fixed crash with generational GC when old objects come back to life
