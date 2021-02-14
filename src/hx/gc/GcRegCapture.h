@@ -39,9 +39,12 @@ typedef jmp_buf RegisterCaptureBuffer;
 
 struct RegisterCaptureBuffer
 {
+   void *eax;
    void *ebx;
+   void *ecx;
    void *edi;
    void *esi;
+   void *ebp;
 };
 
 void CaptureX86(RegisterCaptureBuffer &outBuffer);

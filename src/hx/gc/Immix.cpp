@@ -1049,9 +1049,13 @@ struct BlockDataInfo
             }
             else
             {
+            	 
+            	 // there is an hole here, so allocStart[r] must be reset
+            	 allocStart[r] = 0;
+            	
                int start = r;
                ranges[hole].start = start;
-
+              
                #ifdef HXCPP_ALIGN_ALLOC
                int alignR = (r+3) & ~3;
                while(r<alignR && rowMarked[r]==0)
@@ -1180,7 +1184,7 @@ struct BlockDataInfo
 
                if (inOffset>=scan && inOffset<end)
                {
-                  if (inOffset>scan+sgCheckInternalOffset)
+                  if (inOffset>scan)
                      return allocNone;
 
                   *outPtr = mPtr->mRow[0] + scan + sizeof(int);
@@ -1219,52 +1223,50 @@ struct BlockDataInfo
       }
 
       // Does a live object start on this row
-      if ( !( allocStart[r] & hx::gImmixStartFlag[inOffset &127]) )
-      {
-         #ifdef HXCPP_GC_NURSERY
-         void *ptr;
-         return GetEnclosingNurseryType(inOffset,&ptr);
-         #endif
-         //Not a actual start...
-         return allocNone;
-      }
-
-      return GetAllocTypeChecked(inOffset,inAllowPrevious);
-   }
-
-   AllocType GetEnclosingAllocType(int inOffset,void **outPtr,bool inAllowPrevious)
-   {
-      for(int dx=0;dx<=sgCheckInternalOffset;dx+=4)
-      {
-         int blockOffset = inOffset - dx;
-         if (blockOffset >= 0)
-         {
-	         int r = blockOffset >> IMMIX_LINE_BITS;
-	         if (r >= IMMIX_HEADER_LINES && r < IMMIX_LINES)
-	         {
-	            // Normal, good alloc
-	            int rowPos = hx::gImmixStartFlag[blockOffset &127];
-	            if ( allocStart[r] & rowPos )
-	            {
-	               // Found last valid object - is it big enough?
-	               unsigned int header =  *(unsigned int *)((char *)mPtr + blockOffset);
-	               int size = (header & IMMIX_ALLOC_SIZE_MASK) >> IMMIX_ALLOC_SIZE_SHIFT;
-	               // Valid object not big enough...
-	               if (blockOffset + size +sizeof(int) <= inOffset )
-	                  break;
-	
-	               *outPtr = (void *)(mPtr->mRow[0] + blockOffset + sizeof(int));
-	               return GetAllocTypeChecked(blockOffset,inAllowPrevious);
-	            }
-	         }
-	       }
-      }
-
+      //if ( !( allocStart[r] & hx::gImmixStartFlag[inOffset &IMMIX_START_MASK]) )
+      //{
+      // ^^^^^^^^^^^ this was wrong - allocStart flag could be set to 1 until a full
+      // gc has been run.
       #ifdef HXCPP_GC_NURSERY
-      return GetEnclosingNurseryType(inOffset,outPtr);
+      void *ptr;
+      AllocType t = GetEnclosingNurseryType(inOffset,&ptr);
+      if (t != allocNone)
+      	 return t;
+
       #endif
-      // Not a actual start...
-      return allocNone;
+
+      if (( allocStart[r] & hx::gImmixStartFlag[inOffset &127]) )
+      {
+      
+      // the ptr can be GetAllocTypeChecked only if not in an hole
+       #ifdef HXCPP_GC_NURSERY      
+        if (this->IsInHole(inOffset))
+       	 return allocNone;
+       #endif      	 
+      	
+       return GetAllocTypeChecked(inOffset,inAllowPrevious);
+      }
+      else
+       return allocNone;
+      
+   }
+   
+   inline bool IsInHole(int inOffset)
+   {
+     
+      for(int h=0;h<mHoles;h++)
+      {
+         int scan = mRanges[h].start;
+         if (scan > inOffset)
+         	 break;
+         	 
+         int last = mRanges[h].start + mRanges[h].length;
+         if (inOffset >= scan && inOffset < last) 
+         	 return true;
+
+      }  	
+      
+      return false;
    }
 
 
@@ -4903,20 +4905,18 @@ public:
 
 
             generational = false;
+            
+            reclaimBlocks(full,stats); // reclaim is needed to fix holes
             MarkAll(generational);
 
             sgTimeToNextTableUpdate--;
             full = sgTimeToNextTableUpdate<=0;
 
             stats.clear();
-            reclaimBlocks(full,stats);
          }
       }
-      else
-      {
-         reclaimBlocks(full,stats);
-      }
 
+      reclaimBlocks(full,stats);
 
       #ifdef HXCPP_GC_GENERATIONAL
       if (compactSurviors)
@@ -5551,102 +5551,110 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
 
    for(int *ptr = inBottom ; ptr<inTop; ptr++)
    {
-      void *vptr = *(void **)ptr;
-
-      MemType mem;
-      if (vptr && !((size_t)vptr & 0x03) && vptr!=prev && vptr!=lastPin)
+      void *rptr = *(void **)ptr;
+      for (int dx=0;dx<=sgCheckInternalOffset;dx+=4)
       {
-
-         #ifdef PROFILE_COLLECT
-         hx::localCount++;
-         #endif
-         MemType mem = sGlobalAlloc->GetMemType(vptr);
-
-         #ifdef HX_WATCH
-         isWatch = false;
-         if (hxInWatchList(vptr) && vptr!=lastWatch)
-         {
-            isWatch = true;
-            lastWatch = vptr;
-            GCLOG("********* Watch location conservative mark %p:%d\n",vptr,mem);
-         }
-         #endif
-
-         if (mem!=memUnmanaged)
-         {
-            if (mem==memLarge)
-            {
-               unsigned char &mark = ((unsigned char *)(vptr))[HX_ENDIAN_MARK_ID_BYTE];
-               if (mark!=gByteMarkID)
-                  mark = gByteMarkID;
-            }
-            else
-            {
-               BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
-               BlockDataInfo *info = (*gBlockInfo)[block->mId];
-
-               int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
-               AllocType t = sgCheckInternalOffset ?
-                     info->GetEnclosingAllocType(pos-sizeof(int),&vptr, allowPrevious):
-                     info->GetAllocType(pos-sizeof(int), allowPrevious);
-
-               #ifdef HX_WATCH
-               if (!isWatch && hxInWatchList(vptr))
-               {
-                  isWatch = true;
-                  GCLOG("********* Watch location conservative mark offset %p:%d\n",vptr,mem);
-               }
-               #endif
-
-
-               if ( t==allocObject )
-               {
-                  #ifdef HX_WATCH
-                  if (isWatch)
-                  {
-                     GCLOG(" Mark object %p (%p)\n", vptr,ptr);
-                  }
-                  #endif
-                  hx::MarkObjectAlloc( ((hx::Object *)vptr), __inCtx );
-                  lastPin = vptr;
-                  info->pin();
-               }
-               else if (t==allocString)
-               {
-                  #ifdef HX_WATCH
-                  if (isWatch)
-                     GCLOG(" Mark string %p (%p)\n", vptr,ptr);
-                  #endif
-                  HX_MARK_STRING(vptr);
-                  lastPin = vptr;
-                  info->pin();
-               }
-               else if (t==allocMarked)
-               {
-                  #ifdef HX_WATCH
-                  if (isWatch)
-                     GCLOG(" pin alloced %p (%p)\n", vptr,ptr);
-                  #endif
-                  lastPin = vptr;
-                  info->pin();
-               }
-               else
-               {
-                  #ifdef HX_WATCH
-                  if (isWatch)
-                  {
-                     GCLOG(" missed watch %p:%d\n", vptr,t);
-
-                     int x = info->GetAllocType(pos-sizeof(int));
-                     int y = info->GetEnclosingAllocType(pos-sizeof(int),&vptr);
-                     printf("but got %d,%d o=%d\n",x,y,sgCheckInternalOffset);
-                  }
-                  #endif
-               }
-            }
-         }
-         // GCLOG(" rejected %p %p %d %p %d=%d\n", ptr, vptr, !((size_t)vptr & 0x03), prev,
-         // sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
+        void *vptr = (void*)((size_t)rptr - dx);
+	      MemType mem;
+	      if (vptr && !((size_t)vptr & 0x03) && vptr!=prev && vptr!=lastPin)
+	      {
+	
+	         #ifdef PROFILE_COLLECT
+	         hx::localCount++;
+	         #endif
+	         MemType mem = sGlobalAlloc->GetMemType(vptr);
+	
+	         #ifdef HX_WATCH
+	         isWatch = false;
+	         if (hxInWatchList(vptr) && vptr!=lastWatch)
+	         {
+	            isWatch = true;
+	            lastWatch = vptr;
+	            GCLOG("********* Watch location conservative mark %p:%d\n",vptr,mem);
+	         }
+	         #endif
+	
+	         if (mem!=memUnmanaged)
+	         {
+	            if (mem==memLarge)
+	            {
+	               unsigned char &mark = ((unsigned char *)(vptr))[HX_ENDIAN_MARK_ID_BYTE];
+	               if (mark!=gByteMarkID)
+	                  mark = gByteMarkID;
+	               
+	               break;
+	               
+	            }
+	            else
+	            {
+	               BlockData *block = (BlockData *)( ((size_t)vptr) & IMMIX_BLOCK_BASE_MASK);
+	               BlockDataInfo *info = (*gBlockInfo)[block->mId];
+	
+	               int pos = (int)(((size_t)vptr) & IMMIX_BLOCK_OFFSET_MASK);
+	               AllocType t = info->GetAllocType(pos-sizeof(int), allowPrevious);
+	
+	               #ifdef HX_WATCH
+	               if (!isWatch && hxInWatchList(vptr))
+	               {
+	                  isWatch = true;
+	                  GCLOG("********* Watch location conservative mark offset %p:%d\n",vptr,mem);
+	               }
+	               #endif
+	
+	
+	               if ( t==allocObject )
+	               {
+	                  #ifdef HX_WATCH
+	                  if (isWatch)
+	                  {
+	                     GCLOG(" Mark object %p (%p)\n", vptr,ptr);
+	                  }
+	                  #endif
+	                  hx::MarkObjectAlloc( ((hx::Object *)vptr), __inCtx );
+	                  lastPin = vptr;
+	                  info->pin();
+	               }
+	               else if (t==allocString)
+	               {
+	                  #ifdef HX_WATCH
+	                  if (isWatch)
+	                     GCLOG(" Mark string %p (%p)\n", vptr,ptr);
+	                  #endif
+	                  HX_MARK_STRING(vptr);
+	                  lastPin = vptr;
+	                  info->pin();
+	               }
+	               else if (t==allocMarked)
+	               {
+	                  #ifdef HX_WATCH
+	                  if (isWatch)
+	                     GCLOG(" pin alloced %p (%p)\n", vptr,ptr);
+	                  #endif
+	                  lastPin = vptr;
+	                  info->pin();
+	               }
+	               else
+	               {
+	                  #ifdef HX_WATCH
+	                  if (isWatch)
+	                  {
+	                     GCLOG(" missed watch %p:%d\n", vptr,t);
+	
+	                     int x = info->GetAllocType(pos-sizeof(int));
+	                     int y = info->GetEnclosingAllocType(pos-sizeof(int),&vptr);
+	                     printf("but got %d,%d o=%d\n",x,y,sgCheckInternalOffset);
+	                  }
+	                  #endif
+	               }
+	               
+	               if (t != allocNone)
+	               	 break;
+	               
+	            }
+	         }
+	         // GCLOG(" rejected %p %p %d %p %d=%d\n", ptr, vptr, !((size_t)vptr & 0x03), prev,
+	         // sGlobalAlloc->GetMemType(vptr) , memUnmanaged );
+	      }
       }
    }
    #ifdef SHOW_MEM_EVENTS

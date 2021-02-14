@@ -16,20 +16,28 @@ void CaptureX86(RegisterCaptureBuffer &outBuffer)
    void *regEsi;
    void *regEdi;
    void *regEbx;
+   void *regEax;
+   void *regEcx;
    #ifdef __GNUC__
    asm ("mov %%esi, %0\n\t" : "=r" (regEsi) );
    asm ("mov %%edi, %0\n\t" : "=r" (regEdi) );
    asm ("mov %%ebx, %0\n\t" : "=r" (regEbx) );
+   asm ("mov %%eax, %0\n\t" : "=r" (regEax) );
+   asm ("mov %%ecx, %0\n\t" : "=r" (regEcx) );
    #else
    __asm {
       mov regEsi, esi
       mov regEdi, edi
       mov regEbx, ebx
+      mov regEax, eax
+      mov regEcx, ecx
    }
    #endif
    outBuffer.esi = regEsi;
    outBuffer.edi = regEdi;
    outBuffer.ebx = regEbx;
+   outBuffer.eax = regEax;
+   outBuffer.ecx = regEcx;
 }
 
 } // end namespace hx
