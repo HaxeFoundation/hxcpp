@@ -34,7 +34,7 @@ int sgMinimumWorkingMemory       = 8*1024*1024;
 int sgMinimumFreeSpace           = 4*1024*1024;
 #endif
 // Once you use more than the minimum, this kicks in...
-int sgTargetFreeSpacePercentage  = 50;
+int sgTargetFreeSpacePercentage  = 100;
 
 
 

@@ -47,12 +47,39 @@ struct QuickVec
       mSize = inSize;
       return mPtr;
    }
+   
+   T * reserve(int inSize)
+   {
+      if (inSize>mAlloc)
+      {
+         mAlloc = inSize;
+         mPtr = (T *)realloc(mPtr,sizeof(T)*mAlloc);
+      }
+      return mPtr;
+   }
+   
    // Can push this many without realloc
    bool hasExtraCapacity(int inN)
    {
       return mSize+inN<=mAlloc;
    }
+   inline int indexOf(T inVal)
+   {   
+   	  	for(int i=0;i<mSize;i++)
+         	if (mPtr[i]==inVal)
+           	 return i;
 
+      return -1;
+   }  
+   inline bool has(T inVal)
+   {   
+   	  	for(int i=0;i<mSize;i++)
+         	if (mPtr[i]==inVal)
+           	 return true;
+
+      return false;
+   }
+   
    bool safeReserveExtra(int inN)
    {
       int want = mSize + inN;
@@ -76,9 +103,14 @@ struct QuickVec
    }
    inline void pop_back() { --mSize; }
    inline T &back() { return mPtr[mSize-1]; }
+   inline void back_of(int amount) { mSize -= amount; }
    inline T pop()
    {
       return mPtr[--mSize];
+   }
+   inline T get(int index)
+   {
+      return mPtr[index];
    }
    inline void qerase(int inPos)
    {

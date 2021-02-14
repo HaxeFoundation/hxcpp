@@ -44,7 +44,6 @@ struct RegisterCaptureBuffer
    void *ecx;
    void *edi;
    void *esi;
-   void *ebp;
 };
 
 void CaptureX86(RegisterCaptureBuffer &outBuffer);

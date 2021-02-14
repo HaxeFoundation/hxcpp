@@ -289,9 +289,17 @@ namespace hx
 
 
 // Each line ast 128 bytes (2^7)
+#if defined(HXCPP_GC_SHORT_ROWS)
+// Each line ast 64 bytes (2^6)
+#define IMMIX_LINE_BITS    6
+// This is necessary to allow IMMIX_LINE_BITS < 7
+#define IMMIX_LOOP_COUNT_ROWS  
+#else
+// Each line ast 128 bytes (2^7)
 #define IMMIX_LINE_BITS    7
-#define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
+#endif
 
+#define IMMIX_LINE_LEN     (1<<IMMIX_LINE_BITS)
 #define HX_GC_REMEMBERED          0x40
 
 // The size info is stored in the header 8 bits to the right
@@ -363,8 +371,16 @@ public:
    {
       #ifdef HXCPP_GC_NURSERY
 
+
+		     #if defined(HXCPP_VISIT_ALLOCS) && defined(HXCPP_M64)
+		     // Make sure we can fit a relocation pointer
+		     int allocSize = sizeof(int) + (inSize < 8 ? 8 : inSize);
+		     #else
+		     int allocSize = sizeof(int) + inSize;
+		     #endif
+
          unsigned char *buffer = alloc->spaceFirst;
-         unsigned char *end = buffer + (inSize + 4);
+         unsigned char *end = buffer + allocSize;
 
          if ( end > alloc->spaceOversize )
          {
@@ -376,9 +392,9 @@ public:
             alloc->spaceFirst = end;
 
             if (inContainer)
-               ((unsigned int *)buffer)[-1] = inSize | IMMIX_ALLOC_IS_CONTAINER;
+               ((unsigned int *)buffer)[-1] = (allocSize - 4)  | IMMIX_ALLOC_IS_CONTAINER;
             else
-               ((unsigned int *)buffer)[-1] = inSize;
+               ((unsigned int *)buffer)[-1] = (allocSize - 4) ;
          }
 
          #ifdef HXCPP_TELEMETRY

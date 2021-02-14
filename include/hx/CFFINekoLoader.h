@@ -230,13 +230,13 @@ int api_val_strlen(neko_value  arg1)
 	return 0;
 }
 void api_buffer_set_size(neko_buffer inBuffer,int inLen) { 
-   NEKO_NOT_IMPLEMENTED("api_buffer_set_size");
+   //NEKO_NOT_IMPLEMENTED("api_buffer_set_size");
 }
 
 
 void api_buffer_append_char(neko_buffer inBuffer,int inChar)
 {
-   NEKO_NOT_IMPLEMENTED("api_buffer_append_char");
+   //NEKO_NOT_IMPLEMENTED("api_buffer_append_char");
 }
 
 

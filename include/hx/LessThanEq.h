@@ -248,7 +248,7 @@ struct CompareTraits< T * >
 
 
 template<typename T1>
-hx::Object *GetExistingObject(const T1 &v1)
+inline hx::Object *GetExistingObject(const T1 &v1)
 {
    typedef CompareTraits<T1> traits1;
    return traits1::toObject(v1);
@@ -256,14 +256,14 @@ hx::Object *GetExistingObject(const T1 &v1)
 
 
 template<typename T1>
-bool IsNull(const T1 &v1)
+inline bool IsNull(const T1 &v1)
 {
    typedef CompareTraits<T1> traits1;
    return traits1::isNull(v1);
 }
 
 template<typename T1>
-bool IsNotNull(const T1 &v1)
+inline bool IsNotNull(const T1 &v1)
 {
    typedef CompareTraits<T1> traits1;
    return !traits1::isNull(v1);
@@ -408,41 +408,41 @@ inline bool TestLessEq(const T1 &v1, const T2 &v2)
 
 
 template<typename T1, typename T2>
-bool IsEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,true,T1,T2>(v1,v2); }
+inline bool IsEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,true,T1,T2>(v1,v2); }
 
 template<typename T1, typename T2>
-bool IsNotEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,false,T1,T2>(v1,v2); }
+inline bool IsNotEq(const T1 &v1, const T2 &v2) { return TestLessEq<false,false,T1,T2>(v1,v2); }
 
 template<typename T1, typename T2>
-bool IsLess(const T1 &v1, const T2 &v2) { return TestLessEq<true,false,T1,T2>(v1,v2); }
+inline bool IsLess(const T1 &v1, const T2 &v2) { return TestLessEq<true,false,T1,T2>(v1,v2); }
 
 template<typename T1, typename T2>
-bool IsLessEq(const T1 &v1, const T2 &v2) { return TestLessEq<true,true,T1,T2>(v1,v2); }
-
-
-template<typename T1, typename T2>
-bool IsGreater(const T1 &v1, const T2 &v2) { return TestLessEq<true,false,T2,T1>(v2,v1); }
-
-template<typename T1, typename T2>
-bool IsGreaterEq(const T1 &v1, const T2 &v2) { return TestLessEq<true,true,T2,T1>(v2,v1); }
-
+inline bool IsLessEq(const T1 &v1, const T2 &v2) { return TestLessEq<true,true,T1,T2>(v1,v2); }
 
 
 template<typename T1, typename T2>
-bool IsPointerEq(const T1 &v1, const T2 &v2)
+inline bool IsGreater(const T1 &v1, const T2 &v2) { return TestLessEq<true,false,T2,T1>(v2,v1); }
+
+template<typename T1, typename T2>
+inline bool IsGreaterEq(const T1 &v1, const T2 &v2) { return TestLessEq<true,true,T2,T1>(v2,v1); }
+
+
+
+template<typename T1, typename T2>
+inline bool IsPointerEq(const T1 &v1, const T2 &v2)
 {
    return GetExistingObject(v1) == GetExistingObject(v2);
 }
 
 template<typename T1, typename T2>
-bool IsPointerNotEq(const T1 &v1, const T2 &v2)
+inline bool IsPointerNotEq(const T1 &v1, const T2 &v2)
 {
    return GetExistingObject(v1) != GetExistingObject(v2);
 }
 
 
 template<typename T1, typename T2>
-bool IsInstanceEq(const T1 &v1, const T2 &v2)
+inline bool IsInstanceEq(const T1 &v1, const T2 &v2)
 {
    hx::Object *p1 = GetExistingObject(v1);
    hx::Object *p2 = GetExistingObject(v2);
@@ -454,7 +454,7 @@ bool IsInstanceEq(const T1 &v1, const T2 &v2)
 }
 
 template<typename T1, typename T2>
-bool IsInstanceNotEq(const T1 &v1, const T2 &v2)
+inline bool IsInstanceNotEq(const T1 &v1, const T2 &v2)
 {
    hx::Object *p1 = GetExistingObject(v1);
    hx::Object *p2 = GetExistingObject(v2);
