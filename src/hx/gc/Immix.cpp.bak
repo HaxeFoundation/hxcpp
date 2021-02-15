@@ -140,12 +140,12 @@ static size_t sgMaximumFreeSpace  = 50*1024*1024;
 // HXCPP_GC_DYNAMIC_SIZE
 
 //#define HXCPP_GC_SUMMARY
-#define PROFILE_COLLECT
+//#define PROFILE_COLLECT
 //#define PROFILE_THREAD_USAGE
 //#define HX_GC_VERIFY
 //#define SHOW_MEM_EVENTS
 //#define SHOW_MEM_EVENTS_VERBOSE
-//#define SHOW_FRAGMENTATION
+#define SHOW_FRAGMENTATION
 
 //#define HX_GC_FIXED_BLOCKS
 //#define HX_WATCH
@@ -394,7 +394,6 @@ static void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx);
 static void VisitLocalAlloc(LocalAllocator *inAlloc,hx::VisitContext *__inCtx);
 #endif
 static void WaitForSafe(LocalAllocator *inAlloc);
-static void ReleaseFromSafe(LocalAllocator *inAlloc);
 static void ClearPooledAlloc(LocalAllocator *inAlloc);
 static void CollectFromThisThread(bool inMajor,bool inForceCompact);
 static void ResetLocalAllocatorInitializing(LocalAllocator *inAlloc);
@@ -1088,9 +1087,7 @@ struct BlockDataInfo
             else
             {
             	 
-            	 // there is an hole here, so allocStart[r] must be reset
-            	 allocStart[r] = 0;
-            	
+            	 // there is an hole here, so allocStart[r] must be reset            	
                int start = r;
                ranges[hole].start = start;
               
@@ -1270,41 +1267,13 @@ struct BlockDataInfo
       AllocType t = GetEnclosingNurseryType(inOffset,&ptr);
       if (t != allocNone)
       	 return t;
-
       #endif
 
       if (( allocStart[r] & hx::gImmixStartFlag[inOffset &IMMIX_START_MASK]) )
-      {
-      
-      // the ptr can be GetAllocTypeChecked only if not in an hole
-       #ifdef HXCPP_GC_NURSERY      
-        if (this->IsInHole(inOffset))
-       	 return allocNone;
-       #endif      	 
-      	
        return GetAllocTypeChecked(inOffset,inAllowPrevious);
-      }
       else
        return allocNone;
       
-   }
-   
-   inline bool IsInHole(int inOffset)
-   {
-     
-      for(int h=0;h<mHoles;h++)
-      {
-         int scan = mRanges[h].start;
-         if (scan > inOffset)
-         	 break;
-         	 
-         int last = mRanges[h].start + mRanges[h].length;
-         if (inOffset >= scan && inOffset < last) 
-         	 return true;
-
-      }  	
-      
-      return false;
    }
 
    void pin() { mPinned = true; }
@@ -3168,8 +3137,8 @@ public:
       //  value, so we can't doa realloc without potentially crashing it.
 #ifdef RECYCLE_LARGE
       if (largeObjectRecycle.hasExtraCapacity(1))
-#endif
       {
+#endif
          unsigned int *blob = ((unsigned int *)inLarge) - 2;
          unsigned int size = *blob;
          mLargeListLock.Lock();
@@ -3179,15 +3148,17 @@ public:
          // We could maybe free anyhow?
          #ifdef RECYCLE_LARGE
          if (!largeObjectRecycle.hasExtraCapacity(1))
-         #endif
          {
+         	  #endif
             mLargeListLock.Unlock();
             HxFree(blob);
             return;
+#ifdef RECYCLE_LARGE            
          }
          largeObjectRecycle.push(blob);
          mLargeListLock.Unlock();
       }
+#endif
    }
 
    void *AllocLarge(int inSize, bool inClear)
@@ -5347,8 +5318,6 @@ public:
             #ifdef HXCPP_SCRIPTABLE
             ((hx::StackContext *)mLocalAllocs[i])->byteMarkId = hx::gByteMarkID;
             #endif
-            if (mLocalAllocs[i]!=this_local)
-               ReleaseFromSafe(mLocalAllocs[i]);
          }
 
          if (!inLocked)
@@ -5978,16 +5947,13 @@ public:
    {
       if (sgIsCollecting)
          CriticalGCError("Bad Allocation while collecting - from finalizer?");
-      #ifndef HXCPP_SINGLE_THREADED_APP
-      volatile int dummy = 1;
-      mBottomOfStack = (int *)&dummy;
-      CAPTURE_REGS;
-      #ifdef VerifyStackRead
-      VerifyStackRead(mBottomOfStack, mTopOfStack)
-      #endif
-
-      mReadyForCollect.Set();
-      mCollectDone.Wait();
+         
+			#ifndef HXCPP_SINGLE_THREADED_APP         
+	    EnterGCFreeZone();
+	    gThreadStateChangeLock->Lock();
+	    ExitGCFreeZoneLocked();
+	    
+	    gThreadStateChangeLock->Unlock();
       #endif
    }
 
@@ -6070,14 +6036,6 @@ public:
          #endif
          mReadyForCollect.Wait();
       }
-      #endif
-   }
-
-   void ReleaseFromSafe()
-   {
-      #ifndef HXCPP_SINGLE_THREADED_APP
-      if (!mGCFreeZone)
-         mCollectDone.Set();
       #endif
    }
 
@@ -6319,7 +6277,6 @@ public:
    #ifndef HXCPP_SINGLE_THREADED_APP
    bool            mGCFreeZone;
    HxSemaphore     mReadyForCollect;
-   HxSemaphore     mCollectDone;
    #endif
 
    int             mStackLocks;
@@ -6352,11 +6309,6 @@ void ResetLocalAllocatorInitializing(LocalAllocator *inAlloc)
 void WaitForSafe(LocalAllocator *inAlloc)
 {
    inAlloc->WaitForSafe();
-}
-
-void ReleaseFromSafe(LocalAllocator *inAlloc)
-{
-   inAlloc->ReleaseFromSafe();
 }
 
 void MarkLocalAlloc(LocalAllocator *inAlloc,hx::MarkContext *__inCtx)

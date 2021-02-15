@@ -27,3 +27,4 @@ hxcpp.n
 *.ilk
 
 .vscode
+*.bak
