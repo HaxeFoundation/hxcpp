@@ -112,7 +112,7 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 #endif
 
 
-// #define HXCPP_GC_DEBUG_LEVEL 1
+ #define HXCPP_GC_DEBUG_LEVEL 1
 
 #if HXCPP_GC_DEBUG_LEVEL>1
   #define PROFILE_COLLECT
@@ -137,6 +137,7 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 //#define PROFILE_COLLECT
 //#define PROFILE_THREAD_USAGE
 //#define HX_GC_VERIFY
+//#define HX_GC_VERIFY_ALLOC_START
 //#define SHOW_MEM_EVENTS
 //#define SHOW_MEM_EVENTS_VERBOSE
 //#define SHOW_FRAGMENTATION
@@ -896,6 +897,22 @@ struct BlockDataInfo
       if (mMoveScore> FRAG_THRESH )
          outStats.fraggedBlocks++;
    }
+
+   #ifdef HX_GC_VERIFY_ALLOC_START
+   void verifyAllocStart()
+   {
+      unsigned char *rowMarked = mPtr->mRowMarked;
+
+      for(int r = IMMIX_HEADER_LINES; r<IMMIX_LINES; r++)
+      {
+         if (!rowMarked[r] && allocStart[r])
+         {
+            printf("allocStart set without marking\n");
+            DebuggerTrap();
+         }
+      }
+   }
+   #endif
 
    void countRows(BlockDataStats &outStats)
    {
@@ -4288,7 +4305,7 @@ public:
       }
    }
 
-
+  
 
    #ifdef HXCPP_VISIT_ALLOCS
    void VisitBlockAsync(hx::VisitContext *inCtx)
@@ -4753,6 +4770,15 @@ public:
    }
 
 
+   
+   #ifdef HX_GC_VERIFY_ALLOC_START
+   void verifyAllocStart()
+   {
+      for(int i=1;i<mAllBlocks.size();i++)
+         mAllBlocks[i]->verifyAllocStart();
+   }
+   #endif
+
    #ifdef HX_GC_VERIFY
    void VerifyBlockOrder()
    {
@@ -4935,6 +4961,9 @@ public:
             GCLOG("Generational retention/fragmentation too high %f, do normal collect\n", mGenerationalRetainEstimate);
             #endif
 
+            #ifdef HX_GC_VERIFY_ALLOC_START
+            verifyAllocStart();
+            #endif
 
             generational = false;
             MarkAll(generational);
