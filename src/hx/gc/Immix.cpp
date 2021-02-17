@@ -1188,6 +1188,10 @@ struct BlockDataInfo
    #ifdef HXCPP_GC_NURSERY
    AllocType GetEnclosingNurseryType(int inOffset, void **outPtr)
    {
+      // The block did not get used in the previous cycle, so allocStart is invalid and
+      //  no new objects should be in here
+      if (!mZeroed)
+         return allocNone;
       // For the nursery(generational) case, the allocStart markers are not set
       // So trace tne new object links through the new allocation holes
       for(int h=0;h<mHoles;h++)
