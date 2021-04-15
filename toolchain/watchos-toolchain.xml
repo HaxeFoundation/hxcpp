@@ -44,7 +44,7 @@
   <mmflag value="-fobjc-abi-version=2"/>
   <mmflag value="-fobjc-legacy-dispatch"/>
 
-  <flag value="-mwatchos-version-min=2.2"/>
+  <flag value="-mwatchos-version-min=3.0"/>
   <flag value="-DHX_APPLEWATCH"/>
   <flag value="-DHX_WATCHOS"/>
   <flag value="-fobjc-arc"  />
