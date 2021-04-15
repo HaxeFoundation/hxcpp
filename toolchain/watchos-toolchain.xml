@@ -14,15 +14,15 @@
   <exe name="xcrun --toolchain WatchOS clang++" />
   <flag value="-c"/>
   <flag value="-arch"/>
-  <flag value="armv7k"/>
-
+  <flag value="armv7k" unless="HXCPP_ARM64_32"/>
+  <flag value="arm64_32" if="HXCPP_ARM64_32"/>
 
   <pchflag value="-x" />
   <pchflag value="c++-header" />
 
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-std=c++11" if="HXCPP_CPP11" />
-  
+
   <flag value="-g" />
 
   <flag value="-isysroot"/>
