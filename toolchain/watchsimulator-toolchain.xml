@@ -17,8 +17,8 @@
   <flag value="-arch"/>
   <flag value="${HXCPP_ARCH}" if="HXCPP_ARCH"/>
   <section unless="HXCPP_ARCH">
-    <flag value="i386" unless="HXCPP_M64"/>
-    <flag value="x86_64" if="HXCPP_M64" unless="HXCPP_ARM64"/>
+    <flag value="i386" unless="HXCPP_M64 || HXCPP_ARM64 || HXCPP_X86_64"/>
+    <flag value="x86_64" if="HXCPP_M64 || HXCPP_X86_64"/>
     <flag value="arm64" if="HXCPP_ARM64"/>
   </section>
 
