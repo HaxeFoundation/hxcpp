@@ -13,9 +13,14 @@
 <compiler id="WatchOS" exe="clang" >
   <exe name="xcrun --toolchain WatchOS clang++" />
   <flag value="-c"/>
+
   <flag value="-arch"/>
-  <flag value="armv7k" unless="HXCPP_ARM64_32"/>
-  <flag value="arm64_32" if="HXCPP_ARM64_32"/>
+  <flag value="${HXCPP_ARCH}" if="HXCPP_ARCH"/>
+  <section unless="HXCPP_ARCH">
+    <flag value="armv7k" unless="HXCPP_ARM64_32"/>
+    <flag value="arm64_32" if="HXCPP_ARM64_32"/>
+  </section>
+  
 
   <pchflag value="-x" />
   <pchflag value="c++-header" />

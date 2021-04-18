@@ -13,9 +13,14 @@
 <compiler id="WatchSimulator" exe="clang" >
   <exe name="xcrun --toolchain WatchSimulator clang++" />
   <flag value="-c"/>
+
   <flag value="-arch"/>
-  <flag value="i386" unless="HXCPP_M64"/>
-  <flag value="x86_64" if="HXCPP_M64"/>
+  <flag value="${HXCPP_ARCH}" if="HXCPP_ARCH"/>
+  <section unless="HXCPP_ARCH">
+    <flag value="i386" unless="HXCPP_M64"/>
+    <flag value="x86_64" if="HXCPP_M64" unless="HXCPP_ARM64"/>
+    <flag value="arm64" if="HXCPP_ARM64"/>
+  </section>
 
   <pchflag value="-x" />
   <pchflag value="c++-header" />
