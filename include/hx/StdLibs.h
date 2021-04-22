@@ -533,6 +533,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String op
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool    _hx_regexp_match(Dynamic handle, String string, int pos, int len);
 HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_regexp_matched(Dynamic handle, int pos);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_matched_pos(Dynamic handle, int match);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_regexp_matched_num(Dynamic handle);
 
 
 // haxe.zip.(Un)Compress.hx -> src/hx/libs/zlib/ZLib.cpp

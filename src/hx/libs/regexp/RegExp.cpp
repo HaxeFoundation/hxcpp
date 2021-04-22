@@ -244,4 +244,19 @@ Dynamic _hx_regexp_matched_pos(Dynamic handle, int m)
             ->setFixed(1,HX_("pos",94,5d,55,00),start);
 }
 
+/**
+   regexp_matched_num : 'regexp -> int
+   <doc>Return the total number of matched groups, or -1 if the regexp has not
+   been matched yet</doc>
+**/
+int _hx_regexp_matched_num(Dynamic handle)
+{
+   pcredata *d = PCRE(handle);
+   
+   if( !d->string.raw_ptr() )
+      return -1;
+   else
+      return d->nmatchs;
+}
+
 
