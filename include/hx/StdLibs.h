@@ -173,6 +173,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_string(HX_MAP_THIS_AR
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_set_float(HX_MAP_THIS_ARG,int inKey,Float inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int_hash_to_string(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int_hash_clear(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __int_hash_size(Dynamic &hash);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int_hash_get(Dynamic inHash,int inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES int           __int_hash_get_int(Dynamic inHash,int inKey);
@@ -196,6 +197,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_map_substr(HX_MAP_THIS
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string_raw(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_clear(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __string_hash_size(Dynamic &hash);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_get(Dynamic inHash,String inKey);
 HXCPP_EXTERN_CLASS_ATTRIBUTES int           __string_hash_get_int(Dynamic inHash,String inKey);
@@ -216,6 +218,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_string(HX_MAP_THIS
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_set_float(HX_MAP_THIS_ARG,Dynamic inKey,Float inValue,bool inWeakKey=false);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __object_hash_to_string(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __object_hash_clear(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __object_hash_size(Dynamic &hash);
 
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __object_hash_get(Dynamic inHash,Dynamic inKey);
