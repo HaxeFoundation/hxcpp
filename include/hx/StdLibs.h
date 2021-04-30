@@ -159,6 +159,10 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_utf8_string_to_char_bytes(String &i
    #define HX_MAP_THIS_ARG Dynamic &ioHash
 #endif
 
+// --- HashRoot ---------------------------------------------------------------------
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __root_hash_size(Dynamic *rtHash);
+
 // --- IntHash ----------------------------------------------------------------------
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES inline hx::Object   *__int_hash_create() { return 0; }

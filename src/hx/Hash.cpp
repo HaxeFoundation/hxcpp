@@ -5,6 +5,17 @@
 using namespace hx;
 
 
+// --- HashRoot ---------------------------------------------------
+
+int __root_hash_size(Dynamic &rtHash)
+{
+   HashRoot *hash = static_cast<HashRoot *>(rtHash.GetPtr());
+   if(!hash)
+      return 0;
+   return hash->getSize();
+}
+
+
 // --- IntHash ----------------------------------------------------
 
 namespace
@@ -237,15 +248,6 @@ void __int_hash_clear(Dynamic &ioHash)
    if (hash)
       hash->clear();
 }
-
-int __int_hash_size(Dynamic &ioHash)
-{
-   IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
-   if(!hash)
-      return 0;
-   return ((IntHashObject *) hash)->getSize();
-}
-
 
 
 
@@ -556,15 +558,6 @@ void __string_hash_clear(Dynamic &ioHash)
       hash->clear();
 }
 
-int __string_hash_size(Dynamic &ioHash)
-{
-   StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
-   if(!hash)
-      return 0;
-   return ((StringHashObject *) hash)->getSize();
-}
-
-
 
 
 // --- ObjectHash ----------------------------------------------------
@@ -838,13 +831,5 @@ void __object_hash_clear(Dynamic &ioHash)
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
    if (hash)
       hash->clear();
-}
-
-int __object_hash_size(Dynamic &ioHash)
-{
-   DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
-   if(!hash)
-      return 0;
-   return ((DynamicHashObject *) hash)->getSize();
 }
 

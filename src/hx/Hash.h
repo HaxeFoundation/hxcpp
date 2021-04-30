@@ -218,10 +218,15 @@ template<typename T> inline void CopyValue(null &, const T &) {  }
 struct HashRoot : public Object
 {
    HashStore store;
+   int       size;
+   int       mask;
+   int       bucketCount;
 
     HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdHash };
 
    virtual void updateAfterGc() = 0;
+   
+   inline int getSize() { return size; }
 };
 
 template<typename KEY>
@@ -230,6 +235,9 @@ struct HashBase : public HashRoot
    HashBase(int inStore)
    {
       store = (HashStore)inStore;
+      size = 0;
+      mask = 0;
+      bucketCount = 0;
    }
 
 
@@ -276,22 +284,15 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    enum { IgnoreHash = Element::IgnoreHash };
 
 
-   int       size;
-   int       mask;
-   int       bucketCount;
-   ELEMENT   **bucket;
+   ELEMENT **bucket;
 
 
    Hash() : HashBase<Key>( StoreOf<Value>::store )
    {
       bucket = 0;
-      size = 0;
-      mask = 0;
-      bucketCount = 0;
       if (ELEMENT::WeakKeys && Element::ManageKeys)
          RegisterWeakHash(this);
    }
-   inline int getSize() { return size; }
 
    template<typename T>
    bool TIsWeakRefValid(T &) { return true; }
