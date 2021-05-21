@@ -1,14 +1,16 @@
 package;
 import gc.TestGC;
 
-class TestMain {
+class TestMain #if nme extends nme.display.Sprite #end {
 
-   static function main()
+   static function runTests()
    {
       var passes = 1;
+      #if !nme
       var args = Sys.args();
       if (args.length>0)
          passes = Std.parseInt(args[0]);
+      #end
 
       var r = new haxe.unit.TestRunner();
       r.add(new TestTypes());
@@ -20,7 +22,9 @@ class TestMain {
       r.add(new TestStringHash());
       r.add(new TestObjectHash());
       r.add(new TestWeakHash());
+      #if !nme
       r.add(new file.TestFile());
+      #end
       
       #if cpp
       r.add(new native.TestFinalizer());
@@ -32,8 +36,25 @@ class TestMain {
          var success = r.run();
          trace(" Time : " + (haxe.Timer.stamp()-t0)*1000 );
          if (!success)
-            Sys.exit(1);
+         {
+            endTest(1);
+            return;
+         }
       }
-      Sys.exit(0);
+      endTest(0);
    }
+
+   #if nme
+   public function new()
+   {
+       super();
+       runTests();
+   }
+   static function endTest(error:Int) trace(error==0 ? "All tests OK" : "Tests Failed!");
+   #else
+   public static function main() runTests();
+   public static function endTest(error:Int) Sys.exit(error);
+   #end
 }
+
+

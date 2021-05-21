@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+  
+  <meta
+     title="GCTests"
+     package="org.haxe.hxcpp.gctest"
+     version="1.0.0"
+     company="haxefoundation" 
+  />
+  
+  <app
+     file="TestMain" 
+     main="TestMain"
+  />
+  
+  <window
+     width="640" 
+     height="480" 
+     orientation="landscape" 
+     fps="60"
+     background="0xeeeeee"
+     require_shaders="true"
+     resizable="true"
+     hardware="true"
+  />
+
+  <haxelib name="nme" />
+  <haxedef name="HXCPP_GC_GENERATIONAL" />
+  <haxedef name="HXCPP_DEBUG_LINK" />
+  <haxeflag name="-resource TestMain.hx" />
+  <cp path="../unit" />
+  
+</project>
+
