@@ -3585,8 +3585,7 @@ public:
 
          if (!result)
          {
-            inAlloc->SetupStack();
-            Collect(false,forceCompact,true,true);
+            inAlloc->SetupStackAndCollect(false,forceCompact,true,true);
             result = GetNextFree(inRequiredBytes);
          }
 
@@ -3594,8 +3593,7 @@ public:
          {
             // Try with compact this time...
             forceCompact = true;
-            inAlloc->SetupStack();
-            Collect(false,forceCompact,true,true);
+            inAlloc->SetupStackAndCollect(false,forceCompact,true,true);
             result = GetNextFree(inRequiredBytes);
          }
 
@@ -4798,7 +4796,7 @@ public:
    }
    #endif
 
-   void Collect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false)
+   void Collect(bool inMajor, bool inForceCompact, bool inLocked,bool inFreeIsFragged)
    {
       PROFILE_COLLECT_SUMMARY_START;
 
@@ -5967,8 +5965,15 @@ public:
       #endif
    }
 
-   virtual void SetupStack()
+   virtual void SetupStackAndCollect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false)
    {
+      #ifndef HXCPP_SINGLE_THREADED_APP
+        #if HXCPP_DEBUG
+        if (mGCFreeZone)
+           CriticalGCError("Collecting from a GC-free thread");
+        #endif
+      #endif
+
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
 
@@ -5987,12 +5992,9 @@ public:
       VerifyStackRead(mBottomOfStack, mTopOfStack)
       #endif
 
-      #ifndef HXCPP_SINGLE_THREADED_APP
-      if (mGCFreeZone)
-         ExitGCFreeZone();
-      #endif
-
       CAPTURE_REGS;
+
+      sGlobalAlloc->Collect(inMajor, inForceCompact, inLocked, inFreeIsFragged);
    }
 
 
@@ -6397,8 +6399,7 @@ void VisitLocalAlloc(LocalAllocator *inAlloc,hx::VisitContext *__inCtx)
 void CollectFromThisThread(bool inMajor,bool inForceCompact)
 {
    LocalAllocator *la = GetLocalAlloc();
-   la->SetupStack();
-   sGlobalAlloc->Collect(inMajor,inForceCompact);
+   la->SetupStackAndCollect(inMajor,inForceCompact);
 }
 
 namespace hx
@@ -6580,8 +6581,7 @@ int InternalCollect(bool inMajor,bool inCompact)
    if (!sgAllocInit)
        return 0;
 
-   GetLocalAlloc()->SetupStack();
-   sGlobalAlloc->Collect(inMajor,inCompact);
+   GetLocalAlloc()->SetupStackAndCollect(inMajor, inCompact);
 
    return sGlobalAlloc->MemUsage();
 }

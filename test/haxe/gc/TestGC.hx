@@ -96,6 +96,10 @@ class TestGC extends haxe.unit.TestCase {
 		assertTrue(gc() == null);
 	}
 
+	public function testBigStack():Void {
+      assertTrue( TestBigStack.test() );
+   }
+
    #if !cppia
 	public function testConstStrings():Void {
       // Const strings void Gc overhead

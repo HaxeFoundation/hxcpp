@@ -67,7 +67,7 @@ class TestMain #if nme extends nme.display.Sprite #end {
    #else
    public static function main()
    {
-      Sys.exit(runTests()_;
+      Sys.exit(runTests());
    }
    public static function endTest(error:Int) Sys.exit(error);
    #end

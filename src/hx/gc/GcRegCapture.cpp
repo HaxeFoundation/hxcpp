@@ -85,6 +85,46 @@ void CaptureX64(RegisterCaptureBuffer &outBuffer)
 } // end namespace hx
 
 
+#elif defined(HXCPP_CAPTURE_ARM64) // } {
+
+namespace hx {
+
+void CaptureArm64(RegisterCaptureBuffer &outBuffer)
+{
+   void *regX19;
+   void *regX20;
+   void *regX21;
+   void *regX22;
+   void *regX23;
+   void *regX24;
+   void *regX25;
+   void *regX26;
+   void *regX27;
+   void *regX28;
+   asm ("mov %0, x19\n\t" : "=r" (regX19) );
+   asm ("mov %0, x20\n\t" : "=r" (regX20) );
+   asm ("mov %0, x21\n\t" : "=r" (regX21) );
+   asm ("mov %0, x22\n\t" : "=r" (regX22) );
+   asm ("mov %0, x23\n\t" : "=r" (regX23) );
+   asm ("mov %0, x24\n\t" : "=r" (regX24) );
+   asm ("mov %0, x25\n\t" : "=r" (regX25) );
+   asm ("mov %0, x26\n\t" : "=r" (regX26) );
+   asm ("mov %0, x27\n\t" : "=r" (regX27) );
+   asm ("mov %0, x28\n\t" : "=r" (regX28) );
+   outBuffer.x19 = regX19;
+   outBuffer.x20 = regX20;
+   outBuffer.x21 = regX21;
+   outBuffer.x22 = regX22;
+   outBuffer.x23 = regX23;
+   outBuffer.x24 = regX24;
+   outBuffer.x25 = regX25;
+   outBuffer.x26 = regX26;
+   outBuffer.x27 = regX27;
+   outBuffer.x28 = regX28;
+}
+
+} // end namespace
+
 #else // }  {
 
 #include <string.h>
