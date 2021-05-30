@@ -279,6 +279,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    using HashRoot::size;
    using HashRoot::mask;
    using HashRoot::bucketCount;
+   using HashRoot::getSize;
    
    typedef typename ELEMENT::Key   Key;
    typedef typename ELEMENT::Value Value;
