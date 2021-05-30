@@ -276,6 +276,10 @@ template<> struct ArrayValueOf<null> { typedef Dynamic Value; };
 template<typename ELEMENT>
 struct Hash : public HashBase< typename ELEMENT::Key >
 {
+   using HashRoot::size;
+   using HashRoot::mask;
+   using HashRoot::bucketCount;
+   
    typedef typename ELEMENT::Key   Key;
    typedef typename ELEMENT::Value Value;
    typedef typename ArrayValueOf<Value>::Value ArrayValue;
@@ -304,7 +308,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    {
       if (Element::WeakKeys && Element::ManageKeys)
       {
-         for(int b=0;b<this->bucketCount;b++)
+         for(int b=0;b<bucketCount;b++)
          {
             Element **headPtr = &bucket[b];
             while(*headPtr)
@@ -313,7 +317,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
                if (!TIsWeakRefValid(el.key))
                {
                   *headPtr = el.next;
-                  this->size--;
+                  size--;
                }
                else
                   headPtr = &el.next;
@@ -327,9 +331,9 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 #ifdef HXCPP_TELEMETRY
       bool is_new = bucket==0;
 #endif
-      this->mask = inNewCount-1;
+      mask = inNewCount-1;
       //printf("expand %d -> %d\n",bucketCount, inNewCount);
-      bucket = (Element **)InternalRealloc(this->bucketCount*sizeof(ELEMENT *), bucket,inNewCount*sizeof(ELEMENT *));
+      bucket = (Element **)InternalRealloc(bucketCount*sizeof(ELEMENT *), bucket,inNewCount*sizeof(ELEMENT *));
       HX_OBJ_WB_GET(this, bucket);
       //for(int b=bucketCount;b<inNewCount;b++)
       //   bucket[b] = 0;
@@ -339,13 +343,13 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 #endif
 
 
-      for(int b=0;b<this->bucketCount;b++)
+      for(int b=0;b<bucketCount;b++)
       {
          Element **head = &bucket[b];
          while(*head)
          {
             Element &e = **head;
-            int newBucket = e.getHash()&this->mask;
+            int newBucket = e.getHash()&mask;
             if ( newBucket != b )
             {
                *head = e.next;
@@ -357,7 +361,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
          }
       }
 
-      this->bucketCount = inNewCount;
+      bucketCount = inNewCount;
    }
 
    void reserve(int inSize)
@@ -370,11 +374,11 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
    void compact()
    {
-      int origSize = this->bucketCount;
-      int newSize = this->bucketCount>>1;
+      int origSize = bucketCount;
+      int newSize = bucketCount>>1;
       // printf("compact -> %d\n", newSize);
-      this->mask = newSize-1;
-      for(int b=newSize; b<this->bucketCount; b++)
+      mask = newSize-1;
+      for(int b=newSize; b<bucketCount; b++)
       {
          Element *head = bucket[b];
          if (head)
@@ -393,8 +397,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
             bucket[b] = 0;
          }
       }
-      this->bucketCount = newSize;
-      bucket = (Element **)InternalRealloc(origSize*sizeof(ELEMENT *),bucket, sizeof(ELEMENT *)*this->bucketCount );
+      bucketCount = newSize;
+      bucket = (Element **)InternalRealloc(origSize*sizeof(ELEMENT *),bucket, sizeof(ELEMENT *)*bucketCount );
       HX_OBJ_WB_GET(this, bucket);
    }
 
@@ -403,15 +407,15 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       if (!bucket)
          return false;
       unsigned int hash = HashCalcHash(inKey);
-      Element **head = bucket + (hash&this->mask);
+      Element **head = bucket + (hash&mask);
       while(*head)
       {
          Element &el = **head;
          if ( (IgnoreHash || el.getHash()==hash) && el.key==inKey)
          {
             *head = el.next;
-            this->size--;
-            if (this->bucketCount>8 && this->size < (this->bucketCount>>1) )
+            size--;
+            if (bucketCount>8 && size < (bucketCount>>1) )
                compact();
             return true;
          }
@@ -423,8 +427,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    ELEMENT *allocElement()
    {
       ELEMENT *result = (ELEMENT *)InternalNew( sizeof(ELEMENT), false );
-      this->size++;
-      expandBuckets(this->size);
+      size++;
+      expandBuckets(size);
       return result;
    }
 
@@ -432,15 +436,15 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    {
       // Trades memory vs bucket occupancy - more memory is used for elements anyhow, so not too critical
       enum { LOG_ELEMS_PER_BUCKET = 1 };
-      if ( inSize > (this->bucketCount<<LOG_ELEMS_PER_BUCKET) )
+      if ( inSize > (bucketCount<<LOG_ELEMS_PER_BUCKET) )
       {
-         int newCount = this->bucketCount;
+         int newCount = bucketCount;
          if (newCount==0)
             newCount = 2;
          else
             while( inSize > (newCount<<LOG_ELEMS_PER_BUCKET) )
                newCount<<=1;
-         if (newCount!=this->bucketCount)
+         if (newCount!=bucketCount)
             rebucket(newCount);
       }
    }
@@ -448,7 +452,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    Element *find(int inHash, Key inKey)
    {
       if (!bucket) return 0;
-      Element *head = bucket[inHash & this->mask];
+      Element *head = bucket[inHash & mask];
       while(head)
       {
          if ( (IgnoreHash || head->getHash()==inHash) && head->key==inKey)
@@ -509,7 +513,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    bool findEquivalentKey(Key &outKey, int inHash, const Finder &inFinder)
    {
       if (!bucket) return false;
-      Element *head = bucket[inHash & this->mask];
+      Element *head = bucket[inHash & mask];
       while(head)
       {
          if ( (IgnoreHash || head->getHash()==inHash) && inFinder==head->key)
@@ -542,8 +546,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       el = allocElement();
       el->setKey(inKey,hash);
       CopyValue(el->value,inValue);
-      el->next = bucket[hash&this->mask];
-      bucket[hash&this->mask] = el;
+      el->next = bucket[hash&mask];
+      bucket[hash&mask] = el;
 
       #ifdef HXCPP_GC_GENERATIONAL
       unsigned char &mark =  ((unsigned char *)(this))[ HX_ENDIAN_MARK_ID_BYTE];
@@ -569,16 +573,16 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    void clear()
    {
       bucket = 0;
-      this->size = 0;
-      this->mask = 0;
-      this->bucketCount = 0;
+      size = 0;
+      mask = 0;
+      bucketCount = 0;
    }
 
 
    template<typename F>
    void iterate(F &inFunc)
    {
-      for(int b=0;b<this->bucketCount;b++)
+      for(int b=0;b<bucketCount;b++)
       {
          Element *el = bucket[b];
          while(el)
@@ -609,7 +613,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    {
       Hash<NEW_ELEM> *result = new Hash<NEW_ELEM>();
 
-      result->reserve(this->getSize()*3/2);
+      result->reserve(getSize()*3/2);
 
       Converter< Hash<NEW_ELEM> > converter(result);
 
@@ -636,7 +640,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    };
    Array<Key> keys()
    {
-      KeyBuilder builder(this->getSize());
+      KeyBuilder builder(getSize());
       iterate(builder);
       return builder.array;;
    }
@@ -658,7 +662,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    };
    Dynamic values()
    {
-      ValueBuilder builder(this->getSize());
+      ValueBuilder builder(getSize());
       iterate(builder);
       return builder.array;;
    }
@@ -695,7 +699,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
    String toString()
    {
-      StringBuilder builder(this->getSize());
+      StringBuilder builder(getSize());
       iterate(builder);
       return builder.toString();
    }
@@ -703,7 +707,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
 
    String toStringRaw()
    {
-      StringBuilder builder(this->getSize(),true);
+      StringBuilder builder(getSize(),true);
       iterate(builder);
       return builder.toString();
    }
@@ -739,7 +743,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    {
       //printf(" visit hash %p\n", this);
       HX_VISIT_ARRAY(bucket);
-      for(int b=0;b<this->bucketCount;b++)
+      for(int b=0;b<bucketCount;b++)
       {
          HX_VISIT_ARRAY(bucket[b]);
          Element *el = bucket[b];
