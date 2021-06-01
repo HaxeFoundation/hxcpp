@@ -112,7 +112,7 @@ static size_t sgMaximumFreeSpace  = 1024*1024*1024;
 #endif
 
 
- #define HXCPP_GC_DEBUG_LEVEL 1
+// #define HXCPP_GC_DEBUG_LEVEL 1
 
 #if HXCPP_GC_DEBUG_LEVEL>1
   #define PROFILE_COLLECT
@@ -2692,8 +2692,9 @@ void RunFinalizers()
       ObjectIdMap::iterator next = i;
       next++;
 
-      unsigned char mark = ((unsigned char *)i->first)[HX_ENDIAN_MARK_ID_BYTE];
-      if ( mark!=gByteMarkID )
+      hx::Object *o = i->first;
+      unsigned char mark = ((unsigned char *)o)[HX_ENDIAN_MARK_ID_BYTE];
+      if ( mark!=gByteMarkID && !(((unsigned int *)o)[-1] & HX_GC_CONST_ALLOC_BIT))
       {
          sFreeObjectIds.push(i->second);
          sIdObjectMap[i->second] = 0;
@@ -6971,7 +6972,7 @@ int __hxcpp_obj_id(Dynamic inObj)
    #else
    hx::Object *obj = inObj.mPtr;
    #endif
-   if (!obj) return 0;
+   if (!obj) return -1;
    #ifdef HXCPP_USE_OBJECT_MAP
    return sGlobalAlloc->GetObjectID(obj);
    #else
