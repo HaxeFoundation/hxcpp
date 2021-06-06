@@ -46,6 +46,7 @@
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-overflow" />
+  <flag value="-fsanitize=thread" if="HXCPP_THREAD_SANITIZE" />
   <cppflag value="-Wno-invalid-offsetof" />
   <cppflag value="-Wno-return-type-c-linkage" />
   <mmflag value="-Wno-return-type-c-linkage" />
@@ -94,6 +95,7 @@
   <flag value="Cocoa"/>
   <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
   <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk" unless="LEGACY_MACOSX_SDK"/>
+  <flag value="-fsanitize=thread" if="HXCPP_THREAD_SANITIZE" />
   <!-- <flag value="-debug" if="debug"/> -->
   <flag value="-arch" />
   <flag value="${HXCPP_ARCH}"/>

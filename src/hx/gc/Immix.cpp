@@ -261,7 +261,7 @@ static int sgSpamCollects = 0;
 #endif
 
 #if defined(HXCPP_DEBUG) || defined(HXCPP_GC_DEBUG_ALWAYS_MOVE)
-static int sgAllocsSinceLastSpam = 0;
+volatile int sgAllocsSinceLastSpam = 0;
 #endif
 
 #ifdef ANDROID
@@ -364,12 +364,6 @@ struct ProfileCollectSummary
       #endif
    }
 
-   double getExtra()
-   {
-      double time = __hxcpp_time_stamp() - startTime;
-      if (time==0)
-         return 0.1;
-   }
 };
 
 static ProfileCollectSummary profileCollectSummary;
@@ -1475,7 +1469,7 @@ void GCOnNewPointer(void *inPtr)
 {
    #ifdef HXCPP_GC_DEBUG_ALWAYS_MOVE
    hx::sgPointerMoved.erase(inPtr);
-   sgAllocsSinceLastSpam++;
+   HxAtomicInc(&sgAllocsSinceLastSpam);
    #endif
 }
 
@@ -3132,7 +3126,7 @@ public:
          gThreadStateChangeLock = new HxMutex();
          gSpecialObjectLock = new HxMutex();
       }
-      // Until we add ourselves, the colled will not wait
+      // Until we add ourselves, the collector will not wait
       //  on us - ie, we are assumed ot be in a GC free zone.
       AutoLock lock(*gThreadStateChangeLock);
       mLocalAllocs.push(inAlloc);
@@ -3341,6 +3335,17 @@ public:
 
    // Gets a block with the 'zeroLock' acquired, which means the zeroing thread
    //  will leave it alone from now on
+   //
+   // This contains some "lock free" code that triggers the thread sanitizer.
+   //  * mOwned can only be changed with the mZeroLock
+   //  * mFreeBlocks may increase size, but it is not critical whether the mNextFreeBlockOfSize
+   //     is increased since skipping only leads to a bit of extra searhing for the
+   //     next allocation
+   #if defined(__has_feature)
+     #if __has_feature(thread_sanitizer)
+      __attribute__((no_sanitize("thread")))
+     #endif
+   #endif
    BlockDataInfo *GetNextFree(int inRequiredBytes)
    {
       bool failedLock = true;
@@ -4175,7 +4180,9 @@ public:
 
       int id = 0;
       if (hx::sFreeObjectIds.size()>0)
+      {
          id = hx::sFreeObjectIds.pop();
+      }
       else
       {
          id = hx::sObjectIdMap.size();
@@ -5747,34 +5754,47 @@ static int sFragIgnore=0;
 
 class LocalAllocator : public hx::StackContext
 {
+   int            mCurrentHole;
+   int            mCurrentHoles;
+   HoleRange     *mCurrentRange;
+   int           *mFraggedRows;
+
+   bool           mMoreHoles;
+
+   int *mTopOfStack;
+   int *mBottomOfStack;
+
+   hx::RegisterCaptureBuffer mRegisterBuf;
+   int                   mRegisterBufSize;
+
+   #ifndef HXCPP_SINGLE_THREADED_APP
+   bool            mGCFreeZone;
+   HxSemaphore     mReadyForCollect;
+   HxSemaphore     mCollectDone;
+   #endif
+
+   int             mID;
+
+
    // Must be called locked
    ~LocalAllocator()
    {
    }
 
+public:
+   bool            mGlobalStackLock;
+   int             mStackLocks;
 
 public:
    LocalAllocator(int *inTopOfStack=0)
    {
-      mTopOfStack = mBottomOfStack = inTopOfStack;
-      mRegisterBufSize = 0;
-      #ifndef HXCPP_SINGLE_THREADED_APP
-      mGCFreeZone = false;
-      #endif
-      mStackLocks = 0;
-      mGlobalStackLock = 0;
       Reset();
-      sGlobalAlloc->AddLocal(this);
-      #ifdef HX_WINDOWS
-      mID = GetCurrentThreadId();
-      #endif
+
       #ifdef HXCPP_GC_GENERATIONAL
-      if (sGcMode==gcmGenerational)
-         mOldReferrers = hx::sGlobalChunks.alloc();
-      else
-         mOldReferrers = 0;
+      mOldReferrers = 0;
       #endif
 
+      AttachThread(inTopOfStack);
    }
 
 
@@ -5853,7 +5873,7 @@ public:
       allocBase = 0;
       mCurrentHole = 0;
       mCurrentHoles = 0;
-      mFraggedRows = &sFragIgnore;
+      mFraggedRows = 0;
       #ifdef HXCPP_GC_NURSERY
       spaceFirst = 0;
       spaceOversize = 0;
@@ -5978,6 +5998,8 @@ public:
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
 
+      CAPTURE_REGS;
+
       if (!mTopOfStack)
          mTopOfStack = mBottomOfStack;
       // EMSCRIPTEN the stack grows upwards
@@ -5993,7 +6015,6 @@ public:
       VerifyStackRead(mBottomOfStack, mTopOfStack)
       #endif
 
-      CAPTURE_REGS;
 
       sGlobalAlloc->Collect(inMajor, inForceCompact, inLocked, inFreeIsFragged);
    }
@@ -6001,8 +6022,6 @@ public:
 
    void PauseForCollect()
    {
-      if (sgIsCollecting)
-         CriticalGCError("Bad Allocation while collecting - from finalizer?");
       #ifndef HXCPP_SINGLE_THREADED_APP
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
@@ -6010,6 +6029,9 @@ public:
       #ifdef VerifyStackRead
       VerifyStackRead(mBottomOfStack, mTopOfStack)
       #endif
+
+      if (sgIsCollecting)
+         CriticalGCError("Bad Allocation while collecting - from finalizer?");
 
       mReadyForCollect.Set();
       mCollectDone.Wait();
@@ -6021,7 +6043,6 @@ public:
       #ifndef HXCPP_SINGLE_THREADED_APP
       volatile int dummy = 1;
       mBottomOfStack = (int *)&dummy;
-      mGCFreeZone = true;
       if (mTopOfStack)
       {
          CAPTURE_REGS;
@@ -6030,6 +6051,7 @@ public:
       VerifyStackRead(mBottomOfStack, mTopOfStack)
       #endif
 
+      mGCFreeZone = true;
       mReadyForCollect.Set();
       #endif
    }
@@ -6081,12 +6103,28 @@ public:
    // Called by the collecting thread to make sure this allocator is paused.
    // The collecting thread has the lock, and will not be releasing it until
    //  it has finished the collect.
+   //
+   //  The mGCFreeZone is set without a lock in the EnterGCFreeZone code, and then
+   //   mReadyForCollect is set.  So it is possible the mGCFreeZone check may or may not
+   //   trigger.  If this call happens first, mGCFreeZone will be zero, and mReadyForCollect
+   //   will wait.  By this time mGCFreeZone will be set and the next call not check
+   //   mReadyForCollect again.  If this one happens later, it is possible mReadyForCollect
+   //   will not be waited on. mReadyForCollect will be cleared when the zone is left.
+   //
+   //  The mMoreHoles/spaceOversize/spaceEnd get zeroed without a lock.  The timing should
+   //   not be critical since the allocation code shold expect that these are volatile.
+   //   If the allocation works, all is good.  If it fails then the collection will happed soon.
+   #if defined(__has_feature)
+     #if __has_feature(thread_sanitizer)
+      __attribute__((no_sanitize("thread")))
+     #endif
+   #endif
    void WaitForSafe()
    {
       #ifndef HXCPP_SINGLE_THREADED_APP
       if (!mGCFreeZone)
       {
-         // Cause allocation routines for fail ...
+         // Cause allocation routines to fail ...
          mMoreHoles = false;
          #ifdef HXCPP_GC_NURSERY
          spaceOversize = 0;
@@ -6124,7 +6162,7 @@ public:
       if (end <= spaceEnd)
       {
          int linePad = IMMIX_LINE_LEN - (end & (IMMIX_LINE_LEN-1));
-         if (linePad<=64)
+         if (linePad>0 && linePad<=64)
             ioSize += linePad;
       }
    }
@@ -6183,7 +6221,7 @@ public:
             }
             // spaceOversize might have been set to zero for quick-termination of alloc.
             unsigned char *s = spaceOversize;
-            if (s>spaceFirst)
+            if (s>spaceFirst && mFraggedRows)
                *mFraggedRows += (s - spaceFirst)>>IMMIX_LINE_BITS;
          #else
             int end = spaceStart + allocSize + skip4;
@@ -6211,7 +6249,12 @@ public:
 
                return buffer;
             }
-            *mFraggedRows += (spaceEnd - spaceStart)>>IMMIX_LINE_BITS;
+            if (mFraggedRows)
+            {
+               int frag = spaceEnd-spaceStart;
+               if (frag>0)
+                  *mFraggedRows += frag>>IMMIX_LINE_BITS;
+            }
          #endif
 
 
@@ -6328,28 +6371,6 @@ public:
 
    }
 
-   int            mCurrentHole;
-   int            mCurrentHoles;
-   HoleRange     *mCurrentRange;
-   int           *mFraggedRows;
-
-     bool           mMoreHoles;
-
-   int *mTopOfStack;
-   int *mBottomOfStack;
-
-   hx::RegisterCaptureBuffer mRegisterBuf;
-   int                   mRegisterBufSize;
-
-   #ifndef HXCPP_SINGLE_THREADED_APP
-   bool            mGCFreeZone;
-   HxSemaphore     mReadyForCollect;
-   HxSemaphore     mCollectDone;
-   #endif
-
-   int             mStackLocks;
-   bool            mGlobalStackLock;
-   int             mID;
 };
 
 
@@ -6489,6 +6510,8 @@ void InitAlloc()
 
    tlsStackContext = gMainThreadContext;
 
+   ExitGCFreeZone();
+
    // Setup main thread ...
    __hxcpp_thread_current();
 
@@ -6545,7 +6568,7 @@ void *InternalNew(int inSize,bool inIsObject)
       //GCLOG("InternalNew spam\n");
       CollectFromThisThread(false,false);
    }
-   sgAllocsSinceLastSpam++;
+   HxAtomicInc(&sgAllocsSinceLastSpam);
    #endif
 
    if (inSize>=IMMIX_LARGE_OBJ_SIZE)
@@ -6656,7 +6679,7 @@ void *InternalRealloc(int inFromSize, void *inData,int inSize, bool inExpand)
       //GCLOG("InternalNew spam\n");
       CollectFromThisThread(false,false);
    }
-   sgAllocsSinceLastSpam++;
+   HxAtomicInc(&sgAllocsSinceLastSpam);
    #endif
 
    void *new_data = 0;
