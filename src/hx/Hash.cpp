@@ -20,11 +20,12 @@ int __root_hash_size(Dynamic &rtHash)
 
 namespace
 {
-typedef hx::HashBase<int>                IntHashBase;
-typedef hx::Hash< TIntElement<Dynamic> > IntHashObject;
-typedef hx::Hash< TIntElement<int> >     IntHashInt;
-typedef hx::Hash< TIntElement<Float> >   IntHashFloat;
-typedef hx::Hash< TIntElement<String> >  IntHashString;
+typedef hx::HashBase<int>                   IntHashBase;
+typedef hx::Hash< TIntElement<Dynamic> >    IntHashObject;
+typedef hx::Hash< TIntElement<int> >        IntHashInt;
+typedef hx::Hash< TIntElement<Float> >      IntHashFloat;
+typedef hx::Hash< TIntElement<String> >     IntHashString;
+typedef hx::Hash< TIntElement<cpp::Int64> > IntHashInt64;
 }
 
 void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
@@ -39,14 +40,14 @@ void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
       else
       {
          hxObjectType type = (hxObjectType)value->__GetType();
-         if (type==vtInt)
-            hash = new IntHashInt();
-         else if (type==vtFloat)
-            hash = new IntHashFloat();
-         else if (type==vtString)
-            hash = new IntHashString();
-         else // Object or bool
-            hash = new IntHashObject();
+         switch (type)
+         {
+            case vtInt   : hash = new IntHashInt(); break;
+            case vtFloat : hash = new IntHashFloat(); break;
+            case vtString: hash = new IntHashString(); break;
+            case vtInt64 : hash = new IntHashInt64(); break;
+            default      : hash = new IntHashObject(); break;
+         }
       }
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
@@ -57,22 +58,29 @@ void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
       if (value!=null())
       {
          hxObjectType type = (hxObjectType)value->__GetType();
-         if ( type==vtInt)
+         if (type==vtInt)
          {
             if (hash->store==hashFloat)
                want = hashFloat;
             else if (hash->store==hashInt)
                want = hashInt;
+            else if (hash->store==hashInt64)
+               want = hashInt64;
          }
          else if (type==vtFloat)
          {
             if (hash->store==hashInt || hash->store==hashFloat) 
-               want =hashFloat;
+               want = hashFloat;
          }
          else if (type==vtString)
          {
             if (hash->store==hashString)
                want = hashString;
+         }
+         else if (type==vtInt64)
+         {
+            if (hash->store==hashInt || hash->store==hashInt64)
+               want = hashInt64;
          }
       }
       if (hash->store!=want)
@@ -115,7 +123,7 @@ void __int_hash_set_float(HX_MAP_THIS_ARG,int inKey,Float inValue)
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
    }
-   else if (hash->store==hashString)
+   else if (hash->store==hashString || hash->store==hashInt64)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
@@ -142,7 +150,7 @@ void __int_hash_set_string(HX_MAP_THIS_ARG,int inKey, ::String inValue)
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
    }
-   else if (hash->store==hashInt || hash->store==hashFloat)
+   else if (hash->store==hashInt || hash->store==hashFloat || hash->store==hashInt64)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
@@ -150,6 +158,31 @@ void __int_hash_set_string(HX_MAP_THIS_ARG,int inKey, ::String inValue)
    }
 
    hash->set(inKey,inValue);
+}
+
+void __int_hash_set_int64(HX_MAP_THIS_ARG, int inKey, cpp::Int64 inValue)
+{
+   IntHashBase *hash = static_cast<IntHashBase*>(ioHash.GetPtr());
+   if (!hash)
+   {
+      hash = new IntHashInt64();
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
+   }
+   else if (hash->store==hashInt)
+   {
+      hash = hash->convertStore(hashInt64);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
+   }
+   else if (hash->store==hashString || hash->store==hashFloat)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
+   }
+
+   hash->set(inKey, inValue);
 }
 
 Dynamic  __int_hash_get(Dynamic inHash,int inKey)
@@ -197,7 +230,16 @@ String  __int_hash_get_string(Dynamic inHash,int inKey)
    return result;
 }
 
+cpp::Int64 __int_hash_get_int64(Dynamic inHash, int inKey)
+{
+   IntHashBase *hash = static_cast<IntHashBase*>(inHash.GetPtr());
+   if (!hash)
+      return 0;
 
+   cpp::Int64 result = 0;
+   hash->query(inKey, result);
+   return result;
+}
 
 
 bool  __int_hash_exists(Dynamic &ioHash,int inKey)
@@ -256,11 +298,12 @@ void __int_hash_clear(Dynamic &ioHash)
 
 namespace
 {
-typedef hx::HashBase<String>                StringHashBase;
-typedef hx::Hash< TStringElement<Dynamic> > StringHashObject;
-typedef hx::Hash< TStringElement<int> >     StringHashInt;
-typedef hx::Hash< TStringElement<Float> >   StringHashFloat;
-typedef hx::Hash< TStringElement<String> >  StringHashString;
+typedef hx::HashBase<String>                    StringHashBase;
+typedef hx::Hash< TStringElement<Dynamic> >     StringHashObject;
+typedef hx::Hash< TStringElement<int> >         StringHashInt;
+typedef hx::Hash< TStringElement<Float> >       StringHashFloat;
+typedef hx::Hash< TStringElement<String> >      StringHashString;
+typedef hx::Hash< TStringElement<cpp::Int64> >  StringHashInt64;
 }
 
 
@@ -276,16 +319,14 @@ void __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value, bool i
       else
       {
          hxObjectType type = (hxObjectType)value->__GetType();
-         if (type==vtInt)
+         switch (type)
          {
-            hash = new StringHashInt();
+            case vtInt   : hash = new StringHashInt(); break;
+            case vtFloat : hash = new StringHashFloat(); break;
+            case vtString: hash = new StringHashString(); break;
+            case vtInt64 : hash = new StringHashInt64(); break;
+            default      : hash = new StringHashObject(); break;
          }
-         else if (type==vtFloat)
-            hash = new StringHashFloat();
-         else if (type==vtString)
-            hash = new StringHashString();
-         else
-            hash = new StringHashObject();
       }
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
@@ -302,16 +343,23 @@ void __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value, bool i
                want = hashFloat;
             else if (hash->store==hashInt)
                want = hashInt;
+            else if (hash->store==hashInt64)
+               want = hashInt64;
          }
          else if (type==vtFloat)
          {
-            if (hash->store==hashInt || hash->store==hashFloat) 
-               want =hashFloat;
+            if (hash->store==hashInt || hash->store==hashFloat)
+               want = hashFloat;
          }
          else if (type==vtString)
          {
             if (hash->store==hashString)
                want = hashString;
+         }
+         else if (type==vtInt64)
+         {
+            if (hash->store==hashInt || hash->store==hashInt64)
+               want = hashInt64;
          }
       }
       if (hash->store!=want)
@@ -354,7 +402,7 @@ void __string_hash_set_float(HX_MAP_THIS_ARG,String inKey,Float inValue)
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
    }
-   else if (hash->store==hashString)
+   else if (hash->store==hashString || hash->store==hashInt64)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
@@ -381,7 +429,7 @@ void __string_hash_set_string(HX_MAP_THIS_ARG,String inKey, ::String inValue)
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
    }
-   else if (hash->store==hashInt || hash->store==hashFloat)
+   else if (hash->store==hashInt || hash->store==hashFloat || hash->store==hashInt64)
    {
       hash = hash->convertStore(hashObject);
       ioHash = hash;
@@ -389,6 +437,31 @@ void __string_hash_set_string(HX_MAP_THIS_ARG,String inKey, ::String inValue)
    }
 
    hash->set(inKey,inValue);
+}
+
+void __string_hash_set_int64(HX_MAP_THIS_ARG, String inKey, cpp::Int64 inValue)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
+   if (!hash)
+   {
+      hash = new StringHashInt64();
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
+   }
+   else if (hash->store==hashInt)
+   {
+      hash = hash->convertStore(hashInt64);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
+   }
+   else if (hash->store==hashString || hash->store==hashFloat)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
+   }
+
+   hash->set(inKey, inValue);
 }
 
 ::String __string_hash_map_substr(HX_MAP_THIS_ARG,String inKey, int inStart, int inLength)
@@ -501,7 +574,16 @@ String  __string_hash_get_string(Dynamic inHash,String inKey)
    return result;
 }
 
+cpp::Int64 __string_hash_get_int64(Dynamic inHash,String inKey)
+{
+   StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
 
+   cpp::Int64 result = 0;
+   hash->query(inKey,result);
+   return result;
+}
 
 bool  __string_hash_exists(Dynamic &ioHash,String inKey)
 {
@@ -571,11 +653,13 @@ typedef hx::Hash< TDynamicElement<Dynamic,false> > DynamicHashObject;
 typedef hx::Hash< TDynamicElement<int,false> >    DynamicHashInt;
 typedef hx::Hash< TDynamicElement<Float,false> >   DynamicHashFloat;
 typedef hx::Hash< TDynamicElement<String,false> >  DynamicHashString;
+typedef hx::Hash< TDynamicElement<cpp::Int64,false> >  DynamicHashInt64;
 
 typedef hx::Hash< TDynamicElement<Dynamic,true> > WeakDynamicHashObject;
 typedef hx::Hash< TDynamicElement<int,true> >    WeakDynamicHashInt;
 typedef hx::Hash< TDynamicElement<Float,true> >   WeakDynamicHashFloat;
 typedef hx::Hash< TDynamicElement<String,true> >  WeakDynamicHashString;
+typedef hx::Hash< TDynamicElement<cpp::Int64,true> >  WeakDynamicHashInt64;
 
 #if (HXCPP_API_LEVEL<331)
 inline void toRealObject(Dynamic &ioObject)
@@ -604,20 +688,29 @@ void __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool i
       else
       {
          hxObjectType type = (hxObjectType)value->__GetType();
-         if (type==vtInt)
+         switch (type)
          {
-            hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashInt() :
-                                (DynamicHashBase *)new DynamicHashInt();
+            case vtInt:
+               hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashInt() :
+                                   (DynamicHashBase *)new DynamicHashInt();
+               break;
+            case vtFloat:
+               hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashFloat() :
+                                   (DynamicHashBase *)new DynamicHashFloat();
+               break;
+            case vtString:
+               hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashString() :
+                                   (DynamicHashBase *)new DynamicHashString();
+               break;
+            case vtInt64:
+               hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashInt64() :
+                                   (DynamicHashBase *)new DynamicHashInt64();
+               break;
+            default:
+               hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
+                                   (DynamicHashBase *)new DynamicHashObject();
+               break;
          }
-         else if (type==vtFloat)
-            hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashFloat() :
-                                (DynamicHashBase *)new DynamicHashFloat();
-         else if (type==vtString)
-            hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashString() :
-                                (DynamicHashBase *)new DynamicHashString();
-         else
-            hash = inWeakKeys ? (DynamicHashBase *)new WeakDynamicHashObject() :
-                                (DynamicHashBase *)new DynamicHashObject();
       }
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
@@ -634,16 +727,23 @@ void __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool i
                want = hashFloat;
             else if (hash->store==hashInt)
                want = hashInt;
+            else if (hash->store==hashInt64)
+               want = hashInt64;
          }
          else if (type==vtFloat)
          {
             if (hash->store==hashInt || hash->store==hashFloat) 
-               want =hashFloat;
+               want = hashFloat;
          }
          else if (type==vtString)
          {
             if (hash->store==hashString)
                want = hashString;
+         }
+         else if (type==vtInt64)
+         {
+            if (hash->store==hashInt || hash->store==hashInt64)
+               want = hashInt64;
          }
       }
       if (hash->store!=want)
@@ -696,7 +796,7 @@ void __object_hash_set_float(HX_MAP_THIS_ARG,Dynamic inKey,Float inValue,bool in
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
    }
-   else if (hash->store==hashInt)
+   else if (hash->store==hashInt || hash->store==hashInt64)
    {
       hash = hash->convertStore(hashFloat);
       ioHash = hash;
@@ -719,9 +819,36 @@ void __object_hash_set_string(HX_MAP_THIS_ARG,Dynamic inKey, ::String inValue,bo
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
    }
-   else if (hash->store==hashInt || hash->store==hashFloat)
+   else if (hash->store==hashInt || hash->store==hashFloat || hash->store==hashInt64)
    {
       hash = hash->convertStore(hashObject);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
+   }
+
+   hash->set(inKey,inValue);
+}
+
+void __object_hash_set_int64(HX_MAP_THIS_ARG,Dynamic inKey, cpp::Int64 inValue,bool inWeakKeys)
+{
+   toRealObject(inKey);
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
+   if (!hash)
+   {
+      hash = inWeakKeys ?  (DynamicHashBase *)new WeakDynamicHashInt64() :
+                           (DynamicHashBase *)new DynamicHashInt64();
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
+   }
+   else if (hash->store==hashString || hash->store==hashFloat)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner,hash);
+   }
+   else if (hash->store==hashInt)
+   {
+      hash = hash->convertStore(hashInt64);
       ioHash = hash;
       HX_OBJ_WB_GET(owner,hash);
    }

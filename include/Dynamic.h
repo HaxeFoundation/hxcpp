@@ -402,6 +402,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetFloatClass();
 HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetBoolClass();
 HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetVoidClass();
 HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetStringClass();
+HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetInt64Class();
 }
 
 template<>
@@ -419,6 +420,8 @@ template<>
 inline bool Dynamic::IsClass<String>() { return mPtr && mPtr->__GetClass()==hx::GetStringClass(); }
 template<>
 inline bool Dynamic::IsClass<Dynamic>() { return true; }
+template<>
+inline bool Dynamic::IsClass<::cpp::Int64>() { return mPtr && mPtr->__GetClass()==hx::GetInt64Class(); }
 
 inline String Dynamic::operator+(const String &s) const { return Cast<String>() + s; }
 

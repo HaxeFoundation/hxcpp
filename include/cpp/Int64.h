@@ -47,6 +47,23 @@ typedef Struct<Int64,Int64Handler> Int64Struct;
 
 }
 
+#if (HXCPP_API_LEVEL >= 420)
+
+inline cpp::Int64 _hx_int64_make(int a, int b) { return (((cpp::Int64)(unsigned int)a)<<32) | (unsigned int)b; }
+inline cpp::Int64 _hx_int64_complement(cpp::Int64 a) { return ~a; }
+inline cpp::Int64 _hx_int64_div(cpp::Int64 a, cpp::Int64 b) { return a/b; }
+inline cpp::Int64 _hx_int64_mod(cpp::Int64 a, cpp::Int64 b) { return a%b; }
+inline cpp::Int64 _hx_int64_and(cpp::Int64 a, cpp::Int64 b) { return a&b; }
+inline cpp::Int64 _hx_int64_or(cpp::Int64 a, cpp::Int64 b) { return a|b; }
+inline cpp::Int64 _hx_int64_xor(cpp::Int64 a, cpp::Int64 b) { return a^b; }
+inline cpp::Int64 _hx_int64_shl(cpp::Int64 a, int b) { return a<<(b&63); }
+inline cpp::Int64 _hx_int64_shr(cpp::Int64 a, int b) { return a>>(b&63); }
+inline cpp::Int64 _hx_int64_ushr(cpp::Int64 a, int b) { return ((cpp::UInt64)a)>>(b&63); }
+inline int _hx_int64_high(cpp::Int64 a) { return (int)( a >>32 ); }
+inline int _hx_int64_low(cpp::Int64 a) { return (int)( a & 0xffffffff ); }
+
+#else
+
 inline cpp::Int64Struct _hx_int64_make(int a, int b) { return (((cpp::Int64)(unsigned int)a)<<32) | (unsigned int)b; }
 inline bool _hx_int64_is_neg(cpp::Int64 a) { return a<0; }
 inline bool _hx_int64_is_zero(cpp::Int64 a) { return a==0; }
@@ -91,6 +108,8 @@ inline cpp::Int64Struct _hx_int64_shr(cpp::Int64 a, int b) { return a>>(b&63); }
 inline cpp::Int64Struct _hx_int64_ushr(cpp::Int64 a, int b) { return ((cpp::UInt64)a)>>(b&63); }
 inline int _hx_int64_high(cpp::Int64Struct a) { return (int)( a.get() >>32 ); }
 inline int _hx_int64_low(cpp::Int64Struct a) { return (int)( a.get()  & 0xffffffff ); }
+
+#endif
 
 
 
