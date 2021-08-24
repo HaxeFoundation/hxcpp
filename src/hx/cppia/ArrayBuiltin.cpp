@@ -1352,6 +1352,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                if (sizeof(ELEM)==1) // uchar, bool
                {
                   compiler->move( sJitTemp0.atReg(sJitTemp1).as(jtByte), tempVal );
+                  if (destType!=etNull)
+                     compiler->convert(tempVal, elemType, inDest, destType);
                }
                else if (elemType==etString)
                {
@@ -1364,10 +1366,15 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   #ifdef HXCPP_GC_GENERATIONAL
                   genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + StringOffset::Ptr );
                   #endif
+
+                  if (destType!=etNull)
+                     compiler->convert( sJitTemp0.star(jtString), etString, inDest, destType );
                }
                else if (sizeof(ELEM)==2)
                {
                   compiler->move( sJitTemp0.atReg(sJitTemp1,1), tempVal );
+                  if (destType!=etNull)
+                     compiler->convert(tempVal, elemType, inDest, destType);
                }
                else if (sizeof(ELEM)==4)
                {
@@ -1376,6 +1383,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   if (hx::ContainsPointers<ELEM>())
                      genWriteBarrier(compiler, sJitTemp2, tempVal );
                   #endif
+                  if (destType!=etNull)
+                     compiler->convert(tempVal, elemType, inDest, destType);
                }
                else if (sizeof(ELEM)==8)
                {
@@ -1384,6 +1393,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   if (hx::ContainsPointers<ELEM>())
                      genWriteBarrier(compiler, sJitTemp2, tempVal );
                   #endif
+                  if (destType!=etNull)
+                     compiler->convert(tempVal, elemType, inDest, destType);
                }
                else
                {

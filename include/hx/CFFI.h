@@ -316,21 +316,31 @@ struct CffiBytes
 
 inline CffiBytes getByteData(value inValue)
 {
+   static field bField = 0;
+   static field lengthField = 0;
+   if (bField==0)
+   {
+      bField = val_id("b");
+      lengthField = val_id("length");
+   }
+
    if (val_is_object(inValue))
    {
-      static field bField = 0;
-      static field lengthField = 0;
-      if (bField==0)
-      {
-         bField = val_id("b");
-         lengthField = val_id("length");
-      }
       value b = val_field(inValue, bField);
       value len = val_field(inValue, lengthField);
       if (val_is_string(b) && val_is_int(len))
          return CffiBytes( (unsigned char *)val_string(b), val_int(len) );
       if (val_is_buffer(b) && val_is_int(len))
          return CffiBytes( (unsigned char *)buffer_data(val_to_buffer(b)), val_int(len) );
+   }
+   else if (val_is_buffer(inValue))
+   {
+      value len = val_field(inValue, lengthField);
+      if (val_is_int(len))
+      {
+         buffer b = val_to_buffer(inValue);
+         return CffiBytes( (unsigned char *)buffer_data(b), val_int(len) );
+      }
    }
    return CffiBytes();
 }

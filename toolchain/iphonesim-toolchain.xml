@@ -55,7 +55,8 @@
   <!-- Removed for iOS 8 -->
   <!-- <flag value="-fvisibility=hidden"/> -->
   <!-- <flag value="-miphoneos-version-min=${IPHONE_VER}"/> -->
-  <flag value="-miphoneos-version-min=5.0"/>
+  <flag value="-miphoneos-version-min=9.0" unless="HXCPP_IOS_MIN_VERSION" />
+  <flag value="-miphoneos-version-min=${HXCPP_IOS_MIN_VERSION}" if="HXCPP_IOS_MIN_VERSION" />
   <flag value="-DIPHONE=IPHONE"/>
   <flag value="-DIPHONESIM=IPHONESIM"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />

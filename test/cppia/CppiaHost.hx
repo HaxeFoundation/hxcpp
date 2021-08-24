@@ -29,11 +29,15 @@ class CppiaHost
    {
       Common.hostImplementation = new HostOne();
 
+      Common.callback = () -> Common.callbackSet = 1;
+
+      /*
       if (new HostExtends().getYou().extendOnly != 1)
       {
          Sys.println("extend-overide type failed");
          Sys.exit(-1);
       }
+      */
 
       Host.main();
       Sys.println("TestStatus: " + Common.status );
@@ -71,6 +75,13 @@ class CppiaHost
          if (!hostBase.testUpdateOverride())
          {
             Sys.println("Bad update override");
+            Sys.exit(-1);
+         }
+
+         Common.callback();
+         if (Common.callbackSet!=2)
+         {
+            Sys.println("Bad cppia closure");
             Sys.exit(-1);
          }
       }

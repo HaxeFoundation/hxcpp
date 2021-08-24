@@ -80,6 +80,7 @@ class RunTests
       command("haxe", ["compile-host.hxml"] );
       command("haxe", ["compile-client.hxml"] );
       command("bin" + sep + "CppiaHost",[ "bin" + sep + "client.cppia" ]);
+      command("bin" + sep + "CppiaHost",[ "bin" + sep + "client.cppia", "-jit" ]);
    }
 
    public static function native()

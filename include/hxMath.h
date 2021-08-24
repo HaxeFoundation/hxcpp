@@ -5,7 +5,7 @@
 #include <hxcpp.h>
 #endif
 
-#include <math.h>
+#include <cmath>
 #include <stdlib.h>
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES Math_obj : public hx::Object
@@ -20,28 +20,28 @@ public:
    static Dynamic __CreateEmpty();
    static void __boot();
 
-   inline static int floor(double inX) { return __int__(::floor(inX)); }
-   inline static int ceil(double inX) { return __int__(::ceil(inX)); }
+   inline static int floor(double inX) { return __int__(::std::floor(inX)); }
+   inline static int ceil(double inX) { return __int__(::std::ceil(inX)); }
    inline static int round(double inX) { return floor(inX+0.5); }
-   inline static double ffloor(double inX) { return ::floor(inX); }
-   inline static double fceil(double inX) { return ::ceil(inX); }
-   inline static double fround(double inX) { return ::floor(inX+0.5); }
+   inline static double ffloor(double inX) { return ::std::floor(inX); }
+   inline static double fceil(double inX) { return ::std::ceil(inX); }
+   inline static double fround(double inX) { return ::std::floor(inX+0.5); }
    inline static double random() { return __hxcpp_drand(); }
-   inline static double sqrt(double inX) { return ::sqrt(inX); }
-   inline static double cos(double inX) { return ::cos(inX); }
-   inline static double sin(double inX) { return ::sin(inX); }
-   inline static double tan(double inX) { return ::tan(inX); }
-   inline static double atan2(double inY,double inX) { return ::atan2(inY,inX); }
-   inline static double abs(double inX) { return ::fabs(inX); }
-   inline static double pow(double inA,double inB) { return ::pow(inA,inB); }
-   inline static double log(double inA) { return ::log(inA); }
+   inline static double sqrt(double inX) { return ::std::sqrt(inX); }
+   inline static double cos(double inX) { return ::std::cos(inX); }
+   inline static double sin(double inX) { return ::std::sin(inX); }
+   inline static double tan(double inX) { return ::std::tan(inX); }
+   inline static double atan2(double inY,double inX) { return ::std::atan2(inY,inX); }
+   inline static double abs(double inX) { return ::std::fabs(inX); }
+   inline static double pow(double inA,double inB) { return ::std::pow(inA,inB); }
+   inline static double log(double inA) { return ::std::log(inA); }
    inline static double max(double inA,double inB) { return inA>inB ? inA:inA==inA?inB:inA; }
    inline static double min(double inA,double inB) { return inA<inB ? inA:inA==inA?inB:inA; }
 
-   inline static double atan(double inA) { return ::atan(inA); }
-   inline static double asin(double inA) { return ::asin(inA); }
-   inline static double acos(double inA) { return ::acos(inA); }
-   inline static double exp(double inA) { return ::exp(inA); }
+   inline static double atan(double inA) { return ::std::atan(inA); }
+   inline static double asin(double inA) { return ::std::asin(inA); }
+   inline static double acos(double inA) { return ::std::acos(inA); }
+   inline static double exp(double inA) { return ::std::exp(inA); }
 
 
    static bool isNaN(double inX);

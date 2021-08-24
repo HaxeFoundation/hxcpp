@@ -13,14 +13,20 @@
 <compiler id="WatchSimulator" exe="clang" >
   <exe name="xcrun --toolchain WatchSimulator clang++" />
   <flag value="-c"/>
-  <flag value="-arch"/>
-  <flag value="i386"/>
 
+  <flag value="-arch"/>
+  <flag value="${HXCPP_ARCH}" if="HXCPP_ARCH"/>
+  <section unless="HXCPP_ARCH">
+    <flag value="i386" unless="HXCPP_M64 || HXCPP_ARM64 || HXCPP_X86_64"/>
+    <flag value="x86_64" if="HXCPP_M64 || HXCPP_X86_64"/>
+    <flag value="arm64" if="HXCPP_ARM64"/>
+  </section>
 
   <pchflag value="-x" />
   <pchflag value="c++-header" />
 
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
+  <flag value="-std=c++11" if="HXCPP_CPP11" />
   <flag value="-g" />
 
   <flag value="-isysroot"/>
@@ -42,7 +48,7 @@
   <mmflag value="-fobjc-abi-version=2"/>
   <mmflag value="-fobjc-legacy-dispatch"/>
 
-  <flag value="-mwatchos-simulator-version-min=2.2"/>
+  <flag value="-mwatchos-simulator-version-min=3.0"/>
   <flag value="-DHX_APPLEWATCH"/>
   <flag value="-DHX_WATCHSIM"/>
   <flag value="-fobjc-arc"  />

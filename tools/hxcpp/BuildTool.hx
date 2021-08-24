@@ -154,6 +154,8 @@ class BuildTool
          {
             mDefines.set("BINDIR", Path.withoutDirectory(Path.withoutExtension(mDefines.get("toolchain"))));
          }
+         if ( (new EReg("window","i")).match(os) )
+            mDefines.set("windows_host","1");
       }
       else
          setDefaultToolchain(mDefines);
@@ -406,7 +408,7 @@ class BuildTool
       {
          var useCache = CompileCache.hasCache && group.mUseCache;
          if (!useCache && group.mUseCache)
-            Log.v("Ignoring compiler because of possible missing dependencies");
+            Log.v("Ignoring compiler cache because HXCPP_COMPILE_CACHE is not valid.");
 
          var groupObjs = new Array<String>();
 
@@ -2035,7 +2037,7 @@ class BuildTool
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
-         set64(defines,m64);
+         set64(defines,m64,arm64);
          // Cross-compile?
          if (defines.exists("linux"))
          {
@@ -2050,7 +2052,7 @@ class BuildTool
             defines.set("toolchain","mac");
             defines.set("macos","macos");
             defines.set("apple","apple");
-            defines.set("BINDIR",m64 ? "Mac64":"Mac");
+            defines.set("BINDIR",arm64 ? "MacArm64" : m64 ? "Mac64":"Mac");
          }
       }
    }

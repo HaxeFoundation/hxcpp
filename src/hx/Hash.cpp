@@ -5,6 +5,17 @@
 using namespace hx;
 
 
+// --- HashRoot ---------------------------------------------------
+
+int __root_hash_size(Dynamic &rtHash)
+{
+   HashRoot *hash = static_cast<HashRoot *>(rtHash.GetPtr());
+   if(!hash)
+      return 0;
+   return hash->getSize();
+}
+
+
 // --- IntHash ----------------------------------------------------
 
 namespace
@@ -628,7 +639,6 @@ void __string_hash_clear(Dynamic &ioHash)
    if (hash)
       hash->clear();
 }
-
 
 
 

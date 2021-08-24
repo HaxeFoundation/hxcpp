@@ -2046,6 +2046,23 @@ struct CallStatic : public CppiaExpr
 };
 
 
+#ifdef CPPIA_JIT
+static hx::Object *nullException = 0;
+void genNullReferenceExceptionCheck(CppiaCompiler *compiler, const JitVal &reg)
+{
+   #ifdef HXCPP_CHECK_POINTER
+   if (!nullException)
+      nullException = (HX_CSTRING("Null Object Reference")).makePermanentObject();
+
+   JumpId nonNull = compiler->compare(cmpP_NOT_EQUAL, reg.as(jtPointer), (void *)0);
+   compiler->move( sJitCtx.star(jtPointer, offsetof(hx::StackContext,exception)), (void *)nullException );
+   compiler->addThrow();
+   compiler->comeFrom(nonNull);
+   #endif
+}
+#endif
+
+
 
 struct CallGetIndex : public CppiaIntExpr
 {
@@ -2081,6 +2098,7 @@ struct CallGetIndex : public CppiaIntExpr
       throw "Enum getIndex not supported by this version of compiled code";
       #endif
       thisExpr->genCode(compiler, sJitTemp0, etObject);
+      genNullReferenceExceptionCheck(compiler,sJitTemp0);
       if (destType==etInt)
          compiler->move( inDest, sJitTemp0.star( jtInt, offsetof(hx::EnumBase_obj, index) ) );
       else
@@ -2274,7 +2292,10 @@ struct CallMemberVTable : public CppiaExpr
    {
       int framePos = compiler->getCurrentFrameSize();
       if (thisExpr)
+      {
          thisExpr->genCode(compiler, JitFramePos(framePos,jtPointer), etObject);
+         genNullReferenceExceptionCheck(compiler, JitFramePos(framePos,jtPointer) );
+      }
       else
          compiler->move(JitFramePos(framePos,jtPointer), sJitThis);
       compiler->addFrame(etObject);
@@ -3070,7 +3091,10 @@ struct GetFieldByName : public CppiaDynamicExpr
    {
       // TODO - interfaces
       if (object)
+      {
          object->genCode(compiler, sJitTemp0.as(jtPointer), etObject);
+         genNullReferenceExceptionCheck(compiler, sJitTemp0);
+      }
       else if (isStatic)
       {
          compiler->move(sJitTemp0, (void *)&staticClass.mPtr);
@@ -3496,6 +3520,13 @@ struct CallMember : public CppiaExpr
 
 
 
+
+inline hx::Object *CheckNotNull(hx::Object *inPtr)
+{
+   CPPIA_CHECK(inPtr);
+   return inPtr;
+}
+
 template<typename T, int REFMODE> 
 struct MemReference : public CppiaExpr
 {
@@ -3503,12 +3534,10 @@ struct MemReference : public CppiaExpr
    T *pointer;
    CppiaExpr *object;
 
-   #define CHECKVAL \
-      if (REFMODE==locObj) CPPIA_CHECK(object);
 
    #define MEMGETVAL \
      *(T *)( \
-         ( REFMODE==locObj      ?(char *)object->runObject(ctx) : \
+         ( REFMODE==locObj      ?(char *)CheckNotNull(object->runObject(ctx)) : \
            REFMODE==locAbsolute ?(char *)pointer : \
            REFMODE==locThis     ?(char *)ctx->getThis() : \
                                  (char *)ctx->frame \
@@ -3516,7 +3545,7 @@ struct MemReference : public CppiaExpr
 
    #define MEMGETPTR \
       (T *)( \
-         ( REFMODE==locObj      ?(char *)object->runObject(ctx) : \
+         ( REFMODE==locObj      ?(char *)CheckNotNull(object->runObject(ctx)) : \
            REFMODE==locAbsolute ?(char *)pointer : \
            REFMODE==locThis     ?(char *)ctx->getThis() : \
                                  (char *)ctx->frame \
@@ -3566,16 +3595,13 @@ struct MemReference : public CppiaExpr
    void        runVoid(CppiaCtx *ctx) { }
    int runInt(CppiaCtx *ctx)
    {
-      CHECKVAL;
       return ValToInt( MEMGETVAL );
    }
    Float       runFloat(CppiaCtx *ctx)
    {
-      CHECKVAL;
       return ValToFloat( MEMGETVAL );
    }
    ::String    runString(CppiaCtx *ctx) {
-      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       if (isBoolInt())
@@ -3584,13 +3610,14 @@ struct MemReference : public CppiaExpr
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      CHECKVAL;
       if (isBoolInt())
          return Dynamic( MEMGETVAL ? true : false ).mPtr;
       return Dynamic( MEMGETVAL ).mPtr;
    }
 
    #ifdef CPPIA_JIT
+
+
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
      if (REFMODE==locAbsolute)
@@ -3607,6 +3634,8 @@ struct MemReference : public CppiaExpr
      else if (REFMODE==locObj)
      {
         object->genCode( compiler, sJitTemp2, etObject );
+        genNullReferenceExceptionCheck(compiler, sJitTemp2);
+
         if (isBoolInt())
         {
            compiler->move( sJitTemp2, sJitTemp2.star(jtByte,offset) );
@@ -3949,7 +3978,6 @@ struct MemReferenceSetter : public CppiaExpr
 
    void runVoid(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_VCHECK;
       Assign::run( *t, ctx, value);
@@ -3957,7 +3985,6 @@ struct MemReferenceSetter : public CppiaExpr
    }
    int runInt(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       int val = ValToInt( Assign::run(*t,ctx, value ) );
@@ -3966,7 +3993,6 @@ struct MemReferenceSetter : public CppiaExpr
    }
    Float runFloat(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       Float val = ValToFloat( Assign::run(*t,ctx, value) );
@@ -3975,7 +4001,6 @@ struct MemReferenceSetter : public CppiaExpr
    }
    ::String runString(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       String val = ValToString( Assign::run(*t,ctx, value) );
@@ -3984,7 +4009,6 @@ struct MemReferenceSetter : public CppiaExpr
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       Dynamic result( Assign::run(*t,ctx,value) );
@@ -4016,6 +4040,7 @@ struct MemReferenceSetter : public CppiaExpr
             {
             JitTemp tmpObject(compiler,jtPointer);
             object->genCode(compiler, tmpObject, etObject);
+            genNullReferenceExceptionCheck(compiler, tmpObject);
             JitTemp tmpVal(compiler,getType());
 
             if (op==aoSet)
@@ -4253,13 +4278,11 @@ struct MemReferenceCrement : public CppiaExpr
    }
 
    void        runVoid(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       CREMENT::run( *t );
       MEM_WB_CHECK;
    }
    int runInt(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       int result = ValToInt( CREMENT::run(*t) );
@@ -4267,7 +4290,6 @@ struct MemReferenceCrement : public CppiaExpr
       return result;
    }
    Float       runFloat(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       Float result = ValToFloat( CREMENT::run(*t));
@@ -4275,7 +4297,6 @@ struct MemReferenceCrement : public CppiaExpr
       return result;
    }
    ::String    runString(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       String result = ValToString( CREMENT::run(*t) );
@@ -4284,7 +4305,6 @@ struct MemReferenceCrement : public CppiaExpr
    }
 
    hx::Object *runObject(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       Dynamic result( CREMENT::run(*t) );
@@ -4318,6 +4338,7 @@ struct MemReferenceCrement : public CppiaExpr
       {
          case locObj:
             object->genCode(compiler, sJitTemp0.as(jtPointer), etObject);
+            genNullReferenceExceptionCheck(compiler, sJitTemp0);
             ioPtr = sJitTemp0.star() + offset;
             break;
 

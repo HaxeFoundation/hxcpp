@@ -153,7 +153,7 @@ void Math_obj::__boot()
    unsigned int t = tv.tv_sec * 1000000 + tv.tv_usec;
 #endif
 
-#if defined(HX_WINDOWS)
+#if defined(HX_WINDOWS) && !defined(__BORLANDC__)
   #if defined(HX_WINRT)
    #if defined(__cplusplus_winrt)
    int pid = Windows::Security::Cryptography::CryptographicBuffer::GenerateRandomNumber();
@@ -168,6 +168,9 @@ void Math_obj::__boot()
 #endif  
 
   srand(t ^ (pid | (pid << 16)));
+  #ifdef HX_ANDROID
+  srand48(t ^ (pid | (pid << 16)));
+  #endif
   rand();
 }
 

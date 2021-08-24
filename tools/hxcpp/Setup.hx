@@ -10,10 +10,27 @@ class Setup
       var bestVersion = 0.0;
       var result:String = null;
 
-      Log.v("Looking in ANDROID_NDK_DIR");
-      if (defines.exists("ANDROID_NDK_DIR"))
+      var ndkDir = defines.get("ANDROID_NDK_DIR");
+      if (ndkDir!=null)
       {
-        var ndkDir:String = defines.get("ANDROID_NDK_DIR");
+         Log.v("Looking in ANDROID_NDK_DIR " + ndkDir);
+      }
+      else
+      {
+         Log.v("ANDROID_NDK_DIR not set");
+         if (BuildTool.isMac)
+         {
+            var lib = defines.get("HOME") + "/Library/Android/sdk/ndk";
+            if (FileSystem.exists(lib))
+            {
+               Log.v("trying default " + lib);
+               ndkDir = lib;
+            }
+         }
+      }
+
+      if (ndkDir!=null)
+      {
         ndkDir = ndkDir.split("\\").join("/");
         var files:Array<String> = null;
         var checkFiles:Bool = true;
@@ -694,6 +711,7 @@ class Setup
          proc.close();
          if (str>"")
          {
+            Log.v("MSVC output:" + str);
             var reg = ~/(\d{2})\.\d+/i;
             if (reg.match(str))
             {

@@ -344,7 +344,7 @@ class ImmixAllocator
 public:
    virtual ~ImmixAllocator() {}
    virtual void *CallAlloc(int inSize,unsigned int inObjectFlags) = 0;
-   virtual void SetupStack() = 0;
+   virtual void SetupStackAndCollect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false) = 0;
 
    #ifdef HXCPP_GC_NURSERY
    unsigned char  *spaceFirst;
