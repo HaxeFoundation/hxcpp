@@ -57,6 +57,36 @@ public:
    TIntElement<VALUE>  *next;
 };
 
+//
+template<typename VALUE>
+struct TInt64Element
+{
+   typedef cpp::Int64 Key;
+   typedef VALUE Value;
+
+   enum { IgnoreHash = 0 };
+   enum { WeakKeys = 0 };
+   enum { ManageKeys = 1 };
+
+   typedef TInt64Element<int>        IntValue;
+   typedef TInt64Element<Float>      FloatValue;
+   typedef TInt64Element<Dynamic>    DynamicValue;
+   typedef TInt64Element<String>     StringValue;
+   typedef TInt64Element<cpp::Int64> Int64Value;
+
+public:
+   inline void setKey(cpp::Int64 inKey, unsigned int inHash)
+   {
+      key = inKey;
+      hash = inHash;
+   }
+   inline unsigned int getHash() { return hash; }
+
+   Value                value;
+   Key                  key;
+   unsigned int         hash;
+   TInt64Element<VALUE> *next;
+};
 
 // An string element gets hash from string or calculates it
 template<typename VALUE>
@@ -284,6 +314,7 @@ extern void RegisterWeakHash(HashBase<Dynamic> *);
 extern void RegisterWeakHash(HashBase< ::String> *);
 
 inline void RegisterWeakHash(HashBase<int> *) { };
+inline void RegisterWeakHash(HashBase<cpp::Int64> *) { };
 
 
 template<typename T>

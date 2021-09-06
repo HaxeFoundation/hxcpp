@@ -186,6 +186,29 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __int_hash_get_float(Dynamic inHash,
 HXCPP_EXTERN_CLASS_ATTRIBUTES cpp::Int64    __int_hash_get_int64(Dynamic inHash,int inKey);
 inline  bool   __int_hash_get_bool(Dynamic inHash,int inKey) { return __int_hash_get_int(inHash,inKey); }
 
+// --- Int64Hash -----------------------------------------------------------------------
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES inline hx::Object   *__int64_hash_create() { return 0; }
+HXCPP_EXTERN_CLASS_ATTRIBUTES void              __int64_hash_set(HX_MAP_THIS_ARG,cpp::Int64 inKey,const Dynamic &value);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool              __int64_hash_exists(Dynamic &hash,cpp::Int64 inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES bool              __int64_hash_remove(Dynamic &hash,cpp::Int64 inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Array<cpp::Int64> __int64_hash_keys(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic           __int64_hash_values(Dynamic &hash);
+// Typed IntHash access...
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int64_hash_set_int(HX_MAP_THIS_ARG,cpp::Int64 inKey,int inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int64_hash_set_string(HX_MAP_THIS_ARG,cpp::Int64 inKey,::String inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int64_hash_set_float(HX_MAP_THIS_ARG,cpp::Int64 inKey,Float inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int64_hash_set_int64(HX_MAP_THIS_ARG,cpp::Int64 inKey,cpp::Int64 inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int64_hash_to_string(Dynamic &hash);
+HXCPP_EXTERN_CLASS_ATTRIBUTES void          __int64_hash_clear(Dynamic &hash);
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __int64_hash_get(Dynamic inHash,cpp::Int64 inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __int64_hash_get_int(Dynamic inHash,cpp::Int64 inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __int64_hash_get_string(Dynamic inHash,cpp::Int64 inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES Float         __int64_hash_get_float(Dynamic inHash,cpp::Int64 inKey);
+HXCPP_EXTERN_CLASS_ATTRIBUTES cpp::Int64    __int64_hash_get_int64(Dynamic inHash,cpp::Int64 inKey);
+inline  bool   __int64_hash_get_bool(Dynamic inHash,cpp::Int64 inKey) { return __int64_hash_get_int(inHash,inKey); }
+
 // --- StringHash ----------------------------------------------------------------------
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set(HX_MAP_THIS_ARG,String inKey,const Dynamic &value,bool inForceDynamic=false);

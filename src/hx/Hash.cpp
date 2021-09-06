@@ -291,7 +291,274 @@ void __int_hash_clear(Dynamic &ioHash)
       hash->clear();
 }
 
+// --- Int64Hash -----------------------------------------------------
 
+
+namespace
+{
+typedef hx::HashBase<cpp::Int64>              Int64HashBase;
+typedef hx::Hash< TInt64Element<Dynamic> >    Int64HashObject;
+typedef hx::Hash< TInt64Element<int> >        Int64HashInt;
+typedef hx::Hash< TInt64Element<Float> >      Int64HashFloat;
+typedef hx::Hash< TInt64Element<String> >     Int64HashString;
+typedef hx::Hash< TInt64Element<cpp::Int64> > Int64HashInt64;
+}
+
+void __int64_hash_set(HX_MAP_THIS_ARG, cpp::Int64 inKey, const Dynamic &value)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (!hash)
+   {
+      if (value==null())
+      {
+         hash = new Int64HashObject();
+      }
+      else
+      {
+         hxObjectType type = (hxObjectType)value->__GetType();
+         switch (type)
+         {
+            case vtInt: hash = new Int64HashInt(); break;
+            case vtFloat: hash = new Int64HashFloat(); break;
+            case vtString: hash = new Int64HashString(); break;
+            case vtInt64: hash = new Int64HashInt64(); break;
+            default: hash = new Int64HashObject(); break;
+         }
+      }
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+   else if (hash->store != hashObject)
+   {
+      HashStore want = hashObject;
+      if (value!=null())
+      {
+         hxObjectType type = (hxObjectType)value->__GetType();
+         if (type==vtInt)
+         {
+            if (hash->store==hashFloat)
+               want = hashFloat;
+            else if (hash->store==hashInt)
+               want = hashInt;
+            else if (hash->store==hashInt64)
+               want = hashInt64;
+         }
+         else if (type==vtFloat)
+         {
+            if (hash->store==hashInt || hash->store==hashFloat)
+               want = hashFloat;
+         }
+         else if (type==vtString)
+         {
+            if (hash->store==hashString)
+               want = hashString;
+         }
+      }
+      if (hash->store!=want)
+      {
+         hash = hash->convertStore(want);
+         ioHash = hash;
+         HX_OBJ_WB_GET(owner, hash);
+      }
+   }
+
+   hash->set(inKey, value);
+}
+
+void __int64_hash_set_int(HX_MAP_THIS_ARG, cpp::Int64 inKey, int inValue)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (!hash)
+   {
+      hash = new Int64HashInt();
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+   else if (hash->store==hashString)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+
+   hash->set(inKey, inValue);
+}
+
+void __int64_hash_set_float(HX_MAP_THIS_ARG, cpp::Int64 inKey, Float inValue)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (!hash)
+   {
+      hash = new Int64HashFloat();
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+   else if (hash->store==hashString || hash->store==hashInt64)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+   else if (hash->store==hashInt)
+   {
+      hash = hash->convertStore(hashFloat);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+
+   hash->set(inKey, inValue);
+}
+
+void __int64_hash_set_string(HX_MAP_THIS_ARG, cpp::Int64 inKey, ::String inValue)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (!hash)
+   {
+      hash = new Int64HashString();
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+   else if (hash->store==hashInt || hash->store==hashFloat || hash->store==hashInt64)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+
+   hash->set(inKey, inValue);
+}
+
+void __int64_hash_set_int64(HX_MAP_THIS_ARG, cpp::Int64 inKey, cpp::Int64 inValue)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (!hash)
+   {
+      hash = new Int64HashInt64();
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+   else if (hash->store==hashInt)
+   {
+      hash = hash->convertStore(hashInt64);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+   else if (hash->store==hashString || hash->store==hashFloat)
+   {
+      hash = hash->convertStore(hashObject);
+      ioHash = hash;
+      HX_OBJ_WB_GET(owner, hash);
+   }
+
+   hash->set(inKey, inValue);
+}
+
+Dynamic __int64_hash_get(Dynamic inHash, cpp::Int64 inKey)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   Dynamic result = null();
+   hash->query(inKey, result);
+   return result;
+}
+
+int __int64_hash_get_int(Dynamic inHash, cpp::Int64 inKey)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(inHash.GetPtr());
+   if (!hash)
+      return 0;
+
+   int result = 0;
+   hash->query(inKey, result);
+   return result;
+}
+
+Float __int64_hash_get_float(Dynamic inHash, cpp::Int64 inKey)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(inHash.GetPtr());
+   if (!hash)
+      return 0;
+
+   Float result = 0;
+   hash->query(inKey, result);
+   return result;
+}
+
+String __int64_hash_get_string(Dynamic inHash, cpp::Int64 inKey)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(inHash.GetPtr());
+   if (!hash)
+      return String();
+
+   String result;
+   hash->query(inKey, result);
+   return result;
+}
+
+cpp::Int64 __int64_hash_get_int64(Dynamic inHash, cpp::Int64 inKey)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(inHash.GetPtr());
+   if (!hash)
+      return 0;
+
+   cpp::Int64 result = 0;
+   hash->query(inKey, result);
+   return result;
+}
+
+bool __int64_hash_exists(Dynamic &inHash, cpp::Int64 inKey)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(inHash.GetPtr());
+   if (!hash)
+      return false;
+
+   return hash->exists(inKey);
+}
+
+bool __int64_hash_remove(Dynamic &ioHash, cpp::Int64 inKey)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (!hash)
+      return false;
+
+   return hash->remove(inKey);
+}
+
+Array<cpp::Int64> __int64_hash_keys(Dynamic &ioHash)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (!hash)
+      return Array_obj<cpp::Int64>::__new();
+
+   return hash->keys();
+}
+
+Dynamic __int64_hash_values(Dynamic &ioHash)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (!hash)
+      return Array_obj<Dynamic>::__new();
+
+   return hash->values();
+}
+
+String __int64_hash_to_string(Dynamic &ioHash)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (!hash)
+      return HX_CSTRING("{}");
+
+   return hash->toString();
+}
+
+void __int64_hash_clear(Dynamic &ioHash)
+{
+   Int64HashBase *hash = static_cast<Int64HashBase *>(ioHash.GetPtr());
+   if (hash)
+      hash->clear();
+}
 
 // --- StringHash ----------------------------------------------------
 
