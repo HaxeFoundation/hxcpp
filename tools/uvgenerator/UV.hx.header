@@ -27,6 +27,16 @@
 
 package cpp.uv;
 
+extern enum abstract UvLoopOption(Int) {
+	@:native('UV_LOOP_BLOCK_SIGNAL') var UV_LOOP_BLOCK_SIGNAL;
+	@:native('UV_METRICS_IDLE_TIME') var UV_METRICS_IDLE_TIME;
+}
+
+extern enum abstract UvRunMode(Int) {
+	@:native('UV_RUN_DEFAULT') var UV_RUN_DEFAULT;
+	@:native('UV_RUN_ONCE') var UV_RUN_ONCE;
+	@:native('UV_RUN_NOWAIT') var UV_RUN_NOWAIT;
+}
 
 /**
 	Automatically generated bindings for libuv.
@@ -35,30 +45,16 @@ package cpp.uv;
 **/
 @:buildXml('<include name="${HXCPP}/src/hx/libs/libuv/Build.xml"/>')
 extern class UV {
-/*
+
 	extern static public inline function resolve(result:Int):Int {
 		if(result < 0)
-			throw new UVException(translate_uv_error(result));
+			throw new UVException(UVError.ofNative(result));
 		return result;
 	}
 
 	extern static public inline function throwErr(result:Int):Int {
-		throw new UVException(translate_uv_error(result));
+		throw new UVException(UVError.ofNative(result));
 	}
-
-	extern static public inline function getName(fn:(buf:Bytes, size:Ref<U64>)->Int):String {
-		var size = I64.ofInt(256);
-		var buf = null;
-		var eNoBufs = UVError.UV_ENOBUFS.toNative();
-		var result = eNoBufs;
-		while (result == eNoBufs) {
-			buf = new Bytes(size.toInt());
-			result = fn(buf, Ref.make(size));
-		}
-		result.resolve();
-		return buf.fromUTF8();
-	}
-*/
 
 // Auto generated content :
 

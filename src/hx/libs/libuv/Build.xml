@@ -130,7 +130,7 @@
 </files>
 
 <target id="haxe">
-	<!-- <files id="hxcpp_libuv" /> -->
+	<!-- TODO: <files id="hxcpp_libuv" /> -->
 	<lib name="-luv" />
 </target>
 

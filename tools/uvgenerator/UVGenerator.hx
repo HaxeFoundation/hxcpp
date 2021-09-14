@@ -194,6 +194,7 @@ class UVGenerator {
 	static function mapHXType(type:CType):String {
 		var name = switch type.name {
 			case 'void': 'Void';
+			case 'char' if(type.stars == 1 && type.const): return 'ConstCharStar';
 			case 'char': 'Char';
 			case 'int': 'Int';
 			case 'double': 'Float';
