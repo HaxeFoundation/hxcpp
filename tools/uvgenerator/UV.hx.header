@@ -38,6 +38,20 @@ extern enum abstract UvRunMode(Int) {
 	@:native('UV_RUN_NOWAIT') var UV_RUN_NOWAIT;
 }
 
+extern enum abstract UvSigNum(Int) from Int to Int {
+	@:native('SIGABRT') var SIGABRT;
+	@:native('SIGFPE') var SIGFPE;
+	@:native('SIGHUP') var SIGHUP;
+	@:native('SIGILL') var SIGILL;
+	@:native('SIGINT') var SIGINT;
+	@:native('SIGKILL') var SIGKILL;
+	@:native('SIGSEGV') var SIGSEGV;
+	@:native('SIGTERM') var SIGTERM;
+	@:native('SIGWINCH') var SIGWINCH;
+}
+
+typedef UvPidT = Int;
+
 /**
 	Automatically generated bindings for libuv.
 	Avoid using this module directly.
