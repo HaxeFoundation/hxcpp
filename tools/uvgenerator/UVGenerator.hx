@@ -33,6 +33,16 @@ typedef StructSignature = {
 	var fields:Array<TypeAndName>;
 }
 
+typedef CallbackSignature = {
+	var name:String;
+	var args:Array<TypeAndName>;
+}
+
+enum TypeKind {
+	UnknownType(cName:String);
+	CallbackType(sig:CallbackSignature);
+}
+
 class Skip extends Exception {}
 
 class UVGenerator {
@@ -44,7 +54,7 @@ class UVGenerator {
 		'poll', 'threading', 'threadpool', 'upgrading'];
 
 	static final predefinedHxTypes = new Map<String,String>();
-	static final hxTypesToGenerate = new Map<String,String>();
+	static final hxTypesToGenerate = new Map<String,TypeKind>();
 
 	static function main() {
 		var root = rootDir();
@@ -77,6 +87,11 @@ class UVGenerator {
 					if(line.startsWith('.. c:function:: ')) {
 						var sig = parseFunction(line.substr('.. c:function:: '.length).trim());
 						hxFile.writeString(hxFunctionBinding(sig));
+					} else if(line.startsWith('.. c:type:: void (*')) {
+						var sig = parseCallback(line.substr('.. c:type:: void '.length));
+						var hxName = snakeToPascalCase(sig.name);
+						if(!predefinedHxTypes.exists(hxName))
+							hxTypesToGenerate.set(hxName, CallbackType(sig));
 					}
 				} catch(e:Skip) {
 					continue;
@@ -102,13 +117,29 @@ class UVGenerator {
 		}
 	}
 
-	static function generateHXTypes(types:Map<String,String>):String {
+	static function generateHXTypes(types:Map<String,TypeKind>):String {
 		var lines = [];
-		for(hx => c in types) {
-			lines.push('@:native("$c")');
-			lines.push('extern class $hx {');
-			lines.push('	@:native("new $c") public static function create():Star<$hx>;');
-			lines.push('}');
+		for(hxName => kind in types) {
+			lines.push('');
+			switch kind {
+				case UnknownType(cName):
+					lines.push('@:native("$cName")');
+					lines.push('extern class $hxName {');
+					lines.push('	@:native("new $cName") public static function create():Star<$hxName>;');
+					lines.push('}');
+				case CallbackType(sig):
+					var i = 0;
+					function mapArg(a:TypeAndName) {
+						var name = a.name;
+						if(name == '' || name == null) {
+							name = i == 0 ? 'v' : 'v$i';
+							i++;
+						}
+						return '$name:${mapHXType(a.type)}';
+					}
+					var args = sig.args.map(mapArg).join(', ');
+					lines.push('typedef $hxName = Callable<($args)->Void>');
+			}
 		}
 		return lines.join('\n');
 	}
@@ -116,6 +147,17 @@ class UVGenerator {
 	static function rootDir(?p:PosInfos):String {
 		var generatorPath = FileSync.realPath(p.fileName).resolve().toString();
 		return new Path(new Path(new Path(generatorPath).dir).dir).dir;
+	}
+
+	static var erCallback = ~/\(\*([a-z_]+)\)\((.*?)\)/;
+
+	static function parseCallback(str:String):CallbackSignature {
+		if(!erCallback.match(str))
+			throw 'Unknown callback signature format: $str';
+		return {
+			name: erCallback.matched(1),
+			args: erCallback.matched(2).split(', ').map(parseTypeAndName)
+		}
 	}
 
 	static function parseFunction(str:String):FunctionSignature {
@@ -139,19 +181,23 @@ class UVGenerator {
 			struct:false
 		}
 		var parts = str.split(' ');
-		result.name = parts.pop();
 		for(s in parts) {
 			switch s {
 				case 'const': result.const = true;
 				case 'unsigned': result.unsigned = true;
 				case 'struct': result.struct = true;
-				case _: throw 'Unknown type modifier: $s';
+				case _ if(result.name != null): throw 'Unknown type modifier: $s';
+				case _: result.name = s;
 			}
 		}
+		if(result.name == null)
+			result.name = 'int';
 		while(result.name.endsWith('*')) {
 			result.stars++;
 			result.name = result.name.substr(0, result.name.length - 1);
 		}
+		if(result.name == '')
+			result.name = 'int';
 		return result;
 	}
 
@@ -193,9 +239,11 @@ class UVGenerator {
 
 	static function mapHXType(type:CType):String {
 		var name = switch type.name {
+			case 'void' if(type.stars > 0): 'cpp.Void';
 			case 'void': 'Void';
 			case 'char' if(type.stars == 1 && type.const): return 'ConstCharStar';
 			case 'char': 'Char';
+			case 'int' if(type.unsigned): 'UInt32';
 			case 'int': 'Int';
 			case 'double': 'Float';
 			case '...': 'Rest<Any>';
@@ -206,8 +254,8 @@ class UVGenerator {
 			case 'FILE': 'FILE';
 			case _:
 				var hxType = snakeToPascalCase(type.name);
-				if(!predefinedHxTypes.exists(hxType))
-					hxTypesToGenerate.set(hxType, type.name);
+				if(!predefinedHxTypes.exists(hxType) && !hxTypesToGenerate.exists(hxType))
+					hxTypesToGenerate.set(hxType, UnknownType(type.name));
 				hxType;
 		}
 		for(i in 0...type.stars)
