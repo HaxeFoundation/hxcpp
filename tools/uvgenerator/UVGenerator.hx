@@ -113,7 +113,7 @@ class UVGenerator {
 							if(!predefinedHxTypes.exists(hxName))
 								hxTypesToGenerate.set(hxName, StructType(sig));
 						}
-					} else if(line.startsWith('typedef enum ')) {
+					} else if(reEnum.match(line)) {
 						var sig = parseEnum(line, lines);
 						var hxName = snakeToPascalCase(sig.name.label);
 						if(!predefinedHxTypes.exists(hxName))
@@ -161,9 +161,9 @@ class UVGenerator {
 					if(!sig.isUnion)
 						lines.push('@:native("${sig.type.name}")');
 					lines.push('extern class $hxName {');
-					lines.push(generateHXFields(sig.fields));
 					if(!sig.isUnion)
 						lines.push('	@:native("new ${sig.type.name}") public static function create():RawPointer<$hxName>;');
+					lines.push(generateHXFields(sig.fields));
 					lines.push('}');
 				case EnumType(sig):
 					lines.push('extern enum abstract $hxName(Int) to Int {');
@@ -208,9 +208,17 @@ class UVGenerator {
 		return line;
 	}
 
+	static final reEnum = ~/^(typedef )?enum\s+(.*?)\s*\{$/;
+
 	static function parseEnum(firstLine:String, lines:Array<String>):EnumSignature {
+		if(!reEnum.match(firstLine))
+			throw 'Unexpected enum declaration: "$firstLine"';
+		var isTypedef = reEnum.matched(1) == 'typedef ';
 		var result = {
-			name: null,
+			name: switch reEnum.matched(2) {
+				case null | '': null;
+				case str: parseName(str);
+			},
 			constructors: []
 		}
 		while(lines.length > 0) {
@@ -224,8 +232,10 @@ class UVGenerator {
 			line = line.trim();
 
 			if(line.startsWith('}')) {
-				line = line.endsWith(';') ? line.substring(1, line.length - 1) : line.substr(1);
-				result.name = parseName(line.trim());
+				if(isTypedef) {
+					line = line.endsWith(';') ? line.substring(1, line.length - 1) : line.substr(1);
+					result.name = parseName(line.trim());
+				}
 				break;
 			} else
 				result.constructors.push(line);

@@ -46,13 +46,6 @@ extern enum abstract UvSigNum(Int) from Int to Int {
 
 typedef UvPidT = Int;
 
-@:structAccess
-@:native("uv_stdio_container_t")
-extern class UvStdioContainerTStruct {
-	var flags:UvStdioFlags;
-	var data:UvStdioContainerTDataUnion;
-}
-
 /**
 	Automatically generated bindings for libuv.
 
@@ -72,6 +65,14 @@ extern class UV {
 
 	extern static public inline function throwErr(result:Int):Int {
 		throw new UVException(UVError.ofNative(result));
+	}
+
+	extern inline function toChars(array:Array<String>):Pointer<Pointer<Char>> {
+		var chars:Pointer<CastCharStar> = Stdlib.malloc((array.length + 1) * Native.sizeof(RawPointer<Char>));
+		chars.setAt(array.length, null);
+		for(i => item in array)
+			chars.setAt(i, item);
+		return cast chars;
 	}
 
 // Auto generated content :
