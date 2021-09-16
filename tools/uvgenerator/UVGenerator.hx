@@ -40,6 +40,7 @@ typedef StructSignature = {
 typedef CallbackSignature = {
 	var name:String;
 	var args:Array<TypeAndName>;
+	var returnType:CType;
 }
 
 typedef EnumSignature = {
@@ -98,8 +99,8 @@ class UVGenerator {
 					if(line.startsWith('.. c:function:: ')) {
 						var sig = parseFunction(line.substr('.. c:function:: '.length).trim());
 						hxFile.writeString(hxFunctionBinding(sig));
-					} else if(line.startsWith('.. c:type:: void (*')) {
-						var sig = parseCallback(line.substr('.. c:type:: void '.length));
+					} else if(line.startsWith('.. c:type:: ') && erCallback.match(line)) {
+						var sig = parseCallback(line.substr('.. c:type:: '.length));
 						var hxName = snakeToPascalCase(sig.name);
 						if(!predefinedHxTypes.exists(hxName))
 							hxTypesToGenerate.set(hxName, CallbackType(sig));
@@ -151,7 +152,7 @@ class UVGenerator {
 					lines.push('	@:native("new $cName") public static function create():Star<$hxName>;');
 					lines.push('}');
 				case CallbackType(sig):
-					lines.push('typedef $hxName = Callable<(${generateHXArgs(sig.args)})->Void>');
+					lines.push('typedef $hxName = Callable<(${generateHXArgs(sig.args)})->${mapHXType(sig.returnType)}>');
 				case StructType(sig):
 					lines.push('@:native("${sig.type.name}")');
 					lines.push('extern class $hxName {');
@@ -279,14 +280,15 @@ class UVGenerator {
 		return result;
 	}
 
-	static var erCallback = ~/\(\*([a-z_]+)\)\((.*?)\)/;
+	static final erCallback = ~/(.+?)\s*\(\*([a-z_]+)\)\((.*?)\)/;
 
 	static function parseCallback(str:String):CallbackSignature {
 		if(!erCallback.match(str))
 			throw 'Unknown callback signature format: $str';
 		return {
-			name: erCallback.matched(1),
-			args: erCallback.matched(2).split(', ').map(parseTypeAndName)
+			name: erCallback.matched(2),
+			args: erCallback.matched(3).split(', ').map(parseTypeAndName),
+			returnType: parseType(erCallback.matched(1).trim())
 		}
 	}
 
@@ -331,7 +333,7 @@ class UVGenerator {
 		return result;
 	}
 
-	static var reArray = ~/\[([0-9]*)\]$/;
+	static final reArray = ~/\[([0-9]*)\]$/;
 
 	static function parseName(str:String):CName {
 		var result = {
