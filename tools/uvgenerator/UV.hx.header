@@ -32,12 +32,6 @@ extern enum abstract UvLoopOption(Int) {
 	@:native('UV_METRICS_IDLE_TIME') var UV_METRICS_IDLE_TIME;
 }
 
-extern enum abstract UvRunMode(Int) {
-	@:native('UV_RUN_DEFAULT') var UV_RUN_DEFAULT;
-	@:native('UV_RUN_ONCE') var UV_RUN_ONCE;
-	@:native('UV_RUN_NOWAIT') var UV_RUN_NOWAIT;
-}
-
 extern enum abstract UvSigNum(Int) from Int to Int {
 	@:native('SIGABRT') var SIGABRT;
 	@:native('SIGFPE') var SIGFPE;

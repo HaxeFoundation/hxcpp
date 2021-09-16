@@ -42,10 +42,16 @@ typedef CallbackSignature = {
 	var args:Array<TypeAndName>;
 }
 
+typedef EnumSignature = {
+	var name:CName;
+	var constructors:Array<String>;
+}
+
 enum TypeKind {
 	UnknownType(cName:String);
 	CallbackType(sig:CallbackSignature);
 	StructType(sig:StructSignature);
+	EnumType(sig:EnumSignature);
 }
 
 class Skip extends Exception {}
@@ -104,6 +110,11 @@ class UVGenerator {
 							if(!predefinedHxTypes.exists(hxName))
 								hxTypesToGenerate.set(hxName, StructType(sig));
 						}
+					} else if(line.startsWith('typedef enum ')) {
+						var sig = parseEnum(line, lines);
+						var hxName = snakeToPascalCase(sig.name.label);
+						if(!predefinedHxTypes.exists(hxName))
+								hxTypesToGenerate.set(hxName, EnumType(sig));
 					}
 				} catch(e:Skip) {
 					continue;
@@ -147,6 +158,11 @@ class UVGenerator {
 					lines.push(generateHXFields(sig.fields));
 					lines.push('	@:native("new ${sig.type.name}") public static function create():Star<$hxName>;');
 					lines.push('}');
+				case EnumType(sig):
+					lines.push('extern enum abstract $hxName(Int) {');
+					for(ctor in sig.constructors)
+						lines.push('	@:native("$ctor") var $ctor;');
+					lines.push('}');
 			}
 		}
 		return lines.join('\n');
@@ -157,6 +173,59 @@ class UVGenerator {
 		return new Path(new Path(new Path(generatorPath).dir).dir).dir;
 	}
 
+	static function stripComments(line:String, lines:Array<String>):String {
+		var commentPos = line.indexOf('//');
+		if(commentPos >= 0)
+			line = line.substr(0, commentPos);
+		commentPos = line.indexOf('/*');
+		if(commentPos >= 0) {
+			var commentEnd = line.indexOf('*/');
+			if(commentEnd >= 0) {
+				line = line.substr(0, commentPos) + line.substr(commentEnd + 2);
+			} else {
+				line = line.substring(0, commentPos);
+				while(lines.length > 0) {
+					commentEnd = lines[0].indexOf('*/');
+					if(commentEnd < 0) {
+						lines.shift();
+					} else {
+						lines[0] = lines[0].substr(commentEnd + 2);
+						break;
+					}
+				}
+			}
+		}
+		line = line.trim();
+		while(lines.length > 0 && line == '')
+			line = lines.shift().trim();
+		return line;
+	}
+
+	static function parseEnum(firstLine:String, lines:Array<String>):EnumSignature {
+		var result = {
+			name: null,
+			constructors: []
+		}
+		while(lines.length > 0) {
+			var line = stripComments(lines.shift(), lines);
+			//strip values and commas
+			var eqPos = line.indexOf('=');
+			if(eqPos >= 0)
+				line = line.substring(0, eqPos)
+			else if(line.endsWith(','))
+				line = line.substr(0, line.length - 1);
+			line = line.trim();
+
+			if(line.startsWith('}')) {
+				line = line.endsWith(';') ? line.substring(1, line.length - 1) : line.substr(1);
+				result.name = parseName(line.trim());
+				break;
+			} else
+				result.constructors.push(line);
+		}
+		return result;
+	}
+
 	static var erStructTypeName = ~/(struct\s+(.+?))\s*{/;
 
 	static function parseStruct(firstLine:String, lines:Array<String>, root = true):Array<StructSignature> {
@@ -165,14 +234,7 @@ class UVGenerator {
 		var type = !root && erStructTypeName.match(firstLine) ? parseType(erStructTypeName.matched(1)) : null;
 		var name = null;
 		while(lines.length > 0) {
-			var line = lines.shift();
-			//strip comments
-			var commentPos = line.indexOf('//');
-			if(commentPos >= 0)
-				line = line.substr(0, commentPos);
-			commentPos = line.indexOf('/*');
-			if(commentPos >= 0)
-				line = line.substr(0, commentPos) + line.substr(line.indexOf('*/') + 2);
+			var line = stripComments(lines.shift(), lines);
 			line = line.trim();
 			//TODO: handle unions
 			if(line.startsWith('union {')) {
@@ -324,8 +386,10 @@ class UVGenerator {
 			case '...': 'Rest<Any>';
 			case 'size_t': 'SizeT';
 			case 'ssize_t': 'SSizeT';
+			case 'int32_t': 'Int32';
 			case 'int64_t': 'Int64';
 			case 'uint64_t': 'UInt64';
+			case 'long': 'Int64'; // TODO: is this OK?
 			case 'FILE': 'FILE';
 			case _:
 				var hxType = snakeToPascalCase(type.name);
