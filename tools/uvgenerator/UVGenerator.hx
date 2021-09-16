@@ -35,6 +35,8 @@ typedef StructSignature = {
 	var type:CType;
 	var name:CName;
 	var fields:Array<TypeAndName>;
+	var structAccess:Bool;
+	var isUnion:Bool;
 }
 
 typedef CallbackSignature = {
@@ -154,13 +156,17 @@ class UVGenerator {
 				case CallbackType(sig):
 					lines.push('typedef $hxName = Callable<(${generateHXArgs(sig.args)})->${mapHXType(sig.returnType)}>');
 				case StructType(sig):
-					lines.push('@:native("${sig.type.name}")');
+					if(sig.structAccess)
+						lines.push('@:structAccess');
+					if(!sig.isUnion)
+						lines.push('@:native("${sig.type.name}")');
 					lines.push('extern class $hxName {');
 					lines.push(generateHXFields(sig.fields));
-					lines.push('	@:native("new ${sig.type.name}") public static function create():Star<$hxName>;');
+					if(!sig.isUnion)
+						lines.push('	@:native("new ${sig.type.name}") public static function create():Star<$hxName>;');
 					lines.push('}');
 				case EnumType(sig):
-					lines.push('extern enum abstract $hxName(Int) {');
+					lines.push('extern enum abstract $hxName(Int) to Int {');
 					for(ctor in sig.constructors)
 						lines.push('	@:native("$ctor") var $ctor;');
 					lines.push('}');
@@ -227,23 +233,26 @@ class UVGenerator {
 		return result;
 	}
 
-	static var erStructTypeName = ~/(struct\s+(.+?))\s*{/;
+	static final reStructTypeName = ~/(struct\s+(.+?))\s*\{/;
 
 	static function parseStruct(firstLine:String, lines:Array<String>, root = true):Array<StructSignature> {
 		var result = [];
 		var fields = [];
-		var type = !root && erStructTypeName.match(firstLine) ? parseType(erStructTypeName.matched(1)) : null;
+		var unions = [];
+		var type = !root && reStructTypeName.match(firstLine) ? parseType(reStructTypeName.matched(1)) : null;
 		var name = null;
 		while(lines.length > 0) {
 			var line = stripComments(lines.shift(), lines);
 			line = line.trim();
-			//TODO: handle unions
 			if(line.startsWith('union {')) {
-				//ignore to the end of the union
-				parseStruct('struct TODO {', lines, false);
-				continue;
-			}
-			if(line.startsWith('struct ') && line.endsWith('{')) {
+				var sub = parseStruct('struct UNION_NAME_PLACEHOLDER {', lines, false);
+				if(sub.length > 0) {
+					sub[0].isUnion = true;
+					result = result.concat(sub);
+					fields.push({name:sub[0].name, type:sub[0].type});
+					unions.push(sub[0]);
+				}
+			} else if(line.startsWith('struct ') && line.endsWith('{')) {
 				var sub = parseStruct(line, lines, false);
 				if(sub.length > 0) {
 					result = result.concat(sub);
@@ -263,6 +272,8 @@ class UVGenerator {
 		}
 		if(name == null)
 			throw 'Unexpected struct without a name';
+		for (union in unions)
+			union.type.name = '${name.label}_${union.name.label}_union';
 		if(type == null) {
 			type = {
 				name: name.label,
@@ -276,6 +287,8 @@ class UVGenerator {
 			type: type,
 			name: name,
 			fields: fields,
+			structAccess: !root && type.stars == 0,
+			isUnion: false
 		});
 		return result;
 	}
