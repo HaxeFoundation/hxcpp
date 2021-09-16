@@ -54,6 +54,9 @@ typedef UvPidT = Int;
 
 /**
 	Automatically generated bindings for libuv.
+
+	@see http://docs.libuv.org/en/v1.x/api.html
+
 	Avoid using this module directly.
 	BACKWARD COMPATIBILITY OF THIS MODULE IS NOT MAINTAINED.
 **/

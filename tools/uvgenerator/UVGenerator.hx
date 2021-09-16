@@ -8,28 +8,32 @@ import eval.luv.Dir.DirSync;
 using StringTools;
 
 typedef CType = {
-	name:String,
-	stars:Int,
-	const:Bool,
-	unsigned:Bool,
-	struct:Bool
+	var name:String;
+	var stars:Int;
+	var const:Bool;
+	var unsigned:Bool;
+	var struct:Bool;
+}
+
+typedef CName = {
+	var label:String;
+	var array:Int;
 }
 
 typedef TypeAndName = {
-	type:CType,
-	name:String,
-	array:Int,
+	var type:CType;
+	var name:Null<CName>;
 }
 
 typedef FunctionSignature = {
 	var name:String;
 	var returnType:CType;
-	var arguments:Array<TypeAndName>;
+	var args:Array<TypeAndName>;
 }
 
 typedef StructSignature = {
-	var type:String;
-	var name:String;
+	var type:CType;
+	var name:CName;
 	var fields:Array<TypeAndName>;
 }
 
@@ -41,6 +45,7 @@ typedef CallbackSignature = {
 enum TypeKind {
 	UnknownType(cName:String);
 	CallbackType(sig:CallbackSignature);
+	StructType(sig:StructSignature);
 }
 
 class Skip extends Exception {}
@@ -92,6 +97,13 @@ class UVGenerator {
 						var hxName = snakeToPascalCase(sig.name);
 						if(!predefinedHxTypes.exists(hxName))
 							hxTypesToGenerate.set(hxName, CallbackType(sig));
+					} else if(line.startsWith('typedef struct ')) {
+						var structs = parseStruct(line, lines);
+						for(sig in structs) {
+							var hxName = snakeToPascalCase(sig.type.name);
+							if(!predefinedHxTypes.exists(hxName))
+								hxTypesToGenerate.set(hxName, StructType(sig));
+						}
 					}
 				} catch(e:Skip) {
 					continue;
@@ -128,17 +140,13 @@ class UVGenerator {
 					lines.push('	@:native("new $cName") public static function create():Star<$hxName>;');
 					lines.push('}');
 				case CallbackType(sig):
-					var i = 0;
-					function mapArg(a:TypeAndName) {
-						var name = a.name;
-						if(name == '' || name == null) {
-							name = i == 0 ? 'v' : 'v$i';
-							i++;
-						}
-						return '$name:${mapHXType(a.type)}';
-					}
-					var args = sig.args.map(mapArg).join(', ');
-					lines.push('typedef $hxName = Callable<($args)->Void>');
+					lines.push('typedef $hxName = Callable<(${generateHXArgs(sig.args)})->Void>');
+				case StructType(sig):
+					lines.push('@:native("${sig.type.name}")');
+					lines.push('extern class $hxName {');
+					lines.push(generateHXFields(sig.fields));
+					lines.push('	@:native("new ${sig.type.name}") public static function create():Star<$hxName>;');
+					lines.push('}');
 			}
 		}
 		return lines.join('\n');
@@ -147,6 +155,66 @@ class UVGenerator {
 	static function rootDir(?p:PosInfos):String {
 		var generatorPath = FileSync.realPath(p.fileName).resolve().toString();
 		return new Path(new Path(new Path(generatorPath).dir).dir).dir;
+	}
+
+	static var erStructTypeName = ~/(struct\s+(.+?))\s*{/;
+
+	static function parseStruct(firstLine:String, lines:Array<String>, root = true):Array<StructSignature> {
+		var result = [];
+		var fields = [];
+		var type = !root && erStructTypeName.match(firstLine) ? parseType(erStructTypeName.matched(1)) : null;
+		var name = null;
+		while(lines.length > 0) {
+			var line = lines.shift();
+			//strip comments
+			var commentPos = line.indexOf('//');
+			if(commentPos >= 0)
+				line = line.substr(0, commentPos);
+			commentPos = line.indexOf('/*');
+			if(commentPos >= 0)
+				line = line.substr(0, commentPos) + line.substr(line.indexOf('*/') + 2);
+			line = line.trim();
+			//TODO: handle unions
+			if(line.startsWith('union {')) {
+				//ignore to the end of the union
+				parseStruct('struct TODO {', lines, false);
+				continue;
+			}
+			if(line.startsWith('struct ') && line.endsWith('{')) {
+				var sub = parseStruct(line, lines, false);
+				if(sub.length > 0) {
+					result = result.concat(sub);
+					fields.push({name:sub[0].name, type:sub[0].type});
+				}
+			} else {
+				var splitPos = line.lastIndexOf(' ');
+				if(line.endsWith(';'))
+					line = line.substr(0, line.length - 1);
+				if(line.startsWith('}')) {
+					name = parseName(line.substr(splitPos + 1).trim());
+					break;
+				} else {
+					fields.push(parseTypeAndName(line));
+				}
+			}
+		}
+		if(name == null)
+			throw 'Unexpected struct without a name';
+		if(type == null) {
+			type = {
+				name: name.label,
+				stars:0,
+				const:false,
+				unsigned:false,
+				struct:true
+			}
+		}
+		result.unshift({
+			type: type,
+			name: name,
+			fields: fields,
+		});
+		return result;
 	}
 
 	static var erCallback = ~/\(\*([a-z_]+)\)\((.*?)\)/;
@@ -166,9 +234,9 @@ class UVGenerator {
 		var returnAndName = parseTypeAndName(parts[0]);
 		var args = parts[1].split(',').map(StringTools.trim);
 		return {
-			name: returnAndName.name,
+			name: returnAndName.name.label,
 			returnType: returnAndName.type,
-			arguments: args.map(parseTypeAndName)
+			args: args.map(parseTypeAndName)
 		}
 	}
 
@@ -186,7 +254,7 @@ class UVGenerator {
 				case 'const': result.const = true;
 				case 'unsigned': result.unsigned = true;
 				case 'struct': result.struct = true;
-				case _ if(result.name != null): throw 'Unknown type modifier: $s';
+				case _ if(result.name != null): throw 'Unknown type modifier: "$s"';
 				case _: result.name = s;
 			}
 		}
@@ -203,26 +271,33 @@ class UVGenerator {
 
 	static var reArray = ~/\[([0-9]*)\]$/;
 
+	static function parseName(str:String):CName {
+		var result = {
+			label:str,
+			array:-1
+		}
+		if(reArray.match(result.label)) {
+			var p = reArray.matchedPos();
+			result.label = result.label.substring(0, p.pos);
+			result.array = switch(reArray.matched(1)) {
+				case '': 0;
+				case n: Std.parseInt(n);
+			}
+		}
+		return result;
+	}
+
 	static function parseTypeAndName(str:String):TypeAndName {
 		var result = {
 			type:null,
-			name:'',
-			array:-1
+			name: null
 		}
 		var spacePos = str.lastIndexOf(' ');
 		if(spacePos < 0) {
 			result.type = parseType(str);
 		} else {
 			result.type = parseType(str.substring(0, spacePos));
-			result.name = str.substr(spacePos + 1);
-		}
-		if(reArray.match(result.name)) {
-			var p = reArray.matchedPos();
-			result.name = result.name.substring(0, p.pos);
-			result.array = switch(reArray.matched(1)) {
-				case '': 0;
-				case n: Std.parseInt(n);
-			}
+			result.name = parseName(str.substr(spacePos + 1));
 		}
 		return result;
 	}
@@ -270,34 +345,54 @@ class UVGenerator {
 			throw 'Function name is expected to start with "uv_": "$name"';
 	}
 
+	static function generateHXArgs(args:Array<TypeAndName>):String {
+		return generateHXList(args, '', '', ', ');
+	}
+
+	static function generateHXFields(fields:Array<TypeAndName>):String {
+		return generateHXList(fields, '\tvar ', ';', '\n');
+	}
+
+	static function generateHXList(list:Array<TypeAndName>, prefix:String, postfix:String, separator:String):String {
+		function isNotVoid(a:TypeAndName):Bool {
+			return !(a.type.name == 'void' && a.type.stars == 0);
+		}
+		var i = 0;
+		function mapArg(a:TypeAndName):String {
+			var type = mapHXType(a.type);
+			var name = null;
+			if(a.name != null) {
+				name = a.name.label;
+				if(a.name.array >= 0)
+					type = 'Reference<$type>';
+			} else {
+				if(a.type.name.startsWith('uv_')) {
+					name = a.type.name.substr('uv_'.length);
+					if(name.endsWith('_t'))
+						name = name.substring(0, name.length - '_t'.length);
+				} else {
+					name = i == 0 ? 'v' : 'v$i';
+					i++;
+				}
+			}
+			return '$prefix$name:$type$postfix';
+		}
+		return list.filter(isNotVoid).map(mapArg).join(separator);
+	}
+
 	static function hxFunctionBinding(sig:FunctionSignature):String {
 		function compose(name:String, args:Array<String>) {
 			var args = args.join(', ');
 			var ret = mapHXType(sig.returnType);
 			return '\t@:native("${sig.name}") static function $name($args):$ret;\n';
 		}
-		function mapArg(a:TypeAndName):String {
-			var type = mapHXType(a.type);
-			if(a.array >= 0)
-				type = 'Reference<$type>';
-			var name = a.name;
-			if(name == '') {
-				if(a.type.name.startsWith('uv_')) {
-					name = a.type.name.substr('uv_'.length);
-					if(name.endsWith('_t'))
-						name = name.substring(0, name.length - '_t'.length);
-				} else {
-					name = 'v';
-				}
-			}
-			return '$name:$type';
-		}
+
 		function isNotVoid(a:TypeAndName):Bool {
 			return !(a.type.name == 'void' && a.type.stars == 0);
 		}
 		var name = functionName(sig.name);
 		var returnType = mapHXType(sig.returnType);
-		var args = sig.arguments.filter(isNotVoid).map(mapArg).join(', ');
+		var args = generateHXArgs(sig.args);
 		return '\t@:native("${sig.name}") static function $name($args):$returnType;\n';
 	}
 }
