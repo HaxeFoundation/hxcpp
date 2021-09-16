@@ -46,6 +46,13 @@ extern enum abstract UvSigNum(Int) from Int to Int {
 
 typedef UvPidT = Int;
 
+@:structAccess
+@:native("uv_stdio_container_t")
+extern class UvStdioContainerTStruct {
+	var flags:UvStdioFlags;
+	var data:UvStdioContainerTDataUnion;
+}
+
 /**
 	Automatically generated bindings for libuv.
 

@@ -151,7 +151,7 @@ class UVGenerator {
 				case UnknownType(cName):
 					lines.push('@:native("$cName")');
 					lines.push('extern class $hxName {');
-					lines.push('	@:native("new $cName") public static function create():Star<$hxName>;');
+					lines.push('	@:native("new $cName") public static function create():RawPointer<$hxName>;');
 					lines.push('}');
 				case CallbackType(sig):
 					lines.push('typedef $hxName = Callable<(${generateHXArgs(sig.args)})->${mapHXType(sig.returnType)}>');
@@ -163,7 +163,7 @@ class UVGenerator {
 					lines.push('extern class $hxName {');
 					lines.push(generateHXFields(sig.fields));
 					if(!sig.isUnion)
-						lines.push('	@:native("new ${sig.type.name}") public static function create():Star<$hxName>;');
+						lines.push('	@:native("new ${sig.type.name}") public static function create():RawPointer<$hxName>;');
 					lines.push('}');
 				case EnumType(sig):
 					lines.push('extern enum abstract $hxName(Int) to Int {');
@@ -413,7 +413,7 @@ class UVGenerator {
 				hxType;
 		}
 		for(i in 0...type.stars)
-			name = 'Star<$name>';
+			name = 'RawPointer<$name>';
 		return name;
 	}
 
