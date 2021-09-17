@@ -35,7 +35,6 @@ typedef StructSignature = {
 	var type:CType;
 	var name:CName;
 	var fields:Array<TypeAndName>;
-	var structAccess:Bool;
 	var isUnion:Bool;
 }
 
@@ -72,7 +71,6 @@ class UVGenerator {
 
 	static function main() {
 		var root = rootDir();
-		trace(root);
 		var docsDir = Path.join([root, DOCS]);
 		var scan = DirSync.scan(docsDir).resolve();
 		var hxFile = File.write(Path.join([root, UV_HX]));
@@ -150,19 +148,19 @@ class UVGenerator {
 			switch kind {
 				case UnknownType(cName):
 					lines.push('@:native("$cName")');
-					lines.push('extern class $hxName {');
+					lines.push('@:structAccess extern class $hxName {');
 					lines.push('	@:native("new $cName") public static function create():RawPointer<$hxName>;');
 					lines.push('}');
 				case CallbackType(sig):
 					lines.push('typedef $hxName = Callable<(${generateHXArgs(sig.args)})->${mapHXType(sig.returnType)}>');
 				case StructType(sig):
-					if(sig.structAccess)
-						lines.push('@:structAccess');
 					if(!sig.isUnion)
 						lines.push('@:native("${sig.type.name}")');
-					lines.push('extern class $hxName {');
-					if(!sig.isUnion)
-						lines.push('	@:native("new ${sig.type.name}") public static function create():RawPointer<$hxName>;');
+					lines.push('@:structAccess extern class $hxName {');
+					if(!sig.isUnion) {
+						lines.push('	function new():Void;');
+						lines.push('	@:native("new ${sig.type.name}") static function create():RawPointer<$hxName>;');
+					}
 					lines.push(generateHXFields(sig.fields));
 					lines.push('}');
 				case EnumType(sig):
@@ -297,7 +295,6 @@ class UVGenerator {
 			type: type,
 			name: name,
 			fields: fields,
-			structAccess: !root && type.stars == 0,
 			isUnion: false
 		});
 		return result;

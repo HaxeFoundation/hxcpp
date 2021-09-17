@@ -45,6 +45,8 @@ extern enum abstract UvSigNum(Int) from Int to Int {
 }
 
 typedef UvPidT = Int;
+typedef UvUidT = Int;
+typedef UvGidT = Int;
 
 /**
 	Automatically generated bindings for libuv.
@@ -67,12 +69,12 @@ extern class UV {
 		throw new UVException(UVError.ofNative(result));
 	}
 
-	extern inline function toChars(array:Array<String>):Pointer<Pointer<Char>> {
-		var chars:Pointer<CastCharStar> = Stdlib.malloc((array.length + 1) * Native.sizeof(RawPointer<Char>));
+	extern static public inline function toChars(array:Array<String>):RawPointer<RawPointer<Char>> {
+		var chars:Pointer<CastCharStar> = Stdlib.malloc((array.length + 1) * untyped __cpp__('sizeof(char *)'));
 		chars.setAt(array.length, null);
 		for(i => item in array)
 			chars.setAt(i, item);
-		return cast chars;
+		return chars.raw;
 	}
 
 // Auto generated content :
