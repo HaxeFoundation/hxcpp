@@ -402,7 +402,7 @@ class UVGenerator {
 			case 'void': 'Void';
 			case 'char' if(type.stars == 1 && type.const): return 'ConstCharStar';
 			case 'char': 'Char';
-			case 'int' if(type.unsigned): 'UInt32';
+			case 'int' if(type.unsigned): 'UInt';
 			case 'int': 'Int';
 			case 'double': 'Float';
 			case '...': 'Rest<Any>';

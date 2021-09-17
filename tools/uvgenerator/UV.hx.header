@@ -48,6 +48,13 @@ typedef UvPidT = Int;
 typedef UvUidT = Int;
 typedef UvGidT = Int;
 
+@:native("uv_buf_t")
+@:structAccess extern class UvBufT {
+	var base:RawPointer<Char>;
+	var len:SizeT;
+	@:native("new uv_buf_t") public static function create():RawPointer<UvBufT>;
+}
+
 /**
 	Automatically generated bindings for libuv.
 
@@ -67,6 +74,10 @@ extern class UV {
 
 	extern static public inline function throwErr(result:Int):Int {
 		throw new UVException(UVError.ofNative(result));
+	}
+
+	extern static public inline function explain(result:Int):UVError {
+		return result < 0 ? UVError.ofNative(result) : UV_NOERR;
 	}
 
 	extern static public inline function toChars(array:Array<String>):RawPointer<RawPointer<Char>> {
