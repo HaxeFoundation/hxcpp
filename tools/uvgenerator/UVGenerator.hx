@@ -450,7 +450,7 @@ class UVGenerator {
 			if(a.name != null) {
 				name = a.name.label;
 				if(a.name.array >= 0)
-					type = 'Reference<$type>';
+					type = 'RawPointer<$type>';
 			} else {
 				if(a.type.name.startsWith('uv_')) {
 					name = a.type.name.substr('uv_'.length);
