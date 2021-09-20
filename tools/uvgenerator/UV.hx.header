@@ -79,6 +79,29 @@ extern enum abstract UvTcpFlags to Int {
 	@:native("UV_TCP_IPV6ONLY") var UV_TCP_IPV6ONLY;
 }
 
+@:native("sockaddr_storage")
+@:structAccess extern class SockaddrStorage {
+	var ss_family:AfAddressFamily;
+	@:native("new sockaddr_storage") public static function create():RawPointer<SockaddrStorage>;
+}
+
+@:native("sockaddr_in6")
+@:structAccess extern class SockaddrIn6 {
+	var sin6_port:UInt16;
+	@:native("new sockaddr_in6") public static function create():RawPointer<SockaddrIn6>;
+}
+
+@:native("sockaddr_in")
+@:structAccess extern class SockaddrIn {
+	var sin_port:UInt16;
+	@:native("new sockaddr_in") public static function create():RawPointer<SockaddrIn>;
+}
+
+@:native("sockaddr")
+@:structAccess extern class Sockaddr {
+	@:native("new sockaddr") public static function create():RawPointer<Sockaddr>;
+}
+
 /**
 	Automatically generated bindings for libuv.
 

@@ -419,8 +419,11 @@ class UVGenerator {
 					hxTypesToGenerate.set(hxType, UnknownType(type.name));
 				hxType;
 		}
-		for(i in 0...type.stars)
-			name = 'RawPointer<$name>';
+		if(type.stars > 0) {
+			var ptr = type.const ? 'RawConstPointer' : 'RawPointer';
+			for(i in 0...type.stars)
+				name = '$ptr<$name>';
+		}
 		return name;
 	}
 
