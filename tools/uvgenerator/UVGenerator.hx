@@ -164,7 +164,8 @@ class UVGenerator {
 					lines.push(generateHXFields(sig.fields));
 					lines.push('}');
 				case EnumType(sig):
-					lines.push('extern enum abstract $hxName(Int) to Int {');
+					lines.push('@:coreType @:native("${sig.name.label}")');
+					lines.push('extern enum abstract $hxName to Int {');
 					for(ctor in sig.constructors)
 						lines.push('	@:native("$ctor") var $ctor;');
 					lines.push('}');
@@ -402,7 +403,7 @@ class UVGenerator {
 			case 'void': 'Void';
 			case 'char' if(type.stars == 1 && type.const): return 'ConstCharStar';
 			case 'char': 'Char';
-			case 'int' if(type.unsigned): 'UInt';
+			case 'int' if(type.unsigned): 'UInt32';
 			case 'int': 'Int';
 			case 'double': 'Float';
 			case '...': 'Rest<Any>';
