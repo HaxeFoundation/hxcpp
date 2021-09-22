@@ -102,6 +102,11 @@ extern enum abstract UvTcpFlags to Int {
 	@:native("new sockaddr") public static function create():RawPointer<Sockaddr>;
 }
 
+abstract UvFile(Int) to Int {
+	@:allow(cpp.uv) inline function new(fd:Int)
+		this = fd;
+}
+
 /**
 	Automatically generated bindings for libuv.
 
