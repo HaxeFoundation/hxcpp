@@ -99,7 +99,7 @@ void _hx_std_put_env( String e, String v )
 #ifdef HX_WINRT
    // Do nothing
 #elif defined(NEKO_WINDOWS)
-   String set = e + HX_CSTRING("=") + v;
+   String set = e + HX_CSTRING("=") + (v == null()?'\0':v);
 
    #ifdef HX_SMART_STRINGS
    if (set.isUTF16Encoded())
@@ -108,7 +108,10 @@ void _hx_std_put_env( String e, String v )
    #endif
       putenv(set.utf8_str());
 #else
-   setenv(e.utf8_str(),v.utf8_str(),1);
+   if (v == null())
+      unsetenv(e.utf8_str());
+   else
+      setenv(e.utf8_str(),v.utf8_str(),1);
 #endif
 }
 
@@ -346,7 +349,7 @@ bool _hx_std_sys_exists( String path )
    #ifdef EPPC
    return true;
    #else
-   
+
 #ifdef NEKO_WINDOWS
    const wchar_t * wpath = path.__WCStr();
    hx::EnterGCFreeZone();
@@ -357,7 +360,7 @@ bool _hx_std_sys_exists( String path )
    bool result = stat(path.__s,&st) == 0;
 #endif
    hx::ExitGCFreeZone();
-   
+
    return result;
    #endif
 }
