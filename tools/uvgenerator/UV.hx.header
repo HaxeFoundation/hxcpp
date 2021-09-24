@@ -141,6 +141,44 @@ enum abstract NativeFileAccessMode(Int) to Int {
 	@:native("R_OK") var R_OK;
 }
 
+extern enum abstract NativeAddrInfoFlag(Int) from Int to Int {
+	@:native("AI_PASSIVE") var AI_PASSIVE;
+	@:native("AI_CANONNAME") var AI_CANONNAME;
+	@:native("AI_NUMERICHOST") var AI_NUMERICHOST;
+	@:native("AI_V4MAPPED") var AI_V4MAPPED;
+	@:native("AI_ALL") var AI_ALL;
+	@:native("AI_ADDRCONFIG") var AI_ADDRCONFIG;
+	@:native("AI_NUMERICSERV") var AI_NUMERICSERV;
+}
+
+extern enum abstract NativeSocketType(Int) from Int to Int {
+	@:native("SOCK_STREAM") var SOCK_STREAM;
+	@:native("SOCK_DGRAM") var SOCK_DGRAM;
+	@:native("SOCK_RAW") var SOCK_RAW;
+}
+
+@:native("addrinfo")
+@:structAccess extern class Addrinfo {
+	function new():Void;
+	@:native("new addrinfo") public static function create():RawPointer<Addrinfo>;
+	var ai_flags:Int;
+	var ai_family:Int;
+	var ai_socktype:Int;
+	var ai_protocol:Int;
+	var ai_addrlen:Int;
+	var ai_addr:RawPointer<Sockaddr>;
+	var ai_canonname:RawPointer<Char>;
+	var ai_next:RawPointer<Addrinfo>;
+}
+
+extern enum abstract NativeNameInfoFlag(Int) from Int to Int {
+	@:native("NI_NUMERICHOST") var NI_NUMERICHOST;
+	@:native("NI_NUMERICSERV") var NI_NUMERICSERV;
+	@:native("NI_NOFQDN") var NI_NOFQDN;
+	@:native("NI_NAMEREQD") var NI_NAMEREQD;
+	@:native("NI_DGRAM") var NI_DGRAM;
+}
+
 /**
 	Automatically generated bindings for libuv.
 

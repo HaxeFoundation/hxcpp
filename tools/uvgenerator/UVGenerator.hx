@@ -149,7 +149,7 @@ class UVGenerator {
 				case UnknownType(cName):
 					lines.push('@:native("$cName")');
 					lines.push('@:structAccess extern class $hxName {');
-					lines.push('	@:native("new $cName") public static function create():RawPointer<$hxName>;');
+					lines.push('	@:native("new $cName") static function create():RawPointer<$hxName>;');
 					lines.push('}');
 				case CallbackType(sig):
 					lines.push('typedef $hxName = Callable<(${generateHXArgs(sig.args)})->${mapHXType(sig.returnType)}>');
