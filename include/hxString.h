@@ -58,7 +58,13 @@ public:
    #ifdef __OBJC__
    inline String(NSString *inString)
    {
-      *this = String([inString UTF8String]);
+      if (inString)
+         *this = String([inString UTF8String]);
+      else
+      {
+         length = 0;
+         __s = 0;
+      }
    }
    inline operator NSString * () const
    {
