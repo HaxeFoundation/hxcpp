@@ -365,7 +365,9 @@ String __hxcpp_get_bin_dir()
   #endif
 // Unix...
 #elif defined(__APPLE__)
-  #ifdef HXCPP_M64
+  #ifdef HXCPP_ARM64
+    HX_CSTRING("MacArm64");
+  #elif defined(HXCPP_M64)
     HX_CSTRING("Mac64");
   #else
     HX_CSTRING("Mac");
@@ -633,6 +635,22 @@ void *__hxcpp_get_proc_address(String inLib, String full_name,bool inNdllProc,bo
             {
                printf("Found %s\n", testPath.out_str(&convertBuf));
             }
+
+
+            #if defined(HX_MACOS) && defined(HXCPP_ARM64)
+            if (!module)
+            {
+               // Fat binary?
+               String testPath  = haxelibPath + HX_CSTRING("/ndll/Mac64/") + inLib + extension;
+               if (gLoadDebug)
+                  printf(" try %s...\n", testPath.out_str(&convertBuf));
+               module = hxLoadLibrary(testPath);
+               if (module && gLoadDebug)
+               {
+                  printf("Found %s\n", testPath.out_str(&convertBuf));
+               }
+            }
+            #endif
          }
       }
       #endif
