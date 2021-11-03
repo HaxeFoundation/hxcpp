@@ -1175,6 +1175,18 @@ String  __object_hash_get_string(Dynamic inHash,Dynamic inKey)
 }
 
 
+cpp::Int64 __object_hash_get_int64(Dynamic inHash,String inKey)
+{
+   toRealObject(inKey);
+   DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
+   if (!hash)
+      return null();
+
+   cpp::Int64 result = 0;
+   hash->query(inKey,result);
+   return result;
+}
+
 
 
 bool  __object_hash_exists(Dynamic &ioHash,Dynamic inKey)
