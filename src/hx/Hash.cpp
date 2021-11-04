@@ -1175,7 +1175,7 @@ String  __object_hash_get_string(Dynamic inHash,Dynamic inKey)
 }
 
 
-cpp::Int64 __object_hash_get_int64(Dynamic inHash,String inKey)
+cpp::Int64 __object_hash_get_int64(Dynamic inHash,Dynamic inKey)
 {
    toRealObject(inKey);
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(inHash.GetPtr());
