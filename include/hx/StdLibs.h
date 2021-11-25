@@ -275,6 +275,19 @@ void    __hxcpp_mutex_acquire(Dynamic);
 bool    __hxcpp_mutex_try(Dynamic);
 void    __hxcpp_mutex_release(Dynamic);
 
+Dynamic __hxcpp_semaphore_create(int);
+void __hxcpp_semaphore_acquire(Dynamic);
+bool __hxcpp_semaphore_try_acquire(Dynamic, double timeout);
+void __hxcpp_semaphore_release(Dynamic);
+
+Dynamic __hxcpp_condition_create(void);
+void __hxcpp_condition_acquire(Dynamic);
+bool __hxcpp_condition_try_acquire(Dynamic);
+void __hxcpp_condition_release(Dynamic);
+void __hxcpp_condition_wait(Dynamic);
+bool __hxcpp_condition_timed_wait(Dynamic,double);
+void __hxcpp_condition_signal(Dynamic);
+void __hxcpp_condition_broadcast(Dynamic);
 
 Dynamic __hxcpp_lock_create();
 bool    __hxcpp_lock_wait(Dynamic inlock,double inTime);

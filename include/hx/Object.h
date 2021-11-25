@@ -122,6 +122,8 @@ enum
    clsIdCStatic5,
    clsIdCStaticVar,
    clsIdMutex,
+   clsIdSemaphore,
+   clsIdCondition,
    clsIdLock,
    clsIdDeque,
    clsIdThreadInfo,
