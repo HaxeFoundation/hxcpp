@@ -1,7 +1,6 @@
 #include <hxcpp.h>
 
 #include <hx/Thread.h>
-#include <pthread.h>
 #include <time.h>
 
 DECLARE_TLS_DATA(class hxThreadInfo, tlsCurrentThread);
@@ -539,7 +538,7 @@ public:
 #elif defined(POSIX_SEMAPHORE)
     sem_wait(&sem);
 #elif defined(APPLE_SEMAPHORE)
-    dispatch_semaphore_wait(semaphore->impl.semaphore, DISPATCH_TIME_FOREVER);
+    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
 #endif
   }
 
@@ -568,7 +567,7 @@ public:
     return dispatch_semaphore_wait(
                sem,
                dispatch_time(DISPATCH_TIME_NOW,
-                             (int64_t)(seconds * 1000 * 1000 * 1000))) == 0;
+                             (int64_t)(timeout * 1000 * 1000 * 1000))) == 0;
 #else
 	return false;
 #endif
