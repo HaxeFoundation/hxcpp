@@ -623,8 +623,10 @@ void __hxcpp_semaphore_release(Dynamic inSemaphore) {
 class hxCondition : public hx::Object {
 public:
 #ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
 	CRITICAL_SECTION cs;
 	CONDITION_VARIABLE cond;
+#endif
 #else
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
@@ -634,8 +636,12 @@ public:
     mFinalizer = new hx::InternalFinalizer(this);
     mFinalizer->mFinalizer = clean;
 #ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
     InitializeCriticalSection(&cs);
 	InitializeConditionVariable(&cond);
+#else
+	throw Dynamic(HX_CSTRING("Condition variables are not supported on Windows XP"));
+#endif
 #else
     pthread_condattr_t cond_attr;
     pthread_condattr_init(&cond_attr);
@@ -657,7 +663,9 @@ public:
     hxCondition *cond = dynamic_cast<hxCondition *>(inObj);
     if (cond) {
 #ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
       DeleteCriticalSection(&cond->cs);
+#endif
 #else
       pthread_cond_destroy(&cond->cond);
       pthread_mutex_destroy(&cond->mutex);
@@ -666,40 +674,54 @@ public:
   }
 
   void Acquire() {
-	  #ifdef HX_WINDOWS
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
 	  EnterCriticalSection(&cs);
-	  #else
+#endif
+#else
 	  pthread_mutex_lock(&mutex);
-	  #endif
+#endif
   }
 
   bool TryAcquire() {
 #ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
     return (bool)TryEnterCriticalSection(&cs);
+#else
+	return false;
+#endif
 #else
     return pthread_mutex_trylock(&mutex);
 #endif
   }
 
   void Release() {
-	  #ifdef HX_WINDOWS
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
 	  LeaveCriticalSection(&cs);
-	  #else
+#endif
+#else
 	  pthread_mutex_unlock(&mutex);
-	  #endif
+#endif
   }
 
   void Wait() {
-	  #ifdef HX_WINDOWS
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
 	  SleepConditionVariableCS(&cond,&cs,INFINITE);
-	  #else
+#endif
+#else
 	  pthread_cond_wait(&cond, &mutex);
-	  #endif
+#endif
   }
 
   bool TimedWait(double timeout) {
 #ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
 	  return (bool)SleepConditionVariableCS(&cond, &cs, (DWORD)((FLOAT)timeout * 1000.0));
+#else
+	  return false;
+#endif
 #else
     struct timeval tv;
     struct timespec t;
@@ -717,18 +739,22 @@ public:
 #endif
   }
   void Signal() {
-	  #ifdef HX_WINDOWS
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
 	  WakeConditionVariable(&cond);
-	  #else
+#endif
+#else
 	  pthread_cond_signal(&cond);
-	  #endif
+#endif
   }
   void Broadcast() {
-	  #ifdef HX_WINDOWS
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
 	  WakeAllConditionVariable(&cond);
-	  #else
+#endif
+#else
 	  pthread_cond_broadcast(&cond);
-	  #endif
+#endif
   }
 };
 
@@ -780,7 +806,8 @@ void __hxcpp_condition_broadcast(Dynamic inCond) {
 
 // --- Lock ------------------------------------------------------------
 
-class hxLock : public hx::Object {
+class hxLock : public hx::Object
+{
 public:
 
 	hxLock()
@@ -865,6 +892,8 @@ public:
    HxMutex     mAvailableLock;
 	int         mAvailable;
 };
+
+
 
 Dynamic __hxcpp_lock_create()
 {
