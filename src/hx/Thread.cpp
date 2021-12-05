@@ -517,7 +517,7 @@ public:
     mFinalizer = new hx::InternalFinalizer(this);
     mFinalizer->mFinalizer = clean;
 #ifdef HX_WINDOWS
-    CreateSemaphoreW(&sem, value, INFINITE);
+    sem = CreateSemaphoreW(NULL, value, 0x7FFFFFFF, NULL);
 #elif defined(POSIX_SEMAPHORE)
     sem_init(&sem, 0, value);
 #elif defined(APPLE_SEMAPHORE)
@@ -544,7 +544,7 @@ public:
 
   bool TryAcquire(double timeout) {
 #ifdef HX_WINDOWS
-    return WaitForSingleObject(sem, (DWORD)((FLOAT)timeout * 1000.0)) != WAIT_TIMEOUT;
+    return WaitForSingleObject(sem, (DWORD)((FLOAT)timeout * 1000.0)) == 0;
 #elif defined(POSIX_SEMAPHORE)
     if (timeout == 0) {
       return sem_trywait(&sem) == 0;
@@ -575,7 +575,7 @@ public:
 
   void Release() {
 #if HX_WINDOWS
-	ReleaseSemaphore(sem);
+	ReleaseSemaphore(sem, 1, NULL);
 #elif defined(POSIX_SEMAPHORE)
     sem_post(&sem);
 #elif defined(APPLE_SEMAPHORE)
@@ -675,7 +675,7 @@ public:
 
   bool TryAcquire() {
 #ifdef HX_WINDOWS
-    return (bool)EnterCriticalSection(&cs);
+    return (bool)TryEnterCriticalSection(&cs);
 #else
     return pthread_mutex_trylock(&mutex);
 #endif
@@ -699,7 +699,7 @@ public:
 
   bool TimedWait(double timeout) {
 #ifdef HX_WINDOWS
-    return SleepConditionVariableCS(&cond, &cs, (DWORD)((FLOAT)timeout * 1000.0));
+	  return (bool)SleepConditionVariableCS(&cond, &cs, (DWORD)((FLOAT)timeout * 1000.0));
 #else
     struct timeval tv;
     struct timespec t;
