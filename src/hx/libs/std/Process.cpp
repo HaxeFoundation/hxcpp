@@ -455,6 +455,58 @@ void _hx_std_process_stdin_close( Dynamic handle )
    Wait until the process terminate, then returns its exit code.
    </doc>
 **/
+#if (HXCPP_API_LEVEL > 420)
+Dynamic _hx_std_process_exit( Dynamic handle, bool block )
+{
+   vprocess *p = getProcess(handle);
+
+   hx::EnterGCFreeZone();
+   #ifdef NEKO_WINDOWS
+   {
+      DWORD rval;
+      DWORD wait = INFINITE;
+      if (!block)
+         wait = 0;
+      
+      WaitForSingleObject(p->pinf.hProcess,wait);
+      hx::ExitGCFreeZone();
+
+      if( !GetExitCodeProcess(p->pinf.hProcess,&rval) && block)
+         return 0;
+      else if (!block && rval == STILL_ACTIVE)
+         return null();
+      else
+         return rval;
+   }
+   #else
+   int options=0;
+   if (!block)
+      options = WNOHANG;
+   
+   int rval=0;
+   pid_t ret=-1;
+   while( (ret = waitpid(p->pid,&rval,options)) != p->pid )
+   {
+      if( errno == EINTR )
+         continue;
+      
+      if (!block && ret == 0)
+      {
+         hx::ExitGCFreeZone();
+         return null();
+      }
+
+      hx::ExitGCFreeZone();
+      return 0;
+   }
+   hx::ExitGCFreeZone();
+   if( !WIFEXITED(rval) )
+      return 0;
+
+   return WEXITSTATUS(rval);
+   #endif
+}
+#else
 int _hx_std_process_exit( Dynamic handle )
 {
    vprocess *p = getProcess(handle);
@@ -486,6 +538,7 @@ int _hx_std_process_exit( Dynamic handle )
    return WEXITSTATUS(rval);
    #endif
 }
+#endif
 
 /**
    process_pid : 'process -> int
@@ -536,7 +589,11 @@ int _hx_std_process_stdout_read( Dynamic handle, Array<unsigned char> buf, int p
 int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int pos, int len ) { return 0; }
 int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int pos, int len ) { return 0; }
 void _hx_std_process_stdin_close( Dynamic handle ) { }
+#if (HXCPP_API_LEVEL > 420)
+Dynamic _hx_std_process_exit( Dynamic handle, bool block ) { return 0; }
+#else
 int _hx_std_process_exit( Dynamic handle ) { return 0; }
+#endif
 int _hx_std_process_pid( Dynamic handle ) { return 0; }
 void _hx_std_process_close( Dynamic handle ) { }
 void _hx_std_process_kill( Dynamic handle ) { }
