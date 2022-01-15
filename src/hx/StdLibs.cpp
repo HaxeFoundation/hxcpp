@@ -615,7 +615,6 @@ int __int__(double x)
       return (int)x;
 }
 
-
 Dynamic __hxcpp_parse_int(const String &inString)
 {
    if (!inString.raw_ptr())
@@ -623,12 +622,15 @@ Dynamic __hxcpp_parse_int(const String &inString)
    long result;
    hx::strbuf buf;
    const char *str = inString.utf8_str(&buf);
-   bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
+   int neg = (str[0] == '-' ? 1 : 0);
+   bool hex =  (str[neg]=='0' && (str[neg + 1]=='x' || str[neg + 1]=='X'));
    char *end = 0;
 
-   if (hex)
-      result = (long)strtoul(str+2,&end,16);
-   else
+   if (hex) {
+      result = (long)strtoul(str+2+neg,&end,16);
+	  if (neg == 1)
+	  	result = -result;
+   } else
       result = strtol(str,&end,10);
    if (str==end)
       return null();
