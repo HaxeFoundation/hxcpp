@@ -622,40 +622,46 @@ Dynamic __hxcpp_parse_int(const String &inString)
    long result;
    hx::strbuf buf;
    const char *str = inString.utf8_str(&buf);
-   int neg = (str[0] == '-' ? 1 : 0);
-   bool hex =  (str[neg]=='0' && (str[neg + 1]=='x' || str[neg + 1]=='X'));
-   char *end = 0;
 
-   if (hex) {
-      result = (long)strtoul(str+2+neg,&end,16);
-	  if (neg == 1)
-	  	result = -result;
-   } else
-      result = strtol(str,&end,10);
-   if (str==end)
-      return null();
-   return (int)result;
-}
+   // On the first non space char check to see if we've got a hex string
+   bool hex = false;
+   int len = strlen(str);
+   int offset = 0;
+   bool neg = false;
+   for (offset; offset < len; offset++)
+   {
+      if (!isspace(str[offset]))
+      {
+         if (str[offset] == '-')
+         {
+            neg = true;
+            offset++;
+         }
 
+         if (len - offset >= 1)
+         {
+            if (str[offset] == '0' && (str[offset + 1] == 'x' || str[offset + 1] == 'X'))
+            {
+               hex = true;
+            }
+         }
 
-int __hxcpp_parse_substr_int(const String &inString,int inStart, int inLen)
-{
-   if (!inString.raw_ptr())
-      return 0;
-   if (inLen<0)
-      inLen = inString.length - inStart;
-   long result;
-   hx::strbuf buf;
-   const char *str = inString.ascii_substr(&buf,inStart,inLen);
-   bool hex =  (str[0]=='0' && (str[1]=='x' || str[1]=='X'));
+         break;
+      }
+   }
+
    char *end = 0;
 
    if (hex)
-      result = (long)strtoul(str+2,&end,16);
+   {
+      result = (long)strtoul(str+offset,&end,16);
+      if (neg)
+         result = -result;
+   }
    else
       result = strtol(str,&end,10);
    if (str==end)
-      return 0;
+      return null();
    return (int)result;
 }
 

@@ -881,6 +881,72 @@ class Test
       return ok();
    }
 
+   public static function testIntParsing()
+   {
+      var int0 = '0x1';
+      var int1 = ' 0x1';
+      var int2 = '\t0x1';
+      var int3 = '   0x';
+      var int4 = '-0x1';
+      var int5 = ' -0x1';
+      var int6 = '\t-0x1';
+      var int7 = '   -0x';
+      var int8 = '  5';
+      var int9 = ' \t\n5';
+      
+      var val0 = Std.parseInt(int0);
+      if (val0 != 1)
+      {
+         error('parsed hex value was not 1, $val0');
+      }
+      var val1 = Std.parseInt(int1);
+      if (val1 != 1)
+      {
+         error('parsed hex value was not 1, $val1');
+      }
+      var val2 = Std.parseInt(int2);
+      if (val2 != 1)
+      {
+         error('parsed hex value was not 1, $val2');
+      }
+      var val3 = Std.parseInt(int3);
+      if (val3 != 0)
+      {
+         error('parsed hex value was not 0, $val3');
+      }
+      var val4 = Std.parseInt(int4);
+      if (val4 != -1)
+      {
+         error('parsed hex value was not 1, $val4');
+      }
+      var val5 = Std.parseInt(int5);
+      if (val5 != -1)
+      {
+         error('parsed hex value was not 1, $val5');
+      }
+      var val6 = Std.parseInt(int6);
+      if (val6 != -1)
+      {
+         error('parsed hex value was not 1, $val6');
+      }
+      var val7 = Std.parseInt(int7);
+      if (val7 != 0)
+      {
+         error('parsed hex value was not 0, $val7');
+      }
+      var val8 = Std.parseInt(int8);
+      if (val8 != 5)
+      {
+         error('parsed int value was not 5, $val8');
+      }
+      var val9 = Std.parseInt(int9);
+      if (val9 != 5)
+      {
+         error('parsed int value was not 5, $val9');
+      }
+
+      return ok();
+   }
 
    public static function main()
    {
@@ -912,6 +978,7 @@ class Test
          exitCode |= testDynamicMember();
          exitCode |= testNoDebug();
          exitCode |= testNoDebugNoAlloc();
+         exitCode |= testIntParsing();
 
          if (exitCode!=0)
             Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );
