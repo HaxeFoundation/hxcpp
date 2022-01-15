@@ -661,7 +661,7 @@ Dynamic __hxcpp_parse_int(const String &inString)
    else
       result = strtol(str,&end,10);
    if (str==end)
-      return 0;
+      return null();
    return (int)result;
 }
 
