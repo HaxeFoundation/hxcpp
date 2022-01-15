@@ -10,6 +10,9 @@
 #include <hx/OS.h>
 
 
+#if defined(HXCPP_CATCH_SEGV) && !defined(_MSC_VER)
+#include <signal.h>
+#endif
 
 
 
@@ -107,7 +110,7 @@ void CriticalError(const String &inErr, bool inAllowFixup)
 }
 
 
-#ifdef HXCPP_SEH_THROW
+#ifdef HXCPP_CATCH_SEGV
 class hxSehException : public hx::Object
 {
 public:
@@ -128,12 +131,19 @@ public:
 
 static hx::Object *sException = new hxSehException(1);
 
-void __cdecl hxSehFunction(unsigned int, struct _EXCEPTION_POINTERS* )
+#ifdef _MSC_VER
+void __cdecl hxSignalFunction(unsigned int, struct _EXCEPTION_POINTERS* )
+{
+   hx::Throw(sException);
+}
+#else
+void hxSignalFunction(int)
 {
    hx::Throw(sException);
 }
 #endif
 
+#endif
 
 
 String FormatStack(const char *file, const char *clazz, const char *func, int line, bool display)
@@ -256,15 +266,23 @@ void StackContext::onThreadAttach()
       profAttach(mProfiler,this);
    #endif
 
-   #ifdef HXCPP_SEH_THROW
-   mOldSehFunc = _set_se_translator( hxSehFunction );
+   #ifdef HXCPP_CATCH_SEGV
+      #ifdef _MSC_VER
+      mOldSignalFunc = _set_se_translator( hxSignalFunction );
+      #else
+      mOldSignalFunc = signal( SIGSEGV, hxSignalFunction );
+      #endif
    #endif
 }
 
 void StackContext::onThreadDetach()
 {
-   #ifdef HXCPP_THROW_SEH
-   _set_se_translator( mOldSehFunc );
+   #ifdef HXCPP_CATCH_SEGV
+      #ifdef _MSC_VER
+      _set_se_translator( mOldSignalFunc );
+      #else
+      signal( SIGSEGV, mOldSignalFunc );
+      #endif
    #endif
 
    #ifdef HXCPP_DEBUGGER

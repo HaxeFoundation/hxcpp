@@ -69,8 +69,6 @@ class RunMain
    {
       log("Compiling hxcpp tool...");
       run("tools/hxcpp","haxe", [ "compile.hxml"]);
-      log("Building binaries...");
-      run("project","neko", [ "build.n"]);
       log("Initial setup complete.");
    }
 

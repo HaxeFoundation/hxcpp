@@ -431,7 +431,16 @@ Dynamic String::keyValueIterator()
    return new hx::StringKeyValueIterator(*this);
 }
 
-
+namespace hx
+{
+template<typename FROM, typename TO> Dynamic hx::ArrayKeyValueIterator<FROM, TO>::next()
+{
+   int p = mIdx++;
+   return
+     hx::AnonStruct2_obj< int,TO >::Create(HX_("key",9f,89,51,00),p,
+                                           HX_("value",71,7f,b8,31), toTo(mArray->__get(p)) );
+}
+}
 
 
 

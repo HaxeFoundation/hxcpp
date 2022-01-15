@@ -29,6 +29,7 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <stdio.h>
+#define HXCPP_PTHREADS
 #endif
 
 #ifdef RegisterClass
@@ -36,6 +37,8 @@
 #endif
 
 #if defined(ANDROID)
+
+#define HX_HAS_ATOMIC 1
 
 #if (HXCPP_ANDROID_PLATFORM>=16)
 // Nice one, google, no one was using that.
@@ -60,6 +63,7 @@ inline int HxAtomicInc(volatile int *ioWhere)
    { return __atomic_inc(ioWhere); }
 inline int HxAtomicDec(volatile int *ioWhere)
    { return __atomic_dec(ioWhere); }
+
 
 #elif defined(HX_WINDOWS)
 

@@ -426,7 +426,7 @@ public:
    inline Function( ) { }
    inline Function( const Function &inRHS ) : call(inRHS.call) {  }
    inline Function( const Dynamic &inRHS) { call = inRHS==null()?0: (T*)inRHS->__GetHandle(); }
-   inline Function( const null &inRHS ) { }
+   inline Function( const null &inRHS ) { call = 0; }
    inline Function( T *inValue ) : call((T*)(inValue)) { }
    //inline Function( T *inValue ) : call(inValue) { }
    inline Function( AutoCast inValue ) : call( (T*)inValue.value) { }
@@ -551,6 +551,12 @@ public:
 
 
 } // end namespace cpp
+
+namespace hx
+{
+template <typename T>
+T *StarOf(T &x) { return &x; }
+}
 
 
 #endif

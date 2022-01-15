@@ -15,6 +15,7 @@
   #define atof(x) strtod(x,0)
 #endif
 
+
 // Really microsoft?
 #ifdef interface
   #undef interface
@@ -68,9 +69,9 @@ StackLayout::StackLayout(StackLayout *inParent) :
 
 void StackLayout::dump(Array<String> &inStrings, std::string inIndent)
 {
-   printf("%sCapture:\n",inIndent.c_str());
+   CPPIALOG("%sCapture:\n",inIndent.c_str());
    for(int i=0;i<captureVars.size();i++)
-      printf("%s %s\n", inIndent.c_str(), inStrings[captureVars[i]->nameId].out_str() );
+      CPPIALOG("%s %s\n", inIndent.c_str(), inStrings[captureVars[i]->nameId].out_str() );
    if (parent)
       parent->dump(inStrings,inIndent + "   ");
 }
@@ -815,10 +816,10 @@ struct CallFunExpr : public CppiaExpr
    static void SLJIT_CALL callScriptable(CppiaCtx *inCtx, ScriptCallable *inScriptable)
    {
       // compiled?
-      printf("callScriptable %p(%p) -> %p\n", inCtx, CppiaCtx::getCurrent(), inScriptable );
-      printf(" name = %s\n", inScriptable->getName());
+      CPPIALOG("callScriptable %p(%p) -> %p\n", inCtx, CppiaCtx::getCurrent(), inScriptable );
+      CPPIALOG(" name = %s\n", inScriptable->getName());
       inScriptable->runFunction(inCtx);
-      printf(" Done scipt callable\n");
+      CPPIALOG(" Done scipt callable\n");
    }
 
 
@@ -1101,7 +1102,7 @@ struct SetExpr : public CppiaExpr
       CppiaExpr *result = lvalue->makeSetter(op,value);
       if (!result)
       {
-         printf("Could not makeSetter.\n");
+         CPPIALOG("Could not makeSetter.\n");
          inModule.where(lvalue);
          throw "Bad Set expr";
       }
@@ -1260,7 +1261,7 @@ struct CastExpr : public CppiaDynamicExpr
          arrayType = t->arrayType;
          if (arrayType==arrNotArray)
          {
-            printf("Cast to %d, %s\n", typeId, t->name.out_str());
+            CPPIALOG("Cast to %d, %s\n", typeId, t->name.out_str());
             throw "Data cast to non-array";
          }
       }
@@ -1628,7 +1629,7 @@ struct NewExpr : public CppiaDynamicExpr
          return type->cppiaClass->createInstance(ctx,args);
       }
 
-      printf("Can't create non haxe type\n");
+      CPPIALOG("Can't create non haxe type\n");
       return 0;
    }
 
@@ -1649,7 +1650,7 @@ struct NewExpr : public CppiaDynamicExpr
             case arrAny:func = (void *)createArrayAny; break;
             case arrObject:func = (void *)createArrayObject; break;
             default:
-               printf("Unknown array creation\n");
+               CPPIALOG("Unknown array creation\n");
                return;
          }
 
@@ -1995,7 +1996,7 @@ struct CallStatic : public CppiaExpr
          ScriptCallable *func = (ScriptCallable *)type->cppiaClass->findFunction(true,fieldId);
          if (!func)
          {
-            printf("Could not find static function %s in %s\n", field.out_str(), type->name.out_str());
+            CPPIALOG("Could not find static function %s in %s\n", field.out_str(), type->name.out_str());
          }
          else
          {
@@ -2008,13 +2009,13 @@ struct CallStatic : public CppiaExpr
          ScriptNamedFunction func = type->haxeBase->findStaticFunction(field);
          if (func.signature)
          {
-            //printf(" found function %s\n", func.signature );
+            //CPPIALOG(" found function %s\n", func.signature );
             replace = new CallHaxe( this, func, 0, args, true );
          }
          else
          {
             //const StaticInfo *info = type->haxeClass->GetStaticStorage(field);
-            //printf("INFO %s -> %p\n", field.out_str(),  info);
+            //CPPIALOG("INFO %s -> %p\n", field.out_str(),  info);
             // TODO - create proper glue for static functions
             Dynamic func = type->haxeClass.mPtr->__Field( field, HX_PROP_NEVER );
             if (func.mPtr)
@@ -2029,7 +2030,7 @@ struct CallStatic : public CppiaExpr
          replace = new CallDynamicFunction(inModule, this, String::fromCharCode_dyn(), args );
          
 
-      //printf(" static call to %s::%s (%d)\n", type->name.out_str(), field.out_str(), type->cppiaClass!=0);
+      //CPPIALOG(" static call to %s::%s (%d)\n", type->name.out_str(), field.out_str(), type->cppiaClass!=0);
       if (replace)
       {
          delete this;
@@ -2037,12 +2038,29 @@ struct CallStatic : public CppiaExpr
          return replace;
       }
 
-      printf("Unknown static call to %s::%s (%d)\n", type->name.out_str(), field.out_str(), type->cppiaClass!=0);
+      CPPIALOG("Unknown static call to %s::%s (%d)\n", type->name.out_str(), field.out_str(), type->cppiaClass!=0);
       inModule.where(this);
       throw "Bad link";
       return this;
    }
 };
+
+
+#ifdef CPPIA_JIT
+static hx::Object *nullException = 0;
+void genNullReferenceExceptionCheck(CppiaCompiler *compiler, const JitVal &reg)
+{
+   #ifdef HXCPP_CHECK_POINTER
+   if (!nullException)
+      nullException = (HX_CSTRING("Null Object Reference")).makePermanentObject();
+
+   JumpId nonNull = compiler->compare(cmpP_NOT_EQUAL, reg.as(jtPointer), (void *)0);
+   compiler->move( sJitCtx.star(jtPointer, offsetof(hx::StackContext,exception)), (void *)nullException );
+   compiler->addThrow();
+   compiler->comeFrom(nonNull);
+   #endif
+}
+#endif
 
 
 
@@ -2080,6 +2098,7 @@ struct CallGetIndex : public CppiaIntExpr
       throw "Enum getIndex not supported by this version of compiled code";
       #endif
       thisExpr->genCode(compiler, sJitTemp0, etObject);
+      genNullReferenceExceptionCheck(compiler,sJitTemp0);
       if (destType==etInt)
          compiler->move( inDest, sJitTemp0.star( jtInt, offsetof(hx::EnumBase_obj, index) ) );
       else
@@ -2273,7 +2292,10 @@ struct CallMemberVTable : public CppiaExpr
    {
       int framePos = compiler->getCurrentFrameSize();
       if (thisExpr)
+      {
          thisExpr->genCode(compiler, JitFramePos(framePos,jtPointer), etObject);
+         genNullReferenceExceptionCheck(compiler, JitFramePos(framePos,jtPointer) );
+      }
       else
          compiler->move(JitFramePos(framePos,jtPointer), sJitThis);
       compiler->addFrame(etObject);
@@ -2764,7 +2786,7 @@ struct FieldByName : public CppiaDynamicExpr
    {
       if (crement==coNone && assign==aoNone)
       {
-         printf("FieldAccess without set\n");
+         CPPIALOG("FieldAccess without set\n");
          return;
       }
 
@@ -2809,7 +2831,7 @@ struct FieldByName : public CppiaDynamicExpr
                case coPostDec: func = (void *)postDecByName; break;
                case coPreDec: func = (void *)preDecByName; break;
                default:
-                  printf("Error in crement?\n");
+                  CPPIALOG("Error in crement?\n");
                   CppiaTrap();
             }
             compiler->callNative(func, objSrc, (void *)&name, gotVal );
@@ -2859,7 +2881,7 @@ struct FieldByName : public CppiaDynamicExpr
                }
                break;
             default:
-               printf("Unknown set type %d\n", destType);
+               CPPIALOG("Unknown set type %d\n", destType);
                CppiaTrap();
          }
       }
@@ -2895,7 +2917,7 @@ struct FieldByName : public CppiaDynamicExpr
                   }
                   break;
                default:
-                  printf("Unknown add type %d\n", destType);
+                  CPPIALOG("Unknown add type %d\n", destType);
                   CppiaTrap();
              }
          }
@@ -3017,7 +3039,7 @@ struct GetFieldByName : public CppiaDynamicExpr
             inModule.where(this);
             if (type->cppiaClass)
                type->cppiaClass->dump();
-            printf("Could not link static %s::%s (%d)\n", type->name.c_str(), inModule.strings[nameId].out_str(), nameId );
+            CPPIALOG("Could not link static %s::%s (%d)\n", type->name.c_str(), inModule.strings[nameId].out_str(), nameId );
             throw "Bad link";
          }
          name = inModule.strings[nameId];
@@ -3054,7 +3076,7 @@ struct GetFieldByName : public CppiaDynamicExpr
          ScriptCallable *func = vtable[vtableSlot];
          if (func==0)
          {
-            printf("Could not find vtable entry %s intf=%d (%d)\n", name.out_str(), isInterface, vtableSlot);
+            CPPIALOG("Could not find vtable entry %s intf=%d (%d)\n", name.out_str(), isInterface, vtableSlot);
             return 0;
          }
 
@@ -3069,7 +3091,10 @@ struct GetFieldByName : public CppiaDynamicExpr
    {
       // TODO - interfaces
       if (object)
+      {
          object->genCode(compiler, sJitTemp0.as(jtPointer), etObject);
+         genNullReferenceExceptionCheck(compiler, sJitTemp0);
+      }
       else if (isStatic)
       {
          compiler->move(sJitTemp0, (void *)&staticClass.mPtr);
@@ -3278,7 +3303,7 @@ struct CallMember : public CppiaExpr
    {
       classId = stream.getInt();
       fieldId = inCall==callSuperNew ? 0 : stream.getInt();
-      //printf("fieldId = %d (%s)\n",fieldId,stream.module->strings[ fieldId ].out_str());
+      //CPPIALOG("fieldId = %d (%s)\n",fieldId,stream.module->strings[ fieldId ].out_str());
       int n = stream.getInt();
       thisExpr = inCall==callObject ? createCppiaExpr(stream) : 0;
       callSuperField = inCall==callSuper;
@@ -3293,22 +3318,22 @@ struct CallMember : public CppiaExpr
 
       if (type->cppiaClass)
       {
-         //printf("Using cppia super %p %p\n", type->cppiaClass->newFunc, type->cppiaClass->newFunc->funExpr);
+         //CPPIALOG("Using cppia super %p %p\n", type->cppiaClass->newFunc, type->cppiaClass->newFunc->funExpr);
          CppiaExpr *replace = new CallFunExpr( this, 0, (ScriptCallable*)type->cppiaClass->newFunc->funExpr, args, true );
          replace->link(inModule);
          delete this;
          return replace;
       }
-      //printf("Using haxe super\n");
+      //CPPIALOG("Using haxe super\n");
       HaxeNativeClass *superReg = HaxeNativeClass::findClass(type->name.utf8_str());
       if (!superReg)
       {
-         printf("No class registered for %s\n", type->name.out_str());
+         CPPIALOG("No class registered for %s\n", type->name.out_str());
          throw "Unknown super call";
       }
       if (!superReg->construct.execute)
       {
-         //printf("Call super - nothing to do...\n");
+         //CPPIALOG("Call super - nothing to do...\n");
          CppiaExpr *replace = new CppiaExpr(this);
          delete this;
          return replace;
@@ -3330,7 +3355,7 @@ struct CallMember : public CppiaExpr
       TypeData *type = inModule.types[classId];
       String field = inModule.strings[fieldId];
 
-      //printf("  linking call %s::%s\n", type->name.out_str(), field.out_str());
+      //CPPIALOG("  linking call %s::%s\n", type->name.out_str(), field.out_str());
 
       CppiaExpr *replace = 0;
       
@@ -3341,9 +3366,9 @@ struct CallMember : public CppiaExpr
          {
             if (field!=HX_CSTRING("__SetField") && field!=HX_CSTRING("__Field") && field!=HX_CSTRING("__Index"))
             {
-               printf("Bad array field '%s'\n", field.out_str());
+               CPPIALOG("Bad array field '%s'\n", field.out_str());
                inModule.where(this);
-               throw "Unknown array field";
+               throw "Unknown array field name";
             }
          }
       }
@@ -3362,7 +3387,7 @@ struct CallMember : public CppiaExpr
          {
             int vtableSlot = type->cppiaClass->findFunctionSlot(fieldId);
 
-            //printf("   vslot %d\n", vtableSlot);
+            //CPPIALOG("   vslot %d\n", vtableSlot);
             if (vtableSlot!=-1)
             {
                CppiaFunction *funcProto = type->cppiaClass->findVTableFunction(fieldId);
@@ -3380,7 +3405,7 @@ struct CallMember : public CppiaExpr
             {
                if (!strcmp(nativeInterfaceFuncs[i]->name,field.utf8_str()))
                {
-                  //printf(" found native interface function %s\n", field.out_str() );
+                  //CPPIALOG(" found native interface function %s\n", field.out_str() );
                   replace = new CallHaxe( this, *nativeInterfaceFuncs[i], thisExpr, args );
                   break;
                }
@@ -3395,9 +3420,9 @@ struct CallMember : public CppiaExpr
          if (func.signature)
          {
             if (callSuperField && !func.superExecute)
-               printf("Warning - calling super host '%s' from cppia can lead to infinte recursion\n", field.utf8_str());
+               CPPIALOG("Warning - calling super host '%s' from cppia can lead to infinte recursion\n", field.utf8_str());
 
-            //printf(" found function %s\n", func.signature );
+            //CPPIALOG(" found function %s\n", func.signature );
             replace = new CallHaxe( this, func, thisExpr, args, false, callSuperField && func.superExecute);
          }
       }
@@ -3407,7 +3432,7 @@ struct CallMember : public CppiaExpr
          ScriptNamedFunction func = type->interfaceBase->findFunction(field.utf8_str());
          if (func.signature)
          {
-            //printf(" found function %s\n", func.signature );
+            //CPPIALOG(" found function %s\n", func.signature );
             replace = new CallHaxe( this, func, thisExpr, args );
          }
       }
@@ -3452,7 +3477,7 @@ struct CallMember : public CppiaExpr
             ScriptFunction func = type->haxeBase->findFunction(baseFunc);
             if (func.signature)
             {
-               //printf(" replacing %s.%s, signature %s\n", type->name.out_str(), field.out_str(), func.signature);
+               //CPPIALOG(" replacing %s.%s, signature %s\n", type->name.out_str(), field.out_str(), func.signature);
                replace = new CallHaxe( this, func, thisExpr, args );
             }
          }
@@ -3467,7 +3492,7 @@ struct CallMember : public CppiaExpr
 
       if (!type->isDynamic)
       {
-         printf("   CallMember %s (%p %p) '%s' fallback\n", type->name.out_str(), type->haxeClass.mPtr, type->cppiaClass, field.out_str());
+         CPPIALOG("   CallMember %s (%p %p) '%s' fallback\n", type->name.out_str(), type->haxeClass.mPtr, type->cppiaClass, field.out_str());
       }
 
       {
@@ -3478,8 +3503,8 @@ struct CallMember : public CppiaExpr
       }
 
       /*
-      printf("Could not link %s::%s\n", type->name.c_str(), field.out_str() );
-      printf("%p %p\n", type->cppiaClass, type->haxeBase);
+      CPPIALOG("Could not link %s::%s\n", type->name.c_str(), field.out_str() );
+      CPPIALOG("%p %p\n", type->cppiaClass, type->haxeBase);
       if (type->cppiaClass)
          type->cppiaClass->dump();
       if (type->haxeBase)
@@ -3495,6 +3520,13 @@ struct CallMember : public CppiaExpr
 
 
 
+
+inline hx::Object *CheckNotNull(hx::Object *inPtr)
+{
+   CPPIA_CHECK(inPtr);
+   return inPtr;
+}
+
 template<typename T, int REFMODE> 
 struct MemReference : public CppiaExpr
 {
@@ -3502,12 +3534,10 @@ struct MemReference : public CppiaExpr
    T *pointer;
    CppiaExpr *object;
 
-   #define CHECKVAL \
-      if (REFMODE==locObj) CPPIA_CHECK(object);
 
    #define MEMGETVAL \
      *(T *)( \
-         ( REFMODE==locObj      ?(char *)object->runObject(ctx) : \
+         ( REFMODE==locObj      ?(char *)CheckNotNull(object->runObject(ctx)) : \
            REFMODE==locAbsolute ?(char *)pointer : \
            REFMODE==locThis     ?(char *)ctx->getThis() : \
                                  (char *)ctx->frame \
@@ -3515,7 +3545,7 @@ struct MemReference : public CppiaExpr
 
    #define MEMGETPTR \
       (T *)( \
-         ( REFMODE==locObj      ?(char *)object->runObject(ctx) : \
+         ( REFMODE==locObj      ?(char *)CheckNotNull(object->runObject(ctx)) : \
            REFMODE==locAbsolute ?(char *)pointer : \
            REFMODE==locThis     ?(char *)ctx->getThis() : \
                                  (char *)ctx->frame \
@@ -3565,16 +3595,13 @@ struct MemReference : public CppiaExpr
    void        runVoid(CppiaCtx *ctx) { }
    int runInt(CppiaCtx *ctx)
    {
-      CHECKVAL;
       return ValToInt( MEMGETVAL );
    }
    Float       runFloat(CppiaCtx *ctx)
    {
-      CHECKVAL;
       return ValToFloat( MEMGETVAL );
    }
    ::String    runString(CppiaCtx *ctx) {
-      CHECKVAL;
       T &t = MEMGETVAL;
       BCR_CHECK;
       if (isBoolInt())
@@ -3583,13 +3610,14 @@ struct MemReference : public CppiaExpr
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      CHECKVAL;
       if (isBoolInt())
          return Dynamic( MEMGETVAL ? true : false ).mPtr;
       return Dynamic( MEMGETVAL ).mPtr;
    }
 
    #ifdef CPPIA_JIT
+
+
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
      if (REFMODE==locAbsolute)
@@ -3606,6 +3634,8 @@ struct MemReference : public CppiaExpr
      else if (REFMODE==locObj)
      {
         object->genCode( compiler, sJitTemp2, etObject );
+        genNullReferenceExceptionCheck(compiler, sJitTemp2);
+
         if (isBoolInt())
         {
            compiler->move( sJitTemp2, sJitTemp2.star(jtByte,offset) );
@@ -3852,7 +3882,7 @@ void genSetter(CppiaCompiler *compiler, const JitVal &ioValue, ExprType exprType
 
       default:
          inExpr->genCode(compiler, sJitTemp2, etInt);
-         printf("Gen setter %d\n", inOp);
+         CPPIALOG("Gen setter %d\n", inOp);
    }
 }
 #endif
@@ -3948,7 +3978,6 @@ struct MemReferenceSetter : public CppiaExpr
 
    void runVoid(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_VCHECK;
       Assign::run( *t, ctx, value);
@@ -3956,7 +3985,6 @@ struct MemReferenceSetter : public CppiaExpr
    }
    int runInt(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       int val = ValToInt( Assign::run(*t,ctx, value ) );
@@ -3965,7 +3993,6 @@ struct MemReferenceSetter : public CppiaExpr
    }
    Float runFloat(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       Float val = ValToFloat( Assign::run(*t,ctx, value) );
@@ -3974,7 +4001,6 @@ struct MemReferenceSetter : public CppiaExpr
    }
    ::String runString(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       String val = ValToString( Assign::run(*t,ctx, value) );
@@ -3983,7 +4009,6 @@ struct MemReferenceSetter : public CppiaExpr
    }
    hx::Object *runObject(CppiaCtx *ctx)
    {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       Dynamic result( Assign::run(*t,ctx,value) );
@@ -4015,6 +4040,7 @@ struct MemReferenceSetter : public CppiaExpr
             {
             JitTemp tmpObject(compiler,jtPointer);
             object->genCode(compiler, tmpObject, etObject);
+            genNullReferenceExceptionCheck(compiler, tmpObject);
             JitTemp tmpVal(compiler,getType());
 
             if (op==aoSet)
@@ -4101,7 +4127,7 @@ struct MemReferenceSetter : public CppiaExpr
             }
             break;
 
-         default: printf("unknown REFMODE\n");
+         default: CPPIALOG("unknown REFMODE\n");
       }
    }
 
@@ -4252,13 +4278,11 @@ struct MemReferenceCrement : public CppiaExpr
    }
 
    void        runVoid(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       CREMENT::run( *t );
       MEM_WB_CHECK;
    }
    int runInt(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       int result = ValToInt( CREMENT::run(*t) );
@@ -4266,7 +4290,6 @@ struct MemReferenceCrement : public CppiaExpr
       return result;
    }
    Float       runFloat(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       Float result = ValToFloat( CREMENT::run(*t));
@@ -4274,7 +4297,6 @@ struct MemReferenceCrement : public CppiaExpr
       return result;
    }
    ::String    runString(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       String result = ValToString( CREMENT::run(*t) );
@@ -4283,7 +4305,6 @@ struct MemReferenceCrement : public CppiaExpr
    }
 
    hx::Object *runObject(CppiaCtx *ctx) {
-      CHECKVAL;
       T *t = MEMGETPTR;
       BCR_CHECK;
       Dynamic result( CREMENT::run(*t) );
@@ -4317,6 +4338,7 @@ struct MemReferenceCrement : public CppiaExpr
       {
          case locObj:
             object->genCode(compiler, sJitTemp0.as(jtPointer), etObject);
+            genNullReferenceExceptionCheck(compiler, sJitTemp0);
             ioPtr = sJitTemp0.star() + offset;
             break;
 
@@ -4752,11 +4774,11 @@ struct GetFieldByLinkage : public CppiaExpr
       //  out to actaully be Dynamic (eg template types)
       if (!type->isInterface && !type->isDynamic && !forceNamedAccess)
       {
-         printf("   GetFieldByLinkage %s (%p %p %p) '%s' fallback\n", type->name.out_str(), object, type->haxeClass.mPtr, type->cppiaClass, field.out_str());
+         CPPIALOG("   GetFieldByLinkage %s (%p %p %p) '%s' fallback\n", type->name.out_str(), object, type->haxeClass.mPtr, type->cppiaClass, field.out_str());
          if (type->cppiaClass)
             type->cppiaClass->dump();
          else
-           printf(" - is Native class\n");
+           CPPIALOG(" - is Native class\n");
       }
 
       CppiaExpr *result = new GetFieldByName(this, fieldId, object, false);
@@ -4784,7 +4806,7 @@ struct StringVal : public CppiaExprWithValue
    CppiaExpr *link(CppiaModule &inModule)
    {
       strVal = inModule.strings[stringId];
-      //printf("Linked %d -> %s\n", stringId, strVal.out_str());
+      //CPPIALOG("Linked %d -> %s\n", stringId, strVal.out_str());
       return CppiaExprWithValue::link(inModule);
    }
    ::String    runString(CppiaCtx *ctx)
@@ -5046,7 +5068,7 @@ struct ArrayDef : public CppiaDynamicExpr
       arrayType = type->arrayType;
       if (!arrayType)
       {
-         printf("ArrayDef of non array-type %s\n", type->name.out_str());
+         CPPIALOG("ArrayDef of non array-type %s\n", type->name.out_str());
          throw "Bad ArrayDef";
       }
       LinkExpressions(items,inModule);
@@ -5182,7 +5204,7 @@ struct ArrayDef : public CppiaDynamicExpr
             break;
 
          default:
-            printf("unknown array creation\n");
+            CPPIALOG("unknown array creation\n");
       }
       JitTemp array(compiler, jtPointer);
       compiler->move( array, sJitReturnReg );
@@ -5272,7 +5294,7 @@ struct ArrayDef : public CppiaDynamicExpr
                break;
 
             default:
-               printf("todo other array -init\n");
+               CPPIALOG("todo other array -init\n");
          }
       }
 
@@ -5620,13 +5642,13 @@ struct ArrayAccessI : public CppiaDynamicExpr
       __get = type->haxeBase->findFunction("__get");
       if (!__get.execute)
       {
-         printf("Class %s missing __get\n", type->name.out_str());
+         CPPIALOG("Class %s missing __get\n", type->name.out_str());
          throw "Bad array access - __get";
       }
       __set = type->haxeBase->findFunction("__set");
       if (!__set.execute)
       {
-         printf("Class %s missing __set\n", type->name.out_str());
+         CPPIALOG("Class %s missing __set\n", type->name.out_str());
          throw "Bad array access - __set";
       }
 
@@ -6364,7 +6386,7 @@ struct SwitchExpr : public CppiaExpr
             }
             else
             {
-               printf("Missing switch type\n");
+               CPPIALOG("Missing switch type\n");
                CppiaTrap();
             }
          }
@@ -6541,7 +6563,7 @@ struct VarRef : public CppiaExpr
       {
          // link to cppia static...
 
-         printf("Could not link var %d %s.\n", varId, inModule.strings[ getStackVarNameId(varId) ].out_str() );
+         CPPIALOG("Could not link var %d %s.\n", varId, inModule.strings[ getStackVarNameId(varId) ].out_str() );
          inModule.layout->dump(inModule.strings,"");
          inModule.where(this);
          throw "Unknown variable";
@@ -6583,7 +6605,7 @@ struct VarRef : public CppiaExpr
          return replace;
       }
 
-      printf("Unknown var ref!\n");
+      CPPIALOG("Unknown var ref!\n");
       return this;
    }
 };
@@ -7708,7 +7730,7 @@ struct CrementExpr : public CppiaExpr
       CppiaExpr *replace = lvalue->makeCrement( op );
       if (!replace)
       {
-         printf("Could not create increment operator\n");
+         CPPIALOG("Could not create increment operator\n");
          inModule.where(lvalue);
          throw "Bad increment";
       }
@@ -8239,7 +8261,7 @@ void TypeData::link(CppiaModule &inModule)
          /*
          if (!isInterface && (*sScriptRegistered)[name.utf8_str()])
          {
-            printf("Base class %s\n", name.out_str());
+            CPPIALOG("Base class %s\n", name.out_str());
             (*sScriptRegistered)[name.utf8_str()]->dump();
             throw "New class, but with existing def";
          }

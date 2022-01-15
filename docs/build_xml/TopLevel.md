@@ -2,12 +2,12 @@ Structure of the top-level
 ---------------------------
 The top-level nodes live inside an "xml" node, and can be:
 
-- *set* - Set a "define", define being a general varaible.
+- *set* - Set a "define", define being a general variable.
   ```xml
   <set name="name" value="1" />
   ```
 
-- *setenv* - Sets an hxcpp define and an envorinment variable for child processes.
+- *setenv* - Sets an hxcpp define and an environment variable for child processes.
    ```xml
    <setenv name="name" value="1" />
    ```
@@ -28,7 +28,7 @@ The top-level nodes live inside an "xml" node, and can be:
 
 - *error* - Print value to console and force error.  Good for checking prerequisites.
   ```xml
-  <errot value="error message" />
+  <error value="error message" />
   ```
 
 - *pleaseUpdateHxcppTool* - Used to tell people updating git version that they need to recompile the build tool.
@@ -62,7 +62,7 @@ The top-level nodes live inside an "xml" node, and can be:
   <include name="filename" section="filter" noerror="true" />
   ```
     + noerror - setting the optional noerror allows the file to be missing
-    + section - setting the optional section will only reand the named section from the xml file.  Used by hxcpp_config.xml.
+    + section - setting the optional section will only read the named section from the xml file.  Used by hxcpp_config.xml.
 
 - *pragma* - Only include build file once, even with multiple include statements.
   ```xml

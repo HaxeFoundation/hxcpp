@@ -100,6 +100,18 @@ inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
    if (!mFixedFields || !inKey.isAsciiEncoded() )
       return -1;
    VariantKey *fixed = getFixed();
+
+   if (!inSkip5)
+      if (inKey.__s[HX_GC_CONST_ALLOC_MARK_OFFSET]  & HX_GC_CONST_ALLOC_MARK_BIT)
+      {
+         for(int i=0;i<mFixedFields;i++)
+         {
+            if (fixed[i].key.__s == inKey.__s)
+            return i;
+         }
+      }
+
+
    int sought = inKey.hash();
 
    if (!inSkip5)
@@ -107,7 +119,7 @@ inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
       if (mFixedFields<5)
       {
          for(int i=0;i<mFixedFields;i++)
-            if (fixed[i].hash==sought && (fixed[i].key.raw_ptr() == inKey.raw_ptr() ||
+            if (fixed[i].hash==sought && (
                    (fixed[i].key.length == inKey.length && !memcmp(fixed[i].key.raw_ptr(),inKey.raw_ptr(), inKey.length))))
                return i;
          return -1;
@@ -144,14 +156,13 @@ inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
 
    while(fixed[min].hash==sought)
    {
-      if (fixed[min].key==inKey)
-         if (fixed[min].hash==sought && (fixed[min].key.raw_ptr() == inKey.raw_ptr() ||
-                (fixed[min].key.length == inKey.length && !memcmp(fixed[min].key.raw_ptr(),inKey.raw_ptr(), inKey.length))))
+      // Might be multiple?
+      if ( fixed[min].key.length == inKey.length && !memcmp(fixed[min].key.raw_ptr(),inKey.raw_ptr(), inKey.length))
          return min;
 
       min++;
       if (min>=mFixedFields)
-         return -1;
+         break;
    }
 
    return -1;
@@ -159,31 +170,44 @@ inline int Anon_obj::findFixed(const ::String &inKey, bool inSkip5)
 
 hx::Val Anon_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
 {
+
+   #ifdef HX_SMART_STRINGS
+   if (inName.isAsciiEncodedQ())
+   #endif
    if (mFixedFields>0)
    {
       VariantKey *fixed = getFixed();
+      if (inName.__s[HX_GC_CONST_ALLOC_MARK_OFFSET]  & HX_GC_CONST_ALLOC_MARK_BIT)
+      {
+         for(int i=0;i<mFixedFields;i++)
+         {
+            if (fixed[i].key.__s == inName.__s)
+               return fixed[i].value;
+         }
+      }
+
       int hash = inName.hash();
-      if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
+      if (fixed->hash==hash && HX_QSTR_EQ_AE(fixed->key,inName))
          return fixed->value;
       if (mFixedFields>1)
       {
          fixed++;
-         if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
+         if (fixed->hash==hash && HX_QSTR_EQ_AE(fixed->key,inName))
            return fixed->value;
          if (mFixedFields>2)
          {
             fixed++;
-            if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
+            if (fixed->hash==hash && HX_QSTR_EQ_AE(fixed->key,inName))
               return fixed->value;
             if (mFixedFields>3)
             {
                fixed++;
-               if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
+               if (fixed->hash==hash && HX_QSTR_EQ_AE(fixed->key,inName))
                  return fixed->value;
                if (mFixedFields>4)
                {
                   fixed++;
-                  if (fixed->hash==hash && HX_QSTR_EQ(fixed->key,inName))
+                  if (fixed->hash==hash && HX_QSTR_EQ_AE(fixed->key,inName))
                      return fixed->value;
 
                   int fixed = findFixed(inName,true);

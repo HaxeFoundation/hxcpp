@@ -248,9 +248,11 @@ void __hxcpp_stdlibs_boot()
       GetConsoleWindowFunc getConsole = (GetConsoleWindowFunc)GetProcAddress(kernel32,"GetConsoleWindow");
       if (attach && getConsole)
       {
-         attach( /*ATTACH_PARENT_PROCESS*/ (DWORD)-1 );
-
-         if (getConsole())
+         if (!attach( /*ATTACH_PARENT_PROCESS*/ (DWORD)-1 ))
+         {
+            //printf("Could not attach to parent console : %d\n",GetLastError());
+         }
+         else if (getConsole())
          {
             if (_fileno(stdout) < 0 || _get_osfhandle(fileno(stdout)) < 0)
                freopen("CONOUT$", "w", stdout);
@@ -613,7 +615,6 @@ int __int__(double x)
       return (int)x;
 }
 
-
 Dynamic __hxcpp_parse_int(const String &inString)
 {
    if (!inString.raw_ptr())
@@ -626,10 +627,17 @@ Dynamic __hxcpp_parse_int(const String &inString)
    bool hex = false;
    int len = strlen(str);
    int offset = 0;
+   bool neg = false;
    for (offset; offset < len; offset++)
    {
       if (!isspace(str[offset]))
       {
+         if (str[offset] == '-')
+         {
+            neg = true;
+            offset++;
+         }
+
          if (len - offset >= 1)
          {
             if (str[offset] == '0' && (str[offset + 1] == 'x' || str[offset + 1] == 'X'))
@@ -645,13 +653,37 @@ Dynamic __hxcpp_parse_int(const String &inString)
    char *end = 0;
 
    if (hex)
+   {
       result = (long)strtoul(str+offset,&end,16);
+      if (neg)
+         result = -result;
+   }
    else
       result = strtol(str,&end,10);
    if (str==end)
-      return null();
+      return 0;
    return (int)result;
 }
+
+
+
+
+double __hxcpp_parse_substr_float(const String &inString,int start, int length)
+{
+   if (start>=inString.length || length<1 || (start+length)>inString.length )
+      return Math_obj::NaN;
+
+   hx::strbuf buf;
+   const char *str = inString.ascii_substr(&buf,start,length);
+   char *end = (char *)str;
+   double result = str ? strtod(str,&end) : 0;
+
+   if (end==str)
+      return Math_obj::NaN;
+
+   return result;
+}
+
 
 double __hxcpp_parse_float(const String &inString)
 {

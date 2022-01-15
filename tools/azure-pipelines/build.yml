@@ -24,10 +24,18 @@ jobs:
       - ${{ if startsWith(parameters.vmImage, 'ubuntu-') }}:
         - script: |
             set -ex
+            # mariadb
+            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
             sudo apt-get update -qqy
-            sudo apt-get install -qqy gcc-multilib g++-multilib mariadb-server
+            sudo apt-get upgrade -qqy
+            sudo apt-get remove -qqy mysql-common
+            sudo apt-get autoremove -qqy
+            sudo apt-get install -qqy mariadb-server
+            # remaining packages
+            sudo apt-get install -qqy gcc-multilib g++-multilib
           displayName: Install dependencies
         - script: |
+            sudo systemctl start mysql
             sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
           displayName: Configure MariaDB
       - template: install-neko-snapshot.yaml
@@ -53,7 +61,7 @@ jobs:
       - script: haxe compile-cppia.hxml
         workingDirectory: project
         displayName: Build cppia
-      
+
       # cffi
       - script: haxelib run hxcpp build.xml -debug -DHXCPP_M${{parameters.arch}}
         workingDirectory: test/cffi/project

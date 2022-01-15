@@ -87,6 +87,8 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int   __int__(double x);
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool  __hxcpp_same_closure(Dynamic &inF1,Dynamic &inF2);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_parse_int(const String &inString);
 HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_float(const String &inString);
+HXCPP_EXTERN_CLASS_ATTRIBUTES double __hxcpp_parse_substr_float(const String &inString, int start, int len);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int __hxcpp_parse_substr_int(const String &inString, int start=0, int len=-1);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void __hxcpp_set_float_format(String inFormat);
 
@@ -157,6 +159,10 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES String __hxcpp_utf8_string_to_char_bytes(String &i
    #define HX_MAP_THIS_ARG Dynamic &ioHash
 #endif
 
+// --- HashRoot ---------------------------------------------------------------------
+
+HXCPP_EXTERN_CLASS_ATTRIBUTES int           __root_hash_size(Dynamic *rtHash);
+
 // --- IntHash ----------------------------------------------------------------------
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES inline hx::Object   *__int_hash_create() { return 0; }
@@ -189,6 +195,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic       __string_hash_values(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_int(HX_MAP_THIS_ARG,String inKey,int inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_string(HX_MAP_THIS_ARG,String inKey,::String inValue);
 HXCPP_EXTERN_CLASS_ATTRIBUTES void          __string_hash_set_float(HX_MAP_THIS_ARG,String inKey,Float inValue);
+HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_map_substr(HX_MAP_THIS_ARG,String inKey,int inStart, int inLength);
 
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string(Dynamic &hash);
 HXCPP_EXTERN_CLASS_ATTRIBUTES ::String      __string_hash_to_string_raw(Dynamic &hash);
@@ -530,6 +537,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_new_options(String s, String op
 HXCPP_EXTERN_CLASS_ATTRIBUTES bool    _hx_regexp_match(Dynamic handle, String string, int pos, int len);
 HXCPP_EXTERN_CLASS_ATTRIBUTES String  _hx_regexp_matched(Dynamic handle, int pos);
 HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_regexp_matched_pos(Dynamic handle, int match);
+HXCPP_EXTERN_CLASS_ATTRIBUTES int     _hx_regexp_matched_num(Dynamic handle);
 
 
 // haxe.zip.(Un)Compress.hx -> src/hx/libs/zlib/ZLib.cpp
@@ -602,7 +610,11 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stdout_read( Dynamic handle, A
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stderr_read( Dynamic handle, Array<unsigned char> buf, int pos, int len );
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_stdin_write( Dynamic handle, Array<unsigned char> buf, int pos, int len );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_stdin_close( Dynamic handle );
+#if (HXCPP_API_LEVEL > 420)
+HXCPP_EXTERN_CLASS_ATTRIBUTES Dynamic _hx_std_process_exit( Dynamic handle, bool block );
+#else
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_exit( Dynamic handle );
+#endif
 HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_process_pid( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_kill( Dynamic handle );
 HXCPP_EXTERN_CLASS_ATTRIBUTES void _hx_std_process_close( Dynamic handle );
@@ -684,6 +696,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES int _hx_std_sys_get_pid();
 void _hx_ssl_init();
 Dynamic _hx_ssl_new( Dynamic hconf );
 void _hx_ssl_close( Dynamic hssl );
+void _hx_ssl_debug_set (int i);
 void _hx_ssl_handshake( Dynamic handle );
 void _hx_ssl_set_socket( Dynamic hssl, Dynamic hsocket );
 void _hx_ssl_set_hostname( Dynamic hssl, String hostname );

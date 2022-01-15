@@ -42,7 +42,8 @@ void ArrayBase::reserve(int inSize) const
 {
    if (mAlloc<inSize)
    {
-      int bytes = inSize * GetElementSize();
+      int elemSize = GetElementSize();
+      int bytes = inSize * elemSize;
 
       if (mBase)
       {
@@ -50,11 +51,11 @@ void ArrayBase::reserve(int inSize) const
          if (wasUnamanaged)
          {
             char *base=(char *)hx::InternalNew(bytes,false);
-            memcpy(base,mBase,length*GetElementSize());
+            memcpy(base,mBase,length*elemSize);
             mBase = base;
          }
          else
-            mBase = (char *)hx::InternalRealloc(mBase, bytes );
+            mBase = (char *)hx::InternalRealloc(length*elemSize,mBase, bytes );
       }
       else
       {
@@ -101,12 +102,12 @@ void ArrayBase::Realloc(int inSize) const
          if (wasUnamanaged)
          {
             char *base=(char *)hx::InternalNew(bytes,false);
-            memcpy(base,mBase,length*GetElementSize());
+            memcpy(base,mBase,length*elemSize);
             mBase = base;
          }
          else
          {
-            mBase = (char *)hx::InternalRealloc(mBase, bytes, true);
+            mBase = (char *)hx::InternalRealloc(length*elemSize,mBase, bytes, true);
             int o = bytes;
             bytes = hx::ObjectSizeSafe(mBase);
          }
@@ -213,9 +214,16 @@ String ArrayBase::toString()
 
 void ArrayBase::__SetSizeExact(int inSize)
 {
-   if (inSize!=length || inSize!=mAlloc)
+   if (inSize==0)
    {
-      int bytes = inSize * GetElementSize();
+      InternalReleaseMem(mBase);
+      mBase = 0;
+      mAlloc = length = 0;
+   }
+   else if (inSize!=length || inSize!=mAlloc)
+   {
+      int elemSize = GetElementSize();
+      int bytes = inSize * elemSize;
       if (mBase)
       {
          bool wasUnamanaged = mAlloc<0;
@@ -223,11 +231,11 @@ void ArrayBase::__SetSizeExact(int inSize)
          if (wasUnamanaged)
          {
             char *base=(char *)(AllocAtomic() ? hx::NewGCPrivate(0,bytes) : hx::NewGCBytes(0,bytes));
-            memcpy(base,mBase,std::min(length,inSize)*GetElementSize());
+            memcpy(base,mBase,std::min(length,inSize)*elemSize);
             mBase = base;
          }
          else
-            mBase = (char *)hx::InternalRealloc(mBase, bytes );
+            mBase = (char *)hx::InternalRealloc(length*elemSize,mBase, bytes );
       }
       else if (AllocAtomic())
       {
@@ -615,10 +623,12 @@ DEFINE_ARRAY_FUNC1(return,resize);
 
 DEFINE_ARRAY_FUNC1(return,concat);
 DEFINE_ARRAY_FUNC0(return,iterator);
+DEFINE_ARRAY_FUNC0(return,keyValueIterator);
 DEFINE_ARRAY_FUNC1(return,join);
 DEFINE_ARRAY_FUNC0(return,pop);
 DEFINE_ARRAY_FUNC0(return,copy);
 DEFINE_ARRAY_FUNC1(return,push);
+DEFINE_ARRAY_FUNC1(return,contains);
 DEFINE_ARRAY_FUNC1(return,remove);
 DEFINE_ARRAY_FUNC1(return,removeAt);
 DEFINE_ARRAY_FUNC2(return,indexOf);
@@ -643,9 +653,11 @@ hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp
    if (inString==HX_CSTRING("insert")) return insert_dyn();
    if (inString==HX_CSTRING("copy")) return copy_dyn();
    if (inString==HX_CSTRING("iterator")) return iterator_dyn();
+   if (inString==HX_CSTRING("keyValueIterator")) return keyValueIterator_dyn();
    if (inString==HX_CSTRING("join")) return join_dyn();
    if (inString==HX_CSTRING("pop")) return pop_dyn();
    if (inString==HX_CSTRING("push")) return push_dyn();
+   if (inString==HX_CSTRING("contains")) return contains_dyn();
    if (inString==HX_CSTRING("remove")) return remove_dyn();
    if (inString==HX_CSTRING("removeAt")) return removeAt_dyn();
    if (inString==HX_CSTRING("indexOf")) return indexOf_dyn();
@@ -679,10 +691,12 @@ static String sArrayFields[] = {
    HX_CSTRING("concat"),
    HX_CSTRING("insert"),
    HX_CSTRING("iterator"),
+   HX_CSTRING("keyValueIterator"),
    HX_CSTRING("join"),
    HX_CSTRING("copy"),
    HX_CSTRING("pop"),
    HX_CSTRING("push"),
+   HX_CSTRING("contains"),
    HX_CSTRING("remove"),
    HX_CSTRING("removeAt"),
    HX_CSTRING("indexOf"),
@@ -726,6 +740,7 @@ void ArrayBase::__boot()
 
 bool DynamicEq(const Dynamic &a, const Dynamic &b)
 {
+   // ? return hx::IsInstanceEq(a,b);
    return hx::IsEq(a,b);
 }
 
@@ -801,10 +816,12 @@ Dynamic VirtualArray_obj::func##_dyn()  { return new VirtualArray_##func(this); 
 DEFINE_VARRAY_FUNC1(return,concat);
 DEFINE_VARRAY_FUNC2(,insert);
 DEFINE_VARRAY_FUNC0(return,iterator);
+DEFINE_VARRAY_FUNC0(return,keyValueIterator);
 DEFINE_VARRAY_FUNC1(return,join);
 DEFINE_VARRAY_FUNC0(return,pop);
 DEFINE_VARRAY_FUNC0(return,copy);
 DEFINE_VARRAY_FUNC1(return,push);
+DEFINE_VARRAY_FUNC1(return,contains);
 DEFINE_VARRAY_FUNC1(return,remove);
 DEFINE_VARRAY_FUNC1(return,removeAt);
 DEFINE_VARRAY_FUNC2(return,indexOf);
@@ -873,9 +890,11 @@ hx::Val VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inC
    if (inString==HX_CSTRING("insert")) return insert_dyn();
    if (inString==HX_CSTRING("copy")) return copy_dyn();
    if (inString==HX_CSTRING("iterator")) return iterator_dyn();
+   if (inString==HX_CSTRING("keyValueIterator")) return keyValueIterator_dyn();
    if (inString==HX_CSTRING("join")) return join_dyn();
    if (inString==HX_CSTRING("pop")) return pop_dyn();
    if (inString==HX_CSTRING("push")) return push_dyn();
+   if (inString==HX_CSTRING("contains")) return contains_dyn();
    if (inString==HX_CSTRING("remove")) return remove_dyn();
    if (inString==HX_CSTRING("removeAt")) return removeAt_dyn();
    if (inString==HX_CSTRING("indexOf")) return indexOf_dyn();

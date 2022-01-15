@@ -32,6 +32,7 @@ typedef size_t socket_int;
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/net.h"
+#include "mbedtls/debug.h"
 
 #define val_ssl(o)	((sslctx*)o.mPtr)
 #define val_conf(o)	((sslconf*)o.mPtr)
@@ -213,6 +214,10 @@ Dynamic _hx_ssl_new( Dynamic hconf ) {
 void _hx_ssl_close( Dynamic hssl ) {
 	sslctx *ssl = val_ssl(hssl);
 	ssl->destroy();
+}
+
+void _hx_ssl_debug_set (int i) {
+	mbedtls_debug_set_threshold(i);
 }
 
 void _hx_ssl_handshake( Dynamic hssl ) {

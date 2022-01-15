@@ -114,7 +114,9 @@ namespace hx
 void *InternalNew(int inSize,bool inIsObject);
 
 // Used internall - realloc array data
-void *InternalRealloc(void *inData,int inSize,bool inAllowExpansion=false);
+void *InternalRealloc(int inFromSize, void *inData,int inSize,bool inAllowExpansion=false);
+
+void InternalReleaseMem(void *inMem);
 
 unsigned int ObjectSizeSafe(void *inData);
 
@@ -216,6 +218,8 @@ void EnterGCFreeZone();
 void ExitGCFreeZone();
 // retuns true if ExitGCFreeZone should be called
 bool TryGCFreeZone();
+// retuns true if ExitGCFreeZone was called
+bool TryExitGCFreeZone();
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES AutoGCFreeZone
 {
@@ -257,8 +261,6 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES void MarkPopClass(hx::MarkContext *__inCtx);
 void GCCheckPointer(void *);
 void GCOnNewPointer(void *);
 
-
-void SetTopOfStack(void *inTopOfStack,bool inForce=false);
 
 // Called internally before and GC operations
 void CommonInitAlloc();
@@ -342,7 +344,7 @@ class ImmixAllocator
 public:
    virtual ~ImmixAllocator() {}
    virtual void *CallAlloc(int inSize,unsigned int inObjectFlags) = 0;
-   virtual void SetupStack() = 0;
+   virtual void SetupStackAndCollect(bool inMajor, bool inForceCompact, bool inLocked=false,bool inFreeIsFragged=false) = 0;
 
    #ifdef HXCPP_GC_NURSERY
    unsigned char  *spaceFirst;

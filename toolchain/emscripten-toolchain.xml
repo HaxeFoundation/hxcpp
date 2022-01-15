@@ -9,9 +9,9 @@
 <set name="HXCPP_AR" value="emar" />
 
 <section if="windows_host">
-   <set name="HXCPP_RANLIB" value='python "${EMSCRIPTEN_SDK}/emranlib"' />
-   <set name="HXCPP_AR" value='python "${EMSCRIPTEN_SDK}/emar"' />
-   <set name="CXX" value='python "${EMSCRIPTEN_SDK}/emcc"' />
+   <set name="HXCPP_RANLIB" value='python "${EMSCRIPTEN_SDK}/emranlib.py"' />
+   <set name="HXCPP_AR" value='python "${EMSCRIPTEN_SDK}/emar.py"' />
+   <set name="CXX" value='python "${EMSCRIPTEN_SDK}/emcc.py"' />
 </section>
 
 <set name="nostrip" value="1" if="emscripten"/>
@@ -20,7 +20,7 @@
 
 
 
-<!-- EMCC TOOLS -------------------------------------->
+<!-- EMCC TOOLS -->
 
 
 <section unless="HXCPP_OPTIM_LEVEL" >
@@ -41,8 +41,8 @@
   <pchflag value="c++-header" />
   <cppflag value="--std=c++11" />
   <flag value="${HXCPP_OPTIM_LEVEL}" />
-  <flag value="-fpic"/>
-  <flag value="-fPIC"/>
+  <flag value="-fpic" if="HXCPP_EMSCRIPTEN_FPIC" />
+  <flag value="-fPIC" if="HXCPP_EMSCRIPTEN_FPIC" />
   <flag value="-DEMSCRIPTEN"/>
   <flag value="-DHXCPP_JS_PRIME" if="HXCPP_JS_PRIME" />
   <flag value="-DHXCPP_MULTI_THREADED" if="HXCPP_MULTI_THREADED"/>
@@ -81,13 +81,12 @@
   <exe name="${CXX}" if="CXX" />
   <fromfile value="" if="GCC_OLD" />
   <flag value="-shared"/>
-  <flag value="-fpic"/>
-  <flag value="-fPIC"/>
+  <flag value="-fpic" if="HXCPP_EMSCRIPTEN_FPIC" />
+  <flag value="-fPIC" if="HXCPP_EMSCRIPTEN_FPIC" />
   <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
   <flag value="${HXCPP_LINK_OPTIM_LEVEL}"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK"/>
 
 
   <section if="HXCPP_LINK_TOTAL_MEMORY" >

@@ -34,6 +34,7 @@
   <depend name="${HXCPP}/include/hx/StackContext.h"/>
   <depend name="${HXCPP}/include/hx/Debug.h"/>
   <depend name="${HXCPP}/include/hx/QuickVec.h"/>
+  <depend name="${HXCPP}/include/hx/StringAlloc.h"/>
   <depend name="${HXCPP}/include/hx/Telemetry.h"/>
   <depend name="${HXCPP}/include/hx/Thread.h"/>
   <depend name="${HXCPP}/include/hx/Object.h"/>
@@ -223,6 +224,9 @@
      <ext value="${LIBEXTRA}.a"  if="static_link" />
      <ext value="${LIBEXTRA}" if="exe_link" />
   </section>
+
+  <fullouput name="${HAXE_FULL_OUTPUT_NAME}" if="HAXE_FULL_OUTPUT_NAME" />
+  <fullunstripped name="${HAXE_FULL_UNSTRIPPED_NAME}" if="HAXE_FULL_UNSTRIPPED_NAME" />
 
   <files id="__main__" unless="static_link" />
   <files id="__lib__" if="static_link"/>

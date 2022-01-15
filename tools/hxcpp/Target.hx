@@ -6,6 +6,8 @@ class Target
    public var mTool:String;
    public var mToolID:String;
    private var mExt:String;
+   public var mFullOutputName:String;
+   public var mFullUnstrippedName:String;
 
    // These attributes are merged by the "merge" command
    public var mFiles:Array<File>;
@@ -33,6 +35,7 @@ class Target
       mLibPaths = [];
       mFlags = [];
       mExt = null;
+      mFullOutputName = null;
       mSubTargets = [];
       mFileGroups = [];
       mFlags = [];

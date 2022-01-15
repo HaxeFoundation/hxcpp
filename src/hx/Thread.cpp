@@ -11,6 +11,20 @@ static HxMutex g_threadInfoMutex;
 static int g_nextThreadNumber = 1;
 
 
+// How to manage hxThreadInfo references for non haxe threads (main, extenal)?
+// HXCPP_THREAD_INFO_PTHREAD - use pthread api
+// HXCPP_THREAD_INFO_LOCAL - use thread_local storage
+// HXCPP_THREAD_INFO_SINGLETON - use one structure for all threads. Not ideal.
+
+#if __cplusplus > 199711L && !defined(__BORLANDC__)
+   #define HXCPP_THREAD_INFO_LOCAL
+#elif defined (HXCPP_PTHREADS)
+   #define HXCPP_THREAD_INFO_PTHREAD
+#else
+   #define HXCPP_THREAD_INFO_SINGLETON
+#endif
+
+
 // --- Deque ----------------------------------------------------------
 
 struct Deque : public Array_obj<Dynamic>
@@ -194,6 +208,10 @@ public:
 	{
 		return mDeque->PopFront(inBlocked);
 	}
+	String toString()
+	{
+		return String(GetThreadNumber());
+	}
 	void SetTLS(int inID,Dynamic inVal) {
       mTLS->__SetItem(inID,inVal);
    }
@@ -290,18 +308,74 @@ Dynamic __hxcpp_thread_create(Dynamic inStart)
     #endif
 }
 
-static hx::Object *sMainThreadInfo = 0;
+#ifdef HXCPP_THREAD_INFO_PTHREAD
+static pthread_key_t externThreadInfoKey;;
+static pthread_once_t key_once = PTHREAD_ONCE_INIT;
+static void destroyThreadInfo(void *i)
+{
+   hx::Object **threadRoot = (hx::Object **)i;
+   hx::GCRemoveRoot(threadRoot);
+   delete threadRoot;
+}
+static void make_key()
+{
+   pthread_key_create(&externThreadInfoKey, destroyThreadInfo);
+}
+#elif defined(HXCPP_THREAD_INFO_LOCAL)
+struct ThreadInfoHolder
+{
+   hx::Object **threadRoot;
+   ThreadInfoHolder() : threadRoot(0) { }
+   ~ThreadInfoHolder()
+   {
+      if (threadRoot)
+      {
+         hx::GCRemoveRoot(threadRoot);
+         delete threadRoot;
+      }
+   }
+   void set(hx::Object **info) { threadRoot = info; }
+   hxThreadInfo *get() { return threadRoot ? (hxThreadInfo *)*threadRoot : nullptr; }
+   
+};
+static thread_local ThreadInfoHolder threadHolder;
+#else
+static hx::Object **sMainThreadInfoRoot = 0;
+#endif
 
 static hxThreadInfo *GetCurrentInfo(bool createNew = true)
 {
 	hxThreadInfo *info = tlsCurrentThread;
+	if (!info)
+   {
+      #ifdef HXCPP_THREAD_INFO_PTHREAD
+      pthread_once(&key_once, make_key);
+      hxThreadInfo **pp = (hxThreadInfo **)pthread_getspecific(externThreadInfoKey);
+      if (pp)
+         info = *pp;
+      #elif defined(HXCPP_THREAD_INFO_LOCAL)
+      info = threadHolder.get();
+      #else
+      if (sMainThreadInfoRoot)
+      info = (hxThreadInfo *)*sMainThreadInfoRoot;
+      #endif
+   }
+
 	if (!info && createNew)
 	{
-		// Hmm, must be the "main" thead...
+      // New, non-haxe thread - might be the first thread, or might be a new
+      //  foreign thread.
 		info = new hxThreadInfo(null(), 0);
-		sMainThreadInfo = info;
-		hx::GCAddRoot(&sMainThreadInfo);
-		tlsCurrentThread = info;
+      hx::Object **threadRoot = new hx::Object *;
+      *threadRoot = info; 
+		hx::GCAddRoot(threadRoot);
+      #ifdef HXCPP_THREAD_INFO_PTHREAD
+      pthread_setspecific(externThreadInfoKey, threadRoot);
+      #elif defined(HXCPP_THREAD_INFO_LOCAL)
+      threadHolder.set(threadRoot);
+      #else
+      sMainThreadInfoRoot = threadRoot;
+      #endif
 	}
 	return info;
 }

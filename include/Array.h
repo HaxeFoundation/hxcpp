@@ -93,6 +93,34 @@ public:
    Array<FROM> mArray;
 };
 
+// --- ArrayKeyValueIterator -------------------------------------------
+template<typename FROM,typename TO>
+class ArrayKeyValueIterator : public cpp::FastIterator_obj<Dynamic>
+{
+public:
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdArrayIterator };
+
+   ArrayKeyValueIterator(Array<FROM> inArray) : mArray(inArray), mIdx(0) { }
+
+   bool hasNext()  { return mIdx < mArray->length; }
+
+   inline TO toTo(const Dynamic &inD) { return inD.StaticCast<TO>(); }
+
+   template<typename T>
+   inline TO toTo(T inT) { return inT; }
+
+
+   Dynamic next();
+
+   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER_NAME(mArray,"mArray"); }
+   #ifdef HXCPP_VISIT_ALLOCS
+   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER_NAME(mArray,"mArray"); }
+   #endif
+
+   int      mIdx;
+   Array<FROM> mArray;
+};
+
 }
 
 namespace hx
@@ -224,6 +252,7 @@ public:
    virtual Dynamic __copy() = 0;
    virtual Dynamic __insert(const Dynamic &a0,const Dynamic &a1) = 0;
    virtual Dynamic __iterator() = 0;
+   virtual Dynamic __keyValueIterator() = 0;
    virtual Dynamic __join(const Dynamic &a0) = 0;
    virtual Dynamic __pop() = 0;
    virtual Dynamic __push(const Dynamic &a0) = 0;
@@ -260,9 +289,11 @@ public:
    virtual hx::ArrayBase *__copy() = 0;
    virtual void __insert(int inIndex,const Dynamic &a1) = 0;
    virtual Dynamic __iterator() = 0;
+   virtual Dynamic __keyValueIterator() = 0;
    virtual ::String __join(::String a0) = 0;
    virtual Dynamic __pop() = 0;
    virtual int __push(const Dynamic &a0) = 0;
+   virtual bool __contains(const Dynamic &a0) = 0;
    virtual bool __remove(const Dynamic &a0) = 0;
    virtual bool __removeAt(int inIndex) = 0;
    virtual int __indexOf(const Dynamic &a0,const Dynamic &a1) = 0;
@@ -290,9 +321,11 @@ public:
    Dynamic copy_dyn();
    Dynamic insert_dyn();
    Dynamic iterator_dyn();
+   Dynamic keyValueIterator_dyn();
    Dynamic join_dyn();
    Dynamic pop_dyn();
    Dynamic push_dyn();
+   Dynamic contains_dyn();
    Dynamic remove_dyn();
    Dynamic removeAt_dyn();
    Dynamic indexOf_dyn();
@@ -414,10 +447,6 @@ template<typename TYPE> inline bool ContainsPointers()
 {
    return TypeContainsPointers( (TYPE *)0 );
 }
-
-inline const void *PointerOf(Dynamic &d) { return d.mPtr; }
-inline const void *PointerOf(String &s) { return s.raw_ptr(); }
-inline const void *PointerOf(...) { return 0; }
 
 
 
@@ -645,6 +674,16 @@ public:
       return -1;
    }
 
+   bool contains(ELEM_ inValue)
+   {
+      ELEM_ *e = (ELEM_ *)mBase;
+      for(int i=0;i<length;i++)
+      {
+         if (hx::arrayElemEq(e[i],inValue))
+            return true;
+      }
+      return false;
+   }
 
    bool remove(ELEM_ inValue)
    {
@@ -814,9 +853,13 @@ public:
    }
 
    Dynamic iterator() { return new hx::ArrayIterator<ELEM_,ELEM_>(this); }
+   Dynamic keyValueIterator() { return new hx::ArrayKeyValueIterator<ELEM_,ELEM_>(this); }
 
    template<typename TO>
    Dynamic iteratorFast() { return new hx::ArrayIterator<ELEM_,TO>(this); }
+
+   template<typename TO>
+   Dynamic keyValueIteratorFast() { return new hx::ArrayKeyValueIterator<ELEM_,TO>(this); }
    
    virtual hx::ArrayStore getStoreType() const
    {
@@ -837,6 +880,7 @@ public:
    virtual Dynamic __copy() { return copy(); }
    virtual Dynamic __insert(const Dynamic &a0,const Dynamic &a1) { insert(a0,a1); return null(); }
    virtual Dynamic __iterator() { return iterator(); }
+   virtual Dynamic __keyValueIterator() { return keyValueIterator(); }
    virtual Dynamic __join(const Dynamic &a0) { return join(a0); }
    virtual Dynamic __pop() { return pop(); }
    virtual Dynamic __push(const Dynamic &a0) { return push(a0);}
@@ -863,9 +907,11 @@ public:
    virtual hx::ArrayBase *__copy() { return copy().mPtr; }
    virtual void __insert(int inIndex,const Dynamic &a1) { insert(inIndex,a1);}
    virtual Dynamic __iterator() { return iterator(); }
+   virtual Dynamic __keyValueIterator() { return keyValueIterator(); }
    virtual ::String __join(::String a0) { return join(a0); }
    virtual Dynamic __pop() { return pop(); }
    virtual int __push(const Dynamic &a0) { return push(a0);}
+   virtual bool __contains(const Dynamic &a0) { return contains(a0); }
    virtual bool __remove(const Dynamic &a0) { return remove(a0); }
    virtual bool __removeAt(int inIndex) { return removeAt(inIndex); }
    virtual int __indexOf(const Dynamic &a0,const Dynamic &a1) { return indexOf(a0, a1); }

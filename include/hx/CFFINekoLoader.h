@@ -215,15 +215,6 @@ double  api_val_field_numeric(neko_value  arg1,int arg2)
 
 
 
-neko_buffer api_alloc_buffer_len(int inLen)
-{
-	char *s=dyn_alloc_private(inLen+1);
-	memset(s,' ',inLen);
-	s[inLen] = 0;
-	neko_buffer b = dyn_alloc_buffer(s);
-	return b;
-}
-
 
 int api_val_strlen(neko_value  arg1)
 {
@@ -238,22 +229,26 @@ int api_val_strlen(neko_value  arg1)
    }
 	return 0;
 }
-void api_buffer_set_size(neko_buffer inBuffer,int inLen) { NEKO_NOT_IMPLEMENTED("api_buffer_set_size"); }
+void api_buffer_set_size(neko_buffer inBuffer,int inLen) { 
+   NEKO_NOT_IMPLEMENTED("api_buffer_set_size");
+}
 
 
 void api_buffer_append_char(neko_buffer inBuffer,int inChar)
 {
-	char buf[2] = { (char)inChar, '\0' };
-	dyn_buffer_append_sub(inBuffer,buf,1);
+   NEKO_NOT_IMPLEMENTED("api_buffer_append_char");
 }
 
 
 
-// Byte arrays - not used on neko
-neko_buffer api_val_to_buffer(neko_value  arg1) { return 0; }
-bool api_val_is_buffer(neko_value  arg1) { return false; } 
-int api_buffer_size(neko_buffer inBuffer) { return 0; }
-char * api_buffer_data(neko_buffer inBuffer) { return 0; }
+// Byte arrays - use strings
+neko_buffer api_val_to_buffer(neko_value  arg1)
+{
+   return (neko_buffer)api_val_string(arg1);
+}
+bool api_val_is_buffer(neko_value  arg1) { return neko_val_is_string(arg1); } 
+int api_buffer_size(neko_buffer inBuffer) { return neko_val_strlen((neko_value)inBuffer); }
+char * api_buffer_data(neko_buffer inBuffer) { return (char *)api_val_string((neko_value)inBuffer); }
 
 char * api_val_dup_string(neko_value inVal)
 {
@@ -268,8 +263,22 @@ char * api_val_dup_string(neko_value inVal)
 neko_value api_alloc_string_len(const char *inStr,int inLen)
 {
 	if (gNeko2HaxeString)
+   {
+      if (!inStr)
+		   return dyn_val_call1(*gNeko2HaxeString,api_alloc_raw_string(inLen));
 		return dyn_val_call1(*gNeko2HaxeString,dyn_copy_string(inStr,inLen));
+   }
+   if (!inStr)
+		inStr = dyn_alloc_private(inLen);
    return dyn_copy_string(inStr,inLen);
+}
+
+neko_buffer api_alloc_buffer_len(int inLen)
+{
+	neko_value str=api_alloc_string_len(0,inLen+1);
+	char *s=(char *)api_val_string(str);
+	memset(s,0,inLen+1);
+	return (neko_buffer)str;
 }
 
 
@@ -436,6 +445,17 @@ void api_free_abstract(neko_value inAbstract)
 
 neko_value api_buffer_val(neko_buffer arg1)
 {
+        if (neko_val_is_string(arg1))
+            return (neko_value)arg1;
+
+        if (neko_val_is_object(arg1))
+        {
+            neko_value s = dyn_val_field((neko_value)arg1,__s_id);
+            if (neko_val_is_string(s))
+                return (neko_value)(s);
+        }
+
+
    return api_alloc_null();
 }
 
@@ -536,6 +556,7 @@ void api_gc_change_managed_memory(int,const char *)
 }
 
 bool api_gc_try_blocking() { return false; }
+bool api_gc_try_unblocking() { return false; }
 
 #define IMPLEMENT_HERE(x) if (!strcmp(inName,#x)) return (void *)api_##x;
 #define IGNORE_API(x) if (!strcmp(inName,#x)) return (void *)api_empty;
@@ -560,6 +581,7 @@ void *DynamicNekoLoader(const char *inName)
    IMPLEMENT_HERE(alloc_root)
    IMPLEMENT_HERE(val_gc)
    IMPLEMENT_HERE(gc_try_blocking)
+   IMPLEMENT_HERE(gc_try_unblocking)
 
    IMPLEMENT_HERE(create_abstract)
    IMPLEMENT_HERE(free_abstract)

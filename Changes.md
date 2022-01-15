@@ -1,4 +1,28 @@
 
+
+* Update MIN_IOS_VERSION
+* Bug fixes
+* Upgrade to 4.2 API
+
+4.1.15
+------------------------------------------------------------
+* Added Arm64 suport on windows
+* Fixed crash with zero-sized alloc and generational GC
+* Fixed crash with generational GC when old objects come back to life
+* Fixed compile error with @:fixed Anons and arrays (socket select)
+* Fixed lastIndexOf
+* Optimized some equality functions
+
+4.1.1
+------------------------------------------------------------
+* Added functions for haxe 4.1 Api.
+* Added HXCPP_DEBUG_LINK_AND_STRIP to preserve symbolic information when creating android release binaries.
+* Added optional HXCPP_SIGNAL_THROW to convert memory errors to haxe exceptions without needing additional code
+* Added string_hash_map_substr and __hxcpp_parse_substr_float/int to allow some substring processing without extra allocation
+
+4.0.64
+------------------------------------------------------------
+
 * Upgrade buildserver to 4.01
 * Better generational collection in high fragmentation case
 * typeinfo include fix for MSVC
@@ -10,6 +34,7 @@
 4.0.19
 ------------------------------------------------------------
 
+* Add Array.keyValueIterator
 * General Utf16 string improvements
 * Limit the amount of recursion in toString function
 * Add float32 support to cppia

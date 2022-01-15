@@ -28,8 +28,11 @@ class RunTests
       command("bin" + sep + "cpp" + sep + "TestMain-debug",[]);
       command("bin" + sep + "cpp-utf8" + sep + "TestMain-debug",[]);
 
-      setDir("cffi/bin/neko");
-      command("neko", ["TestMain.n"]);
+      if (m64Def=="HXCPP_M64")
+      {
+         setDir("cffi/bin/neko");
+         command("neko", ["TestMain.n"]);
+      }
    }
 
    public static function runHaxe()
@@ -77,6 +80,7 @@ class RunTests
       command("haxe", ["compile-host.hxml"] );
       command("haxe", ["compile-client.hxml"] );
       command("bin" + sep + "CppiaHost",[ "bin" + sep + "client.cppia" ]);
+      command("bin" + sep + "CppiaHost",[ "bin" + sep + "client.cppia", "-jit" ]);
    }
 
    public static function native()
@@ -162,8 +166,8 @@ class RunTests
             binDir = "Linux64";
             ext = ".dso";
          case "win":
-            m64 = false;
-            binDir = "Windows";
+            m64 = true;
+            binDir = "Windows64";
             ext = ".dll";
             windows = true;
             sep = "\\";

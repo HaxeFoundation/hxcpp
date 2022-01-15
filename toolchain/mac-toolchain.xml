@@ -1,5 +1,5 @@
 <xml>
-<!-- MACOS TOOLS -------------------------------------------------->
+<!-- MACOS TOOLS -->
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
 <set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
@@ -14,11 +14,18 @@
 <set name="STDLIBCPP" value="1" unless="HXCPP_GCC || HXCPP_CPP11" />
 
 
+<section unless="HXCPP_ARCH">
+  <set name="HXCPP_ARCH" value="arm64" if="HXCPP_ARM64"/>
+  <set name="HXCPP_ARCH" value="x86" if="HXCPP_M32"/>
+  <set name="HXCPP_ARCH" value="x86_64" unless="HXCPP_ARCH"/>
+</section>
+
+
 <compiler id="darwin" exe="g++" if="macos">
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
-  <cppflag value="-std=c++11" if="HXCPP_CPP11" unless="HXCPP_GCC"/>
+  <cppflag value="-std=c++11" if="HXCPP_CPP11"/>
   <flag value="-stdlib=libc++" unless="STDLIBCPP" />
   <flag value="-stdlib=libstdc++" if="STDLIBCPP" />
   <cppflag value="-frtti"/>
@@ -31,15 +38,19 @@
   <flag value="-O2" unless="debug"/>
   <flag value="-I${HXCPP}/include"/>
   <flag value="-DHX_MACOS"/>
-  <flag value="-m32" unless="HXCPP_M64"/>
-  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-arch" />
+  <flag value="${HXCPP_ARCH}"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
   <flag value="-Wno-parentheses" />
   <flag value="-Wno-null-dereference" if="HXCPP_CLANG"/>
   <flag value="-Wno-unused-value" />
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-overflow" />
+  <flag value="-fsanitize=thread" if="HXCPP_THREAD_SANITIZE" />
   <cppflag value="-Wno-invalid-offsetof" />
+  <cppflag value="-Wno-return-type-c-linkage" />
+  <mmflag value="-Wno-return-type-c-linkage" />
+
   <flag value="-Wno-bool-conversion" if="HXCPP_CLANG"/>
   <flag value="-fobjc-arc" if="OBJC_ARC" />
   <flag value="-DOBJC_ARC" if="OBJC_ARC" />
@@ -47,6 +58,7 @@
   <flag value="-flto" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTO_THIN"/>
   <flag value="-flto=thin" if="HXCPP_LTO_THIN" unless="debug"/>
   <objdir value="obj/darwin${OBJEXT}/" />
+  <flag value="-msse4.1" if="HXCPP_SSE4" unless="HXCPP_ARM" />
   <outflag value="-o"/>
   <ext value=".o"/>
   <getversion value="xcrun --sdk macosx${MACOSX_VER} clang++ -v" if="HXCPP_CLANG" />
@@ -62,8 +74,8 @@
   <flag value="-fpic"/>
   <flag value="-fPIC"/>
   <flag value="-dynamiclib"/>
-  <flag value="-m32" unless="HXCPP_M64"/>
-  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-arch" />
+  <flag value="${HXCPP_ARCH}"/>
   <flag value="-framework"/>
   <flag value="Cocoa"/>
   <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
@@ -84,9 +96,10 @@
   <flag value="Cocoa"/>
   <flag value="-isysroot" unless="LEGACY_MACOSX_SDK"/>
   <flag value="${DEVELOPER_DIR}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MACOSX_VER}.sdk" unless="LEGACY_MACOSX_SDK"/>
+  <flag value="-fsanitize=thread" if="HXCPP_THREAD_SANITIZE" />
   <!-- <flag value="-debug" if="debug"/> -->
-  <flag value="-m32" unless="HXCPP_M64"/>
-  <flag value="-m64" if="HXCPP_M64"/>
+  <flag value="-arch" />
+  <flag value="${HXCPP_ARCH}"/>
   <ext value=""/>
   <outflag value="-o "/>
 </linker>

@@ -35,6 +35,11 @@ class HostBase implements IHostInterface
       #end
    }
 
+   public function getYou() : HostBase
+   {
+      return this;
+   }
+
    public function testUpdateOverride() : Bool
    {
       return update()=="ClientExtends2 update";

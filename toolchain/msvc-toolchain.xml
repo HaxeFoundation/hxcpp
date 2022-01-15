@@ -17,6 +17,8 @@
 </section>
 <set name="CPP_ABI" value="${ABI}" />
 
+<unset name="HXCPP_WINXP_COMPAT" if="HXCPP_ARM64" />
+
 <set name="XPOBJ" value="xp" if="HXCPP_WINXP_COMPAT" />
 
 
@@ -31,12 +33,15 @@
    <set name="SUBSYSTEM_VER" value=",5.01" unless="HXCPP_M64" />
    <set name="SUBSYSTEM_VER" value=",5.02" if="HXCPP_M64" />
 </section>
+<set name="SUBSYSTEM_VER" value=",6.02" if="HXCPP_ARM64" />
 
 <set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}${OBJEXT}${OBJCACHE}${XPOBJ}" unless="winrt" />
 <set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}-rt${OBJEXT}${OBJCACHE}${XPOBJ}" if="winrt" />
+<set name="MSVC_OBJ_DIR" value="obj/msvc${MSVC_VER}-arm${OBJEXT}${OBJCACHE}${XPOBJ}" if="HXCPP_ARM64" />
 
 <set name="MACHINE" value="x86" />
 <set name="MACHINE" value="x64" if="HXCPP_M64" />
+<set name="MACHINE" value="ARM64" if="HXCPP_ARM64" />
 
 <!-- Seem vc does not know how to start its own pdbserver in 64 bit mode -->
 <setup name="pdbserver" if="HXCPP_DEBUG_LINK HXCPP_HACK_PDBSRV HXCPP_FORCE_PDB_SERVER" />
@@ -62,7 +67,6 @@
   <cppflag value="${CPP_ABI}" />
   <flag value="-DHX_WINDOWS"/>
   <flag value="-DHXCPP_BIG_ENDIAN" if="HXCPP_BIG_ENDIAN"/>
-  <flag value="-DHXCPP_SEH_THROW" if="HXCPP_SEH_THROW" unless="winrt" />
   <flag value="-D${HXCPP_XP_DEFINE}" if="HXCPP_XP_DEFINE"/>
   <flag value="-GR"/>
 
@@ -89,9 +93,9 @@
   <flag value="-FS" if="HXCPP_FORCE_PDB_SERVER" />
   <flag value="-Oy-"/>
   <flag value="-c"/>
-  <flag value="-EHa" if="HXCPP_SEH_THROW" unless="winrt"/>
-  <flag value="-EHs" unless="HXCPP_SEH_THROW || winrt"/>
-  <flag value="-EHsc" if="winrt"/>
+  <flag value="-EHa" if="HXCPP_CATCH_SEGV" />
+  <flag value="-EHs" unless="HXCPP_CATCH_SEGV || winrt"/>
+  <flag value="-EHsc" if="winrt" unless="HXCPP_CATCH_SEGV" />
   <flag value="-GS-"/>
   <flag value="-arch:${MSVC_ARCH}" if="MSVC_ARCH" />
   <flag value="-I${HXCPP}/include"/>
@@ -116,10 +120,13 @@
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
   <flag value="-dll"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug:full" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
   <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-OPT:REF,ICF" if="HXCPP_PDB_FILE"/>
+  <flag value="-pdb:${HXCPP_PDB_FILE}" if="HXCPP_PDB_FILE" />
   <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
   <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
+  <flag value="-map:${HXCPP_MAP_FILE}" if="HXCPP_MAP_FILE" />
   <lib name="${dll_import_link}" if="dll_import_link" />
   <ext value=".dll"/>
   <libdir name="obj/lib"/>
@@ -134,8 +141,12 @@
   <fromfile value="@"/>
   <flag value="-nologo"/>
   <flag value="-machine:${MACHINE}"/>
-  <flag value="-debug" if="HXCPP_DEBUG_LINK" unless="HXCPP_FAST_LINK"/>
+  <flag value="-debug" if="HXCPP_DEBUG_LINK||HXCPP_PDB_FILE" unless="HXCPP_FAST_LINK"/>
   <flag value="-debug:fastlink" if="HXCPP_FAST_LINK HXCPP_DEBUG_LINK"/>
+  <flag value="-OPT:REF,ICF" if="HXCPP_PDB_FILE"/>
+  <flag value="-map:${HXCPP_MAP_FILE}" if="HXCPP_MAP_FILE" />
+  <flag value="-pdb:${HXCPP_PDB_FILE}" if="HXCPP_PDB_FILE" />
+  <flag value="-INCREMENTAL:NO" if="HXCPP_PDB_FILE" />
   <flag value="-LTCG" if="HXCPP_OPTIMIZE_LINK" unless="debug || HXCPP_LTCG_INCREMENTAL"/>
   <flag value="-LTCG:INCREMENTAL" if="HXCPP_LTCG_INCREMENTAL" unless="debug"/>
   <flag value="-subsystem:windows${SUBSYSTEM_VER}" if="SUBSYSTEMWINDOWS" />

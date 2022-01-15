@@ -63,7 +63,7 @@ class Compiler
    public var useCacheInPlace = true;
    //public var useCacheInPlace = false;
 
-   public function new(inID,inExe:String,inGCCFileTypes:Bool)
+   public function new(inID,inExe:String)
    {
       mFlags = [];
       mCFlags = [];
@@ -72,7 +72,7 @@ class Compiler
       mOBJCFlags = [];
       mMMFlags = [];
       mPCHFlags = [];
-      mAddGCCIdentity = inGCCFileTypes;
+      mAddGCCIdentity = false;
       mCompilerVersion = null;
       mRcExt = ".res";
       mObjDir = "obj";
@@ -397,7 +397,11 @@ class Compiler
                var err = ProcessManager.runProcessThreaded(exe, args, null);
                cleanTmp(tmpFile);
                if (err!=0)
+               {
+                  if (FileSystem.exists(obj_name))
+                     FileSystem.deleteFile(obj_name);
                   BuildTool.setThreadError(err);
+               }
             }
          }
          else

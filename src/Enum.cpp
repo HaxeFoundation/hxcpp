@@ -80,6 +80,27 @@ int EnumBase_obj::__Compare(const hx::Object *inRHS) const
    return 0;
 }
 
+#if (HXCPP_API_LEVEL >= 330)
+bool __hxcpp_enum_eq( ::hx::EnumBase a, ::hx::EnumBase b)
+{
+   if (!a.mPtr || !b.mPtr)
+      return !a.mPtr && !b.mPtr;
+   // Known to be same type
+   if (a->index != b->index)
+      return 0;
+   int n =  a->_hx_getParamCount();
+   if (n==0)
+      return true;
+   cpp::Variant *fa = a->_hx_getFixed();
+   cpp::Variant *fb = b->_hx_getFixed();
+   for(int i=0;i<n;i++)
+      if ( fa[i]!=fb[i] )
+         return false;
+   return true;
+}
+#endif
+
+
 
 void EnumBase_obj::__Mark(hx::MarkContext *__inCtx)
 {

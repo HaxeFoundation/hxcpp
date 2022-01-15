@@ -25,6 +25,8 @@
   <set name="EXEPREFIX" value="aarch64-linux-android" />
 </section>
 
+<error value="Please set one of the architectures, eg HXCPP_ARM64, HXCPP_X86, ..." unless="EXEPREFIX" />
+
 <set name="PLATFORM" value="android-${PLATFORM_NUMBER}" />
 <set name="ANDROID_PLATFORM_DEFINE" value="HXCPP_ANDROID_PLATFORM=${PLATFORM_NUMBER}" />
      
@@ -45,6 +47,9 @@
   <flag value="-Iinclude"/>
   <objdir value="obj/android${OBJEXT}${ARCH}" />
   <ext value=".obj"/>
+
+  <pchflag value="-x" />
+  <pchflag value="c++-header" />
   
   <!-- Macros -->
   <flag value="-DANDROID=ANDROID"/>
@@ -61,6 +66,7 @@
   <flag value="-g" if="HXCPP_DEBUG_LINK"/>
   <flag value="-c"/>
   <flag value="-fpic"/>
+  <flag value="-O2" unless="debug"/>
   
   <!-- Warning Supression -->
   <flag value="-Wno-invalid-offsetof" />

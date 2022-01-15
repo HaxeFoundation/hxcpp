@@ -11,9 +11,11 @@ const char *gArrayFuncNames[] =
    "afCopy",
    "afInsert",
    "afIterator",
+   "afKeyValueIterator",
    "afJoin",
    "afPop",
    "afPush",
+   "afContains",
    "afRemove",
    "afReverse",
    "afShift",
@@ -40,9 +42,11 @@ int gArrayArgCount[] =
    0, //afCopy,
    2, //afInsert,
    0, //afIterator,
+   0, //afKeyValueIterator,
    1, //afJoin,
    0, //afPop,
    1, //afPush,
+   1, //afContains,
    1, //afRemove,
    0, //afReverse,
    0, //afShift,
@@ -441,6 +445,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
             return etVoid;
 
          case afPush:
+         case afContains:
          case afRemove:
          case afIndexOf:
          case afLastIndexOf:
@@ -477,6 +482,15 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          BCR_CHECK;
          return ValToInt(thisVal->shift());
+      }
+      if (FUNC==afContains)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
+         ELEM elem;
+         runValue(elem,ctx,args[0]);
+         BCR_CHECK;
+         return thisVal->contains(elem);
       }
       if (FUNC==afRemove)
       {
@@ -674,7 +688,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          return thisVal->toString();
       }
 
-      if (FUNC==afPush || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
+      if (FUNC==afPush || FUNC==afContains || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          return Dynamic(runInt(ctx))->toString();
 
       return runObject(ctx)->toString();
@@ -792,8 +806,14 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_CHECK;
          return thisVal->iterator().mPtr;
       }
+      if (FUNC==afKeyValueIterator)
+      {
+         Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
+         BCR_CHECK;
+         return thisVal->keyValueIterator().mPtr;
+      }
 
-      if (FUNC==afPush || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
+      if (FUNC==afPush || FUNC==afContains || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          return Dynamic(runInt(ctx)).mPtr;
 
       if (FUNC==afJoin || FUNC==afToString)
@@ -844,7 +864,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          #endif
       }
 
-      if (FUNC==afPush || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
+      if (FUNC==afPush || FUNC==afContains || FUNC==afRemove || FUNC==afIndexOf || FUNC==afLastIndexOf)
          runInt(ctx);
 
       if (FUNC==afConcat || FUNC==afCopy || FUNC==afReverse || FUNC==afSplice || FUNC==afSlice ||
@@ -1069,6 +1089,11 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       return result.mPtr;
    }
 
+   static int SLJIT_CALL runContains( Array_obj<ELEM> *inArray, typename ExprBaseTypeOf<ELEM>::Base inBase)
+   {
+      return inArray->contains(inBase);
+   }
+
    static int SLJIT_CALL runRemove( Array_obj<ELEM> *inArray, typename ExprBaseTypeOf<ELEM>::Base inBase)
    {
       return inArray->remove(inBase);
@@ -1129,6 +1154,11 @@ struct ArrayBuiltin : public ArrayBuiltinBase
    static hx::Object *SLJIT_CALL runGetIteratator( Array_obj<ELEM> *inArray )
    {
       return inArray->iterator().mPtr;
+   }
+
+   static hx::Object *SLJIT_CALL runGetKeyValueIteratator( Array_obj<ELEM> *inArray )
+   {
+      return inArray->keyValueIterator().mPtr;
    }
 
    static void SLJIT_CALL runSetSizeExact( Array_obj<ELEM> *inArray, int size )
@@ -1322,6 +1352,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                if (sizeof(ELEM)==1) // uchar, bool
                {
                   compiler->move( sJitTemp0.atReg(sJitTemp1).as(jtByte), tempVal );
+                  if (destType!=etNull)
+                     compiler->convert(tempVal, elemType, inDest, destType);
                }
                else if (elemType==etString)
                {
@@ -1334,10 +1366,15 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   #ifdef HXCPP_GC_GENERATIONAL
                   genWriteBarrier(compiler, sJitTemp2, tempVal.as(jtPointer) + StringOffset::Ptr );
                   #endif
+
+                  if (destType!=etNull)
+                     compiler->convert( sJitTemp0.star(jtString), etString, inDest, destType );
                }
                else if (sizeof(ELEM)==2)
                {
                   compiler->move( sJitTemp0.atReg(sJitTemp1,1), tempVal );
+                  if (destType!=etNull)
+                     compiler->convert(tempVal, elemType, inDest, destType);
                }
                else if (sizeof(ELEM)==4)
                {
@@ -1346,6 +1383,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   if (hx::ContainsPointers<ELEM>())
                      genWriteBarrier(compiler, sJitTemp2, tempVal );
                   #endif
+                  if (destType!=etNull)
+                     compiler->convert(tempVal, elemType, inDest, destType);
                }
                else if (sizeof(ELEM)==8)
                {
@@ -1354,6 +1393,8 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                   if (hx::ContainsPointers<ELEM>())
                      genWriteBarrier(compiler, sJitTemp2, tempVal );
                   #endif
+                  if (destType!=etNull)
+                     compiler->convert(tempVal, elemType, inDest, destType);
                }
                else
                {
@@ -1631,6 +1672,21 @@ struct ArrayBuiltin : public ArrayBuiltinBase
                break;
             }
 
+         // Array<ELEM>
+         case afContains:
+            {
+               JitTemp thisVal(compiler, jtPointer);
+               thisExpr->genCode(compiler, thisVal, etObject);
+
+               ExprType elemType = (ExprType)ExprTypeOf<ELEM>::value;
+               JitTemp val(compiler,getJitType(elemType));
+               args[0]->genCode(compiler, val, elemType);
+
+               compiler->callNative( (void *)runContains, thisVal, val );
+
+               compiler->convertReturnReg(etInt, inDest, destType, true);
+               break;
+            }
 
          // Array<ELEM>
          case afRemove:
@@ -1670,10 +1726,17 @@ struct ArrayBuiltin : public ArrayBuiltinBase
 
    
          // Array<ELEM>
-            case afIterator:
+         case afIterator:
             {
                thisExpr->genCode(compiler, sJitTemp0, etObject);
                compiler->callNative( (void *)runGetIteratator, sJitTemp0.as(jtPointer) );
+               compiler->convertReturnReg(etObject, inDest, destType);
+               break;
+            }
+         case afKeyValueIterator:
+            {
+               thisExpr->genCode(compiler, sJitTemp0, etObject);
+               compiler->callNative( (void *)runGetKeyValueIteratator, sJitTemp0.as(jtPointer) );
                compiler->convertReturnReg(etObject, inDest, destType);
                break;
             }
@@ -1896,6 +1959,10 @@ static hx::Object * SLJIT_CALL objGetItem(hx::Object *inObj, int inIndex)
 {
    return inObj->__GetItem(inIndex).mPtr;
 }
+static int SLJIT_CALL arrayContains(ArrayAnyImpl *inObj, hx::Object *inValue)
+{
+   return inObj->contains(inValue);
+}
 static int SLJIT_CALL arrayRemove(ArrayAnyImpl *inObj, hx::Object *inValue)
 {
    return inObj->remove(inValue);
@@ -2072,12 +2139,16 @@ CppiaExpr *createArrayBuiltin(CppiaExpr *src, ArrayType inType, CppiaExpr *inThi
       return TCreateArrayBuiltin<afInsert,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("iterator"))
       return TCreateArrayBuiltin<afIterator,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("keyValueIterator"))
+      return TCreateArrayBuiltin<afKeyValueIterator,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("join"))
       return TCreateArrayBuiltin<afJoin,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("pop"))
       return TCreateArrayBuiltin<afPop,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("push"))
       return TCreateArrayBuiltin<afPush,NoCrement>(src, inType, inThisExpr, ioExpressions);
+   if (field==HX_CSTRING("contains"))
+      return TCreateArrayBuiltin<afContains,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("remove"))
       return TCreateArrayBuiltin<afRemove,NoCrement>(src, inType, inThisExpr, ioExpressions);
    if (field==HX_CSTRING("reverse"))

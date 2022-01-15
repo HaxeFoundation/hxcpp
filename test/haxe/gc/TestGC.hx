@@ -80,7 +80,7 @@ class TestGC extends haxe.unit.TestCase {
 		create(createCustom);
 		var zombie = gc();
 		assertTrue(zombie != null);
-		assertTrue(Std.is(zombie, CustomObject));
+		assertTrue(Std.isOfType(zombie, CustomObject));
 		assertTrue(gc() == null);
 	}
 
@@ -92,9 +92,13 @@ class TestGC extends haxe.unit.TestCase {
 		create(createBytes);
 		var zombie = gc();
 		assertTrue(zombie != null);
-		assertTrue(Std.is(zombie, Bytes));
+		assertTrue(Std.isOfType(zombie, Bytes));
 		assertTrue(gc() == null);
 	}
+
+	public function testBigStack():Void {
+      assertTrue( TestBigStack.test() );
+   }
 
    #if !cppia
 	public function testConstStrings():Void {

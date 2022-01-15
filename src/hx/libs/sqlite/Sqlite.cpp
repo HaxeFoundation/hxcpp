@@ -233,10 +233,11 @@ Dynamic _hx_sqlite_request(Dynamic handle,String sql)
 {
    database *db = getDatabase(handle);
 
-
+   int byteLength = 0;
+   const char * sqlStr = sql.utf8_str(0, true, &byteLength);
    sqlite3_stmt *statement = 0;
    const char *tl = 0;
-   if( sqlite3_prepare(db->db,sql.utf8_str(),sql.length,&statement,&tl) != SQLITE_OK )
+   if( sqlite3_prepare(db->db,sqlStr,byteLength,&statement,&tl) != SQLITE_OK )
    {
       hx::Throw( HX_CSTRING("Sqlite error in ") + sql + HX_CSTRING(" : ") +
                   String(sqlite3_errmsg(db->db) ) );

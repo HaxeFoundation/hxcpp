@@ -1,7 +1,8 @@
 #ifndef HX_CFFI_H
 #define HX_CFFI_H
 
-#define HX_CFFI_API_VERSION 400
+// 410 - adds gc_try_unblocking
+#define HX_CFFI_API_VERSION 410
 
 #ifdef HXCPP_JS_PRIME
 #include <emscripten/bind.h>
@@ -248,12 +249,35 @@ inline bool val_is_object(value inVal)
 class AutoGCBlocking
 {
 public:
-	AutoGCBlocking() : mLocked( gc_try_blocking() ) {  }
-	~AutoGCBlocking() { if (mLocked) gc_exit_blocking(); }
-	void Close() { if (mLocked) gc_exit_blocking(); mLocked = false; }
+	inline AutoGCBlocking(bool inSoftUnlock=false) :
+      mSoftUnlock(inSoftUnlock), mLocked( gc_try_blocking() ) {  }
+	inline ~AutoGCBlocking() { Close(); }
+	inline void Close()
+   {
+      if (mLocked)
+      {
+         if (mSoftUnlock)
+            gc_try_unblocking();
+         else
+            gc_exit_blocking();
+      }
+      mLocked = false;
+   }
 
 	bool mLocked;
+	bool mSoftUnlock;
 };
+
+class AutoGCUnblocking
+{
+public:
+	AutoGCUnblocking() : mUnlocked( gc_try_unblocking() ) {  }
+	~AutoGCUnblocking() { Close(); }
+	void Close() { if (mUnlocked) gc_enter_blocking(); mUnlocked = false; }
+
+	bool mUnlocked;
+};
+
 
 class AutoGCRoot
 {
@@ -304,21 +328,31 @@ struct CffiBytes
 
 inline CffiBytes getByteData(value inValue)
 {
+   static field bField = 0;
+   static field lengthField = 0;
+   if (bField==0)
+   {
+      bField = val_id("b");
+      lengthField = val_id("length");
+   }
+
    if (val_is_object(inValue))
    {
-      static field bField = 0;
-      static field lengthField = 0;
-      if (bField==0)
-      {
-         bField = val_id("b");
-         lengthField = val_id("length");
-      }
       value b = val_field(inValue, bField);
       value len = val_field(inValue, lengthField);
       if (val_is_string(b) && val_is_int(len))
          return CffiBytes( (unsigned char *)val_string(b), val_int(len) );
       if (val_is_buffer(b) && val_is_int(len))
          return CffiBytes( (unsigned char *)buffer_data(val_to_buffer(b)), val_int(len) );
+   }
+   else if (val_is_buffer(inValue))
+   {
+      value len = val_field(inValue, lengthField);
+      if (val_is_int(len))
+      {
+         buffer b = val_to_buffer(inValue);
+         return CffiBytes( (unsigned char *)buffer_data(b), val_int(len) );
+      }
    }
    return CffiBytes();
 }

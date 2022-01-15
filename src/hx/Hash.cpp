@@ -5,6 +5,17 @@
 using namespace hx;
 
 
+// --- HashRoot ---------------------------------------------------
+
+int __root_hash_size(Dynamic &rtHash)
+{
+   HashRoot *hash = static_cast<HashRoot *>(rtHash.GetPtr());
+   if(!hash)
+      return 0;
+   return hash->getSize();
+}
+
+
 // --- IntHash ----------------------------------------------------
 
 namespace
@@ -380,6 +391,71 @@ void __string_hash_set_string(HX_MAP_THIS_ARG,String inKey, ::String inValue)
    hash->set(inKey,inValue);
 }
 
+::String __string_hash_map_substr(HX_MAP_THIS_ARG,String inKey, int inStart, int inLength)
+{
+   StringHashBase *sash = static_cast<StringHashBase *>(ioHash.GetPtr());
+   if (!sash)
+   {
+      sash = new StringHashInt();
+      ioHash = sash;
+      HX_OBJ_WB_GET(owner,sash);
+   }
+   else if (sash->store!=hashInt)
+   {
+      sash = sash->convertStore(hashInt);
+      ioHash = sash;
+      HX_OBJ_WB_GET(owner,sash);
+   }
+
+   StringHashInt *shi = static_cast<StringHashInt *>(sash);
+
+
+   struct Finder
+   {
+      ::String bigString;
+      int len;
+      int offset;
+
+      Finder(const String &inBigStr, int inStart, int inLength) : bigString(inBigStr), offset(inStart), len(inLength) { }
+
+      bool operator==(const String &inKey) const
+      {
+         if (inKey.length!=len)
+            return false;
+         #ifdef HX_SMART_STRINGS
+         if (inKey.isUTF16Encoded())
+         {
+            // Has no wide chars, so can't match
+            if (!bigString.isUTF16Encoded())
+               return false;
+            return !memcmp(inKey.__w, bigString.__w+offset, sizeof(char16_t)*len);
+         }
+         else if (bigString.isUTF16Encoded())
+         {
+            const char *k = inKey.__s;
+            const char16_t *v = bigString.__w + offset;
+            for(int i=0;i<len;i++)
+               if (k[i] != v[i])
+                  return false;
+            return true;
+         }
+         // fallthough...
+         #endif
+         return !memcmp(inKey.__s, bigString.__s+offset, len);
+      }
+   };
+   Finder finder(inKey, inStart, inLength);
+
+   unsigned int code = inKey.calcSubHash(inStart,inLength);
+   String found;
+   if (shi->findEquivalentKey(found,code,finder))
+      return found;
+   String k = inKey.substr(inStart, inLength);
+   shi->set(k,1);
+   return k;
+}
+
+
 Dynamic  __string_hash_get(Dynamic inHash,String inKey)
 {
    StringHashBase *hash = static_cast<StringHashBase *>(inHash.GetPtr());
@@ -481,7 +557,6 @@ void __string_hash_clear(Dynamic &ioHash)
    if (hash)
       hash->clear();
 }
-
 
 
 

@@ -57,6 +57,26 @@ class Linker
       return false;
    }
 
+   function getSimpleFilename(inTarget:Target)
+   {
+      var ext = inTarget.getExt(mExt);
+      // Remove arch from ext ...
+      var idx = ext.indexOf('.');
+      if (idx>0)
+         ext = ext.substr(idx);
+
+      return mNamePrefix + inTarget.mOutput + ext;
+   }
+   public function getUnstrippedFilename(inObjDir, inTarget:Target)
+   {
+      if (inTarget.mFullUnstrippedName!=null)
+      {
+         PathManager.mkdir( inTarget.mFullUnstrippedName, true );
+         return inTarget.mFullUnstrippedName;
+      }
+      return inObjDir + "/" + getSimpleFilename(inTarget);
+   }
+
    public function link(inTarget:Target,inObjs:Array<String>,inCompiler:Compiler,extraDeps:Array<String> )
    {
       var ext = inTarget.getExt(mExt);
@@ -75,6 +95,13 @@ class Linker
       }
 
       var out_name = Path.normalize(PathManager.combine( inTarget.mBuildDir, inTarget.mOutputDir + file_name));
+      var hashFile = out_name + ".hash";
+      if (inTarget.mFullOutputName!=null)
+      {
+         PathManager.mkdir( inTarget.mFullOutputName, true );
+         out_name = inTarget.mFullOutputName;
+      }
+
       mLastOutName = out_name;
 
 
@@ -105,7 +132,6 @@ class Linker
       var isOutOfDateLibs = false;
 
       var md5 = Md5.encode(inObjs.join(";"));
-      var hashFile = out_name + ".hash";
       if (!FileSystem.exists(hashFile) || sys.io.File.getContent(hashFile)!=md5)
          isOutOfDateLibs = true;
 

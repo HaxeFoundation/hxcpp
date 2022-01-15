@@ -13,35 +13,35 @@
 #define HX_ARG_LIST::ARG:: ::ARG_LIST::::end::
 
 #define HX_DEFINE_DYNAMIC_FUNC0(class,func,ret) \
-static ::NS::Dynamic __##class##func(hx::NS::Object *inObj) \
+static ::NS::Dynamic __##class##func(::hxNS::Object *inObj) \
 { \
       ret reinterpret_cast<class *>(inObj)->func(); return  ::NS::Dynamic(); \
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateMemberFunction0(#func,this,__##class##func); \
+   return ::hxNS::CreateMemberFunction0(#func,this,__##class##func); \
 }
 
 
 #define HX_DEFINE_DYNAMIC_FUNC(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-static ::NS::Dynamic __##class##func(hx::NS::Object *inObj, dynamic_arg_list) \
+static ::NS::Dynamic __##class##func(::hxNS::Object *inObj, dynamic_arg_list) \
 { \
       ret reinterpret_cast<class *>(inObj)->func(arg_list); return  ::NS::Dynamic(); \
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateMemberFunction##N(#func,this,__##class##func); \
+   return ::hxNS::CreateMemberFunction##N(#func,this,__##class##func); \
 }
 
 
 #define HX_DEFINE_DYNAMIC_FUNC_EXTRA(class,N,func,ret,array_list,dynamic_arg_list,arg_list) \
-static ::NS::Dynamic __##class##func(hx::NS::Object *inObj, const Array< ::NS::Dynamic> &inArgs) \
+static ::NS::Dynamic __##class##func(::hxNS::Object *inObj, const Array< ::NS::Dynamic> &inArgs) \
 { \
       ret reinterpret_cast<class *>(inObj)->func(array_list); return  ::NS::Dynamic(); \
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateMemberFunctionVar(#func,this,__##class##func,N); \
+   return ::hxNS::CreateMemberFunctionVar(#func,this,__##class##func,N); \
 }
 
 
@@ -80,7 +80,7 @@ static ::NS::Dynamic __##class##func() \
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateStaticFunction0(#func,__##class##func); \
+   return ::hxNS::CreateStaticFunction0(#func,__##class##func); \
 }
 
 
@@ -91,7 +91,7 @@ static ::NS::Dynamic __##class##func(dynamic_arg_list) \
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateStaticFunction##N(#func,__##class##func); \
+   return ::hxNS::CreateStaticFunction##N(#func,__##class##func); \
 }
 
 
@@ -102,7 +102,7 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
 }; \
  ::NS::Dynamic class::func##_dyn() \
 {\
-   return hx::NS::CreateStaticFunctionVar(#func,__##class##func,N); \
+   return ::hxNS::CreateStaticFunctionVar(#func,__##class##func,N); \
 }
 
 
@@ -127,12 +127,12 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
 
 #define HX_BEGIN_DEFAULT_FUNC(name,t0) \
 	namespace { \
-   struct name : public hx::Object { int __GetType() const { return vtFunction; } \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
-   hx::ObjectPtr<t0> __this; \
-   name(hx::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
-   void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
-   void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
+   struct name : public ::hxNS::Object { int __GetType() const { return vtFunction; } \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
+   ::hxNS::ObjectPtr<t0> __this; \
+   name(::hxNS::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
+   void __Mark(::hxNS::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
+   void __Visit(::hxNS::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
 
 
 #define HX_END_DEFAULT_FUNC \
@@ -142,18 +142,18 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
 
 #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
    struct name : public SUPER { \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
-   void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); } \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
+   void __Mark(::hxNS::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
+   void __Visit(::hxNS::VisitContext *__inCtx) { DoVisitThis(__inCtx); } \
    name() {}
 
 ::foreach LOCALS::
 #define HX_BEGIN_LOCAL_FUNC_S::ARG::(SUPER,name,::TYPE_ARGS::) \
    struct name : public SUPER { \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
+   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
    ::TYPE_DECL::; \
-   void __Mark(hx::MarkContext *__inCtx) { DoMarkThis(__inCtx); ::MARKS:: } \
-   void __Visit(hx::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \
+   void __Mark(::hxNS::MarkContext *__inCtx) { DoMarkThis(__inCtx); ::MARKS:: } \
+   void __Visit(::hxNS::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \
    name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
 
 #if (HXCPP_API_LEVEL>=330)
@@ -168,10 +168,10 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
 
 // For compatibility until next version of haxe is released
 #define HX_BEGIN_LOCAL_FUNC0(name) \
-      HX_BEGIN_LOCAL_FUNC_S0(hx::LocalFunc,name)
+      HX_BEGIN_LOCAL_FUNC_S0(::hxNS::LocalFunc,name)
 ::foreach LOCALS::
 #define HX_BEGIN_LOCAL_FUNC::ARG::(name,::TYPE_ARGS::) \
-      HX_BEGIN_LOCAL_FUNC_S::ARG::(hx::LocalFunc,name,::TYPE_ARGS::)::end::
+      HX_BEGIN_LOCAL_FUNC_S::ARG::(::hxNS::LocalFunc,name,::TYPE_ARGS::)::end::
 
 
 #define HX_DECLARE_DYNAMIC_FUNCTIONS \

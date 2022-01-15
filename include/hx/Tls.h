@@ -13,7 +13,7 @@
     // Nothing
   #else
 
-   #ifndef __GNUC__
+   #if ! defined(__GNUC__) && !defined(__BORLANDC__)
    #include <intrin.h>
    #endif
 
@@ -66,7 +66,7 @@
 
          DATA **extra = (DATA **)(__readfsdword(kTibExtraTlsOffset));
          return extra[mFastOffset];
-         #elif (_MSC_VER >= 1400) & !defined(HXCPP_DEBUG)// 64 bit version...
+         #elif (_MSC_VER >= 1400) & !defined(HXCPP_DEBUG) && !defined(HXCPP_ARM64)// 64 bit version...
          if (mSlot < 64)
            return (DATA *)__readgsqword(mFastOffset);
          else

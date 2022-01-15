@@ -55,7 +55,7 @@ typedef int SocketLen;
 typedef socklen_t SocketLen;
 #endif
 
-#if defined(NEKO_WINDOWS) || defined(NEKO_MAC)
+#if (defined(NEKO_WINDOWS) || defined(NEKO_MAC)) && !defined(MSG_NOSIGNAL)
 #   define MSG_NOSIGNAL 0
 #endif
 
@@ -109,11 +109,16 @@ SOCKET val_sock(Dynamic inValue)
 
 static void block_error()
 {
-   hx::ExitGCFreeZone();
+
 #ifdef NEKO_WINDOWS
    int err = WSAGetLastError();
+   // call ExitGCFreeZone after WSAGetLastError, WSAGetLastError is just an alias for GetLastError and
+   // calling ExitGCFreeZone will on some cases clear the lastError code.
+   hx::ExitGCFreeZone();
    if( err == WSAEWOULDBLOCK || err == WSAEALREADY )
+
 #else
+   hx::ExitGCFreeZone();
    if( errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS || errno == EALREADY )
 #endif
       hx::Throw(HX_CSTRING("Blocking"));
@@ -562,7 +567,7 @@ void _hx_std_socket_connect( Dynamic o, int host, int port )
    *(int*)&addr.sin_addr.s_addr = host;
 
    hx::EnterGCFreeZone();
-   if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) != 0 )
+   if( connect(val_sock(o),(struct sockaddr*)&addr,sizeof(addr)) == SOCKET_ERROR )
    {
       // This will throw a "Blocking" exception if the "error" was because
       // it's a non-blocking socket with connection in progress, otherwise

@@ -111,6 +111,7 @@ class Test
               money DOUBLE,
               password BLOB
           )");
+         cnx.request("SELECT '豪鬼' test");
       } else {
         cnx.request("
           CREATE TABLE IF NOT EXISTS UserPwd (
@@ -882,13 +883,22 @@ class Test
 
    public static function testIntParsing()
    {
-      var int1 = '0x1';
-      var int2 = ' 0x1';
-      var int3 = '\t0x1';
-      var int4 = '   0x';
-      var int5 = '  5';
-      var int6 = ' \t\n5';
+      var int0 = '0x1';
+      var int1 = ' 0x1';
+      var int2 = '\t0x1';
+      var int3 = '   0x';
+      var int4 = '-0x1';
+      var int5 = ' -0x1';
+      var int6 = '\t-0x1';
+      var int7 = '   -0x';
+      var int8 = '  5';
+      var int9 = ' \t\n5';
       
+      var val0 = Std.parseInt(int0);
+      if (val0 != 1)
+      {
+         error('parsed hex value was not 1, $val0');
+      }
       var val1 = Std.parseInt(int1);
       if (val1 != 1)
       {
@@ -900,24 +910,39 @@ class Test
          error('parsed hex value was not 1, $val2');
       }
       var val3 = Std.parseInt(int3);
-      if (val3 != 1)
+      if (val3 != 0)
       {
-         error('parsed hex value was not 1, $val3');
+         error('parsed hex value was not 0, $val3');
       }
       var val4 = Std.parseInt(int4);
-      if (val4 != 0)
+      if (val4 != -1)
       {
-         error('parsed hex value was not 0, $val4');
+         error('parsed hex value was not 1, $val4');
       }
       var val5 = Std.parseInt(int5);
-      if (val5 != 5)
+      if (val5 != -1)
       {
-         error('parsed int value was not 5, $val5');
+         error('parsed hex value was not 1, $val5');
       }
       var val6 = Std.parseInt(int6);
-      if (val6 != 5)
+      if (val6 != -1)
       {
-         error('parsed int value was not 5, $val6');
+         error('parsed hex value was not 1, $val6');
+      }
+      var val7 = Std.parseInt(int7);
+      if (val7 != 0)
+      {
+         error('parsed hex value was not 0, $val7');
+      }
+      var val8 = Std.parseInt(int8);
+      if (val8 != 5)
+      {
+         error('parsed int value was not 5, $val8');
+      }
+      var val9 = Std.parseInt(int9);
+      if (val9 != 5)
+      {
+         error('parsed int value was not 5, $val9');
       }
 
       return ok();
