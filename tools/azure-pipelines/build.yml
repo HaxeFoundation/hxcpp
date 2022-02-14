@@ -24,6 +24,7 @@ jobs:
       - ${{ if startsWith(parameters.vmImage, 'ubuntu-') }}:
         - script: |
             set -ex
+            sudo rm -R /var/lib/mysql/
             # mariadb
             curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
             sudo apt-get update -qqy
@@ -35,6 +36,7 @@ jobs:
             sudo apt-get install -qqy gcc-multilib g++-multilib
           displayName: Install dependencies
         - script: |
+            set -ex
             sudo systemctl start mysql
             sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
           displayName: Configure MariaDB
