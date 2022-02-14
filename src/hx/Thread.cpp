@@ -491,10 +491,318 @@ void __hxcpp_mutex_release(Dynamic inMutex)
 	return mutex->Release();
 }
 
+#if defined(HX_LINUX) || defined(HX_ANDROID)
+#define POSIX_SEMAPHORE
+#include <semaphore.h>
+#endif
 
+#if defined(HX_MACOS) || defined(IPHONE) || defined(APPLETV)
+#define APPLE_SEMAPHORE
+#include <dispatch/dispatch.h>
+#endif
 
+class hxSemaphore : public hx::Object {
+public:
+  hx::InternalFinalizer *mFinalizer;
+#ifdef HX_WINDOWS
+  HANDLE sem;
+#elif defined (POSIX_SEMAPHORE)
+  sem_t sem;
+#elif defined(APPLE_SEMAPHORE)
+	dispatch_semaphore_t sem;
+#endif
+  bool valid;
 
+  hxSemaphore(int value) {
+    mFinalizer = new hx::InternalFinalizer(this);
+    mFinalizer->mFinalizer = clean;
+#ifdef HX_WINDOWS
+    sem = CreateSemaphoreW(NULL, value, 0x7FFFFFFF, NULL);
+#elif defined(POSIX_SEMAPHORE)
+    sem_init(&sem, 0, value);
+#elif defined(APPLE_SEMAPHORE)
+    sem = dispatch_semaphore_create(value);
+#endif
+    valid = true;
+  }
 
+  HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdSemaphore };
+
+#ifdef HXCPP_VISIT_ALLOCS
+  void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+#endif
+
+  void Acquire() {
+#if HX_WINDOWS
+	WaitForSingleObject(sem, INFINITE);
+#elif defined(POSIX_SEMAPHORE)
+    sem_wait(&sem);
+#elif defined(APPLE_SEMAPHORE)
+    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+#endif
+  }
+
+  bool TryAcquire(double timeout) {
+#ifdef HX_WINDOWS
+    return WaitForSingleObject(sem, (DWORD)((FLOAT)timeout * 1000.0)) == 0;
+#elif defined(POSIX_SEMAPHORE)
+    if (timeout == 0) {
+      return sem_trywait(&sem) == 0;
+    } else {
+      struct timeval tv;
+      struct timespec t;
+      double delta = timeout;
+      int idelta = (int)delta, idelta2;
+      delta -= idelta;
+      delta *= 1.0e9;
+      gettimeofday(&tv, NULL);
+      delta += tv.tv_usec * 1000.0;
+      idelta2 = (int)(delta / 1e9);
+      delta -= idelta2 * 1e9;
+      t.tv_sec = tv.tv_sec + idelta + idelta2;
+      t.tv_nsec = (long)delta;
+      return sem_timedwait(&sem, &t) == 0;
+    }
+#elif defined(APPLE_SEMAPHORE)
+    return dispatch_semaphore_wait(
+               sem,
+               dispatch_time(DISPATCH_TIME_NOW,
+                             (int64_t)(timeout * 1000 * 1000 * 1000))) == 0;
+#else
+	return false;
+#endif
+  }
+
+  void Release() {
+#if HX_WINDOWS
+	ReleaseSemaphore(sem, 1, NULL);
+#elif defined(POSIX_SEMAPHORE)
+    sem_post(&sem);
+#elif defined(APPLE_SEMAPHORE)
+    dispatch_semaphore_signal(sem);
+#endif
+  }
+
+  static void clean(hx::Object *inObj) {
+    hxSemaphore *l = dynamic_cast<hxSemaphore *>(inObj);
+    if (l) {
+      if(l->valid) {
+#ifdef HX_WINDOWS
+		CloseHandle(l->sem);
+#elif defined(POSIX_SEMAPHORE)
+		  sem_destroy(&l->sem);
+#endif
+		  l->valid = false;
+	  }
+    }
+  }
+};
+
+Dynamic __hxcpp_semaphore_create(int value) {
+  return new hxSemaphore(value);
+}
+void __hxcpp_semaphore_acquire(Dynamic inSemaphore) {
+  hxSemaphore *semaphore = dynamic_cast<hxSemaphore *>(inSemaphore.mPtr);
+  if (!semaphore)
+    throw HX_INVALID_OBJECT;
+  semaphore->Acquire();
+}
+bool __hxcpp_semaphore_try_acquire(Dynamic inSemaphore, double timeout) {
+  hxSemaphore *semaphore = dynamic_cast<hxSemaphore *>(inSemaphore.mPtr);
+  if (!semaphore)
+    throw HX_INVALID_OBJECT;
+  return semaphore->TryAcquire(timeout);
+}
+void __hxcpp_semaphore_release(Dynamic inSemaphore) {
+  hxSemaphore *semaphore = dynamic_cast<hxSemaphore *>(inSemaphore.mPtr);
+  if (!semaphore)
+    throw HX_INVALID_OBJECT;
+  semaphore->Release();
+}
+
+class hxCondition : public hx::Object {
+public:
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+	CRITICAL_SECTION cs;
+	CONDITION_VARIABLE cond;
+#endif
+#else
+	pthread_cond_t cond;
+	pthread_mutex_t mutex;
+#endif
+  hx::InternalFinalizer *mFinalizer;
+  hxCondition() {
+    mFinalizer = new hx::InternalFinalizer(this);
+    mFinalizer->mFinalizer = clean;
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+    InitializeCriticalSection(&cs);
+	InitializeConditionVariable(&cond);
+#else
+	throw Dynamic(HX_CSTRING("Condition variables are not supported on Windows XP"));
+#endif
+#else
+    pthread_condattr_t cond_attr;
+    pthread_condattr_init(&cond_attr);
+    pthread_cond_init(&cond, &cond_attr);
+    pthread_condattr_destroy(&cond_attr);
+    pthread_mutexattr_t mutex_attr;
+    pthread_mutexattr_init(&mutex_attr);
+    pthread_mutex_init(&mutex, &mutex_attr);
+    pthread_mutexattr_destroy(&mutex_attr);
+#endif
+  }
+
+  HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdCondition };
+
+#ifdef HXCPP_VISIT_ALLOCS
+  void __Visit(hx::VisitContext *__inCtx) { mFinalizer->Visit(__inCtx); }
+#endif
+  static void clean(hx::Object *inObj) {
+    hxCondition *cond = dynamic_cast<hxCondition *>(inObj);
+    if (cond) {
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+      DeleteCriticalSection(&cond->cs);
+#endif
+#else
+      pthread_cond_destroy(&cond->cond);
+      pthread_mutex_destroy(&cond->mutex);
+#endif
+    }
+  }
+
+  void Acquire() {
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+	  EnterCriticalSection(&cs);
+#endif
+#else
+	  pthread_mutex_lock(&mutex);
+#endif
+  }
+
+  bool TryAcquire() {
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+    return (bool)TryEnterCriticalSection(&cs);
+#else
+	return false;
+#endif
+#else
+    return pthread_mutex_trylock(&mutex);
+#endif
+  }
+
+  void Release() {
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+	  LeaveCriticalSection(&cs);
+#endif
+#else
+	  pthread_mutex_unlock(&mutex);
+#endif
+  }
+
+  void Wait() {
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+	  SleepConditionVariableCS(&cond,&cs,INFINITE);
+#endif
+#else
+	  pthread_cond_wait(&cond, &mutex);
+#endif
+  }
+
+  bool TimedWait(double timeout) {
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+	  return (bool)SleepConditionVariableCS(&cond, &cs, (DWORD)((FLOAT)timeout * 1000.0));
+#else
+	  return false;
+#endif
+#else
+    struct timeval tv;
+    struct timespec t;
+    double delta = timeout;
+    int idelta = (int)delta, idelta2;
+    delta -= idelta;
+    delta *= 1.0e9;
+    gettimeofday(&tv, NULL);
+    delta += tv.tv_usec * 1000.0;
+    idelta2 = (int)(delta / 1e9);
+    delta -= idelta2 * 1e9;
+    t.tv_sec = tv.tv_sec + idelta + idelta2;
+    t.tv_nsec = (long)delta;
+    return pthread_cond_timedwait(&cond, &mutex, &t);
+#endif
+  }
+  void Signal() {
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+	  WakeConditionVariable(&cond);
+#endif
+#else
+	  pthread_cond_signal(&cond);
+#endif
+  }
+  void Broadcast() {
+#ifdef HX_WINDOWS
+#ifndef HXCPP_WINXP_COMPAT
+	  WakeAllConditionVariable(&cond);
+#endif
+#else
+	  pthread_cond_broadcast(&cond);
+#endif
+  }
+};
+
+Dynamic __hxcpp_condition_create(void) {
+  return new hxCondition;
+}
+void __hxcpp_condition_acquire(Dynamic inCond) {
+  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
+  if (!cond)
+    throw HX_INVALID_OBJECT;
+  cond->Acquire();
+}
+bool __hxcpp_condition_try_acquire(Dynamic inCond) {
+  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
+  if (!cond)
+    throw HX_INVALID_OBJECT;
+  return cond->TryAcquire();
+}
+void __hxcpp_condition_release(Dynamic inCond) {
+  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
+  if (!cond)
+    throw HX_INVALID_OBJECT;
+  cond->Release();
+}
+void __hxcpp_condition_wait(Dynamic inCond) {
+  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
+  if (!cond)
+    throw HX_INVALID_OBJECT;
+  cond->Wait();
+}
+bool __hxcpp_condition_timed_wait(Dynamic inCond, double timeout) {
+  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
+  if (!cond)
+    throw HX_INVALID_OBJECT;
+  return cond->TimedWait(timeout);
+}
+void __hxcpp_condition_signal(Dynamic inCond) {
+  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
+  if (!cond)
+    throw HX_INVALID_OBJECT;
+  cond->Signal();
+}
+void __hxcpp_condition_broadcast(Dynamic inCond) {
+  hxCondition *cond = dynamic_cast<hxCondition *>(inCond.mPtr);
+  if (!cond)
+    throw HX_INVALID_OBJECT;
+  cond->Broadcast();
+}
 
 // --- Lock ------------------------------------------------------------
 
