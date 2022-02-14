@@ -305,6 +305,100 @@ bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int 
 int _hx_atomic_inc(::cpp::Pointer<cpp::AtomicInt> inPtr );
 int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr );
 
+// Assumptions made:
+//    Everyone uses GCC, Clang or MSVC
+//    People are not using 8 year old versions of GCC.
+
+#if defined(__GNUC__) || defined(__clang__)
+#define HX_GCC_ATOMICS
+#elif defined(_MSC_VER)
+#define HX_MSVC_ATOMICS
+#include <winnt.h>
+#else // Nearly everyone uses GCC, Clang or MSVC, right?
+#error "Neither GCC, clang or MSVC is being used. Please contribute the relevant atomic instrinsics for your compiler."
+#endif
+
+inline int _hx_atomic_add(int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_add(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return InterlockedExchangeAdd((LONG volatile *)a, b);
+#endif
+}
+
+inline int _hx_atomic_sub(int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_sub(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return InterlockedExchangeAdd((LONG volatile *)a, -b);
+#endif
+}
+
+inline int _hx_atomic_and(int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_and(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return InterlockedAnd((LONG volatile *)a, b);
+#endif
+}
+
+inline int _hx_atomic_or(int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_or(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return InterlockedOr((LONG volatile *)a, b);
+#endif
+}
+
+inline int _hx_atomic_xor(int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_xor(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return InterlockedXor((LONG volatile *)a, b);
+#endif
+}
+
+inline int _hx_atomic_compare_exchange(int *a, int expected,
+                                       int replacement) {
+#if defined(HX_GCC_ATOMICS)
+   int _expected = expected;
+  __atomic_compare_exchange(a, &_expected, &replacement, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  return _expected;
+#elif defined(HX_MSVC_ATOMICS)
+  return InterlockedCompareExchange((LONG volatile *)a, replacement, expected);
+#endif
+}
+
+inline int _hx_atomic_exchange(int *a, int replacement) {
+#if defined(HX_GCC_ATOMICS)
+   int ret = 0;
+  __atomic_exchange(a, &replacement, &ret, __ATOMIC_SEQ_CST);
+  return ret;
+#elif defined(HX_MSVC_ATOMICS)
+  return InterlockedExchange((LONG volatile *)a, replacement);
+#endif
+}
+
+inline int _hx_atomic_load(int *a) {
+#if defined(HX_GCC_ATOMICS)
+   int ret = 0;
+  __atomic_load(a, &ret, __ATOMIC_SEQ_CST);
+  return ret;
+#elif defined(HX_MSVC_ATOMICS)
+   return InterlockedXor((LONG volatile *)a, 0);
+#endif
+}
+
+inline int _hx_atomic_store(int *a, int value) {
+#if defined(HX_GCC_ATOMICS)
+  __atomic_store(a, &value, __ATOMIC_SEQ_CST);
+  return value;
+#elif defined(HX_MSVC_ATOMICS)
+   InterlockedExchange((LONG volatile *)a, value);
+   return value;
+#endif
+}
+
 Array<String> __hxcpp_get_call_stack(bool inSkipLast);
 Array<String> __hxcpp_get_exception_stack();
 #define HXCPP_HAS_CLASSLIST
