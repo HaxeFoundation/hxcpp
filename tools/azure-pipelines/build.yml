@@ -31,7 +31,6 @@ jobs:
             sha256sum --check mariadb_repo_setup.sha256
             sudo bash mariadb_repo_setup
             sudo apt-get update -qqy
-            sudo apt-get upgrade -qqy
             sudo apt-get remove -qqy mysql-common
             sudo apt-get autoremove -qqy
             sudo apt-get install -qqy mariadb-server
