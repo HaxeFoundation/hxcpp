@@ -96,10 +96,6 @@
 <set name="HX_TARGET_PREFIX" value="${LIBPREFIX}" />
 
 <section if="isMsvc">
-   <section unless="HXCPP_M64">
-      <set name="HXCPP_NO_WINXP_COMPAT" value="1" if="HX_WINRT || winrt" />
-      <set name="HXCPP_WINXP_COMPAT" value="1" unless="HXCPP_NO_WINXP_COMPAT" />
-   </section>
    <setup name="msvc"/>
 
    <section if="static_link" >
@@ -122,5 +118,3 @@
    </section>
 </section>
 </xml>
-
-
