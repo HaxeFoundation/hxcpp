@@ -399,6 +399,16 @@ inline int _hx_atomic_store(int *a, int value) {
 #endif
 }
 
+inline void* _hx_atomic_compare_exchange_ptr(void **a, void *expected, void* replacement) {
+#if defined(HX_GCC_ATOMICS)
+   void* _expected = expected;
+  __atomic_compare_exchange(a, &_expected, &replacement, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  return _expected;
+#elif defined(HX_MSVC_ATOMICS)
+  return _InterlockedCompareExchangePointer((long volatile *)a, replacement, expected);
+#endif
+}
+
 Array<String> __hxcpp_get_call_stack(bool inSkipLast);
 Array<String> __hxcpp_get_exception_stack();
 #define HXCPP_HAS_CLASSLIST
