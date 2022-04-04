@@ -405,7 +405,7 @@ inline void* _hx_atomic_compare_exchange_ptr(void **a, void *expected, void* rep
   __atomic_compare_exchange(a, &_expected, &replacement, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
   return _expected;
 #elif defined(HX_MSVC_ATOMICS)
-  return _InterlockedCompareExchangePointer((long volatile *)a, replacement, expected);
+  return _InterlockedCompareExchangePointer((void *volatile *)a, replacement, expected);
 #endif
 }
 
