@@ -883,66 +883,66 @@ class Test
 
    public static function testIntParsing()
    {
-      var int0 = '0x1';
-      var int1 = ' 0x1';
-      var int2 = '\t0x1';
-      var int3 = '   0x';
-      var int4 = '-0x1';
-      var int5 = ' -0x1';
-      var int6 = '\t-0x1';
-      var int7 = '   -0x';
-      var int8 = '  5';
-      var int9 = ' \t\n5';
-      
-      var val0 = Std.parseInt(int0);
-      if (val0 != 1)
+		log("Test int parsing");
+		var val = Std.parseInt('0x1');
+      if (val != 1)
       {
-         error('parsed hex value was not 1, $val0');
+         error('parsed hex value was not 1, $val');
       }
-      var val1 = Std.parseInt(int1);
-      if (val1 != 1)
+		var val = Std.parseInt(' 0x1');
+      if (val != 1)
       {
-         error('parsed hex value was not 1, $val1');
+         error('parsed hex value was not 1, $val');
       }
-      var val2 = Std.parseInt(int2);
-      if (val2 != 1)
+		var val = Std.parseInt('\t0x1');
+      if (val != 1)
       {
-         error('parsed hex value was not 1, $val2');
+         error('parsed hex value was not 1, $val');
       }
-      var val3 = Std.parseInt(int3);
-      if (val3 != 0)
+		var val = Std.parseInt('   0x');
+      if (val != 0)
       {
-         error('parsed hex value was not 0, $val3');
+         error('parsed hex value was not 0, $val');
       }
-      var val4 = Std.parseInt(int4);
-      if (val4 != -1)
+		var val = Std.parseInt('   0xyz');
+      if (val != 0)
       {
-         error('parsed hex value was not 1, $val4');
+         error('parsed hex value was not 0, $val');
       }
-      var val5 = Std.parseInt(int5);
-      if (val5 != -1)
+		var val = Std.parseInt('-0x1');
+      if (val != -1)
       {
-         error('parsed hex value was not 1, $val5');
+         error('parsed hex value was not 1, $val');
       }
-      var val6 = Std.parseInt(int6);
-      if (val6 != -1)
+		var val = Std.parseInt(' -0x1');
+      if (val != -1)
       {
-         error('parsed hex value was not 1, $val6');
+         error('parsed hex value was not 1, $val');
       }
-      var val7 = Std.parseInt(int7);
-      if (val7 != 0)
+		var val = Std.parseInt('\t-0x1');
+      if (val != -1)
       {
-         error('parsed hex value was not 0, $val7');
+         error('parsed hex value was not 1, $val');
       }
-      var val8 = Std.parseInt(int8);
-      if (val8 != 5)
+		var val = Std.parseInt('   -0x');
+      if (val != 0)
       {
-         error('parsed int value was not 5, $val8');
+         error('parsed hex value was not 0, $val');
       }
-      var val9 = Std.parseInt(int9);
-      if (val9 != 5)
+		var val = Std.parseInt('   -0xyz');
+      if (val != 0)
       {
-         error('parsed int value was not 5, $val9');
+         error('parsed hex value was not 0, $val');
+      }
+		var val = Std.parseInt('  5');
+      if (val != 5)
+      {
+         error('parsed int value was not 5, $val');
+      }
+		var val = Std.parseInt(' \t\n5');
+      if (val != 5)
+      {
+         error('parsed int value was not 5, $val');
       }
 
       return ok();
