@@ -326,7 +326,7 @@ inline int _hx_atomic_add(int *a, int b) {
 #endif
 }
 
-inline int _hx_atomic_sub(int *a, int b) {
+inline int _hx_atomic_sub(volatile int *a, int b) {
 #if defined(HX_GCC_ATOMICS)
   return __atomic_fetch_sub(a, b, __ATOMIC_SEQ_CST);
 #elif defined(HX_MSVC_ATOMICS)
@@ -334,7 +334,7 @@ inline int _hx_atomic_sub(int *a, int b) {
 #endif
 }
 
-inline int _hx_atomic_and(int *a, int b) {
+inline int _hx_atomic_and(volatile int *a, int b) {
 #if defined(HX_GCC_ATOMICS)
   return __atomic_fetch_and(a, b, __ATOMIC_SEQ_CST);
 #elif defined(HX_MSVC_ATOMICS)
@@ -342,7 +342,7 @@ inline int _hx_atomic_and(int *a, int b) {
 #endif
 }
 
-inline int _hx_atomic_or(int *a, int b) {
+inline int _hx_atomic_or(volatile int *a, int b) {
 #if defined(HX_GCC_ATOMICS)
   return __atomic_fetch_or(a, b, __ATOMIC_SEQ_CST);
 #elif defined(HX_MSVC_ATOMICS)
@@ -358,7 +358,7 @@ inline int _hx_atomic_xor(int *a, int b) {
 #endif
 }
 
-inline int _hx_atomic_compare_exchange(int *a, int expected,
+inline int _hx_atomic_compare_exchange(volatile int *a, int expected,
                                        int replacement) {
 #if defined(HX_GCC_ATOMICS)
    int _expected = expected;
@@ -369,7 +369,7 @@ inline int _hx_atomic_compare_exchange(int *a, int expected,
 #endif
 }
 
-inline int _hx_atomic_exchange(int *a, int replacement) {
+inline int _hx_atomic_exchange(volatile int *a, int replacement) {
 #if defined(HX_GCC_ATOMICS)
    int ret = 0;
   __atomic_exchange(a, &replacement, &ret, __ATOMIC_SEQ_CST);
@@ -379,7 +379,7 @@ inline int _hx_atomic_exchange(int *a, int replacement) {
 #endif
 }
 
-inline int _hx_atomic_load(int *a) {
+inline int _hx_atomic_load(volatile int *a) {
 #if defined(HX_GCC_ATOMICS)
    int ret = 0;
   __atomic_load(a, &ret, __ATOMIC_SEQ_CST);
@@ -389,7 +389,7 @@ inline int _hx_atomic_load(int *a) {
 #endif
 }
 
-inline int _hx_atomic_store(int *a, int value) {
+inline int _hx_atomic_store(volatile int *a, int value) {
 #if defined(HX_GCC_ATOMICS)
   __atomic_store(a, &value, __ATOMIC_SEQ_CST);
   return value;
@@ -399,7 +399,7 @@ inline int _hx_atomic_store(int *a, int value) {
 #endif
 }
 
-inline void* _hx_atomic_compare_exchange_ptr(void **a, void *expected, void* replacement) {
+inline void* _hx_atomic_compare_exchange_ptr(volatile void **a, void *expected, void* replacement) {
 #if defined(HX_GCC_ATOMICS)
    void* _expected = expected;
   __atomic_compare_exchange(a, &_expected, &replacement, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
