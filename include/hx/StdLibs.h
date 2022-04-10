@@ -409,6 +409,10 @@ inline void* _hx_atomic_compare_exchange_ptr(volatile void **a, void *expected, 
 #endif
 }
 
+inline void* _hx_atomic_compare_exchange_cast_ptr(void *a, void *expected, void *replacement) {
+   return _hx_atomic_compare_exchange_ptr((volatile void **)a, expected, replacement);
+}
+
 Array<String> __hxcpp_get_call_stack(bool inSkipLast);
 Array<String> __hxcpp_get_exception_stack();
 #define HXCPP_HAS_CLASSLIST

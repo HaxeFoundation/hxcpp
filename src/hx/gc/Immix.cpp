@@ -1502,7 +1502,7 @@ struct GlobalChunks
       {
          MarkChunk *head = (MarkChunk *)processList;
          inChunk->next = head;
-         if (_hx_atomic_compare_exchange_ptr(&processList, head, inChunk) == head)
+         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, inChunk) == head)
             break;
       }
 
@@ -1515,7 +1515,7 @@ struct GlobalChunks
       {
          MarkChunk *head = (MarkChunk *)processList;
          inChunk->next = head;
-         if (_hx_atomic_compare_exchange_ptr(&processList, head, inChunk) == head)
+         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, inChunk) == head)
             break;
       }
 
@@ -1623,7 +1623,7 @@ struct GlobalChunks
       {
          MarkChunk *head = (MarkChunk *)freeList;
          inChunk->next = head;
-         if (_hx_atomic_compare_exchange_ptr(&freeList, head, inChunk) == head)
+         if (_hx_atomic_compare_exchange_cast_ptr(&freeList, head, inChunk) == head)
             return;
       }
    }
@@ -1651,7 +1651,7 @@ struct GlobalChunks
             return 0;
          }
          MarkChunk *next = head->next;
-         if (_hx_atomic_compare_exchange_ptr(&processList, head, inChunk) == head)
+         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, inChunk) == head)
          {
             processListPopLock = 0;
 
@@ -1734,7 +1734,7 @@ struct GlobalChunks
             return new MarkChunk;
          }
          MarkChunk *next = head->next;
-         if (_hx_atomic_compare_exchange_ptr(&freeList, head, inChunk) == head)
+         if (_hx_atomic_compare_exchange_cast_ptr(&freeList, head, inChunk) == head)
          {
             freeListPopLock = 0;
 
@@ -4811,7 +4811,7 @@ public:
       #ifndef HXCPP_SINGLE_THREADED_APP
       // If we set the flag from 0 -> 0xffffffff then we are the collector
       //  otherwise, someone else is collecting at the moment - so wait...
-      if (_hx_atomic_compare_exchange(0, 0xffffffff,(volatile int *)&hx::gPauseForCollect) != 0)
+      if (_hx_atomic_compare_exchange((volatile int *)&hx::gPauseForCollect, 0, 0xffffffff) != 0)
       {
          if (inLocked)
          {
