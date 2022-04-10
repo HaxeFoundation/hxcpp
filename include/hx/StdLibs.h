@@ -402,7 +402,7 @@ inline int _hx_atomic_store(volatile int *a, int value) {
 inline void* _hx_atomic_compare_exchange_ptr(volatile void **a, void *expected, void* replacement) {
 #if defined(HX_GCC_ATOMICS)
    void* _expected = expected;
-  __atomic_compare_exchange(a, (volatile void **)&_expected, &replacement, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  __atomic_compare_exchange(a, (volatile void **)&_expected, (volatile void**)&replacement, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
   return _expected;
 #elif defined(HX_MSVC_ATOMICS)
   return _InterlockedCompareExchangePointer((void *volatile *)a, replacement, expected);

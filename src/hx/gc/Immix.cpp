@@ -1734,7 +1734,7 @@ struct GlobalChunks
             return new MarkChunk;
          }
          MarkChunk *next = head->next;
-         if (_hx_atomic_compare_exchange_cast_ptr(&freeList, head, inChunk) == head)
+         if (_hx_atomic_compare_exchange_cast_ptr(&freeList, head, next) == head)
          {
             freeListPopLock = 0;
 
