@@ -318,7 +318,7 @@ int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr );
 #error "Neither GCC, clang or MSVC is being used. Please contribute the relevant atomic instrinsics for your compiler."
 #endif
 
-inline int _hx_atomic_add(int *a, int b) {
+inline int _hx_atomic_add(volatile int *a, int b) {
 #if defined(HX_GCC_ATOMICS)
   return __atomic_fetch_add(a, b, __ATOMIC_SEQ_CST);
 #elif defined(HX_MSVC_ATOMICS)
