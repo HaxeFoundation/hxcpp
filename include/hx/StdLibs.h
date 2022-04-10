@@ -306,16 +306,17 @@ int _hx_atomic_inc(::cpp::Pointer<cpp::AtomicInt> inPtr );
 int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr );
 
 // Assumptions made:
-//    Everyone uses GCC, Clang or MSVC
 //    People are not using 8 year old versions of GCC.
 
 #if defined(__GNUC__) || defined(__clang__)
 #define HX_GCC_ATOMICS
+#define HX_HAS_ATOMIC 1
 #elif defined(_MSC_VER)
 #define HX_MSVC_ATOMICS
+#define HX_HAS_ATOMIC 1
 #include <intrin.h>
-#else // Nearly everyone uses GCC, Clang or MSVC, right?
-#error "Neither GCC, clang or MSVC is being used. Please contribute the relevant atomic instrinsics for your compiler."
+#else
+#define HX_HAS_ATOMIC 0
 #endif
 
 inline int _hx_atomic_add(volatile int *a, int b) {
@@ -323,6 +324,10 @@ inline int _hx_atomic_add(volatile int *a, int b) {
   return __atomic_fetch_add(a, b, __ATOMIC_SEQ_CST);
 #elif defined(HX_MSVC_ATOMICS)
   return _InterlockedExchangeAdd((long volatile *)a, b);
+#else
+   int old = *a;
+   *a += b;
+   return old;
 #endif
 }
 
@@ -331,6 +336,10 @@ inline int _hx_atomic_sub(volatile int *a, int b) {
   return __atomic_fetch_sub(a, b, __ATOMIC_SEQ_CST);
 #elif defined(HX_MSVC_ATOMICS)
   return _InterlockedExchangeAdd((long volatile *)a, -b);
+#else
+   int old = *a;
+   *a -= b;
+   return old;
 #endif
 }
 
@@ -339,6 +348,10 @@ inline int _hx_atomic_and(volatile int *a, int b) {
   return __atomic_fetch_and(a, b, __ATOMIC_SEQ_CST);
 #elif defined(HX_MSVC_ATOMICS)
   return _InterlockedAnd((long volatile *)a, b);
+#else
+   int old = *a;
+   *a &= b;
+   return old;
 #endif
 }
 
@@ -347,6 +360,10 @@ inline int _hx_atomic_or(volatile int *a, int b) {
   return __atomic_fetch_or(a, b, __ATOMIC_SEQ_CST);
 #elif defined(HX_MSVC_ATOMICS)
   return _InterlockedOr((long volatile *)a, b);
+#else
+   int old = *a;
+   *a |= b;
+   return old;
 #endif
 }
 
@@ -355,6 +372,10 @@ inline int _hx_atomic_xor(int *a, int b) {
   return __atomic_fetch_xor(a, b, __ATOMIC_SEQ_CST);
 #elif defined(HX_MSVC_ATOMICS)
   return _InterlockedXor((long volatile *)a, b);
+#else
+   int old = *a;
+   *a ^= b;
+   return old;
 #endif
 }
 
@@ -366,6 +387,12 @@ inline int _hx_atomic_compare_exchange(volatile int *a, int expected,
   return _expected;
 #elif defined(HX_MSVC_ATOMICS)
   return _InterlockedCompareExchange((long volatile *)a, replacement, expected);
+#else
+   int old = *a;
+   if(old == expected) {
+      *a = replacement;
+   }
+   return old;
 #endif
 }
 
@@ -376,6 +403,10 @@ inline int _hx_atomic_exchange(volatile int *a, int replacement) {
   return ret;
 #elif defined(HX_MSVC_ATOMICS)
   return _InterlockedExchange((long volatile *)a, replacement);
+#else
+   int old = *a;
+   *a = replacement;
+   return old;
 #endif
 }
 
@@ -386,6 +417,8 @@ inline int _hx_atomic_load(volatile int *a) {
   return ret;
 #elif defined(HX_MSVC_ATOMICS)
    return _InterlockedXor((long volatile *)a, 0);
+#else
+   return *a;
 #endif
 }
 
@@ -395,6 +428,9 @@ inline int _hx_atomic_store(volatile int *a, int value) {
   return value;
 #elif defined(HX_MSVC_ATOMICS)
    _InterlockedExchange((long volatile *)a, value);
+   return value;
+#else
+   *a = value;
    return value;
 #endif
 }
@@ -406,6 +442,10 @@ inline void* _hx_atomic_compare_exchange_ptr(volatile void **a, void *expected, 
   return _expected;
 #elif defined(HX_MSVC_ATOMICS)
   return _InterlockedCompareExchangePointer((void *volatile *)a, replacement, expected);
+#else
+   void *old = *a;
+   *a = replacement;
+   return old;
 #endif
 }
 
