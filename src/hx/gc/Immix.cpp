@@ -1651,7 +1651,7 @@ struct GlobalChunks
             return 0;
          }
          MarkChunk *next = head->next;
-         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, inChunk) == head)
+         if (_hx_atomic_compare_exchange_cast_ptr(&processList, head, next) == head)
          {
             processListPopLock = 0;
 
