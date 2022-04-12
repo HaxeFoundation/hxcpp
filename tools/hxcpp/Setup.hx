@@ -47,7 +47,7 @@ class Setup
           for (file in files)
           {
              file = file.split("\\").join("/");
-             var version = getNdkVersion(file);
+             var version = getNdkVersion(ndkDir + "/" + file);
              if (inBaseVersion==0 || Std.int(version)==inBaseVersion)
              {
                 if (version>bestVersion)
