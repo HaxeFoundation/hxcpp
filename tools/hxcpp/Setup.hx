@@ -415,7 +415,11 @@ class Setup
       // See what ANDROID_HOST to use ...
       try
       {
-         var prebuilt =  root+"/toolchains/"+arm_type+"-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
+         var prebuilt = root+"/toolchains/";
+         if (defines.exists("TOOLCHAIN_VERSION"))
+            prebuilt += arm_type + "-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
+         else
+            prebuilt += "llvm/prebuilt";
          var files = FileSystem.readDirectory(prebuilt);
          for (file in files)
          {

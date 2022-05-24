@@ -4,42 +4,49 @@
 <section if="HXCPP_X86">
   <set name="ARCH" value="-x86" />
   <set name="PLATFORM_NUMBER" value="16" />
-  <set name="EXEPREFIX" value="i686-linux-android" />
+  <set name="ABITRIPLE" value="i686-linux-android" />
 </section>
 
 <section if="HXCPP_X86_64">
   <set name="ARCH" value="-x86_64" />
   <set name="PLATFORM_NUMBER" value="21" />
-  <set name="EXEPREFIX" value="x86_64-linux-android" />
+  <set name="ABITRIPLE" value="x86_64-linux-android" />
 </section>
 
 <section if="HXCPP_ARMV7">
   <set name="ARCH" value="-v7" />
   <set name="PLATFORM_NUMBER" value="16" />
-  <set name="EXEPREFIX" value="arm-linux-androideabi" />
+  <set name="ABITRIPLE" value="armv7a-linux-androideabi" />
 </section>
 
 <section if="HXCPP_ARM64">
   <set name="ARCH" value="-64"/>
   <set name="PLATFORM_NUMBER" value="21" />
-  <set name="EXEPREFIX" value="aarch64-linux-android" />
+  <set name="ABITRIPLE" value="aarch64-linux-android" />
 </section>
 
-<error value="Please set one of the architectures, eg HXCPP_ARM64, HXCPP_X86, ..." unless="EXEPREFIX" />
+<error value="Please set one of the architectures, eg HXCPP_ARM64, HXCPP_X86, ..." unless="ABITRIPLE" />
 
 <set name="PLATFORM" value="android-${PLATFORM_NUMBER}" />
 <set name="ANDROID_PLATFORM_DEFINE" value="HXCPP_ANDROID_PLATFORM=${PLATFORM_NUMBER}" />
      
 <path name="${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${ANDROID_HOST}/bin" />
 
-<set name="HXCPP_AR" value="arm-linux-androideabi-ar" />
+<section unless="NDKV22+">
+  <set name="HXCPP_AR" value="arm-linux-androideabi-ar" />
+  <set name="EXEPREFIX" value="${ABITRIPLE}" />
+</section>
+<section if="NDKV22+">
+  <set name="HXCPP_AR" value="llvm-ar" />
+  <set name="EXEPREFIX" value="llvm" />
+</section>
 
 <include name="toolchain/gcc-toolchain.xml"/>
 
 <compiler id="android-gcc" exe="clang++">
 
   <exe name="clang++" />
-  <flag value="--target=${EXEPREFIX}${PLATFORM_NUMBER}" />
+  <flag value="--target=${ABITRIPLE}${PLATFORM_NUMBER}" />
   
   <!-- File Related -->
   <include name="toolchain/common-defines.xml" />
@@ -80,7 +87,7 @@
 
   <exe name="clang++" />
   <flag value ="-shared" />
-  <flag value="--target=${EXEPREFIX}${PLATFORM_NUMBER}" />
+  <flag value="--target=${ABITRIPLE}${PLATFORM_NUMBER}" />
 
   <flag value ="-static-libstdc++" />
   <flag value ="-v" />
