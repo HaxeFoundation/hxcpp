@@ -17,6 +17,7 @@
   <set name="ARCH" value="-v7" />
   <set name="PLATFORM_NUMBER" value="16" />
   <set name="ABITRIPLE" value="armv7a-linux-androideabi" />
+  <set name="EXEPREFIX" value="arm-linux-androideabi" />
 </section>
 
 <section if="HXCPP_ARM64">
@@ -34,7 +35,7 @@
 
 <section unless="NDKV22+">
   <set name="HXCPP_AR" value="arm-linux-androideabi-ar" />
-  <set name="EXEPREFIX" value="${ABITRIPLE}" />
+  <set name="EXEPREFIX" value="${ABITRIPLE}" unless="EXEPREFIX" />
 </section>
 <section if="NDKV22+">
   <set name="HXCPP_AR" value="llvm-ar" />
