@@ -24,10 +24,21 @@ jobs:
       - ${{ if startsWith(parameters.vmImage, 'ubuntu-') }}:
         - script: |
             set -ex
+            sudo rm -R /var/lib/mysql/
+            # mariadb
+            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup > mariadb_repo_setup
+            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup.sha256 > mariadb_repo_setup.sha256
+            sha256sum --check mariadb_repo_setup.sha256
+            sudo bash mariadb_repo_setup
             sudo apt-get update -qqy
-            sudo apt-get install -qqy gcc-multilib g++-multilib mariadb-server
+            sudo apt-get remove -qqy mysql-common
+            sudo apt-get autoremove -qqy
+            sudo apt-get install -qqy mariadb-server
+            # remaining packages
+            sudo apt-get install -qqy gcc-multilib g++-multilib
           displayName: Install dependencies
         - script: |
+            set -ex
             sudo systemctl start mysql
             sudo mysql -u root -e "create database hxcpp; grant all privileges on hxcpp.* to hxcpp@localhost identified by 'hxcpp'; flush privileges;"
           displayName: Configure MariaDB
@@ -54,7 +65,7 @@ jobs:
       - script: haxe compile-cppia.hxml
         workingDirectory: project
         displayName: Build cppia
-      
+
       # cffi
       - script: haxelib run hxcpp build.xml -debug -DHXCPP_M${{parameters.arch}}
         workingDirectory: test/cffi/project

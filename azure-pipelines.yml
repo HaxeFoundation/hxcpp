@@ -13,19 +13,19 @@ stages:
       - template: tools/azure-pipelines/build.yml
         parameters:
           name: Linux64
-          vmImage: ubuntu-16.04
+          vmImage: ubuntu-20.04
           platform: linux64
           arch: 64
       - template: tools/azure-pipelines/build.yml
         parameters:
           name: Linux32
-          vmImage: ubuntu-16.04
+          vmImage: ubuntu-20.04
           platform: linux64
           arch: 32
       - template: tools/azure-pipelines/build.yml
         parameters:
           name: Mac
-          vmImage: macOS-10.14
+          vmImage: macOS-10.15
           platform: mac
           arch: 64
       - template: tools/azure-pipelines/build.yml

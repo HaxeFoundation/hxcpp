@@ -881,6 +881,72 @@ class Test
       return ok();
    }
 
+   public static function testIntParsing()
+   {
+		log("Test int parsing");
+		var val = Std.parseInt('0x1');
+      if (val != 1)
+      {
+         error('parsed hex value was not 1, $val');
+      }
+		var val = Std.parseInt(' 0x1');
+      if (val != 1)
+      {
+         error('parsed hex value was not 1, $val');
+      }
+		var val = Std.parseInt('\t0x1');
+      if (val != 1)
+      {
+         error('parsed hex value was not 1, $val');
+      }
+		var val = Std.parseInt('   0x');
+      if (val != 0)
+      {
+         error('parsed hex value was not 0, $val');
+      }
+		var val = Std.parseInt('   0xyz');
+      if (val != 0)
+      {
+         error('parsed hex value was not 0, $val');
+      }
+		var val = Std.parseInt('-0x1');
+      if (val != -1)
+      {
+         error('parsed hex value was not 1, $val');
+      }
+		var val = Std.parseInt(' -0x1');
+      if (val != -1)
+      {
+         error('parsed hex value was not 1, $val');
+      }
+		var val = Std.parseInt('\t-0x1');
+      if (val != -1)
+      {
+         error('parsed hex value was not 1, $val');
+      }
+		var val = Std.parseInt('   -0x');
+      if (val != 0)
+      {
+         error('parsed hex value was not 0, $val');
+      }
+		var val = Std.parseInt('   -0xyz');
+      if (val != 0)
+      {
+         error('parsed hex value was not 0, $val');
+      }
+		var val = Std.parseInt('  5');
+      if (val != 5)
+      {
+         error('parsed int value was not 5, $val');
+      }
+		var val = Std.parseInt(' \t\n5');
+      if (val != 5)
+      {
+         error('parsed int value was not 5, $val');
+      }
+
+      return ok();
+   }
 
    public static function main()
    {
@@ -912,6 +978,7 @@ class Test
          exitCode |= testDynamicMember();
          exitCode |= testNoDebug();
          exitCode |= testNoDebugNoAlloc();
+         exitCode |= testIntParsing();
 
          if (exitCode!=0)
             Sys.println("############# Errors running tests:\n   " + errors.join("\n   ") );

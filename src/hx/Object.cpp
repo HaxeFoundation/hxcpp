@@ -53,7 +53,7 @@ Dynamic Object::__IField(int inFieldID)
 
 double Object::__INumField(int inFieldID)
 {
-   return __IField(inFieldID);
+   return __Field( __hxcpp_field_from_id(inFieldID), HX_PROP_DYNAMIC );
 }
 
 Dynamic *Object::__GetFieldMap() { return 0; }
