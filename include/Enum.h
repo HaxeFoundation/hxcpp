@@ -97,6 +97,7 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES EnumBase_obj : public hx::Object
 
       inline ::Dynamic _hx_getObject(int inId) { return _hx_getFixed()[inId].asDynamic(); }
       inline int _hx_getInt(int inId) { return _hx_getFixed()[inId]; }
+      inline ::cpp::Int64 _hx_getInt64(int inId) { return _hx_getFixed()[inId].asInt64(); }
       inline Float _hx_getFloat(int inId) { return _hx_getFixed()[inId]; }
       inline bool _hx_getBool(int inId) { return _hx_getFixed()[inId]; }
       inline ::String _hx_getString(int inId) { return _hx_getFixed()[inId].asString(); }
