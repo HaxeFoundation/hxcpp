@@ -10,6 +10,7 @@ namespace hx
 
 
 inline unsigned int HashCalcHash(int inKey) { return inKey; }
+inline unsigned int HashCalcHash(cpp::Int64 inKey) { return (unsigned int)((inKey >> 32) ^ inKey); }
 inline unsigned int HashCalcHash(const String &inKey) { return inKey.hash(); }
 inline unsigned int HashCalcHash(const Dynamic &inKey)
 {
@@ -20,6 +21,7 @@ inline void HashClear(int &ioValue) { }
 inline void HashClear(Dynamic &ioValue) { ioValue=null(); }
 inline void HashClear(String &ioValue) { ioValue=String(); }
 inline void HashClear(Float &ioValue) {  }
+inline void HashClear(cpp::Int64 &ioValue) { }
 
 template<typename T>
 struct NeedsMarking { enum { Yes = 0 }; };
@@ -37,10 +39,11 @@ struct TIntElement
    enum { WeakKeys = 0 };
    enum { ManageKeys = 0 };
 
-   typedef TIntElement<int>     IntValue;
-   typedef TIntElement<Float>   FloatValue;
-   typedef TIntElement<Dynamic> DynamicValue;
-   typedef TIntElement<String>  StringValue;
+   typedef TIntElement<int>        IntValue;
+   typedef TIntElement<Float>      FloatValue;
+   typedef TIntElement<Dynamic>    DynamicValue;
+   typedef TIntElement<String>     StringValue;
+   typedef TIntElement<cpp::Int64> Int64Value;
 
 public:
    inline void  setKey(int inKey, unsigned int )
@@ -54,6 +57,36 @@ public:
    TIntElement<VALUE>  *next;
 };
 
+//
+template<typename VALUE>
+struct TInt64Element
+{
+   typedef cpp::Int64 Key;
+   typedef VALUE Value;
+
+   enum { IgnoreHash = 0 };
+   enum { WeakKeys = 0 };
+   enum { ManageKeys = 1 };
+
+   typedef TInt64Element<int>        IntValue;
+   typedef TInt64Element<Float>      FloatValue;
+   typedef TInt64Element<Dynamic>    DynamicValue;
+   typedef TInt64Element<String>     StringValue;
+   typedef TInt64Element<cpp::Int64> Int64Value;
+
+public:
+   inline void setKey(cpp::Int64 inKey, unsigned int inHash)
+   {
+      key = inKey;
+      hash = inHash;
+   }
+   inline unsigned int getHash() { return hash; }
+
+   Value                value;
+   Key                  key;
+   unsigned int         hash;
+   TInt64Element<VALUE> *next;
+};
 
 // An string element gets hash from string or calculates it
 template<typename VALUE>
@@ -66,10 +99,11 @@ struct TStringElement
    enum { WeakKeys = 0 };
    enum { ManageKeys = 1 };
 
-   typedef TStringElement<int>     IntValue;
-   typedef TStringElement<Float>   FloatValue;
-   typedef TStringElement<Dynamic> DynamicValue;
-   typedef TStringElement<String>  StringValue;
+   typedef TStringElement<int>        IntValue;
+   typedef TStringElement<Float>      FloatValue;
+   typedef TStringElement<Dynamic>    DynamicValue;
+   typedef TStringElement<String>     StringValue;
+   typedef TStringElement<cpp::Int64> Int64Value;
 
 
 public:
@@ -100,6 +134,7 @@ struct TWeakStringSet
    typedef TWeakStringSet  FloatValue;
    typedef TWeakStringSet  DynamicValue;
    typedef TWeakStringSet  StringValue;
+   typedef TWeakStringSet  Int64Value;
 
 
 public:
@@ -130,6 +165,7 @@ struct TNonGcStringSet
    typedef TNonGcStringSet  FloatValue;
    typedef TNonGcStringSet  DynamicValue;
    typedef TNonGcStringSet  StringValue;
+   typedef TNonGcStringSet  Int64Value;
 
 
 public:
@@ -160,10 +196,11 @@ struct TDynamicElement
    enum { WeakKeys = WEAK };
    enum { ManageKeys = 1 };
 
-   typedef TDynamicElement<int,WEAK>     IntValue;
-   typedef TDynamicElement<Float,WEAK>   FloatValue;
-   typedef TDynamicElement<Dynamic,WEAK> DynamicValue;
-   typedef TDynamicElement<String,WEAK>  StringValue;
+   typedef TDynamicElement<int,WEAK>        IntValue;
+   typedef TDynamicElement<Float,WEAK>      FloatValue;
+   typedef TDynamicElement<Dynamic,WEAK>    DynamicValue;
+   typedef TDynamicElement<String,WEAK>     StringValue;
+   typedef TDynamicElement<cpp::Int64,WEAK> Int64Value;
 
 public:
    inline void  setKey(Dynamic inKey, unsigned int inHash)
@@ -189,12 +226,14 @@ enum HashStore
    hashString,
    hashObject,
    hashNull,
+   hashInt64
 };
 template<typename T> struct StoreOf{ enum {store=hashObject}; };
 template<> struct StoreOf<int> { enum {store=hashInt}; };
 template<> struct StoreOf< ::String> { enum {store=hashString}; };
 template<> struct StoreOf<Float> { enum {store=hashFloat}; };
 template<> struct StoreOf<null> { enum {store=hashNull}; };
+template<> struct StoreOf<cpp::Int64> { enum {store=hashInt64}; };
 
 namespace
 {
@@ -203,12 +242,18 @@ inline void CopyValue(String &outValue, const String &inValue) { outValue = inVa
 inline void CopyValue(String &outValue, Float inValue) {  }
 inline void CopyValue(String &outValue, const Dynamic &inValue) { outValue = inValue; }
 inline void CopyValue(int &outValue, int inValue) { outValue = inValue; }
+inline void CopyValue(int &outValue, cpp::Int64 inValue) { }
 inline void CopyValue(int &outValue, Float inValue) { outValue = inValue; }
 inline void CopyValue(int &outValue, const Dynamic &inValue) { outValue = inValue; }
 inline void CopyValue(int &outValue, const String &inValue) {  }
 inline void CopyValue(Float &outValue, Float inValue) { outValue = inValue; }
 inline void CopyValue(Float &outValue, const Dynamic &inValue) { outValue = inValue; }
 inline void CopyValue(Float &outValue, const String &inValue) {  }
+inline void CopyValue(cpp::Int64 &outValue, cpp::Int64 inValue) { outValue = inValue; }
+inline void CopyValue(cpp::Int64 &outValue, int inValue) { outValue = inValue; }
+inline void CopyValue(cpp::Int64 &outValue, Float inValue) { }
+inline void CopyValue(cpp::Int64 &outValue, const Dynamic &inValue) { outValue = inValue; }
+inline void CopyValue(cpp::Int64 &outValue, const String &inValue) {  }
 inline void CopyValue(null &, const null &) {  }
 template<typename T> inline void CopyValue(T &outValue, const null &) {  }
 template<typename T> inline void CopyValue(null &, const T &) {  }
@@ -245,11 +290,13 @@ struct HashBase : public HashRoot
    virtual bool query(KEY inKey,::String &outValue) = 0;
    virtual bool query(KEY inKey,Float &outValue) = 0;
    virtual bool query(KEY inKey,Dynamic &outValue) = 0;
+   virtual bool query(KEY inKey,cpp::Int64 &outValue) = 0;
 
    virtual void set(KEY inKey, const int &inValue) = 0;
    virtual void set(KEY inKey, const ::String &inValue) = 0;
    virtual void set(KEY inKey, const Float &inValue) = 0;
    virtual void set(KEY inKey, const Dynamic &inValue) = 0;
+   virtual void set(KEY inKey, const cpp::Int64 &inValue) = 0;
 
    virtual void clear() = 0;
 
@@ -267,6 +314,7 @@ extern void RegisterWeakHash(HashBase<Dynamic> *);
 extern void RegisterWeakHash(HashBase< ::String> *);
 
 inline void RegisterWeakHash(HashBase<int> *) { };
+inline void RegisterWeakHash(HashBase<cpp::Int64> *) { };
 
 
 template<typename T>
@@ -478,6 +526,8 @@ struct Hash : public HashBase< typename ELEMENT::Key >
             return TConvertStore< typename ELEMENT::StringValue >();
          case hashObject:
             return TConvertStore< typename ELEMENT::DynamicValue >();
+         case hashInt64:
+            return TConvertStore< typename ELEMENT::Int64Value >();
          case hashNull:
              ;
       }
@@ -499,6 +549,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    bool query(Key inKey,::String &outValue) { return TQuery(inKey,outValue); }
    bool query(Key inKey,Float &outValue) { return TQuery(inKey,outValue); }
    bool query(Key inKey,Dynamic &outValue) { return TQuery(inKey,outValue); }
+   bool query(Key inKey,cpp::Int64 &outValue) { return TQuery(inKey, outValue); }
 
 
    Value get(Key inKey)
@@ -570,6 +621,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    void set(Key inKey, const Float &inValue)  { TSet(inKey, inValue); }
    void set(Key inKey, const Dynamic &inValue)  { TSet(inKey, inValue); }
    void set(Key inKey, const null &inValue)  { TSet(inKey, inValue);  }
+   void set(Key inKey, const cpp::Int64 &inValue) { TSet(inKey, inValue); }
 
    void clear()
    {
