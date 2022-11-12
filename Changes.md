@@ -3,6 +3,7 @@
 * Update MIN_IOS_VERSION
 * Bug fixes
 * Upgrade to 4.2 API
+* Fixed mysql_select_db failing for newer mariadb versions due to extra 0x00 byte after database
 
 4.1.15
 ------------------------------------------------------------
