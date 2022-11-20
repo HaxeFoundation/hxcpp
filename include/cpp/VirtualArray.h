@@ -183,6 +183,7 @@ public:
             MakeBoolArray();
             break;
          case hx::arrayInt:
+         case hx::arrayInt64:
          case hx::arrayFloat:
          case hx::arrayString:
             MakeObjectArray();
@@ -202,6 +203,7 @@ public:
             MakeStringArray();
             break;
          case hx::arrayInt:
+         case hx::arrayInt64:
          case hx::arrayFloat:
          case hx::arrayBool:
             MakeObjectArray();
@@ -218,6 +220,7 @@ public:
          case hx::arrayFixed:
             return;
          case hx::arrayInt:
+         case hx::arrayInt64:
          case hx::arrayEmpty:
             MakeFloatArray();
             break;
@@ -234,6 +237,7 @@ public:
       {
          case hx::arrayNull:
          case hx::arrayInt:
+         case hx::arrayInt64:
          case hx::arrayFloat:
          case hx::arrayObject:
          case hx::arrayFixed:
@@ -253,11 +257,12 @@ public:
       switch(store)
       {
          case hx::arrayNull:
-         case hx::arrayInt:
+         case hx::arrayInt64:
          case hx::arrayFloat:
          case hx::arrayObject:
          case hx::arrayFixed:
             return;
+         case hx::arrayInt:
          case hx::arrayEmpty:
             MakeInt64Array();
             break;
@@ -278,6 +283,7 @@ public:
             return;
          case hx::arrayEmpty:
          case hx::arrayInt:
+         case hx::arrayInt64:
          case hx::arrayFloat:
          case hx::arrayBool:
          case hx::arrayString:
@@ -296,6 +302,7 @@ public:
             return;
          case hx::arrayEmpty:
          case hx::arrayInt:
+         case hx::arrayInt64:
          case hx::arrayFloat:
          case hx::arrayBool:
             MakeObjectArray();
