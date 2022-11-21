@@ -334,6 +334,154 @@ bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int 
 int _hx_atomic_inc(::cpp::Pointer<cpp::AtomicInt> inPtr );
 int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr );
 
+// Assumptions made:
+//    People are not using 8 year old versions of GCC.
+
+#if defined(__GNUC__) || defined(__clang__)
+#define HX_GCC_ATOMICS
+#define HX_HAS_ATOMIC 1
+#elif defined(_MSC_VER)
+#define HX_MSVC_ATOMICS
+#define HX_HAS_ATOMIC 1
+#include <intrin.h>
+#else
+#define HX_HAS_ATOMIC 0
+#endif
+
+inline int _hx_atomic_add(volatile int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_add(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return _InterlockedExchangeAdd((long volatile *)a, b);
+#else
+   int old = *a;
+   *a += b;
+   return old;
+#endif
+}
+
+inline int _hx_atomic_sub(volatile int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_sub(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return _InterlockedExchangeAdd((long volatile *)a, -b);
+#else
+   int old = *a;
+   *a -= b;
+   return old;
+#endif
+}
+
+inline int _hx_atomic_and(volatile int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_and(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return _InterlockedAnd((long volatile *)a, b);
+#else
+   int old = *a;
+   *a &= b;
+   return old;
+#endif
+}
+
+inline int _hx_atomic_or(volatile int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_or(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return _InterlockedOr((long volatile *)a, b);
+#else
+   int old = *a;
+   *a |= b;
+   return old;
+#endif
+}
+
+inline int _hx_atomic_xor(int *a, int b) {
+#if defined(HX_GCC_ATOMICS)
+  return __atomic_fetch_xor(a, b, __ATOMIC_SEQ_CST);
+#elif defined(HX_MSVC_ATOMICS)
+  return _InterlockedXor((long volatile *)a, b);
+#else
+   int old = *a;
+   *a ^= b;
+   return old;
+#endif
+}
+
+inline int _hx_atomic_compare_exchange(volatile int *a, int expected,
+                                       int replacement) {
+#if defined(HX_GCC_ATOMICS)
+   int _expected = expected;
+  __atomic_compare_exchange(a, &_expected, &replacement, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  return _expected;
+#elif defined(HX_MSVC_ATOMICS)
+  return _InterlockedCompareExchange((long volatile *)a, replacement, expected);
+#else
+   int old = *a;
+   if(old == expected) {
+      *a = replacement;
+   }
+   return old;
+#endif
+}
+
+inline int _hx_atomic_exchange(volatile int *a, int replacement) {
+#if defined(HX_GCC_ATOMICS)
+   int ret = 0;
+  __atomic_exchange(a, &replacement, &ret, __ATOMIC_SEQ_CST);
+  return ret;
+#elif defined(HX_MSVC_ATOMICS)
+  return _InterlockedExchange((long volatile *)a, replacement);
+#else
+   int old = *a;
+   *a = replacement;
+   return old;
+#endif
+}
+
+inline int _hx_atomic_load(volatile int *a) {
+#if defined(HX_GCC_ATOMICS)
+   int ret = 0;
+  __atomic_load(a, &ret, __ATOMIC_SEQ_CST);
+  return ret;
+#elif defined(HX_MSVC_ATOMICS)
+   return _InterlockedXor((long volatile *)a, 0);
+#else
+   return *a;
+#endif
+}
+
+inline int _hx_atomic_store(volatile int *a, int value) {
+#if defined(HX_GCC_ATOMICS)
+  __atomic_store(a, &value, __ATOMIC_SEQ_CST);
+  return value;
+#elif defined(HX_MSVC_ATOMICS)
+   _InterlockedExchange((long volatile *)a, value);
+   return value;
+#else
+   *a = value;
+   return value;
+#endif
+}
+
+inline void* _hx_atomic_compare_exchange_ptr(volatile void **a, void *expected, void* replacement) {
+#if defined(HX_GCC_ATOMICS)
+   void* _expected = expected;
+  __atomic_compare_exchange(a, (volatile void **)&_expected, (volatile void**)&replacement, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  return _expected;
+#elif defined(HX_MSVC_ATOMICS)
+  return _InterlockedCompareExchangePointer((void *volatile *)a, replacement, expected);
+#else
+   void *old = *a;
+   *a = replacement;
+   return old;
+#endif
+}
+
+inline void* _hx_atomic_compare_exchange_cast_ptr(void *a, void *expected, void *replacement) {
+   return _hx_atomic_compare_exchange_ptr((volatile void **)a, expected, replacement);
+}
+
 Array<String> __hxcpp_get_call_stack(bool inSkipLast);
 Array<String> __hxcpp_get_exception_stack();
 #define HXCPP_HAS_CLASSLIST
