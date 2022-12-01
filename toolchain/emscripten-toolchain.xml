@@ -57,7 +57,6 @@
   <flag value="-Wno-format-extra-args" />
   <flag value="-Wno-bool-conversion" />
   <flag value="-Wno-warn-absolute-paths" />
-  <flag value="--bind" if="HXCPP_JS_PRIME" />
   <include name="toolchain/common-defines.xml" />
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/emscripten${OBJEXT}"/>
@@ -83,6 +82,7 @@
   <flag value="-shared"/>
   <flag value="-fpic" if="HXCPP_EMSCRIPTEN_FPIC" />
   <flag value="-fPIC" if="HXCPP_EMSCRIPTEN_FPIC" />
+  <flag value="--bind" if="HXCPP_JS_PRIME" />
   <!-- <flag value="-Wl,--unresolved-symbols=report-all"/> -->
   <flag value="-Xlinker"/>
   <flag value="--no-undefined" unless="HXCPP_ALLOW_UNDEFINED" />
