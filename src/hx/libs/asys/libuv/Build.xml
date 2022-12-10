@@ -1,0 +1,159 @@
+<xml>
+
+    <pragma once='true' />
+
+    <set name='LIBUV_DIR' value='${HXCPP}/project/thirdparty/libuv-1.44.2' />
+
+    <files id='libuv'>
+        <depend name="${this_dir}/Build.xml" dateOnly="true"/>
+        <cache value="true" asLibrary="true"/>
+
+        <compilerflag value='-I${LIBUV_DIR}/include'/>
+        <compilerflag value='-I${LIBUV_DIR}/src'/>
+
+        <file name='${LIBUV_DIR}/src/fs-poll.c'/>
+        <file name='${LIBUV_DIR}/src/idna.c'/>
+        <file name='${LIBUV_DIR}/src/inet.c'/>
+        <file name='${LIBUV_DIR}/src/random.c'/>
+        <file name='${LIBUV_DIR}/src/strscpy.c'/>
+        <file name='${LIBUV_DIR}/src/threadpool.c'/>
+        <file name='${LIBUV_DIR}/src/timer.c'/>
+        <file name='${LIBUV_DIR}/src/uv-common.c'/>
+        <file name='${LIBUV_DIR}/src/uv-data-getter-setters.c'/>
+        <file name='${LIBUV_DIR}/src/version.c'/>
+
+        <depend name='${LIBUV_DIR}/src/heap-inl.h'/>
+        <depend name='${LIBUV_DIR}/src/idna.h'/>
+        <depend name='${LIBUV_DIR}/src/queue.h'/>
+        <depend name='${LIBUV_DIR}/src/strscpy.h'/>
+        <depend name='${LIBUV_DIR}/src/uv-common.h'/>
+
+        <section if='windows'>
+            <compilerflag value='-D_WIN32_WINNT=0x0602 '/>
+
+            <file name='${LIBUV_DIR}/src/win/async.c'/>
+            <file name='${LIBUV_DIR}/src/win/core.c'/>
+            <file name='${LIBUV_DIR}/src/win/detect-wakeup.c'/>
+            <file name='${LIBUV_DIR}/src/win/dl.c'/>
+            <file name='${LIBUV_DIR}/src/win/error.c'/>
+            <file name='${LIBUV_DIR}/src/win/fs-event.c'/>
+            <file name='${LIBUV_DIR}/src/win/fs.c'/>
+            <file name='${LIBUV_DIR}/src/win/getaddrinfo.c'/>
+            <file name='${LIBUV_DIR}/src/win/getnameinfo.c'/>
+            <file name='${LIBUV_DIR}/src/win/handle.c'/>
+            <file name='${LIBUV_DIR}/src/win/loop-watcher.c'/>
+            <file name='${LIBUV_DIR}/src/win/pipe.c'/>
+            <file name='${LIBUV_DIR}/src/win/poll.c'/>
+            <file name='${LIBUV_DIR}/src/win/process-stdio.c'/>
+            <file name='${LIBUV_DIR}/src/win/process.c'/>
+            <file name='${LIBUV_DIR}/src/win/signal.c'/>
+            <file name='${LIBUV_DIR}/src/win/snprintf.c'/>
+            <file name='${LIBUV_DIR}/src/win/stream.c'/>
+            <file name='${LIBUV_DIR}/src/win/tcp.c'/>
+            <file name='${LIBUV_DIR}/src/win/thread.c'/>
+            <file name='${LIBUV_DIR}/src/win/tty.c'/>
+            <file name='${LIBUV_DIR}/src/win/udp.c'/>
+            <file name='${LIBUV_DIR}/src/win/util.c'/>
+            <file name='${LIBUV_DIR}/src/win/winapi.c'/>
+            <file name='${LIBUV_DIR}/src/win/winsock.c'/>
+
+            <depend name="${LIBUV_DIR}/src/win/atomicops-inl.h"/>
+            <depend name="${LIBUV_DIR}/src/win/fs-fd-hash-inl.h"/>
+            <depend name="${LIBUV_DIR}/src/win/handle-inl.h"/>
+		    <depend name="${LIBUV_DIR}/src/win/internal.h"/>
+            <depend name="${LIBUV_DIR}/src/win/req-inl.h"/>
+            <depend name="${LIBUV_DIR}/src/win/stream-inl.h"/>
+            <depend name="${LIBUV_DIR}/src/win/winapi.h"/>
+            <depend name="${LIBUV_DIR}/src/win/winsock.h"/>
+        </section>
+
+        <section unless='windows'>
+            <compilerflag value='-fno-strict-aliasing'/>
+            <compilerflag value='-D_FILE_OFFSET_BITS=64'/>
+            <compilerflag value='-D_LARGEFILE_SOURCE'/>
+
+            <file name='${LIBUV_DIR}/src/unix/async.c'/>
+            <file name='${LIBUV_DIR}/src/unix/core.c'/>
+            <file name='${LIBUV_DIR}/src/unix/dl.c'/>
+            <file name='${LIBUV_DIR}/src/unix/fs.c'/>
+            <file name='${LIBUV_DIR}/src/unix/getaddrinfo.c'/>
+            <file name='${LIBUV_DIR}/src/unix/getnameinfo.c'/>
+            <file name='${LIBUV_DIR}/src/unix/loop-watcher.c'/>
+            <file name='${LIBUV_DIR}/src/unix/loop.c'/>
+            <file name='${LIBUV_DIR}/src/unix/pipe.c'/>
+            <file name='${LIBUV_DIR}/src/unix/poll.c'/>
+            <file name='${LIBUV_DIR}/src/unix/process.c'/>
+            <file name='${LIBUV_DIR}/src/unix/random-devurandom.c'/>
+            <file name='${LIBUV_DIR}/src/unix/signal.c'/>
+            <file name='${LIBUV_DIR}/src/unix/stream.c'/>
+            <file name='${LIBUV_DIR}/src/unix/tcp.c'/>
+            <file name='${LIBUV_DIR}/src/unix/thread.c'/>
+            <file name='${LIBUV_DIR}/src/unix/tty.c'/>
+            <file name='${LIBUV_DIR}/src/unix/udp.c'/>
+        </section>
+
+        <section if='linux'>
+            <compilerflag value='-D_GNU_SOURCE'/>
+            <compilerflag value='-D_POSIX_C_SOURCE=200112'/>
+
+            <file name='${LIBUV_DIR}/src/unix/proctitle.c'/>
+            <file name='${LIBUV_DIR}/src/unix/linux-core.c'/>
+            <file name='${LIBUV_DIR}/src/unix/linux-inotify.c'/>
+            <file name='${LIBUV_DIR}/src/unix/linux-syscalls.c'/>
+            <file name='${LIBUV_DIR}/src/unix/procfs-exepath.c'/>
+            <file name='${LIBUV_DIR}/src/unix/random-getrandom.c'/>
+            <file name='${LIBUV_DIR}/src/unix/random-sysctl-linux.c'/>
+            <file name='${LIBUV_DIR}/src/unix/epoll.c'/>
+        </section>
+
+        <section if='mac'>
+            <compilerflag value='-D_DARWIN_UNLIMITED_SELECT=1'/>
+            <compilerflag value='-D_DARWIN_USE_64_BIT_INODE=1'/>
+
+            <file name='${LIBUV_DIR}/src/unix/darwin-proctitle.c'/>
+            <file name='${LIBUV_DIR}/src/unix/darwin.c'/>
+            <file name='${LIBUV_DIR}/src/unix/fsevents.c'/>
+        </section>
+    </files>
+
+    <files id='asys-libuv'>
+        <depend name="${this_dir}/Build.xml" dateOnly="true"/>
+        <cache value='true' asLibrary='true'/>
+
+        <compilerflag value='-DWIN32_LEAN_AND_MEAN' if='windows'/>
+
+        <compilerflag value='/std:c++17' if='windows'/>
+        <compilerflag value='-std=c++17' unless='windows'/>
+
+        <compilerflag value='-I${LIBUV_DIR}/include'/>
+        <compilerflag value='-I${LIBUV_DIR}/src'/>
+
+        <file name='${this_dir}/LibuvAsys.cpp'/>
+    </files>
+
+    <target id='haxe'>
+        <files id='libuv'/>
+        <files id='asys-libuv'/>
+
+        <section unless='static_link'>
+            <section if='windows'>
+                <lib name='psapi.lib'/>
+                <lib name='user32.lib'/>
+                <lib name='advapi32.lib'/>
+                <lib name='iphlpapi.lib'/>
+                <lib name='userenv.lib'/>
+                <lib name='ws2_32.lib'/>
+            </section>
+
+            <section unless='windows'>
+                <lib name='-lpthread'/>
+            </section>
+
+            <section if='linux'>
+                <lib name='-ldl'/>
+                <lib name='-lrt'/>
+            </section>
+        </section>
+    </target>
+
+</xml>

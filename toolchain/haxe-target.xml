@@ -12,7 +12,7 @@
 <!-- You can override the exes an "exe" section on your own .hxcpp_config -->
 <!-- You can use replace="1" to change the compiler, or omit to add flags -->
 
-<!-- Library files & targets -------------------------------------->
+<!-- Library files & targets -->
 
 <files id="cffi-depends">
   <depend name="${HXCPP}/include/hx/CFFI.h"/>
@@ -61,6 +61,7 @@
   <depend name="${HXCPP}/include/cpp/Variant.h"/>
   <depend name="${HXCPP}/include/cpp/VirtualArray.h"/>
   <depend name="${HXCPP}/include/hx/Scriptable.h"/>
+  <depend name="${HXCPP}/include/hx/asys/Asys.h"/>
   <section unless="HXCPP_LINK_NO_TOOL_DEPENDS" >
      <depend name="${HXCPP}/toolchain/haxe-target.xml" dateOnly="true" />
      <depend name="${HXCPP}/toolchain/${toolchain}-toolchain.xml" ifExists="${HXCPP}/toolchain/${toolchain}-toolchain.xml" dateOnly="true" />
@@ -203,6 +204,7 @@
 
 <section if="magiclibs" >
    <magiclib name="lib/${BINDIR}/libstd${LIBEXTRA}${LIBEXT}" replace="project/libs/std/Build.xml" />
+   <magiclib name="lib/${BINDIR}/libasys${LIBEXTRA}${LIBEXT}" replace="project/libs/asys/Build.xml" />
    <magiclib name="lib/${BINDIR}/libzlib${LIBEXTRA}${LIBEXT}" replace="project/libs/zlib/Build.xml" />
    <magiclib name="lib/${BINDIR}/libregexp${LIBEXTRA}${LIBEXT}" replace="project/libs/regexp/Build.xml" />
    <magiclib name="lib/${BINDIR}/libmysql5${LIBEXTRA}${LIBEXT}" replace="project/libs/mysql/Build.xml" />

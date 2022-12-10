@@ -232,6 +232,24 @@ public:
 	bool locked;
 };
 
+class HXCPP_EXTERN_CLASS_ATTRIBUTES AutoGCZone
+{
+private:
+   bool open;
+
+public:
+   AutoGCZone() : open(true) { ExitGCFreeZone(); }
+   ~AutoGCZone() { if(open) { EnterGCFreeZone(); } }
+};
+
+class HXCPP_EXTERN_CLASS_ATTRIBUTES RootedObject
+{
+public:
+   hx::Object* rooted;
+
+   RootedObject(Object* object) : rooted(object) { GCAddRoot(&rooted); }
+   ~RootedObject() { GCRemoveRoot(&rooted); }
+};
 
 // Defined in Class.cpp, these function is called from the Gc to start the marking/visiting
 void MarkClassStatics(hx::MarkContext *__inCtx);

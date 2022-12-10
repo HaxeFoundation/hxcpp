@@ -380,6 +380,7 @@ typedef bool PropertyAccess;
 #include <hx/Undefine.h>
 #if (HXCPP_API_LEVEL>=330)
 #include <hx/LessThanEq.h>
+#include <hx/asys/Asys.h>
 #else
 #include <cpp/Int64.h>
 #endif
