@@ -4,33 +4,11 @@
 #include <hx/Thread.h>
 #include <uv.h>
 
-HX_DECLARE_CLASS2(hx, asys, Event)
-HX_DECLARE_CLASS2(hx, asys, LibuvAsysContext)
+HX_DECLARE_CLASS3(hx, asys, libuv, Event)
+HX_DECLARE_CLASS3(hx, asys, libuv, LibuvAsysContext)
 
-namespace hx::asys
+namespace hx::asys::libuv
 {
-    class BaseData
-    {
-    public:
-        virtual ~BaseData() = 0;
-    };
-
-    class Event_obj : public Object
-    {
-    public:
-        Dynamic func;
-        Null<int> intervalMs;
-        cpp::Pointer<uv_timer_t> timer;
-
-        Event_obj(Dynamic func);
-        Event_obj(Dynamic func, int intervalMs);
-
-        void __Mark(hx::MarkContext *__inCtx);
-#ifdef HXCPP_VISIT_ALLOCS
-        void __Visit(hx::VisitContext *__inCtx);
-#endif
-    };
-
     class LibuvAsysContext_obj : public Context_obj
     {
     private:
@@ -55,4 +33,12 @@ namespace hx::asys
         void __Visit(hx::VisitContext *__inCtx);
 #endif
     };
+}
+
+namespace hx::asys
+{
+    Context Context_obj::create()
+    {
+        return Context(new libuv::LibuvAsysContext_obj());
+    }
 }

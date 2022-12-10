@@ -1,39 +1,11 @@
 #include <hxcpp.h>
+#include "LibuvAsysContext.h"
+#include "Event.h"
+#include "BaseData.h"
+
 #include <memory>
-#include "LibuvAsys.h"
 
-hx::asys::BaseData::~BaseData() {}
-
-hx::asys::Event_obj::Event_obj(Dynamic _func)
-    : func(_func)
-    , intervalMs(null())
-    , timer(cpp::Pointer<uv_timer_t>()) {}
-
-hx::asys::Event_obj::Event_obj(Dynamic _func, int _intervalMs)
-    : func(_func)
-    , intervalMs(_intervalMs)
-    , timer(cpp::Pointer<uv_timer_t>()) {}
-
-void hx::asys::Event_obj::__Mark(hx::MarkContext* __inCtx)
-{
-    HX_MARK_MEMBER(func);
-}
-
-#ifdef HXCPP_VISIT_ALLOCS
-
-void hx::asys::Event_obj::__Visit(hx::VisitContext* __inCtx)
-{
-    HX_VISIT_MEMBER(func);
-}
-
-#endif
-
-hx::asys::Context hx::asys::Context_obj::create()
-{
-    return Context(new LibuvAsysContext_obj());
-}
-
-hx::asys::LibuvAsysContext_obj::LibuvAsysContext_obj()
+hx::asys::libuv::LibuvAsysContext_obj::LibuvAsysContext_obj()
     : uvLoop(new uv_loop_t())
     , uvAsync(new uv_async_t())
     , mutex(HxMutex())
@@ -54,7 +26,7 @@ hx::asys::LibuvAsysContext_obj::LibuvAsysContext_obj()
     uv_unref(uvAsync.rawCast());
 }
 
-void hx::asys::LibuvAsysContext_obj::enqueue(Dynamic func)
+void hx::asys::libuv::LibuvAsysContext_obj::enqueue(Dynamic func)
 {
     auto lock   = AutoLock(mutex);
     auto result = uv_async_send(uvAsync);
@@ -66,7 +38,7 @@ void hx::asys::LibuvAsysContext_obj::enqueue(Dynamic func)
     queue->Add(Event(new Event_obj(func)));
 }
 
-Dynamic hx::asys::LibuvAsysContext_obj::enqueue(Dynamic func, int intervalMs)
+Dynamic hx::asys::libuv::LibuvAsysContext_obj::enqueue(Dynamic func, int intervalMs)
 {
     auto lock   = AutoLock(mutex);
     auto result = uv_async_send(uvAsync);
@@ -82,7 +54,7 @@ Dynamic hx::asys::LibuvAsysContext_obj::enqueue(Dynamic func, int intervalMs)
     return event;
 }
 
-void hx::asys::LibuvAsysContext_obj::cancel(Dynamic obj)
+void hx::asys::libuv::LibuvAsysContext_obj::cancel(Dynamic obj)
 {
     class Callback : public hx::LocalFunc
     {
@@ -124,7 +96,7 @@ void hx::asys::LibuvAsysContext_obj::cancel(Dynamic obj)
     enqueue(Dynamic(new Callback(obj.Cast<Event>())));
 }
 
-void hx::asys::LibuvAsysContext_obj::loop()
+void hx::asys::libuv::LibuvAsysContext_obj::loop()
 {
     consume();
 
@@ -139,7 +111,7 @@ void hx::asys::LibuvAsysContext_obj::loop()
     }
 }
 
-void hx::asys::LibuvAsysContext_obj::consume()
+void hx::asys::libuv::LibuvAsysContext_obj::consume()
 {
     class RunData : public BaseData
     {
@@ -212,7 +184,7 @@ void hx::asys::LibuvAsysContext_obj::consume()
     queue->resize(0);
 }
 
-void hx::asys::LibuvAsysContext_obj::finalize()
+void hx::asys::libuv::LibuvAsysContext_obj::finalize()
 {
     // Cleanup the loop according to https://stackoverflow.com/a/25831688
     // TODO : See if this could try and invoke haxe callbacks,
@@ -240,14 +212,14 @@ void hx::asys::LibuvAsysContext_obj::finalize()
     }
 }
 
-void hx::asys::LibuvAsysContext_obj::__Mark(hx::MarkContext* __inCtx)
+void hx::asys::libuv::LibuvAsysContext_obj::__Mark(hx::MarkContext* __inCtx)
 {
     HX_MARK_MEMBER(queue);
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
 
-void hx::asys::LibuvAsysContext_obj::__Visit(hx::VisitContext* __inCtx)
+void hx::asys::libuv::LibuvAsysContext_obj::__Visit(hx::VisitContext* __inCtx)
 {
     HX_VISIT_MEMBER(queue);
 }
