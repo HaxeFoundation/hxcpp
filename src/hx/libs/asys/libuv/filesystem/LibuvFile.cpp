@@ -60,6 +60,14 @@ namespace
         }
     }
 
+    struct FileRequest
+    {
+        const hx::RootedObject cbSuccess;
+        const hx::RootedObject cbFailure;
+
+        FileRequest(Dynamic _cbSuccess, Dynamic _cbFailure) : cbSuccess(_cbSuccess.mPtr), cbFailure(_cbFailure.mPtr) {}
+    };
+
     class LibuvFile_obj : public hx::asys::filesystem::File_obj
     {
     private:
@@ -70,14 +78,12 @@ namespace
 
         void write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
         {
-            struct WriteRequest
+            struct WriteRequest : FileRequest
             {
                 std::unique_ptr<std::vector<char>> data;
-                hx::RootedObject cbSuccess;
-                hx::RootedObject cbFailure;
 
                 WriteRequest(std::unique_ptr<std::vector<char>> _data, Dynamic _cbSuccess, Dynamic _cbFailure)
-                    : data(std::move(_data)), cbSuccess(_cbSuccess.mPtr), cbFailure(_cbFailure.mPtr) {}
+                    : FileRequest(_cbSuccess, _cbFailure), data(std::move(_data)) {}
             };
 
             auto wrapper = [](uv_fs_t* request) {
@@ -116,17 +122,15 @@ namespace
         }
         void read(::cpp::Int64 pos, Array<uint8_t> buffer, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
         {
-            struct ReadRequest
+            struct ReadRequest : FileRequest
             {
                 const int offset;
                 const hx::RootedObject array;
-                const hx::RootedObject cbSuccess;
-                const hx::RootedObject cbFailure;
                 const std::unique_ptr<std::vector<char>> staging;
                 const std::unique_ptr<uv_buf_t> buffer;
 
                 ReadRequest(int _offset, Array<uint8_t> _array, Dynamic _cbSuccess, Dynamic _cbFailure, std::unique_ptr<std::vector<char>> _staging, std::unique_ptr<uv_buf_t> _buffer)
-                    : offset(_offset), array(_array.mPtr), cbSuccess(_cbSuccess.mPtr), cbFailure(_cbFailure.mPtr), staging(std::move(_staging)), buffer(std::move(_buffer)) { }
+                    : FileRequest(_cbSuccess, _cbFailure), offset(_offset), array(_array.mPtr), staging(std::move(_staging)), buffer(std::move(_buffer)) { }
             };
 
             if (pos < 0)
@@ -180,17 +184,9 @@ namespace
         }
         void close(Dynamic cbSuccess, Dynamic cbFailure)
         {
-            struct CloseRequest
-            {
-                const hx::RootedObject cbSuccess;
-                const hx::RootedObject cbFailure;
-
-                CloseRequest(Dynamic _cbSuccess, Dynamic _cbFailure) : cbSuccess(_cbSuccess.mPtr), cbFailure(_cbFailure.mPtr) {}
-            };
-
             auto wrapper = [](uv_fs_t* request) {
                 auto spRequest = unique_fs_req(request);
-                auto spData    = std::unique_ptr<CloseRequest>(static_cast<CloseRequest*>(request->data));
+                auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
                 auto gcZone    = hx::AutoGCZone();
 
                 if (spRequest->result < 0)
@@ -212,7 +208,7 @@ namespace
             }
             else
             {
-                request->data = new CloseRequest(cbSuccess, cbFailure);
+                request->data = new FileRequest(cbSuccess, cbFailure);
                 request.release();
             }
         }
@@ -221,18 +217,10 @@ namespace
 
 void hx::asys::filesystem::File_obj::open(Context ctx, String path, int flags, Dynamic cbSuccess, Dynamic cbFailure)
 {
-    struct OpenRequest
-    {
-        hx::RootedObject cbSuccess;
-        hx::RootedObject cbFailure;
-
-        OpenRequest(Dynamic _cbSuccess, Dynamic _cbFailure) : cbSuccess(_cbSuccess.mPtr), cbFailure(_cbFailure.mPtr) {}
-    };
-
     auto libuvCtx = hx::asys::libuv::LibuvAsysContext_obj::Get(ctx);
     auto wrapper  = [](uv_fs_t* request) {
         auto gcZone    = hx::AutoGCZone();
-        auto spData    = std::unique_ptr<OpenRequest>(static_cast<OpenRequest*>(request->data));
+        auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
         auto spRequest = unique_fs_req(request);
 
         if (spRequest->result < 0)
@@ -254,7 +242,7 @@ void hx::asys::filesystem::File_obj::open(Context ctx, String path, int flags, D
     }
     else
     {
-        request->data = new OpenRequest(cbSuccess, cbFailure);
+        request->data = new FileRequest(cbSuccess, cbFailure);
         request.release();
     }
 }
