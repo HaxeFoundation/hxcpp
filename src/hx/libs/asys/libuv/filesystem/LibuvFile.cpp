@@ -182,6 +182,51 @@ namespace
                 request.release();
             }
         }
+        void info(Dynamic cbSuccess, Dynamic cbFailure)
+        {
+            auto wrapper = [](uv_fs_t* request) {
+                auto spRequest = unique_fs_req(request);
+                auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
+                auto gcZone    = hx::AutoGCZone();
+
+                if (spRequest->result < 0)
+                {
+                    Dynamic(spData->cbFailure.rooted)(String::create(uv_err_name(spRequest->result)));
+                }
+                else
+                {
+                    auto statBuf = hx::Anon_obj::Create(13);
+                    statBuf->setFixed( 0, HX_CSTRING("atime"), spRequest->statbuf.st_atim.tv_sec);
+                    statBuf->setFixed( 1, HX_CSTRING("mtime"), spRequest->statbuf.st_mtim.tv_sec);
+                    statBuf->setFixed( 2, HX_CSTRING("ctime"), spRequest->statbuf.st_ctim.tv_sec);
+                    statBuf->setFixed( 3, HX_CSTRING("dev"), spRequest->statbuf.st_dev);
+                    statBuf->setFixed( 4, HX_CSTRING("uid"), spRequest->statbuf.st_uid);
+                    statBuf->setFixed( 5, HX_CSTRING("gid"), spRequest->statbuf.st_gid);
+                    statBuf->setFixed( 6, HX_CSTRING("ino"), spRequest->statbuf.st_ino);
+                    statBuf->setFixed( 7, HX_CSTRING("mode"), spRequest->statbuf.st_mode);
+                    statBuf->setFixed( 8, HX_CSTRING("nlink"), spRequest->statbuf.st_nlink);
+                    statBuf->setFixed( 9, HX_CSTRING("rdev"), spRequest->statbuf.st_rdev);
+                    statBuf->setFixed(10, HX_CSTRING("size"), spRequest->statbuf.st_size);
+                    statBuf->setFixed(11, HX_CSTRING("blksize"), spRequest->statbuf.st_blksize);
+                    statBuf->setFixed(12, HX_CSTRING("blocks"), spRequest->statbuf.st_blocks);
+
+                    Dynamic(spData->cbSuccess.rooted)(statBuf);
+                }
+            };
+
+            auto request = std::make_unique<uv_fs_t>();
+            auto result = uv_fs_fstat(loop, request.get(), file, wrapper);
+
+            if (result < 0)
+            {
+                cbFailure(String::create(uv_err_name(result)));
+            }
+            else
+            {
+                request->data = new FileRequest(cbSuccess, cbFailure);
+                request.release();
+            }
+        }
         void close(Dynamic cbSuccess, Dynamic cbFailure)
         {
             auto wrapper = [](uv_fs_t* request) {
