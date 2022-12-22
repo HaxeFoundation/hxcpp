@@ -68,6 +68,22 @@ namespace
         FileRequest(Dynamic _cbSuccess, Dynamic _cbFailure) : cbSuccess(_cbSuccess.mPtr), cbFailure(_cbFailure.mPtr) {}
     };
 
+    void basicCallback(uv_fs_t* request)
+    {
+        auto spRequest = unique_fs_req(request);
+        auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
+        auto gcZone    = hx::AutoGCZone();
+
+        if (spRequest->result < 0)
+        {
+            Dynamic(spData->cbFailure.rooted)(String::create(uv_err_name(spRequest->result)));
+        }
+        else
+        {
+            Dynamic(spData->cbSuccess.rooted)();
+        }
+    }
+
     class LibuvFile_obj : public hx::asys::filesystem::File_obj
     {
     private:
@@ -229,23 +245,53 @@ namespace
         }
         void resize(int size, Dynamic cbSuccess, Dynamic cbFailure)
         {
-            auto wrapper = [](uv_fs_t* request) {
-                auto spRequest = unique_fs_req(request);
-                auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
-                auto gcZone    = hx::AutoGCZone();
-
-                if (spRequest->result < 0)
-                {
-                    Dynamic(spData->cbFailure.rooted)(String::create(uv_err_name(spRequest->result)));
-                }
-                else
-                {
-                    Dynamic(spData->cbSuccess.rooted)();
-                }
-            };
-
             auto request = std::make_unique<uv_fs_t>();
-            auto result  = uv_fs_ftruncate(loop, request.get(), file, size, wrapper);
+            auto result  = uv_fs_ftruncate(loop, request.get(), file, size, basicCallback);
+
+            if (result < 0)
+            {
+                cbFailure(String::create(uv_err_name(result)));
+            }
+            else
+            {
+                request->data = new FileRequest(cbSuccess, cbFailure);
+                request.release();
+            }
+        }
+        void setPermissions(int permissions, Dynamic cbSuccess, Dynamic cbFailure)
+        {
+            auto request = std::make_unique<uv_fs_t>();
+            auto result  = uv_fs_fchmod(loop, request.get(), file, permissions, basicCallback);
+
+            if (result < 0)
+            {
+                cbFailure(String::create(uv_err_name(result)));
+            }
+            else
+            {
+                request->data = new FileRequest(cbSuccess, cbFailure);
+                request.release();
+            }
+        }
+        void setOwner(int user, int group, Dynamic cbSuccess, Dynamic cbFailure)
+        {
+            auto request = std::make_unique<uv_fs_t>();
+            auto result  = uv_fs_fchown(loop, request.get(), file, user, group, basicCallback);
+
+            if (result < 0)
+            {
+                cbFailure(String::create(uv_err_name(result)));
+            }
+            else
+            {
+                request->data = new FileRequest(cbSuccess, cbFailure);
+                request.release();
+            }
+        }
+        void setTimes(int accessTime, int modificationTime, Dynamic cbSuccess, Dynamic cbFailure)
+        {
+            auto request = std::make_unique<uv_fs_t>();
+            auto result  = uv_fs_futime(loop, request.get(), file, accessTime, modificationTime, basicCallback);
 
             if (result < 0)
             {
@@ -259,23 +305,8 @@ namespace
         }
         void flush(Dynamic cbSuccess, Dynamic cbFailure)
         {
-            auto wrapper = [](uv_fs_t* request) {
-                auto spRequest = unique_fs_req(request);
-                auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
-                auto gcZone    = hx::AutoGCZone();
-
-                if (spRequest->result < 0)
-                {
-                    Dynamic(spData->cbFailure.rooted)(String::create(uv_err_name(spRequest->result)));
-                }
-                else
-                {
-                    Dynamic(spData->cbSuccess.rooted)();
-                }
-            };
-
             auto request = std::make_unique<uv_fs_t>();
-            auto result  = uv_fs_fsync(loop, request.get(), file, wrapper);
+            auto result  = uv_fs_fsync(loop, request.get(), file, basicCallback);
 
             if (result < 0)
             {
@@ -289,23 +320,8 @@ namespace
         }
         void close(Dynamic cbSuccess, Dynamic cbFailure)
         {
-            auto wrapper = [](uv_fs_t* request) {
-                auto spRequest = unique_fs_req(request);
-                auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
-                auto gcZone    = hx::AutoGCZone();
-
-                if (spRequest->result < 0)
-                {
-                    Dynamic(spData->cbFailure.rooted)(String::create(uv_err_name(spRequest->result)));
-                }
-                else
-                {
-                    Dynamic(spData->cbSuccess.rooted)();
-                }
-            };
-
             auto request = std::make_unique<uv_fs_t>();
-            auto result  = uv_fs_close(loop, request.get(), file, wrapper);
+            auto result  = uv_fs_close(loop, request.get(), file, basicCallback);
 
             if (result < 0)
             {

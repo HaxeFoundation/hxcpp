@@ -29,6 +29,9 @@ namespace hx
                 virtual void read(::cpp::Int64 pos, Array<uint8_t> buffer, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void info(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void resize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void setPermissions(int permissions, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void setOwner(int user, int group, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void setTimes(int accessTime, int modificationTime, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
