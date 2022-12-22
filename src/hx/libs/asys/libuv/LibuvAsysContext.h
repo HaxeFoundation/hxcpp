@@ -16,6 +16,8 @@ namespace hx::asys::libuv
         Array<Event> queue;
 
     public:
+        static LibuvAsysContext Get(Context ctx);
+
         LibuvAsysContext_obj();
 
         cpp::Pointer<uv_loop_t> uvLoop;
@@ -33,12 +35,4 @@ namespace hx::asys::libuv
         void __Visit(hx::VisitContext *__inCtx);
 #endif
     };
-}
-
-namespace hx::asys
-{
-    Context Context_obj::create()
-    {
-        return Context(new libuv::LibuvAsysContext_obj());
-    }
 }

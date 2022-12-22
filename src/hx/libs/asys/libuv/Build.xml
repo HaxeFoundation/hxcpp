@@ -128,9 +128,10 @@
         <compilerflag value='-I${LIBUV_DIR}/include'/>
         <compilerflag value='-I${LIBUV_DIR}/src'/>
 
+        <file name='${this_dir}/BaseData.cpp'/>
         <file name='${this_dir}/LibuvAsysContext.cpp'/>
         <file name='${this_dir}/Event.cpp'/>
-        <file name='${this_dir}/BaseData.cpp'/>
+        <file name='${this_dir}/filesystem/LibuvFile.cpp'/>
     </files>
 
     <target id='haxe'>

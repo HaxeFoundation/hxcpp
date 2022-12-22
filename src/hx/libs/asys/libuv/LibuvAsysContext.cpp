@@ -5,6 +5,22 @@
 
 #include <memory>
 
+hx::asys::Context hx::asys::Context_obj::create()
+{
+    return Context(new libuv::LibuvAsysContext_obj());
+}
+
+hx::asys::libuv::LibuvAsysContext hx::asys::libuv::LibuvAsysContext_obj::Get(Context ctx)
+{
+    auto casted = dynamic_cast<Context_obj*>(ctx.mPtr);
+    if (!casted)
+    {
+        hx::Throw(HX_CSTRING("Bad Libuv Context"));
+    }
+
+    return casted;
+}
+
 hx::asys::libuv::LibuvAsysContext_obj::LibuvAsysContext_obj()
     : uvLoop(new uv_loop_t())
     , uvAsync(new uv_async_t())
