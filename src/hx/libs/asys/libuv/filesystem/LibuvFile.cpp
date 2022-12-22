@@ -227,6 +227,36 @@ namespace
                 request.release();
             }
         }
+        void flush(Dynamic cbSuccess, Dynamic cbFailure)
+        {
+            auto wrapper = [](uv_fs_t* request) {
+                auto spRequest = unique_fs_req(request);
+                auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
+                auto gcZone    = hx::AutoGCZone();
+
+                if (spRequest->result < 0)
+                {
+                    Dynamic(spData->cbFailure.rooted)(String::create(uv_err_name(spRequest->result)));
+                }
+                else
+                {
+                    Dynamic(spData->cbSuccess.rooted)();
+                }
+            };
+
+            auto request = std::make_unique<uv_fs_t>();
+            auto result  = uv_fs_fsync(loop, request.get(), file, wrapper);
+
+            if (result < 0)
+            {
+                cbFailure(String::create(uv_err_name(result)));
+            }
+            else
+            {
+                request->data = new FileRequest(cbSuccess, cbFailure);
+                request.release();
+            }
+        }
         void close(Dynamic cbSuccess, Dynamic cbFailure)
         {
             auto wrapper = [](uv_fs_t* request) {
