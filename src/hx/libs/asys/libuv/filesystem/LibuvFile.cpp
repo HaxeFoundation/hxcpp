@@ -2,6 +2,7 @@
 #include <uv.h>
 #include <memory>
 #include "../LibuvAsysContext.h"
+#include "../LibuvUtils.h"
 
 namespace
 {
@@ -60,67 +61,15 @@ namespace
         }
     }
 
-    hx::EnumBase create(const String& name, const int index, int fields)
-    {
-        auto result = new (fields * sizeof(cpp::Variant)) hx::EnumBase_obj;
-
-        result->_hx_setIdentity(name, index, fields);
-
-        return result;
-    }
-
-    hx::EnumBase uv_err_to_enum(int code)
-    {
-        switch (code)
-        {
-            case UV_ENOENT:
-                return create(HX_CSTRING("FileNotFound"), 0, 0);
-            case UV_EEXIST:
-                return create(HX_CSTRING("FileExists"), 1, 0);
-            case UV_ESRCH:
-                return create(HX_CSTRING("ProcessNotFound"), 2, 0);
-            case UV_EACCES:
-                return create(HX_CSTRING("AccessDenied"), 3, 0);
-			case UV_ENOTDIR:
-                return create(HX_CSTRING("NotDirectory"), 4, 0);
-			case UV_EMFILE:
-                return create(HX_CSTRING("TooManyOpenFiles"), 5, 0);
-			case UV_EPIPE:
-                return create(HX_CSTRING("BrokenPipe"), 6, 0);
-			case UV_ENOTEMPTY:
-                return create(HX_CSTRING("NotEmpty"), 7, 0);
-			case UV_EADDRNOTAVAIL:
-                return create(HX_CSTRING("AddressNotAvailable"), 8, 0);
-			case UV_ECONNRESET:
-                return create(HX_CSTRING("ConnectionReset"), 9, 0);
-			case UV_ETIMEDOUT:
-                return create(HX_CSTRING("TimedOut"), 10, 0);
-			case UV_ECONNREFUSED:
-                return create(HX_CSTRING("ConnectionRefused"), 11, 0);
-			case UV_EBADF:
-                return create(HX_CSTRING("BadFile"), 12, 0);
-			default:
-                return create(HX_CSTRING("CustomError"), 13, 1)->_hx_init(0, String::create(uv_err_name(code)));
-        }
-    }
-
-    struct FileRequest
-    {
-        const hx::RootedObject cbSuccess;
-        const hx::RootedObject cbFailure;
-
-        FileRequest(Dynamic _cbSuccess, Dynamic _cbFailure) : cbSuccess(_cbSuccess.mPtr), cbFailure(_cbFailure.mPtr) {}
-    };
-
     void basicCallback(uv_fs_t* request)
     {
         auto spRequest = unique_fs_req(request);
-        auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
+        auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
         auto gcZone    = hx::AutoGCZone();
 
         if (spRequest->result < 0)
         {
-            Dynamic(spData->cbFailure.rooted)(uv_err_to_enum(spRequest->result));
+            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
         }
         else
         {
@@ -138,12 +87,12 @@ namespace
 
         void write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
         {
-            struct WriteRequest : FileRequest
+            struct WriteRequest : hx::asys::libuv::BaseRequest
             {
                 std::unique_ptr<std::vector<char>> data;
 
                 WriteRequest(std::unique_ptr<std::vector<char>> _data, Dynamic _cbSuccess, Dynamic _cbFailure)
-                    : FileRequest(_cbSuccess, _cbFailure), data(std::move(_data)) {}
+                    : BaseRequest(_cbSuccess, _cbFailure), data(std::move(_data)) {}
             };
 
             auto wrapper = [](uv_fs_t* request) {
@@ -153,7 +102,7 @@ namespace
 
                 if (request->result < 0)
                 {
-                    Dynamic(spData->cbFailure.rooted)(uv_err_to_enum(spRequest->result));
+                    Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
                 }
                 else
                 {
@@ -172,7 +121,7 @@ namespace
 
             if (result < 0)
             {
-                cbFailure(uv_err_to_enum(result));
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
             }
             else
             {
@@ -182,7 +131,7 @@ namespace
         }
         void read(::cpp::Int64 pos, Array<uint8_t> buffer, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
         {
-            struct ReadRequest : FileRequest
+            struct ReadRequest : hx::asys::libuv::BaseRequest
             {
                 const int offset;
                 const hx::RootedObject array;
@@ -190,16 +139,16 @@ namespace
                 const std::unique_ptr<uv_buf_t> buffer;
 
                 ReadRequest(int _offset, Array<uint8_t> _array, Dynamic _cbSuccess, Dynamic _cbFailure, std::unique_ptr<std::vector<char>> _staging, std::unique_ptr<uv_buf_t> _buffer)
-                    : FileRequest(_cbSuccess, _cbFailure), offset(_offset), array(_array.mPtr), staging(std::move(_staging)), buffer(std::move(_buffer)) { }
+                    : BaseRequest(_cbSuccess, _cbFailure), offset(_offset), array(_array.mPtr), staging(std::move(_staging)), buffer(std::move(_buffer)) { }
             };
 
             if (pos < 0)
             {
-                cbFailure(HX_CSTRING("Position is negative"));
+                cbFailure(hx::asys::libuv::create(HX_CSTRING("CustomError"), 13, 1)->_hx_init(0, HX_CSTRING("Position is negative")));
             }
             if (offset < 0 || offset > buffer->length)
             {
-                cbFailure(HX_CSTRING("Offset outside of buffer bounds"));
+                cbFailure(hx::asys::libuv::create(HX_CSTRING("CustomError"), 13, 1)->_hx_init(0, HX_CSTRING("Offset outside of buffer bounds")));
             }
 
             auto wrapper  = [](uv_fs_t* request) {
@@ -219,7 +168,7 @@ namespace
                 }
                 else
                 {
-                    Dynamic(spData->cbFailure.rooted)(uv_err_to_enum(spRequest->result));
+                    Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
                 }
             };
 
@@ -230,7 +179,7 @@ namespace
             
             if (result < 0)
             {
-                cbFailure(uv_err_to_enum(result));
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
             }
             else
             {
@@ -242,12 +191,12 @@ namespace
         {
             auto wrapper = [](uv_fs_t* request) {
                 auto spRequest = unique_fs_req(request);
-                auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
+                auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
                 auto gcZone    = hx::AutoGCZone();
 
                 if (spRequest->result < 0)
                 {
-                    Dynamic(spData->cbFailure.rooted)(uv_err_to_enum(spRequest->result));
+                    Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
                 }
                 else
                 {
@@ -275,11 +224,11 @@ namespace
 
             if (result < 0)
             {
-                cbFailure(uv_err_to_enum(result));
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
             }
             else
             {
-                request->data = new FileRequest(cbSuccess, cbFailure);
+                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
                 request.release();
             }
         }
@@ -290,11 +239,11 @@ namespace
 
             if (result < 0)
             {
-                cbFailure(uv_err_to_enum(result));
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
             }
             else
             {
-                request->data = new FileRequest(cbSuccess, cbFailure);
+                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
                 request.release();
             }
         }
@@ -305,11 +254,11 @@ namespace
 
             if (result < 0)
             {
-                cbFailure(uv_err_to_enum(result));
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
             }
             else
             {
-                request->data = new FileRequest(cbSuccess, cbFailure);
+                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
                 request.release();
             }
         }
@@ -320,11 +269,11 @@ namespace
 
             if (result < 0)
             {
-                cbFailure(uv_err_to_enum(result));
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
             }
             else
             {
-                request->data = new FileRequest(cbSuccess, cbFailure);
+                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
                 request.release();
             }
         }
@@ -335,11 +284,11 @@ namespace
 
             if (result < 0)
             {
-                cbFailure(uv_err_to_enum(result));
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
             }
             else
             {
-                request->data = new FileRequest(cbSuccess, cbFailure);
+                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
                 request.release();
             }
         }
@@ -350,11 +299,11 @@ namespace
 
             if (result < 0)
             {
-                cbFailure(uv_err_to_enum(result));
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
             }
             else
             {
-                request->data = new FileRequest(cbSuccess, cbFailure);
+                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
                 request.release();
             }
         }
@@ -365,11 +314,11 @@ namespace
 
             if (result < 0)
             {
-                cbFailure(uv_err_to_enum(result));
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
             }
             else
             {
-                request->data = new FileRequest(cbSuccess, cbFailure);
+                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
                 request.release();
             }
         }
@@ -381,12 +330,12 @@ void hx::asys::filesystem::File_obj::open(Context ctx, String path, int flags, D
     auto libuvCtx = hx::asys::libuv::LibuvAsysContext_obj::Get(ctx);
     auto wrapper  = [](uv_fs_t* request) {
         auto gcZone    = hx::AutoGCZone();
-        auto spData    = std::unique_ptr<FileRequest>(static_cast<FileRequest*>(request->data));
+        auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
         auto spRequest = unique_fs_req(request);
 
         if (spRequest->result < 0)
         {
-            Dynamic(spData->cbFailure.rooted)(uv_err_to_enum(spRequest->result));
+            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
         }
         else
         {
@@ -399,11 +348,11 @@ void hx::asys::filesystem::File_obj::open(Context ctx, String path, int flags, D
 
     if (result < 0)
     {
-        cbFailure(uv_err_to_enum(result));
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
     }
     else
     {
-        request->data = new FileRequest(cbSuccess, cbFailure);
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
         request.release();
     }
 }
