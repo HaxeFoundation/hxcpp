@@ -2,6 +2,7 @@
 
 HX_DECLARE_CLASS2(hx, asys, Context)
 HX_DECLARE_CLASS3(hx, asys, filesystem, File)
+HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
 
 namespace hx
 {
@@ -33,6 +34,15 @@ namespace hx
                 virtual void setOwner(int user, int group, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setTimes(int accessTime, int modificationTime, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            };
+
+            class Directory_obj : public Object
+            {
+            public:
+                static void open(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
+
+                virtual void next(int batch, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
         }

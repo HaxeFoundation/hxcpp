@@ -16,8 +16,6 @@ namespace hx::asys::libuv
         Array<Event> queue;
 
     public:
-        static LibuvAsysContext Get(Context ctx);
-
         LibuvAsysContext_obj();
 
         cpp::Pointer<uv_loop_t> uvLoop;

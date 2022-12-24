@@ -1,20 +1,9 @@
 #include <hxcpp.h>
-#include <uv.h>
 #include <memory>
-#include "../LibuvAsysContext.h"
 #include "../LibuvUtils.h"
 
 namespace
 {
-    std::unique_ptr<uv_fs_t, uv_fs_cb> unique_fs_req(uv_fs_t* request)
-    {
-        return std::unique_ptr<uv_fs_t, uv_fs_cb>(request, [](uv_fs_t* request) {
-            uv_fs_req_cleanup(request);
-
-            delete request;
-        });
-    }
-
     int openFlag(int flag)
     {
         switch (flag)
@@ -63,7 +52,7 @@ namespace
 
     void basicCallback(uv_fs_t* request)
     {
-        auto spRequest = unique_fs_req(request);
+        auto spRequest = hx::asys::libuv::unique_fs_req(request);
         auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
         auto gcZone    = hx::AutoGCZone();
 
@@ -98,7 +87,7 @@ namespace
             auto wrapper = [](uv_fs_t* request) {
                 auto gcZone    = hx::AutoGCZone();
                 auto spData    = std::unique_ptr<WriteRequest>(static_cast<WriteRequest*>(request->data));
-                auto spRequest = unique_fs_req(request);
+                auto spRequest = hx::asys::libuv::unique_fs_req(request);
 
                 if (request->result < 0)
                 {
@@ -152,7 +141,7 @@ namespace
             }
 
             auto wrapper  = [](uv_fs_t* request) {
-                auto spRequest = unique_fs_req(request);
+                auto spRequest = hx::asys::libuv::unique_fs_req(request);
                 auto spData    = std::unique_ptr<ReadRequest>(static_cast<ReadRequest*>(request->data));
                 auto gcZone    = hx::AutoGCZone();
 
@@ -190,7 +179,7 @@ namespace
         void info(Dynamic cbSuccess, Dynamic cbFailure)
         {
             auto wrapper = [](uv_fs_t* request) {
-                auto spRequest = unique_fs_req(request);
+                auto spRequest = hx::asys::libuv::unique_fs_req(request);
                 auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
                 auto gcZone    = hx::AutoGCZone();
 
@@ -327,11 +316,11 @@ namespace
 
 void hx::asys::filesystem::File_obj::open(Context ctx, String path, int flags, Dynamic cbSuccess, Dynamic cbFailure)
 {
-    auto libuvCtx = hx::asys::libuv::LibuvAsysContext_obj::Get(ctx);
+    auto libuvCtx = hx::asys::libuv::context(ctx);
     auto wrapper  = [](uv_fs_t* request) {
         auto gcZone    = hx::AutoGCZone();
         auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
-        auto spRequest = unique_fs_req(request);
+        auto spRequest = hx::asys::libuv::unique_fs_req(request);
 
         if (spRequest->result < 0)
         {

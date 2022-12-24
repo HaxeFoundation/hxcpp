@@ -1,5 +1,5 @@
 #include <hxcpp.h>
-#include "LibuvAsysContext.h"
+#include <hx/asys/libuv/LibuvAsysContext.h>
 #include "Event.h"
 #include "BaseData.h"
 
@@ -8,17 +8,6 @@
 hx::asys::Context hx::asys::Context_obj::create()
 {
     return Context(new libuv::LibuvAsysContext_obj());
-}
-
-hx::asys::libuv::LibuvAsysContext hx::asys::libuv::LibuvAsysContext_obj::Get(Context ctx)
-{
-    auto casted = dynamic_cast<Context_obj*>(ctx.mPtr);
-    if (!casted)
-    {
-        hx::Throw(HX_CSTRING("Bad Libuv Context"));
-    }
-
-    return casted;
 }
 
 hx::asys::libuv::LibuvAsysContext_obj::LibuvAsysContext_obj()
