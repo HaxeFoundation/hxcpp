@@ -25,6 +25,11 @@ namespace hx
             {
             public:
                 static void open(Context ctx, String path, int flags, Dynamic cbSuccess, Dynamic cbFailure);
+                static void temp(Context ctx, Dynamic cbSuccess, Dynamic cbFailure);
+
+                const String path;
+
+                File_obj(String _path) : path(_path) {}
 
                 virtual void write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void read(::cpp::Int64 pos, Array<uint8_t> buffer, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
