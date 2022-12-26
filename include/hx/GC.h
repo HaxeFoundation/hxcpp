@@ -242,12 +242,23 @@ public:
    ~AutoGCZone() { if(open) { EnterGCFreeZone(); } }
 };
 
+template<class THxObject = hx::Object>
 class HXCPP_EXTERN_CLASS_ATTRIBUTES RootedObject
+{
+public:
+   THxObject* rooted;
+
+   RootedObject(THxObject* object) : rooted(object) { GCAddRoot(&reinterpret_cast<hx::Object*>(rooted)); }
+   ~RootedObject() { GCRemoveRoot(&reinterpret_cast<hx::Object*>(rooted)); }
+};
+
+template<>
+class HXCPP_EXTERN_CLASS_ATTRIBUTES RootedObject<hx::Object>
 {
 public:
    hx::Object* rooted;
 
-   RootedObject(Object* object) : rooted(object) { GCAddRoot(&rooted); }
+   RootedObject(hx::Object* object) : rooted(object) { GCAddRoot(&rooted); }
    ~RootedObject() { GCRemoveRoot(&rooted); }
 };
 

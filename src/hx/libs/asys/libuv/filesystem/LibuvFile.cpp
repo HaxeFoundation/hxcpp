@@ -72,42 +72,111 @@ namespace
     private:
         uv_loop_t* loop;
         uv_file file;
+
+        struct WriteRequest : hx::asys::libuv::BaseRequest
+        {
+            std::unique_ptr<std::vector<char>> staging;
+
+            // The current offset into the array.
+            // May differ from array offset if multiple smaller requests are needed to complete the overall write.
+            const int currentOffset;
+
+            // The starting offset into the array for the overall write.
+            const int arrayOffset;
+
+            // The total length for the overall write.
+            const int arrayLength;
+
+            // The starting position into the file for the overall write.
+            const int filePos;
+
+            const hx::RootedObject<Array_obj<uint8_t>> array;
+
+            WriteRequest(
+                std::unique_ptr<std::vector<char>> _staging,
+                const int _currentOffset,
+                const int _arrayOffset,
+                const int _arrayLength,
+                const int _filePos,
+                const Array<uint8_t> _array,
+                Dynamic _cbSuccess,
+                Dynamic _cbFailure)
+                : BaseRequest(_cbSuccess, _cbFailure)
+                , staging(std::move(_staging))
+                , currentOffset(_currentOffset)
+                , arrayOffset(_arrayOffset)
+                , arrayLength(_arrayLength)
+                , filePos(_filePos)
+                , array(_array.mPtr) {}
+        };
+
+        static void onWriteCallback(uv_fs_t* request)
+        {
+            auto gcZone    = hx::AutoGCZone();
+            auto spData    = std::unique_ptr<WriteRequest>(static_cast<WriteRequest*>(request->data));
+            auto spRequest = hx::asys::libuv::unique_fs_req(request);
+
+            if (spRequest->result < 0)
+            {
+                Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
+            }
+            else
+            {
+                auto array          = Array<uint8_t>(spData->array.rooted);
+                auto newArrayOffset = spData->currentOffset + spRequest->result;
+
+                if (newArrayOffset >= spData->arrayOffset + spData->arrayLength)
+                {
+                    Dynamic(spData->cbSuccess.rooted)(spData->arrayLength);
+                }
+                else
+                {
+                    auto amountWritten = newArrayOffset - spData->arrayOffset;
+                    auto batchSize     = std::min(spData->staging->capacity(), static_cast<size_t>(spData->arrayLength - amountWritten));
+
+                    std::memcpy(spData->staging->data(), array->getBase() + newArrayOffset, batchSize);
+
+                    auto buffer     = uv_buf_init(spData->staging->data(), batchSize);
+                    auto newFilePos = spData->filePos + amountWritten;
+                    auto result     = uv_fs_write(spRequest->loop, spRequest.get(), spRequest->file.fd, &buffer, 1, newFilePos, onWriteCallback);
+
+                    if (result < 0)
+                    {
+                        Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
+                    }
+                    else
+                    {
+                        spRequest->data =
+                            new WriteRequest(
+                                std::move(spData->staging),
+                                newArrayOffset,
+                                spData->arrayOffset,
+                                spData->arrayLength,
+                                spData->filePos,
+                                array,
+                                spData->cbSuccess.rooted,
+                                spData->cbFailure.rooted);
+                        spRequest.release();
+                    }
+                }
+            }
+        }
     public:
         LibuvFile_obj(uv_loop_t* _loop, uv_file _file, const String _path) : File_obj(_path), loop(_loop), file(_file) {}
 
         void write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
         {
-            struct WriteRequest : hx::asys::libuv::BaseRequest
-            {
-                std::unique_ptr<std::vector<char>> data;
+            // Create an intermediate buffer so libuv isn't handling GC memory which could be moved from under it.
+            // In the case the data being written is larger than the batch buffer multiple write requests are made.
+            auto batchSize  = static_cast<int>(std::numeric_limits<uint16_t>::max());
+            auto bufferSize = std::min(batchSize, length);
+            auto staging    = std::make_unique<std::vector<char>>(bufferSize);
+            auto buffer     = uv_buf_init(staging->data(), staging->capacity());
 
-                WriteRequest(std::unique_ptr<std::vector<char>> _data, Dynamic _cbSuccess, Dynamic _cbFailure)
-                    : BaseRequest(_cbSuccess, _cbFailure), data(std::move(_data)) {}
-            };
-
-            auto wrapper = [](uv_fs_t* request) {
-                auto gcZone    = hx::AutoGCZone();
-                auto spData    = std::unique_ptr<WriteRequest>(static_cast<WriteRequest*>(request->data));
-                auto spRequest = hx::asys::libuv::unique_fs_req(request);
-
-                if (request->result < 0)
-                {
-                    Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
-                }
-                else
-                {
-                    Dynamic(spData->cbSuccess.rooted)(request->result);
-                }
-            };
-
-            
-            auto staging = std::make_unique<std::vector<char>>(length);
-            auto buffer  = uv_buf_init(staging->data(), staging->capacity());
-
-            std::memcpy(staging->data(), data->getBase() + offset, length);
+            std::memcpy(staging->data(), data->getBase() + offset, bufferSize);
 
             auto request = std::make_unique<uv_fs_t>();
-            auto result  = uv_fs_write(loop, request.get(), file, &buffer, 1, pos, wrapper);
+            auto result  = uv_fs_write(loop, request.get(), file, &buffer, 1, pos, &LibuvFile_obj::onWriteCallback);
 
             if (result < 0)
             {
@@ -115,7 +184,7 @@ namespace
             }
             else
             {
-                request->data = new WriteRequest(std::move(staging), cbSuccess, cbFailure);
+                request->data = new WriteRequest(std::move(staging), offset, offset, length, pos, data, cbSuccess, cbFailure);
                 request.release();
             }
         }
@@ -124,7 +193,7 @@ namespace
             struct ReadRequest : hx::asys::libuv::BaseRequest
             {
                 const int offset;
-                const hx::RootedObject array;
+                const hx::RootedObject<hx::Object> array;
                 const std::unique_ptr<std::vector<char>> staging;
                 const std::unique_ptr<uv_buf_t> buffer;
 
