@@ -122,11 +122,11 @@ namespace
             }
             else
             {
-                auto newArrayOffset = spData->currentOffset + spRequest->result;
+                auto newArrayOffset = static_cast<int>(spData->currentOffset + spRequest->result);
 
-                if (newArrayOffset >= spData->arrayOffset + spData->arrayLength)
+                if (0 == spRequest->result || newArrayOffset >= spData->arrayOffset + spData->arrayLength)
                 {
-                    Dynamic(spData->cbSuccess.rooted)(spData->arrayLength);
+                    Dynamic(spData->cbSuccess.rooted)(newArrayOffset - spData->arrayOffset);
                 }
                 else
                 {
@@ -173,11 +173,12 @@ namespace
             }
             else
             {
-                auto newArrayOffset = spData->currentOffset + spRequest->result;
+                auto newArrayOffset  = static_cast<int>(spData->currentOffset + spRequest->result);
+                auto totalAmountRead = newArrayOffset - spData->arrayOffset;
 
-                if (newArrayOffset >= spData->arrayLength)
+                if (spRequest->result == 0)
                 {
-                    Dynamic(spData->cbSuccess.rooted)(spData->arrayLength);
+                    Dynamic(spData->cbSuccess.rooted)(totalAmountRead);
                 }
                 else
                 {
@@ -185,29 +186,35 @@ namespace
 
                     array->memcpy(spData->currentOffset, reinterpret_cast<uint8_t*>(spData->staging->data()), spRequest->result);
 
-                    auto amountRead  = newArrayOffset - spData->arrayOffset;
-                    auto batchSize   = std::min(spData->staging->capacity(), static_cast<size_t>(spData->arrayLength - amountRead));
-                    auto newFilePos  = spData->filePos + amountRead;
-                    auto buffer      = uv_buf_init(spData->staging->data(), batchSize);
-                    auto result      = uv_fs_read(spRequest->loop, spRequest.get(), spRequest->file.fd, &buffer, 1, newFilePos, onReadCallback);
-
-                    if (result < 0)
+                    if (newArrayOffset >= spData->arrayOffset + spData->arrayLength)
                     {
-                        Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
+                        Dynamic(spData->cbSuccess.rooted)(totalAmountRead);
                     }
                     else
                     {
-                        spRequest->data =
-                            new ChunkedRequest(
-                                std::move(spData->staging),
-                                newArrayOffset,
-                                spData->arrayOffset,
-                                spData->arrayLength,
-                                spData->filePos,
-                                array,
-                                spData->cbSuccess.rooted,
-                                spData->cbFailure.rooted);
-                        spRequest.release();
+                        auto batchSize   = std::min(static_cast<int>(spData->staging->capacity()), spData->arrayLength - totalAmountRead);
+                        auto newFilePos  = spData->filePos + totalAmountRead;
+                        auto buffer      = uv_buf_init(spData->staging->data(), batchSize);
+                        auto result      = uv_fs_read(spRequest->loop, spRequest.get(), spRequest->file.fd, &buffer, 1, newFilePos, onReadCallback);
+
+                        if (result < 0)
+                        {
+                            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
+                        }
+                        else
+                        {
+                            spRequest->data =
+                                new ChunkedRequest(
+                                    std::move(spData->staging),
+                                    newArrayOffset,
+                                    spData->arrayOffset,
+                                    spData->arrayLength,
+                                    spData->filePos,
+                                    array,
+                                    spData->cbSuccess.rooted,
+                                    spData->cbFailure.rooted);
+                            spRequest.release();
+                        }
                     }
                 }
             }
@@ -250,7 +257,7 @@ namespace
                 cbFailure(hx::asys::libuv::create(HX_CSTRING("CustomError"), 13, 1)->_hx_init(0, HX_CSTRING("Offset outside of buffer bounds")));
             }
 
-            auto batchSize  = static_cast<int>(std::numeric_limits<uint8_t>::max());
+            auto batchSize  = static_cast<int>(std::numeric_limits<uint16_t>::max());
             auto bufferSize = std::min(batchSize, length);
             auto staging    = std::make_unique<std::vector<char>>(bufferSize);
             auto buffer     = uv_buf_init(staging->data(), staging->capacity());
