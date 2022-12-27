@@ -32,7 +32,7 @@ namespace hx
                 File_obj(String _path) : path(_path) {}
 
                 virtual void write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void read(::cpp::Int64 pos, Array<uint8_t> buffer, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void read(::cpp::Int64 pos, Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void info(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void resize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setPermissions(int permissions, Dynamic cbSuccess, Dynamic cbFailure) = 0;
