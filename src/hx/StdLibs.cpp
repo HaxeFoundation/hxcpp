@@ -357,7 +357,7 @@ https://github.com/dotnet/coreclr/blob/master/src/vm/util.cpp
 
 #define ISWHITE(x) ((x)==(' ') || (x)==('\t') || (x)==('\n') || (x)==('\r') )
 
-static void ParseCommandLine(LPTSTR psrc, Array<String> &out)
+static void ParseCommandLine(LPWSTR psrc, Array<String> &out)
 {
     unsigned int argcount = 1;       // discovery of arg0 is unconditional, below
 
@@ -379,7 +379,7 @@ static void ParseCommandLine(LPTSTR psrc, Array<String> &out)
        we need to preserve compatibility.
     */
 
-    LPTSTR pStart = psrc;
+    LPWSTR pStart = psrc;
     bool skipQuote = false;
 
     // Pairs of double-quotes vanish...
@@ -526,7 +526,7 @@ Array<String> __get_args()
    #ifdef HX_WINRT
    // Do nothing
    #elif defined(HX_WINDOWS)
-   LPTSTR str =  GetCommandLine();
+   LPWSTR str =  GetCommandLineW();
    ParseCommandLine(str, result);
    #else
    #ifdef __APPLE__
