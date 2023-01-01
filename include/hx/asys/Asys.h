@@ -46,6 +46,7 @@ namespace hx
             {
             public:
                 static void open(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
+                static void create(Context ctx, String path, int permissions, bool recursive, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual void next(int batch, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;

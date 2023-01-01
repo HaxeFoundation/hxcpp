@@ -1,5 +1,6 @@
 #include <hxcpp.h>
 #include <memory>
+#include <filesystem>
 #include "../LibuvUtils.h"
 
 namespace
@@ -127,5 +128,75 @@ void hx::asys::filesystem::Directory_obj::open(Context ctx, String path, Dynamic
     {
         request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
         request.release();
+    }
+}
+
+void hx::asys::filesystem::Directory_obj::create(Context ctx, String path, int permissions, bool recursive, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+
+    if (recursive)
+    {
+        // TODO : This isn't really async, eventually move this loop into haxe.
+
+        hx::EnterGCFreeZone();
+
+        auto filePath    = std::filesystem::u8path(path.utf8_str());
+        auto accumulated = std::filesystem::path();
+
+        for (auto&& part : filePath)
+        {
+            if (accumulated.empty())
+            {
+                accumulated = part;
+            }
+            else
+            {
+                accumulated = accumulated / part;
+            }
+
+            auto result = uv_fs_mkdir(libuvCtx->uvLoop, request.get(), accumulated.u8string().c_str(), permissions, nullptr);
+            if (result < 0 && result != EEXIST)
+            {
+                hx::ExitGCFreeZone();
+
+                cbFailure(result);
+
+                return;
+            }
+        }
+
+        hx::ExitGCFreeZone();
+
+        cbSuccess();
+    }
+    else
+    {
+        auto wrapper = [](uv_fs_t* request) {
+            auto gcZone    = hx::AutoGCZone();
+            auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
+            auto spRequest = hx::asys::libuv::unique_fs_req(request);
+
+            if (spRequest->result < 0)
+            {
+                Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
+            }
+            else
+            {
+                Dynamic(spData->cbSuccess.rooted)();
+            }
+        };
+
+        auto result = uv_fs_mkdir(libuvCtx->uvLoop, request.get(), path.utf8_str(), permissions, wrapper);
+        if (result < 0)
+        {
+            cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+        }
+        else
+        {
+            request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+            request.release();
+        }
     }
 }
