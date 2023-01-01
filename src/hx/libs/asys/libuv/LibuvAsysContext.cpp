@@ -26,6 +26,7 @@ hx::asys::libuv::LibuvAsysContext_obj::LibuvAsysContext_obj()
         ctx->consume();
     });
 
+    // TODO : Not safe with a moving gc, wrap in a root.
     uvAsync->ptr->data = this;
 
     uv_unref(uvAsync.rawCast());
@@ -121,7 +122,7 @@ void hx::asys::libuv::LibuvAsysContext_obj::consume()
     class RunData : public BaseData
     {
     private:
-        RootedObject task;
+        RootedObject<hx::Object> task;
         cpp::Pointer<uv_timer_t> timer;
 
     public:
