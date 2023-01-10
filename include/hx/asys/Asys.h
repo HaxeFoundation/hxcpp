@@ -21,6 +21,14 @@ namespace hx
 
         namespace filesystem
         {
+            enum class FileAccessMode : std::uint8_t
+            {
+                exists     = 0b0001,
+                executable = 0b0010,
+                writable   = 0b0100,
+                readable   = 0b1000
+            };
+
             class File_obj : public Object
             {
             public:
@@ -47,6 +55,8 @@ namespace hx
             public:
                 static void open(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
                 static void create(Context ctx, String path, int permissions, bool recursive, Dynamic cbSuccess, Dynamic cbFailure);
+                static void move(Context ctx, String oldPath, String newPath, Dynamic cbSuccess, Dynamic cbFailure);
+                static void check(Context ctx, String path, FileAccessMode accessMode, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual void next(int batch, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;

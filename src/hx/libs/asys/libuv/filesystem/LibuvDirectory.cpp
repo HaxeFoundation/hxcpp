@@ -5,6 +5,14 @@
 
 namespace
 {
+    hx::asys::filesystem::FileAccessMode operator&(hx::asys::filesystem::FileAccessMode lhs, hx::asys::filesystem::FileAccessMode rhs)
+    {
+        return
+            static_cast<hx::asys::filesystem::FileAccessMode>(
+                static_cast<std::underlying_type_t<hx::asys::filesystem::FileAccessMode>>(lhs) &
+                static_cast<std::underlying_type_t<hx::asys::filesystem::FileAccessMode>>(rhs));
+    }
+
     class LibuvDirectory_obj : public hx::asys::filesystem::Directory_obj
     {
     public:
@@ -198,5 +206,92 @@ void hx::asys::filesystem::Directory_obj::create(Context ctx, String path, int p
             request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
             request.release();
         }
+    }
+}
+
+void hx::asys::filesystem::Directory_obj::move(Context ctx, String oldPath, String newPath, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto wrapper  = [](uv_fs_t* request) {
+        auto gcZone    = hx::AutoGCZone();
+        auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
+        auto spRequest = hx::asys::libuv::unique_fs_req(request);
+
+        if (spRequest->result < 0)
+        {
+            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
+        }
+        else
+        {
+            Dynamic(spData->cbSuccess.rooted)();
+        }
+    };
+
+    auto result = uv_fs_rename(libuvCtx->uvLoop, request.get(), oldPath.utf8_str(), newPath.utf8_str(), wrapper);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}
+
+void hx::asys::filesystem::Directory_obj::check(Context ctx, String path, FileAccessMode accessMode, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto wrapper  = [](uv_fs_t* request) {
+        auto gcZone    = hx::AutoGCZone();
+        auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
+        auto spRequest = hx::asys::libuv::unique_fs_req(request);
+
+        if (spRequest->result == UV_ENOENT || spRequest->result == UV_EACCES)
+        {
+            Dynamic(spData->cbSuccess.rooted)(false);
+        }
+        else if (spRequest->result < 0)
+        {
+            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
+        }
+        else
+        {
+            Dynamic(spData->cbSuccess.rooted)(true);
+        }
+    };
+
+    auto mode = 0;
+
+    if (static_cast<bool>(accessMode & hx::asys::filesystem::FileAccessMode::exists))
+    {
+        mode |= F_OK;
+    }
+    if (static_cast<bool>(accessMode & hx::asys::filesystem::FileAccessMode::executable))
+    {
+        mode |= X_OK;
+    }
+    if (static_cast<bool>(accessMode & hx::asys::filesystem::FileAccessMode::writable))
+    {
+        mode |= W_OK;
+    }
+    if (static_cast<bool>(accessMode & hx::asys::filesystem::FileAccessMode::readable))
+    {
+        mode |= R_OK;
+    }
+
+    auto result = uv_fs_access(libuvCtx->uvLoop, request.get(), path.utf8_str(), mode, wrapper);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
     }
 }
