@@ -76,23 +76,8 @@ namespace
         }
         void close(Dynamic cbSuccess, Dynamic cbFailure)
         {
-            auto wrapper = [](uv_fs_t* request) {
-                auto gcZone    = hx::AutoGCZone();
-                auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
-                auto spRequest = hx::asys::libuv::unique_fs_req(request);
-
-                if (spRequest->result < 0)
-                {
-                    Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
-                }
-                else
-                {
-                    Dynamic(spData->cbSuccess.rooted)();
-                }
-            };
-
             auto request = std::make_unique<uv_fs_t>();
-            auto result  = uv_fs_closedir(loop, request.get(), dir, wrapper);
+            auto result  = uv_fs_closedir(loop, request.get(), dir, hx::asys::libuv::basic_callback);
 
             if (result < 0)
             {
@@ -181,22 +166,7 @@ void hx::asys::filesystem::Directory_obj::create(Context ctx, String path, int p
     }
     else
     {
-        auto wrapper = [](uv_fs_t* request) {
-            auto gcZone    = hx::AutoGCZone();
-            auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
-            auto spRequest = hx::asys::libuv::unique_fs_req(request);
-
-            if (spRequest->result < 0)
-            {
-                Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
-            }
-            else
-            {
-                Dynamic(spData->cbSuccess.rooted)();
-            }
-        };
-
-        auto result = uv_fs_mkdir(libuvCtx->uvLoop, request.get(), path.utf8_str(), permissions, wrapper);
+        auto result = uv_fs_mkdir(libuvCtx->uvLoop, request.get(), path.utf8_str(), permissions, hx::asys::libuv::basic_callback);
         if (result < 0)
         {
             cbFailure(hx::asys::libuv::uv_err_to_enum(result));
@@ -213,22 +183,7 @@ void hx::asys::filesystem::Directory_obj::move(Context ctx, String oldPath, Stri
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto request  = std::make_unique<uv_fs_t>();
-    auto wrapper  = [](uv_fs_t* request) {
-        auto gcZone    = hx::AutoGCZone();
-        auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
-        auto spRequest = hx::asys::libuv::unique_fs_req(request);
-
-        if (spRequest->result < 0)
-        {
-            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
-        }
-        else
-        {
-            Dynamic(spData->cbSuccess.rooted)();
-        }
-    };
-
-    auto result = uv_fs_rename(libuvCtx->uvLoop, request.get(), oldPath.utf8_str(), newPath.utf8_str(), wrapper);
+    auto result   = uv_fs_rename(libuvCtx->uvLoop, request.get(), oldPath.utf8_str(), newPath.utf8_str(), hx::asys::libuv::basic_callback);
 
     if (result < 0)
     {
@@ -284,6 +239,40 @@ void hx::asys::filesystem::Directory_obj::check(Context ctx, String path, FileAc
     }
 
     auto result = uv_fs_access(libuvCtx->uvLoop, request.get(), path.utf8_str(), mode, wrapper);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}
+
+void hx::asys::filesystem::Directory_obj::deleteFile(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto result   = uv_fs_unlink(libuvCtx->uvLoop, request.get(), path.utf8_str(), hx::asys::libuv::basic_callback);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}
+
+void hx::asys::filesystem::Directory_obj::deleteDirectory(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto result   = uv_fs_rmdir(libuvCtx->uvLoop, request.get(), path.utf8_str(), hx::asys::libuv::basic_callback);
 
     if (result < 0)
     {

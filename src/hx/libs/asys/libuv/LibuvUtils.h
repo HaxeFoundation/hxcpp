@@ -22,4 +22,6 @@ namespace hx::asys::libuv
 
         BaseRequest(Dynamic _cbSuccess, Dynamic _cbFailure);
     };
+
+    void basic_callback(uv_fs_t* request);
 }
