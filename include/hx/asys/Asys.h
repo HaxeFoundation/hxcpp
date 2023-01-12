@@ -59,6 +59,8 @@ namespace hx
                 static void check(Context ctx, String path, FileAccessMode accessMode, Dynamic cbSuccess, Dynamic cbFailure);
                 static void deleteFile(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
                 static void deleteDirectory(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
+                static void isDirectory(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
+                static void isFile(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual void next(int batch, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;

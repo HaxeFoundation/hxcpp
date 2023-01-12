@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <memory>
 #include <filesystem>
+#include <functional>
 #include "../LibuvUtils.h"
 
 namespace
@@ -11,6 +12,26 @@ namespace
             static_cast<hx::asys::filesystem::FileAccessMode>(
                 static_cast<std::underlying_type_t<hx::asys::filesystem::FileAccessMode>>(lhs) &
                 static_cast<std::underlying_type_t<hx::asys::filesystem::FileAccessMode>>(rhs));
+    }
+
+    void check_type_callback(int type, uv_fs_t* request)
+    {
+        auto gcZone    = hx::AutoGCZone();
+        auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
+        auto spRequest = hx::asys::libuv::unique_fs_req(request);
+
+        if (spRequest->result == UV_ENOENT)
+        {
+            Dynamic(spData->cbSuccess.rooted)(false);
+        }
+        else if (spRequest->result < 0)
+        {
+            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
+        }
+        else
+        {
+            Dynamic(spData->cbSuccess.rooted)((spRequest->statbuf.st_mode & S_IFMT) == type);
+        }
     }
 
     class LibuvDirectory_obj : public hx::asys::filesystem::Directory_obj
@@ -273,6 +294,44 @@ void hx::asys::filesystem::Directory_obj::deleteDirectory(Context ctx, String pa
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto request  = std::make_unique<uv_fs_t>();
     auto result   = uv_fs_rmdir(libuvCtx->uvLoop, request.get(), path.utf8_str(), hx::asys::libuv::basic_callback);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}
+
+void hx::asys::filesystem::Directory_obj::isDirectory(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto wrapper  = [](uv_fs_t* request) { check_type_callback(S_IFDIR, request); };
+
+    auto result = uv_fs_stat(libuvCtx->uvLoop, request.get(), path.utf8_str(), wrapper);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}
+
+void hx::asys::filesystem::Directory_obj::isFile(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto wrapper  = [](uv_fs_t* request) { check_type_callback(S_IFREG, request); };
+
+    auto result = uv_fs_stat(libuvCtx->uvLoop, request.get(), path.utf8_str(), wrapper);
 
     if (result < 0)
     {
