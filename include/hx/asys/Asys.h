@@ -61,6 +61,9 @@ namespace hx
                 static void deleteDirectory(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
                 static void isDirectory(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
                 static void isFile(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
+                static void isLink(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
+                static void setLinkOwner(Context ctx, String path, int user, int group, Dynamic cbSuccess, Dynamic cbFailure);
+                static void link(Context ctx, String target, String path, int type, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual void next(int batch, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;

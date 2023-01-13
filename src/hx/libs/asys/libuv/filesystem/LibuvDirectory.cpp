@@ -343,3 +343,58 @@ void hx::asys::filesystem::Directory_obj::isFile(Context ctx, String path, Dynam
         request.release();
     }
 }
+
+void hx::asys::filesystem::Directory_obj::isLink(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto wrapper  = [](uv_fs_t* request) { check_type_callback(S_IFLNK, request); };
+
+    auto result = uv_fs_stat(libuvCtx->uvLoop, request.get(), path.utf8_str(), wrapper);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}
+
+void hx::asys::filesystem::Directory_obj::setLinkOwner(Context ctx, String path, int user, int group, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto result   = uv_fs_lchown(libuvCtx->uvLoop, request.get(), path.utf8_str(), user, group, hx::asys::libuv::basic_callback);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}
+
+void hx::asys::filesystem::Directory_obj::link(Context ctx, String target, String path, int type, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto result   = type == 0
+        ? uv_fs_link(libuvCtx->uvLoop, request.get(), target.utf8_str(), path.utf8_str(), hx::asys::libuv::basic_callback)
+        : uv_fs_symlink(libuvCtx->uvLoop, request.get(), target.utf8_str(), path.utf8_str(), 0, hx::asys::libuv::basic_callback);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}
