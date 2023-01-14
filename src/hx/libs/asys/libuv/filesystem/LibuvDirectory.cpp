@@ -477,3 +477,20 @@ void hx::asys::filesystem::Directory_obj::readLink(Context ctx, String path, Dyn
         request.release();
     }
 }
+
+void hx::asys::filesystem::Directory_obj::copyFile(Context ctx, String source, String destination, bool overwrite, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto request  = std::make_unique<uv_fs_t>();
+    auto result   = uv_fs_copyfile(libuvCtx->uvLoop, request.get(), source.utf8_str(), destination.utf8_str(), overwrite ? 0 : UV_FS_COPYFILE_EXCL, hx::asys::libuv::basic_callback);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}

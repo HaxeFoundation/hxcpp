@@ -68,6 +68,7 @@ namespace hx
                 static void link(Context ctx, String target, String path, int type, Dynamic cbSuccess, Dynamic cbFailure);
                 static void linkInfo(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
                 static void readLink(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
+                static void copyFile(Context ctx, String source, String destination, bool overwrite, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual void next(int batch, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
