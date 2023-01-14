@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 HX_DECLARE_CLASS2(hx, asys, Context)
 HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
