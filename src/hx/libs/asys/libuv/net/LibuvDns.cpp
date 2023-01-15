@@ -2,6 +2,7 @@
 #include <array>
 #include <memory>
 #include "../LibuvUtils.h"
+#include "NetUtils.h"
 
 namespace
 {
@@ -16,26 +17,6 @@ namespace
             uv_freeaddrinfo(info);
         }
     };
-
-    sockaddr_in sockaddr_from_int(const int ip)
-    {
-        auto addr = sockaddr_in();
-        addr.sin_family = AF_INET;
-
-        std::memcpy(&addr.sin_addr, &ip, sizeof(int));
-
-        return addr;
-    }
-
-    sockaddr_in6 sockaddr_from_data(const Array<uint8_t> ip)
-    {
-        auto addr = sockaddr_in6();
-        addr.sin6_family = AF_INET6;
-
-        std::memcpy(&addr.sin6_addr, ip->getBase(), ip->size());
-
-        return addr;
-    }
 
     void hostname_callback(uv_getnameinfo_t* request, int status, const char* hostname, const char* service)
     {
@@ -54,7 +35,7 @@ namespace
     }
 }
 
-void hx::asys::net::resolve(Context ctx, String host, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::dns::resolve(Context ctx, String host, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto data     = std::make_unique<hx::asys::libuv::BaseRequest>(cbSuccess, cbFailure);
@@ -129,13 +110,13 @@ void hx::asys::net::resolve(Context ctx, String host, Dynamic cbSuccess, Dynamic
     }
 }
 
-void hx::asys::net::reverse(Context ctx, int ip, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::dns::reverse(Context ctx, int ip, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto data     = std::make_unique<hx::asys::libuv::BaseRequest>(cbSuccess, cbFailure);
     auto request  = std::make_unique<uv_getnameinfo_t>();
     
-    auto addr   = sockaddr_from_int(ip);
+    auto addr   = hx::asys::libuv::net::sockaddr_from_int(ip);
     auto result = uv_getnameinfo(libuvCtx->uvLoop, request.get(), hostname_callback, reinterpret_cast<sockaddr*>(&addr), 0);
 
     if (result < 0)
@@ -151,13 +132,13 @@ void hx::asys::net::reverse(Context ctx, int ip, Dynamic cbSuccess, Dynamic cbFa
     }
 }
 
-void hx::asys::net::reverse(Context ctx, Array<uint8_t> ip, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::dns::reverse(Context ctx, Array<uint8_t> ip, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto data     = std::make_unique<hx::asys::libuv::BaseRequest>(cbSuccess, cbFailure);
     auto request  = std::make_unique<uv_getnameinfo_t>();
     
-    auto addr   = sockaddr_from_data(ip);
+    auto addr   = hx::asys::libuv::net::sockaddr_from_data(ip);
     auto result = uv_getnameinfo(libuvCtx->uvLoop, request.get(), hostname_callback, reinterpret_cast<sockaddr*>(&addr), 0);
 
     if (result < 0)
@@ -170,33 +151,5 @@ void hx::asys::net::reverse(Context ctx, Array<uint8_t> ip, Dynamic cbSuccess, D
 
         request.release();
         data.release();
-    }
-}
-
-String hx::asys::net::ipName(const int ip)
-{
-    auto addr   = sockaddr_from_int(ip);
-    auto buffer = std::array<char, UV_IF_NAMESIZE>();
-    if (0 > uv_ip4_name(&addr, buffer.data(), buffer.size()))
-    {
-        return null();
-    }
-    else
-    {
-        return String::create(buffer.data());
-    }
-}
-
-String hx::asys::net::ipName(const Array<uint8_t> ip)
-{
-    auto addr   = sockaddr_from_data(ip);
-    auto buffer = std::array<char, UV_IF_NAMESIZE>();
-    if (0 > uv_ip6_name(&addr, buffer.data(), buffer.size()))
-    {
-        return null();
-    }
-    else
-    {
-        return String::create(buffer.data());
     }
 }

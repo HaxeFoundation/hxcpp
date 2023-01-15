@@ -133,6 +133,8 @@
         <file name='${this_dir}/Event.cpp'/>
         <file name='${this_dir}/LibuvUtils.cpp'/>
         <file name='${this_dir}/net/LibuvDns.cpp'/>
+        <file name='${this_dir}/net/LibuvIp.cpp'/>
+        <file name='${this_dir}/net/NetUtils.cpp'/>
         <file name='${this_dir}/filesystem/LibuvFile.cpp'/>
         <file name='${this_dir}/filesystem/LibuvDirectory.cpp'/>
     </files>

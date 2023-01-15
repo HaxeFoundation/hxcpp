@@ -78,12 +78,19 @@ namespace hx
 
         namespace net
         {
-            void resolve(Context ctx, String host, Dynamic cbSuccess, Dynamic cbFailure);
-            void reverse(Context ctx, int ip, Dynamic cbSuccess, Dynamic cbFailure);
-            void reverse(Context ctx, Array<uint8_t> ip, Dynamic cbSuccess, Dynamic cbFailure);
+            namespace dns
+            {
+                void resolve(Context ctx, String host, Dynamic cbSuccess, Dynamic cbFailure);
+                void reverse(Context ctx, int ip, Dynamic cbSuccess, Dynamic cbFailure);
+                void reverse(Context ctx, Array<uint8_t> ip, Dynamic cbSuccess, Dynamic cbFailure);
+            }
 
-            String ipName(int ip);
-            String ipName(const Array<uint8_t> ip);
+            namespace ip
+            {
+                hx::EnumBase parse(String ip);
+                String name(int ip);
+                String name(const Array<uint8_t> ip);
+            }
         }
     }
 }
