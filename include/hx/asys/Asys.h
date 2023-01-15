@@ -75,5 +75,15 @@ namespace hx
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
         }
+
+        namespace net
+        {
+            void resolve(Context ctx, String host, Dynamic cbSuccess, Dynamic cbFailure);
+
+            String ipName(int ip);
+            String ipName(const Array<uint8_t> ip);
+            // static void reverse(Context ctx, int ip, Dynamic cbSuccess, Dynamic cbFailure);
+            // static void reverse(Context ctx, Array<uint8_t> ip, Dynamic cbSuccess, Dynamic cbFailure);
+        }
     }
 }
