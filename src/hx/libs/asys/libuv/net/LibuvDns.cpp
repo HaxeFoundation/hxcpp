@@ -60,22 +60,12 @@ void hx::asys::net::dns::resolve(Context ctx, String host, Dynamic cbSuccess, Dy
                 switch (info->ai_addr->sa_family)
                 {
                     case AF_INET: {
-                        auto data = reinterpret_cast<sockaddr_in*>(info->ai_addr);
-                        auto ip   = 0;
-
-                        std::memcpy(&ip, &data->sin_addr, sizeof(IN_ADDR));
-
-                        ips->Add(hx::asys::libuv::create(HX_CSTRING("INET"), 0, 1)->_hx_init(0, ip));
+                        ips->Add(hx::asys::libuv::net::ip_from_sockaddr(reinterpret_cast<sockaddr_in*>(info->ai_addr)));
                         break;
                     }
 
                     case AF_INET6: {
-                        auto data  = reinterpret_cast<sockaddr_in6*>(info->ai_addr);
-                        auto bytes = new Array_obj<uint8_t>(0, 0);
-
-                        bytes->memcpy(0, reinterpret_cast<uint8_t*>(&data->sin6_addr), sizeof(IN6_ADDR));
-
-                        ips->Add(hx::asys::libuv::create(HX_CSTRING("INET6"), 1, 1)->_hx_init(0, bytes));
+                        ips->Add(hx::asys::libuv::net::ip_from_sockaddr(reinterpret_cast<sockaddr_in6*>(info->ai_addr)));
                         break;
                     }
 
