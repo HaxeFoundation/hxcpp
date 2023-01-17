@@ -5,6 +5,7 @@
 HX_DECLARE_CLASS2(hx, asys, Context)
 HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
+HX_DECLARE_CLASS4(hx, asys, net, tcp, Socket)
 
 namespace hx
 {
@@ -90,6 +91,21 @@ namespace hx
                 hx::EnumBase parse(String ip);
                 String name(int ip);
                 String name(const Array<uint8_t> ip);
+            }
+
+            namespace tcp
+            {
+                class Socket_obj : public Object
+                {
+                public:
+                    static void connect(Context ctx, const String host, int port, const hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
+                    static void connect(Context ctx, const String path, const hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
+
+                    virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                    virtual void write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                    virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                    virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                };
             }
         }
     }

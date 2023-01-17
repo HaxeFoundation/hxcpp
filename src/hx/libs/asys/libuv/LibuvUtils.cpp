@@ -89,3 +89,8 @@ void hx::asys::libuv::basic_callback(uv_fs_t* request)
         Dynamic(spData->cbSuccess.rooted)();
     }
 }
+
+void hx::asys::libuv::clean_handle(uv_handle_t *handle)
+{
+    delete handle;
+}
