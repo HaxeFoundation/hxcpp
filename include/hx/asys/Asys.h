@@ -107,8 +107,9 @@ namespace hx
                 class Socket_obj : public Object
                 {
                 public:
-                    static void connect(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
-                    static void connect(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure);
+                    static void connect_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
+                    static void connect_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
+                    static void connect_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure);
 
                     virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                     virtual void write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
