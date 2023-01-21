@@ -11,6 +11,9 @@ namespace hx
 {
     namespace asys
     {
+        using Ipv4Address = int;
+        using Ipv6Address = Array<uint8_t>;
+
         class Context_obj : public Object
         {
         public:
@@ -81,30 +84,40 @@ namespace hx
         {
             namespace dns
             {
-                void resolve(Context ctx, String host, Dynamic cbSuccess, Dynamic cbFailure);
-                void reverse(Context ctx, int ip, Dynamic cbSuccess, Dynamic cbFailure);
-                void reverse(Context ctx, Array<uint8_t> ip, Dynamic cbSuccess, Dynamic cbFailure);
+                void resolve(Context ctx, const String host, Dynamic cbSuccess, Dynamic cbFailure);
+                void reverse(Context ctx, const Ipv4Address ip, Dynamic cbSuccess, Dynamic cbFailure);
+                void reverse(Context ctx, const Ipv6Address ip, Dynamic cbSuccess, Dynamic cbFailure);
             }
 
             namespace ip
             {
-                hx::EnumBase parse(String ip);
-                String name(int ip);
-                String name(const Array<uint8_t> ip);
+                hx::EnumBase parse(const String ip);
+                String name(const Ipv4Address ip);
+                String name(const Ipv6Address ip);
             }
 
             namespace tcp
             {
+                enum class BufferType : std::uint8_t
+                {
+                    send = 0,
+                    receive = 1
+                };
+
                 class Socket_obj : public Object
                 {
                 public:
-                    static void connect(Context ctx, const String host, int port, const hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
-                    static void connect(Context ctx, const String path, const hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
+                    static void connect(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
+                    static void connect(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure);
 
                     virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                     virtual void write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                     virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                     virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+                    // virtual void setBufferSize(BufferType type, int size) = 0;
+                    // virtual void setKeepAlive(bool enabled) = 0;
+                    // virtual void setNangle(bool enabled) = 0;
                 };
             }
         }

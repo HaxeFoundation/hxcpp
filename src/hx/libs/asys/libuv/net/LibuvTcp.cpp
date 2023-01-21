@@ -204,7 +204,7 @@ namespace
     };
 }
 
-void hx::asys::net::tcp::Socket_obj::connect(Context ctx, const String host, int port, const hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::tcp::Socket_obj::connect(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto connect  = std::make_unique<uv_connect_t>();
@@ -252,9 +252,4 @@ void hx::asys::net::tcp::Socket_obj::connect(Context ctx, const String host, int
         connect.release();
         socket.release();
     }
-}
-
-void hx::asys::net::tcp::Socket_obj::connect(Context ctx, const String path, const hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure)
-{
-    //
 }

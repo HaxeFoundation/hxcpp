@@ -100,7 +100,7 @@ void hx::asys::net::dns::resolve(Context ctx, String host, Dynamic cbSuccess, Dy
     }
 }
 
-void hx::asys::net::dns::reverse(Context ctx, int ip, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::dns::reverse(Context ctx, const Ipv4Address ip, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto data     = std::make_unique<hx::asys::libuv::BaseRequest>(cbSuccess, cbFailure);
@@ -122,7 +122,7 @@ void hx::asys::net::dns::reverse(Context ctx, int ip, Dynamic cbSuccess, Dynamic
     }
 }
 
-void hx::asys::net::dns::reverse(Context ctx, Array<uint8_t> ip, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::dns::reverse(Context ctx, const Ipv6Address ip, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto data     = std::make_unique<hx::asys::libuv::BaseRequest>(cbSuccess, cbFailure);

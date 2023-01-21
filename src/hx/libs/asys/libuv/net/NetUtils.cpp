@@ -3,20 +3,22 @@
 #include "../LibuvUtils.h"
 #include <memory>
 
-sockaddr_in hx::asys::libuv::net::sockaddr_from_int(const int ip)
+sockaddr_in hx::asys::libuv::net::sockaddr_from_int(const Ipv4Address ip, const int port)
 {
     auto addr = sockaddr_in();
     addr.sin_family = AF_INET;
+    addr.sin_port   = port;
 
     std::memcpy(&addr.sin_addr, &ip, sizeof(int));
 
     return addr;
 }
 
-sockaddr_in6 hx::asys::libuv::net::sockaddr_from_data(const Array<uint8_t> ip)
+sockaddr_in6 hx::asys::libuv::net::sockaddr_from_data(const Ipv6Address ip, const int port)
 {
     auto addr = sockaddr_in6();
     addr.sin6_family = AF_INET6;
+    addr.sin6_port   = port;
 
     std::memcpy(&addr.sin6_addr, ip->getBase(), ip->size());
 

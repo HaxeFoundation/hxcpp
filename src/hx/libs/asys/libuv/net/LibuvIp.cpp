@@ -4,7 +4,7 @@
 #include "../LibuvUtils.h"
 #include "NetUtils.h"
 
-String hx::asys::net::ip::name(const int ip)
+String hx::asys::net::ip::name(const Ipv4Address ip)
 {
     auto addr   = hx::asys::libuv::net::sockaddr_from_int(ip);
     auto buffer = std::array<char, UV_IF_NAMESIZE>();
@@ -18,7 +18,7 @@ String hx::asys::net::ip::name(const int ip)
     }
 }
 
-String hx::asys::net::ip::name(const Array<uint8_t> ip)
+String hx::asys::net::ip::name(const Ipv6Address ip)
 {
     auto addr   = hx::asys::libuv::net::sockaddr_from_data(ip);
     auto buffer = std::array<char, UV_IF_NAMESIZE>();
