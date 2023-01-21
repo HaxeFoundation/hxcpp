@@ -7,7 +7,7 @@
 
 namespace
 {
-    class LibuvTcpSocket;
+    class LibuvSocket;
 
     struct QueuedRead : hx::asys::libuv::BaseRequest
     {
@@ -23,17 +23,17 @@ namespace
         {}
     };
 
-    struct TcpStream
+    struct SocketData
     {
-        hx::RootedObject<LibuvTcpSocket> tcp;
+        hx::RootedObject<LibuvSocket> tcp;
         std::vector<std::vector<char>> staging;
 
-        TcpStream(LibuvTcpSocket* _tcp)
+        SocketData(LibuvSocket* _tcp)
             : tcp(_tcp)
             , staging(std::vector<std::vector<char>>()) {}
     };
 
-    class LibuvTcpSocket : public hx::asys::net::tcp::Socket_obj
+    class LibuvSocket : public hx::asys::net::Socket_obj
     {
     private:
         cpp::Pointer<uv_stream_t> handle;
@@ -57,12 +57,12 @@ namespace
         }
 
     public:
-        LibuvTcpSocket(cpp::Pointer<uv_stream_t> _handle)
+        LibuvSocket(cpp::Pointer<uv_stream_t> _handle)
             : handle(_handle)
             , queue(std::deque<QueuedRead>())
             , buffer(std::make_unique<std::vector<uint8_t>>())
         {
-            handle->ptr->data = new TcpStream(this);
+            handle->ptr->data = new SocketData(this);
         }
 
         void addToBuffer(const ssize_t len, const uv_buf_t* read)
@@ -100,7 +100,7 @@ namespace
 
             if (queue.empty())
             {
-                delete static_cast<TcpStream*>(handle->ptr->data);
+                delete static_cast<SocketData*>(handle->ptr->data);
 
                 uv_read_stop(handle);
             }
@@ -120,7 +120,7 @@ namespace
                 queue.pop_front();
             }
 
-            delete static_cast<TcpStream*>(handle->ptr->data);
+            delete static_cast<SocketData*>(handle->ptr->data);
 
             uv_read_stop(handle);
         }
@@ -130,7 +130,7 @@ namespace
             if (queue.empty())
             {
                 auto alloc = [](uv_handle_t* handle, size_t suggested, uv_buf_t* buffer) {
-                    auto data = static_cast<TcpStream*>(handle->data);
+                    auto data = static_cast<SocketData*>(handle->data);
 
                     data->staging.emplace_back(suggested);
 
@@ -140,7 +140,7 @@ namespace
 
                 auto read = [](uv_stream_t* stream, ssize_t len, const uv_buf_t* read) {
                     auto gcZone = hx::AutoGCZone();
-                    auto data   = static_cast<TcpStream*>(stream->data);
+                    auto data   = static_cast<SocketData*>(stream->data);
 
                     if (len <= 0)
                     {
@@ -220,7 +220,7 @@ namespace
             }
             else
             {
-                Dynamic(spData->cbSuccess.rooted)(hx::asys::net::tcp::Socket(new LibuvTcpSocket(request->handle)));
+                Dynamic(spData->cbSuccess.rooted)(hx::asys::net::Socket(new LibuvSocket(request->handle)));
             }
         };
 
@@ -245,7 +245,7 @@ namespace
     }
 }
 
-void hx::asys::net::tcp::Socket_obj::connect_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::Socket_obj::connect_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto address = sockaddr_in();
     auto result  = uv_ip4_addr(host.utf8_str(), port, &address); 
@@ -260,7 +260,7 @@ void hx::asys::net::tcp::Socket_obj::connect_ipv4(Context ctx, const String host
     connect_impl(ctx, reinterpret_cast<sockaddr*>(&address), port, cbSuccess, cbFailure);
 }
 
-void hx::asys::net::tcp::Socket_obj::connect_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::Socket_obj::connect_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto address = sockaddr_in6();
     auto result  = uv_ip6_addr(host.utf8_str(), port, &address); 
@@ -273,4 +273,9 @@ void hx::asys::net::tcp::Socket_obj::connect_ipv6(Context ctx, const String host
     }
 
     connect_impl(ctx, reinterpret_cast<sockaddr*>(&address), port, cbSuccess, cbFailure);
+}
+
+void hx::asys::net::Socket_obj::connect_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    //
 }
