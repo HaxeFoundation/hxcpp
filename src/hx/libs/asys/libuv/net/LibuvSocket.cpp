@@ -203,26 +203,28 @@ namespace
         }
     };
 
+    void on_socket_connection(uv_connect_t* request, const int status)
+    {
+        auto gcZone    = hx::AutoGCZone();
+        auto spRequest = std::unique_ptr<uv_connect_t>(request);
+        auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
+
+        if (status < 0)
+        {
+            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
+        }
+        else
+        {
+            Dynamic(spData->cbSuccess.rooted)(hx::asys::net::Socket(new LibuvSocket(request->handle)));
+        }
+    }
+
     void connect_impl(hx::asys::Context ctx, const sockaddr* address, int port, Dynamic cbSuccess, Dynamic cbFailure)
     {
         auto libuvCtx = hx::asys::libuv::context(ctx);
         auto connect  = std::make_unique<uv_connect_t>();
         auto socket   = std::make_unique<uv_tcp_t>();
         auto result   = 0;
-        auto wrapper  = [](uv_connect_t* request, const int status) {
-            auto gcZone    = hx::AutoGCZone();
-            auto spRequest = std::unique_ptr<uv_connect_t>(request);
-            auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
-
-            if (status < 0)
-            {
-                Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
-            }
-            else
-            {
-                Dynamic(spData->cbSuccess.rooted)(hx::asys::net::Socket(new LibuvSocket(request->handle)));
-            }
-        };
 
         if ((result = uv_tcp_init(libuvCtx->uvLoop, socket.get())) < 0)
         {
@@ -231,7 +233,7 @@ namespace
             return;
         }
 
-        if ((result = uv_tcp_connect(connect.get(), socket.get(), address, wrapper)) < 0)
+        if ((result = uv_tcp_connect(connect.get(), socket.get(), address, &on_socket_connection)) < 0)
         {
             cbFailure(hx::asys::libuv::uv_err_to_enum(result));
         }
@@ -277,5 +279,24 @@ void hx::asys::net::Socket_obj::connect_ipv6(Context ctx, const String host, int
 
 void hx::asys::net::Socket_obj::connect_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure)
 {
-    //
+    auto libuvCtx = hx::asys::libuv::context(ctx);
+    auto connect  = std::make_unique<uv_connect_t>();
+    auto pipe     = std::make_unique<uv_pipe_t>();
+    auto result   = 0;
+
+    if ((result = uv_pipe_init(libuvCtx->uvLoop, pipe.get(), false)) < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+        return;
+    }
+    else
+    {
+        connect->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+
+        connect.release();
+        pipe.release();
+
+        uv_pipe_connect(connect.get(), pipe.get(), path.utf8_str(), &on_socket_connection);
+    }
 }
