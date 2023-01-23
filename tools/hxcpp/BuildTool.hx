@@ -1325,7 +1325,7 @@ class BuildTool
          process.exitCode();
          process.close();
 
-         if (output.indexOf("aarch64") > -1)
+         if ( (output.indexOf("aarch64") > -1) ||  (output.indexOf("arm64") > -1) )
          {
             return "arm64";
          }
