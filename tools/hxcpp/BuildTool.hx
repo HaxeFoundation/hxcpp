@@ -2050,7 +2050,7 @@ class BuildTool
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
-         set64(defines,m64);
+         set64(defines,m64, arm64);
          // Cross-compile?
          if (defines.exists("linux"))
          {
