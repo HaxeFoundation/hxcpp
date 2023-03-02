@@ -1172,7 +1172,7 @@ const ::String &::String::makePermanent() const
    {
       unsigned int myHash = hash();
       {
-         while(! HxAtomicExchangeIf(0,1,&sPermanentStringSetMutex) )
+         while(_hx_atomic_compare_exchange(&sPermanentStringSetMutex, 0, 1) != 0)
             __hxcpp_gc_safe_point();
          TNonGcStringSet *element = sPermanentStringSet->find(myHash ,  *this);
          sPermanentStringSetMutex = 0;
@@ -1198,7 +1198,7 @@ const ::String &::String::makePermanent() const
          const_cast<String *>(this)->__s = s;
       }
 
-      while(! HxAtomicExchangeIf(0,1,&sPermanentStringSetMutex) )
+      while(_hx_atomic_compare_exchange(&sPermanentStringSetMutex, 0, 1) != 0)
          __hxcpp_gc_safe_point();
       sPermanentStringSet->set(*this,null());
       sPermanentStringSetMutex = 0;

@@ -20,7 +20,12 @@ int EnumBase_obj::__FindArgCount(String inName)
    if (inName==HX_CSTRING("__")) return 0;
    return -1;
 }
-hx::Val EnumBase_obj::__Field(const String &inString, hx::PropertyAccess inCallProp) { return null(); }
+hx::Val EnumBase_obj::__Field(const String &inName, hx::PropertyAccess inCallProp)
+{
+   if (HX_FIELD_EQ(inName,"tag") ) { return ::hx::Val( _hx_tag ); }
+   if (HX_FIELD_EQ(inName,"index") ) { return ::hx::Val( index ); }
+   return null();
+}
 
 hx::Class hxEnumBase_obj__mClass;
 hx::Class &EnumBase_obj::__SGetClass() { return hxEnumBase_obj__mClass; }
@@ -136,6 +141,13 @@ void EnumBase_obj::__Visit(hx::VisitContext *__inCtx)
    #endif
 }
 #endif
+
+
+Dynamic EnumBase_obj::__GetItem(int inIndex) const
+{
+   return ((EnumBase_obj *)this)->_hx_getParamI(inIndex);
+}
+
 
 
 String EnumBase_obj::toString() {
