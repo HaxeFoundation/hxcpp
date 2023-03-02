@@ -930,17 +930,17 @@ int __hxcpp_GetCurrentThreadNumber()
 
 bool _hx_atomic_exchange_if(::cpp::Pointer<cpp::AtomicInt> inPtr, int test, int  newVal )
 {
-   return HxAtomicExchangeIf(test, newVal, inPtr);
+   return _hx_atomic_compare_exchange(inPtr, test, newVal) == test;
 }
 
 int _hx_atomic_inc(::cpp::Pointer<cpp::AtomicInt> inPtr )
 {
-   return HxAtomicInc(inPtr);
+   return _hx_atomic_add(inPtr, 1);
 }
 
 int _hx_atomic_dec(::cpp::Pointer<cpp::AtomicInt> inPtr )
 {
-   return HxAtomicDec(inPtr);
+   return _hx_atomic_sub(inPtr, 1);
 }
 
 
