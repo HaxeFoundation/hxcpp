@@ -96,7 +96,7 @@ class RunMain
          var isWindows = (new EReg("window","i")).match(os);
          var isMac = (new EReg("mac","i")).match(os);
          var isLinux = (new EReg("linux","i")).match(os);
-         var binDir = isWindows ? "Windows" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
+         var binDir = isWindows ? "Windows64" : isMac ? "Mac64" : isLinux ? "Linux64" : null;
          if (binDir!=null)
          {
             var compiled = 'bin/$binDir/BuildTool';
