@@ -16,7 +16,7 @@ setlocal enabledelayedexpansion
 		@echo HXCPP_VARS
 		@set
 	) else (
-		echo Warning: Could not find Visual Studio 2017 VsDevCmd
+		echo Warning: Could not find Visual Studio VsDevCmd
 	)
 ) else if exist "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
 	@call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" -arch=x86 -app_platform=Desktop -no_logo
