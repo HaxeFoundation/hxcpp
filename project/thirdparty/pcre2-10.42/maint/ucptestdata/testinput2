@@ -1,0 +1,19 @@
+find script Han
+find type Pe script Common scriptx Hangul
+find type Sk
+find type Pd
+find gbreak LVT
+find script Old_Uyghur
+find bidi PDF
+find bidi CS
+find bidi CS type Sm
+find bidi B
+find bidi FSI
+find bidi PDI
+find bidi RLI
+find bidi RLO
+find bidi S
+find bidi WS
+find script bopo
+find bool prependedconcatenationmark
+find bool pcm
