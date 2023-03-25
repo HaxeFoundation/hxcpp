@@ -1,30 +1,43 @@
 #include <hxcpp.h>
 #include <string.h>
 
-#ifndef PCRE_STATIC
-#define PCRE_STATIC
+#ifndef PCRE2_STATIC
+#define PCRE2_STATIC
 #endif
-#include <pcre.h>
+#ifndef PCRE2_CODE_UNIT_WIDTH
+#define PCRE2_CODE_UNIT_WIDTH 0
+#endif
+
+#include <pcre2.h>
 
 #define PCRE(o)      ((pcredata*)o.mPtr)
 
+static void regexp_compilation_error(String pattern, int error_code, size_t error_offset) {
+   PCRE2_UCHAR8 error_buffer[128];
+   pcre2_get_error_message_8(error_code, error_buffer, sizeof(error_buffer));
+   hx::Throw(HX_CSTRING("Regexp compilation error : ") + String((const char*)error_buffer) + HX_CSTRING(" in ") + pattern);
+}
 
 struct pcredata : public hx::Object
 {
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdPcreData };
 
-   pcre   *rUtf8;
+   pcre2_code_8   *rUtf8;
    #ifdef HX_SMART_STRINGS
-   pcre16 *rUtf16;
+   pcre2_code_16   *rUtf16;
    #endif
 
-   int nmatchs;
-   int *matchs;
+   int n_groups;
+   pcre2_match_data_8* match_data8;
+   #ifdef HX_SMART_STRINGS
+   pcre2_match_data_16* match_data16;
+   #endif
+
    unsigned int flags;
    String string;
    String expr;
 
-   void create8(pcre *inR, String inExpr, int inFlags)
+   void create8(pcre2_code_8 *inR, String inExpr, int inFlags)
    {
       rUtf8 = inR;
       #ifdef HX_SMART_STRINGS
@@ -34,17 +47,19 @@ struct pcredata : public hx::Object
       HX_OBJ_WB_GET(this, expr.raw_ref());
       flags = inFlags;
 
-
-      nmatchs = 0;
-      pcre_fullinfo(rUtf8,NULL,PCRE_INFO_CAPTURECOUNT,&nmatchs);
-      nmatchs++;
-      matchs = (int*)malloc(sizeof(int) * 3 * nmatchs);
+      n_groups = 0;
+      pcre2_pattern_info_8(rUtf8,PCRE2_INFO_CAPTURECOUNT,&n_groups);
+      n_groups++;
+      match_data8 = pcre2_match_data_create_from_pattern_8(rUtf8, NULL);
+      #ifdef HX_SMART_STRINGS
+      match_data16 = 0;
+      #endif
 
       _hx_set_finalizer(this, finalize);
    }
 
    #ifdef HX_SMART_STRINGS
-   void create16(pcre16 *inR, String inExpr, int inFlags)
+   void create16(pcre2_code_16 *inR, String inExpr, int inFlags)
    {
       rUtf8 = 0;
       rUtf16 = inR;
@@ -52,15 +67,15 @@ struct pcredata : public hx::Object
       HX_OBJ_WB_GET(this, expr.raw_ref());
       flags = inFlags;
 
-      nmatchs = 0;
-      pcre16_fullinfo(rUtf16,NULL,PCRE_INFO_CAPTURECOUNT,&nmatchs);
-      nmatchs++;
-      matchs = (int*)malloc(sizeof(int) * 3 * nmatchs);
+      n_groups = 0;
+      pcre2_pattern_info_8(rUtf8,PCRE2_INFO_CAPTURECOUNT,&n_groups);
+      n_groups++;
+      match_data8 = 0;
+      match_data16 = pcre2_match_data_create_from_pattern_16(rUtf16, NULL);
 
       _hx_set_finalizer(this, finalize);
    }
    #endif
-
 
    bool run(String string,int pos,int len)
    {
@@ -69,41 +84,53 @@ struct pcredata : public hx::Object
       {
          if (!rUtf16)
          {
-            const char *error = 0;
-            int err_offset = 0;
+            int error_code;
+            size_t error_offset;
             hx::strbuf buf;
-            rUtf16 = pcre16_compile((PCRE_SPTR16)expr.wc_str(&buf),flags|PCRE_UTF16,&error,&err_offset,NULL);
-            if (!rUtf16)
-            {
-               return false;
+            rUtf16 = pcre2_compile_16((PCRE2_SPTR16)expr.wc_str(&buf),expr.length,flags,&error_code,&error_offset,NULL);
+            if (!rUtf16) {
+               regexp_compilation_error(expr,error_code,error_offset);
             }
+            match_data16 = pcre2_match_data_create_from_pattern_16(rUtf16, NULL);
          }
 
-         int n =  pcre16_exec(rUtf16,NULL,(const unsigned short *)string.raw_wptr(),pos+len,pos,PCRE_NO_UTF16_CHECK,matchs,nmatchs * 3);
+         int n = pcre2_match_16(rUtf16,(PCRE2_SPTR16)string.raw_wptr(),pos+len,pos,PCRE2_NO_UTF_CHECK,match_data16,NULL);
          return n>=0;
       }
 
       if (!rUtf8)
       {
-         rUtf8 =  pcre_compile(expr.utf8_str(),flags|PCRE_UTF8,0,0,0);
-         if (!rUtf8)
-            return false;
+         int error_code;
+         size_t error_offset;
+         rUtf8 = pcre2_compile_8((PCRE2_SPTR8)expr.utf8_str(),expr.length,flags,&error_code,&error_offset,NULL);
+         if (!rUtf8) {
+            regexp_compilation_error(expr,error_code,error_offset);
+         }
+         match_data8 = pcre2_match_data_create_from_pattern_8(rUtf8, NULL);
       }
 
       #endif
-      return pcre_exec(rUtf8,NULL,string.utf8_str(),pos+len,pos,PCRE_NO_UTF8_CHECK,matchs,nmatchs * 3) >= 0;
+      return pcre2_match_8(rUtf8,(PCRE2_SPTR8)string.utf8_str(),pos+len,pos,PCRE2_NO_UTF_CHECK,match_data8,NULL) >= 0;
+   }
+
+   size_t* get_matches() {
+      #ifdef HX_SMART_STRINGS
+      if (string.isUTF16Encoded()) {
+         return pcre2_get_ovector_pointer_16(match_data16);
+      }
+      #endif
+      return pcre2_get_ovector_pointer_8(match_data8);
    }
 
    void destroy()
    {
-      if (rUtf8)
-          pcre_free( rUtf8 );
+      pcre2_code_free_8( rUtf8 );
+      pcre2_match_data_free_8( match_data8 );
+
       #ifdef HX_SMART_STRINGS
-      if (rUtf16)
-          pcre16_free( rUtf16 );
+      pcre2_code_free_16( rUtf16 );
+      pcre2_match_data_free_16( match_data16 );
       #endif
-      if (matchs)
-         free(matchs);
    }
 
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(string); HX_MARK_MEMBER(expr); }
@@ -137,22 +164,22 @@ Dynamic _hx_regexp_new_options(String s, String opt)
 {
    hx::strbuf buf;
    const char *o = opt.utf8_str(&buf);
-   int options = PCRE_UCP;
+   int options = PCRE2_UCP | PCRE2_UTF;
    while( *o )
    {
       switch( *o++ )
       {
       case 'i':
-         options |= PCRE_CASELESS;
+         options |= PCRE2_CASELESS;
          break;
       case 's':
-         options |= PCRE_DOTALL;
+         options |= PCRE2_DOTALL;
          break;
       case 'm':
-         options |= PCRE_MULTILINE;
+         options |= PCRE2_MULTILINE;
          break;
       case 'g':
-         options |= PCRE_UNGREEDY;
+         options |= PCRE2_UNGREEDY;
          break;
       case 'u':
          break;
@@ -165,11 +192,12 @@ Dynamic _hx_regexp_new_options(String s, String opt)
    #ifdef HX_SMART_STRINGS
    if (s.isUTF16Encoded())
    {
-      const char *error = 0;
-      int err_offset = 0;
-      pcre16 *p =  pcre16_compile((PCRE_SPTR16)s.raw_wptr(),options|PCRE_UTF16,&error,&err_offset,NULL);
-      if( !p )
-         hx::Throw( HX_CSTRING("Regexp compilation error : ")+String(error)+HX_CSTRING(" in ")+s);
+      int error_code;
+      size_t error_offset;
+      pcre2_code_16 *p = pcre2_compile_16((PCRE2_SPTR16)s.raw_wptr(),s.length,options,&error_code,&error_offset,NULL);
+      if( !p ) {
+         regexp_compilation_error(s,error_code,error_offset);
+      }
 
       pcredata *pdata = new pcredata;
       pdata->create16(p,s,options);
@@ -178,12 +206,12 @@ Dynamic _hx_regexp_new_options(String s, String opt)
    else
    #endif
    {
-      const char *error = 0;
-      int err_offset = 0;
-
-      pcre *p =  pcre_compile(s.utf8_str(),options|PCRE_UTF8,&error,&err_offset,NULL);
-      if( !p )
-         hx::Throw( HX_CSTRING("Regexp compilation error : ")+String(error)+HX_CSTRING(" in ")+s);
+      int error_code = 0;
+      size_t error_offset;
+      pcre2_code_8 *p =  pcre2_compile_8((PCRE2_SPTR8)s.utf8_str(),s.length,options,&error_code,&error_offset,NULL);
+      if( !p ) {
+         regexp_compilation_error(s,error_code,error_offset);
+      }
 
       pcredata *pdata = new pcredata;
       pdata->create8(p,s,options);
@@ -215,11 +243,12 @@ String  _hx_regexp_matched(Dynamic handle, int m)
 {
    pcredata *d = PCRE(handle);
 
-   if( m < 0 || m >= d->nmatchs || !d->string.raw_ptr() )
+   if( m < 0 || m >= d->n_groups || !d->string.raw_ptr() )
       hx::Throw( HX_CSTRING("regexp_matched - no valid match"));
 
-   int start = d->matchs[m*2];
-   int len = d->matchs[m*2+1] - start;
+   size_t* matches = d->get_matches();
+   int start = matches[m*2];
+   int len = matches[m*2+1] - start;
    if( start == -1 )
       return String();
    return d->string.substr(start, len);
@@ -233,11 +262,12 @@ String  _hx_regexp_matched(Dynamic handle, int m)
 Dynamic _hx_regexp_matched_pos(Dynamic handle, int m)
 {
    pcredata *d = PCRE(handle);
-   if( m < 0 || m >= d->nmatchs || !d->string.raw_ptr() )
+   if (m < 0 || m >= d->n_groups || !d->string.raw_ptr())
       return null();
 
-   int start = d->matchs[m*2];
-   int len = d->matchs[m*2+1] - start;
+   size_t* matches = d->get_matches();
+   int start = matches[m*2];
+   int len = matches[m*2+1] - start;
 
    return hx::Anon_obj::Create(2)
             ->setFixed(0,HX_("len",d5,4b,52,00),len)
@@ -252,11 +282,11 @@ Dynamic _hx_regexp_matched_pos(Dynamic handle, int m)
 int _hx_regexp_matched_num(Dynamic handle)
 {
    pcredata *d = PCRE(handle);
-   
+
    if( !d->string.raw_ptr() )
       return -1;
    else
-      return d->nmatchs;
+      return d->n_groups;
 }
 
 
