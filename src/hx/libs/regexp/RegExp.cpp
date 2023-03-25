@@ -1,12 +1,8 @@
 #include <hxcpp.h>
 #include <string.h>
 
-#ifndef PCRE2_STATIC
 #define PCRE2_STATIC
-#endif
-#ifndef PCRE2_CODE_UNIT_WIDTH
 #define PCRE2_CODE_UNIT_WIDTH 0
-#endif
 
 #include <pcre2.h>
 

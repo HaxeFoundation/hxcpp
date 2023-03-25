@@ -2,53 +2,43 @@
 
 <pragma once="true" />
 
-<set name="PCRE_DIR" value="${HXCPP}/project/thirdparty/pcre2-10.42" />
+<set name="PCRE_DIR" value="${HXCPP}/project/thirdparty/pcre2-10.42/src" />
 
-<files id="hxcpp_regexp" >
+<files id="pcre2-8" >
   <depend files="hxcpp-depends"/>
   <depend name="${this_dir}/Build.xml" dateOnly="true" />
   <cache value="true" asLibrary="true" />
 
-  <compilerflag value="-DHAVE_CONFIG_H"/>
-  <compilerflag value="-DPCRE2_STATIC" />
-  <compilerflag value="-DPCRE2_CODE_UNIT_WIDTH=0" />
+  <compilerflag value="-DPCRE2_CODE_UNIT_WIDTH=8" />
   <compilerflag value="-DSUPPORT_PCRE2_8" />
+
+  <include name="${this_dir}/pcre2_sources.xml" />
+</files>
+
+<files id="pcre2-16" >
+  <depend files="hxcpp-depends"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <cache value="true" asLibrary="true" />
+
+  <compilerflag value="-DPCRE2_CODE_UNIT_WIDTH=16" />
   <compilerflag value="-DSUPPORT_PCRE2_16" />
-  <compilerflag value="-DSUPPORT_UNICODE" />
-  <compilerflag value="-I${PCRE_DIR}/src"/>
+
+  <include name="${this_dir}/pcre2_sources.xml" />
+</files>
+
+<files id="hxcpp_regexp">
+  <depend files="hxcpp-depends"/>
+  <depend name="${this_dir}/Build.xml" dateOnly="true" />
+  <cache value="true" asLibrary="true" />
+
+  <compilerflag value="-I${PCRE_DIR}"/>
 
   <file name="${this_dir}/RegExp.cpp"/>
-
-  <file name="${PCRE_DIR}/src/pcre2_chartables.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_compile.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_config.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_context.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_convert.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_dfa_match.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_error.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_extuni.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_find_bracket.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_jit_compile.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_maketables.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_match.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_match_data.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_newline.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_ord2utf.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_pattern_info.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_script_run.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_serialize.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_string_utils.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_study.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_substitute.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_substring.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_tables.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_ucd.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_valid_utf.c"/>
-  <file name="${PCRE_DIR}/src/pcre2_xclass.c"/>
-
 </files>
 
 <target id="haxe">
+  <files id="pcre2-8" />
+  <files id="pcre2-16" if="hxcpp_smart_strings" />
   <files id="hxcpp_regexp" />
 </target>
 
