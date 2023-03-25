@@ -37,9 +37,9 @@
 </files>
 
 <target id="haxe">
+  <files id="hxcpp_regexp" />
   <files id="pcre2-8" />
   <files id="pcre2-16" if="hxcpp_smart_strings" />
-  <files id="hxcpp_regexp" />
 </target>
 
 </xml>
