@@ -64,7 +64,7 @@ struct pcredata : public hx::Object
       flags = inFlags;
 
       n_groups = 0;
-      pcre2_pattern_info_8(rUtf8,PCRE2_INFO_CAPTURECOUNT,&n_groups);
+      pcre2_pattern_info_16(rUtf16,PCRE2_INFO_CAPTURECOUNT,&n_groups);
       n_groups++;
       match_data8 = 0;
       match_data16 = pcre2_match_data_create_from_pattern_16(rUtf16, NULL);
@@ -235,7 +235,7 @@ bool _hx_regexp_match(Dynamic handle, String string, int pos, int len)
    }
 }
 
-String  _hx_regexp_matched(Dynamic handle, int m)
+String _hx_regexp_matched(Dynamic handle, int m)
 {
    pcredata *d = PCRE(handle);
 
