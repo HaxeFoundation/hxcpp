@@ -239,6 +239,20 @@ class Test
       return ok();
    }
 
+   public static function testRegexpMixedUnicode() {
+      var success = true;
+
+      // when matching a utf8 subject string against a utf16 pattern and vice versa
+      for (pattern => subject in ["[A-Za-zÀ-ÖØ-öø-ÿ0-9]+" => "a", "[A-Z]+" => "ÀÖA"]) {
+         if (new EReg(pattern, "").match(subject)) {
+            v('"$subject" matches against ~/$pattern/');
+         } else {
+            return error('"$subject" does not match against ~/$pattern/');
+         }
+      }
+      return ok();
+   }
+
    public static function testSqlite()
    {
       log("Test sqlite");
@@ -960,6 +974,7 @@ class Test
          exitCode |= testDate();
          exitCode |= testCompress();
          exitCode |= testRegexp();
+         exitCode |= testRegexpMixedUnicode();
          exitCode |= testSqlite();
          exitCode |= testMysql();
          exitCode |= testRandom();
