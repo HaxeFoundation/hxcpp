@@ -98,7 +98,9 @@ struct pcredata : public hx::Object
       {
          int error_code;
          size_t error_offset;
-         rUtf8 = pcre2_compile_8((PCRE2_SPTR8)expr.utf8_str(),expr.length,flags,&error_code,&error_offset,NULL);
+         int utf8Length = 0;
+         PCRE2_SPTR8 utf8 = (PCRE2_SPTR8)expr.utf8_str(NULL, true, &utf8Length);
+         rUtf8 = pcre2_compile_8(utf8, utf8Length, flags, &error_code, &error_offset, NULL);
          if (!rUtf8) {
             regexp_compilation_error(expr,error_code,error_offset);
          }
