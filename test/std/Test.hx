@@ -272,7 +272,7 @@ class Test
 
       try
       {
-         cnx = Mysql.connect({ 
+         cnx = Mysql.connect({
             host : "localhost",
             port : 3306,
             user : "hxcpp",
@@ -751,7 +751,7 @@ class Test
       var buffer = Bytes.alloc(4);
       input.readBytes(buffer,0,4);
       v("client got " + buffer);
-      output.writeBytes( Bytes.ofString( buffer.toString() + "pong" ), 0, 8); 
+      output.writeBytes( Bytes.ofString( buffer.toString() + "pong" ), 0, 8);
       output.flush();
 
       v("bye");
@@ -897,63 +897,63 @@ class Test
 
    public static function testIntParsing()
    {
-		log("Test int parsing");
-		var val = Std.parseInt('0x1');
+      log("Test int parsing");
+      var val = Std.parseInt('0x1');
       if (val != 1)
       {
          error('parsed hex value was not 1, $val');
       }
-		var val = Std.parseInt(' 0x1');
+      var val = Std.parseInt(' 0x1');
       if (val != 1)
       {
          error('parsed hex value was not 1, $val');
       }
-		var val = Std.parseInt('\t0x1');
+      var val = Std.parseInt('\t0x1');
       if (val != 1)
       {
          error('parsed hex value was not 1, $val');
       }
-		var val = Std.parseInt('   0x');
+      var val = Std.parseInt('   0x');
       if (val != 0)
       {
          error('parsed hex value was not 0, $val');
       }
-		var val = Std.parseInt('   0xyz');
+      var val = Std.parseInt('   0xyz');
       if (val != 0)
       {
          error('parsed hex value was not 0, $val');
       }
-		var val = Std.parseInt('-0x1');
+      var val = Std.parseInt('-0x1');
       if (val != -1)
       {
          error('parsed hex value was not 1, $val');
       }
-		var val = Std.parseInt(' -0x1');
+      var val = Std.parseInt(' -0x1');
       if (val != -1)
       {
          error('parsed hex value was not 1, $val');
       }
-		var val = Std.parseInt('\t-0x1');
+      var val = Std.parseInt('\t-0x1');
       if (val != -1)
       {
          error('parsed hex value was not 1, $val');
       }
-		var val = Std.parseInt('   -0x');
+      var val = Std.parseInt('   -0x');
       if (val != 0)
       {
          error('parsed hex value was not 0, $val');
       }
-		var val = Std.parseInt('   -0xyz');
+      var val = Std.parseInt('   -0xyz');
       if (val != 0)
       {
          error('parsed hex value was not 0, $val');
       }
-		var val = Std.parseInt('  5');
+      var val = Std.parseInt('  5');
       if (val != 5)
       {
          error('parsed int value was not 5, $val');
       }
-		var val = Std.parseInt(' \t\n5');
+      var val = Std.parseInt(' \t\n5');
       if (val != 5)
       {
          error('parsed int value was not 5, $val');
