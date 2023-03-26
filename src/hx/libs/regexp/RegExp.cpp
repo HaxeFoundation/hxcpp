@@ -83,7 +83,9 @@ struct pcredata : public hx::Object
             int error_code;
             size_t error_offset;
             hx::strbuf buf;
-            rUtf16 = pcre2_compile_16((PCRE2_SPTR16)expr.wc_str(&buf),expr.length,flags,&error_code,&error_offset,NULL);
+            int utf16Length = 0;
+            PCRE2_SPTR16 utf16 = (PCRE2_SPTR16)expr.wc_str(&buf, &utf16Length);
+            rUtf16 = pcre2_compile_16((PCRE2_SPTR16)expr.wc_str(&buf),utf16Length,flags,&error_code,&error_offset,NULL);
             if (!rUtf16) {
                regexp_compilation_error(expr,error_code,error_offset);
             }
