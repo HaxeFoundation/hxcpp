@@ -1720,12 +1720,12 @@ wchar_t *ConvertToWChar(const char *inStr, int *ioLen)
 
 
 
-const char16_t * String::wc_str(hx::IStringAlloc *inBuffer, int* outByteLength) const
+const char16_t * String::wc_str(hx::IStringAlloc *inBuffer, int *outCharLength) const
 {
    #ifdef HX_SMART_STRINGS
    if (isUTF16Encoded()) {
-      if (outByteLength != 0) {
-         *outByteLength = length;
+      if (outCharLength != 0) {
+         *outCharLength = length;
       }
       return __w;
    }
@@ -1752,8 +1752,8 @@ const char16_t * String::wc_str(hx::IStringAlloc *inBuffer, int* outByteLength) 
       Char16AdvanceSet(o,code);
    }
    *o = 0;
-   if (outByteLength != 0) {
-      *outByteLength = char16Count;
+   if (outCharLength != 0) {
+      *outCharLength = char16Count;
    }
    return str;
 }

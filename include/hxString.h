@@ -166,7 +166,7 @@ public:
    inline const char *c_str() const { return utf8_str(); }
    inline const char *out_str(hx::IStringAlloc *inBuffer = 0) const { return utf8_str(inBuffer,false); }
    const wchar_t *wchar_str(hx::IStringAlloc *inBuffer = 0) const;
-   const char16_t *wc_str(hx::IStringAlloc *inBuffer = 0, int *outByteLength = 0) const;
+   const char16_t *wc_str(hx::IStringAlloc *inBuffer = 0, int *outCharLength = 0) const;
 
    const char *__CStr() const { return utf8_str(); };
    const wchar_t *__WCStr() const { return wchar_str(0); }
