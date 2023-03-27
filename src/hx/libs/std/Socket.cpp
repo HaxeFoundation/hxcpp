@@ -1215,8 +1215,7 @@ void _hx_std_socket_poll_events( Dynamic pdata, double timeout )
    if( select(0/* Ignored */, p->fdr->fd_count ? p->outr : 0, p->fdw->fd_count ?p->outw : 0,NULL,tt) == SOCKET_ERROR )
    {
       hx::ExitGCFreeZone();
-      hx::Throw( HX_CSTRING("Select error ") + String((int)WSAGetLastError()) );
-      //return;
+      return;
    }
    hx::ExitGCFreeZone();
 
