@@ -195,7 +195,7 @@ String Class_obj::__ToString() const { return mName; }
 
 Array<String> Class_obj::GetInstanceFields()
 {
-   Array<String> result = mSuper ? (*mSuper)->GetInstanceFields() : Array<String>(0,0);
+   Array<String> result = mSuper && (*mSuper).mPtr != this ? (*mSuper)->GetInstanceFields() : Array<String>(0,0);
    if (mMembers.mPtr)
       for(int m=0;m<mMembers->size();m++)
       {
