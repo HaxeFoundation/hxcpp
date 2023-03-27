@@ -250,7 +250,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
       //printf("Cmd %s\n",val_string(cmd));
       PROCESS_INFORMATION pinf;
       memset(&pinf,0,sizeof(pinf));
-      if( !CreateProcessW(NULL,(wchar_t *)name,NULL,NULL,TRUE,0,NULL,NULL,&sinf,&pinf) )
+      if( !CreateProcessW(NULL,(wchar_t *)name,NULL,NULL,TRUE,CREATE_NO_WINDOW,NULL,NULL,&sinf,&pinf) )
       {
          hx::ExitGCFreeZone();
          hx::Throw(HX_CSTRING("Could not start process"));
