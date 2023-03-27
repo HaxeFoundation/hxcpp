@@ -2,7 +2,7 @@
 
 <pragma once="true" />
 
-<set name="SQLITE_DIR" value="${HXCPP}/project/thirdparty/sqlite-3.23.1"/>
+<set name="SQLITE_DIR" value="${HXCPP}/project/thirdparty/sqlite-3.40.1"/>
 
 <files id="hxcpp_sqlite" dir="${this_dir}" >
   <depend files="hxcpp-depends"/>
