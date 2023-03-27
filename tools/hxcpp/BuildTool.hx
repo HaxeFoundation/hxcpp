@@ -1383,7 +1383,7 @@ class BuildTool
       {
          var cores = ~/Total Number of Cores: (\d+)/;
          var output = ProcessManager.runProcess("", "/usr/sbin/system_profiler", [ "-detailLevel", "full", "SPHardwareDataType" ], true, false, true, true);
-         if (cores.match(output))
+         if (output != null && cores.match(output))
          {
             result = cores.matched(1);
          }
