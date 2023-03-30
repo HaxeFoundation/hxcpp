@@ -45,7 +45,7 @@ typedef Linkers = Hash<Linker>;
 
 class BuildTool
 {
-   public inline static var SupportedVersion = 400;
+   public inline static var SupportedVersion = 430;
 
    var mDefines:Hash<String>;
    var mCurrentIncludeFile:String;
@@ -146,7 +146,7 @@ class BuildTool
          set64(mDefines,m64,arm64);
       }
 
-      Profile.setEntry("parse xml"); 
+      Profile.setEntry("parse xml");
 
       include("toolchain/setup.xml");
 
@@ -223,7 +223,7 @@ class BuildTool
 
       var cached = CompileCache.init(mDefines);
 
-      Profile.setEntry("setup cache"); 
+      Profile.setEntry("setup cache");
 
       if (inJob=="cache")
       {
@@ -271,14 +271,14 @@ class BuildTool
 
       if (inTargets.remove("clear"))
       {
-         Profile.setEntry("clear"); 
+         Profile.setEntry("clear");
          for(target in mTargets.keys())
             cleanTarget(target,false);
        }
 
       if (inTargets.remove("clean"))
       {
-         Profile.setEntry("clean"); 
+         Profile.setEntry("clean");
          for(target in mTargets.keys())
             cleanTarget(target,true);
       }
@@ -289,7 +289,7 @@ class BuildTool
          destination = null;
       }
 
-      Profile.setEntry("build"); 
+      Profile.setEntry("build");
       for(target in inTargets)
          buildTarget(target,destination);
 
@@ -1714,7 +1714,7 @@ class BuildTool
            }
       }
 
-      Profile.setEntry("setup"); 
+      Profile.setEntry("setup");
       Setup.initHXCPPConfig(defines);
 
       if (HXCPP=="" && env.exists("HXCPP"))
