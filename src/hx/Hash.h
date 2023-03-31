@@ -270,7 +270,7 @@ struct HashRoot : public Object
     HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdHash };
 
    virtual void updateAfterGc() = 0;
-   
+
    inline int getSize() { return size; }
 };
 
@@ -328,7 +328,7 @@ struct Hash : public HashBase< typename ELEMENT::Key >
    using HashRoot::mask;
    using HashRoot::bucketCount;
    using HashRoot::getSize;
-   
+
    typedef typename ELEMENT::Key   Key;
    typedef typename ELEMENT::Value Value;
    typedef typename ArrayValueOf<Value>::Value ArrayValue;
@@ -731,8 +731,13 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       {
          raw = inRaw;
          array = Array<String>(0,inReserve*4+1);
-         if (!raw)
+         if (!raw) {
+            #if (HXCPP_API_LEVEL >= 430)
+            array->push(HX_CSTRING("["));
+            #else
             array->push(HX_CSTRING("{ "));
+            #endif
+         }
       }
       void operator()(typename Hash::Element *elem)
       {
@@ -744,8 +749,13 @@ struct Hash : public HashBase< typename ELEMENT::Key >
       }
       ::String toString()
       {
-         if (!raw)
+         if (!raw) {
+            #if (HXCPP_API_LEVEL >= 430)
+            array->push(HX_CSTRING("]"));
+            #else
             array->push(HX_CSTRING(" }"));
+            #endif
+         }
          return array->length==0 ? String() : array->join(HX_CSTRING(""));
       }
    };

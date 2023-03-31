@@ -69,7 +69,7 @@ void __int_hash_set(HX_MAP_THIS_ARG,int inKey,const Dynamic &value)
          }
          else if (type==vtFloat)
          {
-            if (hash->store==hashInt || hash->store==hashFloat) 
+            if (hash->store==hashInt || hash->store==hashFloat)
                want = hashFloat;
          }
          else if (type==vtString)
@@ -280,8 +280,11 @@ String __int_hash_to_string(Dynamic &ioHash)
    IntHashBase *hash = static_cast<IntHashBase *>(ioHash.GetPtr());
    if (hash)
       return hash->toString();
+   #if (HXCPP_API_LEVEL >= 430)
+   return HX_CSTRING("[]");
+   #else
    return HX_CSTRING("{}");
-
+   #endif
 }
 
 void __int_hash_clear(Dynamic &ioHash)
@@ -889,7 +892,11 @@ String __string_hash_to_string(Dynamic &ioHash)
    StringHashBase *hash = static_cast<StringHashBase *>(ioHash.GetPtr());
    if (hash)
       return hash->toString();
+   #if (HXCPP_API_LEVEL >= 430)
+   return HX_CSTRING("[]");
+   #else
    return HX_CSTRING("{}");
+   #endif
 }
 
 String __string_hash_to_string_raw(Dynamic &ioHash)
@@ -999,7 +1006,7 @@ void __object_hash_set(HX_MAP_THIS_ARG,Dynamic inKey,const Dynamic &value,bool i
          }
          else if (type==vtFloat)
          {
-            if (hash->store==hashInt || hash->store==hashFloat) 
+            if (hash->store==hashInt || hash->store==hashFloat)
                want = hashFloat;
          }
          else if (type==vtString)
@@ -1228,8 +1235,11 @@ String __object_hash_to_string(Dynamic &ioHash)
    DynamicHashBase *hash = static_cast<DynamicHashBase *>(ioHash.GetPtr());
    if (hash)
       return hash->toString();
+   #if (HXCPP_API_LEVEL >= 430)
+   return HX_CSTRING("[]");
+   #else
    return HX_CSTRING("{}");
-
+   #endif
 }
 
 void __object_hash_clear(Dynamic &ioHash)
