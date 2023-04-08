@@ -33,7 +33,7 @@ template<>
 inline hx::Class &ClassOf<String>() { return GetStringClass(); }
 
 template<>
-inline hx::Class &ClassOf<::cpp::Int64>() { return GetInt64Class(); }
+inline hx::Class &ClassOf< ::cpp::Int64>() { return GetInt64Class(); }
 
 
 template<typename T>
