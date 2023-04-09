@@ -119,7 +119,10 @@ hx::asys::libuv::net::QueuedRead::QueuedRead(const Array<uint8_t> _array, const 
 }
 
 hx::asys::libuv::net::LibuvSocket::LibuvSocket(cpp::Pointer<uv_stream_t> _handle)
-    : handle(_handle)
+    : hx::asys::net::Socket_obj(
+        getName(reinterpret_cast<uv_handle_t*>(_handle->ptr), false),
+        getName(reinterpret_cast<uv_handle_t*>(_handle->ptr), true))
+    , handle(_handle)
     , queue(std::deque<QueuedRead>())
     , buffer(std::make_unique<std::vector<uint8_t>>())
 {
@@ -291,16 +294,6 @@ void hx::asys::libuv::net::LibuvSocket::close(Dynamic cbSuccess, Dynamic cbFailu
         request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
         request.release();
     }
-}
-
-hx::EnumBase hx::asys::libuv::net::LibuvSocket::socket()
-{
-    return getName(reinterpret_cast<uv_handle_t*>(handle->ptr), false);
-}
-
-hx::EnumBase hx::asys::libuv::net::LibuvSocket::peer()
-{
-    return getName(reinterpret_cast<uv_handle_t*>(handle->ptr), true);
 }
 
 void hx::asys::net::Socket_obj::connect_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)

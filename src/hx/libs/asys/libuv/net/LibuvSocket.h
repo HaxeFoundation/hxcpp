@@ -40,8 +40,5 @@ namespace hx::asys::libuv::net
         void write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure);
         void flush(Dynamic cbSuccess, Dynamic cbFailure);
         void close(Dynamic cbSuccess, Dynamic cbFailure);
-
-        hx::EnumBase socket();
-        hx::EnumBase peer();
     };
 }

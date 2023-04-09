@@ -120,7 +120,13 @@ namespace hx
 
             class Socket_obj : public Object
             {
+            protected:
+                Socket_obj(hx::EnumBase _name, hx::EnumBase _peer) : name(_name) , peer(_peer) {}
+
             public:
+                const hx::EnumBase name;
+                const hx::EnumBase peer;
+
                 static void connect_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
                 static void connect_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
                 static void connect_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure);
@@ -129,8 +135,6 @@ namespace hx
                 virtual void write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual hx::EnumBase socket() = 0;
-                virtual hx::EnumBase peer() = 0;
             };
 
             class Server_obj : public Object
