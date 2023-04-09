@@ -9,6 +9,7 @@ namespace hx::asys::libuv::stream
 {
     class StreamReader final
     {
+    private:
         struct QueuedRead : BaseRequest
         {
             const hx::RootedObject<Array_obj<uint8_t>> array;
@@ -18,7 +19,6 @@ namespace hx::asys::libuv::stream
             QueuedRead(const Array<uint8_t> _array, const int _offset, const int _length, const Dynamic _cbSuccess, const Dynamic _cbFailure);
         };
 
-    private:
         uv_stream_t* const stream;
         std::deque<QueuedRead> queue;
 

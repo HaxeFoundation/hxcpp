@@ -12,9 +12,9 @@ namespace hx::asys::libuv::net
     class LibuvSocket final : public hx::asys::net::Socket_obj
     {
     private:
-        cpp::Pointer<uv_stream_t> handle;
-        cpp::Pointer<stream::StreamReader> reader;
-        cpp::Pointer<stream::StreamWriter> writer;
+        uv_stream_t* const handle;
+        const std::unique_ptr<stream::StreamReader> reader;
+        const std::unique_ptr<stream::StreamWriter> writer;
 
     public:
         LibuvSocket(cpp::Pointer<uv_stream_t> _handle);

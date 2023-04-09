@@ -71,6 +71,8 @@ namespace
 
             if ((result = uv_accept(server, reinterpret_cast<uv_stream_t*>(client.get()))) != 0)
             {
+                uv_close(reinterpret_cast<uv_handle_t*>(client.release()), hx::asys::libuv::clean_handle);
+
                 Dynamic(request->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
 
                 return;
@@ -83,26 +85,22 @@ namespace
     class LibuvServer final : public hx::asys::net::Server_obj
     {
     private:
-        uv_stream_t* stream;
-        ConnectionQueue* queue;
+        uv_stream_t* const stream;
+        const std::unique_ptr<ConnectionQueue> queue;
 
     public:
-        LibuvServer(uv_stream_t* _stream, ConnectionQueue* _queue)
-            : stream(_stream), queue(_queue)
+        LibuvServer(uv_stream_t* _stream) : stream(_stream), queue(new ConnectionQueue())
         {
             hx::GCSetFinalizer(this, [](hx::Object* obj) {
                 reinterpret_cast<LibuvServer*>(obj)->~LibuvServer();
             });
 
-            stream->data = queue;
+            stream->data = queue.get();
         }
 
         ~LibuvServer()
         {
-            uv_close(reinterpret_cast<uv_handle_t*>(stream), [](uv_handle_t* handle) {
-                delete static_cast<ConnectionQueue*>(handle->data);
-                delete handle;
-            });
+            uv_close(reinterpret_cast<uv_handle_t*>(stream), hx::asys::libuv::clean_handle);
         }
 
         void accept(Dynamic cbSuccess, Dynamic cbFailure)
@@ -161,6 +159,8 @@ void hx::asys::net::Server_obj::open_ipv4(Context ctx, const String host, int po
     auto address = sockaddr_in();
     if ((result = uv_ip4_addr(host.utf8_str(), port, &address)) < 0)
     {
+        uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
+
         cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
         return;
@@ -168,19 +168,21 @@ void hx::asys::net::Server_obj::open_ipv4(Context ctx, const String host, int po
 
     if ((result = uv_tcp_bind(socket.get(), reinterpret_cast<sockaddr*>(&address), 0)) < 0)
     {
+        uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
+
         cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
         return;
     }
-
-    auto queue = std::make_unique<ConnectionQueue>();
 
     if ((result = uv_listen(reinterpret_cast<uv_stream_t*>(socket.get()), 4, onTcpConnection)) < 0)
     {
+        uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
+
         cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
         return;
     }
 
-    cbSuccess(new LibuvServer(reinterpret_cast<uv_stream_t*>(socket.release()), queue.release()));
+    cbSuccess(new LibuvServer(reinterpret_cast<uv_stream_t*>(socket.release())));
 }

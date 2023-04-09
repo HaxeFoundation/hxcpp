@@ -109,7 +109,7 @@ hx::asys::libuv::net::LibuvSocket::LibuvSocket(cpp::Pointer<uv_stream_t> _handle
     , reader(new hx::asys::libuv::stream::StreamReader(_handle->ptr))
     , writer(new hx::asys::libuv::stream::StreamWriter(_handle->ptr))
 {
-    handle->ptr->data = reader->ptr;
+    handle->data = reader.get();
 
     hx::GCSetFinalizer(this, [](hx::Object* obj) {
         reinterpret_cast<LibuvSocket*>(obj)->~LibuvSocket();
@@ -118,19 +118,17 @@ hx::asys::libuv::net::LibuvSocket::LibuvSocket(cpp::Pointer<uv_stream_t> _handle
 
 hx::asys::libuv::net::LibuvSocket::~LibuvSocket()
 {
-    reader->destroy();
-
-    uv_close(reinterpret_cast<uv_handle_t*>(handle->ptr), hx::asys::libuv::clean_handle);
+    uv_close(reinterpret_cast<uv_handle_t*>(handle), hx::asys::libuv::clean_handle);
 }
 
 void hx::asys::libuv::net::LibuvSocket::read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
 {
-    reader->ptr->read(output, offset, length, cbSuccess, cbFailure);
+    reader->read(output, offset, length, cbSuccess, cbFailure);
 }
 
 void hx::asys::libuv::net::LibuvSocket::write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
 {
-    writer->ptr->write(input, offset, length, cbSuccess, cbFailure);
+    writer->write(input, offset, length, cbSuccess, cbFailure);
 }
 
 void hx::asys::libuv::net::LibuvSocket::flush(Dynamic cbSuccess, Dynamic cbFailure)
