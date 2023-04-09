@@ -44,6 +44,66 @@ namespace
         }
     };
 
+    class LibuvServer final : public hx::asys::net::Server_obj
+    {
+    private:
+        uv_stream_t* const stream;
+        const std::unique_ptr<ConnectionQueue> queue;
+
+    public:
+        LibuvServer(uv_stream_t* _stream) : stream(_stream), queue(new ConnectionQueue())
+        {
+            hx::GCSetFinalizer(this, [](hx::Object* obj) {
+                reinterpret_cast<LibuvServer*>(obj)->~LibuvServer();
+            });
+
+            stream->data = queue.get();
+        }
+
+        ~LibuvServer()
+        {
+            uv_close(reinterpret_cast<uv_handle_t*>(stream), hx::asys::libuv::clean_handle);
+        }
+
+        void accept(Dynamic cbSuccess, Dynamic cbFailure)
+        {
+            queue->Enqueue(cbSuccess, cbFailure);
+        }
+
+        void close(Dynamic cbSuccess, Dynamic cbFailure)
+        {
+            auto request = std::make_unique<uv_shutdown_t>();
+            auto wrapper = [](uv_shutdown_t* request, int status) {
+                auto gcZone    = hx::AutoGCZone();
+                auto spRequest = std::unique_ptr<uv_shutdown_t>(request);
+                auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
+
+                if (status < 0)
+                {
+                    Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
+                }
+                else
+                {
+                    static_cast<ConnectionQueue*>(request->handle->data)->Clear();
+
+                    Dynamic(spData->cbSuccess.rooted)();
+                }
+            };
+
+            auto result = uv_shutdown(request.get(), stream, wrapper);
+
+            if (result < 0)
+            {
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+            }
+            else
+            {
+                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+                request.release();
+            }
+        }
+    };
+
     void onTcpConnection(uv_stream_t* server, int result)
     {
         auto queue   = static_cast<ConnectionQueue*>(server->data);
@@ -82,107 +142,87 @@ namespace
         }
     }
 
-    class LibuvServer final : public hx::asys::net::Server_obj
+    void open_tcp_impl(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic cbSuccess, Dynamic cbFailure)
     {
-    private:
-        uv_stream_t* const stream;
-        const std::unique_ptr<ConnectionQueue> queue;
+        auto socket = std::make_unique<uv_tcp_t>();
+        auto result = 0;
 
-    public:
-        LibuvServer(uv_stream_t* _stream) : stream(_stream), queue(new ConnectionQueue())
+        if ((result = uv_tcp_init(ctx->uvLoop, socket.get())) < 0)
         {
-            hx::GCSetFinalizer(this, [](hx::Object* obj) {
-                reinterpret_cast<LibuvServer*>(obj)->~LibuvServer();
-            });
+            cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
-            stream->data = queue.get();
+            return;
         }
 
-        ~LibuvServer()
+        if ((result = uv_tcp_bind(socket.get(), address, 0)) < 0)
         {
-            uv_close(reinterpret_cast<uv_handle_t*>(stream), hx::asys::libuv::clean_handle);
+            uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
+
+            cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+            return;
         }
 
-        void accept(Dynamic cbSuccess, Dynamic cbFailure)
+        if ((result = uv_listen(reinterpret_cast<uv_stream_t*>(socket.get()), 4, onTcpConnection)) < 0)
         {
-            queue->Enqueue(cbSuccess, cbFailure);
+            uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
+
+            cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+            return;
         }
 
-        void close(Dynamic cbSuccess, Dynamic cbFailure)
-        {
-            auto request = std::make_unique<uv_shutdown_t>();
-            auto wrapper = [](uv_shutdown_t* request, int status) {
-                auto gcZone = hx::AutoGCZone();
-                auto spRequest = std::unique_ptr<uv_shutdown_t>(request);
-                auto spData = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
-
-                if (status < 0)
-                {
-                    Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
-                }
-                else
-                {
-                    static_cast<ConnectionQueue*>(request->handle->data)->Clear();
-
-                    Dynamic(spData->cbSuccess.rooted)();
-                }
-            };
-
-            auto result = uv_shutdown(request.get(), stream, wrapper);
-
-            if (result < 0)
-            {
-                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-            }
-            else
-            {
-                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
-                request.release();
-            }
-        }
-    };
+        cbSuccess(new LibuvServer(reinterpret_cast<uv_stream_t*>(socket.release())));
+    }
 }
 
 void hx::asys::net::Server_obj::open_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
 {
+    auto address = sockaddr_in();
+    auto result  = uv_ip4_addr(host.utf8_str(), port, &address);
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+        return;
+    }
+
+    open_tcp_impl(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), cbSuccess, cbFailure);
+}
+
+void hx::asys::net::Server_obj::open_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto address = sockaddr_in6();
+    auto result  = uv_ip6_addr(host.utf8_str(), port, &address);
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+        return;
+    }
+
+    open_tcp_impl(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), cbSuccess, cbFailure);
+}
+
+void hx::asys::net::Server_obj::open_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure)
+{
     auto libuvCtx = hx::asys::libuv::context(ctx);
-    auto socket   = std::make_unique<uv_tcp_t>();
+    auto pipe     = std::make_unique<uv_pipe_t>();
     auto result   = 0;
 
-    if ((result = uv_tcp_init(libuvCtx->uvLoop, socket.get())) < 0)
+    if ((result = uv_pipe_init(libuvCtx->uvLoop, pipe.get(), false)) < 0)
     {
         cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
         return;
     }
 
-    auto address = sockaddr_in();
-    if ((result = uv_ip4_addr(host.utf8_str(), port, &address)) < 0)
+    if ((result = uv_pipe_bind(pipe.get(), path.utf8_str())) < 0)
     {
-        uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
-
         cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
         return;
     }
 
-    if ((result = uv_tcp_bind(socket.get(), reinterpret_cast<sockaddr*>(&address), 0)) < 0)
-    {
-        uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
-
-        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-        return;
-    }
-
-    if ((result = uv_listen(reinterpret_cast<uv_stream_t*>(socket.get()), 4, onTcpConnection)) < 0)
-    {
-        uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
-
-        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-        return;
-    }
-
-    cbSuccess(new LibuvServer(reinterpret_cast<uv_stream_t*>(socket.release())));
+    cbSuccess(new LibuvServer(reinterpret_cast<uv_stream_t*>(pipe.release())));
 }
