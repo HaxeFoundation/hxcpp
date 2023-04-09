@@ -27,7 +27,7 @@ std::unique_ptr<uv_fs_t, uv_fs_cb> hx::asys::libuv::unique_fs_req(uv_fs_t* reque
     return std::unique_ptr<uv_fs_t, uv_fs_cb>(request, cleanupFsRequest);
 }
 
-hx::EnumBase hx::asys::libuv::create(const String& name, const int index, int fields)
+hx::EnumBase hx::asys::libuv::create(const String& name, const int index, const int fields)
 {
     auto result = new (fields * sizeof(cpp::Variant)) hx::EnumBase_obj;
 

@@ -6,6 +6,9 @@ HX_DECLARE_CLASS2(hx, asys, Context)
 HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
 HX_DECLARE_CLASS3(hx, asys, net, Socket)
+HX_DECLARE_CLASS3(hx, asys, net, Server)
+HX_DECLARE_CLASS3(hx, asys, system, Process)
+HX_DECLARE_CLASS3(hx, asys, system, ChildProcess)
 
 namespace hx
 {
@@ -13,6 +16,7 @@ namespace hx
     {
         using Ipv4Address = int;
         using Ipv6Address = Array<uint8_t>;
+        using Pid = int;
 
         class Context_obj : public Object
         {
@@ -23,6 +27,24 @@ namespace hx
             virtual Dynamic enqueue(Dynamic event, int intervalMs) = 0;
             virtual void cancel(Dynamic) = 0;
             virtual void loop() = 0;
+        };
+
+        class Writable
+        {
+            virtual void write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+        };
+
+        class Readable
+        {
+            virtual void read(::cpp::Int64 pos, Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+        };
+
+        class Duplex : virtual public Writable, virtual public Readable
+        {
+            virtual void write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            virtual void read(::cpp::Int64 pos, Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
 
         namespace filesystem
@@ -107,6 +129,35 @@ namespace hx
                 virtual void write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual hx::EnumBase socket() = 0;
+                virtual hx::EnumBase peer() = 0;
+            };
+
+            class Server_obj : public Object
+            {
+            public:
+                static void open_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
+
+                virtual void accept(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            };
+        }
+
+        namespace system
+        {
+            class CurrentProcess_obj;
+
+            class Process_obj : public Object
+            {
+            public:
+                static ChildProcess_obj currentProcess();
+
+                const Pid pid;
+            };
+
+            class CurrentProcess_obj : public Process_obj
+            {
+                //
             };
         }
     }

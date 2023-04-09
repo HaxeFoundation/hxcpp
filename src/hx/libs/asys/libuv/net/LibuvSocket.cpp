@@ -3,205 +3,19 @@
 #include <deque>
 #include <array>
 #include <memory>
-#include "../LibuvUtils.h"
 #include "../stream/Streams.h"
+#include "LibuvSocket.h"
 
 namespace
 {
-    class LibuvSocket;
-
-    struct QueuedRead : hx::asys::libuv::BaseRequest
-    {
-        const hx::RootedObject<Array_obj<uint8_t>> array;
-        const int offset;
-        const int length;
-
-        QueuedRead(const Array<uint8_t> _array, const int _offset, const int _length, const Dynamic _cbSuccess, const Dynamic _cbFailure)
-            : BaseRequest(_cbSuccess, _cbFailure)
-            , array(_array.mPtr)
-            , offset(_offset)
-            , length(_length)
-        {}
-    };
-
     struct SocketData
     {
-        hx::RootedObject<LibuvSocket> tcp;
+        hx::RootedObject<hx::asys::libuv::net::LibuvSocket> tcp;
         std::vector<std::vector<char>> staging;
 
-        SocketData(LibuvSocket* _tcp)
+        SocketData(hx::asys::libuv::net::LibuvSocket* _tcp)
             : tcp(_tcp)
             , staging(std::vector<std::vector<char>>()) {}
-    };
-
-    class LibuvSocket : public hx::asys::net::Socket_obj
-    {
-    private:
-        cpp::Pointer<uv_stream_t> handle;
-        std::deque<QueuedRead> queue;
-        std::unique_ptr<std::vector<uint8_t>> buffer;
-
-        bool tryConsumeRequest(const QueuedRead& request)
-        {
-            if (request.length > buffer->size())
-            {
-                return false;
-            }
-
-            std::memcpy(request.array.rooted->getBase() + request.offset, buffer->data(), request.length);
-
-            buffer->erase(buffer->begin(), buffer->begin() + request.length);
-
-            Dynamic(request.cbSuccess.rooted)(request.length);
-
-            return true;
-        }
-
-    public:
-        LibuvSocket(cpp::Pointer<uv_stream_t> _handle)
-            : handle(_handle)
-            , queue(std::deque<QueuedRead>())
-            , buffer(std::make_unique<std::vector<uint8_t>>())
-        {
-            handle->ptr->data = new SocketData(this);
-        }
-
-        void addToBuffer(const ssize_t len, const uv_buf_t* read)
-        {
-            const auto oldSize = buffer->size();
-            const auto newSize = oldSize + len;
-
-            buffer->resize(newSize);
-            
-            std::memcpy(buffer->data() + oldSize, read->base, len);
-        }
-
-        void consume()
-        {
-            auto consumed = 0;
-
-            for (auto i = 0; i < queue.size(); i++)
-            {
-                if (tryConsumeRequest(queue.at(i)))
-                {
-                    consumed++;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            while (consumed > 0)
-            {
-                queue.pop_front();
-
-                consumed--;
-            }
-
-            if (queue.empty())
-            {
-                delete static_cast<SocketData*>(handle->ptr->data);
-
-                uv_read_stop(handle);
-            }
-        }
-
-        void reject(int error)
-        {
-            // In the case of an error I guess we should error all pending reads?
-
-            for (auto i = 0; i < queue.size(); i++)
-            {
-                Dynamic(queue.at(i).cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(error));
-            }
-
-            while (queue.size() > 0)
-            {
-                queue.pop_front();
-            }
-
-            delete static_cast<SocketData*>(handle->ptr->data);
-
-            uv_read_stop(handle);
-        }
-
-        void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
-        {
-            if (queue.empty())
-            {
-                auto alloc = [](uv_handle_t* handle, size_t suggested, uv_buf_t* buffer) {
-                    auto data = static_cast<SocketData*>(handle->data);
-
-                    data->staging.emplace_back(suggested);
-
-                    buffer->base = data->staging.back().data();
-                    buffer->len  = data->staging.back().size();
-                };
-
-                auto read = [](uv_stream_t* stream, ssize_t len, const uv_buf_t* read) {
-                    auto gcZone = hx::AutoGCZone();
-                    auto data   = static_cast<SocketData*>(stream->data);
-
-                    if (len <= 0)
-                    {
-                        data->tcp.rooted->reject(len);
-                    }
-                    else
-                    {
-                        data->tcp.rooted->addToBuffer(len, read);
-                        data->tcp.rooted->consume();
-                    }
-                };
-
-                uv_read_start(handle, alloc, read);
-            }
-            
-            queue.emplace_back(output, offset, length, cbSuccess, cbFailure);
-
-            if (tryConsumeRequest(queue.back()))
-            {
-                queue.pop_back();
-            }
-        }
-        void write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
-        {
-            hx::asys::libuv::stream::write(handle, input, offset, length, cbSuccess, cbFailure);
-        }
-        void flush(Dynamic cbSuccess, Dynamic cbFailure)
-        {
-            //
-        }
-        void close(Dynamic cbSuccess, Dynamic cbFailure)
-        {
-            auto request = std::make_unique<uv_shutdown_t>();
-            auto wrapper = [](uv_shutdown_t* request, int status) {
-                auto gcZone    = hx::AutoGCZone();
-                auto spRequest = std::unique_ptr<uv_shutdown_t>(request);
-                auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
-
-                if (status < 0)
-                {
-                    Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
-                }
-                else
-                {
-                    Dynamic(spData->cbSuccess.rooted)();
-                }
-            };
-
-            auto result = uv_shutdown(request.get(), handle, wrapper);
-
-            if (result < 0)
-            {
-                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-            }
-            else
-            {
-                request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
-                request.release();
-            }
-        }
     };
 
     hx::EnumBase getName(uv_handle_t* handle, bool remote)
@@ -264,11 +78,7 @@ namespace
         }
         else
         {
-            auto handle = reinterpret_cast<uv_handle_t*>(request->handle);
-            auto sock   = getName(handle, false);
-            auto peer   = getName(handle, true);
-
-            Dynamic(spData->cbSuccess.rooted)(hx::asys::net::Socket(new LibuvSocket(request->handle)), sock, peer);
+            Dynamic(spData->cbSuccess.rooted)(hx::asys::net::Socket(new hx::asys::libuv::net::LibuvSocket(request->handle)));
         }
     }
 
@@ -298,6 +108,199 @@ namespace
             socket.release();
         }
     }
+}
+
+hx::asys::libuv::net::QueuedRead::QueuedRead(const Array<uint8_t> _array, const int _offset, const int _length, const Dynamic _cbSuccess, const Dynamic _cbFailure)
+    : BaseRequest(_cbSuccess, _cbFailure)
+    , array(_array.mPtr)
+    , offset(_offset)
+    , length(_length)
+{
+}
+
+hx::asys::libuv::net::LibuvSocket::LibuvSocket(cpp::Pointer<uv_stream_t> _handle)
+    : handle(_handle)
+    , queue(std::deque<QueuedRead>())
+    , buffer(std::make_unique<std::vector<uint8_t>>())
+{
+    handle->ptr->data = new SocketData(this);
+
+    hx::GCSetFinalizer(this, [](hx::Object* obj) {
+        reinterpret_cast<LibuvSocket*>(obj)->~LibuvSocket();
+    });
+}
+
+hx::asys::libuv::net::LibuvSocket::~LibuvSocket()
+{
+    delete handle->ptr->data;
+
+    uv_close(reinterpret_cast<uv_handle_t*>(handle->ptr), hx::asys::libuv::clean_handle);
+}
+
+bool hx::asys::libuv::net::LibuvSocket::tryConsumeRequest(const QueuedRead& request)
+{
+    if (request.length > buffer->size())
+    {
+        return false;
+    }
+
+    std::memcpy(request.array.rooted->getBase() + request.offset, buffer->data(), request.length);
+
+    buffer->erase(buffer->begin(), buffer->begin() + request.length);
+
+    Dynamic(request.cbSuccess.rooted)(request.length);
+
+    return true;
+}
+
+void hx::asys::libuv::net::LibuvSocket::addToBuffer(const ssize_t len, const uv_buf_t* read)
+{
+    const auto oldSize = buffer->size();
+    const auto newSize = oldSize + len;
+
+    buffer->resize(newSize);
+        
+    std::memcpy(buffer->data() + oldSize, read->base, len);
+}
+
+void hx::asys::libuv::net::LibuvSocket::consume()
+{
+    auto consumed = 0;
+
+    for (auto i = 0; i < queue.size(); i++)
+    {
+        if (tryConsumeRequest(queue.at(i)))
+        {
+            consumed++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    while (consumed > 0)
+    {
+        queue.pop_front();
+
+        consumed--;
+    }
+
+    if (queue.empty())
+    {
+        delete static_cast<SocketData*>(handle->ptr->data);
+
+        uv_read_stop(handle);
+    }
+}
+
+void hx::asys::libuv::net::LibuvSocket::reject(int error)
+{
+    // In the case of an error I guess we should error all pending reads?
+
+    for (auto i = 0; i < queue.size(); i++)
+    {
+        Dynamic(queue.at(i).cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(error));
+    }
+
+    while (queue.size() > 0)
+    {
+        queue.pop_front();
+    }
+
+    delete static_cast<SocketData*>(handle->ptr->data);
+
+    uv_read_stop(handle);
+}
+
+void hx::asys::libuv::net::LibuvSocket::read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    if (queue.empty())
+    {
+        auto alloc = [](uv_handle_t* handle, size_t suggested, uv_buf_t* buffer) {
+            auto data = static_cast<SocketData*>(handle->data);
+
+            data->staging.emplace_back(suggested);
+
+            buffer->base = data->staging.back().data();
+            buffer->len  = data->staging.back().size();
+        };
+
+        auto read = [](uv_stream_t* stream, ssize_t len, const uv_buf_t* read) {
+            auto gcZone = hx::AutoGCZone();
+            auto data   = static_cast<SocketData*>(stream->data);
+
+            if (len <= 0)
+            {
+                data->tcp.rooted->reject(len);
+            }
+            else
+            {
+                data->tcp.rooted->addToBuffer(len, read);
+                data->tcp.rooted->consume();
+            }
+        };
+
+        uv_read_start(handle, alloc, read);
+    }
+        
+    queue.emplace_back(output, offset, length, cbSuccess, cbFailure);
+
+    if (tryConsumeRequest(queue.back()))
+    {
+        queue.pop_back();
+    }
+}
+
+void hx::asys::libuv::net::LibuvSocket::write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    hx::asys::libuv::stream::write(handle, input, offset, length, cbSuccess, cbFailure);
+}
+
+void hx::asys::libuv::net::LibuvSocket::flush(Dynamic cbSuccess, Dynamic cbFailure)
+{
+    //
+}
+
+void hx::asys::libuv::net::LibuvSocket::close(Dynamic cbSuccess, Dynamic cbFailure)
+{
+    auto request = std::make_unique<uv_shutdown_t>();
+    auto wrapper = [](uv_shutdown_t* request, int status) {
+        auto gcZone    = hx::AutoGCZone();
+        auto spRequest = std::unique_ptr<uv_shutdown_t>(request);
+        auto spData    = std::unique_ptr<hx::asys::libuv::BaseRequest>(static_cast<hx::asys::libuv::BaseRequest*>(request->data));
+
+        if (status < 0)
+        {
+            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
+        }
+        else
+        {
+            Dynamic(spData->cbSuccess.rooted)();
+        }
+    };
+
+    auto result = uv_shutdown(request.get(), handle, wrapper);
+
+    if (result < 0)
+    {
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+    }
+    else
+    {
+        request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
+        request.release();
+    }
+}
+
+hx::EnumBase hx::asys::libuv::net::LibuvSocket::socket()
+{
+    return getName(reinterpret_cast<uv_handle_t*>(handle->ptr), false);
+}
+
+hx::EnumBase hx::asys::libuv::net::LibuvSocket::peer()
+{
+    return getName(reinterpret_cast<uv_handle_t*>(handle->ptr), true);
 }
 
 void hx::asys::net::Socket_obj::connect_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
