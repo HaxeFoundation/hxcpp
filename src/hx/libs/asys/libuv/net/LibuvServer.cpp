@@ -4,7 +4,6 @@
 #include <array>
 #include <memory>
 #include "LibuvSocket.h"
-#include "../stream/Streams.h"
 
 namespace
 {

@@ -29,22 +29,21 @@ namespace hx
             virtual void loop() = 0;
         };
 
-        class Writable
+        struct Writable
         {
-            virtual void write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-        };
-
-        class Readable
-        {
-            virtual void read(::cpp::Int64 pos, Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
 
-        class Duplex : virtual public Writable, virtual public Readable
+        struct Readable
         {
-            virtual void write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            virtual void read(::cpp::Int64 pos, Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+        };
+
+        struct Duplex : virtual public Writable, virtual public Readable
+        {
+            //
         };
 
         namespace filesystem
@@ -118,7 +117,7 @@ namespace hx
                 String name(const Ipv6Address ip);
             }
 
-            class Socket_obj : public Object
+            class Socket_obj : public Object, virtual public Duplex
             {
             protected:
                 Socket_obj(hx::EnumBase _name, hx::EnumBase _peer) : name(_name) , peer(_peer) {}
@@ -131,10 +130,10 @@ namespace hx
                 static void connect_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
                 static void connect_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure);
 
-                virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override = 0;
+                virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override = 0;
+                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) override = 0;
                 virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
             class Server_obj : public Object
