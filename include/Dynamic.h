@@ -421,7 +421,7 @@ inline bool Dynamic::IsClass<String>() { return mPtr && mPtr->__GetClass()==hx::
 template<>
 inline bool Dynamic::IsClass<Dynamic>() { return true; }
 template<>
-inline bool Dynamic::IsClass<::cpp::Int64>() { return mPtr && mPtr->__GetClass()==hx::GetInt64Class(); }
+inline bool Dynamic::IsClass< ::cpp::Int64>() { return mPtr && mPtr->__GetClass()==hx::GetInt64Class(); }
 
 inline String Dynamic::operator+(const String &s) const { return Cast<String>() + s; }
 

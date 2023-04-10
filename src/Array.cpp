@@ -1017,13 +1017,13 @@ void VirtualArray_obj::MakeInt64Array()
    if (store==arrayEmpty && base)
    {
       int len = base->length;
-      base = new Array_obj<::cpp::Int64>(len, len);
+      base = new Array_obj< ::cpp::Int64>(len, len);
    }
    else if (!base)
-      base = new Array_obj<::cpp::Int64>(0, 0);
+      base = new Array_obj< ::cpp::Int64>(0, 0);
    else
    {
-      Array<::cpp::Int64> result = Dynamic(base);
+      Array< ::cpp::Int64> result = Dynamic(base);
       base = result.mPtr;
    }
    store = arrayInt64;
