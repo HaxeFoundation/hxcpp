@@ -53,6 +53,7 @@
   
   <!-- Macros -->
   <flag value="-DANDROID=ANDROID"/>
+  <flag value="-DHXCPP_CLANG"/>
   <flag value="-DHX_ANDROID"/>
   <flag value="-DHXCPP_LOAD_DEBUG" if="HXCPP_LOAD_DEBUG"/>
   <flag value="-D${ANDROID_PLATFORM_DEFINE}"/>
