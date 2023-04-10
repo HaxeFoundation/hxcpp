@@ -1307,8 +1307,9 @@ class BuildTool
       {
          if (isWindowsArm)
             return "arm64";
-         var architecture = Sys.getEnv ("PROCESSOR_ARCHITEW6432");
-         if (architecture != null && architecture.indexOf ("64") > -1)
+         var architecture = Sys.getEnv("PROCESSOR_ARCHITECTURE");
+         var wow64Architecture = Sys.getEnv("PROCESSOR_ARCHITEW6432");
+         if (architecture.indexOf("64") > -1 || wow64Architecture != null && wow64Architecture.indexOf("64") > -1)
          {
             return "m64";
          }
