@@ -134,6 +134,14 @@ namespace hx
                 virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) override = 0;
                 virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+                virtual void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+                virtual void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
             class Server_obj : public Object
