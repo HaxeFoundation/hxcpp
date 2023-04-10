@@ -15,6 +15,15 @@ void hx::asys::libuv::stream::StreamReader::read(Array<uint8_t> output, int offs
 {
     if (queue.empty())
     {
+        if (!buffer.empty())
+        {
+            queue.emplace_back(output, offset, length, cbSuccess, cbFailure);
+
+            consume();
+
+            return;
+        }
+
         auto alloc = [](uv_handle_t* handle, size_t suggested, uv_buf_t* buffer) {
             auto reader = static_cast<StreamReader*>(handle->data);
 
@@ -23,17 +32,18 @@ void hx::asys::libuv::stream::StreamReader::read(Array<uint8_t> output, int offs
         };
 
         auto read = [](uv_stream_t* stream, ssize_t len, const uv_buf_t* read) {
-            if (read <= 0)
+            auto gcZone = hx::AutoGCZone();
+            auto reader = static_cast<StreamReader*>(stream->data);
+
+            if (len <= 0)
             {
-                // TODO : what do we do? Reject all pending reads and clear the buffer?
+                reader->reject(len);
 
                 return;
             }
 
-            auto gcZone = hx::AutoGCZone();
-            auto reader = static_cast<StreamReader*>(stream->data);
-
-            reader->consume(len);
+            reader->buffer.insert(reader->buffer.end(), reader->staging.begin(), reader->staging.begin() + len);
+            reader->consume();
         };
 
         auto result = uv_read_start(stream, alloc, read);
@@ -48,25 +58,38 @@ void hx::asys::libuv::stream::StreamReader::read(Array<uint8_t> output, int offs
     queue.emplace_back(output, offset, length, cbSuccess, cbFailure);
 }
 
-void hx::asys::libuv::stream::StreamReader::consume(int length)
+void hx::asys::libuv::stream::StreamReader::consume()
 {
-    buffer.insert(buffer.end(), staging.begin(), staging.begin() + length);
-
-    auto& request = queue.front();
-
-    if (buffer.size() >= request.length)
+    while (!buffer.empty() && !queue.empty())
     {
-        request.array.rooted->memcpy(request.offset, buffer.data(), request.length);
+        auto& request = queue.front();
+        auto size     = std::min(int(buffer.size()), request.length);
 
-        buffer.erase(buffer.begin(), buffer.begin() + request.length);
+        request.array.rooted->memcpy(request.offset, buffer.data(), size);
 
-        Dynamic(request.cbSuccess.rooted)(request.length);
+        buffer.erase(buffer.begin(), buffer.begin() + size);
 
         queue.pop_front();
 
-        if (queue.empty())
-        {
-            uv_read_stop(stream);
-        }
+        Dynamic(request.cbSuccess.rooted)(size);
+    }
+
+    if (queue.empty())
+    {
+        uv_read_stop(stream);
+    }
+}
+
+void hx::asys::libuv::stream::StreamReader::reject(int code)
+{
+    buffer.clear();
+
+    while (!queue.empty())
+    {
+        auto& request = queue.front();
+
+        Dynamic(request.cbFailure.rooted)(asys::libuv::uv_err_to_enum(code));
+
+        queue.pop_front();
     }
 }

@@ -29,6 +29,7 @@ namespace hx::asys::libuv::stream
         StreamReader(uv_stream_t* _stream);
 
         void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure);
-        void consume(int length);
+        void consume();
+        void reject(int code);
     };
 }
