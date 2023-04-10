@@ -21,6 +21,7 @@ namespace hx::asys::libuv
         const hx::RootedObject<hx::Object> cbFailure;
 
         BaseRequest(Dynamic _cbSuccess, Dynamic _cbFailure);
+        virtual ~BaseRequest() = default;
     };
 
     void basic_callback(uv_fs_t* request);
