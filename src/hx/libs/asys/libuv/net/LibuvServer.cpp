@@ -51,7 +51,10 @@ namespace
         const std::unique_ptr<ConnectionQueue> queue;
 
     public:
-        LibuvServer(uv_stream_t* _stream) : stream(_stream), queue(new ConnectionQueue())
+        LibuvServer(uv_stream_t* _stream)
+            : hx::asys::net::Server_obj(hx::asys::libuv::getName(reinterpret_cast<uv_handle_t*>(_stream), false))
+            , stream(_stream)
+            , queue(new ConnectionQueue())
         {
             hx::GCSetFinalizer(this, [](hx::Object* obj) {
                 reinterpret_cast<LibuvServer*>(obj)->~LibuvServer();

@@ -1,4 +1,5 @@
 #include <hxcpp.h>
+#include <array>
 #include "LibuvUtils.h"
 
 namespace
@@ -93,4 +94,56 @@ void hx::asys::libuv::basic_callback(uv_fs_t* request)
 void hx::asys::libuv::clean_handle(uv_handle_t *handle)
 {
     delete handle;
+}
+
+hx::EnumBase hx::asys::libuv::getName(uv_handle_t* handle, bool remote)
+{
+    switch (uv_handle_get_type(handle))
+    {
+        case uv_handle_type::UV_TCP:
+        {
+            auto storage = sockaddr_storage();
+            auto length = int(sizeof(sockaddr_storage));
+            auto result =
+                remote
+                    ? uv_tcp_getpeername(reinterpret_cast<uv_tcp_t*>(handle), reinterpret_cast<sockaddr*>(&storage), &length)
+                    : uv_tcp_getsockname(reinterpret_cast<uv_tcp_t*>(handle), reinterpret_cast<sockaddr*>(&storage), &length);
+
+            if (result < 0)
+            {
+                return null();
+            }
+            else
+            {
+                auto name = std::array<char, UV_IF_NAMESIZE>();
+                auto port = reinterpret_cast<sockaddr_in*>(&storage)->sin_port;
+
+                if ((result = uv_ip_name(reinterpret_cast<sockaddr*>(&storage), name.data(), name.size())) < 0)
+                {
+                    return null();
+                }
+
+                return
+                    hx::asys::libuv::create(HX_CSTRING("INET"), 0, 2)
+                        ->_hx_init(0, String::create(name.data()))
+                        ->_hx_init(1, int(port));
+            }
+        }
+        case uv_handle_type::UV_NAMED_PIPE:
+        {
+            auto name = std::array<char, 1024>();
+            auto size = name.size();
+            auto result =
+                remote
+                ? uv_pipe_getpeername(reinterpret_cast<uv_pipe_t*>(handle), name.data(), &size)
+                : uv_pipe_getsockname(reinterpret_cast<uv_pipe_t*>(handle), name.data(), &size);
+
+            return
+                (result < 0)
+                ? null()
+                : hx::asys::libuv::create(HX_CSTRING("PIPE"), 1, 1)->_hx_init(0, String::create(name.data(), size));
+        }
+        default:
+            return null();
+    }
 }

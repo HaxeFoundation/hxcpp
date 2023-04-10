@@ -138,7 +138,12 @@ namespace hx
 
             class Server_obj : public Object
             {
+            protected:
+                Server_obj(hx::EnumBase _name) : name(_name) {}
+
             public:
+                const hx::EnumBase name;
+
                 static void open_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
                 static void open_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
                 static void open_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure);

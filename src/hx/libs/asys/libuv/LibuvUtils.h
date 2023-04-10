@@ -26,4 +26,6 @@ namespace hx::asys::libuv
     void basic_callback(uv_fs_t* request);
 
     void clean_handle(uv_handle_t* handle);
+
+    hx::EnumBase getName(uv_handle_t* handle, bool remote);
 }
