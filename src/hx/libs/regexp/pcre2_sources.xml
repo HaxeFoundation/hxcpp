@@ -3,7 +3,7 @@
   <compilerflag value="-DPCRE2_STATIC" />
   <compilerflag value="-DSUPPORT_UNICODE" />
   <compilerflag value="-I${PCRE_DIR}" />
-  <compilerflag value="-std=c99" />
+  <compilerflag value="-std=c99" unless="MSVC_VER" />
 
   <file name="${PCRE_DIR}/pcre2_auto_possess.c" />
   <file name="${PCRE_DIR}/pcre2_chartables.c" />
