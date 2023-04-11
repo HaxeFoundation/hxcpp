@@ -152,9 +152,9 @@ namespace hx
             public:
                 const hx::EnumBase name;
 
-                static void open_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
-                static void open_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
-                static void open_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure);
+                static void open_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+                static void open_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+                static void open_ipc(Context ctx, const String path, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual void accept(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;

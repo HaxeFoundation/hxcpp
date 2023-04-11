@@ -145,41 +145,84 @@ namespace
         }
     }
 
-    void open_tcp_impl(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic cbSuccess, Dynamic cbFailure)
+    void open_tcp_impl(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
     {
-        auto socket = std::make_unique<uv_tcp_t>();
+        auto server = std::make_unique<uv_tcp_t>();
         auto result = 0;
 
-        if ((result = uv_tcp_init(ctx->uvLoop, socket.get())) < 0)
+        if ((result = uv_tcp_init(ctx->uvLoop, server.get())) < 0)
         {
             cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
             return;
         }
 
-        if ((result = uv_tcp_bind(socket.get(), address, 0)) < 0)
+        if ((result = uv_tcp_bind(server.get(), address, 0)) < 0)
         {
-            uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
+            uv_close(reinterpret_cast<uv_handle_t*>(server.release()), hx::asys::libuv::clean_handle);
 
             cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
             return;
         }
 
-        if ((result = uv_listen(reinterpret_cast<uv_stream_t*>(socket.get()), 4, onTcpConnection)) < 0)
+        auto backlog = SOMAXCONN;
+
+        if (null() != options)
         {
-            uv_close(reinterpret_cast<uv_handle_t*>(socket.release()), hx::asys::libuv::clean_handle);
+            auto sendBufferSize = options->__Field(HX_CSTRING("sendBuffer"), hx::PropertyAccess::paccDynamic);
+            if (!sendBufferSize.isNull() && sendBufferSize.isInt())
+            {
+                auto size = sendBufferSize.asInt();
+                auto result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(server.get()), &size);
+
+                if (result < 0)
+                {
+                    uv_close(reinterpret_cast<uv_handle_t*>(server.get()), hx::asys::libuv::clean_handle);
+
+                    cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+                    return;
+                }
+            }
+
+            auto recvBufferSize = options->__Field(HX_CSTRING("receiveBuffer"), hx::PropertyAccess::paccDynamic);
+            if (!recvBufferSize.isNull() && recvBufferSize.isInt())
+            {
+                auto size = sendBufferSize.asInt();
+                auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(server.get()), &size);
+
+                if (result < 0)
+                {
+                    uv_close(reinterpret_cast<uv_handle_t*>(server.get()), hx::asys::libuv::clean_handle);
+
+                    cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+                    return;
+                }
+            }
+
+            auto backlogSize = options->__Field(HX_CSTRING("backlog"), hx::PropertyAccess::paccDynamic);
+            if (!backlogSize.isNull() && backlogSize.isInt())
+            {
+                backlog = backlogSize.asInt();
+            }
+        }
+
+        if ((result = uv_listen(reinterpret_cast<uv_stream_t*>(server.get()), backlog, onTcpConnection)) < 0)
+        {
+            uv_close(reinterpret_cast<uv_handle_t*>(server.release()), hx::asys::libuv::clean_handle);
 
             cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
             return;
         }
 
-        cbSuccess(new LibuvServer(reinterpret_cast<uv_stream_t*>(socket.release())));
+        cbSuccess(new LibuvServer(reinterpret_cast<uv_stream_t*>(server.release())));
     }
 }
 
-void hx::asys::net::Server_obj::open_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::Server_obj::open_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto address = sockaddr_in();
     auto result  = uv_ip4_addr(host.utf8_str(), port, &address);
@@ -190,10 +233,10 @@ void hx::asys::net::Server_obj::open_ipv4(Context ctx, const String host, int po
         return;
     }
 
-    open_tcp_impl(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), cbSuccess, cbFailure);
+    open_tcp_impl(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
 }
 
-void hx::asys::net::Server_obj::open_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::Server_obj::open_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto address = sockaddr_in6();
     auto result  = uv_ip6_addr(host.utf8_str(), port, &address);
@@ -204,10 +247,10 @@ void hx::asys::net::Server_obj::open_ipv6(Context ctx, const String host, int po
         return;
     }
 
-    open_tcp_impl(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), cbSuccess, cbFailure);
+    open_tcp_impl(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
 }
 
-void hx::asys::net::Server_obj::open_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::Server_obj::open_ipc(Context ctx, const String path, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto pipe     = std::make_unique<uv_pipe_t>();
@@ -225,6 +268,41 @@ void hx::asys::net::Server_obj::open_ipc(Context ctx, const String path, Dynamic
         cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
         return;
+    }
+
+    if (null() != options)
+    {
+        auto sendBufferSize = options->__Field(HX_CSTRING("sendBuffer"), hx::PropertyAccess::paccDynamic);
+        if (!sendBufferSize.isNull() && sendBufferSize.isInt())
+        {
+            auto size = sendBufferSize.asInt();
+            auto result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(pipe.get()), &size);
+
+            if (result < 0)
+            {
+                uv_close(reinterpret_cast<uv_handle_t*>(pipe.get()), hx::asys::libuv::clean_handle);
+
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+                return;
+            }
+        }
+
+        auto recvBufferSize = options->__Field(HX_CSTRING("receiveBuffer"), hx::PropertyAccess::paccDynamic);
+        if (!recvBufferSize.isNull() && recvBufferSize.isInt())
+        {
+            auto size = sendBufferSize.asInt();
+            auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(pipe.get()), &size);
+
+            if (result < 0)
+            {
+                uv_close(reinterpret_cast<uv_handle_t*>(pipe.get()), hx::asys::libuv::clean_handle);
+
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+                return;
+            }
+        }
     }
 
     cbSuccess(new LibuvServer(reinterpret_cast<uv_stream_t*>(pipe.release())));
