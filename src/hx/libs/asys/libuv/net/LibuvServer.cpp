@@ -49,12 +49,14 @@ namespace
     private:
         uv_stream_t* const stream;
         const std::unique_ptr<ConnectionQueue> queue;
+        bool keepAliveEnabled;
 
     public:
         LibuvServer(uv_stream_t* _stream)
             : hx::asys::net::Server_obj(hx::asys::libuv::getName(reinterpret_cast<uv_handle_t*>(_stream), false))
             , stream(_stream)
             , queue(new ConnectionQueue())
+            , keepAliveEnabled(false)
         {
             hx::GCSetFinalizer(this, [](hx::Object* obj) {
                 reinterpret_cast<LibuvServer*>(obj)->~LibuvServer();
@@ -68,12 +70,12 @@ namespace
             uv_close(reinterpret_cast<uv_handle_t*>(stream), hx::asys::libuv::clean_handle);
         }
 
-        void accept(Dynamic cbSuccess, Dynamic cbFailure)
+        void accept(Dynamic cbSuccess, Dynamic cbFailure) override
         {
             queue->Enqueue(cbSuccess, cbFailure);
         }
 
-        void close(Dynamic cbSuccess, Dynamic cbFailure)
+        void close(Dynamic cbSuccess, Dynamic cbFailure) override
         {
             auto request = std::make_unique<uv_shutdown_t>();
             auto wrapper = [](uv_shutdown_t* request, int status) {
@@ -103,6 +105,80 @@ namespace
             {
                 request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
                 request.release();
+            }
+        }
+
+        void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) override
+        {
+            auto result = uv_tcp_keepalive(reinterpret_cast<uv_tcp_t*>(stream), keepAlive, 5);
+            if (result < 0)
+            {
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+            }
+            else
+            {
+                keepAliveEnabled = keepAlive;
+
+                cbSuccess();
+            }
+        }
+
+        void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) override
+        {
+            auto result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(stream), &size);
+            if (result < 0)
+            {
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+            }
+            else
+            {
+                cbSuccess();
+            }
+        }
+
+        void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) override
+        {
+            auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(stream), &size);
+            if (result < 0)
+            {
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+            }
+            else
+            {
+                cbSuccess();
+            }
+        }
+
+        void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure)
+        {
+            cbSuccess(keepAliveEnabled);
+        }
+
+        void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override
+        {
+            auto size = 0;
+            auto result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(stream), &size);
+            if (result < 0)
+            {
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+            }
+            else
+            {
+                cbSuccess(size);
+            }
+        }
+
+        void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override
+        {
+            auto size = 0;
+            auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(stream), &size);
+            if (result < 0)
+            {
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+            }
+            else
+            {
+                cbSuccess(size);
             }
         }
     };

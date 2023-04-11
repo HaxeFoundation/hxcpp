@@ -158,6 +158,14 @@ namespace hx
 
                 virtual void accept(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+                virtual void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+                virtual void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
         }
 
