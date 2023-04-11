@@ -41,7 +41,6 @@
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-frtti"/>
   <cppflag value="-std=c++11" if="HXCPP_CPP11" />
-  <cflag value="-std=gnu99" unless="HXCPP_NO_GNU99" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
   <flag value="-fpic"/>
