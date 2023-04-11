@@ -126,9 +126,9 @@ namespace hx
                 const hx::EnumBase name;
                 const hx::EnumBase peer;
 
-                static void connect_ipv4(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
-                static void connect_ipv6(Context ctx, const String host, int port, Dynamic cbSuccess, Dynamic cbFailure);
-                static void connect_ipc(Context ctx, const String path, Dynamic cbSuccess, Dynamic cbFailure);
+                static void connect_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+                static void connect_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+                static void connect_ipc(Context ctx, const String path, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override = 0;
                 virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override = 0;
