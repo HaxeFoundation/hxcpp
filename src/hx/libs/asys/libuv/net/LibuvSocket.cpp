@@ -151,7 +151,7 @@ void hx::asys::libuv::net::LibuvSocket::write(Array<uint8_t> input, int offset, 
 
 void hx::asys::libuv::net::LibuvSocket::flush(Dynamic cbSuccess, Dynamic cbFailure)
 {
-    //
+    writer->flush(cbSuccess, cbFailure);
 }
 
 void hx::asys::libuv::net::LibuvSocket::close(Dynamic cbSuccess, Dynamic cbFailure)
