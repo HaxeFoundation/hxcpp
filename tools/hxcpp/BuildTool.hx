@@ -45,7 +45,7 @@ typedef Linkers = Hash<Linker>;
 
 class BuildTool
 {
-   public inline static var SupportedVersion = 400;
+   public inline static var SupportedVersion = 430;
 
    var mDefines:Hash<String>;
    var mCurrentIncludeFile:String;
@@ -146,7 +146,7 @@ class BuildTool
          set64(mDefines,m64,arm64);
       }
 
-      Profile.setEntry("parse xml"); 
+      Profile.setEntry("parse xml");
 
       include("toolchain/setup.xml");
 
@@ -223,7 +223,7 @@ class BuildTool
 
       var cached = CompileCache.init(mDefines);
 
-      Profile.setEntry("setup cache"); 
+      Profile.setEntry("setup cache");
 
       if (inJob=="cache")
       {
@@ -271,14 +271,14 @@ class BuildTool
 
       if (inTargets.remove("clear"))
       {
-         Profile.setEntry("clear"); 
+         Profile.setEntry("clear");
          for(target in mTargets.keys())
             cleanTarget(target,false);
        }
 
       if (inTargets.remove("clean"))
       {
-         Profile.setEntry("clean"); 
+         Profile.setEntry("clean");
          for(target in mTargets.keys())
             cleanTarget(target,true);
       }
@@ -289,7 +289,7 @@ class BuildTool
          destination = null;
       }
 
-      Profile.setEntry("build"); 
+      Profile.setEntry("build");
       for(target in inTargets)
          buildTarget(target,destination);
 
@@ -1307,8 +1307,9 @@ class BuildTool
       {
          if (isWindowsArm)
             return "arm64";
-         var architecture = Sys.getEnv ("PROCESSOR_ARCHITEW6432");
-         if (architecture != null && architecture.indexOf ("64") > -1)
+         var architecture = Sys.getEnv("PROCESSOR_ARCHITECTURE");
+         var wow64Architecture = Sys.getEnv("PROCESSOR_ARCHITEW6432");
+         if (architecture.indexOf("64") > -1 || wow64Architecture != null && wow64Architecture.indexOf("64") > -1)
          {
             return "m64";
          }
@@ -1325,7 +1326,7 @@ class BuildTool
          process.exitCode();
          process.close();
 
-         if (output.indexOf("aarch64") > -1)
+         if ( (output.indexOf("aarch64") > -1) ||  (output.indexOf("arm64") > -1) )
          {
             return "arm64";
          }
@@ -1383,7 +1384,7 @@ class BuildTool
       {
          var cores = ~/Total Number of Cores: (\d+)/;
          var output = ProcessManager.runProcess("", "/usr/sbin/system_profiler", [ "-detailLevel", "full", "SPHardwareDataType" ], true, false, true, true);
-         if (cores.match(output))
+         if (output != null && cores.match(output))
          {
             result = cores.matched(1);
          }
@@ -1714,7 +1715,7 @@ class BuildTool
            }
       }
 
-      Profile.setEntry("setup"); 
+      Profile.setEntry("setup");
       Setup.initHXCPPConfig(defines);
 
       if (HXCPP=="" && env.exists("HXCPP"))
@@ -1895,14 +1896,14 @@ class BuildTool
          if (!defines.exists("ANDROID_HOST"))
          {
             if ( (new EReg("mac","i")).match(os) )
-               defines.set("ANDROID_HOST","darwin-x86");
+               defines.set("ANDROID_HOST","darwin-x86_64");
             else if ( (new EReg("window","i")).match(os) )
             {
                defines.set("windows_host","1");
                defines.set("ANDROID_HOST","windows");
             }
             else if ( (new EReg("linux","i")).match(os) )
-               defines.set("ANDROID_HOST","linux-x86");
+               defines.set("ANDROID_HOST","linux-x86_64");
             else
             {
                Log.error ("Unknown android host \"" + os + "\"");
@@ -2050,7 +2051,7 @@ class BuildTool
       }
       else if ( (new EReg("mac","i")).match(os) )
       {
-         set64(defines,m64);
+         set64(defines,m64, arm64);
          // Cross-compile?
          if (defines.exists("linux"))
          {

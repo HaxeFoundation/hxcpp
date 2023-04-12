@@ -10,6 +10,7 @@
 #   include <unistd.h>
 #   include <memory.h>
 #   include <errno.h>
+#   include <signal.h>
 #   if defined(ANDROID) || defined(BLACKBERRY) || defined(EMSCRIPTEN)
 #      include <sys/wait.h>
 #   elif !defined(NEKO_MAC)
@@ -250,7 +251,7 @@ Dynamic _hx_std_process_run( String cmd, Array<String> vargs, int inShowParam )
       //printf("Cmd %s\n",val_string(cmd));
       PROCESS_INFORMATION pinf;
       memset(&pinf,0,sizeof(pinf));
-      if( !CreateProcessW(NULL,(wchar_t *)name,NULL,NULL,TRUE,0,NULL,NULL,&sinf,&pinf) )
+      if( !CreateProcessW(NULL,(wchar_t *)name,NULL,NULL,TRUE,CREATE_NO_WINDOW,NULL,NULL,&sinf,&pinf) )
       {
          hx::ExitGCFreeZone();
          hx::Throw(HX_CSTRING("Could not start process"));
@@ -563,7 +564,7 @@ void _hx_std_process_kill( Dynamic handle )
 
    #ifdef NEKO_WINDOWS
    TerminateProcess(p->pinf.hProcess, -1);
-   #elif defined(APPLETV) && !defined(HX_APPLEWATCH)
+   #else
    kill(p->pid, SIGTERM);
    #endif
 }

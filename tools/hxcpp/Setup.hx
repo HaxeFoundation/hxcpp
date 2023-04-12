@@ -47,7 +47,7 @@ class Setup
           for (file in files)
           {
              file = file.split("\\").join("/");
-             var version = getNdkVersion(file);
+             var version = getNdkVersion(ndkDir + "/" + file);
              if (inBaseVersion==0 || Std.int(version)==inBaseVersion)
              {
                 if (version>bestVersion)
@@ -415,7 +415,11 @@ class Setup
       // See what ANDROID_HOST to use ...
       try
       {
-         var prebuilt =  root+"/toolchains/"+arm_type+"-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
+         var prebuilt = root+"/toolchains/";
+         if (defines.exists("TOOLCHAIN_VERSION"))
+            prebuilt += arm_type + "-" + defines.get("TOOLCHAIN_VERSION") + "/prebuilt";
+         else
+            prebuilt += "llvm/prebuilt";
          var files = FileSystem.readDirectory(prebuilt);
          for (file in files)
          {

@@ -1,8 +1,19 @@
 
+4.3
+------------------------------------------------------------
+
+* Bug fixes
+* Upgrade to 4.3 API
+* Use PCRE v2
+
+4.2
+------------------------------------------------------------
 
 * Update MIN_IOS_VERSION
 * Bug fixes
 * Upgrade to 4.2 API
+* Fixed mysql_select_db failing for newer mariadb versions due to extra 0x00 byte after database
+* Fixed mysql_close not sending COM_QUIT before closing socket
 
 4.1.15
 ------------------------------------------------------------

@@ -11,7 +11,7 @@ setlocal enabledelayedexpansion
 	        @set
 	        @echo HXCPP_HACK_PDBSRV=1
 	) else (
-		echo Warning: Could not find Visual Studio 2017 VsDevCmd
+		echo Warning: Could not find Visual Studio VsDevCmd
 	)
 ) else if exist "%VS140COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat" (
 	@call "%VS140COMNTOOLS%\..\..\VC\bin\x86_amd64\vcvarsx86_amd64.bat"
@@ -23,5 +23,5 @@ setlocal enabledelayedexpansion
 	@set
 	@echo HXCPP_HACK_PDBSRV=1
 ) else (
-	echo Warning: Could not find x64 environment variables for Visual Studio 2015 or 2017 compiler
+	echo Warning: Could not find x64 environment variables for Visual Studio compiler
 )

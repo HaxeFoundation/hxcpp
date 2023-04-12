@@ -379,7 +379,6 @@ Array<unsigned char> _hx_std_file_contents_bytes( String name )
    {
       char *dest = (char *)&buffer[0];
 
-      hx::EnterGCFreeZone();
       int p = 0;
       while( len > 0 )
       {

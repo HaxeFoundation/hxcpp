@@ -2,16 +2,17 @@
 <!-- MACOS TOOLS -->
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
-<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11" />
+<set name="HXCPP_CPP11" value="1" unless="HXCPP_NO_CPP11 || HXCPP_CPP14" />
+
 
 <include name="toolchain/gcc-toolchain.xml"/>
-<setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.9" if="HXCPP_CPP11" unless="MACOSX_DEPLOYMENT_TARGET"/>
+<setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.9" if="HXCPP_CPP11||HXCPP_CPP14" unless="MACOSX_DEPLOYMENT_TARGET"/>
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.7" if="OBJC_ARC" unless="MACOSX_DEPLOYMENT_TARGET" />
 <setenv name="MACOSX_DEPLOYMENT_TARGET" value="10.6" unless="MACOSX_DEPLOYMENT_TARGET" />
 <path name="${DEVELOPER_DIR}/usr/bin" />
 <set name="HXCPP_LTO_THIN" value="1" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL"/>
 
-<set name="STDLIBCPP" value="1" unless="HXCPP_GCC || HXCPP_CPP11" />
+<set name="STDLIBCPP" value="1" unless="HXCPP_GCC || HXCPP_CPP11 || HXCPP_CPP14" />
 
 
 <section unless="HXCPP_ARCH">
@@ -26,6 +27,8 @@
   <flag value="-c"/>
   <flag value="-fvisibility=hidden"/>
   <cppflag value="-std=c++11" if="HXCPP_CPP11"/>
+  <cppflag value="-std=c++14" if="HXCPP_CPP14"/>
+  <cppflag value="-Wc++14-extensions" if="HXCPP_CPP14"/>
   <flag value="-stdlib=libc++" unless="STDLIBCPP" />
   <flag value="-stdlib=libstdc++" if="STDLIBCPP" />
   <cppflag value="-frtti"/>
@@ -89,6 +92,9 @@
 <linker id="exe" exe="g++" if="macos">
   <exe name="xcrun --sdk macosx${MACOSX_VER} clang++" if="HXCPP_CLANG" />
   <!-- <flag value="-Wl,-stack_size,0x8000"/> -->
+  <flag value="-rpath" />
+  <flag value="@executable_path"/>
+  <flag value="-Wl,-rpath,${HXCPP_RPATH}" if="HXCPP_RPATH" />
   <flag value="-Wl,-cache_path_lto,/tmp" if="HXCPP_OPTIMIZE_LINK_INCREMENTAL" unless="debug"/>
   <fromfile value="" if="GCC_OLD" />
   <flag value="-stdlib=libstdc++" if="STDLIBCPP" />

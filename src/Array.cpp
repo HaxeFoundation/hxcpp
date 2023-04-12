@@ -973,6 +973,7 @@ void VirtualArray_obj::EnsureArrayStorage(ArrayStore inStore)
       case arrayInt:  EnsureIntStorage(); break;
       case arrayFloat:  EnsureFloatStorage(); break;
       case arrayString:  EnsureStringStorage(); break;
+      case arrayInt64:  EnsureInt64Storage(); break;
       case arrayObject:  EnsureObjectStorage(); break;
    }
 }
@@ -1011,6 +1012,23 @@ void VirtualArray_obj::MakeIntArray()
    HX_OBJ_WB_GET(this,base);
 }
 
+void VirtualArray_obj::MakeInt64Array()
+{
+   if (store==arrayEmpty && base)
+   {
+      int len = base->length;
+      base = new Array_obj< ::cpp::Int64>(len, len);
+   }
+   else if (!base)
+      base = new Array_obj< ::cpp::Int64>(0, 0);
+   else
+   {
+      Array< ::cpp::Int64> result = Dynamic(base);
+      base = result.mPtr;
+   }
+   store = arrayInt64;
+   HX_OBJ_WB_GET(this, base);
+}
 
 void VirtualArray_obj::MakeObjectArray()
 {
