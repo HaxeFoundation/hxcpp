@@ -100,13 +100,13 @@ jobs:
           uses: actions/download-artifact@v3
           with:
              name: mac-64
-             path: hxcpp/bin/Mac64/Cppia
+             path: hxcpp/bin/Mac64/
 
         - name: Download Windows
           uses: actions/download-artifact@v3
           with:
              name: windows-64
-             path: hxcpp/bin/Windows/Cppia.exe
+             path: hxcpp/bin/Windows64/
 
         - name: List Files
           run: ls -R
