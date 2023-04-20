@@ -53,6 +53,7 @@ jobs:
              bin/Linux64/Cppia
              tools
              toolchain
+             version.env
              src
              run.n
              include
