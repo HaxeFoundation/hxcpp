@@ -42,7 +42,7 @@ jobs:
       - name: Clean Project
         if: startsWith(matrix.os,'ubuntu')
         run: |
-          rm -rf project/obj
+          rm -rf project/cppia_bin
 
       - name: Archive Linux Results
         if: startsWith(matrix.os,'ubuntu')
@@ -100,13 +100,13 @@ jobs:
           uses: actions/download-artifact@v3
           with:
              name: mac-64
-             path: hxcpp
+             path: hxcpp/bin/Mac64/Cppia
 
         - name: Download Windows
           uses: actions/download-artifact@v3
           with:
              name: windows-64
-             path: hxcpp
+             path: hxcpp/bin/Windows/Cppia.exe
 
         - name: List Files
           run: ls -R
