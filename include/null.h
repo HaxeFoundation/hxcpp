@@ -193,6 +193,7 @@ struct Null
    }
 
    inline operator Dynamic();
+   inline operator T() { return isNull ? null() : value; }
    inline T Default(T inDefault) { return isNull ? inDefault : value; }
 
    bool isNull;
