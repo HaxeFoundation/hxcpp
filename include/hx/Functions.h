@@ -80,20 +80,26 @@ namespace hx
         typedef Callable_obj<TReturn(TArgs...)>* Ptr;
 
     public:
-        Callable() : super(nullptr) {}
+        Callable()
+            : super(nullptr) {}
 
-        Callable(const null& inNull) : super(nullptr) {}
+        Callable(const null& inNull)
+            : super(nullptr) {}
 
         Callable(Ptr inPtr) : super(inPtr) {}
 
         Callable(const hx::ObjectPtr<OBJ_>& inCallable)
-            : ObjectPtr<Callable_obj<TReturn(TArgs...)>>(inCallable) {}
+            : super(inCallable) {}
 
         Callable(const Callable<TReturn(TArgs...)>& inCallable)
-            : ObjectPtr<Callable_obj<TReturn(TArgs...)>>(inCallable.GetPtr()) {}
+            : super(inCallable.GetPtr()) {}
+
+        Callable(const ::cpp::Variant& inVariant)
+            : Callable(Dynamic(inVariant.asObject())) {}
 
         template<class TOtherReturn, class... TOtherArgs>
-        Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable) : super(nullptr)
+        Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
+            : super(nullptr)
         {
             struct AdapterCallable final : public Callable_obj<TReturn(TArgs...)>
             {
@@ -137,9 +143,10 @@ namespace hx
             super::mPtr = new AdapterCallable(inCallable);
         }
 
-        Callable(const Dynamic& inDynamic) : super(nullptr)
+        Callable(const Dynamic& inDynamic)
+            : super(nullptr)
         {
-            auto casted = dynamic_cast<::hx::Callable_obj<TReturn(TArgs...)>*>(inDynamic.GetPtr());
+            auto casted = dynamic_cast<Ptr>(inDynamic.GetPtr());
             if (nullptr != casted)
             {
                 super::mPtr = casted;
@@ -187,8 +194,6 @@ namespace hx
                 }
             }
         }
-
-        Callable(const ::cpp::Variant& inVariant) : Callable(Dynamic(inVariant.asObject())) {}
 
         TReturn operator ()(TArgs... args)
         {
