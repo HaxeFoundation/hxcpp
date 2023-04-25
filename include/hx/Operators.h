@@ -1,3 +1,4 @@
+#include "null.h"
 #ifndef HX_OPERATORS_H
 #define HX_OPERATORS_H
 
@@ -8,6 +9,8 @@ template<typename T> inline bool null::operator != (const hx::ObjectPtr<T> &O) c
 
 template<typename T> inline bool null::operator == (const Array<T> &O) const { return !O.mPtr; }
 template<typename T> inline bool null::operator != (const Array<T> &O) const { return O.mPtr; }
+template<class TReturn, class... TArgs> inline bool null::operator==(const ::hx::Callable<TReturn(TArgs...)>& O) const { return !O.mPtr; }
+template<class TReturn, class... TArgs> inline bool null::operator!=(const ::hx::Callable<TReturn(TArgs...)>& O) const { return O.mPtr; }
 inline bool null::operator == (const hx::FieldRef &O) const { return !O.HasPointer(); }
 inline bool null::operator != (const hx::FieldRef &O) const { return O.HasPointer(); }
 inline bool null::operator == (const hx::IndexRef &O) const { return !O.HasPointer(); }

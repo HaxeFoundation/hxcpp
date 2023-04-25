@@ -16,6 +16,8 @@ namespace hx { template<typename O> class ObjectPtr; }
 
 namespace hx { null NullArithmetic(const char *inText); }
 
+namespace hx { template<class TReturn, class... TArgs> class Callable; }
+
 #define HX_NULL_COMPARE_OP(op,type,value) \
 			bool operator op (const type &inRHS) const { return value; }
 
@@ -112,6 +114,8 @@ class null
      template<typename T> inline bool operator != (const hx::ObjectPtr<T> &) const;
      template<typename T> inline bool operator == (const Array<T> &) const;
      template<typename T> inline bool operator != (const Array<T> &) const;
+     template<class TReturn, class... TArgs> inline bool operator == (const ::hx::Callable<TReturn(TArgs...)>&) const;
+     template<class TReturn, class... TArgs> inline bool operator != (const ::hx::Callable<TReturn(TArgs...)>&) const;
      inline bool operator == (const hx::FieldRef &) const;
      inline bool operator != (const hx::FieldRef &) const;
      inline bool operator == (const hx::IndexRef &) const;
