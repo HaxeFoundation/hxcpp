@@ -40,33 +40,6 @@ namespace hx
         }
 
         virtual TReturn _hx_run(TArgs... args) = 0;
-
-        inline void DoMarkThis(hx::MarkContext* __inCtx) { }
-#ifdef HXCPP_VISIT_ALLOCS
-        inline void DoVisitThis(hx::VisitContext* __inCtx) { }
-#endif
-    };
-
-    template<class TReturn, class... TArgs>
-    struct HXCPP_EXTERN_CLASS_ATTRIBUTES CallableThis_obj : public Callable_obj<TReturn(TArgs...)>
-    {
-        Dynamic __this;
-
-        void __SetThis(Dynamic inThis) override
-        {
-            __this = inThis;
-        }
-
-        inline void DoMarkThis(hx::MarkContext* __inCtx)
-        {
-            HX_MARK_MEMBER(__this);
-        }
-#ifdef HXCPP_VISIT_ALLOCS
-        inline void DoVisitThis(hx::VisitContext* __inCtx)
-        {
-            HX_VISIT_MEMBER(__this);
-        }
-#endif
     };
 
     template<class TReturn, class... TArgs>
@@ -75,9 +48,10 @@ namespace hx
     template<class TReturn, class... TArgs>
     class Callable<TReturn(TArgs...)> : public ObjectPtr<Callable_obj<TReturn(TArgs...)>>
     {
-        typedef hx::ObjectPtr< Callable_obj<TReturn(TArgs...)> > super;
-        typedef Callable_obj<TReturn(TArgs...)> OBJ_;
-        typedef Callable_obj<TReturn(TArgs...)>* Ptr;
+    private:
+        using super = hx::ObjectPtr< Callable_obj<TReturn(TArgs...)> >;
+        using OBJ_  = Callable_obj<TReturn(TArgs...)>;
+        using Ptr   = Callable_obj<TReturn(TArgs...)>*;
 
     public:
         Callable()
