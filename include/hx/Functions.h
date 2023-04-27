@@ -29,6 +29,8 @@ namespace hx
     template<class TReturn, class... TArgs>
     struct HXCPP_EXTERN_CLASS_ATTRIBUTES Callable_obj<TReturn(TArgs...)> : public hx::Object
     {
+        HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdClosure };
+
         int __GetType() const override
         {
             return vtFunction;
