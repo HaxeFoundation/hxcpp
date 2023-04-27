@@ -696,7 +696,7 @@ struct VarArgFunc : public hx::Object
 {
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure };
 
-   VarArgFunc(Dynamic inFunc) : mRealFunc(inFunc) {
+   VarArgFunc(Dynamic &inFunc) : mRealFunc(inFunc) {
      HX_OBJ_WB_NEW_MARKED_OBJECT(this)
    }
 
@@ -720,7 +720,7 @@ struct VarArgFunc : public hx::Object
 
 }
 
-Dynamic __hxcpp_create_var_args(Dynamic inArrayFunc)
+Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc)
 {
    return Dynamic(new hx::VarArgFunc(inArrayFunc));
 }
