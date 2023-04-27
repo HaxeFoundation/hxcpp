@@ -125,36 +125,59 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
 ::foreach PARAMS::
 #define HX_DYNAMIC_CALL::ARG::(ret,func) HX_DYNAMIC_CALL(ret,func,HX_ARR_LIST::ARG::,HX_DYNAMIC_ARG_LIST::ARG::,HX_ARG_LIST::ARG::)::end::
 
-#define HX_BEGIN_DEFAULT_FUNC(name,t0) \
-	namespace { \
-   struct name : public ::hxNS::Object { int __GetType() const { return vtFunction; } \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
-   ::hxNS::ObjectPtr<t0> __this; \
-   name(::hxNS::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
-   void __Mark(::hxNS::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
-   void __Visit(::hxNS::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
-
+#if (HXCPP_API_LEVEL>=500)
+    #define HX_BEGIN_DEFAULT_FUNC(name,t0) \
+	    namespace { \
+       struct name : public ::hxNS::Object { \
+       ::hxNS::ObjectPtr<t0> __this; \
+       name(::hxNS::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
+       void __Mark(::hxNS::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
+       void __Visit(::hxNS::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
+#else
+    #define HX_BEGIN_DEFAULT_FUNC(name,t0) \
+	    namespace { \
+       struct name : public ::hxNS::Object { int __GetType() const { return vtFunction; } \
+       HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
+       ::hxNS::ObjectPtr<t0> __this; \
+       name(::hxNS::ObjectPtr<t0> __0 = null()) : __this(__0) {} \
+       void __Mark(::hxNS::MarkContext *__inCtx) { HX_MARK_MEMBER(__this); } \
+       void __Visit(::hxNS::VisitContext *__inCtx) { HX_VISIT_MEMBER(__this); }
+#endif
 
 #define HX_END_DEFAULT_FUNC \
 }
 
 #define HXARGC(x) int __ArgCount() const { return x; }
 
-#define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
-   struct name : public SUPER { \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
-   void __Mark(::hxNS::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
-   void __Visit(::hxNS::VisitContext *__inCtx) { DoVisitThis(__inCtx); } \
-   name() {}
+#if (HXCPP_API_LEVEL>=500)
+    #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
+       struct name : public SUPER { \
+       name() {}
 
-::foreach LOCALS::
-#define HX_BEGIN_LOCAL_FUNC_S::ARG::(SUPER,name,::TYPE_ARGS::) \
-   struct name : public SUPER { \
-   HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
-   ::TYPE_DECL::; \
-   void __Mark(::hxNS::MarkContext *__inCtx) { DoMarkThis(__inCtx); ::MARKS:: } \
-   void __Visit(::hxNS::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \
-   name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
+    ::foreach LOCALS::
+    #define HX_BEGIN_LOCAL_FUNC_S::ARG::(SUPER,name,::TYPE_ARGS::) \
+       struct name : public SUPER { \
+       ::TYPE_DECL::; \
+       void __Mark(::hxNS::MarkContext *__inCtx) { ::MARKS:: } \
+       void __Visit(::hxNS::VisitContext *__inCtx) { ::VISITS:: } \
+       name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
+#else
+    #define HX_BEGIN_LOCAL_FUNC_S0(SUPER,name) \
+       struct name : public SUPER { \
+       HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
+       void __Mark(::hxNS::MarkContext *__inCtx) { DoMarkThis(__inCtx); } \
+       void __Visit(::hxNS::VisitContext *__inCtx) { DoVisitThis(__inCtx); } \
+       name() {}
+
+    ::foreach LOCALS::
+    #define HX_BEGIN_LOCAL_FUNC_S::ARG::(SUPER,name,::TYPE_ARGS::) \
+       struct name : public SUPER { \
+       HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hxNS::clsIdClosure }; \
+       ::TYPE_DECL::; \
+       void __Mark(::hxNS::MarkContext *__inCtx) { DoMarkThis(__inCtx); ::MARKS:: } \
+       void __Visit(::hxNS::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \
+       name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
+#endif
 
 #if (HXCPP_API_LEVEL>=330)
   #define HX_LOCAL_RUN _hx_run
