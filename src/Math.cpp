@@ -37,6 +37,71 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 #undef max
 #endif
 
+#if HXCPP_API_LEVEL>=500
+
+#define HX_MATHS_FUNC0(name, ret) \
+	::hx::Callable<ret()> Math_obj::name##_dyn() \
+	{ \
+		struct _hx_maths_##name : public ::hx::Callable_obj<ret()> \
+		{ \
+			ret _hx_run() override \
+			{ \
+				return Math_obj::name(); \
+			} \
+		}; \
+		return new _hx_maths_##name(); \
+	}
+
+#define HX_MATHS_FUNC1(name, ret, arg0) \
+	::hx::Callable<ret(arg0)> Math_obj::name##_dyn() \
+	{ \
+		struct _hx_maths_##name : public ::hx::Callable_obj<ret(arg0)> \
+		{ \
+			ret _hx_run(arg0 a0) override \
+			{ \
+				return Math_obj::name(a0); \
+			} \
+		}; \
+		return new _hx_maths_##name(); \
+	}
+
+#define HX_MATHS_FUNC2(name, ret, arg0, arg1) \
+	::hx::Callable<ret(arg0, arg1)> Math_obj::name##_dyn() \
+	{ \
+		struct _hx_maths_##name : public ::hx::Callable_obj<ret(arg0, arg1)> \
+		{ \
+			ret _hx_run(arg0 a0, arg1 a1) override \
+			{ \
+				return Math_obj::name(a0, a1); \
+			} \
+		}; \
+		return new _hx_maths_##name(); \
+	}
+
+HX_MATHS_FUNC1(floor, int, double);
+HX_MATHS_FUNC1(ceil, int, double);
+HX_MATHS_FUNC1(round, int, double);
+HX_MATHS_FUNC1(ffloor, double, double);
+HX_MATHS_FUNC1(fceil, double, double);
+HX_MATHS_FUNC1(fround, double, double);
+HX_MATHS_FUNC0(random, double);
+HX_MATHS_FUNC1(sqrt, double, double);
+HX_MATHS_FUNC1(cos, double, double);
+HX_MATHS_FUNC1(sin, double, double);
+HX_MATHS_FUNC1(tan, double, double);
+HX_MATHS_FUNC2(atan2, double, double, double);
+HX_MATHS_FUNC1(abs, double, double);
+HX_MATHS_FUNC2(pow, double, double, double);
+HX_MATHS_FUNC1(log, double, double);
+HX_MATHS_FUNC2(min, double, double, double);
+HX_MATHS_FUNC2(max, double, double, double);
+HX_MATHS_FUNC1(acos, double, double);
+HX_MATHS_FUNC1(asin, double, double);
+HX_MATHS_FUNC1(atan, double, double);
+HX_MATHS_FUNC1(exp, double, double);
+HX_MATHS_FUNC1(isNaN, bool, double);
+HX_MATHS_FUNC1(isFinite, bool, double);
+#else
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,floor,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,ffloor,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,ceil,return);
@@ -60,6 +125,7 @@ STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,acos,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,exp,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isNaN,return);
 STATIC_HX_DEFINE_DYNAMIC_FUNC1(Math_obj,isFinite,return);
+#endif
 
 hx::Val Math_obj::__Field(const String &inString, hx::PropertyAccess inCallProp)
 {
