@@ -37,7 +37,7 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 #undef max
 #endif
 
-#if HXCPP_API_LEVEL>=500
+#if (HXCPP_API_LEVEL>=500)
 
 #define HX_MATHS_FUNC0(name, ret) \
 	::hx::Callable<ret()> Math_obj::name##_dyn() \

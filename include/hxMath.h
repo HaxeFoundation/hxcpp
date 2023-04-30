@@ -47,7 +47,7 @@ public:
    static bool isNaN(double inX);
    static bool isFinite(double inX);
 
-#if HXCPP_API_LEVEL>=500
+#if (HXCPP_API_LEVEL>=500)
    static ::hx::Callable<int(double)> floor_dyn();
    static ::hx::Callable<int(double)> ceil_dyn();
    static ::hx::Callable<int(double)> round_dyn();

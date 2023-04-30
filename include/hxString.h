@@ -336,9 +336,21 @@ public:
 
    static char16_t *allocChar16Ptr(int len);
 
+#if (HXCPP_API_LEVEL>=500)
+   static ::hx::Callable<::String(int)> fromCharCode_dyn();
 
+   ::hx::Callable<::String(int)> charAt_dyn();
+   ::hx::Callable<::Dynamic(int)> charCodeAt_dyn();
+   ::hx::Callable<int(::String, ::Dynamic)> indexOf_dyn();
+   ::hx::Callable<int(::String, ::Dynamic)> lastIndexOf_dyn();
+   ::hx::Callable<::Array<::String>(::String)> split_dyn();
+   ::hx::Callable<::String(int, ::Dynamic)> substr_dyn();
+   ::hx::Callable<::String(int, ::Dynamic)> substring_dyn();
+   ::hx::Callable<::String()> toLowerCase_dyn();
+   ::hx::Callable<::String()> toString_dyn();
+   ::hx::Callable<::String()> toUpperCase_dyn();
+#else
    static  Dynamic fromCharCode_dyn();
-
 
    Dynamic charAt_dyn();
    Dynamic charCodeAt_dyn();
@@ -350,6 +362,7 @@ public:
    Dynamic toLowerCase_dyn();
    Dynamic toString_dyn();
    Dynamic toUpperCase_dyn();
+#endif
 
    // This is used by the string-wrapped-as-dynamic class
    hx::Val __Field(const ::String &inString, hx::PropertyAccess inCallProp);
