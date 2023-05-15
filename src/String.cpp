@@ -2123,6 +2123,10 @@ String &String::operator+=(const String &inRHS)
                 { \
                     mThis = inThis; \
                 } \
+			    ::Dynamic __run() \
+			    { \
+				    return _hx_run(); \
+			    } \
             }; \
             return new _hx_string_##name(*this); \
         }
@@ -2145,6 +2149,10 @@ String &String::operator+=(const String &inRHS)
                 { \
                     mThis = inThis; \
                 } \
+			    ::Dynamic __run(::Dynamic a0) \
+			    { \
+				    return _hx_run(a0); \
+			    } \
             }; \
             return new _hx_string_##name(*this); \
         }
@@ -2167,6 +2175,10 @@ String &String::operator+=(const String &inRHS)
                 { \
                     mThis = inThis; \
                 } \
+			    ::Dynamic __run(::Dynamic a0, ::Dynamic a1) \
+			    { \
+				    return _hx_run(a0, a1); \
+			    } \
             }; \
             return new _hx_string_##name(*this); \
         }

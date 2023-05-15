@@ -48,6 +48,10 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 			{ \
 				return Math_obj::name(); \
 			} \
+			::Dynamic __run() \
+			{ \
+				return _hx_run(); \
+			} \
 		}; \
 		return new _hx_maths_##name(); \
 	}
@@ -61,6 +65,10 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 			{ \
 				return Math_obj::name(a0); \
 			} \
+			::Dynamic __run(::Dynamic a0) \
+			{ \
+				return _hx_run(a0); \
+			} \
 		}; \
 		return new _hx_maths_##name(); \
 	}
@@ -73,6 +81,10 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 			ret _hx_run(arg0 a0, arg1 a1) override \
 			{ \
 				return Math_obj::name(a0, a1); \
+			} \
+			::Dynamic __run(::Dynamic a0, ::Dynamic a1) \
+			{ \
+				return _hx_run(a0, a1); \
 			} \
 		}; \
 		return new _hx_maths_##name(); \
