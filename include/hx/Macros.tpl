@@ -119,7 +119,6 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
 
 
 #define HX_DYNAMIC_CALL(ret,func,array_args,dyn_arg_list,arg_list) \
-    ::NS::Dynamic __Run(const Array< ::NS::Dynamic> &inArgs) { ret func( array_args ); return null();} \
     ::NS::Dynamic __run(dyn_arg_list) { ret func( arg_list ); return null();}
 
 ::foreach PARAMS::

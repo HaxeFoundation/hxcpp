@@ -806,7 +806,6 @@ static ::Dynamic __##class##func(const Array< ::Dynamic> &inArgs) \
 
 
 #define HX_DYNAMIC_CALL(ret,func,array_args,dyn_arg_list,arg_list) \
-    ::Dynamic __Run(const Array< ::Dynamic> &inArgs) { ret func( array_args ); return null();} \
     ::Dynamic __run(dyn_arg_list) { ret func( arg_list ); return null();}
 
 

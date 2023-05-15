@@ -31,14 +31,34 @@ namespace hx
     {
         HX_IS_INSTANCE_OF enum { _hx_ClassId = ::hx::clsIdClosure };
 
-        int __GetType() const override
+        int __GetType() const override final
         {
             return vtFunction;
         }
 
-        int __ArgCount() const override
+        int __ArgCount() const override final
         {
             return sizeof...(TArgs);
+        }
+
+        Dynamic __Run(const Array<Dynamic>& inArgs) override final
+        {
+            return apply(inArgs, std::index_sequence_for<TArgs...>());
+        }
+
+        template<size_t... I>
+        Dynamic apply(const Array<Dynamic>& inArgs, std::index_sequence<I...>)
+        {
+            if constexpr (std::is_void<TReturn>())
+            {
+                _hx_run(inArgs[I] ...);
+
+                return null();
+            }
+            else
+            {
+                return _hx_run(inArgs[I] ...);
+            }
         }
 
         virtual TReturn _hx_run(TArgs... args) = 0;
@@ -147,11 +167,6 @@ namespace hx
                             {
                                 return wrapped(args...);
                             }
-                        }
-
-                        Dynamic __Run(const Array<Dynamic>& inArgs) override
-                        {
-                            return wrapped(inArgs);
                         }
 
                         inline void __Mark(hx::MarkContext* __inCtx) override
