@@ -52,6 +52,10 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 			{ \
 				return _hx_run(); \
 			} \
+			int __Compare(const ::hx::Object* inRhs) const override \
+            { \
+                return dynamic_cast<const _hx_maths_##name *>(inRhs) ? 0 : -1; \
+            } \
 		}; \
 		return new _hx_maths_##name(); \
 	}
@@ -69,6 +73,10 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 			{ \
 				return _hx_run(a0); \
 			} \
+			int __Compare(const ::hx::Object* inRhs) const override \
+            { \
+                return dynamic_cast<const _hx_maths_##name *>(inRhs) ? 0 : -1; \
+            } \
 		}; \
 		return new _hx_maths_##name(); \
 	}
@@ -86,6 +94,10 @@ double Math_obj::POSITIVE_INFINITY = std::numeric_limits<double>::infinity();
 			{ \
 				return _hx_run(a0, a1); \
 			} \
+			int __Compare(const ::hx::Object* inRhs) const override \
+            { \
+                return dynamic_cast<const _hx_maths_##name *>(inRhs) ? 0 : -1; \
+            } \
 		}; \
 		return new _hx_maths_##name(); \
 	}

@@ -2127,6 +2127,13 @@ String &String::operator+=(const String &inRHS)
 			    { \
 				    return _hx_run(); \
 			    } \
+                int __Compare(const ::hx::Object* inRhs) const override \
+                { \
+                    auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
+                    if (!casted) return 1; \
+                    if (mThis != casted->mThis) return -1; \
+                    return 0; \
+                } \
             }; \
             return new _hx_string_##name(*this); \
         }
@@ -2153,6 +2160,13 @@ String &String::operator+=(const String &inRHS)
 			    { \
 				    return _hx_run(a0); \
 			    } \
+                int __Compare(const ::hx::Object* inRhs) const override \
+                { \
+                    auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
+                    if (!casted) return 1; \
+                    if (mThis != casted->mThis) return -1; \
+                    return 0; \
+                } \
             }; \
             return new _hx_string_##name(*this); \
         }
@@ -2179,6 +2193,13 @@ String &String::operator+=(const String &inRHS)
 			    { \
 				    return _hx_run(a0, a1); \
 			    } \
+                int __Compare(const ::hx::Object* inRhs) const override \
+                { \
+                    auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
+                    if (!casted) return 1; \
+                    if (mThis != casted->mThis) return -1; \
+                    return 0; \
+                } \
             }; \
             return new _hx_string_##name(*this); \
         }
@@ -2201,6 +2222,10 @@ String &String::operator+=(const String &inRHS)
             ::String _hx_run(int a0) override
             {
                 return ::String::fromCharCode(a0);
+            }
+            int __Compare(const ::hx::Object* inRhs) const override
+            {
+                return dynamic_cast<const _hx_string_fromCharCode*>(inRhs) ? 0 : -1;
             }
         };
 
