@@ -51,22 +51,6 @@ struct CMemberFunction::ARG:: : public hx::Object
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
-   Dynamic __Run(const Array<Dynamic> &inArgs) 
-   { 
-      ::if (ARG>0)::
-      return mFunction(mThis.GetPtr(), ::ARR_LIST::);
-      ::else::
-      return mFunction(mThis.GetPtr());
-      ::end::
-   } 
-   Dynamic __run(::DYNAMIC_ARG_LIST::) 
-   { 
-      ::if (ARG>0)::
-      return mFunction(mThis.GetPtr(), ::ARG_LIST::);
-      ::else::
-      return mFunction(mThis.GetPtr());
-      ::end::
-   } 
 }; 
 
 
@@ -95,14 +79,6 @@ struct CStaticFunction::ARG:: : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return ::ARG::; } 
    ::String __ToString() const{ return String(mName); } 
-   Dynamic __Run(const Array<Dynamic> &inArgs) 
-   { 
-      return mFunction(::ARR_LIST::);
-   } 
-   Dynamic __run(::DYNAMIC_ARG_LIST::) 
-   { 
-      return mFunction(::ARG_LIST::);
-   } 
 }; 
 
 
@@ -158,10 +134,6 @@ struct CMemberFunctionVar : public hx::Object
    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); } 
    #endif
    void *__GetHandle() const { return mThis.GetPtr(); } 
-   Dynamic __Run(const Array<Dynamic> &inArgs) 
-   { 
-      return mFunction(mThis.GetPtr(), inArgs);
-   } 
 }; 
 
 
@@ -192,10 +164,6 @@ struct CStaticFunctionVar : public hx::Object
    int __GetType() const { return vtFunction; } 
    int __ArgCount() const { return N; } 
    ::String __ToString() const { return String(mName); } 
-   Dynamic __Run(const Array<Dynamic> &inArgs) 
-   { 
-      return mFunction(inArgs);
-   } 
 }; 
 
 

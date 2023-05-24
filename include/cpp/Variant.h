@@ -149,12 +149,10 @@ namespace cpp
       inline bool operator!=(const Variant &inRHS) const { return !operator==(inRHS); }
       inline bool operator!=(const String &inRHS)  const;
 
-
       template<typename RETURN_>
       RETURN_ Cast() const { return RETURN_(*this); }
 
       void CheckFPtr();
-      HX_DECLARE_VARIANT_FUNCTIONS
 
 
     // Operator + is different, since it must consider strings too...
@@ -168,6 +166,9 @@ namespace cpp
     inline double operator++(int) {double val = asDouble(); set(val+1); return val; }
     inline double operator--() { return set(asDouble()-1); }
     inline double operator--(int) {double val = asDouble(); set(val-1); return val; }
+
+    template<class... TArgs>
+    inline Dynamic operator()(const TArgs&... args);
 
     template<typename T>
     inline double operator / (const T &inRHS) const { return asDouble() / (double)inRHS; } \
@@ -321,8 +322,13 @@ namespace cpp
       if (isNull())  Dynamic::ThrowBadFunctionError();
    }
 
-   HX_IMPLEMENT_INLINE_VARIANT_FUNCTIONS
+   template<class... TArgs>
+   inline Dynamic Variant::operator()(const TArgs&... args)
+   {
+       CheckFPtr();
 
+       return valObject->__run(args...);
+   }
 
    int Variant::asInt() const
    {

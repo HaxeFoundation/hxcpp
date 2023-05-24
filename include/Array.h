@@ -1280,6 +1280,14 @@ Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
 }
 #endif
 
+template<class ...TArgs>
+Dynamic hx::Object::__run(const TArgs& ...args)
+{
+    auto arr = Array_obj<::Dynamic>::__new(0, sizeof...(args));
 
+    (arr->push(Dynamic(args)), ...);
+
+    return __Run(arr);
+}
 
 #endif

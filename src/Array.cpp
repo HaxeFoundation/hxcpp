@@ -579,10 +579,6 @@ struct ArrayBase_##func : public hx::Object \
    { \
       ret mThis->__##func(array_list); return Dynamic(); \
    } \
-   Dynamic __run(dynamic_arg_list) \
-   { \
-      ret mThis->__##func(arg_list); return Dynamic(); \
-   } \
    int __Compare(const hx::Object *inRHS) const \
    { \
       if (!dynamic_cast<const ArrayBase_##func *>(inRHS)) return -1; \
@@ -753,20 +749,70 @@ bool DynamicEq(const Dynamic &a, const Dynamic &b)
 
 namespace cpp
 {
-HX_DEFINE_DYNAMIC_FUNC0(IteratorBase,hasNext,return)
-HX_DEFINE_DYNAMIC_FUNC0(IteratorBase,_dynamicNext,return)
+    ::hx::Callable<bool()> IteratorBase::hasNext_dyn()
+    {
+        struct _hx_iterator_hasNext : public ::hx::Callable_obj<bool()>
+        {
+            ::hx::ObjectPtr<IteratorBase> __this;
 
-Dynamic IteratorBase::next_dyn()
-{
-   return hx::CreateMemberFunction0("next",this,__IteratorBase_dynamicNext);
-}
+            _hx_iterator_hasNext(IteratorBase* ptr) : __this(ptr) {}
 
-hx::Val IteratorBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
-{
-   if (inString==HX_CSTRING("hasNext")) return hasNext_dyn();
-   if (inString==HX_CSTRING("next")) return _dynamicNext_dyn();
-   return null();
-}
+            bool HX_LOCAL_RUN() final override
+            {
+                return __this->hasNext();
+            }
+
+            void __Mark(hx::MarkContext* __inCtx) final override
+            {
+                HX_MARK_MEMBER(__this);
+            }
+
+#ifdef HXCPP_VISIT_ALLOCS
+            void __Visit(hx::VisitContext* __inCtx)
+            {
+                HX_VISIT_MEMBER(__this);
+            }
+#endif
+        };
+
+        return new _hx_iterator_hasNext(this);
+    }
+
+    ::hx::Callable<::Dynamic()> IteratorBase::next_dyn()
+    {
+        struct _hx_iterator_next : public ::hx::Callable_obj<::Dynamic()>
+        {
+            ::hx::ObjectPtr<IteratorBase> __this;
+
+            _hx_iterator_next(IteratorBase* ptr) : __this(ptr) {}
+
+            ::Dynamic HX_LOCAL_RUN() final override
+            {
+                return __this->_dynamicNext();
+            }
+
+            void __Mark(hx::MarkContext* __inCtx) final override
+            {
+                HX_MARK_MEMBER(__this);
+            }
+
+#ifdef HXCPP_VISIT_ALLOCS
+            void __Visit(hx::VisitContext* __inCtx)
+            {
+                HX_VISIT_MEMBER(__this);
+            }
+#endif
+        };
+
+        return new _hx_iterator_next(this);
+    }
+
+    hx::Val IteratorBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
+    {
+       if (inString==HX_CSTRING("hasNext")) return hasNext_dyn();
+       if (inString==HX_CSTRING("next")) return next_dyn();
+       return null();
+    }
 }
 
 
@@ -794,14 +840,6 @@ struct VirtualArray_##func : public hx::Object \
    int __ArgCount() const { return ARG_C; } \
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
    ARRAY_VISIT_FUNC \
-   Dynamic __Run(const Array<Dynamic> &inArgs) \
-   { \
-      ret mThis->func(array_list); return Dynamic(); \
-   } \
-   Dynamic __run(dynamic_arg_list) \
-   { \
-      ret mThis->func(arg_list); return Dynamic(); \
-   } \
 }; \
 Dynamic VirtualArray_obj::func##_dyn()  { return new VirtualArray_##func(this);  }
 

@@ -27,7 +27,6 @@ enum hxObjectType
    vtAbstractBase = 0x100,
 };
 
-
 namespace hx
 {
 
@@ -262,7 +261,7 @@ public:
    virtual Dynamic __GetItem(int inIndex) const;
    virtual Dynamic __SetItem(int inIndex,Dynamic inValue);
 
-
+#if (HXCPP_API_LEVEL<500)
    typedef const Dynamic &D;
    virtual Dynamic __run();
    virtual Dynamic __run(D a);
@@ -270,6 +269,10 @@ public:
    virtual Dynamic __run(D a,D b,D c);
    virtual Dynamic __run(D a,D b,D c,D d);
    virtual Dynamic __run(D a,D b,D c,D d,D e);
+#else
+   template <class... TArgs>
+   Dynamic __run(const TArgs&... rest);
+#endif
 
    virtual int __ArgCount() const { return -1; }
 
@@ -437,7 +440,6 @@ public:
 
 
 } // end namespace hx
-
 
 
 #endif

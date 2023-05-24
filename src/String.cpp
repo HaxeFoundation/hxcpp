@@ -2123,10 +2123,6 @@ String &String::operator+=(const String &inRHS)
                 { \
                     mThis = inThis; \
                 } \
-			    ::Dynamic __run() \
-			    { \
-				    return _hx_run(); \
-			    } \
                 int __Compare(const ::hx::Object* inRhs) const override \
                 { \
                     auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
@@ -2156,10 +2152,6 @@ String &String::operator+=(const String &inRHS)
                 { \
                     mThis = inThis; \
                 } \
-			    ::Dynamic __run(::Dynamic a0) \
-			    { \
-				    return _hx_run(a0); \
-			    } \
                 int __Compare(const ::hx::Object* inRhs) const override \
                 { \
                     auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
@@ -2189,10 +2181,6 @@ String &String::operator+=(const String &inRHS)
                 { \
                     mThis = inThis; \
                 } \
-			    ::Dynamic __run(::Dynamic a0, ::Dynamic a1) \
-			    { \
-				    return _hx_run(a0, a1); \
-			    } \
                 int __Compare(const ::hx::Object* inRhs) const override \
                 { \
                     auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
@@ -2253,14 +2241,6 @@ String &String::operator+=(const String &inRHS)
        int __GetType() const { return vtFunction; } \
        void *__GetHandle() const { return const_cast<char *>(mThis.raw_ptr()); } \
        int __ArgCount() const { return ARG_C; } \
-       Dynamic __Run(const Array<Dynamic> &inArgs) \
-       { \
-          return mThis.func(array_list); return Dynamic(); \
-       } \
-       Dynamic __run(dynamic_arg_list) \
-       { \
-          return mThis.func(arg_list); return Dynamic(); \
-       } \
        void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.raw_ptr()); } \
        STRING_VISIT_FUNC \
        void  __SetThis(Dynamic inThis) { mThis = inThis; } \
