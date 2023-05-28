@@ -844,6 +844,7 @@ public:
       return doRun(ctx,haveArgs);
    }
 
+#if (HXCPP_API_LEVEL<500)
    Dynamic __run()
    {
       CppiaCtx *ctx = CppiaCtx::getCurrent();
@@ -903,6 +904,7 @@ public:
       pushArgDynamic(ctx,4,e);
       return doRun(ctx,5);
    }
+#endif
 
    void __Mark(hx::MarkContext *__inCtx)
    {
