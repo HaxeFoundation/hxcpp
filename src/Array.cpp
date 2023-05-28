@@ -840,6 +840,10 @@ struct VirtualArray_##func : public hx::Object \
    int __ArgCount() const { return ARG_C; } \
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
    ARRAY_VISIT_FUNC \
+   Dynamic __Run(const Array<Dynamic> &inArgs) \
+   { \
+      ret mThis->func(array_list); return Dynamic(); \
+   } \
 }; \
 Dynamic VirtualArray_obj::func##_dyn()  { return new VirtualArray_##func(this);  }
 
