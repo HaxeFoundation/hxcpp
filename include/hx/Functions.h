@@ -70,12 +70,11 @@ namespace hx
     template<class TReturn, class... TArgs>
     class Callable<TReturn(TArgs...)> : public ObjectPtr<Callable_obj<TReturn(TArgs...)>>
     {
-    private:
+    public:
         using super = hx::ObjectPtr< Callable_obj<TReturn(TArgs...)> >;
         using OBJ_  = Callable_obj<TReturn(TArgs...)>;
         using Ptr   = Callable_obj<TReturn(TArgs...)>*;
 
-    public:
         Callable()
             : super(nullptr) {}
 
