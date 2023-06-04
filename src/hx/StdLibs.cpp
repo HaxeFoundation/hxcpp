@@ -714,9 +714,9 @@ struct VarArgFunc : public hx::Object
    #endif
 
    void *__GetHandle() const { return mRealFunc.GetPtr(); }
-   Dynamic __Run(const Array<Dynamic>& inArgs)
+   Dynamic __Run(const Array<Dynamic> &inArgs)
    {
-       return mRealFunc->__run(inArgs);
+      return mRealFunc->__run(inArgs);
    }
 
    Dynamic mRealFunc;

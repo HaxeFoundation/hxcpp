@@ -154,6 +154,10 @@ namespace cpp
 
       void CheckFPtr();
 
+#if (HXCPP_API_LEVEL<500)
+      HX_DECLARE_VARIANT_FUNCTIONS
+#endif
+
 
     // Operator + is different, since it must consider strings too...
     inline String operator+(const String &s) const;
@@ -322,6 +326,7 @@ namespace cpp
       if (isNull())  Dynamic::ThrowBadFunctionError();
    }
 
+#if (HXCPP_API_LEVEL>=500)
    template<class... TArgs>
    inline Dynamic Variant::operator()(const TArgs&... args)
    {
@@ -329,6 +334,9 @@ namespace cpp
 
        return valObject->__run(args...);
    }
+#else
+   HX_IMPLEMENT_INLINE_VARIANT_FUNCTIONS
+#endif
 
    int Variant::asInt() const
    {

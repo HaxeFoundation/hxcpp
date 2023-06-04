@@ -301,6 +301,7 @@ public:
    static void ThrowBadFunctionError();
    inline void CheckFPtr() { if (!mPtr) ThrowBadFunctionError(); }
 
+#if (HXCPP_API_LEVEL>=500)
    template<class... TArgs>
    ::Dynamic operator()(const TArgs&... args)
    {
@@ -308,11 +309,20 @@ public:
 
        return mPtr->__run(args...);
    }
+#else
+   inline  ::Dynamic operator()() { CheckFPtr(); return mPtr->__run(); }
+   inline  ::Dynamic operator()(const Dynamic& inArg0) { CheckFPtr(); return mPtr->__run(inArg0); }
+   inline  ::Dynamic operator()(const Dynamic& inArg0, const Dynamic& inArg1) { CheckFPtr(); return mPtr->__run(inArg0, inArg1); }
+   inline  ::Dynamic operator()(const Dynamic& inArg0, const Dynamic& inArg1, const Dynamic& inArg2) { CheckFPtr(); return mPtr->__run(inArg0, inArg1, inArg2); }
+   inline  ::Dynamic operator()(const Dynamic& inArg0, const Dynamic& inArg1, const Dynamic& inArg2, const Dynamic& inArg3) { CheckFPtr(); return mPtr->__run(inArg0, inArg1, inArg2, inArg3); }
+   inline  ::Dynamic operator()(const Dynamic& inArg0, const Dynamic& inArg1, const Dynamic& inArg2, const Dynamic& inArg3, const Dynamic& inArg4) { CheckFPtr(); return mPtr->__run(inArg0, inArg1, inArg2, inArg3, inArg4); }
+
+   HX_DECLARE_DYNAMIC_FUNCTIONS;
+#endif
 
 
    typedef const Dynamic &D;
 };
-
 
 
 namespace hx

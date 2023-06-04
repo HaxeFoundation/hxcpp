@@ -1280,6 +1280,8 @@ Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
 }
 #endif
 
+#if (HXCPP_API_LEVEL>=500)
+
 template<class ...TArgs>
 Dynamic hx::Object::__run(const TArgs& ...args)
 {
@@ -1289,5 +1291,7 @@ Dynamic hx::Object::__run(const TArgs& ...args)
 
     return __Run(arr);
 }
+
+#endif
 
 #endif
