@@ -171,8 +171,10 @@ namespace cpp
     inline double operator--() { return set(asDouble()-1); }
     inline double operator--(int) {double val = asDouble(); set(val-1); return val; }
 
+#if (HXCPP_API_LEVEL>=500)
     template<class... TArgs>
     inline Dynamic operator()(const TArgs&... args);
+#endif
 
     template<typename T>
     inline double operator / (const T &inRHS) const { return asDouble() / (double)inRHS; } \
