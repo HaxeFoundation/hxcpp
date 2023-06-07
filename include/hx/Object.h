@@ -361,7 +361,13 @@ public:
    inline ObjectPtr(const SOURCE_ *inPtr,bool inCheckCast=true)
    {
       if (!SetPtr(const_cast<SOURCE_ *>(inPtr)))
-         CastPtr(reinterpret_cast<::hx::Object*>(const_cast<SOURCE_ *>(inPtr)),inCheckCast);
+         CastPtr(
+#if (HXCPP_API_LEVEL>=500)
+             reinterpret_cast<::hx::Object*>(const_cast<SOURCE_ *>(inPtr))
+#else
+             const_cast<SOURCE_*>(inPtr)
+#endif
+             ,inCheckCast);
    }
 
    inline ObjectPtr &operator=(const null &inNull) { mPtr = 0; return *this; }
