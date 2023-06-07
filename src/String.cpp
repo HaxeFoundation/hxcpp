@@ -2242,6 +2242,14 @@ String &String::operator+=(const String &inRHS)
        void *__GetHandle() const { return const_cast<char *>(mThis.raw_ptr()); } \
        int __ArgCount() const { return ARG_C; } \
        void __Mark(hx::MarkContext *__inCtx) { HX_MARK_STRING(mThis.raw_ptr()); } \
+       Dynamic __Run(const Array<Dynamic> &inArgs) \
+       { \
+          return mThis.func(array_list); return Dynamic(); \
+       } \
+       Dynamic __run(dynamic_arg_list) \
+       { \
+          return mThis.func(arg_list); return Dynamic(); \
+       } \
        STRING_VISIT_FUNC \
        void  __SetThis(Dynamic inThis) { mThis = inThis; } \
     }; \
