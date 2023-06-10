@@ -562,16 +562,16 @@ void ArrayBase::safeSort(Dynamic inSorter, bool inIsString)
 #endif
 
 #if (HXCPP_API_LEVEL>=500)
-    #define ARRAY_RUN_FUNC(ret,func,arg_list,dynamic_arg_list)
+    #define ARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list)
 #else
-    #define ARRAY_RUN_FUNC(ret,func,arg_list,dynamic_arg_list) \
+    #define ARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list) \
         Dynamic __run(dynamic_arg_list) \
         { \
             ret mThis->__##func(arg_list); return Dynamic(); \
         }
 #endif
 
-#define DEFINE_ARRAY_FUNC(ret,func,array_list,dynamic_arg_list,arg_list,ARG_C) \
+#define DEFINE_ARRAY_FUNC(ret,func,array_list,run_func,ARG_C) \
 struct ArrayBase_##func : public hx::Object \
 { \
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
@@ -589,7 +589,7 @@ struct ArrayBase_##func : public hx::Object \
    { \
       ret mThis->__##func(array_list); return Dynamic(); \
    } \
-   ARRAY_RUN_FUNC(ret, func, arg_list, dynamic_arg_list) \
+   run_func \
    int __Compare(const hx::Object *inRHS) const \
    { \
       if (!dynamic_cast<const ArrayBase_##func *>(inRHS)) return -1; \
@@ -599,11 +599,11 @@ struct ArrayBase_##func : public hx::Object \
 Dynamic ArrayBase::func##_dyn()  { return new ArrayBase_##func(this);  }
 
 
-#define DEFINE_ARRAY_FUNC0(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST0,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0,0)
-#define DEFINE_ARRAY_FUNC1(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST1,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1,1)
-#define DEFINE_ARRAY_FUNC2(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST2,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2,2)
-#define DEFINE_ARRAY_FUNC3(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST3,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3,3)
-#define DEFINE_ARRAY_FUNC4(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST4,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4,4)
+#define DEFINE_ARRAY_FUNC0(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST0,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0),0)
+#define DEFINE_ARRAY_FUNC1(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST1,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1),1)
+#define DEFINE_ARRAY_FUNC2(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST2,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2),2)
+#define DEFINE_ARRAY_FUNC3(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST3,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3),3)
+#define DEFINE_ARRAY_FUNC4(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST4,ARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4),4)
 
 
 #if (HXCPP_API_LEVEL>=330)
@@ -851,16 +851,16 @@ namespace cpp
 {
 
 #if (HXCPP_API_LEVEL>=500)
-#define VARRAY_RUN_FUNC(ret,func,arg_list,dynamic_arg_list)
+#define VARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list)
 #else
-#define VARRAY_RUN_FUNC(ret,func,arg_list,dynamic_arg_list) \
+#define VARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list) \
     Dynamic __run(dynamic_arg_list) \
     { \
         ret mThis->func(arg_list); return Dynamic(); \
     }
 #endif
 
-#define DEFINE_VARRAY_FUNC(ret, func,array_list,dynamic_arg_list,arg_list,ARG_C) \
+#define DEFINE_VARRAY_FUNC(ret, func,array_list,run_func,ARG_C) \
 struct VirtualArray_##func : public hx::Object \
 { \
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdClosure }; \
@@ -876,7 +876,7 @@ struct VirtualArray_##func : public hx::Object \
    int __ArgCount() const { return ARG_C; } \
    void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
    ARRAY_VISIT_FUNC \
-   VARRAY_RUN_FUNC(ret, func, arg_list, dynamic_arg_list) \
+   run_func \
    Dynamic __Run(const Array<Dynamic> &inArgs) \
    { \
       ret mThis->func(array_list); return Dynamic(); \
@@ -885,11 +885,11 @@ struct VirtualArray_##func : public hx::Object \
 Dynamic VirtualArray_obj::func##_dyn()  { return new VirtualArray_##func(this);  }
 
 
-#define DEFINE_VARRAY_FUNC0(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST0,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0,0)
-#define DEFINE_VARRAY_FUNC1(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST1,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1,1)
-#define DEFINE_VARRAY_FUNC2(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST2,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2,2)
-#define DEFINE_VARRAY_FUNC3(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST3,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3,3)
-#define DEFINE_VARRAY_FUNC4(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST4,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4,4)
+#define DEFINE_VARRAY_FUNC0(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST0,VARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0),0)
+#define DEFINE_VARRAY_FUNC1(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST1,VARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1),1)
+#define DEFINE_VARRAY_FUNC2(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST2,VARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST2,HX_ARG_LIST2),2)
+#define DEFINE_VARRAY_FUNC3(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST3,VARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST3,HX_ARG_LIST3),3)
+#define DEFINE_VARRAY_FUNC4(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST4,VARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4),4)
 
 
 DEFINE_VARRAY_FUNC1(return,concat);
