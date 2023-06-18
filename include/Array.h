@@ -1,5 +1,6 @@
 #ifndef HX_ARRAY_H
 #define HX_ARRAY_H
+#include <limits>
 #include <cpp/FastIterator.h>
 
 // --- hx::ReturnNull ------------------------------------------------------
