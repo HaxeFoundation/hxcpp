@@ -23,6 +23,8 @@ namespace hx
 #endif
    };
 
+#if (HXCPP_API_LEVEL>=500)
+
     template<class TReturn, class... TArgs>
     struct HXCPP_EXTERN_CLASS_ATTRIBUTES Callable_obj;
 
@@ -187,6 +189,7 @@ namespace hx
             return super::mPtr->_hx_run(args...);
         }
     };
+#endif
 }
 
 #endif

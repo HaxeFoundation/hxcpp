@@ -700,9 +700,11 @@ struct VarArgFunc : public hx::Object
      HX_OBJ_WB_NEW_MARKED_OBJECT(this)
    }
 
+#if (HXCPP_API_LEVEL>=500)
    VarArgFunc(::hx::Callable<::Dynamic(::cpp::VirtualArray)>& inFunc) : mRealFunc(inFunc) {
        HX_OBJ_WB_NEW_MARKED_OBJECT(this)
    }
+#endif
 
    int __GetType() const { return vtFunction; }
    ::String __ToString() const { return mRealFunc->__ToString() ; }
