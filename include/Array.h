@@ -234,6 +234,13 @@ public:
         Dynamic;
 #endif
 
+    using DynamicMappingFunc =
+#if (HXCPP_API_LEVEL>=500)
+        hx::Callable<Dynamic(Dynamic)>;
+#else
+        Dynamic;
+#endif
+
    ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic);
 
    // Defined later so we can use "Array"
@@ -391,7 +398,7 @@ public:
    virtual void __sort(const DynamicSorterFunc& a0) = 0;
    virtual ::String __toString() = 0;
    virtual void  __unshift(const Dynamic &a0) = 0;
-   virtual cpp::VirtualArray_obj *__map(const Dynamic &func) = 0;
+   virtual cpp::VirtualArray_obj *__map(const DynamicMappingFunc &func) = 0;
    virtual hx::ArrayBase *__filter(const DynamicFilterFunc &func) = 0;
    virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount) = 0;
    virtual int __memcmp(const cpp::VirtualArray &a0) = 0;
@@ -597,6 +604,13 @@ class Array_obj : public hx::ArrayBase
    using FilterFunc =
 #if (HXCPP_API_LEVEL>=500)
        hx::Callable<bool(Elem)>;
+#else
+       Dynamic;
+#endif
+
+   using MappingFunc =
+#if (HXCPP_API_LEVEL>=500)
+       hx::Callable<Dynamic(Elem)>;
 #else
        Dynamic;
 #endif
@@ -868,7 +882,7 @@ public:
    }
 
    #if HXCPP_API_LEVEL>=330
-   cpp::VirtualArray map(Dynamic inFunc);
+   cpp::VirtualArray map(MappingFunc inFunc);
    #else
    Dynamic map(Dynamic inFunc);
    #endif
@@ -1030,7 +1044,7 @@ public:
    virtual void __sort(const DynamicSorterFunc& a0) override { sort(a0); }
    virtual ::String __toString() { return toString(); }
    virtual void  __unshift(const Dynamic &a0) { unshift(a0); }
-   virtual cpp::VirtualArray_obj *__map(const Dynamic &func) { return map(func).mPtr; }
+   virtual cpp::VirtualArray_obj *__map(const DynamicMappingFunc &func) { return map(func).mPtr; }
    virtual void __resize(int inLen) { resize(inLen); }
 
    virtual hx::ArrayBase *__filter(const DynamicFilterFunc &func) override { return filter(func).mPtr; }
@@ -1364,7 +1378,7 @@ inline typename ARRAY::Elem _hx_array_unsafe_get(ARRAY inArray, int inIndex)
 
 #if HXCPP_API_LEVEL >= 330
 template<typename ELEM_>
-cpp::VirtualArray Array_obj<ELEM_>::map(Dynamic inFunc)
+cpp::VirtualArray Array_obj<ELEM_>::map(MappingFunc inFunc)
 {
    cpp::VirtualArray result = cpp::VirtualArray_obj::__new(length,0);
    for(int i=0;i<length;i++)

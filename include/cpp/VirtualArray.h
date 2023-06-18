@@ -495,7 +495,7 @@ public:
       return new VirtualArray_obj(base->__slice(inPos,end), store==hx::arrayFixed);
    }
    VirtualArray splice(int inPos, int len);
-   VirtualArray map(Dynamic inFunc);
+   VirtualArray map(ArrayBase::DynamicMappingFunc inFunc);
    VirtualArray filter(ArrayBase::DynamicFilterFunc inFunc);
 
    template<typename T>
