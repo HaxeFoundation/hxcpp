@@ -786,7 +786,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          // TODO - maybe make this more efficient
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          BCR_CHECK;
-         hx::Object *func = args[0]->runObject(ctx);
+         Dynamic func = args[0]->runObject(ctx);
          BCR_CHECK;
          Dynamic result = thisVal->map(func);
          return result.mPtr;
@@ -795,7 +795,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          BCR_CHECK;
-         hx::Object *func = args[0]->runObject(ctx);
+         Dynamic func = args[0]->runObject(ctx);
          BCR_CHECK;
          return thisVal->filter(func).mPtr;
       }
@@ -881,7 +881,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       {
          Array_obj<ELEM> *thisVal = (Array_obj<ELEM>*)thisExpr->runObject(ctx);
          BCR_VCHECK;
-         hx::Object * func = args[0]->runObject(ctx);
+         Dynamic func = args[0]->runObject(ctx);
          BCR_VCHECK;
          thisVal->sort(func);
       }
@@ -1198,12 +1198,12 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       TRY_NATIVE
       if (FUNC==afMap)
       {
-         Dynamic result = inArray->map(inFunction);
+         Dynamic result = inArray->map(Dynamic(inFunction));
          return result.mPtr;
       }
       else
       {
-         Array<ELEM> result = inArray->filter(inFunction);
+         Array<ELEM> result = inArray->filter(Dynamic(inFunction));
          return result.mPtr;
       }
       CATCH_NATIVE
