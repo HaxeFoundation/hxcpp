@@ -111,17 +111,17 @@ public:
             return;
         }
 
-        if (length <= std::numeric_limits<uint8_t>::max())
+        if (length <= std::numeric_limits<unsigned char>::max())
         {
-            SortImpl<uint8_t>(base, length, sorter);
+            SortImpl<unsigned char>(base, length, sorter);
         }
-        else if (length <= std::numeric_limits<uint16_t>::max())
+        else if (length <= std::numeric_limits<unsigned short>::max())
         {
-            SortImpl<uint16_t>(base, length, sorter);
+            SortImpl<unsigned short>(base, length, sorter);
         }
         else
         {
-            SortImpl<uint32_t>(base, length, sorter);
+            SortImpl<unsigned int>(base, length, sorter);
         }
     }
 };
