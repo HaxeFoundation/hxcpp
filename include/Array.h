@@ -58,7 +58,12 @@ template<> struct ArrayTraits< ::cpp::Int64> { enum { StoreType = arrayInt64 }; 
 template<class ELEM>
 class SafeSorter
 {
-    using SorterFunc = ::Dynamic;
+    using SorterFunc =
+#if (HXCPP_API_LEVEL>=500)
+        hx::Callable<int(Dynamic, Dynamic)>;
+#else
+        Dynamic;
+#endif
 
     struct ArraySorter
     {
@@ -215,6 +220,20 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayCommon : public hx::Object
 class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayBase : public ArrayCommon
 {
 public:
+    using DynamicSorterFunc =
+#if (HXCPP_API_LEVEL>=500)
+        hx::Callable<int(Dynamic, Dynamic)>;
+#else
+        Dynamic;
+#endif
+
+    using DynamicFilterFunc =
+#if (HXCPP_API_LEVEL>=500)
+        hx::Callable<bool(Dynamic)>;
+#else
+        Dynamic;
+#endif
+
    ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic);
 
    // Defined later so we can use "Array"
@@ -297,7 +316,7 @@ public:
    Dynamic __unsafe_get(const Dynamic &i);
    Dynamic __unsafe_set(const Dynamic &i, const Dynamic &val);
 
-   void safeSort(Dynamic sorter, bool isString);
+   void safeSort(DynamicSorterFunc sorter, bool isString);
 
    inline void __unsafeStringReference(String inString)
    {
@@ -369,15 +388,15 @@ public:
    virtual Dynamic __shift() = 0;
    virtual hx::ArrayBase *__slice(const Dynamic &a0,const Dynamic &a1) = 0;
    virtual hx::ArrayBase *__splice(const Dynamic &a0,const Dynamic &a1) = 0;
-   virtual void __sort(const Dynamic &a0) = 0;
+   virtual void __sort(const DynamicSorterFunc& a0) = 0;
    virtual ::String __toString() = 0;
    virtual void  __unshift(const Dynamic &a0) = 0;
    virtual cpp::VirtualArray_obj *__map(const Dynamic &func) = 0;
-   virtual hx::ArrayBase *__filter(const Dynamic &func) = 0;
+   virtual hx::ArrayBase *__filter(const DynamicFilterFunc &func) = 0;
    virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount) = 0;
    virtual int __memcmp(const cpp::VirtualArray &a0) = 0;
    inline void __zero(const Dynamic &a0,const Dynamic &a1)  { zero(a0,a1); }
-   virtual void __qsort(Dynamic inCompare) = 0;
+   virtual void __qsort(DynamicSorterFunc inCompare) = 0;
    virtual void __resize(int inLen) = 0;
 
    virtual void set(int inIdx, const cpp::Variant &inValue) = 0;
@@ -564,9 +583,23 @@ inline bool arrayElemEq<Dynamic>(const Dynamic &a, const Dynamic &b) {
 template<typename ELEM_>
 class Array_obj : public hx::ArrayBase
 {
-   typedef ELEM_ Elem;
-   typedef hx::ObjectPtr< Array_obj<ELEM_> > ObjPtr;
-   typedef typename hx::ReturnNull<ELEM_>::type NullType;
+   using Elem     = ELEM_;
+   using ObjPtr   = hx::ObjectPtr< Array_obj<ELEM_> >;
+   using NullType = typename hx::ReturnNull<ELEM_>::type;
+
+   using SorterFunc =
+#if (HXCPP_API_LEVEL>=500)
+       hx::Callable<int(Elem, Elem)>;
+#else
+       Dynamic;
+#endif
+
+   using FilterFunc =
+#if (HXCPP_API_LEVEL>=500)
+       hx::Callable<bool(Elem)>;
+#else
+       Dynamic;
+#endif
 
 public:
    enum { _hx_ClassId = ArrayClassId<ELEM_>::id };
@@ -839,7 +872,7 @@ public:
    #else
    Dynamic map(Dynamic inFunc);
    #endif
-   Array<ELEM_> filter(Dynamic inFunc);
+   Array<ELEM_> filter(FilterFunc inFunc);
 
    void insert(int inPos, ELEM_ inValue)
    {
@@ -891,23 +924,27 @@ public:
 
    struct Sorter
    {
-      Sorter(Dynamic inFunc) : mFunc(inFunc) { }
+      Sorter(SorterFunc inFunc) : mFunc(inFunc) { }
 
       bool operator()(const ELEM_ &inA, const ELEM_ &inB)
       {
+#if (HXCPP_API_LEVEL>=500)
+          return mFunc(inA, inB) < 0;
+#else
          return mFunc( Dynamic(inA), Dynamic(inB))->__ToInt() < 0;
+#endif
       }
 
-      Dynamic mFunc;
+      SorterFunc mFunc;
    };
 
-   inline void qsort(Dynamic inSorter)
+   inline void qsort(SorterFunc inSorter)
    {
       ELEM_ *e = (ELEM_ *)mBase;
       std::sort(e, e+length, Sorter(inSorter) );
    }
 
-   void sort(Dynamic inSorter)
+   void sort(SorterFunc inSorter)
    {
       if ( (int)hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayObject ||
           (int)hx::ArrayTraits<ELEM_>::StoreType==(int)hx::arrayString)
@@ -990,19 +1027,19 @@ public:
    virtual Dynamic __shift() { return shift(); }
    virtual hx::ArrayBase *__slice(const Dynamic &a0,const Dynamic &a1) { return slice(a0,a1).mPtr; }
    virtual hx::ArrayBase *__splice(const Dynamic &a0,const Dynamic &a1) { return splice(a0,a1).mPtr; }
-   virtual void __sort(const Dynamic &a0) { sort(a0); }
+   virtual void __sort(const DynamicSorterFunc& a0) override { sort(a0); }
    virtual ::String __toString() { return toString(); }
    virtual void  __unshift(const Dynamic &a0) { unshift(a0); }
    virtual cpp::VirtualArray_obj *__map(const Dynamic &func) { return map(func).mPtr; }
    virtual void __resize(int inLen) { resize(inLen); }
 
-   virtual hx::ArrayBase *__filter(const Dynamic &func) { return filter(func).mPtr; }
+   virtual hx::ArrayBase *__filter(const DynamicFilterFunc &func) override { return filter(func).mPtr; }
    virtual void __blit(int inDestElement,const cpp::VirtualArray &inSourceArray,int inSourceElement,int inElementCount)
    {
       blit(inDestElement,inSourceArray,inSourceElement,inElementCount);
    }
    virtual int __memcmp(const cpp::VirtualArray &a0) { return memcmp(a0); }
-   virtual void __qsort(Dynamic inCompare) { this->qsort(inCompare); };
+   virtual void __qsort(DynamicSorterFunc inCompare) override { this->qsort(inCompare); };
 
    virtual void set(int inIndex, const cpp::Variant &inValue) {
       ELEM_ &elem = Item(inIndex);
@@ -1275,7 +1312,7 @@ Array<ELEM_> Array_obj<ELEM_>::splice(int inPos, int len)
 
 
 template<typename ELEM_>
-Array<ELEM_> Array_obj<ELEM_>::filter(Dynamic inFunc)
+Array<ELEM_> Array_obj<ELEM_>::filter(FilterFunc inFunc)
 {
    Array_obj *result = new Array_obj(0,0);
    for(int i=0;i<length;i++)

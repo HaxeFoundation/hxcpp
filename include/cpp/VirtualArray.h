@@ -53,8 +53,8 @@ public:
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public hx::ArrayCommon
 {
-   typedef hx::ArrayStore ArrayStore;
-   typedef hx::ArrayBase ArrayBase;
+   using ArrayStore = hx::ArrayStore;
+   using ArrayBase  = hx::ArrayBase;
 
 public:
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdVirtualArray };
@@ -390,7 +390,7 @@ public:
       return this;
    }
 
-   void safeSort(Dynamic sorter, bool isString) { checkBase(); if (store!=hx::arrayEmpty) base->safeSort(sorter,isString); }
+   void safeSort(ArrayBase::DynamicSorterFunc sorter, bool isString) { checkBase(); if (store!=hx::arrayEmpty) base->safeSort(sorter,isString); }
 
    inline void __unsafeStringReference(String inString) { if (base) base->__unsafeStringReference(inString); }
 
@@ -496,7 +496,7 @@ public:
    }
    VirtualArray splice(int inPos, int len);
    VirtualArray map(Dynamic inFunc);
-   VirtualArray filter(Dynamic inFunc);
+   VirtualArray filter(ArrayBase::DynamicFilterFunc inFunc);
 
    template<typename T>
    inline VirtualArray init(int inIndex, const T &inVal)
@@ -533,9 +533,9 @@ public:
 
    inline void reverse() { checkBase(); if (store!=hx::arrayEmpty) base->__reverse(); }
 
-   inline void qsort(Dynamic inSorter) { checkBase(); if (base) base->__qsort(inSorter); }
+   inline void qsort(ArrayBase::DynamicSorterFunc inSorter) { checkBase(); if (base) base->__qsort(inSorter); }
 
-   inline void sort(Dynamic inSorter) { checkBase(); if (base) base->__sort(inSorter); }
+   inline void sort(ArrayBase::DynamicSorterFunc inSorter) { checkBase(); if (base) base->__sort(inSorter); }
 
    Dynamic iterator() { checkBase(); return  !base ? getEmptyIterator() :  base->__iterator(); }
    static Dynamic getEmptyIterator();

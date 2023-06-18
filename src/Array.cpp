@@ -493,7 +493,7 @@ String ArrayBase::joinArray(ArrayBase *inBase, String inSeparator)
 }
 
 
-void ArrayBase::safeSort(Dynamic inSorter, bool inIsString)
+void ArrayBase::safeSort(DynamicSorterFunc inSorter, bool inIsString)
 {
    if (inIsString)
        hx::SafeSorter<String>::Sort((String *)mBase, length,inSorter);
@@ -1172,7 +1172,7 @@ VirtualArray VirtualArray_obj::map(Dynamic inFunc)
    return result;
 }
 
-VirtualArray VirtualArray_obj::filter(Dynamic inFunc)
+VirtualArray VirtualArray_obj::filter(ArrayBase::DynamicFilterFunc inFunc)
 {
    if ( !base )
       return new VirtualArray_obj();

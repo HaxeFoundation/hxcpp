@@ -359,6 +359,7 @@ typedef bool PropertyAccess;
 // This needs to "see" other declarations ...
 #include <hx/GcTypeInference.h>
 #include <hx/FieldRef.h>
+#include <hx/Functions.h>
 #include "Array.h"
 #include <hx/Anon.h>
 #include <hx/Class.h>
@@ -372,7 +373,6 @@ typedef bool PropertyAccess;
 #include <cpp/Pointer.h>
 #include <hx/Native.h>
 #include <hx/Operators.h>
-#include <hx/Functions.h>
 // second time ...
 #include <cpp/Variant.h>
 #include <hx/Debug.h>
