@@ -358,8 +358,8 @@ typedef bool PropertyAccess;
 #include <cpp/CppInt32__.h>
 // This needs to "see" other declarations ...
 #include <hx/GcTypeInference.h>
-#include <hx/FieldRef.h>
 #include <hx/Functions.h>
+#include <hx/FieldRef.h>
 #include "Array.h"
 #include <hx/Anon.h>
 #include <hx/Class.h>

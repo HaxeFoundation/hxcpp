@@ -47,19 +47,7 @@ namespace hx
         }
 
         template<size_t... I>
-        Dynamic apply(const Array<Dynamic>& inArgs, std::index_sequence<I...>)
-        {
-            if constexpr (std::is_void<TReturn>())
-            {
-                _hx_run(inArgs[I] ...);
-
-                return null();
-            }
-            else
-            {
-                return _hx_run(inArgs[I] ...);
-            }
-        }
+        Dynamic apply(const Array<Dynamic>& inArgs, std::index_sequence<I...>);
 
         virtual TReturn _hx_run(TArgs... args) = 0;
     };

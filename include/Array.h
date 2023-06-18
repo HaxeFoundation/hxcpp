@@ -1400,6 +1400,8 @@ Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
 
 #if (HXCPP_API_LEVEL>=500)
 
+// Two unrelated template definitions which need to be here due to wanting to know about arrays implementation
+
 template<class ...TArgs>
 Dynamic hx::Object::__run(const TArgs& ...args)
 {
@@ -1410,6 +1412,23 @@ Dynamic hx::Object::__run(const TArgs& ...args)
     return __Run(arr);
 }
 
+template<class TReturn, class... TArgs>
+template<size_t... I>
+Dynamic hx::Callable_obj<TReturn(TArgs...)>::apply(const Array<Dynamic>& inArgs, std::index_sequence<I...>)
+{
+    if constexpr (std::is_void<TReturn>())
+    {
+        _hx_run(inArgs[I] ...);
+
+        return null();
+    }
+    else
+    {
+        return _hx_run(inArgs[I] ...);
+    }
+}
+
 #endif
+
 
 #endif
