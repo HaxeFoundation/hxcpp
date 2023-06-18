@@ -55,6 +55,72 @@ template<> struct ArrayTraits<Dynamic> { enum { StoreType = arrayObject }; };
 template<> struct ArrayTraits<String> { enum { StoreType = arrayString }; };
 template<> struct ArrayTraits< ::cpp::Int64> { enum { StoreType = arrayInt64 }; };
 
+template<class ELEM>
+class SafeSorter
+{
+    using SorterFunc = ::Dynamic;
+
+    struct ArraySorter
+    {
+        ELEM* mArray;
+        SorterFunc mSorter;
+
+        ArraySorter(ELEM* inArray, SorterFunc inSorter) : mArray(inArray), mSorter(inSorter) {};
+
+        bool operator()(int inA, int inB)
+        {
+            return mSorter(mArray[inA], mArray[inB]) < 0;
+        }
+    };
+
+    template<class STORE>
+    static void SortImpl(ELEM* inArray, const int inLength, SorterFunc inSorter)
+    {
+        auto index = std::vector<STORE>(inLength);
+        for (auto i = 0; i < inLength; i++)
+        {
+            index[i] = static_cast<STORE>(i);
+        }
+
+        std::stable_sort(index.begin(), index.end(), ArraySorter(inArray, inSorter));
+
+        // Put the results back ...
+        for (int i = 0; i < inLength; i++)
+        {
+            int from = index[i];
+            while (from < i)
+                from = index[from];
+            if (from != i)
+            {
+                std::swap(inArray[i], inArray[from]);
+                index[i] = from;
+            }
+        }
+    }
+
+public:
+    static void Sort(ELEM* base, const int length, SorterFunc sorter)
+    {
+        if (length < 2)
+        {
+            return;
+        }
+
+        if (length <= std::numeric_limits<uint8_t>::max())
+        {
+            SortImpl<uint8_t>(base, length, sorter);
+        }
+        else if (length <= std::numeric_limits<uint16_t>::max())
+        {
+            SortImpl<uint16_t>(base, length, sorter);
+        }
+        else
+        {
+            SortImpl<uint32_t>(base, length, sorter);
+        }
+    }
+};
+
 }
 
 

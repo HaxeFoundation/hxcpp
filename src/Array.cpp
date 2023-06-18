@@ -492,64 +492,13 @@ String ArrayBase::joinArray(ArrayBase *inBase, String inSeparator)
    return stringArray->join(inSeparator);
 }
 
-template<typename T>
-struct ArrayBaseSorter
-{
-   ArrayBaseSorter(T *inArray, Dynamic inFunc)
-   {
-      mFunc = inFunc;
-      mArray = inArray;
-   }
-
-   bool operator()(int inA, int inB)
-      { return mFunc(mArray[inA], mArray[inB])->__ToInt() < 0; }
-
-   Dynamic mFunc;
-   T*      mArray;
-};
-
-template<typename T,typename STORE>
-void TArraySortLen(T *inArray, int inLength, Dynamic inSorter)
-{
-   std::vector<STORE> index(inLength);
-   for(int i=0;i<inLength;i++)
-      index[i] = (STORE)i;
-
-   std::stable_sort(index.begin(), index.end(), ArrayBaseSorter<T>(inArray,inSorter) );
-
-   // Put the results back ...
-   for(int i=0;i<inLength;i++)
-   {
-      int from = index[i];
-      while(from < i)
-         from = index[from];
-      if (from!=i)
-      {
-         std::swap(inArray[i],inArray[from]);
-         index[i] = from;
-      }
-   }
-}
-
-template<typename T>
-void TArraySort(T *inArray, int inLength, Dynamic inSorter)
-{
-   if (inLength<2)
-      return;
-   if (inLength<=256)
-      TArraySortLen<T,unsigned char >(inArray, inLength, inSorter);
-   else if (inLength<=65536)
-      TArraySortLen<T,unsigned short >(inArray, inLength, inSorter);
-   else
-      TArraySortLen<T,unsigned int >(inArray, inLength, inSorter);
-}
 
 void ArrayBase::safeSort(Dynamic inSorter, bool inIsString)
 {
    if (inIsString)
-      TArraySort((String *)mBase, length,inSorter);
+       hx::SafeSorter<String>::Sort((String *)mBase, length,inSorter);
    else
-      TArraySort((Dynamic *)mBase, length,inSorter);
+       hx::SafeSorter<Dynamic>::Sort((Dynamic *)mBase, length,inSorter);
 }
 
 
