@@ -788,7 +788,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_CHECK;
          Dynamic func = args[0]->runObject(ctx);
          BCR_CHECK;
-         Dynamic result = thisVal->map(func);
+         Dynamic result = thisVal->map<Dynamic>(func);
          return result.mPtr;
       }
       if (FUNC==afFilter)
@@ -1198,7 +1198,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       TRY_NATIVE
       if (FUNC==afMap)
       {
-         Dynamic result = inArray->map(Dynamic(inFunction));
+         Dynamic result = inArray->map<Dynamic>(Dynamic(inFunction));
          return result.mPtr;
       }
       else
