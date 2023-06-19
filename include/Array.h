@@ -609,7 +609,9 @@ class Array_obj : public hx::ArrayBase
        Dynamic;
 #endif
 
+#if (HXCPP_API_LEVEL>=500)
    template<class TO>
+#endif
    using MappingFunc =
 #if (HXCPP_API_LEVEL>=500)
        hx::Callable<TO(Elem)>;
@@ -1048,7 +1050,11 @@ public:
    virtual void __sort(const DynamicSorterFunc& a0) override { sort(a0); }
    virtual ::String __toString() { return toString(); }
    virtual void  __unshift(const Dynamic &a0) { unshift(a0); }
+#if (HXCPP_API_LEVEL>=500)
    virtual cpp::VirtualArray_obj* __map(const DynamicMappingFunc& func) { return cpp::VirtualArray(map<Dynamic>(func)).mPtr; }
+#else
+   virtual cpp::VirtualArray_obj* __map(const DynamicMappingFunc& func) { return map(func).mPtr; }
+#endif
    virtual void __resize(int inLen) { resize(inLen); }
 
    virtual hx::ArrayBase *__filter(const DynamicFilterFunc &func) override { return filter(func).mPtr; }

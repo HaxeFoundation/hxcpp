@@ -788,7 +788,11 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          BCR_CHECK;
          Dynamic func = args[0]->runObject(ctx);
          BCR_CHECK;
+#if (HXCPP_API_LEVEL>=500)
          Dynamic result = thisVal->map<Dynamic>(func);
+#else
+         Dynamic result = thisVal->map(func);
+#endif
          return result.mPtr;
       }
       if (FUNC==afFilter)
@@ -1198,7 +1202,11 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       TRY_NATIVE
       if (FUNC==afMap)
       {
+#if (HXCPP_API_LEVEL>=500)
          Dynamic result = inArray->map<Dynamic>(Dynamic(inFunction));
+#else
+         Dynamic result = inArray->map(Dynamic(inFunction));
+#endif
          return result.mPtr;
       }
       else
