@@ -609,9 +609,10 @@ class Array_obj : public hx::ArrayBase
        Dynamic;
 #endif
 
+   template<class TO>
    using MappingFunc =
 #if (HXCPP_API_LEVEL>=500)
-       hx::Callable<Dynamic(Elem)>;
+       hx::Callable<TO(Elem)>;
 #else
        Dynamic;
 #endif
@@ -881,8 +882,10 @@ public:
    {
       hx::ArrayBase::Splice(0,inPos,len);
    }
-
-   #if HXCPP_API_LEVEL>=330
+   #if (HXCPP_API_LEVEL>=500)
+   template<class TO>
+   Array<TO> map(MappingFunc<TO> inFunc);
+   #elif HXCPP_API_LEVEL>=330
    cpp::VirtualArray map(MappingFunc inFunc);
    #else
    Dynamic map(Dynamic inFunc);
@@ -1045,7 +1048,7 @@ public:
    virtual void __sort(const DynamicSorterFunc& a0) override { sort(a0); }
    virtual ::String __toString() { return toString(); }
    virtual void  __unshift(const Dynamic &a0) { unshift(a0); }
-   virtual cpp::VirtualArray_obj *__map(const DynamicMappingFunc &func) { return map(func).mPtr; }
+   virtual cpp::VirtualArray_obj* __map(const DynamicMappingFunc& func) { return cpp::VirtualArray(map<Dynamic>(func)).mPtr; }
    virtual void __resize(int inLen) { resize(inLen); }
 
    virtual hx::ArrayBase *__filter(const DynamicFilterFunc &func) override { return filter(func).mPtr; }
@@ -1376,12 +1379,21 @@ inline typename ARRAY::Elem _hx_array_unsafe_get(ARRAY inArray, int inIndex)
 #include "cpp/VirtualArray.h"
 #endif
 
-
-#if HXCPP_API_LEVEL >= 330
+#if (HXCPP_API_LEVEL>=500)
+template<typename ELEM_>
+template<class TO>
+Array<TO> Array_obj<ELEM_>::map(MappingFunc<TO> inFunc)
+{
+    auto result = Array_obj<TO>::__new(length, 0);
+    for (int i = 0; i < length; i++)
+        result->__unsafe_set(i, inFunc(__unsafe_get(i)));
+    return result;
+}
+#elif (HXCPP_API_LEVEL>=330)
 template<typename ELEM_>
 cpp::VirtualArray Array_obj<ELEM_>::map(MappingFunc inFunc)
 {
-   cpp::VirtualArray result = cpp::VirtualArray_obj::__new(length,0);
+   cpp::VirtualArray result = cpp::VirtualArray_obj::__new(length, 0);
    for(int i=0;i<length;i++)
       result->__unsafe_set(i,inFunc(__unsafe_get(i)));
    return result;
