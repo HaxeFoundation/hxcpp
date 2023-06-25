@@ -7,6 +7,7 @@
 #include "GcRegCapture.h"
 #include <hx/Unordered.h>
 
+#include <string>
 #include <stdlib.h>
 
 
