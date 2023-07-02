@@ -1,6 +1,7 @@
 #ifndef HX_ARRAY_H
 #define HX_ARRAY_H
 #include <limits>
+#include <vector>
 #include <cpp/FastIterator.h>
 
 // --- hx::ReturnNull ------------------------------------------------------
@@ -1423,9 +1424,11 @@ Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
 template<class ...TArgs>
 Dynamic hx::Object::__run(const TArgs& ...args)
 {
+    using unused = int[];
+
     auto arr = Array_obj<::Dynamic>::__new(0, sizeof...(args));
 
-    (arr->push(Dynamic(args)), ...);
+    (void)unused{ 0, (arr->push(Dynamic(args)), 0)... };
 
     return __Run(arr);
 }
