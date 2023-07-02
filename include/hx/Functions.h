@@ -70,12 +70,7 @@ namespace hx
             return sizeof...(TArgs);
         }
 
-        Dynamic __Run(const Array<Dynamic>& inArgs) override final
-        {
-            return apply(inArgs);
-        }
-
-        Dynamic apply(const Array<Dynamic>& inArgs);
+        Dynamic __Run(const Array<Dynamic>& inArgs) override final;
 
         virtual TReturn _hx_run(TArgs... args) = 0;
     };

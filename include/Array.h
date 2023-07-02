@@ -1430,7 +1430,7 @@ Dynamic hx::Object::__run(const TArgs& ...args)
     return __Run(arr);
 }
 
-template<bool is_void, class TReturn, class... TArgs>
+template<bool void_return, class TReturn, class... TArgs>
 struct Invoker;
 
 template<class TReturn, class... TArgs>
@@ -1456,20 +1456,9 @@ struct Invoker<false, TReturn, TArgs...>
 };
 
 template<class TReturn, class... TArgs>
-Dynamic hx::Callable_obj<TReturn(TArgs...)>::apply(const Array<Dynamic>& inArgs)
+Dynamic hx::Callable_obj<TReturn(TArgs...)>::__Run(const Array<Dynamic>& inArgs)
 {
     return Invoker<std::is_void<TReturn>::value, TReturn, TArgs...>::call(this, inArgs, hx::IndexHelper::index_sequence_for<TArgs...>());
-
-    //if constexpr (std::is_void<TReturn>())
-    //{
-    //    _hx_run(inArgs[I] ...);
-
-    //    return null();
-    //}
-    //else
-    //{
-    //    return _hx_run(inArgs[I] ...);
-    //}
 }
 
 #endif
