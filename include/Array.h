@@ -1432,7 +1432,7 @@ Dynamic hx::Object::__run(const TArgs& ...args)
 
 template<class TReturn, class... TArgs>
 template<size_t... I>
-Dynamic hx::Callable_obj<TReturn(TArgs...)>::apply(const Array<Dynamic>& inArgs, std::index_sequence<I...>)
+Dynamic hx::Callable_obj<TReturn(TArgs...)>::apply(const Array<Dynamic>& inArgs, index_sequence<I...>)
 {
     if constexpr (std::is_void<TReturn>())
     {
