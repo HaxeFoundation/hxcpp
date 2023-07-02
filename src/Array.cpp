@@ -800,14 +800,82 @@ namespace cpp
 {
 
 #if (HXCPP_API_LEVEL>=500)
-#define VARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list)
+
+#define HX_VARRAY_ARG_LIST0
+#define HX_VARRAY_ARG_LIST1(arg0) arg0
+#define HX_VARRAY_ARG_LIST2(arg0, arg1) arg0, arg1
+#define HX_VARRAY_ARG_LIST3(arg0, arg1, arg2) arg0, arg1, arg2
+#define HX_VARRAY_ARG_LIST4(arg0, arg1, arg2, arg3) arg0, arg1, arg2, arg3
+
+#define HX_VARRAY_FUNC_LIST0
+#define HX_VARRAY_FUNC_LIST1(arg0) arg0 inArg0
+#define HX_VARRAY_FUNC_LIST2(arg0, arg1) arg0 inArg0, arg1 inArg1
+#define HX_VARRAY_FUNC_LIST3(arg0, arg1, arg2) arg0 inArg0, arg1 inArg1, arg2 inArg2
+#define HX_VARRAY_FUNC_LIST4(arg0, arg1, arg2, arg3) arg0 inArg0, arg1 inArg1, arg2 inArg2, arg3 inArg3
+
+#define HX_VARRAY_FUNC(ret, value, name, args_list, func_list, args_call) \
+    ::hx::Callable<value(args_list)> VirtualArray_obj::name##_dyn() \
+    { \
+        struct _hx_virtualarray_##name : public ::hx::Callable_obj<value(args_list)> \
+        { \
+            VirtualArray mThis; \
+            _hx_virtualarray_##name(::cpp::VirtualArray inThis) : mThis(inThis) \
+            { \
+                HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
+            } \
+            value _hx_run(func_list) override \
+            { \
+                ret mThis->name(args_call); \
+            } \
+            void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+            ARRAY_VISIT_FUNC \
+            int __Compare(const ::hx::Object* inRhs) const override \
+            { \
+                auto casted = dynamic_cast<const  _hx_virtualarray_##name *>(inRhs); \
+                if (!casted) return 1; \
+                if (mThis != casted->mThis) return -1; \
+                return 0; \
+            } \
+        }; \
+        return new _hx_virtualarray_##name(this); \
+    }
+
+    HX_VARRAY_FUNC(return, ::cpp::VirtualArray, concat, HX_VARRAY_ARG_LIST1(::cpp::VirtualArray), HX_VARRAY_FUNC_LIST1(::cpp::VirtualArray), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, ::cpp::VirtualArray, copy, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
+    HX_VARRAY_FUNC(, void, insert, HX_VARRAY_ARG_LIST2(int, ::Dynamic), HX_VARRAY_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
+    HX_VARRAY_FUNC(return, ::Dynamic, iterator, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
+    HX_VARRAY_FUNC(return, ::Dynamic, keyValueIterator, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
+    HX_VARRAY_FUNC(return, ::String, join, HX_VARRAY_ARG_LIST1(::String), HX_VARRAY_FUNC_LIST1(::String), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, ::Dynamic, pop, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
+    HX_VARRAY_FUNC(return, bool, contains, HX_VARRAY_ARG_LIST1(::Dynamic), HX_VARRAY_FUNC_LIST1(::Dynamic), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, bool, remove, HX_VARRAY_ARG_LIST1(::Dynamic), HX_VARRAY_FUNC_LIST1(::Dynamic), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, bool, removeAt, HX_VARRAY_ARG_LIST1(int), HX_VARRAY_FUNC_LIST1(int), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, int, indexOf, HX_VARRAY_ARG_LIST2(::Dynamic, ::Dynamic), HX_VARRAY_FUNC_LIST2(::Dynamic, ::Dynamic), HX_ARG_LIST2);
+    HX_VARRAY_FUNC(return, int, lastIndexOf, HX_VARRAY_ARG_LIST2(::Dynamic, ::Dynamic), HX_VARRAY_FUNC_LIST2(::Dynamic, ::Dynamic), HX_ARG_LIST2);
+    HX_VARRAY_FUNC(, void, reverse, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
+    HX_VARRAY_FUNC(return, ::Dynamic, shift, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
+    HX_VARRAY_FUNC(return, ::cpp::VirtualArray, slice, HX_VARRAY_ARG_LIST2(int, ::Dynamic), HX_VARRAY_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
+    HX_VARRAY_FUNC(return, ::cpp::VirtualArray, splice, HX_VARRAY_ARG_LIST2(int, ::Dynamic), HX_VARRAY_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
+    HX_VARRAY_FUNC(return, void, sort, HX_VARRAY_ARG_LIST1(hx::ArrayBase::DynamicSorterFunc), HX_VARRAY_FUNC_LIST1(hx::ArrayBase::DynamicSorterFunc), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, ::String, toString, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
+    HX_VARRAY_FUNC(, void, unshift, HX_VARRAY_ARG_LIST1(::Dynamic), HX_VARRAY_FUNC_LIST1(::Dynamic), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, ::cpp::VirtualArray, map, HX_VARRAY_ARG_LIST1(hx::ArrayBase::DynamicMappingFunc), HX_VARRAY_FUNC_LIST1(hx::ArrayBase::DynamicMappingFunc), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, ::cpp::VirtualArray, filter, HX_VARRAY_ARG_LIST1(hx::ArrayBase::DynamicFilterFunc), HX_VARRAY_FUNC_LIST1(hx::ArrayBase::DynamicFilterFunc), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(, void, __SetSize, HX_VARRAY_ARG_LIST1(int), HX_VARRAY_FUNC_LIST1(int), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(, void, __SetSizeExact, HX_VARRAY_ARG_LIST1(int), HX_VARRAY_FUNC_LIST1(int), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, ::Dynamic, __unsafe_get, HX_VARRAY_ARG_LIST1(::Dynamic), HX_VARRAY_FUNC_LIST1(::Dynamic), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(return, ::Dynamic, __unsafe_set, HX_VARRAY_ARG_LIST2(::Dynamic, ::Dynamic), HX_VARRAY_FUNC_LIST2(::Dynamic, ::Dynamic), HX_ARG_LIST2);
+    HX_VARRAY_FUNC(, void, blit, HX_VARRAY_ARG_LIST4(int, ::cpp::VirtualArray, int, int), HX_VARRAY_FUNC_LIST4(int, ::cpp::VirtualArray, int, int), HX_ARG_LIST4);
+    HX_VARRAY_FUNC(, void, zero, HX_VARRAY_ARG_LIST2(::Dynamic, ::Dynamic), HX_VARRAY_FUNC_LIST2(::Dynamic, ::Dynamic), HX_ARG_LIST2);
+    HX_VARRAY_FUNC(, void, memcmp, HX_VARRAY_ARG_LIST1(::cpp::VirtualArray), HX_VARRAY_FUNC_LIST1(::cpp::VirtualArray), HX_ARG_LIST1);
+    HX_VARRAY_FUNC(, void, resize, HX_VARRAY_ARG_LIST1(int), HX_VARRAY_FUNC_LIST1(int), HX_ARG_LIST1);
+
 #else
 #define VARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list) \
     Dynamic __run(dynamic_arg_list) \
     { \
         ret mThis->func(arg_list); return Dynamic(); \
     }
-#endif
 
 #define DEFINE_VARRAY_FUNC(ret, func,array_list,run_func,ARG_C) \
 struct VirtualArray_##func : public hx::Object \
@@ -832,7 +900,6 @@ struct VirtualArray_##func : public hx::Object \
    } \
 }; \
 Dynamic VirtualArray_obj::func##_dyn()  { return new VirtualArray_##func(this);  }
-
 
 #define DEFINE_VARRAY_FUNC0(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST0,VARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST0,HX_ARG_LIST0),0)
 #define DEFINE_VARRAY_FUNC1(ret,func) DEFINE_VARRAY_FUNC(ret,func,HX_ARR_LIST1,VARRAY_RUN_FUNC(ret,func,HX_DYNAMIC_ARG_LIST1,HX_ARG_LIST1),1)
@@ -872,7 +939,7 @@ DEFINE_VARRAY_FUNC2(return,__unsafe_set);
 DEFINE_VARRAY_FUNC4(,blit);
 DEFINE_VARRAY_FUNC1(,resize);
 
-
+#endif
 
 
 #if (HXCPP_API_LEVEL>330)
@@ -921,7 +988,7 @@ hx::Val VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inC
    if (inString==HX_CSTRING("keyValueIterator")) return keyValueIterator_dyn();
    if (inString==HX_CSTRING("join")) return join_dyn();
    if (inString==HX_CSTRING("pop")) return pop_dyn();
-   if (inString==HX_CSTRING("push")) return push_dyn();
+   if (inString==HX_CSTRING("push")) return push_dyn<::Dynamic>();
    if (inString==HX_CSTRING("contains")) return contains_dyn();
    if (inString==HX_CSTRING("remove")) return remove_dyn();
    if (inString==HX_CSTRING("removeAt")) return removeAt_dyn();

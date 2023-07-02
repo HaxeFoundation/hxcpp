@@ -566,6 +566,57 @@ public:
 
    Dynamic __get(int inIndex) const { checkBase(); if (store==hx::arrayEmpty) return null(); return base->__GetItem(inIndex); }
 
+#if (HXCPP_API_LEVEL>=500)
+   ::hx::Callable<::cpp::VirtualArray(::cpp::VirtualArray)> concat_dyn();
+   ::hx::Callable<::cpp::VirtualArray()> copy_dyn();
+   ::hx::Callable<void(int, ::Dynamic)> insert_dyn();
+   ::hx::Callable<::Dynamic()> iterator_dyn();
+   ::hx::Callable<::Dynamic()> keyValueIterator_dyn();
+   ::hx::Callable<::String(::String)> join_dyn();
+   ::hx::Callable<::Dynamic()> pop_dyn();
+   template<typename T>
+   ::hx::Callable<int(T)> push_dyn()
+   {
+       struct _hx_virtualarray_push : public ::hx::Callable_obj<int(T)>
+       {
+           ::cpp::VirtualArray mThis;
+
+           _hx_virtualarray_push(::cpp::VirtualArray inThis) : mThis(inThis)
+           {
+               HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+           }
+
+           int _hx_run(T in) override
+           {
+               return mThis->push(in);
+           }
+       };
+
+       return new _hx_virtualarray_push(this);
+   }
+   ::hx::Callable<bool(::Dynamic)> contains_dyn();
+   ::hx::Callable<bool(::Dynamic)> remove_dyn();
+   ::hx::Callable<bool(int)> removeAt_dyn();
+   ::hx::Callable<int(::Dynamic, ::Dynamic)> indexOf_dyn();
+   ::hx::Callable<int(::Dynamic, ::Dynamic)> lastIndexOf_dyn();
+   ::hx::Callable<void()> reverse_dyn();
+   ::hx::Callable<::Dynamic()> shift_dyn();
+   ::hx::Callable<::cpp::VirtualArray(int, ::Dynamic)> slice_dyn();
+   ::hx::Callable<::cpp::VirtualArray(int, ::Dynamic)> splice_dyn();
+   ::hx::Callable<void(ArrayBase::DynamicSorterFunc)> sort_dyn();
+   ::hx::Callable<::String()> toString_dyn();
+   ::hx::Callable<void(::Dynamic)> unshift_dyn();
+   ::hx::Callable<::cpp::VirtualArray(ArrayBase::DynamicMappingFunc)> map_dyn();
+   ::hx::Callable<::cpp::VirtualArray(ArrayBase::DynamicFilterFunc)> filter_dyn();
+   ::hx::Callable<void(int)> __SetSize_dyn();
+   ::hx::Callable<void(int)> __SetSizeExact_dyn();
+   ::hx::Callable<::Dynamic(::Dynamic)> __unsafe_get_dyn();
+   ::hx::Callable<::Dynamic(::Dynamic, ::Dynamic)> __unsafe_set_dyn();
+   ::hx::Callable<void(int, ::cpp::VirtualArray, int, int)> blit_dyn();
+   ::hx::Callable<void(::Dynamic, ::Dynamic)> zero_dyn();
+   ::hx::Callable<void(::cpp::VirtualArray)> memcmp_dyn();
+   ::hx::Callable<void(int)> resize_dyn();
+#else
    Dynamic concat_dyn();
    Dynamic copy_dyn();
    Dynamic insert_dyn();
@@ -596,6 +647,7 @@ public:
    Dynamic zero_dyn();
    Dynamic memcmp_dyn();
    Dynamic resize_dyn();
+#endif
 };
 
 
