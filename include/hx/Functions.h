@@ -100,16 +100,46 @@ namespace hx
                     }
                     else
                     {
-                        if constexpr (std::is_void<TOtherReturn>())
-                        {
-                            wrapped(args...);
+                        return wrapped(args...);
+                    }
+                }
 
-                            return null();
-                        }
-                        else
-                        {
-                            return wrapped(args...);
-                        }
+                inline void __Mark(hx::MarkContext* __inCtx) override
+                {
+                    HX_MARK_MEMBER(wrapped);
+                }
+#ifdef HXCPP_VISIT_ALLOCS
+                inline void __Visit(hx::VisitContext* __inCtx) override
+                {
+                    HX_VISIT_MEMBER(wrapped);
+                }
+#endif
+            };
+
+            super::mPtr = new AdapterCallable(inCallable);
+        }
+
+        template<class... TOtherArgs>
+        Callable(const Callable<void(TOtherArgs...)>& inCallable)
+            : super(nullptr)
+        {
+            struct AdapterCallable final : public Callable_obj<TReturn(TArgs...)>
+            {
+                Callable<void(TOtherArgs...)> wrapped;
+
+                AdapterCallable(Callable<void(TOtherArgs...)> _wrapped) : wrapped(_wrapped) {}
+
+                TReturn _hx_run(TArgs... args) override
+                {
+                    if constexpr (std::is_void<TReturn>())
+                    {
+                        wrapped(args...);
+                    }
+                    else
+                    {
+                        wrapped(args...);
+
+                        return null();
                     }
                 }
 
