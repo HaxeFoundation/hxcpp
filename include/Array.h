@@ -1430,20 +1430,46 @@ Dynamic hx::Object::__run(const TArgs& ...args)
     return __Run(arr);
 }
 
+template<bool is_void, class TReturn, class... TArgs>
+struct Invoker;
+
 template<class TReturn, class... TArgs>
-template<size_t... I>
-Dynamic hx::Callable_obj<TReturn(TArgs...)>::apply(const Array<Dynamic>& inArgs, index_sequence<I...>)
+struct Invoker<true, TReturn, TArgs...>
 {
-    if constexpr (std::is_void<TReturn>())
+    template<size_t... I>
+    static Dynamic call(hx::Callable_obj<TReturn(TArgs...)>* callable, const Array<Dynamic>& inArgs, hx::IndexHelper::index_sequence<I...>)
     {
-        _hx_run(inArgs[I] ...);
+        callable->_hx_run(inArgs[I] ...);
 
         return null();
     }
-    else
+};
+
+template<class TReturn, class... TArgs>
+struct Invoker<false, TReturn, TArgs...>
+{
+    template<size_t... I>
+    static Dynamic call(hx::Callable_obj<TReturn(TArgs...)>* callable, const Array<Dynamic>& inArgs, hx::IndexHelper::index_sequence<I...>)
     {
-        return _hx_run(inArgs[I] ...);
+        return callable->_hx_run(inArgs[I] ...);
     }
+};
+
+template<class TReturn, class... TArgs>
+Dynamic hx::Callable_obj<TReturn(TArgs...)>::apply(const Array<Dynamic>& inArgs)
+{
+    return Invoker<std::is_void<TReturn>::value, TReturn, TArgs...>::call(this, inArgs, hx::IndexHelper::index_sequence_for<TArgs...>());
+
+    //if constexpr (std::is_void<TReturn>())
+    //{
+    //    _hx_run(inArgs[I] ...);
+
+    //    return null();
+    //}
+    //else
+    //{
+    //    return _hx_run(inArgs[I] ...);
+    //}
 }
 
 #endif
