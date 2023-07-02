@@ -988,7 +988,11 @@ hx::Val VirtualArray_obj::__Field(const String &inString, hx::PropertyAccess inC
    if (inString==HX_CSTRING("keyValueIterator")) return keyValueIterator_dyn();
    if (inString==HX_CSTRING("join")) return join_dyn();
    if (inString==HX_CSTRING("pop")) return pop_dyn();
+#if (HXCPP_API_LEVEL>=500)
    if (inString==HX_CSTRING("push")) return push_dyn<::Dynamic>();
+#else
+   if (inString == HX_CSTRING("push")) return push_dyn();
+#endif
    if (inString==HX_CSTRING("contains")) return contains_dyn();
    if (inString==HX_CSTRING("remove")) return remove_dyn();
    if (inString==HX_CSTRING("removeAt")) return removeAt_dyn();
