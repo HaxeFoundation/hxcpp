@@ -94,14 +94,7 @@ namespace hx
 
                 TReturn _hx_run(TArgs... args) override
                 {
-                    if constexpr (std::is_void<TReturn>())
-                    {
-                        wrapped(args...);
-                    }
-                    else
-                    {
-                        return wrapped(args...);
-                    }
+                    return wrapped(args...);
                 }
 
                 inline void __Mark(hx::MarkContext* __inCtx) override
@@ -131,16 +124,9 @@ namespace hx
 
                 TReturn _hx_run(TArgs... args) override
                 {
-                    if constexpr (std::is_void<TReturn>())
-                    {
-                        wrapped(args...);
-                    }
-                    else
-                    {
-                        wrapped(args...);
+                    wrapped(args...);
 
-                        return null();
-                    }
+                    return null();
                 }
 
                 inline void __Mark(hx::MarkContext* __inCtx) override
@@ -178,14 +164,7 @@ namespace hx
 
                         TReturn _hx_run(TArgs... args) override
                         {
-                            if constexpr (std::is_void<TReturn>())
-                            {
-                                wrapped(args...);
-                            }
-                            else
-                            {
-                                return wrapped(args...);
-                            }
+                            return wrapped(args...);
                         }
 
                         inline void __Mark(hx::MarkContext* __inCtx) override
@@ -217,6 +196,118 @@ namespace hx
             }
 
             return super::mPtr->_hx_run(args...);
+        }
+    };
+
+    //
+
+    template<class... TArgs>
+    class Callable<void(TArgs...)> : public ObjectPtr<Callable_obj<void(TArgs...)>>
+    {
+    public:
+        using super = hx::ObjectPtr< Callable_obj<void(TArgs...)> >;
+        using OBJ_ = Callable_obj<void(TArgs...)>;
+        using Ptr = Callable_obj<void(TArgs...)>*;
+
+        Callable()
+            : super(nullptr) {}
+
+        Callable(const null& inNull)
+            : super(nullptr) {}
+
+        Callable(Ptr inPtr) : super(inPtr) {}
+
+        Callable(const hx::ObjectPtr<OBJ_>& inCallable)
+            : super(inCallable) {}
+
+        Callable(const Callable<void(TArgs...)>& inCallable)
+            : super(inCallable.GetPtr()) {}
+
+        Callable(const ::cpp::Variant& inVariant)
+            : Callable(Dynamic(inVariant.asObject())) {}
+
+        template<class TOtherReturn, class... TOtherArgs>
+        Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
+            : super(nullptr)
+        {
+            struct AdapterCallable final : public Callable_obj<void(TArgs...)>
+            {
+                Callable<TOtherReturn(TOtherArgs...)> wrapped;
+
+                AdapterCallable(Callable<TOtherReturn(TOtherArgs...)> _wrapped) : wrapped(_wrapped) {}
+
+                void _hx_run(TArgs... args) override
+                {
+                    wrapped(args...);
+                }
+
+                inline void __Mark(hx::MarkContext* __inCtx) override
+                {
+                    HX_MARK_MEMBER(wrapped);
+                }
+#ifdef HXCPP_VISIT_ALLOCS
+                inline void __Visit(hx::VisitContext* __inCtx) override
+                {
+                    HX_VISIT_MEMBER(wrapped);
+                }
+#endif
+            };
+
+            super::mPtr = new AdapterCallable(inCallable);
+        }
+
+        Callable(const Dynamic& inDynamic)
+            : super(nullptr)
+        {
+            auto casted = dynamic_cast<Ptr>(inDynamic.GetPtr());
+            if (nullptr != casted)
+            {
+                super::mPtr = casted;
+            }
+            else
+            {
+                if (inDynamic->__GetType() == vtFunction)
+                {
+                    struct DynamicCallable final : public Callable_obj<void(TArgs...)>
+                    {
+                        Dynamic wrapped;
+
+                        DynamicCallable(Dynamic _wrapped) : wrapped(_wrapped) {}
+
+                        void _hx_run(TArgs... args) override
+                        {
+                            wrapped(args...);
+                        }
+
+                        inline void __Mark(hx::MarkContext* __inCtx) override
+                        {
+                            HX_MARK_MEMBER(wrapped);
+                        }
+#ifdef HXCPP_VISIT_ALLOCS
+                        inline void __Visit(hx::VisitContext* __inCtx) override
+                        {
+                            HX_VISIT_MEMBER(wrapped);
+                        }
+#endif
+                    };
+
+                    super::mPtr = new DynamicCallable(inDynamic);
+                }
+                else
+                {
+                    ::hx::Throw(HX_CSTRING("Dynamic is not a function"));
+                }
+            }
+        }
+
+        void operator ()(TArgs... args)
+        {
+            if (nullptr == super::mPtr)
+            {
+                ::Dynamic::ThrowBadFunctionError();
+            }
+
+            super::mPtr->_hx_run(args...);
         }
     };
 #endif
