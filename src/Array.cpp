@@ -503,22 +503,12 @@ void ArrayBase::safeSort(DynamicSorterFunc inSorter, bool inIsString)
 
 
 
-#ifdef HXCPP_VISIT_ALLOCS
-#define ARRAY_VISIT_FUNC \
-    void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
-#else
-#define ARRAY_VISIT_FUNC
-#endif
-
-#if (HXCPP_API_LEVEL>=500)
-    #define ARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list)
-#else
+#if (HXCPP_API_LEVEL<500)
     #define ARRAY_RUN_FUNC(ret,func,dynamic_arg_list,arg_list) \
         Dynamic __run(dynamic_arg_list) \
         { \
             ret mThis->__##func(arg_list); return Dynamic(); \
         }
-#endif
 
 #define DEFINE_ARRAY_FUNC(ret,func,array_list,run_func,ARG_C) \
 struct ArrayBase_##func : public hx::Object \
@@ -599,10 +589,7 @@ DEFINE_ARRAY_FUNC1(return,__unsafe_get);
 DEFINE_ARRAY_FUNC2(return,__unsafe_set);
 DEFINE_ARRAY_FUNC1(return,memcmp);
 
-
-
-
-hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp)
+hx::Val ArrayBase::__Field(const String& inString, hx::PropertyAccess inCallProp)
 {
    if (inString==HX_CSTRING("length")) return (int)size();
    if (inString==HX_CSTRING("concat")) return concat_dyn();
@@ -641,6 +628,7 @@ hx::Val ArrayBase::__Field(const String &inString, hx::PropertyAccess inCallProp
    return null();
 }
 
+#endif
 
 static String sArrayFields[] = {
    HX_CSTRING("length"),
@@ -855,7 +843,7 @@ namespace cpp
     HX_VARRAY_FUNC(, void, reverse, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
     HX_VARRAY_FUNC(return, ::Dynamic, shift, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
     HX_VARRAY_FUNC(return, ::cpp::VirtualArray, slice, HX_VARRAY_ARG_LIST2(int, ::Dynamic), HX_VARRAY_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
-    HX_VARRAY_FUNC(return, ::cpp::VirtualArray, splice, HX_VARRAY_ARG_LIST2(int, ::Dynamic), HX_VARRAY_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
+    HX_VARRAY_FUNC(return, ::cpp::VirtualArray, splice, HX_VARRAY_ARG_LIST2(int, int), HX_VARRAY_FUNC_LIST2(int, int), HX_ARG_LIST2);
     HX_VARRAY_FUNC(return, void, sort, HX_VARRAY_ARG_LIST1(hx::ArrayBase::DynamicSorterFunc), HX_VARRAY_FUNC_LIST1(hx::ArrayBase::DynamicSorterFunc), HX_ARG_LIST1);
     HX_VARRAY_FUNC(return, ::String, toString, HX_VARRAY_ARG_LIST0, HX_VARRAY_FUNC_LIST0, HX_ARG_LIST0);
     HX_VARRAY_FUNC(, void, unshift, HX_VARRAY_ARG_LIST1(::Dynamic), HX_VARRAY_FUNC_LIST1(::Dynamic), HX_ARG_LIST1);

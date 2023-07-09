@@ -602,7 +602,7 @@ public:
    ::hx::Callable<void()> reverse_dyn();
    ::hx::Callable<::Dynamic()> shift_dyn();
    ::hx::Callable<::cpp::VirtualArray(int, ::Dynamic)> slice_dyn();
-   ::hx::Callable<::cpp::VirtualArray(int, ::Dynamic)> splice_dyn();
+   ::hx::Callable<::cpp::VirtualArray(int, int)> splice_dyn();
    ::hx::Callable<void(ArrayBase::DynamicSorterFunc)> sort_dyn();
    ::hx::Callable<::String()> toString_dyn();
    ::hx::Callable<void(::Dynamic)> unshift_dyn();
