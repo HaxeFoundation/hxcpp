@@ -341,6 +341,7 @@ public:
 
    // Dynamic interface
 #if (HXCPP_API_LEVEL>=500)
+   hx::Val __pointerToBase();
    hx::Val __Field(const String &inString ,hx::PropertyAccess inCallProp) override = 0;
 #else
    hx::Val __Field(const String& inString, hx::PropertyAccess inCallProp);
@@ -1542,7 +1543,7 @@ template<class TO>
         }
         Array<TO> _hx_run(hx::Callable<TO(ELEM_)> inArg0) override
         {
-            return mThis->map<TO>(inArg0);
+            return mThis->map(inArg0);
         }
         void __Mark(hx::MarkContext* __inCtx)
         {
@@ -1604,7 +1605,7 @@ hx::Val Array_obj<ELEM_>::__Field(const String& inString, hx::PropertyAccess inC
     if (inString == HX_CSTRING("memcmp")) return memcmp_dyn();
     if (inString == HX_CSTRING("_hx_storeType")) return (int)getStoreType();
     if (inString == HX_CSTRING("_hx_elementSize")) return (int)GetElementSize();
-    if (inString == HX_CSTRING("_hx_pointer")) return ::cpp::CreateDynamicPointer((void*)mBase);
+    if (inString == HX_CSTRING("_hx_pointer")) return __pointerToBase();
     if (inString == HX_CSTRING("resize")) return resize_dyn();
     return null();
 }

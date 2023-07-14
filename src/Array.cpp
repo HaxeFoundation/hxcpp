@@ -630,6 +630,13 @@ hx::Val ArrayBase::__Field(const String& inString, hx::PropertyAccess inCallProp
 
 #endif
 
+#if (HXCPP_API_LEVEL>=500)
+hx::Val ArrayBase::__pointerToBase()
+{
+    return cpp::CreateDynamicPointer(mBase);
+}
+#endif
+
 static String sArrayFields[] = {
    HX_CSTRING("length"),
    HX_CSTRING("concat"),
