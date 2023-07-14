@@ -789,7 +789,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
          Dynamic func = args[0]->runObject(ctx);
          BCR_CHECK;
 #if (HXCPP_API_LEVEL>=500)
-         Dynamic result = thisVal->map<Dynamic>(func);
+         Dynamic result = thisVal->template map<::Dynamic>(func);
 #else
          Dynamic result = thisVal->map(func);
 #endif
@@ -1203,7 +1203,7 @@ struct ArrayBuiltin : public ArrayBuiltinBase
       if (FUNC==afMap)
       {
 #if (HXCPP_API_LEVEL>=500)
-         Dynamic result = inArray->map<Dynamic>(Dynamic(inFunction));
+         Dynamic result = inArray->template map<::Dynamic>(Dynamic(inFunction));
 #else
          Dynamic result = inArray->map(Dynamic(inFunction));
 #endif
