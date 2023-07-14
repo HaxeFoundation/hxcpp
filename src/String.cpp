@@ -2105,111 +2105,70 @@ String &String::operator+=(const String &inRHS)
 }
 
 #if (HXCPP_API_LEVEL>=500)
-    #define HX_STRING_FUNC0(name, ret) \
-        ::hx::Callable<ret()> String::name##_dyn() \
+    #ifdef HXCPP_VISIT_ALLOCS
+        #define STRING_VISIT_FUNC \
+            void __Visit(hx::VisitContext *__inCtx) { HX_VISIT_MEMBER(mThis); }
+    #else
+        #define STRING_VISIT_FUNC
+    #endif
+
+    #define HX_STRING_ARG_LIST0
+    #define HX_STRING_ARG_LIST1(arg0) arg0
+    #define HX_STRING_ARG_LIST2(arg0, arg1) arg0, arg1
+
+    #define HX_STRING_FUNC_LIST0
+    #define HX_STRING_FUNC_LIST1(arg0) arg0 inArg0
+    #define HX_STRING_FUNC_LIST2(arg0, arg1) arg0 inArg0, arg1 inArg1
+
+    #define HX_STRING_FUNC(value, name, args_list, func_list, args_call) \
+        ::hx::Callable<value(args_list)> String::name##_dyn() \
         { \
-            struct _hx_string_##name : public ::hx::Callable_obj<ret()> \
+            struct _hx_string_##name : public ::hx::Callable_obj<value(args_list)> \
             { \
                 ::String mThis; \
                 _hx_string_##name(const ::String& inThis) : mThis(inThis) \
                 { \
                     HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
                 } \
-                ret _hx_run() override \
+                value HX_LOCAL_RUN(func_list) override \
                 { \
-                    return mThis.name(); \
+                    return mThis.name(args_call); \
                 } \
                 void __SetThis(Dynamic inThis) override \
                 { \
                     mThis = inThis; \
                 } \
+                void __Mark(hx::MarkContext *__inCtx) { HX_MARK_MEMBER(mThis); } \
+                STRING_VISIT_FUNC \
                 int __Compare(const ::hx::Object* inRhs) const override \
                 { \
                     auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
                     if (!casted) return 1; \
-                    if (mThis != casted->mThis) return -1; \
+                    if (!hx::IsPointerEq(mThis, casted->mThis)) return -1; \
                     return 0; \
                 } \
             }; \
             return new _hx_string_##name(*this); \
         }
 
-    #define HX_STRING_FUNC1(name, ret, arg0) \
-        ::hx::Callable<ret(arg0)> String::name##_dyn() \
-        { \
-            struct _hx_string_##name : public ::hx::Callable_obj<ret(arg0)> \
-            { \
-                ::String mThis; \
-                _hx_string_##name(const ::String& inThis) : mThis(inThis) \
-                { \
-                    HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
-                } \
-                ret _hx_run(arg0 a0) override \
-                { \
-                    return mThis.name(a0); \
-                } \
-                void __SetThis(Dynamic inThis) override \
-                { \
-                    mThis = inThis; \
-                } \
-                int __Compare(const ::hx::Object* inRhs) const override \
-                { \
-                    auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
-                    if (!casted) return 1; \
-                    if (mThis != casted->mThis) return -1; \
-                    return 0; \
-                } \
-            }; \
-            return new _hx_string_##name(*this); \
-        }
-
-    #define HX_STRING_FUNC2(name, ret, arg0, arg1) \
-        ::hx::Callable<ret(arg0, arg1)> String::name##_dyn() \
-        { \
-            struct _hx_string_##name : public ::hx::Callable_obj<ret(arg0, arg1)> \
-            { \
-                ::String mThis; \
-                _hx_string_##name(const ::String& inThis) : mThis(inThis) \
-                { \
-                    HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
-                } \
-                ret _hx_run(arg0 a0, arg1 a1) override \
-                { \
-                    return mThis.name(a0, a1); \
-                } \
-                void __SetThis(Dynamic inThis) override \
-                { \
-                    mThis = inThis; \
-                } \
-                int __Compare(const ::hx::Object* inRhs) const override \
-                { \
-                    auto casted = dynamic_cast<const _hx_string_##name *>(inRhs); \
-                    if (!casted) return 1; \
-                    if (mThis != casted->mThis) return -1; \
-                    return 0; \
-                } \
-            }; \
-            return new _hx_string_##name(*this); \
-        }
-
-    HX_STRING_FUNC1(charAt, ::String, int);
-    HX_STRING_FUNC1(charCodeAt, ::Dynamic, int);
-    HX_STRING_FUNC2(indexOf, int, ::String, ::Dynamic);
-    HX_STRING_FUNC2(lastIndexOf, int, ::String, ::Dynamic);
-    HX_STRING_FUNC1(split, ::Array<::String>, ::String);
-    HX_STRING_FUNC2(substr, ::String, int, ::Dynamic);
-    HX_STRING_FUNC2(substring, ::String, int, ::Dynamic);
-    HX_STRING_FUNC0(toLowerCase, ::String);
-    HX_STRING_FUNC0(toString, ::String);
-    HX_STRING_FUNC0(toUpperCase, ::String);
+    HX_STRING_FUNC(::String, charAt, HX_STRING_ARG_LIST1(int), HX_STRING_FUNC_LIST1(int), HX_ARG_LIST1);
+    HX_STRING_FUNC(::Dynamic, charCodeAt, HX_STRING_ARG_LIST1(int), HX_STRING_FUNC_LIST1(int), HX_ARG_LIST1);
+    HX_STRING_FUNC(int, indexOf, HX_STRING_ARG_LIST2(::String, ::Dynamic), HX_STRING_FUNC_LIST2(::String, ::Dynamic), HX_ARG_LIST2);
+    HX_STRING_FUNC(int, lastIndexOf, HX_STRING_ARG_LIST2(::String, ::Dynamic), HX_STRING_FUNC_LIST2(::String, ::Dynamic), HX_ARG_LIST2);
+    HX_STRING_FUNC(::Array<::String>, split, HX_STRING_ARG_LIST1(::String), HX_STRING_FUNC_LIST1(::String), HX_ARG_LIST1);
+    HX_STRING_FUNC(::String, substr, HX_STRING_ARG_LIST2(int, ::Dynamic), HX_STRING_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
+    HX_STRING_FUNC(::String, substring, HX_STRING_ARG_LIST2(int, ::Dynamic), HX_STRING_FUNC_LIST2(int, ::Dynamic), HX_ARG_LIST2);
+    HX_STRING_FUNC(::String, toLowerCase, HX_STRING_ARG_LIST0, HX_STRING_FUNC_LIST0, HX_ARG_LIST0);
+    HX_STRING_FUNC(::String, toString, HX_STRING_ARG_LIST0, HX_STRING_FUNC_LIST0, HX_ARG_LIST0);
+    HX_STRING_FUNC(::String, toUpperCase, HX_STRING_ARG_LIST0, HX_STRING_FUNC_LIST0, HX_ARG_LIST0);
 
     ::hx::Callable<::String(int)> String::fromCharCode_dyn()
     {
-        struct _hx_string_fromCharCode : public ::hx::Callable_obj<::String(int)>
+        struct _hx_string_fromCharCode : public ::hx::Callable_obj<::String(HX_STRING_ARG_LIST1(int))>
         {
-            ::String _hx_run(int a0) override
+            ::String HX_LOCAL_RUN(HX_STRING_FUNC_LIST1(int)) override
             {
-                return ::String::fromCharCode(a0);
+                return ::String::fromCharCode(HX_ARG_LIST1);
             }
             int __Compare(const ::hx::Object* inRhs) const override
             {
