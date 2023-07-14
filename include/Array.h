@@ -1492,7 +1492,7 @@ Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
             { \
                 HX_OBJ_WB_NEW_MARKED_OBJECT(this); \
             } \
-            value _hx_run(func_list) override \
+            value HX_LOCAL_RUN(func_list) override \
             { \
                 ret mThis->name(args_call); \
             } \
