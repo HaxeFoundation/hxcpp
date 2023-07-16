@@ -175,7 +175,7 @@ namespace hx
             }
             else
             {
-                if (inDynamic->__GetType() == vtFunction)
+                if (::hx::IsNotNull(inDynamic) && inDynamic->__GetType() == vtFunction)
                 {
                     struct DynamicCallable final : public Callable_obj<TReturn(TArgs...)>
                     {
@@ -201,10 +201,6 @@ namespace hx
                     };
 
                     super::mPtr = new DynamicCallable(inDynamic);
-                }
-                else
-                {
-                    ::hx::Throw(HX_CSTRING("Dynamic is not a function"));
                 }
             }
         }
