@@ -1612,110 +1612,68 @@ hx::Val Array_obj<ELEM_>::__Field(const String& inString, hx::PropertyAccess inC
 
 // Two unrelated template definitions which need to be here due to wanting to know about arrays implementation
 
-//// Wrapping
-//
-//template<typename T>
-//Dynamic __hx_wrap_struct(T value, std::true_type)
-//{
-//    return value;
-//}
-//
-//template<typename T>
-//Dynamic __hx_wrap_struct(T value, std::false_type)
-//{
-//    return cpp::Struct(value);
-//}
-//
-//template<typename T>
-//Dynamic __hx_wrap_pointer(T value, std::true_type)
-//{
-//    return Dynamic(cpp::Pointer(value));
-//}
-//
-//template<typename T>
-//Dynamic __hx_wrap_pointer(T value, std::false_type)
-//{
-//    return __hx_wrap_struct(value, std::is_constructible<Dynamic, T>{});
-//}
-//
-//template<typename T>
-//Dynamic __hx_wrap_dynamic(T value)
-//{
-//    return __hx_wrap_pointer(value, std::is_pointer<T>{});
-//}
-//
-//// Unwrapping
-//
-//template<typename T>
-//T __hx_unwrap_struct(Dynamic value, std::true_type)
-//{
-//    return value;
-//}
-//
-//template<typename T>
-//T __hx_unwrap_struct(Dynamic value, std::false_type)
-//{
-//    return ::cpp::Struct(value);
-//}
-//
-//template<typename T>
-//T __hx_unwrap_pointer(Dynamic value, std::true_type)
-//{
-//    return ::cpp::Pointer(value);
-//}
-//
-//template<typename T>
-//T __hx_unwrap_pointer(Dynamic value, std::false_type)
-//{
-//    return __hx_wrap_struct(value, std::is_constructible<Dynamic, T>{});
-//}
-//
-//template<typename T>
-//T __hx_unwrap_dynamic(Dynamic value)
-//{
-//    return __hx_unwrap_pointer(value, std::is_pointer<T>{});
-//}
+// Wrapping
 
-//
+template<typename T>
+Dynamic __hx_wrap_struct(T value, std::true_type)
+{
+   return value;
+}
+
+template<typename T>
+Dynamic __hx_wrap_struct(T value, std::false_type)
+{
+   return cpp::Struct<T>(value);
+}
+
+template<typename T>
+Dynamic __hx_wrap_pointer(T value, std::true_type)
+{
+   return Dynamic(cpp::Pointer<std::remove_pointer<T>::type>(value));
+}
+
+template<typename T>
+Dynamic __hx_wrap_pointer(T value, std::false_type)
+{
+   return __hx_wrap_struct(value, std::is_constructible<Dynamic, T>{});
+}
 
 template<typename T>
 Dynamic __hx_wrap_dynamic(T value)
 {
-    if constexpr (std::is_pointer_v<T>)
-    {
-        return cpp::Pointer<std::remove_pointer_t<T>>(value);
-    }
-    else
-    {
-        if constexpr (std::is_constructible_v<Dynamic, T>)
-        {
-            return value;
-        }
-        else
-        {
-            return cpp::Struct<T>(value);
-        }
-    }
+   return __hx_wrap_pointer(value, std::is_pointer<T>{});
+}
+
+// Unwrapping
+
+template<typename T>
+T __hx_unwrap_struct(Dynamic value, std::true_type)
+{
+   return value;
+}
+
+template<typename T>
+T __hx_unwrap_struct(Dynamic value, std::false_type)
+{
+   return ::cpp::Struct<T>(value);
+}
+
+template<typename T>
+T __hx_unwrap_pointer(Dynamic value, std::true_type)
+{
+   return ::cpp::Pointer<std::remove_pointer<T>::type>(value);
+}
+
+template<typename T>
+T __hx_unwrap_pointer(Dynamic value, std::false_type)
+{
+   return __hx_unwrap_struct<T>(value, std::is_constructible<Dynamic, T>{});
 }
 
 template<typename T>
 T __hx_unwrap_dynamic(Dynamic value)
 {
-    if constexpr (std::is_pointer_v<T>)
-    {
-        return cpp::Pointer<std::remove_pointer_t<T>>(value);
-    }
-    else
-    {
-        if constexpr (std::is_constructible_v<Dynamic, T>)
-        {
-            return value;
-        }
-        else
-        {
-            return cpp::Struct<T>(value);
-        }
-    }
+   return __hx_unwrap_pointer<T>(value, std::is_pointer<T>{});
 }
 
 template<class ...TArgs>
