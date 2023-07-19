@@ -378,7 +378,9 @@ typedef bool PropertyAccess;
 #include <cpp/Pointer.h>
 #include <hx/Native.h>
 #include <hx/Operators.h>
+#if (HXCPP_API_LEVEL>=500)
 #include <hx/Closure.h>
+#endif
 // second time ...
 #include <cpp/Variant.h>
 #include <hx/Debug.h>
