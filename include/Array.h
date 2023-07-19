@@ -1485,7 +1485,7 @@ Dynamic Array_obj<ELEM_>::map(Dynamic inFunc)
     template<class ELEM_> \
     ::hx::Callable<value(args_list)> Array_obj<ELEM_>::name##_dyn() \
     { \
-        struct _hx_array_##name : public ::hx::Callable_obj<value(args_list)> \
+        struct _hx_array_##name : public ::hx::Closure_obj<value(args_list)> \
         { \
             Array<ELEM_> mThis; \
             _hx_array_##name(Array<ELEM_> inThis) : mThis(inThis) \
@@ -1534,7 +1534,7 @@ template<class ELEM_>
 template<class TO>
 ::hx::Callable<Array<TO>(hx::Callable<TO(ELEM_)>)> Array_obj<ELEM_>::map_dyn()
 {
-    struct _hx_array_map : public ::hx::Callable_obj<Array<TO>(hx::Callable<TO(ELEM_)>)>
+    struct _hx_array_map : public ::hx::Closure_obj<Array<TO>(hx::Callable<TO(ELEM_)>)>
     {
         Array<ELEM_> mThis;
         _hx_array_map(Array<ELEM_> inThis) : mThis(inThis)
@@ -1608,117 +1608,6 @@ hx::Val Array_obj<ELEM_>::__Field(const String& inString, hx::PropertyAccess inC
     if (inString == HX_CSTRING("_hx_pointer")) return __pointerToBase();
     if (inString == HX_CSTRING("resize")) return resize_dyn();
     return null();
-}
-
-// Two unrelated template definitions which need to be here due to wanting to know about arrays implementation
-
-// Wrapping
-
-template<typename T>
-Dynamic __hx_wrap_struct(T value, std::true_type)
-{
-   return value;
-}
-
-template<typename T>
-Dynamic __hx_wrap_struct(T value, std::false_type)
-{
-   return cpp::Struct<T>(value);
-}
-
-template<typename T>
-Dynamic __hx_wrap_pointer(T value, std::true_type)
-{
-   return Dynamic(cpp::Pointer<std::remove_pointer<T>::type>(value));
-}
-
-template<typename T>
-Dynamic __hx_wrap_pointer(T value, std::false_type)
-{
-   return __hx_wrap_struct(value, std::is_constructible<Dynamic, T>{});
-}
-
-template<typename T>
-Dynamic __hx_wrap_dynamic(T value)
-{
-   return __hx_wrap_pointer(value, std::is_pointer<T>{});
-}
-
-// Unwrapping
-
-template<typename T>
-T __hx_unwrap_struct(Dynamic value, std::true_type)
-{
-   return value;
-}
-
-template<typename T>
-T __hx_unwrap_struct(Dynamic value, std::false_type)
-{
-   return ::cpp::Struct<T>(value);
-}
-
-template<typename T>
-T __hx_unwrap_pointer(Dynamic value, std::true_type)
-{
-   return ::cpp::Pointer<std::remove_pointer<T>::type>(value);
-}
-
-template<typename T>
-T __hx_unwrap_pointer(Dynamic value, std::false_type)
-{
-   return __hx_unwrap_struct<T>(value, std::is_constructible<Dynamic, T>{});
-}
-
-template<typename T>
-T __hx_unwrap_dynamic(Dynamic value)
-{
-   return __hx_unwrap_pointer<T>(value, std::is_pointer<T>{});
-}
-
-template<class ...TArgs>
-Dynamic hx::Object::__run(const TArgs& ...args)
-{
-    using unused = int[];
-
-    auto arr = Array_obj<::Dynamic>::__new(0, sizeof...(args));
-
-    (void)unused{ 0, (arr->push(__hx_wrap_dynamic(args)), 0)... };
-
-    return __Run(arr);
-}
-
-template<bool void_return, class TReturn, class... TArgs>
-struct Invoker;
-
-template<class TReturn, class... TArgs>
-struct Invoker<true, TReturn, TArgs...>
-{
-    template<size_t... I>
-    static Dynamic call(hx::Callable_obj<TReturn(TArgs...)>* callable, const Array<Dynamic>& inArgs, hx::IndexHelper::index_sequence<I...>)
-    {
-        callable->_hx_run(__hx_unwrap_dynamic<TArgs>(inArgs[I]) ...);
-
-        return null();
-    }
-};
-
-template<class TReturn, class... TArgs>
-struct Invoker<false, TReturn, TArgs...>
-{
-    template<size_t... I>
-    static Dynamic call(hx::Callable_obj<TReturn(TArgs...)>* callable, const Array<Dynamic>& inArgs, hx::IndexHelper::index_sequence<I...>)
-    {
-      auto result = callable->_hx_run(__hx_unwrap_dynamic<TArgs>(inArgs[I]) ...);
-
-        return __hx_wrap_dynamic(result);
-    }
-};
-
-template<class TReturn, class... TArgs>
-Dynamic hx::Callable_obj<TReturn(TArgs...)>::__Run(const Array<Dynamic>& inArgs)
-{
-    return Invoker<std::is_void<TReturn>::value, TReturn, TArgs...>::call(this, inArgs, hx::IndexHelper::index_sequence_for<TArgs...>());
 }
 
 #endif

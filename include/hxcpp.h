@@ -378,6 +378,7 @@ typedef bool PropertyAccess;
 #include <cpp/Pointer.h>
 #include <hx/Native.h>
 #include <hx/Operators.h>
+#include <hx/Closure.h>
 // second time ...
 #include <cpp/Variant.h>
 #include <hx/Debug.h>

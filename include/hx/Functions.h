@@ -25,31 +25,8 @@ namespace hx
 
 #if (HXCPP_API_LEVEL>=500)
 
-   // C++ 11 std::integer_sequence
-   struct IndexHelper
-   {
-       template<typename T, T... Ints>
-       struct integer_sequence
-       {
-           typedef T value_type;
-           static constexpr std::size_t size() { return sizeof...(Ints); }
-       };
-
-       template<std::size_t... Ints>
-       using index_sequence = integer_sequence<std::size_t, Ints...>;
-
-       template<typename T, std::size_t N, T... Is>
-       struct make_integer_sequence : make_integer_sequence<T, N - 1, N - 1, Is...> {};
-
-       template<typename T, T... Is>
-       struct make_integer_sequence<T, 0, Is...> : integer_sequence<T, Is...> {};
-
-       template<std::size_t N>
-       using make_index_sequence = make_integer_sequence<std::size_t, N>;
-
-       template<typename... T>
-       using index_sequence_for = make_index_sequence<sizeof...(T)>;
-   };
+    template<typename T1>
+    bool IsNotNull(const T1& v1);
 
     template<class TReturn, class... TArgs>
     class HXCPP_EXTERN_CLASS_ATTRIBUTES Callable_obj;
@@ -70,9 +47,19 @@ namespace hx
             return sizeof...(TArgs);
         }
 
-        Dynamic __Run(const Array<Dynamic>& inArgs) override final;
+        Dynamic __Run(const Array<Dynamic>& inArgs) = 0;
 
         virtual TReturn _hx_run(TArgs... args) = 0;
+    };
+
+    template<class TReturn, class... TArgs>
+    class HXCPP_EXTERN_CLASS_ATTRIBUTES Closure_obj;
+
+    template<class TReturn, class... TArgs>
+    class HXCPP_EXTERN_CLASS_ATTRIBUTES Closure_obj<TReturn(TArgs...)> : public Callable_obj<TReturn(TArgs...)>
+    {
+    public:
+        Dynamic __Run(const Array<Dynamic>& inArgs) override final;
     };
 
     template<class TReturn, class... TArgs>
@@ -107,7 +94,7 @@ namespace hx
         Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
             : super(nullptr)
         {
-            struct AdapterCallable final : public Callable_obj<TReturn(TArgs...)>
+            struct AdapterCallable final : public Closure_obj<TReturn(TArgs...)>
             {
                 Callable<TOtherReturn(TOtherArgs...)> wrapped;
 
@@ -137,7 +124,7 @@ namespace hx
         Callable(const Callable<void(TOtherArgs...)>& inCallable)
             : super(nullptr)
         {
-            struct AdapterCallable final : public Callable_obj<TReturn(TArgs...)>
+            struct AdapterCallable final : public Closure_obj<TReturn(TArgs...)>
             {
                 Callable<void(TOtherArgs...)> wrapped;
 
@@ -177,7 +164,7 @@ namespace hx
             {
                 if (::hx::IsNotNull(inDynamic) && inDynamic->__GetType() == vtFunction)
                 {
-                    struct DynamicCallable final : public Callable_obj<TReturn(TArgs...)>
+                    struct DynamicCallable final : public Closure_obj<TReturn(TArgs...)>
                     {
                         Dynamic wrapped;
 
@@ -247,7 +234,7 @@ namespace hx
         Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
             : super(nullptr)
         {
-            struct AdapterCallable final : public Callable_obj<void(TArgs...)>
+            struct AdapterCallable final : public Closure_obj<void(TArgs...)>
             {
                 Callable<TOtherReturn(TOtherArgs...)> wrapped;
 
@@ -285,7 +272,7 @@ namespace hx
             {
                 if (inDynamic->__GetType() == vtFunction)
                 {
-                    struct DynamicCallable final : public Callable_obj<void(TArgs...)>
+                    struct DynamicCallable final : public Closure_obj<void(TArgs...)>
                     {
                         Dynamic wrapped;
 
