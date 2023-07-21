@@ -90,6 +90,24 @@ namespace hx
         Callable(const ::cpp::Variant& inVariant)
             : Callable(Dynamic(inVariant.asObject())) {}
 
+        Callable(::cpp::Function<TReturn(TArgs...)> inFunction)
+            : super(nullptr)
+        {
+            struct FunctionCallable final : public Closure_obj<TReturn(TArgs...)>
+            {
+                ::cpp::Function<TReturn(TArgs...)> func;
+
+                FunctionCallable(::cpp::Function<TReturn(TArgs...)> inFunc) : func(inFunc) {}
+
+                TReturn HX_LOCAL_RUN(TArgs... args) override
+                {
+                    return func(args...);
+                }
+            };
+
+            super::mPtr = new FunctionCallable(inFunction);
+        }
+
         template<class TOtherReturn, class... TOtherArgs>
         Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
             : super(nullptr)
@@ -100,7 +118,7 @@ namespace hx
 
                 AdapterCallable(Callable<TOtherReturn(TOtherArgs...)> _wrapped) : wrapped(_wrapped) {}
 
-                TReturn _hx_run(TArgs... args) override
+                TReturn HX_LOCAL_RUN(TArgs... args) override
                 {
                     return wrapped(args...);
                 }
@@ -130,7 +148,7 @@ namespace hx
 
                 AdapterCallable(Callable<void(TOtherArgs...)> _wrapped) : wrapped(_wrapped) {}
 
-                TReturn _hx_run(TArgs... args) override
+                TReturn HX_LOCAL_RUN(TArgs... args) override
                 {
                     wrapped(args...);
 
@@ -170,7 +188,7 @@ namespace hx
 
                         DynamicCallable(Dynamic _wrapped) : wrapped(_wrapped) {}
 
-                        TReturn _hx_run(TArgs... args) override
+                        TReturn HX_LOCAL_RUN(TArgs... args) override
                         {
                             return wrapped(args...);
                         }
@@ -230,6 +248,24 @@ namespace hx
         Callable(const ::cpp::Variant& inVariant)
             : Callable(Dynamic(inVariant.asObject())) {}
 
+        Callable(::cpp::Function<void(TArgs...)> inFunction)
+            : super(nullptr)
+        {
+            struct FunctionCallable final : public Closure_obj<void(TArgs... )>
+            {
+                ::cpp::Function<void(TArgs...)> func;
+
+                FunctionCallable(::cpp::Function<void(TArgs...)> inFunc) : func(inFunc) {}
+
+                void HX_LOCAL_RUN(TArgs... args) override
+                {
+                    func(args...);
+                }
+            };
+
+            super::mPtr = new FunctionCallable(inFunction);
+        }
+
         template<class TOtherReturn, class... TOtherArgs>
         Callable(const Callable<TOtherReturn(TOtherArgs...)>& inCallable)
             : super(nullptr)
@@ -240,7 +276,7 @@ namespace hx
 
                 AdapterCallable(Callable<TOtherReturn(TOtherArgs...)> _wrapped) : wrapped(_wrapped) {}
 
-                void _hx_run(TArgs... args) override
+                void HX_LOCAL_RUN(TArgs... args) override
                 {
                     wrapped(args...);
                 }
@@ -278,7 +314,7 @@ namespace hx
 
                         DynamicCallable(Dynamic _wrapped) : wrapped(_wrapped) {}
 
-                        void _hx_run(TArgs... args) override
+                        void HX_LOCAL_RUN(TArgs... args) override
                         {
                             wrapped(args...);
                         }
