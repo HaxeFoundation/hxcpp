@@ -74,6 +74,7 @@ public:
    inline operator bool() const { return mPtr && mPtr->__ToInt(); }
    inline operator cpp::Int64() const { return mPtr ? mPtr->__ToInt64() : 0; }
    inline operator cpp::UInt64() const { return mPtr ? mPtr->__ToInt64() : 0; }
+   inline operator ::hx::Object*() const { return mPtr; }
 
    // Conversion to generic pointer requires you to tag the class with a typedef
    template<typename T>
