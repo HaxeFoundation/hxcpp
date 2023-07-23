@@ -306,7 +306,7 @@ namespace hx
             }
             else
             {
-                if (inDynamic->__GetType() == vtFunction)
+                if (::hx::IsNotNull(inDynamic) && inDynamic->__GetType() == vtFunction)
                 {
                     struct DynamicCallable final : public Closure_obj<void(TArgs...)>
                     {
