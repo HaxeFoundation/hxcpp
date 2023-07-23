@@ -186,6 +186,44 @@ public:
        if (mProc == 0) hx::Throw(HX_NULL_FUNCTION_POINTER);
        return ((prim_mult)mProc)((hx::Object**)inArgs->GetBase(), inArgs->length);
    }
+#else
+   Dynamic __Run(const Array<Dynamic>& inArgs) override
+   {
+       HX_STACK_FRAME(hx::EXTERN_CLASS_NAME, "cffi", 0, functionName, __FILE__, __LINE__, 0);
+
+       if (mArgCount != -1 && mArgCount != inArgs->length)
+       {
+           throw HX_INVALID_ARG_COUNT;
+       }
+       if (mProc == 0)
+       {
+           hx::Throw(HX_NULL_FUNCTION_POINTER);
+       }
+
+       switch (mArgCount)
+       {
+       case 0:
+           return ((prim_0)mProc)();
+
+       case 1:
+           return ((prim_1)mProc)(inArgs[0].GetPtr());
+
+       case 2:
+           return ((prim_2)mProc)(inArgs[0].GetPtr(), inArgs[1].GetPtr());
+
+       case 3:
+           return ((prim_3)mProc)(inArgs[0].GetPtr(), inArgs[1].GetPtr(), inArgs[2].GetPtr());
+
+       case 4:
+           return ((prim_4)mProc)(inArgs[0].GetPtr(), inArgs[1].GetPtr(), inArgs[2].GetPtr(), inArgs[3].GetPtr());
+
+       case 5:
+           return ((prim_5)mProc)(inArgs[0].GetPtr(), inArgs[1].GetPtr(), inArgs[2].GetPtr(), inArgs[3].GetPtr(), inArgs[4].GetPtr());
+
+       default:
+           return ((prim_mult)mProc)((hx::Object**)inArgs->GetBase(), inArgs->length);
+       }
+   }
 #endif
    int __Compare(const hx::Object *inRHS) const
    {
