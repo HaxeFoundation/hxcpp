@@ -44,8 +44,8 @@ namespace hx
 
 class CppiaModule;
 
-//#define DBGLOG(...) { }
-#define DBGLOG printf
+#define DBGLOG(...) { }
+//#define DBGLOG printf
 
 struct TypeData;
 class CppiaClassInfo;
