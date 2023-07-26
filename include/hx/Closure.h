@@ -55,9 +55,21 @@ namespace hx
             }
 
             template<typename T>
-            T __hx_pointer(Dynamic value, std::true_type)
+            T __hx_object_pointer(Dynamic value, std::true_type)
+            {
+                return value;
+            }
+
+            template<typename T>
+            T __hx_object_pointer(Dynamic value, std::false_type)
             {
                 return ::cpp::Pointer<remove_pointer_t<T>>(value);
+            }
+
+            template<typename T>
+            T __hx_pointer(Dynamic value, std::true_type)
+            {
+                __hx_object_pointer(value, std::is_base_of<remove_pointer_t<T>, ::hx::Object>{});
             }
 
             template<typename T>
@@ -88,9 +100,21 @@ namespace hx
             }
 
             template<typename T>
-            Dynamic __hx_pointer(T value, std::true_type)
+            Dynamic __hx_object_pointer(T value, std::true_type)
+            {
+                return Dynamic(value);
+            }
+
+            template<typename T>
+            Dynamic __hx_object_pointer(T value, std::false_type)
             {
                 return Dynamic(cpp::Pointer<remove_pointer_t<T>>(value));
+            }
+
+            template<typename T>
+            Dynamic __hx_pointer(T value, std::true_type)
+            {
+                return __hx_object_pointer(value, std::is_base_of<remove_pointer_t<T>, ::hx::Object>{});
             }
 
             template<typename T>
