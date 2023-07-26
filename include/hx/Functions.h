@@ -333,10 +333,6 @@ namespace hx
 
                     super::mPtr = new DynamicCallable(inDynamic);
                 }
-                else
-                {
-                    ::hx::Throw(HX_CSTRING("Dynamic is not a function"));
-                }
             }
         }
 
