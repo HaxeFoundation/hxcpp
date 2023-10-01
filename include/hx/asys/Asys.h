@@ -7,8 +7,6 @@ HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
 HX_DECLARE_CLASS3(hx, asys, net, Socket)
 HX_DECLARE_CLASS3(hx, asys, net, Server)
-HX_DECLARE_CLASS3(hx, asys, system, Process)
-HX_DECLARE_CLASS3(hx, asys, system, ChildProcess)
 
 namespace hx
 {
@@ -167,21 +165,37 @@ namespace hx
                 virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
+
+            // class UdpSocket_obj : public Object
+            // {
+            // public:
+            //     const hx::Anon localAddress;
+            //     const hx::Anon remoteAddress;
+
+            //     static void open(Context ctx, const String& host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+
+            //     virtual void bind(const String& host, int port, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //     virtual void unbind(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //     virtual void write(Array<uint8_t> data, int offset, int length, const String& host, int port, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //     virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //     virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            // };
         }
 
         namespace system
         {
-            class CurrentProcess_obj;
-
-            class Process_obj : public Object
+            class Process
             {
             public:
-                static ChildProcess_obj currentProcess();
-
-                const Pid pid;
+                static void open(Context ctx, String command, hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
             };
 
-            class CurrentProcess_obj : public Process_obj
+            class ChildProcess : public Process
+            {
+                //
+            };
+
+            class CurrentProcess : public Process
             {
                 //
             };
