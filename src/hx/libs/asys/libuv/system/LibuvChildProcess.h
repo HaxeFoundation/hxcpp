@@ -15,9 +15,14 @@ namespace hx::asys::libuv::system
 		uv_process_options_t options;
 		std::vector<char*> arguments;
 		std::vector<char*> environment;
-		std::optional<int64_t> exitCode;
+		std::optional<int64_t> currentExitCode;
+		hx::Object* exitCallback;
 
-		LibuvChildProcess() = default;
-		~LibuvChildProcess() = default;
+		LibuvChildProcess();
+		~LibuvChildProcess();
+
+		int pid() override final;
+
+		void exitCode(Dynamic cbSuccess, Dynamic cbFailure) override final;
 	};
 }

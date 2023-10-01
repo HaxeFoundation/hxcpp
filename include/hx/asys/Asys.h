@@ -188,11 +188,14 @@ namespace hx
             {
             public:
                 static void open(Context ctx, String command, hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
+
+                virtual int pid() = 0;
             };
 
             class ChildProcess : public Process
             {
-                //
+            public:
+                virtual void exitCode(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
             class CurrentProcess : public Process

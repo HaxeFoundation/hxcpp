@@ -150,7 +150,14 @@ void hx::asys::system::Process::open(Context ctx, String command, hx::Anon optio
     process->options.exit_cb = [](uv_process_t* request, int64_t status, int signal) {
         auto process = reinterpret_cast<hx::asys::libuv::system::LibuvChildProcess*>(request->data);
 
-        process->exitCode = status;
+        process->currentExitCode = status;
+
+        auto gcZone   = hx::AutoGCZone();
+        auto callback = Dynamic(process->exitCallback);
+        if (null() != callback)
+        {
+            callback(status);
+        }
     };
 
     auto uidOption = options->__Field(HX_CSTRING("user"), hx::PropertyAccess::paccDynamic);
@@ -180,6 +187,6 @@ void hx::asys::system::Process::open(Context ctx, String command, hx::Anon optio
     }
     else
     {
-        cbSuccess(process.release());
+        cbSuccess(::cpp::Pointer<ChildProcess>(process.release()));
     }
 }
