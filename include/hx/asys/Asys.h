@@ -196,6 +196,7 @@ namespace hx
             {
             public:
                 virtual void exitCode(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
             class CurrentProcess : public Process

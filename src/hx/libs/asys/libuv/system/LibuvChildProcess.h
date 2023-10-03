@@ -16,7 +16,9 @@ namespace hx::asys::libuv::system
 		std::vector<char*> arguments;
 		std::vector<char*> environment;
 		std::optional<int64_t> currentExitCode;
+
 		hx::Object* exitCallback;
+		hx::Object* closeCallback;
 
 		LibuvChildProcess();
 		~LibuvChildProcess();
@@ -24,5 +26,7 @@ namespace hx::asys::libuv::system
 		int pid() override final;
 
 		void exitCode(Dynamic cbSuccess, Dynamic cbFailure) override final;
+
+		void close(Dynamic cbSuccess, Dynamic cbFailure) override final;
 	};
 }
