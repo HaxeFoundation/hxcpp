@@ -84,54 +84,44 @@ namespace
         }
     }
 
-    /*std::unique_ptr<std::vector<uv_stdio_container_t>> getStdioContainers(hx::Anon hxOptions)
+    void makeStdioContainer(uv_stdio_container_t& container, hx::EnumBase field, int target)
+    {
+        switch (field->_hx_getIndex())
+        {
+        case 0:
+            //
+            break;
+
+        case 1:
+            container.flags = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE);
+            break;
+
+        case 2:
+            //
+            break;
+
+        case 3:
+            container.flags = UV_INHERIT_FD;
+            container.data.fd = target;
+            break;
+
+        case 4:
+            container.flags = UV_IGNORE;
+            break;
+        }
+    }
+
+    void getStdioContainers(std::vector<uv_stdio_container_t>& containers, hx::Anon hxOptions)
     {
         if (null() == hxOptions)
         {
             return;
         }
 
-        auto field = hxOptions->__Field(HX_CSTRING("stdio"), HX_PROP_ALWAYS);
-        if (field.isNull())
-        {
-            return;
-        }
-
-        auto stdinOptions = hx::Anon(field.asObject());
-        auto stdinField   = stdinOptions->__Field(HX_CSTRING("stdin"), HX_PROP_ALWAYS);
-        auto stdoutField  = stdinOptions->__Field(HX_CSTRING("stdout"), HX_PROP_ALWAYS);
-        auto stderrField  = stdinOptions->__Field(HX_CSTRING("stderr"), HX_PROP_ALWAYS);
-        auto extraPipes   = stdinOptions->__Field(HX_CSTRING("extra"), HX_PROP_ALWAYS);
-
-        switch (hx::EnumBase(stdinField)->_hx_getIndex())
-        {
-        case 0:
-        {
-            auto config = uv_stdio_container_t();
-            config.flags = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE_PIPE);
-            break;
-        }
-            
-
-        case 1:
-            break;
-
-        case 2:
-            break;
-
-        case 3:
-            break;
-
-        case 4:
-            break;
-
-        case 5:
-            break;
-
-        case 6:
-            break;
-        }
-    }*/
+        makeStdioContainer(containers[0], hxOptions->__Field(HX_CSTRING("stdin"), HX_PROP_ALWAYS), 0);
+        makeStdioContainer(containers[1], hxOptions->__Field(HX_CSTRING("stdout"), HX_PROP_ALWAYS), 1);
+        makeStdioContainer(containers[2], hxOptions->__Field(HX_CSTRING("stderr"), HX_PROP_ALWAYS), 2);
+    }
 }
 
 void hx::asys::system::Process::open(Context ctx, String command, hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure)
@@ -142,12 +132,15 @@ void hx::asys::system::Process::open(Context ctx, String command, hx::Anon optio
     getCwd(process->options.cwd, options);
     getArguments(process->arguments, command, options);
     getEnvironment(process->environment, options);
+    getStdioContainers(process->containers, options->__Field(HX_CSTRING("stdio"), HX_PROP_ALWAYS));
 
-    process->request.data    = process.get();
-    process->options.args    = process->arguments.data();
-    process->options.env     = process->environment.empty() ? nullptr : process->environment.data();
-    process->options.file    = command.utf8_str();
-    process->options.exit_cb = [](uv_process_t* request, int64_t status, int signal) {
+    process->request.data        = process.get();
+    process->options.args        = process->arguments.data();
+    process->options.env         = process->environment.empty() ? nullptr : process->environment.data();
+    process->options.stdio       = process->containers.data();
+    process->options.stdio_count = process->containers.size();
+    process->options.file        = command.utf8_str();
+    process->options.exit_cb     = [](uv_process_t* request, int64_t status, int signal) {
         auto process = reinterpret_cast<hx::asys::libuv::system::LibuvChildProcess*>(request->data);
 
         process->currentExitCode = status;

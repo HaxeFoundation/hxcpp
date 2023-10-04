@@ -8,6 +8,7 @@
 hx::asys::libuv::system::LibuvChildProcess::LibuvChildProcess()
 	: exitCallback(nullptr)
 	, closeCallback(nullptr)
+	, containers(3)
 {
 	hx::GCAddRoot(&exitCallback);
 	hx::GCAddRoot(&closeCallback);

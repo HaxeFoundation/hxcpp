@@ -15,6 +15,7 @@ namespace hx::asys::libuv::system
 		uv_process_options_t options;
 		std::vector<char*> arguments;
 		std::vector<char*> environment;
+		std::vector<uv_stdio_container_t> containers;
 		std::optional<int64_t> currentExitCode;
 
 		hx::Object* exitCallback;
