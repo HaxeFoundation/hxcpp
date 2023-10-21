@@ -2,7 +2,7 @@ package tests;
 
 // Uses native enum, which does not play nice with Dynamic - must use @:unreflective
 @:unreflective
-@:enum extern abstract SystemMetric(SystemMetricImpl) {
+#if (haxe_ver >= 4.0) extern enum #else @:extern @:enum #end abstract SystemMetric(SystemMetricImpl) {
     @:native("wxSYS_MOUSE_BUTTONS")      var MOUSE_BUTTONS;
     @:native("wxSYS_OS")      var OS;
 }
@@ -13,7 +13,7 @@ extern class SystemMetricImpl { }
 
 
 // Wraps enum in struct, which does play nice...
-@:enum extern abstract SystemMetricStruct(SystemMetricStructImpl) {
+#if (haxe_ver >= 4.0) extern enum #else @:extern @:enum #end abstract SystemMetricStruct(SystemMetricStructImpl) {
     @:native("wxSYS_MOUSE_BUTTONS")      var MOUSE_BUTTONS;
     @:native("wxSYS_OS")      var OS;
 }
