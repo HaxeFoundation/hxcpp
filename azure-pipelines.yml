@@ -25,7 +25,7 @@ stages:
       - template: tools/azure-pipelines/build.yml
         parameters:
           name: Mac
-          vmImage: macOS-10.15
+          vmImage: macOS-12
           platform: mac
           arch: 64
       - template: tools/azure-pipelines/build.yml
