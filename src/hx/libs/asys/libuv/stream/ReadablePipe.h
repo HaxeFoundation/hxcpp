@@ -14,7 +14,7 @@ namespace hx::asys::libuv::stream
 	public:
 		std::unique_ptr<uv_pipe_t> pipe;
 
-		ReadablePipe();
+		ReadablePipe(uv_loop_t* loop);
 		~ReadablePipe() = default;
 
 		void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;

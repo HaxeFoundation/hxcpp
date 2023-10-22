@@ -14,7 +14,7 @@ namespace hx::asys::libuv::stream
 	public:
 		std::unique_ptr<uv_pipe_t> pipe;
 
-		WritablePipe();
+		WritablePipe(uv_loop_t* loop);
 		~WritablePipe() = default;
 
 		void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;

@@ -1,11 +1,13 @@
 #include "ReadablePipe.h"
 
-hx::asys::libuv::stream::ReadablePipe::ReadablePipe()
+hx::asys::libuv::stream::ReadablePipe::ReadablePipe(uv_loop_t* loop)
 {
 	pipe   = std::make_unique<uv_pipe_t>();
 	reader = std::make_unique<StreamReader>(reinterpret_cast<uv_stream_t*>(pipe.get()));
 
 	pipe->data = reader.get();
+
+	uv_pipe_init(loop, pipe.get(), false);
 
 	hx::GCSetFinalizer(this, [](hx::Object* obj) -> void {
 		reinterpret_cast<ReadablePipe*>(obj)->~ReadablePipe();

@@ -86,6 +86,26 @@ namespace
         }
     }
 
+    hx::asys::Writable getWritablePipe(uv_loop_t* loop, uv_stdio_container_t& container)
+    {
+        auto writer = new hx::asys::libuv::stream::WritablePipe(loop);
+
+        container.flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE_PIPE);
+        container.data.stream = reinterpret_cast<uv_stream_t*>(writer->pipe.get());
+
+        return writer;
+    }
+
+    hx::asys::Readable getReadablePipe(uv_loop_t* loop, uv_stdio_container_t& container)
+    {
+        auto reader = new hx::asys::libuv::stream::ReadablePipe(loop);
+
+        container.flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
+        container.data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
+
+        return reader;
+    }
+
     void getStdioContainers(uv_loop_t* loop, hx::ObjectPtr<hx::asys::libuv::system::LibuvChildProcess> process, hx::Anon hxOptions)
     {
         if (null() == hxOptions)
@@ -101,38 +121,19 @@ namespace
             {
                 case 0:
                 {
-                    auto writer = new hx::asys::libuv::stream::WritablePipe();
-
-                    process->stdio_in                      = hx::asys::Writable(writer);
-                    process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE_PIPE);
-                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(writer->pipe.get());
-
-                    uv_pipe_init(loop, writer->pipe.get(), false);
-
+                    process->stdio_in = getWritablePipe(loop, process->containers[index]);
                     break;
                 }
 
                 case 1:
                 {
-                    auto reader = new hx::asys::libuv::stream::ReadablePipe();
-
-                    uv_pipe_init(loop, reader->pipe.get(), false);
-
-                    process->stdio_in                      = hx::asys::Readable(reader);
-                    process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
-                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
+                    hx::Throw(HX_CSTRING("Cannot open a writable pipe on stdin"));
                     break;
                 }
 
                 case 2:
                 {
-                    auto reader = new hx::asys::libuv::stream::ReadablePipe();
-
-                    uv_pipe_init(loop, reader->pipe.get(), false);
-
-                    process->stdio_in                      = hx::asys::Readable(reader);
-                    process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
-                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
+                    hx::Throw(HX_CSTRING("Cannot open a duplex pipe on stdin"));
                     break;
                 }
 
@@ -158,29 +159,20 @@ namespace
             switch (field->_hx_getIndex())
             {
                 case 0:
+                {
+                    hx::Throw(HX_CSTRING("Cannot open a readable pipe on stdout"));
                     break;
+                }
 
                 case 1:
                 {
-                    auto reader = new hx::asys::libuv::stream::ReadablePipe();
-
-                    uv_pipe_init(loop, reader->pipe.get(), false);
-
-                    process->stdio_out                     = hx::asys::Readable(reader);
-                    process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
-                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
+                    process->stdio_out = getReadablePipe(loop, process->containers[index]);
                     break;
                 }
 
                 case 2:
                 {
-                    auto reader = new hx::asys::libuv::stream::ReadablePipe();
-
-                    uv_pipe_init(loop, reader->pipe.get(), false);
-
-                    process->stdio_out                     = hx::asys::Readable(reader);
-                    process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
-                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
+                    hx::Throw(HX_CSTRING("Cannot open a duplex pipe on stdout"));
                     break;
                 }
 
@@ -200,7 +192,42 @@ namespace
         }
 
         {
-            //
+            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stderr"), HX_PROP_ALWAYS));
+            auto index = 2;
+
+            switch (field->_hx_getIndex())
+            {
+                case 0:
+                {
+                    hx::Throw(HX_CSTRING("Cannot open a readable pipe on stderr"));
+                    break;
+                }
+
+                case 1:
+                {
+                    process->stdio_out = getReadablePipe(loop, process->containers[index]);
+                    break;
+                }
+
+                case 2:
+                {
+                    hx::Throw(HX_CSTRING("Cannot open a duplex pipe on stderr"));
+                    break;
+                }
+
+                case 3:
+                {
+                    process->containers[index].flags   = UV_INHERIT_FD;
+                    process->containers[index].data.fd = index;
+                    break;
+                }
+
+                case 4:
+                {
+                    process->containers[index].flags = UV_IGNORE;
+                    break;
+                }
+            }
         }
     }
 }

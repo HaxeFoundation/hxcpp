@@ -1,9 +1,13 @@
 #include "WritablePipe.h"
 
-hx::asys::libuv::stream::WritablePipe::WritablePipe()
+hx::asys::libuv::stream::WritablePipe::WritablePipe(uv_loop_t* loop)
 {
 	pipe   = std::make_unique<uv_pipe_t>();
 	writer = std::make_unique<StreamWriter>(reinterpret_cast<uv_stream_t*>(pipe.get()));
+
+	pipe->data = writer.get();
+
+	uv_pipe_init(loop, pipe.get(), false);
 
 	hx::GCSetFinalizer(this, [](hx::Object* obj) -> void {
 		reinterpret_cast<WritablePipe*>(obj)->~WritablePipe();
