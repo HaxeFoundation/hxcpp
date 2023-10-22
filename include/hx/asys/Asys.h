@@ -7,6 +7,9 @@ HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
 HX_DECLARE_CLASS3(hx, asys, net, Socket)
 HX_DECLARE_CLASS3(hx, asys, net, Server)
+HX_DECLARE_CLASS3(hx, asys, system, Process)
+HX_DECLARE_CLASS3(hx, asys, system, CurrentProcess)
+HX_DECLARE_CLASS3(hx, asys, system, ChildProcess)
 
 namespace hx
 {
@@ -27,13 +30,13 @@ namespace hx
             virtual void loop() = 0;
         };
 
-        struct Writable
+        struct Writable : virtual public Object
         {
             virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
 
-        struct Readable
+        struct Readable : virtual public Object
         {
             virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
@@ -115,7 +118,7 @@ namespace hx
                 String name(const Ipv6Address ip);
             }
 
-            class Socket_obj : public Object, virtual public Duplex
+            class Socket_obj : public Duplex
             {
             protected:
                 Socket_obj(hx::EnumBase _name, hx::EnumBase _peer) : name(_name) , peer(_peer) {}
@@ -184,7 +187,7 @@ namespace hx
 
         namespace system
         {
-            class Process
+            class Process_obj : public Object
             {
             public:
                 static void open(Context ctx, String command, hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
@@ -192,14 +195,18 @@ namespace hx
                 virtual int pid() = 0;
             };
 
-            class ChildProcess : public Process
+            class ChildProcess_obj : public Process_obj
             {
             public:
+                hx::ObjectPtr<Readable> stdio_in;
+                hx::ObjectPtr<Writable> stdio_out;
+                hx::ObjectPtr<Writable> stdio_err;
+
                 virtual void exitCode(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
-            class CurrentProcess : public Process
+            class CurrentProcess_obj : public Process_obj
             {
                 //
             };

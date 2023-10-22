@@ -72,6 +72,11 @@ void hx::asys::libuv::stream::StreamWriter::write(Array<uint8_t> input, int offs
     }
 }
 
+ //void hx::asys::libuv::stream::StreamWriter::close(Dynamic cbSuccess, Dynamic cbFailure)
+ //{
+ //    //
+ //}
+
 void hx::asys::libuv::stream::StreamWriter::flush(Dynamic cbSuccess, Dynamic cbFailure)
 {
     if (writeQueue.empty())

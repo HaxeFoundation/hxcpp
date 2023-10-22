@@ -5,29 +5,37 @@
 #include <array>
 #include <optional>
 #include "../LibuvUtils.h"
+#include "../stream/StreamReader.h"
+#include "../stream/StreamWriter.h"
 
 namespace hx::asys::libuv::system
 {
-	class LibuvChildProcess : public hx::asys::system::ChildProcess
+	class LibuvChildProcess final : public hx::asys::system::ChildProcess_obj
 	{
 	public:
-		uv_process_t request;
-		uv_process_options_t options;
+		std::unique_ptr<uv_process_t> request;
+		std::unique_ptr<uv_process_options_t> options;
 		std::vector<char*> arguments;
 		std::vector<char*> environment;
 		std::vector<uv_stdio_container_t> containers;
+		std::vector<uv_pipe_t> pipes;
 		std::optional<int64_t> currentExitCode;
 
-		hx::Object* exitCallback;
-		hx::Object* closeCallback;
+		Dynamic exitCallback;
+		Dynamic closeCallback;
 
 		LibuvChildProcess();
-		~LibuvChildProcess();
+		~LibuvChildProcess() = default;
 
-		int pid() override final;
+		int pid() override;
 
-		void exitCode(Dynamic cbSuccess, Dynamic cbFailure) override final;
+		void exitCode(Dynamic cbSuccess, Dynamic cbFailure) override;
 
-		void close(Dynamic cbSuccess, Dynamic cbFailure) override final;
+		void close(Dynamic cbSuccess, Dynamic cbFailure) override;
+
+		void __Mark(hx::MarkContext* __inCtx) override;
+#ifdef HXCPP_VISIT_ALLOCS
+		void __Visit(hx::VisitContext* __inCtx) override;
+#endif
 	};
 }
