@@ -139,6 +139,8 @@
         <file name='${this_dir}/net/NetUtils.cpp'/>
         <file name='${this_dir}/stream/StreamWriter.cpp'/>
         <file name='${this_dir}/stream/StreamReader.cpp'/>
+        <file name='${this_dir}/stream/ReadablePipe.cpp'/>
+        <file name='${this_dir}/stream/WritablePipe.cpp'/>
         <file name='${this_dir}/filesystem/LibuvFile.cpp'/>
         <file name='${this_dir}/filesystem/LibuvDirectory.cpp'/>
         <file name='${this_dir}/system/LibuvProcess.cpp'/>

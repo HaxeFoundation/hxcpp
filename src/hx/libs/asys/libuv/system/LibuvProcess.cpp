@@ -1,8 +1,8 @@
 #include <hxcpp.h>
 #include <string>
 #include "LibuvChildProcess.h"
-#include "../stream/StreamReader.h"
-#include "../stream/StreamWriter.h"
+#include "../stream/ReadablePipe.h"
+#include "../stream/WritablePipe.h"
 
 namespace
 {
@@ -86,43 +86,6 @@ namespace
         }
     }
 
-    void makeStdioContainer(uv_loop_t* loop, uv_stdio_container_t& container, hx::EnumBase field, int target)
-    {
-        switch (field->_hx_getIndex())
-        {
-        case 0:
-        {
-            auto pipe   = new uv_pipe_t();
-            auto stream = reinterpret_cast<uv_stream_t*>(pipe);
-            auto writer = new hx::asys::libuv::stream::StreamWriter(stream);
-
-            uv_pipe_init(loop, pipe, false);
-
-            container.flags = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE_PIPE);
-            container.data.stream = stream;
-
-            break;
-        }
-
-        case 1:
-            container.flags = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE);
-            break;
-
-        case 2:
-            //
-            break;
-
-        case 3:
-            container.flags = UV_INHERIT_FD;
-            container.data.fd = target;
-            break;
-
-        case 4:
-            container.flags = UV_IGNORE;
-            break;
-        }
-    }
-
     void getStdioContainers(uv_loop_t* loop, hx::ObjectPtr<hx::asys::libuv::system::LibuvChildProcess> process, hx::Anon hxOptions)
     {
         if (null() == hxOptions)
@@ -138,32 +101,40 @@ namespace
             {
                 case 0:
                 {
-                    auto stream = reinterpret_cast<uv_stream_t*>(&process->pipes[index]);
+                    auto writer = new hx::asys::libuv::stream::WritablePipe();
 
-                    uv_pipe_init(loop, &process->pipes[index], false);
-
-                    // process->stdinWriter = std::move(std::make_unique<hx::asys::libuv::stream::StreamWriter>(stream));
+                    process->stdio_in                      = hx::asys::Writable(writer);
                     process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE_PIPE);
-                    process->containers[index].data.stream = stream;
+                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(writer->pipe.get());
+
+                    uv_pipe_init(loop, writer->pipe.get(), false);
 
                     break;
                 }
 
                 case 1:
                 {
-                    auto stream = reinterpret_cast<uv_stream_t*>(&process->pipes[index]);
+                    auto reader = new hx::asys::libuv::stream::ReadablePipe();
 
-                    uv_pipe_init(loop, &process->pipes[index], false);
+                    uv_pipe_init(loop, reader->pipe.get(), false);
 
-                    // process->stdoutReader = std::move(std::make_unique<hx::asys::libuv::stream::StreamReader>(stream));
+                    process->stdio_in                      = hx::asys::Readable(reader);
                     process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
-                    process->containers[index].data.stream = stream;
+                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
                     break;
                 }
 
                 case 2:
-                    //
+                {
+                    auto reader = new hx::asys::libuv::stream::ReadablePipe();
+
+                    uv_pipe_init(loop, reader->pipe.get(), false);
+
+                    process->stdio_in                      = hx::asys::Readable(reader);
+                    process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
+                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
                     break;
+                }
 
                 case 3:
                 {
@@ -191,18 +162,27 @@ namespace
 
                 case 1:
                 {
-                    auto stream = reinterpret_cast<uv_stream_t*>(&process->pipes[index]);
+                    auto reader = new hx::asys::libuv::stream::ReadablePipe();
 
-                    uv_pipe_init(loop, &process->pipes[index], false);
+                    uv_pipe_init(loop, reader->pipe.get(), false);
 
-                    // process->stdoutReader = std::move(std::make_unique<hx::asys::libuv::stream::StreamReader>(stream));
-                    process->containers[index].flags = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
-                    process->containers[index].data.stream = stream;
+                    process->stdio_out                     = hx::asys::Readable(reader);
+                    process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
+                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
                     break;
                 }
 
                 case 2:
+                {
+                    auto reader = new hx::asys::libuv::stream::ReadablePipe();
+
+                    uv_pipe_init(loop, reader->pipe.get(), false);
+
+                    process->stdio_out                     = hx::asys::Readable(reader);
+                    process->containers[index].flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
+                    process->containers[index].data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
                     break;
+                }
 
                 case 3:
                 {

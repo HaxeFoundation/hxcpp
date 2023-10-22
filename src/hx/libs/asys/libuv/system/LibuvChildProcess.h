@@ -18,7 +18,6 @@ namespace hx::asys::libuv::system
 		std::vector<char*> arguments;
 		std::vector<char*> environment;
 		std::vector<uv_stdio_container_t> containers;
-		std::vector<uv_pipe_t> pipes;
 		std::optional<int64_t> currentExitCode;
 
 		Dynamic exitCallback;

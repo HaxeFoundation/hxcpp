@@ -35,12 +35,15 @@ namespace hx
 
         class Writable_obj : virtual public Object
         {
+        public:
             virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
 
         class Readable_obj : virtual public Object
         {
+        public:
             virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
@@ -201,9 +204,9 @@ namespace hx
             class ChildProcess_obj : public Process_obj
             {
             public:
-                Readable stdio_in;
-                Writable stdio_out;
-                Writable stdio_err;
+                Writable stdio_in;
+                Readable stdio_out;
+                Readable stdio_err;
 
                 virtual void exitCode(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;

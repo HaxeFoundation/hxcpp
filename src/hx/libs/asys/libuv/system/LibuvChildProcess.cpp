@@ -11,7 +11,6 @@ hx::asys::libuv::system::LibuvChildProcess::LibuvChildProcess()
 	, exitCallback(null())
 	, closeCallback(null())
 	, containers(3)
-	, pipes(3)
 {
 	hx::GCSetFinalizer(this, [](hx::Object* obj) -> void {
 		reinterpret_cast<LibuvChildProcess*>(obj)->~LibuvChildProcess();
