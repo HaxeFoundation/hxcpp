@@ -3,6 +3,9 @@
 #include <cstdint>
 
 HX_DECLARE_CLASS2(hx, asys, Context)
+HX_DECLARE_CLASS2(hx, asys, Writable)
+HX_DECLARE_CLASS2(hx, asys, Readable)
+HX_DECLARE_CLASS2(hx, asys, Duplex)
 HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
 HX_DECLARE_CLASS3(hx, asys, net, Socket)
@@ -30,19 +33,19 @@ namespace hx
             virtual void loop() = 0;
         };
 
-        struct Writable : virtual public Object
+        class Writable_obj : virtual public Object
         {
             virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
 
-        struct Readable : virtual public Object
+        class Readable_obj : virtual public Object
         {
             virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
 
-        struct Duplex : virtual public Writable, virtual public Readable
+        class Duplex_obj : virtual public Writable_obj, virtual public Readable_obj
         {
             //
         };
@@ -118,7 +121,7 @@ namespace hx
                 String name(const Ipv6Address ip);
             }
 
-            class Socket_obj : public Duplex
+            class Socket_obj : public Duplex_obj
             {
             protected:
                 Socket_obj(hx::EnumBase _name, hx::EnumBase _peer) : name(_name) , peer(_peer) {}
@@ -198,9 +201,9 @@ namespace hx
             class ChildProcess_obj : public Process_obj
             {
             public:
-                hx::ObjectPtr<Readable> stdio_in;
-                hx::ObjectPtr<Writable> stdio_out;
-                hx::ObjectPtr<Writable> stdio_err;
+                Readable stdio_in;
+                Writable stdio_out;
+                Writable stdio_err;
 
                 virtual void exitCode(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
