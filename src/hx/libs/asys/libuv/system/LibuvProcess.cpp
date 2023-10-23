@@ -3,6 +3,7 @@
 #include "LibuvChildProcess.h"
 #include "../stream/ReadablePipe.h"
 #include "../stream/WritablePipe.h"
+#include "../filesystem/LibuvFile.h"
 
 namespace
 {
@@ -149,6 +150,23 @@ namespace
                     process->containers[index].flags = UV_IGNORE;
                     break;
                 }
+
+                case 5:
+                {
+                    break;
+                }
+
+                case 6:
+                {
+                    auto file    = field->_hx_getObject(0);
+                    auto native  = file->__Field(HX_CSTRING("native"), hx::PropertyAccess::paccDynamic).asObject();
+                    auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
+
+                    process->containers[index].flags = UV_INHERIT_FD;
+                    process->containers[index].data.fd = luvFile->file;
+
+                    break;
+                }
             }
         }
 
@@ -188,6 +206,18 @@ namespace
                     process->containers[index].flags = UV_IGNORE;
                     break;
                 }
+
+                case 6:
+                {
+                    auto file    = field->_hx_getObject(0);
+                    auto native  = file->__Field(HX_CSTRING("native"), hx::PropertyAccess::paccDynamic).asObject();
+                    auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
+
+                    process->containers[index].flags = UV_INHERIT_FD;
+                    process->containers[index].data.fd = luvFile->file;
+
+                    break;
+                }
             }
         }
 
@@ -225,6 +255,18 @@ namespace
                 case 4:
                 {
                     process->containers[index].flags = UV_IGNORE;
+                    break;
+                }
+
+                case 6:
+                {
+                    auto file    = field->_hx_getObject(0);
+                    auto native  = file->__Field(HX_CSTRING("native"), hx::PropertyAccess::paccDynamic).asObject();
+                    auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
+
+                    process->containers[index].flags = UV_INHERIT_FD;
+                    process->containers[index].data.fd = luvFile->file;
+
                     break;
                 }
             }
