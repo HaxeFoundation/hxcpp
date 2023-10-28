@@ -89,7 +89,7 @@ static void CriticalErrorHandler(String inErr, bool allowFixup)
     DBGLOG("Critical Error: %s\n", inErr.utf8_str());
 
 #if defined(HX_WINDOWS) && !defined(HX_WINRT)
-    MessageBoxA(0, inErr.utf8_str(), "Critial Error - program must terminate",
+    MessageBoxA(0, inErr.utf8_str(), "Critical Error - program must terminate",
         MB_ICONEXCLAMATION|MB_OK);
 #endif
 
