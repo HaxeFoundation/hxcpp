@@ -214,9 +214,12 @@ namespace hx
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
-            class CurrentProcess_obj : public Process_obj
+            class CurrentProcess_obj
             {
-                //
+            public:
+                static int pid();
+
+                //static void setSignalAction(hx::EnumBase signal, hx::EnumBase action);
             };
         }
     }
