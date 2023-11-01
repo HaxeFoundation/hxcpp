@@ -5,6 +5,74 @@
 #include <memory>
 #include "LibuvChildProcess.h"
 
+namespace
+{
+#if (!HX_WINDOWS)
+	int toPosixCode(int hxCode)
+	{
+		switch (hxCode)
+		{
+		case 0:
+			return SIGHUP;
+		case 1:
+			return SIGINT;
+		case 2:
+			return SIGQUIT;
+		case 3:
+			return SIGILL;
+		case 4:
+			return SIGABRT;
+		case 5:
+			return SIGFPE;
+		case 6:
+			return SIGKILL;
+		case 7:
+			return SIGSEGV;
+		case 8:
+			return SIGPIPE;
+		case 9:
+			return SIGALRM;
+		case 10:
+			return SIGTERM;
+		case 11:
+			return SIGUSR1;
+		case 12:
+			return SIGUSR2;
+		case 13:
+			return SIGCHLD;
+		case 14:
+			return SIGCONT;
+		case 15:
+			return SIGSTOP;
+		case 16:
+			return SIGTSTP;
+		case 17:
+			return SIGTTIN;
+		case 18:
+			return SIGTTOU;
+		case 19:
+			return SIGBUS;
+		case 20:
+			return SIGPOLL;
+		case 21:
+			return SIGPROF;
+		case 22:
+			return SIGSYS;
+		case 23:
+			return SIGTRAP;
+		case 24:
+			return SIGURG;
+		case 25:
+			return SIGVTALRM;
+		case 26:
+			return SIGXCPU;
+		case 27:
+			return SIGXFSZ;
+		}
+	}
+#endif
+}
+
 hx::asys::libuv::system::LibuvChildProcess::LibuvChildProcess()
 	: request(std::move(std::make_unique<uv_process_t>()))
 	, options(std::move(std::make_unique<uv_process_options_t>()))
@@ -37,10 +105,31 @@ void hx::asys::libuv::system::LibuvChildProcess::sendSignal(hx::EnumBase signal,
 		signum = SIGINT;
 		break;
 	case 3:
-		signum = 19;
+#if HX_WINDOWS
+		cbFailure(hx::asys::libuv::uv_err_to_enum(-1));
+
+		return;
+#else
+		signum = SIGSTOP;
+#endif
 		break;
 	case 4:
-		signum = 18;
+#if HX_WINDOWS
+		cbFailure(hx::asys::libuv::uv_err_to_enum(-1));
+
+		return;
+#else
+		signum = SIGCONT;
+#endif
+		break;
+	case 5:
+#if HX_WINDOWS
+		cbFailure(hx::asys::libuv::uv_err_to_enum(-1));
+
+		return;
+#else
+		signum = toPosixCode(signal->_hx_getInt(5));
+#endif
 		break;
 	default:
 		cbFailure(hx::asys::libuv::uv_err_to_enum(-1));
