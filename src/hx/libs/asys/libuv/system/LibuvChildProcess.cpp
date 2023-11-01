@@ -22,6 +22,42 @@ int hx::asys::libuv::system::LibuvChildProcess::pid()
 	return request->pid;
 }
 
+void hx::asys::libuv::system::LibuvChildProcess::sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure)
+{
+	auto signum = 0;
+	switch (signal->_hx_getIndex())
+	{
+	case 0:
+		signum = SIGTERM;
+		break;
+	case 1:
+		signum = SIGKILL;
+		break;
+	case 2:
+		signum = SIGINT;
+		break;
+	case 3:
+		signum = 19;
+		break;
+	case 4:
+		signum = 18;
+		break;
+	default:
+		cbFailure(hx::asys::libuv::uv_err_to_enum(-1));
+		return;
+	}
+
+	auto result = 0;
+	if ((result = uv_process_kill(request.get(), signum)) < 0)
+	{
+		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+	}
+	else
+	{
+		cbSuccess();
+	}
+}
+
 void hx::asys::libuv::system::LibuvChildProcess::exitCode(Dynamic cbSuccess, Dynamic cbFailure)
 {
 	if (currentExitCode.has_value())

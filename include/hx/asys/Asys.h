@@ -199,6 +199,8 @@ namespace hx
                 static void open(Context ctx, String command, hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual int pid() = 0;
+
+                virtual void sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
             class ChildProcess_obj : public Process_obj

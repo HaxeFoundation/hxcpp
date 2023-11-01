@@ -28,6 +28,8 @@ namespace hx::asys::libuv::system
 
 		int pid() override;
 
+		void sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure) override;
+
 		void exitCode(Dynamic cbSuccess, Dynamic cbFailure) override;
 
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override;
