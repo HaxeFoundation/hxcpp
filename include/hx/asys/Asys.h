@@ -198,6 +198,8 @@ namespace hx
             public:
                 static void open(Context ctx, String command, hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
 
+                static CurrentProcess current();
+
                 virtual int pid() = 0;
 
                 virtual void sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure) = 0;
@@ -214,12 +216,10 @@ namespace hx
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
-            class CurrentProcess_obj
+            class CurrentProcess_obj : public Process_obj
             {
             public:
-                static int pid();
-
-                //static void setSignalAction(hx::EnumBase signal, hx::EnumBase action);
+                virtual void setSignalAction(hx::EnumBase signal, hx::EnumBase action) = 0;
             };
         }
     }

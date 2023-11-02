@@ -1,6 +1,7 @@
 #include <hxcpp.h>
 #include <string>
 #include "LibuvChildProcess.h"
+#include "LibuvCurrentProcess.h"
 #include "../stream/ReadablePipe.h"
 #include "../stream/WritablePipe.h"
 #include "../filesystem/LibuvFile.h"
@@ -335,4 +336,9 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
 
         cbSuccess(ChildProcess(process));
     }
+}
+
+hx::asys::system::CurrentProcess hx::asys::system::Process_obj::current()
+{
+    return new hx::asys::libuv::system::LibuvCurrentProcess();
 }
