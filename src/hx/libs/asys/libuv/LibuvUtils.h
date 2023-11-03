@@ -29,4 +29,8 @@ namespace hx::asys::libuv
     void clean_handle(uv_handle_t* handle);
 
     hx::EnumBase getName(uv_handle_t* handle, bool remote);
+
+#if (!HX_WINDOWS)
+    int toPosixCode(int hxCode);
+#endif
 }
