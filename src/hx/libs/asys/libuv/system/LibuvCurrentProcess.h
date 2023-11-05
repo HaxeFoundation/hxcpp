@@ -17,10 +17,17 @@ namespace hx::asys::libuv::system
 
 		LibuvCurrentProcess(std::unique_ptr<std::array<uv_tty_t, 3>> ttys);
 
+		~LibuvCurrentProcess();
+
 		int pid() override;
 
 		void sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure) override;
 
 		void setSignalAction(hx::EnumBase signal, hx::EnumBase action);
+
+		void __Mark(hx::MarkContext* __inCtx) override;
+#ifdef HXCPP_VISIT_ALLOCS
+		void __Visit(hx::VisitContext* __inCtx) override;
+#endif
 	};
 }

@@ -30,7 +30,7 @@ namespace
 		}
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
-			//
+			cbSuccess();
 		}
 	};
 
@@ -51,7 +51,7 @@ namespace
 		}
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
-			//
+			cbSuccess();
 		}
 	};
 }
@@ -62,6 +62,18 @@ hx::asys::libuv::system::LibuvCurrentProcess::LibuvCurrentProcess(std::unique_pt
 	stdio_in  = Readable(new TtyReader(&(ttys->at(0))));
 	stdio_out = Writable(new TtyWriter(&(ttys->at(1))));
 	stdio_err = Writable(new TtyWriter(&(ttys->at(2))));
+
+	hx::GCSetFinalizer(this, [](hx::Object* obj) -> void {
+		reinterpret_cast<hx::asys::libuv::system::LibuvCurrentProcess*>(obj)->~LibuvCurrentProcess();
+	});
+}
+
+hx::asys::libuv::system::LibuvCurrentProcess::~LibuvCurrentProcess()
+{
+	for (auto&& tty : *ttys)
+	{
+		uv_close(reinterpret_cast<uv_handle_t*>(&tty), nullptr);
+	}
 }
 
 int hx::asys::libuv::system::LibuvCurrentProcess::pid()
@@ -140,3 +152,19 @@ void hx::asys::libuv::system::LibuvCurrentProcess::setSignalAction(hx::EnumBase 
 		break;
 	}
 }
+
+void hx::asys::libuv::system::LibuvCurrentProcess::__Mark(hx::MarkContext* __inCtx)
+{
+	HX_MARK_MEMBER(stdio_in);
+	HX_MARK_MEMBER(stdio_out);
+	HX_MARK_MEMBER(stdio_err);
+}
+
+#ifdef HXCPP_VISIT_ALLOCS
+void hx::asys::libuv::system::LibuvCurrentProcess::__Visit(hx::VisitContext* __inCtx)
+{
+	HX_VISIT_MEMBER(stdio_in);
+	HX_VISIT_MEMBER(stdio_out);
+	HX_VISIT_MEMBER(stdio_err);
+}
+#endif
