@@ -6,6 +6,64 @@
 #include "../filesystem/LibuvFile.h"
 #include "LibuvCurrentProcess.h"
 
+namespace
+{
+	class TtyWriter final : public hx::asys::Writable_obj
+	{
+	private:
+		std::unique_ptr<hx::asys::libuv::stream::StreamWriter> writer;
+
+	public:
+		TtyWriter(uv_tty_t* tty)
+			: writer(std::make_unique<hx::asys::libuv::stream::StreamWriter>(reinterpret_cast<uv_stream_t*>(tty)))
+		{
+			tty->data = writer.get();
+		}
+		~TtyWriter() = default;
+		void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
+		{
+			writer->write(data, offset, length, cbSuccess, cbFailure);
+		}
+		void flush(Dynamic cbSuccess, Dynamic cbFailure) override
+		{
+			writer->flush(cbSuccess, cbFailure);
+		}
+		void close(Dynamic cbSuccess, Dynamic cbFailure) override
+		{
+			//
+		}
+	};
+
+	class TtyReader final : public hx::asys::Readable_obj
+	{
+		std::unique_ptr<hx::asys::libuv::stream::StreamReader> reader;
+
+	public:
+		TtyReader(uv_tty_t* tty)
+			: reader(std::make_unique<hx::asys::libuv::stream::StreamReader>(reinterpret_cast<uv_stream_t*>(tty)))
+		{
+			tty->data = reader.get();
+		}
+		~TtyReader() = default;
+		void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
+		{
+			reader->read(output, offset, length, cbSuccess, cbFailure);
+		}
+		void close(Dynamic cbSuccess, Dynamic cbFailure) override
+		{
+			//
+		}
+	};
+}
+
+hx::asys::libuv::system::LibuvCurrentProcess::LibuvCurrentProcess(std::unique_ptr<std::array<uv_tty_t, 3>> inTtys)
+	: ttys(std::move(inTtys))
+{
+	stdio_in  = Readable(new TtyReader(&(ttys->at(0))));
+	stdio_out = Writable(new TtyWriter(&(ttys->at(1))));
+	stdio_err = Writable(new TtyWriter(&(ttys->at(2))));
+}
+
 int hx::asys::libuv::system::LibuvCurrentProcess::pid()
 {
 	return uv_os_getpid();

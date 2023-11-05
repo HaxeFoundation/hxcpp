@@ -338,7 +338,18 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
     }
 }
 
-hx::asys::system::CurrentProcess hx::asys::system::Process_obj::current()
+hx::asys::system::CurrentProcess hx::asys::system::Process_obj::current(Context ctx)
 {
-    return new hx::asys::libuv::system::LibuvCurrentProcess();
+    auto uvContext = hx::asys::libuv::context(ctx);
+    auto ttys      = std::make_unique<std::array<uv_tty_t, 3>>();
+
+    for (auto i = 0; i < ttys->size(); i++)
+    {
+        if (uv_tty_init(uvContext->uvLoop, &(ttys->at(i)), i, true) < 0)
+        {
+            hx::Throw(HX_CSTRING("Failed to init tty"));
+        }
+    }
+
+    return new hx::asys::libuv::system::LibuvCurrentProcess(std::move(ttys));
 }
