@@ -351,5 +351,5 @@ hx::asys::system::CurrentProcess hx::asys::system::Process_obj::current(Context 
         }
     }
 
-    return new hx::asys::libuv::system::LibuvCurrentProcess(std::move(ttys));
+    return new hx::asys::libuv::system::LibuvCurrentProcess(uvContext, std::move(ttys));
 }

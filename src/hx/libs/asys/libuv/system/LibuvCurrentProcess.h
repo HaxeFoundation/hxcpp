@@ -15,7 +15,11 @@ namespace hx::asys::libuv::system
 	public:
 		std::unique_ptr<std::array<uv_tty_t, 3>> ttys;
 
-		LibuvCurrentProcess(std::unique_ptr<std::array<uv_tty_t, 3>> ttys);
+		Dynamic signalActions;
+
+		LibuvAsysContext ctx;
+
+		LibuvCurrentProcess(LibuvAsysContext ctx, std::unique_ptr<std::array<uv_tty_t, 3>> ttys);
 
 		~LibuvCurrentProcess();
 
