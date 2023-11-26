@@ -55,6 +55,21 @@ namespace
 		}
 	};
 
+	class SignalActionRequest final : public hx::asys::libuv::BaseRequest
+	{
+	public:
+		uv_signal_t request;
+
+		SignalActionRequest(Dynamic callback) : BaseRequest(callback, null()) {}
+
+		~SignalActionRequest() override
+		{
+			uv_signal_stop(&request);
+
+			uv_close(reinterpret_cast<uv_handle_t*>(&request), nullptr);
+		}
+	};
+
 	int getSignalId(hx::EnumBase signal)
 	{
 		switch (signal->_hx_getIndex())
@@ -138,26 +153,31 @@ void hx::asys::libuv::system::LibuvCurrentProcess::setSignalAction(hx::EnumBase 
 
 	case 2:
 		{
-			auto handle = std::make_unique<uv_signal_t>();
+			auto handle = std::make_unique<SignalActionRequest>(action->_hx_getObject(0));
 			auto func   = [](uv_signal_t* handle, int signum) {
 				auto gcZone   = AutoGCZone();
-				auto request  = reinterpret_cast<BaseRequest*>(handle->data);
+				auto request  = reinterpret_cast<SignalActionRequest*>(handle->data);
 				auto callback = Dynamic(request->cbSuccess.rooted);
 
-				callback();
+				if (null() != callback)
+				{
+					callback();
+				}
 			};
 
-			if (uv_signal_init(ctx->uvLoop, handle.get()) < 0)
+			if (uv_signal_init(ctx->uvLoop, &handle->request) < 0)
 			{
 				hx::Throw(HX_CSTRING("Failed to init signal"));
 			}
 
-			if (uv_signal_start(handle.get(), func, getSignalId(signal)))
+			if (uv_signal_start(&handle->request, func, getSignalId(signal)))
 			{
 				hx::Throw(HX_CSTRING("Failed to start signal"));
 			}
 
-			handle.release()->data = new BaseRequest(action->_hx_getObject(0), null());
+			handle->request.data = handle.get();
+
+			handle.release();
 		}
 		break;
 	}
