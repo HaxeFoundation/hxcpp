@@ -4,6 +4,7 @@
 #include <deque>
 #include <array>
 #include <optional>
+#include <unordered_map>
 #include "../LibuvUtils.h"
 #include "../stream/StreamReader.h"
 #include "../stream/StreamWriter.h"
@@ -15,7 +16,7 @@ namespace hx::asys::libuv::system
 	public:
 		std::unique_ptr<std::array<uv_tty_t, 3>> ttys;
 
-		Dynamic signalActions;
+		std::unique_ptr<std::unordered_map<int, std::unique_ptr<hx::asys::libuv::BaseRequest>>> signalActions;
 
 		LibuvAsysContext ctx;
 

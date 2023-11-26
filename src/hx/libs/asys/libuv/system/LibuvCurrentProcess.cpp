@@ -104,6 +104,7 @@ namespace
 
 hx::asys::libuv::system::LibuvCurrentProcess::LibuvCurrentProcess(LibuvAsysContext ctx, std::unique_ptr<std::array<uv_tty_t, 3>> inTtys)
 	: ttys(std::move(inTtys))
+	, signalActions(std::make_unique<std::unordered_map<int, std::unique_ptr<BaseRequest>>>(0))
 	, ctx(ctx)
 {
 	stdio_in  = Readable(new TtyReader(&(ttys->at(0))));
@@ -149,10 +150,17 @@ void hx::asys::libuv::system::LibuvCurrentProcess::setSignalAction(hx::EnumBase 
 		break;
 
 	case 1:
+		{
+			signalActions->erase(getSignalId(signal));
+		}
 		break;
 
 	case 2:
 		{
+			auto signum = getSignalId(signal);
+
+			signalActions->erase(signum);
+
 			auto handle = std::make_unique<SignalActionRequest>(action->_hx_getObject(0));
 			auto func   = [](uv_signal_t* handle, int signum) {
 				auto gcZone   = AutoGCZone();
@@ -170,14 +178,14 @@ void hx::asys::libuv::system::LibuvCurrentProcess::setSignalAction(hx::EnumBase 
 				hx::Throw(HX_CSTRING("Failed to init signal"));
 			}
 
-			if (uv_signal_start(&handle->request, func, getSignalId(signal)))
+			if (uv_signal_start(&handle->request, func, signum))
 			{
 				hx::Throw(HX_CSTRING("Failed to start signal"));
 			}
 
 			handle->request.data = handle.get();
 
-			handle.release();
+			signalActions->emplace(signum, std::move(handle));
 		}
 		break;
 	}
