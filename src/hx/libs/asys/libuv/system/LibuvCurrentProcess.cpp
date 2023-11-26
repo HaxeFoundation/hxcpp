@@ -144,9 +144,33 @@ void hx::asys::libuv::system::LibuvCurrentProcess::sendSignal(hx::EnumBase signa
 
 void hx::asys::libuv::system::LibuvCurrentProcess::setSignalAction(hx::EnumBase signal, hx::EnumBase action)
 {
+	// TODO : case 0 and 2 are fairly similar, could remove duplicated code.
+
 	switch (action->_hx_getIndex())
 	{
 	case 0:
+		{
+			auto signum = getSignalId(signal);
+			auto handle = std::make_unique<SignalActionRequest>(null());
+			auto func   = [](uv_signal_t* handle, int signum) {
+				// do nothing!
+			};
+
+			if (uv_signal_init(ctx->uvLoop, &handle->request) < 0)
+			{
+				hx::Throw(HX_CSTRING("Failed to init signal"));
+			}
+
+			if (uv_signal_start(&handle->request, func, signum))
+			{
+				hx::Throw(HX_CSTRING("Failed to start signal"));
+			}
+
+			handle->request.data = handle.get();
+
+			signalActions->erase(signum);
+			signalActions->emplace(signum, std::move(handle));
+		}
 		break;
 
 	case 1:
@@ -158,9 +182,6 @@ void hx::asys::libuv::system::LibuvCurrentProcess::setSignalAction(hx::EnumBase 
 	case 2:
 		{
 			auto signum = getSignalId(signal);
-
-			signalActions->erase(signum);
-
 			auto handle = std::make_unique<SignalActionRequest>(action->_hx_getObject(0));
 			auto func   = [](uv_signal_t* handle, int signum) {
 				auto gcZone   = AutoGCZone();
@@ -185,6 +206,7 @@ void hx::asys::libuv::system::LibuvCurrentProcess::setSignalAction(hx::EnumBase 
 
 			handle->request.data = handle.get();
 
+			signalActions->erase(signum);
 			signalActions->emplace(signum, std::move(handle));
 		}
 		break;
