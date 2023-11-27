@@ -67,8 +67,10 @@ hx::EnumBase hx::asys::libuv::uv_err_to_enum(const int code)
             return create(HX_CSTRING("ConnectionRefused"), 11, 0);
         case UV_EBADF:
             return create(HX_CSTRING("BadFile"), 12, 0);
+        case UV_EISDIR:
+            return create(HX_CSTRING("IsDirectory"), 13, 0);
         default:
-            return create(HX_CSTRING("CustomError"), 13, 1)->_hx_init(0, String::create(uv_err_name(code)));
+            return create(HX_CSTRING("CustomError"), 14, 1)->_hx_init(0, String::create(uv_err_name(code)));
     }
 }
 
