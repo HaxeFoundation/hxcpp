@@ -11,7 +11,7 @@
    // Mingw / gcc on windows
    #define _WIN32_WINNT 0x0501
    #include <winsock2.h>
-   #   include <Ws2tcpip.h>
+   #include <ws2tcpip.h>
 #else
    // Windows...
    #include <winsock2.h>
@@ -412,7 +412,7 @@ Array<unsigned char> _hx_std_host_resolve_ipv6( String host, bool )
       memset(&hints, 0, sizeof(struct addrinfo));
       hints.ai_family = AF_INET6;  //  IPv6
       hints.ai_socktype = 0;  // any - SOCK_STREAM or SOCK_DGRAM
-      hints.ai_flags = AI_PASSIVE;  // For wildcard IP address 
+      hints.ai_flags = AI_PASSIVE;  // For wildcard IP address
       hints.ai_protocol = 0;        // Any protocol
       hints.ai_canonname = 0;
       hints.ai_addr = 0;
