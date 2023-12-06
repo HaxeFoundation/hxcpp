@@ -191,7 +191,7 @@ void hx::asys::filesystem::Directory_obj::create(Context ctx, String path, int p
             {
                 hx::ExitGCFreeZone();
 
-                cbFailure(result);
+                cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
                 return;
             }
