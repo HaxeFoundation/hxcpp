@@ -56,8 +56,8 @@ namespace
         uv_loop_t* loop;
         uv_dir_t* dir;
 
-        LibuvDirectory_obj(uv_loop_t* _loop, uv_dir_t* _dir)
-            : loop(_loop), dir(_dir) {}
+        LibuvDirectory_obj(uv_loop_t* _loop, uv_dir_t* _dir, String _path)
+            : Directory_obj(_path), loop(_loop), dir(_dir) {}
 
         void next(const int batch, Dynamic cbSuccess, Dynamic cbFailure)
         {
@@ -143,7 +143,7 @@ void hx::asys::filesystem::Directory_obj::open(Context ctx, String path, Dynamic
         }
         else
         {
-            Dynamic(spData->cbSuccess.rooted)(Directory(new LibuvDirectory_obj(spRequest->loop, static_cast<uv_dir_t*>(spRequest->ptr))));
+            Dynamic(spData->cbSuccess.rooted)(Directory(new LibuvDirectory_obj(spRequest->loop, static_cast<uv_dir_t*>(spRequest->ptr), String::create(spRequest->path))));
         }
     };
 

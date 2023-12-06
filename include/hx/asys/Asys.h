@@ -87,6 +87,10 @@ namespace hx
             class Directory_obj : public Object
             {
             public:
+                const String path;
+
+                Directory_obj(String _path) : path(_path) {}
+
                 static void open(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
                 static void create(Context ctx, String path, int permissions, bool recursive, Dynamic cbSuccess, Dynamic cbFailure);
                 static void move(Context ctx, String oldPath, String newPath, Dynamic cbSuccess, Dynamic cbFailure);
