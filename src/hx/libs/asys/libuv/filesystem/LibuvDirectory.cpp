@@ -2,6 +2,7 @@
 #include <memory>
 #include <filesystem>
 #include <functional>
+#include <array>
 #include "../LibuvUtils.h"
 
 namespace
@@ -166,28 +167,32 @@ void hx::asys::filesystem::Directory_obj::create(Context ctx, String path, int p
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto request  = std::make_unique<uv_fs_t>();
 
-    if (recursive)
+    // Maybe TODO : this is not async and would be a ball ache to do so.
+
+    auto separator = std::array<char, 2>();
+
+    wcstombs(separator.data(), &std::filesystem::path::preferred_separator, 1);
+
+    auto items       = path.split(separator.data());
+    auto accumulated = std::filesystem::path();
+    auto result      = 0;
+
+    for (auto i = 0; i < items->length - 1; i++)
     {
-        // TODO : This isn't really async, eventually move this loop into haxe.
-
-        hx::EnterGCFreeZone();
-
-        auto filePath    = std::filesystem::u8path(path.utf8_str());
-        auto accumulated = std::filesystem::path();
-
-        for (auto&& part : filePath)
+        if (accumulated.empty())
         {
-            if (accumulated.empty())
-            {
-                accumulated = part;
-            }
-            else
-            {
-                accumulated = accumulated / part;
-            }
+            accumulated = items[i].utf8_str();
+        }
+        else
+        {
+            accumulated = accumulated / items[i].utf8_str();
+        }
 
-            auto result = uv_fs_mkdir(libuvCtx->uvLoop, request.get(), accumulated.u8string().c_str(), permissions, nullptr);
-            if (result < 0 && result != EEXIST)
+        if (!recursive)
+        {
+            hx::EnterGCFreeZone();
+
+            if ((result = uv_fs_stat(libuvCtx->uvLoop, request.get(), accumulated.u8string().c_str(), nullptr)) < 0 && result != UV_EEXIST)
             {
                 hx::ExitGCFreeZone();
 
@@ -195,25 +200,40 @@ void hx::asys::filesystem::Directory_obj::create(Context ctx, String path, int p
 
                 return;
             }
+
+            hx::ExitGCFreeZone();
+        }
+
+        hx::EnterGCFreeZone();
+
+        if ((result = uv_fs_mkdir(libuvCtx->uvLoop, request.get(), accumulated.u8string().c_str(), permissions, nullptr)) < 0 && result != UV_EEXIST)
+        {
+            hx::ExitGCFreeZone();
+
+            cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+            return;
         }
 
         hx::ExitGCFreeZone();
+    }
 
-        cbSuccess();
-    }
-    else
+    accumulated = accumulated / items[items->length - 1].utf8_str();
+
+    hx::EnterGCFreeZone();
+
+    if ((result = uv_fs_mkdir(libuvCtx->uvLoop, request.get(), accumulated.u8string().c_str(), permissions, nullptr)) < 0 && result != UV_EEXIST)
     {
-        auto result = uv_fs_mkdir(libuvCtx->uvLoop, request.get(), path.utf8_str(), permissions, hx::asys::libuv::basic_callback);
-        if (result < 0)
-        {
-            cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-        }
-        else
-        {
-            request->data = new hx::asys::libuv::BaseRequest(cbSuccess, cbFailure);
-            request.release();
-        }
+        hx::ExitGCFreeZone();
+
+        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+        return;
     }
+    
+    hx::ExitGCFreeZone();
+
+    cbSuccess();
 }
 
 void hx::asys::filesystem::Directory_obj::move(Context ctx, String oldPath, String newPath, Dynamic cbSuccess, Dynamic cbFailure)
