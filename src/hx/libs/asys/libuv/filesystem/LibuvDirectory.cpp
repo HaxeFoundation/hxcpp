@@ -236,7 +236,7 @@ void hx::asys::filesystem::Directory_obj::create(Context ctx, String path, int p
     cbSuccess();
 }
 
-void hx::asys::filesystem::Directory_obj::move(Context ctx, String oldPath, String newPath, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::filesystem::Directory_obj::rename(Context ctx, String oldPath, String newPath, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
     auto request  = std::make_unique<uv_fs_t>();

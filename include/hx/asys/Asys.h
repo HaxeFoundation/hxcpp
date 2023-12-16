@@ -93,7 +93,7 @@ namespace hx
 
                 static void open(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
                 static void create(Context ctx, String path, int permissions, bool recursive, Dynamic cbSuccess, Dynamic cbFailure);
-                static void move(Context ctx, String oldPath, String newPath, Dynamic cbSuccess, Dynamic cbFailure);
+                static void rename(Context ctx, String oldPath, String newPath, Dynamic cbSuccess, Dynamic cbFailure);
                 static void check(Context ctx, String path, FileAccessMode accessMode, Dynamic cbSuccess, Dynamic cbFailure);
                 static void deleteFile(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
                 static void deleteDirectory(Context ctx, String path, Dynamic cbSuccess, Dynamic cbFailure);
