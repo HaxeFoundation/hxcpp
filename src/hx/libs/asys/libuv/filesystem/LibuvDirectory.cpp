@@ -386,7 +386,7 @@ void hx::asys::filesystem::Directory_obj::isLink(Context ctx, String path, Dynam
     auto request  = std::make_unique<uv_fs_t>();
     auto wrapper  = [](uv_fs_t* request) { check_type_callback(S_IFLNK, request); };
 
-    auto result = uv_fs_stat(libuvCtx->uvLoop, request.get(), path.utf8_str(), wrapper);
+    auto result = uv_fs_lstat(libuvCtx->uvLoop, request.get(), path.utf8_str(), wrapper);
 
     if (result < 0)
     {
