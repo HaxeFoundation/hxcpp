@@ -53,6 +53,7 @@ jobs:
           mkdir -p ~/haxelib
           haxelib setup ~/haxelib
           haxelib install utest
+          haxelib git hx4compat https://github.com/HaxeFoundation/hx4compat
           haxelib dev hxcpp $(Build.SourcesDirectory)
           haxelib list
         displayName: Install Haxe libraries
