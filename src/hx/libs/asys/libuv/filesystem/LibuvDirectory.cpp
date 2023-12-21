@@ -171,7 +171,11 @@ void hx::asys::filesystem::Directory_obj::create(Context ctx, String path, int p
 
     auto separator = std::array<char, 2>();
 
+#if HX_WINDOWS
     wcstombs(separator.data(), &std::filesystem::path::preferred_separator, 1);
+#else
+    separator[0] = std::filesystem::path::preferred_separator;
+#endif
 
     auto items       = path.split(separator.data());
     auto accumulated = std::filesystem::path();

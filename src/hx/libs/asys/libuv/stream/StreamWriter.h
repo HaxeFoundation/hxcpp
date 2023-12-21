@@ -3,6 +3,7 @@
 #include <hxcpp.h>
 #include <deque>
 #include <array>
+#include <limits>
 #include "../LibuvUtils.h"
 
 namespace hx::asys::libuv::stream

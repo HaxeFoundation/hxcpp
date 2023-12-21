@@ -1,5 +1,6 @@
 #include <hxcpp.h>
 #include "StreamWriter.h"
+#include <cstring>
 
 namespace
 {

@@ -1,6 +1,8 @@
 #include <hxcpp.h>
 #include <memory>
 #include <filesystem>
+#include <cstring>
+#include <limits>
 #include "LibuvFile.h"
 
 namespace
@@ -70,7 +72,7 @@ namespace
 
                 auto buffer     = uv_buf_init(spData->staging->data(), batchSize);
                 auto newFilePos = spData->filePos + amountWritten;
-                auto result     = uv_fs_write(spRequest->loop, spRequest.get(), spRequest->file.fd, &buffer, 1, newFilePos, onWriteCallback);
+                auto result     = uv_fs_write(spRequest->loop, spRequest.get(), spRequest->file, &buffer, 1, newFilePos, onWriteCallback);
 
                 if (result < 0)
                 {
@@ -128,7 +130,7 @@ namespace
                     auto batchSize  = std::min(static_cast<int>(spData->staging->capacity()), spData->arrayLength - totalAmountRead);
                     auto newFilePos = spData->filePos + totalAmountRead;
                     auto buffer     = uv_buf_init(spData->staging->data(), batchSize);
-                    auto result     = uv_fs_read(spRequest->loop, spRequest.get(), spRequest->file.fd, &buffer, 1, newFilePos, onReadCallback);
+                    auto result     = uv_fs_read(spRequest->loop, spRequest.get(), spRequest->file, &buffer, 1, newFilePos, onReadCallback);
 
                     if (result < 0)
                     {

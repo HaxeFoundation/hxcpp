@@ -151,7 +151,7 @@ hx::EnumBase hx::asys::libuv::getName(uv_handle_t* handle, bool remote)
 }
 
 #if (!HX_WINDOWS)
-int toPosixCode(const int hxCode)
+int hx::asys::libuv::toPosixCode(const int hxCode)
 {
     switch (hxCode)
     {
