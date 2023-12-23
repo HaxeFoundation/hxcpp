@@ -7,129 +7,120 @@
 
 namespace
 {
-    struct WriteRequest final : hx::asys::libuv::BaseRequest
+    struct FsRequest : hx::asys::libuv::BaseRequest
     {
     public:
-        uv_fs_t request;
+        uv_fs_t uv;
+
+        FsRequest(Dynamic _cbSuccess, Dynamic _cbFailure) : BaseRequest(_cbSuccess, _cbFailure)
+        {
+            uv.data = this;
+        }
+
+        virtual ~FsRequest()
+        {
+            uv_fs_req_cleanup(&uv);
+        }
+
+        static void callback(uv_fs_t* request)
+        {
+            auto gcZone    = hx::AutoGCZone();
+            auto spRequest = std::unique_ptr<FsRequest>(static_cast<FsRequest*>(request->data));
+
+            if (spRequest->uv.result < 0)
+            {
+                Dynamic(spRequest->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->uv.result));
+            }
+            else
+            {
+                Dynamic(spRequest->cbSuccess.rooted)(spRequest->uv.result);
+            }
+        }
+    };
+
+    struct WriteRequest final : FsRequest
+    {
+    private:
         std::vector<char> staging;
 
+    public:
+        const uv_buf_t buffer;
+
         WriteRequest(int _size, Dynamic _cbSuccess, Dynamic _cbFailure)
-            : BaseRequest(_cbSuccess, _cbFailure)
+            : FsRequest(_cbSuccess, _cbFailure)
             , staging(_size)
+            , buffer(uv_buf_init(staging.data(), staging.capacity()))
         {
-            request.data = this;
-        }
-
-        ~WriteRequest()
-        {
-            uv_fs_req_cleanup(&request);
+            //
         }
     };
 
-    struct ChunkedRequest final : hx::asys::libuv::BaseRequest
+    struct ReadRequest final : FsRequest
     {
-        std::unique_ptr<std::vector<char>> staging;
+    private:
+        std::vector<char> staging;
 
-        // The current offset into the array.
-        // May differ from array offset if multiple smaller chunks are needed to complete the overall request.
-        const int currentOffset;
+    public:
+        const uv_buf_t buffer;
+        const hx::RootedObject<Array_obj<std::uint8_t>> rooted;
+        const int offset;
+        const int length;
+        const int64_t pos;
 
-        // The starting offset into the array for the overall request.
-        const int arrayOffset;
+        int progress;
 
-        // The total length for the overall request.
-        const int arrayLength;
-
-        // The starting position into the file for the overall request.
-        const int filePos;
-
-        const hx::RootedObject<Array_obj<uint8_t>> array;
-
-        ChunkedRequest(
-            std::unique_ptr<std::vector<char>> _staging,
-            const int _currentOffset,
-            const int _arrayOffset,
-            const int _arrayLength,
-            const int _filePos,
-            const Array<uint8_t> _array,
-            Dynamic _cbSuccess,
-            Dynamic _cbFailure)
-            : BaseRequest(_cbSuccess, _cbFailure)
-            , staging(std::move(_staging))
-            , currentOffset(_currentOffset)
-            , arrayOffset(_arrayOffset)
-            , arrayLength(_arrayLength)
-            , filePos(_filePos)
-            , array(_array.mPtr) {}
+        ReadRequest(Dynamic _cbSuccess, Dynamic _cbFailure, Array<std::uint8_t> _array, const int _offset, const int _length, const int64_t _pos)
+            : FsRequest(_cbSuccess, _cbFailure)
+            , staging(std::numeric_limits<uint16_t>::max())
+            , buffer(uv_buf_init(staging.data(), staging.capacity()))
+            , rooted(_array.mPtr)
+            , offset(_offset)
+            , length(_length)
+            , pos(_pos)
+            , progress(0)
+        {
+            //
+        }
     };
-
-    void onWriteCallback(uv_fs_t* request)
-    {
-        auto gcZone = hx::AutoGCZone();
-        auto spData = std::unique_ptr<WriteRequest>(static_cast<WriteRequest*>(request->data));
-
-        if (spData->request.result < 0)
-        {
-            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spData->request.result));
-        }
-        else
-        {
-            Dynamic(spData->cbSuccess.rooted)(spData->request.result);
-        }
-    }
 
     void onReadCallback(uv_fs_t* request)
     {
         auto gcZone    = hx::AutoGCZone();
-        auto spRequest = hx::asys::libuv::unique_fs_req(request);
-        auto spData    = std::unique_ptr<ChunkedRequest>(static_cast<ChunkedRequest*>(spRequest->data));
+        auto spRequest = std::unique_ptr<ReadRequest>(static_cast<ReadRequest*>(request->data));
 
-        if (spRequest->result < 0)
+        if (spRequest->uv.result < 0)
         {
-            Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->result));
+            Dynamic(spRequest->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->uv.result));
         }
         else
         {
-            auto newArrayOffset  = static_cast<int>(spData->currentOffset + spRequest->result);
-            auto totalAmountRead = newArrayOffset - spData->arrayOffset;
-
-            if (spRequest->result == 0)
+            if (spRequest->uv.result == 0)
             {
-                Dynamic(spData->cbSuccess.rooted)(totalAmountRead);
+                Dynamic(spRequest->cbSuccess.rooted)(spRequest->progress);
             }
             else
             {
-                auto array = Array<uint8_t>(spData->array.rooted);
+                auto count = std::min(spRequest->uv.result, static_cast<ssize_t>(spRequest->length) - spRequest->progress);
 
-                array->memcpy(spData->currentOffset, reinterpret_cast<uint8_t*>(spData->staging->data()), spRequest->result);
+                spRequest->rooted.rooted->memcpy(spRequest->offset + spRequest->progress, reinterpret_cast<uint8_t*>(spRequest->buffer.base), count);
 
-                if (newArrayOffset >= spData->arrayOffset + spData->arrayLength)
+                if (spRequest->progress + count >= static_cast<int64_t>(spRequest->length))
                 {
-                    Dynamic(spData->cbSuccess.rooted)(totalAmountRead);
+                    Dynamic(spRequest->cbSuccess.rooted)(spRequest->progress + count);
                 }
                 else
                 {
-                    auto batchSize  = std::min(static_cast<int>(spData->staging->capacity()), spData->arrayLength - totalAmountRead);
-                    auto newFilePos = spData->filePos + totalAmountRead;
-                    auto buffer     = uv_buf_init(spData->staging->data(), batchSize);
-                    auto result     = uv_fs_read(spRequest->loop, spRequest.get(), static_cast<uv_file>(spRequest->file.fd), &buffer, 1, newFilePos, onReadCallback);
+                    spRequest->progress += count;
+
+                    auto newFilePos = spRequest->pos + spRequest->progress;
+                    auto result     = uv_fs_read(spRequest->uv.loop, &spRequest->uv, static_cast<uv_file>(spRequest->uv.file.fd), &spRequest->buffer, 1, newFilePos, onReadCallback);
 
                     if (result < 0)
                     {
-                        Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
+                        Dynamic(spRequest->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
                     }
                     else
                     {
-                        spRequest->data =
-                            new ChunkedRequest(
-                                std::move(spData->staging),
-                                newArrayOffset,
-                                spData->arrayOffset,
-                                spData->arrayLength,
-                                spData->filePos,
-                                array,
-                                spData->cbSuccess.rooted,
-                                spData->cbFailure.rooted);
                         spRequest.release();
                     }
                 }
@@ -259,11 +250,10 @@ hx::asys::libuv::filesystem::LibuvFile_obj::LibuvFile_obj(uv_loop_t* _loop, uv_f
 void hx::asys::libuv::filesystem::LibuvFile_obj::write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto request = std::make_unique<WriteRequest>(length, cbSuccess, cbFailure);
-    auto buffer  = uv_buf_init(request->staging.data(), request->staging.capacity());
 
-    std::memcpy(request->staging.data(), data->getBase() + offset, length);
+    std::memcpy(request->buffer.base, data->getBase() + offset, length);
 
-    auto result = uv_fs_write(loop, &request->request, file, &buffer, 1, pos, onWriteCallback);
+    auto result = uv_fs_write(loop, &request->uv, file, &request->buffer, 1, pos, FsRequest::callback);
 
     if (result < 0)
     {
@@ -277,22 +267,8 @@ void hx::asys::libuv::filesystem::LibuvFile_obj::write(::cpp::Int64 pos, Array<u
 
 void hx::asys::libuv::filesystem::LibuvFile_obj::read(::cpp::Int64 pos, Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
 {
-    if (pos < 0)
-    {
-        cbFailure(hx::asys::libuv::create(HX_CSTRING("CustomError"), 13, 1)->_hx_init(0, HX_CSTRING("Position is negative")));
-    }
-    if (offset < 0 || offset > output->length)
-    {
-        cbFailure(hx::asys::libuv::create(HX_CSTRING("CustomError"), 13, 1)->_hx_init(0, HX_CSTRING("Offset outside of buffer bounds")));
-    }
-
-    auto batchSize = static_cast<int>(std::numeric_limits<uint16_t>::max());
-    auto bufferSize = std::min(batchSize, length);
-    auto staging = std::make_unique<std::vector<char>>(bufferSize);
-    auto buffer = uv_buf_init(staging->data(), staging->capacity());
-
-    auto request = std::make_unique<uv_fs_t>();
-    auto result = uv_fs_read(loop, request.get(), file, &buffer, 1, pos, onReadCallback);
+    auto request = std::make_unique<ReadRequest>(cbSuccess, cbFailure, output, offset, length, pos);
+    auto result  = uv_fs_read(loop, &request->uv, file, &request->buffer, 1, pos, onReadCallback);
 
     if (result < 0)
     {
@@ -300,7 +276,6 @@ void hx::asys::libuv::filesystem::LibuvFile_obj::read(::cpp::Int64 pos, Array<ui
     }
     else
     {
-        request->data = new ChunkedRequest(std::move(staging), offset, offset, length, pos, output, cbSuccess, cbFailure);
         request.release();
     }
 }
