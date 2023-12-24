@@ -2,7 +2,7 @@
 
     <pragma once='true' />
 
-    <set name='LIBUV_DIR' value='${HXCPP}/project/thirdparty/libuv-1.44.2' />
+    <set name='LIBUV_DIR' value='${HXCPP}/project/thirdparty/libuv-1.47.0' />
 
     <files id='libuv'>
         <depend name="${this_dir}/Build.xml" dateOnly="true"/>
@@ -16,6 +16,7 @@
         <file name='${LIBUV_DIR}/src/inet.c'/>
         <file name='${LIBUV_DIR}/src/random.c'/>
         <file name='${LIBUV_DIR}/src/strscpy.c'/>
+        <file name='${LIBUV_DIR}/src/strtok.c'/>
         <file name='${LIBUV_DIR}/src/threadpool.c'/>
         <file name='${LIBUV_DIR}/src/timer.c'/>
         <file name='${LIBUV_DIR}/src/uv-common.c'/>
@@ -26,6 +27,7 @@
         <depend name='${LIBUV_DIR}/src/idna.h'/>
         <depend name='${LIBUV_DIR}/src/queue.h'/>
         <depend name='${LIBUV_DIR}/src/strscpy.h'/>
+        <depend name='${LIBUV_DIR}/src/strtok.h'/>
         <depend name='${LIBUV_DIR}/src/uv-common.h'/>
 
         <section if='windows'>
@@ -160,6 +162,10 @@
                 <lib name='iphlpapi.lib'/>
                 <lib name='userenv.lib'/>
                 <lib name='ws2_32.lib'/>
+                <lib name='dbghelp.lib'/>
+                <lib name='ole32.lib'/>
+                <lib name='uuid.lib'/>
+                <lib name='shell32.lib'/>
             </section>
 
             <section unless='windows'>
