@@ -4,41 +4,11 @@
 #include <cstring>
 #include <limits>
 #include "LibuvFile.h"
+#include "FsRequest.h"
 
 namespace
 {
-    struct FsRequest : hx::asys::libuv::BaseRequest
-    {
-    public:
-        uv_fs_t uv;
-
-        FsRequest(Dynamic _cbSuccess, Dynamic _cbFailure) : BaseRequest(_cbSuccess, _cbFailure)
-        {
-            uv.data = this;
-        }
-
-        virtual ~FsRequest()
-        {
-            uv_fs_req_cleanup(&uv);
-        }
-
-        static void callback(uv_fs_t* request)
-        {
-            auto gcZone    = hx::AutoGCZone();
-            auto spRequest = std::unique_ptr<FsRequest>(static_cast<FsRequest*>(request->data));
-
-            if (spRequest->uv.result < 0)
-            {
-                Dynamic(spRequest->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(spRequest->uv.result));
-            }
-            else
-            {
-                Dynamic(spRequest->cbSuccess.rooted)(spRequest->uv.result);
-            }
-        }
-    };
-
-    struct WriteRequest final : FsRequest
+    struct WriteRequest final : hx::asys::libuv::filesystem::FsRequest
     {
     private:
         std::vector<char> staging;
@@ -55,7 +25,7 @@ namespace
         }
     };
 
-    struct ReadRequest final : FsRequest
+    struct ReadRequest final : hx::asys::libuv::filesystem::FsRequest
     {
     private:
         std::vector<char> staging;
@@ -131,7 +101,7 @@ namespace
     void onOpenCallback(uv_fs_t* request)
     {
         auto gcZone = hx::AutoGCZone();
-        auto spRequest = std::unique_ptr<FsRequest>(static_cast<FsRequest*>(request->data));
+        auto spRequest = std::unique_ptr<hx::asys::libuv::filesystem::FsRequest>(static_cast<hx::asys::libuv::filesystem::FsRequest*>(request->data));
 
         if (spRequest->uv.result < 0)
         {
@@ -193,7 +163,7 @@ namespace
 void hx::asys::filesystem::File_obj::open(Context ctx, String path, int flags, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto libuvCtx = hx::asys::libuv::context(ctx);
-    auto request  = std::make_unique<FsRequest>(cbSuccess, cbFailure);
+    auto request  = std::make_unique<hx::asys::libuv::filesystem::FsRequest>(cbSuccess, cbFailure);
     auto result   = uv_fs_open(libuvCtx->uvLoop, &request->uv, path.utf8_str(), openFlag(flags), openMode(flags), onOpenCallback);
 
     if (result < 0)
@@ -225,7 +195,7 @@ void hx::asys::filesystem::File_obj::temp(Context ctx, Dynamic cbSuccess, Dynami
 
     auto path     = std::filesystem::path(buffer.data()) / std::filesystem::path("XXXXXX");
     auto libuvCtx = hx::asys::libuv::context(ctx);
-    auto request  = std::make_unique<FsRequest>(cbSuccess, cbFailure);
+    auto request  = std::make_unique<hx::asys::libuv::filesystem::FsRequest>(cbSuccess, cbFailure);
 
     result = uv_fs_mkstemp(libuvCtx->uvLoop, &request->uv, path.u8string().c_str(), onOpenCallback);
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <hxcpp.h>
-#include "../LibuvUtils.h"
+#include <uv.h>
 
 namespace hx::asys::libuv::filesystem
 {
