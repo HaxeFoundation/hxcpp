@@ -80,13 +80,13 @@ namespace
                 }
                 else
                 {
-                    auto entries = Array<String>(0, 0);
+                    auto entries = Array<String>(spRequest->uv.result, 0);
 
                     for (auto i = 0; i < spRequest->uv.result; i++)
                     {
                         if (nullptr != spRequest->entries.at(i).name)
                         {
-                            entries->push(String::create(spRequest->entries.at(i).name));
+                            entries[i] = String::create(spRequest->entries.at(i).name);
                         }
                     }
 
