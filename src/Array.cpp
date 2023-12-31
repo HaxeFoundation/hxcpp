@@ -184,8 +184,6 @@ void ArrayBase::Blit(int inDestElement, ArrayBase *inSourceArray, int inSourceEl
    HX_OBJ_WB_PESSIMISTIC_GET(this);
 }
 
-
-#if (HXCPP_API_LEVEL>330)
 int ArrayBase::__Compare(const hx::Object *inRHS) const
 {
    if (inRHS==this)
@@ -196,8 +194,6 @@ int ArrayBase::__Compare(const hx::Object *inRHS) const
    hx::Object *implementation = common->__GetRealObject();
    return implementation<this ? -1 : implementation!=this;
 }
-#endif
-
 
 String ArrayBase::__ToString() const { return HX_CSTRING("Array"); }
 String ArrayBase::toString()
@@ -599,7 +595,6 @@ Dynamic ArrayBase::func##_dyn()  { return new ArrayBase_##func(this);  }
 #define DEFINE_ARRAY_FUNC4(ret,func) DEFINE_ARRAY_FUNC(ret,func,HX_ARR_LIST4,HX_DYNAMIC_ARG_LIST4,HX_ARG_LIST4,4)
 
 
-#if (HXCPP_API_LEVEL>=330)
 DEFINE_ARRAY_FUNC1(,__SetSize);
 DEFINE_ARRAY_FUNC1(,__SetSizeExact);
 DEFINE_ARRAY_FUNC2(,insert);
@@ -609,18 +604,6 @@ DEFINE_ARRAY_FUNC1(,unshift);
 DEFINE_ARRAY_FUNC4(,blit);
 DEFINE_ARRAY_FUNC2(,zero);
 DEFINE_ARRAY_FUNC1(,resize);
-#else
-DEFINE_ARRAY_FUNC1(return,__SetSize);
-DEFINE_ARRAY_FUNC1(return,__SetSizeExact);
-DEFINE_ARRAY_FUNC2(return,insert);
-DEFINE_ARRAY_FUNC0(return,reverse);
-DEFINE_ARRAY_FUNC1(return,sort);
-DEFINE_ARRAY_FUNC1(return,unshift);
-DEFINE_ARRAY_FUNC4(return,blit);
-DEFINE_ARRAY_FUNC2(return,zero);
-DEFINE_ARRAY_FUNC1(return,resize);
-#endif
-
 DEFINE_ARRAY_FUNC1(return,concat);
 DEFINE_ARRAY_FUNC0(return,iterator);
 DEFINE_ARRAY_FUNC0(return,keyValueIterator);
@@ -847,7 +830,6 @@ DEFINE_VARRAY_FUNC1(,resize);
 
 
 
-#if (HXCPP_API_LEVEL>330)
 int VirtualArray_obj::__Compare(const hx::Object *inRHS) const
 {
    if (inRHS->__GetType()!=vtArray)
@@ -857,7 +839,6 @@ int VirtualArray_obj::__Compare(const hx::Object *inRHS) const
    hx::Object *b = common->__GetRealObject();
    return a<b ? -1 : a>b;
 }
-#endif
 
 Dynamic VirtualArray_obj::__GetItem(int inIndex) const
 {

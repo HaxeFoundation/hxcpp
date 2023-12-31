@@ -230,10 +230,8 @@ hx::Val Class_obj::__Field(const String &inString, hx::PropertyAccess inCallProp
 {
    if (inString==HX_CSTRING("__meta__"))
       return __meta__;
-   #if (HXCPP_API_LEVEL>320)
    if (inString==HX_CSTRING("__rtti"))
       return __rtti__;
-   #endif
 
    if (mGetStaticField)
    {

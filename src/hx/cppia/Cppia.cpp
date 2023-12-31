@@ -265,13 +265,11 @@ static hx::Object *convert(hx::Object *obj)
    Array_obj<T> *alreadyGood = dynamic_cast<Array_obj<T> *>(obj);
    if (alreadyGood)
       return alreadyGood;
-   #if (HXCPP_API_LEVEL>=330)
    cpp::VirtualArray_obj *varray = dynamic_cast<cpp::VirtualArray_obj *>(obj);
    if (varray)
    {
       return Array<T>( cpp::VirtualArray(varray) ).mPtr;
    }
-   #endif
    int n = obj->__length();
    Array<T> result = Array_obj<T>::__new(n,n);
    for(int i=0;i<n;i++)
@@ -290,7 +288,6 @@ hx::Object *DynamicToArrayType(hx::Object *obj, ArrayType arrayType)
       case arrFloat:        return convert<Float>(obj);
       case arrFloat32:      return convert<float>(obj);
       case arrString:       return convert<String>(obj);
-      #if (HXCPP_API_LEVEL>=330)
       case arrAny:
       {
          ArrayBase *base = dynamic_cast<ArrayBase *>(obj);
@@ -299,10 +296,6 @@ hx::Object *DynamicToArrayType(hx::Object *obj, ArrayType arrayType)
          return dynamic_cast<cpp::VirtualArray_obj *>(obj);
       }
       case arrObject:       return convert<Dynamic>(obj);
-      #else
-      case arrAny:          return convert<Dynamic>(obj);
-      case arrObject:       return obj;
-      #endif
       case arrNotArray:     throw "Bad cast";
    }
 
@@ -1112,15 +1105,6 @@ struct SetExpr : public CppiaExpr
 
 };
 
-#if (HXCPP_API_LEVEL < 330)
-class CppiaInterface : public hx::Interface
-{
-   typedef CppiaInterface __ME;
-   typedef hx::Interface super;
-   HX_DEFINE_SCRIPTABLE_INTERFACE
-};
-#endif
-
 enum CastOp
 {
    castNOP,
@@ -1212,11 +1196,7 @@ struct CastExpr : public CppiaDynamicExpr
          return 0;
 
       if (op==castDynamic)
-      #if (HXCPP_API_LEVEL>=331)
          return obj;
-      #else
-         return obj->__GetRealObject();
-      #endif
 
       return DynamicToArrayType(obj, arrayType);
    }
@@ -1430,7 +1410,6 @@ struct ToInterface : public CppiaDynamicExpr
 
    const char *getName() { return array ? "ToInterfaceArray" : "ToInterface"; }
 
-   #if (HXCPP_API_LEVEL >= 330)
    CppiaExpr *link(CppiaModule &inModule)
    {
       DBGLOG("Api 330 - no cast required\n");
@@ -1439,67 +1418,6 @@ struct ToInterface : public CppiaDynamicExpr
       return linked;
    }
    hx::Object *runObject(CppiaCtx *ctx) { return 0; }
-
-   #else
-   CppiaExpr *link(CppiaModule &inModule)
-   {
-      toType = inModule.types[toTypeId];
-      TypeData *fromType = fromTypeId ? inModule.types[fromTypeId] : 0;
-
-      if (toType->interfaceBase)
-      {
-         interfaceInfo = toType->interfaceBase;
-         if (!fromType)
-         {
-            useNative = true;
-         }
-         else if (!fromType->cppiaClass)
-         {
-            DBGLOG("native -> native\n");
-            useNative = true;
-         }
-         else
-         {
-            DBGLOG("cppia class, native interface\n");
-            cppiaVTable = fromType->cppiaClass->getInterfaceVTable(toType->interfaceBase->name);
-         }
-         value = value->link(inModule);
-         return this;
-      }
-
-
-      DBGLOG("cppia class, cppia interface - no cast required\n");
-
-      CppiaExpr *linked = value->link(inModule);
-      delete this;
-      return linked;
-   }
-
-   hx::Object *runObject(CppiaCtx *ctx)
-   {
-      hx::Object *obj = value->runObject(ctx);
-      if (!obj)
-         return 0;
-      if (obj)
-         obj = obj->__GetRealObject();
-
-      if (cppiaVTable)
-      {
-         if (array)
-         {
-            CPPIA_CHECK(obj);
-            int n = obj->__length();
-            Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
-            for(int i=0;i<n;i++)
-               result[i] = interfaceInfo->factory(cppiaVTable,obj->__GetItem(i)->__GetRealObject());
-            return result.mPtr;
-         }
-         return interfaceInfo->factory(cppiaVTable,obj);
-      }
-      hx::Object *result = obj->__ToInterface(*interfaceInfo->mType);
-      return result;
-   }
-   #endif
 };
 
 
@@ -1512,11 +1430,7 @@ static void *SLJIT_CALL createArrayFloat32(int n) { return (Array_obj<float>::__
 static void *SLJIT_CALL createArrayString(int n) { return (Array_obj<String>::__new(n,n)).mPtr; }
 static void *SLJIT_CALL createArrayObject(int n) { return (Array_obj<Dynamic>::__new(n,n)).mPtr; }
 static void *SLJIT_CALL createArrayAny(int n) {
-  #if (HXCPP_API_LEVEL>=330)
   return (cpp::VirtualArray_obj::__new(n,n)).mPtr;
-  #else
-  return (Array_obj<Dynamic>::__new(n,n)).mPtr;
-  #endif
 }
 static void SLJIT_CALL varraySetInt(cpp::VirtualArray_obj *varray, int i, int value) { varray->init(i,value); }
 static void SLJIT_CALL varraySetBool(cpp::VirtualArray_obj *varray, int i, int value) { varray->init(i,(bool)value); }
@@ -1604,11 +1518,7 @@ struct NewExpr : public CppiaDynamicExpr
             case arrString:
                return Array_obj<String>::__new(size,size).mPtr;
             case arrAny:
-               #if (HXCPP_API_LEVEL>=330)
                return cpp::VirtualArray_obj::__new(size,size).mPtr;
-               #else
-               // Fallthrough
-               #endif
             case arrObject:
                return Array_obj<Dynamic>::__new(size,size).mPtr;
             default:
@@ -2083,20 +1993,13 @@ struct CallGetIndex : public CppiaIntExpr
    {
       hx::Object *obj = thisExpr->runObject(ctx);
       CPPIA_CHECK(obj);
-      #if (HXCPP_API_LEVEL>=330)
       return static_cast<EnumBase_obj *>(obj)->_hx_getIndex();
-      #else
-      return obj->__Index();
-      #endif
    }
 
 
    #ifdef CPPIA_JIT
    void genCode(CppiaCompiler *compiler, const JitVal &inDest,ExprType destType)
    {
-      #if (HXCPP_API_LEVEL<330)
-      throw "Enum getIndex not supported by this version of compiled code";
-      #endif
       thisExpr->genCode(compiler, sJitTemp0, etObject);
       genNullReferenceExceptionCheck(compiler,sJitTemp0);
       if (destType==etInt)
@@ -2175,11 +2078,7 @@ struct CallGetField : public CppiaDynamicExpr
       CPPIA_CHECK(obj);
       String name = nameExpr->runString(ctx);
       int isProp = isPropExpr->runInt(ctx);
-      #if (HXCPP_API_LEVEL>=330)
       return obj->__Field(name,(hx::PropertyAccess)isProp).asObject();
-      #else
-      return obj->__Field(name,(hx::PropertyAccess)isProp).mPtr;
-      #endif
    }
 };
 
@@ -3397,7 +3296,6 @@ struct CallMember : public CppiaExpr
          }
 
          // Try interface function implemented in host only...
-         #if (HXCPP_API_LEVEL >= 330)
          if (!replace)
          {
             std::vector<ScriptNamedFunction *> &nativeInterfaceFuncs = type->cppiaClass->nativeInterfaceFunctions;
@@ -3411,8 +3309,6 @@ struct CallMember : public CppiaExpr
                }
             }
          }
-         #endif
-
       }
       if (!replace && type->haxeBase)
       {
@@ -4611,7 +4507,6 @@ struct MemStackFloatReference : public CppiaExpr
 };
 
 
-#if (HXCPP_API_LEVEL>=330)
 struct VirtualArrayLength : public CppiaIntExpr
 {
    CppiaExpr   *thisExpr;
@@ -4648,7 +4543,6 @@ struct VirtualArrayLength : public CppiaIntExpr
    }
    #endif
 };
-#endif
 
 
 struct GetFieldByLinkage : public CppiaExpr
@@ -4736,18 +4630,16 @@ struct GetFieldByLinkage : public CppiaExpr
 
       if (!replace && type->arrayType!=arrNotArray && field==HX_CSTRING("length"))
       {
-         #if (HXCPP_API_LEVEL>=330)
          if (type->arrayType==arrAny)
          {
             replace = new VirtualArrayLength(this,object);
          }
          else
-         #endif
          {
-         int offset = (int) offsetof( Array_obj<int>, length );
-         replace = object ?
-             (CppiaExpr*)new MemReference<int,locObj>(this,offset,object):
-             (CppiaExpr*)new MemReference<int,locThis>(this,offset);
+            int offset = (int) offsetof( Array_obj<int>, length );
+            replace = object ?
+               (CppiaExpr*)new MemReference<int,locObj>(this,offset,object):
+               (CppiaExpr*)new MemReference<int,locThis>(this,offset);
          }
       }
 
@@ -5142,7 +5034,6 @@ struct ArrayDef : public CppiaDynamicExpr
             return result.mPtr;
             }
          case arrAny:
-            #if (HXCPP_API_LEVEL>=330)
             {
             cpp::VirtualArray result = cpp::VirtualArray_obj::__new(n,n);
             for(int i=0;i<n;i++)
@@ -5152,9 +5043,6 @@ struct ArrayDef : public CppiaDynamicExpr
             }
             return result.mPtr;
             }
-            #else
-            // Fallthough...
-            #endif
          case arrObject:
             { 
             Array<Dynamic> result = Array_obj<Dynamic>::__new(n,n);
@@ -5920,11 +5808,7 @@ struct EnumIExpr : public CppiaDynamicExpr
    {
       hx::Object *obj = object->runObject(ctx);
       BCR_CHECK;
-      #if (HXCPP_API_LEVEL>=330)
       return static_cast<EnumBase_obj *>(obj)->_hx_getParamI(index).mPtr;
-      #else
-      return obj->__EnumParams()[index].mPtr;
-      #endif
    }
 
    #ifdef CPPIA_JIT
