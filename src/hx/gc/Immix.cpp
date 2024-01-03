@@ -2907,8 +2907,6 @@ typedef hx::QuickVec<BlockDataInfo *> BlockList;
 
 typedef hx::QuickVec<unsigned int *> LargeList;
 
-enum MemType { memUnmanaged, memBlock, memLarge };
-
 
 
 
@@ -5524,7 +5522,7 @@ public:
       return false;
    }
 
-   MemType GetMemType(void *inPtr)
+   hx::MemType GetMemType(void *inPtr)
    {
       BlockData *block = (BlockData *)( ((size_t)inPtr) & IMMIX_BLOCK_BASE_MASK);
 
@@ -5542,16 +5540,16 @@ public:
       */
 
       if (isBlock)
-         return memBlock;
+         return hx::memBlock;
 
       for(int i=0;i<mLargeList.size();i++)
       {
          unsigned int *blob = mLargeList[i] + 2;
          if (blob==inPtr)
-            return memLarge;
+            return hx::memLarge;
       }
 
-      return memUnmanaged;
+      return hx::memUnmanaged;
    }
 
 
@@ -5742,6 +5740,11 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    #ifdef SHOW_MEM_EVENTS
    GCLOG("...]\n");
    #endif
+}
+
+MemType GetMemType(void* inPtr)
+{
+    return sGlobalAlloc->GetMemType(inPtr);
 }
 
 } // namespace hx

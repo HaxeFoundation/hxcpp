@@ -283,6 +283,10 @@ void GCPrepareMultiThreaded();
 namespace hx
 {
 
+enum MemType { memUnmanaged, memBlock, memLarge };
+
+MemType GetMemType(void*);
+
 #define HX_USE_INLINE_IMMIX_OPERATOR_NEW
 
 //#define HX_STACK_CTX ::hx::ImmixAllocator *_hx_stack_ctx =  hx::gMultiThreadMode ? hx::tlsImmixAllocator : hx::gMainThreadAlloc;
