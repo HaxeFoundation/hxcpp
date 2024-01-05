@@ -187,6 +187,10 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx);
 void GCAddRoot(hx::Object **inRoot);
 void GCRemoveRoot(hx::Object **inRoot);
 
+#if (HXCPP_API_LEVEL>=500)
+void GCPinPtr(const void* inPtr);
+void GCUnpinPtr(const void* inPtr);
+#endif
 
 // This is used internally in hxcpp
 // It calls InternalNew, and takes care of null-terminating the result
@@ -282,10 +286,6 @@ void GCPrepareMultiThreaded();
 
 namespace hx
 {
-
-enum MemType { memUnmanaged, memBlock, memLarge };
-
-MemType GetMemType(void*);
 
 #define HX_USE_INLINE_IMMIX_OPERATOR_NEW
 

@@ -126,6 +126,19 @@ public:
 
 namespace hx
 {
+#if (HXCPP_API_LEVEL>=500)
+class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayPin {
+    char* ptr;
+    hx::Object* object;
+
+public:
+    ArrayPin(char* inPtr, hx::Object* inObject);
+
+    ~ArrayPin();
+
+    char* GetBase();
+};
+#endif
 
 // Also used by cpp::VirtualArray
 class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayCommon : public hx::Object
@@ -196,6 +209,9 @@ public:
       mAlloc = -1;
    }
 
+#if (HXCPP_API_LEVEL>=500)
+   ArrayPin* Pin();
+#endif
 
    int __GetType() const { return vtArray; }
 
@@ -407,6 +423,10 @@ public:
 protected:
    mutable int mAlloc;
    mutable char  *mBase;
+
+#if (HXCPP_API_LEVEL>=500)
+   bool hasBeenPinned;
+#endif
 };
 
 } // end namespace hx for ArrayBase

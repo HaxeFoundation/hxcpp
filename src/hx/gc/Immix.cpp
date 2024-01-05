@@ -741,6 +741,7 @@ struct BlockDataInfo
    int          mMoveScore;
    int          mUsedBytes;
    int          mFraggedRows;
+   int          mPinnedAllocs;
    bool         mPinned;
    unsigned char mZeroed;
    bool         mReclaimed;
@@ -789,6 +790,7 @@ struct BlockDataInfo
       mUsedRows = 0;
       mUsedBytes = 0;
       mFraggedRows = 0;
+      mPinnedAllocs = 0;
       mPinned = false;
       ZERO_MEM(allocStart,sizeof(int)*IMMIX_LINES);
       ZERO_MEM(mPtr->mRowMarked+IMMIX_HEADER_LINES, IMMIX_USEFUL_LINES); 
@@ -823,7 +825,7 @@ struct BlockDataInfo
 
    void clearBlockMarks()
    {
-      mPinned = false;
+      mPinned = mPinnedAllocs == 0 ? false : true;
       #ifdef HXCPP_GC_GENERATIONAL
       mHasSurvivor = false;
       #endif
@@ -2376,7 +2378,6 @@ void GCRemoveRoot(hx::Object **inRoot)
    sgRootSet.erase(inRoot);
 }
 
-
 void GcAddOffsetRoot(void *inRoot, int inOffset)
 {
    AutoLock lock(*sGCRootLock);
@@ -2906,6 +2907,8 @@ hx::Object *__hxcpp_weak_ref_get(Dynamic inRef)
 typedef hx::QuickVec<BlockDataInfo *> BlockList;
 
 typedef hx::QuickVec<unsigned int *> LargeList;
+
+enum MemType { memUnmanaged, memBlock, memLarge };
 
 
 
@@ -5522,7 +5525,7 @@ public:
       return false;
    }
 
-   hx::MemType GetMemType(void *inPtr)
+   MemType GetMemType(void *inPtr)
    {
       BlockData *block = (BlockData *)( ((size_t)inPtr) & IMMIX_BLOCK_BASE_MASK);
 
@@ -5540,16 +5543,16 @@ public:
       */
 
       if (isBlock)
-         return hx::memBlock;
+         return memBlock;
 
       for(int i=0;i<mLargeList.size();i++)
       {
          unsigned int *blob = mLargeList[i] + 2;
          if (blob==inPtr)
-            return hx::memLarge;
+            return memLarge;
       }
 
-      return hx::memUnmanaged;
+      return memUnmanaged;
    }
 
 
@@ -5583,6 +5586,47 @@ public:
 
 namespace hx
 {
+#if (HXCPP_API_LEVEL>=500)
+void GCPinPtr(const void* inPtr)
+{
+    if (IsConstAlloc(inPtr))
+    {
+        return;
+    }
+
+    auto ptr_i = reinterpret_cast<size_t>(inPtr) - sizeof(int);
+    auto flags = *reinterpret_cast<unsigned int*>(ptr_i);
+    auto onLOH = (flags & 0xffff) == 0;
+
+    if (!onLOH)
+    {
+        auto block = reinterpret_cast<BlockData*>(ptr_i & IMMIX_BLOCK_BASE_MASK);
+        auto info  = (*gBlockInfo)[block->mId];
+
+        info->mPinnedAllocs++;
+    }
+}
+
+void GCUnpinPtr(const void* inPtr)
+{
+    if (IsConstAlloc(inPtr))
+    {
+        return;
+    }
+
+    auto ptr_i = reinterpret_cast<size_t>(inPtr) - sizeof(int);
+    auto flags = *reinterpret_cast<unsigned int*>(ptr_i);
+    auto onLOH = (flags & 0xffff) == 0;
+
+    if (!onLOH)
+    {
+        auto block = reinterpret_cast<BlockData*>((reinterpret_cast<size_t>(inPtr)) & IMMIX_BLOCK_BASE_MASK);
+        auto info = (*gBlockInfo)[block->mId];
+
+        info->mPinnedAllocs--;
+    }
+}
+#endif
 
 MarkChunk *MarkChunk::swapForNew()
 {
@@ -5740,11 +5784,6 @@ void MarkConservative(int *inBottom, int *inTop,hx::MarkContext *__inCtx)
    #ifdef SHOW_MEM_EVENTS
    GCLOG("...]\n");
    #endif
-}
-
-MemType GetMemType(void* inPtr)
-{
-    return sGlobalAlloc->GetMemType(inPtr);
 }
 
 } // namespace hx

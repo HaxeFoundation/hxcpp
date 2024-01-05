@@ -34,9 +34,66 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
    mAlloc = alloc;
    mArrayConvertId = inAtomic ? inElementSize :
                inElementSize==sizeof(String) ? aciStringArray : aciObjectArray;
+
+#if (HXCPP_API_LEVEL>=500)
+   hasBeenPinned = false;
+#endif
 }
 
+#if (HXCPP_API_LEVEL>=500)
+ArrayPin::ArrayPin(char* inPtr, hx::Object* inObject)
+    : ptr(inPtr)
+    , object(inObject)
+{
+    hx::GCPinPtr(ptr);
+    hx::GCAddRoot(&object);
+}
 
+ArrayPin::~ArrayPin()
+{
+    hx::GCUnpinPtr(ptr);
+    hx::GCAddRoot(&object);
+}
+
+char* ArrayPin::GetBase()
+{
+    return ptr;
+}
+
+ArrayPin* ArrayBase::Pin()
+{
+    class Marker : public hx::Object
+    {
+        char* mBase;
+
+    public:
+        Marker(char* inBase) : mBase(inBase)
+        {
+            HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+        }
+
+        void __Mark(hx::MarkContext* ctx)
+        {
+            hx::MarkAlloc(mBase, ctx);
+        }
+    };
+
+    if (!mBase)
+    {
+        return nullptr;
+    }
+
+    // Unmanaged data, is it safe to put this in the ArrayPin if we don't know the lifetime of that pointer?
+    if (mAlloc < 0)
+    {
+        return new ArrayPin(mBase, nullptr);
+    }
+
+    hasBeenPinned = true;
+
+    return new ArrayPin(mBase, new Marker(mBase));
+}
+#endif
 
 void ArrayBase::reserve(int inSize) const
 {
@@ -48,7 +105,11 @@ void ArrayBase::reserve(int inSize) const
       if (mBase)
       {
          bool wasUnamanaged = mAlloc<0;
+#if (HXCPP_API_LEVEL>=500)
+         if (wasUnamanaged || hasBeenPinned)
+#else
          if (wasUnamanaged)
+#endif
          {
             char *base=(char *)hx::InternalNew(bytes,false);
             memcpy(base,mBase,length*elemSize);
@@ -99,7 +160,11 @@ void ArrayBase::Realloc(int inSize) const
       if (mBase)
       {
          bool wasUnamanaged = mAlloc<0;
+#if (HXCPP_API_LEVEL>=500)
+         if (wasUnamanaged || hasBeenPinned)
+#else
          if (wasUnamanaged)
+#endif
          {
             char *base=(char *)hx::InternalNew(bytes,false);
             memcpy(base,mBase,length*elemSize);
@@ -228,7 +293,11 @@ void ArrayBase::__SetSizeExact(int inSize)
       {
          bool wasUnamanaged = mAlloc<0;
 
+#if (HXCPP_API_LEVEL>=500)
+         if (wasUnamanaged || hasBeenPinned)
+#else
          if (wasUnamanaged)
+#endif
          {
             char *base=(char *)(AllocAtomic() ? hx::NewGCPrivate(0,bytes) : hx::NewGCBytes(0,bytes));
             memcpy(base,mBase,std::min(length,inSize)*elemSize);
