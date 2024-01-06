@@ -302,7 +302,7 @@ public:
          diff = __GetType() - inRHS->__GetType();
       if (diff==0)
          diff = memcmp( mValue, inRHS->__GetHandle(), mLength );
-       
+
       if (diff<0) return -1;
       if (diff>0) return 1;
       return 0;
@@ -386,7 +386,7 @@ Dynamic::Dynamic(short inVal)
    mPtr = fromInt(inVal);
 }
 
-#if !defined(__GNUC__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
+#if !defined(__GNUC__) || defined(__MINGW32__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
 Dynamic::Dynamic(unsigned long inVal)
 {
    mPtr = fromInt(inVal);
@@ -642,5 +642,3 @@ void Dynamic::__boot()
    Static(__ObjcClass) = hx::_hx_RegisterClass(HX_CSTRING("objc::BoxedType"),IsPointer,sNone,sNone, 0,0,&__ObjcClass );
 #endif
 }
-
-

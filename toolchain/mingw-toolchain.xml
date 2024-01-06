@@ -43,6 +43,7 @@
   <cppflag value="-std=c++11" if="HXCPP_CPP11" />
   <cppflag value="-U__STRICT_ANSI__" />
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-DHXCPP_M64" if="HXCPP_M64"/>
   <flag value="-I${HXCPP}/include"/>
   <objdir value="obj/mingw${OBJEXT}/"/>
@@ -56,6 +57,7 @@
   <flag value="-debug" if="debug"/>
   <flag value="--enable-auto-import"/>
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-static" if="no_shared_libs"/>
   <flag value="-static-libgcc" if="no_shared_libs"/>
   <flag value="-static-libstdc++" if="no_shared_libs"/>
@@ -70,20 +72,21 @@
   <flag value="-Wl,--enable-auto-import"/>
   <flag value="-mwindows" if="SUBSYSTEMWINDOWS" />
   <flag value="-m32" unless="HXCPP_M64"/>
+  <flag value="-m64" if="HXCPP_M64"/>
   <flag value="-static" if="no_shared_libs"/>
-  <flag value="-static-libgcc" if="no_shared_libs" unless="linux_host"/>
-  <flag value="-static-libstdc++" if="no_shared_libs" unless="linux_host"/>
-  <flag value="-static-libgcc" if="linux_host"/>
-  <flag value="-static-libstdc++" if="linux_host"/>
+  <flag value="-static-libgcc" if="no_shared_libs" />
+  <flag value="-static-libstdc++" if="no_shared_libs" />
   <flag value="-L${MINGW_ROOT}/lib/libs" />
   <ext value=".exe"/>
   <outflag value="-o "/>
 </linker>
 
-<copyFile toolId="exe" name="libgcc_s_dw2-1.dll" from="${MINGW_ROOT}/bin" allowMissing="true" unless="no_shared_libs"/>
+<copyFile toolId="exe" name="libgcc_s_dw2-1.dll" from="${MINGW_ROOT}/bin" allowMissing="true" unless="no_shared_libs || HXCPP_M64" />
+<copyFile toolId="exe" name="libgcc_s_seh-1.dll" from="${MINGW_ROOT}/bin" allowMissing="true" if="HXCPP_M64" unless="no_shared_libs"/>
 <copyFile toolId="exe" name="libstdc++-6.dll" from="${MINGW_ROOT}/bin" allowMissing="true" unless="no_shared_libs"/>
 <copyFile toolId="exe" name="libwinpthread-1.dll" from="${MINGW_ROOT}/sys-root/mingw/bin" allowMissing="true" unless="no_shared_libs"/>
 <copyFile toolId="exe" name="libwinpthread-1.dll" from="${MINGW_ROOT}/lib" allowMissing="true" unless="no_shared_libs"/>
+<copyFile toolId="exe" name="libwinpthread-1.dll" from="${MINGW_ROOT}/bin" allowMissing="true" unless="no_shared_libs"/>
 
 <linker id="static_link" exe="ar" >
   <ext value="${LIBEXT}"/>

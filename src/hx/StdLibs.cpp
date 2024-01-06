@@ -633,7 +633,16 @@ Dynamic __hxcpp_parse_int(const String &inString)
    while (isspace(*str)) ++str;
    bool isHex = is_hex_string(str, strlen(str));
    char *end = 0;
-   long result = strtol(str,&end,isHex ? 16 : 10);
+   long result;
+   if (isHex)
+   {
+      bool neg = str[0] == '-';
+      if (neg) str++;
+      result = strtoul(str,&end,16);
+      if (neg) result = -result;
+   }
+   else 
+      result = strtol(str,&end,10);
    #ifdef HX_WINDOWS
    if (str==end && !isHex)
    #else

@@ -172,7 +172,7 @@ bool _hx_std_set_time_locale( String l )
       freelocale(old);
    return true;
 #else
-   #ifdef HX_SMART_STRINGS
+   #if defined(NEKO_WINDOWS) && defined(HX_SMART_STRINGS)
    if (l.isUTF16Encoded())
       return _wsetlocale(LC_TIME,l.wchar_str());
    #endif
