@@ -4725,8 +4725,8 @@ public:
             int offset = i->second;
             hx::Object *obj = (hx::Object *)(ptr - offset);
 
-            if (!obj)
-               hx::MarkObjectAlloc(obj , &mMarker );
+            if (obj)
+               hx::MarkObjectAlloc(obj , &mMarker);
          }
       } // automark
 
