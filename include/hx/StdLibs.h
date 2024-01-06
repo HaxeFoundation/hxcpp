@@ -297,7 +297,11 @@ double __hxcpp_time_stamp();
 
 // --- vm/threading --------------------------------------------------------------------
 
+#if (HXCPP_API_LEVEL>=500)
+Dynamic __hxcpp_thread_create(hx::Callable<void()> inFunc);
+#else
 Dynamic __hxcpp_thread_create(Dynamic inFunc);
+#endif
 Dynamic __hxcpp_thread_current();
 void    __hxcpp_thread_send(Dynamic inThread, Dynamic inMessage);
 Dynamic __hxcpp_thread_read_message(bool inBlocked);
