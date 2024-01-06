@@ -38,7 +38,7 @@ public:
    Dynamic(const cpp::Variant &inRHS) : super(inRHS.asDynamic()) { }
    template<typename T>
    Dynamic(const hx::Native<T *> &inInterface):super(inInterface.ptr ? inInterface->__GetRealObject() : (hx::Object *)0 ) { }
-   #if !defined(__GNUC__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
+   #if !defined(__GNUC__) || defined(__MINGW32__) || (defined(__WORDSIZE) && (__WORDSIZE != 64))
    Dynamic(long inVal);
    Dynamic(unsigned long inVal);
    #endif
@@ -408,7 +408,7 @@ HXCPP_EXTERN_CLASS_ATTRIBUTES hx::Class &GetInt64Class();
 template<>
 inline bool Dynamic::IsClass<int>() { return mPtr && mPtr->__GetClass()==hx::GetIntClass(); }
 template<>
-inline bool Dynamic::IsClass<double>() { return mPtr && 
+inline bool Dynamic::IsClass<double>() { return mPtr &&
    ( mPtr->__GetClass()==hx::GetIntClass() || mPtr->__GetClass()==hx::GetFloatClass()) ; }
 template<>
 inline bool Dynamic::IsClass<float>() { return mPtr && mPtr->__GetClass()==hx::GetFloatClass(); }
@@ -458,7 +458,7 @@ bool operator==(Platform::Box<T> ^inPtr, nullptr_t)
    inline bool operator op (float inLHS,const ::Dynamic &inRHS) \
       { return inRHS.IsNumeric() && ((double)inLHS op (double)inRHS); } \
    inline bool operator op (int inLHS,const ::Dynamic &inRHS) \
-      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); } 
+      { return inRHS.IsNumeric() && (inLHS op (double)inRHS); }
 
 COMPARE_DYNAMIC_OP( < )
 COMPARE_DYNAMIC_OP( <= )
