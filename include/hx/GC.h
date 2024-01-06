@@ -188,8 +188,8 @@ void GCAddRoot(hx::Object **inRoot);
 void GCRemoveRoot(hx::Object **inRoot);
 
 #if (HXCPP_API_LEVEL>=500)
-void GCPinPtr(const void* inPtr);
-void GCUnpinPtr(const void* inPtr);
+void GCPinPtr(void* inPtr);
+void GCUnpinPtr(void* inPtr);
 #endif
 
 // This is used internally in hxcpp

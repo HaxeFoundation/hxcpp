@@ -127,16 +127,15 @@ public:
 namespace hx
 {
 #if (HXCPP_API_LEVEL>=500)
-class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayPin {
-    char* ptr;
-    hx::Object* object;
-
+class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayPin
+{
+   char* ptr;
 public:
-    ArrayPin(char* inPtr, hx::Object* inObject);
+   ArrayPin(char* inPtr);
 
-    ~ArrayPin();
+   ~ArrayPin();
 
-    char* GetBase();
+   char* GetBase();
 };
 #endif
 
@@ -423,10 +422,6 @@ public:
 protected:
    mutable int mAlloc;
    mutable char  *mBase;
-
-#if (HXCPP_API_LEVEL>=500)
-   bool hasBeenPinned;
-#endif
 };
 
 } // end namespace hx for ArrayBase
