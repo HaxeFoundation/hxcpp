@@ -60,12 +60,13 @@ template<> struct ArrayTraits< ::cpp::Int64> { enum { StoreType = arrayInt64 }; 
 template<class ELEM>
 class SafeSorter
 {
-    using SorterFunc =
+    typedef
 #if (HXCPP_API_LEVEL>=500)
-        hx::Callable<int(Dynamic, Dynamic)>;
+        hx::Callable<int(Dynamic, Dynamic)>
 #else
-        Dynamic;
+        Dynamic
 #endif
+       = SorterFunc;
 
     struct ArraySorter
     {
@@ -222,26 +223,29 @@ class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayCommon : public hx::Object
 class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayBase : public ArrayCommon
 {
 public:
-    using DynamicSorterFunc =
+    typedef
 #if (HXCPP_API_LEVEL>=500)
-        hx::Callable<int(Dynamic, Dynamic)>;
+        hx::Callable<int(Dynamic, Dynamic)>
 #else
-        Dynamic;
+        Dynamic
 #endif
+        DynamicSorterFunc;
 
-    using DynamicFilterFunc =
+    typedef
 #if (HXCPP_API_LEVEL>=500)
-        hx::Callable<bool(Dynamic)>;
+        hx::Callable<bool(Dynamic)>
 #else
-        Dynamic;
+        Dynamic
 #endif
+        DynamicFilterFunc;
 
-    using DynamicMappingFunc =
+    typedef
 #if (HXCPP_API_LEVEL>=500)
-        hx::Callable<Dynamic(Dynamic)>;
+        hx::Callable<Dynamic(Dynamic)>
 #else
-        Dynamic;
+        Dynamic
 #endif
+        DynamicMappingFunc;
 
    ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic);
 
@@ -599,33 +603,36 @@ inline bool arrayElemEq<Dynamic>(const Dynamic &a, const Dynamic &b) {
 template<typename ELEM_>
 class Array_obj : public hx::ArrayBase
 {
-   using Elem     = ELEM_;
-   using ObjPtr   = hx::ObjectPtr< Array_obj<ELEM_> >;
-   using NullType = typename hx::ReturnNull<ELEM_>::type;
+   typedef ELEM_ Elem;
+   typedef ObjPtr hx::ObjectPtr< Array_obj<ELEM_> >;
+   typedef typename hx::ReturnNull<ELEM_>::type NullType;
 
-   using SorterFunc =
+   typedef
 #if (HXCPP_API_LEVEL>=500)
-       hx::Callable<int(Elem, Elem)>;
+       hx::Callable<int(Elem, Elem)>
 #else
-       Dynamic;
+       Dynamic
 #endif
+       SorterFunc;
 
-   using FilterFunc =
+   typedef
 #if (HXCPP_API_LEVEL>=500)
-       hx::Callable<bool(Elem)>;
+       hx::Callable<bool(Elem)>
 #else
-       Dynamic;
+       Dynamic
 #endif
+       FilterFunc;
 
 #if (HXCPP_API_LEVEL>=500)
    template<class TO>
 #endif
-   using MappingFunc =
+   typedef
 #if (HXCPP_API_LEVEL>=500)
-       hx::Callable<TO(Elem)>;
+       hx::Callable<TO(Elem)>
 #else
-       Dynamic;
+       Dynamic
 #endif
+       MappingFunc;
 
 public:
    enum { _hx_ClassId = ArrayClassId<ELEM_>::id };

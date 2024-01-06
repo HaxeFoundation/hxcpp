@@ -53,8 +53,8 @@ public:
 
 class HXCPP_EXTERN_CLASS_ATTRIBUTES VirtualArray_obj : public hx::ArrayCommon
 {
-   using ArrayStore = hx::ArrayStore;
-   using ArrayBase  = hx::ArrayBase;
+   typedef hx::ArrayStore ArrayStore;
+   typedef hx::ArrayBase ArrayBase;
 
 public:
    HX_IS_INSTANCE_OF enum { _hx_ClassId = hx::clsIdVirtualArray };
