@@ -604,7 +604,7 @@ template<typename ELEM_>
 class Array_obj : public hx::ArrayBase
 {
    typedef ELEM_ Elem;
-   typedef ObjPtr hx::ObjectPtr< Array_obj<ELEM_> >;
+   typedef hx::ObjectPtr< Array_obj<ELEM_> > ObjPtr;
    typedef typename hx::ReturnNull<ELEM_>::type NullType;
 
    typedef
