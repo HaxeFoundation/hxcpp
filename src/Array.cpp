@@ -711,7 +711,10 @@ namespace cpp
         {
             ::hx::ObjectPtr<IteratorBase> __this;
 
-            _hx_iterator_hasNext(IteratorBase* ptr) : __this(ptr) {}
+            _hx_iterator_hasNext(IteratorBase* ptr) : __this(ptr)
+            {
+               HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+            }
 
             bool HX_LOCAL_RUN() final override
             {
@@ -740,7 +743,10 @@ namespace cpp
         {
             ::hx::ObjectPtr<IteratorBase> __this;
 
-            _hx_iterator_next(IteratorBase* ptr) : __this(ptr) {}
+            _hx_iterator_next(IteratorBase* ptr) : __this(ptr)
+            {
+               HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+            }
 
             ::Dynamic HX_LOCAL_RUN() final override
             {

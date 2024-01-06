@@ -97,7 +97,10 @@ namespace hx
             {
                 ::cpp::Function<TReturn(TArgs...)> func;
 
-                FunctionCallable(::cpp::Function<TReturn(TArgs...)> inFunc) : func(inFunc) {}
+                FunctionCallable(::cpp::Function<TReturn(TArgs...)> inFunc) : func(inFunc)
+                {
+                   HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+                }
 
                 TReturn HX_LOCAL_RUN(TArgs... args) override
                 {
@@ -116,7 +119,10 @@ namespace hx
             {
                 Callable<TOtherReturn(TOtherArgs...)> wrapped;
 
-                AdapterCallable(Callable<TOtherReturn(TOtherArgs...)> _wrapped) : wrapped(_wrapped) {}
+                AdapterCallable(Callable<TOtherReturn(TOtherArgs...)> _wrapped) : wrapped(_wrapped)
+                {
+                   HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+                }
 
                 TReturn HX_LOCAL_RUN(TArgs... args) override
                 {
@@ -146,7 +152,10 @@ namespace hx
             {
                 Callable<void(TOtherArgs...)> wrapped;
 
-                AdapterCallable(Callable<void(TOtherArgs...)> _wrapped) : wrapped(_wrapped) {}
+                AdapterCallable(Callable<void(TOtherArgs...)> _wrapped) : wrapped(_wrapped)
+                {
+                   HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+                }
 
                 TReturn HX_LOCAL_RUN(TArgs... args) override
                 {
@@ -186,7 +195,10 @@ namespace hx
                     {
                         Dynamic wrapped;
 
-                        DynamicCallable(Dynamic _wrapped) : wrapped(_wrapped) {}
+                        DynamicCallable(Dynamic _wrapped) : wrapped(_wrapped)
+                        {
+                           HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+                        }
 
                         TReturn HX_LOCAL_RUN(TArgs... args) override
                         {
@@ -274,7 +286,10 @@ namespace hx
             {
                 Callable<TOtherReturn(TOtherArgs...)> wrapped;
 
-                AdapterCallable(Callable<TOtherReturn(TOtherArgs...)> _wrapped) : wrapped(_wrapped) {}
+                AdapterCallable(Callable<TOtherReturn(TOtherArgs...)> _wrapped) : wrapped(_wrapped)
+                {
+                   HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+                }
 
                 void HX_LOCAL_RUN(TArgs... args) override
                 {
@@ -312,7 +327,10 @@ namespace hx
                     {
                         Dynamic wrapped;
 
-                        DynamicCallable(Dynamic _wrapped) : wrapped(_wrapped) {}
+                        DynamicCallable(Dynamic _wrapped) : wrapped(_wrapped)
+                        {
+                           HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+                        }
 
                         void HX_LOCAL_RUN(TArgs... args) override
                         {
