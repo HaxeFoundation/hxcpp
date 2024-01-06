@@ -66,7 +66,7 @@ class SafeSorter
 #else
         Dynamic
 #endif
-       = SorterFunc;
+        SorterFunc;
 
     struct ArraySorter
     {
