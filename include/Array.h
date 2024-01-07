@@ -625,14 +625,10 @@ class Array_obj : public hx::ArrayBase
 
 #if (HXCPP_API_LEVEL>=500)
    template<class TO>
-#endif
-   typedef
-#if (HXCPP_API_LEVEL>=500)
-       hx::Callable<TO(Elem)>
+   using MappingFunc = hx::Callable<TO(Elem)>;
 #else
-       Dynamic
+   typedef Dynamic MappingFunc;
 #endif
-       MappingFunc;
 
 public:
    enum { _hx_ClassId = ArrayClassId<ELEM_>::id };
