@@ -381,7 +381,11 @@ CppiaExpr *createGlobalBuiltin(CppiaExpr *src, String function, Expressions &ioE
    if (function==HX_CSTRING("__hxcpp_thread_create") )
    {
       if (ioExpressions.size()==1)
-         return new ObjectBuiltin1<Dynamic,Dynamic,__hxcpp_thread_create>(src,ioExpressions);
+#if (HXCPP_API_LEVEL>=500)
+         return new ObjectBuiltin1<Callable<void(void)>, Dynamic, __hxcpp_thread_create>(src, ioExpressions);
+#else
+         return new ObjectBuiltin1<Dynamic, Dynamic, __hxcpp_thread_create>(src, ioExpressions);
+#endif
    }
    if (function==HX_CSTRING("__hxcpp_thread_send") )
    {

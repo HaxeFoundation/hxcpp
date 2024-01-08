@@ -872,6 +872,15 @@ inline T &runValue(T& outValue, CppiaCtx *ctx, CppiaExpr *expr)
    return null();
 }
 
+#if (HXCPP_API_LEVEL>=500)
+template<typename... TArgs>
+inline hx::Callable<void(TArgs...)>& runValue(hx::Callable<void(TArgs...)>& outValue, CppiaCtx* ctx, CppiaExpr* expr)
+{
+   expr->runVoid(ctx);
+   return outValue = hx::Callable<void(TArgs...)>();
+}
+#endif
+
 template<> inline int &runValue(int& outValue, CppiaCtx *ctx, CppiaExpr *expr)
 {
    return outValue = expr->runInt(ctx);
