@@ -174,9 +174,8 @@ namespace
 		}
 	};
 
-	class TcpServerImpl final
+	struct TcpServerImpl final
 	{
-	public:
 		static const int KEEP_ALIVE_VALUE = 5;
 
 		uv_tcp_t tcp;
@@ -184,7 +183,9 @@ namespace
 		ConnectionQueue connections;
 		int keepAlive;
 
-		TcpServerImpl(uv_loop_t* _loop) : loop(_loop), keepAlive(KEEP_ALIVE_VALUE)
+		TcpServerImpl(uv_loop_t* _loop)
+			: loop(_loop)
+			, keepAlive(KEEP_ALIVE_VALUE)
 		{
 			tcp.data = this;
 		}
@@ -192,13 +193,15 @@ namespace
 
 	class LibuvTcpServer final : public hx::asys::net::TcpServer_obj
 	{
-	public:
 		TcpServerImpl* server;
 
+	public:
 		LibuvTcpServer(TcpServerImpl* _server)
 			: TcpServer_obj(hx::asys::libuv::getName(reinterpret_cast<uv_handle_t*>(&_server->tcp), false))
 			, server(_server)
-		{}
+		{
+			HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+		}
 
 		void accept(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
@@ -325,6 +328,16 @@ namespace
 				cbSuccess();
 			}
 		}
+		void __Mark(hx::MarkContext* __inCtx) override
+		{
+			HX_MARK_MEMBER(localAddress);
+		}
+#ifdef HXCPP_VISIT_ALLOCS
+		void __Visit(hx::VisitContext* __inCtx) override
+		{
+			HX_VISIT_MEMBER(localAddress);
+		}
+#endif
 		static void on_connection(uv_stream_t* stream, int status)
 		{
 			auto server = reinterpret_cast<TcpServerImpl*>(stream->data);
