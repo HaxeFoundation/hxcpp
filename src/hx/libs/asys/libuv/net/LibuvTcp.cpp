@@ -97,14 +97,13 @@ namespace
 		}
 	};
 
-	struct TcpSocketImpl final
+	struct TcpSocketImpl final : public hx::asys::libuv::stream::StreamReader
 	{
 		uv_tcp_t tcp;
-		hx::asys::libuv::stream::StreamReader reader;
 
-		TcpSocketImpl() : reader(reinterpret_cast<uv_stream_t*>(&tcp))
+		TcpSocketImpl() : hx::asys::libuv::stream::StreamReader(reinterpret_cast<uv_stream_t*>(&tcp))
 		{
-			tcp.data = this;
+			tcp.data = reinterpret_cast<hx::asys::libuv::stream::StreamReader*>(this);
 		}
 	};
 
@@ -164,7 +163,7 @@ namespace
 				else
 				{
 					uv_close(reinterpret_cast<uv_handle_t*>(request->handle), [](uv_handle_t* handle) {
-						delete static_cast<TcpSocketImpl*>(handle->data);
+						delete static_cast<hx::asys::libuv::stream::StreamReader*>(handle->data);
 					});
 
 					Dynamic(spData->cbSuccess.rooted)();
@@ -182,7 +181,7 @@ namespace
 		}
 		void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
-			socket->reader.read(output, offset, length, cbSuccess, cbFailure);
+			socket->read(output, offset, length, cbSuccess, cbFailure);
 		}
 
 		// Inherited via TcpSocket_obj
@@ -331,7 +330,7 @@ namespace
 			// TODO : Not convinced we don't need the shutdown.
 
 			uv_close(reinterpret_cast<uv_handle_t*>(&server->tcp), [](uv_handle_t* handle) {
-				delete static_cast<TcpSocketImpl*>(handle->data);
+				delete static_cast<hx::asys::libuv::stream::StreamReader*>(handle->data);
 			});
 
 			cbSuccess();

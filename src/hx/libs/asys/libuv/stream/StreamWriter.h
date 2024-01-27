@@ -27,7 +27,7 @@ namespace hx::asys::libuv::stream
         QueuedFlush(int _id, Dynamic _cbSuccess, Dynamic _cbFailure);
     };
 
-    class StreamWriter final
+    class StreamWriter
     {
     public:
         const int CHUNK_SIZE = static_cast<int>(std::numeric_limits<uint16_t>::max());
@@ -38,6 +38,7 @@ namespace hx::asys::libuv::stream
         std::deque<std::unique_ptr<QueuedFlush>> flushQueue;
 
         StreamWriter(uv_stream_t* _stream);
+        virtual ~StreamWriter() = default;
 
         void write(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure);
 
