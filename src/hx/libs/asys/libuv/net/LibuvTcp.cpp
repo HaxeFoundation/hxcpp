@@ -101,8 +101,11 @@ namespace
 	struct TcpSocketImpl final : public hx::asys::libuv::stream::StreamReader
 	{
 		uv_tcp_t tcp;
+		int keepAlive;
 
-		TcpSocketImpl() : hx::asys::libuv::stream::StreamReader(reinterpret_cast<uv_stream_t*>(&tcp))
+		TcpSocketImpl()
+			: hx::asys::libuv::stream::StreamReader(reinterpret_cast<uv_stream_t*>(&tcp))
+			, keepAlive(KEEP_ALIVE_VALUE)
 		{
 			tcp.data = reinterpret_cast<hx::asys::libuv::stream::StreamReader*>(this);
 		}
@@ -185,24 +188,77 @@ namespace
 			socket->read(output, offset, length, cbSuccess, cbFailure);
 		}
 
-		// Inherited via TcpSocket_obj
-		void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) override
-		{
-		}
 		void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
+			auto size = 0;
+			auto result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(&socket->tcp, &size), &size);
+
+			if (result < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+			}
+			else
+			{
+				cbSuccess(size);
+			}
 		}
 		void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
+			auto size = 0;
+			auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(&socket->tcp), &size);
+
+			if (result < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+			}
+			else
+			{
+				cbSuccess(size);
+			}
+		}
+		void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) override
+		{
+			cbSuccess(socket->keepAlive > 0);
 		}
 		void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
+			auto result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(&socket->tcp), &size);
+
+			if (result < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+			}
+			else
+			{
+				cbSuccess(size);
+			}
 		}
 		void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
+			auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(&socket->tcp), &size);
+
+			if (result < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+			}
+			else
+			{
+				cbSuccess(size);
+			}
 		}
 		void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
+			auto result = uv_tcp_keepalive(&socket->tcp, keepAlive, socket->keepAlive);
+			if (result < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+			}
+			else
+			{
+				socket->keepAlive = keepAlive ? KEEP_ALIVE_VALUE : 0;
+
+				cbSuccess();
+			}
 		}
 
 		void __Mark(hx::MarkContext* __inCtx) override
@@ -512,6 +568,13 @@ namespace
 					auto socket = std::make_unique<TcpSocketImpl>();
 
 					if ((result = uv_tcp_init(server->loop, &socket->tcp)) < 0)
+					{
+						Dynamic(request->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
+
+						return;
+					}
+
+					if ((result = uv_tcp_keepalive(&socket->tcp, true, socket->keepAlive)) < 0)
 					{
 						Dynamic(request->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
 
