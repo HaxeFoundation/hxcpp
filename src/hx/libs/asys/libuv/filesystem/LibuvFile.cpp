@@ -11,17 +11,22 @@ namespace
     struct WriteRequest final : hx::asys::libuv::filesystem::FsRequest
     {
     private:
-        std::vector<char> staging;
+        hx::ArrayPin* pin;
 
     public:
         const uv_buf_t buffer;
 
-        WriteRequest(int _size, Dynamic _cbSuccess, Dynamic _cbFailure)
+        WriteRequest(hx::ArrayPin* _pin, int _offset, int _length, Dynamic _cbSuccess, Dynamic _cbFailure)
             : FsRequest(_cbSuccess, _cbFailure)
-            , staging(_size)
-            , buffer(uv_buf_init(staging.data(), staging.capacity()))
+            , pin(_pin)
+            , buffer(uv_buf_init(pin->GetBase() + _offset, _length))
         {
             //
+        }
+
+        ~WriteRequest()
+        {
+           delete pin;
         }
     };
 
@@ -216,11 +221,8 @@ hx::asys::libuv::filesystem::LibuvFile_obj::LibuvFile_obj(uv_loop_t* _loop, uv_f
 
 void hx::asys::libuv::filesystem::LibuvFile_obj::write(::cpp::Int64 pos, Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
 {
-    auto request = std::make_unique<WriteRequest>(length, cbSuccess, cbFailure);
-
-    std::memcpy(request->buffer.base, data->getBase() + offset, length);
-
-    auto result = uv_fs_write(loop, &request->uv, file, &request->buffer, 1, pos, FsRequest::callback);
+    auto request = std::make_unique<WriteRequest>(data->Pin(), offset, length, cbSuccess, cbFailure);
+    auto result  = uv_fs_write(loop, &request->uv, file, &request->buffer, 1, pos, FsRequest::callback);
 
     if (result < 0)
     {

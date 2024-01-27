@@ -260,57 +260,57 @@ void hx::asys::libuv::net::LibuvSocket::getRecvBufferSize(Dynamic cbSuccess, Dyn
         cbSuccess(size);
     }
 }
-
-void hx::asys::net::Socket_obj::connect_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
-{
-    auto address = sockaddr_in();
-    auto result  = uv_ip4_addr(host.utf8_str(), port, &address); 
-
-    if (result < 0)
-    {
-        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-        return;
-    }
-
-    connect_impl(ctx, reinterpret_cast<sockaddr*>(&address), port, options, cbSuccess, cbFailure);
-}
-
-void hx::asys::net::Socket_obj::connect_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
-{
-    auto address = sockaddr_in6();
-    auto result  = uv_ip6_addr(host.utf8_str(), port, &address); 
-
-    if (result < 0)
-    {
-        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-        return;
-    }
-
-    connect_impl(ctx, reinterpret_cast<sockaddr*>(&address), port, options, cbSuccess, cbFailure);
-}
-
-void hx::asys::net::Socket_obj::connect_ipc(Context ctx, const String path, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
-{
-    auto libuvCtx = hx::asys::libuv::context(ctx);
-    auto connect  = std::make_unique<uv_connect_t>();
-    auto pipe     = std::make_unique<uv_pipe_t>();
-    auto result   = 0;
-
-    if ((result = uv_pipe_init(libuvCtx->uvLoop, pipe.get(), false)) < 0)
-    {
-        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-        return;
-    }
-    else
-    {
-        connect->data = new ConnectRequest(options, cbSuccess, cbFailure);
-
-        connect.release();
-        pipe.release();
-
-        uv_pipe_connect(connect.get(), pipe.get(), path.utf8_str(), &on_connection);
-    }
-}
+//
+//void hx::asys::net::Socket_obj::connect_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
+//{
+//    auto address = sockaddr_in();
+//    auto result  = uv_ip4_addr(host.utf8_str(), port, &address); 
+//
+//    if (result < 0)
+//    {
+//        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+//
+//        return;
+//    }
+//
+//    connect_impl(ctx, reinterpret_cast<sockaddr*>(&address), port, options, cbSuccess, cbFailure);
+//}
+//
+//void hx::asys::net::Socket_obj::connect_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
+//{
+//    auto address = sockaddr_in6();
+//    auto result  = uv_ip6_addr(host.utf8_str(), port, &address); 
+//
+//    if (result < 0)
+//    {
+//        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+//
+//        return;
+//    }
+//
+//    connect_impl(ctx, reinterpret_cast<sockaddr*>(&address), port, options, cbSuccess, cbFailure);
+//}
+//
+//void hx::asys::net::Socket_obj::connect_ipc(Context ctx, const String path, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
+//{
+//    auto libuvCtx = hx::asys::libuv::context(ctx);
+//    auto connect  = std::make_unique<uv_connect_t>();
+//    auto pipe     = std::make_unique<uv_pipe_t>();
+//    auto result   = 0;
+//
+//    if ((result = uv_pipe_init(libuvCtx->uvLoop, pipe.get(), false)) < 0)
+//    {
+//        cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+//
+//        return;
+//    }
+//    else
+//    {
+//        connect->data = new ConnectRequest(options, cbSuccess, cbFailure);
+//
+//        connect.release();
+//        pipe.release();
+//
+//        uv_pipe_connect(connect.get(), pipe.get(), path.utf8_str(), &on_connection);
+//    }
+//}

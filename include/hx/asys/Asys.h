@@ -10,6 +10,8 @@ HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
 HX_DECLARE_CLASS3(hx, asys, net, Socket)
 HX_DECLARE_CLASS3(hx, asys, net, Server)
+HX_DECLARE_CLASS3(hx, asys, net, TcpServer)
+HX_DECLARE_CLASS3(hx, asys, net, TcpSocket)
 HX_DECLARE_CLASS3(hx, asys, system, Process)
 HX_DECLARE_CLASS3(hx, asys, system, CurrentProcess)
 HX_DECLARE_CLASS3(hx, asys, system, ChildProcess)
@@ -155,17 +157,39 @@ namespace hx
                 virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
-            class Server_obj : public Object
-            {
-            protected:
-                Server_obj(hx::EnumBase _name) : name(_name) {}
+            //class Server_obj : public Object
+            //{
+            //protected:
+            //    Server_obj(hx::EnumBase _name) : name(_name) {}
 
+            //public:
+            //    const hx::EnumBase name;
+
+            //    static void open_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+            //    static void open_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+            //    static void open_ipc(Context ctx, const String path, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+
+            //    virtual void accept(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //    virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+            //    virtual void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //    virtual void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //    virtual void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+            //    virtual void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //    virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //    virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            //};
+
+            class TcpServer_obj : public Object
+            {
             public:
-                const hx::EnumBase name;
+                const hx::EnumBase localAddress;
+
+                TcpServer_obj(hx::EnumBase _localAddress) : localAddress(_localAddress) {}
 
                 static void open_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
                 static void open_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
-                static void open_ipc(Context ctx, const String path, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual void accept(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
@@ -177,6 +201,23 @@ namespace hx
                 virtual void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            };
+
+            class TcpSocket_obj : public virtual Object, public virtual Duplex_obj
+            {
+            public:
+                const hx::EnumBase name;
+                const hx::EnumBase peer;
+
+                //static void connect(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+
+                virtual void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+                virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
             // class UdpSocket_obj : public Object
