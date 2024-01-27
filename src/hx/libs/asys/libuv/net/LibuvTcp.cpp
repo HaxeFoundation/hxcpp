@@ -5,66 +5,11 @@
 #include <memory>
 #include "../stream/StreamReader.h"
 #include "../LibuvUtils.h"
+#include "NetUtils.h"
 
 namespace
 {
 	const int KEEP_ALIVE_VALUE = 5;
-
-	hx::Anon getLocalAddress(uv_tcp_t* tcp)
-	{
-		auto storage = sockaddr_storage();
-		auto length  = int(sizeof(sockaddr_storage));
-		auto result  = uv_tcp_getsockname(tcp, reinterpret_cast<sockaddr*>(&storage), &length);
-
-		if (result < 0)
-		{
-			return null();
-		}
-		else
-		{
-			auto name = std::array<char, UV_IF_NAMESIZE>();
-			auto port = int(reinterpret_cast<sockaddr_in*>(&storage)->sin_port);
-
-			if ((result = uv_ip_name(reinterpret_cast<sockaddr*>(&storage), name.data(), name.size())) < 0)
-			{
-				return null();
-			}
-
-			return
-				hx::Anon(
-					hx::Anon_obj::Create(2)
-						->setFixed(0, HX_CSTRING("host"), String::create(name.data()))
-						->setFixed(1, HX_CSTRING("port"), port));
-		}
-	}
-
-	hx::Anon getRemoteAddress(uv_tcp_t* tcp)
-	{
-		auto storage = sockaddr_storage();
-		auto length  = int(sizeof(sockaddr_storage));
-		auto result  = uv_tcp_getpeername(tcp, reinterpret_cast<sockaddr*>(&storage), &length);
-
-		if (result < 0)
-		{
-			return null();
-		}
-		else
-		{
-			auto name = std::array<char, UV_IF_NAMESIZE>();
-			auto port = int(reinterpret_cast<sockaddr_in*>(&storage)->sin_port);
-
-			if ((result = uv_ip_name(reinterpret_cast<sockaddr*>(&storage), name.data(), name.size())) < 0)
-			{
-				return null();
-			}
-
-			return
-				hx::Anon(
-					hx::Anon_obj::Create(2)
-						->setFixed(0, HX_CSTRING("host"), String::create(name.data()))
-						->setFixed(1, HX_CSTRING("port"), port));
-		}
-	}
 
 	class WriteRequest final : hx::asys::libuv::BaseRequest
 	{
@@ -120,8 +65,8 @@ namespace
 		{
 			HX_OBJ_WB_NEW_MARKED_OBJECT(this);
 
-			localAddress  = getLocalAddress(&socket->tcp);
-			remoteAddress = getRemoteAddress(&socket->tcp);
+			localAddress  = hx::asys::libuv::net::getLocalAddress(&socket->tcp);
+			remoteAddress = hx::asys::libuv::net::getRemoteAddress(&socket->tcp);
 		}
 
 		void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
@@ -336,7 +281,7 @@ namespace
 		{
 			HX_OBJ_WB_NEW_MARKED_OBJECT(this);
 
-			localAddress = getLocalAddress(&server->tcp);
+			localAddress = hx::asys::libuv::net::getLocalAddress(&server->tcp);
 		}
 
 		void accept(Dynamic cbSuccess, Dynamic cbFailure) override
