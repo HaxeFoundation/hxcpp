@@ -8,6 +8,64 @@
 
 namespace
 {
+	const int KEEP_ALIVE_VALUE = 5;
+
+	hx::Anon getLocalAddress(uv_tcp_t* tcp)
+	{
+		auto storage = sockaddr_storage();
+		auto length  = int(sizeof(sockaddr_storage));
+		auto result  = uv_tcp_getsockname(tcp, reinterpret_cast<sockaddr*>(&storage), &length);
+
+		if (result < 0)
+		{
+			return null();
+		}
+		else
+		{
+			auto name = std::array<char, UV_IF_NAMESIZE>();
+			auto port = int(reinterpret_cast<sockaddr_in*>(&storage)->sin_port);
+
+			if ((result = uv_ip_name(reinterpret_cast<sockaddr*>(&storage), name.data(), name.size())) < 0)
+			{
+				return null();
+			}
+
+			return
+				hx::Anon(
+					hx::Anon_obj::Create(2)
+						->setFixed(0, HX_CSTRING("host"), String::create(name.data()))
+						->setFixed(1, HX_CSTRING("port"), port));
+		}
+	}
+
+	hx::Anon getRemoteAddress(uv_tcp_t* tcp)
+	{
+		auto storage = sockaddr_storage();
+		auto length  = int(sizeof(sockaddr_storage));
+		auto result  = uv_tcp_getpeername(tcp, reinterpret_cast<sockaddr*>(&storage), &length);
+
+		if (result < 0)
+		{
+			return null();
+		}
+		else
+		{
+			auto name = std::array<char, UV_IF_NAMESIZE>();
+			auto port = int(reinterpret_cast<sockaddr_in*>(&storage)->sin_port);
+
+			if ((result = uv_ip_name(reinterpret_cast<sockaddr*>(&storage), name.data(), name.size())) < 0)
+			{
+				return null();
+			}
+
+			return
+				hx::Anon(
+					hx::Anon_obj::Create(2)
+						->setFixed(0, HX_CSTRING("host"), String::create(name.data()))
+						->setFixed(1, HX_CSTRING("port"), port));
+		}
+	}
+
 	class WriteRequest final : hx::asys::libuv::BaseRequest
 	{
 		std::unique_ptr<hx::ArrayPin> pin;
@@ -39,9 +97,8 @@ namespace
 		}
 	};
 
-	class TcpSocketImpl final
+	struct TcpSocketImpl final
 	{
-	public:
 		uv_tcp_t tcp;
 		hx::asys::libuv::stream::StreamReader reader;
 
@@ -56,7 +113,13 @@ namespace
 		TcpSocketImpl* socket;
 
 	public:
-		LibuvTcpSocket(TcpSocketImpl* _socket) : socket(_socket) {}
+		LibuvTcpSocket(TcpSocketImpl* _socket) : socket(_socket)
+		{
+			HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+
+			localAddress  = getLocalAddress(&socket->tcp);
+			remoteAddress = getRemoteAddress(&socket->tcp);
+		}
 
 		void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
@@ -123,6 +186,9 @@ namespace
 		}
 
 		// Inherited via TcpSocket_obj
+		void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) override
+		{
+		}
 		void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
 		}
@@ -135,72 +201,86 @@ namespace
 		void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
 		}
-	};
-
-	/// <summary>
-	/// Every time the user calls `Accept` on the server the callback is rooted and stored in this queue.
-	/// Whenever libuv notifies us of a incoming connection the front of the queue will be popped and used.
-	/// </summary>
-	class ConnectionQueue
-	{
-	private:
-		std::deque<std::unique_ptr<hx::asys::libuv::BaseRequest>> queue;
-
-	public:
-		ConnectionQueue() : queue(std::deque<std::unique_ptr<hx::asys::libuv::BaseRequest>>(0)) { }
-
-		void Clear()
+		void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
-			queue.clear();
 		}
 
-		void Enqueue(Dynamic cbSuccess, Dynamic cbFailure)
+		void __Mark(hx::MarkContext* __inCtx) override
 		{
-			queue.push_back(std::make_unique<hx::asys::libuv::BaseRequest>(cbSuccess, cbFailure));
+			HX_MARK_MEMBER(localAddress);
+			HX_MARK_MEMBER(remoteAddress);
 		}
-
-		std::unique_ptr<hx::asys::libuv::BaseRequest> tryDequeue()
+#ifdef HXCPP_VISIT_ALLOCS
+		void __Visit(hx::VisitContext* __inCtx) override
 		{
-			if (queue.empty())
-			{
-				return nullptr;
-			}
-
-			auto root = std::unique_ptr<hx::asys::libuv::BaseRequest>{ std::move(queue.front()) };
-
-			queue.pop_front();
-
-			return root;
+			HX_VISIT_MEMBER(localAddress);
+			HX_VISIT_MEMBER(remoteAddress);
 		}
-	};
-
-	struct TcpServerImpl final
-	{
-		static const int KEEP_ALIVE_VALUE = 5;
-
-		uv_tcp_t tcp;
-		uv_loop_t* loop;
-		ConnectionQueue connections;
-		int keepAlive;
-
-		TcpServerImpl(uv_loop_t* _loop)
-			: loop(_loop)
-			, keepAlive(KEEP_ALIVE_VALUE)
-		{
-			tcp.data = this;
-		}
+#endif
 	};
 
 	class LibuvTcpServer final : public hx::asys::net::TcpServer_obj
 	{
+		/// <summary>
+		/// Every time the user calls `Accept` on the server the callback is rooted and stored in this queue.
+		/// Whenever libuv notifies us of a incoming connection the front of the queue will be popped and used.
+		/// </summary>
+		class ConnectionQueue
+		{
+		private:
+			std::deque<std::unique_ptr<hx::asys::libuv::BaseRequest>> queue;
+
+		public:
+			ConnectionQueue() : queue(std::deque<std::unique_ptr<hx::asys::libuv::BaseRequest>>(0)) { }
+
+			void Clear()
+			{
+				queue.clear();
+			}
+
+			void Enqueue(Dynamic cbSuccess, Dynamic cbFailure)
+			{
+				queue.push_back(std::make_unique<hx::asys::libuv::BaseRequest>(cbSuccess, cbFailure));
+			}
+
+			std::unique_ptr<hx::asys::libuv::BaseRequest> tryDequeue()
+			{
+				if (queue.empty())
+				{
+					return nullptr;
+				}
+
+				auto root = std::unique_ptr<hx::asys::libuv::BaseRequest>{ std::move(queue.front()) };
+
+				queue.pop_front();
+
+				return root;
+			}
+		};
+
+		struct TcpServerImpl final
+		{
+			uv_tcp_t tcp;
+			uv_loop_t* loop;
+			ConnectionQueue connections;
+			int keepAlive;
+
+			TcpServerImpl(uv_loop_t* _loop)
+				: loop(_loop)
+				, keepAlive(KEEP_ALIVE_VALUE)
+			{
+				tcp.data = this;
+			}
+		};
+
 		TcpServerImpl* server;
 
 	public:
-		LibuvTcpServer(TcpServerImpl* _server)
-			: TcpServer_obj(hx::asys::libuv::getName(reinterpret_cast<uv_handle_t*>(&_server->tcp), false))
-			, server(_server)
+		LibuvTcpServer(TcpServerImpl* _server) : server(_server)
 		{
 			HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+
+			localAddress = getLocalAddress(&server->tcp);
 		}
 
 		void accept(Dynamic cbSuccess, Dynamic cbFailure) override
@@ -323,7 +403,7 @@ namespace
 			}
 			else
 			{
-				server->keepAlive = keepAlive ? TcpServerImpl::KEEP_ALIVE_VALUE : 0;
+				server->keepAlive = keepAlive ? KEEP_ALIVE_VALUE : 0;
 
 				cbSuccess();
 			}
@@ -338,9 +418,82 @@ namespace
 			HX_VISIT_MEMBER(localAddress);
 		}
 #endif
+
+		static void on_open(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
+		{
+			auto server = std::make_unique<TcpServerImpl>(ctx->uvLoop);
+			auto result = 0;
+
+			if ((result = uv_tcp_init(ctx->uvLoop, &server->tcp)) < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+				return;
+			}
+
+			if ((result = uv_tcp_bind(&server->tcp, address, 0)) < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+				return;
+			}
+
+			auto backlog = SOMAXCONN;
+
+			if (null() != options)
+			{
+				auto sendBufferSize = options->__Field(HX_CSTRING("sendBuffer"), hx::PropertyAccess::paccDynamic);
+				if (sendBufferSize.isInt())
+				{
+					if ((result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(server.get()), &sendBufferSize.valInt)) < 0)
+					{
+						cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+						return;
+					}
+				}
+
+				auto recvBufferSize = options->__Field(HX_CSTRING("receiveBuffer"), hx::PropertyAccess::paccDynamic);
+				if (recvBufferSize.isInt())
+				{
+					auto size = recvBufferSize.asInt();
+
+					if ((result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(server.get()), &recvBufferSize.valInt)) < 0)
+					{
+						cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+						return;
+					}
+				}
+
+				auto backlogSize = options->__Field(HX_CSTRING("backlog"), hx::PropertyAccess::paccDynamic);
+				if (!backlogSize.isInt())
+				{
+					backlog = backlogSize.asInt();
+				}
+			}
+
+			if ((result = uv_tcp_keepalive(&server->tcp, true, server->keepAlive)) < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+				return;
+			}
+
+			if ((result = uv_listen(reinterpret_cast<uv_stream_t*>(&server->tcp), backlog, LibuvTcpServer::on_connection)) < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+			}
+			else
+			{
+				cbSuccess(hx::asys::net::TcpServer(new LibuvTcpServer(server.release())));
+			}
+		}
+
 		static void on_connection(uv_stream_t* stream, int status)
 		{
-			auto server = reinterpret_cast<TcpServerImpl*>(stream->data);
+			auto gcZone = hx::AutoGCZone();
+			auto server = static_cast<TcpServerImpl*>(stream->data);
 
 			if (status < 0)
 			{
@@ -372,82 +525,11 @@ namespace
 						return;
 					}
 
-					Dynamic(request->cbSuccess.rooted)(hx::asys::net::Socket(new LibuvTcpSocket(socket.release())));
+					Dynamic(request->cbSuccess.rooted)(hx::asys::net::TcpSocket(new LibuvTcpSocket(socket.release())));
 				}
 			}
 		}
 	};
-
-	void open_tcp_impl(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
-	{
-		auto server = std::make_unique<TcpServerImpl>(ctx->uvLoop);
-		auto result = 0;
-
-		if ((result = uv_tcp_init(ctx->uvLoop, &server->tcp)) < 0)
-		{
-			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-			return;
-		}
-
-		if ((result = uv_tcp_bind(&server->tcp, address, 0)) < 0)
-		{
-			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-			return;
-		}
-
-		auto backlog = SOMAXCONN;
-
-		if (null() != options)
-		{
-			auto sendBufferSize = options->__Field(HX_CSTRING("sendBuffer"), hx::PropertyAccess::paccDynamic);
-			if (sendBufferSize.isInt())
-			{
-				if ((result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(server.get()), &sendBufferSize.valInt)) < 0)
-				{
-					cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-					return;
-				}
-			}
-
-			auto recvBufferSize = options->__Field(HX_CSTRING("receiveBuffer"), hx::PropertyAccess::paccDynamic);
-			if (recvBufferSize.isInt())
-			{
-				auto size = recvBufferSize.asInt();
-
-				if ((result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(server.get()), &recvBufferSize.valInt)) < 0)
-				{
-					cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-					return;
-				}
-			}
-
-			auto backlogSize = options->__Field(HX_CSTRING("backlog"), hx::PropertyAccess::paccDynamic);
-			if (!backlogSize.isInt())
-			{
-				backlog = backlogSize.asInt();
-			}
-		}
-
-		if ((result = uv_tcp_keepalive(&server->tcp, true, server->keepAlive)) < 0)
-		{
-			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-			return;
-		}
-
-		if ((result = uv_listen(reinterpret_cast<uv_stream_t*>(&server->tcp), backlog, LibuvTcpServer::on_connection)) < 0)
-		{
-			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-		}
-		else
-		{
-			cbSuccess(hx::asys::net::TcpServer(new LibuvTcpServer(server.release())));
-		}
-	}
 }
 
 void hx::asys::net::TcpServer_obj::open_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
@@ -461,7 +543,7 @@ void hx::asys::net::TcpServer_obj::open_ipv4(Context ctx, const String host, int
 	}
 	else
 	{
-		open_tcp_impl(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
+		LibuvTcpServer::on_open(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
 	}
 }
 
@@ -476,6 +558,6 @@ void hx::asys::net::TcpServer_obj::open_ipv6(Context ctx, const String host, int
 	}
 	else
 	{
-		open_tcp_impl(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
+		LibuvTcpServer::on_open(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
 	}
 }

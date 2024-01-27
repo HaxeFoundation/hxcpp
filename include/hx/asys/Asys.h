@@ -8,8 +8,6 @@ HX_DECLARE_CLASS2(hx, asys, Readable)
 HX_DECLARE_CLASS2(hx, asys, Duplex)
 HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
-HX_DECLARE_CLASS3(hx, asys, net, Socket)
-HX_DECLARE_CLASS3(hx, asys, net, Server)
 HX_DECLARE_CLASS3(hx, asys, net, TcpServer)
 HX_DECLARE_CLASS3(hx, asys, net, TcpSocket)
 HX_DECLARE_CLASS3(hx, asys, system, Process)
@@ -130,63 +128,10 @@ namespace hx
                 String name(const Ipv6Address ip);
             }
 
-            class Socket_obj : public Duplex_obj
-            {
-            protected:
-                Socket_obj(hx::EnumBase _name, hx::EnumBase _peer) : name(_name) , peer(_peer) {}
-
-            public:
-                const hx::EnumBase name;
-                const hx::EnumBase peer;
-
-                static void connect_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
-                static void connect_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
-                static void connect_ipc(Context ctx, const String path, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
-
-                virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override = 0;
-                virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override = 0;
-                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) override = 0;
-                virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-
-                virtual void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-
-                virtual void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            };
-
-            //class Server_obj : public Object
-            //{
-            //protected:
-            //    Server_obj(hx::EnumBase _name) : name(_name) {}
-
-            //public:
-            //    const hx::EnumBase name;
-
-            //    static void open_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
-            //    static void open_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
-            //    static void open_ipc(Context ctx, const String path, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
-
-            //    virtual void accept(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            //    virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-
-            //    virtual void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            //    virtual void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            //    virtual void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-
-            //    virtual void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            //    virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            //    virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-            //};
-
             class TcpServer_obj : public Object
             {
             public:
-                const hx::EnumBase localAddress;
-
-                TcpServer_obj(hx::EnumBase _localAddress) : localAddress(_localAddress) {}
+                hx::Anon localAddress;
 
                 static void open_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
                 static void open_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
@@ -203,20 +148,25 @@ namespace hx
                 virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
-            class TcpSocket_obj : public virtual Object, public virtual Duplex_obj
+            class TcpSocket_obj : public Object
             {
             public:
-                const hx::EnumBase name;
-                const hx::EnumBase peer;
+                hx::Anon localAddress;
+                hx::Anon remoteAddress;
 
                 //static void connect(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
 
+                virtual void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;
 
+                virtual void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
 
+                virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
