@@ -77,9 +77,10 @@ namespace
 		WriteRequest(hx::ArrayPin* _pin, char* _base, int _length, Dynamic _cbSuccess, Dynamic _cbFailure)
 			: BaseRequest(_cbSuccess, _cbFailure)
 			, pin(_pin)
-			, buffer(uv_buf_init(_base, _length)) {}
-
-		~WriteRequest() = default;
+			, buffer(uv_buf_init(_base, _length))
+		{
+			request.data = this;
+		}
 
 		static void callback(uv_write_t* request, int status)
 		{
@@ -125,7 +126,7 @@ namespace
 			auto request = std::make_unique<WriteRequest>(data->Pin(), data->GetBase() + offset, length, cbSuccess, cbFailure);
 			auto result  = uv_write(&request->request, reinterpret_cast<uv_stream_t*>(&socket->tcp), &request->buffer, 1, WriteRequest::callback);
 
-			if (result <= 0)
+			if (result < 0)
 			{
 				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 			}
@@ -330,7 +331,7 @@ namespace
 			// TODO : Not convinced we don't need the shutdown.
 
 			uv_close(reinterpret_cast<uv_handle_t*>(&server->tcp), [](uv_handle_t* handle) {
-				delete static_cast<hx::asys::libuv::stream::StreamReader*>(handle->data);
+				delete static_cast<TcpServerImpl*>(handle->data);
 			});
 
 			cbSuccess();
