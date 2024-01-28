@@ -154,7 +154,8 @@ namespace hx
                 hx::Anon localAddress;
                 hx::Anon remoteAddress;
 
-                //static void connect(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+                static void connect_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+                static void connect_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
 
                 virtual void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) = 0;

@@ -56,6 +56,22 @@ namespace
 		}
 	};
 
+	struct ConnectionRequest final : hx::asys::libuv::BaseRequest
+	{
+		std::unique_ptr<TcpSocketImpl> socket;
+		hx::RootedObject<hx::Object> options;
+
+		uv_connect_t connect;
+
+		ConnectionRequest(Dynamic _cbSuccess, Dynamic _cbFailure)
+			: hx::asys::libuv::BaseRequest(_cbSuccess, _cbFailure)
+			, socket(std::make_unique<TcpSocketImpl>())
+			, options(nullptr)
+		{
+			connect.data = this;
+		}
+	};
+
 	class LibuvTcpSocket final : public hx::asys::net::TcpSocket_obj
 	{
 		TcpSocketImpl* socket;
@@ -121,6 +137,10 @@ namespace
 
 			if ((result = uv_shutdown(&request->request, reinterpret_cast<uv_stream_t*>(&socket->tcp), callback)) < 0)
 			{
+				uv_close(reinterpret_cast<uv_handle_t*>(&socket->tcp), [](uv_handle_t* handle) {
+					delete static_cast<hx::asys::libuv::stream::StreamReader*>(handle->data);
+				});
+
 				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 			}
 			else
@@ -218,6 +238,43 @@ namespace
 			HX_VISIT_MEMBER(remoteAddress);
 		}
 #endif
+
+		static void on_connection(uv_connect_t* request, const int status)
+		{
+			auto gcZone = hx::AutoGCZone();
+			auto spData = std::unique_ptr<ConnectionRequest>(static_cast<ConnectionRequest*>(request->data));
+
+			if (status < 0)
+			{
+				Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
+
+				return;
+			}
+
+			Dynamic(spData->cbSuccess.rooted)(new LibuvTcpSocket(spData->socket.release()));
+		}
+
+		static void on_connect(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
+		{
+			auto request = std::make_unique<ConnectionRequest>(cbSuccess, cbFailure);
+			auto result  = 0;
+
+			if ((result = uv_tcp_init(ctx->uvLoop, &request->socket->tcp)) < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+				return;
+			}
+
+			if ((result = uv_tcp_connect(&request->connect, &request->socket->tcp, address, on_connection)) < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+			}
+			else
+			{
+				request.release();
+			}
+		}
 	};
 
 	class LibuvTcpServer final : public hx::asys::net::TcpServer_obj
@@ -567,5 +624,35 @@ void hx::asys::net::TcpServer_obj::open_ipv6(Context ctx, const String host, int
 	else
 	{
 		LibuvTcpServer::on_open(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
+	}
+}
+
+void hx::asys::net::TcpSocket_obj::connect_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
+{
+	auto address = sockaddr_in();
+	auto result = uv_ip4_addr(host.utf8_str(), port, &address);
+
+	if (result < 0)
+	{
+		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+	}
+	else
+	{
+		LibuvTcpSocket::on_connect(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
+	}
+}
+
+void hx::asys::net::TcpSocket_obj::connect_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
+{
+	auto address = sockaddr_in6();
+	auto result  = uv_ip6_addr(host.utf8_str(), port, &address);
+
+	if (result < 0)
+	{
+		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+	}
+	else
+	{
+		LibuvTcpSocket::on_connect(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
 	}
 }
