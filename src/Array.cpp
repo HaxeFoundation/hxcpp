@@ -36,7 +36,7 @@ ArrayBase::ArrayBase(int inSize,int inReserve,int inElementSize,bool inAtomic)
                inElementSize==sizeof(String) ? aciStringArray : aciObjectArray;
 }
 
-#if (HXCPP_API_LEVEL>=500)
+#if (HXCPP_API_LEVEL>=430)
 ArrayPin::ArrayPin(char* inPtr) : ptr(inPtr)
 {
    hx::GCPinPtr(ptr);
