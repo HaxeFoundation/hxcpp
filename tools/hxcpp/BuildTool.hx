@@ -134,7 +134,8 @@ class BuildTool
       m64 = mDefines.exists("HXCPP_M64");
       m32 = mDefines.exists("HXCPP_M32");
       arm64 = mDefines.exists("HXCPP_ARM64");
-      if (m64==m32 && !arm64)
+      var otherArmArchitecture = mDefines.exists("HXCPP_ARMV6") || mDefines.exists("HXCPP_ARMV7") || mDefines.exists("HXCPP_ARMV7S");
+      if (m64==m32 && !arm64 && !otherArmArchitecture)
       {
          var arch = getArch();
 
