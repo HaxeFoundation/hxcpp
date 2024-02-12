@@ -444,14 +444,7 @@ void StackContext::dumpExceptionStack()
 ExceptionStackFrame::ExceptionStackFrame(const StackFrame &inFrame)
 {
    // It is safe to use the pointer in 331+
-   #if HXCPP_API_LEVEL > 330
    position = inFrame.position;
-   #else
-   // Must copy the pointer values
-   className =  inFrame.position->className;
-   functionName =  inFrame.position->functionName;
-   fileName =  inFrame.position->fileName;
-   #endif
 
    #ifdef HXCPP_STACK_LINE
    line = inFrame.lineNumber;
@@ -464,11 +457,9 @@ ExceptionStackFrame::ExceptionStackFrame(const StackFrame &inFrame)
    int line=0;
    #endif
 
-   #if HXCPP_API_LEVEL > 330
    const char *fileName = position->fileName;
    const char *className = position->className;
    const char *functionName = position->functionName;
-   #endif
 
    return FormatStack(fileName, className, functionName, line, inForDisplay);
 }

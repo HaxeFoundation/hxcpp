@@ -162,13 +162,8 @@ typedef hx::Object * (*ScriptableInterfaceFactory)(void **inVTable,::hx::Object 
 void ScriptableRegisterClass( String inName, int inBaseSize, ScriptNamedFunction *inFunctions, ScriptableClassFactory inFactory, ScriptFunction inConstruct);
 
 
-#if (HXCPP_API_LEVEL >= 330)
 void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions, void *inInterfacePointers);
 void ScriptableRegisterNameSlots(const char *inNames[], int inLength);
-
-#else
-void ScriptableRegisterInterface( String inName, ScriptNamedFunction *inFunctions,const hx::type_info *inType, ScriptableInterfaceFactory inFactory);
-#endif
 
 ::String ScriptableToString(void *);
 hx::Class ScriptableGetClass(void *);
@@ -202,17 +197,8 @@ void __scriptable_load_cppia(String inCode);
 void __scriptable_load_neko_bytes(Array<unsigned char> inBytes);
 void __scriptable_load_abc(Array<unsigned char> inBytes);
 
-#if (HXCPP_API_LEVEL >= 330)
-
 #define HX_SCRIPTABLE_REGISTER_INTERFACE(name,class) \
     hx::ScriptableRegisterInterface( HX_CSTRING(name), __scriptableFunctions, & class##_scriptable )
-
-#else
-
-#define HX_SCRIPTABLE_REGISTER_INTERFACE(name,class) \
-    hx::ScriptableRegisterInterface( HX_CSTRING(name), __scriptableFunctions, &typeid(class), class##__scriptable::__script_create )
-
-#endif
 
 #define HX_SCRIPTABLE_REGISTER_CLASS(name,class) \
    hx::ScriptableRegisterClass( HX_CSTRING(name), (int)offsetof(class##__scriptable,__scriptVTable) + sizeof(void *), __scriptableFunctions, class##__scriptable::__script_create, class##__scriptable::__script_construct )

@@ -313,15 +313,12 @@ template<typename T> struct TCast< ObjectPtr<T> >
    }
 };
 
-#if (HXCPP_API_LEVEL >= 330)
 template< > struct TCast< cpp::VirtualArray >
 {
    template<typename VAL> static inline cpp::VirtualArray cast(VAL inVal ) {
       return  cpp::VirtualArray(inVal);
    }
 };
-#endif
-
 
 // Cast to struct
 template<typename T,typename H> struct TCast< cpp::Struct<T,H> >
@@ -344,9 +341,7 @@ template<> struct DynamicConvertType< hx::Interface * > { enum { Convert = aciAl
 template<> struct DynamicConvertType< Array_obj<Dynamic> * > { enum { Convert = aciObjectArray }; };
 template<> struct DynamicConvertType< Array_obj< ::String> * > { enum { Convert = aciStringArray }; };
 template<typename T> struct DynamicConvertType< Array_obj<T> * > { enum { Convert = sizeof(T) }; };
-#if (HXCPP_API_LEVEL >= 330)
 template<> struct DynamicConvertType< cpp::VirtualArray_obj * > { enum { Convert = aciVirtualArray }; };
-#endif
 
 }
 
@@ -387,11 +382,7 @@ inline void __hxcpp_unsafe_set(hx::ObjectPtr<VALUE> &outForced, const Dynamic &i
    }
    else
    {
-      #if (HXCPP_API_LEVEL >= 331)
       outForced.mPtr = (VALUE *)(inD.mPtr);
-      #else
-      outForced.mPtr = (VALUE *)(inD.mPtr ? inD.mPtr->__GetRealObject() : 0);
-      #endif
    }
 }
 

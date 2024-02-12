@@ -214,10 +214,6 @@ typedef char HX_CHAR;
 // HXCPP includes...
 
 // Basic mapping from haxe -> c++
-#if (HXCPP_API_LEVEL<=330)
-typedef int Int;
-typedef bool Bool;
-#endif
 
 #ifdef HXCPP_FLOAT32
 typedef float Float;
@@ -277,12 +273,6 @@ namespace cpp {
      class CppInt32__;
 }
 
-
-#if (HXCPP_API_LEVEL < 320) && !defined(__OBJC__)
-typedef hx::Class Class;
-typedef hx::Class_obj Class_obj;
-#endif
-
 class Dynamic;
 class String;
 
@@ -306,11 +296,7 @@ public:
    virtual void visitAlloc(void **ioPtr)=0;
 };
 
-#if (HXCPP_API_LEVEL >= 330)
 typedef ::cpp::Variant Val;
-#else
-typedef ::Dynamic Val;
-#endif
 
 #ifdef HXCPP_GC_GENERATIONAL
   #define HXCPP_GC_NURSERY
@@ -319,7 +305,6 @@ typedef ::Dynamic Val;
 
 //#define HXCPP_COMBINE_STRINGS
 
-#if (HXCPP_API_LEVEL >= 313)
 enum PropertyAccessMode
 {
    paccNever   = 0,
@@ -330,12 +315,6 @@ typedef PropertyAccessMode PropertyAccess;
 #define HX_PROP_NEVER  hx::paccNever
 #define HX_PROP_DYNAMIC hx::paccDynamic
 #define HX_PROP_ALWAYS hx::paccAlways
-#else
-typedef bool PropertyAccess;
-#define HX_PROP_NEVER  false
-#define HX_PROP_DYNAMIC true
-#define HX_PROP_ALWAYS true
-#endif
 
 } // end namespace hx
 
@@ -378,11 +357,7 @@ typedef bool PropertyAccess;
 #include <hx/Debug.h>
 #include <hx/Boot.h>
 #include <hx/Undefine.h>
-#if (HXCPP_API_LEVEL>=330)
 #include <hx/LessThanEq.h>
-#else
-#include <cpp/Int64.h>
-#endif
 
 #endif
 

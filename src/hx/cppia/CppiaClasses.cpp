@@ -10,10 +10,6 @@ namespace hx
 class CppiaEnumBase : public EnumBase_obj
 {
 public:
-   #if (HXCPP_API_LEVEL<330)
-   CppiaClassInfo *classInfo; 
-   #endif
-
    CppiaEnumBase(CppiaClassInfo *inInfo) { classInfo = inInfo; }
 
    ::hx::ObjectPtr<hx::Class_obj > __GetClass() const;
@@ -62,15 +58,10 @@ struct CppiaEnumConstructor
          throw Dynamic(HX_CSTRING("Bad enum arg count"));
       if (args.size()==0)
          return value.mPtr;
-      #if (HXCPP_API_LEVEL >= 330)
       EnumBase_obj *result = new ((int)args.size()*sizeof(cpp::Variant)) CppiaEnumBase(classInfo);
       result->_hx_setIdentity(name, index, args.size());
       for(int i=0;i<args.size();i++)
          result->_hx_init( i, inArgs[i] );
-      #else
-      EnumBase_obj *result = new CppiaEnumBase(classInfo);
-      result->__Set(name, index, inArgs);
-      #endif
       return result;
    }
 
@@ -102,7 +93,6 @@ struct CppiaEnumConstructor
       if (!ok)
          printf("Bad enum arg count\n");
 
-      #if (HXCPP_API_LEVEL >= 330)
       compiler->callNative( (void *)createEnumBase, (void *)this );
       JitTemp result(compiler,jtPointer);
       compiler->move(result, sJitReturnReg);
@@ -130,7 +120,6 @@ struct CppiaEnumConstructor
 
       if (destType==etObject)
          compiler->move(inDest, sJitReturnReg.as(jtPointer));
-      #endif
    }
    #endif
 
@@ -841,49 +830,6 @@ bool CppiaClassInfo::load(CppiaStream &inStream)
     return isNew;
 }
 
-#if (HXCPP_API_LEVEL<330)
-void **CppiaClassInfo::createInterfaceVTable(int inTypeId)
-{
-   std::vector<CppiaExpr *> vtable;
-
-   HaxeNativeInterface *interface = cppia.types[inTypeId]->interfaceBase;
-   // Native-defined interface...
-   if (interface)
-   {
-      vtable.push_back( findInterfaceFunction("toString") );
-      ScriptNamedFunction *functions = interface->functions;
-      if (functions != 0) {
-         for(ScriptNamedFunction *f = functions; f->name; f++)
-            if (strcmp(f->name,"toString"))
-               vtable.push_back( findInterfaceFunction(f->name) );
-      }
-         
-   }
-
-   CppiaClassInfo *cls = cppia.types[inTypeId]->cppiaClass;
-   if (!cls && !interface)
-      throw "vtable for unknown class";
-
-   if (cls && !cls->isInterface)
-      throw "vtable for non-interface";
-
-   if (cls)
-   {
-      for(int i=0;i<cls->memberFunctions.size();i++)
-      {
-         CppiaFunction *func = cls->memberFunctions[i];
-         vtable.push_back( findFunction(false,func->nameId) );
-      }
-   }
-
-   void **result = new void *[ vtable.size() + 1];
-   result[0] = this;
-   result++;
-   memcpy(result, &vtable[0], sizeof(void *)*vtable.size());
-   return result;
-}
-#endif
-
 hx::Class *CppiaClassInfo::getSuperClass()
 {
    DBGLOG("getSuperClass %s %d\n", name.c_str(), superId);
@@ -955,7 +901,6 @@ void CppiaClassInfo::linkTypes()
       }
       else
       {
-         #if (HXCPP_API_LEVEL >= 330)
          HaxeNativeInterface *native = HaxeNativeInterface::findInterface( extraInterfaces->name.utf8_str() );
          if (native)
          {
@@ -972,7 +917,6 @@ void CppiaClassInfo::linkTypes()
                   interfaceSlotSize = slot;
             }
          }
-         #endif
          break;
       }
    }
@@ -1173,15 +1117,11 @@ void CppiaClassInfo::linkTypes()
    for(int i=0;i<implements.size();i++)
    {
       int id = implements[i];
-      #if (HXCPP_API_LEVEL < 330)
-      void **vtable = createInterfaceVTable(id);
-      #endif
 
       while(id > 0)
       {
          TypeData *interface = cppia.types[id];
          CppiaClassInfo  *cppiaInterface = interface->cppiaClass;
-         #if (HXCPP_API_LEVEL >= 330)
          HaxeNativeInterface *native = HaxeNativeInterface::findInterface( interface->name.utf8_str() );
          if (native)
          {
@@ -1202,9 +1142,6 @@ void CppiaClassInfo::linkTypes()
                }
             }
          }
-         #else
-         interfaceVTables[ interface->name.utf8_str() ] = vtable;
-         #endif
 
          if (!cppiaInterface)
             break;
@@ -1258,11 +1195,7 @@ void CppiaClassInfo::linkTypes()
       {
          EnumBase base = new CppiaEnumBase(this);
          e.value = base;
-         #if (HXCPP_API_LEVEL>=330)
          base->_hx_setIdentity(cppia.strings[e.nameId],i,0);
-         #else
-         base->__Set( cppia.strings[e.nameId],i,null() );
-         #endif
       }
       else
       {
@@ -1340,7 +1273,6 @@ void CppiaClassInfo::link()
    }
 
    // Find interface functions that are not implemented in client, but rely on host fallback...
-   #if (HXCPP_API_LEVEL >= 330)
    if (!isInterface)
    {
       std::vector<ScriptNamedFunction *> &nativeInterfaceFuncs = type->cppiaClass->nativeInterfaceFunctions;
@@ -1351,7 +1283,6 @@ void CppiaClassInfo::link()
             vtable[-interfaceSlot] = new ScriptCallable(cppia,nativeInterfaceFuncs[i]);
       }
    }
-   #endif
 
    // Vars ...
    if (!isInterface)
@@ -1817,11 +1748,7 @@ hx::Class_obj *createCppiaClass(CppiaClassInfo *inInfo) { return new CppiaClass(
 
 ::String CppiaEnumBase::__ToString() const
 {
-   #if (HXCPP_API_LEVEL>=330)
    return classInfo->getClass()->mName + HX_CSTRING(".") + _hx_tag;
-   #else
-   return classInfo->getClass()->mName + HX_CSTRING(".") + tag;
-   #endif
 }
 
 
@@ -1945,7 +1872,6 @@ bool ScriptableSetField(hx::Object *inObj, const ::String &inName, Dynamic inVal
    return ((CppiaClassInfo *)vtable[-1])->setField(inObj,inName,inValue,inCallProp,outResult);
 }
 
-#if (HXCPP_API_LEVEL >= 330)
 void *hx::Object::_hx_getInterface(int inId)
 {
    void **vtable = __GetScriptVTable();
@@ -1955,8 +1881,6 @@ void *hx::Object::_hx_getInterface(int inId)
    void *result = info->interfaceScriptTables[inId];
    return info->interfaceScriptTables[inId];
 }
-#endif
-
 
 
 } // end namespace hx

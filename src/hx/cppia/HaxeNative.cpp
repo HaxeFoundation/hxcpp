@@ -158,8 +158,6 @@ void ScriptableRegisterClass( String inName, int inDataOffset, ScriptNamedFuncti
 }
 
 
-#if (HXCPP_API_LEVEL >= 330)
-
 HaxeNativeInterface::HaxeNativeInterface(const std::string &inName,
                                          ScriptNamedFunction *inFunctions,
                                          void *inScriptTable )
@@ -180,36 +178,6 @@ void ScriptableRegisterInterface( String inName,
    HaxeNativeInterface *registered = new HaxeNativeInterface(inName.utf8_str(), inFunctions, inScriptTable);
    (*sScriptRegisteredInterface)[inName.utf8_str()] = registered;
 }
-
-#else
-
-
-HaxeNativeInterface::HaxeNativeInterface(const std::string &inName,
-                                         ScriptNamedFunction *inFunctions,
-                                         hx::ScriptableInterfaceFactory inFactory,
-                                         const hx::type_info *inType)
-{
-   functions = inFunctions;
-   factory = inFactory;
-   name = inName;
-   mType = inType;
-}
-
-void ScriptableRegisterInterface( String inName,
-                                  ScriptNamedFunction *inFunctions,
-                                  const hx::type_info *inType,
-                                  hx::ScriptableInterfaceFactory inFactory )
-{
-   DBGLOG("ScriptableInterfaceFactory %s\n",inName.out_str());
-   if (!sScriptRegisteredInterface)
-      sScriptRegisteredInterface = new HaxeNativeIntefaceMap();
-
-   HaxeNativeInterface *registered = new HaxeNativeInterface(inName.utf8_str(), inFunctions, inFactory,inType);
-   (*sScriptRegisteredInterface)[inName.utf8_str()] = registered;
-}
-
-#endif
-
 
 
 HaxeNativeInterface *HaxeNativeInterface::findInterface(const std::string &inName)

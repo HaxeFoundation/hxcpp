@@ -39,12 +39,10 @@ namespace hx
 
 String sNone[] = { String(null()) };
 
-#if (HXCPP_API_LEVEL>=332)
 bool Object::_hx_isInstanceOf(int inClassId)
 {
    return inClassId == hx::Object::_hx_ClassId;
 }
-#endif
 
 Dynamic Object::__IField(int inFieldID)
 {
@@ -61,11 +59,7 @@ Dynamic *Object::__GetFieldMap() { return 0; }
 
 int Object::__Compare(const Object *inRHS) const
 {
-   #if (HXCPP_API_LEVEL<331)
-   hx::Object *real = const_cast<Object *>(this)->__GetRealObject();
-   #else
    hx::Object *real = const_cast<Object *>(this);
-   #endif
    return real < inRHS ? -1 : real==inRHS ? 0 : 1;
 }
 
@@ -95,21 +89,11 @@ Dynamic Object::__SetItem(int inIndex,Dynamic) { return null();  }
 
 void Object::__SetThis(Dynamic inThis) { }
 
-#if (HXCPP_API_LEVEL<331)
-bool Object::__Is(Dynamic inClass ) const { return __Is(inClass.GetPtr()); }
-#endif
-
 hx::Class Object__mClass;
 
 bool AlwaysCast(Object *inPtr) { return inPtr!=0; }
 
-#if (HXCPP_API_LEVEL < 330)
-DynamicArray Object::__EnumParams() { return DynamicArray(); }
-String Object::__Tag() const { return HX_CSTRING("<not enum>"); }
-int Object::__Index() const { return -1; }
-#endif
-
-#if (HXCPP_API_LEVEL >= 330) && !defined(HXCPP_SCRIPTABLE)
+#if !defined(HXCPP_SCRIPTABLE)
 // Other implementation is in Cppia.cpp
 void *hx::Object::_hx_getInterface(int inId)
 {

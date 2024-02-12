@@ -133,9 +133,6 @@ public:
 
    static hx::ObjectPtr<hx::Class_obj> __mClass; \
    static hx::ObjectPtr<hx::Class_obj> &__SGetClass() { return __mClass; }
-   #if (HXCPP_API_LEVEL<331)
-   bool __Is(hx::Object *inObj) const { return dynamic_cast<OBJ_ *>(inObj)!=0; }
-   #endif
    hx::ObjectPtr<hx::Class_obj > __GetClass() const { return __mClass; }
 
    bool __Remove(String inKey);

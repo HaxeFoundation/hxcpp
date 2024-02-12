@@ -935,16 +935,7 @@ typedef hx::Hash< TDynamicElement<Float,true> >   WeakDynamicHashFloat;
 typedef hx::Hash< TDynamicElement<String,true> >  WeakDynamicHashString;
 typedef hx::Hash< TDynamicElement<cpp::Int64,true> >  WeakDynamicHashInt64;
 
-#if (HXCPP_API_LEVEL<331)
-inline void toRealObject(Dynamic &ioObject)
-{
-   if (ioObject!=null())
-      ioObject = ioObject->__GetRealObject();
-}
-#else
-   #define toRealObject(x)
-#endif
-
+#define toRealObject(x)
 }
 
 

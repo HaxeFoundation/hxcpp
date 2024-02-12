@@ -509,11 +509,7 @@ namespace cpp
                return 1;
             return String(valStringPtr, valStringLen)==inPtr->toString() ? 1 : 0;
          case typeObject:
-            #if (HXCPP_API_LEVEL>=331)
             return valObject->__Compare( inPtr );
-            #else
-            return valObject->__Compare( inPtr->__GetRealObject() );
-            #endif
          default: ;
 
       }

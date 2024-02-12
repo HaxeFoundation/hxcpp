@@ -151,10 +151,8 @@ public:
    }
    operator String() const { return HANDLER::toString(&value); }
 
-   #if (HXCPP_API_LEVEL >= 330)
    inline Struct( const hx::Val &inRHS) { fromDynamic(inRHS.asObject()); }
    operator hx::Val() const { return operator Dynamic(); }
-   #endif
 
    bool operator==(const Struct<T,HANDLER> &inRHS) const { return value==inRHS.value; }
    bool operator==(const null &inRHS) const { return false; }
@@ -274,9 +272,7 @@ public:
    inline T &set_ref(const T &inValue) { return *ptr = inValue;  }
 
    operator Dynamic () const { return CreateDynamicPointer((void *)ptr); }
-   #if (HXCPP_API_LEVEL >= 330)
    operator cpp::Variant () const { return CreateDynamicPointer((void *)ptr); }
-   #endif
 
    operator T * () { return ptr; }
    T * get_raw() { return ptr; }

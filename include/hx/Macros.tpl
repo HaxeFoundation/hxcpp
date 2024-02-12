@@ -156,11 +156,7 @@ static ::NS::Dynamic __##class##func(const Array< ::NS::Dynamic> &inArgs) \
    void __Visit(::hxNS::VisitContext *__inCtx) { DoVisitThis(__inCtx); ::VISITS:: } \
    name(::CONSTRUCT_ARGS::) : ::CONSTRUCT_VARS:: {}::end::
 
-#if (HXCPP_API_LEVEL>=330)
-  #define HX_LOCAL_RUN _hx_run
-#else
-  #define HX_LOCAL_RUN run
-#endif
+#define HX_LOCAL_RUN _hx_run
 
 #define HX_END_LOCAL_FUNC0(ret) HX_DYNAMIC_CALL0(ret, HX_LOCAL_RUN ) };
 ::foreach LOCALS::
