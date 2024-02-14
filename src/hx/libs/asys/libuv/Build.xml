@@ -98,14 +98,30 @@
             <compilerflag value='-D_GNU_SOURCE'/>
             <compilerflag value='-D_POSIX_C_SOURCE=200112'/>
 
-            <file name='${LIBUV_DIR}/src/unix/proctitle.c'/>
-            <file name='${LIBUV_DIR}/src/unix/linux-core.c'/>
-            <file name='${LIBUV_DIR}/src/unix/linux-inotify.c'/>
-            <file name='${LIBUV_DIR}/src/unix/linux-syscalls.c'/>
-            <file name='${LIBUV_DIR}/src/unix/procfs-exepath.c'/>
-            <file name='${LIBUV_DIR}/src/unix/random-getrandom.c'/>
-            <file name='${LIBUV_DIR}/src/unix/random-sysctl-linux.c'/>
-            <file name='${LIBUV_DIR}/src/unix/epoll.c'/>
+          <file name='${LIBUV_DIR}/src/unix/async.c'/>
+          <file name='${LIBUV_DIR}/src/unix/core.c'/>
+          <file name='${LIBUV_DIR}/src/unix/dl.c'/>
+          <file name='${LIBUV_DIR}/src/unix/fs.c'/>
+          <file name='${LIBUV_DIR}/src/unix/getaddrinfo.c'/>
+          <file name='${LIBUV_DIR}/src/unix/getnameinfo.c'/>
+          <file name='${LIBUV_DIR}/src/unix/loop-watcher.c'/>
+          <file name='${LIBUV_DIR}/src/unix/loop.c'/>
+          <file name='${LIBUV_DIR}/src/unix/pipe.c'/>
+          <file name='${LIBUV_DIR}/src/unix/poll.c'/>
+          <file name='${LIBUV_DIR}/src/unix/process.c'/>
+          <file name='${LIBUV_DIR}/src/unix/random-devurandom.c'/>
+          <file name='${LIBUV_DIR}/src/unix/signal.c'/>
+          <file name='${LIBUV_DIR}/src/unix/stream.c'/>
+          <file name='${LIBUV_DIR}/src/unix/tcp.c'/>
+          <file name='${LIBUV_DIR}/src/unix/thread.c'/>
+          <file name='${LIBUV_DIR}/src/unix/tty.c'/>
+          <file name='${LIBUV_DIR}/src/unix/udp.c'/>
+
+          <file name='${LIBUV_DIR}/src/unix/linux.c'/>
+          <file name='${LIBUV_DIR}/src/unix/procfs-exepath.c'/>
+          <file name='${LIBUV_DIR}/src/unix/random-getrandom.c'/>
+          <file name='${LIBUV_DIR}/src/unix/random-sysctl-linux.c'/>
+          <file name='${LIBUV_DIR}/src/unix/proctitle.c'/>
         </section>
 
         <section if='mac'>
@@ -166,6 +182,8 @@
                 <lib name='ole32.lib'/>
                 <lib name='uuid.lib'/>
                 <lib name='shell32.lib'/>
+                <lib name='secur32.lib'/>
+                <lib name='shlwapi.lib'/>
             </section>
 
             <section unless='windows'>

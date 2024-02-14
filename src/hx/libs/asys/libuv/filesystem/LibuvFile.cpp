@@ -88,7 +88,11 @@ namespace
                     spRequest->progress += count;
 
                     auto newFilePos = spRequest->pos + spRequest->progress;
+#ifdef HX_WINDOWS
                     auto result     = uv_fs_read(spRequest->uv.loop, &spRequest->uv, static_cast<uv_file>(spRequest->uv.file.fd), &spRequest->buffer, 1, newFilePos, onReadCallback);
+#else
+                    auto result = uv_fs_read(spRequest->uv.loop, &spRequest->uv, static_cast<uv_file>(spRequest->uv.file), &spRequest->buffer, 1, newFilePos, onReadCallback);
+#endif
 
                     if (result < 0)
                     {
