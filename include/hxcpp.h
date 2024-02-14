@@ -384,6 +384,7 @@ typedef bool PropertyAccess;
 #else
 #include <cpp/Int64.h>
 #endif
+#include <hx/Coroutine.h>
 
 #endif
 
