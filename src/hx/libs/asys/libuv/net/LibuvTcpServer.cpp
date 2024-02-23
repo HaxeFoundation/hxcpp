@@ -71,7 +71,7 @@ namespace
 			return;
 		}
 
-		auto backlog = 1;
+		auto backlog = SOMAXCONN;
 
 		if (null() != options)
 		{
@@ -100,7 +100,7 @@ namespace
 			}
 
 			auto backlogSize = options->__Field(HX_CSTRING("backlog"), hx::PropertyAccess::paccDynamic);
-			if (!backlogSize.isInt())
+			if (backlogSize.isInt())
 			{
 				backlog = backlogSize.asInt();
 			}
