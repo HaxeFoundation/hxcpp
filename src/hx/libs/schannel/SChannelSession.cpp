@@ -24,6 +24,12 @@ hx::schannel::SChannelContext::SChannelContext(const char* inHost)
 {
 }
 
+hx::schannel::SChannelContext::~SChannelContext()
+{
+	DeleteSecurityContext(&ctxtHandle);
+	FreeCredentialHandle(&credHandle);
+}
+
 void hx::schannel::SChannelContext::startHandshake(Dynamic cbSuccess, Dynamic cbFailure)
 {
 	/*auto parameter = TLS_PARAMETERS{ 0 };
@@ -86,7 +92,7 @@ void hx::schannel::SChannelContext::handshake(Array<uint8_t> input, Dynamic cbSu
 
 	auto result = SEC_E_OK;
 
-	switch ((result = InitializeSecurityContext(&credHandle, &ctxtHandle, const_cast<char*>(host), requestFlags, 0, 0, &inputBufferDescription, 0, NULL, &outputBufferDescription, &contextFlags, &ctxtTimestamp)))
+	switch ((result = InitializeSecurityContext(&credHandle, &ctxtHandle, const_cast<char*>(host), requestFlags, 0, 0, &inputBufferDescription, 0, nullptr, &outputBufferDescription, &contextFlags, &ctxtTimestamp)))
 	{
 	case SEC_E_OK:
 	{
@@ -206,6 +212,45 @@ void hx::schannel::SChannelContext::decode(Array<uint8_t> input, int offset, int
 	std::memcpy(output->GetBase(), buffers[1].pvBuffer, buffers[1].cbBuffer);
 
 	cbSuccess(output);
+}
+
+void hx::schannel::SChannelContext::close(Dynamic cbSuccess, Dynamic cbFailure)
+{
+	auto type                    = SCHANNEL_SHUTDOWN;
+	auto inputBuffer             = SecBuffer();
+	auto inputBufferDescription  = SecBufferDesc();
+
+	init_sec_buffer(&inputBuffer, SECBUFFER_TOKEN, &type, sizeof(type));
+	init_sec_buffer_desc(&inputBufferDescription, &inputBuffer, 1);
+
+	if (SEC_E_OK != ApplyControlToken(&ctxtHandle, &inputBufferDescription))
+	{
+		cbFailure(HX_CSTRING("Failed to apply control token"));
+
+		return;
+	}
+
+	auto outputBuffer            = SecBuffer();
+	auto outputBufferDescription = SecBufferDesc();
+
+	init_sec_buffer(&outputBuffer, SECBUFFER_EMPTY, nullptr, 0);
+	init_sec_buffer_desc(&outputBufferDescription, &outputBuffer, 1);
+
+	auto result = InitializeSecurityContext(&credHandle, &ctxtHandle, const_cast<char*>(host), requestFlags, 0, 0, nullptr, 0, nullptr, &outputBufferDescription, &contextFlags, &ctxtTimestamp);
+	if (result == SEC_E_OK || result == SEC_I_CONTEXT_EXPIRED)
+	{
+		auto output = Array<uint8_t>(outputBuffer.cbBuffer, outputBuffer.cbBuffer);
+
+		std::memcpy(output->getBase(), outputBuffer.pvBuffer, outputBuffer.cbBuffer);
+
+		FreeContextBuffer(outputBuffer.pvBuffer);
+
+		cbSuccess(output);
+	}
+	else
+	{
+		cbFailure(HX_CSTRING("Unexpected InitializeSecurityContext result"));
+	}
 }
 
 cpp::Pointer<hx::schannel::SChannelContext> hx::schannel::SChannelContext::create(::String host)

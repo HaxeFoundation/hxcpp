@@ -16,12 +16,14 @@
 
 namespace hx::schannel
 {
-	class SChannelContext
+	class SChannelContext final
 	{
 		const int TLS_MAX_PACKET_SIZE = (16384 + 512);
 
 		SChannelContext(const char* inHost);
 	public:
+		~SChannelContext();
+
 		const char* host;
 
 		CredHandle credHandle;
@@ -39,6 +41,7 @@ namespace hx::schannel
 
 		void encode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure);
 		void decode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure);
+		void close(Dynamic cbSuccess, Dynamic cbFailure);
 
 		static cpp::Pointer<SChannelContext> create(::String host);
 	};
