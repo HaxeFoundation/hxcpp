@@ -47,7 +47,7 @@ void hx::asys::libuv::stream::StreamReader::read(Array<uint8_t> output, int offs
         };
 
         auto result = uv_read_start(stream, alloc, read);
-        if (result < 0)
+        if (result < 0 && result != UV_EALREADY)
         {
             cbFailure(uv_err_to_enum(result));
 
