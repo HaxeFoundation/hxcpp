@@ -2,11 +2,16 @@
 
 #include <hxcpp.h>
 
-#include <winsock2.h>
-#include <windows.h>
+#define WIN32_LEAN_AND_MEAN
+
+#include <Windows.h>
+#include <SubAuth.h>
+
+#define SCHANNEL_USE_BLACKLISTS
 #define SECURITY_WIN32
-#include <security.h>
+
 #include <schannel.h>
+#include <security.h>
 #include <shlwapi.h>
 
 namespace hx::schannel

@@ -25,9 +25,14 @@ hx::schannel::SChannelContext::SChannelContext(const char* inHost)
 
 Array<uint8_t> hx::schannel::SChannelContext::startHandshake()
 {
-	auto credential = SCHANNEL_CRED{ 0 };
-	credential.dwFlags   = SCH_CRED_MANUAL_CRED_VALIDATION | SCH_CRED_IGNORE_NO_REVOCATION_CHECK | SCH_CRED_IGNORE_REVOCATION_OFFLINE | SCH_USE_STRONG_CRYPTO;
-	credential.dwVersion = SCHANNEL_CRED_VERSION;
+	/*auto parameter = TLS_PARAMETERS{ 0 };
+	parameter.grbitDisabledProtocols = SP_PROT_TLS1_3_CLIENT | SP_PROT_TLS1_3_SERVER;*/
+
+	auto credential = SCH_CREDENTIALS{ 0 };
+	credential.dwFlags   = SCH_CRED_MANUAL_CRED_VALIDATION | SCH_USE_STRONG_CRYPTO | SCH_CRED_NO_DEFAULT_CREDS;
+	credential.dwVersion = SCH_CREDENTIALS_VERSION;
+	/*credential.cTlsParameters = 1;
+	credential.pTlsParameters = &parameter;*/
 
 	if (SEC_E_OK != AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL, &credential, NULL, NULL, &credHandle, &credTimestamp))
 	{
@@ -74,7 +79,9 @@ hx::Anon hx::schannel::SChannelContext::handshake(Array<uint8_t> input)
 	init_sec_buffer(&outputBuffers[2], SECBUFFER_EMPTY, nullptr, 0);
 	init_sec_buffer_desc(&outputBufferDescription, outputBuffers.data(), outputBuffers.size());
 
-	switch (InitializeSecurityContext(&credHandle, &ctxtHandle, const_cast<char*>(host), requestFlags, 0, 0, &inputBufferDescription, 0, NULL, &outputBufferDescription, &contextFlags, &ctxtTimestamp))
+	auto result = SEC_E_OK;
+
+	switch ((result = InitializeSecurityContext(&credHandle, &ctxtHandle, const_cast<char*>(host), requestFlags, 0, 0, &inputBufferDescription, 0, NULL, &outputBufferDescription, &contextFlags, &ctxtTimestamp)))
 	{
 	case SEC_E_OK:
 	{

@@ -7,7 +7,6 @@
     
     <cache value='true' asLibrary='true'/>
 
-    <compilerflag value='-DWIN32_LEAN_AND_MEAN'/>
     <compilerflag value='/std:c++17'/>
 
     <file name='${this_dir}/SChannelSession.cpp'/>
