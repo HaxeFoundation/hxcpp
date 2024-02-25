@@ -163,7 +163,8 @@ void hx::schannel::SChannelContext::encode(Array<uint8_t> input, int offset, int
 
 	std::memcpy(buffers[1].pvBuffer, input->getBase() + offset, use);
 
-	if (SEC_E_OK != EncryptMessage(&ctxtHandle, 0, &buffersDescription, 0))
+	auto result = SEC_E_OK;
+	if (SEC_E_OK != (result = EncryptMessage(&ctxtHandle, 0, &buffersDescription, 0)))
 	{
 		cbFailure(HX_CSTRING("Failed to encrypt message"));
 
@@ -174,6 +175,35 @@ void hx::schannel::SChannelContext::encode(Array<uint8_t> input, int offset, int
 	auto output = Array<uint8_t>(total, total);
 
 	std::memcpy(output->getBase(), buffer.data(), total);
+
+	cbSuccess(output);
+}
+
+void hx::schannel::SChannelContext::decode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
+{
+	auto buffer             = std::vector<uint8_t>(length);
+	auto buffers            = std::array<SecBuffer, 4>();
+	auto buffersDescription = SecBufferDesc();
+
+	std::memcpy(buffer.data(), input->getBase() + offset, length);
+
+	init_sec_buffer(&buffers[0], SECBUFFER_DATA, buffer.data(), length);
+	init_sec_buffer(&buffers[1], SECBUFFER_EMPTY, nullptr, 0);
+	init_sec_buffer(&buffers[2], SECBUFFER_EMPTY, nullptr, 0);
+	init_sec_buffer(&buffers[3], SECBUFFER_EMPTY, nullptr, 0);
+	init_sec_buffer_desc(&buffersDescription, buffers.data(), buffers.size());
+
+	auto result = SEC_E_OK;
+	if (SEC_E_OK != (result = DecryptMessage(&ctxtHandle, &buffersDescription, 0, 0)))
+	{
+		cbFailure(HX_CSTRING("Failed to decrypt message"));
+
+		return;
+	}
+
+	auto output = Array<uint8_t>(buffers[1].cbBuffer, buffers[1].cbBuffer);
+
+	std::memcpy(output->GetBase(), buffers[1].pvBuffer, buffers[1].cbBuffer);
 
 	cbSuccess(output);
 }
