@@ -36,6 +36,7 @@ namespace hx::schannel
 
 		Array<uint8_t> startHandshake();
 		hx::Anon handshake(Array<uint8_t> input);
+		void encode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure);
 
 		static cpp::Pointer<SChannelContext> create(::String host);
 	};

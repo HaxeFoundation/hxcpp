@@ -1,5 +1,6 @@
 #include <hx/schannel/SChannelSession.h>
 #include <array>
+#include <algorithm>
 
 namespace
 {
@@ -99,19 +100,22 @@ hx::Anon hx::schannel::SChannelContext::handshake(Array<uint8_t> input)
 	}
 	case SEC_I_CONTINUE_NEEDED:
 	{
-		for (auto&& buffer : outputBuffers)
+		if (outputBuffers[0].BufferType != SECBUFFER_TOKEN)
 		{
-			if (SECBUFFER_TOKEN == buffer.BufferType)
-			{
-				auto output = Array<uint8_t>(buffer.cbBuffer, buffer.cbBuffer);
-
-				std::memcpy(output->getBase(), buffer.pvBuffer, buffer.cbBuffer);
-
-				FreeContextBuffer(buffer.pvBuffer);
-
-				return hx::Anon_obj::Create(2)->setFixed(0, "result", 0)->setFixed(1, "data", output);
-			}
+			hx::Throw("Expected buffer to be a token type");
 		}
+		if (outputBuffers[0].cbBuffer <= 0)
+		{
+			hx::Throw("Token buffer contains no data");
+		}
+
+		auto output = Array<uint8_t>(outputBuffers[0].cbBuffer, outputBuffers[0].cbBuffer);
+
+		std::memcpy(output->getBase(), outputBuffers[0].pvBuffer, outputBuffers[0].cbBuffer);
+
+		FreeContextBuffer(outputBuffers[0].pvBuffer);
+
+		return hx::Anon_obj::Create(2)->setFixed(0, "result", 0)->setFixed(1, "data", output);
 	}
 	case SEC_E_WRONG_PRINCIPAL:
 	{
@@ -122,6 +126,36 @@ hx::Anon hx::schannel::SChannelContext::handshake(Array<uint8_t> input)
 		hx::Throw("Creating security context failed");
 	}
 	}
+}
+
+void hx::schannel::SChannelContext::encode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
+{
+	auto use                = std::min(static_cast<unsigned long>(length), sizes.cbMaximumMessage);
+	auto buffer             = std::vector<uint8_t>(TLS_MAX_PACKET_SIZE);
+	auto buffers            = std::array<SecBuffer, 4>();
+	auto buffersDescription = SecBufferDesc();
+
+	init_sec_buffer(&buffers[0], SECBUFFER_STREAM_HEADER, buffer.data(), sizes.cbHeader);
+	init_sec_buffer(&buffers[1], SECBUFFER_DATA, buffer.data() + sizes.cbHeader, use);
+	init_sec_buffer(&buffers[2], SECBUFFER_STREAM_TRAILER, buffer.data() + sizes.cbHeader + use, sizes.cbTrailer);
+	init_sec_buffer(&buffers[3], SECBUFFER_EMPTY, nullptr, 0);
+	init_sec_buffer_desc(&buffersDescription, buffers.data(), buffers.size());
+
+	std::memcpy(buffers[1].pvBuffer, input->getBase() + offset, use);
+
+	if (SEC_E_OK != EncryptMessage(&ctxtHandle, 0, &buffersDescription, 0))
+	{
+		cbFailure(HX_CSTRING("Failed to encrypt message"));
+
+		return;
+	}
+
+	auto total  = buffers[0].cbBuffer + buffers[1].cbBuffer + buffers[2].cbBuffer;
+	auto output = Array<uint8_t>(total, total);
+
+	std::memcpy(output->getBase(), buffer.data(), total);
+
+	cbSuccess(output);
 }
 
 cpp::Pointer<hx::schannel::SChannelContext> hx::schannel::SChannelContext::create(::String host)
