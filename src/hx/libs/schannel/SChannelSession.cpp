@@ -24,7 +24,7 @@ hx::schannel::SChannelContext::SChannelContext(const char* inHost)
 {
 }
 
-Array<uint8_t> hx::schannel::SChannelContext::startHandshake()
+void hx::schannel::SChannelContext::startHandshake(Dynamic cbSuccess, Dynamic cbFailure)
 {
 	/*auto parameter = TLS_PARAMETERS{ 0 };
 	parameter.grbitDisabledProtocols = SP_PROT_TLS1_3_CLIENT | SP_PROT_TLS1_3_SERVER;*/
@@ -37,7 +37,9 @@ Array<uint8_t> hx::schannel::SChannelContext::startHandshake()
 
 	if (SEC_E_OK != AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL, &credential, NULL, NULL, &credHandle, &credTimestamp))
 	{
-		hx::Throw(HX_CSTRING("Failed to aquire credentials"));
+		cbFailure(HX_CSTRING("Failed to aquire credentials"));
+
+		return;
 	}
 
 	auto outputBuffer            = SecBuffer();
@@ -50,7 +52,9 @@ Array<uint8_t> hx::schannel::SChannelContext::startHandshake()
 
 	if (SEC_I_CONTINUE_NEEDED != InitializeSecurityContext(&credHandle, nullptr, const_cast<char*>(host), requestFlags, 0, 0, nullptr, 0, &ctxtHandle, &outputBufferDescription, &contextFlags, &ctxtTimestamp))
 	{
-		hx::Throw(HX_CSTRING("Failed to generate initial handshake"));
+		cbFailure(HX_CSTRING("Failed to generate initial handshake"));
+
+		return;
 	}
 
 	auto buffer = Array<uint8_t>(outputBuffer.cbBuffer, outputBuffer.cbBuffer);
@@ -59,7 +63,7 @@ Array<uint8_t> hx::schannel::SChannelContext::startHandshake()
 
 	FreeContextBuffer(outputBuffer.pvBuffer);
 
-	return buffer;
+	cbSuccess(buffer);
 }
 
 void hx::schannel::SChannelContext::handshake(Array<uint8_t> input, Dynamic cbSuccess, Dynamic cbFailure)
