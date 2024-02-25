@@ -35,7 +35,7 @@ namespace hx::schannel
 		SecPkgContext_StreamSizes sizes;
 
 		Array<uint8_t> startHandshake();
-		hx::Anon handshake(Array<uint8_t> input);
+		void handshake(Array<uint8_t> input, Dynamic cbSuccess, Dynamic cbFailure);
 		void encode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure);
 
 		static cpp::Pointer<SChannelContext> create(::String host);

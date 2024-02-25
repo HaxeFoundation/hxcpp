@@ -62,7 +62,7 @@ Array<uint8_t> hx::schannel::SChannelContext::startHandshake()
 	return buffer;
 }
 
-hx::Anon hx::schannel::SChannelContext::handshake(Array<uint8_t> input)
+void hx::schannel::SChannelContext::handshake(Array<uint8_t> input, Dynamic cbSuccess, Dynamic cbFailure)
 {
 	auto outputBuffers           = std::array<SecBuffer, 3>();
 	auto outputBufferDescription = SecBufferDesc();
@@ -88,25 +88,35 @@ hx::Anon hx::schannel::SChannelContext::handshake(Array<uint8_t> input)
 	{
 		QueryContextAttributes(&ctxtHandle, SECPKG_ATTR_STREAM_SIZES, &sizes);
 
-		return hx::Anon_obj::Create(2)->setFixed(0, "result", 0)->setFixed(1, "data", null());
+		cbSuccess(0, null());
+
+		break;
 	}
 	case SEC_E_INCOMPLETE_MESSAGE:
 	{
-		return hx::Anon_obj::Create(2)->setFixed(0, "result", -1)->setFixed(1, "data", null());
+		cbSuccess(1, null());
+
+		break;
 	}
 	case SEC_I_INCOMPLETE_CREDENTIALS:
 	{
-		hx::Throw(HX_CSTRING("Credentials requested"));
+		cbFailure(HX_CSTRING("Credentials requested"));
+
+		break;
 	}
 	case SEC_I_CONTINUE_NEEDED:
 	{
 		if (outputBuffers[0].BufferType != SECBUFFER_TOKEN)
 		{
-			hx::Throw("Expected buffer to be a token type");
+			cbFailure(HX_CSTRING("Expected buffer to be a token type"));
+
+			break;
 		}
 		if (outputBuffers[0].cbBuffer <= 0)
 		{
-			hx::Throw("Token buffer contains no data");
+			cbFailure(HX_CSTRING("Token buffer contains no data"));
+
+			break;
 		}
 
 		auto output = Array<uint8_t>(outputBuffers[0].cbBuffer, outputBuffers[0].cbBuffer);
@@ -115,15 +125,21 @@ hx::Anon hx::schannel::SChannelContext::handshake(Array<uint8_t> input)
 
 		FreeContextBuffer(outputBuffers[0].pvBuffer);
 
-		return hx::Anon_obj::Create(2)->setFixed(0, "result", 0)->setFixed(1, "data", output);
+		cbSuccess(2, output);
+
+		break;
 	}
 	case SEC_E_WRONG_PRINCIPAL:
 	{
-		hx::Throw("SNI or certificate check failed");
+		cbFailure(HX_CSTRING("SNI or certificate check failed"));
+
+		break;
 	}
 	default:
 	{
-		hx::Throw("Creating security context failed");
+		cbFailure(HX_CSTRING("Creating security context failed"));
+
+		break;
 	}
 	}
 }
