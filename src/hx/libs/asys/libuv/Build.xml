@@ -166,8 +166,16 @@
         <file name='${this_dir}/system/LibuvCurrentProcess.cpp'/>
     </files>
 
+    <files id='schannel'>
+        <depend name="${this_dir}/Build.xml" dateOnly="true"/>
+        <cache value='true' asLibrary='true'/>
+
+        <file name='${this_dir}/net/schannel/SChannelSecureSession.cpp'/>
+    </files>
+
     <target id='haxe'>
         <files id='libuv'/>
+        <files id='schannel' if='windows'/>
         <files id='asys-libuv'/>
 
         <section unless='static_link'>

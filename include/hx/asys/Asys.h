@@ -10,6 +10,7 @@ HX_DECLARE_CLASS3(hx, asys, filesystem, File)
 HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
 HX_DECLARE_CLASS3(hx, asys, net, TcpServer)
 HX_DECLARE_CLASS3(hx, asys, net, TcpSocket)
+HX_DECLARE_CLASS3(hx, asys, net, SecureSession)
 HX_DECLARE_CLASS3(hx, asys, system, Process)
 HX_DECLARE_CLASS3(hx, asys, system, CurrentProcess)
 HX_DECLARE_CLASS3(hx, asys, system, ChildProcess)
@@ -169,6 +170,16 @@ namespace hx
                 virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            };
+
+            class SecureSession_obj : public Object
+            {
+            public:
+                virtual void encode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void decode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+
+                static void authenticateAsClient(TcpSocket socket, String host, Dynamic cbSuccess, Dynamic cbFailure);
             };
 
             // class UdpSocket_obj : public Object
