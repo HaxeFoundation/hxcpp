@@ -68,7 +68,10 @@ namespace
 		SChannelContext* ctx;
 
 	public:
-		SChannelSecureSession_obj(SChannelContext* inCtx) : ctx(inCtx) {}
+		SChannelSecureSession_obj(SChannelContext* inCtx) : ctx(inCtx)
+		{
+			HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+		}
 
 		void encode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
@@ -218,7 +221,10 @@ namespace
 			, cbFailure(cbFailure)
 			, offset(0)
 			, buffer(Array<uint8_t>(std::numeric_limits<uint16_t>::max(), std::numeric_limits<uint16_t>::max()))
-			, ctx(ctx) {}
+			, ctx(ctx)
+		{
+			HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+		}
 
 		void __Mark(hx::MarkContext* __inCtx) override
 		{
