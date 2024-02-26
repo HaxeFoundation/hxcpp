@@ -11,6 +11,7 @@
 #include <schannel.h>
 #include <security.h>
 #include <shlwapi.h>
+#include <comdef.h>
 #include <array>
 #include <algorithm>
 
@@ -87,7 +88,7 @@ namespace
 			auto result = SEC_E_OK;
 			if (SEC_E_OK != (result = EncryptMessage(&ctx->ctxtHandle, 0, &buffersDescription, 0)))
 			{
-				cbFailure(HX_CSTRING("Failed to encrypt message"));
+				cbFailure(String::create(_com_error(result).ErrorMessage()));
 
 				return;
 			}
@@ -116,7 +117,7 @@ namespace
 			auto result = SEC_E_OK;
 			if (SEC_E_OK != (result = DecryptMessage(&ctx->ctxtHandle, &buffersDescription, 0, 0)))
 			{
-				cbFailure(HX_CSTRING("Failed to decrypt message"));
+				cbFailure(String::create(_com_error(result).ErrorMessage()));
 
 				return;
 			}
@@ -129,6 +130,7 @@ namespace
 		}
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
+			auto result                  = SEC_E_OK;
 			auto type                    = SCHANNEL_SHUTDOWN;
 			auto inputBuffer             = SecBuffer();
 			auto inputBufferDescription  = SecBufferDesc();
@@ -136,9 +138,9 @@ namespace
 			init_sec_buffer(&inputBuffer, SECBUFFER_TOKEN, &type, sizeof(type));
 			init_sec_buffer_desc(&inputBufferDescription, &inputBuffer, 1);
 
-			if (SEC_E_OK != ApplyControlToken(&ctx->ctxtHandle, &inputBufferDescription))
+			if (SEC_E_OK != (result = ApplyControlToken(&ctx->ctxtHandle, &inputBufferDescription)))
 			{
-				cbFailure(HX_CSTRING("Failed to apply control token"));
+				cbFailure(String::create(_com_error(result).ErrorMessage()));
 
 				return;
 			}
@@ -149,7 +151,7 @@ namespace
 			init_sec_buffer(&outputBuffer, SECBUFFER_EMPTY, nullptr, 0);
 			init_sec_buffer_desc(&outputBufferDescription, &outputBuffer, 1);
 
-			auto result = InitializeSecurityContext(&ctx->credHandle, &ctx->ctxtHandle, const_cast<char*>(ctx->host), ctx->requestFlags, 0, 0, nullptr, 0, nullptr, &outputBufferDescription, &ctx->contextFlags, &ctx->ctxtTimestamp);
+			result = InitializeSecurityContext(&ctx->credHandle, &ctx->ctxtHandle, const_cast<char*>(ctx->host), ctx->requestFlags, 0, 0, nullptr, 0, nullptr, &outputBufferDescription, &ctx->contextFlags, &ctx->ctxtTimestamp);
 			if (result == SEC_E_OK || result == SEC_I_CONTEXT_EXPIRED)
 			{
 				auto output = Array<uint8_t>(outputBuffer.cbBuffer, outputBuffer.cbBuffer);
@@ -162,7 +164,7 @@ namespace
 			}
 			else
 			{
-				cbFailure(HX_CSTRING("Unexpected InitializeSecurityContext result"));
+				cbFailure(String::create(_com_error(result).ErrorMessage()));
 			}
 		}
 	};
@@ -240,34 +242,35 @@ namespace
 		}
 #endif
 
-		void startHandshake()
+		void startHandshake(bool verifyCert)
 		{
 			hx::EnterGCFreeZone();
 
+			auto result     = SEC_E_OK;
 			auto credential = SCH_CREDENTIALS{ 0 };
-			credential.dwFlags = SCH_CRED_MANUAL_CRED_VALIDATION | SCH_USE_STRONG_CRYPTO | SCH_CRED_NO_DEFAULT_CREDS;
+			credential.dwFlags   = (verifyCert ? SCH_CRED_AUTO_CRED_VALIDATION : SCH_CRED_MANUAL_CRED_VALIDATION) | SCH_USE_STRONG_CRYPTO | SCH_CRED_NO_DEFAULT_CREDS;
 			credential.dwVersion = SCH_CREDENTIALS_VERSION;
 
-			if (SEC_E_OK != AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL, &credential, NULL, NULL, &ctx->credHandle, &ctx->credTimestamp))
+			if (SEC_E_OK != (result = AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL, &credential, NULL, NULL, &ctx->credHandle, &ctx->credTimestamp)))
 			{
 				hx::ExitGCFreeZone();
 
-				cbFailure(HX_CSTRING("Failed to aquire credentials"));
+				cbFailure(String::create(_com_error(result).ErrorMessage()));
 
 				return;
 			}
 
-			auto outputBuffer = SecBuffer();
+			auto outputBuffer            = SecBuffer();
 			auto outputBufferDescription = SecBufferDesc();
 
 			init_sec_buffer(&outputBuffer, SECBUFFER_EMPTY, nullptr, 0);
 			init_sec_buffer_desc(&outputBufferDescription, &outputBuffer, 1);
 
-			if (SEC_I_CONTINUE_NEEDED != InitializeSecurityContext(&ctx->credHandle, nullptr, const_cast<char*>(ctx->host), ctx->requestFlags, 0, 0, nullptr, 0, &ctx->ctxtHandle, &outputBufferDescription, &ctx->contextFlags, &ctx->ctxtTimestamp))
+			if (SEC_I_CONTINUE_NEEDED != (result = InitializeSecurityContext(&ctx->credHandle, nullptr, const_cast<char*>(ctx->host), ctx->requestFlags, 0, 0, nullptr, 0, &ctx->ctxtHandle, &outputBufferDescription, &ctx->contextFlags, &ctx->ctxtTimestamp)))
 			{
 				hx::ExitGCFreeZone();
 
-				cbFailure(HX_CSTRING("Failed to generate initial handshake"));
+				cbFailure(String::create(_com_error(result).ErrorMessage()));
 
 				return;
 			}
@@ -326,12 +329,6 @@ namespace
 
 				break;
 			}
-			case SEC_I_INCOMPLETE_CREDENTIALS:
-			{
-				cbFailure(HX_CSTRING("Credentials requested"));
-
-				break;
-			}
 			case SEC_I_CONTINUE_NEEDED:
 			{
 				if (outputBuffers[0].BufferType != SECBUFFER_TOKEN)
@@ -357,15 +354,9 @@ namespace
 
 				break;
 			}
-			case SEC_E_WRONG_PRINCIPAL:
-			{
-				cbFailure(HX_CSTRING("SNI or certificate check failed"));
-
-				break;
-			}
 			default:
 			{
-				cbFailure(HX_CSTRING("Creating security context failed"));
+				cbFailure(String::create(_com_error(result).ErrorMessage()));
 
 				break;
 			}
@@ -374,9 +365,20 @@ namespace
 	};
 }
 
-void hx::asys::net::SecureSession_obj::authenticateAsClient(TcpSocket socket, String host, Dynamic cbSuccess, Dynamic cbFailure)
+void hx::asys::net::SecureSession_obj::authenticateAsClient(TcpSocket socket, String host, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 {
-	auto handshake = new Handshake_obj(socket, cbSuccess, cbFailure, new SChannelContext(host.utf8_str()));
+	auto ctx        = new SChannelContext(host.utf8_str());
+	auto handshake  = new Handshake_obj(socket, cbSuccess, cbFailure, ctx);
+	auto verifyCert = true;
 
-	handshake->startHandshake();
+	if (hx::IsNotNull(options))
+	{
+		auto entry = options->__Field(HX_CSTRING("verifyCert"), hx::PropertyAccess::paccDynamic);
+		if (!entry.isNull())
+		{
+			verifyCert = entry.valBool;
+		}
+	}
+
+	handshake->startHandshake(verifyCert);
 }

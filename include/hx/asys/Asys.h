@@ -179,7 +179,7 @@ namespace hx
                 virtual void decode(Array<uint8_t> input, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
 
-                static void authenticateAsClient(TcpSocket socket, String host, Dynamic cbSuccess, Dynamic cbFailure);
+                static void authenticateAsClient(TcpSocket socket, String host, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
             };
 
             // class UdpSocket_obj : public Object
