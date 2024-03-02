@@ -21,12 +21,14 @@ namespace hx
     {
         using Ipv4Address = int;
         using Ipv6Address = Array<uint8_t>;
-        using Pid = int;
+        using Pid         = int;
 
         class Context_obj : public Object
         {
         public:
             static Context create();
+
+            system::CurrentProcess process;
 
             virtual void enqueue(Dynamic event) = 0;
             virtual Dynamic enqueue(Dynamic event, int intervalMs) = 0;
@@ -205,9 +207,7 @@ namespace hx
             public:
                 static void open(Context ctx, String command, hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure);
 
-                static CurrentProcess current(Context ctx);
-
-                virtual int pid() = 0;
+                virtual Pid pid() = 0;
 
                 virtual void sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
@@ -226,11 +226,11 @@ namespace hx
             class CurrentProcess_obj : public Process_obj
             {
             public:
+                virtual void setSignalAction(hx::EnumBase signal, hx::EnumBase action) = 0;
+
                 Readable stdio_in;
                 Writable stdio_out;
                 Writable stdio_err;
-
-                virtual void setSignalAction(hx::EnumBase signal, hx::EnumBase action) = 0;
             };
         }
     }

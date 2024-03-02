@@ -2,6 +2,7 @@
 #include <hx/asys/libuv/LibuvAsysContext.h>
 #include "Event.h"
 #include "BaseData.h"
+#include "system/LibuvCurrentProcess.h"
 
 #include <memory>
 
@@ -30,6 +31,8 @@ hx::asys::libuv::LibuvAsysContext_obj::LibuvAsysContext_obj()
     uvAsync->ptr->data = this;
 
     uv_unref(uvAsync.rawCast());
+
+    process = hx::asys::system::CurrentProcess(new hx::asys::libuv::system::LibuvCurrentProcess(this));
 }
 
 void hx::asys::libuv::LibuvAsysContext_obj::enqueue(Dynamic func)

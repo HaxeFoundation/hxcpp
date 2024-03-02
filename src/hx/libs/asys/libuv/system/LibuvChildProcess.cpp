@@ -17,7 +17,7 @@ hx::asys::libuv::system::LibuvChildProcess::LibuvChildProcess()
 	});
 }
 
-int hx::asys::libuv::system::LibuvChildProcess::pid()
+hx::asys::Pid hx::asys::libuv::system::LibuvChildProcess::pid()
 {
 	return request->pid;
 }

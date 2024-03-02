@@ -8,25 +8,64 @@
 
 namespace
 {
-	class TtyWriter final : public hx::asys::Writable_obj
+	class WriteRequest final : hx::asys::libuv::BaseRequest
 	{
-	private:
-		std::unique_ptr<hx::asys::libuv::stream::StreamWriter> writer;
+		std::unique_ptr<hx::ArrayPin> pin;
 
 	public:
-		TtyWriter(uv_tty_t* tty)
-			: writer(std::make_unique<hx::asys::libuv::stream::StreamWriter>(reinterpret_cast<uv_stream_t*>(tty)))
+		uv_write_t request;
+		uv_buf_t buffer;
+
+		WriteRequest(hx::ArrayPin* _pin, char* _base, int _length, Dynamic _cbSuccess, Dynamic _cbFailure)
+			: BaseRequest(_cbSuccess, _cbFailure)
+			, pin(_pin)
+			, buffer(uv_buf_init(_base, _length))
 		{
-			tty->data = writer.get();
+			request.data = this;
 		}
-		~TtyWriter() = default;
+
+		static void callback(uv_write_t* request, int status)
+		{
+			auto gcZone = hx::AutoGCZone();
+			auto spData = std::unique_ptr<WriteRequest>(static_cast<WriteRequest*>(request->data));
+
+			if (status < 0)
+			{
+				Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
+			}
+			else
+			{
+				Dynamic(spData->cbSuccess.rooted)(spData->buffer.len);
+			}
+		}
+	};
+
+	class TtyWriter final : public hx::asys::Writable_obj
+	{
+		uv_tty_t* tty;
+
+	public:
+		TtyWriter(uv_loop_t* loop, uv_file fd) : tty(new uv_tty_t())
+		{
+			uv_tty_init(loop, tty, fd, 0);
+		}
 		void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
-			writer->write(data, offset, length, cbSuccess, cbFailure);
+			auto request = std::make_unique<WriteRequest>(data->Pin(), data->GetBase() + offset, length, cbSuccess, cbFailure);
+			auto result  = uv_write(&request->request, reinterpret_cast<uv_stream_t*>(tty), &request->buffer, 1, WriteRequest::callback);
+
+			if (result < 0)
+			{
+				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+			}
+			else
+			{
+				request.release();
+			}
 		}
 		void flush(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
-			writer->flush(cbSuccess, cbFailure);
+			cbSuccess();
 		}
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
@@ -36,15 +75,18 @@ namespace
 
 	class TtyReader final : public hx::asys::Readable_obj
 	{
-		std::unique_ptr<hx::asys::libuv::stream::StreamReader> reader;
+		uv_tty_t* tty;
+		hx::asys::libuv::stream::StreamReader* reader;
 
 	public:
-		TtyReader(uv_tty_t* tty)
-			: reader(std::make_unique<hx::asys::libuv::stream::StreamReader>(reinterpret_cast<uv_stream_t*>(tty)))
+		TtyReader(uv_loop_t* loop, uv_file fd)
+			: tty(new uv_tty_t())
+			, reader(new hx::asys::libuv::stream::StreamReader(reinterpret_cast<uv_stream_t*>(tty)))
 		{
-			tty->data = reader.get();
+			tty->data = reader;
+
+			uv_tty_init(loop, tty, fd, 0);
 		}
-		~TtyReader() = default;
 		void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
 		{
 			reader->read(output, offset, length, cbSuccess, cbFailure);
@@ -102,29 +144,20 @@ namespace
 	}
 }
 
-hx::asys::libuv::system::LibuvCurrentProcess::LibuvCurrentProcess(LibuvAsysContext ctx, std::unique_ptr<std::array<uv_tty_t, 3>> inTtys)
-	: ttys(std::move(inTtys))
-	, signalActions(std::make_unique<std::unordered_map<int, std::unique_ptr<BaseRequest>>>(0))
+hx::asys::libuv::system::LibuvCurrentProcess::LibuvCurrentProcess(LibuvAsysContext ctx)
+	: signalActions(std::make_unique<std::unordered_map<int, std::unique_ptr<BaseRequest>>>(0))
 	, ctx(ctx)
 {
-	stdio_in  = Readable(new TtyReader(&(ttys->at(0))));
-	stdio_out = Writable(new TtyWriter(&(ttys->at(1))));
-	stdio_err = Writable(new TtyWriter(&(ttys->at(2))));
-
 	hx::GCSetFinalizer(this, [](hx::Object* obj) -> void {
 		reinterpret_cast<hx::asys::libuv::system::LibuvCurrentProcess*>(obj)->~LibuvCurrentProcess();
 	});
+
+	stdio_in  = hx::asys::Readable(new TtyReader(ctx->uvLoop, 0));
+	stdio_out = hx::asys::Writable(new TtyWriter(ctx->uvLoop, 1));
+	stdio_err = hx::asys::Writable(new TtyWriter(ctx->uvLoop, 2));
 }
 
-hx::asys::libuv::system::LibuvCurrentProcess::~LibuvCurrentProcess()
-{
-	for (auto&& tty : *ttys)
-	{
-		uv_close(reinterpret_cast<uv_handle_t*>(&tty), nullptr);
-	}
-}
-
-int hx::asys::libuv::system::LibuvCurrentProcess::pid()
+hx::asys::Pid hx::asys::libuv::system::LibuvCurrentProcess::pid()
 {
 	return uv_os_getpid();
 }
@@ -217,9 +250,6 @@ void hx::asys::libuv::system::LibuvCurrentProcess::__Mark(hx::MarkContext* __inC
 {
 	HX_MARK_MEMBER(ctx);
 	HX_MARK_MEMBER(signalActions);
-	HX_MARK_MEMBER(stdio_in);
-	HX_MARK_MEMBER(stdio_out);
-	HX_MARK_MEMBER(stdio_err);
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
@@ -227,8 +257,5 @@ void hx::asys::libuv::system::LibuvCurrentProcess::__Visit(hx::VisitContext* __i
 {
 	HX_VISIT_MEMBER(ctx);
 	HX_VISIT_MEMBER(signalActions);
-	HX_VISIT_MEMBER(stdio_in);
-	HX_VISIT_MEMBER(stdio_out);
-	HX_VISIT_MEMBER(stdio_err);
 }
 #endif

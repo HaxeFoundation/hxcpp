@@ -14,17 +14,13 @@ namespace hx::asys::libuv::system
 	class LibuvCurrentProcess final : public hx::asys::system::CurrentProcess_obj
 	{
 	public:
-		std::unique_ptr<std::array<uv_tty_t, 3>> ttys;
-
 		std::unique_ptr<std::unordered_map<int, std::unique_ptr<hx::asys::libuv::BaseRequest>>> signalActions;
 
 		LibuvAsysContext ctx;
 
-		LibuvCurrentProcess(LibuvAsysContext ctx, std::unique_ptr<std::array<uv_tty_t, 3>> ttys);
+		LibuvCurrentProcess(LibuvAsysContext ctx);
 
-		~LibuvCurrentProcess();
-
-		int pid() override;
+		Pid pid() override;
 
 		void sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure) override;
 

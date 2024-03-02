@@ -26,7 +26,7 @@ namespace hx::asys::libuv::system
 		LibuvChildProcess();
 		~LibuvChildProcess() = default;
 
-		int pid() override;
+		Pid pid() override;
 
 		void sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure) override;
 
