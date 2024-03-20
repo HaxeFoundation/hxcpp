@@ -14,7 +14,7 @@ namespace hx::asys::libuv::system
 	class LibuvCurrentProcess final : public hx::asys::system::CurrentProcess_obj
 	{
 	public:
-		std::unique_ptr<std::unordered_map<int, std::unique_ptr<hx::asys::libuv::BaseRequest>>> signalActions;
+		Dynamic signalMap;
 
 		LibuvAsysContext ctx;
 

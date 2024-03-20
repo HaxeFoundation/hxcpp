@@ -97,21 +97,6 @@ namespace
 		}
 	};
 
-	class SignalActionRequest final : public hx::asys::libuv::BaseRequest
-	{
-	public:
-		uv_signal_t request;
-
-		SignalActionRequest(Dynamic callback) : BaseRequest(callback, null()) {}
-
-		~SignalActionRequest() override
-		{
-			uv_signal_stop(&request);
-
-			uv_close(reinterpret_cast<uv_handle_t*>(&request), nullptr);
-		}
-	};
-
 	int getSignalId(hx::EnumBase signal)
 	{
 		switch (signal->_hx_getIndex())
@@ -145,7 +130,7 @@ namespace
 }
 
 hx::asys::libuv::system::LibuvCurrentProcess::LibuvCurrentProcess(LibuvAsysContext ctx)
-	: signalActions(std::make_unique<std::unordered_map<int, std::unique_ptr<BaseRequest>>>(0))
+	: signalMap(null())
 	, ctx(ctx)
 {
 	hx::GCSetFinalizer(this, [](hx::Object* obj) -> void {
@@ -165,7 +150,8 @@ hx::asys::Pid hx::asys::libuv::system::LibuvCurrentProcess::pid()
 void hx::asys::libuv::system::LibuvCurrentProcess::sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure)
 {
 	auto result = 0;
-	if ((result = uv_kill(pid(), getSignalId(signal))) < 0)
+	auto signalId = getSignalId(signal);
+	if ((result = uv_kill(pid(), signalId)) < 0)
 	{
 		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 	}
@@ -177,85 +163,116 @@ void hx::asys::libuv::system::LibuvCurrentProcess::sendSignal(hx::EnumBase signa
 
 void hx::asys::libuv::system::LibuvCurrentProcess::setSignalAction(hx::EnumBase signal, hx::EnumBase action)
 {
-	// TODO : case 0 and 2 are fairly similar, could remove duplicated code.
+	struct ActiveSignal final : hx::Object
+	{
+		uv_signal_t* handle;
+		Dynamic callback;
 
-	switch (action->_hx_getIndex())
+		ActiveSignal(uv_signal_t* handle, Dynamic callback) : handle(handle) , callback(callback)
+		{
+			HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+		}
+
+		void __Mark(hx::MarkContext* __inCtx)
+		{
+			HX_MARK_MEMBER(callback);
+		}
+
+#ifdef HXCPP_VISIT_ALLOCS
+		void __Visit(hx::VisitContext* __inCtx)
+		{
+			HX_VISIT_MEMBER(callback);
+		}
+#endif
+	};
+
+	auto signalId = getSignalId(signal);
+	auto actionId = action->_hx_getIndex();
+
+	switch (actionId)
 	{
 	case 0:
-		{
-			auto signum = getSignalId(signal);
-			auto handle = std::make_unique<SignalActionRequest>(null());
-			auto func   = [](uv_signal_t* handle, int signum) {
-				// do nothing!
-			};
-
-			if (uv_signal_init(ctx->uvLoop, &handle->request) < 0)
-			{
-				hx::Throw(HX_CSTRING("Failed to init signal"));
-			}
-
-			if (uv_signal_start(&handle->request, func, signum))
-			{
-				hx::Throw(HX_CSTRING("Failed to start signal"));
-			}
-
-			handle->request.data = handle.get();
-
-			signalActions->erase(signum);
-			signalActions->emplace(signum, std::move(handle));
-		}
-		break;
-
-	case 1:
-		{
-			signalActions->erase(getSignalId(signal));
-		}
-		break;
-
 	case 2:
+	{
+		if (__int_hash_exists(signalMap, signalId))
 		{
-			auto signum = getSignalId(signal);
-			auto handle = std::make_unique<SignalActionRequest>(action->_hx_getObject(0));
-			auto func   = [](uv_signal_t* handle, int signum) {
-				auto gcZone   = AutoGCZone();
-				auto request  = reinterpret_cast<SignalActionRequest*>(handle->data);
-				auto callback = Dynamic(request->cbSuccess.rooted);
+			auto signal = __int_hash_get(signalMap, signalId).Cast<hx::ObjectPtr<ActiveSignal>>();
 
-				if (null() != callback)
+			signal->callback = actionId == 0 ? null() : action->_hx_getObject(0);
+		}
+		else
+		{
+			auto handle   = std::make_unique<uv_signal_t>();
+			auto callback = [](uv_signal_t* handle, int signum) {
+				auto gcZone = hx::AutoGCZone();
+				auto root   = reinterpret_cast<hx::RootedObject<hx::Object>*>(handle->data);
+				auto hash   = Dynamic(root->rooted);
+				auto signal = __int_hash_get(hash, signum).Cast<hx::ObjectPtr<ActiveSignal>>();
+
+				if (hx::IsNotNull(signal->callback))
 				{
-					callback();
+					signal->callback();
 				}
 			};
 
-			if (uv_signal_init(ctx->uvLoop, &handle->request) < 0)
+			if (uv_signal_init(ctx->uvLoop, handle.get()) < 0)
 			{
 				hx::Throw(HX_CSTRING("Failed to init signal"));
 			}
 
-			if (uv_signal_start(&handle->request, func, signum))
+			if (uv_signal_start(handle.get(), callback, signalId) < 0)
 			{
 				hx::Throw(HX_CSTRING("Failed to start signal"));
 			}
 
-			handle->request.data = handle.get();
+			__int_hash_set(signalMap, signalId, new ActiveSignal(handle.get(), actionId == 0 ? null() : action->_hx_getObject(0)));
 
-			signalActions->erase(signum);
-			signalActions->emplace(signum, std::move(handle));
+			handle.release()->data = new hx::RootedObject<hx::Object>(signalMap.mPtr);
 		}
 		break;
+	}
+
+	case 1:
+	{
+		if (__int_hash_exists(signalMap, signalId))
+		{
+			auto signal = __int_hash_get(signalMap, signalId).Cast<hx::ObjectPtr<ActiveSignal>>();
+
+			if (uv_signal_stop(signal->handle) < 0)
+			{
+				hx::Throw(HX_CSTRING("Failed to stop signal"));
+			}
+
+			if (!__int_hash_remove(signalMap, signalId))
+			{
+				hx::Throw(HX_CSTRING("Failed to remove signal"));
+			}
+
+			delete reinterpret_cast<hx::RootedObject<hx::Object>*>(signal->handle->data);
+
+			uv_close(reinterpret_cast<uv_handle_t*>(signal->handle), hx::asys::libuv::clean_handle);
+		}
+		break;
+	}
 	}
 }
 
 void hx::asys::libuv::system::LibuvCurrentProcess::__Mark(hx::MarkContext* __inCtx)
 {
 	HX_MARK_MEMBER(ctx);
-	HX_MARK_MEMBER(signalActions);
+	HX_MARK_MEMBER(signalMap);
+	HX_MARK_MEMBER(stdio_in);
+	HX_MARK_MEMBER(stdio_out);
+	HX_MARK_MEMBER(stdio_err);
 }
 
 #ifdef HXCPP_VISIT_ALLOCS
 void hx::asys::libuv::system::LibuvCurrentProcess::__Visit(hx::VisitContext* __inCtx)
 {
 	HX_VISIT_MEMBER(ctx);
-	HX_VISIT_MEMBER(signalActions);
+	HX_VISIT_MEMBER(signalMap);
+	HX_VISIT_MEMBER(stdio_in);
+	HX_VISIT_MEMBER(stdio_out);
+	HX_VISIT_MEMBER(stdio_err);
 }
 #endif
