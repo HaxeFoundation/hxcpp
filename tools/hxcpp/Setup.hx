@@ -64,11 +64,26 @@ class Setup
       {
         Log.v("checks default ndk-bundle in android sdk");
         var ndkBundle = defines.get("ANDROID_SDK")+"/ndk-bundle";
+        var newStyle = false;
+        if (!FileSystem.exists(ndkBundle) )
+        {
+           Log.v("ndk-bundle directory not found in sdk,try ndk");
+           var altDir = defines.get("ANDROID_SDK")+"/ndk/";
+           if (FileSystem.exists(altDir) )
+           {
+              var alt = findBestNdk(altDir);
+              if (alt!=null)
+              {
+                 Log.v('using $alt ndk dir');
+                 ndkBundle = alt;
+              }
+           }
+        }
         ndkBundle = ndkBundle.split("\\").join("/");
-        var version = getNdkVersion(ndkBundle);
+        var version = getNdkVersion(ndkBundle, newStyle);
         if (version>bestVersion && (inBaseVersion==0 || inBaseVersion==Std.int(version)) )
         {
-           Log.v("Using default ndk-bundle in android sdk");
+           Log.v("Using default ndk-bundle in android sdk:" + ndkBundle);
            result = ndkBundle;
         }
       }
@@ -76,8 +91,45 @@ class Setup
       return result;
    }
 
-   static public function getNdkVersion(inDirName:String):Float
+   static function findBestNdk(root:String) : String
    {
+     var versionMatch = ~/(\d+)\.(\d+\.\d+)/;
+     var version:String = null;
+     var best = 0.0;
+     try
+     {
+        for (file in FileSystem.readDirectory(root))
+        {
+           if (versionMatch.match(file))
+           {
+               var maj = Std.parseInt(versionMatch.matched(1));
+               var minor = Std.parseFloat(versionMatch.matched(2));
+               var combined = maj*1000 + minor;
+               Log.v("  found ndk:" + file);
+               if (combined>best)
+               {
+                  best = combined;
+                  version = file;
+               }
+           }
+        }
+      }
+      catch(e:Dynamic)
+      {
+      }
+
+      if (version!=null)
+         return root + "/" + version;
+    
+      return null;
+   }
+
+   static var gotNdkVersion = 0.0;
+   static public function getNdkVersion(inDirName:String, newStyle=false):Float
+   {
+      if (gotNdkVersion!=0)
+         return gotNdkVersion;
+
       Log.v("Try to get version from source.properties");
       var src = toPath(inDirName+"/source.properties");
       if (sys.FileSystem.exists(src))
@@ -97,8 +149,9 @@ class Setup
                   var result:Float = 1.0 * Std.parseInt(split2[0]) + 0.001 * Std.parseInt(split2[1]);
                   if (result>=8)
                   {
-                     Log.v('Deduced NDK version '+result+' from "$inDirName"/source.properties');
+                     Log.v('Deduced NDK version '+result+' from "$inDirName/source.properties"');
                      fin.close();
+                     gotNdkVersion = result;
                      return result;
                   }
                }
@@ -121,11 +174,13 @@ class Setup
          var minor = extract_version.matched(3);
          if (minor!=null && minor.length>0)
             result += 0.001 * (minor.toLowerCase().charCodeAt(0)-'a'.code);
+         gotNdkVersion = result;
          return result;
       }
 
       Log.v('Could not deduce NDK version from "$inDirName" - assuming 8');
-      return 8;
+      gotNdkVersion = 8;
+      return gotNdkVersion;
    }
 
    public static function initHXCPPConfig(ioDefines:Hash<String>)
