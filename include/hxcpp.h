@@ -358,7 +358,13 @@ typedef bool PropertyAccess;
 #include <cpp/CppInt32__.h>
 // This needs to "see" other declarations ...
 #include <hx/GcTypeInference.h>
+#include <hx/Functions.h>
 #include <hx/FieldRef.h>
+#if (HXCPP_API_LEVEL>=330)
+#include <hx/LessThanEq.h>
+#else
+#include <cpp/Int64.h>
+#endif
 #include "Array.h"
 #include <hx/Anon.h>
 #include <hx/Class.h>
@@ -372,17 +378,14 @@ typedef bool PropertyAccess;
 #include <cpp/Pointer.h>
 #include <hx/Native.h>
 #include <hx/Operators.h>
-#include <hx/Functions.h>
+#if (HXCPP_API_LEVEL>=500)
+#include <hx/Closure.h>
+#endif
 // second time ...
 #include <cpp/Variant.h>
 #include <hx/Debug.h>
 #include <hx/Boot.h>
 #include <hx/Undefine.h>
-#if (HXCPP_API_LEVEL>=330)
-#include <hx/LessThanEq.h>
-#else
-#include <cpp/Int64.h>
-#endif
 
 #endif
 

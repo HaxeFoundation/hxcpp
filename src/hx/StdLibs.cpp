@@ -709,6 +709,12 @@ struct VarArgFunc : public hx::Object
      HX_OBJ_WB_NEW_MARKED_OBJECT(this)
    }
 
+#if (HXCPP_API_LEVEL>=500)
+   VarArgFunc(::hx::Callable<::Dynamic(::cpp::VirtualArray)>& inFunc) : mRealFunc(inFunc) {
+       HX_OBJ_WB_NEW_MARKED_OBJECT(this)
+   }
+#endif
+
    int __GetType() const { return vtFunction; }
    ::String __ToString() const { return mRealFunc->__ToString() ; }
 
@@ -728,8 +734,11 @@ struct VarArgFunc : public hx::Object
 };
 
 }
-
+#if (HXCPP_API_LEVEL>=500)
+Dynamic __hxcpp_create_var_args(::hx::Callable<::Dynamic(::cpp::VirtualArray)>& inArrayFunc)
+#else
 Dynamic __hxcpp_create_var_args(Dynamic &inArrayFunc)
+#endif
 {
    return Dynamic(new hx::VarArgFunc(inArrayFunc));
 }

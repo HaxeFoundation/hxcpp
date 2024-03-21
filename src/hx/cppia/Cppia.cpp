@@ -3044,12 +3044,16 @@ struct GetFieldByName : public CppiaDynamicExpr
          }
          name = inModule.strings[nameId];
          const StaticInfo *info = staticClass->GetStaticStorage(name);
-         if (info && info->type!=hx::fsUnknown)
+
+         // Do not use a MemReference for static access to objects.
+         // If the object in question is a hx::Callable_obj, its pointer will be downcasted to a hx::Object* and then updated to a non callable_obj pointer.
+         // This leads to memory exceptions later when then trying to invoke that callable.
+         if (info && info->type!=hx::fsUnknown && info->type != fsObject)
          {
-            CppiaExpr *replace = createStaticAccess(this, info->type, info->address);
-            replace->link(inModule);
-            delete this;
-            return replace;
+             CppiaExpr* replace = createStaticAccess(this, info->type, info->address);
+             replace->link(inModule);
+             delete this;
+             return replace;
          }
       }
 

@@ -45,7 +45,7 @@ typedef Linkers = Hash<Linker>;
 
 class BuildTool
 {
-   public inline static var SupportedVersion = 430;
+   public inline static var SupportedVersion = 500;
 
    var mDefines:Hash<String>;
    var mCurrentIncludeFile:String;
