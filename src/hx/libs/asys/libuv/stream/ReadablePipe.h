@@ -6,7 +6,7 @@
 
 namespace hx::asys::libuv::stream
 {
-	class ReadablePipe final : virtual public Readable_obj
+	class ReadablePipe final : public Readable_obj
 	{
 	private:
 		std::unique_ptr<StreamReader> reader;
