@@ -51,10 +51,14 @@ namespace hx
             virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
         };
 
-        //class Duplex_obj : virtual public Writable_obj, virtual public Readable_obj
-        //{
-        //    //
-        //};
+        class Duplex_obj : public Object
+        {
+        public:
+            virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+            virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
+        };
 
         namespace filesystem
         {
@@ -151,7 +155,7 @@ namespace hx
                 virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
-            class TcpSocket_obj : public Object
+            class TcpSocket_obj : public Duplex_obj
             {
             public:
                 hx::Anon localAddress;
@@ -167,11 +171,6 @@ namespace hx
                 virtual void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
                 virtual void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-
-                virtual void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void flush(Dynamic cbSuccess, Dynamic cbFailure) = 0;
-                virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
             };
 
             class SecureSession_obj : public Object

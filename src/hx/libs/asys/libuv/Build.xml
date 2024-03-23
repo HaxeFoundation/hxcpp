@@ -62,7 +62,7 @@
             <depend name="${LIBUV_DIR}/src/win/atomicops-inl.h"/>
             <depend name="${LIBUV_DIR}/src/win/fs-fd-hash-inl.h"/>
             <depend name="${LIBUV_DIR}/src/win/handle-inl.h"/>
-		    <depend name="${LIBUV_DIR}/src/win/internal.h"/>
+		        <depend name="${LIBUV_DIR}/src/win/internal.h"/>
             <depend name="${LIBUV_DIR}/src/win/req-inl.h"/>
             <depend name="${LIBUV_DIR}/src/win/stream-inl.h"/>
             <depend name="${LIBUV_DIR}/src/win/winapi.h"/>
@@ -157,8 +157,6 @@
         <file name='${this_dir}/net/NetUtils.cpp'/>
         <file name='${this_dir}/stream/StreamWriter.cpp'/>
         <file name='${this_dir}/stream/StreamReader.cpp'/>
-        <file name='${this_dir}/stream/ReadablePipe.cpp'/>
-        <file name='${this_dir}/stream/WritablePipe.cpp'/>
         <file name='${this_dir}/filesystem/LibuvFile.cpp'/>
         <file name='${this_dir}/filesystem/LibuvDirectory.cpp'/>
         <file name='${this_dir}/system/LibuvProcess.cpp'/>

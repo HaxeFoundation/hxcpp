@@ -5,7 +5,7 @@
 
 namespace
 {
-	void on_connection(uv_stream_t* stream, int status)
+	void onConnection(uv_stream_t* stream, int status)
 	{
 		auto gcZone = hx::AutoGCZone();
 		auto server = static_cast<hx::asys::libuv::net::LibuvTcpServerImpl*>(stream->data);
@@ -24,16 +24,16 @@ namespace
 			if (nullptr != request)
 			{
 				auto result = 0;
-				auto socket = std::make_unique<hx::asys::libuv::net::LibuvTcpSocketImpl>();
+				auto socket = std::make_unique<uv_tcp_t>();
 
-				if ((result = uv_tcp_init(server->loop, &socket->tcp)) < 0)
+				if ((result = uv_tcp_init(server->loop, socket.get())) < 0)
 				{
 					Dynamic(request->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
 
 					return;
 				}
 
-				if ((result = uv_tcp_keepalive(&socket->tcp, true, socket->keepAlive)) < 0)
+				if ((result = uv_tcp_keepalive(socket.get(), true, hx::asys::libuv::net::KEEP_ALIVE_VALUE)) < 0)
 				{
 					Dynamic(request->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
 
@@ -52,7 +52,7 @@ namespace
 		}
 	}
 
-	void on_open(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
+	void onOpen(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 	{
 		auto server = std::make_unique<hx::asys::libuv::net::LibuvTcpServerImpl>(ctx->uvLoop);
 		auto result = 0;
@@ -113,7 +113,7 @@ namespace
 			return;
 		}
 
-		if ((result = uv_listen(reinterpret_cast<uv_stream_t*>(&server->tcp), backlog, on_connection)) < 0)
+		if ((result = uv_listen(reinterpret_cast<uv_stream_t*>(&server->tcp), backlog, onConnection)) < 0)
 		{
 			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 		}
@@ -315,7 +315,7 @@ void hx::asys::libuv::net::LibuvTcpServer::__Visit(hx::VisitContext* __inCtx)
 void hx::asys::net::TcpServer_obj::open_ipv4(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 {
 	auto address = sockaddr_in();
-	auto result = uv_ip4_addr(host.utf8_str(), port, &address);
+	auto result  = uv_ip4_addr(host.utf8_str(), port, &address);
 
 	if (result < 0)
 	{
@@ -323,14 +323,14 @@ void hx::asys::net::TcpServer_obj::open_ipv4(Context ctx, const String host, int
 	}
 	else
 	{
-		on_open(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
+		onOpen(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
 	}
 }
 
 void hx::asys::net::TcpServer_obj::open_ipv6(Context ctx, const String host, int port, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 {
 	auto address = sockaddr_in6();
-	auto result = uv_ip6_addr(host.utf8_str(), port, &address);
+	auto result  = uv_ip6_addr(host.utf8_str(), port, &address);
 
 	if (result < 0)
 	{
@@ -338,6 +338,6 @@ void hx::asys::net::TcpServer_obj::open_ipv6(Context ctx, const String host, int
 	}
 	else
 	{
-		on_open(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
+		onOpen(hx::asys::libuv::context(ctx), reinterpret_cast<sockaddr*>(&address), options, cbSuccess, cbFailure);
 	}
 }

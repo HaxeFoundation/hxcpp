@@ -1,96 +1,33 @@
 #include <hxcpp.h>
 #include <string>
 #include "LibuvChildProcess.h"
-#include "../stream/ReadablePipe.h"
-#include "../stream/WritablePipe.h"
 #include "../filesystem/LibuvFile.h"
 #include "LibuvCurrentProcess.h"
 
 namespace
 {
-	class WriteRequest final : hx::asys::libuv::BaseRequest
+	class TtyWriter final : public hx::asys::libuv::stream::StreamWriter_obj
 	{
-		std::unique_ptr<hx::ArrayPin> pin;
-
 	public:
-		uv_write_t request;
-		uv_buf_t buffer;
-
-		WriteRequest(hx::ArrayPin* _pin, char* _base, int _length, Dynamic _cbSuccess, Dynamic _cbFailure)
-			: BaseRequest(_cbSuccess, _cbFailure)
-			, pin(_pin)
-			, buffer(uv_buf_init(_base, _length))
+		TtyWriter(uv_tty_t* tty) : hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(tty))
 		{
-			request.data = this;
+			//
 		}
 
-		static void callback(uv_write_t* request, int status)
-		{
-			auto gcZone = hx::AutoGCZone();
-			auto spData = std::unique_ptr<WriteRequest>(static_cast<WriteRequest*>(request->data));
-
-			if (status < 0)
-			{
-				Dynamic(spData->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(status));
-			}
-			else
-			{
-				Dynamic(spData->cbSuccess.rooted)(spData->buffer.len);
-			}
-		}
-	};
-
-	class TtyWriter final : public hx::asys::Writable_obj
-	{
-		uv_tty_t* tty;
-
-	public:
-		TtyWriter(uv_loop_t* loop, uv_file fd) : tty(new uv_tty_t())
-		{
-			uv_tty_init(loop, tty, fd, 0);
-		}
-		void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
-		{
-			auto request = std::make_unique<WriteRequest>(data->Pin(), data->GetBase() + offset, length, cbSuccess, cbFailure);
-			auto result  = uv_write(&request->request, reinterpret_cast<uv_stream_t*>(tty), &request->buffer, 1, WriteRequest::callback);
-
-			if (result < 0)
-			{
-				cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-			}
-			else
-			{
-				request.release();
-			}
-		}
-		void flush(Dynamic cbSuccess, Dynamic cbFailure) override
-		{
-			cbSuccess();
-		}
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
 			cbSuccess();
 		}
 	};
 
-	class TtyReader final : public hx::asys::Readable_obj
+	class TtyReader final : public hx::asys::libuv::stream::StreamReader_obj
 	{
-		uv_tty_t* tty;
-		hx::asys::libuv::stream::StreamReader* reader;
-
 	public:
-		TtyReader(uv_loop_t* loop, uv_file fd)
-			: tty(new uv_tty_t())
-			, reader(new hx::asys::libuv::stream::StreamReader(reinterpret_cast<uv_stream_t*>(tty)))
+		TtyReader(uv_tty_t* tty) : hx::asys::libuv::stream::StreamReader_obj(reinterpret_cast<uv_stream_t*>(tty))
 		{
-			tty->data = reader;
 
-			uv_tty_init(loop, tty, fd, 0);
 		}
-		void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override
-		{
-			reader->read(output, offset, length, cbSuccess, cbFailure);
-		}
+
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override
 		{
 			cbSuccess();
@@ -133,13 +70,16 @@ hx::asys::libuv::system::LibuvCurrentProcess::LibuvCurrentProcess(LibuvAsysConte
 	: signalMap(null())
 	, ctx(ctx)
 {
-	hx::GCSetFinalizer(this, [](hx::Object* obj) -> void {
-		reinterpret_cast<hx::asys::libuv::system::LibuvCurrentProcess*>(obj)->~LibuvCurrentProcess();
-	});
+	auto ttys = new std::array<uv_tty_t, 3>();
 
-	stdio_in  = hx::asys::Readable(new TtyReader(ctx->uvLoop, 0));
-	stdio_out = hx::asys::Writable(new TtyWriter(ctx->uvLoop, 1));
-	stdio_err = hx::asys::Writable(new TtyWriter(ctx->uvLoop, 2));
+	stdio_in  = hx::asys::Readable(new TtyReader(&ttys->at(0)));
+	stdio_out = hx::asys::Writable(new TtyWriter(&ttys->at(1)));
+	stdio_err = hx::asys::Writable(new TtyWriter(&ttys->at(2)));
+
+	for (auto i = 0; i < ttys->size(); i++)
+	{
+		uv_tty_init(ctx->uvLoop, &ttys->at(i), i, false);
+	}
 }
 
 hx::asys::Pid hx::asys::libuv::system::LibuvCurrentProcess::pid()

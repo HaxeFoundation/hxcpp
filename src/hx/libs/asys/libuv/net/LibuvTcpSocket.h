@@ -1,27 +1,20 @@
 #include <hxcpp.h>
 #include "../stream/StreamReader.h"
+#include "../stream/StreamWriter.h"
 
 namespace hx::asys::libuv::net
 {
 	const int KEEP_ALIVE_VALUE = 5;
 
-	struct LibuvTcpSocketImpl final : public hx::asys::libuv::stream::StreamReader
-	{
-		uv_tcp_t tcp;
-		int keepAlive;
-
-		LibuvTcpSocketImpl() : hx::asys::libuv::stream::StreamReader(reinterpret_cast<uv_stream_t*>(&tcp)), keepAlive(KEEP_ALIVE_VALUE)
-		{
-			tcp.data = reinterpret_cast<hx::asys::libuv::stream::StreamReader*>(this);
-		}
-	};
-
 	class LibuvTcpSocket final : public hx::asys::net::TcpSocket_obj
 	{
-		LibuvTcpSocketImpl* socket;
+		uv_tcp_t* tcp;
+		int keepAlive;
+		hx::asys::libuv::stream::StreamWriter writer;
+		hx::asys::libuv::stream::StreamReader reader;
 
 	public:
-		LibuvTcpSocket(LibuvTcpSocketImpl* _socket);
+		LibuvTcpSocket(uv_tcp_t* _socket);
 
 		void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) override;
 		void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override;

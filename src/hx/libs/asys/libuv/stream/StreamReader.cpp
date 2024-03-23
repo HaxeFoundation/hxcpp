@@ -1,71 +1,22 @@
 #include <hxcpp.h>
 #include "StreamReader.h"
 
-hx::asys::libuv::stream::StreamReader::QueuedRead::QueuedRead(const Array<uint8_t> _array, const int _offset, const int _length, const Dynamic _cbSuccess, const Dynamic _cbFailure)
-    : BaseRequest(_cbSuccess, _cbFailure)
-    , array(_array.mPtr)
-    , offset(_offset)
-    , length(_length)
+hx::asys::libuv::stream::StreamReader_obj::Ctx::Ctx(uv_stream_t* stream)
+    : stream(stream)
+    , queue()
+    , staging()
+    , buffer()
 {
 }
 
-hx::asys::libuv::stream::StreamReader::StreamReader(uv_stream_t* _stream) : stream(_stream) {}
-
-void hx::asys::libuv::stream::StreamReader::read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
-{
-    if (queue.empty())
-    {
-        if (!buffer.empty())
-        {
-            queue.emplace_back(output, offset, length, cbSuccess, cbFailure);
-
-            consume();
-
-            return;
-        }
-
-        auto alloc = [](uv_handle_t* handle, size_t suggested, uv_buf_t* buffer) {
-            auto reader = static_cast<StreamReader*>(handle->data);
-
-            buffer->base = reader->staging.data();
-            buffer->len  = reader->staging.size();
-        };
-
-        auto read = [](uv_stream_t* stream, ssize_t len, const uv_buf_t* read) {
-            auto gcZone = hx::AutoGCZone();
-            auto reader = static_cast<StreamReader*>(stream->data);
-
-            if (len <= 0)
-            {
-                reader->reject(len);
-
-                return;
-            }
-
-            reader->buffer.insert(reader->buffer.end(), reader->staging.begin(), reader->staging.begin() + len);
-            reader->consume();
-        };
-
-        auto result = uv_read_start(stream, alloc, read);
-        if (result < 0 && result != UV_EALREADY)
-        {
-            cbFailure(uv_err_to_enum(result));
-
-            return;
-        }
-    }
-
-    queue.emplace_back(output, offset, length, cbSuccess, cbFailure);
-}
-
-void hx::asys::libuv::stream::StreamReader::consume()
+void hx::asys::libuv::stream::StreamReader_obj::Ctx::consume()
 {
     while (!buffer.empty() && !queue.empty())
     {
         auto& request = queue.front();
         auto size     = std::min(int(buffer.size()), request.length);
 
-        request.array.rooted->memcpy(request.offset, buffer.data(), size);
+        request.array.rooted->memcpy(request.offset, reinterpret_cast<uint8_t*>(buffer.data()), size);
 
         buffer.erase(buffer.begin(), buffer.begin() + size);
 
@@ -80,7 +31,7 @@ void hx::asys::libuv::stream::StreamReader::consume()
     }
 }
 
-void hx::asys::libuv::stream::StreamReader::reject(int code)
+void hx::asys::libuv::stream::StreamReader_obj::Ctx::reject(int code)
 {
     buffer.clear();
 
@@ -92,4 +43,76 @@ void hx::asys::libuv::stream::StreamReader::reject(int code)
 
         queue.pop_front();
     }
+}
+
+hx::asys::libuv::stream::StreamReader_obj::QueuedRead::QueuedRead(const Array<uint8_t> _array, const int _offset, const int _length, const Dynamic _cbSuccess, const Dynamic _cbFailure)
+    : BaseRequest(_cbSuccess, _cbFailure)
+    , array(_array.mPtr)
+    , offset(_offset)
+    , length(_length)
+{
+}
+
+hx::asys::libuv::stream::StreamReader_obj::StreamReader_obj(uv_stream_t* stream)
+    : ctx(new Ctx(stream))
+{
+    stream->data = ctx;
+
+    hx::GCSetFinalizer(this, [](hx::Object* obj) {
+        delete reinterpret_cast<StreamReader_obj*>(obj)->ctx;
+    });
+}
+
+void hx::asys::libuv::stream::StreamReader_obj::read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure)
+{
+    if (ctx->queue.empty())
+    {
+        if (!ctx->buffer.empty())
+        {
+            ctx->queue.emplace_back(output, offset, length, cbSuccess, cbFailure);
+            ctx->consume();
+
+            return;
+        }
+
+        auto alloc = [](uv_handle_t* handle, size_t suggested, uv_buf_t* buffer) {
+            auto ctx     = static_cast<Ctx*>(handle->data);
+            auto staging = std::vector<char>(suggested);
+
+            buffer->base = staging.data();
+            buffer->len  = staging.size();
+
+            ctx->staging.push_back(staging);
+        };
+
+        auto read = [](uv_stream_t* stream, ssize_t len, const uv_buf_t* read) {
+            auto gc  = hx::AutoGCZone();
+            auto ctx = static_cast<Ctx*>(stream->data);
+
+            if (len <= 0)
+            {
+                ctx->reject(len);
+
+                return;
+            }
+
+            ctx->buffer.insert(ctx->buffer.end(), read->base, read->base + len);
+            ctx->consume();
+        };
+
+        auto result = uv_read_start(ctx->stream, alloc, read);
+        if (result < 0 && result != UV_EALREADY)
+        {
+            cbFailure(uv_err_to_enum(result));
+
+            return;
+        }
+    }
+
+    ctx->queue.emplace_back(output, offset, length, cbSuccess, cbFailure);
+}
+
+void hx::asys::libuv::stream::StreamReader_obj::close(Dynamic cbSuccess, Dynamic cbFailure)
+{
+    uv_close(reinterpret_cast<uv_handle_t*>(ctx->stream), hx::asys::libuv::clean_handle);
 }

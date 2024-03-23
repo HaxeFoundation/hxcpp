@@ -2,8 +2,6 @@
 #include <string>
 #include "LibuvChildProcess.h"
 #include "LibuvCurrentProcess.h"
-#include "../stream/ReadablePipe.h"
-#include "../stream/WritablePipe.h"
 #include "../filesystem/LibuvFile.h"
 
 namespace
@@ -90,20 +88,36 @@ namespace
 
     hx::asys::Writable getWritablePipe(uv_loop_t* loop, uv_stdio_container_t& container)
     {
-        auto writer = new hx::asys::libuv::stream::WritablePipe(loop);
+        auto result = 0;
+        auto pipe   = std::make_unique<uv_pipe_t>();
+
+        if ((result = uv_pipe_init(loop, pipe.get(), 0)) < 0)
+        {
+            hx::Throw(HX_CSTRING("Failed to init pipe"));
+        }
+
+        auto writer = new hx::asys::libuv::stream::StreamWriter_obj(reinterpret_cast<uv_stream_t*>(pipe.get()));
 
         container.flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_READABLE_PIPE);
-        container.data.stream = reinterpret_cast<uv_stream_t*>(writer->pipe.get());
+        container.data.stream = reinterpret_cast<uv_stream_t*>(pipe.release());
 
         return writer;
     }
 
     hx::asys::Readable getReadablePipe(uv_loop_t* loop, uv_stdio_container_t& container)
     {
-        auto reader = new hx::asys::libuv::stream::ReadablePipe(loop);
+        auto result = 0;
+        auto pipe   = std::make_unique<uv_pipe_t>();
+
+        if ((result = uv_pipe_init(loop, pipe.get(), 0)) < 0)
+        {
+            hx::Throw(HX_CSTRING("Failed to init pipe"));
+        }
+
+        auto reader = new hx::asys::libuv::stream::StreamReader_obj(reinterpret_cast<uv_stream_t*>(pipe.get()));
 
         container.flags       = static_cast<uv_stdio_flags>(UV_CREATE_PIPE | UV_WRITABLE_PIPE);
-        container.data.stream = reinterpret_cast<uv_stream_t*>(reader->pipe.get());
+        container.data.stream = reinterpret_cast<uv_stream_t*>(pipe.release());
 
         return reader;
     }
