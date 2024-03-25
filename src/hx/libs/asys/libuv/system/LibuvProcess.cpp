@@ -250,7 +250,7 @@ namespace
 
                 case 1:
                 {
-                    process->stdio_out = getReadablePipe(loop, process->containers[index]);
+                    process->stdio_err = getReadablePipe(loop, process->containers[index]);
                     break;
                 }
 
