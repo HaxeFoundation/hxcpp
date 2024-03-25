@@ -41,5 +41,8 @@ namespace hx::asys::libuv::stream
 
         void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;
         void close(Dynamic cbSuccess, Dynamic cbFailure) override;
+
+        static void onAlloc(uv_handle_t* handle, size_t suggested, uv_buf_t* buffer);
+        static void onRead(uv_stream_t* stream, ssize_t len, const uv_buf_t* read);
     };
 }
