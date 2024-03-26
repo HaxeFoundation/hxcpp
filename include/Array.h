@@ -126,6 +126,18 @@ public:
 
 namespace hx
 {
+#if (HXCPP_API_LEVEL>=430)
+class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayPin
+{
+   char* ptr;
+public:
+   ArrayPin(char* inPtr);
+
+   ~ArrayPin();
+
+   char* GetBase();
+};
+#endif
 
 // Also used by cpp::VirtualArray
 class HXCPP_EXTERN_CLASS_ATTRIBUTES ArrayCommon : public hx::Object
@@ -196,6 +208,9 @@ public:
       mAlloc = -1;
    }
 
+#if (HXCPP_API_LEVEL>=430)
+   ArrayPin* Pin();
+#endif
 
    int __GetType() const { return vtArray; }
 
@@ -214,8 +229,8 @@ public:
    {
       if (inSize<length)
       {
-         int s = GetElementSize();
-         memset(mBase + inSize*s, 0, (length-inSize)*s);
+         /*int s = GetElementSize();
+         memset(mBase + inSize*s, 0, (length-inSize)*s);*/
          length = inSize;
       }
       else if (inSize>length)
