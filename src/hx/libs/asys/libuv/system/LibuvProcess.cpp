@@ -13,7 +13,7 @@ namespace
             return;
         }
 
-        auto field = options->__Field(HX_CSTRING("cwd"), HX_PROP_ALWAYS);
+        auto field = options->__Field(HX_CSTRING("cwd"), HX_PROP_DYNAMIC);
         if (field.isNull())
         {
             return;
@@ -32,7 +32,7 @@ namespace
             return;
         }
 
-        auto field = options->__Field(HX_CSTRING("args"), HX_PROP_ALWAYS);
+        auto field = options->__Field(HX_CSTRING("args"), HX_PROP_DYNAMIC);
         if (field.isNull())
         {
             return;
@@ -59,13 +59,13 @@ namespace
             return;
         }
 
-        auto field = options->__Field(HX_CSTRING("env"), HX_PROP_ALWAYS);
+        auto field = options->__Field(HX_CSTRING("env"), HX_PROP_DYNAMIC);
         if (field.isNull())
         {
             return;
         }
 
-        auto hash = Dynamic(field.asDynamic());
+        auto hash = Dynamic(field.asDynamic()->__Field(HX_CSTRING("h"), HX_PROP_DYNAMIC));
         auto keys = __string_hash_keys(hash);
 
         environment.resize(static_cast<size_t>(keys->length) + 1);
@@ -81,7 +81,7 @@ namespace
             }
             else
             {
-                environment.at(i) = (std::string(key.utf8_str()) + std::string("=") + std::string(value.utf8_str())).data();
+                environment.at(i) = const_cast<char*>((key + HX_CSTRING("=") + value).c_str());
             }
         }
     }
@@ -130,7 +130,7 @@ namespace
         }
 
         {
-            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stdin"), HX_PROP_ALWAYS));
+            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stdin"), HX_PROP_DYNAMIC));
             auto index = 0;
 
             switch (field->_hx_getIndex())
@@ -174,7 +174,7 @@ namespace
                 case 6:
                 {
                     auto file    = field->_hx_getObject(0);
-                    auto native  = file->__Field(HX_CSTRING("native"), hx::PropertyAccess::paccDynamic).asObject();
+                    auto native  = file->__Field(HX_CSTRING("native"), HX_PROP_DYNAMIC).asObject();
                     auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
 
                     process->containers[index].flags = UV_INHERIT_FD;
@@ -186,7 +186,7 @@ namespace
         }
 
         {
-            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stdout"), HX_PROP_ALWAYS));
+            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stdout"), HX_PROP_DYNAMIC));
             auto index = 1;
 
             switch (field->_hx_getIndex())
@@ -225,7 +225,7 @@ namespace
                 case 6:
                 {
                     auto file    = field->_hx_getObject(0);
-                    auto native  = file->__Field(HX_CSTRING("native"), hx::PropertyAccess::paccDynamic).asObject();
+                    auto native  = file->__Field(HX_CSTRING("native"), HX_PROP_DYNAMIC).asObject();
                     auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
 
                     process->containers[index].flags = UV_INHERIT_FD;
@@ -237,7 +237,7 @@ namespace
         }
 
         {
-            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stderr"), HX_PROP_ALWAYS));
+            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stderr"), HX_PROP_DYNAMIC));
             auto index = 2;
 
             switch (field->_hx_getIndex())
@@ -276,7 +276,7 @@ namespace
                 case 6:
                 {
                     auto file    = field->_hx_getObject(0);
-                    auto native  = file->__Field(HX_CSTRING("native"), hx::PropertyAccess::paccDynamic).asObject();
+                    auto native  = file->__Field(HX_CSTRING("native"), HX_PROP_DYNAMIC).asObject();
                     auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
 
                     process->containers[index].flags = UV_INHERIT_FD;
@@ -298,7 +298,7 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
     getCwd(process->options->cwd, options);
     getArguments(process->arguments, command, options);
     getEnvironment(process->environment, options);
-    getStdioContainers(uvContext->uvLoop, process, options->__Field(HX_CSTRING("stdio"), HX_PROP_ALWAYS));
+    getStdioContainers(uvContext->uvLoop, process, options->__Field(HX_CSTRING("stdio"), HX_PROP_DYNAMIC));
 
     process->request->data        = root.get();
     process->options->args        = process->arguments.data();
@@ -319,21 +319,21 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
         }
     };
 
-    auto uidOption = options->__Field(HX_CSTRING("user"), hx::PropertyAccess::paccDynamic);
+    auto uidOption = options->__Field(HX_CSTRING("user"), HX_PROP_DYNAMIC);
     if (!uidOption.isNull())
     {
         process->options->flags |= UV_PROCESS_SETUID;
         process->options->uid = uidOption.asInt();
     }
 
-    auto gidOption = options->__Field(HX_CSTRING("group"), hx::PropertyAccess::paccDynamic);
+    auto gidOption = options->__Field(HX_CSTRING("group"), HX_PROP_DYNAMIC);
     if (!gidOption.isNull())
     {
         process->options->flags |= UV_PROCESS_SETGID;
         process->options->gid = gidOption.asInt();
     }
 
-    auto detachedOption = options->__Field(HX_CSTRING("detached"), hx::PropertyAccess::paccDynamic);
+    auto detachedOption = options->__Field(HX_CSTRING("detached"), HX_PROP_DYNAMIC);
     if (!detachedOption.isNull())
     {
         process->options->flags |= UV_PROCESS_DETACHED;
