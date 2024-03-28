@@ -33,11 +33,31 @@ namespace
 					return;
 				}
 
-				if ((result = uv_tcp_keepalive(socket.get(), true, hx::asys::libuv::net::KEEP_ALIVE_VALUE)) < 0)
+				if ((result = uv_tcp_keepalive(socket.get(), server->keepAlive > 0, hx::asys::libuv::net::KEEP_ALIVE_VALUE)) < 0)
 				{
 					Dynamic(request->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
 
 					return;
+				}
+
+				if (server->sendBufferSize > 0)
+				{
+					if ((result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(socket.get()), &server->sendBufferSize)) < 0)
+					{
+						Dynamic(request->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
+
+						return;
+					}
+				}
+
+				if (server->recvBufferSize > 0)
+				{
+					if ((result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(socket.get()), &server->sendBufferSize)) < 0)
+					{
+						Dynamic(request->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
+
+						return;
+					}
 				}
 
 				if ((result = uv_accept(reinterpret_cast<uv_stream_t*>(&server->tcp), reinterpret_cast<uv_stream_t*>(socket.get()))) < 0)
@@ -54,7 +74,39 @@ namespace
 
 	void onOpen(hx::asys::libuv::LibuvAsysContext ctx, sockaddr* const address, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure)
 	{
-		auto server = std::make_unique<hx::asys::libuv::net::LibuvTcpServerImpl>(ctx->uvLoop);
+		auto backlog        = SOMAXCONN;
+		auto sendBufferSize = 0;
+		auto recvBufferSize = 0;
+		auto keepAlive      = hx::asys::libuv::net::KEEP_ALIVE_VALUE;
+
+		if (hx::IsNotNull(options))
+		{
+			auto sendBufferVal = options->__Field(HX_CSTRING("sendBuffer"), hx::PropertyAccess::paccDynamic);
+			if (sendBufferVal.isInt())
+			{
+				sendBufferSize = sendBufferVal.asInt();
+			}
+
+			auto recvBufferVal = options->__Field(HX_CSTRING("receiveBuffer"), hx::PropertyAccess::paccDynamic);
+			if (recvBufferVal.isInt())
+			{
+				recvBufferSize = recvBufferVal.asInt();
+			}
+
+			auto backlogSizeVal = options->__Field(HX_CSTRING("backlog"), hx::PropertyAccess::paccDynamic);
+			if (backlogSizeVal.isInt())
+			{
+				backlog = backlogSizeVal.asInt();
+			}
+
+			auto keepAliveVal = options->__Field(HX_CSTRING("keepAlive"), hx::PropertyAccess::paccDynamic);
+			if (keepAliveVal.isBool())
+			{
+				keepAlive = keepAliveVal.asInt() ? hx::asys::libuv::net::KEEP_ALIVE_VALUE : 0;
+			}
+		}
+
+		auto server = std::make_unique<hx::asys::libuv::net::LibuvTcpServerImpl>(ctx->uvLoop, keepAlive, sendBufferSize, recvBufferSize);
 		auto result = 0;
 
 		if ((result = uv_tcp_init(ctx->uvLoop, &server->tcp)) < 0)
@@ -65,48 +117,6 @@ namespace
 		}
 
 		if ((result = uv_tcp_bind(&server->tcp, address, 0)) < 0)
-		{
-			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-			return;
-		}
-
-		auto backlog = SOMAXCONN;
-
-		if (null() != options)
-		{
-			auto sendBufferSize = options->__Field(HX_CSTRING("sendBuffer"), hx::PropertyAccess::paccDynamic);
-			if (sendBufferSize.isInt())
-			{
-				if ((result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(server.get()), &sendBufferSize.valInt)) < 0)
-				{
-					cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-					return;
-				}
-			}
-
-			auto recvBufferSize = options->__Field(HX_CSTRING("receiveBuffer"), hx::PropertyAccess::paccDynamic);
-			if (recvBufferSize.isInt())
-			{
-				auto size = recvBufferSize.asInt();
-
-				if ((result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(server.get()), &recvBufferSize.valInt)) < 0)
-				{
-					cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-
-					return;
-				}
-			}
-
-			auto backlogSize = options->__Field(HX_CSTRING("backlog"), hx::PropertyAccess::paccDynamic);
-			if (backlogSize.isInt())
-			{
-				backlog = backlogSize.asInt();
-			}
-		}
-
-		if ((result = uv_tcp_keepalive(&server->tcp, true, server->keepAlive)) < 0)
 		{
 			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 
@@ -153,9 +163,11 @@ std::unique_ptr<hx::asys::libuv::BaseRequest> hx::asys::libuv::net::ConnectionQu
 	return root;
 }
 
-hx::asys::libuv::net::LibuvTcpServerImpl::LibuvTcpServerImpl(uv_loop_t* _loop)
+hx::asys::libuv::net::LibuvTcpServerImpl::LibuvTcpServerImpl(uv_loop_t* _loop, int keepAlive, int sendBufferSize, int recvBufferSize)
 	: loop(_loop)
-	, keepAlive(KEEP_ALIVE_VALUE)
+	, keepAlive(keepAlive)
+	, sendBufferSize(sendBufferSize)
+	, recvBufferSize(recvBufferSize)
 {
 	tcp.data = this;
 }
@@ -229,47 +241,43 @@ void hx::asys::libuv::net::LibuvTcpServer::getKeepAlive(Dynamic cbSuccess, Dynam
 
 void hx::asys::libuv::net::LibuvTcpServer::getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure)
 {
-	auto size   = 0;
-	auto result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(&server->tcp, &size), &size);
+	if (server->recvBufferSize == 0)
+	{
+		auto result = uv_send_buffer_size(reinterpret_cast<uv_handle_t*>(&server->tcp), &server->sendBufferSize);
 
-	if (result < 0)
-	{
-		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+		if (result < 0)
+		{
+			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+			return;
+		}
 	}
-	else
-	{
-		cbSuccess(size);
-	}
+
+	cbSuccess(server->sendBufferSize);
 }
 
 void hx::asys::libuv::net::LibuvTcpServer::getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure)
 {
-	auto size   = 0;
-	auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(&server->tcp), &size);
+	if (server->recvBufferSize == 0)
+	{
+		auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(&server->tcp), &server->recvBufferSize);
 
-	if (result < 0)
-	{
-		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+		if (result < 0)
+		{
+			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+			return;
+		}
 	}
-	else
-	{
-		cbSuccess(size);
-	}
+
+	cbSuccess(server->recvBufferSize);
 }
 
 void hx::asys::libuv::net::LibuvTcpServer::setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure)
 {
-	auto result = uv_tcp_keepalive(&server->tcp, keepAlive, server->keepAlive);
-	if (result < 0)
-	{
-		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-	}
-	else
-	{
-		server->keepAlive = keepAlive ? KEEP_ALIVE_VALUE : 0;
+	server->keepAlive = keepAlive ? KEEP_ALIVE_VALUE : 0;
 
-		cbSuccess();
-	}
+	cbSuccess();
 }
 
 void hx::asys::libuv::net::LibuvTcpServer::setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure)
@@ -288,16 +296,9 @@ void hx::asys::libuv::net::LibuvTcpServer::setSendBufferSize(int size, Dynamic c
 
 void hx::asys::libuv::net::LibuvTcpServer::setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure)
 {
-	auto result = uv_recv_buffer_size(reinterpret_cast<uv_handle_t*>(&server->tcp), &size);
+	server->recvBufferSize = size;
 
-	if (result < 0)
-	{
-		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
-	}
-	else
-	{
-		cbSuccess(size);
-	}
+	cbSuccess();
 }
 
 void hx::asys::libuv::net::LibuvTcpServer::__Mark(hx::MarkContext* __inCtx)

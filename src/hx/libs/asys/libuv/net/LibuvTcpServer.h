@@ -28,8 +28,10 @@ namespace hx::asys::libuv::net
 		uv_loop_t* loop;
 		ConnectionQueue connections;
 		int keepAlive;
+		int sendBufferSize;
+		int recvBufferSize;
 
-		LibuvTcpServerImpl(uv_loop_t* _loop);
+		LibuvTcpServerImpl(uv_loop_t* _loop, int keepAlive, int sendBufferSize, int recvBufferSize);
 	};
 
 	class LibuvTcpServer final : public hx::asys::net::TcpServer_obj
