@@ -6,25 +6,14 @@
 
 namespace hx::asys::libuv::net
 {
-	const int KEEP_ALIVE_VALUE = 5;
-
-	class LibuvTcpSocket final : public hx::asys::net::TcpSocket_obj
+	class LibuvIpcSocket final : public hx::asys::net::IpcSocket_obj
 	{
-		uv_tcp_t* tcp;
-		int keepAlive;
+		uv_pipe_t* pipe;
 		hx::asys::libuv::stream::StreamWriter writer;
 		hx::asys::libuv::stream::StreamReader reader;
 
 	public:
-		LibuvTcpSocket(uv_tcp_t* _socket);
-
-		void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) override;
-		void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override;
-		void getRecvBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override;
-
-		void setKeepAlive(bool keepAlive, Dynamic cbSuccess, Dynamic cbFailure) override;
-		void setSendBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) override;
-		void setRecvBufferSize(int size, Dynamic cbSuccess, Dynamic cbFailure) override;
+		LibuvIpcSocket(uv_pipe_t* pipe);
 
 		void read(Array<uint8_t> output, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;
 		void write(Array<uint8_t> data, int offset, int length, Dynamic cbSuccess, Dynamic cbFailure) override;

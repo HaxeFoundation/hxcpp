@@ -1,3 +1,4 @@
+#include <hxcpp.h>
 #include "LibuvTcpSocket.h"
 #include "NetUtils.h"
 #include "../LibuvUtils.h"
@@ -69,6 +70,13 @@ namespace
 		auto result  = 0;
 
 		if ((result = uv_tcp_init(ctx->uvLoop, request->tcp.get())) < 0)
+		{
+			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
+
+			return;
+		}
+
+		if ((result = uv_tcp_keepalive(request->tcp.get(), true, 10) < 0))
 		{
 			cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 

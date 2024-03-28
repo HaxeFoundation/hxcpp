@@ -11,6 +11,7 @@ HX_DECLARE_CLASS3(hx, asys, filesystem, Directory)
 HX_DECLARE_CLASS3(hx, asys, net, TcpServer)
 HX_DECLARE_CLASS3(hx, asys, net, TcpSocket)
 HX_DECLARE_CLASS3(hx, asys, net, SecureSession)
+HX_DECLARE_CLASS3(hx, asys, net, IpcSocket)
 HX_DECLARE_CLASS3(hx, asys, system, Process)
 HX_DECLARE_CLASS3(hx, asys, system, CurrentProcess)
 HX_DECLARE_CLASS3(hx, asys, system, ChildProcess)
@@ -181,6 +182,16 @@ namespace hx
                 virtual void close(Dynamic cbSuccess, Dynamic cbFailure) = 0;
 
                 static void authenticateAsClient(TcpSocket socket, String host, Dynamic options, Dynamic cbSuccess, Dynamic cbFailure);
+            };
+
+            class IpcSocket_obj : public Duplex_obj
+            {
+            public:
+                String socketName;
+                String peerName;
+
+                static void bind(Context ctx, String name, Dynamic cbSuccess, Dynamic cbFailure);
+                static void connect(Context ctx, String name, Dynamic cbSuccess, Dynamic cbFailure);
             };
 
             // class UdpSocket_obj : public Object
