@@ -40,7 +40,7 @@ namespace
 					return;
 				}
 
-				if ((result = uv_accept(reinterpret_cast<uv_stream_t*>(&server->tcp), reinterpret_cast<uv_stream_t*>(&socket->tcp))) < 0)
+				if ((result = uv_accept(reinterpret_cast<uv_stream_t*>(&server->tcp), reinterpret_cast<uv_stream_t*>(socket.get()))) < 0)
 				{
 					Dynamic(request->cbFailure.rooted)(hx::asys::libuv::uv_err_to_enum(result));
 
