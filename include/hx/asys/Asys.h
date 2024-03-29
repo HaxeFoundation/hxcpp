@@ -31,10 +31,8 @@ namespace hx
 
             system::CurrentProcess process;
 
-            virtual void enqueue(Dynamic event) = 0;
-            virtual Dynamic enqueue(Dynamic event, int intervalMs) = 0;
-            virtual void cancel(Dynamic) = 0;
-            virtual void loop() = 0;
+            virtual bool loop() = 0;
+            virtual void close() = 0;
         };
 
         class Writable_obj : public Object
