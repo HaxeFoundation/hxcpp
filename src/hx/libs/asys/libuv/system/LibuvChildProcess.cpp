@@ -6,16 +6,15 @@
 #include "LibuvChildProcess.h"
 
 hx::asys::libuv::system::LibuvChildProcess::LibuvChildProcess()
-	: request(new uv_process_t())
-	, options(new uv_process_options_t())
-	, arguments(new std::vector<char*>())
-	, environment(new std::vector<char*>())
-	, containers(new std::vector<uv_stdio_container_t>(3))
-	, currentExitCode(new std::optional<int64_t>())
+	: request(std::move(std::make_unique<uv_process_t>()))
+	, options(std::move(std::make_unique<uv_process_options_t>()))
 	, exitCallback(null())
 	, closeCallback(null())
+	, containers(3)
 {
-	HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+	hx::GCSetFinalizer(this, [](hx::Object* obj) -> void {
+		reinterpret_cast<LibuvChildProcess*>(obj)->~LibuvChildProcess();
+	});
 }
 
 hx::asys::Pid hx::asys::libuv::system::LibuvChildProcess::pid()
@@ -70,7 +69,7 @@ void hx::asys::libuv::system::LibuvChildProcess::sendSignal(hx::EnumBase signal,
 	}
 
 	auto result = 0;
-	if ((result = uv_process_kill(request, signum)) < 0)
+	if ((result = uv_process_kill(request.get(), signum)) < 0)
 	{
 		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 	}
@@ -82,9 +81,9 @@ void hx::asys::libuv::system::LibuvChildProcess::sendSignal(hx::EnumBase signal,
 
 void hx::asys::libuv::system::LibuvChildProcess::exitCode(Dynamic cbSuccess, Dynamic cbFailure)
 {
-	if (currentExitCode->has_value())
+	if (currentExitCode.has_value())
 	{
-		cbSuccess(static_cast<int>(currentExitCode->value()));
+		cbSuccess(static_cast<int>(currentExitCode.value()));
 	}
 	else
 	{
@@ -96,7 +95,7 @@ void hx::asys::libuv::system::LibuvChildProcess::close(Dynamic cbSuccess, Dynami
 {
 	closeCallback = cbSuccess.mPtr;
 
-	uv_close(reinterpret_cast<uv_handle_t*>(request), [](uv_handle_t* handle) {
+	uv_close(reinterpret_cast<uv_handle_t*>(request.get()), [](uv_handle_t* handle) {
 		auto gcZone   = hx::AutoGCZone();
 		auto process  = std::unique_ptr<hx::RootedObject<hx::asys::libuv::system::LibuvChildProcess>>(reinterpret_cast<hx::RootedObject<hx::asys::libuv::system::LibuvChildProcess>*>(handle->data));
 		auto callback = Dynamic(process->rooted->closeCallback);

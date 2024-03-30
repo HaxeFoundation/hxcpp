@@ -13,12 +13,12 @@ namespace hx::asys::libuv::system
 	class LibuvChildProcess final : public hx::asys::system::ChildProcess_obj
 	{
 	public:
-		uv_process_t* request;
-		uv_process_options_t* options;
-		std::vector<char*>* arguments;
-		std::vector<char*>* environment;
-		std::vector<uv_stdio_container_t>* containers;
-		std::optional<int64_t>* currentExitCode;
+		std::unique_ptr<uv_process_t> request;
+		std::unique_ptr<uv_process_options_t> options;
+		std::vector<char*> arguments;
+		std::vector<char*> environment;
+		std::vector<uv_stdio_container_t> containers;
+		std::optional<int64_t> currentExitCode;
 
 		Dynamic exitCallback;
 		Dynamic closeCallback;
