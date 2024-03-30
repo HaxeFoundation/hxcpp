@@ -16,7 +16,7 @@ namespace hx::asys::libuv::net
 		hx::asys::libuv::stream::StreamReader reader;
 
 	public:
-		LibuvTcpSocket(uv_tcp_t* _socket);
+		LibuvTcpSocket(uv_tcp_t* _socket, int keepAlive);
 
 		void getKeepAlive(Dynamic cbSuccess, Dynamic cbFailure) override;
 		void getSendBufferSize(Dynamic cbSuccess, Dynamic cbFailure) override;

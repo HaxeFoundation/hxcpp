@@ -67,7 +67,7 @@ namespace
 					return;
 				}
 
-				Dynamic(request->cbSuccess.rooted)(hx::asys::net::TcpSocket(new hx::asys::libuv::net::LibuvTcpSocket(socket.release())));
+				Dynamic(request->cbSuccess.rooted)(hx::asys::net::TcpSocket(new hx::asys::libuv::net::LibuvTcpSocket(socket.release(), server->keepAlive)));
 			}
 		}
 	}
