@@ -5,21 +5,29 @@
 #include <memory>
 #include "LibuvChildProcess.h"
 
-hx::asys::libuv::system::LibuvChildProcess::LibuvChildProcess()
-	: request(std::move(std::make_unique<uv_process_t>()))
-	, options(std::move(std::make_unique<uv_process_options_t>()))
-	, exitCallback(null())
-	, closeCallback(null())
+hx::asys::libuv::system::LibuvChildProcess::Ctx::Ctx()
+	: request()
+	, options()
+	, arguments()
+	, environment()
 	, containers(3)
+	, currentExitCode()
+	, exitCallback(null())
 {
-	hx::GCSetFinalizer(this, [](hx::Object* obj) -> void {
-		reinterpret_cast<LibuvChildProcess*>(obj)->~LibuvChildProcess();
-	});
+}
+
+hx::asys::libuv::system::LibuvChildProcess::LibuvChildProcess(Ctx* ctx, Writable oStdin, Readable oStdout, Readable oStderr) : ctx(ctx)
+{
+	HX_OBJ_WB_NEW_MARKED_OBJECT(this);
+
+	stdio_in  = oStdin;
+	stdio_out = oStdout;
+	stdio_err = oStderr;
 }
 
 hx::asys::Pid hx::asys::libuv::system::LibuvChildProcess::pid()
 {
-	return request->pid;
+	return ctx->request.pid;
 }
 
 void hx::asys::libuv::system::LibuvChildProcess::sendSignal(hx::EnumBase signal, Dynamic cbSuccess, Dynamic cbFailure)
@@ -69,7 +77,7 @@ void hx::asys::libuv::system::LibuvChildProcess::sendSignal(hx::EnumBase signal,
 	}
 
 	auto result = 0;
-	if ((result = uv_process_kill(request.get(), signum)) < 0)
+	if ((result = uv_process_kill(&ctx->request, signum)) < 0)
 	{
 		cbFailure(hx::asys::libuv::uv_err_to_enum(result));
 	}
@@ -81,42 +89,19 @@ void hx::asys::libuv::system::LibuvChildProcess::sendSignal(hx::EnumBase signal,
 
 void hx::asys::libuv::system::LibuvChildProcess::exitCode(Dynamic cbSuccess, Dynamic cbFailure)
 {
-	if (currentExitCode.has_value())
+	if (ctx->currentExitCode.has_value())
 	{
-		cbSuccess(static_cast<int>(currentExitCode.value()));
+		cbSuccess(static_cast<int>(ctx->currentExitCode.value()));
 	}
 	else
 	{
-		exitCallback = cbSuccess.mPtr;
+		ctx->exitCallback.rooted = cbSuccess.mPtr;
 	}
 }
 
 void hx::asys::libuv::system::LibuvChildProcess::close(Dynamic cbSuccess, Dynamic cbFailure)
 {
-	closeCallback = cbSuccess.mPtr;
+	uv_close(reinterpret_cast<uv_handle_t*>(&ctx->request), hx::asys::libuv::clean_handle);
 
-	uv_close(reinterpret_cast<uv_handle_t*>(request.get()), [](uv_handle_t* handle) {
-		auto gcZone   = hx::AutoGCZone();
-		auto process  = std::unique_ptr<hx::RootedObject<hx::asys::libuv::system::LibuvChildProcess>>(reinterpret_cast<hx::RootedObject<hx::asys::libuv::system::LibuvChildProcess>*>(handle->data));
-		auto callback = Dynamic(process->rooted->closeCallback);
-
-		if (null() != callback)
-		{
-			callback();
-		}
-	});
+	cbSuccess();
 }
-
-void hx::asys::libuv::system::LibuvChildProcess::__Mark(hx::MarkContext* __inCtx)
-{
-	HX_MARK_MEMBER(exitCallback);
-	HX_MARK_MEMBER(closeCallback);
-}
-
-#ifdef HXCPP_VISIT_ALLOCS
-void hx::asys::libuv::system::LibuvChildProcess::__Visit(hx::VisitContext* __inCtx)
-{
-	HX_VISIT_MEMBER(exitCallback);
-	HX_VISIT_MEMBER(closeCallback);
-}
-#endif

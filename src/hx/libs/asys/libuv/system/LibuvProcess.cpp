@@ -122,169 +122,103 @@ namespace
         return reader;
     }
 
-    void getStdioContainers(uv_loop_t* loop, hx::ObjectPtr<hx::asys::libuv::system::LibuvChildProcess> process, hx::Anon hxOptions)
+    hx::asys::Writable getStdioWritable(uv_loop_t* loop, hx::EnumBase field, uv_stdio_container_t& container, int index)
     {
-        if (null() == hxOptions)
+        switch (field->_hx_getIndex())
         {
-            return;
+        case 0:
+        {
+            return getWritablePipe(loop, container);
         }
 
+        case 1:
         {
-            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stdin"), HX_PROP_DYNAMIC));
-            auto index = 0;
-
-            switch (field->_hx_getIndex())
-            {
-                case 0:
-                {
-                    process->stdio_in = getWritablePipe(loop, process->containers[index]);
-                    break;
-                }
-
-                case 1:
-                {
-                    hx::Throw(HX_CSTRING("Cannot open a writable pipe on stdin"));
-                    break;
-                }
-
-                case 2:
-                {
-                    hx::Throw(HX_CSTRING("Cannot open a duplex pipe on stdin"));
-                    break;
-                }
-
-                case 3:
-                {
-                    process->containers[index].flags = UV_INHERIT_FD;
-                    process->containers[index].data.fd = index;
-                    break;
-                }
-
-                case 4:
-                {
-                    process->containers[index].flags = UV_IGNORE;
-                    break;
-                }
-
-                case 5:
-                {
-                    break;
-                }
-
-                case 6:
-                {
-                    auto file    = field->_hx_getObject(0);
-                    auto native  = file->__Field(HX_CSTRING("native"), HX_PROP_DYNAMIC).asObject();
-                    auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
-
-                    process->containers[index].flags = UV_INHERIT_FD;
-                    process->containers[index].data.fd = luvFile->file;
-
-                    break;
-                }
-            }
+            hx::Throw(HX_CSTRING("Cannot open a writable pipe on stdin"));
         }
 
+        case 2:
         {
-            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stdout"), HX_PROP_DYNAMIC));
-            auto index = 1;
-
-            switch (field->_hx_getIndex())
-            {
-                case 0:
-                {
-                    hx::Throw(HX_CSTRING("Cannot open a readable pipe on stdout"));
-                    break;
-                }
-
-                case 1:
-                {
-                    process->stdio_out = getReadablePipe(loop, process->containers[index]);
-                    break;
-                }
-
-                case 2:
-                {
-                    hx::Throw(HX_CSTRING("Cannot open a duplex pipe on stdout"));
-                    break;
-                }
-
-                case 3:
-                {
-                    process->containers[index].flags = UV_INHERIT_FD;
-                    process->containers[index].data.fd = index;
-                    break;
-                }
-
-                case 4:
-                {
-                    process->containers[index].flags = UV_IGNORE;
-                    break;
-                }
-
-                case 6:
-                {
-                    auto file    = field->_hx_getObject(0);
-                    auto native  = file->__Field(HX_CSTRING("native"), HX_PROP_DYNAMIC).asObject();
-                    auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
-
-                    process->containers[index].flags = UV_INHERIT_FD;
-                    process->containers[index].data.fd = luvFile->file;
-
-                    break;
-                }
-            }
+            hx::Throw(HX_CSTRING("Cannot open a duplex pipe on stdin"));
         }
 
+        case 3:
         {
-            auto field = hx::EnumBase(hxOptions->__Field(HX_CSTRING("stderr"), HX_PROP_DYNAMIC));
-            auto index = 2;
+            container.flags = UV_INHERIT_FD;
+            container.data.fd = index;
+            break;
+        }
 
-            switch (field->_hx_getIndex())
-            {
-                case 0:
-                {
-                    hx::Throw(HX_CSTRING("Cannot open a readable pipe on stderr"));
-                    break;
-                }
+        case 4:
+        {
+            container.flags = UV_IGNORE;
+            break;
+        }
 
-                case 1:
-                {
-                    process->stdio_err = getReadablePipe(loop, process->containers[index]);
-                    break;
-                }
+        case 5:
+        {
+            break;
+        }
 
-                case 2:
-                {
-                    hx::Throw(HX_CSTRING("Cannot open a duplex pipe on stderr"));
-                    break;
-                }
+        case 6:
+        {
+            auto file    = field->_hx_getObject(0);
+            auto native  = file->__Field(HX_CSTRING("native"), HX_PROP_DYNAMIC).asObject();
+            auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
 
-                case 3:
-                {
-                    process->containers[index].flags   = UV_INHERIT_FD;
-                    process->containers[index].data.fd = index;
-                    break;
-                }
+            container.flags = UV_INHERIT_FD;
+            container.data.fd = luvFile->file;
 
-                case 4:
-                {
-                    process->containers[index].flags = UV_IGNORE;
-                    break;
-                }
+            break;
+        }
+        }
 
-                case 6:
-                {
-                    auto file    = field->_hx_getObject(0);
-                    auto native  = file->__Field(HX_CSTRING("native"), HX_PROP_DYNAMIC).asObject();
-                    auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
+        return null();
+    }
 
-                    process->containers[index].flags = UV_INHERIT_FD;
-                    process->containers[index].data.fd = luvFile->file;
+    hx::asys::Readable getStdioReadable(uv_loop_t* loop, hx::EnumBase field, uv_stdio_container_t& container, int index)
+    {
+        switch (field->_hx_getIndex())
+        {
+        case 0:
+        {
+            hx::Throw(HX_CSTRING("Cannot open a readable pipe on stdout"));
+        }
 
-                    break;
-                }
-            }
+        case 1:
+        {
+            return getReadablePipe(loop, container);
+        }
+
+        case 2:
+        {
+            hx::Throw(HX_CSTRING("Cannot open a duplex pipe on stdout"));
+            break;
+        }
+
+        case 3:
+        {
+            container.flags = UV_INHERIT_FD;
+            container.data.fd = index;
+            break;
+        }
+
+        case 4:
+        {
+            container.flags = UV_IGNORE;
+            break;
+        }
+
+        case 6:
+        {
+            auto file    = field->_hx_getObject(0);
+            auto native  = file->__Field(HX_CSTRING("native"), HX_PROP_DYNAMIC).asObject();
+            auto luvFile = reinterpret_cast<hx::asys::libuv::filesystem::LibuvFile_obj*>(native);
+
+            container.flags = UV_INHERIT_FD;
+            container.data.fd = luvFile->file;
+
+            break;
+        }
         }
     }
 }
@@ -292,27 +226,38 @@ namespace
 void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon options, Dynamic cbSuccess, Dynamic cbFailure)
 {
     auto uvContext = hx::asys::libuv::context(ctx);
-    auto process   = new hx::asys::libuv::system::LibuvChildProcess();
-    auto root      = std::make_unique<hx::RootedObject<hx::asys::libuv::system::LibuvChildProcess>>(process);
+    auto process   = std::make_unique<hx::asys::libuv::system::LibuvChildProcess::Ctx>();
 
-    getCwd(process->options->cwd, options);
+    getCwd(process->options.cwd, options);
     getArguments(process->arguments, command, options);
     getEnvironment(process->environment, options);
-    getStdioContainers(uvContext->uvLoop, process, options->__Field(HX_CSTRING("stdio"), HX_PROP_DYNAMIC));
 
-    process->request->data        = root.get();
-    process->options->args        = process->arguments.data();
-    process->options->env         = process->environment.empty() ? nullptr : process->environment.data();
-    process->options->stdio       = process->containers.data();
-    process->options->stdio_count = process->containers.size();
-    process->options->file        = command.utf8_str();
-    process->options->exit_cb     = [](uv_process_t* request, int64_t status, int signal) {
-        auto process = reinterpret_cast<hx::RootedObject<hx::asys::libuv::system::LibuvChildProcess>*>(request->data);
+    auto o_stdin  = hx::asys::Writable(null());
+    auto o_stdout = hx::asys::Readable(null());
+    auto o_stderr = hx::asys::Readable(null());
 
-        process->rooted->currentExitCode = status;
+    if (hx::IsNotNull(options))
+    {
+        auto io = hx::Anon(options->__Field(HX_CSTRING("stdio"), HX_PROP_DYNAMIC));
+
+        o_stdin  = getStdioWritable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdin"), HX_PROP_DYNAMIC), process->containers[0], 0);
+        o_stdout = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdout"), HX_PROP_DYNAMIC), process->containers[1], 1);
+        o_stderr = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stderr"), HX_PROP_DYNAMIC), process->containers[2], 2);
+    }
+
+    process->request.data        = process.get();
+    process->options.args        = process->arguments.data();
+    process->options.env         = process->environment.empty() ? nullptr : process->environment.data();
+    process->options.stdio       = process->containers.data();
+    process->options.stdio_count = process->containers.size();
+    process->options.file        = command.utf8_str();
+    process->options.exit_cb     = [](uv_process_t* request, int64_t status, int signal) {
+        auto process = reinterpret_cast<hx::asys::libuv::system::LibuvChildProcess::Ctx*>(request->data);
+
+        process->currentExitCode = status;
 
         auto gcZone   = hx::AutoGCZone();
-        auto callback = Dynamic(process->rooted->exitCallback);
+        auto callback = Dynamic(process->exitCallback.rooted);
         if (null() != callback)
         {
             callback(status);
@@ -322,32 +267,30 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
     auto uidOption = options->__Field(HX_CSTRING("user"), HX_PROP_DYNAMIC);
     if (!uidOption.isNull())
     {
-        process->options->flags |= UV_PROCESS_SETUID;
-        process->options->uid = uidOption.asInt();
+        process->options.flags |= UV_PROCESS_SETUID;
+        process->options.uid = uidOption.asInt();
     }
 
     auto gidOption = options->__Field(HX_CSTRING("group"), HX_PROP_DYNAMIC);
     if (!gidOption.isNull())
     {
-        process->options->flags |= UV_PROCESS_SETGID;
-        process->options->gid = gidOption.asInt();
+        process->options.flags |= UV_PROCESS_SETGID;
+        process->options.gid = gidOption.asInt();
     }
 
     auto detachedOption = options->__Field(HX_CSTRING("detached"), HX_PROP_DYNAMIC);
     if (!detachedOption.isNull())
     {
-        process->options->flags |= UV_PROCESS_DETACHED;
+        process->options.flags |= UV_PROCESS_DETACHED;
     }
 
     auto result = 0;
-    if ((result = uv_spawn(uvContext->uvLoop, process->request.get(), process->options.get())))
+    if ((result = uv_spawn(uvContext->uvLoop, &process->request, &process->options)))
     {
         cbFailure(hx::asys::libuv::uv_err_to_enum(result));
     }
     else
     {
-        root.release();
-
-        cbSuccess(ChildProcess(process));
+        cbSuccess(ChildProcess(new hx::asys::libuv::system::LibuvChildProcess(process.release(), o_stdin, o_stdout, o_stderr)));
     }
 }

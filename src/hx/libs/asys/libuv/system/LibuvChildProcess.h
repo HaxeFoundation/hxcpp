@@ -13,18 +13,21 @@ namespace hx::asys::libuv::system
 	class LibuvChildProcess final : public hx::asys::system::ChildProcess_obj
 	{
 	public:
-		std::unique_ptr<uv_process_t> request;
-		std::unique_ptr<uv_process_options_t> options;
-		std::vector<char*> arguments;
-		std::vector<char*> environment;
-		std::vector<uv_stdio_container_t> containers;
-		std::optional<int64_t> currentExitCode;
+		struct Ctx {
+			uv_process_t request;
+			uv_process_options_t options;
+			std::vector<char*> arguments;
+			std::vector<char*> environment;
+			std::vector<uv_stdio_container_t> containers;
+			std::optional<int64_t> currentExitCode;
+			hx::RootedObject<hx::Object> exitCallback;
 
-		Dynamic exitCallback;
-		Dynamic closeCallback;
+			Ctx();
+		};
 
-		LibuvChildProcess();
-		~LibuvChildProcess() = default;
+		Ctx* ctx;
+
+		LibuvChildProcess(Ctx* ctx, Writable oStdin, Readable oStdout, Readable oStderr);
 
 		Pid pid() override;
 
@@ -33,10 +36,5 @@ namespace hx::asys::libuv::system
 		void exitCode(Dynamic cbSuccess, Dynamic cbFailure) override;
 
 		void close(Dynamic cbSuccess, Dynamic cbFailure) override;
-
-		void __Mark(hx::MarkContext* __inCtx) override;
-#ifdef HXCPP_VISIT_ALLOCS
-		void __Visit(hx::VisitContext* __inCtx) override;
-#endif
 	};
 }
