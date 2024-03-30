@@ -10,7 +10,7 @@ hx::asys::libuv::system::LibuvChildProcess::Ctx::Ctx()
 	, options()
 	, arguments()
 	, environment()
-	, containers(3)
+	, containers()
 	, currentExitCode()
 	, exitCallback(null())
 {

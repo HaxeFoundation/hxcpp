@@ -240,9 +240,9 @@ void hx::asys::system::Process_obj::open(Context ctx, String command, hx::Anon o
     {
         auto io = hx::Anon(options->__Field(HX_CSTRING("stdio"), HX_PROP_DYNAMIC));
 
-        o_stdin  = getStdioWritable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdin"), HX_PROP_DYNAMIC), process->containers[0], 0);
-        o_stdout = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdout"), HX_PROP_DYNAMIC), process->containers[1], 1);
-        o_stderr = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stderr"), HX_PROP_DYNAMIC), process->containers[2], 2);
+        o_stdin  = getStdioWritable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdin"), HX_PROP_DYNAMIC), process->containers.at(0), 0);
+        o_stdout = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stdout"), HX_PROP_DYNAMIC), process->containers.at(1), 1);
+        o_stderr = getStdioReadable(uvContext->uvLoop, io->__Field(HX_CSTRING("stderr"), HX_PROP_DYNAMIC), process->containers.at(2), 2);
     }
 
     process->request.data        = process.get();
