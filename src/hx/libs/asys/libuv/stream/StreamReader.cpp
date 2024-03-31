@@ -56,7 +56,7 @@ hx::asys::libuv::stream::StreamReader_obj::QueuedRead::QueuedRead(const Array<ui
 hx::asys::libuv::stream::StreamReader_obj::StreamReader_obj(uv_stream_t* stream)
     : ctx(new Ctx(stream))
 {
-    stream->data = &ctx;
+    stream->data = ctx;
 
     hx::GCSetFinalizer(this, [](hx::Object* obj) {
         delete reinterpret_cast<StreamReader_obj*>(obj)->ctx;
