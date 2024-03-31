@@ -94,18 +94,16 @@ void hx::asys::libuv::stream::StreamReader_obj::close(Dynamic cbSuccess, Dynamic
     cbSuccess();
 }
 
-void hx::asys::libuv::stream::StreamReader_obj::onAlloc(uv_handle_t* handle, size_t suggested, uv_buf_t* buffer)
+void hx::asys::libuv::stream::StreamReader_obj::onAlloc(uv_handle_t* handle, const size_t suggested, uv_buf_t* buffer)
 {
-    auto ctx     = static_cast<Ctx*>(handle->data);
-    auto staging = std::vector<char>(suggested);
+    auto  ctx     = static_cast<Ctx*>(handle->data);
+    auto& staging = ctx->staging.emplace_back(suggested);
 
     buffer->base = staging.data();
     buffer->len  = staging.size();
-
-    ctx->staging.push_back(staging);
 }
 
-void hx::asys::libuv::stream::StreamReader_obj::onRead(uv_stream_t* stream, ssize_t len, const uv_buf_t* read)
+void hx::asys::libuv::stream::StreamReader_obj::onRead(uv_stream_t* stream, const ssize_t len, const uv_buf_t* read)
 {
     auto gc  = hx::AutoGCZone();
     auto ctx = static_cast<Ctx*>(stream->data);
