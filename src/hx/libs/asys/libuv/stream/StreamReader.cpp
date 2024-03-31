@@ -89,7 +89,9 @@ void hx::asys::libuv::stream::StreamReader_obj::read(Array<uint8_t> output, int 
 
 void hx::asys::libuv::stream::StreamReader_obj::close(Dynamic cbSuccess, Dynamic cbFailure)
 {
-    uv_close(reinterpret_cast<uv_handle_t*>(ctx->stream), hx::asys::libuv::clean_handle);
+    uv_close(reinterpret_cast<uv_handle_t*>(ctx->stream), nullptr);
+
+    cbSuccess();
 }
 
 void hx::asys::libuv::stream::StreamReader_obj::onAlloc(uv_handle_t* handle, size_t suggested, uv_buf_t* buffer)
