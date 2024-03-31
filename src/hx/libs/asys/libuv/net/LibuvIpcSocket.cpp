@@ -105,7 +105,7 @@ void hx::asys::libuv::net::LibuvIpcSocket::flush(Dynamic cbSuccess, Dynamic cbFa
 
 void hx::asys::libuv::net::LibuvIpcSocket::close(Dynamic cbSuccess, Dynamic cbFailure)
 {
-	uv_close(reinterpret_cast<uv_handle_t*>(pipe), hx::asys::libuv::clean_handle);
+	uv_close(reinterpret_cast<uv_handle_t*>(pipe), nullptr);
 }
 
 void hx::asys::libuv::net::LibuvIpcSocket::__Mark(hx::MarkContext* __inCtx)

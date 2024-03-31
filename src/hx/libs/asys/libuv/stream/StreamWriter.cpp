@@ -65,5 +65,7 @@ void hx::asys::libuv::stream::StreamWriter_obj::flush(Dynamic cbSuccess, Dynamic
 
 void hx::asys::libuv::stream::StreamWriter_obj::close(Dynamic cbSuccess, Dynamic cbFailure)
 {
-	uv_close(reinterpret_cast<uv_handle_t*>(stream), hx::asys::libuv::clean_handle);
+	uv_close(reinterpret_cast<uv_handle_t*>(stream), nullptr);
+
+	cbSuccess();
 }

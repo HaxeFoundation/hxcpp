@@ -42,7 +42,7 @@ namespace
 			}
 			else
 			{
-				uv_close(reinterpret_cast<uv_handle_t*>(request->handle), hx::asys::libuv::clean_handle);
+				uv_close(reinterpret_cast<uv_handle_t*>(request->handle), nullptr);
 
 				Dynamic(spData->cbSuccess.rooted)();
 			}

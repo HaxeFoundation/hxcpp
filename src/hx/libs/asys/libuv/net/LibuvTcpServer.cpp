@@ -227,9 +227,7 @@ void hx::asys::libuv::net::LibuvTcpServer::close(Dynamic cbSuccess, Dynamic cbFa
 
 	// TODO : Not convinced we don't need the shutdown.
 
-	uv_close(reinterpret_cast<uv_handle_t*>(&server->tcp), [](uv_handle_t* handle) {
-		delete static_cast<LibuvTcpServerImpl*>(handle->data);
-	});
+	uv_close(reinterpret_cast<uv_handle_t*>(&server->tcp), nullptr);
 
 	cbSuccess();
 }

@@ -190,7 +190,7 @@ void hx::asys::libuv::system::LibuvCurrentProcess::setSignalAction(hx::EnumBase 
 
 			delete reinterpret_cast<hx::RootedObject<hx::Object>*>(signal->handle->data);
 
-			uv_close(reinterpret_cast<uv_handle_t*>(signal->handle), hx::asys::libuv::clean_handle);
+			uv_close(reinterpret_cast<uv_handle_t*>(signal->handle), nullptr);
 		}
 		break;
 	}
