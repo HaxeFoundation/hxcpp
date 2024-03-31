@@ -257,7 +257,7 @@ namespace
 			credential.dwFlags   = (verifyCert ? SCH_CRED_AUTO_CRED_VALIDATION : SCH_CRED_MANUAL_CRED_VALIDATION) | SCH_USE_STRONG_CRYPTO | SCH_CRED_NO_DEFAULT_CREDS;
 			credential.dwVersion = SCH_CREDENTIALS_VERSION;
 
-			if (SEC_E_OK != (result = AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL, &credential, NULL, NULL, &ctx->credHandle, &ctx->credTimestamp)))
+			if (SEC_E_OK != (result = AcquireCredentialsHandle(NULL, LPSTR(UNISP_NAME), SECPKG_CRED_OUTBOUND, NULL, &credential, NULL, NULL, &ctx->credHandle, &ctx->credTimestamp)))
 			{
 				hx::ExitGCFreeZone();
 
